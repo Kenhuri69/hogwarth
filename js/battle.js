@@ -338,6 +338,11 @@ function endBattle(won) {
       });
     });
 
+    // Progression des quêtes de type "kill"
+    enemyGroup.forEach(e => {
+      if (window.checkKillQuests) window.checkKillQuests(e.id);
+    });
+
     AudioSystem.playVictory();
     setNarrative(`Victoire ! +${totalXp} XP, +${totalGold} Gallions.`);
     addMsg(`+${totalXp} XP`, 'good');

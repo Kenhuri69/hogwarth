@@ -59,3 +59,53 @@ let player2 = {
 
 // party[0] et player pointent vers le même objet
 let party = [player, player2];
+
+// ============================================================
+// QUÊTES SECONDAIRES
+// ============================================================
+let activeQuests = [
+  {
+    id: "mandragore_pomfresh",
+    title: "Herboristerie urgente",
+    giver: "Madame Pomfresh",
+    desc: "Rapporte 3 Racines de Mandragore à l'infirmerie. Les élèves sont encore pétrifiés !",
+    objective: { type: "item", itemId: "mandragore", amount: 3 },
+    progress: 0,
+    reward: { xp: 80, gold: 40, item: "potion_m", spell: "Episkey" },
+    completed: false,
+    location: "Infirmerie (étage 2)"
+  },
+  {
+    id: "livre_interdit",
+    title: "Le livre qui mord",
+    giver: "Gilderoy Lockhart",
+    desc: "Récupère le Livre des Monstres qui mord dans la Bibliothèque Interdite.",
+    objective: { type: "item", itemId: "book_monsters", amount: 1 },
+    progress: 0,
+    reward: { xp: 120, gold: 25, item: "wand1" },
+    completed: false,
+    location: "Bibliothèque Interdite (étage 3)"
+  },
+  {
+    id: "troll_toilettes",
+    title: "Nettoyage des toilettes",
+    giver: "Mimi Geignarde",
+    desc: "Élimine le Troll des Toilettes qui bloque l'accès aux cachots.",
+    objective: { type: "kill", monsterId: "troll", amount: 1 },
+    progress: 0,
+    reward: { xp: 150, gold: 60, item: "robe1" },
+    completed: false,
+    location: "Toilettes du 2e étage"
+  },
+  {
+    id: "chouette_perdue",
+    title: "Chouette ensorcelée",
+    giver: "Hagrid",
+    desc: "Capture une Chouette Ensorcelée et rapporte-la à Hagrid (dans la Forêt).",
+    objective: { type: "kill", monsterId: "chouette_envoutee", amount: 1 },
+    progress: 0,
+    reward: { xp: 90, gold: 30, item: "broom" },
+    completed: false,
+    location: "Forêt Interdite (étage 4+)"
+  }
+];

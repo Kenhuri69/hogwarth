@@ -12,7 +12,8 @@ function saveGame() {
     dungeon, visited, enemyMap, itemMap,
     seenMonsters: Array.from(seenMonsters),
     audioMuted:   AudioSystem.isMuted,
-    voiceEnabled: AudioSystem.voiceEnabled
+    voiceEnabled: AudioSystem.voiceEnabled,
+    activeQuests
   };
   localStorage.setItem('hogwarts_rpg_save', JSON.stringify(gameState));
   addMsg("Partie sauvegardée !", "good");
@@ -56,6 +57,8 @@ function loadGame() {
   inBattle = false;
   document.getElementById('encounter-overlay').style.display = 'none';
   document.getElementById('btn-interact').style.display      = 'none';
+
+  if (gs.activeQuests) activeQuests = gs.activeQuests;
 
   // Recalculer les stats effectives (base + équipement chargé)
   recalculateStats();
