@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git -C \"C:/Personal/dev/hog\" remote -v)",
       "Bash(git -C \"C:/Personal/dev/hog\" branch -a)",
-      "WebFetch(domain:game-icons.net)"
+      "WebFetch(domain:game-icons.net)",
+      "Bash(grep -c \"^\\\\s\\\\+[a-z].*: \\\\`\" \"C:\\\\Personal\\\\dev\\\\hog\\\\js\\\\icons.js\")"
     ]
   }
 }

@@ -171,14 +171,21 @@ weightedPick(pool)          // tirage pondéré selon .weight
 scaleMonster(base, floor)   // applique le scaling + résout gold en nombre
 ```
 
-### Monstres définis (16 au total)
+### Monstres définis (36 au total)
 | Étages | Monstres |
 |--------|---------|
-| 1–2    | Chat de Mme Norris, Peeve, Mimi Geignarde, Serpent des Cachots |
-| 2–7    | Gobelin Rebelle, Araignée Géante, Troll, Centaure, Détraqueur |
-| 4–9    | Loup-Garou, Mangemort Masqué, Sorcier Renégat |
-| 6+     | Basilic Mineur, Nagini, Voldemort Affaibli |
+| 1–3    | Chat de Mme Norris, Luciole des Marais, Cornichon de Cornouailles, Portrait Hostile, Peeve, Mimi Geignarde, Serpent des Cachots |
+| 2–6    | Chouette Ensorcelée, Mandragore Sauvage, Kappa des Douves, Épouvantard, Gobelin Rebelle, Araignée Géante |
+| 3–7    | Bundimun Venimeux, Homme-Araignée, Méduse Noire, Troll des Toilettes, Centaure Hostile, Détraqueur |
+| 4–9    | Hippogriffe en Furie, Inférius, Loup-Garou Enragé, Sorcière des Ténèbres |
+| 5+     | Mangemort Masqué, Jeune Acromantule, Détraqueur Gardien, Troll des Cavernes, Sorcier Renégat |
+| 6+     | Basilic Mineur, Chimère de Poudlard, Ombre de Quirrell, Nagini |
+| 7+     | Mangemort d'Élite |
+| 8+     | Bellatrix Lestrange, Voldemort Affaibli |
+| 10+    | Voldemort Ressuscité |
 
+**Icônes SVG** définies dans `icons.js` pour tous les monstres majeurs.
+Les monstres sans SVG propre héritent du SVG de leur catégorie.
 Un **TEMPLATE commenté** se trouve en bas de `monsters.js`.
 
 ---
