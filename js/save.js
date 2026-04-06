@@ -10,7 +10,8 @@ function saveGame() {
     partySize,
     currentFloor, playerX, playerY, playerDir,
     dungeon, visited, enemyMap, itemMap,
-    seenMonsters: Array.from(seenMonsters)
+    seenMonsters: Array.from(seenMonsters),
+    audioMuted:   AudioSystem.isMuted
   };
   localStorage.setItem('hogwarts_rpg_save', JSON.stringify(gameState));
   addMsg("Partie sauvegardée !", "good");
@@ -32,6 +33,11 @@ function loadGame() {
 
   if (gs.partySize)     partySize    = gs.partySize;
   if (gs.seenMonsters) seenMonsters = new Set(gs.seenMonsters);
+  if (gs.audioMuted !== undefined) {
+    AudioSystem.isMuted = gs.audioMuted;
+    const btn = document.getElementById('btn-music');
+    if (btn) btn.textContent = gs.audioMuted ? '🔇' : '♪';
+  }
   currentFloor = gs.currentFloor;
   playerX      = gs.playerX;
   playerY      = gs.playerY;

@@ -243,6 +243,7 @@
       <button class="cmd-btn" onclick="openBestiary()">📕<span class="btn-label"> Bestiaire</span></button>
       <button class="cmd-btn" onclick="searchRoom()">🔍<span class="btn-label"> Fouiller</span></button>
       <button class="cmd-btn" onclick="rest()">💤<span class="btn-label"> Repos</span></button>
+      <button id="btn-music" class="cmd-btn" onclick="AudioSystem.toggleMute()" title="Son On/Off">♪</button>
       <button class="cmd-btn" onclick="saveGame()">💾<span class="btn-label"> Sauver</span></button>
       <button class="cmd-btn" onclick="loadGame()">📂<span class="btn-label"> Charger</span></button>
       <button class="cmd-btn mobile-map-btn" onclick="toggleMobileMap()" title="Carte">🗺️</button>
@@ -350,6 +351,7 @@
 <div id="msg-log"></div>
 
 <!-- Scripts (ordre de chargement important) -->
+<script src="js/audio.js"></script>
 <script src="js/icons.js"></script>
 <script src="js/monsters.js"></script>
 <script src="js/data.js"></script>

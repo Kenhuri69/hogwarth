@@ -33,6 +33,10 @@ function startGame(count = 2) {
     : "Bienvenue à Poudlard, jeune sorcier. Harry et Hermione s'avancent dans les couloirs. La Chambre Secrète se cache dans les profondeurs...";
   setNarrative(intro);
 
+  // Lancer la musique ambiante (le geste utilisateur vient de startGame)
+  AudioSystem.init();
+  AudioSystem.playAmbientMusic();
+
   // Boucle de rendu
   let frame = 0;
   function render() {

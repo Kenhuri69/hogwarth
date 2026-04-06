@@ -115,6 +115,7 @@ function executeAttack(targetIdx) {
   enemy.currentHp -= dmg;
   if (enemy.disarmed > 0) enemy.disarmed--;
 
+  AudioSystem.playHit();
   setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${dmg} dégâts !`);
   renderEnemyGroup();
   if (checkAllEnemiesDead()) return;
@@ -235,6 +236,7 @@ function castSpellInBattle(spellName, targetIdx) {
   if (!spell || char.sp < spell.cost) { addMsg("Pas assez de magie !", 'bad'); return; }
 
   char.sp -= spell.cost;
+  AudioSystem.playSpellCast(spellName);
   closeModal('spell-modal');
   document.getElementById('target-selection').style.display = 'none';
 
@@ -335,6 +337,7 @@ function endBattle(won) {
       });
     });
 
+    AudioSystem.playVictory();
     setNarrative(`Victoire ! +${totalXp} XP, +${totalGold} Gallions.`);
     addMsg(`+${totalXp} XP`, 'good');
     addMsg(`+${totalGold} Gallions`, 'good');
@@ -363,6 +366,7 @@ function checkLevelUp() {
     c.str   += 1;  c.int += 1;  c.agi += 1;
   });
 
+  AudioSystem.playLevelUp();
   document.getElementById('levelup-text').textContent = `Le groupe passe au niveau ${player.level} !`;
   document.getElementById('levelup-modal').style.display = 'flex';
   addMsg(`Niveau ${player.level} !`, 'good');
@@ -386,6 +390,7 @@ function closeLevelup() {
 
 // ── Mort et résurrection ─────────────────────────────────────
 function triggerDeath(msg) {
+  AudioSystem.playDeath();
   document.getElementById('death-msg').textContent = msg;
   document.getElementById('death-screen').style.display = 'flex';
 }

@@ -237,6 +237,27 @@ function showMonsterDetail(monster) {
   const floorRange = monster.maxFloor ? `${monster.minFloor}–${monster.maxFloor}` : `${monster.minFloor}+`;
   const goldRange  = typeof monster.gold === 'object' ? `${monster.gold.min}–${monster.gold.max}` : monster.gold;
 
+  // Niveau de danger avec couleur progressive
+  const dangerVal = monster.danger || null;
+  const dangerColor = dangerVal >= 10 ? '#e82020'
+                    : dangerVal >= 8  ? '#e85050'
+                    : dangerVal >= 6  ? '#d07030'
+                    : dangerVal >= 4  ? '#c0a020'
+                    :                   '#608040';
+  const dangerHtml = dangerVal
+    ? `<span class="bestiary-danger" style="color:${dangerColor}">
+         ${'⚠️'.repeat(Math.min(dangerVal, 5))} Danger&nbsp;${dangerVal}/10
+       </span>`
+    : '';
+
+  // Encart Habitat + Anecdote (visible seulement si vu et champs définis)
+  const loreBoxHtml = seen && (monster.habitat || monster.anecdote)
+    ? `<div class="bestiary-lore-box">
+        ${monster.habitat  ? `<div><strong>🏰 Habitat :</strong> ${monster.habitat}</div>`  : ''}
+        ${monster.anecdote ? `<div><strong>📖 Anecdote :</strong> <em>${monster.anecdote}</em></div>` : ''}
+       </div>`
+    : '';
+
   const abilitiesHtml = seen && monster.abilities && monster.abilities.length
     ? `<div class="bestiary-abilities">
         <div class="bestiary-section-title">Capacités spéciales</div>
@@ -268,12 +289,13 @@ function showMonsterDetail(monster) {
   detail.innerHTML = `
     <div class="bestiary-detail-header">
       <div class="bestiary-detail-icon">
-        ${getMonsterIconHtml(monster, seen ? 100 : 80)}
-        ${seen ? '<span class="bestiary-seen-badge" style="font-size:10px;padding:3px 8px">VU EN COMBAT</span>' : ''}
+        ${getMonsterIconHtml(monster, seen ? 120 : 80)}
+        ${seen ? '<span class="bestiary-seen-badge" style="font-size:10px;padding:3px 8px">VU</span>' : ''}
       </div>
-      <div>
+      <div class="bestiary-detail-titles">
         <h2 class="bestiary-detail-name">${seen ? monster.name : '???'}</h2>
         <div class="bestiary-floor-tag">${monster.category.toUpperCase()} · Étages ${floorRange}</div>
+        ${dangerHtml}
         <div class="bestiary-detail-desc">${monster.desc}</div>
       </div>
     </div>
@@ -281,6 +303,8 @@ function showMonsterDetail(monster) {
     <p class="bestiary-lore-full">
       ${seen ? monster.lore : 'Affrontez cette créature pour découvrir son histoire et ses secrets…'}
     </p>
+
+    ${loreBoxHtml}
 
     ${seen ? `
       <div class="bestiary-stat-grid">

@@ -24,6 +24,7 @@ function move(dir) {
   const [dx, dy] = delta[dir];
   playerX += dx; playerY += dy;
   visited[playerY][playerX] = true;
+  AudioSystem.playFootstep();
 
   const cell = dungeon[playerY][playerX];
   updateCompass();
@@ -107,6 +108,7 @@ function goUp() {
 function openChest() {
   dungeon[playerY][playerX] = CELL.FLOOR;
   document.getElementById('btn-interact').style.display = 'none';
+  AudioSystem.playChestOpen();
   const roll = Math.random();
   if (roll < 0.4) {
     const gold = Math.floor(Math.random() * 30 + 10) * currentFloor;
