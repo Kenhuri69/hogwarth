@@ -2,11 +2,34 @@
 // INVENTAIRE (partagé) ET SORTS (par personnage)
 // ============================================================
 
+// ── Calcul des stats réelles (base + équipement) ────────────
+// Doit être appelé après chaque équipement et après chaque level-up.
+function recalculateStats() {
+  party.forEach(c => {
+    // Repartir des stats de base (croissent au level-up via _base*)
+    c.atk = c._baseAtk;
+    c.def = c._baseDef;
+    c.mag = c._baseMag;
+    c.lck = c._baseLck;
+    // Ajouter les bonus des objets équipés
+    ['wand', 'armor', 'acc'].forEach(slot => {
+      const item = c.equipped && c.equipped[slot];
+      if (!item) return;
+      if (item.bonusAtk) c.atk += item.bonusAtk;
+      if (item.bonusDef) c.def += item.bonusDef;
+      if (item.bonusMag) c.mag += item.bonusMag;
+      if (item.bonusLck) c.lck += item.bonusLck;
+    });
+  });
+}
+
+// ── Ouvre l'inventaire hors combat ──────────────────────────
 function openInventory() {
   renderInventory(false);
   document.getElementById('inventory-modal').style.display = 'flex';
 }
 
+// ── Rendu de la grille d'inventaire ─────────────────────────
 function renderInventory(battleMode) {
   const grid = document.getElementById('inv-grid');
   grid.innerHTML = '';
@@ -17,8 +40,24 @@ function renderInventory(battleMode) {
     const item = player.inventory[i]; // inventaire partagé sur Harry
     if (item) {
       div.classList.add('has-item');
-      div.innerHTML = `<div class="item-icon">${item.icon}</div><div class="item-name">${item.name}</div>`;
-      div.onclick = () => useItem(i, battleMode);
+      const isEquip  = item.type !== 'consumable';
+      // Étiquette de type pour les équipements
+      const typeIcon = isEquip
+        ? (item.type === 'wand' ? '🪄' : item.type === 'armor' ? '🧥' : '💎')
+        : '';
+      const typeLabel = isEquip
+        ? `<div style="font-size:9px;color:#b08040;margin-top:1px">${typeIcon}</div>`
+        : '';
+      div.innerHTML = `<div class="item-icon">${item.icon}</div><div class="item-name">${item.name}</div>${typeLabel}`;
+
+      if (battleMode && isEquip) {
+        // Équipements non utilisables en combat — grisés
+        div.style.opacity = '0.45';
+        div.style.cursor  = 'default';
+        div.title         = 'Non utilisable en combat';
+      } else {
+        div.onclick = () => useItem(i, battleMode);
+      }
     } else {
       div.innerHTML = '<div style="font-size:10px;color:#2a1a08">—</div>';
     }
@@ -26,47 +65,102 @@ function renderInventory(battleMode) {
   }
 }
 
+// ── Menu de sélection du personnage pour équiper ─────────────
+// Remplace temporairement la grille par un prompt de choix.
+function showEquipMenu(item, idx) {
+  // Mode solo : équiper directement Harry
+  if (partySize === 1) { equipItem(idx, 0); return; }
+
+  const grid = document.getElementById('inv-grid');
+
+  // Trouver si chaque personnage peut utiliser ce type d'objet
+  // (toutes les baguettes/armures/accessoires peuvent être équipés par les deux)
+  const charButtons = party.slice(0, partySize).map((c, ci) => {
+    const slot    = item.type === 'wand' ? 'wand' : item.type === 'armor' ? 'armor' : 'acc';
+    const current = c.equipped && c.equipped[slot];
+    const curLabel = current ? ` (rem. ${current.name})` : '';
+    return `<button class="cmd-btn" style="width:100%;margin-bottom:6px"
+              onclick="equipItem(${idx},${ci})">
+              ${c.icon} ${c.name.split(' ')[0]}${curLabel}
+            </button>`;
+  }).join('');
+
+  grid.innerHTML = `
+    <div style="grid-column:1/-1;padding:14px;text-align:center">
+      <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
+        Équiper ${item.icon} ${item.name}
+      </div>
+      <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
+      <div style="max-width:200px;margin:0 auto">
+        ${charButtons}
+        <button class="cmd-btn" style="width:100%;margin-top:4px;opacity:.7"
+          onclick="renderInventory(false)">← Annuler</button>
+      </div>
+    </div>
+  `;
+}
+
+// ── Équiper un objet sur un personnage ───────────────────────
+function equipItem(inventoryIdx, charIdx) {
+  const item = player.inventory[inventoryIdx];
+  if (!item) return;
+  const c    = party[charIdx];
+  const slot = item.type === 'wand' ? 'wand' : item.type === 'armor' ? 'armor' : 'acc';
+
+  // Déséquiper l'ancien objet → retour en inventaire si place dispo
+  const old = c.equipped && c.equipped[slot];
+  if (old) {
+    if (player.inventory.length < 16) {
+      player.inventory.push({ ...old });
+      addMsg(`${c.name} déséquipe : ${old.name}`, '');
+    } else {
+      addMsg(`Inventaire plein — ${old.name} est perdu.`, 'bad');
+    }
+  }
+
+  // Équiper le nouvel objet
+  c.equipped[slot] = { ...item };
+
+  // Mettre à jour les chaînes d'affichage legacy (utilisées dans le panneau gauche)
+  if (slot === 'wand')  c.wand  = item.name;
+  if (slot === 'armor') c.armor = item.name;
+  if (slot === 'acc')   c.acc   = item.name;
+
+  // Retirer de l'inventaire
+  player.inventory.splice(inventoryIdx, 1);
+
+  // Recalculer les stats effectives
+  recalculateStats();
+  updateUI();
+  addMsg(`${c.name} équipe : ${item.name}`, 'good');
+  closeModal('inventory-modal');
+}
+
+// ── Utiliser / équiper un objet ──────────────────────────────
 function useItem(idx, battleMode) {
   const item = player.inventory[idx];
   if (!item) return;
 
-  // En combat, l'objet s'applique au personnage actif ; hors combat à Harry
+  // Équipement → menu de sélection (hors combat seulement)
+  if (item.type !== 'consumable') {
+    if (battleMode) return; // ne devrait pas être cliquable en combat
+    showEquipMenu(item, idx);
+    return;
+  }
+
+  // Consommable : s'applique au personnage actif en combat, à Harry sinon
   const target = (battleMode && inBattle) ? party[currentBattleChar] : player;
   let used = false;
 
-  if (item.type === 'consumable') {
-    if (item.effect === 'heal')       target.hp = Math.min(target.hpMax, target.hp + item.power);
-    else if (item.effect === 'restore_sp') target.sp = Math.min(target.spMax, target.sp + item.power);
-    else if (item.effect === 'both') {
-      target.hp = Math.min(target.hpMax, target.hp + item.power);
-      target.sp = Math.min(target.spMax, target.sp + 10);
-    }
-    addMsg(`${target.name} utilise : ${item.name}`, 'good');
-    player.inventory.splice(idx, 1);
-    used = true;
-
-  } else if (item.type === 'wand') {
-    // L'équipement va toujours à Harry
-    player.atk  = player.atk + item.power - (player.atk - 5);
-    player.wand = item.name;
-    player.inventory.splice(idx, 1);
-    addMsg(`Harry équipe : ${item.name}`, 'good');
-    used = true;
-
-  } else if (item.type === 'armor') {
-    player.def   = player.def + item.power - (player.def - 2);
-    player.armor = item.name;
-    player.inventory.splice(idx, 1);
-    addMsg(`Harry équipe : ${item.name}`, 'good');
-    used = true;
-
-  } else if (item.type === 'acc') {
-    player.acc = item.name;
-    if (item.id === 'amulette') player.mag += item.power;
-    player.inventory.splice(idx, 1);
-    addMsg(`Harry équipe : ${item.name}`, 'good');
-    used = true;
+  if (item.effect === 'heal')            target.hp = Math.min(target.hpMax, target.hp + item.power);
+  else if (item.effect === 'restore_sp') target.sp = Math.min(target.spMax, target.sp + item.power);
+  else if (item.effect === 'both') {
+    target.hp = Math.min(target.hpMax, target.hp + item.power);
+    target.sp = Math.min(target.spMax, target.sp + 10);
   }
+  addMsg(`${target.name} utilise : ${item.name}`, 'good');
+  player.inventory.splice(idx, 1);
+  used = true;
 
   updateUI();
 

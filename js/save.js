@@ -57,6 +57,8 @@ function loadGame() {
   document.getElementById('encounter-overlay').style.display = 'none';
   document.getElementById('btn-interact').style.display      = 'none';
 
+  // Recalculer les stats effectives (base + équipement chargé)
+  recalculateStats();
   updateUI();
   updateCompass();
   renderMinimap();

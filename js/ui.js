@@ -133,9 +133,9 @@ function openCharacter(charIdx = 0) {
     <div style="margin-top:12px;border-top:1px solid #2a1a08;padding-top:10px">
       <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);margin-bottom:5px">ÉQUIPEMENT</div>
       <div style="font-size:12px;display:flex;flex-direction:column;gap:3px;color:var(--parchment-dark)">
-        <div>🪄 ${c.wand || '—'}</div>
-        <div>🧥 ${c.armor || '—'}</div>
-        <div>💎 ${c.acc || '—'}</div>
+        <div>🪄 ${(c.equipped && c.equipped.wand  && c.equipped.wand.name)  || c.wand  || '—'}</div>
+        <div>🧥 ${(c.equipped && c.equipped.armor && c.equipped.armor.name) || c.armor || '—'}</div>
+        <div>💎 ${(c.equipped && c.equipped.acc   && c.equipped.acc.name)   || c.acc   || '—'}</div>
       </div>
     </div>
     <div style="margin-top:12px;border-top:1px solid #2a1a08;padding-top:10px">

@@ -363,9 +363,12 @@ function checkLevelUp() {
     c.xpNext = player.xpNext;
     c.hpMax += 8;  c.hp = c.hpMax;
     c.spMax += 5;  c.sp = c.spMax;
-    c.atk   += 1;  c.def += 1;  c.mag += 1;
-    c.str   += 1;  c.int += 1;  c.agi += 1;
+    // Incrémenter les stats de BASE (indépendamment de l'équipement)
+    c._baseAtk += 1;  c._baseDef += 1;  c._baseMag += 1;
+    c.str += 1;  c.int += 1;  c.agi += 1;
   });
+  // Recalculer atk/def/mag/lck = base + bonus équipement
+  recalculateStats();
 
   AudioSystem.playLevelUp();
   document.getElementById('levelup-text').textContent = `Le groupe passe au niveau ${player.level} !`;

@@ -37,11 +37,11 @@ const ITEMS = [
   { id:"potion_m", name:"Potion Magique", icon:"💜", desc:"+12 PM", type:"consumable", effect:"restore_sp", power:12, price:25 },
   { id:"felix", name:"Félix Felicis", icon:"✨", desc:"+20 PV +10 PM", type:"consumable", effect:"both", power:20, price:80 },
   { id:"mandragore", name:"Racine de Mandragore", icon:"🌿", desc:"+8 PV", type:"consumable", effect:"heal", power:8, price:15 },
-  { id:"wand1", name:"Baguette de Saule", icon:"🪄", desc:"ATK+2", type:"wand", power:2, price:120 },
-  { id:"wand2", name:"Baguette de Sureau", icon:"🪄", desc:"ATK+5 MAG+3", type:"wand", power:5, price:300 },
-  { id:"robe1", name:"Robe Renforcée", icon:"🧥", desc:"DEF+3", type:"armor", power:3, price:150 },
-  { id:"amulette", name:"Amulette du Phénix", icon:"💎", desc:"MAG+4 chance++", type:"acc", power:4, price:250 },
-  { id:"broom", name:"Balai Nimbus 2000", icon:"🧹", desc:"Fuite toujours réussie", type:"acc", power:0, price:200 },
+  { id:"wand1",   name:"Baguette de Saule",   icon:"🪄", desc:"ATK+2",          type:"wand",  power:2, bonusAtk:2,                    price:120 },
+  { id:"wand2",   name:"Baguette de Sureau",  icon:"🪄", desc:"ATK+5 MAG+3",    type:"wand",  power:5, bonusAtk:5, bonusMag:3,           price:300 },
+  { id:"robe1",   name:"Robe Renforcée",      icon:"🧥", desc:"DEF+3",          type:"armor", power:3, bonusDef:3,                        price:150 },
+  { id:"amulette",name:"Amulette du Phénix",  icon:"💎", desc:"MAG+4 LCK+3",   type:"acc",   power:4, bonusMag:4, bonusLck:3,           price:250 },
+  { id:"broom",   name:"Balai Nimbus 2000",   icon:"🧹", desc:"Fuite garantie", type:"acc",   power:0,                                   price:200 },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","wand1","robe1","amulette","broom","mandragore"];

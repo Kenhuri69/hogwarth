@@ -33,8 +33,11 @@ let player = {
   hp: 35, hpMax: 35, sp: 22, spMax: 22,
   str: 9, int: 11, agi: 12, end: 10, lck: 15, mag: 10,
   atk: 5, def: 2,
+  // Stats de base (s'incrémentent au level-up, indépendamment de l'équipement)
+  _baseAtk: 5, _baseDef: 2, _baseMag: 10, _baseLck: 15,
   gold: 25,
   inventory: [],
+  equipped: { wand: null, armor: null, acc: null }, // équipement propre à Harry
   spells: ["Expelliarmus", "Stupefix", "Episkey", "Protego", "Incendio"],
   wand: "Baguette de Houx", armor: "Robe de Gryffondor", acc: ""
 };
@@ -45,8 +48,11 @@ let player2 = {
   hp: 28, hpMax: 28, sp: 35, spMax: 35,
   str: 6, int: 17, agi: 10, end: 7, lck: 12, mag: 16,
   atk: 3, def: 2,
+  // Stats de base Hermione
+  _baseAtk: 3, _baseDef: 2, _baseMag: 16, _baseLck: 12,
   gold: 0, // l'or est partagé via player.gold
   inventory: [], // inventaire partagé via player.inventory
+  equipped: { wand: null, armor: null, acc: null }, // équipement propre à Hermione
   spells: ["Episkey", "Protego", "Incendio", "Accio"],
   wand: "Baguette de Vigne", armor: "Robe de Gryffondor", acc: ""
 };
