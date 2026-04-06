@@ -49,18 +49,12 @@ function rollGroupSize() {
 }
 
 function pickSimilarEnemy(base) {
-  const pool = ENEMIES.filter(e => Math.abs(e.hp - base.hp) < 25);
-  const src  = pool.length ? pool[Math.floor(Math.random() * pool.length)] : base;
-  const mult = 1 + (currentFloor - 1) * 0.25;
-  const e    = JSON.parse(JSON.stringify(src));
-  e.hp   = Math.floor(e.hp   * mult);
-  e.atk  = Math.floor(e.atk  * mult);
-  e.def  = Math.floor(e.def  * mult);
-  e.xp   = Math.floor(e.xp   * mult);
-  e.gold = Math.floor(e.gold * mult);
-  if (currentFloor >= 5) e.name = "Ancien " + e.name;
-  else if (currentFloor >= 3) e.name = "Féroce " + e.name;
-  return e;
+  // Choisit un monstre éligible à l'étage courant, similaire au monstre de base
+  const eligible = MONSTERS.filter(m =>
+    m.minFloor <= currentFloor && (m.maxFloor === null || currentFloor <= m.maxFloor)
+  );
+  const pool = eligible.length ? eligible : MONSTERS;
+  return scaleMonster(weightedPick(pool), currentFloor);
 }
 
 // ── Action du joueur (Harry ou Hermione) ─────────────────────
@@ -152,15 +146,18 @@ function advanceBattleChar() {
 // ── Tour des ennemis ─────────────────────────────────────────
 function enemyTurn() {
   battleTurn++;
-  const alive = party.filter(c => c.hp > 0);
+  const alive = party.filter(c => c.hp > 0).slice(0, partySize);
   let log = '';
 
   livingEnemies().forEach(enemy => {
-    // Cible aléatoire parmi les personnages vivants
-    const target   = alive[Math.floor(Math.random() * alive.length)];
+    const target  = alive[Math.floor(Math.random() * alive.length)];
     if (!target) return;
-    const charIdx  = party.indexOf(target);
+    const charIdx = party.indexOf(target);
 
+    // Tentative de capacité spéciale
+    if (tryEnemyAbility(enemy, target, charIdx, txt => { log += txt; })) return;
+
+    // Attaque physique normale
     if (shieldTurns[charIdx] > 0) {
       shieldTurns[charIdx]--;
       log += `🛡️ Protego protège ${target.name} ! `;
@@ -181,10 +178,51 @@ function enemyTurn() {
     return;
   }
 
-  // Reprendre avec le premier personnage vivant
   currentBattleChar = party[0].hp > 0 ? 0 : 1;
   updateBattleCharIndicator();
-  setBattleLog(log + `\nÀ ${party[currentBattleChar].name} d'agir...`);
+  setBattleLog((log || '...') + `\nÀ ${party[currentBattleChar].name} d'agir...`);
+}
+
+// ── Utilisation d'une capacité spéciale par un ennemi ────────
+function tryEnemyAbility(enemy, target, charIdx, appendLog) {
+  if (!enemy.abilities || !enemy.abilities.length) return false;
+  const ability = enemy.abilities.find(a => Math.random() < a.chance);
+  if (!ability) return false;
+
+  switch (ability.effect) {
+    case 'damage': {
+      const dmg = ability.power + Math.floor((enemy.mag || 0) / 2);
+      if (shieldTurns[charIdx] > 0) {
+        shieldTurns[charIdx]--;
+        appendLog(`🛡️ Protego bloque ${ability.name} ! `);
+      } else {
+        target.hp = Math.max(0, target.hp - dmg);
+        appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → ${dmg} dégâts sur ${target.name} ! `);
+      }
+      break;
+    }
+    case 'heal': {
+      const restored = Math.min(enemy.hp, enemy.currentHp + ability.power) - enemy.currentHp;
+      enemy.currentHp += restored;
+      appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : +${restored} PV ! `);
+      renderEnemyGroup();
+      break;
+    }
+    case 'weaken': {
+      target.def = Math.max(0, target.def - ability.power);
+      appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : ${target.name} perd ${ability.power} DEF ! `);
+      break;
+    }
+    case 'drain': {
+      const drained = Math.min(target.hp, ability.power);
+      target.hp       = Math.max(0, target.hp - drained);
+      enemy.currentHp = Math.min(enemy.hp, enemy.currentHp + Math.floor(drained / 2));
+      appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → draine ${drained} PV de ${target.name} ! `);
+      renderEnemyGroup();
+      break;
+    }
+  }
+  return true;
 }
 
 // ── Sorts en combat ──────────────────────────────────────────
@@ -207,7 +245,14 @@ function castSpellInBattle(spellName, targetIdx) {
       addMsg(msg, 'good');
       break;
     case 'disarm':
-      if (enemy) { enemy.disarmed = 2; msg = `✨ ${char.name} : ${spell.name} désarme ${enemy.name} !`; }
+      if (enemy) {
+        if (enemy.resist?.includes('disarm')) {
+          msg = `✨ ${char.name} : ${spell.name} — ${enemy.name} y résiste 🔰 !`;
+        } else {
+          enemy.disarmed = 2;
+          msg = `✨ ${char.name} : ${spell.name} désarme ${enemy.name} !`;
+        }
+      }
       addMsg(msg, 'magic');
       break;
     case 'shield':
@@ -217,9 +262,12 @@ function castSpellInBattle(spellName, targetIdx) {
       break;
     case 'stun': case 'burn': case 'instant':
       if (enemy) {
-        const dmg = spell.power + Math.floor(char.mag / 2);
+        let dmg    = spell.power + Math.floor(char.mag / 2);
+        let suffix = '';
+        if (enemy.resist?.includes(spell.effect)) { dmg = Math.floor(dmg * 0.5); suffix = ' 🔰'; }
+        if (enemy.weak?.includes(spell.effect))   { dmg = Math.floor(dmg * 1.5); suffix = ' 💥'; }
         enemy.currentHp -= dmg;
-        msg = `${spell.icon} ${char.name} : ${spell.name} → ${dmg} dégâts magiques sur ${enemy.name} !`;
+        msg = `${spell.icon} ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} sur ${enemy.name} !`;
       }
       addMsg(msg, 'magic');
       break;
@@ -269,6 +317,20 @@ function endBattle(won) {
     // XP partagée (ajoutée à player = party[0])
     player.xp += totalXp;
     player.gold += totalGold;
+
+    // Drops d'objets (tirage indépendant par ennemi et par drop)
+    enemyGroup.forEach(e => {
+      if (!e.drops || !e.drops.length) return;
+      e.drops.forEach(drop => {
+        if (Math.random() < drop.chance) {
+          const item = ITEMS.find(i => i.id === drop.itemId);
+          if (item && player.inventory.length < 16) {
+            player.inventory.push({ ...item });
+            addMsg(`💎 Drop : ${item.icon} ${item.name} !`, 'good');
+          }
+        }
+      });
+    });
 
     setNarrative(`Victoire ! +${totalXp} XP, +${totalGold} Gallions.`);
     addMsg(`+${totalXp} XP`, 'good');

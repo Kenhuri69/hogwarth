@@ -18,17 +18,9 @@ const CHARACTERS = {
   }
 };
 
-const ENEMIES = [
-  { name:"Peeve le Poltergeist", icon:"👻", hp:15, atk:3, def:1, xp:8, gold:5, desc:"Le poltergeist tourbillonne en ricannant" },
-  { name:"Serpent des Cachots", icon:"🐍", hp:20, atk:5, def:2, xp:12, gold:8, desc:"Un serpent venimeux surgit de l'ombre" },
-  { name:"Troll des Toilettes", icon:"🦕", hp:30, atk:8, def:4, xp:20, gold:15, desc:"Un troll nauséabond barre le passage" },
-  { name:"Araignée Géante", icon:"🕷️", hp:18, atk:6, def:2, xp:14, gold:10, desc:"Une araignée monstrueuse descend du plafond" },
-  { name:"Détraqueur", icon:"🌑", hp:25, atk:10, def:3, xp:25, gold:12, desc:"Un Détraqueur aspire toute joie en vous" },
-  { name:"Mangemort Masqué", icon:"💀", hp:40, atk:12, def:6, xp:40, gold:25, desc:"Un Mangemort vous vise de sa baguette" },
-  { name:"Gobelin Rebelle", icon:"👺", hp:22, atk:7, def:3, xp:18, gold:20, desc:"Un gobelin en colère agite son épée" },
-  { name:"Loup-Garou", icon:"🐺", hp:45, atk:15, def:5, xp:45, gold:18, desc:"La pleine lune a transformé ce sorcier" },
-  { name:"Basilic Mineur", icon:"🐉", hp:60, atk:20, def:8, xp:80, gold:40, desc:"Un jeune basilic dont le regard pétrifie" },
-];
+// Les ennemis sont définis dans js/monsters.js (MONSTERS)
+// ENEMIES est un alias pour la compatibilité du code existant
+const ENEMIES = MONSTERS;
 
 const SPELLS = [
   { name:"Expelliarmus", icon:"✨", desc:"Désarme l'ennemi (-3 ATK)", cost:4, effect:"disarm", power:3 },

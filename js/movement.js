@@ -160,7 +160,9 @@ function rest() {
   if (inBattle) return;
   if (Math.random() < 0.3) {
     addMsg("Une rencontre vous interrompt !", 'bad');
-    const enemy = ENEMIES[Math.floor(Math.random() * Math.min(3, ENEMIES.length))];
+    // Ennemis de repos : niveau 1-2 uniquement (créatures faibles)
+  const restPool = MONSTERS.filter(m => m.minFloor <= 2);
+  const enemy = scaleMonster(restPool[Math.floor(Math.random() * restPool.length)], currentFloor);
     startBattle(enemy);
     return;
   }

@@ -2,6 +2,34 @@
 // GÉNÉRATEUR DE DONJON
 // ============================================================
 
+// ── Utilitaires de sélection et mise à l'échelle ─────────────
+
+// Tirage pondéré selon la propriété weight de chaque monstre
+function weightedPick(pool) {
+  const total = pool.reduce((s, m) => s + (m.weight || 1), 0);
+  let r = Math.random() * total;
+  for (const m of pool) { r -= (m.weight || 1); if (r <= 0) return m; }
+  return pool[pool.length - 1];
+}
+
+// Applique la mise à l'échelle d'un monstre de base pour un étage donné
+function scaleMonster(base, floor) {
+  const mult    = 1 + (floor - 1) * (base.scale || 0.25);
+  const monster = JSON.parse(JSON.stringify(base)); // copie profonde (préserve abilities, drops, resist…)
+  monster.hp  = Math.floor(base.hp  * mult);
+  monster.atk = Math.floor(base.atk * mult);
+  monster.def = Math.floor(base.def * mult);
+  monster.xp  = Math.floor(base.xp  * mult);
+  // Or : résoudre l'intervalle en un nombre, puis scaler
+  if (typeof base.gold === 'object') {
+    const { min, max } = base.gold;
+    monster.gold = Math.floor((min + Math.random() * (max - min)) * mult);
+  } else {
+    monster.gold = Math.floor(base.gold * mult);
+  }
+  return monster;
+}
+
 function generateDungeon(floor) {
   dungeon = Array.from({length:MAP_H}, () => Array(MAP_W).fill(CELL.WALL));
   visited = Array.from({length:MAP_H}, () => Array(MAP_W).fill(false));
@@ -43,36 +71,18 @@ function generateDungeon(floor) {
   // Escalier montant (étage 2+)
   if(floor>1) dungeon[rooms[0].cy][rooms[0].cx] = CELL.STAIRS_U;
 
-  // Placement des ennemis avec mise à l'échelle selon l'étage
-  const enemyTypes = ENEMIES.filter(e => {
-    if(floor<=2) return e.hp<=25;
-    if(floor<=4) return e.hp<=45;
-    return true;
-  });
+  // Sélection des ennemis éligibles à cet étage
+  const eligibleTypes = MONSTERS.filter(m =>
+    m.minFloor <= floor && (m.maxFloor === null || floor <= m.maxFloor)
+  );
+  const pool = eligibleTypes.length ? eligibleTypes : MONSTERS;
 
   for(let r of rooms.slice(1)) {
     if(Math.random()<0.6) {
       const ex = r.x+Math.floor(Math.random()*r.w);
       const ey = r.y+Math.floor(Math.random()*r.h);
-
       if(dungeon[ey][ex]===CELL.FLOOR) {
-        const baseEnemy = enemyTypes[Math.floor(Math.random()*enemyTypes.length)];
-        let scaledEnemy = JSON.parse(JSON.stringify(baseEnemy));
-
-        const multiplier = 1 + (floor - 1) * 0.25;
-        scaledEnemy.hp = Math.floor(scaledEnemy.hp * multiplier);
-        scaledEnemy.atk = Math.floor(scaledEnemy.atk * multiplier);
-        scaledEnemy.def = Math.floor(scaledEnemy.def * multiplier);
-        scaledEnemy.xp = Math.floor(scaledEnemy.xp * multiplier);
-        scaledEnemy.gold = Math.floor(scaledEnemy.gold * multiplier);
-
-        if (floor >= 5) {
-          scaledEnemy.name = "Ancien " + scaledEnemy.name;
-        } else if (floor >= 3) {
-          scaledEnemy.name = "Féroce " + scaledEnemy.name;
-        }
-
-        enemyMap[ey][ex] = scaledEnemy;
+        enemyMap[ey][ex] = scaleMonster(weightedPick(pool), floor);
       }
     }
   }
