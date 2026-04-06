@@ -8,11 +8,25 @@ function showPlayerSelect() {
   document.getElementById('player-select-screen').style.display = 'flex';
 }
 
+// Appelé depuis les boutons de l'écran de sélection (lit la difficulté dans le select)
+function startGameWithDifficulty(count = 2) {
+  difficulty = document.getElementById('difficulty-select')?.value || 'Normal';
+  startGame(count);
+}
+
 function startGame(count = 2) {
   partySize = count;
   document.getElementById('player-select-screen').style.display = 'none';
 
-  // En mode solo : masquer la carte d'Hermione
+  // Appliquer les bonus/malus de départ selon la difficulté
+  const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
+  player.gold    = settings.startingGold;
+  party.forEach(c => {
+    c.hpMax = Math.max(8, c.hpMax + settings.startingHpBonus);
+    c.hp    = c.hpMax;
+  });
+
+  // En mode solo : masquer la carte d'Hermione et l'indicateur de tour
   const card1 = document.getElementById('char-card-1');
   if (card1) card1.style.display = partySize === 1 ? 'none' : '';
   const indicator = document.getElementById('battle-char-indicator');
@@ -28,12 +42,15 @@ function startGame(count = 2) {
   drawDungeon();
   updateLocationDisplay();
 
+  const diffIcon = { Facile:'🟢', Normal:'🟡', Difficile:'🟠', Expert:'🔴' }[difficulty] || '';
+  const modeLabel = `${diffIcon} Mode ${difficulty}`;
   const intro = partySize === 1
-    ? "Bienvenue à Poudlard, Harry. Les couloirs humides vous attendent. Serez-vous à la hauteur ?"
-    : "Bienvenue à Poudlard, jeune sorcier. Harry et Hermione s'avancent dans les couloirs. La Chambre Secrète se cache dans les profondeurs...";
+    ? `Bienvenue à Poudlard, Harry. ${modeLabel} activé. Les couloirs humides vous attendent...`
+    : `Bienvenue à Poudlard. Harry et Hermione s'élancent. ${modeLabel} activé.`;
   setNarrative(intro);
+  addMsg(modeLabel, difficulty === 'Expert' ? 'bad' : 'good');
 
-  // Lancer la musique ambiante (le geste utilisateur vient de startGame)
+  // Lancer la musique ambiante (le geste utilisateur vient du clic sur startGame)
   AudioSystem.init();
   AudioSystem.playAmbientMusic();
 

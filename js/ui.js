@@ -334,3 +334,47 @@ function showBestiaryList() {
   document.getElementById('bestiary-list-panel').style.display   = '';
   document.getElementById('bestiary-detail-panel').style.display = 'none';
 }
+
+// ── Changement de difficulté en cours de partie ──────────────
+function changeDifficulty() {
+  const detail = document.getElementById('char-detail');
+  if (!detail) return;
+
+  const levels = ['Facile', 'Normal', 'Difficile', 'Expert'];
+  const icons  = { Facile:'🟢', Normal:'🟡', Difficile:'🟠', Expert:'🔴' };
+  const descs  = {
+    Facile:    'Moins d\'ennemis, plus de ressources',
+    Normal:    'Difficulté de référence',
+    Difficile: 'Plus d\'ennemis, scaling accru',
+    Expert:    'Mode survie — très dur'
+  };
+
+  const buttons = levels.map(lvl => `
+    <button class="cmd-btn" onclick="applyDifficulty('${lvl}')"
+      style="width:100%;margin-bottom:6px;
+             ${lvl === difficulty ? 'border-color:var(--gold);color:var(--gold-light)' : ''}">
+      ${icons[lvl]} ${lvl}
+      <span style="font-size:10px;color:#8a7050;display:block;margin-top:2px">${descs[lvl]}</span>
+    </button>`).join('');
+
+  detail.innerHTML = `
+    <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--gold);text-align:center;margin-bottom:12px;letter-spacing:2px">
+      ⚙️ DIFFICULTÉ
+    </div>
+    <div style="font-size:11px;color:#8a7050;text-align:center;margin-bottom:14px">
+      Actuelle : <strong style="color:var(--gold)">${icons[difficulty]} ${difficulty}</strong>
+    </div>
+    <div>${buttons}</div>
+    <div style="font-size:10px;color:#4a3a20;text-align:center;margin-top:10px;font-style:italic">
+      Le changement s'applique immédiatement (sauf HP de départ)
+    </div>`;
+  document.getElementById('character-modal').style.display = 'flex';
+}
+
+window.applyDifficulty = function(lvl) {
+  if (!DIFFICULTY_SETTINGS[lvl]) return;
+  difficulty = lvl;
+  const icons = { Facile:'🟢', Normal:'🟡', Difficile:'🟠', Expert:'🔴' };
+  addMsg(`${icons[lvl]} Difficulté : ${lvl}`, lvl === 'Expert' ? 'bad' : 'magic');
+  closeModal('character-modal');
+};

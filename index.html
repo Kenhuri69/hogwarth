@@ -54,18 +54,33 @@
   </div>
 </div>
 
-<!-- Écran de sélection du nombre de joueurs -->
+<!-- Écran de sélection du nombre de joueurs + difficulté -->
 <div id="player-select-screen">
   <div class="select-box">
-    <div class="select-title">⚡ Choisissez votre Équipe</div>
-    <div class="select-sub">Avec combien de sorciers partez-vous à l'aventure ?</div>
+    <div class="select-title">⚡ Choisissez votre Aventure</div>
+    <div class="select-sub">Sorcier(s) et niveau de difficulté</div>
+
+    <!-- Sélecteur de difficulté -->
+    <div style="margin:18px 0 22px">
+      <label style="display:block;margin-bottom:8px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold)">DIFFICULTÉ</label>
+      <select id="difficulty-select"
+        style="width:100%;padding:10px 12px;background:#0a0705;border:2px solid var(--gold-dark);
+               color:var(--parchment);font-size:14px;font-family:'Crimson Text',serif;border-radius:3px;cursor:pointer">
+        <option value="Facile">🟢  Facile — Pour découvrir Poudlard tranquillement</option>
+        <option value="Normal" selected>🟡  Normal — Expérience classique (référence)</option>
+        <option value="Difficile">🟠  Difficile — Un vrai défi de sorcier</option>
+        <option value="Expert">🔴  Expert — Mode survie (très dur)</option>
+      </select>
+    </div>
+
+    <!-- Boutons Solo / Duo -->
     <div class="select-options">
-      <button class="select-btn" onclick="startGame(1)">
+      <button class="select-btn" onclick="startGameWithDifficulty(1)">
         <span class="select-icon">🧙</span>
         <span class="select-label">Solo</span>
         <span class="select-desc">Harry Potter seul<br>Ennemis : 1 à 2</span>
       </button>
-      <button class="select-btn" onclick="startGame(2)">
+      <button class="select-btn" onclick="startGameWithDifficulty(2)">
         <span class="select-icon">🧙🧙‍♀️</span>
         <span class="select-label">Duo</span>
         <span class="select-desc">Harry + Hermione<br>Ennemis : 1 à 3</span>
@@ -248,6 +263,7 @@
       <button id="btn-voice" class="cmd-btn" onclick="AudioSystem.toggleVoice()" title="Voix des sorts On/Off">🗣️</button>
       <button class="cmd-btn" onclick="saveGame()">💾<span class="btn-label"> Sauver</span></button>
       <button class="cmd-btn" onclick="loadGame()">📂<span class="btn-label"> Charger</span></button>
+      <button class="cmd-btn" onclick="changeDifficulty()" title="Changer la difficulté">⚙️<span class="btn-label"> Difficulté</span></button>
       <button class="cmd-btn mobile-map-btn" onclick="toggleMobileMap()" title="Carte">🗺️</button>
       <button class="cmd-btn" id="btn-interact" onclick="interact()" style="display:none">🚪</button>
     </div>

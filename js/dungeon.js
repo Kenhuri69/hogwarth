@@ -14,7 +14,8 @@ function weightedPick(pool) {
 
 // Applique la mise à l'échelle d'un monstre de base pour un étage donné
 function scaleMonster(base, floor) {
-  const mult    = 1 + (floor - 1) * (base.scale || 0.25);
+  const diffMult = (DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal']).scalingMultiplier;
+  const mult     = (1 + (floor - 1) * (base.scale || 0.25)) * diffMult;
   const monster = JSON.parse(JSON.stringify(base)); // copie profonde
   monster.hp  = Math.floor(base.hp  * mult);
   monster.atk = Math.floor(base.atk * mult);

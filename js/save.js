@@ -13,7 +13,8 @@ function saveGame() {
     seenMonsters: Array.from(seenMonsters),
     audioMuted:   AudioSystem.isMuted,
     voiceEnabled: AudioSystem.voiceEnabled,
-    activeQuests
+    activeQuests,
+    difficulty
   };
   localStorage.setItem('hogwarts_rpg_save', JSON.stringify(gameState));
   addMsg("Partie sauvegardée !", "good");
@@ -59,6 +60,7 @@ function loadGame() {
   document.getElementById('btn-interact').style.display      = 'none';
 
   if (gs.activeQuests) activeQuests = gs.activeQuests;
+  if (gs.difficulty && DIFFICULTY_SETTINGS[gs.difficulty]) difficulty = gs.difficulty;
 
   // Recalculer les stats effectives (base + équipement chargé)
   recalculateStats();

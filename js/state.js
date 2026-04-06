@@ -14,6 +14,50 @@ let currentFloor = 1;
 // Nombre de joueurs choisi à l'écran de démarrage (1 ou 2)
 let partySize = 2;
 
+// ============================================================
+// NIVEAU DE DIFFICULTÉ (Normal = difficulté de référence)
+// ============================================================
+let difficulty = "Normal"; // "Facile" | "Normal" | "Difficile" | "Expert"
+
+const DIFFICULTY_SETTINGS = {
+  Facile: {
+    enemyGroupMultiplier: 0.65,  // groupes d'ennemis réduits
+    scalingMultiplier:    0.75,  // scaling plus lent
+    goldMultiplier:       1.6,
+    xpMultiplier:         1.4,
+    dropChanceMultiplier: 1.5,
+    startingGold:         60,
+    startingHpBonus:      12
+  },
+  Normal: {
+    enemyGroupMultiplier: 1.0,
+    scalingMultiplier:    1.0,
+    goldMultiplier:       1.0,
+    xpMultiplier:         1.0,
+    dropChanceMultiplier: 1.0,
+    startingGold:         25,
+    startingHpBonus:      0
+  },
+  Difficile: {
+    enemyGroupMultiplier: 1.35,
+    scalingMultiplier:    1.22,
+    goldMultiplier:       0.75,
+    xpMultiplier:         0.9,
+    dropChanceMultiplier: 0.7,
+    startingGold:         15,
+    startingHpBonus:      -4
+  },
+  Expert: {
+    enemyGroupMultiplier: 1.65,
+    scalingMultiplier:    1.45,
+    goldMultiplier:       0.55,
+    xpMultiplier:         0.75,
+    dropChanceMultiplier: 0.45,
+    startingGold:         8,
+    startingHpBonus:      -8
+  }
+};
+
 // ── État du combat ───────────────────────────────────────────
 let inBattle        = false;
 let enemyGroup      = [];   // tableau de {…enemyData, currentHp, disarmed}

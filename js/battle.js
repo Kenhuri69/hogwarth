@@ -38,17 +38,25 @@ function startBattle(baseEnemyData) {
 }
 
 function rollGroupSize() {
+  const m = (DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal']).enemyGroupMultiplier;
   const r = Math.random();
-  // Mode solo : maximum 2 ennemis, proportion réduite
+
+  // Solo : max 2 ennemis — seuil abaissé si difficulté haute
   if (partySize === 1) {
     if (currentFloor <= 2) return 1;
-    if (currentFloor <= 4) return r < 0.70 ? 1 : 2;
-    return r < 0.50 ? 1 : 2;
+    if (currentFloor <= 4) return r < Math.max(0.10, 0.70 / m) ? 1 : 2;
+    return r < Math.max(0.10, 0.50 / m) ? 1 : 2;
   }
-  // Mode duo : 1-3 ennemis selon l'étage
-  if (currentFloor <= 2) return r < 0.65 ? 1 : 2;
-  if (currentFloor <= 4) return r < 0.30 ? 1 : r < 0.75 ? 2 : 3;
-  return r < 0.20 ? 1 : r < 0.55 ? 2 : 3;
+  // Duo : max 3 ennemis — probabilités pondérées par le multiplicateur
+  if (currentFloor <= 2) return r < Math.max(0.15, 0.65 / m) ? 1 : 2;
+  if (currentFloor <= 4) {
+    const t1 = Math.max(0.05, 0.30 / m);
+    const t2 = Math.min(0.95, t1 + 0.45 * m);
+    return r < t1 ? 1 : r < t2 ? 2 : 3;
+  }
+  const t1 = Math.max(0.05, 0.20 / m);
+  const t2 = Math.min(0.95, t1 + 0.35 * m);
+  return r < t1 ? 1 : r < t2 ? 2 : 3;
 }
 
 function pickSimilarEnemy(base) {
@@ -317,18 +325,19 @@ function endBattle(won) {
 
   if (won) {
     enemyMap[playerY][playerX] = null;
+    const diff     = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
     let totalXp = 0, totalGold = 0;
     enemyGroup.forEach(e => { totalXp += e.xp; totalGold += e.gold + Math.floor(Math.random() * 5); });
 
-    // XP partagée (ajoutée à player = party[0])
-    player.xp += totalXp;
-    player.gold += totalGold;
+    // XP et or multipliés selon la difficulté
+    player.xp   += Math.floor(totalXp   * diff.xpMultiplier);
+    player.gold += Math.floor(totalGold * diff.goldMultiplier);
 
-    // Drops d'objets (tirage indépendant par ennemi et par drop)
+    // Drops d'objets (chance modulée par la difficulté)
     enemyGroup.forEach(e => {
       if (!e.drops || !e.drops.length) return;
       e.drops.forEach(drop => {
-        if (Math.random() < drop.chance) {
+        if (Math.random() < drop.chance * diff.dropChanceMultiplier) {
           const item = ITEMS.find(i => i.id === drop.itemId);
           if (item && player.inventory.length < 16) {
             player.inventory.push({ ...item });
@@ -343,10 +352,12 @@ function endBattle(won) {
       if (window.checkKillQuests) window.checkKillQuests(e.id);
     });
 
+    const xpEarned   = Math.floor(totalXp   * diff.xpMultiplier);
+    const goldEarned = Math.floor(totalGold * diff.goldMultiplier);
     AudioSystem.playVictory();
-    setNarrative(`Victoire ! +${totalXp} XP, +${totalGold} Gallions.`);
-    addMsg(`+${totalXp} XP`, 'good');
-    addMsg(`+${totalGold} Gallions`, 'good');
+    setNarrative(`Victoire ! +${xpEarned} XP, +${goldEarned} Gallions.`);
+    addMsg(`+${xpEarned} XP`, 'good');
+    addMsg(`+${goldEarned} Gallions`, 'good');
     addLog(`✅ Victoire (${enemyGroup.length} ennemi${enemyGroup.length > 1 ? 's' : ''})`);
     checkLevelUp();
     renderMinimap();
