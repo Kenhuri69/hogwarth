@@ -15,18 +15,40 @@ function weightedPick(pool) {
 // Applique la mise à l'échelle d'un monstre de base pour un étage donné
 function scaleMonster(base, floor) {
   const mult    = 1 + (floor - 1) * (base.scale || 0.25);
-  const monster = JSON.parse(JSON.stringify(base)); // copie profonde (préserve abilities, drops, resist…)
+  const monster = JSON.parse(JSON.stringify(base)); // copie profonde
   monster.hp  = Math.floor(base.hp  * mult);
   monster.atk = Math.floor(base.atk * mult);
   monster.def = Math.floor(base.def * mult);
   monster.xp  = Math.floor(base.xp  * mult);
-  // Or : résoudre l'intervalle en un nombre, puis scaler
   if (typeof base.gold === 'object') {
     const { min, max } = base.gold;
     monster.gold = Math.floor((min + Math.random() * (max - min)) * mult);
   } else {
     monster.gold = Math.floor(base.gold * mult);
   }
+
+  // ── Variante visuelle ────────────────────────────────────────
+  // 4 % de chance d'obtenir un monstre "shiny" (rare doré)
+  const shinyRoll = Math.random();
+  if (shinyRoll < 0.04) {
+    monster.variant = 'shiny';
+    monster.name    = '✨ ' + base.name;
+    monster.xp      = Math.floor(monster.xp  * 1.5);
+    monster.gold    = Math.floor(monster.gold * 2.0);
+    // Double les chances de drop pour les shinies
+    if (monster.drops) {
+      monster.drops = monster.drops.map(d => ({ ...d, chance: Math.min(1, d.chance * 2) }));
+    }
+  } else if (floor >= 5) {
+    monster.variant = 'ancient';
+    monster.name    = 'Ancien ' + base.name;
+  } else if (floor >= 3) {
+    monster.variant = 'fierce';
+    monster.name    = 'Féroce ' + base.name;
+  } else {
+    monster.variant = 'normal';
+  }
+
   return monster;
 }
 

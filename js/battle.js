@@ -412,16 +412,33 @@ function renderEnemyGroup() {
   const count = enemyGroup.length;
 
   enemyGroup.forEach((enemy, i) => {
-    const dead = enemy.currentHp <= 0;
-    const pct  = Math.max(0, (enemy.currentHp / enemy.hp) * 100);
+    const dead    = enemy.currentHp <= 0;
+    const pct     = Math.max(0, (enemy.currentHp / enemy.hp) * 100);
+    const sizePx  = count === 1 ? 80 : 56;
+    const variant = enemy.variant || 'normal';
+
+    // Icône : SVG ou emoji via icons.js
+    const iconHtml = dead
+      ? `<div class="monster-icon variant-dead" style="width:${sizePx}px;height:${sizePx}px;font-size:${Math.floor(sizePx*0.7)}px">💀</div>`
+      : getMonsterIconHtml(enemy, sizePx);
+
+    // Badge de variante (shiny / féroce / ancien)
+    const badge = !dead && variant !== 'normal'
+      ? `<div class="variant-badge variant-badge-${variant}">${
+          variant === 'shiny'   ? '✨' :
+          variant === 'ancient' ? '💜' : '🔴'
+        }</div>`
+      : '';
+
     const card = document.createElement('div');
     card.className = `enemy-card${dead ? ' enemy-dead' : ''}`;
     card.id = `enemy-card-${i}`;
     card.innerHTML = `
-      <div style="font-size:${count === 1 ? '64px' : '44px'};filter:drop-shadow(0 0 12px rgba(200,50,50,0.5));animation:float 2s ease-in-out infinite alternate">
-        ${dead ? '💀' : enemy.icon}
+      <div style="position:relative;display:inline-block;animation:float 2s ease-in-out infinite alternate">
+        ${iconHtml}
+        ${badge}
       </div>
-      <div class="enemy-name" style="font-size:${count === 1 ? '16px' : '12px'}">${enemy.name}</div>
+      <div class="enemy-name" style="font-size:${count === 1 ? '15px' : '11px'}">${enemy.name}</div>
       <div class="enemy-bars" style="width:${count === 1 ? '180px' : '120px'}">
         <div class="bar-label" style="font-size:9px"><span>PV</span><span>${Math.max(0, enemy.currentHp)}/${enemy.hp}</span></div>
         <div class="bar-track"><div class="bar-fill hp-fill" style="width:${pct}%"></div></div>

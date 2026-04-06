@@ -631,6 +631,65 @@ body {
 .action-group { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; justify-content: center; }
 .cmd-vsep { width: 1px; background: var(--gold-dark); height: 30px; margin: 0 4px; }
 
+/* ── ICÔNES MONSTRES SVG ── */
+.monster-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: filter 0.3s;
+}
+.monster-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.monster-emoji-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Variante normale — ombre rouge subtile */
+.variant-normal {
+  filter: drop-shadow(0 0 8px rgba(180,60,20,0.35));
+}
+/* Variante féroce (étage 3-4) — lueur rouge ardente */
+.variant-fierce {
+  filter: drop-shadow(0 0 10px rgba(200,60,10,0.65))
+          brightness(1.05) saturate(1.3);
+}
+/* Variante ancien (étage 5+) — aura violette sombre */
+.variant-ancient {
+  filter: drop-shadow(0 0 12px rgba(120,30,200,0.7))
+          brightness(0.9) saturate(1.4);
+}
+/* Variante shiny (rare, 4%) — éclat doré pulsant */
+.variant-shiny {
+  filter: drop-shadow(0 0 14px rgba(220,170,20,0.9))
+          brightness(1.2) saturate(1.8) hue-rotate(8deg);
+  animation: shinyPulse 1.4s ease-in-out infinite alternate !important;
+}
+/* Mort */
+.variant-dead {
+  filter: grayscale(1) brightness(0.5);
+}
+@keyframes shinyPulse {
+  from { filter: drop-shadow(0 0 10px rgba(220,170,20,0.7))  brightness(1.1) saturate(1.6) hue-rotate(5deg); }
+  to   { filter: drop-shadow(0 0 22px rgba(255,210,40,1.0))  brightness(1.35) saturate(2.0) hue-rotate(12deg); }
+}
+
+/* Badge de variante (coin supérieur droit de l'icône) */
+.variant-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  font-size: 14px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+  pointer-events: none;
+}
+
 /* ── PARTY CARDS (left panel) ── */
 .party-card {
   background: rgba(15,9,3,0.7);
