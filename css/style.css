@@ -359,6 +359,126 @@ body {
 .compass-dir.active { background: #2a1a08; color: var(--gold-light); border-color: var(--gold-dark); }
 .compass-center { background: #1a0f05 !important; color: var(--gold) !important; }
 
+/* ============================================================
+   BESTIAIRE MODAL
+   ============================================================ */
+#bestiary-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 500;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.bestiary-modal-box {
+  width: 92vw;
+  max-width: 740px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.bestiary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+.bestiary-title {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+.bestiary-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.bestiary-input {
+  flex: 1;
+  min-width: 130px;
+  padding: 7px 12px;
+  border: 1px solid var(--gold-dark);
+  background: #0a0705;
+  color: var(--parchment);
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+}
+.bestiary-input:focus { outline: none; border-color: var(--gold); }
+.bestiary-select {
+  padding: 7px 8px;
+  border: 1px solid var(--gold-dark);
+  background: #0a0705;
+  color: var(--parchment);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+}
+#bestiary-list-panel { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.bestiary-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.bestiary-card       { cursor: pointer; align-items: flex-start; }
+.bestiary-card:hover { border-color: var(--gold-dark); background: #120a03; }
+.bestiary-seen       { border-color: #3a2a10; }
+.bestiary-seen:hover { border-color: var(--gold); box-shadow: 0 0 10px rgba(201,168,76,0.2); }
+.bestiary-icon-wrap  { position: relative; flex-shrink: 0; }
+.bestiary-seen-badge {
+  position: absolute; top: -5px; right: -5px;
+  background: var(--gold); color: #0a0705;
+  font-size: 9px; font-weight: bold;
+  padding: 2px 6px; border-radius: 999px;
+  font-family: 'Cinzel', serif; white-space: nowrap;
+}
+.bestiary-unseen-badge {
+  position: absolute; top: -5px; right: -5px;
+  background: #2a1a08; color: #6a5030;
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; border: 1px solid #3a2a10;
+  font-size: 13px; font-weight: bold;
+}
+.bestiary-info      { flex: 1; }
+.bestiary-cat-tag   { font-size: 10px; color: #6a5030; font-family: sans-serif; font-weight: normal; }
+.bestiary-floor-tag { font-size: 10px; color: #6a5030; margin: 2px 0 4px; letter-spacing: 1px; text-transform: uppercase; }
+.bestiary-lore      { font-size: 12px; color: var(--parchment-dark); line-height: 1.4; }
+.bestiary-drops     { font-size: 11px; color: #8a7050; margin-top: 5px; }
+.bestiary-stats     { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: #8a7050; margin-top: 6px; }
+.bestiary-empty     { text-align: center; padding: 40px; color: #6a5030; font-style: italic; }
+/* Fiche détail */
+#bestiary-detail-panel { flex: 1; overflow-y: auto; }
+.bestiary-detail-header { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+.bestiary-detail-icon   { position: relative; flex-shrink: 0; }
+.bestiary-detail-name   { font-family: 'Cinzel', serif; font-size: 20px; color: var(--gold); margin: 0 0 4px; }
+.bestiary-detail-desc   { font-size: 12px; color: #8a7050; font-style: italic; margin-top: 6px; }
+.bestiary-lore-full     { font-size: 13px; line-height: 1.7; color: var(--parchment-dark);
+                           border-top: 1px solid #2a1a08; padding-top: 14px; margin: 0 0 16px; }
+.bestiary-stat-grid     { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+.bestiary-stat          { background: #0a0705; border: 1px solid #2a1a08; border-radius: 4px; padding: 8px; text-align: center; }
+.bestiary-stat-val      { font-size: 14px; color: var(--parchment); }
+.bestiary-stat-lbl      { font-size: 9px; color: #6a5030; letter-spacing: 1px; margin-top: 2px; }
+.bestiary-resist-line   { font-size: 11px; color: #8a7050; margin-bottom: 14px;
+                           display: flex; gap: 20px; flex-wrap: wrap; }
+.bestiary-abilities     { border-top: 1px solid #2a1a08; padding-top: 12px; margin-bottom: 14px; }
+.bestiary-section-title { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold); margin-bottom: 8px; letter-spacing: 1px; }
+.bestiary-ability       { font-size: 12px; color: var(--parchment-dark); padding: 4px 0;
+                           border-bottom: 1px solid #1a0f05; line-height: 1.4; }
+.bestiary-chance        { color: #6a5030; }
+
+@media (max-width: 700px) {
+  .bestiary-modal-box     { max-height: 92dvh; }
+  .bestiary-detail-header { flex-direction: column; align-items: center; text-align: center; }
+  .bestiary-stat-grid     { grid-template-columns: repeat(3, 1fr); }
+  .bestiary-input, .bestiary-select { font-size: 12px; }
+}
+
 /* INVENTORY MODAL */
 #inventory-modal, #shop-modal, #character-modal, #spell-modal {
   display: none;

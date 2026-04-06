@@ -240,6 +240,7 @@
       <button class="cmd-btn" onclick="openInventory()">🎒<span class="btn-label"> Sac</span></button>
       <button class="cmd-btn" onclick="openSpells()">📖<span class="btn-label"> Sorts</span></button>
       <button class="cmd-btn" onclick="openCharacter()">📜<span class="btn-label"> Fiche</span></button>
+      <button class="cmd-btn" onclick="openBestiary()">📕<span class="btn-label"> Bestiaire</span></button>
       <button class="cmd-btn" onclick="searchRoom()">🔍<span class="btn-label"> Fouiller</span></button>
       <button class="cmd-btn" onclick="rest()">💤<span class="btn-label"> Repos</span></button>
       <button class="cmd-btn" onclick="saveGame()">💾<span class="btn-label"> Sauver</span></button>
@@ -285,6 +286,50 @@
     <div class="modal-title">📜 Fiche de Personnage</div>
     <span class="modal-close" onclick="closeModal('character-modal')">✕</span>
     <div id="char-detail"></div>
+  </div>
+</div>
+
+<div id="bestiary-modal">
+  <div class="modal-box bestiary-modal-box">
+    <!-- En-tête -->
+    <div class="bestiary-header">
+      <span class="bestiary-title">📕 Bestiaire de Poudlard</span>
+      <span class="modal-close" onclick="closeBestiary()">✕</span>
+    </div>
+
+    <!-- Panneau liste + filtres -->
+    <div id="bestiary-list-panel">
+      <div class="bestiary-filters">
+        <input  id="bestiary-search"   type="text" placeholder="🔎 Nom ou lore…"
+                class="bestiary-input" onkeyup="filterBestiary()">
+        <select id="bestiary-category" class="bestiary-select" onchange="filterBestiary()">
+          <option value="">Toutes catégories</option>
+          <option value="bête">🐾 Bêtes</option>
+          <option value="humain">🧙 Humains</option>
+          <option value="fantôme">👻 Fantômes</option>
+          <option value="créature">🦄 Créatures</option>
+          <option value="être magique">🌌 Êtres magiques</option>
+        </select>
+        <select id="bestiary-floor" class="bestiary-select" onchange="filterBestiary()">
+          <option value="">Tous étages</option>
+          <option value="1">Étage 1+</option>
+          <option value="2">Étage 2+</option>
+          <option value="3">Étage 3+</option>
+          <option value="4">Étage 4+</option>
+          <option value="5">Étage 5+</option>
+          <option value="6">Étage 6+</option>
+          <option value="7">Étage 7+</option>
+          <option value="8">Étage 8+</option>
+          <option value="10">Étage 10+</option>
+        </select>
+      </div>
+      <div id="bestiary-grid" class="spell-list bestiary-grid"></div>
+    </div>
+
+    <!-- Panneau détail (fiche complète d'un monstre) -->
+    <div id="bestiary-detail-panel" style="display:none">
+      <div id="bestiary-detail"></div>
+    </div>
   </div>
 </div>
 

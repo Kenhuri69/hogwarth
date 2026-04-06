@@ -9,7 +9,8 @@ function saveGame() {
     party:        [player, player2],
     partySize,
     currentFloor, playerX, playerY, playerDir,
-    dungeon, visited, enemyMap, itemMap
+    dungeon, visited, enemyMap, itemMap,
+    seenMonsters: Array.from(seenMonsters)
   };
   localStorage.setItem('hogwarts_rpg_save', JSON.stringify(gameState));
   addMsg("Partie sauvegardée !", "good");
@@ -29,7 +30,8 @@ function loadGame() {
   party[0] = player;
   party[1] = player2;
 
-  if (gs.partySize) partySize = gs.partySize;
+  if (gs.partySize)     partySize    = gs.partySize;
+  if (gs.seenMonsters) seenMonsters = new Set(gs.seenMonsters);
   currentFloor = gs.currentFloor;
   playerX      = gs.playerX;
   playerY      = gs.playerY;

@@ -23,6 +23,9 @@ let battleTurn      = 0;
 let pendingAction   = null; // action en attente de sélection de cible
 let pendingSpell    = null; // sort en attente de sélection de cible
 
+// Monstres rencontrés en combat (bestiaire)
+let seenMonsters = new Set();
+
 // ── Membres du groupe ────────────────────────────────────────
 let player = {
   name: "Harry Potter", icon: "🧙", class: "Élève de Gryffondor",

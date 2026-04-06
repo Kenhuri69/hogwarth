@@ -25,6 +25,9 @@ function startBattle(baseEnemyData) {
     enemyGroup.push({ ...base, currentHp: base.hp, disarmed: 0 });
   }
 
+  // Marquer les ennemis comme découverts dans le bestiaire
+  enemyGroup.forEach(e => { if (e.id) seenMonsters.add(e.id); });
+
   document.getElementById('encounter-overlay').style.display = 'flex';
   document.getElementById('target-selection').style.display  = 'none';
   renderEnemyGroup();
