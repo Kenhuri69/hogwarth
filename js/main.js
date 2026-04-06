@@ -2,10 +2,24 @@
 // INITIALISATION DU JEU
 // ============================================================
 
-function startGame() {
-  document.getElementById('title-screen').style.display='none';
-  const gc=document.getElementById('game-container');
-  gc.style.display='grid';
+// Affiche l'écran de sélection du nombre de joueurs
+function showPlayerSelect() {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('player-select-screen').style.display = 'flex';
+}
+
+function startGame(count = 2) {
+  partySize = count;
+  document.getElementById('player-select-screen').style.display = 'none';
+
+  // En mode solo : masquer la carte d'Hermione
+  const card1 = document.getElementById('char-card-1');
+  if (card1) card1.style.display = partySize === 1 ? 'none' : '';
+  const indicator = document.getElementById('battle-char-indicator');
+  if (indicator) indicator.style.display = partySize === 1 ? 'none' : '';
+
+  const gc = document.getElementById('game-container');
+  gc.style.display = 'grid';
   resizeCanvas();
   generateDungeon(1);
   updateUI();
@@ -13,13 +27,17 @@ function startGame() {
   renderMinimap();
   drawDungeon();
   updateLocationDisplay();
-  setNarrative("Bienvenue à Poudlard, jeune sorcier. Les couloirs humides et tortueux vous attendent. La Chambre Secrète se cache quelque part dans les profondeurs...");
+
+  const intro = partySize === 1
+    ? "Bienvenue à Poudlard, Harry. Les couloirs humides vous attendent. Serez-vous à la hauteur ?"
+    : "Bienvenue à Poudlard, jeune sorcier. Harry et Hermione s'avancent dans les couloirs. La Chambre Secrète se cache dans les profondeurs...";
+  setNarrative(intro);
 
   // Boucle de rendu
-  let frame=0;
+  let frame = 0;
   function render() {
     frame++;
-    if(frame%30===0 && !inBattle) drawDungeon();
+    if (frame % 30 === 0 && !inBattle) drawDungeon();
     requestAnimationFrame(render);
   }
   render();

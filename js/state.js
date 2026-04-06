@@ -11,6 +11,9 @@ let playerX, playerY, playerDir;
 // Étage actuel
 let currentFloor = 1;
 
+// Nombre de joueurs choisi à l'écran de démarrage (1 ou 2)
+let partySize = 2;
+
 // ── État du combat ───────────────────────────────────────────
 let inBattle        = false;
 let enemyGroup      = [];   // tableau de {…enemyData, currentHp, disarmed}

@@ -25,8 +25,13 @@ function updateUI() {
   document.getElementById('eq-armor').textContent = player.armor || '—';
   document.getElementById('eq-acc').textContent   = player.acc   || '—';
 
+  // ── Affichage selon partySize ────────────────────────────────
+  const card1 = document.getElementById('char-card-1');
+  if (card1) card1.style.display = partySize === 1 ? 'none' : '';
+
   // ── Statut KO sur les cartes ─────────────────────────────────
   party.forEach((c, i) => {
+    if (i >= partySize) return;
     const card = document.getElementById(`char-card-${i}`);
     if (card) card.classList.toggle('ko-char', c.hp <= 0);
   });

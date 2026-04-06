@@ -36,6 +36,13 @@ function startBattle(baseEnemyData) {
 
 function rollGroupSize() {
   const r = Math.random();
+  // Mode solo : maximum 2 ennemis, proportion réduite
+  if (partySize === 1) {
+    if (currentFloor <= 2) return 1;
+    if (currentFloor <= 4) return r < 0.70 ? 1 : 2;
+    return r < 0.50 ? 1 : 2;
+  }
+  // Mode duo : 1-3 ennemis selon l'étage
   if (currentFloor <= 2) return r < 0.65 ? 1 : 2;
   if (currentFloor <= 4) return r < 0.30 ? 1 : r < 0.75 ? 2 : 3;
   return r < 0.20 ? 1 : r < 0.55 ? 2 : 3;
@@ -127,8 +134,8 @@ function advanceBattleChar() {
   updateUI();
   const next = currentBattleChar === 0 ? 1 : -1;
 
-  if (next === -1 || party[next].hp <= 0) {
-    // Les deux ont agi (ou le second est KO) → tour des ennemis
+  // Mode solo ou Hermione KO → directement tour des ennemis
+  if (next === -1 || partySize === 1 || party[next].hp <= 0) {
     enemyTurn();
   } else {
     currentBattleChar = next;
@@ -281,8 +288,8 @@ function checkLevelUp() {
   player.xp     -= player.xpNext;
   player.xpNext  = Math.floor(player.xpNext * 1.6);
 
-  // Synchroniser et améliorer les deux personnages
-  party.forEach(c => {
+  // Améliorer les personnages du groupe actif
+  party.slice(0, partySize).forEach(c => {
     c.level  = player.level;
     c.xpNext = player.xpNext;
     c.hpMax += 8;  c.hp = c.hpMax;
@@ -366,10 +373,13 @@ function renderEnemyGroup() {
 function updateBattleCharIndicator() {
   const char = party[currentBattleChar];
   const el   = document.getElementById('battle-char-indicator');
-  if (el) el.textContent = `${char.icon}  Tour de ${char.name}`;
-
-  // Surligner la carte du personnage actif
+  if (el) {
+    el.style.display = partySize === 1 ? 'none' : '';
+    el.textContent   = `${char.icon}  Tour de ${char.name}`;
+  }
+  // Surligner uniquement les personnages actifs du groupe
   party.forEach((c, i) => {
+    if (i >= partySize) return;
     const card = document.getElementById(`char-card-${i}`);
     if (card) card.classList.toggle('active-char', i === currentBattleChar && inBattle);
   });

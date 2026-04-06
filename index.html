@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<div id="title-screen" onclick="startGame()">
+<div id="title-screen" onclick="showPlayerSelect()">
   <div class="stars" id="stars-container"></div>
   <div class="castle-art">
     <svg width="300" height="180" viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
@@ -51,6 +51,26 @@
   <div style="position:absolute;bottom:16px;font-family:'Crimson Text',serif;font-size:11px;color:#3a2a10;text-align:center;">
     Utilisez les touches W A S D ou les boutons pour vous déplacer<br>
     Explorez les couloirs de Poudlard, combattez des créatures, trouvez la Chambre Secrète
+  </div>
+</div>
+
+<!-- Écran de sélection du nombre de joueurs -->
+<div id="player-select-screen">
+  <div class="select-box">
+    <div class="select-title">⚡ Choisissez votre Équipe</div>
+    <div class="select-sub">Avec combien de sorciers partez-vous à l'aventure ?</div>
+    <div class="select-options">
+      <button class="select-btn" onclick="startGame(1)">
+        <span class="select-icon">🧙</span>
+        <span class="select-label">Solo</span>
+        <span class="select-desc">Harry Potter seul<br>Ennemis : 1 à 2</span>
+      </button>
+      <button class="select-btn" onclick="startGame(2)">
+        <span class="select-icon">🧙🧙‍♀️</span>
+        <span class="select-label">Duo</span>
+        <span class="select-desc">Harry + Hermione<br>Ennemis : 1 à 3</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -104,7 +124,7 @@
     </div>
 
     <!-- XP partagée -->
-    <div class="stat-bar-row" style="margin-top:4px">
+    <div class="stat-bar-row" id="xp-container" style="margin-top:4px">
       <div class="bar-label"><span>⭐ Expérience</span><span id="xp-text">0/50</span></div>
       <div class="bar-track"><div class="bar-fill xp-fill" id="xp-bar" style="width:0%"></div></div>
     </div>
@@ -175,20 +195,40 @@
   </div>
 
   <div class="commands-bar">
-    <button class="cmd-btn" onclick="move('n')" id="btn-n"><span class="key">W</span>↑ Nord</button>
-    <button class="cmd-btn" onclick="move('s')" id="btn-s"><span class="key">S</span>↓ Sud</button>
-    <button class="cmd-btn" onclick="move('w')" id="btn-w"><span class="key">A</span>← Ouest</button>
-    <button class="cmd-btn" onclick="move('e')" id="btn-e"><span class="key">D</span>→ Est</button>
-    <div style="width:1px; background:var(--gold-dark); height:24px; margin:0 4px"></div>
-    <button class="cmd-btn" onclick="openInventory()">🎒 Sac</button>
-    <button class="cmd-btn" onclick="openSpells()">📖 Sorts</button>
-    <button class="cmd-btn" onclick="openCharacter()">📜 Fiche</button>
-    <button class="cmd-btn" onclick="searchRoom()">🔍 Fouiller</button>
-    <button class="cmd-btn" onclick="rest()">💤 Repos</button>
-    <div style="width:1px; background:var(--gold-dark); height:24px; margin:0 4px"></div>
-    <button class="cmd-btn" onclick="saveGame()">💾 Sauver</button>
-    <button class="cmd-btn" onclick="loadGame()">📂 Charger</button>
-    <button class="cmd-btn" id="btn-interact" onclick="interact()" style="display:none">🚪 Interagir</button>
+
+    <!-- Directions desktop (texte) -->
+    <div class="dir-group desktop-dir">
+      <button class="cmd-btn" onclick="move('n')" id="btn-n"><span class="key">W</span>↑ N</button>
+      <button class="cmd-btn" onclick="move('s')" id="btn-s"><span class="key">S</span>↓ S</button>
+      <button class="cmd-btn" onclick="move('w')" id="btn-w"><span class="key">A</span>← O</button>
+      <button class="cmd-btn" onclick="move('e')" id="btn-e"><span class="key">D</span>→ E</button>
+    </div>
+
+    <!-- D-Pad mobile -->
+    <div class="dpad mobile-dir">
+      <button class="dpad-btn" onclick="move('n')">▲</button>
+      <div class="dpad-mid">
+        <button class="dpad-btn" onclick="move('w')">◄</button>
+        <div class="dpad-center">⚡</div>
+        <button class="dpad-btn" onclick="move('e')">►</button>
+      </div>
+      <button class="dpad-btn" onclick="move('s')">▼</button>
+    </div>
+
+    <div class="cmd-vsep"></div>
+
+    <!-- Actions -->
+    <div class="action-group">
+      <button class="cmd-btn" onclick="openInventory()">🎒<span class="btn-label"> Sac</span></button>
+      <button class="cmd-btn" onclick="openSpells()">📖<span class="btn-label"> Sorts</span></button>
+      <button class="cmd-btn" onclick="openCharacter()">📜<span class="btn-label"> Fiche</span></button>
+      <button class="cmd-btn" onclick="searchRoom()">🔍<span class="btn-label"> Fouiller</span></button>
+      <button class="cmd-btn" onclick="rest()">💤<span class="btn-label"> Repos</span></button>
+      <button class="cmd-btn" onclick="saveGame()">💾<span class="btn-label"> Sauver</span></button>
+      <button class="cmd-btn" onclick="loadGame()">📂<span class="btn-label"> Charger</span></button>
+      <button class="cmd-btn" id="btn-interact" onclick="interact()" style="display:none">🚪</button>
+    </div>
+
   </div>
 </div>
 

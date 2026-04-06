@@ -7,6 +7,7 @@ function saveGame() {
 
   const gameState = {
     party:        [player, player2],
+    partySize,
     currentFloor, playerX, playerY, playerDir,
     dungeon, visited, enemyMap, itemMap
   };
@@ -28,6 +29,7 @@ function loadGame() {
   party[0] = player;
   party[1] = player2;
 
+  if (gs.partySize) partySize = gs.partySize;
   currentFloor = gs.currentFloor;
   playerX      = gs.playerX;
   playerY      = gs.playerY;
