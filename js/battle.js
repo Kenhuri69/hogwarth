@@ -237,6 +237,7 @@ function castSpellInBattle(spellName, targetIdx) {
 
   char.sp -= spell.cost;
   AudioSystem.playSpellCast(spellName);
+  AudioSystem.speakSpell(spellName);
   closeModal('spell-modal');
   document.getElementById('target-selection').style.display = 'none';
 

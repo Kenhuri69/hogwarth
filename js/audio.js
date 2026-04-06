@@ -1,15 +1,17 @@
 // ============================================================
-// AUDIO.JS — Sons & Musique Ambiants (Harry Potter style)
-// Web Audio API procédurale — zéro fichier externe
+// AUDIO.JS — Sons, Musique & Voix des Sortilèges
+// Web Audio API procédurale + SpeechSynthesis — zéro fichier externe
 // ============================================================
 
 const AudioSystem = {
-  ctx:          null,
-  musicGain:    null,
-  sfxGain:      null,
-  isMuted:      false,
-  musicPlaying: false,
-  _noteTimer:   null,
+  ctx:           null,
+  musicGain:     null,
+  sfxGain:       null,
+  isMuted:       false,
+  musicPlaying:  false,
+  _noteTimer:    null,
+  voiceEnabled:  true,   // prononciation des sortilèges
+  _cachedVoice:  null,   // voix mise en cache après premier chargement
 
   // ── Initialisation (une seule fois, après geste utilisateur) ──
   init() {
@@ -286,6 +288,56 @@ const AudioSystem = {
     });
   },
 
+  // ── Voix des sortilèges (SpeechSynthesis) ────────────────────
+  _pickVoice() {
+    if (this._cachedVoice) return this._cachedVoice;
+    const voices = speechSynthesis.getVoices();
+    if (!voices.length) return null;
+
+    // Priorité : accent britannique → anglais générique → première dispo
+    // (accent brit = plus "Harry Potter" que le français)
+    const pref = [
+      v => v.lang === 'en-GB',
+      v => v.name.toLowerCase().includes('daniel'),   // voix Daniel (en-GB) commune sur macOS
+      v => v.name.toLowerCase().includes('british'),
+      v => v.lang.startsWith('en'),
+      v => true,
+    ];
+    for (const test of pref) {
+      const found = voices.find(test);
+      if (found) { this._cachedVoice = found; return found; }
+    }
+    return voices[0];
+  },
+
+  speakSpell(spellName) {
+    if (!this.voiceEnabled || this.isMuted) return;
+    if (!window.speechSynthesis) return;
+
+    // Couper toute prononciation en cours pour ne pas superposer
+    speechSynthesis.cancel();
+
+    // Petite pause pour laisser l'effet sonore s'exprimer d'abord
+    setTimeout(() => {
+      const utt   = new SpeechSynthesisUtterance(spellName);
+      const voice = this._pickVoice();
+      if (voice) utt.voice = voice;
+
+      utt.pitch  = 1.15;   // légèrement aigu = incantatoire
+      utt.rate   = 0.88;   // rythme dramatique
+      utt.volume = 0.9;
+
+      speechSynthesis.speak(utt);
+    }, 120);
+  },
+
+  toggleVoice() {
+    this.voiceEnabled = !this.voiceEnabled;
+    const btn = document.getElementById('btn-voice');
+    if (btn) btn.textContent = this.voiceEnabled ? '🗣️' : '🔕';
+    return this.voiceEnabled;
+  },
+
   // ── Bouton muet / son ─────────────────────────────────────────
   toggleMute() {
     this.isMuted = !this.isMuted;
@@ -302,3 +354,13 @@ const AudioSystem = {
 };
 
 window.AudioSystem = AudioSystem;
+
+// Préchauffer la liste des voix dès le chargement de la page
+// (certains navigateurs chargent les voix de façon asynchrone)
+if (window.speechSynthesis) {
+  speechSynthesis.onvoiceschanged = () => {
+    AudioSystem._cachedVoice = null; // reset cache → _pickVoice() refera le choix
+  };
+  // Déclencher un premier chargement
+  speechSynthesis.getVoices();
+}

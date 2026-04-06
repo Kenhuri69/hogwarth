@@ -1087,7 +1087,7 @@ body {
 .mobile-map-btn { display: none; }
 
 /* Bouton musique */
-#btn-music {
+#btn-music, #btn-voice {
   min-width: 36px;
   font-size: 16px;
   letter-spacing: 0;
@@ -1095,7 +1095,7 @@ body {
   color: var(--gold);
   transition: color 0.2s, border-color 0.2s;
 }
-#btn-music:hover { color: var(--gold-light); border-color: var(--gold); }
+#btn-music:hover, #btn-voice:hover { color: var(--gold-light); border-color: var(--gold); }
 
 @media (max-width: 700px) {
   .mobile-map-btn { display: flex; }
