@@ -109,30 +109,59 @@ function openChest() {
   dungeon[playerY][playerX] = CELL.FLOOR;
   document.getElementById('btn-interact').style.display = 'none';
   AudioSystem.playChestOpen();
+
+  // Livres de sorts disponibles selon l'étage courant
+  const booksAvailable = ITEMS.filter(i => {
+    if (i.type !== 'spellbook') return false;
+    if (i.id === 'livre_sortileges') return currentFloor >= 2;
+    if (i.id === 'livre_soin')       return currentFloor >= 3;
+    if (i.id === 'book_monsters')    return currentFloor >= 3;
+    if (i.id === 'livre_prince')     return currentFloor >= 6; // rare et puissant
+    return false;
+  });
+
   const roll = Math.random();
-  if (roll < 0.4) {
+  // 38% or | 30% consommable | 22% équipement | 10% livre (si dispo)
+  const hasBook = booksAvailable.length > 0;
+
+  if (roll < 0.38) {
+    // Or
     const gold = Math.floor(Math.random() * 30 + 10) * currentFloor;
     player.gold += gold;
     setNarrative(NARRATIVES.gold_found(gold));
     addMsg(`+${gold} Gallions`, 'good');
     updateUI();
-  } else if (roll < 0.75) {
+
+  } else if (roll < 0.68) {
+    // Consommable
     const possItems = ITEMS.filter(i => i.type === 'consumable');
     const item = possItems[Math.floor(Math.random() * possItems.length)];
     if (player.inventory.length < 16) {
       player.inventory.push({ ...item });
       setNarrative(NARRATIVES.item_found(item.name));
-      addMsg(`Obtenu : ${item.name}`, 'good');
+      addMsg(`Obtenu : ${item.icon} ${item.name}`, 'good');
     }
-  } else {
-    const wep  = ITEMS.filter(i => i.type === 'wand' || i.type === 'armor');
-    const item = wep[Math.floor(Math.random() * wep.length)];
+
+  } else if (roll < 0.90 || !hasBook) {
+    // Équipement (wand / armor / acc)
+    const gear = ITEMS.filter(i => ['wand','armor','acc'].includes(i.type));
+    const item  = gear[Math.floor(Math.random() * gear.length)];
     if (player.inventory.length < 16) {
       player.inventory.push({ ...item });
       setNarrative(NARRATIVES.item_found(item.name));
-      addMsg(`Obtenu : ${item.name}`, 'good');
+      addMsg(`Obtenu : ${item.icon} ${item.name}`, 'good');
+    }
+
+  } else {
+    // Livre de sorts — drop rare et précieux
+    const item = booksAvailable[Math.floor(Math.random() * booksAvailable.length)];
+    if (player.inventory.length < 16) {
+      player.inventory.push({ ...item });
+      setNarrative(`Un vieux grimoire poussiéreux est là, dans le coffre : ${item.name} !`);
+      addMsg(`📚 Grimoire trouvé : ${item.name} !`, 'magic');
     }
   }
+
   renderMinimap();
 }
 

@@ -136,14 +136,21 @@ const AudioSystem = {
     this.init();
     const now = this.ctx.currentTime;
 
-    // Fréquence selon le type de sort
+    // Fréquence selon le type de sort [fréq départ, fréq arrivée, durée]
     const freqMap = {
-      Incendio:     [900, 1800, 0.7],   // feu crépitant montant
-      Expelliarmus: [700, 300,  0.5],   // désarmement descendant
-      Stupefix:     [800, 500,  0.5],
-      Episkey:      [400, 700,  0.6],   // soin montant doux
-      Protego:      [500, 500,  0.4],
-      Accio:        [300, 600,  0.5],
+      // ── Sorts de base ──────────────────────────────────────────
+      Incendio:            [900,  1800, 0.7],  // feu crépitant montant
+      Expelliarmus:        [700,  300,  0.5],  // désarmement descendant
+      Stupefix:            [800,  500,  0.5],  // choc électrique
+      Episkey:             [400,  700,  0.6],  // soin montant doux
+      Protego:             [500,  500,  0.4],  // bouclier stable, plateau
+      Accio:               [300,  600,  0.5],  // attraction montante
+      // ── Sorts avancés ──────────────────────────────────────────
+      'Wingardium Leviosa':[350,  900,  0.9],  // lévitation — longue montée aérienne
+      Diffindo:            [1200, 300,  0.25], // lacération — coupure sèche et rapide
+      Reparo:              [380,  680,  0.75], // réparation — montée chaleureuse (Episkey mais plus longue)
+      Sectumsempra:        [1100, 180,  1.0],  // sort maudit — descente grave et sombre
+      'Avada...':          [220,  80,   1.2],  // malédiction — grondement très grave et lent
     };
     const [startF, endF, dur] = freqMap[spellName] || [600, 400, 0.5];
 

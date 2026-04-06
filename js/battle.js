@@ -381,14 +381,50 @@ function checkLevelUp() {
   addMsg(`Niveau ${player.level} !`, 'good');
   addLog(`⭐ Niveau ${player.level} atteint`);
 
-  // Nouveaux sorts débloqués par niveau
-  if (player.level === 3) {
-    if (!player.spells.includes('Incendio'))    player.spells.push('Incendio');
-    if (!player2.spells.includes('Stupefix'))   player2.spells.push('Stupefix');
-  }
-  if (player.level === 5) {
-    if (!player.spells.includes('Accio'))          player.spells.push('Accio');
-    if (!player2.spells.includes('Expelliarmus'))  player2.spells.push('Expelliarmus');
+  // ── Table de progression des sorts par niveau ─────────────────
+  // Helper : enseigne un sort à un personnage s'il ne le connaît pas déjà
+  const teach = (char, spellName) => {
+    if (!char.spells.includes(spellName)) {
+      char.spells.push(spellName);
+      setTimeout(() => addMsg(`✨ ${char.name} apprend : ${spellName} !`, 'magic'), 400);
+    }
+  };
+
+  switch (player.level) {
+    case 2:
+      // Hermione complète sa palette d'attaque de base
+      teach(player2, 'Expelliarmus');
+      break;
+    case 3:
+      // Harry débloque le vol magique, Hermione les étourdissements
+      teach(player,  'Accio');
+      teach(player2, 'Stupefix');
+      break;
+    case 4:
+      // Harry apprend la lévitation offensive
+      teach(player, 'Wingardium Leviosa');
+      break;
+    case 5:
+      // Hermione maîtrise la lacération, Harry le soin avancé
+      teach(player,  'Reparo');
+      teach(player2, 'Diffindo');
+      break;
+    case 7:
+      // Symétrie : chacun apprend le sort de spécialité de l'autre
+      teach(player,  'Diffindo');
+      teach(player2, 'Wingardium Leviosa');
+      teach(player2, 'Reparo');
+      break;
+    case 9:
+      // La Malédiction Impardonnable — déverrouillée pour les deux
+      {
+        const avada = SPELLS.find(s => s.name === 'Avada...');
+        if (avada) avada.locked = false;
+        teach(player,  'Avada...');
+        teach(player2, 'Avada...');
+        setTimeout(() => addMsg('⚠️ Malédiction Impardonnable déverrouillée !', 'bad'), 600);
+      }
+      break;
   }
   updateUI();
 }

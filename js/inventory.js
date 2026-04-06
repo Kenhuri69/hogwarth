@@ -40,13 +40,14 @@ function renderInventory(battleMode) {
     const item = player.inventory[i]; // inventaire partagé sur Harry
     if (item) {
       div.classList.add('has-item');
-      const isEquip  = item.type !== 'consumable';
-      // Étiquette de type pour les équipements
+      const isEquip    = ['wand','armor','acc'].includes(item.type);
+      const isSpellbook = item.type === 'spellbook';
+      // Étiquette de type
       const typeIcon = isEquip
         ? (item.type === 'wand' ? '🪄' : item.type === 'armor' ? '🧥' : '💎')
-        : '';
-      const typeLabel = isEquip
-        ? `<div style="font-size:9px;color:#b08040;margin-top:1px">${typeIcon}</div>`
+        : isSpellbook ? '📖' : '';
+      const typeLabel = (isEquip || isSpellbook)
+        ? `<div style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
         : '';
       div.innerHTML = `<div class="item-icon">${item.icon}</div><div class="item-name">${item.name}</div>${typeLabel}`;
 
@@ -131,15 +132,57 @@ function equipItem(inventoryIdx, charIdx) {
 
   // Recalculer les stats effectives
   recalculateStats();
+
+  // Si l'équipement enseigne un sort, l'apprendre à tout le groupe
+  if (item.grantsSpell) {
+    const newSpell = _teachSpellToParty(item.grantsSpell);
+    if (newSpell) {
+      AudioSystem.playLevelUp();
+      addMsg(`✨ Sort débloqué : ${item.grantsSpell} !`, 'magic');
+    }
+  }
+
   updateUI();
   addMsg(`${c.name} équipe : ${item.name}`, 'good');
   closeModal('inventory-modal');
+}
+
+// ── Apprendre un sort depuis un livre ou un équipement ───────
+function _teachSpellToParty(spellName) {
+  let learned = false;
+  party.slice(0, partySize).forEach(c => {
+    if (!c.spells.includes(spellName)) {
+      c.spells.push(spellName);
+      learned = true;
+    }
+  });
+  return learned;
 }
 
 // ── Utiliser / équiper un objet ──────────────────────────────
 function useItem(idx, battleMode) {
   const item = player.inventory[idx];
   if (!item) return;
+
+  // Livre de sorts → apprentissage immédiat (hors combat seulement)
+  if (item.type === 'spellbook') {
+    if (battleMode) return; // non utilisable en combat
+    const spellDef = SPELLS.find(s => s.name === item.spell);
+    if (!spellDef) { addMsg(`Sort inconnu : ${item.spell}`, 'bad'); return; }
+
+    const learned = _teachSpellToParty(item.spell);
+    if (learned) {
+      AudioSystem.playLevelUp();
+      AudioSystem.speakSpell(item.spell);
+      addMsg(`✨ Sort appris : ${item.spell} !`, 'magic');
+      player.inventory.splice(idx, 1);
+    } else {
+      addMsg(`Le sort ${item.spell} est déjà connu par tout le groupe.`, '');
+    }
+    updateUI();
+    closeModal('inventory-modal');
+    return;
+  }
 
   // Équipement → menu de sélection (hors combat seulement)
   if (item.type !== 'consumable') {

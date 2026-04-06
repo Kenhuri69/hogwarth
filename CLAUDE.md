@@ -93,8 +93,8 @@ player2 ──┘
 | ATK   | 5     | 3        |
 | DEF   | 2     | 2        |
 
-Harry : sorts offensifs + Protego
-Hermione : sorts de soin/support + forte magie
+Harry : sorts offensifs + Protego — commence avec : Expelliarmus, Stupefix, Episkey, Protego, Incendio
+Hermione : sorts de soin/support + forte magie — commence avec : Episkey, Protego, Incendio, Accio
 
 ---
 
@@ -133,15 +133,28 @@ c.lck = c._baseLck + (acc.bonusLck || 0) + ...
 ```
 
 ### Items équipables (data.js)
-| ID | Type | Bonus |
-|----|------|-------|
-| `wand1` | wand | bonusAtk:2 |
-| `wand2` | wand | bonusAtk:5, bonusMag:3 |
-| `robe1` | armor | bonusDef:3 |
-| `amulette` | acc | bonusMag:4, bonusLck:3 |
-| `broom` | acc | (fuite garantie, pas de bonus stats) |
+| ID | Type | Bonus | Effet spécial |
+|----|------|-------|---------------|
+| `wand1` | wand | bonusAtk:2 | — |
+| `wand2` | wand | bonusAtk:5, bonusMag:3 | — |
+| `robe1` | armor | bonusDef:3 | — |
+| `amulette` | acc | bonusMag:4, bonusLck:3 | `grantsSpell:"Reparo"` (enseigné à l'équipement) |
+| `broom` | acc | — | fuite garantie |
 
 En combat, les équipements sont grisés et non cliquables dans l'inventaire.
+
+### Items spellbook (data.js)
+Les livres de sorts ont `type:"spellbook"` et un champ `spell` (nom exact dans SPELLS).
+Cliquer un livre hors combat enseigne le sort à **tout le groupe actif** et consomme le livre.
+
+| ID | Nom | Sort enseigné | Disponible |
+|----|-----|--------------|------------|
+| `livre_sortileges` | Sortilèges Standards, Vol.3 | Wingardium Leviosa | Boutique, coffre ≥ étage 2 |
+| `livre_soin` | Potions & Remèdes Magiques | Reparo | Boutique, coffre ≥ étage 3 |
+| `book_monsters` | Livre des Monstres | Diffindo | Coffre ≥ étage 3 (quête Lockhart) |
+| `livre_prince` | Manuel du Demi-Sang | Sectumsempra | Coffre ≥ étage 6 (rare) |
+
+Les livres apparaissent avec l'étiquette 📖 violette dans l'inventaire.
 
 ---
 
@@ -169,6 +182,23 @@ Si un personnage est KO, son tour est sauté automatiquement.
 ### Level-up (battle.js — checkLevelUp)
 Au level-up, on incrémente `c._baseAtk / _baseDef / _baseMag` (pas `c.atk` directement),
 puis on appelle `recalculateStats()` pour reconstruire les stats effectives avec l'équipement.
+
+#### Table de progression des sorts par niveau
+| Niveau | Harry apprend | Hermione apprend |
+|--------|--------------|-----------------|
+| 2 | — | Expelliarmus |
+| 3 | Accio | Stupefix |
+| 4 | Wingardium Leviosa | — |
+| 5 | Reparo | Diffindo |
+| 7 | Diffindo | Wingardium Leviosa + Reparo |
+| 9 | Avada... (déverrouillé) | Avada... (déverrouillé) |
+
+`Avada...` est `locked:true` dans SPELLS jusqu'au niveau 9, où le flag est muté en `false` et le sort ajouté aux deux personnages.
+
+#### 3 vecteurs d'apprentissage de sorts
+1. **Level-up** : table ci-dessus, automatique
+2. **Livres de sorts** (`type:"spellbook"`) : cliquer dans l'inventaire → enseigne à tout le groupe actif
+3. **Équipement** (`grantsSpell`) : enseigne le sort de façon permanente à l'équipement (ex: Amulette → Reparo)
 
 ### Capacités spéciales des ennemis (tryEnemyAbility)
 Chaque ennemi peut avoir un tableau `abilities[]`. À chaque tour ennemi,
