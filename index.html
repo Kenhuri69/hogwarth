@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poudlard & Magie : Le Secret de la Chambre Secrète</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="title-screen" onclick="startGame()">
+  <div class="stars" id="stars-container"></div>
+  <div class="castle-art">
+    <svg width="300" height="180" viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="moonGlow" cx="50%" cy="30%" r="40%">
+          <stop offset="0%" stop-color="#c9a84c" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#c9a84c" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="300" height="180" fill="transparent"/>
+      <ellipse cx="150" cy="40" rx="50" ry="50" fill="url(#moonGlow)"/>
+      <circle cx="150" cy="35" rx="22" ry="22" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0.5"/>
+      <rect x="130" y="80" width="40" height="90" fill="#1a0f05" stroke="#c9a84c" stroke-width="0.5"/>
+      <rect x="70" y="100" width="60" height="70" fill="#150b03" stroke="#c9a84c" stroke-width="0.5"/>
+      <rect x="170" y="100" width="60" height="70" fill="#150b03" stroke="#c9a84c" stroke-width="0.5"/>
+      <rect x="60" y="70" width="22" height="100" fill="#120a03" stroke="#c9a84c" stroke-width="0.5"/>
+      <rect x="218" y="70" width="22" height="100" fill="#120a03" stroke="#c9a84c" stroke-width="0.5"/>
+      <rect x="128" y="74" width="8" height="10" fill="#1a0f05" stroke="#c9a84c" stroke-width="0.5"/>
+      <rect x="140" y="74" width="8" height="10" fill="#1a0f05" stroke="#c9a84c" stroke-width="0.5"/>
+      <rect x="152" y="74" width="8" height="10" fill="#1a0f05" stroke="#c9a84c" stroke-width="0.5"/>
+      <rect x="164" y="74" width="8" height="10" fill="#1a0f05" stroke="#c9a84c" stroke-width="0.5"/>
+      <rect x="145" y="110" width="10" height="14" fill="#c9a84c" opacity="0.3" rx="5"/>
+      <rect x="85" y="120" width="8" height="12" fill="#c9a84c" opacity="0.2" rx="4"/>
+      <rect x="207" y="120" width="8" height="12" fill="#c9a84c" opacity="0.2" rx="4"/>
+      <polygon points="150,40 128,84 172,84" fill="#0d0705" stroke="#c9a84c" stroke-width="0.5"/>
+      <polygon points="71,40 60,74 82,74" fill="#0a0503" stroke="#c9a84c" stroke-width="0.5"/>
+      <polygon points="229,40 218,74 240,74" fill="#0a0503" stroke="#c9a84c" stroke-width="0.5"/>
+      <circle cx="90" cy="25" r="1.5" fill="#c9a84c" opacity="0.7"/>
+      <circle cx="210" cy="18" r="1" fill="#c9a84c" opacity="0.5"/>
+      <circle cx="265" cy="35" r="1.5" fill="#c9a84c" opacity="0.6"/>
+      <circle cx="40" cy="30" r="1" fill="#c9a84c" opacity="0.4"/>
+    </svg>
+  </div>
+  <div class="title-logo">Poudlard & Magie</div>
+  <div class="title-sub">LE SECRET DE LA CHAMBRE SECRÈTE</div>
+  <div style="margin-top:16px; font-family:'Cinzel',serif; font-size:11px; color:#6a5030; letter-spacing:3px; text-align:center;">
+    UN JEU DE RÔLE INSPIRÉ DE MIGHT & MAGIC BOOK ONE
+  </div>
+  <div class="press-start">— CLIQUER POUR COMMENCER —</div>
+  <div style="position:absolute;bottom:16px;font-family:'Crimson Text',serif;font-size:11px;color:#3a2a10;text-align:center;">
+    Utilisez les touches W A S D ou les boutons pour vous déplacer<br>
+    Explorez les couloirs de Poudlard, combattez des créatures, trouvez la Chambre Secrète
+  </div>
+</div>
+
+<div id="game-container">
+
+  <div class="game-header">
+    <div class="game-title">⚡ Poudlard & Magie</div>
+    <div class="location-display" id="loc-display">Les Couloirs de Poudlard — Niveau 1</div>
+    <div class="gold-display" id="gold-display">🪙 0 Gallions</div>
+  </div>
+
+  <div class="left-panel">
+    <div class="panel-title">Personnage</div>
+    <div class="char-portrait" id="char-portrait">🧙</div>
+    <div class="char-name" id="char-name">Harry Potter</div>
+    <div class="char-class" id="char-class">Élève de Gryffondor — Niv.1</div>
+
+    <div class="stat-bar-row">
+      <div class="bar-label"><span>⚡ Vie</span><span id="hp-text">30/30</span></div>
+      <div class="bar-track"><div class="bar-fill hp-fill" id="hp-bar" style="width:100%"></div></div>
+    </div>
+    <div class="stat-bar-row">
+      <div class="bar-label"><span>✨ Magie</span><span id="sp-text">20/20</span></div>
+      <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar" style="width:100%"></div></div>
+    </div>
+    <div class="stat-bar-row">
+      <div class="bar-label"><span>⭐ Expérience</span><span id="xp-text">0/50</span></div>
+      <div class="bar-track"><div class="bar-fill xp-fill" id="xp-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item"><div class="skey">FORCE</div><div class="sval" id="s-str">8</div></div>
+      <div class="stat-item"><div class="skey">INTEL.</div><div class="sval" id="s-int">12</div></div>
+      <div class="stat-item"><div class="skey">AGILITÉ</div><div class="sval" id="s-agi">10</div></div>
+      <div class="stat-item"><div class="skey">ENDUR.</div><div class="sval" id="s-end">9</div></div>
+      <div class="stat-item"><div class="skey">CHANCE</div><div class="sval" id="s-lck">14</div></div>
+      <div class="stat-item"><div class="skey">MAGIE</div><div class="sval" id="s-mag">11</div></div>
+    </div>
+
+    <div style="margin-top:4px">
+      <div class="panel-title" style="margin-bottom:4px">Équipement</div>
+      <div style="font-size:10px; color:#6a5030; display:flex; flex-direction:column; gap:2px;">
+        <div>🪄 <span id="eq-wand">Baguette de Houx</span></div>
+        <div>🧥 <span id="eq-armor">Robe d'Élève</span></div>
+        <div>💎 <span id="eq-acc">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-view">
+    <div class="scene-viewport">
+      <canvas id="dungeon-canvas"></canvas>
+
+      <div id="encounter-overlay">
+        <div class="enemy-display">
+          <div class="enemy-art" id="enemy-art">🐍</div>
+          <div class="enemy-name" id="enemy-name">Serpent de Poudlard</div>
+          <div class="enemy-bars" style="margin-top:6px">
+            <div class="bar-label"><span>💀 Vie</span><span id="enemy-hp-text">20/20</span></div>
+            <div class="bar-track"><div class="bar-fill hp-fill" id="enemy-hp-bar" style="width:100%"></div></div>
+          </div>
+        </div>
+        <div class="battle-log" id="battle-log">L'ennemi vous attaque !</div>
+        <div class="battle-actions">
+          <button class="cmd-btn" onclick="battleAction('attack')">⚔️ Attaquer</button>
+          <button class="cmd-btn" onclick="battleAction('spell')">✨ Sortilège</button>
+          <button class="cmd-btn" onclick="battleAction('item')">🧪 Objet</button>
+          <button class="cmd-btn" onclick="battleAction('flee')">🏃 Fuir</button>
+        </div>
+      </div>
+    </div>
+    <div id="narrative-panel">Bienvenue à Poudlard, jeune sorcier. Les couloirs vous attendent...</div>
+  </div>
+
+  <div class="right-panel">
+    <div class="panel-title">Carte</div>
+    <div id="minimap"></div>
+    <div style="height:6px"></div>
+    <div class="panel-title">Boussole</div>
+    <div class="compass" id="compass">
+      <div class="compass-dir"></div>
+      <div class="compass-dir" id="dir-n">N</div>
+      <div class="compass-dir"></div>
+      <div class="compass-dir" id="dir-o">O</div>
+      <div class="compass-dir compass-center">⚡</div>
+      <div class="compass-dir" id="dir-e">E</div>
+      <div class="compass-dir"></div>
+      <div class="compass-dir" id="dir-s">S</div>
+      <div class="compass-dir"></div>
+    </div>
+    <div style="height:6px"></div>
+    <div class="panel-title">Événements</div>
+    <div id="event-log" style="font-size:10px; color:#6a5030; line-height:1.8; overflow-y:auto; flex:1;">
+      <div>Jeu démarré</div>
+    </div>
+  </div>
+
+  <div class="commands-bar">
+    <button class="cmd-btn" onclick="move('n')" id="btn-n"><span class="key">W</span>↑ Nord</button>
+    <button class="cmd-btn" onclick="move('s')" id="btn-s"><span class="key">S</span>↓ Sud</button>
+    <button class="cmd-btn" onclick="move('w')" id="btn-w"><span class="key">A</span>← Ouest</button>
+    <button class="cmd-btn" onclick="move('e')" id="btn-e"><span class="key">D</span>→ Est</button>
+    <div style="width:1px; background:var(--gold-dark); height:24px; margin:0 4px"></div>
+    <button class="cmd-btn" onclick="openInventory()">🎒 Sac</button>
+    <button class="cmd-btn" onclick="openSpells()">📖 Sorts</button>
+    <button class="cmd-btn" onclick="openCharacter()">📜 Fiche</button>
+    <button class="cmd-btn" onclick="searchRoom()">🔍 Fouiller</button>
+    <button class="cmd-btn" onclick="rest()">💤 Repos</button>
+    <div style="width:1px; background:var(--gold-dark); height:24px; margin:0 4px"></div>
+    <button class="cmd-btn" onclick="saveGame()">💾 Sauver</button>
+    <button class="cmd-btn" onclick="loadGame()">📂 Charger</button>
+    <button class="cmd-btn" id="btn-interact" onclick="interact()" style="display:none">🚪 Interagir</button>
+  </div>
+</div>
+
+<!-- Modales -->
+<div id="inventory-modal">
+  <div class="modal-box">
+    <div class="modal-title">🎒 Sac de Moldu</div>
+    <span class="modal-close" onclick="closeModal('inventory-modal')">✕</span>
+    <div class="inv-grid" id="inv-grid"></div>
+    <div style="margin-top:12px; font-size:11px; color:#6a5030; text-align:center;">Cliquez sur un objet pour l'utiliser</div>
+  </div>
+</div>
+
+<div id="spell-modal">
+  <div class="modal-box">
+    <div class="modal-title">📖 Livre des Sortilèges</div>
+    <span class="modal-close" onclick="closeModal('spell-modal')">✕</span>
+    <div class="spell-list" id="spell-list"></div>
+  </div>
+</div>
+
+<div id="shop-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="shop-title">🏪 Boutique</div>
+    <span class="modal-close" onclick="closeModal('shop-modal')">✕</span>
+    <div style="text-align:right; margin-bottom:8px; font-family:'Cinzel',serif; font-size:12px; color:var(--gold)">
+      💰 <span id="shop-gold">0</span> Gallions
+    </div>
+    <div class="shop-grid" id="shop-grid"></div>
+  </div>
+</div>
+
+<div id="character-modal">
+  <div class="modal-box">
+    <div class="modal-title">📜 Fiche de Personnage</div>
+    <span class="modal-close" onclick="closeModal('character-modal')">✕</span>
+    <div id="char-detail"></div>
+  </div>
+</div>
+
+<div id="levelup-modal">
+  <div class="levelup-box">
+    <div class="lvl-title">⭐ Niveau Supérieur ! ⭐</div>
+    <div class="lvl-sub" id="levelup-text">Vous passez au niveau 2 !</div>
+    <button class="cmd-btn" style="margin-top:20px; font-size:14px; padding:8px 24px" onclick="closeLevelup()">Continuer</button>
+  </div>
+</div>
+
+<div id="death-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center">
+  <div class="death-title">✝ Pétrification ✝</div>
+  <div class="death-sub" id="death-msg">Le regard du Basilic vous a pétrifié...</div>
+  <button class="cmd-btn" style="margin-top:24px; font-size:14px; padding:10px 28px; border-color:var(--danger); color:var(--danger)" onclick="resurrect()">Revenir à la Vie</button>
+</div>
+
+<div id="msg-log"></div>
+
+<!-- Scripts (ordre de chargement important) -->
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dungeon.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/movement.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/shop.js"></script>
+<script src="js/save.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
