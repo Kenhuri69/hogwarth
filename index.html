@@ -63,29 +63,57 @@
   </div>
 
   <div class="left-panel">
-    <div class="panel-title">Personnage</div>
-    <div class="char-portrait" id="char-portrait">🧙</div>
-    <div class="char-name" id="char-name">Harry Potter</div>
-    <div class="char-class" id="char-class">Élève de Gryffondor — Niv.1</div>
+    <div class="panel-title">Groupe</div>
 
-    <div class="stat-bar-row">
-      <div class="bar-label"><span>⚡ Vie</span><span id="hp-text">30/30</span></div>
-      <div class="bar-track"><div class="bar-fill hp-fill" id="hp-bar" style="width:100%"></div></div>
+    <!-- Harry -->
+    <div class="party-card" id="char-card-0">
+      <div class="party-card-header">
+        <span class="party-portrait">🧙</span>
+        <div>
+          <div class="char-name" id="char-name-0">Harry Potter</div>
+          <div class="char-class" id="char-class-0">Auror · Niv.1</div>
+        </div>
+      </div>
+      <div class="stat-bar-row">
+        <div class="bar-label"><span>⚡ PV</span><span id="hp-text-0">35/35</span></div>
+        <div class="bar-track"><div class="bar-fill hp-fill" id="hp-bar-0" style="width:100%"></div></div>
+      </div>
+      <div class="stat-bar-row">
+        <div class="bar-label"><span>✨ PM</span><span id="sp-text-0">22/22</span></div>
+        <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar-0" style="width:100%"></div></div>
+      </div>
     </div>
-    <div class="stat-bar-row">
-      <div class="bar-label"><span>✨ Magie</span><span id="sp-text">20/20</span></div>
-      <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar" style="width:100%"></div></div>
+
+    <!-- Hermione -->
+    <div class="party-card" id="char-card-1">
+      <div class="party-card-header">
+        <span class="party-portrait">🧙‍♀️</span>
+        <div>
+          <div class="char-name" id="char-name-1">Hermione Granger</div>
+          <div class="char-class" id="char-class-1">Mage · Niv.1</div>
+        </div>
+      </div>
+      <div class="stat-bar-row">
+        <div class="bar-label"><span>⚡ PV</span><span id="hp-text-1">28/28</span></div>
+        <div class="bar-track"><div class="bar-fill hp-fill" id="hp-bar-1" style="width:100%"></div></div>
+      </div>
+      <div class="stat-bar-row">
+        <div class="bar-label"><span>✨ PM</span><span id="sp-text-1">35/35</span></div>
+        <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar-1" style="width:100%"></div></div>
+      </div>
     </div>
-    <div class="stat-bar-row">
+
+    <!-- XP partagée -->
+    <div class="stat-bar-row" style="margin-top:4px">
       <div class="bar-label"><span>⭐ Expérience</span><span id="xp-text">0/50</span></div>
       <div class="bar-track"><div class="bar-fill xp-fill" id="xp-bar" style="width:0%"></div></div>
     </div>
 
+    <!-- Stats de Harry -->
     <div class="stats-grid">
       <div class="stat-item"><div class="skey">FORCE</div><div class="sval" id="s-str">8</div></div>
       <div class="stat-item"><div class="skey">INTEL.</div><div class="sval" id="s-int">12</div></div>
       <div class="stat-item"><div class="skey">AGILITÉ</div><div class="sval" id="s-agi">10</div></div>
-      <div class="stat-item"><div class="skey">ENDUR.</div><div class="sval" id="s-end">9</div></div>
       <div class="stat-item"><div class="skey">CHANCE</div><div class="sval" id="s-lck">14</div></div>
       <div class="stat-item"><div class="skey">MAGIE</div><div class="sval" id="s-mag">11</div></div>
     </div>
@@ -105,15 +133,13 @@
       <canvas id="dungeon-canvas"></canvas>
 
       <div id="encounter-overlay">
-        <div class="enemy-display">
-          <div class="enemy-art" id="enemy-art">🐍</div>
-          <div class="enemy-name" id="enemy-name">Serpent de Poudlard</div>
-          <div class="enemy-bars" style="margin-top:6px">
-            <div class="bar-label"><span>💀 Vie</span><span id="enemy-hp-text">20/20</span></div>
-            <div class="bar-track"><div class="bar-fill hp-fill" id="enemy-hp-bar" style="width:100%"></div></div>
-          </div>
-        </div>
+        <div class="enemy-group-container" id="enemy-group"></div>
+        <div class="battle-char-indicator" id="battle-char-indicator">🧙 Tour de Harry Potter</div>
         <div class="battle-log" id="battle-log">L'ennemi vous attaque !</div>
+        <div class="target-selection" id="target-selection" style="display:none">
+          <div style="font-family:'Cinzel',serif;font-size:10px;color:var(--gold);margin-bottom:6px;letter-spacing:1px">CHOISIR UNE CIBLE</div>
+          <div class="target-buttons" id="target-buttons"></div>
+        </div>
         <div class="battle-actions">
           <button class="cmd-btn" onclick="battleAction('attack')">⚔️ Attaquer</button>
           <button class="cmd-btn" onclick="battleAction('spell')">✨ Sortilège</button>

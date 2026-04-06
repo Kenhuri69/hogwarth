@@ -11,15 +11,16 @@ let playerX, playerY, playerDir;
 // Étage actuel
 let currentFloor = 1;
 
-// État du combat
-let inBattle = false;
-let currentEnemy = null;
-let enemyHp = 0;
-let shieldTurns = 0;
-let enemyDisarmed = 0;
-let battleTurn = 0;
+// ── État du combat ───────────────────────────────────────────
+let inBattle        = false;
+let enemyGroup      = [];   // tableau de {…enemyData, currentHp, disarmed}
+let currentBattleChar = 0;  // 0 = Harry, 1 = Hermione
+let shieldTurns     = [0, 0]; // bouclier par personnage
+let battleTurn      = 0;
+let pendingAction   = null; // action en attente de sélection de cible
+let pendingSpell    = null; // sort en attente de sélection de cible
 
-// Objet joueur
+// ── Membres du groupe ────────────────────────────────────────
 let player = {
   name: "Harry Potter", icon: "🧙", class: "Élève de Gryffondor",
   level: 1, xp: 0, xpNext: 50,
@@ -28,6 +29,21 @@ let player = {
   atk: 5, def: 2,
   gold: 25,
   inventory: [],
-  spells: ["Expelliarmus","Stupefix","Episkey","Protego","Incendio"],
+  spells: ["Expelliarmus", "Stupefix", "Episkey", "Protego", "Incendio"],
   wand: "Baguette de Houx", armor: "Robe de Gryffondor", acc: ""
 };
+
+let player2 = {
+  name: "Hermione Granger", icon: "🧙‍♀️", class: "Élève de Gryffondor",
+  level: 1, xp: 0, xpNext: 50,
+  hp: 28, hpMax: 28, sp: 35, spMax: 35,
+  str: 6, int: 17, agi: 10, end: 7, lck: 12, mag: 16,
+  atk: 3, def: 2,
+  gold: 0, // l'or est partagé via player.gold
+  inventory: [], // inventaire partagé via player.inventory
+  spells: ["Episkey", "Protego", "Incendio", "Accio"],
+  wand: "Baguette de Vigne", armor: "Robe de Gryffondor", acc: ""
+};
+
+// party[0] et player pointent vers le même objet
+let party = [player, player2];

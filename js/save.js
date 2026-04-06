@@ -3,55 +3,49 @@
 // ============================================================
 
 function saveGame() {
-  if (inBattle) {
-    addMsg("Impossible de sauvegarder en combat !", "bad");
-    return;
-  }
+  if (inBattle) { addMsg("Impossible de sauvegarder en combat !", "bad"); return; }
 
   const gameState = {
-    player: player,
-    currentFloor: currentFloor,
-    playerX: playerX,
-    playerY: playerY,
-    playerDir: playerDir,
-    dungeon: dungeon,
-    visited: visited,
-    enemyMap: enemyMap,
-    itemMap: itemMap
+    party:        [player, player2],
+    currentFloor, playerX, playerY, playerDir,
+    dungeon, visited, enemyMap, itemMap
   };
-
   localStorage.setItem('hogwarts_rpg_save', JSON.stringify(gameState));
   addMsg("Partie sauvegardée !", "good");
 }
 
 function loadGame() {
   const saved = localStorage.getItem('hogwarts_rpg_save');
-  if (saved) {
-    const gameState = JSON.parse(saved);
+  if (!saved) { addMsg("Aucune sauvegarde trouvée.", "bad"); return; }
 
-    player = gameState.player;
-    currentFloor = gameState.currentFloor;
-    playerX = gameState.playerX;
-    playerY = gameState.playerY;
-    playerDir = gameState.playerDir;
-    dungeon = gameState.dungeon;
-    visited = gameState.visited;
-    enemyMap = gameState.enemyMap;
-    itemMap = gameState.itemMap;
+  const gs = JSON.parse(saved);
 
-    inBattle = false;
-    document.getElementById('encounter-overlay').style.display = 'none';
-    document.getElementById('btn-interact').style.display = 'none';
+  // Mutation des objets existants pour conserver les références (party[0] = player, etc.)
+  if (gs.party && gs.party[0]) Object.assign(player,  gs.party[0]);
+  if (gs.party && gs.party[1]) Object.assign(player2, gs.party[1]);
 
-    updateUI();
-    updateCompass();
-    renderMinimap();
-    drawDungeon();
-    updateLocationDisplay();
+  // Ré-aligner party avec les objets mutés
+  party[0] = player;
+  party[1] = player2;
 
-    setNarrative("Vous reprenez vos esprits. La partie est chargée !");
-    addMsg("Partie chargée !", "good");
-  } else {
-    addMsg("Aucune sauvegarde trouvée.", "bad");
-  }
+  currentFloor = gs.currentFloor;
+  playerX      = gs.playerX;
+  playerY      = gs.playerY;
+  playerDir    = gs.playerDir;
+  dungeon      = gs.dungeon;
+  visited      = gs.visited;
+  enemyMap     = gs.enemyMap;
+  itemMap      = gs.itemMap;
+
+  inBattle = false;
+  document.getElementById('encounter-overlay').style.display = 'none';
+  document.getElementById('btn-interact').style.display      = 'none';
+
+  updateUI();
+  updateCompass();
+  renderMinimap();
+  drawDungeon();
+  updateLocationDisplay();
+  setNarrative("Le groupe reprend ses esprits. La partie est chargée !");
+  addMsg("Partie chargée !", "good");
 }

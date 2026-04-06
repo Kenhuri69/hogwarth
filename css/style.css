@@ -533,3 +533,77 @@ body {
   0%{opacity:0;transform:translate(-50%,-60%)} 15%{opacity:1;transform:translate(-50%,-50%)}
   70%{opacity:1} 100%{opacity:0;transform:translate(-50%,-40%)}
 }
+
+/* ── PARTY CARDS (left panel) ── */
+.party-card {
+  background: rgba(15,9,3,0.7);
+  border: 1px solid var(--gold-dark);
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.party-card.active-char {
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(201,168,76,0.35);
+}
+.party-card.ko-char {
+  opacity: 0.45;
+  border-color: var(--danger);
+}
+.party-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.party-portrait {
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* ── ENEMY GROUP (encounter overlay) ── */
+.enemy-group-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 120px;
+  margin-bottom: 6px;
+}
+.enemy-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.3s;
+}
+.enemy-card.enemy-dead {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+/* ── BATTLE TURN INDICATOR ── */
+.battle-char-indicator {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 1px;
+  text-align: center;
+  margin-bottom: 4px;
+  padding: 3px 0;
+  border-top: 1px solid var(--gold-dark);
+  border-bottom: 1px solid var(--gold-dark);
+}
+
+/* ── TARGET SELECTION ── */
+.target-selection {
+  text-align: center;
+  margin-bottom: 6px;
+}
+.target-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}

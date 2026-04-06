@@ -1,210 +1,381 @@
 // ============================================================
-// SYSTÈME DE COMBAT
+// SYSTÈME DE COMBAT — GROUPE vs GROUPE (1-3 ennemis)
 // ============================================================
 
-function startBattle(enemyData) {
-  inBattle=true;
-  shieldTurns=0;
-  enemyDisarmed=0;
-  battleTurn=0;
-  currentEnemy={...enemyData};
-  enemyHp=currentEnemy.hp;
+// ── Helpers d'état ──────────────────────────────────────────
+function getActiveChar()       { return party[currentBattleChar]; }
+function getFirstLivingEnemy() { return enemyGroup.findIndex(e => e.currentHp > 0); }
+function livingEnemies()       { return enemyGroup.filter(e => e.currentHp > 0); }
+function allPartyKO()          { return party.every(c => c.hp <= 0); }
 
-  document.getElementById('enemy-art').textContent=currentEnemy.icon;
-  document.getElementById('enemy-name').textContent=currentEnemy.name;
-  updateEnemyBars();
-  document.getElementById('battle-log').textContent=`${currentEnemy.desc} !`;
-  document.getElementById('encounter-overlay').style.display='flex';
-  addMsg(`Combat : ${currentEnemy.name}`, 'bad');
-  addLog(`⚔️ Combat vs ${currentEnemy.name}`);
+// ── Démarrage du combat ──────────────────────────────────────
+function startBattle(baseEnemyData) {
+  inBattle          = true;
+  shieldTurns       = [0, 0];
+  battleTurn        = 0;
+  currentBattleChar = 0;
+  pendingAction     = null;
+  pendingSpell      = null;
+
+  // Générer un groupe de 1-3 ennemis selon l'étage
+  const size = rollGroupSize();
+  enemyGroup = [];
+  for (let i = 0; i < size; i++) {
+    const base = i === 0 ? baseEnemyData : pickSimilarEnemy(baseEnemyData);
+    enemyGroup.push({ ...base, currentHp: base.hp, disarmed: 0 });
+  }
+
+  document.getElementById('encounter-overlay').style.display = 'flex';
+  document.getElementById('target-selection').style.display  = 'none';
+  renderEnemyGroup();
+  updateBattleCharIndicator();
+  setBattleLog(`${size > 1 ? size + ' ennemis surgissent' : enemyGroup[0].desc} !`);
+  addMsg(`⚔️ ${size} ennemi${size > 1 ? 's' : ''} !`, 'bad');
+  addLog(`⚔️ Combat (${size} ennemi${size > 1 ? 's' : ''})`);
 }
 
-function updateEnemyBars() {
-  const pct=(enemyHp/currentEnemy.hp*100)+'%';
-  document.getElementById('enemy-hp-bar').style.width=pct;
-  document.getElementById('enemy-hp-text').textContent=`${Math.max(0,enemyHp)}/${currentEnemy.hp}`;
+function rollGroupSize() {
+  const r = Math.random();
+  if (currentFloor <= 2) return r < 0.65 ? 1 : 2;
+  if (currentFloor <= 4) return r < 0.30 ? 1 : r < 0.75 ? 2 : 3;
+  return r < 0.20 ? 1 : r < 0.55 ? 2 : 3;
 }
 
+function pickSimilarEnemy(base) {
+  const pool = ENEMIES.filter(e => Math.abs(e.hp - base.hp) < 25);
+  const src  = pool.length ? pool[Math.floor(Math.random() * pool.length)] : base;
+  const mult = 1 + (currentFloor - 1) * 0.25;
+  const e    = JSON.parse(JSON.stringify(src));
+  e.hp   = Math.floor(e.hp   * mult);
+  e.atk  = Math.floor(e.atk  * mult);
+  e.def  = Math.floor(e.def  * mult);
+  e.xp   = Math.floor(e.xp   * mult);
+  e.gold = Math.floor(e.gold * mult);
+  if (currentFloor >= 5) e.name = "Ancien " + e.name;
+  else if (currentFloor >= 3) e.name = "Féroce " + e.name;
+  return e;
+}
+
+// ── Action du joueur (Harry ou Hermione) ─────────────────────
 function battleAction(action) {
-  if(!inBattle) return;
-  battleTurn++;
-  let msg='';
+  if (!inBattle) return;
 
-  if(action==='attack') {
-    const playerDmg = Math.max(1, player.atk + Math.floor(Math.random()*4) - (currentEnemy.def - (enemyDisarmed>0?2:0)));
-    enemyHp -= playerDmg;
-    msg=`⚔️ Vous frappez pour ${playerDmg} dégâts !`;
-    if(enemyDisarmed>0) enemyDisarmed--;
+  const char = getActiveChar();
 
-  } else if(action==='spell') {
-    openBattleSpells();
-    return;
+  // Si ce personnage est KO, passer automatiquement
+  if (char.hp <= 0) { advanceBattleChar(); return; }
 
-  } else if(action==='item') {
-    openBattleItems();
-    return;
+  if (action === 'spell') { openBattleSpells(); return; }
+  if (action === 'item')  { openBattleItems();  return; }
+  if (action === 'flee')  { doFlee(); return; }
 
-  } else if(action==='flee') {
-    const fleeChance = player.agi>currentEnemy.atk ? 0.7 : 0.4;
-    const hasBroom = player.inventory.some(i=>i.id==='broom');
-    if(hasBroom||Math.random()<fleeChance) {
-      endBattle(false);
-      setNarrative("Vous fuyez le combat à toute vitesse dans les couloirs !");
-      addMsg("Fuite réussie !", 'good');
-      return;
+  if (action === 'attack') {
+    if (livingEnemies().length > 1) {
+      showTargetSelection('attack');
     } else {
-      msg="❌ Vous n'avez pas pu fuir !";
+      executeAttack(getFirstLivingEnemy());
     }
   }
+}
 
-  if(enemyHp<=0) {
-    endBattle(true);
-    return;
-  }
+// ── Sélection de cible ───────────────────────────────────────
+function showTargetSelection(actionType) {
+  pendingAction = actionType;
+  const wrap = document.getElementById('target-selection');
+  const btns = document.getElementById('target-buttons');
+  btns.innerHTML = '';
+  enemyGroup.forEach((e, i) => {
+    if (e.currentHp <= 0) return;
+    const btn = document.createElement('button');
+    btn.className = 'cmd-btn';
+    btn.style.fontSize = '10px';
+    btn.textContent = `${e.icon} ${e.name} (${e.currentHp} PV)`;
+    btn.onclick = () => {
+      wrap.style.display = 'none';
+      if      (pendingAction === 'attack')    executeAttack(i);
+      else if (pendingAction === 'spell_dmg') castSpellInBattle(pendingSpell, i);
+      pendingAction = null;
+      pendingSpell  = null;
+    };
+    btns.appendChild(btn);
+  });
+  wrap.style.display = 'flex';
+}
 
-  // Contre-attaque ennemie
-  let enemyDmgOut=0;
-  if(shieldTurns>0) {
-    shieldTurns--;
-    msg+=`\n🛡️ Protego absorbe l'attaque !`;
-  } else {
-    enemyDmgOut = Math.max(0, currentEnemy.atk - player.def + Math.floor(Math.random()*4) - 1);
-    player.hp = Math.max(0, player.hp-enemyDmgOut);
-    msg+=`\n${currentEnemy.icon} ${currentEnemy.name} vous inflige ${enemyDmgOut} dégâts !`;
-  }
+// ── Attaque physique ─────────────────────────────────────────
+function executeAttack(targetIdx) {
+  const char  = getActiveChar();
+  const enemy = enemyGroup[targetIdx];
+  const bonus = enemy.disarmed > 0 ? 2 : 0;
+  const dmg   = Math.max(1, char.atk + Math.floor(Math.random() * 4) - (enemy.def - bonus));
+  enemy.currentHp -= dmg;
+  if (enemy.disarmed > 0) enemy.disarmed--;
 
-  document.getElementById('battle-log').textContent=msg;
-  updateEnemyBars();
+  setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${dmg} dégâts !`);
+  renderEnemyGroup();
+  if (checkAllEnemiesDead()) return;
+  advanceBattleChar();
+}
+
+function checkAllEnemiesDead() {
+  if (livingEnemies().length === 0) { endBattle(true); return true; }
+  return false;
+}
+
+// ── Passage au personnage suivant / tour des ennemis ─────────
+function advanceBattleChar() {
   updateUI();
+  const next = currentBattleChar === 0 ? 1 : -1;
 
-  if(player.hp<=0) {
-    document.getElementById('encounter-overlay').style.display='none';
-    inBattle=false;
-    triggerDeath(`${currentEnemy.name} vous a vaincu...`);
+  if (next === -1 || party[next].hp <= 0) {
+    // Les deux ont agi (ou le second est KO) → tour des ennemis
+    enemyTurn();
+  } else {
+    currentBattleChar = next;
+    updateBattleCharIndicator();
+    if (party[currentBattleChar].hp <= 0) {
+      setBattleLog(`${party[currentBattleChar].name} est hors combat, tour des ennemis...`);
+      setTimeout(enemyTurn, 700);
+    } else {
+      setBattleLog(`À ${party[currentBattleChar].name} d'agir...`);
+    }
   }
 }
 
-function castSpellInBattle(spellName) {
-  const spell=SPELLS.find(s=>s.name===spellName);
-  if(!spell||player.sp<spell.cost) {
-    addMsg("Pas assez de magie !", 'bad');
+// ── Tour des ennemis ─────────────────────────────────────────
+function enemyTurn() {
+  battleTurn++;
+  const alive = party.filter(c => c.hp > 0);
+  let log = '';
+
+  livingEnemies().forEach(enemy => {
+    // Cible aléatoire parmi les personnages vivants
+    const target   = alive[Math.floor(Math.random() * alive.length)];
+    if (!target) return;
+    const charIdx  = party.indexOf(target);
+
+    if (shieldTurns[charIdx] > 0) {
+      shieldTurns[charIdx]--;
+      log += `🛡️ Protego protège ${target.name} ! `;
+    } else {
+      const dmg = Math.max(0, enemy.atk - target.def + Math.floor(Math.random() * 3));
+      target.hp = Math.max(0, target.hp - dmg);
+      log += `${enemy.icon} → ${target.name} : -${dmg} PV. `;
+    }
+  });
+
+  setBattleLog(log || '...');
+  updateUI();
+
+  if (allPartyKO()) {
+    document.getElementById('encounter-overlay').style.display = 'none';
+    inBattle = false;
+    triggerDeath('Le groupe a été mis hors combat...');
     return;
   }
-  player.sp-=spell.cost;
-  let msg='';
 
-  if(spell.effect==='heal') {
-    player.hp=Math.min(player.hpMax,player.hp+spell.power);
-    msg=`💚 ${spell.name} : +${spell.power} PV !`;
-    addMsg(msg,'good');
-  } else if(spell.effect==='disarm') {
-    enemyDisarmed=2;
-    msg=`✨ ${spell.name} : ennemi désarmé !`;
-    addMsg(msg,'magic');
-  } else if(spell.effect==='shield') {
-    shieldTurns=2;
-    msg=`🛡️ ${spell.name} : bouclier actif !`;
-    addMsg(msg,'magic');
-  } else if(spell.effect==='stun'||spell.effect==='burn'||spell.effect==='instant') {
-    const dmg=spell.power+Math.floor(player.mag/2);
-    enemyHp-=dmg;
-    msg=`${spell.icon} ${spell.name} : ${dmg} dégâts magiques !`;
-    addMsg(msg,'magic');
-  } else if(spell.effect==='steal') {
-    const gold=Math.floor(Math.random()*10+5);
-    player.gold+=gold;
-    msg=`🌀 ${spell.name} : +${gold} Gallions volés !`;
-    addMsg(msg,'good');
-  }
+  // Reprendre avec le premier personnage vivant
+  currentBattleChar = party[0].hp > 0 ? 0 : 1;
+  updateBattleCharIndicator();
+  setBattleLog(log + `\nÀ ${party[currentBattleChar].name} d'agir...`);
+}
 
-  updateUI();
+// ── Sorts en combat ──────────────────────────────────────────
+function castSpellInBattle(spellName, targetIdx) {
+  const char  = getActiveChar();
+  const spell = SPELLS.find(s => s.name === spellName);
+  if (!spell || char.sp < spell.cost) { addMsg("Pas assez de magie !", 'bad'); return; }
+
+  char.sp -= spell.cost;
   closeModal('spell-modal');
+  document.getElementById('target-selection').style.display = 'none';
 
-  if(enemyHp<=0) { endBattle(true); return; }
+  let msg = '';
+  const enemy = enemyGroup[targetIdx >= 0 ? targetIdx : 0];
 
-  // Contre-attaque après sort
-  let enemyDmg=0;
-  if(shieldTurns>0 && spell.effect==='shield') {
-    // Pas de dégâts le tour du bouclier
-  } else {
-    enemyDmg=Math.max(0,currentEnemy.atk-player.def+Math.floor(Math.random()*3));
-    player.hp=Math.max(0,player.hp-enemyDmg);
-    msg+=`\n${currentEnemy.icon} contre-attaque pour ${enemyDmg} dégâts !`;
+  switch (spell.effect) {
+    case 'heal':
+      char.hp = Math.min(char.hpMax, char.hp + spell.power);
+      msg = `💚 ${char.name} : ${spell.name} +${spell.power} PV !`;
+      addMsg(msg, 'good');
+      break;
+    case 'disarm':
+      if (enemy) { enemy.disarmed = 2; msg = `✨ ${char.name} : ${spell.name} désarme ${enemy.name} !`; }
+      addMsg(msg, 'magic');
+      break;
+    case 'shield':
+      shieldTurns[currentBattleChar] = 2;
+      msg = `🛡️ ${char.name} : ${spell.name} — bouclier actif 2 tours !`;
+      addMsg(msg, 'magic');
+      break;
+    case 'stun': case 'burn': case 'instant':
+      if (enemy) {
+        const dmg = spell.power + Math.floor(char.mag / 2);
+        enemy.currentHp -= dmg;
+        msg = `${spell.icon} ${char.name} : ${spell.name} → ${dmg} dégâts magiques sur ${enemy.name} !`;
+      }
+      addMsg(msg, 'magic');
+      break;
+    case 'steal':
+      const gold = Math.floor(Math.random() * 10 + 5);
+      player.gold += gold;
+      msg = `🌀 ${char.name} : ${spell.name} → +${gold} Gallions !`;
+      addMsg(msg, 'good');
+      break;
   }
 
-  document.getElementById('battle-log').textContent=msg;
-  updateEnemyBars();
+  setBattleLog(msg);
+  renderEnemyGroup();
   updateUI();
+  if (checkAllEnemiesDead()) return;
+  advanceBattleChar();
+}
 
-  if(player.hp<=0) {
-    document.getElementById('encounter-overlay').style.display='none';
-    inBattle=false;
-    triggerDeath(`${currentEnemy.name} vous a vaincu...`);
+// ── Fuite ────────────────────────────────────────────────────
+function doFlee() {
+  const char      = getActiveChar();
+  const firstEnemy = livingEnemies()[0];
+  const chance    = char.agi > (firstEnemy?.atk || 5) ? 0.7 : 0.4;
+  const hasBroom  = player.inventory.some(i => i.id === 'broom');
+
+  if (hasBroom || Math.random() < chance) {
+    endBattle(false);
+    setNarrative("Le groupe fuit le combat à toute vitesse !");
+    addMsg("Fuite réussie !", 'good');
+  } else {
+    setBattleLog(`❌ ${char.name} n'a pas pu fuir !`);
+    advanceBattleChar();
   }
 }
 
+// ── Fin de combat ────────────────────────────────────────────
 function endBattle(won) {
-  document.getElementById('encounter-overlay').style.display='none';
-  inBattle=false;
-  if(won) {
-    enemyMap[playerY][playerX]=null;
-    const xp=currentEnemy.xp;
-    const gold=currentEnemy.gold+Math.floor(Math.random()*5);
-    player.xp+=xp;
-    player.gold+=gold;
-    setNarrative(`Vous avez vaincu ${currentEnemy.name} ! +${xp} XP, +${gold} Gallions.`);
-    addMsg(`+${xp} XP`, 'good');
-    addMsg(`+${gold} Gallions`, 'good');
-    addLog(`✅ ${currentEnemy.name} vaincu`);
+  document.getElementById('encounter-overlay').style.display = 'none';
+  document.getElementById('target-selection').style.display  = 'none';
+  inBattle = false;
+
+  if (won) {
+    enemyMap[playerY][playerX] = null;
+    let totalXp = 0, totalGold = 0;
+    enemyGroup.forEach(e => { totalXp += e.xp; totalGold += e.gold + Math.floor(Math.random() * 5); });
+
+    // XP partagée (ajoutée à player = party[0])
+    player.xp += totalXp;
+    player.gold += totalGold;
+
+    setNarrative(`Victoire ! +${totalXp} XP, +${totalGold} Gallions.`);
+    addMsg(`+${totalXp} XP`, 'good');
+    addMsg(`+${totalGold} Gallions`, 'good');
+    addLog(`✅ Victoire (${enemyGroup.length} ennemi${enemyGroup.length > 1 ? 's' : ''})`);
     checkLevelUp();
     renderMinimap();
   }
   updateUI();
 }
 
+// ── Montée de niveau (synchronisée pour le groupe) ───────────
 function checkLevelUp() {
-  if(player.xp>=player.xpNext) {
-    player.level++;
-    player.xp-=player.xpNext;
-    player.xpNext=Math.floor(player.xpNext*1.6);
-    player.hpMax+=10; player.hp=player.hpMax;
-    player.spMax+=6; player.sp=player.spMax;
-    player.atk+=2; player.def+=1; player.mag+=1;
-    player.str+=1; player.int+=1; player.agi+=1;
-    document.getElementById('levelup-text').textContent=`Vous passez au niveau ${player.level} !`;
-    document.getElementById('levelup-modal').style.display='flex';
-    addMsg(`Niveau ${player.level} !`, 'good');
-    addLog(`⭐ Niveau ${player.level} atteint`);
-    if(player.level===3&&!player.spells.includes('Incendio')) player.spells.push('Incendio');
-    if(player.level===5&&!player.spells.includes('Accio')) player.spells.push('Accio');
-    updateUI();
+  if (player.xp < player.xpNext) return;
+
+  player.level++;
+  player.xp     -= player.xpNext;
+  player.xpNext  = Math.floor(player.xpNext * 1.6);
+
+  // Synchroniser et améliorer les deux personnages
+  party.forEach(c => {
+    c.level  = player.level;
+    c.xpNext = player.xpNext;
+    c.hpMax += 8;  c.hp = c.hpMax;
+    c.spMax += 5;  c.sp = c.spMax;
+    c.atk   += 1;  c.def += 1;  c.mag += 1;
+    c.str   += 1;  c.int += 1;  c.agi += 1;
+  });
+
+  document.getElementById('levelup-text').textContent = `Le groupe passe au niveau ${player.level} !`;
+  document.getElementById('levelup-modal').style.display = 'flex';
+  addMsg(`Niveau ${player.level} !`, 'good');
+  addLog(`⭐ Niveau ${player.level} atteint`);
+
+  // Nouveaux sorts débloqués par niveau
+  if (player.level === 3) {
+    if (!player.spells.includes('Incendio'))    player.spells.push('Incendio');
+    if (!player2.spells.includes('Stupefix'))   player2.spells.push('Stupefix');
   }
+  if (player.level === 5) {
+    if (!player.spells.includes('Accio'))          player.spells.push('Accio');
+    if (!player2.spells.includes('Expelliarmus'))  player2.spells.push('Expelliarmus');
+  }
+  updateUI();
 }
 
 function closeLevelup() {
-  document.getElementById('levelup-modal').style.display='none';
+  document.getElementById('levelup-modal').style.display = 'none';
 }
 
-// ============================================================
-// MORT ET RÉSURRECTION
-// ============================================================
-
+// ── Mort et résurrection ─────────────────────────────────────
 function triggerDeath(msg) {
-  document.getElementById('death-msg').textContent=msg;
-  document.getElementById('death-screen').style.display='flex';
+  document.getElementById('death-msg').textContent = msg;
+  document.getElementById('death-screen').style.display = 'flex';
 }
 
 function resurrect() {
-  player.hp=Math.floor(player.hpMax/2);
-  player.sp=Math.floor(player.spMax/2);
-  player.gold=Math.floor(player.gold*0.7);
-  document.getElementById('death-screen').style.display='none';
+  party.forEach(c => {
+    c.hp = Math.floor(c.hpMax / 2);
+    c.sp = Math.floor(c.spMax / 2);
+  });
+  player.gold = Math.floor(player.gold * 0.7);
+  document.getElementById('death-screen').style.display = 'none';
   generateDungeon(currentFloor);
   updateLocationDisplay();
-  setNarrative("Un Phénix vous ressuscite in extremis. Vous vous réveillez, meurtri mais vivant.");
+  setNarrative("Un Phénix ressuscite le groupe. Vous vous réveillez, meurtris mais vivants.");
   addMsg("Ressuscité !", 'magic');
   renderMinimap();
   drawDungeon();
   updateCompass();
   updateUI();
+}
+
+// ── Rendu du groupe d'ennemis ────────────────────────────────
+function renderEnemyGroup() {
+  const container = document.getElementById('enemy-group');
+  if (!container) return;
+  container.innerHTML = '';
+  const count = enemyGroup.length;
+
+  enemyGroup.forEach((enemy, i) => {
+    const dead = enemy.currentHp <= 0;
+    const pct  = Math.max(0, (enemy.currentHp / enemy.hp) * 100);
+    const card = document.createElement('div');
+    card.className = `enemy-card${dead ? ' enemy-dead' : ''}`;
+    card.id = `enemy-card-${i}`;
+    card.innerHTML = `
+      <div style="font-size:${count === 1 ? '64px' : '44px'};filter:drop-shadow(0 0 12px rgba(200,50,50,0.5));animation:float 2s ease-in-out infinite alternate">
+        ${dead ? '💀' : enemy.icon}
+      </div>
+      <div class="enemy-name" style="font-size:${count === 1 ? '16px' : '12px'}">${enemy.name}</div>
+      <div class="enemy-bars" style="width:${count === 1 ? '180px' : '120px'}">
+        <div class="bar-label" style="font-size:9px"><span>PV</span><span>${Math.max(0, enemy.currentHp)}/${enemy.hp}</span></div>
+        <div class="bar-track"><div class="bar-fill hp-fill" style="width:${pct}%"></div></div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// ── Indicateur de tour ───────────────────────────────────────
+function updateBattleCharIndicator() {
+  const char = party[currentBattleChar];
+  const el   = document.getElementById('battle-char-indicator');
+  if (el) el.textContent = `${char.icon}  Tour de ${char.name}`;
+
+  // Surligner la carte du personnage actif
+  party.forEach((c, i) => {
+    const card = document.getElementById(`char-card-${i}`);
+    if (card) card.classList.toggle('active-char', i === currentBattleChar && inBattle);
+  });
+}
+
+function setBattleLog(text) {
+  const el = document.getElementById('battle-log');
+  if (el) el.textContent = text;
 }

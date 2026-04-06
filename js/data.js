@@ -11,6 +11,10 @@ const CHARACTERS = {
   harry: { name:"Harry Potter", icon:"🧙", class:"Élève de Gryffondor",
     hp:35, sp:22, str:9, int:11, agi:12, end:10, lck:15, mag:10,
     wand:"Baguette de Houx", armor:"Robe de Gryffondor", acc:"Lunettes Rondes"
+  },
+  hermione: { name:"Hermione Granger", icon:"🧙‍♀️", class:"Élève de Gryffondor",
+    hp:28, sp:35, str:6, int:17, agi:10, end:7, lck:12, mag:16,
+    wand:"Baguette de Vigne", armor:"Robe de Gryffondor", acc:""
   }
 };
 
