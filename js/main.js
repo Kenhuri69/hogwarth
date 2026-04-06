@@ -44,6 +44,23 @@ function startGame(count = 2) {
 }
 
 // ============================================================
+// OVERLAY CARTE MOBILE
+// ============================================================
+
+function toggleMobileMap() {
+  const overlay = document.getElementById('map-overlay');
+  const opening = overlay.style.display !== 'flex';
+  overlay.style.display = opening ? 'flex' : 'none';
+  if (opening) {
+    // Construire la carte agrandie au moment de l'ouverture
+    _buildMinimapCells(document.getElementById('minimap-mobile'), 20);
+    // Mettre à jour le niveau affiché
+    const lvlEl = document.getElementById('map-overlay-floor');
+    if (lvlEl) lvlEl.textContent = `Niveau ${currentFloor}`;
+  }
+}
+
+// ============================================================
 // CLAVIER
 // ============================================================
 

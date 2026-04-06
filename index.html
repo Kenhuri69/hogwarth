@@ -194,6 +194,24 @@
     </div>
   </div>
 
+  <!-- Overlay carte mobile -->
+  <div id="map-overlay" onclick="if(event.target===this)toggleMobileMap()">
+    <div class="map-overlay-box">
+      <div class="map-overlay-header">
+        <span>🗺️ Carte — <span id="map-overlay-floor">Niveau 1</span></span>
+        <button class="map-overlay-close" onclick="toggleMobileMap()">✕</button>
+      </div>
+      <div id="minimap-mobile"></div>
+      <div class="map-legend">
+        <span class="legend-item"><span class="legend-dot map-player"></span> Vous</span>
+        <span class="legend-item"><span class="legend-dot map-enemy"></span> Ennemi</span>
+        <span class="legend-item"><span class="legend-dot map-stairs"></span> Escalier</span>
+        <span class="legend-item"><span class="legend-dot map-shop"></span> Boutique</span>
+        <span class="legend-item"><span class="legend-dot map-floor"></span> Couloir</span>
+      </div>
+    </div>
+  </div>
+
   <div class="commands-bar">
 
     <!-- Directions desktop (texte) -->
@@ -226,6 +244,7 @@
       <button class="cmd-btn" onclick="rest()">💤<span class="btn-label"> Repos</span></button>
       <button class="cmd-btn" onclick="saveGame()">💾<span class="btn-label"> Sauver</span></button>
       <button class="cmd-btn" onclick="loadGame()">📂<span class="btn-label"> Charger</span></button>
+      <button class="cmd-btn mobile-map-btn" onclick="toggleMobileMap()" title="Carte">🗺️</button>
       <button class="cmd-btn" id="btn-interact" onclick="interact()" style="display:none">🚪</button>
     </div>
 
