@@ -518,7 +518,7 @@ function updateBattleCharIndicator() {
   const el   = document.getElementById('battle-char-indicator');
   if (el) {
     el.style.display = partySize === 1 ? 'none' : '';
-    el.textContent   = `${char.icon}  Tour de ${char.name}`;
+    el.innerHTML     = `<img src="${char.imgSrc || ''}" alt="${char.name}" style="width:20px;height:20px;object-fit:contain;vertical-align:middle;border-radius:2px"> Tour de ${char.name}`;
   }
   // Surligner uniquement les personnages actifs du groupe
   party.forEach((c, i) => {

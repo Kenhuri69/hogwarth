@@ -72,7 +72,7 @@ let seenMonsters = new Set();
 
 // ── Membres du groupe ────────────────────────────────────────
 let player = {
-  name: "Harry Potter", icon: "🧙", class: "Élève de Gryffondor",
+  name: "Harry Potter", icon: "🧙", imgSrc: "img/harry.png", class: "Élève de Gryffondor",
   level: 1, xp: 0, xpNext: 50,
   hp: 35, hpMax: 35, sp: 22, spMax: 22,
   str: 9, int: 11, agi: 12, end: 10, lck: 15, mag: 10,
@@ -87,7 +87,7 @@ let player = {
 };
 
 let player2 = {
-  name: "Hermione Granger", icon: "🧙‍♀️", class: "Élève de Gryffondor",
+  name: "Hermione Granger", icon: "🧙‍♀️", imgSrc: "img/hermione.png", class: "Élève de Gryffondor",
   level: 1, xp: 0, xpNext: 50,
   hp: 28, hpMax: 28, sp: 35, spMax: 35,
   str: 6, int: 17, agi: 10, end: 7, lck: 12, mag: 16,

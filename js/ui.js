@@ -111,7 +111,7 @@ function openCharacter(charIdx = 0) {
   detail.innerHTML = `
     <div style="display:flex;gap:6px;margin-bottom:12px">${tabs}</div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <div style="font-size:42px">${c.icon}</div>
+      <img src="${c.imgSrc || ''}" alt="${c.name}" style="width:80px;height:80px;object-fit:contain;border-radius:6px">
       <div>
         <div style="font-family:'Cinzel',serif;font-size:15px;color:var(--gold-light)">${c.name}</div>
         <div style="font-size:12px;color:#8a7050">${c.class} — Niveau ${c.level}</div>

@@ -76,12 +76,15 @@
     <!-- Boutons Solo / Duo -->
     <div class="select-options">
       <button class="select-btn" onclick="startGameWithDifficulty(1)">
-        <span class="select-icon">🧙</span>
+        <img src="img/harry.png" alt="Harry" style="width:64px;height:64px;object-fit:contain">
         <span class="select-label">Solo</span>
         <span class="select-desc">Harry Potter seul<br>Ennemis : 1 à 2</span>
       </button>
       <button class="select-btn" onclick="startGameWithDifficulty(2)">
-        <span class="select-icon">🧙🧙‍♀️</span>
+        <span style="display:flex;gap:4px;justify-content:center">
+          <img src="img/harry.png"    alt="Harry"    style="width:48px;height:48px;object-fit:contain">
+          <img src="img/hermione.png" alt="Hermione" style="width:48px;height:48px;object-fit:contain">
+        </span>
         <span class="select-label">Duo</span>
         <span class="select-desc">Harry + Hermione<br>Ennemis : 1 à 3</span>
       </button>
@@ -103,7 +106,7 @@
     <!-- Harry -->
     <div class="party-card" id="char-card-0">
       <div class="party-card-header">
-        <span class="party-portrait">🧙</span>
+        <img class="party-portrait-img" src="img/harry.png" alt="Harry">
         <div>
           <div class="char-name" id="char-name-0">Harry Potter</div>
           <div class="char-class" id="char-class-0">Auror · Niv.1</div>
@@ -122,7 +125,7 @@
     <!-- Hermione -->
     <div class="party-card" id="char-card-1">
       <div class="party-card-header">
-        <span class="party-portrait">🧙‍♀️</span>
+        <img class="party-portrait-img" src="img/hermione.png" alt="Hermione">
         <div>
           <div class="char-name" id="char-name-1">Hermione Granger</div>
           <div class="char-class" id="char-class-1">Mage · Niv.1</div>

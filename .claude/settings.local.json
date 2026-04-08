@@ -4,7 +4,20 @@
       "Bash(git -C \"C:/Personal/dev/hog\" remote -v)",
       "Bash(git -C \"C:/Personal/dev/hog\" branch -a)",
       "WebFetch(domain:game-icons.net)",
-      "Bash(grep -c \"^\\\\s\\\\+[a-z].*: \\\\`\" \"C:\\\\Personal\\\\dev\\\\hog\\\\js\\\\icons.js\")"
+      "Bash(grep -c \"^\\\\s\\\\+[a-z].*: \\\\`\" \"C:\\\\Personal\\\\dev\\\\hog\\\\js\\\\icons.js\")",
+      "Bash(python3 -c \"from PIL import Image; img=Image.open\\(''/c/Personal/dev/hog/img/harry.png''\\); print\\(''Harry:'', img.size, img.mode\\); img2=Image.open\\(''/c/Personal/dev/hog/img/hermione.png''\\); print\\(''Hermione:'', img2.size, img2.mode\\)\")",
+      "Bash(magick identify:*)",
+      "Bash(convert --version)",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const buf=fs.readFileSync\\(''/c/Personal/dev/hog/img/harry.png''\\); console.log\\(''Harry bytes:'', buf.length\\);\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const b=fs.readFileSync\\(''/c/Personal/dev/hog/img/harry.png''\\); const view=new DataView\\(b.buffer\\); const w=view.getUint32\\(16\\); const h=view.getUint32\\(20\\); console.log\\(''Harry: ''+w+''x''+h+'' — ''+b.length+'' bytes''\\); const b2=fs.readFileSync\\(''/c/Personal/dev/hog/img/hermione.png''\\); const v2=new DataView\\(b2.buffer\\); console.log\\(''Hermione: ''+v2.getUint32\\(16\\)+''x''+v2.getUint32\\(20\\)+'' — ''+b2.length+'' bytes''\\);\")",
+      "Bash(cmd /c \"where magick 2>nul && echo magick_found || where ffmpeg 2>nul && echo ffmpeg_found || where python 2>nul && echo python_found || where node 2>nul && echo node_found || echo nothing_found\")",
+      "Bash(cmd /c \"magick --version\")",
+      "Bash(cmd /c \"python --version\")",
+      "Bash(cmd /c \"node --version\")",
+      "Bash(cmd /c \"ffmpeg -version\")",
+      "Bash(cmd /c \"powershell -Command \"\"Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(''C:\\\\Personal\\\\dev\\\\hog\\\\img\\\\harry.png''\\); Write-Host \\(''Harry: '' + $img.Width + ''x'' + $img.Height\\); $img.Dispose\\(\\); $img2 = [System.Drawing.Image]::FromFile\\(''C:\\\\Personal\\\\dev\\\\hog\\\\img\\\\hermione.png''\\); Write-Host \\(''Hermione: '' + $img2.Width + ''x'' + $img2.Height\\); $img2.Dispose\\(\\);\"\"\")",
+      "Bash(powershell -NoProfile -Command \"Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(''C:\\\\Personal\\\\dev\\\\hog\\\\img\\\\harry.png''\\); Write-Host \\(''Harry: '' + $img.Width + ''x'' + $img.Height\\); $img.Dispose\\(\\); $img2 = [System.Drawing.Image]::FromFile\\(''C:\\\\Personal\\\\dev\\\\hog\\\\img\\\\hermione.png''\\); Write-Host \\(''Hermione: '' + $img2.Width + ''x'' + $img2.Height\\); $img2.Dispose\\(\\)\")",
+      "Bash(powershell -NoProfile:*)"
     ]
   }
 }
