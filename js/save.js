@@ -14,7 +14,8 @@ function saveGame() {
     audioMuted:   AudioSystem.isMuted,
     voiceEnabled: AudioSystem.voiceEnabled,
     activeQuests,
-    difficulty
+    difficulty,
+    chosenHouse, housePoints, houseTier
   };
   localStorage.setItem('hogwarts_rpg_save', JSON.stringify(gameState));
   addMsg("Partie sauvegardée !", "good");
@@ -61,6 +62,9 @@ function loadGame() {
 
   if (gs.activeQuests) activeQuests = gs.activeQuests;
   if (gs.difficulty && DIFFICULTY_SETTINGS[gs.difficulty]) difficulty = gs.difficulty;
+  if (gs.chosenHouse && HOUSE_BONUSES[gs.chosenHouse]) chosenHouse = gs.chosenHouse;
+  if (gs.housePoints !== undefined) housePoints = gs.housePoints;
+  if (gs.houseTier   !== undefined) houseTier   = gs.houseTier;
 
   // Recalculer les stats effectives (base + équipement chargé)
   recalculateStats();

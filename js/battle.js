@@ -35,6 +35,7 @@ function startBattle(baseEnemyData) {
   setBattleLog(`${size > 1 ? size + ' ennemis surgissent' : enemyGroup[0].desc} !`);
   addMsg(`⚔️ ${size} ennemi${size > 1 ? 's' : ''} !`, 'bad');
   addLog(`⚔️ Combat (${size} ennemi${size > 1 ? 's' : ''})`);
+  AudioSystem.startCombatMusic();
 }
 
 function rollGroupSize() {
@@ -323,6 +324,8 @@ function endBattle(won) {
   document.getElementById('target-selection').style.display  = 'none';
   inBattle = false;
 
+  AudioSystem.stopCombatMusic();
+
   if (won) {
     enemyMap[playerY][playerX] = null;
     const diff     = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
@@ -354,6 +357,14 @@ function endBattle(won) {
 
     const xpEarned   = Math.floor(totalXp   * diff.xpMultiplier);
     const goldEarned = Math.floor(totalGold * diff.goldMultiplier);
+
+    // Points de Maison selon la difficulté
+    if (chosenHouse) {
+      const hpGain = { Facile: 8, Normal: 10, Difficile: 14, Expert: 18 }[difficulty] || 10;
+      housePoints += hpGain;
+      if (window.checkHouseLevelUp) window.checkHouseLevelUp();
+    }
+
     AudioSystem.playVictory();
     setNarrative(`Victoire ! +${xpEarned} XP, +${goldEarned} Gallions.`);
     addMsg(`+${xpEarned} XP`, 'good');

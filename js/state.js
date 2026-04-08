@@ -58,6 +58,60 @@ const DIFFICULTY_SETTINGS = {
   }
 };
 
+// ============================================================
+// SYSTÈME DES MAISONS
+// ============================================================
+let chosenHouse = null;
+let housePoints = 0;
+let houseTier   = 0;  // 0 = aucun palier atteint, 1-4 = palier actuel
+
+const HOUSE_BONUSES = {
+  Gryffondor: {
+    color: '#740001', accent: '#D3A625', emoji: '🦁',
+    label: 'Gryffondor',
+    desc: 'Bravoure, courage et chevalerie.',
+    tiers: [
+      { threshold: 100,  label: 'Aspirant',  bonus: { _baseAtk: 1 },              msg: '🦁 Courage naissant ! +1 ATK' },
+      { threshold: 300,  label: 'Élève',     bonus: { _baseAtk: 1, _baseLck: 1 }, msg: '🦁 Bravoure éprouvée ! +1 ATK +1 LCK' },
+      { threshold: 600,  label: 'Vaillant',  bonus: { _baseAtk: 2 },              msg: '🦁 Digne de Gryffondor ! +2 ATK' },
+      { threshold: 1000, label: 'Champion',  bonus: { item: 'sword_gryff' },      msg: "🦁 L'Épée de Gryffondor vous est confiée !" },
+    ]
+  },
+  Serpentard: {
+    color: '#1A472A', accent: '#AAAAAA', emoji: '🐍',
+    label: 'Serpentard',
+    desc: 'Ambition, ruse et détermination.',
+    tiers: [
+      { threshold: 100,  label: 'Aspirant',  bonus: { _baseMag: 1 },              msg: "🐍 L'ambition vous galvanise ! +1 MAG" },
+      { threshold: 300,  label: 'Élève',     bonus: { _baseMag: 1, _baseLck: 1 }, msg: '🐍 Ruse affûtée ! +1 MAG +1 LCK' },
+      { threshold: 600,  label: 'Rusé',      bonus: { _baseMag: 2 },              msg: '🐍 Serpentard vous honore ! +2 MAG' },
+      { threshold: 1000, label: 'Champion',  bonus: { item: 'locket_slytherin' }, msg: '🐍 Le Médaillon de Serpentard vous appartient !' },
+    ]
+  },
+  Serdaigle: {
+    color: '#0E1A40', accent: '#946B2D', emoji: '🦅',
+    label: 'Serdaigle',
+    desc: 'Sagesse, intelligence et esprit vif.',
+    tiers: [
+      { threshold: 100,  label: 'Aspirant',  bonus: { _baseMag: 1 },              msg: "🦅 L'intellect s'éveille ! +1 MAG" },
+      { threshold: 300,  label: 'Élève',     bonus: { _baseMag: 1, _baseLck: 1 }, msg: '🦅 Esprit acéré ! +1 MAG +1 LCK' },
+      { threshold: 600,  label: 'Savant',    bonus: { _baseMag: 2 },              msg: '🦅 Digne de Serdaigle ! +2 MAG' },
+      { threshold: 1000, label: 'Champion',  bonus: { item: 'diademe_serdaigle' },msg: '🦅 Le Diadème de Serdaigle vous couronne !' },
+    ]
+  },
+  Poufsouffle: {
+    color: '#372E29', accent: '#F0C75E', emoji: '🦡',
+    label: 'Poufsouffle',
+    desc: 'Loyauté, patience et travail acharné.',
+    tiers: [
+      { threshold: 100,  label: 'Aspirant',  bonus: { _baseDef: 1 },              msg: '🦡 Résistance naturelle ! +1 DEF' },
+      { threshold: 300,  label: 'Élève',     bonus: { _baseDef: 1, _baseLck: 1 }, msg: '🦡 Loyauté récompensée ! +1 DEF +1 LCK' },
+      { threshold: 600,  label: 'Tenace',    bonus: { _baseDef: 2 },              msg: '🦡 Indomptable ! +2 DEF' },
+      { threshold: 1000, label: 'Champion',  bonus: { item: 'coupe_poufsouffle' },msg: '🦡 La Coupe de Poufsouffle brille pour vous !' },
+    ]
+  },
+};
+
 // ── État du combat ───────────────────────────────────────────
 let inBattle        = false;
 let enemyGroup      = [];   // tableau de {…enemyData, currentHp, disarmed}

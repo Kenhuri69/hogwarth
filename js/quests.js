@@ -170,6 +170,12 @@ function completeQuest(index) {
     addMsg(`✨ Nouveau sort débloqué : ${q.reward.spell} !`, 'magic');
   }
 
+  // Points de Maison pour quête accomplie
+  if (chosenHouse) {
+    housePoints += 30;
+    if (window.checkHouseLevelUp) window.checkHouseLevelUp();
+  }
+
   AudioSystem.playLevelUp();
   addMsg(`✅ Quête terminée : « ${q.title} » !`, 'good');
   addLog(`📜 Quête accomplie : ${q.title}`);

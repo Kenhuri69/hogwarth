@@ -93,6 +93,7 @@ function goDeeper() {
   drawDungeon();
   updateCompass();
   addMsg(`Niveau ${currentFloor} atteint !`, 'good');
+  AudioSystem.playAmbientMusic(currentFloor);
 }
 
 function goUp() {
@@ -103,6 +104,7 @@ function goUp() {
   renderMinimap();
   drawDungeon();
   updateCompass();
+  AudioSystem.playAmbientMusic(currentFloor);
 }
 
 function openChest() {

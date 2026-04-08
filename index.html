@@ -54,6 +54,123 @@
   </div>
 </div>
 
+<!-- Écran de choix de la Maison -->
+<div id="house-select-screen" style="display:none;position:fixed;inset:0;background:rgba(5,3,1,.97);
+     z-index:200;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+  <div style="font-family:'Cinzel',serif;font-size:22px;color:var(--gold);margin-bottom:6px;letter-spacing:3px">
+    LE CHOIXPEAU MAGIQUE
+  </div>
+  <div style="font-family:'Crimson Text',serif;font-size:14px;color:#8a7050;margin-bottom:28px;text-align:center;max-width:400px">
+    Quelle Maison vous correspond le mieux ? Votre choix débloquera des bonus uniques en accumulant des points de Maison.
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:540px">
+
+    <!-- Gryffondor -->
+    <button class="house-btn" onclick="chooseHouse('Gryffondor')" style="--hc:#740001;--ha:#D3A625">
+      <svg id="gryffondor-logo" width="90" height="105" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 20 L60 5 L110 20 L105 120 L60 135 L15 120 Z" fill="#740001" stroke="#ffd700" stroke-width="8"/>
+        <!-- Corps du lion -->
+        <ellipse cx="60" cy="65" rx="22" ry="16" fill="#f4c430"/>
+        <!-- Tête -->
+        <circle cx="60" cy="47" r="13" fill="#f4c430"/>
+        <!-- Crinière -->
+        <circle cx="60" cy="47" r="17" fill="none" stroke="#c8860a" stroke-width="6" stroke-dasharray="4 3"/>
+        <!-- Yeux -->
+        <circle cx="54" cy="45" r="2.5" fill="#2a1a08"/>
+        <circle cx="66" cy="45" r="2.5" fill="#2a1a08"/>
+        <!-- Nez -->
+        <path d="M58 51 L62 51 L60 53 Z" fill="#c8860a"/>
+        <!-- Queue -->
+        <path d="M82 72 Q95 60 90 78 Q98 68 94 82" fill="none" stroke="#f4c430" stroke-width="4" stroke-linecap="round"/>
+        <!-- Pattes -->
+        <path d="M44 78 L40 90 M52 80 L50 92 M68 80 L70 92 M76 78 L80 90" stroke="#f4c430" stroke-width="4" stroke-linecap="round"/>
+        <text x="60" y="118" font-family="Cinzel,serif" font-size="10" fill="#ffd700" text-anchor="middle" font-weight="700" letter-spacing="1">GRYFFONDOR</text>
+      </svg>
+      <div class="house-btn-desc">Bravoure · Courage<br><span style="color:#D3A625;font-size:10px">+ATK par palier</span></div>
+    </button>
+
+    <!-- Serpentard -->
+    <button class="house-btn" onclick="chooseHouse('Serpentard')" style="--hc:#1A472A;--ha:#AAAAAA">
+      <svg id="serpentard-logo" width="90" height="105" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 20 L60 5 L110 20 L105 120 L60 135 L15 120 Z" fill="#1a472a" stroke="#c0c0c0" stroke-width="8"/>
+        <!-- Corps du serpent en S -->
+        <path d="M60 30 Q80 38 75 52 Q70 66 50 68 Q30 70 28 84 Q26 96 44 100"
+              fill="none" stroke="#c0c0c0" stroke-width="10" stroke-linecap="round"/>
+        <!-- Écailles (lignes transversales) -->
+        <path d="M60 30 Q80 38 75 52 Q70 66 50 68 Q30 70 28 84 Q26 96 44 100"
+              fill="none" stroke="#1a472a" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 8"/>
+        <!-- Tête du serpent -->
+        <ellipse cx="61" cy="27" rx="9" ry="6" fill="#c0c0c0"/>
+        <!-- Yeux -->
+        <ellipse cx="58" cy="25" rx="2" ry="2.5" fill="#ff3300"/>
+        <ellipse cx="65" cy="25" rx="2" ry="2.5" fill="#ff3300"/>
+        <!-- Langue -->
+        <path d="M60 31 L58 36 M60 31 L62 36" stroke="#ff3300" stroke-width="1.5" stroke-linecap="round"/>
+        <text x="60" y="118" font-family="Cinzel,serif" font-size="9" fill="#c0c0c0" text-anchor="middle" font-weight="700" letter-spacing="1">SERPENTARD</text>
+      </svg>
+      <div class="house-btn-desc">Ambition · Ruse<br><span style="color:#AAAAAA;font-size:10px">+MAG par palier</span></div>
+    </button>
+
+    <!-- Serdaigle -->
+    <button class="house-btn" onclick="chooseHouse('Serdaigle')" style="--hc:#0E1A40;--ha:#946B2D">
+      <svg id="serdaigle-logo" width="90" height="105" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 20 L60 5 L110 20 L105 120 L60 135 L15 120 Z" fill="#0e1a40" stroke="#c9a84c" stroke-width="8"/>
+        <!-- Corps de l'aigle -->
+        <ellipse cx="60" cy="72" rx="14" ry="18" fill="#c9a84c"/>
+        <!-- Tête -->
+        <circle cx="60" cy="48" r="11" fill="#c9a84c"/>
+        <!-- Bec -->
+        <path d="M67 50 L76 54 L67 57 Z" fill="#e8c060"/>
+        <!-- Œil -->
+        <circle cx="57" cy="46" r="3" fill="#0e1a40"/>
+        <circle cx="57" cy="46" r="1.5" fill="#ffffff"/>
+        <!-- Aile gauche -->
+        <path d="M46 65 Q20 50 18 70 Q24 80 46 78" fill="#b08830"/>
+        <!-- Aile droite -->
+        <path d="M74 65 Q100 50 102 70 Q96 80 74 78" fill="#b08830"/>
+        <!-- Plumes ailes -->
+        <path d="M46 65 Q30 55 22 62 M46 70 Q28 62 20 70 M46 75 Q26 70 18 70" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+        <path d="M74 65 Q90 55 98 62 M74 70 Q92 62 100 70 M74 75 Q94 70 102 70" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+        <!-- Queue -->
+        <path d="M53 90 L48 104 M60 92 L60 106 M67 90 L72 104" stroke="#c9a84c" stroke-width="3" stroke-linecap="round"/>
+        <text x="60" y="118" font-family="Cinzel,serif" font-size="10" fill="#c9a84c" text-anchor="middle" font-weight="700" letter-spacing="1">SERDAIGLE</text>
+      </svg>
+      <div class="house-btn-desc">Sagesse · Intelligence<br><span style="color:#946B2D;font-size:10px">+MAG par palier</span></div>
+    </button>
+
+    <!-- Poufsouffle -->
+    <button class="house-btn" onclick="chooseHouse('Poufsouffle')" style="--hc:#3a2a00;--ha:#F0C75E">
+      <svg id="poufsouffle-logo" width="90" height="105" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 20 L60 5 L110 20 L105 120 L60 135 L15 120 Z" fill="#2a1f00" stroke="#ecb939" stroke-width="8"/>
+        <!-- Corps du blaireau -->
+        <ellipse cx="60" cy="72" rx="24" ry="16" fill="#c8c8c8"/>
+        <!-- Tête -->
+        <ellipse cx="60" cy="48" rx="18" ry="14" fill="#c8c8c8"/>
+        <!-- Bande noire caractéristique -->
+        <rect x="42" y="38" width="36" height="10" rx="3" fill="#1a1a1a"/>
+        <!-- Rayures blanches (2 traits sur la bande) -->
+        <rect x="50" y="38" width="5" height="10" fill="#e8e8e8"/>
+        <rect x="65" y="38" width="5" height="10" fill="#e8e8e8"/>
+        <!-- Yeux -->
+        <circle cx="52" cy="52" r="3.5" fill="#1a1a1a"/>
+        <circle cx="68" cy="52" r="3.5" fill="#1a1a1a"/>
+        <circle cx="51" cy="51" r="1.5" fill="#ffffff"/>
+        <circle cx="67" cy="51" r="1.5" fill="#ffffff"/>
+        <!-- Nez -->
+        <ellipse cx="60" cy="57" rx="4" ry="3" fill="#2a1a1a"/>
+        <!-- Pattes -->
+        <path d="M40 82 L36 96 M50 86 L48 98 M70 86 L72 98 M80 82 L84 96" stroke="#888" stroke-width="4" stroke-linecap="round"/>
+        <!-- Queue touffue -->
+        <path d="M84 70 Q100 55 96 75 Q108 62 100 80" fill="none" stroke="#c8c8c8" stroke-width="7" stroke-linecap="round"/>
+        <text x="60" y="118" font-family="Cinzel,serif" font-size="8.5" fill="#ecb939" text-anchor="middle" font-weight="700" letter-spacing="0.5">POUFSOUFFLE</text>
+      </svg>
+      <div class="house-btn-desc">Loyauté · Travail<br><span style="color:#F0C75E;font-size:10px">+DEF par palier</span></div>
+    </button>
+
+  </div>
+</div>
+
 <!-- Écran de sélection du nombre de joueurs + difficulté -->
 <div id="player-select-screen">
   <div class="select-box">
@@ -146,6 +263,22 @@
       <div class="bar-label"><span>⭐ Expérience</span><span id="xp-text">0/50</span></div>
       <div class="bar-track"><div class="bar-fill xp-fill" id="xp-bar" style="width:0%"></div></div>
     </div>
+
+    <!-- Badge de Maison -->
+    <div id="house-badge" style="display:none;margin-top:4px;padding:6px 8px;
+         border:1px solid var(--gold-dark);border-radius:3px;background:#0a0705">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span id="house-badge-label" style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;color:var(--gold)"></span>
+        <span id="house-badge-tier"  style="font-size:9px;color:#8a7050"></span>
+      </div>
+      <div style="background:#1a0e05;border-radius:2px;height:4px;overflow:hidden">
+        <div id="house-badge-bar" style="height:100%;background:var(--gold-dark);transition:width .4s ease;width:0%"></div>
+      </div>
+      <div id="house-badge-pts" style="font-size:9px;color:#6a5030;margin-top:3px;text-align:right"></div>
+    </div>
+
+    <!-- Blason de la Maison (affiché après choix) -->
+    <div id="house-crest" style="display:none;text-align:center;margin:4px 0 2px"></div>
 
     <!-- Stats de Harry -->
     <div class="stats-grid">

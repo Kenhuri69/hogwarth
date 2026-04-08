@@ -29,12 +29,64 @@ function updateUI() {
   const card1 = document.getElementById('char-card-1');
   if (card1) card1.style.display = partySize === 1 ? 'none' : '';
 
+  // ── Badge de Maison ─────────────────────────────────────────
+  _updateHouseBadge();
+
   // ── Statut KO sur les cartes ─────────────────────────────────
   party.forEach((c, i) => {
     if (i >= partySize) return;
     const card = document.getElementById(`char-card-${i}`);
     if (card) card.classList.toggle('ko-char', c.hp <= 0);
   });
+}
+
+function _updateHouseBadge() {
+  const badge = document.getElementById('house-badge');
+  if (!badge) return;
+
+  // Blason dans le HUD
+  const crest = document.getElementById('house-crest');
+  if (crest) {
+    if (!chosenHouse) {
+      crest.style.display = 'none';
+    } else {
+      const svgEl = document.getElementById(chosenHouse.toLowerCase() + '-logo');
+      if (svgEl) {
+        crest.style.display = '';
+        // Cloner le SVG et le réduire pour le HUD (60×70)
+        const clone = svgEl.cloneNode(true);
+        clone.removeAttribute('id');
+        clone.setAttribute('width',  '60');
+        clone.setAttribute('height', '70');
+        crest.innerHTML = clone.outerHTML;
+      }
+    }
+  }
+
+  if (!chosenHouse) { badge.style.display = 'none'; return; }
+
+  badge.style.display = '';
+  const h     = HOUSE_BONUSES[chosenHouse];
+  const tiers = h.tiers;
+
+  // Trouver le seuil du prochain palier
+  const nextTier = tiers[houseTier];  // houseTier = nombre de paliers atteints (0-4)
+  const prevThreshold = houseTier > 0 ? tiers[houseTier - 1].threshold : 0;
+  const nextThreshold = nextTier ? nextTier.threshold : tiers[tiers.length - 1].threshold;
+
+  const pts    = housePoints;
+  const pct    = nextTier
+    ? Math.min(100, Math.round((pts - prevThreshold) / (nextThreshold - prevThreshold) * 100))
+    : 100;
+  const tierLabel = houseTier > 0 ? tiers[houseTier - 1].label : 'Recrue';
+
+  document.getElementById('house-badge-label').textContent = `${h.emoji} ${h.label}`;
+  document.getElementById('house-badge-tier').textContent  = tierLabel;
+  document.getElementById('house-badge-bar').style.width   = pct + '%';
+  document.getElementById('house-badge-bar').style.background = h.accent;
+  document.getElementById('house-badge-pts').textContent   = nextTier
+    ? `${pts} / ${nextThreshold} pts`
+    : `${pts} pts — Palier max !`;
 }
 
 function _updateCharBar(idx) {

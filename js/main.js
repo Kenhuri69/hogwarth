@@ -8,15 +8,65 @@ function showPlayerSelect() {
   document.getElementById('player-select-screen').style.display = 'flex';
 }
 
-// Appelé depuis les boutons de l'écran de sélection (lit la difficulté dans le select)
+// Stocke temporairement la taille du groupe pendant l'écran de choix de Maison
+let _pendingPartySize = 2;
+
+// Appelé depuis les boutons de l'écran de sélection (lit la difficulté, ouvre l'écran Maison)
 function startGameWithDifficulty(count = 2) {
-  difficulty = document.getElementById('difficulty-select')?.value || 'Normal';
-  startGame(count);
+  difficulty        = document.getElementById('difficulty-select')?.value || 'Normal';
+  _pendingPartySize = count;
+  document.getElementById('player-select-screen').style.display = 'none';
+  document.getElementById('house-select-screen').style.display  = 'flex';
+}
+
+// Appelé depuis les boutons de l'écran des Maisons
+function chooseHouse(house) {
+  chosenHouse = house;
+  housePoints = 0;
+  houseTier   = 0;
+  document.getElementById('house-select-screen').style.display = 'none';
+  startGame(_pendingPartySize);
+}
+
+// ── Vérifie si un nouveau palier de Maison est atteint ──────
+window.checkHouseLevelUp = function checkHouseLevelUp() {
+  if (!chosenHouse) return;
+  const bonuses = HOUSE_BONUSES[chosenHouse];
+  if (!bonuses) return;
+
+  bonuses.tiers.forEach((tier, i) => {
+    const tierNum = i + 1;
+    if (houseTier >= tierNum) return;            // déjà atteint
+    if (housePoints < tier.threshold) return;   // pas encore
+
+    houseTier = tierNum;
+    addMsg(tier.msg, 'magic');
+    AudioSystem.playLevelUp();
+
+    // Appliquer les bonus de stat
+    party.forEach(c => {
+      if (tier.bonus._baseAtk) c._baseAtk += tier.bonus._baseAtk;
+      if (tier.bonus._baseDef) c._baseDef += tier.bonus._baseDef;
+      if (tier.bonus._baseMag) c._baseMag += tier.bonus._baseMag;
+      if (tier.bonus._baseLck) c._baseLck += tier.bonus._baseLck;
+    });
+
+    // Donner l'objet légendaire (palier 4)
+    if (tier.bonus.item) {
+      const item = ITEMS.find(it => it.id === tier.bonus.item);
+      if (item && player.inventory.length < 16) {
+        player.inventory.push({ ...item });
+        addMsg(`🎁 ${item.icon} ${item.name} ajouté à l'inventaire !`, 'good');
+      }
+    }
+
+    recalculateStats();
+    updateUI();
+  });
 }
 
 function startGame(count = 2) {
   partySize = count;
-  document.getElementById('player-select-screen').style.display = 'none';
 
   // Appliquer les bonus/malus de départ selon la difficulté
   const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
@@ -52,7 +102,7 @@ function startGame(count = 2) {
 
   // Lancer la musique ambiante (le geste utilisateur vient du clic sur startGame)
   AudioSystem.init();
-  AudioSystem.playAmbientMusic();
+  AudioSystem.playAmbientMusic(1);
 
   // Boucle de rendu
   let frame = 0;
