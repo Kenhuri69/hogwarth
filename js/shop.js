@@ -2,13 +2,29 @@
 // BOUTIQUE
 // ============================================================
 
+// Catalogue progressif : chaque article débloque à un étage minimum
+const SHOP_CATALOG = [
+  { id: "potion_s",         minFloor: 1 },
+  { id: "mandragore",       minFloor: 1 },
+  { id: "wand1",            minFloor: 1 },
+  { id: "potion_m",         minFloor: 2 },
+  { id: "robe1",            minFloor: 2 },
+  { id: "livre_sortileges", minFloor: 2 },
+  { id: "felix",            minFloor: 3 },
+  { id: "amulette",         minFloor: 3 },
+  { id: "broom",            minFloor: 4 },
+  { id: "livre_soin",       minFloor: 4 },
+  { id: "wand2",            minFloor: 6 },
+];
+
 function openShop() {
   document.getElementById('shop-title').textContent='🏪 Madame Malkins des Cachots';
   document.getElementById('shop-gold').textContent=player.gold;
   const grid=document.getElementById('shop-grid');
   grid.innerHTML='';
-  for(const id of SHOP_ITEMS) {
-    const item=ITEMS.find(i=>i.id===id);
+  const available = SHOP_CATALOG.filter(e => e.minFloor <= currentFloor);
+  for(const entry of available) {
+    const item=ITEMS.find(i=>i.id===entry.id);
     if(!item) continue;
     const div=document.createElement('div');
     div.className='shop-item';
