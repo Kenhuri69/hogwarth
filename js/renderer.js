@@ -37,23 +37,60 @@ const CEIL_C  = ['#1e1810', '#161008', '#100c06', '#0a0804', '#060402'];
 const EDGE_A  = [0.92, 0.60, 0.32, 0.14, 0.06];
 
 // ─────────────────────────────────────────────────────────────
-// SÉLECTION DE TEXTURE SELON L'ÉTAGE
+// === TEXTURES INTEGRATION ===
+// Cache des patterns sol/plafond (créés une fois, réutilisés chaque frame)
 // ─────────────────────────────────────────────────────────────
 
-// Retourne le nom de la texture mur appropriée à l'étage courant.
-function getWallType() {
+const _TEX_PATTERNS = { floor: {}, ceiling: {} };
+let _patternsReady  = false;
+
+// Crée les CanvasPattern depuis les images déjà chargées (appelé une seule fois).
+function _ensurePatterns() {
+  if (_patternsReady || !window.texturesLoaded || !window.TEXTURES) return;
+  const T = window.TEXTURES;
+  for (const [name, img] of Object.entries(T.floor)) {
+    if (img && img.complete && img.naturalWidth > 0)
+      _TEX_PATTERNS.floor[name] = ctx.createPattern(img, 'repeat');
+  }
+  for (const [name, img] of Object.entries(T.ceiling)) {
+    if (img && img.complete && img.naturalWidth > 0)
+      _TEX_PATTERNS.ceiling[name] = ctx.createPattern(img, 'repeat');
+  }
+  _patternsReady = true;
+  console.log('[Renderer] Patterns prêts — sols:', Object.keys(_TEX_PATTERNS.floor),
+              'plafonds:', Object.keys(_TEX_PATTERNS.ceiling));
+}
+
+// Retourne le nom de la texture mur selon l'étage (et optionnellement la profondeur).
+function getWallTextureType(x, y, depth) {
   if (typeof currentFloor === 'undefined') return 'stone1';
   if (currentFloor <= 2) return 'stone1';
   if (currentFloor <= 4) return 'stone2';
   if (currentFloor <= 6) return 'wood';
+  if (currentFloor <= 8) return 'tapestry';
   return 'stone2';
 }
 
-// Retourne l'objet Image chargé, ou null si indisponible.
-function _getWallTex() {
+// Retourne l'Image mur chargée, ou null si indisponible.
+function _getWallTex(depth) {
   if (!window.TEXTURES) return null;
-  const t = window.TEXTURES.walls[getWallType()];
+  const type = getWallTextureType(playerX, playerY, depth || 0);
+  const t    = window.TEXTURES.walls[type];
   return (t && t.complete && t.naturalWidth > 0) ? t : null;
+}
+
+// Retourne le pattern de sol selon l'étage (stone ou carpet).
+function _getFloorPattern() {
+  if (!_patternsReady) return null;
+  const name = (typeof currentFloor !== 'undefined' && currentFloor >= 3) ? 'carpet' : 'stone';
+  return _TEX_PATTERNS.floor[name] || null;
+}
+
+// Retourne le pattern de plafond selon l'étage (beams ou stone).
+function _getCeilPattern() {
+  if (!_patternsReady) return null;
+  const name = (typeof currentFloor !== 'undefined' && currentFloor <= 4) ? 'beams' : 'stone';
+  return _TEX_PATTERNS.ceiling[name] || null;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -88,6 +125,9 @@ function hasWall(dx, dy, dist) {
 // DESSIN DU COULOIR EN PERSPECTIVE
 // ─────────────────────────────────────────────────────────────
 function drawCorridor(cx, cy, scale, W, H) {
+  // === TEXTURES INTEGRATION === Créer les patterns dès que les images sont prêtes
+  _ensurePatterns();
+
   // 1. Fond uni noir
   ctx.fillStyle = '#060402';
   ctx.fillRect(0, 0, W, H);
@@ -130,7 +170,7 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
 
       // Texture pixel art sur le mur frontal
-      const _ftex = _getWallTex();
+      const _ftex = _getWallTex(d);
       if (_ftex) {
         ctx.save();
         ctx.beginPath();
@@ -170,14 +210,20 @@ function drawCorridor(cx, cy, scale, W, H) {
     }
 
     // ── Sol (trapèze) ─────────────────────────────────────────
-    ctx.fillStyle = FLOOR_C[di];
     ctx.beginPath();
     ctx.moveTo(near.x0, near.y1);
     ctx.lineTo(near.x1, near.y1);
     ctx.lineTo(far.x1,  far.y1);
     ctx.lineTo(far.x0,  far.y1);
     ctx.closePath();
+    const floorPat = _getFloorPattern();
+    ctx.fillStyle  = floorPat || FLOOR_C[di];
     ctx.fill();
+    // Assombrissement progressif avec la profondeur (si texture)
+    if (floorPat) {
+      ctx.fillStyle = `rgba(0,0,0,${0.05 + di * 0.18})`;
+      ctx.fill();
+    }
 
     // Arête basse (ligne de profondeur)
     ctx.strokeStyle = `rgba(201,168,76,${edgeA * 0.35})`;
@@ -187,14 +233,20 @@ function drawCorridor(cx, cy, scale, W, H) {
     ctx.stroke();
 
     // ── Plafond (trapèze) ─────────────────────────────────────
-    ctx.fillStyle = CEIL_C[di];
     ctx.beginPath();
     ctx.moveTo(near.x0, near.y0);
     ctx.lineTo(near.x1, near.y0);
     ctx.lineTo(far.x1,  far.y0);
     ctx.lineTo(far.x0,  far.y0);
     ctx.closePath();
+    const ceilPat = _getCeilPattern();
+    ctx.fillStyle = ceilPat || CEIL_C[di];
     ctx.fill();
+    // Assombrissement progressif avec la profondeur (si texture)
+    if (ceilPat) {
+      ctx.fillStyle = `rgba(0,0,0,${0.08 + di * 0.14})`;
+      ctx.fill();
+    }
 
     ctx.strokeStyle = `rgba(201,168,76,${edgeA * 0.2})`;
     ctx.lineWidth = 0.4;
@@ -214,7 +266,7 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.fill();
 
       // Texture sur le mur gauche (trapèze)
-      const _ltex = _getWallTex();
+      const _ltex = _getWallTex(d);
       if (_ltex) {
         ctx.save();
         ctx.beginPath();
@@ -264,7 +316,7 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.fill();
 
       // Texture sur le mur droit (trapèze)
-      const _rtex = _getWallTex();
+      const _rtex = _getWallTex(d);
       if (_rtex) {
         ctx.save();
         ctx.beginPath();
