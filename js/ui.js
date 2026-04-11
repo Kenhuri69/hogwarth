@@ -18,7 +18,10 @@ function updateUI() {
   document.getElementById('s-str').textContent = player.str;
   document.getElementById('s-int').textContent = player.int;
   document.getElementById('s-agi').textContent = player.agi;
+  document.getElementById('s-lck').textContent = player.lck;
   document.getElementById('s-mag').textContent = player.mag;
+  const sEnd = document.getElementById('s-end');
+  if (sEnd) sEnd.textContent = player.end;
 
   // ── Équipement ───────────────────────────────────────────────
   document.getElementById('eq-wand').textContent  = player.wand  || '—';
