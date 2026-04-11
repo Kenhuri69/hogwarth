@@ -37,6 +37,26 @@ const CEIL_C  = ['#1e1810', '#161008', '#100c06', '#0a0804', '#060402'];
 const EDGE_A  = [0.92, 0.60, 0.32, 0.14, 0.06];
 
 // ─────────────────────────────────────────────────────────────
+// SÉLECTION DE TEXTURE SELON L'ÉTAGE
+// ─────────────────────────────────────────────────────────────
+
+// Retourne le nom de la texture mur appropriée à l'étage courant.
+function getWallType() {
+  if (typeof currentFloor === 'undefined') return 'stone1';
+  if (currentFloor <= 2) return 'stone1';
+  if (currentFloor <= 4) return 'stone2';
+  if (currentFloor <= 6) return 'wood';
+  return 'stone2';
+}
+
+// Retourne l'objet Image chargé, ou null si indisponible.
+function _getWallTex() {
+  if (!window.TEXTURES) return null;
+  const t = window.TEXTURES.walls[getWallType()];
+  return (t && t.complete && t.naturalWidth > 0) ? t : null;
+}
+
+// ─────────────────────────────────────────────────────────────
 
 function drawDungeon() {
   if (!dungeon) return;
@@ -105,12 +125,23 @@ function drawCorridor(cx, cy, scale, W, H) {
 
     // ── Mur du fond ───────────────────────────────────────────
     if (isWall || d === DEPTH) {
-      // Face du mur
+      // Face du mur : fond de couleur (fallback)
       ctx.fillStyle = WALL_C[di];
       ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
 
-      // Texture de pierres (si assez grand)
-      if (far.x1 - far.x0 > 20) {
+      // Texture pixel art sur le mur frontal
+      const _ftex = _getWallTex();
+      if (_ftex) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
+        ctx.clip();
+        ctx.drawImage(_ftex, far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
+        // Assombrissement progressif avec la profondeur
+        ctx.fillStyle = `rgba(0,0,0,${0.08 + di * 0.16})`;
+        ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
+        ctx.restore();
+      } else if (far.x1 - far.x0 > 20) {
         drawStoneBlocks(far.x0, far.y0, far.x1, far.y1, edgeA);
       }
 
@@ -182,6 +213,22 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.closePath();
       ctx.fill();
 
+      // Texture sur le mur gauche (trapèze)
+      const _ltex = _getWallTex();
+      if (_ltex) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(near.x0, near.y0);
+        ctx.lineTo(far.x0,  far.y0);
+        ctx.lineTo(far.x0,  far.y1);
+        ctx.lineTo(near.x0, near.y1);
+        ctx.clip();
+        ctx.drawImage(_ltex, near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
+        ctx.fillStyle = `rgba(0,0,0,${0.28 + di * 0.12})`;
+        ctx.fillRect(near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
+        ctx.restore();
+      }
+
       drawSideLines(near.x0, near.y0, near.y1, far.x0, far.y0, far.y1, edgeA);
 
       ctx.strokeStyle = `rgba(201,168,76,${edgeA * 0.75})`;
@@ -215,6 +262,22 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.lineTo(near.x1, near.y1);
       ctx.closePath();
       ctx.fill();
+
+      // Texture sur le mur droit (trapèze)
+      const _rtex = _getWallTex();
+      if (_rtex) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(near.x1, near.y0);
+        ctx.lineTo(far.x1,  far.y0);
+        ctx.lineTo(far.x1,  far.y1);
+        ctx.lineTo(near.x1, near.y1);
+        ctx.clip();
+        ctx.drawImage(_rtex, far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
+        ctx.fillStyle = `rgba(0,0,0,${0.28 + di * 0.12})`;
+        ctx.fillRect(far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
+        ctx.restore();
+      }
 
       drawSideLines(near.x1, near.y0, near.y1, far.x1, far.y0, far.y1, edgeA);
 
