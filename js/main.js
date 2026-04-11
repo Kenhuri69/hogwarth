@@ -65,10 +65,11 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
   });
 }
 
-function startGame(count = 2) {
-  // Lancer le chargement des textures en arrière-plan (non bloquant).
-  // Le renderer affiche les couleurs de secours tant que les images ne sont pas prêtes.
-  if (window.loadTextures) loadTextures();
+async function startGame(count = 2) {
+  // === TEXTURES INTEGRATION ===
+  // Attendre le chargement complet des textures avant de générer le donjon.
+  // Les appels suivants sont quasi-instantanés grâce au cache _loadingPromise.
+  if (window.loadTextures) await loadTextures();
 
   partySize = count;
 
