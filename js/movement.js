@@ -193,9 +193,12 @@ function rest() {
   if (inBattle) return;
   if (Math.random() < 0.3) {
     addMsg("Une rencontre vous interrompt !", 'bad');
-    // Ennemis de repos : niveau 1-2 uniquement (créatures faibles)
-  const restPool = MONSTERS.filter(m => m.minFloor <= 2);
-  const enemy = scaleMonster(restPool[Math.floor(Math.random() * restPool.length)], currentFloor);
+    // Ennemis de repos : créatures de l'étage précédent (moins dangereuses),
+    // pondérées par weight et mises à l'échelle de l'étage courant - 1
+    const restFloor = Math.max(1, currentFloor - 1);
+    const restPool  = MONSTERS.filter(m => m.minFloor <= restFloor);
+    const pool      = restPool.length ? restPool : MONSTERS;
+    const enemy     = scaleMonster(weightedPick(pool), restFloor);
     startBattle(enemy);
     return;
   }

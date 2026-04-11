@@ -110,13 +110,13 @@ function equipItem(inventoryIdx, charIdx) {
 
   // Déséquiper l'ancien objet → retour en inventaire si place dispo
   const old = c.equipped && c.equipped[slot];
+  if (old && player.inventory.length >= 16) {
+    addMsg(`Inventaire plein — libérez une place avant d'équiper ${item.name}.`, 'bad');
+    return;
+  }
   if (old) {
-    if (player.inventory.length < 16) {
-      player.inventory.push({ ...old });
-      addMsg(`${c.name} déséquipe : ${old.name}`, '');
-    } else {
-      addMsg(`Inventaire plein — ${old.name} est perdu.`, 'bad');
-    }
+    player.inventory.push({ ...old });
+    addMsg(`${c.name} déséquipe : ${old.name}`, '');
   }
 
   // Équiper le nouvel objet
@@ -149,6 +149,9 @@ function equipItem(inventoryIdx, charIdx) {
 
 // ── Apprendre un sort depuis un livre ou un équipement ───────
 function _teachSpellToParty(spellName) {
+  const spellDef = SPELLS.find(s => s.name === spellName);
+  // Ne pas enseigner un sort encore verrouillé (ex : Avada... avant niv. 9)
+  if (!spellDef || spellDef.locked) return false;
   let learned = false;
   party.slice(0, partySize).forEach(c => {
     if (!c.spells.includes(spellName)) {

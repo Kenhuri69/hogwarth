@@ -306,7 +306,8 @@ function doFlee() {
   const char      = getActiveChar();
   const firstEnemy = livingEnemies()[0];
   const chance    = char.agi > (firstEnemy?.atk || 5) ? 0.7 : 0.4;
-  const hasBroom  = player.inventory.some(i => i.id === 'broom');
+  const hasBroom  = player.inventory.some(i => i.id === 'broom')
+                 || party.some(c => c.equipped && c.equipped.acc && c.equipped.acc.id === 'broom');
 
   if (hasBroom || Math.random() < chance) {
     endBattle(false);
@@ -323,6 +324,9 @@ function endBattle(won) {
   document.getElementById('encounter-overlay').style.display = 'none';
   document.getElementById('target-selection').style.display  = 'none';
   inBattle = false;
+
+  // Restaurer les stats (annule les debuffs temporaires comme weaken)
+  recalculateStats();
 
   AudioSystem.stopCombatMusic();
 

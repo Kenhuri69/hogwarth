@@ -10,6 +10,7 @@ function updateUI() {
   _updateCharBar(1);
 
   // ── XP et or partagés ───────────────────────────────────────
+  document.getElementById('xp-label').textContent = `⭐ Niv.${player.level} — XP`;
   document.getElementById('xp-text').textContent  = `${player.xp}/${player.xpNext}`;
   document.getElementById('xp-bar').style.width   = (player.xp / player.xpNext * 100) + '%';
   document.getElementById('gold-display').textContent = `🪙 ${player.gold} Gallions`;
@@ -18,7 +19,10 @@ function updateUI() {
   document.getElementById('s-str').textContent = player.str;
   document.getElementById('s-int').textContent = player.int;
   document.getElementById('s-agi').textContent = player.agi;
+  document.getElementById('s-lck').textContent = player.lck;
   document.getElementById('s-mag').textContent = player.mag;
+  const sEnd = document.getElementById('s-end');
+  if (sEnd) sEnd.textContent = player.end;
 
   // ── Équipement ───────────────────────────────────────────────
   document.getElementById('eq-wand').textContent  = player.wand  || '—';
@@ -148,8 +152,6 @@ function addLog(text) {
 // ============================================================
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-function interact() {}
 
 // Fiche de personnage (avec onglets Harry / Hermione)
 function openCharacter(charIdx = 0) {
