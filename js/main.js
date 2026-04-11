@@ -66,6 +66,10 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
 }
 
 function startGame(count = 2) {
+  // Lancer le chargement des textures en arrière-plan (non bloquant).
+  // Le renderer affiche les couleurs de secours tant que les images ne sont pas prêtes.
+  if (window.loadTextures) loadTextures();
+
   partySize = count;
 
   // Appliquer les bonus/malus de départ selon la difficulté
