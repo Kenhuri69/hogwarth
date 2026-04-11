@@ -11,30 +11,37 @@ Vanilla JS / HTML5 Canvas, zéro dépendance, zéro build step.
 index.html               Point d'entrée unique
 css/style.css            Toute la mise en page (thème parchemin/or + responsive mobile)
 js/
-  audio.js       →  Système audio complet (Web Audio API + SpeechSynthesis) — AudioSystem{}
-  icons.js       →  SVG inline pour chaque monstre majeur — getMonsterIconHtml()
-  monsters.js    →  ⭐ FICHIER ENRICHISSABLE : registre complet des créatures (MONSTERS[])
-  data.js        →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
-                    ENEMIES = MONSTERS (alias de compatibilité)
-  state.js       →  Variables globales mutables (player, player2, party, partySize,
-                    dungeon, combat, seenMonsters, activeQuests…)
-  ui.js          →  updateUI(), openCharacter(), addMsg(), openBestiary(), showMonsterDetail()
-  dungeon.js     →  generateDungeon(), weightedPick(), scaleMonster()
-  renderer.js    →  drawScene() — rendu 3D canvas raycasting-like
-  movement.js    →  move(), handleCellEntry(), searchRoom(), rest(), interact()
-  battle.js      →  startBattle(), battleAction(), enemyTurn(), endBattle(), checkLevelUp()
-  inventory.js   →  openInventory(), useItem(), showEquipMenu(), equipItem(),
-                    recalculateStats(), openSpells(), openBattleSpells(), openBattleItems()
-  quests.js      →  openQuestLog(), renderQuestList(), checkQuestCompletion(),
-                    completeQuest(), checkKillQuests()
-  shop.js        →  openShop(), buyItem()
-  save.js        →  saveGame(), loadGame()  — LocalStorage clé : hogwarts_rpg_save
-  main.js        →  showPlayerSelect(), startGame(count), keyboard listeners
+  audio.js         →  AudioSystem{} — core : init, state, toggleMute, toggleVoice, stopMusic
+  audio-music.js   →  AudioSystem — musique ambiante et combat (playAmbientMusic, startCombatMusic…)
+  audio-sfx.js     →  AudioSystem — effets sonores et voix (playHit, playSpellCast, speakSpell…)
+  icons.js         →  SVG inline pour chaque monstre majeur — getMonsterIconHtml()
+  monsters.js      →  ⭐ FICHIER ENRICHISSABLE : registre complet des créatures (MONSTERS[])
+  data.js          →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
+                      ENEMIES = MONSTERS (alias de compatibilité)
+  state.js         →  Variables globales mutables (player, player2, party, partySize,
+                      dungeon, combat, seenMonsters, activeQuests…)
+  ui.js            →  updateUI(), openCharacter(), addMsg(), closeModal(), changeDifficulty()
+  ui-bestiary.js   →  openBestiary(), filterBestiary(), showMonsterDetail(), showBestiaryList()
+  dungeon.js       →  generateDungeon(), weightedPick(), scaleMonster()
+  renderer.js      →  drawDungeon(), drawCorridor() — rendu 3D canvas + constantes/textures
+  renderer-effects.js → drawTorch(), drawStoneBlocks(), drawFloorLines(), drawCellMarker()…
+  renderer-minimap.js → renderMinimap(), _buildMinimapCells()
+  movement.js      →  move(), handleCellEntry(), searchRoom(), rest(), interact()
+  battle.js        →  startBattle(), battleAction(), enemyTurn(), endBattle(), checkLevelUp()
+  battle-spells.js →  castSpellInBattle(), tryEnemyAbility()
+  battle-ui.js     →  renderEnemyGroup(), showTargetSelection(), updateBattleCharIndicator()
+  inventory.js     →  openInventory(), useItem(), showEquipMenu(), equipItem(),
+                      recalculateStats(), openSpells(), openBattleSpells(), openBattleItems()
+  quests.js        →  openQuestLog(), renderQuestList(), checkQuestCompletion(),
+                      completeQuest(), checkKillQuests()
+  shop.js          →  openShop(), buyItem()
+  save.js          →  saveGame(), loadGame()  — LocalStorage clé : hogwarts_rpg_save
+  main.js          →  showPlayerSelect(), startGame(count), keyboard listeners
 .github/workflows/deploy.yml   →  CI GitHub Pages (push master → déploiement automatique)
 ```
 
 Ordre de chargement des scripts dans `index.html` :
-`audio → icons → monsters → data → state → ui → dungeon → renderer → movement → battle → inventory → quests → shop → save → main`
+`audio → audio-music → audio-sfx → icons → monsters → data → state → ui → ui-bestiary → dungeon → textures → renderer → renderer-effects → renderer-minimap → movement → battle → battle-spells → battle-ui → inventory → quests → shop → save → main`
 
 ---
 
