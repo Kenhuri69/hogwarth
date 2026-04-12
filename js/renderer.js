@@ -61,14 +61,28 @@ function _ensurePatterns() {
               'plafonds:', Object.keys(_TEX_PATTERNS.ceiling));
 }
 
-// Retourne le nom de la texture mur selon l'étage (et optionnellement la profondeur).
+// === FIX TEXTURE MISSING === Retourne toujours une clé texture existante.
+// Signature compatible : (x, y, depth) OU (d, side) — tous les paramètres sont optionnels.
 function getWallTextureType(x, y, depth) {
-  if (typeof currentFloor === 'undefined') return 'stone1';
-  if (currentFloor <= 2) return 'stone1';
-  if (currentFloor <= 4) return 'stone2';
-  if (currentFloor <= 6) return 'wood';
-  if (currentFloor <= 8) return 'tapestry';
-  return 'stone2';
+  const VALID = ['stone1', 'stone2', 'wood', 'tapestry'];
+  const f = (typeof currentFloor === 'number' && currentFloor > 0) ? currentFloor : 1;
+  let key;
+  if      (f <= 2) key = 'stone1';
+  else if (f <= 4) key = 'stone2';
+  else if (f <= 6) key = 'wood';
+  else if (f <= 8) key = 'tapestry';
+  else             key = 'stone2';
+  // Garantie finale : si la texture n'est pas chargée, on retombe sur une clé chargée
+  if (window.TEXTURES && window.TEXTURES.walls) {
+    const img = window.TEXTURES.walls[key];
+    if (!img || !img.complete || !img.naturalWidth) {
+      key = VALID.find(k => {
+        const i = window.TEXTURES.walls[k];
+        return i && i.complete && i.naturalWidth > 0;
+      }) || key;
+    }
+  }
+  return key;
 }
 
 // Retourne l'Image mur chargée, ou null si indisponible.
@@ -275,17 +289,20 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.closePath();
       ctx.fill();
 
-      // Texture sur le mur gauche (trapèze)
+      // === FIX TEXTURE MISSING === pattern tuilé clippé sur le trapèze gauche
       const _ltex = _getWallTex(d);
       if (_ltex) {
+        if (!_ltex._pattern) _ltex._pattern = ctx.createPattern(_ltex, 'repeat');
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(near.x0, near.y0);
         ctx.lineTo(far.x0,  far.y0);
         ctx.lineTo(far.x0,  far.y1);
         ctx.lineTo(near.x0, near.y1);
+        ctx.closePath();
         ctx.clip();
-        ctx.drawImage(_ltex, near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
+        ctx.fillStyle = _ltex._pattern;
+        ctx.fillRect(near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
         ctx.fillStyle = `rgba(0,0,0,${0.28 + di * 0.12})`;
         ctx.fillRect(near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
         ctx.restore();
@@ -325,17 +342,20 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.closePath();
       ctx.fill();
 
-      // Texture sur le mur droit (trapèze)
+      // === FIX TEXTURE MISSING === pattern tuilé clippé sur le trapèze droit
       const _rtex = _getWallTex(d);
       if (_rtex) {
+        if (!_rtex._pattern) _rtex._pattern = ctx.createPattern(_rtex, 'repeat');
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(near.x1, near.y0);
         ctx.lineTo(far.x1,  far.y0);
         ctx.lineTo(far.x1,  far.y1);
         ctx.lineTo(near.x1, near.y1);
+        ctx.closePath();
         ctx.clip();
-        ctx.drawImage(_rtex, far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
+        ctx.fillStyle = _rtex._pattern;
+        ctx.fillRect(far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
         ctx.fillStyle = `rgba(0,0,0,${0.28 + di * 0.12})`;
         ctx.fillRect(far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
         ctx.restore();
