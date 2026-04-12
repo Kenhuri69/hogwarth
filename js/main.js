@@ -109,11 +109,22 @@ async function startGame(count = 2) {
   AudioSystem.init();
   AudioSystem.playAmbientMusic(1);
 
-  // Boucle de rendu
+  // === FIX TEXTURE MISSING === re-render appuyés jusqu'à ce que tous les patterns soient prêts
+  // Puis cadence normale (~500 ms) une fois l'état stable
   let frame = 0;
+  let warmupTicks = 0;
   function render() {
     frame++;
-    if (frame % 30 === 0 && !inBattle) drawDungeon();
+    if (!inBattle) {
+      // Phase warm-up : redessiner souvent les ~2 premières secondes pour capter
+      // les textures qui finissent de charger ou des resize tardifs.
+      if (warmupTicks < 120) {
+        warmupTicks++;
+        if (frame % 4 === 0) drawDungeon();
+      } else if (frame % 30 === 0) {
+        drawDungeon();
+      }
+    }
     requestAnimationFrame(render);
   }
   render();
