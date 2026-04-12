@@ -14,6 +14,8 @@ function resizeCanvas() {
   const viewport = canvas.parentElement;
   canvas.width  = viewport.clientWidth;
   canvas.height = viewport.clientHeight;
+  // === FIX TEXTURE MISSING === un resize réinitialise le contexte — reconstruire les patterns
+  _invalidatePatternCache();
 }
 
 // Calcule le rectangle de vue à une profondeur donnée
@@ -41,25 +43,48 @@ const EDGE_A  = [0.92, 0.60, 0.32, 0.14, 0.06];
 // Cache des patterns sol/plafond (créés une fois, réutilisés chaque frame)
 // ─────────────────────────────────────────────────────────────
 
-const _TEX_PATTERNS = { floor: {}, ceiling: {} };
-let _patternsReady  = false;
+// === FIX TEXTURE MISSING === Cache central walls/floor/ceiling + construction résiliente
+const _TEX_PATTERNS = { walls: {}, floor: {}, ceiling: {} };
+let _patternsLogged = false;
 
-// Crée les CanvasPattern depuis les images déjà chargées (appelé une seule fois).
+// Tente de créer les patterns manquants à chaque frame (no-op si déjà créés).
+// Résout les cas de race : image pas encore `complete` au premier appel, nouveau
+// contexte canvas après resize, textures chargées tardivement, etc.
 function _ensurePatterns() {
-  if (_patternsReady || !window.texturesLoaded || !window.TEXTURES) return;
+  if (!window.TEXTURES) return;
   const T = window.TEXTURES;
-  for (const [name, img] of Object.entries(T.floor)) {
-    if (img && img.complete && img.naturalWidth > 0)
-      _TEX_PATTERNS.floor[name] = ctx.createPattern(img, 'repeat');
+  const tryBuild = (bucket, dict) => {
+    for (const [name, img] of Object.entries(dict || {})) {
+      if (_TEX_PATTERNS[bucket][name]) continue;           // déjà prêt
+      if (img && img.complete && img.naturalWidth > 0) {
+        try { _TEX_PATTERNS[bucket][name] = ctx.createPattern(img, 'repeat'); }
+        catch (e) { /* ignore, retry next frame */ }
+      }
+    }
+  };
+  tryBuild('walls',   T.walls);
+  tryBuild('floor',   T.floor);
+  tryBuild('ceiling', T.ceiling);
+
+  if (!_patternsLogged
+      && Object.keys(_TEX_PATTERNS.walls).length
+      && Object.keys(_TEX_PATTERNS.floor).length
+      && Object.keys(_TEX_PATTERNS.ceiling).length) {
+    _patternsLogged = true;
+    console.log('[Renderer] Patterns prêts — murs:', Object.keys(_TEX_PATTERNS.walls),
+                '| sols:', Object.keys(_TEX_PATTERNS.floor),
+                '| plafonds:', Object.keys(_TEX_PATTERNS.ceiling));
   }
-  for (const [name, img] of Object.entries(T.ceiling)) {
-    if (img && img.complete && img.naturalWidth > 0)
-      _TEX_PATTERNS.ceiling[name] = ctx.createPattern(img, 'repeat');
-  }
-  _patternsReady = true;
-  console.log('[Renderer] Patterns prêts — sols:', Object.keys(_TEX_PATTERNS.floor),
-              'plafonds:', Object.keys(_TEX_PATTERNS.ceiling));
 }
+
+// === FIX TEXTURE MISSING === Invalide le cache (appelé après resize canvas)
+function _invalidatePatternCache() {
+  _TEX_PATTERNS.walls   = {};
+  _TEX_PATTERNS.floor   = {};
+  _TEX_PATTERNS.ceiling = {};
+  _patternsLogged = false;
+}
+window._invalidatePatternCache = _invalidatePatternCache;
 
 // === FIX TEXTURE MISSING === Retourne toujours une clé texture existante.
 // Signature compatible : (x, y, depth) OU (d, side) — tous les paramètres sont optionnels.
@@ -85,7 +110,14 @@ function getWallTextureType(x, y, depth) {
   return key;
 }
 
-// Retourne l'Image mur chargée, ou null si indisponible.
+// === FIX TEXTURE MISSING === Retourne le pattern mur via le cache central
+function _getWallPattern(depth) {
+  if (!window.TEXTURES) return null;
+  const type = getWallTextureType(playerX, playerY, depth || 0);
+  return _TEX_PATTERNS.walls[type] || null;
+}
+
+// Legacy : retourne l'Image (utilisé comme fallback si pas de pattern).
 function _getWallTex(depth) {
   if (!window.TEXTURES) return null;
   const type = getWallTextureType(playerX, playerY, depth || 0);
@@ -93,18 +125,15 @@ function _getWallTex(depth) {
   return (t && t.complete && t.naturalWidth > 0) ? t : null;
 }
 
-// Retourne le pattern de sol selon l'étage (stone ou carpet).
+// === FIX TEXTURE MISSING === Patterns sol/plafond via cache central (plus de gate _patternsReady)
 function _getFloorPattern() {
-  if (!_patternsReady) return null;
-  const name = (typeof currentFloor !== 'undefined' && currentFloor >= 3) ? 'carpet' : 'stone';
-  return _TEX_PATTERNS.floor[name] || null;
+  const name = (typeof currentFloor === 'number' && currentFloor >= 3) ? 'carpet' : 'stone';
+  return _TEX_PATTERNS.floor[name] || _TEX_PATTERNS.floor['stone'] || _TEX_PATTERNS.floor['carpet'] || null;
 }
 
-// Retourne le pattern de plafond selon l'étage (beams ou stone).
 function _getCeilPattern() {
-  if (!_patternsReady) return null;
-  const name = (typeof currentFloor !== 'undefined' && currentFloor <= 4) ? 'beams' : 'stone';
-  return _TEX_PATTERNS.ceiling[name] || null;
+  const name = (typeof currentFloor === 'number' && currentFloor <= 4) ? 'beams' : 'stone';
+  return _TEX_PATTERNS.ceiling[name] || _TEX_PATTERNS.ceiling['stone'] || _TEX_PATTERNS.ceiling['beams'] || null;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -183,22 +212,23 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.fillStyle = WALL_C[di];
       ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
 
-      // === TEXTURE FIX === Tuilage correct via createPattern('repeat') + clip
-      const _ftex = _getWallTex(d);
-      if (_ftex) {
-        if (!_ftex._pattern) _ftex._pattern = ctx.createPattern(_ftex, 'repeat');
+      // === FIX TEXTURE MISSING === drawStoneBlocks systématique comme baseline visible
+      if (far.x1 - far.x0 > 4) {
+        drawStoneBlocks(far.x0, far.y0, far.x1, far.y1, edgeA);
+      }
+
+      // === FIX TEXTURE MISSING === Texture via cache central (sans écraser la baseline si absente)
+      const _fpat = _getWallPattern(d);
+      if (_fpat) {
         ctx.save();
         ctx.beginPath();
         ctx.rect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
         ctx.clip();
-        ctx.fillStyle = _ftex._pattern;
+        ctx.fillStyle = _fpat;
         ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
-        // Assombrissement progressif avec la profondeur
         ctx.fillStyle = `rgba(0,0,0,${0.08 + di * 0.16})`;
         ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
         ctx.restore();
-      } else if (far.x1 - far.x0 > 20) {
-        drawStoneBlocks(far.x0, far.y0, far.x1, far.y1, edgeA);
       }
 
       // Arête dorée
@@ -226,7 +256,7 @@ function drawCorridor(cx, cy, scale, W, H) {
     }
 
     // ── Sol (trapèze) ─────────────────────────────────────────
-    // === TEXTURE FIX === clip du trapèze puis remplissage par pattern tuilé
+    // === FIX TEXTURE MISSING === pattern via cache central, fallback couleur garanti
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(near.x0, near.y1);
@@ -236,13 +266,8 @@ function drawCorridor(cx, cy, scale, W, H) {
     ctx.closePath();
     ctx.clip();
 
-    const _floorImg = window.TEXTURES && window.TEXTURES.floor && window.TEXTURES.floor['stone'];
-    if (_floorImg && _floorImg.complete && _floorImg.naturalWidth > 0) {
-      if (!_floorImg._pattern) _floorImg._pattern = ctx.createPattern(_floorImg, 'repeat');
-      ctx.fillStyle = _floorImg._pattern;
-    } else {
-      ctx.fillStyle = FLOOR_C[di];
-    }
+    const floorPat = _getFloorPattern();
+    ctx.fillStyle  = floorPat || FLOOR_C[di];
     ctx.fillRect(near.x0, far.y1, near.x1 - near.x0, near.y1 - far.y1);
     // Fog de profondeur
     ctx.fillStyle = `rgba(0,0,0,${0.05 + di * 0.18})`;
@@ -289,10 +314,10 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.closePath();
       ctx.fill();
 
-      // === FIX TEXTURE MISSING === pattern tuilé clippé sur le trapèze gauche
-      const _ltex = _getWallTex(d);
-      if (_ltex) {
-        if (!_ltex._pattern) _ltex._pattern = ctx.createPattern(_ltex, 'repeat');
+      // === FIX TEXTURE MISSING === baseline stone-blocks + pattern si prêt
+      drawStoneBlocks(near.x0, near.y0, far.x0, far.y1, edgeA * 0.8);
+      const _lpat = _getWallPattern(d);
+      if (_lpat) {
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(near.x0, near.y0);
@@ -301,7 +326,7 @@ function drawCorridor(cx, cy, scale, W, H) {
         ctx.lineTo(near.x0, near.y1);
         ctx.closePath();
         ctx.clip();
-        ctx.fillStyle = _ltex._pattern;
+        ctx.fillStyle = _lpat;
         ctx.fillRect(near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
         ctx.fillStyle = `rgba(0,0,0,${0.28 + di * 0.12})`;
         ctx.fillRect(near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
@@ -342,10 +367,10 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.closePath();
       ctx.fill();
 
-      // === FIX TEXTURE MISSING === pattern tuilé clippé sur le trapèze droit
-      const _rtex = _getWallTex(d);
-      if (_rtex) {
-        if (!_rtex._pattern) _rtex._pattern = ctx.createPattern(_rtex, 'repeat');
+      // === FIX TEXTURE MISSING === baseline stone-blocks + pattern si prêt
+      drawStoneBlocks(far.x1, near.y0, near.x1, near.y1, edgeA * 0.8);
+      const _rpat = _getWallPattern(d);
+      if (_rpat) {
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(near.x1, near.y0);
@@ -354,7 +379,7 @@ function drawCorridor(cx, cy, scale, W, H) {
         ctx.lineTo(near.x1, near.y1);
         ctx.closePath();
         ctx.clip();
-        ctx.fillStyle = _rtex._pattern;
+        ctx.fillStyle = _rpat;
         ctx.fillRect(far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
         ctx.fillStyle = `rgba(0,0,0,${0.28 + di * 0.12})`;
         ctx.fillRect(far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);

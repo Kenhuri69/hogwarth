@@ -54,6 +54,11 @@ async function loadTextures() {
     Object.keys(TEXTURES.walls).length,   'murs,',
     Object.keys(TEXTURES.floor).length,   'sols,',
     Object.keys(TEXTURES.ceiling).length, 'plafonds');
+
+  // === FIX TEXTURE MISSING === force un re-render immédiat si le jeu est déjà démarré
+  if (typeof window.drawDungeon === 'function') {
+    try { window.drawDungeon(); } catch (e) { /* dungeon pas encore généré, ignore */ }
+  }
 }
 
 window.TEXTURES       = TEXTURES;
