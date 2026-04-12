@@ -70,6 +70,7 @@ async function startGame(count = 2) {
   // Attendre le chargement complet des textures avant de générer le donjon.
   // Les appels suivants sont quasi-instantanés grâce au cache _loadingPromise.
   if (window.loadTextures) await loadTextures();
+  console.log("✅ Textures chargées - redraw forcé");
 
   partySize = count;
 
