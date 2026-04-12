@@ -165,18 +165,20 @@ function drawCorridor(cx, cy, scale, W, H) {
 
     // ── Mur du fond ───────────────────────────────────────────
     if (isWall || d === DEPTH) {
-      // Face du mur : fond de couleur (fallback)
+      // Fallback couleur (toujours sous la texture)
       ctx.fillStyle = WALL_C[di];
       ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
 
-      // Texture pixel art sur le mur frontal
+      // === TEXTURE FIX === Tuilage correct via createPattern('repeat') + clip
       const _ftex = _getWallTex(d);
       if (_ftex) {
+        if (!_ftex._pattern) _ftex._pattern = ctx.createPattern(_ftex, 'repeat');
         ctx.save();
         ctx.beginPath();
         ctx.rect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
         ctx.clip();
-        ctx.drawImage(_ftex, far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
+        ctx.fillStyle = _ftex._pattern;
+        ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
         // Assombrissement progressif avec la profondeur
         ctx.fillStyle = `rgba(0,0,0,${0.08 + di * 0.16})`;
         ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
@@ -210,20 +212,28 @@ function drawCorridor(cx, cy, scale, W, H) {
     }
 
     // ── Sol (trapèze) ─────────────────────────────────────────
+    // === TEXTURE FIX === clip du trapèze puis remplissage par pattern tuilé
+    ctx.save();
     ctx.beginPath();
     ctx.moveTo(near.x0, near.y1);
     ctx.lineTo(near.x1, near.y1);
     ctx.lineTo(far.x1,  far.y1);
     ctx.lineTo(far.x0,  far.y1);
     ctx.closePath();
-    const floorPat = _getFloorPattern();
-    ctx.fillStyle  = floorPat || FLOOR_C[di];
-    ctx.fill();
-    // Assombrissement progressif avec la profondeur (si texture)
-    if (floorPat) {
-      ctx.fillStyle = `rgba(0,0,0,${0.05 + di * 0.18})`;
-      ctx.fill();
+    ctx.clip();
+
+    const _floorImg = window.TEXTURES && window.TEXTURES.floor && window.TEXTURES.floor['stone'];
+    if (_floorImg && _floorImg.complete && _floorImg.naturalWidth > 0) {
+      if (!_floorImg._pattern) _floorImg._pattern = ctx.createPattern(_floorImg, 'repeat');
+      ctx.fillStyle = _floorImg._pattern;
+    } else {
+      ctx.fillStyle = FLOOR_C[di];
     }
+    ctx.fillRect(near.x0, far.y1, near.x1 - near.x0, near.y1 - far.y1);
+    // Fog de profondeur
+    ctx.fillStyle = `rgba(0,0,0,${0.05 + di * 0.18})`;
+    ctx.fillRect(near.x0, far.y1, near.x1 - near.x0, near.y1 - far.y1);
+    ctx.restore();
 
     // Arête basse (ligne de profondeur)
     ctx.strokeStyle = `rgba(201,168,76,${edgeA * 0.35})`;
