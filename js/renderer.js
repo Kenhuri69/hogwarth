@@ -214,8 +214,18 @@ function drawCorridor(cx, cy, scale, W, H) {
   // 3. Lignes de perspective sur le sol (fuite vers le centre)
   drawFloorLines(cx, cy, scale, W, H);
 
+  // === FIX DEPTH LOOP === Trouver la distance du premier mur devant le joueur.
+  // Tout ce qui est au-delà (d > wallDist) est hors de vue ; on ne dessine QUE
+  // les depths <= wallDist. Le mur du fond est peint à d === wallDist, les
+  // sols/plafonds/murs latéraux sont peints pour chaque depth <= wallDist en
+  // ordre far → near (painter's algorithm).
+  let wallDist = DEPTH;
+  for (let d = 1; d <= DEPTH; d++) {
+    if (getCellAhead(0, 0, d) === CELL.WALL) { wallDist = d; break; }
+  }
+
   // 4. Couches de profondeur du plus loin au plus proche
-  for (let d = DEPTH; d >= 1; d--) {
+  for (let d = wallDist; d >= 1; d--) {
     const di   = Math.min(d - 1, WALL_C.length - 1);
     const near = getRect(cx, cy, scale, d - 1);
     const far  = getRect(cx, cy, scale, d);
@@ -225,7 +235,8 @@ function drawCorridor(cx, cy, scale, W, H) {
     const isWall  = fwdCell === CELL.WALL;
 
     // === FIX TEXTURES FINALES === mur du fond : baseline + pattern alpha=1 + fog
-    if (isWall || d === DEPTH) {
+    // Dessiné UNIQUEMENT à la distance du premier mur (ou au far clipping si aucun).
+    if (d === wallDist) {
       // 1) Baseline couleur + stone-blocks (toujours visible)
       ctx.fillStyle = WALL_C[di];
       ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
@@ -267,8 +278,6 @@ function drawCorridor(cx, cy, scale, W, H) {
           (far.y0 + far.y1) / 2,
           far.hw * 0.45, fwdCell);
       }
-
-      if (isWall) break;
     }
 
     // ── Sol (trapèze) ─────────────────────────────────────────
