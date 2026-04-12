@@ -38,6 +38,24 @@ const CEIL_C  = ['#1e1810', '#161008', '#100c06', '#0a0804', '#060402'];
 // Opacité des arêtes dorées par profondeur
 const EDGE_A  = [0.92, 0.60, 0.32, 0.14, 0.06];
 
+// === TEXTURE FIX - FONCTION QUI MARCHE SUR TOUT ===
+function drawTexturedRect(x, y, w, h, textureKey, alpha = 1) {
+  const tex = (TEXTURES.walls && TEXTURES.walls[textureKey])
+           || (TEXTURES.floor && TEXTURES.floor[textureKey])
+           || (TEXTURES.ceiling && TEXTURES.ceiling[textureKey]);
+  if (!tex || !tex.complete || !tex.naturalWidth) {
+    console.warn(`Texture manquante: ${textureKey}`);
+    return false;
+  }
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const pattern = ctx.createPattern(tex, 'repeat');
+  ctx.fillStyle = pattern;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+  return true;
+}
+
 // ─────────────────────────────────────────────────────────────
 // === TEXTURES INTEGRATION ===
 // Cache des patterns sol/plafond (créés une fois, réutilisés chaque frame)
@@ -206,34 +224,21 @@ function drawCorridor(cx, cy, scale, W, H) {
     const fwdCell = getCellAhead(0, 0, d);
     const isWall  = fwdCell === CELL.WALL;
 
-    // ── Mur du fond ───────────────────────────────────────────
+    // === MUR DU FOND - TEXTURE FORCÉE ===
     if (isWall || d === DEPTH) {
-      // Fallback couleur (toujours sous la texture)
-      ctx.fillStyle = WALL_C[di];
-      ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
+      const wallKey = (d > 3) ? 'stone2' : 'stone1';   // varie un peu selon profondeur
 
-      // === FIX TEXTURE MISSING === drawStoneBlocks systématique comme baseline visible
-      if (far.x1 - far.x0 > 4) {
-        drawStoneBlocks(far.x0, far.y0, far.x1, far.y1, edgeA);
+      const textured = drawTexturedRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0, wallKey, edgeA);
+
+      if (!textured) {
+        ctx.fillStyle = WALL_C[di];
+        ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
+        drawStoneBlocks(far.x0, far.y0, far.x1, far.y1, edgeA); // fallback
       }
 
-      // === FIX TEXTURE MISSING === Texture via cache central (sans écraser la baseline si absente)
-      const _fpat = _getWallPattern(d);
-      if (_fpat) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
-        ctx.clip();
-        ctx.fillStyle = _fpat;
-        ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
-        ctx.fillStyle = `rgba(0,0,0,${0.08 + di * 0.16})`;
-        ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
-        ctx.restore();
-      }
-
-      // Arête dorée
+      // bordure dorée
       ctx.strokeStyle = `rgba(201,168,76,${edgeA})`;
-      ctx.lineWidth   = 1.5;
+      ctx.lineWidth   = 3;
       ctx.strokeRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
 
       // Torches sur le mur du fond
@@ -303,8 +308,12 @@ function drawCorridor(cx, cy, scale, W, H) {
     ctx.moveTo(far.x0, far.y0); ctx.lineTo(far.x1, far.y0);
     ctx.stroke();
 
-    // ── Mur gauche ────────────────────────────────────────────
+    // === MURS LATÉRAUX - TEXTURE AJOUTÉE ===
+    const sideAlpha = edgeA * 0.85;
+
+    // Mur gauche
     if (hasWall(-1, 0, d)) {
+      // Fallback couleur + stone-blocks baseline
       ctx.fillStyle = SIDE_C[di];
       ctx.beginPath();
       ctx.moveTo(near.x0, near.y0);
@@ -313,25 +322,30 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.lineTo(near.x0, near.y1);
       ctx.closePath();
       ctx.fill();
-
-      // === FIX TEXTURE MISSING === baseline stone-blocks + pattern si prêt
       drawStoneBlocks(near.x0, near.y0, far.x0, far.y1, edgeA * 0.8);
-      const _lpat = _getWallPattern(d);
-      if (_lpat) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(near.x0, near.y0);
-        ctx.lineTo(far.x0,  far.y0);
-        ctx.lineTo(far.x0,  far.y1);
-        ctx.lineTo(near.x0, near.y1);
-        ctx.closePath();
-        ctx.clip();
-        ctx.fillStyle = _lpat;
-        ctx.fillRect(near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
-        ctx.fillStyle = `rgba(0,0,0,${0.28 + di * 0.12})`;
-        ctx.fillRect(near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
-        ctx.restore();
+
+      // Trapèze gauche : bounding box + clip pour contenir la texture
+      const leftNear = {
+        x0: near.x0,
+        y0: near.y0,
+        w:  far.x0 - near.x0,
+        h:  near.y1 - near.y0
+      };
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(near.x0, near.y0);
+      ctx.lineTo(far.x0,  far.y0);
+      ctx.lineTo(far.x0,  far.y1);
+      ctx.lineTo(near.x0, near.y1);
+      ctx.closePath();
+      ctx.clip();
+      const sideKeyL = (d > 3) ? 'stone2' : 'wood';
+      const texturedLeft = drawTexturedRect(leftNear.x0, leftNear.y0, leftNear.w, leftNear.h, sideKeyL, sideAlpha);
+      if (!texturedLeft) {
+        ctx.fillStyle = SIDE_C[di];
+        ctx.fillRect(leftNear.x0, leftNear.y0, leftNear.w, leftNear.h);
       }
+      ctx.restore();
 
       drawSideLines(near.x0, near.y0, near.y1, far.x0, far.y0, far.y1, edgeA);
 
@@ -356,7 +370,7 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.fill();
     }
 
-    // ── Mur droit ─────────────────────────────────────────────
+    // Mur droit (même logique)
     if (hasWall(1, 0, d)) {
       ctx.fillStyle = SIDE_C[di];
       ctx.beginPath();
@@ -366,25 +380,29 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.lineTo(near.x1, near.y1);
       ctx.closePath();
       ctx.fill();
-
-      // === FIX TEXTURE MISSING === baseline stone-blocks + pattern si prêt
       drawStoneBlocks(far.x1, near.y0, near.x1, near.y1, edgeA * 0.8);
-      const _rpat = _getWallPattern(d);
-      if (_rpat) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(near.x1, near.y0);
-        ctx.lineTo(far.x1,  far.y0);
-        ctx.lineTo(far.x1,  far.y1);
-        ctx.lineTo(near.x1, near.y1);
-        ctx.closePath();
-        ctx.clip();
-        ctx.fillStyle = _rpat;
-        ctx.fillRect(far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
-        ctx.fillStyle = `rgba(0,0,0,${0.28 + di * 0.12})`;
-        ctx.fillRect(far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
-        ctx.restore();
+
+      const rightNear = {
+        x0: far.x1,
+        y0: near.y0,
+        w:  near.x1 - far.x1,
+        h:  near.y1 - near.y0
+      };
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(near.x1, near.y0);
+      ctx.lineTo(far.x1,  far.y0);
+      ctx.lineTo(far.x1,  far.y1);
+      ctx.lineTo(near.x1, near.y1);
+      ctx.closePath();
+      ctx.clip();
+      const sideKeyR = (d > 3) ? 'stone2' : 'wood';
+      const texturedRight = drawTexturedRect(rightNear.x0, rightNear.y0, rightNear.w, rightNear.h, sideKeyR, sideAlpha);
+      if (!texturedRight) {
+        ctx.fillStyle = SIDE_C[di];
+        ctx.fillRect(rightNear.x0, rightNear.y0, rightNear.w, rightNear.h);
       }
+      ctx.restore();
 
       drawSideLines(near.x1, near.y0, near.y1, far.x1, far.y0, far.y1, edgeA);
 
