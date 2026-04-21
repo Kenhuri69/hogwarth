@@ -44,6 +44,14 @@ function handleCellEntry(cell) {
   const btn = document.getElementById('btn-interact');
   btn.style.display = 'none';
 
+  // Vérifier s'il y a un objet 3D sur la case actuelle
+  const obj = objectMap[playerY] && objectMap[playerY][playerX];
+  if (obj && !obj.opened) {
+    // Afficher l'overlay d'interaction après un court délai
+    setTimeout(() => showObjectInteraction(obj), 200);
+    return;
+  }
+
   if (cell === CELL.STAIRS_D) {
     setNarrative(NARRATIVES.stairs_down);
     btn.style.display = 'inline-block';
@@ -108,8 +116,21 @@ function goUp() {
 }
 
 function openChest() {
+  // Marquer le coffre comme ouvert
+  const obj = objectMap[playerY] && objectMap[playerY][playerX];
+  if (obj && obj.id === 'chest') {
+    if (obj.opened) {
+      setNarrative("Ce coffre a déjà été ouvert.");
+      addMsg("Ce coffre est vide.", 'bad');
+      document.getElementById('object-interaction-overlay').style.display = 'none';
+      return;
+    }
+    obj.opened = true;
+  }
+
   dungeon[playerY][playerX] = CELL.FLOOR;
   document.getElementById('btn-interact').style.display = 'none';
+  document.getElementById('object-interaction-overlay').style.display = 'none';
   AudioSystem.playChestOpen();
 
   // Livres de sorts disponibles selon l'étage courant
@@ -212,4 +233,67 @@ function rest() {
   setNarrative("Le groupe se repose quelques instants. Les forces se restaurent partiellement.");
   addMsg(`Repos : HP et PM restaurés`, 'good');
   updateUI();
+}
+
+// ============================================================
+// INTERACTION AVEC LES OBJETS 3D
+// ============================================================
+
+// Affiche l'overlay d'interaction avec un objet
+function showObjectInteraction(obj) {
+  const overlay = document.getElementById('object-interaction-overlay');
+  const iconEl  = document.getElementById('object-interaction-icon');
+  const nameEl  = document.getElementById('object-interaction-name');
+  const btnEl   = document.getElementById('object-interaction-btn');
+  const closeEl = document.getElementById('object-interaction-close');
+
+  iconEl.textContent = obj.icon;
+  nameEl.textContent = obj.name;
+  btnEl.textContent = getInteractionText(obj.interact);
+  btnEl.onclick = () => {
+    overlay.style.display = 'none';
+    executeObjectInteraction(obj);
+  };
+  closeEl.onclick = () => overlay.style.display = 'none';
+
+  overlay.style.display = 'flex';
+}
+
+function getInteractionText(action) {
+  switch(action) {
+    case 'openChest': return '📦 Ouvrir le coffre';
+    case 'openShop': return '🏪 Entrer dans la boutique';
+    case 'goDeeper': return '⬇ Descendre';
+    case 'goUp': return '⬆ Remonter';
+    default: return 'Interagir';
+  }
+}
+
+function executeObjectInteraction(obj) {
+  if (obj.interact === "openChest") openChest();
+  if (obj.interact === "openShop") openShop();
+  if (obj.interact === "goDeeper") goDeeper();
+  if (obj.interact === "goUp") goUp();
+}
+
+function checkObjectInFront() {
+  if (inBattle) return;
+
+  const dirs = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
+  const [dx, dy] = dirs[playerDir];
+
+  // Vérifier uniquement la case directement devant (dist=1)
+  const frontX = playerX + dx;
+  const frontY = playerY + dy;
+
+  if (frontX >= 0 && frontY >= 0 && frontX < MAP_W && frontY < MAP_H) {
+    const obj = objectMap[frontY] && objectMap[frontY][frontX];
+    if (obj && !obj.opened) {
+      showObjectInteraction(obj);
+      return true;
+    }
+  }
+
+  setNarrative("Rien d'interactable devant vous.");
+  return false;
 }

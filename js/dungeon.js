@@ -58,6 +58,7 @@ function generateDungeon(floor) {
   visited = Array.from({length:MAP_H}, () => Array(MAP_W).fill(false));
   enemyMap = Array.from({length:MAP_H}, () => Array(MAP_W).fill(null));
   itemMap = Array.from({length:MAP_H}, () => Array(MAP_W).fill(null));
+  objectMap = Array.from({length: MAP_H}, () => Array(MAP_W).fill(null));
 
   // Génération des salles
   const rooms = [];
@@ -80,19 +81,29 @@ function generateDungeon(floor) {
   }
 
   // Placement des cellules spéciales
+  const specialPlaced = [];
   for(let i=1;i<rooms.length;i++) {
     const r = rooms[i];
     if(i===rooms.length-1) {
       dungeon[r.cy][r.cx] = CELL.STAIRS_D;
-    } else if(Math.random()<0.2) {
+      objectMap[r.cy][r.cx] = { ...OBJECT_TYPES.stairs_down, x: r.cx, y: r.cy };
+      specialPlaced.push(`stairs_d@${r.cx},${r.cy}`);
+    } else if(Math.random()<0.4) {
       dungeon[r.cy][r.cx] = CELL.SHOP;
+      objectMap[r.cy][r.cx] = { ...OBJECT_TYPES.shop, x: r.cx, y: r.cy };
+      specialPlaced.push(`shop@${r.cx},${r.cy}`);
     } else if(Math.random()<0.3) {
       dungeon[r.cy][r.cx] = CELL.CHEST;
+      objectMap[r.cy][r.cx] = { ...OBJECT_TYPES.chest, x: r.cx, y: r.cy };
+      specialPlaced.push(`chest@${r.cx},${r.cy}`);
     }
   }
 
   // Escalier montant (étage 2+)
-  if(floor>1) dungeon[rooms[0].cy][rooms[0].cx] = CELL.STAIRS_U;
+  if(floor>1) {
+    dungeon[rooms[0].cy][rooms[0].cx] = CELL.STAIRS_U;
+    objectMap[rooms[0].cy][rooms[0].cx] = { ...OBJECT_TYPES.stairs_up, x: rooms[0].cx, y: rooms[0].cy };
+  }
 
   // Sélection des ennemis éligibles à cet étage
   const eligibleTypes = MONSTERS.filter(m =>
@@ -115,4 +126,20 @@ function generateDungeon(floor) {
   playerY = rooms[0].cy;
   playerDir = 'n';
   visited[playerY][playerX] = true;
+
+  // Génération des coffres sur cases FLOOR vides (12% de chance, max 3 par étage)
+  let objCount = 0;
+  const MAX_CHESTS = 3;
+  for (let y = 1; y < MAP_H-1; y++) {
+    for (let x = 1; x < MAP_W-1; x++) {
+      if (objCount >= MAX_CHESTS) break;
+      if (dungeon[y][x] !== CELL.FLOOR || Math.random() > 0.12) continue;
+      if (objectMap[y][x]) continue; // déjà un objet
+
+      objectMap[y][x] = { ...OBJECT_TYPES.chest, x, y };
+      objCount++;
+    }
+    if (objCount >= MAX_CHESTS) break;
+  }
+
 }

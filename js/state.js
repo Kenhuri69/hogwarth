@@ -5,6 +5,46 @@
 // Tableaux de la carte courante
 let dungeon, visited, enemyMap, itemMap;
 
+// ============================================================
+// OBJETS 3D DANS LE DONJON (coffres, boutiques...)
+// ============================================================
+let objectMap = []; // même taille que map, contient les objets ou null
+
+const OBJECT_TYPES = {
+  chest: {
+    id: "chest",
+    name: "Coffre ancien",
+    icon: "🪑",
+    svg: `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="20" width="80" height="50" rx="8" fill="#8a7050" stroke="#c9a84c" stroke-width="8"/><rect x="35" y="35" width="30" height="12" fill="#2a1a08"/></svg>`,
+    color: "#c9a84c",
+    interact: "openChest"
+  },
+  shop: {
+    id: "shop",
+    name: "Boutique du Chaudron",
+    icon: "🛒",
+    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="30" width="60" height="50" rx="5" fill="#2a1a08" stroke="#c9a84c" stroke-width="12"/><text x="50" y="65" font-size="32" fill="#c9a84c" text-anchor="middle">🪄</text></svg>`,
+    color: "#ffd700",
+    interact: "openShop"
+  },
+  stairs_down: {
+    id: "stairs_down",
+    name: "Escalier descendant",
+    icon: "⬇",
+    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="20" width="80" height="70" fill="#3a2a1a" stroke="#c9a84c" stroke-width="4"/><rect x="20" y="30" width="60" height="10" fill="#5a4030"/><rect x="20" y="45" width="60" height="10" fill="#5a4030"/><rect x="20" y="60" width="60" height="10" fill="#5a4030"/><rect x="20" y="75" width="60" height="10" fill="#5a4030"/><text x="50" y="20" font-size="24" fill="#c9a84c" text-anchor="middle">⬇</text></svg>`,
+    color: "#8a6040",
+    interact: "goDeeper"
+  },
+  stairs_up: {
+    id: "stairs_up",
+    name: "Escalier remontant",
+    icon: "⬆",
+    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="20" width="80" height="70" fill="#3a2a1a" stroke="#c9a84c" stroke-width="4"/><rect x="20" y="65" width="60" height="10" fill="#5a4030"/><rect x="20" y="50" width="60" height="10" fill="#5a4030"/><rect x="20" y="35" width="60" height="10" fill="#5a4030"/><rect x="20" y="20" width="60" height="10" fill="#5a4030"/><text x="50" y="18" font-size="24" fill="#c9a84c" text-anchor="middle">⬆</text></svg>`,
+    color: "#8a6040",
+    interact: "goUp"
+  }
+};
+
 // Position et orientation du joueur
 let playerX, playerY, playerDir;
 

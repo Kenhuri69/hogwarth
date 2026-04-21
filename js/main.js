@@ -161,6 +161,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='c') openCharacter();
   if(e.key==='f') searchRoom();
   if(e.key==='r') rest();
+  if(e.key===' ' || e.key==='Enter') { checkObjectInFront(); e.preventDefault(); }
   if(e.key==='Escape') {
     ['inventory-modal','spell-modal','shop-modal','character-modal'].forEach(closeModal);
   }

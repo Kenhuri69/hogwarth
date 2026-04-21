@@ -19,14 +19,14 @@ js/
   data.js          →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
                       ENEMIES = MONSTERS (alias de compatibilité)
   state.js         →  Variables globales mutables (player, player2, party, partySize,
-                      dungeon, combat, seenMonsters, activeQuests…)
+                      dungeon, combat, seenMonsters, activeQuests, objectMap, OBJECT_TYPES…)
   ui.js            →  updateUI(), openCharacter(), addMsg(), closeModal(), changeDifficulty()
   ui-bestiary.js   →  openBestiary(), filterBestiary(), showMonsterDetail(), showBestiaryList()
   dungeon.js       →  generateDungeon(), weightedPick(), scaleMonster()
   renderer.js      →  drawDungeon(), drawCorridor() — rendu 3D canvas + textures + fog
   renderer-effects.js → drawTorch(), drawStoneBlocks(), drawFloorLines(), drawCellMarker()…
   renderer-minimap.js → renderMinimap(), _buildMinimapCells()
-  movement.js      →  move(), handleCellEntry(), searchRoom(), rest(), interact()
+  movement.js      →  move(), handleCellEntry(), searchRoom(), rest(), checkObjectInFront()
   battle.js        →  startBattle(), battleAction(), enemyTurn(), endBattle(), checkLevelUp()
   battle-spells.js →  castSpellInBattle(), tryEnemyAbility()
   battle-ui.js     →  renderEnemyGroup(), showTargetSelection(), updateBattleCharIndicator()
@@ -317,6 +317,49 @@ buyItem(item)
 - Force `grid.style.cssText` en flex si CSS parent casse la grille
 - Fallback catalogue étage 1 si filtré vide
 - `currentFloor` undefined/NaN → traité comme étage 1
+
+---
+
+## Système d'objets 3D (state.js, dungeon.js, renderer.js)
+
+### Types d'objets (`OBJECT_TYPES`)
+
+| ID | Nom | Icône | Interaction |
+|----|-----|-------|-------------|
+| `chest` | Coffre ancien | 🪑 | `openChest()` |
+| `shop` | Boutique du Chaudron | 🛒 | `openShop()` |
+
+Chaque objet a : `id`, `name`, `icon`, `svg` (rendu canvas), `color`, `interact`.
+
+### Génération (`dungeon.js`)
+```js
+objectMap = Array.from({length: MAP_H}, () => Array(MAP_W).fill(null));
+```
+- 12% de chance sur case `FLOOR` vide
+- 65% → coffre, 20% → boutique (si `floor % 3 === 0`)
+
+### Rendu 3D (`renderer.js`)
+```js
+renderObjects(cx, cy, scale, W, H)
+```
+Algorithme :
+1. Collecte tous les objets dans le champ de vision (60° devant le joueur)
+2. Calcule l'angle et la distance pour chaque objet
+3. Filtre hors-champ et trop près (`dist < 0.5`)
+4. Tri par distance (painter's algorithm : loin → proche)
+5. Rendu : SVG ou fallback emoji + ombre elliptique au sol
+
+### Interaction (`movement.js`)
+```js
+checkObjectInFront() → bool
+```
+- Vérifie les 2 cases devant le joueur selon `playerDir`
+- Vérifie la ligne de vue (pas de mur entre le joueur et l'objet)
+- Déclenche l'interaction appropriée (`openChest()` ou `openShop()`)
+- Appelée par Espace/Entrée au clavier
+
+### Clavier (main.js)
+- `Espace` ou `Entrée` → `checkObjectInFront()`
 
 ---
 

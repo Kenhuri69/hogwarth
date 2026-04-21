@@ -476,11 +476,121 @@ function drawCorridor(cx, cy, scale, W, H) {
     }
   }
 
-  // 5. Halo de lumière de torche (ambiance chaude)
+  // 5. Rendu des objets 3D (coffres, boutiques...)
+  renderObjects(cx, cy, scale, canvas.width, canvas.height);
+
+  // 6. Halo de lumière de torche (ambiance chaude)
   addTorchGlow(cx, cy, scale);
 
-  // 6. Arêtes du couloir au premier plan (cadrage)
+  // 7. Arêtes du couloir au premier plan (cadrage)
   drawForegroundFrame(cx, cy, scale);
+}
+
+// ============================================================
+// RENDU DES OBJETS 3D (coffres, boutiques...)
+// ============================================================
+
+// Cache des images SVG pré-rendues pour chaque type d'objet
+const _objectImages = {};
+
+function _getObjectImage(obj) {
+  if (_objectImages[obj.id]) return _objectImages[obj.id];
+
+  const img = new Image();
+  // Encoder le SVG en data URL
+  const svgBlob = new Blob([obj.svg], {type: 'image/svg+xml'});
+  const url = URL.createObjectURL(svgBlob);
+  img.src = url;
+  _objectImages[obj.id] = img;
+  return img;
+}
+
+function renderObjects(cx, cy, scale, W, H) {
+  if (!objectMap || !objectMap.length) return;
+
+  const objectsInView = [];
+  const playerAngle = { n: -Math.PI/2, s: Math.PI/2, e: 0, w: Math.PI }[playerDir] || 0;
+
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      const obj = objectMap[y][x];
+      if (!obj) continue;
+
+      const dx = x - playerX;
+      const dy = y - playerY;
+      let angle = Math.atan2(dy, dx) - playerAngle;
+
+      // Normalisation de l'angle
+      while (angle < -Math.PI) angle += Math.PI * 2;
+      while (angle > Math.PI) angle -= Math.PI * 2;
+
+      if (Math.abs(angle) > Math.PI / 3) continue; // hors champ de vision (60°)
+
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 0.5) continue; // trop près
+
+      // Raycasting simple pour vérifier si l'objet est visible (pas derrière un mur)
+      let visible = true;
+      const steps = Math.ceil(dist * 4);
+      for (let i = 1; i < steps; i++) {
+        const checkX = Math.round(playerX + (dx / dist) * i);
+        const checkY = Math.round(playerY + (dy / dist) * i);
+        if (checkX >= 0 && checkY >= 0 && checkX < MAP_W && checkY < MAP_H) {
+          if (dungeon[checkY][checkX] === CELL.WALL) {
+            visible = false;
+            break;
+          }
+        }
+      }
+      if (!visible) continue;
+
+      const screenX = cx + (angle * (W / 2) / (Math.PI / 3));
+      const objScale = Math.max(0.2, 1 / (dist * dist + 0.5)) * scale * 0.8;
+
+      objectsInView.push({
+        x: screenX,
+        scale: objScale,
+        dist: dist,
+        obj: obj,
+        y: y,
+        mapX: x
+      });
+    }
+  }
+
+  // Tri par distance (plus loin d'abord - painter's algorithm)
+  objectsInView.sort((a, b) => b.dist - a.dist);
+
+  objectsInView.forEach(item => {
+    const { x, scale: objScale, obj, dist } = item;
+    const size = Math.floor(objScale * 1.2);
+    const screenY = cy + (dist * 5); // léger offset vertical selon distance
+
+    const img = _getObjectImage(obj);
+
+    ctx.save();
+    ctx.translate(x, screenY);
+
+    if (img && img.complete && img.naturalWidth > 0) {
+      // Dessiner l'image SVG
+      ctx.drawImage(img, -size/2, -size/2, size, size);
+    } else {
+      // Fallback emoji
+      ctx.font = `${size}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(obj.icon, 0, 0);
+    }
+
+    ctx.restore();
+
+    // Ombre au sol
+    ctx.fillStyle = 'rgba(10,7,5,0.4)';
+    ctx.beginPath();
+    ctx.ellipse(x, screenY + size/2 + 5, size/3, size/6, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
 }
 
 // Les effets visuels (torche, pierres, cadre, marqueurs) sont dans renderer-effects.js

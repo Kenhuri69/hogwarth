@@ -319,6 +319,14 @@
           <button class="cmd-btn" onclick="battleAction('flee')">🏃 Fuir</button>
         </div>
       </div>
+
+      <!-- Overlay d'interaction avec les objets -->
+      <div id="object-interaction-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;flex-direction:column;z-index:100">
+        <div id="object-interaction-icon" style="font-size:72px;margin-bottom:15px"></div>
+        <div id="object-interaction-name" style="font-family:'Cinzel',serif;font-size:20px;color:#c9a84c;margin-bottom:25px;text-align:center"></div>
+        <button id="object-interaction-btn" style="padding:14px 28px;font-family:'Cinzel',serif;font-size:15px;background:linear-gradient(135deg,#c9a84c,#8a6840);color:#0a0502;border:none;border-radius:8px;cursor:pointer;box-shadow:0 4px 15px rgba(201,168,76,0.3)">Interagir</button>
+        <button id="object-interaction-close" style="margin-top:15px;padding:10px 20px;font-family:'Cinzel',serif;font-size:13px;background:transparent;color:#8a7050;border:1px solid #5a4030;border-radius:6px;cursor:pointer">Fermer (Échap)</button>
+      </div>
     </div>
     <div id="narrative-panel">Bienvenue à Poudlard, jeune sorcier. Les couloirs vous attendent...</div>
   </div>
