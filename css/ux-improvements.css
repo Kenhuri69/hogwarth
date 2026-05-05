@@ -1,0 +1,314 @@
+/* ============================================================
+   UX IMPROVEMENTS — Tooltips, Combat Log, Turn Order, Floating DMG
+   ============================================================ */
+
+/* ── 1. TOOLTIPS DÉTAILLÉS ─────────────────────────────────── */
+#ux-tooltip {
+  position: fixed;
+  z-index: 2000;
+  pointer-events: none;
+  max-width: 280px;
+  background: linear-gradient(180deg, #1a0f05 0%, #0a0503 100%);
+  border: 1.5px solid var(--gold);
+  border-radius: 6px;
+  padding: 10px 12px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 18px rgba(201,168,76,0.25);
+  font-family: 'Crimson Text', serif;
+  color: var(--parchment);
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+#ux-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.tt-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--gold-dark);
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+}
+.tt-icon { font-size: 22px; line-height: 1; }
+.tt-title {
+  font-family: 'Cinzel', serif;
+  color: var(--gold);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+.tt-tag {
+  font-size: 9px;
+  color: #8a7050;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.tt-section { margin-top: 6px; }
+.tt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11.5px;
+}
+.tt-row .tt-key { color: #8a7050; }
+.tt-row .tt-val { color: var(--parchment); }
+.tt-formula {
+  background: #0a0705;
+  border-left: 2px solid var(--gold-dark);
+  padding: 4px 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: var(--gold-light);
+  margin-top: 4px;
+  border-radius: 2px;
+}
+.tt-flavor {
+  font-style: italic;
+  color: #a08860;
+  font-size: 11px;
+  border-top: 1px dashed #2a1a08;
+  padding-top: 4px;
+  margin-top: 6px;
+}
+.tt-bad  { color: #e07070; }
+.tt-good { color: #7fd87f; }
+.tt-mag  { color: #b070e0; }
+
+/* éléments hoverables — pointeur d'aide subtil */
+.has-tooltip { cursor: help; }
+.spell-item, .inv-slot, .stat-item, .shop-item { cursor: pointer; }
+
+/* ── 2. JOURNAL DE COMBAT SCROLLABLE ───────────────────────── */
+#combat-log-panel {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 240px;
+  max-height: 220px;
+  background: rgba(8,4,2,0.92);
+  border: 1px solid var(--gold-dark);
+  border-radius: 4px;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Crimson Text', serif;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+  pointer-events: auto;
+}
+#combat-log-panel .clp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--gold-dark);
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  background: #120a03;
+  border-radius: 4px 4px 0 0;
+}
+#combat-log-panel .clp-toggle {
+  cursor: pointer;
+  color: var(--gold-dark);
+  user-select: none;
+  font-size: 14px;
+  transition: color .15s;
+}
+#combat-log-panel .clp-toggle:hover { color: var(--gold); }
+#combat-log-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--parchment-dark);
+  line-height: 1.55;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-dark) #0a0705;
+}
+#combat-log-list::-webkit-scrollbar { width: 6px; }
+#combat-log-list::-webkit-scrollbar-track { background: #0a0705; }
+#combat-log-list::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
+#combat-log-list .clp-turn-divider {
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  color: var(--gold);
+  text-align: center;
+  letter-spacing: 2px;
+  padding: 4px 0 2px;
+  border-bottom: 1px dashed #2a1a08;
+  margin: 4px 0 4px;
+}
+#combat-log-list .clp-entry {
+  padding: 2px 0;
+  border-bottom: 1px dotted #1a0f05;
+  animation: clpFade .35s ease;
+}
+@keyframes clpFade {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+#combat-log-list .clp-entry:last-child { border-bottom: none; }
+#combat-log-list .clp-good  { color: #7fd87f; }
+#combat-log-list .clp-bad   { color: #e07070; }
+#combat-log-list .clp-magic { color: #b070e0; }
+#combat-log-list .clp-info  { color: #8a7050; }
+
+#combat-log-panel.collapsed { max-height: 28px; overflow: hidden; }
+#combat-log-panel.collapsed #combat-log-list { display: none; }
+
+/* ── 3. TIMELINE D'ORDRE DES TOURS ─────────────────────────── */
+#turn-timeline {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(8,4,2,0.85);
+  border: 1px solid var(--gold-dark);
+  border-radius: 999px;
+  padding: 5px 12px;
+  z-index: 12;
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  color: var(--gold);
+  letter-spacing: 1px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+#turn-timeline .tt-label {
+  color: var(--gold-dark);
+  font-size: 9px;
+  letter-spacing: 2px;
+  margin-right: 4px;
+}
+.timeline-slot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid #3a2a10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background: #0a0705;
+  position: relative;
+  transition: all .25s ease;
+}
+.timeline-slot.is-active {
+  border-color: var(--gold);
+  background: #2a1a08;
+  box-shadow: 0 0 14px rgba(201,168,76,0.6);
+  transform: scale(1.18);
+}
+.timeline-slot.is-ko {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+.timeline-slot.tl-ally { border-color: #4a90d9; }
+.timeline-slot.tl-ally.is-active { border-color: var(--gold); }
+.timeline-slot.tl-enemy { border-color: #6a1010; }
+.timeline-slot img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+.timeline-slot .tl-emoji {
+  font-size: 16px;
+  line-height: 1;
+}
+.timeline-slot .tl-pos {
+  position: absolute;
+  bottom: -7px;
+  right: -3px;
+  font-size: 8px;
+  background: var(--gold-dark);
+  color: #0a0503;
+  border-radius: 999px;
+  padding: 1px 4px;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+}
+.timeline-arrow {
+  color: var(--gold-dark);
+  font-size: 10px;
+}
+
+/* ── 4. ANIMATIONS DE DÉGÂTS FLOTTANTS ─────────────────────── */
+.float-dmg-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 15;
+}
+.float-dmg {
+  position: absolute;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 22px;
+  text-shadow:
+    0 0 6px rgba(0,0,0,0.9),
+    0 2px 0 #000,
+    0 -2px 0 #000,
+    2px 0 0 #000,
+    -2px 0 0 #000;
+  pointer-events: none;
+  animation: floatDmg 1.2s cubic-bezier(.2,.8,.3,1) forwards;
+  white-space: nowrap;
+}
+.float-dmg.fd-dmg   { color: #ff5454; }
+.float-dmg.fd-heal  { color: #7fff8f; }
+.float-dmg.fd-mana  { color: #b070ff; }
+.float-dmg.fd-crit  { color: #ffd540; font-size: 28px; }
+.float-dmg.fd-miss  { color: #c0c0c0; font-size: 18px; font-style: italic; }
+.float-dmg.fd-shield{ color: #6cd1ff; font-size: 18px; }
+
+@keyframes floatDmg {
+  0%   { opacity: 0; transform: translate(-50%, 8px) scale(0.6); }
+  15%  { opacity: 1; transform: translate(-50%, -4px) scale(1.15); }
+  30%  { transform: translate(-50%, -16px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -56px) scale(0.95); }
+}
+
+/* Secousse cible touchée */
+.shake-hit { animation: shakeHit .35s ease-in-out; }
+@keyframes shakeHit {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-6px); }
+  40%     { transform: translateX(5px); }
+  60%     { transform: translateX(-4px); }
+  80%     { transform: translateX(3px); }
+}
+
+/* Flash sur soin */
+.flash-heal { animation: flashHeal .5s ease; }
+@keyframes flashHeal {
+  0%,100% { filter: none; }
+  50%     { filter: drop-shadow(0 0 14px #7fff8f) brightness(1.2); }
+}
+
+/* ── RESPONSIVE MOBILE ─────────────────────────────────────── */
+@media (max-width: 700px) {
+  #combat-log-panel {
+    width: 160px;
+    max-height: 130px;
+    font-size: 10px;
+  }
+  #combat-log-list { font-size: 10px; padding: 4px 6px; }
+  #turn-timeline {
+    padding: 3px 8px;
+    gap: 4px;
+  }
+  .timeline-slot { width: 22px; height: 22px; font-size: 11px; }
+  .timeline-slot img { width: 18px; height: 18px; }
+  #turn-timeline .tt-label { display: none; }
+  .float-dmg { font-size: 16px; }
+  .float-dmg.fd-crit { font-size: 22px; }
+  #ux-tooltip { max-width: 220px; font-size: 11px; }
+}

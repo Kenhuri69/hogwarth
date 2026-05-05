@@ -6,6 +6,7 @@
 const SHOP_CATALOG = [
   { id: "potion_s",         minFloor: 1 },
   { id: "mandragore",       minFloor: 1 },
+  { id: "choco_sorcier",    minFloor: 1 },
   { id: "wand1",            minFloor: 1 },
   { id: "potion_m",         minFloor: 2 },
   { id: "robe1",            minFloor: 2 },
@@ -14,7 +15,11 @@ const SHOP_CATALOG = [
   { id: "amulette",         minFloor: 3 },
   { id: "broom",            minFloor: 4 },
   { id: "livre_soin",       minFloor: 4 },
+  { id: "chapeau_pointu",   minFloor: 4 },
   { id: "wand2",            minFloor: 6 },
+  { id: "livre_bombarda",   minFloor: 5 },
+  { id: "livre_patronum",   minFloor: 6 },
+  { id: "cape_invis",       minFloor: 7 },
 ];
 
 function openShop() {
@@ -52,6 +57,7 @@ function openShop() {
     if (!item) { console.warn('[Shop] Item introuvable dans ITEMS :', entry.id); continue; }
     const div = document.createElement('div');
     div.className = 'shop-item';
+    div.dataset.itemId = item.id;
     const canAfford = (player.gold || 0) >= item.price;
     // === FIX SHOP === ceinture+bretelles : layout inline garanti
     div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #5a4020;border-radius:6px;background:rgba(30,20,10,0.55);cursor:' + (canAfford ? 'pointer' : 'default') + ';opacity:' + (canAfford ? '1' : '0.5');

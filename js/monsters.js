@@ -941,6 +941,146 @@ const MONSTERS = [
     ]
   },
 
+  // ── Nouveaux monstres ────────────────────────────────────────
+
+  {
+    id: "niffleur", name: "Niffleur", icon: "🦡", category: "créature",
+    desc: "Un Niffleur fouilleur vous a repéré — et votre bourse l'attire !",
+    lore: "Petite créature à fourrure noire qui raffole des objets brillants.",
+    habitat: "Terriers et cachots à trésor", danger: 2,
+    minFloor: 2, maxFloor: 5, weight: 9,
+    hp: 18, atk: 4, def: 1, mag: 0, agi: 14, lck: 10, scale: 0.18,
+    abilities: [
+      { name: "Vol de Gallions", icon: "🪙", desc: "Vole 5-15 Gallions",
+        effect: "drain", power: 5, chance: 0.40 }
+    ],
+    ai: "cautious", resist: [], weak: ["stun"],
+    xp: 20, gold: { min: 8, max: 25 },
+    drops: [{ itemId: "mandragore", chance: 0.20 }]
+  },
+
+  {
+    id: "elfe_rebelle", name: "Elfe de Maison Rebelle", icon: "👺", category: "être magique",
+    desc: "Un elfe de maison affranchi de force lance des assiettes avec rage !",
+    lore: "Elfe rendu fou par une libération forcée, errant dans les couloirs.",
+    habitat: "Cuisines et couloirs", danger: 3,
+    minFloor: 2, maxFloor: 6, weight: 8,
+    hp: 22, atk: 5, def: 2, mag: 6, agi: 12, lck: 8, scale: 0.22,
+    abilities: [
+      { name: "Assiette Volante", icon: "🍽️", desc: "Projectile (8 dégâts)",
+        effect: "damage", power: 8, chance: 0.35 }
+    ],
+    ai: "random", resist: ["disarm"], weak: ["burn"],
+    xp: 25, gold: { min: 6, max: 18 },
+    drops: [{ itemId: "choco_sorcier", chance: 0.30 }]
+  },
+
+  {
+    id: "bowtruckle", name: "Bowtruckle Géant", icon: "🌿", category: "créature",
+    desc: "Un Bowtruckle de la taille d'un enfant surgit de l'obscurité !",
+    lore: "Gardien des arbres à baguettes magiques, redoutable quand il protège son arbre.",
+    habitat: "Couloirs ombragés près des fenêtres", danger: 2,
+    minFloor: 1, maxFloor: 3, weight: 10,
+    hp: 14, atk: 6, def: 3, mag: 0, agi: 8, lck: 6, scale: 0.15,
+    abilities: [
+      { name: "Griffes de Branche", icon: "🌱", desc: "Réduit DEF (-1)",
+        effect: "weaken", power: 1, chance: 0.25 }
+    ],
+    ai: "aggressive", resist: [], weak: ["burn"],
+    xp: 12, gold: { min: 3, max: 10 },
+    drops: [{ itemId: "wand1", chance: 0.08 }]
+  },
+
+  {
+    id: "chevalier_fantome", name: "Chevalier Fantôme", icon: "⚔️", category: "fantôme",
+    desc: "L'armure vide s'anime ! Un chevalier fantôme vous barre le passage !",
+    lore: "Ancien gardien de Poudlard, condamné à veiller les couloirs pour l'éternité.",
+    habitat: "Galeries et salles d'armures", danger: 6,
+    minFloor: 4, maxFloor: 9, weight: 6,
+    hp: 45, atk: 12, def: 8, mag: 4, agi: 7, lck: 5, scale: 0.28,
+    abilities: [
+      { name: "Coup de Lance", icon: "🏹", desc: "Attaque puissante (15 dégâts)",
+        effect: "damage", power: 15, chance: 0.35 },
+      { name: "Aura Glaciale", icon: "❄️", desc: "Affaiblit les deux adversaires",
+        effect: "weaken", power: 2, chance: 0.20 }
+    ],
+    ai: "aggressive", resist: ["stun", "instant"], weak: ["burn"],
+    xp: 60, gold: { min: 20, max: 50 },
+    drops: [{ itemId: "robe1", chance: 0.15 }, { itemId: "potion_s", chance: 0.25 }]
+  },
+
+  {
+    id: "gremlin_magique", name: "Gremlin Magique", icon: "👾", category: "créature",
+    desc: "Un Gremlin surgit des conduits magiques en crachant des étincelles !",
+    lore: "Petite créature chaotique qui se nourrit d'énergie magique.",
+    habitat: "Conduits de ventilation et salles mécaniques", danger: 4,
+    minFloor: 3, maxFloor: 7, weight: 7,
+    hp: 28, atk: 7, def: 3, mag: 10, agi: 16, lck: 9, scale: 0.24,
+    abilities: [
+      { name: "Drain Magique", icon: "⚡", desc: "Vole 6 PM à la cible",
+        effect: "drain", power: 6, chance: 0.40 },
+      { name: "Surcharge Arcanique", icon: "🔮", desc: "Dégâts magiques (12)",
+        effect: "damage", power: 12, chance: 0.25 }
+    ],
+    ai: "random", resist: ["burn"], weak: ["stun"],
+    xp: 35, gold: { min: 10, max: 28 },
+    drops: [{ itemId: "potion_m", chance: 0.20 }]
+  },
+
+  {
+    id: "manticore_jeune", name: "Manticore Juvénile", icon: "🦁", category: "bête",
+    desc: "Une jeune Manticore rugit, sa queue-scorpion dressée vers vous !",
+    lore: "Créature mi-lion mi-scorpion, classée parmi les plus dangereuses.",
+    habitat: "Souterrains profonds et salles secrètes", danger: 8,
+    minFloor: 6, maxFloor: null, weight: 4,
+    hp: 65, atk: 18, def: 10, mag: 5, agi: 12, lck: 7, scale: 0.32,
+    abilities: [
+      { name: "Piqûre de Venin", icon: "🦂", desc: "Poison (20 dégâts + drain)",
+        effect: "drain", power: 20, chance: 0.30 },
+      { name: "Rugissement Terrifiant", icon: "😱", desc: "Affaiblit toute la troupe",
+        effect: "weaken", power: 3, chance: 0.25 }
+    ],
+    ai: "aggressive", resist: ["disarm", "instant"], weak: [],
+    xp: 90, gold: { min: 30, max: 70 },
+    drops: [{ itemId: "felix", chance: 0.10 }, { itemId: "potion_force", chance: 0.20 }]
+  },
+
+  {
+    id: "gardien_portail", name: "Gardien du Portail", icon: "🗿", category: "être magique",
+    desc: "Un golem de pierre prend vie, gardien des passages secrets !",
+    lore: "Créé par un ancien directeur pour protéger les zones interdites.",
+    habitat: "Passages secrets et portes magiques", danger: 7,
+    minFloor: 5, maxFloor: null, weight: 5,
+    hp: 80, atk: 14, def: 15, mag: 2, agi: 4, lck: 3, scale: 0.30,
+    abilities: [
+      { name: "Écrasement", icon: "💪", desc: "Frappe colossale (18 dégâts)",
+        effect: "damage", power: 18, chance: 0.30 },
+      { name: "Régénération de Pierre", icon: "🏔️", desc: "Récupère 12 PV",
+        effect: "heal", power: 12, chance: 0.20 }
+    ],
+    ai: "aggressive", resist: ["stun", "burn"], weak: [],
+    xp: 75, gold: { min: 25, max: 55 },
+    drops: [{ itemId: "chapeau_pointu", chance: 0.08 }, { itemId: "robe1", chance: 0.18 }]
+  },
+
+  {
+    id: "fantome_sang_noir", name: "Fantôme du Sang Noir", icon: "👻", category: "fantôme",
+    desc: "Un spectre des temps anciens, furieux contre les sang-de-bourbe !",
+    lore: "Esprit d'un sorcier puriste mort en combattant Dumbledore.",
+    habitat: "Cachots de Serpentard", danger: 5,
+    minFloor: 3, maxFloor: 8, weight: 6,
+    hp: 35, atk: 10, def: 6, mag: 12, agi: 10, lck: 6, scale: 0.25,
+    abilities: [
+      { name: "Terreur Spectrale", icon: "😨", desc: "Dégâts psychiques (14)",
+        effect: "damage", power: 14, chance: 0.35 },
+      { name: "Possession Partielle", icon: "🌀", desc: "Drain PV (8)",
+        effect: "drain", power: 8, chance: 0.30 }
+    ],
+    ai: "cautious", resist: ["stun", "disarm"], weak: ["instant"],
+    xp: 45, gold: { min: 12, max: 35 },
+    drops: [{ itemId: "livre_soin", chance: 0.05 }]
+  },
+
 ];
 
 // ════════════════════════════════════════════

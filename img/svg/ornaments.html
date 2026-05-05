@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Planche SVG — Ornements décoratifs</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+    --gold-dark: #7a5c1e;
+    --parchment: #f4e8c1;
+    --parchment-dark: #e8d5a0;
+    --bg: #0a0705;
+    --bg-2: #120a03;
+    --ink: #2a1a08;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(ellipse at top, #14100a 0%, #060403 80%);
+    color: var(--parchment);
+    font-family: 'Crimson Text', serif;
+    padding: 40px 24px 80px;
+    min-height: 100vh;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  h1 {
+    font-family: 'UnifrakturMaguntia', cursive;
+    font-size: 48px;
+    color: var(--gold);
+    margin: 0;
+    text-shadow: 0 0 30px rgba(201,168,76,0.4);
+  }
+  header p {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: var(--parchment-dark);
+    margin: 8px 0 0;
+    text-transform: uppercase;
+  }
+  .grid {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
+    border: 1px solid var(--gold-dark);
+    border-radius: 4px;
+    padding: 18px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+  }
+  .card::before, .card::after {
+    content: '';
+    position: absolute;
+    width: 8px; height: 8px;
+    border: 1px solid var(--gold-dark);
+  }
+  .card::before { top: 4px; left: 4px; border-right: 0; border-bottom: 0; }
+  .card::after  { bottom: 4px; right: 4px; border-left: 0; border-top: 0; }
+  .card.wide { grid-column: 1 / -1; }
+  .card.full { grid-column: span 2; }
+  .frame {
+    width: 100%;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+  }
+  .label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--gold-light);
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .sub {
+    font-size: 11px;
+    color: #8a7050;
+    font-style: italic;
+    text-align: center;
+  }
+  section {
+    max-width: 1200px;
+    margin: 56px auto 0;
+  }
+  h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    letter-spacing: 6px;
+    color: var(--gold);
+    text-transform: uppercase;
+    text-align: center;
+    margin: 0 0 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--gold-dark);
+    position: relative;
+  }
+  h2::after {
+    content: '✦';
+    position: absolute;
+    bottom: -8px; left: 50%;
+    transform: translateX(-50%);
+    background: #060403;
+    color: var(--gold);
+    padding: 0 12px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Planche d'Ornements</h1>
+  <p>Éléments décoratifs · médiéval-fantasy générique</p>
+</header>
+
+<!-- ───────────────────── BORDURES & SÉPARATEURS ───────────────────── -->
+<section>
+  <h2>Séparateurs &amp; Bordures</h2>
+  <div class="grid">
+
+    <div class="card wide">
+      <div class="frame">
+        <!-- Séparateur 1 — losange central -->
+        <svg width="600" height="32" viewBox="0 0 600 32" xmlns="http://www.w3.org/2000/svg">
+          <line x1="20" y1="16" x2="270" y2="16" stroke="#7a5c1e" stroke-width="1"/>
+          <line x1="330" y1="16" x2="580" y2="16" stroke="#7a5c1e" stroke-width="1"/>
+          <circle cx="20" cy="16" r="2" fill="#c9a84c"/>
+          <circle cx="580" cy="16" r="2" fill="#c9a84c"/>
+          <g transform="translate(300 16)">
+            <path d="M -18 0 L 0 -10 L 18 0 L 0 10 Z" fill="none" stroke="#c9a84c" stroke-width="1.2"/>
+            <path d="M -8 0 L 0 -4 L 8 0 L 0 4 Z" fill="#c9a84c"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Séparateur · Losange</div>
+    </div>
+
+    <div class="card wide">
+      <div class="frame">
+        <!-- Séparateur 2 — étoile à 4 branches + volutes -->
+        <svg width="600" height="32" viewBox="0 0 600 32" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#7a5c1e" stroke-width="1" fill="none">
+            <path d="M 30 16 Q 100 16 160 16"/>
+            <path d="M 240 16 Q 270 8 280 16 Q 270 24 260 16"/>
+            <path d="M 360 16 Q 330 8 320 16 Q 330 24 340 16"/>
+            <path d="M 440 16 Q 510 16 570 16"/>
+          </g>
+          <g transform="translate(300 16)">
+            <path d="M 0 -12 L 3 -3 L 12 0 L 3 3 L 0 12 L -3 3 L -12 0 L -3 -3 Z" fill="#c9a84c"/>
+            <circle r="1.5" fill="#0a0705"/>
+          </g>
+          <circle cx="30" cy="16" r="1.5" fill="#c9a84c"/>
+          <circle cx="570" cy="16" r="1.5" fill="#c9a84c"/>
+        </svg>
+      </div>
+      <div class="label">Séparateur · Étoile à 8 branches</div>
+    </div>
+
+    <div class="card wide">
+      <div class="frame">
+        <!-- Séparateur 3 — frise géométrique répétée -->
+        <svg width="600" height="32" viewBox="0 0 600 32" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="frieze" x="0" y="0" width="24" height="16" patternUnits="userSpaceOnUse">
+              <path d="M 0 8 L 6 2 L 12 8 L 18 2 L 24 8" fill="none" stroke="#c9a84c" stroke-width="1"/>
+              <circle cx="12" cy="8" r="1" fill="#c9a84c"/>
+            </pattern>
+          </defs>
+          <line x1="20" y1="6" x2="580" y2="6" stroke="#7a5c1e" stroke-width="0.5"/>
+          <rect x="20" y="8" width="560" height="16" fill="url(#frieze)"/>
+          <line x1="20" y1="26" x2="580" y2="26" stroke="#7a5c1e" stroke-width="0.5"/>
+        </svg>
+      </div>
+      <div class="label">Frise · Zigzag pointé</div>
+    </div>
+
+    <div class="card wide">
+      <div class="frame">
+        <!-- Cartouche horizontale -->
+        <svg width="600" height="60" viewBox="0 0 600 60" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 40 30 L 60 14 L 540 14 L 560 30 L 540 46 L 60 46 Z"
+                fill="#120a03" stroke="#c9a84c" stroke-width="1.2"/>
+          <path d="M 50 30 L 64 22 L 536 22 L 550 30 L 536 38 L 64 38 Z"
+                fill="none" stroke="#7a5c1e" stroke-width="0.6"/>
+          <circle cx="40" cy="30" r="2.5" fill="#c9a84c"/>
+          <circle cx="560" cy="30" r="2.5" fill="#c9a84c"/>
+          <text x="300" y="35" font-family="Cinzel, serif" font-size="13" fill="#c9a84c"
+                text-anchor="middle" letter-spacing="3">CARTOUCHE</text>
+        </svg>
+      </div>
+      <div class="label">Cartouche · Titre de section</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ───────────────────── BLASONS GÉNÉRIQUES ───────────────────── -->
+<section>
+  <h2>Blasons (Écus génériques)</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="frame">
+        <!-- Écu 1 — chevron + 3 étoiles -->
+        <svg width="120" height="140" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="shield1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1a0f05"/>
+              <stop offset="1" stop-color="#0a0705"/>
+            </linearGradient>
+          </defs>
+          <path d="M 12 18 L 60 6 L 108 18 L 104 90 Q 104 118 60 134 Q 16 118 16 90 Z"
+                fill="url(#shield1)" stroke="#c9a84c" stroke-width="2"/>
+          <path d="M 18 24 L 60 14 L 102 24 L 98 88 Q 98 114 60 128 Q 22 114 22 88 Z"
+                fill="none" stroke="#7a5c1e" stroke-width="0.8"/>
+          <path d="M 30 76 L 60 50 L 90 76 L 84 76 L 60 56 L 36 76 Z" fill="#c9a84c"/>
+          <g fill="#c9a84c">
+            <path d="M 38 38 L 40.5 44 L 47 44 L 42 48 L 44 54 L 38 50 L 32 54 L 34 48 L 29 44 L 35.5 44 Z"/>
+            <path d="M 82 38 L 84.5 44 L 91 44 L 86 48 L 88 54 L 82 50 L 76 54 L 78 48 L 73 44 L 79.5 44 Z"/>
+            <path d="M 60 96 L 62.5 102 L 69 102 L 64 106 L 66 112 L 60 108 L 54 112 L 56 106 L 51 102 L 57.5 102 Z"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Écu · Chevron &amp; étoiles</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <!-- Écu 2 — soleil rayonnant -->
+        <svg width="120" height="140" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 12 18 L 60 6 L 108 18 L 104 90 Q 104 118 60 134 Q 16 118 16 90 Z"
+                fill="#0d0805" stroke="#c9a84c" stroke-width="2"/>
+          <path d="M 18 24 L 60 14 L 102 24 L 98 88 Q 98 114 60 128 Q 22 114 22 88 Z"
+                fill="none" stroke="#7a5c1e" stroke-width="0.8"/>
+          <g transform="translate(60 70)">
+            <g stroke="#c9a84c" stroke-width="1.4" stroke-linecap="round">
+              <line x1="0" y1="-32" x2="0" y2="-22"/>
+              <line x1="0" y1="32" x2="0" y2="22"/>
+              <line x1="-32" y1="0" x2="-22" y2="0"/>
+              <line x1="32" y1="0" x2="22" y2="0"/>
+              <line x1="-23" y1="-23" x2="-16" y2="-16"/>
+              <line x1="23" y1="-23" x2="16" y2="-16"/>
+              <line x1="-23" y1="23" x2="-16" y2="16"/>
+              <line x1="23" y1="23" x2="16" y2="16"/>
+            </g>
+            <g stroke="#7a5c1e" stroke-width="0.8" stroke-linecap="round">
+              <line x1="-12" y1="-30" x2="-8" y2="-22"/>
+              <line x1="12" y1="-30" x2="8" y2="-22"/>
+              <line x1="-12" y1="30" x2="-8" y2="22"/>
+              <line x1="12" y1="30" x2="8" y2="22"/>
+              <line x1="-30" y1="-12" x2="-22" y2="-8"/>
+              <line x1="30" y1="-12" x2="22" y2="-8"/>
+              <line x1="-30" y1="12" x2="-22" y2="8"/>
+              <line x1="30" y1="12" x2="22" y2="8"/>
+            </g>
+            <circle r="14" fill="#c9a84c" stroke="#7a5c1e"/>
+            <circle r="9" fill="none" stroke="#0a0705" stroke-width="1"/>
+            <circle r="3" fill="#0a0705"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Écu · Soleil rayonnant</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <!-- Écu 3 — tour / donjon stylisé -->
+        <svg width="120" height="140" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 12 18 L 60 6 L 108 18 L 104 90 Q 104 118 60 134 Q 16 118 16 90 Z"
+                fill="#0d0805" stroke="#c9a84c" stroke-width="2"/>
+          <g fill="#c9a84c">
+            <rect x="42" y="46" width="36" height="46"/>
+            <rect x="42" y="46" width="6" height="6"/>
+            <rect x="54" y="46" width="6" height="6"/>
+            <rect x="66" y="46" width="6" height="6"/>
+            <rect x="78" y="46" width="6" height="6"/>
+            <rect x="42" y="46" width="6" height="6"/>
+          </g>
+          <g fill="#0d0805">
+            <rect x="55" y="66" width="10" height="14" rx="5"/>
+            <rect x="46" y="58" width="6" height="8"/>
+            <rect x="68" y="58" width="6" height="8"/>
+          </g>
+          <g fill="#c9a84c">
+            <rect x="34" y="56" width="12" height="36"/>
+            <rect x="74" y="56" width="12" height="36"/>
+            <rect x="34" y="56" width="4" height="4"/>
+            <rect x="42" y="56" width="4" height="4"/>
+            <rect x="74" y="56" width="4" height="4"/>
+            <rect x="82" y="56" width="4" height="4"/>
+          </g>
+          <rect x="20" y="92" width="80" height="3" fill="#7a5c1e"/>
+        </svg>
+      </div>
+      <div class="label">Écu · Tour crénelée</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <!-- Écu 4 — clé croisée + couronne -->
+        <svg width="120" height="140" viewBox="0 0 120 140" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 12 18 L 60 6 L 108 18 L 104 90 Q 104 118 60 134 Q 16 118 16 90 Z"
+                fill="#0d0805" stroke="#c9a84c" stroke-width="2"/>
+          <!-- Couronne stylisée -->
+          <g fill="#c9a84c" transform="translate(60 32)">
+            <path d="M -20 6 L -16 -6 L -10 2 L -4 -8 L 0 0 L 4 -8 L 10 2 L 16 -6 L 20 6 Z"/>
+            <rect x="-22" y="6" width="44" height="4"/>
+          </g>
+          <!-- Clés croisées -->
+          <g stroke="#c9a84c" stroke-width="3" stroke-linecap="round" fill="none" transform="translate(60 78) rotate(30)">
+            <circle cx="-22" cy="0" r="6"/>
+            <line x1="-16" y1="0" x2="22" y2="0"/>
+            <line x1="14" y1="0" x2="14" y2="6"/>
+            <line x1="20" y1="0" x2="20" y2="6"/>
+          </g>
+          <g stroke="#c9a84c" stroke-width="3" stroke-linecap="round" fill="none" transform="translate(60 78) rotate(-30)">
+            <circle cx="-22" cy="0" r="6"/>
+            <line x1="-16" y1="0" x2="22" y2="0"/>
+            <line x1="14" y1="0" x2="14" y2="6"/>
+            <line x1="20" y1="0" x2="20" y2="6"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Écu · Clés &amp; couronne</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ───────────────────── SCEAUX ───────────────────── -->
+<section>
+  <h2>Sceaux</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="frame">
+        <!-- Sceau 1 — étoile à 8 branches -->
+        <svg width="130" height="130" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="65" cy="65" r="58" fill="#0d0805" stroke="#c9a84c" stroke-width="2"/>
+          <circle cx="65" cy="65" r="50" fill="none" stroke="#7a5c1e" stroke-width="0.8"/>
+          <circle cx="65" cy="65" r="44" fill="none" stroke="#7a5c1e" stroke-width="0.4" stroke-dasharray="2 2"/>
+          <g transform="translate(65 65)">
+            <path d="M 0 -36 L 8 -8 L 36 0 L 8 8 L 0 36 L -8 8 L -36 0 L -8 -8 Z" fill="#c9a84c"/>
+            <path d="M 0 -36 L 0 36 M -36 0 L 36 0" stroke="#0a0705" stroke-width="0.6"/>
+            <circle r="6" fill="#0a0705"/>
+            <circle r="3" fill="#c9a84c"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Sceau · Étoile</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <!-- Sceau 2 — œil dans triangle -->
+        <svg width="130" height="130" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="65" cy="65" r="58" fill="#0d0805" stroke="#c9a84c" stroke-width="2"/>
+          <g stroke="#7a5c1e" stroke-width="0.6" fill="none">
+            <circle cx="65" cy="65" r="50"/>
+            <circle cx="65" cy="65" r="46" stroke-dasharray="1 3"/>
+          </g>
+          <g transform="translate(65 70)">
+            <path d="M 0 -34 L 32 22 L -32 22 Z" fill="none" stroke="#c9a84c" stroke-width="1.6"/>
+            <ellipse cx="0" cy="2" rx="18" ry="10" fill="none" stroke="#c9a84c" stroke-width="1.4"/>
+            <circle cx="0" cy="2" r="6" fill="#c9a84c"/>
+            <circle cx="0" cy="2" r="2.5" fill="#0a0705"/>
+            <g stroke="#7a5c1e" stroke-width="0.8" stroke-linecap="round">
+              <line x1="0" y1="-12" x2="0" y2="-18"/>
+              <line x1="-12" y1="2" x2="-18" y2="2"/>
+              <line x1="12" y1="2" x2="18" y2="2"/>
+              <line x1="-9" y1="-8" x2="-13" y2="-12"/>
+              <line x1="9" y1="-8" x2="13" y2="-12"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Sceau · Œil triangulaire</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <!-- Sceau 3 — pentacle dans cercle -->
+        <svg width="130" height="130" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="65" cy="65" r="58" fill="#0d0805" stroke="#c9a84c" stroke-width="2"/>
+          <circle cx="65" cy="65" r="50" fill="none" stroke="#7a5c1e" stroke-width="0.8"/>
+          <g transform="translate(65 65)" stroke="#c9a84c" fill="none" stroke-width="1.4" stroke-linejoin="round">
+            <path d="M 0 -36 L 21.2 30 L -34.2 -11.5 L 34.2 -11.5 L -21.2 30 Z"/>
+            <circle r="36"/>
+          </g>
+          <g fill="#c9a84c">
+            <circle cx="65" cy="29" r="2"/>
+            <circle cx="99" cy="53" r="2"/>
+            <circle cx="86" cy="95" r="2"/>
+            <circle cx="44" cy="95" r="2"/>
+            <circle cx="31" cy="53" r="2"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Sceau · Pentacle</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <!-- Sceau 4 — runes circulaires -->
+        <svg width="130" height="130" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="65" cy="65" r="58" fill="#0d0805" stroke="#c9a84c" stroke-width="2"/>
+          <circle cx="65" cy="65" r="50" fill="none" stroke="#7a5c1e" stroke-width="0.8"/>
+          <circle cx="65" cy="65" r="34" fill="none" stroke="#7a5c1e" stroke-width="0.6"/>
+          <g stroke="#c9a84c" stroke-width="1.2" stroke-linecap="round" fill="none">
+            <!-- pseudo-runes réparties sur l'anneau -->
+            <g transform="translate(65 22)"><line x1="0" y1="-5" x2="0" y2="5"/><line x1="0" y1="-5" x2="4" y2="-2"/><line x1="0" y1="0" x2="4" y2="3"/></g>
+            <g transform="translate(95 38)"><line x1="-4" y1="-5" x2="-4" y2="5"/><line x1="4" y1="-5" x2="4" y2="5"/><line x1="-4" y1="0" x2="4" y2="0"/></g>
+            <g transform="translate(108 65)"><line x1="0" y1="-5" x2="0" y2="5"/><line x1="-4" y1="-3" x2="4" y2="3"/><line x1="-4" y1="3" x2="4" y2="-3"/></g>
+            <g transform="translate(95 92)"><line x1="-4" y1="5" x2="0" y2="-5"/><line x1="0" y1="-5" x2="4" y2="5"/></g>
+            <g transform="translate(65 108)"><line x1="-4" y1="-5" x2="-4" y2="5"/><line x1="-4" y1="-5" x2="4" y2="0"/><line x1="-4" y1="0" x2="4" y2="0"/></g>
+            <g transform="translate(35 92)"><line x1="0" y1="-5" x2="0" y2="5"/><line x1="0" y1="0" x2="4" y2="-3"/><line x1="0" y1="0" x2="4" y2="3"/></g>
+            <g transform="translate(22 65)"><line x1="-3" y1="-5" x2="-3" y2="5"/><line x1="-3" y1="-5" x2="3" y2="-5"/><line x1="-3" y1="0" x2="3" y2="0"/></g>
+            <g transform="translate(35 38)"><line x1="-4" y1="5" x2="-4" y2="-5"/><line x1="-4" y1="-5" x2="4" y2="-5"/><line x1="-4" y1="0" x2="2" y2="0"/></g>
+          </g>
+          <g transform="translate(65 65)">
+            <path d="M -16 0 L 0 -16 L 16 0 L 0 16 Z" fill="none" stroke="#c9a84c" stroke-width="1.4"/>
+            <circle r="4" fill="#c9a84c"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Sceau · Cercle runique</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ───────────────────── ORNEMENTS DE COIN ───────────────────── -->
+<section>
+  <h2>Ornements de coin (cadres)</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="frame">
+        <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#c9a84c" stroke-width="1.4" fill="none">
+            <path d="M 100 10 L 30 10 L 30 30"/>
+            <path d="M 100 14 Q 36 14 34 30" />
+            <circle cx="30" cy="10" r="3" fill="#c9a84c"/>
+            <path d="M 30 24 Q 24 24 20 30 Q 24 26 30 30" fill="#c9a84c" stroke="none"/>
+            <path d="M 36 16 Q 42 22 38 26" stroke-width="0.8"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Coin · Volute simple</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#c9a84c" stroke-width="1.4" fill="none">
+            <path d="M 110 12 L 24 12 L 24 98"/>
+            <path d="M 24 12 Q 38 18 38 30 Q 38 18 50 18"/>
+            <path d="M 24 12 Q 18 26 30 38 Q 18 26 18 38"/>
+            <circle cx="24" cy="12" r="3" fill="#c9a84c"/>
+          </g>
+          <g fill="#c9a84c">
+            <path d="M 50 10 L 54 14 L 50 18 L 46 14 Z"/>
+            <path d="M 22 40 L 26 44 L 22 48 L 18 44 Z"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Coin · Acanthe géométrique</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#c9a84c" stroke-width="1.2" fill="none">
+            <path d="M 110 18 L 28 18"/>
+            <path d="M 18 28 L 18 110"/>
+            <path d="M 18 18 L 28 18"/>
+            <path d="M 18 28 L 18 18"/>
+          </g>
+          <g fill="#c9a84c">
+            <circle cx="18" cy="18" r="4"/>
+            <path d="M 28 14 L 36 18 L 28 22 Z"/>
+            <path d="M 14 28 L 18 36 L 22 28 Z"/>
+          </g>
+          <g stroke="#7a5c1e" stroke-width="0.6" fill="none">
+            <path d="M 24 24 Q 32 24 32 34"/>
+            <path d="M 24 24 Q 24 32 34 32"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Coin · Triangle &amp; perle</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ───────────────────── ÉTOILES & MOTIFS ───────────────────── -->
+<section>
+  <h2>Étoiles &amp; Motifs</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="frame">
+        <svg width="100" height="100" viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 0 -40 L 9 -12 L 38 -12 L 14 5 L 23 32 L 0 16 L -23 32 L -14 5 L -38 -12 L -9 -12 Z" fill="#c9a84c" stroke="#7a5c1e" stroke-width="0.8"/>
+        </svg>
+      </div>
+      <div class="label">Étoile à 5 branches</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="100" height="100" viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#c9a84c">
+            <path d="M 0 -40 L 5 -5 L 40 0 L 5 5 L 0 40 L -5 5 L -40 0 L -5 -5 Z"/>
+          </g>
+          <g stroke="#7a5c1e" stroke-width="0.6" fill="none">
+            <path d="M 0 -40 L 0 40 M -40 0 L 40 0"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Boussole · 4 pointes</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="100" height="100" viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#c9a84c">
+            <path d="M 0 -40 L 6 -6 L 40 0 L 6 6 L 0 40 L -6 6 L -40 0 L -6 -6 Z"/>
+          </g>
+          <g fill="#7a5c1e">
+            <path d="M -28 -28 L -3 -3 L 0 -10 Z"/>
+            <path d="M 28 -28 L 3 -3 L 10 0 Z"/>
+            <path d="M 28 28 L 3 3 L 0 10 Z"/>
+            <path d="M -28 28 L -3 3 L -10 0 Z"/>
+          </g>
+          <circle r="3" fill="#0a0705"/>
+        </svg>
+      </div>
+      <div class="label">Rose des vents · 8 points</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="100" height="100" viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#c9a84c" stroke-width="1.2" fill="none">
+            <circle r="36"/>
+            <path d="M -36 0 A 36 36 0 0 1 36 0 A 18 18 0 0 1 0 0 A 18 18 0 0 0 -36 0 Z" fill="#c9a84c"/>
+          </g>
+          <circle cx="-18" cy="0" r="3" fill="#0a0705"/>
+          <circle cx="18" cy="0" r="3" fill="#c9a84c"/>
+        </svg>
+      </div>
+      <div class="label">Yin-Yang doré</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="100" height="100" viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#c9a84c" stroke-width="1.2" fill="none">
+            <circle r="38"/>
+            <circle r="19" cx="0" cy="-19"/>
+            <circle r="19" cx="16.5" cy="9.5"/>
+            <circle r="19" cx="-16.5" cy="9.5"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Trifoliée</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="100" height="100" viewBox="-50 -50 100 100" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#c9a84c" stroke-width="1.2" fill="none">
+            <polygon points="0,-38 33,-19 33,19 0,38 -33,19 -33,-19"/>
+            <polygon points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11"/>
+            <line x1="0" y1="-38" x2="0" y2="38"/>
+            <line x1="-33" y1="-19" x2="33" y2="19"/>
+            <line x1="33" y1="-19" x2="-33" y2="19"/>
+          </g>
+          <circle r="4" fill="#c9a84c"/>
+        </svg>
+      </div>
+      <div class="label">Hexagramme</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ───────────────────── OBJETS : CLÉS ───────────────────── -->
+<section>
+  <h2>Clés</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="frame">
+        <svg width="180" height="80" viewBox="0 0 180 80" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#c9a84c" stroke-width="3" fill="none" stroke-linecap="round">
+            <circle cx="30" cy="40" r="16"/>
+            <circle cx="30" cy="40" r="6" fill="#0a0705"/>
+            <line x1="46" y1="40" x2="160" y2="40"/>
+            <line x1="140" y1="40" x2="140" y2="52"/>
+            <line x1="150" y1="40" x2="150" y2="56"/>
+            <line x1="160" y1="40" x2="160" y2="48"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Clé · Anneau simple</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="180" height="80" viewBox="0 0 180 80" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#c9a84c" stroke-width="2.5" fill="none" stroke-linecap="round">
+            <path d="M 30 40 m -18 0 a 18 18 0 1 0 36 0 a 18 18 0 1 0 -36 0"/>
+            <path d="M 22 32 L 38 48 M 22 48 L 38 32"/>
+            <line x1="48" y1="40" x2="160" y2="40"/>
+            <path d="M 130 40 L 130 56 L 138 56 L 138 48"/>
+            <path d="M 145 40 L 145 56 L 158 56 L 158 44"/>
+          </g>
+          <circle cx="30" cy="40" r="4" fill="#c9a84c"/>
+        </svg>
+      </div>
+      <div class="label">Clé · Croix</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="180" height="80" viewBox="0 0 180 80" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#c9a84c" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M 32 22 Q 14 22 14 40 Q 14 58 32 58 Q 50 58 50 40 Q 50 22 32 22 Z"/>
+            <path d="M 26 30 Q 22 34 22 40 Q 22 46 26 50"/>
+            <path d="M 38 30 Q 42 34 42 40 Q 42 46 38 50"/>
+            <line x1="50" y1="40" x2="162" y2="40"/>
+            <path d="M 140 40 L 140 54 M 148 40 L 148 50 M 156 40 L 162 40 L 162 50"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Clé · Trèfle</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ───────────────────── OBJETS : CHANDELIERS ───────────────────── -->
+<section>
+  <h2>Chandeliers &amp; Bougies</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="frame">
+        <svg width="120" height="180" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="flame1" cx="0.5" cy="0.4" r="0.6">
+              <stop offset="0" stop-color="#fff5c8"/>
+              <stop offset="0.5" stop-color="#f0d080"/>
+              <stop offset="1" stop-color="#c9a84c" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="60" cy="42" rx="14" ry="18" fill="url(#flame1)"/>
+          <path d="M 60 30 Q 54 42 56 52 Q 60 46 60 42 Q 60 50 64 52 Q 66 42 60 30 Z" fill="#f0d080"/>
+          <line x1="60" y1="55" x2="60" y2="62" stroke="#2a1a08" stroke-width="1"/>
+          <rect x="52" y="62" width="16" height="60" fill="#e8d5a0" stroke="#7a5c1e" stroke-width="1"/>
+          <rect x="52" y="62" width="16" height="4" fill="#c9a84c"/>
+          <path d="M 36 122 L 84 122 L 80 134 L 40 134 Z" fill="#c9a84c" stroke="#7a5c1e" stroke-width="1"/>
+          <rect x="52" y="134" width="16" height="22" fill="#7a5c1e"/>
+          <rect x="48" y="134" width="24" height="3" fill="#c9a84c"/>
+          <path d="M 28 156 L 92 156 L 86 168 L 34 168 Z" fill="#c9a84c" stroke="#7a5c1e" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="label">Chandelier · Simple</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="flame2" cx="0.5" cy="0.4" r="0.6">
+              <stop offset="0" stop-color="#fff5c8"/>
+              <stop offset="0.5" stop-color="#f0d080"/>
+              <stop offset="1" stop-color="#c9a84c" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <!-- 3 flammes -->
+          <g>
+            <ellipse cx="40" cy="60" rx="10" ry="14" fill="url(#flame2)"/>
+            <path d="M 40 50 Q 36 60 38 68 Q 42 62 40 60 Q 42 66 44 66 Q 44 60 40 50 Z" fill="#f0d080"/>
+            <ellipse cx="90" cy="42" rx="12" ry="16" fill="url(#flame2)"/>
+            <path d="M 90 30 Q 84 44 87 56 Q 92 48 90 42 Q 93 52 95 52 Q 95 44 90 30 Z" fill="#f0d080"/>
+            <ellipse cx="140" cy="60" rx="10" ry="14" fill="url(#flame2)"/>
+            <path d="M 140 50 Q 136 60 138 68 Q 142 62 140 60 Q 142 66 144 66 Q 144 60 140 50 Z" fill="#f0d080"/>
+          </g>
+          <!-- bougies -->
+          <rect x="34" y="74" width="12" height="30" fill="#e8d5a0" stroke="#7a5c1e"/>
+          <rect x="84" y="58" width="12" height="46" fill="#e8d5a0" stroke="#7a5c1e"/>
+          <rect x="134" y="74" width="12" height="30" fill="#e8d5a0" stroke="#7a5c1e"/>
+          <!-- coupelles -->
+          <ellipse cx="40" cy="106" rx="12" ry="3" fill="#c9a84c"/>
+          <ellipse cx="90" cy="106" rx="12" ry="3" fill="#c9a84c"/>
+          <ellipse cx="140" cy="106" rx="12" ry="3" fill="#c9a84c"/>
+          <!-- bras horizontaux -->
+          <path d="M 40 108 Q 40 130 90 130" fill="none" stroke="#c9a84c" stroke-width="3"/>
+          <path d="M 140 108 Q 140 130 90 130" fill="none" stroke="#c9a84c" stroke-width="3"/>
+          <line x1="90" y1="106" x2="90" y2="140" stroke="#c9a84c" stroke-width="3"/>
+          <!-- nœud central -->
+          <circle cx="90" cy="130" r="5" fill="#c9a84c"/>
+          <!-- pied -->
+          <rect x="84" y="140" width="12" height="20" fill="#7a5c1e"/>
+          <path d="M 70 160 L 110 160 L 104 174 L 76 174 Z" fill="#c9a84c" stroke="#7a5c1e" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="label">Candélabre · 3 branches</div>
+    </div>
+
+    <div class="card">
+      <div class="frame">
+        <svg width="160" height="180" viewBox="0 0 160 180" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="flame3" cx="0.5" cy="0.4" r="0.6">
+              <stop offset="0" stop-color="#fff5c8"/>
+              <stop offset="0.5" stop-color="#f0d080"/>
+              <stop offset="1" stop-color="#c9a84c" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <!-- lustre suspendu -->
+          <line x1="80" y1="0" x2="80" y2="40" stroke="#7a5c1e" stroke-width="1.5"/>
+          <circle cx="80" cy="42" r="6" fill="#c9a84c"/>
+          <!-- anneau -->
+          <ellipse cx="80" cy="100" rx="60" ry="14" fill="none" stroke="#c9a84c" stroke-width="2"/>
+          <ellipse cx="80" cy="100" rx="60" ry="14" fill="none" stroke="#7a5c1e" stroke-width="0.6" stroke-dasharray="3 4"/>
+          <!-- chaînes -->
+          <line x1="80" y1="48" x2="22" y2="98" stroke="#7a5c1e" stroke-width="1"/>
+          <line x1="80" y1="48" x2="138" y2="98" stroke="#7a5c1e" stroke-width="1"/>
+          <line x1="80" y1="48" x2="80" y2="98" stroke="#7a5c1e" stroke-width="1"/>
+          <!-- bougies sur l'anneau -->
+          <g>
+            <rect x="17" y="80" width="8" height="20" fill="#e8d5a0" stroke="#7a5c1e"/>
+            <ellipse cx="21" cy="74" rx="6" ry="8" fill="url(#flame3)"/>
+            <rect x="46" y="86" width="8" height="20" fill="#e8d5a0" stroke="#7a5c1e"/>
+            <ellipse cx="50" cy="80" rx="6" ry="8" fill="url(#flame3)"/>
+            <rect x="76" y="88" width="8" height="20" fill="#e8d5a0" stroke="#7a5c1e"/>
+            <ellipse cx="80" cy="82" rx="6" ry="8" fill="url(#flame3)"/>
+            <rect x="106" y="86" width="8" height="20" fill="#e8d5a0" stroke="#7a5c1e"/>
+            <ellipse cx="110" cy="80" rx="6" ry="8" fill="url(#flame3)"/>
+            <rect x="135" y="80" width="8" height="20" fill="#e8d5a0" stroke="#7a5c1e"/>
+            <ellipse cx="139" cy="74" rx="6" ry="8" fill="url(#flame3)"/>
+          </g>
+          <!-- pendeloques -->
+          <g fill="#c9a84c">
+            <path d="M 40 114 L 44 122 L 40 130 L 36 122 Z"/>
+            <path d="M 80 114 L 84 122 L 80 130 L 76 122 Z"/>
+            <path d="M 120 114 L 124 122 L 120 130 L 116 122 Z"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Lustre · Suspendu</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ───────────────────── BORDURE COMPLÈTE ───────────────────── -->
+<section>
+  <h2>Cadre complet</h2>
+  <div class="grid">
+    <div class="card wide" style="grid-column: 1 / -1;">
+      <div class="frame">
+        <svg width="600" height="280" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+          <!-- Cadre extérieur -->
+          <rect x="20" y="20" width="560" height="240" fill="none" stroke="#c9a84c" stroke-width="2"/>
+          <rect x="28" y="28" width="544" height="224" fill="none" stroke="#7a5c1e" stroke-width="0.6"/>
+          <!-- Coins ornés -->
+          <g fill="#c9a84c">
+            <path d="M 20 20 L 60 20 L 60 24 L 24 24 L 24 60 L 20 60 Z"/>
+            <circle cx="20" cy="20" r="4"/>
+            <path d="M 580 20 L 540 20 L 540 24 L 576 24 L 576 60 L 580 60 Z"/>
+            <circle cx="580" cy="20" r="4"/>
+            <path d="M 20 260 L 60 260 L 60 256 L 24 256 L 24 220 L 20 220 Z"/>
+            <circle cx="20" cy="260" r="4"/>
+            <path d="M 580 260 L 540 260 L 540 256 L 576 256 L 576 220 L 580 220 Z"/>
+            <circle cx="580" cy="260" r="4"/>
+          </g>
+          <!-- Volutes intérieures aux coins -->
+          <g fill="none" stroke="#c9a84c" stroke-width="0.8">
+            <path d="M 36 36 Q 50 42 50 56"/>
+            <path d="M 564 36 Q 550 42 550 56"/>
+            <path d="M 36 244 Q 50 238 50 224"/>
+            <path d="M 564 244 Q 550 238 550 224"/>
+          </g>
+          <!-- Étoile au centre des bords haut/bas -->
+          <g fill="#c9a84c" transform="translate(300 20)">
+            <path d="M 0 -3 L 2 0 L 6 0 L 3 2 L 4 6 L 0 4 L -4 6 L -3 2 L -6 0 L -2 0 Z"/>
+          </g>
+          <g fill="#c9a84c" transform="translate(300 260)">
+            <path d="M 0 -3 L 2 0 L 6 0 L 3 2 L 4 6 L 0 4 L -4 6 L -3 2 L -6 0 L -2 0 Z"/>
+          </g>
+          <!-- Texte de démo au centre -->
+          <text x="300" y="140" font-family="UnifrakturMaguntia, cursive" font-size="40"
+                fill="#c9a84c" text-anchor="middle">Parchemin</text>
+          <text x="300" y="172" font-family="Cinzel, serif" font-size="11"
+                fill="#e8d5a0" text-anchor="middle" letter-spacing="6">CADRE DÉCORATIF</text>
+          <!-- Séparateur sous le titre -->
+          <g transform="translate(300 190)">
+            <line x1="-80" y1="0" x2="-12" y2="0" stroke="#7a5c1e" stroke-width="0.8"/>
+            <line x1="80" y1="0" x2="12" y2="0" stroke="#7a5c1e" stroke-width="0.8"/>
+            <path d="M 0 -4 L 4 0 L 0 4 L -4 0 Z" fill="#c9a84c"/>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Cadre · Bordure complète</div>
+      <div class="sub">À utiliser autour des modales, cartes de personnage, parchemins</div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

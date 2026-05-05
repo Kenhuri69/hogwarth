@@ -182,7 +182,8 @@ function completeQuest(index) {
 
   recalculateStats();
   updateUI();
-  checkLevelUp();   // l'XP de récompense peut déclencher un level-up
+  updateQuestTracker();
+  checkLevelUp();
   renderQuestList();
 }
 

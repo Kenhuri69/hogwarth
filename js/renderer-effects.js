@@ -164,11 +164,34 @@ function drawCellMarker(cx, cy, bx, by, size, cell) {
     ctx.arc(bx + size * 0.25, by, size * 0.08, 0, Math.PI * 2);
     ctx.fill();
   } else if (cell === CELL.STAIRS_D || cell === CELL.STAIRS_U) {
-    ctx.font = `${Math.floor(size * 1.4)}px serif`;
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(150,120,220,0.95)';
-    ctx.fillText(cell === CELL.STAIRS_D ? '⬇' : '⬆', bx, by);
+    // Mini icône d'escalier dessinée — marches en perspective
+    const w = size * 0.75, h = size * 1.1;
+    const stepN = 4;
+    const sh = h / stepN;
+    const taper = 0.55;
+    const top = by - h * 0.5;
+    const bottom = by + h * 0.5;
+    const dirDown = (cell === CELL.STAIRS_D);
+    for (let i = 0; i < stepN; i++) {
+      const t = i / (stepN - 1);
+      const yB = dirDown ? top + i * sh + sh : bottom - i * sh;
+      const yT = yB - sh * 0.55;
+      const ww = w * (1 - (1 - taper) * t);
+      ctx.fillStyle = `rgba(168,152,112,${0.85 - t * 0.35})`;
+      ctx.fillRect(bx - ww * 0.5, yT, ww, sh * 0.55);
+      ctx.fillStyle = `rgba(58,46,28,${0.9})`;
+      ctx.fillRect(bx - ww * 0.5, yT + sh * 0.55, ww, sh * 0.45);
+      ctx.strokeStyle = 'rgba(201,168,76,0.7)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx - ww * 0.5, yT, ww, sh * 0.55);
+    }
+    // Halo doré
+    ctx.shadowColor = 'rgba(201,168,76,0.6)';
+    ctx.shadowBlur = 6;
+    ctx.strokeStyle = 'rgba(201,168,76,0.5)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx - w * 0.5, top, w, h);
+    ctx.shadowBlur = 0;
   } else if (cell === CELL.SHOP) {
     ctx.font = `${Math.floor(size * 1.3)}px serif`;
     ctx.textAlign    = 'center';
@@ -180,4 +203,298 @@ function drawCellMarker(cx, cy, bx, by, size, cell) {
     ctx.textBaseline = 'middle';
     ctx.fillText('📦', bx, by);
   }
+}
+
+// ── Coffre (sprite de couloir) ───────────────────────────────
+function drawChestSprite(x, baseY, sz) {
+  ctx.save();
+  // Ombre au sol
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(x, baseY, sz * 0.38, sz * 0.1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Aura dorée
+  const aura = ctx.createRadialGradient(x, baseY - sz * 0.55, 0, x, baseY - sz * 0.55, sz * 0.85);
+  aura.addColorStop(0, 'rgba(220,170,40,0.28)');
+  aura.addColorStop(1, 'rgba(180,120,10,0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.55, sz * 0.85, 0, Math.PI * 2); ctx.fill();
+  // Emoji coffre — même taille que les monstres
+  ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('📦', x, baseY);
+  // Label
+  ctx.font = `bold ${Math.floor(sz * 0.22)}px sans-serif`;
+  ctx.fillStyle = 'rgba(240,200,80,0.9)';
+  ctx.textBaseline = 'top';
+  ctx.fillText('COFFRE', x, baseY - sz * 1.25);
+  ctx.restore();
+}
+
+// ── Escalier (sprite de couloir) ─────────────────────────────
+function drawStairsSprite(x, baseY, sz, dir) {
+  ctx.save();
+
+  // Ombre au sol
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath();
+  ctx.ellipse(x, baseY, sz * 0.55, sz * 0.13, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Aura douce dorée
+  const aura = ctx.createRadialGradient(x, baseY - sz * 0.55, 0, x, baseY - sz * 0.55, sz * 0.95);
+  aura.addColorStop(0, 'rgba(201,168,76,0.22)');
+  aura.addColorStop(1, 'rgba(201,168,76,0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.55, sz * 0.95, 0, Math.PI * 2); ctx.fill();
+
+  // Géométrie de l'escalier — vue de face en perspective
+  const W = sz * 0.95;       // largeur de base
+  const H = sz * 1.05;       // hauteur totale visible
+  const STEPS = 6;           // nombre de marches
+  const TOP = baseY - H;     // y du sommet
+  const stepH = H / STEPS;   // hauteur d'une marche
+  const taper = 0.55;        // largeur du sommet (perspective fuyante)
+
+  // Couleurs pierre médiévale
+  const stoneTop   = '#8a7a5a';
+  const stoneFace  = '#5a4a32';
+  const stoneEdge  = '#3a2e1c';
+  const stoneHi    = '#a89870';
+  const stoneShade = '#2a2010';
+
+  if (dir === 'down') {
+    // ESCALIER DESCENDANT — on regarde dans le trou : marches qui s'enfoncent + s'éloignent
+    // Cadre du trou (encadrement de pierre)
+    ctx.fillStyle = stoneEdge;
+    ctx.beginPath();
+    ctx.moveTo(x - W * 0.55, baseY);
+    ctx.lineTo(x + W * 0.55, baseY);
+    ctx.lineTo(x + W * taper * 0.55, TOP);
+    ctx.lineTo(x - W * taper * 0.55, TOP);
+    ctx.closePath();
+    ctx.fill();
+
+    // Marches descendantes — la plus proche est la plus large et la plus basse
+    for (let i = 0; i < STEPS; i++) {
+      const t0 = i / STEPS;          // 0 = avant (en bas/large), 1 = fond (en haut/étroit)
+      const t1 = (i + 1) / STEPS;
+      const y0 = baseY - t0 * H;
+      const y1 = baseY - t1 * H;
+      const w0 = W * (1 - (1 - taper) * t0);
+      const w1 = W * (1 - (1 - taper) * t1);
+      const dark = 0.35 + t0 * 0.55; // s'assombrit en s'éloignant
+
+      // Plat de la marche (visible en perspective)
+      ctx.fillStyle = `rgba(90,74,50,${1 - t0 * 0.5})`;
+      ctx.beginPath();
+      ctx.moveTo(x - w0 * 0.5, y0);
+      ctx.lineTo(x + w0 * 0.5, y0);
+      ctx.lineTo(x + w1 * 0.5, y1 + stepH * 0.35);
+      ctx.lineTo(x - w1 * 0.5, y1 + stepH * 0.35);
+      ctx.closePath();
+      ctx.fill();
+
+      // Contremarche (la verticale de la marche)
+      const grad = ctx.createLinearGradient(0, y1 + stepH * 0.35, 0, y1);
+      grad.addColorStop(0, stoneFace);
+      grad.addColorStop(1, `rgba(20,15,8,${0.7 + t0 * 0.3})`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(x - w1 * 0.5, y1 + stepH * 0.35);
+      ctx.lineTo(x + w1 * 0.5, y1 + stepH * 0.35);
+      ctx.lineTo(x + w1 * 0.5, y1);
+      ctx.lineTo(x - w1 * 0.5, y1);
+      ctx.closePath();
+      ctx.fill();
+
+      // Bord avant souligné en clair (highlight)
+      ctx.strokeStyle = `rgba(168,152,112,${0.5 - t0 * 0.4})`;
+      ctx.lineWidth = Math.max(1, sz * 0.012);
+      ctx.beginPath();
+      ctx.moveTo(x - w0 * 0.5, y0);
+      ctx.lineTo(x + w0 * 0.5, y0);
+      ctx.stroke();
+    }
+
+    // Trou noir au fond
+    const hole = ctx.createRadialGradient(x, TOP + stepH * 0.4, 0, x, TOP + stepH * 0.4, W * taper * 0.4);
+    hole.addColorStop(0, 'rgba(0,0,0,1)');
+    hole.addColorStop(1, 'rgba(0,0,0,0.2)');
+    ctx.fillStyle = hole;
+    ctx.beginPath();
+    ctx.ellipse(x, TOP + stepH * 0.5, W * taper * 0.42, stepH * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Murs latéraux de l'escalier (suggestion de couloir descendant)
+    ctx.fillStyle = 'rgba(30,22,12,0.7)';
+    ctx.beginPath();
+    ctx.moveTo(x - W * 0.5, baseY);
+    ctx.lineTo(x - W * taper * 0.5, TOP);
+    ctx.lineTo(x - W * taper * 0.5 - sz * 0.04, TOP);
+    ctx.lineTo(x - W * 0.5 - sz * 0.05, baseY);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(x + W * 0.5, baseY);
+    ctx.lineTo(x + W * taper * 0.5, TOP);
+    ctx.lineTo(x + W * taper * 0.5 + sz * 0.04, TOP);
+    ctx.lineTo(x + W * 0.5 + sz * 0.05, baseY);
+    ctx.closePath(); ctx.fill();
+
+  } else {
+    // ESCALIER MONTANT — marches empilées qui montent vers une arche
+    // Marches : la plus basse (large) devant, on monte en s'élargissant un peu vers l'avant
+    for (let i = STEPS - 1; i >= 0; i--) {
+      const t = i / (STEPS - 1);     // 0 = bas/avant, 1 = haut/arrière
+      const yBottom = baseY - i * stepH;
+      const yTop    = yBottom - stepH;
+      const w = W * (1 - (1 - taper) * t);
+
+      // Plat de la marche (vu du dessus)
+      ctx.fillStyle = i === 0 ? stoneTop : `rgba(138,122,90,${1 - t * 0.4})`;
+      ctx.beginPath();
+      ctx.moveTo(x - w * 0.5, yTop);
+      ctx.lineTo(x + w * 0.5, yTop);
+      const wNext = W * (1 - (1 - taper) * Math.min(1, (i + 1) / (STEPS - 1)));
+      ctx.lineTo(x + wNext * 0.5, yTop + stepH * 0.35);
+      ctx.lineTo(x - wNext * 0.5, yTop + stepH * 0.35);
+      ctx.closePath();
+      ctx.fill();
+
+      // Contremarche
+      ctx.fillStyle = `rgba(58,46,28,${0.85 + t * 0.15})`;
+      ctx.beginPath();
+      ctx.moveTo(x - wNext * 0.5, yTop + stepH * 0.35);
+      ctx.lineTo(x + wNext * 0.5, yTop + stepH * 0.35);
+      ctx.lineTo(x + wNext * 0.5, yBottom);
+      ctx.lineTo(x - wNext * 0.5, yBottom);
+      ctx.closePath();
+      ctx.fill();
+
+      // Highlight bord supérieur
+      ctx.strokeStyle = `rgba(168,152,112,${0.6 - t * 0.4})`;
+      ctx.lineWidth = Math.max(1, sz * 0.012);
+      ctx.beginPath();
+      ctx.moveTo(x - w * 0.5, yTop);
+      ctx.lineTo(x + w * 0.5, yTop);
+      ctx.stroke();
+
+      // Joints de pierre verticaux sur la contremarche
+      ctx.strokeStyle = `rgba(30,22,12,${0.5})`;
+      ctx.lineWidth = Math.max(0.5, sz * 0.005);
+      const seg = wNext / 3;
+      for (let s = 1; s < 3; s++) {
+        ctx.beginPath();
+        ctx.moveTo(x - wNext * 0.5 + seg * s, yTop + stepH * 0.35);
+        ctx.lineTo(x - wNext * 0.5 + seg * s, yBottom);
+        ctx.stroke();
+      }
+    }
+
+    // Arche en haut
+    const archW = W * taper * 0.95;
+    const archY = baseY - H;
+    ctx.fillStyle = stoneEdge;
+    ctx.beginPath();
+    ctx.moveTo(x - archW * 0.5, archY);
+    ctx.lineTo(x - archW * 0.5, archY - sz * 0.25);
+    ctx.quadraticCurveTo(x, archY - sz * 0.55, x + archW * 0.5, archY - sz * 0.25);
+    ctx.lineTo(x + archW * 0.5, archY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Intérieur sombre de l'arche
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.beginPath();
+    ctx.moveTo(x - archW * 0.4, archY);
+    ctx.lineTo(x - archW * 0.4, archY - sz * 0.22);
+    ctx.quadraticCurveTo(x, archY - sz * 0.46, x + archW * 0.4, archY - sz * 0.22);
+    ctx.lineTo(x + archW * 0.4, archY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Pierre de clé d'arche
+    ctx.fillStyle = stoneHi;
+    ctx.beginPath();
+    ctx.moveTo(x - sz * 0.05, archY - sz * 0.46);
+    ctx.lineTo(x + sz * 0.05, archY - sz * 0.46);
+    ctx.lineTo(x + sz * 0.07, archY - sz * 0.55);
+    ctx.lineTo(x - sz * 0.07, archY - sz * 0.55);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Label discret au-dessus
+  ctx.font = `600 ${Math.floor(sz * 0.18)}px Cinzel, serif`;
+  ctx.fillStyle = 'rgba(201,168,76,0.95)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.shadowBlur = 4;
+  ctx.fillText(dir === 'down' ? 'DESCENDRE' : 'MONTER', x, baseY - H - sz * 0.32);
+  ctx.shadowBlur = 0;
+
+  ctx.restore();
+}
+
+// ── Boutique (sprite de couloir) ─────────────────────────────
+function drawShopSprite(x, baseY, sz) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.65, sz * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+  const tw = sz * 1.3, th = sz * 0.38;
+  ctx.fillStyle = '#5a3a10';
+  ctx.beginPath();
+  ctx.moveTo(x - tw / 2, baseY); ctx.lineTo(x + tw / 2, baseY);
+  ctx.lineTo(x + tw * 0.35, baseY - th); ctx.lineTo(x - tw * 0.35, baseY - th);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#c9a84c'; ctx.lineWidth = sz * 0.04; ctx.stroke();
+  ['⚗️','📜','🪄'].forEach((ico, i) => {
+    const ox = x + (i - 1) * sz * 0.38;
+    ctx.font = `${Math.floor(sz * 0.28)}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(ico, ox, baseY - th + 2);
+  });
+  const signY = baseY - th - sz * 0.52;
+  ctx.fillStyle = '#6a3a0a';
+  ctx.fillRect(x - sz * 0.5, signY, sz, sz * 0.33);
+  ctx.strokeStyle = '#c9a84c'; ctx.lineWidth = sz * 0.04;
+  ctx.strokeRect(x - sz * 0.5, signY, sz, sz * 0.33);
+  ctx.fillStyle = '#f0d080';
+  ctx.font = `bold ${Math.floor(sz * 0.18)}px sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('BOUTIQUE', x, signY + sz * 0.165);
+  const glowS = ctx.createRadialGradient(x, signY, 0, x, signY, sz * 0.85);
+  glowS.addColorStop(0, 'rgba(30,100,60,0.3)'); glowS.addColorStop(1, 'rgba(30,100,60,0)');
+  ctx.fillStyle = glowS; ctx.fillRect(x - sz, signY - sz * 0.4, sz * 2, sz * 1.4);
+  ctx.restore();
+}
+
+// ── Ennemi (sprite de couloir) ───────────────────────────────
+function drawEnemySprite(enemy, x, baseY, sz) {
+  ctx.save();
+  const shadowG = ctx.createRadialGradient(x, baseY, 0, x, baseY, sz * 0.65);
+  shadowG.addColorStop(0, 'rgba(180,20,10,0.5)'); shadowG.addColorStop(1, 'rgba(180,20,10,0)');
+  ctx.fillStyle = shadowG; ctx.fillRect(x - sz, baseY - sz * 0.3, sz * 2, sz * 0.65);
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.38, sz * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+  const aura = ctx.createRadialGradient(x, baseY - sz * 0.55, 0, x, baseY - sz * 0.55, sz * 0.85);
+  aura.addColorStop(0, 'rgba(220,40,20,0.22)'); aura.addColorStop(1, 'rgba(100,10,5,0)');
+  ctx.fillStyle = aura; ctx.beginPath(); ctx.arc(x, baseY - sz * 0.55, sz * 0.85, 0, Math.PI * 2); ctx.fill();
+  ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText(enemy.icon, x, baseY);
+  const hp  = enemy.currentHp !== undefined ? enemy.currentHp : enemy.hp;
+  const pct = Math.max(0, Math.min(1, hp / enemy.hp));
+  const barW = sz * 0.85, barH = Math.max(3, sz * 0.07);
+  const barX = x - barW / 2, barY = baseY - sz * 1.25;
+  if (barY > 0) {
+    ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(barX, barY, barW, barH);
+    ctx.fillStyle = pct > 0.5 ? '#27ae60' : pct > 0.25 ? '#e67e22' : '#c0392b';
+    ctx.fillRect(barX, barY, barW * pct, barH);
+    ctx.strokeStyle = 'rgba(201,168,76,0.45)'; ctx.lineWidth = 0.5;
+    ctx.strokeRect(barX, barY, barW, barH);
+  }
+  ctx.restore();
 }

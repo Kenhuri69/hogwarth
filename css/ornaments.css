@@ -1,0 +1,169 @@
+/* ═══════════════════════════════════════════════════════════
+   ORNAMENTS — éléments décoratifs génériques médiéval-fantasy
+   À charger APRÈS style.css et ux-improvements.css
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── 1. ÉCRAN-TITRE : cadre + sceau ── */
+#title-screen {
+  position: fixed;
+  padding: 40px 30px;
+}
+/* Cadre or — bordures pleines + corner ornaments via pseudo-elements */
+#title-screen::before {
+  content: '';
+  position: absolute;
+  inset: 24px;
+  border: 2px solid var(--gold);
+  pointer-events: none;
+  z-index: 0;
+}
+#title-screen::after {
+  content: '';
+  position: absolute;
+  inset: 32px;
+  border: 1px solid var(--gold-dark);
+  pointer-events: none;
+  z-index: 0;
+}
+/* Coins ornementés (4 SVG positionnés en absolu) */
+.title-corner {
+  position: absolute;
+  width: 44px; height: 44px;
+  pointer-events: none;
+  z-index: 1;
+  color: var(--gold);
+}
+.title-corner.tl { top: 16px; left: 16px; }
+.title-corner.tr { top: 16px; right: 16px; transform: scaleX(-1); }
+.title-corner.bl { bottom: 16px; left: 16px; transform: scaleY(-1); }
+.title-corner.br { bottom: 16px; right: 16px; transform: scale(-1, -1); }
+
+/* Petites étoiles au milieu des bordures haut & bas */
+.title-edge-star {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px; height: 14px;
+  z-index: 1;
+  color: var(--gold);
+  background: radial-gradient(circle, #050510 60%, transparent 70%);
+  padding: 4px;
+  pointer-events: none;
+}
+.title-edge-star.top    { top: 17px; }
+.title-edge-star.bottom { bottom: 17px; }
+
+/* Tout le contenu reste au-dessus */
+#title-screen > *:not(.stars):not(.title-corner):not(.title-edge-star) {
+  position: relative;
+  z-index: 2;
+}
+
+.title-separator {
+  margin: 8px auto 0;
+  display: block;
+  opacity: 0.9;
+}
+
+/* ── 2. MODALES : ornements de coin ── */
+.modal-box {
+  position: relative;
+}
+.modal-corner {
+  position: absolute;
+  width: 26px; height: 26px;
+  pointer-events: none;
+  color: var(--gold);
+}
+.modal-corner.tl { top: 4px; left: 4px; }
+.modal-corner.tr { top: 4px; right: 4px; transform: scaleX(-1); }
+.modal-corner.bl { bottom: 4px; left: 4px; transform: scaleY(-1); }
+.modal-corner.br { bottom: 4px; right: 4px; transform: scale(-1, -1); }
+
+.modal-title {
+  position: relative;
+}
+.modal-title-orn {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 10px;
+  color: var(--gold);
+}
+
+/* ── 6. BOUSSOLE : rose des vents au centre ── */
+.compass-rose-svg {
+  width: 14px; height: 14px;
+  display: block;
+  margin: auto;
+}
+
+/* ── 3. PANEL TITLES : étoile séparatrice ── */
+.panel-title {
+  position: relative;
+}
+.panel-title::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  transform: translate(-50%, 50%);
+  width: 8px;
+  height: 8px;
+  background: linear-gradient(180deg, #120a03 0%, #0d0705 100%);
+  background-image:
+    radial-gradient(circle, var(--gold) 1.5px, transparent 2px);
+}
+
+/* ── 4. FLOOR TRANSITION : sceau en filigrane ── */
+.floor-transition-content {
+  position: relative;
+}
+.floor-seal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 220px; height: 220px;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+}
+.floor-transition-content > *:not(.floor-seal) {
+  position: relative;
+  z-index: 1;
+}
+.floor-divider {
+  display: block;
+  margin: 14px auto 0;
+}
+
+/* ── 5. LEVEL-UP : sceau pentacle derrière ── */
+.levelup-box { position: relative; }
+.levelup-seal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 240px; height: 240px;
+  opacity: 0.22;
+  pointer-events: none;
+  z-index: 0;
+}
+.levelup-box > *:not(.levelup-seal) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── DEATH : sceau pentacle rouge derrière ── */
+.death-seal {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px; height: 280px;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+  color: #6a1010;
+}
+#death-screen > *:not(.death-seal) {
+  position: relative;
+  z-index: 1;
+}

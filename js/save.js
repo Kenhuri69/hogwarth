@@ -10,12 +10,15 @@ function saveGame() {
     partySize,
     currentFloor, playerX, playerY, playerDir,
     dungeon, visited, enemyMap, itemMap,
-    seenMonsters: Array.from(seenMonsters),
-    audioMuted:   AudioSystem.isMuted,
-    voiceEnabled: AudioSystem.voiceEnabled,
+    seenMonsters:  Array.from(seenMonsters),
+    audioMuted:    AudioSystem.isMuted,
+    voiceEnabled:  AudioSystem.voiceEnabled,
     activeQuests,
     difficulty,
-    chosenHouse, housePoints, houseTier
+    chosenHouse, housePoints, houseTier,
+    searchedCells: Array.from(searchedCells),
+    floorDungeons,
+    restCooldown
   };
   localStorage.setItem('hogwarts_rpg_save', JSON.stringify(gameState));
   addMsg("Partie sauvegardée !", "good");
@@ -59,12 +62,17 @@ function loadGame() {
   inBattle = false;
   document.getElementById('encounter-overlay').style.display = 'none';
   document.getElementById('btn-interact').style.display      = 'none';
+  const expl = document.getElementById('explore-overlay');
+  if (expl) expl.style.display = 'none';
 
   if (gs.activeQuests) activeQuests = gs.activeQuests;
   if (gs.difficulty && DIFFICULTY_SETTINGS[gs.difficulty]) difficulty = gs.difficulty;
   if (gs.chosenHouse && HOUSE_BONUSES[gs.chosenHouse]) chosenHouse = gs.chosenHouse;
   if (gs.housePoints !== undefined) housePoints = gs.housePoints;
   if (gs.houseTier   !== undefined) houseTier   = gs.houseTier;
+  if (gs.searchedCells) searchedCells = new Set(gs.searchedCells);
+  if (gs.floorDungeons) floorDungeons = gs.floorDungeons;
+  if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
 
   // Recalculer les stats effectives (base + équipement chargé)
   recalculateStats();

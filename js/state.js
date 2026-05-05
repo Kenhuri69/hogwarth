@@ -5,46 +5,6 @@
 // Tableaux de la carte courante
 let dungeon, visited, enemyMap, itemMap;
 
-// ============================================================
-// OBJETS 3D DANS LE DONJON (coffres, boutiques...)
-// ============================================================
-let objectMap = []; // même taille que map, contient les objets ou null
-
-const OBJECT_TYPES = {
-  chest: {
-    id: "chest",
-    name: "Coffre ancien",
-    icon: "🪑",
-    svg: `<svg viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="20" width="80" height="50" rx="8" fill="#8a7050" stroke="#c9a84c" stroke-width="8"/><rect x="35" y="35" width="30" height="12" fill="#2a1a08"/></svg>`,
-    color: "#c9a84c",
-    interact: "openChest"
-  },
-  shop: {
-    id: "shop",
-    name: "Boutique du Chaudron",
-    icon: "🛒",
-    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="30" width="60" height="50" rx="5" fill="#2a1a08" stroke="#c9a84c" stroke-width="12"/><text x="50" y="65" font-size="32" fill="#c9a84c" text-anchor="middle">🪄</text></svg>`,
-    color: "#ffd700",
-    interact: "openShop"
-  },
-  stairs_down: {
-    id: "stairs_down",
-    name: "Escalier descendant",
-    icon: "⬇",
-    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="20" width="80" height="70" fill="#3a2a1a" stroke="#c9a84c" stroke-width="4"/><rect x="20" y="30" width="60" height="10" fill="#5a4030"/><rect x="20" y="45" width="60" height="10" fill="#5a4030"/><rect x="20" y="60" width="60" height="10" fill="#5a4030"/><rect x="20" y="75" width="60" height="10" fill="#5a4030"/><text x="50" y="20" font-size="24" fill="#c9a84c" text-anchor="middle">⬇</text></svg>`,
-    color: "#8a6040",
-    interact: "goDeeper"
-  },
-  stairs_up: {
-    id: "stairs_up",
-    name: "Escalier remontant",
-    icon: "⬆",
-    svg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="20" width="80" height="70" fill="#3a2a1a" stroke="#c9a84c" stroke-width="4"/><rect x="20" y="65" width="60" height="10" fill="#5a4030"/><rect x="20" y="50" width="60" height="10" fill="#5a4030"/><rect x="20" y="35" width="60" height="10" fill="#5a4030"/><rect x="20" y="20" width="60" height="10" fill="#5a4030"/><text x="50" y="18" font-size="24" fill="#c9a84c" text-anchor="middle">⬆</text></svg>`,
-    color: "#8a6040",
-    interact: "goUp"
-  }
-};
-
 // Position et orientation du joueur
 let playerX, playerY, playerDir;
 
@@ -164,6 +124,14 @@ let pendingSpell    = null; // sort en attente de sélection de cible
 // Monstres rencontrés en combat (bestiaire)
 let seenMonsters = new Set();
 
+// ── Anti-exploit ─────────────────────────────────────────────
+// Cases déjà fouillées (clé "x,y") — réinitialisé par étage
+let searchedCells = new Set();
+// Cache des étages déjà visités (pour éviter la régénération des coffres)
+let floorDungeons = {};
+// Cooldown de repos (nombre de déplacements avant nouveau repos)
+let restCooldown = 0;
+
 // ── Membres du groupe ────────────────────────────────────────
 let player = {
   name: "Harry Potter", icon: "🧙", imgSrc: "img/harry.png", class: "Élève de Gryffondor",
@@ -245,5 +213,38 @@ let activeQuests = [
     reward: { xp: 90, gold: 30, item: "broom" },
     completed: false,
     location: "Forêt Interdite (étage 4+)"
+  },
+  {
+    id: "niffleurs_trésor",
+    title: "L'invasion des Niffleurs",
+    giver: "Newton Scamander",
+    desc: "Les Niffleurs ont envahi les sous-sols ! Élimine-en 3 avant qu'ils volent tout l'or.",
+    objective: { type: "kill", monsterId: "niffleur", amount: 3 },
+    progress: 0,
+    reward: { xp: 100, gold: 80, item: "amulette" },
+    completed: false,
+    location: "Sous-sols de Poudlard (étage 2+)"
+  },
+  {
+    id: "golem_passage",
+    title: "Le Gardien Endormi",
+    giver: "Professeur McGonagall",
+    desc: "Un Gardien du Portail bloque l'accès à la bibliothèque interdite. Neutralise-le.",
+    objective: { type: "kill", monsterId: "gardien_portail", amount: 1 },
+    progress: 0,
+    reward: { xp: 180, gold: 70, item: "livre_bombarda" },
+    completed: false,
+    location: "Passages secrets (étage 5+)"
+  },
+  {
+    id: "chocolat_dementeur",
+    title: "Remède contre les Détraqueurs",
+    giver: "Professeur Lupin",
+    desc: "Rapporte 2 Chocolats aux Sorciers à Lupin pour son cours sur les Détraqueurs.",
+    objective: { type: "item", itemId: "choco_sorcier", amount: 2 },
+    progress: 0,
+    reward: { xp: 60, gold: 20, spell: "Patronum" },
+    completed: false,
+    location: "Classe de Défense (étage 1)"
   }
 ];

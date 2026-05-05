@@ -35,6 +35,13 @@ function startBattle(baseEnemyData) {
   setBattleLog(`${size > 1 ? size + ' ennemis surgissent' : enemyGroup[0].desc} !`);
   addMsg(`⚔️ ${size} ennemi${size > 1 ? 's' : ''} !`, 'bad');
   addLog(`⚔️ Combat (${size} ennemi${size > 1 ? 's' : ''})`);
+  // UX : reset journal + timeline + tour 1
+  if (window.UX) {
+    UX.clearCombatLog();
+    UX.logCombatTurn(1);
+    UX.logCombat(`⚔️ Combat engagé contre ${size} ennemi${size>1?'s':''}.`, 'info');
+    UX.renderTimeline();
+  }
   AudioSystem.startCombatMusic();
 }
 
@@ -103,7 +110,16 @@ function executeAttack(targetIdx) {
   if (enemy.disarmed > 0) enemy.disarmed--;
 
   AudioSystem.playHit();
-  setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${dmg} dégâts !`);
+  const isCrit = (Math.random() * 100) < (char.lck || 0);
+  const finalDmg = isCrit ? Math.floor(dmg * 1.5) : dmg;
+  if (isCrit) {
+    enemy.currentHp -= (finalDmg - dmg); // ajoute le bonus crit
+  }
+  setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${finalDmg} dégâts${isCrit?' (CRITIQUE !)':''} !`);
+  if (window.UX) {
+    UX.floatDmg(`enemy:${targetIdx}`, finalDmg, isCrit ? 'crit' : 'dmg');
+    UX.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}`, isCrit?'magic':'good');
+  }
   renderEnemyGroup();
   if (checkAllEnemiesDead()) return;
   advanceBattleChar();
@@ -117,6 +133,7 @@ function checkAllEnemiesDead() {
 // ── Passage au personnage suivant / tour des ennemis ─────────
 function advanceBattleChar() {
   updateUI();
+  if (window.UX) UX.renderTimeline();
   const next = currentBattleChar === 0 ? 1 : -1;
 
   // Mode solo ou Hermione KO → directement tour des ennemis
@@ -137,6 +154,7 @@ function advanceBattleChar() {
 // ── Tour des ennemis ─────────────────────────────────────────
 function enemyTurn() {
   battleTurn++;
+  if (window.UX) UX.logCombatTurn(battleTurn + 1);
   const alive = party.filter(c => c.hp > 0).slice(0, partySize);
   let log = '';
 
@@ -152,10 +170,19 @@ function enemyTurn() {
     if (shieldTurns[charIdx] > 0) {
       shieldTurns[charIdx]--;
       log += `🛡️ Protego protège ${target.name} ! `;
+      if (window.UX) {
+        UX.floatDmg('ally', 0, 'shield');
+        UX.logCombat(`🛡️ Protego bloque l'attaque de ${enemy.name} sur ${target.name}.`, 'magic');
+      }
     } else {
       const dmg = Math.max(0, enemy.atk - target.def + Math.floor(Math.random() * 3));
       target.hp = Math.max(0, target.hp - dmg);
       log += `${enemy.icon} → ${target.name} : -${dmg} PV. `;
+      if (window.UX) {
+        if (dmg === 0) UX.floatDmg('ally', 0, 'miss');
+        else UX.floatDmg('ally', dmg, 'dmg');
+        UX.logCombat(`${enemy.icon} ${enemy.name} → ${target.name} : <b>−${dmg} PV</b>`, 'bad');
+      }
     }
   });
 
@@ -171,6 +198,7 @@ function enemyTurn() {
 
   currentBattleChar = party[0].hp > 0 ? 0 : 1;
   updateBattleCharIndicator();
+  if (window.UX) UX.renderTimeline();
   setBattleLog((log || '...') + `\nÀ ${party[currentBattleChar].name} d'agir...`);
 }
 

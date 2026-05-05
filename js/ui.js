@@ -42,6 +42,9 @@ function updateUI() {
     const card = document.getElementById(`char-card-${i}`);
     if (card) card.classList.toggle('ko-char', c.hp <= 0);
   });
+
+  updateQuestTracker();
+  updateRoomStatus();
 }
 
 function _updateHouseBadge() {
@@ -123,6 +126,55 @@ function updateCompass() {
 
 function setNarrative(text) {
   document.getElementById('narrative-panel').textContent = text;
+}
+
+// ── Mini suivi de quêtes (panneau droit) ─────────────────────
+function updateQuestTracker() {
+  const el = document.getElementById('quest-tracker');
+  if (!el) return;
+  const pending = activeQuests.filter(q => !q.completed);
+  if (!pending.length) {
+    el.innerHTML = '<div style="color:#3a2a10;font-style:italic;font-size:9px;text-align:center;padding-top:4px;">Aucune quête active</div>';
+    return;
+  }
+  el.innerHTML = pending.map(q => {
+    const obj = q.objective;
+    let prog = '', pct = 0;
+    if (obj.type === 'kill') {
+      pct = Math.min(1, q.progress / obj.amount);
+      prog = `${q.progress}/${obj.amount}`;
+    } else {
+      const count = (player.inventory || []).filter(i => i.id === obj.itemId).length;
+      pct = Math.min(1, count / obj.amount);
+      prog = `${count}/${obj.amount}`;
+    }
+    const barW = Math.round(pct * 100);
+    return `<div style="background:#0a0705;border:1px solid #2a1a08;border-radius:3px;padding:5px 6px;">
+      <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--gold-light);letter-spacing:0.5px;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${q.title}">${q.title}</div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:#6a5030;margin-bottom:3px;">
+        <span>${q.giver}</span><span style="color:#8a7050">${prog}</span>
+      </div>
+      <div style="background:#1a0f05;border-radius:1px;height:3px;overflow:hidden;">
+        <div style="width:${barW}%;height:100%;background:var(--gold-dark);transition:width .4s ease;"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Indicateur de salle (panneau droit) ──────────────────────
+function updateRoomStatus() {
+  const el = document.getElementById('room-status');
+  if (!el || !dungeon) return;
+  if (typeof searchedCells === 'undefined') return;
+  const cell = dungeon[playerY] && dungeon[playerY][playerX];
+  const searched = searchedCells && searchedCells.has(`${playerX},${playerY}`);
+  let label = '— COULOIR —';
+  if (cell === CELL.CHEST)    label = '📦 COFFRE';
+  else if (cell === CELL.SHOP)    label = '🏪 BOUTIQUE';
+  else if (cell === CELL.STAIRS_D) label = '⬇ DESCENTE';
+  else if (cell === CELL.STAIRS_U) label = '⬆ MONTÉE';
+  const searchTag = searched ? ' <span style="color:#4a3010">✓ Fouillé</span>' : '';
+  el.innerHTML = label + searchTag;
 }
 
 function updateLocationDisplay() {

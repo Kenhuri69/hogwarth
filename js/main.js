@@ -92,7 +92,11 @@ async function startGame(count = 2) {
   gc.style.display = 'grid';
   resizeCanvas();
   generateDungeon(1);
+  floorDungeons = {};   // reset du cache à chaque nouvelle partie
+  searchedCells = new Set();
+  restCooldown  = 0;
   updateUI();
+  updateQuestTracker();
   updateCompass();
   renderMinimap();
   drawDungeon();
@@ -161,7 +165,6 @@ document.addEventListener('keydown',e=>{
   if(e.key==='c') openCharacter();
   if(e.key==='f') searchRoom();
   if(e.key==='r') rest();
-  if(e.key===' ' || e.key==='Enter') { checkObjectInFront(); e.preventDefault(); }
   if(e.key==='Escape') {
     ['inventory-modal','spell-modal','shop-modal','character-modal'].forEach(closeModal);
   }
