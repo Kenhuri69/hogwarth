@@ -298,10 +298,78 @@ async function scenarioChainedQuest() {
   await browser.close();
 }
 
+// ── Scénario 4 : écrans de sélection accessibles sur viewport mobile ─
+
+async function scenarioMobileSelect() {
+  console.log('\n── Scénario 4 : sélection accessible sur mobile ──');
+  const browser = await chromium.launch({ headless: true });
+  const ctx = await browser.newContext({
+    viewport: { width: 375, height: 667 }, // iPhone SE
+    deviceScaleFactor: 2, isMobile: true, hasTouch: true
+  });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
+  page.on('console', m => {
+    if (m.type() !== 'error') return;
+    const t = m.text();
+    if (isIgnorableError(t)) return;
+    errors.push(`console.error: ${t}`);
+  });
+
+  await page.goto(INDEX_URL);
+  await page.waitForFunction(() => typeof window.startGame === 'function');
+
+  await page.evaluate(() => { document.getElementById('title-screen').click(); });
+  await page.waitForFunction(() => {
+    const el = document.getElementById('player-select-screen');
+    return el && getComputedStyle(el).display !== 'none';
+  });
+
+  // Le bouton "Commencer" doit pouvoir être amené dans la viewport
+  const reach = await page.evaluate(() => {
+    const btn = document.getElementById('start-adventure-btn');
+    btn.scrollIntoView({ block: 'center' });
+    const r = btn.getBoundingClientRect();
+    return {
+      visible:  r.top >= 0 && r.bottom <= window.innerHeight,
+      disabled: btn.disabled,
+      overflow: getComputedStyle(document.getElementById('player-select-screen')).overflowY
+    };
+  });
+  console.log('  player-select :', reach);
+  assert(reach.visible,             'bouton "Commencer" hors viewport mobile');
+  assert(!reach.disabled,           'bouton désactivé alors que Harry est sélectionné par défaut');
+  assert(reach.overflow === 'auto', 'overflow-y devrait être auto sur mobile');
+
+  // Cliquer "Commencer" puis vérifier que l'écran Maison apparaît et son bouton atteignable
+  await page.evaluate(() => document.getElementById('start-adventure-btn').click());
+  await page.waitForFunction(() => {
+    const el = document.getElementById('house-select-screen');
+    return el && getComputedStyle(el).display !== 'none';
+  }, { timeout: 3000 });
+
+  const houseReach = await page.evaluate(() => {
+    const btn = document.querySelector('.house-btn');
+    btn.scrollIntoView({ block: 'center' });
+    const r = btn.getBoundingClientRect();
+    return { visible: r.top >= 0 && r.bottom <= window.innerHeight };
+  });
+  console.log('  house-select :', houseReach);
+  assert(houseReach.visible, 'bouton Maison hors viewport mobile');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ parcours sélection mobile complet');
+  await browser.close();
+}
+
 // ── Runner ───────────────────────────────────────────────────
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect];
   for (const s of scenarios) {
     await s();
   }
