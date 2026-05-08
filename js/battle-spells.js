@@ -111,6 +111,40 @@ function castSpellInBattle(spellName, targetIdx) {
       }
       addMsg(msg, 'magic');
       break;
+    case 'lifesteal':
+      if (enemy) {
+        let dmg = spell.power + Math.floor(char.mag / 2);
+        let suffix = '';
+        if (enemy.resist?.includes('lifesteal')) { dmg = Math.floor(dmg * 0.5); suffix = ' 🔰'; }
+        if (enemy.weak?.includes('lifesteal'))   { dmg = Math.floor(dmg * 1.5); suffix = ' 💥'; }
+        enemy.currentHp -= dmg;
+        const heal = Math.floor(dmg / 2);
+        char.hp = Math.min(char.hpMax, char.hp + heal);
+        msg = `🩸 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix}, +${heal} PV drainés !`;
+        if (window.UX) {
+          UX.floatDmg(`enemy:${targetIdx}`, dmg, 'dmg');
+          UX.floatDmg('ally', heal, 'heal');
+          UX.logCombat(`🩸 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix}, <b>+${heal} PV</b>`, 'magic');
+        }
+      }
+      addMsg(msg, 'magic');
+      break;
+    case 'curse':
+      if (enemy) {
+        let dmg = spell.power + Math.floor(char.mag / 2);
+        if (enemy.resist?.includes('curse')) dmg = Math.floor(dmg * 0.5);
+        if (enemy.weak?.includes('curse'))   dmg = Math.floor(dmg * 1.5);
+        enemy.currentHp -= dmg;
+        enemy.atk = Math.max(0, (enemy.atk || 0) - 3);
+        enemy.def = Math.max(0, (enemy.def || 0) - 3);
+        msg = `☠️ ${char.name} : ${spell.name} → ${dmg} dégâts et ${enemy.name} maudit (−3 ATK/DEF) !`;
+        if (window.UX) {
+          UX.floatDmg(`enemy:${targetIdx}`, dmg, 'crit');
+          UX.logCombat(`☠️ ${char.name} maudit ${enemy.name} : <b>−${dmg}</b>, −3 ATK/DEF`, 'magic');
+        }
+      }
+      addMsg(msg, 'magic');
+      break;
     case 'steal':
       const gold = Math.floor(Math.random() * 10 + 5);
       player.gold += gold;

@@ -1081,6 +1081,148 @@ const MONSTERS = [
     drops: [{ itemId: "livre_soin", chance: 0.05 }]
   },
 
+  // ════════════════════════════════════════════
+  // VAMPIRES — Créatures suceuses de vie
+  // ════════════════════════════════════════════
+
+  {
+    id: "chauve_souris_vampire", name: "Chauve-Souris Vampire", icon: "🦇", category: "bête",
+    desc: "Une nuée de chauves-souris assoiffées de sang fond sur vous !",
+    lore: "Cousine corrompue des chauves-souris ordinaires. Ses canines acérées percent la peau en un clin d'œil et drainent juste assez de sang pour affaiblir une proie sans la tuer — la bête préfère revenir festoyer chaque nuit.",
+    habitat: "Beffrois abandonnés et combles humides du château",
+    anecdote: "On en trouve encore des colonies dans les ruines des anciens dortoirs de Serpentard.",
+    danger: 4,
+    minFloor: 2, maxFloor: 6, weight: 7,
+    hp: 22, atk: 5, def: 2, mag: 4, agi: 14, lck: 8, scale: 0.22,
+    abilities: [
+      { name: "Morsure Sanguinaire", icon: "🩸", desc: "Drain de sang",
+        effect: "drain", power: 6, chance: 0.45 }
+    ],
+    ai: "aggressive", resist: [], weak: ["burn", "stun"],
+    xp: 22, gold: { min: 6, max: 14 },
+    drops: [{ itemId: "potion_s", chance: 0.15 }]
+  },
+
+  {
+    id: "vampire_mineur", name: "Vampire Novice", icon: "🧛", category: "être magique",
+    desc: "Un Vampire Novice surgit de l'ombre, ses crocs étincelants !",
+    lore: "Sorcier ou moldu fraîchement transformé, encore vorace et imprudent. Sa soif est si intense qu'il attaque à découvert — mais sa résistance aux sorts de feu reste limitée. Une simple Lumos prolongée suffit à le brûler.",
+    habitat: "Cachots inférieurs et passages secrets de la Forêt Interdite",
+    anecdote: "Il existerait une caste de vampires sympathisants à Voldemort, recrutée pendant la Seconde Guerre des sorciers.",
+    danger: 6,
+    minFloor: 4, maxFloor: 8, weight: 6,
+    hp: 60, atk: 9, def: 5, mag: 8, agi: 12, lck: 10, scale: 0.28,
+    abilities: [
+      { name: "Étreinte Mortelle", icon: "🩸", desc: "Drain puissant",
+        effect: "drain", power: 10, chance: 0.40 },
+      { name: "Regard Hypnotique", icon: "👁️", desc: "Réduit la défense",
+        effect: "weaken", power: 2, chance: 0.20 }
+    ],
+    ai: "cautious", resist: ["stun", "instant"], weak: ["burn"],
+    xp: 50, gold: { min: 18, max: 32 },
+    drops: [
+      { itemId: "potion_m", chance: 0.20 },
+      { itemId: "potion_s", chance: 0.20 }
+    ]
+  },
+
+  {
+    id: "strigoi", name: "Strigoï Ancien", icon: "🩸", category: "être magique",
+    desc: "Un Strigoï millénaire émerge de son cercueil, des siècles de soif dans les yeux !",
+    lore: "Ces vampires anciens n'ont plus rien d'humain. Leur peau a la couleur du parchemin et leur soif est insatiable. Ils maîtrisent une magie du sang qui leur permet de drainer plusieurs proies à distance.",
+    habitat: "Cryptes oubliées sous Poudlard, salles funéraires des fondateurs",
+    anecdote: "Salazar Serpentard aurait fait alliance avec un Strigoï pour protéger sa Chambre des Secrets — d'où la résistance à la magie noire.",
+    danger: 8,
+    minFloor: 6, maxFloor: null, weight: 4,
+    hp: 110, atk: 14, def: 8, mag: 14, agi: 11, lck: 12, scale: 0.32,
+    abilities: [
+      { name: "Sangsue Spectrale", icon: "🦇", desc: "Drain à distance",
+        effect: "drain", power: 14, chance: 0.40 },
+      { name: "Brume Sanglante", icon: "🌫️", desc: "Affaiblit l'âme",
+        effect: "weaken", power: 3, chance: 0.25 }
+    ],
+    ai: "aggressive", resist: ["stun", "instant", "disarm"], weak: ["burn"],
+    xp: 110, gold: { min: 35, max: 60 },
+    drops: [
+      { itemId: "felix", chance: 0.12 },
+      { itemId: "wand2", chance: 0.05 },
+      { itemId: "potion_m", chance: 0.30 }
+    ]
+  },
+
+  // ════════════════════════════════════════════
+  // MAUDITS — Porteurs de malédictions
+  // ════════════════════════════════════════════
+
+  {
+    id: "poupee_maudite", name: "Poupée Maudite", icon: "🪆", category: "être magique",
+    desc: "Une poupée de chiffon flotte vers vous, un sourire cousu sur le visage !",
+    lore: "Réceptacle d'une malédiction ancienne, lancée par une sorcière vengeresse. Chaque entaille sur sa toile reproduit une douleur sur sa cible, et chaque cheveu cousu transmet l'infortune.",
+    habitat: "Greniers oubliés et coffres scellés des cachots",
+    anecdote: "On raconte qu'une de ces poupées a poursuivi son propriétaire pendant trente ans avant d'être détruite par un Riddikulus.",
+    danger: 5,
+    minFloor: 3, maxFloor: 7, weight: 5,
+    hp: 48, atk: 6, def: 4, mag: 12, agi: 8, lck: 6, scale: 0.25,
+    abilities: [
+      { name: "Aiguille Maudite", icon: "📍", desc: "Malédiction de douleur",
+        effect: "damage", power: 8, chance: 0.40 },
+      { name: "Brise-Force", icon: "💔", desc: "Affaiblit la cible",
+        effect: "weaken", power: 2, chance: 0.30 }
+    ],
+    ai: "random", resist: ["stun"], weak: ["burn"],
+    xp: 40, gold: { min: 12, max: 22 },
+    drops: [{ itemId: "livre_prince", chance: 0.04 }]
+  },
+
+  {
+    id: "spectre_maudit", name: "Spectre Maudit", icon: "👻", category: "fantôme",
+    desc: "Un spectre enchaîné hurle, son corps couvert de runes maudites !",
+    lore: "Âme d'un sorcier puni par une malédiction d'éternité — il ne peut ni mourir ni se reposer. Sa rage incandescente se déverse en sortilèges noirs sur toute âme vivante qui croise son chemin.",
+    habitat: "Donjons des cachots, salles d'interrogatoire abandonnées",
+    anecdote: "Plusieurs spectres maudits seraient d'anciens Aurors capturés par des Mangemorts pendant la Première Guerre.",
+    danger: 7,
+    minFloor: 5, maxFloor: null, weight: 5,
+    hp: 80, atk: 11, def: 6, mag: 18, agi: 13, lck: 9, scale: 0.30,
+    abilities: [
+      { name: "Sort Maudit", icon: "☠️", desc: "Magie noire",
+        effect: "damage", power: 14, chance: 0.45 },
+      { name: "Marque du Tourment", icon: "🩻", desc: "Affaiblit ATK et DEF",
+        effect: "weaken", power: 3, chance: 0.25 }
+    ],
+    ai: "aggressive", resist: ["instant", "disarm"], weak: ["stun"],
+    xp: 75, gold: { min: 22, max: 38 },
+    drops: [
+      { itemId: "potion_m", chance: 0.25 },
+      { itemId: "wand2", chance: 0.06 }
+    ]
+  },
+
+  {
+    id: "hecate_sorciere", name: "Hécate la Maudisseuse", icon: "🔮", category: "humain",
+    desc: "Hécate vous toise — sa baguette suinte d'une fumée noire de malédictions !",
+    lore: "Sorcière exclue de Poudlard pour pratique de magie interdite. Devenue spécialiste des malédictions héréditaires, elle hante les couloirs en quête d'apprentis à corrompre. Son rire fait flétrir les torches.",
+    habitat: "Salle sur Demande dans sa configuration sombre, cachots interdits",
+    anecdote: "Son nom apparaît dans le grimoire familial des Black, mentionnée comme « tante éloignée » par Sirius.",
+    danger: 8,
+    minFloor: 7, maxFloor: null, weight: 4,
+    hp: 130, atk: 10, def: 7, mag: 22, agi: 11, lck: 14, scale: 0.32,
+    abilities: [
+      { name: "Tarantallegra Forcé", icon: "💃", desc: "Danse maudite",
+        effect: "damage", power: 12, chance: 0.30 },
+      { name: "Maledictus Funeste", icon: "☠️", desc: "Malédiction d'affaiblissement",
+        effect: "weaken", power: 4, chance: 0.30 },
+      { name: "Drain de Sortilège", icon: "🩸", desc: "Vol de vie magique",
+        effect: "drain", power: 12, chance: 0.25 }
+    ],
+    ai: "cautious", resist: ["disarm", "instant"], weak: ["stun"],
+    xp: 130, gold: { min: 45, max: 75 },
+    drops: [
+      { itemId: "wand2", chance: 0.15 },
+      { itemId: "livre_prince", chance: 0.10 },
+      { itemId: "amulette", chance: 0.08 }
+    ]
+  },
+
 ];
 
 // ════════════════════════════════════════════
