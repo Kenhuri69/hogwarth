@@ -366,10 +366,65 @@ async function scenarioMobileSelect() {
   await browser.close();
 }
 
+// ── Scénario 5 : portraits raster pour les bosses ─────────────
+
+async function scenarioMonsterImages() {
+  console.log('\n── Scénario 5 : portraits PNG (imgSrc) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Tous les monstres avec imgSrc doivent retomber sur un <img> en combat
+  const ids = ['sorciere_tenebres', 'dementor_garde', 'voldemort_affaibli',
+               'voldemort_revenu', 'basilic', 'nagini'];
+
+  for (const id of ids) {
+    const t = await page.evaluate((monsterId) => {
+      const base = MONSTERS.find(m => m.id === monsterId);
+      const html = getMonsterIconHtml({ ...base, currentHp: base.hp }, 80);
+      return {
+        hasImgSrc: !!base.imgSrc,
+        usesImg:   /<img\s+src="img\/monsters\//.test(html),
+        usesSvg:   /<svg /.test(html),
+        src:       (html.match(/src="([^"]+)"/) || [])[1] || null
+      };
+    }, id);
+    console.log(`  ${id} →`, t);
+    assert(t.hasImgSrc,             `${id} sans imgSrc`);
+    assert(t.usesImg && !t.usesSvg, `${id} ne rend pas un <img>`);
+    assert(t.src && t.src.endsWith(`${id}.png`), `${id} src incorrect: ${t.src}`);
+  }
+
+  // Vérifier qu'un monstre sans imgSrc utilise toujours son SVG (régression)
+  const ctrl = await page.evaluate(() => {
+    const base = MONSTERS.find(m => m.id === 'chat_norris');
+    const html = getMonsterIconHtml({ ...base, currentHp: base.hp }, 56);
+    return { usesSvg: /<svg /.test(html), usesImg: /<img /.test(html) };
+  });
+  console.log('  chat_norris (SVG) →', ctrl);
+  assert(ctrl.usesSvg && !ctrl.usesImg, 'fallback SVG cassé');
+
+  // Vérifier que le fichier PNG est bien chargeable (pas 404 silencieux)
+  const loaded = await page.evaluate(() => new Promise(resolve => {
+    const img = new Image();
+    img.onload  = () => resolve({ ok: true,  w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => resolve({ ok: false });
+    img.src = 'img/monsters/sorciere_tenebres.png';
+  }));
+  console.log('  PNG chargeable :', loaded);
+  assert(loaded.ok && loaded.w >= 256, 'PNG sorciere_tenebres introuvable ou trop petit');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ portraits raster conformes');
+  await browser.close();
+}
+
 // ── Runner ───────────────────────────────────────────────────
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages];
   for (const s of scenarios) {
     await s();
   }

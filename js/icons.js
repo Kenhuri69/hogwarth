@@ -40,7 +40,7 @@ const MONSTER_ICONS = {
     <path d="M36 82 L32 92 M44 84 L42 94 M56 84 L58 94 M64 82 L68 92" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/>
   </svg>`,
 
-  luciole: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  luciole_marais: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <!-- Corps allongé d'insecte -->
     <ellipse cx="50" cy="60" rx="10" ry="18" fill="currentColor"/>
     <!-- Tête -->
@@ -1024,19 +1024,28 @@ const VARIANT_COLORS = {
 };
 
 // ── Fonction principale ─────────────────────────────────────
+// Priorité d'affichage : monster.imgSrc (PNG/WebP) → SVG dédié → SVG catégorie → emoji
 function getMonsterIconHtml(monster, sizePx) {
-  const svgStr  = MONSTER_ICONS[monster.id] || MONSTER_ICONS[monster.category] || null;
-  const variant = monster.variant || 'normal';
-
+  const variant    = monster.variant || 'normal';
   const baseColor  = monster.color || MONSTER_BASE_COLORS[monster.category] || '#8a6840';
   const finalColor = VARIANT_COLORS[variant] || baseColor;
 
+  if (monster.imgSrc) {
+    return `<div class="monster-icon monster-img variant-${variant}"
+                 style="width:${sizePx}px;height:${sizePx}px">
+              <img src="${monster.imgSrc}" alt="${monster.name || ''}"
+                   style="width:100%;height:100%;object-fit:contain;display:block">
+            </div>`;
+  }
+
+  const svgStr = MONSTER_ICONS[monster.id] || MONSTER_ICONS[monster.category] || null;
   if (svgStr) {
     return `<div class="monster-icon variant-${variant}"
                  style="width:${sizePx}px;height:${sizePx}px;color:${finalColor}">
               ${svgStr}
             </div>`;
   }
+
   return `<div class="monster-icon variant-${variant} monster-emoji-fallback"
                style="font-size:${Math.floor(sizePx * 0.75)}px;color:${finalColor};
                       width:${sizePx}px;height:${sizePx}px">
