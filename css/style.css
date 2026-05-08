@@ -1145,6 +1145,24 @@ body {
   line-height: 1;
 }
 
+/* Portrait raster (PNG/WebP) : drop-shadow douce dorée + variantes */
+.monster-img {
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6))
+          drop-shadow(0 0 10px rgba(201,168,76,0.18));
+}
+.monster-img img {
+  pointer-events: none;
+  user-select: none;
+}
+/* Les variantes (fierce/ancient/shiny) overrident filter via les règles
+   .variant-*. Pour les images raster on désactive ces règles, sauf pour
+   shiny qui garde son aura sur tout type d'icône via animation. */
+.monster-img.variant-fierce,
+.monster-img.variant-ancient {
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6))
+          drop-shadow(0 0 14px rgba(201,168,76,0.25));
+}
+
 /* Variante normale — ombre rouge subtile */
 .variant-normal {
   filter: drop-shadow(0 0 8px rgba(180,60,20,0.35));
