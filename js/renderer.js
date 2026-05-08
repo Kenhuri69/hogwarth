@@ -107,14 +107,15 @@ window._invalidatePatternCache = _invalidatePatternCache;
 // === FIX TEXTURE MISSING === Retourne toujours une clé texture existante.
 // Signature compatible : (x, y, depth) OU (d, side) — tous les paramètres sont optionnels.
 function getWallTextureType(x, y, depth) {
-  const VALID = ['stone1', 'stone2', 'wood', 'tapestry'];
+  const VALID = ['stone1', 'stone2', 'wood', 'tapestry', 'cavern_wall', 'rune_wall'];
   const f = (typeof currentFloor === 'number' && currentFloor > 0) ? currentFloor : 1;
   let key;
-  if      (f <= 2) key = 'stone1';
-  else if (f <= 4) key = 'stone2';
-  else if (f <= 6) key = 'wood';
-  else if (f <= 8) key = 'tapestry';
-  else             key = 'stone2';
+  if      (f <= 2)  key = 'stone1';
+  else if (f <= 4)  key = 'stone2';
+  else if (f <= 6)  key = 'wood';
+  else if (f <= 8)  key = 'tapestry';
+  else if (f <= 14) key = 'cavern_wall';
+  else              key = 'rune_wall';
   // Garantie finale : si la texture n'est pas chargée, on retombe sur une clé chargée
   if (window.TEXTURES && window.TEXTURES.walls) {
     const img = window.TEXTURES.walls[key];
@@ -145,13 +146,29 @@ function _getWallTex(depth) {
 
 // === FIX TEXTURE MISSING === Patterns sol/plafond via cache central (plus de gate _patternsReady)
 function _getFloorPattern() {
-  const name = (typeof currentFloor === 'number' && currentFloor >= 3) ? 'carpet' : 'stone';
-  return _TEX_PATTERNS.floor[name] || _TEX_PATTERNS.floor['stone'] || _TEX_PATTERNS.floor['carpet'] || null;
+  const f = (typeof currentFloor === 'number') ? currentFloor : 1;
+  let name;
+  if      (f <= 2)  name = 'stone';
+  else if (f <= 8)  name = 'carpet';
+  else if (f <= 14) name = 'cavern_floor';
+  else              name = 'rune_floor';
+  return _TEX_PATTERNS.floor[name]
+      || _TEX_PATTERNS.floor['carpet']
+      || _TEX_PATTERNS.floor['stone']
+      || null;
 }
 
 function _getCeilPattern() {
-  const name = (typeof currentFloor === 'number' && currentFloor <= 4) ? 'beams' : 'stone';
-  return _TEX_PATTERNS.ceiling[name] || _TEX_PATTERNS.ceiling['stone'] || _TEX_PATTERNS.ceiling['beams'] || null;
+  const f = (typeof currentFloor === 'number') ? currentFloor : 1;
+  let name;
+  if      (f <= 4)  name = 'beams';
+  else if (f <= 8)  name = 'stone';
+  else if (f <= 14) name = 'cavern_ceiling';
+  else              name = 'rune_ceiling';
+  return _TEX_PATTERNS.ceiling[name]
+      || _TEX_PATTERNS.ceiling['stone']
+      || _TEX_PATTERNS.ceiling['beams']
+      || null;
 }
 
 // ─────────────────────────────────────────────────────────────
