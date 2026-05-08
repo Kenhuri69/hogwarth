@@ -42,14 +42,15 @@ function renderQuestList() {
   }
 
   // Quêtes actives
-  pending.forEach((q, rawIdx) => {
-    const idx       = activeQuests.indexOf(q);
-    const itemCount = q.objective.type === 'item'
-      ? player.inventory.filter(i => i.id === q.objective.itemId).length
-      : q.progress;
-    const needed    = q.objective.amount;
-    const pct       = Math.min(100, Math.round((itemCount / needed) * 100));
-    const ready     = itemCount >= needed;
+  pending.forEach((q) => {
+    const idx        = activeQuests.indexOf(q);
+    const activeStep = getActiveStep(q);
+
+    // Pour l'étape active de type item : recompter depuis l'inventaire
+    if (activeStep && activeStep.type === 'item') {
+      activeStep.progress = player.inventory.filter(i => i.id === activeStep.itemId).length;
+    }
+    const ready = activeStep && activeStep.progress >= activeStep.amount;
 
     // Récompenses formatées
     const rewardParts = [];
@@ -61,6 +62,42 @@ function renderQuestList() {
     }
     if (q.reward.spell) rewardParts.push(`✨ Sort : ${q.reward.spell}`);
 
+    // Liste des étapes : ✓ complétée, ▶ active (avec barre), ◌ verrouillée
+    const stepsHtml = q.objectives.map((o, i) => {
+      const isActive   = o === activeStep;
+      let displayName;
+      if (o.type === 'kill') {
+        const m = MONSTERS.find(x => x.id === o.monsterId);
+        displayName = m ? m.name : o.monsterId;
+      } else {
+        const it = ITEMS.find(x => x.id === o.itemId);
+        displayName = it ? it.name : o.itemId;
+      }
+      const label = o.type === 'kill'
+        ? `Éliminer ${o.amount}× ${displayName}`
+        : `Apporter ${o.amount}× ${displayName}`;
+      const icon       = o.completed ? '✓' : (isActive ? '▶' : '◌');
+      const color      = o.completed ? '#60c040' : (isActive ? 'var(--gold-light)' : '#4a3a20');
+      let barHtml = '';
+      if (isActive) {
+        const pct = Math.min(100, Math.round((o.progress / o.amount) * 100));
+        barHtml = `
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#8a7050;margin:2px 0 2px 18px">
+            <span>${o.progress} / ${o.amount}</span>
+          </div>
+          <div style="margin-left:18px;background:#1a0e05;border-radius:3px;height:4px;overflow:hidden">
+            <div style="background:${ready ? '#60c040' : 'var(--gold-dark)'};width:${pct}%;height:100%;transition:width .3s ease"></div>
+          </div>`;
+      }
+      return `
+        <div style="margin-top:${i === 0 ? '0' : '4px'}">
+          <div style="font-size:11px;color:${color}">
+            <span style="display:inline-block;width:14px">${icon}</span>${label}
+          </div>
+          ${barHtml}
+        </div>`;
+    }).join('');
+
     const card = document.createElement('div');
     card.className = 'spell-item';
     card.style.cssText = 'flex-direction:column;align-items:flex-start;gap:5px;padding:10px 12px';
@@ -70,24 +107,15 @@ function renderQuestList() {
         <div style="font-size:10px;color:#8a7050;text-align:right">${q.giver}<br>${q.location}</div>
       </div>
       <div style="font-size:12px;color:var(--parchment-dark);line-height:1.5">${q.desc}</div>
-      <div style="width:100%">
-        <div style="display:flex;justify-content:space-between;font-size:10px;color:#8a7050;margin-bottom:3px">
-          <span>Progression</span>
-          <span><strong style="color:${ready ? '#60c040' : 'var(--parchment)'}">${itemCount}</strong> / ${needed}</span>
-        </div>
-        <div style="background:#1a0e05;border-radius:3px;height:5px;overflow:hidden">
-          <div style="background:${ready ? '#60c040' : 'var(--gold-dark)'};width:${pct}%;height:100%;
-                      transition:width .3s ease"></div>
-        </div>
-      </div>
+      <div style="width:100%">${stepsHtml}</div>
       <div style="font-size:10px;color:#8a7050">Récompenses : ${rewardParts.join(' · ')}</div>
       ${ready
         ? `<button class="cmd-btn" onclick="checkQuestCompletion(${idx})"
              style="align-self:flex-end;font-size:11px;color:#60c040;border-color:#60c040">
-             ✅ Remettre la quête
+             ✅ Remettre l'étape
            </button>`
         : `<div style="font-size:10px;color:#4a3a20;align-self:flex-end;font-style:italic">
-             Objectif incomplet…
+             Étape en cours…
            </div>`
       }
     `;
@@ -118,35 +146,56 @@ function renderQuestList() {
   }
 }
 
+// ── Helper : étape active d'une quête (la première non complétée) ──
+function getActiveStep(q) {
+  if (!q || !q.objectives) return null;
+  return q.objectives.find(o => !o.completed) || null;
+}
+
 // ── Vérification et remise d'une quête ──────────────────────
 window.checkQuestCompletion = function(index) {
   const q = activeQuests[index];
   if (!q || q.completed) return;
+  const step = getActiveStep(q);
+  if (!step) return;
 
-  if (q.objective.type === 'item') {
-    const count = player.inventory.filter(i => i.id === q.objective.itemId).length;
-    q.progress = count;
-    if (count >= q.objective.amount) {
+  if (step.type === 'item') {
+    const count = player.inventory.filter(i => i.id === step.itemId).length;
+    step.progress = count;
+    if (count >= step.amount) {
       // Consommer les objets requis
-      let toConsume = q.objective.amount;
+      let toConsume = step.amount;
       player.inventory = player.inventory.filter(i => {
-        if (i.id === q.objective.itemId && toConsume > 0) { toConsume--; return false; }
+        if (i.id === step.itemId && toConsume > 0) { toConsume--; return false; }
         return true;
       });
-      completeQuest(index);
+      step.completed = true;
+      finalizeOrAdvance(index);
     } else {
-      addMsg(`Il manque ${q.objective.amount - count} objet(s) pour finir cette quête.`, 'bad');
+      addMsg(`Il manque ${step.amount - count} objet(s) pour finir cette étape.`, 'bad');
       renderQuestList();
     }
-  } else if (q.objective.type === 'kill') {
-    if (q.progress >= q.objective.amount) {
-      completeQuest(index);
+  } else if (step.type === 'kill') {
+    if (step.progress >= step.amount) {
+      step.completed = true;
+      finalizeOrAdvance(index);
     } else {
-      addMsg(`Il faut encore éliminer ${q.objective.amount - q.progress} ennemi(s).`, 'bad');
+      addMsg(`Il faut encore éliminer ${step.amount - step.progress} ennemi(s).`, 'bad');
       renderQuestList();
     }
   }
 };
+
+// Si toutes les étapes sont closes, complète la quête. Sinon, rafraîchit l'affichage.
+function finalizeOrAdvance(index) {
+  const q = activeQuests[index];
+  if (q.objectives.every(o => o.completed)) {
+    completeQuest(index);
+  } else {
+    addMsg(`📜 Étape suivante : « ${q.title} »`, 'magic');
+    renderQuestList();
+  }
+}
 
 // ── Attribution des récompenses ──────────────────────────────
 function completeQuest(index) {
@@ -189,18 +238,20 @@ function completeQuest(index) {
 
 // ── Appelée depuis battle.js quand un monstre est vaincu ─────
 window.checkKillQuests = function(monsterId) {
-  let anyProgress = false;
   activeQuests.forEach((q, idx) => {
     if (q.completed) return;
-    if (q.objective.type !== 'kill') return;
-    if (q.objective.monsterId !== monsterId) return;
-    q.progress++;
-    anyProgress = true;
-    if (q.progress >= q.objective.amount) {
-      // Auto-complétion avec délai pour laisser la fin de combat s'afficher
-      setTimeout(() => completeQuest(idx), 600);
+    const step = getActiveStep(q);
+    if (!step || step.type !== 'kill' || step.monsterId !== monsterId) return;
+    step.progress++;
+    if (step.progress >= step.amount) {
+      step.completed = true;
+      // Auto-complétion ou passage à l'étape suivante avec délai pour la fin de combat
+      setTimeout(() => {
+        if (q.objectives.every(o => o.completed)) completeQuest(idx);
+        else { addMsg(`📜 Étape suivante : « ${q.title} »`, 'magic'); renderQuestList(); }
+      }, 600);
     } else {
-      addMsg(`📜 Quête « ${q.title} » : ${q.progress}/${q.objective.amount}`, '');
+      addMsg(`📜 Quête « ${q.title} » : ${step.progress}/${step.amount}`, '');
     }
   });
 };

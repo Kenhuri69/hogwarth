@@ -24,6 +24,23 @@ function saveGame() {
   addMsg("Partie sauvegardée !", "good");
 }
 
+// Convertit une quête en ancien format { objective:{}, progress:N } vers
+// le nouveau format { objectives:[{...}] }. Idempotent.
+function _migrateQuestShape(q) {
+  if (q.objectives) return q;
+  if (!q.objective) return q;
+  const step = {
+    type:      q.objective.type,
+    amount:    q.objective.amount,
+    progress:  q.progress || 0,
+    completed: q.completed || (q.progress || 0) >= q.objective.amount
+  };
+  if (q.objective.itemId)    step.itemId    = q.objective.itemId;
+  if (q.objective.monsterId) step.monsterId = q.objective.monsterId;
+  const { objective, progress, ...rest } = q;
+  return { ...rest, objectives: [step] };
+}
+
 function loadGame() {
   const saved = localStorage.getItem('hogwarts_rpg_save');
   if (!saved) { addMsg("Aucune sauvegarde trouvée.", "bad"); return; }
@@ -65,7 +82,7 @@ function loadGame() {
   const expl = document.getElementById('explore-overlay');
   if (expl) expl.style.display = 'none';
 
-  if (gs.activeQuests) activeQuests = gs.activeQuests;
+  if (gs.activeQuests) activeQuests = gs.activeQuests.map(_migrateQuestShape);
   if (gs.difficulty && DIFFICULTY_SETTINGS[gs.difficulty]) difficulty = gs.difficulty;
   if (gs.chosenHouse && HOUSE_BONUSES[gs.chosenHouse]) chosenHouse = gs.chosenHouse;
   if (gs.housePoints !== undefined) housePoints = gs.housePoints;
