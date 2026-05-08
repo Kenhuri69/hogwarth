@@ -55,16 +55,119 @@ function _showExploreOverlay(cell) {
   let iconHtml, titleText, descText, btns;
 
   if (cell === CELL.CHEST) {
-    iconHtml  = '📦';
+    iconHtml  = `<svg viewBox="0 0 110 100" width="120" height="110" xmlns="http://www.w3.org/2000/svg" style="display:block">
+      <!-- ombre -->
+      <ellipse cx="55" cy="94" rx="42" ry="4" fill="#000" opacity="0.5"/>
+      <!-- corps du coffre (bas) -->
+      <rect x="14" y="46" width="82" height="44" rx="2" fill="#5a3a14" stroke="#2a1808" stroke-width="1.5"/>
+      <!-- planches verticales -->
+      <line x1="32" y1="48" x2="32" y2="88" stroke="#3a2410" stroke-width="1"/>
+      <line x1="55" y1="48" x2="55" y2="88" stroke="#3a2410" stroke-width="1"/>
+      <line x1="78" y1="48" x2="78" y2="88" stroke="#3a2410" stroke-width="1"/>
+      <!-- couvercle bombé -->
+      <path d="M14 46 Q55 14 96 46 L96 50 Q55 22 14 50 Z" fill="#6a4818" stroke="#2a1808" stroke-width="1.5"/>
+      <path d="M14 46 Q55 14 96 46" fill="none" stroke="#a87838" stroke-width="0.8" opacity="0.6"/>
+      <!-- ferrures or -->
+      <rect x="14" y="46" width="82" height="3" fill="#c9a84c"/>
+      <rect x="14" y="68" width="82" height="2.5" fill="#c9a84c"/>
+      <rect x="14" y="86" width="82" height="3" fill="#c9a84c"/>
+      <!-- cornières -->
+      <rect x="13" y="45" width="5" height="46" fill="#7a5c1e"/>
+      <rect x="92" y="45" width="5" height="46" fill="#7a5c1e"/>
+      <!-- clous -->
+      <circle cx="16" cy="51" r="1.3" fill="#a89870"/>
+      <circle cx="94" cy="51" r="1.3" fill="#a89870"/>
+      <circle cx="16" cy="71" r="1.3" fill="#a89870"/>
+      <circle cx="94" cy="71" r="1.3" fill="#a89870"/>
+      <circle cx="16" cy="88" r="1.3" fill="#a89870"/>
+      <circle cx="94" cy="88" r="1.3" fill="#a89870"/>
+      <!-- serrure centrale -->
+      <rect x="48" y="58" width="14" height="18" rx="1" fill="#c9a84c" stroke="#5a3a08" stroke-width="0.8"/>
+      <circle cx="55" cy="65" r="2" fill="#1a0f05"/>
+      <rect x="54" y="66" width="2" height="6" fill="#1a0f05"/>
+      <!-- éclat magique -->
+      <g opacity="0.9">
+        <path d="M55 32 L57 38 L63 40 L57 42 L55 48 L53 42 L47 40 L53 38 Z" fill="#fff" opacity="0.85"/>
+        <circle cx="55" cy="40" r="2" fill="#fff"/>
+      </g>
+      <!-- petites étincelles -->
+      <circle cx="30" cy="34" r="1" fill="#c9a84c" opacity="0.8"/>
+      <circle cx="80" cy="38" r="1.2" fill="#c9a84c" opacity="0.8"/>
+      <circle cx="22" cy="42" r="0.8" fill="#fff" opacity="0.7"/>
+      <circle cx="88" cy="30" r="0.8" fill="#fff" opacity="0.7"/>
+    </svg>`;
     titleText = 'Coffre Magique';
     descText  = 'Un vieux coffre verrouillé trône contre le mur de pierre. Qui sait ce qu\'il contient ?';
-    btns = `<button class="explore-btn" onclick="openChest();_hideExploreOverlay()">📦 Ouvrir le coffre</button>
+    btns = `<button class="explore-btn" onclick="openChest();_hideExploreOverlay()">Ouvrir le coffre</button>
             <button class="explore-btn secondary" onclick="_hideExploreOverlay()">Ignorer</button>`;
   } else if (cell === CELL.SHOP) {
-    iconHtml  = '🏪';
+    iconHtml  = `<svg viewBox="0 0 130 110" width="140" height="120" xmlns="http://www.w3.org/2000/svg" style="display:block">
+      <!-- ombre -->
+      <ellipse cx="65" cy="104" rx="55" ry="4" fill="#000" opacity="0.5"/>
+      <!-- enseigne suspendue -->
+      <line x1="65" y1="6" x2="65" y2="14" stroke="#7a5c1e" stroke-width="1.5"/>
+      <rect x="38" y="14" width="54" height="16" rx="2" fill="#3a2410" stroke="#c9a84c" stroke-width="1.2"/>
+      <text x="65" y="25" text-anchor="middle" font-family="Cinzel, serif" font-size="9" font-weight="bold" fill="#c9a84c" letter-spacing="1">ÉCHOPPE</text>
+      <!-- chaînes -->
+      <circle cx="44" cy="14" r="1.3" fill="#7a5c1e"/>
+      <circle cx="86" cy="14" r="1.3" fill="#7a5c1e"/>
+      <!-- toit / auvent rayé -->
+      <polygon points="14,42 116,42 102,30 28,30" fill="#5a2818" stroke="#2a1408" stroke-width="1"/>
+      <line x1="35" y1="32" x2="22" y2="42" stroke="#c9a84c" stroke-width="1" opacity="0.6"/>
+      <line x1="50" y1="32" x2="42" y2="42" stroke="#c9a84c" stroke-width="1" opacity="0.6"/>
+      <line x1="65" y1="32" x2="65" y2="42" stroke="#c9a84c" stroke-width="1" opacity="0.6"/>
+      <line x1="80" y1="32" x2="88" y2="42" stroke="#c9a84c" stroke-width="1" opacity="0.6"/>
+      <line x1="95" y1="32" x2="108" y2="42" stroke="#c9a84c" stroke-width="1" opacity="0.6"/>
+      <!-- frange -->
+      <path d="M14 42 L20 48 L26 42 L32 48 L38 42 L44 48 L50 42 L56 48 L62 42 L68 48 L74 42 L80 48 L86 42 L92 48 L98 42 L104 48 L110 42 L116 42 Z" fill="#5a2818" stroke="#2a1408" stroke-width="0.8"/>
+      <!-- comptoir / étal -->
+      <rect x="18" y="48" width="94" height="48" fill="#3a2410" stroke="#1a0f05" stroke-width="1"/>
+      <rect x="18" y="48" width="94" height="6" fill="#5a3a14"/>
+      <line x1="18" y1="74" x2="112" y2="74" stroke="#1a0f05" stroke-width="0.8"/>
+      <!-- objets sur l'étal -->
+      <!-- fiole -->
+      <g transform="translate(34 56)">
+        <rect x="-3" y="0" width="6" height="3" fill="#7a5c1e"/>
+        <path d="M-4 3 L-4 12 Q-4 15 0 15 Q4 15 4 12 L4 3 Z" fill="#4aa86a" opacity="0.85" stroke="#1a0f05" stroke-width="0.5"/>
+        <ellipse cx="-2" cy="7" rx="0.8" ry="2" fill="#fff" opacity="0.5"/>
+      </g>
+      <!-- parchemin roulé -->
+      <g transform="translate(58 60)">
+        <ellipse cx="0" cy="0" rx="9" ry="3" fill="#d4c08a"/>
+        <ellipse cx="0" cy="0" rx="2" ry="3" fill="#a89870"/>
+        <ellipse cx="0" cy="-1" rx="9" ry="2" fill="#e8d4a0"/>
+      </g>
+      <!-- baguette -->
+      <g transform="translate(86 58) rotate(-15)">
+        <rect x="-1" y="-8" width="2" height="16" fill="#3a2410"/>
+        <rect x="-1.5" y="6" width="3" height="3" fill="#5a3a14"/>
+        <circle cx="0" cy="-8" r="1.5" fill="#c9a84c"/>
+      </g>
+      <!-- pièces empilées -->
+      <g transform="translate(34 84)">
+        <ellipse cx="0" cy="2" rx="6" ry="1.5" fill="#7a5c1e"/>
+        <ellipse cx="0" cy="0" rx="6" ry="1.5" fill="#c9a84c"/>
+        <ellipse cx="0" cy="-2" rx="6" ry="1.5" fill="#e8c860"/>
+      </g>
+      <!-- livre -->
+      <g transform="translate(86 80)">
+        <rect x="-8" y="0" width="16" height="10" fill="#5a1818" stroke="#2a0808" stroke-width="0.8"/>
+        <rect x="-8" y="0" width="16" height="2" fill="#7a2828"/>
+        <rect x="-1" y="2" width="2" height="6" fill="#c9a84c"/>
+      </g>
+      <!-- cristal -->
+      <g transform="translate(60 82)">
+        <polygon points="0,-6 4,-2 3,4 -3,4 -4,-2" fill="#8a4ac8" opacity="0.85" stroke="#3a1858" stroke-width="0.5"/>
+        <polygon points="0,-6 4,-2 0,0 -4,-2" fill="#a86ad8" opacity="0.7"/>
+      </g>
+      <!-- étincelles magiques -->
+      <circle cx="22" cy="22" r="0.8" fill="#fff" opacity="0.8"/>
+      <circle cx="108" cy="20" r="1" fill="#c9a84c" opacity="0.8"/>
+      <circle cx="14" cy="36" r="0.7" fill="#fff" opacity="0.6"/>
+    </svg>`;
     titleText = 'Échoppe Ambulante';
     descText  = 'Une aile de la bibliothèque transformée en échoppe de fortune. Des articles magiques sont disponibles.';
-    btns = `<button class="explore-btn" onclick="openShop();_hideExploreOverlay()">🏪 Entrer dans la boutique</button>
+    btns = `<button class="explore-btn" onclick="openShop();_hideExploreOverlay()">Entrer dans la boutique</button>
             <button class="explore-btn secondary" onclick="_hideExploreOverlay()">Passer son chemin</button>`;
   } else if (cell === CELL.STAIRS_D) {
     iconHtml  = `<svg viewBox="0 0 100 110" width="110" height="120" xmlns="http://www.w3.org/2000/svg" style="display:block">

@@ -9,12 +9,37 @@ const CELL = { WALL:0, FLOOR:1, DOOR:2, STAIRS_D:3, STAIRS_U:4, SHOP:5, CHEST:6 
 // ============================================================
 const CHARACTERS = {
   harry: { name:"Harry Potter", icon:"🧙", class:"Élève de Gryffondor",
+    imgSrc:"img/harry.png", role:"Auror",
     hp:35, sp:22, str:9, int:11, agi:12, end:10, lck:15, mag:10,
-    wand:"Baguette de Houx", armor:"Robe de Gryffondor", acc:"Lunettes Rondes"
+    atk:5, def:2,
+    wand:"Baguette de Houx", armor:"Robe de Gryffondor", acc:"Lunettes Rondes",
+    spells:["Expelliarmus","Stupefix","Episkey","Protego","Incendio"],
+    tagline:"Le Survivant — courage et instinct."
   },
   hermione: { name:"Hermione Granger", icon:"🧙‍♀️", class:"Élève de Gryffondor",
+    imgSrc:"img/hermione.png", role:"Mage",
     hp:28, sp:35, str:6, int:17, agi:10, end:7, lck:12, mag:16,
-    wand:"Baguette de Vigne", armor:"Robe de Gryffondor", acc:""
+    atk:3, def:2,
+    wand:"Baguette de Vigne", armor:"Robe de Gryffondor", acc:"",
+    spells:["Episkey","Protego","Incendio","Accio"],
+    tagline:"Brillante érudite — la magie par le savoir."
+  },
+  // ── Personnages originaux ─────────────────────────────────
+  celeste: { name:"Céleste Luneclair", icon:"🌙", class:"Élève de Serdaigle",
+    imgSrc:"img/celeste.png", role:"Astromage",
+    hp:30, sp:34, str:6, int:15, agi:11, end:8, lck:14, mag:15,
+    atk:3, def:2,
+    wand:"Baguette de Bouleau d'Argent", armor:"Robe de Serdaigle", acc:"Pendentif Lunaire",
+    spells:["Episkey","Protego","Lumos Maxima","Aguamenti"],
+    tagline:"Astromage de Serdaigle — la lune guide ses sortilèges."
+  },
+  iris: { name:"Iris Prismara", icon:"✨", class:"Élève de Poufsouffle",
+    imgSrc:"img/iris.png", role:"Enchanteresse",
+    hp:32, sp:28, str:7, int:13, agi:14, end:9, lck:18, mag:13,
+    atk:4, def:2,
+    wand:"Baguette de Cristal d'Iris", armor:"Robe de Poufsouffle", acc:"Prisme d'Arc-en-ciel",
+    spells:["Expelliarmus","Protego","Incendio","Riddikulus"],
+    tagline:"Enchanteresse prismatique — la chance et la lumière à ses côtés."
   }
 };
 

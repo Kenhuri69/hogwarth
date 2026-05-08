@@ -192,14 +192,60 @@
   </div>
 </div>
 
-<!-- Écran de sélection du nombre de joueurs + difficulté -->
+<!-- Écran de sélection des personnages + difficulté -->
 <div id="player-select-screen">
-  <div class="select-box">
+  <div class="select-box" style="max-width:640px">
     <div class="select-title">⚡ Choisissez votre Aventure</div>
-    <div class="select-sub">Sorcier(s) et niveau de difficulté</div>
+    <div class="select-sub">Composez votre groupe — 1 ou 2 sorciers</div>
+
+    <!-- Mode Solo / Duo -->
+    <div style="display:flex;gap:8px;justify-content:center;margin:18px 0 14px">
+      <button id="mode-btn-1" class="mode-toggle active" onclick="setPartyMode(1)">SOLO · 1 héros</button>
+      <button id="mode-btn-2" class="mode-toggle"        onclick="setPartyMode(2)">DUO · 2 héros</button>
+    </div>
+
+    <!-- Grille de personnages -->
+    <div class="hero-grid" id="hero-grid">
+      <button class="hero-card" data-key="harry" onclick="toggleHero('harry')">
+        <div class="hero-portrait-wrap">
+          <img src="img/harry.png" alt="Harry">
+          <div class="hero-badge">1</div>
+        </div>
+        <div class="hero-name">Harry Potter</div>
+        <div class="hero-role">Auror · Gryffondor</div>
+        <div class="hero-tag">Le Survivant — courage et instinct.</div>
+      </button>
+      <button class="hero-card" data-key="hermione" onclick="toggleHero('hermione')">
+        <div class="hero-portrait-wrap">
+          <img src="img/hermione.png" alt="Hermione">
+          <div class="hero-badge">2</div>
+        </div>
+        <div class="hero-name">Hermione Granger</div>
+        <div class="hero-role">Mage · Gryffondor</div>
+        <div class="hero-tag">Brillante érudite — la magie par le savoir.</div>
+      </button>
+      <button class="hero-card" data-key="celeste" onclick="toggleHero('celeste')">
+        <div class="hero-portrait-wrap">
+          <img src="img/celeste.png" alt="Céleste">
+          <div class="hero-badge">3</div>
+        </div>
+        <div class="hero-name">Céleste Luneclair</div>
+        <div class="hero-role">Astromage · Serdaigle</div>
+        <div class="hero-tag">La lune guide ses sortilèges.</div>
+      </button>
+      <button class="hero-card" data-key="iris" onclick="toggleHero('iris')">
+        <div class="hero-portrait-wrap">
+          <img src="img/iris.png" alt="Iris">
+          <div class="hero-badge">4</div>
+        </div>
+        <div class="hero-name">Iris Prismara</div>
+        <div class="hero-role">Enchanteresse · Poufsouffle</div>
+        <div class="hero-tag">Lumière prismatique et chance.</div>
+      </button>
+    </div>
 
     <!-- Sélecteur de difficulté -->
-    <div style="margin:18px 0 22px">
+    <div style="margin:18px 0 14px">
       <label style="display:block;margin-bottom:8px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold)">DIFFICULTÉ</label>
       <select id="difficulty-select"
         style="width:100%;padding:10px 12px;background:#0a0705;border:2px solid var(--gold-dark);
@@ -211,22 +257,11 @@
       </select>
     </div>
 
-    <!-- Boutons Solo / Duo -->
-    <div class="select-options">
-      <button class="select-btn" onclick="startGameWithDifficulty(1)">
-        <img src="img/harry.png" alt="Harry" style="width:64px;height:64px;object-fit:contain">
-        <span class="select-label">Solo</span>
-        <span class="select-desc">Harry Potter seul<br>Ennemis : 1 à 2</span>
-      </button>
-      <button class="select-btn" onclick="startGameWithDifficulty(2)">
-        <span style="display:flex;gap:4px;justify-content:center">
-          <img src="img/harry.png"    alt="Harry"    style="width:48px;height:48px;object-fit:contain">
-          <img src="img/hermione.png" alt="Hermione" style="width:48px;height:48px;object-fit:contain">
-        </span>
-        <span class="select-label">Duo</span>
-        <span class="select-desc">Harry + Hermione<br>Ennemis : 1 à 3</span>
-      </button>
-    </div>
+    <!-- Action -->
+    <button id="start-adventure-btn" class="start-btn" onclick="confirmHeroSelection()" disabled>
+      ✦ Commencer l'aventure ✦
+    </button>
+    <div id="hero-hint" class="hero-hint">Sélectionnez 1 héros pour commencer</div>
   </div>
 </div>
 
