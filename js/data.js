@@ -40,6 +40,14 @@ const CHARACTERS = {
     wand:"Baguette de Cristal d'Iris", armor:"Robe de Poufsouffle", acc:"Prisme d'Arc-en-ciel",
     spells:["Expelliarmus","Protego","Incendio","Riddikulus"],
     tagline:"Enchanteresse prismatique — la chance et la lumière à ses côtés."
+  },
+  maxence: { name:"Maxence Ravenwood", icon:"🐍", class:"Élève de Serpentard",
+    imgSrc:"img/maxence.png", role:"Mage de Sang",
+    hp:26, sp:32, str:5, int:14, agi:11, end:7, lck:11, mag:14,
+    atk:4, def:1,
+    wand:"Baguette d'If Noueux", armor:"Robe de Serpentard", acc:"Médaillon de Sang",
+    spells:["Episkey","Protego","Sanguini","Stupefix"],
+    tagline:"Sorcier-vampire — son sang répond au sang."
   }
 };
 
