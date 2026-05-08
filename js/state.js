@@ -175,8 +175,9 @@ let activeQuests = [
     title: "Herboristerie urgente",
     giver: "Madame Pomfresh",
     desc: "Rapporte 3 Racines de Mandragore à l'infirmerie. Les élèves sont encore pétrifiés !",
-    objective: { type: "item", itemId: "mandragore", amount: 3 },
-    progress: 0,
+    objectives: [
+      { type: "item", itemId: "mandragore", amount: 3, progress: 0, completed: false }
+    ],
     reward: { xp: 80, gold: 40, item: "potion_m", spell: "Episkey" },
     completed: false,
     location: "Infirmerie (étage 2)"
@@ -186,8 +187,9 @@ let activeQuests = [
     title: "Le livre qui mord",
     giver: "Gilderoy Lockhart",
     desc: "Récupère le Livre des Monstres qui mord dans la Bibliothèque Interdite.",
-    objective: { type: "item", itemId: "book_monsters", amount: 1 },
-    progress: 0,
+    objectives: [
+      { type: "item", itemId: "book_monsters", amount: 1, progress: 0, completed: false }
+    ],
     reward: { xp: 120, gold: 25, item: "wand1" },
     completed: false,
     location: "Bibliothèque Interdite (étage 3)"
@@ -197,8 +199,9 @@ let activeQuests = [
     title: "Nettoyage des toilettes",
     giver: "Mimi Geignarde",
     desc: "Élimine le Troll des Toilettes qui bloque l'accès aux cachots.",
-    objective: { type: "kill", monsterId: "troll", amount: 1 },
-    progress: 0,
+    objectives: [
+      { type: "kill", monsterId: "troll", amount: 1, progress: 0, completed: false }
+    ],
     reward: { xp: 150, gold: 60, item: "robe1" },
     completed: false,
     location: "Toilettes du 2e étage"
@@ -208,8 +211,9 @@ let activeQuests = [
     title: "Chouette ensorcelée",
     giver: "Hagrid",
     desc: "Capture une Chouette Ensorcelée et rapporte-la à Hagrid (dans la Forêt).",
-    objective: { type: "kill", monsterId: "chouette_envoutee", amount: 1 },
-    progress: 0,
+    objectives: [
+      { type: "kill", monsterId: "chouette_envoutee", amount: 1, progress: 0, completed: false }
+    ],
     reward: { xp: 90, gold: 30, item: "broom" },
     completed: false,
     location: "Forêt Interdite (étage 4+)"
@@ -219,8 +223,9 @@ let activeQuests = [
     title: "L'invasion des Niffleurs",
     giver: "Newton Scamander",
     desc: "Les Niffleurs ont envahi les sous-sols ! Élimine-en 3 avant qu'ils volent tout l'or.",
-    objective: { type: "kill", monsterId: "niffleur", amount: 3 },
-    progress: 0,
+    objectives: [
+      { type: "kill", monsterId: "niffleur", amount: 3, progress: 0, completed: false }
+    ],
     reward: { xp: 100, gold: 80, item: "amulette" },
     completed: false,
     location: "Sous-sols de Poudlard (étage 2+)"
@@ -230,21 +235,24 @@ let activeQuests = [
     title: "Le Gardien Endormi",
     giver: "Professeur McGonagall",
     desc: "Un Gardien du Portail bloque l'accès à la bibliothèque interdite. Neutralise-le.",
-    objective: { type: "kill", monsterId: "gardien_portail", amount: 1 },
-    progress: 0,
+    objectives: [
+      { type: "kill", monsterId: "gardien_portail", amount: 1, progress: 0, completed: false }
+    ],
     reward: { xp: 180, gold: 70, item: "livre_bombarda" },
     completed: false,
     location: "Passages secrets (étage 5+)"
   },
   {
-    id: "chocolat_dementeur",
-    title: "Remède contre les Détraqueurs",
+    id: "lumiere_desespoir",
+    title: "La Lumière contre le Désespoir",
     giver: "Professeur Lupin",
-    desc: "Rapporte 2 Chocolats aux Sorciers à Lupin pour son cours sur les Détraqueurs.",
-    objective: { type: "item", itemId: "choco_sorcier", amount: 2 },
-    progress: 0,
-    reward: { xp: 60, gold: 20, spell: "Patronum" },
+    desc: "Affronte un Détraqueur pour prouver ton courage, puis rapporte un Chocolat aux Sorciers à Lupin pour qu'il t'enseigne le Patronus.",
+    objectives: [
+      { type: "kill", monsterId: "dementeur",     amount: 1, progress: 0, completed: false },
+      { type: "item", itemId:    "choco_sorcier", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 200, gold: 50, spell: "Patronum" },
     completed: false,
-    location: "Classe de Défense (étage 1)"
+    location: "Classe de Défense (étage 4+)"
   }
 ];

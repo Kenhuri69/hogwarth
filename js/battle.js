@@ -8,6 +8,56 @@ function getFirstLivingEnemy() { return enemyGroup.findIndex(e => e.currentHp > 
 function livingEnemies()       { return enemyGroup.filter(e => e.currentHp > 0); }
 function allPartyKO()          { return party.every(c => c.hp <= 0); }
 
+// ── Système de statuts persistants ──────────────────────────
+// Chaque combattant porte statusEffects: [{ id, icon, power, turns }]
+// id ∈ "burn" (🔥) | "poison" (☠️) | "bleed" (🩸)
+const STATUS_DEFS = {
+  burn:   { icon: '🔥', label: 'Brûlure',    color: '#e85a2c' },
+  poison: { icon: '☠️', label: 'Empoisonné', color: '#7ab836' },
+  bleed:  { icon: '🩸', label: 'Saignement', color: '#c0392b' }
+};
+
+function applyStatus(target, id, power, turns) {
+  if (!target) return;
+  if (!target.statusEffects) target.statusEffects = [];
+  const existing = target.statusEffects.find(s => s.id === id);
+  if (existing) {
+    existing.power = Math.max(existing.power, power);
+    existing.turns = Math.max(existing.turns, turns);
+  } else {
+    target.statusEffects.push({ id, power, turns, icon: STATUS_DEFS[id].icon });
+  }
+}
+
+function tickStatuses(target, isEnemy) {
+  if (!target || !target.statusEffects || !target.statusEffects.length) return '';
+  let log = '';
+  const remaining = [];
+  target.statusEffects.forEach(s => {
+    let dmg = s.power;
+    if (isEnemy && target.resist?.includes(s.id)) dmg = Math.floor(dmg * 0.5);
+    if (isEnemy && target.weak?.includes(s.id))   dmg = Math.floor(dmg * 1.5);
+    dmg = Math.max(1, dmg);
+    if (isEnemy) target.currentHp = Math.max(0, target.currentHp - dmg);
+    else        target.hp         = Math.max(0, target.hp         - dmg);
+    log += `${s.icon} ${target.name} subit ${dmg} (${STATUS_DEFS[s.id].label}). `;
+    if (window.UX) {
+      const key = isEnemy ? `enemy:${enemyGroup.indexOf(target)}` : 'ally';
+      UX.floatDmg(key, dmg, 'dmg');
+      UX.logCombat(`${s.icon} ${target.name} : <b>−${dmg}</b> (${STATUS_DEFS[s.id].label})`, 'bad');
+    }
+    s.turns--;
+    if (s.turns > 0) remaining.push(s);
+  });
+  target.statusEffects = remaining;
+  return log;
+}
+
+function clearAllStatuses() {
+  party.forEach(c => { c.statusEffects = []; });
+  enemyGroup.forEach(e => { e.statusEffects = []; });
+}
+
 // ── Démarrage du combat ──────────────────────────────────────
 function startBattle(baseEnemyData) {
   inBattle          = true;
@@ -22,8 +72,9 @@ function startBattle(baseEnemyData) {
   enemyGroup = [];
   for (let i = 0; i < size; i++) {
     const base = i === 0 ? baseEnemyData : pickSimilarEnemy(baseEnemyData);
-    enemyGroup.push({ ...base, currentHp: base.hp, disarmed: 0 });
+    enemyGroup.push({ ...base, currentHp: base.hp, disarmed: 0, statusEffects: [] });
   }
+  party.forEach(c => { c.statusEffects = []; });
 
   // Marquer les ennemis comme découverts dans le bestiaire
   enemyGroup.forEach(e => { if (e.id) seenMonsters.add(e.id); });
@@ -158,6 +209,10 @@ function enemyTurn() {
   const alive = party.filter(c => c.hp > 0).slice(0, partySize);
   let log = '';
 
+  // Statuts persistants : tick sur les ennemis vivants en début de tour
+  livingEnemies().forEach(e => { log += tickStatuses(e, true); });
+  if (checkAllEnemiesDead()) { setBattleLog(log || '...'); renderEnemyGroup(); return; }
+
   livingEnemies().forEach(enemy => {
     const target  = alive[Math.floor(Math.random() * alive.length)];
     if (!target) return;
@@ -184,6 +239,11 @@ function enemyTurn() {
         UX.logCombat(`${enemy.icon} ${enemy.name} → ${target.name} : <b>−${dmg} PV</b>`, 'bad');
       }
     }
+  });
+
+  // Statuts persistants : tick sur les alliés vivants en fin de round
+  party.slice(0, partySize).forEach(c => {
+    if (c.hp > 0) log += tickStatuses(c, false);
   });
 
   setBattleLog(log || '...');
@@ -230,6 +290,7 @@ function endBattle(won) {
 
   // Restaurer les stats (annule les debuffs temporaires comme weaken)
   recalculateStats();
+  clearAllStatuses();
 
   AudioSystem.stopCombatMusic();
 

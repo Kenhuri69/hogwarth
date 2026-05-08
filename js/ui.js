@@ -110,6 +110,8 @@ function _updateCharBar(idx) {
   if (sb) sb.style.width   = (c.sp / c.spMax * 100) + '%';
   if (nm) nm.textContent   = c.name;
   if (cl) cl.textContent   = `${c.class} · Niv.${c.level}`;
+  const slot = document.getElementById(`status-slot-${idx}`);
+  if (slot && typeof renderStatusBadges === 'function') slot.innerHTML = renderStatusBadges(c);
 }
 
 function updateCompass() {
@@ -138,15 +140,16 @@ function updateQuestTracker() {
     return;
   }
   el.innerHTML = pending.map(q => {
-    const obj = q.objective;
+    const step = (typeof getActiveStep === 'function') ? getActiveStep(q) : (q.objectives || []).find(o => !o.completed);
+    if (!step) return '';
     let prog = '', pct = 0;
-    if (obj.type === 'kill') {
-      pct = Math.min(1, q.progress / obj.amount);
-      prog = `${q.progress}/${obj.amount}`;
+    if (step.type === 'kill') {
+      pct = Math.min(1, step.progress / step.amount);
+      prog = `${step.progress}/${step.amount}`;
     } else {
-      const count = (player.inventory || []).filter(i => i.id === obj.itemId).length;
-      pct = Math.min(1, count / obj.amount);
-      prog = `${count}/${obj.amount}`;
+      const count = (player.inventory || []).filter(i => i.id === step.itemId).length;
+      pct = Math.min(1, count / step.amount);
+      prog = `${count}/${step.amount}`;
     }
     const barW = Math.round(pct * 100);
     return `<div style="background:#0a0705;border:1px solid #2a1a08;border-radius:3px;padding:5px 6px;">
