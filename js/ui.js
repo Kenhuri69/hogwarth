@@ -110,6 +110,8 @@ function _updateCharBar(idx) {
   if (sb) sb.style.width   = (c.sp / c.spMax * 100) + '%';
   if (nm) nm.textContent   = c.name;
   if (cl) cl.textContent   = `${c.class} · Niv.${c.level}`;
+  const slot = document.getElementById(`status-slot-${idx}`);
+  if (slot && typeof renderStatusBadges === 'function') slot.innerHTML = renderStatusBadges(c);
 }
 
 function updateCompass() {

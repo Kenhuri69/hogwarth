@@ -241,6 +241,11 @@ function enemyTurn() {
     }
   });
 
+  // Statuts persistants : tick sur les alliés vivants en fin de round
+  party.slice(0, partySize).forEach(c => {
+    if (c.hp > 0) log += tickStatuses(c, false);
+  });
+
   setBattleLog(log || '...');
   updateUI();
 
@@ -285,6 +290,7 @@ function endBattle(won) {
 
   // Restaurer les stats (annule les debuffs temporaires comme weaken)
   recalculateStats();
+  clearAllStatuses();
 
   AudioSystem.stopCombatMusic();
 

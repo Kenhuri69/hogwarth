@@ -104,6 +104,21 @@ function castSpellInBattle(spellName, targetIdx) {
         if (enemy.weak?.includes(spell.effect))   { dmg = Math.floor(dmg * 1.5); suffix = ' 💥'; }
         enemy.currentHp -= dmg;
         msg = `${spell.icon} ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} sur ${enemy.name} !`;
+
+        // Application probabiliste d'un statut DoT (étape 2)
+        const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed' };
+        const statusId = STATUS_BY_SPELL[spell.name];
+        if (statusId && enemy.currentHp > 0) {
+          const chance = Math.min(0.50, 0.10 + char.mag * 0.01);
+          if (Math.random() < chance) {
+            const dotPower = Math.max(1, Math.floor(spell.power * 0.25));
+            applyStatus(enemy, statusId, dotPower, 2);
+            const def  = STATUS_DEFS[statusId];
+            msg += ` ${def.icon} ${def.label} appliqué !`;
+            if (window.UX) UX.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, 2 tours)`, 'magic');
+          }
+        }
+
         if (window.UX) {
           UX.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
           UX.logCombat(`${spell.icon} ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix} sur ${enemy.name}`, 'magic');

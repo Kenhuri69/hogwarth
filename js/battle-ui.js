@@ -26,6 +26,15 @@ function showTargetSelection(actionType) {
   wrap.style.display = 'flex';
 }
 
+// ── Pilules de statut (brûlure / poison / saignement) ────────
+function renderStatusBadges(target) {
+  if (!target || !target.statusEffects || !target.statusEffects.length) return '';
+  return '<div class="status-row">' + target.statusEffects.map(s => {
+    const def = (typeof STATUS_DEFS !== 'undefined' && STATUS_DEFS[s.id]) || { color: '#aaa' };
+    return `<span class="status-pill" style="border-color:${def.color}" title="${def.label || s.id} ${s.power}/tour">${s.icon}${s.turns}</span>`;
+  }).join('') + '</div>';
+}
+
 // ── Rendu du groupe d'ennemis ────────────────────────────────
 function renderEnemyGroup() {
   const container = document.getElementById('enemy-group');
@@ -64,6 +73,7 @@ function renderEnemyGroup() {
       <div class="enemy-bars" style="width:${count === 1 ? '180px' : '120px'}">
         <div class="bar-label" style="font-size:9px"><span>PV</span><span>${Math.max(0, enemy.currentHp)}/${enemy.hp}</span></div>
         <div class="bar-track"><div class="bar-fill hp-fill" style="width:${pct}%"></div></div>
+        ${dead ? '' : renderStatusBadges(enemy)}
       </div>
     `;
     container.appendChild(card);

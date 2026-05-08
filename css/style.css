@@ -1236,6 +1236,27 @@ body {
   filter: grayscale(1);
 }
 
+/* ── PILULES DE STATUT (brûlure / poison / saignement) ── */
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+  margin-top: 3px;
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 8px;
+  border: 1px solid #aaa;
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  font-family: 'Cinzel', serif;
+}
+
 /* ── BATTLE TURN INDICATOR ── */
 .battle-char-indicator {
   font-family: 'Cinzel', serif;
