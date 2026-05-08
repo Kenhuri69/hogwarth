@@ -196,6 +196,7 @@ function addMsg(text, type = '') {
 
 function addLog(text) {
   const el  = document.getElementById('event-log');
+  if (!el) return; // pas de panneau journal dans le DOM courant
   const div = document.createElement('div');
   div.textContent = text;
   el.insertBefore(div, el.firstChild);

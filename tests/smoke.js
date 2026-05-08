@@ -47,8 +47,6 @@ async function startNewGame(page, { partySize = 1, heroes = ['harry'], house = '
   }, { partySize, heroes, house });
 
   await page.waitForFunction(() => Array.isArray(party) && party[0] && party[0].hp > 0);
-  // Bug pré-existant : addLog() référence #event-log absent du DOM
-  await page.evaluate(() => { window.addLog = () => {}; });
 }
 
 // Lance un combat contre un mannequin neutre (pas de resist/weak)
@@ -421,10 +419,48 @@ async function scenarioMonsterImages() {
   await browser.close();
 }
 
+// ── Scénario 6 : addLog robuste sans #event-log dans le DOM ──
+
+async function scenarioAddLogGuard() {
+  console.log('\n── Scénario 6 : addLog tolère #event-log absent ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : appel direct ne lève rien et ne mute pas le DOM
+  const t1 = await page.evaluate(() => {
+    const before = document.getElementById('event-log');
+    let threw = false;
+    try { addLog('test direct sans crash'); } catch (e) { threw = true; }
+    return { threw, eventLogExists: !!before };
+  });
+  console.log('  T1 direct  :', t1);
+  assert(!t1.threw,            'addLog a levé une exception malgré le garde-fou');
+  assert(!t1.eventLogExists,   'le DOM contient désormais #event-log : test obsolète');
+
+  // T2 : déclenche un combat complet → addLog est appelé plusieurs fois
+  await page.evaluate(() => {
+    const enemy = {
+      id: 'log_dummy', name: 'Log Dummy', icon: '🎯',
+      hp: 1, atk: 0, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 5, gold: 3, abilities: [], drops: [], resist: [], weak: [], desc: ''
+    };
+    startBattle(enemy);
+    enemyGroup[0].currentHp = 0;
+    endBattle(true);
+  });
+  // Si addLog plantait, errors aurait capté un pageerror ci-dessous
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (addLog refait peut-être surface)`);
+  }
+  console.log('  ✅ addLog silencieux et sans erreur');
+  await browser.close();
+}
+
 // ── Runner ───────────────────────────────────────────────────
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard];
   for (const s of scenarios) {
     await s();
   }
