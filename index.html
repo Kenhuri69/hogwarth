@@ -334,9 +334,9 @@
 <div id="game-container">
 
   <div class="game-header">
-    <div class="game-title">⚡ Poudlard & Magie</div>
+    <div class="game-title"><img class="ui-icon ui-icon-xl" src="img/icons/hp.png" alt=""> Poudlard & Magie</div>
     <div class="location-display" id="loc-display">Les Couloirs de Poudlard — Niveau 1</div>
-    <div class="gold-display" id="gold-display">🪙 0 Gallions</div>
+    <div class="gold-display" id="gold-display"><img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> 0 Gallions</div>
   </div>
 
   <div class="left-panel">
@@ -352,11 +352,11 @@
         </div>
       </div>
       <div class="stat-bar-row">
-        <div class="bar-label"><span>⚡ PV</span><span id="hp-text-0">35/35</span></div>
+        <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/hp.png" alt=""> PV</span><span id="hp-text-0">35/35</span></div>
         <div class="bar-track"><div class="bar-fill hp-fill" id="hp-bar-0" style="width:100%"></div></div>
       </div>
       <div class="stat-bar-row">
-        <div class="bar-label"><span>✨ PM</span><span id="sp-text-0">22/22</span></div>
+        <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/mp.png" alt=""> PM</span><span id="sp-text-0">22/22</span></div>
         <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar-0" style="width:100%"></div></div>
       </div>
       <div id="status-slot-0"></div>
@@ -372,11 +372,11 @@
         </div>
       </div>
       <div class="stat-bar-row">
-        <div class="bar-label"><span>⚡ PV</span><span id="hp-text-1">28/28</span></div>
+        <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/hp.png" alt=""> PV</span><span id="hp-text-1">28/28</span></div>
         <div class="bar-track"><div class="bar-fill hp-fill" id="hp-bar-1" style="width:100%"></div></div>
       </div>
       <div class="stat-bar-row">
-        <div class="bar-label"><span>✨ PM</span><span id="sp-text-1">35/35</span></div>
+        <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/mp.png" alt=""> PM</span><span id="sp-text-1">35/35</span></div>
         <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar-1" style="width:100%"></div></div>
       </div>
       <div id="status-slot-1"></div>
@@ -384,7 +384,7 @@
 
     <!-- XP partagée -->
     <div class="stat-bar-row" id="xp-container" style="margin-top:4px">
-      <div class="bar-label"><span id="xp-label">⭐ Niv.1 — XP</span><span id="xp-text">0/50</span></div>
+      <div class="bar-label"><span id="xp-label"><img class="ui-icon ui-icon-sm" src="img/icons/xp.png" alt=""> Niv.1 — XP</span><span id="xp-text">0/50</span></div>
       <div class="bar-track"><div class="bar-fill xp-fill" id="xp-bar" style="width:0%"></div></div>
     </div>
 
@@ -470,10 +470,10 @@
           <div class="target-buttons" id="target-buttons"></div>
         </div>
         <div class="battle-actions">
-          <button class="cmd-btn" onclick="battleAction('attack')">⚔️ Attaquer</button>
-          <button class="cmd-btn" onclick="battleAction('spell')">✨ Sortilège</button>
+          <button class="cmd-btn" onclick="battleAction('attack')"><img class="ui-icon ui-icon-md" src="img/icons/atk.png" alt=""> Attaquer</button>
+          <button class="cmd-btn" onclick="battleAction('spell')"><img class="ui-icon ui-icon-md" src="img/icons/mp.png" alt=""> Sortilège</button>
           <button class="cmd-btn" onclick="battleAction('item')">🧪 Objet</button>
-          <button class="cmd-btn" onclick="battleAction('flee')">🏃 Fuir</button>
+          <button class="cmd-btn" onclick="battleAction('flee')"><img class="ui-icon ui-icon-md" src="img/icons/agi.png" alt=""> Fuir</button>
         </div>
       </div>
     </div>
@@ -543,7 +543,7 @@
       <button class="dpad-btn" onclick="move('n')">▲</button>
       <div class="dpad-mid">
         <button class="dpad-btn" onclick="move('w')">◄</button>
-        <div class="dpad-center">⚡</div>
+        <div class="dpad-center"><img class="ui-icon ui-icon-md" src="img/icons/hp.png" alt=""></div>
         <button class="dpad-btn" onclick="move('e')">►</button>
       </div>
       <button class="dpad-btn" onclick="move('s')">▼</button>
@@ -572,7 +572,7 @@
       <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon"><img src="img/icons/load.png" alt="Charger"></span><span class="btn-label">Charger</span></button>
       <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon"><img src="img/icons/gear.png" alt="Diff."></span><span class="btn-label">Diff.</span></button>
       <button class="cmd-btn mobile-map-btn" data-group="system" onclick="toggleMobileMap()" title="Carte"><span class="btn-icon"><img src="img/icons/map.png" alt="Carte"></span></button>
-      <button class="cmd-btn" id="btn-interact" data-group="adventure" style="display:none"><span class="btn-icon">🚪</span></button>
+      <button class="cmd-btn" id="btn-interact" data-group="adventure" style="display:none"><span class="btn-icon"><img src="img/icons/door.png" alt="Interact"></span></button>
     </div>
 
   </div>
@@ -598,7 +598,7 @@
 
 <div id="shop-modal">
   <div class="modal-box">
-    <div class="modal-title" id="shop-title">🏪 Boutique</div>
+    <div class="modal-title" id="shop-title"><img class="ui-icon ui-icon-xl" src="img/icons/shop_sign.png" alt=""> Boutique</div>
     <span class="modal-close" onclick="closeModal('shop-modal')">✕</span>
     <div style="text-align:right; margin-bottom:8px; font-family:'Cinzel',serif; font-size:12px; color:var(--gold)">
       💰 <span id="shop-gold">0</span> Gallions

@@ -107,14 +107,16 @@ Icônes à générer pour remplacer les emoji actuels :
 | 🚪      | `door.png`   | Bouton interact |
 
 Étapes Phase 1 :
-- [ ] 1.1 — Étendre `gen_icons.py` avec 12 nouvelles fonctions de génération
-- [ ] 1.2 — Lancer `python3 gen_icons.py`, ouvrir les PNG → validation utilisateur
-- [ ] 1.3 — Remplacer dans `index.html` (HUD, equipment, battle, modal titles)
-- [ ] 1.4 — Remplacer dans `js/ui.js` (`#gold-display`, character modal stats)
-- [ ] 1.5 — Remplacer dans `js/quests.js` (récompense or)
-- [ ] 1.6 — CSS : taille appropriée selon contexte (12px stats inline, 16px barres, 24px boutons)
-- [ ] 1.7 — Smoke test : assert chaque ID DOM contient une `<img>` chargée
-- [ ] 1.8 — Validation utilisateur sur capture in-game
+- [x] 1.1 — Étendre `gen_icons.py` avec 12 nouvelles fonctions de génération
+- [x] 1.2 — Lancer `python3 gen_icons.py`, ouvrir les PNG → validation utilisateur OK
+- [x] 1.3 — Remplacer dans `index.html` (game-title, gold-display, barres HP/MP/XP, dpad-center, btn-interact, shop-title, boutons combat ATK/spell/flee)
+- [x] 1.4 — Remplacer dans `js/ui.js` (`#gold-display` via innerHTML, `#xp-label` via innerHTML, character modal stats : HP/MP/ATK/DEF/STR/INT/AGI/LCK/MAG/Gold)
+- [x] 1.5 — Remplacer dans `js/quests.js` (récompense XP + or)
+- [x] 1.6 — CSS : classes `.ui-icon`, `.ui-icon-sm` (12px), `.ui-icon-md` (16px), `.ui-icon-lg` (20px), `.ui-icon-xl` (28px), `image-rendering: pixelated`
+- [x] 1.7 — Scénario 18 ajouté à `tests/smoke.js` : assert HUD `<img>` chargés + fiche perso + persistance après `updateUI`. Bug détecté et corrigé : `xp-label.textContent =` écrasait l'image → switch vers `innerHTML`.
+- [x] 1.8 — Captures `_phase1_ingame.png` (HUD complet), `_phase1_zoom_left.png`, `_phase1_zoom_gold.png`, `_phase1_charsheet.png`. Tous les scénarios (19) passent.
+
+**Note** : équipement (🪄 🧥 💎) reste en emoji, sera traité en Phase 2 avec wand/armor/accessory dédiées.
 
 ### Phase 2 — Status effects + équipement (8 PNG)
 🪄 wand · 🧥 armor · 💎 accessory · 🔥 burn · ☠️ poison · 🩸 bleed · 💚 heal · 💀 dead

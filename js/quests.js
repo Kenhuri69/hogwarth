@@ -54,8 +54,8 @@ function renderQuestList() {
 
     // Récompenses formatées
     const rewardParts = [];
-    if (q.reward.xp)    rewardParts.push(`⭐ +${q.reward.xp} XP`);
-    if (q.reward.gold)  rewardParts.push(`🪙 +${q.reward.gold}`);
+    if (q.reward.xp)    rewardParts.push(`<img class="ui-icon ui-icon-md" src="img/icons/xp.png" alt=""> +${q.reward.xp} XP`);
+    if (q.reward.gold)  rewardParts.push(`<img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> +${q.reward.gold}`);
     if (q.reward.item) {
       const it = ITEMS.find(i => i.id === q.reward.item);
       if (it) rewardParts.push(`${it.icon} ${it.name}`);

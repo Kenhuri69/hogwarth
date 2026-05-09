@@ -1350,8 +1350,85 @@ async function scenarioCmdBtnIcons() {
   await browser.close();
 }
 
+// ── Scénario 18 : Phase 1 — UI chrome + HUD stats ────────────
+
+async function scenarioUiChromeIcons() {
+  console.log('\n── Scénario 18 : Phase 1 — UI chrome + HUD stats ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : les icônes HUD (game-title, gold-display, barres HP/MP/XP, dpad, shop) sont des <img> chargés
+  const t1 = await page.evaluate(() => {
+    const grab = (sel) => {
+      const el = document.querySelector(sel);
+      const img = el ? el.querySelector('img') : null;
+      return img ? { src: img.getAttribute('src'), loaded: img.complete && img.naturalWidth > 0 } : null;
+    };
+    return {
+      gameTitle: grab('.game-title'),
+      gold:      grab('#gold-display'),
+      hp0:       grab('#char-card-0 .stat-bar-row:nth-child(2) .bar-label'),
+      mp0:       grab('#char-card-0 .stat-bar-row:nth-child(3) .bar-label'),
+      hp1:       grab('#char-card-1 .stat-bar-row:nth-child(2) .bar-label'),
+      mp1:       grab('#char-card-1 .stat-bar-row:nth-child(3) .bar-label'),
+      xp:        grab('#xp-label'),
+      dpad:      grab('.dpad-center'),
+      shopTitle: grab('#shop-title')
+    };
+  });
+  console.log('  T1 HUD icons →', JSON.stringify(t1, null, 2));
+  const checks = {
+    gameTitle: /hp\.png$/,
+    gold:      /gold\.png$/,
+    hp0:       /hp\.png$/,
+    mp0:       /mp\.png$/,
+    hp1:       /hp\.png$/,
+    mp1:       /mp\.png$/,
+    xp:        /xp\.png$/,
+    dpad:      /hp\.png$/,
+    shopTitle: /shop_sign\.png$/
+  };
+  for (const [key, regex] of Object.entries(checks)) {
+    assert(t1[key] !== null,                   `${key} : doit avoir un <img>`);
+    assert(regex.test(t1[key].src),            `${key} : src doit matcher ${regex} (était ${t1[key].src})`);
+    assert(t1[key].loaded === true,            `${key} : image doit être chargée (pas de 404)`);
+  }
+
+  // T2 : la fiche de personnage (modale) contient bien les <img> pour chaque stat
+  const t2 = await page.evaluate(() => {
+    openCharacter(0);
+    const modal = document.getElementById('char-detail');
+    const imgs = Array.from(modal.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
+    return imgs;
+  });
+  console.log('  T2 fiche perso →', t2);
+  ['hp.png', 'mp.png', 'atk.png', 'def.png', 'str.png', 'int.png', 'agi.png', 'xp.png', 'mag.png', 'gold.png'].forEach(name => {
+    assert(t2.some(s => s.endsWith(name)), `fiche perso doit contenir ${name}`);
+  });
+
+  // T3 : updateUI() après une mutation de gold maintient l'<img> (pas de regression sur innerHTML)
+  const t3 = await page.evaluate(() => {
+    player.gold = 999;
+    updateUI();
+    const el = document.getElementById('gold-display');
+    const img = el.querySelector('img');
+    return { hasImg: !!img, src: img && img.getAttribute('src'), txt: el.textContent.trim() };
+  });
+  console.log('  T3 updateUI gold →', t3);
+  assert(t3.hasImg,                   'gold-display doit conserver son <img> après updateUI');
+  assert(/gold\.png$/.test(t3.src),   'gold-display src doit rester sur gold.png');
+  assert(t3.txt.includes('999'),      'le montant Gallions doit être mis à jour');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Phase 1 : 9 icônes HUD + 10 stats fiche perso + persistance après updateUI');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons];
   for (const s of scenarios) {
     await s();
   }

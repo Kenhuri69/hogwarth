@@ -21,10 +21,10 @@ function updateUI() {
   _updateCharBar(1);
 
   // ── XP et or partagés ───────────────────────────────────────
-  document.getElementById('xp-label').textContent = `⭐ Niv.${player.level} — XP`;
+  document.getElementById('xp-label').innerHTML = `<img class="ui-icon ui-icon-sm" src="img/icons/xp.png" alt=""> Niv.${player.level} — XP`;
   document.getElementById('xp-text').textContent  = `${player.xp}/${player.xpNext}`;
   document.getElementById('xp-bar').style.width   = (player.xp / player.xpNext * 100) + '%';
-  document.getElementById('gold-display').textContent = `🪙 ${player.gold} Gallions`;
+  document.getElementById('gold-display').innerHTML = `<img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${player.gold} Gallions`;
 
   // ── Stats de Harry (panneau gauche) ─────────────────────────
   document.getElementById('s-str').textContent = player.str;
@@ -236,16 +236,16 @@ function openCharacter(charIdx = 0) {
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
-      <div style="color:#8a7050">⚡ Points de Vie</div>   <div style="color:var(--parchment)">${c.hp}/${c.hpMax}</div>
-      <div style="color:#8a7050">✨ Points de Magie</div>  <div style="color:var(--parchment)">${c.sp}/${c.spMax}</div>
-      <div style="color:#8a7050">⚔️ Attaque</div>         <div style="color:var(--parchment)">${c.atk}</div>
-      <div style="color:#8a7050">🛡️ Défense</div>         <div style="color:var(--parchment)">${c.def}</div>
-      <div style="color:#8a7050">💪 Force</div>            <div style="color:var(--parchment)">${c.str}</div>
-      <div style="color:#8a7050">🧠 Intelligence</div>     <div style="color:var(--parchment)">${c.int}</div>
-      <div style="color:#8a7050">🏃 Agilité</div>          <div style="color:var(--parchment)">${c.agi}</div>
-      <div style="color:#8a7050">🌟 Chance</div>           <div style="color:var(--parchment)">${c.lck}</div>
-      <div style="color:#8a7050">🔮 Magie</div>            <div style="color:var(--parchment)">${c.mag}</div>
-      ${charIdx === 0 ? `<div style="color:#8a7050">💰 Gallions</div><div style="color:var(--gold)">${player.gold}</div>` : ''}
+      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/hp.png" alt=""> Points de Vie</div>   <div style="color:var(--parchment)">${c.hp}/${c.hpMax}</div>
+      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/mp.png" alt=""> Points de Magie</div>  <div style="color:var(--parchment)">${c.sp}/${c.spMax}</div>
+      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/atk.png" alt=""> Attaque</div>         <div style="color:var(--parchment)">${c.atk}</div>
+      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/def.png" alt=""> Défense</div>         <div style="color:var(--parchment)">${c.def}</div>
+      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/str.png" alt=""> Force</div>            <div style="color:var(--parchment)">${c.str}</div>
+      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/int.png" alt=""> Intelligence</div>     <div style="color:var(--parchment)">${c.int}</div>
+      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/agi.png" alt=""> Agilité</div>          <div style="color:var(--parchment)">${c.agi}</div>
+      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/xp.png" alt=""> Chance</div>           <div style="color:var(--parchment)">${c.lck}</div>
+      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/mag.png" alt=""> Magie</div>            <div style="color:var(--parchment)">${c.mag}</div>
+      ${charIdx === 0 ? `<div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> Gallions</div><div style="color:var(--gold)">${player.gold}</div>` : ''}
     </div>
     <div style="margin-top:12px;border-top:1px solid #2a1a08;padding-top:10px">
       <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);margin-bottom:5px">ÉQUIPEMENT</div>
