@@ -77,3 +77,60 @@ Icônes à générer pour remplacer les emoji actuels :
 - [x] Étape 1 — Patcher `_updateCharBar(idx)` pour synchroniser `.party-portrait-img` (`src` + `alt`) à partir de `c.imgSrc` / `c.name`. → vérifier : tous les flux qui rafraîchissent l'UI (`updateUI`) propagent désormais l'icône. Pas d'effet de bord sur la nouvelle partie (idempotent : valeur déjà bonne).
 - [x] Étape 2 — Étendre le scénario 16 (hub démarrage) pour sauvegarder en jouant Céleste, recharger le slot, et asserter que `#char-card-0 .party-portrait-img` finit par `celeste.png`. → vérifier : `node tests/smoke.js` 17 scénarios passent.
 - [x] Étape 3 — Commit + push sur `claude/icon-generation-engine-LjO0J`.
+
+---
+
+# Plan — Couverture 100% des icônes UI
+
+> Objectif final : 0 emoji visible côté joueur, 100% PNG pixel art générés
+> par `gen_icons.py`. Audit du 2026-05-09 : ~75 emoji distincts à remplacer.
+> Décisions cadrage : ALL items + sorts ; difficulté reste en emoji ; char icons générés.
+
+## Phasage (validation utilisateur entre chaque phase)
+
+### Phase 1 — UI chrome + HUD stats ⏳ (en cours)
+12 PNG, impact visuel maximal, base pour valider le style.
+
+| Symbole | Cible | Usage principal |
+|---------|-------|-----------------|
+| ⚡ HP   | `hp.png`     | Barres PV (`#bar-label`), dpad center, titre jeu |
+| ✨ MP   | `mp.png`     | Barres PM, bouton Sortilège combat |
+| 🌟 XP   | `xp.png`     | Label XP (`#xp-label`) |
+| 🪙      | `gold.png`   | `#gold-display`, récompense quête |
+| ⚔️      | `atk.png`    | Stat ATK (fiche), bouton Attaquer combat, monstres |
+| 🛡️      | `def.png`    | Stat DEF (fiche), monstres, statut bouclier |
+| 💪      | `str.png`    | Stat FOR (fiche personnage) |
+| 🧠      | `int.png`    | Stat INT (fiche) |
+| 🏃      | `agi.png`    | Stat AGI (fiche), bouton Fuir |
+| 🔮      | `mag.png`    | Stat MAG (fiche), monstres |
+| 🏪      | `shop_sign.png` | Titre boutique, room status |
+| 🚪      | `door.png`   | Bouton interact |
+
+Étapes Phase 1 :
+- [ ] 1.1 — Étendre `gen_icons.py` avec 12 nouvelles fonctions de génération
+- [ ] 1.2 — Lancer `python3 gen_icons.py`, ouvrir les PNG → validation utilisateur
+- [ ] 1.3 — Remplacer dans `index.html` (HUD, equipment, battle, modal titles)
+- [ ] 1.4 — Remplacer dans `js/ui.js` (`#gold-display`, character modal stats)
+- [ ] 1.5 — Remplacer dans `js/quests.js` (récompense or)
+- [ ] 1.6 — CSS : taille appropriée selon contexte (12px stats inline, 16px barres, 24px boutons)
+- [ ] 1.7 — Smoke test : assert chaque ID DOM contient une `<img>` chargée
+- [ ] 1.8 — Validation utilisateur sur capture in-game
+
+### Phase 2 — Status effects + équipement (8 PNG)
+🪄 wand · 🧥 armor · 💎 accessory · 🔥 burn · ☠️ poison · 🩸 bleed · 💚 heal · 💀 dead
+
+### Phase 3 — Sorts (~25 PNG)
+Chaque sort de `SPELLS[]` reçoit son PNG. Mapping `name → spell_<slug>.png`.
+Exposé via une fonction `getSpellIconHtml(spellName)` qui retourne `<img>` à partir du nom.
+
+### Phase 4 — Items (~30 PNG)
+Chaque entrée de `ITEMS[]` reçoit son PNG. Idem : `getItemIconHtml(itemId)`.
+
+### Phase 5 — Char icons (5 PNG, 32×32)
+`harry_icon.png`, `hermione_icon.png`, `celeste_icon.png`, `iris_icon.png`, `maxence_icon.png`.
+Mini-portraits stylisés (utilisés là où `c.icon` apparaît, ex. logs combat).
+
+## Critères de succès globaux
+- `node tests/smoke.js` passe à 100% (smoke audit ajouté : aucun caractère emoji UTF-8 dans le DOM rendu).
+- Capture comparative avant/après par phase, stockée dans `img/icons/_phaseN_*.png`.
+- Plan de ce fichier coché à mesure.

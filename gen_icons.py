@@ -943,6 +943,633 @@ def gen_voice_off():
     return img
 
 
+# ═════════════════════════════════════════════════════════════
+# PHASE 1 — UI chrome + HUD stats
+# ═════════════════════════════════════════════════════════════
+
+# Couleurs additionnelles pour Phase 1
+HP_D  = (140, 22, 22, 255)   # rouge HP foncé
+HP_M  = (200, 50, 50, 255)
+HP_L  = (240,100,100, 255)
+HP_H  = (255,180,170, 255)
+
+MP_D  = ( 30, 60,140, 255)   # bleu MP foncé
+MP_M  = ( 70,120,210, 255)
+MP_L  = (140,190,250, 255)
+MP_H  = (220,235,255, 255)
+
+XP_D  = (180,130, 30, 255)   # or XP (réutilise sable doré)
+XP_M  = (230,180, 60, 255)
+XP_L  = (255,220,110, 255)
+XP_H  = (255,245,180, 255)
+
+ROSE  = (200,120,140, 255)   # cerveau
+ROSE_D= (140, 70, 90, 255)
+ROSE_L= (240,180,200, 255)
+
+PURPLE= (110, 60,160, 255)   # crystal ball
+PURPLE_M=(150,100,200, 255)
+PURPLE_L=(200,170,240, 255)
+
+
+def gen_hp():
+    """⚡ HP — éclair rouge à contour or."""
+    img = Image.new('RGBA', (S, S), TR)
+    # Polygone éclair stylisé. Points en pixel (haut→bas, zigzag).
+    # On dessine plein, puis contour, puis highlight.
+    bolt_fill = [
+        (28,5),(29,5),(30,5),(31,5),(32,5),
+        (25,6),(26,6),(27,6),(28,6),(29,6),(30,6),(31,6),(32,6),(33,6),
+        (23,7),(24,7),(25,7),(26,7),(27,7),(28,7),(29,7),(30,7),(31,7),(32,7),(33,7),
+        (22,8),(23,8),(24,8),(25,8),(26,8),(27,8),(28,8),(29,8),(30,8),(31,8),(32,8),
+        (20,9),(21,9),(22,9),(23,9),(24,9),(25,9),(26,9),(27,9),(28,9),(29,9),(30,9),(31,9),
+        (19,10),(20,10),(21,10),(22,10),(23,10),(24,10),(25,10),(26,10),(27,10),(28,10),(29,10),(30,10),
+        (18,11),(19,11),(20,11),(21,11),(22,11),(23,11),(24,11),(25,11),(26,11),(27,11),(28,11),(29,11),
+        (17,12),(18,12),(19,12),(20,12),(21,12),(22,12),(23,12),(24,12),(25,12),(26,12),(27,12),(28,12),
+        (16,13),(17,13),(18,13),(19,13),(20,13),(21,13),(22,13),(23,13),(24,13),(25,13),(26,13),(27,13),
+        (15,14),(16,14),(17,14),(18,14),(19,14),(20,14),(21,14),(22,14),(23,14),(24,14),(25,14),(26,14),
+        (14,15),(15,15),(16,15),(17,15),(18,15),(19,15),(20,15),(21,15),(22,15),(23,15),(24,15),(25,15),
+        (13,16),(14,16),(15,16),(16,16),(17,16),(18,16),(19,16),(20,16),(21,16),(22,16),(23,16),(24,16),
+        (13,17),(14,17),(15,17),(16,17),(17,17),(18,17),(19,17),(20,17),(21,17),(22,17),(23,17),(24,17),(25,17),(26,17),(27,17),(28,17),(29,17),(30,17),(31,17),(32,17),(33,17),(34,17),(35,17),
+        (15,18),(16,18),(17,18),(18,18),(19,18),(20,18),(21,18),(22,18),(23,18),(24,18),(25,18),(26,18),(27,18),(28,18),(29,18),(30,18),(31,18),(32,18),(33,18),(34,18),
+        (17,19),(18,19),(19,19),(20,19),(21,19),(22,19),(23,19),(24,19),(25,19),(26,19),(27,19),(28,19),(29,19),(30,19),(31,19),(32,19),(33,19),
+        (18,20),(19,20),(20,20),(21,20),(22,20),(23,20),(24,20),(25,20),(26,20),(27,20),(28,20),(29,20),(30,20),(31,20),(32,20),
+        (19,21),(20,21),(21,21),(22,21),(23,21),(24,21),(25,21),(26,21),(27,21),(28,21),(29,21),(30,21),
+        (20,22),(21,22),(22,22),(23,22),(24,22),(25,22),(26,22),(27,22),(28,22),(29,22),
+        (20,23),(21,23),(22,23),(23,23),(24,23),(25,23),(26,23),(27,23),(28,23),
+        (19,24),(20,24),(21,24),(22,24),(23,24),(24,24),(25,24),(26,24),(27,24),
+        (18,25),(19,25),(20,25),(21,25),(22,25),(23,25),(24,25),(25,25),(26,25),
+        (17,26),(18,26),(19,26),(20,26),(21,26),(22,26),(23,26),(24,26),(25,26),
+        (16,27),(17,27),(18,27),(19,27),(20,27),(21,27),(22,27),(23,27),(24,27),
+        (15,28),(16,28),(17,28),(18,28),(19,28),(20,28),(21,28),(22,28),(23,28),
+        (14,29),(15,29),(16,29),(17,29),(18,29),(19,29),(20,29),(21,29),(22,29),
+        (13,30),(14,30),(15,30),(16,30),(17,30),(18,30),(19,30),(20,30),(21,30),
+        (12,31),(13,31),(14,31),(15,31),(16,31),(17,31),(18,31),(19,31),(20,31),
+        (11,32),(12,32),(13,32),(14,32),(15,32),(16,32),(17,32),(18,32),(19,32),
+        (10,33),(11,33),(12,33),(13,33),(14,33),(15,33),(16,33),(17,33),(18,33),
+        ( 9,34),(10,34),(11,34),(12,34),(13,34),(14,34),(15,34),(16,34),(17,34),
+        ( 8,35),( 9,35),(10,35),(11,35),(12,35),(13,35),(14,35),(15,35),(16,35),
+        ( 7,36),( 8,36),( 9,36),(10,36),(11,36),(12,36),(13,36),(14,36),(15,36),
+        ( 7,37),( 8,37),( 9,37),(10,37),(11,37),(12,37),(13,37),(14,37),
+        ( 8,38),( 9,38),(10,38),(11,38),(12,38),(13,38),
+        ( 9,39),(10,39),(11,39),(12,39),
+        (10,40),(11,40),
+    ]
+    rng = random.Random(3101)
+    for (x, y) in bolt_fill:
+        # gradient diagonal : haut-droite plus clair, bas-gauche plus foncé
+        t = ((S - x) + y) / (2 * S)
+        col = blend(HP_L, HP_D, t)
+        putpx(img, x, y, vary(col, rng, 6))
+    # Highlight central
+    for (x, y) in [(24,9),(23,10),(22,11),(21,12),(20,13),(19,14),(18,15),(28,18),(27,19),(26,20),
+                   (25,21),(24,22),(23,23),(22,24),(15,30),(14,31),(13,32),(12,33),(11,34)]:
+        putpx(img, x, y, HP_H)
+    # Contour or
+    pixels = set(bolt_fill)
+    for (x, y) in pixels:
+        for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+            nx, ny = x+dx, y+dy
+            if (nx, ny) not in pixels and 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                putpx(img, nx, ny, GM)
+    return img
+
+
+def gen_mp():
+    """✨ MP — étincelle bleue à 4 branches."""
+    img = Image.new('RGBA', (S, S), TR)
+    cx, cy = 24, 24
+    rng = random.Random(3102)
+    # Branche verticale
+    for y in range(4, 44):
+        # largeur diminue avec la distance au centre
+        d = abs(y - cy)
+        w = max(0, 4 - d // 4)
+        for x in range(cx - w, cx + w + 1):
+            t = d / 20
+            col = blend(MP_L, MP_D, t)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Branche horizontale
+    for x in range(4, 44):
+        d = abs(x - cx)
+        w = max(0, 4 - d // 4)
+        for y in range(cy - w, cy + w + 1):
+            if img.getpixel((x, y))[3] > 0:
+                continue
+            t = d / 20
+            col = blend(MP_L, MP_D, t)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Branches diagonales (fines)
+    for r in range(5, 20):
+        for (dx, dy) in [(1,1),(1,-1),(-1,1),(-1,-1)]:
+            x, y = cx + dx*r, cy + dy*r
+            if r < 14:
+                col = MP_M if r > 9 else MP_L
+                putpx(img, x, y, col)
+    # Coeur très brillant
+    for dy in range(-3, 4):
+        for dx in range(-3, 4):
+            if dx*dx + dy*dy <= 6:
+                putpx(img, cx+dx, cy+dy, MP_H)
+    # Coeur central blanc
+    fill_circle(img, cx, cy, 1, (255, 255, 255, 255))
+    # Outline
+    pixels = []
+    for y in range(S):
+        for x in range(S):
+            if img.getpixel((x, y))[3] > 0:
+                pixels.append((x, y))
+    pset = set(pixels)
+    for (x, y) in pixels:
+        for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+            nx, ny = x+dx, y+dy
+            if (nx, ny) not in pset and 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                putpx(img, nx, ny, OUT2)
+    return img
+
+
+def gen_xp():
+    """🌟 XP — étoile dorée 5 branches."""
+    img = Image.new('RGBA', (S, S), TR)
+    cx, cy = 24, 25
+    # Calcul des sommets : 5 branches externes (r=20) et 5 internes (r=8)
+    R_OUT, R_IN = 20, 8
+    pts = []
+    for i in range(10):
+        ang = -math.pi/2 + i * math.pi / 5
+        r = R_OUT if i % 2 == 0 else R_IN
+        pts.append((cx + r * math.cos(ang), cy + r * math.sin(ang)))
+    # Remplissage par scanline
+    rng = random.Random(3103)
+    for y in range(S):
+        # intersections avec les arêtes du polygone
+        xs = []
+        n = len(pts)
+        for i in range(n):
+            x0, y0 = pts[i]
+            x1, y1 = pts[(i+1) % n]
+            if (y0 <= y < y1) or (y1 <= y < y0):
+                t = (y - y0) / (y1 - y0) if (y1 - y0) != 0 else 0
+                xs.append(x0 + t * (x1 - x0))
+        xs.sort()
+        for i in range(0, len(xs)-1, 2):
+            xa, xb = int(xs[i]), int(xs[i+1])
+            for x in range(xa, xb+1):
+                # gradient haut clair → bas foncé
+                t = (y - 5) / 35
+                col = blend(XP_L, XP_D, max(0.0, min(1.0, t)))
+                putpx(img, x, y, vary(col, rng, 5))
+    # Highlight haut-gauche
+    for (x, y) in [(22,8),(23,8),(24,7),(21,10),(22,10),(20,12),(21,12),
+                   (18,14),(19,14),(17,17),(18,17)]:
+        putpx(img, x, y, XP_H)
+    # Outline
+    pixels = []
+    for y in range(S):
+        for x in range(S):
+            if img.getpixel((x, y))[3] > 0:
+                pixels.append((x, y))
+    pset = set(pixels)
+    for (x, y) in pixels:
+        for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+            nx, ny = x+dx, y+dy
+            if (nx, ny) not in pset and 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_gold():
+    """🪙 Gallion — disque doré à anneau et G central."""
+    img = Image.new('RGBA', (S, S), TR)
+    cx, cy = 24, 24
+    rng = random.Random(3104)
+    # Disque externe
+    for dy in range(-19, 20):
+        for dx in range(-19, 20):
+            d2 = dx*dx + dy*dy
+            if d2 > 19*19: continue
+            t = (dy + 19) / 38  # gradient haut clair → bas foncé
+            base = blend(XP_L, XP_D, t)
+            putpx(img, cx+dx, cy+dy, vary(base, rng, 6))
+    # Anneau intérieur (relief)
+    ring(img, cx, cy, 14, GD)
+    # Highlight haut-gauche
+    for theta in range(180, 270, 2):
+        rad = math.radians(theta)
+        x = int(cx + 17 * math.cos(rad))
+        y = int(cy + 17 * math.sin(rad))
+        putpx(img, x, y, XP_H)
+        putpx(img, x-1, y, XP_H)
+    # Lettre G stylisée au centre (5x7)
+    G_PIX = [
+        (0,1),(0,2),(0,3),(0,4),(0,5),
+        (1,0),(2,0),(3,0),
+        (1,6),(2,6),(3,6),
+        (4,1),(4,5),(4,6),
+        (3,3),(2,3),(2,4),(3,4),
+    ]
+    gx0, gy0 = cx-2, cy-3
+    for (px, py) in G_PIX:
+        putpx(img, gx0+px, gy0+py, GD)
+    # Contour disque
+    for dy in range(-20, 21):
+        for dx in range(-20, 21):
+            d2 = dx*dx + dy*dy
+            if 19*19 < d2 <= 20*20:
+                putpx(img, cx+dx, cy+dy, OUT)
+    return img
+
+
+def gen_atk():
+    """⚔️ ATK — épées croisées."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3105)
+    # Épée 1 : diagonale ↘ (de haut-gauche vers bas-droite)
+    # Lame
+    for i in range(28):
+        x = 8 + i
+        y = 8 + i
+        for w in range(-2, 3):
+            putpx(img, x+w, y-w, blend(MTH, MTM, abs(w)/2.5))
+    # Épée 2 : diagonale ↙ (de haut-droite vers bas-gauche)
+    for i in range(28):
+        x = 39 - i
+        y = 8 + i
+        for w in range(-2, 3):
+            col = blend(MTH, MTM, abs(w)/2.5)
+            if img.getpixel((x+w, y+w))[3] > 0:
+                continue
+            putpx(img, x+w, y+w, col)
+    # Garde épée 1 (haut-gauche, perpendiculaire)
+    for i in range(-3, 4):
+        putpx(img, 11+i, 5+i, GD)
+        putpx(img, 12+i, 5+i, GM)
+        putpx(img, 13+i, 5+i, GD)
+    # Garde épée 2
+    for i in range(-3, 4):
+        putpx(img, 36-i, 5+i, GD)
+        putpx(img, 35-i, 5+i, GM)
+        putpx(img, 34-i, 5+i, GD)
+    # Pommeaux (or)
+    fill_circle(img, 38, 38, 2, GD)
+    fill_circle(img, 38, 38, 1, GM)
+    fill_circle(img,  9, 38, 2, GD)
+    fill_circle(img,  9, 38, 1, GM)
+    # Manches en cuir
+    for i in range(0, 4):
+        putpx(img, 36+i, 36+i, LD)
+        putpx(img, 11-i, 36+i, LD)
+    # Contours sur lames (assurer la lisibilité)
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_def():
+    """🛡️ DEF — bouclier (heater) bleu et or."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3106)
+    # Forme heater : trapèze haut, pointe en bas
+    # Top edge y=6, sides droites jusqu'à y=26, courbure jusqu'à pointe y=42
+    SHIELD = (40, 70,140, 255)
+    SHIELD_M = (70,110,180, 255)
+    SHIELD_L = (130,170,220, 255)
+    for y in range(6, 43):
+        if y <= 26:
+            # Trapèze : largeur croît de 16 à 18
+            half = 14 + (y - 6) // 10
+        else:
+            # Pointe : largeur décroît
+            t = (y - 26) / 16
+            half = int(18 * (1 - t * t))
+        for x in range(24-half, 24+half+1):
+            t = (y - 6) / 36
+            base = blend(SHIELD_L, SHIELD, 0.2 + t * 0.6)
+            putpx(img, x, y, vary(base, rng, 5))
+    # Bord supérieur or
+    for x in range(8, 41):
+        if img.getpixel((x, 6))[3] > 0:
+            putpx(img, x, 6, GM)
+            putpx(img, x, 5, GD)
+    # Croix or sur bouclier
+    for y in range(10, 36):
+        if img.getpixel((23, y))[3] > 0:
+            putpx(img, 23, y, GM)
+            putpx(img, 24, y, GL)
+            putpx(img, 25, y, GM)
+    for x in range(13, 36):
+        for dy in (-1, 0, 1):
+            y = 18 + dy
+            if img.getpixel((x, y))[3] > 0 and abs(x-24) > 2:
+                putpx(img, x, y, GL if dy == 0 else GM)
+    # Outline noir
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_str():
+    """💪 STR — haltère (dumbbell) métallique."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3107)
+    cy = 24
+    # Plaque gauche : rectangle 8×26
+    for y in range(11, 38):
+        for x in range(6, 14):
+            t = (x - 6) / 8  # gauche clair → droit foncé
+            col = blend(MTH, MTD, 0.2 + t * 0.6)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Plaque droite (mirroir)
+    for y in range(11, 38):
+        for x in range(34, 42):
+            t = (42 - x) / 8
+            col = blend(MTH, MTD, 0.2 + t * 0.6)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Petit liseré entre la plaque et la barre (gauche)
+    for y in range(15, 34):
+        for x in range(14, 17):
+            putpx(img, x, y, MTM)
+    # Petit liseré (droite)
+    for y in range(15, 34):
+        for x in range(31, 34):
+            putpx(img, x, y, MTM)
+    # Barre (cylindrique avec hachures)
+    for y in range(20, 29):
+        for x in range(15, 33):
+            t = abs(y - 24) / 5
+            col = blend(MTH, MTD, t)
+            putpx(img, x, y, vary(col, rng, 3))
+    # Hachures sur la barre (grip)
+    for x in range(17, 31, 2):
+        for y in range(21, 28):
+            putpx(img, x, y, MTD)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_int():
+    """🧠 INT — cerveau rose."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3108)
+    cx, cy = 24, 25
+    # Forme globale : 2 hémisphères ovales
+    for dy in range(-15, 16):
+        for dx in range(-17, 18):
+            d2 = (dx*dx)/1.4 + (dy*dy)/1.0
+            if d2 > 16*16: continue
+            t = (dy + 15) / 30
+            base = blend(ROSE_L, ROSE_D, 0.2 + t * 0.5)
+            putpx(img, cx+dx, cy+dy, vary(base, rng, 8))
+    # Sillon central (vertical)
+    for y in range(cy-13, cy+14):
+        for w in range(-1, 2):
+            x = cx + w
+            putpx(img, x, y, ROSE_D)
+    # Plis aléatoires (déterministes)
+    folds = [
+        [(cx-12, cy-6),(cx-9, cy-9),(cx-6, cy-7),(cx-4, cy-10)],
+        [(cx-13, cy+2),(cx-9, cy+5),(cx-6, cy+3)],
+        [(cx-11, cy+10),(cx-7, cy+12),(cx-4, cy+10)],
+        [(cx+4, cy-10),(cx+7, cy-7),(cx+10, cy-9),(cx+13, cy-5)],
+        [(cx+5, cy+3),(cx+9, cy+5),(cx+13, cy+2)],
+        [(cx+3, cy+10),(cx+7, cy+12),(cx+11, cy+10)],
+    ]
+    for path in folds:
+        for i in range(len(path)-1):
+            line(img, path[i][0], path[i][1], path[i+1][0], path[i+1][1], ROSE_D)
+    # Highlights aléatoires
+    for (x, y) in [(cx-10, cy-3),(cx-5, cy-7),(cx-7, cy+1),(cx+5, cy-5),(cx+9, cy-1),(cx+3, cy+7)]:
+        putpx(img, x, y, ROSE_L)
+        putpx(img, x+1, y, ROSE_L)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_agi():
+    """🏃 AGI — aile stylisée (vitesse / vol)."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3109)
+    # Couleurs aile : crème → ombre dorée
+    WD = (180, 150, 80, 255)   # plume foncée
+    WM = (230, 200,140, 255)   # plume mid
+    WL = (250, 235,200, 255)   # plume claire
+
+    # Forme : aile en éventail, pivot en bas-droite
+    # Os principal de l'aile : courbe diagonale du pivot vers le haut-gauche
+    pivot_x, pivot_y = 36, 38
+
+    # 4 plumes longues qui s'éventent
+    feathers = [
+        # (start_x, start_y, end_x, end_y, length-curve)
+        (32, 36,  6, 28),   # plume basse, presque horizontale
+        (33, 32,  9, 16),   # plume mid-basse
+        (34, 28, 16,  8),   # plume mid-haute
+        (35, 24, 26,  6),   # plume haute, presque verticale
+    ]
+
+    # Pour chaque plume, dessiner un triangle/feuille
+    for (sx, sy, ex, ey) in feathers:
+        # axe principal
+        steps = 18
+        for i in range(steps):
+            t = i / (steps - 1)
+            cx = int(sx + (ex - sx) * t)
+            cy = int(sy + (ey - sy) * t)
+            # largeur : plus large au milieu de la plume
+            width = int(4 - abs(t - 0.5) * 5)
+            for w in range(-width, width + 1):
+                # déplacer perpendiculairement
+                px = cx + w
+                py = cy
+                if 0 <= px < S and 0 <= py < S:
+                    if abs(w) == width:
+                        col = WD
+                    elif abs(w) >= width - 1:
+                        col = WM
+                    else:
+                        col = WL
+                    putpx(img, px, py, vary(col, rng, 4))
+
+    # Petites barbes des plumes (hachures perpendiculaires)
+    for (sx, sy, ex, ey) in feathers:
+        for i in range(2, 16, 3):
+            t = i / 17
+            cx = int(sx + (ex - sx) * t)
+            cy = int(sy + (ey - sy) * t)
+            putpx(img, cx,   cy-1, WD)
+            putpx(img, cx+1, cy-1, WD)
+
+    # Petites lignes de vitesse à droite de l'aile
+    for y in (24, 28, 32):
+        for x in range(38, 44):
+            putpx(img, x, y, WD)
+
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_mag():
+    """🔮 MAG — boule de cristal violette sur socle."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3110)
+    cx, cy = 24, 22
+    # Socle (or)
+    for y in range(36, 42):
+        half = 12 - (y - 36)
+        for x in range(cx-half, cx+half+1):
+            putpx(img, x, y, GM if y < 39 else GD)
+    # Liaison socle-boule
+    for x in range(cx-4, cx+5):
+        for y in range(34, 37):
+            putpx(img, x, y, GD)
+    # Boule
+    for dy in range(-14, 15):
+        for dx in range(-14, 15):
+            d2 = dx*dx + dy*dy
+            if d2 > 14*14: continue
+            t = (dy + 14) / 28  # gradient haut clair → bas foncé
+            col = blend(PURPLE_L, PURPLE, 0.2 + t * 0.6)
+            putpx(img, cx+dx, cy+dy, vary(col, rng, 8))
+    # Reflets internes
+    for (x, y, col) in [(cx-7, cy-6, PURPLE_L),(cx-5, cy-8, (250,240,255,255)),(cx-3, cy-9, (230,220,250,255))]:
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                if dx*dx + dy*dy <= 4:
+                    putpx(img, x+dx, y+dy, col)
+    # Petite étoile dedans
+    for (x, y) in [(cx+4, cy+2),(cx+5, cy+2),(cx+4, cy+1),(cx+4, cy+3),(cx+3, cy+2),(cx+5, cy+1),(cx+5, cy+3),(cx+3, cy+1),(cx+3, cy+3)]:
+        putpx(img, x, y, (255, 255, 240, 255))
+    # Outline noir
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_shop_sign():
+    """🏪 Boutique — devanture avec auvent rayé."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3111)
+    # Mur arrière en pierre
+    for y in range(14, 42):
+        for x in range(6, 42):
+            base = blend(PD, (90, 70, 50, 255), 0.5)
+            putpx(img, x, y, vary(base, rng, 6))
+    # Auvent rayé (rouge / blanc)
+    for x in range(4, 44):
+        col = RM if (x // 4) % 2 == 0 else (240, 230, 220, 255)
+        for y in range(8, 14):
+            putpx(img, x, y, col)
+    # Bordure auvent
+    for x in range(4, 44):
+        putpx(img, x, 13, OUT)
+    # Festons (zigzag bas auvent)
+    for x in range(4, 44, 3):
+        putpx(img, x, 14, OUT)
+        putpx(img, x+1, 15, OUT)
+    # Porte
+    for y in range(22, 42):
+        for x in range(20, 28):
+            t = (y - 22) / 20
+            col = blend(LM, LD, 0.3 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Poignée porte
+    putpx(img, 26, 32, GD)
+    putpx(img, 26, 33, GM)
+    # Vitrine gauche
+    for y in range(22, 34):
+        for x in range(8, 18):
+            putpx(img, x, y, GLM)
+    # Cadre vitrine gauche
+    outline_rect(img, 8, 22, 18, 34, OUT)
+    # Vitrine droite
+    for y in range(22, 34):
+        for x in range(30, 40):
+            putpx(img, x, y, GLM)
+    outline_rect(img, 30, 22, 40, 34, OUT)
+    # Outline général
+    outline_rect(img, 4, 8, 43, 41, OUT)
+    return img
+
+
+def gen_door():
+    """🚪 Porte en bois cloutée."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3112)
+    # Encadrement pierre
+    for y in range(4, 44):
+        for x in range(8, 40):
+            base = blend(PD, (95, 75, 55, 255), 0.5)
+            putpx(img, x, y, vary(base, rng, 5))
+    # Porte (bois)
+    for y in range(6, 42):
+        for x in range(12, 36):
+            t = ((x - 12) % 6) / 6  # rainures verticales
+            base = blend(LM, LD, 0.3 + t * 0.4)
+            putpx(img, x, y, vary(base, rng, 5))
+    # Rainures
+    for x in (16, 22, 28, 34):
+        for y in range(6, 42):
+            putpx(img, x, y, LD)
+    # Clous (or) en grille
+    for cy_n in (10, 18, 26, 34):
+        for cx_n in (15, 21, 27, 33):
+            putpx(img, cx_n,   cy_n,   GM)
+            putpx(img, cx_n-1, cy_n,   GD)
+            putpx(img, cx_n+1, cy_n,   GD)
+            putpx(img, cx_n,   cy_n-1, GD)
+            putpx(img, cx_n,   cy_n+1, GD)
+    # Poignée (or)
+    fill_circle(img, 31, 25, 2, GD)
+    fill_circle(img, 31, 25, 1, GH)
+    # Outline encadrement
+    outline_rect(img, 8, 4, 39, 43, OUT)
+    # Outline porte
+    outline_rect(img, 12, 6, 35, 41, OUT)
+    return img
+
+
 # ─── Main ─────────────────────────────────────────────────────
 TARGETS = [
     ('img/icons/backpack.png',  gen_backpack),
@@ -960,6 +1587,19 @@ TARGETS = [
     ('img/icons/music_off.png', gen_music_off),
     ('img/icons/voice_on.png',  gen_voice_on),
     ('img/icons/voice_off.png', gen_voice_off),
+    # Phase 1 — UI chrome + HUD stats
+    ('img/icons/hp.png',        gen_hp),
+    ('img/icons/mp.png',        gen_mp),
+    ('img/icons/xp.png',        gen_xp),
+    ('img/icons/gold.png',      gen_gold),
+    ('img/icons/atk.png',       gen_atk),
+    ('img/icons/def.png',       gen_def),
+    ('img/icons/str.png',       gen_str),
+    ('img/icons/int.png',       gen_int),
+    ('img/icons/agi.png',       gen_agi),
+    ('img/icons/mag.png',       gen_mag),
+    ('img/icons/shop_sign.png', gen_shop_sign),
+    ('img/icons/door.png',      gen_door),
 ]
 
 if __name__ == '__main__':
