@@ -17,29 +17,29 @@
 
 ## Étapes
 
-### Étape 1 — Bootstrap + 3 icônes test ⏳
+### Étape 1 — Bootstrap + 3 icônes test ✅
 - [x] Créer `gen_icons.py` avec helpers (palette, blend, vary, putpx, draw_outline)
 - [x] Générer 3 icônes (sac à dos, carte, livre de sorts) → `img/icons/`
-- [ ] **Validation utilisateur** sur le style avant d'aller plus loin
+- [x] **Validation utilisateur** sur le style — OK 2026-05-09
 - Vérification : ouvrir les PNG, confirmer le style pixel art, lisibilité à 48px.
 
-### Étape 2 — Set complet (en attente validation étape 1)
+### Étape 2 — Set complet ⏳ (généré, en attente validation)
 Icônes à générer pour remplacer les emoji actuels :
-| Bouton | Emoji | Icône cible |
-|--------|-------|-------------|
-| Sac | 🎒 | `backpack.png` |
-| Sorts | 📖 | `spellbook.png` |
-| Fiche | 📜 | `scroll.png` |
-| Bestiaire | 📕 | `bestiary.png` |
-| Quêtes | ✦ | `quest.png` |
-| Fouiller | 🔍 | `search.png` |
-| Repos | 💤 | `rest.png` |
-| Sauver | 💾 | `save.png` |
-| Charger | 📂 | `load.png` |
-| Diff. | ⚙️ | `gear.png` |
-| Musique | ♪ / 🔇 | `music_on.png` / `music_off.png` |
-| Voix | 🗣️ / 🔕 | `voice_on.png` / `voice_off.png` |
-| Map (bonus) | — | `map.png` |
+| Bouton | Emoji | Icône cible | Statut |
+|--------|-------|-------------|--------|
+| Sac | 🎒 | `backpack.png` | ✅ |
+| Sorts | 📖 | `spellbook.png` | ✅ |
+| Fiche | 📜 | `scroll.png` | ✅ |
+| Bestiaire | 📕 | `bestiary.png` | ✅ |
+| Quêtes | ✦ | `quest.png` | ✅ |
+| Fouiller | 🔍 | `search.png` | ✅ |
+| Repos | 💤 | `rest.png` | ✅ |
+| Sauver | 💾 | `save.png` | ✅ (tas de sable perfectible) |
+| Charger | 📂 | `load.png` | ✅ (un peu chargé) |
+| Diff. | ⚙️ | `gear.png` | ✅ (dents approximatives) |
+| Musique | ♪ / 🔇 | `music_on.png` / `music_off.png` | ✅ |
+| Voix | 🗣️ / 🔕 | `voice_on.png` / `voice_off.png` | ✅ |
+| Map (bonus) | — | `map.png` | ✅ |
 
 ### Étape 3 — Intégration dans le jeu
 - Modifier `index.html` : remplacer les `<span class="btn-icon">🎒</span>` par
