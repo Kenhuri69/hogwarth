@@ -81,13 +81,19 @@ body {
   margin-top: 40px;
   animation: blink 1.2s step-end infinite;
   letter-spacing: 3px;
+  white-space: nowrap;
+  text-align: center;
+}
+@media (max-width: 520px) {
+  .press-start { font-size: 12px; letter-spacing: 1.5px; margin-top: 28px; }
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
 .castle-art {
   margin: 14px 0 8px;
   opacity: 0.95;
-  width: min(92vw, 600px);
+  width: min(80vw, 600px);
+  max-width: calc(100vw - 80px);
   filter: drop-shadow(0 12px 30px rgba(0,0,0,0.55));
 }
 .castle-art svg { width: 100%; height: auto; display: block; }
