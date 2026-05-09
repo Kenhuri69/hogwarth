@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/improve-svg-HWGDY`
 > (anciennes branches : `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 9 / 71 tâches terminées
+> **Statut global** : 9 / 75 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -146,6 +146,23 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 
 ---
 
+## Bloc D — Blasons des 4 maisons (PNG via LLM image)
+
+> Les SVG inline actuels des blasons se trouvent dans `index.html:91-189`
+> (écran de sélection) et sont réinjectés dans le HUD via `js/ui.js:54-68`
+> (`#house-crest`). Le passage en PNG :
+> 1. génère 4 fichiers `img/houses/<id>.png` (512×512 RGBA, fond transparent) ;
+> 2. remplace les `<svg id="..._logo">` par `<img src="img/houses/<id>.png">`
+>    dans `index.html` ;
+> 3. adapte `js/ui.js` (`#house-crest`) pour cloner l'`<img>` correspondant.
+
+- [ ] **D1** Blason Gryffondor (lion, rouge & or)
+- [ ] **D2** Blason Serpentard (serpent, vert & argent)
+- [ ] **D3** Blason Serdaigle (aigle, bleu nuit & bronze)
+- [ ] **D4** Blason Poufsouffle (blaireau, jaune & noir)
+
+---
+
 ## Finalisation
 
 - [ ] **Z1** Commit final groupé sur `claude/improve-game-svgs-0a3cf` + push.
@@ -168,3 +185,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #10 | C07 kappa_douves intégré (birefnet-general) | Bol d'eau sur le crâne + algues filaments + griffes acérées préservés |
 | 2026-05-09 | #11 | C08 hippogriffe_courroux intégré (birefnet-general) | Ailes déployées + cicatrices de combat + regard menaçant préservés |
 | 2026-05-09 | #12 | C09 acromantula_jeune intégrée (birefnet-general) | 8 yeux, crocs avec venin + fils de toile préservés ; visuellement plus poilue/menaçante que C05 araignee |
+| 2026-05-09 | #13 | Ajout du bloc D (4 blasons de maison en PNG) au plan | Statut 9/75 ; prompts D1-D4 préparés, intégration `index.html` + `ui.js` à prévoir lors de la première intégration |
