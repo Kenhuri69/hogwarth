@@ -31,6 +31,33 @@ const STATUS_ICON_REGISTRY = {
   dead:   'img/icons/dead.png'
 };
 
+// Sortilèges (priorité 1 par nom canonique, fallback emoji icon)
+const SPELL_ICON_REGISTRY = {
+  'Expelliarmus':       'img/icons/spells/expelliarmus.png',
+  'Stupefix':           'img/icons/spells/stupefix.png',
+  'Episkey':            'img/icons/spells/episkey.png',
+  'Protego':            'img/icons/spells/protego.png',
+  'Incendio':           'img/icons/spells/incendio.png',
+  'Accio':              'img/icons/spells/accio.png',
+  'Wingardium Leviosa': 'img/icons/spells/wingardium_leviosa.png',
+  'Diffindo':           'img/icons/spells/diffindo.png',
+  'Reparo':             'img/icons/spells/reparo.png',
+  'Sectumsempra':       'img/icons/spells/sectumsempra.png',
+  'Lumos Maxima':       'img/icons/spells/lumos_maxima.png',
+  'Aguamenti':          'img/icons/spells/aguamenti.png',
+  'Bombarda':           'img/icons/spells/bombarda.png',
+  'Riddikulus':         'img/icons/spells/riddikulus.png',
+  'Alohomora':          'img/icons/spells/alohomora.png',
+  'Patronum':           'img/icons/spells/patronum.png',
+  'Avada...':           'img/icons/spells/avada.png',
+  'Sanguini':           'img/icons/spells/sanguini.png',
+  'Vampyrus':           'img/icons/spells/vampyrus.png',
+  'Tarantallegra':      'img/icons/spells/tarantallegra.png',
+  'Maledictus':         'img/icons/spells/maledictus.png',
+  'Crucio':             'img/icons/spells/crucio.png',
+  'Morsmordre':         'img/icons/spells/morsmordre.png'
+};
+
 // ── API publique ────────────────────────────────────────────
 
 function getItemIconSrc(item) {
@@ -67,4 +94,17 @@ function getStatusIconHtml(statusId, sizeClass) {
   const src = STATUS_ICON_REGISTRY[statusId];
   if (!src) return '';
   return `<img class="ui-icon ${cls}" src="${src}" alt="">`;
+}
+
+// Pour sortilèges (modale sorts, log combat).
+// Accepte soit l'objet spell complet, soit son name (string).
+function getSpellIconHtml(spell, sizeClass) {
+  const cls = sizeClass || 'ui-icon-md';
+  const name = (spell && spell.name) ? spell.name : spell;
+  const src = SPELL_ICON_REGISTRY[name];
+  if (src) {
+    const alt = (name || '').replace(/"/g, '&quot;');
+    return `<img class="ui-icon ${cls}" src="${src}" alt="${alt}">`;
+  }
+  return (spell && spell.icon) ? spell.icon : '';
 }

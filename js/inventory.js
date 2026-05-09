@@ -279,7 +279,7 @@ function openSpells(charIdx = 0) {
     const div = document.createElement('div');
     div.className = 'spell-item';
     div.innerHTML = `
-      <div class="spell-icon">${spell.icon}</div>
+      <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
         <div class="spell-name">${spell.name}</div>
         <div class="spell-desc">${spell.desc}</div>
@@ -307,7 +307,7 @@ function openBattleSpells() {
     div.className  = 'spell-item';
     div.style.opacity = canCast ? '1' : '0.5';
     div.innerHTML  = `
-      <div class="spell-icon">${spell.icon}</div>
+      <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
         <div class="spell-name">${spell.name}</div>
         <div class="spell-desc">${spell.desc}</div>

@@ -101,5 +101,8 @@ function updateBattleCharIndicator() {
 
 function setBattleLog(text) {
   const el = document.getElementById('battle-log');
-  if (el) el.textContent = text;
+  if (!el) return;
+  // innerHTML pour permettre <img> des sortilèges/status. Tous les
+  // appelants construisent des templates contrôlés (pas d'input user).
+  el.innerHTML = text;
 }

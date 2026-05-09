@@ -154,9 +154,26 @@ override n'est enregistré.
 - [x] 2.9 — Scénario 2 mis à jour pour valider l'`<img src="burn.png">` au lieu de l'emoji 🔥
 - [x] 2.10 — Captures `_phase2_left_panel.png`, `_phase2_charsheet.png`, `_phase2_battle_status.png`. 20 scénarios passent.
 
-### Phase 3 — Sorts (~25 PNG)
-Chaque sort de `SPELLS[]` reçoit son PNG. Mapping `name → spell_<slug>.png`.
-Exposé via une fonction `getSpellIconHtml(spellName)` qui retourne `<img>` à partir du nom.
+### Phase 3 — Sorts (23 PNG) ✅
+Chaque sort de `SPELLS[]` reçoit son PNG dans `img/icons/spells/`.
+Architecture : `_spell_badge(seed, bg_dark, bg_light, glyph_fn)` produit un disque
+22r avec dégradé + ring or + glyphe central. 14 helpers de glyphes réutilisables :
+`_bolt`, `_flame`, `_drop`, `_cross`, `_shield_glyph`, `_spiral`, `_star4`,
+`_key`, `_bat`, `_skull`, `_heart_small`, `_wave_arrow_up`, `_scissors`,
+`_explosion_star`, `_mask_face`, `_spider`.
+
+Resolver : `SPELL_ICON_REGISTRY` (mapping `spell.name → src`) + `getSpellIconHtml(spell, sz)`
+avec fallback sur `spell.icon` (emoji) si non mappé.
+
+Étapes Phase 3 :
+- [x] 3.1 — 14 helpers glyphes + 23 fonctions `gen_spell_*` dans `gen_icons.py`
+- [x] 3.2 — Itération diffindo (sablier → ciseaux clairs)
+- [x] 3.3 — `js/item-icons.js` : SPELL_ICON_REGISTRY (23 entrées) + `getSpellIconHtml`
+- [x] 3.4 — `js/inventory.js` : `${spell.icon}` → `${getSpellIconHtml(spell, 'ui-icon-xl')}` dans openSpells/openBattleSpells
+- [x] 3.5 — `js/battle-spells.js` : `${spell.icon}` → `${getSpellIconHtml(spell, 'ui-icon-md')}` dans msg + UX.logCombat
+- [x] 3.6 — `js/battle-ui.js` : `setBattleLog` passe de `textContent` à `innerHTML` pour permettre les `<img>` (pas d'input user dans les appelants)
+- [x] 3.7 — Scénario 20 ajouté à `tests/smoke.js` : valide registry complet, chargement PNG, modale, fallback emoji, setBattleLog innerHTML
+- [x] 3.8 — Capture `_phase3_modal.png`. 21/21 scénarios passent.
 
 ### Phase 4 — Items (~30 PNG)
 Chaque entrée de `ITEMS[]` reçoit son PNG. Idem : `getItemIconHtml(itemId)`.

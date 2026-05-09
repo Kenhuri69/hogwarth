@@ -2018,6 +2018,388 @@ def gen_dead():
     return img
 
 
+# ═════════════════════════════════════════════════════════════
+# PHASE 3 — Sorts (badges circulaires + glyphe central)
+# ═════════════════════════════════════════════════════════════
+
+def _spell_badge(seed, bg_dark, bg_light, glyph_fn, ring_color=None):
+    """Disc 22r + ring + glyph centered."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(seed)
+    cx, cy = 24, 24
+    # Background gradient disc
+    for dy in range(-21, 22):
+        for dx in range(-21, 22):
+            d2 = dx*dx + dy*dy
+            if d2 > 21*21: continue
+            t = (dy + 21) / 42
+            col = blend(bg_light, bg_dark, 0.15 + t*0.55)
+            putpx(img, cx+dx, cy+dy, vary(col, rng, 5))
+    # Inner accent ring
+    rc = ring_color if ring_color else GD
+    for dy in range(-21, 22):
+        for dx in range(-21, 22):
+            d2 = dx*dx + dy*dy
+            if 18*18 < d2 <= 19*19:
+                putpx(img, cx+dx, cy+dy, rc)
+    # Glyph
+    glyph_fn(img, rng, cx, cy)
+    # Outline disc
+    for dy in range(-22, 23):
+        for dx in range(-22, 23):
+            d2 = dx*dx + dy*dy
+            if 21*21 < d2 <= 22*22:
+                putpx(img, cx+dx, cy+dy, OUT)
+    return img
+
+
+# Petits helpers pour glyphes
+def _bolt(img, cx, cy, color):
+    """Éclair zigzag vertical centré."""
+    pts = [(cx, cy-9),(cx, cy-7),(cx-1, cy-5),(cx-2, cy-3),
+           (cx-1, cy-2),(cx, cy-2),(cx+1, cy-1),(cx, cy+1),
+           (cx-1, cy+3),(cx-2, cy+5),(cx-1, cy+7),(cx, cy+9)]
+    for i in range(len(pts)-1):
+        x0, y0 = pts[i]
+        x1, y1 = pts[i+1]
+        line(img, x0, y0, x1, y1, color)
+    # Épaissir
+    for (x, y) in pts:
+        for (dx, dy) in [(-1,0),(1,0)]:
+            putpx(img, x+dx, y, color)
+
+
+def _flame(img, cx, cy, c1, c2, c3):
+    """Petite flamme centrée."""
+    for dy in range(-9, 8):
+        for dx in range(-7, 8):
+            ay = cy + dy
+            ax = cx + dx
+            # Forme : ovale du haut, large du bas
+            if dy < 0:
+                hh = max(0, 6 - abs(dy))
+            else:
+                hh = max(0, 7 - dy // 2)
+            if abs(dx) <= hh:
+                d_center = abs(dx) / max(1, hh)
+                if d_center < 0.4:
+                    putpx(img, ax, ay, c3)
+                elif d_center < 0.75:
+                    putpx(img, ax, ay, c2)
+                else:
+                    putpx(img, ax, ay, c1)
+
+
+def _drop(img, cx, cy, c1, c2, c3):
+    """Goutte petite verticale."""
+    for dy in range(-9, 8):
+        if dy < -3:
+            hh = max(0, dy + 6)
+        elif dy < 4:
+            hh = 3 + (dy + 3)
+        else:
+            hh = max(0, 7 - dy)
+        for dx in range(-hh, hh+1):
+            d_center = abs(dx) / max(1, hh)
+            if d_center < 0.4:
+                col = c3
+            elif d_center < 0.8:
+                col = c2
+            else:
+                col = c1
+            putpx(img, cx+dx, cy+dy, col)
+
+
+def _cross(img, cx, cy, color, size=7, thick=2):
+    """Croix +/heal."""
+    for w in range(-thick, thick+1):
+        for d in range(-size, size+1):
+            putpx(img, cx+d, cy+w, color)
+            putpx(img, cx+w, cy+d, color)
+
+
+def _shield_glyph(img, cx, cy, c1, c2):
+    """Mini bouclier heater."""
+    for dy in range(-8, 9):
+        if dy <= 4:
+            half = 6
+        else:
+            half = max(0, 6 - (dy - 4))
+        for dx in range(-half, half+1):
+            t = (dy + 8) / 17
+            putpx(img, cx+dx, cy+dy, blend(c1, c2, 0.2 + t*0.5))
+
+
+def _spiral(img, cx, cy, color):
+    """Spirale simple."""
+    for theta in range(0, 360*3, 8):
+        rad = math.radians(theta)
+        r = 0.8 + (theta / (360*3)) * 8
+        x = int(cx + r * math.cos(rad))
+        y = int(cy + r * math.sin(rad))
+        putpx(img, x, y, color)
+        putpx(img, x+1, y, color)
+
+
+def _star4(img, cx, cy, color, r=8):
+    """Étoile 4 branches."""
+    for d in range(-r, r+1):
+        w = max(0, r - 2*abs(d))
+        for o in range(-w, w+1):
+            putpx(img, cx+d, cy+o, color)
+            putpx(img, cx+o, cy+d, color)
+
+
+def _key(img, cx, cy, color):
+    """Petite clé."""
+    # Bow (cercle avec trou)
+    fill_circle(img, cx-5, cy, 4, color)
+    fill_circle(img, cx-5, cy, 2, OUT)
+    # Tige
+    for x in range(cx-1, cx+9):
+        putpx(img, x, cy, color)
+        putpx(img, x, cy-1, color)
+    # Dents
+    for (x, y) in [(cx+5, cy+1),(cx+5, cy+2),(cx+7, cy+1),(cx+7, cy+2)]:
+        putpx(img, x, y, color)
+
+
+def _bat(img, cx, cy, color):
+    """Silhouette chauve-souris."""
+    # Corps
+    for y in range(cy-3, cy+5):
+        for x in range(cx-2, cx+3):
+            putpx(img, x, y, color)
+    # Ailes (triangles)
+    for i in range(7):
+        for j in range(i+1):
+            putpx(img, cx-3-i, cy-2+j, color)
+            putpx(img, cx+3+i, cy-2+j, color)
+    # Oreilles
+    for i in range(3):
+        putpx(img, cx-1, cy-5-i, color)
+        putpx(img, cx+1, cy-5-i, color)
+
+
+def _skull(img, cx, cy, c_bone, c_eye):
+    """Petit crâne."""
+    # Tête
+    for dy in range(-7, 4):
+        for dx in range(-7, 8):
+            d2 = dx*dx + dy*dy
+            if d2 <= 7*7:
+                putpx(img, cx+dx, cy+dy, c_bone)
+    # Mâchoire
+    for y in range(cy+4, cy+8):
+        half = 5 - (y - cy - 4)
+        for x in range(cx-half, cx+half+1):
+            putpx(img, x, y, c_bone)
+    # Yeux
+    fill_circle(img, cx-3, cy-1, 2, c_eye)
+    fill_circle(img, cx+3, cy-1, 2, c_eye)
+    # Nez
+    for x in range(cx-1, cx+2):
+        putpx(img, x, cy+2, c_eye)
+
+
+def _heart_small(img, cx, cy, color):
+    """Petit coeur."""
+    fill_circle(img, cx-3, cy-1, 3, color)
+    fill_circle(img, cx+3, cy-1, 3, color)
+    for y in range(cy-1, cy+8):
+        half = max(0, 6 - (y - cy + 1))
+        for x in range(cx-half, cx+half+1):
+            putpx(img, x, y, color)
+
+
+def _wave_arrow_up(img, cx, cy, color):
+    """Flèche vers le haut avec ondulation (lévitation)."""
+    # Tête flèche
+    for i in range(5):
+        for w in range(-i, i+1):
+            putpx(img, cx+w, cy-7+i, color)
+    # Corps
+    for y in range(cy-3, cy+8):
+        for x in range(cx-1, cx+2):
+            putpx(img, x, y, color)
+
+
+def _scissors(img, cx, cy, color):
+    """Ciseaux/cut — vue de face, lames vers le haut."""
+    # Lame gauche (épaisse, diagonale ↗)
+    for t in range(10):
+        x = cx - 4 + t
+        y = cy - 8 + t
+        for w in range(-1, 2):
+            putpx(img, x, y+w, color)
+    # Lame droite (mirroir, ↖)
+    for t in range(10):
+        x = cx + 4 - t
+        y = cy - 8 + t
+        for w in range(-1, 2):
+            putpx(img, x, y+w, color)
+    # Pivot doré
+    fill_circle(img, cx, cy+2, 2, GH)
+    fill_circle(img, cx, cy+2, 1, GD)
+    # Anneau gauche (rond)
+    ring(img, cx-4, cy+6, 3, color)
+    putpx(img, cx-4, cy+6, color)
+    # Lien anneau gauche → pivot
+    line(img, cx-3, cy+5, cx-1, cy+3, color)
+    # Anneau droit
+    ring(img, cx+4, cy+6, 3, color)
+    putpx(img, cx+4, cy+6, color)
+    line(img, cx+3, cy+5, cx+1, cy+3, color)
+
+
+def _explosion_star(img, cx, cy, color, hot):
+    """Étoile explosion (8 branches)."""
+    for theta in range(0, 360, 22):
+        rad = math.radians(theta)
+        for r in range(0, 9):
+            x = int(cx + r * math.cos(rad))
+            y = int(cy + r * math.sin(rad))
+            col = hot if r < 4 else color
+            putpx(img, x, y, col)
+    # Centre brillant
+    fill_circle(img, cx, cy, 3, hot)
+
+
+def _mask_face(img, cx, cy, c_skin, c_eye):
+    """Masque comique (riddikulus)."""
+    fill_circle(img, cx, cy, 8, c_skin)
+    # Yeux
+    fill_circle(img, cx-3, cy-2, 1, c_eye)
+    fill_circle(img, cx+3, cy-2, 1, c_eye)
+    # Sourire
+    for i in range(-3, 4):
+        y = cy + 3 + (1 if abs(i) > 1 else 0)
+        putpx(img, cx+i, y, c_eye)
+
+
+def _spider(img, cx, cy, color):
+    """Petit araignée."""
+    fill_circle(img, cx, cy, 4, color)
+    # 8 pattes
+    for ang in (-45, -90, -135, 45, 90, 135, 180, 0):
+        rad = math.radians(ang)
+        for r in (5, 6, 7, 8):
+            x = int(cx + r * math.cos(rad))
+            y = int(cy + r * math.sin(rad))
+            putpx(img, x, y, color)
+
+
+# ─── Sortilèges ──────────────────────────────────────────────
+
+def gen_spell_stupefix():
+    return _spell_badge(3301, (60,30,80,255), (180,90,200,255),
+        lambda im, rng, cx, cy: _bolt(im, cx, cy, XP_H), ring_color=GM)
+
+def gen_spell_expelliarmus():
+    return _spell_badge(3302, (90,80,40,255), (200,170,80,255),
+        lambda im, rng, cx, cy: _star4(im, cx, cy, XP_H, r=8))
+
+def gen_spell_episkey():
+    return _spell_badge(3303, HEAL_D, HEAL_M,
+        lambda im, rng, cx, cy: _cross(im, cx, cy, HEAL_H, size=7, thick=2))
+
+def gen_spell_protego():
+    return _spell_badge(3304, (30,50,110,255), (90,140,220,255),
+        lambda im, rng, cx, cy: _shield_glyph(im, cx, cy, (180,210,250,255), (60,90,170,255)))
+
+def gen_spell_incendio():
+    return _spell_badge(3305, FIRE_D, FIRE_M,
+        lambda im, rng, cx, cy: _flame(im, cx, cy, FIRE_M, FIRE_L, FIRE_H))
+
+def gen_spell_accio():
+    return _spell_badge(3306, (50,30,90,255), (130,90,200,255),
+        lambda im, rng, cx, cy: _spiral(im, cx, cy, XP_H))
+
+def gen_spell_wingardium():
+    return _spell_badge(3307, (40,80,140,255), (120,180,230,255),
+        lambda im, rng, cx, cy: _wave_arrow_up(im, cx, cy, (220,240,255,255)))
+
+def gen_spell_diffindo():
+    return _spell_badge(3308, (60,60,70,255), (160,160,180,255),
+        lambda im, rng, cx, cy: _scissors(im, cx, cy, MTH))
+
+def gen_spell_reparo():
+    return _spell_badge(3309, (60,80,30,255), (140,180,50,255),
+        lambda im, rng, cx, cy: _heart_small(im, cx, cy, GH))
+
+def gen_spell_sectumsempra():
+    return _spell_badge(3310, BLOOD_D, (60,12,12,255),
+        lambda im, rng, cx, cy: _drop(im, cx, cy, BLOOD_M, BLOOD_L, BLOOD_H))
+
+def gen_spell_lumos():
+    return _spell_badge(3311, (40,30,80,255), (140,120,200,255),
+        lambda im, rng, cx, cy: _star4(im, cx, cy, (255,250,200,255), r=9))
+
+def gen_spell_aguamenti():
+    return _spell_badge(3312, (20,60,110,255), (60,140,200,255),
+        lambda im, rng, cx, cy: _drop(im, cx, cy, MP_M, MP_L, MP_H))
+
+def gen_spell_bombarda():
+    return _spell_badge(3313, (90,30,20,255), (200,80,40,255),
+        lambda im, rng, cx, cy: _explosion_star(im, cx, cy, FIRE_M, FIRE_H))
+
+def gen_spell_riddikulus():
+    return _spell_badge(3314, (90,70,40,255), (220,180,90,255),
+        lambda im, rng, cx, cy: _mask_face(im, cx, cy, (250,210,150,255), OUT))
+
+def gen_spell_alohomora():
+    return _spell_badge(3315, (50,40,20,255), (140,110,40,255),
+        lambda im, rng, cx, cy: _key(im, cx, cy, GH))
+
+def gen_spell_patronum():
+    # Étoile/cerf simplifié = un star + halo
+    def glyph(im, rng, cx, cy):
+        fill_circle(im, cx, cy, 8, (220,220,255,255))
+        _star4(im, cx, cy, (255,255,255,255), r=10)
+        fill_circle(im, cx, cy, 4, (255,255,255,255))
+    return _spell_badge(3316, (30,30,80,255), (90,100,180,255), glyph)
+
+def gen_spell_avada():
+    return _spell_badge(3317, (10,30,15,255), (40,90,40,255),
+        lambda im, rng, cx, cy: _skull(im, cx, cy, (180,250,180,255), (10,40,10,255)),
+        ring_color=POI_M)
+
+def gen_spell_sanguini():
+    return _spell_badge(3318, (40,10,15,255), (120,30,30,255),
+        lambda im, rng, cx, cy: _heart_small(im, cx, cy, BLOOD_L))
+
+def gen_spell_vampyrus():
+    return _spell_badge(3319, (20,10,40,255), (80,50,140,255),
+        lambda im, rng, cx, cy: _bat(im, cx, cy, (40,20,80,255)))
+
+def gen_spell_tarantallegra():
+    return _spell_badge(3320, (60,20,80,255), (160,80,200,255),
+        lambda im, rng, cx, cy: _spider(im, cx, cy, OUT))
+
+def gen_spell_maledictus():
+    return _spell_badge(3321, (50,30,30,255), (130,40,80,255),
+        lambda im, rng, cx, cy: _skull(im, cx, cy, (220,200,210,255), (60,20,40,255)))
+
+def gen_spell_crucio():
+    # Pointes irrégulières (douleur)
+    def glyph(im, rng, cx, cy):
+        for ang in (0, 45, 90, 135, 180, 225, 270, 315):
+            rad = math.radians(ang)
+            for r in range(0, 10):
+                x = int(cx + r * math.cos(rad))
+                y = int(cy + r * math.sin(rad))
+                col = BLOOD_H if r < 3 else BLOOD_L if r < 7 else BLOOD_M
+                putpx(im, x, y, col)
+        fill_circle(im, cx, cy, 2, BLOOD_H)
+    return _spell_badge(3322, (50,10,10,255), (140,30,40,255), glyph)
+
+def gen_spell_morsmordre():
+    # Marque des ténèbres : crâne avec serpent (simplifié = crâne vert)
+    return _spell_badge(3323, (10,15,10,255), (40,80,40,255),
+        lambda im, rng, cx, cy: _skull(im, cx, cy, (140,200,140,255), (10,30,10,255)),
+        ring_color=POI_L)
+
+
 # ─── Main ─────────────────────────────────────────────────────
 TARGETS = [
     ('img/icons/backpack.png',  gen_backpack),
@@ -2057,6 +2439,30 @@ TARGETS = [
     ('img/icons/bleed.png',     gen_bleed),
     ('img/icons/heal.png',      gen_heal),
     ('img/icons/dead.png',      gen_dead),
+    # Phase 3 — Sortilèges (badges circulaires)
+    ('img/icons/spells/stupefix.png',     gen_spell_stupefix),
+    ('img/icons/spells/expelliarmus.png', gen_spell_expelliarmus),
+    ('img/icons/spells/episkey.png',      gen_spell_episkey),
+    ('img/icons/spells/protego.png',      gen_spell_protego),
+    ('img/icons/spells/incendio.png',     gen_spell_incendio),
+    ('img/icons/spells/accio.png',        gen_spell_accio),
+    ('img/icons/spells/wingardium_leviosa.png', gen_spell_wingardium),
+    ('img/icons/spells/diffindo.png',     gen_spell_diffindo),
+    ('img/icons/spells/reparo.png',       gen_spell_reparo),
+    ('img/icons/spells/sectumsempra.png', gen_spell_sectumsempra),
+    ('img/icons/spells/lumos_maxima.png', gen_spell_lumos),
+    ('img/icons/spells/aguamenti.png',    gen_spell_aguamenti),
+    ('img/icons/spells/bombarda.png',     gen_spell_bombarda),
+    ('img/icons/spells/riddikulus.png',   gen_spell_riddikulus),
+    ('img/icons/spells/alohomora.png',    gen_spell_alohomora),
+    ('img/icons/spells/patronum.png',     gen_spell_patronum),
+    ('img/icons/spells/avada.png',        gen_spell_avada),
+    ('img/icons/spells/sanguini.png',     gen_spell_sanguini),
+    ('img/icons/spells/vampyrus.png',     gen_spell_vampyrus),
+    ('img/icons/spells/tarantallegra.png',gen_spell_tarantallegra),
+    ('img/icons/spells/maledictus.png',   gen_spell_maledictus),
+    ('img/icons/spells/crucio.png',       gen_spell_crucio),
+    ('img/icons/spells/morsmordre.png',   gen_spell_morsmordre),
 ]
 
 if __name__ == '__main__':

@@ -1510,8 +1510,81 @@ async function scenarioEquipmentAndStatusIcons() {
   await browser.close();
 }
 
+// ── Scénario 20 : Phase 3 — sortilèges (23 PNG + resolver) ──
+
+async function scenarioSpellIcons() {
+  console.log('\n── Scénario 20 : Phase 3 — sortilèges ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : registre + helper disponibles, tous les sorts mappés vers un PNG existant
+  const t1 = await page.evaluate(async () => {
+    const out = {
+      hasRegistry: typeof SPELL_ICON_REGISTRY === 'object',
+      hasHelper:   typeof getSpellIconHtml === 'function',
+      total:       SPELLS.length,
+      mapped:      SPELLS.filter(s => SPELL_ICON_REGISTRY[s.name]).length,
+      missing:     SPELLS.filter(s => !SPELL_ICON_REGISTRY[s.name]).map(s => s.name)
+    };
+    // Charger chaque PNG et vérifier le succès
+    const tries = await Promise.all(Object.values(SPELL_ICON_REGISTRY).map(src =>
+      new Promise(resolve => {
+        const im = new Image();
+        im.onload = () => resolve({ src, ok: im.naturalWidth > 0 });
+        im.onerror = () => resolve({ src, ok: false });
+        im.src = src;
+      })
+    ));
+    out.allLoaded = tries.every(t => t.ok);
+    out.failedSrcs = tries.filter(t => !t.ok).map(t => t.src);
+    return out;
+  });
+  console.log('  T1 registry →', t1);
+  assert(t1.hasRegistry && t1.hasHelper,    'SPELL_ICON_REGISTRY + getSpellIconHtml requis');
+  assert(t1.missing.length === 0,           `sorts non mappés : ${t1.missing.join(', ')}`);
+  assert(t1.allLoaded === true,             `PNG manquants : ${t1.failedSrcs.join(', ')}`);
+
+  // T2 : modale Sorts utilise les <img> du registre
+  const t2 = await page.evaluate(() => {
+    openSpells();
+    const list = document.getElementById('spell-list');
+    const imgs = Array.from(list.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
+    return { count: imgs.length, all: imgs };
+  });
+  console.log('  T2 modale Sorts →', t2);
+  // Harry a 5 sorts au démarrage : Expelliarmus, Stupefix, Episkey, Protego, Incendio
+  assert(t2.count >= 5,                     `modale Sorts doit contenir ≥5 <img>, vu ${t2.count}`);
+  ['expelliarmus','stupefix','episkey','protego','incendio'].forEach(name => {
+    assert(t2.all.some(s => s.endsWith(`spells/${name}.png`)), `manque ${name}.png dans modale`);
+  });
+
+  // T3 : fallback emoji si sort absent du registre
+  const t3 = await page.evaluate(() => {
+    const fakeSpell = { name: 'SortInconnu', icon: '🦄' };
+    return getSpellIconHtml(fakeSpell);
+  });
+  console.log('  T3 fallback →', t3);
+  assert(t3 === '🦄', 'getSpellIconHtml doit fallback sur l\'emoji si sort absent du registre');
+
+  // T4 : setBattleLog accepte du HTML (innerHTML) après refactor
+  const t4 = await page.evaluate(() => {
+    setBattleLog('<b>test-html</b>');
+    const el = document.getElementById('battle-log');
+    return { html: el.innerHTML, hasBold: !!el.querySelector('b') };
+  });
+  console.log('  T4 setBattleLog →', t4);
+  assert(t4.hasBold, 'setBattleLog doit rendre le HTML (innerHTML), pas l\'échapper');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log(`  ✅ Phase 3 : 23 sorts mappés + modale + fallback + battle-log innerHTML`);
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons];
   for (const s of scenarios) {
     await s();
   }
