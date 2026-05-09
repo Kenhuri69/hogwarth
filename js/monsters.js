@@ -327,6 +327,7 @@ const MONSTERS = [
     id:       "araignee",
     name:     "Araignée Géante",
     icon:     "🕷️",
+    imgSrc:   "img/monsters/araignee.png",
     category: "bête",
     desc:     "Une araignée monstrueuse descend du plafond sur sa toile",
     lore:     "Les descendants d'Aragog peuplent la Forêt Interdite et s'infiltrent parfois dans le château.",

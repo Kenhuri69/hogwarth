@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/improve-svg-HWGDY`
 > (anciennes branches : `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 4 / 71 tâches terminées
+> **Statut global** : 5 / 71 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -92,7 +92,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C02** `luciole_marais`
 - [x] **C03** `cornichon`
 - [x] **C04** `chouette_envoutee`
-- [ ] **C05** `araignee`
+- [x] **C05** `araignee`
 - [ ] **C06** `mandragore_sauvage`
 - [ ] **C07** `kappa_douves`
 - [ ] **C08** `hippogriffe_courroux`
@@ -163,3 +163,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #5 | C03 cornichon intégré (PNG via rembg) + témoin SVG du smoke test rendu auto-adaptatif | Ailes translucides perdues par rembg, corps lisible |
 | 2026-05-09 | #6 | C03 cornichon ré-intégré avec birefnet-general (ailes préservées) | Pipeline étendu : modèle birefnet-general garde les zones translucides ; à privilégier pour les créatures à ailes/voiles |
 | 2026-05-09 | #7 | C04 chouette_envoutee intégrée (birefnet-general) | Plumes fines + fumée violette de corruption + serres préservées |
+| 2026-05-09 | #8 | C05 araignee intégrée (birefnet-general) | 8 pattes, crocs avec venin et fil de toile conservés |
