@@ -1,7 +1,7 @@
 # Plan d'amélioration des SVG / Visuels
 
 > **Branche dédiée** : `claude/improve-game-svgs-0a3cf`
-> **Statut global** : 0 / 71 tâches terminées
+> **Statut global** : 1 / 71 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -87,7 +87,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 
 ### C.1 Monstres sans PNG (30)
 
-- [ ] **C01** `chat_norris`
+- [x] **C01** `chat_norris`
 - [ ] **C02** `luciole_marais`
 - [ ] **C03** `cornichon`
 - [ ] **C04** `chouette_envoutee`
@@ -156,3 +156,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | Date | Session | Tâches traitées | Notes |
 |------|---------|-----------------|-------|
 | 2026-05-09 | #1 | Plan initial rédigé | — |
+| 2026-05-09 | #2 | C01 chat_norris intégré (PNG via rembg) | Pipeline rembg+alpha-matting validé |

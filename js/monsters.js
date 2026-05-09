@@ -73,6 +73,7 @@ const MONSTERS = [
     id:       "chat_norris",
     name:     "Chat de Mme Norris",
     icon:     "🐱",
+    imgSrc:   "img/monsters/chat_norris.png",
     category: "bête",
     desc:     "Les yeux pâles de Mme Norris vous fixent dans l'obscurité",
     lore:     "La fidèle compagne d'Argus Rusard. Ses yeux globuleux semblent voir à travers les murs. Elle patrouille les couloirs la nuit et prévient son maître au moindre mouvement suspect. Sa loyauté pour Rusard est absolue.",
