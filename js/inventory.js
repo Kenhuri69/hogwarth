@@ -72,7 +72,7 @@ function renderInventory(battleMode) {
       const typeLabel = (isEquip || isSpellbook)
         ? `<div style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
         : '';
-      div.innerHTML = `<div class="item-icon">${item.icon}</div><div class="item-name">${item.name}</div>${typeLabel}`;
+      div.innerHTML = `<div class="item-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div><div class="item-name">${item.name}</div>${typeLabel}`;
 
       if (battleMode && isEquip) {
         // Équipements non utilisables en combat — grisés
@@ -112,7 +112,7 @@ function showEquipMenu(item, idx) {
   grid.innerHTML = `
     <div style="grid-column:1/-1;padding:14px;text-align:center">
       <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
-        Équiper ${item.icon} ${item.name}
+        Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}
       </div>
       <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
       <div style="max-width:200px;margin:0 auto">

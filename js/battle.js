@@ -311,7 +311,7 @@ function endBattle(won) {
         if (Math.random() < drop.chance * diff.dropChanceMultiplier) {
           const item = ITEMS.find(i => i.id === drop.itemId);
           if (item && tryAddItem(item, { silent: true })) {
-            addMsg(`💎 Drop : ${item.icon} ${item.name} !`, 'good');
+            addMsg(`<img class="ui-icon ui-icon-sm" src="img/icons/accessory.png" alt=""> Drop : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name} !`, 'good');
           }
         }
       });

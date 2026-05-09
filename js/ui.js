@@ -205,7 +205,9 @@ function addMsg(text, type = '') {
   const log = document.getElementById('msg-log');
   const div = document.createElement('div');
   div.className = `msg-item ${type}`;
-  div.textContent = text;
+  // innerHTML pour permettre <img> des items/sorts. Tous les appelants
+  // construisent des templates contrôlés (pas d'input user).
+  div.innerHTML = text;
   log.appendChild(div);
   setTimeout(() => div.remove(), 4000);
 }

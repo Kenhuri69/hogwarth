@@ -2400,6 +2400,847 @@ def gen_spell_morsmordre():
         ring_color=POI_L)
 
 
+# ═════════════════════════════════════════════════════════════
+# PHASE 4 — Items (potions, baguettes, robes, accessoires, livres)
+# ═════════════════════════════════════════════════════════════
+
+# ── Helpers ─────────────────────────────────────────────────
+
+def _flask(seed, liq_d, liq_m, liq_l, glow=None):
+    """Fiole de potion : bouchon de liège + col + corps rond + liquide."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(seed)
+    cx = 24
+    # Bouchon (liège foncé)
+    for y in range(5, 10):
+        for x in range(cx-3, cx+4):
+            putpx(img, x, y, LD)
+    putpx(img, cx-3, 5, OUT); putpx(img, cx+3, 5, OUT)
+    # Bague or
+    for x in range(cx-4, cx+5):
+        putpx(img, x, 10, GD)
+        putpx(img, x, 11, GM)
+    # Col (verre clair)
+    for y in range(12, 18):
+        for x in range(cx-2, cx+3):
+            putpx(img, x, y, GLL)
+    # Corps : ovale plus large vers bas
+    body = set()
+    for dy in range(-9, 14):
+        for dx in range(-12, 13):
+            d2 = (dx*dx) + (dy*dy) * 1.4 / 2.0
+            if d2 <= 12*12:
+                body.add((cx+dx, 28+dy))
+    # Verre extérieur (highlight côté gauche)
+    for (x, y) in body:
+        # Reflets côté gauche du verre vide
+        putpx(img, x, y, GLM)
+    # Liquide (rempli aux 2/3 bas)
+    liquid_top_y = 23  # niveau de remplissage
+    for (x, y) in body:
+        if y < liquid_top_y: continue
+        # gradient haut→bas du liquide
+        h = max(1, 41 - liquid_top_y)
+        t = (y - liquid_top_y) / h
+        d_center = abs(x - cx) / 12
+        if d_center < 0.3:
+            col = blend(liq_l, liq_m, t)
+        elif d_center < 0.7:
+            col = blend(liq_m, liq_d, t * 0.7)
+        else:
+            col = blend(liq_d, OUT2, 0.2)
+        putpx(img, x, y, vary(col, rng, 4))
+    # Surface du liquide
+    for (x, y) in body:
+        if y == liquid_top_y or y == liquid_top_y + 1:
+            putpx(img, x, y, liq_l)
+    # Bulles (3 petites)
+    for (bx, by) in [(cx-5, 30),(cx+3, 34),(cx+1, 27)]:
+        if (bx, by) in body and by >= liquid_top_y:
+            putpx(img, bx, by, GLL)
+    # Highlight verre haut-gauche
+    for y in range(20, 38):
+        x = cx - 9
+        if (x, y) in body:
+            putpx(img, x, y, GLL)
+            putpx(img, x+1, y, blend(GLL, GLM, 0.5))
+    # Halo glow
+    if glow:
+        for theta in range(0, 360, 30):
+            rad = math.radians(theta)
+            x = int(cx + 14 * math.cos(rad))
+            y = int(28 + 14 * math.sin(rad))
+            if 0 <= x < S and 0 <= y < S and img.getpixel((x, y))[3] == 0:
+                putpx(img, x, y, glow)
+    # Outline noir
+    for (x, y) in body:
+        for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+            nx, ny = x+dx, y+dy
+            if (nx, ny) not in body and 0 <= nx < S and 0 <= ny < S:
+                p = img.getpixel((nx, ny))
+                # n'écraser ni le bouchon ni la bague ni le col
+                if p[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    # Outline du col + bouchon
+    for y in range(5, 18):
+        for x in (cx-4, cx+4):
+            if img.getpixel((x, y))[3] == 0 and 5 <= y < 12:
+                pass
+        if y < 12:
+            putpx(img, cx-4, y, OUT)
+            putpx(img, cx+4, y, OUT)
+        if y >= 12 and y < 18:
+            putpx(img, cx-3, y, OUT)
+            putpx(img, cx+3, y, OUT)
+    return img
+
+
+def _spellbook(seed, cover_d, cover_l, spine_d, symbol_fn=None, ring_color=None):
+    """Livre fermé : tranches de pages + couverture + symbole optionnel."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(seed)
+    # Pages (jaunâtres) — visibles côté droit
+    for y in range(9, 40):
+        for x in range(13, 40):
+            putpx(img, x, y, vary(PM, rng, 4))
+    # Tranche bas (épaisseur)
+    for x in range(13, 40):
+        putpx(img, x, 39, PD)
+        putpx(img, x, 40, blend(PD, OUT, 0.5))
+    # Couverture (front)
+    for y in range(8, 41):
+        for x in range(11, 39):
+            t = (y - 8) / 33
+            d_x = (x - 11) / 28
+            base = blend(cover_l, cover_d, 0.15 + t*0.35 + d_x*0.2)
+            putpx(img, x, y, vary(base, rng, 5))
+    # Dos (spine, plus foncé)
+    for y in range(8, 41):
+        for x in range(11, 14):
+            putpx(img, x, y, spine_d)
+    # Décor or sur la tranche (3 traits horizontaux)
+    for x in range(11, 14):
+        putpx(img, x, 14, GD)
+        putpx(img, x, 24, GD)
+        putpx(img, x, 34, GD)
+    # Cadre or sur la couverture
+    rc = ring_color if ring_color else GM
+    for y in range(11, 38):
+        putpx(img, 14, y, rc)
+        putpx(img, 36, y, rc)
+    for x in range(14, 37):
+        putpx(img, x, 11, rc)
+        putpx(img, x, 37, rc)
+    # Symbole central
+    if symbol_fn:
+        symbol_fn(img, rng, 25, 24)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def _wand_item(seed, wood_d, wood_l, tip_color, has_runes=False):
+    """Baguette horizontale avec poignée et pointe."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(seed)
+    # Diagonale (10, 38) → (40, 8)
+    for t in range(40):
+        x = 10 + (t * 30) // 40
+        y = 38 - (t * 30) // 40
+        if t < 10:
+            col = LD          # poignée cuir
+        elif t < 13:
+            col = GD          # bague or
+        else:
+            col = blend(wood_l, wood_d, (t - 13) / 27)
+        for w in range(-2, 3):
+            putpx(img, x+w, y+w, vary(col, rng, 4))
+            if abs(w) < 2:
+                putpx(img, x+w, y+w-1, blend(col, (255,240,200,255), 0.3))
+    # Pointe (étoile/étincelle)
+    fill_circle(img, 39, 9, 4, tip_color)
+    fill_circle(img, 39, 9, 2, blend(tip_color, (255,255,255,255), 0.6))
+    # Petites étincelles
+    for (dx, dy) in [(-6,0),(6,0),(0,-6),(0,6),(-4,-4),(4,-4),(-4,4),(4,4)]:
+        x, y = 39+dx, 9+dy
+        if 0 <= x < S and 0 <= y < S and img.getpixel((x, y))[3] == 0:
+            putpx(img, x, y, tip_color)
+    # Runes optionnelles (3 points or sur le bois)
+    if has_runes:
+        for off in (15, 22, 28):
+            t = off
+            x = 10 + (t * 30) // 40
+            y = 38 - (t * 30) // 40
+            putpx(img, x+1, y-1, GH)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+# ── Symboles pour spellbooks ────────────────────────────────
+
+def _sym_wand_diag(img, rng, cx, cy):
+    line(img, cx-5, cy+5, cx+5, cy-5, GH)
+    line(img, cx-4, cy+5, cx+5, cy-4, GM)
+    fill_circle(img, cx+6, cy-6, 2, XP_H)
+
+def _sym_heart(img, rng, cx, cy):
+    fill_circle(img, cx-3, cy-2, 2, HEAL_L)
+    fill_circle(img, cx+3, cy-2, 2, HEAL_L)
+    for y in range(cy-2, cy+5):
+        half = max(0, 4 - (y - cy + 2))
+        for x in range(cx-half, cx+half+1):
+            putpx(img, x, y, HEAL_L)
+
+def _sym_eye(img, rng, cx, cy):
+    # ovale blanc
+    for dy in range(-3, 4):
+        for dx in range(-6, 7):
+            d2 = (dx*dx)/4 + dy*dy
+            if d2 <= 9:
+                putpx(img, cx+dx, cy+dy, (240,230,200,255))
+    fill_circle(img, cx, cy, 2, OUT)
+    putpx(img, cx, cy, GH)
+
+def _sym_letter_p(img, rng, cx, cy):
+    # P stylisé
+    P_PIX = [(0,0),(0,1),(0,2),(0,3),(0,4),(0,5),(0,6),
+             (1,0),(2,0),(3,0),
+             (1,3),(2,3),(3,3),
+             (4,1),(4,2)]
+    for (dx, dy) in P_PIX:
+        putpx(img, cx-2+dx, cy-3+dy, GH)
+
+def _sym_explosion(img, rng, cx, cy):
+    for theta in range(0, 360, 30):
+        rad = math.radians(theta)
+        for r in range(0, 6):
+            x = int(cx + r * math.cos(rad))
+            y = int(cy + r * math.sin(rad))
+            putpx(img, x, y, FIRE_H if r < 3 else FIRE_L)
+    fill_circle(img, cx, cy, 2, FIRE_H)
+
+def _sym_stag(img, rng, cx, cy):
+    # Patronus simplifié = étoile + halo
+    fill_circle(img, cx, cy, 5, (220,230,255,255))
+    for (dx, dy) in [(-7,0),(7,0),(0,-7),(0,7)]:
+        x, y = cx+dx, cy+dy
+        putpx(img, x, y, (200,220,255,255))
+    fill_circle(img, cx, cy, 2, (255,255,255,255))
+
+def _sym_drop_red(img, rng, cx, cy):
+    for dy in range(-5, 6):
+        if dy < 0:
+            half = max(0, dy + 4)
+        else:
+            half = max(0, 5 - dy // 2)
+        for dx in range(-half, half+1):
+            putpx(img, cx+dx, cy+dy, BLOOD_L)
+    putpx(img, cx-1, cy-1, BLOOD_H)
+
+def _sym_bat_small(img, rng, cx, cy):
+    _bat(img, cx, cy, OUT)
+
+def _sym_spider_small(img, rng, cx, cy):
+    _spider(img, cx, cy, OUT)
+
+def _sym_skull_small(img, rng, cx, cy):
+    _skull(img, cx, cy, BONE_L, OUT)
+
+def _sym_jagged(img, rng, cx, cy):
+    # Pointes irrégulières (cruelty)
+    for ang in (-30, 30, -90, -150, 150):
+        rad = math.radians(ang)
+        for r in range(0, 7):
+            x = int(cx + r * math.cos(rad))
+            y = int(cy + r * math.sin(rad))
+            putpx(img, x, y, BLOOD_H if r < 3 else BLOOD_M)
+
+def _sym_skull_snake(img, rng, cx, cy):
+    _skull(img, cx, cy, (180,250,180,255), OUT)
+
+
+# ─── Items spécifiques ──────────────────────────────────────
+
+def gen_item_potion_s():
+    return _flask(3401, BLOOD_D, HP_M, HP_L, glow=None)
+
+def gen_item_potion_m():
+    return _flask(3402, (50, 30, 110, 255), (130, 80, 200, 255), (200, 170, 250, 255))
+
+def gen_item_felix():
+    return _flask(3403, GD, GM, XP_H, glow=GL)
+
+def gen_item_potion_force():
+    return _flask(3404, (90, 25, 25, 255), (200, 60, 50, 255), (255, 130, 100, 255), glow=FIRE_H)
+
+def gen_item_mandragore():
+    """Racine de mandragore : forme tortueuse avec feuilles vertes."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3405)
+    cx = 24
+    # Feuilles (vertes, en éventail au sommet)
+    leaf_color = VL
+    for ang in range(-60, 61, 15):
+        rad = math.radians(ang - 90)
+        for r in range(0, 12):
+            x = int(cx + r * math.cos(rad))
+            y = int(10 + r * math.sin(rad)) + 4
+            if 0 <= x < S and 0 <= y < S:
+                col = leaf_color if r > 4 else VM
+                putpx(img, x, y, vary(col, rng, 6))
+                if r > 8:
+                    putpx(img, x+1, y, VD)
+    # Corps de la racine (forme humanoïde simple)
+    SKIN_M = (210, 180, 130, 255)
+    SKIN_D = (140, 100, 60, 255)
+    # Tête
+    for dy in range(-5, 6):
+        for dx in range(-5, 6):
+            d2 = dx*dx + dy*dy
+            if d2 <= 25:
+                putpx(img, cx+dx, 22+dy, vary(SKIN_M, rng, 8))
+    # Corps allongé
+    for y in range(28, 42):
+        half = max(2, 6 - (y - 28) // 4)
+        for x in range(cx-half, cx+half+1):
+            t = (y - 28) / 14
+            col = blend(SKIN_M, SKIN_D, 0.2 + t * 0.5)
+            putpx(img, x, y, vary(col, rng, 6))
+    # 2 yeux et bouche surprises
+    putpx(img, cx-2, 21, OUT); putpx(img, cx+2, 21, OUT)
+    for x in range(cx-1, cx+2):
+        putpx(img, x, 24, OUT)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_item_choco_sorcier():
+    """Tablette de chocolat brisée."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3406)
+    CHOCO_D = (40, 22, 12, 255)
+    CHOCO_M = (90, 50, 24, 255)
+    CHOCO_L = (140, 88, 50, 255)
+    # Tablette (rectangle avec carreaux)
+    for y in range(10, 38):
+        for x in range(8, 40):
+            t = (y - 10) / 28
+            d_x = (x - 8) / 32
+            base = blend(CHOCO_L, CHOCO_D, 0.2 + t * 0.4 + d_x * 0.1)
+            putpx(img, x, y, vary(base, rng, 5))
+    # Lignes carreaux (rainures)
+    for x in (16, 24, 32):
+        for y in range(10, 38):
+            putpx(img, x, y, CHOCO_D)
+    for y in (18, 26):
+        for x in range(8, 40):
+            putpx(img, x, y, CHOCO_D)
+    # Highlight haut-gauche (carreau lumineux)
+    for y in range(11, 17):
+        for x in range(9, 15):
+            putpx(img, x, y, CHOCO_L)
+    # Pépites brillantes (lait/sucre)
+    for (px, py) in [(12, 14),(20, 22),(28, 14),(36, 20),(20, 30),(28, 32)]:
+        putpx(img, px, py, (250, 220, 180, 255))
+    # Outline
+    outline_rect(img, 8, 10, 39, 37, OUT)
+    return img
+
+
+def gen_item_wand1():
+    return _wand_item(3407, (80, 60, 30, 255), (180, 130, 70, 255), XP_H)
+
+def gen_item_wand2():
+    return _wand_item(3408, (40, 25, 15, 255), (110, 70, 40, 255), (240, 240, 250, 255), has_runes=True)
+
+def gen_item_sword_gryff():
+    """Épée de Gryffondor : lame argent + pommeau or + rubis."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3409)
+    # Lame diagonale ↗
+    for t in range(28):
+        x = 12 + t
+        y = 36 - t
+        for w in range(-2, 3):
+            col = blend(MTH, MTM, abs(w) / 2.5)
+            putpx(img, x+w, y-w, vary(col, rng, 4))
+    # Garde (perpendiculaire à la lame)
+    for i in range(-5, 6):
+        putpx(img, 16+i, 32-i, GD)
+        putpx(img, 17+i, 32-i, GM)
+        putpx(img, 18+i, 32-i, GL)
+        putpx(img, 19+i, 32-i, GD)
+    # Manche cuir
+    for i in range(8):
+        for w in range(-1, 2):
+            putpx(img, 11-i+w, 41-i, LD)
+    # Pommeau or
+    fill_circle(img, 7, 41, 3, GD)
+    fill_circle(img, 7, 41, 2, GM)
+    putpx(img, 7, 41, GH)
+    # Rubis sur le manche
+    fill_circle(img, 14, 38, 1, BLOOD_L)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_item_robe1():
+    """Robe d'élève renforcée — variation de gen_armor en gris."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3410)
+    ROBE_D = (50, 50, 60, 255)
+    ROBE_M = (90, 90, 110, 255)
+    ROBE_L = (150, 150, 170, 255)
+    # Capuche
+    for y in range(8, 18):
+        half = (y - 8) + 4
+        for x in range(24-half, 24+half+1):
+            t = (y - 8) / 10
+            col = blend(ROBE_L, ROBE_D, 0.2 + t * 0.5)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Encolure V
+    for i in range(8):
+        for w in range(-1, 2):
+            putpx(img, 24+w, 12+i, ROBE_D)
+            putpx(img, 24-i+w, 12+i, ROBE_D)
+            putpx(img, 24+i+w, 12+i, ROBE_D)
+    # Corps
+    for y in range(18, 42):
+        half = 10 + (y - 18) // 2
+        for x in range(24-half, 24+half+1):
+            t = (y - 18) / 24
+            col = blend(ROBE_M, ROBE_D, 0.1 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Plis
+    for fold_x in (16, 24, 32):
+        for y in range(20, 42):
+            if img.getpixel((fold_x, y))[3] > 0:
+                putpx(img, fold_x, y, ROBE_D)
+    # Renforts plaques (cuir bouilli sur épaules)
+    for y in range(18, 26):
+        for x in (12, 13, 35, 36):
+            if img.getpixel((x, y))[3] > 0:
+                putpx(img, x, y, LM)
+    # Boutons or
+    for cy_b in (22, 28, 34):
+        fill_circle(img, 24, cy_b, 1, GM)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_item_coupe_poufsouffle():
+    """Coupe de Poufsouffle : calice or à 2 anses."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3411)
+    cx = 24
+    # Coupe (bol)
+    for y in range(8, 24):
+        half = 10 - max(0, (24 - y - 6) // 2)
+        for x in range(cx-half, cx+half+1):
+            t = (y - 8) / 16
+            d_x = abs(x - cx) / 10
+            col = blend(GH, GD, 0.1 + t * 0.4 + d_x * 0.2)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Pied / tige
+    for y in range(24, 36):
+        for x in (cx-2, cx-1, cx, cx+1, cx+2):
+            t = abs(x - cx) / 2
+            putpx(img, x, y, blend(GL, GD, 0.3 + t * 0.4))
+    # Base élargie
+    for y in range(36, 41):
+        half = 8 - (40 - y)
+        for x in range(cx-half, cx+half+1):
+            t = (y - 36) / 5
+            putpx(img, x, y, blend(GH, GD, 0.2 + t * 0.5))
+    # Anses (2 demi-cercles)
+    for theta in range(70, 290, 5):
+        rad = math.radians(theta)
+        x = int(cx - 12 + 5 * math.cos(rad))
+        y = int(15 + 5 * math.sin(rad))
+        if 0 <= x < S and 0 <= y < S:
+            putpx(img, x, y, GM)
+    for theta in range(-70, 110, 5):
+        rad = math.radians(theta)
+        x = int(cx + 12 + 5 * math.cos(rad))
+        y = int(15 + 5 * math.sin(rad))
+        if 0 <= x < S and 0 <= y < S:
+            putpx(img, x, y, GM)
+    # Blason poufsouffle (étoile)
+    fill_circle(img, cx, 14, 2, (200, 80, 30, 255))
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_item_chapeau_pointu():
+    """Chapeau de sorcier pointu."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3412)
+    HAT_D = (20, 30, 80, 255)
+    HAT_M = (50, 70, 140, 255)
+    HAT_L = (100, 130, 200, 255)
+    cx = 24
+    # Cône (du sommet vers la base)
+    for y in range(8, 32):
+        half = (y - 8)
+        # courbure
+        if y > 24:
+            half += (y - 24)
+        for x in range(cx-half//2, cx+half//2+1):
+            t = (y - 8) / 24
+            col = blend(HAT_L, HAT_D, 0.2 + t * 0.5)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Bord du chapeau (large)
+    for y in range(32, 38):
+        half = 18 - (y - 32) * 2
+        if y == 32: half = 16
+        for x in range(cx-half, cx+half+1):
+            putpx(img, x, y, HAT_D)
+    # Boucle/ceinture or
+    for x in range(cx-13, cx+14):
+        putpx(img, x, 30, GM)
+        putpx(img, x, 31, GD)
+    # Boucle métal centre
+    fill_rect(img, cx-2, 29, cx+1, 32, GH)
+    putpx(img, cx-1, 30, OUT); putpx(img, cx, 30, OUT)
+    # Étoile or sur le cône
+    putpx(img, cx-2, 18, GH); putpx(img, cx-1, 18, GH); putpx(img, cx, 18, GH)
+    putpx(img, cx-1, 17, GH); putpx(img, cx-1, 19, GH)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_item_amulette():
+    """Amulette du Phénix : pendentif rond + chaîne."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3413)
+    cx = 24
+    # Chaîne (V au-dessus)
+    for i in range(0, 14):
+        putpx(img, cx-i, 6+i, GM)
+        putpx(img, cx+i, 6+i, GM)
+        if i % 2 == 0:
+            putpx(img, cx-i, 6+i, GH)
+            putpx(img, cx+i, 6+i, GH)
+    # Anneau de suspension
+    ring(img, cx, 17, 2, GD)
+    # Pendentif (disque or)
+    for dy in range(-12, 13):
+        for dx in range(-12, 13):
+            d2 = dx*dx + dy*dy
+            if d2 > 12*12: continue
+            t = (dy + 12) / 24
+            d_x = abs(dx) / 12
+            col = blend(GH, GD, 0.1 + t * 0.4 + d_x * 0.2)
+            putpx(img, cx+dx, 30+dy, vary(col, rng, 5))
+    # Phénix stylisé (oiseau au centre, rouge)
+    PHX_M = (220, 70, 30, 255)
+    PHX_L = (250, 150, 80, 255)
+    # Corps
+    for y in range(28, 34):
+        for x in range(cx-2, cx+3):
+            putpx(img, x, y, PHX_M)
+    # Ailes déployées
+    for i in range(4):
+        putpx(img, cx-3-i, 30+i, PHX_M)
+        putpx(img, cx+3+i, 30+i, PHX_M)
+        putpx(img, cx-3-i, 29+i, PHX_L)
+        putpx(img, cx+3+i, 29+i, PHX_L)
+    # Tête + bec
+    putpx(img, cx, 26, PHX_M); putpx(img, cx, 27, PHX_M)
+    putpx(img, cx+1, 26, PHX_L)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_item_broom():
+    """Balai Nimbus 2000 : manche + brindilles."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3414)
+    # Manche diagonal (haut-gauche → bas-droite)
+    for t in range(0, 30):
+        x = 6 + t
+        y = 10 + t
+        for w in range(-1, 2):
+            col = blend(LL, LD, t / 30)
+            putpx(img, x+w, y+w, vary(col, rng, 3))
+    # Bague or à la base des brindilles
+    for w in range(-2, 3):
+        for d in range(-2, 3):
+            x, y = 30+w, 34+d
+            if abs(w) + abs(d) <= 3:
+                putpx(img, x, y, GM)
+    # Brindilles (plumage en éventail)
+    BR_M = (140, 90, 40, 255)
+    BR_L = (200, 140, 80, 255)
+    BR_D = (80, 50, 20, 255)
+    for ang in range(-40, 41, 5):
+        rad = math.radians(ang + 20)
+        for r in range(0, 14):
+            x = int(33 + r * math.cos(rad))
+            y = int(36 + r * math.sin(rad))
+            if 0 <= x < S and 0 <= y < S:
+                col = BR_L if r < 5 else BR_M if r < 10 else BR_D
+                putpx(img, x, y, vary(col, rng, 5))
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_item_locket_slytherin():
+    """Médaillon de Serpentard : ovale vert avec S serpentin."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3415)
+    cx = 24
+    # Chaîne
+    for i in range(0, 12):
+        putpx(img, cx-i, 6+i, GM)
+        putpx(img, cx+i, 6+i, GM)
+    ring(img, cx, 16, 2, GD)
+    # Médaillon ovale
+    for dy in range(-13, 14):
+        for dx in range(-10, 11):
+            d2 = (dx*dx)/0.7 + (dy*dy)/1.0
+            if d2 > 13*13: continue
+            t = (dy + 13) / 26
+            col = blend(GH, GD, 0.1 + t * 0.5)
+            putpx(img, cx+dx, 30+dy, vary(col, rng, 4))
+    # Centre vert (émeraude)
+    EMR_M = (40, 110, 60, 255)
+    EMR_L = (80, 180, 100, 255)
+    EMR_D = (20, 70, 40, 255)
+    for dy in range(-9, 10):
+        for dx in range(-7, 8):
+            d2 = (dx*dx)/0.7 + (dy*dy)/1.0
+            if d2 > 9*9: continue
+            t = (dy + 9) / 18
+            col = blend(EMR_L, EMR_D, 0.1 + t * 0.6)
+            putpx(img, cx+dx, 30+dy, vary(col, rng, 5))
+    # S stylisé
+    S_PIX = [(0,0),(1,0),(2,0),(3,0),
+             (0,1),(0,2),
+             (1,3),(2,3),(3,3),
+             (3,4),(3,5),
+             (0,6),(1,6),(2,6),(3,6)]
+    for (dx, dy) in S_PIX:
+        putpx(img, cx-2+dx, 27+dy, GH)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_item_diademe_serdaigle():
+    """Diadème de Serdaigle : couronne fine avec gemme bleue centrale."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3416)
+    cx = 24
+    # Bandeau or (arc de cercle)
+    for x in range(8, 41):
+        # courbure
+        offset = max(0, ((x - 24) ** 2) // 30)
+        y = 22 + offset
+        for w in (0, 1, 2):
+            putpx(img, x, y+w, GM if w == 1 else GD)
+    # Pointes triangulaires sur le bandeau
+    for cx_p in (12, 17, 22, 27, 32, 37):
+        for i in range(0, 5):
+            offset = max(0, ((cx_p - 24) ** 2) // 30)
+            y = 22 + offset - i
+            for x in range(cx_p - i, cx_p + i + 1):
+                if abs(x - cx_p) <= i:
+                    putpx(img, x, y, GH if i < 3 else GM)
+    # Pointe centrale plus haute (porte la gemme)
+    for i in range(0, 8):
+        offset = 0
+        y = 22 - i
+        for x in range(cx - i, cx + i + 1):
+            putpx(img, x, y, GM)
+    # Gemme bleue (saphir)
+    SAPH_M = (40, 80, 180, 255)
+    SAPH_L = (120, 170, 240, 255)
+    for dy in range(-3, 4):
+        for dx in range(-3, 4):
+            d2 = dx*dx + dy*dy
+            if d2 <= 9:
+                t = (dy + 3) / 6
+                putpx(img, cx+dx, 16+dy, blend(SAPH_L, SAPH_M, 0.2 + t * 0.5))
+    putpx(img, cx-1, 15, (220, 240, 255, 255))
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_item_cape_invis():
+    """Cape d'Invisibilité : robe argentée semi-transparente."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3417)
+    cx = 24
+    CAPE_D = (60, 70, 90, 255)
+    CAPE_M = (130, 150, 180, 230)
+    CAPE_L = (200, 220, 240, 200)
+    # Capuche
+    for y in range(8, 18):
+        half = (y - 8) + 5
+        for x in range(cx-half, cx+half+1):
+            t = (y - 8) / 10
+            col = blend(CAPE_L, CAPE_D, 0.2 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Encolure (vide)
+    for i in range(7):
+        for w in range(-1, 2):
+            putpx(img, 24+w, 14+i, CAPE_D)
+            putpx(img, 24-i+w, 14+i, CAPE_D)
+            putpx(img, 24+i+w, 14+i, CAPE_D)
+    # Corps en évasement
+    for y in range(18, 42):
+        half = 11 + (y - 18) // 2
+        for x in range(cx-half, cx+half+1):
+            t = (y - 18) / 24
+            col = blend(CAPE_M, CAPE_D, 0.1 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 6))
+    # Étoiles scintillantes (effet magique)
+    stars = [(13, 22),(34, 25),(20, 30),(30, 36),(15, 38),(28, 22)]
+    for (px, py) in stars:
+        if img.getpixel((px, py))[3] > 0:
+            putpx(img, px, py, (240, 240, 255, 255))
+            putpx(img, px-1, py, (180, 200, 230, 255))
+            putpx(img, px+1, py, (180, 200, 230, 255))
+            putpx(img, px, py-1, (180, 200, 230, 255))
+            putpx(img, px, py+1, (180, 200, 230, 255))
+    # Outline doux
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+# ─── Spellbooks ─────────────────────────────────────────────
+
+def gen_item_livre_sortileges():
+    return _spellbook(3501, (20, 80, 30, 255), (60, 140, 60, 255), (15, 50, 20, 255), _sym_wand_diag)
+
+def gen_item_livre_soin():
+    return _spellbook(3502, (30, 60, 130, 255), (80, 130, 200, 255), (15, 35, 80, 255), _sym_heart)
+
+def gen_item_book_monsters():
+    return _spellbook(3503, (60, 30, 15, 255), (140, 90, 50, 255), (40, 18, 8, 255), _sym_eye)
+
+def gen_item_livre_prince():
+    return _spellbook(3504, (15, 15, 25, 255), (50, 50, 70, 255), (8, 8, 15, 255), _sym_letter_p)
+
+def gen_item_livre_bombarda():
+    return _spellbook(3505, (140, 70, 20, 255), (220, 130, 50, 255), (90, 40, 10, 255), _sym_explosion)
+
+def gen_item_livre_patronum():
+    return _spellbook(3506, (110, 110, 130, 255), (180, 190, 210, 255), (60, 60, 80, 255), _sym_stag)
+
+def gen_item_livre_sanguini():
+    return _spellbook(3507, (90, 15, 20, 255), (170, 40, 40, 255), (50, 8, 12, 255), _sym_drop_red)
+
+def gen_item_livre_vampyrus():
+    return _spellbook(3508, (40, 15, 60, 255), (110, 60, 150, 255), (20, 8, 35, 255), _sym_bat_small)
+
+def gen_item_livre_taranta():
+    return _spellbook(3509, (60, 30, 90, 255), (140, 80, 180, 255), (30, 15, 50, 255), _sym_spider_small)
+
+def gen_item_livre_maledictus():
+    return _spellbook(3510, (60, 25, 25, 255), (130, 50, 60, 255), (35, 10, 12, 255), _sym_skull_small)
+
+def gen_item_livre_crucio():
+    return _spellbook(3511, (15, 5, 5, 255), (60, 20, 25, 255), (8, 3, 3, 255), _sym_jagged, ring_color=BLOOD_M)
+
+def gen_item_livre_morsmordre():
+    return _spellbook(3512, (10, 30, 12, 255), (40, 90, 40, 255), (5, 18, 8, 255), _sym_skull_snake, ring_color=POI_M)
+
+
 # ─── Main ─────────────────────────────────────────────────────
 TARGETS = [
     ('img/icons/backpack.png',  gen_backpack),
@@ -2463,6 +3304,36 @@ TARGETS = [
     ('img/icons/spells/maledictus.png',   gen_spell_maledictus),
     ('img/icons/spells/crucio.png',       gen_spell_crucio),
     ('img/icons/spells/morsmordre.png',   gen_spell_morsmordre),
+    # Phase 4 — Items (potions, équipement, accessoires, livres)
+    ('img/icons/items/potion_s.png',          gen_item_potion_s),
+    ('img/icons/items/potion_m.png',          gen_item_potion_m),
+    ('img/icons/items/felix.png',             gen_item_felix),
+    ('img/icons/items/potion_force.png',      gen_item_potion_force),
+    ('img/icons/items/mandragore.png',        gen_item_mandragore),
+    ('img/icons/items/choco_sorcier.png',     gen_item_choco_sorcier),
+    ('img/icons/items/wand1.png',             gen_item_wand1),
+    ('img/icons/items/wand2.png',             gen_item_wand2),
+    ('img/icons/items/sword_gryff.png',       gen_item_sword_gryff),
+    ('img/icons/items/robe1.png',             gen_item_robe1),
+    ('img/icons/items/coupe_poufsouffle.png', gen_item_coupe_poufsouffle),
+    ('img/icons/items/chapeau_pointu.png',    gen_item_chapeau_pointu),
+    ('img/icons/items/amulette.png',          gen_item_amulette),
+    ('img/icons/items/broom.png',             gen_item_broom),
+    ('img/icons/items/locket_slytherin.png',  gen_item_locket_slytherin),
+    ('img/icons/items/diademe_serdaigle.png', gen_item_diademe_serdaigle),
+    ('img/icons/items/cape_invis.png',        gen_item_cape_invis),
+    ('img/icons/items/livre_sortileges.png',  gen_item_livre_sortileges),
+    ('img/icons/items/livre_soin.png',        gen_item_livre_soin),
+    ('img/icons/items/book_monsters.png',     gen_item_book_monsters),
+    ('img/icons/items/livre_prince.png',      gen_item_livre_prince),
+    ('img/icons/items/livre_bombarda.png',    gen_item_livre_bombarda),
+    ('img/icons/items/livre_patronum.png',    gen_item_livre_patronum),
+    ('img/icons/items/livre_sanguini.png',    gen_item_livre_sanguini),
+    ('img/icons/items/livre_vampyrus.png',    gen_item_livre_vampyrus),
+    ('img/icons/items/livre_taranta.png',     gen_item_livre_taranta),
+    ('img/icons/items/livre_maledictus.png',  gen_item_livre_maledictus),
+    ('img/icons/items/livre_crucio.png',      gen_item_livre_crucio),
+    ('img/icons/items/livre_morsmordre.png',  gen_item_livre_morsmordre),
 ]
 
 if __name__ == '__main__':

@@ -18,9 +18,43 @@ const EQUIPMENT_SLOT_ICONS = {
   spellbook: 'img/icons/spellbook.png'
 };
 
-// Registre des icônes per-item — vide pour l'instant.
-// Format : { 'wand_houx': 'img/icons/items/wand_houx.png', ... }
-const ITEM_ICON_REGISTRY = {};
+// Registre des icônes per-item (Phase 4 — peuplé pour tous les ITEMS[])
+const ITEM_ICON_REGISTRY = {
+  // Consommables
+  potion_s:           'img/icons/items/potion_s.png',
+  potion_m:           'img/icons/items/potion_m.png',
+  felix:              'img/icons/items/felix.png',
+  potion_force:       'img/icons/items/potion_force.png',
+  mandragore:         'img/icons/items/mandragore.png',
+  choco_sorcier:      'img/icons/items/choco_sorcier.png',
+  // Baguettes / armes
+  wand1:              'img/icons/items/wand1.png',
+  wand2:              'img/icons/items/wand2.png',
+  sword_gryff:        'img/icons/items/sword_gryff.png',
+  // Armures
+  robe1:              'img/icons/items/robe1.png',
+  coupe_poufsouffle:  'img/icons/items/coupe_poufsouffle.png',
+  chapeau_pointu:     'img/icons/items/chapeau_pointu.png',
+  // Accessoires
+  amulette:           'img/icons/items/amulette.png',
+  broom:              'img/icons/items/broom.png',
+  locket_slytherin:   'img/icons/items/locket_slytherin.png',
+  diademe_serdaigle:  'img/icons/items/diademe_serdaigle.png',
+  cape_invis:         'img/icons/items/cape_invis.png',
+  // Livres de sorts
+  livre_sortileges:   'img/icons/items/livre_sortileges.png',
+  livre_soin:         'img/icons/items/livre_soin.png',
+  book_monsters:      'img/icons/items/book_monsters.png',
+  livre_prince:       'img/icons/items/livre_prince.png',
+  livre_bombarda:     'img/icons/items/livre_bombarda.png',
+  livre_patronum:     'img/icons/items/livre_patronum.png',
+  livre_sanguini:     'img/icons/items/livre_sanguini.png',
+  livre_vampyrus:     'img/icons/items/livre_vampyrus.png',
+  livre_taranta:      'img/icons/items/livre_taranta.png',
+  livre_maledictus:   'img/icons/items/livre_maledictus.png',
+  livre_crucio:       'img/icons/items/livre_crucio.png',
+  livre_morsmordre:   'img/icons/items/livre_morsmordre.png'
+};
 
 // Status effects (battle.js consomme ce registre via STATUS_DEFS[id].iconSrc)
 const STATUS_ICON_REGISTRY = {

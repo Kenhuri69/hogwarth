@@ -1482,25 +1482,36 @@ async function scenarioEquipmentAndStatusIcons() {
   assert(t3.some(s => s.endsWith('armor.png')),      'panneau gauche doit afficher armor.png');
   assert(t3.some(s => s.endsWith('accessory.png')),  'panneau gauche doit afficher accessory.png');
 
-  // T4 : fiche perso utilise getItemIconHtml pour les équipés et slot pour les vides
+  // T4 : fiche perso — slots vides retombent sur slot icons (wand/armor/accessory)
+  // (pas d'item équipé sur Harry au démarrage → fallback slot attendu)
   const t4 = await page.evaluate(() => {
-    // Équiper Harry avec l'arme initiale
     if (!player.equipped) player.equipped = {};
-    player.equipped.wand = { id: 'wand1', type: 'wand', name: 'Baguette de Saule', icon: '🪄' };
+    // Reset équipement pour forcer le fallback slot
+    player.equipped = { wand: null, armor: null, acc: null };
     openCharacter(0);
     const detail = document.getElementById('char-detail');
-    const eqSection = detail.querySelector('div[style*="ÉQUIPEMENT"]') || detail;
     const html = detail.innerHTML;
-    // Cherche au moins une <img> wand.png (slot fallback puisque wand1 pas dans registry)
     return {
       hasWand:  /img\/icons\/wand\.png/.test(html),
       hasArmor: /img\/icons\/armor\.png/.test(html),
       hasAcc:   /img\/icons\/accessory\.png/.test(html)
     };
   });
-  console.log('  T4 fiche équipement →', t4);
+  console.log('  T4 fiche slots vides →', t4);
   assert(t4.hasWand && t4.hasArmor && t4.hasAcc,
-         'fiche perso doit afficher les 3 icônes équipement (slots ou per-item)');
+         'slots vides → fallback wand.png/armor.png/accessory.png');
+
+  // T5 : fiche perso — slot avec item équipé utilise le PNG per-item du registry
+  const t5 = await page.evaluate(() => {
+    const wand = ITEMS.find(i => i.id === 'wand1');
+    player.equipped.wand = wand;
+    openCharacter(0);
+    const detail = document.getElementById('char-detail');
+    const html = detail.innerHTML;
+    return { hasPerItem: /img\/icons\/items\/wand1\.png/.test(html) };
+  });
+  console.log('  T5 fiche per-item →', t5);
+  assert(t5.hasPerItem, 'wand1 équipé doit utiliser items/wand1.png (priorité registry)');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
@@ -1583,8 +1594,78 @@ async function scenarioSpellIcons() {
   await browser.close();
 }
 
+// ── Scénario 21 : Phase 4 — items (couverture 100% ITEMS[]) ──
+
+async function scenarioItemIcons() {
+  console.log('\n── Scénario 21 : Phase 4 — items ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : couverture 100% — chaque ITEMS[] a une entrée registry, chargée
+  const t1 = await page.evaluate(async () => {
+    const total   = ITEMS.length;
+    const mapped  = ITEMS.filter(it => ITEM_ICON_REGISTRY[it.id]).length;
+    const missing = ITEMS.filter(it => !ITEM_ICON_REGISTRY[it.id]).map(it => it.id);
+    const tries = await Promise.all(Object.values(ITEM_ICON_REGISTRY).map(src =>
+      new Promise(resolve => {
+        const im = new Image();
+        im.onload  = () => resolve({ src, ok: im.naturalWidth > 0 });
+        im.onerror = () => resolve({ src, ok: false });
+        im.src = src;
+      })
+    ));
+    return {
+      total, mapped, missing,
+      allLoaded: tries.every(t => t.ok),
+      failed:    tries.filter(t => !t.ok).map(t => t.src)
+    };
+  });
+  console.log('  T1 couverture →', t1);
+  assert(t1.missing.length === 0,        `items non mappés : ${t1.missing.join(', ')}`);
+  assert(t1.mapped === t1.total,         `${t1.mapped}/${t1.total} mappés`);
+  assert(t1.allLoaded,                   `PNG manquants : ${t1.failed.join(', ')}`);
+
+  // T2 : grille inventaire utilise les PNG
+  const t2 = await page.evaluate(() => {
+    // Donner quelques items à Harry
+    player.inventory = [
+      ITEMS.find(i => i.id === 'potion_s'),
+      ITEMS.find(i => i.id === 'wand1'),
+      ITEMS.find(i => i.id === 'livre_sortileges')
+    ];
+    openInventory();
+    const grid = document.getElementById('inv-grid');
+    const imgs = Array.from(grid.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
+    return imgs;
+  });
+  console.log('  T2 inventaire →', t2);
+  assert(t2.some(s => /items\/potion_s\.png$/.test(s)),         'inventaire doit afficher potion_s.png');
+  assert(t2.some(s => /items\/wand1\.png$/.test(s)),            'inventaire doit afficher wand1.png');
+  assert(t2.some(s => /items\/livre_sortileges\.png$/.test(s)), 'inventaire doit afficher livre_sortileges.png');
+
+  // T3 : grille boutique utilise les PNG (déclencher openShop avec un currentFloor>=1)
+  const t3 = await page.evaluate(() => {
+    closeModal('inventory-modal');
+    currentFloor = 6;  // pour débloquer wand2 dans shop
+    openShop();
+    const list = document.getElementById('shop-grid');
+    const imgs = Array.from(list.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
+    return imgs;
+  });
+  console.log('  T3 boutique →', t3);
+  assert(t3.length >= 3,                                  `shop doit avoir au moins 3 items, vu ${t3.length}`);
+  assert(t3.every(s => /items\/[a-z0-9_]+\.png$/.test(s)),   'tous les items shop doivent pointer img/icons/items/');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log(`  ✅ Phase 4 : ${t1.total} items mappés + inventaire + boutique 100% PNG`);
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons];
   for (const s of scenarios) {
     await s();
   }

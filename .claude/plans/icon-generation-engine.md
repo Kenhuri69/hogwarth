@@ -175,8 +175,36 @@ avec fallback sur `spell.icon` (emoji) si non mappé.
 - [x] 3.7 — Scénario 20 ajouté à `tests/smoke.js` : valide registry complet, chargement PNG, modale, fallback emoji, setBattleLog innerHTML
 - [x] 3.8 — Capture `_phase3_modal.png`. 21/21 scénarios passent.
 
-### Phase 4 — Items (~30 PNG)
-Chaque entrée de `ITEMS[]` reçoit son PNG. Idem : `getItemIconHtml(itemId)`.
+### Phase 4 — Items (29 PNG) ✅
+Chaque entrée de `ITEMS[]` reçoit son PNG dans `img/icons/items/`.
+3 helpers paramétriques : `_flask` (4 potions), `_spellbook` (12 livres),
+`_wand_item` (2 baguettes). Items uniques (mandragore, choco, sword,
+robe, coupe, chapeau, amulette, broom, locket, diademe, cape) en
+fonctions dédiées.
+
+`ITEM_ICON_REGISTRY` peuplé avec les **29 entrées** ; le resolver
+existant (Phase 2) prend automatiquement la priorité 1 (per-item).
+
+Étapes Phase 4 :
+- [x] 4.1 — 3 helpers paramétriques + 11 items uniques + 12 spellbooks dans `gen_icons.py`
+- [x] 4.2 — 11 helpers de symbole pour spellbooks (`_sym_wand_diag`, `_sym_heart`, `_sym_eye`, `_sym_letter_p`, `_sym_explosion`, `_sym_stag`, `_sym_drop_red`, `_sym_bat_small`, `_sym_spider_small`, `_sym_skull_small`, `_sym_jagged`, `_sym_skull_snake`)
+- [x] 4.3 — Peupler `ITEM_ICON_REGISTRY` (29 entrées) dans `js/item-icons.js`
+- [x] 4.4 — `js/inventory.js` : `${item.icon}` → `${getItemIconHtml(item, 'ui-icon-xl')}` dans grille + prompt équiper
+- [x] 4.5 — `js/shop.js` : `${item.icon}` → `${getItemIconHtml(item, 'ui-icon-xl')}` dans liste boutique
+- [x] 4.6 — `js/movement.js` : items obtenus dans coffres
+- [x] 4.7 — `js/battle.js` : drops après combat
+- [x] 4.8 — `js/quests.js` : récompenses items dans log + addMsg
+- [x] 4.9 — `js/ui.js` : `addMsg` passe de `textContent` à `innerHTML` pour permettre les `<img>`
+- [x] 4.10 — Scénario 21 ajouté à `tests/smoke.js` : couverture 100% (29/29 mappés + chargés), inventaire et boutique
+- [x] 4.11 — Captures `_phase4_inventory.png`, `_phase4_shop.png`. 22/22 scénarios passent.
+
+## Bilan global
+
+**77 PNG générés** (15 chrome+rest + 12 HUD + 8 équipement/status + 23 sorts + 29 items). Le seul emoji restant est intentionnel :
+- 🟢🟡🟠🔴 sélecteur de difficulté (validé par utilisateur)
+- 🔰💥 marqueurs résist/weak inline en combat (suffixes textuels brefs)
+- ✕ bouton fermer (typographique)
+- ✦ décor "NOUVELLE AVENTURE" (typographique)
 
 ### Phase 5 — Char icons (5 PNG, 32×32)
 `harry_icon.png`, `hermione_icon.png`, `celeste_icon.png`, `iris_icon.png`, `maxence_icon.png`.
