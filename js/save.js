@@ -151,7 +151,8 @@ function _serializeState() {
     chosenHouse, housePoints, houseTier,
     searchedCells: Array.from(searchedCells),
     floorDungeons,
-    restCooldown
+    restCooldown,
+    usedFountains: Array.from(usedFountains)
   };
 }
 
@@ -203,6 +204,7 @@ function _applyState(gs) {
   if (gs.searchedCells) searchedCells = new Set(gs.searchedCells);
   if (gs.floorDungeons) floorDungeons = gs.floorDungeons;
   if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
+  usedFountains = new Set(gs.usedFountains || []);
 
   recalculateStats();
   updateUI();

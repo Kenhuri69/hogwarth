@@ -421,6 +421,7 @@ body {
 .map-stairs { background: #4a3a6a; }
 .map-enemy { background: #6a1010; }
 .map-shop { background: #1a4a2a; }
+.map-fountain { background: #2a5a82; box-shadow: inset 0 0 2px #cfe6ff; }
 
 .compass {
   display: grid; grid-template-columns: repeat(3, 1fr);

@@ -343,6 +343,86 @@ function _showExploreOverlay(cell) {
     descText  = 'Un escalier de pierre remonte vers les étages supérieurs, moins dangereux.';
     btns = `<button class="explore-btn" onclick="_hideExploreOverlay();goUp()">Remonter</button>
             <button class="explore-btn secondary" onclick="_hideExploreOverlay()">Rester ici</button>`;
+  } else if (cell === CELL.FOUNTAIN) {
+    const dried = usedFountains && usedFountains.has(`${playerX},${playerY}`);
+    iconHtml = `<svg viewBox="0 0 120 130" width="130" height="140" xmlns="http://www.w3.org/2000/svg" style="display:block">
+      <defs>
+        <radialGradient id="fntWater" cx="0.5" cy="0.5" r="0.55">
+          <stop offset="0"   stop-color="#cfe6ff"/>
+          <stop offset="0.6" stop-color="#5e9bd6"/>
+          <stop offset="1"   stop-color="#1c4a7a"/>
+        </radialGradient>
+        <linearGradient id="fntStoneTop" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#b8a878"/><stop offset="1" stop-color="#7a6a4a"/>
+        </linearGradient>
+        <linearGradient id="fntStoneBase" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#6a5a3a"/><stop offset="1" stop-color="#3a2e1c"/>
+        </linearGradient>
+        <radialGradient id="fntGlow" cx="0.5" cy="0.4" r="0.55">
+          <stop offset="0"   stop-color="#cfe6ff" stop-opacity="0.55"/>
+          <stop offset="0.6" stop-color="#5e9bd6" stop-opacity="0.18"/>
+          <stop offset="1"   stop-color="#000"    stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <!-- ombre -->
+      <ellipse cx="60" cy="124" rx="52" ry="5" fill="#000" opacity="0.55"/>
+      <!-- halo bleu -->
+      <ellipse cx="60" cy="56" rx="56" ry="38" fill="url(#fntGlow)" opacity="${dried ? 0.25 : 1}"/>
+      <!-- socle bas -->
+      <ellipse cx="60" cy="116" rx="50" ry="10" fill="url(#fntStoneBase)" stroke="#1a1208" stroke-width="1.2"/>
+      <!-- bassin -->
+      <ellipse cx="60" cy="92"  rx="50" ry="14" fill="url(#fntStoneTop)" stroke="#1a1208" stroke-width="1.2"/>
+      <!-- gravures cabochons or sur le bassin -->
+      <circle cx="22" cy="93" r="2.2" fill="#c9a84c"/>
+      <circle cx="60" cy="100" r="2.2" fill="#c9a84c"/>
+      <circle cx="98" cy="93" r="2.2" fill="#c9a84c"/>
+      <!-- eau -->
+      <ellipse cx="60" cy="86"  rx="44" ry="9"  fill="${dried ? '#3a2e1c' : 'url(#fntWater)'}"/>
+      <ellipse cx="60" cy="84"  rx="36" ry="5"  fill="${dried ? '#1a1208' : '#cfe6ff'}" opacity="${dried ? 0.4 : 0.6}"/>
+      <!-- ondes -->
+      ${dried ? '' : `
+      <ellipse cx="60" cy="84" rx="20" ry="3"  fill="none" stroke="#fff" stroke-width="0.6" opacity="0.55"/>
+      <ellipse cx="60" cy="86" rx="30" ry="4"  fill="none" stroke="#fff" stroke-width="0.4" opacity="0.35"/>`}
+      <!-- pied central -->
+      <rect x="54" y="50" width="12" height="36" fill="url(#fntStoneBase)" stroke="#1a1208" stroke-width="0.8"/>
+      <rect x="50" y="48" width="20" height="4" fill="url(#fntStoneTop)" stroke="#1a1208" stroke-width="0.8"/>
+      <!-- statue de chouette stylisée au sommet -->
+      <ellipse cx="60" cy="36" rx="11" ry="13" fill="url(#fntStoneTop)" stroke="#1a1208" stroke-width="0.8"/>
+      <circle  cx="60" cy="22" r="9"  fill="url(#fntStoneTop)" stroke="#1a1208" stroke-width="0.8"/>
+      <circle cx="56" cy="22" r="2" fill="#0d0705"/>
+      <circle cx="64" cy="22" r="2" fill="#0d0705"/>
+      <circle cx="56" cy="22" r="0.6" fill="${dried ? '#5a4a32' : '#cfe6ff'}"/>
+      <circle cx="64" cy="22" r="0.6" fill="${dried ? '#5a4a32' : '#cfe6ff'}"/>
+      <polygon points="60,26 58,30 62,30" fill="#c9a84c"/>
+      <!-- ailes -->
+      <path d="M50 32 Q42 38 48 44 M70 32 Q78 38 72 44"
+            stroke="#1a1208" stroke-width="1" fill="none"/>
+      <!-- jet d'eau (caché si tarie) -->
+      ${dried ? '' : `
+      <path d="M60 34 Q56 50 60 60" stroke="#cfe6ff" stroke-width="2" fill="none" opacity="0.85">
+        <animate attributeName="opacity" values="0.55;0.95;0.55" dur="2.4s" repeatCount="indefinite"/>
+      </path>
+      <path d="M60 34 Q64 50 60 60" stroke="#cfe6ff" stroke-width="2" fill="none" opacity="0.85"/>
+      <!-- gouttes / éclaboussures -->
+      <circle cx="48" cy="78" r="1.2" fill="#cfe6ff" opacity="0.85">
+        <animate attributeName="cy" values="78;72;78" dur="2.2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="72" cy="78" r="1.2" fill="#cfe6ff" opacity="0.85">
+        <animate attributeName="cy" values="78;73;78" dur="2.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="60" cy="74" r="1" fill="#fff" opacity="0.95"/>`}
+      <!-- moisissure / mousse au pied -->
+      <path d="M14 110 Q24 106 32 110 M88 110 Q98 106 106 110"
+            stroke="#3a5e2a" stroke-width="1.4" fill="none" opacity="0.6"/>
+    </svg>`;
+    titleText = 'Fontaine de Pierre';
+    descText  = dried
+      ? "L'eau de la fontaine s'est tarie. Vous devrez quitter cet étage et revenir plus tard pour qu'elle se remplisse à nouveau."
+      : "Une vasque sculptée laisse s'écouler une eau bleutée luminescente. Boire ici restaurera entièrement la santé et la magie du groupe.";
+    btns = dried
+      ? `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+      : `<button class="explore-btn" onclick="useFountain();_hideExploreOverlay()">Boire à la fontaine</button>
+         <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`;
   } else return;
 
   icon.innerHTML      = iconHtml;
@@ -375,7 +455,8 @@ function handleCellEntry(cell) {
   updateRoomStatus();
 
   if (cell === CELL.STAIRS_D || cell === CELL.STAIRS_U ||
-      cell === CELL.SHOP     || cell === CELL.CHEST) {
+      cell === CELL.SHOP     || cell === CELL.CHEST    ||
+      cell === CELL.FOUNTAIN) {
     _showExploreOverlay(cell);
   } else {
     if (Math.random() < 0.15) {
@@ -404,6 +485,8 @@ function _saveFloorToCache(floor) {
     itemMap:      JSON.parse(JSON.stringify(itemMap)),
     px: playerX, py: playerY, dir: playerDir,
     searchedCells: Array.from(searchedCells)
+    // Note : on n'archive PAS usedFountains : la fontaine se ré-active
+    // à la prochaine visite (cf. règle d'usage 1×/visite).
   };
 }
 
@@ -416,6 +499,8 @@ function _restoreFloorFromCache(floor) {
   itemMap  = c.itemMap;
   playerX  = c.px; playerY = c.py; playerDir = c.dir;
   searchedCells = new Set(c.searchedCells || []);
+  // Nouvelle visite = nouvelle eau dans la fontaine
+  usedFountains = new Set();
   return true;
 }
 
@@ -570,6 +655,28 @@ function searchRoom() {
     setNarrative(NARRATIVES.nothing);
     addMsg("Rien trouvé.", '');
   }
+}
+
+// ── Fontaine de pierre — soin total 1×/visite d'étage ──────
+function useFountain() {
+  if (inBattle) return;
+  if (dungeon[playerY][playerX] !== CELL.FOUNTAIN) return;
+  const key = `${playerX},${playerY}`;
+  if (usedFountains.has(key)) {
+    addMsg("La fontaine est tarie : revenez sur cet étage plus tard.", 'bad');
+    return;
+  }
+  party.forEach(c => {
+    if (c.hp <= 0) return;
+    c.hp = c.hpMax;
+    c.sp = c.spMax;
+  });
+  usedFountains.add(key);
+  setNarrative("L'eau bleutée scintille. Le groupe boit longuement — la fatigue s'évanouit, la magie se ravive entièrement.");
+  addMsg("Fontaine bue : PV et PM entièrement restaurés.", 'good');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+  updateUI();
+  if (typeof autoSave === 'function') autoSave('fountain-used');
 }
 
 function rest() {

@@ -981,8 +981,114 @@ async function scenarioStartHub() {
   await browser.close();
 }
 
+// ── Scénario 14 : salle fontaine ─────────────────────────────
+
+async function scenarioFountain() {
+  console.log('\n── Scénario 14 : salle fontaine ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page);
+
+  // T1 : génération forcée à floor=2 doit poser au moins une CELL.FOUNTAIN
+  const t1 = await page.evaluate(() => {
+    currentFloor = 2;
+    floorDungeons = {};
+    generateDungeon(2);
+    let count = 0;
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.FOUNTAIN) count++;
+      }
+    }
+    return { count, fountainEnum: CELL.FOUNTAIN };
+  });
+  console.log('  T1 génération floor=2 →', t1);
+  assert(t1.fountainEnum === 7, 'CELL.FOUNTAIN doit valoir 7');
+  assert(t1.count >= 1, 'au moins une fontaine sur l\'étage 2');
+
+  // T2 : pas de fontaine à un étage non éligible (ex. floor=3)
+  const t2 = await page.evaluate(() => {
+    currentFloor = 3;
+    floorDungeons = {};
+    generateDungeon(3);
+    let count = 0;
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.FOUNTAIN) count++;
+      }
+    }
+    return { count };
+  });
+  console.log('  T2 pas de fontaine étage 3 →', t2);
+  assert(t2.count === 0, 'aucune fontaine sur l\'étage 3 (cycle 2/5/8…)');
+
+  // T3 : useFountain() guérit complètement, blocage au second usage
+  const t3 = await page.evaluate(() => {
+    currentFloor = 2;
+    floorDungeons = {};
+    generateDungeon(2);
+    // Trouve la fontaine et téléporte le joueur dessus
+    let fx = -1, fy = -1;
+    for (let y = 0; y < dungeon.length && fx === -1; y++) {
+      for (let x = 0; x < dungeon[y].length && fx === -1; x++) {
+        if (dungeon[y][x] === CELL.FOUNTAIN) { fx = x; fy = y; }
+      }
+    }
+    playerX = fx; playerY = fy;
+    // Blesse le groupe
+    party.forEach(c => { c.hp = 1; c.sp = 0; });
+    const before = party.map(c => ({ hp: c.hp, sp: c.sp }));
+    useFountain();
+    const after  = party.map(c => ({ hp: c.hp, sp: c.sp, hpMax: c.hpMax, spMax: c.spMax }));
+    // 2e usage doit rester tarie
+    party.forEach(c => { c.hp = 1; c.sp = 0; });
+    useFountain();
+    const after2 = party.map(c => ({ hp: c.hp, sp: c.sp }));
+    return { before, after, after2, dried: usedFountains.has(`${fx},${fy}`) };
+  });
+  console.log('  T3 soin fontaine →', t3);
+  t3.after.forEach((c, i) => {
+    assert(c.hp === c.hpMax, `personnage ${i} HP plein après fontaine`);
+    assert(c.sp === c.spMax, `personnage ${i} SP plein après fontaine`);
+  });
+  assert(t3.dried, 'usedFountains doit contenir la clé après usage');
+  t3.after2.forEach((c, i) => {
+    assert(c.hp === 1, `personnage ${i} : 2e usage doit rester sans effet`);
+  });
+
+  // T4 : sortir et revenir → fontaine ré-active
+  const t4 = await page.evaluate(() => {
+    // étage 2 garde une fontaine déjà utilisée
+    const beforeKeys = Array.from(usedFountains);
+    goDeeper();           // floor=3
+    return new Promise(resolve => {
+      const wait = () => {
+        if (currentFloor === 3) {
+          goUp();         // retour floor=2 depuis le cache
+          setTimeout(() => {
+            resolve({
+              beforeKeys,
+              afterKeys: Array.from(usedFountains),
+              currentFloor
+            });
+          }, 700);
+        } else setTimeout(wait, 50);
+      };
+      setTimeout(wait, 700);
+    });
+  });
+  console.log('  T4 cycle quitter/revenir →', t4);
+  assert(t4.afterKeys.length === 0, 'usedFountains doit être réinitialisé au retour sur l\'étage');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ fontaine : génération conditionnelle, soin total, blocage 2e usage, ré-active après cycle');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioFountain];
   for (const s of scenarios) {
     await s();
   }

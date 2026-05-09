@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/continue-svg-work-v6BEc`
 > (anciennes branches : `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 22 / 75 tâches terminées
+> **Statut global** : 23 / 76 tâches terminées (+ C44 fontaine)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -144,6 +144,13 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [ ] **C42** Illustration écran-titre
 - [ ] **C43** Illustration écran de mort
 
+### C.6 Salles spéciales
+
+- [x] **C44** Fontaine de pierre (SVG inline overlay — `movement.js`)
+      *Réalisée en bonus le 2026-05-09 lors de l'ajout de la salle
+      fontaine. PNG dédié à générer plus tard si remplacement
+      souhaité.*
+
 ---
 
 ## Bloc D — Blasons des 4 maisons (PNG via LLM image)
@@ -196,3 +203,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #16 | C11 myrtle intégré (birefnet-general) | Mimi Geignarde fantôme bleu argenté, lunettes rondes, couettes, robe Poudlard ; brume spectrale et ondulations préservées dans l'alpha |
 | 2026-05-09 | #17 | C12 serpent_cachot intégré (birefnet-general) | Serpent vert émeraude/noir en S-pose, gueule ouverte, langue bifide, brume verte ; détourage propre y compris la queue fine |
 | 2026-05-09 | #18 | Bloc A complet (A1-A6) terminé | Plan dédié `.claude/plans/bloc-A.md` ; ordre A3→A1→A2→A4→A5→A6 ; `<defs>` partagés (`shadeRadial`, `halo`, `mist`, `glow`) injectés une fois via `_ensureMonsterDefs()` ; 5 fallback de catégorie redessinés ; couleurs base/variantes plus contrastées ; 4 SVG d'objets enrichis (gradients, rivets, lumière chaude) ; animations CSS `monsterFloat`/`monsterPulseAura` (data-cat) + SMIL scintillement coffre + media `prefers-reduced-motion` ; 4 nouveaux ornements (séparateur fin, cadre parchemin, bouton-volute, badge-rune) |
+| 2026-05-09 | #19 | Salle fontaine (feature connexe) | `CELL.FOUNTAIN=7` ; génération forcée aux étages 2/5/8/… ; SVG fontaine de pierre Poudlard (statue chouette, jet animé SMIL, cabochons or) ; `useFountain()` 100% PV+PM groupe, 1×/visite, ré-active à la rentrée ; persistance via `usedFountains` (Set) dans save ; marqueur canvas + tuile minimap bleue ; `.claude/plans/fountain.md` ; smoke test mis à jour |
