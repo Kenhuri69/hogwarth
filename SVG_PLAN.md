@@ -1,6 +1,7 @@
 # Plan d'amélioration des SVG / Visuels
 
-> **Branche dédiée** : `claude/improve-game-svgs-0a3cf`
+> **Branche dédiée actuelle** : `claude/improve-svg-HWGDY`
+> (anciennes branches : `claude/improve-game-svgs-0a3cf` — historique conservé)
 > **Statut global** : 2 / 71 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
@@ -158,3 +159,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #1 | Plan initial rédigé | — |
 | 2026-05-09 | #2 | C01 chat_norris intégré (PNG via rembg) | Pipeline rembg+alpha-matting validé |
 | 2026-05-09 | #3 | C02 luciole_marais intégré | Script `/tmp/svg_work/integrate.py` réutilisable |
+| 2026-05-09 | #4 | Reprise sur branche `claude/improve-svg-HWGDY`, cible C03 cornichon | Prompt fourni, en attente d'image |
