@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/improve-svg-HWGDY`
 > (anciennes branches : `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 2 / 71 tâches terminées
+> **Statut global** : 3 / 71 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -90,7 +90,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 
 - [x] **C01** `chat_norris`
 - [x] **C02** `luciole_marais`
-- [ ] **C03** `cornichon`
+- [x] **C03** `cornichon`
 - [ ] **C04** `chouette_envoutee`
 - [ ] **C05** `araignee`
 - [ ] **C06** `mandragore_sauvage`
@@ -160,3 +160,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #2 | C01 chat_norris intégré (PNG via rembg) | Pipeline rembg+alpha-matting validé |
 | 2026-05-09 | #3 | C02 luciole_marais intégré | Script `/tmp/svg_work/integrate.py` réutilisable |
 | 2026-05-09 | #4 | Reprise sur branche `claude/improve-svg-HWGDY`, cible C03 cornichon | Prompt fourni, en attente d'image |
+| 2026-05-09 | #5 | C03 cornichon intégré (PNG via rembg) + témoin SVG du smoke test rendu auto-adaptatif | Ailes translucides perdues par rembg, corps lisible |

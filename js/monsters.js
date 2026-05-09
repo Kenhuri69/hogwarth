@@ -116,6 +116,7 @@ const MONSTERS = [
     id:       "cornichon",
     name:     "Cornichon de Cornouailles",
     icon:     "🫐",
+    imgSrc:   "img/monsters/cornichon.png",
     category: "créature",
     desc:     "Une nuée de Cornichons bleus électriques fondent sur vous en criant !",
     lore:     "Ces petites créatures turbulentes du cours de Gilderoy Lockhart ont envahi les couloirs. Elles adorent pincer et tirer les cheveux.",
