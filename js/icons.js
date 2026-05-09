@@ -6,6 +6,49 @@
 // Les détails sombres (yeux, crocs…) sont codés en #0d0705.
 // ============================================================
 
+// `<defs>` partagés (injectés une seule fois dans le document via
+// _ensureMonsterDefs). Tout SVG peut les référencer via url(#id).
+//   shadeRadial : ombrage radial sombre vers les bords
+//   halo        : halo magique externe (filtre flou + lueur)
+//   mist        : voile diffus pour fantômes / brume
+//   glow        : lueur dorée centrale (variante shiny / aura)
+const MONSTER_DEFS_SVG = `<svg aria-hidden="true" focusable="false"
+  style="position:absolute;width:0;height:0;overflow:hidden"
+  xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="shadeRadial" cx="0.5" cy="0.45" r="0.65">
+      <stop offset="0"   stop-color="#fff" stop-opacity="0.18"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1"   stop-color="#000" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#ffe9a8" stop-opacity="0.55"/>
+      <stop offset="0.7" stop-color="#c9a84c" stop-opacity="0.18"/>
+      <stop offset="1"   stop-color="#000"    stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mist" cx="0.5" cy="0.55" r="0.55">
+      <stop offset="0"   stop-color="#e8f0ff" stop-opacity="0.45"/>
+      <stop offset="0.7" stop-color="#90aab8" stop-opacity="0.15"/>
+      <stop offset="1"   stop-color="#000"    stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#fff8d8" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#f0d080" stop-opacity="0.4"/>
+      <stop offset="1"   stop-color="#7a5c1e" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>`;
+
+let _MONSTER_DEFS_INJECTED = false;
+function _ensureMonsterDefs() {
+  if (_MONSTER_DEFS_INJECTED) return;
+  if (typeof document === 'undefined' || !document.body) return;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = MONSTER_DEFS_SVG;
+  document.body.insertBefore(wrap.firstElementChild, document.body.firstChild);
+  _MONSTER_DEFS_INJECTED = true;
+}
+
 const MONSTER_ICONS = {
 
   // ── BÊTES ──────────────────────────────────────────────────
@@ -960,78 +1003,172 @@ const MONSTER_ICONS = {
   // ── FALLBACKS PAR CATÉGORIE ────────────────────────────────
 
   fantôme: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="50" cy="42" rx="26" ry="28" fill="currentColor" opacity=".82"/>
-    <path d="M24 56 Q22 78 34 80 Q44 80 44 68 Q44 80 56 80 Q68 78 76 56 Z" fill="currentColor" opacity=".82"/>
-    <ellipse cx="40" cy="38" rx="6" ry="8" fill="#0d0705" opacity=".72"/>
-    <ellipse cx="60" cy="38" rx="6" ry="8" fill="#0d0705" opacity=".72"/>
-    <path d="M43 54 Q50 58 57 54" stroke="#0d0705" stroke-width="1.5" fill="none" opacity=".4"/>
-    <path d="M36 58 Q34 66 32 68 M64 58 Q66 66 68 68" stroke="currentColor" stroke-width="2.5" fill="none" opacity=".4"/>
+    <!-- Voile spectral diffus -->
+    <ellipse cx="50" cy="50" rx="40" ry="44" fill="url(#mist)"/>
+    <!-- Corps fluide qui ondule en bas -->
+    <path d="M22 38 Q22 18 50 18 Q78 18 78 38 L78 64
+             Q78 76 70 76 Q62 76 60 70 Q58 80 50 80 Q42 80 40 70
+             Q38 76 30 76 Q22 76 22 64 Z"
+          fill="currentColor" opacity=".88"/>
+    <!-- Surimpression d'ombrage -->
+    <path d="M22 38 Q22 18 50 18 Q78 18 78 38 L78 64
+             Q78 76 70 76 Q62 76 60 70 Q58 80 50 80 Q42 80 40 70
+             Q38 76 30 76 Q22 76 22 64 Z"
+          fill="url(#shadeRadial)"/>
+    <!-- Yeux creux phosphorescents -->
+    <ellipse cx="40" cy="40" rx="5.5" ry="8" fill="#0d0705" opacity=".82"/>
+    <ellipse cx="60" cy="40" rx="5.5" ry="8" fill="#0d0705" opacity=".82"/>
+    <ellipse cx="40" cy="40" rx="2" ry="3" fill="#e8f0ff" opacity=".55"/>
+    <ellipse cx="60" cy="40" rx="2" ry="3" fill="#e8f0ff" opacity=".55"/>
+    <!-- Bouche béante -->
+    <ellipse cx="50" cy="56" rx="6" ry="4" fill="#0d0705" opacity=".55"/>
+    <!-- Volutes latérales -->
+    <path d="M14 50 Q6 56 12 64 M86 50 Q94 56 88 64"
+          stroke="currentColor" stroke-width="2" fill="none" opacity=".55"
+          stroke-linecap="round"/>
   </svg>`,
 
   bête: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="50" cy="58" rx="28" ry="22" fill="currentColor"/>
-    <ellipse cx="50" cy="34" rx="18" ry="16" fill="currentColor"/>
-    <circle cx="43" cy="30" r="4.5" fill="#0d0705" opacity=".82"/>
-    <circle cx="57" cy="30" r="4.5" fill="#0d0705" opacity=".82"/>
-    <polygon points="36,24 32,12 42,22" fill="currentColor"/>
-    <polygon points="64,24 68,12 58,22" fill="currentColor"/>
-    <path d="M42 40 Q50 44 58 40" stroke="#0d0705" stroke-width="2" fill="none" opacity=".5"/>
+    <!-- Corps trapu -->
+    <ellipse cx="50" cy="62" rx="30" ry="22" fill="currentColor"/>
+    <ellipse cx="50" cy="62" rx="30" ry="22" fill="url(#shadeRadial)"/>
+    <!-- Pattes -->
+    <path d="M28 80 L24 92 M44 84 L42 94 M56 84 L58 94 M72 80 L76 92"
+          stroke="currentColor" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <!-- Tête massive -->
+    <ellipse cx="50" cy="36" rx="22" ry="20" fill="currentColor"/>
+    <ellipse cx="50" cy="36" rx="22" ry="20" fill="url(#shadeRadial)"/>
+    <!-- Oreilles dressées -->
+    <polygon points="34,22 28,8 44,22" fill="currentColor"/>
+    <polygon points="66,22 72,8 56,22" fill="currentColor"/>
+    <polygon points="36,21 32,14 42,22" fill="#0d0705" opacity=".4"/>
+    <polygon points="64,21 68,14 58,22" fill="#0d0705" opacity=".4"/>
+    <!-- Yeux brillants -->
+    <ellipse cx="42" cy="34" rx="5" ry="4.5" fill="#c87820"/>
+    <ellipse cx="58" cy="34" rx="5" ry="4.5" fill="#c87820"/>
+    <ellipse cx="42" cy="35" rx="2.2" ry="3.5" fill="#0d0705"/>
+    <ellipse cx="58" cy="35" rx="2.2" ry="3.5" fill="#0d0705"/>
+    <circle cx="40" cy="32" r="1.2" fill="#fff" opacity=".75"/>
+    <circle cx="56" cy="32" r="1.2" fill="#fff" opacity=".75"/>
+    <!-- Museau et crocs -->
+    <ellipse cx="50" cy="44" rx="4" ry="3" fill="#0d0705" opacity=".7"/>
+    <path d="M44 48 L42 54 M48 48 L48 55 M52 48 L52 55 M56 48 L58 54"
+          stroke="#fff" stroke-width="1.5" fill="none" opacity=".7"/>
+    <!-- Queue -->
+    <path d="M78 70 Q92 60 90 76 Q88 86 80 80"
+          stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round"/>
   </svg>`,
 
   humain: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="50" cy="28" rx="16" ry="18" fill="currentColor"/>
-    <path d="M30 48 Q30 85 42 88 L58 88 Q70 85 70 48 Q70 38 50 36 Q30 38 30 48 Z" fill="currentColor"/>
-    <path d="M30 48 L14 56 L16 74 L28 68" fill="currentColor"/>
-    <path d="M70 48 L86 56 L84 74 L72 68" fill="currentColor"/>
-    <circle cx="43" cy="24" r="4" fill="#0d0705" opacity=".75"/>
-    <circle cx="57" cy="24" r="4" fill="#0d0705" opacity=".75"/>
-    <path d="M43 33 Q50 37 57 33" stroke="#0d0705" stroke-width="1.5" fill="none" opacity=".45"/>
+    <!-- Capuche / cape -->
+    <path d="M22 30 Q22 14 50 12 Q78 14 78 30 L82 60 L70 56 L70 88 L30 88 L30 56 L18 60 Z"
+          fill="currentColor" opacity=".95"/>
+    <path d="M22 30 Q22 14 50 12 Q78 14 78 30 L82 60 L70 56 L70 88 L30 88 L30 56 L18 60 Z"
+          fill="url(#shadeRadial)"/>
+    <!-- Visage en ombre -->
+    <ellipse cx="50" cy="34" rx="14" ry="16" fill="#160c08" opacity=".82"/>
+    <!-- Yeux luminescents -->
+    <ellipse cx="44" cy="32" rx="2.4" ry="3" fill="#f0d080"/>
+    <ellipse cx="56" cy="32" rx="2.4" ry="3" fill="#f0d080"/>
+    <!-- Bouche serrée -->
+    <path d="M44 42 Q50 44 56 42" stroke="#0d0705" stroke-width="1.4" fill="none" opacity=".6"/>
+    <!-- Bras croisés -->
+    <path d="M30 56 Q40 70 50 64 Q60 70 70 56" stroke="currentColor" stroke-width="6"
+          fill="none" stroke-linecap="round" opacity=".95"/>
+    <!-- Reflet de cape -->
+    <path d="M30 60 L34 86 M70 60 L66 86" stroke="#0d0705" stroke-width="1.2"
+          fill="none" opacity=".35"/>
   </svg>`,
 
   créature: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <path d="M50 88 L24 70 Q10 62 10 48 Q10 26 34 22 L38 6 L46 28 Q50 20 54 28 L62 6 L66 22 Q90 26 90 48 Q90 62 76 70 Z" fill="currentColor"/>
-    <circle cx="40" cy="42" r="5" fill="#0d0705" opacity=".82"/>
-    <circle cx="60" cy="42" r="5" fill="#0d0705" opacity=".82"/>
-    <path d="M42 56 Q50 60 58 56" stroke="#0d0705" stroke-width="2.5" fill="none" opacity=".5"/>
+    <!-- Cornes/épines latérales -->
+    <path d="M14 26 L4 10 L22 18 Z M86 26 L96 10 L78 18 Z" fill="currentColor"/>
+    <!-- Corps anormal -->
+    <path d="M50 90 L20 72 Q6 62 8 44 Q10 24 32 22 L36 8 L46 26
+             Q50 18 54 26 L64 8 L68 22 Q90 24 92 44
+             Q94 62 80 72 Z" fill="currentColor"/>
+    <path d="M50 90 L20 72 Q6 62 8 44 Q10 24 32 22 L36 8 L46 26
+             Q50 18 54 26 L64 8 L68 22 Q90 24 92 44
+             Q94 62 80 72 Z" fill="url(#shadeRadial)"/>
+    <!-- Yeux multiples -->
+    <circle cx="36" cy="44" r="4.5" fill="#0d0705" opacity=".88"/>
+    <circle cx="50" cy="38" r="4.5" fill="#0d0705" opacity=".88"/>
+    <circle cx="64" cy="44" r="4.5" fill="#0d0705" opacity=".88"/>
+    <circle cx="36" cy="44" r="1.5" fill="#f0d080"/>
+    <circle cx="50" cy="38" r="1.5" fill="#f0d080"/>
+    <circle cx="64" cy="44" r="1.5" fill="#f0d080"/>
+    <!-- Crocs -->
+    <path d="M40 58 L42 66 L46 60 L50 66 L54 60 L58 66 L60 58"
+          stroke="#fff" stroke-width="2" fill="none" opacity=".65" stroke-linejoin="round"/>
+    <!-- Tentacules / pattes -->
+    <path d="M22 78 Q12 88 22 92 M78 78 Q88 88 78 92"
+          stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/>
   </svg>`,
 
   "être magique": `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <path d="M50 10 Q30 12 24 30 L20 58 Q18 72 30 80 Q28 88 32 94 L68 94 Q72 88 70 80 Q82 72 80 58 L76 30 Q70 12 50 10 Z" fill="currentColor" opacity=".9"/>
-    <ellipse cx="40" cy="46" rx="7" ry="8" fill="#0d0705" opacity=".88"/>
-    <ellipse cx="60" cy="46" rx="7" ry="8" fill="#0d0705" opacity=".88"/>
-    <path d="M44 62 Q50 67 56 62" stroke="#0d0705" stroke-width="2" fill="none" opacity=".6"/>
-    <!-- Aura magique -->
-    <circle cx="50" cy="52" r="36" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 6" opacity=".25"/>
+    <!-- Halo magique externe -->
+    <circle cx="50" cy="50" r="46" fill="url(#halo)"/>
+    <!-- Robe / silhouette envoûtée -->
+    <path d="M50 8 Q28 12 22 30 L18 60 Q16 76 30 82 Q26 92 32 96 L68 96
+             Q74 92 70 82 Q84 76 82 60 L78 30 Q72 12 50 8 Z"
+          fill="currentColor" opacity=".92"/>
+    <path d="M50 8 Q28 12 22 30 L18 60 Q16 76 30 82 Q26 92 32 96 L68 96
+             Q74 92 70 82 Q84 76 82 60 L78 30 Q72 12 50 8 Z"
+          fill="url(#shadeRadial)"/>
+    <!-- Yeux brûlants -->
+    <ellipse cx="40" cy="44" rx="6" ry="7" fill="#0d0705"/>
+    <ellipse cx="60" cy="44" rx="6" ry="7" fill="#0d0705"/>
+    <ellipse cx="40" cy="44" rx="2.2" ry="3" fill="#f0d080"/>
+    <ellipse cx="60" cy="44" rx="2.2" ry="3" fill="#f0d080"/>
+    <!-- Marque runique au front -->
+    <path d="M50 24 L46 30 L50 36 L54 30 Z" fill="#f0d080" opacity=".75"/>
+    <!-- Bouche -->
+    <path d="M44 60 Q50 65 56 60" stroke="#0d0705" stroke-width="2"
+          fill="none" opacity=".7"/>
+    <!-- Aura mystique -->
+    <circle cx="50" cy="52" r="38" fill="none" stroke="currentColor"
+            stroke-width="1.6" stroke-dasharray="3 6" opacity=".35"/>
   </svg>`,
 
 };
 
 // ── Couleurs de base par catégorie ─────────────────────────
+//   bête          : terre brûlée (mammifères / reptiles sauvages)
+//   humain        : gris-bleu froid (sorciers ou mages déchus)
+//   fantôme       : bleu-gris spectral
+//   créature      : vert mousse profond (créatures organiques)
+//   être magique  : violet sombre arcane
 const MONSTER_BASE_COLORS = {
-  bête:           '#7a5c30',
-  humain:         '#607880',
-  fantôme:        '#90aab8',
-  créature:       '#4e6e40',
-  'être magique': '#6a3898',
+  bête:           '#8a5a24',
+  humain:         '#5a7080',
+  fantôme:        '#a4bcc8',
+  créature:       '#3e6a3a',
+  'être magique': '#5e2c92',
 };
 
 // ── Couleurs des variantes ──────────────────────────────────
+//   normal  : null → conserve la couleur de catégorie / monstre
+//   fierce  : rouge braise saturé (agressif)
+//   ancient : violet pourpre froid (boss antique)
+//   shiny   : or chatoyant (rare)
 const VARIANT_COLORS = {
   normal:  null,
-  fierce:  '#b84010',
-  ancient: '#4a2070',
-  shiny:   '#c8920a',
+  fierce:  '#d8541a',
+  ancient: '#5a2a8a',
+  shiny:   '#e6c248',
 };
 
 // ── Fonction principale ─────────────────────────────────────
 // Priorité d'affichage : monster.imgSrc (PNG/WebP) → SVG dédié → SVG catégorie → emoji
 function getMonsterIconHtml(monster, sizePx) {
+  _ensureMonsterDefs();
   const variant    = monster.variant || 'normal';
   const baseColor  = monster.color || MONSTER_BASE_COLORS[monster.category] || '#8a6840';
   const finalColor = VARIANT_COLORS[variant] || baseColor;
 
   if (monster.imgSrc) {
     return `<div class="monster-icon monster-img variant-${variant}"
+                 data-cat="${monster.category || ''}"
                  style="width:${sizePx}px;height:${sizePx}px">
               <img src="${monster.imgSrc}" alt="${monster.name || ''}"
                    style="width:100%;height:100%;object-fit:contain;display:block">
@@ -1041,12 +1178,14 @@ function getMonsterIconHtml(monster, sizePx) {
   const svgStr = MONSTER_ICONS[monster.id] || MONSTER_ICONS[monster.category] || null;
   if (svgStr) {
     return `<div class="monster-icon variant-${variant}"
+                 data-cat="${monster.category || ''}"
                  style="width:${sizePx}px;height:${sizePx}px;color:${finalColor}">
               ${svgStr}
             </div>`;
   }
 
   return `<div class="monster-icon variant-${variant} monster-emoji-fallback"
+               data-cat="${monster.category || ''}"
                style="font-size:${Math.floor(sizePx * 0.75)}px;color:${finalColor};
                       width:${sizePx}px;height:${sizePx}px">
             ${monster.icon}

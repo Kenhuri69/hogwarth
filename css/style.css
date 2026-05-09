@@ -1247,6 +1247,30 @@ body {
   to   { filter: drop-shadow(0 0 22px rgba(255,210,40,1.0))  brightness(1.35) saturate(2.0) hue-rotate(12deg); }
 }
 
+/* ── Animations subtiles A5 ── */
+@keyframes monsterFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+@keyframes monsterPulseAura {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.04); opacity: 0.92; }
+}
+.monster-icon[data-cat="fantôme"]:not(.variant-shiny) {
+  animation: monsterFloat 4s ease-in-out infinite;
+}
+.monster-icon[data-cat="être magique"]:not(.variant-shiny) {
+  animation: monsterPulseAura 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .monster-icon,
+  .monster-icon[data-cat="fantôme"],
+  .monster-icon[data-cat="être magique"],
+  .variant-shiny {
+    animation: none !important;
+  }
+}
+
 /* Badge de variante (coin supérieur droit de l'icône) */
 .variant-badge {
   position: absolute;

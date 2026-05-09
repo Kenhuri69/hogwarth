@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/continue-svg-work-v6BEc`
 > (anciennes branches : `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 16 / 75 tâches terminées
+> **Statut global** : 22 / 75 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -33,12 +33,12 @@ Pour chaque entrée du bloc C ci-dessous :
 
 ## Bloc A — Code pur (Claude seul)
 
-- [ ] **A1** Refondre les 5 SVG fallback de catégorie (`bête`, `humain`, `fantôme`, `créature`, `être magique`) avec gradients et détails.
-- [ ] **A2** Améliorer `MONSTER_BASE_COLORS` et `VARIANT_COLORS` pour mieux différencier `normal` / `fierce` / `ancient` / `shiny`.
-- [ ] **A3** Ajouter un bloc `<defs>` partagé en tête de `icons.js` : gradients radiaux d'ombrage, filtres de halo magique, brume.
-- [ ] **A4** Refondre les 4 SVG d'objets de scène dans `movement.js` (`CHEST`, `SHOP`, `STAIRS_D`, `STAIRS_U`).
-- [ ] **A5** Ajouter animations SMIL/CSS subtiles (flottement fantômes, scintillement coffre, palpitation aura magique, clignement des yeux).
-- [ ] **A6** Améliorer les ornements UI dans `img/svg/ornaments.html`.
+- [x] **A1** Refondre les 5 SVG fallback de catégorie (`bête`, `humain`, `fantôme`, `créature`, `être magique`) avec gradients et détails.
+- [x] **A2** Améliorer `MONSTER_BASE_COLORS` et `VARIANT_COLORS` pour mieux différencier `normal` / `fierce` / `ancient` / `shiny`.
+- [x] **A3** Ajouter un bloc `<defs>` partagé en tête de `icons.js` : gradients radiaux d'ombrage, filtres de halo magique, brume.
+- [x] **A4** Refondre les 4 SVG d'objets de scène dans `movement.js` (`CHEST`, `SHOP`, `STAIRS_D`, `STAIRS_U`).
+- [x] **A5** Ajouter animations SMIL/CSS subtiles (flottement fantômes, scintillement coffre, palpitation aura magique, clignement des yeux).
+- [x] **A6** Améliorer les ornements UI dans `img/svg/ornaments.html`.
 
 ---
 
@@ -195,3 +195,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #15 | C10 peeves intégré (birefnet-general) sur branche `claude/continue-svg-work-v6BEc` | Costume bouffon + ricanement + geste obscène préservés ; débris/aura magiques retirés (rendus à part en jeu) |
 | 2026-05-09 | #16 | C11 myrtle intégré (birefnet-general) | Mimi Geignarde fantôme bleu argenté, lunettes rondes, couettes, robe Poudlard ; brume spectrale et ondulations préservées dans l'alpha |
 | 2026-05-09 | #17 | C12 serpent_cachot intégré (birefnet-general) | Serpent vert émeraude/noir en S-pose, gueule ouverte, langue bifide, brume verte ; détourage propre y compris la queue fine |
+| 2026-05-09 | #18 | Bloc A complet (A1-A6) terminé | Plan dédié `.claude/plans/bloc-A.md` ; ordre A3→A1→A2→A4→A5→A6 ; `<defs>` partagés (`shadeRadial`, `halo`, `mist`, `glow`) injectés une fois via `_ensureMonsterDefs()` ; 5 fallback de catégorie redessinés ; couleurs base/variantes plus contrastées ; 4 SVG d'objets enrichis (gradients, rivets, lumière chaude) ; animations CSS `monsterFloat`/`monsterPulseAura` (data-cat) + SMIL scintillement coffre + media `prefers-reduced-motion` ; 4 nouveaux ornements (séparateur fin, cadre parchemin, bouton-volute, badge-rune) |
