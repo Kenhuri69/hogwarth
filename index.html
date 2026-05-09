@@ -553,25 +553,25 @@
 
     <!-- Actions -->
     <div class="action-group">
-      <button class="cmd-btn" data-group="adventure" onclick="openInventory()" title="Inventaire (I)"><span class="btn-icon">🎒</span><span class="btn-label">Sac</span></button>
-      <button class="cmd-btn" data-group="adventure" onclick="openSpells()" title="Sortilèges (P)"><span class="btn-icon">📖</span><span class="btn-label">Sorts</span></button>
-      <button class="cmd-btn" data-group="adventure" onclick="openCharacter()" title="Fiche personnage (C)"><span class="btn-icon">📜</span><span class="btn-label">Fiche</span></button>
-      <button class="cmd-btn" data-group="adventure" onclick="openBestiary()" title="Bestiaire"><span class="btn-icon">📕</span><span class="btn-label">Bestiaire</span></button>
-      <button class="cmd-btn" data-group="adventure" onclick="openQuestLog()" title="Quêtes actives"><span class="btn-icon">✦</span><span class="btn-label">Quêtes</span></button>
-      <button class="cmd-btn" data-group="adventure" id="btn-search" onclick="searchRoom()" title="Fouiller la salle (F)"><span class="btn-icon">🔍</span><span class="btn-label">Fouiller</span></button>
-      <button class="cmd-btn" data-group="adventure" onclick="rest()" title="Repos (R)"><span class="btn-icon">💤</span><span class="btn-label">Repos</span></button>
+      <button class="cmd-btn" data-group="adventure" onclick="openInventory()" title="Inventaire (I)"><span class="btn-icon"><img src="img/icons/backpack.png" alt="Sac"></span><span class="btn-label">Sac</span></button>
+      <button class="cmd-btn" data-group="adventure" onclick="openSpells()" title="Sortilèges (P)"><span class="btn-icon"><img src="img/icons/spellbook.png" alt="Sorts"></span><span class="btn-label">Sorts</span></button>
+      <button class="cmd-btn" data-group="adventure" onclick="openCharacter()" title="Fiche personnage (C)"><span class="btn-icon"><img src="img/icons/scroll.png" alt="Fiche"></span><span class="btn-label">Fiche</span></button>
+      <button class="cmd-btn" data-group="adventure" onclick="openBestiary()" title="Bestiaire"><span class="btn-icon"><img src="img/icons/bestiary.png" alt="Bestiaire"></span><span class="btn-label">Bestiaire</span></button>
+      <button class="cmd-btn" data-group="adventure" onclick="openQuestLog()" title="Quêtes actives"><span class="btn-icon"><img src="img/icons/quest.png" alt="Quêtes"></span><span class="btn-label">Quêtes</span></button>
+      <button class="cmd-btn" data-group="adventure" id="btn-search" onclick="searchRoom()" title="Fouiller la salle (F)"><span class="btn-icon"><img src="img/icons/search.png" alt="Fouiller"></span><span class="btn-label">Fouiller</span></button>
+      <button class="cmd-btn" data-group="adventure" onclick="rest()" title="Repos (R)"><span class="btn-icon"><img src="img/icons/rest.png" alt="Repos"></span><span class="btn-label">Repos</span></button>
 
       <div class="cmd-vsep"></div>
 
-      <button id="btn-music" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleMute()" title="Musique On/Off"><span class="btn-icon">♪</span></button>
-      <button id="btn-voice" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleVoice()" title="Voix des sorts On/Off"><span class="btn-icon">🗣️</span></button>
+      <button id="btn-music" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleMute()" title="Musique On/Off"><span class="btn-icon"><img src="img/icons/music_on.png" alt="Musique"></span></button>
+      <button id="btn-voice" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleVoice()" title="Voix des sorts On/Off"><span class="btn-icon"><img src="img/icons/voice_on.png" alt="Voix"></span></button>
 
       <div class="cmd-vsep"></div>
 
-      <button class="cmd-btn" data-group="system" onclick="openSaveDialog()" title="Sauvegarder la partie"><span class="btn-icon">💾</span><span class="btn-label">Sauver</span></button>
-      <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon">📂</span><span class="btn-label">Charger</span></button>
-      <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon">⚙️</span><span class="btn-label">Diff.</span></button>
-      <button class="cmd-btn mobile-map-btn" data-group="system" onclick="toggleMobileMap()" title="Carte"><span class="btn-icon">🗺️</span></button>
+      <button class="cmd-btn" data-group="system" onclick="openSaveDialog()" title="Sauvegarder la partie"><span class="btn-icon"><img src="img/icons/save.png" alt="Sauver"></span><span class="btn-label">Sauver</span></button>
+      <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon"><img src="img/icons/load.png" alt="Charger"></span><span class="btn-label">Charger</span></button>
+      <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon"><img src="img/icons/gear.png" alt="Diff."></span><span class="btn-label">Diff.</span></button>
+      <button class="cmd-btn mobile-map-btn" data-group="system" onclick="toggleMobileMap()" title="Carte"><span class="btn-icon"><img src="img/icons/map.png" alt="Carte"></span></button>
       <button class="cmd-btn" id="btn-interact" data-group="adventure" style="display:none"><span class="btn-icon">🚪</span></button>
     </div>
 

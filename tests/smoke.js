@@ -1222,8 +1222,74 @@ async function scenarioCorruptSave() {
   await browser.close();
 }
 
+// ── Scénario 17 : icônes pixel art de la barre de commandes ──
+
+async function scenarioCmdBtnIcons() {
+  console.log('\n── Scénario 17 : icônes barre de commandes ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Présence + chargement des PNG
+  const t1 = await page.evaluate(() => {
+    const sel = (s) => document.querySelector(s);
+    const checks = {
+      backpack:  sel('button[onclick="openInventory()"] .btn-icon img'),
+      spellbook: sel('button[onclick="openSpells()"] .btn-icon img'),
+      scroll:    sel('button[onclick="openCharacter()"] .btn-icon img'),
+      bestiary:  sel('button[onclick="openBestiary()"] .btn-icon img'),
+      quest:     sel('button[onclick="openQuestLog()"] .btn-icon img'),
+      search:    sel('#btn-search .btn-icon img'),
+      rest:      sel('button[onclick="rest()"] .btn-icon img'),
+      music:     sel('#btn-music .btn-icon img'),
+      voice:     sel('#btn-voice .btn-icon img'),
+      save:      sel('button[onclick="openSaveDialog()"] .btn-icon img'),
+      load:      sel('button[onclick="openLoadDialog()"] .btn-icon img'),
+      gear:      sel('button[onclick="changeDifficulty()"] .btn-icon img'),
+      map:       sel('.mobile-map-btn .btn-icon img'),
+    };
+    return Object.fromEntries(Object.entries(checks).map(([k, el]) => [k, {
+      exists:  !!el,
+      src:     el && el.getAttribute('src'),
+      hasSrc:  !!(el && el.getAttribute('src') && el.getAttribute('src').startsWith('img/icons/')),
+      loaded:  !!(el && el.complete && el.naturalWidth > 0)
+    }]));
+  });
+  for (const [name, c] of Object.entries(t1)) {
+    console.log(`  ${name.padEnd(10)} → exists=${c.exists} loaded=${c.loaded} src=${c.src}`);
+    assert(c.exists, `${name}: <img> absent du DOM`);
+    assert(c.hasSrc, `${name}: src ne pointe pas vers img/icons/`);
+    assert(c.loaded, `${name}: PNG non chargé (404 ou cassé)`);
+  }
+
+  // Toggle music + voice doit changer le src de l'<img>
+  const t2 = await page.evaluate(() => {
+    const musicImg = document.querySelector('#btn-music img');
+    const voiceImg = document.querySelector('#btn-voice img');
+    const before = { music: musicImg.getAttribute('src'), voice: voiceImg.getAttribute('src') };
+    AudioSystem.toggleMute();
+    AudioSystem.toggleVoice();
+    const after = { music: musicImg.getAttribute('src'), voice: voiceImg.getAttribute('src') };
+    // Restaurer l'état initial
+    AudioSystem.toggleMute();
+    AudioSystem.toggleVoice();
+    return { before, after };
+  });
+  console.log('  toggle audio :', t2);
+  assert(t2.before.music !== t2.after.music, 'toggle music doit changer le src de l\'icône');
+  assert(t2.before.voice !== t2.after.voice, 'toggle voice doit changer le src de l\'icône');
+  assert(/music_off\.png$/.test(t2.after.music), 'après toggleMute, src doit pointer vers music_off.png');
+  assert(/voice_off\.png$/.test(t2.after.voice), 'après toggleVoice (off), src doit pointer vers voice_off.png');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ icônes UI : 13 icônes présentes, chargées + toggle music/voice fonctionnel');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons];
   for (const s of scenarios) {
     await s();
   }
