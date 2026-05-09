@@ -615,6 +615,7 @@ const MONSTERS = [
     id:       "acromantula_jeune",
     name:     "Jeune Acromantule",
     icon:     "🕷️",
+    imgSrc:   "img/monsters/acromantula_jeune.png",
     category: "créature",
     desc:     "Une jeune Acromantule agite ses huit yeux noirs et fonce sur vous !",
     lore:     "Descendant direct d'Aragog, ce jeune spécimen n'a pas encore atteint sa taille adulte — mais ses crocs venimeux sont déjà mortels.",
