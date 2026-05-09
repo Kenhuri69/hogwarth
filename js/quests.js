@@ -54,11 +54,11 @@ function renderQuestList() {
 
     // Récompenses formatées
     const rewardParts = [];
-    if (q.reward.xp)    rewardParts.push(`⭐ +${q.reward.xp} XP`);
-    if (q.reward.gold)  rewardParts.push(`🪙 +${q.reward.gold}`);
+    if (q.reward.xp)    rewardParts.push(`<img class="ui-icon ui-icon-md" src="img/icons/xp.png" alt=""> +${q.reward.xp} XP`);
+    if (q.reward.gold)  rewardParts.push(`<img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> +${q.reward.gold}`);
     if (q.reward.item) {
       const it = ITEMS.find(i => i.id === q.reward.item);
-      if (it) rewardParts.push(`${it.icon} ${it.name}`);
+      if (it) rewardParts.push(`${getItemIconHtml(it, 'ui-icon-sm')} ${it.name}`);
     }
     if (q.reward.spell) rewardParts.push(`✨ Sort : ${q.reward.spell}`);
 
@@ -208,7 +208,7 @@ function completeQuest(index) {
   if (q.reward.item) {
     const item = ITEMS.find(i => i.id === q.reward.item);
     if (item && tryAddItem(item, { silent: true })) {
-      addMsg(`📦 Récompense : ${item.icon} ${item.name}`, 'good');
+      addMsg(`Récompense : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name}`, 'good');
     }
   }
   if (q.reward.spell) {

@@ -61,7 +61,7 @@ function openShop() {
     const canAfford = (player.gold || 0) >= item.price;
     // === FIX SHOP === ceinture+bretelles : layout inline garanti
     div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #5a4020;border-radius:6px;background:rgba(30,20,10,0.55);cursor:' + (canAfford ? 'pointer' : 'default') + ';opacity:' + (canAfford ? '1' : '0.5');
-    div.innerHTML = `<div class="shop-icon">${item.icon}</div>
+    div.innerHTML = `<div class="shop-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div>
       <div class="shop-info">
         <div class="shop-name">${item.name}</div>
         <div class="shop-desc">${item.desc}</div>

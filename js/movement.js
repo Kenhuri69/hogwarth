@@ -255,7 +255,7 @@ function openChest() {
     const item = possItems[Math.floor(Math.random() * possItems.length)];
     if (tryAddItem(item, { silent: true })) {
       setNarrative(NARRATIVES.item_found(item.name));
-      addMsg(`Obtenu : ${item.icon} ${item.name}`, 'good');
+      addMsg(`Obtenu : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name}`, 'good');
     }
 
   } else if (roll < 0.90 || !hasBook) {
@@ -264,7 +264,7 @@ function openChest() {
     const item  = gear[Math.floor(Math.random() * gear.length)];
     if (tryAddItem(item, { silent: true })) {
       setNarrative(NARRATIVES.item_found(item.name));
-      addMsg(`Obtenu : ${item.icon} ${item.name}`, 'good');
+      addMsg(`Obtenu : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name}`, 'good');
     }
 
   } else {

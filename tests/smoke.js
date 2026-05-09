@@ -115,24 +115,26 @@ async function scenarioStatusEffects() {
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
   await startDummyFight(page, { hp: 50 });
 
-  // T1 : applyStatus pose le statut + pilule rendue
+  // T1 : applyStatus pose le statut + pilule rendue (icône PNG via resolver)
   const t1 = await page.evaluate(() => {
     const e = enemyGroup[0];
     const before = e.currentHp;
     applyStatus(e, 'burn', 5, 2);
     renderEnemyGroup();
     const pill = document.querySelector('.enemy-card .status-pill');
+    const img  = pill ? pill.querySelector('img') : null;
     return {
       before,
       statusId:    e.statusEffects[0]?.id,
       statusTurns: e.statusEffects[0]?.turns,
-      pillText:    pill ? pill.textContent.trim() : null
+      pillText:    pill ? pill.textContent.trim() : null,
+      iconSrc:     img ? img.getAttribute('src') : null
     };
   });
   console.log('  T1 apply :', t1);
-  assert(t1.statusId === 'burn',           'applyStatus n\'a pas posé burn');
-  assert(t1.pillText && t1.pillText.includes('🔥'), 'pilule 🔥 absente');
-  assert(t1.pillText.includes('2'),        'compteur turns absent');
+  assert(t1.statusId === 'burn',                    'applyStatus n\'a pas posé burn');
+  assert(/burn\.png$/.test(t1.iconSrc || ''),        'pilule burn doit utiliser burn.png');
+  assert(t1.pillText.includes('2'),                 'compteur turns absent');
 
   // T2 : tick → -5 PV, turns décrémenté
   const t2 = await page.evaluate(() => {
@@ -1350,8 +1352,320 @@ async function scenarioCmdBtnIcons() {
   await browser.close();
 }
 
+// ── Scénario 18 : Phase 1 — UI chrome + HUD stats ────────────
+
+async function scenarioUiChromeIcons() {
+  console.log('\n── Scénario 18 : Phase 1 — UI chrome + HUD stats ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : les icônes HUD (game-title, gold-display, barres HP/MP/XP, dpad, shop) sont des <img> chargés
+  const t1 = await page.evaluate(() => {
+    const grab = (sel) => {
+      const el = document.querySelector(sel);
+      const img = el ? el.querySelector('img') : null;
+      return img ? { src: img.getAttribute('src'), loaded: img.complete && img.naturalWidth > 0 } : null;
+    };
+    return {
+      gameTitle: grab('.game-title'),
+      gold:      grab('#gold-display'),
+      hp0:       grab('#char-card-0 .stat-bar-row:nth-child(2) .bar-label'),
+      mp0:       grab('#char-card-0 .stat-bar-row:nth-child(3) .bar-label'),
+      hp1:       grab('#char-card-1 .stat-bar-row:nth-child(2) .bar-label'),
+      mp1:       grab('#char-card-1 .stat-bar-row:nth-child(3) .bar-label'),
+      xp:        grab('#xp-label'),
+      dpad:      grab('.dpad-center'),
+      shopTitle: grab('#shop-title')
+    };
+  });
+  console.log('  T1 HUD icons →', JSON.stringify(t1, null, 2));
+  const checks = {
+    gameTitle: /hp\.png$/,
+    gold:      /gold\.png$/,
+    hp0:       /hp\.png$/,
+    mp0:       /mp\.png$/,
+    hp1:       /hp\.png$/,
+    mp1:       /mp\.png$/,
+    xp:        /xp\.png$/,
+    dpad:      /hp\.png$/,
+    shopTitle: /shop_sign\.png$/
+  };
+  for (const [key, regex] of Object.entries(checks)) {
+    assert(t1[key] !== null,                   `${key} : doit avoir un <img>`);
+    assert(regex.test(t1[key].src),            `${key} : src doit matcher ${regex} (était ${t1[key].src})`);
+    assert(t1[key].loaded === true,            `${key} : image doit être chargée (pas de 404)`);
+  }
+
+  // T2 : la fiche de personnage (modale) contient bien les <img> pour chaque stat
+  const t2 = await page.evaluate(() => {
+    openCharacter(0);
+    const modal = document.getElementById('char-detail');
+    const imgs = Array.from(modal.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
+    return imgs;
+  });
+  console.log('  T2 fiche perso →', t2);
+  ['hp.png', 'mp.png', 'atk.png', 'def.png', 'str.png', 'int.png', 'agi.png', 'xp.png', 'mag.png', 'gold.png'].forEach(name => {
+    assert(t2.some(s => s.endsWith(name)), `fiche perso doit contenir ${name}`);
+  });
+
+  // T3 : updateUI() après une mutation de gold maintient l'<img> (pas de regression sur innerHTML)
+  const t3 = await page.evaluate(() => {
+    player.gold = 999;
+    updateUI();
+    const el = document.getElementById('gold-display');
+    const img = el.querySelector('img');
+    return { hasImg: !!img, src: img && img.getAttribute('src'), txt: el.textContent.trim() };
+  });
+  console.log('  T3 updateUI gold →', t3);
+  assert(t3.hasImg,                   'gold-display doit conserver son <img> après updateUI');
+  assert(/gold\.png$/.test(t3.src),   'gold-display src doit rester sur gold.png');
+  assert(t3.txt.includes('999'),      'le montant Gallions doit être mis à jour');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Phase 1 : 9 icônes HUD + 10 stats fiche perso + persistance après updateUI');
+  await browser.close();
+}
+
+// ── Scénario 19 : Phase 2 — équipement slots + status + resolver ──
+
+async function scenarioEquipmentAndStatusIcons() {
+  console.log('\n── Scénario 19 : Phase 2 — équipement slots + status + resolver ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : resolver disponible et registre slot peuplé
+  const t1 = await page.evaluate(() => ({
+    hasGetItemIconHtml:        typeof getItemIconHtml === 'function',
+    hasGetEquipmentSlotIcon:   typeof getEquipmentSlotIconHtml === 'function',
+    hasGetStatusIconHtml:      typeof getStatusIconHtml === 'function',
+    slotWand:    EQUIPMENT_SLOT_ICONS && EQUIPMENT_SLOT_ICONS.wand,
+    slotArmor:   EQUIPMENT_SLOT_ICONS && EQUIPMENT_SLOT_ICONS.armor,
+    slotAcc:     EQUIPMENT_SLOT_ICONS && EQUIPMENT_SLOT_ICONS.acc,
+    statusBurn:  STATUS_ICON_REGISTRY && STATUS_ICON_REGISTRY.burn
+  }));
+  console.log('  T1 resolver →', t1);
+  assert(t1.hasGetItemIconHtml,        'getItemIconHtml doit exister');
+  assert(t1.hasGetEquipmentSlotIcon,   'getEquipmentSlotIconHtml doit exister');
+  assert(t1.hasGetStatusIconHtml,      'getStatusIconHtml doit exister');
+  assert(/wand\.png$/.test(t1.slotWand),       'slot wand doit pointer wand.png');
+  assert(/armor\.png$/.test(t1.slotArmor),     'slot armor doit pointer armor.png');
+  assert(/accessory\.png$/.test(t1.slotAcc),   'slot acc doit pointer accessory.png');
+  assert(/burn\.png$/.test(t1.statusBurn),     'status burn doit pointer burn.png');
+
+  // T2 : registre per-item override (architecture pour Phase 4)
+  const t2 = await page.evaluate(() => {
+    // Simuler une entrée Phase 4
+    ITEM_ICON_REGISTRY['wand_houx'] = 'img/icons/items/wand_houx.png';
+    const fakeItem = { id: 'wand_houx', type: 'wand', name: 'Baguette de Houx', icon: '🪄' };
+    const html = getItemIconHtml(fakeItem);
+    delete ITEM_ICON_REGISTRY['wand_houx'];
+    // Sans entrée, doit fallback sur slot
+    const html2 = getItemIconHtml(fakeItem);
+    return { override: html, fallback: html2 };
+  });
+  console.log('  T2 override →', t2);
+  assert(/wand_houx\.png/.test(t2.override),  'registry per-item doit prendre la priorité');
+  assert(/img\/icons\/wand\.png/.test(t2.fallback), 'sans override, fallback sur slot wand.png');
+
+  // T3 : équipement panneau gauche affiche les slot icons
+  const t3 = await page.evaluate(() => {
+    const root = document.querySelector('.left-panel');
+    const imgs = Array.from(root.querySelectorAll('img.ui-icon'))
+                      .map(i => i.getAttribute('src'));
+    return imgs;
+  });
+  console.log('  T3 panneau gauche →', t3);
+  assert(t3.some(s => s.endsWith('wand.png')),       'panneau gauche doit afficher wand.png');
+  assert(t3.some(s => s.endsWith('armor.png')),      'panneau gauche doit afficher armor.png');
+  assert(t3.some(s => s.endsWith('accessory.png')),  'panneau gauche doit afficher accessory.png');
+
+  // T4 : fiche perso — slots vides retombent sur slot icons (wand/armor/accessory)
+  // (pas d'item équipé sur Harry au démarrage → fallback slot attendu)
+  const t4 = await page.evaluate(() => {
+    if (!player.equipped) player.equipped = {};
+    // Reset équipement pour forcer le fallback slot
+    player.equipped = { wand: null, armor: null, acc: null };
+    openCharacter(0);
+    const detail = document.getElementById('char-detail');
+    const html = detail.innerHTML;
+    return {
+      hasWand:  /img\/icons\/wand\.png/.test(html),
+      hasArmor: /img\/icons\/armor\.png/.test(html),
+      hasAcc:   /img\/icons\/accessory\.png/.test(html)
+    };
+  });
+  console.log('  T4 fiche slots vides →', t4);
+  assert(t4.hasWand && t4.hasArmor && t4.hasAcc,
+         'slots vides → fallback wand.png/armor.png/accessory.png');
+
+  // T5 : fiche perso — slot avec item équipé utilise le PNG per-item du registry
+  const t5 = await page.evaluate(() => {
+    const wand = ITEMS.find(i => i.id === 'wand1');
+    player.equipped.wand = wand;
+    openCharacter(0);
+    const detail = document.getElementById('char-detail');
+    const html = detail.innerHTML;
+    return { hasPerItem: /img\/icons\/items\/wand1\.png/.test(html) };
+  });
+  console.log('  T5 fiche per-item →', t5);
+  assert(t5.hasPerItem, 'wand1 équipé doit utiliser items/wand1.png (priorité registry)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Phase 2 : resolver ITEM_ICON_REGISTRY/EQUIPMENT_SLOT_ICONS/STATUS + 8 icônes intégrées');
+  await browser.close();
+}
+
+// ── Scénario 20 : Phase 3 — sortilèges (23 PNG + resolver) ──
+
+async function scenarioSpellIcons() {
+  console.log('\n── Scénario 20 : Phase 3 — sortilèges ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : registre + helper disponibles, tous les sorts mappés vers un PNG existant
+  const t1 = await page.evaluate(async () => {
+    const out = {
+      hasRegistry: typeof SPELL_ICON_REGISTRY === 'object',
+      hasHelper:   typeof getSpellIconHtml === 'function',
+      total:       SPELLS.length,
+      mapped:      SPELLS.filter(s => SPELL_ICON_REGISTRY[s.name]).length,
+      missing:     SPELLS.filter(s => !SPELL_ICON_REGISTRY[s.name]).map(s => s.name)
+    };
+    // Charger chaque PNG et vérifier le succès
+    const tries = await Promise.all(Object.values(SPELL_ICON_REGISTRY).map(src =>
+      new Promise(resolve => {
+        const im = new Image();
+        im.onload = () => resolve({ src, ok: im.naturalWidth > 0 });
+        im.onerror = () => resolve({ src, ok: false });
+        im.src = src;
+      })
+    ));
+    out.allLoaded = tries.every(t => t.ok);
+    out.failedSrcs = tries.filter(t => !t.ok).map(t => t.src);
+    return out;
+  });
+  console.log('  T1 registry →', t1);
+  assert(t1.hasRegistry && t1.hasHelper,    'SPELL_ICON_REGISTRY + getSpellIconHtml requis');
+  assert(t1.missing.length === 0,           `sorts non mappés : ${t1.missing.join(', ')}`);
+  assert(t1.allLoaded === true,             `PNG manquants : ${t1.failedSrcs.join(', ')}`);
+
+  // T2 : modale Sorts utilise les <img> du registre
+  const t2 = await page.evaluate(() => {
+    openSpells();
+    const list = document.getElementById('spell-list');
+    const imgs = Array.from(list.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
+    return { count: imgs.length, all: imgs };
+  });
+  console.log('  T2 modale Sorts →', t2);
+  // Harry a 5 sorts au démarrage : Expelliarmus, Stupefix, Episkey, Protego, Incendio
+  assert(t2.count >= 5,                     `modale Sorts doit contenir ≥5 <img>, vu ${t2.count}`);
+  ['expelliarmus','stupefix','episkey','protego','incendio'].forEach(name => {
+    assert(t2.all.some(s => s.endsWith(`spells/${name}.png`)), `manque ${name}.png dans modale`);
+  });
+
+  // T3 : fallback emoji si sort absent du registre
+  const t3 = await page.evaluate(() => {
+    const fakeSpell = { name: 'SortInconnu', icon: '🦄' };
+    return getSpellIconHtml(fakeSpell);
+  });
+  console.log('  T3 fallback →', t3);
+  assert(t3 === '🦄', 'getSpellIconHtml doit fallback sur l\'emoji si sort absent du registre');
+
+  // T4 : setBattleLog accepte du HTML (innerHTML) après refactor
+  const t4 = await page.evaluate(() => {
+    setBattleLog('<b>test-html</b>');
+    const el = document.getElementById('battle-log');
+    return { html: el.innerHTML, hasBold: !!el.querySelector('b') };
+  });
+  console.log('  T4 setBattleLog →', t4);
+  assert(t4.hasBold, 'setBattleLog doit rendre le HTML (innerHTML), pas l\'échapper');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log(`  ✅ Phase 3 : 23 sorts mappés + modale + fallback + battle-log innerHTML`);
+  await browser.close();
+}
+
+// ── Scénario 21 : Phase 4 — items (couverture 100% ITEMS[]) ──
+
+async function scenarioItemIcons() {
+  console.log('\n── Scénario 21 : Phase 4 — items ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : couverture 100% — chaque ITEMS[] a une entrée registry, chargée
+  const t1 = await page.evaluate(async () => {
+    const total   = ITEMS.length;
+    const mapped  = ITEMS.filter(it => ITEM_ICON_REGISTRY[it.id]).length;
+    const missing = ITEMS.filter(it => !ITEM_ICON_REGISTRY[it.id]).map(it => it.id);
+    const tries = await Promise.all(Object.values(ITEM_ICON_REGISTRY).map(src =>
+      new Promise(resolve => {
+        const im = new Image();
+        im.onload  = () => resolve({ src, ok: im.naturalWidth > 0 });
+        im.onerror = () => resolve({ src, ok: false });
+        im.src = src;
+      })
+    ));
+    return {
+      total, mapped, missing,
+      allLoaded: tries.every(t => t.ok),
+      failed:    tries.filter(t => !t.ok).map(t => t.src)
+    };
+  });
+  console.log('  T1 couverture →', t1);
+  assert(t1.missing.length === 0,        `items non mappés : ${t1.missing.join(', ')}`);
+  assert(t1.mapped === t1.total,         `${t1.mapped}/${t1.total} mappés`);
+  assert(t1.allLoaded,                   `PNG manquants : ${t1.failed.join(', ')}`);
+
+  // T2 : grille inventaire utilise les PNG
+  const t2 = await page.evaluate(() => {
+    // Donner quelques items à Harry
+    player.inventory = [
+      ITEMS.find(i => i.id === 'potion_s'),
+      ITEMS.find(i => i.id === 'wand1'),
+      ITEMS.find(i => i.id === 'livre_sortileges')
+    ];
+    openInventory();
+    const grid = document.getElementById('inv-grid');
+    const imgs = Array.from(grid.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
+    return imgs;
+  });
+  console.log('  T2 inventaire →', t2);
+  assert(t2.some(s => /items\/potion_s\.png$/.test(s)),         'inventaire doit afficher potion_s.png');
+  assert(t2.some(s => /items\/wand1\.png$/.test(s)),            'inventaire doit afficher wand1.png');
+  assert(t2.some(s => /items\/livre_sortileges\.png$/.test(s)), 'inventaire doit afficher livre_sortileges.png');
+
+  // T3 : grille boutique utilise les PNG (déclencher openShop avec un currentFloor>=1)
+  const t3 = await page.evaluate(() => {
+    closeModal('inventory-modal');
+    currentFloor = 6;  // pour débloquer wand2 dans shop
+    openShop();
+    const list = document.getElementById('shop-grid');
+    const imgs = Array.from(list.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
+    return imgs;
+  });
+  console.log('  T3 boutique →', t3);
+  assert(t3.length >= 3,                                  `shop doit avoir au moins 3 items, vu ${t3.length}`);
+  assert(t3.every(s => /items\/[a-z0-9_]+\.png$/.test(s)),   'tous les items shop doivent pointer img/icons/items/');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log(`  ✅ Phase 4 : ${t1.total} items mappés + inventaire + boutique 100% PNG`);
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons];
   for (const s of scenarios) {
     await s();
   }
