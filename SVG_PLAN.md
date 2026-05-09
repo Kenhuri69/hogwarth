@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/improve-svg-HWGDY`
 > (anciennes branches : `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 7 / 71 tâches terminées
+> **Statut global** : 8 / 71 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -95,7 +95,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C05** `araignee`
 - [x] **C06** `mandragore_sauvage`
 - [x] **C07** `kappa_douves`
-- [ ] **C08** `hippogriffe_courroux`
+- [x] **C08** `hippogriffe_courroux`
 - [ ] **C09** `acromantula_jeune`
 - [ ] **C10** `peeves`
 - [ ] **C11** `myrtle`
@@ -166,3 +166,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #8 | C05 araignee intégrée (birefnet-general) | 8 pattes, crocs avec venin et fil de toile conservés |
 | 2026-05-09 | #9 | C06 mandragore_sauvage intégrée (birefnet-general) | Couronne de feuillage + radicelles fines préservées |
 | 2026-05-09 | #10 | C07 kappa_douves intégré (birefnet-general) | Bol d'eau sur le crâne + algues filaments + griffes acérées préservés |
+| 2026-05-09 | #11 | C08 hippogriffe_courroux intégré (birefnet-general) | Ailes déployées + cicatrices de combat + regard menaçant préservés |

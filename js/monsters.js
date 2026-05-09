@@ -487,6 +487,7 @@ const MONSTERS = [
     id:       "hippogriffe_courroux",
     name:     "Hippogriffe en Furie",
     icon:     "🦅",
+    imgSrc:   "img/monsters/hippogriffe_courroux.png",
     category: "créature",
     desc:     "Un Hippogriffe déploie ses ailes et charge avec une rage terrifiante !",
     lore:     "Créature à la fierté légendaire qui exige une révérence avant tout contact. Cet Hippogriffe a été blessé et traumatisé par des Mangemorts — sa méfiance est devenue une rage incontrôlable. Il attaque sans avertissement quiconque croise son regard.",
