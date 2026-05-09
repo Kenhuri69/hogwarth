@@ -68,11 +68,11 @@ function filterBestiary() {
         </div>
         ${seen ? dropsHtml : ''}
         ${seen ? `<div class="bestiary-stats">
-          <span>❤️ ${monster.hp}</span>
-          <span>⚔️ ${monster.atk}</span>
-          <span>🛡️ ${monster.def}</span>
-          <span>🔮 ${monster.mag}</span>
-          <span>⭐ ${monster.xp} XP</span>
+          <span><img class="ui-icon ui-icon-sm" src="img/icons/hp.png" alt=""> ${monster.hp}</span>
+          <span><img class="ui-icon ui-icon-sm" src="img/icons/atk.png" alt=""> ${monster.atk}</span>
+          <span><img class="ui-icon ui-icon-sm" src="img/icons/def.png" alt=""> ${monster.def}</span>
+          <span><img class="ui-icon ui-icon-sm" src="img/icons/mag.png" alt=""> ${monster.mag}</span>
+          <span><img class="ui-icon ui-icon-sm" src="img/icons/xp.png" alt=""> ${monster.xp} XP</span>
         </div>` : ''}
       </div>
     `;
@@ -160,13 +160,13 @@ function showMonsterDetail(monster) {
 
     ${seen ? `
       <div class="bestiary-stat-grid">
-        <div class="bestiary-stat"><div class="bestiary-stat-val">❤️ ${monster.hp}</div><div class="bestiary-stat-lbl">PV</div></div>
-        <div class="bestiary-stat"><div class="bestiary-stat-val">⚔️ ${monster.atk}</div><div class="bestiary-stat-lbl">ATK</div></div>
-        <div class="bestiary-stat"><div class="bestiary-stat-val">🛡️ ${monster.def}</div><div class="bestiary-stat-lbl">DEF</div></div>
-        <div class="bestiary-stat"><div class="bestiary-stat-val">🔮 ${monster.mag}</div><div class="bestiary-stat-lbl">MAG</div></div>
-        <div class="bestiary-stat"><div class="bestiary-stat-val">⚡ ${monster.agi}</div><div class="bestiary-stat-lbl">AGI</div></div>
-        <div class="bestiary-stat"><div class="bestiary-stat-val">⭐ ${monster.xp}</div><div class="bestiary-stat-lbl">XP</div></div>
-        <div class="bestiary-stat"><div class="bestiary-stat-val">🪙 ${goldRange}</div><div class="bestiary-stat-lbl">Or</div></div>
+        <div class="bestiary-stat"><div class="bestiary-stat-val"><img class="ui-icon ui-icon-md" src="img/icons/hp.png" alt=""> ${monster.hp}</div><div class="bestiary-stat-lbl">PV</div></div>
+        <div class="bestiary-stat"><div class="bestiary-stat-val"><img class="ui-icon ui-icon-md" src="img/icons/atk.png" alt=""> ${monster.atk}</div><div class="bestiary-stat-lbl">ATK</div></div>
+        <div class="bestiary-stat"><div class="bestiary-stat-val"><img class="ui-icon ui-icon-md" src="img/icons/def.png" alt=""> ${monster.def}</div><div class="bestiary-stat-lbl">DEF</div></div>
+        <div class="bestiary-stat"><div class="bestiary-stat-val"><img class="ui-icon ui-icon-md" src="img/icons/mag.png" alt=""> ${monster.mag}</div><div class="bestiary-stat-lbl">MAG</div></div>
+        <div class="bestiary-stat"><div class="bestiary-stat-val"><img class="ui-icon ui-icon-md" src="img/icons/agi.png" alt=""> ${monster.agi}</div><div class="bestiary-stat-lbl">AGI</div></div>
+        <div class="bestiary-stat"><div class="bestiary-stat-val"><img class="ui-icon ui-icon-md" src="img/icons/xp.png" alt=""> ${monster.xp}</div><div class="bestiary-stat-lbl">XP</div></div>
+        <div class="bestiary-stat"><div class="bestiary-stat-val"><img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${goldRange}</div><div class="bestiary-stat-lbl">Or</div></div>
       </div>
       ${resistHtml || weakHtml
         ? `<div class="bestiary-resist-line">${resistHtml}${weakHtml}</div>` : ''}

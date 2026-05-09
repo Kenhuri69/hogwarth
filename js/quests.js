@@ -14,7 +14,7 @@ function openQuestLog() {
   detail.innerHTML = `
     <div style="font-family:'Cinzel',serif;font-size:15px;color:var(--gold);
                 text-align:center;margin-bottom:4px;letter-spacing:2px">
-      📜 Journal des Quêtes
+      <img class="ui-icon ui-icon-xl" src="img/icons/quest.png" alt=""> Journal des Quêtes
     </div>
     <div style="text-align:center;font-size:11px;color:#8a7050;margin-bottom:14px">
       ${done} / ${total} quête${total > 1 ? 's' : ''} terminée${done > 1 ? 's' : ''}

@@ -150,7 +150,7 @@ function openSaveDialog() {
     return;
   }
   migrateLegacyKey(); // import éventuel de l'ancienne clé
-  document.getElementById('slot-modal-title').textContent = '💾 Sauvegarder';
+  document.getElementById('slot-modal-title').innerHTML = '<img class="ui-icon ui-icon-xl" src="img/icons/save.png" alt=""> Sauvegarder';
   const hint = document.getElementById('slot-modal-hint');
   if (hint) hint.textContent = 'Sélectionnez un emplacement à écrire (1, 2 ou 3).';
   _renderSlotList('save');
@@ -160,7 +160,7 @@ function openSaveDialog() {
 
 function openLoadDialog() {
   migrateLegacyKey();
-  document.getElementById('slot-modal-title').textContent = '📂 Charger une sauvegarde';
+  document.getElementById('slot-modal-title').innerHTML = '<img class="ui-icon ui-icon-xl" src="img/icons/load.png" alt=""> Charger une sauvegarde';
   const hint = document.getElementById('slot-modal-hint');
   if (hint) hint.textContent = 'Cliquez sur un emplacement pour le charger.';
   _renderSlotList('load');
