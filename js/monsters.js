@@ -200,6 +200,7 @@ const MONSTERS = [
     id:       "serpent_cachot",
     name:     "Serpent des Cachots",
     icon:     "🐍",
+    imgSrc:   "img/monsters/serpent_cachot.png",
     category: "bête",
     desc:     "Un serpent venimeux surgit de l'ombre avec un sifflement",
     lore:     "Les cachots de Poudlard abritent des serpents qui répondent parfois au Fourchelang.",
