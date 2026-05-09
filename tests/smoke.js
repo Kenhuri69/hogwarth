@@ -947,6 +947,68 @@ async function scenarioStartHub() {
   console.log('  T4 new btn →', t4);
   assert(t4.hubHidden && t4.psVisible, 'bouton Nouvelle aventure doit fermer le hub et ouvrir player-select');
 
+  // T5 : régression — charger un slot d'un héros non-Harry doit afficher
+  // le bon portrait (bug 2026-05-09 : portrait restait sur Harry).
+  const t5 = await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+    selectedPartySize = 1;
+    selectedHeroes    = ['celeste'];
+    confirmHeroSelection();
+    chooseHouse('Serdaigle');
+    return new Promise(resolve => {
+      const tick = () => {
+        if (Array.isArray(party) && party[0] && party[0].hp > 0 && Array.isArray(enemyMap)) {
+          writeSlot('manual_1', 'Céleste');
+          document.getElementById('game-container').style.display = 'none';
+          document.getElementById('player-select-screen').style.display = 'none';
+          document.getElementById('title-screen').style.display = 'flex';
+          // Sabote volontairement le DOM pour reproduire l'état "fraîche
+          // ouverture de page" : le src par défaut harry.png + nom Harry.
+          const p = document.querySelector('#char-card-0 .party-portrait-img');
+          if (p) { p.src = 'img/harry.png'; p.alt = 'Harry'; }
+          const nm = document.getElementById('char-name-0');
+          if (nm) nm.textContent = 'Harry Potter';
+          enterStartHub();
+          resolve(true);
+        } else {
+          requestAnimationFrame(tick);
+        }
+      };
+      tick();
+    });
+  });
+  assert(t5 === true, 'setup T5 doit terminer');
+
+  await page.evaluate(() => {
+    document.querySelector('#start-hub-slot-list [data-slot-id="manual_1"]').click();
+  });
+  // Attendre la fin du load asynchrone
+  await page.evaluate(async () => {
+    const start = Date.now();
+    while (Date.now() - start < 5000) {
+      const gc = document.getElementById('game-container');
+      if (gc && getComputedStyle(gc).display === 'grid') break;
+      await new Promise(r => setTimeout(r, 50));
+    }
+  });
+  const t5b = await page.evaluate(() => {
+    const portrait = document.querySelector('#char-card-0 .party-portrait-img');
+    return {
+      portraitSrc: portrait ? portrait.getAttribute('src') : null,
+      portraitAlt: portrait ? portrait.getAttribute('alt') : null,
+      playerName:  player && player.name,
+      playerImg:   player && player.imgSrc,
+      domName:     document.getElementById('char-name-0').textContent
+    };
+  });
+  console.log('  T5 load celeste →', t5b);
+  assert(/celeste\.png$/.test(t5b.portraitSrc || ''),
+         `portrait DOM doit pointer sur celeste.png (était : ${t5b.portraitSrc})`);
+  assert(/Céleste/.test(t5b.playerName || ''),  'player.name doit refléter Céleste chargée');
+  assert(/celeste\.png$/.test(t5b.playerImg || ''), 'player.imgSrc doit pointer sur celeste.png');
+  assert(/Céleste/.test(t5b.domName || ''),     'le nom affiché doit être Céleste');
+
   await page.evaluate(() => {
     localStorage.removeItem('hogwarts_rpg_save');
     localStorage.removeItem('hogwarts_rpg_saves');
@@ -956,7 +1018,7 @@ async function scenarioStartHub() {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ hub démarrage : bypass sans slot, affichage avec slot, load direct, nouvelle aventure');
+  console.log('  ✅ hub démarrage : bypass sans slot, affichage avec slot, load direct, nouvelle aventure, portrait correct');
   await browser.close();
 }
 

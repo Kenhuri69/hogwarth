@@ -58,3 +58,22 @@ Icônes à générer pour remplacer les emoji actuels :
 - `gen_icons.py` reste idempotent et déterministe (seeds fixes).
 - Lancer : `python3 gen_icons.py`.
 - Les fichiers existants dans `img/icons/` sont overwritten.
+
+---
+
+# Plan — Fix portrait après chargement de slot
+
+> Bug constaté 2026-05-09 par l'utilisateur : charger un slot depuis le hub démarrage
+> affiche toujours le portrait de Harry, même quand la save porte un autre héros
+> (Céleste, Iris, Maxence…).
+
+## Cause
+- `<img class="party-portrait-img" src="img/harry.png">` est codé en dur dans `index.html:348`.
+- `_updateCharBar()` (`js/ui.js:109`) met à jour name / class / hp / sp mais **pas** le portrait.
+- Le portrait n'est mis à jour que dans `_hydrateCharacter()` (`js/main.js:140`), appelé uniquement par le flux nouvelle partie.
+- `_applyState()` mute bien `player.imgSrc` mais aucun code ne propage la valeur sur le DOM lors d'un load.
+
+## Étapes
+- [x] Étape 1 — Patcher `_updateCharBar(idx)` pour synchroniser `.party-portrait-img` (`src` + `alt`) à partir de `c.imgSrc` / `c.name`. → vérifier : tous les flux qui rafraîchissent l'UI (`updateUI`) propagent désormais l'icône. Pas d'effet de bord sur la nouvelle partie (idempotent : valeur déjà bonne).
+- [x] Étape 2 — Étendre le scénario 16 (hub démarrage) pour sauvegarder en jouant Céleste, recharger le slot, et asserter que `#char-card-0 .party-portrait-img` finit par `celeste.png`. → vérifier : `node tests/smoke.js` 17 scénarios passent.
+- [x] Étape 3 — Commit + push sur `claude/icon-generation-engine-LjO0J`.
