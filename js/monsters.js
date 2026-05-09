@@ -222,6 +222,7 @@ const MONSTERS = [
     id:       "chouette_envoutee",
     name:     "Chouette Ensorcelée",
     icon:     "🦉",
+    imgSrc:   "img/monsters/chouette_envoutee.png",
     category: "bête",
     desc:     "Une chouette aux yeux rouges fond sur vous en poussant un cri strident",
     lore:     "Ces chouettes autrefois paisibles ont été ensorcelées par des Mangemorts pour espionner le château. Leurs serres transmettent une magie corrompue.",
