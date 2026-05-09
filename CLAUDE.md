@@ -56,7 +56,7 @@ js/
 ```
 
 Ordre de chargement des scripts dans `index.html` :
-`ux-improvements → audio → audio-music → audio-sfx → icons → monsters → data → state → ui → ui-bestiary → dungeon → textures → renderer → renderer-effects → renderer-minimap → movement → battle → battle-spells → battle-ui → inventory → quests → shop → save → save-ui → main`
+`ux-improvements → audio → audio-music → audio-sfx → icons → scene-icons → monsters → data → state → ui → ui-bestiary → dungeon → textures → renderer → renderer-effects → renderer-minimap → movement → battle → battle-spells → battle-ui → inventory → quests → shop → save → save-ui → main`
 
 ---
 

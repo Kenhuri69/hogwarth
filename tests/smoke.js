@@ -960,6 +960,43 @@ async function scenarioStartHub() {
   await browser.close();
 }
 
+// ── Scénario 13c : SCENE_ICONS (extraction SVG) ───────────────
+
+async function scenarioSceneIcons() {
+  console.log('\n── Scénario 13c : SCENE_ICONS ──');
+  const { browser, page, errors } = await launchGame();
+
+  const t1 = await page.evaluate(() => {
+    const svgKeys = ['chest', 'shop', 'stairs_d', 'stairs_u'];
+    const ok = svgKeys.every(k => typeof SCENE_ICONS[k] === 'string'
+                                && SCENE_ICONS[k].startsWith('<svg'));
+    const fountainOk = typeof SCENE_ICONS.fountain === 'function';
+    const active = SCENE_ICONS.fountain({ dried: false });
+    const dried  = SCENE_ICONS.fountain({ dried: true });
+    return {
+      svgOk: ok,
+      fountainOk,
+      activeAnimated:  active.includes('<animate'),
+      driedNoAnimate:  !dried.includes('<animate'),
+      activeIsSvg:     active.startsWith('<svg'),
+      driedIsSvg:      dried.startsWith('<svg')
+    };
+  });
+  console.log('  T1 SCENE_ICONS :', t1);
+  assert(t1.svgOk,             '4 SVG statiques (chest/shop/stairs_d/stairs_u) doivent être des strings <svg>');
+  assert(t1.fountainOk,        'SCENE_ICONS.fountain doit être une fonction');
+  assert(t1.activeIsSvg && t1.driedIsSvg, 'la fontaine doit retourner un SVG dans les deux états');
+  assert(t1.activeAnimated,    'fontaine active doit contenir <animate (jet/gouttes)');
+  assert(t1.driedNoAnimate,    'fontaine tarie doit retirer toutes les animations');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ SCENE_ICONS : 4 SVG + fontaine paramétrée (active/tarie)');
+  await browser.close();
+}
+
 // ── Scénario 13b : helper tryAddItem (cap inventaire 16) ─────
 
 async function scenarioTryAddItem() {
@@ -1186,7 +1223,7 @@ async function scenarioCorruptSave() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave];
   for (const s of scenarios) {
     await s();
   }
