@@ -4,6 +4,10 @@
 const MAP_W = 12, MAP_H = 12;
 const CELL = { WALL:0, FLOOR:1, DOOR:2, STAIRS_D:3, STAIRS_U:4, SHOP:5, CHEST:6, FOUNTAIN:7 };
 
+// Vecteurs de déplacement par direction cardinale (N, S, E, O).
+// Indexé par playerDir / cellule cible.
+const DIRECTIONS = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
+
 // ============================================================
 // DONNÉES DU JEU
 // ============================================================
@@ -52,8 +56,6 @@ const CHARACTERS = {
 };
 
 // Les ennemis sont définis dans js/monsters.js (MONSTERS)
-// ENEMIES est un alias pour la compatibilité du code existant
-const ENEMIES = MONSTERS;
 
 const SPELLS = [
   // ── Sorts de base ────────────────────────────────────────────

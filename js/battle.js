@@ -6,7 +6,7 @@
 function getActiveChar()       { return party[currentBattleChar]; }
 function getFirstLivingEnemy() { return enemyGroup.findIndex(e => e.currentHp > 0); }
 function livingEnemies()       { return enemyGroup.filter(e => e.currentHp > 0); }
-function allPartyKO()          { return party.every(c => c.hp <= 0); }
+function allPartyKO()          { return party.slice(0, partySize).every(c => c.hp <= 0); }
 
 // ── Système de statuts persistants ──────────────────────────
 // Chaque combattant porte statusEffects: [{ id, icon, power, turns }]
@@ -85,7 +85,6 @@ function startBattle(baseEnemyData) {
   updateBattleCharIndicator();
   setBattleLog(`${size > 1 ? size + ' ennemis surgissent' : enemyGroup[0].desc} !`);
   addMsg(`⚔️ ${size} ennemi${size > 1 ? 's' : ''} !`, 'bad');
-  addLog(`⚔️ Combat (${size} ennemi${size > 1 ? 's' : ''})`);
   // UX : reset journal + timeline + tour 1
   if (window.UX) {
     UX.clearCombatLog();
@@ -206,7 +205,7 @@ function advanceBattleChar() {
 function enemyTurn() {
   battleTurn++;
   if (window.UX) UX.logCombatTurn(battleTurn + 1);
-  const alive = party.filter(c => c.hp > 0).slice(0, partySize);
+  const alive = party.slice(0, partySize).filter(c => c.hp > 0);
   let log = '';
 
   // Statuts persistants : tick sur les ennemis vivants en début de tour
@@ -256,7 +255,8 @@ function enemyTurn() {
     return;
   }
 
-  currentBattleChar = party[0].hp > 0 ? 0 : 1;
+  // En solo, on reste forcément sur le slot 0 ; en duo on bascule sur Hermione si Harry est KO.
+  currentBattleChar = (partySize === 1 || party[0].hp > 0) ? 0 : 1;
   updateBattleCharIndicator();
   if (window.UX) UX.renderTimeline();
   setBattleLog((log || '...') + `\nÀ ${party[currentBattleChar].name} d'agir...`);
@@ -310,8 +310,7 @@ function endBattle(won) {
       e.drops.forEach(drop => {
         if (Math.random() < drop.chance * diff.dropChanceMultiplier) {
           const item = ITEMS.find(i => i.id === drop.itemId);
-          if (item && player.inventory.length < 16) {
-            player.inventory.push({ ...item });
+          if (item && tryAddItem(item, { silent: true })) {
             addMsg(`💎 Drop : ${item.icon} ${item.name} !`, 'good');
           }
         }
@@ -337,7 +336,6 @@ function endBattle(won) {
     setNarrative(`Victoire ! +${xpEarned} XP, +${goldEarned} Gallions.`);
     addMsg(`+${xpEarned} XP`, 'good');
     addMsg(`+${goldEarned} Gallions`, 'good');
-    addLog(`✅ Victoire (${enemyGroup.length} ennemi${enemyGroup.length > 1 ? 's' : ''})`);
     checkLevelUp();
     renderMinimap();
   }
@@ -370,7 +368,6 @@ function checkLevelUp() {
   document.getElementById('levelup-text').textContent = `Le groupe passe au niveau ${player.level} !`;
   document.getElementById('levelup-modal').style.display = 'flex';
   addMsg(`Niveau ${player.level} !`, 'good');
-  addLog(`⭐ Niveau ${player.level} atteint`);
 
   // ── Table de progression des sorts par niveau ─────────────────
   // Helper : enseigne un sort à un personnage s'il ne le connaît pas déjà

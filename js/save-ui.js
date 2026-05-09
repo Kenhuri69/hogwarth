@@ -276,10 +276,7 @@ async function loadSlotAndStart(id) {
   _applyState(slot.state);
 
   // Tweaks UI dépendants de partySize
-  const card1 = document.getElementById('char-card-1');
-  if (card1) card1.style.display = (partySize === 1) ? 'none' : '';
-  const indicator = document.getElementById('battle-char-indicator');
-  if (indicator) indicator.style.display = (partySize === 1) ? 'none' : '';
+  applyPartyMode();
 
   // Audio (le clic utilisateur sur un slot constitue le geste autorisant l'audio)
   if (typeof AudioSystem !== 'undefined') {

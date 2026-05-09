@@ -171,6 +171,13 @@ function _getCeilPattern() {
       || null;
 }
 
+// Lookup direct dans le cache. Retourne null si pas encore construit
+// (le baseline couleur reste alors visible, sans allocation par frame).
+function _patternForKey(bucket, key) {
+  const b = _TEX_PATTERNS[bucket];
+  return (b && b[key]) || null;
+}
+
 // ─────────────────────────────────────────────────────────────
 
 function drawDungeon() {
@@ -269,14 +276,14 @@ function drawCorridor(cx, cy, scale, W, H) {
       if (far.x1 - far.x0 > 4) drawStoneBlocks(far.x0, far.y0, far.x1, far.y1, edgeA);
 
       // 2) Texture tuilée (pattern 'repeat' + clip, alpha plein)
-      const wallKey = (d > 3) ? 'stone2' : 'stone1';
-      const _wtex = window.TEXTURES && window.TEXTURES.walls && window.TEXTURES.walls[wallKey];
-      if (_wtex && _wtex.complete && _wtex.naturalWidth > 0) {
+      const wallKey  = (d > 3) ? 'stone2' : 'stone1';
+      const _wpattern = _patternForKey('walls', wallKey);
+      if (_wpattern) {
         ctx.save();
         ctx.beginPath();
         ctx.rect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
         ctx.clip();
-        ctx.fillStyle = ctx.createPattern(_wtex, 'repeat');
+        ctx.fillStyle = _wpattern;
         ctx.fillRect(far.x0, far.y0, far.x1 - far.x0, far.y1 - far.y0);
         // Fog de distance (overlay sombre progressif)
         ctx.fillStyle = `rgba(6,4,2,${0.10 + di * 0.16})`;
@@ -319,11 +326,11 @@ function drawCorridor(cx, cy, scale, W, H) {
     ctx.fillStyle = FLOOR_C[di];
     ctx.fillRect(near.x0, far.y1, near.x1 - near.x0, near.y1 - far.y1);
 
-    // Texture tuilée (pattern 'repeat', alpha plein)
-    const _floorKey = (typeof currentFloor === 'number' && currentFloor >= 3) ? 'carpet' : 'stone';
-    const _ftex = window.TEXTURES && window.TEXTURES.floor && window.TEXTURES.floor[_floorKey];
-    if (_ftex && _ftex.complete && _ftex.naturalWidth > 0) {
-      ctx.fillStyle = ctx.createPattern(_ftex, 'repeat');
+    // Texture tuilée (pattern 'repeat', alpha plein) — via cache
+    const _floorKey  = (typeof currentFloor === 'number' && currentFloor >= 3) ? 'carpet' : 'stone';
+    const _fpattern  = _patternForKey('floor', _floorKey);
+    if (_fpattern) {
+      ctx.fillStyle = _fpattern;
       ctx.fillRect(near.x0, far.y1, near.x1 - near.x0, near.y1 - far.y1);
     }
     // Fog de profondeur
@@ -353,10 +360,10 @@ function drawCorridor(cx, cy, scale, W, H) {
     ctx.fillStyle = CEIL_C[di];
     ctx.fillRect(near.x0, near.y0, near.x1 - near.x0, far.y0 - near.y0);
 
-    const _ceilKey = (typeof currentFloor === 'number' && currentFloor <= 4) ? 'beams' : 'stone';
-    const _ctex = window.TEXTURES && window.TEXTURES.ceiling && window.TEXTURES.ceiling[_ceilKey];
-    if (_ctex && _ctex.complete && _ctex.naturalWidth > 0) {
-      ctx.fillStyle = ctx.createPattern(_ctex, 'repeat');
+    const _ceilKey  = (typeof currentFloor === 'number' && currentFloor <= 4) ? 'beams' : 'stone';
+    const _cpattern = _patternForKey('ceiling', _ceilKey);
+    if (_cpattern) {
+      ctx.fillStyle = _cpattern;
       ctx.fillRect(near.x0, near.y0, near.x1 - near.x0, far.y0 - near.y0);
     }
     // Fog
@@ -385,10 +392,10 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.fill();
       drawStoneBlocks(near.x0, near.y0, far.x0, far.y1, edgeA * 0.8);
 
-      // Texture tuilée (pattern 'repeat' + clip trapèze, alpha plein)
-      const sideKeyL = (d > 3) ? 'stone2' : 'wood';
-      const _ltex = window.TEXTURES && window.TEXTURES.walls && window.TEXTURES.walls[sideKeyL];
-      if (_ltex && _ltex.complete && _ltex.naturalWidth > 0) {
+      // Texture tuilée (pattern 'repeat' + clip trapèze, alpha plein) — via cache
+      const sideKeyL  = (d > 3) ? 'stone2' : 'wood';
+      const _lpattern = _patternForKey('walls', sideKeyL);
+      if (_lpattern) {
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(near.x0, near.y0);
@@ -397,7 +404,7 @@ function drawCorridor(cx, cy, scale, W, H) {
         ctx.lineTo(near.x0, near.y1);
         ctx.closePath();
         ctx.clip();
-        ctx.fillStyle = ctx.createPattern(_ltex, 'repeat');
+        ctx.fillStyle = _lpattern;
         ctx.fillRect(near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
         // Fog de distance
         ctx.fillStyle = `rgba(6,4,2,${0.18 + di * 0.14})`;
@@ -441,9 +448,9 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.fill();
       drawStoneBlocks(far.x1, near.y0, near.x1, near.y1, edgeA * 0.8);
 
-      const sideKeyR = (d > 3) ? 'stone2' : 'wood';
-      const _rtex = window.TEXTURES && window.TEXTURES.walls && window.TEXTURES.walls[sideKeyR];
-      if (_rtex && _rtex.complete && _rtex.naturalWidth > 0) {
+      const sideKeyR  = (d > 3) ? 'stone2' : 'wood';
+      const _rpattern = _patternForKey('walls', sideKeyR);
+      if (_rpattern) {
         ctx.save();
         ctx.beginPath();
         ctx.moveTo(near.x1, near.y0);
@@ -452,7 +459,7 @@ function drawCorridor(cx, cy, scale, W, H) {
         ctx.lineTo(near.x1, near.y1);
         ctx.closePath();
         ctx.clip();
-        ctx.fillStyle = ctx.createPattern(_rtex, 'repeat');
+        ctx.fillStyle = _rpattern;
         ctx.fillRect(far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
         // Fog
         ctx.fillStyle = `rgba(6,4,2,${0.18 + di * 0.14})`;

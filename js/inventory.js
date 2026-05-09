@@ -2,6 +2,28 @@
 // INVENTAIRE (partagé) ET SORTS (par personnage)
 // ============================================================
 
+// Capacité maximale du sac (constante centralisée).
+const INVENTORY_MAX = 16;
+
+// Helper centralisé pour ajouter un item au sac partagé. Accepte un
+// item complet ou un id ; gère le cap, copie defensive et message UX.
+// Retourne true si l'item a été ajouté, false sinon (sac plein ou id
+// inconnu).
+function tryAddItem(itemOrId, opts = {}) {
+  const item = (typeof itemOrId === 'string')
+    ? (typeof ITEMS !== 'undefined' && ITEMS.find(i => i.id === itemOrId))
+    : itemOrId;
+  if (!item) return false;
+  if (player.inventory.length >= INVENTORY_MAX) {
+    if (!opts.silent && typeof addMsg === 'function') {
+      addMsg(`Sac plein, ${item.name || 'objet'} non récupéré.`, 'bad');
+    }
+    return false;
+  }
+  player.inventory.push({ ...item });
+  return true;
+}
+
 // ── Calcul des stats réelles (base + équipement) ────────────
 // Doit être appelé après chaque équipement et après chaque level-up.
 function recalculateStats() {

@@ -2,6 +2,17 @@
 // MISE À JOUR DE L'INTERFACE
 // ============================================================
 
+// Synchronise les éléments UI dépendants de `partySize` (carte
+// d'Hermione + indicateur de tour combat). Centralisé pour éviter les
+// 3 copies historiques dans main.js, ui.js et save-ui.js.
+function applyPartyMode() {
+  const hidden = (partySize === 1) ? 'none' : '';
+  const card1     = document.getElementById('char-card-1');
+  const indicator = document.getElementById('battle-char-indicator');
+  if (card1)     card1.style.display     = hidden;
+  if (indicator) indicator.style.display = hidden;
+}
+
 function updateUI() {
   // ── Harry (party[0]) ────────────────────────────────────────
   _updateCharBar(0);
@@ -30,8 +41,7 @@ function updateUI() {
   document.getElementById('eq-acc').textContent   = player.acc   || '—';
 
   // ── Affichage selon partySize ────────────────────────────────
-  const card1 = document.getElementById('char-card-1');
-  if (card1) card1.style.display = partySize === 1 ? 'none' : '';
+  applyPartyMode();
 
   // ── Badge de Maison ─────────────────────────────────────────
   _updateHouseBadge();
@@ -115,11 +125,10 @@ function _updateCharBar(idx) {
 }
 
 function updateCompass() {
-  const delta = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
   ['n','s','e','w'].forEach(d => {
     const el = document.getElementById(`dir-${d}`);
     if (!el) return;
-    const [dx, dy] = delta[d];
+    const [dx, dy] = DIRECTIONS[d];
     const nx = playerX + dx, ny = playerY + dy;
     const free = nx >= 0 && ny >= 0 && nx < MAP_W && ny < MAP_H && dungeon[ny][nx] !== CELL.WALL;
     el.classList.toggle('active', free);
@@ -192,15 +201,6 @@ function addMsg(text, type = '') {
   div.textContent = text;
   log.appendChild(div);
   setTimeout(() => div.remove(), 4000);
-}
-
-function addLog(text) {
-  const el  = document.getElementById('event-log');
-  if (!el) return; // pas de panneau journal dans le DOM courant
-  const div = document.createElement('div');
-  div.textContent = text;
-  el.insertBefore(div, el.firstChild);
-  if (el.children.length > 20) el.removeChild(el.lastChild);
 }
 
 // ============================================================

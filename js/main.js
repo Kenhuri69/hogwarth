@@ -87,13 +87,6 @@ function confirmHeroSelection() {
   document.getElementById('house-select-screen').style.display  = 'flex';
 }
 
-// Compatibilité : ancienne API utilisée éventuellement par d'autres scripts
-function startGameWithDifficulty(count = 2) {
-  selectedPartySize = count;
-  selectedHeroes = count === 1 ? ['harry'] : ['harry', 'hermione'];
-  confirmHeroSelection();
-}
-
 // Appelé depuis les boutons de l'écran des Maisons
 function chooseHouse(house) {
   chosenHouse = house;
@@ -177,8 +170,7 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
     // Donner l'objet légendaire (palier 4)
     if (tier.bonus.item) {
       const item = ITEMS.find(it => it.id === tier.bonus.item);
-      if (item && player.inventory.length < 16) {
-        player.inventory.push({ ...item });
+      if (item && tryAddItem(item, { silent: true })) {
         addMsg(`🎁 ${item.icon} ${item.name} ajouté à l'inventaire !`, 'good');
       }
     }
@@ -206,10 +198,7 @@ async function startGame(count = 2) {
   });
 
   // En mode solo : masquer la carte d'Hermione et l'indicateur de tour
-  const card1 = document.getElementById('char-card-1');
-  if (card1) card1.style.display = partySize === 1 ? 'none' : '';
-  const indicator = document.getElementById('battle-char-indicator');
-  if (indicator) indicator.style.display = partySize === 1 ? 'none' : '';
+  applyPartyMode();
 
   const gc = document.getElementById('game-container');
   gc.style.display = 'grid';
