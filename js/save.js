@@ -25,7 +25,17 @@ function _readStore() {
 }
 
 function _writeStore(store) {
-  localStorage.setItem(SAVE_STORE_KEY, JSON.stringify(store));
+  try {
+    localStorage.setItem(SAVE_STORE_KEY, JSON.stringify(store));
+    return true;
+  } catch (e) {
+    // Quota dépassé (Safari privé / localStorage plein) ou setItem refusé.
+    if (typeof addMsg === 'function') {
+      addMsg("Sauvegarde impossible : espace local saturé.", 'bad');
+    }
+    console.warn('[save] _writeStore failed:', e);
+    return false;
+  }
 }
 
 // Construit les méta-données affichables du slot à partir de l'état runtime.
@@ -83,17 +93,23 @@ function deleteSlot(id) {
   return true;
 }
 
-// Auto-sauvegarde dans le slot dédié `auto`. Throttled pour éviter les
-// rafales (fin de combat → level-up → drop simultané). Silencieuse :
-// pas de toast pour ne pas distraire le joueur. No-op si on n'est pas
-// vraiment en partie (avant la sélection de Maison) ou en plein combat.
-let _autoSaveLastAt = 0;
+// Auto-sauvegarde dans le slot dédié `auto`. Throttled **par raison**
+// pour éviter qu'un événement critique (ex. fontaine bue) soit avalé
+// par un événement précédent indépendant (ex. fin de combat). Une
+// même raison appelée en rafale reste, elle, throttlée.
+// Silencieuse : pas de toast. No-op avant la sélection de Maison ou
+// en plein combat.
+let _autoSaveLastAt = 0;                       // legacy : utilisé par smoke test scénario 12
+const _autoSaveLastByReason = {};
 const AUTO_SAVE_THROTTLE_MS = 1500;
 function autoSave(reason) {
   if (inBattle) return false;
   if (!chosenHouse) return false;            // pas encore en partie
   const now = Date.now();
-  if (now - _autoSaveLastAt < AUTO_SAVE_THROTTLE_MS) return false;
+  const key = reason || '_';
+  const last = _autoSaveLastByReason[key] || 0;
+  if (now - last < AUTO_SAVE_THROTTLE_MS) return false;
+  _autoSaveLastByReason[key] = now;
   _autoSaveLastAt = now;
   const store = _readStore();
   store.slots[AUTO_SLOT_ID] = {
@@ -201,8 +217,12 @@ function _applyState(gs) {
   if (gs.chosenHouse && HOUSE_BONUSES[gs.chosenHouse]) chosenHouse = gs.chosenHouse;
   if (gs.housePoints !== undefined) housePoints = gs.housePoints;
   if (gs.houseTier   !== undefined) houseTier   = gs.houseTier;
-  if (gs.searchedCells) searchedCells = new Set(gs.searchedCells);
-  if (gs.floorDungeons) floorDungeons = gs.floorDungeons;
+  // Réinitialise systématiquement (assignment inconditionnel) pour
+  // éviter une fuite de l'état d'un précédent slot quand le nouveau
+  // slot ne porte pas la clé (ex. save legacy ou partie démarrée
+  // avant l'ajout du champ).
+  searchedCells = new Set(gs.searchedCells || []);
+  floorDungeons = gs.floorDungeons || {};
   if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
   usedFountains = new Set(gs.usedFountains || []);
 
@@ -217,8 +237,13 @@ function _applyState(gs) {
 function saveGame() {
   if (inBattle) { addMsg("Impossible de sauvegarder en combat !", "bad"); return; }
   const gameState = _serializeState();
-  localStorage.setItem(SAVE_LEGACY_KEY, JSON.stringify(gameState));
-  addMsg("Partie sauvegardée !", "good");
+  try {
+    localStorage.setItem(SAVE_LEGACY_KEY, JSON.stringify(gameState));
+    addMsg("Partie sauvegardée !", "good");
+  } catch (e) {
+    addMsg("Sauvegarde impossible : espace local saturé.", "bad");
+    console.warn('[save] saveGame failed:', e);
+  }
 }
 
 // Convertit une quête en ancien format { objective:{}, progress:N } vers
@@ -241,7 +266,18 @@ function _migrateQuestShape(q) {
 function loadGame() {
   const saved = localStorage.getItem(SAVE_LEGACY_KEY);
   if (!saved) { addMsg("Aucune sauvegarde trouvée.", "bad"); return; }
-  const gs = JSON.parse(saved);
+  let gs;
+  try {
+    gs = JSON.parse(saved);
+  } catch (e) {
+    addMsg("Sauvegarde corrompue, chargement annulé.", "bad");
+    console.warn('[save] loadGame parse failed:', e);
+    return;
+  }
+  if (!gs || typeof gs !== 'object') {
+    addMsg("Sauvegarde invalide, chargement annulé.", "bad");
+    return;
+  }
   _applyState(gs);
   setNarrative("Le groupe reprend ses esprits. La partie est chargée !");
   addMsg("Partie chargée !", "good");

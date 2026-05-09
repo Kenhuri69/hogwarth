@@ -851,15 +851,32 @@ async function scenarioAutoSave() {
   console.log('  T3 no-house:', t3);
   assert(t3.ok === false, 'autoSave doit refuser avant la sélection de maison');
 
-  // T4 : throttle (2 appels rapprochés)
+  // T4 : throttle même raison répétée
   const t4 = await page.evaluate(() => {
+    if (typeof _autoSaveLastByReason !== 'undefined') {
+      Object.keys(_autoSaveLastByReason).forEach(k => delete _autoSaveLastByReason[k]);
+    }
     if (typeof _autoSaveLastAt !== 'undefined') _autoSaveLastAt = 0;
+    const a = autoSave('repeated');
+    const b = autoSave('repeated');
+    return { first: a, second: b };
+  });
+  console.log('  T4 throttle même raison:', t4);
+  assert(t4.first === true && t4.second === false,
+         'même raison appelée 2× rapidement doit throttler la 2e');
+
+  // T5 : raisons différentes ne se throttlent pas mutuellement
+  const t5 = await page.evaluate(() => {
+    if (typeof _autoSaveLastByReason !== 'undefined') {
+      Object.keys(_autoSaveLastByReason).forEach(k => delete _autoSaveLastByReason[k]);
+    }
     const a = autoSave('first');
     const b = autoSave('second');
     return { first: a, second: b };
   });
-  console.log('  T4 throttle:', t4);
-  assert(t4.first === true && t4.second === false, 'le 2e appel rapproché doit être throttlé');
+  console.log('  T5 raisons distinctes:', t5);
+  assert(t5.first === true && t5.second === true,
+         'deux raisons distinctes doivent passer le throttle');
 
   // Cleanup
   await page.evaluate(() => {
@@ -1087,8 +1104,90 @@ async function scenarioFountain() {
   await browser.close();
 }
 
+// ── Scénario 15 : softlock solo (Harry KO en mode 1 joueur) ──
+
+async function scenarioSoloSoftlock() {
+  console.log('\n── Scénario 15 : softlock solo ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : allPartyKO ne doit dépendre QUE de partySize premiers
+  const t1 = await page.evaluate(() => {
+    party[0].hp = 0;       // Harry KO
+    party[1].hp = 28;      // Hermione vivante mais inactive en solo
+    return { koSolo: allPartyKO(), partySize };
+  });
+  console.log('  T1 allPartyKO solo Harry KO →', t1);
+  assert(t1.partySize === 1, 'mode solo bien actif');
+  assert(t1.koSolo === true, 'allPartyKO doit retourner true en solo si Harry KO, indépendamment d\'Hermione');
+
+  // T2 : combat solo, après mort de Harry → triggerDeath déclenché
+  const t2 = await page.evaluate(async () => {
+    party[0].hp = 35; party[1].hp = 28;
+    const enemy = {
+      id: 'big_dummy', name: 'Big Mannequin', icon: '🎯',
+      hp: 9999, atk: 9999, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 0, gold: 0, abilities: [], drops: [],
+      resist: [], weak: [], desc: 'Test'
+    };
+    startBattle(enemy);
+    // Force la mort de Harry pour simuler le coup fatal
+    party[0].hp = 0;
+    // Déclenche le check qui doit se transformer en triggerDeath
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const before = inBattle;
+        // appel direct du flux : si allPartyKO renvoie true, endBattle(false)/triggerDeath
+        const ko = allPartyKO();
+        resolve({ harryHp: party[0].hp, hermioneHp: party[1].hp, ko, inBattleBefore: before });
+      }, 50);
+    });
+  });
+  console.log('  T2 combat solo Harry mort →', t2);
+  assert(t2.ko === true,
+         'allPartyKO doit signaler le KO solo même si Hermione (slot inactif) reste à 28');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ softlock solo : allPartyKO ne tient plus compte d\'Hermione en solo');
+  await browser.close();
+}
+
+// ── Scénario 16 : résilience save (legacy corrompue) ─────────
+
+async function scenarioCorruptSave() {
+  console.log('\n── Scénario 16 : résilience save corrompue ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page);
+
+  // T1 : legacy save corrompue → loadGame() ne plante pas, message d'erreur
+  const t1 = await page.evaluate(() => {
+    localStorage.setItem('hogwarts_rpg_save', '{ this is not json');
+    let threw = false;
+    try { loadGame(); } catch (e) { threw = true; }
+    return { threw };
+  });
+  console.log('  T1 legacy corrompue →', t1);
+  assert(t1.threw === false, 'loadGame ne doit pas propager d\'exception sur JSON cassé');
+
+  // Cleanup
+  await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+  });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ save corrompue : loadGame robuste, aucune exception propagée');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioFountain];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave];
   for (const s of scenarios) {
     await s();
   }
