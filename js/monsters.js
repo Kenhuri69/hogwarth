@@ -95,6 +95,7 @@ const MONSTERS = [
     id:       "luciole_marais",
     name:     "Luciole des Marais",
     icon:     "✨",
+    imgSrc:   "img/monsters/luciole_marais.png",
     category: "bête",
     desc:     "Une nuée de lucioles ensorcelées surgit en tourbillonnant",
     lore:     "Ces petites créatures lumineuses des marais de Poudlard sont inoffensives en apparence, mais leurs flashs aveuglants peuvent désorienter n'importe quel sorcier.",
