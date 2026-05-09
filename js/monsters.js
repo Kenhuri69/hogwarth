@@ -671,6 +671,7 @@ const MONSTERS = [
     id:       "troll_grotte",
     name:     "Troll des Cavernes",
     icon:     "🗿",
+    imgSrc:   "img/monsters/troll_grotte.png",
     category: "créature",
     desc:     "Un Troll des cavernes énorme fait trembler le sol à chaque pas",
     lore:     "Bien plus imposant que ses cousins des toilettes, le Troll des cavernes mesure plus de quatre mètres. Sa peau calcifiée par des siècles de vie souterraine dévie la plupart des sorts ordinaires, et ses coups de massue peuvent effondrer des voûtes entières.",
