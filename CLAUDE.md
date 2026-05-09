@@ -1,3 +1,5 @@
+@.claude/guidelines.md
+
 # Poudlard & Magie — Mémoire Projet
 
 RPG en tour par tour inspiré de *Might & Magic Book One*, univers Harry Potter.
