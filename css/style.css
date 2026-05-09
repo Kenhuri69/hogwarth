@@ -1390,9 +1390,17 @@ body {
     justify-content: center;
   }
 
-  /* Overlay de combat adapté mobile */
-  #encounter-overlay { padding: 10px; gap: 8px; }
-  .enemy-group-container { min-height: 80px; }
+  /* Overlay de combat adapté mobile : on aligne en haut et on réserve un
+     padding-top pour laisser de la place au journal (replié) et à la
+     timeline qui sont en position absolue. La zone du monstre est plus
+     haute pour que le portrait PNG ne soit pas écrasé. */
+  #encounter-overlay {
+    padding: 10px;
+    padding-top: 44px;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+  .enemy-group-container { min-height: 140px; }
   .battle-log { font-size: 12px; padding: 6px 10px; min-height: 36px; max-width: 100%; }
   .battle-actions { gap: 5px; }
   .battle-actions .cmd-btn { font-size: 13px; padding: 8px 10px; }
