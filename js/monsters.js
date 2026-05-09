@@ -421,6 +421,7 @@ const MONSTERS = [
     id:       "troll",
     name:     "Troll des Toilettes",
     icon:     "🦕",
+    imgSrc:   "img/monsters/troll.png",
     category: "créature",
     desc:     "Un troll nauséabond barre le passage en grognant",
     lore:     "Un cousin du troll lâché par Quirinus Quirrell lors de la fête d'Halloween. Brutal et lent.",
