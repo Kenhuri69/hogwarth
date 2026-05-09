@@ -827,5 +827,127 @@
   </div>
 </section>
 
+<!-- ───────────────────── COMPLÉMENTS A6 ───────────────────── -->
+<section>
+  <h2>Compléments A6 — éléments UI prêts à l'emploi</h2>
+  <div class="grid">
+
+    <!-- Séparateur fin doré (pour titres de section internes) -->
+    <div class="card" style="grid-column: span 4;">
+      <div class="ornament-canvas" style="width: 100%;">
+        <svg width="600" height="20" viewBox="0 0 600 20" xmlns="http://www.w3.org/2000/svg">
+          <line x1="0" y1="10" x2="280" y2="10" stroke="#c9a84c" stroke-width="0.6"/>
+          <line x1="320" y1="10" x2="600" y2="10" stroke="#c9a84c" stroke-width="0.6"/>
+          <circle cx="300" cy="10" r="2" fill="#c9a84c"/>
+          <circle cx="290" cy="10" r="0.8" fill="#7a5c1e"/>
+          <circle cx="310" cy="10" r="0.8" fill="#7a5c1e"/>
+        </svg>
+      </div>
+      <div class="label">Séparateur fin · 1 pt</div>
+      <div class="sub">Pour sous-titres ou listes denses</div>
+    </div>
+
+    <!-- Cadre parchemin pour modale -->
+    <div class="card" style="grid-column: span 2;">
+      <div class="ornament-canvas">
+        <svg width="280" height="180" viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="parchG" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#f4e8c1"/>
+              <stop offset="1" stop-color="#d6c290"/>
+            </linearGradient>
+            <radialGradient id="parchVignette" cx="0.5" cy="0.5" r="0.7">
+              <stop offset="0.7" stop-color="#000" stop-opacity="0"/>
+              <stop offset="1"   stop-color="#3a2410" stop-opacity="0.35"/>
+            </radialGradient>
+          </defs>
+          <!-- Parchemin avec coins déchirés -->
+          <path d="M 14 12 L 264 16 L 270 100 L 260 168 L 16 164 L 8 80 Z"
+                fill="url(#parchG)" stroke="#7a5c1e" stroke-width="0.6"/>
+          <path d="M 14 12 L 264 16 L 270 100 L 260 168 L 16 164 L 8 80 Z"
+                fill="url(#parchVignette)"/>
+          <!-- Liserés -->
+          <rect x="20" y="22" width="240" height="136" fill="none"
+                stroke="#7a5c1e" stroke-width="0.5" stroke-dasharray="2 3"/>
+          <!-- Sceau circulaire en haut à droite -->
+          <g transform="translate(244 38)">
+            <circle r="14" fill="#7a1e1e" opacity="0.85"/>
+            <circle r="14" fill="none" stroke="#5a1414" stroke-width="0.6"/>
+            <text x="0" y="3" text-anchor="middle" font-family="Cinzel, serif"
+                  font-size="9" fill="#f4e8c1" font-weight="700">H</text>
+          </g>
+        </svg>
+      </div>
+      <div class="label">Cadre parchemin · modale</div>
+      <div class="sub">Fond pour fiche perso, journal, lettre</div>
+    </div>
+
+    <!-- Bouton-volute -->
+    <div class="card">
+      <div class="ornament-canvas">
+        <svg width="180" height="56" viewBox="0 0 180 56" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="btnVolG" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stop-color="#3a2410"/>
+              <stop offset="1" stop-color="#1a0f05"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="176" height="52" rx="6" fill="url(#btnVolG)"
+                stroke="#c9a84c" stroke-width="1.2"/>
+          <!-- Volutes latérales -->
+          <path d="M 14 18 Q 22 28 14 38 M 14 18 L 30 24 M 14 38 L 30 32"
+                stroke="#c9a84c" stroke-width="0.9" fill="none"/>
+          <path d="M 166 18 Q 158 28 166 38 M 166 18 L 150 24 M 166 38 L 150 32"
+                stroke="#c9a84c" stroke-width="0.9" fill="none"/>
+          <!-- Texte central -->
+          <text x="90" y="33" text-anchor="middle" font-family="Cinzel, serif"
+                font-size="13" font-weight="700" fill="#c9a84c" letter-spacing="3">
+            ENGAGER
+          </text>
+          <!-- Étoile centrale -->
+          <path d="M 90 44 L 92 47 L 95 47 L 92.5 49 L 93.5 52 L 90 50.5 L 86.5 52 L 87.5 49 L 85 47 L 88 47 Z"
+                fill="#c9a84c"/>
+        </svg>
+      </div>
+      <div class="label">Bouton-volute</div>
+      <div class="sub">CTA principal de modale (combat, achat)</div>
+    </div>
+
+    <!-- Badge-rune -->
+    <div class="card">
+      <div class="ornament-canvas">
+        <svg width="120" height="120" viewBox="-60 -60 120 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="runeBg" cx="0" cy="0" r="50">
+              <stop offset="0" stop-color="#2a1a08"/>
+              <stop offset="1" stop-color="#0a0604"/>
+            </radialGradient>
+          </defs>
+          <!-- Disque -->
+          <circle r="48" fill="url(#runeBg)" stroke="#c9a84c" stroke-width="1.4"/>
+          <circle r="42" fill="none" stroke="#7a5c1e" stroke-width="0.6"
+                  stroke-dasharray="3 5"/>
+          <!-- Rune centrale (Algiz inversée style) -->
+          <g stroke="#f0d080" stroke-width="2.4" stroke-linecap="round" fill="none">
+            <line x1="0"   y1="-22" x2="0"   y2="22"/>
+            <line x1="-14" y1="-8"  x2="0"   y2="2"/>
+            <line x1="14"  y1="-8"  x2="0"   y2="2"/>
+            <line x1="-10" y1="14"  x2="0"   y2="22"/>
+            <line x1="10"  y1="14"  x2="0"   y2="22"/>
+          </g>
+          <!-- Cabochons aux 4 cardinaux -->
+          <circle cx="0"   cy="-44" r="2" fill="#c9a84c"/>
+          <circle cx="44"  cy="0"   r="2" fill="#c9a84c"/>
+          <circle cx="0"   cy="44"  r="2" fill="#c9a84c"/>
+          <circle cx="-44" cy="0"   r="2" fill="#c9a84c"/>
+        </svg>
+      </div>
+      <div class="label">Badge-rune</div>
+      <div class="sub">Marqueur de session, succès, achievement</div>
+    </div>
+
+  </div>
+</section>
+
 </body>
 </html>
