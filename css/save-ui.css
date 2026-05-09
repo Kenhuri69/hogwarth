@@ -176,3 +176,75 @@
   .slot-line { font-size: 11px; }
   .slot-hero-icon { width: 32px; height: 32px; font-size: 18px; }
 }
+
+/* ============================================================
+   HUB DE DÉMARRAGE (#start-hub-screen)
+   ============================================================ */
+#start-hub-screen {
+  display: none;
+  position: fixed; inset: 0;
+  z-index: 200;
+  background: radial-gradient(circle at center, #120a03 0%, #050300 90%);
+  align-items: center; justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+.hub-frame {
+  width: 100%;
+  max-width: 480px;
+  background: linear-gradient(180deg, #1a0f05 0%, #0d0705 100%);
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  padding: 28px 22px;
+  box-shadow: 0 0 40px rgba(201,168,76,0.20),
+              0 0 0 1px rgba(201,168,76,0.05) inset;
+}
+.hub-title {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  color: var(--gold);
+  text-align: center;
+  letter-spacing: 3px;
+  margin-bottom: 4px;
+}
+.hub-sub {
+  font-family: 'Crimson Text', serif;
+  font-size: 13px;
+  color: #8a7050;
+  text-align: center;
+  margin-bottom: 22px;
+  font-style: italic;
+}
+.hub-slot-list {
+  margin-bottom: 18px;
+}
+.hub-slot-list .slot-card {
+  background: #0a0705;
+}
+.hub-slot-list:empty {
+  display: none;
+}
+.hub-new-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(180deg, #c89048 0%, #a06820 100%);
+  color: #1a0f05;
+  border: none;
+  border-radius: 4px;
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+  box-shadow: 0 4px 14px rgba(201,168,76,0.25);
+}
+.hub-new-btn:hover  { filter: brightness(1.1); }
+.hub-new-btn:active { transform: translateY(1px); }
+
+@media (max-width: 700px) {
+  .hub-frame    { padding: 22px 16px; }
+  .hub-title    { font-size: 18px; }
+  .hub-sub      { font-size: 12px; margin-bottom: 16px; }
+  .hub-new-btn  { font-size: 13px; letter-spacing: 2px; padding: 12px; }
+}

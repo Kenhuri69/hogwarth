@@ -875,8 +875,114 @@ async function scenarioAutoSave() {
   await browser.close();
 }
 
+// ── Scénario 13 : hub démarrage (Nouvelle / Reprendre) ───────
+
+async function scenarioStartHub() {
+  console.log('\n── Scénario 13 : hub démarrage ──');
+  const { browser, page, errors } = await launchGame();
+
+  // T1 : aucun slot → click title → bypass direct vers player-select
+  const t1 = await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+    enterStartHub();
+    return {
+      titleHidden: getComputedStyle(document.getElementById('title-screen')).display === 'none',
+      hubHidden:   getComputedStyle(document.getElementById('start-hub-screen')).display === 'none',
+      psVisible:   getComputedStyle(document.getElementById('player-select-screen')).display !== 'none'
+    };
+  });
+  console.log('  T1 no-slot →', t1);
+  assert(t1.titleHidden && t1.hubHidden && t1.psVisible,
+         'sans slot : on doit aller direct sur player-select sans afficher le hub');
+
+  // T2 : avec un slot → click title → hub affiché avec le slot
+  const t2 = await page.evaluate(() => {
+    // Créer un slot via le flux normal
+    selectedPartySize = 1;
+    selectedHeroes    = ['harry'];
+    confirmHeroSelection();
+    chooseHouse('Gryffondor');
+    return new Promise(resolve => {
+      const tick = () => {
+        if (Array.isArray(party) && party[0] && party[0].hp > 0 && Array.isArray(enemyMap)) {
+          // Écrire dans manual_1 puis revenir au title
+          writeSlot('manual_1', 'Manuel');
+          // Replier les écrans de jeu pour simuler un retour au démarrage
+          document.getElementById('game-container').style.display = 'none';
+          document.getElementById('player-select-screen').style.display = 'none';
+          document.getElementById('title-screen').style.display = 'flex';
+          enterStartHub();
+          const hub = document.getElementById('start-hub-screen');
+          const list = document.getElementById('start-hub-slot-list');
+          resolve({
+            hubVisible:    getComputedStyle(hub).display !== 'none',
+            cardCount:     list.querySelectorAll('[data-slot-id]').length,
+            hasManual1:    !!list.querySelector('[data-slot-id="manual_1"]')
+          });
+        } else {
+          requestAnimationFrame(tick);
+        }
+      };
+      tick();
+    });
+  });
+  console.log('  T2 with slot →', t2);
+  assert(t2.hubVisible,         'le hub doit être visible quand un slot existe');
+  assert(t2.cardCount === 1,    'la liste hub doit contenir le slot manual_1');
+  assert(t2.hasManual1,         'manual_1 doit y figurer');
+
+  // T3 : click sur le slot → chargement direct (game-container visible, hub caché)
+  const t3 = await page.evaluate(async () => {
+    document.querySelector('#start-hub-slot-list [data-slot-id="manual_1"]').click();
+    // loadSlotAndStart est async (loadTextures), on poll le résultat
+    const start = Date.now();
+    while (Date.now() - start < 5000) {
+      const gc = document.getElementById('game-container');
+      if (gc && getComputedStyle(gc).display === 'grid') break;
+      await new Promise(r => setTimeout(r, 50));
+    }
+    return {
+      gameVisible: getComputedStyle(document.getElementById('game-container')).display === 'grid',
+      hubHidden:   getComputedStyle(document.getElementById('start-hub-screen')).display === 'none',
+      house:       chosenHouse,
+      heroLoaded:  player && player.name
+    };
+  });
+  console.log('  T3 load-slot →', t3);
+  assert(t3.gameVisible,                      'game-container doit s\'afficher après load');
+  assert(t3.hubHidden,                        'hub doit être caché après load');
+  assert(t3.house === 'Gryffondor',           'chosenHouse doit refléter la sauvegarde chargée');
+  assert(/Harry/.test(t3.heroLoaded || ''),   'player doit refléter Harry chargé');
+
+  // T4 : bouton "Nouvelle aventure" → bascule sur player-select
+  const t4 = await page.evaluate(() => {
+    document.getElementById('start-hub-screen').style.display = 'flex';
+    document.getElementById('game-container').style.display = 'none';
+    startHubNewGame();
+    return {
+      hubHidden:  getComputedStyle(document.getElementById('start-hub-screen')).display === 'none',
+      psVisible:  getComputedStyle(document.getElementById('player-select-screen')).display !== 'none'
+    };
+  });
+  console.log('  T4 new btn →', t4);
+  assert(t4.hubHidden && t4.psVisible, 'bouton Nouvelle aventure doit fermer le hub et ouvrir player-select');
+
+  await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+  });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ hub démarrage : bypass sans slot, affichage avec slot, load direct, nouvelle aventure');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub];
   for (const s of scenarios) {
     await s();
   }

@@ -11,7 +11,7 @@
 </head>
 <body>
 
-<div id="title-screen" onclick="showPlayerSelect()">
+<div id="title-screen" onclick="enterStartHub()">
   <div class="stars" id="stars-container"></div>
   <!-- Coins du cadre -->
   <svg class="title-corner tl" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg"><g fill="currentColor"><path d="M 0 0 L 22 0 L 22 3 L 3 3 L 3 22 L 0 22 Z"/><circle cx="3" cy="3" r="3"/></g><g fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.8"><path d="M 9 9 Q 18 12 18 22"/><path d="M 9 9 Q 12 18 22 18"/></g></svg>
@@ -73,6 +73,18 @@
   <div style="position:absolute;bottom:48px;font-family:'Crimson Text',serif;font-size:11px;color:#8a7050;text-align:center;z-index:2;">
     Utilisez les touches W A S D ou les boutons pour vous déplacer<br>
     Explorez les couloirs de Poudlard, combattez des créatures, trouvez la Chambre Secrète
+  </div>
+</div>
+
+<!-- Hub démarrage (Nouvelle partie / Reprendre) -->
+<div id="start-hub-screen">
+  <div class="hub-frame">
+    <div class="hub-title">Bienvenue à Poudlard</div>
+    <div class="hub-sub">Reprenez votre aventure ou commencez-en une nouvelle</div>
+    <div id="start-hub-slot-list" class="slot-list hub-slot-list"></div>
+    <button id="hub-new-btn" class="hub-new-btn" onclick="startHubNewGame()">
+      ✦ NOUVELLE AVENTURE ✦
+    </button>
   </div>
 </div>
 

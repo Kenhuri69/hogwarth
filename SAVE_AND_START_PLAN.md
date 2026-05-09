@@ -1,7 +1,7 @@
 # Plan — Système de sauvegarde & Écrans de démarrage
 
 > **Branche** : `claude/save-and-hub` (override utilisateur ; depuis master)
-> **Statut global** : 5 / 14 tâches terminées
+> **Statut global** : 8 / 14 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est mis à jour à chaque étape franchie (règle 5).
@@ -104,18 +104,22 @@ Title (refonte) → click "Commencer"
 
 ### Phase 3 — Hub démarrage (Nouvelle / Reprendre)
 
-- [ ] **3.1** Ajouter `#start-hub-screen` à `index.html` entre
+- [x] **3.1** Ajouter `#start-hub-screen` à `index.html` entre
       `#title-screen` et `#player-select-screen` ; nouveau CSS dédié.
       Mise en page : titre + bouton "Nouvelle partie" + liste de cartes
-      slots (aperçu meta + actions Charger/Effacer).
-- [ ] **3.2** Modifier `showPlayerSelect()` (renommer flux interne sans
+      slots (aperçu meta + actions Charger/Effacer). ✅ Hub stylé
+      parchemin/or avec liste slots et CTA principal.
+- [x] **3.2** Modifier `showPlayerSelect()` (renommer flux interne sans
       casser l'API publique) : depuis `#title-screen` on aiguille vers
       `#start-hub-screen` si au moins un slot existe, sinon directement
-      sur `#player-select-screen`.
-- [ ] **3.3** Branchement "Charger ce slot" → `_applyState(slot.state)`
+      sur `#player-select-screen`. ✅ `enterStartHub()` ajouté ;
+      title-screen onclick rebrandé. Bypass propre quand zéro slot.
+- [x] **3.3** Branchement "Charger ce slot" → `_applyState(slot.state)`
       + bypass complet des écrans player/house-select.
       *Critère :* test smoke complet : démarrage → hub → "Charger" → on
       retombe en jeu avec les bonnes valeurs `playerX/Y/floor/chosenHouse`.
+      ✅ `loadSlotAndStart(id)` async ; scénario smoke 13 (4 phases :
+      no-slot bypass, hub avec slot, click → load, bouton Nouvelle).
 
 ### Phase 4 — Refonte visuelle du title screen
 
@@ -160,3 +164,4 @@ Title (refonte) → click "Commencer"
 | 2026-05-09 | 1.1 + 1.2 OK | save.js refactoré (purs serializer/applier) + API multi-slots + migration legacy ; scénario smoke 10 vert |
 | 2026-05-09 | 1.3 OK | Modale slot-modal + save-ui.js/css ; scénario smoke 11 vert (round-trip save→load via UI) |
 | 2026-05-09 | 2.1 + 2.2 OK | autoSave(reason) avec throttle 1500ms ; hooks goDeeper/goUp/endBattle/checkLevelUp ; scénario smoke 12 vert |
+| 2026-05-09 | 3.1 + 3.2 + 3.3 OK | Hub démarrage opérationnel (HTML + CSS dédiés, JS dans save-ui.js). title-screen → enterStartHub → bypass ou hub. Click slot → loadSlotAndStart (async, charge textures, applique state, init audio). Scénario smoke 13 vert |

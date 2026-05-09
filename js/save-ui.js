@@ -167,3 +167,127 @@ function openLoadDialog() {
   _bindSlotModalEvents('load');
   document.getElementById('slot-modal').style.display = 'flex';
 }
+
+// ============================================================
+// HUB DE DÉMARRAGE (Nouvelle partie / Reprendre)
+// ============================================================
+
+// Rendu de la liste des slots dans le hub. Différent du modal :
+// - mode 'load' (slots remplis cliquables)
+// - les slots vides ne sont pas affichés (visuellement on bascule
+//   directement vers player-select s'il n'y a aucune sauvegarde).
+function _renderHubSlotList() {
+  const list = document.getElementById('start-hub-slot-list');
+  if (!list) return;
+  const slots = listSaveSlots();
+  if (slots.length === 0) {
+    list.innerHTML = '';
+    return;
+  }
+  list.innerHTML = slots
+    .map(s => _renderSlotCard(s.id, readSlot(s.id), 'load'))
+    .filter(Boolean)
+    .join('');
+  list.onclick = (ev) => {
+    const delBtn = ev.target.closest('[data-action="delete"]');
+    if (delBtn) {
+      ev.stopPropagation();
+      const card = delBtn.closest('[data-slot-id]');
+      const id = card && card.getAttribute('data-slot-id');
+      if (!id) return;
+      if (!confirm('Supprimer définitivement cette sauvegarde ?')) return;
+      deleteSlot(id);
+      _renderHubSlotList();
+      return;
+    }
+    const card = ev.target.closest('[data-slot-id]');
+    if (!card) return;
+    const id = card.getAttribute('data-slot-id');
+    if (id) loadSlotAndStart(id);
+  };
+}
+
+// Point d'entrée depuis l'écran titre.
+// - Migre éventuellement l'ancienne clé legacy.
+// - Si au moins une sauvegarde existe → affiche le hub.
+// - Sinon → bascule direct sur player-select (UX inchangée pour les
+//   nouveaux joueurs).
+function enterStartHub() {
+  const titleEl = document.getElementById('title-screen');
+  if (titleEl) titleEl.style.display = 'none';
+  migrateLegacyKey();
+  const slots = listSaveSlots();
+  if (slots.length === 0) {
+    // Aucun slot : flux d'origine (player-select directement)
+    if (typeof showPlayerSelect === 'function') {
+      // showPlayerSelect masque le title-screen lui-même, mais on l'a déjà fait
+      const psEl = document.getElementById('player-select-screen');
+      if (psEl) psEl.style.display = 'flex';
+      // Initialiser comme showPlayerSelect()
+      if (typeof selectedPartySize !== 'undefined') {
+        selectedPartySize = 1;
+        selectedHeroes    = ['harry'];
+        if (typeof refreshHeroSelectionUI === 'function') refreshHeroSelectionUI();
+      }
+    }
+    return;
+  }
+  _renderHubSlotList();
+  document.getElementById('start-hub-screen').style.display = 'flex';
+}
+
+// Bouton "Nouvelle aventure" du hub : on cache le hub et on enchaîne sur
+// player-select (flux existant).
+function startHubNewGame() {
+  document.getElementById('start-hub-screen').style.display = 'none';
+  if (typeof showPlayerSelect === 'function') {
+    const psEl = document.getElementById('player-select-screen');
+    if (psEl) psEl.style.display = 'flex';
+    if (typeof selectedPartySize !== 'undefined') {
+      selectedPartySize = 1;
+      selectedHeroes    = ['harry'];
+      if (typeof refreshHeroSelectionUI === 'function') refreshHeroSelectionUI();
+    }
+  }
+}
+
+// Charge un slot et bascule directement en jeu (skip player/house-select).
+async function loadSlotAndStart(id) {
+  const slot = readSlot(id);
+  if (!slot || !slot.state) {
+    if (typeof addMsg === 'function') addMsg('Sauvegarde introuvable.', 'bad');
+    return false;
+  }
+
+  // Masquer tous les écrans de démarrage
+  ['title-screen','start-hub-screen','player-select-screen','house-select-screen']
+    .forEach(sid => { const el = document.getElementById(sid); if (el) el.style.display = 'none'; });
+
+  // Charger les textures (idempotent grâce au cache _loadingPromise)
+  if (window.loadTextures) await loadTextures();
+
+  // Afficher le conteneur de jeu et redimensionner le canvas
+  const gc = document.getElementById('game-container');
+  if (gc) gc.style.display = 'grid';
+  if (typeof resizeCanvas === 'function') resizeCanvas();
+
+  // Appliquer l'état (mute player/player2, currentFloor, dungeon, etc.,
+  // et redessine la minimap + le donjon).
+  _applyState(slot.state);
+
+  // Tweaks UI dépendants de partySize
+  const card1 = document.getElementById('char-card-1');
+  if (card1) card1.style.display = (partySize === 1) ? 'none' : '';
+  const indicator = document.getElementById('battle-char-indicator');
+  if (indicator) indicator.style.display = (partySize === 1) ? 'none' : '';
+
+  // Audio (le clic utilisateur sur un slot constitue le geste autorisant l'audio)
+  if (typeof AudioSystem !== 'undefined') {
+    AudioSystem.init();
+    AudioSystem.playAmbientMusic(currentFloor || 1);
+  }
+
+  if (typeof setNarrative === 'function') setNarrative('Le groupe reprend son aventure...');
+  if (typeof addMsg === 'function')        addMsg('Partie reprise.', 'good');
+  return true;
+}
