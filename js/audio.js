@@ -37,20 +37,20 @@ const AudioSystem = {
 
   toggleVoice() {
     this.voiceEnabled = !this.voiceEnabled;
-    const btn = document.getElementById('btn-voice');
-    if (btn) btn.textContent = this.voiceEnabled ? '🗣️' : '🔕';
+    const img = document.querySelector('#btn-voice img');
+    if (img) img.src = this.voiceEnabled ? 'img/icons/voice_on.png' : 'img/icons/voice_off.png';
     return this.voiceEnabled;
   },
 
   // ── Bouton muet / son ─────────────────────────────────────────
   toggleMute() {
     this.isMuted = !this.isMuted;
-    const btn = document.getElementById('btn-music');
+    const img = document.querySelector('#btn-music img');
     if (this.isMuted) {
       this.stopMusic();
-      if (btn) btn.textContent = '🔇';
+      if (img) img.src = 'img/icons/music_off.png';
     } else {
-      if (btn) btn.textContent = '♪';
+      if (img) img.src = 'img/icons/music_on.png';
       if (this.inCombat) this.startCombatMusic();
       else this.playAmbientMusic(this.currentFloor);
     }

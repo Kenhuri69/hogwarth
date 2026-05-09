@@ -1141,11 +1141,22 @@ body {
   flex-shrink: 0;
 }
 
-/* Icône emoji dans bouton — plus net, ombre subtile */
+/* Icône (emoji ou pixel art PNG) dans bouton — net, ombre subtile */
 .cmd-btn .btn-icon {
   font-size: 16px;
   line-height: 1;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cmd-btn .btn-icon img {
+  width: 24px;
+  height: 24px;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
 }
 .cmd-btn .btn-label {
   font-size: 11px;

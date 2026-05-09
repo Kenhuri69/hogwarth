@@ -41,18 +41,18 @@ Icônes à générer pour remplacer les emoji actuels :
 | Voix | 🗣️ / 🔕 | `voice_on.png` / `voice_off.png` | ✅ |
 | Map (bonus) | — | `map.png` | ✅ |
 
-### Étape 3 — Intégration dans le jeu
-- Modifier `index.html` : remplacer les `<span class="btn-icon">🎒</span>` par
-  `<img class="btn-icon" src="img/icons/backpack.png" alt="Sac">`.
-- Ajuster `css/style.css` pour `.btn-icon img` (taille fixe, pas d'AA :
-  `image-rendering: pixelated`).
-- Vérifier le rendu mobile (touch targets 44px restent OK).
+### Étape 3 — Intégration dans le jeu ✅
+- [x] `index.html` : `<span class="btn-icon">EMOJI</span>` → `<span class="btn-icon"><img src="img/icons/X.png" alt="…"></span>`
+  (13 boutons : sac, sorts, fiche, bestiaire, quêtes, fouiller, repos, music, voice, sauver, charger, diff, map mobile)
+- [x] `js/audio.js` : `toggleMute`/`toggleVoice` swappent désormais l'`<img>` au lieu du `textContent`
+- [x] `css/style.css` : `.cmd-btn .btn-icon img { 24px × 24px; image-rendering: pixelated }`
+  (downscale 2× propre depuis source 48×48)
+- [x] Captures de validation : `img/icons/_ingame_bar.png` (desktop), `img/icons/_ingame_mobile.png`
 
-### Étape 4 — Validation
-- Test navigateur headless : `node tests/smoke.js`.
-- Vérifier qu'aucune régression UI n'apparaît.
-- Si nouveau scénario (vérifier présence des `<img>`), l'ajouter au smoke test
-  dans le même commit.
+### Étape 4 — Validation ✅
+- [x] Scénario 17 ajouté à `tests/smoke.js` : présence DOM + chargement PNG + toggle music/voice
+- [x] `node tests/smoke.js` : tous les 17 scénarios passent, pas de régression
+- [x] Vérification visuelle desktop + mobile
 
 ## Notes
 - `gen_icons.py` reste idempotent et déterministe (seeds fixes).
