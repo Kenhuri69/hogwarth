@@ -265,6 +265,7 @@ const MONSTERS = [
     id:       "kappa_douves",
     name:     "Kappa des Douves",
     icon:     "🐢",
+    imgSrc:   "img/monsters/kappa_douves.png",
     category: "être magique",
     desc:     "Un Kappa surgit des douves obscures avec des griffes tranchantes comme des lames",
     lore:     "Ces créatures aquatiques d'origine japonaise se sont installées dans les douves du château. Ils préfèrent noyer leurs victimes pour absorber leur force vitale.",
