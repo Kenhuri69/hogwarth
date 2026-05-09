@@ -1,7 +1,7 @@
 # Plan — Système de sauvegarde & Écrans de démarrage
 
 > **Branche** : `claude/save-and-hub` (override utilisateur ; depuis master)
-> **Statut global** : 13 / 14 tâches terminées (Z = PR ouverte = 14/14 visé)
+> **Statut global** : 14 / 14 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est mis à jour à chaque étape franchie (règle 5).
@@ -151,7 +151,7 @@ Title (refonte) → click "Commencer"
       `hogwarts_rpg_saves`, API publique tabulaire, hooks auto-save,
       flux UI/Hub, règle d'or sur les références. Ordre de chargement
       des scripts mis à jour avec `save-ui`.
-- [ ] **5.3** Commit final groupé + push + PR.
+- [x] **5.3** Commit final groupé + push + PR. ✅ PR #21 ouverte vers master.
 
 ---
 
