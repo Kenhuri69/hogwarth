@@ -358,6 +358,7 @@ const MONSTERS = [
     id:       "bundimun",
     name:     "Bundimun Venimeux",
     icon:     "🦠",
+    imgSrc:   "img/monsters/bundimun.png",
     category: "créature",
     desc:     "Un Bundimun suinte une sécrétion verte corrosive et se jette sur vous",
     lore:     "Ces parasites magiques produisent une sécrétion qui dissout tous les matériaux organiques. Même les armures peuvent fondre sous leur acide magique.",
