@@ -121,5 +121,5 @@ smoke test vert.
 | Sprint | Date       | Statut | Notes |
 |--------|-----------|--------|-------|
 | S1     | 2026-05-09 | ✅ | Softlock solo (3 sites battle.js), cache patterns branché (5 sites renderer.js), try/catch save (loadGame, _writeStore, saveGame), reset inconditionnel floorDungeons/searchedCells, throttle autoSave par raison, 3 nouveaux scénarios smoke (15 softlock, 16 corrupt save) + T5 raisons distinctes |
-| S2     | —          | ⏳ | — |
+| S2     | 2026-05-09 | ✅ | Code mort supprimé (ENEMIES, startGameWithDifficulty, addLog + 4 sites + scénario 6 obsolète), helpers DRY ajoutés (`DIRECTIONS`, `tryAddItem`, `INVENTORY_MAX`, `applyPartyMode`), CLAUDE.md aligné (section objets 3D refondue, ordre scripts complet, 7 quêtes), nouveau scénario 13b pour `tryAddItem` |
 | S3     | —          | ⏳ | — |

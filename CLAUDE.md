@@ -26,7 +26,8 @@ js/
   data.js          →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
                       ENEMIES = MONSTERS (alias de compatibilité)
   state.js         →  Variables globales mutables (player, player2, party, partySize,
-                      dungeon, combat, seenMonsters, activeQuests, objectMap, OBJECT_TYPES…)
+                      dungeon, combat, seenMonsters, activeQuests, usedFountains,
+                      searchedCells, floorDungeons, restCooldown…)
   ui.js            →  updateUI(), openCharacter(), addMsg(), closeModal(), changeDifficulty()
   ui-bestiary.js   →  openBestiary(), filterBestiary(), showMonsterDetail(), showBestiaryList()
   dungeon.js       →  generateDungeon(), weightedPick(), scaleMonster()
@@ -55,7 +56,7 @@ js/
 ```
 
 Ordre de chargement des scripts dans `index.html` :
-`audio → audio-music → audio-sfx → icons → monsters → data → state → ui → ui-bestiary → dungeon → textures → renderer → renderer-effects → renderer-minimap → movement → battle → battle-spells → battle-ui → inventory → quests → shop → save → save-ui → main`
+`ux-improvements → audio → audio-music → audio-sfx → icons → monsters → data → state → ui → ui-bestiary → dungeon → textures → renderer → renderer-effects → renderer-minimap → movement → battle → battle-spells → battle-ui → inventory → quests → shop → save → save-ui → main`
 
 ---
 
@@ -286,16 +287,17 @@ enemyGroup.forEach(e => { if (window.checkKillQuests) window.checkKillQuests(e.i
 window.checkKillQuests(monsterId) → incrémente q.progress, auto-complète (délai 600ms)
 ```
 
-### Quêtes actives (4 au démarrage)
-| ID | Donneur | Objectif | Récompenses |
-|----|---------|----------|-------------|
-| `mandragore_pomfresh` | Madame Pomfresh | 3× Mandragore | +80 XP, +40🪙, Potion Magique, sort Episkey |
-| `livre_interdit` | Gilderoy Lockhart | 1× book_monsters | +120 XP, +25🪙, Baguette de Saule |
-| `troll_toilettes` | Mimi Geignarde | Tuer 1 troll | +150 XP, +60🪙, Robe Renforcée |
-| `chouette_perdue` | Hagrid | Tuer 1 chouette_envoutee | +90 XP, +30🪙, Balai Nimbus |
+### Quêtes actives (7 au démarrage — voir `state.js:175+`)
+- `mandragore_pomfresh` (Madame Pomfresh)
+- `livre_interdit` (Gilderoy Lockhart)
+- `troll_toilettes` (Mimi Geignarde)
+- `chouette_perdue` (Hagrid)
+- `niffleurs_trésor`
+- `golem_passage`
+- `lumiere_desespoir`
 
 > Pour ajouter des quêtes : pousser un objet dans `activeQuests` dans `state.js`.
-> `book_monsters` n'existe pas encore dans ITEMS — à ajouter si cette quête doit être completable.
+> Détail des objectifs et récompenses : voir le tableau dans `state.js`.
 
 ---
 
@@ -334,46 +336,32 @@ buyItem(item)
 
 ---
 
-## Système d'objets 3D (state.js, dungeon.js, renderer.js)
+## Cellules spéciales (data.js, dungeon.js, movement.js)
 
-### Types d'objets (`OBJECT_TYPES`)
+Les éléments « interactifs » du donjon sont représentés directement
+par le type de cellule (`CELL.*`), pas par une couche d'objets séparée.
 
-| ID | Nom | Icône | Interaction |
-|----|-----|-------|-------------|
-| `chest` | Coffre ancien | 🪑 | `openChest()` |
-| `shop` | Boutique du Chaudron | 🛒 | `openShop()` |
-
-Chaque objet a : `id`, `name`, `icon`, `svg` (rendu canvas), `color`, `interact`.
+| Cellule | Constante | Icône scène | Interaction |
+|---------|-----------|-------------|-------------|
+| Coffre  | `CELL.CHEST = 6` | SVG inline `_showExploreOverlay` | `openChest()` |
+| Boutique | `CELL.SHOP = 5`  | SVG inline `_showExploreOverlay` | `openShop()` |
+| Escalier descendant | `CELL.STAIRS_D = 3` | SVG inline | `goDeeper()` |
+| Escalier montant    | `CELL.STAIRS_U = 4` | SVG inline | `goUp()` |
+| Fontaine | `CELL.FOUNTAIN = 7` | SVG inline | `useFountain()` |
 
 ### Génération (`dungeon.js`)
-```js
-objectMap = Array.from({length: MAP_H}, () => Array(MAP_W).fill(null));
-```
-- 12% de chance sur case `FLOOR` vide
-- 65% → coffre, 20% → boutique (si `floor % 3 === 0`)
+- Chaque room intermédiaire reçoit aléatoirement `CHEST` (~30 %) ou
+  `SHOP` (~20 %).
+- La dernière room reçoit `STAIRS_D`, la première `STAIRS_U` (étage > 1).
+- Les étages `2, 5, 8, …` reçoivent en plus une `FOUNTAIN` garantie
+  (cf. section dédiée).
 
-### Rendu 3D (`renderer.js`)
-```js
-renderObjects(cx, cy, scale, W, H)
-```
-Algorithme :
-1. Collecte tous les objets dans le champ de vision (60° devant le joueur)
-2. Calcule l'angle et la distance pour chaque objet
-3. Filtre hors-champ et trop près (`dist < 0.5`)
-4. Tri par distance (painter's algorithm : loin → proche)
-5. Rendu : SVG ou fallback emoji + ombre elliptique au sol
-
-### Interaction (`movement.js`)
-```js
-checkObjectInFront() → bool
-```
-- Vérifie les 2 cases devant le joueur selon `playerDir`
-- Vérifie la ligne de vue (pas de mur entre le joueur et l'objet)
-- Déclenche l'interaction appropriée (`openChest()` ou `openShop()`)
-- Appelée par Espace/Entrée au clavier
-
-### Clavier (main.js)
-- `Espace` ou `Entrée` → `checkObjectInFront()`
+### Interaction
+- À chaque déplacement, `handleCellEntry(cell)` (dans `movement.js`)
+  ouvre l'overlay d'exploration `_showExploreOverlay(cell)` quand
+  la cellule est `CHEST`, `SHOP`, `STAIRS_D`, `STAIRS_U` ou `FOUNTAIN`.
+- L'overlay affiche le SVG de scène, un titre, une description, et
+  les boutons d'action.
 
 ---
 

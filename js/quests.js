@@ -207,8 +207,7 @@ function completeQuest(index) {
 
   if (q.reward.item) {
     const item = ITEMS.find(i => i.id === q.reward.item);
-    if (item && player.inventory.length < 16) {
-      player.inventory.push({ ...item });
+    if (item && tryAddItem(item, { silent: true })) {
       addMsg(`📦 Récompense : ${item.icon} ${item.name}`, 'good');
     }
   }
@@ -227,7 +226,6 @@ function completeQuest(index) {
 
   AudioSystem.playLevelUp();
   addMsg(`✅ Quête terminée : « ${q.title} » !`, 'good');
-  addLog(`📜 Quête accomplie : ${q.title}`);
 
   recalculateStats();
   updateUI();

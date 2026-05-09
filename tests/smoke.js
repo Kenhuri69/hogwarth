@@ -429,44 +429,6 @@ async function scenarioMonsterImages() {
   await browser.close();
 }
 
-// ── Scénario 6 : addLog robuste sans #event-log dans le DOM ──
-
-async function scenarioAddLogGuard() {
-  console.log('\n── Scénario 6 : addLog tolère #event-log absent ──');
-  const { browser, page, errors } = await launchGame();
-  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
-
-  // T1 : appel direct ne lève rien et ne mute pas le DOM
-  const t1 = await page.evaluate(() => {
-    const before = document.getElementById('event-log');
-    let threw = false;
-    try { addLog('test direct sans crash'); } catch (e) { threw = true; }
-    return { threw, eventLogExists: !!before };
-  });
-  console.log('  T1 direct  :', t1);
-  assert(!t1.threw,            'addLog a levé une exception malgré le garde-fou');
-  assert(!t1.eventLogExists,   'le DOM contient désormais #event-log : test obsolète');
-
-  // T2 : déclenche un combat complet → addLog est appelé plusieurs fois
-  await page.evaluate(() => {
-    const enemy = {
-      id: 'log_dummy', name: 'Log Dummy', icon: '🎯',
-      hp: 1, atk: 0, def: 0, mag: 0, agi: 0, lck: 0,
-      xp: 5, gold: 3, abilities: [], drops: [], resist: [], weak: [], desc: ''
-    };
-    startBattle(enemy);
-    enemyGroup[0].currentHp = 0;
-    endBattle(true);
-  });
-  // Si addLog plantait, errors aurait capté un pageerror ci-dessous
-  if (errors.length) {
-    errors.forEach(e => console.log('  ⚠️ ', e));
-    throw new Error(`${errors.length} erreurs JS détectées (addLog refait peut-être surface)`);
-  }
-  console.log('  ✅ addLog silencieux et sans erreur');
-  await browser.close();
-}
-
 // ── Scénario 7 : sélection de texture par étage (paliers 9+/15+) ─
 
 async function scenarioFloorTextures() {
@@ -998,6 +960,43 @@ async function scenarioStartHub() {
   await browser.close();
 }
 
+// ── Scénario 13b : helper tryAddItem (cap inventaire 16) ─────
+
+async function scenarioTryAddItem() {
+  console.log('\n── Scénario 13b : tryAddItem ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page);
+
+  const t1 = await page.evaluate(() => {
+    player.inventory = [];
+    const r1 = tryAddItem('potion_s', { silent: true });
+    const r2 = tryAddItem(ITEMS[0],   { silent: true });
+    const r3 = tryAddItem('idée_inexistante', { silent: true });
+    return { r1, r2, r3, len: player.inventory.length };
+  });
+  console.log('  T1 ajouts simples :', t1);
+  assert(t1.r1 === true,  'tryAddItem doit accepter un id valide');
+  assert(t1.r2 === true,  'tryAddItem doit accepter un objet item');
+  assert(t1.r3 === false, 'tryAddItem doit refuser un id inconnu');
+  assert(t1.len === 2,    'inventaire doit contenir 2 items après les 2 succès');
+
+  const t2 = await page.evaluate(() => {
+    player.inventory = Array.from({ length: 16 }, () => ({ ...ITEMS[0] }));
+    const r = tryAddItem('potion_s', { silent: true });
+    return { r, len: player.inventory.length };
+  });
+  console.log('  T2 cap 16 atteint :', t2);
+  assert(t2.r === false, 'tryAddItem doit refuser quand inventaire plein');
+  assert(t2.len === 16,  'inventaire ne doit pas dépasser INVENTORY_MAX');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ tryAddItem : id, objet, cap 16');
+  await browser.close();
+}
+
 // ── Scénario 14 : salle fontaine ─────────────────────────────
 
 async function scenarioFountain() {
@@ -1187,7 +1186,7 @@ async function scenarioCorruptSave() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave];
   for (const s of scenarios) {
     await s();
   }

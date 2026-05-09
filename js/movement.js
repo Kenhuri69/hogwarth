@@ -4,8 +4,7 @@
 
 function canMove(dir) {
   if (inBattle) return false;
-  const delta = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
-  const [dx, dy] = delta[dir];
+  const [dx, dy] = DIRECTIONS[dir];
   const nx = playerX + dx, ny = playerY + dy;
   if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) return false;
   return dungeon[ny][nx] !== CELL.WALL;
@@ -20,8 +19,7 @@ function move(dir) {
     drawDungeon();
     return;
   }
-  const delta = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
-  const [dx, dy] = delta[dir];
+  const [dx, dy] = DIRECTIONS[dir];
   playerX += dx; playerY += dy;
   visited[playerY][playerX] = true;
   if (restCooldown > 0) restCooldown--;
@@ -585,8 +583,7 @@ function openChest() {
     // Consommable
     const possItems = ITEMS.filter(i => i.type === 'consumable');
     const item = possItems[Math.floor(Math.random() * possItems.length)];
-    if (player.inventory.length < 16) {
-      player.inventory.push({ ...item });
+    if (tryAddItem(item, { silent: true })) {
       setNarrative(NARRATIVES.item_found(item.name));
       addMsg(`Obtenu : ${item.icon} ${item.name}`, 'good');
     }
@@ -595,8 +592,7 @@ function openChest() {
     // Équipement (wand / armor / acc)
     const gear = ITEMS.filter(i => ['wand','armor','acc'].includes(i.type));
     const item  = gear[Math.floor(Math.random() * gear.length)];
-    if (player.inventory.length < 16) {
-      player.inventory.push({ ...item });
+    if (tryAddItem(item, { silent: true })) {
       setNarrative(NARRATIVES.item_found(item.name));
       addMsg(`Obtenu : ${item.icon} ${item.name}`, 'good');
     }
@@ -604,8 +600,7 @@ function openChest() {
   } else {
     // Livre de sorts — drop rare et précieux
     const item = booksAvailable[Math.floor(Math.random() * booksAvailable.length)];
-    if (player.inventory.length < 16) {
-      player.inventory.push({ ...item });
+    if (tryAddItem(item, { silent: true })) {
       setNarrative(`Un vieux grimoire poussiéreux est là, dans le coffre : ${item.name} !`);
       addMsg(`📚 Grimoire trouvé : ${item.name} !`, 'magic');
     }
@@ -646,8 +641,7 @@ function searchRoom() {
     updateUI();
   } else if (roll < 0.35) {
     const item = ITEMS.find(i => i.id === 'mandragore') || ITEMS[0];
-    if (player.inventory.length < 16) {
-      player.inventory.push({ ...item });
+    if (tryAddItem(item, { silent: true })) {
       setNarrative(NARRATIVES.item_found(item.name));
       addMsg(`Trouvé : ${item.name}`, 'good');
     }
