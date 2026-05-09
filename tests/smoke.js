@@ -589,6 +589,29 @@ async function scenarioCombatMobile() {
   assert(layout.panelCollapsed,                         'combat-log-panel devrait être replié par défaut sur mobile');
   assert(layout.panelToggleText === '+',                'toggle devrait afficher + quand replié');
 
+  // Ergonomie combat mobile : barre adventure cachée pendant le combat,
+  // boutons d'action en grille 2×2 avec touch targets ≥56px.
+  const battle = await page.evaluate(() => {
+    const cmdBar = document.querySelector('.commands-bar');
+    const actions = document.querySelector('.battle-actions');
+    const btn = actions ? actions.querySelector('.cmd-btn') : null;
+    return {
+      bodyHasInBattle: document.body.classList.contains('in-battle'),
+      cmdBarHidden:    cmdBar ? getComputedStyle(cmdBar).display === 'none' : null,
+      actionsDisplay:  actions ? getComputedStyle(actions).display : null,
+      actionsCols:     actions ? getComputedStyle(actions).gridTemplateColumns : null,
+      btnMinHeight:    btn ? parseFloat(getComputedStyle(btn).minHeight) : 0
+    };
+  });
+  console.log('  battle ergonomics :', battle);
+  assert(battle.bodyHasInBattle === true,                   'body.in-battle doit être posé pendant le combat');
+  assert(battle.cmdBarHidden === true,                      'commands-bar doit être cachée pendant le combat sur mobile');
+  assert(battle.actionsDisplay === 'grid',                  'battle-actions doit passer en grille sur mobile en combat');
+  // grid-template-columns peut être résolu en "px px" — compter le nombre de tracks
+  const trackCount = (battle.actionsCols || '').trim().split(/\s+/).filter(Boolean).length;
+  assert(trackCount === 2,                                  `battle-actions doit être 2 colonnes (${trackCount} vues)`);
+  assert(battle.btnMinHeight >= 56,                         'boutons combat trop petits pour le tactile');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);

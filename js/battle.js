@@ -80,6 +80,7 @@ function startBattle(baseEnemyData) {
   enemyGroup.forEach(e => { if (e.id) seenMonsters.add(e.id); });
 
   document.getElementById('encounter-overlay').style.display = 'flex';
+  document.body.classList.add('in-battle');
   document.getElementById('target-selection').style.display  = 'none';
   renderEnemyGroup();
   updateBattleCharIndicator();
@@ -250,6 +251,7 @@ function enemyTurn() {
 
   if (allPartyKO()) {
     document.getElementById('encounter-overlay').style.display = 'none';
+    document.body.classList.remove('in-battle');
     inBattle = false;
     triggerDeath('Le groupe a été mis hors combat...');
     return;
@@ -285,6 +287,7 @@ function doFlee() {
 // ── Fin de combat ────────────────────────────────────────────
 function endBattle(won) {
   document.getElementById('encounter-overlay').style.display = 'none';
+  document.body.classList.remove('in-battle');
   document.getElementById('target-selection').style.display  = 'none';
   inBattle = false;
 

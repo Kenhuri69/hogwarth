@@ -205,6 +205,7 @@ function _applyState(gs) {
   itemMap      = gs.itemMap;
 
   inBattle = false;
+  document.body.classList.remove('in-battle');
   const overlay = document.getElementById('encounter-overlay');
   if (overlay) overlay.style.display = 'none';
   const btnInter = document.getElementById('btn-interact');
