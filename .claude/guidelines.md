@@ -60,6 +60,26 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Plan écrit obligatoire
+
+**Tout changement nécessite un plan rédigé en Markdown dans le projet, amendé progressivement à chaque étape.**
+
+- Avant d'implémenter, créer un fichier `.md` qui décrit les étapes (ex: `.claude/plans/<feature>.md` ou un `*_PLAN.md` à la racine selon la convention du projet).
+- Le plan liste les étapes avec critères de vérification (voir §4).
+- À chaque étape franchie, mettre à jour le plan : cocher l'étape, ajouter les écarts constatés, noter les décisions prises.
+- Le plan reste vivant jusqu'à la fin du changement ; il n'est ni jeté ni figé en début de tâche.
+- Pour un changement vraiment trivial (typo, renommage local), mentionner l'absence de plan plutôt que l'éluder en silence.
+
+## 6. Test navigateur headless obligatoire
+
+**Tout changement doit être validé via Chrome headless avant d'être considéré comme terminé, pour garantir la non-régression.**
+
+- Commande de référence dans ce projet : `node tests/smoke.js` (Playwright + Chromium headless).
+- Si le test échoue, corriger avant de commit. Ne jamais commit en disant "le test échoue mais le code est bon".
+- Si le changement introduit un nouveau scénario à couvrir, ajouter le cas dans `tests/smoke.js` (ou un fichier de test dédié) **dans le même commit**.
+- Si le test ne couvre pas la zone modifiée, le dire explicitement à l'utilisateur plutôt que de prétendre que la non-régression est garantie.
+- Pour un changement purement documentaire (markdown, commentaires), le test reste recommandé mais peut être omis si justifié.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
