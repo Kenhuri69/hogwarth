@@ -6,7 +6,7 @@ Branche : `claude/game-equipment-system-plan-zrXwI`
 > Convention : `[ ]` pending · `[~]` in progress · `[x]` done.
 > À chaque étape franchie : cocher la case, mettre à jour le statut global, ajouter une ligne dans le journal en bas.
 
-**Statut global** : 0 / 53 étapes — Phase 0 en cours
+**Statut global** : 7 / 53 étapes — Phase 1 terminée, Phase 2 à venir
 
 ---
 
@@ -120,13 +120,13 @@ Phase 5 — Documentation + smoke test + clôture
 slot met à jour les stats correctement, persiste dans la save, et restaure à
 l'identique après reload.
 
-- [ ] **1.1** `state.js` : étendre `equipped` sur `player` et `player2` aux 11 slots (`wand, head, body, hands, feet, cloak, amulet, ring1, ring2, belt, trinket` — tous à `null`).
-- [ ] **1.2** `inventory.js — recalculateStats()` : itérer dynamiquement sur `Object.keys(c.equipped)` au lieu du tableau hard-codé `['wand','armor','acc']`. Appliquer toutes les `bonus*` listées en §2.3, y compris `bonusHpMax`/`bonusSpMax` (clamp `c.hp <= c.hpMax` et `c.sp <= c.spMax` après application).
-- [ ] **1.3** `inventory.js — equipItem()` : déterminer le slot cible via `item.slot || legacyMap[item.type]`. Gérer le cas `ring1`/`ring2` (si `slot === 'ring'`, choisir le premier slot vide ; sinon proposer le remplacement de l'un des deux dans `showEquipMenu`).
-- [ ] **1.4** `inventory.js — showEquipMenu()` : pour les items `slot==='ring'`, afficher 2 boutons (Anneau 1 / Anneau 2) en plus du choix Harry/Hermione en duo.
-- [ ] **1.5** `data.js` : ajouter le champ `slot` explicite sur les items `acc` existants (`amulette`→`amulet`, `broom`→`trinket`, `cape_invis`→`cloak`, `locket_slytherin`→`amulet`, `diademe_serdaigle`→`head`). Garder `type:"acc"` pour la rétrocompat avec d'anciennes saves.
-- [ ] **1.6** `save.js — _applyState()` : migration soft des saves existantes — si `c.equipped.acc` existant, le déplacer vers le slot que pointe son `slot` (ou rester `acc` mappé sur `amulet` par défaut). Idempotent : ne pas re-migrer si déjà au bon slot.
-- [ ] **1.7** `save.js — _serializeState()` : aucune modif (party est sérialisée intégralement, donc les nouveaux slots y vont automatiquement). Vérifier que `_applyState` initialise les slots manquants à `null` si la save ne les porte pas.
+- [x] **1.1** `state.js` : étendre `equipped` sur `player` et `player2` aux 11 slots (`wand, head, body, hands, feet, cloak, amulet, ring1, ring2, belt, trinket` — tous à `null`). Aussi corrigé `_hydrateCharacter` (`main.js:136`) qui réassignait l'ancien schéma 3-slots au choix de héros.
+- [x] **1.2** `inventory.js — recalculateStats()` : itère dynamiquement sur `Object.keys(c.equipped)`. Applique `bonusAtk/Def/Mag/Lck/Str/Int/Agi/End`. **Décision V1** : `bonusHpMax/SpMax` reportés en hors-scope (§11) pour éviter de coupler avec `checkLevelUp` qui mute encore directement `hpMax/spMax`. Ajouté lazy-init de `_baseStr/_baseInt/_baseAgi/_baseEnd` (capture de la valeur courante au premier appel) pour préserver les level-up des saves antérieures à l'extension.
+- [x] **1.3** `inventory.js — equipItem()` : helper `_resolveSlotForItem(item, c)` introduit. Si `item.slot === 'ring'`, choisit `ring1` puis `ring2`. Signature étendue avec `targetSlot` optionnel pour forcer le slot depuis le menu. Mise à jour des strings legacy `c.wand/c.armor/c.acc` selon le slot pour que le panneau gauche reste à jour.
+- [x] **1.4** `inventory.js — showEquipMenu()` : 4 cas (solo/duo × ring/non-ring). En solo + ring : 2 boutons "Anneau gauche / Anneau droit". En duo + ring : 2 boutons par personnage avec étiquette du slot occupé.
+- [x] **1.5** `data.js` : champ `slot` explicite sur tous les équipements existants (`wand1/wand2/sword_gryff` → `wand` ; `robe1/coupe_poufsouffle` → `body` ; `amulette/locket_slytherin` → `amulet` ; `broom` → `trinket` ; `cape_invis` → `cloak` ; `chapeau_pointu/diademe_serdaigle` → `head`). `type:"acc"` conservé pour la rétrocompat.
+- [x] **1.6** `save.js — _migrateEquippedSlots(c)` : nouvelle fonction idempotente. Migre `equipped.armor` → `body`, `equipped.acc` → slot dérivé de `item.slot` (ou `amulet` par défaut), supprime les clés legacy. Appelée depuis `_applyState` avant `recalculateStats`.
+- [x] **1.7** `save.js — _migrateEquippedSlots` initialise tous les slots manquants à `null`. `_serializeState()` sérialise tel quel (la migration s'applique au load).
 
 **Vérification Phase 1** :
 - Dans la console : `party[0].equipped` doit avoir 11 clés.
@@ -323,3 +323,4 @@ l'API actuelle `getItemIconHtml()` (laquelle retourne un `<img>`).
 | Date       | Étape | Statut | Notes |
 |------------|-------|--------|-------|
 | 2026-05-09 | Audit + plan rédigé | ✅ | 11 slots, 3 familles/slot avec variantes par teinte ; distribution shop+drops+quêtes+coffres ; PNG via planches atlas découpées |
+| 2026-05-09 | Phase 1 — Backend  | ✅ | 7/7 étapes : 11 slots dans `equipped` (state.js + main.js `_hydrateCharacter`), `recalculateStats()` dynamique avec bonus Str/Int/Agi/End (`bonusHpMax/SpMax` reportés hors-scope V1), `_resolveSlotForItem` + `equipItem(idx,charIdx,targetSlot)` + gestion ring1/ring2, `showEquipMenu` 4 cas, champ `slot` sur 12 items existants, `_migrateEquippedSlots` (armor→body, acc→slot dérivé). Smoke test scénario 22 ajouté (5 assertions : 11 slots, mapping, cape_invis bonusAgi, 2 anneaux, migration legacy). 22/22 scénarios verts. |

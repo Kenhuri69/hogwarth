@@ -133,7 +133,11 @@ function _hydrateCharacter(target, key) {
   target.level   = 1;
   target.xp      = 0;
   target.xpNext  = 50;
-  target.equipped = { wand: null, armor: null, acc: null };
+  // 11 slots étendus — voir .claude/plans/equipment-extended.md §2.1
+  target.equipped = {
+    wand: null, head: null, body: null, hands: null, feet: null, cloak: null,
+    amulet: null, ring1: null, ring2: null, belt: null, trinket: null
+  };
   // Met à jour la carte du groupe (portrait + nom + classe)
   const idx = (target === player) ? 0 : 1;
   const portrait = document.querySelector(`#char-card-${idx} .party-portrait-img`);

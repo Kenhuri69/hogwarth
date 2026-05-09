@@ -1687,8 +1687,118 @@ async function scenarioItemIcons() {
   await browser.close();
 }
 
+// ── Scénario 22 : équipement étendu — 11 slots + ring1/ring2 + migration ──
+
+async function scenarioExtendedEquipment() {
+  console.log('\n── Scénario 22 : équipement étendu (11 slots) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : equipped a bien 11 slots à l'init
+  const t1 = await page.evaluate(() => Object.keys(player.equipped).sort());
+  console.log('  T1 slots →', t1);
+  const expected = ['amulet','belt','body','cloak','feet','hands','head','ring1','ring2','trinket','wand'];
+  assert(JSON.stringify(t1) === JSON.stringify(expected),
+         `equipped doit avoir 11 slots, got ${JSON.stringify(t1)}`);
+
+  // T2 : items legacy ont reçu un slot explicite
+  const t2 = await page.evaluate(() => ({
+    wand1:    ITEMS.find(i => i.id === 'wand1').slot,
+    robe1:    ITEMS.find(i => i.id === 'robe1').slot,
+    amulette: ITEMS.find(i => i.id === 'amulette').slot,
+    broom:    ITEMS.find(i => i.id === 'broom').slot,
+    cape:     ITEMS.find(i => i.id === 'cape_invis').slot,
+    chapeau:  ITEMS.find(i => i.id === 'chapeau_pointu').slot,
+    diademe:  ITEMS.find(i => i.id === 'diademe_serdaigle').slot
+  }));
+  console.log('  T2 slot mapping →', t2);
+  assert(t2.wand1    === 'wand',    'wand1 → wand');
+  assert(t2.robe1    === 'body',    'robe1 → body');
+  assert(t2.amulette === 'amulet',  'amulette → amulet');
+  assert(t2.broom    === 'trinket', 'broom → trinket');
+  assert(t2.cape     === 'cloak',   'cape_invis → cloak');
+  assert(t2.chapeau  === 'head',    'chapeau_pointu → head');
+  assert(t2.diademe  === 'head',    'diademe_serdaigle → head');
+
+  // T3 : équiper la cape applique bonusAgi (auparavant ignoré)
+  const t3 = await page.evaluate(() => {
+    const baseAgi = player.agi;
+    const cape = ITEMS.find(i => i.id === 'cape_invis');
+    player.inventory.push({ ...cape });
+    equipItem(player.inventory.length - 1, 0);
+    return { baseAgi, equippedAgi: player.agi, slot: !!player.equipped.cloak };
+  });
+  console.log('  T3 cape équipée →', t3);
+  assert(t3.slot, 'cape doit aller dans equipped.cloak');
+  assert(t3.equippedAgi === t3.baseAgi + 5,
+         `bonusAgi doit s'appliquer (got ${t3.equippedAgi - t3.baseAgi}, expected +5)`);
+
+  // T4 : équiper deux anneaux → ring1 puis ring2 (item de test injecté)
+  const t4 = await page.evaluate(() => {
+    const ringItem = {
+      id:'_test_ring', name:'Anneau test', icon:'💍', desc:'+1 ATK',
+      type:'acc', slot:'ring', bonusAtk:1, power:1, price:1
+    };
+    player.inventory.push({ ...ringItem });
+    equipItem(player.inventory.length - 1, 0, 'ring1');
+    player.inventory.push({ ...ringItem });
+    equipItem(player.inventory.length - 1, 0, 'ring2');
+    return {
+      ring1: player.equipped.ring1 && player.equipped.ring1.id,
+      ring2: player.equipped.ring2 && player.equipped.ring2.id
+    };
+  });
+  console.log('  T4 deux anneaux →', t4);
+  assert(t4.ring1 === '_test_ring' && t4.ring2 === '_test_ring',
+         'ring1 et ring2 doivent contenir l\'anneau de test');
+
+  // T5 : migration soft d'une save legacy (3 slots wand/armor/acc → 11)
+  const t5 = await page.evaluate(() => {
+    const fakeSave = {
+      party: [
+        { ...player, equipped: {
+            wand:  ITEMS.find(i => i.id === 'wand1'),
+            armor: ITEMS.find(i => i.id === 'robe1'),
+            acc:   ITEMS.find(i => i.id === 'amulette')
+        }},
+        player2
+      ],
+      partySize: 1,
+      currentFloor, playerX, playerY, playerDir,
+      dungeon, visited, enemyMap, itemMap,
+      seenMonsters: [], activeQuests, difficulty,
+      chosenHouse, housePoints, houseTier,
+      searchedCells: [], floorDungeons: {}, restCooldown: 0,
+      usedFountains: []
+    };
+    _applyState(fakeSave);
+    return {
+      hasArmor:  player.equipped.armor !== undefined,
+      hasAcc:    player.equipped.acc   !== undefined,
+      bodyName:  player.equipped.body && player.equipped.body.name,
+      amuletName: player.equipped.amulet && player.equipped.amulet.name,
+      wandName:  player.equipped.wand && player.equipped.wand.name,
+      slotCount: Object.keys(player.equipped).length
+    };
+  });
+  console.log('  T5 migration legacy →', t5);
+  assert(t5.hasArmor === false, 'slot armor doit être retiré après migration');
+  assert(t5.hasAcc === false,   'slot acc doit être retiré après migration');
+  assert(t5.bodyName   === 'Robe Renforcée',     'body doit recevoir robe1');
+  assert(t5.amuletName === 'Amulette du Phénix', 'amulet doit recevoir amulette');
+  assert(t5.wandName   === 'Baguette de Saule',  'wand doit conserver wand1');
+  assert(t5.slotCount  === 11, `equipped doit avoir 11 slots après migration, got ${t5.slotCount}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ 11 slots + slot mapping + bonusAgi + ring1/ring2 + migration legacy');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment];
   for (const s of scenarios) {
     await s();
   }
