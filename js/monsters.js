@@ -401,6 +401,7 @@ const MONSTERS = [
     id:       "meduse_noire",
     name:     "Méduse Noire des Profondeurs",
     icon:     "🪼",
+    imgSrc:   "img/monsters/meduse_noire.png",
     category: "créature",
     desc:     "Une méduse noire translucide flotte dans l'air vicié du couloir",
     lore:     "Créature des lacs souterrains de Poudlard, cette méduse noire a développé la capacité de flotter dans l'air. Ses tentacules chargés de magie noire paralysent en un instant.",

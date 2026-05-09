@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/resume-svg-work-rgOvm`
 > (anciennes branches : `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 27 / 76 tâches terminées (+ C44 fontaine)
+> **Statut global** : 28 / 76 tâches terminées (+ C44 fontaine)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -104,7 +104,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C14** `troll`
 - [x] **C15** `troll_grotte`
 - [x] **C16** `bundimun`
-- [ ] **C17** `meduse_noire`
+- [x] **C17** `meduse_noire`
 - [ ] **C18** `homme_araignee`
 - [ ] **C19** `portrait_hostile`
 - [ ] **C20** `centaure`
@@ -208,3 +208,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #21 | C14 troll intégré (birefnet-general) | Troll des Toilettes hunchback, club en bois cerclé de fer levé, peau grise verruqueuse, pagne en peaux ; alpha conserve le club, la corde de peau et les bouts de loincloth |
 | 2026-05-09 | #22 | C15 troll_grotte intégré (birefnet-general) | Troll des Cavernes massif, marteau de pierre brandi à deux mains, peau gris-bleu calcifiée, kilt de fourrure orné d'un crâne et de trophées d'os ; prompt ramené sous 2000 caractères à la demande |
 | 2026-05-09 | #23 | C16 bundimun intégré (birefnet-general, source webp) | Masse fongique avec tiges oculaires multiples, mâchoire baveuse, pattes araignée et coulures de sécrétion verte luminescente ; pipeline étendu pour accepter les sources webp via PIL convert("RGBA") |
+| 2026-05-09 | #24 | C17 meduse_noire intégrée (birefnet-general, source jpg sur fond forêt) | Sorcière à chapeau pointu, peau craquelée, serpents enroulés autour du chapeau et de la main, collier de crânes ; détourage propre malgré le fond non-noir |
