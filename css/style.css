@@ -1515,6 +1515,32 @@ body {
   .battle-actions { gap: 5px; }
   .battle-actions .cmd-btn { font-size: 13px; padding: 8px 10px; }
 
+  /* Combat mobile : focus total sur l'overlay, on cache la barre adventure
+     et le D-pad qui sont inutiles pendant un combat. Les 4 boutons
+     d'action (Attaquer/Sortilège/Objet/Fuir) deviennent gros et tactiles
+     en grille 2×2. */
+  body.in-battle .commands-bar { display: none; }
+  body.in-battle #encounter-overlay {
+    padding: 44px 12px 16px;
+  }
+  body.in-battle .battle-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  body.in-battle .battle-actions .cmd-btn {
+    min-height: 56px;
+    font-size: 15px;
+    padding: 12px;
+    justify-content: center;
+  }
+  body.in-battle .battle-actions .cmd-btn img.ui-icon {
+    width: 24px;
+    height: 24px;
+  }
+
   /* Modales plein écran sur mobile */
   .modal-box {
     width: 96vw;
