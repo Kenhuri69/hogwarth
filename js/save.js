@@ -83,6 +83,27 @@ function deleteSlot(id) {
   return true;
 }
 
+// Auto-sauvegarde dans le slot dédié `auto`. Throttled pour éviter les
+// rafales (fin de combat → level-up → drop simultané). Silencieuse :
+// pas de toast pour ne pas distraire le joueur. No-op si on n'est pas
+// vraiment en partie (avant la sélection de Maison) ou en plein combat.
+let _autoSaveLastAt = 0;
+const AUTO_SAVE_THROTTLE_MS = 1500;
+function autoSave(reason) {
+  if (inBattle) return false;
+  if (!chosenHouse) return false;            // pas encore en partie
+  const now = Date.now();
+  if (now - _autoSaveLastAt < AUTO_SAVE_THROTTLE_MS) return false;
+  _autoSaveLastAt = now;
+  const store = _readStore();
+  store.slots[AUTO_SLOT_ID] = {
+    meta:  { ..._buildSlotMeta('Auto'), reason: reason || null },
+    state: _serializeState()
+  };
+  _writeStore(store);
+  return true;
+}
+
 // Migration unique : si la clé legacy existe et qu'aucun slot manuel
 // n'est encore rempli, on importe la save legacy dans manual_1 puis on
 // retire la clé. Idempotent : appels suivants no-op.

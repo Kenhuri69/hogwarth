@@ -342,6 +342,7 @@ function endBattle(won) {
     renderMinimap();
   }
   updateUI();
+  if (typeof autoSave === 'function') autoSave(won ? 'battle-end' : 'battle-flee');
 }
 
 // ── Montée de niveau (synchronisée pour le groupe) ───────────
@@ -417,6 +418,7 @@ function checkLevelUp() {
       break;
   }
   updateUI();
+  if (typeof autoSave === 'function') autoSave('level-up');
 }
 
 function closeLevelup() {

@@ -795,8 +795,88 @@ async function scenarioSlotModal() {
   await browser.close();
 }
 
+// ── Scénario 12 : auto-sauvegarde sur événements-clés ────────
+
+async function scenarioAutoSave() {
+  console.log('\n── Scénario 12 : auto-sauvegarde ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+    // forcer le throttle à zéro
+    if (typeof _autoSaveLastAt !== 'undefined') _autoSaveLastAt = 0;
+  });
+
+  // T1 : appel direct
+  const t1 = await page.evaluate(() => {
+    const ok = autoSave('test-direct');
+    const slot = readSlot('auto');
+    return {
+      ok,
+      hasSlot:    !!slot,
+      label:      slot && slot.meta && slot.meta.label,
+      reason:     slot && slot.meta && slot.meta.reason,
+      hasState:   !!slot && !!slot.state
+    };
+  });
+  console.log('  T1 direct  :', t1);
+  assert(t1.ok,                       'autoSave doit réussir hors combat');
+  assert(t1.hasSlot,                  'le slot auto doit être créé');
+  assert(t1.label === 'Auto',         'meta.label doit valoir "Auto"');
+  assert(t1.reason === 'test-direct', 'meta.reason doit refléter la raison');
+  assert(t1.hasState,                 'le slot doit contenir state');
+
+  // T2 : refusé en plein combat
+  const t2 = await page.evaluate(() => {
+    inBattle = true;
+    if (typeof _autoSaveLastAt !== 'undefined') _autoSaveLastAt = 0;
+    const ok = autoSave('test-in-battle');
+    inBattle = false;
+    return { ok };
+  });
+  console.log('  T2 inBattle:', t2);
+  assert(t2.ok === false, 'autoSave doit refuser en combat');
+
+  // T3 : refusé sans chosenHouse
+  const t3 = await page.evaluate(() => {
+    const saved = chosenHouse;
+    chosenHouse = null;
+    if (typeof _autoSaveLastAt !== 'undefined') _autoSaveLastAt = 0;
+    const ok = autoSave('test-no-house');
+    chosenHouse = saved;
+    return { ok };
+  });
+  console.log('  T3 no-house:', t3);
+  assert(t3.ok === false, 'autoSave doit refuser avant la sélection de maison');
+
+  // T4 : throttle (2 appels rapprochés)
+  const t4 = await page.evaluate(() => {
+    if (typeof _autoSaveLastAt !== 'undefined') _autoSaveLastAt = 0;
+    const a = autoSave('first');
+    const b = autoSave('second');
+    return { first: a, second: b };
+  });
+  console.log('  T4 throttle:', t4);
+  assert(t4.first === true && t4.second === false, 'le 2e appel rapproché doit être throttlé');
+
+  // Cleanup
+  await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+  });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ auto-save : direct, garde-fou combat/maison, throttle');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave];
   for (const s of scenarios) {
     await s();
   }

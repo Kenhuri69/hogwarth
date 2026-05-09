@@ -342,6 +342,7 @@ function goDeeper() {
     updateCompass();
     addMsg(`Niveau ${currentFloor} atteint !`, 'good');
     AudioSystem.playAmbientMusic(currentFloor);
+    if (typeof autoSave === 'function') autoSave('floor-down');
   });
   setNarrative(`Le groupe descend au niveau ${currentFloor} des donjons de Poudlard...`);
 }
@@ -366,6 +367,7 @@ function goUp() {
     drawDungeon();
     updateCompass();
     AudioSystem.playAmbientMusic(currentFloor);
+    if (typeof autoSave === 'function') autoSave('floor-up');
   });
   setNarrative(`Le groupe remonte au niveau ${currentFloor}...`);
 }

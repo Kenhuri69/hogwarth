@@ -1,7 +1,7 @@
 # Plan — Système de sauvegarde & Écrans de démarrage
 
 > **Branche** : `claude/save-and-hub` (override utilisateur ; depuis master)
-> **Statut global** : 3 / 14 tâches terminées
+> **Statut global** : 5 / 14 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est mis à jour à chaque étape franchie (règle 5).
@@ -90,14 +90,17 @@ Title (refonte) → click "Commencer"
 
 ### Phase 2 — Auto-sauvegarde
 
-- [ ] **2.1** Identifier les hooks : `descendStairs()`/changement d'étage
+- [x] **2.1** Identifier les hooks : `descendStairs()`/changement d'étage
       dans `movement.js`, `checkLevelUp()` dans `battle.js`, fin de
       `endBattle()` dans `battle.js`. Vérifier qu'on est *hors* combat.
-- [ ] **2.2** Ajouter `autoSave()` qui appelle `writeSlot('auto')` avec
+      ✅ Hooks branchés : `goDeeper`, `goUp`, `endBattle`, `checkLevelUp`.
+- [x] **2.2** Ajouter `autoSave()` qui appelle `writeSlot('auto')` avec
       un debounce simple (anti-spam). Slot auto distinct des manuels,
       visible dans la liste mais non écrasable manuellement.
       *Critère :* test smoke : on simule un changement d'étage et on
       vérifie que le slot auto a un `meta.savedAt` postérieur.
+      ✅ `autoSave(reason)` avec throttle 1500 ms ; refus en combat
+      ou avant `chosenHouse`. Scénario smoke 12 (4 assertions).
 
 ### Phase 3 — Hub démarrage (Nouvelle / Reprendre)
 
@@ -156,3 +159,4 @@ Title (refonte) → click "Commencer"
 | 2026-05-09 | Plan rédigé | Périmètre confirmé : multi-slots + auto-save + hub démarrage + refonte title |
 | 2026-05-09 | 1.1 + 1.2 OK | save.js refactoré (purs serializer/applier) + API multi-slots + migration legacy ; scénario smoke 10 vert |
 | 2026-05-09 | 1.3 OK | Modale slot-modal + save-ui.js/css ; scénario smoke 11 vert (round-trip save→load via UI) |
+| 2026-05-09 | 2.1 + 2.2 OK | autoSave(reason) avec throttle 1500ms ; hooks goDeeper/goUp/endBattle/checkLevelUp ; scénario smoke 12 vert |
