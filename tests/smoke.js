@@ -714,8 +714,89 @@ async function scenarioSaveSlots() {
   await browser.close();
 }
 
+// ── Scénario 11 : modale de choix de slot (UI) ────────────────
+
+async function scenarioSlotModal() {
+  console.log('\n── Scénario 11 : modale de choix de slot ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Reset clean state
+  await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+  });
+
+  // Ouvrir le dialogue de sauvegarde
+  const t1 = await page.evaluate(() => {
+    openSaveDialog();
+    const modal = document.getElementById('slot-modal');
+    const cards = modal.querySelectorAll('[data-slot-id]');
+    return {
+      visible:    modal && getComputedStyle(modal).display !== 'none',
+      title:      document.getElementById('slot-modal-title').textContent,
+      cardCount:  cards.length,
+      hasManual1: !!modal.querySelector('[data-slot-id="manual_1"]'),
+      hasAuto:    !!modal.querySelector('[data-slot-id="auto"]')
+    };
+  });
+  console.log('  T1 open save :', t1);
+  assert(t1.visible,                   'la modale doit être visible');
+  assert(/Sauvegarder/.test(t1.title), 'le titre doit refléter le mode save');
+  assert(t1.cardCount >= 3,            'au moins les 3 slots manuels doivent être listés');
+  assert(t1.hasManual1,                'manual_1 doit être présent');
+
+  // Cliquer le slot manual_2 (vide → on écrit)
+  const t2 = await page.evaluate(() => {
+    const card = document.querySelector('[data-slot-id="manual_2"]');
+    card.click();
+    const slot = readSlot('manual_2');
+    return {
+      slotWritten: !!slot && !!slot.state,
+      heroName:    slot && slot.meta && slot.meta.heroNames[0],
+      modalClosed: getComputedStyle(document.getElementById('slot-modal')).display === 'none'
+    };
+  });
+  console.log('  T2 click save:', t2);
+  assert(t2.slotWritten,             'cliquer une carte vide en mode save doit écrire le slot');
+  assert(/Harry/.test(t2.heroName),  'meta.heroNames[0] doit refléter Harry');
+  assert(t2.modalClosed,             'la modale doit se fermer après écriture');
+
+  // Réouvrir en mode load → le slot doit y figurer
+  const t3 = await page.evaluate(() => {
+    openLoadDialog();
+    const modal = document.getElementById('slot-modal');
+    const cards = modal.querySelectorAll('[data-slot-id]');
+    return {
+      title:       document.getElementById('slot-modal-title').textContent,
+      cardCount:   cards.length,
+      hasManual2:  !!modal.querySelector('[data-slot-id="manual_2"]'),
+      manual2Mode: modal.querySelector('[data-slot-id="manual_2"]').getAttribute('data-mode')
+    };
+  });
+  console.log('  T3 open load :', t3);
+  assert(/Charger/.test(t3.title),       'le titre doit refléter le mode load');
+  assert(t3.hasManual2,                  'manual_2 doit être listé en load');
+  assert(t3.manual2Mode === 'load',      'data-mode=load attendu en mode load');
+  assert(t3.cardCount === 1,             'seul manual_2 (rempli) doit être listé en load');
+
+  // Cleanup
+  await page.evaluate(() => {
+    closeModal('slot-modal');
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+  });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ modale slot conforme (save → load round-trip)');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal];
   for (const s of scenarios) {
     await s();
   }

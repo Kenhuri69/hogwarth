@@ -6,6 +6,7 @@
 <title>Poudlard & Magie : Le Secret de la Chambre Secrète</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/ux-improvements.css">
+<link rel="stylesheet" href="css/save-ui.css">
 <link rel="stylesheet" href="css/ornaments.css">
 </head>
 <body>
@@ -437,8 +438,8 @@
 
       <div class="cmd-vsep"></div>
 
-      <button class="cmd-btn" data-group="system" onclick="saveGame()" title="Sauvegarder la partie"><span class="btn-icon">💾</span><span class="btn-label">Sauver</span></button>
-      <button class="cmd-btn" data-group="system" onclick="loadGame()" title="Charger une sauvegarde"><span class="btn-icon">📂</span><span class="btn-label">Charger</span></button>
+      <button class="cmd-btn" data-group="system" onclick="openSaveDialog()" title="Sauvegarder la partie"><span class="btn-icon">💾</span><span class="btn-label">Sauver</span></button>
+      <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon">📂</span><span class="btn-label">Charger</span></button>
       <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon">⚙️</span><span class="btn-label">Diff.</span></button>
       <button class="cmd-btn mobile-map-btn" data-group="system" onclick="toggleMobileMap()" title="Carte"><span class="btn-icon">🗺️</span></button>
       <button class="cmd-btn" id="btn-interact" data-group="adventure" style="display:none"><span class="btn-icon">🚪</span></button>
@@ -481,6 +482,16 @@
     <div class="modal-title">📜 Fiche de Personnage</div>
     <span class="modal-close" onclick="closeModal('character-modal')">✕</span>
     <div id="char-detail"></div>
+  </div>
+</div>
+
+<!-- Modale de choix de slot (save / load) — peuplée par save-ui.js -->
+<div id="slot-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="slot-modal-title">💾 Sauvegarder</div>
+    <span class="modal-close" onclick="closeModal('slot-modal')">✕</span>
+    <div id="slot-modal-list" class="slot-list"></div>
+    <div class="slot-modal-hint" id="slot-modal-hint">Choisissez un emplacement…</div>
   </div>
 </div>
 
@@ -598,6 +609,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/quests.js?v=2"></script>
 <script src="js/shop.js?v=2"></script>
 <script src="js/save.js?v=2"></script>
+<script src="js/save-ui.js"></script>
 <script src="js/main.js?v=2"></script>
 
 </body>

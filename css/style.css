@@ -632,7 +632,7 @@ body {
   from { text-shadow: 0 0 20px rgba(201,168,76,0.5); }
   to   { text-shadow: 0 0 60px rgba(201,168,76,1.0), 0 0 100px rgba(201,168,76,0.4); }
 }
-#inventory-modal, #shop-modal, #character-modal, #spell-modal {
+#inventory-modal, #shop-modal, #character-modal, #spell-modal, #slot-modal {
   display: none;
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.85);

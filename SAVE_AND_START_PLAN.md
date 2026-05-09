@@ -1,7 +1,7 @@
 # Plan — Système de sauvegarde & Écrans de démarrage
 
 > **Branche** : `claude/save-and-hub` (override utilisateur ; depuis master)
-> **Statut global** : 2 / 14 tâches terminées
+> **Statut global** : 3 / 14 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est mis à jour à chaque étape franchie (règle 5).
@@ -79,10 +79,14 @@ Title (refonte) → click "Commencer"
       *Critère :* nouveau scénario smoke qui écrit dans un slot, le relit,
       le supprime, vérifie l'idempotence de la migration legacy.
       ✅ Scénario 10 : write/read + delete + migration idempotente.
-- [ ] **1.3** Mettre à jour `saveGame()` (boutons en jeu) pour ouvrir une
+- [x] **1.3** Mettre à jour `saveGame()` (boutons en jeu) pour ouvrir une
       petite modale de choix de slot (3 manuel + indication auto en RO).
       *Critère :* test E2E qui vérifie que la modale apparaît, qu'on peut
       écrire dans un slot et que le slot est ensuite listé.
+      ✅ Modale `#slot-modal` + `js/save-ui.js` + `css/save-ui.css`.
+      Boutons 💾/📂 rebrandés vers `openSaveDialog()`/`openLoadDialog()`.
+      Scénario smoke 11 : open save → click vide → write → close → open load
+      → slot listé en mode load.
 
 ### Phase 2 — Auto-sauvegarde
 
@@ -151,3 +155,4 @@ Title (refonte) → click "Commencer"
 |------|-------|-------|
 | 2026-05-09 | Plan rédigé | Périmètre confirmé : multi-slots + auto-save + hub démarrage + refonte title |
 | 2026-05-09 | 1.1 + 1.2 OK | save.js refactoré (purs serializer/applier) + API multi-slots + migration legacy ; scénario smoke 10 vert |
+| 2026-05-09 | 1.3 OK | Modale slot-modal + save-ui.js/css ; scénario smoke 11 vert (round-trip save→load via UI) |
