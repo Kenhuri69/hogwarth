@@ -1570,6 +1570,454 @@ def gen_door():
     return img
 
 
+# ═════════════════════════════════════════════════════════════
+# PHASE 2 — Équipement slots + status effects
+# ═════════════════════════════════════════════════════════════
+
+# Couleurs additionnelles
+FIRE_D = (140, 30, 10, 255)
+FIRE_M = (220, 80, 20, 255)
+FIRE_L = (250,160, 50, 255)
+FIRE_H = (255,230,140, 255)
+
+POI_D  = ( 32, 70, 22, 255)  # vert poison foncé
+POI_M  = ( 80,140, 50, 255)
+POI_L  = (140,200, 90, 255)
+
+BLOOD_D= (110, 14, 14, 255)
+BLOOD_M= (170, 35, 35, 255)
+BLOOD_L= (220, 80, 80, 255)
+BLOOD_H= (255,180,180, 255)
+
+HEAL_D = ( 30, 90, 35, 255)
+HEAL_M = ( 60,160, 70, 255)
+HEAL_L = (130,220,130, 255)
+HEAL_H = (210,250,210, 255)
+
+BONE_D = (100,100, 90, 255)
+BONE_M = (180,175,160, 255)
+BONE_L = (230,225,210, 255)
+
+
+def gen_wand():
+    """🪄 Baguette — icône slot pour équipement type 'wand'."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3201)
+    # Manche diagonal (du bas-gauche vers haut-droit)
+    # Path: (10, 38) → (38, 10), épaisseur 3
+    for t in range(40):
+        x = 10 + (t * 28) // 40
+        y = 38 - (t * 28) // 40
+        # Couleur : poignée foncée bas, bois mid haut
+        if t < 10:
+            col = LD          # poignée cuir foncée
+        elif t < 14:
+            col = GM          # bague or
+        elif t < 18:
+            col = GD
+        else:
+            col = blend(LL, LD, 0.3)  # bois clair
+        for w in range(-2, 3):
+            putpx(img, x+w, y+w, col)
+            if abs(w) < 2:
+                # Highlight haut
+                putpx(img, x+w, y+w-1, blend(col, (255,240,200,255), 0.3))
+    # Étoile dorée à la pointe (haut-droite)
+    star_pts = [(38, 8),(40,7),(42,8),(43,10),(42,12),(40,13),(38,12),(36,13),(34,12),(33,10),(34,8),(36,7)]
+    fill_circle(img, 39, 10, 5, GM)
+    fill_circle(img, 39, 10, 4, GL)
+    fill_circle(img, 39, 10, 2, XP_H)
+    # Branches d'étoile
+    for (dx, dy) in [(0,-7),(0,7),(-7,0),(7,0),(-5,-5),(5,-5),(-5,5),(5,5)]:
+        x, y = 39+dx, 10+dy
+        if 0 <= x < S and 0 <= y < S:
+            putpx(img, x, y, GL)
+            if abs(dx)+abs(dy) < 7:
+                putpx(img, x + (1 if dx > 0 else -1 if dx < 0 else 0), y, GM)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_armor():
+    """🧥 Armure / Robe — icône slot pour équipement type 'armor'."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3202)
+    ROBE_D = (40, 30, 80, 255)    # bleu nuit foncé
+    ROBE_M = (70, 55,130, 255)
+    ROBE_L = (110, 95,180, 255)
+    # Capuche (col au-dessus, V)
+    for y in range(8, 18):
+        half = (y - 8) + 4
+        for x in range(24-half, 24+half+1):
+            t = (y - 8) / 10
+            col = blend(ROBE_L, ROBE_D, 0.2 + t * 0.5)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Encolure (V foncé)
+    for i in range(8):
+        for w in range(-1, 2):
+            putpx(img, 24+w, 12+i, ROBE_D)
+            putpx(img, 24-i+w, 12+i, ROBE_D)
+            putpx(img, 24+i+w, 12+i, ROBE_D)
+    # Corps de la robe (trapèze inversé qui s'élargit vers le bas)
+    for y in range(18, 42):
+        half = 10 + (y - 18) // 2
+        for x in range(24-half, 24+half+1):
+            t = (y - 18) / 24
+            col = blend(ROBE_M, ROBE_D, 0.1 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Plis verticaux (lignes plus foncées)
+    for fold_x in (16, 24, 32):
+        for y in range(20, 42):
+            if img.getpixel((fold_x, y))[3] > 0:
+                putpx(img, fold_x, y, ROBE_D)
+    # Bordures or
+    for y in range(8, 18):
+        # Bord capuche
+        half = (y - 8) + 4
+        if 0 <= 24-half < S and img.getpixel((24-half, y))[3] > 0:
+            putpx(img, 24-half, y, GM)
+        if 0 <= 24+half < S and img.getpixel((24+half, y))[3] > 0:
+            putpx(img, 24+half, y, GM)
+    # Bordure bas (ourlet or)
+    for x in range(11, 38):
+        if img.getpixel((x, 41))[3] > 0:
+            putpx(img, x, 41, GM)
+        if img.getpixel((x, 40))[3] > 0 and (x % 3 == 0):
+            putpx(img, x, 40, GD)
+    # Boutons or (3 alignés verticalement)
+    for cy_b in (22, 28, 34):
+        fill_circle(img, 24, cy_b, 1, GM)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_accessory():
+    """💎 Accessoire — gemme triangulaire à facettes."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3203)
+    # Gemme rouge en forme de losange/diamant
+    GEM_D = (120, 20, 40, 255)
+    GEM_M = (180, 50, 80, 255)
+    GEM_L = (240,110,140, 255)
+    GEM_H = (255,200,210, 255)
+    # Triangle haut (table) — y=8 à 18
+    for y in range(8, 18):
+        half = ((y - 8) * 14) // 10
+        for x in range(24-half, 24+half+1):
+            # Facettes : alterner couleurs selon position
+            if x < 24 - half // 2:
+                col = GEM_L
+            elif x > 24 + half // 2:
+                col = GEM_M
+            else:
+                col = GEM_H
+            putpx(img, x, y, vary(col, rng, 5))
+    # Tranche pavillon (y=18 à 38) — pointe vers le bas
+    for y in range(18, 38):
+        t = (y - 18) / 20
+        half = int(14 * (1 - t))
+        for x in range(24-half, 24+half+1):
+            # Gradient + facettes
+            if abs(x - 24) < 3:
+                col = blend(GEM_L, GEM_D, t)
+            elif x < 24:
+                col = blend(GEM_M, GEM_D, t * 0.7)
+            else:
+                col = blend(GEM_M, GEM_D, t * 0.9)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Lignes de facettes (foncé)
+    line(img, 24, 8, 10, 18, GEM_D)
+    line(img, 24, 8, 38, 18, GEM_D)
+    line(img, 10, 18, 24, 38, GEM_D)
+    line(img, 38, 18, 24, 38, GEM_D)
+    line(img, 18, 18, 24, 38, GEM_D)
+    line(img, 30, 18, 24, 38, GEM_D)
+    line(img, 10, 18, 38, 18, GEM_D)
+    # Brillance haut-gauche
+    for (x, y) in [(18,12),(19,12),(20,11),(15,15),(16,15),(17,14)]:
+        putpx(img, x, y, GEM_H)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_burn():
+    """🔥 Brûlure — flamme orange (silhouette nette)."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3204)
+    # Silhouette flamme par half-width(y), large bas → pointe haut.
+    # On ajoute un petit hook à gauche pour la forme classique.
+    def half_at(y):
+        if   y >= 38: return 11
+        elif y >= 32: return 12
+        elif y >= 26: return 11
+        elif y >= 20: return 9
+        elif y >= 14: return 7
+        elif y >= 9:  return 4
+        elif y >= 6:  return 2
+        else:         return 0
+    # Petit hook à gauche bas (langue secondaire)
+    pts = set()
+    for y in range(6, 42):
+        h = half_at(y)
+        # Léger décalage à droite pour rendre la flamme dynamique
+        off = 0
+        if   y < 14: off = 1
+        elif y < 22: off = 0
+        else:        off = -1
+        for x in range(24-h+off, 24+h+1+off):
+            pts.add((x, y))
+    # Render avec gradient propre : centre clair → bord foncé
+    for (x, y) in pts:
+        # distance au centre de la flamme à cette altitude
+        h = max(1, half_at(y))
+        d_center = min(1.0, abs(x - 24) / h)
+        # gradient vertical : haut = chaud, bas = encore chaud
+        t_v = (y - 6) / 36
+        # 3 zones radiales, chacune avec gradient vertical doux
+        if d_center < 0.45:
+            col = blend(FIRE_H, FIRE_L, t_v * 0.7)
+        elif d_center < 0.85:
+            col = blend(FIRE_L, FIRE_M, t_v * 0.6)
+        else:
+            col = blend(FIRE_M, FIRE_D, t_v * 0.5)
+        putpx(img, x, y, vary(col, rng, 4))
+    # Outline
+    for (x, y) in pts:
+        for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+            nx, ny = x+dx, y+dy
+            if (nx, ny) not in pts and 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_poison():
+    """☠️ Poison — crâne vert."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3205)
+    cx, cy = 24, 22
+    # Crâne (cercle haut)
+    for dy in range(-12, 6):
+        for dx in range(-12, 13):
+            d2 = dx*dx + dy*dy
+            if d2 > 12*12: continue
+            t = (dy + 12) / 18
+            col = blend((220,240,200,255), POI_M, 0.1 + t * 0.5)
+            putpx(img, cx+dx, cy+dy, vary(col, rng, 6))
+    # Mâchoire (bas étroit)
+    for y in range(28, 36):
+        half = max(2, 8 - (y - 28))
+        for x in range(cx-half, cx+half+1):
+            t = (y - 28) / 8
+            col = blend(POI_L, POI_D, 0.3 + t * 0.5)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Yeux (creux noirs)
+    fill_circle(img, cx-5, cy, 3, OUT)
+    fill_circle(img, cx+5, cy, 3, OUT)
+    # Lueur verte dans yeux
+    putpx(img, cx-5, cy, POI_L)
+    putpx(img, cx+5, cy, POI_L)
+    # Nez (triangle noir)
+    for i in range(3):
+        for x in range(cx-i, cx+i+1):
+            putpx(img, x, cy+5+i, OUT)
+    # Dents (lignes verticales bas)
+    for tooth_x in (cx-4, cx-1, cx+2):
+        for y in range(30, 35):
+            putpx(img, tooth_x, y, OUT)
+    # Outline général
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0 or p == OUT: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_bleed():
+    """🩸 Saignement — goutte de sang (forme classique)."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3206)
+    cx = 24
+    pts = set()
+    # Goutte = unique courbe paramétrique :
+    # half-width = fonction de y, croît lentement en haut puis arrondi en bas.
+    # y=6 → tip (1px); y=42 → base. Ovale avec compression haute.
+    # Formule : pour y in [6, 42], h = 13 * sin( pi * (y-6)/40 ) ** 0.7
+    import math as _m
+    for y in range(6, 42):
+        t = (y - 6) / 36   # 0..1
+        # Forme : taper en haut (très étroit), pleine sphère en bas
+        # On combine deux fonctions : taper(t) en haut, bulge(t) en bas
+        if t < 0.55:
+            # Phase taper : largeur croît du 1 vers ~9
+            h = int(1 + (t / 0.55) * 8)
+        else:
+            # Phase bulge : demi-cercle
+            t2 = (t - 0.55) / 0.45      # 0..1
+            # demi-largeur = sqrt(1 - (t2-0.5)^2 * 4) * 13
+            inner = max(0.0, 1 - ((t2 - 0.5) * 2)**2)
+            h = int(_m.sqrt(inner) * 13)
+            # Assurer transition douce
+            h = max(h, 9)
+        for x in range(cx-h, cx+h+1):
+            pts.add((x, y))
+    # Render avec gradient simple : haut clair → bas foncé
+    for (x, y) in pts:
+        t_v = (y - 8) / 34
+        # bord plus foncé
+        # estimer la distance au centre vertical
+        d_center = abs(x - cx) / 12
+        col = blend(BLOOD_M, BLOOD_D, 0.15 + t_v * 0.45 + d_center * 0.2)
+        putpx(img, x, y, vary(col, rng, 4))
+    # Reflet brillant en haut-centre (forme de virgule)
+    for (x, y) in [(cx-2, 14),(cx-2, 16),(cx-3, 18),(cx-3, 20),(cx-4, 22),(cx-4, 24),(cx-4, 26),(cx-3, 28)]:
+        if (x, y) in pts:
+            putpx(img, x, y, BLOOD_H)
+    for (x, y) in [(cx-1, 13),(cx-1, 15),(cx-2, 17),(cx-2, 19),(cx-3, 21),(cx-3, 23),(cx-3, 25),(cx-2, 27)]:
+        if (x, y) in pts:
+            putpx(img, x, y, BLOOD_L)
+    # Outline
+    for (x, y) in pts:
+        for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+            nx, ny = x+dx, y+dy
+            if (nx, ny) not in pts and 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_heal():
+    """💚 Soin — coeur vert (forme nette)."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3207)
+    cx = 24
+    # Coeur classique : pour chaque y, on calcule la half-width via
+    # union de 2 disques en haut + triangle pointe en bas.
+    pts = set()
+    # Lobes (2 cercles tangents)
+    for dy in range(-9, 10):
+        for dx in range(-9, 10):
+            d2 = dx*dx + dy*dy
+            if d2 <= 9*9:
+                pts.add((cx-7+dx, 18+dy))
+                pts.add((cx+7+dx, 18+dy))
+    # Pointe (V)
+    for y in range(18, 41):
+        half = max(0, 16 - (y - 18))
+        for x in range(cx-half, cx+half+1):
+            pts.add((x, y))
+    # Render avec gradient + highlight
+    for (x, y) in pts:
+        # gradient haut clair → bas foncé + assombrissement aux bords
+        t_v = (y - 9) / 32
+        # distance au "milieu" du coeur (les 2 lobes en haut, pointe en bas)
+        if y < 18:
+            # proche du centre des lobes
+            d = min(math.sqrt((x - (cx-7))**2 + (y-18)**2),
+                    math.sqrt((x - (cx+7))**2 + (y-18)**2)) / 9
+        else:
+            # partie pointe
+            half = max(1, 16 - (y - 18))
+            d = abs(x - cx) / half
+        d = min(1.0, max(0.0, d))
+        # gradient radial : centre clair, bord foncé + tonalité bas
+        col = blend(HEAL_L, HEAL_D, 0.15 + d * 0.5 + t_v * 0.25)
+        putpx(img, x, y, vary(col, rng, 4))
+    # Highlight haut-gauche du lobe gauche
+    for (x, y) in [(13,13),(14,13),(15,12),(13,15),(14,15),(12,16),(11,17)]:
+        if (x, y) in pts:
+            putpx(img, x, y, HEAL_H)
+    # Petit éclat sur lobe droit
+    for (x, y) in [(28,13),(29,13)]:
+        if (x, y) in pts:
+            putpx(img, x, y, HEAL_L)
+    # Outline
+    for (x, y) in pts:
+        for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+            nx, ny = x+dx, y+dy
+            if (nx, ny) not in pts and 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                putpx(img, nx, ny, OUT)
+    return img
+
+
+def gen_dead():
+    """💀 Mort — crâne gris (différent de poison)."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3208)
+    cx, cy = 24, 22
+    # Crâne (cercle haut) — gris/os
+    for dy in range(-13, 7):
+        for dx in range(-13, 14):
+            d2 = dx*dx + dy*dy
+            if d2 > 13*13: continue
+            t = (dy + 13) / 20
+            col = blend(BONE_L, BONE_M, 0.1 + t * 0.4)
+            putpx(img, cx+dx, cy+dy, vary(col, rng, 6))
+    # Mâchoire séparée (bas)
+    for y in range(30, 38):
+        half = max(2, 9 - (y - 30))
+        for x in range(cx-half, cx+half+1):
+            t = (y - 30) / 8
+            col = blend(BONE_M, BONE_D, 0.2 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Petit gap entre crâne et mâchoire
+    for x in range(cx-7, cx+8):
+        if img.getpixel((x, 29))[3] > 0:
+            putpx(img, x, 29, OUT)
+    # Yeux (gros creux noirs en X)
+    fill_circle(img, cx-6, cy-1, 4, OUT)
+    fill_circle(img, cx+6, cy-1, 4, OUT)
+    # Croix dans les yeux (X = mort)
+    line(img, cx-9, cy-4, cx-3, cy+2, BONE_L)
+    line(img, cx-9, cy+2, cx-3, cy-4, BONE_L)
+    line(img, cx+3, cy-4, cx+9, cy+2, BONE_L)
+    line(img, cx+3, cy+2, cx+9, cy-4, BONE_L)
+    # Nez (triangle noir)
+    for i in range(3):
+        for x in range(cx-i, cx+i+1):
+            putpx(img, x, cy+5+i, OUT)
+    # Dents (alternées sur la mâchoire)
+    for tooth_x in (cx-5, cx-2, cx+1, cx+4):
+        for y in range(31, 35):
+            putpx(img, tooth_x, y, OUT)
+    # Outline
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0 or p == OUT: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+
 # ─── Main ─────────────────────────────────────────────────────
 TARGETS = [
     ('img/icons/backpack.png',  gen_backpack),
@@ -1600,6 +2048,15 @@ TARGETS = [
     ('img/icons/mag.png',       gen_mag),
     ('img/icons/shop_sign.png', gen_shop_sign),
     ('img/icons/door.png',      gen_door),
+    # Phase 2 — équipement slots + status effects
+    ('img/icons/wand.png',      gen_wand),
+    ('img/icons/armor.png',     gen_armor),
+    ('img/icons/accessory.png', gen_accessory),
+    ('img/icons/burn.png',      gen_burn),
+    ('img/icons/poison.png',    gen_poison),
+    ('img/icons/bleed.png',     gen_bleed),
+    ('img/icons/heal.png',      gen_heal),
+    ('img/icons/dead.png',      gen_dead),
 ]
 
 if __name__ == '__main__':

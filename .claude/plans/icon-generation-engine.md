@@ -118,8 +118,41 @@ Icônes à générer pour remplacer les emoji actuels :
 
 **Note** : équipement (🪄 🧥 💎) reste en emoji, sera traité en Phase 2 avec wand/armor/accessory dédiées.
 
-### Phase 2 — Status effects + équipement (8 PNG)
+### Phase 2 — Status effects + équipement (8 PNG) ✅
 🪄 wand · 🧥 armor · 💎 accessory · 🔥 burn · ☠️ poison · 🩸 bleed · 💚 heal · 💀 dead
+
+**Architecture resolver (`js/item-icons.js`)** — préparée pour Phase 4 :
+
+```js
+ITEM_ICON_REGISTRY = {}        // priorité 1 — vide aujourd'hui, peuplé en Phase 4
+EQUIPMENT_SLOT_ICONS = {       // priorité 2 — slot par type
+  wand: 'img/icons/wand.png', armor: '...', acc: '...', spellbook: '...'
+}
+STATUS_ICON_REGISTRY = {       // pour STATUS_DEFS (battle.js)
+  burn, poison, bleed, heal, dead → leur PNG
+}
+
+getItemIconHtml(item, sizeClass)        → <img> ou emoji fallback
+getEquipmentSlotIconHtml(type, sz)      → <img> du slot
+getStatusIconHtml(statusId, sz)         → <img> du status
+```
+
+Quand on génèrera un PNG dédié pour `wand_houx`, `wand_sureau`, `robe_renforcee`, etc.,
+il suffira d'ajouter `ITEM_ICON_REGISTRY['wand_houx'] = 'img/icons/items/wand_houx.png'`
+sans toucher au code d'intégration. Le fallback slot reste actif tant qu'aucun
+override n'est enregistré.
+
+Étapes Phase 2 :
+- [x] 2.1 — Étendre `gen_icons.py` avec 8 fonctions (wand, armor, accessory, burn, poison, bleed, heal, dead)
+- [x] 2.2 — Itération style v1→v3 (burn aplati, heal sans artefact tige, bleed redessiné en goutte propre)
+- [x] 2.3 — Créer `js/item-icons.js` avec resolver 3-niveaux + registry vide pour Phase 4
+- [x] 2.4 — Brancher dans `index.html` (panneau gauche équipement + script load order)
+- [x] 2.5 — Brancher dans `js/ui.js` (fiche perso : `getItemIconHtml(c.equipped.X) || getEquipmentSlotIconHtml(type)`)
+- [x] 2.6 — Brancher dans `js/inventory.js` (typeIcon de la grille via `getEquipmentSlotIconHtml`)
+- [x] 2.7 — Brancher dans `js/battle-ui.js` (status pills via `getStatusIconHtml` + variant dead via `dead.png`)
+- [x] 2.8 — Scénario 19 ajouté à `tests/smoke.js` : valide resolver, registry override, fallback slot, présence DOM
+- [x] 2.9 — Scénario 2 mis à jour pour valider l'`<img src="burn.png">` au lieu de l'emoji 🔥
+- [x] 2.10 — Captures `_phase2_left_panel.png`, `_phase2_charsheet.png`, `_phase2_battle_status.png`. 20 scénarios passent.
 
 ### Phase 3 — Sorts (~25 PNG)
 Chaque sort de `SPELLS[]` reçoit son PNG. Mapping `name → spell_<slug>.png`.

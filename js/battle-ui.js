@@ -31,7 +31,10 @@ function renderStatusBadges(target) {
   if (!target || !target.statusEffects || !target.statusEffects.length) return '';
   return '<div class="status-row">' + target.statusEffects.map(s => {
     const def = (typeof STATUS_DEFS !== 'undefined' && STATUS_DEFS[s.id]) || { color: '#aaa' };
-    return `<span class="status-pill" style="border-color:${def.color}" title="${def.label || s.id} ${s.power}/tour">${s.icon}${s.turns}</span>`;
+    const iconHtml = (typeof getStatusIconHtml === 'function')
+      ? (getStatusIconHtml(s.id, 'ui-icon-sm') || s.icon)
+      : s.icon;
+    return `<span class="status-pill" style="border-color:${def.color}" title="${def.label || s.id} ${s.power}/tour">${iconHtml}${s.turns}</span>`;
   }).join('') + '</div>';
 }
 
@@ -50,7 +53,7 @@ function renderEnemyGroup() {
 
     // Icône : SVG ou emoji via icons.js
     const iconHtml = dead
-      ? `<div class="monster-icon variant-dead" style="width:${sizePx}px;height:${sizePx}px;font-size:${Math.floor(sizePx*0.7)}px">💀</div>`
+      ? `<div class="monster-icon variant-dead" style="width:${sizePx}px;height:${sizePx}px;display:flex;align-items:center;justify-content:center"><img src="img/icons/dead.png" alt="" style="width:${Math.floor(sizePx*0.7)}px;height:${Math.floor(sizePx*0.7)}px;image-rendering:pixelated"></div>`
       : getMonsterIconHtml(enemy, sizePx);
 
     // Badge de variante (shiny / féroce / ancien)

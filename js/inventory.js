@@ -64,10 +64,11 @@ function renderInventory(battleMode) {
       div.classList.add('has-item');
       const isEquip    = ['wand','armor','acc'].includes(item.type);
       const isSpellbook = item.type === 'spellbook';
-      // Étiquette de type
-      const typeIcon = isEquip
-        ? (item.type === 'wand' ? '🪄' : item.type === 'armor' ? '🧥' : '💎')
-        : isSpellbook ? '📖' : '';
+      // Étiquette de type — utilise le resolver (slot icon générique pour
+      // l'instant ; per-item PNG dès qu'il sera enregistré dans le registry).
+      const typeIcon = (isEquip || isSpellbook)
+        ? getEquipmentSlotIconHtml(item.type, 'ui-icon-sm')
+        : '';
       const typeLabel = (isEquip || isSpellbook)
         ? `<div style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
         : '';

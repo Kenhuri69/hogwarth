@@ -115,24 +115,26 @@ async function scenarioStatusEffects() {
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
   await startDummyFight(page, { hp: 50 });
 
-  // T1 : applyStatus pose le statut + pilule rendue
+  // T1 : applyStatus pose le statut + pilule rendue (icône PNG via resolver)
   const t1 = await page.evaluate(() => {
     const e = enemyGroup[0];
     const before = e.currentHp;
     applyStatus(e, 'burn', 5, 2);
     renderEnemyGroup();
     const pill = document.querySelector('.enemy-card .status-pill');
+    const img  = pill ? pill.querySelector('img') : null;
     return {
       before,
       statusId:    e.statusEffects[0]?.id,
       statusTurns: e.statusEffects[0]?.turns,
-      pillText:    pill ? pill.textContent.trim() : null
+      pillText:    pill ? pill.textContent.trim() : null,
+      iconSrc:     img ? img.getAttribute('src') : null
     };
   });
   console.log('  T1 apply :', t1);
-  assert(t1.statusId === 'burn',           'applyStatus n\'a pas posé burn');
-  assert(t1.pillText && t1.pillText.includes('🔥'), 'pilule 🔥 absente');
-  assert(t1.pillText.includes('2'),        'compteur turns absent');
+  assert(t1.statusId === 'burn',                    'applyStatus n\'a pas posé burn');
+  assert(/burn\.png$/.test(t1.iconSrc || ''),        'pilule burn doit utiliser burn.png');
+  assert(t1.pillText.includes('2'),                 'compteur turns absent');
 
   // T2 : tick → -5 PV, turns décrémenté
   const t2 = await page.evaluate(() => {
@@ -1427,8 +1429,89 @@ async function scenarioUiChromeIcons() {
   await browser.close();
 }
 
+// ── Scénario 19 : Phase 2 — équipement slots + status + resolver ──
+
+async function scenarioEquipmentAndStatusIcons() {
+  console.log('\n── Scénario 19 : Phase 2 — équipement slots + status + resolver ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : resolver disponible et registre slot peuplé
+  const t1 = await page.evaluate(() => ({
+    hasGetItemIconHtml:        typeof getItemIconHtml === 'function',
+    hasGetEquipmentSlotIcon:   typeof getEquipmentSlotIconHtml === 'function',
+    hasGetStatusIconHtml:      typeof getStatusIconHtml === 'function',
+    slotWand:    EQUIPMENT_SLOT_ICONS && EQUIPMENT_SLOT_ICONS.wand,
+    slotArmor:   EQUIPMENT_SLOT_ICONS && EQUIPMENT_SLOT_ICONS.armor,
+    slotAcc:     EQUIPMENT_SLOT_ICONS && EQUIPMENT_SLOT_ICONS.acc,
+    statusBurn:  STATUS_ICON_REGISTRY && STATUS_ICON_REGISTRY.burn
+  }));
+  console.log('  T1 resolver →', t1);
+  assert(t1.hasGetItemIconHtml,        'getItemIconHtml doit exister');
+  assert(t1.hasGetEquipmentSlotIcon,   'getEquipmentSlotIconHtml doit exister');
+  assert(t1.hasGetStatusIconHtml,      'getStatusIconHtml doit exister');
+  assert(/wand\.png$/.test(t1.slotWand),       'slot wand doit pointer wand.png');
+  assert(/armor\.png$/.test(t1.slotArmor),     'slot armor doit pointer armor.png');
+  assert(/accessory\.png$/.test(t1.slotAcc),   'slot acc doit pointer accessory.png');
+  assert(/burn\.png$/.test(t1.statusBurn),     'status burn doit pointer burn.png');
+
+  // T2 : registre per-item override (architecture pour Phase 4)
+  const t2 = await page.evaluate(() => {
+    // Simuler une entrée Phase 4
+    ITEM_ICON_REGISTRY['wand_houx'] = 'img/icons/items/wand_houx.png';
+    const fakeItem = { id: 'wand_houx', type: 'wand', name: 'Baguette de Houx', icon: '🪄' };
+    const html = getItemIconHtml(fakeItem);
+    delete ITEM_ICON_REGISTRY['wand_houx'];
+    // Sans entrée, doit fallback sur slot
+    const html2 = getItemIconHtml(fakeItem);
+    return { override: html, fallback: html2 };
+  });
+  console.log('  T2 override →', t2);
+  assert(/wand_houx\.png/.test(t2.override),  'registry per-item doit prendre la priorité');
+  assert(/img\/icons\/wand\.png/.test(t2.fallback), 'sans override, fallback sur slot wand.png');
+
+  // T3 : équipement panneau gauche affiche les slot icons
+  const t3 = await page.evaluate(() => {
+    const root = document.querySelector('.left-panel');
+    const imgs = Array.from(root.querySelectorAll('img.ui-icon'))
+                      .map(i => i.getAttribute('src'));
+    return imgs;
+  });
+  console.log('  T3 panneau gauche →', t3);
+  assert(t3.some(s => s.endsWith('wand.png')),       'panneau gauche doit afficher wand.png');
+  assert(t3.some(s => s.endsWith('armor.png')),      'panneau gauche doit afficher armor.png');
+  assert(t3.some(s => s.endsWith('accessory.png')),  'panneau gauche doit afficher accessory.png');
+
+  // T4 : fiche perso utilise getItemIconHtml pour les équipés et slot pour les vides
+  const t4 = await page.evaluate(() => {
+    // Équiper Harry avec l'arme initiale
+    if (!player.equipped) player.equipped = {};
+    player.equipped.wand = { id: 'wand1', type: 'wand', name: 'Baguette de Saule', icon: '🪄' };
+    openCharacter(0);
+    const detail = document.getElementById('char-detail');
+    const eqSection = detail.querySelector('div[style*="ÉQUIPEMENT"]') || detail;
+    const html = detail.innerHTML;
+    // Cherche au moins une <img> wand.png (slot fallback puisque wand1 pas dans registry)
+    return {
+      hasWand:  /img\/icons\/wand\.png/.test(html),
+      hasArmor: /img\/icons\/armor\.png/.test(html),
+      hasAcc:   /img\/icons\/accessory\.png/.test(html)
+    };
+  });
+  console.log('  T4 fiche équipement →', t4);
+  assert(t4.hasWand && t4.hasArmor && t4.hasAcc,
+         'fiche perso doit afficher les 3 icônes équipement (slots ou per-item)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Phase 2 : resolver ITEM_ICON_REGISTRY/EQUIPMENT_SLOT_ICONS/STATUS + 8 icônes intégrées');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons];
   for (const s of scenarios) {
     await s();
   }
