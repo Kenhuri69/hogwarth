@@ -1,7 +1,7 @@
 # Plan — Système de sauvegarde & Écrans de démarrage
 
 > **Branche** : `claude/save-and-hub` (override utilisateur ; depuis master)
-> **Statut global** : 8 / 14 tâches terminées
+> **Statut global** : 10 / 14 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est mis à jour à chaque étape franchie (règle 5).
@@ -123,15 +123,20 @@ Title (refonte) → click "Commencer"
 
 ### Phase 4 — Refonte visuelle du title screen
 
-- [ ] **4.1** Inventaire des éléments décoratifs actuels (SVG cover
+- [x] **4.1** Inventaire des éléments décoratifs actuels (SVG cover
       générée inline, presse-start, footer instructions). Décider quoi
       garder, quoi remplacer/améliorer (au moins un asset visuel + une
-      micro-animation discrète).
-- [ ] **4.2** Implémenter la refonte (HTML/CSS uniquement, pas de JS
+      micro-animation discrète). ✅ Cadre + corner SVG conservés.
+      Castle SVG remplacé par version élargie + animations CSS.
+- [x] **4.2** Implémenter la refonte (HTML/CSS uniquement, pas de JS
       sauf si gestion d'animation via classe). Maintenir l'accessibilité
       mobile (≤ 700px) et l'event listener click → hub/player-select.
       *Critère :* capture mobile et desktop qui montrent une amélioration
       visuelle franche tout en restant cohérent avec la charte parchemin/or.
+      ✅ SVG 600×280 avec : montagne en arrière-plan, lune en croissant
+      avec halo pulsé, 5 tours de hauteurs variées avec toits coniques,
+      drapeau, fenêtres animées (warm/cold flicker), brume basse,
+      mini reflet d'eau. Mobile : SVG fluide en `min(92vw, 600px)`.
 
 ### Phase 5 — Couverture & finalisation
 
@@ -165,3 +170,4 @@ Title (refonte) → click "Commencer"
 | 2026-05-09 | 1.3 OK | Modale slot-modal + save-ui.js/css ; scénario smoke 11 vert (round-trip save→load via UI) |
 | 2026-05-09 | 2.1 + 2.2 OK | autoSave(reason) avec throttle 1500ms ; hooks goDeeper/goUp/endBattle/checkLevelUp ; scénario smoke 12 vert |
 | 2026-05-09 | 3.1 + 3.2 + 3.3 OK | Hub démarrage opérationnel (HTML + CSS dédiés, JS dans save-ui.js). title-screen → enterStartHub → bypass ou hub. Click slot → loadSlotAndStart (async, charge textures, applique state, init audio). Scénario smoke 13 vert |
+| 2026-05-09 | 4.1 + 4.2 OK | Castle SVG redessiné (5 tours + crénaux + drapeau + lune en croissant + halo + montagne + brume + reflet). Animations CSS : flicker fenêtres warm/cold décalées, halo lunaire pulsé, twinkle SVG indépendant. Responsive `min(92vw, 600px)` |
