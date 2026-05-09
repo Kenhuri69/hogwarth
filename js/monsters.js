@@ -311,6 +311,7 @@ const MONSTERS = [
     id:       "gobelin",
     name:     "Gobelin Rebelle",
     icon:     "👺",
+    imgSrc:   "img/monsters/gobelin.png",
     category: "humain",
     desc:     "Un gobelin en colère agite son épée courbe",
     lore:     "Certains gobelins de Gringotts ont rejoint les forces de Voldemort. Ils gardent les couloirs les plus sombres.",
