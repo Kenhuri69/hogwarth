@@ -131,6 +131,9 @@ let searchedCells = new Set();
 let floorDungeons = {};
 // Cooldown de repos (nombre de déplacements avant nouveau repos)
 let restCooldown = 0;
+// Fontaines utilisées sur l'étage courant (clé "x,y") — vidée à chaque
+// entrée d'étage : la fontaine se ré-active si l'on quitte puis revient.
+let usedFountains = new Set();
 
 // ── Membres du groupe ────────────────────────────────────────
 let player = {

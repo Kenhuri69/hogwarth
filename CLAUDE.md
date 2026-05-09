@@ -377,6 +377,35 @@ checkObjectInFront() → bool
 
 ---
 
+## Salle Fontaine (movement.js, dungeon.js)
+
+Salle spéciale qui **restaure 100 % PV + 100 % PM** du groupe, à raison
+d'**1 utilisation par visite d'étage**. Apparaît aux étages **2, 5, 8,
+11, …** (`floor >= 2 && (floor - 2) % 3 === 0`).
+
+| Élément | Détail |
+|---------|--------|
+| Type de cellule | `CELL.FOUNTAIN = 7` (`data.js`) |
+| Génération | `dungeon.js` — force une room intermédiaire à `CELL.FOUNTAIN` |
+| Interaction | `useFountain()` (`movement.js`) — overlay d'exploration dédié |
+| État "tarie" | Set global `usedFountains` (clés `"x,y"` pour l'étage courant) |
+| Reset | `usedFountains.clear()` à chaque entrée d'étage (généré ou restauré) |
+| Persistance | Sauvegardé dans `_serializeState/_applyState` via `Array.from(usedFountains)` |
+| Visuel canvas | `drawCellMarker()` cas `CELL.FOUNTAIN` — anneau d'eau bleuté |
+| Minimap | Classe `.map-fountain` (bleu pâle) |
+
+### Cycle de vie
+```
+Entrée d'étage           → usedFountains = new Set()
+Boire (useFountain)      → soin total + usedFountains.add("x,y")
+Boire à nouveau          → message "tarie", refusé
+Quitter étage            → cache du dungeon (sans usedFountains)
+Revenir sur l'étage      → usedFountains = new Set() (ré-active)
+Sauvegarder en cours     → usedFountains sérialisé tel quel
+```
+
+---
+
 ## Système audio (audio.js)
 
 ```js

@@ -94,6 +94,18 @@ function generateDungeon(floor) {
   // Escalier montant (étage 2+)
   if(floor>1) dungeon[rooms[0].cy][rooms[0].cx] = CELL.STAIRS_U;
 
+  // Salle fontaine — étages 2, 5, 8, 11, … (1 garantie)
+  // Choisit une room intermédiaire (ni départ, ni dernière=stairs down)
+  // et écrase ce qui s'y trouvait pour garantir l'apparition.
+  if (floor >= 2 && (floor - 2) % 3 === 0 && rooms.length >= 3) {
+    const candidates = rooms.slice(1, rooms.length - 1);
+    const room       = candidates[Math.floor(Math.random() * candidates.length)];
+    dungeon[room.cy][room.cx] = CELL.FOUNTAIN;
+  }
+
+  // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
+  usedFountains = new Set();
+
   // Sélection des ennemis éligibles à cet étage
   const eligibleTypes = MONSTERS.filter(m =>
     m.minFloor <= floor && (m.maxFloor === null || floor <= m.maxFloor)

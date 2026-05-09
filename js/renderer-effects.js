@@ -202,6 +202,46 @@ function drawCellMarker(cx, cy, bx, by, size, cell) {
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('📦', bx, by);
+  } else if (cell === CELL.FOUNTAIN) {
+    // Fontaine — anneau d'eau bleuté avec halo
+    const dried = (typeof usedFountains !== 'undefined') &&
+                  usedFountains.has(`${cx},${cy}`);
+    ctx.save();
+    // halo
+    const grad = ctx.createRadialGradient(bx, by, 0, bx, by, size * 0.7);
+    grad.addColorStop(0, 'rgba(207,230,255,0.7)');
+    grad.addColorStop(0.6, 'rgba(94,155,214,0.25)');
+    grad.addColorStop(1, 'rgba(28,74,122,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(bx, by, size * 0.7, size * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // bassin
+    ctx.fillStyle = '#5a4a32';
+    ctx.beginPath();
+    ctx.ellipse(bx, by + size * 0.2, size * 0.45, size * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // eau
+    ctx.fillStyle = dried ? '#3a2e1c' : '#6ea8d8';
+    ctx.beginPath();
+    ctx.ellipse(bx, by + size * 0.16, size * 0.36, size * 0.12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // pied + statue
+    ctx.fillStyle = '#8a7a5a';
+    ctx.fillRect(bx - size * 0.06, by - size * 0.5, size * 0.12, size * 0.6);
+    ctx.fillStyle = '#a89870';
+    ctx.beginPath();
+    ctx.arc(bx, by - size * 0.55, size * 0.13, 0, Math.PI * 2);
+    ctx.fill();
+    // halo doré
+    ctx.shadowColor = 'rgba(207,230,255,0.7)';
+    ctx.shadowBlur  = 8;
+    ctx.strokeStyle = 'rgba(201,168,76,0.5)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.ellipse(bx, by, size * 0.55, size * 0.25, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
 }
 
