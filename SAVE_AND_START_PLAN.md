@@ -1,7 +1,7 @@
 # Plan — Système de sauvegarde & Écrans de démarrage
 
-> **Branche** : `claude/improve-svg-HWGDY` (instruction système)
-> **Statut global** : 0 / 14 tâches terminées
+> **Branche** : `claude/save-and-hub` (override utilisateur ; depuis master)
+> **Statut global** : 2 / 14 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est mis à jour à chaque étape franchie (règle 5).
@@ -68,16 +68,17 @@ Title (refonte) → click "Commencer"
 
 ### Phase 1 — Infrastructure de saves multi-slot
 
-- [ ] **1.1** Refactoriser `js/save.js` : extraire l'ancienne logique en
+- [x] **1.1** Refactoriser `js/save.js` : extraire l'ancienne logique en
       `_serializeState()` / `_applyState()` purs (sans I/O). Pas de
       changement comportemental visible.
       *Critère :* `node tests/smoke.js` reste vert ; saveGame()/loadGame()
-      continuent de fonctionner sur l'ancienne clé.
-- [ ] **1.2** Ajouter `listSaveSlots()`, `readSlot(id)`, `writeSlot(id)`,
+      continuent de fonctionner sur l'ancienne clé. ✅ 9 scénarios verts.
+- [x] **1.2** Ajouter `listSaveSlots()`, `readSlot(id)`, `writeSlot(id)`,
       `deleteSlot(id)`, `migrateLegacyKey()` qui lit `hogwarts_rpg_save`
       et le déplace vers `hogwarts_rpg_saves.slots.manual_1` une fois.
       *Critère :* nouveau scénario smoke qui écrit dans un slot, le relit,
       le supprime, vérifie l'idempotence de la migration legacy.
+      ✅ Scénario 10 : write/read + delete + migration idempotente.
 - [ ] **1.3** Mettre à jour `saveGame()` (boutons en jeu) pour ouvrir une
       petite modale de choix de slot (3 manuel + indication auto en RO).
       *Critère :* test E2E qui vérifie que la modale apparaît, qu'on peut
@@ -149,3 +150,4 @@ Title (refonte) → click "Commencer"
 | Date | Étape | Notes |
 |------|-------|-------|
 | 2026-05-09 | Plan rédigé | Périmètre confirmé : multi-slots + auto-save + hub démarrage + refonte title |
+| 2026-05-09 | 1.1 + 1.2 OK | save.js refactoré (purs serializer/applier) + API multi-slots + migration legacy ; scénario smoke 10 vert |

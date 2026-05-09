@@ -633,8 +633,89 @@ async function scenarioCombatMobile() {
   await browser.close();
 }
 
+// ── Scénario 10 : multi-slots de sauvegarde ───────────────────
+
+async function scenarioSaveSlots() {
+  console.log('\n── Scénario 10 : sauvegarde multi-slots ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const t1 = await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+    const wroteOk = writeSlot('manual_2', 'Manuel');
+    const list    = listSaveSlots();
+    const slot    = readSlot('manual_2');
+    return {
+      wroteOk,
+      listLen:    list.length,
+      listFirst:  list[0] ? list[0].id : null,
+      hasMeta:    !!slot && !!slot.meta,
+      hasState:   !!slot && !!slot.state,
+      heroName:   slot && slot.meta && slot.meta.heroNames[0],
+      house:      slot && slot.meta && slot.meta.house,
+      level:      slot && slot.meta && slot.meta.level
+    };
+  });
+  console.log('  T1 write/read:', t1);
+  assert(t1.wroteOk,                      'writeSlot(manual_2) devrait réussir');
+  assert(t1.listLen === 1,                'listSaveSlots devrait renvoyer 1 entrée');
+  assert(t1.listFirst === 'manual_2',     'le slot listé doit être manual_2');
+  assert(t1.hasMeta && t1.hasState,       'slot doit contenir meta + state');
+  assert(/Harry/.test(t1.heroName || ''), 'meta.heroNames[0] doit refléter Harry');
+  assert(t1.house === 'Gryffondor',       'meta.house doit refléter Gryffondor');
+  assert(t1.level === 1,                  'meta.level doit refléter le niveau courant');
+
+  const t2 = await page.evaluate(() => {
+    const ok = deleteSlot('manual_2');
+    return { ok, listLen: listSaveSlots().length };
+  });
+  console.log('  T2 delete   :', t2);
+  assert(t2.ok && t2.listLen === 0, 'deleteSlot doit retirer le slot');
+
+  // Migration de la clé legacy
+  const t3 = await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_saves');
+    saveGame();
+    const legacyExisted = !!localStorage.getItem('hogwarts_rpg_save');
+    const ok    = migrateLegacyKey();
+    const ok2   = migrateLegacyKey();
+    const list  = listSaveSlots();
+    const slot1 = readSlot('manual_1');
+    const legacyAfter = !!localStorage.getItem('hogwarts_rpg_save');
+    return {
+      legacyExisted,
+      migratedOnce: ok,
+      idempotent:   ok2,
+      legacyAfter,
+      listLen:      list.length,
+      slot1HasMeta: !!slot1 && !!slot1.meta,
+      slot1Label:   slot1 && slot1.meta && slot1.meta.label
+    };
+  });
+  console.log('  T3 migrate  :', t3);
+  assert(t3.legacyExisted,        'saveGame() doit produire la clé legacy');
+  assert(t3.migratedOnce === true,'migrateLegacyKey doit réussir la 1re fois');
+  assert(t3.idempotent === false, 'migrateLegacyKey doit être idempotent (no-op après)');
+  assert(t3.legacyAfter === false,'la clé legacy doit être supprimée après migration');
+  assert(t3.listLen === 1 && t3.slot1HasMeta, 'manual_1 doit contenir le slot migré');
+  assert(t3.slot1Label === 'Importée', 'le slot migré doit porter le label "Importée"');
+
+  await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+  });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ multi-slots conformes (write/read/delete + migration legacy)');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots];
   for (const s of scenarios) {
     await s();
   }
