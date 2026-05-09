@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/improve-svg-HWGDY`
 > (anciennes branches : `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 5 / 71 tâches terminées
+> **Statut global** : 6 / 71 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -93,7 +93,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C03** `cornichon`
 - [x] **C04** `chouette_envoutee`
 - [x] **C05** `araignee`
-- [ ] **C06** `mandragore_sauvage`
+- [x] **C06** `mandragore_sauvage`
 - [ ] **C07** `kappa_douves`
 - [ ] **C08** `hippogriffe_courroux`
 - [ ] **C09** `acromantula_jeune`
@@ -164,3 +164,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #6 | C03 cornichon ré-intégré avec birefnet-general (ailes préservées) | Pipeline étendu : modèle birefnet-general garde les zones translucides ; à privilégier pour les créatures à ailes/voiles |
 | 2026-05-09 | #7 | C04 chouette_envoutee intégrée (birefnet-general) | Plumes fines + fumée violette de corruption + serres préservées |
 | 2026-05-09 | #8 | C05 araignee intégrée (birefnet-general) | 8 pattes, crocs avec venin et fil de toile conservés |
+| 2026-05-09 | #9 | C06 mandragore_sauvage intégrée (birefnet-general) | Couronne de feuillage + radicelles fines préservées |

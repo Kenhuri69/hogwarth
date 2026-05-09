@@ -243,6 +243,7 @@ const MONSTERS = [
     id:       "mandragore_sauvage",
     name:     "Mandragore Sauvage",
     icon:     "🌿",
+    imgSrc:   "img/monsters/mandragore_sauvage.png",
     category: "créature",
     desc:     "Une Mandragore arrachée à la terre pousse un cri à vous glacer le sang !",
     lore:     "Les Mandragores sauvages qui ont poussé sans surveillance dans les serres abandonnées ont développé une agressivité redoutable. Leur cri peut vous assommer instantanément.",
