@@ -120,6 +120,13 @@ function _updateCharBar(idx) {
   if (sb) sb.style.width   = (c.sp / c.spMax * 100) + '%';
   if (nm) nm.textContent   = c.name;
   if (cl) cl.textContent   = `${c.class} · Niv.${c.level}`;
+  if (c.imgSrc) {
+    const portrait = document.querySelector(`#char-card-${idx} .party-portrait-img`);
+    if (portrait && portrait.getAttribute('src') !== c.imgSrc) {
+      portrait.src = c.imgSrc;
+      portrait.alt = c.name;
+    }
+  }
   const slot = document.getElementById(`status-slot-${idx}`);
   if (slot && typeof renderStatusBadges === 'function') slot.innerHTML = renderStatusBadges(c);
 }
