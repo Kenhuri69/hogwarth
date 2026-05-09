@@ -1486,6 +1486,19 @@ body {
     padding: 6px;
     justify-content: center;
   }
+  /* Mobile : icônes plus grandes (32px) sans drop-shadow qui les ternit */
+  .cmd-btn .btn-icon {
+    filter: none;
+  }
+  .cmd-btn .btn-icon img {
+    width: 32px;
+    height: 32px;
+  }
+  /* Idem dpad-center : agrandir l'icône (PV) */
+  .dpad-center img.ui-icon {
+    width: 24px;
+    height: 24px;
+  }
 
   /* Overlay de combat adapté mobile : on aligne en haut et on réserve un
      padding-top pour laisser de la place au journal (replié) et à la
