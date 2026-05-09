@@ -158,6 +158,7 @@ const MONSTERS = [
     id:       "peeves",
     name:     "Peeve le Poltergeist",
     icon:     "👻",
+    imgSrc:   "img/monsters/peeves.png",
     category: "fantôme",
     desc:     "Le poltergeist tourbillonne en ricanant, prêt à tout casser",
     lore:     "Peeve hante Poudlard depuis des siècles. Il prend un malin plaisir à tourmenter les élèves.",
