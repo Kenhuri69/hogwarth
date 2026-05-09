@@ -397,14 +397,19 @@ async function scenarioMonsterImages() {
     assert(t.src && t.src.endsWith(`${id}.png`), `${id} src incorrect: ${t.src}`);
   }
 
-  // Vérifier qu'un monstre sans imgSrc utilise toujours son SVG (régression)
+  // Vérifier qu'un monstre sans imgSrc utilise toujours son SVG (régression).
+  // Témoin auto-adaptatif : on prend le premier monstre qui n'a pas encore
+  // d'imgSrc, pour que ce test reste vert au fil de la migration vers le PNG.
   const ctrl = await page.evaluate(() => {
-    const base = MONSTERS.find(m => m.id === 'chat_norris');
+    const base = MONSTERS.find(m => !m.imgSrc);
+    if (!base) return { skipped: true };
     const html = getMonsterIconHtml({ ...base, currentHp: base.hp }, 56);
-    return { usesSvg: /<svg /.test(html), usesImg: /<img /.test(html) };
+    return { id: base.id, usesSvg: /<svg /.test(html), usesImg: /<img /.test(html) };
   });
-  console.log('  chat_norris (SVG) →', ctrl);
-  assert(ctrl.usesSvg && !ctrl.usesImg, 'fallback SVG cassé');
+  console.log('  contrôle SVG →', ctrl);
+  if (!ctrl.skipped) {
+    assert(ctrl.usesSvg && !ctrl.usesImg, 'fallback SVG cassé');
+  }
 
   // Vérifier que le fichier PNG est bien chargeable (pas 404 silencieux)
   const loaded = await page.evaluate(() => new Promise(resolve => {

@@ -1,7 +1,8 @@
 # Plan d'amélioration des SVG / Visuels
 
-> **Branche dédiée** : `claude/improve-game-svgs-0a3cf`
-> **Statut global** : 2 / 71 tâches terminées
+> **Branche dédiée actuelle** : `claude/improve-svg-HWGDY`
+> (anciennes branches : `claude/improve-game-svgs-0a3cf` — historique conservé)
+> **Statut global** : 9 / 71 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -89,13 +90,13 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 
 - [x] **C01** `chat_norris`
 - [x] **C02** `luciole_marais`
-- [ ] **C03** `cornichon`
-- [ ] **C04** `chouette_envoutee`
-- [ ] **C05** `araignee`
-- [ ] **C06** `mandragore_sauvage`
-- [ ] **C07** `kappa_douves`
-- [ ] **C08** `hippogriffe_courroux`
-- [ ] **C09** `acromantula_jeune`
+- [x] **C03** `cornichon`
+- [x] **C04** `chouette_envoutee`
+- [x] **C05** `araignee`
+- [x] **C06** `mandragore_sauvage`
+- [x] **C07** `kappa_douves`
+- [x] **C08** `hippogriffe_courroux`
+- [x] **C09** `acromantula_jeune`
 - [ ] **C10** `peeves`
 - [ ] **C11** `myrtle`
 - [ ] **C12** `serpent_cachot`
@@ -158,3 +159,12 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #1 | Plan initial rédigé | — |
 | 2026-05-09 | #2 | C01 chat_norris intégré (PNG via rembg) | Pipeline rembg+alpha-matting validé |
 | 2026-05-09 | #3 | C02 luciole_marais intégré | Script `/tmp/svg_work/integrate.py` réutilisable |
+| 2026-05-09 | #4 | Reprise sur branche `claude/improve-svg-HWGDY`, cible C03 cornichon | Prompt fourni, en attente d'image |
+| 2026-05-09 | #5 | C03 cornichon intégré (PNG via rembg) + témoin SVG du smoke test rendu auto-adaptatif | Ailes translucides perdues par rembg, corps lisible |
+| 2026-05-09 | #6 | C03 cornichon ré-intégré avec birefnet-general (ailes préservées) | Pipeline étendu : modèle birefnet-general garde les zones translucides ; à privilégier pour les créatures à ailes/voiles |
+| 2026-05-09 | #7 | C04 chouette_envoutee intégrée (birefnet-general) | Plumes fines + fumée violette de corruption + serres préservées |
+| 2026-05-09 | #8 | C05 araignee intégrée (birefnet-general) | 8 pattes, crocs avec venin et fil de toile conservés |
+| 2026-05-09 | #9 | C06 mandragore_sauvage intégrée (birefnet-general) | Couronne de feuillage + radicelles fines préservées |
+| 2026-05-09 | #10 | C07 kappa_douves intégré (birefnet-general) | Bol d'eau sur le crâne + algues filaments + griffes acérées préservés |
+| 2026-05-09 | #11 | C08 hippogriffe_courroux intégré (birefnet-general) | Ailes déployées + cicatrices de combat + regard menaçant préservés |
+| 2026-05-09 | #12 | C09 acromantula_jeune intégrée (birefnet-general) | 8 yeux, crocs avec venin + fils de toile préservés ; visuellement plus poilue/menaçante que C05 araignee |
