@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/continue-svg-work-v6BEc`
 > (anciennes branches : `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 14 / 75 tâches terminées
+> **Statut global** : 15 / 75 tâches terminées
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -98,7 +98,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C08** `hippogriffe_courroux`
 - [x] **C09** `acromantula_jeune`
 - [x] **C10** `peeves`
-- [ ] **C11** `myrtle`
+- [x] **C11** `myrtle`
 - [ ] **C12** `serpent_cachot`
 - [ ] **C13** `gobelin`
 - [ ] **C14** `troll`
@@ -193,3 +193,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #13 | Ajout du bloc D (4 blasons de maison en PNG) au plan | Statut 9/75 ; prompts D1-D4 préparés, intégration `index.html` + `ui.js` à prévoir lors de la première intégration |
 | 2026-05-09 | #14 | D1-D4 intégrés (V1 médaillons héraldiques) + V2 coasters mis de côté pour comparaison | `<svg>` inline remplacés par `<img>` ; `ui.js` inchangé (cloneNode() compat IMG) ; nouveau scénario 8 dans smoke.js (chargement PNG + clone HUD) |
 | 2026-05-09 | #15 | C10 peeves intégré (birefnet-general) sur branche `claude/continue-svg-work-v6BEc` | Costume bouffon + ricanement + geste obscène préservés ; débris/aura magiques retirés (rendus à part en jeu) |
+| 2026-05-09 | #16 | C11 myrtle intégré (birefnet-general) | Mimi Geignarde fantôme bleu argenté, lunettes rondes, couettes, robe Poudlard ; brume spectrale et ondulations préservées dans l'alpha |

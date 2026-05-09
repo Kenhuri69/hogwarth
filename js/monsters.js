@@ -179,6 +179,7 @@ const MONSTERS = [
     id:       "myrtle",
     name:     "Mimi Geignarde",
     icon:     "💧",
+    imgSrc:   "img/monsters/myrtle.png",
     category: "fantôme",
     desc:     "Le fantôme d'une élève vous attaque en sanglotant bruyamment",
     lore:     "Mimi Geignarde hante les toilettes du deuxième étage depuis sa mort. Son cri perçant peut vous paralyser.",
