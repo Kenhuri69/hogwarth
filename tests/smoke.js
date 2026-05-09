@@ -527,10 +527,60 @@ async function scenarioFloorTextures() {
   await browser.close();
 }
 
-// ── Runner ───────────────────────────────────────────────────
+// ── Scénario 8 : blasons des 4 maisons (PNG) ──────────────────
+
+async function scenarioHouseCrests() {
+  console.log('\n── Scénario 8 : blasons PNG des 4 maisons ──');
+  const { browser, page, errors } = await launchGame();
+
+  const expected = [
+    { id: 'gryffondor-logo', src: 'img/houses/gryffondor.png',  house: 'Gryffondor'  },
+    { id: 'serpentard-logo', src: 'img/houses/serpentard.png',  house: 'Serpentard'  },
+    { id: 'serdaigle-logo',  src: 'img/houses/serdaigle.png',   house: 'Serdaigle'   },
+    { id: 'poufsouffle-logo',src: 'img/houses/poufsouffle.png', house: 'Poufsouffle' }
+  ];
+
+  for (const e of expected) {
+    const t = await page.evaluate(({ eid, src }) => {
+      const el = document.getElementById(eid);
+      return {
+        present: !!el,
+        isImg:   !!el && el.tagName === 'IMG',
+        srcOk:   !!el && el.getAttribute('src') === src,
+        loaded:  !!el && el.complete && el.naturalWidth > 0
+      };
+    }, { eid: e.id, src: e.src });
+    console.log(`  ${e.id} →`, t);
+    assert(t.present && t.isImg, `${e.id} absent ou pas <img>`);
+    assert(t.srcOk,               `${e.id} src incorrect`);
+    assert(t.loaded,              `${e.id} PNG non chargé (404 ou alpha vide)`);
+  }
+
+  // Vérifier que _updateHouseBadge() clone bien l'<img> dans #house-crest.
+  // On appelle directement _updateHouseBadge (pas chooseHouse) pour ne pas
+  // déclencher le démarrage de partie ; on simule juste l'état post-choix.
+  const cloneCheck = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    _updateHouseBadge();
+    const c = document.getElementById('house-crest');
+    return {
+      hasContent: !!c && c.innerHTML.length > 0,
+      hasImg:    !!c && /<img[^>]+gryffondor\.png/.test(c.innerHTML)
+    };
+  });
+  console.log('  HUD clone →', cloneCheck);
+  assert(cloneCheck.hasContent && cloneCheck.hasImg, 'house-crest HUD ne reflète pas le PNG choisi');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ blasons PNG conformes');
+  await browser.close();
+}
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests];
   for (const s of scenarios) {
     await s();
   }
