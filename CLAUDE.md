@@ -42,13 +42,20 @@ js/
   quests.js        →  openQuestLog(), renderQuestList(), checkQuestCompletion(),
                       completeQuest(), checkKillQuests()
   shop.js          →  openShop(), buyItem() — catalogue progressif selon étage + garde-fous
-  save.js          →  saveGame(), loadGame()  — LocalStorage clé : hogwarts_rpg_save
+  save.js          →  Multi-slots : _serializeState/_applyState (purs),
+                      saveGame/loadGame (façades legacy), listSaveSlots,
+                      readSlot, writeSlot, deleteSlot, migrateLegacyKey,
+                      autoSave(reason). LocalStorage : hogwarts_rpg_saves
+                      (multi-slots) + hogwarts_rpg_save (legacy migré once).
+  save-ui.js       →  Modale #slot-modal (openSaveDialog/openLoadDialog) +
+                      Hub démarrage (enterStartHub, startHubNewGame,
+                      loadSlotAndStart).
   main.js          →  showPlayerSelect(), startGame(count), keyboard listeners
 .github/workflows/deploy.yml   →  CI GitHub Pages (push master → déploiement automatique)
 ```
 
 Ordre de chargement des scripts dans `index.html` :
-`audio → audio-music → audio-sfx → icons → monsters → data → state → ui → ui-bestiary → dungeon → textures → renderer → renderer-effects → renderer-minimap → movement → battle → battle-spells → battle-ui → inventory → quests → shop → save → main`
+`audio → audio-music → audio-sfx → icons → monsters → data → state → ui → ui-bestiary → dungeon → textures → renderer → renderer-effects → renderer-minimap → movement → battle → battle-spells → battle-ui → inventory → quests → shop → save → save-ui → main`
 
 ---
 
@@ -602,35 +609,72 @@ Pour chaque `d` de `wallDist` à `1` :
 
 ---
 
-## Sauvegarde
+## Sauvegarde (multi-slots)
 
-Clé LocalStorage : `hogwarts_rpg_save`
+### Modèle de stockage
+
+Deux clés cohabitent dans `localStorage` :
+
+| Clé                     | Rôle                                                       |
+|-------------------------|------------------------------------------------------------|
+| `hogwarts_rpg_saves`    | Modèle multi-slots actuel (versionné v1)                   |
+| `hogwarts_rpg_save`     | Ancienne clé legacy — migrée une seule fois vers `manual_1`|
 
 ```js
-// Contenu sauvegardé
-{
-  party: [player, player2],
-  partySize,
-  currentFloor, playerX, playerY, playerDir,
-  dungeon, visited, enemyMap, itemMap,
-  seenMonsters: Array.from(seenMonsters),   // Set → Array pour JSON
-  audioMuted:   AudioSystem.isMuted,
-  voiceEnabled: AudioSystem.voiceEnabled,
-  activeQuests                              // tableau complet avec progress et completed
-}
+// Forme de hogwarts_rpg_saves
+{ version: 1, slots: { manual_1: SlotEntry, manual_2: SlotEntry, manual_3: SlotEntry, auto: SlotEntry } }
 
-// Chargement — IMPORTANT : Object.assign pour préserver les références
-Object.assign(player,  gs.party[0]);
-Object.assign(player2, gs.party[1]);
-party[0] = player;
-party[1] = player2;
-if (gs.partySize)     partySize    = gs.partySize;
-if (gs.seenMonsters) seenMonsters  = new Set(gs.seenMonsters);
-if (gs.activeQuests) activeQuests  = gs.activeQuests;
-recalculateStats();   // reconstruire atk/def/mag/lck depuis _base* + équipement
+// Forme d'un SlotEntry
+{
+  meta:  { savedAt, label, heroNames[], heroIcons[], house, level, floor, difficulty, reason? },
+  state: <payload save complet — voir _serializeState() dans js/save.js>
+}
 ```
 
-Ne jamais faire `player = gs.party[0]` : cela casserait la référence `party[0] === player`.
+### API publique (`js/save.js`)
+
+| Fonction                   | Rôle                                                            |
+|----------------------------|-----------------------------------------------------------------|
+| `_serializeState()`        | Pur — instantané sérialisable de l'état runtime                 |
+| `_applyState(gs)`          | Pur — applique un instantané (mute en place, drawDungeon, etc.) |
+| `saveGame()` / `loadGame()`| Façades legacy (toujours valides, écrivent sur la clé legacy)    |
+| `listSaveSlots()`          | `[{id, meta, isAuto}]` triés selon `ALL_SLOT_IDS`               |
+| `readSlot(id)`             | `{meta, state}` ou `null`                                       |
+| `writeSlot(id, label)`     | Écriture manuelle. Refusé en combat (`inBattle`)                |
+| `deleteSlot(id)`           | Supprime un slot précis                                         |
+| `migrateLegacyKey()`       | Une seule fois : `hogwarts_rpg_save` → `manual_1`. Idempotent.  |
+| `autoSave(reason)`         | Slot `auto`. Throttle 1500 ms. Refusé en combat ou sans `chosenHouse`. |
+
+### Hooks d'auto-sauvegarde
+- `js/movement.js` : fin de `goDeeper()` (`floor-down`) et `goUp()` (`floor-up`).
+- `js/battle.js`   : fin de `endBattle()` (`battle-end`/`battle-flee`)
+                     et fin de `checkLevelUp()` (`level-up`).
+- Tous gardés par `typeof autoSave === 'function'`.
+
+### UI (`js/save-ui.js` + `css/save-ui.css`)
+- Boutons 💾 / 📂 → `openSaveDialog()` / `openLoadDialog()` qui ouvrent
+  `#slot-modal` peuplé dynamiquement.
+- Mode `save` : 3 emplacements manuels cliquables + carte auto en readonly
+  informatif. Mode `load` : uniquement les slots remplis.
+- Suppression via `×` discret (confirmation native).
+
+### Hub démarrage (`#start-hub-screen`)
+- Click sur `#title-screen` → `enterStartHub()` :
+  • migre l'éventuelle clé legacy
+  • aucun slot → bypass direct sur `#player-select-screen`
+  • au moins un slot → affiche le hub avec la liste cliquable
+- Click sur une carte slot → `loadSlotAndStart(id)` async :
+  • cache tous les écrans de démarrage
+  • `await loadTextures()` (idempotent)
+  • affiche `#game-container`, redimensionne le canvas
+  • `_applyState(slot.state)` puis init audio
+- Bouton "Nouvelle aventure" → `startHubNewGame()` qui bascule sur player-select.
+
+### Règle d'or
+Ne jamais faire `player = gs.party[0]` : `_applyState()` utilise `Object.assign` pour
+muter en place, ce qui préserve les références (`party[0] === player`). Idem pour
+`player2`. Toujours appeler `recalculateStats()` après application (déjà fait dans
+`_applyState`).
 
 ---
 

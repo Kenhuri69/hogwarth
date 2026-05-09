@@ -1,7 +1,7 @@
 # Plan — Système de sauvegarde & Écrans de démarrage
 
 > **Branche** : `claude/save-and-hub` (override utilisateur ; depuis master)
-> **Statut global** : 10 / 14 tâches terminées
+> **Statut global** : 13 / 14 tâches terminées (Z = PR ouverte = 14/14 visé)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est mis à jour à chaque étape franchie (règle 5).
@@ -140,11 +140,17 @@ Title (refonte) → click "Commencer"
 
 ### Phase 5 — Couverture & finalisation
 
-- [ ] **5.1** Étendre `tests/smoke.js` avec un scénario dédié (10) :
+- [x] **5.1** Étendre `tests/smoke.js` avec un scénario dédié (10) :
       multi-slots, migration legacy, hub démarrage, reprise via slot,
       auto-save. Au moins 4 assertions distinctes.
-- [ ] **5.2** Mise à jour `CLAUDE.md` (section sauvegarde + Hub) pour
+      ✅ 4 nouveaux scénarios (10 multi-slots, 11 modale UI,
+      12 auto-save, 13 hub démarrage) totalisant ~24 assertions.
+- [x] **5.2** Mise à jour `CLAUDE.md` (section sauvegarde + Hub) pour
       documenter le nouveau modèle aux sessions futures.
+      ✅ Section "Sauvegarde (multi-slots)" entièrement réécrite : modèle
+      `hogwarts_rpg_saves`, API publique tabulaire, hooks auto-save,
+      flux UI/Hub, règle d'or sur les références. Ordre de chargement
+      des scripts mis à jour avec `save-ui`.
 - [ ] **5.3** Commit final groupé + push + PR.
 
 ---
