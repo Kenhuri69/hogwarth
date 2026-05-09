@@ -296,10 +296,13 @@
 /* ── RESPONSIVE MOBILE ─────────────────────────────────────── */
 @media (max-width: 700px) {
   #combat-log-panel {
-    width: 160px;
+    width: 140px;
     max-height: 130px;
     font-size: 10px;
   }
+  /* Replié sur mobile, le panel devient une simple pastille discrète
+     en haut à droite, pour ne pas chevaucher le portrait du monstre. */
+  #combat-log-panel.collapsed { width: 96px; max-height: 26px; }
   #combat-log-list { font-size: 10px; padding: 4px 6px; }
   #turn-timeline {
     padding: 3px 8px;

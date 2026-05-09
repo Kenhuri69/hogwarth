@@ -579,8 +579,62 @@ async function scenarioHouseCrests() {
   await browser.close();
 }
 
+// ── Scénario 9 : ergonomie combat sur mobile ──────────────────
+
+async function scenarioCombatMobile() {
+  console.log('\n── Scénario 9 : ergonomie combat sur mobile ──');
+  const browser = await chromium.launch({ headless: true });
+  const ctx = await browser.newContext({
+    viewport: { width: 375, height: 800 }, // iPhone SE-like
+    deviceScaleFactor: 2, isMobile: true, hasTouch: true
+  });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
+  page.on('console', m => {
+    if (m.type() !== 'error') return;
+    const t = m.text();
+    if (isIgnorableError(t)) return;
+    errors.push(`console.error: ${t}`);
+  });
+
+  await page.goto(INDEX_URL);
+  await page.waitForFunction(() => typeof window.startGame === 'function');
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 30 });
+
+  const layout = await page.evaluate(() => {
+    const overlay = document.getElementById('encounter-overlay');
+    const cont    = document.getElementById('enemy-group');
+    const panel   = document.getElementById('combat-log-panel');
+    const cs      = el => el ? getComputedStyle(el) : null;
+    return {
+      overlayPadTop: parseFloat(cs(overlay).paddingTop),
+      overlayJustify: cs(overlay).justifyContent,
+      enemyMinH: parseFloat(cs(cont).minHeight),
+      panelExists: !!panel,
+      panelCollapsed: !!panel && panel.classList.contains('collapsed'),
+      panelToggleText: panel ? panel.querySelector('.clp-toggle').textContent : null
+    };
+  });
+  console.log('  layout :', layout);
+  assert(layout.overlayPadTop >= 40,                    'padding-top mobile insuffisant pour libérer la zone du monstre');
+  assert(layout.overlayJustify === 'flex-start',        'overlay devrait s\'aligner en haut sur mobile');
+  assert(layout.enemyMinH >= 140,                       'enemy-group-container trop bas (PNG monstre écrasé)');
+  assert(layout.panelExists,                            'combat-log-panel absent');
+  assert(layout.panelCollapsed,                         'combat-log-panel devrait être replié par défaut sur mobile');
+  assert(layout.panelToggleText === '+',                'toggle devrait afficher + quand replié');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ ergonomie combat mobile correcte');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioAddLogGuard, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile];
   for (const s of scenarios) {
     await s();
   }

@@ -236,6 +236,13 @@
       <div id="combat-log-list"></div>
     `;
     overlay.appendChild(panel);
+    // Sur petits écrans, on replie par défaut pour ne pas masquer le portrait
+    // du monstre. L'utilisateur déplie via le bouton +/− s'il en a besoin.
+    const isSmall = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
+    if (isSmall) {
+      panel.classList.add('collapsed');
+      panel.querySelector('.clp-toggle').textContent = '+';
+    }
     panel.querySelector('.clp-toggle').addEventListener('click', () => {
       panel.classList.toggle('collapsed');
       panel.querySelector('.clp-toggle').textContent = panel.classList.contains('collapsed') ? '+' : '−';
