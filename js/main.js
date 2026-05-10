@@ -237,6 +237,15 @@ async function startGame(count = 2) {
   AudioSystem.init();
   AudioSystem.playAmbientMusic(1);
 
+  // Intro : Dumbledore accueille le joueur dès l'entrée en jeu (avant
+  // qu'il ait pu croiser ou non son marqueur dans le donjon). Le dialogue
+  // propose la 1re quête. Délai léger pour laisser le HUD s'afficher.
+  if (typeof openNpcDialog === 'function' && typeof getNpcById === 'function') {
+    setTimeout(() => {
+      if (!inBattle && getNpcById('dumbledore')) openNpcDialog('dumbledore');
+    }, 500);
+  }
+
   // === FIX TEXTURE MISSING === re-render appuyés jusqu'à ce que tous les patterns soient prêts
   // Puis cadence normale (~500 ms) une fois l'état stable
   let frame = 0;
