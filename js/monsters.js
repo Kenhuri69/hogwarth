@@ -544,6 +544,7 @@ const MONSTERS = [
     id:       "loup_garou",
     name:     "Loup-Garou Enragé",
     icon:     "🐺",
+    imgSrc:   "img/monsters/loup_garou.png",
     category: "créature",
     desc:     "La pleine lune a transformé ce sorcier en bête sauvage",
     lore:     "Transformé par la morsure d'un loup-garou, ce sorcier perd tout contrôle sous la pleine lune. Il n'a plus conscience de lui-même et attaque tout ce qui bouge avec une férocité animale. Ses griffes peuvent déchirer même une armure renforcée.",
