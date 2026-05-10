@@ -31,13 +31,13 @@ connexe au travail SVG en cours, intégrée sur la même branche).
   `save.js` serialize/apply.
 
 ### 2. Backend logique
-- [ ] `data.js` : `CELL.FOUNTAIN = 7`.
-- [ ] `state.js` : `let usedFountains = new Set();`.
-- [ ] `dungeon.js` :
+- [x] `data.js` : `CELL.FOUNTAIN = 7`.
+- [x] `state.js` : `let usedFountains = new Set();`.
+- [x] `dungeon.js` :
     - dans `generateDungeon(floor)`, si `floor >= 2 && (floor-2) % 3 === 0`,
       forcer une room intermédiaire (ni rooms[0] ni rooms[length-1])
       à `CELL.FOUNTAIN` ; cette room ne reçoit alors ni shop ni chest.
-- [ ] `movement.js` :
+- [x] `movement.js` :
     - clé `xy = \`${playerX},${playerY}\``
     - overlay d'exploration `else if (cell === CELL.FOUNTAIN)` : SVG +
       titre + bouton « Boire à la fontaine » qui appelle
@@ -55,40 +55,40 @@ connexe au travail SVG en cours, intégrée sur la même branche).
       `usedFountains = new Set()` au début.
     - dans `checkObjectInFront()` (ligne 377) : ajouter `CELL.FOUNTAIN`
       aux types interactifs.
-- [ ] `save.js` : `_serializeState`/`_applyState` — `usedFountains`.
+- [x] `save.js` : `_serializeState`/`_applyState` — `usedFountains`.
 
 ### 3. Visuel
-- [ ] `movement.js` : SVG fontaine de pierre (bassin circulaire,
+- [x] `movement.js` : SVG fontaine de pierre (bassin circulaire,
       statue de chouette stylisée, jet d'eau bleuté, cabochons or,
       ombre, étincelles SMIL légères).
-- [ ] `renderer-effects.js` `drawCellMarker` : cas `CELL.FOUNTAIN`
+- [x] `renderer-effects.js` `drawCellMarker` : cas `CELL.FOUNTAIN`
       avec teinte bleue (anneau d'eau au sol).
-- [ ] `renderer-minimap.js` : mapper `CELL.FOUNTAIN` → classe
+- [x] `renderer-minimap.js` : mapper `CELL.FOUNTAIN` → classe
       `map-fountain` (bleue pâle).
-- [ ] `css/style.css` : `.map-fountain { background:#7ab4d8; }`.
+- [x] `css/style.css` : `.map-fountain { background:#7ab4d8; }`.
 
 ### 4. Plan SVG (entrées dans `SVG_PLAN.md`)
-- [ ] Ajouter `B-bonus-1` (`fountain` SVG inline raffinement) — pour
+- [x] Ajouter `B-bonus-1` (`fountain` SVG inline raffinement) — pour
       cohérence future.
-- [ ] Ajouter `C-bonus-1` (`fountain` PNG via générateur) — futur
+- [x] Ajouter `C-bonus-1` (`fountain` PNG via générateur) — futur
       remplacement par PNG si l'utilisateur le veut.
 
 ### 5. Documentation
-- [ ] Ajouter section « Salle fontaine » dans `CLAUDE.md` (sous
+- [x] Ajouter section « Salle fontaine » dans `CLAUDE.md` (sous
       « Système d'objets 3D »).
-- [ ] Mettre à jour la table des étages dans `CLAUDE.md` si
+- [x] Mettre à jour la table des étages dans `CLAUDE.md` si
       pertinente.
 
 ### 6. Tests
-- [ ] Smoke test (`tests/smoke.js`) — ajouter scénario fontaine :
+- [x] Smoke test (`tests/smoke.js`) — ajouter scénario fontaine :
     - charge le jeu, force `currentFloor = 2`, force une cellule
       `CELL.FOUNTAIN` adjacente, lance `useFountain()`, vérifie
       `c.hp === c.hpMax`, vérifie deuxième usage refusé.
-- [ ] Run final de tous les scénarios.
+- [x] Run final de tous les scénarios.
 
 ### 7. Clôture
-- [ ] Mettre à jour `SVG_PLAN.md` si compteur change.
-- [ ] Commit + push.
+- [x] Mettre à jour `SVG_PLAN.md` si compteur change.
+- [x] Commit + push.
 
 ## Critères de vérification (résumés)
 

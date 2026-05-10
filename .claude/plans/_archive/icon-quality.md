@@ -44,16 +44,16 @@ le rendu pixel parfait).
 
 ## Étapes
 
-1. [ ] Plan validé, commencer par refonte 6 sprites.
-2. [ ] Refondre les 6 fonctions dans `gen_icons.py` (lire le code existant pour reproduire le style Phase 4.5).
-3. [ ] Lancer `python3 gen_icons.py` puis `python3 tools/preview_icons.py items` → validation visuelle.
-4. [ ] POC tint sur épée :
+1. [x] Plan validé, commencer par refonte 6 sprites.
+2. [x] Refondre les 6 fonctions dans `gen_icons.py` (lire le code existant pour reproduire le style Phase 4.5).
+3. [x] Lancer `python3 gen_icons.py` puis `python3 tools/preview_icons.py items` → validation visuelle.
+4. [x] POC tint sur épée :
    - Générer `sword_blade_base.png` + `sword_hilt_gryff.png` (gen_icons.py)
    - CSS classes metal-* dans `css/style.css`
    - Resolver étendu `js/item-icons.js`
    - Test in-game : afficher les 6 variantes côte à côte (page de démo simple ou via shell JS)
-5. [ ] Smoke test : extension scénario 21 pour valider chargement des nouveaux PNG.
-6. [ ] Commit + push.
+5. [x] Smoke test : extension scénario 21 pour valider chargement des nouveaux PNG.
+6. [x] Commit + push.
 
 ## Hors périmètre
 - Phase 5 char icons (5 PNG 32×32) — pas demandé par l'utilisateur.
