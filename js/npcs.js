@@ -12,7 +12,14 @@
 //   icon:        "🧙",                     // emoji fallback
 //   portraitImg: "img/npc/<id>.png"         // optionnel : portrait raster (priorité 1)
 //   portraitSvg: '<svg>...</svg>'           // optionnel : portrait inline (priorité 2)
-//   placement:   { floor: 1, anchor: "first-room" | "any" },
+//   placement:   { floor: 1, anchor: "first-room" | "any" },  // PNJ fixes
+//   random:      true,                      // PNJ ambulant : tiré aléatoirement
+//   minFloor:    2,                         //   borne basse de tirage (random)
+//   maxFloor:    null,                      //   borne haute (null = sans limite)
+//   wares:       [                          // optionnel : catalogue vendeur
+//     { id: "potion_s", price: 30 },        //   `price` override ITEMS[id].price
+//     ...                                   //   (sinon prix d'origine de l'item)
+//   ],
 //   questsGiven:    ["quest_id", ...],     // quêtes que ce PNJ propose
 //   questsTurnedIn: ["quest_id", ...],     // quêtes que ce PNJ clôt (souvent === questsGiven)
 //   dialogues: {
@@ -193,6 +200,56 @@ const NPCS = [
       questReady:  "Excellent travail. Voici votre récompense, bien méritée.",
       questDone:   "Vous avez prouvé votre valeur. Gryffondor peut être fier."
     }
+  },
+
+  // ── Vendeurs ambulants (random:true) ─────────────────────────
+  // Tirés au sort à la génération d'étage (cf. dungeon.js). Ne donnent
+  // pas de quêtes — ouvrent une boutique réduite via npc.wares.
+  {
+    id:        "rosmerta",
+    name:      "Madame Rosmerta",
+    title:     "Buvette ambulante",
+    icon:      "🍻",
+    // TODO portrait PNG dédié — pour l'instant l'icône emoji 🍻 sert de fallback.
+    random:    true,
+    minFloor:  2,
+    maxFloor:  null,
+    wares: [
+      { id: "potion_s" },
+      { id: "potion_m" },
+      { id: "mandragore" },
+      { id: "choco_sorcier" }
+    ],
+    dialogues: {
+      greeting: [
+        "Tiens, un sorcier en vadrouille ! Une petite Bièreaubeurre, ça vous tente ?",
+        "J'ai aussi tout ce qu'il faut pour tenir le coup dans les couloirs. Servez-vous, vous me payez après."
+      ],
+      idle: "Les bonnes affaires sont rarement deux fois au même endroit, jeune sorcier."
+    }
+  },
+  {
+    id:        "mundungus",
+    name:      "Mondingus Fletcher",
+    title:     "Marchand au flair douteux",
+    icon:      "🦨",
+    // TODO portrait PNG dédié — pour l'instant l'icône emoji 🦨 sert de fallback.
+    random:    true,
+    minFloor:  3,
+    maxFloor:  null,
+    wares: [
+      { id: "livre_sortileges" },
+      { id: "livre_soin" },
+      { id: "livre_bombarda" },
+      { id: "felix" }
+    ],
+    dialogues: {
+      greeting: [
+        "Pst... approche, jeune sorcier. J'ai des... acquisitions exclusives.",
+        "Pas de questions, juste des prix. Tu jettes un œil ?"
+      ],
+      idle: "T'inquiète, c'est honnête. Enfin presque."
+    }
   }
 ];
 
@@ -203,5 +260,15 @@ function getNpcById(id) {
 }
 
 function getNpcsForFloor(floor) {
+  // PNJ fixes : placement déterministe par étage.
   return NPCS.filter(n => n.placement && n.placement.floor === floor);
+}
+
+function getRandomVendorsForFloor(floor) {
+  // PNJ ambulants : éligibles au tirage aléatoire pour cet étage.
+  return NPCS.filter(n =>
+    n.random === true &&
+    (n.minFloor === undefined || floor >= n.minFloor) &&
+    (n.maxFloor === undefined || n.maxFloor === null || floor <= n.maxFloor)
+  );
 }

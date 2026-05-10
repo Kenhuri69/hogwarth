@@ -83,6 +83,13 @@ function _npcDialogActions(npc, state) {
       });
     }
   }
+  // Vendeur ambulant : bouton dédié pour ouvrir sa boutique
+  if (Array.isArray(npc.wares) && npc.wares.length) {
+    out.push({
+      label: '🛒 Voir les marchandises',
+      onClick: `closeNpcDialog(); openVendorShop('${npc.id}');`
+    });
+  }
   out.push({ label: 'S\'éloigner', onClick: 'closeNpcDialog()', secondary: true });
   return out;
 }

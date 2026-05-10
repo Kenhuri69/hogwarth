@@ -133,9 +133,9 @@ function generateDungeon(floor) {
   // Ordre stable (premier inscrit = priorité), salle de spawn pour les
   // PNJ d'introduction, sinon première salle intermédiaire libre, repli
   // sur l'avant-dernière salle si toutes occupées.
+  const occupied = new Set();
   if (typeof getNpcsForFloor === 'function') {
     const npcsHere = getNpcsForFloor(floor);
-    const occupied = new Set();
     for (const npc of npcsHere) {
       const anchor = (npc.placement && npc.placement.anchor) || 'any';
       let placed = false;
@@ -155,6 +155,29 @@ function generateDungeon(floor) {
           if (_placeNpcInRoom(npc, rooms[fallback], false)) {
             occupied.add(fallback); placed = true;
           }
+        }
+      }
+    }
+  }
+
+  // Vendeur ambulant (PNJ random) : 35% de chance par étage 2+. Pool
+  // filtré par minFloor / maxFloor. Un seul vendeur par étage maximum.
+  if (floor >= 2 && Math.random() < 0.35 && typeof getRandomVendorsForFloor === 'function') {
+    const pool = getRandomVendorsForFloor(floor);
+    if (pool.length) {
+      const vendor = pool[Math.floor(Math.random() * pool.length)];
+      // Première room intermédiaire libre, sinon repli avant-dernière.
+      let placed = false;
+      for (let i = 1; i < rooms.length - 1; i++) {
+        if (occupied.has(i)) continue;
+        if (_placeNpcInRoom(vendor, rooms[i], false)) {
+          occupied.add(i); placed = true; break;
+        }
+      }
+      if (!placed && rooms.length >= 2) {
+        const fallback = rooms.length - 2;
+        if (_placeNpcInRoom(vendor, rooms[fallback], false)) {
+          occupied.add(fallback);
         }
       }
     }

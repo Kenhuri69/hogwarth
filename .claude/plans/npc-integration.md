@@ -203,9 +203,11 @@ Boutons d'action dynamiques :
 
 ### Itération 4 — Vendeurs ambulants + rencontres aléatoires
 
-- [ ] Type de PNJ "vendeur" : ouvre une boutique réduite contextuelle (potions rares, livres).
-- [ ] Génération aléatoire (similaire fontaine) avec pool de PNJ flag `random: true`.
-- [ ] Cooldown : pas deux fois le même PNJ aléatoire dans l'étage.
+- [x] Type de PNJ "vendeur" : `wares: [{id, price?}]` sur l'entrée NPCS, bouton "Voir les marchandises" dans le dialogue, `openVendorShop(npcId)` réutilise `#shop-modal`. Catalogue par vendeur, prix overridable par entrée.
+- [x] Génération aléatoire (similaire fontaine) : 35% de chance par étage 2+, pool filtré par `random:true` + `minFloor`/`maxFloor` via `getRandomVendorsForFloor(floor)`. Placement dans la première salle intermédiaire libre, repli avant-dernière room.
+- [x] Cooldown : un seul vendeur ambulant par étage (intrinsèque à la logique de placement — un seul tirage par étage).
+- [x] 2 vendeurs livrés : **Madame Rosmerta** (étage 2+, consommables : potion_s, potion_m, mandragore, choco_sorcier) et **Mondingus Fletcher** (étage 3+, livres + felix). Portraits emoji 🍻 / 🦨 (PNG TODO itération suivante).
+- [x] Smoke 3ter dédié : T1 registre + helpers, T2 bouton dialogue, T3 ouverture boutique avec catalogue, T4 achat débite l'or et grossit l'inventaire.
 
 ### Itération 5 — Quêtes répétables / quêtes en chaîne
 
@@ -246,3 +248,6 @@ Boutons d'action dynamiques :
 | 2026-05-10 | Portraits   | 8 PNG générés via Nano Banana avec prompts archétypaux (contournement filtres "personnalité publique" + IP). 7/8 conformes. Pomfresh : broche croix chrétienne au lieu de symbole magique → correction prévue (prompt de re-passe : "replace silver Christian cross brooch with small silver caduceus medallion / sprig of mandrake leaves / phoenix feather"). On intègre en l'état, correction itération 2 ultérieure. |
 | 2026-05-10 | Itération 2 (polish) | Animations marqueur canvas (halo pulsé + bounce indicateur), son `playNpcGreet`, dialogues multi-pages (string \| array) + nav `Suivant ▸`. 8 greetings convertis en 2 pages. Smoke 3bis étendu (T5 : pagination + anim + son). 24 scénarios verts. Reste : correction Pomfresh + itération 3 (casting étendu). |
 | 2026-05-10 | Retour PR #35 | Deux changements demandés : (1) l'intro Dumbledore est désormais déclenchée **automatiquement à `startGame`** (setTimeout 500 ms) plutôt que de dépendre d'une rencontre aléatoire sur la carte étage 1. Le greeting page 2 indique explicitement "retrouve-moi quelque part dans ces couloirs — je te récompenserai en personne", mécanique exploration→quête conservée. (2) **Type unifié `.map-special`** sur la minimap (fontaine + PNJ + futurs éléments interactifs partagent une même teinte) + entrée "Spécial" ajoutée à la légende. Smoke 3bis ajoute un T0 vérifiant l'auto-intro. |
+| 2026-05-10 | Refonte intro | Suite au retour utilisateur "le popup au-dessus du donjon n'est pas l'intro attendue", l'intro a été déplacée dans un **écran dédié `#intro-screen`** qui s'insère entre `chooseHouse()` et `startGame()`. Le reset PNJ/quêtes a été déplacé de `startGame` vers `chooseHouse` pour ne pas écraser l'acceptation. Smoke `startNewGame(skipIntro=true)` + T0/T0bis dédiés. PR #39 mergée. |
+| 2026-05-10 | Portraits desktop | Retour utilisateur : trop petits sur grand écran. `.npc-dialog-portrait` 64→128 px, `.intro-portrait` 96→180 px, carte intro 540→660 px max-width. Media query `@media (max-width: 700px)` rétablit les tailles d'origine sur mobile. PR #40 mergée. |
+| 2026-05-10 | Itération 4 | Vendeurs ambulants. Schéma NPC étendu avec `random:true` + `wares:[{id,price?}]`. 2 vendeurs livrés : Madame Rosmerta (consommables, étage 2+) et Mondingus Fletcher (livres + felix, étage 3+). Génération aléatoire 35%/étage via `getRandomVendorsForFloor`. Bouton "Voir les marchandises" dans le dialogue PNJ ; `openVendorShop(npcId)` réutilise `#shop-modal`. Scénario smoke 3ter dédié (T1-T4). Portraits PNG TODO — emoji fallback en attendant. |

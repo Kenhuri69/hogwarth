@@ -105,3 +105,61 @@ function buyItem(item) {
   updateUI();
   openShop(); // rafraîchir l'affichage
 }
+
+// ── Boutique de vendeur ambulant ──────────────────────────────
+// Réutilise #shop-modal mais peuple la grille avec npc.wares au lieu
+// de SHOP_CATALOG. Le `price` du wares prend la priorité sur ITEMS[id].price
+// si défini (sinon prix de base).
+function openVendorShop(npcId) {
+  const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
+  if (!npc || !Array.isArray(npc.wares) || !npc.wares.length) return;
+
+  const titleEl = document.getElementById('shop-title');
+  const goldEl  = document.getElementById('shop-gold');
+  const grid    = document.getElementById('shop-grid');
+  const modal   = document.getElementById('shop-modal');
+  if (!grid || !modal) return;
+
+  if (titleEl) titleEl.textContent = `${npc.icon || '🛒'} ${npc.name}`;
+  if (goldEl)  goldEl.textContent  = (player && player.gold) || 0;
+  grid.innerHTML = '';
+  grid.style.cssText = 'display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto';
+
+  let added = 0;
+  for (const entry of npc.wares) {
+    const item = ITEMS.find(i => i.id === entry.id);
+    if (!item) continue;
+    const price = (typeof entry.price === 'number') ? entry.price : item.price;
+    const canAfford = (player.gold || 0) >= price;
+    const div = document.createElement('div');
+    div.className = 'shop-item';
+    div.dataset.itemId = item.id;
+    div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #5a4020;border-radius:6px;background:rgba(30,20,10,0.55);cursor:' + (canAfford ? 'pointer' : 'default') + ';opacity:' + (canAfford ? '1' : '0.5');
+    div.innerHTML = `<div class="shop-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div>
+      <div class="shop-info">
+        <div class="shop-name">${item.name}</div>
+        <div class="shop-desc">${item.desc}</div>
+      </div>
+      <div class="shop-price">${price}G</div>`;
+    if (canAfford) div.onclick = () => buyVendorItem(item, price, npcId);
+    grid.appendChild(div);
+    added++;
+  }
+  if (added === 0) {
+    grid.innerHTML = `<div style="padding:20px;text-align:center;color:#8a7050;font-style:italic">
+      Le vendeur n'a plus rien à proposer…
+    </div>`;
+  }
+  modal.style.display = 'flex';
+}
+
+function buyVendorItem(item, price, npcId) {
+  if (player.gold < price) return;
+  if (player.inventory.length >= 16) { addMsg("Sac plein !", 'bad'); return; }
+  player.gold -= price;
+  player.inventory.push({...item});
+  document.getElementById('shop-gold').textContent = player.gold;
+  addMsg(`Acheté : ${item.name}`, 'good');
+  updateUI();
+  openVendorShop(npcId); // rafraîchir
+}
