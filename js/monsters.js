@@ -470,6 +470,7 @@ const MONSTERS = [
     id:       "detraqueur",
     name:     "Détraqueur",
     icon:     "🌑",
+    imgSrc:   "img/monsters/detraqueur.png",
     category: "être magique",
     desc:     "Un Détraqueur aspire toute joie et tout espoir autour de vous",
     lore:     "Créature squelettique qui se nourrit littéralement du bonheur des autres. Sa simple présence aspire toute joie et force quiconque à revivre ses pires souvenirs. Seul le Patronus — manifestation de ses propres souvenirs heureux — peut le repousser.",
