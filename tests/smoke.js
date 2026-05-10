@@ -14,7 +14,12 @@ const INDEX_URL = 'file://' + path.resolve(__dirname, '../index.html');
 function isIgnorableError(text) {
   // Bruit décorrélé du code (fonts CDN sur file://)
   return text.includes('ERR_CERT_AUTHORITY_INVALID')
-      || text.includes('Failed to load resource');
+      || text.includes('Failed to load resource')
+      // Limite Chromium en file:// : les `mask-image: url(file://...)` du
+      // wrapper .tinted-icon sont bloqués CORS. En production (HTTP) ça
+      // marche. Cf. img/icons/_tint_demo.html et IMG_STYLE.md.
+      || (text.includes('blocked by CORS policy')
+          && text.includes('img/icons/items/'));
 }
 
 async function launchGame() {
@@ -594,9 +599,12 @@ async function scenarioMonsterImages() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
 
-  // Tous les monstres avec imgSrc doivent retomber sur un <img> en combat
-  const ids = ['sorciere_tenebres', 'dementor_garde', 'voldemort_affaibli',
-               'voldemort_revenu', 'basilic', 'nagini'];
+  // Tous les monstres avec imgSrc (data-driven) doivent retomber sur un <img>
+  // en combat ET le PNG doit charger en 512+ avec alpha non-trivial.
+  const ids = await page.evaluate(() =>
+    MONSTERS.filter(m => m.imgSrc).map(m => m.id)
+  );
+  console.log(`  monstres avec imgSrc : ${ids.length}`);
 
   for (const id of ids) {
     const t = await page.evaluate((monsterId) => {
@@ -609,11 +617,22 @@ async function scenarioMonsterImages() {
         src:       (html.match(/src="([^"]+)"/) || [])[1] || null
       };
     }, id);
-    console.log(`  ${id} →`, t);
     assert(t.hasImgSrc,             `${id} sans imgSrc`);
     assert(t.usesImg && !t.usesSvg, `${id} ne rend pas un <img>`);
     assert(t.src && t.src.endsWith(`${id}.png`), `${id} src incorrect: ${t.src}`);
+
+    // Load + dimensions §1 IMG_STYLE.md (≥ 512×512 attendu pour les nouveaux PNG ;
+    // les 6 PNG legacy peuvent être plus petits, on tolère ≥ 256).
+    const probe = await page.evaluate((src) => new Promise(resolve => {
+      const img = new Image();
+      img.onload  = () => resolve({ ok: true, w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => resolve({ ok: false });
+      img.src = src;
+    }), t.src);
+    assert(probe.ok,        `${id}: PNG introuvable`);
+    assert(probe.w >= 256,  `${id}: trop petit (${probe.w}×${probe.h})`);
   }
+  console.log(`  ✓ ${ids.length} <img> + load OK`);
 
   // Vérifier qu'un monstre sans imgSrc utilise toujours son SVG (régression).
   // Témoin auto-adaptatif : on prend le premier monstre qui n'a pas encore
@@ -629,15 +648,21 @@ async function scenarioMonsterImages() {
     assert(ctrl.usesSvg && !ctrl.usesImg, 'fallback SVG cassé');
   }
 
-  // Vérifier que le fichier PNG est bien chargeable (pas 404 silencieux)
-  const loaded = await page.evaluate(() => new Promise(resolve => {
-    const img = new Image();
-    img.onload  = () => resolve({ ok: true,  w: img.naturalWidth, h: img.naturalHeight });
-    img.onerror = () => resolve({ ok: false });
-    img.src = 'img/monsters/sorciere_tenebres.png';
-  }));
-  console.log('  PNG chargeable :', loaded);
-  assert(loaded.ok && loaded.w >= 256, 'PNG sorciere_tenebres introuvable ou trop petit');
+  // Color-type RGBA (§1 IMG_STYLE.md) : tous les PNG monstres doivent
+  // avoir un canal alpha. Lecture du byte 25 de l'IHDR (color-type=6).
+  // L'alpha non-trivial (≥5% pixels à 0) est validé en amont par
+  // tools/process_monster_png.py au moment de l'intégration ; on n'y
+  // revient pas ici (file:// + getImageData = canvas tainted).
+  const fs = require('fs');
+  const repoRoot = path.resolve(__dirname, '..');
+  let nonRgba = [];
+  for (const id of ids) {
+    const buf = fs.readFileSync(path.join(repoRoot, 'img/monsters', `${id}.png`));
+    // Signature 8 bytes + IHDR length 4 + "IHDR" 4 + width 4 + height 4 + bit-depth 1 = 25
+    if (buf[25] !== 6) nonRgba.push(`${id}(ct=${buf[25]})`);
+  }
+  console.log(`  color-type RGBA : ${ids.length - nonRgba.length}/${ids.length} OK`);
+  assert(nonRgba.length === 0, `PNG sans canal alpha : ${nonRgba.join(', ')}`);
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
@@ -1752,17 +1777,23 @@ async function scenarioEquipmentAndStatusIcons() {
   assert(t4.hasWand && t4.hasArmor && t4.hasAcc,
          'slots vides → fallback wand.png/armor.png/accessory.png');
 
-  // T5 : fiche perso — slot avec item équipé utilise le PNG per-item du registry
+  // T5 : fiche perso — slot avec item équipé utilise le sprite per-item.
+  // wand1 est passé sur l'archi tint 2-calques (saule), donc on accepte
+  // soit l'`<img>` du registry legacy, soit le wrapper `tinted-icon`.
   const t5 = await page.evaluate(() => {
     const wand = ITEMS.find(i => i.id === 'wand1');
     player.equipped.wand = wand;
     openCharacter(0);
     const detail = document.getElementById('char-detail');
     const html = detail.innerHTML;
-    return { hasPerItem: /img\/icons\/items\/wand1\.png/.test(html) };
+    return {
+      hasPerItemImg:    /img\/icons\/items\/wand1\.png/.test(html),
+      hasTintedWrapper: /tinted-icon[^"]*tint-willow/.test(html),
+    };
   });
   console.log('  T5 fiche per-item →', t5);
-  assert(t5.hasPerItem, 'wand1 équipé doit utiliser items/wand1.png (priorité registry)');
+  assert(t5.hasPerItemImg || t5.hasTintedWrapper,
+         'wand1 équipé doit utiliser items/wand1.png OU wrapper tinted-icon');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
@@ -1886,12 +1917,15 @@ async function scenarioItemIcons() {
     ];
     openInventory();
     const grid = document.getElementById('inv-grid');
-    const imgs = Array.from(grid.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
-    return imgs;
+    const elems = Array.from(grid.querySelectorAll('img.ui-icon, .tinted-icon'));
+    // Pour `<img>` on lit src ; pour `.tinted-icon` on lit data-mask
+    // (équivalent fonctionnel : sprite source identifiant l'item).
+    return elems.map(e => e.getAttribute('src') || e.getAttribute('data-mask') || '');
   });
   console.log('  T2 inventaire →', t2);
   assert(t2.some(s => /items\/potion_s\.png$/.test(s)),         'inventaire doit afficher potion_s.png');
-  assert(t2.some(s => /items\/wand1\.png$/.test(s)),            'inventaire doit afficher wand1.png');
+  assert(t2.some(s => /items\/wand1\.png$/.test(s) || s === 'wand_shaft_base'),
+         'inventaire doit afficher wand1.png OU wrapper tinted (mask=wand_shaft_base)');
   assert(t2.some(s => /items\/livre_sortileges\.png$/.test(s)), 'inventaire doit afficher livre_sortileges.png');
 
   // T3 : grille boutique utilise les PNG (déclencher openShop avec un currentFloor>=1)
@@ -2196,8 +2230,100 @@ async function scenarioPhase3Catalog() {
   await browser.close();
 }
 
+// ── Scénario 24 : tint CSS 2-calques (resolver + structure DOM) ──
+//
+// Le rendu visuel (mask-image) ne peut pas être validé en file://
+// (limitation Chromium : masks vides). On vérifie ici uniquement :
+//   - structure DOM produite par le resolver (wrapper + 2 layers)
+//   - data attributes cohérents avec data.js
+//   - whitelist anti-injection (refus des metals inconnus / blade malformé)
+//   - présence des classes metal-* dans le CSS chargé
+
+async function scenarioTintCss() {
+  console.log('\n── Scénario 24 : tint CSS 2-calques (épée + baguettes) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const t = await page.evaluate(() => {
+    const sword = ITEMS.find(i => i.id === 'sword_gryff');
+    const wand  = ITEMS.find(i => i.id === 'wand1');
+    if (!sword || !sword.tinted) return { fail: 'sword_gryff sans flag tinted' };
+    if (!wand  || !wand.tinted)  return { fail: 'wand1 sans flag tinted' };
+
+    const html = getItemIconHtml(sword, 'ui-icon-xl');
+    const tmp  = document.createElement('div');
+    tmp.innerHTML = html;
+    const root = tmp.firstChild;
+
+    const wandHtml = getItemIconHtml(wand, 'ui-icon-xl');
+    const wandTmp  = document.createElement('div');
+    wandTmp.innerHTML = wandHtml;
+    const wandRoot = wandTmp.firstChild;
+
+    // Test injection : tint inconnu → fallback path normal (pas d'injection)
+    const evil = getItemIconHtml({ ...sword, tint: 'evil); background: url(data:x' }, 'ui-icon-md');
+
+    return {
+      // épée (palette métaux)
+      isWrapper:    root && root.tagName === 'SPAN',
+      hasTinted:    root && root.classList.contains('tinted-icon'),
+      hasTintCls:   root && root.classList.contains('tint-silver'),
+      hasSize:      root && root.classList.contains('ui-icon-xl'),
+      mask:         root && root.getAttribute('data-mask'),
+      overlay:      root && root.getAttribute('data-overlay'),
+      tint:         root && root.getAttribute('data-tint'),
+      layerCount:   root ? root.childElementCount : 0,
+      maskUrl:      root && root.querySelector('.tint-mask')   ? root.querySelector('.tint-mask').getAttribute('style') : '',
+      overlayUrl:   root && root.querySelector('.tint-overlay')? root.querySelector('.tint-overlay').getAttribute('style') : '',
+      // baguette (palette bois) — vérifie que la généralisation marche
+      wandHasTint:  wandRoot && wandRoot.classList.contains('tinted-icon'),
+      wandTint:     wandRoot && wandRoot.getAttribute('data-tint'),
+      wandMask:     wandRoot && wandRoot.getAttribute('data-mask'),
+      // sécurité
+      evilFallback: !/data:x/.test(evil) && !/tint-evil/.test(evil),
+    };
+  });
+
+  console.log('  resolver →', t);
+  assert(!t.fail,        t.fail || '');
+  assert(t.isWrapper,    'wrapper non produit');
+  assert(t.hasTinted,    'classe tinted-icon manquante');
+  assert(t.hasTintCls,   'classe tint-silver manquante');
+  assert(t.hasSize,      'classe ui-icon-xl perdue');
+  assert(t.mask    === 'sword_blade_base', `mask=${t.mask}`);
+  assert(t.overlay === 'sword_hilt_gryff', `overlay=${t.overlay}`);
+  assert(t.tint    === 'silver',           `tint=${t.tint}`);
+  assert(t.layerCount === 2,               `layers=${t.layerCount} (attendu 2)`);
+  assert(t.maskUrl.includes('sword_blade_base.png'),   'mask URL absente');
+  assert(t.overlayUrl.includes('sword_hilt_gryff.png'),'overlay URL absente');
+  assert(t.wandHasTint,                     'wand1 ne produit pas tinted-icon');
+  assert(['oak','ebony','willow','holly','elder','vine'].includes(t.wandTint),
+         `wand1 tint=${t.wandTint} hors palette bois`);
+  assert(t.wandMask === 'wand_shaft_base',  `wand mask=${t.wandMask}`);
+  assert(t.evilFallback, 'whitelist tint contournée — risque injection CSS');
+
+  // CSS : on lit style.css en Node (cssRules bloqué en file://). Vérifie
+  // les 12 classes tint-* (6 métaux + 6 bois) + le sélecteur tint-mask.
+  const fs   = require('fs');
+  const path = require('path');
+  const css  = fs.readFileSync(path.resolve(__dirname, '../css/style.css'), 'utf-8');
+  const palette = ['iron','copper','bronze','silver','gold','platinum',
+                   'oak','ebony','willow','holly','elder','vine'];
+  palette.forEach(p => {
+    assert(css.includes(`.tint-${p}`), `CSS .tint-${p} manquant`);
+  });
+  assert(css.includes('.tinted-icon .tint-mask'), 'CSS .tinted-icon .tint-mask manquant');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ tint CSS — DOM, attrs et whitelist OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
   for (const s of scenarios) {
     await s();
   }

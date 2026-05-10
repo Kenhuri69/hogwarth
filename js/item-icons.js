@@ -137,6 +137,14 @@ function getItemIconSrc(item) {
 // d'une même famille — voir .claude/plans/equipment-extended.md §2.4.
 function getItemIconHtml(item, sizeClass) {
   const cls = sizeClass || 'ui-icon-md';
+  // Architecture tint 2-calques : si l'item a `tinted: true` et déclare
+  // un blade (silhouette teintable) + un hilt (overlay détails fixes),
+  // on rend un wrapper <span> avec deux layers superposés. Voir
+  // css/style.css `.tinted-icon` et img/icons/_tint_demo.html.
+  if (item && item.tinted) {
+    const html = _getTintedItemHtml(item, cls);
+    if (html) return html;
+  }
   const src = getItemIconSrc(item);
   const tint = item && item.tint;
   // Style inline ne sécurise QUE les couleurs hex bien formées (#abc / #abcdef)
@@ -155,6 +163,36 @@ function getItemIconHtml(item, sizeClass) {
       : item.icon;
   }
   return '';
+}
+
+// Tint 2-calques : produit le wrapper HTML pour un item à variantes
+// (métaux, bois, ...). Refuse silencieusement (retourne null → fallback
+// path normal) si les valeurs ne passent pas la whitelist anti-injection
+// CSS. Les noms `tintMask` / `tintOverlay` correspondent aux deux PNG
+// sources (silhouette teintable + overlay de détails fixes).
+const _TINT_NAME_RE = /^[a-z0-9_]+$/i;
+const _TINT_ALLOWED_VALUES = [
+  // métaux
+  'iron', 'copper', 'bronze', 'silver', 'gold', 'platinum',
+  // bois (baguettes)
+  'oak', 'ebony', 'willow', 'holly', 'elder', 'vine',
+];
+function _getTintedItemHtml(item, cls) {
+  const mask    = String(item.tintMask    || '');
+  const overlay = String(item.tintOverlay || '');
+  const tint    = String(item.tint        || 'silver');
+  if (!_TINT_NAME_RE.test(mask))    return null;
+  if (!_TINT_NAME_RE.test(overlay)) return null;
+  if (_TINT_ALLOWED_VALUES.indexOf(tint) === -1) return null;
+  const alt = (item && item.name ? item.name : '').replace(/"/g, '&quot;');
+  const maskUrl    = `url('img/icons/items/${mask}.png')`;
+  const overlayUrl = `url('img/icons/items/${overlay}.png')`;
+  return `<span class="ui-icon tinted-icon ${cls} tint-${tint}" `
+       + `data-mask="${mask}" data-overlay="${overlay}" data-tint="${tint}" `
+       + `role="img" aria-label="${alt}">`
+       +   `<span class="tint-mask"    style="--tint-mask:${maskUrl}"></span>`
+       +   `<span class="tint-overlay" style="--tint-overlay:${overlayUrl}"></span>`
+       + `</span>`;
 }
 
 // Pour les emplacements d'équipement (fiche perso, panneau gauche)

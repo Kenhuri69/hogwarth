@@ -1278,6 +1278,53 @@ body {
 .ui-icon-md { width: 16px; height: 16px; }
 .ui-icon-lg { width: 20px; height: 20px; }
 .ui-icon-xl { width: 28px; height: 28px; vertical-align: -6px; }
+
+/* ── Tint CSS 2-calques (équipement à variantes : métaux, bois...) ─
+   Wrapper qui empile une silhouette teintée (mask-image + bg-color)
+   et un overlay de détails fixes (garde, gemmes, embout magique…).
+   Permet d'obtenir plusieurs variantes (fer/cuivre/.../chêne/ébène)
+   à partir d'un seul couple de PNG sources.
+
+   ⚠️ Limitation Chromium : `mask-image: url(...)` ne charge pas en
+   contexte file://. Le rendu final ne marche qu'en HTTP. Le smoke
+   test `tests/smoke.js` (file://) vérifie la structure DOM mais pas
+   le pixel produit. */
+.tinted-icon {
+  position: relative;
+  display: inline-block;
+  vertical-align: -2px;
+  image-rendering: pixelated;
+}
+.tinted-icon .tint-mask,
+.tinted-icon .tint-overlay {
+  position: absolute;
+  inset: 0;
+  image-rendering: pixelated;
+}
+.tinted-icon .tint-mask {
+  -webkit-mask: var(--tint-mask) center / contain no-repeat;
+          mask: var(--tint-mask) center / contain no-repeat;
+  background-color: var(--tint-color, #c0c0c8);
+}
+.tinted-icon .tint-overlay {
+  background: var(--tint-overlay) center / contain no-repeat;
+}
+/* Palette « métaux » (épées, anneaux, joaillerie) */
+.tint-iron     { --tint-color: #909096; }
+.tint-copper   { --tint-color: #b87333; }
+.tint-bronze   { --tint-color: #8c5a2c; }
+.tint-silver   { --tint-color: #c0c0c8; }
+.tint-gold     { --tint-color: #d4a830; }
+.tint-platinum { --tint-color: #d8d8e0; }
+/* Palette « bois » (baguettes — esthétique HP : tons chauds neutres
+   avec assez d'écart pour être lisibles à 28 px) */
+.tint-oak      { --tint-color: #a87642; }
+.tint-ebony    { --tint-color: #2a1f18; }
+.tint-willow   { --tint-color: #9b8068; }
+.tint-holly    { --tint-color: #7a4836; }
+.tint-elder    { --tint-color: #52402c; }
+.tint-vine     { --tint-color: #5d4a2a; }
+
 .cmd-btn .btn-label {
   font-size: 11px;
   text-transform: uppercase;

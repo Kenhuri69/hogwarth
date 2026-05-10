@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Tint demo — épée + baguettes 2-calques</title>
+  <style>
+    body {
+      background: #1c1610;
+      color: #e8d8b0;
+      font: 13px/1.5 system-ui, sans-serif;
+      margin: 0;
+      padding: 24px;
+    }
+    h1 { font-size: 16px; margin: 0 0 16px; }
+    h2 { font-size: 13px; margin: 24px 0 8px; }
+    p  { color: #b8a880; margin: 4px 0; }
+    .row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      margin: 8px 0 16px;
+    }
+    .cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .label { font-size: 11px; color: #a89870; }
+
+    /* ── Palette « métaux » (épées, anneaux) ──────────────────── */
+    .tint-iron     { --tint-color: #909096; }
+    .tint-copper   { --tint-color: #b87333; }
+    .tint-bronze   { --tint-color: #8c5a2c; }
+    .tint-silver   { --tint-color: #c0c0c8; }
+    .tint-gold     { --tint-color: #d4a830; }
+    .tint-platinum { --tint-color: #d8d8e0; }
+    /* ── Palette « bois » (baguettes — esthétique HP) ─────────── */
+    .tint-oak      { --tint-color: #a87642; }
+    .tint-ebony    { --tint-color: #2a1f18; }
+    .tint-willow   { --tint-color: #9b8068; }
+    .tint-holly    { --tint-color: #7a4836; }
+    .tint-elder    { --tint-color: #52402c; }
+    .tint-vine     { --tint-color: #5d4a2a; }
+
+    /* Wrapper 2-calques (mask + overlay) */
+    .tinted-icon {
+      position: relative;
+      display: inline-block;
+      vertical-align: -2px;
+      image-rendering: pixelated;
+    }
+    .tinted-icon .tint-mask,
+    .tinted-icon .tint-overlay {
+      position: absolute;
+      inset: 0;
+      image-rendering: pixelated;
+    }
+    .tinted-icon .tint-mask {
+      -webkit-mask: var(--tint-mask) center / contain no-repeat;
+              mask: var(--tint-mask) center / contain no-repeat;
+      background-color: var(--tint-color, #c0c0c8);
+    }
+    .tinted-icon .tint-overlay {
+      background: var(--tint-overlay) center / contain no-repeat;
+    }
+
+    /* Tailles utilisées dans la démo */
+    .ui-icon-xl { width: 48px;  height: 48px;  }
+    .big-2x .tinted-icon, .big-2x .native img { width: 96px;  height: 96px; }
+    .big-4x .tinted-icon, .big-4x .native img { width: 192px; height: 192px; }
+
+    .native img {
+      width: 48px; height: 48px;
+      image-rendering: pixelated;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>POC tint CSS — épée et baguettes (2 calques mask + overlay)</h1>
+  <p>Le calque <code>tint-mask</code> reçoit la couleur via <code>background-color: var(--tint-color)</code>.
+     Le calque <code>tint-overlay</code> superpose les détails fixes (garde, pointe magique…).</p>
+  <p>Limite Chromium : nécessite HTTP (<code>file://</code> rend des masks vides).</p>
+
+  <h2>Référence — sprites natifs combinés</h2>
+  <div class="row big-4x">
+    <div class="cell native"><img src="items/sword_gryff.png" alt="natif"><div class="label">sword_gryff</div></div>
+    <div class="cell native"><img src="items/wand1.png" alt="natif w1"><div class="label">wand1 (saule)</div></div>
+    <div class="cell native"><img src="items/wand2.png" alt="natif w2"><div class="label">wand2 (sureau)</div></div>
+  </div>
+
+  <h2>Épée — 6 métaux à 192px</h2>
+  <div class="row big-4x">
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-iron"><span class="tint-mask"    style="--tint-mask:url('items/sword_blade_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/sword_hilt_gryff.png')"></span></div><div class="label">iron</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-copper"><span class="tint-mask"   style="--tint-mask:url('items/sword_blade_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/sword_hilt_gryff.png')"></span></div><div class="label">copper</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-bronze"><span class="tint-mask"   style="--tint-mask:url('items/sword_blade_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/sword_hilt_gryff.png')"></span></div><div class="label">bronze</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-silver"><span class="tint-mask"   style="--tint-mask:url('items/sword_blade_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/sword_hilt_gryff.png')"></span></div><div class="label">silver</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-gold"><span class="tint-mask"     style="--tint-mask:url('items/sword_blade_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/sword_hilt_gryff.png')"></span></div><div class="label">gold</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-platinum"><span class="tint-mask" style="--tint-mask:url('items/sword_blade_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/sword_hilt_gryff.png')"></span></div><div class="label">platinum</div></div>
+  </div>
+
+  <h2>Baguette commune (tip basic) — 6 bois à 192px</h2>
+  <div class="row big-4x">
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-oak"><span class="tint-mask"     style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_basic.png')"></span></div><div class="label">chêne</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-ebony"><span class="tint-mask"   style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_basic.png')"></span></div><div class="label">ébène</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-willow"><span class="tint-mask"  style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_basic.png')"></span></div><div class="label">saule (wand1)</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-holly"><span class="tint-mask"   style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_basic.png')"></span></div><div class="label">houx</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-elder"><span class="tint-mask"   style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_basic.png')"></span></div><div class="label">sureau</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-vine"><span class="tint-mask"    style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_basic.png')"></span></div><div class="label">vigne</div></div>
+  </div>
+
+  <h2>Baguette runique (tip runic) — 6 bois à 192px</h2>
+  <div class="row big-4x">
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-oak"><span class="tint-mask"     style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_runic.png')"></span></div><div class="label">chêne</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-ebony"><span class="tint-mask"   style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_runic.png')"></span></div><div class="label">ébène</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-willow"><span class="tint-mask"  style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_runic.png')"></span></div><div class="label">saule</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-holly"><span class="tint-mask"   style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_runic.png')"></span></div><div class="label">houx</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-elder"><span class="tint-mask"   style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_runic.png')"></span></div><div class="label">sureau (wand2)</div></div>
+    <div class="cell"><div class="tinted-icon ui-icon-xl tint-vine"><span class="tint-mask"    style="--tint-mask:url('items/wand_shaft_base.png')"></span><span class="tint-overlay" style="--tint-overlay:url('items/wand_tip_runic.png')"></span></div><div class="label">vigne</div></div>
+  </div>
+</body>
+</html>
