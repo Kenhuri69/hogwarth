@@ -422,6 +422,7 @@ body {
 .map-enemy { background: #6a1010; }
 .map-shop { background: #1a4a2a; }
 .map-fountain { background: #2a5a82; box-shadow: inset 0 0 2px #cfe6ff; }
+.map-npc { background: #6a4a18; box-shadow: inset 0 0 2px #f5d27a; }
 
 .compass {
   display: grid; grid-template-columns: repeat(3, 1fr);
@@ -647,6 +648,76 @@ body {
 .explore-btn:active { transform: scale(0.97); }
 .explore-btn.secondary { border-color: var(--gold-dark); color: #8a7050; }
 .explore-btn.secondary:hover { color: var(--gold-light); border-color: var(--gold); }
+
+/* ── DIALOGUE PNJ ── */
+#npc-dialog-overlay {
+  position: absolute; inset: 0;
+  background: rgba(5,2,0,0.85);
+  flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px;
+  padding: 20px;
+  z-index: 9;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+#npc-dialog-overlay[style*="flex"] { display: flex !important; }
+.npc-dialog-header {
+  display: flex; align-items: center; gap: 14px;
+  max-width: 380px;
+}
+.npc-dialog-portrait {
+  width: 64px; height: 64px;
+  border: 1.5px solid var(--gold);
+  border-radius: 6px;
+  background: #1a0f05;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(201,168,76,0.25);
+  overflow: hidden;
+}
+.npc-dialog-portrait svg { width: 100%; height: 100%; }
+.npc-dialog-portrait .npc-portrait-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.npc-dialog-name {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  color: var(--gold);
+  letter-spacing: 1.5px;
+  text-shadow: 0 0 16px rgba(201,168,76,0.45);
+}
+.npc-dialog-title {
+  font-family: 'Crimson Text', serif;
+  font-size: 12px;
+  color: var(--gold-dark);
+  font-style: italic;
+  letter-spacing: 0.5px;
+}
+.npc-dialog-text {
+  font-family: 'Crimson Text', serif;
+  font-size: 14px;
+  color: var(--parchment-dark);
+  text-align: center;
+  max-width: 380px;
+  font-style: italic;
+  line-height: 1.6;
+}
+.npc-dialog-pager {
+  margin-top: 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  color: var(--gold-dark);
+  letter-spacing: 1.5px;
+  font-style: normal;
+}
+.npc-dialog-actions {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  margin-top: 4px;
+}
 
 /* ── FLOOR TRANSITION ── */
 #floor-transition {

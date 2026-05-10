@@ -53,11 +53,34 @@ function scaleMonster(base, floor) {
   return monster;
 }
 
+// Place un PNJ dans une salle. Préfère le centre s'il est libre, sinon
+// une autre case FLOOR. Skippe la case de spawn pour la salle 0 afin
+// que l'entrée sur la cellule PNJ soit déclenchable par un mouvement
+// (handleCellEntry n'est pas appelé sur le spawn). Retourne true si
+// placé, false si la salle n'a aucune case éligible.
+function _placeNpcInRoom(npc, room, isSpawnRoom) {
+  const candidates = [];
+  for (let dy = room.y; dy < room.y + room.h; dy++) {
+    for (let dx = room.x; dx < room.x + room.w; dx++) {
+      if (dungeon[dy][dx] !== CELL.FLOOR) continue;
+      if (isSpawnRoom && dx === room.cx && dy === room.cy) continue;
+      candidates.push({ x: dx, y: dy });
+    }
+  }
+  if (!candidates.length) return false;
+  const center = candidates.find(c => c.x === room.cx && c.y === room.cy);
+  const pick   = center || candidates[Math.floor(Math.random() * candidates.length)];
+  dungeon[pick.y][pick.x] = CELL.NPC;
+  npcPlacements.set(`${pick.x},${pick.y}`, npc.id);
+  return true;
+}
+
 function generateDungeon(floor) {
   dungeon = Array.from({length:MAP_H}, () => Array(MAP_W).fill(CELL.WALL));
   visited = Array.from({length:MAP_H}, () => Array(MAP_W).fill(false));
   enemyMap = Array.from({length:MAP_H}, () => Array(MAP_W).fill(null));
   itemMap = Array.from({length:MAP_H}, () => Array(MAP_W).fill(null));
+  npcPlacements = new Map();
 
   // Génération des salles
   const rooms = [];
@@ -105,6 +128,37 @@ function generateDungeon(floor) {
 
   // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
   usedFountains = new Set();
+
+  // Placement des PNJ majeurs à étage fixe — registre dans npcs.js.
+  // Ordre stable (premier inscrit = priorité), salle de spawn pour les
+  // PNJ d'introduction, sinon première salle intermédiaire libre, repli
+  // sur l'avant-dernière salle si toutes occupées.
+  if (typeof getNpcsForFloor === 'function') {
+    const npcsHere = getNpcsForFloor(floor);
+    const occupied = new Set();
+    for (const npc of npcsHere) {
+      const anchor = (npc.placement && npc.placement.anchor) || 'any';
+      let placed = false;
+      if (anchor === 'first-room') {
+        placed = _placeNpcInRoom(npc, rooms[0], true);
+        if (placed) occupied.add(0);
+      } else {
+        for (let i = 1; i < rooms.length - 1; i++) {
+          if (occupied.has(i)) continue;
+          if (_placeNpcInRoom(npc, rooms[i], false)) {
+            occupied.add(i); placed = true; break;
+          }
+        }
+        if (!placed && rooms.length >= 2) {
+          // Repli : avant-dernière room (peut écraser une salle déjà occupée)
+          const fallback = rooms.length - 2;
+          if (_placeNpcInRoom(npc, rooms[fallback], false)) {
+            occupied.add(fallback); placed = true;
+          }
+        }
+      }
+    }
+  }
 
   // Sélection des ennemis éligibles à cet étage
   const eligibleTypes = MONSTERS.filter(m =>

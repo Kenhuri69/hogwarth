@@ -31,6 +31,7 @@ function _buildMinimapCells(mm, cellSize) {
         else if (c === CELL.STAIRS_D || c === CELL.STAIRS_U) div.classList.add('map-stairs');
         else if (c === CELL.SHOP)                             div.classList.add('map-shop');
         else if (c === CELL.FOUNTAIN)                         div.classList.add('map-fountain');
+        else if (c === CELL.NPC)                              div.classList.add('map-npc');
         else if (enemyMap[y][x])                              div.classList.add('map-enemy');
         else                                                  div.classList.add('map-floor');
       }

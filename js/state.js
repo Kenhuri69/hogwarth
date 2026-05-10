@@ -135,6 +135,13 @@ let restCooldown = 0;
 // entrée d'étage : la fontaine se ré-active si l'on quitte puis revient.
 let usedFountains = new Set();
 
+// PNJ placés sur l'étage courant : Map "x,y" → npcId.
+// Recalculé à chaque génération d'étage, mis en cache dans floorDungeons.
+let npcPlacements = new Map();
+// PNJ déjà rencontrés (au moins une fois) — pour distinguer 1ère rencontre vs
+// visites suivantes dans les dialogues. Persisté au save.
+let seenNpcs = new Set();
+
 // ── Membres du groupe ────────────────────────────────────────
 let player = {
   name: "Harry Potter", icon: "🧙", imgSrc: "img/harry.png", class: "Élève de Gryffondor",
@@ -181,90 +188,11 @@ let party = [player, player2];
 // ============================================================
 // QUÊTES SECONDAIRES
 // ============================================================
-let activeQuests = [
-  {
-    id: "mandragore_pomfresh",
-    title: "Herboristerie urgente",
-    giver: "Madame Pomfresh",
-    desc: "Rapporte 3 Racines de Mandragore à l'infirmerie. Les élèves sont encore pétrifiés !",
-    objectives: [
-      { type: "item", itemId: "mandragore", amount: 3, progress: 0, completed: false }
-    ],
-    reward: { xp: 80, gold: 40, item: "potion_m", spell: "Episkey" },
-    completed: false,
-    location: "Infirmerie (étage 2)"
-  },
-  {
-    id: "livre_interdit",
-    title: "Le livre qui mord",
-    giver: "Gilderoy Lockhart",
-    desc: "Récupère le Livre des Monstres qui mord dans la Bibliothèque Interdite.",
-    objectives: [
-      { type: "item", itemId: "book_monsters", amount: 1, progress: 0, completed: false }
-    ],
-    reward: { xp: 120, gold: 25, item: "wand1" },
-    completed: false,
-    location: "Bibliothèque Interdite (étage 3)"
-  },
-  {
-    id: "troll_toilettes",
-    title: "Nettoyage des toilettes",
-    giver: "Mimi Geignarde",
-    desc: "Élimine le Troll des Toilettes qui bloque l'accès aux cachots.",
-    objectives: [
-      { type: "kill", monsterId: "troll", amount: 1, progress: 0, completed: false }
-    ],
-    reward: { xp: 150, gold: 60, item: "robe1" },
-    completed: false,
-    location: "Toilettes du 2e étage"
-  },
-  {
-    id: "chouette_perdue",
-    title: "Chouette ensorcelée",
-    giver: "Hagrid",
-    desc: "Capture une Chouette Ensorcelée et rapporte-la à Hagrid (dans la Forêt).",
-    objectives: [
-      { type: "kill", monsterId: "chouette_envoutee", amount: 1, progress: 0, completed: false }
-    ],
-    reward: { xp: 90, gold: 30, item: "broom" },
-    completed: false,
-    location: "Forêt Interdite (étage 4+)"
-  },
-  {
-    id: "niffleurs_trésor",
-    title: "L'invasion des Niffleurs",
-    giver: "Newton Scamander",
-    desc: "Les Niffleurs ont envahi les sous-sols ! Élimine-en 3 avant qu'ils volent tout l'or.",
-    objectives: [
-      { type: "kill", monsterId: "niffleur", amount: 3, progress: 0, completed: false }
-    ],
-    reward: { xp: 100, gold: 80, item: "amulette" },
-    completed: false,
-    location: "Sous-sols de Poudlard (étage 2+)"
-  },
-  {
-    id: "golem_passage",
-    title: "Le Gardien Endormi",
-    giver: "Professeur McGonagall",
-    desc: "Un Gardien du Portail bloque l'accès à la bibliothèque interdite. Neutralise-le.",
-    objectives: [
-      { type: "kill", monsterId: "gardien_portail", amount: 1, progress: 0, completed: false }
-    ],
-    reward: { xp: 180, gold: 70, item: "livre_bombarda" },
-    completed: false,
-    location: "Passages secrets (étage 5+)"
-  },
-  {
-    id: "lumiere_desespoir",
-    title: "La Lumière contre le Désespoir",
-    giver: "Professeur Lupin",
-    desc: "Affronte un Détraqueur pour prouver ton courage, puis rapporte un Chocolat aux Sorciers à Lupin pour qu'il t'enseigne le Patronus.",
-    objectives: [
-      { type: "kill", monsterId: "dementeur",     amount: 1, progress: 0, completed: false },
-      { type: "item", itemId:    "choco_sorcier", amount: 1, progress: 0, completed: false }
-    ],
-    reward: { xp: 200, gold: 50, spell: "Patronum" },
-    completed: false,
-    location: "Classe de Défense (étage 4+)"
-  }
-];
+// Catalogue des quêtes : voir QUEST_TEMPLATES dans quests.js.
+// Runtime :
+//   activeQuests     — quêtes acceptées (clones de templates) en cours.
+//   availableQuests  — IDs de quêtes débloquées non encore acceptées.
+//   completedQuests  — IDs de quêtes rendues (pour PNJ "déjà servi").
+let activeQuests    = [];
+let availableQuests = new Set();
+let completedQuests = new Set();

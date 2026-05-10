@@ -112,6 +112,26 @@ Object.assign(AudioSystem, {
     sub.start(now); sub.stop(now + 0.22);
   },
 
+  // ── Salutation PNJ (cloche douce à l'ouverture du dialogue) ──
+  playNpcGreet() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    // Deux notes douces type cloche : une fondamentale + sa quinte
+    [[523, 0, 0.30], [784, 0.08, 0.20]].forEach(([freq, delay, peak]) => {
+      const osc  = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type   = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, now + delay);
+      gain.gain.linearRampToValueAtTime(peak, now + delay + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.9);
+      osc.connect(gain).connect(this.sfxGain);
+      osc.start(now + delay); osc.stop(now + delay + 0.95);
+    });
+  },
+
   // ── Ouverture de coffre ───────────────────────────────────────
   playChestOpen() {
     if (this.isMuted) return;

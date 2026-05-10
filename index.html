@@ -436,6 +436,19 @@
         <div class="explore-actions" id="explore-actions"></div>
       </div>
 
+      <!-- Overlay dialogue PNJ (Dumbledore, Pomfresh, Hagrid…) -->
+      <div id="npc-dialog-overlay" style="display:none">
+        <div class="npc-dialog-header">
+          <div class="npc-dialog-portrait" id="npc-dialog-portrait"></div>
+          <div class="npc-dialog-id">
+            <div class="npc-dialog-name"  id="npc-dialog-name"></div>
+            <div class="npc-dialog-title" id="npc-dialog-title"></div>
+          </div>
+        </div>
+        <div class="npc-dialog-text" id="npc-dialog-text"></div>
+        <div class="npc-dialog-actions" id="npc-dialog-actions"></div>
+      </div>
+
       <!-- Transition d'étage -->
       <div id="floor-transition">
         <div class="floor-transition-content">
@@ -723,6 +736,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/icons.js"></script>
 <script src="js/scene-icons.js"></script>
 <script src="js/monsters.js?v=2"></script>
+<script src="js/npcs.js"></script>
 <script src="js/data.js?v=2"></script>
 <script src="js/item-icons.js"></script>
 <script src="js/state.js?v=2"></script>
@@ -739,6 +753,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/battle-ui.js"></script>
 <script src="js/inventory.js"></script>
 <script src="js/quests.js?v=2"></script>
+<script src="js/npc-dialog.js"></script>
 <script src="js/shop.js?v=2"></script>
 <script src="js/save.js?v=2"></script>
 <script src="js/save-ui.js"></script>

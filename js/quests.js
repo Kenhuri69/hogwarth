@@ -2,14 +2,146 @@
 // QUESTS.JS — Système de quêtes secondaires
 // ============================================================
 
+// Catalogue inerte des quêtes. Le runtime (`activeQuests`,
+// `availableQuests`, `completedQuests`) est dans state.js.
+// Pour activer une quête : `acceptQuest(id)` (clone le template).
+const QUEST_TEMPLATES = [
+  {
+    id: "intro_tutoriel",
+    title: "Bienvenue à Poudlard",
+    giver: "Albus Dumbledore",
+    desc: "Avance dans le donjon et descends jusqu'à l'étage 2 pour faire tes premiers pas.",
+    objectives: [
+      { type: "floor", floor: 2, progress: 0, amount: 1, completed: false }
+    ],
+    reward: { xp: 30, gold: 20 },
+    location: "Hall d'entrée (étage 1)"
+  },
+  {
+    id: "mandragore_pomfresh",
+    title: "Herboristerie urgente",
+    giver: "Madame Pomfresh",
+    desc: "Rapporte 3 Racines de Mandragore à l'infirmerie. Les élèves sont encore pétrifiés !",
+    objectives: [
+      { type: "item", itemId: "mandragore", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 80, gold: 40, item: "potion_m", spell: "Episkey" },
+    location: "Infirmerie (étage 2)"
+  },
+  {
+    id: "livre_interdit",
+    title: "Le livre qui mord",
+    giver: "Gilderoy Lockhart",
+    desc: "Récupère le Livre des Monstres qui mord dans la Bibliothèque Interdite.",
+    objectives: [
+      { type: "item", itemId: "book_monsters", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 120, gold: 25, item: "wand1" },
+    location: "Bibliothèque Interdite (étage 3)"
+  },
+  {
+    id: "troll_toilettes",
+    title: "Nettoyage des toilettes",
+    giver: "Mimi Geignarde",
+    desc: "Élimine le Troll des Toilettes qui bloque l'accès aux cachots.",
+    objectives: [
+      { type: "kill", monsterId: "troll", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 150, gold: 60, item: "robe1" },
+    location: "Toilettes du 2e étage"
+  },
+  {
+    id: "chouette_perdue",
+    title: "Chouette ensorcelée",
+    giver: "Hagrid",
+    desc: "Capture une Chouette Ensorcelée et rapporte-la à Hagrid (dans la Forêt).",
+    objectives: [
+      { type: "kill", monsterId: "chouette_envoutee", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 90, gold: 30, item: "broom" },
+    location: "Forêt Interdite (étage 4+)"
+  },
+  {
+    id: "niffleurs_trésor",
+    title: "L'invasion des Niffleurs",
+    giver: "Newton Scamander",
+    desc: "Les Niffleurs ont envahi les sous-sols ! Élimine-en 3 avant qu'ils volent tout l'or.",
+    objectives: [
+      { type: "kill", monsterId: "niffleur", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 100, gold: 80, item: "amulette" },
+    location: "Sous-sols de Poudlard (étage 2+)"
+  },
+  {
+    id: "golem_passage",
+    title: "Le Gardien Endormi",
+    giver: "Professeur McGonagall",
+    desc: "Un Gardien du Portail bloque l'accès à la bibliothèque interdite. Neutralise-le.",
+    objectives: [
+      { type: "kill", monsterId: "gardien_portail", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 180, gold: 70, item: "livre_bombarda" },
+    location: "Passages secrets (étage 5+)"
+  },
+  {
+    id: "lumiere_desespoir",
+    title: "La Lumière contre le Désespoir",
+    giver: "Professeur Lupin",
+    desc: "Affronte un Détraqueur pour prouver ton courage, puis rapporte un Chocolat aux Sorciers à Lupin pour qu'il t'enseigne le Patronus.",
+    objectives: [
+      { type: "kill", monsterId: "dementeur",     amount: 1, progress: 0, completed: false },
+      { type: "item", itemId:    "choco_sorcier", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 200, gold: 50, spell: "Patronum" },
+    location: "Classe de Défense (étage 4+)"
+  }
+];
+
+function getQuestTemplate(id) {
+  return QUEST_TEMPLATES.find(t => t.id === id) || null;
+}
+
+// ── Acceptation / remise via PNJ ─────────────────────────────────
+
+// Active une quête disponible. Idempotent : silencieusement ignoré si la
+// quête est déjà active ou complétée. Retourne true si la quête a été
+// effectivement ajoutée à activeQuests.
+function acceptQuest(id) {
+  if (!id) return false;
+  if (activeQuests.some(q => q.id === id)) return false;
+  if (completedQuests.has(id))             return false;
+  const tpl = getQuestTemplate(id);
+  if (!tpl) return false;
+  // Clone profond pour préserver les compteurs progress par instance
+  const inst = JSON.parse(JSON.stringify(tpl));
+  inst.completed = false;
+  activeQuests.push(inst);
+  availableQuests.delete(id);
+  addMsg(`📜 Nouvelle quête : « ${tpl.title} »`, 'magic');
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
+  return true;
+}
+
+// Variante appelable depuis l'overlay de dialogue PNJ (ne connaît
+// que l'ID). Trouve l'index puis délègue à completeQuest (ex-turnInQuest).
+function turnInQuestById(id) {
+  _refreshObjectives();
+  const idx = activeQuests.findIndex(q => q.id === id);
+  if (idx === -1) return false;
+  const q = activeQuests[idx];
+  if (!q.objectives.every(o => o.completed)) return false;
+  completeQuest(idx);
+  return true;
+}
+
 // ── Ouvre le journal des quêtes dans la modale personnage ────
 // On réutilise #char-detail pour ne pas casser openCharacter().
 function openQuestLog() {
   const detail = document.getElementById('char-detail');
   if (!detail) return;
 
-  const done  = activeQuests.filter(q =>  q.completed).length;
-  const total = activeQuests.length;
+  const done  = completedQuests.size;
+  const total = activeQuests.length + done;
 
   detail.innerHTML = `
     <div style="font-family:'Cinzel',serif;font-size:15px;color:var(--gold);
@@ -32,8 +164,13 @@ function renderQuestList() {
   if (!container) return;
   container.innerHTML = '';
 
-  const pending   = activeQuests.filter(q => !q.completed);
-  const completed = activeQuests.filter(q =>  q.completed);
+  // Met à jour les étapes "item" (compte depuis l'inventaire)
+  _refreshObjectives();
+
+  const pending   = activeQuests.slice();
+  const completed = Array.from(completedQuests || [])
+    .map(id => getQuestTemplate(id))
+    .filter(Boolean);
 
   if (pending.length === 0 && completed.length === 0) {
     container.innerHTML = `<div style="text-align:center;padding:30px;color:#8a7050">
@@ -110,10 +247,9 @@ function renderQuestList() {
       <div style="width:100%">${stepsHtml}</div>
       <div style="font-size:10px;color:#8a7050">Récompenses : ${rewardParts.join(' · ')}</div>
       ${ready
-        ? `<button class="cmd-btn" onclick="checkQuestCompletion(${idx})"
-             style="align-self:flex-end;font-size:11px;color:#60c040;border-color:#60c040">
-             ✅ Remettre l'étape
-           </button>`
+        ? `<div style="font-size:10px;color:#60c040;align-self:flex-end;font-style:italic">
+             ✅ Prêt — retourne voir ${q.giver}
+           </div>`
         : `<div style="font-size:10px;color:#4a3a20;align-self:flex-end;font-style:italic">
              Étape en cours…
            </div>`
@@ -152,55 +288,41 @@ function getActiveStep(q) {
   return q.objectives.find(o => !o.completed) || null;
 }
 
-// ── Vérification et remise d'une quête ──────────────────────
-window.checkQuestCompletion = function(index) {
-  const q = activeQuests[index];
-  if (!q || q.completed) return;
-  const step = getActiveStep(q);
-  if (!step) return;
-
-  if (step.type === 'item') {
-    const count = player.inventory.filter(i => i.id === step.itemId).length;
-    step.progress = count;
-    if (count >= step.amount) {
-      // Consommer les objets requis
-      let toConsume = step.amount;
-      player.inventory = player.inventory.filter(i => {
-        if (i.id === step.itemId && toConsume > 0) { toConsume--; return false; }
-        return true;
-      });
-      step.completed = true;
-      finalizeOrAdvance(index);
-    } else {
-      addMsg(`Il manque ${step.amount - count} objet(s) pour finir cette étape.`, 'bad');
-      renderQuestList();
+// Recalcule l'état des étapes "item" (et "floor") pour toutes les quêtes
+// actives. À appeler avant tout dispatch d'état (PNJ dialog, journal,
+// avancement étage). Les étapes "kill" sont mises à jour par
+// checkKillQuests, et les étapes "floor" par checkFloorQuests.
+function _refreshObjectives() {
+  for (const q of activeQuests) {
+    for (const step of q.objectives) {
+      if (step.completed) continue;
+      if (step.type === 'item') {
+        const count = (player && player.inventory)
+          ? player.inventory.filter(i => i.id === step.itemId).length : 0;
+        step.progress = count;
+        if (count >= step.amount) step.completed = true;
+      }
     }
-  } else if (step.type === 'kill') {
-    if (step.progress >= step.amount) {
-      step.completed = true;
-      finalizeOrAdvance(index);
-    } else {
-      addMsg(`Il faut encore éliminer ${step.amount - step.progress} ennemi(s).`, 'bad');
-      renderQuestList();
-    }
-  }
-};
-
-// Si toutes les étapes sont closes, complète la quête. Sinon, rafraîchit l'affichage.
-function finalizeOrAdvance(index) {
-  const q = activeQuests[index];
-  if (q.objectives.every(o => o.completed)) {
-    completeQuest(index);
-  } else {
-    addMsg(`📜 Étape suivante : « ${q.title} »`, 'magic');
-    renderQuestList();
   }
 }
 
-// ── Attribution des récompenses ──────────────────────────────
+// ── Attribution des récompenses + remise ─────────────────────
+// Consomme les objets requis pour les étapes "item", retire la quête
+// d'activeQuests, l'ajoute à completedQuests, distribue les
+// récompenses. Appelée par turnInQuestById (depuis le dialogue PNJ).
 function completeQuest(index) {
   const q = activeQuests[index];
-  q.completed = true;
+  if (!q) return;
+
+  // Consomme les items requis (étapes "item")
+  for (const step of q.objectives) {
+    if (step.type !== 'item') continue;
+    let toConsume = step.amount;
+    player.inventory = player.inventory.filter(i => {
+      if (i.id === step.itemId && toConsume > 0) { toConsume--; return false; }
+      return true;
+    });
+  }
 
   if (q.reward.xp)    player.xp   += q.reward.xp;
   if (q.reward.gold)  player.gold += q.reward.gold;
@@ -224,6 +346,10 @@ function completeQuest(index) {
     if (window.checkHouseLevelUp) window.checkHouseLevelUp();
   }
 
+  // Retire de l'actif, marque comme rendue
+  activeQuests.splice(index, 1);
+  completedQuests.add(q.id);
+
   AudioSystem.playLevelUp();
   addMsg(`✅ Quête terminée : « ${q.title} » !`, 'good');
 
@@ -235,21 +361,39 @@ function completeQuest(index) {
 }
 
 // ── Appelée depuis battle.js quand un monstre est vaincu ─────
+// Met à jour la progression. NE complète PLUS automatiquement la quête :
+// le joueur doit retourner voir le PNJ donneur pour la rendre.
 window.checkKillQuests = function(monsterId) {
-  activeQuests.forEach((q, idx) => {
-    if (q.completed) return;
+  activeQuests.forEach((q) => {
     const step = getActiveStep(q);
     if (!step || step.type !== 'kill' || step.monsterId !== monsterId) return;
     step.progress++;
     if (step.progress >= step.amount) {
       step.completed = true;
-      // Auto-complétion ou passage à l'étape suivante avec délai pour la fin de combat
-      setTimeout(() => {
-        if (q.objectives.every(o => o.completed)) completeQuest(idx);
-        else { addMsg(`📜 Étape suivante : « ${q.title} »`, 'magic'); renderQuestList(); }
-      }, 600);
+      const next = getActiveStep(q);
+      if (next) {
+        addMsg(`📜 Étape suivante : « ${q.title} »`, 'magic');
+      } else {
+        addMsg(`📜 Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+      }
     } else {
       addMsg(`📜 Quête « ${q.title} » : ${step.progress}/${step.amount}`, '');
+    }
+  });
+};
+
+// ── Appelée à chaque entrée d'étage (goDeeper / restoration) ──
+// Marque comme accomplies les étapes "floor" dont la cible est atteinte.
+window.checkFloorQuests = function(floor) {
+  activeQuests.forEach((q) => {
+    for (const step of q.objectives) {
+      if (step.completed)         continue;
+      if (step.type   !== 'floor') continue;
+      if (floor      >= step.floor) {
+        step.progress  = step.amount;
+        step.completed = true;
+        addMsg(`📜 Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+      }
     }
   });
 };

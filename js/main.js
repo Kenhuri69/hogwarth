@@ -210,12 +210,19 @@ async function startGame(count = 2) {
   generateDungeon(1);
   floorDungeons = {};   // reset du cache à chaque nouvelle partie
   searchedCells = new Set();
+  seenNpcs      = new Set();
+  // Toutes les quêtes du catalogue sont disponibles dès le départ.
+  // Le joueur doit rencontrer le PNJ correspondant pour les accepter.
+  activeQuests    = [];
+  availableQuests = new Set(QUEST_TEMPLATES.map(t => t.id));
+  completedQuests = new Set();
   restCooldown  = 0;
   updateUI();
   updateQuestTracker();
   updateCompass();
   renderMinimap();
   drawDungeon();
+  if (typeof startNpcAnimLoop === 'function') startNpcAnimLoop();
   updateLocationDisplay();
 
   const diffIcon = { Facile:'🟢', Normal:'🟡', Difficile:'🟠', Expert:'🔴' }[difficulty] || '';

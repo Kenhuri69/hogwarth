@@ -4,6 +4,27 @@
 // Utilise les constantes canvas/ctx/EDGE_A définies dans renderer.js.
 // ============================================================
 
+// Phase d'animation pour les marqueurs PNJ (incrémenté par
+// startNpcAnimLoop, lu par drawCellMarker → cas CELL.NPC).
+let _npcAnimPhase = 0;
+let _npcAnimTimer = null;
+
+// Boucle d'animation déclenchée uniquement quand l'étage contient des
+// PNJ. 5 FPS suffisent pour un pulse de halo et une oscillation du
+// signe "!"/"?". Idempotent.
+function startNpcAnimLoop() {
+  if (_npcAnimTimer) return;
+  _npcAnimTimer = setInterval(() => {
+    if (typeof npcPlacements === 'undefined' || npcPlacements.size === 0) return;
+    _npcAnimPhase = performance.now() / 1000;
+    if (typeof drawDungeon === 'function') drawDungeon();
+  }, 200);
+}
+
+function stopNpcAnimLoop() {
+  if (_npcAnimTimer) { clearInterval(_npcAnimTimer); _npcAnimTimer = null; }
+}
+
 // ── Lignes de fuite sur le sol ──────────────────────────────────
 function drawFloorLines(cx, cy, scale, W, H) {
   const lineCount = 8;
@@ -202,6 +223,68 @@ function drawCellMarker(cx, cy, bx, by, size, cell) {
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('📦', bx, by);
+  } else if (cell === CELL.NPC) {
+    // Silhouette dorée — corps stylisé + halo chaud + indicateur "!" / "?"
+    // selon l'état de la quête liée (offer / ready). Le PNJ exact est
+    // identifié via npcPlacements (Map "x,y" → npcId).
+    const npcId = (typeof npcPlacements !== 'undefined')
+      ? npcPlacements.get(`${cx},${cy}`) : null;
+    const sign  = (typeof getNpcMarkerSign === 'function')
+      ? getNpcMarkerSign(npcId) : '';
+
+    // Phase d'animation : pulse doux du halo + bounce du signe "!"/"?"
+    const phase     = (typeof _npcAnimPhase !== 'undefined') ? _npcAnimPhase : 0;
+    const haloPulse = 0.85 + 0.20 * Math.sin(phase * 2);
+    const signBob   = sign ? Math.sin(phase * 3) * size * 0.08 : 0;
+
+    ctx.save();
+    // Halo chaud (pulsé)
+    const halo = ctx.createRadialGradient(bx, by - size * 0.1, 0, bx, by - size * 0.1, size * 0.85 * haloPulse);
+    halo.addColorStop(0,   `rgba(255,220,140,${0.35 * haloPulse})`);
+    halo.addColorStop(0.6, `rgba(220,170,60,${0.15 * haloPulse})`);
+    halo.addColorStop(1,   'rgba(160,110,30,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.ellipse(bx, by, size * 0.85 * haloPulse, size * 1.0 * haloPulse, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Ombre au sol
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath();
+    ctx.ellipse(bx, by + size * 0.55, size * 0.32, size * 0.09, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Corps stylisé : tête + buste/robe trapézoïdale
+    const goldFill   = '#d8b34c';
+    const goldStroke = 'rgba(80,55,15,0.85)';
+    // Robe (trapèze)
+    ctx.fillStyle   = goldFill;
+    ctx.strokeStyle = goldStroke;
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(bx - size * 0.18, by - size * 0.15);
+    ctx.lineTo(bx + size * 0.18, by - size * 0.15);
+    ctx.lineTo(bx + size * 0.36, by + size * 0.55);
+    ctx.lineTo(bx - size * 0.36, by + size * 0.55);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // Tête
+    ctx.beginPath();
+    ctx.arc(bx, by - size * 0.32, size * 0.16, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+
+    // Indicateur "!" ou "?" au-dessus, bobbé verticalement
+    if (sign) {
+      ctx.font = `bold ${Math.floor(size * 0.5)}px sans-serif`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle    = sign === '!' ? '#ffd84a' : '#b8d4ff';
+      ctx.shadowColor  = 'rgba(0,0,0,0.7)';
+      ctx.shadowBlur   = 4;
+      ctx.fillText(sign, bx, by - size * 0.7 + signBob);
+      ctx.shadowBlur   = 0;
+    }
+    ctx.restore();
   } else if (cell === CELL.FOUNTAIN) {
     // Fontaine — anneau d'eau bleuté avec halo
     const dried = (typeof usedFountains !== 'undefined') &&
