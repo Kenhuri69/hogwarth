@@ -38,12 +38,12 @@ const NPCS = [
     dialogues: {
       greeting:    [
         "Ah, te voilà enfin ! Bienvenue dans les profondeurs de Poudlard, jeune sorcier. Le château recèle bien des mystères.",
-        "Pour faire tes premiers pas, descends d'un étage. Le grand escalier n'est jamais loin — garde l'œil ouvert, chaque salle a son histoire."
+        "Pour ta première épreuve, descends d'un étage. Une fois fait, retrouve-moi quelque part dans ces couloirs — je te récompenserai en personne."
       ],
       idle:        "Le château murmure tes pas. Continue ton exploration.",
       questOffer:  "Avant tout, descends d'un étage. C'est l'épreuve la plus douce que je puisse t'offrir.",
-      questActive: "Le grand escalier t'attend. Trouve-le, et tu auras gagné mon respect.",
-      questReady:  "Bien joué ! Reviens me voir : tu mérites un encouragement.",
+      questActive: "Le grand escalier t'attend. Trouve-le, et reviens me voir une fois la descente accomplie.",
+      questReady:  "Bien joué ! Tu as fait tes premiers pas. Voici ta récompense, bien méritée.",
       questDone:   "Tu es désormais lancé sur le chemin. Que la chance t'accompagne."
     }
   },

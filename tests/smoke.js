@@ -321,6 +321,18 @@ async function scenarioNpcIntegration() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
 
+  // T0 : auto-intro Dumbledore au démarrage (timer 500 ms dans startGame)
+  await page.waitForTimeout(700);
+  const t0 = await page.evaluate(() => ({
+    seenDumbledore: seenNpcs.has('dumbledore'),
+    overlayOpen:    document.getElementById('npc-dialog-overlay').style.display === 'flex'
+  }));
+  console.log('  T0 auto-intro:', t0);
+  assert(t0.seenDumbledore, 'auto-intro Dumbledore non déclenché au démarrage');
+  assert(t0.overlayOpen,    'overlay dialogue non visible après auto-intro');
+  // Refermer pour ne pas perturber les sous-scénarios suivants
+  await page.evaluate(() => closeNpcDialog());
+
   // T1 : registre + helpers exposés
   const t1 = await page.evaluate(() => ({
     npcCount:        typeof NPCS !== 'undefined' ? NPCS.length : -1,
