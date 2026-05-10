@@ -118,8 +118,17 @@ body {
 .char-grid {
   display:grid;
   grid-template-columns:220px 1fr;
+  grid-template-areas:
+    "stats equip"
+    "stats spells"
+    "stats inv";
+  grid-template-rows: auto auto auto;
   gap:12px; align-items:start;
 }
+.char-grid > .section-stats  { grid-area: stats;  }
+.char-grid > .section-equip  { grid-area: equip;  }
+.char-grid > .section-spells { grid-area: spells; }
+.char-grid > .section-inv    { grid-area: inv;    }
 
 /* Bouton accordéon — visible seulement en mobile */
 .section-toggle{
@@ -321,12 +330,10 @@ body {
   left:auto; right:54px; transform:none;
 }
 
-/* =====================  SORTILÈGES PIED-DE-MODALE (A6)  ===================== */
+/* =====================  SORTILÈGES / SAC (intégrés dans char-grid)  ===================== */
 .spells-strip,
 .inv-section{
-  margin-top:14px;
-  border-top:1px solid rgba(122,92,30,0.30);
-  padding-top:10px;
+  /* Plus de margin-top ni border-top : la grid s'occupe de l'espacement (gap:12) */
 }
 .panel-title{
   font-family:'Cinzel',serif;
@@ -384,7 +391,11 @@ body {
   .modal { max-height:calc(100vh - 16px); }
   .modal-title { font-size:12px; letter-spacing:1px; }
   .tab          { font-size:10px; padding:2px 8px; }
-  .char-grid    { grid-template-columns:1fr; gap:6px; }
+  .char-grid {
+    grid-template-columns:1fr;
+    grid-template-areas:"stats" "equip" "spells" "inv";
+    gap:6px;
+  }
   /* Mobile : sections accordéon plus serrées */
   .section-toggle { display:block; margin-bottom:2px; padding:5px 10px; }
   .spells-strip, .inv-section { margin-top:6px; padding-top:4px; }
@@ -464,7 +475,7 @@ body {
     <div class="char-grid">
 
       <!-- ─── COLONNE GAUCHE — STATS ─── -->
-      <div class="section">
+      <div class="section section-stats">
         <button class="section-toggle">Statistiques</button>
         <div class="section-content stats-panel">
           <div class="level-banner">
@@ -490,7 +501,7 @@ body {
       </div>
 
       <!-- ─── COLONNE CENTRALE — PAPER DOLL ─── -->
-      <div class="section">
+      <div class="section section-equip">
         <button class="section-toggle">Équipement</button>
         <div class="section-content">
           <div class="paper-doll">
@@ -567,49 +578,49 @@ body {
         </div>
       </div>
 
+      <!-- A6 — Sortilèges DANS char-grid (grid-area:spells) -->
+      <div class="section spells-strip section-spells">
+        <button class="section-toggle">Sortilèges</button>
+        <div class="section-content">
+          <div class="panel-title">⸻ SORTILÈGES CONNUS ⸻</div>
+          <div class="spells-row">
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/expelliarmus.png" alt=""></span>Expelliarmus</span>
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/stupefix.png" alt=""></span>Stupefix</span>
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/episkey.png" alt=""></span>Episkey</span>
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/protego.png" alt=""></span>Protego</span>
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/incendio.png" alt=""></span>Incendio</span>
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/sanguini.png" alt=""></span>Sanguini</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- A5 — Inventaire DANS char-grid (grid-area:inv) -->
+      <div class="section inv-section section-inv">
+        <button class="section-toggle">Sac</button>
+        <div class="section-content">
+          <div class="panel-title">⸻ SAC — 12 / 16 ⸻</div>
+          <div class="inv-grid">
+            <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/potion_s.png" alt=""></div>
+            <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/potion_m.png" alt=""></div>
+            <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/mandragore.png" alt=""></div>
+            <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/choco_sorcier.png" alt=""></div>
+            <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/livre_soin.png" alt=""></div>
+            <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/livre_sortileges.png" alt="" onerror="this.src='../img/icons/spellbook.png'"></div>
+            <div class="inv-slot has-item rarity-epic"><img src="../img/icons/items/livre_prince.png" alt=""></div>
+            <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/anneau_runique.png" alt=""></div>
+            <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/anneau_argent.png" alt=""></div>
+            <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/chapeau_pointu.png" alt=""></div>
+            <div class="inv-slot has-item rarity-legendary"><img src="../img/icons/items/diademe_serdaigle.png" alt=""></div>
+            <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/circlet_serdaigle.png" alt=""></div>
+            <div class="inv-slot"></div>
+            <div class="inv-slot"></div>
+            <div class="inv-slot"></div>
+            <div class="inv-slot"></div>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /char-grid -->
-
-    <!-- A6 — Sortilèges en bandeau pied (pas en colonne dédiée) -->
-    <div class="section spells-strip">
-      <button class="section-toggle">Sortilèges</button>
-      <div class="section-content">
-        <div class="panel-title">⸻ SORTILÈGES CONNUS ⸻</div>
-        <div class="spells-row">
-          <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/expelliarmus.png" alt=""></span>Expelliarmus</span>
-          <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/stupefix.png" alt=""></span>Stupefix</span>
-          <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/episkey.png" alt=""></span>Episkey</span>
-          <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/protego.png" alt=""></span>Protego</span>
-          <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/incendio.png" alt=""></span>Incendio</span>
-          <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/sanguini.png" alt=""></span>Sanguini</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- A5 — Inventaire 16 slots conformes MAX_INVENTORY -->
-    <div class="section inv-section">
-      <button class="section-toggle">Sac</button>
-      <div class="section-content">
-        <div class="panel-title">⸻ SAC — 12 / 16 ⸻</div>
-        <div class="inv-grid">
-          <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/potion_s.png" alt=""></div>
-          <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/potion_m.png" alt=""></div>
-          <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/mandragore.png" alt=""></div>
-          <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/choco_sorcier.png" alt=""></div>
-          <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/livre_soin.png" alt=""></div>
-          <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/livre_sortileges.png" alt="" onerror="this.src='../img/icons/spellbook.png'"></div>
-          <div class="inv-slot has-item rarity-epic"><img src="../img/icons/items/livre_prince.png" alt=""></div>
-          <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/anneau_runique.png" alt=""></div>
-          <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/anneau_argent.png" alt=""></div>
-          <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/chapeau_pointu.png" alt=""></div>
-          <div class="inv-slot has-item rarity-legendary"><img src="../img/icons/items/diademe_serdaigle.png" alt=""></div>
-          <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/circlet_serdaigle.png" alt=""></div>
-          <div class="inv-slot"></div>
-          <div class="inv-slot"></div>
-          <div class="inv-slot"></div>
-          <div class="inv-slot"></div>
-        </div>
-      </div>
-    </div>
 
   </div><!-- /modal-body -->
 </div><!-- /modal -->
