@@ -215,7 +215,7 @@ const NPCS = [
     name:      "Madame Rosmerta",
     title:     "Buvette ambulante",
     icon:      "🍻",
-    // TODO portrait PNG dédié — pour l'instant l'icône emoji 🍻 sert de fallback.
+    portraitImg: "img/npc/rosmerta.png",
     random:    true,
     minFloor:  2,
     maxFloor:  null,
@@ -243,7 +243,7 @@ const NPCS = [
     name:      "Mondingus Fletcher",
     title:     "Marchand au flair douteux",
     icon:      "🦨",
-    // TODO portrait PNG dédié — pour l'instant l'icône emoji 🦨 sert de fallback.
+    portraitImg: "img/npc/mundungus.png",
     random:    true,
     minFloor:  3,
     maxFloor:  null,
