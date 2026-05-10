@@ -71,6 +71,31 @@ function _currentQuestForState(npc, state) {
   return null;
 }
 
+// Pioche une réplique contextuelle (Portrait Dumbledore) parmi celles dont
+// au moins un monstre cible est tirable à l'étage courant. Retourne null si
+// aucune entrée ne matche → fallback sur `idle`.
+function _pickContextualLore(npc) {
+  const lore = npc && npc.dialogues && npc.dialogues.contextualLore;
+  if (!Array.isArray(lore) || !lore.length) return null;
+  const floor = (typeof currentFloor === 'number' && currentFloor > 0) ? currentFloor : 1;
+  const pool  = (typeof MONSTERS !== 'undefined') ? MONSTERS : [];
+  const tirable = new Set(pool
+    .filter(m => (m.minFloor === undefined || floor >= m.minFloor) &&
+                 (m.maxFloor === undefined || m.maxFloor === null || floor <= m.maxFloor))
+    .map(m => m.id));
+  const matches = lore.filter(e =>
+    Array.isArray(e.monsterIds) && e.monsterIds.some(id => tirable.has(id))
+  );
+  if (!matches.length) return null;
+  return matches[Math.floor(Math.random() * matches.length)].text;
+}
+
+// Vrai si l'action spéciale du PNJ a déjà été utilisée sur l'étage courant.
+function _isSpecialActionSpent(npc) {
+  if (!npc || !npc.specialAction) return false;
+  return (typeof usedSpecialNpcs !== 'undefined') && usedSpecialNpcs.has(npc.id);
+}
+
 // Retourne toujours un tableau de pages (array<string>). Un dialogue
 // peut être déclaré comme string (1 page) ou comme array (multi-page).
 // Les PNJ peuvent fournir un override par quête via `dialoguesByQuest`.
@@ -87,7 +112,15 @@ function _npcDialogPages(npc, state) {
   else if (state === 'active' && pick('questActive') !== undefined) raw = pick('questActive');
   else if (state === 'ready'  && pick('questReady')  !== undefined) raw = pick('questReady');
   else if (state === 'done'   && d.questDone)                       raw = d.questDone;
-  else                                                              raw = d.idle || d.greeting || '...';
+  else {
+    // Idle : priorités spéciales > lore contextuel > idle générique > greeting > "..."
+    if (_isSpecialActionSpent(npc) && d.idleSpent !== undefined) {
+      raw = d.idleSpent;
+    } else {
+      const lore = _pickContextualLore(npc);
+      raw = (lore !== null) ? lore : (d.idle || d.greeting || '...');
+    }
+  }
   return Array.isArray(raw) ? raw.slice() : [raw];
 }
 
@@ -123,8 +156,60 @@ function _npcDialogActions(npc, state) {
       onClick: `closeNpcDialog(); openVendorShop('${npc.id}');`
     });
   }
+  // Action spéciale (ex : Fumseck heal+revive). Bouton masqué si déjà
+  // consommée pour cette visite d'étage (le texte d'idle bascule alors
+  // sur `dialogues.idleSpent` via _npcDialogPages).
+  if (npc.specialAction && !_isSpecialActionSpent(npc)) {
+    const label = npc.specialAction.label || 'Action spéciale';
+    out.push({
+      label,
+      onClick: `triggerNpcSpecialAction('${npc.id}'); openNpcDialog('${npc.id}');`
+    });
+  }
   out.push({ label: 'S\'éloigner', onClick: 'closeNpcDialog()', secondary: true });
   return out;
+}
+
+// Dispatcher des actions spéciales PNJ. Étendre ici pour d'autres types
+// (`bless`, `craft`, ...). Les effets gameplay sont confinés ici pour
+// faciliter l'audit.
+function triggerNpcSpecialAction(npcId) {
+  const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
+  if (!npc || !npc.specialAction) return;
+  if (_isSpecialActionSpent(npc)) {
+    if (typeof addMsg === 'function') addMsg("L'action n'est plus disponible cette visite.", 'bad');
+    return;
+  }
+  const action = npc.specialAction;
+  if (action.type === 'heal_and_revive') {
+    let revived = 0, healed = 0;
+    const size = (typeof partySize === 'number') ? partySize : party.length;
+    for (let i = 0; i < size; i++) {
+      const c = party[i];
+      if (!c) continue;
+      if (c.hp <= 0) {
+        c.hp = Math.max(1, Math.floor(c.hpMax / 2));
+        revived++;
+      } else if (c.hp < c.hpMax) {
+        healed++;
+      } else {
+        // déjà à plein PV : on compte quand même un soin "léger" si PM manquent
+        if (c.sp < c.spMax) healed++;
+      }
+      c.hp = c.hpMax;
+      c.sp = c.spMax;
+    }
+    usedSpecialNpcs.add(npc.id);
+    const parts = [];
+    if (revived) parts.push(`${revived} ranimé${revived > 1 ? 's' : ''}`);
+    if (healed)  parts.push(`PV/PM restaurés`);
+    const msg = parts.length
+      ? `Larmes du phénix : ${parts.join(', ')}.`
+      : 'Larmes du phénix : groupe à pleine forme.';
+    if (typeof addMsg === 'function') addMsg(msg, 'good');
+    if (typeof updateUI === 'function') updateUI();
+    if (typeof autoSave === 'function') autoSave('fumseck-used');
+  }
 }
 
 // État courant du dialogue (multi-pages)

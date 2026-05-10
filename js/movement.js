@@ -174,8 +174,9 @@ function _restoreFloorFromCache(floor) {
   playerX  = c.px; playerY = c.py; playerDir = c.dir;
   searchedCells = new Set(c.searchedCells || []);
   npcPlacements = new Map(c.npcPlacements || []);
-  // Nouvelle visite = nouvelle eau dans la fontaine
+  // Nouvelle visite = nouvelle eau dans la fontaine et nouvelles larmes Fumseck
   usedFountains = new Set();
+  usedSpecialNpcs = new Set();
   return true;
 }
 

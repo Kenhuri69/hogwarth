@@ -141,6 +141,10 @@ let npcPlacements = new Map();
 // PNJ déjà rencontrés (au moins une fois) — pour distinguer 1ère rencontre vs
 // visites suivantes dans les dialogues. Persisté au save.
 let seenNpcs = new Set();
+// PNJ dont l'action spéciale (ex : Fumseck heal+revive) a été utilisée sur
+// l'étage courant — clé `npcId`. Vidé à chaque entrée d'étage (analogue
+// `usedFountains`). Pas archivé dans `floorDungeons`.
+let usedSpecialNpcs = new Set();
 
 // ── Membres du groupe ────────────────────────────────────────
 let player = {

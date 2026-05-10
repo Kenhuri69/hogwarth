@@ -23,13 +23,21 @@
 //   buyback:     {                          // optionnel : politique de rachat
 //     default: 0.50,                        //   multiplicateur par défaut
 //     byType:    { "consumable": 0.75 },    //   override par type d'item
-//     byRarity:  { "epic": 0.75 }           //   override par rareté
+//     byRarity:  { "epic": 0.75 },          //   override par rareté
+//     bySlot:    { "body": 0.75 }           //   override par slot d'équipement
+//   },
+//   specialAction: {                        // optionnel : action unique (1×/visite d'étage)
+//     type:  "heal_and_revive",             //   dispatché par triggerNpcSpecialAction
+//     label: "✨ Recevoir les larmes du phénix"
 //   },
 //   questsGiven:    ["quest_id", ...],     // quêtes que ce PNJ propose
 //   questsTurnedIn: ["quest_id", ...],     // quêtes que ce PNJ clôt (souvent === questsGiven)
 //   dialogues: {
 //     greeting:    "1ère rencontre",
 //     idle:        "Visites suivantes sans contexte particulier",
+//     contextualLore: [                     //   override `idle` par tirage contextuel
+//       { monsterIds: ["bellatrix"], text: "..." }
+//     ],
 //     questOffer:  "Quête disponible non prise",
 //     questActive: "Quête prise mais objectif non rempli",
 //     questReady:  "Objectif rempli, à rendre",
@@ -232,12 +240,21 @@ const NPCS = [
     icon:  "🪄",
     portraitImg: "img/npc/ollivander.png",
     placement: { floor: 3, anchor: "any" },
+    wares: [
+      { id: "wand1" },
+      { id: "wand2" }
+    ],
+    buyback: {
+      default: 0.50,
+      byType:  { "wand": 0.75 }
+    },
     dialogues: {
       greeting: [
         "Curieux... très curieux. Approche, jeune sorcier, et laisse-moi te regarder.",
-        "Souviens-toi : ce n'est pas le sorcier qui choisit la baguette, c'est la baguette qui choisit le sorcier. Garde précieusement la tienne — elle se souvient de chaque sort."
+        "Souviens-toi : ce n'est pas le sorcier qui choisit la baguette, c'est la baguette qui choisit le sorcier. Garde précieusement la tienne — elle se souvient de chaque sort.",
+        "Si une de tes baguettes ne te convient plus, je te la rachèterai à bon prix. Et si tu cherches plus puissant que ton bois actuel, j'ai peut-être ce qu'il te faut."
       ],
-      idle: "Chaque baguette ici a son histoire. Chaque sorcier, la sienne."
+      idle: "Le bois se souvient, le crin de licorne pardonne, mais le cœur de phénix... il choisit."
     }
   },
   {
@@ -247,12 +264,23 @@ const NPCS = [
     icon:  "🧵",
     portraitImg: "img/npc/guipure.png",
     placement: { floor: 5, anchor: "any" },
+    wares: [
+      { id: "robe1" },
+      { id: "chapeau_apprenti" },
+      { id: "cape_voyageur" },
+      { id: "chapeau_pointu" }
+    ],
+    buyback: {
+      default: 0.50,
+      bySlot:  { "body": 0.75, "head": 0.75, "cloak": 0.75 }
+    },
     dialogues: {
       greeting: [
         "Oh, un nouveau client ! Tiens-toi droit, que je prenne tes mesures du regard.",
-        "Une bonne robe de sorcier, c'est plus qu'un vêtement : c'est une seconde peau qui résiste aux sortilèges. La tienne en a vu, dis-moi."
+        "Une bonne robe de sorcier, c'est plus qu'un vêtement : c'est une seconde peau qui résiste aux sortilèges. La tienne en a vu, dis-moi.",
+        "Et si tu as une vieille pièce qui ne te sert plus, dépose-la sur le comptoir : je la reprends à prix d'amie."
       ],
-      idle: "Une couture défaite peut coûter un duel — fais-y attention."
+      idle: "Une couture en zigzag tient mieux contre les sortilèges qu'un point droit. Note-le."
     }
   },
   {
@@ -267,7 +295,25 @@ const NPCS = [
         "(Le portrait s'éveille en clignant des yeux.) Ah, jeune sorcier... même peint, je veille sur ces couloirs.",
         "Ne te fie pas à ce qui semble immobile. Bien des secrets de ce château se cachent derrière les cadres dorés."
       ],
-      idle: "(Le portrait somnole, puis t'adresse un léger sourire en te reconnaissant.)"
+      idle: "(Le portrait somnole, puis t'adresse un léger sourire en te reconnaissant.)",
+      contextualLore: [
+        { monsterIds: ["mangemort", "mangemort_masque", "mangemort_elite", "bellatrix"],
+          text: "Vise toujours la baguette d'abord. Un mangemort désarmé n'est qu'un homme effrayé." },
+        { monsterIds: ["detraqueur", "detraqueur_gardien"],
+          text: "Un Patronus n'est pas un mur, c'est une lumière. Il lui faut un souvenir heureux, pas un bouclier." },
+        { monsterIds: ["bellatrix"],
+          text: "Bellatrix se nourrit de la haine. Combats-la avec discipline, jamais avec rage." },
+        { monsterIds: ["voldemort_affaibli", "voldemort_revenu"],
+          text: "Tom a fragmenté son âme. Chaque éclat est une faille — cherche-les avant de l'affronter." },
+        { monsterIds: ["troll", "troll_grotte"],
+          text: "Un troll a la cervelle plus petite que son poing. Esquive, fais-le trébucher." },
+        { monsterIds: ["loup_garou"],
+          text: "L'argent ne ment jamais. Pour la bête, c'est une vérité qui mord." },
+        { monsterIds: ["inferius"],
+          text: "L'Inferius craint le feu vif autant que le sortilège. Garde toujours une flamme à portée." },
+        { monsterIds: ["araignee", "acromantula_jeune", "homme_araignee"],
+          text: "Aragog respectait un pacte. Ses enfants n'ont rien promis. Méfie-toi." }
+      ]
     }
   },
   {
@@ -277,12 +323,18 @@ const NPCS = [
     icon:  "🔥",
     portraitImg: "img/npc/fumseck.png",
     placement: { floor: 7, anchor: "any" },
+    specialAction: {
+      type:  "heal_and_revive",
+      label: "✨ Recevoir les larmes du phénix"
+    },
     dialogues: {
       greeting: [
         "(Un chant cristallin s'élève. Un phénix écarlate te regarde sans crainte, perché sur un socle de bronze.)",
-        "(Ses larmes scintillent à la commissure de son œil — la légende dit qu'elles guérissent les blessures les plus profondes.)"
+        "(Ses larmes scintillent à la commissure de son œil — la légende dit qu'elles guérissent les blessures les plus profondes.)",
+        "(Fumseck incline la tête vers toi. Une larme nacrée perle au coin de son œil — il l'offre à qui ose tendre la main.)"
       ],
-      idle: "(Fumseck déploie une aile, et quelques étincelles dansent dans l'air avant de s'éteindre.)"
+      idle: "(Fumseck déploie une aile, et quelques étincelles dansent dans l'air avant de s'éteindre.)",
+      idleSpent: "(Le phénix sommeille, plumes éteintes. Reviendra-t-il à ta prochaine visite ?)"
     }
   },
 

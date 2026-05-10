@@ -2789,8 +2789,165 @@ async function scenarioRepeatableQuestSpawn() {
   await browser.close();
 }
 
+// ── Scénario 3sexies : Itération 7.4 — câblage métier des 4 PNJ lore ─
+
+async function scenarioIteration74() {
+  console.log('\n── Scénario 3sexies : Itération 7.4 — Ollivander/Guipure/Portrait/Fumseck ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : Ollivander expose wand1+wand2, buyback baguette à 75%, wand2 retiré du shop fixe.
+  const t1 = await page.evaluate(() => {
+    const o = getNpcById('ollivander');
+    npcPlacements.set('1,1', 'ollivander');
+    seenNpcs.add('ollivander');
+    openVendorShop('ollivander');
+    const grid = document.getElementById('shop-grid');
+    const itemIds = Array.from(grid.querySelectorAll('[data-item-id]'))
+      .map(el => el.getAttribute('data-item-id'));
+    // sell — wand1 doit afficher 75% du price
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'wand1') }];
+    setShopMode('sell');
+    const sellLabel = document.querySelector('#shop-grid .shop-price')?.textContent;
+    const wand1Price = ITEMS.find(i => i.id === 'wand1').price;
+    // wand2 ne doit PLUS être dans SHOP_CATALOG (Malkins)
+    const wand2InStaticShop = SHOP_CATALOG.some(e => e.id === 'wand2');
+    return {
+      hasOllivander:      !!o,
+      buybackWand:        o && o.buyback && o.buyback.byType && o.buyback.byType.wand,
+      waresContainsWand1: itemIds.includes('wand1'),
+      waresContainsWand2: itemIds.includes('wand2'),
+      sellLabel,
+      sellExpected:       '+' + Math.max(1, Math.floor(wand1Price * 0.75)) + 'G',
+      wand2InStaticShop
+    };
+  });
+  console.log('  T1 Ollivander:', t1);
+  assert(t1.hasOllivander,        'PNJ ollivander absent');
+  assert(t1.buybackWand === 0.75, 'buyback wand 75% manquant chez Ollivander');
+  assert(t1.waresContainsWand1,   'wand1 absent des wares Ollivander');
+  assert(t1.waresContainsWand2,   'wand2 absent des wares Ollivander');
+  assert(t1.sellLabel === t1.sellExpected,
+    `Ollivander doit racheter wand1 à 75% (${t1.sellExpected}), got ${t1.sellLabel}`);
+  assert(!t1.wand2InStaticShop,   'wand2 ne doit plus être dans SHOP_CATALOG (Malkins)');
+
+  // T2 : Guipure — buyback bySlot 75% sur body/head/cloak via robe1.
+  const t2 = await page.evaluate(() => {
+    const g = getNpcById('guipure');
+    npcPlacements.set('1,1', 'guipure');
+    seenNpcs.add('guipure');
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'robe1') }];
+    openVendorShop('guipure');
+    setShopMode('sell');
+    const sellLabel = document.querySelector('#shop-grid .shop-price')?.textContent;
+    const robe1Price = ITEMS.find(i => i.id === 'robe1').price;
+    return {
+      hasGuipure:        !!g,
+      bySlotBody:        g && g.buyback && g.buyback.bySlot && g.buyback.bySlot.body,
+      bySlotHead:        g && g.buyback && g.buyback.bySlot && g.buyback.bySlot.head,
+      bySlotCloak:       g && g.buyback && g.buyback.bySlot && g.buyback.bySlot.cloak,
+      waresLen:          (g && g.wares || []).length,
+      sellLabel,
+      sellExpected:      '+' + Math.max(1, Math.floor(robe1Price * 0.75)) + 'G'
+    };
+  });
+  console.log('  T2 Guipure:', t2);
+  assert(t2.hasGuipure,            'PNJ guipure absent');
+  assert(t2.bySlotBody === 0.75,   'buyback bySlot.body 75% manquant chez Guipure');
+  assert(t2.bySlotHead === 0.75,   'buyback bySlot.head 75% manquant chez Guipure');
+  assert(t2.bySlotCloak === 0.75,  'buyback bySlot.cloak 75% manquant chez Guipure');
+  assert(t2.waresLen >= 4,         'Guipure doit proposer au moins 4 articles');
+  assert(t2.sellLabel === t2.sellExpected,
+    `Guipure doit racheter robe1 à 75% (${t2.sellExpected}), got ${t2.sellLabel}`);
+
+  // T3 : Portrait Dumbledore — pool contextuel filtré par étage.
+  // À l'étage 1 (currentFloor par défaut), le pool tirable contient `chat_norris`
+  // et autres bas étages mais pas mangemorts/Voldemort → matches devrait être vide
+  // → fallback sur idle. À l'étage 8 forcé, plusieurs entrées doivent matcher.
+  const t3 = await page.evaluate(() => {
+    closeNpcDialog();
+    const p = getNpcById('portrait_dumbledore');
+    if (!p || !p.dialogues || !p.dialogues.contextualLore) return { ok: false };
+    const loreEntries = p.dialogues.contextualLore.length;
+    // Étage 1 : aucun match attendu
+    currentFloor = 1;
+    const hitsFloor1 = (typeof _pickContextualLore === 'function')
+      ? _pickContextualLore(p) : null;
+    // Étage 9 : Voldemort, Bellatrix, mangemorts → plusieurs matches attendus
+    currentFloor = 10;
+    const hitsFloor10 = (typeof _pickContextualLore === 'function')
+      ? _pickContextualLore(p) : null;
+    return {
+      ok: true,
+      loreEntries,
+      hitsFloor1,
+      hitsFloor10,
+      hasContextualLore: !!p.dialogues.contextualLore
+    };
+  });
+  console.log('  T3 Portrait Dumbledore lore:', t3);
+  assert(t3.ok,                            'portrait_dumbledore introuvable');
+  assert(t3.hasContextualLore,             'contextualLore absent du portrait');
+  assert(t3.loreEntries >= 8,              'au moins 8 répliques contextuelles attendues');
+  assert(t3.hitsFloor1 === null,           'aucune réplique ne doit matcher l\'étage 1');
+  assert(typeof t3.hitsFloor10 === 'string' && t3.hitsFloor10.length > 0,
+    'au moins une réplique doit matcher l\'étage 10');
+
+  // T4 : Fumseck — heal+revive, cooldown 1×/étage, reset à l'entrée d'un nouvel étage.
+  const t4 = await page.evaluate(() => {
+    currentFloor = 7;
+    const f = getNpcById('fumseck');
+    // KO Harry
+    party[0].hp = 0;
+    party[0].sp = 0;
+    if (party[1]) { party[1].hp = 5; party[1].sp = 5; }
+    usedSpecialNpcs = new Set();
+    triggerNpcSpecialAction('fumseck');
+    const after1 = {
+      harryHp:  party[0].hp,
+      harryHpMax: party[0].hpMax,
+      harrySp:  party[0].sp,
+      harrySpMax: party[0].spMax,
+      spent:    usedSpecialNpcs.has('fumseck')
+    };
+    // 2e clic refusé (cooldown)
+    party[0].hp = 1;
+    triggerNpcSpecialAction('fumseck');
+    const after2 = {
+      harryHpAfter2: party[0].hp,   // doit rester à 1 (refus silencieux)
+      stillSpent:    usedSpecialNpcs.has('fumseck')
+    };
+    // Reset par entrée d'étage : on simule via le pipeline de reset
+    usedSpecialNpcs = new Set();
+    triggerNpcSpecialAction('fumseck');
+    const after3 = {
+      harryHpAfter3: party[0].hp,
+      respent:       usedSpecialNpcs.has('fumseck')
+    };
+    return { hasFumseck: !!f, hasSpecial: !!(f && f.specialAction), ...after1, ...after2, ...after3 };
+  });
+  console.log('  T4 Fumseck:', t4);
+  assert(t4.hasFumseck,                'PNJ fumseck absent');
+  assert(t4.hasSpecial,                'specialAction absent sur fumseck');
+  assert(t4.harryHp > 0,               'Harry doit être ranimé après les larmes');
+  assert(t4.harryHp === t4.harryHpMax, `Harry doit être à hpMax après l'usage, got ${t4.harryHp}/${t4.harryHpMax}`);
+  assert(t4.harrySp === t4.harrySpMax, `Harry doit être à spMax (PM) après l'usage`);
+  assert(t4.spent,                     'usedSpecialNpcs doit contenir fumseck après usage');
+  assert(t4.harryHpAfter2 === 1,       '2e clic doit être refusé silencieusement (Harry reste à 1 PV)');
+  assert(t4.stillSpent,                'cooldown doit persister');
+  assert(t4.harryHpAfter3 > 1,         'après reset usedSpecialNpcs, larmes redevenues utilisables');
+  assert(t4.respent,                   'reset puis 2e usage : usedSpecialNpcs doit contenir fumseck à nouveau');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Itération 7.4 — câblage métier des 4 PNJ OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
   for (const s of scenarios) {
     await s();
   }
