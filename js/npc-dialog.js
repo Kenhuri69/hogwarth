@@ -105,6 +105,13 @@ function _npcDialogPages(npc, state) {
   const dq  = (qid && npc.dialoguesByQuest && npc.dialoguesByQuest[qid]) || {};
   const pick = (k) => (dq[k] !== undefined) ? dq[k] : d[k];
 
+  // Texte de saveur "idle" : si `d.idleRandom` est un array de strings,
+  // on en pioche un au hasard pour varier les visites (PNJ lore).
+  // Sinon on retombe sur `d.idle` classique.
+  const idleRandomPick = (Array.isArray(d.idleRandom) && d.idleRandom.length)
+    ? d.idleRandom[Math.floor(Math.random() * d.idleRandom.length)]
+    : null;
+
   let raw;
   if (typeof seenNpcs !== 'undefined' && !seenNpcs.has(npc.id) && d.greeting) {
     raw = d.greeting;
@@ -113,12 +120,16 @@ function _npcDialogPages(npc, state) {
   else if (state === 'ready'  && pick('questReady')  !== undefined) raw = pick('questReady');
   else if (state === 'done'   && d.questDone)                       raw = d.questDone;
   else {
-    // Idle : priorités spéciales > lore contextuel > idle générique > greeting > "..."
+    // Idle : priorités spéciales (Fumseck spent) > lore contextuel
+    // (Portrait Dumbledore) > idleRandom (PNJ lore) > idle générique
+    // > greeting > "...".
     if (_isSpecialActionSpent(npc) && d.idleSpent !== undefined) {
       raw = d.idleSpent;
     } else {
       const lore = _pickContextualLore(npc);
-      raw = (lore !== null) ? lore : (d.idle || d.greeting || '...');
+      raw = (lore !== null) ? lore
+          : (idleRandomPick !== null) ? idleRandomPick
+          : (d.idle || d.greeting || '...');
     }
   }
   return Array.isArray(raw) ? raw.slice() : [raw];
