@@ -523,6 +523,7 @@ const MONSTERS = [
     id:       "inferius",
     name:     "Inférius",
     icon:     "🧟",
+    imgSrc:   "img/monsters/inferius.png",
     category: "créature",
     desc:     "Un cadavre réanimé par la magie noire se lève et avance vers vous !",
     lore:     "Les Inférises sont des corps de personnes mortes réanimées par un sorcier des Ténèbres. Ils n'ont ni âme ni volonté propre et ne craignent rien — sauf le feu.",

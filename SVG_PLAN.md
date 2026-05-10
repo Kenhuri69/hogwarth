@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/resume-svg-work-rgOvm`
 > (anciennes branches : `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 33 / 76 tâches terminées (+ C44 fontaine)
+> **Statut global** : 34 / 76 tâches terminées (+ C44 fontaine)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -110,7 +110,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C20** `centaure`
 - [x] **C21** `detraqueur`
 - [x] **C22** `loup_garou`
-- [ ] **C23** `inferius`
+- [x] **C23** `inferius`
 - [ ] **C24** `mangemort`
 - [ ] **C25** `mangemort_masque`
 - [ ] **C26** `mangemort_elite`
@@ -214,3 +214,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-10 | #27 | C20 centaure intégré (birefnet-general) | Centaure guerrier robe bai pommelé, arc bandé, flèche prête, marques tribales charcoal ; queue, crinière et carquois préservés |
 | 2026-05-10 | #28 | C21 detraqueur intégré (birefnet-general) | Détraqueur lambda flottant, capuche, mains squelettiques, lambeaux de tissu fins préservés ; visuellement distinct du C34 detraqueur_gardien (futur re-gen) |
 | 2026-05-10 | #29 | C22 loup_garou intégré (birefnet-general) | Hybride homme-loup hunché en course, mâchoire ouverte avec crocs et salive, restes de pantalon humain déchiré ; pelage hérissé et griffes courbes préservés |
+| 2026-05-10 | #30 | C23 inferius intégré (birefnet-general) | Cadavre noyé réanimé, peau gris-bleu translucide, yeux laiteux, linceul effiloché trempé ; coulures d'eau et lambeaux préservés |
