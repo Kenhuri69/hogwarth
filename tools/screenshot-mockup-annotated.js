@@ -33,9 +33,18 @@ const TAG = 'v25';
       const main  = document.querySelector('.paper-doll-main');
       const pd    = document.querySelector('.paper-doll');
       const bot   = document.querySelector('.paper-doll-bottom');
+      const spells = document.querySelector('.spells-strip');
+      const inv    = document.querySelector('.inv-section');
+      const gold   = document.querySelector('.gold-banner');
       if (!img || !stage || !pd) return null;
       const r = (el) => { const b = el.getBoundingClientRect(); return { x:b.x, y:b.y, w:b.width, h:b.height }; };
-      return { img:r(img), stage:r(stage), main:r(main), pd:r(pd), bot:bot?r(bot):null };
+      return {
+        img:r(img), stage:r(stage), main:r(main), pd:r(pd),
+        bot:bot?r(bot):null,
+        spells:spells?r(spells):null,
+        inv:inv?r(inv):null,
+        gold:gold?r(gold):null
+      };
     });
 
     if (measure) {
@@ -70,6 +79,14 @@ const TAG = 'v25';
         console.log(`   gap stage vs main (top):   ${Math.round(gapTop)}px`);
         console.log(`   gap img vs stage (top):    ${Math.round(gapImgInStage)}px`);
         console.log(`   gap stage→bottom (bottom): ${Math.round(gapBot)}px`);
+      }
+      if (measure.gold && measure.spells) {
+        const gap = measure.spells.y - (measure.gold.y + measure.gold.h);
+        console.log(`   gap gold-banner→spells:    ${Math.round(gap)}px`);
+      }
+      if (measure.spells && measure.inv) {
+        const gap = measure.inv.y - (measure.spells.y + measure.spells.h);
+        console.log(`   gap spells→inv:            ${Math.round(gap)}px`);
       }
     }
     await ctx.close();

@@ -390,8 +390,9 @@ body {
   .spells-strip, .inv-section { margin-top:6px; padding-top:4px; }
   .panel-title { margin:0 0 4px; }
   /* A10 — mobile : flex/grid identique, juste tailles réduites */
-  .paper-doll   { min-height:420px; }
-  .paper-doll-main { grid-template-columns: 48px 1fr 48px; }
+  /* mobile : pas de min-height (cause 120 px de vide en bas).
+     grid-template auto pour aligner stage = image, comme desktop. */
+  .paper-doll-main { grid-template-columns: 44px auto 44px; }
   .equip-slot   { width:44px; height:44px; font-size:20px; }
   .equip-slot img { width:30px; height:30px; }
   .inv-grid { grid-template-columns:repeat(6, 1fr); }
