@@ -223,8 +223,14 @@ body {
 .paper-doll-stage{
   position:relative;
   display:block;
-  font-size:0;               /* supprime l'espace blanc sous l'image inline */
-  line-height:0;
+  font-size:0; line-height:0;
+  /* fond éclairé pour faire ressortir les cheveux noirs de Harry */
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 25%, rgba(220,180,120,0.30), transparent 65%),
+    radial-gradient(ellipse at 50% 100%, rgba(40,28,12,0.5), transparent 70%),
+    rgba(60,42,20,0.25);
+  border-radius:4px;
+  overflow:hidden;
 }
 .paper-doll-stage .pd-portrait{
   display:block;
@@ -235,7 +241,7 @@ body {
 .paper-doll-bottom{
   display:flex; align-items:center; justify-content:center;
   gap:14px;
-  margin-top:6px;            /* petite respiration sous le perso */
+  margin-top:0;              /* collé sous le stage */
 }
 
 /* A7 — bandeau or sous la rangée wand/belt/trinket */
@@ -503,9 +509,10 @@ body {
                 </div>
               </div>
 
-              <!-- Stage central : buste qui prend toute la hauteur -->
+              <!-- Stage central : buste qui prend toute la hauteur.
+                   harry-cropped.png = harry.png sans les 1 px transparent en haut. -->
               <div class="paper-doll-stage">
-                <img class="pd-portrait" src="../img/harry.png" alt="Harry">
+                <img class="pd-portrait" src="harry-cropped.png" alt="Harry">
               </div>
 
               <!-- Colonne droite : cloak, amulet, ring1, ring2 -->
