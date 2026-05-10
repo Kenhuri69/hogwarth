@@ -30,10 +30,11 @@ const OUT_PATH  = path.resolve(__dirname, 'intro.png');
     Array.isArray(party) && party[0] && party[0].hp > 0
     && typeof playerX === 'number');
 
-  // Ouvrir le dialogue Dumbledore (étage 1, anchor first-room)
-  await page.evaluate(() => openNpcDialog('dumbledore'));
+  // L'intro Dumbledore est désormais déclenchée automatiquement par
+  // startGame() (setTimeout 500 ms). On attend simplement qu'elle apparaisse.
   await page.waitForFunction(() =>
-    document.getElementById('npc-dialog-overlay').style.display === 'flex');
+    document.getElementById('npc-dialog-overlay').style.display === 'flex',
+    { timeout: 3000 });
 
   // Petite pause pour laisser le rendu canvas se stabiliser
   await page.waitForTimeout(400);
