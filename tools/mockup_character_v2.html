@@ -210,33 +210,36 @@ body {
 }
 .paper-doll-main{
   display:grid;
-  grid-template-columns: 54px 1fr 54px;
+  grid-template-columns: 50px auto 50px;  /* auto : stage = largeur de l'image */
   gap:8px;
-  align-items:start;
+  align-items:stretch;        /* stage = hauteur des colonnes */
+  justify-content:center;     /* centre l'ensemble dans le paper-doll */
 }
 .paper-doll-col{
   display:flex; flex-direction:column;
   gap:8px;
 }
-/* Stage : ZÉRO hauteur propre, l'image dicte tout via width:100% + height:auto.
-   Pas d'aspect-ratio, pas de min-height : aucune source de vide possible. */
+/* Stage : hauteur = celle des colonnes latérales (via stretch).
+   Image en height:100% + width:auto → l'image s'adapte EN HAUTEUR à
+   la colonne (4×50+3×8 = 224 desktop, 4×44+3×8 = 200 mobile).
+   Aucun vide vertical possible : stage et colonnes sont identiques. */
 .paper-doll-stage{
   position:relative;
-  display:block;
-  font-size:0; line-height:0;
-  /* fond éclairé pour faire ressortir les cheveux noirs de Harry */
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  overflow:hidden;
+  border-radius:4px;
   background:
     radial-gradient(ellipse 80% 60% at 50% 25%, rgba(220,180,120,0.30), transparent 65%),
-    radial-gradient(ellipse at 50% 100%, rgba(40,28,12,0.5), transparent 70%),
     rgba(60,42,20,0.25);
-  border-radius:4px;
-  overflow:hidden;
+  font-size:0; line-height:0;
 }
 .paper-doll-stage .pd-portrait{
   display:block;
-  width:100%;
-  height:auto;
-  filter:drop-shadow(0 8px 22px rgba(0,0,0,0.75));
+  height:100%;               /* contraint par la hauteur des colonnes */
+  width:auto;                /* ratio carré préservé → width = height */
+  filter:drop-shadow(0 6px 16px rgba(0,0,0,0.75));
 }
 .paper-doll-bottom{
   display:flex; align-items:center; justify-content:center;
