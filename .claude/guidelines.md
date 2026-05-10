@@ -70,7 +70,20 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Le plan reste vivant jusqu'à la fin du changement ; il n'est ni jeté ni figé en début de tâche.
 - Pour un changement vraiment trivial (typo, renommage local), mentionner l'absence de plan plutôt que l'éluder en silence.
 
-## 6. Test navigateur headless obligatoire
+## 6. Vérifier l'état d'une PR avant de pousser
+
+**Ne JAMAIS pousser sur la branche d'une PR déjà mergée ou fermée. Toujours vérifier le statut avant `git push`.**
+
+- Avant chaque `git push`, vérifier l'état de la PR liée à la branche courante via `mcp__github__pull_request_read` (champ `state` + `merged`).
+- Si la PR est `merged` ou `closed` :
+  1. Repartir de `master` (`git fetch origin master && git checkout master && git pull`).
+  2. Créer une **nouvelle branche** descriptive (ex: `claude/<feature>-followup`).
+  3. Cherry-pick ou recréer les commits orphelins.
+  4. Pousser et ouvrir une **nouvelle PR**.
+- Pousser sur une branche post-merge laisse les commits orphelins (invisibles, hors review) — c'est une erreur silencieuse à éviter.
+- Cette vérification s'applique aussi en cas de retour utilisateur après merge : ne pas amender l'ancienne PR, en ouvrir une nouvelle.
+
+## 7. Test navigateur headless obligatoire
 
 **Tout changement doit être validé via Chrome headless avant d'être considéré comme terminé, pour garantir la non-régression.**
 
