@@ -122,14 +122,45 @@ Hermione : sorts de soin/support + forte magie — commence avec : Episkey, Prot
 
 ## Système d'équipement (inventory.js)
 
-Chaque personnage a ses propres slots d'équipement (`c.equipped`), distincts de l'inventaire partagé.
+Chaque personnage a ses propres slots d'équipement (`c.equipped`), distincts de l'inventaire partagé. Le moteur supporte **11 slots étendus** (refonte Phase 1-4 — voir `.claude/plans/equipment-extended.md`).
 
 ### Champs sur chaque personnage (state.js)
 ```js
-equipped: { wand: null, armor: null, acc: null }  // objets équipés (copie complète de l'item)
-_baseAtk, _baseDef, _baseMag, _baseLck            // stats de base qui croissent au level-up
-                                                   // indépendamment des bonus d'équipement
+equipped: {
+  wand:    null,   // baguette / arme
+  head:    null,   // chapeau, capuche, diadème, casque
+  body:    null,   // robe, armure, pectoral
+  hands:   null,   // gants, gantelets, mitaines
+  feet:    null,   // bottes, sandales
+  cloak:   null,   // cape, manteau, châle
+  amulet:  null,   // collier, médaillon, pendentif
+  ring1:   null,   // anneau gauche
+  ring2:   null,   // anneau droit
+  belt:    null,   // ceinture, baudrier
+  trinket: null    // bibelot (balai, retourneur de temps)
+}
+_baseAtk, _baseDef, _baseMag, _baseLck   // stats primaires (croissent au level-up)
+_baseStr, _baseInt, _baseAgi, _baseEnd   // stats secondaires (lazy-init au 1er recalc)
 ```
+
+### Champs d'un item équipable (data.js)
+```js
+{
+  id, name, icon, desc, price,                      // de base
+  type:    "wand" | "armor" | "acc" | "spellbook",  // legacy (back-compat)
+  slot:    "wand"|"head"|"body"|"hands"|"feet"|     // canonique : destination dans equipped
+           "cloak"|"amulet"|"ring"|"belt"|"trinket",
+  family:  "robe", "wand_elder", ...                // identifiant de famille (variantes par teinte)
+  rarity:  "common"|"rare"|"epic"|"legendary",      // bordure d'inventaire + politique buyback
+  tint:    "#a060d0",                                // optionnel : drop-shadow coloré
+  bonusAtk, bonusDef, bonusMag, bonusLck,           // bonus stats primaires
+  bonusStr, bonusInt, bonusAgi, bonusEnd,           // bonus stats secondaires
+  grantsSpell: "Reparo",                            // enseigne un sort à l'équipement
+  // bonusHpMax/SpMax : reportés hors-scope V1 (cf. plan §1.2)
+}
+```
+
+> Pour les items `slot:"ring"`, `equipItem` route automatiquement vers `ring1` puis `ring2`. Le menu d'équipement (`showEquipMenu`) propose explicitement « Anneau gauche / droit » quand les deux sont vides.
 
 ### Flux d'équipement
 ```
@@ -137,31 +168,52 @@ useItem(idx, battleMode)
   └─ si type !== 'consumable' && !battleMode → showEquipMenu(item, idx)
        └─ solo : equipItem(idx, 0)   directement
           duo  : affiche prompt Harry / Hermione dans la grille
-                 → equipItem(inventoryIdx, charIdx)
+                 → equipItem(inventoryIdx, charIdx[, targetSlot])
+                     ├─ slot = _resolveSlotForItem(item, c)   // résout ring → ring1/ring2
                      ├─ c.equipped[slot] = {...item}
-                     ├─ c.wand / c.armor / c.acc = item.name  (strings legacy)
+                     ├─ c.wand / c.armor / c.acc = item.name  (strings legacy pour HUD)
                      ├─ player.inventory.splice(inventoryIdx, 1)
                      └─ recalculateStats()
 ```
 
 ### recalculateStats()
 Doit être appelé après chaque équipement **et** après chaque level-up.
+Itère dynamiquement sur tous les slots présents dans `c.equipped` (extensible sans toucher au code) :
 ```js
 // Pour chaque personnage du groupe :
-c.atk = c._baseAtk + (wand.bonusAtk || 0) + ...
-c.def = c._baseDef + (armor.bonusDef || 0) + ...
-c.mag = c._baseMag + (wand.bonusMag || 0) + (acc.bonusMag || 0) + ...
-c.lck = c._baseLck + (acc.bonusLck || 0) + ...
+c.atk = c._baseAtk; c.def = c._baseDef; c.mag = c._baseMag; c.lck = c._baseLck;
+c.str = c._baseStr; c.int = c._baseInt; c.agi = c._baseAgi; c.end = c._baseEnd;
+for (const slot of Object.keys(c.equipped)) {
+  const item = c.equipped[slot];
+  if (!item) continue;
+  if (item.bonusAtk) c.atk += item.bonusAtk;
+  // ... bonusDef/Mag/Lck/Str/Int/Agi/End
+}
 ```
 
-### Items équipables (data.js)
-| ID | Type | Bonus | Effet spécial |
-|----|------|-------|---------------|
-| `wand1` | wand | bonusAtk:2 | — |
-| `wand2` | wand | bonusAtk:5, bonusMag:3 | — |
-| `robe1` | armor | bonusDef:3 | — |
-| `amulette` | acc | bonusMag:4, bonusLck:3 | `grantsSpell:"Reparo"` (enseigné à l'équipement) |
-| `broom` | acc | — | fuite garantie |
+### Migration save legacy (save.js — `_migrateEquippedSlots`)
+Idempotente, appliquée dans `_applyState` **avant** `recalculateStats` :
+- `equipped.armor` → `body`
+- `equipped.acc` → slot dérivé du `item.slot` (ou `amulet` par défaut)
+- supprime les clés legacy `armor` / `acc`
+- initialise les 11 slots manquants à `null`
+
+### Items équipables — vue par catégorie (data.js)
+
+> Liste non exhaustive — voir `js/data.js` pour le détail. **41 items** au total dont **27 équipables**.
+
+| Slot      | Items représentatifs                                                   |
+|-----------|-----------------------------------------------------------------------|
+| `wand`    | `wand1` (Saule, common), `wand2` (Sureau, rare), `sword_gryff` (legendary) |
+| `head`    | `chapeau_apprenti` (common), `chapeau_pointu` (rare), `circlet_serdaigle` (rare), `diademe_serdaigle` (legendary) |
+| `body`    | `robe1` (common), `coupe_poufsouffle` (legendary)                     |
+| `hands`   | `gants_apprenti` (common)                                              |
+| `feet`    | `bottes_apprenti` (common), `bottes_dragon` (rare)                    |
+| `cloak`   | `cape_voyageur` (common), `cape_invis` (epic, AGI+5 LCK+5)            |
+| `amulet`  | `amulette_protection` (common), `amulette` (epic, `grantsSpell:"Reparo"`), `locket_slytherin` (legendary) |
+| `ring`    | `anneau_argent` (common), `anneau_runique` (rare, `tint:"#a060d0"`)   |
+| `belt`    | `ceinture_cuir` (common), `ceinture_alchimiste` (rare)                |
+| `trinket` | `broom` (rare, fuite garantie), `retourneur_temps` (epic, `tint:"#c9a84c"`) |
 
 En combat, les équipements sont grisés et non cliquables dans l'inventaire.
 
