@@ -141,7 +141,12 @@
     }
 
     if (item.price) body += `<div class="tt-section">${row('Valeur', `${item.price} 🪙`, 'tt-good')}</div>`;
-    return header(item.icon, item.name, tag) + body + `<div class="tt-flavor">${item.desc}</div>`;
+    // Synchro avec la liste boutique/inventaire : on utilise le sprite PNG
+    // via getItemIconHtml (cohérence pixel art) plutôt que l'emoji système.
+    const iconHtml = (typeof getItemIconHtml === 'function')
+      ? getItemIconHtml(item, 'ui-icon-xl')
+      : (item.icon || '•');
+    return header(iconHtml, item.name, tag) + body + `<div class="tt-flavor">${item.desc}</div>`;
   }
 
   function statTooltip(key) {
