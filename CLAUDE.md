@@ -156,9 +156,31 @@ _baseStr, _baseInt, _baseAgi, _baseEnd   // stats secondaires (lazy-init au 1er 
   bonusAtk, bonusDef, bonusMag, bonusLck,           // bonus stats primaires
   bonusStr, bonusInt, bonusAgi, bonusEnd,           // bonus stats secondaires
   grantsSpell: "Reparo",                            // enseigne un sort à l'équipement
+  regenHp:     3,                                   // PV régénérés par round (battle.js — applyEquipmentRegen)
+  regenSp:     1,                                   // PM régénérés par round (idem)
   // bonusHpMax/SpMax : reportés hors-scope V1 (cf. plan §1.2)
 }
 ```
+
+### Effets passifs en combat (battle.js — `applyEquipmentRegen()`)
+À chaque tour ennemi, après le tick des statuts persistants :
+```js
+function applyEquipmentRegen() {
+  for (const c of party.slice(0, partySize)) {
+    if (c.hp <= 0 || !c.equipped) continue;
+    let hpRegen = 0, spRegen = 0;
+    for (const item of Object.values(c.equipped)) {
+      if (item?.regenHp) hpRegen += item.regenHp;
+      if (item?.regenSp) spRegen += item.regenSp;
+    }
+    c.hp = Math.min(c.hpMax, c.hp + hpRegen);
+    c.sp = Math.min(c.spMax, c.sp + spRegen);
+  }
+}
+```
+- Plafonné par `hpMax`/`spMax`. Pas de regen sur perso KO (`hp <= 0`).
+- Sommé sur tous les slots → un perso peut accumuler plusieurs sources.
+- Exemples V1 : `larmes_phenix` (slot `amulet`, `regenHp:3`).
 
 > Pour les items `slot:"ring"`, `equipItem` route automatiquement vers `ring1` puis `ring2`. Le menu d'équipement (`showEquipMenu`) propose explicitement « Anneau gauche / droit » quand les deux sont vides.
 
@@ -200,7 +222,7 @@ Idempotente, appliquée dans `_applyState` **avant** `recalculateStats` :
 
 ### Items équipables — vue par catégorie (data.js)
 
-> Liste non exhaustive — voir `js/data.js` pour le détail. **41 items** au total dont **27 équipables**.
+> Liste non exhaustive — voir `js/data.js` pour le détail. **43 items** au total dont **29 équipables**.
 
 | Slot      | Items représentatifs                                                   |
 |-----------|-----------------------------------------------------------------------|
@@ -210,8 +232,8 @@ Idempotente, appliquée dans `_applyState` **avant** `recalculateStats` :
 | `hands`   | `gants_apprenti` (common)                                              |
 | `feet`    | `bottes_apprenti` (common), `bottes_dragon` (rare)                    |
 | `cloak`   | `cape_voyageur` (common), `cape_invis` (epic, AGI+5 LCK+5)            |
-| `amulet`  | `amulette_protection` (common), `amulette` (epic, `grantsSpell:"Reparo"`), `locket_slytherin` (legendary) |
-| `ring`    | `anneau_argent` (common), `anneau_runique` (rare, `tint:"#a060d0"`)   |
+| `amulet`  | `amulette_protection` (common), `amulette` (epic, `grantsSpell:"Reparo"`), `larmes_phenix` (epic, `regenHp:3`), `locket_slytherin` (legendary) |
+| `ring`    | `anneau_argent` (common), `anneau_runique` (rare, `tint:"#a060d0"`), `anneau_resurrection` (epic, `grantsSpell:"Reparo"`) |
 | `belt`    | `ceinture_cuir` (common), `ceinture_alchimiste` (rare)                |
 | `trinket` | `broom` (rare, fuite garantie), `retourneur_temps` (epic, `tint:"#c9a84c"`) |
 

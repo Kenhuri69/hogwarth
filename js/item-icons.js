@@ -70,6 +70,9 @@ const ITEM_ICON_REGISTRY = {
   ceinture_alchimiste: 'img/icons/items/ceinture_alchimiste.png',
   bottes_dragon:       'img/icons/items/bottes_dragon.png',
   retourneur_temps:    'img/icons/items/retourneur_temps.png',
+  // Phase 3b — récompenses de quêtes PNJ
+  anneau_resurrection: 'img/icons/items/anneau_resurrection.png',
+  larmes_phenix:       'img/icons/items/larmes_phenix.png',
   // Livres de sorts
   livre_sortileges:   'img/icons/items/livre_sortileges.png',
   livre_soin:         'img/icons/items/livre_soin.png',

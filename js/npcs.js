@@ -250,6 +250,8 @@ const NPCS = [
       default: 0.50,
       byType:  { "wand": 0.75 }
     },
+    questsGiven:    ["bottines_ollivander"],
+    questsTurnedIn: ["bottines_ollivander"],
     dialogues: {
       greeting: [
         "Curieux... très curieux. Approche, jeune sorcier, et laisse-moi te regarder.",
@@ -276,6 +278,8 @@ const NPCS = [
       default: 0.50,
       bySlot:  { "body": 0.75, "head": 0.75, "cloak": 0.75 }
     },
+    questsGiven:    ["fil_acromantule"],
+    questsTurnedIn: ["fil_acromantule"],
     dialogues: {
       greeting: [
         "Oh, un nouveau client ! Tiens-toi droit, que je prenne tes mesures du regard.",
@@ -292,6 +296,8 @@ const NPCS = [
     icon:  "🖼️",
     portraitImg: "img/npc/portrait_dumbledore.png",
     placement: { floor: 6, anchor: "any" },
+    questsGiven:    ["anneau_dumbledore"],
+    questsTurnedIn: ["anneau_dumbledore"],
     dialogues: {
       greeting: [
         "(Le portrait s'éveille en clignant des yeux.) Ah, jeune sorcier... même peint, je veille sur ces couloirs.",
@@ -329,6 +335,8 @@ const NPCS = [
       type:  "heal_and_revive",
       label: "✨ Recevoir les larmes du phénix"
     },
+    questsGiven:    ["bouclier_phenix"],
+    questsTurnedIn: ["bouclier_phenix"],
     dialogues: {
       greeting: [
         "(Un chant cristallin s'élève. Un phénix écarlate te regarde sans crainte, perché sur un socle de bronze.)",

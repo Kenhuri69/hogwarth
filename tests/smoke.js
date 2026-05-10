@@ -3141,8 +3141,137 @@ async function scenarioIteration74() {
   await browser.close();
 }
 
+// ── Scénario 25 : Phase 3b — quêtes secondaires PNJ + regenHp ──
+//
+// 4 nouvelles quêtes câblées sur Ollivander/Guipure/Portrait Dumbledore/
+// Fumseck, distribuant des récompenses équipement étendues. Plus 2 nouveaux
+// items : `anneau_resurrection` (grantsSpell:Reparo) et `larmes_phenix`
+// (regenHp:3, slot:amulet). Plus le tick `applyEquipmentRegen()` dans
+// `battle.js` qui fait régénérer les PV à chaque round ennemi.
+
+async function scenarioEquipmentPhase3bQuests() {
+  console.log('\n── Scénario 25 : Phase 3b — quotes équipement + regenHp ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : 4 nouveaux templates dans QUEST_TEMPLATES, chacun avec un reward.item
+  const t1 = await page.evaluate(() => {
+    const ids = ['bottines_ollivander', 'fil_acromantule', 'anneau_dumbledore', 'bouclier_phenix'];
+    return ids.map(id => {
+      const t = QUEST_TEMPLATES.find(q => q.id === id);
+      return t ? {
+        id,
+        rewardItem: t.reward && t.reward.item,
+        objType: t.objectives && t.objectives[0] && t.objectives[0].type,
+        objTarget: t.objectives && t.objectives[0] && (t.objectives[0].monsterId || t.objectives[0].itemId),
+        objAmount: t.objectives && t.objectives[0] && t.objectives[0].amount
+      } : { id, missing: true };
+    });
+  });
+  console.log('  T1 templates:', t1);
+  assert(t1.every(x => !x.missing), `template manquant: ${t1.filter(x=>x.missing).map(x=>x.id)}`);
+  assert(t1.find(x => x.id === 'bottines_ollivander').rewardItem === 'bottes_dragon',
+    'bottines_ollivander doit donner bottes_dragon');
+  assert(t1.find(x => x.id === 'fil_acromantule').rewardItem === 'cape_voyageur',
+    'fil_acromantule doit donner cape_voyageur');
+  assert(t1.find(x => x.id === 'anneau_dumbledore').rewardItem === 'anneau_resurrection',
+    'anneau_dumbledore doit donner anneau_resurrection');
+  assert(t1.find(x => x.id === 'bouclier_phenix').rewardItem === 'larmes_phenix',
+    'bouclier_phenix doit donner larmes_phenix');
+  assert(t1.find(x => x.id === 'fil_acromantule').objAmount === 3,
+    'fil_acromantule doit demander 3 cibles');
+  assert(t1.find(x => x.id === 'bouclier_phenix').objAmount === 5,
+    'bouclier_phenix doit demander 5 cibles');
+
+  // T2 : les 4 PNJ ont questsGiven/questsTurnedIn correctement câblés
+  const t2 = await page.evaluate(() => {
+    const map = { ollivander: 'bottines_ollivander', guipure: 'fil_acromantule',
+                  portrait_dumbledore: 'anneau_dumbledore', fumseck: 'bouclier_phenix' };
+    const out = {};
+    Object.entries(map).forEach(([npcId, questId]) => {
+      const n = getNpcById(npcId);
+      out[npcId] = {
+        exists: !!n,
+        gives:    n && n.questsGiven    && n.questsGiven.includes(questId),
+        turnsIn:  n && n.questsTurnedIn && n.questsTurnedIn.includes(questId)
+      };
+    });
+    return out;
+  });
+  console.log('  T2 PNJ câblage:', t2);
+  Object.entries(t2).forEach(([npcId, d]) => {
+    assert(d.exists,   `PNJ ${npcId} introuvable`);
+    assert(d.gives,    `PNJ ${npcId} doit avoir la quête dans questsGiven`);
+    assert(d.turnsIn,  `PNJ ${npcId} doit avoir la quête dans questsTurnedIn`);
+  });
+
+  // T3 : les 2 nouveaux items existent avec les bons champs
+  const t3 = await page.evaluate(() => {
+    const ar = ITEMS.find(i => i.id === 'anneau_resurrection');
+    const lp = ITEMS.find(i => i.id === 'larmes_phenix');
+    return {
+      arExists: !!ar, arSlot: ar && ar.slot, arRarity: ar && ar.rarity,
+      arGrantsSpell: ar && ar.grantsSpell, arBonusMag: ar && ar.bonusMag,
+      lpExists: !!lp, lpSlot: lp && lp.slot, lpRarity: lp && lp.rarity,
+      lpRegenHp: lp && lp.regenHp, lpBonusDef: lp && lp.bonusDef
+    };
+  });
+  console.log('  T3 nouveaux items:', t3);
+  assert(t3.arExists && t3.arSlot === 'ring' && t3.arRarity === 'epic',
+    'anneau_resurrection doit être slot:ring rarity:epic');
+  assert(t3.arGrantsSpell === 'Reparo',
+    'anneau_resurrection doit grantsSpell:Reparo');
+  assert(t3.lpExists && t3.lpSlot === 'amulet' && t3.lpRarity === 'epic',
+    'larmes_phenix doit être slot:amulet rarity:epic');
+  assert(t3.lpRegenHp === 3,
+    `larmes_phenix doit avoir regenHp:3, got ${t3.lpRegenHp}`);
+
+  // T4 : applyEquipmentRegen() régénère les PV de l'allié équipé
+  const t4 = await page.evaluate(() => {
+    const lp = ITEMS.find(i => i.id === 'larmes_phenix');
+    player.equipped.amulet = JSON.parse(JSON.stringify(lp));
+    recalculateStats();
+    player.hp = Math.max(1, player.hpMax - 10);
+    const before = player.hp;
+    if (typeof applyEquipmentRegen !== 'function') return { fail: 'applyEquipmentRegen non exposée' };
+    applyEquipmentRegen();
+    return { before, after: player.hp, hpMax: player.hpMax, expected: before + 3 };
+  });
+  console.log('  T4 regenHp tick:', t4);
+  assert(!t4.fail, t4.fail || '');
+  assert(t4.after === t4.expected,
+    `tick doit ajouter +3 PV, got ${t4.after} (attendu ${t4.expected})`);
+
+  // T5 : le regen est plafonné par hpMax (pas de débordement)
+  const t5 = await page.evaluate(() => {
+    player.hp = player.hpMax - 1;
+    applyEquipmentRegen();
+    const r1 = { capped: player.hp === player.hpMax };
+    // Plein PV → no-op
+    player.hp = player.hpMax;
+    applyEquipmentRegen();
+    r1.noOp = player.hp === player.hpMax;
+    // KO → no-op
+    player.hp = 0;
+    applyEquipmentRegen();
+    r1.koSkipped = player.hp === 0;
+    return r1;
+  });
+  console.log('  T5 cap/no-op/ko:', t5);
+  assert(t5.capped,    'regen doit s\'arrêter à hpMax');
+  assert(t5.noOp,      'pas de regen quand hp === hpMax');
+  assert(t5.koSkipped, 'pas de regen sur un perso KO (hp <= 0)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Phase 3b — 4 quêtes + 2 items + regenHp passif OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests];
   for (const s of scenarios) {
     await s();
   }

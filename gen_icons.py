@@ -4340,6 +4340,129 @@ def gen_item_retourneur_temps():
     return _outline(img)
 
 
+def gen_item_anneau_resurrection():
+    """Anneau de la Résurrection : bandeau or sombre, pierre noire mate
+    sertie au sommet, fine étincelle blanche."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3613)
+    cx, cy = 24, 30
+    # Or sombre (palette plus foncée que GH/GM/GD habituels)
+    OR_D = (60, 42, 12, 255)
+    OR_M = (115, 85, 28, 255)
+    OR_L = (170, 130, 55, 255)
+    OR_H = (215, 175, 90, 255)
+    # Bandeau ovale (silhouette identique aux autres anneaux pour cohérence)
+    for dy in range(-10, 11):
+        for dx in range(-15, 16):
+            d_out = (dx*0.95)**2 + (dy*1.40)**2
+            d_in  = (dx*1.10)**2 + (dy*1.85)**2
+            if d_out > 14*14 or d_in <= 9*9: continue
+            t  = (dy + 10) / 20.0
+            col = blend(OR_M, OR_D, 0.20 + t * 0.55)
+            if dx < -3 and dy < 0:
+                col = blend(col, OR_H, 0.30)
+            putpx(img, cx+dx, cy+dy, vary(col, rng, 3))
+    # Highlight horizontal en haut
+    for dx in range(-12, 13):
+        d2 = (dx*0.95)**2 + (-10*1.40)**2
+        if d2 <= 14*14:
+            putpx(img, cx+dx, cy-10, OR_L)
+    # Lèvre sombre intérieure
+    for dx in range(-9, 10):
+        if abs(dx) <= 9:
+            putpx(img, cx+dx, cy-5, OUT2)
+    # Sertissage doré (couronne autour de la pierre)
+    cb_cy = cy - 11
+    for dy in range(-5, 4):
+        for dx in range(-5, 6):
+            d2 = dx*dx + dy*dy
+            if 9 < d2 <= 16:
+                col = OR_H if dy < 0 else OR_D
+                putpx(img, cx+dx, cb_cy+dy, col)
+            elif 4 < d2 <= 9:
+                putpx(img, cx+dx, cb_cy+dy, OR_M)
+    # Pierre noire mate (cabochon rond 6 px)
+    STN_D = (10, 8, 12, 255)
+    STN_M = (35, 30, 42, 255)
+    STN_L = (75, 65, 85, 255)
+    for dy in range(-3, 4):
+        for dx in range(-3, 4):
+            d2 = dx*dx + dy*dy
+            if d2 > 4: continue
+            if dy <= -1 and dx <= 0:
+                col = STN_L
+            elif d2 <= 1:
+                col = STN_M
+            else:
+                col = STN_D
+            putpx(img, cx+dx, cb_cy+dy, col)
+    # Étincelle (point blanc discret en haut-gauche)
+    putpx(img, cx-2, cb_cy-2, (240, 235, 245, 255))
+    return _outline(img)
+
+
+def gen_item_larmes_phenix():
+    """Larmes du Phénix : médaillon ovale or-rouge avec gravure plume
+    stylisée et goutte centrale lumineuse. Récompense de Fumseck."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3614)
+    cx = 24
+    # Palette feu / or
+    FR_D = (90, 25, 12, 255)
+    FR_M = (180, 70, 30, 255)
+    FR_L = (235, 130, 55, 255)
+    FR_H = (255, 200, 110, 255)
+    # Chaîne en arc (idem amulette du Phénix / protection)
+    for dx in range(-13, 14):
+        ny = (dx*dx) / 22.0
+        y = 6 + int(ny)
+        if y > 16: continue
+        col = GH if (dx % 2 == 0) else GM
+        putpx(img, cx+dx, y, col)
+        if abs(dx) >= 1:
+            putpx(img, cx+dx, y+1, GD)
+    # Bélière (anneau or)
+    ring(img, cx, 17, 2, GM)
+    putpx(img, cx, 15, GH)
+    # Médaillon ovale (au lieu du blason — différencie de l'amulette de protection)
+    cy_med = 30
+    for dy in range(-10, 11):
+        for dx in range(-10, 11):
+            d2 = (dx*1.0)**2 + (dy*1.05)**2
+            if d2 > 100: continue
+            t  = (dy + 10) / 20.0
+            dl = (dx + 10) / 20.0
+            col = blend(FR_L, FR_D, 0.20 + t * 0.55 + (1 - dl) * -0.05)
+            putpx(img, cx+dx, cy_med+dy, vary(col, rng, 3))
+    # Bordure dorée (couronne)
+    for dy in range(-10, 11):
+        for dx in range(-10, 11):
+            d2 = (dx*1.0)**2 + (dy*1.05)**2
+            if 81 < d2 <= 100:
+                col = GH if dy < -2 else (GD if dy > 2 else GM)
+                putpx(img, cx+dx, cy_med+dy, col)
+    # Plume stylisée gravée (3 segments incurvés du haut vers le bas)
+    feather = (255, 220, 150, 255)
+    feather_d = (140, 80, 30, 255)
+    # Tige centrale
+    for dy in range(-7, 6):
+        putpx(img, cx, cy_med+dy, feather)
+        putpx(img, cx-1, cy_med+dy, feather_d)
+    # Barbules (3 paires divergentes)
+    for level, span in [(-5, 3), (-1, 4), (3, 3)]:
+        for k in range(1, span+1):
+            putpx(img, cx-k,   cy_med+level+k//2, feather)
+            putpx(img, cx-k-1, cy_med+level+k//2, feather_d)
+            putpx(img, cx+k,   cy_med+level+k//2, feather)
+            putpx(img, cx+k+1, cy_med+level+k//2, feather_d)
+    # Goutte lumineuse au pied de la plume
+    putpx(img, cx,   cy_med+7, FR_H)
+    putpx(img, cx-1, cy_med+7, FR_L)
+    putpx(img, cx+1, cy_med+7, FR_L)
+    putpx(img, cx,   cy_med+8, FR_M)
+    return _outline(img)
+
+
 # ─── Spellbooks ─────────────────────────────────────────────
 
 def gen_item_livre_sortileges():
@@ -4490,6 +4613,9 @@ TARGETS = [
     ('img/icons/items/ceinture_alchimiste.png', gen_item_ceinture_alchimiste),
     ('img/icons/items/bottes_dragon.png',       gen_item_bottes_dragon),
     ('img/icons/items/retourneur_temps.png',    gen_item_retourneur_temps),
+    # Phase 3b — récompenses de quêtes PNJ
+    ('img/icons/items/anneau_resurrection.png', gen_item_anneau_resurrection),
+    ('img/icons/items/larmes_phenix.png',       gen_item_larmes_phenix),
 ]
 
 if __name__ == '__main__':
