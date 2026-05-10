@@ -66,3 +66,55 @@ le rendu pixel parfait).
 - Atlas avant/après visuellement comparable, les 6 sprites refaits sont lisibles à 24 px.
 - POC : 6 variantes de l'épée affichables via `data-metal` ou classe CSS, lisibles, distinctes.
 - Smoke test continue de passer.
+
+---
+
+## Méthode 64×64 → 32×32 (alternative pour sprites complexes)
+
+> Premier exemple : `img/icons/items/bottes_apprenti.png` — PR #51,
+> branche `claude/improve-boot-icon-7OVCy`, script `tools/gen_boot_sprite.py`.
+
+### Quand l'utiliser
+
+Sprite final 32×32 trop contraint pour exprimer des détails fins (lacets,
+coutures, œillets, dégradés multi-tons). Dessiner d'abord à 64×64 avec des
+primitives PIL (polygones, ellipses, lignes) puis downscaler.
+
+### Pourquoi pas Lanczos
+
+Le downscale Lanczos (default PIL haute qualité) génère des **pixels
+semi-transparents** sur les bords (anti-aliasing). Or `image-rendering:
+pixelated` (déjà appliqué sur `.ui-icon-*` dans `css/style.css:1300+`)
+ne corrige pas le halo cuit dans le PNG → résultat flou en jeu.
+
+### Recette retenue
+
+```python
+from PIL import Image
+
+PALETTE = [(r,g,b), ...]  # ~9-12 couleurs strictes
+
+def downscale_pixel_art(src_64):
+    small = src_64.resize((32, 32), Image.BOX)   # moyenne 2x2, pas Lanczos
+    px = small.load()
+    for y in range(32):
+        for x in range(32):
+            r, g, b, a = px[x, y]
+            if a < 128:                            # alpha binarisé
+                px[x, y] = (0, 0, 0, 0); continue
+            # snap sur palette stricte (distance euclidienne RGB)
+            best = min(PALETTE, key=lambda c:(c[0]-r)**2+(c[1]-g)**2+(c[2]-b)**2)
+            px[x, y] = (*best, 255)
+    return small
+```
+
+3 ingrédients essentiels :
+1. **`Image.BOX`** — moyenne 2×2 prévisible, pas de fenêtre noyau lissé
+2. **Alpha binarisé** (seuil 128) — bords nets, zéro halo
+3. **Quantization palette stricte** — couleurs cohérentes, pas de fondu sale
+
+### Critère d'acceptation
+
+Capture in-game à 28 px (`.ui-icon-xl` dans la boutique de Madame Malkin)
+doit montrer une silhouette lisible, sans halo flou autour du sprite.
+Comparer visuellement vs sprite avant via un montage côte-à-côte zoom 8×.
