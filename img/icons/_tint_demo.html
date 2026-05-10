@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Tint demo — épée 2-calques</title>
+  <style>
+    body {
+      background: #1c1610;
+      color: #e8d8b0;
+      font: 13px/1.5 system-ui, sans-serif;
+      margin: 0;
+      padding: 24px;
+    }
+    h1 { font-size: 16px; margin: 0 0 16px; }
+    p { color: #b8a880; }
+    .row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      margin: 24px 0;
+    }
+    .cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .label { font-size: 11px; color: #a89870; }
+
+    /* Palette métaux (custom property pour faciliter override) */
+    .metal-iron     { --metal: #909096; }
+    .metal-copper   { --metal: #b87333; }
+    .metal-bronze   { --metal: #8c5a2c; }
+    .metal-silver   { --metal: #c0c0c8; }
+    .metal-gold     { --metal: #d4a830; }
+    .metal-platinum { --metal: #d8d8e0; }
+
+    /* Wrapper 2-calques : la lame teintée + l'overlay garde/pommeau */
+    .tinted-sword {
+      position: relative;
+      width: 48px;
+      height: 48px;
+    }
+    .tinted-sword .layer-blade {
+      position: absolute; inset: 0;
+      /* mask-mode: alpha (défaut) — le PNG sword_blade_base est une
+         silhouette pleine en blanc opaque + fond transparent. La couleur
+         metal est posée uniformément sur la silhouette via background. */
+      -webkit-mask-image: url('items/sword_blade_base.png');
+              mask-image: url('items/sword_blade_base.png');
+      -webkit-mask-size: contain;
+              mask-size: contain;
+      -webkit-mask-position: center;
+              mask-position: center;
+      -webkit-mask-repeat: no-repeat;
+              mask-repeat: no-repeat;
+      background-color: var(--metal, #909096);
+      image-rendering: pixelated;
+    }
+    .tinted-sword .layer-hilt {
+      position: absolute; inset: 0;
+      background: url('items/sword_hilt_gryff.png') center / contain no-repeat;
+      image-rendering: pixelated;
+    }
+
+    /* Test à 2× pour vérifier la pixelisation de la mask. transform: scale
+       n'aide pas à conserver le pixel art sur les masks → on utilise plutôt
+       width/height fixes et on laisse le sprite gérer son propre rendering. */
+    .big-2x .tinted-sword,
+    .big-2x .native-sword img { width: 96px;  height: 96px; }
+    .big-4x .tinted-sword,
+    .big-4x .native-sword img { width: 192px; height: 192px; }
+
+    /* Sprite combiné natif (pour comparaison) */
+    .native-sword img {
+      width: 48px; height: 48px;
+      image-rendering: pixelated;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>POC tint CSS — épée 2-calques (mask-image + background-color)</h1>
+  <p>Mask : <code>img/icons/items/sword_blade_base.png</code> · Overlay : <code>img/icons/items/sword_hilt_gryff.png</code></p>
+
+  <h2 style="font-size:13px;margin:16px 0 4px">Référence — <code>sword_gryff.png</code> (sprite combiné natif)</h2>
+  <div class="row">
+    <div class="cell native-sword"><img src="items/sword_gryff.png" alt="natif"><div class="label">natif 48px</div></div>
+    <div class="cell native-sword big-2x"><img src="items/sword_gryff.png" alt="natif 96"><div class="label">natif 96px</div></div>
+    <div class="cell native-sword big-4x"><img src="items/sword_gryff.png" alt="natif 192"><div class="label">natif 192px</div></div>
+  </div>
+
+  <h2 style="font-size:13px;margin:32px 0 4px">6 variantes via tint CSS — taille 48px</h2>
+  <div class="row">
+    <div class="cell"><div class="tinted-sword metal-iron"><div class="layer-blade"></div><div class="layer-hilt"></div></div><div class="label">iron</div></div>
+    <div class="cell"><div class="tinted-sword metal-copper"><div class="layer-blade"></div><div class="layer-hilt"></div></div><div class="label">copper</div></div>
+    <div class="cell"><div class="tinted-sword metal-bronze"><div class="layer-blade"></div><div class="layer-hilt"></div></div><div class="label">bronze</div></div>
+    <div class="cell"><div class="tinted-sword metal-silver"><div class="layer-blade"></div><div class="layer-hilt"></div></div><div class="label">silver</div></div>
+    <div class="cell"><div class="tinted-sword metal-gold"><div class="layer-blade"></div><div class="layer-hilt"></div></div><div class="label">gold</div></div>
+    <div class="cell"><div class="tinted-sword metal-platinum"><div class="layer-blade"></div><div class="layer-hilt"></div></div><div class="label">platinum</div></div>
+  </div>
+
+  <h2 style="font-size:13px;margin:32px 0 4px">Mêmes variantes à 192px — vérification du rendu pixel art à grande taille</h2>
+  <div class="row big-4x">
+    <div class="cell"><div class="tinted-sword metal-iron"><div class="layer-blade"></div><div class="layer-hilt"></div></div></div>
+    <div class="cell"><div class="tinted-sword metal-copper"><div class="layer-blade"></div><div class="layer-hilt"></div></div></div>
+    <div class="cell"><div class="tinted-sword metal-bronze"><div class="layer-blade"></div><div class="layer-hilt"></div></div></div>
+    <div class="cell"><div class="tinted-sword metal-silver"><div class="layer-blade"></div><div class="layer-hilt"></div></div></div>
+    <div class="cell"><div class="tinted-sword metal-gold"><div class="layer-blade"></div><div class="layer-hilt"></div></div></div>
+    <div class="cell"><div class="tinted-sword metal-platinum"><div class="layer-blade"></div><div class="layer-hilt"></div></div></div>
+  </div>
+</body>
+</html>
