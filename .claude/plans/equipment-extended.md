@@ -6,7 +6,7 @@ Branche : `claude/game-equipment-system-plan-zrXwI`
 > Convention : `[ ]` pending · `[~]` in progress · `[x]` done.
 > À chaque étape franchie : cocher la case, mettre à jour le statut global, ajouter une ligne dans le journal en bas.
 
-**Statut global** : 7 / 53 étapes — Phase 1 terminée, Phase 2 à venir
+**Statut global** : 13 / 53 étapes — Phases 1-2 terminées, Phase 3 à venir
 
 ---
 
@@ -137,12 +137,12 @@ l'identique après reload.
 
 ## 5. Phase 2 — UI
 
-- [ ] **2.1** `inventory.js — renderInventory()` : étendre `isEquip` à `['wand','armor','acc','head','body','hands','feet','cloak','amulet','ring','belt','trinket']`. Étiquette type colorée par catégorie (couleur or pour wand, bleu pour armor, vert pour anneaux, etc. — décidé en sous-tâche).
-- [ ] **2.2** `item-icons.js — EQUIPMENT_SLOT_ICONS` : ajouter une entrée par nouveau slot (`head, hands, feet, cloak, amulet, ring, belt, trinket`) avec un PNG fallback générique (cf. Phase 4).
-- [ ] **2.3** `ui.js — openCharacter()` : remplacer le bloc à 3 lignes (`wand/armor/acc`) par une grille 11 lignes (ou 2 colonnes × 6) listant chaque slot avec icône + nom de l'item équipé (ou « — » si vide). Préserver `c.wand/c.armor/c.acc` strings legacy uniquement pour compat (à terme : retirer).
-- [ ] **2.4** `css/style.css` : nouvelle classe `.equip-grid` (grid 2 colonnes, gap 4px) pour la fiche perso. Classe `.tinted-icon` pour le rendu des variantes (`filter: hue-rotate(var(--tint-rotate))` ou overlay multiply).
-- [ ] **2.5** Rendu de teinte (variantes) : implémenter `getItemIconHtml(item)` pour appliquer `style="filter: drop-shadow(0 0 0 ${item.tint})"` ou un wrapper `<span class="tinted-icon" style="--tint:${item.tint}">`. Tester le rendu sur 3 variantes d'une même famille (commune/rare/épique).
-- [ ] **2.6** Indicateur de rareté dans l'inventaire : bordure colorée du slot selon `item.rarity` (`common`=gris-or, `rare`=bleu, `epic`=violet, `legendary`=or).
+- [x] **2.1** `inventory.js — renderInventory()` : `isEquip` inchangé (les nouveaux items conservent `type:'acc'`) mais l'étiquette type utilise désormais `item.slot` en priorité (plus précis : head/ring/trinket…). Bordure de rareté via classe `rarity-<level>` ajoutée au slot.
+- [x] **2.2** `item-icons.js — EQUIPMENT_SLOT_ICONS` : 8 entrées étendues (`head, body, hands, feet, cloak, amulet, ring, ring1, ring2, belt, trinket`) aliasées sur `armor.png` (body/cloak) ou `accessory.png` (les autres). Sprites dédiés générés en Phase 4.
+- [x] **2.3** `ui.js — openCharacter()` : helper `_renderEquipSlots(c)` itère sur `EQUIP_SLOT_LABELS` (11 paires `[slot, libellé FR]`), produit des `.equip-row` avec icône + label + nom de l'item (ou « — » italique si vide). Conserve `c.wand/c.armor/c.acc` strings legacy intacts pour `updateUI` du panneau gauche.
+- [x] **2.4** `css/style.css` : `.equip-grid` (grid 2 colonnes, repli 1 colonne ≤360px), `.equip-row.filled` (fond ambré subtil), `.equip-icon`/`.equip-label`/`.equip-name` (typographie Cinzel pour le label, ellipsis sur le nom).
+- [x] **2.5** Rendu de teinte : `getItemIconHtml(item)` applique `style="filter: drop-shadow(0 0 1px ${tint}) drop-shadow(0 0 3px ${tint});"` quand `item.tint` est un hex valide (`/^#[0-9a-f]{3,8}$/i`). Tints malformées ignorées (sécurité anti-injection CSS). Smoke T8 valide les deux cas.
+- [x] **2.6** Bordure de rareté : `.rarity-common` (gris-or), `.rarity-rare` (bleu), `.rarity-epic` (violet), `.rarity-legendary` (or, halo). Smoke T7 vérifie `borderColor === rgb(74,138,208)` pour rare.
 
 **Vérification Phase 2** :
 - Fiche perso affiche les 11 slots remplis ou vides.

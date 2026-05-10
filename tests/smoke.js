@@ -1789,11 +1789,58 @@ async function scenarioExtendedEquipment() {
   assert(t5.wandName   === 'Baguette de Saule',  'wand doit conserver wand1');
   assert(t5.slotCount  === 11, `equipped doit avoir 11 slots après migration, got ${t5.slotCount}`);
 
+  // T6 : fiche perso rend bien les 11 lignes d'équipement
+  const t6 = await page.evaluate(() => {
+    openCharacter(0);
+    const rows = document.querySelectorAll('#char-detail .equip-grid .equip-row');
+    const labels = Array.from(rows).map(r =>
+      r.querySelector('.equip-label').textContent.trim());
+    return { count: rows.length, labels };
+  });
+  console.log('  T6 fiche 11 slots →', t6);
+  assert(t6.count === 11, `fiche perso doit avoir 11 lignes equip-row, got ${t6.count}`);
+  assert(t6.labels.includes('Anneau ◀') && t6.labels.includes('Anneau ▶'),
+         'libellés Anneau ◀ et Anneau ▶ doivent être présents');
+
+  // T7 : bordure de rareté appliquée dans l'inventaire
+  const t7 = await page.evaluate(() => {
+    // Reset puis injection d'un item rare
+    player.inventory.length = 0;
+    player.inventory.push({
+      id:'_test_rare', name:'Anneau rare', icon:'💍', desc:'+1',
+      type:'acc', slot:'ring', rarity:'rare', bonusAtk:1, power:1, price:1
+    });
+    openInventory();
+    const slot = document.querySelector('#inv-grid .inv-slot.has-item');
+    return {
+      hasRarityClass: slot && slot.classList.contains('rarity-rare'),
+      borderColor:    slot && getComputedStyle(slot).borderColor
+    };
+  });
+  console.log('  T7 rareté →', t7);
+  assert(t7.hasRarityClass, 'inv-slot avec item rare doit porter classe rarity-rare');
+
+  // T8 : champ tint déclenche un drop-shadow inline
+  const t8 = await page.evaluate(() => {
+    const tinted = { id:'_test_tint', name:'Test', icon:'🪄', type:'wand', slot:'wand', tint:'#4a8ad0' };
+    const html = getItemIconHtml(tinted);
+    // Tint hex valide → style inline présent
+    const validHas = /drop-shadow\(0 0 1px #4a8ad0\)/.test(html);
+    // Tint malformée → ignorée (sécurité injection CSS)
+    const evil = { id:'x', name:'x', icon:'x', tint:'red; background:url(x)' };
+    const evilHtml = getItemIconHtml(evil);
+    const evilHas = /drop-shadow|background/.test(evilHtml);
+    return { validHas, evilHas };
+  });
+  console.log('  T8 tint →', t8);
+  assert(t8.validHas, 'tint hex valide doit produire drop-shadow inline');
+  assert(!t8.evilHas, 'tint malformée doit être ignorée');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ 11 slots + slot mapping + bonusAgi + ring1/ring2 + migration legacy');
+  console.log('  ✅ 11 slots + slot mapping + bonusAgi + ring1/ring2 + migration legacy + UI Phase 2');
   await browser.close();
 }
 

@@ -12,10 +12,25 @@
 // L'intégration UI ne change pas — tout passe par getItemIconHtml().
 
 const EQUIPMENT_SLOT_ICONS = {
+  // ── Slots historiques (PNG dédiés) ─────────────────────────
   wand:      'img/icons/wand.png',
   armor:     'img/icons/armor.png',
   acc:       'img/icons/accessory.png',
-  spellbook: 'img/icons/spellbook.png'
+  spellbook: 'img/icons/spellbook.png',
+  // ── Slots étendus (Phase 2 : aliasés sur PNG existants jusqu'à
+  //    génération des sprites dédiés en Phase 4 — voir
+  //    .claude/plans/equipment-extended.md §2.4 et §7) ──────────
+  head:      'img/icons/accessory.png',
+  body:      'img/icons/armor.png',
+  hands:     'img/icons/accessory.png',
+  feet:      'img/icons/accessory.png',
+  cloak:     'img/icons/armor.png',
+  amulet:    'img/icons/accessory.png',
+  ring:      'img/icons/accessory.png',
+  ring1:     'img/icons/accessory.png',
+  ring2:     'img/icons/accessory.png',
+  belt:      'img/icons/accessory.png',
+  trinket:   'img/icons/accessory.png'
 };
 
 // Registre des icônes per-item (Phase 4 — peuplé pour tous les ITEMS[])
@@ -103,14 +118,29 @@ function getItemIconSrc(item) {
 
 // Retourne soit un <img> HTML, soit l'emoji item.icon en fallback.
 // Sécurise les noms d'item (escape minimal sur ").
+// Si l'item porte un champ `tint` (ex: variante par teinte), applique
+// un drop-shadow coloré pour différencier visuellement les variantes
+// d'une même famille — voir .claude/plans/equipment-extended.md §2.4.
 function getItemIconHtml(item, sizeClass) {
   const cls = sizeClass || 'ui-icon-md';
   const src = getItemIconSrc(item);
+  const tint = item && item.tint;
+  // Style inline ne sécurise QUE les couleurs hex bien formées (#abc / #abcdef)
+  // — toute autre valeur de `tint` est ignorée pour éviter une injection CSS.
+  const safeTint = (tint && /^#[0-9a-f]{3,8}$/i.test(tint)) ? tint : null;
+  const tintAttr = safeTint
+    ? ` style="filter: drop-shadow(0 0 1px ${safeTint}) drop-shadow(0 0 3px ${safeTint});"`
+    : '';
   if (src) {
     const alt = (item && item.name ? item.name : '').replace(/"/g, '&quot;');
-    return `<img class="ui-icon ${cls}" src="${src}" alt="${alt}">`;
+    return `<img class="ui-icon ${cls}" src="${src}" alt="${alt}"${tintAttr}>`;
   }
-  return (item && item.icon) ? item.icon : '';
+  if (item && item.icon) {
+    return safeTint
+      ? `<span class="ui-icon-emoji"${tintAttr}>${item.icon}</span>`
+      : item.icon;
+  }
+  return '';
 }
 
 // Pour les emplacements d'équipement (fiche perso, panneau gauche)

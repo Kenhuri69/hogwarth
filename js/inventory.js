@@ -88,10 +88,16 @@ function renderInventory(battleMode) {
       div.classList.add('has-item');
       const isEquip    = ['wand','armor','acc'].includes(item.type);
       const isSpellbook = item.type === 'spellbook';
-      // Étiquette de type — utilise le resolver (slot icon générique pour
-      // l'instant ; per-item PNG dès qu'il sera enregistré dans le registry).
+      // Bordure de rareté — voir .claude/plans/equipment-extended.md §2.6.
+      // common (par défaut, gris-or) / rare (bleu) / epic (violet) / legendary (or).
+      if (item.rarity) div.classList.add(`rarity-${item.rarity}`);
+      // Étiquette de type — préfère `item.slot` (plus précis : head, ring,
+      // trinket…) puis `item.type` en fallback. Le resolver tombe sur
+      // accessory.png pour tous les nouveaux slots tant que les sprites
+      // dédiés Phase 4 ne sont pas livrés.
+      const slotKey = (isEquip && item.slot) ? item.slot : item.type;
       const typeIcon = (isEquip || isSpellbook)
-        ? getEquipmentSlotIconHtml(item.type, 'ui-icon-sm')
+        ? getEquipmentSlotIconHtml(slotKey, 'ui-icon-sm')
         : '';
       const typeLabel = (isEquip || isSpellbook)
         ? `<div style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
