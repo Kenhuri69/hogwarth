@@ -200,22 +200,27 @@ body {
   border-radius:6px;
   overflow:hidden;
 }
-/* A1bis — buste VRAIMENT agrandi (source 128×128 → upscale assumé). */
-.paper-doll .pd-portrait{
+/* A1ter — buste = tout l'espace libre entre slots latéraux et slots du bas.
+   Wrapper absolu pour définir la zone, img à 100%/100% + object-fit:contain
+   pour que l'image carrée 128×128 s'adapte au min(W,H) sans déformation.
+   Sans wrapper : img absolu garde sa taille intrinsèque (cf. v2.3 raté). */
+.pd-portrait-wrapper{
   position:absolute;
-  left:50%; bottom:60px;
-  transform:translateX(-50%);
-  width:320px; height:320px;
-  object-fit:contain;
-  image-rendering:auto;
-  filter:drop-shadow(0 8px 22px rgba(0,0,0,0.75));
+  top:10px; bottom:170px;
+  left:70px; right:70px;
   z-index:2;
   pointer-events:none;
+}
+.paper-doll .pd-portrait{
+  width:100%; height:100%;
+  object-fit:contain;
+  object-position:center bottom;
+  filter:drop-shadow(0 8px 22px rgba(0,0,0,0.75));
 }
 /* Socle / podium subtil sous le perso */
 .paper-doll::before{
   content:''; position:absolute;
-  left:50%; bottom:46px;
+  left:50%; bottom:166px;
   transform:translateX(-50%);
   width:220px; height:22px;
   background:radial-gradient(ellipse at center, rgba(0,0,0,0.65), transparent 70%);
@@ -381,9 +386,12 @@ body {
   .tab          { font-size:10px; padding:2px 8px; }
   .char-grid    { grid-template-columns:1fr; gap:6px; }
   .section-toggle { display:block; }
-  /* A10 — mobile : perso agrandi mais sans déborder sur slot belt */
+  /* A10 — mobile : wrapper resserré pour s'adapter aux slots 44px */
   .paper-doll   { height:400px; }
-  .paper-doll .pd-portrait { width:240px; height:260px; bottom:90px; }
+  .pd-portrait-wrapper {
+    top:8px; bottom:140px;
+    left:60px; right:60px;
+  }
   .equip-slot   { width:44px; height:44px; font-size:20px; }
   .equip-slot img { width:30px; height:30px; }
   .equip-slot-head    { top:  8px; left:  8px; }
@@ -547,8 +555,10 @@ body {
               <div class="tooltip"><span class="tt-name">Éclair de Feu</span><span class="tt-rarity rare">Rare · Bibelot</span><span class="tt-bonus">Fuite garantie</span></div>
             </div>
 
-            <!-- A1 — buste Harry agrandi, prend toute la zone verticale -->
-            <img class="pd-portrait" src="../img/harry.png" alt="Harry">
+            <!-- A1ter — buste prend toute la zone libre via wrapper absolu -->
+            <div class="pd-portrait-wrapper">
+              <img class="pd-portrait" src="../img/harry.png" alt="Harry">
+            </div>
 
             <!-- A7 — Bandeau Or DANS le paper doll -->
             <div class="gold-banner">
