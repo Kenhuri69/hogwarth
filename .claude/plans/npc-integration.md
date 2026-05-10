@@ -6,7 +6,7 @@ Branche : `claude/add-npc-integration-M4NfZ`
 > Convention : `[ ]` pending · `[~]` in progress · `[x]` done.
 > À chaque étape franchie : cocher la case, mettre à jour le statut global, ajouter une ligne dans le journal en bas.
 
-**Statut global** : 28 / 30 étapes — Itération 1 quasi-terminée (commit + push restants).
+**Statut global** : itérations 1, 2, 4, 6, 7 (def + 7.4 logique métier) **livrées sur master**. Reste : (a) correction portrait Pomfresh (broche → caducée/feuilles de mandragore/plume de phénix), (b) portraits PNG des 4 PNJ lore it. 6 (Sir Nicolas, Moine Gras, Rusard, Trelawney) — emoji fallback en attendant.
 
 ---
 

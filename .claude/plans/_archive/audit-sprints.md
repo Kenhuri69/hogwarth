@@ -64,22 +64,22 @@ smoke test vert.
 ## Sprint 2 — Propreté / dette technique
 
 ### S2.1 — Code mort
-- [ ] `data.js:56` — supprimer `const ENEMIES = MONSTERS;`
-- [ ] `main.js:91-95` — supprimer `startGameWithDifficulty()`
-- [ ] `ui.js:197-204` — supprimer `addLog()` + ses 4 appelants no-op (`battle.js:88, 340, 373`, `quests.js:230`)
-- [ ] `save.js:217-248` — décision : conserver `saveGame()/loadGame()` (utilisés par les tests pour fabriquer la legacy save) mais les marquer clairement « test-only ; production utilise writeSlot/readSlot ».
+- [x] `data.js:56` — supprimer `const ENEMIES = MONSTERS;`
+- [x] `main.js:91-95` — supprimer `startGameWithDifficulty()`
+- [x] `ui.js:197-204` — supprimer `addLog()` + ses 4 appelants no-op (`battle.js:88, 340, 373`, `quests.js:230`)
+- [x] `save.js:217-248` — décision : conserver `saveGame()/loadGame()` (utilisés par les tests pour fabriquer la legacy save) mais les marquer clairement « test-only ; production utilise writeSlot/readSlot ».
 
 ### S2.2 — Helpers DRY
-- [ ] `data.js` — ajouter `const DIRECTIONS = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };` ; remplacer les 3 copies dans `movement.js:7,23` et `ui.js:118`.
-- [ ] `inventory.js` — ajouter `tryAddItem(itemOrId, { silent } = {})` qui factorise la garde `length < 16`, le `{ ...item }` defensif, et le message stand. Refactorer les 9 sites.
-- [ ] `ui.js` — ajouter `applyPartyMode()` qui synchronise `char-card-1` + `battle-char-indicator`. Remplacer les 3 copies dans `main.js:209-212`, `ui.js:33-34`, `save-ui.js:279-282`.
+- [x] `data.js` — ajouter `const DIRECTIONS = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };` ; remplacer les 3 copies dans `movement.js:7,23` et `ui.js:118`.
+- [x] `inventory.js` — ajouter `tryAddItem(itemOrId, { silent } = {})` qui factorise la garde `length < 16`, le `{ ...item }` defensif, et le message stand. Refactorer les 9 sites.
+- [x] `ui.js` — ajouter `applyPartyMode()` qui synchronise `char-card-1` + `battle-char-indicator`. Remplacer les 3 copies dans `main.js:209-212`, `ui.js:33-34`, `save-ui.js:279-282`.
 
 ### S2.3 — Alignement `CLAUDE.md`
-- [ ] Section « Système d'objets 3D » : remplacer toute la prose `OBJECT_TYPES`/`objectMap`/`renderObjects` par la vraie architecture `CELL.CHEST/SHOP/CHEST/FOUNTAIN` + `_showExploreOverlay`.
-- [ ] Arbre des fichiers : retirer les références à `OBJECT_TYPES`, `objectMap`.
-- [ ] Ordre de chargement : ajouter `ux-improvements.js` et `textures.js`.
-- [ ] Section quêtes : compter à nouveau (7 quêtes au lieu de 4).
-- [ ] Mention « Espace/Entrée → checkObjectInFront » : retirer ou corriger.
+- [x] Section « Système d'objets 3D » : remplacer toute la prose `OBJECT_TYPES`/`objectMap`/`renderObjects` par la vraie architecture `CELL.CHEST/SHOP/CHEST/FOUNTAIN` + `_showExploreOverlay`.
+- [x] Arbre des fichiers : retirer les références à `OBJECT_TYPES`, `objectMap`.
+- [x] Ordre de chargement : ajouter `ux-improvements.js` et `textures.js`.
+- [x] Section quêtes : compter à nouveau (7 quêtes au lieu de 4).
+- [x] Mention « Espace/Entrée → checkObjectInFront » : retirer ou corriger.
 
 ### S2.4 — Tests + commit
 - Ajouter scénario `scenarioInventoryHelper` (round-trip `tryAddItem` + cap 16).
@@ -91,16 +91,16 @@ smoke test vert.
 ## Sprint 3 — Extraction `scene-icons.js`
 
 ### S3.1 — Création du fichier
-- [ ] `js/scene-icons.js` — exposer `const SCENE_ICONS = { chest: '<svg…>', shop: '<svg…>', stairs_d: '<svg…>', stairs_u: '<svg…>', fountain: function(opts){…} };`.
+- [x] `js/scene-icons.js` — exposer `const SCENE_ICONS = { chest: '<svg…>', shop: '<svg…>', stairs_d: '<svg…>', stairs_u: '<svg…>', fountain: function(opts){…} };`.
 - La fontaine reçoit `{ dried: bool }` et retourne le SVG dynamiquement (état tarie/active).
 
 ### S3.2 — Branchement dans `index.html`
-- [ ] Insérer `<script src="js/scene-icons.js"></script>` juste après `js/icons.js`.
-- [ ] Mettre à jour `CLAUDE.md` ordre de chargement.
+- [x] Insérer `<script src="js/scene-icons.js"></script>` juste après `js/icons.js`.
+- [x] Mettre à jour `CLAUDE.md` ordre de chargement.
 
 ### S3.3 — Refonte de `_showExploreOverlay`
-- [ ] Remplacer chaque grand bloc `iconHtml = '<svg…>'` par `iconHtml = SCENE_ICONS[type]` (ou `SCENE_ICONS.fountain({ dried })` pour la fontaine).
-- [ ] Cible : `_showExploreOverlay` passe d'environ 387 lignes à ~80 lignes (logique pure : titres, descriptions, callbacks).
+- [x] Remplacer chaque grand bloc `iconHtml = '<svg…>'` par `iconHtml = SCENE_ICONS[type]` (ou `SCENE_ICONS.fountain({ dried })` pour la fontaine).
+- [x] Cible : `_showExploreOverlay` passe d'environ 387 lignes à ~80 lignes (logique pure : titres, descriptions, callbacks).
 
 ### S3.4 — Tests + commit
 - Smoke test reste vert (les SVG sont identiques, seulement déplacés).
@@ -111,10 +111,10 @@ smoke test vert.
 
 ## Critères globaux de fin
 
-- [ ] 3 commits poussés sur `claude/continue-svg-work-v6BEc`.
-- [ ] Smoke test `node tests/smoke.js` 100 % vert sur HEAD.
-- [ ] `CLAUDE.md` aligné (au plus tard fin Sprint 2).
-- [ ] PR mise à jour ou nouvelle PR créée (à la demande utilisateur).
+- [x] 3 commits poussés sur `claude/continue-svg-work-v6BEc`.
+- [x] Smoke test `node tests/smoke.js` 100 % vert sur HEAD.
+- [x] `CLAUDE.md` aligné (au plus tard fin Sprint 2).
+- [x] PR mise à jour ou nouvelle PR créée (à la demande utilisateur).
 
 ## Journal d'exécution
 

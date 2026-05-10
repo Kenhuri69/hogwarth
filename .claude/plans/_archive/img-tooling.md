@@ -61,7 +61,7 @@ Pas de screenshot diff : flaky, exige baselines, redondant avec les assertions p
 3. [x] Scénario 5 smoke étendu : data-driven sur tous les `imgSrc` (19 monstres), check color-type RGBA via lecture binaire (canvas tainted en `file://`).
 4. [x] `IMG_STYLE.md` §7 et §9 pointent vers le script et le smoke.
 5. [x] Journal `SVG_PLAN.md` mis à jour (entrée #22).
-6. [ ] Smoke test final + commit + push.
+6. [x] Smoke test final + commit + push.
 
 ## Hors périmètre (explicite)
 
