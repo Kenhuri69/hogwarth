@@ -204,49 +204,38 @@ body {
   border:1px solid rgba(122,92,30,0.40);
   border-radius:6px;
   overflow:hidden;
-  padding:10px;
+  padding:8px;
   display:flex; flex-direction:column;
-  gap:6px;
+  gap:0;                     /* zéro gap : tout est collé */
 }
 .paper-doll-main{
   display:grid;
   grid-template-columns: 54px 1fr 54px;
   gap:8px;
-  align-items:start;        /* colonnes ne s'étirent pas — stage dicte sa propre hauteur */
+  align-items:start;
 }
 .paper-doll-col{
   display:flex; flex-direction:column;
   gap:8px;
 }
+/* Stage : ZÉRO hauteur propre, l'image dicte tout via width:100% + height:auto.
+   Pas d'aspect-ratio, pas de min-height : aucune source de vide possible. */
 .paper-doll-stage{
   position:relative;
-  aspect-ratio:1 / 1;       /* zone CARRÉE — image carrée la remplit sans trou */
-  width:100%;
-  display:flex;
-  align-items:flex-start;
-  justify-content:center;
-  overflow:hidden;
-  border-radius:4px;
-}
-/* Socle radial sous le perso */
-.paper-doll-stage::after{
-  content:''; position:absolute;
-  left:50%; bottom:0; transform:translateX(-50%);
-  width:80%; height:24px;
-  background:radial-gradient(ellipse at center, rgba(0,0,0,0.6), transparent 70%);
-  pointer-events:none; z-index:3;
+  display:block;
+  font-size:0;               /* supprime l'espace blanc sous l'image inline */
+  line-height:0;
 }
 .paper-doll-stage .pd-portrait{
-  position:relative; z-index:2;
-  width:100%; height:100%;
-  object-fit:cover;          /* remplit toute la zone carrée */
-  object-position:center top;
+  display:block;
+  width:100%;
+  height:auto;
   filter:drop-shadow(0 8px 22px rgba(0,0,0,0.75));
 }
 .paper-doll-bottom{
   display:flex; align-items:center; justify-content:center;
   gap:14px;
-  padding:2px 0;
+  margin-top:6px;            /* petite respiration sous le perso */
 }
 
 /* A7 — bandeau or sous la rangée wand/belt/trinket */
