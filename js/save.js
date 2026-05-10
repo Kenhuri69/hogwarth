@@ -173,6 +173,7 @@ function _serializeState() {
     seenNpcs:      Array.from(seenNpcs),
     availableQuests: Array.from(availableQuests),
     completedQuests: Array.from(completedQuests),
+    lastQuestCompletion: { ...lastQuestCompletion },
     _version:        2
   };
 }
@@ -266,7 +267,10 @@ function _applyState(gs) {
   if (gs._version === 2) {
     availableQuests = new Set(gs.availableQuests || []);
     completedQuests = new Set(gs.completedQuests || []);
+    lastQuestCompletion = (gs.lastQuestCompletion && typeof gs.lastQuestCompletion === 'object')
+      ? { ...gs.lastQuestCompletion } : {};
   } else {
+    lastQuestCompletion = {};
     completedQuests = new Set();
     activeQuests = activeQuests.filter(q => {
       if (q.completed) { completedQuests.add(q.id); return false; }

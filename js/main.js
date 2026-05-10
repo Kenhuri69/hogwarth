@@ -110,6 +110,7 @@ function chooseHouse(house) {
     availableQuests = new Set(QUEST_TEMPLATES.map(t => t.id));
     completedQuests = new Set();
   }
+  if (typeof lastQuestCompletion !== 'undefined') lastQuestCompletion = {};
   if (typeof showIntroScreen === 'function') {
     showIntroScreen(() => startGame(_pendingPartySize));
   } else {

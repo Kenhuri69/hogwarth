@@ -212,8 +212,11 @@ Boutons d'action dynamiques :
 
 ### Itération 5 — Quêtes répétables / quêtes en chaîne
 
-- [ ] PNJ peut donner une 2ᵉ quête après la 1ʳᵉ (champ `questsGiven` ordonné).
-- [ ] Quête répétable (Hagrid : "ramène 3 chouettes" tous les 3 niveaux).
+- [x] **Chaînes** : `npc.questsGiven` ordonné, `getNpcQuestState` itère et retourne le 1er état actionnable. Pas de schéma supplémentaire — juste un parcours en ordre. Permet à un PNJ de donner Q1 puis Q2 (et plus si besoin) une fois Q1 rendue.
+- [x] **Répétables** : nouveau flag `repeatable: { everyLevels: N }` sur `QUEST_TEMPLATES`. Nouvelle map `lastQuestCompletion = {questId: playerLevel}` dans `state.js`, persistée dans `save.js`. Helper `isQuestOfferable(id)` utilisé partout (dialog dispatch, accept) pour gérer "complétée mais cooldown écoulé".
+- [x] **Dialogues par quête** : champ optionnel `npc.dialoguesByQuest = { questId: { questOffer, questActive, questReady } }`. Override des dialogues globaux du PNJ pour la quête concernée. Permet à Hagrid d'avoir des textes différents pour `chouette_perdue` (canon) et `defense_cabane` (chaîne).
+- [x] **Hagrid POC** : `questsGiven: ["chouette_perdue", "defense_cabane"]`. `chouette_perdue` devient répétable (`everyLevels: 3`). Nouvelle quête `defense_cabane` (kill 3 araignées, récompense potion_m). Dialogues dédiés dans `dialoguesByQuest`.
+- [x] **Smoke 3quater** : 7 tests dédiés (registre, état initial, remise → chaîne avance, fin de chaîne, cooldown non atteint, cooldown atteint, ré-acceptation).
 
 ---
 
