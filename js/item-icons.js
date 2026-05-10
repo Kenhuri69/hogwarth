@@ -166,25 +166,32 @@ function getItemIconHtml(item, sizeClass) {
 }
 
 // Tint 2-calques : produit le wrapper HTML pour un item à variantes
-// métalliques. Refuse silencieusement (retourne null → fallback path
-// normal) si les valeurs ne passent pas la whitelist anti-injection CSS.
-const _TINT_NAME_RE     = /^[a-z0-9_]+$/i;
-const _TINT_ALLOWED_METALS = ['iron', 'copper', 'bronze', 'silver', 'gold', 'platinum'];
+// (métaux, bois, ...). Refuse silencieusement (retourne null → fallback
+// path normal) si les valeurs ne passent pas la whitelist anti-injection
+// CSS. Les noms `tintMask` / `tintOverlay` correspondent aux deux PNG
+// sources (silhouette teintable + overlay de détails fixes).
+const _TINT_NAME_RE = /^[a-z0-9_]+$/i;
+const _TINT_ALLOWED_VALUES = [
+  // métaux
+  'iron', 'copper', 'bronze', 'silver', 'gold', 'platinum',
+  // bois (baguettes)
+  'oak', 'ebony', 'willow', 'holly', 'elder', 'vine',
+];
 function _getTintedItemHtml(item, cls) {
-  const blade = String(item.tintBlade || '');
-  const hilt  = String(item.tintHilt  || '');
-  const metal = String(item.metal     || 'silver');
-  if (!_TINT_NAME_RE.test(blade)) return null;
-  if (!_TINT_NAME_RE.test(hilt))  return null;
-  if (_TINT_ALLOWED_METALS.indexOf(metal) === -1) return null;
+  const mask    = String(item.tintMask    || '');
+  const overlay = String(item.tintOverlay || '');
+  const tint    = String(item.tint        || 'silver');
+  if (!_TINT_NAME_RE.test(mask))    return null;
+  if (!_TINT_NAME_RE.test(overlay)) return null;
+  if (_TINT_ALLOWED_VALUES.indexOf(tint) === -1) return null;
   const alt = (item && item.name ? item.name : '').replace(/"/g, '&quot;');
-  const bladeUrl = `url('img/icons/items/${blade}.png')`;
-  const hiltUrl  = `url('img/icons/items/${hilt}.png')`;
-  return `<span class="ui-icon tinted-icon ${cls} metal-${metal}" `
-       + `data-blade="${blade}" data-hilt="${hilt}" data-metal="${metal}" `
+  const maskUrl    = `url('img/icons/items/${mask}.png')`;
+  const overlayUrl = `url('img/icons/items/${overlay}.png')`;
+  return `<span class="ui-icon tinted-icon ${cls} tint-${tint}" `
+       + `data-mask="${mask}" data-overlay="${overlay}" data-tint="${tint}" `
        + `role="img" aria-label="${alt}">`
-       +   `<span class="tint-mask"    style="--tint-mask:${bladeUrl}"></span>`
-       +   `<span class="tint-overlay" style="--tint-overlay:${hiltUrl}"></span>`
+       +   `<span class="tint-mask"    style="--tint-mask:${maskUrl}"></span>`
+       +   `<span class="tint-overlay" style="--tint-overlay:${overlayUrl}"></span>`
        + `</span>`;
 }
 

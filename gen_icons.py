@@ -2822,6 +2822,82 @@ def gen_item_wand1():
 def gen_item_wand2():
     return _wand_item(3408, (40, 25, 15, 255), (110, 70, 40, 255), (240, 240, 250, 255), has_runes=True)
 
+
+# ── Tint 2-calques : pendants pour les baguettes ────────────────
+# `wand_shaft_base` : silhouette pleine du fût en blanc opaque (sert
+# de mask CSS). `wand_tip_basic` / `wand_tip_runic` : tout sauf le fût
+# (poignée, bague, pointe magique, étincelles, runes éventuelles) —
+# overlays superposés au shaft teinté. Géométrie alignée sur _wand_item
+# (diagonale (10,38)→(40,8), 5 px d'épaisseur).
+
+_WAND_LEN     = 40
+_WAND_T_GRIP  = 10   # 0..9 : poignée cuir
+_WAND_T_BAND  = 13   # 10..12 : bague or
+_WAND_TIP_X, _WAND_TIP_Y = 39, 9
+
+def _wand_path(t):
+    return 10 + (t * 30) // _WAND_LEN, 38 - (t * 30) // _WAND_LEN
+
+def gen_item_wand_shaft_base():
+    """Calque "fût" — silhouette pleine en blanc opaque (mask CSS).
+    Couvre uniquement la portion bois (t=13..39), pas la poignée. Le
+    motif suit le même pattern que `_wand_item` (une bande de 5 px le
+    long de la diagonale + une ligne complémentaire pour combler les
+    escaliers, sinon l'agrandissement 4× crée un damier disgracieux)."""
+    img = Image.new('RGBA', (S, S), TR)
+    WHITE = (255, 255, 255, 255)
+    for t in range(_WAND_T_BAND, _WAND_LEN):
+        x, y = _wand_path(t)
+        for w in range(-2, 3):
+            putpx(img, x+w, y+w, WHITE)
+            if abs(w) < 2:
+                putpx(img, x+w, y+w-1, WHITE)
+    return img
+
+def _wand_tip(seed, tip_color, has_runes=False):
+    """Calque "détails fixes" — poignée cuir + bague or + pointe magique
+    + étincelles + runes optionnelles. Le fût lui-même reste transparent
+    (la couleur du fût vient de la classe tint-* du wrapper)."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(seed)
+    # Poignée cuir (t=0..9) + bague or (t=10..12)
+    for t in range(_WAND_T_BAND):
+        x, y = _wand_path(t)
+        col = LD if t < _WAND_T_GRIP else GD
+        for w in range(-2, 3):
+            putpx(img, x+w, y+w, vary(col, rng, 4))
+            if abs(w) < 2:
+                putpx(img, x+w, y+w-1, blend(col, (255, 240, 200, 255), 0.3))
+    # Pointe magique (étoile + halo)
+    fill_circle(img, _WAND_TIP_X, _WAND_TIP_Y, 4, tip_color)
+    fill_circle(img, _WAND_TIP_X, _WAND_TIP_Y, 2, blend(tip_color, (255, 255, 255, 255), 0.6))
+    # Étincelles externes (sur fond transparent uniquement)
+    for (dx, dy) in [(-6,0),(6,0),(0,-6),(0,6),(-4,-4),(4,-4),(-4,4),(4,4)]:
+        x, y = _WAND_TIP_X + dx, _WAND_TIP_Y + dy
+        if 0 <= x < S and 0 <= y < S and img.getpixel((x, y))[3] == 0:
+            putpx(img, x, y, tip_color)
+    # Runes or (3 cabochons sur le fût) — le fût étant peint par CSS,
+    # les runes apparaîtront comme inclusions or sur la couleur de bois.
+    if has_runes:
+        for off in (15, 22, 28):
+            x, y = _wand_path(off)
+            putpx(img, x+1, y-1, GH)
+    # Outline (pour la silhouette des éléments fixes uniquement)
+    for y in range(S):
+        for x in range(S):
+            if img.getpixel((x, y))[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
+    return img
+
+def gen_item_wand_tip_basic():
+    return _wand_tip(3407, XP_H, has_runes=False)
+
+def gen_item_wand_tip_runic():
+    return _wand_tip(3408, (240, 240, 250, 255), has_runes=True)
+
 def gen_item_sword_blade_base():
     """Calque "lame" — silhouette pleine en blanc opaque pour servir de
     `mask-image` CSS (mask-mode: alpha par défaut). Une teinte appliquée
@@ -4251,6 +4327,9 @@ TARGETS = [
     ('img/icons/items/sword_gryff.png',       gen_item_sword_gryff),
     ('img/icons/items/sword_blade_base.png',  gen_item_sword_blade_base),
     ('img/icons/items/sword_hilt_gryff.png',  gen_item_sword_hilt_gryff),
+    ('img/icons/items/wand_shaft_base.png',   gen_item_wand_shaft_base),
+    ('img/icons/items/wand_tip_basic.png',    gen_item_wand_tip_basic),
+    ('img/icons/items/wand_tip_runic.png',    gen_item_wand_tip_runic),
     ('img/icons/items/robe1.png',             gen_item_robe1),
     ('img/icons/items/coupe_poufsouffle.png', gen_item_coupe_poufsouffle),
     ('img/icons/items/chapeau_pointu.png',    gen_item_chapeau_pointu),

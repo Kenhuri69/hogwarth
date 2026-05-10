@@ -14,7 +14,12 @@ const INDEX_URL = 'file://' + path.resolve(__dirname, '../index.html');
 function isIgnorableError(text) {
   // Bruit décorrélé du code (fonts CDN sur file://)
   return text.includes('ERR_CERT_AUTHORITY_INVALID')
-      || text.includes('Failed to load resource');
+      || text.includes('Failed to load resource')
+      // Limite Chromium en file:// : les `mask-image: url(file://...)` du
+      // wrapper .tinted-icon sont bloqués CORS. En production (HTTP) ça
+      // marche. Cf. img/icons/_tint_demo.html et IMG_STYLE.md.
+      || (text.includes('blocked by CORS policy')
+          && text.includes('img/icons/items/'));
 }
 
 async function launchGame() {
@@ -1693,17 +1698,23 @@ async function scenarioEquipmentAndStatusIcons() {
   assert(t4.hasWand && t4.hasArmor && t4.hasAcc,
          'slots vides → fallback wand.png/armor.png/accessory.png');
 
-  // T5 : fiche perso — slot avec item équipé utilise le PNG per-item du registry
+  // T5 : fiche perso — slot avec item équipé utilise le sprite per-item.
+  // wand1 est passé sur l'archi tint 2-calques (saule), donc on accepte
+  // soit l'`<img>` du registry legacy, soit le wrapper `tinted-icon`.
   const t5 = await page.evaluate(() => {
     const wand = ITEMS.find(i => i.id === 'wand1');
     player.equipped.wand = wand;
     openCharacter(0);
     const detail = document.getElementById('char-detail');
     const html = detail.innerHTML;
-    return { hasPerItem: /img\/icons\/items\/wand1\.png/.test(html) };
+    return {
+      hasPerItemImg:    /img\/icons\/items\/wand1\.png/.test(html),
+      hasTintedWrapper: /tinted-icon[^"]*tint-willow/.test(html),
+    };
   });
   console.log('  T5 fiche per-item →', t5);
-  assert(t5.hasPerItem, 'wand1 équipé doit utiliser items/wand1.png (priorité registry)');
+  assert(t5.hasPerItemImg || t5.hasTintedWrapper,
+         'wand1 équipé doit utiliser items/wand1.png OU wrapper tinted-icon');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
@@ -1827,12 +1838,15 @@ async function scenarioItemIcons() {
     ];
     openInventory();
     const grid = document.getElementById('inv-grid');
-    const imgs = Array.from(grid.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
-    return imgs;
+    const elems = Array.from(grid.querySelectorAll('img.ui-icon, .tinted-icon'));
+    // Pour `<img>` on lit src ; pour `.tinted-icon` on lit data-mask
+    // (équivalent fonctionnel : sprite source identifiant l'item).
+    return elems.map(e => e.getAttribute('src') || e.getAttribute('data-mask') || '');
   });
   console.log('  T2 inventaire →', t2);
   assert(t2.some(s => /items\/potion_s\.png$/.test(s)),         'inventaire doit afficher potion_s.png');
-  assert(t2.some(s => /items\/wand1\.png$/.test(s)),            'inventaire doit afficher wand1.png');
+  assert(t2.some(s => /items\/wand1\.png$/.test(s) || s === 'wand_shaft_base'),
+         'inventaire doit afficher wand1.png OU wrapper tinted (mask=wand_shaft_base)');
   assert(t2.some(s => /items\/livre_sortileges\.png$/.test(s)), 'inventaire doit afficher livre_sortileges.png');
 
   // T3 : grille boutique utilise les PNG (déclencher openShop avec un currentFloor>=1)
@@ -2147,34 +2161,47 @@ async function scenarioPhase3Catalog() {
 //   - présence des classes metal-* dans le CSS chargé
 
 async function scenarioTintCss() {
-  console.log('\n── Scénario 24 : tint CSS 2-calques (épée silver) ──');
+  console.log('\n── Scénario 24 : tint CSS 2-calques (épée + baguettes) ──');
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
 
   const t = await page.evaluate(() => {
-    const item = ITEMS.find(i => i.id === 'sword_gryff');
-    if (!item || !item.tinted) return { fail: 'sword_gryff sans flag tinted' };
+    const sword = ITEMS.find(i => i.id === 'sword_gryff');
+    const wand  = ITEMS.find(i => i.id === 'wand1');
+    if (!sword || !sword.tinted) return { fail: 'sword_gryff sans flag tinted' };
+    if (!wand  || !wand.tinted)  return { fail: 'wand1 sans flag tinted' };
 
-    const html = getItemIconHtml(item, 'ui-icon-xl');
+    const html = getItemIconHtml(sword, 'ui-icon-xl');
     const tmp  = document.createElement('div');
     tmp.innerHTML = html;
     const root = tmp.firstChild;
 
-    // Test injection : metal inconnu → fallback path normal (pas d'injection)
-    const evil = getItemIconHtml({ ...item, metal: 'evil); background: url(data:x' }, 'ui-icon-md');
+    const wandHtml = getItemIconHtml(wand, 'ui-icon-xl');
+    const wandTmp  = document.createElement('div');
+    wandTmp.innerHTML = wandHtml;
+    const wandRoot = wandTmp.firstChild;
+
+    // Test injection : tint inconnu → fallback path normal (pas d'injection)
+    const evil = getItemIconHtml({ ...sword, tint: 'evil); background: url(data:x' }, 'ui-icon-md');
 
     return {
+      // épée (palette métaux)
       isWrapper:    root && root.tagName === 'SPAN',
       hasTinted:    root && root.classList.contains('tinted-icon'),
-      hasMetal:     root && root.classList.contains('metal-silver'),
+      hasTintCls:   root && root.classList.contains('tint-silver'),
       hasSize:      root && root.classList.contains('ui-icon-xl'),
-      blade:        root && root.getAttribute('data-blade'),
-      hilt:         root && root.getAttribute('data-hilt'),
-      metal:        root && root.getAttribute('data-metal'),
+      mask:         root && root.getAttribute('data-mask'),
+      overlay:      root && root.getAttribute('data-overlay'),
+      tint:         root && root.getAttribute('data-tint'),
       layerCount:   root ? root.childElementCount : 0,
       maskUrl:      root && root.querySelector('.tint-mask')   ? root.querySelector('.tint-mask').getAttribute('style') : '',
       overlayUrl:   root && root.querySelector('.tint-overlay')? root.querySelector('.tint-overlay').getAttribute('style') : '',
-      evilFallback: !/data:x/.test(evil) && !/metal-evil/.test(evil),
+      // baguette (palette bois) — vérifie que la généralisation marche
+      wandHasTint:  wandRoot && wandRoot.classList.contains('tinted-icon'),
+      wandTint:     wandRoot && wandRoot.getAttribute('data-tint'),
+      wandMask:     wandRoot && wandRoot.getAttribute('data-mask'),
+      // sécurité
+      evilFallback: !/data:x/.test(evil) && !/tint-evil/.test(evil),
     };
   });
 
@@ -2182,23 +2209,29 @@ async function scenarioTintCss() {
   assert(!t.fail,        t.fail || '');
   assert(t.isWrapper,    'wrapper non produit');
   assert(t.hasTinted,    'classe tinted-icon manquante');
-  assert(t.hasMetal,     'classe metal-silver manquante');
+  assert(t.hasTintCls,   'classe tint-silver manquante');
   assert(t.hasSize,      'classe ui-icon-xl perdue');
-  assert(t.blade === 'sword_blade_base', `blade=${t.blade}`);
-  assert(t.hilt  === 'sword_hilt_gryff', `hilt=${t.hilt}`);
-  assert(t.metal === 'silver',           `metal=${t.metal}`);
-  assert(t.layerCount === 2,             `layers=${t.layerCount} (attendu 2)`);
-  assert(t.maskUrl.includes('sword_blade_base.png'),  'mask URL absente');
+  assert(t.mask    === 'sword_blade_base', `mask=${t.mask}`);
+  assert(t.overlay === 'sword_hilt_gryff', `overlay=${t.overlay}`);
+  assert(t.tint    === 'silver',           `tint=${t.tint}`);
+  assert(t.layerCount === 2,               `layers=${t.layerCount} (attendu 2)`);
+  assert(t.maskUrl.includes('sword_blade_base.png'),   'mask URL absente');
   assert(t.overlayUrl.includes('sword_hilt_gryff.png'),'overlay URL absente');
-  assert(t.evilFallback, 'whitelist metal contournée — risque injection CSS');
+  assert(t.wandHasTint,                     'wand1 ne produit pas tinted-icon');
+  assert(['oak','ebony','willow','holly','elder','vine'].includes(t.wandTint),
+         `wand1 tint=${t.wandTint} hors palette bois`);
+  assert(t.wandMask === 'wand_shaft_base',  `wand mask=${t.wandMask}`);
+  assert(t.evilFallback, 'whitelist tint contournée — risque injection CSS');
 
   // CSS : on lit style.css en Node (cssRules bloqué en file://). Vérifie
-  // les 6 classes metal-* + le sélecteur .tinted-icon .tint-mask.
+  // les 12 classes tint-* (6 métaux + 6 bois) + le sélecteur tint-mask.
   const fs   = require('fs');
   const path = require('path');
   const css  = fs.readFileSync(path.resolve(__dirname, '../css/style.css'), 'utf-8');
-  ['iron','copper','bronze','silver','gold','platinum'].forEach(m => {
-    assert(css.includes(`.metal-${m}`), `CSS .metal-${m} manquant`);
+  const palette = ['iron','copper','bronze','silver','gold','platinum',
+                   'oak','ebony','willow','holly','elder','vine'];
+  palette.forEach(p => {
+    assert(css.includes(`.tint-${p}`), `CSS .tint-${p} manquant`);
   });
   assert(css.includes('.tinted-icon .tint-mask'), 'CSS .tinted-icon .tint-mask manquant');
 
