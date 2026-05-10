@@ -2430,11 +2430,90 @@ async function scenarioExtendedEquipment() {
   assert(t8.validHas, 'tint hex valide doit produire drop-shadow inline');
   assert(!t8.evilHas, 'tint malformée doit être ignorée');
 
+  // T9 : équiper plusieurs slots distincts en série — tous les bonus s'additionnent
+  // Couvre Phase 5 §5.3 sub-2 : un item de plusieurs slots, bonus appliqués.
+  const t9 = await page.evaluate(() => {
+    // Reset complet (les T précédents ont équipé une cape + 2 anneaux _test_ring)
+    Object.keys(player.equipped).forEach(k => { player.equipped[k] = null; });
+    recalculateStats();
+    const base = { atk: player.atk, def: player.def, mag: player.mag,
+                   lck: player.lck, agi: player.agi };
+    // Inventaire propre puis 4 items de slots distincts (head/hands/feet/cloak)
+    player.inventory.length = 0;
+    const ids = ['chapeau_apprenti', 'gants_apprenti', 'bottes_apprenti', 'cape_voyageur'];
+    for (const id of ids) {
+      player.inventory.push({ ...ITEMS.find(i => i.id === id) });
+    }
+    // Équiper depuis l'index 0 à chaque fois (l'inventaire se compacte)
+    while (player.inventory.length) equipItem(0, 0);
+    return {
+      base,
+      after: { atk: player.atk, def: player.def, mag: player.mag,
+               lck: player.lck, agi: player.agi },
+      filledSlots: ['head','hands','feet','cloak']
+        .filter(s => player.equipped[s] !== null),
+      // Bonus attendus (cf. data.js) :
+      // chapeau_apprenti : MAG+1 DEF+1
+      // gants_apprenti   : ATK+1 DEF+1
+      // bottes_apprenti  : DEF+1 AGI+1
+      // cape_voyageur    : DEF+2 AGI+2
+      expected: { atkDelta: 1, defDelta: 5, magDelta: 1, lckDelta: 0, agiDelta: 3 }
+    };
+  });
+  console.log('  T9 multi-slot bonuses →', {
+    filledSlots: t9.filledSlots, deltas: {
+      atk: t9.after.atk - t9.base.atk,
+      def: t9.after.def - t9.base.def,
+      mag: t9.after.mag - t9.base.mag,
+      agi: t9.after.agi - t9.base.agi
+    }
+  });
+  assert(t9.filledSlots.length === 4, `4 slots remplis attendus, got ${t9.filledSlots.length}`);
+  assert(t9.after.atk - t9.base.atk === t9.expected.atkDelta,
+    `ATK delta attendu +${t9.expected.atkDelta}, got ${t9.after.atk - t9.base.atk}`);
+  assert(t9.after.def - t9.base.def === t9.expected.defDelta,
+    `DEF delta attendu +${t9.expected.defDelta}, got ${t9.after.def - t9.base.def}`);
+  assert(t9.after.mag - t9.base.mag === t9.expected.magDelta,
+    `MAG delta attendu +${t9.expected.magDelta}, got ${t9.after.mag - t9.base.mag}`);
+  assert(t9.after.agi - t9.base.agi === t9.expected.agiDelta,
+    `AGI delta attendu +${t9.expected.agiDelta}, got ${t9.after.agi - t9.base.agi}`);
+
+  // T10 : save → reload roundtrip — les 11 slots survivent intacts
+  // Couvre Phase 5 §5.3 sub-5 : persistance + restauration.
+  const t10 = await page.evaluate(() => {
+    // Équipement courant : 4 slots remplis (T9). On capture, save, vide, reload.
+    const before = {};
+    Object.keys(player.equipped).forEach(s => {
+      before[s] = player.equipped[s] && player.equipped[s].id || null;
+    });
+    saveGame();
+    // Vider et muter les bases pour s'assurer que reload restaure
+    Object.keys(player.equipped).forEach(s => { player.equipped[s] = null; });
+    recalculateStats();
+    const cleared = {};
+    Object.keys(player.equipped).forEach(s => {
+      cleared[s] = player.equipped[s] && player.equipped[s].id || null;
+    });
+    loadGame();
+    const after = {};
+    Object.keys(player.equipped).forEach(s => {
+      after[s] = player.equipped[s] && player.equipped[s].id || null;
+    });
+    const allCleared = Object.values(cleared).every(v => v === null);
+    const allRestored = Object.keys(before).every(s => before[s] === after[s]);
+    return { before, cleared, after, allCleared, allRestored,
+             slotCount: Object.keys(player.equipped).length };
+  });
+  console.log('  T10 save→reload roundtrip →', { allCleared: t10.allCleared, allRestored: t10.allRestored });
+  assert(t10.allCleared,         'le clear préalable n\'a pas vidé tous les slots');
+  assert(t10.allRestored,        `roundtrip a perdu des items : before=${JSON.stringify(t10.before)} after=${JSON.stringify(t10.after)}`);
+  assert(t10.slotCount === 11,   `equipped doit toujours avoir 11 slots après reload, got ${t10.slotCount}`);
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ 11 slots + slot mapping + bonusAgi + ring1/ring2 + migration legacy + UI Phase 2');
+  console.log('  ✅ 11 slots + slot mapping + bonusAgi + ring1/ring2 + migration legacy + UI Phase 2 + multi-slot bonuses + save roundtrip');
   await browser.close();
 }
 

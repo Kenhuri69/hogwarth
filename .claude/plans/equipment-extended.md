@@ -6,7 +6,7 @@ Branche : `claude/game-equipment-system-plan-zrXwI`
 > Convention : `[ ]` pending · `[~]` in progress · `[x]` done.
 > À chaque étape franchie : cocher la case, mettre à jour le statut global, ajouter une ligne dans le journal en bas.
 
-**Statut global** : 19 / 53 étapes — Phases 1-2-3a-4 terminées (sprites dédiés livrés, 12 PNG via gen_icons.py). 3b (quêtes/PNJ) reportée — plan PNJ à rédiger.
+**Statut global** : 24 / 53 étapes — Phases 1-2-3a-4-5 terminées (sprites dédiés + doc CLAUDE.md + smoke 11 slots étendu T9/T10). 3b (quêtes/PNJ) reportée — plan PNJ à rédiger.
 
 ---
 
@@ -355,17 +355,18 @@ appliquer à toute future addition de sprite item.
 
 ## 8. Phase 5 — Documentation & tests
 
-- [ ] **5.1** `CLAUDE.md` : mettre à jour la section « Système d'équipement » pour décrire les 11 slots, le champ `slot`, le champ `tint`/`rarity`, et l'évolution de `recalculateStats()`.
-- [ ] **5.2** `CLAUDE.md` : table mise à jour des items équipables (au moins par catégorie, pas exhaustive).
-- [ ] **5.3** `tests/smoke.js` — nouveau scénario « équipement étendu » :
-    - Vérifier que `party[0].equipped` a 11 clés après chargement.
-    - Pousser un item de chaque slot dans `inventory`, équiper, vérifier que les bonus s'appliquent.
-    - Équiper 2 anneaux → vérifier `ring1` puis `ring2`.
-    - Équiper un item avec `bonusHpMax:+10` sur un perso à PV pleins → `hpMax` augmente, `hp` reste valide (pas > hpMax).
-    - Save → reload → tous les slots intacts.
-- [ ] **5.4** `tests/smoke.js` — scénario « migration save legacy » :
-    - Charger une save synthétique avec uniquement `equipped: {wand, armor, acc}` → vérifier que `_applyState` complète les nouveaux slots à `null` sans crash.
-- [ ] **5.5** Run complet `node tests/smoke.js` — tous scénarios verts.
+- [x] **5.1** `CLAUDE.md` : section « Système d'équipement » refondue. 11 slots, schéma item complet (`slot`/`family`/`rarity`/`tint`/`bonus*`/`grantsSpell`), implémentation dynamique de `recalculateStats()`, migration `_migrateEquippedSlots`. `bonusHpMax/SpMax` annoté hors-scope V1.
+- [x] **5.2** `CLAUDE.md` : table par catégorie de slot (10 lignes : wand/head/body/hands/feet/cloak/amulet/ring/belt/trinket), exemples d'items représentatifs avec rareté.
+- [x] **5.3** `tests/smoke.js` — extension du scénario 22 existant :
+    - T1 : 11 clés dans `equipped` (déjà existant).
+    - T2 : mapping `slot` sur 7 items legacy (déjà existant).
+    - T3 : bonusAgi cape (déjà existant).
+    - T4 : ring1 puis ring2 (déjà existant).
+    - **T9 (nouveau)** : équiper 4 slots distincts (head/hands/feet/cloak) en série, vérifier que les bonus s'additionnent (ATK+1 DEF+5 MAG+1 AGI+3).
+    - **T10 (nouveau)** : save → vide equipped → loadGame → vérifier que les 11 slots sont restaurés à l'identique.
+    - `bonusHpMax` test omis : reporté hors-scope V1 (cf. §1.2 du plan).
+- [x] **5.4** `tests/smoke.js` — couvert par T5 du scénario 22 existant : save synthétique `equipped:{wand,armor,acc}` → `_applyState` migre vers `body`/`amulet` + complète à 11 slots, sans crash.
+- [x] **5.5** `node tests/smoke.js` — **29 scénarios verts** (sur branche `claude/equipment-phase5-docs-smoke`).
 
 ---
 
@@ -404,3 +405,4 @@ appliquer à toute future addition de sprite item.
 |------------|-------|--------|-------|
 | 2026-05-09 | Audit + plan rédigé | ✅ | 11 slots, 3 familles/slot avec variantes par teinte ; distribution shop+drops+quêtes+coffres ; PNG via planches atlas découpées |
 | 2026-05-09 | Phase 1 — Backend  | ✅ | 7/7 étapes : 11 slots dans `equipped` (state.js + main.js `_hydrateCharacter`), `recalculateStats()` dynamique avec bonus Str/Int/Agi/End (`bonusHpMax/SpMax` reportés hors-scope V1), `_resolveSlotForItem` + `equipItem(idx,charIdx,targetSlot)` + gestion ring1/ring2, `showEquipMenu` 4 cas, champ `slot` sur 12 items existants, `_migrateEquippedSlots` (armor→body, acc→slot dérivé). Smoke test scénario 22 ajouté (5 assertions : 11 slots, mapping, cape_invis bonusAgi, 2 anneaux, migration legacy). 22/22 scénarios verts. |
+| 2026-05-10 | Phase 5 — Doc + smoke | ✅ | 5.1 + 5.2 : section « Système d'équipement » de `CLAUDE.md` refondue (11 slots, schéma item complet `slot`/`family`/`rarity`/`tint`/`bonus*`/`grantsSpell`, `recalculateStats()` dynamique, `_migrateEquippedSlots`). Table par catégorie de slot (10 lignes, exemples d'items représentatifs avec rareté). 5.3 : extension du scénario 22 — T9 (4 slots distincts head/hands/feet/cloak équipés en série, deltas ATK/DEF/MAG/AGI assertés) + T10 (saveGame → clear → loadGame, vérifie que les 11 slots sont restaurés à l'identique). 5.4 : couvert par T5 existant (migration `acc/armor` → 11 slots). 5.5 : 29 scénarios verts. `bonusHpMax` test omis (hors-scope V1). |
