@@ -218,6 +218,33 @@ Boutons d'action dynamiques :
 - [x] **Hagrid POC** : `questsGiven: ["chouette_perdue", "defense_cabane"]`. `chouette_perdue` devient répétable (`everyLevels: 3`). Nouvelle quête `defense_cabane` (kill 3 araignées, récompense potion_m). Dialogues dédiés dans `dialoguesByQuest`.
 - [x] **Smoke 3quater** : 7 tests dédiés (registre, état initial, remise → chaîne avance, fin de chaîne, cooldown non atteint, cooldown atteint, ré-acceptation).
 
+### Itération 7 — 4 PNJ supplémentaires (définition seule)
+
+> Volontairement **scindée en deux étapes** : (a) définition (cette PR), (b) logique métier
+> (vendeurs Ollivander/Guipure, indices Portrait Dumbledore, mécanique heal/revive
+> Fumseck) — itération suivante.
+
+- [x] **7.1** Génération des 4 portraits PNG via Nano Banana, prompts archétypaux + style cohérent avec les 8 sorciers (réaliste, head-and-shoulders) :
+  - `img/npc/ollivander.png` (256×256) — vieillard cheveux blancs hirsutes, fond de boîtes empilées.
+  - `img/npc/guipure.png` (256×256) — couturière, lunettes, tablier bleu, mètre ruban (recadrage tight head-and-shoulders à l'intégration via `Image.crop` Pillow).
+  - `img/npc/portrait_dumbledore.png` (256×256) — portrait peint dans cadre doré ouvragé, sage barbu en robe pourpre.
+  - `img/npc/fumseck.png` (256×256) — phénix écarlate, perchoir bronze, crête flamboyante.
+- [x] **7.2** Ajout des 4 entrées dans `js/npcs.js` (placement fixe, dialogues lore-only, sans `wares`, sans `questsGiven`, sans mécanique spéciale) :
+
+  | PNJ | Étage | Rôle ciblé (itération suivante) |
+  |---|---|---|
+  | Ollivander | 3 | Vendeur baguettes (`wand1`, `wand2`) |
+  | Guipure | 5 | Vendeuse robes (`robe1` + nouvelle pièce ?) |
+  | Portrait Dumbledore | 6 | Lore stratégique / indices monstres |
+  | Fumseck | 7 | « Fontaine vivante » — heal + revive 1×/étage |
+
+- [x] **7.3** Smoke test inchangé : aucun nouveau scénario, vérification simplement que la suite existante reste verte (la définition seule n'introduit pas de logique exécutable).
+- [ ] **7.4 (itération suivante)** Câbler la logique métier de chacun :
+  - Ollivander : `wares: [{id:"wand1"}, {id:"wand2"}]` + buyback baguettes 75%.
+  - Guipure : `wares: [{id:"robe1"}, ...]` + éventuel nouvel item `robe2`.
+  - Portrait Dumbledore : pool de répliques contextuelles (rumeurs sur les ennemis de l'étage courant).
+  - Fumseck : nouveau type d'action `dialogues.specialAction = "heal_and_revive"` + cooldown 1 utilisation par étage (analogue fontaine).
+
 ---
 
 ## 4. Risques & mitigations
@@ -257,3 +284,4 @@ Boutons d'action dynamiques :
 | 2026-05-10 | Itération 4 | Vendeurs ambulants. Schéma NPC étendu avec `random:true` + `wares:[{id,price?}]`. 2 vendeurs livrés : Madame Rosmerta (consommables, étage 2+) et Mondingus Fletcher (livres + felix, étage 3+). Génération aléatoire 35%/étage via `getRandomVendorsForFloor`. Bouton "Voir les marchandises" dans le dialogue PNJ ; `openVendorShop(npcId)` réutilise `#shop-modal`. Scénario smoke 3ter dédié (T1-T4). Portraits PNG TODO — emoji fallback en attendant. |
 | 2026-05-10 | Onglet Vendre | Suite au retour utilisateur "il faudrait aussi ajouter la capacité de vendre". `#shop-modal` gagne deux onglets Acheter/Vendre via `setShopMode`. Politique de rachat configurable par PNJ : `buyback: { default, byType, byRarity }`. Spécialisations : Rosmerta 75% sur `consumable`, Mondingus 75% sur `rare/epic/legendary`, Madame Malkins 50% standard. Smoke 3ter étendu (T5 onglets + spécialisation, T6 sellItem, T7 spécialisation Mondingus). |
 | 2026-05-10 | Portraits vendeurs | Omission corrigée : les 2 vendeurs n'avaient pas de PNG (emoji fallback) alors que la consigne projet est Nano Banana + prompt archétypal. Prompts rédigés (tenancière d'auberge / receleur miteux), images générées par l'utilisateur, déposées dans `img/npc/rosmerta.png` + `img/npc/mundungus.png`, `portraitImg` câblé. Style légèrement plus illustratif que les 8 sorciers — accepté comme "ok pour des vendeurs secondaires". |
+| 2026-05-10 | Itération 7 (def) | 4 nouveaux PNJ ajoutés en **définition seule** (pas de logique métier câblée) : Ollivander (étage 3, baguettes), Madame Guipure (étage 4, robes), Portrait Dumbledore (étage 6, lore stratégique), Fumseck (étage 7, futur heal/revive). 4 portraits PNG 256×256 générés via Nano Banana, recadrage Pillow tight head-and-shoulders pour Guipure (image source 1408×768 → 608×608 → 256×256). Branchement off `master` car la branche assignée `claude/add-npc-integration-M4NfZ` était déjà mergée (PR #35) — nouvelle branche `claude/iteration-7-define-extra-npcs`. La logique métier (wares, indices contextuels, fontaine vivante) reste à câbler dans une itération suivante. |
