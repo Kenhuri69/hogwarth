@@ -185,8 +185,13 @@ function _getTintedItemHtml(item, cls) {
   if (!_TINT_NAME_RE.test(overlay)) return null;
   if (_TINT_ALLOWED_VALUES.indexOf(tint) === -1) return null;
   const alt = (item && item.name ? item.name : '').replace(/"/g, '&quot;');
-  const maskUrl    = `url('img/icons/items/${mask}.png')`;
-  const overlayUrl = `url('img/icons/items/${overlay}.png')`;
+  // ⚠️ Piège des url() dans les custom properties CSS : elles sont
+  // résolues relativement au fichier CSS qui CONSOMME la var, pas au
+  // document HTML qui la DÉFINIT. style.css est dans /css/, donc on
+  // préfixe par `../` pour pointer vers /img/icons/items/. Sans ça,
+  // le navigateur cherche /css/img/icons/items/... (404 silencieux).
+  const maskUrl    = `url('../img/icons/items/${mask}.png')`;
+  const overlayUrl = `url('../img/icons/items/${overlay}.png')`;
   return `<span class="ui-icon tinted-icon ${cls} tint-${tint}" `
        + `data-mask="${mask}" data-overlay="${overlay}" data-tint="${tint}" `
        + `role="img" aria-label="${alt}">`
