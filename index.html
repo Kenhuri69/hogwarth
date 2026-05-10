@@ -3,11 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Empêche le navigateur de servir un index.html périmé après un déploiement
+     Pages. Les ?v=N sur les scripts/styles forcent ensuite la re-récupération
+     des assets modifiés. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Le Secret de la Chambre Secrète</title>
 <link rel="stylesheet" href="css/style.css?v=1">
-<link rel="stylesheet" href="css/ux-improvements.css">
-<link rel="stylesheet" href="css/save-ui.css">
-<link rel="stylesheet" href="css/ornaments.css">
+<link rel="stylesheet" href="css/ux-improvements.css?v=1">
+<link rel="stylesheet" href="css/save-ui.css?v=1">
+<link rel="stylesheet" href="css/ornaments.css?v=1">
 </head>
 <body>
 
@@ -747,35 +753,35 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
-<script src="js/ux-improvements.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/audio-music.js"></script>
-<script src="js/audio-sfx.js"></script>
-<script src="js/icons.js"></script>
-<script src="js/scene-icons.js"></script>
+<script src="js/ux-improvements.js?v=1"></script>
+<script src="js/audio.js?v=1"></script>
+<script src="js/audio-music.js?v=1"></script>
+<script src="js/audio-sfx.js?v=1"></script>
+<script src="js/icons.js?v=1"></script>
+<script src="js/scene-icons.js?v=1"></script>
 <script src="js/monsters.js?v=2"></script>
 <script src="js/npcs.js?v=8"></script>
 <script src="js/data.js?v=3"></script>
 <script src="js/item-icons.js?v=2"></script>
 <script src="js/state.js?v=4"></script>
 <script src="js/ui.js?v=2"></script>
-<script src="js/ui-bestiary.js"></script>
+<script src="js/ui-bestiary.js?v=1"></script>
 <script src="js/dungeon.js?v=5"></script>
-<script src="js/textures.js"></script>
+<script src="js/textures.js?v=1"></script>
 <script src="js/renderer.js?v=4"></script>
 <script src="js/renderer-effects.js?v=4"></script>
-<script src="js/renderer-minimap.js"></script>
+<script src="js/renderer-minimap.js?v=1"></script>
 <script src="js/movement.js?v=3"></script>
 <script src="js/battle.js?v=2"></script>
-<script src="js/battle-spells.js"></script>
-<script src="js/battle-ui.js"></script>
-<script src="js/inventory.js"></script>
+<script src="js/battle-spells.js?v=1"></script>
+<script src="js/battle-ui.js?v=1"></script>
+<script src="js/inventory.js?v=1"></script>
 <script src="js/quests.js?v=5"></script>
 <script src="js/npc-dialog.js?v=5"></script>
-<script src="js/intro.js"></script>
+<script src="js/intro.js?v=1"></script>
 <script src="js/shop.js?v=5"></script>
 <script src="js/save.js?v=4"></script>
-<script src="js/save-ui.js"></script>
+<script src="js/save-ui.js?v=1"></script>
 <script src="js/main.js?v=3"></script>
 
 </body>
