@@ -3249,82 +3249,197 @@ def gen_item_gants_apprenti():
 
 
 def gen_item_bottes_apprenti():
-    """Paire de bottes en cuir basique."""
+    """Une botte en cuir vue de profil — forme L marquée, talon, pointe
+    arrondie, lacets croisés, semelle épaisse."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3602)
-    for bx in (14, 32):
-        # Tige verticale
-        for y in range(10, 30):
-            for x in range(bx-4, bx+5):
-                t = (y - 10) / 20
-                col = blend(LL, LD, 0.2 + t * 0.4)
-                putpx(img, x, y, vary(col, rng, 5))
-        # Pied (extension horizontale)
-        for y in range(30, 38):
-            for x in range(bx-4, bx+9):
-                t = (y - 30) / 8
-                col = blend(LM, LD, t)
-                putpx(img, x, y, vary(col, rng, 4))
-        # Semelle
-        for x in range(bx-5, bx+10):
-            putpx(img, x, 38, OUT)
-            putpx(img, x, 37, OUT2)
-        # Lacets (3 X)
-        for y in (16, 22, 28):
-            putpx(img, bx-1, y, GH); putpx(img, bx+1, y, GH)
+    # Tige (vertical, à gauche)
+    tige_x0, tige_x1 = 10, 22
+    for y in range(8, 30):
+        for x in range(tige_x0, tige_x1+1):
+            t = (y - 8) / 22.0
+            d_x = abs(x - 16) / 6.0
+            col = blend(LL, LD, 0.12 + t * 0.35 + d_x * 0.20)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Repli du col (haut de la tige, plus foncé)
+    for y in range(8, 12):
+        for x in range(tige_x0-1, tige_x1+2):
+            putpx(img, x, y, vary(LD, rng, 3))
+    # Bordure dorée du col
+    for x in range(tige_x0-1, tige_x1+2):
+        putpx(img, x, 8, GM)
+    # Highlight vertical sur la tige
+    for y in range(13, 28):
+        putpx(img, tige_x0+1, y, blend(LH, LL, 0.5))
+    # Talon + cou-de-pied (transition tige → pied)
+    for y in range(28, 33):
+        for x in range(tige_x0, tige_x1+1):
+            t = (y - 28) / 5.0
+            col = blend(LM, LD, 0.3 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 3))
+    # Pied (extension vers la droite, semelle haute)
+    pied_y0, pied_y1 = 31, 38
+    pied_x0, pied_x1 = tige_x0, 40
+    for y in range(pied_y0, pied_y1):
+        # Le bout du pied se courbe (forme arrondie)
+        x_max = pied_x1 - max(0, (pied_y1 - 1 - y) - 2)
+        for x in range(pied_x0, x_max+1):
+            t = (y - pied_y0) / (pied_y1 - pied_y0)
+            d_y = 1.0 - abs(y - 33) / 4.0
+            col = blend(LM, LD, 0.3 + t * 0.4 + (1-d_y) * 0.2)
+            putpx(img, x, y, vary(col, rng, 3))
+    # Bout du pied arrondi (bombé)
+    for y in range(33, 37):
+        x = pied_x1 - abs(34 - y)
+        if x < S: putpx(img, x, y, blend(LM, LL, 0.3))
+    # Semelle (ligne sombre épaisse en bas)
+    for x in range(pied_x0-1, pied_x1+1):
+        putpx(img, x, pied_y1-1, OUT)
+        if x <= pied_x1-1:
+            putpx(img, x, pied_y1, OUT2)
+    # Talon décollé (petit relief en bas-arrière)
+    for x in range(tige_x0, tige_x0+5):
+        putpx(img, x, pied_y1, OUT2)
+    # Œillets + lacets croisés (X dorés sur 4 niveaux)
+    for ly in (13, 17, 21, 25):
+        putpx(img, tige_x0+1, ly, OUT); putpx(img, tige_x1-1, ly, OUT)
+        line(img, tige_x0+1, ly, tige_x1-1, ly+1, GH)
+        line(img, tige_x0+1, ly+1, tige_x1-1, ly, GH)
+    # Boucle dorée centrale au-dessus du cou-de-pied
+    fill_rect(img, 14, 28, 18, 30, GD)
+    fill_rect(img, 15, 29, 17, 29, GH)
     return _outline(img)
 
 
 def gen_item_chapeau_apprenti():
-    """Toque ronde d'apprenti (pas pointu, plus modeste)."""
+    """Toque ronde + plume bleue ample qui dépasse au-dessus à gauche."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3603)
     cx = 24
-    # Calotte (demi-cercle)
-    for dy in range(-10, 4):
-        for dx in range(-12, 13):
-            d2 = dx*dx + dy*dy * 2
-            if d2 > 144: continue
-            t = (dy + 10) / 14
-            col = blend(LL, LD, 0.2 + t * 0.4)
-            putpx(img, cx+dx, 22+dy, vary(col, rng, 4))
-    # Bord du chapeau (anneau de cuir)
-    for x in range(cx-13, cx+14):
-        for y in range(26, 30):
-            t = (y - 26) / 4
+    # Calotte large (rayon 14 H × hauteur ovalisée)
+    for dy in range(-12, 5):
+        for dx in range(-14, 15):
+            d2 = dx*dx + (dy*1.15)**2
+            if d2 > 14*14: continue
+            t = (dy + 12) / 17.0
+            d_x = abs(dx) / 14.0
+            col = blend(LH, LD, 0.15 + t * 0.45 + d_x * 0.20)
+            putpx(img, cx+dx, 26+dy, vary(col, rng, 4))
+    # Highlight haut-gauche (lumière oblique)
+    for dy in range(-10, -3):
+        for dx in range(-9, -4):
+            d2 = dx*dx + (dy*1.15)**2
+            if d2 > 14*14: continue
+            putpx(img, cx+dx, 26+dy, blend(LH, LL, 0.3))
+    # Bord du chapeau (anneau de cuir épais autour)
+    for x in range(cx-15, cx+16):
+        for y in range(31, 36):
+            if abs(x - cx) > 14 and (y < 32 or y > 34): continue
+            t = (y - 31) / 5.0
             putpx(img, x, y, blend(LD, LM, 1-t))
-    # Plume bleue à gauche
-    PD_BLUE = (40, 60, 130, 255)
-    PM_BLUE = (90, 130, 200, 255)
-    for i, y in enumerate(range(8, 18)):
-        x = cx - 12 + i // 2
-        putpx(img, x, y, PM_BLUE)
-        putpx(img, x-1, y+1, PD_BLUE)
-    # Boucle dorée
-    fill_rect(img, cx-2, 27, cx+1, 29, GH)
+    # Sous-bord (ombre)
+    for x in range(cx-14, cx+15):
+        putpx(img, x, 35, OUT2)
+    # Plume bleue ample : tige courbe + barbes des deux côtés
+    PD_BLUE = (30, 50, 130, 255)
+    PM_BLUE = (75, 120, 200, 255)
+    PL_BLUE = (150, 195, 240, 255)
+    # Tige (8 segments suivant une courbe douce)
+    tige = []
+    for i in range(10):
+        # Position partant du chapeau (en haut-gauche) qui s'éloigne
+        t = i / 9.0
+        x = cx - 9 - int(5 * t)
+        y = 18 - int(14 * t)
+        tige.append((x, y))
+    # Barbes + tige
+    for x, y in tige:
+        if 0 <= x < S and 0 <= y < S:
+            putpx(img, x, y, PD_BLUE)
+            # Barbes orthogonales à la tige
+            for off, col in [(-1, PM_BLUE), (1, PM_BLUE), (-2, PL_BLUE), (2, PL_BLUE)]:
+                putpx(img, x+off, y, col)
+                if abs(off) == 2:
+                    putpx(img, x+off, y+1, vary(col, rng, 8))
+    # Pointe de la plume (bouclée)
+    putpx(img, tige[-1][0]-1, tige[-1][1], PL_BLUE)
+    putpx(img, tige[-1][0]-2, tige[-1][1]+1, PM_BLUE)
+    # Cocarde dorée centrale (sertie)
+    fill_rect(img, cx-3, 31, cx+3, 35, GD)
+    fill_rect(img, cx-2, 32, cx+2, 34, GH)
+    putpx(img, cx, 33, OUT)
     return _outline(img)
 
 
 def gen_item_ceinture_cuir():
-    """Ceinture horizontale en cuir avec boucle dorée centrale."""
+    """Ceinture horizontale enroulée : sangle clair-foncé, boucle
+    dorée centrale rectangulaire, bout libre qui pend, trous rivetés."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3604)
-    # Sangle
-    for y in range(20, 28):
-        for x in range(4, 44):
-            t = (y - 20) / 8
+    # Sangle horizontale principale (large et clair sur les bords pour
+    # bien la détacher du fond)
+    for y in range(22, 28):
+        for x in range(2, 46):
+            t = (y - 22) / 6.0
+            col = blend(LH, LD, 0.20 + t * 0.55)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Bord supérieur (fil de couture clair)
+    for x in range(2, 46):
+        putpx(img, x, 22, blend(LH, LL, 0.5))
+    # Bord inférieur (ombre)
+    for x in range(2, 46):
+        putpx(img, x, 28, OUT2)
+    # Bout libre qui pend en bas-gauche (la sangle se replie)
+    for y in range(28, 38):
+        for x in range(4, 12):
+            t = (y - 28) / 10.0
             col = blend(LM, LD, 0.3 + t * 0.4)
-            putpx(img, x, y, vary(col, rng, 5))
-    # Trous (rivets)
-    for x in (8, 14, 20, 38):
-        ring(img, x, 24, 1, OUT)
-    # Boucle dorée carrée au centre
-    fill_rect(img, 22, 18, 30, 30, GD)
-    fill_rect(img, 24, 20, 28, 28, GH)
-    fill_rect(img, 25, 21, 27, 27, GM)
-    # Pointe d'ardillon
-    for y in range(23, 26):
-        putpx(img, 30, y, GD)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Pointe arrondie du bout libre
+    for x in range(7, 12):
+        putpx(img, x, 38, OUT2)
+        putpx(img, x, 39, OUT2)
+    # Couture verticale du repli
+    for y in range(28, 36):
+        putpx(img, 12, y, OUT2)
+    # Trous (rivets) sur la partie libre + sangle principale
+    for (rx, ry) in [(15, 25), (40, 25), (8, 33), (8, 36)]:
+        # Rivet doré
+        putpx(img, rx, ry, GD)
+        putpx(img, rx-1, ry, GM)
+        putpx(img, rx+1, ry, GM)
+        putpx(img, rx, ry-1, GM)
+        putpx(img, rx, ry+1, GM)
+    # Boucle dorée centrale (rectangle creux, façon ardillon)
+    bx0, bx1 = 21, 31
+    by0, by1 = 18, 32
+    # Cadre extérieur
+    outline_rect(img, bx0, by0, bx1, by1, GD)
+    # Cadre intérieur (épaisseur)
+    for y in range(by0+1, by1):
+        for x in range(bx0+1, bx1):
+            putpx(img, x, y, GH)
+    # Évidement (laisse voir la sangle au centre)
+    for y in range(by0+2, by1-1):
+        for x in range(bx0+2, bx1-1):
+            # Si on est dans la zone de la sangle, restaurer la sangle
+            if 22 <= y <= 27:
+                t = (y - 22) / 6.0
+                col = blend(LM, LD, 0.30 + t * 0.45)
+                putpx(img, x, y, vary(col, rng, 3))
+            else:
+                putpx(img, x, y, TR)
+    # Highlight or sur le bord supérieur de la boucle
+    for x in range(bx0, bx1+1):
+        putpx(img, x, by0, GH)
+    # Ardillon (tige verticale qui traverse)
+    for y in range(by0+1, by1):
+        putpx(img, 26, y, GD)
+        putpx(img, 27, y, GH)
+    # Pointe de l'ardillon (qui dépasse à droite)
+    for x in range(bx1, bx1+3):
+        putpx(img, x, 24, GH)
+        putpx(img, x, 25, GD)
     return _outline(img)
 
 
@@ -3358,35 +3473,83 @@ def gen_item_anneau_argent():
 
 
 def gen_item_cape_voyageur():
-    """Cape brune drapée avec capuche."""
+    """Cape voyageur : capuche compacte + corps drapé évasé avec
+    5 plis verticaux marqués + fermoir doré + ourlet sombre."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3606)
     cx = 24
-    CAPE_D = (60, 38, 22, 255)
-    CAPE_M = (110, 75, 45, 255)
-    CAPE_L = (150, 105, 65, 255)
-    # Capuche (triangle pointu en haut)
-    for y in range(8, 18):
-        half = (y - 8) + 2
-        for x in range(cx-half, cx+half+1):
-            t = (y - 8) / 10
-            col = blend(CAPE_L, CAPE_D, 0.3 + t * 0.4)
-            putpx(img, x, y, vary(col, rng, 5))
-    # Corps de la cape (trapèze)
-    for y in range(18, 42):
-        half = 10 + (y - 18)
-        for x in range(cx-half, cx+half+1):
-            t = (y - 18) / 24
-            col = blend(CAPE_M, CAPE_D, 0.2 + t * 0.5)
-            putpx(img, x, y, vary(col, rng, 6))
-    # Plis verticaux
-    for fx in (cx-12, cx-4, cx+4, cx+12):
-        for y in range(20, 40):
-            if 0 <= fx + (y//6) < S:
-                putpx(img, fx, y, vary(CAPE_D, rng, 3))
-    # Fermoir doré au cou
-    fill_rect(img, cx-2, 16, cx+2, 19, GH)
-    putpx(img, cx, 17, GD)
+    CAPE_D = (45, 28, 18, 255)
+    CAPE_M = (105, 70, 42, 255)
+    CAPE_L = (160, 115, 70, 255)
+    CAPE_H = (200, 150, 95, 255)
+    # Capuche compacte (haut, moitié supérieure d'un ovale)
+    for dy in range(-7, 4):
+        for dx in range(-6, 7):
+            d2 = (dx*1.15)**2 + (dy*1.0)**2
+            if d2 > 36: continue
+            t = (dy + 7) / 11.0
+            col = blend(CAPE_L, CAPE_D, 0.25 + t * 0.40)
+            putpx(img, cx+dx, 11+dy, vary(col, rng, 3))
+    # Ombre intérieure de la capuche (creux du visage)
+    for dy in range(0, 5):
+        for dx in range(-3, 4):
+            d2 = (dx*1.2)**2 + (dy*0.8)**2
+            if d2 > 9: continue
+            putpx(img, cx+dx, 12+dy, vary(CAPE_D, rng, 2))
+    # Cou (rétrécissement)
+    for y in range(15, 18):
+        for dx in range(-3, 4):
+            putpx(img, cx+dx, y, vary(CAPE_M, rng, 2))
+    # Corps drapé (trapèze évasé) — base aplanie de y=18 à y=43.
+    # Bords plus clairs (light catches the rounded shape) pour
+    # contraster avec les plis sombres dessinés ensuite.
+    body_top = 18
+    body_bot = 43
+    body_top_half = 7
+    body_bot_half = 19
+    for y in range(body_top, body_bot+1):
+        prog = (y - body_top) / (body_bot - body_top)
+        half = int(body_top_half + prog * (body_bot_half - body_top_half))
+        for dx in range(-half, half+1):
+            d_x = abs(dx) / max(1, half)
+            # Plus clair sur les bords (rotondité), médian à mi-largeur
+            col = blend(CAPE_L, CAPE_M, 0.3 + prog * 0.3) if d_x > 0.6 \
+                  else blend(CAPE_M, CAPE_D, 0.1 + prog * 0.3)
+            putpx(img, cx+dx, y, vary(col, rng, 4))
+    # 5 plis verticaux qui descendent en éventail.
+    # Les plis utilisent OUT2 (presque noir) pour un contraste fort,
+    # avec un highlight clair à gauche pour suggérer une concavité.
+    plis = [-0.75, -0.40, 0.0, 0.40, 0.75]
+    for ratio in plis:
+        for y in range(body_top+2, body_bot):
+            prog = (y - body_top) / (body_bot - body_top)
+            half = int(body_top_half + prog * (body_bot_half - body_top_half))
+            x = cx + int(ratio * half)
+            putpx(img, x, y, OUT2)
+            # Highlight clair juste à gauche du pli (creux du pli)
+            if x - 1 > cx - half + 1:
+                putpx(img, x-1, y, vary(CAPE_L, rng, 3))
+    # Highlight oblique (rayon de lumière en haut-gauche)
+    for y in range(body_top, body_top + 12):
+        prog = (y - body_top) / 12.0
+        half = int(body_top_half + ((y - body_top) / (body_bot - body_top)) * (body_bot_half - body_top_half))
+        x = cx - half + 1 + int(prog * 3)
+        if x < cx - 2:
+            putpx(img, x, y, vary(CAPE_H, rng, 3))
+            putpx(img, x+1, y, vary(CAPE_L, rng, 3))
+    # Ourlet du bas (ligne sombre épaisse, légèrement courbée)
+    for dx in range(-body_bot_half, body_bot_half+1):
+        # Léger arrondi des extrémités
+        if abs(dx) > body_bot_half - 2 and abs(dx) <= body_bot_half:
+            y_cut = body_bot - (abs(dx) - (body_bot_half - 2))
+            putpx(img, cx+dx, y_cut, OUT2)
+        else:
+            putpx(img, cx+dx, body_bot, OUT2)
+            putpx(img, cx+dx, body_bot-1, vary(CAPE_D, rng, 3))
+    # Fermoir doré rond au cou (broche cape)
+    fill_circle(img, cx, 17, 2, GD)
+    fill_circle(img, cx, 17, 1, GH)
+    putpx(img, cx-1, 16, GH); putpx(img, cx+1, 18, GH)
     return _outline(img)
 
 
@@ -3427,68 +3590,185 @@ def gen_item_amulette_protection():
 
 
 def gen_item_circlet_serdaigle():
-    """Diadème fin avec gemme bleue centrale."""
+    """Diadème large : arc épais bord-à-bord, 3 grandes pointes
+    triangulaires ajourées, gros saphir central avec facettes."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3608)
     cx = 24
-    # Bandeau courbé (arc)
-    for dx in range(-16, 17):
-        # Hauteur courbée (fonction parabole)
-        y = 24 + int((dx*dx) / 22)
-        if y > 30: continue
-        for dy in range(0, 4):
-            t = dy / 4
-            col = blend(GH, GD, 0.2 + t * 0.5)
-            putpx(img, cx+dx, y+dy, vary(col, rng, 4))
-    # Pointes décoratives (3 sur le devant)
-    for px in (cx-6, cx, cx+6):
-        for ph in range(0, 5):
-            putpx(img, px, 18+ph, GH if ph % 2 == 0 else GM)
-            if ph >= 3:
-                putpx(img, px-1, 18+ph, GM)
-                putpx(img, px+1, 18+ph, GM)
-    # Gemme bleue centrale (saphir)
+    # Arc principal (très large : -22 à +22, épaisseur 5)
+    # Courbure douce qui descend vers les côtés
+    for dx in range(-22, 23):
+        ny = (dx*dx) / 28.0  # max ~17
+        y_top = 24 + int(ny)
+        if y_top > 38: continue
+        for thick in range(0, 5):
+            y = y_top + thick
+            if y >= S: continue
+            t = thick / 4.0
+            col = blend(GH, GD, 0.20 + t * 0.55)
+            putpx(img, cx+dx, y, vary(col, rng, 4))
+        # Reflet métal sur le bord supérieur
+        putpx(img, cx+dx, y_top, GH)
+        if thick >= 1 and y_top + 1 < S:
+            putpx(img, cx+dx, y_top+1, blend(GH, GM, 0.3))
+    # Pointe centrale (triangle haut, large)
+    for ph in range(0, 10):
+        y = 23 - ph
+        half = max(0, 4 - ph // 3)
+        for dx in range(-half, half+1):
+            t = ph / 9.0
+            col = blend(GH, GM, t)
+            putpx(img, cx+dx, y, col)
+        if half >= 1:
+            putpx(img, cx-half, y, GD)
+            putpx(img, cx+half, y, GD)
+    # Boule décorative au sommet de la pointe
+    fill_circle(img, cx, 13, 1, GH)
+    putpx(img, cx, 12, GH)
+    # 2 pointes latérales (triangles plus courts)
+    for sgn in (-1, 1):
+        px = cx + sgn * 13
+        ny = (13*13) / 28.0
+        y_base = 24 + int(ny)
+        for ph in range(0, 6):
+            y = y_base - ph
+            half = max(0, 3 - ph // 2)
+            for dx in range(-half, half+1):
+                col = GH if ph < 4 else GM
+                putpx(img, px+dx, y, col)
+            if half >= 1:
+                putpx(img, px-half, y, GD)
+                putpx(img, px+half, y, GD)
+        # Petite boule au sommet
+        putpx(img, px, y_base - 6, GH)
+    # Volutes décoratives (lignes courbes entre les pointes)
+    for sgn in (-1, 1):
+        # 4 points qui dessinent un S à plat
+        for (mx, my) in [(6, 22), (7, 21), (8, 22), (9, 23), (10, 24)]:
+            putpx(img, cx + sgn*mx, my, GH)
+            putpx(img, cx + sgn*mx, my+1, GD)
+    # Gros saphir central serti (rond de 7 px de diamètre)
+    cy_gem = 28
+    # Sertissage doré (anneau or autour)
+    for dy in range(-5, 6):
+        for dx in range(-5, 6):
+            d2 = dx*dx + dy*dy
+            if 16 < d2 <= 25:
+                col = GH if dy < 0 else GD
+                putpx(img, cx+dx, cy_gem+dy, col)
+            elif 9 < d2 <= 16:
+                putpx(img, cx+dx, cy_gem+dy, GM)
+    # Saphir avec 4 facettes
+    GEM_D = (20, 45, 125, 255)
+    GEM_M = (70, 120, 210, 255)
+    GEM_L = (170, 215, 255, 255)
+    GEM_H = (240, 248, 255, 255)
     for dy in range(-3, 4):
         for dx in range(-3, 4):
             d2 = dx*dx + dy*dy
             if d2 > 9: continue
-            col = GLM if d2 > 4 else GLL
-            putpx(img, cx+dx, 23+dy, col)
+            if dy <= -1 and abs(dx) <= 1:
+                col = GEM_H
+            elif d2 <= 1:
+                col = GEM_L
+            elif d2 <= 4:
+                col = GEM_M
+            else:
+                col = GEM_D
+            putpx(img, cx+dx, cy_gem+dy, col)
+    # Étincelle (croix blanche)
+    putpx(img, cx-1, cy_gem-1, (255, 255, 255, 255))
+    putpx(img, cx-2, cy_gem-1, (255, 255, 255, 255))
     return _outline(img)
 
 
 def gen_item_anneau_runique():
-    """Anneau runique violet avec gemme épique."""
+    """Anneau d'argent rituel : larges runes gravées sur la bande +
+    grosse gemme violette sertie au sommet (vue 3/4)."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3609)
-    cx, cy = 24, 26
-    # Anneau en or noirci
-    GD2 = (60, 30, 80, 255)
-    GM2 = (110, 60, 140, 255)
-    GL2 = (160, 100, 200, 255)
-    for dy in range(-12, 13):
-        for dx in range(-13, 14):
-            d2 = dx*dx + (dy*1.4)**2
-            if d2 > 13*13: continue
-            if d2 > 9*9:
-                t = (dy + 12) / 24
-                col = blend(GL2, GD2, 0.2 + t * 0.5)
-                putpx(img, cx+dx, cy+dy, vary(col, rng, 4))
-    # Runes gravées (3 marques sombres autour)
-    for ang_deg in (-60, 0, 60):
-        rad = math.radians(ang_deg)
-        rx = int(cx + 11 * math.cos(rad - math.pi/2))
-        ry = int(cy + 11 * 1.4 * math.sin(rad - math.pi/2))
-        putpx(img, rx, ry, OUT)
-        putpx(img, rx-1, ry, OUT)
-        putpx(img, rx, ry-1, OUT)
-    # Gemme violette épique au sommet
+    cx, cy = 24, 30
+    # Métal violet-argent (très foncé pour contraster avec runes claires)
+    DK1 = (35, 22, 50, 255)
+    DK2 = (75, 50, 105, 255)
+    DK3 = (130, 100, 165, 255)
+    DK4 = (180, 155, 210, 255)
+    # Anneau ovalisé large
+    for dy in range(-11, 12):
+        for dx in range(-15, 16):
+            d2 = (dx*0.95)**2 + (dy*1.4)**2
+            outer = 14*14
+            inner = 9*9
+            if d2 > outer or d2 < inner: continue
+            t = (dy + 11) / 22.0
+            col = blend(DK3, DK1, 0.2 + t * 0.55)
+            putpx(img, cx+dx, cy+dy, vary(col, rng, 5))
+    # Highlight horizontal en haut de l'anneau (lumière oblique)
+    for dx in range(-12, 13):
+        d2 = (dx*0.95)**2 + (-11*1.4)**2
+        if d2 <= 14*14:
+            putpx(img, cx+dx, cy-11, DK4)
+            putpx(img, cx+dx, cy-10, DK3)
+    # Bordure intérieure foncée (effet creux)
+    for dy in range(-9, 10):
+        for dx in range(-12, 13):
+            d2 = (dx*0.95)**2 + (dy*1.4)**2
+            if 9*9 <= d2 <= 10*10:
+                putpx(img, cx+dx, cy+dy, OUT2)
+    # 3 grosses runes gravées (style nordique : flèches/Z lumineux)
+    rune_color = (220, 200, 255, 255)
+    rune_glow  = (160, 130, 220, 255)
+    # Rune 1 — Sigil "Z" gauche
+    for px, py in [(-12, -1), (-11, -1), (-10, -1),
+                    (-11, 0), (-10, 1),
+                    (-12, 2), (-11, 2), (-10, 2)]:
+        putpx(img, cx+px, cy+py, rune_color)
+    # Rune 2 — Pointe "V" droite
+    for px, py in [(10, -1), (12, -1),
+                    (10, 0), (12, 0),
+                    (11, 1), (11, 2)]:
+        putpx(img, cx+px, cy+py, rune_color)
+    # Rune 3 — Croix bas-centre
+    for px, py in [(-1, 9), (0, 9), (1, 9),
+                    (0, 8), (0, 10)]:
+        putpx(img, cx+px, cy+py, rune_color)
+    # Halo léger autour des runes
+    for cx_r, cy_r in [(cx-11, cy+0), (cx+11, cy+0), (cx, cy+9)]:
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                if dx*dx+dy*dy != 4 and (dx or dy):
+                    nx, ny = cx_r+dx, cy_r+dy
+                    if 0 <= nx < S and 0 <= ny < S:
+                        if img.getpixel((nx, ny))[3] != 0 and img.getpixel((nx, ny)) != rune_color:
+                            putpx(img, nx, ny, rune_glow)
+    # Sertissage doré sous la gemme
     for dy in range(-4, 1):
+        for dx in range(-5, 6):
+            d2 = dx*dx + dy*dy
+            if 16 < d2 <= 24:
+                putpx(img, cx+dx, cy-13+dy, GD)
+            elif 9 < d2 <= 16:
+                putpx(img, cx+dx, cy-13+dy, GM)
+    # Gemme violette épique (3 facettes)
+    GEM_D = (75, 25, 110, 255)
+    GEM_M = (160, 80, 220, 255)
+    GEM_L = (220, 160, 255, 255)
+    GEM_H = (245, 220, 255, 255)
+    for dy in range(-3, 4):
         for dx in range(-3, 4):
             d2 = dx*dx + dy*dy
             if d2 > 9: continue
-            col = (160, 80, 220, 255) if d2 > 2 else (220, 180, 255, 255)
+            if dy <= -1 and abs(dx) <= 1:
+                col = GEM_H
+            elif d2 <= 1:
+                col = GEM_L
+            elif d2 <= 4:
+                col = GEM_M
+            else:
+                col = GEM_D
             putpx(img, cx+dx, cy-13+dy, col)
+    # Étincelle blanche
+    putpx(img, cx-1, cy-15, (255, 255, 255, 255))
     return _outline(img)
 
 
@@ -3526,37 +3806,83 @@ def gen_item_ceinture_alchimiste():
 
 
 def gen_item_bottes_dragon():
-    """Bottes en peau de dragon — écarlate, écailles, coutures."""
+    """Une botte en peau de dragon vue de profil — col cape doré,
+    écailles en chevrons, griffe pointue, semelle cloutée."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3611)
-    DR_D = (90, 16, 12, 255)
-    DR_M = (160, 36, 24, 255)
-    DR_L = (210, 70, 50, 255)
-    for bx in (14, 32):
-        # Tige
-        for y in range(10, 30):
-            for x in range(bx-4, bx+5):
-                t = (y - 10) / 20
-                col = blend(DR_L, DR_D, 0.2 + t * 0.4)
-                putpx(img, x, y, vary(col, rng, 5))
-        # Pied
-        for y in range(30, 38):
-            for x in range(bx-4, bx+9):
-                t = (y - 30) / 8
-                col = blend(DR_M, DR_D, t)
-                putpx(img, x, y, vary(col, rng, 4))
-        # Écailles (motif chevron sur la tige)
-        for sy in range(12, 28, 3):
-            for sx in (bx-3, bx, bx+3):
-                putpx(img, sx, sy, DR_L)
-                putpx(img, sx-1, sy+1, DR_M)
-                putpx(img, sx+1, sy+1, DR_M)
-        # Semelle noire
-        for x in range(bx-5, bx+10):
-            putpx(img, x, 38, OUT)
-        # Boucle dorée en haut
-        fill_rect(img, bx-3, 11, bx+3, 13, GD)
-        putpx(img, bx, 12, GH)
+    DR_D = (75, 12, 10, 255)
+    DR_M = (155, 36, 24, 255)
+    DR_L = (220, 75, 55, 255)
+    DR_H = (255, 130, 100, 255)
+    # Col cape (rabattu, large, bordure dorée)
+    col_x0, col_x1 = 8, 24
+    for y in range(4, 12):
+        for x in range(col_x0, col_x1+1):
+            t = (y - 4) / 8.0
+            col = blend(DR_M, DR_D, t)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Bord doré du col
+    for x in range(col_x0, col_x1+1):
+        putpx(img, x, 4, GH)
+        putpx(img, x, 11, GD)
+    for y in range(4, 12):
+        putpx(img, col_x0, y, GM)
+        putpx(img, col_x1, y, GM)
+    # Pointes du col (3 dents en bas)
+    for px in (col_x0+3, 16, col_x1-3):
+        putpx(img, px, 12, DR_M)
+        putpx(img, px-1, 12, DR_D)
+        putpx(img, px+1, 12, DR_D)
+        putpx(img, px, 13, DR_D)
+    # Tige (vertical à gauche)
+    tige_x0, tige_x1 = 10, 22
+    for y in range(12, 30):
+        for x in range(tige_x0, tige_x1+1):
+            t = (y - 12) / 18.0
+            d_x = abs(x - 16) / 6.0
+            col = blend(DR_L, DR_D, 0.20 + t * 0.40 + d_x * 0.20)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Highlight vertical (lumière oblique côté gauche)
+    for y in range(14, 28):
+        putpx(img, tige_x0+1, y, blend(DR_H, DR_L, 0.5))
+    # Écailles en quinconce (motif net)
+    for row, sy in enumerate(range(14, 30, 3)):
+        offset = (row % 2) * 2
+        for sx in range(tige_x0+2 + offset, tige_x1, 4):
+            # Chaque écaille = arc en chevron
+            putpx(img, sx, sy, DR_H)
+            putpx(img, sx-1, sy+1, DR_M)
+            putpx(img, sx+1, sy+1, DR_M)
+            putpx(img, sx, sy+1, DR_L)
+    # Pied (extension horizontale)
+    pied_y0, pied_y1 = 30, 37
+    pied_x0, pied_x1 = tige_x0, 38
+    for y in range(pied_y0, pied_y1):
+        x_max = pied_x1 - max(0, (pied_y1 - 1 - y) - 1)
+        for x in range(pied_x0, x_max+1):
+            t = (y - pied_y0) / max(1, pied_y1 - pied_y0)
+            col = blend(DR_M, DR_D, 0.3 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 3))
+    # Griffe (noire, pointe vers l'avant en bas)
+    for i in range(4):
+        putpx(img, pied_x1 - i, pied_y0 + 2 + i, OUT)
+        putpx(img, pied_x1 - 1 - i, pied_y0 + 2 + i, OUT2)
+    # 2 griffes secondaires plus petites au-dessus
+    for cx_g in (pied_x1-3, pied_x1-6):
+        for i in range(2):
+            putpx(img, cx_g - i, pied_y0 + i, OUT)
+    # Semelle noire avec clous métal
+    for x in range(pied_x0-1, pied_x1+1):
+        putpx(img, x, pied_y1-1, OUT2)
+        if pied_x0 <= x <= pied_x1:
+            putpx(img, x, pied_y1, OUT)
+    for cx_n in (pied_x0+2, pied_x0+7, pied_x0+12, pied_x0+17):
+        if cx_n <= pied_x1:
+            putpx(img, cx_n, pied_y1, MTH)
+    # Boucle dorée + sangle au cou-de-pied
+    fill_rect(img, 13, 27, 19, 29, GD)
+    fill_rect(img, 14, 28, 18, 28, GH)
+    putpx(img, 16, 28, OUT)  # ardillon
     return _outline(img)
 
 

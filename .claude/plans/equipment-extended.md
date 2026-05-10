@@ -271,6 +271,77 @@ l'API actuelle `getItemIconHtml()` (laquelle retourne un `<img>`).
 > partage de sprite par teinte — non nécessaire tant que le catalogue
 > reste à 12 entrées. À rouvrir si on étoffe à 33+ items.
 
+### 7.4 Principes de qualité pour sprites Pillow 48×48
+
+Tirés de l'itération réelle sur les 12 sprites Phase 3 (1ère passe
+trop sobre → 2e passe avec cycle voir-ajuster sur 6 sprites). À
+appliquer à toute future addition de sprite item.
+
+**Contraintes du projet**
+- Pixel art Pillow **déterministe** (seed RNG par sprite, pas d'IA).
+- 48×48 RGBA, fond transparent, **outline noir 1 px** systématique
+  via le helper `_outline()` partagé.
+- Palette importée depuis le bloc d'en-tête de `gen_icons.py`
+  (LD/LM/LL/LH cuir, GD/GM/GH or, MTD/MTL/MTH métal, etc.) — pour
+  rester cohérent avec les ~30 sprites existants.
+
+**Règles de composition**
+1. **Remplir le canvas à 75–90 %** — un sprite qui n'occupe que
+   le centre paraît "perdu" en grille d'inventaire à 32 px. Mes
+   premiers sprites étaient à 40 % (ex: ancien `circlet`), refonte
+   à -22→+22 sur l'axe X.
+2. **Un sujet > deux sujets** — pour les paires (gants, bottes), un
+   seul objet vu de profil grand donne plus de présence que deux
+   serrés côte à côte (cf. `bottes_apprenti` v1 vs v2). Exception :
+   bijoux (paire d'anneaux n'a pas de sens).
+3. **Silhouette lisible en 1 s** — la forme doit dire l'objet sans
+   lire les détails. Test : réduire à 24 px et vérifier qu'on
+   reconnaît encore.
+4. **Contraste fort entre objet et fond** + entre zones internes.
+   Mes plis de cape v1 utilisaient `CAPE_D` proche du `CAPE_M`
+   ambiant : invisibles. Refonte avec `OUT2` (presque noir) +
+   highlight clair adjacent.
+
+**Règles de palette/volume**
+5. **3 à 4 nuances par teinte** (foncé/mid/clair/highlight). Un seul
+   ton plat est plat — `blend()` entre 2 valeurs avec progression
+   linéaire suffit pour le 3D plausible.
+6. **Lumière oblique** depuis le haut-gauche : appliquer un
+   highlight 1 px d'épaisseur sur la face exposée.
+7. **`vary(col, rng, 3-5)`** systématique sur les surfaces — bruit
+   qui empêche le rendu de paraître plat sans casser la palette.
+
+**Règles d'identification**
+8. **1 détail signature** par item — lacets dorés (bottes), écailles
+   chevron (dragon), plume (chapeau), gemme sertie (bijoux). C'est
+   ce détail qui différencie 2 items partageant la même silhouette.
+9. **Différencier les paires d'items** par la **forme**, pas
+   uniquement la couleur. v1 : `bottes_dragon` = `bottes_apprenti`
+   recolorées. v2 : col cape doré + écailles + griffe pointue +
+   semelle cloutée.
+
+**Workflow d'itération**
+10. **Cycle voir-ajuster** : écrire le générateur → `python3
+    gen_icons.py` → lire le PNG via le tool d'image → ajuster les
+    zones faibles → regénérer. Compter **2 à 4 passes** par sprite
+    en moyenne ; viser 1 dans l'idéal mais ne pas livrer après une
+    seule.
+11. **Helper `_outline()`** factorisé : ne pas dupliquer la triple
+    boucle d'outline dans chaque générateur.
+12. **Numéro de seed unique** par sprite (`Random(360X)`) — convention
+    : 36XX pour les items Phase 3, 34XX pour les items Phase 4
+    historiques. Préserve le déterminisme.
+
+**Hors limites pratiques de cette chaîne**
+- Pas d'antialiasing (pixel art volontaire).
+- Pas de transparence intermédiaire (alpha 0 ou 255 uniquement).
+- Effets complexes (glow, gradient radial, transparence) peuvent
+  être simulés via overlays multi-passes mais coûtent en lisibilité
+  à 48×48.
+- Pour de la qualité "asset commercial", basculer sur la chaîne
+  Phase 4 originale (atlas IA + découpe Python) telle que prévue
+  en 4.2/4.3 — laissée en place dans le plan pour ce cas.
+
 ### 7.3 Workflow de génération (un atlas à la fois)
 
 1. Claude rédige le prompt de génération (style Poudlard, fond transparent,
