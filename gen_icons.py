@@ -2735,47 +2735,93 @@ def gen_item_potion_force():
     return _flask(3404, (90, 25, 25, 255), (200, 60, 50, 255), (255, 130, 100, 255), glow=FIRE_H)
 
 def gen_item_mandragore():
-    """Racine de mandragore : forme tortueuse avec feuilles vertes."""
+    """Racine de mandragore en pot : feuilles vertes en éventail +
+    racine humanoïde (tête ronde, 2 yeux noirs grands ouverts, bouche
+    en O criante) qui dépasse du pot. Pot terre cuite distinct, racines
+    qui débordent du pot. Lit clairement comme « petit homme végétal »
+    même à 16 px."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3405)
     cx = 24
-    # Feuilles (vertes, en éventail au sommet)
-    leaf_color = VL
-    for ang in range(-60, 61, 15):
-        rad = math.radians(ang - 90)
-        for r in range(0, 12):
-            x = int(cx + r * math.cos(rad))
-            y = int(10 + r * math.sin(rad)) + 4
-            if 0 <= x < S and 0 <= y < S:
-                col = leaf_color if r > 4 else VM
-                putpx(img, x, y, vary(col, rng, 6))
-                if r > 8:
-                    putpx(img, x+1, y, VD)
-    # Corps de la racine (forme humanoïde simple)
-    SKIN_M = (210, 180, 130, 255)
-    SKIN_D = (140, 100, 60, 255)
-    # Tête
-    for dy in range(-5, 6):
-        for dx in range(-5, 6):
+    # ── Feuilles : éventail vertical (5 brins) du sommet vers le haut
+    leaf_pts = [
+        # (start_y, length, dx_per_step, color)
+        (16, 9,  -2, VD),  # extrême gauche
+        (15, 11, -1, VL),  # gauche
+        (13, 13,  0, VL),  # centre (la plus haute)
+        (15, 11,  1, VL),  # droite
+        (16, 9,   2, VD),  # extrême droite
+    ]
+    for (sy, length, dx, base_col) in leaf_pts:
+        x = cx
+        for i in range(length):
+            y = sy - i
+            xx = x + (dx * i) // 4
+            if 0 <= xx < S and 0 <= y < S:
+                # Bord plus foncé, cœur plus clair
+                col = base_col if i < length - 2 else VD
+                putpx(img, xx, y, vary(col, rng, 4))
+                # Élargir la feuille au milieu
+                if 2 < i < length - 2 and abs(dx) <= 1:
+                    putpx(img, xx-1, y, vary(VM, rng, 4))
+                    putpx(img, xx+1, y, vary(VM, rng, 4))
+    # ── Tête de la racine (juste sous les feuilles, GRANDE : 13 px de Ø)
+    SKIN_L = (235, 205, 155, 255)
+    SKIN_M = (200, 165, 115, 255)
+    SKIN_D = (140, 105, 65, 255)
+    head_cy = 26
+    head_r  = 6
+    for dy in range(-head_r-1, head_r+2):
+        for dx in range(-head_r-1, head_r+2):
             d2 = dx*dx + dy*dy
-            if d2 <= 25:
-                putpx(img, cx+dx, 22+dy, vary(SKIN_M, rng, 8))
-    # Corps allongé
-    for y in range(28, 42):
-        half = max(2, 6 - (y - 28) // 4)
+            if d2 > head_r*head_r + 2: continue
+            if dy <= -3 and dx <= -2:
+                col = SKIN_L
+            elif dy >= 4:
+                col = SKIN_D
+            else:
+                col = SKIN_M
+            putpx(img, cx+dx, head_cy+dy, vary(col, rng, 5))
+    # 2 yeux noirs grands ouverts (3×3 chacun, plus écartés)
+    for (ex, ey) in [(cx-3, head_cy-1), (cx+3, head_cy-1)]:
+        for (ox, oy) in [(0,0),(0,-1),(0,1),(-1,0),(1,0)]:
+            putpx(img, ex+ox, ey+oy, OUT)
+        putpx(img, ex+1, ey-1, (255, 240, 230, 255))
+    # Bouche en O criante (carré 5×3 plein noir avec rouge intérieur)
+    fill_rect(img, cx-2, head_cy+2, cx+2, head_cy+4, OUT)
+    fill_rect(img, cx-1, head_cy+3, cx+1, head_cy+3, (90, 35, 30, 255))
+    # Petites racines pendantes sous la tête (3 fils + corps allongé)
+    for (rx, ry) in [(cx-4, head_cy+head_r+1), (cx, head_cy+head_r+2), (cx+4, head_cy+head_r+1)]:
+        putpx(img, rx, ry, SKIN_D)
+        putpx(img, rx, ry+1, SKIN_D)
+    # Corps : moignon entre tête et pot (suggère le « petit homme »)
+    body_y0 = head_cy + head_r
+    body_y1 = body_y0 + 4
+    for y in range(body_y0, body_y1):
+        t = (y - body_y0) / max(1, body_y1 - body_y0)
+        half = max(1, 3 - int(t * 2))
         for x in range(cx-half, cx+half+1):
-            t = (y - 28) / 14
-            col = blend(SKIN_M, SKIN_D, 0.2 + t * 0.5)
-            putpx(img, x, y, vary(col, rng, 6))
-    # 2 yeux et bouche surprises
-    putpx(img, cx-2, 21, OUT); putpx(img, cx+2, 21, OUT)
-    for x in range(cx-1, cx+2):
-        putpx(img, x, 24, OUT)
+            putpx(img, x, y, vary(SKIN_D, rng, 4))
+    # ── Pot en terre cuite (compact, occupe juste la base)
+    POT_L = (170, 95, 55, 255)
+    POT_D = (75, 40, 18, 255)
+    pot_top_y, pot_bot_y = body_y1, 44
+    for y in range(pot_top_y, pot_bot_y+1):
+        t = (y - pot_top_y) / max(1, pot_bot_y - pot_top_y)
+        # Largeur croissante (trapèze inversé)
+        half = 7 + int(t * 2)
+        for x in range(cx-half, cx+half+1):
+            edge = abs(x - cx) / half
+            base = blend(POT_L, POT_D, 0.10 + t * 0.40 + edge * 0.20)
+            putpx(img, x, y, vary(base, rng, 4))
+    # Lèvre du pot (bande or-ocre en haut)
+    for x in range(cx-8, cx+9):
+        putpx(img, x, pot_top_y - 1, POT_L)
+        putpx(img, x, pot_top_y, blend(POT_L, GM, 0.3))
     # Outline
     for y in range(S):
         for x in range(S):
-            p = img.getpixel((x, y))
-            if p[3] == 0: continue
+            if img.getpixel((x, y))[3] == 0: continue
             for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
                 nx, ny = x+dx, y+dy
                 if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
@@ -2784,35 +2830,77 @@ def gen_item_mandragore():
 
 
 def gen_item_choco_sorcier():
-    """Tablette de chocolat brisée."""
+    """Tablette de chocolat ouverte : moitié droite enveloppée dans un
+    papier alu plié (gris-violet métallique), moitié gauche découverte
+    montrant 3×2 carreaux de chocolat avec rainures profondes et étoile
+    magique dorée gravée au centre. Lit comme « chocolat magique » à
+    24 px (l'alu déchiré est la signature visuelle)."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3406)
-    CHOCO_D = (40, 22, 12, 255)
-    CHOCO_M = (90, 50, 24, 255)
-    CHOCO_L = (140, 88, 50, 255)
-    # Tablette (rectangle avec carreaux)
+    CHOCO_D = (45, 22, 10, 255)
+    CHOCO_M = (95, 55, 25, 255)
+    CHOCO_L = (165, 100, 55, 255)
+    CHOCO_H = (210, 145, 90, 255)
+    FOIL_D  = (95, 70, 110, 255)   # alu mauve sombre
+    FOIL_M  = (155, 130, 175, 255)
+    FOIL_L  = (215, 200, 235, 255)
+    # ── Côté chocolat (gauche : x=6..24)
     for y in range(10, 38):
-        for x in range(8, 40):
+        for x in range(6, 25):
             t = (y - 10) / 28
-            d_x = (x - 8) / 32
-            base = blend(CHOCO_L, CHOCO_D, 0.2 + t * 0.4 + d_x * 0.1)
-            putpx(img, x, y, vary(base, rng, 5))
-    # Lignes carreaux (rainures)
-    for x in (16, 24, 32):
+            d_x = abs(x - 15) / 10
+            base = blend(CHOCO_L, CHOCO_D, 0.15 + t * 0.40 + d_x * 0.20)
+            putpx(img, x, y, vary(base, rng, 4))
+    # Rainures du chocolat (verticales et horizontales — profondes)
+    for x in (12, 18):
         for y in range(10, 38):
             putpx(img, x, y, CHOCO_D)
-    for y in (18, 26):
-        for x in range(8, 40):
+            putpx(img, x+1, y, blend(CHOCO_D, OUT, 0.4))
+    for y in (19, 28):
+        for x in range(6, 25):
             putpx(img, x, y, CHOCO_D)
-    # Highlight haut-gauche (carreau lumineux)
-    for y in range(11, 17):
-        for x in range(9, 15):
-            putpx(img, x, y, CHOCO_L)
-    # Pépites brillantes (lait/sucre)
-    for (px, py) in [(12, 14),(20, 22),(28, 14),(36, 20),(20, 30),(28, 32)]:
-        putpx(img, px, py, (250, 220, 180, 255))
-    # Outline
-    outline_rect(img, 8, 10, 39, 37, OUT)
+            putpx(img, x, y+1, blend(CHOCO_D, OUT, 0.4))
+    # Highlight haut-gauche du carreau supérieur-gauche (luminance bord)
+    for y in range(11, 14):
+        for x in range(7, 11):
+            putpx(img, x, y, CHOCO_H)
+    # Étoile magique dorée gravée (4 branches au centre du carreau central)
+    star_x, star_y = 15, 23
+    for d in range(0, 3):
+        putpx(img, star_x,   star_y-d, GH)
+        putpx(img, star_x,   star_y+d, GH)
+        putpx(img, star_x-d, star_y,   GH)
+        putpx(img, star_x+d, star_y,   GH)
+    putpx(img, star_x, star_y, (255, 255, 220, 255))
+    # ── Côté papier alu (droite : x=25..40, déchiré en zigzag)
+    # Bord déchiré (zigzag entre x=24 et x=27 selon y)
+    edge_x = [25, 26, 25, 27, 25, 26, 24, 26, 25, 27, 26, 25, 27, 26, 25,
+              26, 27, 25, 26, 25, 27, 26, 25, 26, 25, 27, 26, 25]
+    for i, y in enumerate(range(10, 38)):
+        x_start = edge_x[min(i, len(edge_x)-1)]
+        for x in range(x_start, 41):
+            d_x = (x - x_start) / max(1, 41 - x_start)
+            d_y_centered = (y - 24) / 14.0
+            base = blend(FOIL_L, FOIL_D, 0.10 + d_x * 0.55 + abs(d_y_centered) * 0.20)
+            putpx(img, x, y, vary(base, rng, 6))
+    # Plis du papier alu (3 lignes verticales claires/sombres)
+    for fold_x, dark in [(31, False), (35, True), (38, False)]:
+        col = FOIL_D if dark else FOIL_L
+        for y in range(11, 37):
+            x_start = edge_x[min(y - 10, len(edge_x)-1)]
+            if fold_x > x_start:
+                putpx(img, fold_x, y, col)
+    # Reflet brillant en haut (alu)
+    for x in range(28, 40):
+        putpx(img, x, 11, FOIL_L)
+    # Outline globale
+    for y in range(S):
+        for x in range(S):
+            if img.getpixel((x, y))[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, OUT)
     return img
 
 
@@ -3083,39 +3171,58 @@ def gen_item_coupe_poufsouffle():
 
 
 def gen_item_chapeau_pointu():
-    """Chapeau de sorcier pointu."""
+    """Chapeau de Serdaigle (rare) — chapeau de mage : cône bleu nuit
+    haut, large bord en saillie, ruban bleu Serdaigle bordé bronze, +
+    constellation de 3 étoiles or sur le cône (clairement plus orné
+    que le chapeau_apprenti commun à plume)."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3412)
-    HAT_D = (20, 30, 80, 255)
-    HAT_M = (50, 70, 140, 255)
-    HAT_L = (100, 130, 200, 255)
+    HAT_D = (15, 25, 70, 255)     # bleu nuit Serdaigle
+    HAT_M = (35, 55, 120, 255)
+    HAT_L = (75, 105, 175, 255)
+    BRONZE_D = (110, 70, 30, 255)
+    BRONZE_M = (170, 110, 50, 255)
+    BRONZE_H = (220, 165, 95, 255)
     cx = 24
-    # Cône (du sommet vers la base)
-    for y in range(8, 32):
-        half = (y - 8)
-        # courbure
-        if y > 24:
-            half += (y - 24)
-        for x in range(cx-half//2, cx+half//2+1):
-            t = (y - 8) / 24
-            col = blend(HAT_L, HAT_D, 0.2 + t * 0.5)
-            putpx(img, x, y, vary(col, rng, 5))
-    # Bord du chapeau (large)
-    for y in range(32, 38):
-        half = 18 - (y - 32) * 2
-        if y == 32: half = 16
+    # ── Cône (haut et fin, légèrement penché à droite pour donner
+    # une silhouette de mage savant)
+    for y in range(5, 30):
+        progress = (y - 5) / 25.0
+        half = max(1, int(progress * 11))
+        # Léger pench : décale le centre de cône avec y
+        center = cx + int(progress * 1.5)
+        for x in range(center-half, center+half+1):
+            edge = abs(x - center) / max(1, half)
+            base = blend(HAT_L, HAT_D, 0.10 + progress * 0.50 + edge * 0.20)
+            putpx(img, x, y, vary(base, rng, 4))
+    # ── Bord large (rebord du chapeau, légèrement courbé)
+    for y in range(30, 36):
+        # Courbe : plus large au milieu, finit en pointe sur les côtés
+        dy = y - 30
+        half = 21 - dy * 2 if dy < 4 else 13
         for x in range(cx-half, cx+half+1):
-            putpx(img, x, y, HAT_D)
-    # Boucle/ceinture or
+            t = abs(x - cx) / half
+            base = blend(HAT_M, HAT_D, 0.30 + t * 0.50)
+            putpx(img, x, y, vary(base, rng, 3))
+    # Soulignement bronze sous le bord (donne du volume)
+    for x in range(cx-19, cx+20):
+        putpx(img, x, 36, BRONZE_D)
+    # ── Ruban : bande bleu plus claire bordée bronze, à la base du cône
     for x in range(cx-13, cx+14):
-        putpx(img, x, 30, GM)
-        putpx(img, x, 31, GD)
-    # Boucle métal centre
-    fill_rect(img, cx-2, 29, cx+1, 32, GH)
-    putpx(img, cx-1, 30, OUT); putpx(img, cx, 30, OUT)
-    # Étoile or sur le cône
-    putpx(img, cx-2, 18, GH); putpx(img, cx-1, 18, GH); putpx(img, cx, 18, GH)
-    putpx(img, cx-1, 17, GH); putpx(img, cx-1, 19, GH)
+        putpx(img, x, 28, BRONZE_M)
+        putpx(img, x, 29, BRONZE_D)
+    # Cabochon bronze central sur le ruban
+    fill_rect(img, cx-2, 27, cx+2, 30, BRONZE_H)
+    fill_rect(img, cx-1, 28, cx+1, 29, BRONZE_M)
+    putpx(img, cx, 28, (255, 240, 180, 255))
+    # ── Constellation : 3 étoiles or sur le cône (positions disposées
+    # en triangle, pour suggérer un savoir astronomique)
+    star_pts = [(cx-3, 12), (cx+4, 17), (cx-1, 22)]
+    for (sx, sy) in star_pts:
+        # Petite étoile 4 branches (5 px)
+        putpx(img, sx,   sy,   GH)
+        putpx(img, sx-1, sy,   GD); putpx(img, sx+1, sy,   GD)
+        putpx(img, sx,   sy-1, GD); putpx(img, sx,   sy+1, GD)
     # Outline
     for y in range(S):
         for x in range(S):
@@ -3188,39 +3295,59 @@ def gen_item_amulette():
 
 
 def gen_item_broom():
-    """Balai Nimbus 2000 : manche + brindilles."""
+    """Nimbus 2000 vu en diagonale : manche bois clair épais (4 px)
+    avec 3 anneaux dorés gravés + bag de brindilles serrées en éventail
+    cuivré-doré, distinctes du fond. Lit comme un balai de Quidditch
+    même à 16 px (pas comme un trait diagonal anonyme)."""
     img = Image.new('RGBA', (S, S), TR)
     rng = random.Random(3414)
-    # Manche diagonal (haut-gauche → bas-droite)
-    for t in range(0, 30):
-        x = 6 + t
-        y = 10 + t
-        for w in range(-1, 2):
-            col = blend(LL, LD, t / 30)
-            putpx(img, x+w, y+w, vary(col, rng, 3))
-    # Bague or à la base des brindilles
-    for w in range(-2, 3):
-        for d in range(-2, 3):
-            x, y = 30+w, 34+d
-            if abs(w) + abs(d) <= 3:
-                putpx(img, x, y, GM)
-    # Brindilles (plumage en éventail)
-    BR_M = (140, 90, 40, 255)
-    BR_L = (200, 140, 80, 255)
-    BR_D = (80, 50, 20, 255)
-    for ang in range(-40, 41, 5):
-        rad = math.radians(ang + 20)
-        for r in range(0, 14):
-            x = int(33 + r * math.cos(rad))
-            y = int(36 + r * math.sin(rad))
+    # Manche : diagonale (8,12) → (32,36), épaisseur 4 px perpendiculaire
+    HANDLE_L = (190, 130, 70, 255)
+    HANDLE_M = (130, 80, 35, 255)
+    HANDLE_D = (70, 40, 15, 255)
+    for t in range(25):
+        x = 8 + t
+        y = 12 + t
+        for w in range(-2, 2):
+            # w en perpendiculaire (x+w, y-w), pas diagonale
+            t_n = (w + 2) / 4.0
+            base = blend(HANDLE_L, HANDLE_D, 0.15 + t_n * 0.55)
+            putpx(img, x+w, y-w, vary(base, rng, 4))
+    # 3 anneaux dorés sur le manche (signature Nimbus)
+    for ring_t in (5, 12, 19):
+        rx = 8 + ring_t
+        ry = 12 + ring_t
+        for w in range(-2, 2):
+            putpx(img, rx+w, ry-w, GH if w == -1 else GD)
+    # Bag de brindilles : éventail compact 13 px de rayon, axe à (35,38)
+    BR_L = (245, 200, 110, 255)   # paille claire (highlights)
+    BR_M = (200, 145, 60, 255)    # paille moyenne (corps)
+    BR_D = (130, 85, 30, 255)     # paille sombre (bord)
+    bag_cx, bag_cy = 35, 38
+    for ang in range(20, 91, 4):  # arc 20°→90° (vers droite-bas)
+        rad = math.radians(ang)
+        for r in range(2, 14):
+            x = int(bag_cx + r * math.cos(rad))
+            y = int(bag_cy - r * math.sin(rad)) + 2  # offset pour caler sous le manche
+            if not (0 <= x < S and 0 <= y < S): continue
+            if img.getpixel((x, y))[3] != 0: continue  # ne pas écraser le manche
+            if r < 5:
+                col = BR_L
+            elif r < 10:
+                col = BR_M
+            else:
+                col = BR_D
+            putpx(img, x, y, vary(col, rng, 5))
+    # Bague dorée à la jonction manche / bag (couvre l'angle)
+    for dy in range(-1, 3):
+        for dx in range(-3, 1):
+            x, y = bag_cx + dx, bag_cy + dy
             if 0 <= x < S and 0 <= y < S:
-                col = BR_L if r < 5 else BR_M if r < 10 else BR_D
-                putpx(img, x, y, vary(col, rng, 5))
+                putpx(img, x, y, GH if (dx == -2 or dy == -1) else GM)
     # Outline
     for y in range(S):
         for x in range(S):
-            p = img.getpixel((x, y))
-            if p[3] == 0: continue
+            if img.getpixel((x, y))[3] == 0: continue
             for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
                 nx, ny = x+dx, y+dy
                 if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
