@@ -527,9 +527,12 @@ async function scenarioMonsterImages() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
 
-  // Tous les monstres avec imgSrc doivent retomber sur un <img> en combat
-  const ids = ['sorciere_tenebres', 'dementor_garde', 'voldemort_affaibli',
-               'voldemort_revenu', 'basilic', 'nagini'];
+  // Tous les monstres avec imgSrc (data-driven) doivent retomber sur un <img>
+  // en combat ET le PNG doit charger en 512+ avec alpha non-trivial.
+  const ids = await page.evaluate(() =>
+    MONSTERS.filter(m => m.imgSrc).map(m => m.id)
+  );
+  console.log(`  monstres avec imgSrc : ${ids.length}`);
 
   for (const id of ids) {
     const t = await page.evaluate((monsterId) => {
@@ -542,11 +545,22 @@ async function scenarioMonsterImages() {
         src:       (html.match(/src="([^"]+)"/) || [])[1] || null
       };
     }, id);
-    console.log(`  ${id} →`, t);
     assert(t.hasImgSrc,             `${id} sans imgSrc`);
     assert(t.usesImg && !t.usesSvg, `${id} ne rend pas un <img>`);
     assert(t.src && t.src.endsWith(`${id}.png`), `${id} src incorrect: ${t.src}`);
+
+    // Load + dimensions §1 IMG_STYLE.md (≥ 512×512 attendu pour les nouveaux PNG ;
+    // les 6 PNG legacy peuvent être plus petits, on tolère ≥ 256).
+    const probe = await page.evaluate((src) => new Promise(resolve => {
+      const img = new Image();
+      img.onload  = () => resolve({ ok: true, w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => resolve({ ok: false });
+      img.src = src;
+    }), t.src);
+    assert(probe.ok,        `${id}: PNG introuvable`);
+    assert(probe.w >= 256,  `${id}: trop petit (${probe.w}×${probe.h})`);
   }
+  console.log(`  ✓ ${ids.length} <img> + load OK`);
 
   // Vérifier qu'un monstre sans imgSrc utilise toujours son SVG (régression).
   // Témoin auto-adaptatif : on prend le premier monstre qui n'a pas encore
@@ -562,15 +576,21 @@ async function scenarioMonsterImages() {
     assert(ctrl.usesSvg && !ctrl.usesImg, 'fallback SVG cassé');
   }
 
-  // Vérifier que le fichier PNG est bien chargeable (pas 404 silencieux)
-  const loaded = await page.evaluate(() => new Promise(resolve => {
-    const img = new Image();
-    img.onload  = () => resolve({ ok: true,  w: img.naturalWidth, h: img.naturalHeight });
-    img.onerror = () => resolve({ ok: false });
-    img.src = 'img/monsters/sorciere_tenebres.png';
-  }));
-  console.log('  PNG chargeable :', loaded);
-  assert(loaded.ok && loaded.w >= 256, 'PNG sorciere_tenebres introuvable ou trop petit');
+  // Color-type RGBA (§1 IMG_STYLE.md) : tous les PNG monstres doivent
+  // avoir un canal alpha. Lecture du byte 25 de l'IHDR (color-type=6).
+  // L'alpha non-trivial (≥5% pixels à 0) est validé en amont par
+  // tools/process_monster_png.py au moment de l'intégration ; on n'y
+  // revient pas ici (file:// + getImageData = canvas tainted).
+  const fs = require('fs');
+  const repoRoot = path.resolve(__dirname, '..');
+  let nonRgba = [];
+  for (const id of ids) {
+    const buf = fs.readFileSync(path.join(repoRoot, 'img/monsters', `${id}.png`));
+    // Signature 8 bytes + IHDR length 4 + "IHDR" 4 + width 4 + height 4 + bit-depth 1 = 25
+    if (buf[25] !== 6) nonRgba.push(`${id}(ct=${buf[25]})`);
+  }
+  console.log(`  color-type RGBA : ${ids.length - nonRgba.length}/${ids.length} OK`);
+  assert(nonRgba.length === 0, `PNG sans canal alpha : ${nonRgba.join(', ')}`);
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

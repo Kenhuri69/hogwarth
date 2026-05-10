@@ -1,8 +1,8 @@
 # Plan d'amélioration des SVG / Visuels
 
-> **Branche dédiée actuelle** : `claude/resume-svg-work-rgOvm`
-> (anciennes branches : `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 35 / 76 tâches terminées (+ C44 fontaine)
+> **Branche dédiée actuelle** : `claude/improve-game-images-7OVCy`
+> (anciennes branches : `claude/resume-svg-work-rgOvm`, `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
+> **Statut global** : 35 / 76 tâches terminées (+ C44 fontaine, hors bloc D)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -221,3 +221,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-10 | #29 | C22 loup_garou intégré (birefnet-general) | Hybride homme-loup hunché en course, mâchoire ouverte avec crocs et salive, restes de pantalon humain déchiré ; pelage hérissé et griffes courbes préservés |
 | 2026-05-10 | #30 | C23 inferius intégré (birefnet-general) | Cadavre noyé réanimé, peau gris-bleu translucide, yeux laiteux, linceul effiloché trempé ; coulures d'eau et lambeaux préservés |
 | 2026-05-10 | #31 | C28 boggart intégré (birefnet-general, source fond blanc) | Épouvantard en transformation araignée hairy, volutes de fumée et visages fantomatiques émergeants ; prompt "transformation incomplete" pour figer une silhouette lisible ; PNG nommé `boggart.png` (id du monstre, pas son nom français) ; saute en avant dans la liste — C24-C27 mangemorts/sorcier_renegat à faire ensuite |
+| 2026-05-10 | #32 | Chantier outillage (sur branche `claude/improve-game-images-7OVCy`, post-rebase sur master) | `IMG_STYLE.md` (guide visuel : palette/cadrage/prompts-types §8/critères §9, dérivé des PNG validés) ; `tools/process_monster_png.py` (pipeline reproductible rembg/birefnet + trim + recentrage + resize + auto-QA) ; `tools/count_plan.py` (compte tous blocs A+B+C+D+Z et signale les dérives vs `Statut global`) ; smoke scénario 5 data-driven sur tous les `imgSrc` (19 monstres) + check color-type RGBA via lecture binaire (canvas tainted en `file://`). Pas de rétro-traitement des PNG master |

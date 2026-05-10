@@ -100,8 +100,17 @@ Décision basée sur le contenu :
 | Sujet avec **ailes translucides, voile, fumée, fantôme** | **`birefnet-general`** (obligatoire) |
 | Doute | `birefnet-general` par défaut (plus lent mais préserve mieux) |
 
-Le script de référence vivra dans `tools/process_monster_png.py`
-(à committer au prochain chantier outillage).
+**Script de référence** : `tools/process_monster_png.py`
+(détourage + trim + recentrage 8 % + resize 512 + optimize PNG, avec
+auto-vérification des critères §9).
+
+```
+python3 tools/process_monster_png.py \
+    --src /chemin/image_generee.png \
+    --id  <monster_id>            \
+    [--model birefnet|u2net]      \
+    [--dry-run]                   # sort dans /tmp/<id>_check.png
+```
 
 ---
 
@@ -162,8 +171,13 @@ Avant de cocher la case dans `SVG_PLAN.md`, vérifier :
 - [ ] **Silhouette** : reconnaissable à 80×80 px (test rapide via inspecteur).
 - [ ] **Palette** : conforme à la catégorie (§5).
 - [ ] **Posture** : non-statique, regard intentionnel.
-- [ ] **Poids** : < 350 KB après `oxipng`.
+- [ ] **Poids** : < 350 KB après optimisation.
 - [ ] **Pas d'ombre au sol**, pas de bordure, pas de signature.
+
+Les critères automatisables (dimensions, mode RGBA, %alpha 0/255, occupation,
+poids) sont validés à l'intégration par `tools/process_monster_png.py`.
+Le smoke test (`node tests/smoke.js` scénario 5) re-vérifie en CI le
+color-type RGBA sur tous les PNG embarqués.
 
 Si un seul critère échoue → re-run plutôt qu'intégration "à peu près".
 
