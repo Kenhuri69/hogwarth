@@ -168,7 +168,12 @@ function _serializeState() {
     searchedCells: Array.from(searchedCells),
     floorDungeons,
     restCooldown,
-    usedFountains: Array.from(usedFountains)
+    usedFountains: Array.from(usedFountains),
+    npcPlacements: Array.from(npcPlacements.entries()),
+    seenNpcs:      Array.from(seenNpcs),
+    availableQuests: Array.from(availableQuests),
+    completedQuests: Array.from(completedQuests),
+    _version:        2
   };
 }
 
@@ -256,6 +261,26 @@ function _applyState(gs) {
   if (expl) expl.style.display = 'none';
 
   if (gs.activeQuests)   activeQuests = gs.activeQuests.map(_migrateQuestShape);
+  // Migration v1 → v2 : sépare les quêtes complétées et déduit
+  // availableQuests à partir du catalogue. v2+ lit les Sets persistés.
+  if (gs._version === 2) {
+    availableQuests = new Set(gs.availableQuests || []);
+    completedQuests = new Set(gs.completedQuests || []);
+  } else {
+    completedQuests = new Set();
+    activeQuests = activeQuests.filter(q => {
+      if (q.completed) { completedQuests.add(q.id); return false; }
+      return true;
+    });
+    const acceptedIds = new Set(activeQuests.map(q => q.id));
+    availableQuests = new Set();
+    if (typeof QUEST_TEMPLATES !== 'undefined') {
+      for (const tpl of QUEST_TEMPLATES) {
+        if (acceptedIds.has(tpl.id) || completedQuests.has(tpl.id)) continue;
+        availableQuests.add(tpl.id);
+      }
+    }
+  }
   if (gs.difficulty && DIFFICULTY_SETTINGS[gs.difficulty]) difficulty = gs.difficulty;
   if (gs.chosenHouse && HOUSE_BONUSES[gs.chosenHouse]) chosenHouse = gs.chosenHouse;
   if (gs.housePoints !== undefined) housePoints = gs.housePoints;
@@ -268,6 +293,8 @@ function _applyState(gs) {
   floorDungeons = gs.floorDungeons || {};
   if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
   usedFountains = new Set(gs.usedFountains || []);
+  npcPlacements = new Map(gs.npcPlacements || []);
+  seenNpcs      = new Set(gs.seenNpcs || []);
 
   recalculateStats();
   updateUI();

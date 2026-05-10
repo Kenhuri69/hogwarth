@@ -202,6 +202,63 @@ function drawCellMarker(cx, cy, bx, by, size, cell) {
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('📦', bx, by);
+  } else if (cell === CELL.NPC) {
+    // Silhouette dorée — corps stylisé + halo chaud + indicateur "!" / "?"
+    // selon l'état de la quête liée (offer / ready). Le PNJ exact est
+    // identifié via npcPlacements (Map "x,y" → npcId).
+    const npcId = (typeof npcPlacements !== 'undefined')
+      ? npcPlacements.get(`${cx},${cy}`) : null;
+    const sign  = (typeof getNpcMarkerSign === 'function')
+      ? getNpcMarkerSign(npcId) : '';
+
+    ctx.save();
+    // Halo chaud
+    const halo = ctx.createRadialGradient(bx, by - size * 0.1, 0, bx, by - size * 0.1, size * 0.85);
+    halo.addColorStop(0,   'rgba(255,220,140,0.35)');
+    halo.addColorStop(0.6, 'rgba(220,170,60,0.15)');
+    halo.addColorStop(1,   'rgba(160,110,30,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.ellipse(bx, by, size * 0.85, size * 1.0, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Ombre au sol
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.beginPath();
+    ctx.ellipse(bx, by + size * 0.55, size * 0.32, size * 0.09, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Corps stylisé : tête + buste/robe trapézoïdale
+    const goldFill   = '#d8b34c';
+    const goldStroke = 'rgba(80,55,15,0.85)';
+    // Robe (trapèze)
+    ctx.fillStyle   = goldFill;
+    ctx.strokeStyle = goldStroke;
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(bx - size * 0.18, by - size * 0.15);
+    ctx.lineTo(bx + size * 0.18, by - size * 0.15);
+    ctx.lineTo(bx + size * 0.36, by + size * 0.55);
+    ctx.lineTo(bx - size * 0.36, by + size * 0.55);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // Tête
+    ctx.beginPath();
+    ctx.arc(bx, by - size * 0.32, size * 0.16, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+
+    // Indicateur "!" ou "?" au-dessus
+    if (sign) {
+      ctx.font = `bold ${Math.floor(size * 0.5)}px sans-serif`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle    = sign === '!' ? '#ffd84a' : '#b8d4ff';
+      ctx.shadowColor  = 'rgba(0,0,0,0.7)';
+      ctx.shadowBlur   = 4;
+      ctx.fillText(sign, bx, by - size * 0.7);
+      ctx.shadowBlur   = 0;
+    }
+    ctx.restore();
   } else if (cell === CELL.FOUNTAIN) {
     // Fontaine — anneau d'eau bleuté avec halo
     const dried = (typeof usedFountains !== 'undefined') &&

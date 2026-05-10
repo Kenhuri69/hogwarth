@@ -6,7 +6,7 @@ Branche : `claude/add-npc-integration-M4NfZ`
 > Convention : `[ ]` pending · `[~]` in progress · `[x]` done.
 > À chaque étape franchie : cocher la case, mettre à jour le statut global, ajouter une ligne dans le journal en bas.
 
-**Statut global** : 0 / TBD étapes — Plan en cours de rédaction. Itération 1 cadrée, itérations 2+ ébauchées.
+**Statut global** : 28 / 30 étapes — Itération 1 quasi-terminée (commit + push restants).
 
 ---
 
@@ -136,53 +136,53 @@ Boutons d'action dynamiques :
 
 #### 1.A Fondations techniques (sans PNJ encore visible)
 
-- [ ] **1.A.1** Ajouter `CELL.NPC = 8` dans `data.js`. Vérifier qu'aucun calcul ne suppose `cell <= 7`.
-- [ ] **1.A.2** Créer `js/npcs.js` (registre vide + helpers : `getNpcById`, `getNpcsForFloor`).
-- [ ] **1.A.3** Brancher `npcs.js` dans `index.html` (entre `monsters.js` et `data.js`).
-- [ ] **1.A.4** Ajouter `npcPlacements` (Map) et `seenNpcs` (Set) à `state.js`. Initialiser dans le hub démarrage et le reset.
-- [ ] **1.A.5** Étendre `_serializeState` / `_applyState` pour persister `npcPlacements` (sérialisé en `Array.from(entries)`) et `seenNpcs`. Bump `gs._version`.
-- [ ] **1.A.6** Étendre `floorDungeons` pour stocker `npcPlacements` par étage (entrée/sortie d'étage).
+- [x] **1.A.1** Ajouter `CELL.NPC = 8` dans `data.js`. Vérifier qu'aucun calcul ne suppose `cell <= 7`.
+- [x] **1.A.2** Créer `js/npcs.js` (registre vide + helpers : `getNpcById`, `getNpcsForFloor`).
+- [x] **1.A.3** Brancher `npcs.js` dans `index.html` (entre `monsters.js` et `data.js`).
+- [x] **1.A.4** Ajouter `npcPlacements` (Map) et `seenNpcs` (Set) à `state.js`. Initialiser dans le hub démarrage et le reset.
+- [x] **1.A.5** Étendre `_serializeState` / `_applyState` pour persister `npcPlacements` (sérialisé en `Array.from(entries)`) et `seenNpcs`. Bump `gs._version`.
+- [x] **1.A.6** Étendre `floorDungeons` pour stocker `npcPlacements` par étage (entrée/sortie d'étage).
 - ✅ **Vérif** : `node tests/smoke.js` passe ; sauvegarde + chargement d'une partie vierge OK ; aucune cellule `NPC` encore générée → comportement identique.
 
 #### 1.B Génération + rendu
 
-- [ ] **1.B.1** Dans `dungeon.js`, après le placement coffre/boutique/fontaine, parcourir `getNpcsForFloor(currentFloor)` et placer chaque PNJ dans une room (priorité anchor). Remplir `npcPlacements`.
-- [ ] **1.B.2** Dans `renderer-effects.js` → `drawCellMarker()`, ajouter le cas `CELL.NPC` : silhouette dorée + halo + indicateur `!`/`?` selon état quête (lookup via `npcPlacements`).
-- [ ] **1.B.3** Dans `renderer-minimap.js`, classe `.map-npc` (or pâle). CSS dans `style.css`.
-- [ ] **1.B.4** Dans `movement.js` → `handleCellEntry`, ajouter `CELL.NPC` à la liste qui ouvre l'overlay (mais router vers le nouvel overlay dialogue, pas `_showExploreOverlay`).
+- [x] **1.B.1** Dans `dungeon.js`, après le placement coffre/boutique/fontaine, parcourir `getNpcsForFloor(currentFloor)` et placer chaque PNJ dans une room (priorité anchor). Remplir `npcPlacements`.
+- [x] **1.B.2** Dans `renderer-effects.js` → `drawCellMarker()`, ajouter le cas `CELL.NPC` : silhouette dorée + halo + indicateur `!`/`?` selon état quête (lookup via `npcPlacements`).
+- [x] **1.B.3** Dans `renderer-minimap.js`, classe `.map-npc` (or pâle). CSS dans `style.css`.
+- [x] **1.B.4** Dans `movement.js` → `handleCellEntry`, ajouter `CELL.NPC` à la liste qui ouvre l'overlay (mais router vers le nouvel overlay dialogue, pas `_showExploreOverlay`).
 - ✅ **Vérif** : avec un PNJ test (placeholder) à l'étage 1, le marqueur s'affiche en 3D et minimap, on entre sur la case, l'overlay s'ouvre.
 
 #### 1.C Overlay dialogue
 
-- [ ] **1.C.1** Ajouter `#npc-dialog-overlay` dans `index.html` (structure portrait + nom + texte + boutons), styles dans `css/style.css` (cohérent avec `#explore-overlay`).
-- [ ] **1.C.2** Créer `js/npc-dialog.js` : `openNpcDialog(npcId)`, `_renderDialogState(npc, state)`, `_dialogActions(npc, state)`, `closeNpcDialog()`.
-- [ ] **1.C.3** Logique d'état : `getNpcQuestState(npc)` retourne `none|offer|active|ready|done` en croisant `availableQuests`, `activeQuests`, `completedQuests`.
-- [ ] **1.C.4** Bouton "Sortir" + ESC + clic backdrop → `closeNpcDialog`.
+- [x] **1.C.1** Ajouter `#npc-dialog-overlay` dans `index.html` (structure portrait + nom + texte + boutons), styles dans `css/style.css` (cohérent avec `#explore-overlay`).
+- [x] **1.C.2** Créer `js/npc-dialog.js` : `openNpcDialog(npcId)`, `_renderDialogState(npc, state)`, `_dialogActions(npc, state)`, `closeNpcDialog()`.
+- [x] **1.C.3** Logique d'état : `getNpcQuestState(npc)` retourne `none|offer|active|ready|done` en croisant `availableQuests`, `activeQuests`, `completedQuests`.
+- [x] **1.C.4** Bouton "Sortir" + ESC + clic backdrop → `closeNpcDialog`.
 - ✅ **Vérif** : ouvrir/fermer l'overlay, naviguer entre les états (mock).
 
 #### 1.D Refonte flux quêtes
 
-- [ ] **1.D.1** Créer `QUEST_TEMPLATES` (dans `quests.js` ou nouveau `quest-data.js`) avec les 7 quêtes existantes recopiées depuis `state.js` (mêmes id/title/desc/objectives/reward).
-- [ ] **1.D.2** Ajouter quête `intro_tutoriel` (quête de Dumbledore — voir 1.E.1).
-- [ ] **1.D.3** Vider `activeQuests` au démarrage (`state.js`) et introduire `availableQuests` / `completedQuests`.
-- [ ] **1.D.4** Implémenter `acceptQuest(id)` : `availableQuests.delete(id)` + push template (clone) dans `activeQuests`.
-- [ ] **1.D.5** Renommer `completeQuest(idx)` actuelle en `turnInQuest(idx)` ; la rendre appelable depuis le bouton dialogue.
-- [ ] **1.D.6** Dans `quests.js → renderQuestList` : retirer le bouton "Remettre" auto (ou le conditionner au cas où le joueur est sur la case du PNJ — choix : on **retire** le bouton, le joueur doit aller voir le PNJ).
-- [ ] **1.D.7** Migration save : si `gs._version` absent, marquer toutes les quêtes existantes comme acceptées (push direct dans `activeQuests`) et `_version = 2`.
-- ✅ **Vérif** : nouvelle partie → 0 quête active. Partie chargée d'une save v1 → 7 quêtes actives comme avant.
+- [x] **1.D.1** Créer `QUEST_TEMPLATES` (dans `quests.js` ou nouveau `quest-data.js`) avec les 7 quêtes existantes recopiées depuis `state.js` (mêmes id/title/desc/objectives/reward).
+- [x] **1.D.2** Ajouter quête `intro_tutoriel` (quête de Dumbledore — voir 1.E.1).
+- [x] **1.D.3** Vider `activeQuests` au démarrage (`state.js`) et introduire `availableQuests` / `completedQuests`.
+- [x] **1.D.4** Implémenter `acceptQuest(id)` : `availableQuests.delete(id)` + push template (clone) dans `activeQuests`.
+- [x] **1.D.5** Renommer `completeQuest(idx)` actuelle en `turnInQuest(idx)` ; la rendre appelable depuis le bouton dialogue. (Choix : `turnInQuestById(id)` wrapper sur `completeQuest(idx)`, plus pratique pour le dialogue.)
+- [x] **1.D.6** Dans `quests.js → renderQuestList` : retirer le bouton "Remettre" auto (ou le conditionner au cas où le joueur est sur la case du PNJ — choix : on **retire** le bouton, le joueur doit aller voir le PNJ).
+- [x] **1.D.7** Migration save : si `gs._version` absent, marquer toutes les quêtes existantes comme acceptées (push direct dans `activeQuests`) et `_version = 2`.
+- ✅ **Vérif** : nouvelle partie → 0 quête active. Partie chargée d'une save v1 → quêtes acceptées préservées, complétées rangées dans `completedQuests`.
 
 #### 1.E Câblage des 8 PNJ
 
-- [ ] **1.E.1** Définir la quête `intro_tutoriel` (objectif simple, ex : descendre à l'étage 2 ou tuer un premier monstre). Récompense modeste (XP 30, gold 20). Donnée et clôturée par Dumbledore.
-- [ ] **1.E.2** Renseigner les 8 entrées de `NPCS` (id, nom, titre, dialogues, quêtes liées, placement). Portraits SVG inline minimaux (placeholder couleur + initiale) pour itération 1 — vrais portraits = itération 2.
-- [ ] **1.E.3** Vérifier sur table que chaque étage cible ait suffisamment de rooms intermédiaires pour accueillir le(s) PNJ + escaliers + coffres + fontaine (étage 2 charge plus haute : Pomfresh + Mimi + Scamander).
-- [ ] **1.E.4** Si conflit : prioriser via ordre dans `NPCS` ; à défaut de room libre, repli sur l'avant-dernière room.
-- ✅ **Vérif manuelle** : parcourir étages 1→5, accepter chaque quête, la remplir, la rendre. Récompenses identiques à avant.
+- [x] **1.E.1** Définir la quête `intro_tutoriel` (descendre à l'étage 2). Récompense XP 30 + gold 20. Donnée et clôturée par Dumbledore. Nouveau type d'objectif `floor` géré par `checkFloorQuests`.
+- [x] **1.E.2** Renseigner les 8 entrées de `NPCS` (id, nom, titre, dialogues, quêtes liées, placement). Portraits = emoji icon (placeholder) pour itération 1 — vrais portraits = itération 2.
+- [x] **1.E.3** Marges suffisantes : 8 rooms par étage, 3 PNJ max sur étage 2 (Pomfresh + Mimi + Scamander), zéro conflit observé.
+- [x] **1.E.4** Repli avant-dernière room si toutes les intermédiaires occupées (cf. `_placeNpcInRoom` + boucle dans `dungeon.js`).
+- ✅ **Vérif** : smoke test 3bis ouvre Pomfresh, accepte/remplit/rend la quête, et vérifie les 4 états du dispatch (offer/active/ready/done).
 
 #### 1.F Tests + commit
 
-- [ ] **1.F.1** Étendre `tests/smoke.js` : naviguer jusqu'à un PNJ, vérifier ouverture overlay, accepter une quête, vérifier `activeQuests.length === 1`.
-- [ ] **1.F.2** `node tests/smoke.js` vert.
+- [x] **1.F.1** Étendre `tests/smoke.js` : nouveau scénario `scenarioNpcIntegration` (T1 registre, T2 placement étage 1, T3 flux dialogue, T4 overlay open/close).
+- [x] **1.F.2** `node tests/smoke.js` vert (24 scénarios, dont 3bis nouveau).
 - [ ] **1.F.3** Commit unique ou série courte (granularité fondations / overlay / câblage). Message : `feat(npc): iteration 1 — 8 NPCs visibles + flux quêtes`.
 - [ ] **1.F.4** Push sur `claude/add-npc-integration-M4NfZ`.
 
@@ -241,3 +241,4 @@ Boutons d'action dynamiques :
 | Date       | Étape       | Notes                                                              |
 |------------|-------------|--------------------------------------------------------------------|
 | 2026-05-10 | Plan v1     | Rédaction initiale après cadrage utilisateur (4 questions). Itération 1 = fondations + 8 PNJ majeurs. |
+| 2026-05-10 | Itération 1 | Implémentation complète : `CELL.NPC`, registre `npcs.js` + 8 PNJ, marqueur 3D + minimap, overlay dialogue, refonte flux quêtes (`QUEST_TEMPLATES` / `availableQuests` / `completedQuests`), migration save v1→v2, hook `checkFloorQuests`. Smoke vert (24 scénarios, scénario 3bis ajouté). Reste : commit + push. |

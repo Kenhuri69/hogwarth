@@ -210,11 +210,17 @@ async function scenarioChainedQuest() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
 
-  // T1 : la quête lumiere_desespoir existe avec 2 étapes pendantes
+  // T1 : la quête lumiere_desespoir est dispo (catalogue) + acceptable via PNJ
   const t1 = await page.evaluate(() => {
+    const tpl = getQuestTemplate('lumiere_desespoir');
+    const wasAvailable = availableQuests.has('lumiere_desespoir');
+    acceptQuest('lumiere_desespoir');
     const q = activeQuests.find(x => x.id === 'lumiere_desespoir');
     return {
-      exists:       !!q,
+      exists:       !!tpl,
+      wasAvailable,
+      removedFromAvailable: !availableQuests.has('lumiere_desespoir'),
+      activeNow:    !!q,
       stepCount:    q?.objectives.length,
       step0Type:    q?.objectives[0]?.type,
       step0Monster: q?.objectives[0]?.monsterId,
@@ -223,14 +229,17 @@ async function scenarioChainedQuest() {
     };
   });
   console.log('  T1 quest:', t1);
-  assert(t1.exists,                           'quête lumiere_desespoir absente');
+  assert(t1.exists,                           'template lumiere_desespoir absent du catalogue');
+  assert(t1.wasAvailable,                     'quête doit être dans availableQuests au démarrage');
+  assert(t1.activeNow,                        'acceptQuest n\'a pas activé la quête');
+  assert(t1.removedFromAvailable,             'quête doit sortir d\'availableQuests après acceptation');
   assert(t1.stepCount === 2,                  'doit avoir 2 étapes');
   assert(t1.step0Type === 'kill',             'étape 0 doit être un kill');
   assert(t1.step0Monster === 'dementeur',     'étape 0 doit cibler dementeur');
   assert(t1.step1Type === 'item',             'étape 1 doit être un item');
   assert(t1.step1Item === 'choco_sorcier',    'étape 1 doit cibler choco_sorcier');
 
-  // T2 : simuler kill du Détraqueur → étape 1 progresse + complète
+  // T2 : simuler kill du Détraqueur → étape 0 complète, pas d'auto-completion
   const t2 = await page.evaluate(() => {
     checkKillQuests('dementeur');
     const q = activeQuests.find(x => x.id === 'lumiere_desespoir');
@@ -238,32 +247,34 @@ async function scenarioChainedQuest() {
       step0Done: q.objectives[0].completed,
       step0Prog: q.objectives[0].progress,
       step1Done: q.objectives[1].completed,
-      questDone: q.completed
+      stillActive: !!q,                     // pas auto-complétée
+      notCompleted: !completedQuests.has('lumiere_desespoir')
     };
   });
   console.log('  T2 kill :', t2);
   assert(t2.step0Done,        'étape 0 non marquée comme complétée');
   assert(t2.step0Prog === 1,  'progression étape 0 attendue à 1');
   assert(!t2.step1Done,       'étape 1 ne doit pas être complétée');
-  assert(!t2.questDone,       'quête ne doit pas être complétée (étape item à faire)');
+  assert(t2.stillActive,      'quête doit rester active (étape item à faire)');
+  assert(t2.notCompleted,     'quête ne doit pas être marquée rendue automatiquement');
 
-  // T3 : ajouter un choco au sac, remettre la quête → étape 1 OK + Patronum appris
+  // T3 : ajouter un choco au sac, remettre via PNJ (turnInQuestById) → Patronum appris
   const t3 = await page.evaluate(() => {
     const choco = ITEMS.find(i => i.id === 'choco_sorcier');
     player.inventory.push({ ...choco });
-    const idx = activeQuests.findIndex(x => x.id === 'lumiere_desespoir');
-    checkQuestCompletion(idx);
-    const q = activeQuests[idx];
+    const ok = turnInQuestById('lumiere_desespoir');
     return {
-      step1Done:   q.objectives[1].completed,
-      questDone:   q.completed,
+      turnInOk:    ok,
+      questGone:   !activeQuests.find(x => x.id === 'lumiere_desespoir'),
+      inCompleted: completedQuests.has('lumiere_desespoir'),
       patronumLearned: party[0].spells.includes('Patronum'),
       chocoConsumed:   !player.inventory.some(i => i.id === 'choco_sorcier')
     };
   });
   console.log('  T3 deliver:', t3);
-  assert(t3.step1Done,         'étape 1 non complétée après remise');
-  assert(t3.questDone,         'quête non finalisée');
+  assert(t3.turnInOk,          'turnInQuestById a échoué malgré objectifs remplis');
+  assert(t3.questGone,         'quête doit être retirée d\'activeQuests après remise');
+  assert(t3.inCompleted,       'quête doit être ajoutée à completedQuests');
   assert(t3.patronumLearned,   'Patronum non appris');
   assert(t3.chocoConsumed,     'chocolat non consommé');
 
@@ -300,6 +311,96 @@ async function scenarioChainedQuest() {
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
   console.log('  ✅ flux quête chaînée conforme');
+  await browser.close();
+}
+
+// ── Scénario 3bis : intégration PNJ (génération + dialogue + flux quête) ─
+
+async function scenarioNpcIntegration() {
+  console.log('\n── Scénario 3bis : intégration PNJ ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : registre + helpers exposés
+  const t1 = await page.evaluate(() => ({
+    npcCount:        typeof NPCS !== 'undefined' ? NPCS.length : -1,
+    hasGetById:      typeof getNpcById === 'function',
+    hasGetForFloor:  typeof getNpcsForFloor === 'function',
+    cellNpc:         CELL.NPC,
+    dumbledore:      !!getNpcById('dumbledore'),
+    floor1Count:     getNpcsForFloor(1).length,
+    floor2Count:     getNpcsForFloor(2).length,
+    floor4Count:     getNpcsForFloor(4).length
+  }));
+  console.log('  T1 registry:', t1);
+  assert(t1.npcCount === 8,              `attendu 8 PNJ, trouvé ${t1.npcCount}`);
+  assert(t1.hasGetById,                  'getNpcById absent');
+  assert(t1.hasGetForFloor,              'getNpcsForFloor absent');
+  assert(t1.cellNpc === 8,               'CELL.NPC doit valoir 8');
+  assert(t1.dumbledore,                  'PNJ Dumbledore introuvable');
+  assert(t1.floor1Count === 1,           'étage 1 doit avoir 1 PNJ (Dumbledore)');
+  assert(t1.floor2Count === 3,           'étage 2 doit avoir 3 PNJ');
+  assert(t1.floor4Count === 2,           'étage 4 doit avoir 2 PNJ');
+
+  // T2 : génération étage 1 — Dumbledore présent + npcPlacements peuplé
+  const t2 = await page.evaluate(() => {
+    const placements = Array.from(npcPlacements.entries());
+    let foundCells = 0;
+    for (let y = 0; y < MAP_H; y++) {
+      for (let x = 0; x < MAP_W; x++) {
+        if (dungeon[y][x] === CELL.NPC) foundCells++;
+      }
+    }
+    return {
+      placementsCount: placements.length,
+      cellsCount:      foundCells,
+      ids:             placements.map(([, id]) => id)
+    };
+  });
+  console.log('  T2 floor1:', t2);
+  assert(t2.placementsCount === 1,       'doit avoir 1 placement étage 1');
+  assert(t2.cellsCount === 1,            'doit avoir 1 cellule NPC dans dungeon');
+  assert(t2.ids[0] === 'dumbledore',     'le PNJ étage 1 doit être Dumbledore');
+
+  // T3 : flux dialogue — état "offer" → accept → "active" → ready → done
+  const t3 = await page.evaluate(() => {
+    const npc = getNpcById('pomfresh');
+    const before = getNpcQuestState(npc);
+    acceptQuest('mandragore_pomfresh');
+    const afterAccept = getNpcQuestState(npc);
+    // Ajoute 3 mandragores au sac → étape "item" remplie après refresh
+    const m = ITEMS.find(i => i.id === 'mandragore');
+    for (let i = 0; i < 3; i++) player.inventory.push({ ...m });
+    const ready = getNpcQuestState(npc);
+    turnInQuestById('mandragore_pomfresh');
+    const done = getNpcQuestState(npc);
+    return { before, afterAccept, ready, done };
+  });
+  console.log('  T3 dialog flow:', t3);
+  assert(t3.before === 'offer',          `état initial doit être "offer" (got ${t3.before})`);
+  assert(t3.afterAccept === 'active',    `après accept doit être "active" (got ${t3.afterAccept})`);
+  assert(t3.ready === 'ready',           `objectifs remplis doit être "ready" (got ${t3.ready})`);
+  assert(t3.done === 'done',             `après remise doit être "done" (got ${t3.done})`);
+
+  // T4 : ouverture overlay → fermeture
+  const t4 = await page.evaluate(() => {
+    openNpcDialog('dumbledore');
+    const opened = document.getElementById('npc-dialog-overlay').style.display;
+    closeNpcDialog();
+    const closed = document.getElementById('npc-dialog-overlay').style.display;
+    const seen = seenNpcs.has('dumbledore');
+    return { opened, closed, seen };
+  });
+  console.log('  T4 overlay:', t4);
+  assert(t4.opened === 'flex',           'overlay non ouvert');
+  assert(t4.closed === 'none',           'overlay non fermé');
+  assert(t4.seen,                        'PNJ non marqué comme rencontré');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ intégration PNJ conforme');
   await browser.close();
 }
 
@@ -1969,7 +2070,7 @@ async function scenarioPhase3Catalog() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog];
   for (const s of scenarios) {
     await s();
   }

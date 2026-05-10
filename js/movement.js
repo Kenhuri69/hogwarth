@@ -126,6 +126,11 @@ function handleCellEntry(cell) {
       cell === CELL.SHOP     || cell === CELL.CHEST    ||
       cell === CELL.FOUNTAIN) {
     _showExploreOverlay(cell);
+  } else if (cell === CELL.NPC) {
+    const npcId = npcPlacements.get(`${playerX},${playerY}`);
+    if (npcId && typeof openNpcDialog === 'function') {
+      openNpcDialog(npcId);
+    }
   } else {
     if (Math.random() < 0.15) {
       if (Math.random() < 0.08) {
@@ -152,7 +157,8 @@ function _saveFloorToCache(floor) {
     enemyMap:     JSON.parse(JSON.stringify(enemyMap)),
     itemMap:      JSON.parse(JSON.stringify(itemMap)),
     px: playerX, py: playerY, dir: playerDir,
-    searchedCells: Array.from(searchedCells)
+    searchedCells: Array.from(searchedCells),
+    npcPlacements: Array.from(npcPlacements.entries())
     // Note : on n'archive PAS usedFountains : la fontaine se ré-active
     // à la prochaine visite (cf. règle d'usage 1×/visite).
   };
@@ -167,6 +173,7 @@ function _restoreFloorFromCache(floor) {
   itemMap  = c.itemMap;
   playerX  = c.px; playerY = c.py; playerDir = c.dir;
   searchedCells = new Set(c.searchedCells || []);
+  npcPlacements = new Map(c.npcPlacements || []);
   // Nouvelle visite = nouvelle eau dans la fontaine
   usedFountains = new Set();
   return true;
@@ -192,6 +199,7 @@ function goDeeper() {
     updateCompass();
     addMsg(`Niveau ${currentFloor} atteint !`, 'good');
     AudioSystem.playAmbientMusic(currentFloor);
+    if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
     if (typeof autoSave === 'function') autoSave('floor-down');
   });
   setNarrative(`Le groupe descend au niveau ${currentFloor} des donjons de Poudlard...`);
@@ -217,6 +225,7 @@ function goUp() {
     drawDungeon();
     updateCompass();
     AudioSystem.playAmbientMusic(currentFloor);
+    if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
     if (typeof autoSave === 'function') autoSave('floor-up');
   });
   setNarrative(`Le groupe remonte au niveau ${currentFloor}...`);

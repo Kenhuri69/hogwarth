@@ -2,7 +2,7 @@
 // CONSTANTES DE CARTE
 // ============================================================
 const MAP_W = 12, MAP_H = 12;
-const CELL = { WALL:0, FLOOR:1, DOOR:2, STAIRS_D:3, STAIRS_U:4, SHOP:5, CHEST:6, FOUNTAIN:7 };
+const CELL = { WALL:0, FLOOR:1, DOOR:2, STAIRS_D:3, STAIRS_U:4, SHOP:5, CHEST:6, FOUNTAIN:7, NPC:8 };
 
 // Vecteurs de déplacement par direction cardinale (N, S, E, O).
 // Indexé par playerDir / cellule cible.
