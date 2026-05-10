@@ -162,23 +162,24 @@ function generateDungeon(floor) {
     }
   }
 
-  // Vendeur ambulant (PNJ random) : 35% de chance par étage 2+. Pool
-  // filtré par minFloor / maxFloor. Un seul vendeur par étage maximum.
-  if (floor >= 2 && Math.random() < 0.35 && typeof getRandomVendorsForFloor === 'function') {
-    const pool = getRandomVendorsForFloor(floor);
+  // Rencontre aléatoire (PNJ random — vendeur OU lore) : 50% par étage.
+  // Pool combiné via getRandomEncountersForFloor, filtré par minFloor /
+  // maxFloor. Un seul random par étage maximum (vendeur ou lore exclusif).
+  if (Math.random() < 0.50 && typeof getRandomEncountersForFloor === 'function') {
+    const pool = getRandomEncountersForFloor(floor);
     if (pool.length) {
-      const vendor = pool[Math.floor(Math.random() * pool.length)];
+      const npc = pool[Math.floor(Math.random() * pool.length)];
       // Première room intermédiaire libre, sinon repli avant-dernière.
       let placed = false;
       for (let i = 1; i < rooms.length - 1; i++) {
         if (occupied.has(i)) continue;
-        if (_placeNpcInRoom(vendor, rooms[i], false)) {
+        if (_placeNpcInRoom(npc, rooms[i], false)) {
           occupied.add(i); placed = true; break;
         }
       }
       if (!placed && rooms.length >= 2) {
         const fallback = rooms.length - 2;
-        if (_placeNpcInRoom(vendor, rooms[fallback], false)) {
+        if (_placeNpcInRoom(npc, rooms[fallback], false)) {
           occupied.add(fallback);
         }
       }

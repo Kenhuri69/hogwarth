@@ -34,10 +34,12 @@
 //   questsTurnedIn: ["quest_id", ...],     // quêtes que ce PNJ clôt (souvent === questsGiven)
 //   dialogues: {
 //     greeting:    "1ère rencontre",
-//     idle:        "Visites suivantes sans contexte particulier",
-//     contextualLore: [                     //   override `idle` par tirage contextuel
-//       { monsterIds: ["bellatrix"], text: "..." }
-//     ],
+//     idle:        "Visites suivantes (texte fixe)",
+//     idleRandom:  ["...","..."],           // optionnel : pioche random
+//                                           //   à chaque visite (PNJ lore)
+//     contextualLore: [                     // optionnel : override `idle` par
+//       { monsterIds: ["bellatrix"], text: "..." }   // tirage contextuel selon
+//     ],                                    //   les monstres tirables à l'étage
 //     questOffer:  "Quête disponible non prise",
 //     questActive: "Quête prise mais objectif non rempli",
 //     questReady:  "Objectif rempli, à rendre",
@@ -396,6 +398,94 @@ const NPCS = [
       ],
       idle: "T'inquiète, c'est honnête. Enfin presque."
     }
+  },
+
+  // ── PNJ "lore" (random:true, sans wares ni quêtes) ────────────
+  // Saveur narrative seule. `dialogues.idleRandom` (array de strings)
+  // est piocheé au hasard à chaque visite après la 1re rencontre.
+  {
+    id:        "sir_nicolas",
+    name:      "Sir Nicolas de Mimsy",
+    title:     "Fantôme de Gryffondor (presque sans-tête)",
+    icon:      "👻",
+    random:    true,
+    minFloor:  1,
+    maxFloor:  null,
+    dialogues: {
+      greeting: [
+        "Bonjour, jeune Gryffondor ! Ou… Serdaigle ? Pardonnez-moi, ma tête a tendance à dodeliner.",
+        "Si vous avez un moment, je voulais partager quelques anecdotes sur ce vieux château."
+      ],
+      idleRandom: [
+        "On dit qu'au troisième étage, un miroir reflète plus que votre image…",
+        "Le Baron Sanglant n'apparaît qu'aux nuits d'orage. Évitez les cachots ce soir.",
+        "J'ai connu Godric Gryffondor en personne. Charmant, mais bien trop grand pour les portes.",
+        "La Salle Sur Demande change selon le besoin. Certains la trouvent. D'autres y restent."
+      ]
+    }
+  },
+  {
+    id:        "moine_gras",
+    name:      "Le Moine Gras",
+    title:     "Fantôme de Poufsouffle",
+    icon:      "🍷",
+    random:    true,
+    minFloor:  2,
+    maxFloor:  null,
+    dialogues: {
+      greeting: [
+        "Ah, un voyageur fatigué ! Approche, mon enfant, et reprends souffle un instant.",
+        "Le donjon est rude, mais la patience finit toujours par triompher de la furie."
+      ],
+      idleRandom: [
+        "Une bonne assiette et un cœur tranquille — voilà mes secrets de longévité.",
+        "Tu sais, mourir n'est pas si terrible. C'est de mal vivre qui devrait t'inquiéter.",
+        "Helga Poufsouffle disait : « Tous égaux devant la marmite. » Ça m'a toujours plu.",
+        "Méfie-toi des Inferius. Ils n'ont ni faim ni pitié."
+      ]
+    }
+  },
+  {
+    id:        "rusard",
+    name:      "Argus Rusard",
+    title:     "Concierge de Poudlard",
+    icon:      "🐈‍⬛",
+    random:    true,
+    minFloor:  1,
+    maxFloor:  null,
+    dialogues: {
+      greeting: [
+        "Encore un cancre qui erre dans MES couloirs ! Miss Teigne, surveille-le.",
+        "Je n'ai pas le droit de te punir, MAIS Rogue m'avait promis qu'on ramènerait les chaînes…"
+      ],
+      idleRandom: [
+        "Touche pas aux portraits. Touche pas aux vitrines. TOUCHE A RIEN.",
+        "J'ai vu trois élèves disparaître dans ce couloir hier. Bon débarras.",
+        "Miss Teigne te fixe. Elle sait. Elle sait toujours.",
+        "De mon temps, on suspendait les fauteurs de troubles par les pouces."
+      ]
+    }
+  },
+  {
+    id:        "trelawney",
+    name:      "Sibylle Trelawney",
+    title:     "Professeure de Divination",
+    icon:      "🔮",
+    random:    true,
+    minFloor:  3,
+    maxFloor:  null,
+    dialogues: {
+      greeting: [
+        "Oh ! Mon œil intérieur t'a vu venir depuis trois jours. Ou trois minutes. Le temps est si flou…",
+        "Approche, mon enfant. Les ombres autour de toi me parlent."
+      ],
+      idleRandom: [
+        "Je vois… je vois… une tasse de thé. Et un péril mortel. Probablement les deux.",
+        "Tes lignes de la main indiquent un long voyage. Ou un déjeuner. C'est confus.",
+        "Méfie-toi du chiffre 7 cette semaine. Ou du 3. Ou des deux.",
+        "Le marc de café m'a révélé que ton destin est… intéressant. C'est tout ce que je peux dire."
+      ]
+    }
   }
 ];
 
@@ -411,7 +501,29 @@ function getNpcsForFloor(floor) {
 }
 
 function getRandomVendorsForFloor(floor) {
-  // PNJ ambulants : éligibles au tirage aléatoire pour cet étage.
+  // Vendeurs ambulants uniquement (présence de `wares`).
+  return NPCS.filter(n =>
+    n.random === true &&
+    Array.isArray(n.wares) && n.wares.length > 0 &&
+    (n.minFloor === undefined || floor >= n.minFloor) &&
+    (n.maxFloor === undefined || n.maxFloor === null || floor <= n.maxFloor)
+  );
+}
+
+function getRandomLoreForFloor(floor) {
+  // PNJ lore (random sans wares ni quêtes — saveur narrative seule).
+  return NPCS.filter(n =>
+    n.random === true &&
+    !(Array.isArray(n.wares) && n.wares.length) &&
+    !(Array.isArray(n.questsGiven) && n.questsGiven.length) &&
+    (n.minFloor === undefined || floor >= n.minFloor) &&
+    (n.maxFloor === undefined || n.maxFloor === null || floor <= n.maxFloor)
+  );
+}
+
+function getRandomEncountersForFloor(floor) {
+  // Pool combiné : tout PNJ random éligible à cet étage (vendeur OU lore).
+  // Utilisé par dungeon.js pour le tirage uniforme par étage.
   return NPCS.filter(n =>
     n.random === true &&
     (n.minFloor === undefined || floor >= n.minFloor) &&

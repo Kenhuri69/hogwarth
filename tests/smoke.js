@@ -417,7 +417,7 @@ async function scenarioNpcIntegration() {
     floor4Count:     getNpcsForFloor(4).length
   }));
   console.log('  T1 registry:', t1);
-  // 8 PNJ fixes + 2 vendeurs ambulants ajoutés en itération 4 = 10 entrées.
+  // 8 PNJ fixes + 2 vendeurs (it. 4) + 4 lore (it. 6) = 14 entrées minimum.
   assert(t1.npcCount >= 8,               `attendu ≥ 8 PNJ, trouvé ${t1.npcCount}`);
   assert(t1.hasGetById,                  'getNpcById absent');
   assert(t1.hasGetForFloor,              'getNpcsForFloor absent');
@@ -443,9 +443,12 @@ async function scenarioNpcIntegration() {
     };
   });
   console.log('  T2 floor1:', t2);
-  assert(t2.placementsCount === 1,       'doit avoir 1 placement étage 1');
-  assert(t2.cellsCount === 1,            'doit avoir 1 cellule NPC dans dungeon');
-  assert(t2.ids[0] === 'dumbledore',     'le PNJ étage 1 doit être Dumbledore');
+  // Dumbledore est garanti à l'étage 1 ; un PNJ random (lore) peut s'y ajouter.
+  assert(t2.placementsCount >= 1 && t2.placementsCount <= 2,
+         `1 ou 2 placements étage 1 attendus (Dumbledore + éventuel random), got ${t2.placementsCount}`);
+  assert(t2.cellsCount === t2.placementsCount,
+         'le nombre de cellules NPC doit égaler le nombre de placements');
+  assert(t2.ids.includes('dumbledore'),  'Dumbledore doit être présent à l\'étage 1');
 
   // T3 : flux dialogue — état "offer" → accept → "active" → ready → done
   const t3 = await page.evaluate(() => {
@@ -853,6 +856,119 @@ async function scenarioChainAndRepeatable() {
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
   console.log('  ✅ chaîne Hagrid + quête répétable conformes');
+  await browser.close();
+}
+
+// ── Scénario 3septies : rencontres PNJ aléatoires lore (sans quête) ──
+
+async function scenarioRandomLoreNpcs() {
+  console.log('\n── Scénario 3septies : PNJ lore aléatoires ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : registre — 4 PNJ lore, helpers exposés, distinction vendeur vs lore
+  const t1 = await page.evaluate(() => {
+    const loreIds = ['sir_nicolas', 'moine_gras', 'rusard', 'trelawney'];
+    const allFound = loreIds.every(id => NPCS.find(n => n.id === id));
+    const sirNicolas = NPCS.find(n => n.id === 'sir_nicolas');
+    const trelawney  = NPCS.find(n => n.id === 'trelawney');
+    return {
+      allFound,
+      hasGetRandomLoreForFloor:       typeof getRandomLoreForFloor === 'function',
+      hasGetRandomEncountersForFloor: typeof getRandomEncountersForFloor === 'function',
+      hasGetRandomVendorsForFloor:    typeof getRandomVendorsForFloor === 'function',
+      sirNicolasIsRandom:    !!sirNicolas?.random,
+      sirNicolasNoWares:     !sirNicolas?.wares,
+      sirNicolasNoQuests:    !(sirNicolas?.questsGiven?.length),
+      sirNicolasIdleRandom:  Array.isArray(sirNicolas?.dialogues?.idleRandom) && sirNicolas.dialogues.idleRandom.length >= 2,
+      trelawneyMinFloor:     trelawney?.minFloor,
+      loreCount:             NPCS.filter(n => n.random && !n.wares && !(n.questsGiven?.length)).length
+    };
+  });
+  console.log('  T1 registry:', t1);
+  assert(t1.allFound,                       '4 PNJ lore attendus (sir_nicolas, moine_gras, rusard, trelawney)');
+  assert(t1.hasGetRandomLoreForFloor,       'getRandomLoreForFloor absent');
+  assert(t1.hasGetRandomEncountersForFloor, 'getRandomEncountersForFloor absent');
+  assert(t1.hasGetRandomVendorsForFloor,    'getRandomVendorsForFloor (compat) absent');
+  assert(t1.sirNicolasIsRandom,             'Sir Nicolas doit être random:true');
+  assert(t1.sirNicolasNoWares,              'Sir Nicolas ne doit PAS avoir wares');
+  assert(t1.sirNicolasNoQuests,             'Sir Nicolas ne doit PAS avoir questsGiven');
+  assert(t1.sirNicolasIdleRandom,           'Sir Nicolas doit avoir au moins 2 idleRandom');
+  assert(t1.trelawneyMinFloor === 3,        'Trelawney doit être minFloor=3');
+  assert(t1.loreCount === 4,                `4 PNJ lore attendus, got ${t1.loreCount}`);
+
+  // T2 : pools cloisonnés — vendeurs vs lore, et combiné
+  const t2 = await page.evaluate(() => {
+    const lore1 = getRandomLoreForFloor(1).map(n => n.id).sort();
+    const lore3 = getRandomLoreForFloor(3).map(n => n.id).sort();
+    const vendors2 = getRandomVendorsForFloor(2).map(n => n.id).sort();
+    const enc1 = getRandomEncountersForFloor(1).map(n => n.id).sort();
+    const enc3 = getRandomEncountersForFloor(3).map(n => n.id).sort();
+    return { lore1, lore3, vendors2, enc1, enc3 };
+  });
+  console.log('  T2 pools:', t2);
+  assert(t2.lore1.includes('sir_nicolas') && t2.lore1.includes('rusard'),
+    `lore étage 1 doit contenir sir_nicolas + rusard, got ${JSON.stringify(t2.lore1)}`);
+  assert(!t2.lore1.includes('moine_gras'),     'moine_gras (minFloor=2) ne doit pas être à l\'étage 1');
+  assert(!t2.lore1.includes('trelawney'),      'trelawney (minFloor=3) ne doit pas être à l\'étage 1');
+  assert(t2.lore3.includes('trelawney'),       'trelawney doit être éligible à l\'étage 3');
+  assert(t2.vendors2.includes('rosmerta'),     'rosmerta doit rester dans le pool vendeurs');
+  assert(!t2.vendors2.includes('sir_nicolas'), 'getRandomVendorsForFloor ne doit PAS retourner les lore NPCs');
+  assert(t2.enc1.includes('sir_nicolas') && t2.enc1.includes('rusard'),
+    `encounters étage 1 doit contenir les lore éligibles, got ${JSON.stringify(t2.enc1)}`);
+  assert(t2.enc3.includes('rosmerta') && t2.enc3.includes('mundungus') && t2.enc3.includes('trelawney'),
+    `encounters étage 3 doit combiner vendeurs + lore, got ${JSON.stringify(t2.enc3)}`);
+
+  // T3 : dialog d'un PNJ lore — pas de bouton "Accepter", greeting puis idleRandom varie
+  const t3 = await page.evaluate(() => {
+    seenNpcs.clear();
+    openNpcDialog('sir_nicolas');
+    const greetingPages = _dialogState.pages.slice();
+    const greetingActions = _dialogState.actions.map(a => a.label);
+    closeNpcDialog();
+    // 2e visite : seenNpcs a sir_nicolas → idleRandom
+    openNpcDialog('sir_nicolas');
+    const idleText = _dialogState.pages[0];
+    const idleActions = _dialogState.actions.map(a => a.label);
+    const sn = NPCS.find(n => n.id === 'sir_nicolas');
+    const inIdlePool = sn.dialogues.idleRandom.includes(idleText);
+    closeNpcDialog();
+    return {
+      greetingIsArray: greetingPages.length >= 2,
+      greetingActions,
+      idleText,
+      inIdlePool,
+      idleActions
+    };
+  });
+  console.log('  T3 dialog flow:', t3);
+  assert(t3.greetingIsArray,                       'greeting doit être multi-page (>= 2)');
+  assert(!t3.greetingActions.includes('Accepter la quête'),
+    'PNJ lore ne doit PAS proposer "Accepter la quête"');
+  assert(t3.greetingActions.includes('S\'éloigner'),
+    `bouton "S'éloigner" attendu, got ${JSON.stringify(t3.greetingActions)}`);
+  assert(t3.inIdlePool, `idle 2e visite doit venir d'idleRandom, got "${t3.idleText}"`);
+  assert(!t3.idleActions.includes('Accepter la quête'),
+    'PNJ lore ne doit PAS proposer "Accepter la quête" en idle non plus');
+
+  // T4 : getNpcQuestState retourne 'none' pour PNJ lore (pas de quête)
+  const t4 = await page.evaluate(() => {
+    return {
+      sirNicolas: getNpcQuestState(NPCS.find(n => n.id === 'sir_nicolas')),
+      rusard:     getNpcQuestState(NPCS.find(n => n.id === 'rusard')),
+      hagrid:     getNpcQuestState(NPCS.find(n => n.id === 'hagrid')) // toujours 'offer' au démarrage
+    };
+  });
+  console.log('  T4 quest state:', t4);
+  assert(t4.sirNicolas === 'none', `Sir Nicolas state doit être 'none', got ${t4.sirNicolas}`);
+  assert(t4.rusard     === 'none', `Rusard state doit être 'none', got ${t4.rusard}`);
+  assert(t4.hagrid     === 'offer', `Hagrid (control) doit être 'offer', got ${t4.hagrid}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ PNJ lore aléatoires conformes');
   await browser.close();
 }
 
@@ -3026,7 +3142,7 @@ async function scenarioIteration74() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
   for (const s of scenarios) {
     await s();
   }
