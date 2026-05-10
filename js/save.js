@@ -172,6 +172,44 @@ function _serializeState() {
   };
 }
 
+// Schéma 11 slots étendus — voir .claude/plans/equipment-extended.md §2.1
+const EXTENDED_EQUIP_SLOTS = [
+  'wand', 'head', 'body', 'hands', 'feet', 'cloak',
+  'amulet', 'ring1', 'ring2', 'belt', 'trinket'
+];
+
+// Migration douce des slots d'équipement vers le schéma étendu :
+//   • assure que tous les slots étendus existent (null si absents) ;
+//   • déplace `equipped.armor` (objet) → `equipped.body` ;
+//   • déplace `equipped.acc` (objet) → slot que pointe `item.slot`,
+//     ou `amulet` par défaut si aucune indication.
+// Idempotente — ne touche pas un slot cible déjà rempli.
+function _migrateEquippedSlots(c) {
+  if (!c || typeof c !== 'object') return;
+  if (!c.equipped || typeof c.equipped !== 'object') c.equipped = {};
+  const eq = c.equipped;
+
+  // 1) Migrer armor → body
+  if (eq.armor && !eq.body) {
+    eq.body = eq.armor;
+  }
+  delete eq.armor;
+
+  // 2) Migrer acc → slot dérivé de l'item (ou amulet par défaut)
+  if (eq.acc) {
+    const target = (eq.acc.slot && EXTENDED_EQUIP_SLOTS.includes(eq.acc.slot))
+      ? eq.acc.slot
+      : 'amulet';
+    if (!eq[target]) eq[target] = eq.acc;
+  }
+  delete eq.acc;
+
+  // 3) S'assurer que tous les slots étendus existent
+  for (const slot of EXTENDED_EQUIP_SLOTS) {
+    if (eq[slot] === undefined) eq[slot] = null;
+  }
+}
+
 // Applique un instantané au runtime — mute les objets en place pour
 // préserver les références partagées (party[0] === player, etc.).
 // Pas d'I/O, pas de message UI : pur applicateur.
@@ -180,6 +218,10 @@ function _applyState(gs) {
   if (gs.party && gs.party[1]) Object.assign(player2, gs.party[1]);
   party[0] = player;
   party[1] = player2;
+
+  // Migration des slots d'équipement (ancien schéma → 11 slots étendus)
+  // Idempotent : ne touche pas un slot déjà rempli au bon endroit.
+  party.forEach(_migrateEquippedSlots);
 
   if (gs.partySize)     partySize    = gs.partySize;
   if (gs.seenMonsters)  seenMonsters = new Set(gs.seenMonsters);

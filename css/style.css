@@ -737,6 +737,40 @@ body {
 .inv-slot .item-icon { font-size: 22px; }
 .inv-slot .item-name { font-size: 9px; color: var(--parchment-dark); line-height: 1.2; }
 
+/* Bordure de rareté — voir .claude/plans/equipment-extended.md §2.6.
+ * `common` reste sur la bordure or-sombre par défaut. Les variantes
+ * supérieures forcent une bordure colorée et un léger halo. */
+.inv-slot.rarity-common    { border-color: #6a5030; }
+.inv-slot.rarity-rare      { border-color: #4a8ad0; box-shadow: inset 0 0 0 1px rgba(74,138,208,0.25); }
+.inv-slot.rarity-epic      { border-color: #a060d0; box-shadow: inset 0 0 0 1px rgba(160,96,208,0.30); }
+.inv-slot.rarity-legendary { border-color: var(--gold); box-shadow: inset 0 0 0 1px rgba(201,168,76,0.35); }
+
+/* Grille des 11 slots d'équipement (fiche perso) — voir §2.4. */
+.equip-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+  font-size: 11px;
+}
+.equip-grid .equip-row {
+  display: grid;
+  grid-template-columns: 18px 60px 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.equip-grid .equip-row.filled { background: rgba(40,28,12,0.45); }
+.equip-grid .equip-icon  { display: inline-flex; justify-content: center; opacity: 0.85; }
+.equip-grid .equip-label { color: #8a7050; font-family: 'Cinzel',serif; letter-spacing: 0.5px; font-size: 10px; }
+.equip-grid .equip-name  { color: var(--parchment-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.equip-grid .equip-name.empty { color: #4a3a20; font-style: italic; }
+
+/* Repli en une seule colonne sur les fiches étroites (≤ 360 px). */
+@media (max-width: 360px) {
+  .equip-grid { grid-template-columns: 1fr; }
+}
+
 .spell-list { display: flex; flex-direction: column; gap: 6px; }
 .spell-item {
   background: #0a0705;

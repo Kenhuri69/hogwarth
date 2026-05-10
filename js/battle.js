@@ -360,9 +360,14 @@ function checkLevelUp() {
     c.xpNext = player.xpNext;
     c.hpMax += 8;  c.hp = c.hpMax;
     c.spMax += 5;  c.sp = c.spMax;
-    // Incrémenter les stats de BASE (indépendamment de l'équipement)
+    // Incrémenter les stats de BASE (indépendamment de l'équipement).
+    // recalculateStats() reconstruit ensuite c.str/c.int/c.agi à partir
+    // de _baseStr/_baseInt/_baseAgi + bonus d'équipement.
     c._baseAtk += 1;  c._baseDef += 1;  c._baseMag += 1;
-    c.str += 1;  c.int += 1;  c.agi += 1;
+    if (c._baseStr === undefined) c._baseStr = c.str;
+    if (c._baseInt === undefined) c._baseInt = c.int;
+    if (c._baseAgi === undefined) c._baseAgi = c.agi;
+    c._baseStr += 1;  c._baseInt += 1;  c._baseAgi += 1;
   });
   // Recalculer atk/def/mag/lck = base + bonus équipement
   recalculateStats();

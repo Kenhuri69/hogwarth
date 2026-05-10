@@ -218,6 +218,40 @@ function addMsg(text, type = '') {
 
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+// ── Rendu de la grille d'équipement (fiche perso) ────────────
+// 11 slots étendus, ordre stable. Chaque ligne = icône slot ou icône
+// item équipé + nom. Les slots vides retombent sur l'icône slot
+// générique via getEquipmentSlotIconHtml().
+const EQUIP_SLOT_LABELS = [
+  ['wand',    'Baguette'],
+  ['head',    'Tête'],
+  ['body',    'Armure'],
+  ['hands',   'Gants'],
+  ['feet',    'Bottes'],
+  ['cloak',   'Cape'],
+  ['amulet',  'Amulette'],
+  ['ring1',   'Anneau ◀'],
+  ['ring2',   'Anneau ▶'],
+  ['belt',    'Ceinture'],
+  ['trinket', 'Bibelot']
+];
+
+function _renderEquipSlots(c) {
+  return EQUIP_SLOT_LABELS.map(([slot, label]) => {
+    const item = c.equipped && c.equipped[slot];
+    const icon = item
+      ? getItemIconHtml(item, 'ui-icon-sm')
+      : getEquipmentSlotIconHtml(slot, 'ui-icon-sm');
+    const name = item ? item.name : '—';
+    const nameClass = item ? 'parchment' : 'empty';
+    return `<div class="equip-row${item ? ' filled' : ''}">
+              <span class="equip-icon">${icon}</span>
+              <span class="equip-label">${label}</span>
+              <span class="equip-name ${nameClass}">${name}</span>
+            </div>`;
+  }).join('');
+}
+
 // Fiche de personnage (avec onglets Harry / Hermione)
 function openCharacter(charIdx = 0) {
   const c      = party[charIdx];
@@ -251,10 +285,8 @@ function openCharacter(charIdx = 0) {
     </div>
     <div style="margin-top:12px;border-top:1px solid #2a1a08;padding-top:10px">
       <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);margin-bottom:5px">ÉQUIPEMENT</div>
-      <div style="font-size:12px;display:flex;flex-direction:column;gap:3px;color:var(--parchment-dark)">
-        <div>${(c.equipped && c.equipped.wand)  ? getItemIconHtml(c.equipped.wand)  : getEquipmentSlotIconHtml('wand')}  ${(c.equipped && c.equipped.wand  && c.equipped.wand.name)  || c.wand  || '—'}</div>
-        <div>${(c.equipped && c.equipped.armor) ? getItemIconHtml(c.equipped.armor) : getEquipmentSlotIconHtml('armor')} ${(c.equipped && c.equipped.armor && c.equipped.armor.name) || c.armor || '—'}</div>
-        <div>${(c.equipped && c.equipped.acc)   ? getItemIconHtml(c.equipped.acc)   : getEquipmentSlotIconHtml('acc')}   ${(c.equipped && c.equipped.acc   && c.equipped.acc.name)   || c.acc   || '—'}</div>
+      <div class="equip-grid">
+        ${_renderEquipSlots(c)}
       </div>
     </div>
     <div style="margin-top:12px;border-top:1px solid #2a1a08;padding-top:10px">

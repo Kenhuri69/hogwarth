@@ -26,22 +26,46 @@ function tryAddItem(itemOrId, opts = {}) {
 
 // ── Calcul des stats réelles (base + équipement) ────────────
 // Doit être appelé après chaque équipement et après chaque level-up.
+// Itère dynamiquement sur tous les slots de c.equipped pour supporter
+// les 11 slots étendus (head, hands, feet, cloak, amulet, ring1, ring2,
+// belt, trinket) ainsi que d'éventuels slots legacy (armor, acc) issus
+// d'anciennes saves non migrées.
+//
+// hpMax/spMax restent hors-scope V1 : `checkLevelUp()` les mute encore
+// directement, on n'y touche pas ici.
 function recalculateStats() {
   party.forEach(c => {
+    // Lazy init des bases secondaires (str/int/agi/end) pour les saves
+    // antérieures à l'extension : capture la valeur courante comme base.
+    if (c._baseStr === undefined) c._baseStr = c.str;
+    if (c._baseInt === undefined) c._baseInt = c.int;
+    if (c._baseAgi === undefined) c._baseAgi = c.agi;
+    if (c._baseEnd === undefined) c._baseEnd = c.end;
+
     // Repartir des stats de base (croissent au level-up via _base*)
     c.atk = c._baseAtk;
     c.def = c._baseDef;
     c.mag = c._baseMag;
     c.lck = c._baseLck;
-    // Ajouter les bonus des objets équipés
-    ['wand', 'armor', 'acc'].forEach(slot => {
-      const item = c.equipped && c.equipped[slot];
-      if (!item) return;
+    c.str = c._baseStr;
+    c.int = c._baseInt;
+    c.agi = c._baseAgi;
+    c.end = c._baseEnd;
+
+    if (!c.equipped) return;
+    // Itérer sur tous les slots présents (extensible sans toucher au code)
+    for (const slot of Object.keys(c.equipped)) {
+      const item = c.equipped[slot];
+      if (!item) continue;
       if (item.bonusAtk) c.atk += item.bonusAtk;
       if (item.bonusDef) c.def += item.bonusDef;
       if (item.bonusMag) c.mag += item.bonusMag;
       if (item.bonusLck) c.lck += item.bonusLck;
-    });
+      if (item.bonusStr) c.str += item.bonusStr;
+      if (item.bonusInt) c.int += item.bonusInt;
+      if (item.bonusAgi) c.agi += item.bonusAgi;
+      if (item.bonusEnd) c.end += item.bonusEnd;
+    }
   });
 }
 
@@ -64,10 +88,16 @@ function renderInventory(battleMode) {
       div.classList.add('has-item');
       const isEquip    = ['wand','armor','acc'].includes(item.type);
       const isSpellbook = item.type === 'spellbook';
-      // Étiquette de type — utilise le resolver (slot icon générique pour
-      // l'instant ; per-item PNG dès qu'il sera enregistré dans le registry).
+      // Bordure de rareté — voir .claude/plans/equipment-extended.md §2.6.
+      // common (par défaut, gris-or) / rare (bleu) / epic (violet) / legendary (or).
+      if (item.rarity) div.classList.add(`rarity-${item.rarity}`);
+      // Étiquette de type — préfère `item.slot` (plus précis : head, ring,
+      // trinket…) puis `item.type` en fallback. Le resolver tombe sur
+      // accessory.png pour tous les nouveaux slots tant que les sprites
+      // dédiés Phase 4 ne sont pas livrés.
+      const slotKey = (isEquip && item.slot) ? item.slot : item.type;
       const typeIcon = (isEquip || isSpellbook)
-        ? getEquipmentSlotIconHtml(item.type, 'ui-icon-sm')
+        ? getEquipmentSlotIconHtml(slotKey, 'ui-icon-sm')
         : '';
       const typeLabel = (isEquip || isSpellbook)
         ? `<div style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
@@ -89,18 +119,78 @@ function renderInventory(battleMode) {
   }
 }
 
+// ── Résolution du slot cible d'un item ───────────────────────
+// Priorité : champ explicite `item.slot`, sinon mapping legacy via type.
+// Pour les anneaux (`slot === 'ring'`), choisit le premier slot vide
+// entre `ring1` et `ring2`. Si les deux sont occupés, retourne `ring1`
+// (l'appelant gérera la confirmation de remplacement).
+function _resolveSlotForItem(item, c) {
+  const explicit = item.slot;
+  if (explicit === 'ring') {
+    if (c && c.equipped && !c.equipped.ring1) return 'ring1';
+    if (c && c.equipped && !c.equipped.ring2) return 'ring2';
+    return 'ring1';
+  }
+  if (explicit) return explicit;
+  // Mapping legacy pour items sans champ `slot` explicite
+  if (item.type === 'wand')  return 'wand';
+  if (item.type === 'armor') return 'body';
+  return 'amulet'; // type === 'acc' par défaut → cou
+}
+
 // ── Menu de sélection du personnage pour équiper ─────────────
 // Remplace temporairement la grille par un prompt de choix.
 function showEquipMenu(item, idx) {
-  // Mode solo : équiper directement Harry
-  if (partySize === 1) { equipItem(idx, 0); return; }
+  const isRing = item.slot === 'ring';
+
+  // Mode solo + non-anneau : équiper directement Harry
+  if (partySize === 1 && !isRing) { equipItem(idx, 0); return; }
 
   const grid = document.getElementById('inv-grid');
 
-  // Trouver si chaque personnage peut utiliser ce type d'objet
-  // (toutes les baguettes/armures/accessoires peuvent être équipés par les deux)
+  // Mode solo + anneau : choisir l'anneau cible (Harry uniquement)
+  if (partySize === 1 && isRing) {
+    const c = party[0];
+    const ring1 = c.equipped && c.equipped.ring1;
+    const ring2 = c.equipped && c.equipped.ring2;
+    const r1Label = ring1 ? ` (rem. ${ring1.name})` : ' (vide)';
+    const r2Label = ring2 ? ` (rem. ${ring2.name})` : ' (vide)';
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;padding:14px;text-align:center">
+        <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
+          Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}
+        </div>
+        <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
+        <div style="max-width:200px;margin:0 auto">
+          <button class="cmd-btn" style="width:100%;margin-bottom:6px"
+            onclick="equipItem(${idx},0,'ring1')">💍 Anneau gauche${r1Label}</button>
+          <button class="cmd-btn" style="width:100%;margin-bottom:6px"
+            onclick="equipItem(${idx},0,'ring2')">💍 Anneau droit${r2Label}</button>
+          <button class="cmd-btn" style="width:100%;margin-top:4px;opacity:.7"
+            onclick="renderInventory(false)">← Annuler</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // Duo : un bouton par personnage. Pour les anneaux, deux boutons par
+  // personnage (anneau gauche / anneau droit).
   const charButtons = party.slice(0, partySize).map((c, ci) => {
-    const slot    = item.type === 'wand' ? 'wand' : item.type === 'armor' ? 'armor' : 'acc';
+    if (isRing) {
+      const ring1 = c.equipped && c.equipped.ring1;
+      const ring2 = c.equipped && c.equipped.ring2;
+      const r1Label = ring1 ? ` (rem. ${ring1.name})` : '';
+      const r2Label = ring2 ? ` (rem. ${ring2.name})` : '';
+      return `
+        <div style="margin-bottom:8px;font-size:10px;color:var(--gold-dark)">${c.icon} ${c.name.split(' ')[0]}</div>
+        <button class="cmd-btn" style="width:100%;margin-bottom:4px"
+          onclick="equipItem(${idx},${ci},'ring1')">💍 gauche${r1Label}</button>
+        <button class="cmd-btn" style="width:100%;margin-bottom:8px"
+          onclick="equipItem(${idx},${ci},'ring2')">💍 droit${r2Label}</button>
+      `;
+    }
+    const slot    = _resolveSlotForItem(item, c);
     const current = c.equipped && c.equipped[slot];
     const curLabel = current ? ` (rem. ${current.name})` : '';
     return `<button class="cmd-btn" style="width:100%;margin-bottom:6px"
@@ -125,11 +215,13 @@ function showEquipMenu(item, idx) {
 }
 
 // ── Équiper un objet sur un personnage ───────────────────────
-function equipItem(inventoryIdx, charIdx) {
+// `targetSlot` est optionnel : si fourni (ex. 'ring1'/'ring2'), force le
+// slot ; sinon résolu via `_resolveSlotForItem`.
+function equipItem(inventoryIdx, charIdx, targetSlot) {
   const item = player.inventory[inventoryIdx];
   if (!item) return;
   const c    = party[charIdx];
-  const slot = item.type === 'wand' ? 'wand' : item.type === 'armor' ? 'armor' : 'acc';
+  const slot = targetSlot || _resolveSlotForItem(item, c);
 
   // Déséquiper l'ancien objet → retour en inventaire si place dispo
   const old = c.equipped && c.equipped[slot];
@@ -145,10 +237,16 @@ function equipItem(inventoryIdx, charIdx) {
   // Équiper le nouvel objet
   c.equipped[slot] = { ...item };
 
-  // Mettre à jour les chaînes d'affichage legacy (utilisées dans le panneau gauche)
-  if (slot === 'wand')  c.wand  = item.name;
-  if (slot === 'armor') c.armor = item.name;
-  if (slot === 'acc')   c.acc   = item.name;
+  // Mettre à jour les chaînes d'affichage legacy (utilisées dans le
+  // panneau gauche `#eq-wand/#eq-armor/#eq-acc`).
+  if (slot === 'wand')                     c.wand  = item.name;
+  if (slot === 'body' || slot === 'armor') c.armor = item.name;
+  if (slot === 'amulet' || slot === 'cloak' || slot === 'trinket'
+      || slot === 'ring1' || slot === 'ring2' || slot === 'belt'
+      || slot === 'head' || slot === 'hands' || slot === 'feet'
+      || slot === 'acc') {
+    c.acc = item.name;
+  }
 
   // Retirer de l'inventaire
   player.inventory.splice(inventoryIdx, 1);

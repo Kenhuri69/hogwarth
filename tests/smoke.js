@@ -1687,8 +1687,289 @@ async function scenarioItemIcons() {
   await browser.close();
 }
 
+// ── Scénario 22 : équipement étendu — 11 slots + ring1/ring2 + migration ──
+
+async function scenarioExtendedEquipment() {
+  console.log('\n── Scénario 22 : équipement étendu (11 slots) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : equipped a bien 11 slots à l'init
+  const t1 = await page.evaluate(() => Object.keys(player.equipped).sort());
+  console.log('  T1 slots →', t1);
+  const expected = ['amulet','belt','body','cloak','feet','hands','head','ring1','ring2','trinket','wand'];
+  assert(JSON.stringify(t1) === JSON.stringify(expected),
+         `equipped doit avoir 11 slots, got ${JSON.stringify(t1)}`);
+
+  // T2 : items legacy ont reçu un slot explicite
+  const t2 = await page.evaluate(() => ({
+    wand1:    ITEMS.find(i => i.id === 'wand1').slot,
+    robe1:    ITEMS.find(i => i.id === 'robe1').slot,
+    amulette: ITEMS.find(i => i.id === 'amulette').slot,
+    broom:    ITEMS.find(i => i.id === 'broom').slot,
+    cape:     ITEMS.find(i => i.id === 'cape_invis').slot,
+    chapeau:  ITEMS.find(i => i.id === 'chapeau_pointu').slot,
+    diademe:  ITEMS.find(i => i.id === 'diademe_serdaigle').slot
+  }));
+  console.log('  T2 slot mapping →', t2);
+  assert(t2.wand1    === 'wand',    'wand1 → wand');
+  assert(t2.robe1    === 'body',    'robe1 → body');
+  assert(t2.amulette === 'amulet',  'amulette → amulet');
+  assert(t2.broom    === 'trinket', 'broom → trinket');
+  assert(t2.cape     === 'cloak',   'cape_invis → cloak');
+  assert(t2.chapeau  === 'head',    'chapeau_pointu → head');
+  assert(t2.diademe  === 'head',    'diademe_serdaigle → head');
+
+  // T3 : équiper la cape applique bonusAgi (auparavant ignoré)
+  const t3 = await page.evaluate(() => {
+    const baseAgi = player.agi;
+    const cape = ITEMS.find(i => i.id === 'cape_invis');
+    player.inventory.push({ ...cape });
+    equipItem(player.inventory.length - 1, 0);
+    return { baseAgi, equippedAgi: player.agi, slot: !!player.equipped.cloak };
+  });
+  console.log('  T3 cape équipée →', t3);
+  assert(t3.slot, 'cape doit aller dans equipped.cloak');
+  assert(t3.equippedAgi === t3.baseAgi + 5,
+         `bonusAgi doit s'appliquer (got ${t3.equippedAgi - t3.baseAgi}, expected +5)`);
+
+  // T4 : équiper deux anneaux → ring1 puis ring2 (item de test injecté)
+  const t4 = await page.evaluate(() => {
+    const ringItem = {
+      id:'_test_ring', name:'Anneau test', icon:'💍', desc:'+1 ATK',
+      type:'acc', slot:'ring', bonusAtk:1, power:1, price:1
+    };
+    player.inventory.push({ ...ringItem });
+    equipItem(player.inventory.length - 1, 0, 'ring1');
+    player.inventory.push({ ...ringItem });
+    equipItem(player.inventory.length - 1, 0, 'ring2');
+    return {
+      ring1: player.equipped.ring1 && player.equipped.ring1.id,
+      ring2: player.equipped.ring2 && player.equipped.ring2.id
+    };
+  });
+  console.log('  T4 deux anneaux →', t4);
+  assert(t4.ring1 === '_test_ring' && t4.ring2 === '_test_ring',
+         'ring1 et ring2 doivent contenir l\'anneau de test');
+
+  // T5 : migration soft d'une save legacy (3 slots wand/armor/acc → 11)
+  const t5 = await page.evaluate(() => {
+    const fakeSave = {
+      party: [
+        { ...player, equipped: {
+            wand:  ITEMS.find(i => i.id === 'wand1'),
+            armor: ITEMS.find(i => i.id === 'robe1'),
+            acc:   ITEMS.find(i => i.id === 'amulette')
+        }},
+        player2
+      ],
+      partySize: 1,
+      currentFloor, playerX, playerY, playerDir,
+      dungeon, visited, enemyMap, itemMap,
+      seenMonsters: [], activeQuests, difficulty,
+      chosenHouse, housePoints, houseTier,
+      searchedCells: [], floorDungeons: {}, restCooldown: 0,
+      usedFountains: []
+    };
+    _applyState(fakeSave);
+    return {
+      hasArmor:  player.equipped.armor !== undefined,
+      hasAcc:    player.equipped.acc   !== undefined,
+      bodyName:  player.equipped.body && player.equipped.body.name,
+      amuletName: player.equipped.amulet && player.equipped.amulet.name,
+      wandName:  player.equipped.wand && player.equipped.wand.name,
+      slotCount: Object.keys(player.equipped).length
+    };
+  });
+  console.log('  T5 migration legacy →', t5);
+  assert(t5.hasArmor === false, 'slot armor doit être retiré après migration');
+  assert(t5.hasAcc === false,   'slot acc doit être retiré après migration');
+  assert(t5.bodyName   === 'Robe Renforcée',     'body doit recevoir robe1');
+  assert(t5.amuletName === 'Amulette du Phénix', 'amulet doit recevoir amulette');
+  assert(t5.wandName   === 'Baguette de Saule',  'wand doit conserver wand1');
+  assert(t5.slotCount  === 11, `equipped doit avoir 11 slots après migration, got ${t5.slotCount}`);
+
+  // T6 : fiche perso rend bien les 11 lignes d'équipement
+  const t6 = await page.evaluate(() => {
+    openCharacter(0);
+    const rows = document.querySelectorAll('#char-detail .equip-grid .equip-row');
+    const labels = Array.from(rows).map(r =>
+      r.querySelector('.equip-label').textContent.trim());
+    return { count: rows.length, labels };
+  });
+  console.log('  T6 fiche 11 slots →', t6);
+  assert(t6.count === 11, `fiche perso doit avoir 11 lignes equip-row, got ${t6.count}`);
+  assert(t6.labels.includes('Anneau ◀') && t6.labels.includes('Anneau ▶'),
+         'libellés Anneau ◀ et Anneau ▶ doivent être présents');
+
+  // T7 : bordure de rareté appliquée dans l'inventaire
+  const t7 = await page.evaluate(() => {
+    // Reset puis injection d'un item rare
+    player.inventory.length = 0;
+    player.inventory.push({
+      id:'_test_rare', name:'Anneau rare', icon:'💍', desc:'+1',
+      type:'acc', slot:'ring', rarity:'rare', bonusAtk:1, power:1, price:1
+    });
+    openInventory();
+    const slot = document.querySelector('#inv-grid .inv-slot.has-item');
+    return {
+      hasRarityClass: slot && slot.classList.contains('rarity-rare'),
+      borderColor:    slot && getComputedStyle(slot).borderColor
+    };
+  });
+  console.log('  T7 rareté →', t7);
+  assert(t7.hasRarityClass, 'inv-slot avec item rare doit porter classe rarity-rare');
+
+  // T8 : champ tint déclenche un drop-shadow inline
+  const t8 = await page.evaluate(() => {
+    const tinted = { id:'_test_tint', name:'Test', icon:'🪄', type:'wand', slot:'wand', tint:'#4a8ad0' };
+    const html = getItemIconHtml(tinted);
+    // Tint hex valide → style inline présent
+    const validHas = /drop-shadow\(0 0 1px #4a8ad0\)/.test(html);
+    // Tint malformée → ignorée (sécurité injection CSS)
+    const evil = { id:'x', name:'x', icon:'x', tint:'red; background:url(x)' };
+    const evilHtml = getItemIconHtml(evil);
+    const evilHas = /drop-shadow|background/.test(evilHtml);
+    return { validHas, evilHas };
+  });
+  console.log('  T8 tint →', t8);
+  assert(t8.validHas, 'tint hex valide doit produire drop-shadow inline');
+  assert(!t8.evilHas, 'tint malformée doit être ignorée');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ 11 slots + slot mapping + bonusAgi + ring1/ring2 + migration legacy + UI Phase 2');
+  await browser.close();
+}
+
+// ── Scénario 23 : Phase 3 — catalogue items + boutique + drops + coffres ──
+
+async function scenarioPhase3Catalog() {
+  console.log('\n── Scénario 23 : Phase 3 — catalogue items + drops + coffres ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : nouveaux items définis avec slot/family/rarity
+  const t1 = await page.evaluate(() => {
+    const ids = ['gants_apprenti','bottes_apprenti','chapeau_apprenti','ceinture_cuir',
+                 'anneau_argent','cape_voyageur','amulette_protection',
+                 'circlet_serdaigle','anneau_runique','ceinture_alchimiste',
+                 'bottes_dragon','retourneur_temps'];
+    return ids.map(id => {
+      const it = ITEMS.find(i => i.id === id);
+      return it ? { id, slot: it.slot, family: it.family, rarity: it.rarity } : { id, missing: true };
+    });
+  });
+  console.log('  T1 nouveaux items →', t1.length, 'items');
+  assert(t1.every(x => !x.missing), `tous les nouveaux items doivent exister, manquant: ${t1.filter(x=>x.missing).map(x=>x.id)}`);
+  assert(t1.every(x => x.slot && x.family && x.rarity),
+         'chaque nouvel item doit avoir slot+family+rarity');
+
+  // T2 : backfill rarity sur items legacy
+  const t2 = await page.evaluate(() => ({
+    wand1:        ITEMS.find(i => i.id === 'wand1').rarity,
+    amulette:     ITEMS.find(i => i.id === 'amulette').rarity,
+    cape_invis:   ITEMS.find(i => i.id === 'cape_invis').rarity,
+    sword_gryff:  ITEMS.find(i => i.id === 'sword_gryff').rarity,
+    diademe:      ITEMS.find(i => i.id === 'diademe_serdaigle').rarity
+  }));
+  console.log('  T2 rarity backfill →', t2);
+  assert(t2.wand1 === 'common',     `wand1 doit être common, got ${t2.wand1}`);
+  assert(t2.amulette === 'epic',    `amulette doit être epic, got ${t2.amulette}`);
+  assert(t2.sword_gryff === 'legendary', `sword_gryff doit être legendary`);
+
+  // T3 : SHOP_CATALOG a bien les nouveaux items aux bons étages
+  const t3 = await page.evaluate(() => {
+    const find = id => SHOP_CATALOG.find(e => e.id === id);
+    return {
+      gants:   find('gants_apprenti'),
+      bottes:  find('bottes_apprenti'),
+      anneau:  find('anneau_argent'),
+      circlet: find('circlet_serdaigle'),
+      timer:   find('retourneur_temps')
+    };
+  });
+  console.log('  T3 catalog →', t3);
+  assert(t3.gants && t3.gants.minFloor === 1,    'gants_apprenti doit être étage 1');
+  assert(t3.anneau && t3.anneau.minFloor === 2,  'anneau_argent doit être étage 2');
+  assert(t3.circlet && t3.circlet.minFloor === 5,'circlet_serdaigle doit être étage 5');
+  assert(t3.timer && t3.timer.minFloor === 7,    'retourneur_temps doit être étage 7');
+
+  // T4 : pickChestEquipment exclut les légendaires et respecte le seuil étage
+  const t4 = await page.evaluate(() => {
+    const counts = { common: 0, rare: 0, epic: 0, legendary: 0, total: 0 };
+    let saw_circlet = false, saw_timer = false;
+    for (let i = 0; i < 600; i++) {
+      const it = pickChestEquipment(1);
+      if (!it) continue;
+      counts[it.rarity || 'common']++;
+      counts.total++;
+    }
+    // À étage 7 : peut tirer epic, jamais legendary
+    const counts7 = { common: 0, rare: 0, epic: 0, legendary: 0 };
+    for (let i = 0; i < 600; i++) {
+      const it = pickChestEquipment(7);
+      if (!it) continue;
+      counts7[it.rarity || 'common']++;
+      if (it.id === 'circlet_serdaigle') saw_circlet = true;
+      if (it.id === 'retourneur_temps')  saw_timer   = true;
+    }
+    return { counts, counts7, saw_circlet, saw_timer };
+  });
+  console.log('  T4 pickChestEquipment →', t4);
+  assert(t4.counts.legendary === 0,        'aucun legendary à étage 1');
+  assert(t4.counts.rare === 0,             'aucun rare à étage 1 (seuil étage 4)');
+  assert(t4.counts.common > 0,             'au moins quelques common à étage 1');
+  assert(t4.counts7.legendary === 0,       'aucun legendary à étage 7');
+  assert(t4.counts7.epic > 0,              'au moins quelques epic à étage 7');
+
+  // T5 : drops étendus sur les monstres ciblés
+  const t5 = await page.evaluate(() => {
+    const dropsOf = id => {
+      const m = MONSTERS.find(x => x.id === id);
+      return m ? m.drops.map(d => d.itemId) : [];
+    };
+    return {
+      gobelin:   dropsOf('gobelin'),
+      bundimun:  dropsOf('bundimun'),
+      centaure:  dropsOf('centaure'),
+      mangemort: dropsOf('mangemort'),
+      bellatrix: dropsOf('bellatrix'),
+      voldemort: dropsOf('voldemort_revenu')
+    };
+  });
+  console.log('  T5 drops →', t5);
+  assert(t5.gobelin.includes('ceinture_cuir'),         'gobelin → ceinture_cuir');
+  assert(t5.bundimun.includes('bottes_apprenti'),      'bundimun → bottes_apprenti');
+  assert(t5.centaure.includes('anneau_argent'),        'centaure → anneau_argent');
+  assert(t5.mangemort.includes('cape_voyageur'),       'mangemort → cape_voyageur');
+  assert(t5.bellatrix.includes('anneau_runique'),      'bellatrix → anneau_runique');
+  assert(t5.voldemort.includes('retourneur_temps'),    'voldemort → retourneur_temps');
+
+  // T6 : ouverture boutique étage 1 → nouveaux items présents
+  const t6 = await page.evaluate(() => {
+    currentFloor = 1;
+    openShop();
+    const ids = Array.from(document.querySelectorAll('#shop-grid .shop-item'))
+      .map(el => el.dataset.itemId);
+    return ids;
+  });
+  console.log('  T6 boutique étage 1 →', t6);
+  assert(t6.includes('gants_apprenti'),  'boutique étage 1 doit lister gants_apprenti');
+  assert(t6.includes('bottes_apprenti'), 'boutique étage 1 doit lister bottes_apprenti');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ catalogue Phase 3 + drops + coffres + boutique progressive');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog];
   for (const s of scenarios) {
     await s();
   }

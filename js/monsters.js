@@ -323,8 +323,9 @@ const MONSTERS = [
     weak:   ["stun"],
     xp: 18, gold: { min: 10, max: 22 },
     drops:  [
-      { itemId: "mandragore", chance: 0.20 },
-      { itemId: "potion_s",   chance: 0.08 }
+      { itemId: "mandragore",    chance: 0.20 },
+      { itemId: "potion_s",      chance: 0.08 },
+      { itemId: "ceinture_cuir", chance: 0.04 }
     ]
   },
 
@@ -371,7 +372,9 @@ const MONSTERS = [
     resist: ["burn"],
     weak:   [],
     xp: 14, gold: { min: 5, max: 10 },
-    drops:  []
+    drops:  [
+      { itemId: "bottes_apprenti", chance: 0.05 }
+    ]
   },
 
   {
@@ -434,8 +437,9 @@ const MONSTERS = [
     weak:   [],
     xp: 20, gold: { min: 12, max: 18 },
     drops:  [
-      { itemId: "potion_s", chance: 0.20 },
-      { itemId: "robe1",    chance: 0.05 }
+      { itemId: "potion_s",       chance: 0.20 },
+      { itemId: "robe1",          chance: 0.05 },
+      { itemId: "gants_apprenti", chance: 0.04 }
     ]
   },
 
@@ -456,7 +460,10 @@ const MONSTERS = [
     resist: [],
     weak:   [],
     xp: 22, gold: { min: 10, max: 18 },
-    drops:  [{ itemId: "potion_s", chance: 0.10 }]
+    drops:  [
+      { itemId: "potion_s",      chance: 0.10 },
+      { itemId: "anneau_argent", chance: 0.06 }
+    ]
   },
 
   {
@@ -508,7 +515,10 @@ const MONSTERS = [
     resist: [],
     weak:   ["stun"],
     xp: 38, gold: { min: 16, max: 26 },
-    drops:  [{ itemId: "potion_s", chance: 0.15 }]
+    drops:  [
+      { itemId: "potion_s",         chance: 0.15 },
+      { itemId: "chapeau_apprenti", chance: 0.04 }
+    ]
   },
 
   {
@@ -608,9 +618,10 @@ const MONSTERS = [
     weak:   ["stun"],
     xp: 40, gold: { min: 20, max: 30 },
     drops:  [
-      { itemId: "potion_s", chance: 0.25 },
-      { itemId: "potion_m", chance: 0.15 },
-      { itemId: "wand1",    chance: 0.05 }
+      { itemId: "potion_s",      chance: 0.25 },
+      { itemId: "potion_m",      chance: 0.15 },
+      { itemId: "wand1",         chance: 0.05 },
+      { itemId: "cape_voyageur", chance: 0.08 }
     ]
   },
 
@@ -891,9 +902,10 @@ const MONSTERS = [
     weak:   [],
     xp: 130, gold: { min: 50, max: 80 },
     drops:  [
-      { itemId: "felix",    chance: 0.30 },
-      { itemId: "wand2",    chance: 0.15 },
-      { itemId: "amulette", chance: 0.10 }
+      { itemId: "felix",          chance: 0.30 },
+      { itemId: "wand2",          chance: 0.15 },
+      { itemId: "amulette",       chance: 0.10 },
+      { itemId: "anneau_runique", chance: 0.10 }
     ]
   },
 
@@ -953,9 +965,10 @@ const MONSTERS = [
     weak:   [],
     xp: 350, gold: { min: 120, max: 200 },
     drops:  [
-      { itemId: "felix",    chance: 0.60 },
-      { itemId: "wand2",    chance: 0.40 },
-      { itemId: "amulette", chance: 0.30 }
+      { itemId: "felix",            chance: 0.60 },
+      { itemId: "wand2",            chance: 0.40 },
+      { itemId: "amulette",         chance: 0.30 },
+      { itemId: "retourneur_temps", chance: 0.20 }
     ]
   },
 
