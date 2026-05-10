@@ -238,9 +238,10 @@ const EQUIP_SLOT_LABELS = [
 
 const EQUIP_SLOT_LABELS_MAP = Object.fromEntries(EQUIP_SLOT_LABELS);
 
-// Slots du paper doll : 11 emplacements positionnés autour du portrait via CSS.
-// `equip-slot-${slot}` correspond aux règles `.paper-doll .equip-slot-<slot>`
-// dans style.css (positions absolues). `equip-slot-floating` factorise le cadre.
+// Slots du paper doll. Classes conservées (.equip-slot-floating +
+// equip-slot-${slot}) pour la compatibilité du smoke test. En v2 le
+// positionnement est en flex/grid via .paper-doll-col / .paper-doll-bottom
+// dans style.css — plus de position:absolute.
 function _renderPaperDollSlot(slot, c) {
   const item = c.equipped && c.equipped[slot];
   const icon = item
@@ -253,6 +254,30 @@ function _renderPaperDollSlot(slot, c) {
                title="${tooltip.replace(/"/g, '&quot;')}">${icon}</div>`;
 }
 
+// Badge pour un sort connu. Cherche l'icône PNG sous img/icons/spells/
+// (slug normalisé du nom). Fallback emoji si l'image n'existe pas.
+function _renderSpellBadge(spellName) {
+  const slug = String(spellName)
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  const path = `img/icons/spells/${slug}.png`;
+  return `<span class="spell-badge">
+    <span class="icon"><img src="${path}" alt="" onerror="this.style.display='none'"></span>
+    ${spellName}
+  </span>`;
+}
+
+// Slot d'inventaire pour la grille du sac.
+function _renderInvSlot(item) {
+  if (!item) return `<div class="inv-slot"></div>`;
+  const rarityCls = item.rarity ? `rarity-${item.rarity}` : '';
+  const icon = getItemIconHtml(item, 'ui-icon');
+  const tooltip = item.name.replace(/"/g, '&quot;');
+  return `<div class="inv-slot has-item ${rarityCls}" title="${tooltip}">${icon}</div>`;
+}
+
 // Une ligne de stat dans le panneau gauche.
 function _renderStatLine(iconPath, label, value, derived = false) {
   return `<div class="stat-line${derived ? ' derived' : ''}">
@@ -262,7 +287,15 @@ function _renderStatLine(iconPath, label, value, derived = false) {
           </div>`;
 }
 
-// Fiche de personnage — layout 3 colonnes (paper doll central).
+// Fiche de personnage v2 — grid-template-areas :
+//   "stats equip"
+//   "stats spells"
+//   "stats inv"
+// Stats prend les 3 rows à gauche. Équipement / Sortilèges / Sac
+// s'empilent à droite — plus de gap structurel parasite.
+// Paper-doll : flex column avec une paper-doll-main (3 cols [50px][auto][50px])
+// et une paper-doll-bottom (rangée wand/belt/trinket). Stage carré contraint
+// par les 4 slots latéraux via align-items:stretch.
 function openCharacter(charIdx = 0) {
   const c      = party[charIdx];
   const detail = document.getElementById('char-detail');
@@ -273,19 +306,28 @@ function openCharacter(charIdx = 0) {
 
   const xpPct = Math.max(0, Math.min(100, Math.floor((player.xp / Math.max(1, player.xpNext)) * 100)));
 
-  // Slots du paper doll dans l'ordre de leur position visuelle.
-  const slotOrder = ['head','body','hands','feet','cloak','amulet','ring1','ring2','wand','trinket','belt'];
-  const slotsHtml = slotOrder.map(s => _renderPaperDollSlot(s, c)).join('');
+  // Slots regroupés par zone visuelle du paper-doll.
+  const slotsLeft   = ['head','body','hands','feet']  .map(s => _renderPaperDollSlot(s, c)).join('');
+  const slotsRight  = ['cloak','amulet','ring1','ring2'].map(s => _renderPaperDollSlot(s, c)).join('');
+  const slotsBottom = ['wand','belt','trinket']        .map(s => _renderPaperDollSlot(s, c)).join('');
 
-  // Stats dérivées (Phase B). Déjà calculées par recalculateStats().
   const critPct  = (c.critChance  != null) ? `${Math.round(c.critChance)}%`  : '—';
   const dodgePct = (c.dodgeChance != null) ? `${Math.round(c.dodgeChance)}%` : '—';
 
+  // Sortilèges sous forme de badges PNG. c.spells = liste de noms.
+  const spellsHtml = (c.spells || []).map(_renderSpellBadge).join('');
+
+  // Sac : grille fixe 16 slots (INVENTORY_MAX). Items + slots vides.
+  const inv = player.inventory || [];
+  let invHtml = '';
+  for (let i = 0; i < 16; i++) invHtml += _renderInvSlot(inv[i]);
+
   detail.innerHTML = `
     <div style="display:flex;gap:6px;margin-bottom:10px">${tabs}</div>
-    <div class="char-modal-grid">
-      <!-- Colonne gauche : niveau + stats -->
-      <div class="char-stats-panel">
+    <div class="char-grid">
+
+      <!-- Stats (grid-area:stats) -->
+      <div class="section section-stats char-stats-panel">
         <div class="level-banner">
           <div class="lvl">${c.name.split(' ')[0]} — Niveau ${c.level}</div>
           <div style="font-size:10px;color:#8a7050;margin-top:2px">${c.class}</div>
@@ -304,19 +346,36 @@ function openCharacter(charIdx = 0) {
         ${_renderStatLine('img/icons/atk.png', 'Critique',    critPct,  true)}
         ${_renderStatLine('img/icons/agi.png', 'Esquive',     dodgePct, true)}
       </div>
-      <!-- Colonne centrale : paper doll + 11 slots -->
-      <div class="paper-doll">
-        <img class="pd-portrait" src="${c.imgSrc || ''}" alt="${c.name}">
-        ${slotsHtml}
-        <div class="gold-banner">
-          <img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${player.gold}
+
+      <!-- Équipement (grid-area:equip) -->
+      <div class="section section-equip">
+        <div class="paper-doll">
+          <div class="paper-doll-main">
+            <div class="paper-doll-col left">${slotsLeft}</div>
+            <div class="paper-doll-stage">
+              <img class="pd-portrait" src="${c.imgSrc || ''}" alt="${c.name}">
+            </div>
+            <div class="paper-doll-col right">${slotsRight}</div>
+          </div>
+          <div class="paper-doll-bottom">${slotsBottom}</div>
+          <div class="gold-banner">
+            <img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${player.gold}
+          </div>
         </div>
       </div>
-      <!-- Colonne droite : sorts connus -->
-      <div class="char-spells-panel">
-        <div class="panel-title">SORTS CONNUS</div>
-        ${c.spells.map(s => `<div class="spell-line">${s}</div>`).join('')}
+
+      <!-- Sortilèges (grid-area:spells) -->
+      <div class="section section-spells char-spells-panel">
+        <div class="panel-title">⸻ SORTILÈGES CONNUS ⸻</div>
+        <div class="spells-row">${spellsHtml}</div>
       </div>
+
+      <!-- Sac (grid-area:inv) -->
+      <div class="section section-inv">
+        <div class="panel-title">⸻ SAC — ${inv.length} / 16 ⸻</div>
+        <div class="inv-grid">${invHtml}</div>
+      </div>
+
     </div>
   `;
   document.getElementById('character-modal').style.display = 'flex';

@@ -774,6 +774,8 @@ body {
   position: relative;
   box-shadow: 0 0 40px rgba(201,168,76,0.2);
 }
+/* Fiche personnage v2 — beaucoup plus large pour contenir les 4 sections */
+#character-modal .modal-box { max-width: 780px; }
 .modal-title {
   font-family: 'Cinzel', serif;
   font-size: 18px;
@@ -850,12 +852,27 @@ body {
    Inspiré d'une référence RPG mobile : stats à gauche, perso au
    centre encadré de 11 slots d'équipement, sorts à droite.
    ============================================================ */
-.char-modal-grid {
+/* ============================================================
+   FICHE PERSONNAGE v2 — grid-template-areas
+   stats prend 3 rows à gauche, equip/spells/inv s'empilent à droite.
+   ============================================================ */
+.char-grid {
   display: grid;
-  grid-template-columns: 180px 1fr 180px;
-  gap: 14px;
+  grid-template-columns: 220px 1fr;
+  grid-template-areas:
+    "stats equip"
+    "stats spells"
+    "stats inv";
+  grid-template-rows: auto auto auto;
+  gap: 12px;
   align-items: start;
 }
+.char-grid > .section-stats  { grid-area: stats;  }
+.char-grid > .section-equip  { grid-area: equip;  }
+.char-grid > .section-spells { grid-area: spells; }
+.char-grid > .section-inv    { grid-area: inv;    }
+
+/* Stats panel */
 .char-stats-panel {
   display: flex;
   flex-direction: column;
@@ -864,11 +881,17 @@ body {
 }
 .char-stats-panel .stat-line {
   display: grid;
-  grid-template-columns: 18px 1fr auto;
+  grid-template-columns: 26px 1fr auto;
   align-items: center;
-  gap: 6px;
-  padding: 2px 4px;
-  border-bottom: 1px dashed rgba(122,92,30,0.20);
+  gap: 8px;
+  padding: 3px 4px;
+  border-bottom: 1px dashed rgba(122,92,30,0.18);
+}
+.char-stats-panel .stat-line .ui-icon-md {
+  width: 22px; height: 22px;
+  background: rgba(20,12,4,0.55);
+  border-radius: 3px; padding: 2px;
+  border: 1px solid rgba(122,92,30,0.25);
 }
 .char-stats-panel .stat-label { color: #8a7050; font-size: 10px; letter-spacing: 0.3px; }
 .char-stats-panel .stat-value { color: var(--parchment); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -877,132 +900,187 @@ body {
   background: rgba(40,28,12,0.55);
   border: 1px solid rgba(201,168,76,0.30);
   border-radius: 4px;
-  padding: 6px 8px;
-  margin-bottom: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
   text-align: center;
   font-family: 'Cinzel',serif;
   color: var(--gold-light);
 }
 .char-stats-panel .level-banner .lvl { font-size: 13px; font-weight: 700; }
 .char-stats-panel .level-banner .xp-bar {
-  height: 5px;
+  height: 6px;
   background: rgba(20,12,4,0.6);
   border-radius: 3px;
   overflow: hidden;
-  margin-top: 4px;
-  border: 1px solid rgba(201,168,76,0.25);
+  margin-top: 6px;
+  border: 1px solid rgba(201,168,76,0.30);
 }
 .char-stats-panel .level-banner .xp-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold-light)); }
 
-/* Paper doll central — image perso encadrée de 11 slots positionnés. */
+/* Paper doll — flex column : main (3 cols) + bottom (wand/belt/trinket) + gold-banner */
 .paper-doll {
-  position: relative;
-  width: 100%;
-  min-height: 320px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: radial-gradient(ellipse at center, rgba(40,28,12,0.55), rgba(20,12,4,0.85));
   border: 1px solid rgba(122,92,30,0.40);
   border-radius: 6px;
+  overflow: hidden;
   padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
-.paper-doll .pd-portrait {
-  width: 180px;
-  height: 220px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+.paper-doll-main {
+  display: grid;
+  grid-template-columns: 50px auto 50px;
+  gap: 8px;
+  align-items: stretch;       /* stage = hauteur des 4 slots */
+  justify-content: center;
 }
-.paper-doll .gold-banner {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
+.paper-doll-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* Stage : hauteur dictée par les colonnes via align-items:stretch.
+   image en height:100% + width:auto → ratio carré préservé, plus
+   AUCUN vide vertical possible. */
+.paper-doll-stage {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 4px;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 25%, rgba(220,180,120,0.30), transparent 65%),
+    rgba(60,42,20,0.25);
+  font-size: 0; line-height: 0;
+}
+.paper-doll-stage .pd-portrait {
+  display: block;
+  height: 100%;
+  width: auto;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.75));
+}
+.paper-doll-bottom {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: linear-gradient(180deg, rgba(80,55,18,0.85), rgba(40,28,12,0.85));
-  border: 1px solid var(--gold-dark);
-  border-radius: 14px;
-  padding: 4px 12px;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 0;
+}
+.paper-doll .gold-banner {
+  align-self: center;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(80,55,18,0.95), rgba(40,28,12,0.95));
+  border: 1px solid var(--gold);
+  border-radius: 18px;
+  padding: 5px 22px;
   font-family: 'Cinzel',serif;
   color: var(--gold-light);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(240,208,128,0.4);
   white-space: nowrap;
 }
-.paper-doll .gold-banner img { width: 18px; height: 18px; }
+.paper-doll .gold-banner img { width: 16px; height: 16px; }
 
-/* 11 slots flottants positionnés en pixels. Tailles 44×44 sur desktop. */
+/* Slots — flex layout, plus de positionnement absolu (v2.18) */
 .equip-slot-floating {
-  position: absolute;
-  width: 44px;
-  height: 44px;
-  border: 1px solid rgba(201,168,76,0.45);
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border: 1px solid #2a1a08;
   border-radius: 4px;
-  background: rgba(20,12,4,0.75);
+  background: #0a0705;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: help;
   transition: border-color 0.15s, transform 0.15s;
+  flex-shrink: 0;
 }
-.equip-slot-floating:hover { border-color: var(--gold-light); transform: scale(1.06); }
-.equip-slot-floating.filled { background: rgba(60,42,20,0.85); border-color: var(--gold-dark); }
-.equip-slot-floating.filled.rarity-rare      { border-color: #4a8ad0; }
-.equip-slot-floating.filled.rarity-epic      { border-color: #a060d0; }
-.equip-slot-floating.filled.rarity-legendary { border-color: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.5); }
-.equip-slot-floating .ui-icon { width: 32px; height: 32px; opacity: 0.95; }
-.equip-slot-floating.empty .ui-icon { opacity: 0.30; }
+.equip-slot-floating:hover { border-color: var(--gold-light); transform: scale(1.06); z-index: 5; }
+.equip-slot-floating.filled { border-color: #4a3010; }
+.equip-slot-floating.filled.rarity-rare      { border-color: #4a8ad0; box-shadow: inset 0 0 0 1px rgba(74,138,208,0.25); }
+.equip-slot-floating.filled.rarity-epic      { border-color: #a060d0; box-shadow: inset 0 0 0 1px rgba(160,96,208,0.30); }
+.equip-slot-floating.filled.rarity-legendary { border-color: var(--gold); box-shadow: inset 0 0 0 1px rgba(201,168,76,0.45), 0 0 8px rgba(201,168,76,0.4); }
+.equip-slot-floating .ui-icon { width: 36px; height: 36px; opacity: 0.95; }
+.equip-slot-floating.empty .ui-icon { opacity: 0.35; filter: grayscale(70%); }
 
-/* Positions des 11 slots — référence layout 240×320. */
-.paper-doll .equip-slot-head    { top:   8px; left:  8px; }
-.paper-doll .equip-slot-body    { top:  62px; left:  8px; }
-.paper-doll .equip-slot-hands   { top: 116px; left:  8px; }
-.paper-doll .equip-slot-feet    { top: 170px; left:  8px; }
-.paper-doll .equip-slot-cloak   { top:   8px; right: 8px; }
-.paper-doll .equip-slot-amulet  { top:  62px; right: 8px; }
-.paper-doll .equip-slot-ring1   { top: 116px; right: 8px; }
-.paper-doll .equip-slot-ring2   { top: 170px; right: 8px; }
-.paper-doll .equip-slot-wand    { bottom: 56px; left:  8px; }
-.paper-doll .equip-slot-trinket { bottom: 56px; right: 8px; }
-.paper-doll .equip-slot-belt    { bottom: 56px; left: 50%; transform: translateX(-50%); }
-
-.char-spells-panel {
-  font-size: 11px;
-  color: var(--parchment-dark);
-  line-height: 1.6;
-}
+/* Sortilèges connus — badges PNG */
+.char-spells-panel { font-size: 11px; }
 .char-spells-panel .panel-title {
   font-family: 'Cinzel',serif;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--gold);
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
+  letter-spacing: 1.5px;
   text-align: center;
+  margin: 0 0 8px;
 }
-.char-spells-panel .spell-line {
-  padding: 3px 6px;
-  border-bottom: 1px dashed rgba(122,92,30,0.18);
+.spells-row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.spell-badge {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(40,28,12,0.65);
+  border: 1px solid var(--gold-dark);
+  border-radius: 14px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--parchment-dark);
 }
+.spell-badge .icon {
+  width: 22px; height: 22px;
+  background: #0a0705;
+  border: 1px solid #2a1a08;
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1px;
+}
+.spell-badge .icon img { width: 100%; height: 100%; object-fit: contain; }
 
-/* Mobile : 1 colonne, paper doll plus compact, slots en grille 4×3. */
+/* Sac intégré */
+.section-inv .panel-title {
+  font-family: 'Cinzel',serif;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 1.5px;
+  text-align: center;
+  margin: 0 0 8px;
+}
+.section-inv .inv-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 5px;
+}
+.section-inv .inv-slot {
+  aspect-ratio: 1/1;
+  background: #0a0705;
+  border: 1px solid #2a1a08;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.section-inv .inv-slot:hover { border-color: var(--gold-dark); }
+.section-inv .inv-slot.has-item { border-color: #4a3010; }
+.section-inv .inv-slot.rarity-rare      { border-color: #4a8ad0; }
+.section-inv .inv-slot.rarity-epic      { border-color: #a060d0; }
+.section-inv .inv-slot.rarity-legendary { border-color: var(--gold); }
+.section-inv .inv-slot .ui-icon { width: 28px; height: 28px; object-fit: contain; }
+
+/* Mobile : 1 colonne, paper-doll plus compact */
 @media (max-width: 700px) {
-  .char-modal-grid { grid-template-columns: 1fr; gap: 10px; }
-  .paper-doll { min-height: 280px; }
-  .paper-doll .pd-portrait { width: 140px; height: 180px; }
-  .paper-doll .equip-slot-floating { width: 38px; height: 38px; }
-  .paper-doll .equip-slot-floating .ui-icon { width: 28px; height: 28px; }
-  .paper-doll .equip-slot-head    { top:   6px; left:  6px; }
-  .paper-doll .equip-slot-body    { top:  50px; left:  6px; }
-  .paper-doll .equip-slot-hands   { top:  94px; left:  6px; }
-  .paper-doll .equip-slot-feet    { top: 138px; left:  6px; }
-  .paper-doll .equip-slot-cloak   { top:   6px; right: 6px; }
-  .paper-doll .equip-slot-amulet  { top:  50px; right: 6px; }
-  .paper-doll .equip-slot-ring1   { top:  94px; right: 6px; }
-  .paper-doll .equip-slot-ring2   { top: 138px; right: 6px; }
-  .paper-doll .equip-slot-wand    { bottom: 50px; left:  6px; }
-  .paper-doll .equip-slot-trinket { bottom: 50px; right: 6px; }
+  .char-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas: "stats" "equip" "spells" "inv";
+    gap: 8px;
+  }
+  .paper-doll-main { grid-template-columns: 44px auto 44px; }
+  .equip-slot-floating { width: 44px; height: 44px; }
+  .equip-slot-floating .ui-icon { width: 30px; height: 30px; }
+  .section-inv .inv-grid { grid-template-columns: repeat(6, 1fr); }
 }
 
 .spell-list { display: flex; flex-direction: column; gap: 6px; }
