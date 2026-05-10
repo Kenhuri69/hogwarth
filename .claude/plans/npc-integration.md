@@ -273,7 +273,7 @@ Décisions validées :
 - [x] **D.1** `tests/smoke.js` : nouveau scénario `scenarioIteration74` (T1 Ollivander wares + buyback wand 75% + wand2 absent SHOP_CATALOG, T2 Guipure bySlot 75%, T3 lore contextuel Dumbledore filtré par étage, T4 Fumseck heal+revive + cooldown + reset).
 - [x] **D.2** Bump cache-busting : `npcs.js v=6`, `state.js v=4`, `dungeon.js v=4`, `movement.js v=3`, `npc-dialog.js v=4`, `shop.js v=5`, `save.js v=4` dans `index.html`.
 - [x] **D.3** `node tests/smoke.js` 100% vert (29 scénarios).
-- [ ] **D.4** Commit + push sur `claude/seine-project-review-NX5o2`.
+- [x] **D.4** Commit + push sur `claude/seine-project-review-NX5o2` (commit `fbcc933`).
 
 ---
 
