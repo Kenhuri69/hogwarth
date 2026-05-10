@@ -22,12 +22,17 @@
 
 ## Workflow PNG via LLM image
 
+> **Style guide obligatoire** : [`IMG_STYLE.md`](./IMG_STYLE.md) — palette,
+> cadrage, prompts-types par catégorie, critères d'acceptation. À lire
+> avant de générer un nouveau PNG.
+
 Pour chaque entrée du bloc C ci-dessous :
-1. Claude fournit un prompt de génération (style HP, fond transparent, cadrage carré).
+1. Claude reprend le prompt-type adapté (cf. `IMG_STYLE.md` §8) et le complète
+   pour la créature visée.
 2. L'utilisateur colle l'image générée dans la conversation.
-3. Claude vérifie l'alpha, place le fichier dans `img/monsters/<id>.png`,
-   ajoute `imgSrc: "img/monsters/<id>.png"` dans la fiche du monstre dans `monsters.js`,
-   puis coche la case.
+3. Claude vérifie les critères d'acceptation (`IMG_STYLE.md` §9), place le
+   fichier dans `img/monsters/<id>.png`, ajoute `imgSrc: "img/monsters/<id>.png"`
+   dans la fiche du monstre dans `monsters.js`, puis coche la case.
 
 ---
 
