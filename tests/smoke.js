@@ -417,7 +417,8 @@ async function scenarioNpcIntegration() {
     floor4Count:     getNpcsForFloor(4).length
   }));
   console.log('  T1 registry:', t1);
-  assert(t1.npcCount === 8,              `attendu 8 PNJ, trouvé ${t1.npcCount}`);
+  // 8 PNJ fixes + 2 vendeurs ambulants ajoutés en itération 4 = 10 entrées.
+  assert(t1.npcCount >= 8,               `attendu ≥ 8 PNJ, trouvé ${t1.npcCount}`);
   assert(t1.hasGetById,                  'getNpcById absent');
   assert(t1.hasGetForFloor,              'getNpcsForFloor absent');
   assert(t1.cellNpc === 8,               'CELL.NPC doit valoir 8');
@@ -521,6 +522,195 @@ async function scenarioNpcIntegration() {
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
   console.log('  ✅ intégration PNJ conforme');
+  await browser.close();
+}
+
+// ── Scénario 3ter : vendeurs ambulants (random PNJ + boutique réduite) ─
+
+async function scenarioVendors() {
+  console.log('\n── Scénario 3ter : vendeurs ambulants ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helpers + entrées vendeur exposés
+  const t1 = await page.evaluate(() => {
+    const rosmerta  = getNpcById('rosmerta');
+    const mundungus = getNpcById('mundungus');
+    return {
+      hasGetVendorsForFloor: typeof getRandomVendorsForFloor === 'function',
+      hasOpenVendorShop:     typeof openVendorShop === 'function',
+      rosmertaExists:        !!rosmerta,
+      rosmertaIsRandom:      rosmerta && rosmerta.random === true,
+      rosmertaWaresLen:      rosmerta && Array.isArray(rosmerta.wares) ? rosmerta.wares.length : -1,
+      rosmertaNoQuests:      rosmerta && (!rosmerta.questsGiven || rosmerta.questsGiven.length === 0),
+      mundungusMinFloor:     mundungus && mundungus.minFloor,
+      poolFloor1Empty:       getRandomVendorsForFloor(1).length,
+      poolFloor2HasRosmerta: getRandomVendorsForFloor(2).some(n => n.id === 'rosmerta'),
+      poolFloor3HasMundungus: getRandomVendorsForFloor(3).some(n => n.id === 'mundungus')
+    };
+  });
+  console.log('  T1 registry:', t1);
+  assert(t1.hasGetVendorsForFloor,  'getRandomVendorsForFloor absent');
+  assert(t1.hasOpenVendorShop,      'openVendorShop absent');
+  assert(t1.rosmertaExists,         'PNJ rosmerta introuvable');
+  assert(t1.rosmertaIsRandom,       'rosmerta doit avoir random=true');
+  assert(t1.rosmertaWaresLen >= 4,  'rosmerta doit avoir au moins 4 articles');
+  assert(t1.rosmertaNoQuests,       'rosmerta ne doit pas donner de quête');
+  assert(t1.mundungusMinFloor === 3,'mundungus minFloor doit valoir 3');
+  assert(t1.poolFloor1Empty === 0,  'aucun vendeur ne doit être éligible étage 1');
+  assert(t1.poolFloor2HasRosmerta,  'rosmerta doit être éligible étage 2');
+  assert(t1.poolFloor3HasMundungus, 'mundungus doit être éligible étage 3');
+
+  // T2 : ouverture boutique + bouton dialogue
+  const t2 = await page.evaluate(() => {
+    // Force la présence d'un vendeur dans le donjon courant pour tester
+    // le pipeline dialogue → openVendorShop. seenNpcs pré-rempli pour
+    // sauter le greeting multi-page (idle = single page → actions visibles
+    // d'entrée).
+    npcPlacements.set('1,1', 'rosmerta');
+    seenNpcs.add('rosmerta');
+    openNpcDialog('rosmerta');
+    const actionsHtml = document.getElementById('npc-dialog-actions').innerHTML;
+    const hasShopBtn  = actionsHtml.includes('marchandises') ||
+                        actionsHtml.includes('boutique') ||
+                        actionsHtml.includes('Voir');
+    return { hasShopBtn, actionsHtml };
+  });
+  console.log('  T2 dialog:', { hasShopBtn: t2.hasShopBtn });
+  assert(t2.hasShopBtn, 'bouton boutique absent dans le dialogue vendeur');
+
+  // T3 : ouverture de la boutique vendeur affiche les wares
+  const t3 = await page.evaluate(() => {
+    closeNpcDialog();
+    openVendorShop('rosmerta');
+    const modal = document.getElementById('shop-modal');
+    const grid  = document.getElementById('shop-grid');
+    const title = document.getElementById('shop-title').textContent;
+    const itemIds = Array.from(grid.querySelectorAll('[data-item-id]'))
+      .map(el => el.getAttribute('data-item-id'));
+    return {
+      modalOpen: modal.style.display === 'flex',
+      title,
+      itemIds,
+      hasPotionS: itemIds.includes('potion_s'),
+      hasMandragore: itemIds.includes('mandragore')
+    };
+  });
+  console.log('  T3 shop open:', t3);
+  assert(t3.modalOpen,             'shop-modal non ouvert');
+  assert(t3.title.includes('Rosmerta'), 'titre boutique ne contient pas le nom du vendeur');
+  assert(t3.hasPotionS,            'potion_s absent du catalogue rosmerta');
+  assert(t3.hasMandragore,         'mandragore absent du catalogue rosmerta');
+
+  // T4 : achat depuis la boutique vendeur consomme l'or et ajoute l'item
+  const t4 = await page.evaluate(() => {
+    player.gold = 1000;
+    const goldBefore = player.gold;
+    const invBefore  = player.inventory.length;
+    const item = ITEMS.find(i => i.id === 'potion_s');
+    buyVendorItem(item, item.price, 'rosmerta');
+    return {
+      goldDelta: goldBefore - player.gold,
+      itemPrice: item.price,
+      invGrew:   player.inventory.length === invBefore + 1,
+      lastItem:  player.inventory[player.inventory.length - 1]?.id
+    };
+  });
+  console.log('  T4 buy:', t4);
+  assert(t4.goldDelta === t4.itemPrice, `or débité doit valoir ${t4.itemPrice}, got ${t4.goldDelta}`);
+  assert(t4.invGrew,                 'inventaire n\'a pas grandi après achat');
+  assert(t4.lastItem === 'potion_s', 'dernier item ajouté n\'est pas potion_s');
+
+  // T5 : onglets Acheter/Vendre — bascule + rendu sell + spécialisation
+  // buyback (Rosmerta paie 75% pour les consumables, 50% sinon).
+  const t5 = await page.evaluate(() => {
+    // Inventaire propre pour le test : 1 potion (consumable) + 1 wand (autre)
+    player.inventory = [
+      { ...ITEMS.find(i => i.id === 'potion_s') },
+      { ...ITEMS.find(i => i.id === 'wand1') }
+    ];
+    player.gold = 100;
+    openVendorShop('rosmerta');
+    const tabsBefore = document.getElementById('shop-tabs').innerHTML;
+    setShopMode('sell');
+    const tabsAfter = document.getElementById('shop-tabs').innerHTML;
+    const grid      = document.getElementById('shop-grid');
+    const items     = Array.from(grid.querySelectorAll('[data-inv-idx]'));
+    const labels    = items.map(el => el.querySelector('.shop-price').textContent);
+    const potionItem = ITEMS.find(i => i.id === 'potion_s');
+    const wandItem   = ITEMS.find(i => i.id === 'wand1');
+    return {
+      hasBuyTab:  tabsBefore.includes('Acheter'),
+      hasSellTab: tabsBefore.includes('Vendre'),
+      buyActiveBefore:  tabsBefore.includes('shop-tab active') && tabsBefore.indexOf('active') < tabsBefore.indexOf('Vendre'),
+      sellActiveAfter:  tabsAfter.includes('Vendre</button>'),
+      sellGridCount:    items.length,
+      sellLabels:       labels,
+      potionType:       potionItem.type,
+      potionPrice:      potionItem.price,
+      wandPrice:        wandItem.price,
+      potionExpected:   '+' + Math.max(1, Math.floor(potionItem.price * 0.75)) + 'G',
+      wandExpected:     '+' + Math.max(1, Math.floor(wandItem.price * 0.50)) + 'G'
+    };
+  });
+  console.log('  T5 sell tab:', t5);
+  assert(t5.hasBuyTab,            'onglet Acheter absent');
+  assert(t5.hasSellTab,           'onglet Vendre absent');
+  assert(t5.sellGridCount === 2,  `2 items vendables attendus, got ${t5.sellGridCount}`);
+  assert(t5.potionType === 'consumable', 'potion_s.type doit être consumable');
+  assert(t5.sellLabels.includes(t5.potionExpected),
+    `prix vente potion_s attendu ${t5.potionExpected} (75%), got ${t5.sellLabels.join(',')}`);
+  assert(t5.sellLabels.includes(t5.wandExpected),
+    `prix vente wand1 attendu ${t5.wandExpected} (50%), got ${t5.sellLabels.join(',')}`);
+
+  // T6 : sellItem débite l'inventaire et crédite l'or
+  const t6 = await page.evaluate(() => {
+    const goldBefore = player.gold;
+    const invBefore  = player.inventory.length;
+    // Vend l'item à l'index 0 (potion_s, prix attendu 75% du price)
+    const potion = player.inventory[0];
+    const sellPrice = Math.max(1, Math.floor(potion.price * 0.75));
+    sellItem(0, sellPrice);
+    return {
+      goldDelta:  player.gold - goldBefore,
+      sellPrice,
+      invShrunk:  player.inventory.length === invBefore - 1,
+      potionGone: !player.inventory.some(i => i.id === 'potion_s')
+    };
+  });
+  console.log('  T6 sell action:', t6);
+  assert(t6.goldDelta === t6.sellPrice, `or crédité ${t6.sellPrice}, got ${t6.goldDelta}`);
+  assert(t6.invShrunk,    'inventaire n\'a pas rétréci');
+  assert(t6.potionGone,   'potion_s toujours présente');
+
+  // T7 : politique vendor-spécifique — Mondingus paie 75% sur rare/epic/legendary
+  const t7 = await page.evaluate(() => {
+    // wand2 est legendary dans ITEMS ? Cherchons un item rare/epic/legendary.
+    const rareItem = ITEMS.find(i => i.rarity === 'epic' || i.rarity === 'legendary' || i.rarity === 'rare');
+    if (!rareItem) return { skipped: true };
+    player.inventory = [{ ...rareItem }];
+    openVendorShop('mundungus');
+    setShopMode('sell');
+    const grid = document.getElementById('shop-grid');
+    const label = grid.querySelector('.shop-price')?.textContent;
+    return {
+      itemId:    rareItem.id,
+      rarity:    rareItem.rarity,
+      label,
+      expected:  '+' + Math.max(1, Math.floor(rareItem.price * 0.75)) + 'G'
+    };
+  });
+  console.log('  T7 vendor specialization:', t7);
+  if (!t7.skipped) {
+    assert(t7.label === t7.expected,
+      `Mondingus doit payer ${t7.expected} pour ${t7.itemId} (${t7.rarity}), got ${t7.label}`);
+  }
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ vendeurs ambulants + onglet Vendre conformes');
   await browser.close();
 }
 
@@ -2323,7 +2513,7 @@ async function scenarioTintCss() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
   for (const s of scenarios) {
     await s();
   }

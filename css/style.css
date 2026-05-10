@@ -909,6 +909,31 @@ body {
 .lvl-sub { font-family: 'Cinzel', serif; font-size: 16px; color: var(--parchment); margin-top: 8px; }
 
 /* Shop */
+.shop-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--gold-dark);
+}
+.shop-tab {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  padding: 8px 18px;
+  background: transparent;
+  border: 1px solid var(--gold-dark);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  color: var(--gold-dark);
+  cursor: pointer;
+  letter-spacing: 1.5px;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.shop-tab:hover { color: var(--gold-light); }
+.shop-tab.active {
+  background: rgba(60,40,15,0.5);
+  border-color: var(--gold);
+  color: var(--gold);
+}
 .shop-grid { display: flex; flex-direction: column; gap: 6px; }
 .shop-item {
   background: #0a0705; border: 1px solid #2a1a08; border-radius: 4px;
