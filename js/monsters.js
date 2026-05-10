@@ -380,6 +380,7 @@ const MONSTERS = [
     id:       "homme_araignee",
     name:     "Homme-Araignée Acromantule",
     icon:     "🕸️",
+    imgSrc:   "img/monsters/homme_araignee.png",
     category: "créature",
     desc:     "Un chasseur à mi-chemin entre l'humain et l'araignée géante surgit de l'obscurité",
     lore:     "Né d'une expérience magique interdite, cet hybride possède la ruse d'un sorcier et la cruauté d'une araignée. Il tisse des pièges dans les couloirs.",
