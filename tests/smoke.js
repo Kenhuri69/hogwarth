@@ -1677,7 +1677,12 @@ async function scenarioItemIcons() {
   });
   console.log('  T3 boutique →', t3);
   assert(t3.length >= 3,                                  `shop doit avoir au moins 3 items, vu ${t3.length}`);
-  assert(t3.every(s => /items\/[a-z0-9_]+\.png$/.test(s)),   'tous les items shop doivent pointer img/icons/items/');
+  // Accepte soit un PNG dédié (img/icons/items/*.png), soit un fallback
+  // slot générique (img/icons/{accessory,armor,wand,spellbook}.png) pour
+  // les items Phase 3 du plan extended dont le sprite dédié arrivera en
+  // Phase 4. Voir .claude/plans/equipment-extended.md §3.5 / §7.
+  const validShopSrc = /(items\/[a-z0-9_]+|(?:accessory|armor|wand|spellbook))\.png$/;
+  assert(t3.every(s => validShopSrc.test(s)), 'tous les items shop doivent pointer un PNG (dédié ou slot)');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
@@ -1844,8 +1849,132 @@ async function scenarioExtendedEquipment() {
   await browser.close();
 }
 
+// ── Scénario 23 : Phase 3 — catalogue items + boutique + drops + coffres ──
+
+async function scenarioPhase3Catalog() {
+  console.log('\n── Scénario 23 : Phase 3 — catalogue items + drops + coffres ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : nouveaux items définis avec slot/family/rarity
+  const t1 = await page.evaluate(() => {
+    const ids = ['gants_apprenti','bottes_apprenti','chapeau_apprenti','ceinture_cuir',
+                 'anneau_argent','cape_voyageur','amulette_protection',
+                 'circlet_serdaigle','anneau_runique','ceinture_alchimiste',
+                 'bottes_dragon','retourneur_temps'];
+    return ids.map(id => {
+      const it = ITEMS.find(i => i.id === id);
+      return it ? { id, slot: it.slot, family: it.family, rarity: it.rarity } : { id, missing: true };
+    });
+  });
+  console.log('  T1 nouveaux items →', t1.length, 'items');
+  assert(t1.every(x => !x.missing), `tous les nouveaux items doivent exister, manquant: ${t1.filter(x=>x.missing).map(x=>x.id)}`);
+  assert(t1.every(x => x.slot && x.family && x.rarity),
+         'chaque nouvel item doit avoir slot+family+rarity');
+
+  // T2 : backfill rarity sur items legacy
+  const t2 = await page.evaluate(() => ({
+    wand1:        ITEMS.find(i => i.id === 'wand1').rarity,
+    amulette:     ITEMS.find(i => i.id === 'amulette').rarity,
+    cape_invis:   ITEMS.find(i => i.id === 'cape_invis').rarity,
+    sword_gryff:  ITEMS.find(i => i.id === 'sword_gryff').rarity,
+    diademe:      ITEMS.find(i => i.id === 'diademe_serdaigle').rarity
+  }));
+  console.log('  T2 rarity backfill →', t2);
+  assert(t2.wand1 === 'common',     `wand1 doit être common, got ${t2.wand1}`);
+  assert(t2.amulette === 'epic',    `amulette doit être epic, got ${t2.amulette}`);
+  assert(t2.sword_gryff === 'legendary', `sword_gryff doit être legendary`);
+
+  // T3 : SHOP_CATALOG a bien les nouveaux items aux bons étages
+  const t3 = await page.evaluate(() => {
+    const find = id => SHOP_CATALOG.find(e => e.id === id);
+    return {
+      gants:   find('gants_apprenti'),
+      bottes:  find('bottes_apprenti'),
+      anneau:  find('anneau_argent'),
+      circlet: find('circlet_serdaigle'),
+      timer:   find('retourneur_temps')
+    };
+  });
+  console.log('  T3 catalog →', t3);
+  assert(t3.gants && t3.gants.minFloor === 1,    'gants_apprenti doit être étage 1');
+  assert(t3.anneau && t3.anneau.minFloor === 2,  'anneau_argent doit être étage 2');
+  assert(t3.circlet && t3.circlet.minFloor === 5,'circlet_serdaigle doit être étage 5');
+  assert(t3.timer && t3.timer.minFloor === 7,    'retourneur_temps doit être étage 7');
+
+  // T4 : pickChestEquipment exclut les légendaires et respecte le seuil étage
+  const t4 = await page.evaluate(() => {
+    const counts = { common: 0, rare: 0, epic: 0, legendary: 0, total: 0 };
+    let saw_circlet = false, saw_timer = false;
+    for (let i = 0; i < 600; i++) {
+      const it = pickChestEquipment(1);
+      if (!it) continue;
+      counts[it.rarity || 'common']++;
+      counts.total++;
+    }
+    // À étage 7 : peut tirer epic, jamais legendary
+    const counts7 = { common: 0, rare: 0, epic: 0, legendary: 0 };
+    for (let i = 0; i < 600; i++) {
+      const it = pickChestEquipment(7);
+      if (!it) continue;
+      counts7[it.rarity || 'common']++;
+      if (it.id === 'circlet_serdaigle') saw_circlet = true;
+      if (it.id === 'retourneur_temps')  saw_timer   = true;
+    }
+    return { counts, counts7, saw_circlet, saw_timer };
+  });
+  console.log('  T4 pickChestEquipment →', t4);
+  assert(t4.counts.legendary === 0,        'aucun legendary à étage 1');
+  assert(t4.counts.rare === 0,             'aucun rare à étage 1 (seuil étage 4)');
+  assert(t4.counts.common > 0,             'au moins quelques common à étage 1');
+  assert(t4.counts7.legendary === 0,       'aucun legendary à étage 7');
+  assert(t4.counts7.epic > 0,              'au moins quelques epic à étage 7');
+
+  // T5 : drops étendus sur les monstres ciblés
+  const t5 = await page.evaluate(() => {
+    const dropsOf = id => {
+      const m = MONSTERS.find(x => x.id === id);
+      return m ? m.drops.map(d => d.itemId) : [];
+    };
+    return {
+      gobelin:   dropsOf('gobelin'),
+      bundimun:  dropsOf('bundimun'),
+      centaure:  dropsOf('centaure'),
+      mangemort: dropsOf('mangemort'),
+      bellatrix: dropsOf('bellatrix'),
+      voldemort: dropsOf('voldemort_revenu')
+    };
+  });
+  console.log('  T5 drops →', t5);
+  assert(t5.gobelin.includes('ceinture_cuir'),         'gobelin → ceinture_cuir');
+  assert(t5.bundimun.includes('bottes_apprenti'),      'bundimun → bottes_apprenti');
+  assert(t5.centaure.includes('anneau_argent'),        'centaure → anneau_argent');
+  assert(t5.mangemort.includes('cape_voyageur'),       'mangemort → cape_voyageur');
+  assert(t5.bellatrix.includes('anneau_runique'),      'bellatrix → anneau_runique');
+  assert(t5.voldemort.includes('retourneur_temps'),    'voldemort → retourneur_temps');
+
+  // T6 : ouverture boutique étage 1 → nouveaux items présents
+  const t6 = await page.evaluate(() => {
+    currentFloor = 1;
+    openShop();
+    const ids = Array.from(document.querySelectorAll('#shop-grid .shop-item'))
+      .map(el => el.dataset.itemId);
+    return ids;
+  });
+  console.log('  T6 boutique étage 1 →', t6);
+  assert(t6.includes('gants_apprenti'),  'boutique étage 1 doit lister gants_apprenti');
+  assert(t6.includes('bottes_apprenti'), 'boutique étage 1 doit lister bottes_apprenti');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ catalogue Phase 3 + drops + coffres + boutique progressive');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog];
   for (const s of scenarios) {
     await s();
   }

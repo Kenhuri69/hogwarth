@@ -259,12 +259,20 @@ function openChest() {
     }
 
   } else if (roll < 0.90 || !hasBook) {
-    // Équipement (wand / armor / acc)
-    const gear = ITEMS.filter(i => ['wand','armor','acc'].includes(i.type));
-    const item  = gear[Math.floor(Math.random() * gear.length)];
-    if (tryAddItem(item, { silent: true })) {
+    // Équipement — pondéré par rareté et filtré par étage. Voir
+    // pickChestEquipment() dans data.js et plan §3.5.
+    const item = (typeof pickChestEquipment === 'function')
+      ? pickChestEquipment(currentFloor || 1)
+      : null;
+    if (item && tryAddItem(item, { silent: true })) {
       setNarrative(NARRATIVES.item_found(item.name));
       addMsg(`Obtenu : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name}`, 'good');
+    } else if (!item) {
+      // Aucun équipement éligible pour cet étage — repli sur or
+      const gold = Math.floor(Math.random() * 30 + 10) * (currentFloor || 1);
+      player.gold += gold;
+      addMsg(`Coffre vide… mais +${gold} Gallions cachés au fond`, 'good');
+      updateUI();
     }
 
   } else {

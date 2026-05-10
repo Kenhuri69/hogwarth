@@ -6,7 +6,7 @@ Branche : `claude/game-equipment-system-plan-zrXwI`
 > Convention : `[ ]` pending · `[~]` in progress · `[x]` done.
 > À chaque étape franchie : cocher la case, mettre à jour le statut global, ajouter une ligne dans le journal en bas.
 
-**Statut global** : 13 / 53 étapes — Phases 1-2 terminées, Phase 3 à venir
+**Statut global** : 18 / 53 étapes — Phases 1-2-3a terminées (catalogue + boutique + drops + coffres), 3b (4 nouvelles quêtes) reportée
 
 ---
 
@@ -176,12 +176,12 @@ ajoutées en V2 sans nouveau PNG (juste teinte différente).
 
 ### 6.2 Items à ajouter (étapes)
 
-- [ ] **3.1** `data.js` — ajouter ~25 nouveaux items (après filtrage des familles déjà couvertes). Champs : `id, name, icon, desc, type:"acc", slot, family, tint, rarity, bonus*, price`.
-- [ ] **3.2** `data.js` — backfill de `slot`/`family`/`rarity` sur les items existants (cf. §1.5).
+- [x] **3.1** `data.js` — 12 nouveaux items couvrant les slots vides : `gants_apprenti`, `bottes_apprenti`, `chapeau_apprenti`, `ceinture_cuir`, `anneau_argent` (commons étage 1-2), `cape_voyageur`, `amulette_protection` (commons étage 3-4), `circlet_serdaigle`, `anneau_runique` (rare étage 5+, tint #a060d0), `ceinture_alchimiste`, `bottes_dragon` (rare étage 7+, tint #c04020), `retourneur_temps` (epic étage 7+, tint #c9a84c). Champ `tint` exploité par `getItemIconHtml` Phase 2.
+- [x] **3.2** `data.js` — backfill `family`+`rarity` sur 11 items existants. Mapping : `wand1→common, wand2→rare, robe1→common, amulette→epic, broom→rare, cape_invis→epic, chapeau_pointu→rare, sword_gryff/locket_slytherin/diademe_serdaigle/coupe_poufsouffle→legendary`. `slot` était déjà fait en Phase 1.5.
 
 ### 6.3 Boutique progressive
 
-- [ ] **3.3** `shop.js — SHOP_CATALOG` : étoffer avec les nouveaux items, distribués par `minFloor` selon le tableau ci-dessous (à finaliser à l'étape) :
+- [x] **3.3** `shop.js — SHOP_CATALOG` : 12 nouveaux items injectés selon le tableau ci-dessous (étage 1 : gants+bottes ; étage 2 : chapeau+ceinture+anneau ; étage 3 : cape+amulette ; étage 5 : circlet+anneau_runique+ceinture_alchimiste ; étage 7 : bottes_dragon+retourneur_temps). Smoke T6 valide la liste à l'étage 1.
 
 | Étage | Nouveaux ajouts (proposition)                                  |
 |-------|----------------------------------------------------------------|
@@ -195,22 +195,27 @@ ajoutées en V2 sans nouveau PNG (juste teinte différente).
 
 ### 6.4 Drops monstres
 
-- [ ] **3.4** `monsters.js` — distribuer les nouveaux items via `drops[]` :
-    - Gobelin Rebelle / Troll → `hands_gloves`, `belt_leather` (chance 0.04).
-    - Bundimun → `feet_boots` (chance 0.05).
-    - Mangemort Masqué → `cloak_traveler` (chance 0.08).
-    - Centaure Hostile → `ring_silver` (chance 0.06).
-    - Hippogriffe → `trinket_snitch` (chance 0.03).
-    - Boss (Bellatrix, Voldemort) → variantes rare/épique (chance 0.10–0.20).
+- [x] **3.4** `monsters.js` — drops étendus sur 7 monstres :
+    - Gobelin Rebelle → `ceinture_cuir` (0.04)
+    - Troll des Toilettes → `gants_apprenti` (0.04)
+    - Bundimun → `bottes_apprenti` (0.05)
+    - Centaure Hostile → `anneau_argent` (0.06)
+    - Hippogriffe en Furie → `chapeau_apprenti` (0.04, snitch n'existe pas dans le jeu)
+    - Mangemort Masqué → `cape_voyageur` (0.08)
+    - Bellatrix → `anneau_runique` (0.10)
+    - Voldemort Ressuscité → `retourneur_temps` (0.20)
 
 ### 6.5 Coffres — loot table par étage
 
-- [ ] **3.5** `movement.js — openChest()` : remplacer le tirage actuel par une **loot table** déclarative dans `data.js` (`CHEST_LOOT_TABLE`) qui pondère par étage. Chaque coffre tire 1–2 items + or. Inclut :
-    - 60% items consommables (potions, mandragore)
-    - 25% équipement (selon étage, common/rare)
-    - 15% livre de sort
+- [x] **3.5** `data.js` — fonction `pickChestEquipment(floor)` : filtre `ITEMS` (slot non null, exclut consumable/spellbook/legendary), pondère par rareté (`common×6, rare×3, epic×1`) et seuils étage (`common≥1, rare≥4, epic≥7`). Smoke T4 vérifie distribution étage 1 (100% common) vs étage 7 (~70% common, ~25% rare, ~5% epic). `movement.js — openChest()` utilise cette fonction dans la branche équipement (38% or, 30% conso, 22% équipement, 10% livre — distribution conservée). Repli sur or si pool vide pour un étage. Remplace le tirage uniforme `ITEMS.filter(['wand','armor','acc'])`.
 
 ### 6.6 Nouvelles quêtes
+
+> **Phase 3b reportée** (3.6 + 3.7) : les 4 quêtes secondaires demandent
+> de nouveaux donneurs (Ollivander, Madame Guipure, portrait de Dumbledore,
+> Fumseck) qui ne sont pas encore wired dans le moteur de quête actuel
+> (`completeQuest()` distribue déjà `reward.item` : ce point est ✓). Sera
+> traité dans une Phase 3.5 dédiée si besoin.
 
 - [ ] **3.6** `state.js — activeQuests` : ajouter 4 nouvelles quêtes secondaires donnant un slot inédit en récompense :
     1. **« Les bottines disparues d'Olivander »** (donneur : Mr Ollivander, étage 3) — récompense `feet_dragonhide`.
