@@ -1,8 +1,8 @@
 # Plan d'amélioration des SVG / Visuels
 
-> **Branche dédiée actuelle** : `claude/continue-svg-work-v6BEc`
-> (anciennes branches : `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 23 / 76 tâches terminées (+ C44 fontaine)
+> **Branche dédiée actuelle** : `claude/resume-svg-work-rgOvm`
+> (anciennes branches : `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
+> **Statut global** : 35 / 76 tâches terminées (+ C44 fontaine)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -100,22 +100,22 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C10** `peeves`
 - [x] **C11** `myrtle`
 - [x] **C12** `serpent_cachot`
-- [ ] **C13** `gobelin`
-- [ ] **C14** `troll`
-- [ ] **C15** `troll_grotte`
-- [ ] **C16** `bundimun`
-- [ ] **C17** `meduse_noire`
-- [ ] **C18** `homme_araignee`
-- [ ] **C19** `portrait_hostile`
-- [ ] **C20** `centaure`
-- [ ] **C21** `detraqueur`
-- [ ] **C22** `loup_garou`
-- [ ] **C23** `inferius`
+- [x] **C13** `gobelin`
+- [x] **C14** `troll`
+- [x] **C15** `troll_grotte`
+- [x] **C16** `bundimun`
+- [x] **C17** `meduse_noire`
+- [x] **C18** `homme_araignee`
+- [x] **C19** `portrait_hostile`
+- [x] **C20** `centaure`
+- [x] **C21** `detraqueur`
+- [x] **C22** `loup_garou`
+- [x] **C23** `inferius`
 - [ ] **C24** `mangemort`
 - [ ] **C25** `mangemort_masque`
 - [ ] **C26** `mangemort_elite`
 - [ ] **C27** `sorcier_renegat`
-- [ ] **C28** `boggart`
+- [x] **C28** `boggart`
 - [ ] **C29** `chimere`
 - [ ] **C30** `ombre_quirrell`
 
@@ -204,3 +204,15 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #17 | C12 serpent_cachot intégré (birefnet-general) | Serpent vert émeraude/noir en S-pose, gueule ouverte, langue bifide, brume verte ; détourage propre y compris la queue fine |
 | 2026-05-09 | #18 | Bloc A complet (A1-A6) terminé | Plan dédié `.claude/plans/bloc-A.md` ; ordre A3→A1→A2→A4→A5→A6 ; `<defs>` partagés (`shadeRadial`, `halo`, `mist`, `glow`) injectés une fois via `_ensureMonsterDefs()` ; 5 fallback de catégorie redessinés ; couleurs base/variantes plus contrastées ; 4 SVG d'objets enrichis (gradients, rivets, lumière chaude) ; animations CSS `monsterFloat`/`monsterPulseAura` (data-cat) + SMIL scintillement coffre + media `prefers-reduced-motion` ; 4 nouveaux ornements (séparateur fin, cadre parchemin, bouton-volute, badge-rune) |
 | 2026-05-09 | #19 | Salle fontaine (feature connexe) | `CELL.FOUNTAIN=7` ; génération forcée aux étages 2/5/8/… ; SVG fontaine de pierre Poudlard (statue chouette, jet animé SMIL, cabochons or) ; `useFountain()` 100% PV+PM groupe, 1×/visite, ré-active à la rentrée ; persistance via `usedFountains` (Set) dans save ; marqueur canvas + tuile minimap bleue ; `.claude/plans/fountain.md` ; smoke test mis à jour |
+| 2026-05-09 | #20 | Reprise sur branche `claude/resume-svg-work-rgOvm` ; C13 gobelin intégré (birefnet-general) | Sabre courbe gravé runique + manteau bourgogne déchiré + gauntlets en cuir préservés ; alpha propre y compris la lame translucide verte et les longs doigts griffus |
+| 2026-05-09 | #21 | C14 troll intégré (birefnet-general) | Troll des Toilettes hunchback, club en bois cerclé de fer levé, peau grise verruqueuse, pagne en peaux ; alpha conserve le club, la corde de peau et les bouts de loincloth |
+| 2026-05-09 | #22 | C15 troll_grotte intégré (birefnet-general) | Troll des Cavernes massif, marteau de pierre brandi à deux mains, peau gris-bleu calcifiée, kilt de fourrure orné d'un crâne et de trophées d'os ; prompt ramené sous 2000 caractères à la demande |
+| 2026-05-09 | #23 | C16 bundimun intégré (birefnet-general, source webp) | Masse fongique avec tiges oculaires multiples, mâchoire baveuse, pattes araignée et coulures de sécrétion verte luminescente ; pipeline étendu pour accepter les sources webp via PIL convert("RGBA") |
+| 2026-05-09 | #24 | C17 meduse_noire intégrée (birefnet-general, source jpg sur fond forêt) | Sorcière à chapeau pointu, peau craquelée, serpents enroulés autour du chapeau et de la main, collier de crânes ; détourage propre malgré le fond non-noir |
+| 2026-05-10 | #25 | C18 homme_araignee intégré (birefnet-general) | Hybride humain-araignée gaunt, 8 pattes, robe sorcier déchirée, fils de toile préservés ; visuellement plus humain que C09 acromantula_jeune |
+| 2026-05-10 | #26 | C19 portrait_hostile intégré (birefnet-general) | Cadre baroque doré incliné, noble en perruque hurlant, main jaillissant de la toile avec aura magique verte ; alpha conserve les arêtes du cadre et les éclairs énergétiques |
+| 2026-05-10 | #27 | C20 centaure intégré (birefnet-general) | Centaure guerrier robe bai pommelé, arc bandé, flèche prête, marques tribales charcoal ; queue, crinière et carquois préservés |
+| 2026-05-10 | #28 | C21 detraqueur intégré (birefnet-general) | Détraqueur lambda flottant, capuche, mains squelettiques, lambeaux de tissu fins préservés ; visuellement distinct du C34 detraqueur_gardien (futur re-gen) |
+| 2026-05-10 | #29 | C22 loup_garou intégré (birefnet-general) | Hybride homme-loup hunché en course, mâchoire ouverte avec crocs et salive, restes de pantalon humain déchiré ; pelage hérissé et griffes courbes préservés |
+| 2026-05-10 | #30 | C23 inferius intégré (birefnet-general) | Cadavre noyé réanimé, peau gris-bleu translucide, yeux laiteux, linceul effiloché trempé ; coulures d'eau et lambeaux préservés |
+| 2026-05-10 | #31 | C28 boggart intégré (birefnet-general, source fond blanc) | Épouvantard en transformation araignée hairy, volutes de fumée et visages fantomatiques émergeants ; prompt "transformation incomplete" pour figer une silhouette lisible ; PNG nommé `boggart.png` (id du monstre, pas son nom français) ; saute en avant dans la liste — C24-C27 mangemorts/sorcier_renegat à faire ensuite |
