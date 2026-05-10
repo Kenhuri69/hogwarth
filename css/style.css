@@ -664,18 +664,20 @@ body {
 }
 #npc-dialog-overlay[style*="flex"] { display: flex !important; }
 .npc-dialog-header {
-  display: flex; align-items: center; gap: 14px;
-  max-width: 380px;
+  display: flex; align-items: center; gap: 18px;
+  max-width: 520px;
 }
 .npc-dialog-portrait {
-  width: 64px; height: 64px;
+  /* Desktop par défaut : portrait large pour bien voir le PNJ.
+     Mobile (≤ 700px) : downscaled à 64px via media query plus bas. */
+  width: 128px; height: 128px;
   border: 1.5px solid var(--gold);
   border-radius: 6px;
   background: #1a0f05;
   display: flex; align-items: center; justify-content: center;
-  font-size: 36px;
+  font-size: 64px;
   flex-shrink: 0;
-  box-shadow: 0 0 12px rgba(201,168,76,0.25);
+  box-shadow: 0 0 16px rgba(201,168,76,0.3);
   overflow: hidden;
 }
 .npc-dialog-portrait svg { width: 100%; height: 100%; }
@@ -1776,28 +1778,30 @@ body {
 
 .intro-card {
   width: 100%;
-  max-width: 540px;
+  max-width: 660px;
   background: linear-gradient(180deg, #1a0f05 0%, #0d0705 100%);
   border: 2px solid var(--gold);
   border-radius: 6px;
-  padding: 28px 26px;
+  padding: 32px 30px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   box-shadow: 0 0 40px rgba(201,168,76,0.20),
               0 0 0 1px rgba(201,168,76,0.05) inset;
 }
-.intro-header { display: flex; align-items: center; gap: 16px; }
+.intro-header { display: flex; align-items: center; gap: 22px; }
 .intro-portrait {
-  width: 96px; height: 96px;
+  /* Desktop par défaut : portrait large pour bien voir le PNJ guide.
+     Mobile (≤ 700px) : downscaled à 96px via media query plus bas. */
+  width: 180px; height: 180px;
   border: 2px solid var(--gold);
   border-radius: 6px;
   background: #1a0f05;
   flex-shrink: 0;
   overflow: hidden;
   display: flex; align-items: center; justify-content: center;
-  font-size: 56px;
-  box-shadow: 0 0 18px rgba(201,168,76,0.35);
+  font-size: 100px;
+  box-shadow: 0 0 22px rgba(201,168,76,0.4);
 }
 .intro-portrait .intro-portrait-img {
   width: 100%; height: 100%; object-fit: cover; display: block;
@@ -1837,3 +1841,14 @@ body {
   display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
 }
 .intro-actions .explore-btn { font-size: 14px; padding: 11px 24px; }
+
+/* Override mobile pour les portraits PNJ : on réduit en dessous de 700px
+   pour rester lisible sans casser la mise en page (l'utilisateur trouve
+   les tailles desktop trop importantes sur mobile). */
+@media (max-width: 700px) {
+  .npc-dialog-portrait { width: 64px; height: 64px; font-size: 36px; }
+  .npc-dialog-header   { gap: 14px; max-width: 380px; }
+  .intro-portrait      { width: 96px; height: 96px; font-size: 56px; }
+  .intro-header        { gap: 16px; }
+  .intro-card          { max-width: 540px; padding: 28px 26px; gap: 18px; }
+}
