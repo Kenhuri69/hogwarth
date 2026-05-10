@@ -215,8 +215,8 @@ body {
 }
 .paper-doll .pd-portrait{
   width:100%; height:100%;
-  object-fit:contain;
-  object-position:center bottom;
+  object-fit:cover;             /* cover au lieu de contain : remplit la zone */
+  object-position:center top;   /* on prend le haut (tête + buste), on perd le bas */
   filter:drop-shadow(0 8px 22px rgba(0,0,0,0.75));
 }
 /* Socle / podium subtil sous le perso */
