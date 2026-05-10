@@ -714,6 +714,148 @@ async function scenarioVendors() {
   await browser.close();
 }
 
+// ── Scénario 3quater : chaînes de quêtes + quête répétable (Hagrid) ───
+
+async function scenarioChainAndRepeatable() {
+  console.log('\n── Scénario 3quater : Hagrid — chaîne + répétable ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : registre QUEST_TEMPLATES contient defense_cabane et chouette_perdue.repeatable
+  const t1 = await page.evaluate(() => {
+    const chouette = QUEST_TEMPLATES.find(t => t.id === 'chouette_perdue');
+    const cabane   = QUEST_TEMPLATES.find(t => t.id === 'defense_cabane');
+    const hagrid   = NPCS.find(n => n.id === 'hagrid');
+    return {
+      chouetteRepeatable: !!(chouette && chouette.repeatable && chouette.repeatable.everyLevels),
+      everyLevels:        chouette?.repeatable?.everyLevels,
+      cabaneExists:       !!cabane,
+      hagridGivesBoth:    JSON.stringify(hagrid?.questsGiven),
+      hagridDialoguesByQuest: !!hagrid?.dialoguesByQuest?.defense_cabane,
+      hasIsQuestOfferable: typeof isQuestOfferable === 'function',
+      lastQuestCompletionInit: JSON.stringify(lastQuestCompletion)
+    };
+  });
+  console.log('  T1 registry:', t1);
+  assert(t1.chouetteRepeatable,                 'chouette_perdue n\'est pas marquée repeatable');
+  assert(t1.everyLevels === 3,                  'cooldown attendu 3 niveaux');
+  assert(t1.cabaneExists,                       'defense_cabane absent du catalogue');
+  assert(t1.hagridGivesBoth.includes('chouette_perdue') && t1.hagridGivesBoth.includes('defense_cabane'),
+                                                'Hagrid n\'a pas la chaîne questsGiven');
+  assert(t1.hagridDialoguesByQuest,             'Hagrid n\'a pas dialoguesByQuest pour defense_cabane');
+  assert(t1.hasIsQuestOfferable,                'isQuestOfferable non exposée');
+  assert(t1.lastQuestCompletionInit === '{}',   'lastQuestCompletion doit démarrer vide');
+
+  // T2 : avant tout, état Hagrid = offer (chouette en 1ère)
+  const t2 = await page.evaluate(() => {
+    const hagrid = NPCS.find(n => n.id === 'hagrid');
+    return {
+      state:    getNpcQuestState(hagrid),
+      currentQ: _currentQuestForState(hagrid, 'offer')
+    };
+  });
+  console.log('  T2 initial state:', t2);
+  assert(t2.state    === 'offer',           `Hagrid initial doit être 'offer', got ${t2.state}`);
+  assert(t2.currentQ === 'chouette_perdue', `Quête courante doit être chouette_perdue, got ${t2.currentQ}`);
+
+  // T3 : accepter + remettre la 1ère quête → chaîne avance vers defense_cabane
+  const t3 = await page.evaluate(() => {
+    const hagrid = NPCS.find(n => n.id === 'hagrid');
+    acceptQuest('chouette_perdue');
+    // Bypass de l'objectif : on coche directement
+    const q = activeQuests.find(x => x.id === 'chouette_perdue');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    turnInQuestById('chouette_perdue');
+    const stateAfter   = getNpcQuestState(hagrid);
+    const currentAfter = _currentQuestForState(hagrid, stateAfter);
+    return {
+      chouetteCompleted: completedQuests.has('chouette_perdue'),
+      chouetteLastLevel: lastQuestCompletion['chouette_perdue'],
+      stateAfter,
+      currentAfter,
+      cabaneOfferable:   isQuestOfferable('defense_cabane'),
+      chouetteOfferableNow: isQuestOfferable('chouette_perdue')
+    };
+  });
+  console.log('  T3 after first quest:', t3);
+  assert(t3.chouetteCompleted,           'chouette_perdue doit être marquée completed');
+  assert(typeof t3.chouetteLastLevel === 'number', 'lastQuestCompletion doit enregistrer le niveau');
+  assert(t3.stateAfter === 'offer',      `chaîne doit avancer à 'offer' (defense_cabane), got ${t3.stateAfter}`);
+  assert(t3.currentAfter === 'defense_cabane', `next quest doit être defense_cabane, got ${t3.currentAfter}`);
+  assert(t3.cabaneOfferable,             'defense_cabane doit être offrable');
+  assert(!t3.chouetteOfferableNow,       'chouette_perdue ne doit pas être ré-offrable immédiatement');
+
+  // T4 : remettre defense_cabane → état done
+  const t4 = await page.evaluate(() => {
+    const hagrid = NPCS.find(n => n.id === 'hagrid');
+    acceptQuest('defense_cabane');
+    const q = activeQuests.find(x => x.id === 'defense_cabane');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    turnInQuestById('defense_cabane');
+    return {
+      bothCompleted: completedQuests.has('chouette_perdue') && completedQuests.has('defense_cabane'),
+      state:         getNpcQuestState(hagrid),
+      cabaneLastLevel: lastQuestCompletion['defense_cabane']  // pas répétable → undefined attendu
+    };
+  });
+  console.log('  T4 chain finished:', t4);
+  assert(t4.bothCompleted,                  'les 2 quêtes doivent être completed');
+  assert(t4.state === 'done',               `Hagrid doit être 'done', got ${t4.state}`);
+  assert(t4.cabaneLastLevel === undefined,  'defense_cabane (non répétable) ne doit pas écrire lastQuestCompletion');
+
+  // T5 : pas de cooldown encore atteint → chouette pas ré-offrable
+  const t5 = await page.evaluate(() => {
+    return {
+      level: player.level,
+      lastChouette: lastQuestCompletion['chouette_perdue'],
+      offerable: isQuestOfferable('chouette_perdue')
+    };
+  });
+  console.log('  T5 cooldown not reached:', t5);
+  assert(!t5.offerable, 'chouette_perdue ne doit pas être ré-offrable avant cooldown');
+
+  // T6 : amener le joueur exactement au cooldown → chouette redevient offrable
+  const t6 = await page.evaluate(() => {
+    const tpl  = QUEST_TEMPLATES.find(t => t.id === 'chouette_perdue');
+    const last = lastQuestCompletion['chouette_perdue'] || 0;
+    player.level = last + tpl.repeatable.everyLevels; // exactement au seuil
+    const hagrid = NPCS.find(n => n.id === 'hagrid');
+    return {
+      level:      player.level,
+      lastSeen:   last,
+      everyLvls:  tpl.repeatable.everyLevels,
+      offerable:  isQuestOfferable('chouette_perdue'),
+      state:      getNpcQuestState(hagrid),
+      currentQ:   _currentQuestForState(hagrid, 'offer')
+    };
+  });
+  console.log('  T6 cooldown reached:', t6);
+  assert(t6.offerable,                       'chouette_perdue doit redevenir offrable après +3 niveaux');
+  assert(t6.state === 'offer',               `Hagrid doit revenir à 'offer', got ${t6.state}`);
+  assert(t6.currentQ === 'chouette_perdue',  `quête courante doit être chouette_perdue, got ${t6.currentQ}`);
+
+  // T7 : ré-acceptation, completedQuests doit la sortir
+  const t7 = await page.evaluate(() => {
+    const accepted = acceptQuest('chouette_perdue');
+    return {
+      accepted,
+      stillCompleted: completedQuests.has('chouette_perdue'),
+      activeNow:      !!activeQuests.find(q => q.id === 'chouette_perdue')
+    };
+  });
+  console.log('  T7 re-accept:', t7);
+  assert(t7.accepted,         'acceptQuest doit retourner true en répétition');
+  assert(!t7.stillCompleted,  'chouette_perdue doit être retirée de completedQuests à la ré-acceptation');
+  assert(t7.activeNow,        'chouette_perdue doit être dans activeQuests');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ chaîne Hagrid + quête répétable conformes');
+  await browser.close();
+}
+
 // ── Scénario 4 : écrans de sélection accessibles sur viewport mobile ─
 
 async function scenarioMobileSelect() {
@@ -2513,7 +2655,7 @@ async function scenarioTintCss() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
   for (const s of scenarios) {
     await s();
   }

@@ -59,6 +59,19 @@ const QUEST_TEMPLATES = [
       { type: "kill", monsterId: "chouette_envoutee", amount: 1, progress: 0, completed: false }
     ],
     reward: { xp: 90, gold: 30, item: "broom" },
+    location: "Forêt Interdite (étage 4+)",
+    // Quête répétable : Hagrid en redemande tous les 3 niveaux.
+    repeatable: { everyLevels: 3 }
+  },
+  {
+    id: "defense_cabane",
+    title: "Défense de la Cabane",
+    giver: "Hagrid",
+    desc: "Des araignées rôdent autour de la cabane d'Hagrid. Élimine-en 3 pour qu'il puisse dormir tranquille.",
+    objectives: [
+      { type: "kill", monsterId: "araignee", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 140, gold: 60, item: "potion_m" },
     location: "Forêt Interdite (étage 4+)"
   },
   {
@@ -101,15 +114,34 @@ function getQuestTemplate(id) {
   return QUEST_TEMPLATES.find(t => t.id === id) || null;
 }
 
+// Une quête est offrable si elle est dans availableQuests (jamais
+// faite) OU si elle est répétable et que le cooldown est écoulé
+// depuis la dernière complétion (lastQuestCompletion[id]).
+function isQuestOfferable(id) {
+  if (!id) return false;
+  if (availableQuests.has(id)) return true;
+  if (!completedQuests.has(id)) return false;
+  const tpl = getQuestTemplate(id);
+  if (!tpl || !tpl.repeatable) return false;
+  const need = tpl.repeatable.everyLevels | 0;
+  if (!need) return false;
+  const last = lastQuestCompletion[id] || 0;
+  const lvl  = (player && player.level) || 0;
+  return (lvl - last) >= need;
+}
+
 // ── Acceptation / remise via PNJ ─────────────────────────────────
 
 // Active une quête disponible. Idempotent : silencieusement ignoré si la
-// quête est déjà active ou complétée. Retourne true si la quête a été
-// effectivement ajoutée à activeQuests.
+// quête est déjà active. Si la quête est complétée mais répétable +
+// cooldown écoulé, on la "ré-accepte" en la sortant de completedQuests.
 function acceptQuest(id) {
   if (!id) return false;
   if (activeQuests.some(q => q.id === id)) return false;
-  if (completedQuests.has(id))             return false;
+  if (completedQuests.has(id)) {
+    if (!isQuestOfferable(id)) return false;
+    completedQuests.delete(id); // recyclage répétable
+  }
   const tpl = getQuestTemplate(id);
   if (!tpl) return false;
   // Clone profond pour préserver les compteurs progress par instance
@@ -349,6 +381,12 @@ function completeQuest(index) {
   // Retire de l'actif, marque comme rendue
   activeQuests.splice(index, 1);
   completedQuests.add(q.id);
+  // Quêtes répétables : on retient le niveau du joueur à la remise
+  // pour calculer le cooldown lors d'une éventuelle ré-offre.
+  const tpl = getQuestTemplate(q.id);
+  if (tpl && tpl.repeatable) {
+    lastQuestCompletion[q.id] = (player && player.level) || 0;
+  }
 
   AudioSystem.playLevelUp();
   addMsg(`✅ Quête terminée : « ${q.title} » !`, 'good');

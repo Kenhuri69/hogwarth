@@ -9,23 +9,27 @@
 // ── Utilitaires d'état quête ────────────────────────────────────
 
 // Retourne 'none' | 'offer' | 'active' | 'ready' | 'done'
+// Itère `npc.questsGiven` dans l'ordre — c'est la mécanique des chaînes :
+// on saute les quêtes complétées et non-répétables, on s'arrête sur la
+// première quête qui a un état actionnable.
 function getNpcQuestState(npc) {
   if (!npc) return 'none';
   const given = npc.questsGiven || [];
   if (!given.length) return 'none';
   if (typeof _refreshObjectives === 'function') _refreshObjectives();
   for (const qid of given) {
-    if (typeof completedQuests !== 'undefined' && completedQuests.has(qid)) {
-      continue; // celle-ci est rendue, on regarde la suivante
-    }
     const active = (typeof activeQuests !== 'undefined')
       ? activeQuests.find(q => q.id === qid) : null;
     if (active) {
       const allDone = (active.objectives || []).every(o => o.completed);
       return allDone ? 'ready' : 'active';
     }
-    if (typeof availableQuests !== 'undefined' && availableQuests.has(qid)) {
+    // Offrable = nouvelle OU répétable dont le cooldown est écoulé
+    if (typeof isQuestOfferable === 'function' && isQuestOfferable(qid)) {
       return 'offer';
+    }
+    if (typeof completedQuests !== 'undefined' && completedQuests.has(qid)) {
+      continue; // celle-ci est rendue (et pas due pour répétition) — on continue la chaîne
     }
   }
   // Toutes les quêtes données sont complétées
@@ -45,18 +49,45 @@ function getNpcMarkerSign(npcId) {
 
 // ── Rendu de l'overlay ───────────────────────────────────────────
 
+// Renvoie l'ID de quête actuellement adressée par cet état (ou null).
+// Sert à choisir un override de dialogue dans `dialoguesByQuest` pour
+// les PNJ avec chaîne de quêtes.
+function _currentQuestForState(npc, state) {
+  const given = npc.questsGiven || [];
+  if (state === 'offer') {
+    return given.find(q =>
+      typeof isQuestOfferable === 'function' ? isQuestOfferable(q) : availableQuests.has(q)
+    ) || null;
+  }
+  if (state === 'active' || state === 'ready') {
+    const wantReady = state === 'ready';
+    return given.find(q => {
+      const a = (typeof activeQuests !== 'undefined') ? activeQuests.find(x => x.id === q) : null;
+      if (!a) return false;
+      const ready = (a.objectives || []).every(o => o.completed);
+      return wantReady ? ready : !ready;
+    }) || null;
+  }
+  return null;
+}
+
 // Retourne toujours un tableau de pages (array<string>). Un dialogue
 // peut être déclaré comme string (1 page) ou comme array (multi-page).
+// Les PNJ peuvent fournir un override par quête via `dialoguesByQuest`.
 function _npcDialogPages(npc, state) {
-  const d = npc.dialogues || {};
+  const d   = npc.dialogues || {};
+  const qid = _currentQuestForState(npc, state);
+  const dq  = (qid && npc.dialoguesByQuest && npc.dialoguesByQuest[qid]) || {};
+  const pick = (k) => (dq[k] !== undefined) ? dq[k] : d[k];
+
   let raw;
   if (typeof seenNpcs !== 'undefined' && !seenNpcs.has(npc.id) && d.greeting) {
     raw = d.greeting;
-  } else if (state === 'offer'  && d.questOffer)  raw = d.questOffer;
-  else if (state === 'active' && d.questActive) raw = d.questActive;
-  else if (state === 'ready'  && d.questReady)  raw = d.questReady;
-  else if (state === 'done'   && d.questDone)   raw = d.questDone;
-  else                                           raw = d.idle || d.greeting || '...';
+  } else if (state === 'offer'  && pick('questOffer')  !== undefined) raw = pick('questOffer');
+  else if (state === 'active' && pick('questActive') !== undefined) raw = pick('questActive');
+  else if (state === 'ready'  && pick('questReady')  !== undefined) raw = pick('questReady');
+  else if (state === 'done'   && d.questDone)                       raw = d.questDone;
+  else                                                              raw = d.idle || d.greeting || '...';
   return Array.isArray(raw) ? raw.slice() : [raw];
 }
 
@@ -64,7 +95,9 @@ function _npcDialogActions(npc, state) {
   const out = [];
   // Action contextuelle quête
   if (state === 'offer') {
-    const qid = (npc.questsGiven || []).find(q => availableQuests.has(q));
+    const qid = (npc.questsGiven || []).find(q =>
+      typeof isQuestOfferable === 'function' ? isQuestOfferable(q) : availableQuests.has(q)
+    );
     if (qid) {
       out.push({
         label: 'Accepter la quête',

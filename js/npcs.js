@@ -171,18 +171,31 @@ const NPCS = [
     icon:  "🦉",
     portraitImg: "img/npc/hagrid.png",
     placement: { floor: 4, anchor: "any" },
-    questsGiven:    ["chouette_perdue"],
-    questsTurnedIn: ["chouette_perdue"],
+    questsGiven:    ["chouette_perdue", "defense_cabane"],
+    questsTurnedIn: ["chouette_perdue", "defense_cabane"],
     dialogues: {
       greeting:    [
         "Ah, te v'là ! Tu tombes bien — j'ai perdu une de mes chouettes ensorcelées dans la Forêt Interdite.",
         "Elle est têtue comme une mule, c'te bestiole. Mais c'est qu'un'amour, j'te jure. Tu pourrais m'aider à la r'trouver ?"
       ],
       idle:        "Y'a tant de bestioles à surveiller dans c'te Forêt...",
-      questOffer:  "Trouve cette Chouette Ensorcelée et ramène-la moi, j'te r'compenserai bien.",
-      questActive: "Toujours pas trouvé ? Fais attention, c'te bestiole sait s'cacher.",
-      questReady:  "Tu l'as ! Magnifique ! Tiens, prends c'balai — t'en auras plus besoin que moi.",
-      questDone:   "Merci encore. Reviens quand tu veux pour boire un thé !"
+      questDone:   "Merci encore pour tout c'que t'as fait. Reviens quand tu veux pour boire un thé !"
+    },
+    // Dialogues spécifiques par quête (chaîne + répétable)
+    dialoguesByQuest: {
+      chouette_perdue: {
+        questOffer:  "Trouve cette Chouette Ensorcelée et ramène-la moi, j'te r'compenserai bien.",
+        questActive: "Toujours pas trouvé ? Fais attention, c'te bestiole sait s'cacher.",
+        questReady:  "Tu l'as ! Magnifique ! Tiens, prends c'balai — t'en auras plus besoin que moi."
+      },
+      defense_cabane: {
+        questOffer:  [
+          "Ah, j'allais oublier ! Y'a des araignées géantes qui rôdent autour d'ma cabane c'temps-ci.",
+          "Si tu pouvais m'en éliminer trois, j'pourrais enfin dormir tranquille. Et j'ai d'quoi t'remercier dignement."
+        ],
+        questActive: "T'en es à combien ? Faut pas qu'elles s'approchent de Crockdur, hein.",
+        questReady:  "Trois d'moins ! Bien joué. Tiens, prends c'tte potion — j'la garde pour les soirs d'orage."
+      }
     }
   },
   {

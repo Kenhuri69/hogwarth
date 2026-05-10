@@ -190,9 +190,12 @@ let party = [player, player2];
 // ============================================================
 // Catalogue des quêtes : voir QUEST_TEMPLATES dans quests.js.
 // Runtime :
-//   activeQuests     — quêtes acceptées (clones de templates) en cours.
-//   availableQuests  — IDs de quêtes débloquées non encore acceptées.
-//   completedQuests  — IDs de quêtes rendues (pour PNJ "déjà servi").
-let activeQuests    = [];
-let availableQuests = new Set();
-let completedQuests = new Set();
+//   activeQuests        — quêtes acceptées (clones de templates) en cours.
+//   availableQuests     — IDs de quêtes débloquées non encore acceptées.
+//   completedQuests     — IDs de quêtes rendues (pour PNJ "déjà servi").
+//   lastQuestCompletion — { [questId]: playerLevel } au moment de la remise.
+//                         Lu par les quêtes répétables pour gérer le cooldown.
+let activeQuests        = [];
+let availableQuests     = new Set();
+let completedQuests     = new Set();
+let lastQuestCompletion = {};
