@@ -191,73 +191,92 @@ body {
 }
 .stats-panel .quests-btn img{ width:14px; height:14px; }
 
-/* =====================  PAPER DOLL (A1, A7, A9)  ===================== */
+/* =====================  PAPER DOLL — structure flex column (v2.7)  =====================
+   2 zones empilées :
+     .paper-doll-main   → grid 3 colonnes [slots gauche][buste][slots droite]
+                          flex:1, prend toute la hauteur restante
+     .paper-doll-bottom → row centrée [wand][belt][trinket]
+                          taille fixe, sous la zone buste
+   Le buste n'est PLUS contraint par le slot belt — il prend toute la hauteur
+   de paper-doll-main, qui se dilate à la taille du panneau. */
 .paper-doll{
-  position:relative;
-  height:440px;                                /* A1bis — hauteur augmentée pour absorber buste 320 */
-  background:var(--bg-parchment);              /* A9 — texture parchemin subtile */
+  background:var(--bg-parchment);              /* A9 — texture parchemin */
   border:1px solid rgba(122,92,30,0.40);
   border-radius:6px;
   overflow:hidden;
+  padding:10px;
+  display:flex; flex-direction:column;
+  gap:8px;
+  min-height:480px;
 }
-/* A1quat — buste occupe TOUT l'espace dispo entre slots :
-   - haut : juste sous le bord (top:4)
-   - bas : juste au-dessus du gold-banner (bottom:48)
-   - côtés : juste à droite des slots latéraux (left:64, right:64)
-   - slot belt est dans la même zone, le perso passe derrière (z-index inférieur)
-   object-fit:contain → reste dans le ratio carré, prend min(W,H). */
-.pd-portrait-wrapper{
-  position:absolute;
-  top:4px; bottom:48px;
-  left:64px; right:64px;
-  z-index:2;
-  pointer-events:none;
+.paper-doll-main{
+  display:grid;
+  grid-template-columns: 54px 1fr 54px;
+  gap:8px; flex:1;
+  align-items:stretch;
 }
-.paper-doll .pd-portrait{
+.paper-doll-col{
+  display:flex; flex-direction:column;
+  gap:8px; justify-content:flex-start;
+}
+.paper-doll-stage{
+  position:relative;
+  display:flex;
+  align-items:flex-end;       /* perso ancré en bas du stage */
+  justify-content:center;
+  overflow:hidden;
+  border-radius:4px;
+}
+/* Socle radial sous le perso */
+.paper-doll-stage::before{
+  content:''; position:absolute;
+  left:50%; bottom:4px; transform:translateX(-50%);
+  width:60%; height:22px;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,0.65), transparent 70%);
+  pointer-events:none; z-index:1;
+}
+.paper-doll-stage .pd-portrait{
+  position:relative; z-index:2;
   width:100%; height:100%;
-  object-fit:cover;             /* cover au lieu de contain : remplit la zone */
-  object-position:center top;   /* on prend le haut (tête + buste), on perd le bas */
+  object-fit:cover;
+  object-position:center top;
   filter:drop-shadow(0 8px 22px rgba(0,0,0,0.75));
 }
-/* Socle / podium subtil sous le perso */
-.paper-doll::before{
-  content:''; position:absolute;
-  left:50%; bottom:166px;
-  transform:translateX(-50%);
-  width:220px; height:22px;
-  background:radial-gradient(ellipse at center, rgba(0,0,0,0.65), transparent 70%);
-  z-index:1; pointer-events:none;
+.paper-doll-bottom{
+  display:flex; align-items:center; justify-content:center;
+  gap:14px;
+  position:relative;
+  padding:4px 0 2px;
 }
 
-/* A7 — Bandeau Or INTÉGRÉ dans le paper doll (encart ovale centre-bas) */
+/* A7 — bandeau or sous la rangée wand/belt/trinket */
 .gold-banner{
-  position:absolute;
-  bottom:12px; left:50%; transform:translateX(-50%);
+  align-self:center;
+  margin-top:2px;
   display:flex; align-items:center; gap:8px;
   background:linear-gradient(180deg, rgba(80,55,18,0.95), rgba(40,28,12,0.95));
   border:1px solid var(--gold);
   border-radius:18px;
-  padding:5px 18px;
+  padding:5px 22px;
   font-family:'Cinzel',serif;
   color:var(--gold-light);
   font-weight:700; font-size:13px;
-  z-index:4;
   box-shadow:0 2px 10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(240,208,128,0.4);
 }
 .gold-banner img{ width:16px; height:16px; }
 
 /* =====================  SLOTS (A3)  ===================== */
 .equip-slot{
-  position:absolute;
+  position:relative;
   width:50px; height:50px;
-  background:var(--slot-bg);          /* fond noir uniforme */
+  background:var(--slot-bg);
   border:1px solid var(--slot-border);
   border-radius:4px;
   display:flex; align-items:center; justify-content:center;
   cursor:pointer;
   transition:border-color 0.15s, transform 0.15s;
-  z-index:3;                          /* au-dessus du buste (z:2) pour rester cliquables */
-  font-size:24px;                     /* taille emoji slot vide */
+  font-size:24px;
+  flex-shrink:0;
 }
 .equip-slot:hover{ border-color:var(--gold-light); transform:scale(1.06); z-index:50; }
 .equip-slot.filled                  { border-color:#4a3010; }
@@ -268,18 +287,7 @@ body {
 .equip-slot img{ width:36px; height:36px; object-fit:contain; }
 .equip-slot.empty .slot-emoji{ opacity:0.35; filter:grayscale(70%); }
 
-/* Position des 11 slots — paper doll 440px */
-.equip-slot-head    { top:  14px; left:  10px; }
-.equip-slot-body    { top:  78px; left:  10px; }
-.equip-slot-hands   { top: 142px; left:  10px; }
-.equip-slot-feet    { top: 206px; left:  10px; }
-.equip-slot-cloak   { top:  14px; right: 10px; }
-.equip-slot-amulet  { top:  78px; right: 10px; }
-.equip-slot-ring1   { top: 142px; right: 10px; }
-.equip-slot-ring2   { top: 206px; right: 10px; }
-.equip-slot-wand    { top: 280px; left:  10px; }
-.equip-slot-trinket { top: 280px; right: 10px; }
-.equip-slot-belt    { top: 280px; left:  50%; transform:translateX(-50%); }
+/* Plus de positions absolues : le layout flex/grid s'occupe de tout. */
 
 /* =====================  TOOLTIP (A11)  ===================== */
 .tooltip{
@@ -305,21 +313,13 @@ body {
 .tooltip .tt-bonus  { color:var(--bonus); font-weight:600; display:block; margin-bottom:2px; }
 .tooltip .tt-desc   { color:var(--parchment-dk); font-style:italic; margin-top:5px; font-size:10px; line-height:1.4; }
 
-/* Slots de la rangée du haut → tooltip dessous (par défaut) */
-/* Slots du bas → tooltip au-dessus pour éviter de déborder */
-.equip-slot-wand .tooltip,
-.equip-slot-belt .tooltip,
-.equip-slot-trinket .tooltip,
-.equip-slot-feet .tooltip,
-.equip-slot-ring2 .tooltip{
+/* Tooltips : slots de la rangée du bas → tooltip au-dessus */
+.paper-doll-bottom .equip-slot .tooltip,
+.paper-doll-col .equip-slot:last-child .tooltip{
   top:auto; bottom:54px;
 }
-/* Slots de droite → tooltip à gauche du slot */
-.equip-slot-cloak  .tooltip,
-.equip-slot-amulet .tooltip,
-.equip-slot-ring1  .tooltip,
-.equip-slot-ring2  .tooltip,
-.equip-slot-trinket .tooltip{
+/* Slots colonne droite → tooltip à gauche */
+.paper-doll-col.right .equip-slot .tooltip{
   left:auto; right:54px; transform:none;
 }
 
@@ -388,25 +388,11 @@ body {
   .tab          { font-size:10px; padding:2px 8px; }
   .char-grid    { grid-template-columns:1fr; gap:6px; }
   .section-toggle { display:block; }
-  /* A10 — mobile : wrapper occupe tout l'espace dispo */
-  .paper-doll   { height:400px; }
-  .pd-portrait-wrapper {
-    top:4px; bottom:50px;
-    left:56px; right:56px;
-  }
+  /* A10 — mobile : flex/grid identique, juste tailles réduites */
+  .paper-doll   { min-height:420px; }
+  .paper-doll-main { grid-template-columns: 48px 1fr 48px; }
   .equip-slot   { width:44px; height:44px; font-size:20px; }
   .equip-slot img { width:30px; height:30px; }
-  .equip-slot-head    { top:  8px; left:  8px; }
-  .equip-slot-body    { top: 62px; left:  8px; }
-  .equip-slot-hands   { top:116px; left:  8px; }
-  .equip-slot-feet    { top:170px; left:  8px; }
-  .equip-slot-cloak   { top:  8px; right: 8px; }
-  .equip-slot-amulet  { top: 62px; right: 8px; }
-  .equip-slot-ring1   { top:116px; right: 8px; }
-  .equip-slot-ring2   { top:170px; right: 8px; }
-  .equip-slot-wand    { top:240px; left:  8px; }
-  .equip-slot-trinket { top:240px; right: 8px; }
-  .equip-slot-belt    { top:240px; left: 50%; }
   .inv-grid { grid-template-columns:repeat(6, 1fr); }
 }
 </style>
@@ -506,63 +492,71 @@ body {
         <button class="section-toggle">Équipement</button>
         <div class="section-content">
           <div class="paper-doll">
-            <!-- 4 slots gauche -->
-            <div class="equip-slot equip-slot-head filled rarity-common">
-              <img src="../img/icons/items/chapeau_apprenti.png" alt="">
-              <div class="tooltip"><span class="tt-name">Chapeau d'apprenti</span><span class="tt-rarity">Commun · Tête</span><span class="tt-bonus">+1 Intelligence</span><span class="tt-desc">Un classique des élèves de première année.</span></div>
-            </div>
-            <div class="equip-slot equip-slot-body filled rarity-rare">
-              <img src="../img/icons/items/robe_renforcee.png" alt="" onerror="this.src='../img/icons/armor.png'">
-              <div class="tooltip"><span class="tt-name">Robe Renforcée</span><span class="tt-rarity rare">Rare · Armure</span><span class="tt-bonus">+5 Défense</span><span class="tt-bonus">+2 Endurance</span><span class="tt-desc">Tissée par Madame Guipure avec des fils enchantés.</span></div>
-            </div>
-            <div class="equip-slot equip-slot-hands filled rarity-common">
-              <img src="../img/icons/items/gants_apprenti.png" alt="">
-              <div class="tooltip"><span class="tt-name">Gants d'Apprenti</span><span class="tt-rarity">Commun · Mains</span><span class="tt-bonus">+1 Attaque</span></div>
-            </div>
-            <div class="equip-slot equip-slot-feet filled rarity-rare">
-              <img src="../img/icons/items/bottes_dragon.png" alt="">
-              <div class="tooltip"><span class="tt-name">Bottes en cuir de dragon</span><span class="tt-rarity rare">Rare · Bottes</span><span class="tt-bonus">+3 Agilité</span><span class="tt-bonus">+2 Défense</span><span class="tt-desc">Résiste au feu, parfait pour les cachots.</span></div>
+            <div class="paper-doll-main">
+
+              <!-- Colonne gauche : head, body, hands, feet -->
+              <div class="paper-doll-col left">
+                <div class="equip-slot filled rarity-common">
+                  <img src="../img/icons/items/chapeau_apprenti.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Chapeau d'apprenti</span><span class="tt-rarity">Commun · Tête</span><span class="tt-bonus">+1 Intelligence</span><span class="tt-desc">Un classique des élèves de première année.</span></div>
+                </div>
+                <div class="equip-slot filled rarity-rare">
+                  <img src="../img/icons/items/robe_renforcee.png" alt="" onerror="this.src='../img/icons/armor.png'">
+                  <div class="tooltip"><span class="tt-name">Robe Renforcée</span><span class="tt-rarity rare">Rare · Armure</span><span class="tt-bonus">+5 Défense</span><span class="tt-bonus">+2 Endurance</span><span class="tt-desc">Tissée par Madame Guipure avec des fils enchantés.</span></div>
+                </div>
+                <div class="equip-slot filled rarity-common">
+                  <img src="../img/icons/items/gants_apprenti.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Gants d'Apprenti</span><span class="tt-rarity">Commun · Mains</span><span class="tt-bonus">+1 Attaque</span></div>
+                </div>
+                <div class="equip-slot filled rarity-rare">
+                  <img src="../img/icons/items/bottes_dragon.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Bottes en cuir de dragon</span><span class="tt-rarity rare">Rare · Bottes</span><span class="tt-bonus">+3 Agilité</span><span class="tt-bonus">+2 Défense</span><span class="tt-desc">Résiste au feu, parfait pour les cachots.</span></div>
+                </div>
+              </div>
+
+              <!-- Stage central : buste qui prend toute la hauteur -->
+              <div class="paper-doll-stage">
+                <img class="pd-portrait" src="../img/harry.png" alt="Harry">
+              </div>
+
+              <!-- Colonne droite : cloak, amulet, ring1, ring2 -->
+              <div class="paper-doll-col right">
+                <div class="equip-slot filled rarity-epic">
+                  <img src="../img/icons/items/cape_invis.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Cape d'Invisibilité</span><span class="tt-rarity epic">Épique · Cape</span><span class="tt-bonus">+5 Agilité</span><span class="tt-bonus">+5 Chance</span><span class="tt-desc">Héritage de famille tissé dans le linceul de la mort.</span></div>
+                </div>
+                <div class="equip-slot filled rarity-epic">
+                  <img src="../img/icons/items/larmes_phenix.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Larmes du Phénix</span><span class="tt-rarity epic">Épique · Amulette</span><span class="tt-bonus">+3 PV / tour</span><span class="tt-desc">Une fiole scintillante, miracle de Fumseck.</span></div>
+                </div>
+                <div class="equip-slot filled rarity-rare">
+                  <img src="../img/icons/items/anneau_runique.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Anneau runique</span><span class="tt-rarity rare">Rare · Anneau gauche</span><span class="tt-bonus">+2 Magie</span></div>
+                </div>
+                <div class="equip-slot empty">
+                  <span class="slot-emoji">💍</span>
+                  <div class="tooltip"><span class="tt-name">Anneau droit</span><span class="tt-rarity" style="color:#6a5030">— Emplacement libre —</span></div>
+                </div>
+              </div>
             </div>
 
-            <!-- 4 slots droite -->
-            <div class="equip-slot equip-slot-cloak filled rarity-epic">
-              <img src="../img/icons/items/cape_invis.png" alt="">
-              <div class="tooltip"><span class="tt-name">Cape d'Invisibilité</span><span class="tt-rarity epic">Épique · Cape</span><span class="tt-bonus">+5 Agilité</span><span class="tt-bonus">+5 Chance</span><span class="tt-desc">Héritage de famille tissé dans le linceul de la mort.</span></div>
-            </div>
-            <div class="equip-slot equip-slot-amulet filled rarity-epic">
-              <img src="../img/icons/items/larmes_phenix.png" alt="">
-              <div class="tooltip"><span class="tt-name">Larmes du Phénix</span><span class="tt-rarity epic">Épique · Amulette</span><span class="tt-bonus">+3 PV / tour</span><span class="tt-desc">Une fiole scintillante, miracle de Fumseck.</span></div>
-            </div>
-            <div class="equip-slot equip-slot-ring1 filled rarity-rare">
-              <img src="../img/icons/items/anneau_runique.png" alt="">
-              <div class="tooltip"><span class="tt-name">Anneau runique</span><span class="tt-rarity rare">Rare · Anneau gauche</span><span class="tt-bonus">+2 Magie</span></div>
-            </div>
-            <!-- A3 — slot vide : emoji distinctif par type -->
-            <div class="equip-slot equip-slot-ring2 empty">
-              <span class="slot-emoji">💍</span>
-              <div class="tooltip"><span class="tt-name">Anneau droit</span><span class="tt-rarity" style="color:#6a5030">— Emplacement libre —</span></div>
+            <!-- Rangée sous le buste : wand, belt, trinket -->
+            <div class="paper-doll-bottom">
+              <div class="equip-slot filled rarity-rare">
+                <img src="../img/icons/items/wand2.png" alt="" onerror="this.src='../img/icons/wand.png'">
+                <div class="tooltip"><span class="tt-name">Baguette de Sureau</span><span class="tt-rarity rare">Rare · Baguette</span><span class="tt-bonus">+4 Attaque</span><span class="tt-bonus">+3 Magie</span></div>
+              </div>
+              <div class="equip-slot filled rarity-rare">
+                <img src="../img/icons/items/ceinture_alchimiste.png" alt="">
+                <div class="tooltip"><span class="tt-name">Ceinture d'alchimiste</span><span class="tt-rarity rare">Rare · Ceinture</span><span class="tt-bonus">+2 Intelligence</span></div>
+              </div>
+              <div class="equip-slot filled rarity-rare">
+                <img src="../img/icons/items/broom.png" alt="">
+                <div class="tooltip"><span class="tt-name">Éclair de Feu</span><span class="tt-rarity rare">Rare · Bibelot</span><span class="tt-bonus">Fuite garantie</span></div>
+              </div>
             </div>
 
-            <!-- 3 slots bas -->
-            <div class="equip-slot equip-slot-wand filled rarity-rare">
-              <img src="../img/icons/items/wand2.png" alt="" onerror="this.src='../img/icons/wand.png'">
-              <div class="tooltip"><span class="tt-name">Baguette de Sureau</span><span class="tt-rarity rare">Rare · Baguette</span><span class="tt-bonus">+4 Attaque</span><span class="tt-bonus">+3 Magie</span></div>
-            </div>
-            <div class="equip-slot equip-slot-belt filled rarity-rare">
-              <img src="../img/icons/items/ceinture_alchimiste.png" alt="">
-              <div class="tooltip"><span class="tt-name">Ceinture d'alchimiste</span><span class="tt-rarity rare">Rare · Ceinture</span><span class="tt-bonus">+2 Intelligence</span></div>
-            </div>
-            <div class="equip-slot equip-slot-trinket filled rarity-rare">
-              <img src="../img/icons/items/broom.png" alt="">
-              <div class="tooltip"><span class="tt-name">Éclair de Feu</span><span class="tt-rarity rare">Rare · Bibelot</span><span class="tt-bonus">Fuite garantie</span></div>
-            </div>
-
-            <!-- A1ter — buste prend toute la zone libre via wrapper absolu -->
-            <div class="pd-portrait-wrapper">
-              <img class="pd-portrait" src="../img/harry.png" alt="Harry">
-            </div>
-
-            <!-- A7 — Bandeau Or DANS le paper doll -->
+            <!-- A7 — Bandeau Or sous la rangée d'armes -->
             <div class="gold-banner">
               <img src="../img/icons/gold.png" alt=""> 329 Gallions
             </div>
