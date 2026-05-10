@@ -56,21 +56,20 @@ const ITEM_ICON_REGISTRY = {
   locket_slytherin:   'img/icons/items/locket_slytherin.png',
   diademe_serdaigle:  'img/icons/items/diademe_serdaigle.png',
   cape_invis:         'img/icons/items/cape_invis.png',
-  // Phase 3 du plan extended : équipement étendu. PNG dédiés à
-  // produire en Phase 4 ; en attendant, on aliase vers les sprites
-  // slot génériques pour ne jamais retomber sur l'emoji.
-  gants_apprenti:      'img/icons/accessory.png',
-  bottes_apprenti:     'img/icons/accessory.png',
-  chapeau_apprenti:    'img/icons/accessory.png',
-  ceinture_cuir:       'img/icons/accessory.png',
-  anneau_argent:       'img/icons/accessory.png',
-  cape_voyageur:       'img/icons/armor.png',
-  amulette_protection: 'img/icons/accessory.png',
-  circlet_serdaigle:   'img/icons/accessory.png',
-  anneau_runique:      'img/icons/accessory.png',
-  ceinture_alchimiste: 'img/icons/accessory.png',
-  bottes_dragon:       'img/icons/accessory.png',
-  retourneur_temps:    'img/icons/accessory.png',
+  // Phase 3 extension — sprites dédiés générés par gen_icons.py
+  // (gen_item_*, 48×48 RGBA pixel art, palette cohérente).
+  gants_apprenti:      'img/icons/items/gants_apprenti.png',
+  bottes_apprenti:     'img/icons/items/bottes_apprenti.png',
+  chapeau_apprenti:    'img/icons/items/chapeau_apprenti.png',
+  ceinture_cuir:       'img/icons/items/ceinture_cuir.png',
+  anneau_argent:       'img/icons/items/anneau_argent.png',
+  cape_voyageur:       'img/icons/items/cape_voyageur.png',
+  amulette_protection: 'img/icons/items/amulette_protection.png',
+  circlet_serdaigle:   'img/icons/items/circlet_serdaigle.png',
+  anneau_runique:      'img/icons/items/anneau_runique.png',
+  ceinture_alchimiste: 'img/icons/items/ceinture_alchimiste.png',
+  bottes_dragon:       'img/icons/items/bottes_dragon.png',
+  retourneur_temps:    'img/icons/items/retourneur_temps.png',
   // Livres de sorts
   livre_sortileges:   'img/icons/items/livre_sortileges.png',
   livre_soin:         'img/icons/items/livre_soin.png',

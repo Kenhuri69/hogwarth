@@ -1677,12 +1677,7 @@ async function scenarioItemIcons() {
   });
   console.log('  T3 boutique →', t3);
   assert(t3.length >= 3,                                  `shop doit avoir au moins 3 items, vu ${t3.length}`);
-  // Accepte soit un PNG dédié (img/icons/items/*.png), soit un fallback
-  // slot générique (img/icons/{accessory,armor,wand,spellbook}.png) pour
-  // les items Phase 3 du plan extended dont le sprite dédié arrivera en
-  // Phase 4. Voir .claude/plans/equipment-extended.md §3.5 / §7.
-  const validShopSrc = /(items\/[a-z0-9_]+|(?:accessory|armor|wand|spellbook))\.png$/;
-  assert(t3.every(s => validShopSrc.test(s)), 'tous les items shop doivent pointer un PNG (dédié ou slot)');
+  assert(t3.every(s => /items\/[a-z0-9_]+\.png$/.test(s)),   'tous les items shop doivent pointer img/icons/items/');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

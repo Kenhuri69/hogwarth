@@ -3202,6 +3202,421 @@ def gen_item_cape_invis():
     return img
 
 
+# ─── Phase 3 extension : équipement étendu (12 items) ──────
+# Sprites 48×48 pixel art, palette cohérente. Outline noir final
+# appliqué via le helper _outline() partagé pour éviter la
+# duplication de la triple boucle.
+
+def _outline(img, color=OUT):
+    """Ajoute un outline 1px sur tous les pixels opaques en bordure."""
+    for y in range(S):
+        for x in range(S):
+            p = img.getpixel((x, y))
+            if p[3] == 0: continue
+            for (dx, dy) in [(-1,0),(1,0),(0,-1),(0,1)]:
+                nx, ny = x+dx, y+dy
+                if 0 <= nx < S and 0 <= ny < S and img.getpixel((nx, ny))[3] == 0:
+                    putpx(img, nx, ny, color)
+    return img
+
+
+def gen_item_gants_apprenti():
+    """Paire de gants en cuir simples — vue de face, pouce levé."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3601)
+    # Gant gauche (un peu décalé)
+    for gx, ox in ((14, 0), (32, 1)):  # cx, miroir
+        # Paume
+        for y in range(20, 36):
+            for x in range(gx-5, gx+6):
+                t = (y - 20) / 16
+                col = blend(LL, LD, 0.2 + t * 0.4)
+                putpx(img, x, y, vary(col, rng, 5))
+        # Doigts (4 stubs en haut)
+        for fx in (gx-4, gx-2, gx, gx+2):
+            for y in range(15, 20):
+                putpx(img, fx, y, vary(LM, rng, 4))
+                putpx(img, fx+1, y, vary(LL, rng, 4))
+        # Pouce (côté)
+        for y in range(22, 28):
+            putpx(img, gx-6+ox*12, y, LM)
+            putpx(img, gx-5+ox*12, y, LL)
+        # Manchette dorée
+        for y in range(35, 38):
+            for x in range(gx-6, gx+7):
+                putpx(img, x, y, GM if y == 36 else GD)
+    return _outline(img)
+
+
+def gen_item_bottes_apprenti():
+    """Paire de bottes en cuir basique."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3602)
+    for bx in (14, 32):
+        # Tige verticale
+        for y in range(10, 30):
+            for x in range(bx-4, bx+5):
+                t = (y - 10) / 20
+                col = blend(LL, LD, 0.2 + t * 0.4)
+                putpx(img, x, y, vary(col, rng, 5))
+        # Pied (extension horizontale)
+        for y in range(30, 38):
+            for x in range(bx-4, bx+9):
+                t = (y - 30) / 8
+                col = blend(LM, LD, t)
+                putpx(img, x, y, vary(col, rng, 4))
+        # Semelle
+        for x in range(bx-5, bx+10):
+            putpx(img, x, 38, OUT)
+            putpx(img, x, 37, OUT2)
+        # Lacets (3 X)
+        for y in (16, 22, 28):
+            putpx(img, bx-1, y, GH); putpx(img, bx+1, y, GH)
+    return _outline(img)
+
+
+def gen_item_chapeau_apprenti():
+    """Toque ronde d'apprenti (pas pointu, plus modeste)."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3603)
+    cx = 24
+    # Calotte (demi-cercle)
+    for dy in range(-10, 4):
+        for dx in range(-12, 13):
+            d2 = dx*dx + dy*dy * 2
+            if d2 > 144: continue
+            t = (dy + 10) / 14
+            col = blend(LL, LD, 0.2 + t * 0.4)
+            putpx(img, cx+dx, 22+dy, vary(col, rng, 4))
+    # Bord du chapeau (anneau de cuir)
+    for x in range(cx-13, cx+14):
+        for y in range(26, 30):
+            t = (y - 26) / 4
+            putpx(img, x, y, blend(LD, LM, 1-t))
+    # Plume bleue à gauche
+    PD_BLUE = (40, 60, 130, 255)
+    PM_BLUE = (90, 130, 200, 255)
+    for i, y in enumerate(range(8, 18)):
+        x = cx - 12 + i // 2
+        putpx(img, x, y, PM_BLUE)
+        putpx(img, x-1, y+1, PD_BLUE)
+    # Boucle dorée
+    fill_rect(img, cx-2, 27, cx+1, 29, GH)
+    return _outline(img)
+
+
+def gen_item_ceinture_cuir():
+    """Ceinture horizontale en cuir avec boucle dorée centrale."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3604)
+    # Sangle
+    for y in range(20, 28):
+        for x in range(4, 44):
+            t = (y - 20) / 8
+            col = blend(LM, LD, 0.3 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Trous (rivets)
+    for x in (8, 14, 20, 38):
+        ring(img, x, 24, 1, OUT)
+    # Boucle dorée carrée au centre
+    fill_rect(img, 22, 18, 30, 30, GD)
+    fill_rect(img, 24, 20, 28, 28, GH)
+    fill_rect(img, 25, 21, 27, 27, GM)
+    # Pointe d'ardillon
+    for y in range(23, 26):
+        putpx(img, 30, y, GD)
+    return _outline(img)
+
+
+def gen_item_anneau_argent():
+    """Anneau en argent simple, vu de 3/4."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3605)
+    cx, cy = 24, 26
+    # Ovale extérieur
+    for dy in range(-12, 13):
+        for dx in range(-13, 14):
+            d2 = dx*dx + (dy*1.4)**2
+            if d2 > 13*13: continue
+            if d2 > 9*9:
+                # Anneau
+                t = (dy + 12) / 24
+                col = blend(MTL, MTD, 0.2 + t * 0.4)
+                putpx(img, cx+dx, cy+dy, vary(col, rng, 4))
+    # Reflet sur le dessus
+    for dx in range(-8, 9):
+        if abs(dx) <= 8:
+            putpx(img, cx+dx, cy-11, MTH)
+    # Petite gemme bleue au sommet
+    for dy in range(-3, 1):
+        for dx in range(-2, 3):
+            d2 = dx*dx + dy*dy
+            if d2 <= 4:
+                putpx(img, cx+dx, cy-14+dy, GLM)
+                if d2 <= 1: putpx(img, cx+dx, cy-14+dy, GLL)
+    return _outline(img)
+
+
+def gen_item_cape_voyageur():
+    """Cape brune drapée avec capuche."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3606)
+    cx = 24
+    CAPE_D = (60, 38, 22, 255)
+    CAPE_M = (110, 75, 45, 255)
+    CAPE_L = (150, 105, 65, 255)
+    # Capuche (triangle pointu en haut)
+    for y in range(8, 18):
+        half = (y - 8) + 2
+        for x in range(cx-half, cx+half+1):
+            t = (y - 8) / 10
+            col = blend(CAPE_L, CAPE_D, 0.3 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Corps de la cape (trapèze)
+    for y in range(18, 42):
+        half = 10 + (y - 18)
+        for x in range(cx-half, cx+half+1):
+            t = (y - 18) / 24
+            col = blend(CAPE_M, CAPE_D, 0.2 + t * 0.5)
+            putpx(img, x, y, vary(col, rng, 6))
+    # Plis verticaux
+    for fx in (cx-12, cx-4, cx+4, cx+12):
+        for y in range(20, 40):
+            if 0 <= fx + (y//6) < S:
+                putpx(img, fx, y, vary(CAPE_D, rng, 3))
+    # Fermoir doré au cou
+    fill_rect(img, cx-2, 16, cx+2, 19, GH)
+    putpx(img, cx, 17, GD)
+    return _outline(img)
+
+
+def gen_item_amulette_protection():
+    """Amulette en bouclier — pendentif triangulaire avec croix."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3607)
+    cx = 24
+    # Chaîne (V au-dessus)
+    for i in range(0, 12):
+        if i % 2 == 0:
+            putpx(img, cx-i, 6+i, GH)
+            putpx(img, cx+i, 6+i, GH)
+        else:
+            putpx(img, cx-i, 6+i, GM)
+            putpx(img, cx+i, 6+i, GM)
+    # Pendentif bouclier (forme blason)
+    SHL_M = (90, 110, 140, 255)
+    SHL_L = (140, 165, 200, 255)
+    SHL_D = (40, 55, 80, 255)
+    for y in range(18, 38):
+        if y < 32:
+            half = 9
+        else:
+            half = max(1, 9 - (y - 32) * 2)
+        for x in range(cx-half, cx+half+1):
+            t = (y - 18) / 20
+            col = blend(SHL_L, SHL_D, 0.2 + t * 0.5)
+            putpx(img, x, y, vary(col, rng, 4))
+    # Croix dorée centrale
+    for y in range(22, 32):
+        putpx(img, cx, y, GH)
+        putpx(img, cx-1, y, GM)
+    for x in range(cx-4, cx+5):
+        putpx(img, x, 26, GH)
+        putpx(img, x, 27, GM)
+    return _outline(img)
+
+
+def gen_item_circlet_serdaigle():
+    """Diadème fin avec gemme bleue centrale."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3608)
+    cx = 24
+    # Bandeau courbé (arc)
+    for dx in range(-16, 17):
+        # Hauteur courbée (fonction parabole)
+        y = 24 + int((dx*dx) / 22)
+        if y > 30: continue
+        for dy in range(0, 4):
+            t = dy / 4
+            col = blend(GH, GD, 0.2 + t * 0.5)
+            putpx(img, cx+dx, y+dy, vary(col, rng, 4))
+    # Pointes décoratives (3 sur le devant)
+    for px in (cx-6, cx, cx+6):
+        for ph in range(0, 5):
+            putpx(img, px, 18+ph, GH if ph % 2 == 0 else GM)
+            if ph >= 3:
+                putpx(img, px-1, 18+ph, GM)
+                putpx(img, px+1, 18+ph, GM)
+    # Gemme bleue centrale (saphir)
+    for dy in range(-3, 4):
+        for dx in range(-3, 4):
+            d2 = dx*dx + dy*dy
+            if d2 > 9: continue
+            col = GLM if d2 > 4 else GLL
+            putpx(img, cx+dx, 23+dy, col)
+    return _outline(img)
+
+
+def gen_item_anneau_runique():
+    """Anneau runique violet avec gemme épique."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3609)
+    cx, cy = 24, 26
+    # Anneau en or noirci
+    GD2 = (60, 30, 80, 255)
+    GM2 = (110, 60, 140, 255)
+    GL2 = (160, 100, 200, 255)
+    for dy in range(-12, 13):
+        for dx in range(-13, 14):
+            d2 = dx*dx + (dy*1.4)**2
+            if d2 > 13*13: continue
+            if d2 > 9*9:
+                t = (dy + 12) / 24
+                col = blend(GL2, GD2, 0.2 + t * 0.5)
+                putpx(img, cx+dx, cy+dy, vary(col, rng, 4))
+    # Runes gravées (3 marques sombres autour)
+    for ang_deg in (-60, 0, 60):
+        rad = math.radians(ang_deg)
+        rx = int(cx + 11 * math.cos(rad - math.pi/2))
+        ry = int(cy + 11 * 1.4 * math.sin(rad - math.pi/2))
+        putpx(img, rx, ry, OUT)
+        putpx(img, rx-1, ry, OUT)
+        putpx(img, rx, ry-1, OUT)
+    # Gemme violette épique au sommet
+    for dy in range(-4, 1):
+        for dx in range(-3, 4):
+            d2 = dx*dx + dy*dy
+            if d2 > 9: continue
+            col = (160, 80, 220, 255) if d2 > 2 else (220, 180, 255, 255)
+            putpx(img, cx+dx, cy-13+dy, col)
+    return _outline(img)
+
+
+def gen_item_ceinture_alchimiste():
+    """Ceinture avec 4 petites fioles colorées suspendues."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3610)
+    # Sangle
+    for y in range(14, 22):
+        for x in range(4, 44):
+            t = (y - 14) / 8
+            col = blend(LM, LD, 0.3 + t * 0.4)
+            putpx(img, x, y, vary(col, rng, 5))
+    # Boucle au centre
+    fill_rect(img, 22, 12, 26, 24, GD)
+    fill_rect(img, 23, 13, 25, 23, GH)
+    # 4 fioles suspendues
+    flask_colors = [
+        ((180, 30, 30, 255), (250, 100, 80, 255)),   # rouge
+        ((30, 80, 200, 255), (120, 170, 240, 255)),  # bleu
+        ((30, 130, 50, 255), (100, 200, 120, 255)),  # vert
+        ((180, 150, 30, 255), (240, 220, 100, 255)), # or
+    ]
+    for i, (cd, cl) in enumerate(flask_colors):
+        fx = 8 + i * 10
+        # Cordelette
+        for y in range(22, 28):
+            putpx(img, fx, y, OUT2)
+        # Bouchon
+        fill_rect(img, fx-2, 28, fx+2, 30, LD)
+        # Corps fiole
+        fill_rect(img, fx-2, 30, fx+2, 38, cd)
+        fill_rect(img, fx-1, 31, fx, 36, cl)
+    return _outline(img)
+
+
+def gen_item_bottes_dragon():
+    """Bottes en peau de dragon — écarlate, écailles, coutures."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3611)
+    DR_D = (90, 16, 12, 255)
+    DR_M = (160, 36, 24, 255)
+    DR_L = (210, 70, 50, 255)
+    for bx in (14, 32):
+        # Tige
+        for y in range(10, 30):
+            for x in range(bx-4, bx+5):
+                t = (y - 10) / 20
+                col = blend(DR_L, DR_D, 0.2 + t * 0.4)
+                putpx(img, x, y, vary(col, rng, 5))
+        # Pied
+        for y in range(30, 38):
+            for x in range(bx-4, bx+9):
+                t = (y - 30) / 8
+                col = blend(DR_M, DR_D, t)
+                putpx(img, x, y, vary(col, rng, 4))
+        # Écailles (motif chevron sur la tige)
+        for sy in range(12, 28, 3):
+            for sx in (bx-3, bx, bx+3):
+                putpx(img, sx, sy, DR_L)
+                putpx(img, sx-1, sy+1, DR_M)
+                putpx(img, sx+1, sy+1, DR_M)
+        # Semelle noire
+        for x in range(bx-5, bx+10):
+            putpx(img, x, 38, OUT)
+        # Boucle dorée en haut
+        fill_rect(img, bx-3, 11, bx+3, 13, GD)
+        putpx(img, bx, 12, GH)
+    return _outline(img)
+
+
+def gen_item_retourneur_temps():
+    """Retourneur de temps — sablier or sur chaîne."""
+    img = Image.new('RGBA', (S, S), TR)
+    rng = random.Random(3612)
+    cx = 24
+    # Chaîne
+    for i in range(0, 8):
+        if i % 2 == 0:
+            putpx(img, cx-i, 4+i, GH)
+            putpx(img, cx+i, 4+i, GH)
+        else:
+            putpx(img, cx-i, 4+i, GM)
+            putpx(img, cx+i, 4+i, GM)
+    # Anneau du haut
+    ring(img, cx, 13, 2, GD)
+    # Cadre or extérieur (sablier — 2 trapèzes)
+    # Plaque sup
+    for x in range(cx-10, cx+11):
+        putpx(img, x, 16, GD)
+        putpx(img, x, 17, GH)
+    # Plaque inf
+    for x in range(cx-10, cx+11):
+        putpx(img, x, 39, GD)
+        putpx(img, x, 38, GH)
+    # Côtés (4 piliers)
+    for y in range(17, 39):
+        putpx(img, cx-10, y, GD)
+        putpx(img, cx-9, y, GM)
+        putpx(img, cx+10, y, GD)
+        putpx(img, cx+9, y, GM)
+    # Verre supérieur (trapèze inverse) — sable doré qui s'écoule
+    for y in range(18, 27):
+        half = 9 - (y - 18)
+        for x in range(cx-half, cx+half+1):
+            putpx(img, x, y, GLM)
+        # Sable au-dessus du col
+        if y < 24:
+            for x in range(cx-half+1, cx+half):
+                putpx(img, x, y, vary(SBM, rng, 6))
+    # Col central
+    for y in range(26, 30):
+        putpx(img, cx-1, y, GLD)
+        putpx(img, cx, y, SBL)
+        putpx(img, cx+1, y, GLD)
+    # Verre inférieur (trapèze normal)
+    for y in range(29, 38):
+        half = (y - 29) + 1
+        if half > 9: half = 9
+        for x in range(cx-half, cx+half+1):
+            putpx(img, x, y, GLM)
+        # Petit tas de sable au fond
+        if y >= 35:
+            for x in range(cx-half+1, cx+half):
+                putpx(img, x, y, vary(SBM, rng, 6))
+    return _outline(img)
+
+
 # ─── Spellbooks ─────────────────────────────────────────────
 
 def gen_item_livre_sortileges():
@@ -3334,6 +3749,19 @@ TARGETS = [
     ('img/icons/items/livre_maledictus.png',  gen_item_livre_maledictus),
     ('img/icons/items/livre_crucio.png',      gen_item_livre_crucio),
     ('img/icons/items/livre_morsmordre.png',  gen_item_livre_morsmordre),
+    # Phase 3 extension — équipement étendu (12 sprites dédiés)
+    ('img/icons/items/gants_apprenti.png',      gen_item_gants_apprenti),
+    ('img/icons/items/bottes_apprenti.png',     gen_item_bottes_apprenti),
+    ('img/icons/items/chapeau_apprenti.png',    gen_item_chapeau_apprenti),
+    ('img/icons/items/ceinture_cuir.png',       gen_item_ceinture_cuir),
+    ('img/icons/items/anneau_argent.png',       gen_item_anneau_argent),
+    ('img/icons/items/cape_voyageur.png',       gen_item_cape_voyageur),
+    ('img/icons/items/amulette_protection.png', gen_item_amulette_protection),
+    ('img/icons/items/circlet_serdaigle.png',   gen_item_circlet_serdaigle),
+    ('img/icons/items/anneau_runique.png',      gen_item_anneau_runique),
+    ('img/icons/items/ceinture_alchimiste.png', gen_item_ceinture_alchimiste),
+    ('img/icons/items/bottes_dragon.png',       gen_item_bottes_dragon),
+    ('img/icons/items/retourneur_temps.png',    gen_item_retourneur_temps),
 ]
 
 if __name__ == '__main__':

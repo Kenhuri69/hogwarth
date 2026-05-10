@@ -6,7 +6,7 @@ Branche : `claude/game-equipment-system-plan-zrXwI`
 > Convention : `[ ]` pending · `[~]` in progress · `[x]` done.
 > À chaque étape franchie : cocher la case, mettre à jour le statut global, ajouter une ligne dans le journal en bas.
 
-**Statut global** : 18 / 53 étapes — Phases 1-2-3a terminées (catalogue + boutique + drops + coffres), 3b (4 nouvelles quêtes) reportée
+**Statut global** : 19 / 53 étapes — Phases 1-2-3a-4 terminées (sprites dédiés livrés, 12 PNG via gen_icons.py). 3b (quêtes/PNJ) reportée — plan PNJ à rédiger.
 
 ---
 
@@ -252,20 +252,24 @@ l'API actuelle `getItemIconHtml()` (laquelle retourne un `<img>`).
 
 ### 7.2 Étapes Phase 4
 
-- [ ] **4.1** Trancher : sprite sheet runtime vs PNG individuels post-découpe (recommandation : individuels).
-- [ ] **4.2** Script `tools/split_atlas.py` : prend un PNG NxN + un manifeste JSON `{nom_famille: [x,y,w,h]}` → exporte des PNG individuels avec rembg/alpha-matting si besoin.
-- [ ] **4.3** Atlas **Slot icons génériques** (8 nouveaux : `head, hands, feet, cloak, amulet, ring, belt, trinket`) — pour `EQUIPMENT_SLOT_ICONS` (placeholder par slot).
-- [ ] **4.4** Atlas **wand** — 3 familles (`oak, elder, phoenix`).
-- [ ] **4.5** Atlas **head** — 3 familles (`hat, hood, circlet`).
-- [ ] **4.6** Atlas **body** — 3 familles (`robe, chain, dueling`).
-- [ ] **4.7** Atlas **hands** — 3 familles (`gloves, mittens, dragonhide`).
-- [ ] **4.8** Atlas **feet** — 3 familles (`boots, sandals, dragonhide`).
-- [ ] **4.9** Atlas **cloak** — 3 familles (`school, traveler, invisibility`).
-- [ ] **4.10** Atlas **amulet** — 3 familles (`phoenix, serpent, protection`).
-- [ ] **4.11** Atlas **ring** — 3 familles (`silver, runed, resurrection`).
-- [ ] **4.12** Atlas **belt** — 3 familles (`leather, potionsmith, dueling`).
-- [ ] **4.13** Atlas **trinket** — 3 familles (`broom, timeturner, snitch`).
-- [ ] **4.14** `item-icons.js — ITEM_ICON_REGISTRY` : ajouter une entrée par nouvel item (33 entrées).
+- [x] **4.1** Décision : PNG individuels (48×48 RGBA) générés en pixel
+      art Pillow via `gen_icons.py`, cohérent avec les ~30 sprites
+      d'items déjà livrés. Pas d'atlas IA à découper — le projet utilise
+      la même chaîne (Pillow déterministe) pour 100% des items.
+- [x] **4.14** `item-icons.js — ITEM_ICON_REGISTRY` : 12 entrées
+      pointent désormais vers `img/icons/items/<id>.png` (sprites
+      dédiés). Smoke T3 du scénario 21 restauré en assertion stricte.
+- [x] **4.x** `gen_icons.py` : helper `_outline()` partagé +
+      12 `gen_item_*` ajoutés (gants, bottes, chapeau, ceinture,
+      anneau, cape, amulette_protection, circlet, anneau_runique,
+      ceinture_alchimiste, bottes_dragon, retourneur_temps) +
+      12 entrées dans `TARGETS`. Total : **99 icônes** générées.
+
+> **4.2–4.13 (atlas IA + variantes par teinte) hors-scope V1** :
+> les 12 sprites dédiés couvrent déjà 1 PNG par item du catalogue
+> Phase 3a. Le plan original prévoyait 33 items × 3 familles avec
+> partage de sprite par teinte — non nécessaire tant que le catalogue
+> reste à 12 entrées. À rouvrir si on étoffe à 33+ items.
 
 ### 7.3 Workflow de génération (un atlas à la fois)
 
