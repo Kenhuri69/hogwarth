@@ -2662,8 +2662,135 @@ async function scenarioTintCss() {
   await browser.close();
 }
 
+async function scenarioRepeatableQuestSpawn() {
+  console.log('\n── Scénario 3quinquies : chouette_perdue — spawn + reward répétée ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : champs spawnOnAccept + repeatableReward présents sur le template
+  const t1 = await page.evaluate(() => {
+    const t = QUEST_TEMPLATES.find(q => q.id === 'chouette_perdue');
+    return {
+      hasSpawn:        !!(t && t.spawnOnAccept),
+      spawnTarget:     t?.spawnOnAccept?.targetMonsterId,
+      spawnExtra:      t?.spawnOnAccept?.extraRandomCount,
+      hasRepeatReward: !!(t && t.repeatableReward),
+      repeatXp:        t?.repeatableReward?.xp,
+      repeatGold:      t?.repeatableReward?.gold,
+      repeatItem:      t?.repeatableReward?.item,
+      hasSpawnFn:      typeof spawnQuestMonsters === 'function'
+    };
+  });
+  console.log('  T1 template fields:', t1);
+  assert(t1.hasSpawn,                             'spawnOnAccept manquant sur chouette_perdue');
+  assert(t1.spawnTarget === 'chouette_envoutee',  'targetMonsterId attendu = chouette_envoutee');
+  assert(t1.spawnExtra === 2,                     'extraRandomCount attendu = 2');
+  assert(t1.hasRepeatReward,                      'repeatableReward manquant');
+  assert(typeof t1.repeatXp === 'number' && t1.repeatXp > 0,   'repeatableReward.xp invalide');
+  assert(typeof t1.repeatGold === 'number' && t1.repeatGold > 0, 'repeatableReward.gold invalide');
+  assert(t1.repeatItem === undefined,             'repeatableReward ne doit pas redonner le balai');
+  assert(t1.hasSpawnFn,                           'spawnQuestMonsters non exposée');
+
+  // T2 : étage vide (donjon nettoyé manuellement) → acceptQuest doit
+  // peupler enemyMap avec au moins la cible (chouette).
+  const t2 = await page.evaluate(() => {
+    // Vide l'étage de tous les ennemis
+    for (let y = 0; y < enemyMap.length; y++) {
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    }
+    const before = (() => {
+      let n = 0;
+      for (let y = 0; y < enemyMap.length; y++)
+        for (let x = 0; x < enemyMap[y].length; x++)
+          if (enemyMap[y][x]) n++;
+      return n;
+    })();
+    acceptQuest('chouette_perdue');
+    let chouettes = 0, total = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) {
+        const m = enemyMap[y][x];
+        if (!m) continue;
+        total++;
+        if (m.id === 'chouette_envoutee') chouettes++;
+      }
+    return { before, chouettes, total };
+  });
+  console.log('  T2 spawn after accept:', t2);
+  assert(t2.before === 0,        'enemyMap aurait dû être vidé');
+  assert(t2.chouettes >= 1,      'au moins 1 chouette doit être spawnée');
+  assert(t2.total >= 2,          'au moins 1 chouette + 1 mob random attendus (pool peut être petit)');
+
+  // T3 : 1re remise → récompense complète (xp 90, gold 30, item broom).
+  // On gonfle xpNext pour neutraliser un éventuel level-up qui résète
+  // player.xp et fausserait la mesure du delta.
+  const t3 = await page.evaluate(() => {
+    player.xpNext = 999999;
+    const xpBefore   = player.xp;
+    const goldBefore = player.gold;
+    const hadBroom   = player.inventory.some(i => i.id === 'broom');
+    player.inventory = player.inventory.filter(i => i.id !== 'broom');
+    const q = activeQuests.find(x => x.id === 'chouette_perdue');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    turnInQuestById('chouette_perdue');
+    return {
+      hadBroomBefore: hadBroom,
+      xpDelta:        player.xp   - xpBefore,
+      goldDelta:      player.gold - goldBefore,
+      gotBroom:       player.inventory.some(i => i.id === 'broom'),
+      lastLvl:        lastQuestCompletion['chouette_perdue']
+    };
+  });
+  console.log('  T3 first turn-in:', t3);
+  assert(t3.xpDelta   === 90,     `1re remise : xp+90 attendu, got ${t3.xpDelta}`);
+  assert(t3.goldDelta === 30,     `1re remise : gold+30 attendu, got ${t3.goldDelta}`);
+  assert(t3.gotBroom,             '1re remise doit donner le balai');
+  assert(typeof t3.lastLvl === 'number', 'lastQuestCompletion doit être posé');
+
+  // T4 : ré-acceptation après cooldown atteint → 2e remise = reward dégradée.
+  const t4 = await page.evaluate(() => {
+    const tpl = QUEST_TEMPLATES.find(q => q.id === 'chouette_perdue');
+    player.level += tpl.repeatable.everyLevels; // saute le cooldown
+    player.xpNext = 999999;                     // neutralise level-up
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const accepted = acceptQuest('chouette_perdue');
+    let chouettes = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && enemyMap[y][x].id === 'chouette_envoutee') chouettes++;
+    const xpBefore   = player.xp;
+    const goldBefore = player.gold;
+    const broomCountBefore = player.inventory.filter(i => i.id === 'broom').length;
+    const q = activeQuests.find(x => x.id === 'chouette_perdue');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    turnInQuestById('chouette_perdue');
+    return {
+      accepted,
+      chouettesAfterReaccept: chouettes,
+      xpDelta:                player.xp   - xpBefore,
+      goldDelta:              player.gold - goldBefore,
+      broomCountBefore,
+      broomCountAfter:        player.inventory.filter(i => i.id === 'broom').length
+    };
+  });
+  console.log('  T4 second turn-in (degraded):', t4);
+  assert(t4.accepted,                       'ré-acceptation refusée');
+  assert(t4.chouettesAfterReaccept >= 1,    'spawn doit aussi marcher à la 2e acceptation');
+  assert(t4.xpDelta   === 60,               `2e remise : xp+60 attendu (repeatableReward), got ${t4.xpDelta}`);
+  assert(t4.goldDelta === 35,               `2e remise : gold+35 attendu, got ${t4.goldDelta}`);
+  assert(t4.broomCountAfter === t4.broomCountBefore, '2e remise ne doit PAS ajouter un balai');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ chouette_perdue — spawn + reward dégradée OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
   for (const s of scenarios) {
     await s();
   }
