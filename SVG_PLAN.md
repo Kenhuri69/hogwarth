@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/resume-svg-work-rgOvm`
 > (anciennes branches : `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 29 / 76 tâches terminées (+ C44 fontaine)
+> **Statut global** : 30 / 76 tâches terminées (+ C44 fontaine)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -106,7 +106,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C16** `bundimun`
 - [x] **C17** `meduse_noire`
 - [x] **C18** `homme_araignee`
-- [ ] **C19** `portrait_hostile`
+- [x] **C19** `portrait_hostile`
 - [ ] **C20** `centaure`
 - [ ] **C21** `detraqueur`
 - [ ] **C22** `loup_garou`
@@ -210,3 +210,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-09 | #23 | C16 bundimun intégré (birefnet-general, source webp) | Masse fongique avec tiges oculaires multiples, mâchoire baveuse, pattes araignée et coulures de sécrétion verte luminescente ; pipeline étendu pour accepter les sources webp via PIL convert("RGBA") |
 | 2026-05-09 | #24 | C17 meduse_noire intégrée (birefnet-general, source jpg sur fond forêt) | Sorcière à chapeau pointu, peau craquelée, serpents enroulés autour du chapeau et de la main, collier de crânes ; détourage propre malgré le fond non-noir |
 | 2026-05-10 | #25 | C18 homme_araignee intégré (birefnet-general) | Hybride humain-araignée gaunt, 8 pattes, robe sorcier déchirée, fils de toile préservés ; visuellement plus humain que C09 acromantula_jeune |
+| 2026-05-10 | #26 | C19 portrait_hostile intégré (birefnet-general) | Cadre baroque doré incliné, noble en perruque hurlant, main jaillissant de la toile avec aura magique verte ; alpha conserve les arêtes du cadre et les éclairs énergétiques |

@@ -137,6 +137,7 @@ const MONSTERS = [
     id:       "portrait_hostile",
     name:     "Portrait Animé Hostile",
     icon:     "🖼️",
+    imgSrc:   "img/monsters/portrait_hostile.png",
     category: "fantôme",
     desc:     "Le portrait d'un ancien élève de Serpentard s'anime et vous maudit !",
     lore:     "Certains portraits des couloirs ont été ensorcelés par des sympathisants de Voldemort. Ils lancent des malédictions sur les passants indésirables.",
