@@ -301,6 +301,7 @@ function _applyState(gs) {
   updateCompass();
   renderMinimap();
   drawDungeon();
+  if (typeof startNpcAnimLoop === 'function') startNpcAnimLoop();
   updateLocationDisplay();
 }
 

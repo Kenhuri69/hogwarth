@@ -36,7 +36,10 @@ const NPCS = [
     questsGiven:    ["intro_tutoriel"],
     questsTurnedIn: ["intro_tutoriel"],
     dialogues: {
-      greeting:    "Ah, te voilà enfin ! Bienvenue dans les profondeurs de Poudlard, jeune sorcier. Le château recèle bien des mystères — descends d'un étage pour faire tes premiers pas.",
+      greeting:    [
+        "Ah, te voilà enfin ! Bienvenue dans les profondeurs de Poudlard, jeune sorcier. Le château recèle bien des mystères.",
+        "Pour faire tes premiers pas, descends d'un étage. Le grand escalier n'est jamais loin — garde l'œil ouvert, chaque salle a son histoire."
+      ],
       idle:        "Le château murmure tes pas. Continue ton exploration.",
       questOffer:  "Avant tout, descends d'un étage. C'est l'épreuve la plus douce que je puisse t'offrir.",
       questActive: "Le grand escalier t'attend. Trouve-le, et tu auras gagné mon respect.",
@@ -54,7 +57,10 @@ const NPCS = [
     questsGiven:    ["mandragore_pomfresh"],
     questsTurnedIn: ["mandragore_pomfresh"],
     dialogues: {
-      greeting:    "Par Merlin ! L'infirmerie est saturée et il me manque des Mandragores. Aurais-tu un instant ?",
+      greeting:    [
+        "Par Merlin ! L'infirmerie est saturée et il me manque des Mandragores. Aurais-tu un instant, jeune sorcier ?",
+        "Ces racines poussent dans les coffres et chez les marchands ambulants. Trois suffisent pour préparer l'antidote — files ne traînent pas."
+      ],
       idle:        "Tant de pétrifiés, si peu de mains pour les soigner...",
       questOffer:  "Si tu pouvais m'apporter trois Racines de Mandragore, tu sauverais des vies !",
       questActive: "As-tu déjà trouvé les Mandragores ? Le temps presse...",
@@ -72,7 +78,10 @@ const NPCS = [
     questsGiven:    ["troll_toilettes"],
     questsTurnedIn: ["troll_toilettes"],
     dialogues: {
-      greeting:    "Snif... Personne ne vient jamais me voir... sauf ce sale Troll qui pollue MES toilettes !",
+      greeting:    [
+        "Snif... Personne ne vient jamais me voir... Personne, jamais, je suis tellement seule...",
+        "Sauf ce sale Troll qui pollue MES toilettes ! Il sent affreusement mauvais et il fait du bruit toute la nuit. Tu pourrais le faire taire ?"
+      ],
       idle:        "Snif... pourquoi est-ce toujours moi qui dois supporter ça ?",
       questOffer:  "Tu pourrais m'en débarrasser ? Élimine le Troll des Toilettes, je t'en supplie !",
       questActive: "Il sent toujours aussi mauvais... fais vite !",
@@ -90,7 +99,10 @@ const NPCS = [
     questsGiven:    ["niffleurs_trésor"],
     questsTurnedIn: ["niffleurs_trésor"],
     dialogues: {
-      greeting:    "Oh ! Un visiteur ! Mes Niffleurs se sont... euh... échappés. Encore. Pourrais-tu m'aider à en récupérer trois ?",
+      greeting:    [
+        "Oh ! Un visiteur ! Mes Niffleurs se sont... euh... échappés. Encore.",
+        "Ils volent tout ce qui brille — surveille bien ton or si tu en croises. Pourrais-tu m'aider à en neutraliser trois ?"
+      ],
       idle:        "Ces petites créatures sont fascinantes, mais incroyablement filous.",
       questOffer:  "Élimine 3 Niffleurs avant qu'ils ne dévalisent les sous-sols !",
       questActive: "Combien en as-tu déjà attrapé ? Continue, je te prie.",
@@ -108,7 +120,10 @@ const NPCS = [
     questsGiven:    ["livre_interdit"],
     questsTurnedIn: ["livre_interdit"],
     dialogues: {
-      greeting:    "Ah, un admirateur ! Approche, approche. As-tu lu mes mémoires ? Non ? Eh bien, j'aurais une petite mission pour toi...",
+      greeting:    [
+        "Ah, un admirateur ! Approche, approche. As-tu lu mes mémoires ? Non ? Quel dommage — je te recommande chaudement le tome trois.",
+        "Eh bien, j'aurais une petite mission pour toi. Une bagatelle, vraiment. Pour quelqu'un de mon talent ce serait trivial — mais je suis un peu... occupé."
+      ],
       idle:        "J'aurais bien récupéré ce livre moi-même, mais... mes cheveux n'aiment pas la poussière.",
       questOffer:  "Récupère le Livre des Monstres dans la Bibliothèque Interdite — pour la science, bien entendu.",
       questActive: "Tu as déjà mis la main sur ce satané ouvrage ?",
@@ -126,7 +141,10 @@ const NPCS = [
     questsGiven:    ["lumiere_desespoir"],
     questsTurnedIn: ["lumiere_desespoir"],
     dialogues: {
-      greeting:    "Bienvenue. Je peux t'enseigner un sort puissant — mais d'abord, tu dois affronter ta peur la plus sombre.",
+      greeting:    [
+        "Bienvenue, jeune sorcier. Je peux t'enseigner un sort puissant — mais d'abord, tu dois affronter ta peur la plus sombre.",
+        "Le Patronus exige un souvenir heureux, pur, indéfectible. Sans lui, le Détraqueur t'engloutira. Es-tu prêt à passer cette épreuve ?"
+      ],
       idle:        "Le Patronus exige plus que de la magie : il exige du courage.",
       questOffer:  "Affronte un Détraqueur, puis rapporte-moi un Chocolat aux Sorciers. Je t'enseignerai alors le sort du Patronus.",
       questActive: "As-tu trouvé un Détraqueur ? Et le chocolat ?",
@@ -144,7 +162,10 @@ const NPCS = [
     questsGiven:    ["chouette_perdue"],
     questsTurnedIn: ["chouette_perdue"],
     dialogues: {
-      greeting:    "Ah, te v'là ! J'ai perdu une de mes chouettes ensorcelées dans la Forêt. Tu pourrais m'aider à la retrouver ?",
+      greeting:    [
+        "Ah, te v'là ! Tu tombes bien — j'ai perdu une de mes chouettes ensorcelées dans la Forêt Interdite.",
+        "Elle est têtue comme une mule, c'te bestiole. Mais c'est qu'un'amour, j'te jure. Tu pourrais m'aider à la r'trouver ?"
+      ],
       idle:        "Y'a tant de bestioles à surveiller dans c'te Forêt...",
       questOffer:  "Trouve cette Chouette Ensorcelée et ramène-la moi, j'te r'compenserai bien.",
       questActive: "Toujours pas trouvé ? Fais attention, c'te bestiole sait s'cacher.",
@@ -162,7 +183,10 @@ const NPCS = [
     questsGiven:    ["golem_passage"],
     questsTurnedIn: ["golem_passage"],
     dialogues: {
-      greeting:    "Un Gardien du Portail s'est éveillé dans les passages. Il bloque l'accès à des connaissances précieuses. Pouvez-vous le neutraliser ?",
+      greeting:    [
+        "Un Gardien du Portail s'est éveillé dans les passages secrets. Il bloque l'accès à des connaissances précieuses.",
+        "Soyez prudent : ce gardien est de pierre vivante, ses coups peuvent rompre un os. Préparez vos contre-sorts. Êtes-vous prêt à l'affronter ?"
+      ],
       idle:        "L'ordre doit être maintenu, même dans ces souterrains.",
       questOffer:  "Neutralisez le Gardien du Portail. Je vous récompenserai à la hauteur du danger.",
       questActive: "Le Gardien est-il vaincu ?",

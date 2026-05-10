@@ -222,6 +222,7 @@ async function startGame(count = 2) {
   updateCompass();
   renderMinimap();
   drawDungeon();
+  if (typeof startNpcAnimLoop === 'function') startNpcAnimLoop();
   updateLocationDisplay();
 
   const diffIcon = { Facile:'🟢', Normal:'🟡', Difficile:'🟠', Expert:'🔴' }[difficulty] || '';

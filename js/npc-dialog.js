@@ -45,17 +45,19 @@ function getNpcMarkerSign(npcId) {
 
 // ── Rendu de l'overlay ───────────────────────────────────────────
 
-function _npcDialogText(npc, state) {
+// Retourne toujours un tableau de pages (array<string>). Un dialogue
+// peut être déclaré comme string (1 page) ou comme array (multi-page).
+function _npcDialogPages(npc, state) {
   const d = npc.dialogues || {};
-  // 1ère rencontre prioritaire si dispo
+  let raw;
   if (typeof seenNpcs !== 'undefined' && !seenNpcs.has(npc.id) && d.greeting) {
-    return d.greeting;
-  }
-  if (state === 'offer'  && d.questOffer)  return d.questOffer;
-  if (state === 'active' && d.questActive) return d.questActive;
-  if (state === 'ready'  && d.questReady)  return d.questReady;
-  if (state === 'done'   && d.questDone)   return d.questDone;
-  return d.idle || d.greeting || '...';
+    raw = d.greeting;
+  } else if (state === 'offer'  && d.questOffer)  raw = d.questOffer;
+  else if (state === 'active' && d.questActive) raw = d.questActive;
+  else if (state === 'ready'  && d.questReady)  raw = d.questReady;
+  else if (state === 'done'   && d.questDone)   raw = d.questDone;
+  else                                           raw = d.idle || d.greeting || '...';
+  return Array.isArray(raw) ? raw.slice() : [raw];
 }
 
 function _npcDialogActions(npc, state) {
@@ -85,6 +87,38 @@ function _npcDialogActions(npc, state) {
   return out;
 }
 
+// État courant du dialogue (multi-pages)
+let _dialogState = { npcId: null, pages: [], page: 0, actions: [] };
+
+function _renderDialogPage() {
+  const { pages, page, actions } = _dialogState;
+  const total = pages.length;
+  const textEl = document.getElementById('npc-dialog-text');
+  if (textEl) {
+    const pagerHtml = total > 1
+      ? `<div class="npc-dialog-pager">${page + 1} / ${total}</div>` : '';
+    textEl.innerHTML = `<div class="npc-dialog-page">${pages[page]}</div>${pagerHtml}`;
+  }
+  const actionsEl = document.getElementById('npc-dialog-actions');
+  if (actionsEl) {
+    if (page < total - 1) {
+      actionsEl.innerHTML =
+        `<button class="explore-btn" onclick="nextDialogPage()">Suivant ▸</button>`;
+    } else {
+      actionsEl.innerHTML = actions.map(a =>
+        `<button class="explore-btn${a.secondary ? ' secondary' : ''}" onclick="${a.onClick}">${a.label}</button>`
+      ).join('');
+    }
+  }
+}
+
+function nextDialogPage() {
+  if (_dialogState.page < _dialogState.pages.length - 1) {
+    _dialogState.page++;
+    _renderDialogPage();
+  }
+}
+
 function openNpcDialog(npcId) {
   const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
   if (!npc) return;
@@ -105,21 +139,28 @@ function openNpcDialog(npcId) {
   const titleEl = document.getElementById('npc-dialog-title');
   if (titleEl) titleEl.textContent = npc.title || '';
 
-  const textEl = document.getElementById('npc-dialog-text');
-  if (textEl) textEl.textContent = _npcDialogText(npc, state);
+  // État dialog → pages + actions calculés AVANT add(seenNpcs) pour
+  // que la 1re rencontre lise bien `greeting`.
+  _dialogState = {
+    npcId,
+    pages:   _npcDialogPages(npc, state),
+    page:    0,
+    actions: _npcDialogActions(npc, state)
+  };
+  _renderDialogPage();
 
-  const actionsEl = document.getElementById('npc-dialog-actions');
-  if (actionsEl) {
-    actionsEl.innerHTML = _npcDialogActions(npc, state).map(a =>
-      `<button class="explore-btn${a.secondary ? ' secondary' : ''}" onclick="${a.onClick}">${a.label}</button>`
-    ).join('');
-  }
-
-  // Marquer comme rencontré (après calcul du texte greeting)
+  // Marquer comme rencontré (après calcul des pages)
   if (typeof seenNpcs !== 'undefined') seenNpcs.add(npc.id);
 
   const overlay = document.getElementById('npc-dialog-overlay');
-  if (overlay) overlay.style.display = 'flex';
+  if (overlay) {
+    const wasOpen = overlay.style.display === 'flex';
+    overlay.style.display = 'flex';
+    // Cloche d'accueil seulement à la 1re ouverture (pas sur re-render après accept/turnIn)
+    if (!wasOpen && AudioSystem && typeof AudioSystem.playNpcGreet === 'function') {
+      AudioSystem.playNpcGreet();
+    }
+  }
 
   // Rafraîchit le canvas pour mettre à jour l'indicateur "!"/"?".
   if (typeof drawDungeon === 'function') drawDungeon();

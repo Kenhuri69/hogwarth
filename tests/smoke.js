@@ -403,6 +403,35 @@ async function scenarioNpcIntegration() {
   assert(t4.portraitSrc === 'img/npc/dumbledore.png',
     `portrait src attendu img/npc/dumbledore.png, got ${t4.portraitSrc}`);
 
+  // T5 : pagination des dialogues + son + animation loop
+  const t5 = await page.evaluate(() => {
+    // McGonagall n'a pas encore été rencontrée → greeting multi-page
+    seenNpcs.delete('mcgonagall');
+    openNpcDialog('mcgonagall');
+    const total       = _dialogState.pages.length;
+    const pageInitial = _dialogState.page;
+    const actionsHtml1 = document.getElementById('npc-dialog-actions').innerHTML;
+    const hasNext     = actionsHtml1.includes('Suivant');
+    nextDialogPage();
+    const pageAfter   = _dialogState.page;
+    const actionsHtml2 = document.getElementById('npc-dialog-actions').innerHTML;
+    const hasAccept   = actionsHtml2.includes('Accepter');
+    closeNpcDialog();
+    return {
+      total, pageInitial, pageAfter, hasNext, hasAccept,
+      hasGreetSound: typeof AudioSystem.playNpcGreet === 'function',
+      hasAnimLoop:   typeof startNpcAnimLoop === 'function'
+    };
+  });
+  console.log('  T5 multi-page:', t5);
+  assert(t5.total === 2,         `greeting McGonagall doit avoir 2 pages (got ${t5.total})`);
+  assert(t5.pageInitial === 0,   'pagination doit démarrer à la page 0');
+  assert(t5.hasNext,             'bouton Suivant ▸ absent en page 0');
+  assert(t5.pageAfter === 1,     'nextDialogPage n\'a pas avancé la pagination');
+  assert(t5.hasAccept,           'bouton Accepter absent en dernière page');
+  assert(t5.hasGreetSound,       'AudioSystem.playNpcGreet absent');
+  assert(t5.hasAnimLoop,         'startNpcAnimLoop absent');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
