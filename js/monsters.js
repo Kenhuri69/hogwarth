@@ -291,6 +291,7 @@ const MONSTERS = [
     id:       "boggart",
     name:     "Épouvantard",
     icon:     "🌫️",
+    imgSrc:   "img/monsters/boggart.png",
     category: "être magique",
     desc:     "L'Épouvantard prend la forme de votre pire cauchemar !",
     lore:     "L'Épouvantard est une créature sans forme propre qui prend l'apparence de ce que vous craignez le plus. Seul le sort Riddikulus peut le repousser en faisant rire.",

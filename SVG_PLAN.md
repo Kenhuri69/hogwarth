@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/resume-svg-work-rgOvm`
 > (anciennes branches : `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 34 / 76 tâches terminées (+ C44 fontaine)
+> **Statut global** : 35 / 76 tâches terminées (+ C44 fontaine)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -115,7 +115,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [ ] **C25** `mangemort_masque`
 - [ ] **C26** `mangemort_elite`
 - [ ] **C27** `sorcier_renegat`
-- [ ] **C28** `boggart`
+- [x] **C28** `boggart`
 - [ ] **C29** `chimere`
 - [ ] **C30** `ombre_quirrell`
 
@@ -215,3 +215,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-10 | #28 | C21 detraqueur intégré (birefnet-general) | Détraqueur lambda flottant, capuche, mains squelettiques, lambeaux de tissu fins préservés ; visuellement distinct du C34 detraqueur_gardien (futur re-gen) |
 | 2026-05-10 | #29 | C22 loup_garou intégré (birefnet-general) | Hybride homme-loup hunché en course, mâchoire ouverte avec crocs et salive, restes de pantalon humain déchiré ; pelage hérissé et griffes courbes préservés |
 | 2026-05-10 | #30 | C23 inferius intégré (birefnet-general) | Cadavre noyé réanimé, peau gris-bleu translucide, yeux laiteux, linceul effiloché trempé ; coulures d'eau et lambeaux préservés |
+| 2026-05-10 | #31 | C28 boggart intégré (birefnet-general, source fond blanc) | Épouvantard en transformation araignée hairy, volutes de fumée et visages fantomatiques émergeants ; prompt "transformation incomplete" pour figer une silhouette lisible ; PNG nommé `boggart.png` (id du monstre, pas son nom français) ; saute en avant dans la liste — C24-C27 mangemorts/sorcier_renegat à faire ensuite |
