@@ -200,14 +200,16 @@ body {
   border-radius:6px;
   overflow:hidden;
 }
-/* A1ter — buste = tout l'espace libre entre slots latéraux et slots du bas.
-   Wrapper absolu pour définir la zone, img à 100%/100% + object-fit:contain
-   pour que l'image carrée 128×128 s'adapte au min(W,H) sans déformation.
-   Sans wrapper : img absolu garde sa taille intrinsèque (cf. v2.3 raté). */
+/* A1quat — buste occupe TOUT l'espace dispo entre slots :
+   - haut : juste sous le bord (top:4)
+   - bas : juste au-dessus du gold-banner (bottom:48)
+   - côtés : juste à droite des slots latéraux (left:64, right:64)
+   - slot belt est dans la même zone, le perso passe derrière (z-index inférieur)
+   object-fit:contain → reste dans le ratio carré, prend min(W,H). */
 .pd-portrait-wrapper{
   position:absolute;
-  top:10px; bottom:170px;
-  left:70px; right:70px;
+  top:4px; bottom:48px;
+  left:64px; right:64px;
   z-index:2;
   pointer-events:none;
 }
@@ -254,7 +256,7 @@ body {
   display:flex; align-items:center; justify-content:center;
   cursor:pointer;
   transition:border-color 0.15s, transform 0.15s;
-  z-index:1;
+  z-index:3;                          /* au-dessus du buste (z:2) pour rester cliquables */
   font-size:24px;                     /* taille emoji slot vide */
 }
 .equip-slot:hover{ border-color:var(--gold-light); transform:scale(1.06); z-index:50; }
@@ -386,11 +388,11 @@ body {
   .tab          { font-size:10px; padding:2px 8px; }
   .char-grid    { grid-template-columns:1fr; gap:6px; }
   .section-toggle { display:block; }
-  /* A10 — mobile : wrapper resserré pour s'adapter aux slots 44px */
+  /* A10 — mobile : wrapper occupe tout l'espace dispo */
   .paper-doll   { height:400px; }
   .pd-portrait-wrapper {
-    top:8px; bottom:140px;
-    left:60px; right:60px;
+    top:4px; bottom:50px;
+    left:56px; right:56px;
   }
   .equip-slot   { width:44px; height:44px; font-size:20px; }
   .equip-slot img { width:30px; height:30px; }
