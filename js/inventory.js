@@ -52,20 +52,37 @@ function recalculateStats() {
     c.agi = c._baseAgi;
     c.end = c._baseEnd;
 
-    if (!c.equipped) return;
-    // Itérer sur tous les slots présents (extensible sans toucher au code)
-    for (const slot of Object.keys(c.equipped)) {
-      const item = c.equipped[slot];
-      if (!item) continue;
-      if (item.bonusAtk) c.atk += item.bonusAtk;
-      if (item.bonusDef) c.def += item.bonusDef;
-      if (item.bonusMag) c.mag += item.bonusMag;
-      if (item.bonusLck) c.lck += item.bonusLck;
-      if (item.bonusStr) c.str += item.bonusStr;
-      if (item.bonusInt) c.int += item.bonusInt;
-      if (item.bonusAgi) c.agi += item.bonusAgi;
-      if (item.bonusEnd) c.end += item.bonusEnd;
+    if (c.equipped) {
+      // Itérer sur tous les slots présents (extensible sans toucher au code)
+      for (const slot of Object.keys(c.equipped)) {
+        const item = c.equipped[slot];
+        if (!item) continue;
+        if (item.bonusAtk) c.atk += item.bonusAtk;
+        if (item.bonusDef) c.def += item.bonusDef;
+        if (item.bonusMag) c.mag += item.bonusMag;
+        if (item.bonusLck) c.lck += item.bonusLck;
+        if (item.bonusStr) c.str += item.bonusStr;
+        if (item.bonusInt) c.int += item.bonusInt;
+        if (item.bonusAgi) c.agi += item.bonusAgi;
+        if (item.bonusEnd) c.end += item.bonusEnd;
+      }
     }
+
+    // Stats dérivées : crit chance via LCK (5–25 %), esquive via AGI (5–20 %).
+    // Bonus optionnels d'équipement (`bonusCritChance`, `bonusDodgeChance`)
+    // pris en compte si présents (préparé pour V2 — items existants ne les
+    // utilisent pas encore).
+    let critBonus = 0, dodgeBonus = 0;
+    if (c.equipped) {
+      for (const item of Object.values(c.equipped)) {
+        if (!item) continue;
+        if (item.bonusCritChance)  critBonus  += item.bonusCritChance;
+        if (item.bonusDodgeChance) dodgeBonus += item.bonusDodgeChance;
+      }
+    }
+    c.critChance     = Math.max(0, Math.min(40, 5 + c.lck * 0.5 + critBonus));
+    c.dodgeChance    = Math.max(0, Math.min(35, 5 + c.agi * 0.4 + dodgeBonus));
+    c.critMultiplier = 1.5;
   });
 }
 

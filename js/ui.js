@@ -236,62 +236,87 @@ const EQUIP_SLOT_LABELS = [
   ['trinket', 'Bibelot']
 ];
 
-function _renderEquipSlots(c) {
-  return EQUIP_SLOT_LABELS.map(([slot, label]) => {
-    const item = c.equipped && c.equipped[slot];
-    const icon = item
-      ? getItemIconHtml(item, 'ui-icon-sm')
-      : getEquipmentSlotIconHtml(slot, 'ui-icon-sm');
-    const name = item ? item.name : '—';
-    const nameClass = item ? 'parchment' : 'empty';
-    return `<div class="equip-row${item ? ' filled' : ''}">
-              <span class="equip-icon">${icon}</span>
-              <span class="equip-label">${label}</span>
-              <span class="equip-name ${nameClass}">${name}</span>
-            </div>`;
-  }).join('');
+const EQUIP_SLOT_LABELS_MAP = Object.fromEntries(EQUIP_SLOT_LABELS);
+
+// Slots du paper doll : 11 emplacements positionnés autour du portrait via CSS.
+// `equip-slot-${slot}` correspond aux règles `.paper-doll .equip-slot-<slot>`
+// dans style.css (positions absolues). `equip-slot-floating` factorise le cadre.
+function _renderPaperDollSlot(slot, c) {
+  const item = c.equipped && c.equipped[slot];
+  const icon = item
+    ? getItemIconHtml(item, 'ui-icon')
+    : getEquipmentSlotIconHtml(slot, 'ui-icon');
+  const filled    = !!item;
+  const rarityCls = item && item.rarity ? `rarity-${item.rarity}` : '';
+  const tooltip   = item ? item.name : EQUIP_SLOT_LABELS_MAP[slot] || slot;
+  return `<div class="equip-slot-floating equip-slot-${slot} ${filled ? 'filled' : 'empty'} ${rarityCls}"
+               title="${tooltip.replace(/"/g, '&quot;')}">${icon}</div>`;
 }
 
-// Fiche de personnage (avec onglets Harry / Hermione)
+// Une ligne de stat dans le panneau gauche.
+function _renderStatLine(iconPath, label, value, derived = false) {
+  return `<div class="stat-line${derived ? ' derived' : ''}">
+            <img class="ui-icon ui-icon-md" src="${iconPath}" alt="">
+            <span class="stat-label">${label}</span>
+            <span class="stat-value">${value}</span>
+          </div>`;
+}
+
+// Fiche de personnage — layout 3 colonnes (paper doll central).
 function openCharacter(charIdx = 0) {
   const c      = party[charIdx];
   const detail = document.getElementById('char-detail');
 
   const tabs = party.map((p, i) =>
-    `<button class="cmd-btn${i === charIdx ? '' : ''}" style="font-size:10px;${i === charIdx ? 'border-color:var(--gold)' : ''}" onclick="openCharacter(${i})">${p.icon} ${p.name.split(' ')[0]}</button>`
+    `<button class="cmd-btn" style="font-size:10px;${i === charIdx ? 'border-color:var(--gold)' : ''}" onclick="openCharacter(${i})">${p.icon} ${p.name.split(' ')[0]}</button>`
   ).join('');
 
+  const xpPct = Math.max(0, Math.min(100, Math.floor((player.xp / Math.max(1, player.xpNext)) * 100)));
+
+  // Slots du paper doll dans l'ordre de leur position visuelle.
+  const slotOrder = ['head','body','hands','feet','cloak','amulet','ring1','ring2','wand','trinket','belt'];
+  const slotsHtml = slotOrder.map(s => _renderPaperDollSlot(s, c)).join('');
+
+  // Stats dérivées (Phase B). Déjà calculées par recalculateStats().
+  const critPct  = (c.critChance  != null) ? `${Math.round(c.critChance)}%`  : '—';
+  const dodgePct = (c.dodgeChance != null) ? `${Math.round(c.dodgeChance)}%` : '—';
+
   detail.innerHTML = `
-    <div style="display:flex;gap:6px;margin-bottom:12px">${tabs}</div>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <img src="${c.imgSrc || ''}" alt="${c.name}" style="width:80px;height:80px;object-fit:contain;border-radius:6px">
-      <div>
-        <div style="font-family:'Cinzel',serif;font-size:15px;color:var(--gold-light)">${c.name}</div>
-        <div style="font-size:12px;color:#8a7050">${c.class} — Niveau ${c.level}</div>
-        <div style="font-size:11px;color:#6a5030;margin-top:2px">XP : ${player.xp}/${player.xpNext}</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">${tabs}</div>
+    <div class="char-modal-grid">
+      <!-- Colonne gauche : niveau + stats -->
+      <div class="char-stats-panel">
+        <div class="level-banner">
+          <div class="lvl">${c.name.split(' ')[0]} — Niveau ${c.level}</div>
+          <div style="font-size:10px;color:#8a7050;margin-top:2px">${c.class}</div>
+          <div class="xp-bar"><span style="width:${xpPct}%"></span></div>
+          <div style="font-size:9px;color:#6a5030;margin-top:2px">XP ${player.xp}/${player.xpNext}</div>
+        </div>
+        ${_renderStatLine('img/icons/hp.png',  'Vie',         `${c.hp}/${c.hpMax}`)}
+        ${_renderStatLine('img/icons/mp.png',  'Mana',        `${c.sp}/${c.spMax}`)}
+        ${_renderStatLine('img/icons/atk.png', 'Attaque',     c.atk)}
+        ${_renderStatLine('img/icons/def.png', 'Défense',     c.def)}
+        ${_renderStatLine('img/icons/mag.png', 'Magie',       c.mag)}
+        ${_renderStatLine('img/icons/str.png', 'Force',       c.str)}
+        ${_renderStatLine('img/icons/int.png', 'Intelligence',c.int)}
+        ${_renderStatLine('img/icons/agi.png', 'Agilité',     c.agi)}
+        ${_renderStatLine('img/icons/xp.png',  'Chance',      c.lck)}
+        ${_renderStatLine('img/icons/atk.png', 'Critique',    critPct,  true)}
+        ${_renderStatLine('img/icons/agi.png', 'Esquive',     dodgePct, true)}
       </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px">
-      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/hp.png" alt=""> Points de Vie</div>   <div style="color:var(--parchment)">${c.hp}/${c.hpMax}</div>
-      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/mp.png" alt=""> Points de Magie</div>  <div style="color:var(--parchment)">${c.sp}/${c.spMax}</div>
-      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/atk.png" alt=""> Attaque</div>         <div style="color:var(--parchment)">${c.atk}</div>
-      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/def.png" alt=""> Défense</div>         <div style="color:var(--parchment)">${c.def}</div>
-      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/str.png" alt=""> Force</div>            <div style="color:var(--parchment)">${c.str}</div>
-      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/int.png" alt=""> Intelligence</div>     <div style="color:var(--parchment)">${c.int}</div>
-      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/agi.png" alt=""> Agilité</div>          <div style="color:var(--parchment)">${c.agi}</div>
-      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/xp.png" alt=""> Chance</div>           <div style="color:var(--parchment)">${c.lck}</div>
-      <div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/mag.png" alt=""> Magie</div>            <div style="color:var(--parchment)">${c.mag}</div>
-      ${charIdx === 0 ? `<div style="color:#8a7050"><img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> Gallions</div><div style="color:var(--gold)">${player.gold}</div>` : ''}
-    </div>
-    <div style="margin-top:12px;border-top:1px solid #2a1a08;padding-top:10px">
-      <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);margin-bottom:5px">ÉQUIPEMENT</div>
-      <div class="equip-grid">
-        ${_renderEquipSlots(c)}
+      <!-- Colonne centrale : paper doll + 11 slots -->
+      <div class="paper-doll">
+        <img class="pd-portrait" src="${c.imgSrc || ''}" alt="${c.name}">
+        ${slotsHtml}
+        <div class="gold-banner">
+          <img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${player.gold}
+        </div>
       </div>
-    </div>
-    <div style="margin-top:12px;border-top:1px solid #2a1a08;padding-top:10px">
-      <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);margin-bottom:5px">SORTS CONNUS</div>
-      <div style="font-size:12px;color:var(--parchment-dark);line-height:1.9">${c.spells.join(' • ')}</div>
+      <!-- Colonne droite : sorts connus -->
+      <div class="char-spells-panel">
+        <div class="panel-title">SORTS CONNUS</div>
+        ${c.spells.map(s => `<div class="spell-line">${s}</div>`).join('')}
+      </div>
     </div>
   `;
   document.getElementById('character-modal').style.display = 'flex';

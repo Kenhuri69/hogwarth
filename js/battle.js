@@ -188,8 +188,12 @@ function executeAttack(targetIdx) {
   if (enemy.disarmed > 0) enemy.disarmed--;
 
   AudioSystem.playHit();
-  const isCrit = (Math.random() * 100) < (char.lck || 0);
-  const finalDmg = isCrit ? Math.floor(dmg * 1.5) : dmg;
+  // Crit pondéré par critChance/critMultiplier (calculés par recalculateStats).
+  // Saves antérieures : fallback sur l'ancienne formule (lck en %).
+  const critPct  = (char.critChance != null) ? char.critChance : (char.lck || 0);
+  const critMult = char.critMultiplier || 1.5;
+  const isCrit   = Math.random() * 100 < critPct;
+  const finalDmg = isCrit ? Math.floor(dmg * critMult) : dmg;
   if (isCrit) {
     enemy.currentHp -= (finalDmg - dmg); // ajoute le bonus crit
   }
@@ -255,6 +259,13 @@ function enemyTurn() {
       if (window.UX) {
         UX.floatDmg('ally', 0, 'shield');
         UX.logCombat(`🛡️ Protego bloque l'attaque de ${enemy.name} sur ${target.name}.`, 'magic');
+      }
+    } else if (Math.random() * 100 < (target.dodgeChance || 0)) {
+      // Esquive : AGI-based, calculé par recalculateStats. Annule l'attaque.
+      log += `💨 ${target.name} esquive l'attaque de ${enemy.name} ! `;
+      if (window.UX) {
+        UX.floatDmg('ally', 0, 'miss');
+        UX.logCombat(`💨 ${target.name} esquive ${enemy.name}`, 'good');
       }
     } else {
       const dmg = Math.max(0, enemy.atk - target.def + Math.floor(Math.random() * 3));
