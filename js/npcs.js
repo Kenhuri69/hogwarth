@@ -220,6 +220,72 @@ const NPCS = [
     }
   },
 
+  // ── PNJ lore (placement fixe, pas de quête, pas de wares) ────
+  // Définition seule — la logique associée (boutique baguettes pour
+  // Ollivander, robes pour Guipure, mécanique de soin pour Fumseck,
+  // indices stratégiques pour le portrait) sera câblée dans une
+  // itération ultérieure.
+  {
+    id:    "ollivander",
+    name:  "Mr Ollivander",
+    title: "Fabricant de baguettes",
+    icon:  "🪄",
+    portraitImg: "img/npc/ollivander.png",
+    placement: { floor: 3, anchor: "any" },
+    dialogues: {
+      greeting: [
+        "Curieux... très curieux. Approche, jeune sorcier, et laisse-moi te regarder.",
+        "Souviens-toi : ce n'est pas le sorcier qui choisit la baguette, c'est la baguette qui choisit le sorcier. Garde précieusement la tienne — elle se souvient de chaque sort."
+      ],
+      idle: "Chaque baguette ici a son histoire. Chaque sorcier, la sienne."
+    }
+  },
+  {
+    id:    "guipure",
+    name:  "Madame Guipure",
+    title: "Couturière de Pré-au-Lard",
+    icon:  "🧵",
+    portraitImg: "img/npc/guipure.png",
+    placement: { floor: 5, anchor: "any" },
+    dialogues: {
+      greeting: [
+        "Oh, un nouveau client ! Tiens-toi droit, que je prenne tes mesures du regard.",
+        "Une bonne robe de sorcier, c'est plus qu'un vêtement : c'est une seconde peau qui résiste aux sortilèges. La tienne en a vu, dis-moi."
+      ],
+      idle: "Une couture défaite peut coûter un duel — fais-y attention."
+    }
+  },
+  {
+    id:    "portrait_dumbledore",
+    name:  "Portrait d'Albus Dumbledore",
+    title: "Toile animée",
+    icon:  "🖼️",
+    portraitImg: "img/npc/portrait_dumbledore.png",
+    placement: { floor: 6, anchor: "any" },
+    dialogues: {
+      greeting: [
+        "(Le portrait s'éveille en clignant des yeux.) Ah, jeune sorcier... même peint, je veille sur ces couloirs.",
+        "Ne te fie pas à ce qui semble immobile. Bien des secrets de ce château se cachent derrière les cadres dorés."
+      ],
+      idle: "(Le portrait somnole, puis t'adresse un léger sourire en te reconnaissant.)"
+    }
+  },
+  {
+    id:    "fumseck",
+    name:  "Fumseck",
+    title: "Phénix de Dumbledore",
+    icon:  "🔥",
+    portraitImg: "img/npc/fumseck.png",
+    placement: { floor: 7, anchor: "any" },
+    dialogues: {
+      greeting: [
+        "(Un chant cristallin s'élève. Un phénix écarlate te regarde sans crainte, perché sur un socle de bronze.)",
+        "(Ses larmes scintillent à la commissure de son œil — la légende dit qu'elles guérissent les blessures les plus profondes.)"
+      ],
+      idle: "(Fumseck déploie une aile, et quelques étincelles dansent dans l'air avant de s'éteindre.)"
+    }
+  },
+
   // ── Vendeurs ambulants (random:true) ─────────────────────────
   // Tirés au sort à la génération d'étage (cf. dungeon.js). Ne donnent
   // pas de quêtes — ouvrent une boutique réduite via npc.wares.
