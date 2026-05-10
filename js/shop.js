@@ -30,7 +30,6 @@ const SHOP_CATALOG = [
   { id: "anneau_runique",      minFloor: 5 },
   { id: "ceinture_alchimiste", minFloor: 5 },
   { id: "livre_bombarda",      minFloor: 5 },
-  { id: "wand2",               minFloor: 6 },
   { id: "livre_patronum",      minFloor: 6 },
   { id: "cape_invis",          minFloor: 7 },
   { id: "bottes_dragon",       minFloor: 7 },
@@ -46,7 +45,8 @@ let _shopContext = { kind: 'static', npcId: null };
 let _shopMode    = 'buy';
 
 // Calcule le prix de rachat pour un item donné selon une politique buyback.
-// Priorité : byRarity > byType > default. Plancher à 1G pour éviter le 0.
+// Le multiplicateur final = max(default, byType, byRarity, bySlot) — la
+// spécialisation la plus avantageuse l'emporte. Plancher à 1G.
 function _computeSellPrice(item, buyback) {
   if (!item || typeof item.price !== 'number' || item.price <= 0) return 0;
   buyback = buyback || STATIC_SHOP_BUYBACK;
@@ -56,6 +56,9 @@ function _computeSellPrice(item, buyback) {
   }
   if (buyback.byRarity && item.rarity && typeof buyback.byRarity[item.rarity] === 'number') {
     mult = Math.max(mult, buyback.byRarity[item.rarity]);
+  }
+  if (buyback.bySlot && item.slot && typeof buyback.bySlot[item.slot] === 'number') {
+    mult = Math.max(mult, buyback.bySlot[item.slot]);
   }
   return Math.max(1, Math.floor(item.price * mult));
 }

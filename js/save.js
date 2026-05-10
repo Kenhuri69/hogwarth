@@ -169,6 +169,7 @@ function _serializeState() {
     floorDungeons,
     restCooldown,
     usedFountains: Array.from(usedFountains),
+    usedSpecialNpcs: Array.from(usedSpecialNpcs),
     npcPlacements: Array.from(npcPlacements.entries()),
     seenNpcs:      Array.from(seenNpcs),
     availableQuests: Array.from(availableQuests),
@@ -297,6 +298,7 @@ function _applyState(gs) {
   floorDungeons = gs.floorDungeons || {};
   if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
   usedFountains = new Set(gs.usedFountains || []);
+  usedSpecialNpcs = new Set(gs.usedSpecialNpcs || []);
   npcPlacements = new Map(gs.npcPlacements || []);
   seenNpcs      = new Set(gs.seenNpcs || []);
 

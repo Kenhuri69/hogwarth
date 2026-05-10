@@ -128,6 +128,8 @@ function generateDungeon(floor) {
 
   // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
   usedFountains = new Set();
+  // Réinitialise les actions spéciales PNJ (Fumseck, etc.).
+  usedSpecialNpcs = new Set();
 
   // Placement des PNJ majeurs à étage fixe — registre dans npcs.js.
   // Ordre stable (premier inscrit = priorité), salle de spawn pour les

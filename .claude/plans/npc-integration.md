@@ -239,11 +239,41 @@ Boutons d'action dynamiques :
   | Fumseck | 7 | « Fontaine vivante » — heal + revive 1×/étage |
 
 - [x] **7.3** Smoke test inchangé : aucun nouveau scénario, vérification simplement que la suite existante reste verte (la définition seule n'introduit pas de logique exécutable).
-- [ ] **7.4 (itération suivante)** Câbler la logique métier de chacun :
-  - Ollivander : `wares: [{id:"wand1"}, {id:"wand2"}]` + buyback baguettes 75%.
-  - Guipure : `wares: [{id:"robe1"}, ...]` + éventuel nouvel item `robe2`.
-  - Portrait Dumbledore : pool de répliques contextuelles (rumeurs sur les ennemis de l'étage courant).
-  - Fumseck : nouveau type d'action `dialogues.specialAction = "heal_and_revive"` + cooldown 1 utilisation par étage (analogue fontaine).
+### Itération 7.4 — câblage logique métier (4 PNJ)
+
+Branche : `claude/seine-project-review-NX5o2`.
+
+Décisions validées :
+1. `wand2` est **retiré** de `SHOP_CATALOG` (Madame Malkins) — Ollivander devient la seule source rare avant l'étage 6.
+2. Pool de 8 répliques contextuelles validé pour Portrait Dumbledore.
+3. Fumseck restaure PV **et** PM (analogue fontaine) + ranime KO à hpMax/2.
+
+#### 7.4.A Extension du moteur
+
+- [x] **A.1** `shop.js` : étendre la résolution buyback avec un niveau `bySlot` (entre `byRarity` et `default`). Ordre : `byType > byRarity > bySlot > default`.
+- [x] **A.2** `state.js` : nouveau `Set` global `usedSpecialNpcs` (clé `npcId`), reset à l'entrée d'étage (analogue `usedFountains`) — `dungeon.js` (génération) + `movement.js` (restauration cache).
+- [x] **A.3** `save.js` : sérialisation `Array.from(usedSpecialNpcs)` dans `_serializeState` + restauration `_applyState`.
+- [x] **A.4** `npc-dialog.js` : si `npc.specialAction`, ajouter un bouton dédié qui appelle `triggerNpcSpecialAction(npcId)`. Si déjà utilisé sur l'étage, bouton masqué + texte d'idle bascule sur `dialogues.idleSpent`.
+- [x] **A.5** `npc-dialog.js` : si `npc.dialogues.contextualLore`, override `idle` par tirage parmi les entrées dont `monsterIds` ∩ pool tirable de l'étage courant ≠ ∅.
+- [x] **A.6** Nouveau dispatcher `triggerNpcSpecialAction(npcId)` (dans `npc-dialog.js`) qui implémente `type:"heal_and_revive"` (PV+PM restaurés, KO ranimés à hpMax/2, autoSave reason `fumseck-used`).
+
+#### 7.4.B Câblage des 4 PNJ
+
+- [x] **B.1** Ollivander : `wares: [wand1, wand2]` + `buyback.byType.wand = 0.75` + greeting page 3 + idle révisé.
+- [x] **B.2** Guipure : `wares: [robe1, chapeau_apprenti, cape_voyageur, chapeau_pointu]` + `buyback.bySlot.{body,head,cloak} = 0.75` + greeting page 3 + idle révisé.
+- [x] **B.3** Portrait Dumbledore : `dialogues.contextualLore` 8 entrées (mangemorts, détraqueurs, Bellatrix, Voldemort, trolls, loup-garou, inferius, araignées).
+- [x] **B.4** Fumseck : `specialAction: { type:"heal_and_revive", label:"✨ Recevoir les larmes du phénix" }` + page 3 du greeting + idle post-usage.
+
+#### 7.4.C Boutique fixe
+
+- [x] **C.1** `shop.js — SHOP_CATALOG` : retirer l'entrée `wand2` (la baguette de Sureau ne se vend plus chez Malkins). Drop loot et coffres conservés inchangés.
+
+#### 7.4.D Tests + livraison
+
+- [x] **D.1** `tests/smoke.js` : nouveau scénario `scenarioIteration74` (T1 Ollivander wares + buyback wand 75% + wand2 absent SHOP_CATALOG, T2 Guipure bySlot 75%, T3 lore contextuel Dumbledore filtré par étage, T4 Fumseck heal+revive + cooldown + reset).
+- [x] **D.2** Bump cache-busting : `npcs.js v=6`, `state.js v=4`, `dungeon.js v=4`, `movement.js v=3`, `npc-dialog.js v=4`, `shop.js v=5`, `save.js v=4` dans `index.html`.
+- [x] **D.3** `node tests/smoke.js` 100% vert (29 scénarios).
+- [ ] **D.4** Commit + push sur `claude/seine-project-review-NX5o2`.
 
 ---
 
@@ -285,3 +315,4 @@ Boutons d'action dynamiques :
 | 2026-05-10 | Onglet Vendre | Suite au retour utilisateur "il faudrait aussi ajouter la capacité de vendre". `#shop-modal` gagne deux onglets Acheter/Vendre via `setShopMode`. Politique de rachat configurable par PNJ : `buyback: { default, byType, byRarity }`. Spécialisations : Rosmerta 75% sur `consumable`, Mondingus 75% sur `rare/epic/legendary`, Madame Malkins 50% standard. Smoke 3ter étendu (T5 onglets + spécialisation, T6 sellItem, T7 spécialisation Mondingus). |
 | 2026-05-10 | Portraits vendeurs | Omission corrigée : les 2 vendeurs n'avaient pas de PNG (emoji fallback) alors que la consigne projet est Nano Banana + prompt archétypal. Prompts rédigés (tenancière d'auberge / receleur miteux), images générées par l'utilisateur, déposées dans `img/npc/rosmerta.png` + `img/npc/mundungus.png`, `portraitImg` câblé. Style légèrement plus illustratif que les 8 sorciers — accepté comme "ok pour des vendeurs secondaires". |
 | 2026-05-10 | Itération 7 (def) | 4 nouveaux PNJ ajoutés en **définition seule** (pas de logique métier câblée) : Ollivander (étage 3, baguettes), Madame Guipure (étage 4, robes), Portrait Dumbledore (étage 6, lore stratégique), Fumseck (étage 7, futur heal/revive). 4 portraits PNG 256×256 générés via Nano Banana, recadrage Pillow tight head-and-shoulders pour Guipure (image source 1408×768 → 608×608 → 256×256). Branchement off `master` car la branche assignée `claude/add-npc-integration-M4NfZ` était déjà mergée (PR #35) — nouvelle branche `claude/iteration-7-define-extra-npcs`. La logique métier (wares, indices contextuels, fontaine vivante) reste à câbler dans une itération suivante. |
+| 2026-05-10 | Itération 7.4 (logique métier) | Câblage des 4 PNJ lore. **Ollivander** : `wares:[wand1,wand2]` + `buyback.byType.wand=0.75` + page 3 du greeting. **Guipure** : `wares:[robe1,chapeau_apprenti,cape_voyageur,chapeau_pointu]` + nouveau `buyback.bySlot:{body,head,cloak}=0.75` (extension `_computeSellPrice` dans `shop.js`). **Portrait Dumbledore** : `dialogues.contextualLore` 8 entrées, override `idle` par tirage parmi celles dont `monsterIds` ∩ pool tirable étage courant ≠ ∅. **Fumseck** : `specialAction:{type:"heal_and_revive"}` + dispatcher `triggerNpcSpecialAction()` qui restaure PV+PM groupe et ranime KO à hpMax/2. Cooldown 1×/visite via nouveau `usedSpecialNpcs` (Set, reset à l'entrée d'étage analogue `usedFountains`, persisté dans save). `wand2` retiré de `SHOP_CATALOG` Malkins (Ollivander seule source rare avant étage 6). Smoke 3sexies (4 sous-tests). 29 scénarios verts. Cache-bust : npcs.js v=6, state.js v=4, dungeon.js v=4, movement.js v=3, npc-dialog.js v=4, shop.js v=5, save.js v=4. |
