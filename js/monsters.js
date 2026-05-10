@@ -449,6 +449,7 @@ const MONSTERS = [
     id:       "centaure",
     name:     "Centaure Hostile",
     icon:     "🏹",
+    imgSrc:   "img/monsters/centaure.png",
     category: "créature",
     desc:     "Un centaure de la forêt vous barre le chemin, arc tendu",
     lore:     "Tous les centaures ne sont pas bienveillants. Celui-ci n'apprécie pas les intrus dans son territoire.",
