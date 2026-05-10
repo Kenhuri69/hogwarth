@@ -382,19 +382,26 @@ async function scenarioNpcIntegration() {
   assert(t3.ready === 'ready',           `objectifs remplis doit être "ready" (got ${t3.ready})`);
   assert(t3.done === 'done',             `après remise doit être "done" (got ${t3.done})`);
 
-  // T4 : ouverture overlay → fermeture
+  // T4 : ouverture overlay → fermeture + portrait raster câblé
   const t4 = await page.evaluate(() => {
     openNpcDialog('dumbledore');
-    const opened = document.getElementById('npc-dialog-overlay').style.display;
+    const overlay = document.getElementById('npc-dialog-overlay');
+    const portraitEl = document.getElementById('npc-dialog-portrait');
+    const img = portraitEl.querySelector('img.npc-portrait-img');
+    const opened = overlay.style.display;
+    const portraitSrc = img ? img.getAttribute('src') : null;
     closeNpcDialog();
-    const closed = document.getElementById('npc-dialog-overlay').style.display;
+    const closed = overlay.style.display;
     const seen = seenNpcs.has('dumbledore');
-    return { opened, closed, seen };
+    return { opened, closed, seen, hasImg: !!img, portraitSrc };
   });
   console.log('  T4 overlay:', t4);
   assert(t4.opened === 'flex',           'overlay non ouvert');
   assert(t4.closed === 'none',           'overlay non fermé');
   assert(t4.seen,                        'PNJ non marqué comme rencontré');
+  assert(t4.hasImg,                      'portrait <img> absent');
+  assert(t4.portraitSrc === 'img/npc/dumbledore.png',
+    `portrait src attendu img/npc/dumbledore.png, got ${t4.portraitSrc}`);
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

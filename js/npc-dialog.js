@@ -91,10 +91,14 @@ function openNpcDialog(npcId) {
 
   const state = getNpcQuestState(npc);
 
-  // Portrait : SVG inline si fourni, sinon emoji icon
+  // Portrait : raster (priorité 1) > SVG inline > emoji fallback
   const portraitEl = document.getElementById('npc-dialog-portrait');
   if (portraitEl) {
-    portraitEl.innerHTML = npc.portraitSvg || (npc.icon || '🧙');
+    if (npc.portraitImg) {
+      portraitEl.innerHTML = `<img src="${npc.portraitImg}" alt="${npc.name || ''}" class="npc-portrait-img">`;
+    } else {
+      portraitEl.innerHTML = npc.portraitSvg || (npc.icon || '🧙');
+    }
   }
   const nameEl = document.getElementById('npc-dialog-name');
   if (nameEl) nameEl.textContent = npc.name || '';

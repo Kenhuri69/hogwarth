@@ -190,7 +190,8 @@ Boutons d'action dynamiques :
 
 ### Itération 2 — Portraits + polish dialogue
 
-- [ ] Vrais portraits SVG/PNG pour les 8 PNJ (style cohérent monstres / scene-icons).
+- [~] Vrais portraits PNG pour les 8 PNJ générés via Nano Banana à partir de photos d'adultes (prompts archétypaux pour contourner les filtres "personnalité publique"). En cours d'intégration.
+- [ ] **Correction connue — Pomfresh** : la broche est rendue en croix chrétienne au lieu d'un symbole magique. À corriger via re-passe Nano Banana ("replace cross with silver caduceus") ou retouche GIMP/Krita. Prompts de variantes consignés dans le journal.
 - [ ] Animations légères marqueur canvas (idle, indicateur clignotant `!`).
 - [ ] Sons : `playNpcGreet()` (cloche douce) à l'ouverture du dialogue.
 - [ ] Dialogues à plusieurs répliques (next page) au lieu d'une seule chaîne.
@@ -242,3 +243,4 @@ Boutons d'action dynamiques :
 |------------|-------------|--------------------------------------------------------------------|
 | 2026-05-10 | Plan v1     | Rédaction initiale après cadrage utilisateur (4 questions). Itération 1 = fondations + 8 PNJ majeurs. |
 | 2026-05-10 | Itération 1 | Implémentation complète : `CELL.NPC`, registre `npcs.js` + 8 PNJ, marqueur 3D + minimap, overlay dialogue, refonte flux quêtes (`QUEST_TEMPLATES` / `availableQuests` / `completedQuests`), migration save v1→v2, hook `checkFloorQuests`. Smoke vert (24 scénarios, scénario 3bis ajouté). Reste : commit + push. |
+| 2026-05-10 | Portraits   | 8 PNG générés via Nano Banana avec prompts archétypaux (contournement filtres "personnalité publique" + IP). 7/8 conformes. Pomfresh : broche croix chrétienne au lieu de symbole magique → correction prévue (prompt de re-passe : "replace silver Christian cross brooch with small silver caduceus medallion / sprig of mandrake leaves / phoenix feather"). On intègre en l'état, correction itération 2 ultérieure. |

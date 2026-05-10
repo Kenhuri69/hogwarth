@@ -10,7 +10,8 @@
 //   name:        "Nom affiché",
 //   title:       "Sous-titre / fonction",
 //   icon:        "🧙",                     // emoji fallback
-//   portraitSvg: '<svg>...</svg>'           // optionnel : portrait inline (sinon icône)
+//   portraitImg: "img/npc/<id>.png"         // optionnel : portrait raster (priorité 1)
+//   portraitSvg: '<svg>...</svg>'           // optionnel : portrait inline (priorité 2)
 //   placement:   { floor: 1, anchor: "first-room" | "any" },
 //   questsGiven:    ["quest_id", ...],     // quêtes que ce PNJ propose
 //   questsTurnedIn: ["quest_id", ...],     // quêtes que ce PNJ clôt (souvent === questsGiven)
@@ -30,6 +31,7 @@ const NPCS = [
     name:  "Albus Dumbledore",
     title: "Directeur de Poudlard",
     icon:  "🧙‍♂️",
+    portraitImg: "img/npc/dumbledore.png",
     placement: { floor: 1, anchor: "first-room" },
     questsGiven:    ["intro_tutoriel"],
     questsTurnedIn: ["intro_tutoriel"],
@@ -47,6 +49,7 @@ const NPCS = [
     name:  "Madame Pomfresh",
     title: "Infirmière en chef",
     icon:  "🩺",
+    portraitImg: "img/npc/pomfresh.png",
     placement: { floor: 2, anchor: "any" },
     questsGiven:    ["mandragore_pomfresh"],
     questsTurnedIn: ["mandragore_pomfresh"],
@@ -64,6 +67,7 @@ const NPCS = [
     name:  "Mimi Geignarde",
     title: "Fantôme des toilettes",
     icon:  "👻",
+    portraitImg: "img/npc/mimi.png",
     placement: { floor: 2, anchor: "any" },
     questsGiven:    ["troll_toilettes"],
     questsTurnedIn: ["troll_toilettes"],
@@ -81,6 +85,7 @@ const NPCS = [
     name:  "Newton Scamander",
     title: "Magizoologiste",
     icon:  "🐾",
+    portraitImg: "img/npc/scamander.png",
     placement: { floor: 2, anchor: "any" },
     questsGiven:    ["niffleurs_trésor"],
     questsTurnedIn: ["niffleurs_trésor"],
@@ -98,6 +103,7 @@ const NPCS = [
     name:  "Gilderoy Lockhart",
     title: "Professeur de DCFM (autoproclamé)",
     icon:  "✨",
+    portraitImg: "img/npc/lockhart.png",
     placement: { floor: 3, anchor: "any" },
     questsGiven:    ["livre_interdit"],
     questsTurnedIn: ["livre_interdit"],
@@ -115,6 +121,7 @@ const NPCS = [
     name:  "Professeur Lupin",
     title: "Professeur de DCFM",
     icon:  "🐺",
+    portraitImg: "img/npc/lupin.png",
     placement: { floor: 4, anchor: "any" },
     questsGiven:    ["lumiere_desespoir"],
     questsTurnedIn: ["lumiere_desespoir"],
@@ -132,6 +139,7 @@ const NPCS = [
     name:  "Hagrid",
     title: "Garde-chasse de Poudlard",
     icon:  "🦉",
+    portraitImg: "img/npc/hagrid.png",
     placement: { floor: 4, anchor: "any" },
     questsGiven:    ["chouette_perdue"],
     questsTurnedIn: ["chouette_perdue"],
@@ -149,6 +157,7 @@ const NPCS = [
     name:  "Professeur McGonagall",
     title: "Directrice de Gryffondor",
     icon:  "🐈",
+    portraitImg: "img/npc/mcgonagall.png",
     placement: { floor: 5, anchor: "any" },
     questsGiven:    ["golem_passage"],
     questsTurnedIn: ["golem_passage"],
