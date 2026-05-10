@@ -331,6 +331,22 @@
   </div>
 </div>
 
+<!-- Écran d'introduction (PNJ guide) — étape narrative entre la sélection
+     de Maison et l'entrée dans le donjon. Géré par js/intro.js. -->
+<div id="intro-screen" style="display:none">
+  <div class="intro-card">
+    <div class="intro-header">
+      <div class="intro-portrait" id="intro-portrait"></div>
+      <div class="intro-id">
+        <div class="intro-name" id="intro-name"></div>
+        <div class="intro-subtitle" id="intro-subtitle"></div>
+      </div>
+    </div>
+    <div class="intro-text" id="intro-text"></div>
+    <div class="intro-actions" id="intro-actions"></div>
+  </div>
+</div>
+
 <div id="game-container">
 
   <div class="game-header">
@@ -755,6 +771,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/inventory.js"></script>
 <script src="js/quests.js?v=2"></script>
 <script src="js/npc-dialog.js"></script>
+<script src="js/intro.js"></script>
 <script src="js/shop.js?v=2"></script>
 <script src="js/save.js?v=2"></script>
 <script src="js/save-ui.js"></script>

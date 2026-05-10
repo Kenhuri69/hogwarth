@@ -38,13 +38,32 @@ async function launchGame() {
 }
 
 // Bypass des écrans titre / sélection en appelant directement les fonctions globales
-async function startNewGame(page, { partySize = 1, heroes = ['harry'], house = 'Gryffondor' } = {}) {
+async function startNewGame(page, { partySize = 1, heroes = ['harry'], house = 'Gryffondor', skipIntro = true } = {}) {
   await page.evaluate((opts) => {
     selectedPartySize = opts.partySize;
     selectedHeroes    = opts.heroes;
     confirmHeroSelection();
     chooseHouse(opts.house);
   }, { partySize, heroes, house });
+
+  // Le flow nouvelle partie passe désormais par #intro-screen
+  // (Dumbledore guide) avant d'appeler startGame(). Par défaut, le helper
+  // saute cette étape pour que les autres scénarios fonctionnent comme
+  // avant. Mettre skipIntro=false pour la tester explicitement.
+  if (skipIntro) {
+    await page.waitForFunction(() =>
+      document.getElementById('intro-screen') &&
+      document.getElementById('intro-screen').style.display === 'flex',
+      { timeout: 3000 });
+    await page.evaluate(() => {
+      while (typeof _introPage === 'number' &&
+             typeof _introPages !== 'undefined' &&
+             _introPage < _introPages.length - 1) {
+        _advanceIntro();
+      }
+      _finishIntro();
+    });
+  }
 
   // Attendre que startGame() ait fini son init asynchrone (textures + dungeon)
   await page.waitForFunction(() =>
@@ -321,17 +340,65 @@ async function scenarioNpcIntegration() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
 
-  // T0 : auto-intro Dumbledore au démarrage (timer 500 ms dans startGame)
-  await page.waitForTimeout(700);
+  // T0 : intro Dumbledore intégrée au flow nouvelle partie. Le helper
+  // startNewGame est passé par #intro-screen et a cliqué "Accepter".
+  // Vérif post-conditions : quête active + PNJ marqué rencontré.
   const t0 = await page.evaluate(() => ({
-    seenDumbledore: seenNpcs.has('dumbledore'),
-    overlayOpen:    document.getElementById('npc-dialog-overlay').style.display === 'flex'
+    introScreenHidden: document.getElementById('intro-screen').style.display === 'none',
+    seenDumbledore:    seenNpcs.has('dumbledore'),
+    introQuestActive:  activeQuests.some(q => q.id === 'intro_tutoriel'),
+    introNotPending:   !availableQuests.has('intro_tutoriel')
   }));
-  console.log('  T0 auto-intro:', t0);
-  assert(t0.seenDumbledore, 'auto-intro Dumbledore non déclenché au démarrage');
-  assert(t0.overlayOpen,    'overlay dialogue non visible après auto-intro');
-  // Refermer pour ne pas perturber les sous-scénarios suivants
-  await page.evaluate(() => closeNpcDialog());
+  console.log('  T0 intro flow:', t0);
+  assert(t0.introScreenHidden, 'intro-screen non caché après le flow');
+  assert(t0.seenDumbledore,    'PNJ guide non marqué comme rencontré');
+  assert(t0.introQuestActive,  'quête intro_tutoriel non acceptée');
+  assert(t0.introNotPending,   'quête intro_tutoriel reste dans availableQuests');
+
+  // T0bis : page séparée pour valider le contenu de l'écran d'intro
+  // AVANT le clic final (portrait, nom, pagination, état pré-acceptation).
+  const fresh = await launchGame();
+  await fresh.page.evaluate(() => {
+    selectedPartySize = 1;
+    selectedHeroes    = ['harry'];
+    confirmHeroSelection();
+    chooseHouse('Gryffondor');
+  });
+  await fresh.page.waitForFunction(() =>
+    document.getElementById('intro-screen').style.display === 'flex',
+    { timeout: 3000 });
+  const t0b = await fresh.page.evaluate(() => ({
+    visible:           document.getElementById('intro-screen').style.display === 'flex',
+    portraitImg:       !!document.querySelector('#intro-portrait img.intro-portrait-img'),
+    name:              document.getElementById('intro-name').textContent,
+    totalPages:        (typeof _introPages !== 'undefined') ? _introPages.length : -1,
+    pageInitial:       (typeof _introPage !== 'undefined') ? _introPage : -1,
+    btnLabel0:         document.querySelector('#intro-actions button')?.textContent || '',
+    questBeforeFinish: activeQuests.some(q => q.id === 'intro_tutoriel'),
+    seenBeforeFinish:  seenNpcs.has('dumbledore')
+  }));
+  console.log('  T0bis intro screen:', t0b);
+  assert(t0b.visible,                       'intro-screen non visible après chooseHouse');
+  assert(t0b.portraitImg,                   'portrait raster Dumbledore absent');
+  assert(t0b.name === 'Albus Dumbledore',   `nom attendu Albus Dumbledore, got ${t0b.name}`);
+  assert(t0b.totalPages >= 2,               'greeting Dumbledore doit être multi-page');
+  assert(t0b.pageInitial === 0,             'pagination doit démarrer à 0');
+  assert(t0b.btnLabel0.includes('Suivant'), 'bouton Suivant attendu sur la 1re page');
+  assert(!t0b.questBeforeFinish,            'quête ne doit PAS être acceptée avant clic final');
+  assert(!t0b.seenBeforeFinish,             'PNJ ne doit PAS être marqué rencontré avant clic final');
+  await fresh.page.evaluate(() => {
+    while (_introPage < _introPages.length - 1) _advanceIntro();
+    _finishIntro();
+  });
+  const t0c = await fresh.page.evaluate(() => ({
+    introScreenHidden: document.getElementById('intro-screen').style.display === 'none',
+    questNowActive:    activeQuests.some(q => q.id === 'intro_tutoriel'),
+    seenNow:           seenNpcs.has('dumbledore')
+  }));
+  assert(t0c.introScreenHidden, 'intro-screen non caché après _finishIntro');
+  assert(t0c.questNowActive,    'quête non activée par _finishIntro');
+  assert(t0c.seenNow,           'PNJ non marqué rencontré par _finishIntro');
+  await fresh.browser.close();
 
   // T1 : registre + helpers exposés
   const t1 = await page.evaluate(() => ({
@@ -1058,6 +1125,13 @@ async function scenarioStartHub() {
     chooseHouse('Gryffondor');
     return new Promise(resolve => {
       const tick = () => {
+        // Le flow nouvelle partie passe désormais par #intro-screen.
+        // Si l'écran d'intro est ouvert, on le dismisse avant de poller startGame.
+        const introEl = document.getElementById('intro-screen');
+        if (introEl && introEl.style.display === 'flex' && typeof _finishIntro === 'function') {
+          while (typeof _introPage === 'number' && _introPage < _introPages.length - 1) _advanceIntro();
+          _finishIntro();
+        }
         if (Array.isArray(party) && party[0] && party[0].hp > 0 && Array.isArray(enemyMap)) {
           // Écrire dans manual_1 puis revenir au title
           writeSlot('manual_1', 'Manuel');
@@ -1132,6 +1206,11 @@ async function scenarioStartHub() {
     chooseHouse('Serdaigle');
     return new Promise(resolve => {
       const tick = () => {
+        const introEl = document.getElementById('intro-screen');
+        if (introEl && introEl.style.display === 'flex' && typeof _finishIntro === 'function') {
+          while (typeof _introPage === 'number' && _introPage < _introPages.length - 1) _advanceIntro();
+          _finishIntro();
+        }
         if (Array.isArray(party) && party[0] && party[0].hp > 0 && Array.isArray(enemyMap)) {
           writeSlot('manual_1', 'Céleste');
           document.getElementById('game-container').style.display = 'none';

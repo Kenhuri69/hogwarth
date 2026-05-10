@@ -87,14 +87,34 @@ function confirmHeroSelection() {
   document.getElementById('house-select-screen').style.display  = 'flex';
 }
 
-// Appelé depuis les boutons de l'écran des Maisons
+// Appelé depuis les boutons de l'écran des Maisons. Insère un écran
+// d'introduction tenu par Dumbledore (le PNJ guide) avant de basculer
+// dans le donjon : permet au joueur de connaître la 1re quête et de
+// savoir qu'il faudra retrouver le PNJ dans l'exploration pour la
+// rendre. La fonction showIntroScreen vit dans `js/intro.js`.
+//
+// Important : on reset ICI seenNpcs / availableQuests / activeQuests /
+// completedQuests pour que les effets appliqués par _finishIntro
+// (acceptQuest + seenNpcs.add) soient préservés ensuite par startGame.
 function chooseHouse(house) {
   chosenHouse = house;
   housePoints = 0;
   houseTier   = 0;
   document.getElementById('house-select-screen').style.display = 'none';
   applyHeroSelection(_pendingHeroKeys, _pendingPartySize);
-  startGame(_pendingPartySize);
+  // Reset état PNJ + quêtes (déplacé hors de startGame pour ne pas
+  // écraser ce que _finishIntro va y ajouter).
+  if (typeof seenNpcs !== 'undefined') seenNpcs = new Set();
+  if (typeof activeQuests !== 'undefined' && typeof QUEST_TEMPLATES !== 'undefined') {
+    activeQuests    = [];
+    availableQuests = new Set(QUEST_TEMPLATES.map(t => t.id));
+    completedQuests = new Set();
+  }
+  if (typeof showIntroScreen === 'function') {
+    showIntroScreen(() => startGame(_pendingPartySize));
+  } else {
+    startGame(_pendingPartySize);
+  }
 }
 
 // Applique les stats du héros choisi sur player (et player2 en duo)
@@ -210,12 +230,9 @@ async function startGame(count = 2) {
   generateDungeon(1);
   floorDungeons = {};   // reset du cache à chaque nouvelle partie
   searchedCells = new Set();
-  seenNpcs      = new Set();
-  // Toutes les quêtes du catalogue sont disponibles dès le départ.
-  // Le joueur doit rencontrer le PNJ correspondant pour les accepter.
-  activeQuests    = [];
-  availableQuests = new Set(QUEST_TEMPLATES.map(t => t.id));
-  completedQuests = new Set();
+  // Note : seenNpcs / activeQuests / availableQuests / completedQuests
+  // sont déjà initialisés par chooseHouse() AVANT l'intro Dumbledore
+  // (sinon _finishIntro serait écrasée). Ne pas les reset ici.
   restCooldown  = 0;
   updateUI();
   updateQuestTracker();
@@ -236,15 +253,8 @@ async function startGame(count = 2) {
   // Lancer la musique ambiante (le geste utilisateur vient du clic sur startGame)
   AudioSystem.init();
   AudioSystem.playAmbientMusic(1);
-
-  // Intro : Dumbledore accueille le joueur dès l'entrée en jeu (avant
-  // qu'il ait pu croiser ou non son marqueur dans le donjon). Le dialogue
-  // propose la 1re quête. Délai léger pour laisser le HUD s'afficher.
-  if (typeof openNpcDialog === 'function' && typeof getNpcById === 'function') {
-    setTimeout(() => {
-      if (!inBattle && getNpcById('dumbledore')) openNpcDialog('dumbledore');
-    }, 500);
-  }
+  // Note : l'intro Dumbledore est désormais gérée AVANT startGame() par
+  // showIntroScreen() dans le flow chooseHouse. Pas de popup en jeu.
 
   // === FIX TEXTURE MISSING === re-render appuyés jusqu'à ce que tous les patterns soient prêts
   // Puis cadence normale (~500 ms) une fois l'état stable
