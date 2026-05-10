@@ -180,6 +180,18 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 
 ---
 
+## Sprites items refondus (méthode 64×64 → 32×32)
+
+> Méthode documentée dans `.claude/plans/icon-quality.md` §"Méthode 64×64 → 32×32".
+> Dessin source haute-résolution puis downscale Box + alpha binarisé +
+> palette quantize, compatible avec `image-rendering: pixelated`.
+
+| Sprite | PR | Script générateur | Notes |
+|--------|----|-------------------|-------|
+| `bottes_apprenti` | #51 | `tools/gen_boot_sprite.py` | Silhouette en L, lacets dorés en X, talon distinct |
+
+---
+
 ## Finalisation
 
 - [ ] **Z1** Commit final groupé sur `claude/improve-game-svgs-0a3cf` + push.
