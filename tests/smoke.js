@@ -621,11 +621,96 @@ async function scenarioVendors() {
   assert(t4.invGrew,                 'inventaire n\'a pas grandi après achat');
   assert(t4.lastItem === 'potion_s', 'dernier item ajouté n\'est pas potion_s');
 
+  // T5 : onglets Acheter/Vendre — bascule + rendu sell + spécialisation
+  // buyback (Rosmerta paie 75% pour les consumables, 50% sinon).
+  const t5 = await page.evaluate(() => {
+    // Inventaire propre pour le test : 1 potion (consumable) + 1 wand (autre)
+    player.inventory = [
+      { ...ITEMS.find(i => i.id === 'potion_s') },
+      { ...ITEMS.find(i => i.id === 'wand1') }
+    ];
+    player.gold = 100;
+    openVendorShop('rosmerta');
+    const tabsBefore = document.getElementById('shop-tabs').innerHTML;
+    setShopMode('sell');
+    const tabsAfter = document.getElementById('shop-tabs').innerHTML;
+    const grid      = document.getElementById('shop-grid');
+    const items     = Array.from(grid.querySelectorAll('[data-inv-idx]'));
+    const labels    = items.map(el => el.querySelector('.shop-price').textContent);
+    const potionItem = ITEMS.find(i => i.id === 'potion_s');
+    const wandItem   = ITEMS.find(i => i.id === 'wand1');
+    return {
+      hasBuyTab:  tabsBefore.includes('Acheter'),
+      hasSellTab: tabsBefore.includes('Vendre'),
+      buyActiveBefore:  tabsBefore.includes('shop-tab active') && tabsBefore.indexOf('active') < tabsBefore.indexOf('Vendre'),
+      sellActiveAfter:  tabsAfter.includes('Vendre</button>'),
+      sellGridCount:    items.length,
+      sellLabels:       labels,
+      potionType:       potionItem.type,
+      potionPrice:      potionItem.price,
+      wandPrice:        wandItem.price,
+      potionExpected:   '+' + Math.max(1, Math.floor(potionItem.price * 0.75)) + 'G',
+      wandExpected:     '+' + Math.max(1, Math.floor(wandItem.price * 0.50)) + 'G'
+    };
+  });
+  console.log('  T5 sell tab:', t5);
+  assert(t5.hasBuyTab,            'onglet Acheter absent');
+  assert(t5.hasSellTab,           'onglet Vendre absent');
+  assert(t5.sellGridCount === 2,  `2 items vendables attendus, got ${t5.sellGridCount}`);
+  assert(t5.potionType === 'consumable', 'potion_s.type doit être consumable');
+  assert(t5.sellLabels.includes(t5.potionExpected),
+    `prix vente potion_s attendu ${t5.potionExpected} (75%), got ${t5.sellLabels.join(',')}`);
+  assert(t5.sellLabels.includes(t5.wandExpected),
+    `prix vente wand1 attendu ${t5.wandExpected} (50%), got ${t5.sellLabels.join(',')}`);
+
+  // T6 : sellItem débite l'inventaire et crédite l'or
+  const t6 = await page.evaluate(() => {
+    const goldBefore = player.gold;
+    const invBefore  = player.inventory.length;
+    // Vend l'item à l'index 0 (potion_s, prix attendu 75% du price)
+    const potion = player.inventory[0];
+    const sellPrice = Math.max(1, Math.floor(potion.price * 0.75));
+    sellItem(0, sellPrice);
+    return {
+      goldDelta:  player.gold - goldBefore,
+      sellPrice,
+      invShrunk:  player.inventory.length === invBefore - 1,
+      potionGone: !player.inventory.some(i => i.id === 'potion_s')
+    };
+  });
+  console.log('  T6 sell action:', t6);
+  assert(t6.goldDelta === t6.sellPrice, `or crédité ${t6.sellPrice}, got ${t6.goldDelta}`);
+  assert(t6.invShrunk,    'inventaire n\'a pas rétréci');
+  assert(t6.potionGone,   'potion_s toujours présente');
+
+  // T7 : politique vendor-spécifique — Mondingus paie 75% sur rare/epic/legendary
+  const t7 = await page.evaluate(() => {
+    // wand2 est legendary dans ITEMS ? Cherchons un item rare/epic/legendary.
+    const rareItem = ITEMS.find(i => i.rarity === 'epic' || i.rarity === 'legendary' || i.rarity === 'rare');
+    if (!rareItem) return { skipped: true };
+    player.inventory = [{ ...rareItem }];
+    openVendorShop('mundungus');
+    setShopMode('sell');
+    const grid = document.getElementById('shop-grid');
+    const label = grid.querySelector('.shop-price')?.textContent;
+    return {
+      itemId:    rareItem.id,
+      rarity:    rareItem.rarity,
+      label,
+      expected:  '+' + Math.max(1, Math.floor(rareItem.price * 0.75)) + 'G'
+    };
+  });
+  console.log('  T7 vendor specialization:', t7);
+  if (!t7.skipped) {
+    assert(t7.label === t7.expected,
+      `Mondingus doit payer ${t7.expected} pour ${t7.itemId} (${t7.rarity}), got ${t7.label}`);
+  }
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ vendeurs ambulants conformes');
+  console.log('  ✅ vendeurs ambulants + onglet Vendre conformes');
   await browser.close();
 }
 

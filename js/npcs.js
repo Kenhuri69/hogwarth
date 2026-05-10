@@ -20,6 +20,11 @@
 //     { id: "potion_s", price: 30 },        //   `price` override ITEMS[id].price
 //     ...                                   //   (sinon prix d'origine de l'item)
 //   ],
+//   buyback:     {                          // optionnel : politique de rachat
+//     default: 0.50,                        //   multiplicateur par défaut
+//     byType:    { "consumable": 0.75 },    //   override par type d'item
+//     byRarity:  { "epic": 0.75 }           //   override par rareté
+//   },
 //   questsGiven:    ["quest_id", ...],     // quêtes que ce PNJ propose
 //   questsTurnedIn: ["quest_id", ...],     // quêtes que ce PNJ clôt (souvent === questsGiven)
 //   dialogues: {
@@ -220,6 +225,11 @@ const NPCS = [
       { id: "mandragore" },
       { id: "choco_sorcier" }
     ],
+    // Rachat : 50% par défaut, 75% pour les consommables (sa spécialité).
+    buyback: {
+      default: 0.50,
+      byType:  { "consumable": 0.75 }
+    },
     dialogues: {
       greeting: [
         "Tiens, un sorcier en vadrouille ! Une petite Bièreaubeurre, ça vous tente ?",
@@ -243,6 +253,11 @@ const NPCS = [
       { id: "livre_bombarda" },
       { id: "felix" }
     ],
+    // Rachat : 50% par défaut, 75% pour rare/epic/legendary (sa spécialité).
+    buyback: {
+      default:  0.50,
+      byRarity: { "rare": 0.75, "epic": 0.75, "legendary": 0.75 }
+    },
     dialogues: {
       greeting: [
         "Pst... approche, jeune sorcier. J'ai des... acquisitions exclusives.",

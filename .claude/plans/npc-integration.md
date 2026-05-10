@@ -208,6 +208,7 @@ Boutons d'action dynamiques :
 - [x] Cooldown : un seul vendeur ambulant par étage (intrinsèque à la logique de placement — un seul tirage par étage).
 - [x] 2 vendeurs livrés : **Madame Rosmerta** (étage 2+, consommables : potion_s, potion_m, mandragore, choco_sorcier) et **Mondingus Fletcher** (étage 3+, livres + felix). Portraits emoji 🍻 / 🦨 (PNG TODO itération suivante).
 - [x] Smoke 3ter dédié : T1 registre + helpers, T2 bouton dialogue, T3 ouverture boutique avec catalogue, T4 achat débite l'or et grossit l'inventaire.
+- [x] **Onglet Vendre** dans `#shop-modal` (Acheter/Vendre). Marche pour tous les commerçants — boutique fixe (Madame Malkins) + vendeurs ambulants. Politique de rachat configurable via `npc.buyback = { default, byType, byRarity }`. Spécialisation : Rosmerta paie 75% les `consumable`, Mondingus paie 75% les `rare/epic/legendary`. Shop fixe : 50% standard. Smoke 3ter étendu (T5 onglets + spécialisation Rosmerta sur potion/wand, T6 sellItem débite, T7 spécialisation Mondingus sur wand2 rare).
 
 ### Itération 5 — Quêtes répétables / quêtes en chaîne
 
