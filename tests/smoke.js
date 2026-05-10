@@ -2137,8 +2137,81 @@ async function scenarioPhase3Catalog() {
   await browser.close();
 }
 
+// ── Scénario 24 : tint CSS 2-calques (resolver + structure DOM) ──
+//
+// Le rendu visuel (mask-image) ne peut pas être validé en file://
+// (limitation Chromium : masks vides). On vérifie ici uniquement :
+//   - structure DOM produite par le resolver (wrapper + 2 layers)
+//   - data attributes cohérents avec data.js
+//   - whitelist anti-injection (refus des metals inconnus / blade malformé)
+//   - présence des classes metal-* dans le CSS chargé
+
+async function scenarioTintCss() {
+  console.log('\n── Scénario 24 : tint CSS 2-calques (épée silver) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const t = await page.evaluate(() => {
+    const item = ITEMS.find(i => i.id === 'sword_gryff');
+    if (!item || !item.tinted) return { fail: 'sword_gryff sans flag tinted' };
+
+    const html = getItemIconHtml(item, 'ui-icon-xl');
+    const tmp  = document.createElement('div');
+    tmp.innerHTML = html;
+    const root = tmp.firstChild;
+
+    // Test injection : metal inconnu → fallback path normal (pas d'injection)
+    const evil = getItemIconHtml({ ...item, metal: 'evil); background: url(data:x' }, 'ui-icon-md');
+
+    return {
+      isWrapper:    root && root.tagName === 'SPAN',
+      hasTinted:    root && root.classList.contains('tinted-icon'),
+      hasMetal:     root && root.classList.contains('metal-silver'),
+      hasSize:      root && root.classList.contains('ui-icon-xl'),
+      blade:        root && root.getAttribute('data-blade'),
+      hilt:         root && root.getAttribute('data-hilt'),
+      metal:        root && root.getAttribute('data-metal'),
+      layerCount:   root ? root.childElementCount : 0,
+      maskUrl:      root && root.querySelector('.tint-mask')   ? root.querySelector('.tint-mask').getAttribute('style') : '',
+      overlayUrl:   root && root.querySelector('.tint-overlay')? root.querySelector('.tint-overlay').getAttribute('style') : '',
+      evilFallback: !/data:x/.test(evil) && !/metal-evil/.test(evil),
+    };
+  });
+
+  console.log('  resolver →', t);
+  assert(!t.fail,        t.fail || '');
+  assert(t.isWrapper,    'wrapper non produit');
+  assert(t.hasTinted,    'classe tinted-icon manquante');
+  assert(t.hasMetal,     'classe metal-silver manquante');
+  assert(t.hasSize,      'classe ui-icon-xl perdue');
+  assert(t.blade === 'sword_blade_base', `blade=${t.blade}`);
+  assert(t.hilt  === 'sword_hilt_gryff', `hilt=${t.hilt}`);
+  assert(t.metal === 'silver',           `metal=${t.metal}`);
+  assert(t.layerCount === 2,             `layers=${t.layerCount} (attendu 2)`);
+  assert(t.maskUrl.includes('sword_blade_base.png'),  'mask URL absente');
+  assert(t.overlayUrl.includes('sword_hilt_gryff.png'),'overlay URL absente');
+  assert(t.evilFallback, 'whitelist metal contournée — risque injection CSS');
+
+  // CSS : on lit style.css en Node (cssRules bloqué en file://). Vérifie
+  // les 6 classes metal-* + le sélecteur .tinted-icon .tint-mask.
+  const fs   = require('fs');
+  const path = require('path');
+  const css  = fs.readFileSync(path.resolve(__dirname, '../css/style.css'), 'utf-8');
+  ['iron','copper','bronze','silver','gold','platinum'].forEach(m => {
+    assert(css.includes(`.metal-${m}`), `CSS .metal-${m} manquant`);
+  });
+  assert(css.includes('.tinted-icon .tint-mask'), 'CSS .tinted-icon .tint-mask manquant');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ tint CSS — DOM, attrs et whitelist OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss];
   for (const s of scenarios) {
     await s();
   }

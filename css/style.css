@@ -1276,6 +1276,44 @@ body {
 .ui-icon-md { width: 16px; height: 16px; }
 .ui-icon-lg { width: 20px; height: 20px; }
 .ui-icon-xl { width: 28px; height: 28px; vertical-align: -6px; }
+
+/* ── Tint CSS 2-calques (équipement à variantes métalliques) ─────
+   Wrapper qui empile une silhouette teintée (mask-image + bg-color)
+   et un overlay de détails fixes (garde, gemmes…). Permet d'obtenir
+   plusieurs variantes (fer/cuivre/bronze/argent/or/platine) à partir
+   d'un seul couple de PNG sources.
+
+   ⚠️ Limitation Chromium : `mask-image: url(...)` ne charge pas en
+   contexte file://. Le rendu final ne marche qu'en HTTP. Le smoke
+   test `tests/smoke.js` (file://) vérifie la structure DOM mais pas
+   le pixel produit. */
+.tinted-icon {
+  position: relative;
+  display: inline-block;
+  vertical-align: -2px;
+  image-rendering: pixelated;
+}
+.tinted-icon .tint-mask,
+.tinted-icon .tint-overlay {
+  position: absolute;
+  inset: 0;
+  image-rendering: pixelated;
+}
+.tinted-icon .tint-mask {
+  -webkit-mask: var(--tint-mask) center / contain no-repeat;
+          mask: var(--tint-mask) center / contain no-repeat;
+  background-color: var(--metal, #c0c0c8);
+}
+.tinted-icon .tint-overlay {
+  background: var(--tint-overlay) center / contain no-repeat;
+}
+.metal-iron     { --metal: #909096; }
+.metal-copper   { --metal: #b87333; }
+.metal-bronze   { --metal: #8c5a2c; }
+.metal-silver   { --metal: #c0c0c8; }
+.metal-gold     { --metal: #d4a830; }
+.metal-platinum { --metal: #d8d8e0; }
+
 .cmd-btn .btn-label {
   font-size: 11px;
   text-transform: uppercase;
