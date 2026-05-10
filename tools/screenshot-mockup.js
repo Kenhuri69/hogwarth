@@ -15,9 +15,15 @@ const URL = 'file://' + path.resolve(__dirname, 'mockup_character_v2.html');
     const ctx  = await browser.newContext({ viewport: { width: v.w, height: v.h }, deviceScaleFactor: 1 });
     const page = await ctx.newPage();
     await page.goto(URL, { waitUntil: 'networkidle' });
+    await page.evaluate(() => {
+      const m = document.querySelector('.modal');
+      if (m) { m.style.maxHeight = 'none'; }
+      const b = document.querySelector('.modal-body');
+      if (b) { b.style.overflowY = 'visible'; }
+    });
     await page.waitForTimeout(300);
     const out = path.resolve(__dirname, `mockup-${v.name}.png`);
-    await page.screenshot({ path: out, fullPage: false });
+    await page.screenshot({ path: out, fullPage: true });
     console.log(`✅ ${v.name} → ${out}`);
     await ctx.close();
   }
