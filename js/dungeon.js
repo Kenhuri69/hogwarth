@@ -205,3 +205,47 @@ function generateDungeon(floor) {
   playerDir = 'n';
   visited[playerY][playerX] = true;
 }
+
+// Spawn ciblé pour quête à l'acceptation. Place 1 monstre cible (par id) +
+// `extraRandomCount` monstres aléatoires éligibles à l'étage courant, sur
+// des cellules FLOOR libres de `enemyMap`. Tolérant : place ce qui rentre
+// si pas assez de cases libres. Retourne le nombre de mobs placés.
+function spawnQuestMonsters(targetMonsterId, extraRandomCount) {
+  if (typeof dungeon === 'undefined' || typeof enemyMap === 'undefined') return 0;
+  const floor = (typeof currentFloor === 'number') ? currentFloor : 1;
+
+  const free = [];
+  for (let y = 0; y < dungeon.length; y++) {
+    for (let x = 0; x < dungeon[y].length; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (enemyMap[y][x]) continue;
+      if (x === playerX && y === playerY) continue;
+      free.push({ x, y });
+    }
+  }
+  if (!free.length) return 0;
+
+  for (let i = free.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [free[i], free[j]] = [free[j], free[i]];
+  }
+
+  let placed = 0;
+  const target = MONSTERS.find(m => m.id === targetMonsterId);
+  if (target && free.length) {
+    const cell = free.pop();
+    enemyMap[cell.y][cell.x] = scaleMonster(target, floor);
+    placed++;
+  }
+
+  const pool = MONSTERS.filter(m =>
+    m.minFloor <= floor && (m.maxFloor === null || floor <= m.maxFloor)
+  );
+  for (let i = 0; i < extraRandomCount && free.length && pool.length; i++) {
+    const cell = free.pop();
+    enemyMap[cell.y][cell.x] = scaleMonster(weightedPick(pool), floor);
+    placed++;
+  }
+
+  return placed;
+}

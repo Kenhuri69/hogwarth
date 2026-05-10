@@ -61,7 +61,13 @@ const QUEST_TEMPLATES = [
     reward: { xp: 90, gold: 30, item: "broom" },
     location: "Forêt Interdite (étage 4+)",
     // Quête répétable : Hagrid en redemande tous les 3 niveaux.
-    repeatable: { everyLevels: 3 }
+    repeatable: { everyLevels: 3 },
+    // À partir de la 2e remise, le balai est déjà au sac : on bascule
+    // sur une récompense allégée plutôt que d'empiler des doublons.
+    repeatableReward: { xp: 60, gold: 35 },
+    // À l'acceptation : 1 chouette + 2 mobs aléatoires de l'étage,
+    // pour donner du grain à moudre dans des salles déjà nettoyées.
+    spawnOnAccept: { targetMonsterId: "chouette_envoutee", extraRandomCount: 2 }
   },
   {
     id: "defense_cabane",
@@ -150,6 +156,19 @@ function acceptQuest(id) {
   activeQuests.push(inst);
   availableQuests.delete(id);
   addMsg(`📜 Nouvelle quête : « ${tpl.title} »`, 'magic');
+
+  // Hook générique : si la quête déclare `spawnOnAccept`, on injecte
+  // les mobs sur l'étage courant. Utile pour les quêtes répétables qui
+  // se ré-acceptent sur des étages déjà nettoyés.
+  if (tpl.spawnOnAccept && typeof spawnQuestMonsters === 'function') {
+    const { targetMonsterId, extraRandomCount } = tpl.spawnOnAccept;
+    const placed = spawnQuestMonsters(targetMonsterId, extraRandomCount | 0);
+    if (placed > 0) {
+      if (typeof renderMinimap === 'function') renderMinimap();
+      if (typeof drawDungeon === 'function') drawDungeon();
+    }
+  }
+
   if (typeof updateQuestTracker === 'function') updateQuestTracker();
   return true;
 }
@@ -356,20 +375,27 @@ function completeQuest(index) {
     });
   }
 
-  if (q.reward.xp)    player.xp   += q.reward.xp;
-  if (q.reward.gold)  player.gold += q.reward.gold;
+  const tpl = getQuestTemplate(q.id);
+  // Quête répétable : à partir de la 2e remise (lastQuestCompletion[id]
+  // déjà renseigné), on bascule sur `repeatableReward` si défini, pour
+  // éviter d'empiler des items déjà acquis.
+  const isReRun = !!(tpl && tpl.repeatable && lastQuestCompletion[q.id] !== undefined);
+  const reward  = (isReRun && tpl.repeatableReward) ? tpl.repeatableReward : q.reward;
 
-  if (q.reward.item) {
-    const item = ITEMS.find(i => i.id === q.reward.item);
+  if (reward.xp)    player.xp   += reward.xp;
+  if (reward.gold)  player.gold += reward.gold;
+
+  if (reward.item) {
+    const item = ITEMS.find(i => i.id === reward.item);
     if (item && tryAddItem(item, { silent: true })) {
       addMsg(`Récompense : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name}`, 'good');
     }
   }
-  if (q.reward.spell) {
+  if (reward.spell) {
     party.forEach(c => {
-      if (!c.spells.includes(q.reward.spell)) c.spells.push(q.reward.spell);
+      if (!c.spells.includes(reward.spell)) c.spells.push(reward.spell);
     });
-    addMsg(`✨ Nouveau sort débloqué : ${q.reward.spell} !`, 'magic');
+    addMsg(`✨ Nouveau sort débloqué : ${reward.spell} !`, 'magic');
   }
 
   // Points de Maison pour quête accomplie
@@ -383,7 +409,6 @@ function completeQuest(index) {
   completedQuests.add(q.id);
   // Quêtes répétables : on retient le niveau du joueur à la remise
   // pour calculer le cooldown lors d'une éventuelle ré-offre.
-  const tpl = getQuestTemplate(q.id);
   if (tpl && tpl.repeatable) {
     lastQuestCompletion[q.id] = (player && player.level) || 0;
   }
