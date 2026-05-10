@@ -2486,6 +2486,14 @@ async function scenarioTintCss() {
   assert(t.layerCount === 2,               `layers=${t.layerCount} (attendu 2)`);
   assert(t.maskUrl.includes('sword_blade_base.png'),   'mask URL absente');
   assert(t.overlayUrl.includes('sword_hilt_gryff.png'),'overlay URL absente');
+  // Régression connue : les url() dans les custom properties CSS sont
+  // résolues relativement au CSS consommateur (style.css dans /css/).
+  // Un chemin sans `../` produit un 404 silencieux et la baguette/épée
+  // n'apparaît pas en jeu (vu en prod 2026-05-10 sur Baguette de Saule).
+  assert(t.maskUrl.includes("'../img/"),
+         'mask URL doit commencer par ../img/ pour résoudre depuis css/style.css');
+  assert(t.overlayUrl.includes("'../img/"),
+         'overlay URL doit commencer par ../img/ pour résoudre depuis css/style.css');
   assert(t.wandHasTint,                     'wand1 ne produit pas tinted-icon');
   assert(['oak','ebony','willow','holly','elder','vine'].includes(t.wandTint),
          `wand1 tint=${t.wandTint} hors palette bois`);
