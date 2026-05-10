@@ -58,6 +58,33 @@ function clearAllStatuses() {
   enemyGroup.forEach(e => { e.statusEffects = []; });
 }
 
+// Tick fin de round : applique regenHp/regenSp issus de l'équipement.
+// Plafonné par hpMax/spMax. Appelé depuis enemyTurn ; testable directement.
+function applyEquipmentRegen() {
+  let log = '';
+  party.slice(0, partySize).forEach(c => {
+    if (c.hp <= 0 || !c.equipped) return;
+    let hpRegen = 0, spRegen = 0;
+    Object.values(c.equipped).forEach(item => {
+      if (!item) return;
+      if (item.regenHp) hpRegen += item.regenHp;
+      if (item.regenSp) spRegen += item.regenSp;
+    });
+    if (hpRegen > 0 && c.hp < c.hpMax) {
+      const heal = Math.min(hpRegen, c.hpMax - c.hp);
+      c.hp += heal;
+      log += `✨ ${c.name} régénère ${heal} PV. `;
+      if (window.UX) UX.floatDmg('ally', heal, 'heal');
+    }
+    if (spRegen > 0 && c.sp < c.spMax) {
+      const restore = Math.min(spRegen, c.spMax - c.sp);
+      c.sp += restore;
+      log += `💧 ${c.name} récupère ${restore} PM. `;
+    }
+  });
+  return log;
+}
+
 // ── Démarrage du combat ──────────────────────────────────────
 function startBattle(baseEnemyData) {
   inBattle          = true;
@@ -245,6 +272,9 @@ function enemyTurn() {
   party.slice(0, partySize).forEach(c => {
     if (c.hp > 0) log += tickStatuses(c, false);
   });
+
+  // Régénération passive depuis l'équipement (regenHp / regenSp).
+  log += applyEquipmentRegen();
 
   setBattleLog(log || '...');
   updateUI();

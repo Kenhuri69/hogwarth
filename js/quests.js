@@ -113,6 +113,51 @@ const QUEST_TEMPLATES = [
     ],
     reward: { xp: 200, gold: 50, spell: "Patronum" },
     location: "Classe de Défense (étage 4+)"
+  },
+  // ── Phase 3b : quêtes secondaires PNJ → équipement étendu ──
+  {
+    id: "bottines_ollivander",
+    title: "Le cuir volé d'Ollivander",
+    giver: "Mr Ollivander",
+    desc: "Un Hippogriffe en colère a éventré une caisse de cuir de dragon que je gardais pour un client. Élimine la bête : ses serres trahissent les bottes qu'elle a piétinées.",
+    objectives: [
+      { type: "kill", monsterId: "hippogriffe_courroux", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 220, gold: 80, item: "bottes_dragon" },
+    location: "Atelier d'Ollivander (étage 3)"
+  },
+  {
+    id: "fil_acromantule",
+    title: "Le fil de l'Acromantule",
+    giver: "Madame Guipure",
+    desc: "Pour broder une cape qui résiste aux sortilèges, il me faut trois fils tirés d'Acromantules vivantes. Tue trois jeunes Acromantules et récupère-les pour moi.",
+    objectives: [
+      { type: "kill", monsterId: "acromantula_jeune", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 260, gold: 90, item: "cape_voyageur" },
+    location: "Atelier de couture (étage 5)"
+  },
+  {
+    id: "anneau_dumbledore",
+    title: "L'Anneau de la Résurrection",
+    giver: "Portrait d'Albus Dumbledore",
+    desc: "Une ombre rôde dans les couloirs — un fragment d'âme qui hante un vieil anneau de famille. Vaincs cette ombre, et l'anneau te reviendra.",
+    objectives: [
+      { type: "kill", monsterId: "ombre_quirrell", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 320, gold: 120, item: "anneau_resurrection" },
+    location: "Galerie des portraits (étage 6)"
+  },
+  {
+    id: "bouclier_phenix",
+    title: "Le Bouclier du Phénix",
+    giver: "Fumseck",
+    desc: "Cinq Mangemorts profanent les couloirs du château. Élimine-les, et je te confierai une de mes larmes — un baume qui te soignera dans la durée.",
+    objectives: [
+      { type: "kill", monsterId: "mangemort", amount: 5, progress: 0, completed: false }
+    ],
+    reward: { xp: 380, gold: 150, item: "larmes_phenix" },
+    location: "Volière de Fumseck (étage 7)"
   }
 ];
 

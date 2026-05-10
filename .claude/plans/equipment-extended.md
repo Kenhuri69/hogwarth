@@ -6,7 +6,7 @@ Branche : `claude/game-equipment-system-plan-zrXwI`
 > Convention : `[ ]` pending · `[~]` in progress · `[x]` done.
 > À chaque étape franchie : cocher la case, mettre à jour le statut global, ajouter une ligne dans le journal en bas.
 
-**Statut global** : 24 / 53 étapes — Phases 1-2-3a-4-5 terminées (sprites dédiés + doc CLAUDE.md + smoke 11 slots étendu T9/T10). 3b (quêtes/PNJ) reportée — plan PNJ à rédiger.
+**Statut global** : 28 / 53 étapes — Phases 1-2-3a-3b-4-5 terminées. Phase 3b livrée : 4 quêtes secondaires câblées sur Ollivander/Guipure/Portrait Dumbledore/Fumseck + 2 nouveaux items (`anneau_resurrection`, `larmes_phenix`) + effet passif `regenHp` câblé dans `battle.js — applyEquipmentRegen()`. Reste : Phase 6 (clôture / PR).
 
 ---
 
@@ -211,18 +211,15 @@ ajoutées en V2 sans nouveau PNG (juste teinte différente).
 
 ### 6.6 Nouvelles quêtes
 
-> **Phase 3b reportée** (3.6 + 3.7) : les 4 quêtes secondaires demandent
-> de nouveaux donneurs (Ollivander, Madame Guipure, portrait de Dumbledore,
-> Fumseck) qui ne sont pas encore wired dans le moteur de quête actuel
-> (`completeQuest()` distribue déjà `reward.item` : ce point est ✓). Sera
-> traité dans une Phase 3.5 dédiée si besoin.
+> **Phase 3b livrée** (post itération 6 PNJ) : les 4 PNJ donneurs étaient
+> déjà placés (it. 7.4) ; il restait à câbler les quêtes elles-mêmes.
 
-- [ ] **3.6** `state.js — activeQuests` : ajouter 4 nouvelles quêtes secondaires donnant un slot inédit en récompense :
-    1. **« Les bottines disparues d'Olivander »** (donneur : Mr Ollivander, étage 3) — récompense `feet_dragonhide`.
-    2. **« Le sortilège du brodeur »** (donneur : Madame Guipure, étage 2) — collecter 3 fils d'acromantule → récompense `cloak_traveler` (variante rare).
-    3. **« L'anneau perdu de Dumbledore »** (donneur : portrait de Dumbledore, étage 6) — explorer salle cachée → `ring_resurrection` (variante épique, `grantsSpell`).
-    4. **« Le bouclier du Phénix »** (donneur : Fumseck, étage 8) — vaincre 5 mangemorts → `amulet_phoenix` (variante épique avec `regenHp`).
-- [ ] **3.7** `quests.js` : aucune logique nouvelle nécessaire si la quête est de type `kill` ou `item` ; vérifier que les nouveaux items récompenses sont bien distribués via `completeQuest()`.
+- [x] **3.6** `quests.js — QUEST_TEMPLATES` : 4 nouvelles entrées :
+    1. **« Le cuir volé d'Ollivander »** (Ollivander, étage 3) — kill 1 `hippogriffe_courroux` → récompense `bottes_dragon`.
+    2. **« Le fil de l'Acromantule »** (Madame Guipure, étage 5) — kill 3 `acromantula_jeune` → récompense `cape_voyageur`.
+    3. **« L'Anneau de la Résurrection »** (Portrait Dumbledore, étage 6) — kill 1 `ombre_quirrell` → récompense **nouvel item** `anneau_resurrection` (epic, `grantsSpell:"Reparo"`, MAG+3 LCK+4).
+    4. **« Le Bouclier du Phénix »** (Fumseck, étage 7) — kill 5 `mangemort` → récompense **nouvel item** `larmes_phenix` (epic, `regenHp:3`, DEF+2 MAG+2).
+- [x] **3.7** `npcs.js` : `questsGiven`/`questsTurnedIn` ajoutés sur les 4 PNJ. `data.js` : 2 nouveaux items + sprites Pillow dédiés (`gen_item_anneau_resurrection`, `gen_item_larmes_phenix`, seeds 3613/3614) + entrées dans `ITEM_ICON_REGISTRY`. **Bonus hors plan original** : `regenHp` câblé dans `battle.js` via nouvelle fonction `applyEquipmentRegen()` (tick fin de round, plafonné par hpMax/spMax, pas de regen sur perso KO). Cf. §11 — déplace `regenHp` de hors-scope V1 vers livré.
 
 **Vérification Phase 3** :
 - Chaque slot a au moins 1 voie d'acquisition à un étage donné.
@@ -393,7 +390,7 @@ appliquer à toute future addition de sprite item.
 ## 11. Hors-scope V1 (notes pour le futur)
 
 - **Set bonuses** : porter une famille complète (ex: 4 pièces `dragonhide`) → bonus additionnel.
-- **Effets passifs en combat** : `regenHp/regenSp/firstStrike/critBonus` (préparés en §2.5, à câbler dans `battle.js`).
+- **Effets passifs en combat** : `firstStrike/critBonus` restent à câbler. `regenHp` (et `regenSp` par cohérence) **livrés en Phase 3b** via `battle.js — applyEquipmentRegen()`.
 - **Slots faction-locked** : items légendaires des Maisons réservés à la maison choisie.
 - **Variantes nommées** : auto-générer le nom selon `family + rarity` au lieu de hard-coder 3 entrées par famille.
 
@@ -406,3 +403,4 @@ appliquer à toute future addition de sprite item.
 | 2026-05-09 | Audit + plan rédigé | ✅ | 11 slots, 3 familles/slot avec variantes par teinte ; distribution shop+drops+quêtes+coffres ; PNG via planches atlas découpées |
 | 2026-05-09 | Phase 1 — Backend  | ✅ | 7/7 étapes : 11 slots dans `equipped` (state.js + main.js `_hydrateCharacter`), `recalculateStats()` dynamique avec bonus Str/Int/Agi/End (`bonusHpMax/SpMax` reportés hors-scope V1), `_resolveSlotForItem` + `equipItem(idx,charIdx,targetSlot)` + gestion ring1/ring2, `showEquipMenu` 4 cas, champ `slot` sur 12 items existants, `_migrateEquippedSlots` (armor→body, acc→slot dérivé). Smoke test scénario 22 ajouté (5 assertions : 11 slots, mapping, cape_invis bonusAgi, 2 anneaux, migration legacy). 22/22 scénarios verts. |
 | 2026-05-10 | Phase 5 — Doc + smoke | ✅ | 5.1 + 5.2 : section « Système d'équipement » de `CLAUDE.md` refondue (11 slots, schéma item complet `slot`/`family`/`rarity`/`tint`/`bonus*`/`grantsSpell`, `recalculateStats()` dynamique, `_migrateEquippedSlots`). Table par catégorie de slot (10 lignes, exemples d'items représentatifs avec rareté). 5.3 : extension du scénario 22 — T9 (4 slots distincts head/hands/feet/cloak équipés en série, deltas ATK/DEF/MAG/AGI assertés) + T10 (saveGame → clear → loadGame, vérifie que les 11 slots sont restaurés à l'identique). 5.4 : couvert par T5 existant (migration `acc/armor` → 11 slots). 5.5 : 29 scénarios verts. `bonusHpMax` test omis (hors-scope V1). |
+| 2026-05-10 | Phase 3b — quotes équipement | ✅ | 4 templates `QUEST_TEMPLATES` (Ollivander/Guipure/Portrait Dumbledore/Fumseck) avec récompenses équipement. 2 nouveaux items dans `data.js` : `anneau_resurrection` (epic, ring, grantsSpell:Reparo) + `larmes_phenix` (epic, amulet, regenHp:3). 2 sprites Pillow `gen_item_*` (seeds 3613/3614). `questsGiven`/`questsTurnedIn` câblés sur 4 PNJ. Bonus hors plan original : `regenHp` câblé dans `battle.js` via nouvelle fonction `applyEquipmentRegen()` (tick fin de round ennemi, plafonné par hpMax/spMax, KO skipped). `regenHp` retiré de hors-scope V1. Section CLAUDE.md « Effets passifs en combat » ajoutée. Cache-bust : `data.js v=3`, `npcs.js v=8`, `quests.js v=5`, `battle.js v=2`, `item-icons.js v=2`. Smoke : nouveau **scénario 25** (T1 templates, T2 PNJ câblage, T3 nouveaux items, T4 regen tick, T5 cap+no-op+KO). 31 scénarios verts. |
