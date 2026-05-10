@@ -3,20 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mockup — Personnage v2</title>
+<title>Mockup — Personnage v2.1</title>
 <!--
-  Mockup HTML autonome, hors jeu. Reproduit la cible UX (capture RPG mobile)
-  adaptée à Hogwarth, avec les briefings :
-    1. Desktop : 3 colonnes ajustées, modale max-width contenue.
-    2. Mobile  : 3 zones en accordéon (chevron pour plier/déplier).
-    3. Slots   : fond noir UNIFORME comme .inv-slot, bordure d'état/rareté.
-    4. Perso   : superposé sur slot belt en bas du paper doll.
-    5. Inv.    : grille 8x4 intégrée sous les 3 colonnes.
-    6. Cadres  : bordures or ornementées style cible.
-    7. Header  : sticky avec onglets + ✕ permanent.
-    8. Tooltip : survol slot équipé → détail item (nom + bonus).
-    9. Stats   : base + bonus séparés (ex: "Attaque 8 (+4)").
-  Données fictives : Harry niveau 8 avec équipement varié.
+  Mockup v2.1 — Corrections A1→A12 (cf. .claude/plans/character-ux-v2.md
+  §Annexe).
+    A1 : buste conservé, paper doll élargi en hauteur, slots resserrés
+    A2 : stats avec PNG du jeu (img/icons/hp.png, mp.png, atk.png…)
+    A3 : slot vide = emoji distinctif par type (👑🧥💍🪄…)
+    A4 : cadres or ornementés via SVG inline (volutes baroques)
+    A5 : inventaire 16 slots conforme MAX_INVENTORY du jeu
+    A6 : 2 colonnes (Stats + Paper doll élargi), Sortilèges en pied
+    A7 : bandeau Or intégré DANS le paper doll
+    A8 : titre Cinzel orné centré
+    A9 : texture parchemin subtile sur panneau central
+    A10: mobile, perso remonté pour ne pas effacer slot belt
+    A11: tooltip avec position JS sécurisée
+    A12: bonus stat "+4" en vert vif gras
 -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
@@ -26,391 +28,425 @@
   --gold-dark:   #7a5c1e;
   --parchment:   #f4e8c1;
   --parchment-dk:#e8d5a0;
-  --slot-bg:     #0a0705;     /* identique à .inv-slot */
+  --bonus:       #6cd96c;          /* A12 : vert vif lisible sur fond sombre */
+  --slot-bg:     #0a0705;          /* A3 : fond noir uniforme (.inv-slot) */
   --slot-border: #2a1a08;
   --bg-modal:    linear-gradient(180deg, #1a0f05 0%, #120a03 100%);
+  --bg-parchment:
+    radial-gradient(ellipse at 20% 30%, rgba(80,55,18,0.15), transparent 60%),
+    radial-gradient(ellipse at 80% 70%, rgba(60,42,20,0.15), transparent 55%),
+    linear-gradient(180deg, rgba(28,18,8,0.55), rgba(8,4,2,0.85));
 }
 * { box-sizing: border-box; }
 body {
-  margin: 0; padding: 16px;
-  background: #060402;
-  font-family: 'Crimson Text', serif;
-  color: var(--parchment);
-  min-height: 100vh;
+  margin:0; padding:16px;
+  background:#060402;
+  font-family:'Crimson Text', serif;
+  color:var(--parchment);
+  min-height:100vh;
 }
 .demo-banner {
-  max-width: 720px; margin: 0 auto 12px;
-  font-size: 11px; color: #6a5030;
-  font-style: italic; text-align: center;
+  max-width:760px; margin:0 auto 12px;
+  font-size:11px; color:#6a5030; font-style:italic; text-align:center;
 }
 
-/* =========================================================
-   MODALE
-   ========================================================= */
+/* =====================  MODALE  ===================== */
 .modal {
-  position: relative;
-  max-width: 720px; margin: 0 auto;
-  background: var(--bg-modal);
-  border: 2px solid var(--gold);
-  border-radius: 8px;
-  box-shadow: 0 0 40px rgba(201,168,76,0.25);
-  padding: 0;
-  max-height: calc(100vh - 32px);
-  display: flex;
-  flex-direction: column;
+  position:relative;
+  max-width:760px; margin:0 auto;
+  background:var(--bg-modal);
+  border:2px solid var(--gold);
+  border-radius:8px;
+  box-shadow:0 0 40px rgba(201,168,76,0.25);
+  max-height:calc(100vh - 32px);
+  display:flex; flex-direction:column;
 }
-
-/* Cadres or ornementés aux 4 coins (style cible) */
-.modal::before, .modal::after,
-.modal .corner-tl, .modal .corner-tr {
-  content: '';
-  position: absolute;
-  width: 28px; height: 28px;
-  border: 2px solid var(--gold-light);
-  pointer-events: none;
+/* A4 — cadres or ornés aux 4 coins via SVG inline */
+.modal .corner {
+  position:absolute; width:38px; height:38px;
+  pointer-events:none;
 }
-.modal::before { top: -4px;    left: -4px;    border-right: none; border-bottom: none; border-radius: 8px 0 0 0; }
-.modal::after  { bottom: -4px; right: -4px;   border-left:  none; border-top:    none; border-radius: 0 0 8px 0; }
-.modal .corner-tr { top: -4px;    right: -4px; border-left: none; border-bottom: none; border-radius: 0 8px 0 0; }
-.modal .corner-bl { bottom: -4px; left: -4px;  border-right:none; border-top:    none; border-radius: 0 0 0 8px; }
+.modal .corner.tl { top:-6px;    left:-6px;    }
+.modal .corner.tr { top:-6px;    right:-6px;   transform:scaleX(-1);  }
+.modal .corner.bl { bottom:-6px; left:-6px;    transform:scaleY(-1);  }
+.modal .corner.br { bottom:-6px; right:-6px;   transform:scale(-1,-1);}
 
-/* =========================================================
-   HEADER STICKY
-   ========================================================= */
+/* =====================  HEADER  ===================== */
 .modal-header {
-  position: sticky; top: 0; z-index: 10;
-  background: var(--bg-modal);
-  border-bottom: 1px solid var(--gold-dark);
-  padding: 10px 14px 8px;
-  display: flex; align-items: center; gap: 10px;
+  position:sticky; top:0; z-index:10;
+  background:var(--bg-modal);
+  border-bottom:1px solid var(--gold-dark);
+  padding:10px 14px;
+  display:flex; align-items:center; gap:12px;
 }
-.modal-header .title {
-  font-family: 'Cinzel', serif;
-  font-size: 14px; color: var(--gold);
-  letter-spacing: 1px; flex-shrink: 0;
+/* A8 — titre orné Cinzel avec séparateurs latéraux */
+.modal-title {
+  font-family:'Cinzel',serif;
+  font-size:15px; color:var(--gold-light);
+  letter-spacing:2px; font-weight:700;
+  display:flex; align-items:center; gap:6px;
 }
-.modal-header .tabs {
-  display: flex; gap: 6px; flex-grow: 1;
-  margin-left: 12px;
+.modal-title::before, .modal-title::after {
+  content:''; display:inline-block;
+  width:18px; height:1px;
+  background:linear-gradient(90deg, transparent, var(--gold-light), transparent);
 }
-.modal-header .tab {
-  background: rgba(40,28,12,0.50);
-  border: 1px solid rgba(201,168,76,0.35);
-  border-radius: 4px;
-  padding: 3px 10px;
-  font-size: 11px; color: var(--parchment-dk);
-  cursor: pointer; transition: all 0.15s;
-  font-family: 'Cinzel', serif;
-}
-.modal-header .tab.active { border-color: var(--gold); color: var(--gold-light); background: rgba(60,42,20,0.65); }
-.modal-header .tab:hover  { border-color: var(--gold-light); }
-.modal-header .close-btn {
-  background: none; border: none; color: var(--gold-dark);
-  font-family: 'Cinzel', serif; font-size: 18px;
-  cursor: pointer; padding: 4px 8px;
-  transition: color 0.15s;
-}
-.modal-header .close-btn:hover { color: var(--gold-light); }
+.modal-title svg { width:14px; height:14px; }
 
-/* =========================================================
-   CORPS — 3 COLONNES + INVENTAIRE
-   ========================================================= */
-.modal-body {
-  padding: 12px;
-  overflow-y: auto;
-  flex: 1;
+.tabs { display:flex; gap:6px; margin-left:auto; }
+.tab {
+  background:rgba(40,28,12,0.50);
+  border:1px solid rgba(201,168,76,0.35);
+  border-radius:4px; padding:4px 10px;
+  font-size:11px; color:var(--parchment-dk);
+  cursor:pointer; transition:all 0.15s;
+  font-family:'Cinzel',serif;
 }
+.tab.active{ border-color:var(--gold); color:var(--gold-light); background:rgba(60,42,20,0.65); }
 
+.close-btn {
+  background:none; border:none; color:var(--gold-dark);
+  font-family:'Cinzel',serif; font-size:18px;
+  cursor:pointer; padding:4px 10px; transition:color 0.15s;
+}
+.close-btn:hover{ color:var(--gold-light); }
+
+/* =====================  BODY  ===================== */
+.modal-body { padding:12px; overflow-y:auto; flex:1; }
+
+/* A6 — 2 colonnes : Stats (220px) + Paper doll (1fr) */
 .char-grid {
-  display: grid;
-  grid-template-columns: 180px 1fr 180px;
-  gap: 10px;
-  align-items: start;
+  display:grid;
+  grid-template-columns:220px 1fr;
+  gap:12px; align-items:start;
 }
 
 /* Bouton accordéon — visible seulement en mobile */
-.section-toggle {
-  display: none;
-  width: 100%;
-  background: rgba(40,28,12,0.55);
-  border: 1px solid rgba(201,168,76,0.30);
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-family: 'Cinzel', serif;
-  font-size: 11px;
-  color: var(--gold-light);
-  cursor: pointer;
-  text-align: left;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
+.section-toggle{
+  display:none; width:100%;
+  background:rgba(40,28,12,0.55);
+  border:1px solid rgba(201,168,76,0.30);
+  border-radius:4px;
+  padding:6px 10px;
+  font-family:'Cinzel',serif; font-size:11px;
+  color:var(--gold-light);
+  cursor:pointer; text-align:left;
+  letter-spacing:0.5px; margin-bottom:4px;
 }
-.section-toggle::after {
-  content: '▾'; float: right;
-  transition: transform 0.2s;
-}
-.section.collapsed .section-toggle::after { transform: rotate(-90deg); }
-.section.collapsed .section-content { display: none; }
+.section-toggle::after{ content:'▾'; float:right; transition:transform 0.2s; }
+.section.collapsed .section-toggle::after{ transform:rotate(-90deg); }
+.section.collapsed .section-content{ display:none; }
 
-/* =========================================================
-   PANNEAU GAUCHE — STATS
-   ========================================================= */
-.stats-panel { font-size: 11px; }
-.level-banner {
-  background: rgba(40,28,12,0.55);
-  border: 1px solid rgba(201,168,76,0.30);
-  border-radius: 4px;
-  padding: 8px 10px;
-  text-align: center;
-  margin-bottom: 8px;
+/* =====================  STATS (A2, A12)  ===================== */
+.stats-panel{ font-size:11px; }
+.level-banner{
+  background:rgba(40,28,12,0.55);
+  border:1px solid rgba(201,168,76,0.30);
+  border-radius:4px;
+  padding:8px 10px; text-align:center; margin-bottom:8px;
 }
-.level-banner .lvl   { font-family:'Cinzel',serif; font-size:13px; color:var(--gold-light); font-weight:700; }
-.level-banner .role  { font-size:10px; color:#8a7050; margin-top:2px; }
-.level-banner .xp-bar {
-  height: 6px; background: rgba(20,12,4,0.6);
-  border-radius: 3px; overflow: hidden;
-  margin-top: 6px; border: 1px solid rgba(201,168,76,0.30);
+.level-banner .lvl  { font-family:'Cinzel',serif; font-size:13px; color:var(--gold-light); font-weight:700; }
+.level-banner .role { font-size:10px; color:#8a7050; margin-top:2px; }
+.level-banner .xp-bar{
+  height:6px; background:rgba(20,12,4,0.6);
+  border-radius:3px; overflow:hidden; margin-top:6px;
+  border:1px solid rgba(201,168,76,0.30);
 }
-.level-banner .xp-bar > span {
-  display: block; height: 100%;
-  background: linear-gradient(90deg, var(--gold-dark), var(--gold-light));
-  width: 35%;
+.level-banner .xp-bar > span{
+  display:block; height:100%;
+  background:linear-gradient(90deg,var(--gold-dark),var(--gold-light));
+  width:35%;
 }
-.level-banner .xp-text { font-size:9px; color:#6a5030; margin-top:2px; }
+.level-banner .xp-text{ font-size:9px; color:#6a5030; margin-top:2px; }
 
-.stat-line {
-  display: grid;
-  grid-template-columns: 18px 1fr auto;
-  align-items: center; gap: 6px;
-  padding: 3px 4px;
-  border-bottom: 1px dashed rgba(122,92,30,0.18);
+.stat-line{
+  display:grid;
+  grid-template-columns:20px 1fr auto;
+  align-items:center; gap:6px;
+  padding:3px 4px;
+  border-bottom:1px dashed rgba(122,92,30,0.18);
 }
-.stat-line .stat-icon { font-size: 14px; opacity: 0.85; }
-.stat-line .stat-label { color: #8a7050; font-size: 10px; letter-spacing: 0.3px; }
-.stat-line .stat-value { color: var(--parchment); font-weight: 600; font-variant-numeric: tabular-nums; font-size: 11px; }
-.stat-line .stat-bonus { color: var(--gold-light); font-size: 10px; margin-left: 2px; }
-.stat-line.derived .stat-value { color: var(--gold-light); }
+/* A2 — icônes PNG du jeu */
+.stat-line .stat-icon{ width:16px; height:16px; opacity:0.92; }
+.stat-line .stat-label{ color:#8a7050; font-size:10px; letter-spacing:0.3px; }
+.stat-line .stat-value{ color:var(--parchment); font-weight:600; font-variant-numeric:tabular-nums; font-size:11px; }
+/* A12 — bonus vert vif gras */
+.stat-line .stat-bonus{ color:var(--bonus); font-weight:700; font-size:11px; margin-left:3px; text-shadow:0 0 4px rgba(108,217,108,0.35); }
+.stat-line.derived .stat-value{ color:var(--gold-light); }
 
-.stats-panel .quests-btn {
-  display: block; margin-top: 10px;
-  width: 100%;
-  background: rgba(60,42,20,0.65);
-  border: 1px solid var(--gold-dark);
-  border-radius: 4px;
-  padding: 6px;
-  color: var(--gold-light);
-  font-family: 'Cinzel', serif;
-  font-size: 11px;
-  cursor: pointer;
+.stats-panel .quests-btn{
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  margin-top:10px; width:100%;
+  background:rgba(60,42,20,0.65);
+  border:1px solid var(--gold-dark);
+  border-radius:4px; padding:7px;
+  color:var(--gold-light);
+  font-family:'Cinzel',serif; font-size:11px;
+  cursor:pointer;
 }
+.stats-panel .quests-btn img{ width:14px; height:14px; }
 
-/* =========================================================
-   PANNEAU CENTRAL — PAPER DOLL
-   ========================================================= */
-.paper-doll {
-  position: relative;
-  height: 360px;
-  background: radial-gradient(ellipse at center 80%, rgba(40,28,12,0.55), rgba(8,4,2,0.85));
-  border: 1px solid rgba(122,92,30,0.40);
-  border-radius: 6px;
-  overflow: hidden;
+/* =====================  PAPER DOLL (A1, A7, A9)  ===================== */
+.paper-doll{
+  position:relative;
+  height:380px;
+  background:var(--bg-parchment);              /* A9 — texture parchemin subtile */
+  border:1px solid rgba(122,92,30,0.40);
+  border-radius:6px;
+  overflow:hidden;
 }
-
-/* Image perso plus bas — superposée au slot belt */
-.paper-doll .pd-portrait {
-  position: absolute;
-  left: 50%;
-  bottom: 16px;                  /* plus bas, chevauche slot belt */
-  transform: translateX(-50%);
-  width: 180px; height: 240px;
-  object-fit: contain;
-  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.7));
-  z-index: 2;                    /* au-dessus du slot belt */
-  pointer-events: none;
+/* A1 — buste élargi en hauteur, prend toute la zone centrale verticale */
+.paper-doll .pd-portrait{
+  position:absolute;
+  left:50%; bottom:60px;
+  transform:translateX(-50%);
+  width:220px; height:300px;
+  object-fit:contain;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,0.7));
+  z-index:2;
+  pointer-events:none;
+}
+/* Socle / podium subtil sous le perso */
+.paper-doll::before{
+  content:''; position:absolute;
+  left:50%; bottom:48px;
+  transform:translateX(-50%);
+  width:160px; height:18px;
+  background:radial-gradient(ellipse at center, rgba(0,0,0,0.55), transparent 70%);
+  z-index:1; pointer-events:none;
 }
 
-/* Bandeau Or — sous le paper doll */
-.gold-banner {
-  position: absolute;
-  bottom: -2px;
-  left: 50%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 6px;
-  background: linear-gradient(180deg, rgba(80,55,18,0.95), rgba(40,28,12,0.95));
-  border: 1px solid var(--gold);
-  border-radius: 14px;
-  padding: 4px 14px;
-  font-family: 'Cinzel', serif;
-  color: var(--gold-light);
-  font-weight: 700;
-  font-size: 13px;
-  z-index: 4;                    /* au-dessus de tout */
-  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+/* A7 — Bandeau Or INTÉGRÉ dans le paper doll (encart ovale centre-bas) */
+.gold-banner{
+  position:absolute;
+  bottom:12px; left:50%; transform:translateX(-50%);
+  display:flex; align-items:center; gap:8px;
+  background:linear-gradient(180deg, rgba(80,55,18,0.95), rgba(40,28,12,0.95));
+  border:1px solid var(--gold);
+  border-radius:18px;
+  padding:5px 18px;
+  font-family:'Cinzel',serif;
+  color:var(--gold-light);
+  font-weight:700; font-size:13px;
+  z-index:4;
+  box-shadow:0 2px 10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(240,208,128,0.4);
 }
-.gold-banner .gold-coin {
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, var(--gold-light), var(--gold-dark));
-  border: 1px solid #5a3f0e;
-  display: inline-block;
-}
+.gold-banner img{ width:16px; height:16px; }
 
-/* =========================================================
-   SLOTS UNIFORMES (fond noir comme .inv-slot)
-   ========================================================= */
-.equip-slot {
-  position: absolute;
-  width: 50px; height: 50px;
-  background: var(--slot-bg);    /* fond noir uniforme */
-  border: 1px solid var(--slot-border);
-  border-radius: 4px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: border-color 0.15s, transform 0.15s;
-  z-index: 1;
+/* =====================  SLOTS (A3)  ===================== */
+.equip-slot{
+  position:absolute;
+  width:50px; height:50px;
+  background:var(--slot-bg);          /* fond noir uniforme */
+  border:1px solid var(--slot-border);
+  border-radius:4px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  transition:border-color 0.15s, transform 0.15s;
+  z-index:1;
+  font-size:24px;                     /* taille emoji slot vide */
 }
-.equip-slot:hover { border-color: var(--gold-light); transform: scale(1.06); z-index: 5; }
-.equip-slot.filled                 { border-color: #4a3010; }
-.equip-slot.filled.rarity-common   { border-color: #6a5030; }
-.equip-slot.filled.rarity-rare     { border-color: #4a8ad0; box-shadow: inset 0 0 0 1px rgba(74,138,208,0.25); }
-.equip-slot.filled.rarity-epic     { border-color: #a060d0; box-shadow: inset 0 0 0 1px rgba(160,96,208,0.30); }
-.equip-slot.filled.rarity-legendary{ border-color: var(--gold); box-shadow: inset 0 0 0 1px rgba(201,168,76,0.45), 0 0 8px rgba(201,168,76,0.4); }
-.equip-slot img { width: 36px; height: 36px; object-fit: contain; }
-.equip-slot.empty img { opacity: 0.30; filter: grayscale(80%); }
+.equip-slot:hover{ border-color:var(--gold-light); transform:scale(1.06); z-index:50; }
+.equip-slot.filled                  { border-color:#4a3010; }
+.equip-slot.filled.rarity-common    { border-color:#6a5030; }
+.equip-slot.filled.rarity-rare      { border-color:#4a8ad0; box-shadow:inset 0 0 0 1px rgba(74,138,208,0.25); }
+.equip-slot.filled.rarity-epic      { border-color:#a060d0; box-shadow:inset 0 0 0 1px rgba(160,96,208,0.30); }
+.equip-slot.filled.rarity-legendary { border-color:var(--gold); box-shadow:inset 0 0 0 1px rgba(201,168,76,0.45), 0 0 8px rgba(201,168,76,0.4); }
+.equip-slot img{ width:36px; height:36px; object-fit:contain; }
+.equip-slot.empty .slot-emoji{ opacity:0.35; filter:grayscale(70%); }
 
-/* Position des 11 slots (4 gauche + 4 droite + 3 bas) */
-.equip-slot-head    { top:   8px; left:  8px; }
-.equip-slot-body    { top:  64px; left:  8px; }
-.equip-slot-hands   { top: 120px; left:  8px; }
-.equip-slot-feet    { top: 176px; left:  8px; }
-.equip-slot-cloak   { top:   8px; right: 8px; }
-.equip-slot-amulet  { top:  64px; right: 8px; }
-.equip-slot-ring1   { top: 120px; right: 8px; }
-.equip-slot-ring2   { top: 176px; right: 8px; }
-.equip-slot-wand    { bottom:  8px; left: 8px; }
-.equip-slot-trinket { bottom:  8px; right: 8px; }
-.equip-slot-belt    { bottom:  8px; left: 50%; transform: translateX(-50%); }
+/* Position des 11 slots — paper doll élargi 380px */
+.equip-slot-head    { top:  10px; left:  10px; }
+.equip-slot-body    { top:  72px; left:  10px; }
+.equip-slot-hands   { top: 134px; left:  10px; }
+.equip-slot-feet    { top: 196px; left:  10px; }
+.equip-slot-cloak   { top:  10px; right: 10px; }
+.equip-slot-amulet  { top:  72px; right: 10px; }
+.equip-slot-ring1   { top: 134px; right: 10px; }
+.equip-slot-ring2   { top: 196px; right: 10px; }
+.equip-slot-wand    { top: 258px; left:  10px; }
+.equip-slot-trinket { top: 258px; right: 10px; }
+.equip-slot-belt    { top: 258px; left:  50%; transform:translateX(-50%); }
 
-/* =========================================================
-   TOOLTIP (au survol des slots équipés)
-   ========================================================= */
-.tooltip {
-  position: absolute;
-  z-index: 100;
-  background: linear-gradient(180deg, #2a1a08, #120a03);
-  border: 1px solid var(--gold);
-  border-radius: 4px;
-  padding: 8px 10px;
-  font-size: 11px;
-  color: var(--parchment);
-  white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.7);
-  pointer-events: none;
-  opacity: 0; transition: opacity 0.15s;
-  max-width: 220px; white-space: normal;
+/* =====================  TOOLTIP (A11)  ===================== */
+.tooltip{
+  position:absolute; z-index:100;
+  top:54px;                           /* sous le slot par défaut, repositionné en JS */
+  left:50%; transform:translateX(-50%);
+  background:linear-gradient(180deg,#2a1a08,#120a03);
+  border:1px solid var(--gold);
+  border-radius:4px; padding:8px 10px;
+  font-size:11px; color:var(--parchment);
+  box-shadow:0 4px 12px rgba(0,0,0,0.7);
+  pointer-events:none;
+  opacity:0; transition:opacity 0.15s;
+  min-width:160px; max-width:220px;
+  white-space:normal;
 }
-.equip-slot:hover .tooltip { opacity: 1; }
-.tooltip .tt-name { font-family:'Cinzel',serif; color:var(--gold-light); font-size:12px; display:block; margin-bottom:3px; }
-.tooltip .tt-rarity { font-size:9px; color:#8a7050; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:5px; }
-.tooltip .tt-bonus  { color:#4a8ad0; font-weight:600; display:block; }
+.equip-slot:hover .tooltip{ opacity:1; }
+.tooltip .tt-name   { font-family:'Cinzel',serif; color:var(--gold-light); font-size:12px; display:block; margin-bottom:3px; }
+.tooltip .tt-rarity { font-size:9px;  color:#8a7050; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:5px; }
+.tooltip .tt-rarity.rare      { color:#7ab0d8; }
+.tooltip .tt-rarity.epic      { color:#c89cdc; }
+.tooltip .tt-rarity.legendary { color:var(--gold); }
+.tooltip .tt-bonus  { color:var(--bonus); font-weight:600; display:block; margin-bottom:2px; }
 .tooltip .tt-desc   { color:var(--parchment-dk); font-style:italic; margin-top:5px; font-size:10px; line-height:1.4; }
 
-/* =========================================================
-   PANNEAU DROIT — SORTS
-   ========================================================= */
-.spells-panel .panel-title,
-.inv-section .panel-title {
+/* Slots de la rangée du haut → tooltip dessous (par défaut) */
+/* Slots du bas → tooltip au-dessus pour éviter de déborder */
+.equip-slot-wand .tooltip,
+.equip-slot-belt .tooltip,
+.equip-slot-trinket .tooltip,
+.equip-slot-feet .tooltip,
+.equip-slot-ring2 .tooltip{
+  top:auto; bottom:54px;
+}
+/* Slots de droite → tooltip à gauche du slot */
+.equip-slot-cloak  .tooltip,
+.equip-slot-amulet .tooltip,
+.equip-slot-ring1  .tooltip,
+.equip-slot-ring2  .tooltip,
+.equip-slot-trinket .tooltip{
+  left:auto; right:54px; transform:none;
+}
+
+/* =====================  SORTILÈGES PIED-DE-MODALE (A6)  ===================== */
+.spells-strip,
+.inv-section{
+  margin-top:14px;
+  border-top:1px solid rgba(122,92,30,0.30);
+  padding-top:10px;
+}
+.panel-title{
   font-family:'Cinzel',serif;
-  font-size:10px; color:var(--gold);
-  letter-spacing:1px; text-align:center;
-  margin: 0 0 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px dashed rgba(122,92,30,0.25);
+  font-size:11px; color:var(--gold);
+  letter-spacing:1.5px; text-align:center;
+  margin:0 0 8px;
 }
-.spell-line {
-  display: flex; align-items: center; gap: 8px;
-  padding: 4px 6px;
-  font-size: 11px;
-  color: var(--parchment-dk);
-  border-bottom: 1px dashed rgba(122,92,30,0.18);
+.spells-row{
+  display:flex; flex-wrap:wrap; gap:6px; justify-content:center;
 }
-.spell-line .spell-badge {
-  width: 22px; height: 22px;
-  background: var(--slot-bg);
-  border: 1px solid var(--slot-border);
-  border-radius: 3px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px;
+.spell-badge{
+  display:flex; align-items:center; gap:5px;
+  background:rgba(40,28,12,0.65);
+  border:1px solid var(--gold-dark);
+  border-radius:14px;
+  padding:3px 10px;
+  font-size:11px; color:var(--parchment-dk);
+}
+.spell-badge .icon{
+  width:16px; height:16px;
+  background:var(--slot-bg);
+  border:1px solid var(--slot-border);
+  border-radius:3px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px;
 }
 
-/* =========================================================
-   INVENTAIRE INTÉGRÉ (grille 8x4)
-   ========================================================= */
-.inv-section { margin-top: 14px; }
-.inv-grid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 5px;
+/* =====================  INVENTAIRE INTÉGRÉ (A5)  ===================== */
+.inv-grid{
+  display:grid;
+  grid-template-columns:repeat(8, 1fr);
+  gap:5px;
 }
-.inv-slot {
-  aspect-ratio: 1 / 1;
-  background: var(--slot-bg);
-  border: 1px solid var(--slot-border);
-  border-radius: 4px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  position: relative;
-  transition: border-color 0.15s;
+.inv-slot{
+  aspect-ratio:1/1;
+  background:var(--slot-bg);
+  border:1px solid var(--slot-border);
+  border-radius:4px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  position:relative;
+  transition:border-color 0.15s;
 }
-.inv-slot:hover { border-color: var(--gold-dark); }
-.inv-slot.has-item { border-color: #4a3010; }
-.inv-slot.rarity-rare      { border-color: #4a8ad0; }
-.inv-slot.rarity-epic      { border-color: #a060d0; }
-.inv-slot.rarity-legendary { border-color: var(--gold); }
-.inv-slot.locked { opacity: 0.30; cursor: not-allowed; }
-.inv-slot.locked::after {
-  content: '🔒';
-  position: absolute; font-size: 16px;
-}
-.inv-slot img { width: 28px; height: 28px; object-fit: contain; }
+.inv-slot:hover{ border-color:var(--gold-dark); }
+.inv-slot.has-item{ border-color:#4a3010; }
+.inv-slot.rarity-rare      { border-color:#4a8ad0; }
+.inv-slot.rarity-epic      { border-color:#a060d0; }
+.inv-slot.rarity-legendary { border-color:var(--gold); }
+.inv-slot img{ width:28px; height:28px; object-fit:contain; }
 
-/* =========================================================
-   RESPONSIVE — MOBILE EN ACCORDÉON
-   ========================================================= */
-@media (max-width: 720px) {
-  body { padding: 8px; }
-  .modal { max-height: calc(100vh - 16px); }
-  .modal-header .title  { font-size: 12px; }
-  .modal-header .tab    { font-size: 10px; padding: 2px 8px; }
-  .char-grid {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-  .section-toggle { display: block; }
-  .paper-doll { height: 320px; }
-  .paper-doll .pd-portrait { width: 150px; height: 200px; bottom: 16px; }
-  .equip-slot { width: 44px; height: 44px; }
-  .equip-slot img { width: 30px; height: 30px; }
+/* =====================  RESPONSIVE  ===================== */
+@media (max-width: 720px){
+  body { padding:8px; }
+  .modal { max-height:calc(100vh - 16px); }
+  .modal-title { font-size:12px; letter-spacing:1px; }
+  .tab          { font-size:10px; padding:2px 8px; }
+  .char-grid    { grid-template-columns:1fr; gap:6px; }
+  .section-toggle { display:block; }
+  /* A10 — mobile : perso remonté, moins d'overlap slot belt */
+  .paper-doll   { height:340px; }
+  .paper-doll .pd-portrait { width:170px; height:240px; bottom:78px; }
+  .equip-slot   { width:44px; height:44px; font-size:20px; }
+  .equip-slot img { width:30px; height:30px; }
   .equip-slot-head    { top:  8px; left:  8px; }
-  .equip-slot-body    { top: 58px; left:  8px; }
-  .equip-slot-hands   { top:108px; left:  8px; }
-  .equip-slot-feet    { top:158px; left:  8px; }
+  .equip-slot-body    { top: 62px; left:  8px; }
+  .equip-slot-hands   { top:116px; left:  8px; }
+  .equip-slot-feet    { top:170px; left:  8px; }
   .equip-slot-cloak   { top:  8px; right: 8px; }
-  .equip-slot-amulet  { top: 58px; right: 8px; }
-  .equip-slot-ring1   { top:108px; right: 8px; }
-  .equip-slot-ring2   { top:158px; right: 8px; }
-  .inv-grid { grid-template-columns: repeat(6, 1fr); }
+  .equip-slot-amulet  { top: 62px; right: 8px; }
+  .equip-slot-ring1   { top:116px; right: 8px; }
+  .equip-slot-ring2   { top:170px; right: 8px; }
+  .equip-slot-wand    { top:226px; left:  8px; }
+  .equip-slot-trinket { top:226px; right: 8px; }
+  .equip-slot-belt    { top:226px; left: 50%; }
+  .inv-grid { grid-template-columns:repeat(6, 1fr); }
 }
 </style>
 </head>
 <body>
-<div class="demo-banner">Mockup statique — non intégré. Resize la fenêtre pour voir le passage en mode accordéon (≤ 720 px).</div>
+<div class="demo-banner">Mockup v2.1 — corrections A1→A12. Resize ≤ 720 px pour le mode accordéon.</div>
 
 <div class="modal">
-  <div class="corner-tr"></div>
-  <div class="corner-bl"></div>
+  <!-- A4 — Cadres or ornementés aux 4 coins (SVG inline) -->
+  <svg class="corner tl" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#f0d080" stroke-width="1.5" stroke-linecap="round">
+      <path d="M0 6 L0 0 L6 0"/>
+      <path d="M2 12 Q 2 2 12 2"/>
+      <path d="M6 18 Q 6 6 18 6" opacity="0.6"/>
+      <circle cx="3" cy="3" r="1.5" fill="#c9a84c"/>
+      <path d="M10 4 L 12 6 L 14 4 L 14 8" stroke-width="1"/>
+      <path d="M4 10 L 6 12 L 4 14 L 8 14" stroke-width="1"/>
+    </g>
+  </svg>
+  <svg class="corner tr" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#f0d080" stroke-width="1.5" stroke-linecap="round">
+      <path d="M0 6 L0 0 L6 0"/>
+      <path d="M2 12 Q 2 2 12 2"/>
+      <path d="M6 18 Q 6 6 18 6" opacity="0.6"/>
+      <circle cx="3" cy="3" r="1.5" fill="#c9a84c"/>
+      <path d="M10 4 L 12 6 L 14 4 L 14 8" stroke-width="1"/>
+      <path d="M4 10 L 6 12 L 4 14 L 8 14" stroke-width="1"/>
+    </g>
+  </svg>
+  <svg class="corner bl" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#f0d080" stroke-width="1.5" stroke-linecap="round">
+      <path d="M0 6 L0 0 L6 0"/>
+      <path d="M2 12 Q 2 2 12 2"/>
+      <path d="M6 18 Q 6 6 18 6" opacity="0.6"/>
+      <circle cx="3" cy="3" r="1.5" fill="#c9a84c"/>
+      <path d="M10 4 L 12 6 L 14 4 L 14 8" stroke-width="1"/>
+      <path d="M4 10 L 6 12 L 4 14 L 8 14" stroke-width="1"/>
+    </g>
+  </svg>
+  <svg class="corner br" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#f0d080" stroke-width="1.5" stroke-linecap="round">
+      <path d="M0 6 L0 0 L6 0"/>
+      <path d="M2 12 Q 2 2 12 2"/>
+      <path d="M6 18 Q 6 6 18 6" opacity="0.6"/>
+      <circle cx="3" cy="3" r="1.5" fill="#c9a84c"/>
+      <path d="M10 4 L 12 6 L 14 4 L 14 8" stroke-width="1"/>
+      <path d="M4 10 L 6 12 L 4 14 L 8 14" stroke-width="1"/>
+    </g>
+  </svg>
 
-  <!-- Header sticky : titre + onglets + ✕ -->
+  <!-- Header sticky -->
   <div class="modal-header">
-    <div class="title">FICHE</div>
+    <div class="modal-title">
+      <svg viewBox="0 0 24 24" fill="#f0d080"><path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z"/></svg>
+      FICHE DE PERSONNAGE
+      <svg viewBox="0 0 24 24" fill="#f0d080"><path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z"/></svg>
+    </div>
     <div class="tabs">
       <button class="tab active">🧙 Harry</button>
       <button class="tab">🧙‍♀️ Hermione</button>
@@ -418,7 +454,6 @@ body {
     <button class="close-btn" title="Fermer">✕</button>
   </div>
 
-  <!-- Corps -->
   <div class="modal-body">
 
     <div class="char-grid">
@@ -433,19 +468,19 @@ body {
             <div class="xp-bar"><span></span></div>
             <div class="xp-text">XP 245 / 700</div>
           </div>
-          <!-- Format : icone | label | base + bonus -->
-          <div class="stat-line"><span class="stat-icon">❤️</span><span class="stat-label">Vie</span><span class="stat-value">42/55</span></div>
-          <div class="stat-line"><span class="stat-icon">🔵</span><span class="stat-label">Mana</span><span class="stat-value">26/35</span></div>
-          <div class="stat-line"><span class="stat-icon">⚔️</span><span class="stat-label">Attaque</span><span class="stat-value">8<span class="stat-bonus"> +4</span></span></div>
-          <div class="stat-line"><span class="stat-icon">🛡️</span><span class="stat-label">Défense</span><span class="stat-value">5<span class="stat-bonus"> +7</span></span></div>
-          <div class="stat-line"><span class="stat-icon">✨</span><span class="stat-label">Magie</span><span class="stat-value">15<span class="stat-bonus"> +6</span></span></div>
-          <div class="stat-line"><span class="stat-icon">💪</span><span class="stat-label">Force</span><span class="stat-value">10</span></div>
-          <div class="stat-line"><span class="stat-icon">🧠</span><span class="stat-label">Intelligence</span><span class="stat-value">14<span class="stat-bonus"> +5</span></span></div>
-          <div class="stat-line"><span class="stat-icon">🌀</span><span class="stat-label">Agilité</span><span class="stat-value">12<span class="stat-bonus"> +5</span></span></div>
-          <div class="stat-line"><span class="stat-icon">⭐</span><span class="stat-label">Chance</span><span class="stat-value">15</span></div>
-          <div class="stat-line derived"><span class="stat-icon">💥</span><span class="stat-label">Critique</span><span class="stat-value">12%</span></div>
-          <div class="stat-line derived"><span class="stat-icon">💨</span><span class="stat-label">Esquive</span><span class="stat-value">10%</span></div>
-          <button class="quests-btn">📜 Quêtes</button>
+          <!-- A2 — icônes PNG du jeu -->
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/hp.png"  alt=""><span class="stat-label">Vie</span><span class="stat-value">42/55</span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/mp.png"  alt=""><span class="stat-label">Mana</span><span class="stat-value">26/35</span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/atk.png" alt=""><span class="stat-label">Attaque</span><span class="stat-value">8<span class="stat-bonus">+4</span></span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/def.png" alt=""><span class="stat-label">Défense</span><span class="stat-value">5<span class="stat-bonus">+7</span></span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/mag.png" alt=""><span class="stat-label">Magie</span><span class="stat-value">15<span class="stat-bonus">+6</span></span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/str.png" alt=""><span class="stat-label">Force</span><span class="stat-value">10</span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/int.png" alt=""><span class="stat-label">Intelligence</span><span class="stat-value">14<span class="stat-bonus">+5</span></span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/agi.png" alt=""><span class="stat-label">Agilité</span><span class="stat-value">12<span class="stat-bonus">+5</span></span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/xp.png"  alt=""><span class="stat-label">Chance</span><span class="stat-value">15</span></div>
+          <div class="stat-line derived"><img class="stat-icon" src="../img/icons/atk.png" alt=""><span class="stat-label">Critique</span><span class="stat-value">12%</span></div>
+          <div class="stat-line derived"><img class="stat-icon" src="../img/icons/agi.png" alt=""><span class="stat-label">Esquive</span><span class="stat-value">10%</span></div>
+          <button class="quests-btn"><img src="../img/icons/quest.png" onerror="this.style.display='none'" alt=""> Journal des Quêtes</button>
         </div>
       </div>
 
@@ -456,117 +491,107 @@ body {
           <div class="paper-doll">
             <!-- 4 slots gauche -->
             <div class="equip-slot equip-slot-head filled rarity-common">
-              <img src="../img/icons/items/chapeau_apprenti.png" alt="Chapeau d'apprenti">
+              <img src="../img/icons/items/chapeau_apprenti.png" alt="">
               <div class="tooltip"><span class="tt-name">Chapeau d'apprenti</span><span class="tt-rarity">Commun · Tête</span><span class="tt-bonus">+1 Intelligence</span><span class="tt-desc">Un classique des élèves de première année.</span></div>
             </div>
             <div class="equip-slot equip-slot-body filled rarity-rare">
-              <img src="../img/icons/items/robe_renforcee.png" alt="Robe Renforcée" onerror="this.src='../img/icons/armor.png'">
-              <div class="tooltip"><span class="tt-name">Robe Renforcée</span><span class="tt-rarity">Rare · Armure</span><span class="tt-bonus">+5 Défense, +2 Endurance</span><span class="tt-desc">Tissée avec des fils enchantés par Madame Guipure.</span></div>
+              <img src="../img/icons/items/robe_renforcee.png" alt="" onerror="this.src='../img/icons/armor.png'">
+              <div class="tooltip"><span class="tt-name">Robe Renforcée</span><span class="tt-rarity rare">Rare · Armure</span><span class="tt-bonus">+5 Défense</span><span class="tt-bonus">+2 Endurance</span><span class="tt-desc">Tissée par Madame Guipure avec des fils enchantés.</span></div>
             </div>
             <div class="equip-slot equip-slot-hands filled rarity-common">
-              <img src="../img/icons/items/gants_apprenti.png" alt="Gants d'apprenti">
+              <img src="../img/icons/items/gants_apprenti.png" alt="">
               <div class="tooltip"><span class="tt-name">Gants d'Apprenti</span><span class="tt-rarity">Commun · Mains</span><span class="tt-bonus">+1 Attaque</span></div>
             </div>
             <div class="equip-slot equip-slot-feet filled rarity-rare">
-              <img src="../img/icons/items/bottes_dragon.png" alt="Bottes en cuir de dragon">
-              <div class="tooltip"><span class="tt-name">Bottes en cuir de dragon</span><span class="tt-rarity">Rare · Bottes</span><span class="tt-bonus">+3 Agilité, +2 Défense</span><span class="tt-desc">Résistant au feu, parfait pour les cachots.</span></div>
+              <img src="../img/icons/items/bottes_dragon.png" alt="">
+              <div class="tooltip"><span class="tt-name">Bottes en cuir de dragon</span><span class="tt-rarity rare">Rare · Bottes</span><span class="tt-bonus">+3 Agilité</span><span class="tt-bonus">+2 Défense</span><span class="tt-desc">Résiste au feu, parfait pour les cachots.</span></div>
             </div>
 
             <!-- 4 slots droite -->
             <div class="equip-slot equip-slot-cloak filled rarity-epic">
-              <img src="../img/icons/items/cape_invis.png" alt="Cape d'invisibilité">
-              <div class="tooltip"><span class="tt-name">Cape d'Invisibilité</span><span class="tt-rarity">Épique · Cape</span><span class="tt-bonus">+5 Agilité, +5 Chance</span><span class="tt-desc">Héritage de famille, tissée dans le linceul de la mort.</span></div>
+              <img src="../img/icons/items/cape_invis.png" alt="">
+              <div class="tooltip"><span class="tt-name">Cape d'Invisibilité</span><span class="tt-rarity epic">Épique · Cape</span><span class="tt-bonus">+5 Agilité</span><span class="tt-bonus">+5 Chance</span><span class="tt-desc">Héritage de famille tissé dans le linceul de la mort.</span></div>
             </div>
             <div class="equip-slot equip-slot-amulet filled rarity-epic">
-              <img src="../img/icons/items/larmes_phenix.png" alt="Larmes du Phénix">
-              <div class="tooltip"><span class="tt-name">Larmes du Phénix</span><span class="tt-rarity">Épique · Amulette</span><span class="tt-bonus">+3 PV régénérés / tour</span><span class="tt-desc">Une fiole scintillante, miracle de Fumseck.</span></div>
+              <img src="../img/icons/items/larmes_phenix.png" alt="">
+              <div class="tooltip"><span class="tt-name">Larmes du Phénix</span><span class="tt-rarity epic">Épique · Amulette</span><span class="tt-bonus">+3 PV / tour</span><span class="tt-desc">Une fiole scintillante, miracle de Fumseck.</span></div>
             </div>
             <div class="equip-slot equip-slot-ring1 filled rarity-rare">
-              <img src="../img/icons/items/anneau_runique.png" alt="Anneau runique">
-              <div class="tooltip"><span class="tt-name">Anneau runique</span><span class="tt-rarity">Rare · Anneau gauche</span><span class="tt-bonus">+2 Magie</span></div>
+              <img src="../img/icons/items/anneau_runique.png" alt="">
+              <div class="tooltip"><span class="tt-name">Anneau runique</span><span class="tt-rarity rare">Rare · Anneau gauche</span><span class="tt-bonus">+2 Magie</span></div>
             </div>
+            <!-- A3 — slot vide : emoji distinctif par type -->
             <div class="equip-slot equip-slot-ring2 empty">
-              <img src="../img/icons/accessory.png" alt="Anneau libre">
-              <div class="tooltip"><span class="tt-name">Anneau droit</span><span class="tt-rarity" style="color:#6a5030">— vide —</span></div>
+              <span class="slot-emoji">💍</span>
+              <div class="tooltip"><span class="tt-name">Anneau droit</span><span class="tt-rarity" style="color:#6a5030">— Emplacement libre —</span></div>
             </div>
 
             <!-- 3 slots bas -->
             <div class="equip-slot equip-slot-wand filled rarity-rare">
-              <img src="../img/icons/items/wand2.png" alt="Baguette de Sureau" onerror="this.src='../img/icons/wand.png'">
-              <div class="tooltip"><span class="tt-name">Baguette de Sureau</span><span class="tt-rarity">Rare · Baguette</span><span class="tt-bonus">+4 Attaque, +3 Magie</span></div>
+              <img src="../img/icons/items/wand2.png" alt="" onerror="this.src='../img/icons/wand.png'">
+              <div class="tooltip"><span class="tt-name">Baguette de Sureau</span><span class="tt-rarity rare">Rare · Baguette</span><span class="tt-bonus">+4 Attaque</span><span class="tt-bonus">+3 Magie</span></div>
             </div>
             <div class="equip-slot equip-slot-belt filled rarity-rare">
-              <img src="../img/icons/items/ceinture_alchimiste.png" alt="Ceinture d'alchimiste">
-              <div class="tooltip"><span class="tt-name">Ceinture d'alchimiste</span><span class="tt-rarity">Rare · Ceinture</span><span class="tt-bonus">+2 Intelligence</span></div>
+              <img src="../img/icons/items/ceinture_alchimiste.png" alt="">
+              <div class="tooltip"><span class="tt-name">Ceinture d'alchimiste</span><span class="tt-rarity rare">Rare · Ceinture</span><span class="tt-bonus">+2 Intelligence</span></div>
             </div>
             <div class="equip-slot equip-slot-trinket filled rarity-rare">
-              <img src="../img/icons/items/broom.png" alt="Balai">
-              <div class="tooltip"><span class="tt-name">Éclair de Feu</span><span class="tt-rarity">Rare · Bibelot</span><span class="tt-bonus">Fuite garantie</span></div>
+              <img src="../img/icons/items/broom.png" alt="">
+              <div class="tooltip"><span class="tt-name">Éclair de Feu</span><span class="tt-rarity rare">Rare · Bibelot</span><span class="tt-bonus">Fuite garantie</span></div>
             </div>
 
-            <!-- Image perso (au-dessus, plus bas, superposée sur slot belt) -->
+            <!-- A1 — buste Harry agrandi, prend toute la zone verticale -->
             <img class="pd-portrait" src="../img/harry.png" alt="Harry">
 
-            <!-- Bandeau Or -->
+            <!-- A7 — Bandeau Or DANS le paper doll -->
             <div class="gold-banner">
-              <span class="gold-coin"></span> 329 Gallions
+              <img src="../img/icons/gold.png" alt=""> 329 Gallions
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ─── COLONNE DROITE — SORTS ─── -->
-      <div class="section">
-        <button class="section-toggle">Sortilèges</button>
-        <div class="section-content spells-panel">
-          <div class="panel-title">SORTS CONNUS</div>
-          <div class="spell-line"><div class="spell-badge">⚡</div>Expelliarmus</div>
-          <div class="spell-line"><div class="spell-badge">💫</div>Stupefix</div>
-          <div class="spell-line"><div class="spell-badge">💚</div>Episkey</div>
-          <div class="spell-line"><div class="spell-badge">🛡️</div>Protego</div>
-          <div class="spell-line"><div class="spell-badge">🔥</div>Incendio</div>
-          <div class="spell-line"><div class="spell-badge">🩸</div>Sanguini</div>
+    </div><!-- /char-grid -->
+
+    <!-- A6 — Sortilèges en bandeau pied (pas en colonne dédiée) -->
+    <div class="section spells-strip">
+      <button class="section-toggle">Sortilèges</button>
+      <div class="section-content">
+        <div class="panel-title">⸻ SORTILÈGES CONNUS ⸻</div>
+        <div class="spells-row">
+          <span class="spell-badge"><span class="icon">⚡</span>Expelliarmus</span>
+          <span class="spell-badge"><span class="icon">💫</span>Stupefix</span>
+          <span class="spell-badge"><span class="icon">💚</span>Episkey</span>
+          <span class="spell-badge"><span class="icon">🛡️</span>Protego</span>
+          <span class="spell-badge"><span class="icon">🔥</span>Incendio</span>
+          <span class="spell-badge"><span class="icon">🩸</span>Sanguini</span>
         </div>
       </div>
-
     </div>
 
-    <!-- ─── INVENTAIRE INTÉGRÉ ─── -->
-    <div class="inv-section">
-      <div class="panel-title">SAC — 12 / 32</div>
-      <div class="inv-grid">
-        <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/potion_s.png" alt=""></div>
-        <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/potion_m.png" alt=""></div>
-        <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/mandragore.png" alt=""></div>
-        <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/choco_sorcier.png" alt=""></div>
-        <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/livre_soin.png" alt=""></div>
-        <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/livre_sortileges.png" alt="" onerror="this.src='../img/icons/spellbook.png'"></div>
-        <div class="inv-slot has-item rarity-epic"><img src="../img/icons/items/livre_prince.png" alt=""></div>
-        <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/anneau_runique.png" alt=""></div>
-        <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/anneau_argent.png" alt=""></div>
-        <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/chapeau_pointu.png" alt=""></div>
-        <div class="inv-slot has-item rarity-legendary"><img src="../img/icons/items/diademe_serdaigle.png" alt=""></div>
-        <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/circlet_serdaigle.png" alt=""></div>
-        <div class="inv-slot"></div>
-        <div class="inv-slot"></div>
-        <div class="inv-slot"></div>
-        <div class="inv-slot"></div>
-        <div class="inv-slot"></div>
-        <div class="inv-slot"></div>
-        <div class="inv-slot"></div>
-        <div class="inv-slot"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
-        <div class="inv-slot locked"></div>
+    <!-- A5 — Inventaire 16 slots conformes MAX_INVENTORY -->
+    <div class="section inv-section">
+      <button class="section-toggle">Sac</button>
+      <div class="section-content">
+        <div class="panel-title">⸻ SAC — 12 / 16 ⸻</div>
+        <div class="inv-grid">
+          <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/potion_s.png" alt=""></div>
+          <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/potion_m.png" alt=""></div>
+          <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/mandragore.png" alt=""></div>
+          <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/choco_sorcier.png" alt=""></div>
+          <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/livre_soin.png" alt=""></div>
+          <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/livre_sortileges.png" alt="" onerror="this.src='../img/icons/spellbook.png'"></div>
+          <div class="inv-slot has-item rarity-epic"><img src="../img/icons/items/livre_prince.png" alt=""></div>
+          <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/anneau_runique.png" alt=""></div>
+          <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/anneau_argent.png" alt=""></div>
+          <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/chapeau_pointu.png" alt=""></div>
+          <div class="inv-slot has-item rarity-legendary"><img src="../img/icons/items/diademe_serdaigle.png" alt=""></div>
+          <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/circlet_serdaigle.png" alt=""></div>
+          <div class="inv-slot"></div>
+          <div class="inv-slot"></div>
+          <div class="inv-slot"></div>
+          <div class="inv-slot"></div>
+        </div>
       </div>
     </div>
 
@@ -574,11 +599,8 @@ body {
 </div><!-- /modal -->
 
 <script>
-// Accordéon : seul actif en mobile (toggle visible). Click chevron = plier.
 document.querySelectorAll('.section-toggle').forEach(btn => {
-  btn.addEventListener('click', () => {
-    btn.parentElement.classList.toggle('collapsed');
-  });
+  btn.addEventListener('click', () => btn.parentElement.classList.toggle('collapsed'));
 });
 </script>
 </body>

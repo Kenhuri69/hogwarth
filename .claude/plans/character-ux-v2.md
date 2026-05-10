@@ -142,4 +142,25 @@ PR #57, à ne PAS dévier sans nouvelle décision explicite :
 | Date | Étape | Statut | Notes |
 |------|-------|--------|-------|
 | 2026-05-10 | Spec gelée | ✅ | Briefings utilisateur capturés (9 points). |
-| 2026-05-10 | Étape 0 — mockup HTML | ✅ | `tools/mockup_character_v2.html` créé, autonome, basé sur les vrais assets. Validation utilisateur attendue avant étape 1. |
+| 2026-05-10 | Étape 0 — mockup HTML v1 | ✅ | `tools/mockup_character_v2.html` créé, autonome, basé sur les vrais assets. Validation utilisateur attendue avant étape 1. |
+| 2026-05-10 | Auto-review mockup v1 | ⚠️ | 12 écarts identifiés vs cible (A1–A12). A1 décidé : garder buste, adapter layout. Refonte mockup en v2.1 nécessaire. |
+| 2026-05-10 | Étape 0.1 — corrections A2–A12 | 🔄 | En cours. |
+
+---
+
+## Annexe — Auto-review mockup v1 (écarts)
+
+| Code | Écart | Action v2.1 |
+|------|-------|------------|
+| A1 | Personnage en buste (asset `harry.png`) au lieu de pied | **Décision utilisateur** : garder buste, élargir paper doll en hauteur, slots plus serrés |
+| A2 | Stats utilisent emojis natifs (❤️ 🔵 ⚔️) au lieu des PNG `img/icons/*.png` | Remplacer par `<img src="../img/icons/hp.png">` etc. |
+| A3 | Slots vides répètent `accessory.png` partout | Utiliser une icône distinctive par slot type (emoji visible si pas d'asset PNG dédié) |
+| A4 | Cadres or = 4 simples équerres CSS | Cadres ornementés via SVG inline (rinceaux, motifs) ou unicode décoratifs |
+| A5 | Inventaire 32 slots (16 + 12 verrouillés) | Réduire à `MAX_INVENTORY=16` conforme au jeu |
+| A6 | Panneau Sorts à droite (absent de la cible) | Repenser : 2 colonnes (Stats + Paper doll élargi) + zone Sortilèges en bas |
+| A7 | Bandeau Or en débordement sous le paper doll | Intégrer dans le paper doll (encart ovale centre-bas) |
+| A8 | Titre "FICHE" plat | Typographie Cinzel ornée centrée avec séparateurs latéraux |
+| A9 | Fond modale uniforme noir-brun | Subtile texture parchemin sur le panneau central |
+| A10 | Mobile : perso superposé efface visuellement le slot belt | Réduire l'overlap mobile, perso légèrement remonté |
+| A11 | Tooltip risque de déborder de la modale | Position JS calculée selon le slot + bord modale |
+| A12 | Bonus "+4" couleur or-light trop discrète | Vert vif ou gras + plus gros |
