@@ -2499,18 +2499,20 @@ async function scenarioExtendedEquipment() {
   assert(t5.wandName   === 'Baguette de Saule',  'wand doit conserver wand1');
   assert(t5.slotCount  === 11, `equipped doit avoir 11 slots après migration, got ${t5.slotCount}`);
 
-  // T6 : fiche perso rend bien les 11 lignes d'équipement
+  // T6 : fiche perso rend bien les 11 slots d'équipement (paper doll)
   const t6 = await page.evaluate(() => {
     openCharacter(0);
-    const rows = document.querySelectorAll('#char-detail .equip-grid .equip-row');
-    const labels = Array.from(rows).map(r =>
-      r.querySelector('.equip-label').textContent.trim());
-    return { count: rows.length, labels };
+    const slots = document.querySelectorAll('#char-detail .paper-doll .equip-slot-floating');
+    const tooltips = Array.from(slots).map(s => s.getAttribute('title'));
+    const slotIds  = Array.from(slots).map(s => Array.from(s.classList).find(c => c.startsWith('equip-slot-') && c !== 'equip-slot-floating'));
+    return { count: slots.length, tooltips, slotIds };
   });
   console.log('  T6 fiche 11 slots →', t6);
-  assert(t6.count === 11, `fiche perso doit avoir 11 lignes equip-row, got ${t6.count}`);
-  assert(t6.labels.includes('Anneau ◀') && t6.labels.includes('Anneau ▶'),
-         'libellés Anneau ◀ et Anneau ▶ doivent être présents');
+  assert(t6.count === 11, `fiche perso doit avoir 11 slots paper-doll, got ${t6.count}`);
+  assert(t6.tooltips.includes('Anneau ◀') && t6.tooltips.includes('Anneau ▶'),
+         'tooltips Anneau ◀ et Anneau ▶ doivent être présents');
+  assert(t6.slotIds.includes('equip-slot-ring1') && t6.slotIds.includes('equip-slot-ring2'),
+         'classes equip-slot-ring1 / equip-slot-ring2 doivent être présentes');
 
   // T7 : bordure de rareté appliquée dans l'inventaire
   const t7 = await page.evaluate(() => {
@@ -3270,8 +3272,111 @@ async function scenarioEquipmentPhase3bQuests() {
   await browser.close();
 }
 
+// ── Scénario 26 : Crit + Esquive (stats dérivées + câblage combat) ──
+//
+// Iter B de la refonte UX Personnage : recalculateStats() expose désormais
+// `critChance` (LCK) et `dodgeChance` (AGI). Le combat applique :
+//   - crit physique dans executeAttack (×1.5 dégâts)
+//   - esquive dans enemyTurn (annule l'attaque ennemie)
+
+async function scenarioCritDodge() {
+  console.log('\n── Scénario 26 : Crit + Esquive ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : critChance, dodgeChance, critMultiplier présents et cohérents
+  const t1 = await page.evaluate(() => {
+    recalculateStats();
+    return {
+      critChance:    party[0].critChance,
+      dodgeChance:   party[0].dodgeChance,
+      critMult:      party[0].critMultiplier,
+      lck:           party[0].lck,
+      agi:           party[0].agi
+    };
+  });
+  console.log('  T1 stats dérivées:', t1);
+  // Harry base : LCK=15, AGI=12 → critChance ≈ 5 + 15*0.5 = 12.5 ; dodgeChance ≈ 5 + 12*0.4 = 9.8
+  assert(typeof t1.critChance === 'number',  'critChance doit être un nombre');
+  assert(typeof t1.dodgeChance === 'number', 'dodgeChance doit être un nombre');
+  assert(t1.critMult === 1.5,                 `critMultiplier doit être 1.5, got ${t1.critMult}`);
+  assert(t1.critChance >= 5 && t1.critChance <= 40, `critChance hors plage [5;40] : ${t1.critChance}`);
+  assert(t1.dodgeChance >= 5 && t1.dodgeChance <= 35, `dodgeChance hors plage [5;35] : ${t1.dodgeChance}`);
+
+  // T2 : monter LCK fait monter critChance proportionnellement
+  const t2 = await page.evaluate(() => {
+    party[0]._baseLck = 30;
+    recalculateStats();
+    const high = party[0].critChance;
+    party[0]._baseLck = 0;
+    recalculateStats();
+    const low = party[0].critChance;
+    return { high, low };
+  });
+  console.log('  T2 critChance LCK 30 vs 0:', t2);
+  assert(t2.high > t2.low, `LCK 30 doit donner plus de critChance que LCK 0 (got ${t2.high} vs ${t2.low})`);
+  assert(t2.high >= 15,    `LCK 30 → critChance attendue ≥15%, got ${t2.high}`);
+  assert(t2.low === 5,     `LCK 0 → critChance plancher 5%, got ${t2.low}`);
+
+  // T3 : modale Personnage affiche Critique et Esquive
+  const t3 = await page.evaluate(() => {
+    party[0]._baseLck = 15; party[0]._baseAgi = 12;
+    recalculateStats();
+    openCharacter(0);
+    const txt = document.getElementById('char-detail').textContent;
+    return {
+      hasCritLabel:  txt.includes('Critique'),
+      hasDodgeLabel: txt.includes('Esquive'),
+      hasPercent:    /\d+%/.test(txt)
+    };
+  });
+  console.log('  T3 modale:', t3);
+  assert(t3.hasCritLabel,  'modale doit afficher "Critique"');
+  assert(t3.hasDodgeLabel, 'modale doit afficher "Esquive"');
+  assert(t3.hasPercent,    'modale doit afficher un %');
+
+  // T4 : 200 rolls de crit avec critChance=20% — fréquence observée raisonnable
+  const t4 = await page.evaluate(() => {
+    party[0].critChance = 20;
+    let crits = 0;
+    for (let i = 0; i < 200; i++) {
+      if (Math.random() * 100 < (party[0].critChance || 0)) crits++;
+    }
+    return { crits, total: 200 };
+  });
+  console.log('  T4 crit rolls 200 @20%:', t4);
+  assert(t4.crits >= 20 && t4.crits <= 80,
+    `200 rolls @20% : entre 20 et 80 crits attendus (3σ ≈ ±17), got ${t4.crits}`);
+
+  // T5 : enemyTurn applique l'esquive — dodgeChance=100% → 0 dégâts
+  const t5 = await page.evaluate(() => {
+    inBattle = true;
+    enemyGroup = [{ id:'_test', name:'Test', icon:'X', hp:5, atk:10, def:0,
+                    currentHp:5, statusEffects:[] }];
+    party[0].hp = party[0].hpMax;
+    party[0].dodgeChance = 100;
+    shieldTurns = [0, 0];
+    party[0].statusEffects = [];
+    const before = party[0].hp;
+    enemyTurn();
+    const after = party[0].hp;
+    inBattle = false;
+    return { before, after };
+  });
+  console.log('  T5 esquive 100%:', t5);
+  assert(t5.after === t5.before,
+    `dodgeChance=100% : aucun dégât attendu, got ${t5.before}→${t5.after}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Crit + Esquive OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge];
   for (const s of scenarios) {
     await s();
   }

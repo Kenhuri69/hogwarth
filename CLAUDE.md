@@ -296,6 +296,21 @@ puis on appelle `recalculateStats()` pour reconstruire les stats effectives avec
 2. **Livres de sorts** (`type:"spellbook"`) : cliquer dans l'inventaire → enseigne à tout le groupe actif
 3. **Équipement** (`grantsSpell`) : enseigne le sort de façon permanente à l'équipement (ex: Amulette → Reparo)
 
+### Crit + Esquive (stats dérivées)
+`recalculateStats()` calcule deux stats dérivées exposées sur chaque
+personnage et affichées dans la modale Personnage :
+
+| Stat            | Formule                                       | Plage   |
+|-----------------|-----------------------------------------------|---------|
+| `critChance`    | `5 + lck * 0.5 + bonusCritChance`             | 5–40 %  |
+| `dodgeChance`   | `5 + agi * 0.4 + bonusDodgeChance`            | 5–35 %  |
+| `critMultiplier`| `1.5` (constant V1)                           | —       |
+
+- **Crit physique** (`battle.js — executeAttack`) : roll `Math.random() * 100 < critChance`. Si crit, dégâts × `critMultiplier`. Log `💥 (CRITIQUE !)`.
+- **Esquive** (`battle.js — enemyTurn`) : pour chaque attaque ennemie, roll `Math.random() * 100 < target.dodgeChance`. Si esquive, attaque annulée. Log `💨 esquive`.
+- Les sorts ne déclenchent pas le crit dans cette V1 (les multiplicateurs viennent des résistances/faiblesses).
+- Champs optionnels d'équipement `bonusCritChance` / `bonusDodgeChance` câblés dans `recalculateStats` mais pas encore portés par les items existants — préparé pour V2.
+
 ### Capacités spéciales des ennemis (tryEnemyAbility)
 Chaque ennemi peut avoir un tableau `abilities[]`. À chaque tour ennemi,
 chaque capacité est tentée selon sa `chance` (0.0–1.0).
@@ -550,7 +565,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | `gold` | number\|{min,max} | Or de base (scalé automatiquement) |
 | `drops` | [{itemId, chance}] | Drops potentiels après victoire |
 
-### Monstres définis (36 au total)
+### Monstres définis (50 au total)
 | Étages | Monstres |
 |--------|---------|
 | 1–3    | Chat de Mme Norris, Luciole des Marais, Cornichon de Cornouailles, Portrait Hostile, Peeve, Mimi Geignarde, Serpent des Cachots |
@@ -562,6 +577,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | 7+     | Mangemort d'Élite |
 | 8+     | Bellatrix Lestrange, Voldemort Affaibli |
 | 10+    | Voldemort Ressuscité |
+| **+14 ajouts récents** | Niffleur, Elfe de Maison Rebelle, Bowtruckle Géant, Chevalier Fantôme, Gremlin Magique, Manticore Juvénile, Gardien du Portail, Fantôme du Sang Noir, Chauve-Souris Vampire, Vampire Novice, Strigoï Ancien, Poupée Maudite, Spectre Maudit, Hécate la Maudisseuse — voir `monsters.js` pour `minFloor`/`maxFloor` |
 
 **Icônes SVG** définies dans `icons.js` pour tous les monstres majeurs.
 Les monstres sans SVG propre héritent du SVG de leur catégorie.
