@@ -1758,3 +1758,82 @@ body {
 @media (max-width: 700px) {
   .mobile-map-btn { display: flex; }
 }
+
+/* ============================================================
+   ÉCRAN D'INTRODUCTION (#intro-screen)
+   Étape narrative entre choix de Maison et entrée en donjon.
+   Style cohérent avec #start-hub-screen / #house-select-screen.
+   ============================================================ */
+#intro-screen {
+  position: fixed; inset: 0;
+  z-index: 150;
+  background: radial-gradient(circle at center, #120a03 0%, #050300 90%);
+  align-items: center; justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+#intro-screen[style*="flex"] { display: flex !important; }
+
+.intro-card {
+  width: 100%;
+  max-width: 540px;
+  background: linear-gradient(180deg, #1a0f05 0%, #0d0705 100%);
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  padding: 28px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 0 40px rgba(201,168,76,0.20),
+              0 0 0 1px rgba(201,168,76,0.05) inset;
+}
+.intro-header { display: flex; align-items: center; gap: 16px; }
+.intro-portrait {
+  width: 96px; height: 96px;
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  background: #1a0f05;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 56px;
+  box-shadow: 0 0 18px rgba(201,168,76,0.35);
+}
+.intro-portrait .intro-portrait-img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.intro-name {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-shadow: 0 0 16px rgba(201,168,76,0.45);
+}
+.intro-subtitle {
+  font-family: 'Crimson Text', serif;
+  font-size: 13px;
+  color: var(--gold-dark);
+  font-style: italic;
+  margin-top: 2px;
+}
+.intro-text {
+  font-family: 'Crimson Text', serif;
+  font-size: 16px;
+  color: var(--parchment-dark);
+  line-height: 1.7;
+  text-align: center;
+  font-style: italic;
+}
+.intro-page-text { padding: 6px 4px; }
+.intro-pager {
+  margin-top: 14px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  color: var(--gold-dark);
+  letter-spacing: 2px;
+  font-style: normal;
+}
+.intro-actions {
+  display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+}
+.intro-actions .explore-btn { font-size: 14px; padding: 11px 24px; }
