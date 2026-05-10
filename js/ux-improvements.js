@@ -34,10 +34,22 @@
     if (!tooltipEl) return;
     const r = tooltipEl.getBoundingClientRect();
     const pad = 14;
-    let x = ev.clientX + 16;
-    let y = ev.clientY + 16;
-    if (x + r.width  > window.innerWidth - pad)  x = ev.clientX - r.width - 16;
-    if (y + r.height > window.innerHeight - pad) y = ev.clientY - r.height - 16;
+    // Coordonnées du curseur ; certains chemins (events synthétisés en
+    // test, touch dispatch) arrivent avec clientX/Y à 0 ou undefined,
+    // ce qui collait le tooltip dans le coin haut-gauche. Fallback :
+    // ancrer sur la bbox de l'élément cible.
+    let cx = (ev && typeof ev.clientX === 'number' && ev.clientX > 0) ? ev.clientX : null;
+    let cy = (ev && typeof ev.clientY === 'number' && ev.clientY > 0) ? ev.clientY : null;
+    if (cx === null && ev && ev.target && typeof ev.target.getBoundingClientRect === 'function') {
+      const tr = ev.target.getBoundingClientRect();
+      cx = tr.right;
+      cy = tr.top + tr.height / 2;
+    }
+    if (cx === null) { cx = window.innerWidth / 2; cy = window.innerHeight / 2; }
+    let x = cx + 16;
+    let y = cy + 16;
+    if (x + r.width  > window.innerWidth - pad)  x = cx - r.width - 16;
+    if (y + r.height > window.innerHeight - pad) y = cy - r.height - 16;
     if (x < pad) x = pad;
     if (y < pad) y = pad;
     tooltipEl.style.left = x + 'px';
