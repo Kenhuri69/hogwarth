@@ -20,13 +20,13 @@ function isIgnorableError(text) {
       // marche. Cf. img/icons/_tint_demo.html et IMG_STYLE.md.
       || (text.includes('blocked by CORS policy')
           && text.includes('img/icons/items/'))
-      // Limite Chromium en file:// : `fetch('audio/ambient_*.ogg')`
-      // depuis audio-music.js échoue en environnement smoke (Fetch API ne
-      // supporte pas file://). Le code attrape la rejection et bascule sur
-      // la synthèse procédurale, mais Chromium log avant le catch. En prod
-      // (HTTP/HTTPS) cette erreur n'apparaît pas.
+      // Limite Chromium en file:// : `fetch('audio/*.ogg')` depuis
+      // audio-music.js échoue en environnement smoke (Fetch API ne
+      // supporte pas file://). Le code attrape la rejection et bascule
+      // sur la synthèse procédurale, mais Chromium log avant le catch.
+      // En prod (HTTP/HTTPS) cette erreur n'apparaît pas.
       || (text.includes('URL scheme "file" is not supported')
-          && /audio\/ambient_\w+\.ogg/.test(text));
+          && /audio\/\w+\.ogg/.test(text));
 }
 
 async function launchGame() {
