@@ -242,16 +242,20 @@ const EQUIP_SLOT_LABELS_MAP = Object.fromEntries(EQUIP_SLOT_LABELS);
 // equip-slot-${slot}) pour la compatibilité du smoke test. En v2 le
 // positionnement est en flex/grid via .paper-doll-col / .paper-doll-bottom
 // dans style.css — plus de position:absolute.
-function _renderPaperDollSlot(slot, c) {
+function _renderPaperDollSlot(slot, c, charIdx) {
   const item = c.equipped && c.equipped[slot];
   const icon = item
     ? getItemIconHtml(item, 'ui-icon')
     : getEquipmentSlotIconHtml(slot, 'ui-icon');
   const filled    = !!item;
   const rarityCls = item && item.rarity ? `rarity-${item.rarity}` : '';
-  const tooltip   = item ? item.name : EQUIP_SLOT_LABELS_MAP[slot] || slot;
+  const baseLabel = EQUIP_SLOT_LABELS_MAP[slot] || slot;
+  const tooltip   = item ? `${item.name} — cliquer pour déséquiper` : baseLabel;
+  const onclick   = (item && Number.isInteger(charIdx))
+    ? `onclick="unequipFromSlot(${charIdx}, '${slot}')"`
+    : '';
   return `<div class="equip-slot-floating equip-slot-${slot} ${filled ? 'filled' : 'empty'} ${rarityCls}"
-               title="${tooltip.replace(/"/g, '&quot;')}">${icon}</div>`;
+               title="${tooltip.replace(/"/g, '&quot;')}" ${onclick}>${icon}</div>`;
 }
 
 // Badge pour un sort connu. Cherche l'icône PNG sous img/icons/spells/
@@ -269,13 +273,23 @@ function _renderSpellBadge(spellName) {
   </span>`;
 }
 
-// Slot d'inventaire pour la grille du sac.
-function _renderInvSlot(item) {
+// Slot d'inventaire pour la grille du sac. Cliquer un item :
+// - consommable → applique sur charIdx
+// - équipement  → equipItem(idx, charIdx) (anneau routé ring1/ring2)
+// - livre sort  → enseigne au groupe
+function _renderInvSlot(item, idx, charIdx) {
   if (!item) return `<div class="inv-slot"></div>`;
   const rarityCls = item.rarity ? `rarity-${item.rarity}` : '';
   const icon = getItemIconHtml(item, 'ui-icon');
-  const tooltip = item.name.replace(/"/g, '&quot;');
-  return `<div class="inv-slot has-item ${rarityCls}" title="${tooltip}">${icon}</div>`;
+  let actionHint = 'utiliser';
+  if (item.type === 'consumable')      actionHint = 'consommer';
+  else if (item.type === 'spellbook')  actionHint = 'apprendre';
+  else if (item.slot)                  actionHint = 'équiper';
+  const tooltip = `${item.name} — cliquer pour ${actionHint}`.replace(/"/g, '&quot;');
+  const onclick = Number.isInteger(charIdx)
+    ? `onclick="useItemFromChar(${idx}, ${charIdx})"`
+    : '';
+  return `<div class="inv-slot has-item ${rarityCls}" title="${tooltip}" ${onclick}>${icon}</div>`;
 }
 
 // Une ligne de stat dans le panneau gauche.
@@ -321,9 +335,9 @@ function openCharacter(charIdx = 0) {
   const xpPct = Math.max(0, Math.min(100, Math.floor((player.xp / Math.max(1, player.xpNext)) * 100)));
 
   // Slots regroupés par zone visuelle du paper-doll.
-  const slotsLeft   = ['head','body','hands','feet']  .map(s => _renderPaperDollSlot(s, c)).join('');
-  const slotsRight  = ['cloak','amulet','ring1','ring2'].map(s => _renderPaperDollSlot(s, c)).join('');
-  const slotsBottom = ['wand','belt','trinket']        .map(s => _renderPaperDollSlot(s, c)).join('');
+  const slotsLeft   = ['head','body','hands','feet']  .map(s => _renderPaperDollSlot(s, c, charIdx)).join('');
+  const slotsRight  = ['cloak','amulet','ring1','ring2'].map(s => _renderPaperDollSlot(s, c, charIdx)).join('');
+  const slotsBottom = ['wand','belt','trinket']        .map(s => _renderPaperDollSlot(s, c, charIdx)).join('');
 
   const critPct  = (c.critChance  != null) ? `${Math.round(c.critChance)}%`  : '—';
   const dodgePct = (c.dodgeChance != null) ? `${Math.round(c.dodgeChance)}%` : '—';
@@ -334,7 +348,7 @@ function openCharacter(charIdx = 0) {
   // Sac : grille fixe 16 slots (INVENTORY_MAX). Items + slots vides.
   const inv = player.inventory || [];
   let invHtml = '';
-  for (let i = 0; i < 16; i++) invHtml += _renderInvSlot(inv[i]);
+  for (let i = 0; i < 16; i++) invHtml += _renderInvSlot(inv[i], i, charIdx);
 
   detail.innerHTML = `
     <div style="display:flex;gap:6px;margin-bottom:10px">${tabs}</div>

@@ -452,3 +452,83 @@ function openBattleItems() {
   renderInventory(true);
   document.getElementById('inventory-modal').style.display = 'flex';
 }
+
+// ============================================================
+// INTERACTIONS DEPUIS LA FICHE PERSONNAGE (v2)
+// ============================================================
+
+// Déséquiper un slot directement depuis la fiche. L'item retombe
+// dans le sac (refusé si plein). Re-render la fiche après.
+function unequipFromSlot(charIdx, slot) {
+  const c = party[charIdx];
+  if (!c || !c.equipped) return;
+  const item = c.equipped[slot];
+  if (!item) return;
+  if (player.inventory.length >= INVENTORY_MAX) {
+    addMsg(`Sac plein — libérez une place avant de déséquiper.`, 'bad');
+    return;
+  }
+  player.inventory.push({ ...item });
+  c.equipped[slot] = null;
+  // Reset chaînes legacy (HUD #eq-wand/#eq-armor/#eq-acc)
+  if (slot === 'wand')                                                  c.wand  = '';
+  if (slot === 'body')                                                  c.armor = '';
+  if (['amulet','cloak','trinket','ring1','ring2','belt','head','hands','feet'].includes(slot)) c.acc = '';
+  recalculateStats();
+  updateUI();
+  addMsg(`${c.name} déséquipe : ${item.name}`, '');
+  if (typeof openCharacter === 'function') openCharacter(charIdx);
+}
+
+// Utiliser/équiper un item du sac directement depuis la fiche, sur le
+// perso affiché — sans passer par le prompt party de showEquipMenu.
+// - consommable : applique l'effet sur party[charIdx]
+// - spellbook   : enseigne à tout le groupe
+// - équipement  : equipItem(idx, charIdx) (anneau routé ring1→ring2)
+function useItemFromChar(inventoryIdx, charIdx) {
+  const item = player.inventory[inventoryIdx];
+  if (!item) return;
+  const target = party[charIdx];
+  if (!target) return;
+
+  if (item.type === 'consumable') {
+    if (item.effect === 'heal')            target.hp = Math.min(target.hpMax, target.hp + item.power);
+    else if (item.effect === 'restore_sp') target.sp = Math.min(target.spMax, target.sp + item.power);
+    else if (item.effect === 'both') {
+      target.hp = Math.min(target.hpMax, target.hp + item.power);
+      target.sp = Math.min(target.spMax, target.sp + 10);
+    }
+    addMsg(`${target.name} utilise : ${item.name}`, 'good');
+    player.inventory.splice(inventoryIdx, 1);
+    updateUI();
+    openCharacter(charIdx);
+    return;
+  }
+
+  if (item.type === 'spellbook') {
+    const learned = _teachSpellToParty(item.spell);
+    if (learned) {
+      AudioSystem.playLevelUp();
+      AudioSystem.speakSpell(item.spell);
+      addMsg(`✨ Sort appris : ${item.spell} !`, 'magic');
+      player.inventory.splice(inventoryIdx, 1);
+    } else {
+      addMsg(`Le sort ${item.spell} est déjà connu par tout le groupe.`, '');
+    }
+    updateUI();
+    openCharacter(charIdx);
+    return;
+  }
+
+  // Équipement : équipe sur le charIdx en cours. Pour les anneaux, route
+  // automatiquement vers ring1 puis ring2 si l'un des deux est libre.
+  let targetSlot;
+  if (item.slot === 'ring') {
+    if (!target.equipped.ring1)       targetSlot = 'ring1';
+    else if (!target.equipped.ring2)  targetSlot = 'ring2';
+    else                              targetSlot = 'ring1'; // sinon, remplace ring1
+  }
+  equipItem(inventoryIdx, charIdx, targetSlot);
+  // equipItem ferme inventory-modal (sans effet ici) et déjà appelle updateUI.
+  openCharacter(charIdx);
+}
