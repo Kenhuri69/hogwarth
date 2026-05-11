@@ -813,6 +813,18 @@ body {
 .inv-slot .item-icon { font-size: 22px; }
 .inv-slot .item-name { font-size: 9px; color: var(--parchment-dark); line-height: 1.2; }
 
+/* Desktop (souris) : le nom passe en tooltip au hover, l'icône occupe
+ * toute la cellule. Sur mobile (hover: none), on garde le nom visible
+ * sous l'icône — le tap-preview JS s'occupe d'afficher la tooltip riche. */
+@media (hover: hover) and (min-width: 701px) {
+  .inv-slot { height: 84px; padding: 6px; }
+  .inv-slot .item-name { display: none; }
+  .section-inv .inv-slot .ui-icon,
+  .inv-slot .ui-icon { width: 64px; height: 64px; }
+}
+/* Mobile : tap-preview montre la tooltip riche, comme hover sur desktop */
+.inv-slot.tap-preview .item-tooltip { opacity: 1; visibility: visible; }
+
 /* Bordure de rareté — voir .claude/plans/equipment-extended.md §2.6.
  * `common` reste sur la bordure or-sombre par défaut. Les variantes
  * supérieures forcent une bordure colorée et un léger halo. */

@@ -92,6 +92,36 @@ function openInventory() {
   document.getElementById('inventory-modal').style.display = 'flex';
 }
 
+// Tap-preview sur les cellules d'inventaire : sur un device pointer:fine
+// (souris desktop) l'action s'exécute directement — la tooltip riche
+// s'affiche au :hover via CSS. Sur un device hover:none (mobile/tactile),
+// le premier tap affiche la tooltip pendant 1.5 s, le second tap exécute
+// l'action. Évite les confirmations accidentelles sans bloquer le flow.
+let _invTapPreview = null;
+let _invTapTimer = null;
+function _handleInvTap(slotEl, action) {
+  const isPointerFine = typeof matchMedia === 'function'
+    && matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (isPointerFine) { action(); return; }
+  if (_invTapPreview === slotEl) {
+    slotEl.classList.remove('tap-preview');
+    clearTimeout(_invTapTimer);
+    _invTapPreview = null;
+    action();
+    return;
+  }
+  document.querySelectorAll('.inv-slot.tap-preview').forEach(s => s.classList.remove('tap-preview'));
+  slotEl.classList.add('tap-preview');
+  _invTapPreview = slotEl;
+  clearTimeout(_invTapTimer);
+  _invTapTimer = setTimeout(() => {
+    if (_invTapPreview === slotEl) {
+      slotEl.classList.remove('tap-preview');
+      _invTapPreview = null;
+    }
+  }, 1500);
+}
+
 // ── Rendu de la grille d'inventaire ─────────────────────────
 function renderInventory(battleMode) {
   const grid = document.getElementById('inv-grid');
@@ -119,7 +149,13 @@ function renderInventory(battleMode) {
       const typeLabel = (isEquip || isSpellbook)
         ? `<div style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
         : '';
-      div.innerHTML = `<div class="item-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div><div class="item-name">${item.name}</div>${typeLabel}`;
+      // Bordure de rareté inv-slot ↔ classe rarity-*
+      if (item.rarity) div.classList.add(`rarity-${item.rarity}`);
+      const ttHtml = (typeof _renderItemTooltip === 'function')
+        ? _renderItemTooltip(item, null, battleMode && !isEquip ? 'cliquer pour utiliser' : (isEquip ? 'cliquer pour équiper' : (isSpellbook ? 'cliquer pour apprendre' : 'cliquer pour utiliser')))
+        : '';
+      div.title = item.name; // fallback natif si tooltip riche indispo
+      div.innerHTML = `<div class="item-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div><div class="item-name">${item.name}</div>${typeLabel}${ttHtml}`;
 
       if (battleMode && isEquip) {
         // Équipements non utilisables en combat — grisés
@@ -127,7 +163,7 @@ function renderInventory(battleMode) {
         div.style.cursor  = 'default';
         div.title         = 'Non utilisable en combat';
       } else {
-        div.onclick = () => useItem(i, battleMode);
+        div.onclick = () => _handleInvTap(div, () => useItem(i, battleMode));
       }
     } else {
       div.innerHTML = '<div style="font-size:10px;color:#2a1a08">—</div>';
