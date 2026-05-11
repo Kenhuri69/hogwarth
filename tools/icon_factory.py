@@ -189,7 +189,9 @@ def _rasterize(svg: str, size: int = RENDER_SIZE) -> Image.Image:
 def _region_masks(svg: str, size: int = RENDER_SIZE) -> Dict[str, np.ndarray]:
     """For each unique data-region in the SVG, rasterize JUST that region
     (white on transparent) and return a {region: alpha_array} dict in [0,1]."""
-    regions = sorted(set(re.findall(r'data-region="([^"]+)"', svg)))
+    # Preserve first-occurrence order so the SVG-defined z-order is honored
+    # by _flat_compose (later regions paint on top of earlier ones).
+    regions = list(dict.fromkeys(re.findall(r'data-region="([^"]+)"', svg)))
     masks: Dict[str, np.ndarray] = {}
     for region in regions:
         # isolate this region — make every other path invisible
