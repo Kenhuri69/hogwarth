@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : cuff (wrist band) · palm (main body) · fingers (top digits) · stitch (seam line) -->
+  <g fill="#000000">
+    <!-- cuff : wrist opening -->
+    <path data-region="cuff" d="M 128 420 L 384 420 L 396 480 L 116 480 Z"/>
+    <!-- palm : main body of the glove -->
+    <path data-region="palm" d="M 144 240 L 368 240 L 384 420 L 128 420 Z"/>
+    <!-- fingers : 4 finger silhouettes at top -->
+    <path data-region="fingers" d="M 156 96 L 196 96 L 200 240 L 152 240 Z"/>
+    <path data-region="fingers" d="M 208 80 L 248 80 L 252 240 L 204 240 Z"/>
+    <path data-region="fingers" d="M 260 88 L 300 88 L 304 240 L 256 240 Z"/>
+    <path data-region="fingers" d="M 312 112 L 352 112 L 356 240 L 308 240 Z"/>
+    <!-- thumb : sticking out to the right -->
+    <path data-region="fingers" d="M 368 240 L 416 224 L 432 280 L 388 304 Z"/>
+    <!-- stitch : a horizontal seam line on the cuff -->
+    <path data-region="stitch" d="M 132 440 L 380 440 L 380 448 L 132 448 Z"/>
+  </g>
+</svg>

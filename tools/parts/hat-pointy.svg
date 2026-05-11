@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : cone (top point) · brim (wide bottom) · band (decorative strip) · buckle (front emblem) -->
+  <g fill="#000000">
+    <!-- cone : tall pointed top, slightly curved -->
+    <path data-region="cone" d="M 256 32 L 280 64 L 320 360 L 192 360 L 232 64 Z"/>
+    <!-- band : horizontal strip near the base of the cone -->
+    <path data-region="band" d="M 184 340 L 328 340 L 332 384 L 180 384 Z"/>
+    <!-- buckle : square emblem on the band -->
+    <path data-region="buckle" d="M 240 348 L 272 348 L 272 376 L 240 376 Z"/>
+    <!-- brim : wide flat brim at the bottom -->
+    <path data-region="brim" d="M 56 384 L 456 384 L 480 432 L 32 432 Z"/>
+    <path data-region="brim" d="M 32 432 L 480 432 L 472 460 L 40 460 Z"/>
+  </g>
+</svg>

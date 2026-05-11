@@ -2227,7 +2227,8 @@ async function scenarioEquipmentAndStatusIcons() {
 
   // T5 : fiche perso — slot avec item équipé utilise le sprite per-item.
   // wand1 est passé sur l'archi tint 2-calques (saule), donc on accepte
-  // soit l'`<img>` du registry legacy, soit le wrapper `tinted-icon`.
+  // soit l'`<img>` du registry legacy, soit le wrapper `tinted-icon`,
+  // soit le nouveau pipeline painterly (icons_new/wand1_<size>.png).
   const t5 = await page.evaluate(() => {
     const wand = ITEMS.find(i => i.id === 'wand1');
     player.equipped.wand = wand;
@@ -2237,11 +2238,12 @@ async function scenarioEquipmentAndStatusIcons() {
     return {
       hasPerItemImg:    /img\/icons\/items\/wand1\.png/.test(html),
       hasTintedWrapper: /tinted-icon[^"]*tint-willow/.test(html),
+      hasPainterly:     /icons_new\/wand1_\d+\.png/.test(html),
     };
   });
   console.log('  T5 fiche per-item →', t5);
-  assert(t5.hasPerItemImg || t5.hasTintedWrapper,
-         'wand1 équipé doit utiliser items/wand1.png OU wrapper tinted-icon');
+  assert(t5.hasPerItemImg || t5.hasTintedWrapper || t5.hasPainterly,
+         'wand1 équipé doit utiliser items/wand1.png, tinted-icon ou icons_new/wand1_*.png');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
@@ -2371,10 +2373,14 @@ async function scenarioItemIcons() {
     return elems.map(e => e.getAttribute('src') || e.getAttribute('data-mask') || '');
   });
   console.log('  T2 inventaire →', t2);
-  assert(t2.some(s => /items\/potion_s\.png$/.test(s)),         'inventaire doit afficher potion_s.png');
-  assert(t2.some(s => /items\/wand1\.png$/.test(s) || s === 'wand_shaft_base'),
-         'inventaire doit afficher wand1.png OU wrapper tinted (mask=wand_shaft_base)');
-  assert(t2.some(s => /items\/livre_sortileges\.png$/.test(s)), 'inventaire doit afficher livre_sortileges.png');
+  // Accepte l'ancien chemin (items/<id>.png) ou le nouveau pipeline painterly
+  // (icons_new/<id>_<size>.png — étape 9 du redesign).
+  assert(t2.some(s => /(items\/potion_s\.png|icons_new\/potion_s_\d+\.png)$/.test(s)),
+         'inventaire doit afficher potion_s');
+  assert(t2.some(s => /(items\/wand1\.png|icons_new\/wand1_\d+\.png)$/.test(s) || s === 'wand_shaft_base'),
+         'inventaire doit afficher wand1 OU wrapper tinted (mask=wand_shaft_base)');
+  assert(t2.some(s => /(items\/livre_sortileges\.png|icons_new\/livre_sortileges_\d+\.png)$/.test(s)),
+         'inventaire doit afficher livre_sortileges');
 
   // T3 : grille boutique utilise les PNG (déclencher openShop avec un currentFloor>=1)
   const t3 = await page.evaluate(() => {
@@ -2387,7 +2393,8 @@ async function scenarioItemIcons() {
   });
   console.log('  T3 boutique →', t3);
   assert(t3.length >= 3,                                  `shop doit avoir au moins 3 items, vu ${t3.length}`);
-  assert(t3.every(s => /items\/[a-z0-9_]+\.png$/.test(s)),   'tous les items shop doivent pointer img/icons/items/');
+  assert(t3.every(s => /(items\/[a-z0-9_]+\.png|icons_new\/[a-z0-9_]+_\d+\.png)$/.test(s)),
+         'tous les items shop doivent pointer img/icons/items/ ou img/icons_new/');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
@@ -2779,18 +2786,22 @@ async function scenarioTintCss() {
     if (!sword || !sword.tinted) return { fail: 'sword_gryff sans flag tinted' };
     if (!wand  || !wand.tinted)  return { fail: 'wand1 sans flag tinted' };
 
-    const html = getItemIconHtml(sword, 'ui-icon-xl');
+    // Le pipeline painterly (étape 9) supplante le système tinted dans
+    // getItemIconHtml. Pour tester le système tinted en isolation on
+    // appelle directement _getTintedItemHtml — il reste utilisé comme
+    // fallback pour les items tinted hors ITEM_ICON_NEW_REGISTRY.
+    const html = _getTintedItemHtml(sword, 'ui-icon-xl');
     const tmp  = document.createElement('div');
     tmp.innerHTML = html;
     const root = tmp.firstChild;
 
-    const wandHtml = getItemIconHtml(wand, 'ui-icon-xl');
+    const wandHtml = _getTintedItemHtml(wand, 'ui-icon-xl');
     const wandTmp  = document.createElement('div');
     wandTmp.innerHTML = wandHtml;
     const wandRoot = wandTmp.firstChild;
 
-    // Test injection : tint inconnu → fallback path normal (pas d'injection)
-    const evil = getItemIconHtml({ ...sword, tint: 'evil); background: url(data:x' }, 'ui-icon-md');
+    // Test injection : tint inconnu → null (whitelist bloque l'injection)
+    const evil = _getTintedItemHtml({ ...sword, tint: 'evil); background: url(data:x' }, 'ui-icon-md') || '';
 
     return {
       // épée (palette métaux)

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- inspired by delapouite/spell-book (game-icons.net, CC BY 3.0).
+       Redrawn with 4 explicit regions for the painterly pipeline:
+       spine (left binding) · pages (visible edges) · cover (front face) ·
+       gilt (small ornaments — corner curls + central medallion).
+       Z-order from back to front : spine → pages → cover → gilt. -->
+  <g fill="#000000">
+
+    <!-- spine : left binding, full height, slightly beveled outward -->
+    <path data-region="spine" d="M 76 80 L 116 80 L 116 432 L 76 432 Z"/>
+
+    <!-- pages : visible page edges along the right and bottom, plus a thin top band -->
+    <path data-region="pages" d="M 116 80  L 436 80  L 436 96  L 116 96  Z"/>
+    <path data-region="pages" d="M 420 80  L 436 80  L 436 432 L 420 432 Z"/>
+    <path data-region="pages" d="M 116 416 L 436 416 L 436 432 L 116 432 Z"/>
+
+    <!-- cover : main front face (over the page edges in the middle) -->
+    <path data-region="cover" d="M 116 96 L 420 96 L 420 416 L 116 416 Z"/>
+
+    <!-- gilt : tiny corner curls (4 small L-shaped marks at cover corners) -->
+    <path data-region="gilt" d="M 130 108 L 158 108 L 158 114 L 136 114 L 136 134 L 130 134 Z"/>
+    <path data-region="gilt" d="M 378 108 L 406 108 L 406 134 L 400 134 L 400 114 L 378 114 Z"/>
+    <path data-region="gilt" d="M 130 378 L 136 378 L 136 398 L 158 398 L 158 404 L 130 404 Z"/>
+    <path data-region="gilt" d="M 400 378 L 406 378 L 406 404 L 378 404 L 378 398 L 400 398 Z"/>
+
+    <!-- gilt : small central medallion (~50px diameter) -->
+    <path data-region="gilt" d="M 268 256 m -28 0 a 28 28 0 1 0 56 0 a 28 28 0 1 0 -56 0"/>
+    <!-- gilt : small four-pointed star inside the medallion -->
+    <path data-region="gilt" d="M 268 240 L 274 254 L 288 256 L 274 258 L 268 272 L 262 258 L 248 256 L 262 254 Z"/>
+  </g>
+</svg>

@@ -1,0 +1,1963 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Audit — Icônes d'objets · Poudlard & Magie</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=UnifrakturMaguntia&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gold:        #c9a84c;
+    --gold-light:  #f0d080;
+    --gold-dark:   #7a5c1e;
+    --gold-faint:  rgba(201,168,76,0.18);
+    --parchment:   #f4e8c1;
+    --parchment-d: #e8d5a0;
+    --paper:       #1a0f05;
+    --paper-d:     #120a03;
+    --paper-dd:    #0a0705;
+    --ink:         #d9c79a;
+    --ink-soft:    #a89060;
+    --ink-mute:    #6a5030;
+    --rare:        #4a8ad0;
+    --epic:        #a060d0;
+    --legend:      #c9a84c;
+    --bad:         #d96666;
+    --good:        #6cd96c;
+    --note:        #e9b85a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #08060a; }
+  body {
+    font-family: 'Crimson Text', Georgia, serif;
+    color: var(--ink);
+    line-height: 1.55;
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(120,80,200,0.10), transparent 60%),
+      radial-gradient(ellipse at 100% 110%, rgba(201,168,76,0.07), transparent 60%),
+      #08060a;
+    min-height: 100vh;
+  }
+  ::selection { background: rgba(201,168,76,0.35); color: #fff; }
+
+  /* ── PAGE ── */
+  .page {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 56px 36px 96px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    border: 1px solid var(--gold-dark);
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, rgba(40,28,12,0.55) 0%, rgba(10,7,5,0.85) 100%),
+      radial-gradient(ellipse at 80% 0%, rgba(201,168,76,0.20), transparent 60%);
+    padding: 38px 44px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before, .hero::after {
+    content: ''; position: absolute;
+    width: 130px; height: 130px;
+    background:
+      radial-gradient(circle, rgba(201,168,76,0.35), transparent 70%);
+    pointer-events: none;
+  }
+  .hero::before { top: -50px; left: -40px; }
+  .hero::after  { bottom: -50px; right: -40px; }
+  .eyebrow {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 14px;
+  }
+  .eyebrow .dot {
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--gold); border-radius: 50%;
+    vertical-align: 2px; margin: 0 8px;
+    box-shadow: 0 0 8px var(--gold);
+  }
+  h1 {
+    font-family: 'UnifrakturMaguntia', cursive;
+    font-size: clamp(34px, 5vw, 56px);
+    color: var(--gold-light);
+    line-height: 1.05;
+    text-shadow: 0 0 24px rgba(201,168,76,0.4);
+    margin-bottom: 12px;
+    font-weight: 400;
+  }
+  .hero-sub {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--ink-soft);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+  .hero-lede {
+    font-size: 17px;
+    color: var(--parchment-d);
+    max-width: 720px;
+    font-style: italic;
+    line-height: 1.7;
+  }
+  .hero-meta {
+    display: flex; gap: 28px; flex-wrap: wrap;
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(201,168,76,0.25);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+  }
+  .hero-meta b { color: var(--gold-light); font-weight: 600; }
+
+  /* ── SECTIONS ── */
+  section { margin-top: 64px; }
+  section > header { margin-bottom: 22px; }
+  .section-num {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--gold-dark);
+    letter-spacing: 3px;
+  }
+  h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 26px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin: 4px 0 6px;
+  }
+  .section-desc {
+    color: var(--ink-soft);
+    font-style: italic;
+    max-width: 760px;
+  }
+  h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--gold-light);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dark), transparent);
+    margin: 10px 0 22px;
+  }
+
+  /* ── DIAGNOSTIC BANNER ── */
+  .diag-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .diag {
+    border: 1px solid #2a1a08;
+    border-radius: 6px;
+    background: rgba(20,12,4,0.5);
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .diag::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px; background: var(--bad);
+  }
+  .diag.ok::before { background: var(--good); }
+  .diag .num {
+    font-family: 'Cinzel', serif;
+    font-size: 28px;
+    color: var(--gold-light);
+    font-weight: 700;
+    line-height: 1;
+  }
+  .diag .lbl {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: var(--ink-mute);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 4px 0 8px;
+  }
+  .diag .desc {
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+
+  /* ── PLANCHE CONTACT ── */
+  .scale-tabs {
+    display: flex; gap: 0;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--gold-dark);
+  }
+  .scale-tab {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--ink-mute);
+    padding: 10px 18px;
+    cursor: pointer;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.15s;
+    position: relative; bottom: -1px;
+  }
+  .scale-tab:hover { color: var(--gold-light); }
+  .scale-tab.active {
+    color: var(--gold);
+    border-color: var(--gold-dark);
+    border-bottom: 1px solid #08060a;
+    background: var(--paper);
+  }
+  .scale-meta {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 1.5px;
+    margin-bottom: 14px;
+  }
+
+  .planche {
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(201,168,76,0.018),
+      rgba(201,168,76,0.018) 12px,
+      transparent 12px,
+      transparent 24px
+    ), var(--paper);
+    border: 1px solid var(--gold-dark);
+    border-radius: 6px;
+    padding: 24px;
+  }
+  .planche-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+  }
+  .cell {
+    aspect-ratio: 1/1;
+    background: var(--paper-dd);
+    border: 1px solid #2a1a08;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; justify-content: flex-end;
+    padding: 6px 4px 4px;
+    transition: border-color 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .cell:hover { border-color: var(--gold-dark); }
+  .cell .icon-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center; justify-content: center;
+    width: 100%;
+  }
+  .cell img {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
+  }
+  .cell .id {
+    font-family: 'Cinzel', serif;
+    font-size: 7.5px;
+    color: var(--ink-mute);
+    letter-spacing: 0.5px;
+    text-align: center;
+    text-transform: uppercase;
+    line-height: 1.2;
+    margin-top: 4px;
+    max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* Display sizes via data attr */
+  .planche[data-size="16"]  .cell img { width: 16px; height: 16px; }
+  .planche[data-size="24"]  .cell img { width: 24px; height: 24px; }
+  .planche[data-size="32"]  .cell img { width: 32px; height: 32px; }
+  .planche[data-size="48"]  .cell img { width: 48px; height: 48px; }
+  .planche[data-size="96"]  .cell img { width: 96px; height: 96px; }
+  .planche[data-size="96"]  .planche-grid { grid-template-columns: repeat(6, 1fr); }
+
+  .legend-dots {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    margin-top: 18px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: var(--ink-mute);
+    letter-spacing: 1px;
+  }
+  .legend-dots span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend-dots i {
+    width: 10px; height: 10px;
+    display: inline-block; border-radius: 2px;
+    background: #6a5030;
+  }
+  .legend-dots .rare   { background: var(--rare); }
+  .legend-dots .epic   { background: var(--epic); }
+  .legend-dots .legend { background: var(--legend); }
+
+  /* Rarity ring */
+  .cell[data-rarity="rare"]      { box-shadow: inset 0 0 0 1px rgba(74,138,208,0.30); }
+  .cell[data-rarity="epic"]      { box-shadow: inset 0 0 0 1px rgba(160,96,208,0.30); }
+  .cell[data-rarity="legendary"] { box-shadow: inset 0 0 0 1px rgba(201,168,76,0.45); }
+
+  /* ── ANNOTATIONS ── */
+  .annot-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+    align-items: flex-start;
+    padding: 18px 0;
+    border-top: 1px dashed rgba(122,92,30,0.30);
+  }
+  .annot-row:first-of-type { border-top: none; padding-top: 0; }
+  .annot-spec {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 10px;
+    text-align: center;
+  }
+  .annot-spec .compare {
+    display: flex; align-items: flex-end; gap: 12px;
+    background: var(--paper-dd);
+    border: 1px solid #2a1a08;
+    border-radius: 4px;
+    padding: 10px 14px;
+  }
+  .annot-spec img { image-rendering: pixelated; display: block; }
+  .annot-spec .compare .px16 img { width: 16px; height: 16px; }
+  .annot-spec .compare .px32 img { width: 32px; height: 32px; }
+  .annot-spec .compare .px64 img { width: 64px; height: 64px; }
+  .annot-spec .compare .px-label {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    color: var(--ink-mute);
+    letter-spacing: 1px;
+    margin-top: 6px;
+    text-align: center;
+  }
+  .annot-spec .name {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    color: var(--gold-light);
+    letter-spacing: 1px;
+  }
+  .annot-spec .name-fr {
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .annot-body p { margin-bottom: 8px; }
+  .pill {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-size: 9.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-right: 6px;
+    margin-bottom: 6px;
+    border: 1px solid currentColor;
+  }
+  .pill.bad   { color: var(--bad); }
+  .pill.warn  { color: var(--note); }
+  .pill.good  { color: var(--good); }
+  .pill.info  { color: var(--rare); }
+  .verdict {
+    display: inline-block;
+    background: rgba(217,102,102,0.10);
+    border-left: 3px solid var(--bad);
+    padding: 8px 14px;
+    margin-top: 6px;
+    font-style: italic;
+    color: var(--parchment-d);
+    font-size: 13px;
+    border-radius: 0 3px 3px 0;
+  }
+  .verdict.warn { background: rgba(233,184,90,0.10); border-color: var(--note); }
+  .verdict.good { background: rgba(108,217,108,0.10); border-color: var(--good); }
+
+  /* ── UI IN SITU ── */
+  .insitu {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 28px;
+  }
+  .mockup {
+    background: linear-gradient(180deg, var(--paper) 0%, var(--paper-d) 100%);
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    padding: 18px;
+    box-shadow: 0 0 28px rgba(201,168,76,0.12);
+    position: relative;
+  }
+  .mockup-label {
+    position: absolute; top: -10px; left: 18px;
+    background: #08060a;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    padding: 0 10px;
+    text-transform: uppercase;
+  }
+  .mockup-title {
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    color: var(--gold);
+    text-align: center;
+    border-bottom: 1px solid var(--gold-dark);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+  /* Inventory mockup */
+  .m-inv {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .m-slot {
+    aspect-ratio: 1/1;
+    background: var(--paper-dd);
+    border: 1px solid #2a1a08;
+    border-radius: 4px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px;
+    padding: 5px;
+    cursor: pointer;
+    position: relative;
+  }
+  .m-slot.has   { border-color: #4a3010; }
+  .m-slot.rare      { border-color: var(--rare); }
+  .m-slot.epic      { border-color: var(--epic); }
+  .m-slot.legendary { border-color: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.30); }
+  .m-slot img {
+    width: 32px; height: 32px;
+    image-rendering: pixelated;
+    display: block;
+  }
+  .m-slot .lbl {
+    font-size: 9px;
+    color: var(--parchment-d);
+    font-family: 'Crimson Text', serif;
+    line-height: 1.1;
+    text-align: center;
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .m-slot.empty { opacity: 0.45; }
+
+  /* Action bar mockup */
+  .m-actbar {
+    display: flex; gap: 6px;
+    background: linear-gradient(180deg, #110803 0%, #060300 100%);
+    border-top: 1px solid var(--gold-dark);
+    border-radius: 0 0 6px 6px;
+    padding: 8px 10px;
+    margin-top: 14px;
+    overflow-x: auto;
+  }
+  .m-btn {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    padding: 6px 10px;
+    background: linear-gradient(180deg, #2a1a08 0%, #1a0f05 100%);
+    border: 1px solid var(--gold-dark);
+    color: var(--gold-light);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    min-height: 32px;
+    cursor: pointer;
+  }
+  .m-btn img {
+    width: 20px; height: 20px;
+    image-rendering: pixelated;
+  }
+  .m-btn .emoji {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  /* Tooltip / hover state mockup */
+  .m-tooltip {
+    background: linear-gradient(180deg, #2a1a08 0%, #120a03 100%);
+    border: 1px solid var(--gold);
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-top: 16px;
+    width: 230px;
+  }
+  .m-tooltip .tt-row {
+    display: flex; gap: 10px; align-items: center;
+  }
+  .m-tooltip img {
+    width: 40px; height: 40px;
+    image-rendering: pixelated;
+    background: var(--paper-dd);
+    border-radius: 3px;
+    padding: 3px;
+  }
+  .m-tooltip .tt-name {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--gold-light);
+  }
+  .m-tooltip .tt-rar {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--epic);
+  }
+  .m-tooltip .tt-bonus {
+    color: var(--good);
+    font-size: 11px;
+    margin-top: 8px;
+    font-weight: 600;
+  }
+  .m-tooltip .tt-desc {
+    color: var(--parchment-d);
+    font-style: italic;
+    font-size: 11px;
+    margin-top: 4px;
+    line-height: 1.4;
+  }
+
+  /* Inventory annotations */
+  .annot-callout {
+    position: relative;
+    margin-top: 22px;
+    padding: 14px 18px;
+    background: rgba(233,184,90,0.06);
+    border-left: 3px solid var(--note);
+    border-radius: 0 3px 3px 0;
+    font-size: 13px;
+    color: var(--parchment-d);
+  }
+  .annot-callout strong {
+    color: var(--note);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    display: block; margin-bottom: 4px;
+  }
+  .annot-list {
+    list-style: none;
+    margin-top: 14px;
+  }
+  .annot-list li {
+    font-size: 13px;
+    color: var(--parchment-d);
+    padding: 6px 0 6px 24px;
+    position: relative;
+    line-height: 1.55;
+    border-bottom: 1px dotted rgba(122,92,30,0.18);
+  }
+  .annot-list li::before {
+    content: '✦';
+    position: absolute; left: 4px;
+    color: var(--gold-dark);
+    font-size: 11px;
+  }
+  .annot-list li.bad::before  { content: '✕'; color: var(--bad); }
+  .annot-list li.warn::before { content: '!'; color: var(--note); }
+  .annot-list li.good::before { content: '✓'; color: var(--good); }
+
+  /* ── PROPOSITIONS ── */
+  .props {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+  .prop {
+    border: 1px solid var(--gold-dark);
+    border-radius: 8px;
+    background: linear-gradient(180deg, rgba(20,12,4,0.85), rgba(10,7,5,0.95));
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .prop-head {
+    padding: 18px 20px 14px;
+    background: linear-gradient(180deg, rgba(40,28,12,0.6), transparent);
+    border-bottom: 1px solid rgba(122,92,30,0.30);
+  }
+  .prop-tag {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: var(--gold-dark);
+    letter-spacing: 3px;
+  }
+  .prop-name {
+    font-family: 'Cinzel', serif;
+    font-size: 17px;
+    color: var(--gold);
+    margin: 3px 0 6px;
+    letter-spacing: 1px;
+  }
+  .prop-lede {
+    font-size: 13px;
+    color: var(--ink-soft);
+    font-style: italic;
+    line-height: 1.6;
+  }
+  .prop-body {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .prop-demo {
+    background:
+      radial-gradient(ellipse at center, rgba(40,28,12,0.5), transparent 70%),
+      var(--paper-dd);
+    border: 1px solid #2a1a08;
+    border-radius: 6px;
+    padding: 18px 10px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    justify-items: center;
+  }
+  .prop-demo svg {
+    display: block;
+    width: 72px;
+    height: 72px;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+  }
+  .prop-demo .demo-cell {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+  }
+  .prop-demo .demo-cell .lbl {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    color: var(--ink-mute);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  /* Small-scale row */
+  .prop-scales {
+    display: flex; align-items: flex-end;
+    justify-content: space-around;
+    background: var(--paper-dd);
+    border: 1px solid #2a1a08;
+    border-radius: 4px;
+    padding: 10px;
+  }
+  .prop-scales .ssize {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+  }
+  .prop-scales .ssize svg { display: block; }
+  .prop-scales .lbl {
+    font-family: 'Cinzel', serif;
+    font-size: 8px;
+    color: var(--ink-mute);
+    letter-spacing: 0.5px;
+  }
+
+  .prop-traits {
+    list-style: none;
+    margin-top: 4px;
+  }
+  .prop-traits li {
+    font-size: 12.5px;
+    color: var(--parchment-d);
+    padding: 4px 0 4px 18px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .prop-traits li::before {
+    content: '◆';
+    position: absolute; left: 0; top: 4px;
+    color: var(--gold-dark);
+    font-size: 9px;
+  }
+  .prop-foot {
+    padding: 14px 20px;
+    border-top: 1px solid rgba(122,92,30,0.30);
+    display: flex; gap: 12px; align-items: center;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--ink-mute);
+    background: rgba(0,0,0,0.25);
+  }
+  .prop-foot .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--gold-dark);
+    color: var(--gold-light);
+  }
+  .prop-foot .badge.hi  { border-color: var(--good); color: var(--good); }
+  .prop-foot .badge.md  { border-color: var(--note); color: var(--note); }
+
+  /* Recommandation */
+  .recommend {
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, rgba(40,28,12,0.55), rgba(20,12,4,0.85));
+    padding: 28px 32px;
+    margin-top: 26px;
+    box-shadow: 0 0 24px rgba(201,168,76,0.15);
+  }
+  .recommend h3 {
+    color: var(--gold);
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+  .recommend p {
+    color: var(--parchment-d);
+    margin-bottom: 10px;
+    max-width: 820px;
+  }
+
+  /* ── PLAN ── */
+  .plan ol {
+    counter-reset: step;
+    list-style: none;
+  }
+  .plan li {
+    padding: 14px 0 14px 56px;
+    position: relative;
+    border-bottom: 1px dashed rgba(122,92,30,0.25);
+  }
+  .plan li::before {
+    counter-increment: step;
+    content: counter(step, decimal-leading-zero);
+    position: absolute; left: 0; top: 12px;
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    color: var(--gold);
+    font-weight: 600;
+    background: rgba(40,28,12,0.7);
+    border: 1px solid var(--gold-dark);
+    border-radius: 4px;
+    width: 42px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .plan h4 {
+    font-family: 'Cinzel', serif;
+    font-size: 13px;
+    color: var(--gold-light);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .plan p {
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .plan .est {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: var(--gold-dark);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* footer */
+  .footer-rule {
+    margin-top: 70px;
+    text-align: center;
+    color: var(--ink-mute);
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .footer-rule::before, .footer-rule::after {
+    content: '✦';
+    color: var(--gold-dark);
+    margin: 0 14px;
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .page { padding: 32px 18px 56px; }
+    .hero { padding: 24px 22px; }
+    .diag-grid { grid-template-columns: repeat(2, 1fr); }
+    .props { grid-template-columns: 1fr; }
+    .insitu { grid-template-columns: 1fr; }
+    .annot-row { grid-template-columns: 1fr; }
+    .planche-grid { grid-template-columns: repeat(6, 1fr); }
+    .planche[data-size="96"] .planche-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       HERO
+       ════════════════════════════════════════════════════════════════════ -->
+  <div class="hero">
+    <div class="eyebrow">Poudlard &amp; Magie<span class="dot"></span>Design Review</div>
+    <h1>Refonte des icônes d'objets</h1>
+    <div class="hero-sub">Audit + propositions visuelles</div>
+    <p class="hero-lede">
+      Le moteur d'inventaire monte en charge — 48 icônes générées par script,
+      réutilisées sur le sac, la fiche personnage, la barre d'actions et les coffres.
+      Aujourd'hui elles passent mal le test des 24–32 px et coexistent mal avec
+      les emojis encore présents dans l'UI. Voici ce qu'on voit, et trois pistes
+      pour donner aux objets le poids visuel qu'ils méritent.
+    </p>
+    <div class="hero-meta">
+      <span><b>48</b> icônes auditées</span>
+      <span><b>13</b> catégories (potions, baguettes, robes, anneaux, livres…)</span>
+      <span>Cibles : <b>24 / 32 / 48 px</b></span>
+      <span><b>3</b> directions visuelles proposées</span>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       1. DIAGNOSTIC
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <header>
+      <div class="section-num">§ 01</div>
+      <h2>Diagnostic</h2>
+      <p class="section-desc">
+        Quatre problèmes structurels qui se renforcent l'un l'autre.
+      </p>
+    </header>
+
+    <div class="diag-grid">
+      <div class="diag">
+        <div class="num">~28%</div>
+        <div class="lbl">Pixels opaques · planche</div>
+        <div class="desc">
+          Les motifs occupent moins du tiers du canvas 48×48.
+          Tout l'œuvre se concentre dans une zone de ~24×30 px qui se dilue
+          dès qu'on affiche en 24 px.
+        </div>
+      </div>
+      <div class="diag">
+        <div class="num">2</div>
+        <div class="lbl">Systèmes graphiques mélangés</div>
+        <div class="desc">
+          Pixel-art monochrome pour les items, emoji système (🧙 🔥 💚)
+          pour les sorts, les boutons et les indicateurs. Aucune unité
+          de style entre les deux registres.
+        </div>
+      </div>
+      <div class="diag">
+        <div class="num">11</div>
+        <div class="lbl">Livres quasi-identiques</div>
+        <div class="desc">
+          Variantes de couvertures vertes / bleues / violettes différenciées
+          par une seule lettre minuscule. Illisibles à toute taille &lt; 48 px,
+          aucune signature de discipline.
+        </div>
+      </div>
+      <div class="diag">
+        <div class="num">0</div>
+        <div class="lbl">Hiérarchie visuelle par rareté</div>
+        <div class="desc">
+          La rareté n'est portée que par le liseré de la bordure du slot.
+          L'icône elle-même ne distingue pas une commune d'une légendaire —
+          le drop ne « brille » jamais.
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       2. PLANCHE CONTACT
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <header>
+      <div class="section-num">§ 02</div>
+      <h2>Planche de contact</h2>
+      <p class="section-desc">
+        Les 48 icônes existantes, à toutes les tailles d'usage réel.
+        Switche entre <b>16</b>, <b>24</b>, <b>32</b>, <b>48</b> et <b>96 px</b>
+        pour voir où la lisibilité décroche.
+      </p>
+    </header>
+
+    <div class="scale-tabs" role="tablist" aria-label="Taille d'affichage">
+      <button class="scale-tab" data-size="16">16 px</button>
+      <button class="scale-tab" data-size="24">24 px</button>
+      <button class="scale-tab active" data-size="32">32 px</button>
+      <button class="scale-tab" data-size="48">48 px</button>
+      <button class="scale-tab" data-size="96">96 px (zoom)</button>
+    </div>
+    <div class="scale-meta" id="scale-meta">
+      <b>32 px</b> — taille de référence dans la fiche personnage (sac) et la fiche bestiaire.
+    </div>
+
+    <div class="planche" id="planche" data-size="32">
+      <div class="planche-grid" id="planche-grid"><!-- generated --></div>
+
+      <div class="legend-dots">
+        <span><i></i> commune</span>
+        <span><i class="rare"></i> rare</span>
+        <span><i class="epic"></i> épique</span>
+        <span><i class="legend"></i> légendaire</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       3. ANNOTATIONS PAR CATÉGORIE
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <header>
+      <div class="section-num">§ 03</div>
+      <h2>Lecture par catégorie</h2>
+      <p class="section-desc">
+        Échantillon représentatif. Chaque ligne montre l'icône à 16 / 32 / 64 px
+        — la même image, juste agrandie — et le diagnostic associé.
+      </p>
+    </header>
+
+    <div class="annot-block">
+
+      <!-- POTIONS -->
+      <div class="annot-row">
+        <div class="annot-spec">
+          <div class="compare">
+            <div class="px16"><img src="img/icons/items/potion_s.png" alt=""><span class="px-label">16</span></div>
+            <div class="px32"><img src="img/icons/items/potion_s.png" alt=""><span class="px-label">32</span></div>
+            <div class="px64"><img src="img/icons/items/potion_s.png" alt=""><span class="px-label">64</span></div>
+          </div>
+          <div class="name">Potions</div>
+          <div class="name-fr">potion_s · potion_m · felix · choco_sorcier…</div>
+        </div>
+        <div class="annot-body">
+          <span class="pill good">SILHOUETTE OK</span>
+          <span class="pill warn">VARIANTES PEU CONTRASTÉES</span>
+          <span class="pill bad">PAS DE BRILLANCE / VERRE</span>
+          <p>
+            La forme « fiole » se lit dès 16 px — c'est le seul groupe
+            qui passe ce seuil sans aide. Mais les 4 potions se distinguent
+            uniquement par la couleur du liquide (rouge / violet / or / marron),
+            sans signature ni effet de matière (mousse, brillance, étiquette).
+          </p>
+          <p>
+            <b>Felix Felicis</b> (objet rare, +20PV +10PM, 80 G)
+            est visuellement le plus pauvre du lot : disque doré flou,
+            sans la fameuse étincelle dorée canon.
+          </p>
+          <div class="verdict warn">
+            À conserver comme base de silhouette, mais retravailler la
+            matière (verre, bouchon, étiquette) et donner à Felix une vraie
+            mise en scène lumineuse.
+          </div>
+        </div>
+      </div>
+
+      <!-- BAGUETTES -->
+      <div class="annot-row">
+        <div class="annot-spec">
+          <div class="compare">
+            <div class="px16"><img src="img/icons/items/wand1.png" alt=""><span class="px-label">16</span></div>
+            <div class="px32"><img src="img/icons/items/wand1.png" alt=""><span class="px-label">32</span></div>
+            <div class="px64"><img src="img/icons/items/wand1.png" alt=""><span class="px-label">64</span></div>
+          </div>
+          <div class="name">Baguettes</div>
+          <div class="name-fr">wand1 · wand2 · sword_gryff</div>
+        </div>
+        <div class="annot-body">
+          <span class="pill bad">DIAGONALE TROP FINE</span>
+          <span class="pill bad">DISPARAÎT À 16 PX</span>
+          <span class="pill warn">PAS DE POMMEAU LISIBLE</span>
+          <p>
+            La baguette en diagonale prend moins de 8 pixels de large.
+            À 32 px elle est un trait orienté, à 16 px elle est un point flou.
+            Aucun signe ne distingue <b>Saule</b> (commune, ATK+2) de
+            <b>Sureau</b> (rare, ATK+5 MAG+3) — c'est gênant car ce sont
+            les deux items qui définissent le slot principal du joueur.
+          </p>
+          <p>
+            Le système de teinte (<code>tinted: true</code>, <code>tintOverlay</code>)
+            existe déjà côté data mais ne porte que sur 1–2 px d'embout.
+            Il faut soit élargir la baguette (renoncer à la diagonale fine),
+            soit cadrer plus serré sur la <b>poignée</b> et l'<b>embout</b>
+            comme deux pièces de joaillerie distinctes.
+          </p>
+          <div class="verdict">
+            La famille la plus à risque. Recommandation : repenser la
+            composition (vertical centré ou nœud + embout) avant de
+            repeindre.
+          </div>
+        </div>
+      </div>
+
+      <!-- LIVRES -->
+      <div class="annot-row">
+        <div class="annot-spec">
+          <div class="compare">
+            <div class="px16"><img src="img/icons/items/livre_sortileges.png" alt=""><span class="px-label">16</span></div>
+            <div class="px32"><img src="img/icons/items/livre_sortileges.png" alt=""><span class="px-label">32</span></div>
+            <div class="px64"><img src="img/icons/items/livre_sortileges.png" alt=""><span class="px-label">64</span></div>
+          </div>
+          <div class="name">Livres de sorts</div>
+          <div class="name-fr">11 grimoires (livre_sortileges, livre_crucio…)</div>
+        </div>
+        <div class="annot-body">
+          <span class="pill bad">11 ITEMS, 1 SEUL GLYPHE</span>
+          <span class="pill bad">LETTRE ILLISIBLE &lt; 32 PX</span>
+          <span class="pill warn">PAS DE CODE COULEUR DOMAINE</span>
+          <p>
+            Le grimoire « Manuel du Demi-Sang » (Sectumsempra, 500 G)
+            partage exactement la même silhouette que « Sortilèges Standards »
+            (Wingardium, 90 G) à un changement de teinte près.
+            Les 11 livres dessinent un mur monotone dans la boutique et
+            l'inventaire.
+          </p>
+          <p>
+            <b>Opportunité forte&nbsp;:</b> profiter de la refonte pour
+            introduire un code visuel par <i>discipline</i> — sortilèges
+            (éclair), soin (croix / feuille), maléfices (rune noire),
+            vampirisme (goutte), explosion (flamme). Reliure cuir + signet
+            coloré + sigil au centre.
+          </p>
+          <div class="verdict">
+            Catégorie où la refonte aura l'impact ressenti le plus élevé.
+          </div>
+        </div>
+      </div>
+
+      <!-- BIJOUX -->
+      <div class="annot-row">
+        <div class="annot-spec">
+          <div class="compare">
+            <div class="px16"><img src="img/icons/items/anneau_runique.png" alt=""><span class="px-label">16</span></div>
+            <div class="px32"><img src="img/icons/items/anneau_runique.png" alt=""><span class="px-label">32</span></div>
+            <div class="px64"><img src="img/icons/items/anneau_runique.png" alt=""><span class="px-label">64</span></div>
+          </div>
+          <div class="name">Anneaux &amp; Amulettes</div>
+          <div class="name-fr">3 anneaux · 3 amulettes</div>
+        </div>
+        <div class="annot-body">
+          <span class="pill warn">SILHOUETTE FRAGILE</span>
+          <span class="pill bad">AUCUNE GEMME LISIBLE</span>
+          <span class="pill info">SLOT À FORT IMPACT</span>
+          <p>
+            Anneau : ellipse fine, traitée en 2–3 pixels d'épaisseur.
+            La gemme — pourtant la <i>seule</i> info qui distingue
+            commune / runique / résurrection — fait 2×2 pixels.
+            <b>Larmes du Phénix</b> (épique, regen +3 PV/tour) mérite
+            mieux qu'une lentille ovale brune.
+          </p>
+          <p>
+            Sur un RPG, les anneaux et amulettes sont la catégorie où
+            le joueur observe le plus l'icône (achat, comparaison de
+            stats). Ils méritent traitement « bijou » — métal, gemme
+            facettée, micro-éclat.
+          </p>
+          <div class="verdict warn">
+            Priorité haute. Petit nombre d'items, gros impact perçu.
+          </div>
+        </div>
+      </div>
+
+      <!-- HABILLEMENT -->
+      <div class="annot-row">
+        <div class="annot-spec">
+          <div class="compare">
+            <div class="px16"><img src="img/icons/items/robe1.png" alt=""><span class="px-label">16</span></div>
+            <div class="px32"><img src="img/icons/items/robe1.png" alt=""><span class="px-label">32</span></div>
+            <div class="px64"><img src="img/icons/items/robe1.png" alt=""><span class="px-label">64</span></div>
+          </div>
+          <div class="name">Vêtements</div>
+          <div class="name-fr">robes · capes · chapeaux · bottes · gants · ceintures</div>
+        </div>
+        <div class="annot-body">
+          <span class="pill good">FULL-FRAME CORRECT</span>
+          <span class="pill warn">RENDU PIERRE / GRIS</span>
+          <span class="pill bad">RAREté INVISIBLE</span>
+          <p>
+            La famille la plus saine : la robe et la cape remplissent bien
+            le canvas, et la silhouette tient à 24 px. Mais le rendu reste
+            terne — palettes monochromes grises / brunes sans broderie,
+            sans liseré, sans signe d'âge ou de magie.
+          </p>
+          <p>
+            La <b>Cape d'Invisibilité</b> (épique, AGI+5 LCK+5) et la
+            <b>Cape du Voyageur</b> (commune) sont quasiment interchangeables.
+            On attend que la cape « disparaisse à demi » — c'est l'objet
+            le plus iconique de la franchise.
+          </p>
+          <div class="verdict good">
+            Bonne base à raffiner. Pas une priorité refonte.
+          </div>
+        </div>
+      </div>
+
+      <!-- LÉGENDAIRES -->
+      <div class="annot-row">
+        <div class="annot-spec">
+          <div class="compare">
+            <div class="px16"><img src="img/icons/items/coupe_poufsouffle.png" alt=""><span class="px-label">16</span></div>
+            <div class="px32"><img src="img/icons/items/coupe_poufsouffle.png" alt=""><span class="px-label">32</span></div>
+            <div class="px64"><img src="img/icons/items/coupe_poufsouffle.png" alt=""><span class="px-label">64</span></div>
+          </div>
+          <div class="name">Légendaires</div>
+          <div class="name-fr">coupe · diadème · médaillon · épée</div>
+        </div>
+        <div class="annot-body">
+          <span class="pill warn">SCALE OK</span>
+          <span class="pill bad">PAS DE TRAITEMENT « SAINT »</span>
+          <span class="pill info">RÉCOMPENSES DE MAISON</span>
+          <p>
+            Les 4 reliques de Maisons (récompenses, prix = 0) partagent
+            une signature visuelle quasi-identique aux items communs.
+            C'est dommage : ce sont des récompenses rares, fortes
+            narrativement, qui doivent provoquer un « ah ! » dans
+            l'inventaire.
+          </p>
+          <p>
+            <b>Coupe de Poufsouffle</b> : forme correcte mais aucun éclat,
+            aucune aura, aucune signature dorée. À 32 px elle ressemble
+            à un trophée scolaire générique.
+          </p>
+          <div class="verdict warn">
+            Doivent recevoir un traitement visuel à part (halo, aura,
+            cartouche doré).
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       4. UI IN SITU
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <header>
+      <div class="section-num">§ 04</div>
+      <h2>Mise en situation</h2>
+      <p class="section-desc">
+        Comment les icônes vivent dans les vrais composants du jeu.
+      </p>
+    </header>
+
+    <div class="insitu">
+
+      <!-- Inventaire complet -->
+      <div class="mockup">
+        <span class="mockup-label">Inventaire — fiche personnage</span>
+        <div class="mockup-title">Sac (8 colonnes)</div>
+        <div class="m-inv" id="m-inv"><!-- generated --></div>
+
+        <div class="annot-callout">
+          <strong>Observation</strong>
+          À 32 px dans un slot 48 px (~28 px d'icône effective),
+          les baguettes, anneaux et fioles tombent sous le seuil de
+          lecture. Le joueur se repère par couleur de bordure plus
+          que par l'icône.
+        </div>
+      </div>
+
+      <!-- Barre d'actions + Tooltip -->
+      <div>
+        <div class="mockup">
+          <span class="mockup-label">Barre de commandes — bas d'écran</span>
+          <div class="mockup-title">Mix PNG + Emoji</div>
+          <div class="m-actbar">
+            <span class="m-btn"><span class="emoji">🎒</span>Sac</span>
+            <span class="m-btn"><span class="emoji">📖</span>Sorts</span>
+            <span class="m-btn"><span class="emoji">📜</span>Fiche</span>
+            <span class="m-btn"><img src="img/icons/items/book_monsters.png" alt="">Bestiaire</span>
+            <span class="m-btn"><span class="emoji">📜</span>Quêtes</span>
+            <span class="m-btn"><span class="emoji">🔍</span>Fouiller</span>
+          </div>
+          <div class="annot-callout">
+            <strong>Diagnostic</strong>
+            5 boutons utilisent un emoji système (rendu OS dépendant —
+            varie entre Windows, macOS, Android), 1 bouton utilise
+            une icône PNG pixel-art. Le contraste de rendu rompt
+            l'unité de barre.
+          </div>
+        </div>
+
+        <div class="mockup" style="margin-top: 22px;">
+          <span class="mockup-label">Tooltip hover</span>
+          <div class="mockup-title">Détail d'un item</div>
+          <div class="m-tooltip">
+            <div class="tt-row">
+              <img src="img/icons/items/amulette.png" alt="">
+              <div>
+                <div class="tt-name">Amulette du Phénix</div>
+                <div class="tt-rar">Épique</div>
+              </div>
+            </div>
+            <div class="tt-bonus">MAG +4&nbsp; LCK +3</div>
+            <div class="tt-desc">Apprend Reparo.</div>
+          </div>
+          <ul class="annot-list">
+            <li class="warn">Icône agrandie à 40 px → flou pixel-art visible (1.25× upscale)</li>
+            <li class="bad">Aucune indication visuelle « épique » sur l'icône elle-même</li>
+            <li class="good">Le tooltip lui-même (typographie + cadre or) est très réussi</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       5. PROPOSITIONS
+       ════════════════════════════════════════════════════════════════════ -->
+  <section>
+    <header>
+      <div class="section-num">§ 05</div>
+      <h2>Trois directions visuelles</h2>
+      <p class="section-desc">
+        Mockups SVG d'un même quartet d'objets — potion, baguette, amulette, anneau —
+        traités dans chaque langage. Comparez à isovaleur avec la planche actuelle.
+      </p>
+    </header>
+
+    <div class="props">
+
+      <!-- ───────── PROP A : MTG PEINT FULL-BLEED ───────── -->
+      <article class="prop">
+        <div class="prop-head">
+          <div class="prop-tag">DIRECTION A</div>
+          <div class="prop-name">Tableau peint — full-bleed</div>
+          <p class="prop-lede">
+            Tableau d'inventaire à la Magic the Gathering : peinture huile
+            cadrée bord-à-bord avec cartouche dorée, fond peint sombre,
+            lumière dirigée 45°.
+          </p>
+        </div>
+        <div class="prop-body">
+          <div class="prop-demo" id="demo-a"></div>
+          <div class="prop-scales" id="demo-a-scales"></div>
+          <ul class="prop-traits">
+            <li>Full-frame 64×64 — exploite 100 % du canvas</li>
+            <li>Cartouche dorée fine = bordure native, plus de slot</li>
+            <li>Rim-light or sur arête haut/droite — tient à 32 px</li>
+            <li>Background peint subtilement teinté par rareté</li>
+            <li>Légendaires : halo radial + grain de poussière magique</li>
+          </ul>
+        </div>
+        <div class="prop-foot">
+          <span class="badge hi">Impact ★★★</span>
+          <span class="badge md">Effort ★★★</span>
+          <span>~3–4 j de peinture</span>
+        </div>
+      </article>
+
+      <!-- ───────── PROP B : MEDAILLON ÉMAILLÉ ───────── -->
+      <article class="prop">
+        <div class="prop-head">
+          <div class="prop-tag">DIRECTION B</div>
+          <div class="prop-name">Médaillon émaillé</div>
+          <p class="prop-lede">
+            Chaque objet est rendu en silhouette dorée sur un disque
+            d'émail circulaire bordé d'un anneau métallique. Lisibilité
+            maximale, langage héraldique de Poudlard.
+          </p>
+        </div>
+        <div class="prop-body">
+          <div class="prop-demo" id="demo-b"></div>
+          <div class="prop-scales" id="demo-b-scales"></div>
+          <ul class="prop-traits">
+            <li>Disque émail + couronne or — silhouette parfaite</li>
+            <li>Couleur d'émail = code rareté (gris / bleu / violet / or)</li>
+            <li>Lisible jusqu'à 16 px sans perdre l'identité</li>
+            <li>Très peu de variation par item — vectorisable / SVG natif</li>
+            <li>Risque : peut sembler abstrait pour les consommables</li>
+          </ul>
+        </div>
+        <div class="prop-foot">
+          <span class="badge hi">Impact ★★★</span>
+          <span class="badge hi">Effort ★★</span>
+          <span>SVG natif possible</span>
+        </div>
+      </article>
+
+      <!-- ───────── PROP C : GRAVURE PARCHEMIN ───────── -->
+      <article class="prop">
+        <div class="prop-head">
+          <div class="prop-tag">DIRECTION C</div>
+          <div class="prop-name">Gravure dorée sur parchemin</div>
+          <p class="prop-lede">
+            Style « manuel d'apothicaire » — trait or fin gravé sur fond
+            parchemin texturé, sépia. Identité forte tournée vers
+            l'ambiance scolaire-occulte du jeu.
+          </p>
+        </div>
+        <div class="prop-body">
+          <div class="prop-demo" id="demo-c"></div>
+          <div class="prop-scales" id="demo-c-scales"></div>
+          <ul class="prop-traits">
+            <li>Trait or 1.5 px + ombres en hachures (style botanique XVIIIᵉ)</li>
+            <li>Fond parchemin = continuité avec la fiche personnage</li>
+            <li>Très différenciant — personne d'autre ne fait ça</li>
+            <li>Compatible avec le ton « livre de sorts » du jeu</li>
+            <li>Risque : peu de variation tonale entre raretés</li>
+          </ul>
+        </div>
+        <div class="prop-foot">
+          <span class="badge md">Impact ★★</span>
+          <span class="badge hi">Effort ★★</span>
+          <span>SVG natif, très portable</span>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="recommend">
+      <h3>Recommandation</h3>
+      <p>
+        <b>Direction A (MTG peint)</b> est la plus émotionnellement
+        forte mais coûte cher si elle est dessinée à la main et passera
+        moyennement à 16 px.
+        <b>Direction B (médaillon)</b> est la plus pragmatique :
+        lisible à toutes les tailles, encode la rareté <i>dans</i> l'icône,
+        SVG natif donc redimensionnable à coût zéro.
+        <b>Direction C (gravure)</b> tisse le mieux le récit Poudlard mais
+        diffère le moins entre raretés.
+      </p>
+      <p>
+        Mon vote : <b>B en système principal</b> (les 40+ items communs/rares/épiques),
+        avec un <b>traitement A peint, à la main</b> réservé aux <b>4 légendaires</b>
+        et aux 4 consommables-stars (Felix, Mandragore, Choco, Larmes du Phénix).
+        Hybride bon marché, fort impact, scalable.
+      </p>
+    </div>
+  </section>
+
+
+  <!-- ════════════════════════════════════════════════════════════════════
+       6. PLAN
+       ════════════════════════════════════════════════════════════════════ -->
+  <section class="plan">
+    <header>
+      <div class="section-num">§ 06</div>
+      <h2>Plan d'attaque proposé</h2>
+      <p class="section-desc">
+        Si la direction te plaît, on découpe en lots livrables — chacun
+        produit un commit testable en jeu.
+      </p>
+    </header>
+
+    <ol>
+      <li>
+        <h4>Système de cartouche + grille de variations</h4>
+        <p>
+          Définir le composant SVG « médaillon » (disque + anneau or + slot
+          silhouette) en 4 raretés. Génère 4 templates vides prêts à recevoir
+          les silhouettes.
+        </p>
+        <div class="est">~½ jour</div>
+      </li>
+      <li>
+        <h4>Lot 1 — Catégories simples (28 icônes)</h4>
+        <p>
+          Potions, anneaux, amulettes, ceintures, bottes, gants, chapeaux.
+          Silhouettes vectorielles dans le médaillon. Couvre 60 % des items.
+        </p>
+        <div class="est">~1 jour</div>
+      </li>
+      <li>
+        <h4>Lot 2 — Livres avec code discipline (11 icônes)</h4>
+        <p>
+          11 reliures + 11 sigils de discipline (sortilèges, soin, maléfices,
+          vampirisme, explosion…). Pas dans le médaillon : reliure full-frame
+          + signet + sigil au centre.
+        </p>
+        <div class="est">~1 jour</div>
+      </li>
+      <li>
+        <h4>Lot 3 — Baguettes &amp; armes (4 icônes)</h4>
+        <p>
+          Recadrage vertical (renoncer à la diagonale), embouts et pommeaux
+          comme bijoux, intégration du système de teintes existant
+          (tintMask / tintOverlay).
+        </p>
+        <div class="est">~½ jour</div>
+      </li>
+      <li>
+        <h4>Lot 4 — Légendaires peints à la main (4 + 4 stars)</h4>
+        <p>
+          Direction A pour Coupe, Diadème, Médaillon, Épée + Felix,
+          Mandragore, Larmes du Phénix, Cape d'Invisibilité. Halo,
+          aura, grain, traitement signature.
+        </p>
+        <div class="est">~2 jours</div>
+      </li>
+      <li>
+        <h4>Lot 5 — Cohérence UI (boutons d'action)</h4>
+        <p>
+          Remplacer les emojis 🎒 📖 📜 🔍 💤 par des icônes ligne or
+          du même système. Élimine le mix PNG / emoji.
+        </p>
+        <div class="est">~½ jour</div>
+      </li>
+    </ol>
+  </section>
+
+  <div class="footer-rule">FIN DE L'AUDIT</div>
+
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════
+     ICON DATA + JS — Planche, mini-inventaire, mockups SVG
+     ════════════════════════════════════════════════════════════════════ -->
+<script>
+/* Inventaire complet de la planche (id, name, rarity).
+   Source : js/data.js du repo Kenhuri69/hogwarth */
+const ITEMS = [
+  // Consommables
+  { id:"potion_s",         name:"Potion de Soin",            rarity:null,        category:"potion" },
+  { id:"potion_m",         name:"Potion Magique",            rarity:null,        category:"potion" },
+  { id:"potion_force",     name:"Potion de Force",           rarity:null,        category:"potion" },
+  { id:"felix",            name:"Félix Felicis",             rarity:null,        category:"potion" },
+  { id:"mandragore",       name:"Racine de Mandragore",      rarity:null,        category:"plante" },
+  { id:"choco_sorcier",    name:"Chocogrenouille",           rarity:null,        category:"snack" },
+  // Baguettes / Armes
+  { id:"wand1",            name:"Saule",                     rarity:"common",    category:"wand" },
+  { id:"wand2",            name:"Sureau",                    rarity:"rare",      category:"wand" },
+  { id:"sword_gryff",      name:"Épée Gryffondor",           rarity:"legendary", category:"wand" },
+  // Tête
+  { id:"chapeau_apprenti", name:"Chapeau d'Apprenti",        rarity:"common",    category:"head" },
+  { id:"chapeau_pointu",   name:"Chapeau Serdaigle",         rarity:"rare",      category:"head" },
+  { id:"circlet_serdaigle",name:"Circlet d'Argent",          rarity:"rare",      category:"head" },
+  { id:"diademe_serdaigle",name:"Diadème Serdaigle",         rarity:"legendary", category:"head" },
+  // Corps
+  { id:"robe1",            name:"Robe Renforcée",            rarity:"common",    category:"body" },
+  { id:"coupe_poufsouffle",name:"Coupe Poufsouffle",         rarity:"legendary", category:"body" },
+  // Mains
+  { id:"gants_apprenti",   name:"Gants d'Apprenti",          rarity:"common",    category:"hands" },
+  // Pieds
+  { id:"bottes_apprenti",  name:"Bottes d'Apprenti",         rarity:"common",    category:"feet" },
+  { id:"bottes_dragon",    name:"Bottes en Peau de Dragon",  rarity:"rare",      category:"feet" },
+  // Cape
+  { id:"cape_voyageur",    name:"Cape du Voyageur",          rarity:"common",    category:"cloak" },
+  { id:"cape_invis",       name:"Cape d'Invisibilité",       rarity:"epic",      category:"cloak" },
+  // Amulettes
+  { id:"amulette",         name:"Amulette du Phénix",        rarity:"epic",      category:"amulet" },
+  { id:"amulette_protection", name:"Amulette de Protection", rarity:"common",    category:"amulet" },
+  { id:"larmes_phenix",    name:"Larmes du Phénix",          rarity:"epic",      category:"amulet" },
+  { id:"locket_slytherin", name:"Médaillon Serpentard",      rarity:"legendary", category:"amulet" },
+  // Anneaux
+  { id:"anneau_argent",    name:"Anneau d'Argent",           rarity:"common",    category:"ring" },
+  { id:"anneau_runique",   name:"Anneau Runique",            rarity:"rare",      category:"ring" },
+  { id:"anneau_resurrection",name:"Anneau Résurrection",     rarity:"epic",      category:"ring" },
+  // Ceintures
+  { id:"ceinture_cuir",    name:"Ceinture de Cuir",          rarity:"common",    category:"belt" },
+  { id:"ceinture_alchimiste",name:"Ceinture Alchimiste",     rarity:"rare",      category:"belt" },
+  // Trinkets
+  { id:"broom",            name:"Nimbus 2000",               rarity:"rare",      category:"trinket" },
+  { id:"retourneur_temps", name:"Retourneur de Temps",       rarity:"epic",      category:"trinket" },
+  // Spellbooks
+  { id:"livre_sortileges", name:"Sortilèges Std",            rarity:null,        category:"book" },
+  { id:"livre_soin",       name:"Potions & Remèdes",         rarity:null,        category:"book" },
+  { id:"book_monsters",    name:"Livre Monstres",            rarity:null,        category:"book" },
+  { id:"livre_prince",     name:"Manuel Demi-Sang",          rarity:null,        category:"book" },
+  { id:"livre_bombarda",   name:"Magie Explosive",           rarity:null,        category:"book" },
+  { id:"livre_patronum",   name:"Guide Patronus",            rarity:null,        category:"book" },
+  { id:"livre_sanguini",   name:"Sang Vivant",               rarity:null,        category:"book" },
+  { id:"livre_vampyrus",   name:"Codex Strigoï",             rarity:null,        category:"book" },
+  { id:"livre_taranta",    name:"Pas Maudits",               rarity:null,        category:"book" },
+  { id:"livre_maledictus", name:"Grimoire Maudits",          rarity:null,        category:"book" },
+  { id:"livre_crucio",     name:"Impardonnables II",         rarity:null,        category:"book" },
+  { id:"livre_morsmordre", name:"Marque des Ténèbres",       rarity:null,        category:"book" },
+  // Atomic
+  { id:"wand_shaft_base",  name:"Bois (atomic)",             rarity:null,        category:"atom" },
+  { id:"wand_tip_basic",   name:"Embout simple",             rarity:null,        category:"atom" },
+  { id:"wand_tip_runic",   name:"Embout runique",            rarity:null,        category:"atom" },
+  { id:"sword_blade_base", name:"Lame (atomic)",             rarity:null,        category:"atom" },
+  { id:"sword_hilt_gryff", name:"Garde Gryff",               rarity:null,        category:"atom" }
+];
+
+/* ── PLANCHE CONTACT ── */
+const grid = document.getElementById('planche-grid');
+const planche = document.getElementById('planche');
+const meta = document.getElementById('scale-meta');
+
+const SCALE_LABELS = {
+  '16': '<b>16 px</b> — taille minimum dans le tooltip et la mini-map.',
+  '24': '<b>24 px</b> — taille des boutons mobile et des badges de sorts.',
+  '32': '<b>32 px</b> — taille de référence dans la fiche personnage (sac) et la fiche bestiaire.',
+  '48': '<b>48 px</b> — taille native du PNG, équipement et grand inventaire.',
+  '96': '<b>96 px</b> — zoom×2 pour audit. Révèle le détail réel du dessin.',
+};
+
+ITEMS.forEach(item => {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  if (item.rarity) cell.dataset.rarity = item.rarity;
+  cell.innerHTML = `
+    <div class="icon-wrap">
+      <img src="img/icons/items/${item.id}.png" alt="${item.name}" loading="lazy">
+    </div>
+    <div class="id" title="${item.id} — ${item.name}">${item.id}</div>
+  `;
+  grid.appendChild(cell);
+});
+
+document.querySelectorAll('.scale-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const s = btn.dataset.size;
+    document.querySelectorAll('.scale-tab').forEach(b => b.classList.toggle('active', b === btn));
+    planche.dataset.size = s;
+    meta.innerHTML = SCALE_LABELS[s];
+  });
+});
+
+/* ── MINI INVENTORY MOCKUP ── */
+const invSamples = [
+  { id:"potion_s",    name:"Potion de Soin",  rarity:null },
+  { id:"potion_m",    name:"Potion Magique",  rarity:null },
+  { id:"felix",       name:"Felix Felicis",   rarity:null },
+  { id:"mandragore",  name:"Mandragore",      rarity:null },
+  { id:"wand2",       name:"Baguette Sureau", rarity:"rare" },
+  { id:"robe1",       name:"Robe Renforcée",  rarity:"common" },
+  { id:"amulette",    name:"Amulette Phénix", rarity:"epic" },
+  { id:"anneau_runique", name:"Anneau Runique", rarity:"rare" },
+  { id:"livre_sortileges", name:"Sortilèges Std", rarity:null },
+  { id:"livre_prince", name:"Demi-Sang",      rarity:null },
+  { id:"cape_invis",  name:"Cape Invisible",  rarity:"epic" },
+  { id:"coupe_poufsouffle", name:"Coupe Pouf.", rarity:"legendary" },
+  { id:null, name:"" }, { id:null, name:"" }, { id:null, name:"" }, { id:null, name:"" },
+];
+const mInv = document.getElementById('m-inv');
+invSamples.forEach(it => {
+  const slot = document.createElement('div');
+  slot.className = 'm-slot ' + (it.id ? 'has ' + (it.rarity || '') : 'empty');
+  slot.innerHTML = it.id
+    ? `<img src="img/icons/items/${it.id}.png" alt=""><div class="lbl">${it.name}</div>`
+    : '';
+  mInv.appendChild(slot);
+});
+
+/* ── PROPOSITIONS : MOCKUPS SVG ── */
+
+// SVG helpers : 4 items demo (potion, wand, amulet, ring)
+// Direction A — Painterly MTG cartouche
+function svgA(kind) {
+  const g = {
+    potion: `
+      <defs>
+        <radialGradient id="aP-bg" cx="50%" cy="35%" r="70%">
+          <stop offset="0%" stop-color="#3a2a4a"/>
+          <stop offset="100%" stop-color="#0a0510"/>
+        </radialGradient>
+        <linearGradient id="aP-liq" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e84a4a"/>
+          <stop offset="60%" stop-color="#c01818"/>
+          <stop offset="100%" stop-color="#6a0808"/>
+        </linearGradient>
+        <linearGradient id="aP-glass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>
+          <stop offset="50%" stop-color="rgba(255,255,255,0.05)"/>
+          <stop offset="100%" stop-color="rgba(255,255,255,0.2)"/>
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" fill="url(#aP-bg)"/>
+      <ellipse cx="32" cy="56" rx="14" ry="3" fill="rgba(0,0,0,0.5)"/>
+      <!-- Cork -->
+      <rect x="26" y="11" width="12" height="5" rx="1.5" fill="#7a5020"/>
+      <rect x="27" y="9" width="10" height="3" rx="1" fill="#a06b32"/>
+      <!-- Bottle neck -->
+      <rect x="28" y="14" width="8" height="6" fill="#1a0f1f"/>
+      <!-- Bottle body -->
+      <path d="M 28 19 Q 16 26 16 38 Q 16 54 32 54 Q 48 54 48 38 Q 48 26 36 19 Z"
+            fill="#251530" stroke="#5a3a6a" stroke-width="0.5"/>
+      <!-- Liquid (clip to body shape) -->
+      <path d="M 26 28 Q 18 32 18 40 Q 18 52 32 52 Q 46 52 46 40 Q 46 32 38 28 Z"
+            fill="url(#aP-liq)"/>
+      <!-- Glass highlight -->
+      <path d="M 21 28 Q 19 35 22 46" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <path d="M 25 24 Q 22 22 22 27" stroke="rgba(255,255,255,0.7)" stroke-width="1" fill="none" stroke-linecap="round"/>
+      <!-- Label band -->
+      <rect x="22" y="38" width="20" height="6" fill="#e8d5a0" opacity="0.85"/>
+      <line x1="24" y1="41" x2="40" y2="41" stroke="#7a5c1e" stroke-width="0.8"/>
+      <!-- Cartouche frame -->
+      <rect x="0.5" y="0.5" width="63" height="63" fill="none" stroke="#c9a84c" stroke-width="1"/>
+      <rect x="2" y="2" width="60" height="60" fill="none" stroke="rgba(201,168,76,0.4)" stroke-width="0.5"/>`,
+    wand: `
+      <defs>
+        <radialGradient id="aW-bg" cx="50%" cy="30%" r="80%">
+          <stop offset="0%" stop-color="#3a2810"/>
+          <stop offset="100%" stop-color="#0a0703"/>
+        </radialGradient>
+        <linearGradient id="aW-wood" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0%" stop-color="#a06030"/>
+          <stop offset="50%" stop-color="#6a3a18"/>
+          <stop offset="100%" stop-color="#3a1d08"/>
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" fill="url(#aW-bg)"/>
+      <!-- Atmospheric particles -->
+      <circle cx="48" cy="14" r="0.8" fill="#f0d080" opacity="0.7"/>
+      <circle cx="52" cy="22" r="0.5" fill="#f0d080" opacity="0.5"/>
+      <circle cx="42" cy="10" r="0.6" fill="#f0d080" opacity="0.6"/>
+      <!-- Wand shadow -->
+      <line x1="44" y1="58" x2="20" y2="58" stroke="rgba(0,0,0,0.5)" stroke-width="2" stroke-linecap="round"/>
+      <!-- Wand handle (bottom-left), tip top-right -->
+      <path d="M 12 50 L 18 56 L 50 24 L 44 18 Z" fill="url(#aW-wood)"/>
+      <!-- Handle binding -->
+      <rect x="13" y="45" width="9" height="3" fill="#2a1408" transform="rotate(45 17 47)"/>
+      <rect x="14" y="48" width="9" height="2" fill="#5a3015" transform="rotate(45 18 49)"/>
+      <!-- Tip metal cap -->
+      <path d="M 44 18 L 50 24 L 54 20 L 48 14 Z" fill="#c9a84c"/>
+      <path d="M 48 14 L 54 20 L 56 18 L 50 12 Z" fill="#f0d080"/>
+      <!-- Tip glow -->
+      <circle cx="52" cy="16" r="6" fill="#f0d080" opacity="0.25"/>
+      <circle cx="52" cy="16" r="3" fill="#fff8c8" opacity="0.7"/>
+      <circle cx="52" cy="16" r="1.2" fill="#fff"/>
+      <!-- Spark -->
+      <path d="M 52 10 L 52 16 M 48 16 L 56 16 M 49 13 L 55 19 M 49 19 L 55 13"
+            stroke="#fff8c8" stroke-width="0.5" opacity="0.7" stroke-linecap="round"/>
+      <!-- Cartouche frame -->
+      <rect x="0.5" y="0.5" width="63" height="63" fill="none" stroke="#c9a84c" stroke-width="1"/>
+      <rect x="2" y="2" width="60" height="60" fill="none" stroke="rgba(201,168,76,0.4)" stroke-width="0.5"/>`,
+    amulet: `
+      <defs>
+        <radialGradient id="aA-bg" cx="50%" cy="40%" r="70%">
+          <stop offset="0%" stop-color="#4a2a1a"/>
+          <stop offset="100%" stop-color="#0a0303"/>
+        </radialGradient>
+        <radialGradient id="aA-gem" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#ff6a2a"/>
+          <stop offset="40%" stop-color="#e84020"/>
+          <stop offset="100%" stop-color="#7a1808"/>
+        </radialGradient>
+        <linearGradient id="aA-gold" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f0d080"/>
+          <stop offset="50%" stop-color="#c9a84c"/>
+          <stop offset="100%" stop-color="#7a5c1e"/>
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" fill="url(#aA-bg)"/>
+      <!-- Halo (epic) -->
+      <circle cx="32" cy="36" r="22" fill="#e84020" opacity="0.12"/>
+      <circle cx="32" cy="36" r="14" fill="#ff6a2a" opacity="0.15"/>
+      <!-- Chain -->
+      <path d="M 14 16 Q 24 22 32 24 Q 40 22 50 16" stroke="url(#aA-gold)" stroke-width="1.5" fill="none"/>
+      <circle cx="18" cy="17" r="1.2" fill="#c9a84c"/>
+      <circle cx="22" cy="20" r="1" fill="#c9a84c"/>
+      <circle cx="46" cy="17" r="1.2" fill="#c9a84c"/>
+      <circle cx="42" cy="20" r="1" fill="#c9a84c"/>
+      <!-- Pendant frame -->
+      <path d="M 32 22 L 22 36 Q 22 50 32 54 Q 42 50 42 36 Z" fill="url(#aA-gold)" stroke="#7a5c1e" stroke-width="0.8"/>
+      <!-- Inner setting -->
+      <path d="M 32 26 L 25 36 Q 25 47 32 50 Q 39 47 39 36 Z" fill="#2a1408"/>
+      <!-- Gem -->
+      <ellipse cx="32" cy="38" rx="5.5" ry="7" fill="url(#aA-gem)"/>
+      <ellipse cx="30" cy="35" rx="1.5" ry="2.5" fill="#ffb892" opacity="0.7"/>
+      <!-- Sparks -->
+      <circle cx="40" cy="32" r="0.6" fill="#ffd6a8" opacity="0.8"/>
+      <circle cx="26" cy="44" r="0.5" fill="#ffd6a8" opacity="0.6"/>
+      <!-- Cartouche frame -->
+      <rect x="0.5" y="0.5" width="63" height="63" fill="none" stroke="#c9a84c" stroke-width="1"/>
+      <rect x="2" y="2" width="60" height="60" fill="none" stroke="rgba(201,168,76,0.4)" stroke-width="0.5"/>`,
+    ring: `
+      <defs>
+        <radialGradient id="aR-bg" cx="50%" cy="40%" r="70%">
+          <stop offset="0%" stop-color="#2a1a4a"/>
+          <stop offset="100%" stop-color="#0a0510"/>
+        </radialGradient>
+        <radialGradient id="aR-gem" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="#d0a0ff"/>
+          <stop offset="50%" stop-color="#8040c0"/>
+          <stop offset="100%" stop-color="#3a0860"/>
+        </radialGradient>
+        <linearGradient id="aR-band" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#f0d080"/>
+          <stop offset="100%" stop-color="#7a5c1e"/>
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" fill="url(#aR-bg)"/>
+      <!-- Aura (rare) -->
+      <circle cx="32" cy="36" r="18" fill="#8040c0" opacity="0.10"/>
+      <!-- Shadow -->
+      <ellipse cx="32" cy="56" rx="14" ry="2" fill="rgba(0,0,0,0.5)"/>
+      <!-- Ring back (perspective) -->
+      <ellipse cx="32" cy="42" rx="14" ry="5" fill="none" stroke="url(#aR-band)" stroke-width="3"/>
+      <!-- Ring front (cuts back) -->
+      <ellipse cx="32" cy="44" rx="14" ry="5" fill="none" stroke="#5a4018" stroke-width="3"/>
+      <ellipse cx="32" cy="44" rx="14" ry="5" fill="none" stroke="url(#aR-band)" stroke-width="2"/>
+      <!-- Setting -->
+      <path d="M 27 30 L 25 38 L 32 36 L 39 38 L 37 30 Z" fill="url(#aR-band)"/>
+      <!-- Runes on band -->
+      <path d="M 20 42 L 22 44 M 24 44 L 26 42 M 40 42 L 42 44 M 44 44 L 46 42"
+            stroke="#3a2a08" stroke-width="0.5" fill="none"/>
+      <!-- Gem -->
+      <path d="M 28 22 L 36 22 L 38 30 L 32 36 L 26 30 Z" fill="url(#aR-gem)" stroke="#3a0860" stroke-width="0.5"/>
+      <!-- Gem facets -->
+      <path d="M 32 22 L 32 36 M 28 22 L 26 30 L 38 30 L 36 22" stroke="rgba(0,0,0,0.3)" stroke-width="0.3" fill="none"/>
+      <!-- Gem highlight -->
+      <path d="M 29 24 L 31 23" stroke="#ffe0ff" stroke-width="1" stroke-linecap="round"/>
+      <!-- Spark -->
+      <circle cx="42" cy="20" r="0.6" fill="#fff" opacity="0.9"/>
+      <circle cx="44" cy="22" r="0.4" fill="#fff" opacity="0.6"/>
+      <!-- Cartouche frame -->
+      <rect x="0.5" y="0.5" width="63" height="63" fill="none" stroke="#c9a84c" stroke-width="1"/>
+      <rect x="2" y="2" width="60" height="60" fill="none" stroke="rgba(201,168,76,0.4)" stroke-width="0.5"/>`,
+  }[kind];
+  return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+
+// Direction B — Médaillon émaillé
+function svgB(kind, rarity = 'common') {
+  const enamels = {
+    common:    { fill: '#3a4858', stroke: '#7a92a8' },
+    rare:      { fill: '#1f3a68', stroke: '#4a8ad0' },
+    epic:      { fill: '#3a1f5a', stroke: '#a060d0' },
+    legendary: { fill: '#4a3a08', stroke: '#c9a84c' }
+  }[rarity];
+
+  const silhouettes = {
+    potion: `
+      <!-- Potion silhouette -->
+      <rect x="29" y="20" width="6" height="3" rx="0.5" fill="#f0d080"/>
+      <path d="M 29 23 L 35 23 L 35 28 Q 42 32 42 42 Q 42 50 32 50 Q 22 50 22 42 Q 22 32 29 28 Z"
+            fill="#f0d080"/>
+      <rect x="25" y="40" width="14" height="3" fill="${enamels.fill}"/>
+    `,
+    wand: `
+      <!-- Wand silhouette -->
+      <path d="M 18 46 L 22 50 L 46 26 L 42 22 Z" fill="#f0d080"/>
+      <circle cx="44" cy="22" r="3" fill="#f0d080"/>
+      <rect x="17" y="44" width="7" height="3" fill="${enamels.fill}" transform="rotate(45 20 45)"/>
+      <circle cx="44" cy="22" r="1" fill="${enamels.fill}"/>
+    `,
+    amulet: `
+      <!-- Amulet silhouette -->
+      <path d="M 22 18 L 42 18" stroke="#f0d080" stroke-width="1.5" fill="none"/>
+      <path d="M 32 22 L 22 34 Q 22 46 32 50 Q 42 46 42 34 Z" fill="#f0d080"/>
+      <circle cx="32" cy="36" r="4" fill="${enamels.fill}"/>
+    `,
+    ring: `
+      <!-- Ring silhouette -->
+      <ellipse cx="32" cy="40" rx="12" ry="5" fill="none" stroke="#f0d080" stroke-width="3"/>
+      <path d="M 27 28 L 37 28 L 38 36 L 32 40 L 26 36 Z" fill="#f0d080"/>
+      <circle cx="32" cy="32" r="2.5" fill="${enamels.fill}"/>
+    `
+  }[kind];
+
+  return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="b-disc-${kind}" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="${enamels.fill}" stop-opacity="1"/>
+        <stop offset="100%" stop-color="#0a0705"/>
+      </radialGradient>
+      <linearGradient id="b-ring-${kind}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f0d080"/>
+        <stop offset="50%" stop-color="${enamels.stroke}"/>
+        <stop offset="100%" stop-color="#5a4018"/>
+      </linearGradient>
+    </defs>
+    <!-- Outer ring -->
+    <circle cx="32" cy="32" r="30" fill="url(#b-ring-${kind})"/>
+    <!-- Inner enamel disc -->
+    <circle cx="32" cy="32" r="26" fill="url(#b-disc-${kind})" stroke="${enamels.stroke}" stroke-width="1"/>
+    <!-- Inner sheen -->
+    <ellipse cx="32" cy="22" rx="18" ry="6" fill="rgba(255,255,255,0.08)"/>
+    <!-- Silhouette -->
+    ${silhouettes}
+    <!-- Tiny rivets at cardinal points -->
+    <circle cx="32" cy="3" r="1.2" fill="#7a5c1e"/>
+    <circle cx="32" cy="61" r="1.2" fill="#7a5c1e"/>
+    <circle cx="3" cy="32" r="1.2" fill="#7a5c1e"/>
+    <circle cx="61" cy="32" r="1.2" fill="#7a5c1e"/>
+  </svg>`;
+}
+
+// Direction C — Gravure parchemin
+function svgC(kind) {
+  const drawings = {
+    potion: `
+      <!-- Gravure potion : hachures -->
+      <line x1="0" y1="0" x2="64" y2="64" stroke="#7a5c1e" stroke-width="0.3" opacity="0.08"/>
+      <!-- Bottle outline -->
+      <path d="M 27 14 L 27 22 Q 18 28 18 40 Q 18 54 32 54 Q 46 54 46 40 Q 46 28 37 22 L 37 14 Z"
+            fill="none" stroke="#7a5c1e" stroke-width="1.5" stroke-linejoin="round"/>
+      <rect x="25" y="11" width="14" height="3" rx="0.5" fill="none" stroke="#7a5c1e" stroke-width="1.2"/>
+      <!-- Etching shadow lines on body -->
+      <path d="M 22 36 Q 22 48 32 50" stroke="#7a5c1e" stroke-width="0.5" fill="none"/>
+      <path d="M 25 36 Q 24 46 28 49" stroke="#7a5c1e" stroke-width="0.4" fill="none" opacity="0.7"/>
+      <path d="M 28 36 Q 26 44 27 47" stroke="#7a5c1e" stroke-width="0.3" fill="none" opacity="0.5"/>
+      <!-- Liquid line -->
+      <path d="M 20 38 Q 32 36 44 38" stroke="#7a5c1e" stroke-width="0.6" fill="none"/>
+      <!-- Bubble -->
+      <circle cx="28" cy="42" r="1" fill="none" stroke="#7a5c1e" stroke-width="0.4"/>
+      <circle cx="36" cy="46" r="0.7" fill="none" stroke="#7a5c1e" stroke-width="0.4"/>
+      <!-- Decorative frame -->
+      <path d="M 4 8 L 4 4 L 8 4 M 56 4 L 60 4 L 60 8 M 4 56 L 4 60 L 8 60 M 56 60 L 60 60 L 60 56"
+            stroke="#7a5c1e" stroke-width="0.7" fill="none"/>
+    `,
+    wand: `
+      <!-- Wand etching -->
+      <line x1="14" y1="50" x2="50" y2="14" stroke="#7a5c1e" stroke-width="2" stroke-linecap="round"/>
+      <line x1="14" y1="50" x2="50" y2="14" stroke="#c9a84c" stroke-width="0.6" stroke-linecap="round" opacity="0.7"/>
+      <!-- Handle binding -->
+      <line x1="14" y1="46" x2="22" y2="54" stroke="#7a5c1e" stroke-width="0.7"/>
+      <line x1="16" y1="44" x2="24" y2="52" stroke="#7a5c1e" stroke-width="0.7"/>
+      <line x1="18" y1="42" x2="26" y2="50" stroke="#7a5c1e" stroke-width="0.7"/>
+      <!-- Tip cap -->
+      <circle cx="50" cy="14" r="4" fill="none" stroke="#7a5c1e" stroke-width="1.2"/>
+      <circle cx="50" cy="14" r="1.5" fill="#7a5c1e"/>
+      <!-- Spark rays (etching style) -->
+      <line x1="50" y1="4" x2="50" y2="8" stroke="#7a5c1e" stroke-width="0.7"/>
+      <line x1="58" y1="6" x2="55" y2="9" stroke="#7a5c1e" stroke-width="0.7"/>
+      <line x1="60" y1="14" x2="56" y2="14" stroke="#7a5c1e" stroke-width="0.7"/>
+      <line x1="42" y1="6" x2="45" y2="9" stroke="#7a5c1e" stroke-width="0.7"/>
+      <!-- Frame corners -->
+      <path d="M 4 8 L 4 4 L 8 4 M 56 4 L 60 4 L 60 8 M 4 56 L 4 60 L 8 60 M 56 60 L 60 60 L 60 56"
+            stroke="#7a5c1e" stroke-width="0.7" fill="none"/>
+    `,
+    amulet: `
+      <!-- Amulet etching -->
+      <path d="M 18 14 Q 32 22 46 14" stroke="#7a5c1e" stroke-width="0.7" fill="none"/>
+      <!-- Chain stipple -->
+      <circle cx="20" cy="14" r="0.5" fill="#7a5c1e"/>
+      <circle cx="24" cy="16" r="0.5" fill="#7a5c1e"/>
+      <circle cx="28" cy="18" r="0.5" fill="#7a5c1e"/>
+      <circle cx="36" cy="18" r="0.5" fill="#7a5c1e"/>
+      <circle cx="40" cy="16" r="0.5" fill="#7a5c1e"/>
+      <circle cx="44" cy="14" r="0.5" fill="#7a5c1e"/>
+      <!-- Pendant outline -->
+      <path d="M 32 20 L 22 34 Q 22 50 32 54 Q 42 50 42 34 Z" fill="none" stroke="#7a5c1e" stroke-width="1.5"/>
+      <!-- Inner border -->
+      <path d="M 32 24 L 25 34 Q 25 47 32 50 Q 39 47 39 34 Z" fill="none" stroke="#7a5c1e" stroke-width="0.5"/>
+      <!-- Hatching shadow -->
+      <path d="M 24 38 L 27 40 M 24 41 L 27 43 M 24 44 L 27 46 M 24 47 L 27 49"
+            stroke="#7a5c1e" stroke-width="0.3"/>
+      <!-- Gem (etched lines) -->
+      <circle cx="32" cy="38" r="5" fill="#7a5c1e" opacity="0.2"/>
+      <circle cx="32" cy="38" r="5" fill="none" stroke="#7a5c1e" stroke-width="0.7"/>
+      <path d="M 30 35 L 34 35 M 28 38 L 36 38 M 30 41 L 34 41"
+            stroke="#c9a84c" stroke-width="0.4" opacity="0.8"/>
+      <!-- Frame corners -->
+      <path d="M 4 8 L 4 4 L 8 4 M 56 4 L 60 4 L 60 8 M 4 56 L 4 60 L 8 60 M 56 60 L 60 60 L 60 56"
+            stroke="#7a5c1e" stroke-width="0.7" fill="none"/>
+    `,
+    ring: `
+      <!-- Ring etching -->
+      <ellipse cx="32" cy="42" rx="13" ry="5" fill="none" stroke="#7a5c1e" stroke-width="1.5"/>
+      <ellipse cx="32" cy="42" rx="13" ry="5" fill="none" stroke="#c9a84c" stroke-width="0.4" opacity="0.7"/>
+      <!-- Inner ring shadow -->
+      <ellipse cx="32" cy="43.5" rx="12" ry="4" fill="none" stroke="#7a5c1e" stroke-width="0.4"/>
+      <!-- Setting -->
+      <path d="M 27 30 L 25 38 L 32 36 L 39 38 L 37 30 Z" fill="none" stroke="#7a5c1e" stroke-width="1"/>
+      <!-- Gem (lozenge) -->
+      <path d="M 28 22 L 36 22 L 38 30 L 32 36 L 26 30 Z" fill="#7a5c1e" opacity="0.18"/>
+      <path d="M 28 22 L 36 22 L 38 30 L 32 36 L 26 30 Z" fill="none" stroke="#7a5c1e" stroke-width="0.9"/>
+      <!-- Gem facets -->
+      <path d="M 32 22 L 32 36 M 26 30 L 38 30 M 28 22 L 38 30 M 36 22 L 26 30"
+            stroke="#7a5c1e" stroke-width="0.4" fill="none"/>
+      <!-- Sparkle -->
+      <line x1="42" y1="20" x2="42" y2="24" stroke="#c9a84c" stroke-width="0.6"/>
+      <line x1="40" y1="22" x2="44" y2="22" stroke="#c9a84c" stroke-width="0.6"/>
+      <!-- Frame corners -->
+      <path d="M 4 8 L 4 4 L 8 4 M 56 4 L 60 4 L 60 8 M 4 56 L 4 60 L 8 60 M 56 60 L 60 60 L 60 56"
+            stroke="#7a5c1e" stroke-width="0.7" fill="none"/>
+    `
+  }[kind];
+
+  return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <!-- Parchment background with subtle noise -->
+    <defs>
+      <radialGradient id="c-bg-${kind}" cx="50%" cy="40%" r="80%">
+        <stop offset="0%" stop-color="#f4e8c1"/>
+        <stop offset="80%" stop-color="#d8c290"/>
+        <stop offset="100%" stop-color="#a88e5a"/>
+      </radialGradient>
+      <pattern id="c-noise-${kind}" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+        <circle cx="1" cy="1" r="0.3" fill="#7a5c1e" opacity="0.10"/>
+        <circle cx="3" cy="3" r="0.2" fill="#7a5c1e" opacity="0.08"/>
+        <circle cx="2" cy="3.5" r="0.15" fill="#7a5c1e" opacity="0.05"/>
+      </pattern>
+    </defs>
+    <rect width="64" height="64" fill="url(#c-bg-${kind})"/>
+    <rect width="64" height="64" fill="url(#c-noise-${kind})"/>
+    ${drawings}
+  </svg>`;
+}
+
+// Demos at 72px (visual scale)
+const RARITIES = ['common','rare','epic','legendary'];
+const KINDS = [
+  { kind: 'potion', lbl: 'POTION' },
+  { kind: 'wand',   lbl: 'BAGUETTE' },
+  { kind: 'amulet', lbl: 'AMULETTE' },
+  { kind: 'ring',   lbl: 'ANNEAU' }
+];
+
+function fillDemo(rootId, fn, mapRarity = true) {
+  const root = document.getElementById(rootId);
+  KINDS.forEach((k, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'demo-cell';
+    const r = mapRarity ? RARITIES[i] : null;
+    cell.innerHTML = fn(k.kind, r) + `<div class="lbl">${k.lbl}${r ? ' · ' + r : ''}</div>`;
+    root.appendChild(cell);
+  });
+}
+
+fillDemo('demo-a', (k) => svgA(k), false);
+fillDemo('demo-b', (k, r) => svgB(k, r), true);
+fillDemo('demo-c', (k) => svgC(k), false);
+
+// Scale rows (the same SVG at 16 / 24 / 32 / 48 px)
+function fillScales(rootId, fn, kind = 'amulet') {
+  const root = document.getElementById(rootId);
+  const sizes = [16, 24, 32, 48];
+  sizes.forEach(sz => {
+    const cell = document.createElement('div');
+    cell.className = 'ssize';
+    const svg = fn(kind, 'epic');
+    // Inject width/height
+    const sized = svg.replace('<svg ', `<svg width="${sz}" height="${sz}" `);
+    cell.innerHTML = sized + `<div class="lbl">${sz} px</div>`;
+    root.appendChild(cell);
+  });
+}
+
+fillScales('demo-a-scales', (k) => svgA(k), 'amulet');
+fillScales('demo-b-scales', (k, r) => svgB(k, r), 'amulet');
+fillScales('demo-c-scales', (k) => svgC(k), 'amulet');
+</script>
+</body>
+</html>

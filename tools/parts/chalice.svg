@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : bowl (cup interior) · rim (top edge) · stem (column) · foot (base) · gem (decorative jewel) -->
+  <g fill="#000000">
+    <!-- bowl : trapezoidal cup body -->
+    <path data-region="bowl" d="M 144 96 L 368 96 L 348 264 L 164 264 Z"/>
+    <!-- rim : top edge of the cup -->
+    <path data-region="rim" d="M 144 96 L 368 96 L 372 124 L 140 124 Z"/>
+    <!-- stem : vertical column under the bowl -->
+    <path data-region="stem" d="M 232 264 L 280 264 L 280 380 L 232 380 Z"/>
+    <!-- small node in the middle of the stem -->
+    <path data-region="stem" d="M 216 308 L 296 308 L 296 332 L 216 332 Z"/>
+    <!-- foot : wide circular base -->
+    <path data-region="foot" d="M 144 380 L 368 380 L 388 432 L 124 432 Z"/>
+    <path data-region="foot" d="M 124 432 L 388 432 L 392 460 L 120 460 Z"/>
+    <!-- gem : decorative jewel on the front of the bowl -->
+    <path data-region="gem" d="M 256 180 m -28 0 a 28 28 0 1 0 56 0 a 28 28 0 1 0 -56 0"/>
+  </g>
+</svg>

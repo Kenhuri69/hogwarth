@@ -29,10 +29,23 @@ jobs:
       - name: Configurer GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Préparer le bundle Pages
+        # On ne publie que les fichiers nécessaires au jeu en runtime.
+        # Exclut : tools/ (pipeline d'icônes, captures QA), tests/,
+        # .claude/, *.md, *_PLAN.md, gen_*.py, Audit/Compare HTML, etc.
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          [ -s CNAME ] && cp CNAME _site/ || true
+          cp -r css js img _site/
+          [ -d audio ] && cp -r audio _site/ || true
+          echo "Contenu publié :"
+          du -sh _site _site/* | sort -h
+
       - name: Empaqueter les fichiers
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: ./_site
 
       - name: Déployer sur GitHub Pages
         id: deployment

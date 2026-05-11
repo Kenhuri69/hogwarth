@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Compare — ancien PNG vs pipeline painterly · Poudlard & Magie</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:wght@400;600&family=UnifrakturMaguntia&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --gold:#c9a84c; --gold-light:#f0d080; --gold-dark:#7a5c1e;
+    --paper:#1a0f05; --paper-d:#120a03; --paper-dd:#0a0705;
+    --ink:#d9c79a; --ink-soft:#a89060; --ink-mute:#6a5030;
+    --rare:#4a8ad0; --epic:#a060d0; --legend:#c9a84c;
+    --bad:#d96666; --good:#6cd96c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#08060a}
+  body{
+    font-family:'Crimson Text',Georgia,serif;color:var(--ink);line-height:1.55;
+    background:
+      radial-gradient(ellipse at 20% -10%,rgba(120,80,200,.10),transparent 60%),
+      radial-gradient(ellipse at 100% 110%,rgba(201,168,76,.07),transparent 60%),
+      #08060a;
+    min-height:100vh;
+  }
+  .page{max-width:1240px;margin:0 auto;padding:48px 36px 96px}
+
+  .hero{
+    border:1px solid var(--gold-dark);border-radius:8px;
+    background:
+      linear-gradient(180deg,rgba(40,28,12,.55) 0%,rgba(10,7,5,.85) 100%),
+      radial-gradient(ellipse at 80% 0%,rgba(201,168,76,.20),transparent 60%);
+    padding:36px 42px;margin-bottom:32px;position:relative;overflow:hidden;
+  }
+  .eyebrow{
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:5px;
+    text-transform:uppercase;color:var(--gold);margin-bottom:12px;
+  }
+  .eyebrow .dot{display:inline-block;width:6px;height:6px;background:var(--gold);
+    border-radius:50%;vertical-align:2px;margin:0 8px;box-shadow:0 0 8px var(--gold)}
+  h1{
+    font-family:'UnifrakturMaguntia',cursive;font-size:clamp(32px,4.5vw,48px);
+    color:var(--gold-light);line-height:1.05;
+    text-shadow:0 0 24px rgba(201,168,76,.4);margin-bottom:10px;font-weight:400;
+  }
+  .lede{color:var(--ink-soft);max-width:780px;font-size:15px}
+  .lede code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+    color:var(--gold-light);background:rgba(201,168,76,.08);
+    padding:1px 6px;border-radius:3px;border:1px solid rgba(201,168,76,.18);
+  }
+
+  .toolbar{
+    display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+    margin:24px 0 18px;padding:14px 18px;
+    border:1px solid var(--gold-dark);border-radius:6px;
+    background:rgba(20,12,4,.6);
+  }
+  .toolbar .label{
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;
+    text-transform:uppercase;color:var(--gold);margin-right:8px;
+  }
+  .toolbar button{
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;
+    text-transform:uppercase;
+    background:rgba(201,168,76,.08);border:1px solid var(--gold-dark);
+    color:var(--ink);padding:6px 12px;border-radius:3px;cursor:pointer;
+    transition:.15s;
+  }
+  .toolbar button:hover{background:rgba(201,168,76,.18);color:var(--gold-light)}
+  .toolbar button.active{
+    background:rgba(201,168,76,.25);border-color:var(--gold);color:var(--gold-light);
+  }
+  .toolbar .spacer{flex:1}
+
+  /* item card */
+  .item{
+    border:1px solid var(--gold-dark);border-radius:8px;
+    background:linear-gradient(180deg,rgba(28,18,8,.55),rgba(10,7,5,.85));
+    padding:20px 24px;margin-bottom:20px;
+  }
+  .item-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    border-bottom:1px solid rgba(201,168,76,.15);padding-bottom:10px;margin-bottom:18px;
+  }
+  .item-id{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;
+    color:var(--ink-mute);letter-spacing:1px;
+  }
+  .item-name{font-family:'Cinzel',serif;font-size:16px;color:var(--gold-light);letter-spacing:2px}
+  .pill{
+    display:inline-block;font-family:'Cinzel',serif;font-size:9.5px;
+    letter-spacing:2px;text-transform:uppercase;padding:2px 8px;border-radius:3px;
+    border:1px solid currentColor;margin-left:10px;
+  }
+  .pill.common   {color:#bbb}
+  .pill.rare     {color:var(--rare)}
+  .pill.epic     {color:var(--epic)}
+  .pill.legendary{color:var(--legend);text-shadow:0 0 6px rgba(240,208,128,.45)}
+
+  .grid{
+    display:grid;
+    grid-template-columns:140px repeat(5,minmax(0,1fr));
+    gap:14px;align-items:center;
+  }
+  .row-label{
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;
+    text-transform:uppercase;color:var(--gold);text-align:right;padding-right:4px;
+  }
+  .row-label .sub{display:block;color:var(--ink-mute);font-size:9.5px;
+    letter-spacing:1.5px;margin-top:3px}
+
+  .cell{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:10px 6px;border:1px dashed rgba(201,168,76,.18);border-radius:4px;
+    background:rgba(10,7,5,.5);
+  }
+  .cell .sz{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;
+    color:var(--ink-mute);
+  }
+  .cell .stage{
+    display:flex;align-items:center;justify-content:center;
+    width:80px;height:80px;
+  }
+  .cell img{
+    display:block;image-rendering:auto;
+    /* upscale visual at small sizes so 16/24/32 stay inspectable */
+  }
+  .cell img.crisp{image-rendering:pixelated}
+
+  .missing{
+    width:100%;height:100%;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;
+    color:var(--ink-mute);font-size:9.5px;letter-spacing:1.5px;
+    font-family:'Cinzel',serif;text-transform:uppercase;
+    border:1px solid rgba(217,102,102,.4);background:rgba(80,30,30,.18);
+    border-radius:4px;padding:6px;
+  }
+  .missing .glyph{font-size:18px;margin-bottom:4px;color:var(--bad)}
+
+  .verdict{
+    margin-top:16px;padding:10px 14px;border-radius:4px;
+    font-size:13px;color:var(--ink-soft);
+    border:1px solid rgba(201,168,76,.18);background:rgba(201,168,76,.05);
+  }
+  .verdict b{color:var(--gold-light)}
+
+  /* run-instructions block when nothing rendered yet */
+  .run-block{
+    border:1px dashed var(--gold-dark);border-radius:6px;
+    padding:18px 22px;margin:18px 0;background:rgba(20,12,4,.5);
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:13px;color:var(--ink-soft);line-height:1.7;
+  }
+  .run-block .cmt{color:var(--ink-mute)}
+  .run-block .cmd{color:var(--gold-light)}
+
+  footer{margin-top:48px;text-align:center;color:var(--ink-mute);font-size:12px;
+    letter-spacing:2px;font-family:'Cinzel',serif;text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <section class="hero">
+    <div class="eyebrow">Pipeline icônes <span class="dot"></span> J1 livraison <span class="dot"></span> 5 items test</div>
+    <h1>Comparaison — ancien vs painterly</h1>
+    <p class="lede">
+      Ancien <code>img/icons/items/*.png</code> vs nouveau rendu Python
+      (<code>tools/icon_factory.py</code>) sorti dans <code>img/icons_new/</code>.
+      Direction A validée : tableau peint MTG, cartouche dorée, 7 passes
+      (AO · shading 45° · rim-light · specular · grain · halo rareté · cadre).
+      Affichage @ 16 / 24 / 32 / 48 / 64 px (mipmaps LANCZOS depuis 512 px).
+    </p>
+  </section>
+
+  <div class="run-block">
+    <div class="cmt"># Lancer le rendu (depuis la racine du repo) :</div>
+    <div class="cmd">pip install pillow cairosvg numpy scipy</div>
+    <div class="cmd">python tools/icon_factory.py --all</div>
+    <div class="cmt"># puis recharge cette page. Les images manquantes affichent « à générer ».</div>
+  </div>
+
+  <div class="toolbar">
+    <span class="label">Affichage</span>
+    <button data-render="auto" class="active">Anti-alias</button>
+    <button data-render="crisp">Pixel-perfect</button>
+    <span class="spacer"></span>
+    <span class="label">Légende</span>
+    <span style="font-size:12px;color:var(--ink-mute)">les cellules à bord rouge = PNG non généré</span>
+  </div>
+
+  <div id="items"></div>
+
+  <footer>Poudlard &amp; Magie — Pipeline icônes · Jour 1</footer>
+</div>
+
+<script>
+/* ── test set : les 5 items validés pour le J1 ─────────────────────────── */
+const ITEMS = [
+  { id:"potion_s", name:'Potion de Soin', rarity:"common", note:'flask.svg · stopper, body' },
+  { id:"felix", name:'Félix Felicis', rarity:"legendary", note:'flask.svg · stopper, body' },
+  { id:"wand2", name:'Baguette de Sureau', rarity:"rare", note:'wizard-staff.svg · shaft, grip, pommel, orb' },
+  { id:"anneau_runique", name:'Anneau Runique', rarity:"rare", note:'shape:ring_band · metal, gem' },
+  { id:"livre_sortileges", name:'Sortilèges Standards, Vol.3', rarity:"common", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"potion_m", name:'Potion Magique', rarity:"common", note:'flask.svg · stopper, body' },
+  { id:"potion_force", name:'Potion de Force', rarity:"common", note:'flask.svg · stopper, body' },
+  { id:"larmes_phenix", name:'Larmes de Phénix', rarity:"legendary", note:'flask.svg · stopper, body' },
+  { id:"wand1", name:'Baguette de Saule', rarity:"common", note:'wizard-staff.svg · shaft, grip, pommel, orb' },
+  { id:"livre_soin", name:'Potions & Remèdes Magiques', rarity:"common", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"book_monsters", name:'Livre des Monstres', rarity:"common", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"livre_prince", name:'Manuel du Demi-Sang', rarity:"epic", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"livre_bombarda", name:'Traité de Magie Explosive', rarity:"rare", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"livre_patronum", name:'Guide du Patronus', rarity:"rare", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"livre_sanguini", name:'Traité du Sang Vivant', rarity:"rare", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"livre_vampyrus", name:'Codex des Strigoï', rarity:"epic", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"livre_taranta", name:'Pas de la Sorcière Maudite', rarity:"common", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"livre_maledictus", name:'Grimoire des Maudits', rarity:"rare", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"livre_crucio", name:'Sortilèges Impardonnables, T.II', rarity:"epic", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"livre_morsmordre", name:'Marque des Ténèbres', rarity:"epic", note:'book-cover.svg · cover, pages, spine, gilt' },
+  { id:"amulette", name:'Amulette du Phénix', rarity:"rare", note:'gem-pendant.svg · chain, bezel, gem' },
+  { id:"amulette_protection", name:'Amulette de Protection', rarity:"common", note:'gem-pendant.svg · chain, bezel, gem' },
+  { id:"locket_slytherin", name:'Médaillon de Serpentard', rarity:"legendary", note:'gem-pendant.svg · chain, bezel, gem' },
+  { id:"robe1", name:'Robe Renforcée', rarity:"common", note:'hood.svg · cloth, lining, clasp' },
+  { id:"cape_voyageur", name:'Cape du Voyageur', rarity:"common", note:'hood.svg · cloth, lining, clasp' },
+  { id:"cape_invis", name:"Cape d'Invisibilité", rarity:"legendary", note:'hood.svg · cloth, lining, clasp' },
+  { id:"anneau_argent", name:"Anneau d'Argent", rarity:"common", note:'shape:ring_band · metal' },
+  { id:"anneau_resurrection", name:'Pierre de Résurrection', rarity:"epic", note:'shape:ring_band · metal, gem' },
+  { id:"sword_gryff", name:'Épée de Gryffondor', rarity:"legendary", note:'sword.svg · blade, guard, hilt, pommel' },
+  { id:"broom", name:'Balai Nimbus 2000', rarity:"rare", note:'broom.svg · handle, binding, bristles, tip' },
+  { id:"bottes_apprenti", name:"Bottes d'Apprenti", rarity:"common", note:'boot.svg · shaft, foot, sole, lace' },
+  { id:"bottes_dragon", name:'Bottes en Peau de Dragon', rarity:"rare", note:'boot.svg · shaft, foot, sole, lace' },
+  { id:"gants_apprenti", name:"Gants d'Apprenti", rarity:"common", note:'glove.svg · cuff, palm, fingers, stitch' },
+  { id:"ceinture_cuir", name:'Ceinture de Cuir', rarity:"common", note:'belt.svg · strap, buckle, holes, tongue' },
+  { id:"ceinture_alchimiste", name:"Ceinture d'Alchimiste", rarity:"rare", note:'belt.svg · strap, buckle, holes, tongue' },
+  { id:"chapeau_apprenti", name:"Chapeau d'Apprenti", rarity:"common", note:'hat-pointy.svg · cone, brim, band, buckle' },
+  { id:"chapeau_pointu", name:'Chapeau de Serdaigle', rarity:"rare", note:'hat-pointy.svg · cone, brim, band, buckle' },
+  { id:"circlet_serdaigle", name:'Bandeau de Serdaigle', rarity:"common", note:'tiara.svg · band, points, gem, side' },
+  { id:"diademe_serdaigle", name:'Diadème de Serdaigle', rarity:"legendary", note:'tiara.svg · band, points, gem, side' },
+  { id:"coupe_poufsouffle", name:'Coupe de Poufsouffle', rarity:"legendary", note:'chalice.svg · bowl, rim, stem, foot, gem' },
+  { id:"retourneur_temps", name:'Retourneur de Temps', rarity:"legendary", note:'hourglass.svg · frame, glass, sand_top, sand_bot' },
+  { id:"mandragore", name:'Racine de Mandragore', rarity:"common", note:'mandragore.svg · leaves, root, face, tendrils' },
+  { id:"choco_sorcier", name:'Chocolat aux Sorciers', rarity:"common", note:'choco-bar.svg · wrapper, bar, cube, accent' }
+];
+
+const SIZES = [16, 24, 32, 48, 64];
+
+const OLD_DIR = "img/icons/items";
+const NEW_DIR = "img/icons_new";
+
+const root = document.getElementById("items");
+
+for (const it of ITEMS) {
+  const card = document.createElement("article");
+  card.className = "item";
+  card.innerHTML = `
+    <header class="item-head">
+      <div>
+        <span class="item-name">${it.name}</span>
+        <span class="pill ${it.rarity}">${it.rarity}</span>
+      </div>
+      <div class="item-id">${it.id}</div>
+    </header>
+    <div class="grid">
+      <div class="row-label">Ancien<span class="sub">img/icons/items</span></div>
+      ${SIZES.map(s => cellHtml(`${OLD_DIR}/${it.id}.png`, s, "old")).join("")}
+
+      <div class="row-label">Nouveau<span class="sub">img/icons_new</span></div>
+      ${SIZES.map(s => cellHtml(`${NEW_DIR}/${it.id}_${s}.png`, s, "new", it.id)).join("")}
+    </div>
+    <div class="verdict"><b>${it.id}</b> — ${it.note}</div>
+  `;
+  root.appendChild(card);
+}
+
+function cellHtml(src, size, kind, id){
+  // Render the missing-placeholder up front; probe via fetch(HEAD) and only
+  // swap to <img> if the file actually exists. Avoids noisy 404 resource
+  // errors when the Python pipeline hasn't been run yet.
+  return `
+    <div class="cell" data-size="${size}">
+      <div class="stage" data-src="${src}" data-size="${size}" data-kind="${kind}">
+        <div class="missing" style="width:72px;height:72px">
+          <span class="glyph">×</span><span>${kind==='new'?'à générer':'absent'}</span>
+        </div>
+      </div>
+      <span class="sz">${size}px</span>
+    </div>`;
+}
+
+async function hydrate(){
+  const stages = document.querySelectorAll('.stage[data-src]');
+  await Promise.all([...stages].map(async stage => {
+    const src = stage.dataset.src;
+    try {
+      const r = await fetch(src, { method:'HEAD', cache:'no-store' });
+      if (!r.ok) return;
+      const size = +stage.dataset.size;
+      const img = new Image(size, size);
+      img.src = src;
+      img.alt = '';
+      stage.innerHTML = '';
+      stage.appendChild(img);
+    } catch (_) { /* keep missing placeholder */ }
+  }));
+}
+hydrate();
+
+/* render mode toggle */
+document.querySelectorAll('.toolbar button[data-render]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toolbar button[data-render]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const crisp = btn.dataset.render === 'crisp';
+    document.querySelectorAll('.cell img').forEach(img => {
+      img.classList.toggle('crisp', crisp);
+    });
+  });
+});
+</script>
+
+</body>
+</html>

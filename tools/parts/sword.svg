@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : blade (steel) · guard (crossguard) · hilt (grip) · pommel (cap) -->
+  <g fill="#000000">
+    <!-- blade : long pointed silhouette, point at top -->
+    <path data-region="blade" d="M 256 32 L 280 80 L 280 296 L 232 296 L 232 80 Z"/>
+    <!-- guard : crossguard horizontal bar -->
+    <path data-region="guard" d="M 168 296 L 344 296 L 344 320 L 168 320 Z"/>
+    <path data-region="guard" d="M 176 320 L 336 320 L 332 332 L 180 332 Z"/>
+    <!-- hilt : wrapped grip -->
+    <path data-region="hilt" d="M 236 332 L 276 332 L 276 432 L 236 432 Z"/>
+    <!-- pommel : round cap at the bottom -->
+    <path data-region="pommel" d="M 256 456 m -28 0 a 28 28 0 1 0 56 0 a 28 28 0 1 0 -56 0"/>
+  </g>
+</svg>

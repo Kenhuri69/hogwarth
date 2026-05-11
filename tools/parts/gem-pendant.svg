@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  
+  <g fill="#000000">
+    
+    <path data-region="chain" d="&#xA;      M 256 90&#xA;      C 226 90 204 112 204 142&#xA;      C 204 168 222 188 246 192&#xA;      L 246 218 L 266 218 L 266 192&#xA;      C 290 188 308 168 308 142&#xA;      C 308 112 286 90 256 90 Z&#xA;      M 256 118&#xA;      C 270 118 280 128 280 142&#xA;      C 280 156 270 166 256 166&#xA;      C 242 166 232 156 232 142&#xA;      C 232 128 242 118 256 118 Z"></path>
+    
+    <path data-region="setting" d="M 226 210 L 286 210 L 296 240 L 216 240 Z"></path>
+    
+    <path data-region="gem" d="&#xA;      M 256 240&#xA;      L 366 360&#xA;      L 256 478&#xA;      L 146 360&#xA;      Z"></path>
+    
+    <path data-region="gem_facet" d="&#xA;      M 256 240 L 256 478&#xA;      M 146 360 L 366 360&#xA;      M 200 300 L 312 300&#xA;      M 200 420 L 312 420" stroke="#000" stroke-width="3" fill="none" opacity="0"></path>
+  </g>
+</svg>

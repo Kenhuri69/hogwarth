@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  
+  <g fill="#000000">
+    
+    <path data-region="stopper" d="M 210 96 L 302 96 L 302 132 C 302 142 294 150 284 150 L 228 150 C 218 150 210 142 210 132 Z"></path>
+    <path data-region="stopper" d="M 218 150 L 294 150 L 294 178 L 218 178 Z"></path>
+    
+    <path data-region="body" d="M 226 178 L 286 178 L 286 296 L 226 296 Z"></path>
+    
+    <path data-region="stopper" d="M 214 178 L 298 178 L 298 196 L 214 196 Z"></path>
+    
+    <path data-region="body" d="&#xA;      M 226 280&#xA;      C 168 296 110 348 110 408&#xA;      C 110 466 162 510 230 510&#xA;      L 282 510&#xA;      C 350 510 402 466 402 408&#xA;      C 402 348 344 296 286 280&#xA;      Z"></path>
+  </g>
+</svg>

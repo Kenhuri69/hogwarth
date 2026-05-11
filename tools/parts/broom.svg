@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : handle (wood stick) · binding (cord wrap) · bristles (straw) · tip (decorative end) -->
+  <g fill="#000000">
+    <!-- handle : long diagonal stick from upper-left to mid-right -->
+    <path data-region="handle" d="M 56 96 L 96 80 L 312 320 L 280 348 Z"/>
+    <!-- tip : small ornamental knob at top-left end -->
+    <path data-region="tip" d="M 56 96 m -16 -8 a 18 18 0 1 0 36 0 a 18 18 0 1 0 -36 0"/>
+    <!-- binding : cord wrap where bristles join handle -->
+    <path data-region="binding" d="M 280 304 L 320 268 L 360 304 L 340 340 Z"/>
+    <!-- bristles : fan of straw spreading downward -->
+    <path data-region="bristles" d="M 296 332 L 432 432 L 416 472 L 376 484 L 312 444 L 264 396 Z"/>
+    <path data-region="bristles" d="M 308 344 L 360 408 L 332 452 L 280 412 Z"/>
+  </g>
+</svg>
