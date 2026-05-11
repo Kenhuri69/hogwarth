@@ -209,7 +209,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#3a588a", pages:"#e4d2a8", spine:"#263c62", gilt:"#c9a84c" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#1e2e4c" }
+      { kind:"emboss", region:"cover", color:"#1e2e4c" },
+      { kind:"symbol", region:"cover", shape:"star", color:"#d8bc6c", size:130 }
     ],
     rarity:"common", material:"leather"
   },
@@ -257,7 +258,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#38704e", pages:"#e4d2a8", spine:"#204830", gilt:"#c9a84c" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#163424" }
+      { kind:"emboss", region:"cover", color:"#163424" },
+      { kind:"symbol", region:"cover", shape:"cross", color:"#d8bc6c", size:120 }
     ],
     rarity:"common", material:"leather"
   },
@@ -266,7 +268,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#6c482c", pages:"#d0b894", spine:"#48301c", gilt:"#b07c38" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#382414" }
+      { kind:"emboss", region:"cover", color:"#382414" },
+      { kind:"symbol", region:"cover", shape:"fang", color:"#e0d0ac", size:130 }
     ],
     rarity:"common", material:"leather"
   },
@@ -275,7 +278,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#20202c", pages:"#d0bc9c", spine:"#12121c", gilt:"#c09c48" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#0e0e14" }
+      { kind:"emboss", region:"cover", color:"#0e0e14" },
+      { kind:"symbol", region:"cover", shape:"moon", color:"#dcc484", size:130 }
     ],
     rarity:"epic", material:"leather"
   },
@@ -284,7 +288,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#983c28", pages:"#e4d2a8", spine:"#682418", gilt:"#dcb048" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#4c1810" }
+      { kind:"emboss", region:"cover", color:"#4c1810" },
+      { kind:"symbol", region:"cover", shape:"flame", color:"#f0c86c", size:130 }
     ],
     rarity:"rare", material:"leather"
   },
@@ -293,7 +298,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#dcdce8", pages:"#f0e0b8", spine:"#acb0c0", gilt:"#c9a84c" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#989cac" }
+      { kind:"emboss", region:"cover", color:"#989cac" },
+      { kind:"symbol", region:"cover", shape:"deer", color:"#b4bcd0", size:130 }
     ],
     rarity:"rare", material:"leather"
   },
@@ -302,7 +308,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#78141c", pages:"#d0bc98", spine:"#500c12", gilt:"#b48430" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#3c080c" }
+      { kind:"emboss", region:"cover", color:"#3c080c" },
+      { kind:"symbol", region:"cover", shape:"drop", color:"#e0a858", size:120 }
     ],
     rarity:"rare", material:"leather"
   },
@@ -311,7 +318,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#24182c", pages:"#c8b494", spine:"#160e1e", gilt:"#b498c4" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#100a16" }
+      { kind:"emboss", region:"cover", color:"#100a16" },
+      { kind:"symbol", region:"cover", shape:"bat", color:"#d8bce0", size:140 }
     ],
     rarity:"epic", material:"leather"
   },
@@ -320,7 +328,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#64387c", pages:"#e4d2a8", spine:"#402054", gilt:"#c09c48" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#2c143c" }
+      { kind:"emboss", region:"cover", color:"#2c143c" },
+      { kind:"symbol", region:"cover", shape:"snake", color:"#d8bc6c", size:140 }
     ],
     rarity:"common", material:"leather"
   },
@@ -329,7 +338,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#381c4c", pages:"#d0bc98", spine:"#201034", gilt:"#a480c4" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#180c28" }
+      { kind:"emboss", region:"cover", color:"#180c28" },
+      { kind:"symbol", region:"cover", shape:"eye", color:"#d0ace0", size:130 }
     ],
     rarity:"rare", material:"leather"
   },
@@ -338,7 +348,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#1a1414", pages:"#c8b494", spine:"#0e0a0a", gilt:"#b4302c" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#0a0606" }
+      { kind:"emboss", region:"cover", color:"#0a0606" },
+      { kind:"symbol", region:"cover", shape:"lightning", color:"#e05848", size:130 }
     ],
     rarity:"epic", material:"leather"
   },
@@ -347,7 +358,8 @@ const ICON_RECIPES = {
     silhouette: { kind:"svg", file:"book-cover.svg" },
     fills: { cover:"#141418", pages:"#c8b494", spine:"#0a0a0e", gilt:"#50bc78" },
     accents: [
-      { kind:"emboss", region:"cover", color:"#08080c" }
+      { kind:"emboss", region:"cover", color:"#08080c" },
+      { kind:"symbol", region:"cover", shape:"skull", color:"#8ce0a8", size:130 }
     ],
     rarity:"epic", material:"leather"
   },
@@ -409,10 +421,12 @@ const ICON_RECIPES = {
   },
 
   anneau_argent: {
-    silhouette: { kind:"shape", name:"ring_band", params:{ radius:175, thickness:30, bezel:false, gem:false } },
-    fills: { metal:"#c4c8d4" },
+    silhouette: { kind:"shape", name:"ring_band", params:{ radius:165, thickness:48, bezel:true, gem:true } },
+    fills: { metal:"#c4c8d4", gem:"#9498a8" },
     accents: [
-      { kind:"runes", region:"metal", color:"#848898", count:4, around:"ring" }
+      { kind:"runes", region:"metal", color:"#6c7080", count:8, around:"ring" },
+      { kind:"gem_facet_shine", region:"gem", color:"#e8ecf8" },
+      { kind:"emboss", region:"metal", color:"#606474" }
     ],
     rarity:"common", material:"metal"
   },

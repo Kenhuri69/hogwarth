@@ -162,8 +162,9 @@ RECIPES: Dict[str, Recipe] = {
             "gilt":   (201, 168,  76),
         },
         accents=[
-            {"kind": "emboss", "region": "cover",
-             "color": ( 30,  46,  76)},
+            {"kind": "emboss", "region": "cover", "color": ( 30,  46,  76)},
+            {"kind": "symbol", "region": "cover", "shape": "star",
+             "color": (216, 188, 108), "size": 130},
         ],
     ),
 
@@ -223,77 +224,121 @@ RECIPES: Dict[str, Recipe] = {
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": ( 56, 112,  78), "pages": (228, 210, 168),
                "spine": ( 32,  72,  48), "gilt":  (201, 168,  76)},
-        accents=[{"kind": "emboss", "region": "cover", "color": ( 22,  52,  36)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 22,  52,  36)},
+            {"kind": "symbol", "region": "cover", "shape": "cross",
+             "color": (216, 188, 108), "size": 120},
+        ],
     ),
     "book_monsters": Recipe(
         id="book_monsters", name="Livre des Monstres", rarity="common", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": (108,  72,  44), "pages": (208, 184, 148),
                "spine": ( 72,  48,  28), "gilt":  (176, 124,  56)},
-        accents=[{"kind": "emboss", "region": "cover", "color": ( 56,  36,  20)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 56,  36,  20)},
+            {"kind": "symbol", "region": "cover", "shape": "fang",
+             "color": (224, 208, 172), "size": 130},
+        ],
     ),
     "livre_prince": Recipe(
         id="livre_prince", name="Manuel du Demi-Sang", rarity="epic", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": ( 32,  32,  44), "pages": (208, 188, 156),
                "spine": ( 18,  18,  28), "gilt":  (192, 156,  72)},
-        accents=[{"kind": "emboss", "region": "cover", "color": ( 14,  14,  20)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 14,  14,  20)},
+            {"kind": "symbol", "region": "cover", "shape": "moon",
+             "color": (220, 196, 132), "size": 130},
+        ],
     ),
     "livre_bombarda": Recipe(
         id="livre_bombarda", name="Traité de Magie Explosive", rarity="rare", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": (152,  60,  40), "pages": (228, 210, 168),
                "spine": (104,  36,  24), "gilt":  (220, 176,  72)},
-        accents=[{"kind": "emboss", "region": "cover", "color": ( 76,  24,  16)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 76,  24,  16)},
+            {"kind": "symbol", "region": "cover", "shape": "flame",
+             "color": (240, 200, 108), "size": 130},
+        ],
     ),
     "livre_patronum": Recipe(
         id="livre_patronum", name="Guide du Patronus", rarity="rare", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": (220, 220, 232), "pages": (240, 224, 184),
                "spine": (172, 176, 192), "gilt":  (201, 168,  76)},
-        accents=[{"kind": "emboss", "region": "cover", "color": (152, 156, 172)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": (152, 156, 172)},
+            {"kind": "symbol", "region": "cover", "shape": "deer",
+             "color": (180, 188, 208), "size": 130},
+        ],
     ),
     "livre_sanguini": Recipe(
         id="livre_sanguini", name="Traité du Sang Vivant", rarity="rare", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": (120,  20,  28), "pages": (208, 188, 152),
                "spine": ( 80,  12,  18), "gilt":  (180, 132,  48)},
-        accents=[{"kind": "emboss", "region": "cover", "color": ( 60,   8,  12)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 60,   8,  12)},
+            {"kind": "symbol", "region": "cover", "shape": "drop",
+             "color": (224, 168,  88), "size": 120},
+        ],
     ),
     "livre_vampyrus": Recipe(
         id="livre_vampyrus", name="Codex des Strigoï", rarity="epic", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": ( 36,  24,  44), "pages": (200, 180, 148),
                "spine": ( 22,  14,  30), "gilt":  (180, 152, 196)},
-        accents=[{"kind": "emboss", "region": "cover", "color": ( 16,  10,  22)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 16,  10,  22)},
+            {"kind": "symbol", "region": "cover", "shape": "bat",
+             "color": (216, 188, 224), "size": 140},
+        ],
     ),
     "livre_taranta": Recipe(
         id="livre_taranta", name="Pas de la Sorcière Maudite", rarity="common", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": (100,  56, 124), "pages": (228, 210, 168),
                "spine": ( 64,  32,  84), "gilt":  (192, 156,  72)},
-        accents=[{"kind": "emboss", "region": "cover", "color": ( 44,  20,  60)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 44,  20,  60)},
+            {"kind": "symbol", "region": "cover", "shape": "snake",
+             "color": (216, 188, 108), "size": 140},
+        ],
     ),
     "livre_maledictus": Recipe(
         id="livre_maledictus", name="Grimoire des Maudits", rarity="rare", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": ( 56,  28,  76), "pages": (208, 188, 152),
                "spine": ( 32,  16,  52), "gilt":  (164, 128, 196)},
-        accents=[{"kind": "emboss", "region": "cover", "color": ( 24,  12,  40)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 24,  12,  40)},
+            {"kind": "symbol", "region": "cover", "shape": "eye",
+             "color": (208, 172, 224), "size": 130},
+        ],
     ),
     "livre_crucio": Recipe(
         id="livre_crucio", name="Sortilèges Impardonnables, T.II", rarity="epic", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": ( 26,  20,  20), "pages": (200, 180, 148),
                "spine": ( 14,  10,  10), "gilt":  (180,  48,  44)},
-        accents=[{"kind": "emboss", "region": "cover", "color": ( 10,   6,   6)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 10,   6,   6)},
+            {"kind": "symbol", "region": "cover", "shape": "lightning",
+             "color": (224,  88,  72), "size": 130},
+        ],
     ),
     "livre_morsmordre": Recipe(
         id="livre_morsmordre", name="Marque des Ténèbres", rarity="epic", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
         fills={"cover": ( 20,  20,  24), "pages": (200, 180, 148),
                "spine": ( 10,  10,  14), "gilt":  ( 80, 188, 120)},
-        accents=[{"kind": "emboss", "region": "cover", "color": (  8,   8,  12)}],
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": (  8,   8,  12)},
+            {"kind": "symbol", "region": "cover", "shape": "skull",
+             "color": (140, 224, 168), "size": 130},
+        ],
     ),
 
     # Amulets / pendants
@@ -358,11 +403,14 @@ RECIPES: Dict[str, Recipe] = {
     "anneau_argent": Recipe(
         id="anneau_argent", name="Anneau d'Argent", rarity="common", material="metal",
         silhouette={"kind": "shape", "name": "ring_band",
-                    "params": {"radius": 175, "thickness": 30, "bezel": False, "gem": False}},
-        fills={"metal": (196, 200, 212)},
+                    "params": {"radius": 165, "thickness": 48,
+                               "bezel": True, "gem": True}},
+        fills={"metal": (196, 200, 212), "gem": (148, 152, 168)},
         accents=[
-            {"kind": "runes", "region": "metal", "color": (132, 136, 152),
-             "count": 4, "around": "ring"},
+            {"kind": "runes", "region": "metal", "color": (108, 112, 128),
+             "count": 8, "around": "ring"},
+            {"kind": "gem_facet_shine", "region": "gem", "color": (232, 236, 248)},
+            {"kind": "emboss", "region": "metal", "color": ( 96, 100, 116)},
         ],
     ),
     "anneau_resurrection": Recipe(
@@ -687,7 +735,62 @@ def _apply_accents(rgb: np.ndarray, alpha: np.ndarray,
             inner = ndimage.binary_erosion((mask > 0.5), iterations=18).astype(np.float32)
             band = (mask - inner) * mask
             rgb = rgb * (1 - band[..., None] * 0.35)
+        elif kind == "symbol":
+            # Render a small named glyph centered on the region. Used mainly
+            # to distinguish books that otherwise share the same silhouette.
+            ys, xs = np.where(mask > 0.5)
+            if len(ys) == 0:
+                continue
+            cy, cx = int(ys.mean()), int(xs.mean())
+            size_px = int(acc.get("size", 110))   # ~22% of 512 frame
+            shape_name = acc.get("shape", "star")
+            sym = _render_symbol(shape_name, size_px)
+            if sym is None:
+                continue
+            sh, sw = sym.shape
+            y0 = max(0, cy - sh // 2); y1 = min(h, y0 + sh)
+            x0 = max(0, cx - sw // 2); x1 = min(w, x0 + sw)
+            sy0 = y0 - (cy - sh // 2); sx0 = x0 - (cx - sw // 2)
+            patch_mask = sym[sy0:sy0 + (y1 - y0), sx0:sx0 + (x1 - x0)] * mask[y0:y1, x0:x1]
+            strength = acc.get("strength", 0.85)
+            rgb[y0:y1, x0:x1] = (
+                rgb[y0:y1, x0:x1] * (1 - patch_mask[..., None] * strength)
+                + color * (patch_mask[..., None] * strength)
+            )
     return rgb
+
+
+# ── small symbol library for cover/region glyphs ───────────────────────────
+
+_SYMBOL_PATHS = {
+    "star":      'M 50 8 L 60 40 L 92 40 L 66 60 L 76 92 L 50 72 L 24 92 L 34 60 L 8 40 L 40 40 Z',
+    "moon":      'M 70 18 A 38 38 0 1 0 70 82 A 30 30 0 1 1 70 18 Z',
+    "flame":     'M 50 8 C 56 30 78 32 70 56 C 84 56 80 78 64 86 C 70 70 56 70 60 84 C 44 84 32 72 36 56 C 20 56 38 30 50 8 Z',
+    "drop":      'M 50 8 C 32 36 22 52 22 64 C 22 80 34 92 50 92 C 66 92 78 80 78 64 C 78 52 68 36 50 8 Z',
+    "lightning": 'M 56 4 L 22 52 L 44 52 L 32 96 L 78 40 L 54 40 L 64 4 Z',
+    "skull":     'M 30 14 A 22 22 0 0 1 70 14 L 74 52 L 64 56 L 64 70 L 58 70 L 58 60 L 42 60 L 42 70 L 36 70 L 36 56 L 26 52 Z M 36 32 a 6 6 0 1 0 12 0 a 6 6 0 1 0 -12 0 M 52 32 a 6 6 0 1 0 12 0 a 6 6 0 1 0 -12 0',
+    "eye":       'M 6 50 C 26 22 74 22 94 50 C 74 78 26 78 6 50 Z M 38 50 a 12 12 0 1 0 24 0 a 12 12 0 1 0 -24 0',
+    "bat":       'M 50 50 L 8 30 L 14 56 L 26 50 L 22 70 L 50 60 L 78 70 L 74 50 L 86 56 L 92 30 Z',
+    "fang":      'M 24 8 L 40 8 L 32 80 Z M 60 8 L 76 8 L 68 80 Z',
+    "cross":     'M 42 8 L 58 8 L 58 42 L 92 42 L 92 58 L 58 58 L 58 92 L 42 92 L 42 58 L 8 58 L 8 42 L 42 42 Z',
+    "leaf":      'M 50 8 C 76 24 80 60 50 92 C 20 60 24 24 50 8 Z M 48 24 L 52 24 L 52 84 L 48 84 Z',
+    "snake":     'M 12 30 C 36 18 64 50 88 38 C 64 50 36 82 12 70 C 36 60 64 60 88 70 Z',
+    "deer":      'M 36 6 L 30 28 L 22 22 L 28 38 L 16 36 L 28 48 L 50 56 L 72 48 L 84 36 L 72 38 L 78 22 L 70 28 L 64 6 L 56 26 L 50 18 L 44 26 Z',
+    "wand":      'M 12 88 L 76 24 L 88 36 L 24 100 Z M 76 16 L 80 4 L 86 12 L 98 12 L 90 20 L 98 28 L 86 28 L 84 38 Z',
+}
+
+
+def _render_symbol(name: str, size_px: int):
+    """Rasterize a named glyph to a (size_px, size_px) alpha array in [0,1]."""
+    path_d = _SYMBOL_PATHS.get(name)
+    if path_d is None:
+        return None
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+        f'<path fill="#000" fill-rule="evenodd" d="{path_d}"/></svg>'
+    )
+    img = _rasterize(svg, size_px)
+    return np.asarray(img, dtype=np.float32)[..., 3] / 255.0
 
 
 # ── PASS 1 — Ambient Occlusion ─────────────────────────────────────────────
