@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mockup — Personnage v2.1</title>
+<!--
+  Mockup v2.1 — Corrections A1→A12 (cf. .claude/plans/character-ux-v2.md
+  §Annexe).
+    A1 : buste conservé, paper doll élargi en hauteur, slots resserrés
+    A2 : stats avec PNG du jeu (img/icons/hp.png, mp.png, atk.png…)
+    A3 : slot vide = emoji distinctif par type (👑🧥💍🪄…)
+    A4 : cadres or ornementés via SVG inline (volutes baroques)
+    A5 : inventaire 16 slots conforme MAX_INVENTORY du jeu
+    A6 : 2 colonnes (Stats + Paper doll élargi), Sortilèges en pied
+    A7 : bandeau Or intégré DANS le paper doll
+    A8 : titre Cinzel orné centré
+    A9 : texture parchemin subtile sur panneau central
+    A10: mobile, perso remonté pour ne pas effacer slot belt
+    A11: tooltip avec position JS sécurisée
+    A12: bonus stat "+4" en vert vif gras
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+:root {
+  --gold:        #c9a84c;
+  --gold-light:  #f0d080;
+  --gold-dark:   #7a5c1e;
+  --parchment:   #f4e8c1;
+  --parchment-dk:#e8d5a0;
+  --bonus:       #6cd96c;          /* A12 : vert vif lisible sur fond sombre */
+  --slot-bg:     #0a0705;          /* A3 : fond noir uniforme (.inv-slot) */
+  --slot-border: #2a1a08;
+  --bg-modal:    linear-gradient(180deg, #1a0f05 0%, #120a03 100%);
+  --bg-parchment:
+    radial-gradient(ellipse at 20% 30%, rgba(80,55,18,0.15), transparent 60%),
+    radial-gradient(ellipse at 80% 70%, rgba(60,42,20,0.15), transparent 55%),
+    linear-gradient(180deg, rgba(28,18,8,0.55), rgba(8,4,2,0.85));
+}
+* { box-sizing: border-box; }
+body {
+  margin:0; padding:16px;
+  background:#060402;
+  font-family:'Crimson Text', serif;
+  color:var(--parchment);
+  min-height:100vh;
+}
+.demo-banner {
+  max-width:760px; margin:0 auto 12px;
+  font-size:11px; color:#6a5030; font-style:italic; text-align:center;
+}
+
+/* =====================  MODALE  ===================== */
+.modal {
+  position:relative;
+  max-width:760px; margin:0 auto;
+  background:var(--bg-modal);
+  border:2px solid var(--gold);
+  border-radius:8px;
+  box-shadow:0 0 40px rgba(201,168,76,0.25);
+  max-height:calc(100vh - 32px);
+  display:flex; flex-direction:column;
+}
+/* A4 — cadres or ornés aux 4 coins via SVG inline */
+.modal .corner {
+  position:absolute; width:38px; height:38px;
+  pointer-events:none;
+}
+.modal .corner.tl { top:-6px;    left:-6px;    }
+.modal .corner.tr { top:-6px;    right:-6px;   transform:scaleX(-1);  }
+.modal .corner.bl { bottom:-6px; left:-6px;    transform:scaleY(-1);  }
+.modal .corner.br { bottom:-6px; right:-6px;   transform:scale(-1,-1);}
+
+/* =====================  HEADER  ===================== */
+.modal-header {
+  position:sticky; top:0; z-index:10;
+  background:var(--bg-modal);
+  border-bottom:1px solid var(--gold-dark);
+  padding:10px 14px;
+  display:flex; align-items:center; gap:12px;
+}
+/* A8 — titre orné Cinzel avec séparateurs latéraux */
+.modal-title {
+  font-family:'Cinzel',serif;
+  font-size:15px; color:var(--gold-light);
+  letter-spacing:2px; font-weight:700;
+  display:flex; align-items:center; gap:6px;
+}
+.modal-title::before, .modal-title::after {
+  content:''; display:inline-block;
+  width:18px; height:1px;
+  background:linear-gradient(90deg, transparent, var(--gold-light), transparent);
+}
+.modal-title svg { width:14px; height:14px; }
+
+.tabs { display:flex; gap:6px; margin-left:auto; }
+.tab {
+  background:rgba(40,28,12,0.50);
+  border:1px solid rgba(201,168,76,0.35);
+  border-radius:4px; padding:4px 10px;
+  font-size:11px; color:var(--parchment-dk);
+  cursor:pointer; transition:all 0.15s;
+  font-family:'Cinzel',serif;
+}
+.tab.active{ border-color:var(--gold); color:var(--gold-light); background:rgba(60,42,20,0.65); }
+
+.close-btn {
+  background:none; border:none; color:var(--gold-dark);
+  font-family:'Cinzel',serif; font-size:18px;
+  cursor:pointer; padding:4px 10px; transition:color 0.15s;
+}
+.close-btn:hover{ color:var(--gold-light); }
+
+/* =====================  BODY  ===================== */
+.modal-body { padding:12px; overflow-y:auto; flex:1; }
+
+/* A6 — 2 colonnes : Stats (220px) + Paper doll (1fr) */
+.char-grid {
+  display:grid;
+  grid-template-columns:220px 1fr;
+  grid-template-areas:
+    "stats equip"
+    "stats spells"
+    "stats inv";
+  grid-template-rows: auto auto auto;
+  gap:12px; align-items:start;
+}
+.char-grid > .section-stats  { grid-area: stats;  }
+.char-grid > .section-equip  { grid-area: equip;  }
+.char-grid > .section-spells { grid-area: spells; }
+.char-grid > .section-inv    { grid-area: inv;    }
+
+/* Bouton accordéon — visible seulement en mobile */
+.section-toggle{
+  display:none; width:100%;
+  background:rgba(40,28,12,0.55);
+  border:1px solid rgba(201,168,76,0.30);
+  border-radius:4px;
+  padding:6px 10px;
+  font-family:'Cinzel',serif; font-size:11px;
+  color:var(--gold-light);
+  cursor:pointer; text-align:left;
+  letter-spacing:0.5px; margin-bottom:4px;
+}
+.section-toggle::after{ content:'▾'; float:right; transition:transform 0.2s; }
+.section.collapsed .section-toggle::after{ transform:rotate(-90deg); }
+.section.collapsed .section-content{ display:none; }
+
+/* =====================  STATS (A2, A12)  ===================== */
+.stats-panel{ font-size:11px; }
+.level-banner{
+  background:rgba(40,28,12,0.55);
+  border:1px solid rgba(201,168,76,0.30);
+  border-radius:4px;
+  padding:8px 10px; text-align:center; margin-bottom:8px;
+}
+.level-banner .lvl  { font-family:'Cinzel',serif; font-size:13px; color:var(--gold-light); font-weight:700; }
+.level-banner .role { font-size:10px; color:#8a7050; margin-top:2px; }
+.level-banner .xp-bar{
+  height:6px; background:rgba(20,12,4,0.6);
+  border-radius:3px; overflow:hidden; margin-top:6px;
+  border:1px solid rgba(201,168,76,0.30);
+}
+.level-banner .xp-bar > span{
+  display:block; height:100%;
+  background:linear-gradient(90deg,var(--gold-dark),var(--gold-light));
+  width:35%;
+}
+.level-banner .xp-text{ font-size:9px; color:#6a5030; margin-top:2px; }
+
+.stat-line{
+  display:grid;
+  grid-template-columns:26px 1fr auto;
+  align-items:center; gap:8px;
+  padding:4px 4px;
+  border-bottom:1px dashed rgba(122,92,30,0.18);
+}
+/* A2 — icônes PNG du jeu, taille suffisante pour ne pas passer pour des emojis */
+.stat-line .stat-icon{
+  width:22px; height:22px; opacity:0.95;
+  background:rgba(20,12,4,0.55);
+  border-radius:3px; padding:2px;
+  border:1px solid rgba(122,92,30,0.25);
+}
+.stat-line .stat-label{ color:#8a7050; font-size:10px; letter-spacing:0.3px; }
+.stat-line .stat-value{ color:var(--parchment); font-weight:600; font-variant-numeric:tabular-nums; font-size:11px; }
+/* A12 — bonus vert vif gras */
+.stat-line .stat-bonus{ color:var(--bonus); font-weight:700; font-size:11px; margin-left:3px; text-shadow:0 0 4px rgba(108,217,108,0.35); }
+.stat-line.derived .stat-value{ color:var(--gold-light); }
+
+.stats-panel .quests-btn{
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  margin-top:10px; width:100%;
+  background:rgba(60,42,20,0.65);
+  border:1px solid var(--gold-dark);
+  border-radius:4px; padding:7px;
+  color:var(--gold-light);
+  font-family:'Cinzel',serif; font-size:11px;
+  cursor:pointer;
+}
+.stats-panel .quests-btn img{ width:14px; height:14px; }
+
+/* =====================  PAPER DOLL — structure flex column (v2.7)  =====================
+   2 zones empilées :
+     .paper-doll-main   → grid 3 colonnes [slots gauche][buste][slots droite]
+                          flex:1, prend toute la hauteur restante
+     .paper-doll-bottom → row centrée [wand][belt][trinket]
+                          taille fixe, sous la zone buste
+   Le buste n'est PLUS contraint par le slot belt — il prend toute la hauteur
+   de paper-doll-main, qui se dilate à la taille du panneau. */
+.paper-doll{
+  background:var(--bg-parchment);
+  border:1px solid rgba(122,92,30,0.40);
+  border-radius:6px;
+  overflow:hidden;
+  padding:8px;
+  display:flex; flex-direction:column;
+  gap:0;                     /* zéro gap : tout est collé */
+}
+.paper-doll-main{
+  display:grid;
+  grid-template-columns: 50px auto 50px;  /* auto : stage = largeur de l'image */
+  gap:8px;
+  align-items:stretch;        /* stage = hauteur des colonnes */
+  justify-content:center;     /* centre l'ensemble dans le paper-doll */
+}
+.paper-doll-col{
+  display:flex; flex-direction:column;
+  gap:8px;
+}
+/* Stage : hauteur = celle des colonnes latérales (via stretch).
+   Image en height:100% + width:auto → l'image s'adapte EN HAUTEUR à
+   la colonne (4×50+3×8 = 224 desktop, 4×44+3×8 = 200 mobile).
+   Aucun vide vertical possible : stage et colonnes sont identiques. */
+.paper-doll-stage{
+  position:relative;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  overflow:hidden;
+  border-radius:4px;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 25%, rgba(220,180,120,0.30), transparent 65%),
+    rgba(60,42,20,0.25);
+  font-size:0; line-height:0;
+}
+.paper-doll-stage .pd-portrait{
+  display:block;
+  height:100%;               /* contraint par la hauteur des colonnes */
+  width:auto;                /* ratio carré préservé → width = height */
+  filter:drop-shadow(0 6px 16px rgba(0,0,0,0.75));
+}
+.paper-doll-bottom{
+  display:flex; align-items:center; justify-content:center;
+  gap:14px;
+  margin-top:0;              /* collé sous le stage */
+}
+
+/* A7 — bandeau or sous la rangée wand/belt/trinket */
+.gold-banner{
+  align-self:center;
+  margin-top:2px;
+  display:flex; align-items:center; gap:8px;
+  background:linear-gradient(180deg, rgba(80,55,18,0.95), rgba(40,28,12,0.95));
+  border:1px solid var(--gold);
+  border-radius:18px;
+  padding:5px 22px;
+  font-family:'Cinzel',serif;
+  color:var(--gold-light);
+  font-weight:700; font-size:13px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(240,208,128,0.4);
+}
+.gold-banner img{ width:16px; height:16px; }
+
+/* =====================  SLOTS (A3)  ===================== */
+.equip-slot{
+  position:relative;
+  width:50px; height:50px;
+  background:var(--slot-bg);
+  border:1px solid var(--slot-border);
+  border-radius:4px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  transition:border-color 0.15s, transform 0.15s;
+  font-size:24px;
+  flex-shrink:0;
+}
+.equip-slot:hover{ border-color:var(--gold-light); transform:scale(1.06); z-index:50; }
+.equip-slot.filled                  { border-color:#4a3010; }
+.equip-slot.filled.rarity-common    { border-color:#6a5030; }
+.equip-slot.filled.rarity-rare      { border-color:#4a8ad0; box-shadow:inset 0 0 0 1px rgba(74,138,208,0.25); }
+.equip-slot.filled.rarity-epic      { border-color:#a060d0; box-shadow:inset 0 0 0 1px rgba(160,96,208,0.30); }
+.equip-slot.filled.rarity-legendary { border-color:var(--gold); box-shadow:inset 0 0 0 1px rgba(201,168,76,0.45), 0 0 8px rgba(201,168,76,0.4); }
+.equip-slot img{ width:36px; height:36px; object-fit:contain; }
+.equip-slot.empty .slot-emoji{ opacity:0.35; filter:grayscale(70%); }
+
+/* Plus de positions absolues : le layout flex/grid s'occupe de tout. */
+
+/* =====================  TOOLTIP (A11)  ===================== */
+.tooltip{
+  position:absolute; z-index:100;
+  top:54px;                           /* sous le slot par défaut, repositionné en JS */
+  left:50%; transform:translateX(-50%);
+  background:linear-gradient(180deg,#2a1a08,#120a03);
+  border:1px solid var(--gold);
+  border-radius:4px; padding:8px 10px;
+  font-size:11px; color:var(--parchment);
+  box-shadow:0 4px 12px rgba(0,0,0,0.7);
+  pointer-events:none;
+  opacity:0; transition:opacity 0.15s;
+  min-width:160px; max-width:220px;
+  white-space:normal;
+}
+.equip-slot:hover .tooltip{ opacity:1; }
+.tooltip .tt-name   { font-family:'Cinzel',serif; color:var(--gold-light); font-size:12px; display:block; margin-bottom:3px; }
+.tooltip .tt-rarity { font-size:9px;  color:#8a7050; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:5px; }
+.tooltip .tt-rarity.rare      { color:#7ab0d8; }
+.tooltip .tt-rarity.epic      { color:#c89cdc; }
+.tooltip .tt-rarity.legendary { color:var(--gold); }
+.tooltip .tt-bonus  { color:var(--bonus); font-weight:600; display:block; margin-bottom:2px; }
+.tooltip .tt-desc   { color:var(--parchment-dk); font-style:italic; margin-top:5px; font-size:10px; line-height:1.4; }
+
+/* Tooltips : slots de la rangée du bas → tooltip au-dessus */
+.paper-doll-bottom .equip-slot .tooltip,
+.paper-doll-col .equip-slot:last-child .tooltip{
+  top:auto; bottom:54px;
+}
+/* Slots colonne droite → tooltip à gauche */
+.paper-doll-col.right .equip-slot .tooltip{
+  left:auto; right:54px; transform:none;
+}
+
+/* =====================  SORTILÈGES / SAC (intégrés dans char-grid)  ===================== */
+.spells-strip,
+.inv-section{
+  /* Plus de margin-top ni border-top : la grid s'occupe de l'espacement (gap:12) */
+}
+.panel-title{
+  font-family:'Cinzel',serif;
+  font-size:11px; color:var(--gold);
+  letter-spacing:1.5px; text-align:center;
+  margin:0 0 8px;
+}
+.spells-row{
+  display:flex; flex-wrap:wrap; gap:6px; justify-content:center;
+}
+.spell-badge{
+  display:flex; align-items:center; gap:5px;
+  background:rgba(40,28,12,0.65);
+  border:1px solid var(--gold-dark);
+  border-radius:14px;
+  padding:3px 10px;
+  font-size:11px; color:var(--parchment-dk);
+}
+.spell-badge .icon{
+  width:22px; height:22px;
+  background:var(--slot-bg);
+  border:1px solid var(--slot-border);
+  border-radius:3px;
+  display:flex; align-items:center; justify-content:center;
+  padding:1px;
+}
+.spell-badge .icon img{ width:100%; height:100%; object-fit:contain; }
+
+/* =====================  INVENTAIRE INTÉGRÉ (A5)  ===================== */
+.inv-grid{
+  display:grid;
+  grid-template-columns:repeat(8, 1fr);
+  gap:5px;
+}
+.inv-slot{
+  aspect-ratio:1/1;
+  background:var(--slot-bg);
+  border:1px solid var(--slot-border);
+  border-radius:4px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  position:relative;
+  transition:border-color 0.15s;
+}
+.inv-slot:hover{ border-color:var(--gold-dark); }
+.inv-slot.has-item{ border-color:#4a3010; }
+.inv-slot.rarity-rare      { border-color:#4a8ad0; }
+.inv-slot.rarity-epic      { border-color:#a060d0; }
+.inv-slot.rarity-legendary { border-color:var(--gold); }
+.inv-slot img{ width:28px; height:28px; object-fit:contain; }
+
+/* =====================  RESPONSIVE  ===================== */
+@media (max-width: 720px){
+  body { padding:8px; }
+  .modal { max-height:calc(100vh - 16px); }
+  .modal-title { font-size:12px; letter-spacing:1px; }
+  .tab          { font-size:10px; padding:2px 8px; }
+  .char-grid {
+    grid-template-columns:1fr;
+    grid-template-areas:"stats" "equip" "spells" "inv";
+    gap:6px;
+  }
+  /* Mobile : sections accordéon plus serrées */
+  .section-toggle { display:block; margin-bottom:2px; padding:5px 10px; }
+  .spells-strip, .inv-section { margin-top:6px; padding-top:4px; }
+  .panel-title { margin:0 0 4px; }
+  /* A10 — mobile : flex/grid identique, juste tailles réduites */
+  /* mobile : pas de min-height (cause 120 px de vide en bas).
+     grid-template auto pour aligner stage = image, comme desktop. */
+  .paper-doll-main { grid-template-columns: 44px auto 44px; }
+  .equip-slot   { width:44px; height:44px; font-size:20px; }
+  .equip-slot img { width:30px; height:30px; }
+  .inv-grid { grid-template-columns:repeat(6, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="demo-banner">Mockup v2.1 — corrections A1→A12. Resize ≤ 720 px pour le mode accordéon.</div>
+
+<div class="modal">
+  <!-- A4 — Cadres or ornementés aux 4 coins (SVG inline) -->
+  <svg class="corner tl" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#f0d080" stroke-width="1.5" stroke-linecap="round">
+      <path d="M0 6 L0 0 L6 0"/>
+      <path d="M2 12 Q 2 2 12 2"/>
+      <path d="M6 18 Q 6 6 18 6" opacity="0.6"/>
+      <circle cx="3" cy="3" r="1.5" fill="#c9a84c"/>
+      <path d="M10 4 L 12 6 L 14 4 L 14 8" stroke-width="1"/>
+      <path d="M4 10 L 6 12 L 4 14 L 8 14" stroke-width="1"/>
+    </g>
+  </svg>
+  <svg class="corner tr" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#f0d080" stroke-width="1.5" stroke-linecap="round">
+      <path d="M0 6 L0 0 L6 0"/>
+      <path d="M2 12 Q 2 2 12 2"/>
+      <path d="M6 18 Q 6 6 18 6" opacity="0.6"/>
+      <circle cx="3" cy="3" r="1.5" fill="#c9a84c"/>
+      <path d="M10 4 L 12 6 L 14 4 L 14 8" stroke-width="1"/>
+      <path d="M4 10 L 6 12 L 4 14 L 8 14" stroke-width="1"/>
+    </g>
+  </svg>
+  <svg class="corner bl" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#f0d080" stroke-width="1.5" stroke-linecap="round">
+      <path d="M0 6 L0 0 L6 0"/>
+      <path d="M2 12 Q 2 2 12 2"/>
+      <path d="M6 18 Q 6 6 18 6" opacity="0.6"/>
+      <circle cx="3" cy="3" r="1.5" fill="#c9a84c"/>
+      <path d="M10 4 L 12 6 L 14 4 L 14 8" stroke-width="1"/>
+      <path d="M4 10 L 6 12 L 4 14 L 8 14" stroke-width="1"/>
+    </g>
+  </svg>
+  <svg class="corner br" viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+    <g fill="none" stroke="#f0d080" stroke-width="1.5" stroke-linecap="round">
+      <path d="M0 6 L0 0 L6 0"/>
+      <path d="M2 12 Q 2 2 12 2"/>
+      <path d="M6 18 Q 6 6 18 6" opacity="0.6"/>
+      <circle cx="3" cy="3" r="1.5" fill="#c9a84c"/>
+      <path d="M10 4 L 12 6 L 14 4 L 14 8" stroke-width="1"/>
+      <path d="M4 10 L 6 12 L 4 14 L 8 14" stroke-width="1"/>
+    </g>
+  </svg>
+
+  <!-- Header sticky -->
+  <div class="modal-header">
+    <div class="modal-title">
+      <svg viewBox="0 0 24 24" fill="#f0d080"><path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z"/></svg>
+      FICHE DE PERSONNAGE
+      <svg viewBox="0 0 24 24" fill="#f0d080"><path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z"/></svg>
+    </div>
+    <div class="tabs">
+      <button class="tab active">🧙 Harry</button>
+      <button class="tab">🧙‍♀️ Hermione</button>
+    </div>
+    <button class="close-btn" title="Fermer">✕</button>
+  </div>
+
+  <div class="modal-body">
+
+    <div class="char-grid">
+
+      <!-- ─── COLONNE GAUCHE — STATS ─── -->
+      <div class="section section-stats">
+        <button class="section-toggle">Statistiques</button>
+        <div class="section-content stats-panel">
+          <div class="level-banner">
+            <div class="lvl">Harry — Niveau 8</div>
+            <div class="role">Élève de Gryffondor</div>
+            <div class="xp-bar"><span></span></div>
+            <div class="xp-text">XP 245 / 700</div>
+          </div>
+          <!-- A2 — icônes PNG du jeu -->
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/hp.png"  alt=""><span class="stat-label">Vie</span><span class="stat-value">42/55</span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/mp.png"  alt=""><span class="stat-label">Mana</span><span class="stat-value">26/35</span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/atk.png" alt=""><span class="stat-label">Attaque</span><span class="stat-value">8<span class="stat-bonus">+4</span></span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/def.png" alt=""><span class="stat-label">Défense</span><span class="stat-value">5<span class="stat-bonus">+7</span></span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/mag.png" alt=""><span class="stat-label">Magie</span><span class="stat-value">15<span class="stat-bonus">+6</span></span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/str.png" alt=""><span class="stat-label">Force</span><span class="stat-value">10</span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/int.png" alt=""><span class="stat-label">Intelligence</span><span class="stat-value">14<span class="stat-bonus">+5</span></span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/agi.png" alt=""><span class="stat-label">Agilité</span><span class="stat-value">12<span class="stat-bonus">+5</span></span></div>
+          <div class="stat-line"><img class="stat-icon" src="../img/icons/xp.png"  alt=""><span class="stat-label">Chance</span><span class="stat-value">15</span></div>
+          <div class="stat-line derived"><img class="stat-icon" src="../img/icons/atk.png" alt=""><span class="stat-label">Critique</span><span class="stat-value">12%</span></div>
+          <div class="stat-line derived"><img class="stat-icon" src="../img/icons/agi.png" alt=""><span class="stat-label">Esquive</span><span class="stat-value">10%</span></div>
+          <button class="quests-btn"><img src="../img/icons/quest.png" onerror="this.style.display='none'" alt=""> Journal des Quêtes</button>
+        </div>
+      </div>
+
+      <!-- ─── COLONNE CENTRALE — PAPER DOLL ─── -->
+      <div class="section section-equip">
+        <button class="section-toggle">Équipement</button>
+        <div class="section-content">
+          <div class="paper-doll">
+            <div class="paper-doll-main">
+
+              <!-- Colonne gauche : head, body, hands, feet -->
+              <div class="paper-doll-col left">
+                <div class="equip-slot filled rarity-common">
+                  <img src="../img/icons/items/chapeau_apprenti.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Chapeau d'apprenti</span><span class="tt-rarity">Commun · Tête</span><span class="tt-bonus">+1 Intelligence</span><span class="tt-desc">Un classique des élèves de première année.</span></div>
+                </div>
+                <div class="equip-slot filled rarity-rare">
+                  <img src="../img/icons/items/robe_renforcee.png" alt="" onerror="this.src='../img/icons/armor.png'">
+                  <div class="tooltip"><span class="tt-name">Robe Renforcée</span><span class="tt-rarity rare">Rare · Armure</span><span class="tt-bonus">+5 Défense</span><span class="tt-bonus">+2 Endurance</span><span class="tt-desc">Tissée par Madame Guipure avec des fils enchantés.</span></div>
+                </div>
+                <div class="equip-slot filled rarity-common">
+                  <img src="../img/icons/items/gants_apprenti.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Gants d'Apprenti</span><span class="tt-rarity">Commun · Mains</span><span class="tt-bonus">+1 Attaque</span></div>
+                </div>
+                <div class="equip-slot filled rarity-rare">
+                  <img src="../img/icons/items/bottes_dragon.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Bottes en cuir de dragon</span><span class="tt-rarity rare">Rare · Bottes</span><span class="tt-bonus">+3 Agilité</span><span class="tt-bonus">+2 Défense</span><span class="tt-desc">Résiste au feu, parfait pour les cachots.</span></div>
+                </div>
+              </div>
+
+              <!-- Stage central : buste qui prend toute la hauteur.
+                   harry-cropped.png = harry.png sans les 1 px transparent en haut. -->
+              <div class="paper-doll-stage">
+                <img class="pd-portrait" src="harry-cropped.png" alt="Harry">
+              </div>
+
+              <!-- Colonne droite : cloak, amulet, ring1, ring2 -->
+              <div class="paper-doll-col right">
+                <div class="equip-slot filled rarity-epic">
+                  <img src="../img/icons/items/cape_invis.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Cape d'Invisibilité</span><span class="tt-rarity epic">Épique · Cape</span><span class="tt-bonus">+5 Agilité</span><span class="tt-bonus">+5 Chance</span><span class="tt-desc">Héritage de famille tissé dans le linceul de la mort.</span></div>
+                </div>
+                <div class="equip-slot filled rarity-epic">
+                  <img src="../img/icons/items/larmes_phenix.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Larmes du Phénix</span><span class="tt-rarity epic">Épique · Amulette</span><span class="tt-bonus">+3 PV / tour</span><span class="tt-desc">Une fiole scintillante, miracle de Fumseck.</span></div>
+                </div>
+                <div class="equip-slot filled rarity-rare">
+                  <img src="../img/icons/items/anneau_runique.png" alt="">
+                  <div class="tooltip"><span class="tt-name">Anneau runique</span><span class="tt-rarity rare">Rare · Anneau gauche</span><span class="tt-bonus">+2 Magie</span></div>
+                </div>
+                <div class="equip-slot empty">
+                  <span class="slot-emoji">💍</span>
+                  <div class="tooltip"><span class="tt-name">Anneau droit</span><span class="tt-rarity" style="color:#6a5030">— Emplacement libre —</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rangée sous le buste : wand, belt, trinket -->
+            <div class="paper-doll-bottom">
+              <div class="equip-slot filled rarity-rare">
+                <img src="../img/icons/items/wand2.png" alt="" onerror="this.src='../img/icons/wand.png'">
+                <div class="tooltip"><span class="tt-name">Baguette de Sureau</span><span class="tt-rarity rare">Rare · Baguette</span><span class="tt-bonus">+4 Attaque</span><span class="tt-bonus">+3 Magie</span></div>
+              </div>
+              <div class="equip-slot filled rarity-rare">
+                <img src="../img/icons/items/ceinture_alchimiste.png" alt="">
+                <div class="tooltip"><span class="tt-name">Ceinture d'alchimiste</span><span class="tt-rarity rare">Rare · Ceinture</span><span class="tt-bonus">+2 Intelligence</span></div>
+              </div>
+              <div class="equip-slot filled rarity-rare">
+                <img src="../img/icons/items/broom.png" alt="">
+                <div class="tooltip"><span class="tt-name">Éclair de Feu</span><span class="tt-rarity rare">Rare · Bibelot</span><span class="tt-bonus">Fuite garantie</span></div>
+              </div>
+            </div>
+
+            <!-- A7 — Bandeau Or sous la rangée d'armes -->
+            <div class="gold-banner">
+              <img src="../img/icons/gold.png" alt=""> 329 Gallions
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- A6 — Sortilèges DANS char-grid (grid-area:spells) -->
+      <div class="section spells-strip section-spells">
+        <button class="section-toggle">Sortilèges</button>
+        <div class="section-content">
+          <div class="panel-title">⸻ SORTILÈGES CONNUS ⸻</div>
+          <div class="spells-row">
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/expelliarmus.png" alt=""></span>Expelliarmus</span>
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/stupefix.png" alt=""></span>Stupefix</span>
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/episkey.png" alt=""></span>Episkey</span>
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/protego.png" alt=""></span>Protego</span>
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/incendio.png" alt=""></span>Incendio</span>
+            <span class="spell-badge"><span class="icon"><img src="../img/icons/spells/sanguini.png" alt=""></span>Sanguini</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- A5 — Inventaire DANS char-grid (grid-area:inv) -->
+      <div class="section inv-section section-inv">
+        <button class="section-toggle">Sac</button>
+        <div class="section-content">
+          <div class="panel-title">⸻ SAC — 12 / 16 ⸻</div>
+          <div class="inv-grid">
+            <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/potion_s.png" alt=""></div>
+            <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/potion_m.png" alt=""></div>
+            <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/mandragore.png" alt=""></div>
+            <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/choco_sorcier.png" alt=""></div>
+            <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/livre_soin.png" alt=""></div>
+            <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/livre_sortileges.png" alt="" onerror="this.src='../img/icons/spellbook.png'"></div>
+            <div class="inv-slot has-item rarity-epic"><img src="../img/icons/items/livre_prince.png" alt=""></div>
+            <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/anneau_runique.png" alt=""></div>
+            <div class="inv-slot has-item rarity-common"><img src="../img/icons/items/anneau_argent.png" alt=""></div>
+            <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/chapeau_pointu.png" alt=""></div>
+            <div class="inv-slot has-item rarity-legendary"><img src="../img/icons/items/diademe_serdaigle.png" alt=""></div>
+            <div class="inv-slot has-item rarity-rare"><img src="../img/icons/items/circlet_serdaigle.png" alt=""></div>
+            <div class="inv-slot"></div>
+            <div class="inv-slot"></div>
+            <div class="inv-slot"></div>
+            <div class="inv-slot"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /char-grid -->
+
+  </div><!-- /modal-body -->
+</div><!-- /modal -->
+
+<script>
+document.querySelectorAll('.section-toggle').forEach(btn => {
+  btn.addEventListener('click', () => btn.parentElement.classList.toggle('collapsed'));
+});
+</script>
+</body>
+</html>
