@@ -80,16 +80,20 @@ Object.assign(AudioSystem, {
     abyss:   'audio/ambient_abyss.ogg',
   },
 
-  // ── Chargement paresseux d'un sample par zone ─────────────────
-  _loadZoneSample(zoneKey) {
-    if (this._sampleBuffers[zoneKey]) {
-      return Promise.resolve(this._sampleBuffers[zoneKey]);
-    }
-    if (this._sampleLoadPromises[zoneKey]) {
-      return this._sampleLoadPromises[zoneKey];
-    }
-    const url = this._ZONE_SAMPLES[zoneKey];
-    if (!url) return Promise.reject(new Error('no sample registered for zone ' + zoneKey));
+  // ── Registre difficulté → fichier OGG de combat ───────────────
+  // Mêmes règles que _ZONE_SAMPLES : entrée absente → procédural.
+  // Les clés sont préfixées 'combat_' pour cohabiter dans le même
+  // cache `_sampleBuffers` que les samples ambient.
+  _COMBAT_SAMPLES: {
+    combat_normal: 'audio/combat_normal.ogg',
+    // combat_hard, combat_expert : pas encore livrés → procédural
+  },
+
+  // ── Chargement paresseux d'un sample (zone ou combat) ─────────
+  _loadSample(key, url) {
+    if (this._sampleBuffers[key]) return Promise.resolve(this._sampleBuffers[key]);
+    if (this._sampleLoadPromises[key]) return this._sampleLoadPromises[key];
+    if (!url) return Promise.reject(new Error('no sample url for ' + key));
     if (!this.ctx) this.init();
     const p = fetch(url, { cache: 'force-cache' })
       .then(r => {
@@ -100,28 +104,37 @@ Object.assign(AudioSystem, {
         this.ctx.decodeAudioData(buf, resolve, reject)
       ))
       .then(audioBuf => {
-        this._sampleBuffers[zoneKey] = audioBuf;
+        this._sampleBuffers[key] = audioBuf;
         return audioBuf;
       })
       .catch(err => {
-        delete this._sampleLoadPromises[zoneKey];  // permet un retry
+        delete this._sampleLoadPromises[key];  // permet un retry
         throw err;
       });
-    this._sampleLoadPromises[zoneKey] = p;
+    this._sampleLoadPromises[key] = p;
     return p;
   },
 
+  // ── Wrapper rétrocompatible — appelle _loadSample avec l'URL du registre ──
+  _loadZoneSample(zoneKey) {
+    return this._loadSample(zoneKey, this._ZONE_SAMPLES[zoneKey]);
+  },
+
   // ── Lecture loopée avec crossfade 1 s ─────────────────────────
-  _playZoneSampleLoop(zoneKey) {
-    const buf = this._sampleBuffers[zoneKey];
-    if (!buf || !this.musicPlaying || this.inCombat) return;
+  // `isRelevant` est une fonction qui retourne `true` tant que le sample
+  // doit continuer à jouer ; quand elle retourne `false`, le loop arrête
+  // de se reprogrammer (sans toucher aux sources déjà schedulées qui
+  // finiront naturellement). Utilisée pour distinguer ambient vs combat
+  // et pour stopper proprement à un changement de zone/contexte.
+  _playSampleLoop(bufKey, isRelevant) {
+    const buf = this._sampleBuffers[bufKey];
+    if (!buf || !this.musicPlaying) return;
     const CROSSFADE = 1.0;
     const duration  = buf.duration;
     if (duration <= 2 * CROSSFADE) return;  // sample trop court pour crossfader
 
     const schedule = (startAt) => {
-      if (!this.musicPlaying || this.inCombat ||
-          this._zoneKeyForFloor(this.currentFloor) !== zoneKey) return;
+      if (!this.musicPlaying || !isRelevant()) return;
       const src  = this.ctx.createBufferSource();
       const gain = this.ctx.createGain();
       src.buffer = buf;
@@ -139,13 +152,19 @@ Object.assign(AudioSystem, {
         const i = this._sampleSources.indexOf(src);
         if (i >= 0) this._sampleSources.splice(i, 1);
       };
-      // Enchaîne la prochaine itération CROSSFADE secondes avant la fin
       const nextStart = startAt + duration - CROSSFADE;
       const delayMs   = Math.max(0, (nextStart - this.ctx.currentTime) * 1000 - 200);
       this._sampleLoopTimer = setTimeout(() => schedule(nextStart), delayMs);
     };
 
     schedule(this.ctx.currentTime);
+  },
+
+  // ── Wrapper rétrocompatible — ambient ─────────────────────────
+  _playZoneSampleLoop(zoneKey) {
+    this._playSampleLoop(zoneKey, () =>
+      !this.inCombat && this._zoneKeyForFloor(this.currentFloor) === zoneKey
+    );
   },
 
   // ── Synthèse procédurale (zones 3+ ou fallback zones 1-2) ─────
@@ -271,13 +290,49 @@ Object.assign(AudioSystem, {
   },
 
   // ── Musique de combat ─────────────────────────────────────────
+  // Difficulté Normale : sample OGG (audio/combat_normal.ogg) si dispo,
+  // sinon procédural. Difficile / Expert : procédural (variantes
+  // plus dures, samples à livrer plus tard si besoin).
   startCombatMusic() {
     if (this.inCombat) return;
     this.inCombat = true;
     this.stopMusic();
     if (this.isMuted) return;
     this.init();
+    this.musicPlaying = true;
 
+    const combatKey = this._combatSampleKey();
+    const url = this._COMBAT_SAMPLES[combatKey];
+
+    if (!url) {
+      this._playProceduralCombat();
+      return;
+    }
+
+    this._loadSample(combatKey, url)
+      .then(() => {
+        if (this.inCombat && this.musicPlaying) {
+          this._playSampleLoop(combatKey, () => this.inCombat);
+        }
+      })
+      .catch(err => {
+        console.warn(`[audio] sample "${combatKey}" unavailable, fallback to procedural:`, err && err.message);
+        if (this.inCombat && this.musicPlaying) {
+          this._playProceduralCombat();
+        }
+      });
+  },
+
+  // ── Mapping difficulté courante → clé de sample combat ────────
+  _combatSampleKey() {
+    const d = (typeof difficulty !== 'undefined') ? difficulty : 'Normal';
+    if (d === 'Expert')    return 'combat_expert';
+    if (d === 'Difficile') return 'combat_hard';
+    return 'combat_normal';
+  },
+
+  // ── Synthèse procédurale de combat (fallback ou difficulté sans sample) ──
+  _playProceduralCombat() {
     // Paramètres selon la difficulté
     const isExpert     = (typeof difficulty !== 'undefined') && difficulty === 'Expert';
     const isDifficile  = (typeof difficulty !== 'undefined') && difficulty === 'Difficile';
@@ -291,7 +346,6 @@ Object.assign(AudioSystem, {
 
     let melIdx = 0;
     let beatIdx = 0;
-    this.musicPlaying = true;
 
     // ── Mélodie tendue ────────────────────────────────────────
     const melTick = () => {
