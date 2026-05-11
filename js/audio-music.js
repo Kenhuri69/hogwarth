@@ -89,6 +89,72 @@ Object.assign(AudioSystem, {
     // combat_hard, combat_expert : pas encore livrés → procédural
   },
 
+  // ── Registre voix narratives (un fichier par phrase) ──────────
+  // Voir .claude/plans/voice-intro-dumbledore.md. Fallback silencieux
+  // si l'entrée n'existe pas ou si le fetch échoue.
+  _VOICE_SAMPLES: {
+    dumbledore_intro_1: 'audio/voice/dumbledore_intro_1.ogg',
+    dumbledore_intro_2: 'audio/voice/dumbledore_intro_2.ogg',
+  },
+
+  // ── Lecture d'une voix narrative (one-shot, avec ducking music) ──
+  // Charge le sample paresseusement, lance la lecture une seule fois,
+  // applique un ducking 30 % sur la musique pendant la durée + 200 ms
+  // de retombée. `stopVoice()` est appelée systématiquement avant de
+  // démarrer une nouvelle voix pour éviter tout chevauchement.
+  playVoice(voiceKey) {
+    if (this.isMuted) return Promise.resolve();
+    const url = this._VOICE_SAMPLES[voiceKey];
+    if (!url) return Promise.resolve();  // fallback silencieux
+    this.init();
+    this.stopVoice();
+    this._voicePending = voiceKey;
+    return this._loadSample(voiceKey, url)
+      .then(buf => {
+        // Si une autre voix a été démarrée entre temps, on abandonne
+        if (this._voicePending !== voiceKey) return;
+        this._voicePending = null;
+        if (!this.voiceGain) return;  // init pas encore prête
+        const now  = this.ctx.currentTime;
+        const src  = this.ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(this.voiceGain);
+        src.start(now);
+        this._voiceSources.push(src);
+        this._duckMusic(true);
+        src.onended = () => {
+          const i = this._voiceSources.indexOf(src);
+          if (i >= 0) this._voiceSources.splice(i, 1);
+          if (this._voiceSources.length === 0) this._duckMusic(false);
+        };
+      })
+      .catch(err => {
+        console.warn(`[audio] voice "${voiceKey}" unavailable:`, err && err.message);
+        this._voicePending = null;
+      });
+  },
+
+  // ── Stoppe toutes les voix actives et restaure la musique ─────
+  stopVoice() {
+    this._voicePending = null;
+    for (const src of this._voiceSources) {
+      try { src.stop(); } catch (_) { /* déjà arrêté */ }
+    }
+    this._voiceSources = [];
+    this._duckMusic(false);
+  },
+
+  // ── Ducking : musique × 0.30 pendant la voix, restaurée après ─
+  _duckMusic(active) {
+    if (!this.ctx || !this.musicGain) return;
+    const now    = this.ctx.currentTime;
+    const ramp   = this._duckRampSeconds || 0.20;
+    const target = active ? 0.078 : 0.26;   // 0.26 × 0.30 ≈ 0.078
+    this.musicGain.gain.cancelScheduledValues(now);
+    this.musicGain.gain.setValueAtTime(this.musicGain.gain.value, now);
+    this.musicGain.gain.linearRampToValueAtTime(target, now + ramp);
+  },
+
   // ── Chargement paresseux d'un sample (zone ou combat) ─────────
   _loadSample(key, url) {
     if (this._sampleBuffers[key]) return Promise.resolve(this._sampleBuffers[key]);
