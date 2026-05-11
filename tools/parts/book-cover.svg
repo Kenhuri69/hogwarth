@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  
+  <g fill="#000000">
+    
+    <path data-region="spine" d="M 86 96 L 110 80 L 442 80 L 442 432 L 110 432 L 86 416 Z"></path>
+    
+    <path data-region="pages" d="M 110 96 L 432 96 L 432 420 L 110 420 Z"></path>
+    
+    <path data-region="cover" d="M 96 102 L 410 102 L 426 422 L 112 422 Z"></path>
+    
+    <path data-region="spine" d="M 96 102 L 112 422 L 96 422 L 80 102 Z"></path>
+    
+    <path data-region="gilt" d="M 84 160 L 102 160 L 104 184 L 86 184 Z"></path>
+    <path data-region="gilt" d="M 88 340 L 106 340 L 108 364 L 90 364 Z"></path>
+    
+    <path data-region="gilt" d="M 252 220 L 304 268 L 252 316 L 200 268 Z"></path>
+    
+    <path data-region="gilt" d="M 410 240 L 446 232 L 450 296 L 414 304 Z"></path>
+  </g>
+</svg>

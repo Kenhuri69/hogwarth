@@ -17,7 +17,11 @@
       "Bash(cmd /c \"ffmpeg -version\")",
       "Bash(cmd /c \"powershell -Command \"\"Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(''C:\\\\Personal\\\\dev\\\\hog\\\\img\\\\harry.png''\\); Write-Host \\(''Harry: '' + $img.Width + ''x'' + $img.Height\\); $img.Dispose\\(\\); $img2 = [System.Drawing.Image]::FromFile\\(''C:\\\\Personal\\\\dev\\\\hog\\\\img\\\\hermione.png''\\); Write-Host \\(''Hermione: '' + $img2.Width + ''x'' + $img2.Height\\); $img2.Dispose\\(\\);\"\"\")",
       "Bash(powershell -NoProfile -Command \"Add-Type -AssemblyName System.Drawing; $img = [System.Drawing.Image]::FromFile\\(''C:\\\\Personal\\\\dev\\\\hog\\\\img\\\\harry.png''\\); Write-Host \\(''Harry: '' + $img.Width + ''x'' + $img.Height\\); $img.Dispose\\(\\); $img2 = [System.Drawing.Image]::FromFile\\(''C:\\\\Personal\\\\dev\\\\hog\\\\img\\\\hermione.png''\\); Write-Host \\(''Hermione: '' + $img2.Width + ''x'' + $img2.Height\\); $img2.Dispose\\(\\)\")",
-      "Bash(powershell -NoProfile:*)"
+      "Bash(powershell -NoProfile:*)",
+      "Bash(unzip -q /root/.claude/uploads/ea286b17-9a10-43c2-bddb-b654d1f764bc/a571e40b-tools.zip -d .)",
+      "Bash(rm -rf tools/__pycache__)",
+      "Bash(cp \"/root/.claude/uploads/ea286b17-9a10-43c2-bddb-b654d1f764bc/6219e21f-Compare_Icones.html\" \"./Compare Icones.html\")",
+      "Bash(cp \"/root/.claude/uploads/ea286b17-9a10-43c2-bddb-b654d1f764bc/2b1809a7-Audit_Icones.html\" \"./Audit Icones.html\")"
     ]
   }
 }

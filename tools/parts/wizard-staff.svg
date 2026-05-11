@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  
+  <g fill="#000000">
+    
+    <path data-region="shaft" d="M 240 188 L 268 188 L 282 496 L 226 496 Z"></path>
+    
+    <path data-region="grip" d="M 220 360 L 288 360 L 290 392 L 218 392 Z"></path>
+    
+    <path data-region="shaft" d="&#xA;      M 264 196&#xA;      C 264 124 322 88 372 110&#xA;      C 416 130 422 188 388 218&#xA;      C 360 244 320 234 308 208&#xA;      C 300 188 314 168 332 168&#xA;      C 348 168 358 184 350 198&#xA;      L 332 198&#xA;      C 326 198 322 192 326 188&#xA;      C 304 188 304 220 332 230&#xA;      C 372 244 412 218 414 178&#xA;      C 416 130 372 100 332 110&#xA;      C 290 120 264 158 264 196 Z"></path>
+    
+    <path data-region="gem" d="M 366 168 m -40 0 a 40 40 0 1 0 80 0 a 40 40 0 1 0 -80 0"></path>
+    
+    <path data-region="pommel" d="M 222 488 L 286 488 L 280 510 L 228 510 Z"></path>
+  </g>
+</svg>

@@ -148,6 +148,74 @@ const ITEMS = [
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];
 
+/* ─────────────────────────────────────────────────────────────────────────
+   ICON_RECIPES — schéma de migration vers le pipeline painterly (direction A).
+   Mirror exact du dict RECIPES dans tools/icon_factory.py.
+
+   Pour chaque item :
+     silhouette : soit { kind:"svg", file } pointant tools/parts/<file>,
+                  soit { kind:"shape", name, params } via tools/shapes.py
+     fills      : { region: "#rrggbb" } — une couleur par data-region du SVG
+     accents    : [ { kind, region, color, ...opts } ] — liquide, runes, bulles,
+                  emboss, orb_glow, gem_facet_shine, sparkles
+     rarity     : common | uncommon | rare | epic | legendary  (pilote le halo)
+     material   : matte | glass | metal | leather | wood       (pilote spec)
+     lightAngle : degrés, défaut 45
+
+   Le moteur Python est seul à lire ce schéma (front consomme les PNG
+   mipmaps générés). Garder les deux côtés alignés pour le mapping J2.
+   ───────────────────────────────────────────────────────────────────────── */
+const ICON_RECIPES = {
+  potion_s: {
+    silhouette: { kind:"svg", file:"flask.svg" },
+    fills: { stopper:"#764e2a", body:"#acc4d0" },
+    accents: [
+      { kind:"liquid",  region:"body", color:"#d94444", level:0.72, meniscus:true }
+    ],
+    rarity:"common", material:"glass"
+  },
+
+  felix: {
+    silhouette: { kind:"svg", file:"flask.svg" },
+    fills: { stopper:"#8c622e", body:"#d2bc8e" },
+    accents: [
+      { kind:"liquid",  region:"body", color:"#f0c448", level:0.80, meniscus:true, glow:true },
+      { kind:"bubbles", region:"body", color:"#ffe8a8", count:6 }
+    ],
+    rarity:"legendary", material:"glass", sparkles:true
+  },
+
+  wand2: {
+    silhouette: { kind:"svg", file:"wizard-staff.svg" },
+    fills: { shaft:"#4e3420", grip:"#362416", pommel:"#7a582a", gem:"#bedceb" },
+    accents: [
+      { kind:"runes",    region:"shaft", color:"#ebd796", count:5 },
+      { kind:"orb_glow", region:"gem",   color:"#c8e6ff" }
+    ],
+    rarity:"rare", material:"wood"
+  },
+
+  anneau_runique: {
+    silhouette: { kind:"shape", name:"ring_band",
+                  params:{ radius:175, thickness:36, bezel:true, gem:true } },
+    fills: { metal:"#c9a84c", gem:"#6096dc" },
+    accents: [
+      { kind:"runes",            region:"metal", color:"#503814", count:6, around:"ring" },
+      { kind:"gem_facet_shine",  region:"gem",   color:"#dcebff" }
+    ],
+    rarity:"rare", material:"metal"
+  },
+
+  livre_sortileges: {
+    silhouette: { kind:"svg", file:"book-cover.svg" },
+    fills: { cover:"#3a588a", pages:"#e4d2a8", spine:"#263c62", gilt:"#c9a84c" },
+    accents: [
+      { kind:"emboss", region:"cover", color:"#1e2e4c" }
+    ],
+    rarity:"common", material:"leather"
+  }
+};
+
 // ── Loot table d'équipement pour les coffres ────────────────────
 // Étage minimum d'éligibilité par rareté. Les items légendaires
 // (Maisons) sont exclus des coffres (récompenses dédiées).
