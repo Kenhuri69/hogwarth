@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/improve-game-images-7OVCy`
 > (anciennes branches : `claude/resume-svg-work-rgOvm`, `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 38 / 76 tâches terminées (+ C44 fontaine, hors bloc D ; C25 marqué n/a)
+> **Statut global** : 39 / 76 tâches terminées (+ C44 fontaine, hors bloc D ; C25 marqué n/a)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -121,7 +121,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C26** `mangemort_elite`
 - [x] **C27** `sorcier_renegat`
 - [x] **C28** `boggart`
-- [ ] **C29** `chimere`
+- [x] **C29** `chimere`
 - [ ] **C30** `ombre_quirrell`
 
 ### C.2 Boss sans PNG (1)
@@ -237,3 +237,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-11 | #33 | C24 mangemort intégré (sur branche `claude/monster-png-C24-mangemort`) | Source 1024×1024 RGBA livrée avec alpha déjà détouré (43,8% pixels α=0) → skip rembg, pipeline inline (trim bbox + recentrage 8% + resize 512 + optimize). Squelette masqué hood noir, baguette à étincelles violettes, robe noire en lambeaux. QA §9 : alpha=0 57%, alpha=255 22%, occupation 85×83%, 294 KB ✓. Constat : C25 `mangemort_masque` n'a jamais existé dans `monsters.js` (id "mangemort" porte déjà `name:"Mangemort Masqué"`) → marqué `[~]` n/a |
 | 2026-05-11 | #34 | C26 mangemort_elite intégré (sur branche `claude/monster-png-C26-mangemort-elite`, dérivée de C24) | Source 1024×1024 livrée détourée (43,8% α=0) → pipeline inline. Armure noire segmentée (épaulières, plastron) sous capuche, masque de crâne gravé, baguette obsidienne émettant volutes sombres, Marque des Ténèbres rouge sur avant-bras. QA §9 : alpha=0 59%, alpha=255 17%, occupation 77×84%, 296 KB ✓ |
 | 2026-05-11 | #35 | C27 sorcier_renegat intégré (sur branche `claude/monster-png-C27-sorcier-renegat`, dérivée de C26) | Source 1024×1024 détourée (52,6% α=0) → pipeline inline. Jeune ex-Serpentard brun, robe verte/grise effilochée, écusson serpent, cravate desserrée, baguette en main droite, lueur acide verte d'auto-soin dans la main gauche. QA §9 : alpha=0 65%, alpha=255 18%, occupation 79×84%, 240 KB ✓ |
+| 2026-05-11 | #36 | C29 chimere intégrée (sur branche `claude/monster-png-C29-chimere`, dérivée de C27) | Source 1024×1024 détourée (46,3% α=0) → pipeline inline. Chimère mythologique 3 têtes : lion central rugissant à crinière dorée, chèvre cornes noires à gauche, serpent émeraude gueule ouverte à droite ; corps de lion musculeux en charge ; embers/fumée subtiles préservés. QA §9 : alpha=0 48%, alpha=255 15%, occupation 82×84%, 396 KB (soft warning §1 mais en ligne avec les complexes existants : portrait_hostile 401 KB, meduse_noire 399, serpent_cachot 375 ; hard limit 700 KB largement respecté). oxipng indisponible dans le sandbox |
