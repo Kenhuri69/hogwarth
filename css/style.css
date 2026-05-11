@@ -1009,6 +1009,10 @@ body {
   flex-shrink: 0;
 }
 .equip-slot-floating:hover { border-color: var(--gold-light); transform: scale(1.06); z-index: 5; }
+.equip-slot-floating.filled[onclick] { cursor: pointer; }
+.equip-slot-floating.filled[onclick]:hover { box-shadow: 0 0 0 2px rgba(255,255,255,0.15) inset, 0 0 10px rgba(201,168,76,0.4); }
+.section-inv .inv-slot[onclick] { cursor: pointer; }
+.section-inv .inv-slot[onclick]:hover { border-color: var(--gold-light); transform: scale(1.05); }
 .equip-slot-floating.filled { border-color: #4a3010; }
 .equip-slot-floating.filled.rarity-rare      { border-color: #4a8ad0; box-shadow: inset 0 0 0 1px rgba(74,138,208,0.25); }
 .equip-slot-floating.filled.rarity-epic      { border-color: #a060d0; box-shadow: inset 0 0 0 1px rgba(160,96,208,0.30); }
