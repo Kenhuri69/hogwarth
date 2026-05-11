@@ -118,6 +118,42 @@ player2 ──┘
 Harry : sorts offensifs + Protego — commence avec : Expelliarmus, Stupefix, Episkey, Protego, Incendio
 Hermione : sorts de soin/support + forte magie — commence avec : Episkey, Protego, Incendio, Accio
 
+### Ajouter un nouveau personnage jouable
+
+Pour ajouter un héros sélectionnable (modèle des 6 entrées actuelles :
+Harry, Hermione, Céleste, Iris, Maxence, Anastasia) :
+
+1. **Portrait** — préparer **deux** fichiers PNG 128×128 dans `img/` :
+   - `img/<key>-original.png` : crop centré du visuel source, sans décoration.
+   - `img/<key>.png` : variante encadrée d'un **médaillon doré**
+     (cercle photo + double anneau or). C'est ce fichier qui s'affiche
+     partout dans le jeu.
+   Procédure : center-crop puis Lanczos vers 128×128 pour la version
+   `-original.png`, puis appliquer le frame doré pour `<key>.png`.
+   Structure commune : photo r≤50, anneau or vif r=52-54, gap, anneau
+   or moyen r=57-60, bord or sombre r=61-63.
+   **Variante selon le genre du héros** (à respecter) :
+   - **Filles** (Céleste, Iris, Anastasia…) : gemme colorée sertie aux
+     points N/S, accents or sobres aux E/O. Couleur unique par héroïne
+     (Céleste = bleu sourd, Iris = violet, Anastasia = bleu lunaire argenté).
+   - **Garçons** (Maxence…) : 4 points cardinaux en or uni, sans gemme
+     colorée — finition sobre.
+2. **Données** — ajouter une entrée dans `CHARACTERS` (`js/data.js`)
+   avec `name`, `icon`, `class`, `imgSrc:"img/<key>.png"`, `role`, stats
+   (hp/sp/str/int/agi/end/lck/mag/atk/def), `wand`, `armor`, `acc`,
+   `spells:[…]`, `tagline`. `_hydrateCharacter()` lit ces champs.
+3. **Carte de sélection** — ajouter un `<button class="hero-card"
+   data-key="<key>" onclick="toggleHero('<key>')">…</button>` dans
+   `#hero-grid` de `index.html`, en numérotant `hero-badge` à la suite.
+4. **Test** — relancer `node tests/smoke.js` ; aucune assertion n'utilise
+   la nouvelle clé directement, donc tous les scénarios doivent rester
+   verts sans modification. Si tu touches au flow de sélection, ajouter
+   un cas dédié.
+
+Aucun autre câblage n'est requis : combats, sauvegardes, équipement,
+quêtes — tout repose sur les références `party[0]/party[1]`/`player`
+qui sont hydratées dynamiquement depuis `CHARACTERS[key]`.
+
 ---
 
 ## Système d'équipement (inventory.js)
