@@ -16,6 +16,11 @@ const AudioSystem = {
   _combatTimer:  null,
   voiceEnabled:  true,
   _cachedVoice:  null,
+  // Sample audio — voir audio-music.js et .claude/plans/audio-intro-sample.md
+  _sampleBuffer:    null,   // AudioBuffer décodé du sample d'intro (zones 1-2)
+  _sampleLoadPromise: null, // Promise en cours pour éviter les multi-fetch
+  _sampleSources:   [],     // sources actives à stopper sur stopMusic()
+  _sampleLoopTimer: null,   // setTimeout du prochain enchaînement loop
 
   // ── Initialisation (une seule fois, après geste utilisateur) ──
   init() {
@@ -33,6 +38,12 @@ const AudioSystem = {
     this.musicPlaying = false;
     clearTimeout(this._noteTimer);
     clearTimeout(this._combatTimer);
+    clearTimeout(this._sampleLoopTimer);
+    // Stoppe toutes les sources sample actives
+    for (const src of this._sampleSources) {
+      try { src.stop(); } catch (_) { /* déjà arrêté ou pas démarré */ }
+    }
+    this._sampleSources = [];
   },
 
   toggleVoice() {

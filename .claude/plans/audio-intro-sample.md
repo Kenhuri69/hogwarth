@@ -135,3 +135,10 @@ Critères de réussite (à mesurer en fin de test) :
 | Date | Étape | Notes |
 |------|-------|-------|
 | 2026-05-11 | Plan rédigé | Périmètre figé : zone 1-2 uniquement, fallback procédural obligatoire |
+| 2026-05-11 | A1 prompt rédigé | « Hogwarts corridor ambient, harp + low strings + celesta, 72 BPM, 20 s seamless loop, no melodic hook » + variante anti-IP-filter |
+| 2026-05-11 | A2-A3 sample reçu | `under_the_canopy_1.mp3` — 30,77 s stéréo 192 kbps. Plus long que les 20 s cible (acceptable). Fade-in audible en début → bouclage brut imparfait, sera absorbé par crossfade 1 s en code |
+| 2026-05-11 | B1 encodage OGG | `audio/ambient_intro.ogg` mono q2 (libvorbis) = 232 KB (sous la cible 250). 30,77 s, 44,1 kHz |
+| 2026-05-11 | B2-B3 intégration | `audio.js` : 4 nouveaux champs sur `AudioSystem` (`_sampleBuffer`, `_sampleLoadPromise`, `_sampleSources`, `_sampleLoopTimer`) + nettoyage dans `stopMusic()`. `audio-music.js` : `playAmbientMusic` devient un dispatcher (zones 1-2 → sample-or-fallback, zones 3+ → procédural). Nouvelles méthodes : `_loadIntroSample()` (lazy fetch + decodeAudioData + cache + retry sur erreur), `_playIntroSampleLoop()` (crossfade 1 s entre itérations, deux `AudioBufferSourceNode` qui se chevauchent), `_playProceduralAmbient(f)` (extraction du code procédural existant, inchangé). En cas d'erreur (fetch, decode, format) → `console.warn` + fallback automatique sur procédural |
+| 2026-05-11 | B4 doc | `tests/smoke.js` : filtre `isIgnorableError` étendu au pattern `URL scheme "file" is not supported` + `ambient_intro.ogg` (limite Chromium file:// ; fallback fonctionne mais Chromium log avant le catch). En prod HTTP cette erreur n'apparaît pas |
+| 2026-05-11 | C1 test manuel HTTP | `python3 -m http.server 8765` + Playwright headless : sample décodé (`buffer.duration` = 30,77 s), 1 source active, `ctx.state = "running"`, aucun warn audio. Bouclage à vérifier sur 3 itérations en jeu réel |
+| 2026-05-11 | C3 smoke | 26/26 ✓ (filtre ajusté pour le bruit Chromium file://) |

@@ -19,7 +19,14 @@ function isIgnorableError(text) {
       // wrapper .tinted-icon sont bloqués CORS. En production (HTTP) ça
       // marche. Cf. img/icons/_tint_demo.html et IMG_STYLE.md.
       || (text.includes('blocked by CORS policy')
-          && text.includes('img/icons/items/'));
+          && text.includes('img/icons/items/'))
+      // Limite Chromium en file:// : `fetch('audio/ambient_intro.ogg')`
+      // depuis audio-music.js échoue en environnement smoke (Fetch API ne
+      // supporte pas file://). Le code attrape la rejection et bascule sur
+      // la synthèse procédurale, mais Chromium log avant le catch. En prod
+      // (HTTP/HTTPS) cette erreur n'apparaît pas.
+      || (text.includes('URL scheme "file" is not supported')
+          && text.includes('ambient_intro.ogg'));
 }
 
 async function launchGame() {
