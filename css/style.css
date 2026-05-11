@@ -896,6 +896,12 @@ body {
 .char-stats-panel .stat-label { color: #8a7050; font-size: 10px; letter-spacing: 0.3px; }
 .char-stats-panel .stat-value { color: var(--parchment); font-weight: 600; font-variant-numeric: tabular-nums; }
 .char-stats-panel .stat-line.derived .stat-value { color: var(--gold-light); }
+.char-stats-panel .stat-bonus {
+  color: #6cd96c;
+  font-weight: 700;
+  margin-left: 3px;
+  text-shadow: 0 0 4px rgba(108,217,108,0.35);
+}
 .char-stats-panel .level-banner {
   background: rgba(40,28,12,0.55);
   border: 1px solid rgba(201,168,76,0.30);
@@ -1077,10 +1083,27 @@ body {
     grid-template-areas: "stats" "equip" "spells" "inv";
     gap: 8px;
   }
-  .paper-doll-main { grid-template-columns: 44px auto 44px; }
-  .equip-slot-floating { width: 44px; height: 44px; }
-  .equip-slot-floating .ui-icon { width: 30px; height: 30px; }
+  /* Paper-doll mobile : slots 36×36, gaps réduits, paddings minimal.
+     But : tenir dans modal-box width:96vw (≈ 345 px sur viewport 360 px).
+     Calcul largeur min : 36 + 6 + auto + 6 + 36 + 2×6 padding = 90 + image.
+     Image height = 4×36+3×6 = 162 → width image 162 → total ~252 px. */
+  .paper-doll { padding: 6px; }
+  .paper-doll-main {
+    grid-template-columns: 36px auto 36px;
+    gap: 6px;
+  }
+  .paper-doll-col { gap: 6px; }
+  .equip-slot-floating { width: 36px; height: 36px; }
+  .equip-slot-floating .ui-icon { width: 26px; height: 26px; }
+  .paper-doll-bottom { gap: 8px; }
+
   .section-inv .inv-grid { grid-template-columns: repeat(6, 1fr); }
+  .section-inv .inv-slot .ui-icon { width: 22px; height: 22px; }
+
+  /* Safety : aucune section ne doit faire scroll horizontal */
+  .char-grid > .section { min-width: 0; max-width: 100%; overflow-x: hidden; }
+  .char-stats-panel .stat-line { min-width: 0; }
+  .char-stats-panel .stat-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 .spell-list { display: flex; flex-direction: column; gap: 6px; }
@@ -1974,8 +1997,11 @@ button.shop-tab.active {
     width: 96vw;
     max-height: 85vh;
     overflow-y: auto;
-    padding: 16px;
+    overflow-x: hidden;     /* zéro scroll horizontal */
+    padding: 12px;          /* réduit pour gagner ~8 px de chaque côté */
   }
+  /* Fiche personnage : largeur max strictement bornée par le viewport */
+  #character-modal .modal-box { max-width: 100vw; }
   .levelup-box, .death-title { font-size: 18px; }
 
   /* Écran sélection joueurs */
