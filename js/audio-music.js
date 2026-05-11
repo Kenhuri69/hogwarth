@@ -11,6 +11,14 @@ Object.assign(AudioSystem, {
   // Voir .claude/plans/audio-intro-sample.md.
   playAmbientMusic(floor) {
     if (this.inCombat) return;
+    // No-op si la même zone joue déjà — évite de couper/relancer le sample
+    // d'intro entre showIntroScreen() et startGame() (cf. js/intro.js).
+    const targetFloor = (floor !== undefined) ? floor : this.currentFloor;
+    if (this.musicPlaying && !this.isMuted &&
+        this._sameAmbientZone(targetFloor, this.currentFloor)) {
+      this.currentFloor = targetFloor;
+      return;
+    }
     this.stopMusic();
     if (floor !== undefined) this.currentFloor = floor;
     if (this.isMuted) { this.musicPlaying = true; return; }
@@ -38,6 +46,12 @@ Object.assign(AudioSystem, {
 
     // Étages 3+ : procédural direct
     this._playProceduralAmbient(f);
+  },
+
+  // ── Deux étages tombent dans la même zone musicale ? ──────────
+  _sameAmbientZone(a, b) {
+    const z = f => (f <= 2 ? 1 : f <= 4 ? 2 : f <= 6 ? 3 : f <= 8 ? 4 : 5);
+    return z(a) === z(b);
   },
 
   // ── Chargement paresseux du sample d'intro ────────────────────
