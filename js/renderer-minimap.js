@@ -30,9 +30,24 @@ function _buildMinimapCells(mm, cellSize) {
         if (c === CELL.WALL)                                  div.classList.add('map-wall');
         else if (c === CELL.STAIRS_D || c === CELL.STAIRS_U) div.classList.add('map-stairs');
         else if (c === CELL.SHOP)                             div.classList.add('map-shop');
-        // Type "spécial" unifié : fontaine, PNJ et futurs éléments interactifs
-        // partagent une même teinte sur la minimap pour ne pas alourdir la légende.
-        else if (c === CELL.FOUNTAIN || c === CELL.NPC)       div.classList.add('map-special');
+        else if (c === CELL.FOUNTAIN)                         div.classList.add('map-special');
+        else if (c === CELL.NPC) {
+          // PNJ : teinte spéciale + marqueur "!" / "?" si la quête liée
+          // est offrable ou prête à rendre. La case est révélée d'office
+          // (cf. _placeNpcInRoom dans dungeon.js qui force visited=true).
+          div.classList.add('map-special', 'map-npc');
+          const npcId = (typeof npcPlacements !== 'undefined')
+            ? npcPlacements.get(`${x},${y}`) : null;
+          const sign  = (typeof getNpcMarkerSign === 'function')
+            ? getNpcMarkerSign(npcId) : '';
+          if (sign === '!') {
+            div.classList.add('map-npc-offer');
+            div.dataset.sign = '!';
+          } else if (sign === '?') {
+            div.classList.add('map-npc-ready');
+            div.dataset.sign = '?';
+          }
+        }
         else if (enemyMap[y][x])                              div.classList.add('map-enemy');
         else                                                  div.classList.add('map-floor');
       }
