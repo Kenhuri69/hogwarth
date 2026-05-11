@@ -66,3 +66,19 @@ distincte du bleu sourd de Céleste et du violet d'Iris, en accord avec
 son thème « Moonveil ». Les E/O restent en or sobre comme chez les autres
 héroïnes. La règle dans `CLAUDE.md` précise désormais cette dichotomie
 fille (gemme colorée N/S) vs garçon (or uni).
+
+## Suivi — 3ᵉ passe : anneau identique à Céleste/Iris
+
+**Écart constaté** : malgré la palette correcte, mon anneau or régénéré
+de zéro avait un profil différent de celui de Céleste/Iris (ring plat,
+pic absent). Analyse pixel-par-pixel : leur anneau or fait 5 px de large
+au milieu avec un pic blanc-or `#ecd692` au centre, encadré de bandes
+plus sombres ; le mien était mid-gold uni de 4 px.
+
+**Correction définitive** : on transplante directement la **couche
+d'anneau de Céleste** (pixels r ≥ 50 depuis le centre) sur la photo
+d'Anastasia masquée en rond. Puis on remappe par luminance les pixels
+de gemmes bleues vers une palette **bleu glacé argenté** (highlight
+`#f5fafc`, light `#d7e8f5`, mid `#afcde6`, dark `#82aad2`, deep
+`#5a82af`). Résultat : structure d'anneau exactement identique à
+Céleste/Iris (au pixel près), gemmes nettement distinctes.
