@@ -1,15 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  
+  <!-- inspired by lorc/wizard-staff (game-icons.net, CC BY 3.0).
+       Redrawn with 4 explicit regions for the painterly pipeline:
+       shaft (wooden pole) · grip (wrap) · pommel (bottom cap) · orb (magic crystal). -->
   <g fill="#000000">
-    
-    <path data-region="shaft" d="M 240 188 L 268 188 L 282 496 L 226 496 Z"></path>
-    
-    <path data-region="grip" d="M 220 360 L 288 360 L 290 392 L 218 392 Z"></path>
-    
-    <path data-region="shaft" d="&#xA;      M 264 196&#xA;      C 264 124 322 88 372 110&#xA;      C 416 130 422 188 388 218&#xA;      C 360 244 320 234 308 208&#xA;      C 300 188 314 168 332 168&#xA;      C 348 168 358 184 350 198&#xA;      L 332 198&#xA;      C 326 198 322 192 326 188&#xA;      C 304 188 304 220 332 230&#xA;      C 372 244 412 218 414 178&#xA;      C 416 130 372 100 332 110&#xA;      C 290 120 264 158 264 196 Z"></path>
-    
-    <path data-region="gem" d="M 366 168 m -40 0 a 40 40 0 1 0 80 0 a 40 40 0 1 0 -80 0"></path>
-    
-    <path data-region="pommel" d="M 222 488 L 286 488 L 280 510 L 228 510 Z"></path>
+    <!-- shaft : long vertical wooden pole, slightly tapered toward the top -->
+    <path data-region="shaft" d="M 240 200 L 272 200 L 282 488 L 230 488 Z"/>
+
+    <!-- grip : wrapped leather/cord band in the lower-middle, wider than shaft -->
+    <path data-region="grip" d="M 220 348 L 292 348 L 296 408 L 216 408 Z"/>
+    <!-- grip cord bands (thin horizontal lines for texture pickup) -->
+    <path data-region="grip" d="M 218 360 L 294 360 L 294 366 L 218 366 Z"/>
+    <path data-region="grip" d="M 217 388 L 295 388 L 295 394 L 217 394 Z"/>
+
+    <!-- pommel : decorative cap at the bottom -->
+    <path data-region="pommel" d="M 218 484 L 294 484 L 286 512 L 226 512 Z"/>
+
+    <!-- orb : glowing crystal/sphere at the top (its own region — distinct color) -->
+    <path data-region="orb" d="M 256 128 m -64 0 a 64 64 0 1 0 128 0 a 64 64 0 1 0 -128 0"/>
+    <!-- orb mount : small fixture between orb and shaft (also orb region for unified glow) -->
+    <path data-region="orb" d="M 244 184 L 268 184 L 264 206 L 248 206 Z"/>
   </g>
 </svg>

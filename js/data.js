@@ -187,10 +187,10 @@ const ICON_RECIPES = {
 
   wand2: {
     silhouette: { kind:"svg", file:"wizard-staff.svg" },
-    fills: { shaft:"#4e3420", grip:"#362416", pommel:"#7a582a", gem:"#bedceb" },
+    fills: { shaft:"#4e3420", grip:"#362416", pommel:"#7a582a", orb:"#bedceb" },
     accents: [
       { kind:"runes",    region:"shaft", color:"#ebd796", count:5 },
-      { kind:"orb_glow", region:"gem",   color:"#c8e6ff" }
+      { kind:"orb_glow", region:"orb",   color:"#c8e6ff" }
     ],
     rarity:"rare", material:"wood"
   },

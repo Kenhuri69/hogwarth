@@ -127,12 +127,12 @@ RECIPES: Dict[str, Recipe] = {
             "shaft":  ( 78,  52,  32),
             "grip":   ( 54,  36,  22),
             "pommel": (122,  88,  42),
-            "gem":    (190, 220, 235),       # crystal orb
+            "orb":    (190, 220, 235),       # crystal orb at the top
         },
         accents=[
             {"kind": "runes", "region": "shaft", "color": (235, 215, 150),
              "count": 5},
-            {"kind": "orb_glow", "region": "gem", "color": (200, 230, 255)},
+            {"kind": "orb_glow", "region": "orb", "color": (200, 230, 255)},
         ],
     ),
     "anneau_runique": Recipe(
