@@ -26,7 +26,7 @@ function isIgnorableError(text) {
       // sur la synthèse procédurale, mais Chromium log avant le catch.
       // En prod (HTTP/HTTPS) cette erreur n'apparaît pas.
       || (text.includes('URL scheme "file" is not supported')
-          && /audio\/\w+\.ogg/.test(text));
+          && /audio\/[\w/]+\.ogg/.test(text));
 }
 
 async function launchGame() {

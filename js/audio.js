@@ -21,6 +21,9 @@ const AudioSystem = {
   _sampleLoadPromises:{},   // Promise en cours par zone (évite multi-fetch)
   _sampleSources:     [],   // sources actives à stopper sur stopMusic()
   _sampleLoopTimer:   null, // setTimeout du prochain enchaînement loop
+  _voiceSources:      [],   // sources voix actives (séparé de _sampleSources pour ne pas être stoppé par stopMusic)
+  _voicePending:      null, // clé voix en attente de décode (pour annuler si une autre est demandée)
+  _duckRampSeconds:   0.20, // durée du ducking music in/out pendant une voix
 
   // ── Initialisation (une seule fois, après geste utilisateur) ──
   init() {
@@ -28,10 +31,13 @@ const AudioSystem = {
     this.ctx       = new (window.AudioContext || window.webkitAudioContext)();
     this.musicGain = this.ctx.createGain();
     this.sfxGain   = this.ctx.createGain();
+    this.voiceGain = this.ctx.createGain();
     this.musicGain.connect(this.ctx.destination);
     this.sfxGain.connect(this.ctx.destination);
+    this.voiceGain.connect(this.ctx.destination);
     this.musicGain.gain.value = 0.26;
     this.sfxGain.gain.value   = 0.65;
+    this.voiceGain.gain.value = 0.95;
   },
 
   stopMusic() {

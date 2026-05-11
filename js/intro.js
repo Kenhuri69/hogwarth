@@ -73,16 +73,28 @@ function _renderIntroPage() {
     actionsEl.innerHTML =
       `<button class="explore-btn" onclick="_finishIntro()">Accepter & Entrer à Poudlard</button>`;
   }
+
+  // Voix narrative Dumbledore : un fichier par page (cf. plan voice-intro-dumbledore.md).
+  // Fallback silencieux si la clé n'est pas dans _VOICE_SAMPLES.
+  if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playVoice === 'function') {
+    AudioSystem.playVoice('dumbledore_intro_' + (_introPage + 1));
+  }
 }
 
 function _advanceIntro() {
   if (_introPage < _introPages.length - 1) {
+    if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.stopVoice === 'function') {
+      AudioSystem.stopVoice();
+    }
     _introPage++;
     _renderIntroPage();
   }
 }
 
 function _finishIntro() {
+  if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.stopVoice === 'function') {
+    AudioSystem.stopVoice();
+  }
   // Acceptation auto de la 1re quête : c'est le contrat narratif de l'intro.
   if (typeof acceptQuest === 'function') acceptQuest('intro_tutoriel');
   // Marquer le PNJ guide comme rencontré : le greeting ne se rejouera pas
