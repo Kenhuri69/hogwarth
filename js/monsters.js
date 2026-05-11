@@ -781,6 +781,7 @@ const MONSTERS = [
     id:       "chimere",
     name:     "Chimère de Poudlard",
     icon:     "🦁",
+    imgSrc:   "img/monsters/chimere.png",
     category: "créature",
     desc:     "La Chimère rugit de ses trois têtes et crache des flammes !",
     lore:     "Créature mythologique rarissime possédant une tête de lion, une de chèvre et une queue-serpent. Elle n'a été vaincue qu'une seule fois dans l'histoire des sorciers.",
