@@ -126,13 +126,18 @@ Harry, Hermione, Céleste, Iris, Maxence, Anastasia) :
 1. **Portrait** — préparer **deux** fichiers PNG 128×128 dans `img/` :
    - `img/<key>-original.png` : crop centré du visuel source, sans décoration.
    - `img/<key>.png` : variante encadrée d'un **médaillon doré**
-     (cercle photo + double anneau or + 4 gemmes aux points cardinaux).
-     C'est ce fichier qui s'affiche partout dans le jeu.
+     (cercle photo + double anneau or). C'est ce fichier qui s'affiche
+     partout dans le jeu.
    Procédure : center-crop puis Lanczos vers 128×128 pour la version
-   `-original.png`, puis appliquer le frame doré pour `<key>.png`. Comparer
-   à l'œil avec `img/celeste.png`, `img/iris.png`, `img/maxence.png` —
-   structure : photo r≤50, anneau or vif r=52-54, gap, anneau or moyen
-   r=57-60, bord or sombre r=61-63, gemmes aux N/S/E/O.
+   `-original.png`, puis appliquer le frame doré pour `<key>.png`.
+   Structure commune : photo r≤50, anneau or vif r=52-54, gap, anneau
+   or moyen r=57-60, bord or sombre r=61-63.
+   **Variante selon le genre du héros** (à respecter) :
+   - **Filles** (Céleste, Iris, Anastasia…) : gemme colorée sertie aux
+     points N/S, accents or sobres aux E/O. Couleur unique par héroïne
+     (Céleste = bleu sourd, Iris = violet, Anastasia = bleu lunaire argenté).
+   - **Garçons** (Maxence…) : 4 points cardinaux en or uni, sans gemme
+     colorée — finition sobre.
 2. **Données** — ajouter une entrée dans `CHARACTERS` (`js/data.js`)
    avec `name`, `icon`, `class`, `imgSrc:"img/<key>.png"`, `role`, stats
    (hp/sp/str/int/agi/end/lck/mag/atk/def), `wand`, `armor`, `acc`,

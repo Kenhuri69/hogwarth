@@ -52,3 +52,17 @@ conservé en `<key>-original.png`).
 - Règle d'ajout d'un héros documentée dans `CLAUDE.md` (section
   "Ajouter un nouveau personnage jouable") pour qu'une prochaine session
   livre les deux fichiers d'office.
+
+## Suivi — followup médaillon féminin
+
+**Écart constaté** : la 2ᵉ passe avait livré un médaillon « masculin » (or
+uni aux 4 points cardinaux, façon Maxence) pour Anastasia, alors que
+Céleste et Iris portent des **gemmes colorées N/S** réservées aux
+héroïnes féminines.
+
+**Correction** : Anastasia reçoit désormais des gemmes **bleu lunaire
+argenté** (`#aac8eb` clair / `#5a78af` rim) aux points N/S — couleur
+distincte du bleu sourd de Céleste et du violet d'Iris, en accord avec
+son thème « Moonveil ». Les E/O restent en or sobre comme chez les autres
+héroïnes. La règle dans `CLAUDE.md` précise désormais cette dichotomie
+fille (gemme colorée N/S) vs garçon (or uni).
