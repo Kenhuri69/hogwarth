@@ -66,3 +66,37 @@ distincte du bleu sourd de Céleste et du violet d'Iris, en accord avec
 son thème « Moonveil ». Les E/O restent en or sobre comme chez les autres
 héroïnes. La règle dans `CLAUDE.md` précise désormais cette dichotomie
 fille (gemme colorée N/S) vs garçon (or uni).
+
+## Suivi — 3ᵉ passe : anneau identique à Céleste/Iris
+
+**Écart constaté** : malgré la palette correcte, l'anneau or régénéré
+de zéro avait un profil radial différent de Céleste/Iris.
+
+Analyse pixel-par-pixel (`celeste.png`, axe horizontal positif depuis
+le centre 63,63) :
+```
+r=53  rgb=(150,124,68)  gold_dark   ← pinstripe fin
+r=54  rgb=(150,124,68)  gold_dark
+r=55  rgb=( 27, 14, 5)  noir        ← gap
+r=56  rgb=(132, 99,20)  gold_dark
+r=57  rgb=(226,194,96)  gold_bright
+r=58  rgb=(236,214,146) GOLD PEAK   ← #ecd692 = pic central
+r=59  rgb=(205,165,45)  gold_mid
+r=60  rgb=(136,101,20)  gold_dark
+r=61+ rgb=( 28, 15, 4)  noir/transp ← fade
+```
+Ma génération précédente avait un anneau plat `#c9a84c` sans pic central.
+
+**Règle définitive** (codifiée dans `CLAUDE.md`) :
+> Pour une héroïne, ne PAS générer l'anneau procéduralement. Transplanter
+> directement la couche d'anneau de `celeste.png` ou `iris.png` :
+> 1. masque rond la photo cible au radius 50,
+> 2. copie tous les pixels à `r ≥ 50` du médaillon de référence,
+> 3. `alpha_composite(photo, ring)`,
+> 4. recolore uniquement les pixels de gemme (filtrés par dominance
+>    bleue) par luminance vers la palette propre à l'héroïne.
+
+**Implémentation Anastasia** : palette bleu glacé argenté par bandes de
+luminance (highlight `#f5fafc`, light `#d7e8f5`, mid `#afcde6`, dark
+`#82aad2`, deep `#5a82af`). Snippet PIL conservé dans le commit pour
+référence future.

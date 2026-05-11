@@ -125,19 +125,33 @@ Harry, Hermione, Céleste, Iris, Maxence, Anastasia) :
 
 1. **Portrait** — préparer **deux** fichiers PNG 128×128 dans `img/` :
    - `img/<key>-original.png` : crop centré du visuel source, sans décoration.
-   - `img/<key>.png` : variante encadrée d'un **médaillon doré**
-     (cercle photo + double anneau or). C'est ce fichier qui s'affiche
-     partout dans le jeu.
-   Procédure : center-crop puis Lanczos vers 128×128 pour la version
-   `-original.png`, puis appliquer le frame doré pour `<key>.png`.
-   Structure commune : photo r≤50, anneau or vif r=52-54, gap, anneau
-   or moyen r=57-60, bord or sombre r=61-63.
-   **Variante selon le genre du héros** (à respecter) :
-   - **Filles** (Céleste, Iris, Anastasia…) : gemme colorée sertie aux
-     points N/S, accents or sobres aux E/O. Couleur unique par héroïne
-     (Céleste = bleu sourd, Iris = violet, Anastasia = bleu lunaire argenté).
-   - **Garçons** (Maxence…) : 4 points cardinaux en or uni, sans gemme
-     colorée — finition sobre.
+   - `img/<key>.png` : variante encadrée d'un **médaillon doré**.
+     C'est ce fichier qui s'affiche partout dans le jeu.
+
+   **Procédure** : center-crop puis Lanczos vers 128×128 pour la version
+   `-original.png`. Pour la version encadrée, NE PAS générer l'anneau de
+   zéro — le profil radial est subtil (pic central, gradient à 5 px) et
+   échoue facilement à l'œil. La règle est :
+
+   > Transplanter l'anneau d'un médaillon existant de **même genre** :
+   > 1. masque rond la photo source au radius 50 (centre 63.5, 63.5),
+   > 2. copie pixel-par-pixel tous les pixels à `r ≥ 50` depuis le
+   >    médaillon de référence (`celeste.png` ou `iris.png` pour les
+   >    héroïnes ; `maxence.png` pour les héros) sur un canevas vide,
+   > 3. compose les deux couches : `Image.alpha_composite(photo, ring)`.
+
+   **Variante selon le genre** (à respecter) :
+   - **Filles** (Céleste, Iris, Anastasia…) : référence = `celeste.png`
+     ou `iris.png`. L'anneau est un **gradient à 5 px de large** avec
+     pic blanc-or `#ecd692` au centre (profil radial à r=56→60 :
+     `#846314` → `#e2c260` → `#ecd692` → `#cda52d` → `#886514`), avec
+     un fin pinstripe or à r=53-54, gap noir à r=55, et fade noir
+     externe à r=61+. Gemmes colorées N/S, accents or E/O.
+     Pour différencier deux héroïnes, recolorer **uniquement les pixels
+     bleus de gemme** par luminance (Céleste = bleu sourd ; Iris = violet ;
+     Anastasia = bleu glacé argenté).
+   - **Garçons** (Maxence…) : référence = `maxence.png`. Anneau plus
+     fin et sobre (gold uni `#f0d782`), pas de gemme colorée.
 2. **Données** — ajouter une entrée dans `CHARACTERS` (`js/data.js`)
    avec `name`, `icon`, `class`, `imgSrc:"img/<key>.png"`, `role`, stats
    (hp/sp/str/int/agi/end/lck/mag/atk/def), `wand`, `armor`, `acc`,
