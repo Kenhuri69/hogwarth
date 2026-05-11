@@ -367,10 +367,14 @@ function _renderStatValueWithBonus(c, key, baseKey) {
 // et une paper-doll-bottom (rangée wand/belt/trinket). Stage carré contraint
 // par les 4 slots latéraux via align-items:stretch.
 function openCharacter(charIdx = 0) {
+  // En mode solo, partySize=1 → on borne charIdx à 0 même si l'appel
+  // demande Hermione (peut arriver via état legacy ou bouton resté affiché).
+  if (charIdx >= partySize) charIdx = 0;
   const c      = party[charIdx];
   const detail = document.getElementById('char-detail');
 
-  const tabs = party.map((p, i) =>
+  // Onglets : un seul perso visible en solo, deux en duo.
+  const tabs = party.slice(0, partySize).map((p, i) =>
     `<button class="cmd-btn" style="font-size:10px;${i === charIdx ? 'border-color:var(--gold)' : ''}" onclick="openCharacter(${i})">${p.icon} ${p.name.split(' ')[0]}</button>`
   ).join('');
 

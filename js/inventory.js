@@ -375,11 +375,13 @@ function useItem(idx, battleMode) {
 
 // Hors combat : liste les sorts du personnage sélectionné (onglets)
 function openSpells(charIdx = 0) {
+  // En mode solo, on ne montre que Harry (partySize=1).
+  if (charIdx >= partySize) charIdx = 0;
   const c    = party[charIdx];
   const list = document.getElementById('spell-list');
 
-  // Onglets Harry / Hermione
-  const tabs = party.map((p, i) =>
+  // Onglets Harry / Hermione (Hermione masquée en solo).
+  const tabs = party.slice(0, partySize).map((p, i) =>
     `<div onclick="openSpells(${i})" style="cursor:pointer;padding:4px 8px;border-radius:2px;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;
      background:${i === charIdx ? '#2a1a08' : '#0a0705'};border:1px solid ${i === charIdx ? 'var(--gold-dark)' : '#2a1a08'};color:${i === charIdx ? 'var(--gold-light)' : '#6a5030'}">
       ${p.icon} ${p.name.split(' ')[0]}
