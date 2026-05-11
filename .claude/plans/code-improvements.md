@@ -172,7 +172,7 @@ Pas de refactor de confort.
 
 | Item | Status | Commit | Notes |
 |------|--------|--------|-------|
-| A1   | ⏳     | -      | -     |
+| A1   | ✅     | TBD    | 55 modules vérifiés au chargement. Détection via `typeof` (safe pour let/const). Bandeau DOM rouge si critique manquant. |
 | A2   | ⏳     | -      | -     |
 | A3   | ⏳     | -      | -     |
 | A4   | ⏳     | -      | -     |
