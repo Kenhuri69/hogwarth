@@ -6,15 +6,102 @@
 Object.assign(AudioSystem, {
 
   // ── Musique ambiante selon l'étage (5 zones progressives) ────
+  // Étages 1-2 : sample OGG (audio/ambient_intro.ogg) si disponible,
+  // sinon fallback synthèse procédurale. Étages 3+ : toujours procédural.
+  // Voir .claude/plans/audio-intro-sample.md.
   playAmbientMusic(floor) {
     if (this.inCombat) return;
     this.stopMusic();
     if (floor !== undefined) this.currentFloor = floor;
     if (this.isMuted) { this.musicPlaying = true; return; }
     this.init();
+    this.musicPlaying = true;
 
-    // ── Paramètres par zone ───────────────────────────────────
     const f = this.currentFloor;
+
+    // Zones 1-2 : tenter le sample, fallback procédural
+    if (f <= 2) {
+      this._loadIntroSample()
+        .then(() => {
+          if (this.musicPlaying && !this.inCombat && this.currentFloor <= 2) {
+            this._playIntroSampleLoop();
+          }
+        })
+        .catch(err => {
+          console.warn('[audio] intro sample unavailable, fallback to procedural:', err && err.message);
+          if (this.musicPlaying && !this.inCombat && this.currentFloor <= 2) {
+            this._playProceduralAmbient(f);
+          }
+        });
+      return;
+    }
+
+    // Étages 3+ : procédural direct
+    this._playProceduralAmbient(f);
+  },
+
+  // ── Chargement paresseux du sample d'intro ────────────────────
+  _loadIntroSample() {
+    if (this._sampleBuffer) return Promise.resolve(this._sampleBuffer);
+    if (this._sampleLoadPromise) return this._sampleLoadPromise;
+    if (!this.ctx) this.init();
+    this._sampleLoadPromise = fetch('audio/ambient_intro.ogg', { cache: 'force-cache' })
+      .then(r => {
+        if (!r.ok) throw new Error('fetch ' + r.status);
+        return r.arrayBuffer();
+      })
+      .then(buf => new Promise((resolve, reject) =>
+        this.ctx.decodeAudioData(buf, resolve, reject)
+      ))
+      .then(audioBuf => {
+        this._sampleBuffer = audioBuf;
+        return audioBuf;
+      })
+      .catch(err => {
+        this._sampleLoadPromise = null;  // permet un retry
+        throw err;
+      });
+    return this._sampleLoadPromise;
+  },
+
+  // ── Lecture loopée avec crossfade 1 s ─────────────────────────
+  _playIntroSampleLoop() {
+    const buf = this._sampleBuffer;
+    if (!buf || !this.musicPlaying || this.inCombat) return;
+    const CROSSFADE = 1.0;
+    const duration  = buf.duration;
+    if (duration <= 2 * CROSSFADE) return;  // sample trop court pour crossfader
+
+    const schedule = (startAt) => {
+      if (!this.musicPlaying || this.inCombat || this.currentFloor > 2) return;
+      const src  = this.ctx.createBufferSource();
+      const gain = this.ctx.createGain();
+      src.buffer = buf;
+      src.connect(gain).connect(this.musicGain);
+      // Fade in sur CROSSFADE
+      gain.gain.setValueAtTime(0, startAt);
+      gain.gain.linearRampToValueAtTime(1, startAt + CROSSFADE);
+      // Fade out sur les CROSSFADE dernières secondes
+      gain.gain.setValueAtTime(1, startAt + duration - CROSSFADE);
+      gain.gain.linearRampToValueAtTime(0, startAt + duration);
+      src.start(startAt);
+      src.stop(startAt + duration + 0.05);
+      this._sampleSources.push(src);
+      src.onended = () => {
+        const i = this._sampleSources.indexOf(src);
+        if (i >= 0) this._sampleSources.splice(i, 1);
+      };
+      // Enchaîne la prochaine itération CROSSFADE secondes avant la fin
+      const nextStart = startAt + duration - CROSSFADE;
+      const delayMs   = Math.max(0, (nextStart - this.ctx.currentTime) * 1000 - 200);
+      this._sampleLoopTimer = setTimeout(() => schedule(nextStart), delayMs);
+    };
+
+    schedule(this.ctx.currentTime);
+  },
+
+  // ── Synthèse procédurale (zones 3+ ou fallback zones 1-2) ─────
+  _playProceduralAmbient(f) {
     let scale, tempo, oscType, filterHz, windChance, harmChance, bassDrone;
 
     if (f <= 2) {
