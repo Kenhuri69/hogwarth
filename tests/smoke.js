@@ -2371,10 +2371,14 @@ async function scenarioItemIcons() {
     return elems.map(e => e.getAttribute('src') || e.getAttribute('data-mask') || '');
   });
   console.log('  T2 inventaire →', t2);
-  assert(t2.some(s => /items\/potion_s\.png$/.test(s)),         'inventaire doit afficher potion_s.png');
-  assert(t2.some(s => /items\/wand1\.png$/.test(s) || s === 'wand_shaft_base'),
-         'inventaire doit afficher wand1.png OU wrapper tinted (mask=wand_shaft_base)');
-  assert(t2.some(s => /items\/livre_sortileges\.png$/.test(s)), 'inventaire doit afficher livre_sortileges.png');
+  // Accepte l'ancien chemin (items/<id>.png) ou le nouveau pipeline painterly
+  // (icons_new/<id>_<size>.png — étape 9 du redesign).
+  assert(t2.some(s => /(items\/potion_s\.png|icons_new\/potion_s_\d+\.png)$/.test(s)),
+         'inventaire doit afficher potion_s');
+  assert(t2.some(s => /(items\/wand1\.png|icons_new\/wand1_\d+\.png)$/.test(s) || s === 'wand_shaft_base'),
+         'inventaire doit afficher wand1 OU wrapper tinted (mask=wand_shaft_base)');
+  assert(t2.some(s => /(items\/livre_sortileges\.png|icons_new\/livre_sortileges_\d+\.png)$/.test(s)),
+         'inventaire doit afficher livre_sortileges');
 
   // T3 : grille boutique utilise les PNG (déclencher openShop avec un currentFloor>=1)
   const t3 = await page.evaluate(() => {
@@ -2387,7 +2391,8 @@ async function scenarioItemIcons() {
   });
   console.log('  T3 boutique →', t3);
   assert(t3.length >= 3,                                  `shop doit avoir au moins 3 items, vu ${t3.length}`);
-  assert(t3.every(s => /items\/[a-z0-9_]+\.png$/.test(s)),   'tous les items shop doivent pointer img/icons/items/');
+  assert(t3.every(s => /(items\/[a-z0-9_]+\.png|icons_new\/[a-z0-9_]+_\d+\.png)$/.test(s)),
+         'tous les items shop doivent pointer img/icons/items/ ou img/icons_new/');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

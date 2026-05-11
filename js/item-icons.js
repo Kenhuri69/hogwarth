@@ -88,6 +88,53 @@ const ITEM_ICON_REGISTRY = {
   livre_morsmordre:   'img/icons/items/livre_morsmordre.png'
 };
 
+// Mapping painterly pipeline (étape 9 — voir SVG_PLAN / tools/icon_factory.py)
+const ITEM_ICON_NEW_REGISTRY = {
+  potion_s:             'img/icons_new/potion_s_48.png',
+  felix:                'img/icons_new/felix_48.png',
+  wand2:                'img/icons_new/wand2_48.png',
+  anneau_runique:       'img/icons_new/anneau_runique_48.png',
+  livre_sortileges:     'img/icons_new/livre_sortileges_48.png',
+  potion_m:             'img/icons_new/potion_m_48.png',
+  potion_force:         'img/icons_new/potion_force_48.png',
+  larmes_phenix:        'img/icons_new/larmes_phenix_48.png',
+  wand1:                'img/icons_new/wand1_48.png',
+  livre_soin:           'img/icons_new/livre_soin_48.png',
+  book_monsters:        'img/icons_new/book_monsters_48.png',
+  livre_prince:         'img/icons_new/livre_prince_48.png',
+  livre_bombarda:       'img/icons_new/livre_bombarda_48.png',
+  livre_patronum:       'img/icons_new/livre_patronum_48.png',
+  livre_sanguini:       'img/icons_new/livre_sanguini_48.png',
+  livre_vampyrus:       'img/icons_new/livre_vampyrus_48.png',
+  livre_taranta:        'img/icons_new/livre_taranta_48.png',
+  livre_maledictus:     'img/icons_new/livre_maledictus_48.png',
+  livre_crucio:         'img/icons_new/livre_crucio_48.png',
+  livre_morsmordre:     'img/icons_new/livre_morsmordre_48.png',
+  amulette:             'img/icons_new/amulette_48.png',
+  amulette_protection:  'img/icons_new/amulette_protection_48.png',
+  locket_slytherin:     'img/icons_new/locket_slytherin_48.png',
+  robe1:                'img/icons_new/robe1_48.png',
+  cape_voyageur:        'img/icons_new/cape_voyageur_48.png',
+  cape_invis:           'img/icons_new/cape_invis_48.png',
+  anneau_argent:        'img/icons_new/anneau_argent_48.png',
+  anneau_resurrection:  'img/icons_new/anneau_resurrection_48.png',
+  sword_gryff:          'img/icons_new/sword_gryff_48.png',
+  broom:                'img/icons_new/broom_48.png',
+  bottes_apprenti:      'img/icons_new/bottes_apprenti_48.png',
+  bottes_dragon:        'img/icons_new/bottes_dragon_48.png',
+  gants_apprenti:       'img/icons_new/gants_apprenti_48.png',
+  ceinture_cuir:        'img/icons_new/ceinture_cuir_48.png',
+  ceinture_alchimiste:  'img/icons_new/ceinture_alchimiste_48.png',
+  chapeau_apprenti:     'img/icons_new/chapeau_apprenti_48.png',
+  chapeau_pointu:       'img/icons_new/chapeau_pointu_48.png',
+  circlet_serdaigle:    'img/icons_new/circlet_serdaigle_48.png',
+  diademe_serdaigle:    'img/icons_new/diademe_serdaigle_48.png',
+  coupe_poufsouffle:    'img/icons_new/coupe_poufsouffle_48.png',
+  retourneur_temps:     'img/icons_new/retourneur_temps_48.png',
+  mandragore:           'img/icons_new/mandragore_48.png',
+  choco_sorcier:        'img/icons_new/choco_sorcier_48.png'
+};
+
 // Status effects (battle.js consomme ce registre via STATUS_DEFS[id].iconSrc)
 const STATUS_ICON_REGISTRY = {
   burn:   'img/icons/burn.png',
@@ -128,6 +175,8 @@ const SPELL_ICON_REGISTRY = {
 
 function getItemIconSrc(item) {
   if (!item) return null;
+  // Painterly pipeline (étape 9) — prioritaire si l'item y figure
+  if (item.id && ITEM_ICON_NEW_REGISTRY[item.id]) return ITEM_ICON_NEW_REGISTRY[item.id];
   if (item.id && ITEM_ICON_REGISTRY[item.id]) return ITEM_ICON_REGISTRY[item.id];
   if (item.type && EQUIPMENT_SLOT_ICONS[item.type]) return EQUIPMENT_SLOT_ICONS[item.type];
   return null;
