@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/improve-game-images-7OVCy`
 > (anciennes branches : `claude/resume-svg-work-rgOvm`, `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 37 / 76 tâches terminées (+ C44 fontaine, hors bloc D ; C25 marqué n/a)
+> **Statut global** : 38 / 76 tâches terminées (+ C44 fontaine, hors bloc D ; C25 marqué n/a)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -119,7 +119,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C24** `mangemort` *(le monstre `id:"mangemort"` porte déjà `name:"Mangemort Masqué"` — C25 ci-dessous est n/a)*
 - [~] **C25** `mangemort_masque` *(n/a — fusionné avec C24, pas d'entrée séparée dans `monsters.js`)*
 - [x] **C26** `mangemort_elite`
-- [ ] **C27** `sorcier_renegat`
+- [x] **C27** `sorcier_renegat`
 - [x] **C28** `boggart`
 - [ ] **C29** `chimere`
 - [ ] **C30** `ombre_quirrell`
@@ -236,3 +236,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-10 | #32 | Chantier outillage (sur branche `claude/improve-game-images-7OVCy`, post-rebase sur master) | `IMG_STYLE.md` (guide visuel : palette/cadrage/prompts-types §8/critères §9, dérivé des PNG validés) ; `tools/process_monster_png.py` (pipeline reproductible rembg/birefnet + trim + recentrage + resize + auto-QA) ; `tools/count_plan.py` (compte tous blocs A+B+C+D+Z et signale les dérives vs `Statut global`) ; smoke scénario 5 data-driven sur tous les `imgSrc` (19 monstres) + check color-type RGBA via lecture binaire (canvas tainted en `file://`). Pas de rétro-traitement des PNG master |
 | 2026-05-11 | #33 | C24 mangemort intégré (sur branche `claude/monster-png-C24-mangemort`) | Source 1024×1024 RGBA livrée avec alpha déjà détouré (43,8% pixels α=0) → skip rembg, pipeline inline (trim bbox + recentrage 8% + resize 512 + optimize). Squelette masqué hood noir, baguette à étincelles violettes, robe noire en lambeaux. QA §9 : alpha=0 57%, alpha=255 22%, occupation 85×83%, 294 KB ✓. Constat : C25 `mangemort_masque` n'a jamais existé dans `monsters.js` (id "mangemort" porte déjà `name:"Mangemort Masqué"`) → marqué `[~]` n/a |
 | 2026-05-11 | #34 | C26 mangemort_elite intégré (sur branche `claude/monster-png-C26-mangemort-elite`, dérivée de C24) | Source 1024×1024 livrée détourée (43,8% α=0) → pipeline inline. Armure noire segmentée (épaulières, plastron) sous capuche, masque de crâne gravé, baguette obsidienne émettant volutes sombres, Marque des Ténèbres rouge sur avant-bras. QA §9 : alpha=0 59%, alpha=255 17%, occupation 77×84%, 296 KB ✓ |
+| 2026-05-11 | #35 | C27 sorcier_renegat intégré (sur branche `claude/monster-png-C27-sorcier-renegat`, dérivée de C26) | Source 1024×1024 détourée (52,6% α=0) → pipeline inline. Jeune ex-Serpentard brun, robe verte/grise effilochée, écusson serpent, cravate desserrée, baguette en main droite, lueur acide verte d'auto-soin dans la main gauche. QA §9 : alpha=0 65%, alpha=255 18%, occupation 79×84%, 240 KB ✓ |
