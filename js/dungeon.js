@@ -72,6 +72,13 @@ function _placeNpcInRoom(npc, room, isSpawnRoom) {
   const pick   = center || candidates[Math.floor(Math.random() * candidates.length)];
   dungeon[pick.y][pick.x] = CELL.NPC;
   npcPlacements.set(`${pick.x},${pick.y}`, npc.id);
+  // Révèle la case sur la minimap dès le départ : les PNJ sont des
+  // repères de navigation, pas des surprises (choix UX 2026-05-11).
+  // Le marqueur "!"/"?" éventuel est ajouté par renderer-minimap selon
+  // l'état de la quête liée.
+  if (typeof visited !== 'undefined' && visited[pick.y]) {
+    visited[pick.y][pick.x] = true;
+  }
   return true;
 }
 

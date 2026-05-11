@@ -421,9 +421,35 @@ body {
 .map-stairs { background: #4a3a6a; }
 .map-enemy { background: #6a1010; }
 .map-shop { background: #1a4a2a; }
-/* Type "spécial" : fontaine, PNJ, et futurs éléments interactifs.
-   Une seule teinte pour ne pas alourdir la légende. */
+/* Type "spécial" : fontaine, PNJ neutre, et futurs éléments interactifs.
+   Une teinte unifiée par défaut pour ne pas alourdir la légende. */
 .map-special { background: #6a4a18; box-shadow: inset 0 0 2px #f5d27a; }
+.map-npc     { position: relative; }
+/* PNJ avec quête disponible (offer) — jaune doré, pulse subtil */
+.map-npc-offer { background: #b8881c; box-shadow: 0 0 4px #ffd84a, inset 0 0 2px #fff0a0;
+                 animation: mapNpcPulse 1.6s ease-in-out infinite; }
+/* PNJ avec quête prête à rendre (ready) — bleu clair, pulse subtil */
+.map-npc-ready { background: #2a4e8a; box-shadow: 0 0 4px #b8d4ff, inset 0 0 2px #e0eaff;
+                 animation: mapNpcPulse 1.6s ease-in-out infinite; }
+.map-npc[data-sign]::after {
+  content: attr(data-sign);
+  position: absolute; inset: 0;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff7c8;
+  text-shadow: 0 0 2px rgba(0,0,0,0.95), 0 0 1px rgba(0,0,0,1);
+  line-height: 1;
+  pointer-events: none;
+}
+@keyframes mapNpcPulse {
+  0%, 100% { filter: brightness(1.0); }
+  50%      { filter: brightness(1.35); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-npc-offer, .map-npc-ready { animation: none; }
+}
 
 .compass {
   display: grid; grid-template-columns: repeat(3, 1fr);
