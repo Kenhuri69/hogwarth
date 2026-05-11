@@ -287,6 +287,20 @@ function _renderStatLine(iconPath, label, value, derived = false) {
           </div>`;
 }
 
+// Construit la valeur affichée d'une stat avec son bonus.
+// Ex: base 8, total 12 → "8 <span class='stat-bonus'>+4</span>"
+//     base 9, total 9  → "9"
+// Si _base${Key} n'existe pas (cas legacy), on tombe sur le total tel quel.
+function _renderStatValueWithBonus(c, key, baseKey) {
+  const total = c[key];
+  if (total == null) return '—';
+  const base  = c[baseKey];
+  if (base == null || base === total) return String(total);
+  const bonus = total - base;
+  if (bonus <= 0) return String(total);
+  return `${base} <span class="stat-bonus">+${bonus}</span>`;
+}
+
 // Fiche de personnage v2 — grid-template-areas :
 //   "stats equip"
 //   "stats spells"
@@ -336,13 +350,13 @@ function openCharacter(charIdx = 0) {
         </div>
         ${_renderStatLine('img/icons/hp.png',  'Vie',         `${c.hp}/${c.hpMax}`)}
         ${_renderStatLine('img/icons/mp.png',  'Mana',        `${c.sp}/${c.spMax}`)}
-        ${_renderStatLine('img/icons/atk.png', 'Attaque',     c.atk)}
-        ${_renderStatLine('img/icons/def.png', 'Défense',     c.def)}
-        ${_renderStatLine('img/icons/mag.png', 'Magie',       c.mag)}
-        ${_renderStatLine('img/icons/str.png', 'Force',       c.str)}
-        ${_renderStatLine('img/icons/int.png', 'Intelligence',c.int)}
-        ${_renderStatLine('img/icons/agi.png', 'Agilité',     c.agi)}
-        ${_renderStatLine('img/icons/xp.png',  'Chance',      c.lck)}
+        ${_renderStatLine('img/icons/atk.png', 'Attaque',     _renderStatValueWithBonus(c, 'atk', '_baseAtk'))}
+        ${_renderStatLine('img/icons/def.png', 'Défense',     _renderStatValueWithBonus(c, 'def', '_baseDef'))}
+        ${_renderStatLine('img/icons/mag.png', 'Magie',       _renderStatValueWithBonus(c, 'mag', '_baseMag'))}
+        ${_renderStatLine('img/icons/str.png', 'Force',       _renderStatValueWithBonus(c, 'str', '_baseStr'))}
+        ${_renderStatLine('img/icons/int.png', 'Intelligence',_renderStatValueWithBonus(c, 'int', '_baseInt'))}
+        ${_renderStatLine('img/icons/agi.png', 'Agilité',     _renderStatValueWithBonus(c, 'agi', '_baseAgi'))}
+        ${_renderStatLine('img/icons/xp.png',  'Chance',      _renderStatValueWithBonus(c, 'lck', '_baseLck'))}
         ${_renderStatLine('img/icons/atk.png', 'Critique',    critPct,  true)}
         ${_renderStatLine('img/icons/agi.png', 'Esquive',     dodgePct, true)}
       </div>
