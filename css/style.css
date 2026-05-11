@@ -815,12 +815,24 @@ body {
 
 /* Desktop (souris) : le nom passe en tooltip au hover, l'icône occupe
  * toute la cellule. Sur mobile (hover: none), on garde le nom visible
- * sous l'icône — le tap-preview JS s'occupe d'afficher la tooltip riche. */
+ * sous l'icône — le tap-preview JS s'occupe d'afficher la tooltip riche.
+ * Le badge de slot (inv-type-badge) passe en absolu coin bas-droit pour
+ * ne plus déborder hors de la cellule. */
 @media (hover: hover) and (min-width: 701px) {
-  .inv-slot { height: 84px; padding: 6px; }
+  .inv-slot {
+    min-height: 88px; height: auto;
+    padding: 8px;
+    position: relative;
+  }
   .inv-slot .item-name { display: none; }
+  .inv-slot .item-icon { display: flex; align-items: center; justify-content: center; }
   .section-inv .inv-slot .ui-icon,
-  .inv-slot .ui-icon { width: 64px; height: 64px; }
+  .inv-slot .ui-icon { width: 60px; height: 60px; }
+  .inv-slot .inv-type-badge {
+    position: absolute; bottom: 4px; right: 4px; margin: 0 !important;
+    opacity: 0.75; pointer-events: none;
+  }
+  .inv-slot .inv-type-badge .ui-icon { width: 14px; height: 14px; }
 }
 /* Mobile : tap-preview montre la tooltip riche, comme hover sur desktop */
 .inv-slot.tap-preview .item-tooltip { opacity: 1; visibility: visible; }

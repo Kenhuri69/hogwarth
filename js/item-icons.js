@@ -189,11 +189,17 @@ function getItemIconSrc(item) {
 // d'une même famille — voir .claude/plans/equipment-extended.md §2.4.
 function getItemIconHtml(item, sizeClass) {
   const cls = sizeClass || 'ui-icon-md';
+  // Le pipeline painterly (étape 9) supplante le système tinted 2-calques
+  // pour les items mappés : si l'id figure dans ITEM_ICON_NEW_REGISTRY,
+  // on utilise directement le PNG painterly (déjà coloré par recipe).
+  const hasPainterly = item && item.id
+    && typeof ITEM_ICON_NEW_REGISTRY !== 'undefined'
+    && ITEM_ICON_NEW_REGISTRY[item.id];
   // Architecture tint 2-calques : si l'item a `tinted: true` et déclare
   // un blade (silhouette teintable) + un hilt (overlay détails fixes),
   // on rend un wrapper <span> avec deux layers superposés. Voir
   // css/style.css `.tinted-icon` et img/icons/_tint_demo.html.
-  if (item && item.tinted) {
+  if (item && item.tinted && !hasPainterly) {
     const html = _getTintedItemHtml(item, cls);
     if (html) return html;
   }

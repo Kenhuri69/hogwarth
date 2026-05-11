@@ -147,7 +147,7 @@ function renderInventory(battleMode) {
         ? getEquipmentSlotIconHtml(slotKey, 'ui-icon-sm')
         : '';
       const typeLabel = (isEquip || isSpellbook)
-        ? `<div style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
+        ? `<div class="inv-type-badge" style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
         : '';
       // Bordure de rareté inv-slot ↔ classe rarity-*
       if (item.rarity) div.classList.add(`rarity-${item.rarity}`);
