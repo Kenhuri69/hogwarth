@@ -166,6 +166,377 @@ RECIPES: Dict[str, Recipe] = {
              "color": ( 30,  46,  76)},
         ],
     ),
+
+    # ── Étape 7 — Mapping étendu ───────────────────────────────────────────
+
+    # Potions / glass
+    "potion_m": Recipe(
+        id="potion_m", name="Potion Magique", rarity="common", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (118,  78,  42), "body": (172, 196, 208)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": (146,  92, 196),
+             "level": 0.74, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (220, 196, 255), "count": 4},
+        ],
+    ),
+    "potion_force": Recipe(
+        id="potion_force", name="Potion de Force", rarity="common", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (140,  92,  46), "body": (208, 184, 156)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": (216, 102,  44),
+             "level": 0.70, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (255, 200, 120), "count": 5},
+        ],
+    ),
+    "larmes_phenix": Recipe(
+        id="larmes_phenix", name="Larmes de Phénix", rarity="legendary", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (172, 120,  52), "body": (228, 212, 172)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": (240, 208, 128),
+             "level": 0.82, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (255, 240, 200), "count": 7},
+        ],
+        sparkles=True,
+    ),
+
+    # Wand
+    "wand1": Recipe(
+        id="wand1", name="Baguette de Saule", rarity="common", material="wood",
+        silhouette={"kind": "svg", "file": "wizard-staff.svg"},
+        fills={
+            "shaft":  (132,  96,  56),
+            "grip":   ( 84,  60,  36),
+            "pommel": (156, 120,  72),
+            "orb":    (208, 192, 144),
+        },
+        accents=[
+            {"kind": "orb_glow", "region": "orb", "color": (240, 220, 160)},
+        ],
+    ),
+
+    # Books — all use book-cover.svg, only colors change
+    "livre_soin": Recipe(
+        id="livre_soin", name="Potions & Remèdes Magiques", rarity="common", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 56, 112,  78), "pages": (228, 210, 168),
+               "spine": ( 32,  72,  48), "gilt":  (201, 168,  76)},
+        accents=[{"kind": "emboss", "region": "cover", "color": ( 22,  52,  36)}],
+    ),
+    "book_monsters": Recipe(
+        id="book_monsters", name="Livre des Monstres", rarity="common", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": (108,  72,  44), "pages": (208, 184, 148),
+               "spine": ( 72,  48,  28), "gilt":  (176, 124,  56)},
+        accents=[{"kind": "emboss", "region": "cover", "color": ( 56,  36,  20)}],
+    ),
+    "livre_prince": Recipe(
+        id="livre_prince", name="Manuel du Demi-Sang", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 32,  32,  44), "pages": (208, 188, 156),
+               "spine": ( 18,  18,  28), "gilt":  (192, 156,  72)},
+        accents=[{"kind": "emboss", "region": "cover", "color": ( 14,  14,  20)}],
+    ),
+    "livre_bombarda": Recipe(
+        id="livre_bombarda", name="Traité de Magie Explosive", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": (152,  60,  40), "pages": (228, 210, 168),
+               "spine": (104,  36,  24), "gilt":  (220, 176,  72)},
+        accents=[{"kind": "emboss", "region": "cover", "color": ( 76,  24,  16)}],
+    ),
+    "livre_patronum": Recipe(
+        id="livre_patronum", name="Guide du Patronus", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": (220, 220, 232), "pages": (240, 224, 184),
+               "spine": (172, 176, 192), "gilt":  (201, 168,  76)},
+        accents=[{"kind": "emboss", "region": "cover", "color": (152, 156, 172)}],
+    ),
+    "livre_sanguini": Recipe(
+        id="livre_sanguini", name="Traité du Sang Vivant", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": (120,  20,  28), "pages": (208, 188, 152),
+               "spine": ( 80,  12,  18), "gilt":  (180, 132,  48)},
+        accents=[{"kind": "emboss", "region": "cover", "color": ( 60,   8,  12)}],
+    ),
+    "livre_vampyrus": Recipe(
+        id="livre_vampyrus", name="Codex des Strigoï", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 36,  24,  44), "pages": (200, 180, 148),
+               "spine": ( 22,  14,  30), "gilt":  (180, 152, 196)},
+        accents=[{"kind": "emboss", "region": "cover", "color": ( 16,  10,  22)}],
+    ),
+    "livre_taranta": Recipe(
+        id="livre_taranta", name="Pas de la Sorcière Maudite", rarity="common", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": (100,  56, 124), "pages": (228, 210, 168),
+               "spine": ( 64,  32,  84), "gilt":  (192, 156,  72)},
+        accents=[{"kind": "emboss", "region": "cover", "color": ( 44,  20,  60)}],
+    ),
+    "livre_maledictus": Recipe(
+        id="livre_maledictus", name="Grimoire des Maudits", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 56,  28,  76), "pages": (208, 188, 152),
+               "spine": ( 32,  16,  52), "gilt":  (164, 128, 196)},
+        accents=[{"kind": "emboss", "region": "cover", "color": ( 24,  12,  40)}],
+    ),
+    "livre_crucio": Recipe(
+        id="livre_crucio", name="Sortilèges Impardonnables, T.II", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 26,  20,  20), "pages": (200, 180, 148),
+               "spine": ( 14,  10,  10), "gilt":  (180,  48,  44)},
+        accents=[{"kind": "emboss", "region": "cover", "color": ( 10,   6,   6)}],
+    ),
+    "livre_morsmordre": Recipe(
+        id="livre_morsmordre", name="Marque des Ténèbres", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 20,  20,  24), "pages": (200, 180, 148),
+               "spine": ( 10,  10,  14), "gilt":  ( 80, 188, 120)},
+        accents=[{"kind": "emboss", "region": "cover", "color": (  8,   8,  12)}],
+    ),
+
+    # Amulets / pendants
+    "amulette": Recipe(
+        id="amulette", name="Amulette du Phénix", rarity="rare", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (180, 148,  72), "bezel": (201, 168,  76),
+               "gem":   (216,  64,  48)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (255, 180, 120)},
+        ],
+    ),
+    "amulette_protection": Recipe(
+        id="amulette_protection", name="Amulette de Protection", rarity="common", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (172, 176, 188), "bezel": (192, 196, 208),
+               "gem":   ( 80, 148, 192)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (200, 230, 255)},
+        ],
+    ),
+    "locket_slytherin": Recipe(
+        id="locket_slytherin", name="Médaillon de Serpentard", rarity="legendary", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (180, 184, 196), "bezel": (172, 176, 188),
+               "gem":   ( 28, 108,  60)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (120, 220, 160)},
+            {"kind": "orb_glow", "region": "gem", "color": ( 80, 200, 140)},
+        ],
+        sparkles=True,
+    ),
+
+    # Cloaks / robes (use hood.svg)
+    "robe1": Recipe(
+        id="robe1", name="Robe Renforcée", rarity="common", material="matte",
+        silhouette={"kind": "svg", "file": "hood.svg"},
+        fills={"cloth": ( 48,  68, 108), "lining": ( 28,  44,  76),
+               "clasp": (201, 168,  76)},
+        accents=[{"kind": "emboss", "region": "cloth", "color": ( 24,  36,  60)}],
+    ),
+    "cape_voyageur": Recipe(
+        id="cape_voyageur", name="Cape du Voyageur", rarity="common", material="matte",
+        silhouette={"kind": "svg", "file": "hood.svg"},
+        fills={"cloth": (108,  76,  48), "lining": ( 68,  44,  28),
+               "clasp": (152, 124,  72)},
+        accents=[{"kind": "emboss", "region": "cloth", "color": ( 56,  36,  20)}],
+    ),
+    "cape_invis": Recipe(
+        id="cape_invis", name="Cape d'Invisibilité", rarity="legendary", material="matte",
+        silhouette={"kind": "svg", "file": "hood.svg"},
+        fills={"cloth": (200, 208, 220), "lining": (148, 156, 172),
+               "clasp": (208, 196, 232)},
+        accents=[
+            {"kind": "emboss", "region": "cloth", "color": (124, 132, 148)},
+            {"kind": "orb_glow", "region": "cloth", "color": (220, 232, 255)},
+        ],
+        sparkles=True,
+    ),
+
+    # Rings (parametric shape ring_band)
+    "anneau_argent": Recipe(
+        id="anneau_argent", name="Anneau d'Argent", rarity="common", material="metal",
+        silhouette={"kind": "shape", "name": "ring_band",
+                    "params": {"radius": 175, "thickness": 30, "bezel": False, "gem": False}},
+        fills={"metal": (196, 200, 212)},
+        accents=[
+            {"kind": "runes", "region": "metal", "color": (132, 136, 152),
+             "count": 4, "around": "ring"},
+        ],
+    ),
+    "anneau_resurrection": Recipe(
+        id="anneau_resurrection", name="Pierre de Résurrection", rarity="epic", material="metal",
+        silhouette={"kind": "shape", "name": "ring_band",
+                    "params": {"radius": 175, "thickness": 38, "bezel": True, "gem": True}},
+        fills={"metal": ( 88,  72,  52), "gem":   ( 32,  32,  40)},
+        accents=[
+            {"kind": "runes", "region": "metal", "color": ( 48,  36,  24),
+             "count": 6, "around": "ring"},
+            {"kind": "gem_facet_shine", "region": "gem", "color": (180, 156, 220)},
+            {"kind": "orb_glow", "region": "gem", "color": (140, 100, 200)},
+        ],
+    ),
+
+    # Sword
+    "sword_gryff": Recipe(
+        id="sword_gryff", name="Épée de Gryffondor", rarity="legendary", material="metal",
+        silhouette={"kind": "svg", "file": "sword.svg"},
+        fills={"blade":  (212, 220, 232), "guard":  (201, 168,  76),
+               "hilt":   ( 96,  20,  20), "pommel": (212,  60,  56)},
+        accents=[
+            {"kind": "runes", "region": "blade", "color": (152, 160, 176), "count": 4},
+            {"kind": "gem_facet_shine", "region": "pommel", "color": (255, 180, 160)},
+            {"kind": "orb_glow", "region": "pommel", "color": (240, 120,  80)},
+        ],
+        sparkles=True,
+    ),
+
+    # Broom
+    "broom": Recipe(
+        id="broom", name="Balai Nimbus 2000", rarity="rare", material="wood",
+        silhouette={"kind": "svg", "file": "broom.svg"},
+        fills={"handle":   (124,  84,  44), "binding": (192, 140,  56),
+               "bristles": (172, 124,  68), "tip":     (216, 184,  96)},
+        accents=[
+            {"kind": "runes", "region": "handle", "color": (216, 184,  96), "count": 3},
+        ],
+    ),
+
+    # Boots
+    "bottes_apprenti": Recipe(
+        id="bottes_apprenti", name="Bottes d'Apprenti", rarity="common", material="leather",
+        silhouette={"kind": "svg", "file": "boot.svg"},
+        fills={"shaft": (124,  88,  56), "foot":  (108,  72,  40),
+               "sole":  ( 56,  36,  20), "lace":  (208, 184, 132)},
+        accents=[{"kind": "emboss", "region": "shaft", "color": ( 64,  44,  24)}],
+    ),
+    "bottes_dragon": Recipe(
+        id="bottes_dragon", name="Bottes en Peau de Dragon", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "boot.svg"},
+        fills={"shaft": ( 40,  44,  48), "foot":  ( 28,  32,  36),
+               "sole":  ( 12,  16,  20), "lace":  (180,  60,  44)},
+        accents=[
+            {"kind": "emboss", "region": "shaft", "color": ( 16,  20,  24)},
+            {"kind": "runes", "region": "shaft", "color": (200,  80,  56), "count": 3},
+        ],
+    ),
+
+    # Gloves
+    "gants_apprenti": Recipe(
+        id="gants_apprenti", name="Gants d'Apprenti", rarity="common", material="leather",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={"cuff":    ( 84,  56,  32), "palm":    (116,  80,  48),
+               "fingers": (108,  72,  40), "stitch":  (208, 180, 132)},
+        accents=[{"kind": "emboss", "region": "palm", "color": ( 60,  40,  20)}],
+    ),
+
+    # Belts
+    "ceinture_cuir": Recipe(
+        id="ceinture_cuir", name="Ceinture de Cuir", rarity="common", material="leather",
+        silhouette={"kind": "svg", "file": "belt.svg"},
+        fills={"strap":  (108,  72,  40), "buckle": (180, 184, 196),
+               "holes":  ( 56,  36,  20), "tongue": (172, 176, 188)},
+        accents=[{"kind": "emboss", "region": "strap", "color": ( 64,  44,  24)}],
+    ),
+    "ceinture_alchimiste": Recipe(
+        id="ceinture_alchimiste", name="Ceinture d'Alchimiste", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "belt.svg"},
+        fills={"strap":  ( 88,  56,  32), "buckle": (201, 168,  76),
+               "holes":  ( 48,  28,  12), "tongue": (176, 144,  64)},
+        accents=[
+            {"kind": "emboss", "region": "strap", "color": ( 52,  32,  16)},
+            {"kind": "runes", "region": "strap", "color": (216, 184,  96), "count": 4},
+        ],
+    ),
+
+    # Pointy hats
+    "chapeau_apprenti": Recipe(
+        id="chapeau_apprenti", name="Chapeau d'Apprenti", rarity="common", material="matte",
+        silhouette={"kind": "svg", "file": "hat-pointy.svg"},
+        fills={"cone":   ( 44,  56,  88), "brim":   ( 28,  40,  68),
+               "band":   ( 64,  44,  20), "buckle": (180, 156,  88)},
+        accents=[{"kind": "emboss", "region": "cone", "color": ( 24,  32,  56)}],
+    ),
+    "chapeau_pointu": Recipe(
+        id="chapeau_pointu", name="Chapeau de Serdaigle", rarity="rare", material="matte",
+        silhouette={"kind": "svg", "file": "hat-pointy.svg"},
+        fills={"cone":   ( 36,  60, 104), "brim":   ( 20,  40,  76),
+               "band":   (140, 108,  56), "buckle": (216, 184,  96)},
+        accents=[
+            {"kind": "emboss", "region": "cone", "color": ( 16,  32,  64)},
+            {"kind": "gem_facet_shine", "region": "buckle", "color": (255, 220, 140)},
+        ],
+    ),
+
+    # Tiaras / circlets
+    "circlet_serdaigle": Recipe(
+        id="circlet_serdaigle", name="Bandeau de Serdaigle", rarity="common", material="metal",
+        silhouette={"kind": "svg", "file": "tiara.svg"},
+        fills={"band":   (172, 132,  56), "points": (180, 144,  64),
+               "gem":    ( 56,  92, 156), "side":   ( 92, 132, 188)},
+        accents=[{"kind": "gem_facet_shine", "region": "gem", "color": (180, 220, 255)}],
+    ),
+    "diademe_serdaigle": Recipe(
+        id="diademe_serdaigle", name="Diadème de Serdaigle", rarity="legendary", material="metal",
+        silhouette={"kind": "svg", "file": "tiara.svg"},
+        fills={"band":   (201, 168,  76), "points": (224, 196, 108),
+               "gem":    ( 36,  76, 156), "side":   (108, 168, 224)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (200, 220, 255)},
+            {"kind": "orb_glow", "region": "gem", "color": (140, 180, 255)},
+        ],
+        sparkles=True,
+    ),
+
+    # Chalice
+    "coupe_poufsouffle": Recipe(
+        id="coupe_poufsouffle", name="Coupe de Poufsouffle", rarity="legendary", material="metal",
+        silhouette={"kind": "svg", "file": "chalice.svg"},
+        fills={"bowl": (201, 168,  76), "rim":  (224, 196, 108),
+               "stem": (176, 144,  64), "foot": (160, 128,  56),
+               "gem":  (216, 168,  44)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (255, 224, 144)},
+            {"kind": "orb_glow", "region": "gem", "color": (240, 200, 100)},
+            {"kind": "emboss", "region": "bowl", "color": (120,  84,  28)},
+        ],
+        sparkles=True,
+    ),
+
+    # Hourglass
+    "retourneur_temps": Recipe(
+        id="retourneur_temps", name="Retourneur de Temps", rarity="legendary", material="metal",
+        silhouette={"kind": "svg", "file": "hourglass.svg"},
+        fills={"frame":    (201, 168,  76), "glass":    (220, 224, 236),
+               "sand_top": (240, 196,  72), "sand_bot": (216, 168,  44)},
+        accents=[
+            {"kind": "orb_glow", "region": "sand_top", "color": (255, 224, 144)},
+            {"kind": "gem_facet_shine", "region": "glass", "color": (240, 244, 255)},
+        ],
+        sparkles=True,
+    ),
+
+    # Mandragore
+    "mandragore": Recipe(
+        id="mandragore", name="Racine de Mandragore", rarity="common", material="matte",
+        silhouette={"kind": "svg", "file": "mandragore.svg"},
+        fills={"leaves":   ( 80, 132,  60), "root":     (200, 168, 124),
+               "face":     ( 84,  56,  32), "tendrils": (172, 140,  96)},
+        accents=[
+            {"kind": "emboss", "region": "root", "color": (124,  92,  56)},
+            {"kind": "emboss", "region": "leaves", "color": ( 40,  76,  24)},
+        ],
+    ),
+
+    # Chocolate bar
+    "choco_sorcier": Recipe(
+        id="choco_sorcier", name="Chocolat aux Sorciers", rarity="common", material="matte",
+        silhouette={"kind": "svg", "file": "choco-bar.svg"},
+        fills={"wrapper": (172,  60,  48), "bar":     ( 88,  52,  32),
+               "cube":    ( 56,  32,  20), "accent":  (216, 184,  96)},
+        accents=[{"kind": "emboss", "region": "bar", "color": ( 32,  20,  12)}],
+    ),
 }
 
 

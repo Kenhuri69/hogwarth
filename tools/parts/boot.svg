@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : shaft (upper boot) · foot (lower boot) · sole (bottom) · lace (cord) -->
+  <g fill="#000000">
+    <!-- shaft : tall upper boot section (calf) -->
+    <path data-region="shaft" d="M 180 96 L 312 96 L 320 320 L 172 320 Z"/>
+    <!-- foot : lower boot extending forward (toe to right) -->
+    <path data-region="foot" d="M 172 320 L 320 320 L 428 396 L 428 432 L 152 432 Z"/>
+    <!-- sole : bottom strip -->
+    <path data-region="sole" d="M 152 432 L 428 432 L 432 460 L 148 460 Z"/>
+    <!-- lace : vertical cord on the shaft front -->
+    <path data-region="lace" d="M 240 120 L 252 120 L 252 296 L 240 296 Z"/>
+    <path data-region="lace" d="M 218 140 L 274 132 L 276 144 L 220 152 Z"/>
+    <path data-region="lace" d="M 218 196 L 274 188 L 276 200 L 220 208 Z"/>
+    <path data-region="lace" d="M 218 252 L 274 244 L 276 256 L 220 264 Z"/>
+  </g>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : wrapper (paper sleeve) · bar (chocolate body) · cube (segments grid) · accent (wrapper band) -->
+  <g fill="#000000">
+    <!-- wrapper : full outline (paper sleeve underneath the bar) -->
+    <path data-region="wrapper" d="M 88 112 L 424 112 L 432 400 L 80 400 Z"/>
+    <!-- bar : chocolate body inset within the wrapper -->
+    <path data-region="bar" d="M 120 144 L 392 144 L 396 368 L 116 368 Z"/>
+    <!-- cube : grid of 3×2 segment grooves -->
+    <path data-region="cube" d="M 212 144 L 220 144 L 220 368 L 212 368 Z"/>
+    <path data-region="cube" d="M 292 144 L 300 144 L 300 368 L 292 368 Z"/>
+    <path data-region="cube" d="M 120 252 L 392 252 L 392 260 L 120 260 Z"/>
+    <!-- accent : decorative band on the wrapper -->
+    <path data-region="accent" d="M 80 400 L 432 400 L 436 432 L 76 432 Z"/>
+    <path data-region="accent" d="M 88 96 L 424 96 L 420 116 L 92 116 Z"/>
+  </g>
+</svg>

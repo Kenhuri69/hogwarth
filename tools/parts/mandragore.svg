@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : leaves (top foliage) · root (body) · face (carved features) · tendrils (small roots) -->
+  <g fill="#000000">
+    <!-- leaves : 5 pointed leaves fanning upward -->
+    <path data-region="leaves" d="M 256 80 L 268 32 L 244 32 Z"/>
+    <path data-region="leaves" d="M 200 96 L 168 56 L 156 88 L 184 116 Z"/>
+    <path data-region="leaves" d="M 312 96 L 344 56 L 356 88 L 328 116 Z"/>
+    <path data-region="leaves" d="M 232 88 L 220 36 L 200 60 Z"/>
+    <path data-region="leaves" d="M 280 88 L 292 36 L 312 60 Z"/>
+    <!-- root : main body, like a bulbous turnip -->
+    <path data-region="root" d="M 192 144 C 192 116 224 96 256 96 C 288 96 320 116 320 144 L 336 280 C 336 360 296 416 256 416 C 216 416 176 360 176 280 Z"/>
+    <!-- face : two eye sockets -->
+    <path data-region="face" d="M 220 220 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0"/>
+    <path data-region="face" d="M 292 220 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0"/>
+    <!-- face : open mouth -->
+    <path data-region="face" d="M 232 280 L 280 280 L 288 312 L 224 312 Z"/>
+    <!-- tendrils : two small roots dangling from the bottom -->
+    <path data-region="tendrils" d="M 232 416 L 244 416 L 240 472 L 228 480 Z"/>
+    <path data-region="tendrils" d="M 268 416 L 280 416 L 284 472 L 272 480 Z"/>
+  </g>
+</svg>

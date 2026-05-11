@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : strap (leather band) · buckle (metal clasp) · holes (eyelets) · tongue (buckle pin) -->
+  <g fill="#000000">
+    <!-- strap : horizontal leather band across the icon -->
+    <path data-region="strap" d="M 32 196 L 480 196 L 480 316 L 32 316 Z"/>
+    <!-- holes : 5 round eyelets on the left half -->
+    <path data-region="holes" d="M 80 256 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0"/>
+    <path data-region="holes" d="M 120 256 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0"/>
+    <path data-region="holes" d="M 160 256 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0"/>
+    <path data-region="holes" d="M 200 256 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0"/>
+    <path data-region="holes" d="M 240 256 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0"/>
+    <!-- buckle : rectangular frame on right side -->
+    <path data-region="buckle" d="M 320 168 L 432 168 L 432 344 L 320 344 Z"/>
+    <path data-region="strap" d="M 348 196 L 404 196 L 404 316 L 348 316 Z"/>
+    <!-- tongue : pin pointing left from buckle -->
+    <path data-region="tongue" d="M 304 248 L 348 248 L 348 264 L 304 264 Z"/>
+  </g>
+</svg>

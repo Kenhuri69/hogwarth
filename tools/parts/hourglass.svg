@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : frame (wooden top/bottom) · glass (the two bulbs) · sand_top (sand still falling) · sand_bot (collected sand) -->
+  <g fill="#000000">
+    <!-- frame : top wooden plate -->
+    <path data-region="frame" d="M 120 64 L 392 64 L 392 100 L 120 100 Z"/>
+    <!-- frame : bottom wooden plate -->
+    <path data-region="frame" d="M 120 412 L 392 412 L 392 448 L 120 448 Z"/>
+    <!-- frame : side pillars -->
+    <path data-region="frame" d="M 124 100 L 148 100 L 148 412 L 124 412 Z"/>
+    <path data-region="frame" d="M 364 100 L 388 100 L 388 412 L 364 412 Z"/>
+    <!-- glass : top bulb (triangle pointing down) -->
+    <path data-region="glass" d="M 156 100 L 356 100 L 256 256 Z"/>
+    <!-- glass : bottom bulb (triangle pointing up) -->
+    <path data-region="glass" d="M 256 256 L 356 412 L 156 412 Z"/>
+    <!-- sand_top : reduced triangle of sand inside top bulb -->
+    <path data-region="sand_top" d="M 184 116 L 328 116 L 256 232 Z"/>
+    <!-- sand stream : thin vertical line at the neck -->
+    <path data-region="sand_top" d="M 252 232 L 260 232 L 260 320 L 252 320 Z"/>
+    <!-- sand_bot : accumulated mound at the bottom -->
+    <path data-region="sand_bot" d="M 180 412 L 332 412 L 304 360 L 256 336 L 208 360 Z"/>
+  </g>
+</svg>

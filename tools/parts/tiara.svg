@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : band (curved metal arch) · gem (central jewel) · points (decorative spikes) · side (smaller side gems) -->
+  <g fill="#000000">
+    <!-- band : curved arch across the middle -->
+    <path data-region="band" d="M 56 256 C 56 168 200 144 256 144 C 312 144 456 168 456 256 L 456 296 C 456 220 312 192 256 192 C 200 192 56 220 56 296 Z"/>
+    <!-- points : 5 decorative spikes rising from the band -->
+    <path data-region="points" d="M 96 220 L 112 152 L 128 220 Z"/>
+    <path data-region="points" d="M 168 196 L 184 116 L 200 196 Z"/>
+    <path data-region="points" d="M 312 196 L 328 116 L 344 196 Z"/>
+    <path data-region="points" d="M 384 220 L 400 152 L 416 220 Z"/>
+    <!-- central tall point with gem -->
+    <path data-region="points" d="M 232 180 L 256 64 L 280 180 Z"/>
+    <path data-region="gem" d="M 256 124 m -22 0 a 22 22 0 1 0 44 0 a 22 22 0 1 0 -44 0"/>
+    <!-- side : smaller gems embedded in the band -->
+    <path data-region="side" d="M 144 232 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0"/>
+    <path data-region="side" d="M 368 232 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0"/>
+  </g>
+</svg>
