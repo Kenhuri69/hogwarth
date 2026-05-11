@@ -614,6 +614,7 @@ const MONSTERS = [
     id:       "mangemort",
     name:     "Mangemort Masqué",
     icon:     "💀",
+    imgSrc:   "img/monsters/mangemort.png",
     category: "humain",
     desc:     "Un Mangemort vous vise de sa baguette noire en murmurant des sortilèges",
     lore:     "Serviteur de Lord Voldemort, reconnaissable à son masque blanc et la Marque des Ténèbres sur son bras.",

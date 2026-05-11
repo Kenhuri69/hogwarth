@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/improve-game-images-7OVCy`
 > (anciennes branches : `claude/resume-svg-work-rgOvm`, `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 35 / 76 tâches terminées (+ C44 fontaine, hors bloc D)
+> **Statut global** : 36 / 76 tâches terminées (+ C44 fontaine, hors bloc D ; C25 marqué n/a)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -116,8 +116,8 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C21** `detraqueur`
 - [x] **C22** `loup_garou`
 - [x] **C23** `inferius`
-- [ ] **C24** `mangemort`
-- [ ] **C25** `mangemort_masque`
+- [x] **C24** `mangemort` *(le monstre `id:"mangemort"` porte déjà `name:"Mangemort Masqué"` — C25 ci-dessous est n/a)*
+- [~] **C25** `mangemort_masque` *(n/a — fusionné avec C24, pas d'entrée séparée dans `monsters.js`)*
 - [ ] **C26** `mangemort_elite`
 - [ ] **C27** `sorcier_renegat`
 - [x] **C28** `boggart`
@@ -234,3 +234,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-10 | #30 | C23 inferius intégré (birefnet-general) | Cadavre noyé réanimé, peau gris-bleu translucide, yeux laiteux, linceul effiloché trempé ; coulures d'eau et lambeaux préservés |
 | 2026-05-10 | #31 | C28 boggart intégré (birefnet-general, source fond blanc) | Épouvantard en transformation araignée hairy, volutes de fumée et visages fantomatiques émergeants ; prompt "transformation incomplete" pour figer une silhouette lisible ; PNG nommé `boggart.png` (id du monstre, pas son nom français) ; saute en avant dans la liste — C24-C27 mangemorts/sorcier_renegat à faire ensuite |
 | 2026-05-10 | #32 | Chantier outillage (sur branche `claude/improve-game-images-7OVCy`, post-rebase sur master) | `IMG_STYLE.md` (guide visuel : palette/cadrage/prompts-types §8/critères §9, dérivé des PNG validés) ; `tools/process_monster_png.py` (pipeline reproductible rembg/birefnet + trim + recentrage + resize + auto-QA) ; `tools/count_plan.py` (compte tous blocs A+B+C+D+Z et signale les dérives vs `Statut global`) ; smoke scénario 5 data-driven sur tous les `imgSrc` (19 monstres) + check color-type RGBA via lecture binaire (canvas tainted en `file://`). Pas de rétro-traitement des PNG master |
+| 2026-05-11 | #33 | C24 mangemort intégré (sur branche `claude/monster-png-C24-mangemort`) | Source 1024×1024 RGBA livrée avec alpha déjà détouré (43,8% pixels α=0) → skip rembg, pipeline inline (trim bbox + recentrage 8% + resize 512 + optimize). Squelette masqué hood noir, baguette à étincelles violettes, robe noire en lambeaux. QA §9 : alpha=0 57%, alpha=255 22%, occupation 85×83%, 294 KB ✓. Constat : C25 `mangemort_masque` n'a jamais existé dans `monsters.js` (id "mangemort" porte déjà `name:"Mangemort Masqué"`) → marqué `[~]` n/a |
