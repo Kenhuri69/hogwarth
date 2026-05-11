@@ -52,6 +52,14 @@ const CHARACTERS = {
     wand:"Baguette d'If Noueux", armor:"Robe de Serpentard", acc:"Médaillon de Sang",
     spells:["Episkey","Protego","Sanguini","Stupefix"],
     tagline:"Sorcier-vampire — son sang répond au sang."
+  },
+  anastasia: { name:"Anastasia Moonveil", icon:"🌙", class:"Élève de Gryffondor",
+    imgSrc:"img/anastasia.png", role:"Mage de la Lune",
+    hp:30, sp:32, str:7, int:16, agi:11, end:8, lck:13, mag:15,
+    atk:4, def:2,
+    wand:"Baguette de Bois de Lune", armor:"Robe de Gryffondor", acc:"Lunettes de Lune",
+    spells:["Episkey","Protego","Wingardium Leviosa","Lumos Maxima"],
+    tagline:"Magicienne studieuse — la magie au clair de lune."
   }
 };
 
