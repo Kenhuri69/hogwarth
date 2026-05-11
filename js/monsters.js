@@ -720,6 +720,7 @@ const MONSTERS = [
     id:       "sorcier_renegat",
     name:     "Sorcier Renégat",
     icon:     "🧙‍♂️",
+    imgSrc:   "img/monsters/sorcier_renegat.png",
     category: "humain",
     desc:     "Un sorcier passé du côté des Ténèbres vous affronte avec une haine froide",
     lore:     "Ancien élève brillant de Serpentard qui a succombé aux promesses de pouvoir de Voldemort. Il combat avec une haine froide et calculée, utilisant la magie noire pour se soigner en plein combat. Il méprise ceux qui résistent aux Ténèbres.",
