@@ -2,3 +2,4 @@
 __pycache__/
 tools/_smoke/
 node_modules/
+tools/_shot_*.js
