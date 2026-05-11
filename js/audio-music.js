@@ -77,7 +77,7 @@ Object.assign(AudioSystem, {
     tension: 'audio/ambient_tension.ogg',
     dungeon: 'audio/ambient_dungeon.ogg',
     depths:  'audio/ambient_depths.ogg',
-    // abyss : pas encore livré → procédural
+    abyss:   'audio/ambient_abyss.ogg',
   },
 
   // ── Chargement paresseux d'un sample par zone ─────────────────
