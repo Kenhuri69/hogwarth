@@ -173,8 +173,8 @@ Pas de refactor de confort.
 | Item | Status | Commit | Notes |
 |------|--------|--------|-------|
 | A1   | ✅     | 0f1bc1a| 55 modules vérifiés au chargement. Détection via `typeof` (safe pour let/const). Bandeau DOM rouge si critique manquant. |
-| A2   | ✅     | TBD    | Audit grep clean (zéro réassignation). `let → const` sur player/player2/party. Object.assign() dans save.js intact. |
-| A3   | ⏳     | -      | -     |
+| A2   | ✅     | 3d2eb59| Audit grep clean (zéro réassignation). `let → const` sur player/player2/party. Object.assign() dans save.js intact. |
+| A3   | ✅     | TBD    | `safeEl(id)` (warn dédupé) + `safeCall(name, ...args)` ajoutés dans loader.js. Démo dans `_showExploreOverlay` / `_hideExploreOverlay`. |
 | A4   | ⏳     | -      | -     |
 
 ## Hors-scope (renvoyé à Vague B/C)

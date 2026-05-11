@@ -15,6 +15,32 @@
 // Référence : .claude/plans/code-improvements.md §A1
 // ============================================================
 
+// ── Helpers d'accès défensif (§A3) ───────────────────────────
+// Exposés sur window. Disponibles partout au runtime (loader.js
+// charge en dernier, mais les fonctions consommatrices s'exécutent
+// après — au premier geste utilisateur ou appel game logic).
+//
+// safeEl(id)       → document.getElementById avec warn dédupé
+// safeCall(name)   → invoque window[name](...) si défini, sinon undef
+window.safeEl = (function () {
+  const warned = new Set();
+  return function safeEl(id) {
+    const el = document.getElementById(id);
+    if (!el && !warned.has(id)) {
+      warned.add(id);
+      console.warn('[DOM] Element manquant: #' + id);
+    }
+    return el;
+  };
+})();
+
+window.safeCall = function safeCall(name /*, ...args */) {
+  const fn = window[name];
+  if (typeof fn !== 'function') return undefined;
+  const args = Array.prototype.slice.call(arguments, 1);
+  return fn.apply(null, args);
+};
+
 (function () {
   // ── Manifeste des modules attendus ───────────────────────────
   // Chaque entrée : { name, source, kind, critical }

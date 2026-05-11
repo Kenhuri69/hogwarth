@@ -93,15 +93,22 @@ function _exploreDescriptors() {
 function _showExploreOverlay(cell) {
   const desc = _exploreDescriptors()[cell];
   if (!desc) return;
-  document.getElementById('explore-icon').innerHTML    = desc.icon;
-  document.getElementById('explore-title').textContent = desc.title;
-  document.getElementById('explore-desc').textContent  = desc.desc;
-  document.getElementById('explore-actions').innerHTML = desc.btns;
-  document.getElementById('explore-overlay').style.display = 'flex';
+  const icon    = safeEl('explore-icon');
+  const title   = safeEl('explore-title');
+  const descEl  = safeEl('explore-desc');
+  const actions = safeEl('explore-actions');
+  const overlay = safeEl('explore-overlay');
+  if (!icon || !title || !descEl || !actions || !overlay) return;
+  icon.innerHTML       = desc.icon;
+  title.textContent    = desc.title;
+  descEl.textContent   = desc.desc;
+  actions.innerHTML    = desc.btns;
+  overlay.style.display = 'flex';
 }
 
 function _hideExploreOverlay() {
-  document.getElementById('explore-overlay').style.display = 'none';
+  const overlay = safeEl('explore-overlay');
+  if (overlay) overlay.style.display = 'none';
 }
 
 // ── Transition d'étage ───────────────────────────────────────
