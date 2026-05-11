@@ -47,6 +47,12 @@ function showIntroScreen(onContinue) {
     // Geste utilisateur déjà donné via chooseHouse → init() est OK ici.
     AudioSystem.init();
     AudioSystem.playNpcGreet();
+    // Démarre la musique d'ambiance dès l'intro Dumbledore (zone 1-2).
+    // startGame appellera à nouveau playAmbientMusic(1) mais celle-ci est
+    // no-op si la même zone tourne déjà (voir audio-music.js).
+    if (typeof AudioSystem.playAmbientMusic === 'function') {
+      AudioSystem.playAmbientMusic(1);
+    }
   }
 }
 

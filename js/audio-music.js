@@ -6,46 +6,92 @@
 Object.assign(AudioSystem, {
 
   // ── Musique ambiante selon l'étage (5 zones progressives) ────
-  // Étages 1-2 : sample OGG (audio/ambient_intro.ogg) si disponible,
-  // sinon fallback synthèse procédurale. Étages 3+ : toujours procédural.
+  // Chaque zone peut avoir un sample OGG. Si le sample existe, on le
+  // joue avec crossfade ; sinon on retombe sur la synthèse procédurale.
   // Voir .claude/plans/audio-intro-sample.md.
+  //
+  // Registre zone → fichier (la map vit en bas via _ZONE_SAMPLES).
   playAmbientMusic(floor) {
     if (this.inCombat) return;
+    // No-op si la même zone joue déjà — évite de couper/relancer le sample
+    // entre showIntroScreen() et startGame() (cf. js/intro.js), ou entre
+    // deux étages d'une même zone (1→2, 3→4, 5→6, 7→8).
+    const targetFloor = (floor !== undefined) ? floor : this.currentFloor;
+    if (this.musicPlaying && !this.isMuted &&
+        this._sameAmbientZone(targetFloor, this.currentFloor)) {
+      this.currentFloor = targetFloor;
+      return;
+    }
     this.stopMusic();
     if (floor !== undefined) this.currentFloor = floor;
     if (this.isMuted) { this.musicPlaying = true; return; }
     this.init();
     this.musicPlaying = true;
 
-    const f = this.currentFloor;
+    const f       = this.currentFloor;
+    const zoneKey = this._zoneKeyForFloor(f);
+    const sampleUrl = this._ZONE_SAMPLES[zoneKey];
 
-    // Zones 1-2 : tenter le sample, fallback procédural
-    if (f <= 2) {
-      this._loadIntroSample()
-        .then(() => {
-          if (this.musicPlaying && !this.inCombat && this.currentFloor <= 2) {
-            this._playIntroSampleLoop();
-          }
-        })
-        .catch(err => {
-          console.warn('[audio] intro sample unavailable, fallback to procedural:', err && err.message);
-          if (this.musicPlaying && !this.inCombat && this.currentFloor <= 2) {
-            this._playProceduralAmbient(f);
-          }
-        });
+    // Pas de sample déclaré pour cette zone → procédural direct
+    if (!sampleUrl) {
+      this._playProceduralAmbient(f);
       return;
     }
 
-    // Étages 3+ : procédural direct
-    this._playProceduralAmbient(f);
+    // Sample déclaré : tenter le chargement, fallback procédural sur erreur
+    this._loadZoneSample(zoneKey)
+      .then(() => {
+        if (this.musicPlaying && !this.inCombat &&
+            this._zoneKeyForFloor(this.currentFloor) === zoneKey) {
+          this._playZoneSampleLoop(zoneKey);
+        }
+      })
+      .catch(err => {
+        console.warn(`[audio] sample "${zoneKey}" unavailable, fallback to procedural:`, err && err.message);
+        if (this.musicPlaying && !this.inCombat &&
+            this._zoneKeyForFloor(this.currentFloor) === zoneKey) {
+          this._playProceduralAmbient(this.currentFloor);
+        }
+      });
   },
 
-  // ── Chargement paresseux du sample d'intro ────────────────────
-  _loadIntroSample() {
-    if (this._sampleBuffer) return Promise.resolve(this._sampleBuffer);
-    if (this._sampleLoadPromise) return this._sampleLoadPromise;
+  // ── Mapping étage → clé de zone (5 paliers) ───────────────────
+  _zoneKeyForFloor(f) {
+    if (f <= 2) return 'intro';
+    if (f <= 4) return 'tension';
+    if (f <= 6) return 'dungeon';
+    if (f <= 8) return 'depths';
+    return 'abyss';
+  },
+
+  // ── Deux étages tombent dans la même zone musicale ? ──────────
+  _sameAmbientZone(a, b) {
+    return this._zoneKeyForFloor(a) === this._zoneKeyForFloor(b);
+  },
+
+  // ── Registre zone → fichier OGG ───────────────────────────────
+  // Une entrée absente (ou undefined) signifie : pas de sample, utilise
+  // la synthèse procédurale pour cette zone.
+  _ZONE_SAMPLES: {
+    intro:   'audio/ambient_intro.ogg',
+    tension: 'audio/ambient_tension.ogg',
+    dungeon: 'audio/ambient_dungeon.ogg',
+    depths:  'audio/ambient_depths.ogg',
+    abyss:   'audio/ambient_abyss.ogg',
+  },
+
+  // ── Chargement paresseux d'un sample par zone ─────────────────
+  _loadZoneSample(zoneKey) {
+    if (this._sampleBuffers[zoneKey]) {
+      return Promise.resolve(this._sampleBuffers[zoneKey]);
+    }
+    if (this._sampleLoadPromises[zoneKey]) {
+      return this._sampleLoadPromises[zoneKey];
+    }
+    const url = this._ZONE_SAMPLES[zoneKey];
+    if (!url) return Promise.reject(new Error('no sample registered for zone ' + zoneKey));
     if (!this.ctx) this.init();
-    this._sampleLoadPromise = fetch('audio/ambient_intro.ogg', { cache: 'force-cache' })
+    const p = fetch(url, { cache: 'force-cache' })
       .then(r => {
         if (!r.ok) throw new Error('fetch ' + r.status);
         return r.arrayBuffer();
@@ -54,26 +100,28 @@ Object.assign(AudioSystem, {
         this.ctx.decodeAudioData(buf, resolve, reject)
       ))
       .then(audioBuf => {
-        this._sampleBuffer = audioBuf;
+        this._sampleBuffers[zoneKey] = audioBuf;
         return audioBuf;
       })
       .catch(err => {
-        this._sampleLoadPromise = null;  // permet un retry
+        delete this._sampleLoadPromises[zoneKey];  // permet un retry
         throw err;
       });
-    return this._sampleLoadPromise;
+    this._sampleLoadPromises[zoneKey] = p;
+    return p;
   },
 
   // ── Lecture loopée avec crossfade 1 s ─────────────────────────
-  _playIntroSampleLoop() {
-    const buf = this._sampleBuffer;
+  _playZoneSampleLoop(zoneKey) {
+    const buf = this._sampleBuffers[zoneKey];
     if (!buf || !this.musicPlaying || this.inCombat) return;
     const CROSSFADE = 1.0;
     const duration  = buf.duration;
     if (duration <= 2 * CROSSFADE) return;  // sample trop court pour crossfader
 
     const schedule = (startAt) => {
-      if (!this.musicPlaying || this.inCombat || this.currentFloor > 2) return;
+      if (!this.musicPlaying || this.inCombat ||
+          this._zoneKeyForFloor(this.currentFloor) !== zoneKey) return;
       const src  = this.ctx.createBufferSource();
       const gain = this.ctx.createGain();
       src.buffer = buf;
