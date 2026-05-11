@@ -35,3 +35,20 @@ protectrice / lumineuse).
   `_hydrateCharacter()` dans `main.js` qui lit `CHARACTERS[key]`.
 - Pas besoin d'icône SVG dédiée (les héros utilisent leur portrait PNG).
 - Pas de portrait SVG NPC nécessaire (Anastasia est une héroïne, pas un PNJ).
+
+## Suivi — followup médaillon
+
+**Écart constaté** : la première passe a livré `anastasia.png` en crop brut,
+sans le cadre doré façon médaillon que portent `celeste.png` / `iris.png` /
+`maxence.png` (un double anneau or + gemmes cardinales, le crop brut étant
+conservé en `<key>-original.png`).
+
+**Correction** :
+- `img/anastasia-original.png` ← crop brut 128×128 (ancien `anastasia.png`).
+- `img/anastasia.png` ← médaillon doré généré par PIL :
+  cercle photo r≤50, anneau or vif r=52-54, gap, anneau or moyen r=57-60,
+  bord or sombre r=61-63, 4 gemmes N/S/E/O. Couleurs reprises de maxence
+  (#f0d782 vif, #c9a84c moyen, #8a6926 sombre).
+- Règle d'ajout d'un héros documentée dans `CLAUDE.md` (section
+  "Ajouter un nouveau personnage jouable") pour qu'une prochaine session
+  livre les deux fichiers d'office.
