@@ -250,12 +250,15 @@ function _renderPaperDollSlot(slot, c, charIdx) {
   const filled    = !!item;
   const rarityCls = item && item.rarity ? `rarity-${item.rarity}` : '';
   const baseLabel = EQUIP_SLOT_LABELS_MAP[slot] || slot;
-  const tooltip   = item ? `${item.name} — cliquer pour déséquiper` : baseLabel;
+  const titleAttr = item ? `${item.name} — cliquer pour déséquiper` : baseLabel;
   const onclick   = (item && Number.isInteger(charIdx))
     ? `onclick="unequipFromSlot(${charIdx}, '${slot}')"`
     : '';
+  const tooltipHtml = item
+    ? _renderItemTooltip(item, baseLabel, 'cliquer pour déséquiper')
+    : '';
   return `<div class="equip-slot-floating equip-slot-${slot} ${filled ? 'filled' : 'empty'} ${rarityCls}"
-               title="${tooltip.replace(/"/g, '&quot;')}" ${onclick}>${icon}</div>`;
+               title="${titleAttr.replace(/"/g, '&quot;')}" ${onclick}>${icon}${tooltipHtml}</div>`;
 }
 
 // Badge pour un sort connu. Cherche l'icône PNG sous img/icons/spells/
@@ -285,11 +288,50 @@ function _renderInvSlot(item, idx, charIdx) {
   if (item.type === 'consumable')      actionHint = 'consommer';
   else if (item.type === 'spellbook')  actionHint = 'apprendre';
   else if (item.slot)                  actionHint = 'équiper';
-  const tooltip = `${item.name} — cliquer pour ${actionHint}`.replace(/"/g, '&quot;');
+  const titleAttr = `${item.name} — cliquer pour ${actionHint}`.replace(/"/g, '&quot;');
   const onclick = Number.isInteger(charIdx)
     ? `onclick="useItemFromChar(${idx}, ${charIdx})"`
     : '';
-  return `<div class="inv-slot has-item ${rarityCls}" title="${tooltip}" ${onclick}>${icon}</div>`;
+  const tooltipHtml = _renderItemTooltip(item, null, `cliquer pour ${actionHint}`);
+  return `<div class="inv-slot has-item ${rarityCls}" title="${titleAttr}" ${onclick}>${icon}${tooltipHtml}</div>`;
+}
+
+// Tooltip riche affiché au hover sur un slot rempli (paper-doll OU sac).
+// Affiche : nom (coloré selon rareté), type/slot, bonus, regen, grantsSpell,
+// description, prix. Tout est calculé depuis les champs de l'item.
+function _renderItemTooltip(item, slotLabel, action) {
+  if (!item) return '';
+  const rarity = item.rarity || 'common';
+  const rarityLabel = { common:'Commun', rare:'Rare', epic:'Épique', legendary:'Légendaire' }[rarity] || rarity;
+  const slotName = slotLabel || EQUIP_SLOT_LABELS_MAP[item.slot] || (
+    item.type === 'consumable' ? 'Consommable' :
+    item.type === 'spellbook'  ? 'Livre de sort' : ''
+  );
+  const bonuses = [];
+  if (item.bonusAtk) bonuses.push(`+${item.bonusAtk} Attaque`);
+  if (item.bonusDef) bonuses.push(`+${item.bonusDef} Défense`);
+  if (item.bonusMag) bonuses.push(`+${item.bonusMag} Magie`);
+  if (item.bonusLck) bonuses.push(`+${item.bonusLck} Chance`);
+  if (item.bonusStr) bonuses.push(`+${item.bonusStr} Force`);
+  if (item.bonusInt) bonuses.push(`+${item.bonusInt} Intelligence`);
+  if (item.bonusAgi) bonuses.push(`+${item.bonusAgi} Agilité`);
+  if (item.bonusEnd) bonuses.push(`+${item.bonusEnd} Endurance`);
+  if (item.regenHp)  bonuses.push(`+${item.regenHp} PV / tour`);
+  if (item.regenSp)  bonuses.push(`+${item.regenSp} PM / tour`);
+  if (item.grantsSpell) bonuses.push(`Apprend : ${item.grantsSpell}`);
+  if (item.spell)        bonuses.push(`Enseigne : ${item.spell}`);
+
+  const bonusLines = bonuses.map(b => `<span class="tt-bonus">${b}</span>`).join('');
+  const desc = item.desc ? `<span class="tt-desc">${item.desc}</span>` : '';
+  const actionLine = action ? `<span class="tt-action">→ ${action}</span>` : '';
+
+  return `<div class="item-tooltip" role="tooltip">
+    <span class="tt-name">${item.name}</span>
+    <span class="tt-rarity rarity-${rarity}">${rarityLabel}${slotName ? ' · ' + slotName : ''}</span>
+    ${bonusLines}
+    ${desc}
+    ${actionLine}
+  </div>`;
 }
 
 // Une ligne de stat dans le panneau gauche.
