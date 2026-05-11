@@ -147,7 +147,13 @@ let seenNpcs = new Set();
 let usedSpecialNpcs = new Set();
 
 // ── Membres du groupe ────────────────────────────────────────
-let player = {
+// `player`, `player2`, `party` sont déclarés `const` pour verrouiller
+// l'invariant `party[0] === player` (cf. CLAUDE.md §"Règle d'or" save).
+// Toute mutation doit passer par `Object.assign(player, …)` — c'est ce
+// que fait `_applyState()` dans save.js. Une réassignation casserait
+// les références partagées avec `party` et provoquerait des bugs
+// silencieux. Voir .claude/plans/code-improvements.md §A2.
+const player = {
   name: "Harry Potter", icon: "🧙", imgSrc: "img/harry.png", class: "Élève de Gryffondor",
   level: 1, xp: 0, xpNext: 50,
   hp: 35, hpMax: 35, sp: 22, spMax: 22,
@@ -168,7 +174,7 @@ let player = {
   wand: "Baguette de Houx", armor: "Robe de Gryffondor", acc: ""
 };
 
-let player2 = {
+const player2 = {
   name: "Hermione Granger", icon: "🧙‍♀️", imgSrc: "img/hermione.png", class: "Élève de Gryffondor",
   level: 1, xp: 0, xpNext: 50,
   hp: 28, hpMax: 28, sp: 35, spMax: 35,
@@ -187,7 +193,7 @@ let player2 = {
 };
 
 // party[0] et player pointent vers le même objet
-let party = [player, player2];
+const party = [player, player2];
 
 // ============================================================
 // QUÊTES SECONDAIRES

@@ -172,8 +172,8 @@ Pas de refactor de confort.
 
 | Item | Status | Commit | Notes |
 |------|--------|--------|-------|
-| A1   | ✅     | TBD    | 55 modules vérifiés au chargement. Détection via `typeof` (safe pour let/const). Bandeau DOM rouge si critique manquant. |
-| A2   | ⏳     | -      | -     |
+| A1   | ✅     | 0f1bc1a| 55 modules vérifiés au chargement. Détection via `typeof` (safe pour let/const). Bandeau DOM rouge si critique manquant. |
+| A2   | ✅     | TBD    | Audit grep clean (zéro réassignation). `let → const` sur player/player2/party. Object.assign() dans save.js intact. |
 | A3   | ⏳     | -      | -     |
 | A4   | ⏳     | -      | -     |
 
