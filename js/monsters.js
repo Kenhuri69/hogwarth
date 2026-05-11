@@ -862,6 +862,7 @@ const MONSTERS = [
     id:       "mangemort_elite",
     name:     "Mangemort d'Élite",
     icon:     "💀",
+    imgSrc:   "img/monsters/mangemort_elite.png",
     category: "humain",
     desc:     "Un Mangemort d'élite en armure noire vous fixe avec mépris",
     lore:     "Membres du cercle intérieur de Voldemort, portant la Marque des Ténèbres depuis des décennies. Leur maîtrise des malédictions impardonnables est absolue. Ils ont juré allégeance totale et préfèrent la mort à la capture.",
