@@ -166,6 +166,20 @@ Pas de refactor de confort.
 **Effort estimé :** M (lecture + petites corrections ciblées).
 **Risque :** faible — corrections chirurgicales uniquement.
 
+**Résultat de l'audit A4 :**
+
+| # | Zone examinée | Verdict |
+|---|---------------|---------|
+| 1 | `endBattle`/`triggerDeath` race avec `autoSave` | ✅ Déjà sain : `triggerDeath` via early return évite double appel (`battle.js:298`) |
+| 2 | Save corrompue partielle | ✅ Déjà couvert par `scenarioCorruptSave` dans smoke + migrations dans `_applyState` |
+| 3 | `goDeeper` sans cache d'étage | ✅ Déjà géré : `if (!_restoreFloorFromCache(...))` régénère (`movement.js:197`) |
+| 4 | `equipItem(idx, charIdx)` avec `charIdx` invalide | ⚠️ Corrigé : `if (!c) return;` ajouté après `const c = party[charIdx]` (`inventory.js:241`) |
+| 5 | `buyItem` avec catalogue vide | ✅ Déjà couvert : fallback étage 1 + UI message "Plus rien à acheter" (`shop.js:136,162`) |
+
+**Bonus :** warn dev ajouté dans `_resolveSlotForItem` si `item.slot` n'existe pas
+dans `c.equipped` — facilite le diagnostic des typos dans data.js sans changer
+le comportement runtime.
+
 ---
 
 ## Suivi d'exécution
@@ -174,8 +188,8 @@ Pas de refactor de confort.
 |------|--------|--------|-------|
 | A1   | ✅     | 0f1bc1a| 55 modules vérifiés au chargement. Détection via `typeof` (safe pour let/const). Bandeau DOM rouge si critique manquant. |
 | A2   | ✅     | 3d2eb59| Audit grep clean (zéro réassignation). `let → const` sur player/player2/party. Object.assign() dans save.js intact. |
-| A3   | ✅     | TBD    | `safeEl(id)` (warn dédupé) + `safeCall(name, ...args)` ajoutés dans loader.js. Démo dans `_showExploreOverlay` / `_hideExploreOverlay`. |
-| A4   | ⏳     | -      | -     |
+| A3   | ✅     | 782b099| `safeEl(id)` (warn dédupé) + `safeCall(name, ...args)` ajoutés dans loader.js. Démo dans `_showExploreOverlay` / `_hideExploreOverlay`. |
+| A4   | ✅     | TBD    | 5 zones examinées, 4 déjà saines (confirmation des faux positifs du rapport initial). 1 trou : `equipItem` sans guard sur `c` → fix + warn dev sur slot inconnu dans `_resolveSlotForItem`. |
 
 ## Hors-scope (renvoyé à Vague B/C)
 

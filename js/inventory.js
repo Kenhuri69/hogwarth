@@ -148,7 +148,14 @@ function _resolveSlotForItem(item, c) {
     if (c && c.equipped && !c.equipped.ring2) return 'ring2';
     return 'ring1';
   }
-  if (explicit) return explicit;
+  if (explicit) {
+    // Warn dev si le slot demandé n'existe pas dans la structure
+    // `equipped` (typo dans data.js, slot custom non câblé).
+    if (c && c.equipped && !(explicit in c.equipped)) {
+      console.warn('[equip] Slot inconnu "' + explicit + '" pour item ' + (item.id || item.name));
+    }
+    return explicit;
+  }
   // Mapping legacy pour items sans champ `slot` explicite
   if (item.type === 'wand')  return 'wand';
   if (item.type === 'armor') return 'body';
@@ -238,6 +245,7 @@ function equipItem(inventoryIdx, charIdx, targetSlot) {
   const item = player.inventory[inventoryIdx];
   if (!item) return;
   const c    = party[charIdx];
+  if (!c) return;
   const slot = targetSlot || _resolveSlotForItem(item, c);
 
   // Déséquiper l'ancien objet → retour en inventaire si place dispo
