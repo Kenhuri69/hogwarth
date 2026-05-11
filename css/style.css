@@ -834,8 +834,46 @@ body {
   }
   .inv-slot .inv-type-badge .ui-icon { width: 14px; height: 14px; }
 }
-/* Mobile : tap-preview montre la tooltip riche, comme hover sur desktop */
+/* Mobile : tap-preview montre la tooltip riche, comme hover sur desktop.
+ * Sur tactile on positionne en overlay centré (et non collé à la cellule)
+ * pour ne pas déborder du viewport quand la cellule est en bord d'écran. */
 .inv-slot.tap-preview .item-tooltip { opacity: 1; visibility: visible; }
+@media (hover: none) {
+  .inv-slot.tap-preview .item-tooltip {
+    position: fixed;
+    bottom: auto; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 86vw; width: 280px;
+    z-index: 9999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.9);
+  }
+}
+
+/* Mobile (≤700 px) : on garde le nom mais on agrandit l'icône à 48 px
+ * (mipmap 64 px downscaled propre) et on clampe le texte sur 2 lignes
+ * pour éviter qu'un nom long fasse exploser la hauteur de la grille. */
+@media (max-width: 700px) {
+  .inv-slot {
+    height: auto; min-height: 92px;
+    padding: 5px; gap: 3px;
+    position: relative;
+  }
+  .inv-slot .ui-icon-xl,
+  .inv-slot .ui-icon { width: 48px; height: 48px; }
+  .inv-slot .item-name {
+    font-size: 9px; line-height: 1.15;
+    max-width: 100%; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+  }
+  /* typeLabel passe aussi en badge discret coin bas-droit */
+  .inv-slot .inv-type-badge {
+    position: absolute; bottom: 3px; right: 3px; margin: 0 !important;
+    opacity: 0.75; pointer-events: none;
+  }
+  .inv-slot .inv-type-badge .ui-icon { width: 12px; height: 12px; }
+}
 
 /* Bordure de rareté — voir .claude/plans/equipment-extended.md §2.6.
  * `common` reste sur la bordure or-sombre par défaut. Les variantes
