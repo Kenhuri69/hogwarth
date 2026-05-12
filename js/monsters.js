@@ -446,7 +446,8 @@ const MONSTERS = [
     drops:  [
       { itemId: "potion_s",       chance: 0.20 },
       { itemId: "robe1",          chance: 0.05 },
-      { itemId: "gants_apprenti", chance: 0.04 }
+      { itemId: "gants_apprenti", chance: 0.04 },
+      { itemId: "ceinture_force", chance: 0.03 }
     ]
   },
 
@@ -470,7 +471,8 @@ const MONSTERS = [
     xp: 22, gold: { min: 10, max: 18 },
     drops:  [
       { itemId: "potion_s",      chance: 0.10 },
-      { itemId: "anneau_argent", chance: 0.06 }
+      { itemId: "anneau_argent", chance: 0.06 },
+      { itemId: "anneau_courage",chance: 0.03 }
     ]
   },
 
@@ -526,7 +528,8 @@ const MONSTERS = [
     xp: 38, gold: { min: 16, max: 26 },
     drops:  [
       { itemId: "potion_s",         chance: 0.15 },
-      { itemId: "chapeau_apprenti", chance: 0.04 }
+      { itemId: "chapeau_apprenti", chance: 0.04 },
+      { itemId: "gants_duelliste",  chance: 0.04 }
     ]
   },
 
@@ -657,8 +660,9 @@ const MONSTERS = [
     weak:   ["burn"],
     xp: 48, gold: { min: 18, max: 28 },
     drops:  [
-      { itemId: "potion_s", chance: 0.20 },
-      { itemId: "potion_m", chance: 0.08 }
+      { itemId: "potion_s",       chance: 0.20 },
+      { itemId: "potion_m",       chance: 0.08 },
+      { itemId: "bottes_silence", chance: 0.03 }
     ]
   },
 
@@ -738,8 +742,9 @@ const MONSTERS = [
     weak:   [],
     xp: 35, gold: { min: 18, max: 28 },
     drops:  [
-      { itemId: "potion_m", chance: 0.20 },
-      { itemId: "wand1",    chance: 0.08 }
+      { itemId: "potion_m",         chance: 0.20 },
+      { itemId: "wand1",            chance: 0.08 },
+      { itemId: "talisman_tactique",chance: 0.03 }
     ]
   },
 
@@ -881,9 +886,10 @@ const MONSTERS = [
     weak:   ["stun"],
     xp: 70, gold: { min: 28, max: 42 },
     drops:  [
-      { itemId: "potion_m", chance: 0.25 },
-      { itemId: "wand1",    chance: 0.10 },
-      { itemId: "wand2",    chance: 0.05 }
+      { itemId: "potion_m",     chance: 0.25 },
+      { itemId: "wand1",        chance: 0.10 },
+      { itemId: "wand2",        chance: 0.05 },
+      { itemId: "casque_aurore",chance: 0.04 }
     ]
   },
 

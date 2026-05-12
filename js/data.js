@@ -158,6 +158,15 @@ const ITEMS = [
   // Tier rare/épique étage 7+
   { id:"bottes_dragon",    name:"Bottes en Peau de Dragon",icon:"🥾",desc:"DEF+3 AGI+2",      type:"acc",   slot:"feet",  family:"boots_dragon",  rarity:"rare",   bonusDef:3, bonusAgi:2, power:3, price:340 },
   { id:"retourneur_temps", name:"Retourneur de Temps",   icon:"⌛", desc:"AGI+3 LCK+2",        type:"acc",   slot:"trinket",family:"timeturner",  rarity:"epic",   bonusAgi:3, bonusLck:2, power:3, price:550, tint:"#c9a84c" },
+  // ── Phase 3c : équipements mid-game (étages 3-7) ─────────────
+  // Comblent les slots peu fournis. Apparaissent en boutique selon
+  // minFloor et peuvent dropper sur les monstres élite de la zone.
+  { id:"gants_duelliste",  name:"Gants du Duelliste",     icon:"🧤", desc:"ATK+2 AGI+1",        type:"acc",   slot:"hands", family:"gloves_duelist",rarity:"rare",   bonusAtk:2, bonusAgi:1, power:2, price:210 },
+  { id:"casque_aurore",    name:"Casque d'Auror",         icon:"⛑️", desc:"DEF+3 MAG+1",        type:"acc",   slot:"head",  family:"helm_auror",    rarity:"rare",   bonusDef:3, bonusMag:1, power:3, price:260 },
+  { id:"ceinture_force",   name:"Ceinture de Force",      icon:"➿", desc:"ATK+1 DEF+2",        type:"acc",   slot:"belt",  family:"belt_strength", rarity:"rare",   bonusAtk:1, bonusDef:2, power:2, price:250 },
+  { id:"anneau_courage",   name:"Anneau du Courage",      icon:"💍", desc:"ATK+2 LCK+1",        type:"acc",   slot:"ring",  family:"ring_courage",  rarity:"rare",   bonusAtk:2, bonusLck:1, power:2, price:280, tint:"#c2453a" },
+  { id:"bottes_silence",   name:"Bottes du Silence",      icon:"🥾", desc:"AGI+3 LCK+1",        type:"acc",   slot:"feet",  family:"boots_silence", rarity:"epic",   bonusAgi:3, bonusLck:1, power:3, price:420 },
+  { id:"talisman_tactique",name:"Talisman du Tacticien",  icon:"🔮", desc:"LCK+2 MAG+1",        type:"acc",   slot:"trinket",family:"talisman_tact",rarity:"rare",   bonusLck:2, bonusMag:1, power:2, price:300 },
   // ── Phase 3b : récompenses de quêtes (PNJ donneurs) ──
   // Anneau remis par le portrait de Dumbledore (quête `anneau_dumbledore`). Pierre noire sertie d'or.
   { id:"anneau_resurrection",name:"Anneau de la Résurrection",icon:"💍", desc:"MAG+3 LCK+4 · Apprend Reparo", type:"acc", slot:"ring",  family:"ring_resurrection", rarity:"epic", bonusMag:3, bonusLck:4, power:3, grantsSpell:"Reparo", price:0, tint:"#1a1a1a" },
