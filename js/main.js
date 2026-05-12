@@ -300,8 +300,17 @@ function toggleMobileMap() {
 
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT') return;
-  const map={w:'n',s:'s',a:'w',d:'e',ArrowUp:'n',ArrowDown:'s',ArrowLeft:'w',ArrowRight:'e'};
-  if(map[e.key]) { move(map[e.key]); e.preventDefault(); }
+  // Contrôles relatifs : ↑/W = avancer, ↓/S = reculer, ←/A = pivoter G, →/D = pivoter D.
+  // Z/Q ajoutés pour les claviers AZERTY.
+  const k = e.key;
+  const fwd   = (k==='ArrowUp'    || k==='w' || k==='W' || k==='z' || k==='Z');
+  const back  = (k==='ArrowDown'  || k==='s' || k==='S');
+  const left  = (k==='ArrowLeft'  || k==='a' || k==='A' || k==='q' || k==='Q');
+  const right = (k==='ArrowRight' || k==='d' || k==='D');
+  if (fwd)        { moveForward();  e.preventDefault(); }
+  else if (back)  { moveBackward(); e.preventDefault(); }
+  else if (left)  { turnLeft();     e.preventDefault(); }
+  else if (right) { turnRight();    e.preventDefault(); }
   if(e.key==='i') openInventory();
   if(e.key==='p') openSpells();
   if(e.key==='c') openCharacter();

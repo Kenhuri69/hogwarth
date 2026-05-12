@@ -23,6 +23,10 @@ function _buildMinimapCells(mm, cellSize) {
       div.style.height = cellSize + 'px';
       if (x === playerX && y === playerY) {
         div.classList.add('map-player');
+        // Flèche d'orientation : matérialise la direction de la vue 3D centrale.
+        const arrow = document.createElement('div');
+        arrow.className = 'map-player-arrow map-player-dir-' + (playerDir || 'n');
+        div.appendChild(arrow);
       } else if (!visited[y][x]) {
         div.classList.add('map-wall');
       } else {

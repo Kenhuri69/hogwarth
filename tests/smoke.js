@@ -3394,6 +3394,114 @@ async function scenarioCritDodge() {
 }
 
 // ── Scénario 27 : loader (manifeste de globals + helpers) ────
+async function scenarioRelativeControls() {
+  console.log('\n── Scénario : contrôles relatifs (avancer/reculer/pivoter) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Helpers exposés sur window
+  const exposed = await page.evaluate(() => ({
+    moveForward:  typeof moveForward  === 'function',
+    moveBackward: typeof moveBackward === 'function',
+    turnLeft:     typeof turnLeft     === 'function',
+    turnRight:    typeof turnRight    === 'function'
+  }));
+  assert(exposed.moveForward,  'moveForward absent');
+  assert(exposed.moveBackward, 'moveBackward absent');
+  assert(exposed.turnLeft,     'turnLeft absent');
+  assert(exposed.turnRight,    'turnRight absent');
+
+  // 2) Rotation : turnRight de n → e, sans changer playerX/playerY.
+  const rot = await page.evaluate(() => {
+    playerDir = 'n';
+    const x0 = playerX, y0 = playerY;
+    turnRight();
+    const e = { dir: playerDir, moved: (playerX !== x0 || playerY !== y0) };
+    turnLeft();
+    const back = { dir: playerDir };
+    return { e, back };
+  });
+  assert(rot.e.dir === 'e',   `turnRight depuis n doit donner e (obtenu ${rot.e.dir})`);
+  assert(!rot.e.moved,        'turnRight ne doit pas déplacer le joueur');
+  assert(rot.back.dir === 'n',`turnLeft doit ramener à n (obtenu ${rot.back.dir})`);
+
+  // 3) moveForward : tente d'avancer dans chaque direction jusqu'à trouver
+  //    une case libre. Vérifie ensuite que moveBackward fait l'inverse SANS
+  //    pivoter, puis que l'opposé du dx,dy correspond bien à playerDir.
+  const stepCheck = await page.evaluate(() => {
+    const dirs = ['n','e','s','w'];
+    const D = { n:[0,-1], e:[1,0], s:[0,1], w:[-1,0] };
+    for (const d of dirs) {
+      playerDir = d;
+      const [dx,dy] = D[d];
+      const nx = playerX + dx, ny = playerY + dy;
+      if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) continue;
+      if (dungeon[ny][nx] === CELL.WALL) continue;
+      const x0 = playerX, y0 = playerY;
+      moveForward();
+      const afterFwd = { dir: playerDir, dx: playerX - x0, dy: playerY - y0 };
+      const dirBefore = playerDir;
+      moveBackward();
+      const afterBack = { dir: playerDir, dx: playerX - x0, dy: playerY - y0 };
+      return { tried: d, afterFwd, afterBack, dirPreserved: dirBefore === afterBack.dir };
+    }
+    return { tried: null };
+  });
+  assert(stepCheck.tried, 'aucune direction libre — donjon corrompu ?');
+  assert(stepCheck.afterFwd.dx !== 0 || stepCheck.afterFwd.dy !== 0,
+    'moveForward sans effet sur la position');
+  assert(stepCheck.afterFwd.dir === stepCheck.tried,
+    'moveForward doit aligner playerDir sur la direction du pas');
+  assert(stepCheck.afterBack.dx === 0 && stepCheck.afterBack.dy === 0,
+    'moveBackward doit ramener à la position initiale');
+  assert(stepCheck.dirPreserved,
+    'moveBackward NE doit PAS modifier playerDir');
+
+  // 4) Mapping clavier : ArrowRight déclenche turnRight (rotation cardinale).
+  const kbd = await page.evaluate(async () => {
+    playerDir = 'n';
+    const ev = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
+    document.dispatchEvent(ev);
+    return playerDir;
+  });
+  assert(kbd === 'e', `ArrowRight depuis n doit donner playerDir=e (obtenu ${kbd})`);
+
+  // 5) Boussole : la lettre orientée porte la classe .facing.
+  const compass = await page.evaluate(() => {
+    playerDir = 'e';
+    updateCompass();
+    return {
+      facingE: document.getElementById('dir-e')?.classList.contains('facing'),
+      facingN: document.getElementById('dir-n')?.classList.contains('facing')
+    };
+  });
+  assert(compass.facingE,  'la lettre E doit porter .facing quand playerDir=e');
+  assert(!compass.facingN, 'la lettre N ne doit pas porter .facing quand playerDir=e');
+
+  // 6) Minimap : la case joueur contient un enfant .map-player-arrow
+  //    avec la classe directionnelle correspondant à playerDir.
+  const arrow = await page.evaluate(() => {
+    playerDir = 's';
+    renderMinimap();
+    const mini = document.getElementById('minimap');
+    const playerCell = mini?.querySelector('.map-cell.map-player');
+    const arr = playerCell?.querySelector('.map-player-arrow');
+    return {
+      hasArrow: !!arr,
+      hasDirClass: !!arr && arr.classList.contains('map-player-dir-s')
+    };
+  });
+  assert(arrow.hasArrow,    'flèche d\'orientation absente sur la minimap');
+  assert(arrow.hasDirClass, 'flèche minimap manque la classe map-player-dir-s');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Contrôles relatifs OK');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -3451,7 +3559,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

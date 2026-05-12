@@ -132,13 +132,16 @@ function _updateCharBar(idx) {
 }
 
 function updateCompass() {
+  // L'Ouest s'affiche avec l'ID `dir-o` côté HTML (la lettre O).
+  const idByDir = { n:'dir-n', s:'dir-s', e:'dir-e', w:'dir-o' };
   ['n','s','e','w'].forEach(d => {
-    const el = document.getElementById(`dir-${d}`);
+    const el = document.getElementById(idByDir[d]);
     if (!el) return;
     const [dx, dy] = DIRECTIONS[d];
     const nx = playerX + dx, ny = playerY + dy;
     const free = nx >= 0 && ny >= 0 && nx < MAP_W && ny < MAP_H && dungeon[ny][nx] !== CELL.WALL;
     el.classList.toggle('active', free);
+    el.classList.toggle('facing', d === playerDir);
   });
 }
 

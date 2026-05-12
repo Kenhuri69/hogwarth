@@ -416,6 +416,18 @@ body {
 .map-wall { background: #1a0f05; border: 1px solid #0a0703; }
 .map-floor { background: #3a2a10; border: 1px solid #2a1a08; }
 .map-player { background: var(--gold); border: 1px solid var(--gold-light); position: relative; }
+/* Flèche d'orientation du joueur : pointe vers la direction de la vue 3D. */
+.map-player-arrow {
+  position: absolute; inset: 0;
+  background: #1a0f05;
+  clip-path: polygon(50% 12%, 86% 88%, 50% 68%, 14% 88%);
+  pointer-events: none;
+  transition: transform 0.12s ease-out;
+}
+.map-player-dir-n { transform: rotate(0deg); }
+.map-player-dir-e { transform: rotate(90deg); }
+.map-player-dir-s { transform: rotate(180deg); }
+.map-player-dir-w { transform: rotate(270deg); }
 .map-visited { background: #2a1a08; }
 .map-door { background: #6b4c1a; border: 1px solid #8b6c2a; }
 .map-stairs { background: #4a3a6a; }
@@ -467,6 +479,13 @@ body {
   border-radius: 2px;
 }
 .compass-dir.active { background: #2a1a08; color: var(--gold-light); border-color: var(--gold-dark); }
+.compass-dir.facing {
+  background: radial-gradient(circle, rgba(201,168,76,0.32), rgba(42,26,8,0.85) 75%);
+  color: #fff7c8;
+  border-color: var(--gold);
+  text-shadow: 0 0 6px rgba(255,247,200,0.9), 0 0 2px var(--gold);
+  box-shadow: 0 0 6px rgba(201,168,76,0.55) inset;
+}
 .compass-center { background: #1a0f05 !important; color: var(--gold) !important; }
 
 /* ============================================================
