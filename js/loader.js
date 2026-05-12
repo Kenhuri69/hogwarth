@@ -85,6 +85,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'partySize',          source: 'state.js',        kind: 'obj' },
     { name: 'HOUSE_BONUSES',      source: 'state.js',        kind: 'obj' },
     { name: 'DIFFICULTY_SETTINGS',source: 'state.js',        kind: 'obj' },
+    { name: 'defeatedCellsByFloor',source: 'state.js',       kind: 'obj' },
 
     // ── Audio (critique) ──
     { name: 'AudioSystem',        source: 'audio.js',        kind: 'obj' },

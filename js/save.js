@@ -177,6 +177,8 @@ function _serializeState() {
     restCooldown,
     usedFountains: Array.from(usedFountains),
     usedSpecialNpcs: Array.from(usedSpecialNpcs),
+    defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
+                          .map(([f, set]) => [f, Array.from(set)]),
     npcPlacements: Array.from(npcPlacements.entries()),
     seenNpcs:      Array.from(seenNpcs),
     availableQuests: Array.from(availableQuests),
@@ -306,6 +308,9 @@ function _applyState(gs) {
   if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
   usedFountains = new Set(gs.usedFountains || []);
   usedSpecialNpcs = new Set(gs.usedSpecialNpcs || []);
+  defeatedCellsByFloor = new Map(
+    (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])
+  );
   npcPlacements = new Map(gs.npcPlacements || []);
   seenNpcs      = new Set(gs.seenNpcs || []);
 

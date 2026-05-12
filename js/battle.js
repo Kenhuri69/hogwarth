@@ -327,6 +327,11 @@ function endBattle(won) {
 
   if (won) {
     enemyMap[playerY][playerX] = null;
+    // Trace la cellule pour le respawn 20 % au retour d'étage (cf. _respawnEnemiesOnEntry).
+    if (typeof defeatedCellsByFloor !== 'undefined' && typeof currentFloor === 'number') {
+      if (!defeatedCellsByFloor.has(currentFloor)) defeatedCellsByFloor.set(currentFloor, new Set());
+      defeatedCellsByFloor.get(currentFloor).add(`${playerX},${playerY}`);
+    }
     const diff     = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
     let totalXp = 0, totalGold = 0;
     enemyGroup.forEach(e => { totalXp += e.xp; totalGold += e.gold + Math.floor(Math.random() * 5); });
