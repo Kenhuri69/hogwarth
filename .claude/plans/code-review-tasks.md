@@ -1,0 +1,285 @@
+# Passe code — restes à faire & améliorations
+
+> Branche : `claude/code-review-tasks-voWQi`
+> Date de la passe : 2026-05-12
+> Méthode : lecture des plans existants + grep ciblé + heuristiques (longueur des fonctions, patterns défensifs, a11y, code mort).
+>
+> Ce document **n'implémente rien** : il consolide ce qui reste à faire à
+> travers les plans actifs + ajoute les points découverts pendant la passe.
+> À chaque chantier lancé : créer une branche dédiée + cocher la case ici.
+
+---
+
+## 1. Bilan des plans existants
+
+| Plan                                  | Statut                                    | Reste à faire                                                                                                           |
+|---------------------------------------|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| `SVG_PLAN.md`                         | 36 / 76 (47 %)                            | Bloc B (31 SVG inline à affiner) + Bloc C (5 PNG monstres + 6 re-gen + 4 portraits PNJ + 2 scènes) + Z1 commit final.    |
+| `code-improvements.md` — **Vague A**  | ✅ livrée (4/4)                           | —                                                                                                                       |
+| `code-improvements.md` — **Vague B**  | ⏳ 0/5                                    | B1 `safeUX` + migration ; B2 refactor `castSpellInBattle` ; B3 refactor `renderQuestList` ; B4 refactor `checkLevelUp` ; B5 audit code mort. |
+| `code-improvements.md` — **Vague C**  | ⏳ 0/4                                    | C1 doc CLAUDE.md ; C2 a11y ; C3 smoke loader ; C4 hygiène plans.                                                         |
+| `equipment-extended.md`               | 28 / 53 — Phase 6 restante                | 6.1 update SVG_PLAN si atlas items ajoutés ; 6.2 commit groupé ; 6.3 PR (sur demande). Phase 4 (atlas PNG items) reportée. |
+| `npc-integration.md`                  | Livré pour l'essentiel                    | (a) Corriger portrait Pomfresh (broche → caducée + mandragore + plume de phénix) ; (b) PNG 4 PNJ lore (Sir Nicolas, Moine Gras, Rusard, Trelawney). |
+| `character-ux-v2.md`                  | Étape 0 (mockup) livrée                   | Validation utilisateur 0.U pour débloquer 1.1 → 6.6 (refonte modale Personnage 3 colonnes + tooltip riche).               |
+| `character-ux-refonte.md`             | Iter A + B livrées                        | Plan obsolète → **à archiver** dans `_archive/` (PR #57 mergée).                                                          |
+| `audio-intro-sample.md`               | Implémenté (commits récents)              | Plan obsolète (samples livrés dans commits `481c384`, `924b48c`, etc.) → **à archiver**.                                 |
+| `voice-intro-dumbledore.md`           | Implémenté (commit `a0962fa`)             | Plan obsolète → **à archiver**.                                                                                          |
+| `anastasia-character.md`              | Livré (commit `c6765e7`)                  | Plan obsolète → **à archiver**.                                                                                          |
+
+**Constat** : 4 plans terminés traînent à la racine de `.claude/plans/` alors
+que `_archive/` existe. Premier nettoyage à faire (cf. C4).
+
+---
+
+## 2. Nouveaux items découverts pendant la passe
+
+### N1 — Migration des `if (window.UX)` non faite (recoupe B1)
+
+Compte actuel par grep :
+
+| Fichier              | Occurrences |
+|----------------------|-------------|
+| `js/battle.js`       | 10          |
+| `js/battle-spells.js`| 14          |
+
+Le plan code-improvements prévoit `UX_safe = new Proxy({...})` dans `loader.js`.
+Le proxy n'existe pas encore (`grep UX_safe` → 0). `safeCall` est dispo mais
+inutilisé pour UX. **Tractable, faible risque.**
+
+### N2 — `safeEl` / `safeCall` sous-utilisés
+
+Helpers livrés en A3 mais utilisés uniquement dans `movement.js`
+(`_showExploreOverlay`/`_hideExploreOverlay`, 6 occurrences) sur **180+
+`getElementById`** existants. Pas de refactor de masse à faire, mais les
+fonctions à risque (manipulations DOM en cascade dans une même fonction)
+mériteraient la migration ciblée.
+
+Zones candidates (fonctions touchant ≥ 5 IDs sans check) :
+- `js/inventory.js — showEquipMenu()` (8 `getElementById` dans `inventory.js`)
+- `js/save-ui.js — _renderSlotCard()` + `openSaveDialog/openLoadDialog` (16 IDs)
+- `js/ui-bestiary.js — showMonsterDetail()` (13 IDs)
+- `js/main.js — startGame()` + démarrage (18 IDs)
+- `js/ux-improvements.js` (15 IDs — timeline/log/floatDmg)
+
+### N3 — `localStorage.getItem` lui-même peut throw (cas marginal)
+
+Recoupé avec l'audit indépendant : `_readStore` et `_writeStore` ont déjà
+des try/catch corrects sur `JSON.parse` et `localStorage.setItem`. **Faux
+positif partiel.**
+
+Reste un point : `save.js:15` `localStorage.getItem(SAVE_STORE_KEY)` est
+**hors** du `try/catch` (qui commence ligne 17). En Safari mode privé, un
+simple `getItem` peut jeter `SecurityError`. Idem `save.js:127, 344`.
+
+**Impact** : rare mais possible — démarrage planté en Safari privé.
+**Fix** : étendre le try/catch d'une ligne (englober le `getItem`) dans
+les 3 endroits.
+
+### N4 — `console.log` de debug oubliés en prod
+
+3 logs informatifs qui devraient être derrière un flag dev :
+- `js/main.js:213` — `console.log("✅ Textures chargées - redraw forcé")`
+- `js/textures.js:53` — `console.log('[Textures] ✅ Chargées :', …)`
+- `js/renderer.js:92` — `console.log('[Renderer] Patterns prêts — murs:', …)`
+
+**Choix** : soit les garder préfixés `[Textures]`/`[Renderer]` (acceptable),
+soit ajouter un `DEBUG` flag global dans `state.js` consommé par les 3.
+
+### N5 — Accessibilité ARIA quasi inexistante (recoupe C2)
+
+`grep aria- index.html` → **0 occurrence**. Aucun attribut accessible :
+- Modales (`#character-modal`, `#inventory-modal`, `#bestiary-modal`,
+  `#shop-modal`, `#slot-modal`, `#spell-modal`, `#npc-dialog`) → aucune
+  n'a `role="dialog"` / `aria-modal="true"` / `aria-labelledby`.
+- Logs combat (`#battle-log`, `#msg-log`) → pas d'`aria-live` ; un lecteur
+  d'écran ne lit pas les events.
+- Bandeau loader (`#loader-error-banner`, créé en JS) → pas de `role="alert"`.
+- D-pad mobile `.mobile-dir`, boutons `.cmd-btn` en mode emoji-only → pas
+  d'`aria-label`.
+
+C'est l'item C2 du plan code-improvements, à confirmer/promouvoir.
+
+### N6 — CLAUDE.md ne reflète plus la liste réelle des modules
+
+`<script src="js/...">` dans `index.html` charge **31 modules** :
+`ux-improvements, audio, audio-music, audio-sfx, icons, scene-icons, monsters,
+npcs, data, item-icons, state, ui, ui-bestiary, dungeon, textures, renderer,
+renderer-effects, renderer-minimap, movement, battle, battle-spells, battle-ui,
+inventory, quests, npc-dialog, intro, shop, save, save-ui, main, loader`.
+
+CLAUDE.md liste seulement 25 modules — manquent **npcs, npc-dialog, intro,
+item-icons, scene-icons, loader**. Ces modules sont par ailleurs absents de la
+section « Structure des fichiers » détaillée.
+
+C'est l'item C1 du plan code-improvements.
+
+### N7 — Fonctions longues confirmées (recoupe B2/B3/B4 + nouvelles)
+
+Heuristique : `function` jusqu'à la suivante. Top 12 :
+
+| Fichier:ligne                           | Fonction                  | Lignes |
+|------------------------------------------|---------------------------|--------|
+| `js/renderer.js:212`                     | `drawCorridor`            | 316    |
+| `js/renderer-effects.js:359`             | `drawStairsSprite`        | 206    |
+| `js/renderer-effects.js:168`             | `drawCellMarker`          | 164    |
+| `js/dungeon.js:85`                       | `generateDungeon`         | 138    |
+| `js/quests.js:258`                       | `renderQuestList`         | 124    |
+| `js/battle-spells.js:59`                 | `castSpellInBattle`       | 118    |
+| `js/ui-bestiary.js:84`                   | `showMonsterDetail`       | 101    |
+| `js/quests.js:409`                       | `completeQuest`           | 98     |
+| `js/ui.js:369`                           | `openCharacter`           | 92     |
+| `js/save.js:223`                         | `_applyState`             | 91     |
+| `js/battle.js:391`                       | `checkLevelUp`            | 79     |
+| `js/main.js:208`                         | `startGame`               | 77     |
+
+**Lecture** :
+- `drawCorridor`, `drawStairsSprite`, `drawCellMarker` : code rendu canvas
+  procédural avec beaucoup de constantes inline. Découpage par couche
+  faisable mais le bénéfice est faible — **laisser tel quel sauf demande
+  utilisateur**.
+- `castSpellInBattle` 118 l → **B2** déjà planifié (table de handlers).
+- `renderQuestList` 124 l → **B3** déjà planifié (sous-vues).
+- `completeQuest` 98 l → candidat naturel à découper en parallèle de B3
+  (`_grantRewards`, `_chainNext`, `_logCompletion`).
+- `showMonsterDetail` 101 l → template-builder, factorisable en helpers
+  `_renderLoreBox`, `_renderAbilities`, `_renderDrops`.
+- `_applyState` 91 l → critique pour saves. **À laisser tel quel** : tests
+  smoke `scenarioSaveSlots` + `scenarioCorruptSave` couvrent.
+- `generateDungeon` 138 l → mêlange room layout + placement spécial
+  (chest/shop/stairs/fountain). Découpage faisable mais touche au cœur de
+  la génération — **risque modéré**, attendre vraie justification.
+
+### N8 — Smoke test ne couvre pas le rapport loader (recoupe C3)
+
+`tests/smoke.js` a 33 scénarios mais aucun ne lit `window.__loaderReport`.
+Si quelqu'un casse `loader.js` (typo dans le manifest, etc.), aucun signal.
+
+### N9 — Doublon HTML mineur
+
+- `js/inventory.js:169` : `div.innerHTML = '<div style="font-size:10px;color:#2a1a08">—</div>'`
+- `js/ui.js:155` : `el.innerHTML = '<div style="color:#3a2a10;font-style:italic;font-size:9px;text-align:center;padding-top:4px;">Aucune quête active</div>'`
+
+Petit, mais le pattern « string HTML inline avec style attribute » se répète
+dans plusieurs fichiers. Pas critique, mais à factoriser si une refonte UI
+arrive (cf. character-ux-v2).
+
+### N10 — `eval('typeof ' + entry.name)` dans loader.js (acceptable)
+
+`js/loader.js:149` utilise `eval` volontairement pour tester l'existence d'un
+identifiant déclaré en `let`/`const` au scope global (non exposé sur `window`).
+**Mentionné comme acceptable dans le plan A1** (typeof avec un identifiant nu
+ne throw pas). Aucune action requise — juste documenter ce choix dans CLAUDE.md
+(C1) pour éviter qu'une future passe « anti-eval » ne le supprime.
+
+### N11 — Magic numbers récurrents à factoriser
+
+L'audit code a relevé plusieurs constantes hardcodées qui mériteraient des
+noms :
+
+| Source                            | Valeur     | Constante suggérée            |
+|-----------------------------------|------------|-------------------------------|
+| `battle.js:396` xp courbe         | `× 1.6`    | `LEVEL_UP_XP_MULTIPLIER`      |
+| `battle.js:374` gains maison      | `{Facile:8, Normal:10, Difficile:14, Expert:18}` | `HOUSE_POINTS_PER_KILL` |
+| `battle-spells.js` résist         | `× 0.5`    | `RESIST_MULTIPLIER`           |
+| `battle-spells.js` faiblesse      | `× 1.5`    | `WEAK_MULTIPLIER`             |
+| `movement.js:331,337` fouille     | `0.2` / `0.35` | `SEARCH_GOLD_CHANCE`, `SEARCH_ITEM_CHANCE` |
+| `movement.js:378` rest encounter  | `0.3`      | `REST_ENCOUNTER_CHANCE`       |
+
+**Pas un blocker** — mais une refactorisation low-effort qui aide la
+lisibilité et autorise des bonus d'équipement futurs (ex. « -10% rest
+encounter » via item).
+
+### N12 — `pendingAction` / `pendingSpell` : couplage fragile
+
+`battle.js:94-95` initialise `pendingAction` et `pendingSpell` à `null` en
+début de combat, mais ces variables sont **lues uniquement** depuis
+`battle-ui.js` (`showTargetSelection`). Si le flow change, easy à casser
+sans rouge au compile.
+
+**Fix possible** : encapsuler dans un objet `pendingTargetSelection` exposé
+en API, ou — minimaliste — ajouter un commentaire bloc dans `state.js`
+explicitant le contrat.
+
+### N13 — `typeof autoSave === 'function'` : 8 occurrences
+
+Pattern défensif autour de `autoSave` (au cas où `save.js` ne se charge
+pas). `safeCall('autoSave', reason)` est dispo dans loader.js mais
+inutilisé. Migration mécanique sed-friendly.
+
+Fichiers : `js/battle.js:387, 467`, `js/movement.js:368`, `js/quests.js`
+(à vérifier), etc.
+
+### N14 — `if (window.checkKillQuests)` / `if (window.checkHouseLevelUp)` non factorisés
+
+`battle.js:366, 376` — mêmes guards défensifs que UX. Candidats à
+`safeCall('checkKillQuests', enemyId)` / `safeCall('checkHouseLevelUp')`.
+
+### N15 — `showEquipMenu()` solo/duo dupliqué
+
+`inventory.js:203-275` rend les boutons d'équipement avec **3 variantes
+inline** (solo non-ring / solo ring / duo). Logique onclick répétée. À
+factoriser via `_renderEquipButton(charIdx, slotHint)` lors de la prochaine
+passe inventaire — ou laisser tel quel jusqu'à character-ux-v2 qui va
+refondre cette UI.
+
+### N16 — Boucle d'attente `setInterval` à vérifier
+
+`grep setTimeout/setInterval` retourne 19 occurrences dans 9 fichiers. À
+auditer rapidement si un setInterval n'est jamais cleared, ou si des
+setTimeout s'accumulent en cas de combat répété. **Pas un blocker, juste un
+sanity check.** Cibles prioritaires :
+- `js/audio-music.js` (5 occurrences) — boucle musicale, vérifier que la
+  refonte multi-zone (commit `b445beb`) clear bien le précédent.
+- `js/ux-improvements.js` (3) — timeline, vérifier que `floatDmg` cleanup
+  bien ses nœuds.
+
+---
+
+## 3. Recommandation d'ordre
+
+> Aucun item n'est urgent. Cet ordre minimise les conflits et maximise le
+> ROI documentaire.
+
+1. **C1** (doc CLAUDE.md) + **C4** (archivage des 4 plans terminés) — 1 PR
+   doc-only.
+2. **N3** (try/catch saves) + **N4** (logs debug) — 1 PR hygiène.
+3. **B1** (`UX_safe` + migration des 24 `if (window.UX)`) — 1 PR mécanique.
+4. **B2** (refactor `castSpellInBattle`) — 1 PR ciblée.
+5. **B3** (refactor `renderQuestList`) — 1 PR ciblée.
+6. **B4** (refactor `checkLevelUp`) — 1 PR ciblée.
+7. **C2** (a11y ARIA) — 1 PR additive.
+8. **C3** + **N8** (smoke loader) — 1 PR test.
+9. **B5** + **N7** dead-code/longueurs résiduelles — bas ROI, à faire si
+   temps.
+
+**Hors-scope code** (mais sur l'arriéré global) :
+- SVG_PLAN reste : 40 tâches visuelles à 2 mains (PNG génération utilisateur).
+- npc-integration : 4 portraits PNG manquants + correction Pomfresh.
+- equipment-extended Phase 4 : atlas PNG items (reporté, hors V1).
+- character-ux-v2 : 6 phases en attente de validation utilisateur sur le
+  mockup `tools/mockup_character_v2.html`.
+
+---
+
+## 4. Suivi
+
+| Item | Statut | Branche | Notes |
+|------|--------|---------|-------|
+| C1   | ⏳     | -       | Doc CLAUDE.md (loader, UX, NPC, intro, item-icons, scene-icons, Maisons) |
+| C4   | ⏳     | -       | Déplacer 4 plans terminés dans `_archive/` |
+| N3   | ⏳     | -       | Élargir try/catch en `_readStore`, `loadGame` au `getItem` (Safari privé) |
+| N4   | ⏳     | -       | Préfixer ou supprimer 3 `console.log` debug |
+| B1/N1| ⏳     | -       | `UX_safe` proxy + migration **32** `if (window.UX)` (battle+battle-spells) |
+| N13  | ⏳     | -       | Migrer 8 `typeof autoSave === 'function'` vers `safeCall('autoSave', …)` |
+| N14  | ⏳     | -       | Migrer `checkKillQuests` / `checkHouseLevelUp` vers `safeCall` |
+| B2   | ⏳     | -       | `castSpellInBattle` → table `SPELL_HANDLERS` (118 l) |
+| B3   | ⏳     | -       | `renderQuestList` → 3 sous-vues (124 l) |
+| B4   | ⏳     | -       | `checkLevelUp` → `_grantLevelStats/HpSp/Spells` (79 l) |
+| C2/N5| ⏳     | -       | ARIA modales + aria-live logs + aria-label cmd-btn |
+| C3/N8| ⏳     | -       | `scenarioLoader` dans smoke.js |
+| B5/N7| ⏳     | -       | Audit code mort + factorisation `showMonsterDetail`/`completeQuest` |
+| N9   | ⏳     | -       | (Optionnel) factor empty-state HTML |
+| N11  | ⏳     | -       | (Optionnel) extraire magic numbers (XP courbe, résist, fouille, rest) |
+| N12  | ⏳     | -       | (Optionnel) clarifier contrat `pendingAction`/`pendingSpell` |
+| N15  | ⏳     | -       | (Optionnel) factoriser `showEquipMenu` solo/duo (à coupler avec character-ux-v2) |
+| N16  | ⏳     | -       | (Optionnel) audit timer leaks (audio-music multi-zone, ux timeline) |
