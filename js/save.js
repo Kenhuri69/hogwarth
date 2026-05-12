@@ -184,7 +184,7 @@ function _serializeState() {
     availableQuests: Array.from(availableQuests),
     completedQuests: Array.from(completedQuests),
     lastQuestCompletion: { ...lastQuestCompletion },
-    _version:        2
+    _version:        3
   };
 }
 
@@ -229,12 +229,18 @@ function _migrateEquippedSlots(c) {
 // Migration rétroactive : crédite (level - 1) * STAT_POINTS_PER_LEVEL
 // au perso s'il n'a pas encore le champ `unallocatedStatPoints`. Le
 // joueur peut ensuite les dépenser via la fiche perso (ui.js).
-// Idempotente : si le champ existe déjà (même à 0), ne touche pas.
-function _migrateUnallocatedStatPoints(c) {
+//
+// Le mode `force` est utilisé pour les saves antérieures à v3 :
+// le champ peut y exister à 0 à cause d'un Object.assign après
+// `_hydrateCharacter` (qui met 0 à la création d'un héros) — la
+// vérif undefined seule rate alors la migration. Force = recalcule
+// la valeur correcte. Les saves v3+ sont supposées fiables.
+function _migrateUnallocatedStatPoints(c, force) {
   if (!c || typeof c !== 'object') return;
-  if (c.unallocatedStatPoints !== undefined) return;
+  if (!force && c.unallocatedStatPoints !== undefined) return;
   if (typeof STAT_POINTS_PER_LEVEL !== 'number') {
-    c.unallocatedStatPoints = 0; return;
+    if (c.unallocatedStatPoints === undefined) c.unallocatedStatPoints = 0;
+    return;
   }
   const lvl = Math.max(1, c.level || 1);
   c.unallocatedStatPoints = (lvl - 1) * STAT_POINTS_PER_LEVEL;
@@ -256,8 +262,10 @@ function _applyState(gs) {
   // Migration rétroactive des points de stats libres : un perso niveau N
   // de l'ancienne version n'avait pas accumulé de points. On lui crédite
   // `(N - 1) * STAT_POINTS_PER_LEVEL` qu'il pourra allouer via la fiche.
-  // Idempotente : ne touche pas un perso qui a déjà le champ.
-  party.forEach(_migrateUnallocatedStatPoints);
+  // `force` est vrai pour les saves antérieures à v3 (cf. commentaire de
+  // _migrateUnallocatedStatPoints), où le champ peut exister à 0 à tort.
+  const forceStatPoints = !gs._version || gs._version < 3;
+  party.forEach(c => _migrateUnallocatedStatPoints(c, forceStatPoints));
 
   if (gs.partySize)     partySize    = gs.partySize;
   if (gs.seenMonsters)  seenMonsters = new Set(gs.seenMonsters);
@@ -292,9 +300,9 @@ function _applyState(gs) {
   if (expl) expl.style.display = 'none';
 
   if (gs.activeQuests)   activeQuests = gs.activeQuests.map(_migrateQuestShape);
-  // Migration v1 → v2 : sépare les quêtes complétées et déduit
+  // Migration v1 → v2+ : sépare les quêtes complétées et déduit
   // availableQuests à partir du catalogue. v2+ lit les Sets persistés.
-  if (gs._version === 2) {
+  if (gs._version >= 2) {
     availableQuests = new Set(gs.availableQuests || []);
     completedQuests = new Set(gs.completedQuests || []);
     lastQuestCompletion = (gs.lastQuestCompletion && typeof gs.lastQuestCompletion === 'object')

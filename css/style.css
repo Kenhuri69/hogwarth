@@ -345,6 +345,47 @@ body {
   pointer-events: none;
 }
 
+/* Panneau d'allocation des points de stats (fiche perso, Phase 3) */
+.alloc-panel {
+  margin: 8px 0;
+  padding: 8px;
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  background: rgba(180, 140, 60, 0.08);
+}
+.alloc-panel-title {
+  font-size: 11px;
+  color: var(--gold);
+  text-align: center;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.alloc-buttons-row {
+  display: grid;
+  /* `minmax(0, 1fr)` autorise le shrink des colonnes en dessous de leur
+     largeur de contenu (sinon `1fr` = `minmax(auto, 1fr)` bloque le shrink). */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+.alloc-btn {
+  font-size: 10px;
+  padding: 6px 4px;
+  min-width: 0;        /* idem : autorise le rétrécissement */
+  line-height: 1.2;
+}
+.alloc-btn-effect {
+  font-size: 9px;
+  color: #8a7050;
+  display: block;
+}
+@media (max-width: 700px) {
+  /* Sur mobile, 5 boutons côte à côte sont coupés à droite (le LCK
+     dépassait le cadre). On wrap sur 3 colonnes — 3 puis 2. */
+  .alloc-buttons-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .cmd-btn {
   font-family: 'Cinzel', serif;
   font-size: 12px;
