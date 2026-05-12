@@ -21,10 +21,6 @@ function startNpcAnimLoop() {
   }, 200);
 }
 
-function stopNpcAnimLoop() {
-  if (_npcAnimTimer) { clearInterval(_npcAnimTimer); _npcAnimTimer = null; }
-}
-
 // ── Lignes de fuite sur le sol ──────────────────────────────────
 function drawFloorLines(cx, cy, scale, W, H) {
   const lineCount = 8;

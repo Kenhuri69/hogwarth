@@ -129,48 +129,6 @@ function getWallTextureType(x, y, depth) {
   return key;
 }
 
-// === FIX TEXTURE MISSING === Retourne le pattern mur via le cache central
-function _getWallPattern(depth) {
-  if (!window.TEXTURES) return null;
-  const type = getWallTextureType(playerX, playerY, depth || 0);
-  return _TEX_PATTERNS.walls[type] || null;
-}
-
-// Legacy : retourne l'Image (utilisé comme fallback si pas de pattern).
-function _getWallTex(depth) {
-  if (!window.TEXTURES) return null;
-  const type = getWallTextureType(playerX, playerY, depth || 0);
-  const t    = window.TEXTURES.walls[type];
-  return (t && t.complete && t.naturalWidth > 0) ? t : null;
-}
-
-// === FIX TEXTURE MISSING === Patterns sol/plafond via cache central (plus de gate _patternsReady)
-function _getFloorPattern() {
-  const f = (typeof currentFloor === 'number') ? currentFloor : 1;
-  let name;
-  if      (f <= 2)  name = 'stone';
-  else if (f <= 8)  name = 'carpet';
-  else if (f <= 14) name = 'cavern_floor';
-  else              name = 'rune_floor';
-  return _TEX_PATTERNS.floor[name]
-      || _TEX_PATTERNS.floor['carpet']
-      || _TEX_PATTERNS.floor['stone']
-      || null;
-}
-
-function _getCeilPattern() {
-  const f = (typeof currentFloor === 'number') ? currentFloor : 1;
-  let name;
-  if      (f <= 4)  name = 'beams';
-  else if (f <= 8)  name = 'stone';
-  else if (f <= 14) name = 'cavern_ceiling';
-  else              name = 'rune_ceiling';
-  return _TEX_PATTERNS.ceiling[name]
-      || _TEX_PATTERNS.ceiling['stone']
-      || _TEX_PATTERNS.ceiling['beams']
-      || null;
-}
-
 // Lookup direct dans le cache. Retourne null si pas encore construit
 // (le baseline couleur reste alors visible, sans allocation par frame).
 function _patternForKey(bucket, key) {
