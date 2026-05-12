@@ -388,6 +388,7 @@ function checkLevelUp() {
   party.slice(0, partySize).forEach(c => {
     _grantLevelHpSp(c);
     _grantLevelStats(c);
+    _grantLevelStatPoints(c);
   });
   // Recalculer atk/def/mag/lck = base + bonus équipement
   recalculateStats();
@@ -395,12 +396,19 @@ function checkLevelUp() {
   AudioSystem.playLevelUp();
   document.getElementById('levelup-text').textContent = `Le groupe passe au niveau ${player.level} !`;
   document.getElementById('levelup-modal').style.display = 'flex';
-  addMsg(`Niveau ${player.level} !`, 'good');
+  addMsg(`Niveau ${player.level} ! +${STAT_POINTS_PER_LEVEL} points à allouer par perso`, 'good');
 
   _grantLevelSpells(player.level);
 
   updateUI();
   safeCall('autoSave', 'level-up');
+}
+
+// Accumule STAT_POINTS_PER_LEVEL sur le perso. Le joueur dépense les
+// points via la fiche perso (ui.js — allocateStatPoint).
+function _grantLevelStatPoints(c) {
+  if (typeof STAT_POINTS_PER_LEVEL !== 'number') return;
+  c.unallocatedStatPoints = (c.unallocatedStatPoints || 0) + STAT_POINTS_PER_LEVEL;
 }
 
 // Sync niveau/xp + grant PV/PM max +8/+5 et full heal au passage de niveau.

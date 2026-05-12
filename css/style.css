@@ -360,6 +360,25 @@ body {
 .commands-bar::-webkit-scrollbar-track { background: transparent; }
 .commands-bar::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
 
+/* Badge "points à allouer" sur bouton Fiche (Phase 3) */
+.alloc-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  background: #c9a84c;
+  color: #1a0f05;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 0 6px rgba(201,168,76,0.8);
+  animation: blink 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
 .cmd-btn {
   font-family: 'Cinzel', serif;
   font-size: 12px;

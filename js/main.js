@@ -154,6 +154,7 @@ function _hydrateCharacter(target, key) {
   target.level   = 1;
   target.xp      = 0;
   target.xpNext  = 50;
+  target.unallocatedStatPoints = 0;
   // 11 slots étendus — voir .claude/plans/equipment-extended.md §2.1
   target.equipped = {
     wand: null, head: null, body: null, hands: null, feet: null, cloak: null,

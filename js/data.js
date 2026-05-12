@@ -15,6 +15,22 @@ const DIRECTIONS = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
 // Progression d'XP : multiplicateur appliqué à xpNext à chaque level-up.
 const LEVEL_UP_XP_MULTIPLIER = 1.6;
 
+// Points de stats libres gagnés à chaque level-up, en plus du baseline
+// (+1 ATK/DEF/MAG, +1 STR/INT/AGI, +8 HP, +5 SP qui restent dans `_grantLevelStats`).
+// `unallocatedStatPoints` sur chaque perso accumule les points non dépensés.
+const STAT_POINTS_PER_LEVEL = 3;
+
+// Effet d'un point alloué : mutation appliquée à `c._baseX` (ou `hpMax`)
+// pour persister à travers les futurs level-ups via `recalculateStats`.
+// Clés UI : STR / INT / AGI / END / LCK.
+const STAT_POINT_EFFECTS = {
+  STR: { baseAtk: 1 },          // +1 ATK permanent
+  INT: { baseMag: 1 },          // +1 MAG permanent
+  AGI: { baseAgi: 1 },          // +1 AGI (impacte dodge dans recalculateStats)
+  END: { hpMax: 5, baseEnd: 1 },// +5 HP max (+ +1 END pour cohérence affichage)
+  LCK: { baseLck: 1 },          // +1 LCK (impacte crit dans recalculateStats)
+};
+
 // Points de Maison gagnés par kill, selon la difficulté courante.
 const HOUSE_POINTS_PER_KILL = { Facile: 8, Normal: 10, Difficile: 14, Expert: 18 };
 
