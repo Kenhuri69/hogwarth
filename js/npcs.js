@@ -55,8 +55,10 @@ const NPCS = [
     icon:  "🧙‍♂️",
     portraitImg: "img/npc/dumbledore.png",
     placement: { floor: 1, anchor: "first-room" },
-    questsGiven:    ["intro_tutoriel"],
-    questsTurnedIn: ["intro_tutoriel"],
+    questsGiven:    ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
+                     "dumbledore_resistance", "dumbledore_revelation"],
+    questsTurnedIn: ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
+                     "dumbledore_resistance", "dumbledore_revelation"],
     dialogues: {
       greeting:    [
         "Ah, te voilà enfin ! Bienvenue dans les profondeurs de Poudlard, jeune sorcier. Le château recèle bien des mystères.",
