@@ -274,7 +274,7 @@ sanity check.** Cibles prioritaires :
 | N14  | ✅     | `claude/code-review-tasks-voWQi` | `checkKillQuests` (battle.js, 1 site) et `checkHouseLevelUp` (battle.js + quests.js, 2 sites) migrés vers `safeCall(...)`. |
 | B2   | ✅     | `claude/code-review-tasks-voWQi` | `castSpellInBattle` passée de 118 → **26 lignes**. 7 handlers privés (`_spellHeal`, `_spellDisarm`, `_spellShield`, `_spellElementalDamage`, `_spellLifesteal`, `_spellCurse`, `_spellSteal`) + table `SPELL_HANDLERS` (`stun`/`burn`/`instant` partagent le handler élémentaire). Test ad-hoc : couverture handlers/effets = 9/9, 0 manquant, 0 inutilisé. |
 | B3   | ✅     | `claude/code-review-tasks-voWQi` | `renderQuestList` passée de 124 → **34 lignes**. 5 helpers privés extraits : `_renderActiveQuestCard`, `_renderQuestStep`, `_renderRewardParts`, `_appendCompletedSection`, `_prependAllDoneBanner`. Comportement strictement préservé (createElement+appendChild conservé, pas de migration vers innerHTML unique). Smoke test 33/33 — scénarios chained/repeatable validés. |
-| B4   | ⏳     | -       | `checkLevelUp` → `_grantLevelStats/HpSp/Spells` (79 l) |
+| B4   | ✅     | `claude/code-review-tasks-voWQi` | `checkLevelUp` passée de 79 → **24 lignes**. 3 helpers : `_grantLevelHpSp(c)` (hpMax/spMax/level/xpNext), `_grantLevelStats(c)` (`_baseX += 1` + lazy-init str/int/agi), `_grantLevelSpells(level)` (switch table + Avada unlock niv 9). Test ad-hoc : progression Lv1→9 confirme tous les apprentissages attendus + `avadaLocked` false au niveau 9. |
 | C2/N5| ⏳     | -       | ARIA modales + aria-live logs + aria-label cmd-btn |
 | C3/N8| ⏳     | -       | `scenarioLoader` dans smoke.js |
 | B5/N7| ⏳     | -       | Audit code mort + factorisation `showMonsterDetail`/`completeQuest` |

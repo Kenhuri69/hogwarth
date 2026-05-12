@@ -380,20 +380,9 @@ function checkLevelUp() {
   player.xp     -= player.xpNext;
   player.xpNext  = Math.floor(player.xpNext * 1.6);
 
-  // Améliorer les personnages du groupe actif
   party.slice(0, partySize).forEach(c => {
-    c.level  = player.level;
-    c.xpNext = player.xpNext;
-    c.hpMax += 8;  c.hp = c.hpMax;
-    c.spMax += 5;  c.sp = c.spMax;
-    // Incrémenter les stats de BASE (indépendamment de l'équipement).
-    // recalculateStats() reconstruit ensuite c.str/c.int/c.agi à partir
-    // de _baseStr/_baseInt/_baseAgi + bonus d'équipement.
-    c._baseAtk += 1;  c._baseDef += 1;  c._baseMag += 1;
-    if (c._baseStr === undefined) c._baseStr = c.str;
-    if (c._baseInt === undefined) c._baseInt = c.int;
-    if (c._baseAgi === undefined) c._baseAgi = c.agi;
-    c._baseStr += 1;  c._baseInt += 1;  c._baseAgi += 1;
+    _grantLevelHpSp(c);
+    _grantLevelStats(c);
   });
   // Recalculer atk/def/mag/lck = base + bonus équipement
   recalculateStats();
@@ -403,8 +392,34 @@ function checkLevelUp() {
   document.getElementById('levelup-modal').style.display = 'flex';
   addMsg(`Niveau ${player.level} !`, 'good');
 
-  // ── Table de progression des sorts par niveau ─────────────────
-  // Helper : enseigne un sort à un personnage s'il ne le connaît pas déjà
+  _grantLevelSpells(player.level);
+
+  updateUI();
+  safeCall('autoSave', 'level-up');
+}
+
+// Sync niveau/xp + grant PV/PM max +8/+5 et full heal au passage de niveau.
+function _grantLevelHpSp(c) {
+  c.level  = player.level;
+  c.xpNext = player.xpNext;
+  c.hpMax += 8;  c.hp = c.hpMax;
+  c.spMax += 5;  c.sp = c.spMax;
+}
+
+// Incrémenter les stats de BASE (indépendamment de l'équipement).
+// recalculateStats() reconstruit ensuite c.str/c.int/c.agi à partir
+// de _baseStr/_baseInt/_baseAgi + bonus d'équipement.
+function _grantLevelStats(c) {
+  c._baseAtk += 1;  c._baseDef += 1;  c._baseMag += 1;
+  if (c._baseStr === undefined) c._baseStr = c.str;
+  if (c._baseInt === undefined) c._baseInt = c.int;
+  if (c._baseAgi === undefined) c._baseAgi = c.agi;
+  c._baseStr += 1;  c._baseInt += 1;  c._baseAgi += 1;
+}
+
+// Table de progression des sorts par niveau (hardcodée Harry/Hermione).
+// Niveau 9 : déverrouille aussi le flag `locked` de "Avada..." dans SPELLS.
+function _grantLevelSpells(level) {
   const teach = (char, spellName) => {
     if (!char.spells.includes(spellName)) {
       char.spells.push(spellName);
@@ -412,7 +427,7 @@ function checkLevelUp() {
     }
   };
 
-  switch (player.level) {
+  switch (level) {
     case 2:
       // Hermione complète sa palette d'attaque de base
       teach(player2, 'Expelliarmus');
@@ -437,19 +452,16 @@ function checkLevelUp() {
       teach(player2, 'Wingardium Leviosa');
       teach(player2, 'Reparo');
       break;
-    case 9:
+    case 9: {
       // La Malédiction Impardonnable — déverrouillée pour les deux
-      {
-        const avada = SPELLS.find(s => s.name === 'Avada...');
-        if (avada) avada.locked = false;
-        teach(player,  'Avada...');
-        teach(player2, 'Avada...');
-        setTimeout(() => addMsg('⚠️ Malédiction Impardonnable déverrouillée !', 'bad'), 600);
-      }
+      const avada = SPELLS.find(s => s.name === 'Avada...');
+      if (avada) avada.locked = false;
+      teach(player,  'Avada...');
+      teach(player2, 'Avada...');
+      setTimeout(() => addMsg('⚠️ Malédiction Impardonnable déverrouillée !', 'bad'), 600);
       break;
+    }
   }
-  updateUI();
-  safeCall('autoSave', 'level-up');
 }
 
 function closeLevelup() {
