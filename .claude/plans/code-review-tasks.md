@@ -279,7 +279,7 @@ sanity check.** Cibles prioritaires :
 | C3/N8| ✅     | `claude/code-review-tasks-voWQi` | `scenarioLoader` ajouté à `tests/smoke.js` (35 lignes, 4 vérifications) : 1) `__loaderReport.ok === true` + 0 missing critical + ≥50 modules ; 2) absence du bandeau d'erreur sur démarrage sain ; 3) helpers `safeEl`/`safeCall`/`UX_safe` exposés sur `window` ; 4) régression B1 — `UX_safe` retourne `undefined` après `delete window.UX`. Smoke passe 34/34 (rapport `total: 55, missingCritical: 0`). |
 | B5/N7| ⏳     | -       | Audit code mort + factorisation `showMonsterDetail`/`completeQuest` |
 | N9   | ⏳     | -       | (Optionnel) factor empty-state HTML |
-| N11  | ⏳     | -       | (Optionnel) extraire magic numbers (XP courbe, résist, fouille, rest) |
+| N11  | ✅     | `claude/code-review-tasks-voWQi` | 7 constantes ajoutées dans `data.js` (bloc CONSTANTES DE GAMEPLAY) : `LEVEL_UP_XP_MULTIPLIER`, `HOUSE_POINTS_PER_KILL`, `RESIST_MULTIPLIER`, `WEAK_MULTIPLIER`, `SEARCH_GOLD_THRESHOLD`, `SEARCH_ITEM_THRESHOLD`, `REST_ENCOUNTER_CHANCE`. 10 sites migrés (battle.js xp + maison + 2 resist/weak, battle-spells.js 3 paires resist/weak, movement.js fouille + repos). Smoke 34/34. |
 | N12  | ⏳     | -       | (Optionnel) clarifier contrat `pendingAction`/`pendingSpell` |
 | N15  | ⏳     | -       | (Optionnel) factoriser `showEquipMenu` solo/duo (à coupler avec character-ux-v2) |
 | N16  | ⏳     | -       | (Optionnel) audit timer leaks (audio-music multi-zone, ux timeline) |

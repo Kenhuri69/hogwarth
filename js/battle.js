@@ -35,8 +35,8 @@ function tickStatuses(target, isEnemy) {
   const remaining = [];
   target.statusEffects.forEach(s => {
     let dmg = s.power;
-    if (isEnemy && target.resist?.includes(s.id)) dmg = Math.floor(dmg * 0.5);
-    if (isEnemy && target.weak?.includes(s.id))   dmg = Math.floor(dmg * 1.5);
+    if (isEnemy && target.resist?.includes(s.id)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
+    if (isEnemy && target.weak?.includes(s.id))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
     dmg = Math.max(1, dmg);
     if (isEnemy) target.currentHp = Math.max(0, target.currentHp - dmg);
     else        target.hp         = Math.max(0, target.hp         - dmg);
@@ -356,7 +356,7 @@ function endBattle(won) {
 
     // Points de Maison selon la difficulté
     if (chosenHouse) {
-      const hpGain = { Facile: 8, Normal: 10, Difficile: 14, Expert: 18 }[difficulty] || 10;
+      const hpGain = HOUSE_POINTS_PER_KILL[difficulty] || HOUSE_POINTS_PER_KILL.Normal;
       housePoints += hpGain;
       safeCall('checkHouseLevelUp');
     }
@@ -378,7 +378,7 @@ function checkLevelUp() {
 
   player.level++;
   player.xp     -= player.xpNext;
-  player.xpNext  = Math.floor(player.xpNext * 1.6);
+  player.xpNext  = Math.floor(player.xpNext * LEVEL_UP_XP_MULTIPLIER);
 
   party.slice(0, partySize).forEach(c => {
     _grantLevelHpSp(c);
