@@ -108,6 +108,7 @@ window.UX_safe = new Proxy({}, {
 
     // ── Donjon / rendu ──
     { name: 'generateDungeon',    source: 'dungeon.js',      kind: 'fn'  },
+    { name: '_migrateMissingNpcsForFloor', source: 'dungeon.js', kind: 'fn' },
     { name: 'drawDungeon',        source: 'renderer.js',     kind: 'fn'  },
     { name: 'renderMinimap',      source: 'renderer-minimap.js', kind: 'fn' },
 

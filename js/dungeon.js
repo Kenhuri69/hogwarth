@@ -259,3 +259,69 @@ function spawnQuestMonsters(targetMonsterId, extraRandomCount) {
 
   return placed;
 }
+
+// Repère les PNJ qui devraient être placés à l'étage courant (selon
+// `getNpcsForFloor`) mais absents de `npcPlacements`. Les place sur
+// une cellule FLOOR libre. Permet aux saves antérieures à un ajout
+// de PNJ (ex : Dumbledore, chaîne d'épreuves Phase 3) de "voir
+// apparaître" le PNJ manquant au prochain passage sur l'étage.
+//
+// Appelée depuis `_applyState` (étage courant à la restauration de
+// la save) et `_restoreFloorFromCache` (à chaque retour sur un étage
+// déjà visité). Idempotente : si tous les PNJ attendus sont déjà
+// présents, no-op. Retourne le nombre de PNJ ajoutés.
+function _migrateMissingNpcsForFloor(floor) {
+  if (typeof dungeon === 'undefined' || typeof npcPlacements === 'undefined') return 0;
+  if (typeof getNpcsForFloor !== 'function') return 0;
+
+  const present = new Set();
+  for (const npcId of npcPlacements.values()) present.add(npcId);
+
+  const expected = getNpcsForFloor(floor) || [];
+  let added = 0;
+  for (const npc of expected) {
+    if (!npc || !npc.id) continue;
+    if (present.has(npc.id)) continue;
+    // Anchor 'first-room' : on cherche en priorité dans le quart haut-gauche
+    // du donjon (proxy raisonnable de la première salle). Sinon n'importe
+    // quelle case FLOOR libre.
+    const isFirstRoom = (npc.placement && npc.placement.anchor) === 'first-room';
+    const cell = _findFreeNpcCell(isFirstRoom);
+    if (!cell) continue;
+    dungeon[cell.y][cell.x] = CELL.NPC;
+    npcPlacements.set(`${cell.x},${cell.y}`, npc.id);
+    if (typeof visited !== 'undefined' && visited[cell.y]) {
+      visited[cell.y][cell.x] = true;
+    }
+    present.add(npc.id);
+    added++;
+  }
+  return added;
+}
+
+// Cherche une cellule FLOOR libre pour y placer un PNJ. Évite la case
+// joueur, les cellules avec ennemi/item/PNJ déjà posé. Si `preferEarly`
+// est vrai (anchor 'first-room'), parcourt en spirale depuis le coin
+// haut-gauche pour rester proche du spawn.
+function _findFreeNpcCell(preferEarly) {
+  if (typeof dungeon === 'undefined' || !dungeon.length) return null;
+  const H = dungeon.length, W = dungeon[0].length;
+  const candidates = [];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (typeof playerX !== 'undefined' && x === playerX && y === playerY) continue;
+      if (npcPlacements && npcPlacements.has(`${x},${y}`)) continue;
+      if (typeof enemyMap !== 'undefined' && enemyMap[y] && enemyMap[y][x]) continue;
+      if (typeof itemMap !== 'undefined'  && itemMap[y]  && itemMap[y][x])  continue;
+      candidates.push({ x, y });
+    }
+  }
+  if (!candidates.length) return null;
+  if (preferEarly) {
+    // Tri par distance au coin (0,0) → favorise la première salle
+    candidates.sort((a, b) => (a.x * a.x + a.y * a.y) - (b.x * b.x + b.y * b.y));
+    return candidates[0];
+  }
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
