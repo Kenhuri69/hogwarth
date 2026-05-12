@@ -211,6 +211,8 @@ window.UX_safe = new Proxy({}, {
       if (document.getElementById('loader-error-banner')) return true;
       const b = document.createElement('div');
       b.id = 'loader-error-banner';
+      b.setAttribute('role', 'alert');
+      b.setAttribute('aria-live', 'assertive');
       b.style.cssText = [
         'position:fixed', 'top:0', 'left:0', 'right:0',
         'background:#7a0a0a', 'color:#fff',
