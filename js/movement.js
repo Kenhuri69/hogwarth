@@ -225,6 +225,11 @@ function _restoreFloorFromCache(floor) {
   usedFountains = new Set();
   usedSpecialNpcs = new Set();
   _respawnEnemiesOnEntry(floor);
+  // Migration : re-place les PNJ manquants pour les saves antérieures
+  // à un ajout (cf. dungeon.js — _migrateMissingNpcsForFloor).
+  if (typeof _migrateMissingNpcsForFloor === 'function') {
+    _migrateMissingNpcsForFloor(floor);
+  }
   return true;
 }
 

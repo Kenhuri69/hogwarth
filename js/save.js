@@ -342,6 +342,12 @@ function _applyState(gs) {
   npcPlacements = new Map(gs.npcPlacements || []);
   seenNpcs      = new Set(gs.seenNpcs || []);
 
+  // Migration : re-place les PNJ attendus à l'étage courant qui seraient
+  // absents (saves antérieures à un ajout — ex. Dumbledore Phase 3).
+  if (typeof _migrateMissingNpcsForFloor === 'function') {
+    _migrateMissingNpcsForFloor(currentFloor);
+  }
+
   recalculateStats();
   updateUI();
   updateCompass();
