@@ -57,28 +57,92 @@ const { MONSTERS, SPELLS, CHARACTERS, LEVEL_UP_XP_MULTIPLIER,
 const spellByName = Object.fromEntries(SPELLS.map(s => [s.name, s]));
 
 // ── Constantes simulation ───────────────────────────────────
-const N_SIMS = parseInt(process.argv[2] || '400', 10);
 const FLOORS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 // Hypothèse : ~4 combats par étage en moyenne (8 rooms - shop/chest - escaliers,
 // densité 0.6 → ~4 enemy spawns; cf. dungeon.js:202)
 const COMBATS_PER_FLOOR_AVG = 4;
 
+// ── CLI ─────────────────────────────────────────────────────
+function parseArgs(argv) {
+  const out = { nSims: 400, hpMult: 1.0, xpMult: 1.0, statPoints: 0,
+                build: 'balanced', mode: 'single' };
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--compare')              { out.mode = 'compare'; continue; }
+    if (a === '-h' || a === '--help')   { out.mode = 'help'; continue; }
+    if (!a.includes('=')) {
+      // Compat : `node sim-difficulty.js 800` → nSims positionnel
+      const n = parseInt(a, 10);
+      if (!isNaN(n)) { out.nSims = n; continue; }
+    }
+    const [k, v] = a.replace(/^--/, '').split('=');
+    if (k === 'n' || k === 'n-sims') out.nSims = parseInt(v, 10);
+    else if (k === 'hp-mult')   out.hpMult = parseFloat(v);
+    else if (k === 'xp-mult')   out.xpMult = parseFloat(v);
+    else if (k === 'stat-points') out.statPoints = parseInt(v, 10);
+    else if (k === 'build')     out.build = v;
+  }
+  return out;
+}
+
+// Builds prédéfinis : combien de points dans chaque stat secondaire / niveau.
+// Total doit valoir `statPoints` total (sinon clamp).
+const BUILDS = {
+  // Joueur défensif : maximise survie
+  tank:       { str: 0, int: 0, agi: 0, end: 3, lck: 0 },
+  // Joueur équilibré : 1 END (HP) + 1 offensif (STR Harry / INT Hermione) + 1 utilité
+  balanced:   { str: 1, int: 0, agi: 1, end: 1, lck: 0 },     // pour Harry (atk-based)
+  // Joueur offensif : tout sur le DPS
+  offensive:  { str: 2, int: 0, agi: 0, end: 0, lck: 1 },
+  // Casteur (utilisé pour Hermione en mode balanced)
+  caster:     { str: 0, int: 1, agi: 1, end: 1, lck: 0 },
+};
+
+function buildFor(build, key) {
+  // Hermione utilise la version "caster" du build équilibré
+  if (build === 'balanced' && key === 'hermione') return BUILDS.caster;
+  return BUILDS[build] || BUILDS.balanced;
+}
+
+const ARGS = parseArgs(process.argv);
+if (ARGS.mode === 'help') {
+  console.log(`Usage: node tools/sim-difficulty.js [N_SIMS] [options]
+
+Options:
+  --n=N | --n-sims=N      Nombre de sims par cellule (def 400)
+  --hp-mult=F             Multiplicateur HP des monstres (def 1.0)
+  --xp-mult=F             Multiplicateur XP des monstres (def 1.0)
+  --stat-points=N         Points libres alloués au joueur par niveau (def 0)
+  --build=BUILD           tank | balanced | offensive (def balanced)
+  --compare               Lance baseline ET proposition (hp×1.5 xp×1.3 stats=3 balanced), tableau comparatif
+
+Exemples:
+  node tools/sim-difficulty.js                      # baseline 400 sims
+  node tools/sim-difficulty.js 800                  # baseline 800 sims
+  node tools/sim-difficulty.js --compare            # baseline vs proposition validée
+  node tools/sim-difficulty.js --hp-mult=1.5 --xp-mult=1.3 --stat-points=3 800`);
+  process.exit(0);
+}
+
 // ── Reproduction des formules du jeu ─────────────────────────
 
 // dungeon.js:16 — scaleMonster (Normal = diffMult 1.0, on ignore shiny pour la sim)
-function scaleMonster(base, floor) {
-  const mult = 1 + (floor - 1) * (base.scale || 0.25);
+// `cfg` injecte les multiplicateurs HP/XP testés (cf. Phase 2 du plan).
+function scaleMonster(base, floor, cfg) {
+  const mult   = 1 + (floor - 1) * (base.scale || 0.25);
+  const hpRaw  = base.hp * mult * cfg.hpMult;
+  const xpRaw  = base.xp * mult * cfg.xpMult;
   return {
     ...JSON.parse(JSON.stringify(base)),
-    hp:  Math.floor(base.hp  * mult),
+    hp:  Math.floor(hpRaw),
     atk: Math.floor(base.atk * mult),
     def: Math.floor(base.def * mult),
-    xp:  Math.floor(base.xp  * mult),
+    xp:  Math.floor(xpRaw),
     gold: Math.floor((typeof base.gold === 'object'
             ? (base.gold.min + base.gold.max) / 2
             : base.gold) * mult),
-    currentHp: Math.floor(base.hp * mult),
+    currentHp: Math.floor(hpRaw),
     disarmed: 0,
   };
 }
@@ -113,7 +177,18 @@ function eligiblePool(floor) {
 
 // Reproduit _hydrateCharacter() + recalculateStats() pour les
 // stats dérivées de base, puis applique les level-ups.
-function createHero(key, level) {
+// Effets par point alloué (Phase 2 du plan)
+//   STR → +1 ATK, INT → +1 MAG, AGI → +0.4 % esquive, END → +5 HP, LCK → +0.5 % crit
+function applyStatPoints(c, points) {
+  c._baseAtk += points.str || 0;
+  c._baseMag += points.int || 0;
+  c.agi      += points.agi || 0;
+  c._baseEnd  = (c._baseEnd || 0) + (points.end || 0);
+  c.hpMax    += 5 * (points.end || 0);
+  c._baseLck += points.lck || 0;
+}
+
+function createHero(key, level, cfg) {
   const def = CHARACTERS[key];
   const c = {
     name: def.name,
@@ -126,7 +201,6 @@ function createHero(key, level) {
     shieldTurns: 0,
     statusEffects: [],
   };
-  // Apprentissage des sorts par level-up (cf. CLAUDE.md + main.js)
   const learnByLevel = {
     2:  { hermione: ['Expelliarmus'] },
     3:  { harry: ['Accio'], hermione: ['Stupefix'] },
@@ -135,19 +209,37 @@ function createHero(key, level) {
     7:  { harry: ['Diffindo'], hermione: ['Wingardium Leviosa', 'Reparo'] },
     9:  { both: ['Avada...'] },
   };
+  const allocation = buildFor(cfg.build, key);
+  const ptsPerLevel = cfg.statPoints || 0;
   for (let lv = 2; lv <= level; lv++) {
-    // grant HP/SP/stats
+    // baseline level-up (inchangée)
     c.hpMax += 8;  c.hp = c.hpMax;
     c.spMax += 5;  c.sp = c.spMax;
     c._baseAtk += 1;  c._baseDef += 1;  c._baseMag += 1;
-    // apprentissage
+    // points libres alloués selon le build
+    if (ptsPerLevel > 0) {
+      const total = (allocation.str || 0) + (allocation.int || 0) + (allocation.agi || 0)
+                  + (allocation.end || 0) + (allocation.lck || 0);
+      // Normalise au statPoints demandé si total ≠ statPoints
+      const scale = total > 0 ? ptsPerLevel / total : 0;
+      applyStatPoints(c, {
+        str: Math.round((allocation.str || 0) * scale),
+        int: Math.round((allocation.int || 0) * scale),
+        agi: Math.round((allocation.agi || 0) * scale),
+        end: Math.round((allocation.end || 0) * scale),
+        lck: Math.round((allocation.lck || 0) * scale),
+      });
+    }
+    // apprentissage de sorts
     const learn = learnByLevel[lv];
     if (learn) {
       const adds = (learn[key] || []).concat(learn.both || []);
       for (const sp of adds) if (!c.spells.includes(sp)) c.spells.push(sp);
     }
   }
-  // Stats effectives (pas d'équipement dans cette sim, donc atk = _base)
+  // Soin complet après les level-ups (l'allocation END a augmenté hpMax)
+  c.hp = c.hpMax; c.sp = c.spMax;
+  // Stats effectives (pas d'équipement dans cette sim)
   c.atk = c._baseAtk; c.def = c._baseDef; c.mag = c._baseMag; c.lck = c._baseLck;
   c.critChance    = Math.max(5, Math.min(40, 5 + c.lck * 0.5));
   c.dodgeChance   = Math.max(5, Math.min(35, 5 + c.agi * 0.4));
@@ -175,17 +267,15 @@ function levelFromXp(totalXp) {
   return level;
 }
 
-// XP moyenne d'un combat à l'étage f
-function avgCombatXp(floor, partySize) {
+// XP moyenne d'un combat à l'étage f (cfg.xpMult appliqué)
+function avgCombatXp(floor, partySize, cfg) {
   const pool = eligiblePool(floor);
   if (!pool.length) return 0;
   const totalW = pool.reduce((s, m) => s + (m.weight || 1), 0);
-  // XP moyen pondéré du monstre médian, scalé
   const avgXpScaled = pool.reduce((s, m) => {
     const mult = 1 + (floor - 1) * (m.scale || 0.25);
-    return s + (m.weight || 1) * m.xp * mult;
+    return s + (m.weight || 1) * m.xp * mult * cfg.xpMult;
   }, 0) / totalW;
-  // Taille de groupe moyenne
   const samples = 200;
   let totalSize = 0;
   for (let i = 0; i < samples; i++) totalSize += rollGroupSize(floor, partySize);
@@ -194,27 +284,27 @@ function avgCombatXp(floor, partySize) {
 }
 
 // Niveau attendu à l'entrée de l'étage f, en assumant `COMBATS_PER_FLOOR_AVG` combats / étage
-function expectedLevelAtFloor(floor, partySize) {
+function expectedLevelAtFloor(floor, partySize, cfg) {
   let totalXp = 0;
   for (let f = 1; f < floor; f++) {
-    totalXp += avgCombatXp(f, partySize) * COMBATS_PER_FLOOR_AVG;
+    totalXp += avgCombatXp(f, partySize, cfg) * COMBATS_PER_FLOOR_AVG;
   }
   return levelFromXp(totalXp);
 }
 
 // ── Stats moyennes du pool ennemi à l'étage f ────────────────
 
-function poolStats(floor) {
+function poolStats(floor, cfg) {
   const pool = eligiblePool(floor);
   if (!pool.length) return null;
   const totalW = pool.reduce((s, m) => s + (m.weight || 1), 0);
-  const wAvg = (key) => pool.reduce((s, m) => {
+  const wAvg = (key, postMult = 1) => pool.reduce((s, m) => {
     const mult = 1 + (floor - 1) * (m.scale || 0.25);
-    return s + (m.weight || 1) * Math.floor(m[key] * mult);
+    return s + (m.weight || 1) * Math.floor(m[key] * mult * postMult);
   }, 0) / totalW;
   return {
     poolSize: pool.length,
-    hp:  wAvg('hp'),
+    hp:  wAvg('hp', cfg.hpMult),
     atk: wAvg('atk'),
     def: wAvg('def'),
     mag: wAvg('mag'),
@@ -369,26 +459,27 @@ function enemyAct(enemy, target, partySize) {
 
 // ── Boucle principale : sims solo + duo ──────────────────────
 
-function runSimulations() {
+function runSimulations(cfg) {
   const rows = [];
 
   for (const floor of FLOORS) {
     const pool = eligiblePool(floor);
-    const stats = poolStats(floor);
+    const stats = poolStats(floor, cfg);
     if (!stats) { rows.push({ floor, skip: true }); continue; }
 
     for (const partySize of [1, 2]) {
-      const level = expectedLevelAtFloor(floor, partySize);
+      const level = expectedLevelAtFloor(floor, partySize, cfg);
       const wins = { count: 0, turns: 0, hpPct: 0, dmgTaken: 0 };
       const groupSizes = { 1: 0, 2: 0, 3: 0 };
 
-      for (let i = 0; i < N_SIMS; i++) {
+      for (let i = 0; i < cfg.nSims; i++) {
         const party = partySize === 1
-          ? [createHero('harry', level)]
-          : [createHero('harry', level), createHero('hermione', level)];
+          ? [createHero('harry', level, cfg)]
+          : [createHero('harry', level, cfg), createHero('hermione', level, cfg)];
         const size = rollGroupSize(floor, partySize);
         groupSizes[size]++;
-        const enemyGroup = Array.from({ length: size }, () => scaleMonster(weightedPick(pool), floor));
+        const enemyGroup = Array.from({ length: size },
+          () => scaleMonster(weightedPick(pool), floor, cfg));
         const res = simulateBattle(party, enemyGroup);
         if (res.won) {
           wins.count++;
@@ -400,10 +491,10 @@ function runSimulations() {
 
       rows.push({
         floor, partySize, level,
-        winRate: wins.count / N_SIMS,
+        winRate: wins.count / cfg.nSims,
         avgTurns: wins.count ? wins.turns / wins.count : null,
         avgHpPctOnWin: wins.count ? wins.hpPct / wins.count : null,
-        avgDmgTaken: wins.dmgTaken / N_SIMS,
+        avgDmgTaken: wins.dmgTaken / cfg.nSims,
         groupSizes,
         poolStats: stats,
       });
@@ -418,20 +509,22 @@ function runSimulations() {
 function pct(x) { return (x * 100).toFixed(0) + '%'; }
 function num(x, d=1) { return x == null ? '—' : x.toFixed(d); }
 
-function emitReport(rows) {
+function emitReport(rows, cfg) {
   // Section 1 : progression joueur attendue
   console.log('# Étude de la difficulté — mode Normal\n');
-  console.log(`Simulation : ${N_SIMS} combats par couple (étage, mode). ` +
+  console.log(`Simulation : ${cfg.nSims} combats par couple (étage, mode). ` +
               `Hypothèse : ${COMBATS_PER_FLOOR_AVG} combats / étage en moyenne.\n`);
+  console.log(`Paramètres : HP×${cfg.hpMult} | XP×${cfg.xpMult} | ` +
+              `${cfg.statPoints} pts libres/niveau | build=${cfg.build}\n`);
 
   console.log('## 1. Progression joueur attendue\n');
   console.log('| Étage | Niveau Solo | XP cumul Solo | Niveau Duo | XP cumul Duo |');
   console.log('|------:|------------:|--------------:|-----------:|-------------:|');
   for (const f of FLOORS) {
-    const lvSolo = expectedLevelAtFloor(f, 1);
-    const lvDuo  = expectedLevelAtFloor(f, 2);
-    let xpSolo = 0; for (let i = 1; i < f; i++) xpSolo += avgCombatXp(i, 1) * COMBATS_PER_FLOOR_AVG;
-    let xpDuo  = 0; for (let i = 1; i < f; i++) xpDuo  += avgCombatXp(i, 2) * COMBATS_PER_FLOOR_AVG;
+    const lvSolo = expectedLevelAtFloor(f, 1, cfg);
+    const lvDuo  = expectedLevelAtFloor(f, 2, cfg);
+    let xpSolo = 0; for (let i = 1; i < f; i++) xpSolo += avgCombatXp(i, 1, cfg) * COMBATS_PER_FLOOR_AVG;
+    let xpDuo  = 0; for (let i = 1; i < f; i++) xpDuo  += avgCombatXp(i, 2, cfg) * COMBATS_PER_FLOOR_AVG;
     console.log(`| ${f} | ${lvSolo} | ${xpSolo.toFixed(0)} | ${lvDuo} | ${xpDuo.toFixed(0)} |`);
   }
 
@@ -440,7 +533,7 @@ function emitReport(rows) {
   console.log('| Étage | Monstres éligibles | HP moy | ATK moy | DEF moy | MAG moy |');
   console.log('|------:|-------------------:|-------:|--------:|--------:|--------:|');
   for (const f of FLOORS) {
-    const s = poolStats(f);
+    const s = poolStats(f, cfg);
     if (!s) continue;
     console.log(`| ${f} | ${s.poolSize} | ${num(s.hp,0)} | ${num(s.atk,1)} | ${num(s.def,1)} | ${num(s.mag,1)} |`);
   }
@@ -498,5 +591,67 @@ function emitReport(rows) {
   }
 }
 
-const rows = runSimulations();
-emitReport(rows);
+// ── Comparaison baseline vs proposition (mode --compare) ────
+function emitComparison(baseline, proposed, cfgProposed) {
+  console.log('# Comparaison baseline vs proposition\n');
+  console.log(`Sims : ${cfgProposed.nSims} / cellule. Hypothèse : ${COMBATS_PER_FLOOR_AVG} combats / étage.\n`);
+  console.log('**Baseline** : HP×1.0, XP×1.0, 0 pt libre.');
+  console.log(`**Proposition** : HP×${cfgProposed.hpMult}, XP×${cfgProposed.xpMult}, ` +
+              `${cfgProposed.statPoints} pts libres/niveau, build=${cfgProposed.build}.\n`);
+
+  for (const partySize of [1, 2]) {
+    const label = partySize === 1 ? 'Solo' : 'Duo';
+    console.log(`\n## ${label}\n`);
+    console.log('| Étage | Niv. base | Niv. prop | Win % base | Win % prop | Δ win | Tours base | Tours prop |');
+    console.log('|------:|----------:|----------:|-----------:|-----------:|------:|-----------:|-----------:|');
+    const baseRows = baseline.filter(r => r.partySize === partySize);
+    const propRows = proposed.filter(r => r.partySize === partySize);
+    for (let i = 0; i < baseRows.length; i++) {
+      const b = baseRows[i], p = propRows[i];
+      const delta = (p.winRate - b.winRate) * 100;
+      const deltaStr = (delta >= 0 ? '+' : '') + delta.toFixed(0) + ' pts';
+      const tBase = b.avgTurns == null ? '—' : b.avgTurns.toFixed(1);
+      const tProp = p.avgTurns == null ? '—' : p.avgTurns.toFixed(1);
+      console.log(`| ${b.floor} | ${b.level} | ${p.level} | ${pct(b.winRate)} | ${pct(p.winRate)} | ${deltaStr} | ${tBase} | ${tProp} |`);
+    }
+  }
+
+  // Verdicts qualitatifs
+  console.log('\n## Verdict\n');
+  for (const partySize of [1, 2]) {
+    const label = partySize === 1 ? 'Solo' : 'Duo';
+    const baseRows = baseline.filter(r => r.partySize === partySize);
+    const propRows = proposed.filter(r => r.partySize === partySize);
+    const wallBase = baseRows.findIndex(r => r.winRate < 0.40);
+    const wallProp = propRows.findIndex(r => r.winRate < 0.40);
+    const wallBaseF = wallBase === -1 ? '—' : baseRows[wallBase].floor;
+    const wallPropF = wallProp === -1 ? '—' : propRows[wallProp].floor;
+    console.log(`- **${label}** : mur (<40 %) baseline → étage ${wallBaseF} | proposition → étage ${wallPropF}`);
+    // Tours moyens floors 1-3
+    const earlyBaseT = baseRows.slice(0,3).reduce((s,r)=>s+(r.avgTurns||0),0)/3;
+    const earlyPropT = propRows.slice(0,3).reduce((s,r)=>s+(r.avgTurns||0),0)/3;
+    console.log(`  - Tours moyens étages 1-3 : baseline ${earlyBaseT.toFixed(1)} → proposition ${earlyPropT.toFixed(1)} (combats ${earlyPropT > earlyBaseT * 1.3 ? 'plus longs ✓' : earlyPropT > earlyBaseT ? 'légèrement plus longs' : 'inchangés'})`);
+  }
+}
+
+if (ARGS.mode === 'compare') {
+  // Force build=balanced statPoints=3 hp=1.5 xp=1.3 si non spécifié
+  const cfgBase = { nSims: ARGS.nSims, hpMult: 1.0, xpMult: 1.0, statPoints: 0, build: 'balanced' };
+  const cfgProp = {
+    nSims: ARGS.nSims,
+    hpMult: ARGS.hpMult !== 1.0 ? ARGS.hpMult : 1.5,
+    xpMult: ARGS.xpMult !== 1.0 ? ARGS.xpMult : 1.3,
+    statPoints: ARGS.statPoints || 3,
+    build: ARGS.build,
+  };
+  console.error(`Run baseline (${cfgBase.nSims} sims)...`);
+  const baseRows = runSimulations(cfgBase);
+  console.error(`Run proposition (${cfgProp.nSims} sims)...`);
+  const propRows = runSimulations(cfgProp);
+  emitComparison(baseRows, propRows, cfgProp);
+} else {
+  const cfg = { nSims: ARGS.nSims, hpMult: ARGS.hpMult, xpMult: ARGS.xpMult,
+                statPoints: ARGS.statPoints, build: ARGS.build };
+  const rows = runSimulations(cfg);
+  emitReport(rows, cfg);
+}

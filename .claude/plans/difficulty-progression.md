@@ -158,3 +158,87 @@ Le test `node tests/smoke.js` reste applicable. Il sera relancé :
 - avant le commit final du rapport.
 
 Aucun changement runtime n'est attendu dans cette PR, donc le smoke devrait rester vert sans effort.
+
+---
+
+## Phase 2 — Proposition validée par l'utilisateur
+
+Direction validée pour itération sur la balance Normal :
+
+### 2.1 Monstres
+- **HP base ×1.5** (toutes entrées de `MONSTERS`).
+- **XP base ×1.3** (toutes entrées de `MONSTERS`).
+- Aucun changement de `scale`, `atk`, `def` à ce stade — on observe l'effet HP+XP d'abord.
+
+### 2.2 Joueur — stats allouables au level-up
+- Baseline level-up **conservée** : +8 HP, +5 SP, +1 ATK/DEF/MAG.
+- **+3 points libres** par niveau, à distribuer parmi 5 stats secondaires :
+
+| Stat | Effet par point |
+|------|-----------------|
+| STR  | +1 ATK |
+| INT  | +1 MAG |
+| AGI  | +0.4 % esquive |
+| END  | +5 HP max |
+| LCK  | +0.5 % crit |
+
+Pour la simulation : on modélise 3 builds (Tank / Équilibré / Offensif) pour mesurer la fourchette.
+
+### 2.3 Hors-scope simulation, à suivre séparément
+- **Quête de départ avec Dumbledore repérable** : onboarding UX, marker minimap pointant vers Dumbledore au tout début de la partie. Sera une PR dédiée — pas de lien direct avec la balance.
+
+### 2.4 Critère de succès
+- Étage 1-3 : win rate **inchangé** (~95-100%) mais **combat 2-3× plus long en tours** (moins de one-shot par Incendio).
+- Étage 5 solo : 34% → **≥ 55%** (build équilibré).
+- Étage 8 duo : 26% → **≥ 50%** (build équilibré).
+
+---
+
+## Phase 3 — Direction validée : contenu plutôt que mults
+
+Après simulation Phase 2 (cf. ci-dessus), l'utilisateur a choisi de **ne pas modifier HP/XP/stat-mults** mais d'attaquer la difficulté via du **contenu** :
+
+### 3.1 Respawn ennemis
+- **20 % de probabilité** par cellule-monstre déjà vidée de re-spawner un ennemi quand le joueur **revient à un étage déjà visité** (via escalier montant/descendant).
+- En plus : accepter une quête de type `kill` **déclenche un respawn ciblé** du monstre désigné (au moins 1 instance garantie sur l'étage indiqué de la quête).
+- Permet le **farming d'XP et de drops**, et garantit que les quêtes kill restent réalisables.
+
+### 3.2 Chaîne de quêtes Dumbledore (5 étapes)
+| Étape | Étage | Type d'objectif | Récompense (cumulative permanente) |
+|-------|-------|------------------|------------------------------------|
+| 1 | 1 | Onboarding (visite N rooms ou bats 3 mobs) | +5 HP max + +1 ATK/MAG/DEF, débloque Dumbledore comme PNJ marqué ❗ |
+| 2 | 3 | Kill cible (élite étage 2-3) | +1 LCK + sort `Wingardium Leviosa` aux deux |
+| 3 | 5 | Récupérer artefact (item drop élite étage 4-5) | +2 stat secondaire au choix (rendu en item de potion-stat) |
+| 4 | 7 | Kill élite étage 6-7 | item équipable rare (slot mid-game à définir) |
+| 5 | 10 | Affronter ombre/figure (élite étage 9-10) | item légendaire ou sort rare (à choisir lors du build) |
+
+- Dumbledore est repérable dès le départ sur la **minimap** (marqueur ❗) — c'est aussi l'**onboarding** demandé initialement.
+- Chaque étape ne se déclenche que si la précédente est complétée (chainage via `questPrereq` ou ordre dans `activeQuests`).
+
+### 3.3 Équipements mid-game (5-8 items)
+Combler les slots faiblement fournis pour les étages 3-7 :
+- 1-2 `head` rare/epic (ex : Heaume du Phénix, +DEF +MAG)
+- 1 `hands` rare (ex : Gants du Stratège, +ATK +AGI)
+- 1 `feet` epic (ex : Bottes du Vif d'or, +AGI esquive)
+- 1-2 `belt` rare (ex : Ceinture de Force, +STR)
+- 1 `ring` rare/epic (ex : Anneau du Mentor, +LCK)
+- 1 `trinket` (ex : Bibelot tactique)
+
+Drops : monstres élite étage 3-7 + boutique progressive + récompense quête Dumbledore.
+
+### 3.4 Étapes d'implémentation
+
+| # | Étape | Statut | Verification |
+|---|-------|--------|--------------|
+| 1 | Plan écrit (ce doc) | ☑ | rédigé |
+| 2 | Explorer architecture spawn/dungeon | ☐ | repérer où se câble le respawn |
+| 3 | Commit travail sim (Phase 2) | ☐ | `git log` montre extension |
+| 4 | Implémenter respawn 20 % par étage | ☐ | sim manuelle : aller-retour étage → ennemis re-peuplés |
+| 5 | Quête Dumbledore chaîne 5 étapes | ☐ | `activeQuests` + dialogues + récompenses applicables |
+| 6 | Trigger respawn par acceptation quête kill | ☐ | accept quête kill → monstre cible re-spawné |
+| 7 | 5-8 équipements mid-game | ☐ | items dans `data.js`, drops/boutique |
+| 8 | Smoke test `node tests/smoke.js` | ☐ | vert |
+| 9 | Commit + push | ☐ | sur `claude/analyze-difficulty-progression-vyItb` |
+
+### 3.5 Note hors-scope
+- L'extension de la simulation (`tools/sim-difficulty.js`) reste utile comme outil de balance pour les futures itérations. Les 2 scénarios testés (3 / 5 pts libres) sont documentés ci-dessus comme référence si l'on veut un jour passer aux mults bruts.
