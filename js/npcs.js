@@ -69,6 +69,38 @@ const NPCS = [
       questActive: "Le grand escalier t'attend. Trouve-le, et reviens me voir une fois la descente accomplie.",
       questReady:  "Bien joué ! Tu as fait tes premiers pas. Voici ta récompense, bien méritée.",
       questDone:   "Tu es désormais lancé sur le chemin. Que la chance t'accompagne."
+    },
+    // ── Chaîne d'épreuves (Phase 3) — dialogues par quête ──
+    // Override `questOffer` / `questActive` / `questReady` par quête.
+    // Les textes ci-dessous sont ceux générés en audio (cf.
+    // .claude/plans/voice-dumbledore-chain.md §3). Garder synchronisés
+    // avec les samples OGG, sinon décalage texte/voix.
+    dialoguesByQuest: {
+      intro_tutoriel: {
+        questOffer:  "Tu te demandes par où commencer ? Descends d'un étage — c'est l'épreuve la plus douce que je puisse t'offrir. Reviens me voir une fois la descente accomplie.",
+        questActive: "Le grand escalier t'attend, jeune sorcier. Trouve-le, et reviens me retrouver dès que tu auras fait tes premiers pas vers le bas.",
+        questReady:  "Bien joué. Tu as fait tes premiers pas — et déjà, le château reconnaît ton courage. Tiens, prends ceci : ce ne sont que des bagatelles, mais elles t'épauleront sur le chemin."
+      },
+      dumbledore_eveil: {
+        questOffer:  "Tes peurs t'attendent dans les couloirs sombres, sous la forme d'un Épouvantard ou d'un Détraqueur. Affronte l'une de ces créatures. Ce que l'on défie nous rend plus forts.",
+        questActive: "As-tu trouvé ta peur, jeune sorcier ? Ne tarde pas trop — les ombres se nourrissent du doute autant que de l'oubli.",
+        questReady:  "Tu as défié ta peur. Voilà qui te servira plus que n'importe quel sort. Reçois ceci, et apprends ce léger sortilège — il te sera utile."
+      },
+      dumbledore_courage: {
+        questOffer:  "Deux Mangemorts ont franchi nos défenses et rôdent dans les couloirs profonds. Élimine-les. C'est par la ruse autant que par le courage que l'on protège ceux qu'on aime.",
+        questActive: "Les Mangemorts ne se rendent pas, jeune sorcier. Ils mourront pour leur cause — assure-toi qu'ils ne t'emportent pas avec eux.",
+        questReady:  "Deux de moins. Le château respire un peu plus librement. Voici une potion que j'ai concoctée pour toi — et un bonus de force et de magie qui t'accompagneront."
+      },
+      dumbledore_resistance: {
+        questOffer:  "Un Mangemort d'élite, membre du cercle intérieur, s'est glissé jusqu'aux étages oubliés. Trouve-le. L'Ordre du Phénix compte sur toi.",
+        questActive: "Méfie-toi — il porte la Marque depuis des décennies. Son Cruciatus est implacable. Frappe vite, et garde une potion à portée de main.",
+        questReady:  "L'Ordre te remercie, jeune sorcier. Reçois cette amulette — elle a appartenu à un ami que je n'ai pas pu sauver. Qu'elle te protège mieux qu'elle ne l'a protégé."
+      },
+      dumbledore_revelation: {
+        questOffer:  "Au plus profond, une ombre se reforme. Bellatrix Lestrange a juré de finir ce que son maître n'a pu accomplir. Affronte-la — pour Poudlard, pour ceux que nous avons perdus.",
+        questActive: "Bellatrix n'a peur de rien — sauf de l'amour, qu'elle ne comprend pas. Garde cela en tête. Ne la sous-estime pas.",
+        questReady:  "Tu l'as fait. Tu as tenu tête à l'ombre… et tu en sors plus lumineux qu'avant. Reçois ce dernier don — un fragment de moi-même, en somme — et continue ton chemin. Poudlard te doit beaucoup."
+      }
     }
   },
   {

@@ -246,6 +246,43 @@ function _renderDialogPage() {
       ).join('');
     }
   }
+  _playPageVoice();
+}
+
+// ── Voix par page (Phase 3) ───────────────────────────────────
+// Calcule une clé audio pour la page courante du dialogue Dumbledore.
+// Retourne null pour les PNJs sans voix ou les états sans sample
+// défini (l'intro pré-jeu reste gérée par intro.js, distincte).
+// Cf. .claude/plans/voice-dumbledore-chain.md.
+const _DUMBLEDORE_QID_SUFFIX = {
+  intro_tutoriel:        'tutoriel',
+  dumbledore_eveil:      'eveil',
+  dumbledore_courage:    'courage',
+  dumbledore_resistance: 'resistance',
+  dumbledore_revelation: 'revelation',
+};
+function _voiceKeyForPage(npcId, state, qid, pageIdx) {
+  if (npcId !== 'dumbledore') return null;
+  const suffix = _DUMBLEDORE_QID_SUFFIX[qid];
+  if (!suffix) return null;
+  if (state !== 'offer' && state !== 'active' && state !== 'ready') return null;
+  return `dumbledore_${suffix}_${state}_${pageIdx + 1}`;
+}
+
+// Stoppe la voix précédente et lance celle de la page courante.
+// Fallback silencieux à tous les étages : pas de PNJ Dumbledore, pas
+// d'AudioSystem.playVoice, clé inconnue, OGG manquant → no-op.
+function _playPageVoice() {
+  if (typeof AudioSystem === 'undefined' || typeof AudioSystem.playVoice !== 'function') return;
+  if (typeof AudioSystem.stopVoice === 'function') AudioSystem.stopVoice();
+  if (!_dialogState) return;
+  const { npcId, page } = _dialogState;
+  const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
+  if (!npc) return;
+  const state = (typeof getNpcQuestState === 'function') ? getNpcQuestState(npc) : 'none';
+  const qid   = (typeof _currentQuestForState === 'function') ? _currentQuestForState(npc, state) : null;
+  const key   = _voiceKeyForPage(npcId, state, qid, page);
+  if (key) AudioSystem.playVoice(key);
 }
 
 function nextDialogPage() {
@@ -305,6 +342,9 @@ function openNpcDialog(npcId) {
 function closeNpcDialog() {
   const overlay = document.getElementById('npc-dialog-overlay');
   if (overlay) overlay.style.display = 'none';
+  if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.stopVoice === 'function') {
+    AudioSystem.stopVoice();
+  }
 }
 
 // ── Fermeture par Échap / clic backdrop ────────────────────────
