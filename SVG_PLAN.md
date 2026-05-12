@@ -2,7 +2,7 @@
 
 > **Branche dédiée actuelle** : `claude/svg-c1-monsters-png`
 > (anciennes branches : `claude/improve-game-images-7OVCy`, `claude/resume-svg-work-rgOvm`, `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 44 / 86 tâches terminées (C25 n/a ; C44 fontaine livrée ; C.1 PNG monstres clos sauf re-gens C32-C37 optionnels ; C.4 portraits PNJ livrés via plan npc-integration) — dénominateur recalibré (l'ancien "36/76" sous-estimait le compte réel des sous-blocs C, cf. `tools/count_plan.py`)
+> **Statut global** : 45 / 86 tâches terminées (C25 n/a ; C44 fontaine livrée ; C.1 PNG monstres clos sauf re-gens C32-C37 optionnels ; C.2 Bellatrix livrée ; C.4 portraits PNJ livrés via plan npc-integration) — dénominateur recalibré (l'ancien "36/76" sous-estimait le compte réel des sous-blocs C, cf. `tools/count_plan.py`)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -126,7 +126,7 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 
 ### C.2 Boss sans PNG (1)
 
-- [ ] **C31** `bellatrix`
+- [x] **C31** `bellatrix`
 
 ### C.3 Re-génération optionnelle des 6 PNG existants
 
@@ -236,3 +236,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-10 | #32 | Chantier outillage (sur branche `claude/improve-game-images-7OVCy`, post-rebase sur master) | `IMG_STYLE.md` (guide visuel : palette/cadrage/prompts-types §8/critères §9, dérivé des PNG validés) ; `tools/process_monster_png.py` (pipeline reproductible rembg/birefnet + trim + recentrage + resize + auto-QA) ; `tools/count_plan.py` (compte tous blocs A+B+C+D+Z et signale les dérives vs `Statut global`) ; smoke scénario 5 data-driven sur tous les `imgSrc` (19 monstres) + check color-type RGBA via lecture binaire (canvas tainted en `file://`). Pas de rétro-traitement des PNG master |
 | 2026-05-11 | #33 | C24 mangemort intégré (sur branche `claude/monster-png-C24-mangemort`) | Source 1024×1024 RGBA livrée avec alpha déjà détouré (43,8% pixels α=0) → skip rembg, pipeline inline (trim bbox + recentrage 8% + resize 512 + optimize). Squelette masqué hood noir, baguette à étincelles violettes, robe noire en lambeaux. QA §9 : alpha=0 57%, alpha=255 22%, occupation 85×83%, 294 KB ✓. Constat : C25 `mangemort_masque` n'a jamais existé dans `monsters.js` (id "mangemort" porte déjà `name:"Mangemort Masqué"`) → marqué `[~]` n/a |
 | 2026-05-12 | #34 | C26 + C27 + C29 + C30 intégrés (sur branche `claude/svg-c1-monsters-png`) | 4 PNG livrés par Nano Banana en lot. 3 sources 1024×1024 RGBA déjà détourées (mangemort_elite α0=59%, sorcier_renegat α0=65%, chimere α0=48%) → pipeline inline trim+recentrage 8%+resize 512+optimize (cf. `.claude/plans/svg-c1-monsters.md`). 4ᵉ source ombre_quirrell 784×1168 JPG fond sombre dégradé → `process_monster_png.py --id ombre_quirrell` (rembg birefnet-general, modèle téléchargé 973 MB). Résultats : mangemort_elite 296 KB (77×84%), sorcier_renegat 240 KB (79×84%), chimere 396 KB (82×84%), ombre_quirrell 117 KB (60×84%, α255=8.6% acceptable car fantôme translucide). Smoke 34/34. Bloc C.1 désormais clos (C26-C30 ✓, C25 n/a) hors re-gens optionnels C32-C37. C.4 portraits PNJ cochés rétroactivement (déjà livrés via plan `npc-integration.md` it. 2/3). Statut global 36 → 44 (C26,C27,C29,C30 + C38,C39,C40,C41). |
+| 2026-05-12 | #35 | C31 bellatrix intégré (suite sur même branche `claude/svg-c1-monsters-png`) | Source 1024×1024 RGB avec décor gothique complet (donjon, arches, lueurs vert/violet) — cas difficile mais Bellatrix a un contour net (cheveux volants, robe en lambeaux, bottes lacées). Pipeline complet `process_monster_png.py --id bellatrix` (rembg birefnet-general). Dry-run validé visuellement avant run final : détourage impeccable, rim light cyan préservé subtilement, aucune bavure du fond. QA §9 tous critères verts : 139 KB, 512×512 RGBA, α0=78%, α255=17%, occupation 53×84%. Smoke 34/34. Bloc C.2 clos. Statut global 44 → 45/86. Mini-plan dédié `.claude/plans/svg-c2-bellatrix.md`. |

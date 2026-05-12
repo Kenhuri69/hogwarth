@@ -899,6 +899,7 @@ const MONSTERS = [
     id:       "bellatrix",
     name:     "Bellatrix Lestrange",
     icon:     "🧙‍♀️",
+    imgSrc:   "img/monsters/bellatrix.png",
     category: "humain",
     desc:     "Bellatrix Lestrange éclate d'un rire dément et brandit sa baguette !",
     lore:     "La plus fanatique des Mangemorts. Son rire dément précède chaque torture. Elle a poussé les parents de Neville Londubat à la folie à l'aide du Cruciatus, et est restée fidèle à Voldemort même durant ses treize années à Azkaban.",
