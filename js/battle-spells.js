@@ -15,11 +15,13 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       if (shieldTurns[charIdx] > 0) {
         shieldTurns[charIdx]--;
         appendLog(`🛡️ Protego bloque ${ability.name} ! `);
-        if (window.UX) { UX.floatDmg('ally', 0, 'shield'); UX.logCombat(`🛡️ Protego bloque ${ability.name}.`, 'magic'); }
+        UX_safe.floatDmg('ally', 0, 'shield');
+        UX_safe.logCombat(`🛡️ Protego bloque ${ability.name}.`, 'magic');
       } else {
         target.hp = Math.max(0, target.hp - dmg);
         appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → ${dmg} dégâts sur ${target.name} ! `);
-        if (window.UX) { UX.floatDmg('ally', dmg, 'dmg'); UX.logCombat(`${ability.icon} ${enemy.name} : ${ability.name} → <b>−${dmg}</b> sur ${target.name}`, 'bad'); }
+        UX_safe.floatDmg('ally', dmg, 'dmg');
+        UX_safe.logCombat(`${ability.icon} ${enemy.name} : ${ability.name} → <b>−${dmg}</b> sur ${target.name}`, 'bad');
       }
       break;
     }
@@ -27,14 +29,16 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       const restored = Math.min(enemy.hp, enemy.currentHp + ability.power) - enemy.currentHp;
       enemy.currentHp += restored;
       appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : +${restored} PV ! `);
-      if (window.UX) { const idx = enemyGroup.indexOf(enemy); UX.floatDmg(`enemy:${idx}`, restored, 'heal'); UX.logCombat(`${ability.icon} ${enemy.name} se soigne : <b>+${restored} PV</b>`, 'magic'); }
+      const healIdx = enemyGroup.indexOf(enemy);
+      UX_safe.floatDmg(`enemy:${healIdx}`, restored, 'heal');
+      UX_safe.logCombat(`${ability.icon} ${enemy.name} se soigne : <b>+${restored} PV</b>`, 'magic');
       renderEnemyGroup();
       break;
     }
     case 'weaken': {
       target.def = Math.max(0, target.def - ability.power);
       appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : ${target.name} perd ${ability.power} DEF ! `);
-      if (window.UX) UX.logCombat(`${ability.icon} ${enemy.name} affaiblit ${target.name} : −${ability.power} DEF`, 'bad');
+      UX_safe.logCombat(`${ability.icon} ${enemy.name} affaiblit ${target.name} : −${ability.power} DEF`, 'bad');
       break;
     }
     case 'drain': {
@@ -42,12 +46,10 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       target.hp       = Math.max(0, target.hp - drained);
       enemy.currentHp = Math.min(enemy.hp, enemy.currentHp + Math.floor(drained / 2));
       appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → draine ${drained} PV de ${target.name} ! `);
-      if (window.UX) {
-        UX.floatDmg('ally', drained, 'dmg');
-        const idx = enemyGroup.indexOf(enemy);
-        UX.floatDmg(`enemy:${idx}`, Math.floor(drained/2), 'heal');
-        UX.logCombat(`${ability.icon} ${enemy.name} draine <b>${drained} PV</b> à ${target.name}`, 'bad');
-      }
+      const drainIdx = enemyGroup.indexOf(enemy);
+      UX_safe.floatDmg('ally', drained, 'dmg');
+      UX_safe.floatDmg(`enemy:${drainIdx}`, Math.floor(drained/2), 'heal');
+      UX_safe.logCombat(`${ability.icon} ${enemy.name} draine <b>${drained} PV</b> à ${target.name}`, 'bad');
       renderEnemyGroup();
       break;
     }
@@ -75,17 +77,19 @@ function castSpellInBattle(spellName, targetIdx) {
       char.hp = Math.min(char.hpMax, char.hp + spell.power);
       msg = `💚 ${char.name} : ${spell.name} +${spell.power} PV !`;
       addMsg(msg, 'good');
-      if (window.UX) { UX.floatDmg('ally', spell.power, 'heal'); UX.logCombat(`💚 ${char.name} lance ${spell.name} : <b>+${spell.power} PV</b>`, 'good'); }
+      UX_safe.floatDmg('ally', spell.power, 'heal');
+      UX_safe.logCombat(`💚 ${char.name} lance ${spell.name} : <b>+${spell.power} PV</b>`, 'good');
       break;
     case 'disarm':
       if (enemy) {
         if (enemy.resist?.includes('disarm')) {
           msg = `✨ ${char.name} : ${spell.name} — ${enemy.name} y résiste 🔰 !`;
-          if (window.UX) UX.logCombat(`🔰 ${enemy.name} résiste à ${spell.name}`, 'info');
+          UX_safe.logCombat(`🔰 ${enemy.name} résiste à ${spell.name}`, 'info');
         } else {
           enemy.disarmed = 2;
           msg = `✨ ${char.name} : ${spell.name} désarme ${enemy.name} !`;
-          if (window.UX) { UX.floatDmg(`enemy:${targetIdx}`, 0, 'shield'); UX.logCombat(`✨ ${char.name} désarme ${enemy.name} (2 tours)`, 'magic'); }
+          UX_safe.floatDmg(`enemy:${targetIdx}`, 0, 'shield');
+          UX_safe.logCombat(`✨ ${char.name} désarme ${enemy.name} (2 tours)`, 'magic');
         }
       }
       addMsg(msg, 'magic');
@@ -94,7 +98,7 @@ function castSpellInBattle(spellName, targetIdx) {
       shieldTurns[currentBattleChar] = 2;
       msg = `🛡️ ${char.name} : ${spell.name} — bouclier actif 2 tours !`;
       addMsg(msg, 'magic');
-      if (window.UX) UX.logCombat(`🛡️ ${char.name} active Protego (2 tours)`, 'magic');
+      UX_safe.logCombat(`🛡️ ${char.name} active Protego (2 tours)`, 'magic');
       break;
     case 'stun': case 'burn': case 'instant':
       if (enemy) {
@@ -115,14 +119,12 @@ function castSpellInBattle(spellName, targetIdx) {
             applyStatus(enemy, statusId, dotPower, 2);
             const def  = STATUS_DEFS[statusId];
             msg += ` ${def.icon} ${def.label} appliqué !`;
-            if (window.UX) UX.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, 2 tours)`, 'magic');
+            UX_safe.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, 2 tours)`, 'magic');
           }
         }
 
-        if (window.UX) {
-          UX.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
-          UX.logCombat(`${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix} sur ${enemy.name}`, 'magic');
-        }
+        UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
+        UX_safe.logCombat(`${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix} sur ${enemy.name}`, 'magic');
       }
       addMsg(msg, 'magic');
       break;
@@ -136,11 +138,9 @@ function castSpellInBattle(spellName, targetIdx) {
         const heal = Math.floor(dmg / 2);
         char.hp = Math.min(char.hpMax, char.hp + heal);
         msg = `🩸 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix}, +${heal} PV drainés !`;
-        if (window.UX) {
-          UX.floatDmg(`enemy:${targetIdx}`, dmg, 'dmg');
-          UX.floatDmg('ally', heal, 'heal');
-          UX.logCombat(`🩸 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix}, <b>+${heal} PV</b>`, 'magic');
-        }
+        UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'dmg');
+        UX_safe.floatDmg('ally', heal, 'heal');
+        UX_safe.logCombat(`🩸 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix}, <b>+${heal} PV</b>`, 'magic');
       }
       addMsg(msg, 'magic');
       break;
@@ -153,10 +153,8 @@ function castSpellInBattle(spellName, targetIdx) {
         enemy.atk = Math.max(0, (enemy.atk || 0) - 3);
         enemy.def = Math.max(0, (enemy.def || 0) - 3);
         msg = `☠️ ${char.name} : ${spell.name} → ${dmg} dégâts et ${enemy.name} maudit (−3 ATK/DEF) !`;
-        if (window.UX) {
-          UX.floatDmg(`enemy:${targetIdx}`, dmg, 'crit');
-          UX.logCombat(`☠️ ${char.name} maudit ${enemy.name} : <b>−${dmg}</b>, −3 ATK/DEF`, 'magic');
-        }
+        UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'crit');
+        UX_safe.logCombat(`☠️ ${char.name} maudit ${enemy.name} : <b>−${dmg}</b>, −3 ATK/DEF`, 'magic');
       }
       addMsg(msg, 'magic');
       break;
@@ -165,7 +163,7 @@ function castSpellInBattle(spellName, targetIdx) {
       player.gold += gold;
       msg = `🌀 ${char.name} : ${spell.name} → +${gold} Gallions !`;
       addMsg(msg, 'good');
-      if (window.UX) UX.logCombat(`🌀 ${char.name} : ${spell.name} → <b>+${gold} 🪙</b>`, 'good');
+      UX_safe.logCombat(`🌀 ${char.name} : ${spell.name} → <b>+${gold} 🪙</b>`, 'good');
       break;
   }
 
