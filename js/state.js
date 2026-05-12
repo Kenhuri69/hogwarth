@@ -118,8 +118,17 @@ let enemyGroup      = [];   // tableau de {…enemyData, currentHp, disarmed}
 let currentBattleChar = 0;  // 0 = Harry, 1 = Hermione
 let shieldTurns     = [0, 0]; // bouclier par personnage
 let battleTurn      = 0;
-let pendingAction   = null; // action en attente de sélection de cible
-let pendingSpell    = null; // sort en attente de sélection de cible
+// Sélection de cible en combat (cycle producteur → consommateur) :
+//  - battle-ui.js — showTargetSelection(actionType)  écrit pendingAction
+//  - inventory.js — openBattleSpells onclick         écrit pendingSpell
+//                                                    puis appelle showTargetSelection('spell_dmg')
+//  - battle-ui.js — target button onclick            lit les 2, exécute, puis remet à null
+//  - battle.js    — startBattle()                    reset à null en début de combat
+// Contrat : tout code qui MET pendingAction/pendingSpell doit aussi
+// déclencher la sélection de cible (showTargetSelection), sinon le state
+// reste « pendant » jusqu'au prochain combat.
+let pendingAction   = null;
+let pendingSpell    = null;
 
 // Monstres rencontrés en combat (bestiaire)
 let seenMonsters = new Set();

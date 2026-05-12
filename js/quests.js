@@ -429,7 +429,39 @@ function completeQuest(index) {
   const q = activeQuests[index];
   if (!q) return;
 
-  // Consomme les items requis (étapes "item")
+  _consumeQuestItems(q);
+
+  const tpl    = getQuestTemplate(q.id);
+  const reward = _resolveQuestReward(q, tpl);
+  _grantQuestReward(reward);
+
+  // Points de Maison pour quête accomplie
+  if (chosenHouse) {
+    housePoints += 30;
+    safeCall('checkHouseLevelUp');
+  }
+
+  // Retire de l'actif, marque comme rendue. Quêtes répétables : on
+  // retient le niveau du joueur à la remise pour calculer le cooldown
+  // lors d'une éventuelle ré-offre.
+  activeQuests.splice(index, 1);
+  completedQuests.add(q.id);
+  if (tpl && tpl.repeatable) {
+    lastQuestCompletion[q.id] = (player && player.level) || 0;
+  }
+
+  AudioSystem.playLevelUp();
+  addMsg(`✅ Quête terminée : « ${q.title} » !`, 'good');
+
+  recalculateStats();
+  updateUI();
+  updateQuestTracker();
+  checkLevelUp();
+  renderQuestList();
+}
+
+// Consomme les items requis par les étapes "item" de la quête.
+function _consumeQuestItems(q) {
   for (const step of q.objectives) {
     if (step.type !== 'item') continue;
     let toConsume = step.amount;
@@ -438,16 +470,21 @@ function completeQuest(index) {
       return true;
     });
   }
+}
 
-  const tpl = getQuestTemplate(q.id);
-  // Quête répétable : à partir de la 2e remise (lastQuestCompletion[id]
-  // déjà renseigné), on bascule sur `repeatableReward` si défini, pour
-  // éviter d'empiler des items déjà acquis.
+// Quête répétable : à partir de la 2e remise (lastQuestCompletion[id]
+// déjà renseigné), on bascule sur `repeatableReward` si défini, pour
+// éviter d'empiler des items déjà acquis.
+function _resolveQuestReward(q, tpl) {
   const isReRun = !!(tpl && tpl.repeatable && lastQuestCompletion[q.id] !== undefined);
-  const reward  = (isReRun && tpl.repeatableReward) ? tpl.repeatableReward : q.reward;
+  return (isReRun && tpl.repeatableReward) ? tpl.repeatableReward : q.reward;
+}
 
-  if (reward.xp)    player.xp   += reward.xp;
-  if (reward.gold)  player.gold += reward.gold;
+// Applique XP / or / item / sort. Item refusé si inventaire plein.
+// Sort distribué à tout le groupe actif.
+function _grantQuestReward(reward) {
+  if (reward.xp)   player.xp   += reward.xp;
+  if (reward.gold) player.gold += reward.gold;
 
   if (reward.item) {
     const item = ITEMS.find(i => i.id === reward.item);
@@ -461,30 +498,6 @@ function completeQuest(index) {
     });
     addMsg(`✨ Nouveau sort débloqué : ${reward.spell} !`, 'magic');
   }
-
-  // Points de Maison pour quête accomplie
-  if (chosenHouse) {
-    housePoints += 30;
-    safeCall('checkHouseLevelUp');
-  }
-
-  // Retire de l'actif, marque comme rendue
-  activeQuests.splice(index, 1);
-  completedQuests.add(q.id);
-  // Quêtes répétables : on retient le niveau du joueur à la remise
-  // pour calculer le cooldown lors d'une éventuelle ré-offre.
-  if (tpl && tpl.repeatable) {
-    lastQuestCompletion[q.id] = (player && player.level) || 0;
-  }
-
-  AudioSystem.playLevelUp();
-  addMsg(`✅ Quête terminée : « ${q.title} » !`, 'good');
-
-  recalculateStats();
-  updateUI();
-  updateQuestTracker();
-  checkLevelUp();
-  renderQuestList();
 }
 
 // ── Appelée depuis battle.js quand un monstre est vaincu ─────
