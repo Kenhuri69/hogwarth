@@ -323,6 +323,21 @@ function _applyState(gs) {
       }
     }
   }
+  // Forward-fill catalogue : toute quête présente dans QUEST_TEMPLATES
+  // mais inconnue de la save (ni active, ni complétée, ni dispo) est
+  // ajoutée comme dispo. Couvre les saves créées avant l'ajout d'une
+  // nouvelle quête (ex. chaîne Dumbledore Phase 3) : sans cette passe,
+  // les nouvelles quêtes restaient invisibles côté joueur — Dumbledore
+  // ne proposait pas la suite après une remise.
+  if (typeof QUEST_TEMPLATES !== 'undefined') {
+    const activeIds = new Set((activeQuests || []).map(q => q.id));
+    for (const tpl of QUEST_TEMPLATES) {
+      if (activeIds.has(tpl.id))       continue;
+      if (completedQuests.has(tpl.id)) continue;
+      if (availableQuests.has(tpl.id)) continue;
+      availableQuests.add(tpl.id);
+    }
+  }
   if (gs.difficulty && DIFFICULTY_SETTINGS[gs.difficulty]) difficulty = gs.difficulty;
   if (gs.chosenHouse && HOUSE_BONUSES[gs.chosenHouse]) chosenHouse = gs.chosenHouse;
   if (gs.housePoints !== undefined) housePoints = gs.housePoints;
