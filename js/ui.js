@@ -53,6 +53,19 @@ function updateUI() {
     if (card) card.classList.toggle('ko-char', c.hp <= 0);
   });
 
+  // ── Badge "points à allouer" sur le bouton Fiche ──────────────
+  const badge = document.getElementById('char-alloc-badge');
+  if (badge) {
+    const total = party.slice(0, partySize)
+      .reduce((s, c) => s + (c.unallocatedStatPoints || 0), 0);
+    if (total > 0) {
+      badge.textContent = total < 10 ? total : '▲';
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
   updateQuestTracker();
   updateRoomStatus();
 }
@@ -391,6 +404,10 @@ function openCharacter(charIdx = 0) {
   const critPct  = (c.critChance  != null) ? `${Math.round(c.critChance)}%`  : '—';
   const dodgePct = (c.dodgeChance != null) ? `${Math.round(c.dodgeChance)}%` : '—';
 
+  // Panneau d'allocation : visible uniquement si des points sont en attente.
+  const statPts = c.unallocatedStatPoints || 0;
+  const allocPanel = statPts > 0 ? _renderStatAllocPanel(charIdx, statPts) : '';
+
   // Sortilèges sous forme de badges PNG. c.spells = liste de noms.
   const spellsHtml = (c.spells || []).map(_renderSpellBadge).join('');
 
@@ -411,6 +428,7 @@ function openCharacter(charIdx = 0) {
           <div class="xp-bar"><span style="width:${xpPct}%"></span></div>
           <div style="font-size:9px;color:#6a5030;margin-top:2px">XP ${player.xp}/${player.xpNext}</div>
         </div>
+        ${allocPanel}
         ${_renderStatLine('img/icons/hp.png',  'Vie',         `${c.hp}/${c.hpMax}`)}
         ${_renderStatLine('img/icons/mp.png',  'Mana',        `${c.sp}/${c.spMax}`)}
         ${_renderStatLine('img/icons/atk.png', 'Attaque',     _renderStatValueWithBonus(c, 'atk', '_baseAtk'))}
@@ -456,6 +474,58 @@ function openCharacter(charIdx = 0) {
     </div>
   `;
   document.getElementById('character-modal').style.display = 'flex';
+}
+
+// ── Allocation de points de stats libres (Phase 3 — UX) ─────
+// Bandeau inséré dans openCharacter quand `c.unallocatedStatPoints > 0`.
+// Chaque bouton consomme 1 point et applique l'effet via allocateStatPoint().
+function _renderStatAllocPanel(charIdx, points) {
+  const keys = ['STR', 'INT', 'AGI', 'END', 'LCK'];
+  const labels = { STR: '+1 ATK', INT: '+1 MAG', AGI: '+1 AGI',
+                   END: '+5 PV',  LCK: '+1 LCK' };
+  const buttons = keys.map(k =>
+    `<button class="cmd-btn alloc-btn"
+       onclick="allocateStatPoint(${charIdx}, '${k}')"
+       style="flex:1;font-size:10px;padding:6px 4px">${k}<br>
+       <span style="font-size:9px;color:#8a7050">${labels[k]}</span></button>`
+  ).join('');
+  return `
+    <div class="alloc-panel" style="margin:8px 0;padding:8px;
+         border:1px solid var(--gold);border-radius:6px;
+         background:rgba(180,140,60,0.08)">
+      <div style="font-size:11px;color:var(--gold);text-align:center;
+                  letter-spacing:1px;margin-bottom:6px">
+        ▲ ${points} POINT${points > 1 ? 'S' : ''} À ALLOUER
+      </div>
+      <div style="display:flex;gap:4px">${buttons}</div>
+    </div>`;
+}
+
+// Applique 1 point sur la stat choisie, via le mapping STAT_POINT_EFFECTS.
+// Mute `_baseX` (ou `hpMax`) — recalculateStats régénère les stats
+// effectives en intégrant l'équipement. Re-render la fiche pour montrer
+// le total restant.
+function allocateStatPoint(charIdx, statKey) {
+  if (charIdx >= partySize) charIdx = 0;
+  const c = party[charIdx];
+  if (!c) return;
+  if ((c.unallocatedStatPoints || 0) <= 0) return;
+  const eff = (typeof STAT_POINT_EFFECTS !== 'undefined') ? STAT_POINT_EFFECTS[statKey] : null;
+  if (!eff) return;
+  if (eff.baseAtk) c._baseAtk = (c._baseAtk || 0) + eff.baseAtk;
+  if (eff.baseDef) c._baseDef = (c._baseDef || 0) + eff.baseDef;
+  if (eff.baseMag) c._baseMag = (c._baseMag || 0) + eff.baseMag;
+  if (eff.baseLck) c._baseLck = (c._baseLck || 0) + eff.baseLck;
+  if (eff.baseStr) c._baseStr = (c._baseStr || c.str || 0) + eff.baseStr;
+  if (eff.baseInt) c._baseInt = (c._baseInt || c.int || 0) + eff.baseInt;
+  if (eff.baseAgi) c._baseAgi = (c._baseAgi || c.agi || 0) + eff.baseAgi;
+  if (eff.baseEnd) c._baseEnd = (c._baseEnd || c.end || 0) + eff.baseEnd;
+  if (eff.hpMax)   { c.hpMax += eff.hpMax; c.hp = Math.min(c.hpMax, c.hp + eff.hpMax); }
+  if (eff.spMax)   { c.spMax += eff.spMax; c.sp = Math.min(c.spMax, c.sp + eff.spMax); }
+  c.unallocatedStatPoints--;
+  if (typeof recalculateStats === 'function') recalculateStats();
+  if (typeof updateUI === 'function') updateUI();
+  openCharacter(charIdx);
 }
 
 // Bestiaire (openBestiary, filterBestiary, showMonsterDetail, etc.) → ui-bestiary.js

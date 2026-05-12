@@ -14,8 +14,62 @@ const QUEST_TEMPLATES = [
     objectives: [
       { type: "floor", floor: 2, progress: 0, amount: 1, completed: false }
     ],
-    reward: { xp: 30, gold: 20 },
+    reward: { xp: 30, gold: 20, stats: { hp: 5, atk: 1, def: 1, mag: 1 } },
     location: "Hall d'entrée (étage 1)"
+  },
+  // ── Chaîne d'épreuves de Dumbledore (Phase 3) ─────────────────
+  // Une chaîne de 5 quêtes (intro_tutoriel + 4 nouvelles) qui boost
+  // permanent les stats du groupe et débloque sorts/items. La quête N+1
+  // n'apparaît qu'après remise de la quête N (champ `prereq`).
+  {
+    id: "dumbledore_eveil",
+    title: "L'éveil du Sorcier",
+    giver: "Albus Dumbledore",
+    desc: "Affronte un Épouvantard ou un Détraqueur. Les peurs qu'on défie nous rendent plus forts.",
+    prereq: "intro_tutoriel",
+    objectives: [
+      { type: "kill", monsterId: "boggart", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 120, gold: 50, stats: { hp: 5, lck: 1 }, spell: "Wingardium Leviosa" },
+    location: "Hall d'entrée (étage 1) — cible étage 3+"
+  },
+  {
+    id: "dumbledore_courage",
+    title: "Le Courage et la Ruse",
+    giver: "Albus Dumbledore",
+    desc: "Élimine deux Mangemorts qui rôdent dans les couloirs profonds. Apporte-moi cette preuve de bravoure.",
+    prereq: "dumbledore_eveil",
+    objectives: [
+      { type: "kill", monsterId: "mangemort", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 220, gold: 100, stats: { hp: 10, atk: 1, mag: 1 }, item: "potion_m" },
+    location: "Hall d'entrée (étage 1) — cible étage 5+",
+    spawnOnAccept: { targetMonsterId: "mangemort", extraRandomCount: 1 }
+  },
+  {
+    id: "dumbledore_resistance",
+    title: "L'Ordre du Phénix",
+    giver: "Albus Dumbledore",
+    desc: "Un Mangemort d'élite a infiltré nos défenses. Trouve-le et neutralise-le. L'Ordre compte sur toi.",
+    prereq: "dumbledore_courage",
+    objectives: [
+      { type: "kill", monsterId: "mangemort_elite", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 340, gold: 160, stats: { hp: 10, atk: 2, def: 2 }, item: "amulette" },
+    location: "Hall d'entrée (étage 1) — cible étage 7+",
+    spawnOnAccept: { targetMonsterId: "mangemort_elite", extraRandomCount: 1 }
+  },
+  {
+    id: "dumbledore_revelation",
+    title: "La Révélation",
+    giver: "Albus Dumbledore",
+    desc: "Au plus profond, une ombre se reforme. Affronte Bellatrix Lestrange — pour Poudlard, pour ceux que nous avons perdus.",
+    prereq: "dumbledore_resistance",
+    objectives: [
+      { type: "kill", monsterId: "bellatrix", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 500, gold: 250, stats: { hp: 20, atk: 2, def: 2, mag: 2, lck: 2 } },
+    location: "Hall d'entrée (étage 1) — cible étage 10+"
   },
   {
     id: "mandragore_pomfresh",
@@ -170,6 +224,9 @@ function getQuestTemplate(id) {
 // depuis la dernière complétion (lastQuestCompletion[id]).
 function isQuestOfferable(id) {
   if (!id) return false;
+  // Pré-requis de chaîne : `tpl.prereq` doit être dans completedQuests.
+  const tplPrereq = getQuestTemplate(id);
+  if (tplPrereq && tplPrereq.prereq && !completedQuests.has(tplPrereq.prereq)) return false;
   if (availableQuests.has(id)) return true;
   if (!completedQuests.has(id)) return false;
   const tpl = getQuestTemplate(id);
@@ -479,8 +536,9 @@ function _resolveQuestReward(q, tpl) {
   return (isReRun && tpl.repeatableReward) ? tpl.repeatableReward : q.reward;
 }
 
-// Applique XP / or / item / sort. Item refusé si inventaire plein.
-// Sort distribué à tout le groupe actif.
+// Applique XP / or / item / sort / stats permanents. Item refusé si
+// inventaire plein. Sort et bonus de stats sont distribués à tout le
+// groupe actif (`party.slice(0, partySize)`).
 function _grantQuestReward(reward) {
   if (reward.xp)   player.xp   += reward.xp;
   if (reward.gold) player.gold += reward.gold;
@@ -497,6 +555,31 @@ function _grantQuestReward(reward) {
     });
     addMsg(`✨ Nouveau sort débloqué : ${reward.spell} !`, 'magic');
   }
+  if (reward.stats) _applyStatsReward(reward.stats);
+}
+
+// Applique un bonus permanent de stats à tout le groupe actif. Touche
+// les `_baseX` (croissent au level-up) pour préserver le bonus à
+// travers les futures montées. recalculateStats() est appelé par le
+// caller (completeQuest) après _grantQuestReward.
+function _applyStatsReward(stats) {
+  const labels = [];
+  for (const c of party.slice(0, partySize)) {
+    if (stats.atk) c._baseAtk = (c._baseAtk || 0) + stats.atk;
+    if (stats.def) c._baseDef = (c._baseDef || 0) + stats.def;
+    if (stats.mag) c._baseMag = (c._baseMag || 0) + stats.mag;
+    if (stats.lck) c._baseLck = (c._baseLck || 0) + stats.lck;
+    if (stats.str) c._baseStr = (c._baseStr || c.str || 0) + stats.str;
+    if (stats.int) c._baseInt = (c._baseInt || c.int || 0) + stats.int;
+    if (stats.agi) c._baseAgi = (c._baseAgi || c.agi || 0) + stats.agi;
+    if (stats.end) c._baseEnd = (c._baseEnd || c.end || 0) + stats.end;
+    if (stats.hp)  { c.hpMax += stats.hp; c.hp = Math.min(c.hpMax, c.hp + stats.hp); }
+    if (stats.sp)  { c.spMax += stats.sp; c.sp = Math.min(c.spMax, c.sp + stats.sp); }
+  }
+  for (const [k, v] of Object.entries(stats)) {
+    if (v > 0) labels.push(`+${v} ${k.toUpperCase()}`);
+  }
+  if (labels.length) addMsg(`📈 Bonus permanent : ${labels.join(', ')}`, 'good');
 }
 
 // ── Appelée depuis battle.js quand un monstre est vaincu ─────

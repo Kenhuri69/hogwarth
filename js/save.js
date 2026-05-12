@@ -177,6 +177,8 @@ function _serializeState() {
     restCooldown,
     usedFountains: Array.from(usedFountains),
     usedSpecialNpcs: Array.from(usedSpecialNpcs),
+    defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
+                          .map(([f, set]) => [f, Array.from(set)]),
     npcPlacements: Array.from(npcPlacements.entries()),
     seenNpcs:      Array.from(seenNpcs),
     availableQuests: Array.from(availableQuests),
@@ -224,6 +226,20 @@ function _migrateEquippedSlots(c) {
   }
 }
 
+// Migration rétroactive : crédite (level - 1) * STAT_POINTS_PER_LEVEL
+// au perso s'il n'a pas encore le champ `unallocatedStatPoints`. Le
+// joueur peut ensuite les dépenser via la fiche perso (ui.js).
+// Idempotente : si le champ existe déjà (même à 0), ne touche pas.
+function _migrateUnallocatedStatPoints(c) {
+  if (!c || typeof c !== 'object') return;
+  if (c.unallocatedStatPoints !== undefined) return;
+  if (typeof STAT_POINTS_PER_LEVEL !== 'number') {
+    c.unallocatedStatPoints = 0; return;
+  }
+  const lvl = Math.max(1, c.level || 1);
+  c.unallocatedStatPoints = (lvl - 1) * STAT_POINTS_PER_LEVEL;
+}
+
 // Applique un instantané au runtime — mute les objets en place pour
 // préserver les références partagées (party[0] === player, etc.).
 // Pas d'I/O, pas de message UI : pur applicateur.
@@ -236,6 +252,12 @@ function _applyState(gs) {
   // Migration des slots d'équipement (ancien schéma → 11 slots étendus)
   // Idempotent : ne touche pas un slot déjà rempli au bon endroit.
   party.forEach(_migrateEquippedSlots);
+
+  // Migration rétroactive des points de stats libres : un perso niveau N
+  // de l'ancienne version n'avait pas accumulé de points. On lui crédite
+  // `(N - 1) * STAT_POINTS_PER_LEVEL` qu'il pourra allouer via la fiche.
+  // Idempotente : ne touche pas un perso qui a déjà le champ.
+  party.forEach(_migrateUnallocatedStatPoints);
 
   if (gs.partySize)     partySize    = gs.partySize;
   if (gs.seenMonsters)  seenMonsters = new Set(gs.seenMonsters);
@@ -306,6 +328,9 @@ function _applyState(gs) {
   if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
   usedFountains = new Set(gs.usedFountains || []);
   usedSpecialNpcs = new Set(gs.usedSpecialNpcs || []);
+  defeatedCellsByFloor = new Map(
+    (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])
+  );
   npcPlacements = new Map(gs.npcPlacements || []);
   seenNpcs      = new Set(gs.seenNpcs || []);
 

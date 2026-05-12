@@ -224,7 +224,34 @@ function _restoreFloorFromCache(floor) {
   // Nouvelle visite = nouvelle eau dans la fontaine et nouvelles larmes Fumseck
   usedFountains = new Set();
   usedSpecialNpcs = new Set();
+  _respawnEnemiesOnEntry(floor);
   return true;
+}
+
+// Respawn 20 % par cellule où un ennemi a été vaincu, déclenché à chaque
+// retour sur un étage déjà visité. Les entrées re-spawnées sont retirées
+// du Set (sinon elles continueraient à roller au prochain retour).
+const ENEMY_RESPAWN_CHANCE = 0.20;
+function _respawnEnemiesOnEntry(floor) {
+  if (typeof defeatedCellsByFloor === 'undefined') return;
+  const set = defeatedCellsByFloor.get(floor);
+  if (!set || set.size === 0) return;
+  if (typeof MONSTERS === 'undefined' || typeof scaleMonster !== 'function') return;
+  const pool = MONSTERS.filter(m =>
+    m.minFloor <= floor && (m.maxFloor === null || floor <= m.maxFloor)
+  );
+  if (!pool.length) return;
+  const respawned = [];
+  for (const key of set) {
+    if (Math.random() >= ENEMY_RESPAWN_CHANCE) continue;
+    const [x, y] = key.split(',').map(Number);
+    if (!dungeon[y] || dungeon[y][x] !== CELL.FLOOR) continue;
+    if (enemyMap[y][x]) continue;
+    if (x === playerX && y === playerY) continue;
+    enemyMap[y][x] = scaleMonster(weightedPick(pool), floor);
+    respawned.push(key);
+  }
+  for (const key of respawned) set.delete(key);
 }
 
 function goDeeper() {

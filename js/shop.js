@@ -34,6 +34,13 @@ const SHOP_CATALOG = [
   { id: "cape_invis",          minFloor: 7 },
   { id: "bottes_dragon",       minFloor: 7 },
   { id: "retourneur_temps",    minFloor: 7 },
+  // Phase 3c — équipements mid-game (étages 3-7)
+  { id: "gants_duelliste",     minFloor: 3 },
+  { id: "anneau_courage",      minFloor: 4 },
+  { id: "ceinture_force",      minFloor: 4 },
+  { id: "casque_aurore",       minFloor: 5 },
+  { id: "talisman_tactique",   minFloor: 6 },
+  { id: "bottes_silence",      minFloor: 6 },
 ];
 
 // Politique de rachat par défaut (boutique fixe Madame Malkins). Les

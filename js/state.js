@@ -143,6 +143,11 @@ let restCooldown = 0;
 // Fontaines utilisées sur l'étage courant (clé "x,y") — vidée à chaque
 // entrée d'étage : la fontaine se ré-active si l'on quitte puis revient.
 let usedFountains = new Set();
+// Cellules où le joueur a tué un ennemi, indexées par étage.
+// Map<floor, Set<"x,y">>. À chaque retour sur un étage déjà visité, chaque
+// entrée a 20 % de chance de re-spawner un ennemi (`_respawnEnemiesOnEntry`).
+// Persisté au save.
+let defeatedCellsByFloor = new Map();
 
 // PNJ placés sur l'étage courant : Map "x,y" → npcId.
 // Recalculé à chaque génération d'étage, mis en cache dans floorDungeons.
