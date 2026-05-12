@@ -265,7 +265,7 @@ sanity check.** Cibles prioritaires :
 
 | Item | Statut | Branche | Notes |
 |------|--------|---------|-------|
-| C1   | ⏳     | -       | Doc CLAUDE.md (loader, UX, NPC, intro, item-icons, scene-icons, Maisons) |
+| C1   | ✅     | `claude/code-review-tasks-voWQi` | Liste fichiers à jour (6 modules ajoutés : scene-icons, npcs, item-icons, npc-dialog, intro, loader) ; ordre de chargement à 31 modules ; 4 nouvelles sections (Loader & helpers, Système UX, Système PNJ, Système des Maisons). |
 | C4   | ✅     | `claude/code-review-tasks-voWQi` | 4 plans archivés (`character-ux-refonte`, `audio-intro-sample`, `voice-intro-dumbledore`, `anastasia-character`). README mis à jour. |
 | N3   | ✅     | `claude/code-review-tasks-voWQi` | 3 `localStorage.getItem` enveloppés (`_readStore`, `migrateLegacyKey`, `loadGame`). `loadGame` log un message lisible sur SecurityError. Autres accès déjà protégés. |
 | N4   | ✅     | `claude/code-review-tasks-voWQi` | Supprimé le `console.log` redondant de `main.js:213`. Conservé `textures.js:53` et `renderer.js:92` (déjà one-shot, préfixés, informatifs). |
