@@ -30,6 +30,8 @@ const SHOP_CATALOG = [
   { id: "anneau_runique",      minFloor: 5 },
   { id: "ceinture_alchimiste", minFloor: 5 },
   { id: "livre_bombarda",      minFloor: 5 },
+  { id: "potion_l",            minFloor: 5 },
+  { id: "potion_l_sp",         minFloor: 5 },
   { id: "livre_patronum",      minFloor: 6 },
   { id: "cape_invis",          minFloor: 7 },
   { id: "bottes_dragon",       minFloor: 7 },
