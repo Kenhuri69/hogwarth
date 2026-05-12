@@ -5,11 +5,23 @@ Voir l'historique git pour le détail technique.
 
 ---
 
-## 2026-05-12 — Phase 3 : Difficulté & Voix Dumbledore
+## 2026-05-12 — Phase 3 : Difficulté, Contrôles & Voix Dumbledore
 
-Grosse itération autour de la progression et de l'ambiance audio.
+Grosse journée d'itération couvrant 8 PR mergées (#78 → #87).
 
-### 🎮 Progression & personnalisation
+### 🕹️ Contrôles relatifs (PR #80)
+
+Nouvelle ergonomie de déplacement style dungeon-crawler :
+
+- **↑ avance / ↓ recule / ← pivote à gauche / → pivote à droite**.
+  Plus de contrôles absolus N/S/E/O — le joueur raisonne désormais
+  par rapport à sa direction de regard.
+- **Boussole** : la lettre correspondant à `playerDir` est mise en
+  surbrillance (or + glow).
+- **Minimap** : flèche directionnelle sur la case du joueur (desktop
+  et overlay mobile).
+
+### 🎮 Progression & personnalisation (PR #82)
 
 - **3 points de stats libres à chaque niveau** — en plus du baseline
   existant (+1 ATK / DEF / MAG, +8 PV, +5 PM). Le joueur les répartit
@@ -21,7 +33,7 @@ Grosse itération autour de la progression et de l'ambiance audio.
   niveau N d'une partie ancienne reçoit `(N − 1) × 3` points à
   allouer à l'ouverture de la fiche.
 
-### 🧙 Chaîne de quêtes Dumbledore (5 paliers)
+### 🧙 Chaîne de quêtes Dumbledore (5 paliers) (PR #82)
 
 Un fil narratif structurant l'aventure, du tutoriel à la confrontation
 finale. Dumbledore reste accessible à l'étage 1 — le joueur revient
@@ -39,7 +51,7 @@ Les quêtes s'enchaînent : la suivante n'apparaît qu'une fois la
 précédente complétée. Les bonus de stats sont **permanents** et
 s'accumulent à travers les futurs level-ups.
 
-### 🗣️ Voix Dumbledore complète
+### 🗣️ Voix Dumbledore complète (PR #86)
 
 Dumbledore parle désormais à chaque page de dialogue de sa chaîne
 d'épreuves, en plus de l'intro initiale.
@@ -52,7 +64,7 @@ d'épreuves, en plus de l'intro initiale.
   du dialogue.
 - ~1.1 MB cumulés pour 17 OGG (intro + 15 chaîne).
 
-### ⚔️ Combat & exploration
+### ⚔️ Combat & exploration (PR #82, #84)
 
 - **Respawn 20 %** : à chaque retour sur un étage déjà visité, les
   cellules où le joueur a tué un ennemi ont 20 % de chance de
@@ -65,15 +77,41 @@ d'épreuves, en plus de l'intro initiale.
   l'étage 5 : Grande Potion de Soin (+40 PV, 80 g) et Grande Potion
   Magique (+30 PM, 70 g).
 
-### 🐛 Corrections
+### 🎨 Visuels (PR #79, #81)
 
-- Layout mobile du panneau d'allocation de points : le 5ᵉ bouton
-  (LCK) n'est plus coupé à droite sur écrans ≤ 700 px (wrap auto en
-  3 lignes).
-- Migration des anciennes sauvegardes : les points de stats à
-  allouer rétroactifs sont désormais bien crédités même quand un
-  champ de save legacy était initialisé à 0 par un démarrage de
-  nouvelle partie précédent.
+- **5 portraits PNJ** ajoutés/affinés (256×256) : Pomfresh
+  (broche corrigée en caducée argent), Sir Nicolas, Moine Gras,
+  Rusard, Trelawney.
+- **4 sprites monstres** retravaillés (512×512 RGBA) : Mangemort
+  d'élite, Sorcier Renégat, Chimère, Ombre de Quirrell.
+
+### 🐛 Corrections (PR #84, #87)
+
+- **Migration des PNJ manquants** : les vieilles sauvegardes
+  antérieures à l'ajout d'un PNJ (typiquement Dumbledore) voient
+  désormais ces PNJ apparaître automatiquement dans le donjon au
+  prochain passage sur l'étage.
+- **Layout mobile** du panneau d'allocation de points : le 5ᵉ bouton
+  (LCK) n'est plus coupé à droite sur écrans ≤ 700 px (wrap auto
+  en 3 lignes).
+- **Migration des points de stats sur anciennes sauvegardes** : les
+  points rétroactifs sont désormais correctement crédités même quand
+  un démarrage de nouvelle partie précédent avait initialisé le
+  champ à 0.
+
+### ♿ Accessibilité & qualité (PR #78)
+
+Passe d'hygiène globale, invisible côté joueur mais structurante :
+
+- **ARIA** : 8 modales (`role="dialog" aria-modal aria-labelledby`),
+  2 logs `aria-live`, 6 boutons close `aria-label`, bannière
+  loader `role="alert"`.
+- **Robustesse** : `localStorage.getItem` enveloppé pour Safari
+  mode privé. Patterns défensifs nettoyés (24 sites `UX_safe` proxy,
+  9 sites `safeCall`).
+- **Maintenabilité** : 6 fonctions longues raccourcies (-54 % au
+  total), 7 magic numbers nommés en constantes, 5 fonctions mortes
+  supprimées, nouveau scénario smoke `loader` (manifeste de globals).
 
 ### 🛠️ Outils & analyse (interne)
 
