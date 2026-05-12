@@ -266,7 +266,7 @@ sanity check.** Cibles prioritaires :
 | Item | Statut | Branche | Notes |
 |------|--------|---------|-------|
 | C1   | ⏳     | -       | Doc CLAUDE.md (loader, UX, NPC, intro, item-icons, scene-icons, Maisons) |
-| C4   | ⏳     | -       | Déplacer 4 plans terminés dans `_archive/` |
+| C4   | ✅     | `claude/code-review-tasks-voWQi` | 4 plans archivés (`character-ux-refonte`, `audio-intro-sample`, `voice-intro-dumbledore`, `anastasia-character`). README mis à jour. |
 | N3   | ⏳     | -       | Élargir try/catch en `_readStore`, `loadGame` au `getItem` (Safari privé) |
 | N4   | ⏳     | -       | Préfixer ou supprimer 3 `console.log` debug |
 | B1/N1| ⏳     | -       | `UX_safe` proxy + migration **32** `if (window.UX)` (battle+battle-spells) |

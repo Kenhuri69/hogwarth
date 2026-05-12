@@ -11,5 +11,9 @@ Plans 100 % terminés et livrés sur master. Conservés pour archéologie / déc
 | `icon-quality.md` | Refonte 6 sprites (amulette, anneau_argent, felix, ceinture_alchimiste…) + POC tint CSS épée (`sword_blade_base.png` + `sword_hilt_gryff.png`) + scénario smoke 24 | `claude/improve-game-images-7OVCy` |
 | `img-tooling.md` | `tools/process_monster_png.py`, `tools/count_plan.py`, scénario smoke 5 data-driven sur tous les `imgSrc` | `claude/improve-game-images-7OVCy` |
 | `repeatable-quest-hagrid.md` | `spawnQuestMonsters` + `repeatableReward` + hook `acceptQuest`, scénario smoke `scenarioRepeatableQuestSpawn` | PR #52 |
+| `character-ux-refonte.md` | Iter A (paper doll) + Iter B (crit/esquive) — Iter C reportée vers `character-ux-v2.md` | PR #57 |
+| `audio-intro-sample.md` | Sample d'ambiance intro + samples zones 1-2/3-4/5-6/7-8/9+ avec fallback procédural | PR #73, #74 |
+| `voice-intro-dumbledore.md` | Voix narrative Dumbledore sur l'intro (2 pages OGG Vorbis) | PR #76 |
+| `anastasia-character.md` | Personnage jouable Anastasia Moonveil — portrait médaillon + intégration `CHARACTERS` | commit `c6765e7` |
 
 > Pour un plan encore actif, voir le dossier parent `.claude/plans/`.
