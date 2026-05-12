@@ -57,7 +57,139 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
   return true;
 }
 
-// ── Sorts en combat ──────────────────────────────────────────
+// ── Sorts en combat : handlers par effet ─────────────────────
+//
+// Chaque handler reçoit (spell, char, enemy, targetIdx) et mute en
+// place l'état (char.hp, enemy.currentHp, shieldTurns, player.gold,
+// statuts DoT). Il retourne le message principal du sort (string)
+// que `castSpellInBattle` injecte dans setBattleLog.
+//
+// stun/burn/instant partagent _spellElementalDamage — la nature du
+// statut DoT est déterminée par STATUS_BY_SPELL.
+
+const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed' };
+
+function _spellHeal(spell, char) {
+  char.hp = Math.min(char.hpMax, char.hp + spell.power);
+  const msg = `💚 ${char.name} : ${spell.name} +${spell.power} PV !`;
+  addMsg(msg, 'good');
+  UX_safe.floatDmg('ally', spell.power, 'heal');
+  UX_safe.logCombat(`💚 ${char.name} lance ${spell.name} : <b>+${spell.power} PV</b>`, 'good');
+  return msg;
+}
+
+function _spellDisarm(spell, char, enemy, targetIdx) {
+  let msg = '';
+  if (enemy) {
+    if (enemy.resist?.includes('disarm')) {
+      msg = `✨ ${char.name} : ${spell.name} — ${enemy.name} y résiste 🔰 !`;
+      UX_safe.logCombat(`🔰 ${enemy.name} résiste à ${spell.name}`, 'info');
+    } else {
+      enemy.disarmed = 2;
+      msg = `✨ ${char.name} : ${spell.name} désarme ${enemy.name} !`;
+      UX_safe.floatDmg(`enemy:${targetIdx}`, 0, 'shield');
+      UX_safe.logCombat(`✨ ${char.name} désarme ${enemy.name} (2 tours)`, 'magic');
+    }
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+function _spellShield(spell, char) {
+  shieldTurns[currentBattleChar] = 2;
+  const msg = `🛡️ ${char.name} : ${spell.name} — bouclier actif 2 tours !`;
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(`🛡️ ${char.name} active Protego (2 tours)`, 'magic');
+  return msg;
+}
+
+function _spellElementalDamage(spell, char, enemy, targetIdx) {
+  let msg = '';
+  if (enemy) {
+    let dmg    = spell.power + Math.floor(char.mag / 2);
+    let suffix = '';
+    if (enemy.resist?.includes(spell.effect)) { dmg = Math.floor(dmg * 0.5); suffix = ' 🔰'; }
+    if (enemy.weak?.includes(spell.effect))   { dmg = Math.floor(dmg * 1.5); suffix = ' 💥'; }
+    enemy.currentHp -= dmg;
+    msg = `${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} sur ${enemy.name} !`;
+
+    // Application probabiliste d'un statut DoT
+    const statusId = STATUS_BY_SPELL[spell.name];
+    if (statusId && enemy.currentHp > 0) {
+      const chance = Math.min(0.50, 0.10 + char.mag * 0.01);
+      if (Math.random() < chance) {
+        const dotPower = Math.max(1, Math.floor(spell.power * 0.25));
+        applyStatus(enemy, statusId, dotPower, 2);
+        const def  = STATUS_DEFS[statusId];
+        msg += ` ${def.icon} ${def.label} appliqué !`;
+        UX_safe.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, 2 tours)`, 'magic');
+      }
+    }
+
+    UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
+    UX_safe.logCombat(`${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix} sur ${enemy.name}`, 'magic');
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+function _spellLifesteal(spell, char, enemy, targetIdx) {
+  let msg = '';
+  if (enemy) {
+    let dmg = spell.power + Math.floor(char.mag / 2);
+    let suffix = '';
+    if (enemy.resist?.includes('lifesteal')) { dmg = Math.floor(dmg * 0.5); suffix = ' 🔰'; }
+    if (enemy.weak?.includes('lifesteal'))   { dmg = Math.floor(dmg * 1.5); suffix = ' 💥'; }
+    enemy.currentHp -= dmg;
+    const heal = Math.floor(dmg / 2);
+    char.hp = Math.min(char.hpMax, char.hp + heal);
+    msg = `🩸 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix}, +${heal} PV drainés !`;
+    UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'dmg');
+    UX_safe.floatDmg('ally', heal, 'heal');
+    UX_safe.logCombat(`🩸 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix}, <b>+${heal} PV</b>`, 'magic');
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+function _spellCurse(spell, char, enemy, targetIdx) {
+  let msg = '';
+  if (enemy) {
+    let dmg = spell.power + Math.floor(char.mag / 2);
+    if (enemy.resist?.includes('curse')) dmg = Math.floor(dmg * 0.5);
+    if (enemy.weak?.includes('curse'))   dmg = Math.floor(dmg * 1.5);
+    enemy.currentHp -= dmg;
+    enemy.atk = Math.max(0, (enemy.atk || 0) - 3);
+    enemy.def = Math.max(0, (enemy.def || 0) - 3);
+    msg = `☠️ ${char.name} : ${spell.name} → ${dmg} dégâts et ${enemy.name} maudit (−3 ATK/DEF) !`;
+    UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'crit');
+    UX_safe.logCombat(`☠️ ${char.name} maudit ${enemy.name} : <b>−${dmg}</b>, −3 ATK/DEF`, 'magic');
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+function _spellSteal(spell, char) {
+  const gold = Math.floor(Math.random() * 10 + 5);
+  player.gold += gold;
+  const msg = `🌀 ${char.name} : ${spell.name} → +${gold} Gallions !`;
+  addMsg(msg, 'good');
+  UX_safe.logCombat(`🌀 ${char.name} : ${spell.name} → <b>+${gold} 🪙</b>`, 'good');
+  return msg;
+}
+
+const SPELL_HANDLERS = {
+  heal:      _spellHeal,
+  disarm:    _spellDisarm,
+  shield:    _spellShield,
+  stun:      _spellElementalDamage,
+  burn:      _spellElementalDamage,
+  instant:   _spellElementalDamage,
+  lifesteal: _spellLifesteal,
+  curse:     _spellCurse,
+  steal:     _spellSteal,
+};
+
 function castSpellInBattle(spellName, targetIdx) {
   const char  = getActiveChar();
   const spell = SPELLS.find(s => s.name === spellName);
@@ -69,102 +201,13 @@ function castSpellInBattle(spellName, targetIdx) {
   closeModal('spell-modal');
   document.getElementById('target-selection').style.display = 'none';
 
+  const enemy   = enemyGroup[targetIdx >= 0 ? targetIdx : 0];
+  const handler = SPELL_HANDLERS[spell.effect];
   let msg = '';
-  const enemy = enemyGroup[targetIdx >= 0 ? targetIdx : 0];
-
-  switch (spell.effect) {
-    case 'heal':
-      char.hp = Math.min(char.hpMax, char.hp + spell.power);
-      msg = `💚 ${char.name} : ${spell.name} +${spell.power} PV !`;
-      addMsg(msg, 'good');
-      UX_safe.floatDmg('ally', spell.power, 'heal');
-      UX_safe.logCombat(`💚 ${char.name} lance ${spell.name} : <b>+${spell.power} PV</b>`, 'good');
-      break;
-    case 'disarm':
-      if (enemy) {
-        if (enemy.resist?.includes('disarm')) {
-          msg = `✨ ${char.name} : ${spell.name} — ${enemy.name} y résiste 🔰 !`;
-          UX_safe.logCombat(`🔰 ${enemy.name} résiste à ${spell.name}`, 'info');
-        } else {
-          enemy.disarmed = 2;
-          msg = `✨ ${char.name} : ${spell.name} désarme ${enemy.name} !`;
-          UX_safe.floatDmg(`enemy:${targetIdx}`, 0, 'shield');
-          UX_safe.logCombat(`✨ ${char.name} désarme ${enemy.name} (2 tours)`, 'magic');
-        }
-      }
-      addMsg(msg, 'magic');
-      break;
-    case 'shield':
-      shieldTurns[currentBattleChar] = 2;
-      msg = `🛡️ ${char.name} : ${spell.name} — bouclier actif 2 tours !`;
-      addMsg(msg, 'magic');
-      UX_safe.logCombat(`🛡️ ${char.name} active Protego (2 tours)`, 'magic');
-      break;
-    case 'stun': case 'burn': case 'instant':
-      if (enemy) {
-        let dmg    = spell.power + Math.floor(char.mag / 2);
-        let suffix = '';
-        if (enemy.resist?.includes(spell.effect)) { dmg = Math.floor(dmg * 0.5); suffix = ' 🔰'; }
-        if (enemy.weak?.includes(spell.effect))   { dmg = Math.floor(dmg * 1.5); suffix = ' 💥'; }
-        enemy.currentHp -= dmg;
-        msg = `${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} sur ${enemy.name} !`;
-
-        // Application probabiliste d'un statut DoT (étape 2)
-        const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed' };
-        const statusId = STATUS_BY_SPELL[spell.name];
-        if (statusId && enemy.currentHp > 0) {
-          const chance = Math.min(0.50, 0.10 + char.mag * 0.01);
-          if (Math.random() < chance) {
-            const dotPower = Math.max(1, Math.floor(spell.power * 0.25));
-            applyStatus(enemy, statusId, dotPower, 2);
-            const def  = STATUS_DEFS[statusId];
-            msg += ` ${def.icon} ${def.label} appliqué !`;
-            UX_safe.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, 2 tours)`, 'magic');
-          }
-        }
-
-        UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
-        UX_safe.logCombat(`${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix} sur ${enemy.name}`, 'magic');
-      }
-      addMsg(msg, 'magic');
-      break;
-    case 'lifesteal':
-      if (enemy) {
-        let dmg = spell.power + Math.floor(char.mag / 2);
-        let suffix = '';
-        if (enemy.resist?.includes('lifesteal')) { dmg = Math.floor(dmg * 0.5); suffix = ' 🔰'; }
-        if (enemy.weak?.includes('lifesteal'))   { dmg = Math.floor(dmg * 1.5); suffix = ' 💥'; }
-        enemy.currentHp -= dmg;
-        const heal = Math.floor(dmg / 2);
-        char.hp = Math.min(char.hpMax, char.hp + heal);
-        msg = `🩸 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix}, +${heal} PV drainés !`;
-        UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'dmg');
-        UX_safe.floatDmg('ally', heal, 'heal');
-        UX_safe.logCombat(`🩸 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix}, <b>+${heal} PV</b>`, 'magic');
-      }
-      addMsg(msg, 'magic');
-      break;
-    case 'curse':
-      if (enemy) {
-        let dmg = spell.power + Math.floor(char.mag / 2);
-        if (enemy.resist?.includes('curse')) dmg = Math.floor(dmg * 0.5);
-        if (enemy.weak?.includes('curse'))   dmg = Math.floor(dmg * 1.5);
-        enemy.currentHp -= dmg;
-        enemy.atk = Math.max(0, (enemy.atk || 0) - 3);
-        enemy.def = Math.max(0, (enemy.def || 0) - 3);
-        msg = `☠️ ${char.name} : ${spell.name} → ${dmg} dégâts et ${enemy.name} maudit (−3 ATK/DEF) !`;
-        UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'crit');
-        UX_safe.logCombat(`☠️ ${char.name} maudit ${enemy.name} : <b>−${dmg}</b>, −3 ATK/DEF`, 'magic');
-      }
-      addMsg(msg, 'magic');
-      break;
-    case 'steal':
-      const gold = Math.floor(Math.random() * 10 + 5);
-      player.gold += gold;
-      msg = `🌀 ${char.name} : ${spell.name} → +${gold} Gallions !`;
-      addMsg(msg, 'good');
-      UX_safe.logCombat(`🌀 ${char.name} : ${spell.name} → <b>+${gold} 🪙</b>`, 'good');
-      break;
+  if (handler) {
+    msg = handler(spell, char, enemy, targetIdx) || '';
+  } else {
+    console.warn('[spell] effet inconnu:', spell.effect);
   }
 
   setBattleLog(msg);

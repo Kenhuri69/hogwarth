@@ -272,7 +272,7 @@ sanity check.** Cibles prioritaires :
 | B1/N1| ✅     | `claude/code-review-tasks-voWQi` | Proxy `UX_safe` ajouté dans `loader.js`. 24 sites `if (window.UX) { ... }` migrés vers appels directs `UX_safe.foo(...)` (44 appels au total dans battle.js + battle-spells.js). Test ad-hoc validé : `delete window.UX` → toutes les méthodes retournent `undefined` sans throw. |
 | N13  | ✅     | `claude/code-review-tasks-voWQi` | 6 `typeof autoSave === 'function'` (battle.js, movement.js, npc-dialog.js) migrés vers `safeCall('autoSave', reason)`. |
 | N14  | ✅     | `claude/code-review-tasks-voWQi` | `checkKillQuests` (battle.js, 1 site) et `checkHouseLevelUp` (battle.js + quests.js, 2 sites) migrés vers `safeCall(...)`. |
-| B2   | ⏳     | -       | `castSpellInBattle` → table `SPELL_HANDLERS` (118 l) |
+| B2   | ✅     | `claude/code-review-tasks-voWQi` | `castSpellInBattle` passée de 118 → **26 lignes**. 7 handlers privés (`_spellHeal`, `_spellDisarm`, `_spellShield`, `_spellElementalDamage`, `_spellLifesteal`, `_spellCurse`, `_spellSteal`) + table `SPELL_HANDLERS` (`stun`/`burn`/`instant` partagent le handler élémentaire). Test ad-hoc : couverture handlers/effets = 9/9, 0 manquant, 0 inutilisé. |
 | B3   | ⏳     | -       | `renderQuestList` → 3 sous-vues (124 l) |
 | B4   | ⏳     | -       | `checkLevelUp` → `_grantLevelStats/HpSp/Spells` (79 l) |
 | C2/N5| ⏳     | -       | ARIA modales + aria-live logs + aria-label cmd-btn |
