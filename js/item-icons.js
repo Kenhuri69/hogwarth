@@ -38,6 +38,10 @@ const ITEM_ICON_REGISTRY = {
   // Consommables
   potion_s:           'img/icons/items/potion_s.png',
   potion_m:           'img/icons/items/potion_m.png',
+  // Versions "++" étage 5+ : réutilisent les PNG des petites en attendant
+  // la génération de sprites dédiés via tools/gen_icons.py.
+  potion_l:           'img/icons/items/potion_s.png',
+  potion_l_sp:        'img/icons/items/potion_m.png',
   felix:              'img/icons/items/felix.png',
   potion_force:       'img/icons/items/potion_force.png',
   mandragore:         'img/icons/items/mandragore.png',

@@ -141,6 +141,8 @@ const SPELLS = [
 const ITEMS = [
   { id:"potion_s", name:"Potion de Soin", icon:"🧪", desc:"+15 PV", type:"consumable", effect:"heal", power:15, price:30 },
   { id:"potion_m", name:"Potion Magique", icon:"💜", desc:"+12 PM", type:"consumable", effect:"restore_sp", power:12, price:25 },
+  { id:"potion_l",     name:"Grande Potion de Soin", icon:"🧪", desc:"+40 PV", type:"consumable", effect:"heal",       power:40, price:80 },
+  { id:"potion_l_sp",  name:"Grande Potion Magique", icon:"💜", desc:"+30 PM", type:"consumable", effect:"restore_sp", power:30, price:70 },
   { id:"felix", name:"Félix Felicis", icon:"✨", desc:"+20 PV +10 PM", type:"consumable", effect:"both", power:20, price:80 },
   { id:"mandragore", name:"Racine de Mandragore", icon:"🌿", desc:"+8 PV", type:"consumable", effect:"heal", power:8, price:15 },
   { id:"wand1",   name:"Baguette de Saule",   icon:"🪄", desc:"ATK+2",                      type:"wand",  slot:"wand",   family:"wand_basic",    rarity:"common", power:2, bonusAtk:2,                                price:120, tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_basic", tint:"willow" },
