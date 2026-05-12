@@ -3393,8 +3393,65 @@ async function scenarioCritDodge() {
   await browser.close();
 }
 
+// ── Scénario 27 : loader (manifeste de globals + helpers) ────
+async function scenarioLoader() {
+  console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
+  const { browser, page, errors } = await launchGame();
+
+  // 1) Happy path : rapport publié par loader.js
+  const report = await page.evaluate(() => window.__loaderReport);
+  console.log('  report :', {
+    ok:              report?.ok,
+    total:           report?.totalChecked,
+    missingCritical: report?.missingCritical?.length,
+    missingOptional: report?.missingOptional?.length
+  });
+  assert(report,                              'window.__loaderReport absent');
+  assert(report.ok === true,                  'loader.ok doit être true');
+  assert(report.missingCritical.length === 0,
+    `modules critiques manquants : ${JSON.stringify(report.missingCritical.map(m => m.name))}`);
+  assert(report.totalChecked >= 50,
+    `totalChecked trop faible (${report.totalChecked}) — manifeste tronqué ?`);
+
+  // 2) Aucun bandeau d'erreur visible sur démarrage sain
+  const noBanner = await page.evaluate(() => !document.getElementById('loader-error-banner'));
+  assert(noBanner, "pas de bandeau d'erreur attendu sur démarrage sain");
+
+  // 3) Helpers exposés sur window
+  const helpers = await page.evaluate(() => ({
+    safeEl:   typeof window.safeEl   === 'function',
+    safeCall: typeof window.safeCall === 'function',
+    UX_safe:  typeof window.UX_safe  === 'object' && window.UX_safe !== null
+  }));
+  console.log('  helpers :', helpers);
+  assert(helpers.safeEl,   'window.safeEl absent');
+  assert(helpers.safeCall, 'window.safeCall absent');
+  assert(helpers.UX_safe,  'window.UX_safe absent');
+
+  // 4) Régression B1 : UX_safe survit à delete window.UX (proxy tolérant)
+  const uxSafeOk = await page.evaluate(() => {
+    const saved = window.UX;
+    try {
+      delete window.UX;
+      const r1 = window.UX_safe.floatDmg('ally', 10, 'dmg');
+      const r2 = window.UX_safe.logCombat('test', 'info');
+      return r1 === undefined && r2 === undefined;
+    } finally {
+      window.UX = saved;
+    }
+  });
+  assert(uxSafeOk, 'UX_safe doit retourner undefined quand window.UX absent');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Loader OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

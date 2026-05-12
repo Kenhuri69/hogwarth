@@ -152,7 +152,7 @@ function updateQuestTracker() {
   if (!el) return;
   const pending = activeQuests.filter(q => !q.completed);
   if (!pending.length) {
-    el.innerHTML = '<div style="color:#3a2a10;font-style:italic;font-size:9px;text-align:center;padding-top:4px;">Aucune quête active</div>';
+    el.innerHTML = '<div class="quest-tracker-empty">Aucune quête active</div>';
     return;
   }
   el.innerHTML = pending.map(q => {

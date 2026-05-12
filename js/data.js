@@ -9,6 +9,31 @@ const CELL = { WALL:0, FLOOR:1, DOOR:2, STAIRS_D:3, STAIRS_U:4, SHOP:5, CHEST:6,
 const DIRECTIONS = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
 
 // ============================================================
+// CONSTANTES DE GAMEPLAY
+// ============================================================
+
+// Progression d'XP : multiplicateur appliqué à xpNext à chaque level-up.
+const LEVEL_UP_XP_MULTIPLIER = 1.6;
+
+// Points de Maison gagnés par kill, selon la difficulté courante.
+const HOUSE_POINTS_PER_KILL = { Facile: 8, Normal: 10, Difficile: 14, Expert: 18 };
+
+// Résistance / faiblesse aux types de dégâts magiques.
+// (battle.js — tickStatuses ; battle-spells.js — _spellElementalDamage,
+//  _spellLifesteal, _spellCurse)
+const RESIST_MULTIPLIER = 0.5;
+const WEAK_MULTIPLIER   = 1.5;
+
+// Fouille de salle (movement.js — searchRoom) : seuils cumulatifs sur un
+// Math.random(). roll < GOLD : trouve de l'or. roll < ITEM (et ≥ GOLD) :
+// trouve un item. Sinon : rien.
+const SEARCH_GOLD_THRESHOLD = 0.20;
+const SEARCH_ITEM_THRESHOLD = 0.35;
+
+// Repos (movement.js — rest) : chance d'être interrompu par une rencontre.
+const REST_ENCOUNTER_CHANCE = 0.3;
+
+// ============================================================
 // DONNÉES DU JEU
 // ============================================================
 const CHARACTERS = {

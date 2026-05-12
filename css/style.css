@@ -562,6 +562,11 @@ body {
 .bestiary-drops     { font-size: 11px; color: #8a7050; margin-top: 5px; }
 .bestiary-stats     { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: #8a7050; margin-top: 6px; }
 .bestiary-empty     { text-align: center; padding: 40px; color: #6a5030; font-style: italic; }
+
+/* Empty-states divers — pendants de .bestiary-empty / .slot-empty-state */
+.inv-empty-slot       { font-size: 10px; color: #2a1a08; }
+.quest-tracker-empty  { color: #3a2a10; font-style: italic; font-size: 9px; text-align: center; padding-top: 4px; }
+.quest-list-empty     { text-align: center; padding: 30px; color: #8a7050; }
 /* Fiche détail */
 #bestiary-detail-panel { flex: 1; overflow-y: auto; }
 .bestiary-detail-header { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }

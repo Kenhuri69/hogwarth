@@ -208,7 +208,7 @@ function goDeeper() {
     addMsg(`Niveau ${currentFloor} atteint !`, 'good');
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
-    if (typeof autoSave === 'function') autoSave('floor-down');
+    safeCall('autoSave', 'floor-down');
   });
   setNarrative(`Le groupe descend au niveau ${currentFloor} des donjons de Poudlard...`);
 }
@@ -234,7 +234,7 @@ function goUp() {
     updateCompass();
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
-    if (typeof autoSave === 'function') autoSave('floor-up');
+    safeCall('autoSave', 'floor-up');
   });
   setNarrative(`Le groupe remonte au niveau ${currentFloor}...`);
 }
@@ -328,13 +328,13 @@ function searchRoom() {
   _updateSearchBtn();
 
   const roll = Math.random();
-  if (roll < 0.2) {
+  if (roll < SEARCH_GOLD_THRESHOLD) {
     const gold = Math.floor(Math.random() * 15 + 5);
     player.gold += gold;
     setNarrative(NARRATIVES.gold_found(gold));
     addMsg(`+${gold} Gallions`, 'good');
     updateUI();
-  } else if (roll < 0.35) {
+  } else if (roll < SEARCH_ITEM_THRESHOLD) {
     const item = ITEMS.find(i => i.id === 'mandragore') || ITEMS[0];
     if (tryAddItem(item, { silent: true })) {
       setNarrative(NARRATIVES.item_found(item.name));
@@ -365,7 +365,7 @@ function useFountain() {
   addMsg("Fontaine bue : PV et PM entièrement restaurés.", 'good');
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
   updateUI();
-  if (typeof autoSave === 'function') autoSave('fountain-used');
+  safeCall('autoSave', 'fountain-used');
 }
 
 function rest() {
@@ -375,7 +375,7 @@ function rest() {
     addMsg(`Repos impossible (${restCooldown} pas restants)`, 'bad');
     return;
   }
-  if (Math.random() < 0.3) {
+  if (Math.random() < REST_ENCOUNTER_CHANCE) {
     addMsg("Une rencontre vous interrompt !", 'bad');
     const restFloor = Math.max(1, currentFloor - 1);
     const restPool  = MONSTERS.filter(m => m.minFloor <= restFloor);

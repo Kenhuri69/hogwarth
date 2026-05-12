@@ -22,12 +22,22 @@ js/
   audio-music.js   →  AudioSystem — musique ambiante et combat (playAmbientMusic, startCombatMusic…)
   audio-sfx.js     →  AudioSystem — effets sonores et voix (playHit, playSpellCast, speakSpell…)
   icons.js         →  SVG inline pour chaque monstre majeur — getMonsterIconHtml()
+  scene-icons.js   →  SCENE_ICONS{} — SVG inline pour objets de scène (coffre,
+                      boutique, escaliers, fontaine) consommés par _showExploreOverlay()
   monsters.js      →  ⭐ FICHIER ENRICHISSABLE : registre complet des créatures (MONSTERS[])
+  npcs.js          →  NPCS[] (502 lignes) — registre des PNJ (donneurs de quêtes,
+                      vendeurs, PNJ lore). getNpcById(), getNpcsForFloor(),
+                      getRandomVendorsForFloor(), getRandomLoreForFloor(),
+                      getRandomEncountersForFloor()
   data.js          →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
                       ENEMIES = MONSTERS (alias de compatibilité)
+  item-icons.js    →  Registres ITEM_ICON_REGISTRY, EQUIPMENT_SLOT_ICONS,
+                      STATUS_ICON_REGISTRY, SPELL_ICON_REGISTRY ;
+                      getItemIconHtml(item, size), tinted variants via filter CSS
   state.js         →  Variables globales mutables (player, player2, party, partySize,
                       dungeon, combat, seenMonsters, activeQuests, usedFountains,
-                      searchedCells, floorDungeons, restCooldown…)
+                      searchedCells, floorDungeons, restCooldown,
+                      chosenHouse, housePoints, houseTier, HOUSE_BONUSES, DIFFICULTY_SETTINGS)
   ui.js            →  updateUI(), openCharacter(), addMsg(), closeModal(), changeDifficulty()
   ui-bestiary.js   →  openBestiary(), filterBestiary(), showMonsterDetail(), showBestiaryList()
   dungeon.js       →  generateDungeon(), weightedPick(), scaleMonster()
@@ -51,12 +61,35 @@ js/
   save-ui.js       →  Modale #slot-modal (openSaveDialog/openLoadDialog) +
                       Hub démarrage (enterStartHub, startHubNewGame,
                       loadSlotAndStart).
-  main.js          →  showPlayerSelect(), startGame(count), keyboard listeners
+  npc-dialog.js    →  Dialogues PNJ : openNpcDialog(), nextDialogPage(),
+                      closeNpcDialog(), triggerNpcSpecialAction(),
+                      getNpcQuestState(), getNpcMarkerSign()
+  intro.js         →  Écran d'intro Dumbledore : showIntroScreen(onContinue),
+                      _renderIntroPage(), _advanceIntro(), _finishIntro()
+  ux-improvements.js → window.UX = { showTooltip, hideTooltip, logCombat,
+                      logCombatTurn, clearCombatLog, renderTimeline, floatDmg }
+                      — surcouche UX combat (tooltips, log enrichi, dégâts
+                      flottants, timeline d'initiative)
+  main.js          →  showPlayerSelect(), startGame(count), keyboard listeners,
+                      _hydrateCharacter(), checkHouseLevelUp()
+  loader.js        →  Chargé EN DERNIER. Vérifie ~55 globals attendus
+                      (typeof entry.name), affiche bandeau rouge si critique
+                      manquant. Exporte window.safeEl(id) + window.safeCall(fn,...args).
+                      window.__loaderReport publié pour smoke test.
 .github/workflows/deploy.yml   →  CI GitHub Pages (push master → déploiement automatique)
 ```
 
-Ordre de chargement des scripts dans `index.html` :
-`ux-improvements → audio → audio-music → audio-sfx → icons → scene-icons → monsters → data → state → ui → ui-bestiary → dungeon → textures → renderer → renderer-effects → renderer-minimap → movement → battle → battle-spells → battle-ui → inventory → quests → shop → save → save-ui → main`
+Ordre de chargement des scripts dans `index.html` (31 modules) :
+`ux-improvements → audio → audio-music → audio-sfx → icons → scene-icons →
+monsters → npcs → data → item-icons → state → ui → ui-bestiary → dungeon →
+textures → renderer → renderer-effects → renderer-minimap → movement →
+battle → battle-spells → battle-ui → inventory → quests → npc-dialog →
+intro → shop → save → save-ui → main → loader`
+
+> `loader.js` est volontairement chargé en dernier : il vérifie que tous
+> les globals attendus sont présents et affiche un bandeau d'erreur sinon.
+> Tout nouveau module exposant une fonction critique doit être ajouté à son
+> MANIFEST (voir section « Loader & helpers » ci-dessous).
 
 ---
 
@@ -65,6 +98,168 @@ Ordre de chargement des scripts dans `index.html` :
 - **Pas de modules ES** : tous les fichiers partagent le scope global via `<script>` séquentiels.
 - **Pas de bundler** : les fichiers sont servis directement par GitHub Pages.
 - Les fonctions d'un fichier peuvent appeler celles de n'importe quel autre fichier chargé avant.
+
+---
+
+## Loader & helpers (`js/loader.js`)
+
+Chargé **en dernier** dans `index.html`, le loader vérifie que tous les modules
+attendus se sont exécutés correctement et expose 2 helpers d'accès défensif.
+
+### Manifeste
+
+Le `MANIFEST` dans `loader.js` énumère ~55 entrées `{ name, source, kind,
+optional? }` :
+- `kind: 'fn'` → `typeof name === 'function'`
+- `kind: 'obj'` → `typeof name !== 'undefined'` (couvre `let`/`const`/`var`)
+- `optional: true` → log info au lieu d'un bandeau rouge
+
+**Tout nouveau global critique** exporté par un nouveau fichier doit être ajouté
+au MANIFEST, sinon une éventuelle régression de chargement passera inaperçue.
+
+Le résultat est publié dans `window.__loaderReport = { ok, totalChecked,
+missingCritical, missingOptional }`. Consommable par le smoke test.
+
+> Détail technique : `loader.js` utilise `eval('typeof ' + name)` pour tester
+> l'existence d'un identifiant déclaré en `let`/`const` au scope global (non
+> exposé sur `window`). C'est volontaire — un identifiant déclaré dans un
+> autre `<script>` n'est lisible ici que via le scope déclaratif, pas via
+> `window.X`. `typeof` avec un identifiant nu ne throw jamais.
+
+### Helpers exposés
+
+```js
+window.safeEl(id)            // document.getElementById avec warn dédupé
+window.safeCall(name, ...args) // window[name](...args) si défini, sinon undefined
+```
+
+Utiliser ces helpers **dans tout nouveau code** ou lors de refactors ciblés.
+Ne pas migrer en masse les ~180 `getElementById` existants sans raison —
+risque > bénéfice. Cibles naturelles : fonctions qui touchent ≥ 5 IDs en
+cascade (overlays, modales).
+
+---
+
+## Système UX (`js/ux-improvements.js`)
+
+Surcouche d'agrément du combat exposée sur `window.UX`. Tous les call-sites
+sont **défensifs** : `if (window.UX) UX.foo(...)` — si le module n'a pas
+chargé, le jeu fonctionne sans logs/effets.
+
+| Méthode | Rôle |
+|---------|------|
+| `UX.floatDmg(targetKey, amount, type)` | Nombre flottant qui monte au-dessus du sprite (`ally`/`enemy-0`/`enemy-1`/`enemy-2`). `type` ∈ `'dmg'`/`'heal'`/`'crit'`/`'miss'`. |
+| `UX.logCombat(html, kind)` | Append une ligne dans `#combat-timeline-log`. `kind` ∈ `'good'`/`'bad'`/`'info'`. |
+| `UX.logCombatTurn(label)` | Insert un séparateur entre deux tours. |
+| `UX.clearCombatLog()` | Vide le log au démarrage du combat. |
+| `UX.renderTimeline(party, enemies, currentIdx)` | Redessine la frise d'initiative. |
+| `UX.showTooltip(el, html)` / `UX.hideTooltip()` | Tooltip riche au survol (équipement / sort). |
+
+Délégation tooltip attachée sur `DOMContentLoaded`. Cibles : `[data-tooltip]`
+ou `[data-item-id]` dans les modales.
+
+---
+
+## Système PNJ (`js/npcs.js` + `js/npc-dialog.js`)
+
+### Modèle de PNJ (`NPCS[]` dans `npcs.js`)
+
+```js
+{
+  id, name, role, portrait,            // identification
+  floor, location,                     // placement déterministe
+  marker:    'quest'|'vendor'|'lore',  // type d'icône sur minimap
+  dialogues: { greeting:[…], questIntro:[…], questDone:[…], farewell:[…] },
+  questId:   'mandragore_pomfresh',    // si donneur de quête
+  specialAction: { id, label, oneShot? } // action spéciale (Fumseck, Portrait Dumbledore…)
+}
+```
+
+`getNpcsForFloor(floor)` retourne tous les PNJ d'un étage (déterministes +
+aléatoires fusionnés). Les PNJ aléatoires (`getRandomVendorsForFloor`,
+`getRandomLoreForFloor`, `getRandomEncountersForFloor`) sont seedés par
+étage pour la reproductibilité d'une partie.
+
+### Dialogues (`npc-dialog.js`)
+
+```
+openNpcDialog(npcId)  → ouvre #npc-dialog, calcule l'état narratif
+  ├─ getNpcQuestState(npc)        // 'none'|'available'|'inProgress'|'completable'|'done'
+  ├─ _npcDialogPages(npc, state)  // tableau de pages selon l'état
+  └─ _npcDialogActions(npc, state)// boutons d'action (Accepter / Remettre / Action spéciale)
+
+nextDialogPage()  → page suivante ou ferme si dernière
+closeNpcDialog() → vide _dialogState + cache la modale
+
+triggerNpcSpecialAction(npcId)
+  └─ Actions spéciales hardcodées : `dumbledore_blessing`, `fumseck_tears`,
+     `mcgonagall_lesson`, etc. Chacune produit un effet (heal, sort appris,
+     XP, équipement). `oneShot` → state stocké via `_isSpecialActionSpent`.
+```
+
+### Intégration quêtes
+
+Le flux `accepter une quête / remettre l'objectif` passe désormais par les
+PNJ : `getNpcMarkerSign(npcId)` détermine le pictogramme minimap (❗ disponible,
+❓ en cours, ✓ remettable), et les actions du dialogue déclenchent
+`acceptQuest()` / `completeQuest()` de `quests.js`.
+
+### Écran d'intro (`intro.js`)
+
+`showIntroScreen(onContinue)` lit `NPCS[id=dumbledore].dialogues.greeting`
+(tableau de pages) et les affiche une à une. Voix narrative chargée en
+parallèle via `AudioSystem.playVoice('dumbledore_intro_page_<n>')` (samples
+OGG dans `audio/voice/`). `onContinue` appelé après la dernière page →
+bascule sur l'écran de choix de Maison.
+
+---
+
+## Système des Maisons (`js/state.js` — `HOUSE_BONUSES`)
+
+Choix au démarrage (après l'intro Dumbledore). Stockage : `chosenHouse`
+(string), `housePoints` (int), `houseTier` (0-4).
+
+### Gain de points
+
+Chaque ennemi vaincu rapporte des points selon la difficulté
+(`battle.js — endBattle`) :
+
+| Difficulté | Points / kill |
+|------------|---------------|
+| Facile     | 8             |
+| Normal     | 10            |
+| Difficile  | 14            |
+| Expert     | 18            |
+
+Les 4 Maisons partagent la même grille de **paliers** (100 / 300 / 600 / 1000
+points), chacune avec un bonus différent.
+
+### Bonus par palier (extrait `HOUSE_BONUSES`)
+
+| Maison      | Palier 100   | Palier 300        | Palier 600   | Palier 1000 (item)     |
+|-------------|--------------|-------------------|--------------|-------------------------|
+| Gryffondor  | +1 ATK       | +1 ATK +1 LCK     | +2 ATK       | `sword_gryff` (légendaire) |
+| Serpentard  | +1 MAG       | +1 MAG +1 LCK     | +2 MAG       | `locket_slytherin`      |
+| Serdaigle   | +1 MAG       | +1 MAG +1 LCK     | +2 MAG       | `diademe_serdaigle`     |
+| Poufsouffle | +1 DEF       | +1 DEF +1 LCK     | +2 DEF       | `coupe_poufsouffle`     |
+
+Les bonus de stats sont appliqués en `_baseX` (croissent au level-up via
+`recalculateStats()`). Les items légendaires sont poussés directement
+dans `player.inventory`.
+
+### Cycle
+
+```
+endBattle() / completeQuest()
+  └─ housePoints += gain
+     └─ checkHouseLevelUp() (main.js:173)
+        ├─ détecte le passage d'un palier
+        ├─ applique le bonus (stat ou item)
+        └─ affiche #levelup-modal avec le message custom
+```
+
+`#house-crest` dans le HUD est rafraîchi par `_updateHouseBadge()` (ui.js:60)
+à chaque update. Le blason est un `<img>` cloné depuis l'écran de sélection.
 
 ---
 

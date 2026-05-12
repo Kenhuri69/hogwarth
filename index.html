@@ -468,7 +468,7 @@
       </div>
 
       <!-- Overlay dialogue PNJ (Dumbledore, Pomfresh, Hagrid…) -->
-      <div id="npc-dialog-overlay" style="display:none">
+      <div id="npc-dialog-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="npc-dialog-name">
         <div class="npc-dialog-header">
           <div class="npc-dialog-portrait" id="npc-dialog-portrait"></div>
           <div class="npc-dialog-id">
@@ -508,7 +508,7 @@
       <div id="encounter-overlay">
         <div class="enemy-group-container" id="enemy-group"></div>
         <div class="battle-char-indicator" id="battle-char-indicator">🧙 Tour de Harry Potter</div>
-        <div class="battle-log" id="battle-log">L'ennemi vous attaque !</div>
+        <div class="battle-log" id="battle-log" role="log" aria-live="polite" aria-atomic="false">L'ennemi vous attaque !</div>
         <div class="target-selection" id="target-selection" style="display:none">
           <div style="font-family:'Cinzel',serif;font-size:10px;color:var(--gold);margin-bottom:6px;letter-spacing:1px">CHOISIR UNE CIBLE</div>
           <div class="target-buttons" id="target-buttons"></div>
@@ -624,27 +624,27 @@
 </div>
 
 <!-- Modales -->
-<div id="inventory-modal">
+<div id="inventory-modal" role="dialog" aria-modal="true" aria-labelledby="inventory-modal-title">
   <div class="modal-box">
-    <div class="modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/backpack.png" alt=""> Sac de Moldu</div>
-    <span class="modal-close" onclick="closeModal('inventory-modal')">✕</span>
+    <div class="modal-title" id="inventory-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/backpack.png" alt=""> Sac de Moldu</div>
+    <span class="modal-close" onclick="closeModal('inventory-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
     <div class="inv-grid" id="inv-grid"></div>
     <div style="margin-top:12px; font-size:11px; color:#6a5030; text-align:center;">Cliquez sur un objet pour l'utiliser</div>
   </div>
 </div>
 
-<div id="spell-modal">
+<div id="spell-modal" role="dialog" aria-modal="true" aria-labelledby="spell-modal-title">
   <div class="modal-box">
-    <div class="modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/spellbook.png" alt=""> Livre des Sortilèges</div>
-    <span class="modal-close" onclick="closeModal('spell-modal')">✕</span>
+    <div class="modal-title" id="spell-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/spellbook.png" alt=""> Livre des Sortilèges</div>
+    <span class="modal-close" onclick="closeModal('spell-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
     <div class="spell-list" id="spell-list"></div>
   </div>
 </div>
 
-<div id="shop-modal">
+<div id="shop-modal" role="dialog" aria-modal="true" aria-labelledby="shop-title">
   <div class="modal-box">
     <div class="modal-title" id="shop-title"><img class="ui-icon ui-icon-xl" src="img/icons/shop_sign.png" alt=""> Boutique</div>
-    <span class="modal-close" onclick="closeModal('shop-modal')">✕</span>
+    <span class="modal-close" onclick="closeModal('shop-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
     <div style="text-align:right; margin-bottom:8px; font-family:'Cinzel',serif; font-size:12px; color:var(--gold)">
       💰 <span id="shop-gold">0</span> Gallions
     </div>
@@ -653,30 +653,30 @@
   </div>
 </div>
 
-<div id="character-modal">
+<div id="character-modal" role="dialog" aria-modal="true" aria-labelledby="character-modal-title">
   <div class="modal-box">
-    <div class="modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/scroll.png" alt=""> Fiche de Personnage</div>
-    <span class="modal-close" onclick="closeModal('character-modal')">✕</span>
+    <div class="modal-title" id="character-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/scroll.png" alt=""> Fiche de Personnage</div>
+    <span class="modal-close" onclick="closeModal('character-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
     <div id="char-detail"></div>
   </div>
 </div>
 
 <!-- Modale de choix de slot (save / load) — peuplée par save-ui.js -->
-<div id="slot-modal">
+<div id="slot-modal" role="dialog" aria-modal="true" aria-labelledby="slot-modal-title">
   <div class="modal-box">
     <div class="modal-title" id="slot-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/save.png" alt=""> Sauvegarder</div>
-    <span class="modal-close" onclick="closeModal('slot-modal')">✕</span>
+    <span class="modal-close" onclick="closeModal('slot-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
     <div id="slot-modal-list" class="slot-list"></div>
     <div class="slot-modal-hint" id="slot-modal-hint">Choisissez un emplacement…</div>
   </div>
 </div>
 
-<div id="bestiary-modal">
+<div id="bestiary-modal" role="dialog" aria-modal="true" aria-labelledby="bestiary-modal-title">
   <div class="modal-box bestiary-modal-box">
     <!-- En-tête -->
     <div class="bestiary-header">
-      <span class="bestiary-title"><img class="ui-icon ui-icon-xl" src="img/icons/bestiary.png" alt=""> Bestiaire de Poudlard</span>
-      <span class="modal-close" onclick="closeBestiary()">✕</span>
+      <span class="bestiary-title" id="bestiary-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/bestiary.png" alt=""> Bestiaire de Poudlard</span>
+      <span class="modal-close" onclick="closeBestiary()" role="button" aria-label="Fermer" tabindex="0">✕</span>
     </div>
 
     <!-- Panneau liste + filtres -->
@@ -715,7 +715,7 @@
   </div>
 </div>
 
-<div id="levelup-modal">
+<div id="levelup-modal" role="dialog" aria-modal="true" aria-labelledby="levelup-modal-title">
   <div class="levelup-box">
     <svg class="levelup-seal" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
       <circle cx="65" cy="65" r="58" fill="none" stroke="#c9a84c" stroke-width="2"/>
@@ -725,7 +725,7 @@
         <circle r="36"/>
       </g>
     </svg>
-    <div class="lvl-title">⭐ Niveau Supérieur ! ⭐</div>
+    <div class="lvl-title" id="levelup-modal-title">⭐ Niveau Supérieur ! ⭐</div>
     <div class="lvl-sub" id="levelup-text">Vous passez au niveau 2 !</div>
     <button class="cmd-btn" style="margin-top:20px; font-size:14px; padding:8px 24px" onclick="closeLevelup()">Continuer</button>
   </div>
@@ -745,7 +745,7 @@
   <button class="cmd-btn" style="margin-top:24px; font-size:14px; padding:10px 28px; border-color:var(--danger); color:var(--danger)" onclick="resurrect()">Revenir à la Vie</button>
 </div>
 
-<div id="msg-log"></div>
+<div id="msg-log" role="log" aria-live="polite" aria-atomic="false"></div>
 
 <!-- Scripts (ordre de chargement important) -->
 <script>

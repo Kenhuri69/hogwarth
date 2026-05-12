@@ -166,7 +166,7 @@ function renderInventory(battleMode) {
         div.onclick = () => _handleInvTap(div, () => useItem(i, battleMode));
       }
     } else {
-      div.innerHTML = '<div style="font-size:10px;color:#2a1a08">—</div>';
+      div.innerHTML = '<div class="inv-empty-slot">—</div>';
     }
     grid.appendChild(div);
   }

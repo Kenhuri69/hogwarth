@@ -219,7 +219,7 @@ function triggerNpcSpecialAction(npcId) {
       : 'Larmes du phénix : groupe à pleine forme.';
     if (typeof addMsg === 'function') addMsg(msg, 'good');
     if (typeof updateUI === 'function') updateUI();
-    if (typeof autoSave === 'function') autoSave('fumseck-used');
+    safeCall('autoSave', 'fumseck-used');
   }
 }
 

@@ -41,6 +41,22 @@ window.safeCall = function safeCall(name /*, ...args */) {
   return fn.apply(null, args);
 };
 
+// UX_safe — surcouche tolérante à l'absence de window.UX
+// Avant : if (window.UX) { UX.floatDmg(...); UX.logCombat(...); }
+// Après : UX_safe.floatDmg(...); UX_safe.logCombat(...);
+// Si window.UX n'existe pas (ux-improvements.js non chargé), les appels
+// retournent undefined silencieusement — comportement identique à l'ancien
+// `if (window.UX)` mais sans `if` répété.
+window.UX_safe = new Proxy({}, {
+  get(_target, method) {
+    return function (/* ...args */) {
+      const ux = window.UX;
+      if (!ux || typeof ux[method] !== 'function') return undefined;
+      return ux[method].apply(ux, arguments);
+    };
+  }
+});
+
 (function () {
   // ── Manifeste des modules attendus ───────────────────────────
   // Chaque entrée : { name, source, kind, critical }
@@ -195,6 +211,8 @@ window.safeCall = function safeCall(name /*, ...args */) {
       if (document.getElementById('loader-error-banner')) return true;
       const b = document.createElement('div');
       b.id = 'loader-error-banner';
+      b.setAttribute('role', 'alert');
+      b.setAttribute('aria-live', 'assertive');
       b.style.cssText = [
         'position:fixed', 'top:0', 'left:0', 'right:0',
         'background:#7a0a0a', 'color:#fff',
