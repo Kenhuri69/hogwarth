@@ -96,46 +96,12 @@ body {
   max-width: calc(100vw - 80px);
   filter: drop-shadow(0 12px 30px rgba(0,0,0,0.55));
 }
-.castle-art svg { width: 100%; height: auto; display: block; }
-
-/* Fenêtres animées : flicker chaleureux et froid en boucles décalées */
-.title-win-warm {
-  animation: titleFlickerWarm 3.2s ease-in-out infinite;
-  filter: drop-shadow(0 0 4px rgba(255, 200, 100, 0.7));
-}
-.title-win-cold {
-  animation: titleFlickerCold 4s ease-in-out infinite;
-  filter: drop-shadow(0 0 3px rgba(255, 200, 100, 0.5));
-}
-.title-win-warm:nth-child(2n)  { animation-delay: 0.6s; }
-.title-win-warm:nth-child(3n)  { animation-delay: 1.4s; }
-.title-win-cold:nth-child(2n)  { animation-delay: 0.9s; }
-.title-win-cold:nth-child(3n)  { animation-delay: 2.1s; }
-@keyframes titleFlickerWarm {
-  0%, 100% { fill: #ffc864; opacity: 0.95; }
-  50%      { fill: #f7a830; opacity: 0.55; }
-}
-@keyframes titleFlickerCold {
-  0%, 100% { fill: #ffd680; opacity: 0.85; }
-  60%      { fill: #c89048; opacity: 0.40; }
-}
-
-/* Lune en croissant : subtile pulsation de halo */
-.title-moon { animation: moonGlow 5s ease-in-out infinite; }
-@keyframes moonGlow {
-  0%, 100% { filter: drop-shadow(0 0 14px rgba(255, 247, 200, 0.7)); }
-  50%      { filter: drop-shadow(0 0 22px rgba(255, 247, 200, 0.95)); }
-}
-
-/* Étoiles décoratives du SVG : twinkle lent indépendant des stars JS */
-.title-twinkle circle {
-  animation: titleSvgTwinkle 4s ease-in-out infinite;
-}
-.title-twinkle circle:nth-child(2n) { animation-delay: 1.2s; animation-duration: 5s; }
-.title-twinkle circle:nth-child(3n) { animation-delay: 2.4s; animation-duration: 3s; }
-@keyframes titleSvgTwinkle {
-  0%, 100% { opacity: 0.85; }
-  50%      { opacity: 0.25; }
+.castle-art svg,
+.castle-art img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 10px;
 }
 
 /* MAIN GAME */
@@ -1391,6 +1357,14 @@ button.shop-tab.active {
   z-index: 900;
   align-items: center; justify-content: center;
   flex-direction: column; gap: 16px;
+}
+.death-art {
+  width: min(72vw, 320px);
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  border: 2px solid rgba(224, 64, 64, 0.4);
+  box-shadow: 0 0 36px rgba(120, 20, 20, 0.7);
 }
 .death-title {
   font-family: 'UnifrakturMaguntia', cursive;
