@@ -993,7 +993,7 @@ const MONSTERS = [
   // ── Nouveaux monstres ────────────────────────────────────────
 
   {
-    id: "niffleur", name: "Niffleur", icon: "🦡", category: "créature",
+    id: "niffleur", name: "Niffleur", icon: "🦡", imgSrc: "img/monsters/niffleur.png", category: "créature",
     desc: "Un Niffleur fouilleur vous a repéré — et votre bourse l'attire !",
     lore: "Petite créature à fourrure noire qui raffole des objets brillants.",
     habitat: "Terriers et cachots à trésor", danger: 2,
