@@ -139,13 +139,13 @@ crit% = 5 + lck * 0.5 (cap 40)   ×1.5 dégâts
 
 | Étape | Statut | Notes |
 |-------|--------|-------|
-| 1. Progression joueur     | ☐ | — |
-| 2. Pool ennemi par étage  | ☐ | — |
-| 3. Calculs analytiques    | ☐ | — |
-| 4. Simulation Monte Carlo | ☐ | — |
-| 5. Identification paliers | ☐ | — |
-| 6. Recommandations        | ☐ | — |
-| 7. Rapport final          | ☐ | — |
+| 1. Progression joueur     | ☑ | Niveau attendu calculé pour étages 1-12, solo + duo. Solo plafonne lvl 10. |
+| 2. Pool ennemi par étage  | ☑ | Moyenne pondérée par `weight` sur le pool éligible. |
+| 3. Calculs analytiques    | ☑ | Intégrés dans la simulation (formules battle.js reproduites). |
+| 4. Simulation Monte Carlo | ☑ | `tools/sim-difficulty.js` — 800 sims/étage/mode, stable. |
+| 5. Identification paliers | ☑ | **Solo : mur étage 5 (−31 pts). Duo : mur étage 8 (−15 pts).** |
+| 6. Recommandations        | ☑ | 6 leviers R1-R6 hiérarchisés. Combo recommandé : R1+R2+R3. |
+| 7. Rapport final          | ☑ | `DIFFICULTY_REPORT.md` à la racine. |
 
 À chaque étape franchie : cocher, ajouter une ligne "écarts constatés / décisions" si pertinent.
 
