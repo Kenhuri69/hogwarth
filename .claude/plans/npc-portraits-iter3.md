@@ -48,15 +48,17 @@ Pour chaque PNG livré par l'utilisateur :
 
 - [x] **0** Branche `claude/npc-portraits-iter3` créée depuis master.
 - [x] **1** Prompts archétypaux rédigés pour les 5 PNJ (cf. message conversation).
-- [ ] **2a** Pomfresh — image Nano Banana fournie par l'utilisateur.
-- [ ] **2b** Sir Nicolas — image fournie.
-- [ ] **2c** Moine Gras — image fournie.
-- [ ] **2d** Rusard — image fournie.
-- [ ] **2e** Trelawney — image fournie.
-- [ ] **3** Pipeline batch : rembg + crop + resize 256×256 → `img/npc/`.
-- [ ] **4** Ajouter `portraitImg` sur les 4 entrées lore dans `js/npcs.js`
-        (Pomfresh a déjà le champ — pas d'édition npcs.js pour ce cas).
-- [ ] **5** Smoke test 34/34.
+- [x] **2a** Pomfresh — image Nano Banana fournie par l'utilisateur.
+- [x] **2b** Sir Nicolas — image fournie.
+- [x] **2c** Moine Gras — image fournie.
+- [x] **2d** Rusard — image fournie.
+- [x] **2e** Trelawney — image fournie.
+- [x] **3** Pipeline simplifié (pas de rembg car convention RGB sans alpha) :
+        center-crop carré + resize 256×256 Lanczos via Pillow.
+- [x] **4** `portraitImg` ajouté sur les 4 entrées lore dans `js/npcs.js`
+        (sir_nicolas, moine_gras, rusard, trelawney). Pomfresh : PNG
+        écrasé in-place, `portraitImg` déjà présent.
+- [x] **5** Smoke test 34/34 vert.
 - [ ] **6** Commit + push.
 - [ ] **7** Mise à jour `.claude/plans/npc-integration.md` (cocher (a) et (b)
         dans le statut global) + journal d'itération.
@@ -68,3 +70,4 @@ Pour chaque PNG livré par l'utilisateur :
 | Date | Étape | Notes |
 |------|-------|-------|
 | 2026-05-12 | Setup | Branche créée, prompts préparés. En attente PNG côté utilisateur. |
+| 2026-05-12 | Intégration | 5 PNG fournis en batch (1254×1254 chacun). Pipeline center-crop + resize 256×256 RGB. Tailles finales : 95–116 KB, cohérentes avec les 12 portraits existants. 4 `portraitImg` ajoutés (sir_nicolas, moine_gras, rusard, trelawney). Pomfresh : écrasement in-place (correction caducée argent ✓). Smoke 34/34. |
