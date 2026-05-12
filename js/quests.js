@@ -269,8 +269,7 @@ function renderQuestList() {
     .filter(Boolean);
 
   if (pending.length === 0 && completed.length === 0) {
-    container.innerHTML = `<div style="text-align:center;padding:30px;color:#8a7050">
-      Aucune quête disponible.</div>`;
+    container.innerHTML = `<div class="quest-list-empty">Aucune quête disponible.</div>`;
     return;
   }
 
