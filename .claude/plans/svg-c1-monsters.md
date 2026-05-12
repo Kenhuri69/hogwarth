@@ -50,15 +50,14 @@ transparent (rare), `process_monster_png.py --skip-rembg` accepté.
 
 - [x] **0** Branche `claude/svg-c1-monsters-png` créée depuis master.
 - [x] **1** Prompts archétypaux rédigés pour les 4 monstres (cf. message conv).
-- [ ] **2a** mangemort_elite — image Nano Banana fournie.
-- [ ] **2b** sorcier_renegat — image fournie.
-- [ ] **2c** chimere — image fournie.
-- [ ] **2d** ombre_quirrell — image fournie.
-- [ ] **3** Pipeline batch (rembg birefnet + trim + recentrage + resize 512) → `img/monsters/`.
-- [ ] **4** Ajouter `imgSrc` sur les 4 entrées dans `js/monsters.js`.
-- [ ] **5** Smoke test 34/34 (scénario 5 valide la liste imgSrc).
-- [ ] **6** Mise à jour `SVG_PLAN.md` : C26/C27/C29/C30 cochés + statut global
-        (+ rétroactif C.4 portraits PNJ qui sont déjà livrés via plan NPC).
+- [x] **2a** mangemort_elite — PNG 1024×1024 RGBA déjà détouré (α0=59%).
+- [x] **2b** sorcier_renegat — PNG 1024×1024 RGBA déjà détouré (α0=65%).
+- [x] **2c** chimere — PNG 1024×1024 RGBA déjà détouré (α0=48%).
+- [x] **2d** ombre_quirrell — JPG 784×1168 fond sombre → rembg birefnet.
+- [x] **3** Pipeline (rembg birefnet pour Quirrell uniquement + trim+recentrage 8%+resize 512+optimize ad-hoc pour les 3 autres) → `img/monsters/`.
+- [x] **4** `imgSrc` ajouté sur les 4 entrées dans `js/monsters.js`.
+- [x] **5** Smoke test 34/34 vert.
+- [x] **6** `SVG_PLAN.md` mis à jour (C26/C27/C29/C30 ✓ + C.4 rétroactif + statut 36→44/76 + journal #34).
 - [ ] **7** Commit + push.
 
 ---
@@ -68,3 +67,7 @@ transparent (rare), `process_monster_png.py --skip-rembg` accepté.
 | Date | Étape | Notes |
 |------|-------|-------|
 | 2026-05-12 | Setup | Branche + prompts. En attente PNG. |
+| 2026-05-12 | Réception PNG | 4 images livrées par l'utilisateur. 3 sur 4 déjà avec alpha cutout (α_min=0 dans le canal RGBA), 1 en JPG (Quirrell, fond sombre dégradé). Inspection : PIL `Image.split()[-1].getextrema()`. |
+| 2026-05-12 | Pipeline | rembg+onnxruntime installés (`pip install rembg[cpu] onnxruntime`). Modèle BiRefNet-general-epoch_244.onnx téléchargé (973 MB) au premier appel. Pipeline ad-hoc inline pour les 3 PNG pré-cut (skip rembg pour éviter d'amplifier les artefacts comme l'avertit le script). Pipeline complet `process_monster_png.py` sur Quirrell uniquement. |
+| 2026-05-12 | QA | mangemort_elite 296 KB occ 77×84%. sorcier_renegat 240 KB occ 79×84%. chimere 396 KB occ 82×84%. ombre_quirrell 117 KB occ 60×84% (α255=8.6%, sous le seuil §9 de 10% mais cohérent avec un fantôme à corps translucide — critère non bloquant). Tous 512×512 RGBA. |
+| 2026-05-12 | Intégration | `imgSrc` câblé entre `icon` et `category` sur les 4 entrées dans `js/monsters.js`. Smoke 34/34 vert (scénario 5 data-driven vérifie tous les `imgSrc` + color-type RGBA). |

@@ -1,8 +1,8 @@
 # Plan d'amélioration des SVG / Visuels
 
-> **Branche dédiée actuelle** : `claude/improve-game-images-7OVCy`
-> (anciennes branches : `claude/resume-svg-work-rgOvm`, `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
-> **Statut global** : 36 / 76 tâches terminées (+ C44 fontaine, hors bloc D ; C25 marqué n/a)
+> **Branche dédiée actuelle** : `claude/svg-c1-monsters-png`
+> (anciennes branches : `claude/improve-game-images-7OVCy`, `claude/resume-svg-work-rgOvm`, `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
+> **Statut global** : 44 / 86 tâches terminées (C25 n/a ; C44 fontaine livrée ; C.1 PNG monstres clos sauf re-gens C32-C37 optionnels ; C.4 portraits PNJ livrés via plan npc-integration) — dénominateur recalibré (l'ancien "36/76" sous-estimait le compte réel des sous-blocs C, cf. `tools/count_plan.py`)
 > **Convention** : `[ ]` pending · `[~]` in progress · `[x]` done
 >
 > Ce document est la **source de vérité** entre sessions Claude.
@@ -118,11 +118,11 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 - [x] **C23** `inferius`
 - [x] **C24** `mangemort` *(le monstre `id:"mangemort"` porte déjà `name:"Mangemort Masqué"` — C25 ci-dessous est n/a)*
 - [~] **C25** `mangemort_masque` *(n/a — fusionné avec C24, pas d'entrée séparée dans `monsters.js`)*
-- [ ] **C26** `mangemort_elite`
-- [ ] **C27** `sorcier_renegat`
+- [x] **C26** `mangemort_elite`
+- [x] **C27** `sorcier_renegat`
 - [x] **C28** `boggart`
-- [ ] **C29** `chimere`
-- [ ] **C30** `ombre_quirrell`
+- [x] **C29** `chimere`
+- [x] **C30** `ombre_quirrell`
 
 ### C.2 Boss sans PNG (1)
 
@@ -139,10 +139,10 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 
 ### C.4 Portraits PNJ donneurs de quête (optionnel)
 
-- [ ] **C38** Portrait Madame Pomfresh (quête mandragore_pomfresh)
-- [ ] **C39** Portrait Gilderoy Lockhart (quête livre_interdit)
-- [ ] **C40** Portrait Mimi Geignarde — version PNJ (quête troll_toilettes)
-- [ ] **C41** Portrait Hagrid (quête chouette_perdue)
+- [x] **C38** Portrait Madame Pomfresh (quête mandragore_pomfresh) — livré via plan `npc-integration.md` itération 2, refondu en itération 3 (caducée d'argent)
+- [x] **C39** Portrait Gilderoy Lockhart (quête livre_interdit) — livré via plan `npc-integration.md` itération 2
+- [x] **C40** Portrait Mimi Geignarde — version PNJ (quête troll_toilettes) — livré via plan `npc-integration.md` itération 2
+- [x] **C41** Portrait Hagrid (quête chouette_perdue) — livré via plan `npc-integration.md` itération 2
 
 ### C.5 Scènes grand format (optionnel)
 
@@ -235,3 +235,4 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-10 | #31 | C28 boggart intégré (birefnet-general, source fond blanc) | Épouvantard en transformation araignée hairy, volutes de fumée et visages fantomatiques émergeants ; prompt "transformation incomplete" pour figer une silhouette lisible ; PNG nommé `boggart.png` (id du monstre, pas son nom français) ; saute en avant dans la liste — C24-C27 mangemorts/sorcier_renegat à faire ensuite |
 | 2026-05-10 | #32 | Chantier outillage (sur branche `claude/improve-game-images-7OVCy`, post-rebase sur master) | `IMG_STYLE.md` (guide visuel : palette/cadrage/prompts-types §8/critères §9, dérivé des PNG validés) ; `tools/process_monster_png.py` (pipeline reproductible rembg/birefnet + trim + recentrage + resize + auto-QA) ; `tools/count_plan.py` (compte tous blocs A+B+C+D+Z et signale les dérives vs `Statut global`) ; smoke scénario 5 data-driven sur tous les `imgSrc` (19 monstres) + check color-type RGBA via lecture binaire (canvas tainted en `file://`). Pas de rétro-traitement des PNG master |
 | 2026-05-11 | #33 | C24 mangemort intégré (sur branche `claude/monster-png-C24-mangemort`) | Source 1024×1024 RGBA livrée avec alpha déjà détouré (43,8% pixels α=0) → skip rembg, pipeline inline (trim bbox + recentrage 8% + resize 512 + optimize). Squelette masqué hood noir, baguette à étincelles violettes, robe noire en lambeaux. QA §9 : alpha=0 57%, alpha=255 22%, occupation 85×83%, 294 KB ✓. Constat : C25 `mangemort_masque` n'a jamais existé dans `monsters.js` (id "mangemort" porte déjà `name:"Mangemort Masqué"`) → marqué `[~]` n/a |
+| 2026-05-12 | #34 | C26 + C27 + C29 + C30 intégrés (sur branche `claude/svg-c1-monsters-png`) | 4 PNG livrés par Nano Banana en lot. 3 sources 1024×1024 RGBA déjà détourées (mangemort_elite α0=59%, sorcier_renegat α0=65%, chimere α0=48%) → pipeline inline trim+recentrage 8%+resize 512+optimize (cf. `.claude/plans/svg-c1-monsters.md`). 4ᵉ source ombre_quirrell 784×1168 JPG fond sombre dégradé → `process_monster_png.py --id ombre_quirrell` (rembg birefnet-general, modèle téléchargé 973 MB). Résultats : mangemort_elite 296 KB (77×84%), sorcier_renegat 240 KB (79×84%), chimere 396 KB (82×84%), ombre_quirrell 117 KB (60×84%, α255=8.6% acceptable car fantôme translucide). Smoke 34/34. Bloc C.1 désormais clos (C26-C30 ✓, C25 n/a) hors re-gens optionnels C32-C37. C.4 portraits PNJ cochés rétroactivement (déjà livrés via plan `npc-integration.md` it. 2/3). Statut global 36 → 44 (C26,C27,C29,C30 + C38,C39,C40,C41). |
