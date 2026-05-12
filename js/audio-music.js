@@ -95,6 +95,25 @@ Object.assign(AudioSystem, {
   _VOICE_SAMPLES: {
     dumbledore_intro_1: 'audio/voice/dumbledore_intro_1.ogg',
     dumbledore_intro_2: 'audio/voice/dumbledore_intro_2.ogg',
+    // ── Chaîne d'épreuves Dumbledore (Phase 3) ──
+    // 15 samples = 5 quêtes × 3 moments (offer / active / ready).
+    // Cf. .claude/plans/voice-dumbledore-chain.md §3 pour les textes.
+    // Fallback silencieux tant que les fichiers ne sont pas générés.
+    dumbledore_tutoriel_offer_1:    'audio/voice/dumbledore_tutoriel_offer_1.ogg',
+    dumbledore_tutoriel_active_1:   'audio/voice/dumbledore_tutoriel_active_1.ogg',
+    dumbledore_tutoriel_ready_1:    'audio/voice/dumbledore_tutoriel_ready_1.ogg',
+    dumbledore_eveil_offer_1:       'audio/voice/dumbledore_eveil_offer_1.ogg',
+    dumbledore_eveil_active_1:      'audio/voice/dumbledore_eveil_active_1.ogg',
+    dumbledore_eveil_ready_1:       'audio/voice/dumbledore_eveil_ready_1.ogg',
+    dumbledore_courage_offer_1:     'audio/voice/dumbledore_courage_offer_1.ogg',
+    dumbledore_courage_active_1:    'audio/voice/dumbledore_courage_active_1.ogg',
+    dumbledore_courage_ready_1:     'audio/voice/dumbledore_courage_ready_1.ogg',
+    dumbledore_resistance_offer_1:  'audio/voice/dumbledore_resistance_offer_1.ogg',
+    dumbledore_resistance_active_1: 'audio/voice/dumbledore_resistance_active_1.ogg',
+    dumbledore_resistance_ready_1:  'audio/voice/dumbledore_resistance_ready_1.ogg',
+    dumbledore_revelation_offer_1:  'audio/voice/dumbledore_revelation_offer_1.ogg',
+    dumbledore_revelation_active_1: 'audio/voice/dumbledore_revelation_active_1.ogg',
+    dumbledore_revelation_ready_1:  'audio/voice/dumbledore_revelation_ready_1.ogg',
   },
 
   // ── Lecture d'une voix narrative (one-shot, avec ducking music) ──
