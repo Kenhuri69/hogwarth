@@ -270,8 +270,8 @@ sanity check.** Cibles prioritaires :
 | N3   | ✅     | `claude/code-review-tasks-voWQi` | 3 `localStorage.getItem` enveloppés (`_readStore`, `migrateLegacyKey`, `loadGame`). `loadGame` log un message lisible sur SecurityError. Autres accès déjà protégés. |
 | N4   | ✅     | `claude/code-review-tasks-voWQi` | Supprimé le `console.log` redondant de `main.js:213`. Conservé `textures.js:53` et `renderer.js:92` (déjà one-shot, préfixés, informatifs). |
 | B1/N1| ✅     | `claude/code-review-tasks-voWQi` | Proxy `UX_safe` ajouté dans `loader.js`. 24 sites `if (window.UX) { ... }` migrés vers appels directs `UX_safe.foo(...)` (44 appels au total dans battle.js + battle-spells.js). Test ad-hoc validé : `delete window.UX` → toutes les méthodes retournent `undefined` sans throw. |
-| N13  | ⏳     | -       | Migrer 8 `typeof autoSave === 'function'` vers `safeCall('autoSave', …)` |
-| N14  | ⏳     | -       | Migrer `checkKillQuests` / `checkHouseLevelUp` vers `safeCall` |
+| N13  | ✅     | `claude/code-review-tasks-voWQi` | 6 `typeof autoSave === 'function'` (battle.js, movement.js, npc-dialog.js) migrés vers `safeCall('autoSave', reason)`. |
+| N14  | ✅     | `claude/code-review-tasks-voWQi` | `checkKillQuests` (battle.js, 1 site) et `checkHouseLevelUp` (battle.js + quests.js, 2 sites) migrés vers `safeCall(...)`. |
 | B2   | ⏳     | -       | `castSpellInBattle` → table `SPELL_HANDLERS` (118 l) |
 | B3   | ⏳     | -       | `renderQuestList` → 3 sous-vues (124 l) |
 | B4   | ⏳     | -       | `checkLevelUp` → `_grantLevelStats/HpSp/Spells` (79 l) |

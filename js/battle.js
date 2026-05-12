@@ -349,9 +349,7 @@ function endBattle(won) {
     });
 
     // Progression des quêtes de type "kill"
-    enemyGroup.forEach(e => {
-      if (window.checkKillQuests) window.checkKillQuests(e.id);
-    });
+    enemyGroup.forEach(e => safeCall('checkKillQuests', e.id));
 
     const xpEarned   = Math.floor(totalXp   * diff.xpMultiplier);
     const goldEarned = Math.floor(totalGold * diff.goldMultiplier);
@@ -360,7 +358,7 @@ function endBattle(won) {
     if (chosenHouse) {
       const hpGain = { Facile: 8, Normal: 10, Difficile: 14, Expert: 18 }[difficulty] || 10;
       housePoints += hpGain;
-      if (window.checkHouseLevelUp) window.checkHouseLevelUp();
+      safeCall('checkHouseLevelUp');
     }
 
     AudioSystem.playVictory();
@@ -371,7 +369,7 @@ function endBattle(won) {
     renderMinimap();
   }
   updateUI();
-  if (typeof autoSave === 'function') autoSave(won ? 'battle-end' : 'battle-flee');
+  safeCall('autoSave', won ? 'battle-end' : 'battle-flee');
 }
 
 // ── Montée de niveau (synchronisée pour le groupe) ───────────
@@ -451,7 +449,7 @@ function checkLevelUp() {
       break;
   }
   updateUI();
-  if (typeof autoSave === 'function') autoSave('level-up');
+  safeCall('autoSave', 'level-up');
 }
 
 function closeLevelup() {

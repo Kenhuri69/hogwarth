@@ -446,7 +446,7 @@ function completeQuest(index) {
   // Points de Maison pour quête accomplie
   if (chosenHouse) {
     housePoints += 30;
-    if (window.checkHouseLevelUp) window.checkHouseLevelUp();
+    safeCall('checkHouseLevelUp');
   }
 
   // Retire de l'actif, marque comme rendue
