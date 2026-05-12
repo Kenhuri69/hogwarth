@@ -33,15 +33,15 @@
 
 - [x] **0** Poursuite sur la branche actuelle.
 - [x] **1** Audit du markup actuel (`castle-art` SVG + `death-seal` SVG).
-- [ ] **2** Prompts archétypaux rédigés (titre + mort).
-- [ ] **3** PNG Nano Banana fournis (×2).
-- [ ] **4** Pipeline simple (resize si nécessaire + optimize) → `img/scenes/title.png` + `img/scenes/death.png`.
-- [ ] **5** Remplacement dans `index.html` :
-    - `<svg width="600" height="280"...>...</svg>` → `<img src="img/scenes/title.png" alt="Château de Poudlard">`
-    - `<svg class="death-seal"...>...</svg>` → `<img class="death-art" src="img/scenes/death.png" alt="Pétrification">`
-- [ ] **6** CSS d'ajustement (taille, max-width, ombrage, animation glow conservée).
-- [ ] **7** Smoke test 34/34.
-- [ ] **8** `SVG_PLAN.md` : C42 + C43 ✓ + statut global + journal.
+- [x] **2** Prompts archétypaux rédigés (titre + mort, 3 itérations pour C43).
+- [x] **3** PNG Nano Banana fournis (×2).
+- [x] **4** Pipeline JPEG q88 progressive optimize → `img/scenes/title.jpg` (182 KB) + `img/scenes/death.jpg` (205 KB).
+- [x] **5** Remplacement dans `index.html` :
+    - `<svg width="600" height="280"...>...</svg>` (150 lignes, ~8.7 KB markup) → `<img src="img/scenes/title.jpg" alt="Château de Poudlard nocturne">`
+    - `<svg class="death-seal"...>...</svg>` → `<img class="death-art" src="img/scenes/death.jpg" alt="Couloir pétrifié de Poudlard">`
+- [x] **6** CSS adapté : `.castle-art svg, .castle-art img { ... border-radius: 10px; }`. Nouvelle règle `.death-art`. Anims orphelines supprimées (`.title-win-warm/.title-win-cold/.title-moon/.title-twinkle` et leurs keyframes).
+- [x] **7** Smoke test 34/34 vert. Vérifié `grep -rE` : aucune référence orpheline aux classes supprimées.
+- [x] **8** `SVG_PLAN.md` mis à jour : C42 + C43 ✓, statut 45 → 47/86, journal #36.
 - [ ] **9** Commit + push.
 
 ---
@@ -51,3 +51,8 @@
 | Date | Étape | Notes |
 |------|-------|-------|
 | 2026-05-12 | Setup | Choix utilisateur tranché (option « remplace les SVG »). Mini-plan créé. |
+| 2026-05-12 | Prompts | C42 château nocturne livré du premier coup. C43 morbidité bloquée par filtres Gemini : v1 « collapsed body » refusée → v2 « petrified statue » (canon HP : pétrification est réversible via mandragore) → v3 plan B « still life sans figure » (baguette tombée, lunettes rondes brisées, écharpe Gryffondor, livre, œil du Basilic dans la flaque) — acceptée. |
+| 2026-05-12 | Pipeline | Pas de rembg (illustrations pleines RGB). PIL convert RGB JPEG q88 progressive optimize. 2 fichiers ~1.5 MB chacun → 182 KB + 205 KB. Total 387 KB pour les 2 écrans, acceptable au boot. |
+| 2026-05-12 | Intégration | Bloc SVG château 150 lignes (lignes 30-179 d'`index.html`) remplacé par `<img>` via script Python (Edit pas pratique sur 150 lignes). Bloc SVG death-seal 8 lignes remplacé pareillement. CSS : règle `.castle-art svg` étendue à `img` avec border-radius 10px. Supprimé : `.title-win-warm/.title-win-cold/.title-moon/.title-twinkle` et leurs keyframes (orphelines après suppression du SVG inline). Vérifié zéro référence ailleurs. |
+| 2026-05-12 | Nouvelle règle | `.death-art { width: min(72vw, 320px); height: auto; display: block; border-radius: 12px; border: 2px solid rgba(224, 64, 64, 0.4); box-shadow: 0 0 36px rgba(120, 20, 20, 0.7); }` — taille raisonnable au-dessus du titre « ✝ Pétrification ✝ », bordure et glow rouge pour cohérence avec le ton de l'écran. |
+| 2026-05-12 | QA | `node tests/smoke.js` → 34/34 vert (scénario 1 démarrage charge bien le titre, donc l'`<img>` est valide). Rendu visuel non automatisé pour ces écrans-là — l'utilisateur valide directement via l'URL de prod GitHub Pages après merge. |
