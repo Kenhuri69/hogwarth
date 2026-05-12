@@ -109,6 +109,10 @@ window.UX_safe = new Proxy({}, {
 
     // ── Mouvement ──
     { name: 'move',               source: 'movement.js',     kind: 'fn'  },
+    { name: 'moveForward',        source: 'movement.js',     kind: 'fn'  },
+    { name: 'moveBackward',       source: 'movement.js',     kind: 'fn'  },
+    { name: 'turnLeft',           source: 'movement.js',     kind: 'fn'  },
+    { name: 'turnRight',          source: 'movement.js',     kind: 'fn'  },
     { name: 'handleCellEntry',    source: 'movement.js',     kind: 'fn'  },
     { name: 'searchRoom',         source: 'movement.js',     kind: 'fn'  },
     { name: 'rest',               source: 'movement.js',     kind: 'fn'  },

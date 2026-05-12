@@ -44,7 +44,9 @@ js/
   renderer.js      →  drawDungeon(), drawCorridor() — rendu 3D canvas + textures + fog
   renderer-effects.js → drawTorch(), drawStoneBlocks(), drawFloorLines(), drawCellMarker()…
   renderer-minimap.js → renderMinimap(), _buildMinimapCells()
-  movement.js      →  move(), handleCellEntry(), searchRoom(), rest(), checkObjectInFront()
+  movement.js      →  moveForward(), moveBackward(), turnLeft(), turnRight(),
+                      move() (legacy absolu), handleCellEntry(), searchRoom(),
+                      rest(), checkObjectInFront()
   battle.js        →  startBattle(), battleAction(), enemyTurn(), endBattle(), checkLevelUp()
   battle-spells.js →  castSpellInBattle(), tryEnemyAbility()
   battle-ui.js     →  renderEnemyGroup(), showTargetSelection(), updateBattleCharIndicator()
@@ -895,11 +897,46 @@ Un **TEMPLATE commenté** se trouve en bas de `monsters.js`.
 
 ---
 
+## Contrôles de déplacement (relatif)
+
+Les contrôles sont **relatifs à `playerDir`** (style dungeon crawler) :
+↑/↓ avancent ou reculent dans la direction du regard, ←/→ pivotent la
+caméra sans bouger. Le moteur conserve en interne les directions
+cardinales (`playerDir ∈ {n,s,e,w}`, `DIRECTIONS`, minimap…) — seuls
+les inputs utilisateur sont relatifs.
+
+| Action | Touches | Bouton desktop | Bouton mobile | Helper (`js/movement.js`) |
+|--------|---------|----------------|---------------|---------------------------|
+| Avancer        | ↑ / W / Z | `#btn-forward` | ▲ | `moveForward()` |
+| Reculer        | ↓ / S     | `#btn-back`    | ▼ | `moveBackward()` (ne pivote pas) |
+| Pivoter gauche | ← / A / Q | `#btn-turn-l`  | ↺ | `turnLeft()` |
+| Pivoter droite | → / D     | `#btn-turn-r`  | ↻ | `turnRight()` |
+
+- `moveForward` / `moveBackward` réutilisent le helper interne `_step(dir, faceDir)`.
+  `moveBackward` passe `faceDir=false` pour conserver l'orientation.
+- `turnLeft` / `turnRight` muent `playerDir` puis rafraîchissent
+  `updateCompass()`, `renderMinimap()`, `drawDungeon()`,
+  `_updateSearchBtn()`. Pas de footstep (rotation = silence).
+- `move(dir)` legacy (déplacement absolu) reste disponible pour
+  cinématiques / debug, n'est plus appelée par l'UI.
+
+### Indicateurs visuels d'orientation
+
+- **Boussole** (`updateCompass`) : la lettre N/S/E/O correspondant à
+  `playerDir` porte la classe `.facing` (or + glow). Mapping HTML
+  particulier : ouest s'affiche avec l'ID `dir-o`.
+- **Minimap** (`renderMinimap` + `_buildMinimapCells`) : la case du
+  joueur contient un enfant `.map-player-arrow` doté de la classe
+  `map-player-dir-<n|s|e|w>` (triangle CSS via `clip-path` + rotation).
+  S'applique à la minimap desktop **et** à l'overlay mobile.
+
+---
+
 ## Responsive mobile (≤ 700px)
 
 - Layout devient une colonne unique : header → left (bandeau HP) → main → footer
 - Panneau droit masqué
-- D-pad tactile (`.mobile-dir`) remplace les boutons WASD (`.desktop-dir`)
+- D-pad tactile (`.mobile-dir`, avancer/reculer/pivoter) remplace les boutons texte (`.desktop-dir`)
 - Boutons action en grille avec emoji uniquement (`.btn-label` masqué)
 - Touch targets minimum 44px
 - Modales en 96vw scrollable

@@ -575,23 +575,23 @@
 
   <div class="commands-bar">
 
-    <!-- Directions desktop (texte) -->
+    <!-- Directions desktop (texte) — contrôles relatifs -->
     <div class="dir-group desktop-dir">
-      <button class="cmd-btn" onclick="move('n')" id="btn-n"><span class="key">W</span>↑ N</button>
-      <button class="cmd-btn" onclick="move('s')" id="btn-s"><span class="key">S</span>↓ S</button>
-      <button class="cmd-btn" onclick="move('w')" id="btn-w"><span class="key">A</span>← O</button>
-      <button class="cmd-btn" onclick="move('e')" id="btn-e"><span class="key">D</span>→ E</button>
+      <button class="cmd-btn" onclick="moveForward()"  id="btn-forward"><span class="key">W</span>↑ Avancer</button>
+      <button class="cmd-btn" onclick="moveBackward()" id="btn-back"><span class="key">S</span>↓ Reculer</button>
+      <button class="cmd-btn" onclick="turnLeft()"     id="btn-turn-l"><span class="key">A</span>↺ Pivoter</button>
+      <button class="cmd-btn" onclick="turnRight()"    id="btn-turn-r"><span class="key">D</span>↻ Pivoter</button>
     </div>
 
-    <!-- D-Pad mobile -->
+    <!-- D-Pad mobile — contrôles relatifs -->
     <div class="dpad mobile-dir">
-      <button class="dpad-btn" onclick="move('n')">▲</button>
+      <button class="dpad-btn" onclick="moveForward()">▲</button>
       <div class="dpad-mid">
-        <button class="dpad-btn" onclick="move('w')">◄</button>
+        <button class="dpad-btn" onclick="turnLeft()">↺</button>
         <div class="dpad-center"><img class="ui-icon ui-icon-md" src="img/icons/hp.png" alt=""></div>
-        <button class="dpad-btn" onclick="move('e')">►</button>
+        <button class="dpad-btn" onclick="turnRight()">↻</button>
       </div>
-      <button class="dpad-btn" onclick="move('s')">▼</button>
+      <button class="dpad-btn" onclick="moveBackward()">▼</button>
     </div>
 
     <div class="cmd-vsep"></div>

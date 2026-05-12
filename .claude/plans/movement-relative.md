@@ -139,19 +139,19 @@ flèche d'orientation).
 1. **Plan rédigé** → vérifier : ce fichier existe, choix validés listés. ✅
 2. **Helpers movement** (`movement.js`) → vérifier : `moveForward`,
    `moveBackward`, `turnLeft`, `turnRight` exposés, smoke test JS local
-   confirme rotation sans déplacement. ⬜
+   confirme rotation sans déplacement. ✅
 3. **Mapping clavier** (`main.js`) → vérifier : touches déclenchent les
-   bonnes actions ; pas d'effet en `INPUT` ; pas de mouvement en combat. ⬜
+   bonnes actions ; pas d'effet en `INPUT` ; pas de mouvement en combat. ✅
 4. **Boutons UI** (`index.html`) → vérifier : 4 boutons desktop +
-   4 boutons D-pad mobile câblés sur les nouveaux helpers. ⬜
+   4 boutons D-pad mobile câblés sur les nouveaux helpers. ✅
 5. **Boussole surbrillance** (`ui.js` + `css/style.css`) → vérifier :
-   en pivotant, la lettre N/S/E/W active change visuellement. ⬜
+   en pivotant, la lettre N/S/E/W active change visuellement. ✅
 6. **Flèche minimap** (`renderer-minimap.js` + CSS) → vérifier :
    triangle apparaît sur la case du joueur et tourne avec `playerDir`.
-   Sur minimap desktop **et** overlay mobile. ⬜
+   Sur minimap desktop **et** overlay mobile. ✅
 7. **MANIFEST loader** (`js/loader.js`) → vérifier : ajouter
    `moveForward/moveBackward/turnLeft/turnRight` dans `MANIFEST`
-   (kind `fn`), pas de bandeau rouge. ⬜
+   (kind `fn`), pas de bandeau rouge. ✅
 8. **Smoke test** (`tests/smoke.js`) → vérifier : nouveau scénario
    « contrôles relatifs » qui :
    - mémorise `playerDir = 'n'`,
@@ -161,11 +161,11 @@ flèche d'orientation).
    - dispatche `ArrowDown` → recule d'une case vers l'ouest **sans**
      modifier `playerDir`.
    Lancer `node tests/smoke.js`, tous les scénarios existants restent
-   verts. ⬜
-9. **CLAUDE.md** → vérifier : section Contrôles ajoutée, IDs HTML à jour. ⬜
+   verts. ✅
+9. **CLAUDE.md** → vérifier : section Contrôles ajoutée, IDs HTML à jour. ✅
 10. **Commit + push** sur `claude/improve-game-controls-7xFMg` →
     vérifier : `git status` propre, PR pas mergée avant push (cf. §6
-    guidelines). ⬜
+    guidelines). ✅
 
 ## Risques / points d'attention
 
@@ -189,4 +189,17 @@ flèche d'orientation).
 
 ## Notes de mise à jour
 
-- (à remplir au fil des étapes)
+- **Step 2** : `_step(dir, faceDir)` factorisé, `moveBackward` passe
+  `faceDir=false` pour ne pas pivoter. `move(dir)` legacy = wrapper sur
+  `_step(dir, true)`.
+- **Step 3** : ajout des touches AZERTY `Z`/`Q` comme prévu. Le mapping
+  est désormais une succession de booléens (plus de table `map`).
+- **Step 5** : découverte d'un bug latent — l'ancien code testait
+  `document.getElementById('dir-w')` alors que l'ID HTML est `dir-o`.
+  La lettre Ouest n'était donc jamais marquée `active`. Corrigé via
+  la table `idByDir` (effet de bord positif, mais hors scope strict).
+- **Step 7** : 4 nouveaux helpers ajoutés au MANIFEST → loader rapporte
+  désormais 59 modules (vs 55 attendus dans la doc).
+- **Step 8** : scénario `scenarioRelativeControls` (6 assertions :
+  rotation, avance/recul, mapping clavier, `.facing` boussole, flèche
+  minimap). Test vert + 33 scénarios existants verts.

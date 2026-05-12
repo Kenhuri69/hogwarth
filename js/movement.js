@@ -10,9 +10,24 @@ function canMove(dir) {
   return dungeon[ny][nx] !== CELL.WALL;
 }
 
-function move(dir) {
+// ─────────────────────────────────────────────────────────────
+// Helpers de rotation : indexés cycliquement n→e→s→w→n.
+// ─────────────────────────────────────────────────────────────
+const _DIR_ORDER = ['n', 'e', 's', 'w'];
+function _oppositeDir(dir) {
+  return _DIR_ORDER[(_DIR_ORDER.indexOf(dir) + 2) % 4];
+}
+function _rotateDir(dir, delta) {
+  const i = _DIR_ORDER.indexOf(dir);
+  return _DIR_ORDER[(i + delta + 4) % 4];
+}
+
+// Pas dans une direction absolue. Si `faceDir` est vrai, on aligne
+// `playerDir` sur la direction du pas (mouvement classique). Sinon
+// on garde `playerDir` intact (cas `moveBackward`).
+function _step(dir, faceDir) {
   if (inBattle) return;
-  playerDir = dir;
+  if (faceDir) playerDir = dir;
   if (!canMove(dir)) {
     setNarrative("Un mur de pierre solide bloque le passage.");
     updateCompass();
@@ -41,6 +56,31 @@ function move(dir) {
 
   handleCellEntry(cell);
 }
+
+// Contrôles relatifs (avancer/reculer + rotation).
+function moveForward()  { _step(playerDir, true); }
+function moveBackward() { _step(_oppositeDir(playerDir), false); }
+function turnLeft() {
+  if (inBattle) return;
+  playerDir = _rotateDir(playerDir, -1);
+  updateCompass();
+  renderMinimap();
+  drawDungeon();
+  _updateSearchBtn();
+}
+function turnRight() {
+  if (inBattle) return;
+  playerDir = _rotateDir(playerDir, 1);
+  updateCompass();
+  renderMinimap();
+  drawDungeon();
+  _updateSearchBtn();
+}
+
+// API legacy : déplacement absolu dans une direction cardinale.
+// Conservée pour cinématiques / debug. L'UI utilise désormais les
+// helpers relatifs ci-dessus.
+function move(dir) { _step(dir, true); }
 
 // ── Overlay exploration (coffre / escalier / boutique / fontaine) ───
 // Pour chaque cellule interactive : un descripteur (icon, title, desc,
