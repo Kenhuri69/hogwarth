@@ -275,107 +275,126 @@ function renderQuestList() {
   }
 
   // Quêtes actives
-  pending.forEach((q) => {
-    const idx        = activeQuests.indexOf(q);
-    const activeStep = getActiveStep(q);
-
-    // Pour l'étape active de type item : recompter depuis l'inventaire
-    if (activeStep && activeStep.type === 'item') {
-      activeStep.progress = player.inventory.filter(i => i.id === activeStep.itemId).length;
-    }
-    const ready = activeStep && activeStep.progress >= activeStep.amount;
-
-    // Récompenses formatées
-    const rewardParts = [];
-    if (q.reward.xp)    rewardParts.push(`<img class="ui-icon ui-icon-md" src="img/icons/xp.png" alt=""> +${q.reward.xp} XP`);
-    if (q.reward.gold)  rewardParts.push(`<img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> +${q.reward.gold}`);
-    if (q.reward.item) {
-      const it = ITEMS.find(i => i.id === q.reward.item);
-      if (it) rewardParts.push(`${getItemIconHtml(it, 'ui-icon-sm')} ${it.name}`);
-    }
-    if (q.reward.spell) rewardParts.push(`✨ Sort : ${q.reward.spell}`);
-
-    // Liste des étapes : ✓ complétée, ▶ active (avec barre), ◌ verrouillée
-    const stepsHtml = q.objectives.map((o, i) => {
-      const isActive   = o === activeStep;
-      let displayName;
-      if (o.type === 'kill') {
-        const m = MONSTERS.find(x => x.id === o.monsterId);
-        displayName = m ? m.name : o.monsterId;
-      } else {
-        const it = ITEMS.find(x => x.id === o.itemId);
-        displayName = it ? it.name : o.itemId;
-      }
-      const label = o.type === 'kill'
-        ? `Éliminer ${o.amount}× ${displayName}`
-        : `Apporter ${o.amount}× ${displayName}`;
-      const icon       = o.completed ? '✓' : (isActive ? '▶' : '◌');
-      const color      = o.completed ? '#60c040' : (isActive ? 'var(--gold-light)' : '#4a3a20');
-      let barHtml = '';
-      if (isActive) {
-        const pct = Math.min(100, Math.round((o.progress / o.amount) * 100));
-        barHtml = `
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#8a7050;margin:2px 0 2px 18px">
-            <span>${o.progress} / ${o.amount}</span>
-          </div>
-          <div style="margin-left:18px;background:#1a0e05;border-radius:3px;height:4px;overflow:hidden">
-            <div style="background:${ready ? '#60c040' : 'var(--gold-dark)'};width:${pct}%;height:100%;transition:width .3s ease"></div>
-          </div>`;
-      }
-      return `
-        <div style="margin-top:${i === 0 ? '0' : '4px'}">
-          <div style="font-size:11px;color:${color}">
-            <span style="display:inline-block;width:14px">${icon}</span>${label}
-          </div>
-          ${barHtml}
-        </div>`;
-    }).join('');
-
+  pending.forEach(q => {
     const card = document.createElement('div');
     card.className = 'spell-item';
     card.style.cssText = 'flex-direction:column;align-items:flex-start;gap:5px;padding:10px 12px';
-    card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
-        <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--gold-light)">${q.title}</div>
-        <div style="font-size:10px;color:#8a7050;text-align:right">${q.giver}<br>${q.location}</div>
-      </div>
-      <div style="font-size:12px;color:var(--parchment-dark);line-height:1.5">${q.desc}</div>
-      <div style="width:100%">${stepsHtml}</div>
-      <div style="font-size:10px;color:#8a7050">Récompenses : ${rewardParts.join(' · ')}</div>
-      ${ready
-        ? `<div style="font-size:10px;color:#60c040;align-self:flex-end;font-style:italic">
-             ✅ Prêt — retourne voir ${q.giver}
-           </div>`
-        : `<div style="font-size:10px;color:#4a3a20;align-self:flex-end;font-style:italic">
-             Étape en cours…
-           </div>`
-      }
-    `;
+    card.innerHTML = _renderActiveQuestCard(q);
     container.appendChild(card);
   });
 
-  // Séparateur si quêtes terminées existent
-  if (completed.length > 0) {
-    const sep = document.createElement('div');
-    sep.style.cssText = 'border-top:1px solid #2a1a08;padding-top:8px;font-family:"Cinzel",serif;font-size:10px;color:#4a3a20;letter-spacing:2px';
-    sep.textContent = '— TERMINÉES —';
-    container.appendChild(sep);
+  // Section terminées
+  if (completed.length > 0) _appendCompletedSection(container, completed);
 
-    completed.forEach(q => {
-      const card = document.createElement('div');
-      card.style.cssText = 'padding:8px 12px;opacity:.5;border:1px solid #2a1a08;border-radius:3px;font-size:12px;color:#6a5030';
-      card.innerHTML = `✅ <strong>${q.title}</strong> — ${q.giver}`;
-      container.appendChild(card);
-    });
-  }
+  // Bannière "tout terminé" si plus aucune quête active
+  if (pending.length === 0) _prependAllDoneBanner(container);
+}
 
-  // Message si tout est fini
-  if (pending.length === 0) {
-    const msg = document.createElement('div');
-    msg.style.cssText = 'text-align:center;padding:20px;color:var(--gold);font-family:"Cinzel",serif;font-size:12px';
-    msg.textContent   = 'Toutes les quêtes sont terminées ! Bravo, jeune sorcier.';
-    container.insertBefore(msg, container.firstChild);
+// HTML interne d'une carte de quête active (sans le wrapper <div.spell-item>).
+function _renderActiveQuestCard(q) {
+  const activeStep = getActiveStep(q);
+
+  // Pour l'étape active de type item : recompter depuis l'inventaire
+  if (activeStep && activeStep.type === 'item') {
+    activeStep.progress = player.inventory.filter(i => i.id === activeStep.itemId).length;
   }
+  const ready = activeStep && activeStep.progress >= activeStep.amount;
+
+  const rewardHtml = _renderRewardParts(q.reward);
+  const stepsHtml  = q.objectives
+    .map((o, i) => _renderQuestStep(o, o === activeStep, ready, i === 0))
+    .join('');
+
+  return `
+    <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+      <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--gold-light)">${q.title}</div>
+      <div style="font-size:10px;color:#8a7050;text-align:right">${q.giver}<br>${q.location}</div>
+    </div>
+    <div style="font-size:12px;color:var(--parchment-dark);line-height:1.5">${q.desc}</div>
+    <div style="width:100%">${stepsHtml}</div>
+    <div style="font-size:10px;color:#8a7050">Récompenses : ${rewardHtml}</div>
+    ${ready
+      ? `<div style="font-size:10px;color:#60c040;align-self:flex-end;font-style:italic">
+           ✅ Prêt — retourne voir ${q.giver}
+         </div>`
+      : `<div style="font-size:10px;color:#4a3a20;align-self:flex-end;font-style:italic">
+           Étape en cours…
+         </div>`
+    }
+  `;
+}
+
+// HTML d'une étape d'objectif (✓ complétée, ▶ active avec barre, ◌ verrouillée).
+function _renderQuestStep(o, isActive, ready, isFirst) {
+  let displayName;
+  if (o.type === 'kill') {
+    const m = MONSTERS.find(x => x.id === o.monsterId);
+    displayName = m ? m.name : o.monsterId;
+  } else {
+    const it = ITEMS.find(x => x.id === o.itemId);
+    displayName = it ? it.name : o.itemId;
+  }
+  const label = o.type === 'kill'
+    ? `Éliminer ${o.amount}× ${displayName}`
+    : `Apporter ${o.amount}× ${displayName}`;
+  const icon  = o.completed ? '✓' : (isActive ? '▶' : '◌');
+  const color = o.completed ? '#60c040' : (isActive ? 'var(--gold-light)' : '#4a3a20');
+
+  let barHtml = '';
+  if (isActive) {
+    const pct = Math.min(100, Math.round((o.progress / o.amount) * 100));
+    barHtml = `
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#8a7050;margin:2px 0 2px 18px">
+        <span>${o.progress} / ${o.amount}</span>
+      </div>
+      <div style="margin-left:18px;background:#1a0e05;border-radius:3px;height:4px;overflow:hidden">
+        <div style="background:${ready ? '#60c040' : 'var(--gold-dark)'};width:${pct}%;height:100%;transition:width .3s ease"></div>
+      </div>`;
+  }
+  return `
+    <div style="margin-top:${isFirst ? '0' : '4px'}">
+      <div style="font-size:11px;color:${color}">
+        <span style="display:inline-block;width:14px">${icon}</span>${label}
+      </div>
+      ${barHtml}
+    </div>`;
+}
+
+// HTML de la liste des récompenses (XP, or, item, sort) jointes par ' · '.
+function _renderRewardParts(reward) {
+  const parts = [];
+  if (reward.xp)   parts.push(`<img class="ui-icon ui-icon-md" src="img/icons/xp.png" alt=""> +${reward.xp} XP`);
+  if (reward.gold) parts.push(`<img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> +${reward.gold}`);
+  if (reward.item) {
+    const it = ITEMS.find(i => i.id === reward.item);
+    if (it) parts.push(`${getItemIconHtml(it, 'ui-icon-sm')} ${it.name}`);
+  }
+  if (reward.spell) parts.push(`✨ Sort : ${reward.spell}`);
+  return parts.join(' · ');
+}
+
+// Séparateur "— TERMINÉES —" + carte compacte par quête terminée.
+function _appendCompletedSection(container, completed) {
+  const sep = document.createElement('div');
+  sep.style.cssText = 'border-top:1px solid #2a1a08;padding-top:8px;font-family:"Cinzel",serif;font-size:10px;color:#4a3a20;letter-spacing:2px';
+  sep.textContent = '— TERMINÉES —';
+  container.appendChild(sep);
+
+  completed.forEach(q => {
+    const card = document.createElement('div');
+    card.style.cssText = 'padding:8px 12px;opacity:.5;border:1px solid #2a1a08;border-radius:3px;font-size:12px;color:#6a5030';
+    card.innerHTML = `✅ <strong>${q.title}</strong> — ${q.giver}`;
+    container.appendChild(card);
+  });
+}
+
+// Bannière dorée en tête : "Toutes les quêtes sont terminées !" — n'apparaît
+// que quand activeQuests est vide mais des quêtes terminées existent.
+function _prependAllDoneBanner(container) {
+  const msg = document.createElement('div');
+  msg.style.cssText = 'text-align:center;padding:20px;color:var(--gold);font-family:"Cinzel",serif;font-size:12px';
+  msg.textContent   = 'Toutes les quêtes sont terminées ! Bravo, jeune sorcier.';
+  container.insertBefore(msg, container.firstChild);
 }
 
 // ── Helper : étape active d'une quête (la première non complétée) ──

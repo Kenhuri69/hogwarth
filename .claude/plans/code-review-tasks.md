@@ -273,7 +273,7 @@ sanity check.** Cibles prioritaires :
 | N13  | ✅     | `claude/code-review-tasks-voWQi` | 6 `typeof autoSave === 'function'` (battle.js, movement.js, npc-dialog.js) migrés vers `safeCall('autoSave', reason)`. |
 | N14  | ✅     | `claude/code-review-tasks-voWQi` | `checkKillQuests` (battle.js, 1 site) et `checkHouseLevelUp` (battle.js + quests.js, 2 sites) migrés vers `safeCall(...)`. |
 | B2   | ✅     | `claude/code-review-tasks-voWQi` | `castSpellInBattle` passée de 118 → **26 lignes**. 7 handlers privés (`_spellHeal`, `_spellDisarm`, `_spellShield`, `_spellElementalDamage`, `_spellLifesteal`, `_spellCurse`, `_spellSteal`) + table `SPELL_HANDLERS` (`stun`/`burn`/`instant` partagent le handler élémentaire). Test ad-hoc : couverture handlers/effets = 9/9, 0 manquant, 0 inutilisé. |
-| B3   | ⏳     | -       | `renderQuestList` → 3 sous-vues (124 l) |
+| B3   | ✅     | `claude/code-review-tasks-voWQi` | `renderQuestList` passée de 124 → **34 lignes**. 5 helpers privés extraits : `_renderActiveQuestCard`, `_renderQuestStep`, `_renderRewardParts`, `_appendCompletedSection`, `_prependAllDoneBanner`. Comportement strictement préservé (createElement+appendChild conservé, pas de migration vers innerHTML unique). Smoke test 33/33 — scénarios chained/repeatable validés. |
 | B4   | ⏳     | -       | `checkLevelUp` → `_grantLevelStats/HpSp/Spells` (79 l) |
 | C2/N5| ⏳     | -       | ARIA modales + aria-live logs + aria-label cmd-btn |
 | C3/N8| ⏳     | -       | `scenarioLoader` dans smoke.js |
