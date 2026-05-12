@@ -231,14 +231,24 @@ Drops : monstres élite étage 3-7 + boutique progressive + récompense quête D
 | # | Étape | Statut | Verification |
 |---|-------|--------|--------------|
 | 1 | Plan écrit (ce doc) | ☑ | rédigé |
-| 2 | Explorer architecture spawn/dungeon | ☐ | repérer où se câble le respawn |
-| 3 | Commit travail sim (Phase 2) | ☐ | `git log` montre extension |
-| 4 | Implémenter respawn 20 % par étage | ☐ | sim manuelle : aller-retour étage → ennemis re-peuplés |
-| 5 | Quête Dumbledore chaîne 5 étapes | ☐ | `activeQuests` + dialogues + récompenses applicables |
-| 6 | Trigger respawn par acceptation quête kill | ☐ | accept quête kill → monstre cible re-spawné |
-| 7 | 5-8 équipements mid-game | ☐ | items dans `data.js`, drops/boutique |
-| 8 | Smoke test `node tests/smoke.js` | ☐ | vert |
-| 9 | Commit + push | ☐ | sur `claude/analyze-difficulty-progression-vyItb` |
+| 2 | Explorer architecture spawn/dungeon | ☑ | architecture documentée ci-dessus |
+| 3 | Commit travail sim (Phase 2) | ☑ | commit `f20fe4b` |
+| 4 | Implémenter respawn 20 % par étage | ☑ | commit `b78d84a` — `defeatedCellsByFloor` + `_respawnEnemiesOnEntry` |
+| 5 | Quête Dumbledore chaîne 5 étapes | ☑ | commit `f6d711d` — `prereq` + `reward.stats` |
+| 6 | Trigger respawn par acceptation quête kill | ☑ | déjà existant (`spawnOnAccept`) — utilisé par dumbledore_courage / dumbledore_resistance |
+| 7 | 5-8 équipements mid-game | ☑ | commit `a953376` — 6 items rare/epic, drops + shop |
+| 8 | Smoke test `node tests/smoke.js` | ☑ | vert (60 entrées loader) |
+| 9 | Commit + push | en cours | branche `claude/analyze-difficulty-progression-vyItb` |
+
+### 3.6 Compléments à faire ultérieurement
+
+- **Sprites dédiés** pour les 6 nouveaux équipements (actuellement icônes
+  réutilisées). Pipeline : `tools/gen_icons.py` + ajout dans
+  `ITEM_ICON_NEW_REGISTRY`.
+- **Dialogues Dumbledore par quête** (`dialoguesByQuest`) pour enrichir la
+  narration au lieu des messages génériques actuels.
+- **Test smoke dédié au respawn 20 %** : simuler aller-retour entre
+  étages et vérifier le re-peuplement statistique des cellules vidées.
 
 ### 3.5 Note hors-scope
 - L'extension de la simulation (`tools/sim-difficulty.js`) reste utile comme outil de balance pour les futures itérations. Les 2 scénarios testés (3 / 5 pts libres) sont documentés ci-dessus comme référence si l'on veut un jour passer aux mults bruts.
