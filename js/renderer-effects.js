@@ -590,6 +590,28 @@ function drawShopSprite(x, baseY, sz) {
   ctx.restore();
 }
 
+// Cache d'images monstres pour le rendu 3D. Lazy : chaque PNG est chargé
+// à la première demande. Re-render automatique du donjon dès qu'une image
+// est prête (cf. pattern de textures.js).
+const _MONSTER_IMG_CACHE = Object.create(null);
+function _getMonsterImg(src) {
+  if (!src) return null;
+  let entry = _MONSTER_IMG_CACHE[src];
+  if (!entry) {
+    entry = { img: new Image(), ready: false, failed: false };
+    entry.img.onload  = () => {
+      entry.ready = true;
+      if (typeof window.drawDungeon === 'function') {
+        try { window.drawDungeon(); } catch (e) { /* dungeon pas prêt */ }
+      }
+    };
+    entry.img.onerror = () => { entry.failed = true; };
+    entry.img.src     = src;
+    _MONSTER_IMG_CACHE[src] = entry;
+  }
+  return entry;
+}
+
 // ── Ennemi (sprite de couloir) ───────────────────────────────
 function drawEnemySprite(enemy, x, baseY, sz) {
   ctx.save();
@@ -601,9 +623,18 @@ function drawEnemySprite(enemy, x, baseY, sz) {
   const aura = ctx.createRadialGradient(x, baseY - sz * 0.55, 0, x, baseY - sz * 0.55, sz * 0.85);
   aura.addColorStop(0, 'rgba(220,40,20,0.22)'); aura.addColorStop(1, 'rgba(100,10,5,0)');
   ctx.fillStyle = aura; ctx.beginPath(); ctx.arc(x, baseY - sz * 0.55, sz * 0.85, 0, Math.PI * 2); ctx.fill();
-  ctx.font = `${Math.floor(sz * 1.1)}px serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  ctx.fillText(enemy.icon, x, baseY);
+
+  // PNG du monstre prioritaire ; emoji en fallback si imgSrc absent
+  // (14 monstres récents) ou image pas encore chargée.
+  const entry = _getMonsterImg(enemy.imgSrc);
+  if (entry && entry.ready) {
+    const drawSize = sz * 1.5;
+    ctx.drawImage(entry.img, x - drawSize / 2, baseY - drawSize, drawSize, drawSize);
+  } else {
+    ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText(enemy.icon, x, baseY);
+  }
   const hp  = enemy.currentHp !== undefined ? enemy.currentHp : enemy.hp;
   const pct = Math.max(0, Math.min(1, hp / enemy.hp));
   const barW = sz * 0.85, barH = Math.max(3, sz * 0.07);
