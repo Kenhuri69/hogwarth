@@ -267,7 +267,7 @@ sanity check.** Cibles prioritaires :
 |------|--------|---------|-------|
 | C1   | ⏳     | -       | Doc CLAUDE.md (loader, UX, NPC, intro, item-icons, scene-icons, Maisons) |
 | C4   | ✅     | `claude/code-review-tasks-voWQi` | 4 plans archivés (`character-ux-refonte`, `audio-intro-sample`, `voice-intro-dumbledore`, `anastasia-character`). README mis à jour. |
-| N3   | ⏳     | -       | Élargir try/catch en `_readStore`, `loadGame` au `getItem` (Safari privé) |
+| N3   | ✅     | `claude/code-review-tasks-voWQi` | 3 `localStorage.getItem` enveloppés (`_readStore`, `migrateLegacyKey`, `loadGame`). `loadGame` log un message lisible sur SecurityError. Autres accès déjà protégés. |
 | N4   | ✅     | `claude/code-review-tasks-voWQi` | Supprimé le `console.log` redondant de `main.js:213`. Conservé `textures.js:53` et `renderer.js:92` (déjà one-shot, préfixés, informatifs). |
 | B1/N1| ⏳     | -       | `UX_safe` proxy + migration **32** `if (window.UX)` (battle+battle-spells) |
 | N13  | ⏳     | -       | Migrer 8 `typeof autoSave === 'function'` vers `safeCall('autoSave', …)` |

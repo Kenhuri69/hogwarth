@@ -12,9 +12,10 @@ const ALL_SLOT_IDS    = [...MANUAL_SLOT_IDS, AUTO_SLOT_ID];
 // ── Modèle multi-slots ──────────────────────────────────────
 
 function _readStore() {
-  const raw = localStorage.getItem(SAVE_STORE_KEY);
-  if (!raw) return { version: SAVE_STORE_VERSION, slots: {} };
   try {
+    // localStorage.getItem peut throw SecurityError en Safari mode privé.
+    const raw = localStorage.getItem(SAVE_STORE_KEY);
+    if (!raw) return { version: SAVE_STORE_VERSION, slots: {} };
     const obj = JSON.parse(raw);
     if (!obj || typeof obj !== 'object') throw new Error('shape');
     obj.slots = obj.slots || {};
@@ -124,7 +125,13 @@ function autoSave(reason) {
 // n'est encore rempli, on importe la save legacy dans manual_1 puis on
 // retire la clé. Idempotent : appels suivants no-op.
 function migrateLegacyKey() {
-  const legacy = localStorage.getItem(SAVE_LEGACY_KEY);
+  let legacy;
+  try {
+    // localStorage.getItem peut throw SecurityError en Safari mode privé.
+    legacy = localStorage.getItem(SAVE_LEGACY_KEY);
+  } catch (e) {
+    return false;
+  }
   if (!legacy) return false;
   const store = _readStore();
   const hasAnyManual = MANUAL_SLOT_IDS.some(id => store.slots[id]);
@@ -341,7 +348,15 @@ function _migrateQuestShape(q) {
 }
 
 function loadGame() {
-  const saved = localStorage.getItem(SAVE_LEGACY_KEY);
+  let saved;
+  try {
+    // localStorage.getItem peut throw SecurityError en Safari mode privé.
+    saved = localStorage.getItem(SAVE_LEGACY_KEY);
+  } catch (e) {
+    addMsg("Stockage local indisponible (mode privé ?).", "bad");
+    console.warn('[save] loadGame getItem failed:', e);
+    return;
+  }
   if (!saved) { addMsg("Aucune sauvegarde trouvée.", "bad"); return; }
   let gs;
   try {
