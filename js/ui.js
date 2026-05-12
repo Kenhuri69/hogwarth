@@ -485,19 +485,15 @@ function _renderStatAllocPanel(charIdx, points) {
                    END: '+5 PV',  LCK: '+1 LCK' };
   const buttons = keys.map(k =>
     `<button class="cmd-btn alloc-btn"
-       onclick="allocateStatPoint(${charIdx}, '${k}')"
-       style="flex:1;font-size:10px;padding:6px 4px">${k}<br>
-       <span style="font-size:9px;color:#8a7050">${labels[k]}</span></button>`
+       onclick="allocateStatPoint(${charIdx}, '${k}')">${k}<br>
+       <span class="alloc-btn-effect">${labels[k]}</span></button>`
   ).join('');
   return `
-    <div class="alloc-panel" style="margin:8px 0;padding:8px;
-         border:1px solid var(--gold);border-radius:6px;
-         background:rgba(180,140,60,0.08)">
-      <div style="font-size:11px;color:var(--gold);text-align:center;
-                  letter-spacing:1px;margin-bottom:6px">
+    <div class="alloc-panel">
+      <div class="alloc-panel-title">
         ▲ ${points} POINT${points > 1 ? 'S' : ''} À ALLOUER
       </div>
-      <div style="display:flex;gap:4px">${buttons}</div>
+      <div class="alloc-buttons-row">${buttons}</div>
     </div>`;
 }
 
