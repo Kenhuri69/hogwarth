@@ -370,6 +370,40 @@ const MONSTER_ICONS = {
 
   // ── CRÉATURES ─────────────────────────────────────────────
 
+  niffleur: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <!-- Corps poilu rondelet -->
+    <ellipse cx="50" cy="62" rx="32" ry="26" fill="currentColor"/>
+    <!-- Touffes de poils sur le dos -->
+    <path d="M28 46 L30 38 L34 44 L38 36 L42 44 L46 36 L50 44 L54 36 L58 44 L62 36 L66 44 L70 38 L72 46" stroke="currentColor" stroke-width="2" fill="none" opacity=".8"/>
+    <!-- Pattes courtes avec griffes -->
+    <ellipse cx="32" cy="84" rx="6" ry="5" fill="currentColor"/>
+    <ellipse cx="68" cy="84" rx="6" ry="5" fill="currentColor"/>
+    <path d="M28 87 L26 90 M32 88 L32 92 M36 87 L38 90" stroke="#0d0705" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+    <path d="M64 87 L62 90 M68 88 L68 92 M72 87 L74 90" stroke="#0d0705" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+    <!-- Tête bombée -->
+    <ellipse cx="50" cy="42" rx="22" ry="18" fill="currentColor"/>
+    <!-- Long museau caractéristique d'ornithorynque -->
+    <ellipse cx="50" cy="56" rx="12" ry="7" fill="currentColor"/>
+    <ellipse cx="50" cy="57" rx="11" ry="5" fill="#0d0705" opacity=".55"/>
+    <!-- Narines au bout du museau -->
+    <circle cx="46" cy="58" r="1" fill="#0d0705" opacity=".8"/>
+    <circle cx="54" cy="58" r="1" fill="#0d0705" opacity=".8"/>
+    <!-- Petits yeux brillants et malicieux -->
+    <ellipse cx="42" cy="38" rx="3.5" ry="4" fill="#0d0705"/>
+    <ellipse cx="58" cy="38" rx="3.5" ry="4" fill="#0d0705"/>
+    <circle cx="43" cy="36" r="1.3" fill="#ffd86b"/>
+    <circle cx="59" cy="36" r="1.3" fill="#ffd86b"/>
+    <!-- Poche ventrale qui déborde de trésors -->
+    <path d="M36 70 Q50 86 64 70 Q60 78 50 78 Q40 78 36 70 Z" fill="#0d0705" opacity=".35"/>
+    <!-- Pièces dorées qui dépassent -->
+    <circle cx="44" cy="74" r="3" fill="#f0c850" stroke="#c9a84c" stroke-width="0.8"/>
+    <circle cx="52" cy="76" r="3.5" fill="#ffd86b" stroke="#c9a84c" stroke-width="0.8"/>
+    <circle cx="59" cy="73" r="2.5" fill="#f0c850" stroke="#c9a84c" stroke-width="0.8"/>
+    <!-- Une pièce qui s'échappe en flottant -->
+    <circle cx="82" cy="32" r="3" fill="#ffd86b" stroke="#c9a84c" stroke-width="0.8" opacity=".85"/>
+    <circle cx="82" cy="32" r="1.2" fill="#fff8d8" opacity=".7"/>
+  </svg>`,
+
   serpent_cachot: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <!-- Corps serpentin en S -->
     <path d="M50 92 Q22 86 18 66 Q14 44 38 38 Q60 32 60 16 Q60 8 54 5" stroke="currentColor" stroke-width="14" fill="none" stroke-linecap="round"/>
