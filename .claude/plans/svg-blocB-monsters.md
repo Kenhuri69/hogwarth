@@ -1,68 +1,79 @@
-# Plan — Bloc B pivoté : SVG dédiés pour les 14 monstres SANS PNG
+# Plan — Bloc B pivoté : PNG dédiés pour les 14 monstres SANS PNG
 
-## Contexte (décision utilisateur du 2026-05-12)
+## Contexte (décisions utilisateur du 2026-05-12)
 
-Le Bloc B d'origine (raffiner les 31 SVG inline des monstres B01–B31) est
-**abandonné** : audit `js/icons.js:1163-1193` + `js/monsters.js` montre que
-**tous les 31 monstres concernés ont un `imgSrc` PNG**, et que
-`getMonsterIconHtml` retourne le PNG dès que `imgSrc` est défini. Le SVG
-correspondant est donc strictement du code mort en production — toute
-amélioration serait invisible en jeu.
+1. Le Bloc B d'origine (raffiner les 31 SVG inline) est **abandonné** :
+   audit `js/icons.js:1163-1193` + `js/monsters.js` confirme que les 31
+   monstres ont déjà un `imgSrc` PNG ; `getMonsterIconHtml` court-circuite
+   leur SVG en production → tout raffinage y serait invisible.
+2. **Premier pivot** : créer des SVG dédiés pour les 14 monstres récents
+   sans PNG. Pilote `niffleur` livré (commit `2e574b5`).
+3. **Second pivot (final)** : la méthode SVG est trop limitée visuellement.
+   On passe à **PNG via Nano Banana** (workflow Bloc C éprouvé).
+   Le SVG niffleur est **conservé comme fallback graceful** au cas où le
+   PNG ne charge pas.
 
-**Pivot** : créer un SVG dédié pour les **14 monstres récents** qui n'ont
-**ni PNG ni SVG dédié** et héritent actuellement du SVG générique de leur
-catégorie (ou du fallback emoji). Forte valeur visible : ces monstres
-s'affichent aujourd'hui de manière identique entre eux quand ils partagent
-la même catégorie.
-
-## Cibles (14 monstres)
+## Cibles (14 PNG à générer)
 
 | Catégorie | Monstres |
 |-----------|----------|
 | **Bête** | `chauve_souris_vampire`, `manticore_jeune` |
-| **Fantôme** | `chevalier_fantome`, `fantome_sang_noir`, `spectre_maudit` |
 | **Créature** | `niffleur`, `bowtruckle`, `gremlin_magique` |
+| **Fantôme** | `chevalier_fantome`, `fantome_sang_noir`, `spectre_maudit` |
 | **Humain** | `hecate_sorciere` |
 | **Être magique** | `elfe_rebelle`, `gardien_portail`, `vampire_mineur`, `strigoi`, `poupee_maudite` |
 
-> `mon_monstre` est le template commenté — exclu.
+## Workflow (identique au Bloc C — éprouvé)
 
-## Style cible (vérifié sur peeves/myrtle/serpent_cachot/gobelin)
-
-- `viewBox="0 0 100 100"`, ~25-30 lignes par entrée
-- Corps principal : `fill="currentColor"` (teinté via VARIANT_COLORS)
-- Détails sombres : `#0d0705` (yeux, crocs, contours)
-- Accents colorés ponctuels autorisés (sang `#c0392b`, vert oeil `#2a6a20`…)
-- Commentaires français courts par groupe d'éléments
-- `<defs>` disponibles : `url(#shadeRadial)`, `url(#halo)`, `url(#mist)`, `url(#glow)`
-- 6-12 éléments visuels distincts par monstre
+Pour chaque PNG livré par Nano Banana :
+1. Vérifier alpha avec PIL (`Image.split()[-1].getextrema()`).
+2. Si pré-détouré (α0 > 10%) → pipeline ad-hoc trim+recentrage+resize.
+   Sinon → `python3 tools/process_monster_png.py --src … --id …` (rembg
+   birefnet par défaut pour préserver translucides).
+3. Sortie : `img/monsters/<id>.png` (512×512 RGBA, < 350 KB cible).
+4. Ajouter `imgSrc: "img/monsters/<id>.png"` après `icon:` dans
+   `monsters.js`.
+5. `node tests/smoke.js` doit rester vert (scénario 5 valide RGBA + alpha).
 
 ## Cadence (validée utilisateur)
 
-1. **Pilote** = `niffleur` (créature, silhouette iconique : long museau + pelage noir + trésor doré dans le bec)
-2. **Pause** pour validation du style/niveau de détail
-3. **Batchs ~5/6** de 3 commits :
-   - B+1 : `niffleur` (pilote)
-   - B+2 : 5 créatures/bêtes (`bowtruckle`, `gremlin_magique`, `manticore_jeune`, `chauve_souris_vampire`)
-   - B+3 : 4 fantômes/êtres magiques (`chevalier_fantome`, `fantome_sang_noir`, `spectre_maudit`, `poupee_maudite`)
-   - B+4 : 4 êtres magiques + humain (`elfe_rebelle`, `gardien_portail`, `vampire_mineur`, `strigoi`, `hecate_sorciere`)
+Batchs de **3-4 prompts**. Utilisateur valide le style sur chaque batch
+avant que je livre le suivant.
 
-## Vérification (§4 + §7 des guidelines)
+- **Batch 1** : 4 prompts diversifiés en catégorie (1 bête, 1 créature,
+  1 fantôme, 1 humain) pour caler le style.
+  → `manticore_jeune`, `niffleur`, `chevalier_fantome`, `hecate_sorciere`.
+- **Batch 2** : 4 prompts (poursuite des fantômes + créatures restantes).
+  → `bowtruckle`, `gremlin_magique`, `chauve_souris_vampire`, `fantome_sang_noir`.
+- **Batch 3** : 3 prompts (êtres magiques 1/2).
+  → `elfe_rebelle`, `poupee_maudite`, `spectre_maudit`.
+- **Batch 4** : 3 prompts (êtres magiques 2/2).
+  → `gardien_portail`, `vampire_mineur`, `strigoi`.
 
-- Après chaque batch : `node tests/smoke.js` doit rester vert (34/34).
-- L'ajout est strictement additif : on insère de nouvelles clés dans
-  `MONSTER_ICONS`, jamais on n'écrase une clé existante.
-- L'insertion respecte la section catégorielle (`// ── CRÉATURES ──`).
-- Critère visuel de validation (vérifié manuellement par l'utilisateur après merge) :
-  - Le monstre doit être reconnaissable par sa silhouette seule.
-  - Couleur tintée par variant `fierce`/`ancient`/`shiny` (donc corps en `currentColor`).
+## Idée parking — vue 3D billboarding
+
+Question posée par l'utilisateur : "ne pourrait-on pas utiliser les icônes
+monstre dans la vue 3D ?". Réponse honnête → faisable mais chantier
+séparé (200-400 lignes de renderer, choix game design : encounter pré-
+spawné vs. random, fuite possible, monstre mobile). À traiter **après**
+les 14 PNG, qui sont prérequis pour avoir des billboards nets.
+Ne pas mélanger les deux chantiers.
 
 ## Suivi
 
-- [x] Plan rédigé et validé
-- [x] Pilote `niffleur` livré + smoke vert
-- [ ] Validation utilisateur du pilote
-- [ ] Batch B+2 (4 créatures/bêtes)
-- [ ] Batch B+3 (4 fantômes)
-- [ ] Batch B+4 (5 êtres magiques + humain)
-- [ ] Ajout de la section au `SVG_PLAN.md` une fois clos (renumérotage B+)
+- [x] **Décision pivot SVG→PNG**
+- [x] **SVG niffleur conservé comme fallback**
+- [ ] **Batch 1** — prompts rédigés
+- [ ] **Batch 1** — PNG reçus + pipeline + smoke + commit
+- [ ] **Batch 2** — prompts + PNG + commit
+- [ ] **Batch 3** — prompts + PNG + commit
+- [ ] **Batch 4** — prompts + PNG + commit
+- [ ] **SVG_PLAN.md** mis à jour avec un nouveau bloc (ex: C.6 "PNG monstres récents")
+- [ ] **Idée 3D billboarding** → ouvrir un nouveau plan dédié si validée
+
+## Journal
+
+| Date | Étape | Notes |
+|------|-------|-------|
+| 2026-05-12 | Plan v1 SVG | 14 monstres ciblés. Pilote niffleur SVG livré (commit `2e574b5`). |
+| 2026-05-12 | Pivot v2 PNG | Utilisateur préfère méthode PNG (Bloc C). SVG niffleur conservé comme fallback. Re-rédaction du plan pour 14 PNG en 4 batchs. |
