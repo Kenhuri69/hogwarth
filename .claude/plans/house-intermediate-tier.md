@@ -1,7 +1,12 @@
-# Plan — Tier 2 bis Maison : item à 300 points
+# Plan — Tier 2 bis Maison : item remis par PNJ Chef de Maison
 
 > Plan vivant (cf. `.claude/guidelines.md` §5). Cocher les étapes au fur et à mesure.
 > Statut au démarrage : non implémenté.
+>
+> **Refonte (révision 2)** : à la demande du dev, **toutes** les récompenses
+> Maison qui distribuent un objet (tier 2 et tier 4) ne tombent plus
+> automatiquement dans l'inventaire. Le bonus de stats reste immédiat, mais
+> **l'item doit être réclamé en personne auprès du Chef de Maison**.
 
 ## 1. Contexte
 
@@ -15,230 +20,430 @@ Audit du système Maison (CLAUDE.md + `state.js:68-113`) :
 | 4 | 1000 pts | Item légendaire (sword_gryff, locket_slytherin…) | étage 10+ |
 
 **Constat du top-10** (#3) : la Maison est ressentie comme **cosmétique
-en early/mid-game** parce que +1 ATK sur Harry (ATK base 5) à l'étage 2
-représente +20 % de dégâts sur une base de 5 — imperceptible quand les
-monstres ont DEF 2-5. Le seul effet *visible* arrive au tier 4 (item
-légendaire) qui se débloque trop tard pour la majorité des runs (étage
-10+ correspond au mur de difficulté solo).
+en early/mid-game** : +1 ATK à l'étage 2 = +20 % sur 5 dégâts, imperceptible.
+Le seul effet *visible* arrive au tier 4 (item légendaire) qui se débloque
+trop tard pour la majorité des runs (étage 10+).
 
-**Objectif** : injecter un **item rare** au tier 2 (300 pts), accessible
-mid-game, qui matérialise le bonus de Maison sans casser la progression
-légendaire du tier 4. Pas remplacer le bonus de stats existant — ajouter
-un item **en plus**, à la même étape de palier.
+**Objectifs** :
+1. Injecter un **item rare** au tier 2 (300 pts), accessible mid-game.
+2. **Ancrer la Maison dans le monde** : les items ne tombent plus du ciel
+   — ils sont remis solennellement par le Chef de Maison correspondant.
+   Cela crée une boucle « atteindre seuil → message d'annonce → aller voir
+   le prof » qui matérialise narrativement l'appartenance.
 
 ## 2. Conception
 
-### 2.1 Choix des items
+### 2.1 Choix des items tier 2
 
 Critères :
-- **Rarity `rare`** (visible dans l'inventaire grâce à la bordure, mais
-  pas légendaire — on garde l'aura T4 intacte).
-- **Slot peu disputé en mid-game** pour ne pas forcer le joueur à
-  arbitrer entre l'item de Maison et son équipement principal de l'étage
-  (typiquement wand2, robe1, amulette).
-- **Stats cohérentes avec l'identité de la Maison**, dans une fourchette
-  de +2 sur la stat majeure (entre le +1 ATK des wand1/dague basique et
-  le +4-8 des items légendaires).
+- **Rarity `rare`** (bordure visible mais pas légendaire — on garde l'aura T4 intacte).
+- **Slot peu disputé en mid-game** pour ne pas forcer un arbitrage avec
+  wand2 / robe1 / amulette.
+- **Stats cohérentes** : +2 sur la stat majeure (entre les +1 ATK des
+  équipements basiques et les +4-8 des items légendaires).
 
-| Maison      | Item                  | Slot     | Bonus                | Raison du slot |
-|-------------|-----------------------|----------|----------------------|----------------|
-| Gryffondor  | Brassard du Lion      | `hands`  | ATK +2, LCK +1       | `hands` souvent vide mid-game ; cohérent avec un boost martial |
-| Serpentard  | Anneau du Serpent     | `ring`   | MAG +2, LCK +1       | route `ring1` puis `ring2` via `_resolveSlotForItem` — toujours libre |
-| Serdaigle   | Plume d'Aigle         | `trinket`| MAG +2, INT +1       | `trinket` peu utilisé avant l'épée Gryff ou retourneur de temps |
-| Poufsouffle | Ceinture du Blaireau  | `belt`   | DEF +2, END +1       | `belt` rarement équipé mid-game ; END boost survie cohérent |
+| Maison      | Item                  | Slot     | Bonus                | Remise par |
+|-------------|-----------------------|----------|----------------------|-----------|
+| Gryffondor  | Brassard du Lion      | `hands`  | ATK +2, LCK +1       | McGonagall (existant) |
+| Serpentard  | Anneau du Serpent     | `ring`   | MAG +2, LCK +1       | Rogue (nouveau) |
+| Serdaigle   | Plume d'Aigle         | `trinket`| MAG +2, INT +1       | Flitwick (nouveau) |
+| Poufsouffle | Ceinture du Blaireau  | `belt`   | DEF +2, END +1       | Chourave (nouveau) |
 
-Tous : `rarity: 'rare'`, `price: 0` (non vendable au shop par convention
-des items spéciaux), `family` propre par maison pour distinction.
+Tous : `rarity: 'rare'`, `price: 0`, `family` propre par maison.
 
-### 2.2 Cumul stats + item au tier 2
+### 2.2 Nouveau flux de distribution
 
-Lecture du code (`main.js:174-207`) :
-- `checkHouseLevelUp()` itère sur les tiers et applique :
-  - les bonus de stat `_baseAtk / _baseDef / _baseMag / _baseLck`
-  - **et** l'item si `tier.bonus.item` est défini
-- **Les deux blocs sont indépendants** — un tier peut avoir les deux.
+Code actuel (`main.js:174-207`) :
+- `checkHouseLevelUp` applique stats **et** distribue immédiatement
+  l'item via `tryAddItem` quand `tier.bonus.item` est défini.
 
-Donc le plan est de modifier la définition tier 2 dans `state.js` pour
-**conserver le bonus de stats actuel** ET y ajouter `item: '<id>'`. Aucun
-changement de logique métier requis.
+Code cible :
+- `checkHouseLevelUp` applique **uniquement les stats**, et ajoute l'ID
+  de l'item à un nouvel état `pendingHouseRewards: Set<itemId>`.
+- Le `msg` du palier renvoie le joueur vers le Chef de Maison :
+  « 🦁 Bravoure éprouvée ! +1 ATK +1 LCK — le Brassard du Lion vous attend
+  auprès du Pr McGonagall. »
+- À la visite du Chef de Maison, une action spéciale **`claim_house_reward`**
+  remet **toutes** les récompenses en attente pour cette Maison, retire
+  les IDs du Set, déclenche un autosave.
 
-### 2.3 Message de palier
+### 2.3 Nouvel état persisté : `pendingHouseRewards`
 
-Le `msg` actuel du tier 2 mentionne déjà les stats (ex. « Bravoure
-éprouvée ! +1 ATK +1 LCK »). On enrichit : « Bravoure éprouvée ! +1 ATK
-+1 LCK — le Brassard du Lion vous est offert. »
+```js
+// state.js (à côté de housePoints/houseTier)
+let pendingHouseRewards = new Set();   // Set<itemId>
 
-L'ajout d'item est affiché en plus du msg via `addMsg` ligne 200 :
-`🎁 {icon} {name} ajouté à l'inventaire !`. Cohérent avec le tier 4.
+// save.js — _serializeState / _applyState
+// Sérialisé en Array.from, restauré en new Set(arr || [])
+```
+
+Avantages d'un `Set<itemId>` (vs `Set<tierIndex>`) :
+- Découplé du tier numéro — facile d'ajouter tier 5 plus tard.
+- Idempotent (un même id ne peut être en attente deux fois).
+- Trivialement testable (`pendingHouseRewards.has('brassard_lion')`).
+
+### 2.4 PNJ Chefs de Maison
+
+McGonagall existe déjà (`npcs.js:246`, étage 5, titre « Directrice de
+Gryffondor »). On lui **ajoute** une `specialAction`. Les 3 autres profs
+sont **nouveaux** :
+
+| PNJ                  | Maison      | Étage | Localisation narrative | Portrait |
+|----------------------|-------------|-------|------------------------|----------|
+| Pr McGonagall        | Gryffondor  | 5     | Tour de Gryffondor     | `img/npc/mcgonagall.png` (existant) |
+| Pr Severus Rogue     | Serpentard  | 4     | Cachots / labo potions | `img/npc/rogue.png` (à fournir ou fallback emoji) |
+| Pr Filius Flitwick   | Serdaigle   | 6     | Salle de Sortilèges    | `img/npc/flitwick.png` (idem) |
+| Pr Pomona Chourave   | Poufsouffle | 3     | Serres / Botanique     | `img/npc/sprout.png` (idem) |
+
+**Placement** : choisi pour que le PNJ soit **proche du seuil tier 2**
+(300 pts ≈ étage 4-5 normalement). Si le seuil est atteint à un étage
+inférieur au placement du PNJ, l'item reste en attente jusqu'à la
+descente : c'est un *feature*, pas un bug — ça encourage la descente.
+
+**Sans image** : si `portraitImg` pointe vers un fichier absent, le
+fallback emoji du champ `icon` reste affiché ; aucune erreur. À court
+terme on accepte l'emoji ; les portraits PNG arriveront dans une PR
+séparée (hors-scope §6).
+
+### 2.5 Action spéciale `claim_house_reward`
+
+Structure dans le PNJ :
+```js
+specialAction: {
+  type:  'claim_house_reward',
+  house: 'Gryffondor',
+  label: '🎁 Recevoir votre récompense'   // affiché conditionnellement
+}
+```
+
+**Logique d'affichage du bouton** (dans `_npcDialogActions`) :
+- Bouton **caché** sauf si :
+  - `chosenHouse === npc.specialAction.house` ET
+  - `pendingHouseRewards.size > 0` ET
+  - au moins une entrée du Set est un item « appartenant » à cette Maison
+    (lookup : `HOUSE_BONUSES[house].tiers.find(t => t.bonus.item === id)`).
+
+**Dispatcher** (dans `triggerNpcSpecialAction`, nouveau cas
+`claim_house_reward`) :
+- Récupère les IDs en attente pour cette Maison.
+- Pour chaque : `tryAddItem(item, { silent: true })`. Si l'inventaire
+  est plein, on n'enlève **pas** du Set (le joueur reviendra) et on
+  affiche `addMsg("L'inventaire est plein — libérez de la place.", 'bad')`.
+- Sinon, retire du Set, addMsg `🎁 {icon} {name} vous est remis(e) par
+  {npc.title}.`, joue `playLevelUp`, déclenche `autoSave('house-reward')`.
+- Pas `oneShot` : si une 2e récompense devient en attente (tier 4),
+  l'action redevient cliquable.
+
+### 2.6 Marker minimap
+
+`getNpcMarkerSign(npcId)` doit retourner **🎁** (ou ❗ doré) si le PNJ
+a une récompense Maison en attente pour le joueur. Priorité par-dessus
+le marker quête s'il y en a un (la récompense Maison est plus rare et
+plus saillante). Lookup léger via `pendingHouseRewards` + match
+`specialAction.house`.
+
+### 2.7 Message d'annonce au palier
+
+Format unifié :
+```
+🦁 Bravoure éprouvée ! +1 ATK +1 LCK — le Brassard du Lion vous attend auprès du Pr McGonagall (étage 5).
+```
+Le numéro d'étage est lu depuis `npc.placement.floor` au moment de
+l'annonce (le PNJ est résolu via `HOUSE_BONUSES[house].headOfHouse`,
+un nouveau champ — voir §4 étape 2).
 
 ## 3. Contraintes
 
 | # | Contrainte |
 |---|-----------|
 | C1 | Aucune régression : `node tests/smoke.js` vert avant push. |
-| C2 | Inventaire plein à 16 → l'item ne tombe pas, mais le bonus de stat s'applique quand même (cas existant déjà géré par `tryAddItem`). |
-| C3 | Save legacy : un perso qui a déjà atteint 300 pts AVANT cette PR a `houseTier ≥ 2`, donc `checkHouseLevelUp` skippe ce tier (ligne 181). **Il faut une migration one-shot** pour pousser l'item rétroactivement aux saves qui étaient déjà au tier 2+. (Voir §4 étape 3.) |
-| C4 | Ne pas casser le formatage parchemin/or des badges (rarity-rare bordure or pâle). |
-| C5 | Pas de nouveau slot, pas de nouveau type d'item. |
+| C2 | Inventaire plein → record reste en attente, le joueur revient. Pas de perte silencieuse. |
+| C3 | Save legacy : item déjà distribué automatiquement (ancien code) → ne PAS le redistribuer. Migration : vérifier la présence avant de pousser dans `pendingHouseRewards`. |
+| C4 | `pendingHouseRewards` sérialisé / restauré dans save (`_serializeState` / `_applyState`). |
+| C5 | `_npcDialogActions` actuel cache l'action via `_isSpecialActionSpent` — pour `claim_house_reward` on **bypass** ce mécanisme et on utilise une condition propre (`_canClaimHouseReward(npc)`). |
+| C6 | Le marker 🎁 ne doit pas apparaître si le PNJ n'est pas de la bonne Maison (sinon, après avoir choisi Serpentard, McGonagall montrerait quand même un cadeau — incohérent). |
+| C7 | `loader.js` MANIFEST : ajouter `pendingHouseRewards` (kind `obj`) si on veut le tracer, sinon pas critique. |
 
 ## 4. Découpage en étapes
 
-> Convention : `[ ]` à faire, `[x]` fait, `[~]` partiel/écart noté.
-
 ### Étape 1 — 4 nouveaux items dans `data.js`
-- [ ] Ajouter à `ITEMS[]` (juste après les autres items équipables ; rester proche du groupement Maison existant — ex. sous `sword_gryff` / `locket_slytherin`) :
+- [ ] Ajouter à `ITEMS[]` (juste après les items légendaires existants) :
   ```js
-  // Items Tier 2 Maison (300 pts) — cf. plan house-intermediate-tier
-  { id: 'brassard_lion',   name: 'Brassard du Lion',
-    icon: '🥊', type: 'armor',  slot: 'hands', family: 'gryff_t2',
+  // Items Tier 2 Maison (300 pts) — remis par les Chefs de Maison
+  { id: 'brassard_lion',     name: 'Brassard du Lion',
+    icon: '🥊', type: 'armor', slot: 'hands',  family: 'gryff_t2',
     rarity: 'rare', price: 0, bonusAtk: 2, bonusLck: 1,
     desc: 'Cuir tanné aux couleurs rouge et or — fierté gryffondorienne.' },
-  { id: 'anneau_serpent',  name: 'Anneau du Serpent',
-    icon: '💍', type: 'acc',    slot: 'ring',  family: 'slyth_t2',
+  { id: 'anneau_serpent',    name: 'Anneau du Serpent',
+    icon: '💍', type: 'acc',   slot: 'ring',   family: 'slyth_t2',
     rarity: 'rare', price: 0, bonusMag: 2, bonusLck: 1,
     desc: 'Argent ciselé enroulé sur lui-même, gemme émeraude.' },
-  { id: 'plume_aigle',     name: "Plume d'Aigle",
-    icon: '🪶', type: 'acc',    slot: 'trinket', family: 'raven_t2',
+  { id: 'plume_aigle',       name: "Plume d'Aigle",
+    icon: '🪶', type: 'acc',   slot: 'trinket', family: 'raven_t2',
     rarity: 'rare', price: 0, bonusMag: 2, bonusInt: 1,
     desc: "Plume immaculée d'un aigle des Highlands ; bleue à reflets bronze." },
   { id: 'ceinture_blaireau', name: 'Ceinture du Blaireau',
-    icon: '🪢', type: 'armor',  slot: 'belt',  family: 'pouf_t2',
+    icon: '🪢', type: 'armor', slot: 'belt',   family: 'pouf_t2',
     rarity: 'rare', price: 0, bonusDef: 2, bonusEnd: 1,
-    desc: 'Cuir épais brodé aux couleurs jaune et noir — solide et discret.' }
+    desc: 'Cuir épais brodé jaune et noir — solide et discret.' }
   ```
-- **Vérif** : `ITEMS.find(i => i.id === 'brassard_lion').rarity === 'rare'`. Loader manifest reste vert (ITEMS attendu).
+- **Vérif** : `ITEMS.find(i => i.id === 'brassard_lion').rarity === 'rare'`.
 
-### Étape 2 — Étendre `HOUSE_BONUSES` tier 2 dans `state.js`
-- [ ] Modifier les 4 entrées tier 2 (lignes ~75, 86, 97, 108) pour ajouter `item:` :
+### Étape 2 — `HOUSE_BONUSES` : tier 2 enrichi + `headOfHouse`
+- [ ] Pour chaque Maison dans `state.js`, ajouter un champ `headOfHouse`
+  pointant vers l'ID du PNJ, et conserver `bonus.item` sur tier 2 et 4 :
   ```js
-  // Gryffondor t2 (ligne ~75)
-  { threshold: 300, label: 'Élève', bonus: { _baseAtk: 1, _baseLck: 1, item: 'brassard_lion' },
-    msg: '🦁 Bravoure éprouvée ! +1 ATK +1 LCK — le Brassard du Lion vous revient.' },
-
-  // Serpentard t2
-  { threshold: 300, label: 'Élève', bonus: { _baseMag: 1, _baseLck: 1, item: 'anneau_serpent' },
-    msg: "🐍 Ruse affûtée ! +1 MAG +1 LCK — l'Anneau du Serpent s'enroule sur votre doigt." },
-
-  // Serdaigle t2
-  { threshold: 300, label: 'Élève', bonus: { _baseMag: 1, _baseLck: 1, item: 'plume_aigle' },
-    msg: "🦅 Esprit acéré ! +1 MAG +1 LCK — la Plume d'Aigle vous est offerte." },
-
-  // Poufsouffle t2
-  { threshold: 300, label: 'Élève', bonus: { _baseDef: 1, _baseLck: 1, item: 'ceinture_blaireau' },
-    msg: '🦡 Loyauté récompensée ! +1 DEF +1 LCK — la Ceinture du Blaireau vous habille.' }
+  Gryffondor: {
+    color: '#740001', /* … */
+    headOfHouse: 'mcgonagall',     // ← nouveau
+    tiers: [
+      { threshold: 100, /* … */ bonus: { _baseAtk: 1 } },
+      { threshold: 300, label: 'Élève',
+        bonus: { _baseAtk: 1, _baseLck: 1, item: 'brassard_lion' },
+        msg: '🦁 Bravoure éprouvée ! +1 ATK +1 LCK — le Brassard du Lion vous attend auprès du Pr McGonagall.' },
+      { threshold: 600, /* … */ bonus: { _baseAtk: 2 } },
+      { threshold: 1000, label: 'Champion',
+        bonus: { item: 'sword_gryff' },
+        msg: "🦁 L'Épée de Gryffondor vous attend auprès du Pr McGonagall." },
+    ]
+  }
+  // idem Serpentard → headOfHouse: 'rogue',     items: anneau_serpent / locket_slytherin
+  // idem Serdaigle  → headOfHouse: 'flitwick',  items: plume_aigle / diademe_serdaigle
+  // idem Poufsouffle→ headOfHouse: 'sprout',    items: ceinture_blaireau / coupe_poufsouffle
   ```
-- **Vérif** : depuis la console — `chosenHouse = 'Gryffondor'; housePoints = 300; houseTier = 1; checkHouseLevelUp()` → tier passe à 2, `brassard_lion` se retrouve dans `player.inventory`, `addMsg` log lisible.
+- **Vérif** : `HOUSE_BONUSES.Gryffondor.headOfHouse === 'mcgonagall'`.
 
-### Étape 3 — Migration rétroactive pour saves existantes
-- [ ] Dans `main.js — checkHouseLevelUp()` ou via un helper séparé, ajouter un balayage one-shot au chargement :
+### Étape 3 — Refonte `checkHouseLevelUp` (main.js)
+- [ ] Remplacer la branche `tier.bonus.item` (lignes 197-202) :
   ```js
-  // À placer dans _applyState (save.js) APRÈS Object.assign,
-  // OU dans main.js après chargement → exécuté une fois par session.
-  function _grantMissedHouseItems() {
-    if (!chosenHouse) return;
-    const bonuses = HOUSE_BONUSES[chosenHouse];
-    if (!bonuses) return;
-    bonuses.tiers.forEach((tier, i) => {
-      if (houseTier < i + 1) return;           // pas atteint → pas concerné
-      if (!tier.bonus.item) return;            // tier sans item → rien à faire
-      const item = ITEMS.find(it => it.id === tier.bonus.item);
-      if (!item) return;
-      // Vérifier qu'on ne l'a pas déjà (par id, équipé OU en inventaire)
-      const has = (player.inventory || []).some(i => i && i.id === item.id)
-               || party.some(c => c.equipped && Object.values(c.equipped).some(it => it && it.id === item.id));
-      if (has) return;
-      tryAddItem(item, { silent: true });
-      if (typeof addMsg === 'function') {
-        addMsg(`🎁 ${item.icon} ${item.name} (rétroactif — Maison)`, 'good');
+  if (tier.bonus.item) {
+    pendingHouseRewards.add(tier.bonus.item);
+    // pas de tryAddItem — l'item est remis par le Chef de Maison
+  }
+  ```
+- Le `msg` du tier mentionne déjà le PNJ (étape 2). Pas de second
+  `addMsg` redondant.
+- **Vérif** : depuis la console — atteindre seuil 300 → stats appliquées,
+  `pendingHouseRewards` contient `'brassard_lion'`, inventaire **inchangé**.
+
+### Étape 4 — Ajout des 3 nouveaux PNJ dans `npcs.js`
+- [ ] Ajouter Rogue (étage 4), Flitwick (étage 6), Chourave (étage 3) avec :
+  ```js
+  {
+    id: 'rogue', name: 'Professeur Severus Rogue',
+    title: 'Directeur de Serpentard', icon: '🦇',
+    portraitImg: 'img/npc/rogue.png',
+    placement: { floor: 4, anchor: 'any' },
+    specialAction: { type: 'claim_house_reward', house: 'Serpentard',
+                     label: '🎁 Recevoir votre récompense' },
+    dialogues: {
+      greeting: ["Tiens, tiens... un élève de ma maison qui se distingue.",
+                 "L'ambition n'est rien sans la maîtrise. Voyons ce que vous méritez."],
+      idle:     "Concentrez-vous. La distraction tue plus vite que les sortilèges.",
+      idleSpent:"Vous avez déjà reçu votre dû. Au travail.",
+      idleOtherHouse: "Que faites-vous dans mes cachots ? Hors de ma vue.",
+    }
+  }
+  // Flitwick / Chourave : même structure, tons adaptés
+  ```
+- [ ] **Étendre McGonagall** : lui ajouter le bloc `specialAction` (sans
+  toucher à ses dialogues existants ni à sa quête) :
+  ```js
+  specialAction: { type: 'claim_house_reward', house: 'Gryffondor',
+                   label: '🎁 Recevoir votre récompense' }
+  ```
+- **Vérif** : `getNpcById('rogue').specialAction.house === 'Serpentard'`.
+
+### Étape 5 — Dispatcher dans `npc-dialog.js`
+- [ ] Ajouter le cas `claim_house_reward` dans `triggerNpcSpecialAction` :
+  ```js
+  if (action.type === 'claim_house_reward') {
+    if (chosenHouse !== action.house) {
+      addMsg('Ce professeur ne dirige pas votre Maison.', 'bad');
+      return;
+    }
+    const houseItems = HOUSE_BONUSES[chosenHouse].tiers
+      .map(t => t.bonus.item).filter(Boolean);
+    const claimable = houseItems.filter(id => pendingHouseRewards.has(id));
+    if (!claimable.length) {
+      addMsg('Rien à recevoir pour le moment.', 'info');
+      return;
+    }
+    let given = 0;
+    for (const id of claimable) {
+      const item = ITEMS.find(it => it.id === id);
+      if (!item) continue;
+      if (!tryAddItem(item, { silent: true })) {
+        addMsg("Inventaire plein — libérez de la place et revenez.", 'bad');
+        break;
       }
+      pendingHouseRewards.delete(id);
+      addMsg(`🎁 ${item.icon} ${item.name} vous est remis(e) par ${npc.title}.`, 'good');
+      given++;
+    }
+    if (given) {
+      AudioSystem.playLevelUp();
+      updateUI();
+      safeCall('autoSave', 'house-reward');
+    }
+    return;
+  }
+  ```
+- [ ] Modifier `_npcDialogActions` pour utiliser un helper
+  `_canClaimHouseReward(npc)` plutôt que `_isSpecialActionSpent` quand
+  `npc.specialAction?.type === 'claim_house_reward'`.
+- **Vérif** : aller voir Rogue avec `chosenHouse='Serpentard'` et
+  `pendingHouseRewards.has('anneau_serpent')` → bouton visible →
+  clic → item dans inventaire, Set vidé.
+
+### Étape 6 — Marker minimap (`getNpcMarkerSign`)
+- [ ] Avant la logique quête existante, vérifier si le PNJ a une
+  récompense Maison disponible :
+  ```js
+  if (npc.specialAction?.type === 'claim_house_reward'
+      && chosenHouse === npc.specialAction.house) {
+    const houseItems = HOUSE_BONUSES[chosenHouse].tiers
+      .map(t => t.bonus.item).filter(Boolean);
+    if (houseItems.some(id => pendingHouseRewards.has(id))) return '🎁';
+  }
+  ```
+- **Vérif** : marker 🎁 apparaît sur la case McGonagall quand on a
+  passé le seuil 300 (Gryffondor) ; disparaît après réclamation.
+
+### Étape 7 — Persistance (`save.js`)
+- [ ] Dans `_serializeState` : `pendingHouseRewards: Array.from(pendingHouseRewards)`.
+- [ ] Dans `_applyState` : `pendingHouseRewards = new Set(gs.pendingHouseRewards || [])`.
+- [ ] Initialiser `pendingHouseRewards = new Set()` dans `state.js` et
+  dans `main.js` lors de `Nouvelle aventure` (à côté de `housePoints = 0`).
+- **Vérif** : save → reload → Set repeuplé.
+
+### Étape 8 — Migration rétroactive (saves d'avant cette PR)
+- [ ] Helper one-shot `_migrateHouseRewards()` appelé à la fin de
+  `_applyState` :
+  ```js
+  function _migrateHouseRewards() {
+    if (!chosenHouse) return;
+    const house = HOUSE_BONUSES[chosenHouse]; if (!house) return;
+    house.tiers.forEach((tier, i) => {
+      if (houseTier < i + 1) return;
+      if (!tier.bonus.item) return;
+      const itemId = tier.bonus.item;
+      // Possède déjà (inventaire ou équipé) → rien à faire
+      const has = (player.inventory || []).some(it => it && it.id === itemId)
+              || party.some(c => c.equipped &&
+                   Object.values(c.equipped).some(it => it && it.id === itemId));
+      if (has) return;
+      // Sinon → en attente chez le Chef de Maison
+      pendingHouseRewards.add(itemId);
     });
   }
   ```
-- Appeler `_grantMissedHouseItems()` :
-  - Après chaque `_applyState()` (load) → couvre les vieilles saves
-  - À la fin de `checkHouseLevelUp()` (ceinture/bretelles) → couvre les
-    cas où on aurait raté une distribution par bug futur
-- **Vérif** : charger une save où `houseTier = 3` mais pas de brassard
-  dans l'inventaire → après load, brassard apparaît automatiquement, et
-  ne se duplique pas au prochain load.
+- **Vérif** : charger une vieille save tier 4 où l'épée Gryff a été
+  vendue/perdue → l'épée reste perdue (le joueur l'a eue) et **n'est pas**
+  remise en attente (présence vérifiée *historiquement* impossible — on
+  ne migre que ce qui n'a jamais été reçu).
 
-### Étape 4 — Smoke test
-- [ ] Nouveau scénario `scenarioHouseTier2Item` dans `tests/smoke.js` :
+  > Limitation acceptée : on ne distingue pas « possédé puis vendu » de
+  > « jamais reçu ». Si un joueur a vendu son épée Gryff avant cette PR,
+  > la migration la remettra en attente. Acceptable car cas extrême et
+  > avantageux pour le joueur.
+
+### Étape 9 — Smoke test (`tests/smoke.js`)
+- [ ] Nouveau scénario `scenarioHouseRewardFlow` :
   ```js
-  async function scenarioHouseTier2Item() {
-    console.log('\n── Scénario : Tier 2 Maison donne un item rare ──');
+  async function scenarioHouseRewardFlow() {
+    console.log('\n── Scénario : Récompense Maison remise par PNJ ──');
     const { browser, page, errors } = await launchGame();
     await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
 
-    // T1 : force le passage au tier 2 (300 pts) → brassard tombé
+    // T1 : franchir seuil 300 → item en attente, pas dans inventaire
     const t1 = await page.evaluate(() => {
-      chosenHouse = 'Gryffondor';
-      housePoints = 300;
-      houseTier   = 1;
+      chosenHouse = 'Gryffondor'; housePoints = 300; houseTier = 1;
       checkHouseLevelUp();
       return {
-        tier:   houseTier,
-        hasItem: (player.inventory || []).some(i => i && i.id === 'brassard_lion'),
-        atkBoosted: party[0]._baseAtk > 5     // base Harry = 5 → après t1 +1 et t2 +1 = 7
+        tier:    houseTier,
+        pending: pendingHouseRewards.has('brassard_lion'),
+        inInv:   (player.inventory || []).some(i => i && i.id === 'brassard_lion'),
+        atkBoosted: party[0]._baseAtk > 5
       };
     });
     assert(t1.tier === 2, 'tier non passé à 2');
-    assert(t1.hasItem, 'brassard_lion absent après tier 2');
+    assert(t1.pending, 'brassard non mis en attente');
+    assert(!t1.inInv, 'brassard distribué automatiquement (bug)');
     assert(t1.atkBoosted, 'bonus ATK non appliqué');
 
-    // T2 : migration rétroactive — vider l'inventaire et recharger
+    // T2 : visite McGonagall → réception
     const t2 = await page.evaluate(() => {
-      player.inventory = [];
-      _grantMissedHouseItems();
-      return (player.inventory || []).some(i => i && i.id === 'brassard_lion');
+      triggerNpcSpecialAction('mcgonagall');
+      return {
+        pending: pendingHouseRewards.has('brassard_lion'),
+        inInv:   (player.inventory || []).some(i => i && i.id === 'brassard_lion')
+      };
     });
-    assert(t2, 'migration rétroactive n\'a pas distribué l\'item');
+    assert(!t2.pending, 'brassard toujours en attente après réclamation');
+    assert(t2.inInv, 'brassard absent après réclamation');
 
-    // T3 : idempotence — re-appel ne duplique pas
+    // T3 : autre Maison → refus
     const t3 = await page.evaluate(() => {
-      _grantMissedHouseItems();
-      return (player.inventory || []).filter(i => i && i.id === 'brassard_lion').length;
+      chosenHouse = 'Serpentard';
+      pendingHouseRewards.add('anneau_serpent');
+      triggerNpcSpecialAction('mcgonagall');   // pas la bonne Maison
+      return pendingHouseRewards.has('anneau_serpent');
     });
-    assert(t3 === 1, `attendu 1 exemplaire, obtenu ${t3}`);
+    assert(t3, 'McGonagall a distribué une récompense Serpentard (bug)');
+
+    // T4 : inventaire plein → record reste en attente
+    const t4 = await page.evaluate(() => {
+      chosenHouse = 'Serpentard';
+      pendingHouseRewards.add('anneau_serpent');
+      // Bourrer l'inventaire à 16
+      player.inventory = Array.from({ length: 16 }, () => ({
+        id: 'potion_s', name: 'Potion', icon: '🧪', type: 'consumable' }));
+      triggerNpcSpecialAction('rogue');
+      return pendingHouseRewards.has('anneau_serpent');
+    });
+    assert(t4, 'anneau perdu silencieusement (inventaire plein)');
 
     if (errors.length) throw new Error(`${errors.length} erreurs JS`);
-    console.log('  ✅ Tier 2 item Maison conforme');
+    console.log('  ✅ Flow récompense Maison conforme');
     await browser.close();
   }
   ```
-- Ajouter dans la liste finale `scenarios = [..., scenarioHouseTier2Item, ...]`
-- **Vérif** : `node tests/smoke.js` vert.
+- Ajouter à `scenarios = […, scenarioHouseRewardFlow, …]`.
 
-### Étape 5 — Commit & push
-- [ ] Branche : `claude/house-tier2-item-300pts` depuis master à jour
-- [ ] Commit message : `feat(house): item rare au tier 2 Maison (300 pts)`
-- [ ] Push, ouvrir PR — guidelines §6 (vérifier état avant)
+### Étape 10 — Commit & push
+- [ ] Branche : `claude/house-reward-by-npc` (depuis master à jour)
+- [ ] Message : `feat(house): récompenses tier 2/4 remises par les Chefs de Maison`
+- [ ] Vérifier guidelines §6 avant push (état de la PR liée).
 
 ## 5. Ce qui ne change pas (sanity)
 
-- Aucun changement dans la **mécanique** de `checkHouseLevelUp` : on
-  exploite la branche `tier.bonus.item` déjà présente.
-- Tier 4 reste intact (item légendaire) — toujours le climax Maison.
-- Slots `hands` / `ring` / `trinket` / `belt` ne sont pas modifiés.
-- Pas de nouveau slot, pas de nouveau type. Migration rétroactive
-  idempotente (vérifie présence avant ajout).
-- Save legacy : si un perso au tier 4 (épée Gryff déjà reçue) n'a pas le
-  brassard, la migration le distribue. Si l'épée est perdue, elle n'est
-  PAS redistribuée (par design ; seul le t2 est rétroactif dans ce
-  patch).
+- Tier 1 et tier 3 : bonus de stats uniquement, comportement strictement
+  identique (pas d'item, pas de visite PNJ requise).
+- Bonus de stats du tier 2 / tier 4 : appliqués **immédiatement** au
+  franchissement du seuil — la visite chez le prof ne concerne que l'item.
+- `tryAddItem` reste utilisé tel quel pour la distribution effective.
+- Architecture `specialAction` existante : un seul nouveau `type`
+  (`claim_house_reward`), 4 entrées PNJ, pas de moteur custom.
 
 ## 6. Hors-scope
 
-- Tier 5 post-victoire (cf. ENDGAME_PLAN §7.7) — déjà planifié séparément
-- Animation spéciale de réception d'item Maison (V2)
-- Recoloration de l'item selon la Maison équipée (V2)
-- Suppression de l'item de Maison si on change de Maison (impossible dans
-  le jeu actuel — la Maison est figée à la sélection)
-- Buff/nerf des items Maison T4 existants (séparé)
+- Portraits PNG de Rogue / Flitwick / Chourave (PR art séparée — emoji
+  fallback en attendant).
+- Dialogues complets / quêtes de Rogue / Flitwick / Chourave (juste
+  l'action de remise dans cette PR ; quêtes propres → V2).
+- Tier 5 post-victoire (cf. ENDGAME_PLAN §7.7).
+- Animation de réception d'item Maison (V2).
 
 ## 7. Estimation
 
-- Étape 1-3 (data + migration) : 30 min
-- Étape 4 (smoke) : 30 min
-- Étape 5 (commit/push) : 10 min
-- **Total : ~1h10** (cohérent avec l'estimation initiale top-10 : 30 min - 1h)
+- Étape 1-2 (items + HOUSE_BONUSES) : 20 min
+- Étape 3 (checkHouseLevelUp) : 10 min
+- Étape 4 (3 nouveaux PNJ + extension McGonagall) : 30 min
+- Étape 5-6 (dispatcher + marker) : 30 min
+- Étape 7-8 (save + migration) : 20 min
+- Étape 9 (smoke) : 40 min
+- Étape 10 (commit/push) : 10 min
+- **Total : ~2h30** (re-calibration vs estimation initiale de 30 min - 1h ;
+  le passage par PNJ ajoute ~1h30 d'intégration mais apporte la cohérence
+  narrative demandée).
