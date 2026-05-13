@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : vane (feathery sides) · rachis (central spine) · quill (hollow tip at base) -->
+  <g fill="#000000">
+    <!-- vane : left half-leaf -->
+    <path data-region="vane" d="M 256 60 C 220 80 180 160 168 240 C 168 300 192 360 240 410 L 256 410 Z"/>
+    <!-- vane : right half-leaf -->
+    <path data-region="vane" d="M 256 60 C 292 80 332 160 344 240 C 344 300 320 360 272 410 L 256 410 Z"/>
+    <!-- rachis : central spine (renders on top of vane) -->
+    <path data-region="rachis" d="M 248 60 L 264 60 L 264 410 L 248 410 Z"/>
+    <!-- quill : hollow tip at base -->
+    <path data-region="quill" d="M 240 410 L 272 410 L 272 488 L 252 504 L 232 488 Z"/>
+  </g>
+</svg>

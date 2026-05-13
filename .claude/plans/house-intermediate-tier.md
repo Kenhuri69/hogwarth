@@ -267,29 +267,44 @@ un nouveau champ — voir §4 étape 2).
 
 ## 4. Découpage en étapes
 
-### Étape 0 — Assets visuels (parts SVG + recettes + PNG)
-- [ ] Créer `tools/parts/ring.svg` (regions `band`, `setting`, `gem`).
-- [ ] Créer `tools/parts/feather.svg` (regions `vane`, `rachis`, `quill`).
-- [ ] Créer 4 emblèmes mono-région : `emblem-lion.svg`, `emblem-snake.svg`,
-  `emblem-eagle.svg`, `emblem-badger.svg` (silhouette centrée ~140×140
-  sur viewBox 512, region unique `emblem`). Référence : `img/houses/*.png`.
-- [ ] Ajouter 4 recettes dans `tools/icon_factory.py` (`brassard_lion`,
-  `anneau_serpent`, `plume_aigle`, `ceinture_blaireau`) en suivant le
-  pattern d'un item rare existant. Couleurs : voir tableau §2.7.3.
-- [ ] Générer les PNG :
+### Étape 0 — Assets visuels (parts SVG + recettes + PNG) ✅
+
+**Écart constaté au démarrage** : le factory dispose déjà de deux
+mécanismes qui rendent inutile la création de 6 SVG :
+- `shapes.ring_band` (paramétrique) couvre l'Anneau du Serpent — pas
+  besoin de `tools/parts/ring.svg`.
+- `_SYMBOL_PATHS` + accent `{"kind": "symbol", …}` (cf. `icon_factory.py:765+`)
+  centre un glyph nommé sur n'importe quelle région — pile l'usage prévu
+  pour l'emblème de Maison. Pas besoin de 4 fichiers `emblem-*.svg` ni
+  de modifier `_build_silhouette_svg` pour composer plusieurs parts.
+
+Scope réel exécuté :
+
+- [x] Créer `tools/parts/feather.svg` (regions `vane`, `rachis`, `quill`).
+- [x] Ajouter 3 entrées dans `_SYMBOL_PATHS` (`lion`, `eagle`, `badger`).
+  `snake` y était déjà — réutilisé.
+- [x] Décision : pas de symbole emblème sur l'Anneau du Serpent — la
+  centroïde du masque `metal` (donut + bezel) tombe dans le trou central
+  du ring, donc le symbole serait crop-out par le masque. L'identité
+  Serpentard est portée par la gemme émeraude + accents runiques. Le
+  nom de l'item suffit à signaler le serpent.
+- [x] Ajouter 4 recettes dans `tools/icon_factory.py` (`brassard_lion`,
+  `anneau_serpent`, `plume_aigle`, `ceinture_blaireau`).
+- [x] Générer les PNG :
   ```bash
-  python tools/icon_factory.py brassard_lion anneau_serpent plume_aigle ceinture_blaireau
+  python3 tools/icon_factory.py brassard_lion anneau_serpent plume_aigle ceinture_blaireau
   ```
-- [ ] Référencer dans `js/item-icons.js` (ITEM_ICONS_NEW) — 4 entrées
-  pointant vers les `_64.png`.
-- **Vérif visuelle** : ouvrir `tools/_shots/` ou utiliser
-  `tools/preview_icons.py` si dispo ; sinon survoler dans le jeu après
-  l'étape 1 pour valider que les PNG s'affichent, que le symbole de
-  Maison est lisible à 32px et que la palette est cohérente avec le
-  blason existant.
+  → 20 PNG dans `img/icons_new/`.
+- [x] Référencer dans `js/item-icons.js` (`ITEM_ICON_NEW_REGISTRY`) —
+  4 entrées pointant vers les `_64.png`.
+- **Vérif visuelle (64px + 32px)** : les 4 items ont des silhouettes et
+  palettes distinctes par Maison. Brassard = lion gold sur cuir + cuff
+  rouge ; Anneau = argent + gemme émeraude ; Plume = vane bleu nuit +
+  rachis bronze + eagle bronze ; Ceinture = strap brun + buckle or +
+  badger or. Lisibles dès 32px.
 - **Vérif technique** : `git status` montre 20 nouveaux PNG dans
-  `img/icons_new/`, 6 nouveaux SVG dans `tools/parts/`, +4 recettes
-  dans `icon_factory.py`.
+  `img/icons_new/`, 1 nouveau SVG (`feather.svg`), +4 recettes et
+  +3 glyphs dans `icon_factory.py`, +4 entrées dans `item-icons.js`.
 
 ### Étape 1 — 4 nouveaux items dans `data.js`
 - [ ] Ajouter à `ITEMS[]` (juste après les items légendaires existants) :

@@ -160,7 +160,12 @@ const ITEM_ICON_NEW_REGISTRY = {
   coupe_poufsouffle:    'img/icons_new/coupe_poufsouffle_64.png',
   retourneur_temps:     'img/icons_new/retourneur_temps_64.png',
   mandragore:           'img/icons_new/mandragore_64.png',
-  choco_sorcier:        'img/icons_new/choco_sorcier_64.png'
+  choco_sorcier:        'img/icons_new/choco_sorcier_64.png',
+  // Tier 2 Maison (cf. .claude/plans/house-intermediate-tier.md)
+  brassard_lion:        'img/icons_new/brassard_lion_64.png',
+  anneau_serpent:       'img/icons_new/anneau_serpent_64.png',
+  plume_aigle:          'img/icons_new/plume_aigle_64.png',
+  ceinture_blaireau:    'img/icons_new/ceinture_blaireau_64.png'
 };
 
 // Status effects (battle.js consomme ce registre via STATUS_DEFS[id].iconSrc)

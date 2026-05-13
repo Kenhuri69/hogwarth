@@ -585,6 +585,68 @@ RECIPES: Dict[str, Recipe] = {
                "cube":    ( 56,  32,  20), "accent":  (216, 184,  96)},
         accents=[{"kind": "emboss", "region": "bar", "color": ( 32,  20,  12)}],
     ),
+
+    # ── Items Tier 2 Maison (cf. .claude/plans/house-intermediate-tier.md) ────
+    "brassard_lion": Recipe(
+        id="brassard_lion", name="Brassard du Lion", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={
+            "cuff":    (116,   0,   1),    # rouge Gryffondor
+            "palm":    (116,  80,  48),    # cuir tanné
+            "fingers": (108,  72,  40),
+            "stitch":  (211, 166,  37),    # or Gryffondor
+        },
+        accents=[
+            {"kind": "emboss", "region": "palm", "color": ( 60,  32,  16)},
+            {"kind": "symbol", "region": "palm", "shape": "lion",
+             "color": (224, 184,  76), "size": 140},
+        ],
+    ),
+    "anneau_serpent": Recipe(
+        id="anneau_serpent", name="Anneau du Serpent", rarity="rare", material="metal",
+        silhouette={"kind": "shape", "name": "ring_band",
+                    "params": {"radius": 170, "thickness": 38,
+                               "bezel": True, "gem": True}},
+        fills={
+            "metal": (170, 170, 170),     # argent Serpentard
+            "gem":   ( 36, 124,  80),     # émeraude
+        },
+        accents=[
+            {"kind": "runes", "region": "metal", "color": ( 72,  72,  72),
+             "count": 8, "around": "ring"},
+            {"kind": "gem_facet_shine", "region": "gem", "color": (140, 230, 180)},
+            {"kind": "orb_glow", "region": "gem", "color": ( 60, 200, 140)},
+        ],
+    ),
+    "plume_aigle": Recipe(
+        id="plume_aigle", name="Plume d'Aigle", rarity="rare", material="matte",
+        silhouette={"kind": "svg", "file": "feather.svg"},
+        fills={
+            "vane":   ( 14,  26,  64),    # bleu nuit Serdaigle
+            "rachis": (148, 107,  45),    # bronze Serdaigle
+            "quill":  ( 92,  68,  32),
+        },
+        accents=[
+            {"kind": "emboss", "region": "vane", "color": (  8,  16,  40)},
+            {"kind": "symbol", "region": "vane", "shape": "eagle",
+             "color": (200, 156,  76), "size": 120},
+        ],
+    ),
+    "ceinture_blaireau": Recipe(
+        id="ceinture_blaireau", name="Ceinture du Blaireau", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "belt.svg"},
+        fills={
+            "strap":  ( 88,  56,  32),    # cuir brun foncé
+            "buckle": (240, 199,  94),    # or Poufsouffle
+            "holes":  ( 48,  28,  12),
+            "tongue": (220, 180,  80),
+        },
+        accents=[
+            {"kind": "emboss", "region": "strap", "color": ( 52,  32,  16)},
+            {"kind": "symbol", "region": "strap", "shape": "badger",
+             "color": (240, 199,  94), "size": 100},
+        ],
+    ),
 }
 
 
@@ -777,6 +839,10 @@ _SYMBOL_PATHS = {
     "snake":     'M 12 30 C 36 18 64 50 88 38 C 64 50 36 82 12 70 C 36 60 64 60 88 70 Z',
     "deer":      'M 36 6 L 30 28 L 22 22 L 28 38 L 16 36 L 28 48 L 50 56 L 72 48 L 84 36 L 72 38 L 78 22 L 70 28 L 64 6 L 56 26 L 50 18 L 44 26 Z',
     "wand":      'M 12 88 L 76 24 L 88 36 L 24 100 Z M 76 16 L 80 4 L 86 12 L 98 12 L 90 20 L 98 28 L 86 28 L 84 38 Z',
+    # House emblems — used for Tier 2 Maison items (cf. .claude/plans/house-intermediate-tier.md §2.7.2)
+    "lion":      'M 50.0 10.0 L 55.7 28.7 L 70.0 15.4 L 65.6 34.4 L 84.6 30.0 L 71.3 44.3 L 90.0 50.0 L 71.3 55.7 L 84.6 70.0 L 65.6 65.6 L 70.0 84.6 L 55.7 71.3 L 50.0 90.0 L 44.3 71.3 L 30.0 84.6 L 34.4 65.6 L 15.4 70.0 L 28.7 55.7 L 10.0 50.0 L 28.7 44.3 L 15.4 30.0 L 34.4 34.4 L 30.0 15.4 L 44.3 28.7 Z',
+    "eagle":     'M 50 30 L 8 18 L 16 44 L 30 38 L 22 60 L 50 44 L 78 60 L 70 38 L 84 44 L 92 18 Z M 46 44 L 54 44 L 54 84 L 50 92 L 46 84 Z',
+    "badger":    'M 30 30 L 70 30 L 78 50 L 60 56 L 54 78 L 50 84 L 46 78 L 40 56 L 22 50 Z M 32 38 L 40 38 L 42 70 L 34 70 Z M 60 38 L 68 38 L 66 70 L 58 70 Z',
 }
 
 
