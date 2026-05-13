@@ -43,6 +43,9 @@ const SHOP_CATALOG = [
   { id: "casque_aurore",       minFloor: 5 },
   { id: "talisman_tactique",   minFloor: 6 },
   { id: "bottes_silence",      minFloor: 6 },
+  // Consommables endgame (post-victoire) — voir ENDGAME_PLAN.md §7.10
+  { id: "potion_xl",           minFloor: 15 },
+  { id: "potion_xl_sp",        minFloor: 15 },
 ];
 
 // Politique de rachat par défaut (boutique fixe Madame Malkins). Les

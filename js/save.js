@@ -50,7 +50,8 @@ function _buildSlotMeta(label) {
     house:      chosenHouse || null,
     level:      (player && player.level) || 1,
     floor:      currentFloor || 1,
-    difficulty: difficulty || 'Normal'
+    difficulty: difficulty || 'Normal',
+    victory:    !!(typeof victoryAchieved !== 'undefined' && victoryAchieved)
   };
 }
 
@@ -214,6 +215,8 @@ function _serializeState() {
     availableQuests: Array.from(availableQuests),
     completedQuests: Array.from(completedQuests),
     lastQuestCompletion: { ...lastQuestCompletion },
+    victoryAchieved,
+    victoryAt,
     _version:        3
   };
 }
@@ -372,6 +375,9 @@ function _applyState(gs) {
   if (gs.chosenHouse && HOUSE_BONUSES[gs.chosenHouse]) chosenHouse = gs.chosenHouse;
   if (gs.housePoints !== undefined) housePoints = gs.housePoints;
   if (gs.houseTier   !== undefined) houseTier   = gs.houseTier;
+  // Endgame : saves antérieures à l'introduction du flag → false/null.
+  victoryAchieved = !!gs.victoryAchieved;
+  victoryAt       = gs.victoryAt || null;
   // Réinitialise systématiquement (assignment inconditionnel) pour
   // éviter une fuite de l'état d'un précédent slot quand le nouveau
   // slot ne porte pas la clé (ex. save legacy ou partie démarrée

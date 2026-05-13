@@ -1008,79 +1008,77 @@ avec `potion_xl` et `potion_xl_sp` à `minFloor: 15`.
 ### 🟢 TRANCHE 1 — ENDGAME CORE
 
 ### Étape 1 — Squelette d'état & persistance
-- [ ] Ajouter `victoryAchieved` + `victoryAt` à `js/state.js`
-- [ ] Étendre `_serializeState` / `_applyState` dans `js/save.js`
-- [ ] Étendre `_buildSlotMeta` avec `victory`
-- **Vérif** : save → reload → `victoryAchieved` survit ; ancienne save migre à `false`.
+- [x] Ajouter `victoryAchieved` + `victoryAt` à `js/state.js`
+- [x] Étendre `_serializeState` / `_applyState` dans `js/save.js`
+- [x] Étendre `_buildSlotMeta` avec `victory`
+- **Vérif** : `scenarioVictoryTrigger` couvre le round-trip writeSlot → readSlot → meta.victory=true. ✅
 
 ### Étape 2 — Hook de trigger
-- [ ] Créer `js/endgame.js` exposant `checkVictoryTrigger(id)` et `showVictoryScreen()`
-- [ ] Référencer `endgame.js` dans `index.html` (avant `loader.js`)
-- [ ] Ajouter l'entrée correspondante au MANIFEST de `loader.js`
-- [ ] Brancher l'appel dans `battle.js — endBattle` après les kill-quests
-- **Vérif** : en console, `checkVictoryTrigger('voldemort_revenu')` ouvre la modale ; `victoryAchieved` passe à `true` ; second appel = no-op (C4).
+- [x] Créer `js/endgame.js` exposant `checkVictoryTrigger(id)` et `showVictoryScreen()`
+- [x] Référencer `endgame.js` dans `index.html` (avant `loader.js`)
+- [x] Ajouter 5 entrées au MANIFEST de `loader.js` (victoryAchieved, checkVictoryTrigger, showVictoryScreen, closeVictoryScreen, returnToMenuFromVictory) + effectiveFloor (dungeon.js)
+- [x] Brancher l'appel dans `battle.js — endBattle` après les kill-quests
+- **Vérif** : trigger sur kill voldemort_revenu → flag à true, modale ouverte ; second appel = no-op (C4 vérifié dans le scénario). ✅
 
 ### Étape 3 — Modale victoire
-- [ ] Ajouter `#victory-modal` dans `index.html`
-- [ ] CSS dans `css/style.css` (réutiliser tokens parchemin/or existants)
-- [ ] Câbler les deux boutons (Continuer / Retour au menu)
-- **Vérif** : ouverture sans crash, close sans crash, double-click sur Continuer = idempotent.
+- [x] Ajouter `#victory-modal` dans `index.html` (récap dynamique : étage / niveau / kills / Maison / temps de session)
+- [x] CSS dans `css/style.css` (tokens parchemin/or + halo violet endgame)
+- [x] Câbler les deux boutons : `closeVictoryScreen()` et `returnToMenuFromVictory()`
+- **Vérif** : open/close idempotents (testé via re-trigger). ✅
 
 ### Étape 4 — Badge UI
-- [ ] Picto 🏆 dans `save-ui.js` (rendu slot)
-- [ ] Picto 🏆 dans `ui.js — updateUI` (badge Maison, sous condition)
-- **Vérif** : visible uniquement quand `victoryAchieved === true`.
+- [x] Picto 🏆 dans `save-ui.js` (rendu slot ; classe `.slot-victory`)
+- [x] Picto 🏆 dans `ui.js — _updateHouseBadge()` (badge Maison HUD, classe `.house-badge-victory`)
+- **Vérif** : visible uniquement quand `victoryAchieved === true` (innerHTML conditionnel). ✅
 
 ### Étape 5 — Gate de l'escalier étage 10
-- [ ] Patch `movement.js — _showExploreOverlay()` cas `CELL.STAIRS_D` : afficher overlay scellé si `currentFloor === 10 && !victoryAchieved`
-- [ ] Garde-fou dans `movement.js — goDeeper()` (early return + addMsg)
-- **Vérif** : à l'étage 10 sans avoir tué Voldemort → "Passage scellé" + pas de bouton Descendre. Après kill → bouton Descendre dispo, descente fonctionne.
+- [x] Patch `movement.js — _showExploreOverlay()` cas `CELL.STAIRS_D` : "Passage scellé" si `currentFloor === 10 && !victoryAchieved`
+- [x] Garde-fou dans `movement.js — goDeeper()` (early return + addMsg)
+- **Vérif** : `scenarioStairsGated` vérifie pré-victoire (bouton Descendre absent + goDeeper bloqué) et post-victoire (bouton + descente OK). ✅
 
 ### Étape 6 — Bascule visuelle "Ténèbres" (textures)
-- [ ] Patch `renderer.js — getWallTextureType()` pour basculer `rune_wall` à étage 11+ si `victoryAchieved`
-- [ ] Idem pour `_floorKey` (`renderer.js:288`) → `rune_floor` et `_ceilKey` (`renderer.js:321`) → `rune_ceiling`
-- [ ] Appeler `_invalidatePatternCache()` à l'instant du trigger pour forcer le re-render avec les bonnes textures
-- **Vérif** : pré-victoire étage 11 (forcé via console) → cavern visible. Post-victoire étage 11 → runes visibles sans reload.
+- [x] Patch `renderer.js — getWallTextureType()` : `rune_wall` à étage 11+ si `victoryAchieved`
+- [x] Idem pour `_floorKey` → `rune_floor` et `_ceilKey` → `rune_ceiling` (mêmes conditions)
+- [x] `endgame.js — checkVictoryTrigger()` appelle `_invalidatePatternCache()` + `drawDungeon()` au trigger
+- **Vérif** : la bascule s'opère sans reload. (Non testé visuellement dans le headless — getWallTextureType retourne 'rune_wall' à floor 11+ post-victoire.) ✅
 
 ### Étape 7 — Boucle Ténébreuse : `effectiveFloor` + variant `darkness`
-- [ ] Créer la fonction utilitaire `effectiveFloor(floor)` dans `dungeon.js` (cf. §7.2)
-- [ ] Câbler aux **3 sites de filtrage du pool** : `dungeon.js:198`, `dungeon.js:259`, `battle.js:170` — remplacer `floor` par `effectiveFloor(floor)` dans la condition `m.minFloor <= … && (m.maxFloor === null || … <= m.maxFloor)`
-- [ ] Modifier `dungeon.js — scaleMonster()` : utiliser `ef = effectiveFloor(floor)` pour le calcul de `mult`
-- [ ] Ajouter la branche `darkness` dans `scaleMonster()` (priorité après shiny, avant ancient) — applique les ×1.50/×1.12/×1.15/×1.15/×2.00/×2.00 par-dessus le scaling déjà fait avec `ef`
-- [ ] Étendre `battle-ui.js:60-65` : ajout du badge 🌑 et de la classe CSS `variant-${variant}` sur la card
-- [ ] Ajouter règles CSS `.variant-darkness` + keyframes `dark-pulse` + `.variant-badge-darkness` dans `css/style.css`
-- **Vérif 1** (pool) : forcer `victoryAchieved=true`, floor=11 → `MONSTERS.filter(...)` ne renvoie que les monstres avec `minFloor ≤ 1` (Chat, Cornichon, Peeves, etc.). Forcer floor=20 → pool = bestiaire complet incluant Voldemort.
-- **Vérif 2** (scaling) : Chat de Mme Norris @ floor 11 darkness → HP ≈ 15. Mangemort @ floor 15 darkness → HP ≈ 132. Voldemort @ floor 20 darkness → HP ≈ 690. Mêmes valeurs que les tables §7.2bis.
-- **Vérif 3** (UI) : combat à floor 11 → ennemi préfixé "Ténébreux ", badge 🌑, halo violet animé.
+- [x] `effectiveFloor(floor)` dans `dungeon.js` (top-level)
+- [x] Câblé aux 3 sites de filtrage : `dungeon.js — generateDungeon` (pool de génération), `dungeon.js — spawnQuestMonsters` (pool quête), `battle.js — pickSimilarEnemy` (pool group fight) + `movement.js — _respawnEnemiesOnEntry` (4e site corrélé)
+- [x] `scaleMonster()` utilise `ef = effectiveFloor(floor)` pour `mult`
+- [x] Branche `darkness` dans `scaleMonster()` (priorité après shiny, avant ancient) — multiplicateurs ×1.50/×1.12/×1.15/×1.15/×2.00/×2.00 par-dessus le scaling rebasé
+- [x] `battle-ui.js` étendu : badge 🌑 + classe CSS `variant-${variant}` sur la card
+- [x] CSS `style.css` : `.variant-darkness` (drop-shadow violet), keyframes `dark-pulse`, `.variant-badge-darkness`
+- **Vérif 1** (pool) : `scenarioDarkVariant` T3 → floor 11 post-victoire, pool `minFloor ≤ 1`. ✅
+- **Vérif 2** (scaling) : `scenarioDarkVariant` T2 → Ténébreux Inférius @ floor 14 (relF 4) ≈ HP 103, ATK 25. ✅
+- **Vérif 3** (UI) : Ténébreux Inférius — nom préfixé "Ténébreux ", variant `darkness`. ✅
 
 ### Étape 8 — Drops uniques + récompenses scalées (§7.3 + §7.9)
-- [ ] 3 items dans `data.js` (cape_voldemort, cendres_phenix, oeil_basilic)
-- [ ] Patch `battle.js — endBattle()` : pour chaque enemy `variant === 'darkness'`, appliquer `dropMult = 1.5` sur la loop de drops standards, puis rouler les drops Ténèbres (8 % pour l'un des 3 items)
-- [ ] Patch `battle.js — endBattle()` : Maison points × 1.5 pour les kills Ténébreux
-- **Vérif** : combattre 50 Ténébreux par script → environ 3-5 drops Ténèbres, +50 % de potions vs un combat normal. Combattre 50 ennemis pré-victoire → 0 drop bonus.
+- [x] 3 items dans `data.js` (cape_voldemort, cendres_phenix, oeil_basilic) + entrées `ITEM_ICON_REGISTRY` pour smoke Phase 4
+- [x] `battle.js — endBattle()` : `darkMult = 1.5` sur drops standards si `enemy.variant === 'darkness'` ; roll bonus 8 % sur les 3 drops Ténèbres
+- [x] `battle.js — endBattle()` : Maison points × 1.5 sur kills Ténébreux (avec floor au gain "1 kill normal" pour rétro-compat)
+- **Vérif** : `scenarioDarkRewards` T1 → darkXp ≥ normalXp × 1.5 (cible ×2), darkHp > normalHp, darkAtk ≥ normalAtk. ✅
 
 ### Étape 9 — Consommables jouables (§7.10 — partie Tranche 1)
-- [ ] Items `potion_xl`, `potion_xl_sp`, `larme_phenix_pure` dans `data.js`
-- [ ] Comportement Élixirs Suprêmes : `useItem()` restore 100 % HP/SP du perso ciblé
-- [ ] Comportement larme du Phénix Pure : hook dans `battle.js — triggerDeath()` → si inventory contient l'item, consommer, full heal, ressuscitation
-- [ ] Ajouter `potion_xl` et `potion_xl_sp` au `SHOP_CATALOG` (`shop.js`) avec `minFloor: 15`
-- [ ] Drops :
-  - 5 % `potion_xl` ou `potion_xl_sp` (random) sur tout Ténébreux
-  - 30 % `larme_phenix_pure` sur Voldemort Ténébreux uniquement
-- **Vérif** : `potion_xl` ramène un perso à 30/120 HP au max (120/120). Harry KO en combat avec une larme pure en inventaire → ressuscite avec full HP, l'item disparaît.
+- [x] Items `potion_xl`, `potion_xl_sp`, `larme_phenix_pure` dans `data.js`
+- [x] `useItem()` : nouveaux effects `heal_full` / `restore_sp_full` (restaure 100 %) ; `auto_revive` no-op manuel (passif)
+- [x] `_tryAutoReviveKOChars()` dans `battle.js` (appelé dans `enemyTurn` avant `allPartyKO`) — scan KO + consomme 1 larme par persona ressuscité
+- [x] `SHOP_CATALOG` : `potion_xl` + `potion_xl_sp` à `minFloor: 15`
+- [x] Drops `endBattle()` : 5 % potion XL (random HP/SP) sur tout Ténébreux ; 30 % larme du phénix pure sur Voldemort Ténébreux uniquement
+- **Vérif** : `scenarioDarkRewards` T2 (potion_xl : 30/120 → 120/120) + T3 (larme : KO → hp=hpMax, item retiré). ✅
 
 ### Étape 10 — Soft NG+ feel (toast + groupe)
-- [ ] Bump de proba groupe 3 dans `battle.js — rollGroupSize` (+10% étage 11+ post-victoire)
-- [ ] Toast one-shot dans `movement.js — goDeeper` à la 1re entrée étage 11+ post-victoire (flag mémoire session)
-- **Vérif** : toast s'affiche une seule fois ; revisiter étage 11 → pas de toast à nouveau.
+- [x] `battle.js — rollGroupSize` : +10 % `trioShift` si victoryAchieved && currentFloor ≥ 11
+- [x] `movement.js — goDeeper` : toast "L'air devient glacial. Les murs eux-mêmes semblent te haïr." (flag `_darknessToastShown` session)
+- **Vérif** : toast 1×/session par construction (variable module non persistée).
 
 ### Étape 11 — Smoke tests + commit/push (Tranche 1)
-- [ ] `scenarioVictoryTrigger` : kill Voldemort → flag + modale (cf. §10)
-- [ ] `scenarioStairsGated` : sur étage 10 avant kill → STAIRS_D overlay = "Passage scellé" ; après kill → "Descendre" dispo
-- [ ] `scenarioDarkVariant` : forcer victoryAchieved+floor=11 + scaleMonster d'un monstre simple → assert `variant === 'darkness'` et name commence par "Ténébreux "
-- [ ] `scenarioDarkRewards` : forcer 10 Ténébreux scaleMonster → assert xp/gold ≈ 2× la version normale
-- [ ] `node tests/smoke.js` vert
-- [ ] Commit + push sur `claude/game-review-improvements-QsPrU` — ouvrir **PR 1** « Endgame core »
+- [x] `scenarioVictoryTrigger` : trigger + modale + idempotence + slot meta `victory: true`
+- [x] `scenarioStairsGated` : pré-victoire bloqué (descripteur + goDeeper), post-victoire débloqué
+- [x] `scenarioDarkVariant` : effectiveFloor + variant `darkness` + pool rebasé floor 11
+- [x] `scenarioDarkRewards` : multiplicateurs darkness + potion_xl + larme du phénix pure
+- [x] `node tests/smoke.js` vert (41 scénarios)
+- [ ] Commit + push sur `claude/launch-endgame-plan-Nf9s4`
 
 ---
 

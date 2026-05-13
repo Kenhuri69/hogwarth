@@ -110,7 +110,10 @@ function _updateHouseBadge() {
     : 100;
   const tierLabel = houseTier > 0 ? tiers[houseTier - 1].label : 'Recrue';
 
-  document.getElementById('house-badge-label').textContent = `${h.emoji} ${h.label}`;
+  const victoryMark = (typeof victoryAchieved !== 'undefined' && victoryAchieved)
+    ? ` <span class="house-badge-victory" title="Vainqueur de Voldemort">🏆</span>`
+    : '';
+  document.getElementById('house-badge-label').innerHTML = `${h.emoji} ${h.label}${victoryMark}`;
   document.getElementById('house-badge-tier').textContent  = tierLabel;
   document.getElementById('house-badge-bar').style.width   = pct + '%';
   document.getElementById('house-badge-bar').style.background = h.accent;

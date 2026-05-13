@@ -77,16 +77,18 @@ function renderEnemyGroup() {
       ? `<div class="monster-icon variant-dead" style="width:${sizePx}px;height:${sizePx}px;display:flex;align-items:center;justify-content:center"><img src="img/icons/dead.png" alt="" style="width:${Math.floor(sizePx*0.7)}px;height:${Math.floor(sizePx*0.7)}px;image-rendering:pixelated"></div>`
       : getMonsterIconHtml(enemy, sizePx);
 
-    // Badge de variante (shiny / féroce / ancien)
+    // Badge de variante (shiny / féroce / ancien / ténébreux)
     const badge = !dead && variant !== 'normal'
       ? `<div class="variant-badge variant-badge-${variant}">${
-          variant === 'shiny'   ? '✨' :
-          variant === 'ancient' ? '💜' : '🔴'
+          variant === 'shiny'    ? '✨' :
+          variant === 'ancient'  ? '💜' :
+          variant === 'darkness' ? '🌑' :
+          '🔴'  /* fierce */
         }</div>`
       : '';
 
     const card = document.createElement('div');
-    card.className = `enemy-card${dead ? ' enemy-dead' : ''}`;
+    card.className = `enemy-card variant-${variant}${dead ? ' enemy-dead' : ''}`;
     card.id = `enemy-card-${i}`;
     card.innerHTML = `
       <div style="position:relative;display:inline-block;animation:float 2s ease-in-out infinite alternate">

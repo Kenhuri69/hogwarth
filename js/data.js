@@ -150,6 +150,29 @@ const ITEMS = [
   { id:"robe1",   name:"Robe Renforcée",      icon:"🧥", desc:"DEF+3",                      type:"armor", slot:"body",   family:"robe",          rarity:"common", power:3, bonusDef:3,                                    price:150 },
   { id:"amulette",name:"Amulette du Phénix",  icon:"💎", desc:"MAG+4 LCK+3 · Apprend Reparo", type:"acc", slot:"amulet", family:"amulet_phoenix",rarity:"epic",   power:4, bonusMag:4, bonusLck:3, grantsSpell:"Reparo", price:250 },
   { id:"broom",   name:"Balai Nimbus 2000",   icon:"🧹", desc:"Fuite garantie",             type:"acc",   slot:"trinket", family:"broom",        rarity:"rare",   power:0,                                                price:200 },
+  // ── Consommables endgame (drop Ténèbres + shop floor 15+) ──
+  // Voir ENDGAME_PLAN.md §7.10.
+  { id:"potion_xl",         name:"Élixir Suprême",       icon:"🧪", desc:"Restaure 100 % PV",
+    type:"consumable", effect:"heal_full", price:200 },
+  { id:"potion_xl_sp",      name:"Élixir d'Esprit Suprême", icon:"💜", desc:"Restaure 100 % PM",
+    type:"consumable", effect:"restore_sp_full", price:200 },
+  // Larme du Phénix Pure : passive — au moment d'un KO, si présente en
+  // inventaire, ressuscite le perso à hpMax et consomme l'item.
+  // Hook dans battle.js — triggerDeath/enemyTurn (cf. §7.10).
+  { id:"larme_phenix_pure", name:"Larme du Phénix Pure", icon:"✨", desc:"Ressuscite un perso KO (auto)",
+    type:"consumable", effect:"auto_revive", price:500 },
+  // ── Drops Ténèbres (post-victoire, floor 11+) — variant darkness ──
+  // Voir ENDGAME_PLAN.md §7.3. Drop bonus 8 % sur tout monstre variant
+  // `darkness` (logique dans battle.js — endBattle).
+  { id:"cape_voldemort", name:"Cape de l'Ombre",    icon:"🌫️", desc:"DEF+4 MAG+3 · Régen +1 PM/tour",
+    type:"acc", slot:"cloak",  family:"cloak_voldemort", rarity:"legendary",
+    bonusDef:4, bonusMag:3, regenSp:1, power:4, price:0, tint:"#3a1a5a" },
+  { id:"cendres_phenix", name:"Cendres du Phénix",  icon:"🔥", desc:"MAG+4 LCK+2 · Régen +4 PV/tour",
+    type:"acc", slot:"amulet", family:"amulet_ashes",    rarity:"legendary",
+    bonusMag:4, bonusLck:2, regenHp:4, power:4, price:0, tint:"#e84020" },
+  { id:"oeil_basilic",   name:"Œil de Basilic",     icon:"🐍", desc:"Crit +10 % · Esquive +5 %",
+    type:"acc", slot:"trinket",family:"trinket_basilisk", rarity:"legendary",
+    bonusCritChance:10, bonusDodgeChance:5, power:0, price:0, tint:"#3a8a3a" },
   // ── Objets légendaires des Maisons (non vendus, récompenses du système de Maison) ──
   { id:"sword_gryff",      name:"Épée de Gryffondor",   icon:"⚔️",  desc:"ATK+8 — Légendaire Gryffondor",    type:"wand",  slot:"wand",   family:"sword_gryff",   rarity:"legendary", power:8, bonusAtk:8,              price:0,  tinted:true, tintMask:"sword_blade_base", tintOverlay:"sword_hilt_gryff", tint:"silver" },
   { id:"locket_slytherin", name:"Médaillon de Serpentard",icon:"🐍", desc:"MAG+6 LCK+3 — Légendaire Serpentard", type:"acc", slot:"amulet", family:"locket_slyth",  rarity:"legendary", power:6, bonusMag:6, bonusLck:3, price:0 },

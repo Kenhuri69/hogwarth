@@ -85,6 +85,14 @@ const ITEM_ICON_REGISTRY = {
   anneau_courage:      'img/icons/items/anneau_runique.png',
   bottes_silence:      'img/icons/items/bottes_dragon.png',
   talisman_tactique:   'img/icons/items/retourneur_temps.png',
+  // Endgame — réutilisent les PNG existants en attendant la génération
+  // de sprites dédiés via gen_icons.py. Cf. ENDGAME_PLAN.md §7.3/§7.10.
+  potion_xl:           'img/icons/items/potion_s.png',
+  potion_xl_sp:        'img/icons/items/potion_m.png',
+  larme_phenix_pure:   'img/icons/items/larmes_phenix.png',
+  cape_voldemort:      'img/icons/items/cape_invis.png',
+  cendres_phenix:      'img/icons/items/larmes_phenix.png',
+  oeil_basilic:        'img/icons/items/retourneur_temps.png',
   // Livres de sorts
   livre_sortileges:   'img/icons/items/livre_sortileges.png',
   livre_soin:         'img/icons/items/livre_soin.png',

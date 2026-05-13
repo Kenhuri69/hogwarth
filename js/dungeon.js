@@ -12,10 +12,22 @@ function weightedPick(pool) {
   return pool[pool.length - 1];
 }
 
+// Boucle Ténébreuse (endgame) : à floor 11+ post-victoire, on rejoue
+// la progression 1-10 à l'identique (pool + scaling). Voir ENDGAME_PLAN.md §7.2.
+// Retourne `floor` inchangé si pré-victoire ou floor ≤ 10.
+function effectiveFloor(floor) {
+  if (typeof victoryAchieved !== 'undefined' && victoryAchieved && floor >= 11) {
+    return floor - 10;     // 11 → 1, 12 → 2, …, 20 → 10, 21 → 11, …
+  }
+  return floor;
+}
+
 // Applique la mise à l'échelle d'un monstre de base pour un étage donné
 function scaleMonster(base, floor) {
+  const ef       = effectiveFloor(floor);
+  const isDark   = (ef !== floor);       // post-victoire & floor 11+
   const diffMult = (DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal']).scalingMultiplier;
-  const mult     = (1 + (floor - 1) * (base.scale || 0.25)) * diffMult;
+  const mult     = (1 + (ef - 1) * (base.scale || 0.25)) * diffMult;
   const monster = JSON.parse(JSON.stringify(base)); // copie profonde
   monster.hp  = Math.floor(base.hp  * mult);
   monster.atk = Math.floor(base.atk * mult);
@@ -40,6 +52,17 @@ function scaleMonster(base, floor) {
     if (monster.drops) {
       monster.drops = monster.drops.map(d => ({ ...d, chance: Math.min(1, d.chance * 2) }));
     }
+  } else if (isDark) {
+    // Ténébreux : applique les multiplicateurs darkness par-dessus le
+    // scaling déjà calculé avec relFloor. Cf. ENDGAME_PLAN.md §7.2bis.
+    monster.variant = 'darkness';
+    monster.name    = 'Ténébreux ' + base.name;
+    monster.hp      = Math.floor(monster.hp  * 1.50);
+    monster.atk     = Math.floor(monster.atk * 1.12);
+    monster.def     = Math.floor(monster.def * 1.15);
+    if (monster.mag) monster.mag = Math.floor(monster.mag * 1.15);
+    monster.xp      = Math.floor(monster.xp   * 2.00);
+    monster.gold    = Math.floor(monster.gold * 2.00);
   } else if (floor >= 5) {
     monster.variant = 'ancient';
     monster.name    = 'Ancien ' + base.name;
@@ -193,9 +216,11 @@ function generateDungeon(floor) {
     }
   }
 
-  // Sélection des ennemis éligibles à cet étage
+  // Sélection des ennemis éligibles à cet étage (rebase sur relFloor
+  // en post-victoire pour la Boucle Ténébreuse — §7.2).
+  const ef = effectiveFloor(floor);
   const eligibleTypes = MONSTERS.filter(m =>
-    m.minFloor <= floor && (m.maxFloor === null || floor <= m.maxFloor)
+    m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor)
   );
   const pool = eligibleTypes.length ? eligibleTypes : MONSTERS;
 
@@ -259,8 +284,9 @@ function spawnQuestMonsters(targetMonsterId, extraRandomCount) {
     placed++;
   }
 
+  const efFloor = effectiveFloor(floor);
   const pool = MONSTERS.filter(m =>
-    m.minFloor <= floor && (m.maxFloor === null || floor <= m.maxFloor)
+    m.minFloor <= efFloor && (m.maxFloor === null || efFloor <= m.maxFloor)
   );
   for (let i = 0; i < extraRandomCount && free.length && pool.length; i++) {
     const cell = free.pop();

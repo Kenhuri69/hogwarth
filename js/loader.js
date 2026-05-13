@@ -112,6 +112,7 @@ window.UX_safe = new Proxy({}, {
     { name: '_migrateMissingNpcsForFloor', source: 'dungeon.js', kind: 'fn' },
     { name: '_ensureActiveKillQuestTargets', source: 'dungeon.js', kind: 'fn' },
     { name: '_ensureStairsExist', source: 'dungeon.js', kind: 'fn' },
+    { name: 'effectiveFloor',     source: 'dungeon.js', kind: 'fn'  },
     { name: 'drawDungeon',        source: 'renderer.js',     kind: 'fn'  },
     { name: 'renderMinimap',      source: 'renderer-minimap.js', kind: 'fn' },
 
@@ -161,6 +162,13 @@ window.UX_safe = new Proxy({}, {
     // ── Main / démarrage ──
     { name: 'showPlayerSelect',   source: 'main.js',         kind: 'fn'  },
     { name: 'startGame',          source: 'main.js',         kind: 'fn'  },
+
+    // ── Endgame (écran de victoire + boucle Ténébreuse) ──
+    { name: 'victoryAchieved',    source: 'state.js',        kind: 'obj' },
+    { name: 'checkVictoryTrigger',source: 'endgame.js',      kind: 'fn'  },
+    { name: 'showVictoryScreen',  source: 'endgame.js',      kind: 'fn'  },
+    { name: 'closeVictoryScreen', source: 'endgame.js',      kind: 'fn'  },
+    { name: 'returnToMenuFromVictory', source: 'endgame.js', kind: 'fn'  },
 
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },
