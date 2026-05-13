@@ -60,9 +60,14 @@ la même catégorie.
 ## Suivi
 
 - [x] Plan rédigé et validé
-- [x] Pilote `niffleur` livré + smoke vert
-- [ ] Validation utilisateur du pilote
-- [ ] Batch B+2 (4 créatures/bêtes)
-- [ ] Batch B+3 (4 fantômes)
-- [ ] Batch B+4 (5 êtres magiques + humain)
-- [ ] Ajout de la section au `SVG_PLAN.md` une fois clos (renumérotage B+)
+- [x] Batch 1 — 4 PNG (PR #85, mergée) : `niffleur`, `manticore_jeune`, `chevalier_fantome`, `hecate_sorciere`
+  - Bonus inclus : fix renderer 3D `drawEnemySprite` (cache `_MONSTER_IMG_CACHE`, PNG via `ctx.drawImage`)
+- [x] Batch 2 — 4 PNG (PR #90, mergée) : `bowtruckle`, `chauve_souris_vampire`, `fantome_sang_noir`, `vampire_mineur`
+- [x] Batch 3 — 3 PNG (PR #91, mergée) : `gremlin_magique`, `spectre_maudit`, `gardien_portail`
+- [x] Batch 4 final — 3 PNG : `strigoi`, `poupee_maudite`, `elfe_rebelle`
+- [x] **Bloc B clôturé — 14/14 monstres livrés en PNG 512×512 RGBA**
+
+> Tous les critères §9 IMG_STYLE.md verts sur chaque PNG.
+> Workflow validé : prompt Nano Banana (template §8) → `tools/process_monster_png.py`
+> (rembg birefnet-general + trim alpha + recentrage 8% + resize 512) → câblage `imgSrc`
+> dans `monsters.js` → smoke 34/34 → commit + PR.
