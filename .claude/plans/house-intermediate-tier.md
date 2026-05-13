@@ -376,8 +376,16 @@ loader : les `let` mutables d'état ne sont pas tracés (cf.
   ```
 - **Vérif** : `HOUSE_BONUSES.Gryffondor.headOfHouse === 'mcgonagall'`.
 
-### Étape 3 — Refonte `checkHouseLevelUp` (main.js)
-- [ ] Remplacer la branche `tier.bonus.item` (lignes 197-202) :
+### Étape 3 — Refonte `checkHouseLevelUp` (main.js) ✅
+
+**Décision** : la discrimination tier 2/4 vs tier 5 utilise `tierNum >= 5`.
+Tier 5 conserve `tryAddItem` direct (cinématique post-victoire endgame).
+Tier 2 et tier 4 vont dans `pendingHouseRewards.add(...)`.
+
+Le `msg` du tier est suffisant pour annoncer le PNJ (rédigé à l'étape 2),
+pas de second `addMsg` redondant.
+
+- [x] Branche `tier.bonus.item` refactorée :
   ```js
   if (tier.bonus.item) {
     pendingHouseRewards.add(tier.bonus.item);

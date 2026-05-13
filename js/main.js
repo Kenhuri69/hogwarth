@@ -197,11 +197,17 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
       if (tier.bonus._baseLck) c._baseLck += tier.bonus._baseLck;
     });
 
-    // Donner l'objet légendaire (palier 4)
+    // Items : tier 2 et tier 4 sont remis en main propre par le Chef de
+    // Maison (pendingHouseRewards). Tier 5 reste distribué directement
+    // (cinématique post-victoire endgame, cf. ENDGAME_PLAN.md §7.7).
     if (tier.bonus.item) {
-      const item = ITEMS.find(it => it.id === tier.bonus.item);
-      if (item && tryAddItem(item, { silent: true })) {
-        addMsg(`🎁 ${item.icon} ${item.name} ajouté à l'inventaire !`, 'good');
+      if (tierNum >= 5) {
+        const item = ITEMS.find(it => it.id === tier.bonus.item);
+        if (item && tryAddItem(item, { silent: true })) {
+          addMsg(`🎁 ${item.icon} ${item.name} ajouté à l'inventaire !`, 'good');
+        }
+      } else {
+        pendingHouseRewards.add(tier.bonus.item);
       }
     }
 
