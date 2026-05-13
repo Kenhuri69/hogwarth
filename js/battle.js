@@ -10,11 +10,15 @@ function allPartyKO()          { return party.slice(0, partySize).every(c => c.h
 
 // ── Système de statuts persistants ──────────────────────────
 // Chaque combattant porte statusEffects: [{ id, icon, power, turns }]
-// id ∈ "burn" (🔥) | "poison" (☠️) | "bleed" (🩸)
+// id ∈ "burn" (🔥) | "poison" (☠️) | "bleed" (🩸) | "weaken" (🛡️↓)
+// Les DoT (burn/poison/bleed) infligent des dégâts au tick.
+// "weaken" applique un malus DEF persistant (power = DEF perdue) :
+// le malus est appliqué au moment de applyStatus, restauré à l'expiry.
 const STATUS_DEFS = {
-  burn:   { icon: '🔥', label: 'Brûlure',    color: '#e85a2c' },
-  poison: { icon: '☠️', label: 'Empoisonné', color: '#7ab836' },
-  bleed:  { icon: '🩸', label: 'Saignement', color: '#c0392b' }
+  burn:   { icon: '🔥',   label: 'Brûlure',           color: '#e85a2c' },
+  poison: { icon: '☠️',   label: 'Empoisonné',        color: '#7ab836' },
+  bleed:  { icon: '🩸',   label: 'Saignement',        color: '#c0392b' },
+  weaken: { icon: '🛡️↓', label: 'Affaiblissement',   color: '#9b59b6' }
 };
 
 function applyStatus(target, id, power, turns) {
@@ -34,18 +38,30 @@ function tickStatuses(target, isEnemy) {
   let log = '';
   const remaining = [];
   target.statusEffects.forEach(s => {
-    let dmg = s.power;
-    if (isEnemy && target.resist?.includes(s.id)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
-    if (isEnemy && target.weak?.includes(s.id))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
-    dmg = Math.max(1, dmg);
-    if (isEnemy) target.currentHp = Math.max(0, target.currentHp - dmg);
-    else        target.hp         = Math.max(0, target.hp         - dmg);
-    log += `${s.icon} ${target.name} subit ${dmg} (${STATUS_DEFS[s.id].label}). `;
-    const key = isEnemy ? `enemy:${enemyGroup.indexOf(target)}` : 'ally';
-    UX_safe.floatDmg(key, dmg, 'dmg');
-    UX_safe.logCombat(`${s.icon} ${target.name} : <b>−${dmg}</b> (${STATUS_DEFS[s.id].label})`, 'bad');
+    // Statuts DoT : burn / poison / bleed → dégâts par tour
+    if (s.id === 'burn' || s.id === 'poison' || s.id === 'bleed') {
+      let dmg = s.power;
+      if (isEnemy && target.resist?.includes(s.id)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
+      if (isEnemy && target.weak?.includes(s.id))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
+      dmg = Math.max(1, dmg);
+      if (isEnemy) target.currentHp = Math.max(0, target.currentHp - dmg);
+      else        target.hp         = Math.max(0, target.hp         - dmg);
+      log += `${s.icon} ${target.name} subit ${dmg} (${STATUS_DEFS[s.id].label}). `;
+      const key = isEnemy ? `enemy:${enemyGroup.indexOf(target)}` : 'ally';
+      UX_safe.floatDmg(key, dmg, 'dmg');
+      UX_safe.logCombat(`${s.icon} ${target.name} : <b>−${dmg}</b> (${STATUS_DEFS[s.id].label})`, 'bad');
+    }
+    // (weaken : pas de tick de dégâts — le malus DEF est appliqué au cast,
+    //  restauré à l'expiry ci-dessous.)
     s.turns--;
-    if (s.turns > 0) remaining.push(s);
+    if (s.turns > 0) {
+      remaining.push(s);
+    } else if (s.id === 'weaken') {
+      // Expiration → restaurer la DEF perdue
+      target.def = (target.def || 0) + s.power;
+      log += `${STATUS_DEFS[s.id].icon} ${target.name} récupère ${s.power} DEF. `;
+      UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} récupère <b>+${s.power} DEF</b>`, 'magic');
+    }
   });
   target.statusEffects = remaining;
   return log;

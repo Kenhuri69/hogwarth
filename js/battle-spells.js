@@ -40,9 +40,27 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       break;
     }
     case 'weaken': {
-      target.def = Math.max(0, target.def - ability.power);
-      appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : ${target.name} perd ${ability.power} DEF ! `);
-      UX_safe.logCombat(`${ability.icon} ${enemy.name} affaiblit ${target.name} : −${ability.power} DEF`, 'bad');
+      // Conversion en statusEffect typé : badge visible côté UI, durée,
+      // restauration auto via tickStatuses à l'expiration.
+      const turns = ability.turns || 3;
+      const lost  = Math.min(ability.power, target.def || 0);
+      target.def  = Math.max(0, (target.def || 0) - lost);
+      applyStatus(target, 'weaken', lost, turns);
+      appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : ${target.name} perd ${lost} DEF (${turns} tours) ! `);
+      UX_safe.logCombat(`${ability.icon} ${enemy.name} affaiblit ${target.name} : <b>−${lost} DEF</b> (${turns} tours)`, 'bad');
+      break;
+    }
+    case 'status': {
+      // ability = { name, icon, effect:'status', statusId, power, chance, turns }
+      // Inflige un statut persistant (burn / poison / bleed) à la cible.
+      const sid   = ability.statusId;
+      const turns = ability.turns || 3;
+      applyStatus(target, sid, ability.power, turns);
+      const lbl = (typeof STATUS_DEFS !== 'undefined' && STATUS_DEFS[sid])
+                ? STATUS_DEFS[sid].label
+                : sid;
+      appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → ${target.name} subit ${lbl} (${turns} tours) ! `);
+      UX_safe.logCombat(`${ability.icon} ${enemy.name} inflige <b>${lbl}</b> à ${target.name} (${turns} tours)`, 'bad');
       break;
     }
     case 'drain': {

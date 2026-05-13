@@ -234,6 +234,178 @@ async function scenarioStatusEffects() {
   await browser.close();
 }
 
+// ── Scénario 2bis : weaken statusEffect + Protego badge + ability `status` ─
+
+async function scenarioWeakenAndProtegoBadges() {
+  console.log('\n── Scénario 2bis : weaken / Protego / ability status ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 50 });
+
+  // T1 : applyStatus weaken pose le statut sur le joueur, DEF réduite
+  // (simule fidèlement la logique de l'ability : lost = min(power, def))
+  const t1 = await page.evaluate(() => {
+    const c = party[0];
+    // Augmenter artificiellement la DEF pour tester un cas non-cappé
+    c.def = 10;
+    const defBefore = c.def;
+    const power     = 4;
+    const lost      = Math.min(power, c.def);
+    c.def = Math.max(0, c.def - lost);
+    applyStatus(c, 'weaken', lost, 3);
+    updateUI();
+    const slot = document.getElementById('status-slot-0');
+    const pill = slot ? slot.querySelector('.status-pill') : null;
+    return {
+      defBefore,
+      defAfter:   c.def,
+      lost,
+      statusId:   c.statusEffects[0]?.id,
+      storedPwr:  c.statusEffects[0]?.power,
+      turns:      c.statusEffects[0]?.turns,
+      pillExists: !!pill,
+      pillTitle:  pill ? pill.getAttribute('title') : null
+    };
+  });
+  console.log('  T1 weaken apply:', t1);
+  assert(t1.defAfter === t1.defBefore - t1.lost, 'DEF non réduite par weaken');
+  assert(t1.statusId === 'weaken',         'statusEffect weaken non posé');
+  assert(t1.storedPwr === t1.lost,         'power stocké doit refléter le lost effectif');
+  assert(t1.turns === 3,                   'turns initial weaken doit être 3');
+  assert(t1.pillExists,                    'pilule weaken absente du status-slot-0');
+  assert(/Affaiblissement/.test(t1.pillTitle || ''), 'tooltip weaken doit mentionner DEF');
+
+  // T2 : 3 ticks → expiration + restauration DEF
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    tickStatuses(c, false);
+    tickStatuses(c, false);
+    tickStatuses(c, false);
+    updateUI();
+    const slot = document.getElementById('status-slot-0');
+    const pill = slot ? slot.querySelector('.status-pill') : null;
+    return {
+      defAfter:    c.def,
+      statusCount: c.statusEffects.length,
+      pillExists:  !!pill
+    };
+  });
+  console.log('  T2 weaken expiry:', t2);
+  assert(t2.statusCount === 0,              'weaken non retiré après 3 ticks');
+  assert(t2.defAfter === t1.defBefore,      `DEF non restaurée (attendu ${t1.defBefore}, obtenu ${t2.defAfter})`);
+  assert(!t2.pillExists,                    'pilule weaken doit disparaître après expiry');
+
+  // T3 : badge Protego rendu quand shieldTurns[0] > 0
+  const t3 = await page.evaluate(() => {
+    shieldTurns[0] = 2;
+    updateUI();
+    const slot  = document.getElementById('status-slot-0');
+    const pills = slot ? slot.querySelectorAll('.status-pill') : [];
+    let found = null;
+    pills.forEach(p => { if ((p.textContent || '').includes('🛡️')) found = p; });
+    return {
+      hasShield:    !!found,
+      shieldTitle:  found ? found.getAttribute('title') : null,
+      shieldText:   found ? found.textContent.trim() : null
+    };
+  });
+  console.log('  T3 Protego badge:', t3);
+  assert(t3.hasShield,                    'badge Protego absent du status-slot-0');
+  assert(/Protego/.test(t3.shieldTitle || ''), 'tooltip Protego incorrect');
+  assert(t3.shieldText.includes('2'),     'compteur shieldTurns absent');
+
+  // T4 : ability `status` applique un DoT sur la cible
+  const t4 = await page.evaluate(() => {
+    const c = party[0];
+    c.statusEffects = [];
+    const fakeEnemy = {
+      name: 'TestSpider', mag: 0,
+      abilities: [{ name: 'Morsure', icon: '🦂', effect: 'status', statusId: 'poison', power: 3, chance: 1.0, turns: 2 }]
+    };
+    // Mock RNG pour forcer le pick
+    const origRandom = Math.random;
+    Math.random = () => 0;     // < chance=1.0
+    try {
+      tryEnemyAbility(fakeEnemy, c, 0, () => {});
+    } finally {
+      Math.random = origRandom;
+    }
+    return {
+      statusId: c.statusEffects[0]?.id,
+      power:    c.statusEffects[0]?.power,
+      turns:    c.statusEffects[0]?.turns
+    };
+  });
+  console.log('  T4 ability status:', t4);
+  assert(t4.statusId === 'poison', `ability status doit appliquer poison (obtenu ${t4.statusId})`);
+  assert(t4.power === 3,           'power non transféré');
+  assert(t4.turns === 2,           'turns non transféré');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ weaken/Protego/ability-status conformes');
+  await browser.close();
+}
+
+// ── Scénario 2ter : mini-équipement party-card ──────────────────
+
+async function scenarioPartyEquipRow() {
+  console.log('\n── Scénario 2ter : mini-équipement party-card ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : 3 cellules présentes dans le DOM
+  const t1 = await page.evaluate(() => {
+    const row = document.getElementById('equip-row-0');
+    if (!row) return { rowExists: false };
+    const cells = row.querySelectorAll('.party-equip-slot');
+    const slots = Array.from(cells).map(c => c.getAttribute('data-slot'));
+    return { rowExists: true, count: cells.length, slots };
+  });
+  console.log('  T1 DOM:', t1);
+  assert(t1.rowExists, '#equip-row-0 absent du DOM');
+  assert(t1.count === 3, `attendu 3 cellules, obtenu ${t1.count}`);
+  assert(t1.slots.includes('wand') && t1.slots.includes('body') && t1.slots.includes('amulet'),
+    `slots attendus wand/body/amulet, obtenus ${t1.slots}`);
+
+  // T2 : équiper une wand → cell wand a .filled
+  const t2 = await page.evaluate(() => {
+    const wand = ITEMS.find(i => i.id === 'wand1');
+    party[0].equipped.wand = JSON.parse(JSON.stringify(wand));
+    if (typeof recalculateStats === 'function') recalculateStats();
+    updateUI();
+    const cell = document.querySelector('#equip-row-0 .party-equip-slot[data-slot="wand"]');
+    return {
+      filled:    cell ? cell.classList.contains('filled') : false,
+      hasImg:    cell ? !!cell.querySelector('img') : false,
+      title:     cell ? cell.getAttribute('title') : null
+    };
+  });
+  console.log('  T2 equip:', t2);
+  assert(t2.filled, 'cell wand doit avoir la classe .filled après équipement');
+  assert(t2.hasImg, 'cell wand doit contenir une image (icon)');
+
+  // T3 : déséquiper → .filled retiré
+  const t3 = await page.evaluate(() => {
+    party[0].equipped.wand = null;
+    if (typeof recalculateStats === 'function') recalculateStats();
+    updateUI();
+    const cell = document.querySelector('#equip-row-0 .party-equip-slot[data-slot="wand"]');
+    return { filled: cell ? cell.classList.contains('filled') : false };
+  });
+  console.log('  T3 unequip:', t3);
+  assert(!t3.filled, 'cell wand doit perdre .filled après déséquipement');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ party-equip-row conforme');
+  await browser.close();
+}
+
 // ── Scénario 3 : quête chaînée Lupin (kill → item → Patronum) ─
 
 async function scenarioChainedQuest() {
@@ -3784,7 +3956,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

@@ -26,16 +26,37 @@ function showTargetSelection(actionType) {
   wrap.style.display = 'flex';
 }
 
-// ── Pilules de statut (brûlure / poison / saignement) ────────
+// ── Pilules de statut (brûlure / poison / saignement / weaken / Protego) ─
 function renderStatusBadges(target) {
-  if (!target || !target.statusEffects || !target.statusEffects.length) return '';
-  return '<div class="status-row">' + target.statusEffects.map(s => {
-    const def = (typeof STATUS_DEFS !== 'undefined' && STATUS_DEFS[s.id]) || { color: '#aaa' };
-    const iconHtml = (typeof getStatusIconHtml === 'function')
-      ? (getStatusIconHtml(s.id, 'ui-icon-sm') || s.icon)
-      : s.icon;
-    return `<span class="status-pill" style="border-color:${def.color}" title="${def.label || s.id} ${s.power}/tour">${iconHtml}${s.turns}</span>`;
-  }).join('') + '</div>';
+  const parts = [];
+
+  if (target && target.statusEffects && target.statusEffects.length) {
+    target.statusEffects.forEach(s => {
+      const def = (typeof STATUS_DEFS !== 'undefined' && STATUS_DEFS[s.id]) || { color: '#aaa' };
+      const iconHtml = (typeof getStatusIconHtml === 'function')
+        ? (getStatusIconHtml(s.id, 'ui-icon-sm') || s.icon)
+        : s.icon;
+      // weaken = malus DEF (power = points perdus, pas dmg/tour)
+      const tooltip = s.id === 'weaken'
+        ? `${def.label || s.id} −${s.power} DEF`
+        : `${def.label || s.id} ${s.power}/tour`;
+      parts.push(`<span class="status-pill" style="border-color:${def.color}" title="${tooltip}">${iconHtml}${s.turns}</span>`);
+    });
+  }
+
+  // Badge Protego pour les alliés actifs (basé sur shieldTurns).
+  if (typeof party !== 'undefined' && typeof shieldTurns !== 'undefined') {
+    const idx = party.indexOf(target);
+    if (idx === 0 || idx === 1) {
+      const t = shieldTurns[idx] || 0;
+      if (t > 0) {
+        parts.push(`<span class="status-pill" style="border-color:#3498db" title="Protego — bloque l'attaque suivante (${t} tours)">🛡️${t}</span>`);
+      }
+    }
+  }
+
+  if (!parts.length) return '';
+  return '<div class="status-row">' + parts.join('') + '</div>';
 }
 
 // ── Rendu du groupe d'ennemis ────────────────────────────────

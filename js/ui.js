@@ -142,6 +142,34 @@ function _updateCharBar(idx) {
   }
   const slot = document.getElementById(`status-slot-${idx}`);
   if (slot && typeof renderStatusBadges === 'function') slot.innerHTML = renderStatusBadges(c);
+
+  // Mini-équipement party-card : 3 slots (arme + armure + amulette)
+  const er = document.getElementById(`equip-row-${idx}`);
+  if (er) {
+    ['wand', 'body', 'amulet'].forEach(slotName => {
+      const cell = er.querySelector(`.party-equip-slot[data-slot="${slotName}"]`);
+      if (!cell) return;
+      const item = c.equipped && c.equipped[slotName];
+      const iconFn = (typeof getItemIconHtml === 'function')
+                   ? getItemIconHtml
+                   : null;
+      const slotIconFn = (typeof getEquipmentSlotIconHtml === 'function')
+                       ? getEquipmentSlotIconHtml
+                       : null;
+      if (item && iconFn) {
+        cell.innerHTML = iconFn(item, 'ui-icon-sm');
+        cell.title = `${item.name}`;
+        cell.classList.add('filled');
+      } else if (slotIconFn) {
+        cell.innerHTML = slotIconFn(slotName, 'ui-icon-sm');
+        cell.title = `${slotName} : vide`;
+        cell.classList.remove('filled');
+      } else {
+        cell.innerHTML = '';
+        cell.classList.remove('filled');
+      }
+    });
+  }
 }
 
 function updateCompass() {

@@ -2028,6 +2028,35 @@ button.shop-tab.active {
   font-family: 'Cinzel', serif;
 }
 
+/* ── Mini-équipement party-card ── */
+.party-equip-row {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 2px 0;
+  justify-content: flex-start;
+}
+.party-equip-slot {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #2a1a08;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.25);
+  opacity: 0.55;
+}
+.party-equip-slot.filled {
+  opacity: 1;
+  border-color: var(--gold);
+  background: rgba(28, 18, 8, 0.55);
+}
+.party-equip-slot img {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
 /* ── BATTLE TURN INDICATOR ── */
 .battle-char-indicator {
   font-family: 'Cinzel', serif;
