@@ -341,8 +341,19 @@ Scope réel exécuté :
   ```
 - **Vérif** : `ITEMS.find(i => i.id === 'brassard_lion').rarity === 'rare'`.
 
-### Étape 2 — `HOUSE_BONUSES` : tier 2 enrichi + `headOfHouse`
-- [ ] Pour chaque Maison dans `state.js`, ajouter un champ `headOfHouse`
+### Étape 2 — `HOUSE_BONUSES` : tier 2 enrichi + `headOfHouse` ✅
+
+**Décision** : tier 5 conserve sa distribution directe (post-victoire,
+cinématique endgame Tranche 2). Seuls tier 2 et tier 4 passent par
+`pendingHouseRewards`. Les `msg` du tier 4 ont aussi été reformulés
+pour rediriger vers le Chef de Maison (cohérence avec tier 2).
+
+`pendingHouseRewards = new Set()` ajouté à côté de `chosenHouse /
+housePoints / houseTier` dans `state.js`. Pas d'ajout au MANIFEST du
+loader : les `let` mutables d'état ne sont pas tracés (cf.
+`chosenHouse`, `housePoints` non manifestés non plus).
+
+- [x] Pour chaque Maison dans `state.js`, ajouter un champ `headOfHouse`
   pointant vers l'ID du PNJ, et conserver `bonus.item` sur tier 2 et 4 :
   ```js
   Gryffondor: {
