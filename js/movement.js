@@ -230,6 +230,11 @@ function _restoreFloorFromCache(floor) {
   if (typeof _migrateMissingNpcsForFloor === 'function') {
     _migrateMissingNpcsForFloor(floor);
   }
+  // Migration : re-spawn des cibles de quête `kill` manquantes
+  // (cf. dungeon.js — _ensureActiveKillQuestTargets).
+  if (typeof _ensureActiveKillQuestTargets === 'function') {
+    _ensureActiveKillQuestTargets(floor);
+  }
   return true;
 }
 

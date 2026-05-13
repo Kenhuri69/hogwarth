@@ -362,6 +362,11 @@ function _applyState(gs) {
   if (typeof _migrateMissingNpcsForFloor === 'function') {
     _migrateMissingNpcsForFloor(currentFloor);
   }
+  // Migration : re-spawn des cibles de quête `kill` manquantes
+  // (saves antérieures au hook `spawnOnAccept`).
+  if (typeof _ensureActiveKillQuestTargets === 'function') {
+    _ensureActiveKillQuestTargets(currentFloor);
+  }
 
   recalculateStats();
   updateUI();
