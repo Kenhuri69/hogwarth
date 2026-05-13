@@ -1174,6 +1174,14 @@ async function scenarioMobileSelect() {
   await page.waitForFunction(() => typeof window.startGame === 'function');
 
   await page.evaluate(() => { document.getElementById('title-screen').click(); });
+  // Depuis l'ajout du bouton "📥 Importer" dans le hub, le hub démarrage
+  // s'affiche toujours (même sans slot). On clique "Nouvelle aventure"
+  // pour basculer sur player-select.
+  await page.waitForFunction(() => {
+    const el = document.getElementById('start-hub-screen');
+    return el && getComputedStyle(el).display !== 'none';
+  });
+  await page.evaluate(() => startHubNewGame());
   await page.waitForFunction(() => {
     const el = document.getElementById('player-select-screen');
     return el && getComputedStyle(el).display !== 'none';
@@ -1824,20 +1832,25 @@ async function scenarioStartHub() {
   console.log('\n── Scénario 13 : hub démarrage ──');
   const { browser, page, errors } = await launchGame();
 
-  // T1 : aucun slot → click title → bypass direct vers player-select
+  // T1 : aucun slot → click title → hub visible avec liste vide
+  //      (depuis l'ajout du bouton "📥 Importer" : le hub doit rester
+  //      accessible même sans slot, sinon impossible d'importer une save).
   const t1 = await page.evaluate(() => {
     localStorage.removeItem('hogwarts_rpg_save');
     localStorage.removeItem('hogwarts_rpg_saves');
     enterStartHub();
     return {
-      titleHidden: getComputedStyle(document.getElementById('title-screen')).display === 'none',
-      hubHidden:   getComputedStyle(document.getElementById('start-hub-screen')).display === 'none',
-      psVisible:   getComputedStyle(document.getElementById('player-select-screen')).display !== 'none'
+      titleHidden:        getComputedStyle(document.getElementById('title-screen')).display === 'none',
+      hubVisible:         getComputedStyle(document.getElementById('start-hub-screen')).display !== 'none',
+      importBtnPresent:   !!document.querySelector('.hub-import-btn'),
+      slotsListedCount:   document.querySelectorAll('#start-hub-slot-list [data-slot-id]').length
     };
   });
   console.log('  T1 no-slot →', t1);
-  assert(t1.titleHidden && t1.hubHidden && t1.psVisible,
-         'sans slot : on doit aller direct sur player-select sans afficher le hub');
+  assert(t1.titleHidden,        'le titre doit être caché après enterStartHub');
+  assert(t1.hubVisible,         'le hub doit rester visible même sans slot (bouton import accessible)');
+  assert(t1.importBtnPresent,   'le bouton "📥 Importer" doit être présent dans le hub');
+  assert(t1.slotsListedCount === 0, 'aucun slot ne doit apparaître dans la liste');
 
   // T2 : avec un slot → click title → hub affiché avec le slot
   const t2 = await page.evaluate(() => {
