@@ -1,0 +1,1248 @@
+{
+  "version": 1,
+  "slots": {
+    "manual_1": {
+      "meta": {
+        "savedAt": "2026-05-13T07:48:19.000Z",
+        "label": "Endgame TEST",
+        "heroNames": [
+          "Harry Potter"
+        ],
+        "heroIcons": [
+          "img/harry.png"
+        ],
+        "house": "Gryffondor",
+        "level": 18,
+        "floor": 10,
+        "difficulty": "Normal",
+        "victory": false
+      },
+      "state": {
+        "party": [
+          {
+            "name": "Harry Potter",
+            "icon": "🧙",
+            "imgSrc": "img/harry.png",
+            "class": "Élève de Gryffondor",
+            "level": 18,
+            "xp": 0,
+            "xpNext": 800,
+            "hp": 500,
+            "hpMax": 500,
+            "sp": 200,
+            "spMax": 200,
+            "str": 30,
+            "int": 30,
+            "agi": 25,
+            "end": 25,
+            "lck": 30,
+            "mag": 60,
+            "atk": 60,
+            "def": 35,
+            "_baseAtk": 60,
+            "_baseDef": 35,
+            "_baseMag": 60,
+            "_baseLck": 30,
+            "gold": 5000,
+            "inventory": [
+              {
+                "id": "chapeau_pointu",
+                "name": "Chapeau de Serdaigle",
+                "icon": "🎓",
+                "desc": "MAG+3 INT+3",
+                "type": "armor",
+                "bonusDef": 2,
+                "bonusMag": 3,
+                "power": 3,
+                "price": 200
+              },
+              {
+                "id": "mandragore",
+                "name": "Racine de Mandragore",
+                "icon": "🌿",
+                "desc": "+8 PV",
+                "type": "consumable",
+                "effect": "heal",
+                "power": 8,
+                "price": 15
+              },
+              {
+                "id": "broom",
+                "name": "Balai Nimbus 2000",
+                "icon": "🧹",
+                "desc": "Fuite garantie",
+                "type": "acc",
+                "power": 0,
+                "price": 200
+              },
+              {
+                "id": "amulette",
+                "name": "Amulette du Phénix",
+                "icon": "💎",
+                "desc": "MAG+4 LCK+3 · Apprend Reparo",
+                "type": "acc",
+                "power": 4,
+                "bonusMag": 4,
+                "bonusLck": 3,
+                "grantsSpell": "Reparo",
+                "price": 250
+              },
+              {
+                "id": "mandragore",
+                "name": "Racine de Mandragore",
+                "icon": "🌿",
+                "desc": "+8 PV",
+                "type": "consumable",
+                "effect": "heal",
+                "power": 8,
+                "price": 15
+              },
+              {
+                "id": "larme_phenix_pure",
+                "name": "Larme du Phénix Pure",
+                "icon": "✨",
+                "desc": "Ressuscite un perso KO (auto)",
+                "type": "consumable",
+                "effect": "auto_revive",
+                "price": 500
+              },
+              {
+                "id": "potion_xl",
+                "name": "Élixir Suprême",
+                "icon": "🧪",
+                "desc": "Restaure 100 % PV",
+                "type": "consumable",
+                "effect": "heal_full",
+                "price": 200
+              },
+              {
+                "id": "potion_xl_sp",
+                "name": "Élixir d'Esprit Suprême",
+                "icon": "💜",
+                "desc": "Restaure 100 % PM",
+                "type": "consumable",
+                "effect": "restore_sp_full",
+                "price": 200
+              }
+            ],
+            "equipped": {
+              "wand": null,
+              "armor": null,
+              "acc": null
+            },
+            "spells": [
+              "Expelliarmus",
+              "Stupefix",
+              "Episkey",
+              "Protego",
+              "Incendio",
+              "Accio"
+            ],
+            "wand": "Baguette de Houx",
+            "armor": "Robe de Gryffondor",
+            "acc": "Lunettes Rondes",
+            "heroKey": "harry",
+            "statusEffects": [],
+            "unallocatedStatPoints": 0
+          },
+          {
+            "name": "Hermione Granger",
+            "icon": "🧙‍♀️",
+            "imgSrc": "img/hermione.png",
+            "class": "Élève de Gryffondor",
+            "level": 1,
+            "xp": 0,
+            "xpNext": 50,
+            "hp": 22,
+            "hpMax": 28,
+            "sp": 19,
+            "spMax": 35,
+            "str": 6,
+            "int": 17,
+            "agi": 10,
+            "end": 7,
+            "lck": 12,
+            "mag": 16,
+            "atk": 4,
+            "def": 2,
+            "_baseAtk": 4,
+            "_baseDef": 2,
+            "_baseMag": 16,
+            "_baseLck": 12,
+            "gold": 0,
+            "inventory": [],
+            "equipped": {
+              "wand": null,
+              "armor": null,
+              "acc": null
+            },
+            "spells": [
+              "Episkey",
+              "Protego",
+              "Incendio",
+              "Accio",
+              "Expelliarmus",
+              "Stupefix"
+            ],
+            "wand": "Baguette de Vigne",
+            "armor": "Robe de Gryffondor",
+            "acc": "",
+            "statusEffects": []
+          }
+        ],
+        "partySize": 1,
+        "currentFloor": 10,
+        "playerX": 1,
+        "playerY": 7,
+        "playerDir": "n",
+        "dungeon": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            4,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            3,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "visited": [
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ],
+          [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        ],
+        "enemyMap": [
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            {
+              "id": "detraqueur",
+              "name": "Féroce Détraqueur",
+              "icon": "🌑",
+              "category": "être magique",
+              "desc": "Un Détraqueur aspire toute joie et tout espoir autour de vous",
+              "lore": "Créature squelettique qui se nourrit littéralement du bonheur des autres. Sa simple présence aspire toute joie et force quiconque à revivre ses pires souvenirs. Seul le Patronus — manifestation de ses propres souvenirs heureux — peut le repousser.",
+              "habitat": "Forêt Interdite, cachots les plus sombres et abords du lac souterrain",
+              "anecdote": "Harry en rencontre pour la première fois dans le Poudlard Express — il s'évanouit sous leur influence (Le Prisonnier d'Azkaban).",
+              "danger": 9,
+              "minFloor": 3,
+              "maxFloor": 8,
+              "weight": 7,
+              "hp": 47,
+              "atk": 19,
+              "def": 5,
+              "mag": 8,
+              "agi": 10,
+              "lck": 6,
+              "scale": 0.3,
+              "abilities": [
+                {
+                  "name": "Baiser du Détraqueur",
+                  "icon": "💀",
+                  "desc": "Draine l'âme de la cible",
+                  "effect": "drain",
+                  "power": 10,
+                  "chance": 0.35
+                }
+              ],
+              "ai": "cautious",
+              "resist": [
+                "burn",
+                "stun",
+                "disarm"
+              ],
+              "weak": [],
+              "xp": 47,
+              "gold": 19,
+              "drops": [
+                {
+                  "itemId": "potion_m",
+                  "chance": 0.12
+                }
+              ],
+              "variant": "fierce"
+            },
+            null,
+            null,
+            {
+              "id": "gremlin_magique",
+              "name": "Féroce Gremlin Magique",
+              "icon": "👾",
+              "category": "créature",
+              "desc": "Un Gremlin surgit des conduits magiques en crachant des étincelles !",
+              "lore": "Petite créature chaotique qui se nourrit d'énergie magique.",
+              "habitat": "Conduits de ventilation et salles mécaniques",
+              "danger": 4,
+              "minFloor": 3,
+              "maxFloor": 7,
+              "weight": 7,
+              "hp": 48,
+              "atk": 12,
+              "def": 5,
+              "mag": 10,
+              "agi": 16,
+              "lck": 9,
+              "scale": 0.24,
+              "abilities": [
+                {
+                  "name": "Drain Magique",
+                  "icon": "⚡",
+                  "desc": "Vole 6 PM à la cible",
+                  "effect": "drain",
+                  "power": 6,
+                  "chance": 0.4
+                },
+                {
+                  "name": "Surcharge Arcanique",
+                  "icon": "🔮",
+                  "desc": "Dégâts magiques (12)",
+                  "effect": "damage",
+                  "power": 12,
+                  "chance": 0.25
+                }
+              ],
+              "ai": "random",
+              "resist": [
+                "burn"
+              ],
+              "weak": [
+                "stun"
+              ],
+              "xp": 60,
+              "gold": 34,
+              "drops": [
+                {
+                  "itemId": "potion_m",
+                  "chance": 0.2
+                }
+              ],
+              "variant": "fierce"
+            },
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            {
+              "id": "voldemort_revenu",
+              "name": "Voldemort Ressuscité",
+              "icon": "💀",
+              "imgSrc": "img/monsters/voldemort_revenu.png",
+              "category": "être magique",
+              "desc": "Lord Voldemort, pleinement ressuscité, vous contemple avec froideur absolue !",
+              "minFloor": 10,
+              "maxFloor": null,
+              "weight": 1,
+              "hp": 100,
+              "atk": 28,
+              "def": 14,
+              "mag": 25,
+              "agi": 10,
+              "lck": 15,
+              "scale": 0.4,
+              "abilities": [
+                {
+                  "name": "Avada Kedavra",
+                  "icon": "💚",
+                  "desc": "Sort de la mort imparable",
+                  "effect": "damage",
+                  "power": 35,
+                  "chance": 0.3
+                },
+                {
+                  "name": "Cruciatus Absolu",
+                  "icon": "⚡",
+                  "desc": "Torture au-delà de l'imaginable",
+                  "effect": "drain",
+                  "power": 22,
+                  "chance": 0.25
+                },
+                {
+                  "name": "Nagini te Convoque",
+                  "icon": "🐍",
+                  "desc": "Invoque Nagini pour se soigner",
+                  "effect": "heal",
+                  "power": 25,
+                  "chance": 0.2
+                },
+                {
+                  "name": "Marque des Ténèbres",
+                  "icon": "🌑",
+                  "desc": "Marque qui ronge les défenses",
+                  "effect": "weaken",
+                  "power": 6,
+                  "chance": 0.15
+                }
+              ],
+              "ai": "aggressive",
+              "resist": [
+                "stun",
+                "disarm",
+                "burn",
+                "instant"
+              ],
+              "weak": [],
+              "xp": 350,
+              "gold": 150,
+              "drops": [
+                {
+                  "itemId": "felix",
+                  "chance": 0.6
+                },
+                {
+                  "itemId": "wand2",
+                  "chance": 0.4
+                },
+                {
+                  "itemId": "amulette",
+                  "chance": 0.3
+                },
+                {
+                  "itemId": "retourneur_temps",
+                  "chance": 0.2
+                }
+              ],
+              "variant": "normal"
+            },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ],
+        "itemMap": [
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ],
+        "seenMonsters": [
+          "chat_norris",
+          "bowtruckle",
+          "cornichon",
+          "troll",
+          "gobelin",
+          "chouette_envoutee",
+          "araignee",
+          "homme_araignee"
+        ],
+        "audioMuted": false,
+        "voiceEnabled": true,
+        "activeQuests": [
+          {
+            "id": "mandragore_pomfresh",
+            "title": "Herboristerie urgente",
+            "giver": "Madame Pomfresh",
+            "desc": "Rapporte 3 Racines de Mandragore à l'infirmerie. Les élèves sont encore pétrifiés !",
+            "objectives": [
+              {
+                "type": "item",
+                "itemId": "mandragore",
+                "amount": 3,
+                "progress": 0,
+                "completed": false
+              }
+            ],
+            "reward": {
+              "xp": 80,
+              "gold": 40,
+              "item": "potion_m",
+              "spell": "Episkey"
+            },
+            "completed": false,
+            "location": "Infirmerie (étage 2)"
+          },
+          {
+            "id": "livre_interdit",
+            "title": "Le livre qui mord",
+            "giver": "Gilderoy Lockhart",
+            "desc": "Récupère le Livre des Monstres qui mord dans la Bibliothèque Interdite.",
+            "objectives": [
+              {
+                "type": "item",
+                "itemId": "book_monsters",
+                "amount": 1,
+                "progress": 0,
+                "completed": false
+              }
+            ],
+            "reward": {
+              "xp": 120,
+              "gold": 25,
+              "item": "wand1"
+            },
+            "completed": false,
+            "location": "Bibliothèque Interdite (étage 3)"
+          },
+          {
+            "id": "troll_toilettes",
+            "title": "Nettoyage des toilettes",
+            "giver": "Mimi Geignarde",
+            "desc": "Élimine le Troll des Toilettes qui bloque l'accès aux cachots.",
+            "objectives": [
+              {
+                "type": "kill",
+                "monsterId": "troll",
+                "amount": 1,
+                "progress": 0,
+                "completed": false
+              }
+            ],
+            "reward": {
+              "xp": 150,
+              "gold": 60,
+              "item": "robe1"
+            },
+            "completed": false,
+            "location": "Toilettes du 2e étage"
+          },
+          {
+            "id": "chouette_perdue",
+            "title": "Chouette ensorcelée",
+            "giver": "Hagrid",
+            "desc": "Capture une Chouette Ensorcelée et rapporte-la à Hagrid (dans la Forêt).",
+            "objectives": [
+              {
+                "type": "kill",
+                "monsterId": "chouette_envoutee",
+                "amount": 1,
+                "progress": 1,
+                "completed": true
+              }
+            ],
+            "reward": {
+              "xp": 90,
+              "gold": 30,
+              "item": "broom"
+            },
+            "completed": true,
+            "location": "Forêt Interdite (étage 4+)"
+          },
+          {
+            "id": "niffleurs_trésor",
+            "title": "L'invasion des Niffleurs",
+            "giver": "Newton Scamander",
+            "desc": "Les Niffleurs ont envahi les sous-sols ! Élimine-en 3 avant qu'ils volent tout l'or.",
+            "objectives": [
+              {
+                "type": "kill",
+                "monsterId": "niffleur",
+                "amount": 3,
+                "progress": 0,
+                "completed": false
+              }
+            ],
+            "reward": {
+              "xp": 100,
+              "gold": 80,
+              "item": "amulette"
+            },
+            "completed": false,
+            "location": "Sous-sols de Poudlard (étage 2+)"
+          },
+          {
+            "id": "golem_passage",
+            "title": "Le Gardien Endormi",
+            "giver": "Professeur McGonagall",
+            "desc": "Un Gardien du Portail bloque l'accès à la bibliothèque interdite. Neutralise-le.",
+            "objectives": [
+              {
+                "type": "kill",
+                "monsterId": "gardien_portail",
+                "amount": 1,
+                "progress": 0,
+                "completed": false
+              }
+            ],
+            "reward": {
+              "xp": 180,
+              "gold": 70,
+              "item": "livre_bombarda"
+            },
+            "completed": false,
+            "location": "Passages secrets (étage 5+)"
+          },
+          {
+            "id": "lumiere_desespoir",
+            "title": "La Lumière contre le Désespoir",
+            "giver": "Professeur Lupin",
+            "desc": "Affronte un Détraqueur pour prouver ton courage, puis rapporte un Chocolat aux Sorciers à Lupin pour qu'il t'enseigne le Patronus.",
+            "objectives": [
+              {
+                "type": "kill",
+                "monsterId": "dementeur",
+                "amount": 1,
+                "progress": 0,
+                "completed": false
+              },
+              {
+                "type": "item",
+                "itemId": "choco_sorcier",
+                "amount": 1,
+                "progress": 0,
+                "completed": false
+              }
+            ],
+            "reward": {
+              "xp": 200,
+              "gold": 50,
+              "spell": "Patronum"
+            },
+            "completed": false,
+            "location": "Classe de Défense (étage 4+)"
+          }
+        ],
+        "difficulty": "Normal",
+        "chosenHouse": "Gryffondor",
+        "housePoints": 100,
+        "houseTier": 1,
+        "searchedCells": [],
+        "floorDungeons": {},
+        "restCooldown": 0,
+        "victoryAchieved": false,
+        "victoryAt": null,
+        "defeatedCellsByFloor": [],
+        "floorKillCount": [],
+        "usedFountains": []
+      }
+    }
+  }
+}
