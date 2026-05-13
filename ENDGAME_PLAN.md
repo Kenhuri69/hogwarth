@@ -368,10 +368,10 @@ else if (typeof victoryAchieved !== 'undefined'
   // ajoutent juste la couche "corrupted" — cf. §7.2bis.
   monster.variant = 'darkness';
   monster.name    = 'Ténébreux ' + base.name;
-  monster.hp      = Math.floor(monster.hp  * 1.35);
-  monster.atk     = Math.floor(monster.atk * 1.22);
+  monster.hp      = Math.floor(monster.hp  * 1.50);
+  monster.atk     = Math.floor(monster.atk * 1.12);
   monster.def     = Math.floor(monster.def * 1.15);
-  if (monster.mag) monster.mag = Math.floor(monster.mag * 1.30);
+  if (monster.mag) monster.mag = Math.floor(monster.mag * 1.15);
   monster.xp      = Math.floor(monster.xp   * 2.00);
   monster.gold    = Math.floor(monster.gold * 2.00);
   // Drops gated : voir §7.3 + §7.9 (filtre côté endBattle sur enemy.variant)
@@ -460,18 +460,25 @@ applique les multiplicateurs darkness par-dessus :
 ```
 relFloor = floor − 10                                (post-victoire, floor≥11)
 mult     = (1 + (relFloor − 1) × base.scale) × diffMult
-hp  = base.hp  × mult × 1.35
-atk = base.atk × mult × 1.22
+hp  = base.hp  × mult × 1.50      ← combat plus long, plus de marge tactique
+atk = base.atk × mult × 1.12      ← faible boost — à haut niveau, +ATK ennemi
+                                    a un impact disproportionné (dmg = atk - def
+                                    avec DEF qui sature). On évite les one-shots.
 def = base.def × mult × 1.15
-mag = base.mag × 1.30                                (mag toujours non scalé par mult)
+mag = base.mag × 1.15             ← réduit (vs ×1.30 initial). La formule
+                                    abilities = power + mag/2 amplifie déjà la
+                                    magie. Sur-bumper rendait Avada/Cruciatus
+                                    létaux dès floor 14-15.
 xp  = base.xp  × mult × 2.00
 gold = base.gold × mult × 2.00
 ```
 
-> **Multiplicateurs bumpés** (vs version précédente du plan : ×1.25/×1.15/×1.10/×1.20/×1.75/×1.75). Le scaling est désormais
-> calibré pour être un peu **plus exigeant** — compensé côté joueur
-> par les mécaniques de boost §7.5 (Forge), §7.6 (Bibliothèque),
-> §7.7 (Maison T5), §7.8 (Set Ténèbres), §7.10 (consommables purifiés).
+> **Profil retenu** : monstres significativement **plus tanky** (HP ×1.50)
+> et **un peu plus dangereux** physiquement (ATK ×1.12) / magiquement
+> (MAG ×1.15). Le combat dure plus longtemps sans devenir létal — laisse
+> au joueur le temps d'utiliser ses sorts upgradés, ses consommables,
+> et son set Ténèbres. Récompenses très généreuses (xp/gold ×2) pour
+> compenser la longueur des fights et financer la Forge / Bibliothèque.
 
 #### Référentiel joueur (Normal, Gryffondor, équipement mid)
 
@@ -491,28 +498,29 @@ Drops Ténèbres en cours d'acquisition (cape_voldemort +DEF/MAG,
 cendres_phenix +MAG/regenHp, oeil_basilic +crit/dodge) — non comptés
 dans le tableau, marge de sécurité.
 
-#### Stats des monstres clés en version Ténébreuse (multiplicateurs bumpés)
+#### Stats des monstres clés en version Ténébreuse (multiplicateurs retenus)
 
 `mult(relF) = 1 + (relF − 1) × scale` (Normal, diffMult = 1.0). Le
 floor d'apparition est `minFloor + 10`. Stats finales avec darkness
-×1.35 / ×1.22 / ×1.15 / ×1.30.
+**×1.50 / ×1.12 / ×1.15 / ×1.15** (hp / atk / def / mag).
 
 | Monstre | minFloor | scale | apparait à floor… | relF | mult | **HP** | **ATK** | **DEF** | **MAG** |
 |---------|---------:|------:|-------------------|-----:|-----:|-------:|--------:|--------:|--------:|
-| Chat de Mme Norris   | 1  | 0.15 | floor 11 | 1  | 1.00 | **13**  | **2**   | **1**  | 0  |
-| Cornichon            | 1  | 0.15 | floor 11 | 1  | 1.00 | **16**  | **3**   | **2**  | 0  |
-| Peeves               | 1  | 0.18 | floor 11 | 1  | 1.00 | **19**  | **4**   | **2**  | 0  |
-| Mandragore Sauvage   | 2  | 0.20 | floor 12 | 2  | 1.20 | **39**  | **8**   | **4**  | 9  |
-| Inférius             | 4  | 0.28 | floor 14 | 4  | 1.84 | **94**  | **29**  | **15** | 0  |
-| Mangemort            | 5  | 0.30 | floor 15 | 5  | 2.20 | **119** | **32**  | **15** | 13 |
-| Basilic Mineur       | 6  | 0.32 | floor 16 | 6  | 2.60 | **245** | **48**  | **24** | 18 |
-| Mangemort d'Élite    | 7  | 0.32 | floor 17 | 7  | 2.92 | **217** | **57**  | **27** | 21 |
-| Bellatrix            | 8  | 0.35 | floor 18 | 8  | 3.45 | **326** | **84**  | **32** | 26 |
-| Voldemort Ressuscité | 10 | 0.40 | floor 20 | 10 | 4.60 | **621** | **157** | **74** | 33 |
+| Chat de Mme Norris   | 1  | 0.15 | floor 11 | 1  | 1.00 | **15**  | **2**   | **1**  | 0  |
+| Cornichon            | 1  | 0.15 | floor 11 | 1  | 1.00 | **18**  | **3**   | **2**  | 0  |
+| Peeves               | 1  | 0.18 | floor 11 | 1  | 1.00 | **21**  | **4**   | **2**  | 0  |
+| Mandragore Sauvage   | 2  | 0.20 | floor 12 | 2  | 1.20 | **43**  | **8**   | **4**  | 8  |
+| Inférius             | 4  | 0.28 | floor 14 | 4  | 1.84 | **104** | **26**  | **15** | 0  |
+| Mangemort            | 5  | 0.30 | floor 15 | 5  | 2.20 | **132** | **29**  | **15** | 11 |
+| Basilic Mineur       | 6  | 0.32 | floor 16 | 6  | 2.60 | **273** | **44**  | **24** | 16 |
+| Mangemort d'Élite    | 7  | 0.32 | floor 17 | 7  | 2.92 | **241** | **52**  | **27** | 18 |
+| Bellatrix            | 8  | 0.35 | floor 18 | 8  | 3.45 | **362** | **77**  | **32** | 23 |
+| Voldemort Ressuscité | 10 | 0.40 | floor 20 | 10 | 4.60 | **690** | **144** | **74** | 28 |
 
-> ✨ Voldemort Ténébreux à floor 20 = **+35 % HP / +23 % ATK** vs
-> Voldemort original à floor 10 (HP 460/ATK 128). Le boss final
-> revisité demande clairement un build NG+ optimisé.
+> ✨ Voldemort Ténébreux à floor 20 = **+50 % HP / +12 % ATK** vs
+> Voldemort original à floor 10 (HP 460/ATK 128). Profil très tanky
+> mais frappant à peine plus fort — les ressources du joueur (PM,
+> potions) sont vraiment mises à l'épreuve sur la durée du fight.
 
 #### Combat-feel attendu (joueur sans boost §7.5+)
 
@@ -523,10 +531,16 @@ pour mesurer ce que les mécaniques de boost doivent combler.
 |--------|------------------|-----------------|-----------------|----------------|------------------|
 | Chat Ténébreux (floor 11)   | L11 ATK 22 | 22−1 = 21       | 2−15 = 0    | **1**   | invulnérable  |
 | Mandragore Ténébreuse (12)  | L11 ATK 22 | 22−4 = 18       | 8−15 = 0    | 3       | invulnérable  |
-| Inférius Ténébreux (14)     | L13 ATK 25 | 25−15 = 10      | 29−18 = 11  | 10      | 18            |
-| Mangemort Ténébreux (15)    | L14 ATK 28 | 28−15 = 13      | 32−20 = 12  | 10      | 14            |
-| Bellatrix Ténébreuse (18)   | L17 ATK 32 | 32−32 = 1       | 84−24 = 60  | ~330    | 4             |
-| Voldemort Ténébreux (20)    | L20 ATK 38 | 38−74 = 1       | 157−28 = 129| ~621    | 2             |
+| Inférius Ténébreux (14)     | L13 ATK 25 | 25−15 = 10      | 26−18 = 8   | 11      | 23            |
+| Mangemort Ténébreux (15)    | L14 ATK 28 | 28−15 = 13      | 29−20 = 9   | 11      | 18            |
+| Bellatrix Ténébreuse (18)   | L17 ATK 32 | 32−32 = 1       | 77−24 = 53  | ~360    | 4             |
+| Voldemort Ténébreux (20)    | L20 ATK 38 | 38−74 = 1       | 144−28 = 116| ~690    | 2             |
+
+→ Vs version précédente du plan (atk ×1.22, mag ×1.30) :
+- Bellatrix dmg/coup 60 → **53** (gain de marge survie joueur ~+13 %)
+- Voldemort dmg/coup 129 → **116** (gain ~+10 %)
+- HP des bosses ~+10-15 % (combat plus long)
+- Le joueur a clairement plus de "fenêtre" pour caster ses sorts.
 
 → Lecture :
 - **Floors 11-13** : easy lap — le joueur surclasse les Ténébreux des
@@ -542,10 +556,10 @@ pour mesurer ce que les mécaniques de boost doivent combler.
 
 | Stat | Multiplier | Justification |
 |------|-----------:|----------------|
-| `hp`   | **× 1.35** | Corruption marquée — combat ~+35 % plus long, compense bumpée pour exiger les boost joueur |
-| `atk`  | **× 1.22** | +22 % de dmg subis — réduit la marge de survie d'un hit, compensé par Forge ATK/HP |
-| `def`  | **× 1.15** | Léger ralentissement de l'offensive physique, suffit à pousser vers les sorts upgradés (Bibliothèque) |
-| `mag`  | **× 1.30** | `mag` n'est pas scalé par défaut → le ×1.30 est la seule croissance qu'aura ce stat. Crucial pour les abilities magiques |
+| `hp`   | **× 1.50** | **Tanky** — combat ~+50 % plus long, donne tout le temps tactique nécessaire. Le joueur doit gérer ses ressources (PM, potions) sur la durée du combat plutôt que survivre à un burst. |
+| `atk`  | **× 1.12** | **Volontairement bas** — la formule `dmg = atk - def` saturée à haut niveau fait qu'un +1 ATK = +1 dmg sec ; bumper ATK trop fort multiplie les one-shots. ×1.12 garde la pression sans rendre les coups létaux. |
+| `def`  | **× 1.15** | Léger ralentissement de l'offensive physique, pousse vers les sorts upgradés (Bibliothèque) |
+| `mag`  | **× 1.15** | **Réduit vs version précédente** (était ×1.30). La formule abilities = `power + mag/2` amplifie déjà la magie ; sur-bumper rendait Avada/Cruciatus quasi-létaux dès floor 14-15. ×1.15 maintient une menace magique sans la rendre dictatoriale. |
 | `xp`   | **× 2.00** | Reward × 2 — incite à descendre malgré la difficulté, finance les coûts Forge/Bibliothèque |
 | `gold` | **× 2.00** | Idem — l'or devient une vraie ressource d'upgrade |
 
@@ -576,10 +590,10 @@ Tentation : booster davantage HP/ATK pour que le second loop soit
 
 | Floor | relF | mult | HP | ATK | DEF |
 |------:|-----:|-----:|---:|----:|----:|
-| 20    | 10   | 4.60 | 621 | 157 | 74 |
-| 22    | 12   | 5.40 | 729 | 184 | 87 |
-| 25    | 15   | 6.60 | 891 | 225 | 106|
-| 30    | 20   | 8.60 | 1161| 294 | 138|
+| 20    | 10   | 4.60 | 690 | 144 | 74 |
+| 22    | 12   | 5.40 | 810 | 169 | 87 |
+| 25    | 15   | 6.60 | 990 | 207 | 106|
+| 30    | 20   | 8.60 | 1290| 270 | 138|
 
 Au-delà de floor 25, le joueur est typiquement L25+ avec items
 forge level 5 et tier 5 Maison — c'est un grind asymptotique attendu
@@ -588,17 +602,18 @@ pour les sessions post-endgame "longues". OK pour V1.
 #### Sanity check : difficulté Expert (sans boost joueur)
 
 Bellatrix Ténébreuse floor 18, Expert (`diffMult = 1.45`) :
-- HP  = 70 × 3.45 × 1.45 × 1.35 = **473**
-- ATK = 20 × 3.45 × 1.45 × 1.22 = **122**
+- HP  = 70 × 3.45 × 1.45 × 1.50 = **525**
+- ATK = 20 × 3.45 × 1.45 × 1.12 = **112**
 
 Voldemort Ténébreux floor 20, Expert :
-- HP  = 100 × 4.60 × 1.45 × 1.35 = **900**
-- ATK = 28 × 4.60 × 1.45 × 1.22 = **228**
+- HP  = 100 × 4.60 × 1.45 × 1.50 = **1000**
+- ATK = 28 × 4.60 × 1.45 × 1.12 = **209**
 
-**Sans boost §7.5+, Expert Voldemort Ténébreux devient quasi-infaisable.**
-C'est l'INTENTION : le scaling bumpé force le joueur à investir dans
-les mécaniques de progression endgame (Forge, Bibliothèque, Tier 5).
-Le `diffMult` existant gère le ratio ; pas d'ajustement spécial.
+**Tendu mais affrontable** : le joueur Expert post-Voldemort a accès
+aux mécaniques §7.5+ (Forge, Bibliothèque, Tier 5, set Ténèbres,
+larme du phénix pure). Voldemort 1000 HP demande ~50 casts d'Avada
+level 3 (power 56) — finançable par les drops de PM et le set bonus
+regen. Le `diffMult` existant gère le ratio ; pas d'ajustement spécial.
 
 #### À retoucher si le ressenti diffère
 
@@ -606,10 +621,16 @@ Le `diffMult` existant gère le ratio ; pas d'ajustement spécial.
   le victory lap voulu. Si trop ennuyeux, augmenter le `weight` des
   drops Ténèbres pour rendre le loot fréquent.
 - **Mur à Bellatrix/Voldemort Ténébreux (floors 18-20)** → réduire
-  d'abord `hp` (×1.20) avant `atk` (qui touche la survie joueur).
-- **Sorts magiques surpuissants** → augmenter `mag` darkness à ×1.30
-  pour que les abilities ennemies mordent plus.
-- **Drops trop rares** → bump la chance de drop §7.3 de 8 % à 10-12 %.
+  d'abord `hp` (×1.35 ou ×1.25) plutôt que `atk` (qui touche directement
+  la survie joueur).
+- **Joueur clean trop facilement à coups physiques** → augmenter
+  doucement `def` darkness (×1.20). Évite de toucher `atk` qui crée
+  des spikes de létalité.
+- **Sorts ennemis trop faibles (abilities ne mordent pas)** → bumper
+  `mag` darkness (×1.20-×1.25) pour que les Avada/Cruciatus aient
+  plus de portée.
+- **Drops trop rares** → bump la chance de drop §7.3 de 8 % à 10-12 %,
+  ou bump le `dropChanceMultiplier` Ténèbres §7.9 de ×1.5 à ×1.75.
 
 ### 7.3 Drops uniques post-victoire
 
@@ -1025,11 +1046,11 @@ avec `potion_xl` et `potion_xl_sp` à `minFloor: 15`.
 - [ ] Créer la fonction utilitaire `effectiveFloor(floor)` dans `dungeon.js` (cf. §7.2)
 - [ ] Câbler aux **3 sites de filtrage du pool** : `dungeon.js:198`, `dungeon.js:259`, `battle.js:170` — remplacer `floor` par `effectiveFloor(floor)` dans la condition `m.minFloor <= … && (m.maxFloor === null || … <= m.maxFloor)`
 - [ ] Modifier `dungeon.js — scaleMonster()` : utiliser `ef = effectiveFloor(floor)` pour le calcul de `mult`
-- [ ] Ajouter la branche `darkness` dans `scaleMonster()` (priorité après shiny, avant ancient) — applique les ×1.35/×1.22/×1.15/×1.30/×2.00/×2.00 par-dessus le scaling déjà fait avec `ef`
+- [ ] Ajouter la branche `darkness` dans `scaleMonster()` (priorité après shiny, avant ancient) — applique les ×1.50/×1.12/×1.15/×1.15/×2.00/×2.00 par-dessus le scaling déjà fait avec `ef`
 - [ ] Étendre `battle-ui.js:60-65` : ajout du badge 🌑 et de la classe CSS `variant-${variant}` sur la card
 - [ ] Ajouter règles CSS `.variant-darkness` + keyframes `dark-pulse` + `.variant-badge-darkness` dans `css/style.css`
 - **Vérif 1** (pool) : forcer `victoryAchieved=true`, floor=11 → `MONSTERS.filter(...)` ne renvoie que les monstres avec `minFloor ≤ 1` (Chat, Cornichon, Peeves, etc.). Forcer floor=20 → pool = bestiaire complet incluant Voldemort.
-- **Vérif 2** (scaling) : Chat de Mme Norris @ floor 11 darkness → HP ≈ 13. Mangemort @ floor 15 darkness → HP ≈ 119. Voldemort @ floor 20 darkness → HP ≈ 621. Mêmes valeurs que les tables §7.2bis.
+- **Vérif 2** (scaling) : Chat de Mme Norris @ floor 11 darkness → HP ≈ 15. Mangemort @ floor 15 darkness → HP ≈ 132. Voldemort @ floor 20 darkness → HP ≈ 690. Mêmes valeurs que les tables §7.2bis.
 - **Vérif 3** (UI) : combat à floor 11 → ennemi préfixé "Ténébreux ", badge 🌑, halo violet animé.
 
 ### Étape 8 — Drops uniques + récompenses scalées (§7.3 + §7.9)
