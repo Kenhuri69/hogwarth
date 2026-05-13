@@ -29,32 +29,177 @@ function loadGameData() {
   const root = path.join(__dirname, '..');
   const monstersSrc = fs.readFileSync(path.join(root, 'js/monsters.js'), 'utf8');
   const dataSrc     = fs.readFileSync(path.join(root, 'js/data.js'),     'utf8');
+  const questsSrc   = fs.readFileSync(path.join(root, 'js/quests.js'),   'utf8');
+  const shopSrc     = fs.readFileSync(path.join(root, 'js/shop.js'),     'utf8');
 
   // Sandbox commun : on injecte un objet `globalThis` qu'on peut
   // muter, puis on patche les sources pour publier les bindings.
-  const sandbox = { console, exports: {} };
+  const sandbox = { console, exports: {},
+    // Stubs côté DOM/runtime pour quests.js et shop.js qui touchent
+    // window/document/setTimeout au top-level. La sim ne les exécute
+    // pas, seules les constantes `QUEST_TEMPLATES` / `SHOP_CATALOG`
+    // nous intéressent.
+    window: {}, document: { getElementById: () => null },
+    setTimeout: () => 0, clearTimeout: () => {},
+    addMsg: () => {}, updateUI: () => {}, AudioSystem: { playLevelUp: () => {} },
+    party: [], partySize: 1, player: {}, recalculateStats: () => {},
+    checkLevelUp: () => {}, openQuestLog: () => {}, updateQuestTracker: () => {},
+    chosenHouse: null, housePoints: 0, safeCall: () => {},
+    getItemIconHtml: () => '', tryAddItem: () => false,
+    activeQuests: [], availableQuests: new Set(), completedQuests: new Set(),
+    lastQuestCompletion: {}, renderMinimap: () => {}, drawDungeon: () => {},
+  };
   vm.createContext(sandbox);
 
   const patchedMonsters = monstersSrc + '\n;exports.MONSTERS = MONSTERS;';
   vm.runInContext(patchedMonsters, sandbox, { filename: 'monsters.js' });
 
   // data.js définit beaucoup de constantes mais on a juste besoin
-  // de SPELLS, CHARACTERS, LEVEL_UP_XP_MULTIPLIER, RESIST/WEAK.
-  // ITEMS y vit aussi (références circulaires avec MONSTERS.drops).
+  // de SPELLS, CHARACTERS, LEVEL_UP_XP_MULTIPLIER, RESIST/WEAK, ITEMS.
   // On évalue le fichier complet dans le même sandbox.
   const patchedData = dataSrc + `\n;exports.SPELLS = SPELLS;\n;exports.CHARACTERS = CHARACTERS;\n` +
     `;exports.LEVEL_UP_XP_MULTIPLIER = LEVEL_UP_XP_MULTIPLIER;\n` +
     `;exports.RESIST_MULTIPLIER = RESIST_MULTIPLIER;\n` +
-    `;exports.WEAK_MULTIPLIER = WEAK_MULTIPLIER;\n`;
+    `;exports.WEAK_MULTIPLIER = WEAK_MULTIPLIER;\n` +
+    `;exports.ITEMS = ITEMS;\n`;
   vm.runInContext(patchedData, sandbox, { filename: 'data.js' });
+
+  // quests.js : seule la constante `QUEST_TEMPLATES` nous intéresse.
+  // Le reste du fichier touche le DOM (already stubbed) ou ne sera pas
+  // appelé par la sim. On capture la déclaration top-level.
+  const patchedQuests = questsSrc + '\n;exports.QUEST_TEMPLATES = QUEST_TEMPLATES;';
+  vm.runInContext(patchedQuests, sandbox, { filename: 'quests.js' });
+
+  const patchedShop = shopSrc + '\n;exports.SHOP_CATALOG = SHOP_CATALOG;';
+  vm.runInContext(patchedShop, sandbox, { filename: 'shop.js' });
 
   return sandbox.exports;
 }
 
 const { MONSTERS, SPELLS, CHARACTERS, LEVEL_UP_XP_MULTIPLIER,
-        RESIST_MULTIPLIER, WEAK_MULTIPLIER } = loadGameData();
+        RESIST_MULTIPLIER, WEAK_MULTIPLIER, ITEMS,
+        QUEST_TEMPLATES, SHOP_CATALOG } = loadGameData();
 
 const spellByName = Object.fromEntries(SPELLS.map(s => [s.name, s]));
+
+// ── Récompenses de quêtes : modélisation "joueur normal" ─────
+//
+// Étage où une quête est considérée comme complétée. Pour les quêtes
+// kill : minFloor du monstre cible. Pour les item/floor : étage cible
+// du donneur. Ces valeurs servent à appliquer rétroactivement l'XP et
+// les bonus de stats permanents aux personnages quand on simule à
+// l'étage F (toutes les quêtes dont completion_floor ≤ F sont
+// considérées comme rendues).
+//
+// Hypothèse explicite : le joueur joue les quêtes optionnelles. On peut
+// désactiver la modélisation via `--no-quests`.
+const QUEST_COMPLETION_FLOOR = {
+  intro_tutoriel:        2,
+  mandragore_pomfresh:   3,
+  livre_interdit:        3,
+  troll_toilettes:       3,
+  niffleurs_trésor:      3,
+  chouette_perdue:       4,
+  defense_cabane:        4,
+  bottines_ollivander:   4,
+  lumiere_desespoir:     5,
+  fil_acromantule:       5,
+  golem_passage:         5,
+  anneau_dumbledore:     6,
+  bouclier_phenix:       7,
+  dumbledore_eveil:      3,
+  dumbledore_courage:    5,
+  dumbledore_resistance: 7,
+  dumbledore_revelation: 10,
+};
+
+// XP totale gagnée par les quêtes complétées avant l'étage `floor`.
+function questXpUpToFloor(floor) {
+  if (!QUEST_TEMPLATES) return 0;
+  let total = 0;
+  for (const tpl of QUEST_TEMPLATES) {
+    const cf = QUEST_COMPLETION_FLOOR[tpl.id];
+    if (cf === undefined) continue;
+    if (cf > floor) continue;
+    if (tpl.reward && tpl.reward.xp) total += tpl.reward.xp;
+  }
+  return total;
+}
+
+// Applique les bonus stats permanents des quêtes complétées avant
+// l'étage `floor` sur un personnage (mute en place). Les bonus
+// s'accumulent sur les `_baseX` (effet identique au runtime).
+function applyQuestStatRewards(c, floor) {
+  if (!QUEST_TEMPLATES) return;
+  for (const tpl of QUEST_TEMPLATES) {
+    const cf = QUEST_COMPLETION_FLOOR[tpl.id];
+    if (cf === undefined) continue;
+    if (cf > floor) continue;
+    const stats = tpl.reward && tpl.reward.stats;
+    if (!stats) continue;
+    if (stats.atk) c._baseAtk = (c._baseAtk || 0) + stats.atk;
+    if (stats.def) c._baseDef = (c._baseDef || 0) + stats.def;
+    if (stats.mag) c._baseMag = (c._baseMag || 0) + stats.mag;
+    if (stats.lck) c._baseLck = (c._baseLck || 0) + stats.lck;
+    if (stats.str) c._baseStr = (c._baseStr || c.str || 0) + stats.str;
+    if (stats.int) c._baseInt = (c._baseInt || c.int || 0) + stats.int;
+    if (stats.agi) c._baseAgi = (c._baseAgi || c.agi || 0) + stats.agi;
+    if (stats.end) c._baseEnd = (c._baseEnd || c.end || 0) + stats.end;
+    if (stats.hp)  { c.hpMax += stats.hp; }
+    if (stats.sp)  { c.spMax += stats.sp; }
+  }
+}
+
+// ── Équipement : modélisation "best-in-slot" disponible ──────
+//
+// On simule un joueur qui équipe progressivement les meilleurs items
+// disponibles selon `minFloor` du shop. Pour chaque slot, on prend le
+// item avec la somme de bonus la plus élevée parmi les items éligibles.
+// Approche conservative : un seul perso équipé, pas de doublon ring1/2.
+function equipmentBuffForFloor(floor) {
+  if (!ITEMS || !SHOP_CATALOG) return null;
+  const eligibleIds = new Set(
+    SHOP_CATALOG.filter(e => (e.minFloor || 1) <= floor).map(e => e.id)
+  );
+  const buff = { atk: 0, def: 0, mag: 0, lck: 0, str: 0, int: 0, agi: 0, end: 0 };
+  const bestBySlot = {};
+  for (const it of ITEMS) {
+    if (!it.slot) continue;
+    if (!eligibleIds.has(it.id)) continue;
+    const score = (it.bonusAtk||0)+(it.bonusDef||0)+(it.bonusMag||0)+(it.bonusLck||0)
+                + (it.bonusStr||0)+(it.bonusInt||0)+(it.bonusAgi||0)+(it.bonusEnd||0);
+    const cur = bestBySlot[it.slot];
+    if (!cur || score > cur.score) bestBySlot[it.slot] = { item: it, score };
+  }
+  for (const slot of Object.keys(bestBySlot)) {
+    const it = bestBySlot[slot].item;
+    buff.atk += it.bonusAtk || 0;
+    buff.def += it.bonusDef || 0;
+    buff.mag += it.bonusMag || 0;
+    buff.lck += it.bonusLck || 0;
+    buff.str += it.bonusStr || 0;
+    buff.int += it.bonusInt || 0;
+    buff.agi += it.bonusAgi || 0;
+    buff.end += it.bonusEnd || 0;
+  }
+  return buff;
+}
+
+// Applique les bonus directement sur les stats effectives. À appeler
+// **après** que `c.atk/def/mag/lck/str/int/agi/end` ont été initialisées
+// depuis les `_base*` (cf. createHero étape "stats effectives").
+function applyEquipmentBuff(c, floor) {
+  const b = equipmentBuffForFloor(floor);
+  if (!b) return;
+  c.atk += b.atk;
+  c.def += b.def;
+  c.mag += b.mag;
+  c.lck += b.lck;
+  c.str = (c.str || 0) + b.str;
+  c.int = (c.int || 0) + b.int;
+  c.agi = (c.agi || 0) + b.agi;
+  c.end = (c.end || 0) + b.end;
+}
 
 // ── Constantes simulation ───────────────────────────────────
 const FLOORS = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -66,11 +211,16 @@ const COMBATS_PER_FLOOR_AVG = 4;
 // ── CLI ─────────────────────────────────────────────────────
 function parseArgs(argv) {
   const out = { nSims: 400, hpMult: 1.0, xpMult: 1.0, statPoints: 0,
-                build: 'balanced', mode: 'single' };
+                build: 'balanced', mode: 'single',
+                useQuests: true, useEquipment: true, usePotions: true };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
     if (a === '-h' || a === '--help')   { out.mode = 'help'; continue; }
+    if (a === '--no-quests')            { out.useQuests = false; continue; }
+    if (a === '--no-equipment')         { out.useEquipment = false; continue; }
+    if (a === '--no-potions')           { out.usePotions = false; continue; }
+    if (a === '--pessimistic')          { out.useQuests = false; out.useEquipment = false; out.usePotions = false; continue; }
     if (!a.includes('=')) {
       // Compat : `node sim-difficulty.js 800` → nSims positionnel
       const n = parseInt(a, 10);
@@ -182,13 +332,13 @@ function eligiblePool(floor) {
 function applyStatPoints(c, points) {
   c._baseAtk += points.str || 0;
   c._baseMag += points.int || 0;
-  c.agi      += points.agi || 0;
-  c._baseEnd  = (c._baseEnd || 0) + (points.end || 0);
+  c._baseAgi += points.agi || 0;
+  c._baseEnd += points.end || 0;
   c.hpMax    += 5 * (points.end || 0);
   c._baseLck += points.lck || 0;
 }
 
-function createHero(key, level, cfg) {
+function createHero(key, level, cfg, floor) {
   const def = CHARACTERS[key];
   const c = {
     name: def.name,
@@ -196,10 +346,12 @@ function createHero(key, level, cfg) {
     hpMax: def.hp,  hp: def.hp,
     spMax: def.sp,  sp: def.sp,
     _baseAtk: def.atk, _baseDef: def.def, _baseMag: def.mag, _baseLck: def.lck,
+    _baseStr: def.str, _baseInt: def.int, _baseAgi: def.agi, _baseEnd: def.end,
     str: def.str, int: def.int, agi: def.agi, end: def.end,
     spells: [...def.spells],
     shieldTurns: 0,
     statusEffects: [],
+    potionStock: 0,         // rempli plus bas si cfg.usePotions
   };
   const learnByLevel = {
     2:  { hermione: ['Expelliarmus'] },
@@ -237,10 +389,26 @@ function createHero(key, level, cfg) {
       for (const sp of adds) if (!c.spells.includes(sp)) c.spells.push(sp);
     }
   }
+  // Récompenses de quêtes (stats permanentes) si modélisées.
+  if (cfg.useQuests && typeof floor === 'number') {
+    applyQuestStatRewards(c, floor);
+  }
   // Soin complet après les level-ups (l'allocation END a augmenté hpMax)
   c.hp = c.hpMax; c.sp = c.spMax;
-  // Stats effectives (pas d'équipement dans cette sim)
+  // Stats effectives = _base* (avant équipement). Inclut les gains
+  // des level-ups, points libres et récompenses de quêtes.
   c.atk = c._baseAtk; c.def = c._baseDef; c.mag = c._baseMag; c.lck = c._baseLck;
+  c.str = c._baseStr; c.int = c._baseInt; c.agi = c._baseAgi; c.end = c._baseEnd;
+  // Bonus équipement (best-in-slot dispo en boutique à cet étage)
+  if (cfg.useEquipment && typeof floor === 'number') {
+    applyEquipmentBuff(c, floor);
+  }
+  // Stock de potions : la sim suppose que le joueur entre en combat
+  // avec quelques consommables. Quantité croît avec l'étage (plus de
+  // gold cumulé → plus de potions achetées).
+  if (cfg.usePotions && typeof floor === 'number') {
+    c.potionStock = Math.min(8, 2 + Math.floor(floor / 2));
+  }
   c.critChance    = Math.max(5, Math.min(40, 5 + c.lck * 0.5));
   c.dodgeChance   = Math.max(5, Math.min(35, 5 + c.agi * 0.4));
   c.critMultiplier = 1.5;
@@ -284,11 +452,13 @@ function avgCombatXp(floor, partySize, cfg) {
 }
 
 // Niveau attendu à l'entrée de l'étage f, en assumant `COMBATS_PER_FLOOR_AVG` combats / étage
+// + XP des quêtes complétées avant cet étage (si cfg.useQuests).
 function expectedLevelAtFloor(floor, partySize, cfg) {
   let totalXp = 0;
   for (let f = 1; f < floor; f++) {
     totalXp += avgCombatXp(f, partySize, cfg) * COMBATS_PER_FLOOR_AVG;
   }
+  if (cfg.useQuests) totalXp += questXpUpToFloor(floor);
   return levelFromXp(totalXp);
 }
 
@@ -370,7 +540,18 @@ function avgHpPct(party) {
 function heroAct(char, enemies) {
   const target = enemies[0];
 
-  // 1. Auto-heal si hp < 40 %
+  // 1. Potion si hp critique (< 40 %) et stock dispo.
+  //    Consomme le tour : pas d'attaque, mais restaure 25 PV (moyenne
+  //    pondérée potion_s/potion_m/potion_l aux étages 5+). C'est
+  //    exactement ce que l'utilisateur signalait : "un tour d'attaques
+  //    en moins pour le joueur" en échange de la survie.
+  if (char.hp < char.hpMax * 0.40 && (char.potionStock || 0) > 0) {
+    char.potionStock--;
+    char.hp = Math.min(char.hpMax, char.hp + 25);
+    return;
+  }
+
+  // 1b. Auto-heal sort si hp < 40 % (fallback si potions épuisées)
   if (char.hp < char.hpMax * 0.40) {
     const heal = pickHealSpell(char);
     if (heal && char.sp >= heal.cost) {
@@ -474,8 +655,8 @@ function runSimulations(cfg) {
 
       for (let i = 0; i < cfg.nSims; i++) {
         const party = partySize === 1
-          ? [createHero('harry', level, cfg)]
-          : [createHero('harry', level, cfg), createHero('hermione', level, cfg)];
+          ? [createHero('harry', level, cfg, floor)]
+          : [createHero('harry', level, cfg, floor), createHero('hermione', level, cfg, floor)];
         const size = rollGroupSize(floor, partySize);
         groupSizes[size]++;
         const enemyGroup = Array.from({ length: size },

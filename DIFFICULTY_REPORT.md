@@ -4,26 +4,26 @@
 > Script : [`tools/sim-difficulty.js`](./tools/sim-difficulty.js) — exécutable avec `node tools/sim-difficulty.js --stat-points=3 --build=balanced [N_SIMS]`.
 > Plan : [`.claude/plans/difficulty-progression.md`](./.claude/plans/difficulty-progression.md)
 >
-> **Hypothèses de la sim (pessimistes)** : pas d'achat au shop, pas de potions, pas de fontaines (étages 2/5/8/11), pas de repos, pas de drops d'équipement, pas de quêtes Dumbledore (bonus stats permanents), pas de farming par respawn 20 %, pas de points de Maison. C'est le **pire cas** d'un joueur qui combat sans optimiser. Le vrai win rate en jeu est probablement **+20-30 pts** au-dessus.
+> **Baseline du joueur (default)** : 3 points de stats libres alloués à chaque niveau (build « balanced » = +1 STR, +1 AGI, +1 END par niveau) **+ XP cumulée des quêtes** (chaîne Dumbledore + secondaires PNJ) **+ bonus stats permanents des récompenses** (`reward.stats`) **+ équipement best-in-slot** disponible en boutique selon `minFloor` **+ stock de potions** consommables (1 par tour de soin, restaure 25 PV).
 >
-> **Baseline du joueur** : 3 points de stats libres alloués à chaque niveau (build « balanced » = +1 ATK STR, +1 esquive AGI, +5 PV END par niveau). Reflète l'équilibre actuel du jeu post-Phase 3.
+> **Pour comparer au cas pire** : `--pessimistic` désactive quêtes / équipement / potions. Permet d'isoler l'effet brut du contenu.
 
 ---
 
 ## 📊 Résumé exécutif
 
-| Mode | Étages confortables (≥80 %) | Premier décrochage (<80 %) | Mur (<40 %) |
-|------|-----------------------------|----------------------------|-------------|
-| **Solo** | 1–4 | **Étage 5** (42 %) | **Étage 7** (37 %) |
-| **Duo**  | 1–5 | **Étage 6** (64 %) | **Étage 8** (35 %) |
+| Mode | Étages confortables (≥ 80 %) | Premier décrochage (< 80 %) | Mur (< 40 %) |
+|------|------------------------------|------------------------------|--------------|
+| **Solo** | 1–4 | **Étage 5** (46 %) | **Étage 7** (37 %) |
+| **Duo**  | 1–5 | **Étage 6** (67 %) | **Étage 8** (38 %) |
 
-**Verdict** : le mode Normal a **un mur en solo dès l'étage 5** (chute 77 % → 42 %, −35 pts) et **un mur en duo à l'étage 8** (53 % → 35 %, −17 pts). Le baseline Phase 3 (3 pts libres/niveau) rend les murs **moins brutaux** que la V1 sans points libres (34 % et 26 % respectivement), mais les pics restent visibles.
+**Verdict** : malgré l'intégration **complète** des leviers Phase 3 (3 pts libres / niveau, XP des quêtes, bonus stats des récompenses, équipement, potions), les murs restent visibles aux mêmes étages que la version V1 pessimiste. **Le contenu joueur n'efface pas les murs — il les atténue de 0 à 8 pts seulement.**
 
-**Cause profonde commune** : la pente du scaling ennemi (×1.22–×1.40 par étage selon le monstre) reste supérieure à la pente joueur, même après les 3 pts libres. L'écart se creuse à partir de l'étage 5 — c'est cohérent avec la zone où l'on a placé les **6 équipements mid-game** et les **potions ++** (étage 5+) ajoutés en Phase 3 : ils sont conçus pour compenser ce décrochage hors-sim.
+**Cause profonde diagnostiquée** : les capacités spéciales ennemies (`enemy.abilities[].effect = "damage"`) **ignorent la défense joueur**. Elles font `power + mag/2` dégâts directs. À partir de l'étage 5, ces capacités (Cruciatus, Charge Ailée, Drain, Crocs Venimeux…) avec un trigger ~25-35 % par tour deviennent la source dominante de dégâts subis. Le buff DEF (équipement, quêtes, points END) ne les atténue pas.
 
 ---
 
-## 1. Progression joueur attendue (4 combats / étage)
+## 1. Progression joueur attendue (4 combats / étage + XP des quêtes complétées)
 
 | Étage | Niveau Solo | XP cumul Solo | Niveau Duo | XP cumul Duo |
 |------:|------------:|--------------:|-----------:|-------------:|
@@ -34,13 +34,13 @@
 | 5  | 4  | 447   | 5  | 655   |
 | 6  | 6  | 832   | 6  | 1268  |
 | 7  | 7  | 1383  | 7  | 1998  |
-| 8  | 8  | 2149  | 8  | 3307  |
+| 8  | 7  | 2149  | 8  | 3307  |
 | 9  | 8  | 3239  | 9  | 4894  |
 | 10 | 9  | 4656  | 10 | 6976  |
 | 11 | 10 | 6585  | 11 | 9858  |
 | 12 | 10 | 8629  | 11 | 12998 |
 
-> En Phase 3, **chaque level-up offre 3 points libres** à allouer parmi STR / INT / AGI / END / LCK. Le baseline simulé alloue 1 STR (+1 ATK), 1 AGI (+1 esquive), 1 END (+5 PV) par niveau. Le sort interdit **Avada... se débloque au niveau 9** — soit l'étage 9-10 en solo, trop tard pour aider sur le mur de l'étage 5.
+> Les XP des quêtes (intro 30, Dumbledore 120/220/340/500, secondaires 80-380) sont cumulées selon `QUEST_COMPLETION_FLOOR` (table dans `tools/sim-difficulty.js`). Effet net : niveau gagné +0/+1 selon l'étage. Le sort interdit **Avada... se débloque au niveau 9** — toujours étage 9-10 en solo.
 
 ---
 
@@ -61,85 +61,85 @@
 | 11 | 16 | 274 | 61.1 | 31.6 | 54.3 |
 | 12 | 16 | 294 | 65.6 | 33.8 | 58.3 |
 
-**Lecture** : entre l'étage 4 et l'étage 5, la HP moyenne passe de 47 à 70 (+49 %), l'ATK de 11.6 à 17.6 (+52 %). Le joueur gagne +1 ATK / +1 DEF / +1 MAG **et** 3 points libres (~+5 PV ou +1 ATK ou +0.4 esquive selon allocation) en passant d'un niveau à l'autre — la pente joueur a doublé vs V1 mais reste en-dessous de la pente ennemi.
+**Lecture** : entre l'étage 4 et l'étage 5, la HP moyenne passe de 47 à 70 (+49 %), l'ATK de 11.6 à 17.6 (+52 %), et la **MAG de 7.6 à 10.8 (+42 %)** — c'est cette MAG qui fait scaler les capacités spéciales `damage` des ennemis (`power + mag/2`), et c'est le facteur dominant du mur étage 5 en solo.
 
 ---
 
-## 3. Résultats Monte Carlo (800 combats / cellule, Normal, 3 pts/niveau balanced)
+## 3. Résultats Monte Carlo (800 combats / cellule, Normal, baseline complet)
 
 | Étage | Mode | Niv. | Win % | Tours | PV restants (win) | Dégâts subis |
 |------:|:----:|-----:|------:|------:|------------------:|-------------:|
-| 1  | Solo | 1  | 100 % | 2.2 | 98 % | 0.5  |
-| 1  | Duo  | 1  | 100 % | 1.5 | 100 %| 0.2  |
-| 2  | Solo | 1  | 100 % | 2.4 | 95 % | 1.9  |
-| 2  | Duo  | 1  | 100 % | 1.7 | 99 % | 0.8  |
-| 3  | Solo | 2  | 🟢 80 %  | 3.7 | 82 % | 18.2 |
-| 3  | Duo  | 2  | 🟢 98 %  | 3.1 | 87 % | 15.0 |
-| 4  | Solo | 3  | 🟡 77 %  | 4.4 | 73 % | 31.6 |
-| 4  | Duo  | 4  | 🟢 99 %  | 3.7 | 86 % | 23.9 |
-| **5** | **Solo** | **4** | **🟠 42 %** | 5.2 | 70 % | 67.3  |
-| 5  | Duo  | 5  | 🟢 80 % | 4.5 | 79 % | 74.3  |
-| 6  | Solo | 6  | 🟠 47 % | 5.6 | 69 % | 93.5  |
-| 6  | Duo  | 6  | 🟡 64 % | 5.0 | 76 % | 128.1 |
-| 7  | Solo | 7  | 🔴 37 % | 5.8 | 62 % | 119.3 |
-| 7  | Duo  | 7  | 🟠 53 % | 5.3 | 72 % | 180.7 |
-| **8** | Solo | 8  | 🔴 24 % | 6.4 | 52 % | 150.3 |
-| **8** | **Duo** | **8** | **🔴 35 %** | 5.4 | 70 % | 250.6 |
-| 9  | Solo | 8  | 🔴 14 % | 6.9 | 51 % | 162.2 |
-| 9  | Duo  | 9  | 🔴 29 % | 5.8 | 68 % | 292.8 |
-| 10 | Solo | 9  | 🔴 6 %  | 7.1 | 49 % | 185.3 |
-| 10 | Duo  | 10 | 🔴 19 % | 6.1 | 67 % | 346.8 |
-| 11 | Solo | 10 | 🔴 7 %  | 8.3 | 40 % | 202.5 |
-| 11 | Duo  | 11 | 🔴 22 % | 6.6 | 66 % | 371.1 |
-| 12 | Solo | 10 | 🔴 6 %  | 8.6 | 38 % | 203.7 |
-| 12 | Duo  | 11 | 🔴 18 % | 6.2 | 68 % | 384.1 |
+| 1  | Solo | 1  | 100 % | 2.2 | 98 % | 0.6   |
+| 1  | Duo  | 1  | 100 % | 1.5 | 100 %| 0.2   |
+| 2  | Solo | 1  | 100 % | 2.4 | 95 % | 1.7   |
+| 2  | Duo  | 1  | 100 % | 1.7 | 98 % | 0.9   |
+| 3  | Solo | 2  | 🟢 77 % | 3.6 | 82 % | 20.0  |
+| 3  | Duo  | 2  | 🟢 98 % | 3.0 | 88 % | 13.2  |
+| 4  | Solo | 3  | 🟡 75 % | 4.3 | 75 % | 31.3  |
+| 4  | Duo  | 4  | 🟢 98 % | 3.6 | 86 % | 24.6  |
+| **5** | **Solo** | **4** | **🟠 46 %** | 5.0 | 71 % | 64.6  |
+| 5  | Duo  | 5  | 🟢 79 % | 4.6 | 78 % | 77.8  |
+| 6  | Solo | 6  | 🟠 47 % | 5.7 | 66 % | 96.4  |
+| 6  | Duo  | 6  | 🟡 67 % | 5.1 | 76 % | 121.1 |
+| 7  | Solo | 7  | 🔴 37 % | 5.8 | 63 % | 118.8 |
+| 7  | Duo  | 7  | 🟠 54 % | 5.4 | 72 % | 176.9 |
+| **8** | Solo | 7  | 🔴 21 % | 6.5 | 49 % | 141.2 |
+| **8** | **Duo** | **8** | **🔴 38 %** | 5.3 | 71 % | 242.5 |
+| 9  | Solo | 8  | 🔴 14 % | 7.0 | 49 % | 161.9 |
+| 9  | Duo  | 9  | 🔴 28 % | 5.8 | 69 % | 296.6 |
+| 10 | Solo | 9  | 🔴 6 %  | 7.2 | 47 % | 184.3 |
+| 10 | Duo  | 10 | 🔴 20 % | 5.8 | 69 % | 347.6 |
+| 11 | Solo | 10 | 🔴 7 %  | 8.1 | 44 % | 200.8 |
+| 11 | Duo  | 11 | 🔴 21 % | 6.6 | 65 % | 373.4 |
+| 12 | Solo | 10 | 🔴 6 %  | 8.3 | 38 % | 204.9 |
+| 12 | Duo  | 11 | 🔴 18 % | 6.3 | 68 % | 375.5 |
 
 ### Spikes détectés (chute > 15 pts entre 2 étages)
 
 **Solo**
-- Étage 2 → 3 : 100 % → 80 % (−20 pts)
-- **Étage 4 → 5 : 77 % → 42 % (−35 pts)** ← mur principal solo
+- Étage 2 → 3 : 100 % → 77 % (−23 pts)
+- **Étage 4 → 5 : 75 % → 46 % (−29 pts)** ← mur principal
+- Étage 7 → 8 : 37 % → 21 % (−16 pts)
 
 **Duo**
-- Étage 4 → 5 : 99 % → 80 % (−18 pts)
-- Étage 5 → 6 : 80 % → 64 % (−16 pts)
-- Étage 7 → 8 : 53 % → 35 % (−17 pts) ← mur principal duo
+- Étage 4 → 5 : 98 % → 79 % (−19 pts)
+- Étage 7 → 8 : 54 % → 38 % (−16 pts)
 
 ---
 
-## 4. Impact des ajouts Phase 3
+## 4. Impact mesuré du contenu Phase 3 (default vs `--pessimistic`)
 
-### 4.1 Effet mesuré : 3 pts libres / niveau (sim baseline)
+Comparaison rigoureuse à 800 sims/cellule, mode solo :
 
-Comparaison V1 (0 pt libre) vs Phase 3 (3 pts balanced) :
+| Étage | Pessimistic (3 pts libres seul) | Phase 3 complète | Δ |
+|------:|--------------------------------:|-----------------:|--:|
+| 3 | 79 % | 77 % | −2  |
+| 4 | 74 % | 75 % | +1  |
+| 5 | 46 % | 46 % | **0**  |
+| 6 | 46 % | 47 % | +1  |
+| 7 | 38 % | 37 % | −1  |
+| 8 | 26 % | 21 % | −5  |
+| 9 | 12 % | 14 % | +2  |
+| 10 | 7 % | 6 % | −1  |
 
-| Étage | Win % Solo V1 | Win % Solo Ph3 | Δ | Win % Duo V1 | Win % Duo Ph3 | Δ |
-|------:|--------------:|---------------:|--:|-------------:|--------------:|--:|
-| 3 | 76 % | 80 % | **+4** | 98 % | 98 % | 0 |
-| 4 | 65 % | 77 % | **+12** | 95 % | 99 % | +4 |
-| 5 | 34 % | 42 % | **+8** | 73 % | 80 % | +7 |
-| 6 | 38 % | 47 % | **+9** | 56 % | 64 % | +8 |
-| 7 | 28 % | 37 % | **+9** | 41 % | 53 % | +12 |
-| 8 | 12 % | 24 % | **+12** | 26 % | 35 % | +9 |
+**Constat** : l'impact mesuré du contenu (XP de quêtes, bonus stats, équipement best-in-slot, potions) est **dans la marge d'erreur du Monte Carlo** (~±3 %). Concrètement, les ajouts Phase 3 **ne déplacent pas significativement les murs**.
 
-Effet net : **+8 à +12 points de win rate** sur la zone difficile (étages 5–8). Pas suffisant pour passer au-dessus de 50 % en solo mid-game, mais réduit la pente du décrochage.
+### Pourquoi un effet aussi limité ?
 
-### 4.2 Effets non simulés (qui amélioreraient encore le win rate)
+Trois explications cumulatives :
 
-Les ajouts suivants ne sont **pas modélisés** dans la sim mais sont disponibles au joueur :
+1. **Capacités spéciales ennemies non atténuées par DEF** (cf. `enemyAct` dans `js/battle.js`). Au mid-game, la majorité des dégâts subis viennent de `damage` abilities (~25-35 % chance par tour) qui font `power + mag/2`. La DEF du joueur (équipement + quêtes + END) n'a **aucun effet** sur ces dégâts.
+2. **Le DPS additionnel raccourcit peu les combats**. À l'étage 5, +6 ATK fait passer l'attaque de ~11 à ~17 dégâts par tour. Sur un ennemi à 70 HP, ça raccourcit le combat de ~6 à ~4 tours. Mais 4 tours d'attaques spéciales ennemies = encore 50-80 dégâts subis.
+3. **Les potions sont déjà dépassées par les sorts de soin**. Reparo à 20 PV pour 8 SP est comparable aux 25 PV de potion. Les potions deviennent un fallback marginal quand le SP est épuisé.
 
-| Ajout | Impact attendu sur win rate |
-|-------|-----------------------------|
-| **6 équipements mid-game** (étages 3-7) | +ATK/DEF/AGI/LCK selon slot, drops élite + boutique progressive |
-| **2 potions ++** (étage 5+) | Grande Potion de Soin (+40 PV) et Grande Potion Magique (+30 PM), refait toute une combat-vie |
-| **Chaîne quêtes Dumbledore** (5 paliers) | Cumul jusqu'à +50 PV +5 ATK +5 DEF +5 MAG +3 LCK + 1 sort + 2 items |
-| **Respawn 20 %** au retour d'étage | Permet le farming d'XP → joueur d'1-2 niveaux au-dessus de la sim |
-| Fontaines (étages 2/5/8/11) | Heal complet 1×/visite |
-| Repos | Heal partiel hors combat |
-| Drops de monstres | Items consommables et équipement |
-| Points de Maison | Bonus stats permanents (Gryffondor +ATK, etc.) |
+### Vraie solution si l'on veut alléger les murs
 
-**Estimation cumulée** : avec un usage normal du shop, des fontaines et de la chaîne Dumbledore, le win rate réel sur les étages 5-8 monte probablement à **65–85 %** en solo et **80–95 %** en duo. La sim reste un **plancher pessimiste**.
+Pas un changement de contenu, mais un changement de **design** :
+- Réduire la `chance` ou le `power` des capacités spéciales mid-game (étages 5-7 en particulier).
+- Faire dépendre le `damage` des abilities aussi de la DEF cible (`max(1, power + mag/2 - def/2)` par exemple).
+- Réduire la fréquence des groupes de 3 ennemis (cf. `rollGroupSize` étages 5+).
+
+Ces leviers sont hors-scope de ce rapport — à valider avant implémentation.
 
 ---
 
@@ -167,14 +167,21 @@ Les ajouts suivants ne sont **pas modélisés** dans la sim mais sont disponible
 
 ---
 
-## 6. Recommandations (post-Phase 3)
+## 6. Recommandations
 
-Les éléments suivants sont disponibles **côté joueur** depuis Phase 3 et atténuent les murs sans changer la balance brute :
+### Côté joueur (immédiates, sans changement code)
 
-1. **Allocation des 3 pts libres** : pour passer le mur étage 5 solo, allouer prioritairement en END (+5 PV/pt) et STR (+1 ATK/pt) jusqu'au niveau 6, puis basculer sur LCK pour les crits.
-2. **Chaîne Dumbledore** : faire les 3 premiers paliers (étages 1/3/5) avant d'attaquer l'étage 5 pour bénéficier de **+10 PV +1 ATK +1 MAG +1 LCK** cumulés.
-3. **Boutique étage 5** : acheter les nouvelles potions ++ (Grande Potion de Soin / Magique) et au moins une pièce d'équipement mid-game (Casque d'Auror DEF+3 MAG+1 ou Anneau du Courage ATK+2 LCK+1).
-4. **Farming respawn 20 %** : faire 2-3 allers-retours étage 4-5 pour gagner 1 niveau + or supplémentaire avant l'étage 6.
-5. **Fontaines** : ne jamais traverser l'étage 5 ou 8 sans avoir bu à la fontaine de l'étage (1×/visite).
+1. **Allocation des 3 pts libres** : prioriser END jusqu'à l'étage 5 (PV max contre les capacités ignorant la DEF), puis bascule LCK pour les crits qui raccourcissent les combats. STR/INT marginal (gain DPS faible).
+2. **Chaîne Dumbledore** : faire les 3 premiers paliers avant l'étage 5. Les +20 PV cumulés et +1 LCK aident concrètement contre les abilities mid-game.
+3. **Boutique étage 5** : prioriser **Grande Potion de Soin** (40 PV) et **Grande Potion Magique** (rester capable de cast Reparo). L'équipement aide moins que les consommables sur les abilities ignorant DEF.
+4. **Farming respawn 20 %** : 2-3 allers-retours étage 4-5 pour gagner 1 niveau + 100-200 g supplémentaires.
+5. **Fontaines** (étages 2/5/8/11) : indispensables — 1×/visite, restaure tout PV/PM.
 
-Pour la sim, ces leviers ne sont pas modélisés — le rapport est volontairement le **plancher** de difficulté. Toute valeur ≥ 30 % sur la sim devrait être confortablement gérable en jeu réel avec usage normal des leviers ci-dessus.
+### Côté design (à valider avant implémentation)
+
+Si l'équipe souhaite alléger les murs étage 5 (solo) et étage 8 (duo), modifier les capacités ennemies (`MONSTERS[].abilities`) plutôt que d'ajouter du contenu joueur. Trois pistes possibles :
+- Atténuation par DEF cible : `power + mag/2 - target.def/3`.
+- Cap sur la chance des abilities `damage` à 0.20 pour les monstres ≥ étage 5 (au lieu de 0.30-0.35).
+- Retrait du groupe à 3 ennemis avant l'étage 7.
+
+Aucune de ces pistes n'est mise en œuvre dans ce rapport — c'est de la balance design qui mérite sa propre PR + sim de validation.
