@@ -87,6 +87,10 @@ function move(dir) { _step(dir, true); }
 // btns). Les SVG eux-mêmes sont centralisés dans `js/scene-icons.js`.
 function _exploreDescriptors() {
   const fountainDried = usedFountains && usedFountains.has(`${playerX},${playerY}`);
+  // L'escalier descendant de l'étage 10 est scellé tant que Voldemort
+  // Ressuscité n'a pas été vaincu. Voir ENDGAME_PLAN.md §7.1ter.
+  const stairsSealed = currentFloor === 10
+    && !(typeof victoryAchieved !== 'undefined' && victoryAchieved);
   return {
     [CELL.CHEST]: {
       icon:  SCENE_ICONS.chest,
@@ -102,7 +106,12 @@ function _exploreDescriptors() {
       btns:  `<button class="explore-btn" onclick="openShop();_hideExploreOverlay()">Entrer dans la boutique</button>
               <button class="explore-btn secondary" onclick="_hideExploreOverlay()">Passer son chemin</button>`
     },
-    [CELL.STAIRS_D]: {
+    [CELL.STAIRS_D]: stairsSealed ? {
+      icon:  SCENE_ICONS.stairs_d,
+      title: 'Passage scellé',
+      desc:  "Une magie ancienne et noire scelle cet escalier. Une présence maléfique veille — tant qu'elle n'aura pas été abattue, le passage restera fermé.",
+      btns:  `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    } : {
       icon:  SCENE_ICONS.stairs_d,
       title: 'Escalier Descendant',
       desc:  'Un escalier en colimaçon disparaît dans les profondeurs. Le danger augmente en descendant.',
@@ -254,8 +263,10 @@ function _respawnEnemiesOnEntry(floor) {
   const set = defeatedCellsByFloor.get(floor);
   if (!set || set.size === 0) return 0;
   if (typeof MONSTERS === 'undefined' || typeof scaleMonster !== 'function') return 0;
+  // Boucle Ténébreuse : pool rebasé sur relFloor en post-victoire (§7.2).
+  const efFloor = (typeof effectiveFloor === 'function') ? effectiveFloor(floor) : floor;
   const pool = MONSTERS.filter(m =>
-    m.minFloor <= floor && (m.maxFloor === null || floor <= m.maxFloor)
+    m.minFloor <= efFloor && (m.maxFloor === null || efFloor <= m.maxFloor)
   );
   if (!pool.length) return 0;
   const respawned = [];
@@ -289,9 +300,30 @@ function _announceRespawn(floor, respawnCount) {
   addMsg(`👁️ ${msg}`, 'bad');
 }
 
+// Flag mémoire session : toast "entrée Ténèbres" affiché 1× par session.
+// Non persisté (volontaire — un reload ré-affiche le toast).
+let _darknessToastShown = false;
+
 function goDeeper() {
+  // Endgame : l'escalier descendant de l'étage 10 est scellé tant que
+  // Voldemort Ressuscité n'a pas été vaincu. Voir ENDGAME_PLAN.md §7.1ter.
+  if (currentFloor === 10 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) {
+    if (typeof addMsg === 'function') {
+      addMsg("L'escalier reste scellé — une ombre veille encore.", 'bad');
+    }
+    return;
+  }
   _saveFloorToCache(currentFloor);
   currentFloor++;
+
+  // Endgame §7.1 : toast narratif à la 1re entrée en étage 11+ post-victoire.
+  if (!_darknessToastShown
+      && typeof victoryAchieved !== 'undefined' && victoryAchieved
+      && currentFloor >= 11
+      && typeof addMsg === 'function') {
+    _darknessToastShown = true;
+    addMsg("L'air devient glacial. Les murs eux-mêmes semblent te haïr.", 'bad');
+  }
 
   const locName = LOCATIONS[Math.min(currentFloor - 1, LOCATIONS.length - 1)];
 

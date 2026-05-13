@@ -599,6 +599,30 @@
   </div>
 </div>
 
+<!-- Modale de victoire (endgame) — affichée après la défaite de Voldemort
+     Ressuscité. Non bloquante : le joueur peut continuer l'aventure ou
+     revenir au hub. Voir js/endgame.js + ENDGAME_PLAN.md §4. -->
+<div id="victory-modal" role="dialog" aria-modal="true" aria-labelledby="victory-title" style="display:none">
+  <div class="victory-box modal-box">
+    <svg class="victory-seal" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="65" cy="65" r="58" fill="none" stroke="#c9a84c" stroke-width="2"/>
+      <circle cx="65" cy="65" r="50" fill="none" stroke="#7a5c1e" stroke-width="0.8"/>
+      <g transform="translate(65 65)" stroke="#c9a84c" fill="none" stroke-width="1.4" stroke-linejoin="round">
+        <path d="M 0 -40 L 8 -8 L 40 0 L 8 8 L 0 40 L -8 8 L -40 0 L -8 -8 Z"/>
+        <circle r="22"/>
+      </g>
+    </svg>
+    <div class="victory-title" id="victory-title">L'Ombre s'efface</div>
+    <div class="victory-sub" id="victory-sub">Vous avez vaincu Lord Voldemort.</div>
+    <div class="victory-recap" id="victory-recap"></div>
+    <div class="victory-speech" id="victory-speech"></div>
+    <div class="victory-actions">
+      <button class="cmd-btn victory-continue-btn" onclick="closeVictoryScreen()">Continuer l'aventure</button>
+      <button class="cmd-btn victory-menu-btn" onclick="returnToMenuFromVictory()">Retour au menu</button>
+    </div>
+  </div>
+</div>
+
 <div id="death-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center">
   <img class="death-art" src="img/scenes/death.jpg" alt="Couloir pétrifié de Poudlard">
   <div class="death-title">✝ Pétrification ✝</div>
@@ -653,6 +677,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/save.js?v=4"></script>
 <script src="js/save-ui.js?v=1"></script>
 <script src="js/main.js?v=3"></script>
+<script src="js/endgame.js?v=1"></script>
 <script src="js/loader.js?v=1"></script>
 
 </body>

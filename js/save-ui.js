@@ -50,6 +50,7 @@ function _renderSlotCard(id, slot, mode) {
       : `<span class="slot-hero-icon">${src || '🧙'}</span>`
   ).join('');
   const houseLine = m.house ? ` · ${m.house}` : '';
+  const victoryBadge = m.victory ? `<span class="slot-victory" title="Vainqueur de Voldemort">🏆</span>` : '';
   const when = _formatSavedAt(m.savedAt);
   const readonlyAttr = (mode === 'save' && isAuto) ? 'aria-disabled="true"' : '';
   const dataMode = mode === 'save' && isAuto ? 'noop' : mode;
@@ -64,7 +65,7 @@ function _renderSlotCard(id, slot, mode) {
       <div class="slot-body">
         <div class="slot-heroes">${heroIcons}</div>
         <div class="slot-text">
-          <div class="slot-line slot-line-strong">${(m.heroNames || []).join(' &amp; ')}</div>
+          <div class="slot-line slot-line-strong">${(m.heroNames || []).join(' &amp; ')}${victoryBadge}</div>
           <div class="slot-line">Niv. ${m.level || 1} · Étage ${m.floor || 1}${houseLine}</div>
           <div class="slot-line slot-line-meta">${m.difficulty || 'Normal'} — ${when}</div>
         </div>

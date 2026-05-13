@@ -3899,6 +3899,262 @@ async function scenarioRelativeControls() {
   await browser.close();
 }
 
+// ── Scénario endgame 1 : trigger de victoire + idempotence ─────
+async function scenarioVictoryTrigger() {
+  console.log('\n── Scénario endgame 1 : trigger de victoire ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1. Setup minimal d'un combat contre voldemort_revenu hp 1
+  await page.evaluate(() => {
+    currentFloor = 10;
+    party[0].level = 10; party[0].hp = 999; party[0].atk = 999; party[0].def = 0;
+    // startBattle clone le monstre — l'id est conservé.
+    startBattle({
+      id: 'voldemort_revenu', name: 'Voldemort Ressuscité', icon: '☠',
+      hp: 1, atk: 1, def: 0, mag: 1, agi: 1, lck: 1,
+      xp: 100, gold: 1, abilities: [], drops: [],
+      resist: [], weak: [], desc: 'Test'
+    });
+    // Réécrase pour HP=1 (rollGroupSize peut spawn d'autres ennemis)
+    enemyGroup = [{ ...enemyGroup[0], currentHp: 1, hp: 1 }];
+  });
+
+  // 2. Attaque → kill → trigger
+  await page.evaluate(() => battleAction('attack'));
+  await page.waitForFunction(() => victoryAchieved === true, { timeout: 3000 });
+
+  const after = await page.evaluate(() => ({
+    flag: victoryAchieved,
+    victoryAtSet: typeof victoryAt === 'string' && victoryAt.length > 0,
+    modalOpen: document.getElementById('victory-modal')?.style.display === 'flex'
+  }));
+  console.log('  trigger →', after);
+  assert(after.flag === true,         'victoryAchieved doit être à true');
+  assert(after.victoryAtSet,          'victoryAt doit être une date ISO non vide');
+  assert(after.modalOpen === true,    '#victory-modal doit être affichée');
+
+  // 3. Idempotent : second trigger = no-op, ne ré-ouvre pas la modale
+  await page.evaluate(() => {
+    document.getElementById('victory-modal').style.display = 'none';
+    checkVictoryTrigger('voldemort_revenu');
+  });
+  const reopened = await page.evaluate(() =>
+    document.getElementById('victory-modal').style.display === 'flex');
+  assert(reopened === false, 'la modale ne doit pas se rouvrir au 2e appel (C4)');
+
+  // 4. Persistance : victoryAchieved survit à un write/read de slot
+  await page.evaluate(() => {
+    document.getElementById('victory-modal').style.display = 'none';
+    writeSlot('manual_1', 'TestVict');
+  });
+  const meta = await page.evaluate(() => readSlot('manual_1')?.meta || null);
+  console.log('  slot meta victory:', meta?.victory);
+  assert(meta && meta.victory === true, "meta.victory doit refléter le flag pour le badge HUD");
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ trigger victoire + persistance OK');
+  await browser.close();
+}
+
+// ── Scénario endgame 2 : escalier étage 10 scellé tant que pas de victoire ─
+async function scenarioStairsGated() {
+  console.log('\n── Scénario endgame 2 : escalier étage 10 scellé ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : floor 10 pré-victoire → descripteur "Passage scellé"
+  const t1 = await page.evaluate(() => {
+    currentFloor = 10;
+    victoryAchieved = false;
+    // _exploreDescriptors est privé mais on peut tester via _showExploreOverlay
+    _showExploreOverlay(CELL.STAIRS_D);
+    const title = document.getElementById('explore-title')?.textContent || '';
+    const actions = document.getElementById('explore-actions')?.innerHTML || '';
+    _hideExploreOverlay();
+    return { title, hasDescend: actions.includes('goDeeper()') };
+  });
+  console.log('  T1 pré-victoire :', t1);
+  assert(t1.title.includes('scellé'),        'titre doit indiquer "Passage scellé"');
+  assert(t1.hasDescend === false,            'aucun bouton "Descendre" tant que pas de victoire');
+
+  // T2 : goDeeper() bloqué tant que pré-victoire à floor 10
+  const t2 = await page.evaluate(() => {
+    currentFloor = 10;
+    victoryAchieved = false;
+    goDeeper();
+    return { stayedAtFloor: currentFloor };
+  });
+  assert(t2.stayedAtFloor === 10, 'goDeeper() doit no-op à floor 10 sans victoire');
+
+  // T3 : post-victoire → descripteur normal + descente possible
+  const t3 = await page.evaluate(() => {
+    currentFloor = 10;
+    victoryAchieved = true;
+    _showExploreOverlay(CELL.STAIRS_D);
+    const title = document.getElementById('explore-title')?.textContent || '';
+    const actions = document.getElementById('explore-actions')?.innerHTML || '';
+    _hideExploreOverlay();
+    return { title, hasDescend: actions.includes('goDeeper()') };
+  });
+  console.log('  T3 post-victoire :', t3);
+  assert(!t3.title.includes('scellé'),       'titre redevient "Escalier Descendant" post-victoire');
+  assert(t3.hasDescend === true,             'bouton "Descendre" présent post-victoire');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ gate stairs étage 10 OK');
+  await browser.close();
+}
+
+// ── Scénario endgame 3 : variant darkness + scaling Ténèbres ─────
+async function scenarioDarkVariant() {
+  console.log('\n── Scénario endgame 3 : variant darkness + scaling Ténèbres ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : effectiveFloor — pré-victoire = floor, post-victoire >=11 = floor-10
+  const t1 = await page.evaluate(() => {
+    victoryAchieved = false;
+    const pre = effectiveFloor(15);
+    victoryAchieved = true;
+    const post20 = effectiveFloor(20);
+    const post21 = effectiveFloor(21);
+    const post10 = effectiveFloor(10);
+    return { pre, post20, post21, post10 };
+  });
+  console.log('  effectiveFloor :', t1);
+  assert(t1.pre === 15,    'pré-victoire : effectiveFloor(15) === 15');
+  assert(t1.post20 === 10, 'post-victoire : effectiveFloor(20) === 10');
+  assert(t1.post21 === 11, 'post-victoire : effectiveFloor(21) === 11');
+  assert(t1.post10 === 10, 'post-victoire : floor 10 reste inchangé (toujours pré-Ténèbres)');
+
+  // T2 : scaleMonster d'un mob simple à floor 11 darkness → variant + préfixe
+  const t2 = await page.evaluate(() => {
+    victoryAchieved = true;
+    const base = MONSTERS.find(m => m.id === 'inferius') || MONSTERS[0];
+    // Force la branche darkness en escapant le shiny aléatoire (4%)
+    const results = [];
+    for (let i = 0; i < 50; i++) {
+      const m = scaleMonster(base, 14);
+      if (m.variant === 'darkness') { results.push(m); break; }
+      // Sinon retry
+    }
+    return results[0] || null;
+  });
+  console.log('  scaleMonster darkness inferius @ floor 14 :', t2 && {
+    name: t2.name, variant: t2.variant, hp: t2.hp, atk: t2.atk, def: t2.def
+  });
+  assert(t2,                                          'au moins 1 darkness sur 50 rolls (4 % shiny seulement)');
+  assert(t2.variant === 'darkness',                   'variant doit être "darkness"');
+  assert(t2.name.startsWith('Ténébreux '),            'nom préfixé par "Ténébreux "');
+
+  // T3 : pool filtré sur relFloor — à floor 11 post-victoire,
+  // pool === monstres avec minFloor <= 1 (rebase 11-10=1)
+  const t3 = await page.evaluate(() => {
+    victoryAchieved = true;
+    const ef = effectiveFloor(11);
+    const pool = MONSTERS.filter(m =>
+      m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor)
+    );
+    const allLow = pool.every(m => m.minFloor <= 1);
+    return { ef, poolLen: pool.length, allLow };
+  });
+  console.log('  pool floor 11 post-victoire :', t3);
+  assert(t3.ef === 1,         'effectiveFloor(11) === 1');
+  assert(t3.poolLen > 0,      'au moins 1 monstre dans le pool floor 1');
+  assert(t3.allLow,           'tous les monstres du pool ont minFloor <= 1');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ variant darkness + scaling Ténèbres OK');
+  await browser.close();
+}
+
+// ── Scénario endgame 4 : récompenses scalées + consommables ─────
+async function scenarioDarkRewards() {
+  console.log('\n── Scénario endgame 4 : récompenses scalées + consommables ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : récompenses xp/gold ×2 + multiplicateurs darkness (hp ×1.5, atk ×1.12)
+  const t1 = await page.evaluate(() => {
+    victoryAchieved = false;
+    const base = MONSTERS.find(m => m.id === 'inferius');
+    if (!base) return null;
+    // Reroll jusqu'à éviter le shiny pour les deux versions
+    let normal, dark;
+    for (let i = 0; i < 200 && (!normal || !dark); i++) {
+      const m = scaleMonster(base, 4);
+      if (!normal && (m.variant === 'normal' || m.variant === 'fierce' || m.variant === 'ancient')) normal = m;
+    }
+    victoryAchieved = true;
+    for (let i = 0; i < 200 && !dark; i++) {
+      const m = scaleMonster(base, 14);   // relFloor 4 = même scale
+      if (m.variant === 'darkness') dark = m;
+    }
+    return {
+      normalHp: normal?.hp, darkHp: dark?.hp,
+      normalAtk: normal?.atk, darkAtk: dark?.atk,
+      normalXp: normal?.xp, darkXp: dark?.xp
+    };
+  });
+  console.log('  inferius normal vs darkness :', t1);
+  assert(t1.darkHp > t1.normalHp,       'darkness HP > normal HP (×1.50)');
+  assert(t1.darkAtk >= t1.normalAtk,    'darkness ATK ≥ normal ATK (×1.12)');
+  assert(t1.darkXp >= t1.normalXp * 1.5, 'darkness XP ≥ normal XP × 1.5 (cible ×2)');
+
+  // T2 : potion_xl restaure 100 % HP du perso ciblé
+  const t2 = await page.evaluate(() => {
+    party[0].hpMax = 120; party[0].hp = 30;
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'potion_xl') });
+    const idx = player.inventory.length - 1;
+    useItem(idx, false);
+    return { hp: player.hp, hpMax: player.hpMax, invLen: player.inventory.length };
+  });
+  console.log('  potion_xl :', t2);
+  assert(t2.hp === t2.hpMax, 'potion_xl doit restaurer hp à hpMax');
+
+  // T3 : larme du phénix pure — KO en combat → ressuscite
+  const t3 = await page.evaluate(() => {
+    party[0].hpMax = 100; party[0].hp = 100;
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'larme_phenix_pure') });
+    const log = _tryAutoReviveKOChars();
+    // Simule un KO et re-test
+    party[0].hp = 0;
+    const log2 = _tryAutoReviveKOChars();
+    const stillHasLarme = player.inventory.some(it => it.id === 'larme_phenix_pure');
+    return { hpAfter: party[0].hp, log2: log2.length > 0, stillHasLarme };
+  });
+  console.log('  larme phénix :', t3);
+  assert(t3.hpAfter === 100,        'larme du phénix doit ressusciter à hpMax');
+  assert(t3.log2,                   'log non vide à la résurrection');
+  assert(t3.stillHasLarme === false, 'larme consommée');
+
+  // T4 : checkVictoryTrigger pas re-déclenché par un kill quelconque
+  const t4 = await page.evaluate(() => {
+    victoryAchieved = false;
+    const a = checkVictoryTrigger('chat_norris');
+    return { a, flag: victoryAchieved };
+  });
+  assert(t4.a === false && t4.flag === false,
+         'checkVictoryTrigger ne se déclenche que pour voldemort_revenu');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ récompenses + consommables OK');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -3956,7 +4212,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

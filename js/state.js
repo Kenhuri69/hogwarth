@@ -215,6 +215,16 @@ const player2 = {
 const party = [player, player2];
 
 // ============================================================
+// ENDGAME — Victoire vs Voldemort Ressuscité
+// ============================================================
+// `victoryAchieved` passe à true une seule fois quand
+// `voldemort_revenu` tombe en combat (cf. js/endgame.js).
+// `victoryAt` mémorise l'ISO-date du trigger. Les deux sont
+// persistés via _serializeState / _applyState (save.js).
+let victoryAchieved = false;
+let victoryAt       = null;
+
+// ============================================================
 // QUÊTES SECONDAIRES
 // ============================================================
 // Catalogue des quêtes : voir QUEST_TEMPLATES dans quests.js.

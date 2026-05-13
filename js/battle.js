@@ -72,6 +72,29 @@ function clearAllStatuses() {
   enemyGroup.forEach(e => { e.statusEffects = []; });
 }
 
+// Endgame §7.10 — Larme du Phénix Pure : scanne le groupe à la
+// recherche de persos à HP ≤ 0 et les ressuscite à hpMax si une
+// larme est présente en inventaire (partagé). 1 larme = 1 revive.
+// Retourne le log des résurrections.
+function _tryAutoReviveKOChars() {
+  if (typeof player === 'undefined' || !player.inventory) return '';
+  let log = '';
+  for (const c of party.slice(0, partySize)) {
+    if (c.hp > 0) continue;
+    const idx = player.inventory.findIndex(it => it && it.id === 'larme_phenix_pure');
+    if (idx < 0) break; // plus de larmes disponibles
+    player.inventory.splice(idx, 1);
+    c.hp = c.hpMax;
+    c.statusEffects = [];
+    log += `✨ ${c.name} ressuscite — la Larme du Phénix Pure se consume ! `;
+    if (typeof addMsg === 'function') {
+      addMsg(`✨ ${c.name} ressuscite (Larme du Phénix Pure consommée).`, 'magic');
+    }
+    UX_safe.floatDmg('ally', c.hpMax, 'heal');
+  }
+  return log;
+}
+
 // Tick fin de round : applique regenHp/regenSp issus de l'équipement.
 // Plafonné par hpMax/spMax. Appelé depuis enemyTurn ; testable directement.
 function applyEquipmentRegen() {
@@ -172,7 +195,12 @@ function rollGroupSize() {
   const duoShift = Math.min(p1, duoBonus);
   p1 -= duoShift;  p2 += duoShift;
   // Transfert p2 → p3 (déblocage / accroissement des trios)
-  const trioShift = Math.min(p2, trioBonus);
+  let trioShiftBase = trioBonus;
+  // Endgame §7.1 : +10 % de proba groupe 3 en post-victoire à floor 11+.
+  if (typeof victoryAchieved !== 'undefined' && victoryAchieved && currentFloor >= 11) {
+    trioShiftBase += 0.10;
+  }
+  const trioShift = Math.min(p2, trioShiftBase);
   p2 -= trioShift; p3 += trioShift;
 
   if (r < p1) return 1;
@@ -181,9 +209,11 @@ function rollGroupSize() {
 }
 
 function pickSimilarEnemy(base) {
-  // Choisit un monstre éligible à l'étage courant, similaire au monstre de base
+  // Choisit un monstre éligible à l'étage courant, similaire au monstre de base.
+  // Boucle Ténébreuse : pool rebasé sur relFloor en post-victoire (§7.2).
+  const ef = (typeof effectiveFloor === 'function') ? effectiveFloor(currentFloor) : currentFloor;
   const eligible = MONSTERS.filter(m =>
-    m.minFloor <= currentFloor && (m.maxFloor === null || currentFloor <= m.maxFloor)
+    m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor)
   );
   const pool = eligible.length ? eligible : MONSTERS;
   return scaleMonster(weightedPick(pool), currentFloor);
@@ -313,6 +343,9 @@ function enemyTurn() {
   // Régénération passive depuis l'équipement (regenHp / regenSp).
   log += applyEquipmentRegen();
 
+  // Endgame §7.10 : Larme du Phénix Pure — auto-revive sur KO en combat.
+  log += _tryAutoReviveKOChars();
+
   setBattleLog(log || '...');
   updateUI();
 
@@ -385,29 +418,66 @@ function endBattle(won) {
     player.xp   += Math.floor(totalXp   * diff.xpMultiplier);
     player.gold += Math.floor(totalGold * diff.goldMultiplier);
 
-    // Drops d'objets (chance modulée par la difficulté)
+    // Drops d'objets (chance modulée par la difficulté + bonus Ténèbres).
+    // Endgame §7.9 : sur variant `darkness`, drop standards ×1.5 et roll
+    // bonus 8 % sur 1 des 3 drops Ténèbres légendaires.
+    const TENEBRES_DROPS = ['cape_voldemort', 'cendres_phenix', 'oeil_basilic'];
     enemyGroup.forEach(e => {
-      if (!e.drops || !e.drops.length) return;
-      e.drops.forEach(drop => {
-        if (Math.random() < drop.chance * diff.dropChanceMultiplier) {
-          const item = ITEMS.find(i => i.id === drop.itemId);
+      const darkMult = (e.variant === 'darkness') ? 1.5 : 1.0;
+      if (e.drops && e.drops.length) {
+        e.drops.forEach(drop => {
+          if (Math.random() < drop.chance * diff.dropChanceMultiplier * darkMult) {
+            const item = ITEMS.find(i => i.id === drop.itemId);
+            if (item && tryAddItem(item, { silent: true })) {
+              addMsg(`<img class="ui-icon ui-icon-sm" src="img/icons/accessory.png" alt=""> Drop : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name} !`, 'good');
+            }
+          }
+        });
+      }
+      if (e.variant === 'darkness') {
+        if (Math.random() < 0.08) {
+          const pickId = TENEBRES_DROPS[Math.floor(Math.random() * TENEBRES_DROPS.length)];
+          const item   = ITEMS.find(i => i.id === pickId);
           if (item && tryAddItem(item, { silent: true })) {
-            addMsg(`<img class="ui-icon ui-icon-sm" src="img/icons/accessory.png" alt=""> Drop : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name} !`, 'good');
+            addMsg(`💎 Butin des Ténèbres : ${item.name} !`, 'magic');
           }
         }
-      });
+        // Drop 5 % Élixir Suprême HP/SP (random entre les deux)
+        if (Math.random() < 0.05) {
+          const xlId = Math.random() < 0.5 ? 'potion_xl' : 'potion_xl_sp';
+          const item = ITEMS.find(i => i.id === xlId);
+          if (item && tryAddItem(item, { silent: true })) {
+            addMsg(`🧪 Drop des Ténèbres : ${item.name} !`, 'good');
+          }
+        }
+        // Drop 30 % Larme du Phénix Pure — UNIQUEMENT sur Voldemort Ténébreux
+        if (e.id === 'voldemort_revenu' && Math.random() < 0.30) {
+          const item = ITEMS.find(i => i.id === 'larme_phenix_pure');
+          if (item && tryAddItem(item, { silent: true })) {
+            addMsg(`✨ Drop unique : ${item.name} !`, 'magic');
+          }
+        }
+      }
     });
 
     // Progression des quêtes de type "kill"
     enemyGroup.forEach(e => safeCall('checkKillQuests', e.id));
 
+    // Endgame : déclenche la modale de victoire si Voldemort Ressuscité
+    // est tombé. No-op pour tout autre monstre ou si déjà déclenché.
+    enemyGroup.forEach(e => safeCall('checkVictoryTrigger', e.id));
+
     const xpEarned   = Math.floor(totalXp   * diff.xpMultiplier);
     const goldEarned = Math.floor(totalGold * diff.goldMultiplier);
 
-    // Points de Maison selon la difficulté
+    // Points de Maison selon la difficulté — Ténèbres ×1.5 (endgame §7.9).
     if (chosenHouse) {
-      const hpGain = HOUSE_POINTS_PER_KILL[difficulty] || HOUSE_POINTS_PER_KILL.Normal;
-      housePoints += hpGain;
+      const baseGain = HOUSE_POINTS_PER_KILL[difficulty] || HOUSE_POINTS_PER_KILL.Normal;
+      const darkKills = enemyGroup.filter(e => e.variant === 'darkness').length;
+      const normalKills = enemyGroup.length - darkKills;
+      const hpGain = Math.floor(baseGain * normalKills + baseGain * darkKills * 1.5);
+      // Au moins le gain "1 kill normal" pour rester rétrocompatible
+      housePoints += Math.max(baseGain, hpGain);
       safeCall('checkHouseLevelUp');
     }
 

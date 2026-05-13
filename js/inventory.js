@@ -376,12 +376,21 @@ function useItem(idx, battleMode) {
     return;
   }
 
-  // Consommable : s'applique au personnage actif en combat, à Harry sinon
+  // Consommable : s'applique au personnage actif en combat, à Harry sinon.
+  // La larme du Phénix Pure est passive (auto-revive au KO) — non
+  // consommable manuellement.
+  if (item.effect === 'auto_revive') {
+    addMsg(`${item.name} : effet passif — déclenchera à la prochaine perte d'un membre du groupe.`, '');
+    return;
+  }
+
   const target = (battleMode && inBattle) ? party[currentBattleChar] : player;
   let used = false;
 
-  if (item.effect === 'heal')            target.hp = Math.min(target.hpMax, target.hp + item.power);
-  else if (item.effect === 'restore_sp') target.sp = Math.min(target.spMax, target.sp + item.power);
+  if (item.effect === 'heal')                  target.hp = Math.min(target.hpMax, target.hp + item.power);
+  else if (item.effect === 'restore_sp')       target.sp = Math.min(target.spMax, target.sp + item.power);
+  else if (item.effect === 'heal_full')        target.hp = target.hpMax;
+  else if (item.effect === 'restore_sp_full')  target.sp = target.spMax;
   else if (item.effect === 'both') {
     target.hp = Math.min(target.hpMax, target.hp + item.power);
     target.sp = Math.min(target.spMax, target.sp + 10);
