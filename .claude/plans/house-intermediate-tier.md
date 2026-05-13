@@ -510,14 +510,23 @@ duplication de logique. Priorité 🎁 sur ! / ? (quête).
 - **Vérif** : marker 🎁 apparaît sur la case McGonagall quand on a
   passé le seuil 300 (Gryffondor) ; disparaît après réclamation.
 
-### Étape 7 — Persistance (`save.js`)
-- [ ] Dans `_serializeState` : `pendingHouseRewards: Array.from(pendingHouseRewards)`.
-- [ ] Dans `_applyState` : `pendingHouseRewards = new Set(gs.pendingHouseRewards || [])`.
-- [ ] Initialiser `pendingHouseRewards = new Set()` dans `state.js` et
-  dans `main.js` lors de `Nouvelle aventure` (à côté de `housePoints = 0`).
-- **Vérif** : save → reload → Set repeuplé.
+### Étape 7 — Persistance (`save.js`) ✅
+- [x] `_serializeState` : `pendingHouseRewards: Array.from(pendingHouseRewards)`.
+- [x] `_applyState` : `pendingHouseRewards = new Set(gs.pendingHouseRewards || [])`.
+- [x] `state.js` : `let pendingHouseRewards = new Set();` (déjà fait étape 2).
+- [x] `main.js — chooseHouse` : reset à `new Set()` au démarrage d'une
+  Nouvelle aventure.
 
-### Étape 8 — Migration rétroactive (saves d'avant cette PR)
+### Étape 8 — Migration rétroactive (saves d'avant cette PR) ✅
+
+**Écart au plan** : ajout d'un skip `if (tierNum >= 5) return` — le tier 5
+conserve la distribution directe dans le code runtime, donc la migration
+doit elle aussi l'exclure (sinon un joueur post-victoire qui aurait vendu
+sa lame se la verrait offerte par McGonagall, ce qui contredit le rôle
+de cinématique-finale du tier 5).
+
+- [x] Helper `_migrateHouseRewards()` défini dans save.js, appelé après
+  `recalculateStats()` dans `_applyState`.
 - [ ] Helper one-shot `_migrateHouseRewards()` appelé à la fin de
   `_applyState` :
   ```js

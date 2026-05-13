@@ -202,6 +202,7 @@ function _serializeState() {
     activeQuests,
     difficulty,
     chosenHouse, housePoints, houseTier,
+    pendingHouseRewards: Array.from(pendingHouseRewards),
     searchedCells: Array.from(searchedCells),
     floorDungeons,
     restCooldown,
@@ -380,6 +381,8 @@ function _applyState(gs) {
   if (gs.chosenHouse && HOUSE_BONUSES[gs.chosenHouse]) chosenHouse = gs.chosenHouse;
   if (gs.housePoints !== undefined) housePoints = gs.housePoints;
   if (gs.houseTier   !== undefined) houseTier   = gs.houseTier;
+  // Saves antérieures au tier 2 intermédiaire → set vide par défaut.
+  pendingHouseRewards = new Set(gs.pendingHouseRewards || []);
   // Endgame : saves antérieures à l'introduction du flag → false/null.
   victoryAchieved = !!gs.victoryAchieved;
   victoryAt       = gs.victoryAt || null;
@@ -416,12 +419,43 @@ function _applyState(gs) {
   }
 
   recalculateStats();
+  _migrateHouseRewards();
   updateUI();
   updateCompass();
   renderMinimap();
   drawDungeon();
   if (typeof startNpcAnimLoop === 'function') startNpcAnimLoop();
   updateLocationDisplay();
+}
+
+// Migration rétroactive : pour les saves antérieures à l'introduction des
+// récompenses Maison remises par PNJ. On reconstitue `pendingHouseRewards`
+// en regardant chaque tier déjà franchi : si l'item correspondant n'est
+// nulle part chez le joueur, on l'ajoute en attente.
+//
+// Tier 5 est exclu : il conserve la distribution directe (cinématique
+// post-victoire, cf. checkHouseLevelUp). Si le joueur l'a vendu, tant pis.
+//
+// Limitation : on ne distingue pas « possédé puis vendu » de « jamais reçu ».
+// Si un joueur tier 4 a vendu son légendaire avant cette PR, il sera remis
+// en attente. Cas extrême et avantageux pour le joueur. Cf. plan §8.
+function _migrateHouseRewards() {
+  if (typeof pendingHouseRewards === 'undefined') return;
+  if (!chosenHouse) return;
+  const house = HOUSE_BONUSES[chosenHouse];
+  if (!house) return;
+  house.tiers.forEach((tier, i) => {
+    const tierNum = i + 1;
+    if (houseTier < tierNum) return;
+    if (!tier.bonus.item) return;
+    if (tierNum >= 5) return;
+    const itemId = tier.bonus.item;
+    const inInventory = (player.inventory || []).some(it => it && it.id === itemId);
+    const equipped    = party.some(c => c.equipped &&
+      Object.values(c.equipped).some(it => it && it.id === itemId));
+    if (inInventory || equipped) return;
+    pendingHouseRewards.add(itemId);
+  });
 }
 
 function saveGame() {

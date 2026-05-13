@@ -100,6 +100,7 @@ function chooseHouse(house) {
   chosenHouse = house;
   housePoints = 0;
   houseTier   = 0;
+  pendingHouseRewards = new Set();
   document.getElementById('house-select-screen').style.display = 'none';
   applyHeroSelection(_pendingHeroKeys, _pendingPartySize);
   // Reset état PNJ + quêtes (déplacé hors de startGame pour ne pas
