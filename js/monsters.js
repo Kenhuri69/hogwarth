@@ -278,7 +278,8 @@ const MONSTERS = [
     scale: 0.22,
     abilities: [
       { name: "Saisie des Eaux",  icon: "💧", desc: "Draine la force vitale",    effect: "drain",  power: 6, chance: 0.30 },
-      { name: "Griffes d'Écaille", icon: "🦀", desc: "Griffes acérées sous l'eau", effect: "damage", power: 5, chance: 0.25 }
+      { name: "Griffes d'Écaille", icon: "🦀", desc: "Griffes acérées sous l'eau", effect: "damage", power: 5, chance: 0.25 },
+      { name: "Crachat Acide",    icon: "🧪", desc: "Acide corrosif qui brûle",  effect: "status", statusId: "burn", power: 3, chance: 0.20, turns: 2 }
     ],
     ai: "cautious",
     resist: [],
@@ -546,7 +547,8 @@ const MONSTERS = [
     scale: 0.28,
     abilities: [
       { name: "Étreinte Glaciale", icon: "🧊", desc: "Étreinte de mort qui draine la chaleur", effect: "drain",  power: 9, chance: 0.35 },
-      { name: "Régénération Obscure", icon: "💀", desc: "Se réanime partiellement",             effect: "heal",   power: 8, chance: 0.15 }
+      { name: "Régénération Obscure", icon: "💀", desc: "Se réanime partiellement",             effect: "heal",   power: 8, chance: 0.15 },
+      { name: "Griffes Putrides",   icon: "🩸", desc: "Griffes infectées qui font saigner",  effect: "status", statusId: "bleed", power: 3, chance: 0.25, turns: 3 }
     ],
     ai: "aggressive",
     resist: ["stun", "disarm"],
@@ -653,7 +655,8 @@ const MONSTERS = [
     scale: 0.30,
     abilities: [
       { name: "Crocs Venimeux",  icon: "☠️", desc: "Morsure qui draine la vitalité", effect: "drain",  power: 10, chance: 0.35 },
-      { name: "Toile Géante",    icon: "🕸️", desc: "Emprisonne complètement",         effect: "weaken", power: 4,  chance: 0.25 }
+      { name: "Toile Géante",    icon: "🕸️", desc: "Emprisonne complètement",         effect: "weaken", power: 4,  chance: 0.25 },
+      { name: "Morsure Venimeuse", icon: "🦂", desc: "Inocule un venin lent",          effect: "status", statusId: "poison", power: 4, chance: 0.30, turns: 3 }
     ],
     ai: "aggressive",
     resist: [],
@@ -883,7 +886,8 @@ const MONSTERS = [
     abilities: [
       { name: "Cruciatus Noir",      icon: "⚡", desc: "Sort de torture intense",     effect: "drain",  power: 14, chance: 0.30 },
       { name: "Magie Noire Pure",    icon: "🟣", desc: "Magie des ténèbres absolue",  effect: "damage", power: 15, chance: 0.35 },
-      { name: "Expelliarmus Sombre", icon: "⚫", desc: "Désarme et affaiblit",         effect: "weaken", power: 3,  chance: 0.20 }
+      { name: "Expelliarmus Sombre", icon: "⚫", desc: "Désarme et affaiblit",         effect: "weaken", power: 3,  chance: 0.20 },
+      { name: "Marque Brûlante",     icon: "🔥", desc: "Marque incandescente sur la peau", effect: "status", statusId: "burn", power: 5, chance: 0.25, turns: 3 }
     ],
     ai: "aggressive",
     resist: [],
@@ -919,7 +923,8 @@ const MONSTERS = [
       { name: "Avada Kedavra",       icon: "💚", desc: "Sort de la mort",               effect: "damage", power: 25, chance: 0.25 },
       { name: "Cruciatus Intense",   icon: "⚡", desc: "Sort de torture suprême",        effect: "drain",  power: 16, chance: 0.30 },
       { name: "Sonore Maudit",       icon: "📣", desc: "Cri de démence déstabilisant",  effect: "weaken", power: 4,  chance: 0.20 },
-      { name: "Régénération Noire",  icon: "💜", desc: "Se soigne par passion pour les ténèbres", effect: "heal", power: 16, chance: 0.15 }
+      { name: "Régénération Noire",  icon: "💜", desc: "Se soigne par passion pour les ténèbres", effect: "heal", power: 16, chance: 0.15 },
+      { name: "Sortilège Sanglant",  icon: "🩸", desc: "Inflige une plaie qui saigne",  effect: "status", statusId: "bleed", power: 6, chance: 0.30, turns: 3 }
     ],
     ai: "aggressive",
     resist: ["stun", "disarm"],
