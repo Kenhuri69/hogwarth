@@ -1031,7 +1031,7 @@ const MONSTERS = [
   },
 
   {
-    id: "bowtruckle", name: "Bowtruckle Géant", icon: "🌿", category: "créature",
+    id: "bowtruckle", name: "Bowtruckle Géant", icon: "🌿", imgSrc: "img/monsters/bowtruckle.png", category: "créature",
     desc: "Un Bowtruckle de la taille d'un enfant surgit de l'obscurité !",
     lore: "Gardien des arbres à baguettes magiques, redoutable quand il protège son arbre.",
     habitat: "Couloirs ombragés près des fenêtres", danger: 2,
@@ -1119,7 +1119,7 @@ const MONSTERS = [
   },
 
   {
-    id: "fantome_sang_noir", name: "Fantôme du Sang Noir", icon: "👻", category: "fantôme",
+    id: "fantome_sang_noir", name: "Fantôme du Sang Noir", icon: "👻", imgSrc: "img/monsters/fantome_sang_noir.png", category: "fantôme",
     desc: "Un spectre des temps anciens, furieux contre les sang-de-bourbe !",
     lore: "Esprit d'un sorcier puriste mort en combattant Dumbledore.",
     habitat: "Cachots de Serpentard", danger: 5,
@@ -1141,7 +1141,7 @@ const MONSTERS = [
   // ════════════════════════════════════════════
 
   {
-    id: "chauve_souris_vampire", name: "Chauve-Souris Vampire", icon: "🦇", category: "bête",
+    id: "chauve_souris_vampire", name: "Chauve-Souris Vampire", icon: "🦇", imgSrc: "img/monsters/chauve_souris_vampire.png", category: "bête",
     desc: "Une nuée de chauves-souris assoiffées de sang fond sur vous !",
     lore: "Cousine corrompue des chauves-souris ordinaires. Ses canines acérées percent la peau en un clin d'œil et drainent juste assez de sang pour affaiblir une proie sans la tuer — la bête préfère revenir festoyer chaque nuit.",
     habitat: "Beffrois abandonnés et combles humides du château",
@@ -1159,7 +1159,7 @@ const MONSTERS = [
   },
 
   {
-    id: "vampire_mineur", name: "Vampire Novice", icon: "🧛", category: "être magique",
+    id: "vampire_mineur", name: "Vampire Novice", icon: "🧛", imgSrc: "img/monsters/vampire_mineur.png", category: "être magique",
     desc: "Un Vampire Novice surgit de l'ombre, ses crocs étincelants !",
     lore: "Sorcier ou moldu fraîchement transformé, encore vorace et imprudent. Sa soif est si intense qu'il attaque à découvert — mais sa résistance aux sorts de feu reste limitée. Une simple Lumos prolongée suffit à le brûler.",
     habitat: "Cachots inférieurs et passages secrets de la Forêt Interdite",
