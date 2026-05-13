@@ -51,6 +51,11 @@ Critères :
 
 Tous : `rarity: 'rare'`, `price: 0`, `family` propre par maison.
 
+> Les emojis dans les déclarations `data.js` (étape 1) sont des fallbacks
+> texte uniquement. Le rendu effectif passe par les PNG painterly
+> générés via `icon_factory.py` (voir §2.7 — un SVG part de base + un
+> emblème de Maison par item, palette héritée du blason existant).
+
 ### 2.2 Nouveau flux de distribution
 
 Code actuel (`main.js:174-207`) :
@@ -142,7 +147,103 @@ le marker quête s'il y en a un (la récompense Maison est plus rare et
 plus saillante). Lookup léger via `pendingHouseRewards` + match
 `specialAction.house`.
 
-### 2.7 Message d'annonce au palier
+### 2.7 Conception visuelle des icônes (pipeline `icon_factory.py`)
+
+Le projet ne fonctionne **pas** à l'emoji pour les items : `js/item-icons.js`
+expose `ITEM_ICON_REGISTRY` (priorité 1) et `ITEM_ICONS_NEW` (priorité 2,
+PNG painterly multi-tailles 16/24/32/48/64) générés par
+`tools/icon_factory.py` à partir de :
+- **SVG parts** dans `tools/parts/` (silhouette mono-couleur avec
+  `data-region="<nom>"` par zone) ;
+- **recettes** dans `icon_factory.py` qui associent à chaque item :
+  parts utilisés, couleurs par région, rareté, palette de halo.
+
+Les emojis `🥊 💍 🪶 🪢` du tableau §2.1 ne sont qu'un placeholder pour
+la liste écran avant rendu PNG. Le rendu final doit suivre le pipeline,
+**et incorporer le symbole de la Maison** pour qu'on identifie l'item
+au coup d'œil.
+
+#### 2.7.1 Parts SVG nécessaires
+
+| Item                  | Part de base       | À créer ? |
+|-----------------------|--------------------|-----------|
+| Brassard du Lion      | `glove.svg`        | ✓ existe |
+| Anneau du Serpent     | `ring.svg`         | **à créer** (anneau + monture gemme) |
+| Plume d'Aigle         | `feather.svg`      | **à créer** (vexille + rachis) |
+| Ceinture du Blaireau  | `belt.svg`         | ✓ existe |
+
+Pour les 2 nouveaux parts : silhouette mono-couleur `#000000`, viewBox
+`0 0 512 512`, 3-5 régions max (`band`, `gem`, `setting` pour `ring` ;
+`vane`, `rachis`, `quill` pour `feather`), conforme au style des parts
+existants.
+
+#### 2.7.2 Symbole de Maison incrusté
+
+Quatre nouveaux parts emblème simples (silhouette plate centrée
+~140×140 px sur viewBox 512) :
+- `tools/parts/emblem-lion.svg` (Gryffondor)
+- `tools/parts/emblem-snake.svg` (Serpentard)
+- `tools/parts/emblem-eagle.svg` (Serdaigle)
+- `tools/parts/emblem-badger.svg` (Poufsouffle)
+
+Référence visuelle : `img/houses/<maison>.png` (blasons painterly déjà
+livrés). Mais on ne réutilise pas les PNG des blasons en couche
+brute — on en extrait la silhouette de l'animal pour produire un
+mono-SVG cohérent avec le pipeline. Une seule région `data-region="emblem"`
+peinte en couleur d'accent de la Maison (or pour Gryffondor /
+Poufsouffle, argent pour Serpentard, bronze pour Serdaigle).
+
+Compositing dans la recette : `emblem-<animal>` superposé centré sur
+l'item de base, opacité 0.85, après la passe RIM-LIGHT et avant
+SPECULAR — pour que le symbole capte un peu de la lumière directionnelle.
+
+#### 2.7.3 Palette par Maison (régions de l'item)
+
+Réutilise les couleurs déjà définies dans `HOUSE_BONUSES` :
+
+| Maison      | Dominante         | Accent             | Halo rareté (`rare`) |
+|-------------|-------------------|--------------------|----------------------|
+| Gryffondor  | rouge `#740001`   | or `#D3A625`       | halo or chaud         |
+| Serpentard  | vert `#1A472A`    | argent `#AAAAAA`   | halo vert froid       |
+| Serdaigle   | bleu `#0E1A40`    | bronze `#946B2D`   | halo bleu nuit        |
+| Poufsouffle | brun `#372E29`    | or `#F0C75E`       | halo or doux          |
+
+Régions par item :
+- Brassard du Lion : `cuff` rouge, `palm/fingers` brun-cuir, `stitch` or, emblème lion or.
+- Anneau du Serpent : `band` argent, `setting` argent oxydé, `gem` émeraude, emblème serpent argent.
+- Plume d'Aigle : `vane` bleu nuit dégradé, `rachis` bronze, emblème aigle bronze.
+- Ceinture du Blaireau : `strap` brun, `buckle` or, `holes/tongue` or sombre, emblème blaireau or.
+
+#### 2.7.4 Recettes dans `icon_factory.py`
+
+4 nouvelles entrées dans le dict `RECIPES` du factory, sur le modèle
+des items existants (voir `sword_gryff`, `coupe_poufsouffle` dans le
+fichier). Chaque recette spécifie :
+- `parts` : `[base_part, 'emblem-<animal>']`
+- `colors` : map `data-region → hex`
+- `rarity` : `'rare'` (pilote le halo)
+- `extra_passes` optionnel si besoin (ex. pour la gemme de l'anneau)
+
+#### 2.7.5 Génération et intégration
+
+```bash
+python tools/icon_factory.py brassard_lion anneau_serpent plume_aigle ceinture_blaireau
+```
+Produit 20 PNG (4 items × 5 tailles) dans `img/icons_new/`.
+
+Puis ajouter dans `js/item-icons.js` :
+```js
+// ITEM_ICONS_NEW (lignes ~127) — pattern existant
+brassard_lion:    'img/icons_new/brassard_lion_64.png',
+anneau_serpent:   'img/icons_new/anneau_serpent_64.png',
+plume_aigle:      'img/icons_new/plume_aigle_64.png',
+ceinture_blaireau:'img/icons_new/ceinture_blaireau_64.png',
+```
+
+Le champ `icon` dans `data.js` reste un emoji (fallback texte si le
+PNG ne charge pas — pattern déjà en place pour les autres items).
+
+### 2.8 Message d'annonce au palier
 
 Format unifié :
 ```
@@ -165,6 +266,30 @@ un nouveau champ — voir §4 étape 2).
 | C7 | `loader.js` MANIFEST : ajouter `pendingHouseRewards` (kind `obj`) si on veut le tracer, sinon pas critique. |
 
 ## 4. Découpage en étapes
+
+### Étape 0 — Assets visuels (parts SVG + recettes + PNG)
+- [ ] Créer `tools/parts/ring.svg` (regions `band`, `setting`, `gem`).
+- [ ] Créer `tools/parts/feather.svg` (regions `vane`, `rachis`, `quill`).
+- [ ] Créer 4 emblèmes mono-région : `emblem-lion.svg`, `emblem-snake.svg`,
+  `emblem-eagle.svg`, `emblem-badger.svg` (silhouette centrée ~140×140
+  sur viewBox 512, region unique `emblem`). Référence : `img/houses/*.png`.
+- [ ] Ajouter 4 recettes dans `tools/icon_factory.py` (`brassard_lion`,
+  `anneau_serpent`, `plume_aigle`, `ceinture_blaireau`) en suivant le
+  pattern d'un item rare existant. Couleurs : voir tableau §2.7.3.
+- [ ] Générer les PNG :
+  ```bash
+  python tools/icon_factory.py brassard_lion anneau_serpent plume_aigle ceinture_blaireau
+  ```
+- [ ] Référencer dans `js/item-icons.js` (ITEM_ICONS_NEW) — 4 entrées
+  pointant vers les `_64.png`.
+- **Vérif visuelle** : ouvrir `tools/_shots/` ou utiliser
+  `tools/preview_icons.py` si dispo ; sinon survoler dans le jeu après
+  l'étape 1 pour valider que les PNG s'affichent, que le symbole de
+  Maison est lisible à 32px et que la palette est cohérente avec le
+  blason existant.
+- **Vérif technique** : `git status` montre 20 nouveaux PNG dans
+  `img/icons_new/`, 6 nouveaux SVG dans `tools/parts/`, +4 recettes
+  dans `icon_factory.py`.
 
 ### Étape 1 — 4 nouveaux items dans `data.js`
 - [ ] Ajouter à `ITEMS[]` (juste après les items légendaires existants) :
@@ -437,6 +562,10 @@ un nouveau champ — voir §4 étape 2).
 
 ## 7. Estimation
 
+- Étape 0 (parts SVG + emblèmes + recettes + PNG) : ~1h30
+  - 6 SVG à créer (2 base + 4 emblèmes) : ~45 min
+  - 4 recettes Python : ~20 min
+  - Génération + revue visuelle multi-tailles : ~25 min
 - Étape 1-2 (items + HOUSE_BONUSES) : 20 min
 - Étape 3 (checkHouseLevelUp) : 10 min
 - Étape 4 (3 nouveaux PNJ + extension McGonagall) : 30 min
@@ -444,6 +573,7 @@ un nouveau champ — voir §4 étape 2).
 - Étape 7-8 (save + migration) : 20 min
 - Étape 9 (smoke) : 40 min
 - Étape 10 (commit/push) : 10 min
-- **Total : ~2h30** (re-calibration vs estimation initiale de 30 min - 1h ;
-  le passage par PNJ ajoute ~1h30 d'intégration mais apporte la cohérence
-  narrative demandée).
+- **Total : ~4h** (vs ~2h30 sans assets visuels). Le coût art (~1h30)
+  conditionne la qualité de l'identité Maison à l'écran — sans lui,
+  les 4 items resteraient des emojis indistincts dans l'inventaire,
+  ce qui irait à l'encontre de l'objectif « rendre la Maison visible ».
