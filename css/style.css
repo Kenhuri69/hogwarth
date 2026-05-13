@@ -235,6 +235,11 @@ body {
 #dungeon-canvas {
   width: 100%; height: 100%;
   display: block;
+  /* Neutralise pull-to-refresh, scroll vertical et double-tap zoom
+     uniquement sur le canvas pour permettre les swipes de déplacement
+     (cf. js/swipe-canvas.js). Les modales et le HUD gardent leur
+     scroll natif. */
+  touch-action: none;
 }
 
 /* Encounter overlay */

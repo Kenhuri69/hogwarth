@@ -49,6 +49,11 @@ js/
   movement.js      →  moveForward(), moveBackward(), turnLeft(), turnRight(),
                       move() (legacy absolu), handleCellEntry(), searchRoom(),
                       rest(), checkObjectInFront()
+  swipe-canvas.js  →  Gestes tactiles sur #dungeon-canvas (mobile) :
+                      swipe vertical → avancer/reculer, swipe horizontal →
+                      tourner. initCanvasSwipeGestures(),
+                      _dispatchCanvasSwipe(dx,dy), _isCanvasSwipeBlocked().
+                      Le D-pad tactile reste affiché en fallback.
   battle.js        →  startBattle(), battleAction(), enemyTurn(), endBattle(), checkLevelUp()
   battle-spells.js →  castSpellInBattle(), tryEnemyAbility()
   battle-ui.js     →  renderEnemyGroup(), showTargetSelection(), updateBattleCharIndicator()
@@ -940,12 +945,12 @@ caméra sans bouger. Le moteur conserve en interne les directions
 cardinales (`playerDir ∈ {n,s,e,w}`, `DIRECTIONS`, minimap…) — seuls
 les inputs utilisateur sont relatifs.
 
-| Action | Touches | Bouton desktop | Bouton mobile | Helper (`js/movement.js`) |
-|--------|---------|----------------|---------------|---------------------------|
-| Avancer        | ↑ / W / Z | `#btn-forward` | ▲ | `moveForward()` |
-| Reculer        | ↓ / S     | `#btn-back`    | ▼ | `moveBackward()` (ne pivote pas) |
-| Pivoter gauche | ← / A / Q | `#btn-turn-l`  | ↺ | `turnLeft()` |
-| Pivoter droite | → / D     | `#btn-turn-r`  | ↻ | `turnRight()` |
+| Action | Touches | Bouton desktop | Bouton mobile | Swipe canvas | Helper (`js/movement.js`) |
+|--------|---------|----------------|---------------|--------------|---------------------------|
+| Avancer        | ↑ / W / Z | `#btn-forward` | ▲ | swipe ↑ | `moveForward()` |
+| Reculer        | ↓ / S     | `#btn-back`    | ▼ | swipe ↓ | `moveBackward()` (ne pivote pas) |
+| Pivoter gauche | ← / A / Q | `#btn-turn-l`  | ↺ | swipe ← | `turnLeft()` |
+| Pivoter droite | → / D     | `#btn-turn-r`  | ↻ | swipe → | `turnRight()` |
 
 - `moveForward` / `moveBackward` réutilisent le helper interne `_step(dir, faceDir)`.
   `moveBackward` passe `faceDir=false` pour conserver l'orientation.
@@ -954,6 +959,22 @@ les inputs utilisateur sont relatifs.
   `_updateSearchBtn()`. Pas de footstep (rotation = silence).
 - `move(dir)` legacy (déplacement absolu) reste disponible pour
   cinématiques / debug, n'est plus appelée par l'UI.
+
+### Swipe canvas (mobile)
+
+Voir `js/swipe-canvas.js`. Listeners `touchstart`/`touchmove`/`touchend`
+sur `#dungeon-canvas`, seuil 30 px sur l'axe dominant. L'axe le plus
+long décide du type d'action (translation vs rotation). Mono-touch
+uniquement (multi-doigts → annule le geste, laisse passer pinch/zoom
+si jamais le navigateur les autorise).
+
+Garde-fous : `_isCanvasSwipeBlocked()` retourne `true` si `inBattle`
+ou si un overlay couvre la vue (`#encounter-overlay`, `#explore-overlay`,
+`#npc-dialog-overlay`, `#floor-transition`). CSS `touch-action: none`
+sur `#dungeon-canvas` neutralise pull-to-refresh / scroll vertical /
+double-tap zoom sur cette zone uniquement. Le D-pad tactile reste
+affiché et fonctionnel — c'est un canal d'entrée additionnel, pas un
+remplacement.
 
 ### Indicateurs visuels d'orientation
 

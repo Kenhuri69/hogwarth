@@ -3912,6 +3912,108 @@ async function scenarioRelativeControls() {
   await browser.close();
 }
 
+// ── Scénario : swipe canvas pseudo-3D (mobile) ──────────────────
+async function scenarioCanvasSwipe() {
+  console.log('\n── Scénario : swipe canvas pseudo-3D ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Helpers exposés
+  const exposed = await page.evaluate(() => ({
+    init:     typeof window.initCanvasSwipeGestures === 'function',
+    dispatch: typeof window._dispatchCanvasSwipe     === 'function',
+    blocked:  typeof window._isCanvasSwipeBlocked    === 'function'
+  }));
+  assert(exposed.init,     'initCanvasSwipeGestures absent');
+  assert(exposed.dispatch, '_dispatchCanvasSwipe absent');
+  assert(exposed.blocked,  '_isCanvasSwipeBlocked absent');
+
+  // 2) Mapping rotation : swipe horizontal → turnLeft / turnRight,
+  //    position inchangée.
+  const rot = await page.evaluate(() => {
+    playerDir = 'n';
+    const x0 = playerX, y0 = playerY;
+    window._dispatchCanvasSwipe(80, 0);   // → droite
+    const right = { dir: playerDir, moved: (playerX !== x0 || playerY !== y0) };
+    window._dispatchCanvasSwipe(-80, 0);  // → gauche
+    const left  = { dir: playerDir, moved: (playerX !== x0 || playerY !== y0) };
+    return { right, left };
+  });
+  assert(rot.right.dir === 'e',  `swipe droite depuis n doit donner e (obtenu ${rot.right.dir})`);
+  assert(!rot.right.moved,       'swipe droite ne doit pas déplacer le joueur');
+  assert(rot.left.dir === 'n',   `swipe gauche depuis e doit ramener à n (obtenu ${rot.left.dir})`);
+  assert(!rot.left.moved,        'swipe gauche ne doit pas déplacer le joueur');
+
+  // 3) Mapping translation : swipe vertical → moveForward / moveBackward.
+  //    On cherche une direction où la case devant est libre, puis on
+  //    déclenche un swipe vers le haut (avancer) puis vers le bas (reculer).
+  const trans = await page.evaluate(() => {
+    const dirs = ['n','e','s','w'];
+    const D = { n:[0,-1], e:[1,0], s:[0,1], w:[-1,0] };
+    for (const d of dirs) {
+      playerDir = d;
+      const [dx,dy] = D[d];
+      const nx = playerX + dx, ny = playerY + dy;
+      if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) continue;
+      if (dungeon[ny][nx] === CELL.WALL) continue;
+      const x0 = playerX, y0 = playerY;
+      window._dispatchCanvasSwipe(0, -80);  // ↑ = avancer
+      const afterFwd = { dx: playerX - x0, dy: playerY - y0, dir: playerDir };
+      const dirBefore = playerDir;
+      window._dispatchCanvasSwipe(0, 80);   // ↓ = reculer
+      const afterBack = { dx: playerX - x0, dy: playerY - y0, dir: playerDir };
+      return { tried: d, afterFwd, afterBack, dirPreserved: dirBefore === afterBack.dir };
+    }
+    return { tried: null };
+  });
+  assert(trans.tried, 'aucune direction libre — donjon corrompu ?');
+  assert(trans.afterFwd.dx !== 0 || trans.afterFwd.dy !== 0,
+    'swipe haut sans effet sur la position');
+  assert(trans.afterFwd.dir === trans.tried,
+    'swipe haut doit aligner playerDir sur la direction du pas');
+  assert(trans.afterBack.dx === 0 && trans.afterBack.dy === 0,
+    'swipe bas doit ramener à la position initiale');
+  assert(trans.dirPreserved,
+    'swipe bas (reculer) NE doit PAS modifier playerDir');
+
+  // 4) Garde-fou combat : pendant inBattle, le swipe est bloqué.
+  const guard = await page.evaluate(() => {
+    inBattle = true;
+    const dir0 = playerDir;
+    const x0 = playerX, y0 = playerY;
+    const wasBlocked = window._isCanvasSwipeBlocked();
+    // Le dispatch lui-même appelle moveForward/turnLeft, qui sont déjà
+    // gardés par inBattle ; on vérifie surtout _isCanvasSwipeBlocked.
+    inBattle = false;
+    return { wasBlocked, dirUnchanged: playerDir === dir0,
+             posUnchanged: playerX === x0 && playerY === y0 };
+  });
+  assert(guard.wasBlocked,    '_isCanvasSwipeBlocked doit être vrai pendant inBattle');
+  assert(guard.dirUnchanged,  'playerDir ne doit pas changer pendant inBattle');
+  assert(guard.posUnchanged,  'position ne doit pas changer pendant inBattle');
+
+  // 5) Canvas marqué `data-swipe-bound` et touch-action: none côté CSS.
+  const dom = await page.evaluate(() => {
+    const c = document.getElementById('dungeon-canvas');
+    if (!c) return null;
+    return {
+      bound:       c.dataset.swipeBound,
+      touchAction: getComputedStyle(c).touchAction
+    };
+  });
+  assert(dom,                       'canvas #dungeon-canvas absent');
+  assert(dom.bound === '1',         'canvas pas marqué comme bound');
+  assert(dom.touchAction === 'none',
+    `touch-action attendu "none", obtenu "${dom.touchAction}"`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Swipe canvas OK');
+  await browser.close();
+}
+
 // ── Scénario endgame 1 : trigger de victoire + idempotence ─────
 async function scenarioVictoryTrigger() {
   console.log('\n── Scénario endgame 1 : trigger de victoire ──');
@@ -4515,7 +4617,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
