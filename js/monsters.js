@@ -999,7 +999,7 @@ const MONSTERS = [
   // ── Nouveaux monstres ────────────────────────────────────────
 
   {
-    id: "niffleur", name: "Niffleur", icon: "🦡", category: "créature",
+    id: "niffleur", name: "Niffleur", icon: "🦡", imgSrc: "img/monsters/niffleur.png", category: "créature",
     desc: "Un Niffleur fouilleur vous a repéré — et votre bourse l'attire !",
     lore: "Petite créature à fourrure noire qui raffole des objets brillants.",
     habitat: "Terriers et cachots à trésor", danger: 2,
@@ -1047,7 +1047,7 @@ const MONSTERS = [
   },
 
   {
-    id: "chevalier_fantome", name: "Chevalier Fantôme", icon: "⚔️", category: "fantôme",
+    id: "chevalier_fantome", name: "Chevalier Fantôme", icon: "⚔️", imgSrc: "img/monsters/chevalier_fantome.png", category: "fantôme",
     desc: "L'armure vide s'anime ! Un chevalier fantôme vous barre le passage !",
     lore: "Ancien gardien de Poudlard, condamné à veiller les couloirs pour l'éternité.",
     habitat: "Galeries et salles d'armures", danger: 6,
@@ -1083,7 +1083,7 @@ const MONSTERS = [
   },
 
   {
-    id: "manticore_jeune", name: "Manticore Juvénile", icon: "🦁", category: "bête",
+    id: "manticore_jeune", name: "Manticore Juvénile", icon: "🦁", imgSrc: "img/monsters/manticore_jeune.png", category: "bête",
     desc: "Une jeune Manticore rugit, sa queue-scorpion dressée vers vous !",
     lore: "Créature mi-lion mi-scorpion, classée parmi les plus dangereuses.",
     habitat: "Souterrains profonds et salles secrètes", danger: 8,
@@ -1253,7 +1253,7 @@ const MONSTERS = [
   },
 
   {
-    id: "hecate_sorciere", name: "Hécate la Maudisseuse", icon: "🔮", category: "humain",
+    id: "hecate_sorciere", name: "Hécate la Maudisseuse", icon: "🔮", imgSrc: "img/monsters/hecate_sorciere.png", category: "humain",
     desc: "Hécate vous toise — sa baguette suinte d'une fumée noire de malédictions !",
     lore: "Sorcière exclue de Poudlard pour pratique de magie interdite. Devenue spécialiste des malédictions héréditaires, elle hante les couloirs en quête d'apprentis à corrompre. Son rire fait flétrir les torches.",
     habitat: "Salle sur Demande dans sa configuration sombre, cachots interdits",
