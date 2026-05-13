@@ -34,7 +34,12 @@ enemyGroup.forEach(e => safeCall('checkVictoryTrigger', e.id));
 
 `checkVictoryTrigger(monsterId)` vit dans un nouveau module **`js/endgame.js`**
 (cf. §9 pour l'arborescence). Si `monsterId === 'voldemort_revenu'` et
-`!victoryAchieved`, il mute le flag, persiste, et lance la cinématique.
+`!victoryAchieved`, il mute le flag, persiste, **invalide le cache de
+textures** (pour la bascule §7.1bis), et lance la cinématique.
+
+**Double rôle du trigger** : il déverrouille aussi l'escalier descendant
+de l'étage 10 (cf. §7.1ter). Sans victoire, **le jeu est plafonné à
+l'étage 10**.
 
 ## 4. Cinématique de victoire (non bloquante)
 
@@ -156,59 +161,184 @@ respectivement sur `rune_floor` / `rune_ceiling`.
 renforce visuellement le shift. À garder en réserve si rune_wall seul
 manque d'impact.
 
-### 7.1ter Escaliers : aucun ajout nécessaire ✅
+### 7.1ter Escalier de l'étage 10 — scellé tant que Voldemort vit
 
-**Vérification** : `dungeon.js:116` place `CELL.STAIRS_D` dans la
-dernière room générée, **sans condition sur l'étage**. `movement.js:290`
-incrémente `currentFloor` sans cap. L'escalier de l'étage 10 vers
-l'étage 11 existe donc déjà par défaut, mais n'avait jamais de raison
-d'être emprunté avant ce plan.
+**Décision** : la descente vers l'étage 11 doit être **gated** par la
+victoire. Pas de raccourci pour grinder le NG+ avant d'avoir affronté
+le boss.
 
-**Aucune modification de génération requise.** À mentionner dans le
-texte de la modale de victoire pour orienter le joueur :
-> *"Un dernier escalier descend vers les ténèbres au plus profond du château."*
+**Génération** : on garde la génération actuelle intacte (`dungeon.js:116`
+place toujours un `STAIRS_D` dans la dernière room de l'étage 10). On
+ne modifie pas la map — on bloque uniquement l'interaction.
 
-### 7.2 Roster monstres étages 11+ (nouveaux)
+**Patch attendu** dans `js/movement.js — _showExploreOverlay()`, cas
+`CELL.STAIRS_D` :
+```js
+[CELL.STAIRS_D]: (() => {
+  const sealed = currentFloor === 10 && !victoryAchieved;
+  return {
+    icon:  SCENE_ICONS.stairs_d,
+    title: sealed ? 'Passage scellé' : 'Escalier descendant',
+    desc:  sealed
+      ? "Une magie ancienne et noire scelle cet escalier. Une présence maléfique veille — tant qu'elle n'aura pas été abattue, le passage restera fermé."
+      : 'Un escalier en colimaçon disparaît dans les profondeurs…',
+    btns:  sealed
+      ? `<button class="explore-btn" onclick="_hideExploreOverlay()">S'éloigner</button>`
+      : `<button class="explore-btn" onclick="_hideExploreOverlay();goDeeper()">Descendre</button>`
+  };
+})(),
+```
 
-**Constat existant** : 17 monstres ont `maxFloor: null` (incluant
-voldemort_revenu, bellatrix, mangemort, mangemort_elite, acromantula_jeune,
-hecate, vampire_novice, strigoi_ancien…). À l'étage 11+ ils continuent
-de spawn, scalés par leur `scale` propre. **Pool fonctionne déjà**,
-mais **monotone** — c'est le même bestiaire que l'étage 10.
+**Effet** :
+- Avant victoire : entrer sur l'escalier de l'étage 10 affiche
+  "Passage scellé" → joueur doit chasser Voldemort.
+- Après victoire : interaction normale, descente déverrouillée.
+- Étages 1-9 : aucun changement (le check `currentFloor === 10` les ignore).
+- Étages 11+ : le joueur y arrive après victoire par construction, donc
+  les stairs y sont toujours libres.
 
-**Décision V1** : ajouter **3 nouveaux monstres exclusifs Ténèbres**
-dans `js/monsters.js`. Le filtrage est centralisé via un champ
-`requiresVictory: true` (consommé par `dungeon.js — weightedPick` avec
-un filtre `(!m.requiresVictory || victoryAchieved)`).
+**Sécurité supplémentaire** : verrouiller aussi `goDeeper()` lui-même
+(`js/movement.js:288`) en garde-fou — au cas où quelqu'un appellerait
+la fonction depuis la console.
+```js
+function goDeeper() {
+  if (currentFloor === 10 && !victoryAchieved) {
+    addMsg("L'escalier reste scellé — une ombre veille encore.", 'bad');
+    return;
+  }
+  currentFloor++;
+  // … reste inchangé
+}
+```
 
-| id | name | minFloor | weight | rôle | drop signature |
-|----|------|---------|--------|------|----------------|
-| `mangemort_ancien` | Mangemort Ancien | 11 | 6 | Variant durci du `mangemort_elite`, scale 0.32, 2 abilities (damage + drain) | chance ~8% sur `cape_voldemort` |
-| `nagini_revenue` | Nagini Réincarnée | 11 | 4 | Esprit-serpent, poison/drain, scale 0.30 | chance ~10% sur `cendres_phenix` |
-| `voldemort_ombre` | Ombre du Maître | 13 | 1 | Boss rare optionnel, écho d'âme post-mortem, scale 0.45, 4 abilities (proche `voldemort_revenu` mais HP/ATK +20%) | chance ~15% sur `oeil_basilic` |
+**Sauvegardes existantes** : aucune migration spéciale. Si un joueur a
+une vieille save à `currentFloor >= 11` (impossible avec la
+génération actuelle, mais théoriquement), il est libre de continuer ;
+les seuls étages plafonnés sont ceux dont on essaie de **sortir par le
+bas**.
 
-**Notes design** :
-- Tous ont `requiresVictory: true` → invisibles avant le kill de Voldemort.
-- Pas de PNG nouvelle à créer obligatoirement : réutiliser
-  `img/monsters/mangemort.png` (avec teinte CSS si possible),
-  `nagini.png`, `voldemort_revenu.png`. Ajout d'asset est V1+
-  uniquement si frustrant à l'usage.
-- `voldemort_ombre` joue le rôle de "vrai boss final NG+" — récompense
-  rare, weight 1 garantit qu'il n'est pas trivialisé.
-- Resistances cohérentes : tous résistent `disarm` et `stun` ; faibles à `instant`.
-- XP/gold scalés au niveau 11 (xp ~60-150, gold 30-80) pour ne pas
-  exploser la progression.
+**Texte de la modale de victoire** doit le mentionner :
+> *"L'escalier le plus profond, scellé par la peur, s'ouvre enfin."*
 
-> ⚠️ **Voldemort_revenu reste dans le pool étage 10+** — il pourra
-> respawn à 11+ aussi (weight 1). C'est volontaire : "les ténèbres
-> reviennent". Si l'utilisateur veut le rendre vraiment one-shot,
-> ajouter une garde côté pool : `id === 'voldemort_revenu' && victoryAchieved → exclu`.
-> Hors scope V1 par défaut.
+### 7.2 Roster monstres étages 11+ — Variant "Ténébreux" automatique
+
+**Constat existant** (`js/dungeon.js:31-51`) : le système de variants
+**existe déjà**. `scaleMonster()` applique l'un de ces 4 variants à
+**tout monstre généré**, par-dessus son entrée de base :
+
+| Variant | Préfixe nom | Conditions | Badge `battle-ui.js:60-65` | Multipliers |
+|--------|-----------|------------|---------------------------|-------------|
+| `shiny` | `✨ ` | 4% aléatoire, partout | ✨ | xp×1.5, gold×2, drops×2 |
+| `ancient` | `Ancien ` | étage ≥ 5 | 💜 | aucun (cosmétique) |
+| `fierce` | `Féroce ` | étage ≥ 3 | 🔴 | aucun (cosmétique) |
+| `normal` | (aucun) | défaut | (aucun) | aucun |
+
+**Décision V1** : **étendre** ce système avec un nouveau variant
+`darkness` qui s'applique automatiquement à **TOUS les monstres**
+quand `victoryAchieved === true && currentFloor >= 11`. Zéro entrée
+monstre à créer, zéro PNG à dessiner, pool entier du bestiaire mis à
+niveau d'un coup.
+
+**Convention de nom** : préfixe `Ténébreux ` (au choix utilisateur).
+Genre incorrect sur quelques entrées féminines (« Ténébreux Mimi
+Geignarde ») mais lisible et homogène. V1+ pourra introduire une
+table de genre si nécessaire.
+
+**Patch attendu** dans `js/dungeon.js — scaleMonster()`, **avant** le
+test `floor >= 5` (l'ordre de priorité compte) :
+
+```js
+const shinyRoll = Math.random();
+if (shinyRoll < 0.04) {
+  // ✨ shiny — inchangé, peut se cumuler avec darkness en théorie
+  // mais comme on entre par if/else, shiny l'emporte (rare)
+  ...
+}
+else if (typeof victoryAchieved !== 'undefined'
+         && victoryAchieved
+         && floor >= 11) {
+  monster.variant = 'darkness';
+  monster.name    = 'Ténébreux ' + base.name;
+  monster.hp      = Math.floor(monster.hp  * 1.30);
+  monster.atk     = Math.floor(monster.atk * 1.20);
+  monster.def     = Math.floor(monster.def * 1.15);
+  if (monster.mag) monster.mag = Math.floor(monster.mag * 1.20);
+  monster.xp      = Math.floor(monster.xp   * 1.50);
+  monster.gold    = Math.floor(monster.gold * 1.50);
+  // Drops gated : voir §7.3 (filtre côté endBattle)
+}
+else if (floor >= 5) { … } // ancient
+else if (floor >= 3) { … } // fierce
+else                  { monster.variant = 'normal'; }
+```
+
+**Badge visuel** dans `js/battle-ui.js:60-65`, étendre l'expression :
+```js
+const badge = !dead && variant !== 'normal'
+  ? `<div class="variant-badge variant-badge-${variant}">${
+      variant === 'shiny'    ? '✨' :
+      variant === 'ancient'  ? '💜' :
+      variant === 'darkness' ? '🌑' :
+      '🔴'  /* fierce */
+    }</div>`
+  : '';
+```
+
+**Halo violet** dans `css/style.css` — nouvelle règle dédiée. Pas
+besoin de retoucher les PNG, juste un filter/box-shadow sur la card
+ennemie quand le variant est `darkness`.
+
+```css
+.enemy-card.variant-darkness,
+.enemy-card[data-variant="darkness"] {
+  filter: drop-shadow(0 0 8px #a040ff) drop-shadow(0 0 16px #6020c0);
+  animation: dark-pulse 1.6s ease-in-out infinite alternate;
+}
+@keyframes dark-pulse {
+  from { filter: drop-shadow(0 0 6px #a040ff) drop-shadow(0 0 12px #6020c0); }
+  to   { filter: drop-shadow(0 0 12px #c060ff) drop-shadow(0 0 24px #8040e0); }
+}
+.variant-badge-darkness {
+  background: linear-gradient(135deg, #4a1a6a 0%, #1a0a2a 100%);
+  border: 1px solid #c060ff;
+  color: #e0c0ff;
+  box-shadow: 0 0 6px #a040ff;
+}
+```
+
+Pour que la card porte la classe : amender `battle-ui.js:68` :
+```js
+card.className = `enemy-card variant-${variant}${dead ? ' enemy-dead' : ''}`;
+```
+(remplace l'ancien — toutes les autres variants en bénéficient aussi,
+mais sans styles définis ils n'ont aucun effet visible. Régression
+zéro.)
+
+**Avantages de cette approche** :
+- **0 nouvel asset PNG**, **0 nouvelle entrée monstre**.
+- Couvre les 50 monstres existants d'un coup.
+- Boss Voldemort/Bellatrix deviennent automatiquement "Ténébreux
+  Voldemort Ressuscité" / "Ténébreuse Bellatrix" au respawn post-victoire :
+  re-affrontement narrativement cohérent.
+- Les futures additions monstres bénéficient gratuitement de leur
+  version Ténèbres.
+- Compatibilité totale avec saves existantes : `victoryAchieved=false`
+  par défaut → comportement actuel inchangé.
+
+**Choix de couleur halo** : violet/pourpre (`#a040ff`). On évite le
+rouge qui appartient déjà à `fierce` (🔴) et le bleu trop "magique
+gentil". Le violet matche l'ambiance dark/Voldemort et complète le
+badge ancient (💜) sans confusion grâce à l'animation pulse.
+
+> ⚠️ **Variant `darkness` vs `ancient`** : à étage 11+ post-victoire,
+> `darkness` prend la priorité (cf. ordre des `else if`). Donc plus de
+> "Ancien Mangemort" au-delà de 10 — uniquement des "Ténébreux X". Ça
+> simplifie la lecture du badge pour le joueur.
 
 ### 7.3 Drops uniques post-victoire
 
-3 nouveaux items dans `js/data.js — ITEMS[]` (rarity `legendary`, drop only
-si `victoryAchieved && currentFloor >= 11`). Suggestions :
+3 nouveaux items dans `js/data.js — ITEMS[]` (rarity `legendary`).
+Suggestions :
 
 | id | name | slot | bonus |
 |----|------|------|-------|
@@ -216,28 +346,57 @@ si `victoryAchieved && currentFloor >= 11`). Suggestions :
 | `cendres_phenix` | Cendres du Phénix | `amulet` | MAG+4, LCK+2, regenHp +4 |
 | `oeil_basilic` | Œil de Basilic | `trinket` | bonusCritChance +10, bonusDodgeChance +5 |
 
-Drops attachés aux 3 ennemis les plus durs des étages 11+
-(`voldemort_revenu`, `bellatrix`, `mangemort_elite`) — chance basse (5-10%),
-**gated** par un nouveau champ `requiresVictory: true` sur l'entrée de drop.
+**Gating** : maintenant que tous les monstres étage 11+ passent par le
+variant `darkness`, on a deux stratégies possibles :
 
-Implémentation dans `endBattle` : avant le roll, filtrer
-`enemy.drops.filter(d => !d.requiresVictory || victoryAchieved)`.
+- **A — Drop sur variant** (recommandé) : ajout dans `endBattle()` —
+  si `enemy.variant === 'darkness'`, roll un drop bonus 8% sur l'un
+  des 3 nouveaux items (pondéré aléatoirement). Aucun champ à toucher
+  dans `monsters.js`.
+- **B — Drop par entrée** : ajouter manuellement le champ
+  `requiresVictory: true` à des entrées de drop dans `monsters.js`
+  pour `voldemort_revenu`, `bellatrix`, `mangemort_elite`. Plus
+  granulaire mais demande maintenance par monstre.
+
+**Décision V1 : stratégie A**. Elle profite automatiquement de tout
+nouveau monstre. Code minimal dans `endBattle` :
+```js
+// après la loop de drops standard
+if (enemy.variant === 'darkness' && Math.random() < 0.08) {
+  const darkDrops = ['cape_voldemort', 'cendres_phenix', 'oeil_basilic'];
+  const pick = darkDrops[Math.floor(Math.random() * darkDrops.length)];
+  if (player.inventory.length < 16) {
+    player.inventory.push({...ITEMS.find(i => i.id === pick)});
+    addMsg(`💎 Butin des Ténèbres : ${pick} !`, 'good');
+  }
+}
+```
+
+Pas de champ `requiresVictory` à ajouter dans `monsters.js` : le
+gating est implicite via le variant.
 
 ### 7.4 Bestiaire enrichi (optionnel, V2)
 
-Marquer dans le bestiaire les drops post-victoire avec un picto 🏆.
-Idem pour les 3 nouveaux monstres : entrée visible seulement après
-première rencontre (logique existante `seenMonsters` couvre déjà ça).
-Hors scope V1 si effort > 30 min.
+Marquer dans le bestiaire les entrées ayant été rencontrées en variant
+`darkness` avec un picto 🌑 à côté du portrait. La logique existante
+`seenMonsters` couvre déjà la révélation ; il suffit d'ajouter un Set
+parallèle `seenDarknessVariants` (sérialisé via `Array.from`).
+Hors scope V1 si effort > 45 min.
 
 ## 8. Ce qui ne change pas (sanity)
 
-- Aucun monstre supprimé. Aucun étage retiré.
-- Aucune quête bloquée ou auto-validée.
-- Le HUD reste identique sauf le picto 🏆.
+- Aucun monstre supprimé ni dupliqué. Aucun étage retiré.
+- Aucune quête bloquée ou auto-validée. La chaîne Dumbledore reste
+  indépendante du trigger de victoire (elle peut être en cours, finie
+  ou jamais commencée).
+- Le HUD reste identique sauf le picto 🏆 sur le badge Maison.
 - Les anciennes saves se chargent sans migration explicite (cf. §5).
-- Le smoke test existant reste vert sans modification (les nouveaux
-  scénarios sont ajoutés, pas substitués).
+  `victoryAchieved` défaut `false` → comportement courant inchangé.
+- Le smoke test existant reste vert sans modification ; les nouveaux
+  scénarios sont ajoutés, pas substitués.
+- **Pré-victoire** : aucun visuel ni texte ne change. Voldemort se
+  comporte exactement comme avant le plan. Seul l'escalier de l'étage
+  10 prend un message dédié quand on tente d'y descendre.
 
 ## 9. Découpage en étapes
 
@@ -267,36 +426,43 @@ Hors scope V1 si effort > 30 min.
 - [ ] Picto 🏆 dans `ui.js — updateUI` (badge Maison, sous condition)
 - **Vérif** : visible uniquement quand `victoryAchieved === true`.
 
-### Étape 5 — Soft NG+ : balance & feel
-- [ ] Multiplicateur ténèbres dans `dungeon.js — scaleMonster`
-- [ ] Bump de proba groupe 3 dans `battle.js — rollGroupSize`
-- [ ] Toast one-shot dans `movement.js — goDeeper` (flag mémoire session)
-- **Vérif** : forcer `victoryAchieved = true` + entrer étage 11 → toast s'affiche une fois, monstres plus durs.
+### Étape 5 — Gate de l'escalier étage 10
+- [ ] Patch `movement.js — _showExploreOverlay()` cas `CELL.STAIRS_D` : afficher overlay scellé si `currentFloor === 10 && !victoryAchieved`
+- [ ] Garde-fou dans `movement.js — goDeeper()` (early return + addMsg)
+- **Vérif** : à l'étage 10 sans avoir tué Voldemort → "Passage scellé" + pas de bouton Descendre. Après kill → bouton Descendre dispo, descente fonctionne.
 
-### Étape 6 — Bascule visuelle "Ténèbres"
+### Étape 6 — Bascule visuelle "Ténèbres" (textures)
 - [ ] Patch `renderer.js — getWallTextureType()` pour basculer `rune_wall` à étage 11+ si `victoryAchieved`
 - [ ] Idem pour `_floorKey` (`renderer.js:288`) → `rune_floor` et `_ceilKey` (`renderer.js:321`) → `rune_ceiling`
-- [ ] Vider le cache de patterns (`_invalidatePatternCache()`) à l'instant du trigger pour forcer le re-render avec les bonnes textures
-- **Vérif** : pré-victoire étage 11 → cavern visible ; post-victoire étage 11 → runes visibles immédiatement.
+- [ ] Appeler `_invalidatePatternCache()` à l'instant du trigger pour forcer le re-render avec les bonnes textures
+- **Vérif** : pré-victoire étage 11 (forcé via console) → cavern visible. Post-victoire étage 11 → runes visibles sans reload.
 
-### Étape 7 — Roster monstres étages 11+
-- [ ] 3 nouveaux monstres dans `js/monsters.js` (`mangemort_ancien`, `nagini_revenue`, `voldemort_ombre`) avec `requiresVictory: true`
-- [ ] Ajouter le filtre `(!m.requiresVictory || victoryAchieved)` dans `dungeon.js — weightedPick` (ou la fonction qui peuple le pool d'étage)
-- [ ] Lier les drops uniques §7.3 sur ces 3 monstres (chance basse, gating identique)
-- **Vérif** : étage 11 pré-victoire → seuls les ennemis classiques. Étage 11 post-victoire → les 3 nouveaux peuvent apparaître (vérifier sur 50 spawns simulés par seed).
+### Étape 7 — Variant `darkness` automatique sur tous les monstres
+- [ ] Étendre `dungeon.js — scaleMonster()` avec la branche `darkness` (priorité après shiny, avant ancient)
+- [ ] Étendre `battle-ui.js:60-65` : ajout du badge 🌑 et de la classe CSS `variant-${variant}` sur la card
+- [ ] Ajouter règles CSS `.variant-darkness` + keyframes `dark-pulse` + `.variant-badge-darkness` dans `css/style.css`
+- **Vérif** : forcer `victoryAchieved=true`, descendre étage 11, lancer un combat → l'ennemi est préfixé "Ténébreux ", a un halo violet animé, badge 🌑.
 
-### Étape 8 — Drops uniques
-- [ ] 3 items dans `data.js`
-- [ ] Champ `requiresVictory` sur les entrées de drop concernées dans `monsters.js` (voldemort_revenu, bellatrix, mangemort_elite, + les 3 nouveaux)
-- [ ] Filtre dans `battle.js — endBattle` (drops loop)
-- **Vérif** : kill Voldemort avant victoire → drops standards seulement. Kill un Mangemort élite étage 11+ après victoire → l'item gated peut tomber (test par seed/proba forcée).
+### Étape 8 — Drops uniques (stratégie A — variant-gated)
+- [ ] 3 items dans `data.js` (cape_voldemort, cendres_phenix, oeil_basilic)
+- [ ] Patch `battle.js — endBattle()` : roll bonus 8% si `enemy.variant === 'darkness'`
+- **Vérif** : combattre 50 Ténébreux par script → environ 3-5 drops bonus. Combattre 50 ennemis pré-victoire → 0 drop bonus.
 
-### Étape 9 — Smoke test
-- [ ] Ajouter scénario `scenarioVictoryTrigger` dans `tests/smoke.js`
-- [ ] Ajouter scénario `scenarioDarknessTextures` : flag forcé + currentFloor=11 → vérifier `getWallTextureType()` retourne `rune_wall`
+### Étape 9 — Soft NG+ feel (multiplicateurs + toast)
+- [ ] Bump de proba groupe 3 dans `battle.js — rollGroupSize` (+10% étage 11+ post-victoire)
+- [ ] Toast one-shot dans `movement.js — goDeeper` à la 1re entrée étage 11+ post-victoire (flag mémoire session)
+- **Vérif** : toast s'affiche une seule fois ; revisiter étage 11 → pas de toast à nouveau.
+
+> Note : le boost de stats (+30% HP / +20% ATK) est déjà couvert par
+> l'étape 7 via le variant darkness — pas besoin d'une étape multiplicateur séparée.
+
+### Étape 10 — Smoke tests
+- [ ] `scenarioVictoryTrigger` : kill Voldemort → flag + modale (cf. §10)
+- [ ] `scenarioStairsGated` : sur étage 10 avant kill → STAIRS_D overlay = "Passage scellé" ; après kill → "Descendre" dispo
+- [ ] `scenarioDarkVariant` : forcer victoryAchieved+floor=11 + scaleMonster d'un monstre simple → assert `variant === 'darkness'` et name commence par "Ténébreux "
 - **Vérif** : `node tests/smoke.js` passe vert.
 
-### Étape 10 — Commit & push
+### Étape 11 — Commit & push
 - [ ] Commit message clair (cf. §11)
 - [ ] Push sur `claude/game-review-improvements-QsPrU`
 - [ ] Vérifier état PR avant push (`mcp__github__pull_request_read`) — cf. guidelines §6
