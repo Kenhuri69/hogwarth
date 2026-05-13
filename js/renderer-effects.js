@@ -5,7 +5,8 @@
 // ============================================================
 
 // Phase d'animation pour les marqueurs PNJ (incrémenté par
-// startNpcAnimLoop, lu par drawCellMarker → cas CELL.NPC).
+// startNpcAnimLoop, lu par drawNpcSprite pour pulser le halo et bobber
+// le signe ❗/❓).
 let _npcAnimPhase = 0;
 let _npcAnimTimer = null;
 
@@ -219,68 +220,6 @@ function drawCellMarker(cx, cy, bx, by, size, cell) {
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('📦', bx, by);
-  } else if (cell === CELL.NPC) {
-    // Silhouette dorée — corps stylisé + halo chaud + indicateur "!" / "?"
-    // selon l'état de la quête liée (offer / ready). Le PNJ exact est
-    // identifié via npcPlacements (Map "x,y" → npcId).
-    const npcId = (typeof npcPlacements !== 'undefined')
-      ? npcPlacements.get(`${cx},${cy}`) : null;
-    const sign  = (typeof getNpcMarkerSign === 'function')
-      ? getNpcMarkerSign(npcId) : '';
-
-    // Phase d'animation : pulse doux du halo + bounce du signe "!"/"?"
-    const phase     = (typeof _npcAnimPhase !== 'undefined') ? _npcAnimPhase : 0;
-    const haloPulse = 0.85 + 0.20 * Math.sin(phase * 2);
-    const signBob   = sign ? Math.sin(phase * 3) * size * 0.08 : 0;
-
-    ctx.save();
-    // Halo chaud (pulsé)
-    const halo = ctx.createRadialGradient(bx, by - size * 0.1, 0, bx, by - size * 0.1, size * 0.85 * haloPulse);
-    halo.addColorStop(0,   `rgba(255,220,140,${0.35 * haloPulse})`);
-    halo.addColorStop(0.6, `rgba(220,170,60,${0.15 * haloPulse})`);
-    halo.addColorStop(1,   'rgba(160,110,30,0)');
-    ctx.fillStyle = halo;
-    ctx.beginPath();
-    ctx.ellipse(bx, by, size * 0.85 * haloPulse, size * 1.0 * haloPulse, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Ombre au sol
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.beginPath();
-    ctx.ellipse(bx, by + size * 0.55, size * 0.32, size * 0.09, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Corps stylisé : tête + buste/robe trapézoïdale
-    const goldFill   = '#d8b34c';
-    const goldStroke = 'rgba(80,55,15,0.85)';
-    // Robe (trapèze)
-    ctx.fillStyle   = goldFill;
-    ctx.strokeStyle = goldStroke;
-    ctx.lineWidth   = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(bx - size * 0.18, by - size * 0.15);
-    ctx.lineTo(bx + size * 0.18, by - size * 0.15);
-    ctx.lineTo(bx + size * 0.36, by + size * 0.55);
-    ctx.lineTo(bx - size * 0.36, by + size * 0.55);
-    ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    // Tête
-    ctx.beginPath();
-    ctx.arc(bx, by - size * 0.32, size * 0.16, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-
-    // Indicateur "!" ou "?" au-dessus, bobbé verticalement
-    if (sign) {
-      ctx.font = `bold ${Math.floor(size * 0.5)}px sans-serif`;
-      ctx.textAlign    = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle    = sign === '!' ? '#ffd84a' : '#b8d4ff';
-      ctx.shadowColor  = 'rgba(0,0,0,0.7)';
-      ctx.shadowBlur   = 4;
-      ctx.fillText(sign, bx, by - size * 0.7 + signBob);
-      ctx.shadowBlur   = 0;
-    }
-    ctx.restore();
   } else if (cell === CELL.FOUNTAIN) {
     // Fontaine — anneau d'eau bleuté avec halo
     const dried = (typeof usedFountains !== 'undefined') &&
@@ -646,5 +585,107 @@ function drawEnemySprite(enemy, x, baseY, sz) {
     ctx.strokeStyle = 'rgba(201,168,76,0.45)'; ctx.lineWidth = 0.5;
     ctx.strokeRect(barX, barY, barW, barH);
   }
+  ctx.restore();
+}
+
+// ── Sprite PNJ dans le couloir ───────────────────────────────────
+// V1 : un seul PNG générique pour tous les PNJ. Le PNJ exact est
+// identifié via npcPlacements (Map "x,y" → npcId) côté caller, qui
+// nous transmet l'id pour calculer le signe ❗/❓.
+let _NPC_SPRITE = null;
+function _getNpcSprite() {
+  if (_NPC_SPRITE) return _NPC_SPRITE;
+  _NPC_SPRITE = { img: new Image(), ready: false };
+  _NPC_SPRITE.img.onload = () => { _NPC_SPRITE.ready = true; };
+  _NPC_SPRITE.img.src = 'img/npc/_wizard_generic.png';
+  return _NPC_SPRITE;
+}
+
+// Silhouette vectorielle de secours, utilisée tant que le PNG n'est
+// pas chargé (ou s'il échoue). Conserve l'aspect doré + halo + bobbing
+// du signe — cohérent avec drawEnemySprite (PNG → emoji fallback).
+function _drawNpcVectorFallback(bx, by, size, sign, phase) {
+  const haloPulse = 0.85 + 0.20 * Math.sin(phase * 2);
+
+  // Halo chaud pulsé
+  const halo = ctx.createRadialGradient(bx, by - size * 0.5, 0,
+                                        bx, by - size * 0.5, size * 0.85 * haloPulse);
+  halo.addColorStop(0,   `rgba(255,220,140,${0.35 * haloPulse})`);
+  halo.addColorStop(0.6, `rgba(220,170,60,${0.15 * haloPulse})`);
+  halo.addColorStop(1,   'rgba(160,110,30,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.ellipse(bx, by - size * 0.4, size * 0.85 * haloPulse, size * 1.0 * haloPulse, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Corps : tête + robe trapézoïdale
+  const goldFill   = '#d8b34c';
+  const goldStroke = 'rgba(80,55,15,0.85)';
+  ctx.fillStyle   = goldFill;
+  ctx.strokeStyle = goldStroke;
+  ctx.lineWidth   = 1.5;
+  // Robe
+  ctx.beginPath();
+  ctx.moveTo(bx - size * 0.18, by - size * 0.55);
+  ctx.lineTo(bx + size * 0.18, by - size * 0.55);
+  ctx.lineTo(bx + size * 0.36, by - size * 0.05);
+  ctx.lineTo(bx - size * 0.36, by - size * 0.05);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // Tête
+  ctx.beginPath();
+  ctx.arc(bx, by - size * 0.72, size * 0.16, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+}
+
+function drawNpcSprite(npcId, x, baseY, sz) {
+  const phase = (typeof _npcAnimPhase !== 'undefined') ? _npcAnimPhase : 0;
+  const sign  = (typeof getNpcMarkerSign === 'function')
+    ? getNpcMarkerSign(npcId) : '';
+
+  ctx.save();
+
+  // Ombre au sol — ellipse écrasée centrée sur les pieds (baseY).
+  ctx.fillStyle = 'rgba(0,0,0,0.50)';
+  ctx.beginPath();
+  ctx.ellipse(x, baseY, sz * 0.38, sz * 0.10, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Aura chaude douce derrière le PNJ — distincte du halo pulsé du
+  // fallback, car ici elle accompagne le PNG (qui contient déjà ses
+  // ombres internes).
+  const auraPulse = 0.85 + 0.20 * Math.sin(phase * 2);
+  const aura = ctx.createRadialGradient(x, baseY - sz * 0.55, 0,
+                                        x, baseY - sz * 0.55, sz * 0.95 * auraPulse);
+  aura.addColorStop(0,   `rgba(255,220,140,${0.28 * auraPulse})`);
+  aura.addColorStop(0.6, `rgba(220,170,60,${0.10 * auraPulse})`);
+  aura.addColorStop(1,   'rgba(160,110,30,0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.arc(x, baseY - sz * 0.55, sz * 0.95 * auraPulse, 0, Math.PI * 2);
+  ctx.fill();
+
+  // PNG prioritaire ; fallback vectoriel sinon.
+  const entry = _getNpcSprite();
+  if (entry && entry.ready) {
+    const drawSize = sz * 1.5;
+    ctx.drawImage(entry.img, x - drawSize / 2, baseY - drawSize, drawSize, drawSize);
+  } else {
+    _drawNpcVectorFallback(x, baseY, sz, sign, phase);
+  }
+
+  // Signe ❗/❓ au-dessus, bobbé verticalement.
+  if (sign) {
+    const signBob = Math.sin(phase * 3) * sz * 0.08;
+    ctx.font         = `bold ${Math.floor(sz * 0.45)}px sans-serif`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = sign === '!' ? '#ffd84a' : '#b8d4ff';
+    ctx.shadowColor  = 'rgba(0,0,0,0.7)';
+    ctx.shadowBlur   = 4;
+    ctx.fillText(sign, x, baseY - sz * 1.65 + signBob);
+    ctx.shadowBlur   = 0;
+  }
+
   ctx.restore();
 }

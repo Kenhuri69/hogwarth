@@ -114,6 +114,7 @@ window.UX_safe = new Proxy({}, {
     { name: '_ensureStairsExist', source: 'dungeon.js', kind: 'fn' },
     { name: 'effectiveFloor',     source: 'dungeon.js', kind: 'fn'  },
     { name: 'drawDungeon',        source: 'renderer.js',     kind: 'fn'  },
+    { name: 'drawNpcSprite',      source: 'renderer-effects.js', kind: 'fn' },
     { name: 'renderMinimap',      source: 'renderer-minimap.js', kind: 'fn' },
 
     // ── Mouvement ──

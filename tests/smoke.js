@@ -4014,6 +4014,121 @@ async function scenarioCanvasSwipe() {
   await browser.close();
 }
 
+// ── Scénario : sprite PNJ dans la vue pseudo-3D ─────────────────
+async function scenarioNpcSprite3D() {
+  console.log('\n── Scénario : sprite PNJ pseudo-3D ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) drawNpcSprite est exposé.
+  const exposed = await page.evaluate(() => ({
+    drawNpcSprite: typeof drawNpcSprite === 'function'
+  }));
+  assert(exposed.drawNpcSprite, 'drawNpcSprite absent du global scope');
+
+  // 2) Forcer un PNJ pile devant le joueur, vérifier que drawNpcSprite
+  //    est appelé avec l'id attendu.
+  const result = await page.evaluate(() => {
+    // Place le joueur dans un état déterministe : direction 'n', case
+    // (5,5) si possible, et la case juste devant (5,4) devient CELL.NPC.
+    const px = 5, py = 5;
+    // Sécurise les bornes
+    if (px < 1 || py < 2 || px >= MAP_W - 1 || py >= MAP_H - 1) {
+      return { skipped: 'hors carte', tried: { px, py } };
+    }
+    playerX = px;
+    playerY = py;
+    playerDir = 'n';
+    // S'assurer que le joueur est sur une case libre
+    dungeon[py][px] = CELL.FLOOR;
+    // La case juste devant : NPC associé à un PNJ déterministe.
+    dungeon[py - 1][px] = CELL.NPC;
+    if (typeof npcPlacements === 'undefined') return { skipped: 'no npcPlacements' };
+    npcPlacements.set(`${px},${py - 1}`, 'dumbledore');
+
+    // Spy sur drawNpcSprite — wrap pour capturer les args.
+    const calls = [];
+    const orig = window.drawNpcSprite;
+    window.drawNpcSprite = function (npcId, x, baseY, sz) {
+      calls.push({ npcId, x, baseY, sz });
+      return orig.apply(this, arguments);
+    };
+
+    // Spy sur l'objet sprite : vérifier que l'image est demandée.
+    // _getNpcSprite stocke _NPC_SPRITE module-scope ; on lit son .src
+    // après drawDungeon().
+    drawDungeon();
+
+    window.drawNpcSprite = orig;
+    // Trouver l'élément Image du sprite via le DOM (les Image() restent
+    // attachées au document si srcd, sinon on relit depuis le call).
+    // Plus simple : on inspecte qu'au moins un call ait été fait avec
+    // npcId === 'dumbledore'.
+    return {
+      callCount: calls.length,
+      lastCall:  calls[calls.length - 1] || null
+    };
+  });
+  console.log('  result :', result);
+  assert(!result.skipped, `scénario skipé : ${result.skipped}`);
+  assert(result.callCount >= 1,
+    `drawNpcSprite doit être appelé au moins 1 fois (obtenu ${result.callCount})`);
+  assert(result.lastCall.npcId === 'dumbledore',
+    `npcId attendu "dumbledore", obtenu "${result.lastCall.npcId}"`);
+  assert(typeof result.lastCall.x === 'number' && Number.isFinite(result.lastCall.x),
+    'coord x invalide');
+  assert(typeof result.lastCall.baseY === 'number' && Number.isFinite(result.lastCall.baseY),
+    'coord baseY invalide');
+  assert(result.lastCall.sz > 0, 'taille sz doit être > 0');
+
+  // 3) Le PNG _wizard_generic.png est demandé par _getNpcSprite.
+  //    On déclenche l'appel et on lit l'image source via un second
+  //    drawDungeon (au cas où le premier n'a pas alloué encore).
+  const png = await page.evaluate(() => {
+    // Force un appel pour s'assurer que _getNpcSprite a tourné.
+    drawNpcSprite('dumbledore', 100, 100, 60);
+    // _NPC_SPRITE est module-scope ; on ne peut pas y accéder
+    // directement, mais l'image est dans le DOM ? Non — `new Image()`
+    // n'est pas dans le DOM. On relit via une fetch sync de l'asset
+    // pour confirmer son existence côté serveur (file://).
+    return new Promise((resolve) => {
+      const probe = new Image();
+      probe.onload  = () => resolve({ ok: true,  src: probe.src });
+      probe.onerror = () => resolve({ ok: false, src: probe.src });
+      probe.src = 'img/npc/_wizard_generic.png';
+    });
+  });
+  console.log('  png   :', png);
+  assert(png.ok, "img/npc/_wizard_generic.png inaccessible côté navigateur");
+  assert(/\/_wizard_generic\.png$/.test(png.src),
+    `src finale attendue …/_wizard_generic.png, obtenu ${png.src}`);
+
+  // 4) Pas de PNJ devant → drawNpcSprite NE doit PAS être appelé.
+  const noNpc = await page.evaluate(() => {
+    // Retire le PNJ posé plus haut, place du floor partout devant.
+    if (typeof npcPlacements !== 'undefined') npcPlacements.clear();
+    for (let dy = 1; dy <= 3; dy++) {
+      const yy = playerY - dy;
+      if (yy >= 0) dungeon[yy][playerX] = CELL.FLOOR;
+    }
+    const calls = [];
+    const orig = window.drawNpcSprite;
+    window.drawNpcSprite = function () { calls.push(arguments); };
+    drawDungeon();
+    window.drawNpcSprite = orig;
+    return { calls: calls.length };
+  });
+  assert(noNpc.calls === 0,
+    `drawNpcSprite ne doit pas être appelé si aucun PNJ devant (obtenu ${noNpc.calls})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ sprite PNJ pseudo-3D OK');
+  await browser.close();
+}
+
 // ── Scénario endgame 1 : trigger de victoire + idempotence ─────
 async function scenarioVictoryTrigger() {
   console.log('\n── Scénario endgame 1 : trigger de victoire ──');
@@ -4617,7 +4732,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

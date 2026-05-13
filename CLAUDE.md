@@ -213,6 +213,26 @@ PNJ : `getNpcMarkerSign(npcId)` détermine le pictogramme minimap (❗ disponibl
 ❓ en cours, ✓ remettable), et les actions du dialogue déclenchent
 `acceptQuest()` / `completeQuest()` de `quests.js`.
 
+### Sprite PNJ en vue pseudo-3D (`drawNpcSprite` dans `renderer-effects.js`)
+
+Quand le joueur fait face à une case `CELL.NPC` (scan dans `renderer.js`,
+même mécanique que CHEST/STAIRS/SHOP), `drawNpcSprite(npcId, x, baseY, sz)`
+rend :
+
+1. Ombre au sol (ellipse écrasée).
+2. Aura chaude pulsée (driven par `_npcAnimPhase` rafraîchi 5 FPS via
+   `startNpcAnimLoop` — boucle déclenchée par `startGame` + chargement
+   de save quand `npcPlacements.size > 0`).
+3. Sprite PNG `img/npc/_wizard_generic.png` (V1 : un seul PNG pour
+   tous les PNJ). Fallback vectoriel `_drawNpcVectorFallback` tant que
+   l'image n'a pas chargé.
+4. Signe ❗/❓ animé (bobbing vertical) au-dessus, basé sur
+   `getNpcMarkerSign(npcId)`.
+
+L'image est paresseuse : `_getNpcSprite()` la charge à la première
+demande puis cache l'`HTMLImageElement` (cohérent avec
+`_getMonsterImg`). Sur file:// (smoke), le PNG charge nativement.
+
 ### Écran d'intro (`intro.js`)
 
 `showIntroScreen(onContinue)` lit `NPCS[id=dumbledore].dialogues.greeting`
