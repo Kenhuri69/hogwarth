@@ -2,6 +2,40 @@
 // GÉNÉRATEUR DE DONJON
 // ============================================================
 
+// ── Configuration du scaling endgame (Boucle Ténébreuse) ─────
+// Formule récursive appliquée aux monstres post-victoire (floor 11+).
+//
+//   stat(0) = base × (1 + (relFloor − 1) × scale) × diffMult        (≡ scaling actuel)
+//   stat(n) = stat(n−1) × scal(n) + baseFix_eff                     (récursion par palier de 10)
+//
+// avec
+//   n           = ⌊(floor − 1) / 10⌋                                (0 pour 1-10, 1 pour 11-20, …)
+//   relFloor    = effectiveFloor(floor)                              (1-10 dans chaque palier)
+//   intraMult   = 1 + (relFloor − 1) × scale                         (scaling intra-palier)
+//   scal(n)     = 1 + scalDelta / intraMult                          (mult lissé)
+//   baseFix_eff = baseFix[stat] / intraMult                          (bonus lissé)
+//
+// Le lissage par `intraMult` réduit proportionnellement l'apport
+// du bonus (+ multiplicateur) sur les monstres déjà fortement scalés
+// (Voldemort relF=10, intraMult=4.6 → bonus ÷4.6) et le maximise sur
+// les monstres faibles (Chat relF=1, intraMult=1 → bonus complet).
+//
+// TODO : à l'avenir, `scalDelta` pourrait dépendre de `n` pour rendre
+//        la croissance plus agressive aux paliers profonds (palier 5+).
+//        Actuellement constant à 0.5.
+const ENDGAME_SCALING = {
+  baseFix: { hp: 80, atk: 10, def: 5, mag: 8, xp: 50, gold: 80 },
+  scalDelta: 0.5,
+};
+
+// Récursion endgame : applique `(stat × scal + fixEff)` exactement `n` fois.
+// Implémentation récursive pour refléter la spec du joueur. Le coût est nul
+// (n ≤ ~10 en pratique).
+function _endgameRecurse(stat, n, fixEff, scal) {
+  if (n <= 0) return stat;
+  return _endgameRecurse(stat * scal + fixEff, n - 1, fixEff, scal);
+}
+
 // ── Utilitaires de sélection et mise à l'échelle ─────────────
 
 // Tirage pondéré selon la propriété weight de chaque monstre
@@ -22,22 +56,54 @@ function effectiveFloor(floor) {
   return floor;
 }
 
-// Applique la mise à l'échelle d'un monstre de base pour un étage donné
+// Indice de palier endgame : 0 pour pré-victoire (floors 1-10), 1 pour
+// le premier palier Ténèbres (11-20), 2 pour le 2e (21-30), etc.
+// Utilisé comme « n » dans la formule récursive du scaling.
+function endgameTierIndex(floor) {
+  if (typeof victoryAchieved !== 'undefined' && victoryAchieved && floor >= 11) {
+    return Math.floor((floor - 1) / 10);   // 1 pour 11-20, 2 pour 21-30, …
+  }
+  return 0;
+}
+
+// Applique la mise à l'échelle d'un monstre de base pour un étage donné.
+//
+// Pré-victoire (n=0) : stat = base × intraMult × diffMult — comportement inchangé.
+// Post-victoire (n≥1) : récursion endgame `_endgameRecurse(stat0, n, fixEff, scal)`
+// avec `scal` et `fixEff` lissés par `intraMult` (cf. ENDGAME_SCALING en haut).
 function scaleMonster(base, floor) {
-  const ef       = effectiveFloor(floor);
-  const isDark   = (ef !== floor);       // post-victoire & floor 11+
-  const diffMult = (DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal']).scalingMultiplier;
-  const mult     = (1 + (ef - 1) * (base.scale || 0.25)) * diffMult;
-  const monster = JSON.parse(JSON.stringify(base)); // copie profonde
-  monster.hp  = Math.floor(base.hp  * mult);
-  monster.atk = Math.floor(base.atk * mult);
-  monster.def = Math.floor(base.def * mult);
-  monster.xp  = Math.floor(base.xp  * mult);
+  const ef        = effectiveFloor(floor);
+  const isDark    = (ef !== floor);
+  const n         = endgameTierIndex(floor);
+  const diffMult  = (DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal']).scalingMultiplier;
+  const scale     = base.scale || 0.25;
+  const intraMult = 1 + (ef - 1) * scale;
+  const mult      = intraMult * diffMult;
+
+  // Précalculs récursion (no-op si n=0 — recurse retourne stat tel quel).
+  const scal      = 1 + ENDGAME_SCALING.scalDelta / intraMult;
+  function recurse(stat0, fixKey) {
+    if (n <= 0) return stat0;
+    const fixEff = ENDGAME_SCALING.baseFix[fixKey] / intraMult;
+    return _endgameRecurse(stat0, n, fixEff, scal);
+  }
+
+  const monster = JSON.parse(JSON.stringify(base));
+  monster.hp  = Math.floor(recurse(base.hp  * mult, 'hp'));
+  monster.atk = Math.floor(recurse(base.atk * mult, 'atk'));
+  monster.def = Math.floor(recurse(base.def * mult, 'def'));
+  monster.xp  = Math.floor(recurse(base.xp  * mult, 'xp'));
   if (typeof base.gold === 'object') {
     const { min, max } = base.gold;
-    monster.gold = Math.floor((min + Math.random() * (max - min)) * mult);
+    monster.gold = Math.floor(recurse((min + Math.random() * (max - min)) * mult, 'gold'));
   } else {
-    monster.gold = Math.floor(base.gold * mult);
+    monster.gold = Math.floor(recurse(base.gold * mult, 'gold'));
+  }
+  // mag : non scalée par intraMult dans la formule actuelle (constante),
+  // mais participe à la récursion endgame pour évoluer avec les paliers.
+  if (n > 0 && base.mag) {
+    monster.mag = Math.floor(_endgameRecurse(base.mag, n,
+      ENDGAME_SCALING.baseFix.mag / intraMult, scal));
   }
 
   // ── Variante visuelle ────────────────────────────────────────
@@ -48,21 +114,16 @@ function scaleMonster(base, floor) {
     monster.name    = '✨ ' + base.name;
     monster.xp      = Math.floor(monster.xp  * 1.5);
     monster.gold    = Math.floor(monster.gold * 2.0);
-    // Double les chances de drop pour les shinies
     if (monster.drops) {
       monster.drops = monster.drops.map(d => ({ ...d, chance: Math.min(1, d.chance * 2) }));
     }
   } else if (isDark) {
-    // Ténébreux : applique les multiplicateurs darkness par-dessus le
-    // scaling déjà calculé avec relFloor. Cf. ENDGAME_PLAN.md §7.2bis.
+    // Ténébreux : la récursion endgame ci-dessus a déjà appliqué le
+    // boost de stats. On garde uniquement le préfixe et la metadata
+    // pour le rendu (CSS halo violet, badge 🌑). Plus de multiplicateurs
+    // séparés (×1.5 HP / ×1.12 ATK / etc.) — tout passe par scal+fix.
     monster.variant = 'darkness';
     monster.name    = 'Ténébreux ' + base.name;
-    monster.hp      = Math.floor(monster.hp  * 1.50);
-    monster.atk     = Math.floor(monster.atk * 1.12);
-    monster.def     = Math.floor(monster.def * 1.15);
-    if (monster.mag) monster.mag = Math.floor(monster.mag * 1.15);
-    monster.xp      = Math.floor(monster.xp   * 2.00);
-    monster.gold    = Math.floor(monster.gold * 2.00);
   } else if (floor >= 5) {
     monster.variant = 'ancient';
     monster.name    = 'Ancien ' + base.name;
