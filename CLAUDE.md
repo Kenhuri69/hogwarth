@@ -275,10 +275,15 @@ Au démarrage, `showPlayerSelect()` affiche un écran de sélection.
 
 ### Taille des groupes ennemis selon partySize
 
-| Mode  | Étage 1-2 | Étage 3-4       | Étage 5+        |
-|-------|-----------|-----------------|-----------------|
-| Solo  | 1 seul    | 70% / 30% (1/2) | 50% / 50% (1/2) |
-| Duo   | 65% / 35% (1/2) | 30% / 45% / 25% (1/2/3) | 20% / 35% / 45% (1/2/3) |
+| Mode  | Étage 1-2       | Étage 3-4       | Étage 5-6       | Étage 7+        |
+|-------|-----------------|-----------------|-----------------|-----------------|
+| Solo  | 1 seul          | 70% / 30% (1/2) | 50% / 50% (1/2) | 50% / 50% (1/2) |
+| Duo   | 65% / 35% (1/2) | 35% / 65% (1/2) | 35% / 65% (1/2) | 20% / 35% / 45% (1/2/3) |
+
+> Les groupes de 3 ennemis en duo sont **différés à l'étage 7+** depuis
+> la PR « balance design fixes » (cf. DIFFICULTY_REPORT.md §4). Avant ce
+> fix, le mur duo arrivait dès l'étage 5 (79 %) ; il est maintenant à
+> l'étage 7 (57 %).
 
 ---
 

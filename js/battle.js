@@ -129,13 +129,15 @@ function rollGroupSize() {
     if (currentFloor <= 4) return r < Math.max(0.10, 0.70 / m) ? 1 : 2;
     return r < Math.max(0.10, 0.50 / m) ? 1 : 2;
   }
-  // Duo : max 3 ennemis — probabilités pondérées par le multiplicateur
+  // Duo : max 2 ennemis avant l'étage 7 (groupes de 3 différés —
+  // cf. DIFFICULTY_REPORT.md §6, contribuait au mur étage 5-7).
+  // À partir de l'étage 7, les groupes de 3 réapparaissent.
   if (currentFloor <= 2) return r < Math.max(0.15, 0.65 / m) ? 1 : 2;
-  if (currentFloor <= 4) {
-    const t1 = Math.max(0.05, 0.30 / m);
-    const t2 = Math.min(0.95, t1 + 0.45 * m);
-    return r < t1 ? 1 : r < t2 ? 2 : 3;
+  if (currentFloor <= 6) {
+    // Étages 3-6 : 1 ou 2 ennemis seulement
+    return r < Math.max(0.10, 0.35 / m) ? 1 : 2;
   }
+  // Étages 7+ : 1, 2 ou 3 ennemis
   const t1 = Math.max(0.05, 0.20 / m);
   const t2 = Math.min(0.95, t1 + 0.35 * m);
   return r < t1 ? 1 : r < t2 ? 2 : 3;

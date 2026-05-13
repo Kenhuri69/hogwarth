@@ -1,47 +1,50 @@
-# Étude de la difficulté — Mode Normal
+# Étude de la difficulté — Mode Normal (Phase 3 + fixes design)
 
-> Branche : `claude/analyze-difficulty-progression-vyItb`
 > Méthode : tableaux théoriques (formules réelles `scaleMonster`, `checkLevelUp`, `rollGroupSize`) + simulation Monte Carlo (800 combats / étage / mode).
-> Script : [`tools/sim-difficulty.js`](./tools/sim-difficulty.js) — exécutable avec `node tools/sim-difficulty.js [N_SIMS]`.
+> Script : [`tools/sim-difficulty.js`](./tools/sim-difficulty.js) — exécutable avec `node tools/sim-difficulty.js --stat-points=3 --build=balanced [N_SIMS]`.
 > Plan : [`.claude/plans/difficulty-progression.md`](./.claude/plans/difficulty-progression.md)
 >
-> **⚠️ Hypothèses de la sim (pessimistes)** : pas d'achat au shop, pas de potions de soin, pas de fontaines (étages 2/5/8/11), pas de repos, pas de drops, pas de points de Maison. C'est le **pire cas** d'un joueur qui combat "honnêtement" sans optimiser. Le vrai win rate en jeu est probablement **+15-25 pts** au-dessus.
+> **Baseline du joueur (default)** : 3 points de stats libres alloués à chaque niveau (build « balanced » = +1 STR, +1 AGI, +1 END par niveau) **+ XP cumulée des quêtes** (chaîne Dumbledore + secondaires PNJ) **+ bonus stats permanents des récompenses** (`reward.stats`) **+ équipement best-in-slot** disponible en boutique selon `minFloor` **+ stock de potions** consommables (1 par tour de soin, restaure 25 PV).
+>
+> **Fixes design appliqués dans ce rapport** :
+> 1. Les **capacités spéciales `damage`** sont atténuées par la DEF cible (`max(1, power + mag/2 − def/3)`) — auparavant la DEF était ignorée par les abilities ennemies.
+> 2. Les **groupes de 3 ennemis** en duo sont **différés à l'étage 7+** (avant : dès l'étage 3-4).
+>
+> **Pour comparer au cas pire** : `--pessimistic` désactive quêtes / équipement / potions.
 
 ---
 
 ## 📊 Résumé exécutif
 
-| Mode | Étages confortables (≥85%) | Premier décrochage (<85%) | Mur (<35%) |
-|------|---------------------------|---------------------------|------------|
-| **Solo** | 1–2          | **Étage 3** (76%)   | **Étage 5** (34%) |
-| **Duo**  | 1–4          | **Étage 5** (73%)   | **Étage 8** (26%) |
+| Mode | Étages confortables (≥ 80 %) | Premier décrochage (< 80 %) | Mur (< 40 %) |
+|------|------------------------------|------------------------------|--------------|
+| **Solo** | 1–3 | **Étage 4** (72 %) | **Étage 7** (37 %) |
+| **Duo**  | 1–6 | **Étage 7** (57 %) | **Étage 8** (35 %) |
 
-**Verdict** : le mode Normal a **deux murs** :
-- **Solo, étage 5** : chute de 31 pts en un étage (65% → 34%). Quasi-injouable dès cet étage sans grind.
-- **Duo, étage 8** : chute de 41% à 26%. Le joueur n'arrive plus à boucler les combats.
+**Verdict** : les fixes design **résolvent le mur duo étage 5** (passe de 79 % à 91 %) et **lissent la zone duo 5-6** (étage 6 monte de 67 % à 82 %). Le mur duo se décale logiquement à l'étage 7 (réapparition des groupes de 3) puis 8.
 
-**Cause profonde commune** : la pente du scaling ennemi (×1.22–×1.40 par étage selon le monstre) est environ **2 à 4 fois supérieure** à la pente joueur (+1 ATK/DEF/MAG par niveau, soit ~+10% sur les stats offensives). Le gap se creuse irrémédiablement à partir de l'étage 5.
+Le **mur solo étage 5 reste** à 46 %. Cause : en solo les groupes restent à 1-2 ennemis (le retrait des 3 ne s'applique qu'au duo) et l'atténuation DEF apporte un gain marginal car le joueur a peu de DEF à ce niveau (~14, soit -4 dégâts par ability). Améliorer le solo nécessiterait un autre levier (cap chance, ralentissement scaling, ou groupes solo plus indulgents).
 
 ---
 
-## 1. Progression joueur attendue (4 combats / étage)
+## 1. Progression joueur attendue (4 combats / étage + XP des quêtes)
 
 | Étage | Niveau Solo | XP cumul Solo | Niveau Duo | XP cumul Duo |
 |------:|------------:|--------------:|-----------:|-------------:|
 | 1  | 1  | 0     | 1  | 0     |
-| 2  | 1  | 30    | 1  | 40    |
-| 3  | 2  | 92    | 2  | 123   |
-| 4  | 3  | 224   | 4  | 310   |
-| 5  | 4  | 443   | 5  | 631   |
-| 6  | 6  | 818   | 6  | 1230  |
-| 7  | 7  | 1373  | 7  | 2004  |
-| 8  | 8  | 2135  | 8  | 3247  |
-| 9  | 8  | 3276  | 9  | 4912  |
-| 10 | 9  | 4736  | 10 | 7059  |
-| 11 | 10 | 6629  | 11 | 9749  |
-| 12 | 10 | 8696  | 11 | 12921 |
+| 2  | 1  | 30    | 1  | 42    |
+| 3  | 2  | 92    | 2  | 125   |
+| 4  | 3  | 229   | 4  | 325   |
+| 5  | 4  | 447   | 5  | 655   |
+| 6  | 6  | 832   | 6  | 1268  |
+| 7  | 7  | 1383  | 7  | 1998  |
+| 8  | 7  | 2149  | 8  | 3307  |
+| 9  | 8  | 3239  | 9  | 4894  |
+| 10 | 9  | 4656  | 10 | 6976  |
+| 11 | 10 | 6585  | 11 | 9858  |
+| 12 | 10 | 8629  | 11 | 12998 |
 
-> Le joueur solo plafonne à niveau 9-10 sur l'ensemble de l'aventure faute d'XP. Le sort interdit **Avada... se débloque au niveau 9** — soit l'étage 9-10 en solo, **trop tard pour aider sur le mur de l'étage 5**.
+> Les XP des quêtes (intro 30, Dumbledore 120/220/340/500, secondaires 80-380) sont cumulées selon `QUEST_COMPLETION_FLOOR`. Le sort interdit **Avada... se débloque au niveau 9**.
 
 ---
 
@@ -62,170 +65,125 @@
 | 11 | 16 | 274 | 61.1 | 31.6 | 54.3 |
 | 12 | 16 | 294 | 65.6 | 33.8 | 58.3 |
 
-**Lecture** : entre l'étage 4 et l'étage 5, la HP moyenne passe de 47 à 70 (+49 %), l'ATK de 11.6 à 17.6 (+52 %). Le joueur, lui, ne gagne que +1 ATK et +8 HP en passant d'un niveau à l'autre.
+**Lecture** : la MAG ennemie (qui scale `power + mag/2` des capacités spéciales) passe de 7.6 à 10.8 entre étages 4 et 5. Avec l'atténuation DEF/3 (joueur ~DEF 14 → -4 dégâts), une capacité Détraqueur (power 10 + mag/2 = 15) fait désormais 11 dégâts au joueur (vs 15 avant le fix).
 
 ---
 
-## 3. Résultats Monte Carlo (800 combats / cellule, Normal)
+## 3. Résultats Monte Carlo (800 combats / cellule, post-fixes design)
 
 | Étage | Mode | Niv. | Win % | Tours | PV restants (win) | Dégâts subis |
 |------:|:----:|-----:|------:|------:|------------------:|-------------:|
-| 1  | Solo | 1  | 100% | 2.2 | 99% | 0.5  |
-| 1  | Duo  | 1  | 100% | 1.5 | 100%| 0.1  |
-| 2  | Solo | 1  | 100% | 2.5 | 95% | 1.8  |
-| 2  | Duo  | 1  | 100% | 1.7 | 99% | 0.8  |
-| 3  | Solo | 2  | 76%  | 3.3 | 85% | 16.7 |
-| 3  | Duo  | 2  | 98%  | 3.0 | 87% | 15.1 |
-| 4  | Solo | 3  | 65%  | 4.1 | 77% | 32.2 |
-| 4  | Duo  | 4  | 95%  | 3.7 | 84% | 26.0 |
-| **5** | **Solo** | **4** | **🔴 34%** | 4.9 | 71% | 60.2 |
-| 5  | Duo  | 5  | 🟡 73% | 4.3 | 78% | 68.3 |
-| 6  | Solo | 6  | 🔴 38% | 5.5 | 66% | 86.7  |
-| 6  | Duo  | 6  | 🟠 56% | 4.9 | 73% | 118.4 |
-| 7  | Solo | 7  | 🔴 28% | 5.6 | 60% | 106.0 |
-| 7  | Duo  | 7  | 🟠 41% | 5.2 | 70% | 160.6 |
-| **8** | Solo | 8  | 🔴 12% | 6.1 | 54% | 127.1 |
-| **8** | **Duo** | **8** | **🔴 26%** | 4.9 | 68% | 207.5 |
-| 9  | Solo | 8  | 🔴 9%  | 7.5 | 44% | 132.4 |
-| 9  | Duo  | 9  | 🔴 22% | 5.4 | 64% | 230.0 |
-| 10 | Solo | 9  | 🔴 2%  | 6.9 | 51% | 144.0 |
-| 10 | Duo  | 10 | 🔴 12% | 5.2 | 72% | 261.5 |
-| 11 | Solo | 10 | 🔴 2%  | 9.0 | 28% | 155.9 |
-| 11 | Duo  | 11 | 🔴 15% | 5.9 | 64% | 285.8 |
-| 12 | Solo | 10 | 🔴 3%  | 8.8 | 30% | 159.3 |
-| 12 | Duo  | 11 | 🔴 12% | 5.8 | 68% | 291.7 |
+| 1  | Solo | 1  | 100 % | 2.2 | 99 % | 0.5  |
+| 1  | Duo  | 1  | 100 % | 1.5 | 100 %| 0.1  |
+| 2  | Solo | 1  | 100 % | 2.4 | 95 % | 1.6  |
+| 2  | Duo  | 1  | 100 % | 1.7 | 99 % | 0.8  |
+| 3  | Solo | 2  | 🟢 80 % | 3.6 | 83 % | 17.9 |
+| 3  | Duo  | 2  | 🟢 100 % | 2.8 | 90 % | 9.4  |
+| 4  | Solo | 3  | 🟡 72 % | 4.4 | 75 % | 33.4 |
+| 4  | Duo  | 4  | 🟢 100 % | 3.1 | 90 % | 14.4 |
+| **5** | **Solo** | **4** | **🟠 46 %** | 5.2 | 70 % | 65.4 |
+| 5  | Duo  | 5  | 🟢 91 % | 3.8 | 85 % | 42.9 |
+| 6  | Solo | 6  | 🟠 46 % | 5.8 | 67 % | 97.4 |
+| 6  | Duo  | 6  | 🟢 82 % | 4.4 | 83 % | 74.7 |
+| 7  | Solo | 7  | 🔴 37 % | 5.9 | 64 % | 118.6 |
+| 7  | Duo  | 7  | 🟠 57 % | 5.3 | 73 % | 167.5 |
+| 8  | Solo | 7  | 🔴 20 % | 6.4 | 51 % | 139.4 |
+| **8** | **Duo** | **8** | **🔴 35 %** | 5.5 | 71 % | 251.3 |
+| 9  | Solo | 8  | 🔴 15 % | 6.8 | 54 % | 161.5 |
+| 9  | Duo  | 9  | 🔴 28 % | 5.5 | 71 % | 293.3 |
+| 10 | Solo | 9  | 🔴 8 %  | 7.2 | 51 % | 181.3 |
+| 10 | Duo  | 10 | 🔴 17 % | 5.9 | 70 % | 358.0 |
+| 11 | Solo | 10 | 🔴 6 %  | 8.4 | 44 % | 202.0 |
+| 11 | Duo  | 11 | 🔴 20 % | 6.5 | 66 % | 382.2 |
+| 12 | Solo | 10 | 🔴 7 %  | 8.6 | 39 % | 202.1 |
+| 12 | Duo  | 11 | 🔴 19 % | 6.8 | 65 % | 379.1 |
 
 ### Spikes détectés (chute > 15 pts entre 2 étages)
 
-| Mode | Transition | Win rate | Chute |
-|------|-----------|----------|-------|
-| Solo | 2 → 3     | 100% → 76% | −25 pts |
-| Solo | **4 → 5** | 65% → 34%  | **−31 pts** ← le mur |
-| Duo  | **4 → 5** | 95% → 73%  | −22 pts |
-| Duo  | 5 → 6     | 73% → 56%  | −17 pts |
+**Solo**
+- Étage 2 → 3 : 100 % → 80 % (−20 pts)
+- **Étage 4 → 5 : 72 % → 46 % (−26 pts)** ← mur principal solo (inchangé par les fixes)
+- Étage 7 → 8 : 37 % → 20 % (−17 pts)
+
+**Duo**
+- **Étage 6 → 7 : 82 % → 57 % (−25 pts)** ← mur duo (déplacé d'1 étage par les fixes)
+- Étage 7 → 8 : 57 % → 35 % (−23 pts)
 
 ---
 
-## 4. Coupables identifiés
+## 4. Impact mesuré des fixes design
 
-### 4.1 Monstres à scaling agressif (scale ≥ 0.30)
+Comparaison du même baseline (Phase 3 complet, 3 pts libres balanced) **avant** vs **après** les fixes design :
 
-| Monstre | scale | Étages | weight | Diagnostic |
-|---------|------:|:------:|------:|------------|
-| Voldemort Ressuscité  | 0.40 | 10+   | 1 | Boss final, scaling extrême — acceptable |
-| Voldemort Affaibli    | 0.40 | 9+    | 2 | Boss, scaling extrême — acceptable |
-| Basilic Mineur        | 0.35 | 6+    | 4 | Frappe trop fort dès l'étage 6 |
-| Bellatrix Lestrange   | 0.35 | 8+    | 2 | Boss intermédiaire — acceptable |
-| **Mangemort Masqué**  | 0.30 | 5+    | **8** | ⚠️ **Le plus commun à partir de l'étage 5** + scaling élevé = catastrophe |
-| Détraqueur            | 0.30 | 3–8   | 7 | ⚠️ Présent dès l'étage 3, contribue au décrochage de l'étage 3 |
-| Chimère / Manticore / Strigoï / Hécate / Ombre Quirrell / Nagini | 0.32 | 6-7+ | 3-4 | Pile à l'étage 6, où le joueur lutte déjà |
-| Mangemort d'Élite     | 0.32 | 7+    | 4 | Renforce l'étage 7 |
-| Jeune Acromantule / Détraqueur Gardien / Gardien du Portail / Spectre Maudit | 0.30 | 5+ | 5 | Pile sur le mur de l'étage 5 |
+| Étage | Mode | AVANT fixes | APRÈS fixes | Δ |
+|------:|:----:|------------:|------------:|--:|
+| 3  | Duo  | 98 % | 100 % | +2  |
+| 4  | Duo  | 98 % | 100 % | +2  |
+| 5  | Duo  | 79 % | **91 %** | **+12** |
+| 6  | Duo  | 67 % | **82 %** | **+15** |
+| 7  | Duo  | 54 % | 57 % | +3  |
+| 8  | Duo  | 38 % | 35 % | −3  |
+| 5  | Solo | 46 % | 46 % | 0   |
+| 6  | Solo | 47 % | 46 % | −1  |
+| 7  | Solo | 37 % | 37 % | 0   |
 
-### 4.2 Tailles de groupe trop punitives en solo
+**Conclusion** :
+- **Le mur duo étage 5-6 est éliminé** (gain +12 / +15 pts) — résultat direct du retrait des groupes de 3 dans cette zone, qui supprimait le scénario punitif « 3 ennemis frappent pendant que la party fait 2 actions ».
+- **Le mur duo se décale logiquement à l'étage 7** (57 % de win rate, dès la réapparition des groupes de 3).
+- **Le solo reste inchangé** : ni le retrait des groupes de 3 (qui ne s'applique pas en solo) ni l'atténuation DEF/3 (~-4 dégâts par ability au niveau 4-5) ne suffisent à corriger le mur étage 5.
 
-Solo, à partir de l'étage 5 : 50 % de chance d'avoir **2 ennemis** alors que Harry n'a qu'un seul tour de jeu et environ 70 HP. Un Mangemort Masqué + Détraqueur Gardien représente ~140 HP à abattre face à 70 HP de Harry — 2 tours ennemis pour 1 tour Harry = défaite assurée.
+### Pour aller plus loin sur le mur solo (futur)
 
-### 4.3 Pente d'XP trop lente vs scaling ennemi
-
-En solo, le joueur arrive à l'**étage 5 niveau 4** (430 XP cumulés), face à des ennemis dont le scaling moyen est ×2.0 par rapport à l'étage 1. Il faudrait être niveau 5-6 pour tenir le rythme — soit ~50 % d'XP en plus.
-
----
-
-## 5. 🎯 Recommandations chiffrées
-
-Hiérarchisées du moins au plus invasif. Chaque levier est isolément applicable.
-
-### R1 — Réduire la fréquence du Mangemort Masqué (poids 8 → 5)
-**Fichier** : `js/monsters.js` (entrée `mangemort_masque`)
-**Impact attendu** : +6-10 pts win rate solo étage 5-6 ; +4-6 pts duo étage 5-7.
-**Coût** : trivial, 1 ligne. Risque nul — il reste présent, juste moins dominant.
-
-### R2 — Lisser le scaling des élites
-**Fichier** : `js/monsters.js`
-- Mangemort Masqué : `scale: 0.30 → 0.24`
-- Détraqueur : `scale: 0.30 → 0.24`
-- Détraqueur Gardien, Jeune Acromantule, Gardien du Portail, Spectre Maudit : `0.30 → 0.25`
-- Basilic Mineur, Chimère, Manticore, Strigoï, Hécate, Ombre Quirrell, Nagini, Mangemort d'Élite : `0.32–0.35 → 0.27`
-- Voldemort Affaibli / Ressuscité : laisser à 0.40 (boss finaux)
-
-**Impact attendu** : +10-15 pts win rate étage 5-7 (solo et duo), +8-12 pts étage 8+.
-**Coût** : ~12 valeurs à éditer. Aucune logique à modifier.
-
-### R3 — Adoucir les tailles de groupe en solo
-**Fichier** : `js/battle.js — rollGroupSize`
-- Solo étage 3-4 : `0.70` → `0.80` (80 % d'un seul ennemi)
-- Solo étage 5+  : `0.50` → `0.65` (65 % d'un seul ennemi)
-
-**Impact attendu** : +12-18 pts win rate solo étage 5+.
-**Coût** : 2 lignes. Différencie davantage solo / duo (cohérent : solo doit rester jouable).
-
-### R4 — Augmenter la pente de progression joueur (ciblé MAG / HP)
-**Fichier** : `js/battle.js — _grantLevelHpSp` + `_grantLevelStats`
-- HP par level-up : `+8 → +10`
-- MAG par level-up : `+1 → +2` (les sorts mettent leur `power + mag/2`, donc cette ligne aide les caster)
-
-**Impact attendu** : +8-12 pts win rate sur tous les étages 5+, plus marqué duo (Hermione vit de sa MAG).
-**Coût** : 2 lignes. Affecte aussi les autres difficultés — à valider.
-
-### R5 — Bonus XP en mode Normal pour rattraper la pente
-**Fichier** : `js/state.js — DIFFICULTY_SETTINGS.Normal`
-- `xpMultiplier: 1.0 → 1.15`
-
-**Impact attendu** : niveau attendu +1 à partir de l'étage 5, +1-2 à partir de l'étage 8. Convertit en environ +8 pts win rate sur étages 5-10.
-**Coût** : 1 ligne. **Attention** : rend Normal plus proche de Facile (1.4) côté XP. Si on combine avec R4, à doser.
-
-### R6 — Plafonner le scaling absolu au-delà de l'étage 8 (optionnel)
-**Fichier** : `js/dungeon.js — scaleMonster`
-```js
-const mult = Math.min(MAX_MULT, (1 + (floor - 1) * (base.scale || 0.25)) * diffMult);
-// où MAX_MULT = 4.0 (= étage ~13 avec scale 0.25)
-```
-**Impact attendu** : évite que les étages 11-12 deviennent injouables si l'aventure se prolonge.
-**Coût** : 1 ligne + 1 constante. Diagnostic plus que correctif.
+Pistes possibles, hors-scope de cette PR :
+- **Cap sur la chance des abilities `damage` à 0.20** pour les monstres ≥ étage 5 (au lieu de 0.30-0.35). Réduirait la fréquence des dégâts ignorant DEF.
+- **Ralentir le scaling** des élites étage 5+ (`scale: 0.30 → 0.25`).
+- **Ajustement `rollGroupSize` solo** : forcer 1 ennemi à 80 % (au lieu de 50 %) sur les étages 5-6 en solo.
 
 ---
 
-## 🥇 Combinaison recommandée
+## 5. Monstres à scaling élevé (scale ≥ 0.30)
 
-Pour **un patch minimal et efficace** (objectif : ramener le mode Normal à 70-85 % win rate sur tous les étages) :
-
-> **R1 + R2 + R3** — uniquement `monsters.js` et `battle.js — rollGroupSize`.
-
-Estimation cumulée :
-- Solo étage 5 : 34% → ~65-70%
-- Solo étage 8 : 12% → ~35-45%
-- Duo étage 5 : 73% → ~88%
-- Duo étage 8 : 26% → ~50-60%
-
-Si après ce patch les étages 8+ restent durs : ajouter **R4** ou **R5** (mais pas les deux ensemble).
+| Monstre | scale | floors | weight | HP base | ATK base |
+|:--------|------:|:-------|-------:|--------:|---------:|
+| Voldemort Ressuscité | 0.40 | 10–∞ | 1 | 100 | 28 |
+| Voldemort Affaibli   | 0.40 | 9–∞  | 2 | 80  | 22 |
+| Basilic Mineur       | 0.35 | 6–∞  | 4 | 60  | 20 |
+| Bellatrix Lestrange  | 0.35 | 8–∞  | 2 | 70  | 20 |
+| Chimère de Poudlard  | 0.32 | 6–∞  | 3 | 65  | 19 |
+| Ombre de Quirrell    | 0.32 | 6–∞  | 3 | 50  | 12 |
+| Nagini               | 0.32 | 7–∞  | 3 | 55  | 18 |
+| Mangemort d'Élite    | 0.32 | 7–∞  | 4 | 55  | 16 |
+| Manticore Juvénile   | 0.32 | 6–∞  | 4 | 65  | 18 |
+| Strigoï Ancien       | 0.32 | 6–∞  | 4 | 110 | 14 |
+| Hécate la Maudisseuse| 0.32 | 7–∞  | 4 | 130 | 10 |
+| Détraqueur           | 0.30 | 3–8  | 7 | 25  | 10 |
+| Mangemort Masqué     | 0.30 | 5–∞  | 8 | 40  | 12 |
+| Jeune Acromantule    | 0.30 | 5–9  | 5 | 48  | 16 |
+| Détraqueur Gardien   | 0.30 | 5–∞  | 5 | 45  | 14 |
+| Gardien du Portail   | 0.30 | 5–∞  | 5 | 80  | 14 |
+| Spectre Maudit       | 0.30 | 5–∞  | 5 | 80  | 11 |
 
 ---
 
-## 6. Annexes
+## 6. Recommandations
 
-### Comment relancer la simulation
+### Côté joueur (immédiates)
 
-```bash
-node tools/sim-difficulty.js          # 400 sims / étage / mode (def)
-node tools/sim-difficulty.js 1000     # 1000 sims pour plus de stabilité
-```
+1. **Allocation des 3 pts libres** : prioriser END jusqu'à l'étage 5 (le bonus DEF + HP est désormais effectif contre les abilities). Bascule LCK à partir de l'étage 6 pour les crits.
+2. **Chaîne Dumbledore** : faire les 3 premiers paliers avant l'étage 5. Les +20 PV cumulés et +1 LCK aident concrètement.
+3. **Boutique étage 5** : prioriser l'**équipement DEF** (Casque d'Auror DEF+3 MAG+1, Ceinture de Force ATK+1 DEF+2) — désormais utile contre les capacités spéciales.
+4. **Farming respawn 20 %** : 2-3 allers-retours étage 4-5 pour gagner 1 niveau + 100-200 g supplémentaires.
+5. **Fontaines** (étages 2/5/8/11) : indispensables — 1×/visite.
 
-### Limites de la sim (à garder en tête)
+### Côté design (cette PR)
 
-- Ignore les **potions de soin** (or initial = 25 G en Normal, peut acheter 1-2 potions par étage).
-- Ignore les **fontaines** des étages 2/5/8/11 qui *full-heal* le groupe une fois.
-- Ignore les **drops** (potions, équipement).
-- Ignore les **achats d'équipement** au shop (+ATK/+DEF/+MAG).
-- Ignore les **points de Maison** (palier 100 = +1 stat, atteint vers le niveau 5).
-- IA joueur volontairement simple : pas d'usage de l'effet `disarm`, `shield`, ni de items en combat.
+- ✓ **Atténuation DEF des abilities `damage`** (`max(1, power + mag/2 − def/3)`)
+- ✓ **Retrait des groupes de 3 en duo avant étage 7**
 
-→ En pratique, ces ressources rapportent **15 à 25 pts de win rate** supplémentaires. Mais elles ne suffisent pas à compenser le mur de l'étage 5 en solo (qui resterait autour de 50-55 %, soit "tendu").
+### Côté design (futur, hors-scope)
 
-### Extrapolation autres difficultés
+- Cap sur `chance` des abilities damage à 0.20 pour étages 5+
+- Ralentissement du scaling élites mid-game (`scale: 0.30 → 0.25`)
+- Ajustement `rollGroupSize` solo (favoriser 1 ennemi en mid-game)
 
-- **Facile** : `scalingMultiplier: 0.75` + `groupMultiplier: 0.65` → ajoute environ +15-20 pts de win rate à tous les étages. L'étage 5 solo en Facile : ~55-65 %, jouable.
-- **Difficile** : `1.22 × 1.35` → retire environ −20 pts. L'étage 5 solo en Difficile : ~10-15 %, injouable sans grind.
-- **Expert** : `1.45 × 1.65` → retire environ −35 pts. L'étage 3 solo en Expert : ~30 %, mur dès le départ.
-
-L'écart entre les difficultés est cohérent **en multiplicateur**. Le problème de la pente de scaling reste structurel — corriger Normal réparera automatiquement les autres modes.
+Ces pistes attaquent le mur solo restant (étage 5, 46 %) mais touchent plus profondément la balance — à valider et sim avant implémentation.
