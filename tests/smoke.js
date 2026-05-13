@@ -604,7 +604,7 @@ async function scenarioNpcIntegration() {
   assert(t1.dumbledore,                  'PNJ Dumbledore introuvable');
   assert(t1.floor1Count === 1,           'étage 1 doit avoir 1 PNJ (Dumbledore)');
   assert(t1.floor2Count === 3,           'étage 2 doit avoir 3 PNJ');
-  assert(t1.floor4Count === 2,           'étage 4 doit avoir 2 PNJ');
+  assert(t1.floor4Count === 3,           'étage 4 doit avoir 3 PNJ (incl. Rogue chef Serpentard)');
 
   // T2 : génération étage 1 — Dumbledore présent + npcPlacements peuplé
   const t2 = await page.evaluate(() => {
@@ -4331,6 +4331,76 @@ async function scenarioHouseTier5() {
   await browser.close();
 }
 
+// ── Scénario : récompenses Maison remises par les Chefs de Maison ──
+async function scenarioHouseRewardFlow() {
+  console.log('\n── Scénario : Récompense Maison remise par PNJ ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : franchir seuil tier 2 → item en attente, pas dans inventaire
+  const t1 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    housePoints = 300;
+    houseTier   = 1;
+    pendingHouseRewards = new Set();
+    const atkBefore = party[0]._baseAtk;
+    checkHouseLevelUp();
+    return {
+      tier:       houseTier,
+      pending:    pendingHouseRewards.has('brassard_lion'),
+      inInv:      (player.inventory || []).some(i => i && i.id === 'brassard_lion'),
+      atkBoosted: party[0]._baseAtk > atkBefore
+    };
+  });
+  console.log('  T1 seuil 300 →', t1);
+  assert(t1.tier === 2,    'tier non passé à 2');
+  assert(t1.pending,       'brassard_lion non mis en attente');
+  assert(!t1.inInv,        'brassard_lion distribué automatiquement (bug)');
+  assert(t1.atkBoosted,    'bonus ATK tier 2 non appliqué');
+
+  // T2 : visite McGonagall → réception
+  const t2 = await page.evaluate(() => {
+    triggerNpcSpecialAction('mcgonagall');
+    return {
+      pending: pendingHouseRewards.has('brassard_lion'),
+      inInv:   (player.inventory || []).some(i => i && i.id === 'brassard_lion')
+    };
+  });
+  console.log('  T2 visite McGonagall →', t2);
+  assert(!t2.pending, 'brassard toujours en attente après réclamation');
+  assert(t2.inInv,    'brassard absent de l\'inventaire après réclamation');
+
+  // T3 : mauvaise Maison → refus (McGonagall n'est pas Serpentard)
+  const t3 = await page.evaluate(() => {
+    chosenHouse = 'Serpentard';
+    pendingHouseRewards.add('anneau_serpent');
+    triggerNpcSpecialAction('mcgonagall');
+    return pendingHouseRewards.has('anneau_serpent');
+  });
+  console.log('  T3 mauvaise Maison →', { stillPending: t3 });
+  assert(t3, 'McGonagall a distribué une récompense Serpentard (bug)');
+
+  // T4 : inventaire plein → l'item reste en attente (pas de perte silencieuse)
+  const t4 = await page.evaluate(() => {
+    chosenHouse = 'Serpentard';
+    pendingHouseRewards.add('anneau_serpent');
+    player.inventory = Array.from({ length: 16 }, () => ({
+      id: 'potion_s', name: 'Potion', icon: '🧪', type: 'consumable'
+    }));
+    triggerNpcSpecialAction('rogue');
+    return pendingHouseRewards.has('anneau_serpent');
+  });
+  console.log('  T4 inventaire plein →', { stillPending: t4 });
+  assert(t4, 'anneau_serpent perdu silencieusement (inventaire plein)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Flow récompense Maison conforme');
+  await browser.close();
+}
+
 // ── Scénario endgame Tranche 2 — 4 : Set bonus Ténèbres ─────
 async function scenarioTenebresSet() {
   console.log('\n── Scénario endgame T2.4 : Set bonus Ténèbres ──');
@@ -4445,7 +4515,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioTenebresSet, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

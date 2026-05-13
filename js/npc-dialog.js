@@ -41,6 +41,9 @@ function getNpcMarkerSign(npcId) {
   if (!npcId) return '';
   const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
   if (!npc) return '';
+  // Récompense Maison en attente : marker 🎁 prioritaire sur les marqueurs quête
+  // (cf. plan house-intermediate-tier.md §2.6).
+  if (_canClaimHouseReward(npc)) return '🎁';
   const state = getNpcQuestState(npc);
   if (state === 'offer') return '!';
   if (state === 'ready') return '?';
@@ -91,6 +94,21 @@ function _pickContextualLore(npc) {
 }
 
 // Vrai si l'action spéciale du PNJ a déjà été utilisée sur l'étage courant.
+// Pour `claim_house_reward`, on bypass `_isSpecialActionSpent` :
+// l'action reste disponible tant qu'il reste au moins une récompense
+// en attente pour la Maison du joueur. Si un tier ultérieur ajoute un
+// nouvel item à `pendingHouseRewards`, le bouton redevient cliquable
+// automatiquement (cf. plan house-intermediate-tier.md §2.5).
+function _canClaimHouseReward(npc) {
+  const action = npc && npc.specialAction;
+  if (!action || action.type !== 'claim_house_reward') return false;
+  if (typeof chosenHouse === 'undefined' || chosenHouse !== action.house) return false;
+  if (typeof pendingHouseRewards === 'undefined' || !pendingHouseRewards.size) return false;
+  const house = HOUSE_BONUSES && HOUSE_BONUSES[chosenHouse];
+  if (!house) return false;
+  return house.tiers.some(t => t.bonus.item && pendingHouseRewards.has(t.bonus.item));
+}
+
 function _isSpecialActionSpent(npc) {
   if (!npc || !npc.specialAction) return false;
   return (typeof usedSpecialNpcs !== 'undefined') && usedSpecialNpcs.has(npc.id);
@@ -170,12 +188,18 @@ function _npcDialogActions(npc, state) {
   // Action spéciale (ex : Fumseck heal+revive). Bouton masqué si déjà
   // consommée pour cette visite d'étage (le texte d'idle bascule alors
   // sur `dialogues.idleSpent` via _npcDialogPages).
-  if (npc.specialAction && !_isSpecialActionSpent(npc)) {
-    const label = npc.specialAction.label || 'Action spéciale';
-    out.push({
-      label,
-      onClick: `triggerNpcSpecialAction('${npc.id}'); openNpcDialog('${npc.id}');`
-    });
+  // Cas particulier `claim_house_reward` : on bypass `_isSpecialActionSpent`
+  // et on utilise `_canClaimHouseReward` (cf. plan house-intermediate-tier.md §2.5).
+  if (npc.specialAction) {
+    const isClaim = npc.specialAction.type === 'claim_house_reward';
+    const available = isClaim ? _canClaimHouseReward(npc) : !_isSpecialActionSpent(npc);
+    if (available) {
+      const label = npc.specialAction.label || 'Action spéciale';
+      out.push({
+        label,
+        onClick: `triggerNpcSpecialAction('${npc.id}'); openNpcDialog('${npc.id}');`
+      });
+    }
   }
   out.push({ label: 'S\'éloigner', onClick: 'closeNpcDialog()', secondary: true });
   return out;
@@ -187,11 +211,45 @@ function _npcDialogActions(npc, state) {
 function triggerNpcSpecialAction(npcId) {
   const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
   if (!npc || !npc.specialAction) return;
+  const action = npc.specialAction;
+  // claim_house_reward gère sa propre garde (pas via _isSpecialActionSpent).
+  if (action.type === 'claim_house_reward') {
+    if (chosenHouse !== action.house) {
+      if (typeof addMsg === 'function') addMsg('Ce professeur ne dirige pas votre Maison.', 'bad');
+      return;
+    }
+    const houseItems = (HOUSE_BONUSES[chosenHouse].tiers || [])
+      .map(t => t.bonus.item).filter(Boolean);
+    const claimable = houseItems.filter(id => pendingHouseRewards.has(id));
+    if (!claimable.length) {
+      if (typeof addMsg === 'function') addMsg('Rien à recevoir pour le moment.');
+      return;
+    }
+    let given = 0;
+    for (const id of claimable) {
+      const item = ITEMS.find(it => it.id === id);
+      if (!item) continue;
+      if (!tryAddItem(item, { silent: true })) {
+        if (typeof addMsg === 'function') addMsg('Inventaire plein — libérez de la place et revenez.', 'bad');
+        break;
+      }
+      pendingHouseRewards.delete(id);
+      if (typeof addMsg === 'function') {
+        addMsg(`🎁 ${item.icon} ${item.name} vous est remis(e) par ${npc.title || npc.name}.`, 'good');
+      }
+      given++;
+    }
+    if (given) {
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+      if (typeof updateUI === 'function') updateUI();
+      safeCall('autoSave', 'house-reward');
+    }
+    return;
+  }
   if (_isSpecialActionSpent(npc)) {
     if (typeof addMsg === 'function') addMsg("L'action n'est plus disponible cette visite.", 'bad');
     return;
   }
-  const action = npc.specialAction;
   if (action.type === 'heal_and_revive') {
     let revived = 0, healed = 0;
     const size = (typeof partySize === 'number') ? partySize : party.length;

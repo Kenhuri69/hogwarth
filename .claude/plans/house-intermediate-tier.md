@@ -267,32 +267,59 @@ un nouveau champ — voir §4 étape 2).
 
 ## 4. Découpage en étapes
 
-### Étape 0 — Assets visuels (parts SVG + recettes + PNG)
-- [ ] Créer `tools/parts/ring.svg` (regions `band`, `setting`, `gem`).
-- [ ] Créer `tools/parts/feather.svg` (regions `vane`, `rachis`, `quill`).
-- [ ] Créer 4 emblèmes mono-région : `emblem-lion.svg`, `emblem-snake.svg`,
-  `emblem-eagle.svg`, `emblem-badger.svg` (silhouette centrée ~140×140
-  sur viewBox 512, region unique `emblem`). Référence : `img/houses/*.png`.
-- [ ] Ajouter 4 recettes dans `tools/icon_factory.py` (`brassard_lion`,
-  `anneau_serpent`, `plume_aigle`, `ceinture_blaireau`) en suivant le
-  pattern d'un item rare existant. Couleurs : voir tableau §2.7.3.
-- [ ] Générer les PNG :
-  ```bash
-  python tools/icon_factory.py brassard_lion anneau_serpent plume_aigle ceinture_blaireau
-  ```
-- [ ] Référencer dans `js/item-icons.js` (ITEM_ICONS_NEW) — 4 entrées
-  pointant vers les `_64.png`.
-- **Vérif visuelle** : ouvrir `tools/_shots/` ou utiliser
-  `tools/preview_icons.py` si dispo ; sinon survoler dans le jeu après
-  l'étape 1 pour valider que les PNG s'affichent, que le symbole de
-  Maison est lisible à 32px et que la palette est cohérente avec le
-  blason existant.
-- **Vérif technique** : `git status` montre 20 nouveaux PNG dans
-  `img/icons_new/`, 6 nouveaux SVG dans `tools/parts/`, +4 recettes
-  dans `icon_factory.py`.
+### Étape 0 — Assets visuels (parts SVG + recettes + PNG) ✅
 
-### Étape 1 — 4 nouveaux items dans `data.js`
-- [ ] Ajouter à `ITEMS[]` (juste après les items légendaires existants) :
+**Écart constaté au démarrage** : le factory dispose déjà de deux
+mécanismes qui rendent inutile la création de 6 SVG :
+- `shapes.ring_band` (paramétrique) couvre l'Anneau du Serpent — pas
+  besoin de `tools/parts/ring.svg`.
+- `_SYMBOL_PATHS` + accent `{"kind": "symbol", …}` (cf. `icon_factory.py:765+`)
+  centre un glyph nommé sur n'importe quelle région — pile l'usage prévu
+  pour l'emblème de Maison. Pas besoin de 4 fichiers `emblem-*.svg` ni
+  de modifier `_build_silhouette_svg` pour composer plusieurs parts.
+
+Scope réel exécuté :
+
+- [x] Créer `tools/parts/feather.svg` (regions `vane`, `rachis`, `quill`).
+- [x] Ajouter 3 entrées dans `_SYMBOL_PATHS` (`lion`, `eagle`, `badger`).
+  `snake` y était déjà — réutilisé.
+- [x] Décision : pas de symbole emblème sur l'Anneau du Serpent — la
+  centroïde du masque `metal` (donut + bezel) tombe dans le trou central
+  du ring, donc le symbole serait crop-out par le masque. L'identité
+  Serpentard est portée par la gemme émeraude + accents runiques. Le
+  nom de l'item suffit à signaler le serpent.
+- [x] Ajouter 4 recettes dans `tools/icon_factory.py` (`brassard_lion`,
+  `anneau_serpent`, `plume_aigle`, `ceinture_blaireau`).
+- [x] Générer les PNG :
+  ```bash
+  python3 tools/icon_factory.py brassard_lion anneau_serpent plume_aigle ceinture_blaireau
+  ```
+  → 20 PNG dans `img/icons_new/`.
+- [x] Référencer dans `js/item-icons.js` (`ITEM_ICON_NEW_REGISTRY`) —
+  4 entrées pointant vers les `_64.png`.
+- **Vérif visuelle (64px + 32px)** : les 4 items ont des silhouettes et
+  palettes distinctes par Maison. Brassard = lion gold sur cuir + cuff
+  rouge ; Anneau = argent + gemme émeraude ; Plume = vane bleu nuit +
+  rachis bronze + eagle bronze ; Ceinture = strap brun + buckle or +
+  badger or. Lisibles dès 32px.
+- **Vérif technique** : `git status` montre 20 nouveaux PNG dans
+  `img/icons_new/`, 1 nouveau SVG (`feather.svg`), +4 recettes et
+  +3 glyphs dans `icon_factory.py`, +4 entrées dans `item-icons.js`.
+
+### Étape 1 — 4 nouveaux items dans `data.js` ✅
+
+**Écarts au plan** :
+- `type:"acc"` (pas `"armor"`) pour `brassard_lion` et `ceinture_blaireau` —
+  alignement sur la convention codebase (cf. `gants_apprenti`, `ceinture_cuir`
+  qui sont aussi des items hands/belt typés `acc`).
+- Champ `power` ajouté (=2 pour tous, miroir du bonus principal) —
+  cohérent avec les autres items équipables.
+- Alias 4 entrées dans `ITEM_ICON_REGISTRY` (cf. `js/item-icons.js`) sur
+  les PNG du slot le plus proche — exigé par le smoke test scénario 21
+  (couverture 100 % ITEMS[]). Le runtime utilise le PNG painterly via
+  `ITEM_ICON_NEW_REGISTRY` (priorité 1).
+
+- [x] Ajouter à `ITEMS[]` (juste après les items légendaires existants) :
   ```js
   // Items Tier 2 Maison (300 pts) — remis par les Chefs de Maison
   { id: 'brassard_lion',     name: 'Brassard du Lion',
@@ -314,8 +341,19 @@ un nouveau champ — voir §4 étape 2).
   ```
 - **Vérif** : `ITEMS.find(i => i.id === 'brassard_lion').rarity === 'rare'`.
 
-### Étape 2 — `HOUSE_BONUSES` : tier 2 enrichi + `headOfHouse`
-- [ ] Pour chaque Maison dans `state.js`, ajouter un champ `headOfHouse`
+### Étape 2 — `HOUSE_BONUSES` : tier 2 enrichi + `headOfHouse` ✅
+
+**Décision** : tier 5 conserve sa distribution directe (post-victoire,
+cinématique endgame Tranche 2). Seuls tier 2 et tier 4 passent par
+`pendingHouseRewards`. Les `msg` du tier 4 ont aussi été reformulés
+pour rediriger vers le Chef de Maison (cohérence avec tier 2).
+
+`pendingHouseRewards = new Set()` ajouté à côté de `chosenHouse /
+housePoints / houseTier` dans `state.js`. Pas d'ajout au MANIFEST du
+loader : les `let` mutables d'état ne sont pas tracés (cf.
+`chosenHouse`, `housePoints` non manifestés non plus).
+
+- [x] Pour chaque Maison dans `state.js`, ajouter un champ `headOfHouse`
   pointant vers l'ID du PNJ, et conserver `bonus.item` sur tier 2 et 4 :
   ```js
   Gryffondor: {
@@ -338,8 +376,16 @@ un nouveau champ — voir §4 étape 2).
   ```
 - **Vérif** : `HOUSE_BONUSES.Gryffondor.headOfHouse === 'mcgonagall'`.
 
-### Étape 3 — Refonte `checkHouseLevelUp` (main.js)
-- [ ] Remplacer la branche `tier.bonus.item` (lignes 197-202) :
+### Étape 3 — Refonte `checkHouseLevelUp` (main.js) ✅
+
+**Décision** : la discrimination tier 2/4 vs tier 5 utilise `tierNum >= 5`.
+Tier 5 conserve `tryAddItem` direct (cinématique post-victoire endgame).
+Tier 2 et tier 4 vont dans `pendingHouseRewards.add(...)`.
+
+Le `msg` du tier est suffisant pour annoncer le PNJ (rédigé à l'étape 2),
+pas de second `addMsg` redondant.
+
+- [x] Branche `tier.bonus.item` refactorée :
   ```js
   if (tier.bonus.item) {
     pendingHouseRewards.add(tier.bonus.item);
@@ -351,8 +397,21 @@ un nouveau champ — voir §4 étape 2).
 - **Vérif** : depuis la console — atteindre seuil 300 → stats appliquées,
   `pendingHouseRewards` contient `'brassard_lion'`, inventaire **inchangé**.
 
-### Étape 4 — Ajout des 3 nouveaux PNJ dans `npcs.js`
-- [ ] Ajouter Rogue (étage 4), Flitwick (étage 6), Chourave (étage 3) avec :
+### Étape 4 — Ajout des 3 nouveaux PNJ dans `npcs.js` ✅
+
+**Écarts au plan** :
+- Pas de champ `idleSpent` / `idleOtherHouse` : la condition « pas de
+  récompense » sera gérée à l'étape 5 via `_canClaimHouseReward`. Le
+  refus pour mauvaise Maison passe par un `addMsg` côté dispatcher,
+  pas par un texte d'idle spécifique — plus surgical.
+- Pas de `portraitImg` pour Rogue / Flitwick / Sprout : les PNG ne
+  sont pas livrés (cf. plan §2.4 fallback emoji). Évite un 404 dans
+  la console.
+- Assertion smoke `floor4Count` mise à jour (2 → 3) suite à l'ajout
+  de Rogue sur l'étage 4. Étages 3 et 6 non testés, pas d'autre
+  ajustement nécessaire.
+
+- [x] Ajout de Rogue (étage 4), Flitwick (étage 6), Chourave (étage 3).
   ```js
   {
     id: 'rogue', name: 'Professeur Severus Rogue',
@@ -379,8 +438,21 @@ un nouveau champ — voir §4 étape 2).
   ```
 - **Vérif** : `getNpcById('rogue').specialAction.house === 'Serpentard'`.
 
-### Étape 5 — Dispatcher dans `npc-dialog.js`
-- [ ] Ajouter le cas `claim_house_reward` dans `triggerNpcSpecialAction` :
+### Étape 5 — Dispatcher dans `npc-dialog.js` ✅
+
+**Notes** :
+- Le case `claim_house_reward` est placé **avant** la garde
+  `_isSpecialActionSpent` dans `triggerNpcSpecialAction` (il a sa
+  propre logique de garde via `_canClaimHouseReward`).
+- `_npcDialogActions` route conditionnellement : pour
+  `type === 'claim_house_reward'` → `_canClaimHouseReward`, sinon
+  comportement existant (`!_isSpecialActionSpent`).
+- Le cas « mauvaise Maison » est traité défensivement dans le
+  dispatcher (au cas où on appelle `triggerNpcSpecialAction` en
+  bypass de la UI), mais la UI ne devrait jamais afficher le bouton
+  pour un PNJ de l'autre Maison.
+
+- [x] Ajout du cas `claim_house_reward` dans `triggerNpcSpecialAction`.
   ```js
   if (action.type === 'claim_house_reward') {
     if (chosenHouse !== action.house) {
@@ -421,9 +493,12 @@ un nouveau champ — voir §4 étape 2).
   `pendingHouseRewards.has('anneau_serpent')` → bouton visible →
   clic → item dans inventaire, Set vidé.
 
-### Étape 6 — Marker minimap (`getNpcMarkerSign`)
-- [ ] Avant la logique quête existante, vérifier si le PNJ a une
-  récompense Maison disponible :
+### Étape 6 — Marker minimap (`getNpcMarkerSign`) ✅
+
+Réutilise `_canClaimHouseReward(npc)` (défini à l'étape 5) — pas de
+duplication de logique. Priorité 🎁 sur ! / ? (quête).
+
+- [x] Marker 🎁 ajouté avant la logique quête :
   ```js
   if (npc.specialAction?.type === 'claim_house_reward'
       && chosenHouse === npc.specialAction.house) {
@@ -435,14 +510,23 @@ un nouveau champ — voir §4 étape 2).
 - **Vérif** : marker 🎁 apparaît sur la case McGonagall quand on a
   passé le seuil 300 (Gryffondor) ; disparaît après réclamation.
 
-### Étape 7 — Persistance (`save.js`)
-- [ ] Dans `_serializeState` : `pendingHouseRewards: Array.from(pendingHouseRewards)`.
-- [ ] Dans `_applyState` : `pendingHouseRewards = new Set(gs.pendingHouseRewards || [])`.
-- [ ] Initialiser `pendingHouseRewards = new Set()` dans `state.js` et
-  dans `main.js` lors de `Nouvelle aventure` (à côté de `housePoints = 0`).
-- **Vérif** : save → reload → Set repeuplé.
+### Étape 7 — Persistance (`save.js`) ✅
+- [x] `_serializeState` : `pendingHouseRewards: Array.from(pendingHouseRewards)`.
+- [x] `_applyState` : `pendingHouseRewards = new Set(gs.pendingHouseRewards || [])`.
+- [x] `state.js` : `let pendingHouseRewards = new Set();` (déjà fait étape 2).
+- [x] `main.js — chooseHouse` : reset à `new Set()` au démarrage d'une
+  Nouvelle aventure.
 
-### Étape 8 — Migration rétroactive (saves d'avant cette PR)
+### Étape 8 — Migration rétroactive (saves d'avant cette PR) ✅
+
+**Écart au plan** : ajout d'un skip `if (tierNum >= 5) return` — le tier 5
+conserve la distribution directe dans le code runtime, donc la migration
+doit elle aussi l'exclure (sinon un joueur post-victoire qui aurait vendu
+sa lame se la verrait offerte par McGonagall, ce qui contredit le rôle
+de cinématique-finale du tier 5).
+
+- [x] Helper `_migrateHouseRewards()` défini dans save.js, appelé après
+  `recalculateStats()` dans `_applyState`.
 - [ ] Helper one-shot `_migrateHouseRewards()` appelé à la fin de
   `_applyState` :
   ```js
@@ -473,8 +557,12 @@ un nouveau champ — voir §4 étape 2).
   > la migration la remettra en attente. Acceptable car cas extrême et
   > avantageux pour le joueur.
 
-### Étape 9 — Smoke test (`tests/smoke.js`)
-- [ ] Nouveau scénario `scenarioHouseRewardFlow` :
+### Étape 9 — Smoke test (`tests/smoke.js`) ✅
+
+Scénario inséré entre `scenarioHouseTier5` et `scenarioTenebresSet`,
+référencé dans le tableau `scenarios`. T1 → T4 conformes au plan.
+
+- [x] Nouveau scénario `scenarioHouseRewardFlow` :
   ```js
   async function scenarioHouseRewardFlow() {
     console.log('\n── Scénario : Récompense Maison remise par PNJ ──');

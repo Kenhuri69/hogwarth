@@ -213,6 +213,11 @@ const ITEMS = [
   { id:"locket_slytherin", name:"Médaillon de Serpentard",icon:"🐍", desc:"MAG+6 LCK+3 — Légendaire Serpentard", type:"acc", slot:"amulet", family:"locket_slyth",  rarity:"legendary", power:6, bonusMag:6, bonusLck:3, price:0 },
   { id:"diademe_serdaigle",name:"Diadème de Serdaigle", icon:"👑",  desc:"MAG+4 LCK+5 — Légendaire Serdaigle",  type:"acc", slot:"head",   family:"diademe_serd",  rarity:"legendary", power:4, bonusMag:4, bonusLck:5, price:0 },
   { id:"coupe_poufsouffle",name:"Coupe de Poufsouffle", icon:"🏆",  desc:"DEF+6 — Légendaire Poufsouffle",   type:"armor", slot:"body",   family:"coupe_pouf",    rarity:"legendary", power:6, bonusDef:6,              price:0 },
+  // ── Items Tier 2 Maison (cf. .claude/plans/house-intermediate-tier.md) — remis par les Chefs de Maison ──
+  { id:"brassard_lion",    name:"Brassard du Lion",      icon:"🥊", desc:"ATK+2 LCK+1 — Tier 2 Gryffondor",   type:"acc",   slot:"hands",  family:"gryff_t2",     rarity:"rare", power:2, bonusAtk:2, bonusLck:1, price:0 },
+  { id:"anneau_serpent",   name:"Anneau du Serpent",     icon:"💍", desc:"MAG+2 LCK+1 — Tier 2 Serpentard",   type:"acc",   slot:"ring",   family:"slyth_t2",     rarity:"rare", power:2, bonusMag:2, bonusLck:1, price:0 },
+  { id:"plume_aigle",      name:"Plume d'Aigle",         icon:"🪶", desc:"MAG+2 INT+1 — Tier 2 Serdaigle",    type:"acc",   slot:"trinket",family:"raven_t2",     rarity:"rare", power:2, bonusMag:2, bonusInt:1, price:0 },
+  { id:"ceinture_blaireau",name:"Ceinture du Blaireau",  icon:"🪢", desc:"DEF+2 END+1 — Tier 2 Poufsouffle",  type:"acc",   slot:"belt",   family:"pouf_t2",      rarity:"rare", power:2, bonusDef:2, bonusEnd:1, price:0 },
   { id:"choco_sorcier",name:"Chocolat aux Sorciers", icon:"🍫", desc:"+10 PV +5 PM",       type:"consumable", effect:"both",       power:10, price:20 },
   { id:"potion_force", name:"Potion de Force",       icon:"💪", desc:"+8 ATK pendant 3 tours", type:"consumable", effect:"heal",      power:8,  price:45 },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5",           type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, power:5, price:400 },
