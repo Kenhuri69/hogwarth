@@ -1065,7 +1065,7 @@ const MONSTERS = [
   },
 
   {
-    id: "gremlin_magique", name: "Gremlin Magique", icon: "👾", category: "créature",
+    id: "gremlin_magique", name: "Gremlin Magique", icon: "👾", imgSrc: "img/monsters/gremlin_magique.png", category: "créature",
     desc: "Un Gremlin surgit des conduits magiques en crachant des étincelles !",
     lore: "Petite créature chaotique qui se nourrit d'énergie magique.",
     habitat: "Conduits de ventilation et salles mécaniques", danger: 4,
@@ -1101,7 +1101,7 @@ const MONSTERS = [
   },
 
   {
-    id: "gardien_portail", name: "Gardien du Portail", icon: "🗿", category: "être magique",
+    id: "gardien_portail", name: "Gardien du Portail", icon: "🗿", imgSrc: "img/monsters/gardien_portail.png", category: "être magique",
     desc: "Un golem de pierre prend vie, gardien des passages secrets !",
     lore: "Créé par un ancien directeur pour protéger les zones interdites.",
     habitat: "Passages secrets et portes magiques", danger: 7,
@@ -1230,7 +1230,7 @@ const MONSTERS = [
   },
 
   {
-    id: "spectre_maudit", name: "Spectre Maudit", icon: "👻", category: "fantôme",
+    id: "spectre_maudit", name: "Spectre Maudit", icon: "👻", imgSrc: "img/monsters/spectre_maudit.png", category: "fantôme",
     desc: "Un spectre enchaîné hurle, son corps couvert de runes maudites !",
     lore: "Âme d'un sorcier puni par une malédiction d'éternité — il ne peut ni mourir ni se reposer. Sa rage incandescente se déverse en sortilèges noirs sur toute âme vivante qui croise son chemin.",
     habitat: "Donjons des cachots, salles d'interrogatoire abandonnées",
