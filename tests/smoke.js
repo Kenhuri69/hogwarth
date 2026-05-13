@@ -3147,6 +3147,88 @@ async function scenarioEnsureKillTargets() {
   await browser.close();
 }
 
+// ── Scénario : escaliers manquants (softlock collision rooms[0]/last) ─
+// Couvre les vieilles saves où la génération a écrasé STAIRS_D avec
+// STAIRS_U (centres de salle identiques).
+
+async function scenarioEnsureStairs() {
+  console.log('\n── Scénario : _ensureStairsExist (softlock escaliers) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helper exposé
+  const t1 = await page.evaluate(() => ({
+    hasFn: typeof _ensureStairsExist === 'function'
+  }));
+  console.log('  T1 fn exposed:', t1);
+  assert(t1.hasFn, '_ensureStairsExist non exposée');
+
+  // T2 : on simule un étage softlocké — supprime STAIRS_D et STAIRS_U
+  // du dungeon courant puis appelle le helper.
+  const t2 = await page.evaluate(() => {
+    currentFloor = 5; // floor>1 pour activer la condition STAIRS_U
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.STAIRS_D || dungeon[y][x] === CELL.STAIRS_U) {
+          dungeon[y][x] = CELL.FLOOR;
+        }
+      }
+    }
+    const added = _ensureStairsExist(currentFloor);
+    let down = 0, up = 0;
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.STAIRS_D) down++;
+        if (dungeon[y][x] === CELL.STAIRS_U) up++;
+      }
+    }
+    return { added, down, up };
+  });
+  console.log('  T2 softlocked floor:', t2);
+  assert(t2.added === 2, `helper devrait avoir ajouté 2 escaliers, got ${t2.added}`);
+  assert(t2.down === 1, 'STAIRS_D absent après migration');
+  assert(t2.up === 1,   'STAIRS_U absent après migration sur floor>1');
+
+  // T3 : idempotence — 2e appel = no-op
+  const t3 = await page.evaluate(() => ({
+    added: _ensureStairsExist(currentFloor)
+  }));
+  console.log('  T3 idempotent:', t3);
+  assert(t3.added === 0, `2e appel doit être no-op, got ${t3.added}`);
+
+  // T4 : floor 1 → pas de STAIRS_U ajouté même si manquant
+  const t4 = await page.evaluate(() => {
+    currentFloor = 1;
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.STAIRS_D || dungeon[y][x] === CELL.STAIRS_U) {
+          dungeon[y][x] = CELL.FLOOR;
+        }
+      }
+    }
+    const added = _ensureStairsExist(currentFloor);
+    let down = 0, up = 0;
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.STAIRS_D) down++;
+        if (dungeon[y][x] === CELL.STAIRS_U) up++;
+      }
+    }
+    return { added, down, up };
+  });
+  console.log('  T4 floor 1 (no STAIRS_U):', t4);
+  assert(t4.added === 1, 'floor 1 : seul STAIRS_D doit être ajouté');
+  assert(t4.down === 1,  'STAIRS_D manquant sur floor 1');
+  assert(t4.up === 0,    'STAIRS_U ne doit PAS être ajouté sur floor 1');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ migration des escaliers OK');
+  await browser.close();
+}
+
 // ── Scénario 3sexies : Itération 7.4 — câblage métier des 4 PNJ lore ─
 
 async function scenarioIteration74() {
@@ -3702,7 +3784,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
