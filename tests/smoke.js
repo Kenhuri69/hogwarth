@@ -3004,6 +3004,78 @@ async function scenarioRepeatableQuestSpawn() {
   await browser.close();
 }
 
+// ── Scénario : migration des cibles de quête `kill` manquantes ─────
+// Couvre les vieilles saves où une quête est active mais la cible n'a
+// jamais été spawnée (le hook `spawnOnAccept` a été ajouté après coup).
+
+async function scenarioEnsureKillTargets() {
+  console.log('\n── Scénario : _ensureActiveKillQuestTargets (vieilles saves) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helper exposé
+  const t1 = await page.evaluate(() => ({
+    hasFn: typeof _ensureActiveKillQuestTargets === 'function'
+  }));
+  console.log('  T1 fn exposed:', t1);
+  assert(t1.hasFn, '_ensureActiveKillQuestTargets non exposée');
+
+  // T2 : simule une vieille save — chouette_perdue active sans spawn.
+  // 1) on insère manuellement la quête dans activeQuests (sans passer
+  //    par acceptQuest pour éviter le hook spawnOnAccept).
+  // 2) on vide enemyMap.
+  // 3) appel direct du helper → la chouette doit apparaître.
+  const t2 = await page.evaluate(() => {
+    const tpl  = QUEST_TEMPLATES.find(q => q.id === 'chouette_perdue');
+    const inst = JSON.parse(JSON.stringify(tpl));
+    inst.completed = false;
+    activeQuests.push(inst);
+    availableQuests.delete('chouette_perdue');
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const added = _ensureActiveKillQuestTargets(currentFloor);
+    let chouettes = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && enemyMap[y][x].id === 'chouette_envoutee') chouettes++;
+    return { added, chouettes };
+  });
+  console.log('  T2 migration spawn:', t2);
+  assert(t2.added >= 1,     `helper devrait avoir placé ≥1 cible, got ${t2.added}`);
+  assert(t2.chouettes >= 1, 'chouette_envoutee absente après migration');
+
+  // T3 : idempotence — un 2e appel ne doit RIEN ajouter (cible déjà là).
+  const t3 = await page.evaluate(() => ({
+    added: _ensureActiveKillQuestTargets(currentFloor)
+  }));
+  console.log('  T3 idempotent:', t3);
+  assert(t3.added === 0, `2e appel doit être no-op, got ${t3.added}`);
+
+  // T4 : si la quête est terminée (objective completed), pas de spawn.
+  const t4 = await page.evaluate(() => {
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const q = activeQuests.find(x => x.id === 'chouette_perdue');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    const added = _ensureActiveKillQuestTargets(currentFloor);
+    let chouettes = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && enemyMap[y][x].id === 'chouette_envoutee') chouettes++;
+    return { added, chouettes };
+  });
+  console.log('  T4 completed step skipped:', t4);
+  assert(t4.added === 0,     'objective completed → pas de spawn');
+  assert(t4.chouettes === 0, 'aucune chouette ne doit être placée');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ migration des cibles de quête OK');
+  await browser.close();
+}
+
 // ── Scénario 3sexies : Itération 7.4 — câblage métier des 4 PNJ lore ─
 
 async function scenarioIteration74() {
@@ -3559,7 +3631,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

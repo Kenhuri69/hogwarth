@@ -214,6 +214,13 @@ function generateDungeon(floor) {
   playerY = rooms[0].cy;
   playerDir = 'n';
   visited[playerY][playerX] = true;
+
+  // Cibles de quêtes actives : si une étape `kill` non terminée existe
+  // pour une quête déclarant `spawnOnAccept`, on garantit la présence de
+  // la cible (couvre les saves antérieures au hook spawnOnAccept).
+  if (typeof _ensureActiveKillQuestTargets === 'function') {
+    _ensureActiveKillQuestTargets(floor);
+  }
 }
 
 // Spawn ciblé pour quête à l'acceptation. Place 1 monstre cible (par id) +
@@ -258,6 +265,53 @@ function spawnQuestMonsters(targetMonsterId, extraRandomCount) {
   }
 
   return placed;
+}
+
+// Garantit que les cibles des quêtes "kill" actives avec `spawnOnAccept`
+// sont présentes sur l'étage courant. Comble le manque entre `step.amount`
+// et (progress + instances déjà dans `enemyMap`). Idempotente : no-op si
+// toutes les cibles sont déjà là.
+//
+// Couvre :
+//  - les vieilles saves où la quête a été acceptée avant l'ajout du hook
+//    `spawnOnAccept` (cas du joueur sans Chouette Ensorcelée à l'étage 4
+//    pour `chouette_perdue`),
+//  - le respawn d'une cible multi-amount tuée par un kill non-quête
+//    (ex. attaque collatérale, AoE).
+//
+// Appelée depuis `generateDungeon` (génération initiale) et
+// `_restoreFloorFromCache` (retour sur un étage déjà visité). Retourne
+// le nombre de cibles ajoutées.
+function _ensureActiveKillQuestTargets(floor) {
+  if (typeof dungeon === 'undefined' || typeof enemyMap === 'undefined') return 0;
+  if (typeof activeQuests === 'undefined' || !activeQuests.length) return 0;
+  if (typeof QUEST_TEMPLATES === 'undefined' || typeof MONSTERS === 'undefined') return 0;
+
+  let added = 0;
+  for (const q of activeQuests) {
+    const tpl = QUEST_TEMPLATES.find(t => t.id === q.id);
+    if (!tpl || !tpl.spawnOnAccept) continue;
+    const targetId = tpl.spawnOnAccept.targetMonsterId;
+    if (!targetId) continue;
+    const step = (q.objectives || []).find(o =>
+      o.type === 'kill' && o.monsterId === targetId && !o.completed
+    );
+    if (!step) continue;
+
+    let present = 0;
+    for (let y = 0; y < enemyMap.length; y++) {
+      for (let x = 0; x < enemyMap[y].length; x++) {
+        if (enemyMap[y][x] && enemyMap[y][x].id === targetId) present++;
+      }
+    }
+    const need = Math.max(0, step.amount - (step.progress | 0) - present);
+    for (let i = 0; i < need; i++) {
+      const placed = spawnQuestMonsters(targetId, 0);
+      if (!placed) break; // plus de cases FLOOR libres
+      added += placed;
+    }
+  }
+  return added;
 }
 
 // Repère les PNJ qui devraient être placés à l'étage courant (selon
