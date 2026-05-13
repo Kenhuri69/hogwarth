@@ -557,8 +557,12 @@ de cinématique-finale du tier 5).
   > la migration la remettra en attente. Acceptable car cas extrême et
   > avantageux pour le joueur.
 
-### Étape 9 — Smoke test (`tests/smoke.js`)
-- [ ] Nouveau scénario `scenarioHouseRewardFlow` :
+### Étape 9 — Smoke test (`tests/smoke.js`) ✅
+
+Scénario inséré entre `scenarioHouseTier5` et `scenarioTenebresSet`,
+référencé dans le tableau `scenarios`. T1 → T4 conformes au plan.
+
+- [x] Nouveau scénario `scenarioHouseRewardFlow` :
   ```js
   async function scenarioHouseRewardFlow() {
     console.log('\n── Scénario : Récompense Maison remise par PNJ ──');
