@@ -56,7 +56,7 @@ Apporter **deux** leviers tactiques nouveaux :
 | Durée               | 1 tour ennemi (jusqu'au prochain tour du perso)               |
 | Effet défensif      | Dégâts physiques reçus × 0.5 ; mitigation **après** Protego (Protego prioritaire si actif) |
 | Effet offensif      | Aucun                                                         |
-| Effet utilitaire    | +3 PM au moment de l'action (cap `spMax`)                    |
+| Effet utilitaire    | +`3 + floor(MAG / 5)` PM au moment de l'action (cap `spMax`). Harry L1 ≈ 5, Hermione L1 ≈ 6, end-game ≈ 6–8. Différencie naturellement caster / non-caster. |
 | Stack avec Protego  | Oui — Protego absorbe complètement, Garde mitige le résiduel (en pratique : Protego d'abord, Garde ne sert qu'aux tours sans bouclier) |
 | Crit ennemi         | Pas pris en compte V1 (le moteur n'a pas de crit ennemi). N/A. |
 | Esquive             | Inchangée (`dodgeChance` agit avant la mitigation Garde)      |
@@ -120,8 +120,8 @@ if (s.id === 'regen') {
 
 | Situation | Garde | Ferula |
 |-----------|-------|--------|
-| Solo (Harry seul) | Tour de récupération PM + mitigation 50 % sur un coup. Utile contre les abilities lourdes (drain, damage). | Auto-cible Harry. 12+ PV étalés sur 3 tours, complète Episkey (12 PV burst, 5 PM). À 6 PM, échange visible : 4 + reg vs 12 burst. |
-| Duo (Harry + Hermione) | Le perso passif (KO bientôt) gagne 1 tour de respit pendant que l'actif soigne. Synergie nette avec Hermione qui Ferula derrière. | Choix tactique : Hermione Ferula Harry (le tank physique) pendant qu'elle attaque ou Garde le tour d'après. |
+| Solo (Harry seul) | Tour de récupération PM (+5 L1 → +6 L9) + mitigation 50 % sur un coup. Utile contre les abilities lourdes (drain, damage). | Auto-cible Harry. 12+ PV étalés sur 3 tours, complète Episkey (12 PV burst, 5 PM). À 6 PM, échange visible : 4 + reg vs 12 burst. |
+| Duo (Harry + Hermione) | Hermione gagne +6 à +8 PM (MAG 16+) → pivote rapidement de tank passif à caster pleine main. Le perso KO-imminent gagne 1 tour de respit. | Choix tactique : Hermione Ferula Harry (le tank physique) pendant qu'elle attaque ou Garde le tour d'après. |
 
 ### 2.4 Hors-scope V1
 
@@ -157,16 +157,33 @@ if (s.id === 'regen') {
 
 ### Étape 2 — Action Garde
 - [ ] `index.html` : ajouter `<button class="cmd-btn" onclick="battleAction('guard')">🛡️ Garde</button>` entre Sortilège et Objet (ordre : Attaquer / Sortilège / **Garde** / Objet / Fuir).
+- [ ] `css/style.css` (media query mobile `≤700px`, à la suite de `body.in-battle .battle-actions`) — éviter l'orphelin sur la grille 2×2 actuelle. Passer à une grille **3+2** via `span` :
+  ```css
+  body.in-battle .battle-actions {
+    grid-template-columns: repeat(6, 1fr);  /* 6 cols fines */
+  }
+  body.in-battle .battle-actions .cmd-btn:nth-child(1),
+  body.in-battle .battle-actions .cmd-btn:nth-child(2),
+  body.in-battle .battle-actions .cmd-btn:nth-child(3) {
+    grid-column: span 2;   /* ligne 1 : Attaquer / Sortilège / Garde, 33 % chacun */
+  }
+  body.in-battle .battle-actions .cmd-btn:nth-child(4),
+  body.in-battle .battle-actions .cmd-btn:nth-child(5) {
+    grid-column: span 3;   /* ligne 2 : Objet / Fuir, 50 % chacun */
+  }
+  ```
+  Hauteur totale inchangée (2 lignes × `min-height:56px` + gap). Touch targets ≥ 100 px (ligne 1) / ≥ 160 px (ligne 2) sur écran 360 px. Desktop : `flex-wrap: wrap` existant absorbe le 5ᵉ bouton sans modification.
 - [ ] `battle.js — battleAction` : ajouter le cas `'guard'` :
   ```js
   if (action === 'guard') {
     const idx  = currentBattleChar;
     const c    = getActiveChar();
     guardTurns[idx] = 1;
-    const pmGain = Math.min(3, c.spMax - c.sp);
+    const pmTheo = 3 + Math.floor((c.mag || 0) / 5);
+    const pmGain = Math.max(0, Math.min(pmTheo, c.spMax - c.sp));
     c.sp += pmGain;
     addMsg(`🛡️ ${c.name} se met en garde${pmGain ? ` (+${pmGain} PM)` : ''}.`, 'info');
-    UX_safe.logCombat(`🛡️ ${c.name} se met en garde`, 'magic');
+    UX_safe.logCombat(`🛡️ ${c.name} se met en garde${pmGain ? ` (+${pmGain} PM)` : ''}`, 'magic');
     AudioSystem.playSpellCast('Protego');   // ré-use du son existant
     advanceBattleChar();
     return;
@@ -320,7 +337,7 @@ if (s.id === 'regen') {
 | Étape | Durée |
 |------:|-------|
 | 1. État + framework regen | 25 min |
-| 2. Action Garde (état + UI + tick) | 30 min |
+| 2. Action Garde (état + UI + grille mobile + tick) | 35 min |
 | 3. Sort Ferula (handler + sélection allié) | 30 min |
 | 4. Level-up table + apprentissage | 10 min |
 | 5. Sérialisation regen | 10 min |
