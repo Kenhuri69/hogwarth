@@ -396,6 +396,11 @@ function _applyState(gs) {
   if (typeof _ensureActiveKillQuestTargets === 'function') {
     _ensureActiveKillQuestTargets(currentFloor);
   }
+  // Migration : replace les escaliers manquants (étage softlocké par
+  // une vieille collision de génération rooms[0]/rooms[last]).
+  if (typeof _ensureStairsExist === 'function') {
+    _ensureStairsExist(currentFloor);
+  }
 
   recalculateStats();
   updateUI();

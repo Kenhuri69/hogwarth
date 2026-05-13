@@ -235,6 +235,10 @@ function _restoreFloorFromCache(floor) {
   if (typeof _ensureActiveKillQuestTargets === 'function') {
     _ensureActiveKillQuestTargets(floor);
   }
+  // Migration : replace les escaliers manquants (softlock vieilles saves).
+  if (typeof _ensureStairsExist === 'function') {
+    _ensureStairsExist(floor);
+  }
   return true;
 }
 

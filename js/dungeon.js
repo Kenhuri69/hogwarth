@@ -221,6 +221,10 @@ function generateDungeon(floor) {
   if (typeof _ensureActiveKillQuestTargets === 'function') {
     _ensureActiveKillQuestTargets(floor);
   }
+
+  // Garde-fou : si la génération a écrasé un escalier (collision
+  // rooms[0]/rooms[last] = mêmes centres), on en replace un.
+  _ensureStairsExist(floor);
 }
 
 // Spawn ciblé pour quête à l'acceptation. Place 1 monstre cible (par id) +
@@ -310,6 +314,59 @@ function _ensureActiveKillQuestTargets(floor) {
       if (!placed) break; // plus de cases FLOOR libres
       added += placed;
     }
+  }
+  return added;
+}
+
+// Garantit la présence de STAIRS_D (toujours) et STAIRS_U (si floor>1)
+// sur l'étage courant. Couvre deux cas :
+//  - bug de génération : si rooms[0].center === rooms[last].center, alors
+//    STAIRS_U (ligne 125) écrasait STAIRS_D (ligne 116) → softlock,
+//  - vieilles saves dont le cache contient un étage softlocké.
+//
+// Place les escaliers manquants sur une case FLOOR libre (jamais sur
+// SHOP/CHEST/NPC/FOUNTAIN ni sur la case du joueur). Idempotent.
+// Appelée depuis `generateDungeon`, `_restoreFloorFromCache` et `_applyState`.
+function _ensureStairsExist(floor) {
+  if (typeof dungeon === 'undefined' || !dungeon || !dungeon.length) return 0;
+  let hasDown = false, hasUp = false;
+  for (let y = 0; y < dungeon.length; y++) {
+    for (let x = 0; x < dungeon[y].length; x++) {
+      if (dungeon[y][x] === CELL.STAIRS_D) hasDown = true;
+      if (dungeon[y][x] === CELL.STAIRS_U) hasUp   = true;
+    }
+  }
+  const needDown = !hasDown;
+  const needUp   = !hasUp && (floor || 1) > 1;
+  if (!needDown && !needUp) return 0;
+
+  // Pool de cases FLOOR éligibles (hors joueur)
+  const free = [];
+  for (let y = 0; y < dungeon.length; y++) {
+    for (let x = 0; x < dungeon[y].length; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (typeof playerX === 'number' && x === playerX && y === playerY) continue;
+      free.push({ x, y });
+    }
+  }
+  if (!free.length) return 0;
+
+  // Shuffle Fisher-Yates pour des placements non corrélés
+  for (let i = free.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [free[i], free[j]] = [free[j], free[i]];
+  }
+
+  let added = 0;
+  if (needDown && free.length) {
+    const c = free.pop();
+    dungeon[c.y][c.x] = CELL.STAIRS_D;
+    added++;
+  }
+  if (needUp && free.length) {
+    const c = free.pop();
+    dungeon[c.y][c.x] = CELL.STAIRS_U;
+    added++;
   }
   return added;
 }
