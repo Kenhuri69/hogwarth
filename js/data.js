@@ -107,6 +107,14 @@ const CHARACTERS = {
     wand:"Baguette de Bois de Lune", armor:"Robe de Gryffondor", acc:"Lunettes de Lune",
     spells:["Episkey","Protego","Wingardium Leviosa","Lumos Maxima"],
     tagline:"Magicienne studieuse — la magie au clair de lune."
+  },
+  louis: { name:"Louis Dragonflamme", icon:"🐉", class:"Élève de Poufsouffle",
+    imgSrc:"img/louis.png", role:"Dompteur de Dragons",
+    hp:33, sp:26, str:8, int:12, agi:11, end:10, lck:13, mag:12,
+    atk:5, def:2,
+    wand:"Baguette d'Acacia", armor:"Robe de Poufsouffle", acc:"Brassard d'Écailles",
+    spells:["Expelliarmus","Protego","Incendio","Episkey"],
+    tagline:"Dompteur de dragons — sa baguette pulse au rythme du feu."
   }
 };
 
