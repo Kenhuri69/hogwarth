@@ -259,13 +259,14 @@ else if (typeof victoryAchieved !== 'undefined'
          && floor >= 11) {
   monster.variant = 'darkness';
   monster.name    = 'Ténébreux ' + base.name;
-  monster.hp      = Math.floor(monster.hp  * 1.30);
-  monster.atk     = Math.floor(monster.atk * 1.20);
-  monster.def     = Math.floor(monster.def * 1.15);
+  // Multipliers calibrés — cf. §7.2bis (≈ 2 étages virtuels)
+  monster.hp      = Math.floor(monster.hp  * 1.25);
+  monster.atk     = Math.floor(monster.atk * 1.15);
+  monster.def     = Math.floor(monster.def * 1.10);
   if (monster.mag) monster.mag = Math.floor(monster.mag * 1.20);
-  monster.xp      = Math.floor(monster.xp   * 1.50);
-  monster.gold    = Math.floor(monster.gold * 1.50);
-  // Drops gated : voir §7.3 (filtre côté endBattle)
+  monster.xp      = Math.floor(monster.xp   * 1.75);
+  monster.gold    = Math.floor(monster.gold * 1.75);
+  // Drops gated : voir §7.3 (filtre côté endBattle sur enemy.variant)
 }
 else if (floor >= 5) { … } // ancient
 else if (floor >= 3) { … } // fierce
@@ -334,6 +335,148 @@ badge ancient (💜) sans confusion grâce à l'animation pulse.
 > `darkness` prend la priorité (cf. ordre des `else if`). Donc plus de
 > "Ancien Mangemort" au-delà de 10 — uniquement des "Ténébreux X". Ça
 > simplifie la lecture du badge pour le joueur.
+
+### 7.2bis Calibrage du scaling — calcul concret
+
+**Formule actuelle** (`dungeon.js:16-29`) :
+```
+mult = (1 + (floor - 1) × base.scale) × diffMult
+hp  = base.hp  × mult
+atk = base.atk × mult
+def = base.def × mult
+xp  = base.xp  × mult
+mag = base.mag        (non scalé)
+agi, lck = inchangés  (non scalés)
+gold = base.gold × mult
+```
+
+Le variant `darkness` **applique ses multiplicateurs par-dessus**, sur
+les valeurs déjà scalées. Donc l'effet net sur une stat S à un étage F
+post-victoire = `S_base × scaleMult(F) × darknessMult(S)`.
+
+#### Référentiel joueur (Normal, Gryffondor, équipement mid)
+
+Sur la base d'une partie qui atteint Voldemort à L10-11 (kill →
+saut à L11-12), Maison tier 3 atteint (~600 pts ≈ 60 kills) :
+
+| Stat | Calcul L11 | + équipement mid | + Maison tier 3 | **Effectif L11** |
+|------|-----------|------------------|-----------------|------------------|
+| HP   | 35 + 10×8 = 115 | +10 (robe1+chapeau) | — | **~125** |
+| SP   | 22 + 10×5 = 72  | +5  | — | **~77** |
+| ATK  | 5 + 10 = 15    | +5 (wand2)       | +2 (Gryff t3)   | **~22** |
+| DEF  | 2 + 10 = 12    | +3 (armor)       | —               | **~15** |
+| MAG  | 10 + 10 = 20   | +4 (amulette)    | —               | **~24** |
+| LCK  | 15             | +1 (anneau)      | +1 (Gryff t3)   | **~17** |
+| crit | 5 + 17×0.5     | —                | —               | **~14 %** |
+| dodge| 5 + 12×0.4     | —                | —               | **~10 %** |
+
+#### Stats des monstres clés à l'étage 10 (Normal, pré-darkness)
+
+`mult(F=10) = 1 + 9 × scale` (diffMult = 1.0 sur Normal)
+
+| Monstre | base HP/ATK/DEF/MAG | scale | mult@10 | HP@10 | ATK@10 | DEF@10 | MAG@10 |
+|---------|---------------------|-------|---------|-------|--------|--------|--------|
+| Mangemort           | 40/12/6/10  | 0.30 | 3.70 | 148 | 44 | 22 | 10 |
+| Mangemort d'Élite   | 55/16/8/16  | 0.32 | 3.88 | 213 | 62 | 31 | 16 |
+| Bellatrix           | 70/20/8/20  | 0.35 | 4.15 | 290 | 83 | 33 | 20 |
+| Hécate              | 130/10/7/22 | 0.32 | 3.88 | 504 | 38 | 27 | 22 |
+| Strigoï             | 110/14/8/14 | 0.32 | 3.88 | 426 | 54 | 31 | 14 |
+| Voldemort Ressuscité| 100/28/14/25| 0.40 | 4.60 | 460 | 128 | 64 | 25 |
+
+#### Combat-feel actuel (étage 10, sans darkness)
+
+Formules : attaque joueur = `max(1, atk + rand(0,3) - enemy.def)` (`battle.js:205`),
+attaque ennemie = `max(0, enemy.atk - target.def + rand(0,2))` (`battle.js:284`).
+
+| Combat L11 vs… | Dmg joueur/coup | Dmg ennemi/coup | Hits pour tuer | Hits pour mourir |
+|----------------|-----------------|-----------------|----------------|------------------|
+| Mangemort     | 22−22 = 1‑3     | 44−15 = 30      | ~50            | ~4               |
+| Mangemort élite| 22−31 = 1‑3    | 62−15 = 47      | ~70            | ~3               |
+| Bellatrix     | 22−33 = 1‑3     | 83−15 = 68      | ~100           | ~2               |
+| Voldemort     | 22−64 = 1‑3     | 128−15 = 113    | ~150           | 1‑2              |
+
+→ À l'étage 10, le combat physique tend vers **0 dégât joueur** dès que
+la DEF ennemie dépasse l'ATK joueur. Le joueur s'appuie déjà fortement
+sur les sorts magiques (qui ignorent la DEF). C'est cohérent avec le
+"mur" documenté dans `DIFFICULTY_REPORT.md`.
+
+#### Recommandation : multiplicateurs `darkness`
+
+Objectif : que le variant `darkness` à l'étage 11 se ressente comme
+**~2 étages supplémentaires** d'agression, sans casser le moteur.
+Un étage naturel ajoute `scale / mult` ≈ +8 % (sur Mangemort) à
++9 % (sur Voldemort). Donc « 2 étages virtuels » ≈ +16-18 % sur les
+stats déjà scalées.
+
+**Multiplicateurs retenus** (à appliquer dans `scaleMonster()` après
+le calcul standard) :
+
+| Stat | Multiplier | Effet net étage 11 vs étage 10 base | Justification |
+|------|-----------|---------------------------------------|----------------|
+| `hp`   | **× 1.25** | +35-36 % | Le combat dure clairement plus longtemps, sans devenir interminable |
+| `atk`  | **× 1.15** | +25 % sur dmg subis | Le joueur perd ~1 hit de marge sur sa marge de survie |
+| `def`  | **× 1.10** | +20 % | Réduit légèrement l'offensive physique (déjà saturée) ; surtout pour ne pas trivialiser les sorts |
+| `mag`  | **× 1.20** | +20 % | Power des abilities = `power + mag/2` → +10 % dmg sur abilities (raisonnable) |
+| `xp`   | **× 1.75** | — | Incentive clair : Ténébreux rapporte +75 % d'XP pour un combat ~+35 % plus long |
+| `gold` | **× 1.75** | — | Idem |
+
+> **Pas de multiplicateur sur `agi`/`lck`** — ces stats ne sont pas
+> scalées dans le moteur de base (cf. formule), il serait incohérent
+> de les boost ici. Si on veut booster crit/dodge ennemi à la marge,
+> passer par `bonusCritChance`/`bonusDodgeChance` sur les abilities.
+
+#### Tables vérification — stats post-darkness à l'étage 11
+
+`mult(F=11) = 1 + 10 × scale` puis × darknessMult.
+
+| Monstre | HP@11 dark | ATK@11 dark | DEF@11 dark | MAG@11 dark | ΔHP @10 base | ΔATK @10 base |
+|---------|-----------:|------------:|------------:|------------:|-------------:|---------------:|
+| Mangemort           | 200 | 55  | 26 | 12 | +35 % | +25 % |
+| Mangemort d'Élite   | 289 | 77  | 37 | 19 | +36 % | +24 % |
+| Bellatrix           | 394 | 104 | 40 | 24 | +36 % | +25 % |
+| Hécate              | 683 | 48  | 32 | 26 | +36 % | +26 % |
+| Strigoï             | 578 | 68  | 37 | 17 | +36 % | +26 % |
+| Voldemort Ressuscité| 625 | 161 | 77 | 30 | +36 % | +26 % |
+
+#### Projection courbe sur 5 étages NG+ (Mangemort référence)
+
+| Étage | mult base | HP base (no dark) | HP darkness (×1.25) | ATK darkness (×1.15) |
+|-------|----------:|------------------:|---------------------:|---------------------:|
+| 10    | 3.70 | 148 | — | — |
+| 11    | 4.00 | 160 | **200** | **55** |
+| 13    | 4.60 | 184 | **230** | **64** |
+| 15    | 5.20 | 208 | **260** | **72** |
+| 18    | 6.10 | 244 | **305** | **84** |
+| 20    | 6.70 | 268 | **335** | **93** |
+
+→ Croissance linéaire et lisible : sur 10 étages NG+ (10 → 20),
+les HP de Mangemort darkness passent de 200 à 335 (×1.68). Le joueur
+gagne mécaniquement 10 niveaux dans le même temps : +80 HP base,
++10 ATK base, +10 DEF base, sans compter les drops Ténèbres
+(`cape_voldemort` DEF+4 MAG+3 ; `cendres_phenix` MAG+4 LCK+2 ;
+`oeil_basilic` crit+10 dodge+5). **Le joueur scale plus vite que les
+monstres en absolu, donc l'écart ne s'élargit pas.**
+
+#### Sanity check : difficulté Expert
+
+`diffMult(Expert) = 1.45`. Un Mangemort darkness étage 11 Expert :
+- HP = 40 × (1 + 10×0.30) × 1.45 × 1.25 = 290
+- ATK = 12 × 4 × 1.45 × 1.15 = 80
+
+Ça reste affrontable par un joueur Expert post-Voldemort (qui aura
+typiquement L13-15 avec build optimisé). Aucun ajustement spécial
+nécessaire pour la difficulté — le `diffMult` existant suffit.
+
+#### À retoucher si le ressenti diffère du calcul
+
+Si playtesting montre que :
+- **Trop dur** → réduire d'abord `hp` (×1.20) avant `atk` (qui touche
+  directement le facteur survie).
+- **Trop facile** → augmenter `xp`/`gold` plutôt que d'augmenter les
+  stats. La récompense doit rester proportionnelle au risque.
+- **Sorts surpuissants** → relire la formule ability `power + mag/2` et
+  envisager une atténuation `def/4` au lieu de `def/3` (déjà appliqué
+  par PR #92).
 
 ### 7.3 Drops uniques post-victoire
 
