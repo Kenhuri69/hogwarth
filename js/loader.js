@@ -151,7 +151,11 @@ window.UX_safe = new Proxy({}, {
     { name: 'loadGame',           source: 'save.js',         kind: 'fn'  },
     { name: 'autoSave',           source: 'save.js',         kind: 'fn'  },
     { name: 'listSaveSlots',      source: 'save.js',         kind: 'fn'  },
+    { name: 'exportSaveStore',    source: 'save.js',         kind: 'fn'  },
+    { name: 'importSaveStore',    source: 'save.js',         kind: 'fn'  },
     { name: 'openSaveDialog',     source: 'save-ui.js',      kind: 'fn'  },
+    { name: 'exportSaveToFile',   source: 'save-ui.js',      kind: 'fn'  },
+    { name: 'importSaveFromFile', source: 'save-ui.js',      kind: 'fn'  },
 
     // ── Main / démarrage ──
     { name: 'showPlayerSelect',   source: 'main.js',         kind: 'fn'  },
