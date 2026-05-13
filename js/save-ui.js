@@ -265,31 +265,50 @@ function _renderHubSlotList() {
 
 // Point d'entrée depuis l'écran titre.
 // - Migre éventuellement l'ancienne clé legacy.
-// - Si au moins une sauvegarde existe → affiche le hub.
-// - Sinon → bascule direct sur player-select (UX inchangée pour les
-//   nouveaux joueurs).
+// - Affiche toujours le hub : le bouton "Importer une sauvegarde" doit
+//   rester accessible même sans slot existant (cas typique : test d'une
+//   fixture). La liste vide est rendue avec un placeholder doux.
 function enterStartHub() {
   const titleEl = document.getElementById('title-screen');
   if (titleEl) titleEl.style.display = 'none';
   migrateLegacyKey();
-  const slots = listSaveSlots();
-  if (slots.length === 0) {
-    // Aucun slot : flux d'origine (player-select directement)
-    if (typeof showPlayerSelect === 'function') {
-      // showPlayerSelect masque le title-screen lui-même, mais on l'a déjà fait
-      const psEl = document.getElementById('player-select-screen');
-      if (psEl) psEl.style.display = 'flex';
-      // Initialiser comme showPlayerSelect()
-      if (typeof selectedPartySize !== 'undefined') {
-        selectedPartySize = 1;
-        selectedHeroes    = ['harry'];
-        if (typeof refreshHeroSelectionUI === 'function') refreshHeroSelectionUI();
-      }
-    }
-    return;
-  }
   _renderHubSlotList();
   document.getElementById('start-hub-screen').style.display = 'flex';
+}
+
+// Bouton "📥 Importer une sauvegarde" du hub démarrage. Wiring séparé
+// de la modale `slot-modal` car le hub n'est pas en jeu (pas de modale
+// pré-ouverte à rafraîchir). Après import, on rebascule sur le hub si
+// au moins un slot a été importé, sinon on reste où on est.
+function importSaveFromFileToHub() {
+  const input = document.getElementById('hub-import-file-input');
+  if (!input || typeof importSaveStore !== 'function') return;
+  input.onchange = () => {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const res = importSaveStore(String(reader.result || ''));
+      if (!res.ok) {
+        const reasonLabel = {
+          json:  'fichier JSON invalide',
+          shape: 'structure inattendue',
+          empty: 'aucun emplacement reconnu',
+          write: 'écriture impossible (espace local saturé ?)'
+        }[res.reason] || 'erreur inconnue';
+        alert('Import refusé : ' + reasonLabel);
+        return;
+      }
+      // Rebascule sur le hub avec la nouvelle liste de slots.
+      const hub = document.getElementById('start-hub-screen');
+      if (hub) hub.style.display = 'none';
+      enterStartHub();
+    };
+    reader.onerror = () => alert('Lecture du fichier impossible.');
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 // Bouton "Nouvelle aventure" du hub : on cache le hub et on enchaîne sur
