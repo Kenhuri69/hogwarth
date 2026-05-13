@@ -446,39 +446,48 @@ badge ancient (💜) sans confusion grâce à l'animation pulse.
 
 ### 7.2bis Calibrage du scaling — Boucle Ténébreuse
 
-**Formule actuelle** (`dungeon.js:16-29`) :
+> 🔄 **Itération 2 (retour utilisateur)** : les multiplicateurs darkness
+> figés (×1.50 HP / ×1.12 ATK / ×1.15 DEF·MAG / ×2 XP·gold) donnaient des
+> Chats Ténébreux à 15 hp au floor 11 (one-shot trivial) tandis que les
+> bosses haut-relF montaient à 690+ hp. Trop déséquilibré. Remplacé par
+> une **formule récursive lissée par le scaling intra-palier**.
+
+**Formule récursive (V2)** définie dans `js/dungeon.js — scaleMonster` :
+
 ```
-mult = (1 + (floor - 1) × base.scale) × diffMult
-hp, atk, def, xp = base × mult
-mag, agi, lck    = base (non scalés)
-gold             = base × mult
+n          = ⌊(floor − 1) / 10⌋                              // 0 pour 1-10, 1 pour 11-20, 2 pour 21-30, …
+relFloor   = effectiveFloor(floor)                            // 1-10 dans le 1er palier post-victoire
+intraMult  = 1 + (relFloor − 1) × base.scale                 // ex : 1.0 pour Chat relF=1, 4.6 pour Voldemort relF=10
+mult       = intraMult × diffMult
+
+stat(0)    = base × mult                                      // pré-victoire (n=0), comportement inchangé
+scal       = 1 + scalDelta / intraMult                        // mult récursif lissé
+fixEff[s]  = baseFix[s] / intraMult                           // bonus additif lissé
+stat(n)    = stat(n−1) × scal + fixEff                        // récursion appliquée n fois (n≥1)
 ```
 
-**Formule revue pour la Boucle Ténébreuse** : on substitue `floor` par
-`relFloor = floor − 10` quand `victoryAchieved && floor >= 11`. Puis on
-applique les multiplicateurs darkness par-dessus :
-```
-relFloor = floor − 10                                (post-victoire, floor≥11)
-mult     = (1 + (relFloor − 1) × base.scale) × diffMult
-hp  = base.hp  × mult × 1.50      ← combat plus long, plus de marge tactique
-atk = base.atk × mult × 1.12      ← faible boost — à haut niveau, +ATK ennemi
-                                    a un impact disproportionné (dmg = atk - def
-                                    avec DEF qui sature). On évite les one-shots.
-def = base.def × mult × 1.15
-mag = base.mag × 1.15             ← réduit (vs ×1.30 initial). La formule
-                                    abilities = power + mag/2 amplifie déjà la
-                                    magie. Sur-bumper rendait Avada/Cruciatus
-                                    létaux dès floor 14-15.
-xp  = base.xp  × mult × 2.00
-gold = base.gold × mult × 2.00
+**Le lissage par `intraMult`** maximise l'apport sur les monstres faibles
+(Chat relF=1 → `scal=1.5`, `fixEff_hp=80`) et minimise l'apport sur les
+monstres haut-relF déjà fortement scalés (Voldemort relF=10 → `scal≈1.11`,
+`fixEff_hp≈17.4`). Résultat : le bas remonte, le haut reste calibré.
+
+**Bloc de configuration** (`dungeon.js` en haut du fichier) :
+```js
+const ENDGAME_SCALING = {
+  baseFix: { hp: 80, atk: 10, def: 5, mag: 8, xp: 50, gold: 80 },
+  scalDelta: 0.5,    // TODO: faire dépendre de n pour amplifier les paliers profonds
+};
 ```
 
-> **Profil retenu** : monstres significativement **plus tanky** (HP ×1.50)
-> et **un peu plus dangereux** physiquement (ATK ×1.12) / magiquement
-> (MAG ×1.15). Le combat dure plus longtemps sans devenir létal — laisse
-> au joueur le temps d'utiliser ses sorts upgradés, ses consommables,
-> et son set Ténèbres. Récompenses très généreuses (xp/gold ×2) pour
-> compenser la longueur des fights et financer la Forge / Bibliothèque.
+**Disparition** : les multiplicateurs darkness séparés (×1.50 HP, ×1.12
+ATK, ×1.15 DEF·MAG, ×2 XP·gold) sont **intégrés dans `scal+fixEff`**.
+Le variant `darkness` conserve uniquement son rôle visuel (préfixe
+« Ténébreux », badge 🌑, halo CSS).
+
+> **Profil retenu V2** : courbe géométrique douce (`× ~1.11` par palier
+> sur les bosses, `× 1.5 + 80` par palier sur les mobs faibles). Voldemort
+> Ténébreux floor 20 = 527 hp (légère baisse vs 690 V1), floor 30 = 982
+> hp, floor 40 = 1435 hp. Chat Ténébreux floor 11 passe de 15 à 95 hp.
 
 #### Référentiel joueur (Normal, Gryffondor, équipement mid)
 
@@ -498,31 +507,50 @@ Drops Ténèbres en cours d'acquisition (cape_voldemort +DEF/MAG,
 cendres_phenix +MAG/regenHp, oeil_basilic +crit/dodge) — non comptés
 dans le tableau, marge de sécurité.
 
-#### Stats des monstres clés en version Ténébreuse (multiplicateurs retenus)
+#### Stats des monstres clés en version Ténébreuse (formule V2 — récursive)
 
-`mult(relF) = 1 + (relF − 1) × scale` (Normal, diffMult = 1.0). Le
-floor d'apparition est `minFloor + 10`. Stats finales avec darkness
-**×1.50 / ×1.12 / ×1.15 / ×1.15** (hp / atk / def / mag).
+Stats finales sortie de `scaleMonster` (Normal, diffMult = 1.0). Le floor
+d'apparition correspond à `relFloor = minFloor` (donc Chat à floor 11,
+Mangemort à floor 15, Voldemort à floor 20, etc.).
 
-| Monstre | minFloor | scale | apparait à floor… | relF | mult | **HP** | **ATK** | **DEF** | **MAG** |
-|---------|---------:|------:|-------------------|-----:|-----:|-------:|--------:|--------:|--------:|
-| Chat de Mme Norris   | 1  | 0.15 | floor 11 | 1  | 1.00 | **15**  | **2**   | **1**  | 0  |
-| Cornichon            | 1  | 0.15 | floor 11 | 1  | 1.00 | **18**  | **3**   | **2**  | 0  |
-| Peeves               | 1  | 0.18 | floor 11 | 1  | 1.00 | **21**  | **4**   | **2**  | 0  |
-| Mandragore Sauvage   | 2  | 0.20 | floor 12 | 2  | 1.20 | **43**  | **8**   | **4**  | 8  |
-| Inférius             | 4  | 0.28 | floor 14 | 4  | 1.84 | **104** | **26**  | **15** | 0  |
-| Mangemort            | 5  | 0.30 | floor 15 | 5  | 2.20 | **132** | **29**  | **15** | 11 |
-| Basilic Mineur       | 6  | 0.32 | floor 16 | 6  | 2.60 | **273** | **44**  | **24** | 16 |
-| Mangemort d'Élite    | 7  | 0.32 | floor 17 | 7  | 2.92 | **241** | **52**  | **27** | 18 |
-| Bellatrix            | 8  | 0.35 | floor 18 | 8  | 3.45 | **362** | **77**  | **32** | 23 |
-| Voldemort Ressuscité | 10 | 0.40 | floor 20 | 10 | 4.60 | **690** | **144** | **74** | 28 |
+| Monstre | minFloor | scale | apparait à | relF | intraMult | scal | fixEff_hp | **HP** | **ATK** | **DEF** | **XP** |
+|---------|---------:|------:|------------|-----:|----------:|-----:|----------:|-------:|--------:|--------:|-------:|
+| Chat de Mme Norris   | 1  | 0.15 | floor 11 | 1  | 1.00 | 1.50  | 80.0 | **95**  | **13**  | **6**  | **57** |
+| Mandragore Sauvage   | 2  | 0.20 | floor 12 | 2  | 1.20 | 1.42  | 66.7 | **106** | **16**  | **10** | **66** |
+| Inférius             | 4  | 0.28 | floor 14 | 4  | 1.84 | 1.27  | 43.5 | **132** | **35**  | **19** | **109**|
+| Mangemort            | 5  | 0.30 | floor 15 | 5  | 2.20 | 1.23  | 36.4 | **144** | **36**  | **18** | **130**|
+| Mangemort d'Élite    | 7  | 0.32 | floor 17 | 7  | 2.92 | 1.17  | 27.4 | **256** | **57**  | **31** | …      |
+| Bellatrix            | 8  | 0.35 | floor 18 | 8  | 3.45 | 1.14  | 23.2 | **299** | **81**  | **33** | **527**|
+| Voldemort Ressuscité | 10 | 0.40 | floor 20 | 10 | 4.60 | 1.11  | 17.4 | **527** | **144** | **72** | **1795**|
 
-> ✨ Voldemort Ténébreux à floor 20 = **+50 % HP / +12 % ATK** vs
-> Voldemort original à floor 10 (HP 460/ATK 128). Profil très tanky
-> mais frappant à peine plus fort — les ressources du joueur (PM,
-> potions) sont vraiment mises à l'épreuve sur la durée du fight.
+#### Projection paliers profonds (Voldemort Ressuscité)
 
-#### Combat-feel attendu (joueur sans boost §7.5+)
+À chaque palier supplémentaire, `n` augmente de 1 et la récursion est
+appliquée une fois de plus. Pour Voldemort (intraMult cumule via relF) :
+
+| Floor | n | relF | intraMult | HP | ATK | XP |
+|------:|--:|-----:|----------:|---:|----:|----|
+| 20    | 1 | 10   | 4.60      | **527**  | 144 | 1795 |
+| 30    | 2 | 20   | 8.60      | **982**  | 272 | 3382 |
+| 40    | 3 | 30   | 12.60     | **1435** | 398 | 4968 |
+| 50    | 4 | 40   | 16.60     | **1889** | 525 | 6554 |
+
+Croissance ~linéaire par palier (+450 hp / +125 atk / +1600 xp par 10
+floors). Pas d'explosion exponentielle, le scaling reste lisible.
+
+> ✨ Vs **V1** (mult constants × 1.50, etc.) : Chat floor 11 multiplié
+> par **6.3** (15 → 95), Voldemort floor 20 baissé de 690 → **527**
+> (combat ~25 % plus court). Plus de victory lap one-shot, plus
+> d'épopée infinie sur le boss.
+
+#### Combat-feel attendu (joueur sans boost §7.5+) — analyse V1 (historique)
+
+> ⚠️ Analyse rédigée avant la refonte V2. Les chiffres ci-dessous
+> reflètent les anciens multiplicateurs (HP×1.5, ATK×1.12). Garder pour
+> contexte ; recalibrer si besoin avec les nouvelles valeurs du tableau
+> précédent.
+
+
 
 Référentiel "joueur nu" sans Forge/Bibliothèque/Tier 5/Set bonus —
 pour mesurer ce que les mécaniques de boost doivent combler.
@@ -552,7 +580,11 @@ pour mesurer ce que les mécaniques de boost doivent combler.
   Ténébreux sont des **murs réels**. Le joueur DOIT s'appuyer sur
   les drops Ténèbres + sorts magiques (qui ignorent DEF).
 
-#### Multiplicateurs retenus
+#### Multiplicateurs retenus — V1 (historique, intégré dans `scal+fixEff` V2)
+
+> ⚠️ Les multiplicateurs fixes ci-dessous (V1) sont **remplacés par la
+> formule récursive V2** au sommet de la section. Conservés ici pour
+> traçabilité du raisonnement original.
 
 | Stat | Multiplier | Justification |
 |------|-----------:|----------------|
@@ -584,9 +616,10 @@ Tentation : booster davantage HP/ATK pour que le second loop soit
 3. Si trop dur dès floor 11, le joueur n'atteint jamais Voldemort
    Ténébreux à floor 20. Or c'est le climax voulu.
 
-#### Projection des stats Voldemort Ténébreux au-delà floor 20
+#### Projection des stats Voldemort Ténébreux au-delà floor 20 — V1 (historique)
 
-`relFloor > 10` n'est pas spécialement géré → la formule continue.
+> ⚠️ Voir le tableau « Projection paliers profonds » plus haut pour les
+> chiffres V2. V1 conservé pour traçabilité.
 
 | Floor | relF | mult | HP | ATK | DEF |
 |------:|-----:|-----:|---:|----:|----:|
@@ -594,10 +627,6 @@ Tentation : booster davantage HP/ATK pour que le second loop soit
 | 22    | 12   | 5.40 | 810 | 169 | 87 |
 | 25    | 15   | 6.60 | 990 | 207 | 106|
 | 30    | 20   | 8.60 | 1290| 270 | 138|
-
-Au-delà de floor 25, le joueur est typiquement L25+ avec items
-forge level 5 et tier 5 Maison — c'est un grind asymptotique attendu
-pour les sessions post-endgame "longues". OK pour V1.
 
 #### Sanity check : difficulté Expert (sans boost joueur)
 
