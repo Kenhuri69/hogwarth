@@ -1478,6 +1478,91 @@ body {
   from { filter: drop-shadow(0 0 6px #a040ff)  drop-shadow(0 0 12px #6020c0); }
   to   { filter: drop-shadow(0 0 12px #c060ff) drop-shadow(0 0 24px #8040e0); }
 }
+/* ===== Forge des Ténèbres & Bibliothèque interdite (endgame Tranche 2) ===== */
+#forge-modal, #library-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(30,10,10,0.95) 0%, rgba(0,0,0,0.96) 70%);
+  z-index: 600;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.forge-box, .library-box {
+  position: relative;
+  max-width: 540px; width: 100%;
+  max-height: 85vh; overflow-y: auto;
+  background: linear-gradient(180deg, #1b1208 0%, #0a0604 100%);
+  border: 2px solid var(--gold-dark);
+  border-radius: 6px;
+  padding: 22px 22px 16px;
+  box-shadow: 0 0 30px rgba(201,168,76,0.2);
+}
+.forge-resources, .library-resources {
+  display: flex; gap: 18px; justify-content: center;
+  font-family: 'Crimson Text', serif; font-size: 13px;
+  color: var(--parchment);
+  border-bottom: 1px solid var(--gold-dark);
+  padding-bottom: 10px; margin: 8px 0 12px;
+}
+.forge-list, .library-list { display: flex; flex-direction: column; gap: 8px; }
+.forge-item, .library-spell {
+  display: flex; align-items: center; gap: 10px;
+  background: #0a0705; border: 1px solid #2a1a08;
+  border-radius: 4px; padding: 8px 12px;
+}
+.forge-item-icon { position: relative; }
+.forge-lvl-badge {
+  position: absolute; top: -6px; right: -6px;
+  background: linear-gradient(135deg, #c89048, #a06820);
+  color: #1a0f05;
+  font-family: 'Cinzel', serif; font-size: 10px; font-weight: 700;
+  padding: 1px 5px; border-radius: 8px;
+  border: 1px solid var(--gold-dark);
+}
+.forge-item-text { flex: 1; min-width: 0; }
+.forge-item-name, .library-spell-name {
+  font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold-light);
+  margin-bottom: 2px;
+}
+.forge-item-slot, .library-spell-meta { color: #8a7050; font-size: 11px; font-style: italic; }
+.forge-preview, .library-preview {
+  font-size: 12px; color: var(--parchment);
+}
+.forge-preview b, .library-preview b { color: var(--gold-light); }
+.forge-maxed { color: #a8c070; font-style: italic; }
+.forge-noupgrade { color: #6a5030; font-style: italic; }
+.forge-cost, .library-cost { font-size: 11px; color: var(--gold); margin-top: 2px; }
+.forge-upgrade-btn, .library-upgrade-btn {
+  background: linear-gradient(180deg, #c89048, #a06820);
+  color: #1a0f05; border: none; border-radius: 3px;
+  padding: 6px 14px; font-family: 'Cinzel', serif; font-size: 11px;
+  letter-spacing: 1.5px; cursor: pointer;
+  transition: filter 0.15s, transform 0.05s;
+}
+.forge-upgrade-btn:hover, .library-upgrade-btn:hover { filter: brightness(1.1); }
+.forge-upgrade-btn.disabled, .library-upgrade-btn.disabled {
+  background: #3a2a1a; color: #6a5030; cursor: not-allowed; filter: none;
+}
+.forge-empty, .library-empty {
+  text-align: center; padding: 24px; color: #8a7050; font-style: italic;
+}
+.forge-hint, .library-hint {
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid rgba(106, 80, 48, 0.4);
+  font-size: 11px; color: #8a7050; font-style: italic; text-align: center;
+}
+.library-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+.library-tab {
+  flex: 1; padding: 7px;
+  background: #0a0705; border: 1px solid #2a1a08; border-radius: 3px;
+  color: var(--gold-dark); font-family: 'Cinzel', serif; font-size: 11px;
+  letter-spacing: 1px; cursor: pointer; transition: all 0.15s;
+}
+.library-tab.active {
+  background: linear-gradient(180deg, rgba(80,55,20,0.7), rgba(50,32,10,0.8));
+  border-color: var(--gold); color: var(--gold);
+}
+
 .variant-badge-darkness {
   background: linear-gradient(135deg, #4a1a6a 0%, #1a0a2a 100%);
   border: 1px solid #c060ff;

@@ -107,6 +107,9 @@ function applyEquipmentRegen() {
       if (item.regenHp) hpRegen += item.regenHp;
       if (item.regenSp) spRegen += item.regenSp;
     });
+    // Set bonus Ténèbres 3/3 : +2 regen HP / tour (cf. recalculateStats —
+    // c._tenebresSetCount). Voir ENDGAME_PLAN.md §7.8.
+    if ((c._tenebresSetCount | 0) >= 3) hpRegen += 2;
     if (hpRegen > 0 && c.hp < c.hpMax) {
       const heal = Math.min(hpRegen, c.hpMax - c.hp);
       c.hp += heal;
@@ -455,6 +458,20 @@ function endBattle(won) {
           const item = ITEMS.find(i => i.id === 'larme_phenix_pure');
           if (item && tryAddItem(item, { silent: true })) {
             addMsg(`✨ Drop unique : ${item.name} !`, 'magic');
+          }
+        }
+        // Matériaux endgame (Tranche 2) — drops indépendants
+        // 3 % Essence des Ténèbres + 2 % Page de Grimoire (cf. ENDGAME_PLAN.md §7.10).
+        if (Math.random() < 0.03) {
+          const item = ITEMS.find(i => i.id === 'essence_tenebres');
+          if (item && tryAddItem(item, { silent: true })) {
+            addMsg(`🌑 Matériau : ${item.name}`, 'magic');
+          }
+        }
+        if (Math.random() < 0.02) {
+          const item = ITEMS.find(i => i.id === 'page_grimoire');
+          if (item && tryAddItem(item, { silent: true })) {
+            addMsg(`📜 Matériau : ${item.name}`, 'magic');
           }
         }
       }

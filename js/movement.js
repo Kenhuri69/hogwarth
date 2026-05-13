@@ -135,6 +135,24 @@ function _exploreDescriptors() {
         ? `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
         : `<button class="explore-btn" onclick="useFountain();_hideExploreOverlay()">Boire à la fontaine</button>
            <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    },
+    // Endgame Tranche 2 — Forge des Ténèbres : upgrade des items équipés.
+    // Voir ENDGAME_PLAN.md §7.5 + js/forge.js — openForge.
+    [CELL.FORGE]: {
+      icon:  SCENE_ICONS.forge,
+      title: 'Forge des Ténèbres',
+      desc:  "Une enclume noire repose sur des charbons éternels. Le métal des Ténèbres peut renforcer vos équipements — au prix d'or et d'essence.",
+      btns:  `<button class="explore-btn" onclick="openForge();_hideExploreOverlay()">Forger</button>
+              <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    },
+    // Endgame Tranche 2 — Bibliothèque interdite : upgrade des sorts.
+    // Voir ENDGAME_PLAN.md §7.6 + js/library.js — openLibrary.
+    [CELL.LIBRARY]: {
+      icon:  SCENE_ICONS.library,
+      title: 'Bibliothèque interdite',
+      desc:  "Un pupitre sculpté porte un grimoire dont les pages flottent légèrement. Y déchiffrer un sort en amplifie la puissance — moyennant or et Pages de Grimoire.",
+      btns:  `<button class="explore-btn" onclick="openLibrary();_hideExploreOverlay()">Étudier</button>
+              <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     }
   };
 }
@@ -180,7 +198,8 @@ function handleCellEntry(cell) {
 
   if (cell === CELL.STAIRS_D || cell === CELL.STAIRS_U ||
       cell === CELL.SHOP     || cell === CELL.CHEST    ||
-      cell === CELL.FOUNTAIN) {
+      cell === CELL.FOUNTAIN ||
+      cell === CELL.FORGE    || cell === CELL.LIBRARY) {
     _showExploreOverlay(cell);
   } else if (cell === CELL.NPC) {
     const npcId = npcPlacements.get(`${playerX},${playerY}`);

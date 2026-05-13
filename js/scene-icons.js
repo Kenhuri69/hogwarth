@@ -294,6 +294,88 @@ const SCENE_ICONS = {
       <path d="M14 110 Q24 106 32 110 M88 110 Q98 106 106 110"
             stroke="#3a5e2a" stroke-width="1.4" fill="none" opacity="0.6"/>
     </svg>`;
-  }
+  },
+
+  // ── Forge des Ténèbres (endgame Tranche 2) ───────────────────
+  // Enclume sur charbons rougeoyants avec étincelles ascendantes.
+  forge: `<svg viewBox="0 0 120 110" width="130" height="120" xmlns="http://www.w3.org/2000/svg" style="display:block">
+    <defs>
+      <radialGradient id="forgeGlow" cx="50%" cy="80%" r="60%">
+        <stop offset="0%" stop-color="#ff7530" stop-opacity="0.85"/>
+        <stop offset="60%" stop-color="#a04060" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#3a1a3a" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="anvilMetal" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#5a5050"/>
+        <stop offset="100%" stop-color="#1a1818"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="60" cy="85" rx="55" ry="22" fill="url(#forgeGlow)"/>
+    <path d="M 25 100 L 95 100 L 88 92 L 32 92 Z" fill="#3a2a1a" stroke="#5a4030" stroke-width="1"/>
+    <path d="M 38 92 L 82 92 L 78 86 L 42 86 Z" fill="#ff5020"/>
+    <circle cx="48" cy="88" r="2.5" fill="#ffb060">
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="89" r="2"   fill="#ffd080">
+      <animate attributeName="opacity" values="1;0.5;1" dur="1.4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="72" cy="88" r="2.5" fill="#ff9050">
+      <animate attributeName="opacity" values="0.7;1;0.7" dur="2.1s" repeatCount="indefinite"/>
+    </circle>
+    <path d="M 40 80 L 80 80 L 76 64 L 60 60 L 44 64 Z" fill="url(#anvilMetal)" stroke="#7a6868" stroke-width="1.2"/>
+    <rect x="32" y="56" width="56" height="8" rx="2" fill="#3a3434" stroke="#787070" stroke-width="1"/>
+    <path d="M 88 60 L 102 62 L 102 66 L 88 64 Z" fill="#3a3434" stroke="#787070" stroke-width="0.8"/>
+    <circle cx="50" cy="45" r="1.3" fill="#ffcc66" opacity="0.9">
+      <animate attributeName="cy" values="45;25;45" dur="2.4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0;0.9" dur="2.4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="40" r="1.5" fill="#ff9933" opacity="0.85">
+      <animate attributeName="cy" values="40;18;40" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.85;0;0.85" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="70" cy="48" r="1.2" fill="#ffaa44" opacity="0.9">
+      <animate attributeName="cy" values="48;28;48" dur="2.1s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0;0.9" dur="2.1s" repeatCount="indefinite"/>
+    </circle>
+  </svg>`,
+
+  // ── Bibliothèque interdite (endgame Tranche 2) ───────────────
+  // Pupitre + grimoire ouvert avec runes flottantes pourpres.
+  library: `<svg viewBox="0 0 120 110" width="130" height="120" xmlns="http://www.w3.org/2000/svg" style="display:block">
+    <defs>
+      <radialGradient id="libGlow" cx="50%" cy="50%" r="55%">
+        <stop offset="0%" stop-color="#9060c0" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#2a1a3a" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="bookCover" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3a1a4a"/>
+        <stop offset="100%" stop-color="#1a0a26"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="60" cy="55" rx="50" ry="32" fill="url(#libGlow)"/>
+    <path d="M 20 100 L 100 100 L 90 78 L 30 78 Z" fill="#3a2a1a" stroke="#5a3a26" stroke-width="1.2"/>
+    <path d="M 30 78 L 90 78 L 84 70 L 36 70 Z" fill="#48321a" stroke="#5a3a26" stroke-width="1"/>
+    <path d="M 38 70 L 60 66 L 82 70 L 82 56 L 60 52 L 38 56 Z" fill="#e4d6b4" stroke="#7a5a3a" stroke-width="1"/>
+    <path d="M 38 70 L 60 66 L 60 50 L 36 54 Z" fill="url(#bookCover)" stroke="#7a5a3a" stroke-width="1"/>
+    <path d="M 82 70 L 60 66 L 60 50 L 84 54 Z" fill="url(#bookCover)" stroke="#7a5a3a" stroke-width="1"/>
+    <line x1="60" y1="52" x2="60" y2="66" stroke="#c9a84c" stroke-width="1.5"/>
+    <line x1="42" y1="60" x2="56" y2="58" stroke="#5a4030" stroke-width="0.5" opacity="0.7"/>
+    <line x1="42" y1="63" x2="56" y2="61" stroke="#5a4030" stroke-width="0.5" opacity="0.7"/>
+    <line x1="42" y1="66" x2="56" y2="64" stroke="#5a4030" stroke-width="0.5" opacity="0.7"/>
+    <line x1="64" y1="58" x2="78" y2="60" stroke="#5a4030" stroke-width="0.5" opacity="0.7"/>
+    <line x1="64" y1="61" x2="78" y2="63" stroke="#5a4030" stroke-width="0.5" opacity="0.7"/>
+    <line x1="64" y1="64" x2="78" y2="66" stroke="#5a4030" stroke-width="0.5" opacity="0.7"/>
+    <text x="48" y="40" font-family="serif" font-size="10" fill="#c060ff" opacity="0.85">✶
+      <animate attributeName="opacity" values="0.85;0.3;0.85" dur="2.4s" repeatCount="indefinite"/>
+      <animate attributeName="y"       values="40;34;40" dur="2.4s" repeatCount="indefinite"/>
+    </text>
+    <text x="68" y="36" font-family="serif" font-size="10" fill="#a040e0" opacity="0.9">✦
+      <animate attributeName="opacity" values="0.9;0.4;0.9" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="y"       values="36;30;36" dur="3s" repeatCount="indefinite"/>
+    </text>
+    <text x="58" y="32" font-family="serif" font-size="8" fill="#d080ff" opacity="0.85">✧
+      <animate attributeName="opacity" values="0.85;0.5;0.85" dur="2.1s" repeatCount="indefinite"/>
+    </text>
+  </svg>`,
 
 };

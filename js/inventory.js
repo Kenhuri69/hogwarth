@@ -53,7 +53,9 @@ function recalculateStats() {
     c.end = c._baseEnd;
 
     if (c.equipped) {
-      // Itérer sur tous les slots présents (extensible sans toucher au code)
+      // Itérer sur tous les slots présents (extensible sans toucher au code).
+      // Bonus Forge : `upgradeLevel` ajoute +N au bonus principal de l'item
+      // (la stat avec la valeur la plus haute parmi atk/def/mag/lck).
       for (const slot of Object.keys(c.equipped)) {
         const item = c.equipped[slot];
         if (!item) continue;
@@ -65,13 +67,25 @@ function recalculateStats() {
         if (item.bonusInt) c.int += item.bonusInt;
         if (item.bonusAgi) c.agi += item.bonusAgi;
         if (item.bonusEnd) c.end += item.bonusEnd;
+        // Forge des Ténèbres : +upgradeLevel sur la stat principale.
+        const lvl = item.upgradeLevel | 0;
+        if (lvl > 0) {
+          // Détermine la stat principale (plus élevée parmi atk/def/mag/lck).
+          const bonuses = [
+            ['atk', item.bonusAtk | 0],
+            ['def', item.bonusDef | 0],
+            ['mag', item.bonusMag | 0],
+            ['lck', item.bonusLck | 0],
+          ];
+          bonuses.sort((a, b) => b[1] - a[1]);
+          if (bonuses[0][1] > 0) c[bonuses[0][0]] += lvl;
+        }
       }
     }
 
     // Stats dérivées : crit chance via LCK (5–25 %), esquive via AGI (5–20 %).
     // Bonus optionnels d'équipement (`bonusCritChance`, `bonusDodgeChance`)
-    // pris en compte si présents (préparé pour V2 — items existants ne les
-    // utilisent pas encore).
+    // pris en compte si présents.
     let critBonus = 0, dodgeBonus = 0;
     if (c.equipped) {
       for (const item of Object.values(c.equipped)) {
@@ -79,6 +93,20 @@ function recalculateStats() {
         if (item.bonusCritChance)  critBonus  += item.bonusCritChance;
         if (item.bonusDodgeChance) dodgeBonus += item.bonusDodgeChance;
       }
+    }
+
+    // Set bonus Ténèbres (endgame Tranche 2 — cf. ENDGAME_PLAN.md §7.8).
+    // 2 items équipés → +10 crit, +5 dodge ; 3 items → +15 crit, +10 dodge.
+    // Le bonus regenHp 3/3 est appliqué dans applyEquipmentRegen (battle.js).
+    c._tenebresSetCount = 0;
+    if (typeof TENEBRES_SET !== 'undefined' && c.equipped) {
+      const equippedIds = new Set();
+      for (const item of Object.values(c.equipped)) {
+        if (item && item.id) equippedIds.add(item.id);
+      }
+      c._tenebresSetCount = TENEBRES_SET.filter(id => equippedIds.has(id)).length;
+      if (c._tenebresSetCount >= 2) { critBonus += 10; dodgeBonus += 5;  }
+      if (c._tenebresSetCount >= 3) { critBonus += 5;  dodgeBonus += 5;  }
     }
     c.critChance     = Math.max(0, Math.min(40, 5 + c.lck * 0.5 + critBonus));
     c.dodgeChance    = Math.max(0, Math.min(35, 5 + c.agi * 0.4 + dodgeBonus));
@@ -373,6 +401,13 @@ function useItem(idx, battleMode) {
   if (item.type !== 'consumable') {
     if (battleMode) return; // ne devrait pas être cliquable en combat
     showEquipMenu(item, idx);
+    return;
+  }
+
+  // Matériaux endgame (Forge / Bibliothèque) — non utilisables manuellement.
+  // Consommés lors d'un upgrade Forge/Bibliothèque uniquement.
+  if (item.type === 'material') {
+    addMsg(`${item.name} : matériau d'upgrade — utilisable uniquement à la Forge ou à la Bibliothèque.`, '');
     return;
   }
 

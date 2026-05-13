@@ -212,9 +212,34 @@ const SPELL_HANDLERS = {
   steal:     _spellSteal,
 };
 
+// Bibliothèque interdite (endgame Tranche 2) — renvoie une copie augmentée
+// du sort en appliquant le `spellUpgrades` du caster :
+//   - power  : +2 × level
+//   - cost   : −1 × level (plancher 1)
+//   - chance : +0.05 × level (cap 0.50, pour les sorts à statut)
+// Si le caster n'a pas d'upgrade sur ce sort, retourne le sort tel quel.
+// Voir ENDGAME_PLAN.md §7.6 + js/library.js.
+function _spellForCaster(spell, char) {
+  if (!spell || !char) return spell;
+  const ups = char.spellUpgrades;
+  if (!ups) return spell;
+  const lvl = (ups[spell.name] | 0);
+  if (lvl <= 0) return spell;
+  const out = { ...spell };
+  if (typeof spell.power === 'number') out.power = spell.power + 2 * lvl;
+  if (typeof spell.cost  === 'number') out.cost  = Math.max(1, spell.cost - lvl);
+  if (typeof spell.chance === 'number') {
+    out.chance = Math.min(0.5, spell.chance + 0.05 * lvl);
+  }
+  return out;
+}
+window._spellForCaster = _spellForCaster;
+
 function castSpellInBattle(spellName, targetIdx) {
-  const char  = getActiveChar();
-  const spell = SPELLS.find(s => s.name === spellName);
+  const char     = getActiveChar();
+  const baseSpell = SPELLS.find(s => s.name === spellName);
+  // Wrapping Bibliothèque : applique les upgrades du caster.
+  const spell    = _spellForCaster(baseSpell, char);
   if (!spell || char.sp < spell.cost) { addMsg("Pas assez de magie !", 'bad'); return; }
 
   char.sp -= spell.cost;

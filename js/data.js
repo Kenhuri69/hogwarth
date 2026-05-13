@@ -2,7 +2,13 @@
 // CONSTANTES DE CARTE
 // ============================================================
 const MAP_W = 12, MAP_H = 12;
-const CELL = { WALL:0, FLOOR:1, DOOR:2, STAIRS_D:3, STAIRS_U:4, SHOP:5, CHEST:6, FOUNTAIN:7, NPC:8 };
+const CELL = {
+  WALL:0, FLOOR:1, DOOR:2, STAIRS_D:3, STAIRS_U:4, SHOP:5, CHEST:6,
+  FOUNTAIN:7, NPC:8,
+  // Endgame Tranche 2 — Forge des Ténèbres (upgrade items) et Bibliothèque
+  // interdite (upgrade sorts). Voir ENDGAME_PLAN.md §7.5/§7.6.
+  FORGE:9, LIBRARY:10
+};
 
 // Vecteurs de déplacement par direction cardinale (N, S, E, O).
 // Indexé par playerDir / cellule cible.
@@ -161,6 +167,35 @@ const ITEMS = [
   // Hook dans battle.js — triggerDeath/enemyTurn (cf. §7.10).
   { id:"larme_phenix_pure", name:"Larme du Phénix Pure", icon:"✨", desc:"Ressuscite un perso KO (auto)",
     type:"consumable", effect:"auto_revive", price:500 },
+  // ── Matériaux endgame (Tranche 2 — Forge & Bibliothèque) ──────
+  // Drop sur tout monstre variant `darkness` (cf. ENDGAME_PLAN.md §7.10).
+  // Type `material` : stockable mais non utilisable directement (useItem refuse).
+  // Consommés lors d'un upgrade Forge (essence_tenebres) ou Bibliothèque (page_grimoire).
+  { id:"essence_tenebres", name:"Essence des Ténèbres", icon:"🌑", desc:"Matériau · Forge des Ténèbres",
+    type:"material", price:0 },
+  { id:"page_grimoire",    name:"Page de Grimoire",     icon:"📜", desc:"Matériau · Bibliothèque interdite",
+    type:"material", price:0 },
+  // ── Items légendaires+ Maison Tier 5 (endgame Tranche 2) ─────
+  // Récompenses du palier Tier 5 (2000 pts, gated par victoryAchieved).
+  // Voir ENDGAME_PLAN.md §7.7. Cumulables avec les items Tier 4 si slots
+  // différents (sauf lame_godric/sword_gryff partage slot wand).
+  { id:"lame_godric",     name:"Lame de Godric",       icon:"⚔️", desc:"ATK+12 LCK+3 — Tier 5 Gryffondor",
+    type:"wand",  slot:"wand",   family:"sword_godric",  rarity:"legendary",
+    power:12, bonusAtk:12, bonusLck:3, price:0 },
+  { id:"bague_salazar",   name:"Bague de Salazar",     icon:"💍", desc:"MAG+8 LCK+5 — Tier 5 Serpentard",
+    type:"acc",   slot:"ring",   family:"ring_salazar",  rarity:"legendary",
+    power:8,  bonusMag:8,  bonusLck:5, price:0 },
+  { id:"bouclier_helga",  name:"Bouclier de Helga",    icon:"🛡️", desc:"DEF+10 — Tier 5 Poufsouffle",
+    type:"armor", slot:"body",   family:"shield_helga",  rarity:"legendary",
+    power:10, bonusDef:10,             price:0 },
+  { id:"codex_rowena",    name:"Codex de Rowena",      icon:"📔", desc:"MAG+10 INT+3 — Tier 5 Serdaigle",
+    type:"acc",   slot:"trinket",family:"codex_rowena", rarity:"legendary",
+    power:10, bonusMag:10, bonusInt:3, price:0 },
+  // ── Set bonus Ténèbres (endgame Tranche 2) ───────────────────
+  // Ids des 3 drops Ténèbres formant un set. Bonus de synergie appliqué
+  // dans recalculateStats() : 2/3 = +10 crit/+5 dodge ; 3/3 = +15 crit /
+  // +10 dodge / +2 regenHp. Voir ENDGAME_PLAN.md §7.8.
+  // (Constante exportée juste en dessous de la définition des 3 items.)
   // ── Drops Ténèbres (post-victoire, floor 11+) — variant darkness ──
   // Voir ENDGAME_PLAN.md §7.3. Drop bonus 8 % sur tout monstre variant
   // `darkness` (logique dans battle.js — endBattle).
@@ -230,6 +265,12 @@ const ITEMS = [
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];
+
+// Set bonus Ténèbres (endgame Tranche 2 — cf. ENDGAME_PLAN.md §7.8) :
+//   2 items équipés → +10 crit chance, +5 dodge chance
+//   3 items équipés → +15 crit chance, +10 dodge chance, +2 regenHp/tour
+// Compté dans recalculateStats() (crit/dodge) et applyEquipmentRegen() (regen).
+const TENEBRES_SET = ['cape_voldemort', 'cendres_phenix', 'oeil_basilic'];
 
 /* ─────────────────────────────────────────────────────────────────────────
    ICON_RECIPES — schéma de migration vers le pipeline painterly (direction A).

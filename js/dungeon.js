@@ -217,6 +217,23 @@ function generateDungeon(floor) {
     dungeon[room.cy][room.cx] = CELL.FOUNTAIN;
   }
 
+  // Endgame Tranche 2 : Forge des Ténèbres garantie aux floors 11, 14, 17, 20.
+  // Bibliothèque interdite garantie aux floors 12, 15, 18 (cadence offset
+  // pour ne pas overlap avec la Forge). Voir ENDGAME_PLAN.md §7.5 / §7.6.
+  // Ne s'affichent qu'en post-victoire (utilisent les matériaux Ténèbres).
+  const forgeFloors    = [11, 14, 17, 20];
+  const libraryFloors  = [12, 15, 18];
+  if (typeof victoryAchieved !== 'undefined' && victoryAchieved && rooms.length >= 3) {
+    const intermediate = rooms.slice(1, rooms.length - 1);
+    if (forgeFloors.includes(floor)) {
+      const room = intermediate[Math.floor(Math.random() * intermediate.length)];
+      dungeon[room.cy][room.cx] = CELL.FORGE;
+    } else if (libraryFloors.includes(floor)) {
+      const room = intermediate[Math.floor(Math.random() * intermediate.length)];
+      dungeon[room.cy][room.cx] = CELL.LIBRARY;
+    }
+  }
+
   // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
   usedFountains = new Set();
   // Réinitialise les actions spéciales PNJ (Fumseck, etc.).
