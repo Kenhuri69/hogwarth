@@ -96,6 +96,13 @@ const ITEM_ICON_REGISTRY = {
   // Matériaux endgame (Tranche 2) — réutilisent les PNG existants.
   essence_tenebres:    'img/icons/items/larmes_phenix.png',
   page_grimoire:       'img/icons/items/livre_sortileges.png',
+  // Items Tier 2 Maison (cf. .claude/plans/house-intermediate-tier.md) —
+  // alias legacy vers le PNG du slot le plus proche. Le rendu effectif
+  // passe par ITEM_ICON_NEW_REGISTRY (painterly, priorité 1 au runtime).
+  brassard_lion:       'img/icons/items/gants_apprenti.png',
+  anneau_serpent:      'img/icons/items/anneau_runique.png',
+  plume_aigle:         'img/icons/items/retourneur_temps.png',
+  ceinture_blaireau:   'img/icons/items/ceinture_cuir.png',
   // Items Tier 5 Maison (Tranche 2) — réutilisent les PNG des items Tier 4.
   lame_godric:         'img/icons/items/sword_gryff.png',
   bague_salazar:       'img/icons/items/locket_slytherin.png',

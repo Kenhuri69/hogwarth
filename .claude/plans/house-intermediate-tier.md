@@ -306,8 +306,20 @@ Scope réel exécuté :
   `img/icons_new/`, 1 nouveau SVG (`feather.svg`), +4 recettes et
   +3 glyphs dans `icon_factory.py`, +4 entrées dans `item-icons.js`.
 
-### Étape 1 — 4 nouveaux items dans `data.js`
-- [ ] Ajouter à `ITEMS[]` (juste après les items légendaires existants) :
+### Étape 1 — 4 nouveaux items dans `data.js` ✅
+
+**Écarts au plan** :
+- `type:"acc"` (pas `"armor"`) pour `brassard_lion` et `ceinture_blaireau` —
+  alignement sur la convention codebase (cf. `gants_apprenti`, `ceinture_cuir`
+  qui sont aussi des items hands/belt typés `acc`).
+- Champ `power` ajouté (=2 pour tous, miroir du bonus principal) —
+  cohérent avec les autres items équipables.
+- Alias 4 entrées dans `ITEM_ICON_REGISTRY` (cf. `js/item-icons.js`) sur
+  les PNG du slot le plus proche — exigé par le smoke test scénario 21
+  (couverture 100 % ITEMS[]). Le runtime utilise le PNG painterly via
+  `ITEM_ICON_NEW_REGISTRY` (priorité 1).
+
+- [x] Ajouter à `ITEMS[]` (juste après les items légendaires existants) :
   ```js
   // Items Tier 2 Maison (300 pts) — remis par les Chefs de Maison
   { id: 'brassard_lion',     name: 'Brassard du Lion',
