@@ -397,8 +397,21 @@ pas de second `addMsg` redondant.
 - **Vérif** : depuis la console — atteindre seuil 300 → stats appliquées,
   `pendingHouseRewards` contient `'brassard_lion'`, inventaire **inchangé**.
 
-### Étape 4 — Ajout des 3 nouveaux PNJ dans `npcs.js`
-- [ ] Ajouter Rogue (étage 4), Flitwick (étage 6), Chourave (étage 3) avec :
+### Étape 4 — Ajout des 3 nouveaux PNJ dans `npcs.js` ✅
+
+**Écarts au plan** :
+- Pas de champ `idleSpent` / `idleOtherHouse` : la condition « pas de
+  récompense » sera gérée à l'étape 5 via `_canClaimHouseReward`. Le
+  refus pour mauvaise Maison passe par un `addMsg` côté dispatcher,
+  pas par un texte d'idle spécifique — plus surgical.
+- Pas de `portraitImg` pour Rogue / Flitwick / Sprout : les PNG ne
+  sont pas livrés (cf. plan §2.4 fallback emoji). Évite un 404 dans
+  la console.
+- Assertion smoke `floor4Count` mise à jour (2 → 3) suite à l'ajout
+  de Rogue sur l'étage 4. Étages 3 et 6 non testés, pas d'autre
+  ajustement nécessaire.
+
+- [x] Ajout de Rogue (étage 4), Flitwick (étage 6), Chourave (étage 3).
   ```js
   {
     id: 'rogue', name: 'Professeur Severus Rogue',

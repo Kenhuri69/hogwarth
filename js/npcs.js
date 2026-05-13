@@ -249,6 +249,11 @@ const NPCS = [
     icon:  "🐈",
     portraitImg: "img/npc/mcgonagall.png",
     placement: { floor: 5, anchor: "any" },
+    specialAction: {
+      type:  "claim_house_reward",
+      house: "Gryffondor",
+      label: "🎁 Recevoir votre récompense"
+    },
     questsGiven:    ["golem_passage"],
     questsTurnedIn: ["golem_passage"],
     dialogues: {
@@ -261,6 +266,63 @@ const NPCS = [
       questActive: "Le Gardien est-il vaincu ?",
       questReady:  "Excellent travail. Voici votre récompense, bien méritée.",
       questDone:   "Vous avez prouvé votre valeur. Gryffondor peut être fier."
+    }
+  },
+  {
+    id:    "rogue",
+    name:  "Professeur Severus Rogue",
+    title: "Directeur de Serpentard",
+    icon:  "🦇",
+    placement: { floor: 4, anchor: "any" },
+    specialAction: {
+      type:  "claim_house_reward",
+      house: "Serpentard",
+      label: "🎁 Recevoir votre récompense"
+    },
+    dialogues: {
+      greeting: [
+        "Tiens, tiens... un élève de ma maison qui ose s'aventurer ici.",
+        "L'ambition n'est rien sans la maîtrise. Voyons si vous méritez ce qui vous attend."
+      ],
+      idle: "Concentrez-vous. La distraction tue plus vite que les sortilèges."
+    }
+  },
+  {
+    id:    "flitwick",
+    name:  "Professeur Filius Flitwick",
+    title: "Directeur de Serdaigle",
+    icon:  "🎓",
+    placement: { floor: 6, anchor: "any" },
+    specialAction: {
+      type:  "claim_house_reward",
+      house: "Serdaigle",
+      label: "🎁 Recevoir votre récompense"
+    },
+    dialogues: {
+      greeting: [
+        "Oh ! Un esprit aiguisé, n'est-ce pas ? L'aigle de Serdaigle se reconnaît au premier regard.",
+        "Approchez, approchez. Le savoir récompense ceux qui le cultivent avec assiduité."
+      ],
+      idle: "Un sortilège bien exécuté vaut mille incantations brouillonnes. Travaillez vos gestes."
+    }
+  },
+  {
+    id:    "sprout",
+    name:  "Professeur Pomona Chourave",
+    title: "Directrice de Poufsouffle",
+    icon:  "🌱",
+    placement: { floor: 3, anchor: "any" },
+    specialAction: {
+      type:  "claim_house_reward",
+      house: "Poufsouffle",
+      label: "🎁 Recevoir votre récompense"
+    },
+    dialogues: {
+      greeting: [
+        "Ah, un Poufsouffle ! La loyauté finit toujours par porter ses fruits — comme mes plantes.",
+        "Ne sous-estimez jamais le travail acharné. C'est ce qui distingue les vrais sorciers."
+      ],
+      idle: "Patience et persévérance, comme on l'enseigne aux racines."
     }
   },
 

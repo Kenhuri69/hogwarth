@@ -604,7 +604,7 @@ async function scenarioNpcIntegration() {
   assert(t1.dumbledore,                  'PNJ Dumbledore introuvable');
   assert(t1.floor1Count === 1,           'étage 1 doit avoir 1 PNJ (Dumbledore)');
   assert(t1.floor2Count === 3,           'étage 2 doit avoir 3 PNJ');
-  assert(t1.floor4Count === 2,           'étage 4 doit avoir 2 PNJ');
+  assert(t1.floor4Count === 3,           'étage 4 doit avoir 3 PNJ (incl. Rogue chef Serpentard)');
 
   // T2 : génération étage 1 — Dumbledore présent + npcPlacements peuplé
   const t2 = await page.evaluate(() => {
