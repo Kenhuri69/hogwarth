@@ -438,8 +438,21 @@ pas de second `addMsg` redondant.
   ```
 - **Vérif** : `getNpcById('rogue').specialAction.house === 'Serpentard'`.
 
-### Étape 5 — Dispatcher dans `npc-dialog.js`
-- [ ] Ajouter le cas `claim_house_reward` dans `triggerNpcSpecialAction` :
+### Étape 5 — Dispatcher dans `npc-dialog.js` ✅
+
+**Notes** :
+- Le case `claim_house_reward` est placé **avant** la garde
+  `_isSpecialActionSpent` dans `triggerNpcSpecialAction` (il a sa
+  propre logique de garde via `_canClaimHouseReward`).
+- `_npcDialogActions` route conditionnellement : pour
+  `type === 'claim_house_reward'` → `_canClaimHouseReward`, sinon
+  comportement existant (`!_isSpecialActionSpent`).
+- Le cas « mauvaise Maison » est traité défensivement dans le
+  dispatcher (au cas où on appelle `triggerNpcSpecialAction` en
+  bypass de la UI), mais la UI ne devrait jamais afficher le bouton
+  pour un PNJ de l'autre Maison.
+
+- [x] Ajout du cas `claim_house_reward` dans `triggerNpcSpecialAction`.
   ```js
   if (action.type === 'claim_house_reward') {
     if (chosenHouse !== action.house) {
