@@ -220,11 +220,85 @@ bas**.
 **Texte de la modale de victoire** doit le mentionner :
 > *"L'escalier le plus profond, scellé par la peur, s'ouvre enfin."*
 
-### 7.2 Roster monstres étages 11+ — Variant "Ténébreux" automatique
+### 7.2 Roster monstres étages 11+ — Boucle originale Ténébreuse
 
-**Constat existant** (`js/dungeon.js:31-51`) : le système de variants
-**existe déjà**. `scaleMonster()` applique l'un de ces 4 variants à
-**tout monstre généré**, par-dessus son entrée de base :
+**Principe** : à partir du floor 11 post-victoire, le jeu **rejoue
+intégralement la progression de bestiaire** des floors 1-10, mais en
+version **Ténébreuse**. Chaque monstre original a une version Ténébreuse
+qui apparaît à `minFloor + 10` :
+
+| Monstre original | minFloor | Apparaît en Ténébreux à |
+|------------------|---------:|-------------------------|
+| Chat de Mme Norris, Cornichon, Peeves… | 1 | floor **11** |
+| Mandragore Sauvage, Chouette… | 2 | floor **12** |
+| Bundimun, Centaure, Détraqueur… | 3-4 | floor **13-14** |
+| Mangemort, Détraqueur Gardien… | 5 | floor **15** |
+| Basilic Mineur, Chimère… | 6 | floor **16** |
+| Mangemort d'Élite, Hécate… | 7 | floor **17** |
+| Bellatrix Lestrange | 8 | floor **18** |
+| Voldemort Ressuscité | 10 | floor **20** |
+
+C'est exactement la **même progression** que les floors 1-10, décalée
+de +10. La courbe de découverte est donc identique : à chaque
+nouveau floor Ténèbres, le joueur croise un nouvel ennemi corrompu,
+exactement comme dans le jeu d'origine.
+
+**Floor relatif** : on définit `relFloor = floor - 10` quand
+`victoryAchieved && floor >= 11`. Tout le système (pool eligibility,
+scaling) tourne sur `relFloor`. À floor 11 → relFloor 1 (Ténèbres
+floor 1). À floor 20 → relFloor 10 (Ténèbres floor 10, full set).
+
+**Implémentation centralisée** — ajouter dans `dungeon.js` :
+```js
+// Retourne le floor à utiliser pour le pool eligibility + scaling.
+// En post-victoire à floor 11+, on rejoue la progression 1-10 décalée.
+function effectiveFloor(floor) {
+  if (typeof victoryAchieved !== 'undefined'
+      && victoryAchieved
+      && floor >= 11) {
+    return floor - 10;     // 11 → 1, 12 → 2, …, 20 → 10, 21 → 11, …
+  }
+  return floor;
+}
+```
+
+**Appliquer aux 3 sites de filtrage** (`dungeon.js:198`, `dungeon.js:259`,
+`battle.js:170`) :
+```js
+const ef = effectiveFloor(floor);
+const pool = MONSTERS.filter(m =>
+  m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor)
+);
+```
+
+Et **dans `scaleMonster()`** :
+```js
+function scaleMonster(base, floor) {
+  const ef       = effectiveFloor(floor);
+  const isDark   = (ef !== floor);           // post-victoire & floor 11+
+  const diffMult = (DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal']).scalingMultiplier;
+  const mult     = (1 + (ef - 1) * (base.scale || 0.25)) * diffMult;
+  // ... reste inchangé, mais utilise mult sur ef et non floor
+}
+```
+
+> **Conséquence importante** : un monstre dont la version originale est
+> bornée par `maxFloor` (ex. Chat de Mme Norris `maxFloor: 2`) **ne
+> reviendra QUE sur floors 11-12** en Ténébreux. Pas de Chat de Mme
+> Norris à floor 13. C'est cohérent : on rejoue la progression d'origine
+> à l'identique.
+
+> **Floors 21+ (au-delà du second loop)** : `relFloor = floor - 10 ≥ 11`.
+> Le pool reste celui de "Ténèbres floor 10" (tous les monstres avec
+> maxFloor null) et le scaling continue de monter linéairement (Voldemort
+> ne plafonne pas). Pas de logique spéciale V1. Si l'utilisateur veut
+> un cap à floor 20, ajouter `Math.min(ef, 10)` dans `effectiveFloor`.
+
+---
+
+**Système de variants** (`js/dungeon.js:31-51`) : le système **existe
+déjà**. `scaleMonster()` applique l'un de ces 4 variants à **tout
+monstre généré**, par-dessus son entrée de base :
 
 | Variant | Préfixe nom | Conditions | Badge `battle-ui.js:60-65` | Multipliers |
 |--------|-----------|------------|---------------------------|-------------|
@@ -257,9 +331,13 @@ if (shinyRoll < 0.04) {
 else if (typeof victoryAchieved !== 'undefined'
          && victoryAchieved
          && floor >= 11) {
+  // À ce stade, hp/atk/def/xp/gold ont déjà été scalés avec
+  // relFloor = floor − 10 (via effectiveFloor() en début de fonction).
+  // Donc un Mangemort (minFloor 5) à floor 15 a été scalé comme un
+  // Mangemort normal à floor 5. Les multiplicateurs ci-dessous
+  // ajoutent juste la couche "corrupted" — cf. §7.2bis.
   monster.variant = 'darkness';
   monster.name    = 'Ténébreux ' + base.name;
-  // Multipliers calibrés — cf. §7.2bis (≈ 2 étages virtuels)
   monster.hp      = Math.floor(monster.hp  * 1.25);
   monster.atk     = Math.floor(monster.atk * 1.15);
   monster.def     = Math.floor(monster.def * 1.10);
@@ -336,147 +414,163 @@ badge ancient (💜) sans confusion grâce à l'animation pulse.
 > "Ancien Mangemort" au-delà de 10 — uniquement des "Ténébreux X". Ça
 > simplifie la lecture du badge pour le joueur.
 
-### 7.2bis Calibrage du scaling — calcul concret
+### 7.2bis Calibrage du scaling — Boucle Ténébreuse
 
 **Formule actuelle** (`dungeon.js:16-29`) :
 ```
 mult = (1 + (floor - 1) × base.scale) × diffMult
-hp  = base.hp  × mult
-atk = base.atk × mult
-def = base.def × mult
-xp  = base.xp  × mult
-mag = base.mag        (non scalé)
-agi, lck = inchangés  (non scalés)
-gold = base.gold × mult
+hp, atk, def, xp = base × mult
+mag, agi, lck    = base (non scalés)
+gold             = base × mult
 ```
 
-Le variant `darkness` **applique ses multiplicateurs par-dessus**, sur
-les valeurs déjà scalées. Donc l'effet net sur une stat S à un étage F
-post-victoire = `S_base × scaleMult(F) × darknessMult(S)`.
+**Formule revue pour la Boucle Ténébreuse** : on substitue `floor` par
+`relFloor = floor − 10` quand `victoryAchieved && floor >= 11`. Puis on
+applique les multiplicateurs darkness par-dessus :
+```
+relFloor = floor − 10                                (post-victoire, floor≥11)
+mult     = (1 + (relFloor − 1) × base.scale) × diffMult
+hp  = base.hp  × mult × 1.25
+atk = base.atk × mult × 1.15
+def = base.def × mult × 1.10
+mag = base.mag × 1.20                                (mag toujours non scalé par mult)
+xp  = base.xp  × mult × 1.75
+gold = base.gold × mult × 1.75
+```
 
 #### Référentiel joueur (Normal, Gryffondor, équipement mid)
 
-Sur la base d'une partie qui atteint Voldemort à L10-11 (kill →
-saut à L11-12), Maison tier 3 atteint (~600 pts ≈ 60 kills) :
+Pour la calibration, on estime la puissance du joueur **à chaque pilier
+du second loop** (floor 11, 15, 18, 20). Les level-ups apportent
++8 HP, +5 SP, +1 ATK/DEF/MAG, +3 points à répartir, et +XP cumulé sur
+~1.6× /palier.
 
-| Stat | Calcul L11 | + équipement mid | + Maison tier 3 | **Effectif L11** |
-|------|-----------|------------------|-----------------|------------------|
-| HP   | 35 + 10×8 = 115 | +10 (robe1+chapeau) | — | **~125** |
-| SP   | 22 + 10×5 = 72  | +5  | — | **~77** |
-| ATK  | 5 + 10 = 15    | +5 (wand2)       | +2 (Gryff t3)   | **~22** |
-| DEF  | 2 + 10 = 12    | +3 (armor)       | —               | **~15** |
-| MAG  | 10 + 10 = 20   | +4 (amulette)    | —               | **~24** |
-| LCK  | 15             | +1 (anneau)      | +1 (Gryff t3)   | **~17** |
-| crit | 5 + 17×0.5     | —                | —               | **~14 %** |
-| dodge| 5 + 12×0.4     | —                | —               | **~10 %** |
+| Floor | Niveau approx. | HP eff. | ATK eff. | DEF eff. | MAG eff. | LCK eff. |
+|------:|---------------:|--------:|---------:|---------:|---------:|---------:|
+| 11    | L11-12         | ~125    | ~22      | ~15      | ~24      | ~17      |
+| 15    | L14-15         | ~165    | ~28      | ~20      | ~30      | ~19      |
+| 18    | L17-18         | ~200    | ~32      | ~24      | ~34      | ~21      |
+| 20    | L19-21         | ~225    | ~38 (épée Gryff t4) | ~28 | ~38 (diadème) | ~23 |
 
-#### Stats des monstres clés à l'étage 10 (Normal, pré-darkness)
+Drops Ténèbres en cours d'acquisition (cape_voldemort +DEF/MAG,
+cendres_phenix +MAG/regenHp, oeil_basilic +crit/dodge) — non comptés
+dans le tableau, marge de sécurité.
 
-`mult(F=10) = 1 + 9 × scale` (diffMult = 1.0 sur Normal)
+#### Stats des monstres clés en version Ténébreuse
 
-| Monstre | base HP/ATK/DEF/MAG | scale | mult@10 | HP@10 | ATK@10 | DEF@10 | MAG@10 |
-|---------|---------------------|-------|---------|-------|--------|--------|--------|
-| Mangemort           | 40/12/6/10  | 0.30 | 3.70 | 148 | 44 | 22 | 10 |
-| Mangemort d'Élite   | 55/16/8/16  | 0.32 | 3.88 | 213 | 62 | 31 | 16 |
-| Bellatrix           | 70/20/8/20  | 0.35 | 4.15 | 290 | 83 | 33 | 20 |
-| Hécate              | 130/10/7/22 | 0.32 | 3.88 | 504 | 38 | 27 | 22 |
-| Strigoï             | 110/14/8/14 | 0.32 | 3.88 | 426 | 54 | 31 | 14 |
-| Voldemort Ressuscité| 100/28/14/25| 0.40 | 4.60 | 460 | 128 | 64 | 25 |
+`mult(relF) = 1 + (relF − 1) × scale` (Normal, diffMult = 1.0). Le
+floor d'apparition est `minFloor + 10`. Stats finales avec darkness.
 
-#### Combat-feel actuel (étage 10, sans darkness)
+| Monstre | minFloor | scale | apparait à floor… | relF | mult | **HP** | **ATK** | **DEF** | **MAG** |
+|---------|---------:|------:|-------------------|-----:|-----:|-------:|--------:|--------:|--------:|
+| Chat de Mme Norris   | 1  | 0.15 | floor 11 | 1  | 1.00 | **13**  | **2**   | **1**  | 0  |
+| Cornichon            | 1  | 0.15 | floor 11 | 1  | 1.00 | **15**  | **3**   | **2**  | 0  |
+| Peeves               | 1  | 0.18 | floor 11 | 1  | 1.00 | **18**  | **4**   | **2**  | 0  |
+| Mandragore Sauvage   | 2  | 0.20 | floor 12 | 2  | 1.20 | **36**  | **8**   | **4**  | 7  |
+| Inférius             | 4  | 0.28 | floor 14 | 4  | 1.84 | **87**  | **27**  | **14** | 0  |
+| Mangemort            | 5  | 0.30 | floor 15 | 5  | 2.20 | **110** | **30**  | **14** | 12 |
+| Basilic Mineur       | 6  | 0.32 | floor 16 | 6  | 2.60 | **227** | **45**  | **23** | 14 |
+| Mangemort d'Élite    | 7  | 0.32 | floor 17 | 7  | 2.92 | **201** | **53**  | **25** | 19 |
+| Bellatrix            | 8  | 0.35 | floor 18 | 8  | 3.45 | **302** | **79**  | **30** | 24 |
+| Voldemort Ressuscité | 10 | 0.40 | floor 20 | 10 | 4.60 | **575** | **148** | **70** | 30 |
 
-Formules : attaque joueur = `max(1, atk + rand(0,3) - enemy.def)` (`battle.js:205`),
-attaque ennemie = `max(0, enemy.atk - target.def + rand(0,2))` (`battle.js:284`).
+> ✨ Voldemort Ténébreux à floor 20 = **+25 % HP / +16 % ATK** vs
+> Voldemort original à floor 10 (HP 460/ATK 128). Final boss revisité,
+> pas re-stomp d'un boss usé.
 
-| Combat L11 vs… | Dmg joueur/coup | Dmg ennemi/coup | Hits pour tuer | Hits pour mourir |
-|----------------|-----------------|-----------------|----------------|------------------|
-| Mangemort     | 22−22 = 1‑3     | 44−15 = 30      | ~50            | ~4               |
-| Mangemort élite| 22−31 = 1‑3    | 62−15 = 47      | ~70            | ~3               |
-| Bellatrix     | 22−33 = 1‑3     | 83−15 = 68      | ~100           | ~2               |
-| Voldemort     | 22−64 = 1‑3     | 128−15 = 113    | ~150           | 1‑2              |
+#### Combat-feel attendu
 
-→ À l'étage 10, le combat physique tend vers **0 dégât joueur** dès que
-la DEF ennemie dépasse l'ATK joueur. Le joueur s'appuie déjà fortement
-sur les sorts magiques (qui ignorent la DEF). C'est cohérent avec le
-"mur" documenté dans `DIFFICULTY_REPORT.md`.
+| Combat | Joueur niv. réf. | Dmg joueur/coup | Dmg ennemi/coup | Hits pour tuer | Hits pour mourir |
+|--------|------------------|-----------------|-----------------|----------------|------------------|
+| Chat Ténébreux (floor 11)   | L11 ATK 22 | 22−1 = 21       | 2−15 = 0    | **1**   | invulnérable  |
+| Mandragore Ténébreuse (12)  | L11 ATK 22 | 22−4 = 18       | 8−15 = 0    | 2       | invulnérable  |
+| Inférius Ténébreux (14)     | L13 ATK 25 | 25−14 = 11      | 27−18 = 9   | 8       | 22            |
+| Mangemort Ténébreux (15)    | L14 ATK 28 | 28−14 = 14      | 30−20 = 10  | 8       | 16            |
+| Bellatrix Ténébreuse (18)   | L17 ATK 32 | 32−30 = 2       | 79−24 = 55  | ~150    | 4             |
+| Voldemort Ténébreux (20)    | L20 ATK 38 | 38−70 = 1       | 148−28 = 120| ~575    | 2             |
 
-#### Recommandation : multiplicateurs `darkness`
+→ Lecture :
+- **Floors 11-13** : easy lap — le joueur surclasse les Ténébreux des
+  premiers floors d'origine. Loot facile, montée en puissance, drops
+  Ténèbres commencent à tomber. C'est le "victory lap" attendu.
+- **Floors 14-17** : palier d'équilibre. Le joueur fight des combats
+  serrés mais lisibles. Idéal pour grinder les drops Ténèbres.
+- **Floors 18-20** : retour de la difficulté → Bellatrix puis Voldemort
+  Ténébreux sont des **murs réels**. Le joueur DOIT s'appuyer sur
+  les drops Ténèbres + sorts magiques (qui ignorent DEF).
 
-Objectif : que le variant `darkness` à l'étage 11 se ressente comme
-**~2 étages supplémentaires** d'agression, sans casser le moteur.
-Un étage naturel ajoute `scale / mult` ≈ +8 % (sur Mangemort) à
-+9 % (sur Voldemort). Donc « 2 étages virtuels » ≈ +16-18 % sur les
-stats déjà scalées.
+#### Multiplicateurs retenus
 
-**Multiplicateurs retenus** (à appliquer dans `scaleMonster()` après
-le calcul standard) :
+| Stat | Multiplier | Justification |
+|------|-----------:|----------------|
+| `hp`   | **× 1.25** | Marque visiblement la corruption, n'allonge pas le combat de plus de ~25 % |
+| `atk`  | **× 1.15** | Boost subtil mais ressenti, le Ténébreux frappe ~15 % plus fort que son original |
+| `def`  | **× 1.10** | DEF en seconde priorité — déjà saturée à haut niveau, +10 % suffit |
+| `mag`  | **× 1.20** | `mag` n'est pas scalé par défaut → le ×1.20 est la seule croissance qu'aura ce stat ! Crucial pour les abilities magiques |
+| `xp`   | **× 1.75** | Récompense claire pour un fight ~+25 % plus long |
+| `gold` | **× 1.75** | Idem |
 
-| Stat | Multiplier | Effet net étage 11 vs étage 10 base | Justification |
-|------|-----------|---------------------------------------|----------------|
-| `hp`   | **× 1.25** | +35-36 % | Le combat dure clairement plus longtemps, sans devenir interminable |
-| `atk`  | **× 1.15** | +25 % sur dmg subis | Le joueur perd ~1 hit de marge sur sa marge de survie |
-| `def`  | **× 1.10** | +20 % | Réduit légèrement l'offensive physique (déjà saturée) ; surtout pour ne pas trivialiser les sorts |
-| `mag`  | **× 1.20** | +20 % | Power des abilities = `power + mag/2` → +10 % dmg sur abilities (raisonnable) |
-| `xp`   | **× 1.75** | — | Incentive clair : Ténébreux rapporte +75 % d'XP pour un combat ~+35 % plus long |
-| `gold` | **× 1.75** | — | Idem |
+> **Note sur `mag`** : dans le moteur courant, `mag` reste constant
+> à toute floor (cf. `scaleMonster()` ne touche pas `monster.mag`).
+> Le ×1.20 darkness est donc la **seule** augmentation que reçoit
+> cette stat. Pour Hécate (mag 22 → 26), Voldemort (25 → 30), c'est
+> un boost notable des abilities sans toucher au framework.
 
-> **Pas de multiplicateur sur `agi`/`lck`** — ces stats ne sont pas
-> scalées dans le moteur de base (cf. formule), il serait incohérent
-> de les boost ici. Si on veut booster crit/dodge ennemi à la marge,
-> passer par `bonusCritChance`/`bonusDodgeChance` sur les abilities.
+#### Pourquoi pas plus fort ?
 
-#### Tables vérification — stats post-darkness à l'étage 11
+Tentation : booster davantage HP/ATK pour que le second loop soit
+"vraiment dur" dès floor 11. Mauvaise idée parce que :
 
-`mult(F=11) = 1 + 10 × scale` puis × darknessMult.
+1. Le pool de floor 11 = **mobs d'origine du floor 1**. Si on les
+   blinde, on perd l'effet "victory lap" qui rend le NG+ satisfaisant.
+2. La courbe se construit toute seule via le scaling : Bellatrix
+   Ténébreuse à floor 18 (HP 302, ATK 79) est déjà bien plus tough
+   qu'une Bellatrix originale à floor 8 (HP 290, ATK 83 — équivalent),
+   parce que le joueur n'a pas autant d'équipement à floor 18 que
+   prévu pour floor 8.
+3. Si trop dur dès floor 11, le joueur n'atteint jamais Voldemort
+   Ténébreux à floor 20. Or c'est le climax voulu.
 
-| Monstre | HP@11 dark | ATK@11 dark | DEF@11 dark | MAG@11 dark | ΔHP @10 base | ΔATK @10 base |
-|---------|-----------:|------------:|------------:|------------:|-------------:|---------------:|
-| Mangemort           | 200 | 55  | 26 | 12 | +35 % | +25 % |
-| Mangemort d'Élite   | 289 | 77  | 37 | 19 | +36 % | +24 % |
-| Bellatrix           | 394 | 104 | 40 | 24 | +36 % | +25 % |
-| Hécate              | 683 | 48  | 32 | 26 | +36 % | +26 % |
-| Strigoï             | 578 | 68  | 37 | 17 | +36 % | +26 % |
-| Voldemort Ressuscité| 625 | 161 | 77 | 30 | +36 % | +26 % |
+#### Projection des stats Voldemort Ténébreux au-delà floor 20
 
-#### Projection courbe sur 5 étages NG+ (Mangemort référence)
+`relFloor > 10` n'est pas spécialement géré → la formule continue.
 
-| Étage | mult base | HP base (no dark) | HP darkness (×1.25) | ATK darkness (×1.15) |
-|-------|----------:|------------------:|---------------------:|---------------------:|
-| 10    | 3.70 | 148 | — | — |
-| 11    | 4.00 | 160 | **200** | **55** |
-| 13    | 4.60 | 184 | **230** | **64** |
-| 15    | 5.20 | 208 | **260** | **72** |
-| 18    | 6.10 | 244 | **305** | **84** |
-| 20    | 6.70 | 268 | **335** | **93** |
+| Floor | relF | mult | HP | ATK | DEF |
+|------:|-----:|-----:|---:|----:|----:|
+| 20    | 10   | 4.60 | 575 | 148 | 70 |
+| 22    | 12   | 5.40 | 675 | 174 | 84 |
+| 25    | 15   | 6.60 | 825 | 213 | 99 |
+| 30    | 20   | 8.60 | 1075| 277 | 132|
 
-→ Croissance linéaire et lisible : sur 10 étages NG+ (10 → 20),
-les HP de Mangemort darkness passent de 200 à 335 (×1.68). Le joueur
-gagne mécaniquement 10 niveaux dans le même temps : +80 HP base,
-+10 ATK base, +10 DEF base, sans compter les drops Ténèbres
-(`cape_voldemort` DEF+4 MAG+3 ; `cendres_phenix` MAG+4 LCK+2 ;
-`oeil_basilic` crit+10 dodge+5). **Le joueur scale plus vite que les
-monstres en absolu, donc l'écart ne s'élargit pas.**
+Au-delà de floor 25, le joueur est typiquement L25+ avec stats au
+plafond — c'est un grind asymptotique attendu pour les sessions
+post-endgame "longues". OK pour V1.
 
 #### Sanity check : difficulté Expert
 
-`diffMult(Expert) = 1.45`. Un Mangemort darkness étage 11 Expert :
-- HP = 40 × (1 + 10×0.30) × 1.45 × 1.25 = 290
-- ATK = 12 × 4 × 1.45 × 1.15 = 80
+Bellatrix Ténébreuse floor 18, Expert (`diffMult = 1.45`) :
+- HP  = 70 × 3.45 × 1.45 × 1.25 = **438**
+- ATK = 20 × 3.45 × 1.45 × 1.15 = **115**
 
-Ça reste affrontable par un joueur Expert post-Voldemort (qui aura
-typiquement L13-15 avec build optimisé). Aucun ajustement spécial
-nécessaire pour la difficulté — le `diffMult` existant suffit.
+Voldemort Ténébreux floor 20, Expert :
+- HP  = 100 × 4.60 × 1.45 × 1.25 = **834**
+- ATK = 28 × 4.60 × 1.45 × 1.15 = **214**
 
-#### À retoucher si le ressenti diffère du calcul
+Affrontable par un joueur Expert post-Voldemort (build optimisé,
+sorts magiques avec mag ~38, drops Ténèbres) mais clairement tendu.
+Pas d'ajustement spécial — `diffMult` existant gère le ratio
+correctement.
 
-Si playtesting montre que :
-- **Trop dur** → réduire d'abord `hp` (×1.20) avant `atk` (qui touche
-  directement le facteur survie).
-- **Trop facile** → augmenter `xp`/`gold` plutôt que d'augmenter les
-  stats. La récompense doit rester proportionnelle au risque.
-- **Sorts surpuissants** → relire la formule ability `power + mag/2` et
-  envisager une atténuation `def/4` au lieu de `def/3` (déjà appliqué
-  par PR #92).
+#### À retoucher si le ressenti diffère
+
+- **Premier loop trop facile (floors 11-13)** → laisser tel quel. C'est
+  le victory lap voulu. Si trop ennuyeux, augmenter le `weight` des
+  drops Ténèbres pour rendre le loot fréquent.
+- **Mur à Bellatrix/Voldemort Ténébreux (floors 18-20)** → réduire
+  d'abord `hp` (×1.20) avant `atk` (qui touche la survie joueur).
+- **Sorts magiques surpuissants** → augmenter `mag` darkness à ×1.30
+  pour que les abilities ennemies mordent plus.
+- **Drops trop rares** → bump la chance de drop §7.3 de 8 % à 10-12 %.
 
 ### 7.3 Drops uniques post-victoire
 
@@ -580,11 +674,16 @@ Hors scope V1 si effort > 45 min.
 - [ ] Appeler `_invalidatePatternCache()` à l'instant du trigger pour forcer le re-render avec les bonnes textures
 - **Vérif** : pré-victoire étage 11 (forcé via console) → cavern visible. Post-victoire étage 11 → runes visibles sans reload.
 
-### Étape 7 — Variant `darkness` automatique sur tous les monstres
-- [ ] Étendre `dungeon.js — scaleMonster()` avec la branche `darkness` (priorité après shiny, avant ancient)
+### Étape 7 — Boucle Ténébreuse : `effectiveFloor` + variant `darkness`
+- [ ] Créer la fonction utilitaire `effectiveFloor(floor)` dans `dungeon.js` (cf. §7.2)
+- [ ] Câbler aux **3 sites de filtrage du pool** : `dungeon.js:198`, `dungeon.js:259`, `battle.js:170` — remplacer `floor` par `effectiveFloor(floor)` dans la condition `m.minFloor <= … && (m.maxFloor === null || … <= m.maxFloor)`
+- [ ] Modifier `dungeon.js — scaleMonster()` : utiliser `ef = effectiveFloor(floor)` pour le calcul de `mult`
+- [ ] Ajouter la branche `darkness` dans `scaleMonster()` (priorité après shiny, avant ancient) — applique les ×1.25/×1.15/×1.10/×1.20/×1.75/×1.75 par-dessus le scaling déjà fait avec `ef`
 - [ ] Étendre `battle-ui.js:60-65` : ajout du badge 🌑 et de la classe CSS `variant-${variant}` sur la card
 - [ ] Ajouter règles CSS `.variant-darkness` + keyframes `dark-pulse` + `.variant-badge-darkness` dans `css/style.css`
-- **Vérif** : forcer `victoryAchieved=true`, descendre étage 11, lancer un combat → l'ennemi est préfixé "Ténébreux ", a un halo violet animé, badge 🌑.
+- **Vérif 1** (pool) : forcer `victoryAchieved=true`, floor=11 → `MONSTERS.filter(...)` ne renvoie que les monstres avec `minFloor ≤ 1` (Chat, Cornichon, Peeves, etc.). Forcer floor=20 → pool = bestiaire complet incluant Voldemort.
+- **Vérif 2** (scaling) : Chat de Mme Norris @ floor 11 darkness → HP ≈ 13. Mangemort @ floor 15 darkness → HP ≈ 110. Voldemort @ floor 20 darkness → HP ≈ 575. Mêmes valeurs que les tables §7.2bis.
+- **Vérif 3** (UI) : combat à floor 11 → ennemi préfixé "Ténébreux ", badge 🌑, halo violet animé.
 
 ### Étape 8 — Drops uniques (stratégie A — variant-gated)
 - [ ] 3 items dans `data.js` (cape_voldemort, cendres_phenix, oeil_basilic)
