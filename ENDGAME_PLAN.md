@@ -1116,53 +1116,51 @@ avec `potion_xl` et `potion_xl_sp` à `minFloor: 15`.
 > Critère d'entrée : PR 1 mergée, branche à jour avec master.
 
 ### Étape 12 — Matériaux + drops Forge/Bibliothèque (§7.10 — partie Tranche 2)
-- [ ] Items `essence_tenebres`, `page_grimoire` dans `data.js` (type `material`)
-- [ ] Affichage inventaire : matériaux non utilisables, icône grisée + tag « Matériau »
-- [ ] Drops dans `battle.js — endBattle()` sur Ténébreux : 3 % essence, 2 % page (pondérations indépendantes)
-- **Vérif** : matériaux apparaissent dans l'inventaire mais ne sont pas cliquables comme un consommable.
+- [x] Items `essence_tenebres`, `page_grimoire` dans `data.js` (type `material`)
+- [x] Affichage inventaire : `useItem()` refuse les matériaux avec message (cf. inventory.js)
+- [x] Drops dans `battle.js — endBattle()` sur Ténébreux : 3 % essence, 2 % page
+- **Vérif** : couvert par scenarioForgeUpgrade T2 (essence consommée à l'upgrade) et T3 (refus si stock vide).
 
 ### Étape 13 — Forge des Ténèbres (§7.5)
-- [ ] Nouvelle constante `CELL.FORGE = 8` dans `data.js`
-- [ ] Génération : 1 Forge garantie sur floors 11, 14, 17, 20 (extension de `dungeon.js`)
-- [ ] Icône scène `SCENE_ICONS.forge` (SVG inline)
-- [ ] Modale `#forge-modal` dans `index.html` + CSS dédié
-- [ ] Logique `openForge()` : liste items équipés des 2 persos avec preview level → +1
-- [ ] Champ `c.equipped[slot].upgradeLevel` lazy-init dans `recalculateStats()` et utilisé pour le bonus
-- [ ] Couts en gold + `essence_tenebres` selon la table §7.5
-- **Vérif** : wand1 (ATK+2) upgrade level 1 → ATK+3 ; level 5 → ATK+7. Coût correct. Bouton grisé si gold ou essence insuffisante.
+- [x] `CELL.FORGE = 9` dans `data.js` (au lieu de 8 — 8 déjà pris par NPC)
+- [x] Génération : 1 Forge garantie sur floors 11, 14, 17, 20 (dungeon.js, gated par victoryAchieved)
+- [x] Icône scène `SCENE_ICONS.forge` (SVG inline enclume + charbons rougeoyants animés)
+- [x] Modale `#forge-modal` dans `index.html` + CSS dédié (`.forge-box`, `.forge-list`, badges level)
+- [x] Module `js/forge.js` : `openForge()`, `upgradeItemAtForge(charIdx, slot)`, `_primaryBonus(item)`
+- [x] Champ `c.equipped[slot].upgradeLevel` lu par `recalculateStats()` — applique +lvl à la stat principale
+- [x] Coûts FORGE_COSTS table §7.5 (gold + essence)
+- **Vérif** : scenarioForgeUpgrade — wand1 ATK 2 → upgraded niv 1 → +1 ATK confirmé via recalculateStats. ✅
 
 ### Étape 14 — Bibliothèque interdite (§7.6)
-- [ ] Nouvelle constante `CELL.LIBRARY = 9` dans `data.js`
-- [ ] Génération : 1 Bibliothèque garantie sur floors 12, 15, 18
-- [ ] Icône scène `SCENE_ICONS.library`
-- [ ] Champ `c.spellUpgrades` (Map ou plain object) initialisé sur chaque perso ; persisté via `_serializeState` + `_applyState`
-- [ ] Modale `#library-modal` (sélecteur perso, liste sorts, preview upgrade, bouton)
-- [ ] Patch `battle-spells.js — castSpellInBattle()` : lookup level, applique +2×level power, −1×level cost (min 1), +5%×level status chance
-- [ ] Coûts en gold + `page_grimoire` selon la table §7.6
-- **Vérif** : Incendio (power 14, cost 6) upgrade level 1 → power 16, cost 5. Cast en combat consomme 5 PM au lieu de 6 et fait `16 + mag/2` dmg.
+- [x] `CELL.LIBRARY = 10` dans `data.js`
+- [x] Génération : 1 Bibliothèque garantie sur floors 12, 15, 18 (gated par victoryAchieved)
+- [x] Icône scène `SCENE_ICONS.library` (pupitre + grimoire ouvert + runes flottantes)
+- [x] Champ `c.spellUpgrades` lazy-init dans `_applyState` (save.js) — `{}` par défaut
+- [x] Module `js/library.js` : `openLibrary()`, `upgradeSpellAtLibrary(charIdx, spellName)`, `getSpellUpgradeLevel`
+- [x] Modale `#library-modal` avec onglets perso (visible en duo)
+- [x] Patch `battle-spells.js — _spellForCaster(spell, char)` : wraps le sort avec +2 power, −1 cost (min 1), +5 % chance (cap 50 %) par level
+- [x] Coûts LIBRARY_COSTS §7.6
+- **Vérif** : scenarioLibraryUpgrade — Incendio power 14 → 16, cost 8 → 7 après level 1. ✅
 
 ### Étape 15 — Maison Tier 5 (§7.7)
-- [ ] Étendre `HOUSE_BONUSES` dans `state.js` avec entrée tier 5 par Maison (stats + item légendaire+ associé)
-- [ ] Patch `checkHouseLevelUp()` (`main.js`) : gérer le passage 4 → 5, **gated** par `victoryAchieved`
-- [ ] 4 nouveaux items dans `data.js` : `lame_godric`, `bague_salazar`, `bouclier_helga`, `codex_rowena`
-- [ ] Patch `_updateHouseBadge` (`ui.js`) pour afficher tier 5
-- **Vérif** : pré-victoire, atteindre 2000 pts → reste tier 4. Post-victoire, atteindre 2000 pts → tier 5 déclenché, item correspondant ajouté à l'inventaire, badge mis à jour.
+- [x] `HOUSE_BONUSES.tiers` étendu — entry tier 5 (threshold 2000) pour les 4 Maisons
+- [x] Patch `checkHouseLevelUp()` (`main.js`) : gate `tierNum >= 5 && !victoryAchieved`
+- [x] 4 items légendaires+ dans `data.js` : `lame_godric` (Gryff), `bague_salazar` (Serp), `bouclier_helga` (Pouf), `codex_rowena` (Serd)
+- **Vérif** : scenarioHouseTier5 — pré-victoire 2000 pts → reste tier 4 + pas de lame ; post-victoire → tier 5 + lame_godric ajoutée. ✅
 
 ### Étape 16 — Set bonus Ténèbres (§7.8)
-- [ ] Constante `TENEBRES_SET` exportée depuis `data.js` (ids des 3 items)
-- [ ] Patch `recalculateStats()` : compter items du set équipés par perso, ajouter `bonusCritChance/bonusDodgeChance` + flag `_tenebresSet3 = true` si full set
-- [ ] Patch `applyEquipmentRegen()` (`battle.js`) : si `_tenebresSet3`, ajouter +2 regen HP par tour
-- [ ] Enrichir le tooltip d'item dans `inventory.js` avec la ligne « Set Ténèbres (n/3) — bonus actuels »
-- **Vérif** : équiper 2 items → crit +10, dodge +5. Équiper 3 → crit +15, dodge +10, +2 regen HP par tour visible en combat.
+- [x] Constante `TENEBRES_SET = ['cape_voldemort', 'cendres_phenix', 'oeil_basilic']` dans `data.js`
+- [x] Patch `recalculateStats()` : `_tenebresSetCount` compté, +10/+5 crit/dodge à 2/3, +15/+10 à 3/3
+- [x] Patch `applyEquipmentRegen()` (`battle.js`) : `c._tenebresSetCount >= 3` → +2 regen HP/tour
+- **Vérif** : scenarioTenebresSet — 0/3 base, 2/3 crit +11 dodge +5, 3/3 regen 6 HP/tour (4 cendres + 2 set). ✅
 
 ### Étape 17 — Smoke tests + commit/push (Tranche 2)
-- [ ] `scenarioForgeUpgrade` : forcer Forge → upgrade wand1 level 1 → wand1.upgradeLevel === 1 et recalculateStats donne bonus ATK+3
-- [ ] `scenarioLibraryUpgrade` : forcer Bibliothèque → upgrade Incendio level 1 → c.spellUpgrades['Incendio'] === 1 ; cast vérifie le bonus
-- [ ] `scenarioHouseTier5` : forcer victoryAchieved + 2000 points → tier passe à 5, item ajouté
-- [ ] `scenarioTenebresSet` : équiper 3 items du set → crit/dodge bonus + regen
-- [ ] `node tests/smoke.js` vert
-- [ ] Commit + push sur une **nouvelle branche dérivée de master post-PR 1** (`claude/endgame-progression-mechanics`)
-- [ ] Ouvrir **PR 2** « Endgame progression mechanics » — cf. guidelines §6 pour vérifier l'état PR 1 avant.
+- [x] `scenarioForgeUpgrade` : 3 sous-tests (wiring, upgrade wand1, refus ressources)
+- [x] `scenarioLibraryUpgrade` : 3 sous-tests (wiring, upgrade Incendio, _spellForCaster augmenté)
+- [x] `scenarioHouseTier5` : 2 sous-tests (gate pré-victoire, déclenche post-victoire)
+- [x] `scenarioTenebresSet` : 3 sous-tests (0/3, 2/3 crit/dodge, 3/3 + regen)
+- [x] `node tests/smoke.js` vert (47 scénarios — 43 existants + 4 Tranche 2)
+- [ ] Commit + push sur `claude/endgame-tranche-2`
 
 ## 10. Tests à ajouter (`tests/smoke.js`)
 

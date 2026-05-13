@@ -4168,6 +4168,226 @@ async function scenarioDarkRewards() {
   await browser.close();
 }
 
+// ── Scénario endgame Tranche 2 — 1 : Forge des Ténèbres ─────
+async function scenarioForgeUpgrade() {
+  console.log('\n── Scénario endgame T2.1 : Forge des Ténèbres ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : modèle de coût + upgradeLevel
+  const t1 = await page.evaluate(() => ({
+    hasForge:        typeof openForge === 'function',
+    hasUpgradeFn:    typeof upgradeItemAtForge === 'function',
+    CELL_FORGE:      CELL.FORGE
+  }));
+  console.log('  T1 wiring →', t1);
+  assert(t1.hasForge,        'openForge doit être exposé');
+  assert(t1.hasUpgradeFn,    'upgradeItemAtForge doit être exposé');
+  assert(t1.CELL_FORGE === 9,'CELL.FORGE === 9');
+
+  // T2 : upgrade Wand1 (ATK+2) → level 1 → bonus ATK+3 dans recalculateStats
+  const t2 = await page.evaluate(() => {
+    // Équipe Harry avec wand1, donne ressources, ouvre forge (UI), upgrade
+    const wand = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'wand1')));
+    party[0].equipped.wand = wand;
+    player.gold = 5000;
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'essence_tenebres') });
+    recalculateStats();
+    const baseAtk = party[0].atk;
+    const ok = upgradeItemAtForge(0, 'wand');
+    return {
+      ok,
+      lvl:        party[0].equipped.wand.upgradeLevel,
+      essenceLeft: player.inventory.filter(i => i.id === 'essence_tenebres').length,
+      goldLeft:   player.gold,
+      atkBefore:  baseAtk,
+      atkAfter:   party[0].atk
+    };
+  });
+  console.log('  T2 upgrade wand1 →', t2);
+  assert(t2.ok === true,                'upgradeItemAtForge doit réussir');
+  assert(t2.lvl === 1,                  'upgradeLevel doit passer à 1');
+  assert(t2.essenceLeft === 0,          'essence consommée');
+  assert(t2.goldLeft === 5000 - 80,     'gold débité de 80');
+  assert(t2.atkAfter === t2.atkBefore + 1, 'recalculateStats : ATK +1 (bonus forge)');
+
+  // T3 : ressources insuffisantes → refus
+  const t3 = await page.evaluate(() => {
+    party[0].equipped.wand.upgradeLevel = 0;
+    player.gold = 5;
+    recalculateStats();
+    const ok = upgradeItemAtForge(0, 'wand');
+    return { ok, lvl: party[0].equipped.wand.upgradeLevel };
+  });
+  console.log('  T3 gold insuffisant →', t3);
+  assert(t3.ok === false,   'refusé si gold insuffisant');
+  assert(t3.lvl === 0,      'upgradeLevel inchangé');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Forge des Ténèbres OK');
+  await browser.close();
+}
+
+// ── Scénario endgame Tranche 2 — 2 : Bibliothèque interdite ───
+async function scenarioLibraryUpgrade() {
+  console.log('\n── Scénario endgame T2.2 : Bibliothèque interdite ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : wiring + cost model
+  const t1 = await page.evaluate(() => ({
+    hasOpenLib:     typeof openLibrary === 'function',
+    hasUpgrade:     typeof upgradeSpellAtLibrary === 'function',
+    hasGetLevel:    typeof getSpellUpgradeLevel === 'function',
+    CELL_LIBRARY:   CELL.LIBRARY,
+    initSpellUps:   typeof party[0].spellUpgrades === 'object' || party[0].spellUpgrades === undefined,
+  }));
+  console.log('  T1 wiring →', t1);
+  assert(t1.hasOpenLib,     'openLibrary exposé');
+  assert(t1.hasUpgrade,     'upgradeSpellAtLibrary exposé');
+  assert(t1.CELL_LIBRARY === 10, 'CELL.LIBRARY === 10');
+
+  // T2 : upgrade Incendio level 1 → spellUpgrades['Incendio'] === 1
+  const t2 = await page.evaluate(() => {
+    player.gold = 5000;
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'page_grimoire') });
+    const ok = upgradeSpellAtLibrary(0, 'Incendio');
+    return {
+      ok,
+      lvl:       getSpellUpgradeLevel(party[0], 'Incendio'),
+      goldLeft:  player.gold,
+      pagesLeft: player.inventory.filter(i => i.id === 'page_grimoire').length
+    };
+  });
+  console.log('  T2 upgrade Incendio →', t2);
+  assert(t2.ok === true,        'upgradeSpellAtLibrary doit réussir');
+  assert(t2.lvl === 1,          "spellUpgrades['Incendio'] doit passer à 1");
+  assert(t2.goldLeft === 5000 - 120, 'gold débité de 120');
+  assert(t2.pagesLeft === 0,    'page consommée');
+
+  // T3 : _spellForCaster applique le bonus
+  const t3 = await page.evaluate(() => {
+    const baseSpell = SPELLS.find(s => s.name === 'Incendio');
+    const augmented = _spellForCaster(baseSpell, party[0]);
+    return {
+      basePower: baseSpell.power,
+      basecost:  baseSpell.cost,
+      augPower:  augmented.power,
+      augCost:   augmented.cost,
+    };
+  });
+  console.log('  T3 _spellForCaster Incendio →', t3);
+  assert(t3.augPower === t3.basePower + 2, 'power +2 × level');
+  assert(t3.augCost  === Math.max(1, t3.basecost - 1), 'cost −1 × level (min 1)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Bibliothèque interdite OK');
+  await browser.close();
+}
+
+// ── Scénario endgame Tranche 2 — 3 : Maison Tier 5 ──────────
+async function scenarioHouseTier5() {
+  console.log('\n── Scénario endgame T2.3 : Maison Tier 5 ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : pré-victoire, 2000 points → reste tier 4 (gated)
+  const t1 = await page.evaluate(() => {
+    victoryAchieved = false;
+    housePoints     = 2000;
+    houseTier       = 0; // simule restart
+    checkHouseLevelUp();
+    return { tier: houseTier, hasLame: player.inventory.some(i => i.id === 'lame_godric') };
+  });
+  console.log('  T1 pré-victoire 2000 pts →', t1);
+  assert(t1.tier === 4,         'tier doit s\'arrêter à 4 sans victoire');
+  assert(t1.hasLame === false,  'lame_godric NON ajoutée pré-victoire');
+
+  // T2 : post-victoire, 2000 points → tier 5 + lame_godric
+  const t2 = await page.evaluate(() => {
+    victoryAchieved = true;
+    checkHouseLevelUp();
+    return {
+      tier: houseTier,
+      hasLame: player.inventory.some(i => i.id === 'lame_godric'),
+      atkBase: party[0]._baseAtk
+    };
+  });
+  console.log('  T2 post-victoire →', t2);
+  assert(t2.tier === 5,            'tier passe à 5 post-victoire');
+  assert(t2.hasLame === true,      'lame_godric ajoutée à l\'inventaire');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Maison Tier 5 OK');
+  await browser.close();
+}
+
+// ── Scénario endgame Tranche 2 — 4 : Set bonus Ténèbres ─────
+async function scenarioTenebresSet() {
+  console.log('\n── Scénario endgame T2.4 : Set bonus Ténèbres ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : 0 item du set → pas de bonus
+  const t1 = await page.evaluate(() => {
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    recalculateStats();
+    return { crit: party[0].critChance, dodge: party[0].dodgeChance, count: party[0]._tenebresSetCount };
+  });
+  console.log('  T1 0/3 →', t1);
+  assert(t1.count === 0, '_tenebresSetCount === 0');
+
+  // T2 : 2 items du set → +10 crit, +5 dodge
+  const t2 = await page.evaluate(() => {
+    party[0].equipped.cloak  = { ...ITEMS.find(i => i.id === 'cape_voldemort') };
+    party[0].equipped.amulet = { ...ITEMS.find(i => i.id === 'cendres_phenix') };
+    recalculateStats();
+    return { crit: party[0].critChance, dodge: party[0].dodgeChance, count: party[0]._tenebresSetCount };
+  });
+  console.log('  T2 2/3 →', t2);
+  assert(t2.count === 2,                    '_tenebresSetCount === 2');
+  assert(t2.crit  >= t1.crit + 10 - 0.5,    'crit +10 au moins');
+  assert(t2.dodge >= t1.dodge + 5 - 0.5,    'dodge +5 au moins');
+
+  // T3 : 3 items du set → +15 crit, +10 dodge, +2 regenHp
+  const t3 = await page.evaluate(() => {
+    party[0].equipped.trinket = { ...ITEMS.find(i => i.id === 'oeil_basilic') };
+    recalculateStats();
+    // simule un tick regen
+    party[0].hp = Math.max(1, party[0].hpMax - 10);
+    const hpBefore = party[0].hp;
+    if (typeof applyEquipmentRegen === 'function') applyEquipmentRegen();
+    return {
+      crit: party[0].critChance,
+      dodge: party[0].dodgeChance,
+      count: party[0]._tenebresSetCount,
+      hpDelta: party[0].hp - hpBefore
+    };
+  });
+  console.log('  T3 3/3 →', t3);
+  assert(t3.count === 3,                    '_tenebresSetCount === 3');
+  // oeil_basilic apporte aussi +10 crit et +5 dodge intrinsèques.
+  assert(t3.crit  >= t2.crit + 15 - 0.5,    'crit +15 total (10 du set 2/3 → 15 du set 3/3 + bonus item)');
+  assert(t3.hpDelta >= 2,                   'set 3/3 : regen HP +2/tour');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Set bonus Ténèbres OK');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -4225,7 +4445,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioTenebresSet, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

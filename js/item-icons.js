@@ -93,6 +93,14 @@ const ITEM_ICON_REGISTRY = {
   cape_voldemort:      'img/icons/items/cape_invis.png',
   cendres_phenix:      'img/icons/items/larmes_phenix.png',
   oeil_basilic:        'img/icons/items/retourneur_temps.png',
+  // Matériaux endgame (Tranche 2) — réutilisent les PNG existants.
+  essence_tenebres:    'img/icons/items/larmes_phenix.png',
+  page_grimoire:       'img/icons/items/livre_sortileges.png',
+  // Items Tier 5 Maison (Tranche 2) — réutilisent les PNG des items Tier 4.
+  lame_godric:         'img/icons/items/sword_gryff.png',
+  bague_salazar:       'img/icons/items/locket_slytherin.png',
+  bouclier_helga:      'img/icons/items/coupe_poufsouffle.png',
+  codex_rowena:        'img/icons/items/diademe_serdaigle.png',
   // Livres de sorts
   livre_sortileges:   'img/icons/items/livre_sortileges.png',
   livre_soin:         'img/icons/items/livre_soin.png',

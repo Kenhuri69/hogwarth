@@ -292,6 +292,11 @@ function _applyState(gs) {
   // Idempotent : ne touche pas un slot déjà rempli au bon endroit.
   party.forEach(_migrateEquippedSlots);
 
+  // Endgame Tranche 2 — Bibliothèque : initialise spellUpgrades = {} pour
+  // les saves antérieures à l'ajout du champ. Object.assign préserve les
+  // entrées existantes ; le défaut est juste un objet vide.
+  party.forEach(c => { if (c && !c.spellUpgrades) c.spellUpgrades = {}; });
+
   // Migration rétroactive des points de stats libres : un perso niveau N
   // de l'ancienne version n'avait pas accumulé de points. On lui crédite
   // `(N - 1) * STAT_POINTS_PER_LEVEL` qu'il pourra allouer via la fiche.

@@ -170,6 +170,13 @@ window.UX_safe = new Proxy({}, {
     { name: 'closeVictoryScreen', source: 'endgame.js',      kind: 'fn'  },
     { name: 'returnToMenuFromVictory', source: 'endgame.js', kind: 'fn'  },
 
+    // ── Endgame Tranche 2 (Forge + Bibliothèque + Set Ténèbres) ──
+    { name: 'openForge',            source: 'forge.js',      kind: 'fn'  },
+    { name: 'upgradeItemAtForge',   source: 'forge.js',      kind: 'fn'  },
+    { name: 'openLibrary',          source: 'library.js',    kind: 'fn'  },
+    { name: 'upgradeSpellAtLibrary',source: 'library.js',    kind: 'fn'  },
+    { name: 'TENEBRES_SET',         source: 'data.js',       kind: 'obj' },
+
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },
     { name: 'showIntroScreen',    source: 'intro.js',        kind: 'fn',    optional: true },

@@ -75,6 +75,8 @@ const HOUSE_BONUSES = {
       { threshold: 300,  label: 'Élève',     bonus: { _baseAtk: 1, _baseLck: 1 }, msg: '🦁 Bravoure éprouvée ! +1 ATK +1 LCK' },
       { threshold: 600,  label: 'Vaillant',  bonus: { _baseAtk: 2 },              msg: '🦁 Digne de Gryffondor ! +2 ATK' },
       { threshold: 1000, label: 'Champion',  bonus: { item: 'sword_gryff' },      msg: "🦁 L'Épée de Gryffondor vous est confiée !" },
+      // Tier 5 — endgame Tranche 2 (gated par victoryAchieved dans main.js).
+      { threshold: 2000, label: 'Légende',   bonus: { _baseAtk: 3, item: 'lame_godric' }, msg: "🦁 Légende vivante de Gryffondor ! +3 ATK · La Lame de Godric s'incline." },
     ]
   },
   Serpentard: {
@@ -86,6 +88,7 @@ const HOUSE_BONUSES = {
       { threshold: 300,  label: 'Élève',     bonus: { _baseMag: 1, _baseLck: 1 }, msg: '🐍 Ruse affûtée ! +1 MAG +1 LCK' },
       { threshold: 600,  label: 'Rusé',      bonus: { _baseMag: 2 },              msg: '🐍 Serpentard vous honore ! +2 MAG' },
       { threshold: 1000, label: 'Champion',  bonus: { item: 'locket_slytherin' }, msg: '🐍 Le Médaillon de Serpentard vous appartient !' },
+      { threshold: 2000, label: 'Légende',   bonus: { _baseMag: 3, _baseLck: 1, item: 'bague_salazar' }, msg: '🐍 Légende de Serpentard ! +3 MAG +1 LCK · La Bague de Salazar t\'élit.' },
     ]
   },
   Serdaigle: {
@@ -97,6 +100,7 @@ const HOUSE_BONUSES = {
       { threshold: 300,  label: 'Élève',     bonus: { _baseMag: 1, _baseLck: 1 }, msg: '🦅 Esprit acéré ! +1 MAG +1 LCK' },
       { threshold: 600,  label: 'Savant',    bonus: { _baseMag: 2 },              msg: '🦅 Digne de Serdaigle ! +2 MAG' },
       { threshold: 1000, label: 'Champion',  bonus: { item: 'diademe_serdaigle' },msg: '🦅 Le Diadème de Serdaigle vous couronne !' },
+      { threshold: 2000, label: 'Légende',   bonus: { _baseMag: 2, item: 'codex_rowena' }, msg: '🦅 Légende de Serdaigle ! +2 MAG · Le Codex de Rowena t\'est révélé.' },
     ]
   },
   Poufsouffle: {
@@ -108,6 +112,7 @@ const HOUSE_BONUSES = {
       { threshold: 300,  label: 'Élève',     bonus: { _baseDef: 1, _baseLck: 1 }, msg: '🦡 Loyauté récompensée ! +1 DEF +1 LCK' },
       { threshold: 600,  label: 'Tenace',    bonus: { _baseDef: 2 },              msg: '🦡 Indomptable ! +2 DEF' },
       { threshold: 1000, label: 'Champion',  bonus: { item: 'coupe_poufsouffle' },msg: '🦡 La Coupe de Poufsouffle brille pour vous !' },
+      { threshold: 2000, label: 'Légende',   bonus: { _baseDef: 3, item: 'bouclier_helga' }, msg: '🦡 Légende de Poufsouffle ! +3 DEF · Le Bouclier de Helga te défend.' },
     ]
   },
 };
