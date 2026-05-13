@@ -114,6 +114,7 @@ window.UX_safe = new Proxy({}, {
     { name: '_ensureStairsExist', source: 'dungeon.js', kind: 'fn' },
     { name: 'effectiveFloor',     source: 'dungeon.js', kind: 'fn'  },
     { name: 'drawDungeon',        source: 'renderer.js',     kind: 'fn'  },
+    { name: 'drawNpcSprite',      source: 'renderer-effects.js', kind: 'fn' },
     { name: 'renderMinimap',      source: 'renderer-minimap.js', kind: 'fn' },
 
     // ── Mouvement ──
@@ -122,6 +123,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'moveBackward',       source: 'movement.js',     kind: 'fn'  },
     { name: 'turnLeft',           source: 'movement.js',     kind: 'fn'  },
     { name: 'turnRight',          source: 'movement.js',     kind: 'fn'  },
+    { name: 'initCanvasSwipeGestures', source: 'swipe-canvas.js', kind: 'fn' },
     { name: 'handleCellEntry',    source: 'movement.js',     kind: 'fn'  },
     { name: 'searchRoom',         source: 'movement.js',     kind: 'fn'  },
     { name: 'rest',               source: 'movement.js',     kind: 'fn'  },

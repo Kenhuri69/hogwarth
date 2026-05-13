@@ -213,9 +213,12 @@ function drawCorridor(cx, cy, scale, W, H) {
   for (let d = 1; d <= DEPTH; d++) {
     const cell = getCellAhead(0, 0, d);
     if (cell === CELL.WALL) { wallDist = d; break; }
-    if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP)) {
+    if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC)) {
       const nearS = getRect(cx, cy, scale, d - 1);
+      const dirs2 = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
+      const [_fdx, _fdy] = dirs2[playerDir];
       pendingSprite = { cell, x: cx, baseY: nearS.y1, sz: nearS.hw * 1.1,
+                        mapX: playerX + _fdx * d, mapY: playerY + _fdy * d,
                         clipX0: nearS.x0, clipY0: nearS.y0, clipX1: nearS.x1, clipY1: nearS.y1 };
     }
   }
@@ -484,6 +487,12 @@ function drawCorridor(cx, cy, scale, W, H) {
     else if (cell === CELL.STAIRS_D) drawStairsSprite(x, baseY, sz, 'down');
     else if (cell === CELL.STAIRS_U) drawStairsSprite(x, baseY, sz, 'up');
     else if (cell === CELL.SHOP)     drawShopSprite(x, baseY, sz);
+    else if (cell === CELL.NPC) {
+      const npcId = (typeof npcPlacements !== 'undefined')
+        ? npcPlacements.get(`${pendingSprite.mapX},${pendingSprite.mapY}`)
+        : null;
+      drawNpcSprite(npcId, x, baseY, sz);
+    }
     ctx.restore();
   }
 
