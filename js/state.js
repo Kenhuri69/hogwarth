@@ -148,6 +148,11 @@ let usedFountains = new Set();
 // entrée a 20 % de chance de re-spawner un ennemi (`_respawnEnemiesOnEntry`).
 // Persisté au save.
 let defeatedCellsByFloor = new Map();
+// Compteur de kills cumulés par étage (Map<floor, kills>). Sert au scaling
+// progressif de la difficulté (rollGroupSize) : chaque tranche de 4 kills
+// incrémente le « niveau de visite » n. n ≥ 1 augmente la prob duo (+10%/n,
+// cap +40 %), n ≥ 5 active la prob trio (+10%/(n-4), cap +40 %). Persisté.
+let floorKillCount = new Map();
 
 // PNJ placés sur l'étage courant : Map "x,y" → npcId.
 // Recalculé à chaque génération d'étage, mis en cache dans floorDungeons.

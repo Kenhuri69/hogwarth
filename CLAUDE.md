@@ -285,6 +285,34 @@ Au démarrage, `showPlayerSelect()` affiche un écran de sélection.
 > fix, le mur duo arrivait dès l'étage 5 (79 %) ; il est maintenant à
 > l'étage 7 (57 %).
 
+### Difficulté progressive par étage (scaling au grind)
+
+`floorKillCount: Map<floor, kills>` (`state.js`) accumule les kills
+cumulés par étage. Chaque tranche de 4 kills incrémente le niveau de
+visite `n = floor(kills / 4)`. `battle.js — rollGroupSize` applique
+deux bonus cumulatifs au-dessus des probabilités baseline :
+
+| Stade | n | duoBonus (transfert p1→p2) | trioBonus (transfert p2→p3) |
+|-------|---|----------------------------|------------------------------|
+| Premier passage  | 0   | 0 %    | 0 %  |
+| Échauffement     | 1-2 | +10-20 % | 0 % |
+| Familier         | 3-4 | +30-40 % | 0 % |
+| Maîtrisé         | 5   | +40 % (cap) | +10 % |
+| Ponceur          | 6-8 | +40 % | +20-40 % |
+| Cap              | 9+  | +40 % | +40 % (cap) |
+
+Effet : plus le joueur ponce un étage (farming respawn 20 %), plus
+les combats deviennent denses. Solo passe progressivement de 1 à 2
+puis 3 ennemis ; duo progresse de 2 à 3.
+
+Toast narratif au respawn (`movement.js — _announceRespawn`) :
+- n ≤ 1 : « Quelques ombres se reforment… »
+- n ≤ 3 : « Les ombres se reforment plus nombreuses cette fois… »
+- n ≤ 5 : « Tu sens des présences hostiles se rassembler — ta présence dérange. »
+- n ≥ 6 : « Le château pulse de menaces. L'étage te défie ouvertement. »
+
+Persisté dans le save (`floorKillCount` sérialisé dans `_serializeState`).
+
 ---
 
 ## Groupe de personnages

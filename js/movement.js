@@ -241,16 +241,19 @@ function _restoreFloorFromCache(floor) {
 // Respawn 20 % par cellule où un ennemi a été vaincu, déclenché à chaque
 // retour sur un étage déjà visité. Les entrées re-spawnées sont retirées
 // du Set (sinon elles continueraient à roller au prochain retour).
+// Affiche un toast narratif si des ennemis ont effectivement respawné,
+// avec un texte qui escalade selon le « niveau de visite » n du compteur
+// floorKillCount (cf. battle.js — rollGroupSize).
 const ENEMY_RESPAWN_CHANCE = 0.20;
 function _respawnEnemiesOnEntry(floor) {
-  if (typeof defeatedCellsByFloor === 'undefined') return;
+  if (typeof defeatedCellsByFloor === 'undefined') return 0;
   const set = defeatedCellsByFloor.get(floor);
-  if (!set || set.size === 0) return;
-  if (typeof MONSTERS === 'undefined' || typeof scaleMonster !== 'function') return;
+  if (!set || set.size === 0) return 0;
+  if (typeof MONSTERS === 'undefined' || typeof scaleMonster !== 'function') return 0;
   const pool = MONSTERS.filter(m =>
     m.minFloor <= floor && (m.maxFloor === null || floor <= m.maxFloor)
   );
-  if (!pool.length) return;
+  if (!pool.length) return 0;
   const respawned = [];
   for (const key of set) {
     if (Math.random() >= ENEMY_RESPAWN_CHANCE) continue;
@@ -262,6 +265,24 @@ function _respawnEnemiesOnEntry(floor) {
     respawned.push(key);
   }
   for (const key of respawned) set.delete(key);
+  if (respawned.length > 0) _announceRespawn(floor, respawned.length);
+  return respawned.length;
+}
+
+// Toast narratif au respawn — message varie selon le « niveau de visite »
+// n = floor(kills / 4). Plus le joueur ponce l'étage, plus le message
+// est inquiétant — cohérent avec le scaling progressif des groupes.
+function _announceRespawn(floor, respawnCount) {
+  if (typeof addMsg !== 'function') return;
+  const kills = (typeof floorKillCount !== 'undefined')
+    ? (floorKillCount.get(floor) || 0) : 0;
+  const n = Math.floor(kills / 4);
+  let msg;
+  if (n <= 1)       msg = `Quelques ombres se reforment dans les couloirs (${respawnCount}).`;
+  else if (n <= 3)  msg = `Les ombres se reforment plus nombreuses cette fois (${respawnCount}).`;
+  else if (n <= 5)  msg = `Tu sens des présences hostiles se rassembler — ta présence dérange (${respawnCount}).`;
+  else              msg = `Le château pulse de menaces. L'étage te défie ouvertement (${respawnCount}).`;
+  addMsg(`👁️ ${msg}`, 'bad');
 }
 
 function goDeeper() {
