@@ -493,9 +493,12 @@ pas de second `addMsg` redondant.
   `pendingHouseRewards.has('anneau_serpent')` → bouton visible →
   clic → item dans inventaire, Set vidé.
 
-### Étape 6 — Marker minimap (`getNpcMarkerSign`)
-- [ ] Avant la logique quête existante, vérifier si le PNJ a une
-  récompense Maison disponible :
+### Étape 6 — Marker minimap (`getNpcMarkerSign`) ✅
+
+Réutilise `_canClaimHouseReward(npc)` (défini à l'étape 5) — pas de
+duplication de logique. Priorité 🎁 sur ! / ? (quête).
+
+- [x] Marker 🎁 ajouté avant la logique quête :
   ```js
   if (npc.specialAction?.type === 'claim_house_reward'
       && chosenHouse === npc.specialAction.house) {

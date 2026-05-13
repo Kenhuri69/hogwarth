@@ -41,6 +41,9 @@ function getNpcMarkerSign(npcId) {
   if (!npcId) return '';
   const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
   if (!npc) return '';
+  // Récompense Maison en attente : marker 🎁 prioritaire sur les marqueurs quête
+  // (cf. plan house-intermediate-tier.md §2.6).
+  if (_canClaimHouseReward(npc)) return '🎁';
   const state = getNpcQuestState(npc);
   if (state === 'offer') return '!';
   if (state === 'ready') return '?';
