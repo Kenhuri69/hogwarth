@@ -1,6 +1,36 @@
-# ENDGAME_PLAN — Écran de victoire + Soft NG+
+# ENDGAME_PLAN — Écran de victoire + Boucle Ténébreuse
 
 > Plan vivant (cf. `.claude/guidelines.md` §5). Cocher les étapes au fur et à mesure, noter les écarts.
+
+## Table des matières
+
+1. [Objectif](#1-objectif)
+2. [Contraintes dures](#2-contraintes-dures)
+3. [Trigger de victoire](#3-trigger-de-victoire)
+4. [Cinématique de victoire (non bloquante)](#4-cinématique-de-victoire-non-bloquante)
+5. [Persistance](#5-persistance)
+6. [UI badge "Vainqueur"](#6-ui-badge-vainqueur)
+7. **Soft NG+ — Étages des Ténèbres (11+)**
+   - 7.1 [Principe](#71-principe)
+   - 7.1bis [Démarcation visuelle — Textures](#71bis-démarcation-visuelle--textures-des-ténèbres)
+   - 7.1ter [Escalier scellé](#71ter-escalier-de-létage-10--scellé-tant-que-voldemort-vit)
+   - 7.2 [Roster — Boucle originale Ténébreuse](#72-roster-monstres-étages-11--boucle-originale-ténébreuse)
+   - 7.2bis [Calibrage scaling — Boucle Ténébreuse](#72bis-calibrage-du-scaling--boucle-ténébreuse)
+   - 7.3 [Drops uniques](#73-drops-uniques-post-victoire)
+   - 7.4 [Bestiaire enrichi (V2)](#74-bestiaire-enrichi-optionnel-v2)
+   - 7.5 [**Forge des Ténèbres** (Tranche 2)](#75-forge-des-ténèbres-item-upgrade--tranche-2)
+   - 7.6 [**Bibliothèque interdite** (Tranche 2)](#76-bibliothèque-interdite-spell-upgrade--tranche-2)
+   - 7.7 [**Maison Tier 5** (Tranche 2)](#77-maison-tier-5-post-victoire--tranche-2)
+   - 7.8 [**Set bonus Ténèbres** (Tranche 2)](#78-set-bonus-ténèbres--tranche-2)
+   - 7.9 [Récompenses scalées](#79-récompenses-scalées--tranche-1-intégré-au-variant)
+   - 7.10 [Consommables Ténèbres](#710-consommables-ténèbres--tranche-2-drop--tranche-1-essencepage)
+8. [Ce qui ne change pas (sanity)](#8-ce-qui-ne-change-pas-sanity)
+9. [Découpage en étapes (2 tranches → 2 PRs)](#9-découpage-en-étapes-2-tranches--2-prs)
+10. [Tests à ajouter (`tests/smoke.js`)](#10-tests-à-ajouter-testssmokejs)
+11. [Commit & PR](#11-commit--pr)
+12. [Hors-scope (V2+)](#12-hors-scope-pour-mémoire--v2-ou-plus-tard)
+
+---
 
 ## 1. Objectif
 
@@ -338,13 +368,13 @@ else if (typeof victoryAchieved !== 'undefined'
   // ajoutent juste la couche "corrupted" — cf. §7.2bis.
   monster.variant = 'darkness';
   monster.name    = 'Ténébreux ' + base.name;
-  monster.hp      = Math.floor(monster.hp  * 1.25);
-  monster.atk     = Math.floor(monster.atk * 1.15);
-  monster.def     = Math.floor(monster.def * 1.10);
-  if (monster.mag) monster.mag = Math.floor(monster.mag * 1.20);
-  monster.xp      = Math.floor(monster.xp   * 1.75);
-  monster.gold    = Math.floor(monster.gold * 1.75);
-  // Drops gated : voir §7.3 (filtre côté endBattle sur enemy.variant)
+  monster.hp      = Math.floor(monster.hp  * 1.35);
+  monster.atk     = Math.floor(monster.atk * 1.22);
+  monster.def     = Math.floor(monster.def * 1.15);
+  if (monster.mag) monster.mag = Math.floor(monster.mag * 1.30);
+  monster.xp      = Math.floor(monster.xp   * 2.00);
+  monster.gold    = Math.floor(monster.gold * 2.00);
+  // Drops gated : voir §7.3 + §7.9 (filtre côté endBattle sur enemy.variant)
 }
 else if (floor >= 5) { … } // ancient
 else if (floor >= 3) { … } // fierce
@@ -430,13 +460,18 @@ applique les multiplicateurs darkness par-dessus :
 ```
 relFloor = floor − 10                                (post-victoire, floor≥11)
 mult     = (1 + (relFloor − 1) × base.scale) × diffMult
-hp  = base.hp  × mult × 1.25
-atk = base.atk × mult × 1.15
-def = base.def × mult × 1.10
-mag = base.mag × 1.20                                (mag toujours non scalé par mult)
-xp  = base.xp  × mult × 1.75
-gold = base.gold × mult × 1.75
+hp  = base.hp  × mult × 1.35
+atk = base.atk × mult × 1.22
+def = base.def × mult × 1.15
+mag = base.mag × 1.30                                (mag toujours non scalé par mult)
+xp  = base.xp  × mult × 2.00
+gold = base.gold × mult × 2.00
 ```
+
+> **Multiplicateurs bumpés** (vs version précédente du plan : ×1.25/×1.15/×1.10/×1.20/×1.75/×1.75). Le scaling est désormais
+> calibré pour être un peu **plus exigeant** — compensé côté joueur
+> par les mécaniques de boost §7.5 (Forge), §7.6 (Bibliothèque),
+> §7.7 (Maison T5), §7.8 (Set Ténèbres), §7.10 (consommables purifiés).
 
 #### Référentiel joueur (Normal, Gryffondor, équipement mid)
 
@@ -456,38 +491,42 @@ Drops Ténèbres en cours d'acquisition (cape_voldemort +DEF/MAG,
 cendres_phenix +MAG/regenHp, oeil_basilic +crit/dodge) — non comptés
 dans le tableau, marge de sécurité.
 
-#### Stats des monstres clés en version Ténébreuse
+#### Stats des monstres clés en version Ténébreuse (multiplicateurs bumpés)
 
 `mult(relF) = 1 + (relF − 1) × scale` (Normal, diffMult = 1.0). Le
-floor d'apparition est `minFloor + 10`. Stats finales avec darkness.
+floor d'apparition est `minFloor + 10`. Stats finales avec darkness
+×1.35 / ×1.22 / ×1.15 / ×1.30.
 
 | Monstre | minFloor | scale | apparait à floor… | relF | mult | **HP** | **ATK** | **DEF** | **MAG** |
 |---------|---------:|------:|-------------------|-----:|-----:|-------:|--------:|--------:|--------:|
 | Chat de Mme Norris   | 1  | 0.15 | floor 11 | 1  | 1.00 | **13**  | **2**   | **1**  | 0  |
-| Cornichon            | 1  | 0.15 | floor 11 | 1  | 1.00 | **15**  | **3**   | **2**  | 0  |
-| Peeves               | 1  | 0.18 | floor 11 | 1  | 1.00 | **18**  | **4**   | **2**  | 0  |
-| Mandragore Sauvage   | 2  | 0.20 | floor 12 | 2  | 1.20 | **36**  | **8**   | **4**  | 7  |
-| Inférius             | 4  | 0.28 | floor 14 | 4  | 1.84 | **87**  | **27**  | **14** | 0  |
-| Mangemort            | 5  | 0.30 | floor 15 | 5  | 2.20 | **110** | **30**  | **14** | 12 |
-| Basilic Mineur       | 6  | 0.32 | floor 16 | 6  | 2.60 | **227** | **45**  | **23** | 14 |
-| Mangemort d'Élite    | 7  | 0.32 | floor 17 | 7  | 2.92 | **201** | **53**  | **25** | 19 |
-| Bellatrix            | 8  | 0.35 | floor 18 | 8  | 3.45 | **302** | **79**  | **30** | 24 |
-| Voldemort Ressuscité | 10 | 0.40 | floor 20 | 10 | 4.60 | **575** | **148** | **70** | 30 |
+| Cornichon            | 1  | 0.15 | floor 11 | 1  | 1.00 | **16**  | **3**   | **2**  | 0  |
+| Peeves               | 1  | 0.18 | floor 11 | 1  | 1.00 | **19**  | **4**   | **2**  | 0  |
+| Mandragore Sauvage   | 2  | 0.20 | floor 12 | 2  | 1.20 | **39**  | **8**   | **4**  | 9  |
+| Inférius             | 4  | 0.28 | floor 14 | 4  | 1.84 | **94**  | **29**  | **15** | 0  |
+| Mangemort            | 5  | 0.30 | floor 15 | 5  | 2.20 | **119** | **32**  | **15** | 13 |
+| Basilic Mineur       | 6  | 0.32 | floor 16 | 6  | 2.60 | **245** | **48**  | **24** | 18 |
+| Mangemort d'Élite    | 7  | 0.32 | floor 17 | 7  | 2.92 | **217** | **57**  | **27** | 21 |
+| Bellatrix            | 8  | 0.35 | floor 18 | 8  | 3.45 | **326** | **84**  | **32** | 26 |
+| Voldemort Ressuscité | 10 | 0.40 | floor 20 | 10 | 4.60 | **621** | **157** | **74** | 33 |
 
-> ✨ Voldemort Ténébreux à floor 20 = **+25 % HP / +16 % ATK** vs
-> Voldemort original à floor 10 (HP 460/ATK 128). Final boss revisité,
-> pas re-stomp d'un boss usé.
+> ✨ Voldemort Ténébreux à floor 20 = **+35 % HP / +23 % ATK** vs
+> Voldemort original à floor 10 (HP 460/ATK 128). Le boss final
+> revisité demande clairement un build NG+ optimisé.
 
-#### Combat-feel attendu
+#### Combat-feel attendu (joueur sans boost §7.5+)
+
+Référentiel "joueur nu" sans Forge/Bibliothèque/Tier 5/Set bonus —
+pour mesurer ce que les mécaniques de boost doivent combler.
 
 | Combat | Joueur niv. réf. | Dmg joueur/coup | Dmg ennemi/coup | Hits pour tuer | Hits pour mourir |
 |--------|------------------|-----------------|-----------------|----------------|------------------|
 | Chat Ténébreux (floor 11)   | L11 ATK 22 | 22−1 = 21       | 2−15 = 0    | **1**   | invulnérable  |
-| Mandragore Ténébreuse (12)  | L11 ATK 22 | 22−4 = 18       | 8−15 = 0    | 2       | invulnérable  |
-| Inférius Ténébreux (14)     | L13 ATK 25 | 25−14 = 11      | 27−18 = 9   | 8       | 22            |
-| Mangemort Ténébreux (15)    | L14 ATK 28 | 28−14 = 14      | 30−20 = 10  | 8       | 16            |
-| Bellatrix Ténébreuse (18)   | L17 ATK 32 | 32−30 = 2       | 79−24 = 55  | ~150    | 4             |
-| Voldemort Ténébreux (20)    | L20 ATK 38 | 38−70 = 1       | 148−28 = 120| ~575    | 2             |
+| Mandragore Ténébreuse (12)  | L11 ATK 22 | 22−4 = 18       | 8−15 = 0    | 3       | invulnérable  |
+| Inférius Ténébreux (14)     | L13 ATK 25 | 25−15 = 10      | 29−18 = 11  | 10      | 18            |
+| Mangemort Ténébreux (15)    | L14 ATK 28 | 28−15 = 13      | 32−20 = 12  | 10      | 14            |
+| Bellatrix Ténébreuse (18)   | L17 ATK 32 | 32−32 = 1       | 84−24 = 60  | ~330    | 4             |
+| Voldemort Ténébreux (20)    | L20 ATK 38 | 38−74 = 1       | 157−28 = 129| ~621    | 2             |
 
 → Lecture :
 - **Floors 11-13** : easy lap — le joueur surclasse les Ténébreux des
@@ -503,12 +542,12 @@ floor d'apparition est `minFloor + 10`. Stats finales avec darkness.
 
 | Stat | Multiplier | Justification |
 |------|-----------:|----------------|
-| `hp`   | **× 1.25** | Marque visiblement la corruption, n'allonge pas le combat de plus de ~25 % |
-| `atk`  | **× 1.15** | Boost subtil mais ressenti, le Ténébreux frappe ~15 % plus fort que son original |
-| `def`  | **× 1.10** | DEF en seconde priorité — déjà saturée à haut niveau, +10 % suffit |
-| `mag`  | **× 1.20** | `mag` n'est pas scalé par défaut → le ×1.20 est la seule croissance qu'aura ce stat ! Crucial pour les abilities magiques |
-| `xp`   | **× 1.75** | Récompense claire pour un fight ~+25 % plus long |
-| `gold` | **× 1.75** | Idem |
+| `hp`   | **× 1.35** | Corruption marquée — combat ~+35 % plus long, compense bumpée pour exiger les boost joueur |
+| `atk`  | **× 1.22** | +22 % de dmg subis — réduit la marge de survie d'un hit, compensé par Forge ATK/HP |
+| `def`  | **× 1.15** | Léger ralentissement de l'offensive physique, suffit à pousser vers les sorts upgradés (Bibliothèque) |
+| `mag`  | **× 1.30** | `mag` n'est pas scalé par défaut → le ×1.30 est la seule croissance qu'aura ce stat. Crucial pour les abilities magiques |
+| `xp`   | **× 2.00** | Reward × 2 — incite à descendre malgré la difficulté, finance les coûts Forge/Bibliothèque |
+| `gold` | **× 2.00** | Idem — l'or devient une vraie ressource d'upgrade |
 
 > **Note sur `mag`** : dans le moteur courant, `mag` reste constant
 > à toute floor (cf. `scaleMonster()` ne touche pas `monster.mag`).
@@ -537,29 +576,29 @@ Tentation : booster davantage HP/ATK pour que le second loop soit
 
 | Floor | relF | mult | HP | ATK | DEF |
 |------:|-----:|-----:|---:|----:|----:|
-| 20    | 10   | 4.60 | 575 | 148 | 70 |
-| 22    | 12   | 5.40 | 675 | 174 | 84 |
-| 25    | 15   | 6.60 | 825 | 213 | 99 |
-| 30    | 20   | 8.60 | 1075| 277 | 132|
+| 20    | 10   | 4.60 | 621 | 157 | 74 |
+| 22    | 12   | 5.40 | 729 | 184 | 87 |
+| 25    | 15   | 6.60 | 891 | 225 | 106|
+| 30    | 20   | 8.60 | 1161| 294 | 138|
 
-Au-delà de floor 25, le joueur est typiquement L25+ avec stats au
-plafond — c'est un grind asymptotique attendu pour les sessions
-post-endgame "longues". OK pour V1.
+Au-delà de floor 25, le joueur est typiquement L25+ avec items
+forge level 5 et tier 5 Maison — c'est un grind asymptotique attendu
+pour les sessions post-endgame "longues". OK pour V1.
 
-#### Sanity check : difficulté Expert
+#### Sanity check : difficulté Expert (sans boost joueur)
 
 Bellatrix Ténébreuse floor 18, Expert (`diffMult = 1.45`) :
-- HP  = 70 × 3.45 × 1.45 × 1.25 = **438**
-- ATK = 20 × 3.45 × 1.45 × 1.15 = **115**
+- HP  = 70 × 3.45 × 1.45 × 1.35 = **473**
+- ATK = 20 × 3.45 × 1.45 × 1.22 = **122**
 
 Voldemort Ténébreux floor 20, Expert :
-- HP  = 100 × 4.60 × 1.45 × 1.25 = **834**
-- ATK = 28 × 4.60 × 1.45 × 1.15 = **214**
+- HP  = 100 × 4.60 × 1.45 × 1.35 = **900**
+- ATK = 28 × 4.60 × 1.45 × 1.22 = **228**
 
-Affrontable par un joueur Expert post-Voldemort (build optimisé,
-sorts magiques avec mag ~38, drops Ténèbres) mais clairement tendu.
-Pas d'ajustement spécial — `diffMult` existant gère le ratio
-correctement.
+**Sans boost §7.5+, Expert Voldemort Ténébreux devient quasi-infaisable.**
+C'est l'INTENTION : le scaling bumpé force le joueur à investir dans
+les mécaniques de progression endgame (Forge, Bibliothèque, Tier 5).
+Le `diffMult` existant gère le ratio ; pas d'ajustement spécial.
 
 #### À retoucher si le ressenti diffère
 
@@ -620,6 +659,292 @@ Marquer dans le bestiaire les entrées ayant été rencontrées en variant
 parallèle `seenDarknessVariants` (sérialisé via `Array.from`).
 Hors scope V1 si effort > 45 min.
 
+---
+
+### 7.5 Forge des Ténèbres (item upgrade) — Tranche 2
+
+**Pourquoi** : compense le scaling Ténèbres bumpé en permettant au
+joueur d'investir gold + matériaux dans ses items équipés.
+
+**Cellule spéciale** : nouvelle constante `CELL.FORGE = 8` dans
+`js/data.js`. Génération dans `dungeon.js` :
+- 1 Forge garantie par floor 11, 14, 17, 20 (cadence 1 / 3 floors).
+- Placement : une room intermédiaire au choix (cf. logique existante
+  pour `CELL.FOUNTAIN`).
+- Icône scène : nouvelle entrée `SCENE_ICONS.forge` (SVG inline,
+  enclume rougeoyante).
+
+**Interaction** : `handleCellEntry` détecte `CELL.FORGE` → ouvre une
+modale dédiée `#forge-modal`.
+
+**Modèle d'upgrade** : chaque item équipable acquiert un champ
+`upgradeLevel` (entier 0 à 5). Persisté naturellement par
+`Object.assign` dans le slot d'équipement.
+
+**Coûts d'amélioration** (par niveau cible) :
+
+| Level cible | Gold | Essence des Ténèbres |
+|------------:|-----:|---------------------:|
+| 1 | 80   | 1 |
+| 2 | 160  | 2 |
+| 3 | 320  | 3 |
+| 4 | 640  | 5 |
+| 5 | 1280 | 8 |
+| **Cumul** | **2480** | **19** |
+
+L'essence des Ténèbres est un nouveau consommable (cf. §7.10), drop
+~3 % sur tout Ténébreux.
+
+**Effet par level** : `recalculateStats()` lit `upgradeLevel` et
+ajoute `+upgradeLevel` au bonus principal de l'item (= le plus
+élevé parmi `bonusAtk/bonusDef/bonusMag/bonusLck`). Si plusieurs
+bonus sont à égalité, +`upgradeLevel` à chacun (cas rare).
+
+Exemples (cap level 5) :
+
+| Item | Bonus base | Bonus level 5 |
+|------|-----------|---------------|
+| wand1 (Saule, common) | ATK+2 | ATK+7 |
+| wand2 (Sureau, rare) | ATK+4 MAG+2 | ATK+9 MAG+2 |
+| sword_gryff (legendary) | ATK+8 LCK+2 | ATK+13 LCK+2 |
+| amulette (epic) | MAG+3 | MAG+8 |
+| robe1 (common) | DEF+3 | DEF+8 |
+
+**Cas spécial : items grant-spell / regen** — `upgradeLevel` ne touche
+pas les `grantsSpell` / `regenHp` / `regenSp`. Ces effets sont
+binaires et restent identiques.
+
+**Migration** : items existants → `upgradeLevel = 0` par défaut (lazy
+init dans `recalculateStats`). Pas de coercition explicite à appliquer.
+
+**UI** :
+- Modale `#forge-modal` liste tous les items équipés des 2 personnages.
+- Chaque ligne : icône item, nom (level), bonus actuel → bonus après
+  upgrade, coût, bouton « Améliorer ».
+- Bouton grisé si gold insuffisant ou essences insuffisantes ou
+  level cap atteint.
+
+**Vérif** :
+- Wand1 acheté en boutique floor 1 → reste ATK+2 jusqu'à atteinte
+  d'une Forge. À la forge floor 11, upgrade level 1 → ATK+3 (coût
+  80 gold + 1 essence). `recalculateStats` reflète le bonus dès la
+  sortie de modale.
+
+---
+
+### 7.6 Bibliothèque interdite (spell upgrade) — Tranche 2
+
+**Pourquoi** : les sorts du joueur sont actuellement plats (puissance
+fixe dès qu'on les apprend). À haut niveau, ils sont trop faibles
+face aux Ténébreux. La Bibliothèque amplifie les sorts existants.
+
+**Cellule spéciale** : `CELL.LIBRARY = 9` dans `data.js`.
+Génération dans `dungeon.js` :
+- 1 Bibliothèque garantie par floor 12, 15, 18 (offset par rapport
+  aux Forges pour ne pas overlap).
+
+**Interaction** : `handleCellEntry` → ouvre `#library-modal`.
+
+**Modèle d'upgrade** : nouveau champ par perso
+`c.spellUpgrades = { 'Incendio': 2, 'Reparo': 0, ... }`. Map nom-sort
+→ level (0-3). Persisté via `_serializeState` (ajouter le champ).
+
+**Coûts d'amélioration** :
+
+| Level cible | Gold | Page de Grimoire |
+|------------:|-----:|------------------:|
+| 1 | 120 | 1 |
+| 2 | 240 | 2 |
+| 3 | 480 | 3 |
+| **Cumul** | **840** | **6** |
+
+Page de Grimoire = nouveau consommable §7.10, drop ~2 % sur tout
+Ténébreux.
+
+**Effet par level** dans `battle-spells.js — castSpellInBattle()` :
+- `+2 × level` à la `power` du sort (dégâts ou heal)
+- `−1 × level` au `cost` SP (plancher à 1 SP)
+- `+5 % × level` à la `chance` d'appliquer le statut (burn, stun,
+  bleed) — capé à 50 % avant éventuels bonus de stat
+
+Exemples (cap level 3) :
+
+| Sort | Stats base | Stats level 3 |
+|------|-----------|---------------|
+| Incendio (burn) | power 14, cost 6 | power 20, cost 3, chance status +15 pp |
+| Reparo (heal)   | power 20, cost 7 | power 26, cost 4 |
+| Avada (instant) | power 50, cost 20| power 56, cost 17 |
+
+**UI** :
+- Modale `#library-modal` : sélecteur de perso (radio Harry/Hermione
+  si duo), puis liste des sorts appris du perso sélectionné.
+- Chaque ligne : icône sort, nom (level), preview des stats actuels
+  → preview après upgrade, coût, bouton « Amplifier ».
+
+**Migration** : si un perso n'a pas `spellUpgrades` (vieille save) →
+init `{}` dans `_applyState` post-`Object.assign`.
+
+**Vérif** :
+- Hermione apprend Incendio (niv 1, power 14). À la Bibliothèque
+  floor 12, upgrade Incendio level 1 → power 16 cost 5. En combat,
+  Incendio fait `16 + mag/2` dégâts au lieu de `14 + mag/2`.
+
+---
+
+### 7.7 Maison Tier 5 post-victoire — Tranche 2
+
+**Pourquoi** : tier 4 atteint vers ~1000 points = floor 10. Sans
+nouveau palier, l'incitation à grinder s'effondre en NG+. Tier 5
+offre une carotte continue pendant tout le second loop.
+
+**Seuil** : 2000 points cumulés. **Uniquement** trigger si
+`victoryAchieved` (gated dans `checkHouseLevelUp` de `main.js`).
+
+**Bonus par Maison** (`HOUSE_BONUSES` étendu, `state.js`) :
+
+| Maison      | Tier 5 stats             | Item légendaire+ |
+|-------------|--------------------------|------------------|
+| Gryffondor  | ATK+3, STR+1, HP+5       | `lame_godric` — épée (ATK+12, LCK+3, slot wand) |
+| Serpentard  | MAG+3, LCK+1, regenSp +2 | `bague_salazar` — anneau (MAG+8, LCK+5) |
+| Poufsouffle | DEF+3, END+1, HP+10      | `bouclier_helga` — body (DEF+10, HP+15) |
+| Serdaigle   | MAG+2, INT+2, crit+5 %   | `codex_rowena` — trinket (MAG+10, INT+3) |
+
+Les bonus stat sont appliqués en `_baseX` (croissent au level-up
+exactement comme tiers existants). Les items sont **distincts** des
+items tier 4 et peuvent être équipés en même temps (slots différents
+sauf Gryff : Lame de Godric peut écraser l'Épée si même slot wand,
+choix joueur).
+
+**UI** :
+- Le badge Maison HUD (`#house-crest`) affiche tier 5 quand atteint
+  (réutilise `_updateHouseBadge`).
+- Modale level-up Maison déclenchée comme aux autres tiers.
+
+**Migration** : aucune. Champ `houseTier` peut passer à 5, ce qui
+ne casse pas la logique existante (clamp à `Object.keys(tiers).length`).
+
+**Vérif** :
+- En partie post-victoire, accumuler 2000 pts (forcer via console
+  pour le smoke test : `housePoints = 2000; checkHouseLevelUp()`) →
+  tier passe à 5, bonus stats appliqués, item correspondant ajouté
+  à l'inventaire.
+- En partie **pré**-victoire, atteindre 2000 pts → reste tier 4
+  (gated par `victoryAchieved`).
+
+---
+
+### 7.8 Set bonus Ténèbres — Tranche 2
+
+**Pourquoi** : les 3 drops Ténèbres (cape_voldemort, cendres_phenix,
+oeil_basilic) ont chacun un effet propre, mais aucune synergie. Ajouter
+un set bonus encourage le joueur à compléter le set complet.
+
+**Set défini** :
+```js
+const TENEBRES_SET = ['cape_voldemort', 'cendres_phenix', 'oeil_basilic'];
+```
+
+**Bonus** (appliqués dans `recalculateStats()` après les bonus
+d'équipement classiques) :
+
+| # équipés | Bonus |
+|----------:|-------|
+| 2 | bonusCritChance +10, bonusDodgeChance +5 |
+| 3 | bonusCritChance +15, bonusDodgeChance +10, regenHp +2 |
+
+**Calcul** : compter les items équipés du set par perso (boucle sur
+`c.equipped`). Ajout à `c.critChance` et `c.dodgeChance` via les
+champs existants `bonusCritChance/bonusDodgeChance`. RegenHp s'ajoute
+dans `applyEquipmentRegen` (battle.js) — extension du même mécanisme
+qui lit déjà `item.regenHp`, on injecte une source virtuelle.
+
+**UI** :
+- Aucune nouvelle modale. Tooltip enrichi sur chaque item du set :
+  ligne supplémentaire « Set Ténèbres (2/3) — crit +10 % » avec
+  compteur actuel.
+- Carte perso (fiche) : badge « Set Ténèbres complet » si 3/3.
+
+**Vérif** :
+- Équiper 2 items du set → recalculateStats donne crit chance +10.
+- Équiper 3 → crit chance +15, dodge +10, regenHp +2 par tour
+  (visible en combat).
+
+---
+
+### 7.9 Récompenses scalées — Tranche 1 (intégré au variant)
+
+Le bump des multiplicateurs `xp×2.00` et `gold×2.00` (§7.2bis) couvre
+déjà 80 % du besoin. On complète avec **3 ajouts** côté drops :
+
+**A. Drop chance des drops standards × 1.5** sur Ténébreux.
+Implémentation dans `endBattle()` :
+```js
+const dropMult = (enemy.variant === 'darkness') ? 1.5 : 1.0;
+for (const d of enemy.drops) {
+  if (Math.random() < d.chance * dropMult) { … }
+}
+```
+
+**B. Maison points × 1.5** sur kill Ténébreux. Dans `endBattle` :
+```js
+const points = BASE_POINTS_BY_DIFFICULTY[difficulty]
+             * (enemy.variant === 'darkness' ? 1.5 : 1.0);
+housePoints += Math.floor(points);
+```
+Effet : avec Normal (10 pts/kill base), Ténébreux donne 15 pts → tier 5
+(2000 pts) atteignable en ~140 kills Ténèbres = grosso modo une session
+floor 11→20 complète. Bon ratio.
+
+**C. Drops Ténèbres-only via variant gating** — déjà spec en §7.3
+(8 % cape/cendres/oeil) + nouveaux drops §7.10 :
+- 5 % drop `potion_xl` ou `potion_xl_sp` (rand entre les deux)
+- 3 % drop `essence_tenebres` (matière Forge)
+- 2 % drop `page_grimoire` (matière Bibliothèque)
+- 30 % drop `larme_phenix_pure` **uniquement** sur Voldemort Ténébreux
+
+**Vérif** : combattre 100 Ténébreux par script (forcer `victoryAchieved=true`,
+floor=15) → environ 8 cape/cendres/oeil, 5 potions XL, 3 essences,
+2 pages de grimoire. Tester sur Voldemort spécifiquement pour la
+larme pure.
+
+---
+
+### 7.10 Consommables Ténèbres — Tranche 2 (drop) + Tranche 1 (essence/page)
+
+**Distinction tranche** : `essence_tenebres` et `page_grimoire` sont
+nécessaires aux Forge/Bibliothèque (tranche 2). Pour la tranche 1,
+seuls les nouveaux consommables jouables sont introduits.
+
+**Nouveaux items dans `js/data.js — ITEMS[]`** :
+
+| ID | Nom | Type | Effet | Source primaire |
+|----|-----|------|-------|-----------------|
+| `potion_xl` | Élixir Suprême | consumable | restore 100 % HP du perso ciblé | drop Ténèbres 5 %, boutique floor 15+ (200 g) |
+| `potion_xl_sp` | Élixir d'Esprit Suprême | consumable | restore 100 % SP du perso ciblé | drop Ténèbres 5 %, boutique floor 15+ (200 g) |
+| `larme_phenix_pure` | Larme du Phénix Pure | consumable | auto-revive 1 fois si KO ce combat (effet passif au pickup) | drop Voldemort Ténébreux 30 % |
+| `essence_tenebres` | Essence des Ténèbres | material | matériau Forge §7.5 | drop Ténèbres 3 % |
+| `page_grimoire` | Page de Grimoire | material | matériau Bibliothèque §7.6 | drop Ténèbres 2 % |
+
+**Implémentation matériaux** :
+- Type `material` : non utilisable directement, juste stocké en
+  inventaire. Affichage avec icône grisée + tag « Matériau ».
+- Consommé lors d'un upgrade Forge/Bibliothèque.
+
+**Implémentation larme du phénix pure** :
+- Effet « passif au pickup » = au moment où le perso passe `hp <= 0`
+  en combat, si l'inventaire contient une `larme_phenix_pure`,
+  consommer 1, restaurer `hpMax`, retirer le statut KO. Log dédié.
+- Implémenté dans `battle.js — triggerDeath()` (early return + heal +
+  pop de l'item).
+
+**Catalogue boutique** (Tranche 1) : étendre `shop.js — SHOP_CATALOG`
+avec `potion_xl` et `potion_xl_sp` à `minFloor: 15`.
+
+**Vérif** :
+- `potion_xl` utilisé sur Harry à 30/120 HP → Harry passe à 120/120 HP.
+- Harry KO en combat avec 1 `larme_phenix_pure` en inventaire →
+  ressuscite avec full HP, l'item disparaît.
+
 ## 8. Ce qui ne change pas (sanity)
 
 - Aucun monstre supprimé ni dupliqué. Aucun étage retiré.
@@ -635,9 +960,31 @@ Hors scope V1 si effort > 45 min.
   comporte exactement comme avant le plan. Seul l'escalier de l'étage
   10 prend un message dédié quand on tente d'y descendre.
 
-## 9. Découpage en étapes
+## 9. Découpage en étapes (2 tranches → 2 PRs)
 
 > Convention : `[ ]` à faire, `[x]` fait, `[~]` partiel/écart noté.
+>
+> **Tranche 1 — Endgame core (PR 1)** : étapes 1-11.
+> Trigger, modale, persistance, badge, gate stairs floor 10, bascule
+> textures, variant Ténébreuse + scaling, drops uniques §7.3,
+> récompenses scalées §7.9, consommables jouables §7.10 (potion_xl,
+> potion_xl_sp, larme_phenix_pure), smoke tests, push.
+>
+> Critère de "shippable" : le joueur peut tuer Voldemort, voir la
+> modale, descendre à floor 11+, fight des Ténébreux avec leur halo,
+> récupérer les 3 drops Ténèbres et les nouveaux consommables.
+>
+> **Tranche 2 — Mécaniques de progression endgame (PR 2)** : étapes 12-17.
+> Forge, Bibliothèque, Maison Tier 5, Set bonus, matériaux
+> (essence_tenebres, page_grimoire), smoke tests étendus, push.
+>
+> Critère de "shippable" : le joueur peut investir gold + matériaux
+> pour upgrader items et sorts, atteindre tier 5 Maison, recevoir
+> le set bonus.
+
+---
+
+### 🟢 TRANCHE 1 — ENDGAME CORE
 
 ### Étape 1 — Squelette d'état & persistance
 - [ ] Ajouter `victoryAchieved` + `victoryAt` à `js/state.js`
@@ -678,36 +1025,96 @@ Hors scope V1 si effort > 45 min.
 - [ ] Créer la fonction utilitaire `effectiveFloor(floor)` dans `dungeon.js` (cf. §7.2)
 - [ ] Câbler aux **3 sites de filtrage du pool** : `dungeon.js:198`, `dungeon.js:259`, `battle.js:170` — remplacer `floor` par `effectiveFloor(floor)` dans la condition `m.minFloor <= … && (m.maxFloor === null || … <= m.maxFloor)`
 - [ ] Modifier `dungeon.js — scaleMonster()` : utiliser `ef = effectiveFloor(floor)` pour le calcul de `mult`
-- [ ] Ajouter la branche `darkness` dans `scaleMonster()` (priorité après shiny, avant ancient) — applique les ×1.25/×1.15/×1.10/×1.20/×1.75/×1.75 par-dessus le scaling déjà fait avec `ef`
+- [ ] Ajouter la branche `darkness` dans `scaleMonster()` (priorité après shiny, avant ancient) — applique les ×1.35/×1.22/×1.15/×1.30/×2.00/×2.00 par-dessus le scaling déjà fait avec `ef`
 - [ ] Étendre `battle-ui.js:60-65` : ajout du badge 🌑 et de la classe CSS `variant-${variant}` sur la card
 - [ ] Ajouter règles CSS `.variant-darkness` + keyframes `dark-pulse` + `.variant-badge-darkness` dans `css/style.css`
 - **Vérif 1** (pool) : forcer `victoryAchieved=true`, floor=11 → `MONSTERS.filter(...)` ne renvoie que les monstres avec `minFloor ≤ 1` (Chat, Cornichon, Peeves, etc.). Forcer floor=20 → pool = bestiaire complet incluant Voldemort.
-- **Vérif 2** (scaling) : Chat de Mme Norris @ floor 11 darkness → HP ≈ 13. Mangemort @ floor 15 darkness → HP ≈ 110. Voldemort @ floor 20 darkness → HP ≈ 575. Mêmes valeurs que les tables §7.2bis.
+- **Vérif 2** (scaling) : Chat de Mme Norris @ floor 11 darkness → HP ≈ 13. Mangemort @ floor 15 darkness → HP ≈ 119. Voldemort @ floor 20 darkness → HP ≈ 621. Mêmes valeurs que les tables §7.2bis.
 - **Vérif 3** (UI) : combat à floor 11 → ennemi préfixé "Ténébreux ", badge 🌑, halo violet animé.
 
-### Étape 8 — Drops uniques (stratégie A — variant-gated)
+### Étape 8 — Drops uniques + récompenses scalées (§7.3 + §7.9)
 - [ ] 3 items dans `data.js` (cape_voldemort, cendres_phenix, oeil_basilic)
-- [ ] Patch `battle.js — endBattle()` : roll bonus 8% si `enemy.variant === 'darkness'`
-- **Vérif** : combattre 50 Ténébreux par script → environ 3-5 drops bonus. Combattre 50 ennemis pré-victoire → 0 drop bonus.
+- [ ] Patch `battle.js — endBattle()` : pour chaque enemy `variant === 'darkness'`, appliquer `dropMult = 1.5` sur la loop de drops standards, puis rouler les drops Ténèbres (8 % pour l'un des 3 items)
+- [ ] Patch `battle.js — endBattle()` : Maison points × 1.5 pour les kills Ténébreux
+- **Vérif** : combattre 50 Ténébreux par script → environ 3-5 drops Ténèbres, +50 % de potions vs un combat normal. Combattre 50 ennemis pré-victoire → 0 drop bonus.
 
-### Étape 9 — Soft NG+ feel (multiplicateurs + toast)
+### Étape 9 — Consommables jouables (§7.10 — partie Tranche 1)
+- [ ] Items `potion_xl`, `potion_xl_sp`, `larme_phenix_pure` dans `data.js`
+- [ ] Comportement Élixirs Suprêmes : `useItem()` restore 100 % HP/SP du perso ciblé
+- [ ] Comportement larme du Phénix Pure : hook dans `battle.js — triggerDeath()` → si inventory contient l'item, consommer, full heal, ressuscitation
+- [ ] Ajouter `potion_xl` et `potion_xl_sp` au `SHOP_CATALOG` (`shop.js`) avec `minFloor: 15`
+- [ ] Drops :
+  - 5 % `potion_xl` ou `potion_xl_sp` (random) sur tout Ténébreux
+  - 30 % `larme_phenix_pure` sur Voldemort Ténébreux uniquement
+- **Vérif** : `potion_xl` ramène un perso à 30/120 HP au max (120/120). Harry KO en combat avec une larme pure en inventaire → ressuscite avec full HP, l'item disparaît.
+
+### Étape 10 — Soft NG+ feel (toast + groupe)
 - [ ] Bump de proba groupe 3 dans `battle.js — rollGroupSize` (+10% étage 11+ post-victoire)
 - [ ] Toast one-shot dans `movement.js — goDeeper` à la 1re entrée étage 11+ post-victoire (flag mémoire session)
 - **Vérif** : toast s'affiche une seule fois ; revisiter étage 11 → pas de toast à nouveau.
 
-> Note : le boost de stats (+30% HP / +20% ATK) est déjà couvert par
-> l'étape 7 via le variant darkness — pas besoin d'une étape multiplicateur séparée.
-
-### Étape 10 — Smoke tests
+### Étape 11 — Smoke tests + commit/push (Tranche 1)
 - [ ] `scenarioVictoryTrigger` : kill Voldemort → flag + modale (cf. §10)
 - [ ] `scenarioStairsGated` : sur étage 10 avant kill → STAIRS_D overlay = "Passage scellé" ; après kill → "Descendre" dispo
 - [ ] `scenarioDarkVariant` : forcer victoryAchieved+floor=11 + scaleMonster d'un monstre simple → assert `variant === 'darkness'` et name commence par "Ténébreux "
-- **Vérif** : `node tests/smoke.js` passe vert.
+- [ ] `scenarioDarkRewards` : forcer 10 Ténébreux scaleMonster → assert xp/gold ≈ 2× la version normale
+- [ ] `node tests/smoke.js` vert
+- [ ] Commit + push sur `claude/game-review-improvements-QsPrU` — ouvrir **PR 1** « Endgame core »
 
-### Étape 11 — Commit & push
-- [ ] Commit message clair (cf. §11)
-- [ ] Push sur `claude/game-review-improvements-QsPrU`
-- [ ] Vérifier état PR avant push (`mcp__github__pull_request_read`) — cf. guidelines §6
+---
+
+### 🟣 TRANCHE 2 — MÉCANIQUES DE PROGRESSION ENDGAME
+
+> Critère d'entrée : PR 1 mergée, branche à jour avec master.
+
+### Étape 12 — Matériaux + drops Forge/Bibliothèque (§7.10 — partie Tranche 2)
+- [ ] Items `essence_tenebres`, `page_grimoire` dans `data.js` (type `material`)
+- [ ] Affichage inventaire : matériaux non utilisables, icône grisée + tag « Matériau »
+- [ ] Drops dans `battle.js — endBattle()` sur Ténébreux : 3 % essence, 2 % page (pondérations indépendantes)
+- **Vérif** : matériaux apparaissent dans l'inventaire mais ne sont pas cliquables comme un consommable.
+
+### Étape 13 — Forge des Ténèbres (§7.5)
+- [ ] Nouvelle constante `CELL.FORGE = 8` dans `data.js`
+- [ ] Génération : 1 Forge garantie sur floors 11, 14, 17, 20 (extension de `dungeon.js`)
+- [ ] Icône scène `SCENE_ICONS.forge` (SVG inline)
+- [ ] Modale `#forge-modal` dans `index.html` + CSS dédié
+- [ ] Logique `openForge()` : liste items équipés des 2 persos avec preview level → +1
+- [ ] Champ `c.equipped[slot].upgradeLevel` lazy-init dans `recalculateStats()` et utilisé pour le bonus
+- [ ] Couts en gold + `essence_tenebres` selon la table §7.5
+- **Vérif** : wand1 (ATK+2) upgrade level 1 → ATK+3 ; level 5 → ATK+7. Coût correct. Bouton grisé si gold ou essence insuffisante.
+
+### Étape 14 — Bibliothèque interdite (§7.6)
+- [ ] Nouvelle constante `CELL.LIBRARY = 9` dans `data.js`
+- [ ] Génération : 1 Bibliothèque garantie sur floors 12, 15, 18
+- [ ] Icône scène `SCENE_ICONS.library`
+- [ ] Champ `c.spellUpgrades` (Map ou plain object) initialisé sur chaque perso ; persisté via `_serializeState` + `_applyState`
+- [ ] Modale `#library-modal` (sélecteur perso, liste sorts, preview upgrade, bouton)
+- [ ] Patch `battle-spells.js — castSpellInBattle()` : lookup level, applique +2×level power, −1×level cost (min 1), +5%×level status chance
+- [ ] Coûts en gold + `page_grimoire` selon la table §7.6
+- **Vérif** : Incendio (power 14, cost 6) upgrade level 1 → power 16, cost 5. Cast en combat consomme 5 PM au lieu de 6 et fait `16 + mag/2` dmg.
+
+### Étape 15 — Maison Tier 5 (§7.7)
+- [ ] Étendre `HOUSE_BONUSES` dans `state.js` avec entrée tier 5 par Maison (stats + item légendaire+ associé)
+- [ ] Patch `checkHouseLevelUp()` (`main.js`) : gérer le passage 4 → 5, **gated** par `victoryAchieved`
+- [ ] 4 nouveaux items dans `data.js` : `lame_godric`, `bague_salazar`, `bouclier_helga`, `codex_rowena`
+- [ ] Patch `_updateHouseBadge` (`ui.js`) pour afficher tier 5
+- **Vérif** : pré-victoire, atteindre 2000 pts → reste tier 4. Post-victoire, atteindre 2000 pts → tier 5 déclenché, item correspondant ajouté à l'inventaire, badge mis à jour.
+
+### Étape 16 — Set bonus Ténèbres (§7.8)
+- [ ] Constante `TENEBRES_SET` exportée depuis `data.js` (ids des 3 items)
+- [ ] Patch `recalculateStats()` : compter items du set équipés par perso, ajouter `bonusCritChance/bonusDodgeChance` + flag `_tenebresSet3 = true` si full set
+- [ ] Patch `applyEquipmentRegen()` (`battle.js`) : si `_tenebresSet3`, ajouter +2 regen HP par tour
+- [ ] Enrichir le tooltip d'item dans `inventory.js` avec la ligne « Set Ténèbres (n/3) — bonus actuels »
+- **Vérif** : équiper 2 items → crit +10, dodge +5. Équiper 3 → crit +15, dodge +10, +2 regen HP par tour visible en combat.
+
+### Étape 17 — Smoke tests + commit/push (Tranche 2)
+- [ ] `scenarioForgeUpgrade` : forcer Forge → upgrade wand1 level 1 → wand1.upgradeLevel === 1 et recalculateStats donne bonus ATK+3
+- [ ] `scenarioLibraryUpgrade` : forcer Bibliothèque → upgrade Incendio level 1 → c.spellUpgrades['Incendio'] === 1 ; cast vérifie le bonus
+- [ ] `scenarioHouseTier5` : forcer victoryAchieved + 2000 points → tier passe à 5, item ajouté
+- [ ] `scenarioTenebresSet` : équiper 3 items du set → crit/dodge bonus + regen
+- [ ] `node tests/smoke.js` vert
+- [ ] Commit + push sur une **nouvelle branche dérivée de master post-PR 1** (`claude/endgame-progression-mechanics`)
+- [ ] Ouvrir **PR 2** « Endgame progression mechanics » — cf. guidelines §6 pour vérifier l'état PR 1 avant.
 
 ## 10. Tests à ajouter (`tests/smoke.js`)
 
@@ -746,19 +1153,43 @@ async function scenarioVictoryTrigger(page) {
 
 ## 11. Commit & PR
 
+### PR 1 — Endgame core (Tranche 1)
+
 - Branche : `claude/game-review-improvements-QsPrU` (déjà créée, propre).
-- Commit unique recommandé : `feat(endgame): écran de victoire + soft NG+ étages 11+`
-- Avant push, vérifier que la PR liée n'existe pas déjà ou est ouverte
-  (cf. guidelines §6).
+- Commits idéalement scopés : 1 commit par étape (1-11) ou 1 commit
+  par thématique cohérente (état+save, modale+UI, gate+textures,
+  variant+roster, drops+récompenses, consommables, smoke tests).
+- Titre PR suggéré : `feat(endgame): écran de victoire + boucle Ténébreuse + drops`
+- Body : résumer §3 (trigger), §7.2 (boucle relFloor), §7.2bis (multiplicateurs),
+  §7.3 (drops gated), §7.9 (récompenses scalées), §7.10 (consommables V1).
+
+### PR 2 — Mécaniques de progression endgame (Tranche 2)
+
+- **Avant de commencer** : vérifier l'état de PR 1 via `mcp__github__pull_request_read`.
+  Si mergée → repartir de master à jour, créer une nouvelle branche
+  `claude/endgame-progression-mechanics`. Si encore ouverte → continuer
+  sur la même branche post-merge, ou attendre.
+- Étapes 12-17.
+- Titre PR suggéré : `feat(endgame): Forge + Bibliothèque + Maison Tier 5 + Set bonus`
+- Body : résumer §7.5 / §7.6 / §7.7 / §7.8, et matériaux §7.10 (Tranche 2).
+
+### Règles communes
+
+- Avant chaque push, vérifier que la PR n'est pas mergée/closed
+  (guidelines §6) — ne JAMAIS pousser sur branche post-merge.
 - Pas d'ouverture de PR automatique sans demande explicite de l'utilisateur.
 
-## 12. Hors-scope V1 (pour mémoire)
+## 12. Hors-scope (pour mémoire — V2 ou plus tard)
 
-- Crédits déroulants
-- Achievements / trophées
-- NG+ dur (avec respec)
+- Crédits déroulants après victoire
+- Achievements / trophées système global
+- NG+ dur (respec stats, nouveau cap niveau)
 - Cinématique audio dédiée (TTS Dumbledore long format)
-- Nouveau boss étage 15+ (Mort en personne, etc.)
-- Marquage 🏆 dans le bestiaire
+- Nouveau boss étage 21+ (Mort en personne, Reliques)
+- Marquage 🌑 dans le bestiaire pour les variants vus
+- Tier 6 Maison (loop de prestige)
+- Upgrade Forge level 6+ (super-upgrade avec matériau ultra-rare)
+- Skill tree complet par perso
+- Sorts uniques exclusifs au second loop (à apprendre par grimoire dropable)
 
 > Toute extension passera par un plan séparé.
