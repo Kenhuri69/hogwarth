@@ -273,6 +273,7 @@ const NPCS = [
     name:  "Professeur Severus Rogue",
     title: "Directeur de Serpentard",
     icon:  "🦇",
+    portraitImg: "img/npc/rogue.png",
     placement: { floor: 4, anchor: "any" },
     specialAction: {
       type:  "claim_house_reward",
@@ -292,6 +293,7 @@ const NPCS = [
     name:  "Professeur Filius Flitwick",
     title: "Directeur de Serdaigle",
     icon:  "🎓",
+    portraitImg: "img/npc/flitwick.png",
     placement: { floor: 6, anchor: "any" },
     specialAction: {
       type:  "claim_house_reward",
