@@ -1015,7 +1015,7 @@ const MONSTERS = [
   },
 
   {
-    id: "elfe_rebelle", name: "Elfe de Maison Rebelle", icon: "👺", category: "être magique",
+    id: "elfe_rebelle", name: "Elfe de Maison Rebelle", icon: "👺", imgSrc: "img/monsters/elfe_rebelle.png", category: "être magique",
     desc: "Un elfe de maison affranchi de force lance des assiettes avec rage !",
     lore: "Elfe rendu fou par une libération forcée, errant dans les couloirs.",
     habitat: "Cuisines et couloirs", danger: 3,
@@ -1182,7 +1182,7 @@ const MONSTERS = [
   },
 
   {
-    id: "strigoi", name: "Strigoï Ancien", icon: "🩸", category: "être magique",
+    id: "strigoi", name: "Strigoï Ancien", icon: "🩸", imgSrc: "img/monsters/strigoi.png", category: "être magique",
     desc: "Un Strigoï millénaire émerge de son cercueil, des siècles de soif dans les yeux !",
     lore: "Ces vampires anciens n'ont plus rien d'humain. Leur peau a la couleur du parchemin et leur soif est insatiable. Ils maîtrisent une magie du sang qui leur permet de drainer plusieurs proies à distance.",
     habitat: "Cryptes oubliées sous Poudlard, salles funéraires des fondateurs",
@@ -1210,7 +1210,7 @@ const MONSTERS = [
   // ════════════════════════════════════════════
 
   {
-    id: "poupee_maudite", name: "Poupée Maudite", icon: "🪆", category: "être magique",
+    id: "poupee_maudite", name: "Poupée Maudite", icon: "🪆", imgSrc: "img/monsters/poupee_maudite.png", category: "être magique",
     desc: "Une poupée de chiffon flotte vers vous, un sourire cousu sur le visage !",
     lore: "Réceptacle d'une malédiction ancienne, lancée par une sorcière vengeresse. Chaque entaille sur sa toile reproduit une douleur sur sa cible, et chaque cheveu cousu transmet l'infortune.",
     habitat: "Greniers oubliés et coffres scellés des cachots",
