@@ -104,7 +104,108 @@ Après victoire, les étages 11+ basculent en **mode "Ténèbres"** :
   *"L'air devient glacial. Les murs eux-mêmes semblent te haïr."*
   (one-shot par session, déclenché dans `movement.js — goDeeper`)
 
-### 7.2 Drops uniques post-victoire
+### 7.1bis Démarcation visuelle — Textures des Ténèbres
+
+**Constat existant** (`js/textures.js:21-23`, `js/renderer.js:109-129`) :
+- 6 jeux de murs chargés : `stone1`, `stone2`, `wood`, `tapestry`,
+  `cavern_wall`, `rune_wall`.
+- Sol + plafond : `stone`, `carpet`, `cavern_floor/ceiling`,
+  `rune_floor/ceiling`.
+- Mapping actuel `getWallTextureType()` :
+
+| Étage | Mur | Sol | Plafond |
+|------|-----|-----|---------|
+| 1-2  | stone1 | stone | beams |
+| 3-4  | stone2 | carpet | beams |
+| 5-6  | wood | carpet | stone |
+| 7-8  | tapestry | carpet | stone |
+| **9-14** | **cavern_wall** | cavern_floor | cavern_ceiling |
+| 15+  | rune_wall | rune_floor | rune_ceiling |
+
+**Décision V1** : aucun nouvel asset à créer. On **avance la bascule
+`rune_*` à l'étage 11** uniquement si `victoryAchieved === true`. Les
+runes ont été pensées pour le endgame ; les rendre disponibles plus tôt
+post-victoire matérialise l'entrée dans les Ténèbres sans coût graphique.
+
+| Étage | Pré-victoire | Post-victoire |
+|------|--------------|--------------|
+| 9-10 | cavern | cavern |
+| **11-14** | **cavern** | **rune (avance)** |
+| 15+ | rune | rune |
+
+**Patch attendu** dans `renderer.js — getWallTextureType()` :
+```js
+if      (f <= 2)  key = 'stone1';
+else if (f <= 4)  key = 'stone2';
+else if (f <= 6)  key = 'wood';
+else if (f <= 8)  key = 'tapestry';
+else if (f <= 10) key = 'cavern_wall';
+else if (typeof victoryAchieved !== 'undefined' && victoryAchieved) {
+  key = 'rune_wall';                  // Ténèbres avancées (étage 11+)
+}
+else if (f <= 14) key = 'cavern_wall';
+else              key = 'rune_wall';
+```
+Idem pour le `floor_key`/`ceil_key` dans `renderer.js:288/321` :
+ajouter la condition `(victoryAchieved && f >= 11)` pour basculer
+respectivement sur `rune_floor` / `rune_ceiling`.
+
+**Optionnel (V1+)** : appliquer un overlay teinté pourpre froid
+(`rgba(40, 20, 70, 0.12)`) en fin de pipeline `drawDungeon` quand
+`victoryAchieved && currentFloor >= 11`. ~3 lignes, zéro asset,
+renforce visuellement le shift. À garder en réserve si rune_wall seul
+manque d'impact.
+
+### 7.1ter Escaliers : aucun ajout nécessaire ✅
+
+**Vérification** : `dungeon.js:116` place `CELL.STAIRS_D` dans la
+dernière room générée, **sans condition sur l'étage**. `movement.js:290`
+incrémente `currentFloor` sans cap. L'escalier de l'étage 10 vers
+l'étage 11 existe donc déjà par défaut, mais n'avait jamais de raison
+d'être emprunté avant ce plan.
+
+**Aucune modification de génération requise.** À mentionner dans le
+texte de la modale de victoire pour orienter le joueur :
+> *"Un dernier escalier descend vers les ténèbres au plus profond du château."*
+
+### 7.2 Roster monstres étages 11+ (nouveaux)
+
+**Constat existant** : 17 monstres ont `maxFloor: null` (incluant
+voldemort_revenu, bellatrix, mangemort, mangemort_elite, acromantula_jeune,
+hecate, vampire_novice, strigoi_ancien…). À l'étage 11+ ils continuent
+de spawn, scalés par leur `scale` propre. **Pool fonctionne déjà**,
+mais **monotone** — c'est le même bestiaire que l'étage 10.
+
+**Décision V1** : ajouter **3 nouveaux monstres exclusifs Ténèbres**
+dans `js/monsters.js`. Le filtrage est centralisé via un champ
+`requiresVictory: true` (consommé par `dungeon.js — weightedPick` avec
+un filtre `(!m.requiresVictory || victoryAchieved)`).
+
+| id | name | minFloor | weight | rôle | drop signature |
+|----|------|---------|--------|------|----------------|
+| `mangemort_ancien` | Mangemort Ancien | 11 | 6 | Variant durci du `mangemort_elite`, scale 0.32, 2 abilities (damage + drain) | chance ~8% sur `cape_voldemort` |
+| `nagini_revenue` | Nagini Réincarnée | 11 | 4 | Esprit-serpent, poison/drain, scale 0.30 | chance ~10% sur `cendres_phenix` |
+| `voldemort_ombre` | Ombre du Maître | 13 | 1 | Boss rare optionnel, écho d'âme post-mortem, scale 0.45, 4 abilities (proche `voldemort_revenu` mais HP/ATK +20%) | chance ~15% sur `oeil_basilic` |
+
+**Notes design** :
+- Tous ont `requiresVictory: true` → invisibles avant le kill de Voldemort.
+- Pas de PNG nouvelle à créer obligatoirement : réutiliser
+  `img/monsters/mangemort.png` (avec teinte CSS si possible),
+  `nagini.png`, `voldemort_revenu.png`. Ajout d'asset est V1+
+  uniquement si frustrant à l'usage.
+- `voldemort_ombre` joue le rôle de "vrai boss final NG+" — récompense
+  rare, weight 1 garantit qu'il n'est pas trivialisé.
+- Resistances cohérentes : tous résistent `disarm` et `stun` ; faibles à `instant`.
+- XP/gold scalés au niveau 11 (xp ~60-150, gold 30-80) pour ne pas
+  exploser la progression.
+
+> ⚠️ **Voldemort_revenu reste dans le pool étage 10+** — il pourra
+> respawn à 11+ aussi (weight 1). C'est volontaire : "les ténèbres
+> reviennent". Si l'utilisateur veut le rendre vraiment one-shot,
+> ajouter une garde côté pool : `id === 'voldemort_revenu' && victoryAchieved → exclu`.
+> Hors scope V1 par défaut.
+
+### 7.3 Drops uniques post-victoire
 
 3 nouveaux items dans `js/data.js — ITEMS[]` (rarity `legendary`, drop only
 si `victoryAchieved && currentFloor >= 11`). Suggestions :
@@ -122,10 +223,12 @@ Drops attachés aux 3 ennemis les plus durs des étages 11+
 Implémentation dans `endBattle` : avant le roll, filtrer
 `enemy.drops.filter(d => !d.requiresVictory || victoryAchieved)`.
 
-### 7.3 Bestiaire enrichi (optionnel, V2)
+### 7.4 Bestiaire enrichi (optionnel, V2)
 
-Marquer dans le bestiaire les drops post-victoire avec un picto 🏆. Hors
-scope V1 si effort > 30 min.
+Marquer dans le bestiaire les drops post-victoire avec un picto 🏆.
+Idem pour les 3 nouveaux monstres : entrée visible seulement après
+première rencontre (logique existante `seenMonsters` couvre déjà ça).
+Hors scope V1 si effort > 30 min.
 
 ## 8. Ce qui ne change pas (sanity)
 
@@ -164,23 +267,36 @@ scope V1 si effort > 30 min.
 - [ ] Picto 🏆 dans `ui.js — updateUI` (badge Maison, sous condition)
 - **Vérif** : visible uniquement quand `victoryAchieved === true`.
 
-### Étape 5 — Soft NG+
+### Étape 5 — Soft NG+ : balance & feel
 - [ ] Multiplicateur ténèbres dans `dungeon.js — scaleMonster`
 - [ ] Bump de proba groupe 3 dans `battle.js — rollGroupSize`
 - [ ] Toast one-shot dans `movement.js — goDeeper` (flag mémoire session)
 - **Vérif** : forcer `victoryAchieved = true` + entrer étage 11 → toast s'affiche une fois, monstres plus durs.
 
-### Étape 6 — Drops uniques
+### Étape 6 — Bascule visuelle "Ténèbres"
+- [ ] Patch `renderer.js — getWallTextureType()` pour basculer `rune_wall` à étage 11+ si `victoryAchieved`
+- [ ] Idem pour `_floorKey` (`renderer.js:288`) → `rune_floor` et `_ceilKey` (`renderer.js:321`) → `rune_ceiling`
+- [ ] Vider le cache de patterns (`_invalidatePatternCache()`) à l'instant du trigger pour forcer le re-render avec les bonnes textures
+- **Vérif** : pré-victoire étage 11 → cavern visible ; post-victoire étage 11 → runes visibles immédiatement.
+
+### Étape 7 — Roster monstres étages 11+
+- [ ] 3 nouveaux monstres dans `js/monsters.js` (`mangemort_ancien`, `nagini_revenue`, `voldemort_ombre`) avec `requiresVictory: true`
+- [ ] Ajouter le filtre `(!m.requiresVictory || victoryAchieved)` dans `dungeon.js — weightedPick` (ou la fonction qui peuple le pool d'étage)
+- [ ] Lier les drops uniques §7.3 sur ces 3 monstres (chance basse, gating identique)
+- **Vérif** : étage 11 pré-victoire → seuls les ennemis classiques. Étage 11 post-victoire → les 3 nouveaux peuvent apparaître (vérifier sur 50 spawns simulés par seed).
+
+### Étape 8 — Drops uniques
 - [ ] 3 items dans `data.js`
-- [ ] Champ `requiresVictory` sur les entrées de drop concernées dans `monsters.js` (voldemort_revenu, bellatrix, mangemort_elite)
+- [ ] Champ `requiresVictory` sur les entrées de drop concernées dans `monsters.js` (voldemort_revenu, bellatrix, mangemort_elite, + les 3 nouveaux)
 - [ ] Filtre dans `battle.js — endBattle` (drops loop)
 - **Vérif** : kill Voldemort avant victoire → drops standards seulement. Kill un Mangemort élite étage 11+ après victoire → l'item gated peut tomber (test par seed/proba forcée).
 
-### Étape 7 — Smoke test
+### Étape 9 — Smoke test
 - [ ] Ajouter scénario `scenarioVictoryTrigger` dans `tests/smoke.js`
+- [ ] Ajouter scénario `scenarioDarknessTextures` : flag forcé + currentFloor=11 → vérifier `getWallTextureType()` retourne `rune_wall`
 - **Vérif** : `node tests/smoke.js` passe vert.
 
-### Étape 8 — Commit & push
+### Étape 10 — Commit & push
 - [ ] Commit message clair (cf. §11)
 - [ ] Push sur `claude/game-review-improvements-QsPrU`
 - [ ] Vérifier état PR avant push (`mcp__github__pull_request_read`) — cf. guidelines §6
