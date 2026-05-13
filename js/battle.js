@@ -119,28 +119,49 @@ function startBattle(baseEnemyData) {
   AudioSystem.startCombatMusic();
 }
 
+// Renvoie 1, 2 ou 3. Politique de base selon mode et étage + scaling
+// progressif basé sur `floorKillCount` (n = floor(kills / 4)).
+// duoBonus  = min(0.40, 0.10·n)        — transfert prob p1 → p2
+// trioBonus = (n ≥ 5) ? min(0.40, 0.10·(n-4)) : 0  — transfert p2 → p3
+// Cf. CLAUDE.md §"Difficulté progressive par étage".
 function rollGroupSize() {
   const m = (DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal']).enemyGroupMultiplier;
   const r = Math.random();
 
-  // Solo : max 2 ennemis — seuil abaissé si difficulté haute
+  // Probabilités baseline (p1, p2, p3) — somme = 1.
+  let p1, p2, p3;
   if (partySize === 1) {
-    if (currentFloor <= 2) return 1;
-    if (currentFloor <= 4) return r < Math.max(0.10, 0.70 / m) ? 1 : 2;
-    return r < Math.max(0.10, 0.50 / m) ? 1 : 2;
+    if (currentFloor <= 2)        { p1 = 1.00; p2 = 0.00; p3 = 0.00; }
+    else if (currentFloor <= 4)   { p1 = Math.max(0.10, 0.70 / m); p2 = 1 - p1; p3 = 0; }
+    else                          { p1 = Math.max(0.10, 0.50 / m); p2 = 1 - p1; p3 = 0; }
+  } else {
+    if (currentFloor <= 2)        { p1 = Math.max(0.15, 0.65 / m); p2 = 1 - p1; p3 = 0; }
+    else if (currentFloor <= 6)   { p1 = Math.max(0.10, 0.35 / m); p2 = 1 - p1; p3 = 0; }
+    else {
+      const t1 = Math.max(0.05, 0.20 / m);
+      const t2 = Math.min(0.95, t1 + 0.35 * m);
+      p1 = t1; p2 = t2 - t1; p3 = 1 - t2;
+    }
   }
-  // Duo : max 2 ennemis avant l'étage 7 (groupes de 3 différés —
-  // cf. DIFFICULTY_REPORT.md §6, contribuait au mur étage 5-7).
-  // À partir de l'étage 7, les groupes de 3 réapparaissent.
-  if (currentFloor <= 2) return r < Math.max(0.15, 0.65 / m) ? 1 : 2;
-  if (currentFloor <= 6) {
-    // Étages 3-6 : 1 ou 2 ennemis seulement
-    return r < Math.max(0.10, 0.35 / m) ? 1 : 2;
-  }
-  // Étages 7+ : 1, 2 ou 3 ennemis
-  const t1 = Math.max(0.05, 0.20 / m);
-  const t2 = Math.min(0.95, t1 + 0.35 * m);
-  return r < t1 ? 1 : r < t2 ? 2 : 3;
+
+  // Scaling progressif : si le joueur a beaucoup poncé l'étage, les
+  // groupes deviennent plus gros.
+  const n = (typeof floorKillCount !== 'undefined')
+    ? Math.floor(((floorKillCount.get(currentFloor) || 0)) / 4)
+    : 0;
+  const duoBonus  = Math.min(0.40, 0.10 * n);
+  const trioBonus = n >= 5 ? Math.min(0.40, 0.10 * (n - 4)) : 0;
+
+  // Transfert p1 → p2 (chance accrue d'avoir un duo)
+  const duoShift = Math.min(p1, duoBonus);
+  p1 -= duoShift;  p2 += duoShift;
+  // Transfert p2 → p3 (déblocage / accroissement des trios)
+  const trioShift = Math.min(p2, trioBonus);
+  p2 -= trioShift; p3 += trioShift;
+
+  if (r < p1) return 1;
+  if (r < p1 + p2) return 2;
+  return 3;
 }
 
 function pickSimilarEnemy(base) {
@@ -333,6 +354,12 @@ function endBattle(won) {
     if (typeof defeatedCellsByFloor !== 'undefined' && typeof currentFloor === 'number') {
       if (!defeatedCellsByFloor.has(currentFloor)) defeatedCellsByFloor.set(currentFloor, new Set());
       defeatedCellsByFloor.get(currentFloor).add(`${playerX},${playerY}`);
+    }
+    // Compteur de kills cumulés par étage (scaling progressif de la
+    // difficulté — cf. rollGroupSize). 1 monstre tué = +1.
+    if (typeof floorKillCount !== 'undefined' && typeof currentFloor === 'number') {
+      const killsThisFight = enemyGroup.length;
+      floorKillCount.set(currentFloor, (floorKillCount.get(currentFloor) || 0) + killsThisFight);
     }
     const diff     = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
     let totalXp = 0, totalGold = 0;

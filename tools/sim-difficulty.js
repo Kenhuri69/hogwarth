@@ -212,7 +212,8 @@ const COMBATS_PER_FLOOR_AVG = 4;
 function parseArgs(argv) {
   const out = { nSims: 400, hpMult: 1.0, xpMult: 1.0, statPoints: 0,
                 build: 'balanced', mode: 'single',
-                useQuests: true, useEquipment: true, usePotions: true };
+                useQuests: true, useEquipment: true, usePotions: true,
+                kills: 0 };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
@@ -232,6 +233,7 @@ function parseArgs(argv) {
     else if (k === 'xp-mult')   out.xpMult = parseFloat(v);
     else if (k === 'stat-points') out.statPoints = parseInt(v, 10);
     else if (k === 'build')     out.build = v;
+    else if (k === 'kills')     out.kills = parseInt(v, 10);
   }
   return out;
 }
@@ -298,17 +300,30 @@ function scaleMonster(base, floor, cfg) {
 }
 
 // battle.js:122 — rollGroupSize (Normal = m = 1.0)
-function rollGroupSize(floor, partySize) {
+// Reproduit la logique runtime battle.js (politique baseline +
+// scaling progressif via `cfg.kills` cumulés sur l'étage).
+function rollGroupSize(floor, partySize, cfg) {
   const r = Math.random();
+  let p1, p2, p3;
   if (partySize === 1) {
-    if (floor <= 2) return 1;
-    if (floor <= 4) return r < 0.70 ? 1 : 2;
-    return r < 0.50 ? 1 : 2;
+    if (floor <= 2)        { p1 = 1.0;  p2 = 0;    p3 = 0; }
+    else if (floor <= 4)   { p1 = 0.70; p2 = 0.30; p3 = 0; }
+    else                   { p1 = 0.50; p2 = 0.50; p3 = 0; }
+  } else {
+    if (floor <= 2)        { p1 = 0.65; p2 = 0.35; p3 = 0; }
+    else if (floor <= 6)   { p1 = 0.35; p2 = 0.65; p3 = 0; }
+    else                   { p1 = 0.20; p2 = 0.35; p3 = 0.45; }
   }
-  // Duo : groupes de 3 différés à étage 7+ (cf. fix design battle.js)
-  if (floor <= 2) return r < 0.65 ? 1 : 2;
-  if (floor <= 6) return r < 0.35 ? 1 : 2;
-  return r < 0.20 ? 1 : (r < 0.55 ? 2 : 3);
+  const n = Math.floor(((cfg && cfg.kills) || 0) / 4);
+  const duoBonus  = Math.min(0.40, 0.10 * n);
+  const trioBonus = n >= 5 ? Math.min(0.40, 0.10 * (n - 4)) : 0;
+  const duoShift = Math.min(p1, duoBonus);
+  p1 -= duoShift;  p2 += duoShift;
+  const trioShift = Math.min(p2, trioBonus);
+  p2 -= trioShift; p3 += trioShift;
+  if (r < p1) return 1;
+  if (r < p1 + p2) return 2;
+  return 3;
 }
 
 // Tirage pondéré sur le pool éligible
@@ -446,7 +461,7 @@ function avgCombatXp(floor, partySize, cfg) {
   }, 0) / totalW;
   const samples = 200;
   let totalSize = 0;
-  for (let i = 0; i < samples; i++) totalSize += rollGroupSize(floor, partySize);
+  for (let i = 0; i < samples; i++) totalSize += rollGroupSize(floor, partySize, cfg);
   const avgSize = totalSize / samples;
   return avgXpScaled * avgSize;
 }
@@ -660,7 +675,7 @@ function runSimulations(cfg) {
         const party = partySize === 1
           ? [createHero('harry', level, cfg, floor)]
           : [createHero('harry', level, cfg, floor), createHero('hermione', level, cfg, floor)];
-        const size = rollGroupSize(floor, partySize);
+        const size = rollGroupSize(floor, partySize, cfg);
         groupSizes[size]++;
         const enemyGroup = Array.from({ length: size },
           () => scaleMonster(weightedPick(pool), floor, cfg));
