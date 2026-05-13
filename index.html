@@ -521,6 +521,11 @@
     <span class="modal-close" onclick="closeModal('slot-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
     <div id="slot-modal-list" class="slot-list"></div>
     <div class="slot-modal-hint" id="slot-modal-hint">Choisissez un emplacement…</div>
+    <div class="slot-modal-footer">
+      <button type="button" class="slot-io-btn" id="slot-modal-export" onclick="exportSaveToFile()">📤 Exporter</button>
+      <button type="button" class="slot-io-btn" id="slot-modal-import" onclick="importSaveFromFile()">📥 Importer</button>
+      <input type="file" id="slot-modal-file-input" accept=".json,application/json" style="display:none">
+    </div>
   </div>
 </div>
 

@@ -94,6 +94,35 @@ function deleteSlot(id) {
   return true;
 }
 
+// ── Export / import du multi-slot store (debug / partage) ──────────
+// Retourne le JSON sérialisé du store complet (4 slots max).
+function exportSaveStore() {
+  return JSON.stringify(_readStore(), null, 2);
+}
+
+// Importe un JSON dans le store. Préserve les slots reconnus uniquement
+// (manual_1..3 + auto). Retourne { ok, reason?, imported, skipped }.
+function importSaveStore(json) {
+  let parsed;
+  try { parsed = JSON.parse(json); }
+  catch (e) { return { ok: false, reason: 'json', imported: 0, skipped: 0 }; }
+  if (!parsed || typeof parsed !== 'object' || !parsed.slots || typeof parsed.slots !== 'object') {
+    return { ok: false, reason: 'shape', imported: 0, skipped: 0 };
+  }
+  const store = { version: SAVE_STORE_VERSION, slots: {} };
+  let imported = 0, skipped = 0;
+  for (const [id, slot] of Object.entries(parsed.slots)) {
+    if (!ALL_SLOT_IDS.includes(id)) { skipped++; continue; }
+    if (!slot || typeof slot !== 'object' || !slot.state) { skipped++; continue; }
+    store.slots[id] = { meta: slot.meta || {}, state: slot.state };
+    imported++;
+  }
+  if (!imported) return { ok: false, reason: 'empty', imported: 0, skipped };
+  const ok = _writeStore(store);
+  if (!ok) return { ok: false, reason: 'write', imported, skipped };
+  return { ok: true, imported, skipped };
+}
+
 // Auto-sauvegarde dans le slot dédié `auto`. Throttled **par raison**
 // pour éviter qu'un événement critique (ex. fontaine bue) soit avalé
 // par un événement précédent indépendant (ex. fin de combat). Une

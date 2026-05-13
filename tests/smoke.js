@@ -1478,6 +1478,77 @@ async function scenarioSlotModal() {
   await browser.close();
 }
 
+// ── Scénario : export / import du save store ────────────────
+
+async function scenarioExportImport() {
+  console.log('\n── Scénario : export / import du save store ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helpers exposés
+  const t1 = await page.evaluate(() => ({
+    hasExport: typeof exportSaveStore === 'function',
+    hasImport: typeof importSaveStore === 'function',
+    hasUIExp:  typeof exportSaveToFile === 'function',
+    hasUIImp:  typeof importSaveFromFile === 'function'
+  }));
+  console.log('  T1 fns:', t1);
+  assert(t1.hasExport && t1.hasImport, 'export/importSaveStore non exposés');
+  assert(t1.hasUIExp && t1.hasUIImp,   'exportSaveToFile / importSaveFromFile non exposés');
+
+  // T2 : écrit un slot, exporte → la sortie est un JSON valide avec ce slot
+  const t2 = await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_save');
+    localStorage.removeItem('hogwarts_rpg_saves');
+    writeSlot('manual_1', 'Test');
+    const json = exportSaveStore();
+    const obj  = JSON.parse(json);
+    return {
+      hasVersion: obj.version === 1,
+      slotIds:    Object.keys(obj.slots),
+      hasState:   !!obj.slots.manual_1?.state
+    };
+  });
+  console.log('  T2 export:', t2);
+  assert(t2.hasVersion,                 'version manquante dans export');
+  assert(t2.slotIds.includes('manual_1'), 'manual_1 absent de l\'export');
+  assert(t2.hasState,                   'state manquant dans le slot exporté');
+
+  // T3 : import d'un JSON valide → store remplacé
+  const t3 = await page.evaluate(() => {
+    const fake = {
+      version: 1,
+      slots: {
+        manual_2: { meta: { label: 'Imported' }, state: { _version: 3, foo: 'bar' } }
+      }
+    };
+    const res = importSaveStore(JSON.stringify(fake));
+    const after = JSON.parse(localStorage.getItem('hogwarts_rpg_saves'));
+    return { res, slotIds: Object.keys(after.slots) };
+  });
+  console.log('  T3 import OK:', t3);
+  assert(t3.res.ok && t3.res.imported === 1, 'import devrait avoir importé 1 slot');
+  assert(t3.slotIds.length === 1 && t3.slotIds[0] === 'manual_2', 'store doit contenir uniquement manual_2');
+
+  // T4 : import d'un JSON invalide → refus avec raison
+  const t4 = await page.evaluate(() => ({
+    bad:   importSaveStore('{not json'),
+    shape: importSaveStore('{"version":1}'),
+    empty: importSaveStore('{"version":1,"slots":{"bogus":{"state":{}}}}')
+  }));
+  console.log('  T4 import refus:', t4);
+  assert(t4.bad.ok === false && t4.bad.reason === 'json',     'JSON cassé doit retourner reason=json');
+  assert(t4.shape.ok === false && t4.shape.reason === 'shape', 'sans slots doit retourner reason=shape');
+  assert(t4.empty.ok === false && t4.empty.reason === 'empty', 'slot id inconnu → reason=empty');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ export / import OK');
+  await browser.close();
+}
+
 // ── Scénario 12 : auto-sauvegarde sur événements-clés ────────
 
 async function scenarioAutoSave() {
@@ -3631,7 +3702,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

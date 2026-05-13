@@ -168,6 +168,61 @@ function openLoadDialog() {
   document.getElementById('slot-modal').style.display = 'flex';
 }
 
+// ── Export / import depuis le bouton du modal ──────────────────────
+function exportSaveToFile() {
+  if (typeof exportSaveStore !== 'function') return;
+  const json = exportSaveStore();
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const filename = `hogwarts-save-${ts}.json`;
+  try {
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+    if (typeof addMsg === 'function') addMsg(`Sauvegarde exportée (${filename}).`, 'good');
+  } catch (e) {
+    if (typeof addMsg === 'function') addMsg('Export impossible.', 'bad');
+  }
+}
+
+function importSaveFromFile() {
+  const input = document.getElementById('slot-modal-file-input');
+  if (!input || typeof importSaveStore !== 'function') return;
+  input.onchange = () => {
+    const file = input.files && input.files[0];
+    input.value = ''; // permet de re-sélectionner le même fichier
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const res = importSaveStore(String(reader.result || ''));
+      if (!res.ok) {
+        const reasonLabel = {
+          json:  'fichier JSON invalide',
+          shape: 'structure inattendue',
+          empty: 'aucun emplacement reconnu',
+          write: 'écriture impossible (espace local saturé ?)'
+        }[res.reason] || 'erreur inconnue';
+        if (typeof addMsg === 'function') addMsg(`Import refusé : ${reasonLabel}.`, 'bad');
+        return;
+      }
+      if (typeof addMsg === 'function')
+        addMsg(`Import OK — ${res.imported} slot(s) importé(s).`, 'good');
+      // Rafraîchit la liste en mode courant si la modale est ouverte
+      const titleEl = document.getElementById('slot-modal-title');
+      const isSave  = titleEl && titleEl.textContent && titleEl.textContent.includes('Sauvegarder');
+      _renderSlotList(isSave ? 'save' : 'load');
+      _bindSlotModalEvents(isSave ? 'save' : 'load');
+    };
+    reader.onerror = () => {
+      if (typeof addMsg === 'function') addMsg('Lecture du fichier impossible.', 'bad');
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
 // ============================================================
 // HUB DE DÉMARRAGE (Nouvelle partie / Reprendre)
 // ============================================================
