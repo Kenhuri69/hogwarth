@@ -313,6 +313,7 @@ const NPCS = [
     name:  "Professeur Pomona Chourave",
     title: "Directrice de Poufsouffle",
     icon:  "🌱",
+    portraitImg: "img/npc/sprout.png",
     placement: { floor: 3, anchor: "any" },
     specialAction: {
       type:  "claim_house_reward",
