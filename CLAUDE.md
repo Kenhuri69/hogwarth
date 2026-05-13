@@ -5,10 +5,12 @@
 RPG en tour par tour inspiré de *Might & Magic Book One*, univers Harry Potter.
 Vanilla JS / HTML5 Canvas, zéro dépendance, zéro build step.
 
-> 🎨 **Travail en cours** : amélioration de tous les SVG / visuels du jeu.
-> Plan détaillé et suivi : voir [`SVG_PLAN.md`](./SVG_PLAN.md) à la racine.
-> Branche dédiée : `claude/improve-game-svgs-0a3cf`.
-> Toute nouvelle session Claude doit lire ce fichier en premier pour reprendre le suivi.
+> 🏁 **Plan visuel finalisé (mai 2026)** : refonte SVG/PNG complète.
+> 31 monstres + 4 blasons + 2 scènes grand format livrés, plus 14 monstres
+> récents en PNG via Nano Banana (Bloc B pivoté).
+> Archive du plan : [`.claude/plans/_archive/SVG_PLAN.md`](./.claude/plans/_archive/SVG_PLAN.md).
+> Re-gens optionnels (C32-C37) listés dans la même archive si re-direction
+> artistique souhaitée.
 
 ---
 

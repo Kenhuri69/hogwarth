@@ -1,4 +1,23 @@
-# Plan d'amélioration des SVG / Visuels
+# Plan d'amélioration des SVG / Visuels — ARCHIVÉ
+
+> 🏁 **Statut final (2026-05-13) : finalisé et archivé.**
+>
+> Tous les items actionnables ont été livrés. Restent uniquement :
+> - **Bloc B (B01-B31)** — **abandonné** : les 31 monstres concernés ont
+>   désormais un `imgSrc` PNG. `getMonsterIconHtml` court-circuite leur
+>   SVG inline → tout raffinage SVG y serait invisible en production.
+>   Décision documentée dans `.claude/plans/_archive/svg-blocB-monsters.md`.
+> - **Bloc C.3 (C32-C37)** — **deferred (optionnel)** : re-générations
+>   de 6 PNG existants et fonctionnels. À reprendre si re-direction
+>   artistique souhaitée.
+> - **Z1** — **obsolète** : la branche `claude/improve-game-svgs-0a3cf`
+>   référencée n'existe plus. Le travail a été mergé par lots successifs.
+>
+> 14 monstres ajoutés en Bloc B pivoté (workflow Nano Banana + rembg)
+> pendant la session #37 — voir `.claude/plans/_archive/svg-blocB-monsters.md`
+> pour le détail.
+
+---
 
 > **Branche dédiée actuelle** : `claude/svg-c1-monsters-png`
 > (anciennes branches : `claude/improve-game-images-7OVCy`, `claude/resume-svg-work-rgOvm`, `claude/continue-svg-work-v6BEc`, `claude/improve-svg-HWGDY`, `claude/improve-game-svgs-0a3cf` — historique conservé)
