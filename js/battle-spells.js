@@ -11,7 +11,11 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
 
   switch (ability.effect) {
     case 'damage': {
-      const dmg = ability.power + Math.floor((enemy.mag || 0) / 2);
+      // La DEF de la cible atténue désormais les capacités spéciales
+      // (cf. DIFFICULTY_REPORT.md §6). Division par 3 : la DEF a un
+      // effet modéré sans annuler complètement (target.def 15 → -5 dgts).
+      const raw = ability.power + Math.floor((enemy.mag || 0) / 2);
+      const dmg = Math.max(1, raw - Math.floor((target.def || 0) / 3));
       if (shieldTurns[charIdx] > 0) {
         shieldTurns[charIdx]--;
         appendLog(`🛡️ Protego bloque ${ability.name} ! `);
