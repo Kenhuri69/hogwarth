@@ -213,7 +213,7 @@ function drawCorridor(cx, cy, scale, W, H) {
   for (let d = 1; d <= DEPTH; d++) {
     const cell = getCellAhead(0, 0, d);
     if (cell === CELL.WALL) { wallDist = d; break; }
-    if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC)) {
+    if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY)) {
       const nearS = getRect(cx, cy, scale, d - 1);
       const dirs2 = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
       const [_fdx, _fdy] = dirs2[playerDir];
@@ -487,6 +487,8 @@ function drawCorridor(cx, cy, scale, W, H) {
     else if (cell === CELL.STAIRS_D) drawStairsSprite(x, baseY, sz, 'down');
     else if (cell === CELL.STAIRS_U) drawStairsSprite(x, baseY, sz, 'up');
     else if (cell === CELL.SHOP)     drawShopSprite(x, baseY, sz);
+    else if (cell === CELL.FORGE)    drawForgeSprite(x, baseY, sz);
+    else if (cell === CELL.LIBRARY)  drawLibrarySprite(x, baseY, sz);
     else if (cell === CELL.NPC) {
       const npcId = (typeof npcPlacements !== 'undefined')
         ? npcPlacements.get(`${pendingSprite.mapX},${pendingSprite.mapY}`)

@@ -529,6 +529,56 @@ function drawShopSprite(x, baseY, sz) {
   ctx.restore();
 }
 
+// ── Forge des Ténèbres (sprite de couloir, endgame Tranche 2) ──
+// Enclume sur charbons éternels + halo rouge-orange + panneau "FORGE".
+function drawForgeSprite(x, baseY, sz) {
+  ctx.save();
+  // Ombre au sol
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.55, sz * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  // Halo de braise (rouge-orange chaud)
+  const ember = ctx.createRadialGradient(x, baseY - sz * 0.45, 0, x, baseY - sz * 0.45, sz * 0.95);
+  ember.addColorStop(0, 'rgba(255,140,60,0.45)');
+  ember.addColorStop(1, 'rgba(120,30,10,0)');
+  ctx.fillStyle = ember;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.45, sz * 0.95, 0, Math.PI * 2); ctx.fill();
+  // Emoji enclume (même registre que coffre/boutique)
+  ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('⚒️', x, baseY);
+  // Panneau "FORGE"
+  ctx.font = `bold ${Math.floor(sz * 0.22)}px sans-serif`;
+  ctx.fillStyle = 'rgba(255,170,90,0.95)';
+  ctx.textBaseline = 'top';
+  ctx.fillText('FORGE', x, baseY - sz * 1.25);
+  ctx.restore();
+}
+
+// ── Bibliothèque interdite (sprite de couloir, endgame Tranche 2) ──
+// Grimoire ouvert + halo violet + panneau "BIBLIOTHÈQUE".
+function drawLibrarySprite(x, baseY, sz) {
+  ctx.save();
+  // Ombre au sol
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.55, sz * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  // Halo violet runique
+  const runic = ctx.createRadialGradient(x, baseY - sz * 0.45, 0, x, baseY - sz * 0.45, sz * 0.95);
+  runic.addColorStop(0, 'rgba(180,100,220,0.4)');
+  runic.addColorStop(1, 'rgba(50,20,80,0)');
+  ctx.fillStyle = runic;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.45, sz * 0.95, 0, Math.PI * 2); ctx.fill();
+  // Emoji livre ouvert
+  ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText('📖', x, baseY);
+  // Panneau "BIBLIOTHÈQUE"
+  ctx.font = `bold ${Math.floor(sz * 0.2)}px sans-serif`;
+  ctx.fillStyle = 'rgba(210,160,255,0.95)';
+  ctx.textBaseline = 'top';
+  ctx.fillText('BIBLIOTHÈQUE', x, baseY - sz * 1.25);
+  ctx.restore();
+}
+
 // Cache d'images monstres pour le rendu 3D. Lazy : chaque PNG est chargé
 // à la première demande. Re-render automatique du donjon dès qu'une image
 // est prête (cf. pattern de textures.js).
