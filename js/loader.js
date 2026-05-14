@@ -115,6 +115,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'effectiveFloor',     source: 'dungeon.js', kind: 'fn'  },
     { name: 'drawDungeon',        source: 'renderer.js',     kind: 'fn'  },
     { name: 'drawNpcSprite',      source: 'renderer-effects.js', kind: 'fn' },
+    { name: 'drawForgeSprite',    source: 'renderer-effects.js', kind: 'fn' },
+    { name: 'drawLibrarySprite',  source: 'renderer-effects.js', kind: 'fn' },
     { name: 'renderMinimap',      source: 'renderer-minimap.js', kind: 'fn' },
 
     // ── Mouvement ──
