@@ -569,10 +569,23 @@ inBattle          // bool
 partySize         // 1 ou 2 — choisi à l'écran de démarrage
 enemyGroup        // [{...monsterData scalé, currentHp, disarmed}, …]  1 à 3 ennemis
 currentBattleChar // 0 = Harry, 1 = Hermione
-shieldTurns       // [0, 0]  — bouclier par personnage
+shieldTurns       // [0, 0]  — bouclier Protego par personnage
+guardTurns        // [0, 0]  — posture de Garde par personnage (1 tour, mitigation 50 %)
 pendingAction     // 'attack' | 'spell_dmg' | null
-pendingSpell      // nom du sort en attente de sélection de cible
+pendingSpell      // nom du sort en attente de sélection de cible (ennemi ou allié)
 ```
+
+### Actions de combat (#battle-actions)
+
+5 actions disponibles à chaque tour du perso actif :
+
+| Action | Coût | Effet |
+|--------|------|-------|
+| 🗡️ Attaquer | — | Attaque physique (atk + 0-3 vs def, crit `critChance`) |
+| ✨ Sortilège | PM | Liste des sorts du perso (modale `#spell-modal`) |
+| 🛡️ Garde | — | `guardTurns[idx] = 1` ; mitige le prochain coup ennemi de 50 % ; restitue `3 + floor(mag/5)` PM (cap `spMax`). Priorité après Protego/Esquive. Consommée à la fin du segment ennemi (`enemyTurn` reset `guardTurns = [0, 0]`). |
+| 🧪 Objet | — | Inventaire en mode combat (consommables uniquement) |
+| 💨 Fuir | — | `doFlee()` — chance basée sur AGI vs ATK ennemi, garantie avec Balai |
 
 ### Tour de jeu
 ```
@@ -591,8 +604,9 @@ puis on appelle `recalculateStats()` pour reconstruire les stats effectives avec
 |--------|--------------|-----------------|
 | 2 | — | Expelliarmus |
 | 3 | Accio | Stupefix |
-| 4 | Wingardium Leviosa | — |
+| 4 | Wingardium Leviosa | Ferula |
 | 5 | Reparo | Diffindo |
+| 6 | Ferula | — |
 | 7 | Diffindo | Wingardium Leviosa + Reparo |
 | 9 | Avada... (déverrouillé) | Avada... (déverrouillé) |
 

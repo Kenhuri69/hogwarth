@@ -125,6 +125,7 @@ const SPELLS = [
   { name:"Expelliarmus",      icon:"✨",   desc:"Désarme l'ennemi (-3 ATK)",          cost:4,  effect:"disarm",  power:3  },
   { name:"Stupefix",          icon:"⚡",   desc:"Étourdit l'ennemi (8 dégâts)",       cost:6,  effect:"stun",    power:8  },
   { name:"Episkey",           icon:"💚",   desc:"Soigne légèrement (12 PV)",          cost:5,  effect:"heal",    power:12 },
+  { name:"Ferula",            icon:"🩹",   desc:"Bande un allié (+4 PV puis 4 PV/tour × 3 tours)", cost:6,  effect:"support_regen", power:4 },
   { name:"Protego",           icon:"🛡️",  desc:"Bouclier magique (2 tours)",          cost:5,  effect:"shield",  power:5  },
   { name:"Incendio",          icon:"🔥",   desc:"Flammes magiques (14 dégâts)",       cost:8,  effect:"burn",    power:14 },
   { name:"Accio",             icon:"🌀",   desc:"Tire un objet ennemi (+or)",         cost:6,  effect:"steal",   power:0  },

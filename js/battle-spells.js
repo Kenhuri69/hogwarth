@@ -200,17 +200,44 @@ function _spellSteal(spell, char) {
   return msg;
 }
 
+// Sort de soutien à cible alliée : soin instantané + statut regen 3 tours.
+// targetAllyIdx (4ᵉ arg, position non standard) est posé par castSpellInBattle.
+function _spellSupportRegen(spell, char, _enemy, _enemyIdx, targetAllyIdx) {
+  const idx  = (typeof targetAllyIdx === 'number') ? targetAllyIdx : 0;
+  const ally = party[idx];
+  if (!ally || ally.hp <= 0) {
+    const msg = `${char.name} ne trouve pas de cible pour ${spell.name}.`;
+    addMsg(msg, 'bad');
+    return msg;
+  }
+  const burst = Math.min(ally.hpMax - ally.hp, spell.power + Math.floor((char.mag || 0) / 2));
+  if (burst > 0) {
+    ally.hp += burst;
+    UX_safe.floatDmg('ally', burst, 'heal');
+  }
+  applyStatus(ally, 'regen', spell.power, 3);
+  const msg = `🩹 ${char.name} → ${ally.name} : ${spell.name} (+${burst} PV, régen 3 tours).`;
+  addMsg(msg, 'good');
+  UX_safe.logCombat(`🩹 <b>${char.name}</b> bande ${ally.name} : <b>+${burst} PV</b> · régen 3 tours`, 'good');
+  return msg;
+}
+
 const SPELL_HANDLERS = {
-  heal:      _spellHeal,
-  disarm:    _spellDisarm,
-  shield:    _spellShield,
-  stun:      _spellElementalDamage,
-  burn:      _spellElementalDamage,
-  instant:   _spellElementalDamage,
-  lifesteal: _spellLifesteal,
-  curse:     _spellCurse,
-  steal:     _spellSteal,
+  heal:           _spellHeal,
+  disarm:         _spellDisarm,
+  shield:         _spellShield,
+  stun:           _spellElementalDamage,
+  burn:           _spellElementalDamage,
+  instant:        _spellElementalDamage,
+  lifesteal:      _spellLifesteal,
+  curse:          _spellCurse,
+  steal:          _spellSteal,
+  support_regen:  _spellSupportRegen,
 };
+
+// Sorts à cible alliée — pas de sélection d'ennemi, mais éventuellement
+// une sélection d'allié en duo (résolue par showAllyTargetSelection).
+const ALLY_TARGET_EFFECTS = new Set(['support_regen']);
 
 // Bibliothèque interdite (endgame Tranche 2) — renvoie une copie augmentée
 // du sort en appliquant le `spellUpgrades` du caster :
@@ -235,12 +262,30 @@ function _spellForCaster(spell, char) {
 }
 window._spellForCaster = _spellForCaster;
 
-function castSpellInBattle(spellName, targetIdx) {
+function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   const char     = getActiveChar();
   const baseSpell = SPELLS.find(s => s.name === spellName);
   // Wrapping Bibliothèque : applique les upgrades du caster.
   const spell    = _spellForCaster(baseSpell, char);
   if (!spell || char.sp < spell.cost) { addMsg("Pas assez de magie !", 'bad'); return; }
+
+  // Sorts à cible alliée (Ferula…) : en duo, demander la cible si non fournie.
+  if (ALLY_TARGET_EFFECTS.has(spell.effect) && typeof targetAllyIdx !== 'number') {
+    const alive = party.slice(0, partySize).map((c, i) => ({ c, i })).filter(o => o.c.hp > 0);
+    if (partySize === 1 || alive.length <= 1) {
+      // Solo (ou un seul allié vivant) : auto-cible le caster.
+      targetAllyIdx = currentBattleChar;
+    } else {
+      // Duo, choix entre alliés vivants : on stocke le sort et on ouvre le sélecteur.
+      pendingSpell = spellName;
+      if (typeof showAllyTargetSelection === 'function') {
+        showAllyTargetSelection(spellName);
+        return;
+      }
+      // Fallback : auto-cible le caster si la sélection n'est pas dispo.
+      targetAllyIdx = currentBattleChar;
+    }
+  }
 
   char.sp -= spell.cost;
   AudioSystem.playSpellCast(spellName);
@@ -252,7 +297,7 @@ function castSpellInBattle(spellName, targetIdx) {
   const handler = SPELL_HANDLERS[spell.effect];
   let msg = '';
   if (handler) {
-    msg = handler(spell, char, enemy, targetIdx) || '';
+    msg = handler(spell, char, enemy, targetIdx, targetAllyIdx) || '';
   } else {
     console.warn('[spell] effet inconnu:', spell.effect);
   }

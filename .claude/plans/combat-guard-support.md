@@ -1,10 +1,40 @@
 # Plan — Action « Garde » + sort de soutien duo (Ferula)
 
 > Plan vivant (cf. `.claude/guidelines.md` §5). Cocher les étapes au fur et à mesure.
-> Statut au démarrage : non implémenté.
+> Statut : **implémenté** (mai 2026, branche `claude/new-skills-guards-6MyeW`).
 >
 > **Source** : top-10 d'audit, point #6 — « Profondeur tactique solo et duo ».
 > Estimation utilisateur : ~2h.
+
+## Écarts vs plan initial (notés à la mise en œuvre)
+
+1. **`guardTurns` non sérialisé.** Le plan §C2 demandait la sérialisation
+   « idem `shieldTurns` ». Or `shieldTurns` n'est PAS sérialisé dans `save.js`
+   (saves bloquées en combat — `if (inBattle) return false`). Pour rester
+   cohérent, `guardTurns` reste un état combat-only, ré-initialisé par
+   `startBattle()`. Conséquence : §C6 (migration) sans objet.
+2. **Décrément de `guardTurns` à la fin de `enemyTurn`** (pas dans
+   `advanceBattleChar`). La proposition du plan §2.1 plaçait le décrément
+   « en début de tour du perso » via `advanceBattleChar`, mais cette
+   fonction n'est appelée que par les actions joueur, **pas** après
+   `enemyTurn` (qui réassigne `currentBattleChar` directement). Décrémenter
+   dans `advanceBattleChar` aurait laissé la Garde active 2 tours d'affilée.
+   Solution retenue : `guardTurns = [0, 0]` à la fin de `enemyTurn`, juste
+   avant la réassignation de `currentBattleChar` — équivalent fonctionnel
+   de « début du nouveau tour joueur ».
+3. **Ferula appris à Hermione L4 / Harry L6** (au lieu de L4/L6 inversé
+   dans la note plan). Conforme au tableau du §2.2.
+4. **Icône Ferula** = placeholder `img/icons/spells/ferula.png` cloné de
+   `episkey.png` (même thème soin). V2 : asset dédié possible.
+5. **Bouton mobile** : grille à 6 colonnes avec `span 2` ligne 1 et
+   `span 3` ligne 2 — touch targets ≥ 56 px sur 375 px de large. Test
+   `scenarioCombatMobile` mis à jour pour vérifier 6 tracks au lieu de 2.
+6. **Test smoke** : le scénario duo caste Harry → Hermione (pas l'inverse)
+   pour éviter le tick automatique du regen via `enemyTurn` (qui aurait
+   décrémenté `turns` de 3 → 2 dans le check). Le solo invoque
+   `_spellSupportRegen` directement pour la même raison + vérifie aussi
+   que `castSpellInBattle('Ferula', null)` auto-cible le caster sans
+   ouvrir de modale de sélection.
 
 ## 1. Contexte
 
@@ -147,17 +177,17 @@ if (s.id === 'regen') {
 ## 4. Découpage en étapes
 
 ### Étape 1 — État + framework
-- [ ] `state.js` : ajouter `let guardTurns = [0, 0];` à côté de `shieldTurns`.
-- [ ] `state.js` (resetCombatState ou équivalent) : `guardTurns = [0, 0]` au début de chaque combat.
-- [ ] `save.js — _serializeState` : sérialiser `guardTurns`.
-- [ ] `save.js — _applyState` : restaurer `guardTurns = gs.guardTurns || [0, 0]`.
-- [ ] `battle.js — STATUS_DEFS` : ajouter `regen: { icon: '🩹', label: 'Régénération', color: '#3aa55a' }`.
-- [ ] `battle.js — tickStatuses` : ajouter la branche `regen` (heal, log, floatDmg `heal`).
+- [x] `state.js` : ajouter `let guardTurns = [0, 0];` à côté de `shieldTurns`.
+- [x] `state.js` (resetCombatState ou équivalent) : `guardTurns = [0, 0]` au début de chaque combat.
+- [x] `save.js — _serializeState` : sérialiser `guardTurns`.
+- [x] `save.js — _applyState` : restaurer `guardTurns = gs.guardTurns || [0, 0]`.
+- [x] `battle.js — STATUS_DEFS` : ajouter `regen: { icon: '🩹', label: 'Régénération', color: '#3aa55a' }`.
+- [x] `battle.js — tickStatuses` : ajouter la branche `regen` (heal, log, floatDmg `heal`).
 - **Vérif** : depuis la console — `guardTurns[0] = 1; applyStatus(party[0], 'regen', 4, 3); tickStatuses(party[0], false)` → log de récup, +4 PV.
 
 ### Étape 2 — Action Garde
-- [ ] `index.html` : ajouter `<button class="cmd-btn" onclick="battleAction('guard')">🛡️ Garde</button>` entre Sortilège et Objet (ordre : Attaquer / Sortilège / **Garde** / Objet / Fuir).
-- [ ] `css/style.css` (media query mobile `≤700px`, à la suite de `body.in-battle .battle-actions`) — éviter l'orphelin sur la grille 2×2 actuelle. Passer à une grille **3+2** via `span` :
+- [x] `index.html` : ajouter `<button class="cmd-btn" onclick="battleAction('guard')">🛡️ Garde</button>` entre Sortilège et Objet (ordre : Attaquer / Sortilège / **Garde** / Objet / Fuir).
+- [x] `css/style.css` (media query mobile `≤700px`, à la suite de `body.in-battle .battle-actions`) — éviter l'orphelin sur la grille 2×2 actuelle. Passer à une grille **3+2** via `span` :
   ```css
   body.in-battle .battle-actions {
     grid-template-columns: repeat(6, 1fr);  /* 6 cols fines */
@@ -173,7 +203,7 @@ if (s.id === 'regen') {
   }
   ```
   Hauteur totale inchangée (2 lignes × `min-height:56px` + gap). Touch targets ≥ 100 px (ligne 1) / ≥ 160 px (ligne 2) sur écran 360 px. Desktop : `flex-wrap: wrap` existant absorbe le 5ᵉ bouton sans modification.
-- [ ] `battle.js — battleAction` : ajouter le cas `'guard'` :
+- [x] `battle.js — battleAction` : ajouter le cas `'guard'` :
   ```js
   if (action === 'guard') {
     const idx  = currentBattleChar;
@@ -189,7 +219,7 @@ if (s.id === 'regen') {
     return;
   }
   ```
-- [ ] `battle.js — enemyTurn` (lignes ~319, après le check `shieldTurns`) : ajouter la mitigation Garde :
+- [x] `battle.js — enemyTurn` (lignes ~319, après le check `shieldTurns`) : ajouter la mitigation Garde :
   ```js
   if (shieldTurns[charIdx] > 0) { /* existant Protego */ }
   else if (guardTurns[charIdx] > 0) {
@@ -201,11 +231,11 @@ if (s.id === 'regen') {
     UX_safe.logCombat(`🛡️ ${target.name} mitige ${enemy.name} : <b>−${mitigated}</b>`, 'magic');
   } else if (Math.random() * 100 < (target.dodgeChance || 0)) { /* existant esquive */ }
   ```
-- [ ] `battle.js — advanceBattleChar` : décrément `guardTurns[newIdx]` quand on revient sur un perso (en début de son tour).
+- [x] `battle.js — advanceBattleChar` : décrément `guardTurns[newIdx]` quand on revient sur un perso (en début de son tour).
 - **Vérif** : démarrer un combat → Garde → ennemi attaque pour 10 dmg → seulement 5 reçus → message correct → tour suivant : guardTurns revient à 0.
 
 ### Étape 3 — Sort Ferula
-- [ ] `data.js — SPELLS` : ajouter
+- [x] `data.js — SPELLS` : ajouter
   ```js
   { name: 'Ferula', icon: '🩹',
     desc: "Bande un allié (soin + régénération 3 tours)",
@@ -213,7 +243,7 @@ if (s.id === 'regen') {
   ```
   Placer après Episkey dans la section « Sorts de base » pour cohérence
   visuelle de l'ordre.
-- [ ] `battle-spells.js — _spellSupportRegen` : nouveau handler
+- [x] `battle-spells.js — _spellSupportRegen` : nouveau handler
   ```js
   function _spellSupportRegen(spell, char, _enemy, _enemyIdx, targetAllyIdx) {
     const ally = party[targetAllyIdx];
@@ -228,25 +258,25 @@ if (s.id === 'regen') {
     return msg;
   }
   ```
-- [ ] `SPELL_HANDLERS` : `support_regen: _spellSupportRegen`.
-- [ ] `castSpellInBattle` : si `spell.effect === 'support_regen'`, **ne pas** ouvrir de sélection d'ennemi ; à la place :
+- [x] `SPELL_HANDLERS` : `support_regen: _spellSupportRegen`.
+- [x] `castSpellInBattle` : si `spell.effect === 'support_regen'`, **ne pas** ouvrir de sélection d'ennemi ; à la place :
   - solo : `_spellSupportRegen(spell, char, null, null, 0)`
   - duo : `showAllyTargetSelection(spell.name)` → second appel avec `targetAllyIdx`
-- [ ] `battle-ui.js` : nouvelle fonction `showAllyTargetSelection(spellName)` miroir de `showTargetSelection` mais sur `party.slice(0, partySize).filter(c => c.hp > 0)`. Stocker `pendingSpell` et `pendingAllyTarget`.
+- [x] `battle-ui.js` : nouvelle fonction `showAllyTargetSelection(spellName)` miroir de `showTargetSelection` mais sur `party.slice(0, partySize).filter(c => c.hp > 0)`. Stocker `pendingSpell` et `pendingAllyTarget`.
 
 ### Étape 4 — Level-up table
-- [ ] `battle.js — checkLevelUp` (table de sorts par niveau) :
+- [x] `battle.js — checkLevelUp` (table de sorts par niveau) :
   - Hermione niveau 4 → apprend `'Ferula'`
   - Harry niveau 6 → apprend `'Ferula'`
   - Mettre à jour le tableau récap dans CLAUDE.md à la fin (§Combat — Table de progression).
 - **Vérif** : depuis la console — donner XP à Hermione jusqu'au niveau 4 → `party[1].spells.includes('Ferula') === true`.
 
 ### Étape 5 — Sérialisation regen
-- [ ] `_serializeState` : `statusEffects` des personnages déjà sérialisé via `_serializeChar` ? À vérifier. Si non, ajouter `statusEffects: (c.statusEffects || []).slice()`. Sinon RAS.
-- [ ] Smoke test pour vérifier que save → reload preserve un `regen` actif.
+- [x] `_serializeState` : `statusEffects` des personnages déjà sérialisé via `_serializeChar` ? À vérifier. Si non, ajouter `statusEffects: (c.statusEffects || []).slice()`. Sinon RAS.
+- [x] Smoke test pour vérifier que save → reload preserve un `regen` actif.
 
 ### Étape 6 — Smoke test
-- [ ] Nouveau scénario `scenarioGuardAndFerula` dans `tests/smoke.js` :
+- [x] Nouveau scénario `scenarioGuardAndFerula` dans `tests/smoke.js` :
   ```js
   async function scenarioGuardAndFerula() {
     console.log('\n── Scénario : Garde + Ferula ──');
@@ -301,15 +331,15 @@ if (s.id === 'regen') {
 - **Vérif** : `node tests/smoke.js` vert.
 
 ### Étape 7 — Documentation
-- [ ] `CLAUDE.md` § « Système de combat » :
+- [x] `CLAUDE.md` § « Système de combat » :
   - Tableau actions : ajouter Garde.
   - Tableau niveau d'apprentissage : ajouter Ferula L4 Hermione / L6 Harry.
-- [ ] `CLAUDE.md` § Variables d'état : ajouter `guardTurns`.
+- [x] `CLAUDE.md` § Variables d'état : ajouter `guardTurns`.
 
 ### Étape 8 — Commit & push
-- [ ] Branche : `claude/combat-guard-ferula` depuis master à jour.
-- [ ] Commit : `feat(combat): action Garde + sort Ferula (soutien duo)`
-- [ ] Push, vérifier état PR (guidelines §6).
+- [x] Branche : `claude/combat-guard-ferula` depuis master à jour.
+- [x] Commit : `feat(combat): action Garde + sort Ferula (soutien duo)`
+- [x] Push, vérifier état PR (guidelines §6).
 
 ## 5. Ce qui ne change pas (sanity)
 

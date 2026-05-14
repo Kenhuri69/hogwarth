@@ -1466,16 +1466,19 @@ async function scenarioCombatMobile() {
   assert(layout.panelToggleText === '+',                'toggle devrait afficher + quand replié');
 
   // Ergonomie combat mobile : barre adventure cachée pendant le combat,
-  // boutons d'action en grille 2×2 avec touch targets ≥56px.
+  // boutons d'action en grille 6 colonnes (ligne 1 = 3 boutons span 2,
+  // ligne 2 = 2 boutons span 3) avec touch targets ≥56px.
   const battle = await page.evaluate(() => {
     const cmdBar = document.querySelector('.commands-bar');
     const actions = document.querySelector('.battle-actions');
     const btn = actions ? actions.querySelector('.cmd-btn') : null;
+    const btns = actions ? Array.from(actions.querySelectorAll('.cmd-btn')) : [];
     return {
       bodyHasInBattle: document.body.classList.contains('in-battle'),
       cmdBarHidden:    cmdBar ? getComputedStyle(cmdBar).display === 'none' : null,
       actionsDisplay:  actions ? getComputedStyle(actions).display : null,
       actionsCols:     actions ? getComputedStyle(actions).gridTemplateColumns : null,
+      btnCount:        btns.length,
       btnMinHeight:    btn ? parseFloat(getComputedStyle(btn).minHeight) : 0
     };
   });
@@ -1483,9 +1486,10 @@ async function scenarioCombatMobile() {
   assert(battle.bodyHasInBattle === true,                   'body.in-battle doit être posé pendant le combat');
   assert(battle.cmdBarHidden === true,                      'commands-bar doit être cachée pendant le combat sur mobile');
   assert(battle.actionsDisplay === 'grid',                  'battle-actions doit passer en grille sur mobile en combat');
-  // grid-template-columns peut être résolu en "px px" — compter le nombre de tracks
+  // grid-template-columns peut être résolu en "px px ..." — compter les tracks
   const trackCount = (battle.actionsCols || '').trim().split(/\s+/).filter(Boolean).length;
-  assert(trackCount === 2,                                  `battle-actions doit être 2 colonnes (${trackCount} vues)`);
+  assert(trackCount === 6,                                  `battle-actions doit être 6 colonnes (${trackCount} vues)`);
+  assert(battle.btnCount === 5,                             `5 boutons attendus (Attaquer/Sortilège/Garde/Objet/Fuir), obtenu ${battle.btnCount}`);
   assert(battle.btnMinHeight >= 56,                         'boutons combat trop petits pour le tactile');
 
   if (errors.length) {
@@ -2585,7 +2589,7 @@ async function scenarioSpellIcons() {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log(`  ✅ Phase 3 : 23 sorts mappés + modale + fallback + battle-log innerHTML`);
+  console.log(`  ✅ Phase 3 : ${t1.mapped} sorts mappés + modale + fallback + battle-log innerHTML`);
   await browser.close();
 }
 
@@ -4933,6 +4937,155 @@ async function scenarioFarmingQuests() {
   await browser.close();
 }
 
+// ── Scénario : action Garde + sort Ferula ────────────────────
+
+async function scenarioGuardAndFerula() {
+  console.log('\n── Scénario : Garde + Ferula ──');
+  const { browser, page, errors } = await launchGame();
+
+  // ─── A. Action Garde — duo (Hermione mitige) ──────────────
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+  await startDummyFight(page, { hp: 60 });
+
+  // Bouton Garde présent dans la barre d'action de combat
+  const hasGuardBtn = await page.evaluate(() => {
+    const btn = Array.from(document.querySelectorAll('.battle-actions .cmd-btn'))
+      .find(b => /garde/i.test(b.textContent));
+    return !!btn;
+  });
+  assert(hasGuardBtn, 'Bouton Garde absent de .battle-actions');
+
+  // T1 : Harry Garde — guardTurns[0] = 1, PM gagnés
+  const tGuard = await page.evaluate(() => {
+    currentBattleChar = 0;
+    party[0].sp = 0;            // sec pour vérifier le gain
+    party[0].mag = 10;
+    battleAction('guard');
+    return { sp: party[0].sp, gt0: guardTurns[0], cur: currentBattleChar };
+  });
+  assert(tGuard.gt0 === 1,        `guardTurns[0] attendu 1, obtenu ${tGuard.gt0}`);
+  assert(tGuard.sp >= 3,          `PM gagnés via Garde attendus ≥ 3, obtenu ${tGuard.sp}`);
+  // Après l'action, currentBattleChar a avancé (vers Hermione en duo)
+  assert(tGuard.cur === 1,        `currentBattleChar attendu 1 (Hermione), obtenu ${tGuard.cur}`);
+
+  // T2 : ennemi attaque Harry (guardTurns[0]=1 actif) → mitigation 50 %
+  const tMitig = await page.evaluate(() => {
+    // Forcer le ciblage sur Harry et un coup déterministe
+    party[0].hp = 50; party[0].hpMax = 50; party[0].def = 0;
+    party[1].hp = 0;             // Hermione KO pour forcer la cible Harry
+    party[0].dodgeChance = 0;    // pas d'esquive
+    shieldTurns = [0, 0];        // pas de Protego
+    guardTurns  = [1, 0];        // Garde actif
+    enemyGroup[0].atk = 10;
+    // Patch Math.random pour rendre l'attaque déterministe (no random bonus)
+    const origRand = Math.random;
+    Math.random = () => 0;       // dmg = 10 - 0 + 0 = 10, mitigated = 5
+    enemyTurn();
+    Math.random = origRand;
+    return { hp: party[0].hp, gt0: guardTurns[0] };
+  });
+  // 10 dmg attendu, mitigé à 5 → 50 - 5 = 45
+  assert(tMitig.hp === 45,        `HP attendu 45 après mitigation, obtenu ${tMitig.hp}`);
+  // Garde consommée à la fin du segment ennemi
+  assert(tMitig.gt0 === 0,        `guardTurns[0] attendu 0 après enemyTurn, obtenu ${tMitig.gt0}`);
+
+  await browser.close();
+
+  // ─── B. Sort Ferula — duo (Harry bande Hermione) ──────────
+  // Note : on caste depuis le slot 0 vers le slot 1 pour que
+  // advanceBattleChar() bascule sur Hermione (sans déclencher enemyTurn) —
+  // ainsi aucun tick du statut regen n'intervient, l'assertion porte sur
+  // l'état immédiatement appliqué par le handler.
+  {
+    const ctx = await launchGame();
+    await startNewGame(ctx.page, { partySize: 2, heroes: ['harry', 'hermione'] });
+    await startDummyFight(ctx.page, { hp: 50 });
+
+    const fer = await ctx.page.evaluate(() => {
+      currentBattleChar = 0;
+      party[0].spells.push('Ferula');
+      party[0].sp = 20; party[0].mag = 10;
+      party[1].hp = 5; party[1].hpMax = 30;
+      party[1].statusEffects = [];
+      // Cast direct avec targetAllyIdx (saute la modale de sélection)
+      castSpellInBattle('Ferula', null, 1);
+      const regen = (party[1].statusEffects || []).find(s => s.id === 'regen');
+      return {
+        hp: party[1].hp,
+        regenPower: regen ? regen.power : 0,
+        regenTurns: regen ? regen.turns : 0,
+        sp: party[0].sp
+      };
+    });
+    assert(fer.hp > 5,                  `Ferula : Hermione pas soignée (hp=${fer.hp})`);
+    assert(fer.regenTurns === 3,        `regen attendu 3 tours, obtenu ${fer.regenTurns}`);
+    assert(fer.regenPower === 4,        `regen power attendu 4, obtenu ${fer.regenPower}`);
+    assert(fer.sp === 14,               `PM Harry attendu 20-6=14, obtenu ${fer.sp}`);
+
+    // T3 : tick du statut regen — Hermione récupère 4 PV
+    const tick = await ctx.page.evaluate(() => {
+      const before = party[1].hp;
+      tickStatuses(party[1], false);
+      return { before, after: party[1].hp };
+    });
+    assert(tick.after - tick.before === 4,
+      `regen tick attendu +4 PV, obtenu +${tick.after - tick.before}`);
+
+    if (ctx.errors.length) {
+      ctx.errors.forEach(e => console.log('  ⚠️ ', e));
+      throw new Error(`${ctx.errors.length} erreurs JS détectées (Ferula duo)`);
+    }
+    await ctx.browser.close();
+  }
+
+  // ─── C. Ferula solo — auto-cible Harry (test du handler isolé) ──
+  // En solo, castSpellInBattle déclenche enemyTurn → tick immédiat. Pour
+  // tester l'état fraîchement appliqué, on invoque le handler directement.
+  // On valide en plus que castSpellInBattle (sans targetAllyIdx) résout
+  // bien la cible vers le caster en solo (pas de modale demandée).
+  {
+    const ctx = await launchGame();
+    await startNewGame(ctx.page, { partySize: 1, heroes: ['harry'] });
+    await startDummyFight(ctx.page, { hp: 50 });
+
+    const solo = await ctx.page.evaluate(() => {
+      currentBattleChar = 0;
+      party[0].hp = 10; party[0].hpMax = 30;
+      party[0].mag = 10; party[0].statusEffects = [];
+      const spell = SPELLS.find(s => s.name === 'Ferula');
+      _spellSupportRegen(spell, party[0], null, null, 0);
+      const regen = (party[0].statusEffects || []).find(s => s.id === 'regen');
+      return { hp: party[0].hp, regenTurns: regen ? regen.turns : 0 };
+    });
+    assert(solo.hp > 10,           `Ferula solo : Harry pas soigné (hp=${solo.hp})`);
+    assert(solo.regenTurns === 3,  `regen solo attendu 3 tours, obtenu ${solo.regenTurns}`);
+
+    // Auto-résolution de la cible en solo (sans targetAllyIdx fourni).
+    const autoSolo = await ctx.page.evaluate(() => {
+      party[0].hp = 8; party[0].statusEffects = [];
+      party[0].sp = 20;
+      party[0].spells.push('Ferula');
+      const targetSel = document.getElementById('target-selection');
+      castSpellInBattle('Ferula', null);     // pas de targetAllyIdx
+      const regen = (party[0].statusEffects || []).find(s => s.id === 'regen');
+      return {
+        hadRegen: !!regen,
+        targetVisible: targetSel ? targetSel.style.display === 'flex' : null
+      };
+    });
+    assert(autoSolo.hadRegen,            'Ferula solo sans cible : regen pas appliqué (auto-cible KO)');
+    assert(!autoSolo.targetVisible,      'Ferula solo : modale de sélection ne devrait pas apparaître');
+
+    if (ctx.errors.length) {
+      ctx.errors.forEach(e => console.log('  ⚠️ ', e));
+      throw new Error(`${ctx.errors.length} erreurs JS détectées (Ferula solo)`);
+    }
+    await ctx.browser.close();
+  }
+
+  console.log('  ✅ Garde + Ferula conformes');
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -4990,7 +5143,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
