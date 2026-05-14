@@ -4925,6 +4925,83 @@ async function scenarioFarmingQuests() {
   assert(!t10.hasOfferClass,      'minimap ne doit pas appliquer .map-npc-offer en parallèle');
   assert(t10.sign === '!',        `dataset.sign attendu "!", got ${t10.sign}`);
 
+  // T11 : migration save legacy (placedFarmingNpcs vide, étage éligible
+  // déjà caché sans Scamander) → `_migrateMissingNpcsForFloor` doit
+  // placer le NPC quand on revisite l'étage. Simule via 50 tirages pour
+  // dompter le 80 % stochastique (P(échec×50) = 0.2^50 ≈ 1e-35).
+  const t11 = await page.evaluate(() => {
+    // Repart d'un étage propre (floor 5, Scamander éligible 3-8)
+    let placedAtLeastOnce = false;
+    let alreadyTracked    = false;
+    for (let trial = 0; trial < 50; trial++) {
+      generateDungeon(5);
+      // Force l'état "save ancienne" : Scamander absent du donjon + set vide.
+      for (const [k, id] of Array.from(npcPlacements.entries())) {
+        if (id === 'scamander_random') {
+          const [x, y] = k.split(',').map(Number);
+          dungeon[y][x] = CELL.FLOOR;
+          npcPlacements.delete(k);
+        }
+      }
+      placedFarmingNpcs.delete('scamander_random');
+      _migrateMissingNpcsForFloor(5);
+      const found = Array.from(npcPlacements.values()).includes('scamander_random');
+      if (found) {
+        placedAtLeastOnce = true;
+        if (placedFarmingNpcs.has('scamander_random')) alreadyTracked = true;
+        break;
+      }
+    }
+    return { placedAtLeastOnce, alreadyTracked };
+  });
+  console.log('  T11 migration legacy:', t11);
+  assert(t11.placedAtLeastOnce, 'migration doit placer scamander_random sur un étage caché legacy');
+  assert(t11.alreadyTracked,    'placedFarmingNpcs doit être mis à jour après placement par migration');
+
+  // T12 : génération fresh — sur 30 essais de l'étage 5 avec set vide,
+  // Scamander doit être placé sur la majorité (P attendue 80 %). On
+  // exige ≥ 60 % (marge large vs binomiale n=30,p=0.8).
+  const t12 = await page.evaluate(() => {
+    let placedCount = 0;
+    let trackedCount = 0;
+    let preventDoublePlacement = 0;
+    for (let trial = 0; trial < 30; trial++) {
+      placedFarmingNpcs = new Set();
+      generateDungeon(5);
+      const found = Array.from(npcPlacements.values()).includes('scamander_random');
+      if (found) placedCount++;
+      if (placedFarmingNpcs.has('scamander_random')) trackedCount++;
+    }
+    // Vérification double-placement : si déjà dans le set, le slot doit skipper.
+    placedFarmingNpcs = new Set(['scamander_random']);
+    for (let trial = 0; trial < 20; trial++) {
+      generateDungeon(5);
+      const found = Array.from(npcPlacements.values()).includes('scamander_random');
+      if (!found) preventDoublePlacement++;
+    }
+    return { placedCount, trackedCount, preventDoublePlacement };
+  });
+  console.log('  T12 generation fresh:', t12);
+  assert(t12.placedCount >= 18,         `Scamander placé ${t12.placedCount}/30 fois, attendu ≥ 18`);
+  assert(t12.placedCount === t12.trackedCount, 'placedFarmingNpcs doit suivre les placements 1:1');
+  assert(t12.preventDoublePlacement === 20, `re-placement bloqué ${t12.preventDoublePlacement}/20 quand déjà dans set`);
+
+  // T13 : save → reload conserve placedFarmingNpcs
+  const t13 = await page.evaluate(() => {
+    placedFarmingNpcs = new Set(['scamander_random', 'hagrid_random']);
+    const snapshot = _serializeState();
+    placedFarmingNpcs = new Set();
+    _applyState(snapshot);
+    return {
+      hasSc: placedFarmingNpcs.has('scamander_random'),
+      hasHg: placedFarmingNpcs.has('hagrid_random'),
+      size:  placedFarmingNpcs.size
+    };
+  });
+  console.log('  T13 save roundtrip:', t13);
+  assert(t13.hasSc && t13.hasHg, 'roundtrip doit conserver les 2 IDs');
+  assert(t13.size === 2,         `set attendu de taille 2, got ${t13.size}`);
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);

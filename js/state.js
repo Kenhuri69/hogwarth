@@ -179,6 +179,11 @@ let seenNpcs = new Set();
 // l'étage courant — clé `npcId`. Vidé à chaque entrée d'étage (analogue
 // `usedFountains`). Pas archivé dans `floorDungeons`.
 let usedSpecialNpcs = new Set();
+// PNJ random porteurs de quêtes farming déjà placés dans cette partie
+// (Set<npcId>). Garantit qu'un farming NPC n'est placé qu'une seule fois
+// sur l'ensemble du donjon, et permet à `_migrateMissingNpcsForFloor` de
+// rattraper les saves antérieures au système. Persisté.
+let placedFarmingNpcs = new Set();
 
 // ── Membres du groupe ────────────────────────────────────────
 // `player`, `player2`, `party` sont déclarés `const` pour verrouiller

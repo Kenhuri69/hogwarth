@@ -239,8 +239,12 @@ async function startGame(count = 2) {
   const gc = document.getElementById('game-container');
   gc.style.display = 'grid';
   resizeCanvas();
+  // Reset cache + état partagé AVANT generateDungeon pour que le tirage
+  // farming de l'étage 1 ne soit pas filtré par un set hérité d'une
+  // précédente partie.
+  floorDungeons      = {};
+  placedFarmingNpcs  = new Set();
   generateDungeon(1);
-  floorDungeons = {};   // reset du cache à chaque nouvelle partie
   searchedCells = new Set();
   // Note : seenNpcs / activeQuests / availableQuests / completedQuests
   // sont déjà initialisés par chooseHouse() AVANT l'intro Dumbledore

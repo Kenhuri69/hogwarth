@@ -685,10 +685,35 @@ function getRandomLoreForFloor(floor) {
 }
 
 function getRandomEncountersForFloor(floor) {
-  // Pool combiné : tout PNJ random éligible à cet étage (vendeur OU lore).
-  // Utilisé par dungeon.js pour le tirage uniforme par étage.
+  // Pool combiné : tout PNJ random éligible à cet étage (vendeur OU lore
+  // OU questgiver). Conservé pour back-compat / debug — `generateDungeon`
+  // utilise désormais les deux helpers ciblés ci-dessous.
   return NPCS.filter(n =>
     n.random === true &&
+    (n.minFloor === undefined || floor >= n.minFloor) &&
+    (n.maxFloor === undefined || n.maxFloor === null || floor <= n.maxFloor)
+  );
+}
+
+function getRandomVendorOrLoreForFloor(floor) {
+  // PNJ random SANS quête donnée (vendeur ou lore pur). Slot partagé à
+  // 50 % par étage — voir dungeon.js.
+  return NPCS.filter(n =>
+    n.random === true &&
+    !(Array.isArray(n.questsGiven) && n.questsGiven.length) &&
+    (n.minFloor === undefined || floor >= n.minFloor) &&
+    (n.maxFloor === undefined || n.maxFloor === null || floor <= n.maxFloor)
+  );
+}
+
+function getRandomFarmingNpcsForFloor(floor) {
+  // PNJ random AVEC quête donnée (scamander_random, hagrid_random…).
+  // Slot dédié à 80 %, indépendant du slot vendor/lore, filtré au
+  // moment du tirage par `placedFarmingNpcs` pour ne placer chaque NPC
+  // qu'une fois par partie (cf. dungeon.js et farming-quests.md §13).
+  return NPCS.filter(n =>
+    n.random === true &&
+    Array.isArray(n.questsGiven) && n.questsGiven.length > 0 &&
     (n.minFloor === undefined || floor >= n.minFloor) &&
     (n.maxFloor === undefined || n.maxFloor === null || floor <= n.maxFloor)
   );

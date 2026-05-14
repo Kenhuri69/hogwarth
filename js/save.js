@@ -213,6 +213,7 @@ function _serializeState() {
     floorKillCount: Array.from(floorKillCount.entries()),
     npcPlacements: Array.from(npcPlacements.entries()),
     seenNpcs:      Array.from(seenNpcs),
+    placedFarmingNpcs: Array.from(placedFarmingNpcs),
     availableQuests: Array.from(availableQuests),
     completedQuests: Array.from(completedQuests),
     lastQuestCompletion: { ...lastQuestCompletion },
@@ -401,6 +402,10 @@ function _applyState(gs) {
   floorKillCount = new Map(gs.floorKillCount || []);
   npcPlacements = new Map(gs.npcPlacements || []);
   seenNpcs      = new Set(gs.seenNpcs || []);
+  // Saves antérieures à la Phase visibility-fix farming → set vide. Le
+  // rattrapage est ensuite assuré par `_migrateMissingNpcsForFloor` à
+  // chaque revisit d'étage éligible.
+  placedFarmingNpcs = new Set(gs.placedFarmingNpcs || []);
 
   // Migration : re-place les PNJ attendus à l'étage courant qui seraient
   // absents (saves antérieures à un ajout — ex. Dumbledore Phase 3).

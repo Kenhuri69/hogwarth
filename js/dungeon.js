@@ -142,6 +142,26 @@ function scaleMonster(base, floor) {
 // que l'entrée sur la cellule PNJ soit déclenchable par un mouvement
 // (handleCellEntry n'est pas appelé sur le spawn). Retourne true si
 // placé, false si la salle n'a aucune case éligible.
+// Cherche une room intermédiaire libre pour un PNJ random, sinon repli
+// sur l'avant-dernière. Retourne `true` si placé. Marque la room occupée.
+function _placeRandomNpcInRooms(npc, rooms, occupied) {
+  for (let i = 1; i < rooms.length - 1; i++) {
+    if (occupied.has(i)) continue;
+    if (_placeNpcInRoom(npc, rooms[i], false)) {
+      occupied.add(i);
+      return true;
+    }
+  }
+  if (rooms.length >= 2) {
+    const fallback = rooms.length - 2;
+    if (_placeNpcInRoom(npc, rooms[fallback], false)) {
+      occupied.add(fallback);
+      return true;
+    }
+  }
+  return false;
+}
+
 function _placeNpcInRoom(npc, room, isSpawnRoom) {
   const candidates = [];
   for (let dy = room.y; dy < room.y + room.h; dy++) {
@@ -270,26 +290,29 @@ function generateDungeon(floor) {
     }
   }
 
-  // Rencontre aléatoire (PNJ random — vendeur OU lore) : 50% par étage.
-  // Pool combiné via getRandomEncountersForFloor, filtré par minFloor /
-  // maxFloor. Un seul random par étage maximum (vendeur ou lore exclusif).
-  if (Math.random() < 0.50 && typeof getRandomEncountersForFloor === 'function') {
-    const pool = getRandomEncountersForFloor(floor);
+  // Rencontre aléatoire vendeur OU lore : 50% par étage.
+  // Pool restreint via getRandomVendorOrLoreForFloor (exclut les donneurs
+  // de quêtes farming, qui ont leur propre slot dédié juste après).
+  if (Math.random() < 0.50 && typeof getRandomVendorOrLoreForFloor === 'function') {
+    const pool = getRandomVendorOrLoreForFloor(floor);
     if (pool.length) {
       const npc = pool[Math.floor(Math.random() * pool.length)];
-      // Première room intermédiaire libre, sinon repli avant-dernière.
-      let placed = false;
-      for (let i = 1; i < rooms.length - 1; i++) {
-        if (occupied.has(i)) continue;
-        if (_placeNpcInRoom(npc, rooms[i], false)) {
-          occupied.add(i); placed = true; break;
-        }
-      }
-      if (!placed && rooms.length >= 2) {
-        const fallback = rooms.length - 2;
-        if (_placeNpcInRoom(npc, rooms[fallback], false)) {
-          occupied.add(fallback);
-        }
+      _placeRandomNpcInRooms(npc, rooms, occupied);
+    }
+  }
+
+  // Slot dédié donneurs de quêtes farming (scamander_random, hagrid_random) :
+  // 80 % par PNJ éligible non encore placé dans cette partie. Indépendant
+  // du slot vendor/lore ci-dessus. `placedFarmingNpcs` (state.js) garantit
+  // qu'un farming NPC n'est placé qu'une fois sur l'ensemble du donjon.
+  // Cf. .claude/plans/farming-quests.md §13.
+  if (typeof getRandomFarmingNpcsForFloor === 'function'
+      && typeof placedFarmingNpcs !== 'undefined') {
+    for (const npc of getRandomFarmingNpcsForFloor(floor)) {
+      if (placedFarmingNpcs.has(npc.id)) continue;
+      if (Math.random() >= 0.80) continue;
+      if (_placeRandomNpcInRooms(npc, rooms, occupied)) {
+        placedFarmingNpcs.add(npc.id);
       }
     }
   }
@@ -542,6 +565,34 @@ function _migrateMissingNpcsForFloor(floor) {
     present.add(npc.id);
     added++;
   }
+
+  // Rattrapage farming NPCs : applique le slot dédié 80 % aux étages déjà
+  // cachés des saves antérieures à la Phase visibility-fix (placedFarmingNpcs
+  // était vide). Chaque revisit d'étage éligible re-tente le tirage tant que
+  // le NPC n'est pas placé. Cf. farming-quests.md §13.
+  if (typeof getRandomFarmingNpcsForFloor === 'function'
+      && typeof placedFarmingNpcs !== 'undefined') {
+    for (const npc of getRandomFarmingNpcsForFloor(floor)) {
+      if (placedFarmingNpcs.has(npc.id)) continue;
+      if (present.has(npc.id)) {
+        // Déjà sur l'étage mais absent du set (save legacy) → réconcilier.
+        placedFarmingNpcs.add(npc.id);
+        continue;
+      }
+      if (Math.random() >= 0.80) continue;
+      const cell = _findFreeNpcCell(false);
+      if (!cell) continue;
+      dungeon[cell.y][cell.x] = CELL.NPC;
+      npcPlacements.set(`${cell.x},${cell.y}`, npc.id);
+      if (typeof visited !== 'undefined' && visited[cell.y]) {
+        visited[cell.y][cell.x] = true;
+      }
+      placedFarmingNpcs.add(npc.id);
+      present.add(npc.id);
+      added++;
+    }
+  }
+
   return added;
 }
 

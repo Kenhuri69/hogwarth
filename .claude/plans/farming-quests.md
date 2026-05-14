@@ -348,3 +348,20 @@ si les OGG ne sont pas livrés.
 | Date | Étape | Notes |
 |------|-------|-------|
 | 2026-05-14 | Plan rédigé | Décision : 2 entrées NPC séparées (`scamander_random` / `hagrid_random`) pour éviter conflit avec placements fixes existants. Pool monstres = toutes catégories sauf bosses uniques. Pool items = ingrédients/consommables (mandragore, choco_sorcier, potion_s, potion_m). |
+| 2026-05-14 | Post-merge feedback | Utilisateur signale qu'il n'a pas trouvé Scamander/Hagrid en parcourant les étages 1-8. Diagnostic : (1) saves anciennes ont leurs étages cachés dans `floorDungeons` — aucun re-roll des PNJ random ne s'applique sur revisit ; (2) même fresh game, le slot random unique (50 %) partagé entre 7-8 PNJ rend chaque farming NPC à ~6 % par étage (~30 % cumulé sur la fourchette). |
+
+---
+
+## 13. Visibilité — fix post-merge (Option C : slot dédié + migration)
+
+Solution combinée pour traiter à la fois les saves anciennes et les fresh games.
+
+### Étapes
+
+- [x] V1 — Ajout `placedFarmingNpcs: Set<npcId>` dans `state.js` ; reset dans `main.js` (new game) → critère : présent dans serialize/restore + reset cohérent avec `floorDungeons`.
+- [x] V2 — Nouveau helper `getRandomFarmingNpcsForFloor(floor)` (random + `questsGiven` non vide) + `getRandomVendorOrLoreForFloor(floor)` (random sans `questsGiven`) → critère : pools strictement disjoints, somme = `getRandomEncountersForFloor`.
+- [x] V3 — `generateDungeon` : utiliser `getRandomVendorOrLoreForFloor` pour le slot 50 % existant ; ajouter un slot **dédié** parcourant `getRandomFarmingNpcsForFloor` avec 80 % de chance par PNJ éligible **non encore placé** (filtré par `placedFarmingNpcs`). Add to set on success → critère : sur 100 générations d'étage 3-8 sans persistance préalable, ≥ 95 % de croisements pour chaque farming NPC.
+- [x] V4 — `_migrateMissingNpcsForFloor` : après la passe fixes, parcourir `getRandomFarmingNpcsForFloor(floor)` et placer ceux non présents ET non dans `placedFarmingNpcs` (même 80 %) → critère : sur save ancienne sans `placedFarmingNpcs`, revisiter chaque étage de la fourchette place finalement le NPC.
+- [x] V5 — `save.js` : sérialiser `placedFarmingNpcs` (Array) + restaurer (Set, défaut vide pour saves antérieures) → critère : roundtrip save→reload conserve la valeur.
+- [x] V6 — Smoke `T11` (vieille save migrée → Scamander placé sur revisit) + `T12` (génération fresh sur fourchette → 2 NPCs placés au moins une fois) → critère : test vert.
+
