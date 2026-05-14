@@ -214,6 +214,7 @@ function _serializeState() {
     visitedFloors:  Array.from(visitedFloors),
     portusOocCooldown,
     portusFightCooldown,
+    healSpellCooldown,
     npcPlacements: Array.from(npcPlacements.entries()),
     seenNpcs:      Array.from(seenNpcs),
     availableQuests: Array.from(availableQuests),
@@ -407,6 +408,7 @@ function _applyState(gs) {
   if (currentFloor) visitedFloors.add(currentFloor);
   portusOocCooldown   = (typeof gs.portusOocCooldown   === 'number') ? gs.portusOocCooldown   : 0;
   portusFightCooldown = (typeof gs.portusFightCooldown === 'number') ? gs.portusFightCooldown : 0;
+  healSpellCooldown   = (typeof gs.healSpellCooldown   === 'number') ? gs.healSpellCooldown   : 0;
   npcPlacements = new Map(gs.npcPlacements || []);
   seenNpcs      = new Set(gs.seenNpcs || []);
 

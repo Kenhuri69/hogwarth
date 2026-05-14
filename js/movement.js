@@ -38,6 +38,7 @@ function _step(dir, faceDir) {
   playerX += dx; playerY += dy;
   visited[playerY][playerX] = true;
   if (restCooldown > 0) restCooldown--;
+  if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) healSpellCooldown--;
   AudioSystem.playFootstep();
 
   const cell = dungeon[playerY][playerX];

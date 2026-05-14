@@ -101,6 +101,42 @@ les helpers, et `battle-spells.js` route `effect:"teleport"` vers ces helpers.
 - Sur les étages avec très peu de cases libres (cas rare), `_pickRandomFreeFloorCell`
   retourne `null` → message d'échec et remboursement du PM.
 
+## Itération 3 — Soin hors combat (Episkey / Reparo)
+
+Extension du menu OOC (initialement amorcé pour Portus) aux sorts de soin
+pour réduire la dépendance au `rest`/fontaine et donner un usage régulier
+au menu.
+
+### Comportement
+
+- Sorts éligibles : `effect: "heal"` (Episkey, Reparo, et tout futur sort
+  ajouté avec ce flag).
+- Coût : identique au coût combat (5 PM Episkey, 7 PM Reparo). Pas
+  d'`outOfCombatCost` séparé — le sort de soin est censé être un peu
+  moins efficace que le repos (qui rend 30 % HP+SP, sans coût PM), donc
+  garder le même coût est cohérent.
+- Cible : automatique — perso vivant avec le ratio `hp/hpMax` le plus
+  bas. Évite une modale de sélection en duo (mobile-friendly). Si tout
+  le monde est au max, message « déjà au mieux » et pas de consommation.
+- Cooldown : **3 pas** (décrémenté dans `_step` via `moveForward`/
+  `moveBackward`). Partagé entre tous les sorts de soin pour empêcher
+  l'alternance Episkey/Reparo. Le repos reste compétitif (rend HP + SP).
+
+### Implémentation
+
+- `state.js` : nouveau compteur `healSpellCooldown`.
+- `save.js` : sérialisation + désérialisation (avec fallback 0).
+- `main.js` — `startGame` : reset à 0.
+- `movement.js` — `_step` : décrément à chaque pas réussi.
+- `inventory.js` :
+  - `isOutOfCombatSpell` : ajoute `effect === 'heal'`.
+  - `SPELL_OOC_HANDLERS.heal` : nouveau handler avec cible auto, gate sur
+    cooldown + PM + état "déjà au mieux".
+  - `openSpells` : surface du cooldown dans le hint (« ⏳ Se recharge — N
+    pas »).
+- `tests/smoke.js` : 4 nouveaux sub-cases (apprentissage, cible auto,
+  cooldown décrémenté, blocage à full HP).
+
 ## Itération 2 — équilibrage (post-revue)
 
 Après revue : Portus était trop puissant. Ajustements :

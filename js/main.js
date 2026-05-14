@@ -245,6 +245,7 @@ async function startGame(count = 2) {
   visitedFloors = new Set([1]);
   portusOocCooldown   = 0;
   portusFightCooldown = 0;
+  healSpellCooldown   = 0;
   // Note : seenNpcs / activeQuests / availableQuests / completedQuests
   // sont déjà initialisés par chooseHouse() AVANT l'intro Dumbledore
   // (sinon _finishIntro serait écrasée). Ne pas les reset ici.

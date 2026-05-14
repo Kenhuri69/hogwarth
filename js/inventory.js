@@ -483,16 +483,19 @@ function openSpells(charIdx = 0) {
     if (!spell) continue;
     const div = document.createElement('div');
     div.className = 'spell-item';
-    // Sorts utilisables hors combat : pour l'instant uniquement Portus
-    // (extensible via SPELL_OOC_HANDLERS). Affichage gris + tag "combat
-    // uniquement" pour les autres pour ne pas tromper le joueur.
+    // Sorts utilisables hors combat (teleport + heal pour V1). Les autres
+    // affichent un tag "Combat uniquement" pour ne pas tromper le joueur.
     const oocCost   = spell.outOfCombatCost || null;
     const isOoc     = isOutOfCombatSpell(spell);
-    // Cooldown OOC (Portus uniquement pour l'instant). Si > 0, le sort est
-    // affiché mais non cliquable, avec un libellé "se recharge".
-    const cdRemaining = (spell.effect === 'teleport'
-                        && typeof portusOocCooldown === 'number')
-                        ? portusOocCooldown : 0;
+    // Cooldown OOC selon le type de sort.
+    let cdRemaining = 0, cdUnit = '';
+    if (spell.effect === 'teleport' && typeof portusOocCooldown === 'number') {
+      cdRemaining = portusOocCooldown;
+      cdUnit = `transition${cdRemaining > 1 ? 's' : ''} d'étage`;
+    } else if (spell.effect === 'heal' && typeof healSpellCooldown === 'number') {
+      cdRemaining = healSpellCooldown;
+      cdUnit = `pas`;
+    }
     const canCastOoc = isOoc && cdRemaining === 0 && c.sp >= (oocCost || spell.cost);
     const costLabel = oocCost
       ? `${oocCost} PM <span style="color:#6a5030;font-size:9px">(hors combat)</span>`
@@ -501,7 +504,7 @@ function openSpells(charIdx = 0) {
     if (!isOoc) {
       hint = '<span style="font-size:9px;color:#6a5030">Combat uniquement</span>';
     } else if (cdRemaining > 0) {
-      hint = `<span style="font-size:9px;color:#a04020">⏳ Se recharge — ${cdRemaining} transition${cdRemaining > 1 ? 's' : ''} d'étage</span>`;
+      hint = `<span style="font-size:9px;color:#a04020">⏳ Se recharge — ${cdRemaining} ${cdUnit}</span>`;
     } else if (!canCastOoc) {
       hint = '<span style="font-size:9px;color:#a04020">PM insuffisants</span>';
     } else {
@@ -528,12 +531,30 @@ function openSpells(charIdx = 0) {
   document.getElementById('spell-modal').style.display = 'flex';
 }
 
-// Sorts utilisables hors combat (V1 : Portus uniquement). Le dispatch est
-// fait via SPELL_OOC_HANDLERS pour rester extensible (Episkey/Reparo
-// pourront s'y greffer avec un cooldown séparé).
+// Sorts utilisables hors combat. Inscrits via SPELL_OOC_HANDLERS pour
+// rester extensible. V1 : Portus (teleport) + sorts de soin (heal).
 function isOutOfCombatSpell(spell) {
   if (!spell) return false;
-  return spell.effect === 'teleport';
+  return spell.effect === 'teleport' || spell.effect === 'heal';
+}
+
+// Cooldown partagé entre tous les sorts de soin OOC (cf. .claude/plans/
+// teleportation-spell.md §Itération 3).
+const HEAL_OOC_CD_STEPS = 3;
+
+// Retourne l'allié vivant avec le ratio hp/hpMax le plus bas, ou null si
+// personne n'est blessé (tous au max ou tous KO). Le caster est inclus.
+function _pickMostWoundedAlly() {
+  let best = null, bestRatio = 1.0;
+  for (const c of party.slice(0, partySize)) {
+    if (!c || c.hp <= 0) continue;
+    if (c.hp >= c.hpMax) continue;
+    const ratio = c.hp / c.hpMax;
+    if (best === null || ratio < bestRatio) {
+      best = c; bestRatio = ratio;
+    }
+  }
+  return best;
 }
 
 const SPELL_OOC_HANDLERS = {
@@ -542,6 +563,39 @@ const SPELL_OOC_HANDLERS = {
       closeModal('spell-modal');
       openOutOfCombatTeleport(charIdx);
     }
+  },
+  // Soin OOC : cible auto = perso vivant le plus en bas de PV.
+  // Coût identique au combat. Cooldown HEAL_OOC_CD_STEPS pas, partagé.
+  heal: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster || caster.hp <= 0) {
+      addMsg('Personne ne peut canaliser le sort.', 'bad');
+      return;
+    }
+    if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) {
+      addMsg(`Sort de soin en récupération — encore ${healSpellCooldown} pas.`, 'bad');
+      return;
+    }
+    if (caster.sp < spell.cost) {
+      addMsg(`Pas assez de magie pour ${spell.name} (${spell.cost} PM).`, 'bad');
+      return;
+    }
+    const target = _pickMostWoundedAlly();
+    if (!target) {
+      addMsg('Le groupe est déjà au mieux — pas besoin de soin.', '');
+      return;
+    }
+    caster.sp -= spell.cost;
+    const before = target.hp;
+    target.hp = Math.min(target.hpMax, target.hp + spell.power);
+    const healed = target.hp - before;
+    if (typeof healSpellCooldown === 'number') healSpellCooldown = HEAL_OOC_CD_STEPS;
+    AudioSystem.playSpellCast(spell.name);
+    AudioSystem.speakSpell(spell.name);
+    addMsg(`💚 ${caster.name} → ${target.name} : ${spell.name} +${healed} PV.`, 'good');
+    UX_safe.floatDmg('ally', healed, 'heal');
+    closeModal('spell-modal');
+    updateUI();
   }
 };
 

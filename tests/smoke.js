@@ -5332,6 +5332,102 @@ async function scenarioTeleportation() {
   await browser.close();
 }
 
+// ── Scénario : Soin hors combat (Episkey/Reparo) ─────────────
+// Vérifie : Episkey/Reparo cliquables hors combat, cible auto = perso
+// le plus blessé, full HP → no-op, cooldown 3 pas décrémenté.
+
+async function scenarioHealOoc() {
+  console.log('\n── Scénario : Soin hors combat ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : Episkey est dans la liste de Hermione, cliquable hors combat.
+  const t1 = await page.evaluate(() => {
+    openSpells(1); // onglet Hermione
+    const items = Array.from(document.querySelectorAll('#spell-list .spell-item'));
+    const episkey = items.find(el => /Episkey/.test(el.textContent));
+    return {
+      hasEpiskey:  !!episkey,
+      isClickable: !!(episkey && typeof episkey.onclick === 'function')
+    };
+  });
+  console.log('  T1 modale →', t1);
+  assert(t1.hasEpiskey,                'Episkey doit être dans la liste');
+  assert(t1.isClickable,               'Episkey doit être cliquable hors combat');
+
+  // T2 : cast cible auto le perso le moins en forme et applique le soin.
+  const t2 = await page.evaluate(() => {
+    // Harry plus blessé que Hermione.
+    party[0].hp = 5;  party[0].hpMax = 35;
+    party[1].hp = 28; party[1].hpMax = 28;
+    party[1].sp = 35;
+    const before = { harry: party[0].hp, hermione: party[1].hp, hermioneSp: party[1].sp };
+    castSpellOutOfCombat('Episkey', 1);   // Hermione caste
+    return {
+      before,
+      after: { harry: party[0].hp, hermione: party[1].hp, hermioneSp: party[1].sp },
+      cd: healSpellCooldown
+    };
+  });
+  console.log('  T2 cast →', t2);
+  assert(t2.after.harry > t2.before.harry,                 `Harry doit être soigné (${t2.before.harry} → ${t2.after.harry})`);
+  assert(t2.after.hermione === t2.before.hermione,         'Hermione (full HP) ne doit pas être ciblée');
+  assert(t2.after.hermioneSp === t2.before.hermioneSp - 5, 'PM Hermione consommés (5 PM Episkey)');
+  assert(t2.cd === 3,                                       `Cooldown doit être armé à 3 (vu ${t2.cd})`);
+
+  // T3 : tenter de re-caster pendant le cooldown est no-op.
+  const t3 = await page.evaluate(() => {
+    const spBefore = party[1].sp;
+    castSpellOutOfCombat('Episkey', 1);
+    return { blocked: party[1].sp === spBefore };
+  });
+  console.log('  T3 blocage CD →', t3);
+  assert(t3.blocked,                                        'Cast Episkey en CD doit être no-op');
+
+  // T4 : cooldown décrémente à chaque pas.
+  const t4 = await page.evaluate(() => {
+    // Garantir un couloir devant le joueur (chercher une case libre adjacente).
+    healSpellCooldown = 3;
+    const beforeCd = healSpellCooldown;
+    // Essayer 4 directions jusqu'à trouver un mouvement valide.
+    let stepped = false;
+    for (const dir of ['n','e','s','w']) {
+      const [dx, dy] = DIRECTIONS[dir];
+      const nx = playerX + dx, ny = playerY + dy;
+      if (dungeon[ny] && dungeon[ny][nx] !== CELL.WALL) {
+        playerDir = dir;
+        moveForward();
+        stepped = true;
+        break;
+      }
+    }
+    return { beforeCd, stepped, afterCd: healSpellCooldown };
+  });
+  console.log('  T4 step CD →', t4);
+  assert(t4.stepped,                                        'Un mouvement doit avoir été effectué');
+  assert(t4.afterCd === t4.beforeCd - 1,                    `CD doit décrémenter de 1 par pas (${t4.beforeCd} → ${t4.afterCd})`);
+
+  // T5 : tout le monde au max → message no-op, PM préservés.
+  const t5 = await page.evaluate(() => {
+    healSpellCooldown = 0;
+    party.forEach(c => { c.hp = c.hpMax; });
+    party[1].sp = 30;
+    const spBefore = party[1].sp;
+    castSpellOutOfCombat('Episkey', 1);
+    return { blocked: party[1].sp === spBefore, cd: healSpellCooldown };
+  });
+  console.log('  T5 full HP no-op →', t5);
+  assert(t5.blocked,                                        'Pas de PM consommés si tout le monde est au max');
+  assert(t5.cd === 0,                                       'CD non armé sur no-op');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Soin OOC OK (cible auto + CD + no-op full HP)');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -5389,7 +5485,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

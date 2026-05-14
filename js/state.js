@@ -186,6 +186,12 @@ let visitedFloors = new Set([1]);
 let portusOocCooldown   = 0;
 let portusFightCooldown = 0;
 
+// Cooldown des sorts de soin hors combat (Episkey, Reparo et tout futur sort
+// effect:"heal"). Décrémenté dans _step à chaque pas réussi. Partagé entre
+// tous les sorts de soin (cf. .claude/plans/teleportation-spell.md §Itération 3).
+// Persisté dans le save, reset à startGame.
+let healSpellCooldown = 0;
+
 // PNJ placés sur l'étage courant : Map "x,y" → npcId.
 // Recalculé à chaque génération d'étage, mis en cache dans floorDungeons.
 let npcPlacements = new Map();
