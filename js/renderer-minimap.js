@@ -47,7 +47,10 @@ function _buildMinimapCells(mm, cellSize) {
           const sign  = (typeof getNpcMarkerSign === 'function')
             ? getNpcMarkerSign(npcId) : '';
           if (sign === '!') {
-            div.classList.add('map-npc-offer');
+            // Quête farming offerable → marqueur rouge clignotant distinct.
+            const isFarming = (typeof _npcHasFarmingOffer === 'function')
+              ? _npcHasFarmingOffer(npcId) : false;
+            div.classList.add(isFarming ? 'map-npc-farming' : 'map-npc-offer');
             div.dataset.sign = '!';
           } else if (sign === '?') {
             div.classList.add('map-npc-ready');

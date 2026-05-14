@@ -576,6 +576,58 @@ const NPCS = [
       ]
     }
   },
+  // ── PNJ donneurs de quêtes répétables (random:true) ───────────
+  // Doublons "ambulants" des PNJ fixes (Scamander, Hagrid) qui apparaissent
+  // sur des étages élargis pour proposer leurs quêtes de farming.
+  // Cf. .claude/plans/farming-quests.md §4.
+  {
+    id:        "scamander_random",
+    name:      "Newton Scamander",
+    title:     "Magizoologiste en tournée",
+    icon:      "🐾",
+    portraitImg: "img/npc/scamander.png",
+    random:    true,
+    minFloor:  3,
+    maxFloor:  8,
+    questsGiven:    ["chasse_magizoologiste"],
+    questsTurnedIn: ["chasse_magizoologiste"],
+    dialogues: {
+      greeting: [
+        "Oh ! Un visiteur ! Tombe à pic — j'observe les créatures de cet étage et certaines me préoccupent un peu.",
+        "Tu n'aurais pas un instant ? Je t'expliquerais ce qu'il faut faire."
+      ],
+      idle:        "Mes carnets se remplissent à mesure que j'arpente le château…",
+      // Placeholders {target} et {amount} interpolés par _interpolateFarmingText
+      // depuis la preview (offer) ou _dynamicTarget de la quête active.
+      questOffer:  "J'ai repéré des {target} qui posent problème par ici. Veux-tu en éliminer {amount} pour moi ?",
+      questActive: "As-tu éliminé les {target} ?",
+      questReady:  "Excellent ! Voilà ta récompense.",
+      questDone:   "Reviens me voir : il y a toujours une espèce à recenser."
+    }
+  },
+  {
+    id:        "hagrid_random",
+    name:      "Hagrid",
+    title:     "Garde-chasse en maraude",
+    icon:      "🦉",
+    portraitImg: "img/npc/hagrid.png",
+    random:    true,
+    minFloor:  4,
+    maxFloor:  9,
+    questsGiven:    ["course_hagrid"],
+    questsTurnedIn: ["course_hagrid"],
+    dialogues: {
+      greeting: [
+        "Ah, te v'là ! J'tombe bien — j'ai un p'tit service à t'demander pour mes bestioles.",
+        "Si tu peux m'rendre c'service, j'ai d'quoi t'remercier."
+      ],
+      idle:        "Y'a toujours quelque chose à r'cueillir pour nourrir mes bestioles…",
+      questOffer:  "J'ai encore besoin de {target}. Peux-tu m'en ramener {amount} ?",
+      questActive: "T'as trouvé les {target} que j't'ai d'mandés ?",
+      questReady:  "Parfait mon gars ! Voilà pour toi.",
+      questDone:   "Merci encore pour tout c'que t'as fait. Reviens quand tu veux."
+    }
+  },
   {
     id:        "trelawney",
     name:      "Sibylle Trelawney",

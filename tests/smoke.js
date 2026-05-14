@@ -4675,6 +4675,196 @@ async function scenarioTenebresSet() {
   await browser.close();
 }
 
+// ── Scénario : quêtes de farming (Chasse Scamander + Course Hagrid) ──
+async function scenarioFarmingQuests() {
+  console.log('\n── Scénario : quêtes répétables de farming ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : templates présents + flag farming
+  const t1 = await page.evaluate(() => {
+    const chasse = QUEST_TEMPLATES.find(q => q.id === 'chasse_magizoologiste');
+    const course = QUEST_TEMPLATES.find(q => q.id === 'course_hagrid');
+    return {
+      chasseFarming: !!(chasse && chasse.farming),
+      courseFarming: !!(course && course.farming),
+      chasseEveryLvls: chasse?.repeatable?.everyLevels,
+      courseEveryLvls: course?.repeatable?.everyLevels,
+      hasRollFn:       typeof _rollFarmingTarget === 'function',
+      hasSpawnFn:      typeof spawnFarmingMonsters === 'function',
+      hasPreviewFn:    typeof _previewFarmingOffer === 'function',
+      blacklistOk:     FARMING_KILL_BLACKLIST.has('bellatrix') &&
+                       FARMING_KILL_BLACKLIST.has('voldemort_revenu')
+    };
+  });
+  console.log('  T1 templates:', t1);
+  assert(t1.chasseFarming,   'chasse_magizoologiste doit porter farming:true');
+  assert(t1.courseFarming,   'course_hagrid doit porter farming:true');
+  assert(t1.chasseEveryLvls === 2, 'chasse : cooldown 2 niveaux');
+  assert(t1.courseEveryLvls === 3, 'course : cooldown 3 niveaux');
+  assert(t1.hasRollFn,       '_rollFarmingTarget absent');
+  assert(t1.hasSpawnFn,      'spawnFarmingMonsters absent');
+  assert(t1.hasPreviewFn,    '_previewFarmingOffer absent');
+  assert(t1.blacklistOk,     'FARMING_KILL_BLACKLIST incomplète');
+
+  // T2 : PNJ random Scamander/Hagrid présents et propres
+  const t2 = await page.evaluate(() => {
+    const sc = NPCS.find(n => n.id === 'scamander_random');
+    const hg = NPCS.find(n => n.id === 'hagrid_random');
+    return {
+      scOk: !!(sc && sc.random && sc.minFloor === 3 && sc.maxFloor === 8 &&
+               sc.questsGiven && sc.questsGiven.includes('chasse_magizoologiste')),
+      hgOk: !!(hg && hg.random && hg.minFloor === 4 && hg.maxFloor === 9 &&
+               hg.questsGiven && hg.questsGiven.includes('course_hagrid'))
+    };
+  });
+  console.log('  T2 random NPCs:', t2);
+  assert(t2.scOk, 'scamander_random mal configuré');
+  assert(t2.hgOk, 'hagrid_random mal configuré');
+
+  // T3 : Accepter la chasse à l'étage 5 → tirage + spawn effectif
+  const t3 = await page.evaluate(() => {
+    currentFloor = 5;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const accepted = acceptQuest('chasse_magizoologiste');
+    const q = activeQuests.find(x => x.id === 'chasse_magizoologiste');
+    let totalMobs = 0, targetMobs = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) {
+        const m = enemyMap[y][x];
+        if (!m) continue;
+        totalMobs++;
+        if (q && m.id === q.objectives[0].monsterId) targetMobs++;
+      }
+    return {
+      accepted, totalMobs, targetMobs,
+      monsterId: q?.objectives[0]?.monsterId,
+      amount:    q?.objectives[0]?.amount,
+      hasDynamic: !!(q && q._dynamicTarget),
+      blacklisted: q ? FARMING_KILL_BLACKLIST.has(q.objectives[0].monsterId) : false,
+      rewardXp:    q?.reward?.xp,
+      rewardGold:  q?.reward?.gold
+    };
+  });
+  console.log('  T3 chasse accepted:', t3);
+  assert(t3.accepted,                'chasse_magizoologiste doit être acceptable étage 5');
+  assert(t3.monsterId,               'objectif.monsterId doit être tiré');
+  assert(t3.amount >= 4 && t3.amount <= 8, `amount attendu 4-8, got ${t3.amount}`);
+  assert(t3.hasDynamic,              '_dynamicTarget doit être renseigné');
+  assert(!t3.blacklisted,            'cible blacklist (bellatrix/voldemort) tirée — interdit');
+  assert(t3.targetMobs >= 1,         'au moins une cible doit être spawnée');
+  assert(typeof t3.rewardXp === 'number' && t3.rewardXp > 0, 'reward.xp invalide');
+  assert(typeof t3.rewardGold === 'number' && t3.rewardGold > 0, 'reward.gold invalide');
+
+  // T4 : Accepter la course à l'étage 6 → tirage item dans le pool autorisé
+  const t4 = await page.evaluate(() => {
+    currentFloor = 6;
+    const accepted = acceptQuest('course_hagrid');
+    const q = activeQuests.find(x => x.id === 'course_hagrid');
+    const allowed = ['mandragore', 'choco_sorcier', 'potion_s', 'potion_m'];
+    return {
+      accepted,
+      itemId:    q?.objectives[0]?.itemId,
+      amount:    q?.objectives[0]?.amount,
+      isAllowed: q ? allowed.includes(q.objectives[0].itemId) : false,
+      descHasName: !!(q && q.desc && q.desc.length > 10)
+    };
+  });
+  console.log('  T4 course accepted:', t4);
+  assert(t4.accepted,        'course_hagrid doit être acceptable étage 6');
+  assert(t4.itemId,          'objectif.itemId doit être tiré');
+  assert(t4.amount >= 3 && t4.amount <= 5, `amount attendu 3-5, got ${t4.amount}`);
+  assert(t4.isAllowed,       `itemId tiré hors pool autorisé : ${t4.itemId}`);
+  assert(t4.descHasName,     'desc dynamique doit être renseignée');
+
+  // T5 : Refus hors fourchette d'étage
+  const t5 = await page.evaluate(() => {
+    // Reset l'état de la quête en la marquant complétée pour qu'elle soit
+    // potentiellement répétable, puis on simule une nouvelle tentative
+    // hors fourchette.
+    activeQuests = activeQuests.filter(q => q.id !== 'chasse_magizoologiste');
+    completedQuests.delete('chasse_magizoologiste');
+    availableQuests.add('chasse_magizoologiste');
+    currentFloor = 1;  // hors fourchette (3-8)
+    const accepted = acceptQuest('chasse_magizoologiste');
+    return {
+      accepted,
+      stillAvailable: availableQuests.has('chasse_magizoologiste'),
+      notActive: !activeQuests.find(q => q.id === 'chasse_magizoologiste')
+    };
+  });
+  console.log('  T5 hors fourchette:', t5);
+  assert(!t5.accepted,       'acceptation doit échouer hors fourchette');
+  assert(t5.notActive,       'chasse ne doit pas devenir active hors fourchette');
+  assert(t5.stillAvailable,  'chasse doit rester offrable pour plus tard');
+
+  // T6 : Preview interpolable dans le dialogue (offer)
+  const t6 = await page.evaluate(() => {
+    currentFloor = 4;
+    _clearFarmingPreviews();
+    const preview = _previewFarmingOffer('chasse_magizoologiste');
+    const raw = "J'ai repéré des {target} qui posent problème par ici. Veux-tu en éliminer {amount} ?";
+    const interpolated = _interpolateFarmingText(raw, 'chasse_magizoologiste', 'offer');
+    return {
+      hasPreview:     !!preview,
+      hasTargetName:  !!(preview && preview.target && preview.target.name),
+      interpolated,
+      hasNoPlaceholder: !/{target}|{amount}/.test(interpolated)
+    };
+  });
+  console.log('  T6 preview interpolation:', t6);
+  assert(t6.hasPreview,        'preview manquant à floor 4');
+  assert(t6.hasTargetName,     'preview sans nom de cible');
+  assert(t6.hasNoPlaceholder,  `placeholders non interpolés : ${t6.interpolated}`);
+
+  // T7 : Cooldown répétable (every 2 niveaux pour la chasse)
+  const t7 = await page.evaluate(() => {
+    // Force une remise pour amorcer lastQuestCompletion
+    currentFloor = 5;
+    activeQuests = activeQuests.filter(q => q.id !== 'chasse_magizoologiste');
+    availableQuests.add('chasse_magizoologiste');
+    completedQuests.delete('chasse_magizoologiste');
+    acceptQuest('chasse_magizoologiste');
+    const q = activeQuests.find(x => x.id === 'chasse_magizoologiste');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    turnInQuestById('chasse_magizoologiste');
+    const completedAfter = completedQuests.has('chasse_magizoologiste');
+    const offerableImmediately = isQuestOfferable('chasse_magizoologiste');
+    const tpl = QUEST_TEMPLATES.find(q => q.id === 'chasse_magizoologiste');
+    player.level = (lastQuestCompletion['chasse_magizoologiste'] || 0) + tpl.repeatable.everyLevels;
+    const offerableAfterCd = isQuestOfferable('chasse_magizoologiste');
+    return { completedAfter, offerableImmediately, offerableAfterCd };
+  });
+  console.log('  T7 cooldown:', t7);
+  assert(t7.completedAfter,         'chasse doit être marquée completed après remise');
+  assert(!t7.offerableImmediately,  'chasse ne doit pas être ré-offrable immédiatement');
+  assert(t7.offerableAfterCd,       'chasse doit redevenir offrable après cooldown');
+
+  // T8 : Voix mappées (clés _VOICE_SAMPLES présentes)
+  const t8 = await page.evaluate(() => {
+    const sm = AudioSystem._VOICE_SAMPLES;
+    return {
+      scOffer:  !!sm['scamander_chasse_offer_1'],
+      scActive: !!sm['scamander_chasse_active_1'],
+      scReady:  !!sm['scamander_chasse_ready_1'],
+      hgOffer:  !!sm['hagrid_course_offer_1'],
+      hgActive: !!sm['hagrid_course_active_1'],
+      hgReady:  !!sm['hagrid_course_ready_1']
+    };
+  });
+  console.log('  T8 voice keys:', t8);
+  assert(t8.scOffer && t8.scActive && t8.scReady, 'clés audio Scamander manquantes');
+  assert(t8.hgOffer && t8.hgActive && t8.hgReady, 'clés audio Hagrid manquantes');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Quêtes de farming OK');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -4732,7 +4922,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

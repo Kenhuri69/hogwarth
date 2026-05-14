@@ -36,6 +36,21 @@ function getNpcQuestState(npc) {
   return 'done';
 }
 
+// Retourne vrai si le PNJ propose actuellement une quête farming offerable
+// (utilisé par la minimap pour appliquer un marqueur rouge clignotant
+// distinct du marqueur or commun). Inclut le state.offer côté quest.
+function _npcHasFarmingOffer(npcId) {
+  if (!npcId) return false;
+  const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
+  if (!npc || !Array.isArray(npc.questsGiven)) return false;
+  for (const qid of npc.questsGiven) {
+    const tpl = (typeof getQuestTemplate === 'function') ? getQuestTemplate(qid) : null;
+    if (!tpl || !tpl.farming) continue;
+    if (typeof isQuestOfferable === 'function' && isQuestOfferable(qid)) return true;
+  }
+  return false;
+}
+
 // Indicateur "!" / "?" / "" affiché au-dessus du marqueur 3D.
 function getNpcMarkerSign(npcId) {
   if (!npcId) return '';
@@ -114,6 +129,27 @@ function _isSpecialActionSpent(npc) {
   return (typeof usedSpecialNpcs !== 'undefined') && usedSpecialNpcs.has(npc.id);
 }
 
+// Interpole {target} et {amount} dans une chaîne ou tableau de chaînes,
+// à partir de la cible dynamique d'une quête farming (preview ou
+// active). No-op si pas de cible (autres dialogues).
+function _interpolateFarmingText(raw, qid, state) {
+  if (!raw || !qid) return raw;
+  let target = null;
+  // État `offer` : preview pré-tirée par _previewFarmingOffer (quests.js)
+  if (state === 'offer' && typeof _previewFarmingOffer === 'function') {
+    const preview = _previewFarmingOffer(qid);
+    if (preview) target = preview.target;
+  } else if (typeof activeQuests !== 'undefined') {
+    const q = activeQuests.find(x => x.id === qid);
+    if (q && q._dynamicTarget) target = q._dynamicTarget;
+  }
+  if (!target) return raw;
+  const apply = (s) => String(s)
+    .replace(/\{target\}/g, target.name || '')
+    .replace(/\{amount\}/g, String(target.amount || ''));
+  return Array.isArray(raw) ? raw.map(apply) : apply(raw);
+}
+
 // Retourne toujours un tableau de pages (array<string>). Un dialogue
 // peut être déclaré comme string (1 page) ou comme array (multi-page).
 // Les PNJ peuvent fournir un override par quête via `dialoguesByQuest`.
@@ -150,7 +186,11 @@ function _npcDialogPages(npc, state) {
           : (d.idle || d.greeting || '...');
     }
   }
-  return Array.isArray(raw) ? raw.slice() : [raw];
+  const pages = Array.isArray(raw) ? raw.slice() : [raw];
+  // Interpolation des placeholders {target} / {amount} pour les quêtes
+  // farming. No-op pour les autres dialogues (raw renvoyé tel quel).
+  const interpolated = _interpolateFarmingText(pages, qid, state);
+  return Array.isArray(interpolated) ? interpolated : [interpolated];
 }
 
 function _npcDialogActions(npc, state) {
@@ -320,11 +360,21 @@ const _DUMBLEDORE_QID_SUFFIX = {
   dumbledore_revelation: 'revelation',
 };
 function _voiceKeyForPage(npcId, state, qid, pageIdx) {
-  if (npcId !== 'dumbledore') return null;
-  const suffix = _DUMBLEDORE_QID_SUFFIX[qid];
-  if (!suffix) return null;
   if (state !== 'offer' && state !== 'active' && state !== 'ready') return null;
-  return `dumbledore_${suffix}_${state}_${pageIdx + 1}`;
+  if (npcId === 'dumbledore') {
+    const suffix = _DUMBLEDORE_QID_SUFFIX[qid];
+    if (!suffix) return null;
+    return `dumbledore_${suffix}_${state}_${pageIdx + 1}`;
+  }
+  // Quêtes farming : un OGG générique par PNJ + état, partagé entre tous
+  // les tirages (cf. .claude/plans/farming-quests.md §9).
+  if (qid === 'chasse_magizoologiste' && (npcId === 'scamander_random' || npcId === 'scamander')) {
+    return `scamander_chasse_${state}_${pageIdx + 1}`;
+  }
+  if (qid === 'course_hagrid' && (npcId === 'hagrid_random' || npcId === 'hagrid')) {
+    return `hagrid_course_${state}_${pageIdx + 1}`;
+  }
+  return null;
 }
 
 // Stoppe la voix précédente et lance celle de la page courante.
