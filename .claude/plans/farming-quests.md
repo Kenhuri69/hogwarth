@@ -318,8 +318,13 @@ si les OGG ne sont pas livrés.
 - [ ] A10 — Commit + push sur `claude/add-farming-quests-9LL9P`
 
 ### Phase B — Voix (Utilisateur, hors PR)
-- [ ] B1 — Générer 6 OGG via ElevenLabs avec les scripts génériques §2.
-- [ ] B2 — Déposer dans `audio/voice/` (nommage exact §2).
+- [x] B1 — Générer 6 OGG via ElevenLabs avec les scripts génériques §2.
+- [x] B2 — Déposer dans `audio/voice/` (nommage exact §2).
+
+### Phase C — Intégration audio (Claude)
+- [x] C1 — MP3 originaux dans `audio/voice/_raw/`
+- [x] C2 — Conversion `ffmpeg -ac 1 -ar 22050 -c:a libvorbis -q:a 3` + fade-out 300 ms
+- [x] C3 — 6 OGG livrés : 11-27 KB par fichier (115 KB cumulés, sous le budget 300 KB)
 
 ---
 
