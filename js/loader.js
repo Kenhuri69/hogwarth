@@ -88,6 +88,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'defeatedCellsByFloor',source: 'state.js',       kind: 'obj' },
     { name: 'floorKillCount',     source: 'state.js',        kind: 'obj' },
     { name: 'visitedFloors',      source: 'state.js',        kind: 'obj' },
+    { name: 'portusOocCooldown',  source: 'state.js',        kind: 'obj' },
+    { name: 'portusFightCooldown',source: 'state.js',        kind: 'obj' },
     { name: 'STAT_POINTS_PER_LEVEL',source: 'data.js',       kind: 'obj' },
     { name: 'STAT_POINT_EFFECTS', source: 'data.js',         kind: 'obj' },
     { name: 'allocateStatPoint',  source: 'ui.js',           kind: 'fn'  },

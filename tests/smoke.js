@@ -5224,12 +5224,105 @@ async function scenarioTeleportation() {
     return {
       xpDelta: player.xp - xpBefore,
       enemiesAfter: enemyGroup.length,
-      beforeCount
+      beforeCount,
+      fightCd: portusFightCooldown
     };
   });
   console.log('  T7 banish →', t7);
   assert(t7.enemiesAfter < t7.beforeCount,         'Un ennemi doit avoir été retiré du combat');
   assert(t7.xpDelta === 0,                         'Aucun XP gagné via Portus');
+  assert(t7.fightCd === 3,                         `Cooldown combat doit être armé à 3 (vu ${t7.fightCd})`);
+
+  // T8 : tenter de relancer Portus en combat est bloqué tant que CD > 0.
+  const t8 = await page.evaluate(() => {
+    // Restaurer SP et tenter de re-caster Portus pendant un autre combat dummy.
+    const enemy = {
+      id: 'test_dummy_3', name: 'Cobaye 3', icon: '🎯', danger: 3,
+      hp: 10, atk: 1, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 1, gold: 0, abilities: [], drops: [], resist: [], weak: [], desc: 'Test'
+    };
+    // Forcer end-of-fight gracefully d'abord (gagner le combat précédent).
+    while (enemyGroup.length > 0) enemyGroup.shift();
+    if (typeof checkAllEnemiesDead === 'function') checkAllEnemiesDead();
+    const cdAfterWin = portusFightCooldown;
+    player.sp = player.spMax = 200;
+    startBattle(enemy);
+    const spBefore = player.sp;
+    castSpellInBattle('Portus', -1);
+    return {
+      cdAfterWin,
+      blocked: player.sp === spBefore,
+      cdNow:   portusFightCooldown
+    };
+  });
+  console.log('  T8 combat CD →', t8);
+  assert(t8.cdAfterWin === 2,                      `Après 1 win, CD doit valoir 2 (vu ${t8.cdAfterWin})`);
+  assert(t8.blocked,                               'Cast Portus en CD doit être no-op (PM non décomptés)');
+  assert(t8.cdNow === 2,                           'CD reste à 2 (pas re-armé)');
+
+  // T9 : cooldown hors combat décrémente sur transition d'étage.
+  const t9 = await page.evaluate(() => {
+    // Sortie de combat propre.
+    while (enemyGroup.length > 0) enemyGroup.shift();
+    if (typeof checkAllEnemiesDead === 'function') checkAllEnemiesDead();
+    inBattle = false;
+    document.getElementById('encounter-overlay').style.display = 'none';
+    document.body.classList.remove('in-battle');
+    // Simuler un cooldown OOC restant et le faire baisser.
+    portusOocCooldown = 2;
+    visitedFloors.add(currentFloor);
+    const before = portusOocCooldown;
+    // goUp diminue d'un, goDeeper diminue d'un.
+    if (currentFloor > 1) goUp();
+    return { before, afterStep: portusOocCooldown };
+  });
+  // goUp est async (transition).
+  await page.waitForFunction(() => portusOocCooldown <= 1, { timeout: 3500 });
+  console.log('  T9 OOC CD step →', t9);
+  assert(t9.before === 2,                          'CD initial doit être 2');
+  // afterStep peut être 2 (avant transition) ou 1 (après) — on a déjà attendu.
+  const t9b = await page.evaluate(() => portusOocCooldown);
+  assert(t9b === 1,                                `Après 1 goUp, CD OOC doit valoir 1 (vu ${t9b})`);
+
+  // T10 : tenter Portus OOC avec CD > 0 est bloqué.
+  const t10 = await page.evaluate(() => {
+    portusOocCooldown = 2;
+    player.sp = player.spMax = 200;
+    player.spells.push('Portus');  // s'assurer connu
+    const spBefore = player.sp;
+    openOutOfCombatTeleport(0);
+    return {
+      blocked: player.sp === spBefore,
+      modalShown: document.getElementById('spell-modal').style.display === 'flex'
+    };
+  });
+  console.log('  T10 OOC bloqué →', t10);
+  assert(t10.blocked,                              'Portus OOC avec CD > 0 ne doit pas consommer de PM');
+
+  // T11 : événement d'arrivée — exécution déterministe pour valider le helper.
+  const t11 = await page.evaluate(() => {
+    // Forcer le tirage positif (1ère branche < 0.5 puis 1ère branche < 0.5).
+    const origRandom = Math.random;
+    // séquence : [0.05 (<0.12 trigger), 0.1 (<0.5 positif)]
+    let seq = [0.05, 0.1]; let i = 0;
+    Math.random = () => (i < seq.length ? seq[i++] : origRandom());
+    party.forEach(c => { c.hp = 1; });
+    const beforeHp = party.map(c => c.hp);
+    _rollPortusArrivalEvent();
+    const afterHp = party.map(c => c.hp);
+    // Forcer maintenant un piège : [0.05, 0.9 (>0.5 négatif), 0.1 (<0.5 piège)]
+    seq = [0.05, 0.9, 0.1]; i = 0; Math.random = () => (i < seq.length ? seq[i++] : origRandom());
+    party.forEach(c => { c.hp = 50; c.hpMax = 50; });
+    _rollPortusArrivalEvent();
+    const afterTrap = party.map(c => c.hp);
+    Math.random = origRandom;
+    return { beforeHp, afterHp, afterTrap };
+  });
+  console.log('  T11 event arrivée →', t11);
+  assert(t11.afterHp.some((hp, i) => hp > t11.beforeHp[i]),
+         'Événement positif doit soigner au moins un perso');
+  assert(t11.afterTrap.some(hp => hp < 50),
+         'Piège doit réduire les PV d\'au moins un perso');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

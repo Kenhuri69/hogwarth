@@ -13,6 +13,18 @@ const _PORTUS_BOSS_IDS = new Set([
   'bellatrix', 'voldemort_affaibli', 'voldemort_revenu'
 ]);
 
+// Cooldowns (cf. .claude/plans/teleportation-spell.md §"Itération 2") :
+//   - PORTUS_OOC_CD_TURNS   : transitions d'étage avant réarmement hors combat.
+//   - PORTUS_FIGHT_CD_WINS  : combats à gagner avant réarmement en combat.
+// Les compteurs courants vivent dans state.js (portusOocCooldown,
+// portusFightCooldown) pour être persistés via _serializeState.
+const PORTUS_OOC_CD_TURNS  = 2;
+const PORTUS_FIGHT_CD_WINS = 3;
+
+// Probabilité d'événement à l'arrivée hors combat (12 %), réparti 50/50
+// entre positif (heal HP only) et négatif (piège ou ennemi 50/50).
+const PORTUS_EVENT_CHANCE = 0.12;
+
 // Flag combat — 1 utilisation max par combat. Reset par battle.js — startBattle.
 let _teleportUsedThisFight = false;
 function _resetTeleportFightFlag() { _teleportUsedThisFight = false; }
@@ -106,6 +118,7 @@ function _resolveTeleportPartyChoice() {
   const sel = safeEl('target-selection');
   if (sel) sel.style.display = 'none';
   _teleportUsedThisFight = true;
+  if (typeof portusFightCooldown === 'number') portusFightCooldown = PORTUS_FIGHT_CD_WINS;
   // On marque la fuite réussie ; pas d'XP/loot — endBattle(false) gère ça.
   endBattle(false);
   // Re-positionner sur une case libre du même étage.
@@ -165,6 +178,7 @@ function teleportEnemyAway(enemyIdx) {
     return;
   }
   _teleportUsedThisFight = true;
+  if (typeof portusFightCooldown === 'number') portusFightCooldown = PORTUS_FIGHT_CD_WINS;
   const cell = _pickRandomFreeCell(currentFloor, { avoidPlayer: true });
   if (cell && enemyMap) {
     // Restaure les HP à 100 % au moment du replace (l'ennemi original est consommé).
@@ -193,6 +207,10 @@ function openOutOfCombatTeleport(charIdx) {
   const caster = party[ci] || party[0];
   if (!caster || caster.hp <= 0) {
     addMsg(`${caster ? caster.name : 'Le sorcier'} ne peut pas lancer Portus.`, 'bad');
+    return;
+  }
+  if (typeof portusOocCooldown === 'number' && portusOocCooldown > 0) {
+    addMsg(`Portus se recharge — encore ${portusOocCooldown} transition${portusOocCooldown > 1 ? 's' : ''} d'étage.`, 'bad');
     return;
   }
   const spell = SPELLS.find(s => s.name === 'Portus');
@@ -284,6 +302,7 @@ function teleportOutOfCombat(targetFloor, charIdx) {
   const cost = spell.outOfCombatCost || spell.cost;
   if (caster.sp < cost) { addMsg(`Pas assez de magie pour Portus (${cost} PM).`, 'bad'); return; }
   caster.sp -= cost;
+  if (typeof portusOocCooldown === 'number') portusOocCooldown = PORTUS_OOC_CD_TURNS;
 
   AudioSystem.playSpellCast('Portus');
   AudioSystem.speakSpell('Portus');
@@ -318,26 +337,76 @@ function teleportOutOfCombat(targetFloor, charIdx) {
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
 
-    // 12 % de chance d'un petit bonus (or ou full PV/PM) à l'arrivée.
-    if (Math.random() < 0.12) {
-      if (Math.random() < 0.5) {
-        const gold = 20 + (currentFloor || 1) * 10 + Math.floor(Math.random() * 15);
-        player.gold += gold;
-        addMsg(`✨ La magie du voyage révèle ${gold} Gallions oubliés.`, 'good');
-      } else {
-        party.slice(0, partySize).forEach(c => {
-          if (c.hp > 0) {
-            c.hp = c.hpMax;
-            c.sp = c.spMax;
-          }
-        });
-        addMsg(`✨ Le tourbillon revigore le groupe — PV et PM restaurés.`, 'good');
-      }
-    }
+    // Événement aléatoire à l'arrivée (12 %), réparti 50/50 entre positif
+    // (soin HP) et négatif (50/50 piège / monstre).
+    _rollPortusArrivalEvent();
     updateUI();
     safeCall('autoSave', 'portus-teleport');
   });
   setNarrative(`Le groupe traverse un vortex bleu-violet vers ${locName}...`);
+}
+
+// Évent d'arrivée Portus — 12 % de déclencher, puis 50/50 positif/négatif.
+// - Positif : soin HP only (3 + floor × 5 PV par perso vivant), pas de PM.
+// - Négatif : 50/50 piège (perte HP) ou pop d'un ennemi scalé à l'étage
+//   (déclenche immédiatement startBattle si possible).
+function _rollPortusArrivalEvent() {
+  if (Math.random() >= PORTUS_EVENT_CHANCE) return;
+  if (Math.random() < 0.5) {
+    // Positif — soin HP only.
+    const heal = 3 + (currentFloor || 1) * 5;
+    let healed = 0;
+    party.slice(0, partySize).forEach(c => {
+      if (c.hp <= 0) return;
+      const before = c.hp;
+      c.hp = Math.min(c.hpMax, c.hp + heal);
+      healed += (c.hp - before);
+    });
+    if (healed > 0) {
+      addMsg(`✨ Le vortex restaure ${healed} PV au groupe.`, 'good');
+    } else {
+      addMsg(`✨ Le vortex semblait bénéfique, mais le groupe est déjà au mieux.`, '');
+    }
+    return;
+  }
+  // Négatif — 50/50 piège ou ennemi.
+  if (Math.random() < 0.5) {
+    _portusTriggerTrap();
+  } else {
+    _portusTriggerAmbush();
+  }
+}
+
+function _portusTriggerTrap() {
+  const alive = party.slice(0, partySize).filter(c => c.hp > 0);
+  if (alive.length === 0) return;
+  const target = alive[Math.floor(Math.random() * alive.length)];
+  const dmg = 4 + Math.ceil((currentFloor || 1) * 1.5);
+  target.hp = Math.max(0, target.hp - dmg);
+  addMsg(`💥 Piège runique à l'arrivée — ${target.name} perd ${dmg} PV.`, 'bad');
+  if (typeof setNarrative === 'function') {
+    setNarrative(`Un piège jaillit à l'arrivée — ${target.name} encaisse le choc.`);
+  }
+  if (party.every(c => c.hp <= 0) && typeof triggerDeath === 'function') {
+    triggerDeath('Le vortex de Portus a précipité le groupe dans un piège mortel...');
+  }
+}
+
+function _portusTriggerAmbush() {
+  if (typeof MONSTERS === 'undefined' || typeof scaleMonster !== 'function') return;
+  const ef   = (typeof effectiveFloor === 'function') ? effectiveFloor(currentFloor) : currentFloor;
+  const pool = MONSTERS.filter(m =>
+    m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor) && !_PORTUS_BOSS_IDS.has(m.id)
+  );
+  if (!pool.length) return;
+  const base  = (typeof weightedPick === 'function') ? weightedPick(pool) : pool[0];
+  const enemy = scaleMonster(base, currentFloor);
+  addMsg(`👁️ Le vortex attire l'attention — un ${enemy.name} surgit !`, 'bad');
+  if (typeof setNarrative === 'function') {
+    setNarrative(`Vous arrivez en plein milieu d'une présence hostile...`);
+  }
+  // Déclenche le combat — le startBattle gère renderEnemyGroup + audio.
+  if (typeof startBattle === 'function') startBattle(enemy);
 }
 
 // Exposition globale (pour appels HTML inline et battle-spells.js)

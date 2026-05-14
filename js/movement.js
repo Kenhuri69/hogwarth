@@ -336,6 +336,7 @@ function goDeeper() {
   if (typeof _clearFarmingPreviews === 'function') _clearFarmingPreviews();
   currentFloor++;
   if (typeof visitedFloors !== 'undefined') visitedFloors.add(currentFloor);
+  if (typeof portusOocCooldown === 'number' && portusOocCooldown > 0) portusOocCooldown--;
 
   // Endgame §7.1 : toast narratif à la 1re entrée en étage 11+ post-victoire.
   if (!_darknessToastShown
@@ -374,6 +375,7 @@ function goUp() {
   if (typeof _clearFarmingPreviews === 'function') _clearFarmingPreviews();
   currentFloor--;
   if (typeof visitedFloors !== 'undefined') visitedFloors.add(currentFloor);
+  if (typeof portusOocCooldown === 'number' && portusOocCooldown > 0) portusOocCooldown--;
 
   const locName = LOCATIONS[Math.min(currentFloor - 1, LOCATIONS.length - 1)];
 

@@ -488,14 +488,25 @@ function openSpells(charIdx = 0) {
     // uniquement" pour les autres pour ne pas tromper le joueur.
     const oocCost   = spell.outOfCombatCost || null;
     const isOoc     = isOutOfCombatSpell(spell);
-    const canCastOoc = isOoc && c.sp >= (oocCost || spell.cost);
+    // Cooldown OOC (Portus uniquement pour l'instant). Si > 0, le sort est
+    // affiché mais non cliquable, avec un libellé "se recharge".
+    const cdRemaining = (spell.effect === 'teleport'
+                        && typeof portusOocCooldown === 'number')
+                        ? portusOocCooldown : 0;
+    const canCastOoc = isOoc && cdRemaining === 0 && c.sp >= (oocCost || spell.cost);
     const costLabel = oocCost
       ? `${oocCost} PM <span style="color:#6a5030;font-size:9px">(hors combat)</span>`
       : `${spell.cost} PM`;
-    const hint = isOoc
-      ? (canCastOoc ? '<span style="font-size:9px;color:#6a8030">▶ cliquer pour lancer</span>'
-                    : '<span style="font-size:9px;color:#a04020">PM insuffisants</span>')
-      : '<span style="font-size:9px;color:#6a5030">Combat uniquement</span>';
+    let hint;
+    if (!isOoc) {
+      hint = '<span style="font-size:9px;color:#6a5030">Combat uniquement</span>';
+    } else if (cdRemaining > 0) {
+      hint = `<span style="font-size:9px;color:#a04020">⏳ Se recharge — ${cdRemaining} transition${cdRemaining > 1 ? 's' : ''} d'étage</span>`;
+    } else if (!canCastOoc) {
+      hint = '<span style="font-size:9px;color:#a04020">PM insuffisants</span>';
+    } else {
+      hint = '<span style="font-size:9px;color:#6a8030">▶ cliquer pour lancer</span>';
+    }
     div.innerHTML = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
@@ -557,15 +568,26 @@ function openBattleSpells() {
   for (const sName of c.spells) {
     const spell    = SPELLS.find(s => s.name === sName);
     if (!spell) continue;
-    const canCast  = c.sp >= spell.cost && !spell.locked;
+    // Portus en combat : bloqué si déjà utilisé ce combat OU si cooldown actif.
+    const fightCd = (spell.effect === 'teleport' && typeof portusFightCooldown === 'number')
+                    ? portusFightCooldown : 0;
+    const alreadyUsed = spell.effect === 'teleport'
+                       && typeof _teleportUsedThisFight !== 'undefined'
+                       && _teleportUsedThisFight;
+    const cdBlocked = fightCd > 0 || alreadyUsed;
+    const canCast  = c.sp >= spell.cost && !spell.locked && !cdBlocked;
     const div      = document.createElement('div');
     div.className  = 'spell-item';
     div.style.opacity = canCast ? '1' : '0.5';
+    const cdHint = (spell.effect === 'teleport' && cdBlocked)
+      ? `<div style="font-size:9px;color:#a04020;margin-top:2px">⏳ ${alreadyUsed ? 'déjà utilisé ce combat' : `recharge ${fightCd} combat${fightCd > 1 ? 's' : ''}`}</div>`
+      : '';
     div.innerHTML  = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
         <div class="spell-name">${spell.name}</div>
         <div class="spell-desc">${spell.desc}</div>
+        ${cdHint}
       </div>
       <div class="spell-cost">${spell.cost} PM</div>`;
 

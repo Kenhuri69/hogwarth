@@ -100,3 +100,24 @@ les helpers, et `battle-spells.js` route `effect:"teleport"` vers ces helpers.
   remplacée plus tard par une vraie image si nécessaire.
 - Sur les étages avec très peu de cases libres (cas rare), `_pickRandomFreeFloorCell`
   retourne `null` → message d'échec et remboursement du PM.
+
+## Itération 2 — équilibrage (post-revue)
+
+Après revue : Portus était trop puissant. Ajustements :
+
+- **Bonus 12 % à l'arrivée** désormais 50/50 positif/négatif :
+  - Positif (6 %) : soin **HP only** (3 + niveau d'étage × 5 PV, plafonné par hpMax),
+    pas de full heal, pas de PM restauré.
+  - Négatif (6 %) : 50/50 entre piège (`-X PV` sur un perso random, scalé étage)
+    et apparition d'un ennemi (combat immédiat avec un monstre éligible à
+    l'étage d'arrivée).
+- **Cooldown hors combat** : 2 transitions d'étage (escaliers, `goDeeper`
+  OU `goUp`) avant de pouvoir relancer Portus hors combat. Un compteur
+  `portusOocCooldown` est décrémenté à chaque transition.
+- **Cooldown en combat** : 3 combats gagnés (`endBattle(won=true)`) avant
+  de pouvoir relancer Portus en combat. Compteur `portusFightCooldown`.
+- Les deux compteurs sont persistés dans le save (`_serializeState` /
+  `_applyState`) et reset à `startGame`.
+- L'UI affiche le cooldown restant à la place du coût PM quand le sort
+  est en attente.
+

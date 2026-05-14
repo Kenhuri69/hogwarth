@@ -212,6 +212,8 @@ function _serializeState() {
                           .map(([f, set]) => [f, Array.from(set)]),
     floorKillCount: Array.from(floorKillCount.entries()),
     visitedFloors:  Array.from(visitedFloors),
+    portusOocCooldown,
+    portusFightCooldown,
     npcPlacements: Array.from(npcPlacements.entries()),
     seenNpcs:      Array.from(seenNpcs),
     availableQuests: Array.from(availableQuests),
@@ -403,6 +405,8 @@ function _applyState(gs) {
   // visitedFloors : fallback sur l'étage courant pour les saves antérieures.
   visitedFloors = new Set(gs.visitedFloors || [currentFloor || 1]);
   if (currentFloor) visitedFloors.add(currentFloor);
+  portusOocCooldown   = (typeof gs.portusOocCooldown   === 'number') ? gs.portusOocCooldown   : 0;
+  portusFightCooldown = (typeof gs.portusFightCooldown === 'number') ? gs.portusFightCooldown : 0;
   npcPlacements = new Map(gs.npcPlacements || []);
   seenNpcs      = new Set(gs.seenNpcs || []);
 

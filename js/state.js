@@ -176,6 +176,16 @@ let floorKillCount = new Map();
 // Persisté dans le save.
 let visitedFloors = new Set([1]);
 
+// Cooldowns du sort Portus (cf. .claude/plans/teleportation-spell.md §"Itération 2").
+//  - portusOocCooldown   : transitions d'étage (escaliers) restantes avant
+//                          de pouvoir relancer Portus hors combat. Décrémenté
+//                          par goDeeper/goUp.
+//  - portusFightCooldown : combats gagnés restants avant de pouvoir relancer
+//                          Portus en combat. Décrémenté par endBattle(won=true).
+// Persistés dans le save. Reset à startGame.
+let portusOocCooldown   = 0;
+let portusFightCooldown = 0;
+
 // PNJ placés sur l'étage courant : Map "x,y" → npcId.
 // Recalculé à chaque génération d'étage, mis en cache dans floorDungeons.
 let npcPlacements = new Map();

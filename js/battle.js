@@ -445,6 +445,10 @@ function endBattle(won) {
       if (!defeatedCellsByFloor.has(currentFloor)) defeatedCellsByFloor.set(currentFloor, new Set());
       defeatedCellsByFloor.get(currentFloor).add(`${playerX},${playerY}`);
     }
+    // Décrémente le cooldown combat de Portus (réarme après N victoires).
+    if (typeof portusFightCooldown === 'number' && portusFightCooldown > 0) {
+      portusFightCooldown--;
+    }
     // Compteur de kills cumulés par étage (scaling progressif de la
     // difficulté — cf. rollGroupSize). 1 monstre tué = +1.
     if (typeof floorKillCount !== 'undefined' && typeof currentFloor === 'number') {

@@ -286,6 +286,10 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
       addMsg('Portus déjà utilisé dans ce combat.', 'bad');
       return;
     }
+    if (typeof portusFightCooldown === 'number' && portusFightCooldown > 0) {
+      addMsg(`Portus se recharge — encore ${portusFightCooldown} combat${portusFightCooldown > 1 ? 's' : ''} à gagner.`, 'bad');
+      return;
+    }
     char.sp -= spell.cost;
     AudioSystem.playSpellCast(spell.name);
     AudioSystem.speakSpell(spell.name);
