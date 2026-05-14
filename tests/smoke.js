@@ -5086,6 +5086,159 @@ async function scenarioGuardAndFerula() {
   console.log('  ✅ Garde + Ferula conformes');
 }
 
+// ── Scénario : Portus (téléportation) ────────────────────────
+// Vérifie : visitedFloors persisté, livre_portus dispo en boutique
+// floor 6+, sort appris via le livre, lancement hors combat (changement
+// d'étage + PM décompté), lancement en combat (overlay A/B), garde-fou
+// "1 utilisation par combat".
+
+async function scenarioTeleportation() {
+  console.log('\n── Scénario : Portus (téléportation) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : visitedFloors initialisé à {1} et grandit avec goDeeper.
+  const t1 = await page.evaluate(() => {
+    const initial = Array.from(visitedFloors);
+    // Marquer artificiellement 2 étages comme visités (sans descendre vraiment).
+    visitedFloors.add(2);
+    visitedFloors.add(3);
+    return { initial, after: Array.from(visitedFloors).sort((a,b)=>a-b) };
+  });
+  console.log('  T1 visitedFloors →', t1);
+  assert(t1.initial.includes(1),                   'visitedFloors doit contenir l\'étage 1 au démarrage');
+  assert(t1.after.includes(2) && t1.after.includes(3), 'add() doit alimenter visitedFloors');
+
+  // T2 : le livre_portus est en boutique à floor 6 et achetable.
+  const t2 = await page.evaluate(() => {
+    currentFloor = 6;
+    player.gold = 5000;
+    openShop();
+    const grid  = document.getElementById('shop-grid');
+    const found = Array.from(grid.querySelectorAll('.shop-item')).find(el =>
+      el.dataset.itemId === 'livre_portus'
+    );
+    return { hasEntry: !!found, price: found ? found.querySelector('.shop-price').textContent : null };
+  });
+  console.log('  T2 shop →', t2);
+  assert(t2.hasEntry,                              'livre_portus doit apparaître en boutique floor 6+');
+  assert(/2800/.test(t2.price || ''),              'livre_portus doit coûter 2800G');
+
+  // T3 : achat + apprentissage automatique → sort dans player.spells.
+  const t3 = await page.evaluate(() => {
+    closeModal('shop-modal');
+    const livre = ITEMS.find(i => i.id === 'livre_portus');
+    player.inventory.push({ ...livre });
+    const idx = player.inventory.findIndex(i => i.id === 'livre_portus');
+    useItem(idx, false);   // hors combat → apprend Portus
+    return {
+      knowsPortus: player.spells.includes('Portus'),
+      bookGone:    !player.inventory.some(i => i.id === 'livre_portus')
+    };
+  });
+  console.log('  T3 apprentissage →', t3);
+  assert(t3.knowsPortus,                           'Portus doit être enseigné après usage du livre');
+  assert(t3.bookGone,                              'Le livre doit être consommé');
+
+  // T4 : modale Sorts hors combat propose un bouton cliquable pour Portus.
+  const t4 = await page.evaluate(() => {
+    player.spMax = 100;
+    player.sp    = 100;
+    openSpells(0);
+    const items = Array.from(document.querySelectorAll('#spell-list .spell-item'));
+    const portus = items.find(el => /Portus/.test(el.textContent));
+    return {
+      hasPortusEntry: !!portus,
+      isClickable:    !!(portus && typeof portus.onclick === 'function')
+    };
+  });
+  console.log('  T4 modale sorts →', t4);
+  assert(t4.hasPortusEntry,                        'Portus doit apparaître dans la modale Sorts');
+  assert(t4.isClickable,                           'Entrée Portus doit être cliquable hors combat');
+
+  // T5 : téléportation hors combat → changement d'étage + PM décomptés.
+  const t5 = await page.evaluate(() => {
+    closeModal('spell-modal');
+    // Préparer un étage cible cache.
+    visitedFloors.add(2);
+    player.spMax = 100;
+    player.sp    = 100;
+    const before = { floor: currentFloor, sp: player.sp };
+    // Stubber `confirm` pour éviter le prompt.
+    window.confirm = () => true;
+    teleportOutOfCombat(2, 0);
+    return {
+      before,
+      floor: currentFloor,
+      sp:    player.sp,
+      cost:  SPELLS.find(s => s.name === 'Portus').outOfCombatCost
+    };
+  });
+  console.log('  T5 hors combat →', t5);
+  // Le _floorTransition est async (1400 ms). On vérifie après attente.
+  await page.waitForFunction(() => currentFloor === 2, { timeout: 3500 });
+  const t5b = await page.evaluate(() => ({ floor: currentFloor, sp: player.sp }));
+  console.log('  T5b apres transition →', t5b);
+  assert(t5b.floor === 2,                          'Le joueur doit être à l\'étage 2 après Portus');
+  assert(t5.sp === t5.before.sp - t5.cost,         `PM doivent être décomptés (avant ${t5.before.sp}, après ${t5.sp}, coût ${t5.cost})`);
+
+  // T6 : lancement en combat ouvre l'overlay A/B et consomme les PM.
+  const t6 = await page.evaluate(() => {
+    // Démarrer un combat dummy contre 2 ennemis pour activer l'option ennemi.
+    const enemy = {
+      id: 'test_dummy_1', name: 'Cobaye', icon: '🎯', danger: 3,
+      hp: 30, atk: 1, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 0, gold: 0, abilities: [], drops: [], resist: [], weak: [], desc: 'Test'
+    };
+    startBattle(enemy);
+    // Forcer 2 ennemis (rollGroupSize peut renvoyer 1 selon floor).
+    if (enemyGroup.length < 2) {
+      enemyGroup.push({ ...enemy, id: 'test_dummy_2', name: 'Cobaye 2',
+                        currentHp: enemy.hp, disarmed: 0, statusEffects: [] });
+    }
+    player.sp = player.spMax;
+    const spBefore = player.sp;
+    castSpellInBattle('Portus', -1);
+    const sel = document.getElementById('target-selection');
+    return {
+      spBefore, spAfter: player.sp,
+      overlayShown: sel && sel.style.display === 'flex',
+      hasPartyBtn:  !!Array.from(document.querySelectorAll('#target-buttons button')).find(b => /groupe/i.test(b.textContent)),
+      hasEnemyBtn:  !!Array.from(document.querySelectorAll('#target-buttons button')).find(b => /ennemi/i.test(b.textContent))
+    };
+  });
+  console.log('  T6 combat overlay →', t6);
+  assert(t6.overlayShown,                          'Overlay A/B doit être affiché');
+  assert(t6.hasPartyBtn && t6.hasEnemyBtn,         'Boutons groupe + ennemi doivent être présents');
+  assert(t6.spAfter === t6.spBefore - 52,          'PM combat (52) doivent être consommés');
+
+  // T7 : choisir "ennemi" bannit un ennemi du combat sans XP.
+  const t7 = await page.evaluate(() => {
+    const xpBefore = player.xp;
+    const beforeCount = enemyGroup.length;
+    _resolveTeleportEnemyChoice();
+    // Cas chemin direct (un seul ennemi non-boss restant) → bannit immédiatement.
+    // Sinon affiche un sub-sélecteur ; on clique le premier bouton.
+    const subBtn = document.querySelector('#target-buttons button[onclick^="teleportEnemyAway"]');
+    if (subBtn) subBtn.click();
+    return {
+      xpDelta: player.xp - xpBefore,
+      enemiesAfter: enemyGroup.length,
+      beforeCount
+    };
+  });
+  console.log('  T7 banish →', t7);
+  assert(t7.enemiesAfter < t7.beforeCount,         'Un ennemi doit avoir été retiré du combat');
+  assert(t7.xpDelta === 0,                         'Aucun XP gagné via Portus');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Portus OK (shop + apprentissage + hors combat + combat)');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -5143,7 +5296,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

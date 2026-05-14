@@ -120,7 +120,9 @@ const ITEM_ICON_REGISTRY = {
   livre_taranta:      'img/icons/items/livre_taranta.png',
   livre_maledictus:   'img/icons/items/livre_maledictus.png',
   livre_crucio:       'img/icons/items/livre_crucio.png',
-  livre_morsmordre:   'img/icons/items/livre_morsmordre.png'
+  livre_morsmordre:   'img/icons/items/livre_morsmordre.png',
+  // Cf. .claude/plans/teleportation-spell.md — icône reprise du sort.
+  livre_portus:       'img/icons/items/livre_portus.png'
 };
 
 // Mapping painterly pipeline (étape 9 — voir SVG_PLAN / tools/icon_factory.py)
@@ -209,7 +211,8 @@ const SPELL_ICON_REGISTRY = {
   'Tarantallegra':      'img/icons/spells/tarantallegra.png',
   'Maledictus':         'img/icons/spells/maledictus.png',
   'Crucio':             'img/icons/spells/crucio.png',
-  'Morsmordre':         'img/icons/spells/morsmordre.png'
+  'Morsmordre':         'img/icons/spells/morsmordre.png',
+  'Portus':             'img/icons/spells/teleportation.png'
 };
 
 // ── API publique ────────────────────────────────────────────

@@ -170,6 +170,12 @@ let defeatedCellsByFloor = new Map();
 // cap +40 %), n ≥ 5 active la prob trio (+10%/(n-4), cap +40 %). Persisté.
 let floorKillCount = new Map();
 
+// Étages déjà visités par le joueur — alimentés par goDeeper/goUp et le
+// démarrage de partie (1 = couloir d'entrée). Consommés par la modale de
+// téléportation hors combat (Portus) pour proposer la liste des destinations.
+// Persisté dans le save.
+let visitedFloors = new Set([1]);
+
 // PNJ placés sur l'étage courant : Map "x,y" → npcId.
 // Recalculé à chaque génération d'étage, mis en cache dans floorDungeons.
 let npcPlacements = new Map();

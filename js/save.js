@@ -211,6 +211,7 @@ function _serializeState() {
     defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
                           .map(([f, set]) => [f, Array.from(set)]),
     floorKillCount: Array.from(floorKillCount.entries()),
+    visitedFloors:  Array.from(visitedFloors),
     npcPlacements: Array.from(npcPlacements.entries()),
     seenNpcs:      Array.from(seenNpcs),
     availableQuests: Array.from(availableQuests),
@@ -399,6 +400,9 @@ function _applyState(gs) {
     (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])
   );
   floorKillCount = new Map(gs.floorKillCount || []);
+  // visitedFloors : fallback sur l'étage courant pour les saves antérieures.
+  visitedFloors = new Set(gs.visitedFloors || [currentFloor || 1]);
+  if (currentFloor) visitedFloors.add(currentFloor);
   npcPlacements = new Map(gs.npcPlacements || []);
   seenNpcs      = new Set(gs.seenNpcs || []);
 

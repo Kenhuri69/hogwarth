@@ -145,6 +145,7 @@ function startBattle(baseEnemyData) {
   currentBattleChar = 0;
   pendingAction     = null;
   pendingSpell      = null;
+  if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 
   // Générer un groupe de 1-3 ennemis selon l'étage
   const size = rollGroupSize();

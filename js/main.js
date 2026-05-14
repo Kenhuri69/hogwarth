@@ -242,6 +242,7 @@ async function startGame(count = 2) {
   generateDungeon(1);
   floorDungeons = {};   // reset du cache à chaque nouvelle partie
   searchedCells = new Set();
+  visitedFloors = new Set([1]);
   // Note : seenNpcs / activeQuests / availableQuests / completedQuests
   // sont déjà initialisés par chooseHouse() AVANT l'intro Dumbledore
   // (sinon _finishIntro serait écrasée). Ne pas les reset ici.

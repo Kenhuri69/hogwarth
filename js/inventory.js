@@ -483,16 +483,66 @@ function openSpells(charIdx = 0) {
     if (!spell) continue;
     const div = document.createElement('div');
     div.className = 'spell-item';
+    // Sorts utilisables hors combat : pour l'instant uniquement Portus
+    // (extensible via SPELL_OOC_HANDLERS). Affichage gris + tag "combat
+    // uniquement" pour les autres pour ne pas tromper le joueur.
+    const oocCost   = spell.outOfCombatCost || null;
+    const isOoc     = isOutOfCombatSpell(spell);
+    const canCastOoc = isOoc && c.sp >= (oocCost || spell.cost);
+    const costLabel = oocCost
+      ? `${oocCost} PM <span style="color:#6a5030;font-size:9px">(hors combat)</span>`
+      : `${spell.cost} PM`;
+    const hint = isOoc
+      ? (canCastOoc ? '<span style="font-size:9px;color:#6a8030">▶ cliquer pour lancer</span>'
+                    : '<span style="font-size:9px;color:#a04020">PM insuffisants</span>')
+      : '<span style="font-size:9px;color:#6a5030">Combat uniquement</span>';
     div.innerHTML = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
         <div class="spell-name">${spell.name}</div>
         <div class="spell-desc">${spell.desc}</div>
+        <div style="margin-top:3px">${hint}</div>
       </div>
-      <div class="spell-cost">${spell.cost} PM</div>`;
+      <div class="spell-cost">${costLabel}</div>`;
+    if (canCastOoc) {
+      div.style.cursor = 'pointer';
+      div.onclick = () => castSpellOutOfCombat(spell.name, charIdx);
+    } else if (isOoc) {
+      div.style.opacity = '0.6';
+    } else {
+      div.style.opacity = '0.85';
+    }
     list.appendChild(div);
   }
   document.getElementById('spell-modal').style.display = 'flex';
+}
+
+// Sorts utilisables hors combat (V1 : Portus uniquement). Le dispatch est
+// fait via SPELL_OOC_HANDLERS pour rester extensible (Episkey/Reparo
+// pourront s'y greffer avec un cooldown séparé).
+function isOutOfCombatSpell(spell) {
+  if (!spell) return false;
+  return spell.effect === 'teleport';
+}
+
+const SPELL_OOC_HANDLERS = {
+  teleport: function (spell, charIdx) {
+    if (typeof openOutOfCombatTeleport === 'function') {
+      closeModal('spell-modal');
+      openOutOfCombatTeleport(charIdx);
+    }
+  }
+};
+
+function castSpellOutOfCombat(spellName, charIdx) {
+  const spell = SPELLS.find(s => s.name === spellName);
+  if (!spell) return;
+  const handler = SPELL_OOC_HANDLERS[spell.effect];
+  if (!handler) {
+    addMsg(`${spellName} ne peut être lancé qu'en combat.`, 'bad');
+    return;
+  }
+  handler(spell, charIdx);
 }
 
 // En combat : liste les sorts du personnage actif avec possibilité de cibler
@@ -522,6 +572,12 @@ function openBattleSpells() {
     if (canCast) {
       div.onclick = () => {
         closeModal('spell-modal');
+        // Portus gère son propre flow (overlay A/B) — court-circuite la
+        // sélection de cible standard.
+        if (spell.effect === 'teleport') {
+          castSpellInBattle(spell.name, -1);
+          return;
+        }
         const needsTarget = ['stun','burn','instant','disarm'].includes(spell.effect);
         if (needsTarget && livingEnemies().length > 1) {
           pendingSpell = spell.name;
