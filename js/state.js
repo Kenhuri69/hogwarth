@@ -131,7 +131,8 @@ const HOUSE_BONUSES = {
 let inBattle        = false;
 let enemyGroup      = [];   // tableau de {…enemyData, currentHp, disarmed}
 let currentBattleChar = 0;  // 0 = Harry, 1 = Hermione
-let shieldTurns     = [0, 0]; // bouclier par personnage
+let shieldTurns     = [0, 0]; // bouclier par personnage (Protego)
+let guardTurns      = [0, 0]; // posture de Garde — mitigation 50 % sur le prochain coup ennemi
 let battleTurn      = 0;
 // Sélection de cible en combat (cycle producteur → consommateur) :
 //  - battle-ui.js — showTargetSelection(actionType)  écrit pendingAction

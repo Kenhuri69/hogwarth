@@ -189,6 +189,7 @@ const SPELL_ICON_REGISTRY = {
   'Expelliarmus':       'img/icons/spells/expelliarmus.png',
   'Stupefix':           'img/icons/spells/stupefix.png',
   'Episkey':            'img/icons/spells/episkey.png',
+  'Ferula':             'img/icons/spells/ferula.png',
   'Protego':            'img/icons/spells/protego.png',
   'Incendio':           'img/icons/spells/incendio.png',
   'Accio':              'img/icons/spells/accio.png',

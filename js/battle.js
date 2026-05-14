@@ -18,7 +18,8 @@ const STATUS_DEFS = {
   burn:   { icon: '🔥',   label: 'Brûlure',           color: '#e85a2c' },
   poison: { icon: '☠️',   label: 'Empoisonné',        color: '#7ab836' },
   bleed:  { icon: '🩸',   label: 'Saignement',        color: '#c0392b' },
-  weaken: { icon: '🛡️↓', label: 'Affaiblissement',   color: '#9b59b6' }
+  weaken: { icon: '🛡️↓', label: 'Affaiblissement',   color: '#9b59b6' },
+  regen:  { icon: '🩹',   label: 'Régénération',      color: '#3aa55a' }
 };
 
 function applyStatus(target, id, power, turns) {
@@ -50,6 +51,16 @@ function tickStatuses(target, isEnemy) {
       const key = isEnemy ? `enemy:${enemyGroup.indexOf(target)}` : 'ally';
       UX_safe.floatDmg(key, dmg, 'dmg');
       UX_safe.logCombat(`${s.icon} ${target.name} : <b>−${dmg}</b> (${STATUS_DEFS[s.id].label})`, 'bad');
+    }
+    // Statut regen : heal-over-time sur les alliés (s.power PV / tour, plafonné par hpMax).
+    if (s.id === 'regen' && !isEnemy) {
+      const heal = Math.min(target.hpMax - target.hp, s.power);
+      if (heal > 0) {
+        target.hp += heal;
+        log += `${STATUS_DEFS.regen.icon} ${target.name} récupère ${heal} PV (Régénération). `;
+        UX_safe.floatDmg('ally', heal, 'heal');
+        UX_safe.logCombat(`${STATUS_DEFS.regen.icon} ${target.name} régénère <b>+${heal} PV</b>`, 'good');
+      }
     }
     // (weaken : pas de tick de dégâts — le malus DEF est appliqué au cast,
     //  restauré à l'expiry ci-dessous.)
@@ -129,6 +140,7 @@ function applyEquipmentRegen() {
 function startBattle(baseEnemyData) {
   inBattle          = true;
   shieldTurns       = [0, 0];
+  guardTurns        = [0, 0];
   battleTurn        = 0;
   currentBattleChar = 0;
   pendingAction     = null;
@@ -235,6 +247,20 @@ function battleAction(action) {
   if (action === 'item')  { openBattleItems();  return; }
   if (action === 'flee')  { doFlee(); return; }
 
+  if (action === 'guard') {
+    const idx    = currentBattleChar;
+    guardTurns[idx] = 1;
+    const pmTheo = 3 + Math.floor((char.mag || 0) / 5);
+    const pmGain = Math.max(0, Math.min(pmTheo, char.spMax - char.sp));
+    char.sp += pmGain;
+    setBattleLog(`🛡️ ${char.name} se met en garde${pmGain ? ` (+${pmGain} PM)` : ''}.`);
+    addMsg(`🛡️ ${char.name} se met en garde${pmGain ? ` (+${pmGain} PM)` : ''}.`, 'info');
+    UX_safe.logCombat(`🛡️ <b>${char.name}</b> se met en garde${pmGain ? ` <b>+${pmGain} PM</b>` : ''}`, 'magic');
+    AudioSystem.playSpellCast('Protego');
+    advanceBattleChar();
+    return;
+  }
+
   if (action === 'attack') {
     if (livingEnemies().length > 1) {
       showTargetSelection('attack');
@@ -318,7 +344,7 @@ function enemyTurn() {
     // Tentative de capacité spéciale
     if (tryEnemyAbility(enemy, target, charIdx, txt => { log += txt; })) return;
 
-    // Attaque physique normale
+    // Attaque physique normale — priorité : Protego > Esquive > Garde > coup normal.
     if (shieldTurns[charIdx] > 0) {
       shieldTurns[charIdx]--;
       log += `🛡️ Protego protège ${target.name} ! `;
@@ -329,6 +355,13 @@ function enemyTurn() {
       log += `💨 ${target.name} esquive l'attaque de ${enemy.name} ! `;
       UX_safe.floatDmg('ally', 0, 'miss');
       UX_safe.logCombat(`💨 ${target.name} esquive ${enemy.name}`, 'good');
+    } else if (guardTurns[charIdx] > 0) {
+      const dmg = Math.max(0, enemy.atk - target.def + Math.floor(Math.random() * 3));
+      const mitigated = Math.max(0, Math.floor(dmg / 2));
+      target.hp = Math.max(0, target.hp - mitigated);
+      log += `🛡️ ${target.name} mitige : -${mitigated} (au lieu de -${dmg}). `;
+      UX_safe.floatDmg('ally', mitigated, 'dmg');
+      UX_safe.logCombat(`🛡️ ${target.name} mitige ${enemy.name} : <b>−${mitigated}</b> <small>(au lieu de −${dmg})</small>`, 'magic');
     } else {
       const dmg = Math.max(0, enemy.atk - target.def + Math.floor(Math.random() * 3));
       target.hp = Math.max(0, target.hp - dmg);
@@ -359,6 +392,10 @@ function enemyTurn() {
     triggerDeath('Le groupe a été mis hors combat...');
     return;
   }
+
+  // Garde : consommée à la fin du segment ennemi (mitigation appliquée pendant le tour).
+  // Le perso peut re-Garder au prochain tour s'il le souhaite.
+  guardTurns = [0, 0];
 
   // En solo, on reste forcément sur le slot 0 ; en duo on bascule sur Hermione si Harry est KO.
   currentBattleChar = (partySize === 1 || party[0].hp > 0) ? 0 : 1;
@@ -585,11 +622,17 @@ function _grantLevelSpells(level) {
     case 4:
       // Harry apprend la lévitation offensive
       teach(player, 'Wingardium Leviosa');
+      // Hermione (rôle soutien) apprend Ferula — bandage + régen
+      teach(player2, 'Ferula');
       break;
     case 5:
       // Hermione maîtrise la lacération, Harry le soin avancé
       teach(player,  'Reparo');
       teach(player2, 'Diffindo');
+      break;
+    case 6:
+      // Harry rejoint Hermione sur Ferula (soutien partagé)
+      teach(player, 'Ferula');
       break;
     case 7:
       // Symétrie : chacun apprend le sort de spécialité de l'autre

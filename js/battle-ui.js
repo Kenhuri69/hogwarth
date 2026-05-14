@@ -26,6 +26,32 @@ function showTargetSelection(actionType) {
   wrap.style.display = 'flex';
 }
 
+// Sélection d'un allié vivant pour les sorts de soutien (Ferula, etc.).
+// Stocke pendingSpell ; le clic sur un bouton allié relance castSpellInBattle
+// avec le 3ᵉ argument `targetAllyIdx`.
+function showAllyTargetSelection(spellName) {
+  pendingSpell = spellName;
+  const wrap = document.getElementById('target-selection');
+  const btns = document.getElementById('target-buttons');
+  btns.innerHTML = '';
+  party.slice(0, partySize).forEach((c, i) => {
+    if (c.hp <= 0) return;
+    const btn = document.createElement('button');
+    btn.className = 'cmd-btn';
+    btn.style.fontSize = '10px';
+    btn.textContent = `${c.icon || ''} ${c.name} (${c.hp}/${c.hpMax} PV)`;
+    btn.onclick = () => {
+      wrap.style.display = 'none';
+      const spell = pendingSpell;
+      pendingSpell  = null;
+      pendingAction = null;
+      castSpellInBattle(spell, null, i);
+    };
+    btns.appendChild(btn);
+  });
+  wrap.style.display = 'flex';
+}
+
 // ── Pilules de statut (brûlure / poison / saignement / weaken / Protego) ─
 function renderStatusBadges(target) {
   const parts = [];
@@ -52,6 +78,14 @@ function renderStatusBadges(target) {
       if (t > 0) {
         parts.push(`<span class="status-pill" style="border-color:#3498db" title="Protego — bloque l'attaque suivante (${t} tours)">🛡️${t}</span>`);
       }
+    }
+  }
+
+  // Badge Garde pour les alliés actifs (basé sur guardTurns).
+  if (typeof party !== 'undefined' && typeof guardTurns !== 'undefined') {
+    const idx = party.indexOf(target);
+    if ((idx === 0 || idx === 1) && (guardTurns[idx] || 0) > 0) {
+      parts.push(`<span class="status-pill" style="border-color:#cda52d" title="Garde — atténue le prochain coup ennemi de 50 %">🛡️G</span>`);
     }
   }
 
