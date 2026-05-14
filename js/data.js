@@ -115,6 +115,14 @@ const CHARACTERS = {
     wand:"Baguette d'Acacia", armor:"Robe de Poufsouffle", acc:"Brassard d'Écailles",
     spells:["Expelliarmus","Protego","Incendio","Episkey"],
     tagline:"Dompteur de dragons — sa baguette pulse au rythme du feu."
+  },
+  jeanne: { name:"Jeanne d'Argenciel", icon:"🪄", class:"Élève de Gryffondor",
+    imgSrc:"img/jeanne.png", role:"Charmeuse de Sortilèges",
+    hp:31, sp:30, str:7, int:15, agi:13, end:9, lck:14, mag:14,
+    atk:4, def:2,
+    wand:"Baguette d'Étoile", armor:"Robe de Gryffondor", acc:"Grimoire de Sortilèges",
+    spells:["Wingardium Leviosa","Protego","Episkey","Lumos Maxima"],
+    tagline:"Petite Gryffondor espiègle — ses sortilèges chantent comme des étoiles."
   }
 };
 
