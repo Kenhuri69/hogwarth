@@ -114,6 +114,16 @@ Object.assign(AudioSystem, {
     dumbledore_revelation_offer_1:  'audio/voice/dumbledore_revelation_offer_1.ogg',
     dumbledore_revelation_active_1: 'audio/voice/dumbledore_revelation_active_1.ogg',
     dumbledore_revelation_ready_1:  'audio/voice/dumbledore_revelation_ready_1.ogg',
+    // ── Quêtes farming (cf. .claude/plans/farming-quests.md §2) ──
+    // 6 samples = 2 quêtes × 3 moments. Textes génériques (sans nom de
+    // monstre / item, qui varient dynamiquement à l'écran).
+    // Fallback silencieux tant que les OGG ne sont pas générés.
+    scamander_chasse_offer_1:  'audio/voice/scamander_chasse_offer_1.ogg',
+    scamander_chasse_active_1: 'audio/voice/scamander_chasse_active_1.ogg',
+    scamander_chasse_ready_1:  'audio/voice/scamander_chasse_ready_1.ogg',
+    hagrid_course_offer_1:     'audio/voice/hagrid_course_offer_1.ogg',
+    hagrid_course_active_1:    'audio/voice/hagrid_course_active_1.ogg',
+    hagrid_course_ready_1:     'audio/voice/hagrid_course_ready_1.ogg',
   },
 
   // ── Lecture d'une voix narrative (one-shot, avec ducking music) ──

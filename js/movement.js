@@ -333,6 +333,7 @@ function goDeeper() {
     return;
   }
   _saveFloorToCache(currentFloor);
+  if (typeof _clearFarmingPreviews === 'function') _clearFarmingPreviews();
   currentFloor++;
 
   // Endgame §7.1 : toast narratif à la 1re entrée en étage 11+ post-victoire.
@@ -369,6 +370,7 @@ function goDeeper() {
 function goUp() {
   if (currentFloor <= 1) return;
   _saveFloorToCache(currentFloor);
+  if (typeof _clearFarmingPreviews === 'function') _clearFarmingPreviews();
   currentFloor--;
 
   const locName = LOCATIONS[Math.min(currentFloor - 1, LOCATIONS.length - 1)];

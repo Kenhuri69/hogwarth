@@ -212,8 +212,159 @@ const QUEST_TEMPLATES = [
     ],
     reward: { xp: 380, gold: 150, item: "larmes_phenix" },
     location: "Volière de Fumseck (étage 7)"
+  },
+  // ── Quêtes répétables de farming (cf. .claude/plans/farming-quests.md) ──
+  // Cible (monsterId / itemId / amount) tirée à l'acceptation par
+  // `_rollFarmingTarget()`. Le template ci-dessous est inerte ; le clone
+  // créé par `acceptQuest()` reçoit les valeurs dynamiques + un `_dynamicDesc`.
+  {
+    id: "chasse_magizoologiste",
+    title: "Chasse du Magizoologiste",
+    giver: "Newton Scamander",
+    desc: "Élimine les créatures que Scamander a repérées dans cet étage.",
+    farming: true,
+    objectives: [
+      { type: "kill", monsterId: null, amount: 0, progress: 0, completed: false }
+    ],
+    reward: { xp: 230, gold: 75 },
+    location: "Étages 3 à 8",
+    repeatable: { everyLevels: 2 },
+    rollOnAccept: { kind: "kill", minFloor: 3, maxFloor: 8, minAmount: 4, maxAmount: 8, spawnBonus: 1 }
+  },
+  {
+    id: "course_hagrid",
+    title: "Course pour Hagrid",
+    giver: "Hagrid",
+    desc: "Rapporte les ingrédients qu'Hagrid t'a demandés.",
+    farming: true,
+    objectives: [
+      { type: "item", itemId: null, amount: 0, progress: 0, completed: false }
+    ],
+    reward: { xp: 190, gold: 65 },
+    location: "Étages 4 à 9",
+    repeatable: { everyLevels: 3 },
+    rollOnAccept: { kind: "item", pool: ["mandragore", "choco_sorcier", "potion_s", "potion_m"], minAmount: 3, maxAmount: 5 }
   }
 ];
+
+// IDs de monstres exclus du pool farming (bosses uniques scénaristiques).
+const FARMING_KILL_BLACKLIST = new Set([
+  'bellatrix', 'voldemort_affaibli', 'voldemort_revenu', 'nagini'
+]);
+
+// Cache de prévisualisation des quêtes farming. Une `offer` ouvre un
+// dialogue qui doit afficher le nom de la cible AVANT acceptation : on
+// pré-tire ici (idempotent par qid+floor) et `acceptQuest` consomme la
+// preview pour que dialogue et quête activée référencent la même cible.
+// Vidé quand le joueur change d'étage (cf. _clearFarmingPreviews dans
+// movement.js — appelé par goDeeper / goUp).
+const _farmingOfferPreviews = {};
+
+function _previewFarmingOffer(qid) {
+  const tpl = getQuestTemplate(qid);
+  if (!tpl || !tpl.rollOnAccept) return null;
+  const floor = (typeof currentFloor === 'number') ? currentFloor : 1;
+  const cached = _farmingOfferPreviews[qid];
+  if (cached && cached.floor === floor) return cached;
+  const fake = JSON.parse(JSON.stringify(tpl));
+  if (!_rollFarmingTarget(fake, floor)) {
+    _farmingOfferPreviews[qid] = null;
+    return null;
+  }
+  const preview = {
+    floor,
+    monsterId: fake.objectives[0].monsterId,
+    itemId:    fake.objectives[0].itemId,
+    amount:    fake.objectives[0].amount,
+    target:    fake._dynamicTarget,
+    reward:    fake.reward,
+    desc:      fake._dynamicDesc
+  };
+  _farmingOfferPreviews[qid] = preview;
+  return preview;
+}
+
+function _consumeFarmingOfferPreview(qid, floor) {
+  const cached = _farmingOfferPreviews[qid];
+  if (cached && cached.floor === floor) {
+    delete _farmingOfferPreviews[qid];
+    return cached;
+  }
+  return null;
+}
+
+function _clearFarmingPreviews() {
+  for (const k of Object.keys(_farmingOfferPreviews)) delete _farmingOfferPreviews[k];
+}
+
+// Bonus XP si le joueur est sous-level pour l'étage (+10 %/niveau de retard,
+// cap +50 %). expectedLevel = max(1, floor).
+function _farmingXpBonus(baseXp, floor) {
+  const expected = Math.max(1, floor | 0);
+  const lvl      = (typeof player !== 'undefined' && player) ? (player.level || 1) : 1;
+  const delta    = expected - lvl;
+  if (delta <= 0) return baseXp | 0;
+  const mult = Math.min(1.5, 1 + delta * 0.10);
+  return Math.floor(baseXp * mult);
+}
+
+// Tire monstre/item + quantité à l'acceptation d'une quête farming.
+// Mute `quest.objectives[0]` (monsterId/itemId + amount), recalcule
+// `quest.reward` avec fluctuation ±20 % et bonus sous-level, stocke
+// `quest._dynamicDesc` et `quest._dynamicTarget` pour les dialogues.
+// Retourne true si le tirage a abouti, false sinon (quête abandonnée).
+function _rollFarmingTarget(quest, floor) {
+  const cfg = quest && quest.rollOnAccept;
+  if (!cfg) return false;
+  const step = quest.objectives[0];
+  if (!step) return false;
+
+  if (cfg.kind === 'kill') {
+    const f = floor | 0;
+    if (f < cfg.minFloor || f > cfg.maxFloor) return false;
+    const pool = (typeof MONSTERS !== 'undefined' ? MONSTERS : []).filter(m =>
+      m.minFloor <= f && (m.maxFloor === null || f <= m.maxFloor) &&
+      !FARMING_KILL_BLACKLIST.has(m.id)
+    );
+    if (!pool.length) return false;
+    const picked = (typeof weightedPick === 'function') ? weightedPick(pool) : pool[Math.floor(Math.random() * pool.length)];
+    const amount = cfg.minAmount + Math.floor(Math.random() * (cfg.maxAmount - cfg.minAmount + 1));
+    step.monsterId = picked.id;
+    step.amount    = amount;
+    step.progress  = 0;
+    step.completed = false;
+    quest._dynamicTarget = { type: 'monster', id: picked.id, name: picked.name, amount };
+    quest._dynamicDesc   = `Élimine ${amount}× ${picked.name} repérés dans le château.`;
+    quest.desc           = quest._dynamicDesc;
+  } else if (cfg.kind === 'item') {
+    const pool = (cfg.pool || [])
+      .map(id => (typeof ITEMS !== 'undefined') ? ITEMS.find(i => i.id === id) : null)
+      .filter(Boolean);
+    if (!pool.length) return false;
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    const amount = cfg.minAmount + Math.floor(Math.random() * (cfg.maxAmount - cfg.minAmount + 1));
+    step.itemId    = picked.id;
+    step.amount    = amount;
+    step.progress  = 0;
+    step.completed = false;
+    quest._dynamicTarget = { type: 'item', id: picked.id, name: picked.name, amount };
+    quest._dynamicDesc   = `Apporte ${amount}× ${picked.name} à Hagrid.`;
+    quest.desc           = quest._dynamicDesc;
+  } else {
+    return false;
+  }
+
+  // Fluctuation ±20 % sur les récompenses + bonus sous-level sur l'XP
+  const baseXp   = quest.reward && quest.reward.xp   ? quest.reward.xp   : 0;
+  const baseGold = quest.reward && quest.reward.gold ? quest.reward.gold : 0;
+  const xpJitter   = 0.8 + Math.random() * 0.4;
+  const goldJitter = 0.8 + Math.random() * 0.4;
+  quest.reward = {
+    xp:   _farmingXpBonus(Math.floor(baseXp * xpJitter), floor),
+    gold: Math.floor(baseGold * goldJitter)
+  };
+  return true;
+}
 
 function getQuestTemplate(id) {
   return QUEST_TEMPLATES.find(t => t.id === id) || null;
@@ -255,6 +406,35 @@ function acceptQuest(id) {
   // Clone profond pour préserver les compteurs progress par instance
   const inst = JSON.parse(JSON.stringify(tpl));
   inst.completed = false;
+
+  // Quête farming : tirage dynamique monstre/item + amount + récompense.
+  // Si le tirage échoue (étage hors fourchette, pool vide…), on n'active
+  // pas la quête : message d'avertissement et abandon.
+  if (tpl.rollOnAccept) {
+    const floor = (typeof currentFloor === 'number') ? currentFloor : 1;
+    const preview = _consumeFarmingOfferPreview(id, floor);
+    let ok;
+    if (preview) {
+      const step = inst.objectives[0];
+      if (preview.monsterId) step.monsterId = preview.monsterId;
+      if (preview.itemId)    step.itemId    = preview.itemId;
+      step.amount    = preview.amount;
+      step.progress  = 0;
+      step.completed = false;
+      inst._dynamicTarget = preview.target;
+      inst._dynamicDesc   = preview.desc;
+      inst.desc           = preview.desc;
+      inst.reward         = Object.assign({}, preview.reward);
+      ok = true;
+    } else {
+      ok = _rollFarmingTarget(inst, floor);
+    }
+    if (!ok) {
+      addMsg(`Aucune cible disponible ici pour « ${tpl.title} ». Reviens sur un étage adapté.`, 'bad');
+      return false;
+    }
+  }
+
   activeQuests.push(inst);
   availableQuests.delete(id);
   addMsg(`📜 Nouvelle quête : « ${tpl.title} »`, 'magic');
@@ -269,6 +449,23 @@ function acceptQuest(id) {
       if (typeof renderMinimap === 'function') renderMinimap();
       if (typeof drawDungeon === 'function') drawDungeon();
     }
+  }
+
+  // Quête chasse farming : on injecte `amount + spawnBonus` copies de la
+  // cible sur l'étage courant pour rendre le grind visible et accessible.
+  if (tpl.rollOnAccept && tpl.rollOnAccept.kind === 'kill' &&
+      typeof spawnFarmingMonsters === 'function' && inst._dynamicTarget) {
+    const tgt = inst._dynamicTarget;
+    const spawnCount = tgt.amount + (tpl.rollOnAccept.spawnBonus | 0);
+    const placed = spawnFarmingMonsters(tgt.id, spawnCount);
+    if (placed > 0) {
+      addMsg(`🦂 Plusieurs ${tgt.name} ont été repérés dans l'étage !`, 'magic');
+      if (typeof renderMinimap === 'function') renderMinimap();
+      if (typeof drawDungeon === 'function') drawDungeon();
+    }
+  } else if (tpl.rollOnAccept && tpl.rollOnAccept.kind === 'item' && inst._dynamicTarget) {
+    const tgt = inst._dynamicTarget;
+    addMsg(`📦 Hagrid a besoin de ${tgt.amount}× ${tgt.name}.`, 'magic');
   }
 
   if (typeof updateQuestTracker === 'function') updateQuestTracker();
@@ -330,8 +527,34 @@ function renderQuestList() {
     return;
   }
 
-  // Quêtes actives
-  pending.forEach(q => {
+  // Tri : quêtes farming d'abord (template `farming: true`), puis les autres.
+  const farming = pending.filter(q => {
+    const t = getQuestTemplate(q.id);
+    return t && t.farming;
+  });
+  const others = pending.filter(q => !farming.includes(q));
+
+  if (farming.length) {
+    const header = document.createElement('div');
+    header.style.cssText = 'font-family:"Cinzel",serif;font-size:12px;color:#ff8a40;letter-spacing:2px;border-bottom:1px solid #4a2010;padding-bottom:4px;margin-bottom:2px';
+    header.textContent = '🌾 QUÊTES DE FARMING';
+    container.appendChild(header);
+    farming.forEach(q => {
+      const card = document.createElement('div');
+      card.className = 'spell-item';
+      card.style.cssText = 'flex-direction:column;align-items:flex-start;gap:5px;padding:10px 12px;border-color:#7a3a10';
+      card.innerHTML = _renderActiveQuestCard(q);
+      container.appendChild(card);
+    });
+    if (others.length) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'font-family:"Cinzel",serif;font-size:11px;color:var(--gold-dark);letter-spacing:2px;border-bottom:1px solid #2a1a08;padding-bottom:4px;margin-top:6px';
+      sep.textContent = 'QUÊTES PRINCIPALES';
+      container.appendChild(sep);
+    }
+  }
+
+  others.forEach(q => {
     const card = document.createElement('div');
     card.className = 'spell-item';
     card.style.cssText = 'flex-direction:column;align-items:flex-start;gap:5px;padding:10px 12px';

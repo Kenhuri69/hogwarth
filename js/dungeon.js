@@ -375,6 +375,37 @@ function spawnQuestMonsters(targetMonsterId, extraRandomCount) {
   return placed;
 }
 
+// Variante farming : place `count` copies du monstre `targetMonsterId` sur
+// des cases FLOOR libres, sans extra random. Utilisée à l'acceptation d'une
+// quête farming kill. Tolérant : retourne le nombre effectivement placé.
+function spawnFarmingMonsters(targetMonsterId, count) {
+  if (typeof dungeon === 'undefined' || typeof enemyMap === 'undefined') return 0;
+  const floor = (typeof currentFloor === 'number') ? currentFloor : 1;
+  const target = MONSTERS.find(m => m.id === targetMonsterId);
+  if (!target) return 0;
+
+  const free = [];
+  for (let y = 0; y < dungeon.length; y++) {
+    for (let x = 0; x < dungeon[y].length; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (enemyMap[y][x]) continue;
+      if (x === playerX && y === playerY) continue;
+      free.push({ x, y });
+    }
+  }
+  for (let i = free.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [free[i], free[j]] = [free[j], free[i]];
+  }
+  let placed = 0;
+  for (let i = 0; i < count && free.length; i++) {
+    const cell = free.pop();
+    enemyMap[cell.y][cell.x] = scaleMonster(target, floor);
+    placed++;
+  }
+  return placed;
+}
+
 // Garantit que les cibles des quêtes "kill" actives avec `spawnOnAccept`
 // sont présentes sur l'étage courant. Comble le manque entre `step.amount`
 // et (progress + instances déjà dans `enemyMap`). Idempotente : no-op si

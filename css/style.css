@@ -478,6 +478,14 @@ body {
 /* PNJ avec quête prête à rendre (ready) — bleu clair, pulse subtil */
 .map-npc-ready { background: #2a4e8a; box-shadow: 0 0 4px #b8d4ff, inset 0 0 2px #e0eaff;
                  animation: mapNpcPulse 1.6s ease-in-out infinite; }
+/* PNJ avec quête de farming offerable — rouge clignotant rapide (différencié des
+   quêtes scénaristiques en or). Cf. .claude/plans/farming-quests.md §7. */
+.map-npc-farming { background: #b81c1c; box-shadow: 0 0 5px #ff5a5a, inset 0 0 2px #ffb0b0;
+                   animation: mapNpcFarmingBlink 0.8s ease-in-out infinite; }
+@keyframes mapNpcFarmingBlink {
+  0%, 100% { filter: brightness(0.85); }
+  50%      { filter: brightness(1.6); }
+}
 .map-npc[data-sign]::after {
   content: attr(data-sign);
   position: absolute; inset: 0;
@@ -495,7 +503,7 @@ body {
   50%      { filter: brightness(1.35); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .map-npc-offer, .map-npc-ready { animation: none; }
+  .map-npc-offer, .map-npc-ready, .map-npc-farming { animation: none; }
 }
 
 .compass {
