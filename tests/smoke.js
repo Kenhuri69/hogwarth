@@ -5086,6 +5086,348 @@ async function scenarioGuardAndFerula() {
   console.log('  ✅ Garde + Ferula conformes');
 }
 
+// ── Scénario : Portus (téléportation) ────────────────────────
+// Vérifie : visitedFloors persisté, livre_portus dispo en boutique
+// floor 6+, sort appris via le livre, lancement hors combat (changement
+// d'étage + PM décompté), lancement en combat (overlay A/B), garde-fou
+// "1 utilisation par combat".
+
+async function scenarioTeleportation() {
+  console.log('\n── Scénario : Portus (téléportation) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : visitedFloors initialisé à {1} et grandit avec goDeeper.
+  const t1 = await page.evaluate(() => {
+    const initial = Array.from(visitedFloors);
+    // Marquer artificiellement 2 étages comme visités (sans descendre vraiment).
+    visitedFloors.add(2);
+    visitedFloors.add(3);
+    return { initial, after: Array.from(visitedFloors).sort((a,b)=>a-b) };
+  });
+  console.log('  T1 visitedFloors →', t1);
+  assert(t1.initial.includes(1),                   'visitedFloors doit contenir l\'étage 1 au démarrage');
+  assert(t1.after.includes(2) && t1.after.includes(3), 'add() doit alimenter visitedFloors');
+
+  // T2 : le livre_portus est en boutique à floor 6 et achetable.
+  const t2 = await page.evaluate(() => {
+    currentFloor = 6;
+    player.gold = 5000;
+    openShop();
+    const grid  = document.getElementById('shop-grid');
+    const found = Array.from(grid.querySelectorAll('.shop-item')).find(el =>
+      el.dataset.itemId === 'livre_portus'
+    );
+    return { hasEntry: !!found, price: found ? found.querySelector('.shop-price').textContent : null };
+  });
+  console.log('  T2 shop →', t2);
+  assert(t2.hasEntry,                              'livre_portus doit apparaître en boutique floor 6+');
+  assert(/2800/.test(t2.price || ''),              'livre_portus doit coûter 2800G');
+
+  // T3 : achat + apprentissage automatique → sort dans player.spells.
+  const t3 = await page.evaluate(() => {
+    closeModal('shop-modal');
+    const livre = ITEMS.find(i => i.id === 'livre_portus');
+    player.inventory.push({ ...livre });
+    const idx = player.inventory.findIndex(i => i.id === 'livre_portus');
+    useItem(idx, false);   // hors combat → apprend Portus
+    return {
+      knowsPortus: player.spells.includes('Portus'),
+      bookGone:    !player.inventory.some(i => i.id === 'livre_portus')
+    };
+  });
+  console.log('  T3 apprentissage →', t3);
+  assert(t3.knowsPortus,                           'Portus doit être enseigné après usage du livre');
+  assert(t3.bookGone,                              'Le livre doit être consommé');
+
+  // T4 : modale Sorts hors combat propose un bouton cliquable pour Portus.
+  const t4 = await page.evaluate(() => {
+    player.spMax = 100;
+    player.sp    = 100;
+    openSpells(0);
+    const items = Array.from(document.querySelectorAll('#spell-list .spell-item'));
+    const portus = items.find(el => /Portus/.test(el.textContent));
+    return {
+      hasPortusEntry: !!portus,
+      isClickable:    !!(portus && typeof portus.onclick === 'function')
+    };
+  });
+  console.log('  T4 modale sorts →', t4);
+  assert(t4.hasPortusEntry,                        'Portus doit apparaître dans la modale Sorts');
+  assert(t4.isClickable,                           'Entrée Portus doit être cliquable hors combat');
+
+  // T5 : téléportation hors combat → changement d'étage + PM décomptés.
+  const t5 = await page.evaluate(() => {
+    closeModal('spell-modal');
+    // Préparer un étage cible cache.
+    visitedFloors.add(2);
+    player.spMax = 100;
+    player.sp    = 100;
+    const before = { floor: currentFloor, sp: player.sp };
+    // Stubber `confirm` pour éviter le prompt.
+    window.confirm = () => true;
+    teleportOutOfCombat(2, 0);
+    return {
+      before,
+      floor: currentFloor,
+      sp:    player.sp,
+      cost:  SPELLS.find(s => s.name === 'Portus').outOfCombatCost
+    };
+  });
+  console.log('  T5 hors combat →', t5);
+  // Le _floorTransition est async (1400 ms). On vérifie après attente.
+  await page.waitForFunction(() => currentFloor === 2, { timeout: 3500 });
+  const t5b = await page.evaluate(() => ({ floor: currentFloor, sp: player.sp }));
+  console.log('  T5b apres transition →', t5b);
+  assert(t5b.floor === 2,                          'Le joueur doit être à l\'étage 2 après Portus');
+  assert(t5.sp === t5.before.sp - t5.cost,         `PM doivent être décomptés (avant ${t5.before.sp}, après ${t5.sp}, coût ${t5.cost})`);
+
+  // T6 : lancement en combat ouvre l'overlay A/B et consomme les PM.
+  const t6 = await page.evaluate(() => {
+    // Démarrer un combat dummy contre 2 ennemis pour activer l'option ennemi.
+    const enemy = {
+      id: 'test_dummy_1', name: 'Cobaye', icon: '🎯', danger: 3,
+      hp: 30, atk: 1, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 0, gold: 0, abilities: [], drops: [], resist: [], weak: [], desc: 'Test'
+    };
+    startBattle(enemy);
+    // Forcer 2 ennemis (rollGroupSize peut renvoyer 1 selon floor).
+    if (enemyGroup.length < 2) {
+      enemyGroup.push({ ...enemy, id: 'test_dummy_2', name: 'Cobaye 2',
+                        currentHp: enemy.hp, disarmed: 0, statusEffects: [] });
+    }
+    player.sp = player.spMax;
+    const spBefore = player.sp;
+    castSpellInBattle('Portus', -1);
+    const sel = document.getElementById('target-selection');
+    return {
+      spBefore, spAfter: player.sp,
+      overlayShown: sel && sel.style.display === 'flex',
+      hasPartyBtn:  !!Array.from(document.querySelectorAll('#target-buttons button')).find(b => /groupe/i.test(b.textContent)),
+      hasEnemyBtn:  !!Array.from(document.querySelectorAll('#target-buttons button')).find(b => /ennemi/i.test(b.textContent))
+    };
+  });
+  console.log('  T6 combat overlay →', t6);
+  assert(t6.overlayShown,                          'Overlay A/B doit être affiché');
+  assert(t6.hasPartyBtn && t6.hasEnemyBtn,         'Boutons groupe + ennemi doivent être présents');
+  assert(t6.spAfter === t6.spBefore - 52,          'PM combat (52) doivent être consommés');
+
+  // T7 : choisir "ennemi" bannit un ennemi du combat sans XP.
+  const t7 = await page.evaluate(() => {
+    const xpBefore = player.xp;
+    const beforeCount = enemyGroup.length;
+    _resolveTeleportEnemyChoice();
+    // Cas chemin direct (un seul ennemi non-boss restant) → bannit immédiatement.
+    // Sinon affiche un sub-sélecteur ; on clique le premier bouton.
+    const subBtn = document.querySelector('#target-buttons button[onclick^="teleportEnemyAway"]');
+    if (subBtn) subBtn.click();
+    return {
+      xpDelta: player.xp - xpBefore,
+      enemiesAfter: enemyGroup.length,
+      beforeCount,
+      fightCd: portusFightCooldown
+    };
+  });
+  console.log('  T7 banish →', t7);
+  assert(t7.enemiesAfter < t7.beforeCount,         'Un ennemi doit avoir été retiré du combat');
+  assert(t7.xpDelta === 0,                         'Aucun XP gagné via Portus');
+  assert(t7.fightCd === 3,                         `Cooldown combat doit être armé à 3 (vu ${t7.fightCd})`);
+
+  // T8 : tenter de relancer Portus en combat est bloqué tant que CD > 0.
+  const t8 = await page.evaluate(() => {
+    // Restaurer SP et tenter de re-caster Portus pendant un autre combat dummy.
+    const enemy = {
+      id: 'test_dummy_3', name: 'Cobaye 3', icon: '🎯', danger: 3,
+      hp: 10, atk: 1, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 1, gold: 0, abilities: [], drops: [], resist: [], weak: [], desc: 'Test'
+    };
+    // Forcer end-of-fight gracefully d'abord (gagner le combat précédent).
+    while (enemyGroup.length > 0) enemyGroup.shift();
+    if (typeof checkAllEnemiesDead === 'function') checkAllEnemiesDead();
+    const cdAfterWin = portusFightCooldown;
+    player.sp = player.spMax = 200;
+    startBattle(enemy);
+    const spBefore = player.sp;
+    castSpellInBattle('Portus', -1);
+    return {
+      cdAfterWin,
+      blocked: player.sp === spBefore,
+      cdNow:   portusFightCooldown
+    };
+  });
+  console.log('  T8 combat CD →', t8);
+  assert(t8.cdAfterWin === 2,                      `Après 1 win, CD doit valoir 2 (vu ${t8.cdAfterWin})`);
+  assert(t8.blocked,                               'Cast Portus en CD doit être no-op (PM non décomptés)');
+  assert(t8.cdNow === 2,                           'CD reste à 2 (pas re-armé)');
+
+  // T9 : cooldown hors combat décrémente sur transition d'étage.
+  const t9 = await page.evaluate(() => {
+    // Sortie de combat propre.
+    while (enemyGroup.length > 0) enemyGroup.shift();
+    if (typeof checkAllEnemiesDead === 'function') checkAllEnemiesDead();
+    inBattle = false;
+    document.getElementById('encounter-overlay').style.display = 'none';
+    document.body.classList.remove('in-battle');
+    // Simuler un cooldown OOC restant et le faire baisser.
+    portusOocCooldown = 2;
+    visitedFloors.add(currentFloor);
+    const before = portusOocCooldown;
+    // goUp diminue d'un, goDeeper diminue d'un.
+    if (currentFloor > 1) goUp();
+    return { before, afterStep: portusOocCooldown };
+  });
+  // goUp est async (transition).
+  await page.waitForFunction(() => portusOocCooldown <= 1, { timeout: 3500 });
+  console.log('  T9 OOC CD step →', t9);
+  assert(t9.before === 2,                          'CD initial doit être 2');
+  // afterStep peut être 2 (avant transition) ou 1 (après) — on a déjà attendu.
+  const t9b = await page.evaluate(() => portusOocCooldown);
+  assert(t9b === 1,                                `Après 1 goUp, CD OOC doit valoir 1 (vu ${t9b})`);
+
+  // T10 : tenter Portus OOC avec CD > 0 est bloqué.
+  const t10 = await page.evaluate(() => {
+    portusOocCooldown = 2;
+    player.sp = player.spMax = 200;
+    player.spells.push('Portus');  // s'assurer connu
+    const spBefore = player.sp;
+    openOutOfCombatTeleport(0);
+    return {
+      blocked: player.sp === spBefore,
+      modalShown: document.getElementById('spell-modal').style.display === 'flex'
+    };
+  });
+  console.log('  T10 OOC bloqué →', t10);
+  assert(t10.blocked,                              'Portus OOC avec CD > 0 ne doit pas consommer de PM');
+
+  // T11 : événement d'arrivée — exécution déterministe pour valider le helper.
+  const t11 = await page.evaluate(() => {
+    // Forcer le tirage positif (1ère branche < 0.5 puis 1ère branche < 0.5).
+    const origRandom = Math.random;
+    // séquence : [0.05 (<0.12 trigger), 0.1 (<0.5 positif)]
+    let seq = [0.05, 0.1]; let i = 0;
+    Math.random = () => (i < seq.length ? seq[i++] : origRandom());
+    party.forEach(c => { c.hp = 1; });
+    const beforeHp = party.map(c => c.hp);
+    _rollPortusArrivalEvent();
+    const afterHp = party.map(c => c.hp);
+    // Forcer maintenant un piège : [0.05, 0.9 (>0.5 négatif), 0.1 (<0.5 piège)]
+    seq = [0.05, 0.9, 0.1]; i = 0; Math.random = () => (i < seq.length ? seq[i++] : origRandom());
+    party.forEach(c => { c.hp = 50; c.hpMax = 50; });
+    _rollPortusArrivalEvent();
+    const afterTrap = party.map(c => c.hp);
+    Math.random = origRandom;
+    return { beforeHp, afterHp, afterTrap };
+  });
+  console.log('  T11 event arrivée →', t11);
+  assert(t11.afterHp.some((hp, i) => hp > t11.beforeHp[i]),
+         'Événement positif doit soigner au moins un perso');
+  assert(t11.afterTrap.some(hp => hp < 50),
+         'Piège doit réduire les PV d\'au moins un perso');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Portus OK (shop + apprentissage + hors combat + combat)');
+  await browser.close();
+}
+
+// ── Scénario : Soin hors combat (Episkey/Reparo) ─────────────
+// Vérifie : Episkey/Reparo cliquables hors combat, cible auto = perso
+// le plus blessé, full HP → no-op, cooldown 3 pas décrémenté.
+
+async function scenarioHealOoc() {
+  console.log('\n── Scénario : Soin hors combat ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : Episkey est dans la liste de Hermione, cliquable hors combat.
+  const t1 = await page.evaluate(() => {
+    openSpells(1); // onglet Hermione
+    const items = Array.from(document.querySelectorAll('#spell-list .spell-item'));
+    const episkey = items.find(el => /Episkey/.test(el.textContent));
+    return {
+      hasEpiskey:  !!episkey,
+      isClickable: !!(episkey && typeof episkey.onclick === 'function')
+    };
+  });
+  console.log('  T1 modale →', t1);
+  assert(t1.hasEpiskey,                'Episkey doit être dans la liste');
+  assert(t1.isClickable,               'Episkey doit être cliquable hors combat');
+
+  // T2 : cast cible auto le perso le moins en forme et applique le soin.
+  const t2 = await page.evaluate(() => {
+    // Harry plus blessé que Hermione.
+    party[0].hp = 5;  party[0].hpMax = 35;
+    party[1].hp = 28; party[1].hpMax = 28;
+    party[1].sp = 35;
+    const before = { harry: party[0].hp, hermione: party[1].hp, hermioneSp: party[1].sp };
+    castSpellOutOfCombat('Episkey', 1);   // Hermione caste
+    return {
+      before,
+      after: { harry: party[0].hp, hermione: party[1].hp, hermioneSp: party[1].sp },
+      cd: healSpellCooldown
+    };
+  });
+  console.log('  T2 cast →', t2);
+  assert(t2.after.harry > t2.before.harry,                 `Harry doit être soigné (${t2.before.harry} → ${t2.after.harry})`);
+  assert(t2.after.hermione === t2.before.hermione,         'Hermione (full HP) ne doit pas être ciblée');
+  assert(t2.after.hermioneSp === t2.before.hermioneSp - 5, 'PM Hermione consommés (5 PM Episkey)');
+  assert(t2.cd === 3,                                       `Cooldown doit être armé à 3 (vu ${t2.cd})`);
+
+  // T3 : tenter de re-caster pendant le cooldown est no-op.
+  const t3 = await page.evaluate(() => {
+    const spBefore = party[1].sp;
+    castSpellOutOfCombat('Episkey', 1);
+    return { blocked: party[1].sp === spBefore };
+  });
+  console.log('  T3 blocage CD →', t3);
+  assert(t3.blocked,                                        'Cast Episkey en CD doit être no-op');
+
+  // T4 : cooldown décrémente à chaque pas.
+  const t4 = await page.evaluate(() => {
+    // Garantir un couloir devant le joueur (chercher une case libre adjacente).
+    healSpellCooldown = 3;
+    const beforeCd = healSpellCooldown;
+    // Essayer 4 directions jusqu'à trouver un mouvement valide.
+    let stepped = false;
+    for (const dir of ['n','e','s','w']) {
+      const [dx, dy] = DIRECTIONS[dir];
+      const nx = playerX + dx, ny = playerY + dy;
+      if (dungeon[ny] && dungeon[ny][nx] !== CELL.WALL) {
+        playerDir = dir;
+        moveForward();
+        stepped = true;
+        break;
+      }
+    }
+    return { beforeCd, stepped, afterCd: healSpellCooldown };
+  });
+  console.log('  T4 step CD →', t4);
+  assert(t4.stepped,                                        'Un mouvement doit avoir été effectué');
+  assert(t4.afterCd === t4.beforeCd - 1,                    `CD doit décrémenter de 1 par pas (${t4.beforeCd} → ${t4.afterCd})`);
+
+  // T5 : tout le monde au max → message no-op, PM préservés.
+  const t5 = await page.evaluate(() => {
+    healSpellCooldown = 0;
+    party.forEach(c => { c.hp = c.hpMax; });
+    party[1].sp = 30;
+    const spBefore = party[1].sp;
+    castSpellOutOfCombat('Episkey', 1);
+    return { blocked: party[1].sp === spBefore, cd: healSpellCooldown };
+  });
+  console.log('  T5 full HP no-op →', t5);
+  assert(t5.blocked,                                        'Pas de PM consommés si tout le monde est au max');
+  assert(t5.cd === 0,                                       'CD non armé sur no-op');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Soin OOC OK (cible auto + CD + no-op full HP)');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -5143,7 +5485,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

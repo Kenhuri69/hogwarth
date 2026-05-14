@@ -170,6 +170,28 @@ let defeatedCellsByFloor = new Map();
 // cap +40 %), n ≥ 5 active la prob trio (+10%/(n-4), cap +40 %). Persisté.
 let floorKillCount = new Map();
 
+// Étages déjà visités par le joueur — alimentés par goDeeper/goUp et le
+// démarrage de partie (1 = couloir d'entrée). Consommés par la modale de
+// téléportation hors combat (Portus) pour proposer la liste des destinations.
+// Persisté dans le save.
+let visitedFloors = new Set([1]);
+
+// Cooldowns du sort Portus (cf. .claude/plans/teleportation-spell.md §"Itération 2").
+//  - portusOocCooldown   : transitions d'étage (escaliers) restantes avant
+//                          de pouvoir relancer Portus hors combat. Décrémenté
+//                          par goDeeper/goUp.
+//  - portusFightCooldown : combats gagnés restants avant de pouvoir relancer
+//                          Portus en combat. Décrémenté par endBattle(won=true).
+// Persistés dans le save. Reset à startGame.
+let portusOocCooldown   = 0;
+let portusFightCooldown = 0;
+
+// Cooldown des sorts de soin hors combat (Episkey, Reparo et tout futur sort
+// effect:"heal"). Décrémenté dans _step à chaque pas réussi. Partagé entre
+// tous les sorts de soin (cf. .claude/plans/teleportation-spell.md §Itération 3).
+// Persisté dans le save, reset à startGame.
+let healSpellCooldown = 0;
+
 // PNJ placés sur l'étage courant : Map "x,y" → npcId.
 // Recalculé à chaque génération d'étage, mis en cache dans floorDungeons.
 let npcPlacements = new Map();

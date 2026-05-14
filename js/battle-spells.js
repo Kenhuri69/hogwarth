@@ -222,6 +222,14 @@ function _spellSupportRegen(spell, char, _enemy, _enemyIdx, targetAllyIdx) {
   return msg;
 }
 
+// Sort de téléportation : pas de dégâts ni de cible directe — on ouvre
+// un overlay A/B (groupe vs ennemi). castSpellInBattle court-circuite la
+// boucle standard pour ce sort (cf. ci-dessous).
+function _spellTeleport(spell, char) {
+  if (typeof openCombatTeleportChoice === 'function') openCombatTeleportChoice();
+  return `🌀 ${char.name} canalise ${spell.name}...`;
+}
+
 const SPELL_HANDLERS = {
   heal:           _spellHeal,
   disarm:         _spellDisarm,
@@ -233,6 +241,7 @@ const SPELL_HANDLERS = {
   curse:          _spellCurse,
   steal:          _spellSteal,
   support_regen:  _spellSupportRegen,
+  teleport:       _spellTeleport,
 };
 
 // Sorts à cible alliée — pas de sélection d'ennemi, mais éventuellement
@@ -268,6 +277,36 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   // Wrapping Bibliothèque : applique les upgrades du caster.
   const spell    = _spellForCaster(baseSpell, char);
   if (!spell || char.sp < spell.cost) { addMsg("Pas assez de magie !", 'bad'); return; }
+
+  // Portus : 1 utilisation par combat. Le sort ouvre un overlay A/B —
+  // pas de cycle pendingAction et pas d'avance de tour ici (les helpers
+  // dans teleport.js gèrent la suite : fuite/banissement/annulation).
+  if (spell.effect === 'teleport') {
+    if (typeof _teleportUsedThisFight !== 'undefined' && _teleportUsedThisFight) {
+      addMsg('Portus déjà utilisé dans ce combat.', 'bad');
+      return;
+    }
+    if (typeof portusFightCooldown === 'number' && portusFightCooldown > 0) {
+      addMsg(`Portus se recharge — encore ${portusFightCooldown} combat${portusFightCooldown > 1 ? 's' : ''} à gagner.`, 'bad');
+      return;
+    }
+    char.sp -= spell.cost;
+    AudioSystem.playSpellCast(spell.name);
+    AudioSystem.speakSpell(spell.name);
+    closeModal('spell-modal');
+    // Marqueur consommé dès l'ouverture du choix — _cancelTeleportChoice
+    // remet le flag à false et rembourse les PM si l'utilisateur annule.
+    if (typeof window._resetTeleportFightFlag === 'function') {
+      // (reset déjà fait par startBattle ; ici on marque "in-flight" via le
+      // helper exposé pour qu'un appel _cancelTeleportChoice puisse re-toggle).
+    }
+    // On considère le sort engagé : le flag est levé par les helpers
+    // teleport.js après confirmation (party/enemy). Ouvrir l'overlay :
+    if (typeof openCombatTeleportChoice === 'function') openCombatTeleportChoice();
+    setBattleLog(`🌀 ${char.name} canalise ${spell.name}...`);
+    updateUI();
+    return;
+  }
 
   // Sorts à cible alliée (Ferula…) : en duo, demander la cible si non fournie.
   if (ALLY_TARGET_EFFECTS.has(spell.effect) && typeof targetAllyIdx !== 'number') {

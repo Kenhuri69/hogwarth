@@ -143,6 +143,12 @@ const SPELLS = [
   { name:"Patronum",          icon:"✨",   desc:"Patronus : 18 dégâts anti-Détraqueur", cost:12, effect:"burn",  power:18 },
   // ── Sort interdit (débloqué au niveau 9) ─────────────────────
   { name:"Avada...",          icon:"💚✨", desc:"Malédiction mortelle (50 dégâts)",   cost:20, effect:"instant", power:50, locked:true },
+  // ── Sort utilitaire — Téléportation (Portus) ─────────────────
+  // Achetable cher en boutique (livre_portus). Utilisable en combat
+  // (déplace le groupe OU bannit un ennemi non-boss) et hors combat
+  // (rejoint un étage déjà visité, case libre random).
+  // Coût hors combat : `outOfCombatCost` (38 PM). Voir js/teleport.js.
+  { name:"Portus",            icon:"🌀",   desc:"Téléportation tactique (combat ou hors combat)", cost:52, outOfCombatCost:38, effect:"teleport", power:0 },
   // ── Sorts de Vampirisme ─────────────────────────────────────
   { name:"Sanguini",          icon:"🩸",   desc:"Vol de vie (12 dégâts, +6 PV)",      cost:8,  effect:"lifesteal", power:12 },
   { name:"Vampyrus",          icon:"🦇",   desc:"Drain magique (18 dégâts, +9 PV)",   cost:14, effect:"lifesteal", power:18 },
@@ -276,6 +282,8 @@ const ITEMS = [
   { id:"livre_maledictus", name:"Grimoire des Maudits",          icon:"📓", desc:"Apprend Maledictus",            type:"spellbook", spell:"Maledictus",    price:220 },
   { id:"livre_crucio",     name:"Sortilèges Impardonnables, T.II", icon:"📕", desc:"Apprend Crucio (sort interdit)", type:"spellbook", spell:"Crucio",     price:450 },
   { id:"livre_morsmordre", name:"Marque des Ténèbres",            icon:"📕", desc:"Apprend Morsmordre",            type:"spellbook", spell:"Morsmordre",    price:600 },
+  // Sort utilitaire premium (cf. .claude/plans/teleportation-spell.md).
+  { id:"livre_portus",     name:"Traité de la Téléportation",     icon:"📘", desc:"Apprend Portus — téléportation tactique (combat + hors combat)", type:"spellbook", spell:"Portus", price:2800 },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];

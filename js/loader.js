@@ -87,6 +87,10 @@ window.UX_safe = new Proxy({}, {
     { name: 'DIFFICULTY_SETTINGS',source: 'state.js',        kind: 'obj' },
     { name: 'defeatedCellsByFloor',source: 'state.js',       kind: 'obj' },
     { name: 'floorKillCount',     source: 'state.js',        kind: 'obj' },
+    { name: 'visitedFloors',      source: 'state.js',        kind: 'obj' },
+    { name: 'portusOocCooldown',  source: 'state.js',        kind: 'obj' },
+    { name: 'portusFightCooldown',source: 'state.js',        kind: 'obj' },
+    { name: 'healSpellCooldown',  source: 'state.js',        kind: 'obj' },
     { name: 'STAT_POINTS_PER_LEVEL',source: 'data.js',       kind: 'obj' },
     { name: 'STAT_POINT_EFFECTS', source: 'data.js',         kind: 'obj' },
     { name: 'allocateStatPoint',  source: 'ui.js',           kind: 'fn'  },
@@ -135,6 +139,10 @@ window.UX_safe = new Proxy({}, {
     { name: 'endBattle',          source: 'battle.js',       kind: 'fn'  },
     { name: 'battleAction',       source: 'battle.js',       kind: 'fn'  },
     { name: 'castSpellInBattle',  source: 'battle-spells.js',kind: 'fn'  },
+    { name: 'openCombatTeleportChoice', source: 'teleport.js', kind: 'fn' },
+    { name: 'openOutOfCombatTeleport',  source: 'teleport.js', kind: 'fn' },
+    { name: 'teleportEnemyAway',        source: 'teleport.js', kind: 'fn' },
+    { name: 'teleportOutOfCombat',      source: 'teleport.js', kind: 'fn' },
     { name: 'renderEnemyGroup',   source: 'battle-ui.js',    kind: 'fn'  },
 
     // ── Inventaire ──

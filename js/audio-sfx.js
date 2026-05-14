@@ -47,6 +47,7 @@ Object.assign(AudioSystem, {
       Reparo:               [380,  680,  0.75],
       Sectumsempra:         [1100, 180,  1.0],
       'Avada...':           [220,  80,   1.2],
+      Portus:               [240,  1400, 0.9],
     };
     const [startF, endF, dur] = freqMap[spellName] || [600, 400, 0.5];
 

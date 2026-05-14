@@ -483,16 +483,131 @@ function openSpells(charIdx = 0) {
     if (!spell) continue;
     const div = document.createElement('div');
     div.className = 'spell-item';
+    // Sorts utilisables hors combat (teleport + heal pour V1). Les autres
+    // affichent un tag "Combat uniquement" pour ne pas tromper le joueur.
+    const oocCost   = spell.outOfCombatCost || null;
+    const isOoc     = isOutOfCombatSpell(spell);
+    // Cooldown OOC selon le type de sort.
+    let cdRemaining = 0, cdUnit = '';
+    if (spell.effect === 'teleport' && typeof portusOocCooldown === 'number') {
+      cdRemaining = portusOocCooldown;
+      cdUnit = `transition${cdRemaining > 1 ? 's' : ''} d'étage`;
+    } else if (spell.effect === 'heal' && typeof healSpellCooldown === 'number') {
+      cdRemaining = healSpellCooldown;
+      cdUnit = `pas`;
+    }
+    const canCastOoc = isOoc && cdRemaining === 0 && c.sp >= (oocCost || spell.cost);
+    const costLabel = oocCost
+      ? `${oocCost} PM <span style="color:#6a5030;font-size:9px">(hors combat)</span>`
+      : `${spell.cost} PM`;
+    let hint;
+    if (!isOoc) {
+      hint = '<span style="font-size:9px;color:#6a5030">Combat uniquement</span>';
+    } else if (cdRemaining > 0) {
+      hint = `<span style="font-size:9px;color:#a04020">⏳ Se recharge — ${cdRemaining} ${cdUnit}</span>`;
+    } else if (!canCastOoc) {
+      hint = '<span style="font-size:9px;color:#a04020">PM insuffisants</span>';
+    } else {
+      hint = '<span style="font-size:9px;color:#6a8030">▶ cliquer pour lancer</span>';
+    }
     div.innerHTML = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
         <div class="spell-name">${spell.name}</div>
         <div class="spell-desc">${spell.desc}</div>
+        <div style="margin-top:3px">${hint}</div>
       </div>
-      <div class="spell-cost">${spell.cost} PM</div>`;
+      <div class="spell-cost">${costLabel}</div>`;
+    if (canCastOoc) {
+      div.style.cursor = 'pointer';
+      div.onclick = () => castSpellOutOfCombat(spell.name, charIdx);
+    } else if (isOoc) {
+      div.style.opacity = '0.6';
+    } else {
+      div.style.opacity = '0.85';
+    }
     list.appendChild(div);
   }
   document.getElementById('spell-modal').style.display = 'flex';
+}
+
+// Sorts utilisables hors combat. Inscrits via SPELL_OOC_HANDLERS pour
+// rester extensible. V1 : Portus (teleport) + sorts de soin (heal).
+function isOutOfCombatSpell(spell) {
+  if (!spell) return false;
+  return spell.effect === 'teleport' || spell.effect === 'heal';
+}
+
+// Cooldown partagé entre tous les sorts de soin OOC (cf. .claude/plans/
+// teleportation-spell.md §Itération 3).
+const HEAL_OOC_CD_STEPS = 3;
+
+// Retourne l'allié vivant avec le ratio hp/hpMax le plus bas, ou null si
+// personne n'est blessé (tous au max ou tous KO). Le caster est inclus.
+function _pickMostWoundedAlly() {
+  let best = null, bestRatio = 1.0;
+  for (const c of party.slice(0, partySize)) {
+    if (!c || c.hp <= 0) continue;
+    if (c.hp >= c.hpMax) continue;
+    const ratio = c.hp / c.hpMax;
+    if (best === null || ratio < bestRatio) {
+      best = c; bestRatio = ratio;
+    }
+  }
+  return best;
+}
+
+const SPELL_OOC_HANDLERS = {
+  teleport: function (spell, charIdx) {
+    if (typeof openOutOfCombatTeleport === 'function') {
+      closeModal('spell-modal');
+      openOutOfCombatTeleport(charIdx);
+    }
+  },
+  // Soin OOC : cible auto = perso vivant le plus en bas de PV.
+  // Coût identique au combat. Cooldown HEAL_OOC_CD_STEPS pas, partagé.
+  heal: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster || caster.hp <= 0) {
+      addMsg('Personne ne peut canaliser le sort.', 'bad');
+      return;
+    }
+    if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) {
+      addMsg(`Sort de soin en récupération — encore ${healSpellCooldown} pas.`, 'bad');
+      return;
+    }
+    if (caster.sp < spell.cost) {
+      addMsg(`Pas assez de magie pour ${spell.name} (${spell.cost} PM).`, 'bad');
+      return;
+    }
+    const target = _pickMostWoundedAlly();
+    if (!target) {
+      addMsg('Le groupe est déjà au mieux — pas besoin de soin.', '');
+      return;
+    }
+    caster.sp -= spell.cost;
+    const before = target.hp;
+    target.hp = Math.min(target.hpMax, target.hp + spell.power);
+    const healed = target.hp - before;
+    if (typeof healSpellCooldown === 'number') healSpellCooldown = HEAL_OOC_CD_STEPS;
+    AudioSystem.playSpellCast(spell.name);
+    AudioSystem.speakSpell(spell.name);
+    addMsg(`💚 ${caster.name} → ${target.name} : ${spell.name} +${healed} PV.`, 'good');
+    UX_safe.floatDmg('ally', healed, 'heal');
+    closeModal('spell-modal');
+    updateUI();
+  }
+};
+
+function castSpellOutOfCombat(spellName, charIdx) {
+  const spell = SPELLS.find(s => s.name === spellName);
+  if (!spell) return;
+  const handler = SPELL_OOC_HANDLERS[spell.effect];
+  if (!handler) {
+    addMsg(`${spellName} ne peut être lancé qu'en combat.`, 'bad');
+    return;
+  }
+  handler(spell, charIdx);
 }
 
 // En combat : liste les sorts du personnage actif avec possibilité de cibler
@@ -507,21 +622,38 @@ function openBattleSpells() {
   for (const sName of c.spells) {
     const spell    = SPELLS.find(s => s.name === sName);
     if (!spell) continue;
-    const canCast  = c.sp >= spell.cost && !spell.locked;
+    // Portus en combat : bloqué si déjà utilisé ce combat OU si cooldown actif.
+    const fightCd = (spell.effect === 'teleport' && typeof portusFightCooldown === 'number')
+                    ? portusFightCooldown : 0;
+    const alreadyUsed = spell.effect === 'teleport'
+                       && typeof _teleportUsedThisFight !== 'undefined'
+                       && _teleportUsedThisFight;
+    const cdBlocked = fightCd > 0 || alreadyUsed;
+    const canCast  = c.sp >= spell.cost && !spell.locked && !cdBlocked;
     const div      = document.createElement('div');
     div.className  = 'spell-item';
     div.style.opacity = canCast ? '1' : '0.5';
+    const cdHint = (spell.effect === 'teleport' && cdBlocked)
+      ? `<div style="font-size:9px;color:#a04020;margin-top:2px">⏳ ${alreadyUsed ? 'déjà utilisé ce combat' : `recharge ${fightCd} combat${fightCd > 1 ? 's' : ''}`}</div>`
+      : '';
     div.innerHTML  = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
         <div class="spell-name">${spell.name}</div>
         <div class="spell-desc">${spell.desc}</div>
+        ${cdHint}
       </div>
       <div class="spell-cost">${spell.cost} PM</div>`;
 
     if (canCast) {
       div.onclick = () => {
         closeModal('spell-modal');
+        // Portus gère son propre flow (overlay A/B) — court-circuite la
+        // sélection de cible standard.
+        if (spell.effect === 'teleport') {
+          castSpellInBattle(spell.name, -1);
+          return;
+        }
         const needsTarget = ['stun','burn','instant','disarm'].includes(spell.effect);
         if (needsTarget && livingEnemies().length > 1) {
           pendingSpell = spell.name;
