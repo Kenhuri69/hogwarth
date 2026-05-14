@@ -4857,6 +4857,74 @@ async function scenarioFarmingQuests() {
   assert(t8.scOffer && t8.scActive && t8.scReady, 'clés audio Scamander manquantes');
   assert(t8.hgOffer && t8.hgActive && t8.hgReady, 'clés audio Hagrid manquantes');
 
+  // T9 : helper _npcHasFarmingOffer — détecte uniquement les PNJ random
+  // avec une quête farming offerable (pas les fixes, pas les PNJ lore).
+  const t9 = await page.evaluate(() => {
+    // Reset à un état propre où chasse + course sont offerables
+    activeQuests = activeQuests.filter(q =>
+      q.id !== 'chasse_magizoologiste' && q.id !== 'course_hagrid');
+    completedQuests.delete('chasse_magizoologiste');
+    completedQuests.delete('course_hagrid');
+    availableQuests.add('chasse_magizoologiste');
+    availableQuests.add('course_hagrid');
+    delete lastQuestCompletion['chasse_magizoologiste'];
+    delete lastQuestCompletion['course_hagrid'];
+    return {
+      scRandomFarming: _npcHasFarmingOffer('scamander_random'),
+      hgRandomFarming: _npcHasFarmingOffer('hagrid_random'),
+      scFixedNoFarming: _npcHasFarmingOffer('scamander'),    // ne porte que niffleurs
+      hgFixedNoFarming: _npcHasFarmingOffer('hagrid'),       // ne porte que chouette/cabane
+      dumbledoreNoFarming: _npcHasFarmingOffer('dumbledore'),
+      unknownNoFarming: _npcHasFarmingOffer('inexistant'),
+      noIdNoFarming: _npcHasFarmingOffer(null)
+    };
+  });
+  console.log('  T9 _npcHasFarmingOffer:', t9);
+  assert(t9.scRandomFarming,     'scamander_random doit porter une farming offerable');
+  assert(t9.hgRandomFarming,     'hagrid_random doit porter une farming offerable');
+  assert(!t9.scFixedNoFarming,   'scamander fixe ne doit pas être détecté comme farming');
+  assert(!t9.hgFixedNoFarming,   'hagrid fixe ne doit pas être détecté comme farming');
+  assert(!t9.dumbledoreNoFarming,'dumbledore ne doit pas être détecté comme farming');
+  assert(!t9.unknownNoFarming,   'NPC inexistant ne doit pas crasher');
+  assert(!t9.noIdNoFarming,      'id null ne doit pas crasher');
+
+  // T10 : minimap applique bien .map-npc-farming + dataset.sign sur la
+  // case du PNJ random porteur d'une farming offerable.
+  const t10 = await page.evaluate(() => {
+    // Choisit une case FLOOR connue et la force en NPC pour le test
+    let target = null;
+    for (let y = 0; y < dungeon.length && !target; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.FLOOR && !(x === playerX && y === playerY)) {
+          target = { x, y };
+          break;
+        }
+      }
+    }
+    if (!target) return { ok: false, reason: 'no FLOOR cell available' };
+    dungeon[target.y][target.x] = CELL.NPC;
+    visited[target.y][target.x] = true;
+    npcPlacements.set(`${target.x},${target.y}`, 'scamander_random');
+    renderMinimap();
+    const cells = document.querySelectorAll('#minimap .map-cell');
+    const idx   = target.y * MAP_W + target.x;
+    const cell  = cells[idx];
+    return {
+      ok:        true,
+      x:         target.x,
+      y:         target.y,
+      classes:   cell ? Array.from(cell.classList) : null,
+      sign:      cell ? cell.dataset.sign : null,
+      hasFarmingClass: cell ? cell.classList.contains('map-npc-farming') : false,
+      hasOfferClass:   cell ? cell.classList.contains('map-npc-offer') : false
+    };
+  });
+  console.log('  T10 minimap class:', t10);
+  assert(t10.ok,                  `setup échoué : ${t10.reason}`);
+  assert(t10.hasFarmingClass,     'minimap doit appliquer .map-npc-farming sur scamander_random offerable');
+  assert(!t10.hasOfferClass,      'minimap ne doit pas appliquer .map-npc-offer en parallèle');
+  assert(t10.sign === '!',        `dataset.sign attendu "!", got ${t10.sign}`);
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
