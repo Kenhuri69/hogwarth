@@ -103,7 +103,7 @@ const HOUSE_BONUSES = {
       // Phase 3 — Expert
       { threshold: 1700,  label: 'Expert Bronze',   bonus: { _baseLck: 1 }, msg: '🦁 Expertise naissante ! +1 LCK' },
       { threshold: 2500,  label: 'Expert Argent',   bonus: { _baseAtk: 1 }, msg: '🦁 Maître d\'armes ! +1 ATK' },
-      // Expert Or — Set artifact #2 = sword_gryff (déjà existant).
+      // Expert Or — récompense legendary NON-set (sword_gryff existant).
       { threshold: 3500,  label: 'Expert Or',       bonus: { item: 'sword_gryff' }, msg: "🦁 L'Épée de Gryffondor vous attend auprès du Pr McGonagall." },
       // Phase 4 — Maître
       { threshold: 4500,  label: 'Maître Bronze',   bonus: { _baseLck: 1 }, msg: '🦁 Maîtrise éprouvée ! +1 LCK' },
@@ -115,8 +115,9 @@ const HOUSE_BONUSES = {
       { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseAtk: 1 }, msg: '🦁 Virtuose accompli ! +1 ATK' },
       // Virtuose Or — Set artifact #3 = lame_godric (récompense de la quête, item livré ici uniquement si la quête est validée — câblage Étape 3).
       { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🦁 Virtuose d\'or — la dernière relique attend que tu termines la quête du Lion.' },
-      // Phase 6 — Légende (endgame, gated victoryAchieved)
-      { threshold: 25000, label: 'Légende',         bonus: { _baseAtk: 2, _baseLck: 1, legendaryPassive: true }, msg: '🦁 Légende vivante de Gryffondor ! +2 ATK +1 LCK · Maîtrise Légendaire éveillée.' },
+      // Phase 6 — Légende (endgame, gated victoryAchieved). Restitue
+      // lame_godric (existant) en récompense NON-set + bonus passif.
+      { threshold: 25000, label: 'Légende',         bonus: { _baseAtk: 2, _baseLck: 1, legendaryPassive: true, item: 'lame_godric' }, msg: '🦁 Légende vivante de Gryffondor ! +2 ATK +1 LCK · Maîtrise Légendaire éveillée — la Lame de Godric vous attend.' },
     ]
   },
   Serpentard: {
@@ -140,7 +141,7 @@ const HOUSE_BONUSES = {
       { threshold: 10000, label: 'Virtuose Bronze', bonus: { _baseLck: 1 }, msg: '🐍 Virtuose des ombres ! +1 LCK' },
       { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseMag: 1 }, msg: '🐍 Maître absolu ! +1 MAG' },
       { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🐍 Virtuose d\'or — la dernière relique attend que tu termines la quête du Serpent.' },
-      { threshold: 25000, label: 'Légende',         bonus: { _baseMag: 2, _baseLck: 1, legendaryPassive: true }, msg: '🐍 Légende de Serpentard ! +2 MAG +1 LCK · Maîtrise Légendaire éveillée.' },
+      { threshold: 25000, label: 'Légende',         bonus: { _baseMag: 2, _baseLck: 1, legendaryPassive: true, item: 'bague_salazar' }, msg: '🐍 Légende de Serpentard ! +2 MAG +1 LCK · Maîtrise Légendaire éveillée — la Bague de Salazar vous attend.' },
     ]
   },
   Serdaigle: {
@@ -164,7 +165,7 @@ const HOUSE_BONUSES = {
       { threshold: 10000, label: 'Virtuose Bronze', bonus: { _baseLck: 1 }, msg: '🦅 Virtuose lettré ! +1 LCK' },
       { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseMag: 1 }, msg: '🦅 Maître des sorts ! +1 MAG' },
       { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🦅 Virtuose d\'or — la dernière relique attend que tu termines la quête de l\'Aigle.' },
-      { threshold: 25000, label: 'Légende',         bonus: { _baseMag: 2, _baseLck: 1, legendaryPassive: true }, msg: '🦅 Légende de Serdaigle ! +2 MAG +1 LCK · Maîtrise Légendaire éveillée.' },
+      { threshold: 25000, label: 'Légende',         bonus: { _baseMag: 2, _baseLck: 1, legendaryPassive: true, item: 'codex_rowena' }, msg: '🦅 Légende de Serdaigle ! +2 MAG +1 LCK · Maîtrise Légendaire éveillée — le Codex de Rowena vous attend.' },
     ]
   },
   Poufsouffle: {
@@ -188,47 +189,55 @@ const HOUSE_BONUSES = {
       { threshold: 10000, label: 'Virtuose Bronze', bonus: { _baseLck: 1 }, msg: '🦡 Virtuose patient ! +1 LCK' },
       { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseDef: 1 }, msg: '🦡 Forteresse vivante ! +1 DEF' },
       { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🦡 Virtuose d\'or — la dernière relique attend que tu termines la quête du Blaireau.' },
-      { threshold: 25000, label: 'Légende',         bonus: { _baseDef: 2, _baseLck: 1, legendaryPassive: true }, msg: '🦡 Légende de Poufsouffle ! +2 DEF +1 LCK · Maîtrise Légendaire éveillée.' },
+      { threshold: 25000, label: 'Légende',         bonus: { _baseDef: 2, _baseLck: 1, legendaryPassive: true, item: 'bouclier_helga' }, msg: '🦡 Légende de Poufsouffle ! +2 DEF +1 LCK · Maîtrise Légendaire éveillée — le Bouclier de Helga vous attend.' },
     ]
   },
 };
 
 // ============================================================
-// SYSTÈME DE SETS DE MAISON — placeholder Étape 1
+// SYSTÈME DE SETS DE MAISON — 4 pièces par Maison
 // ============================================================
-// Chaque Maison aura à terme 3 artefacts (slots distincts) liés par
-// un `setKey`. Bonus 2/3 pièces appliqués dans recalculateStats() à
-// partir de l'Étape 4. Les pieceIds restent vides ici : ils seront
-// remplis lors de la création des items en Étape 2, et reliés aux
-// paliers 3-5 en Étape 3. Cf. .claude/plans/houses-2.0.md §B.
+// Composition : 1 pièce existante (brassard/anneau/plume/ceinture
+// distribuée à Apprenti Or, tier 3) + 3 pièces NOUVELLES créées en
+// Étape 2 (Confirmé Or tier 6, Maître Or tier 12, Virtuose Or tier 15
+// via quête de Maison). Cf. .claude/plans/houses-2.0.md §B.
+//
+// Bonus de set appliqués par recalculateStats() à partir de l'Étape 4 :
+// 2 pièces → bonus mineur, 3 pièces → bonus moyen, 4 pièces → bonus
+// majeur. Les pieceIds restent vides jusqu'à l'Étape 2 (création des
+// 3 items NEW par Maison).
 const HOUSE_SETS = {
   Gryffondor: {
     setKey:    'gryff_set',
     setLabel:  'Set du Lion',
-    pieceIds:  [],                                 // [piece1, piece2, piece3]
-    setBonus2: { bonusAtk: 1, bonusCritChance: 5 },
-    setBonus3: { bonusAtk: 3, bonusCritChance: 10, immuneDisarm: true },
+    pieceIds:  [],                                 // [piece1, piece2, piece3, piece4]
+    setBonus2: { bonusAtk: 1, bonusCritChance: 3 },
+    setBonus3: { bonusAtk: 2, bonusCritChance: 7 },
+    setBonus4: { bonusAtk: 4, bonusCritChance: 12, immuneDisarm: true },
   },
   Serpentard: {
     setKey:    'slyth_set',
     setLabel:  'Set du Serpent',
     pieceIds:  [],
     setBonus2: { bonusMag: 1, bonusLck: 1 },
-    setBonus3: { bonusMag: 3, bonusLck: 2, spellLifesteal: 0.10 },
+    setBonus3: { bonusMag: 2, bonusLck: 1 },
+    setBonus4: { bonusMag: 4, bonusLck: 2, spellLifesteal: 0.10 },
   },
   Serdaigle: {
     setKey:    'raven_set',
     setLabel:  "Set de l'Aigle",
     pieceIds:  [],
     setBonus2: { bonusMag: 1, bonusInt: 1 },
-    setBonus3: { bonusMag: 3, bonusInt: 2, spellCostReduction: 0.10 },
+    setBonus3: { bonusMag: 2, bonusInt: 1 },
+    setBonus4: { bonusMag: 4, bonusInt: 2, spellCostReduction: 0.10 },
   },
   Poufsouffle: {
     setKey:    'pouf_set',
     setLabel:  'Set du Blaireau',
     pieceIds:  [],
     setBonus2: { bonusDef: 1, bonusEnd: 1 },
-    setBonus3: { bonusDef: 3, bonusEnd: 2, regenHp: 2 },
+    setBonus3: { bonusDef: 2, bonusEnd: 1 },
+    setBonus4: { bonusDef: 4, bonusEnd: 2, regenHp: 2 },
   },
 };
 

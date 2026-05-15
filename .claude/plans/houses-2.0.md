@@ -72,29 +72,38 @@ Vision long-terme : on pourra ajouter une 7ᵉ phase ("Mythe", 40000 pts ?)
 pour les étages 40+, ou ajouter des sous-paliers Diamant/Platine entre
 Or et le palier suivant si on veut plus de granularité.
 
-### B. Modèle des Sets (3 pièces — items existants annotés)
+### B. Modèle des Sets (4 pièces : 1 existant + 3 nouveaux)
+
+Décision finale : chaque Maison a un set de **4 pièces** dont **1 seul
+existant** (le brassard distribué historiquement) et **3 nouveaux** à
+créer en Étape 2.
 
 Champs ajoutés sur les items du set (dans `js/data.js`) :
 
 ```js
-setKey: "gryff_set"   // identifie l'appartenance au set
-setPiece: 1 | 2 | 3   // numéro de pièce dans le set
+setKey: "gryff_set"     // identifie l'appartenance au set
+setPiece: 1 | 2 | 3 | 4 // numéro de pièce dans le set
 ```
 
-Composition (12 items existants annotés, **aucune création**) :
+Composition cible (Étape 2 livrera les NEW items) :
 
-| Set         | Pièce 1 (Apprenti Or) | Pièce 2 (Expert Or)   | Pièce 3 (Virtuose Or via quête) |
-|-------------|-----------------------|-----------------------|----------------------------------|
-| Gryffondor  | `brassard_lion` (hands) | `sword_gryff` (wand)  | `lame_godric` (wand)             |
-| Serpentard  | `anneau_serpent` (ring) | `locket_slytherin` (amulet) | `bague_salazar` (ring)         |
-| Serdaigle   | `plume_aigle` (trinket) | `diademe_serdaigle` (head) | `codex_rowena` (trinket)        |
-| Poufsouffle | `ceinture_blaireau` (belt) | `coupe_poufsouffle` (body) | `bouclier_helga` (cloak)       |
+| Set         | Pièce 1 (Apprenti Or, existant) | Pièce 2 (Confirmé Or, NEW) | Pièce 3 (Maître Or, NEW)     | Pièce 4 (Virtuose Or via quête, NEW) |
+|-------------|----------------------------------|----------------------------|------------------------------|----------------------------------------|
+| Gryffondor  | `brassard_lion` (hands)          | NEW slot TBD               | NEW slot TBD                 | NEW slot TBD                           |
+| Serpentard  | `anneau_serpent` (ring)          | NEW slot TBD               | NEW slot TBD                 | NEW slot TBD                           |
+| Serdaigle   | `plume_aigle` (trinket)          | NEW slot TBD               | NEW slot TBD                 | NEW slot TBD                           |
+| Poufsouffle | `ceinture_blaireau` (belt)       | NEW slot TBD               | NEW slot TBD                 | NEW slot TBD                           |
 
-⚠️ Slot Gryffondor : `sword_gryff` et `lame_godric` sont tous deux
-`wand` — mutuellement exclusifs. Solution simple à trancher Étape 2 :
-soit on crée un nouvel item Gry (set piece #3 sur slot libre), soit
-on accepte le conflit (joueur choisit). Décision casuelle, non
-bloquante pour Étape 1bis.
+Items existants conservés en récompense **NON-set** (pas de `setKey`) :
+- `sword_gryff`/`locket_slytherin`/`diademe_serdaigle`/`coupe_poufsouffle`
+  → toujours livrés à Expert Or (tier 9), via head-of-house, comme avant.
+- `lame_godric`/`bague_salazar`/`codex_rowena`/`bouclier_helga`
+  → restitués à Légende (tier 16, gated victoire) via head-of-house
+  (anciennement distribués directement, désormais cohérents avec le
+  reste du flow).
+
+Bonus de set : 2 pièces équipées → mineur, 3 pièces → moyen, 4 pièces
+→ majeur. Détaillé dans `HOUSE_SETS` (`js/state.js`).
 
 Bonus de set (calculés à `recalculateStats()` après agrégation des
 bonus pièce-par-pièce) :
