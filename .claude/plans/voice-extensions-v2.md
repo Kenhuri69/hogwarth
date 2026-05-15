@@ -1,9 +1,12 @@
 # Plan — Voix in-game V2 : extensions
 
 > Plan vivant (cf. `.claude/guidelines.md` §5).
-> Statut au démarrage : **non démarré** — items hors-scope V1 de
-> `voice-dumbledore-chain.md` (toujours actif, encore bloqué Phase A).
-> Pré-requis : `voice-dumbledore-chain` Phase A-D livrée et stabilisée.
+> Statut au 2026-05-15 : **Vague A en cours** — code + smoke posés sous
+> branche `claude/launch-voice-extension-grPyO`, fallback silencieux en
+> attente des 20 OGG ElevenLabs (utilisateur).
+> Pré-requis : 15 OGG `voice-dumbledore-chain` livrés (vérifié dans
+> `audio/voice/`) + 6 OGG farming (Hagrid/Scamander) — mécanique
+> `playVoice` éprouvée.
 
 ## 1. Contexte
 
@@ -117,14 +120,53 @@ forte.
 
 ### Vague A — 20 lignes Chefs de Maison
 
-- [ ] Rédiger les 20 textes (5 par PNJ) dans `npcs.js — dialogues`.
+> Décision : on réutilise les textes existants de `npcs.js`
+> (`dialogues.greeting` 2 pages + `dialoguesByQuest.quest_set_<house>`
+> 3 états) — 4 PNJ × 5 OGG = **20 OGG**, mapping 1:1.
+> Voice keys : `<npcid>_greeting_<1|2>`, `<npcid>_<offer|active|ready>_1`
+> (suffixe `_1` future-proof pour split multi-page).
+
+- [x] Mapping voice keys figé (20 entrées dans `_VOICE_SAMPLES`).
+- [x] Refactor `_voiceKeyForPage` → ajout source `'greeting'` et 4 chefs.
+- [x] Helper `_npcDialogSource(npc, state)` pour tracker l'origine des pages.
+- [x] Smoke `scenarioHeadOfHouseVoice` (T1 mapping clés, T2 greeting,
+      T3 état offer, T4 régression Dumbledore).
 - [ ] Briefing ElevenLabs : 4 acteurs choisis + textes dans un .md de prompt.
-- [ ] Génération MP3 (utilisateur).
-- [ ] Encodage OGG Vorbis (`tools/encode_voice.sh` à créer ou réutiliser).
-- [ ] Placement dans `audio/voice/<id>.ogg`.
-- [ ] Hook dans `npc-dialog.js` (5 sites par PNJ × 4 = 20 sites).
-- [ ] Smoke `scenarioHeadOfHouseVoice` (4 sous-cas).
-- [ ] Commit + push.
+- [ ] Génération MP3 (utilisateur) — voir §3.A.5 pour la liste exacte.
+- [ ] Encodage OGG Vorbis (`ffmpeg -ac 1 -ar 22050 -c:a libvorbis -q:a 3`).
+- [ ] Placement dans `audio/voice/<key>.ogg`.
+- [ ] Commit + push (PR séparée éventuelle pour les assets binaires).
+
+#### A.5 — Liste des 20 OGG attendus (textes existants dans `npcs.js`)
+
+| Voice key                | Texte source (npcs.js)                                                              |
+|--------------------------|-------------------------------------------------------------------------------------|
+| `mcgonagall_greeting_1`  | « Un Gardien du Portail s'est éveillé dans les passages secrets. […] »              |
+| `mcgonagall_greeting_2`  | « Soyez prudent : ce gardien est de pierre vivante, ses coups peuvent rompre un os. […] » |
+| `mcgonagall_offer_1`     | « Une Chimère rôde dans les profondeurs. Trois de ces bêtes — pas une de moins […] » |
+| `mcgonagall_active_1`    | « Les Chimères tiennent-elles encore tête à un lion ? »                              |
+| `mcgonagall_ready_1`     | « Trois Chimères abattues. Le Cœur du Lion vous revient […] »                        |
+| `rogue_greeting_1`       | « Tiens, tiens... un élève de ma maison qui ose s'aventurer ici. »                  |
+| `rogue_greeting_2`       | « L'ambition n'est rien sans la maîtrise. Voyons si vous méritez ce qui vous attend. » |
+| `rogue_offer_1`          | « Trois Basilics Mineurs souillent les cachots oubliés. Élimine-les. […] »          |
+| `rogue_active_1`         | « Encore en vie ? Surprenant. Le travail n'est pas terminé. »                        |
+| `rogue_ready_1`          | « Trois Basilics, trois preuves. La Couronne vous attend […] »                       |
+| `flitwick_greeting_1`    | « Oh ! Un esprit aiguisé, n'est-ce pas ? L'aigle de Serdaigle se reconnaît au premier regard. » |
+| `flitwick_greeting_2`    | « Approchez, approchez. Le savoir récompense ceux qui le cultivent avec assiduité. » |
+| `flitwick_offer_1`       | « Hécate la Maudisseuse dévore nos grimoires interdits. Trois de ses avatars […] »  |
+| `flitwick_active_1`      | « Le savoir s'écrit dans le silence — combien d'avatars d'Hécate avez-vous réduits au néant ? » |
+| `flitwick_ready_1`       | « Trois maudisseuses, trois pages préservées. L'Anneau du Savoir vous attend […] »  |
+| `sprout_greeting_1`      | « Ah, un Poufsouffle ! La loyauté finit toujours par porter ses fruits — comme mes plantes. » |
+| `sprout_greeting_2`      | « Ne sous-estimez jamais le travail acharné. C'est ce qui distingue les vrais sorciers. » |
+| `sprout_offer_1`         | « Trois Trolls des Cavernes terrorisent les passages — patience et loyauté […] »   |
+| `sprout_active_1`        | « Trois trolls, et pas un de moins. Garde la tête haute. »                          |
+| `sprout_ready_1`         | « Trois trolls vaincus — le serment est tenu. Le Médaillon de Helga vous attend […] » |
+
+> Limite connue : si un PNJ propose une autre quête avant `quest_set_<house>`
+> (ex. McGonagall donne aussi `golem_passage`), la voix `_offer_1` jouera
+> sur le texte de `golem_passage` — léger décalage texte/voix accepté en V1
+> (tons cohérents). Override par quête possible plus tard via mapping
+> dédié dans `_voiceKeyForPage` (cf. modèle Dumbledore).
 
 ### Vague B — Voix incantation sorts
 
