@@ -108,6 +108,39 @@ function recalculateStats() {
       if (c._tenebresSetCount >= 2) { critBonus += 10; dodgeBonus += 5;  }
       if (c._tenebresSetCount >= 3) { critBonus += 5;  dodgeBonus += 5;  }
     }
+
+    // Sets Maison 2.0 — 4 pièces par Maison (cf. .claude/plans/houses-2.0.md
+    // §B). Bonus 2/3/4 pièces additifs : applique setBonus2 puis setBonus3
+    // puis setBonus4 selon le compte équipé. Stocke le compte sur
+    // c._<setKey>Count pour les tests et l'UI.
+    if (typeof HOUSE_SETS !== 'undefined' && c.equipped) {
+      const equippedIds = new Set();
+      for (const item of Object.values(c.equipped)) {
+        if (item && item.id) equippedIds.add(item.id);
+      }
+      for (const houseName of Object.keys(HOUSE_SETS)) {
+        const set = HOUSE_SETS[houseName];
+        const count = set.pieceIds.filter(id => equippedIds.has(id)).length;
+        c['_' + set.setKey + 'Count'] = count;
+        const bonuses = [];
+        if (count >= 2 && set.setBonus2) bonuses.push(set.setBonus2);
+        if (count >= 3 && set.setBonus3) bonuses.push(set.setBonus3);
+        if (count >= 4 && set.setBonus4) bonuses.push(set.setBonus4);
+        for (const b of bonuses) {
+          if (b.bonusAtk) c.atk += b.bonusAtk;
+          if (b.bonusDef) c.def += b.bonusDef;
+          if (b.bonusMag) c.mag += b.bonusMag;
+          if (b.bonusLck) c.lck += b.bonusLck;
+          if (b.bonusStr) c.str += b.bonusStr;
+          if (b.bonusInt) c.int += b.bonusInt;
+          if (b.bonusAgi) c.agi += b.bonusAgi;
+          if (b.bonusEnd) c.end += b.bonusEnd;
+          if (b.bonusCritChance)  critBonus  += b.bonusCritChance;
+          if (b.bonusDodgeChance) dodgeBonus += b.bonusDodgeChance;
+        }
+      }
+    }
+
     c.critChance     = Math.max(0, Math.min(40, 5 + c.lck * 0.5 + critBonus));
     c.dodgeChance    = Math.max(0, Math.min(35, 5 + c.agi * 0.4 + dodgeBonus));
     c.critMultiplier = 1.5;

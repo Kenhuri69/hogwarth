@@ -121,6 +121,9 @@ function applyEquipmentRegen() {
     // Set bonus Ténèbres 3/3 : +2 regen HP / tour (cf. recalculateStats —
     // c._tenebresSetCount). Voir ENDGAME_PLAN.md §7.8.
     if ((c._tenebresSetCount | 0) >= 3) hpRegen += 2;
+    // Set du Blaireau 4/4 : +2 regen HP / tour
+    // (cf. .claude/plans/houses-2.0.md §B — HOUSE_SETS.Poufsouffle.setBonus4).
+    if ((c._pouf_setCount | 0) >= 4) hpRegen += 2;
     if (hpRegen > 0 && c.hp < c.hpMax) {
       const heal = Math.min(hpRegen, c.hpMax - c.hp);
       c.hp += heal;

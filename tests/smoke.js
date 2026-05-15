@@ -4635,6 +4635,84 @@ async function scenarioHouseRewardFlow() {
   await browser.close();
 }
 
+// ── Scénario Maisons 2.0 — Set bonus 4 pièces ─────────────────
+// Vérifie la détection progressive d'un set Maison (Set du Lion,
+// Gryffondor) à 2 / 3 / 4 pièces équipées et l'application correcte
+// des bonus cumulatifs depuis HOUSE_SETS. Cf.
+// .claude/plans/houses-2.0.md §B + js/inventory.js — recalculateStats.
+async function scenarioHouseSet() {
+  console.log('\n── Scénario Maisons 2.0 : Set du Lion (4 pièces) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : 0 pièce équipée → pas de bonus de set
+  const t1 = await page.evaluate(() => {
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    recalculateStats();
+    return { count: party[0]._gryff_setCount | 0, atk: party[0].atk, crit: party[0].critChance };
+  });
+  console.log('  T1 0/4 →', t1);
+  assert(t1.count === 0, '_gryff_setCount === 0 à vide');
+
+  // T2 : 2 pièces équipées (brassard hands + heaume head) → setBonus2 +1 ATK +3 crit
+  const t2 = await page.evaluate(() => {
+    party[0].equipped.hands = { ...ITEMS.find(i => i.id === 'brassard_lion') };
+    party[0].equipped.head  = { ...ITEMS.find(i => i.id === 'heaume_vaillant') };
+    recalculateStats();
+    return { count: party[0]._gryff_setCount | 0, atk: party[0].atk, crit: party[0].critChance };
+  });
+  console.log('  T2 2/4 →', t2);
+  assert(t2.count === 2,                'compte 2/4');
+  assert(t2.atk   >= t1.atk + 4,        'ATK +4 minimum (2+2 stats items + 1 setBonus2 dépend de calibration)');
+  assert(t2.crit  >= t1.crit + 3 - 0.5, '+3 crit du setBonus2');
+
+  // T3 : 3 pièces (+ cape_godric cloak) → setBonus2 + setBonus3 cumulés
+  const t3 = await page.evaluate(() => {
+    party[0].equipped.cloak = { ...ITEMS.find(i => i.id === 'cape_godric') };
+    recalculateStats();
+    return { count: party[0]._gryff_setCount | 0, atk: party[0].atk, crit: party[0].critChance };
+  });
+  console.log('  T3 3/4 →', t3);
+  assert(t3.count === 3,                'compte 3/4');
+  assert(t3.crit  >= t2.crit + 7 - 0.5, '+7 crit cumulé du setBonus3');
+
+  // T4 : 4 pièces (+ coeur_lion amulet) → tous les bonus actifs
+  const t4 = await page.evaluate(() => {
+    party[0].equipped.amulet = { ...ITEMS.find(i => i.id === 'coeur_lion') };
+    recalculateStats();
+    return { count: party[0]._gryff_setCount | 0, atk: party[0].atk, crit: party[0].critChance };
+  });
+  console.log('  T4 4/4 →', t4);
+  assert(t4.count === 4,                 'compte 4/4');
+  assert(t4.crit  >= t3.crit + 12 - 0.5, '+12 crit du setBonus4 (immuneDisarm hors-stats)');
+
+  // T5 : set Poufsouffle 4/4 → regenHp +2/tour dans applyEquipmentRegen
+  const t5 = await page.evaluate(() => {
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    party[0].equipped.belt   = { ...ITEMS.find(i => i.id === 'ceinture_blaireau') };
+    party[0].equipped.cloak  = { ...ITEMS.find(i => i.id === 'cape_loyaute') };
+    party[0].equipped.head   = { ...ITEMS.find(i => i.id === 'coiffe_blaireau') };
+    party[0].equipped.amulet = { ...ITEMS.find(i => i.id === 'medaillon_helga') };
+    recalculateStats();
+    party[0].hp = Math.max(1, party[0].hpMax - 10);
+    const hpBefore = party[0].hp;
+    if (typeof applyEquipmentRegen === 'function') applyEquipmentRegen();
+    return { count: party[0]._pouf_setCount | 0, hpDelta: party[0].hp - hpBefore };
+  });
+  console.log('  T5 Pouf 4/4 regen →', t5);
+  assert(t5.count === 4,    'Pouf 4/4 détecté');
+  assert(t5.hpDelta >= 3,   'regenHp ≥ 3 (1 du medaillon_helga + 2 du setBonus4)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Set Maison Lion + Blaireau OK');
+  await browser.close();
+}
+
 // ── Scénario endgame Tranche 2 — 4 : Set bonus Ténèbres ─────
 async function scenarioTenebresSet() {
   console.log('\n── Scénario endgame T2.4 : Set bonus Ténèbres ──');
@@ -5498,7 +5576,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSet, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
