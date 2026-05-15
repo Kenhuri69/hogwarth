@@ -1157,6 +1157,85 @@ muter en place, ce qui préserve les références (`party[0] === player`). Idem 
 
 ---
 
+## Pipeline d'icônes d'items (`tools/icon_factory.py`)
+
+Les items du jeu n'utilisent **pas** d'emoji en runtime — le champ `icon`
+(emoji) de `data.js` n'est qu'un fallback texte. Le rendu réel passe
+par `getItemIconHtml(item, size)` qui résout l'ID dans cet ordre :
+
+1. `ITEM_ICON_NEW_REGISTRY[id]` → PNG painterly multi-tailles
+   `img/icons_new/<id>_<16|24|32|48|64>.png` (priorité 1)
+2. `ITEM_ICON_REGISTRY[id]` → PNG legacy `img/icons/items/<id>.png`
+3. fallback emoji `item.icon`
+
+Les PNG painterly sont générés par `tools/icon_factory.py` (4627 lignes,
+44 recettes au 2026-05). Pipeline : silhouette SVG (`tools/parts/`) →
+remplissage par région → 7 passes painterly (AO, shading 45°, rim-light,
+specular, grain, halo rareté, cartouche dorée) → mipmaps 64/48/32/24/16
+via LANCZOS.
+
+### Ajouter une icône d'item
+
+1. **Identifier le part SVG de base** dans `tools/parts/` (`hood.svg`,
+   `gem-pendant.svg`, `tiara.svg`, `hat-pointy.svg`, `feather.svg`,
+   `glove.svg`, `belt.svg`, `flask.svg`, `chalice.svg`, etc.).
+   Chaque part a des régions nommées via `data-region="<nom>"` —
+   inspecter avec `grep -oE 'data-region="[^"]+"' tools/parts/<file>.svg`.
+   Si aucun part ne convient → en créer un nouveau (silhouette
+   mono-couleur `#000000` sur viewBox `0 0 512 512`, 2-5 régions max).
+2. **Ajouter une recette** dans le dict `RECIPES` de `tools/icon_factory.py`
+   (modèles : `sword_gryff`, `coupe_poufsouffle`, `brassard_lion`).
+   Champs : `id`, `name`, `rarity` (`common|uncommon|rare|epic|legendary`,
+   pilote le halo), `material` (`matte|glass|metal|leather|wood`),
+   `silhouette` (`{kind:"svg",file:"..."}` ou `{kind:"shape",name:"ring_band",params:{...}}`),
+   `fills` (map `region → (r,g,b)`), `accents` (liste de passes
+   optionnelles : `liquid`, `bubbles`, `runes`, `orb_glow`,
+   `gem_facet_shine`, `emboss`, `symbol`), `sparkles` (legendary).
+3. **Pour un emblème de Maison incrusté**, utiliser l'accent
+   `{kind:"symbol", region:"<region>", shape:"lion|snake|eagle|badger",
+   color:(r,g,b), size:<px>}`. Glyphs disponibles dans `_SYMBOL_PATHS`
+   (`icon_factory.py:827+`) : `lion`, `snake`, `eagle`, `badger`,
+   `star`, `moon`, `flame`, `drop`, `lightning`, `skull`, `eye`,
+   `bat`, `fang`, `cross`, `leaf`, `deer`, `wand`.
+4. **Générer les PNG** :
+   ```bash
+   python3 tools/icon_factory.py <id1> <id2> ...
+   # ou pour tout regénérer :
+   python3 tools/icon_factory.py --all
+   ```
+   Produit 5 PNG par ID dans `img/icons_new/<id>_<size>.png`.
+5. **Référencer** dans `js/item-icons.js — ITEM_ICON_NEW_REGISTRY`
+   (entrée pointant vers le `_64.png`).
+6. **Vérifier** : ouvrir le jeu, item visible dans l'inventaire au bon
+   visuel. Le halo de rareté + le cartouche doré encadrent le sujet.
+
+### Palettes Maison standardisées
+
+Réutilisées dans toutes les recettes thématiques (cf. `brassard_lion`,
+`heaume_vaillant`, etc.) :
+
+| Maison      | Dominante       | Accent           | Emblème (`shape`) |
+|-------------|-----------------|------------------|-------------------|
+| Gryffondor  | `(116,0,1)` rouge | `(211,166,37)` or | `"lion"`         |
+| Serpentard  | `(26,71,42)` vert | `(170,170,170)` argent | `"snake"`   |
+| Serdaigle   | `(14,26,64)` bleu | `(148,107,45)` bronze | `"eagle"`    |
+| Poufsouffle | `(55,46,41)` brun | `(240,199,94)` or | `"badger"`       |
+
+### Dépendances Python
+
+```bash
+pip install pillow cairosvg numpy scipy
+# macOS : brew install cairo pango
+```
+
+### Référence complète
+
+Procédure détaillée et historique : `tools/README.md` +
+`.claude/plans/house-intermediate-tier.md §2.7` (paliers Tier 2) +
+`.claude/plans/houses-2.0.md §B` (Sets de Maison 2.0).
+
+---
+
 ## Déploiement
 
 - Dépôt : https://github.com/Kenhuri69/hogwarth

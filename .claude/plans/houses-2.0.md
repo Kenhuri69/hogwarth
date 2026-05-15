@@ -195,7 +195,22 @@ existants en endgame.
 - `js/state.js — HOUSE_SETS.pieceIds` : remplis avec les 4 IDs par set.
 - `js/item-icons.js` : 12 entrées `ITEM_ICON_REGISTRY` ajoutées
   (alias vers PNG existants — sprites dédiés à générer plus tard via
-  `tools/gen_icons.py` si direction artistique souhaitée).
+  `tools/icon_factory.py` si direction artistique souhaitée).
+
+**Itération suivante (post-Étape 6) — sprites painterly dédiés** :
+- Ajout de 12 recettes dans `tools/icon_factory.py` (lignes ~650+)
+  selon le pipeline standard du projet (cf. `CLAUDE.md → Pipeline
+  d'icônes d'items`). Chaque recette utilise la palette de la Maison
+  (rouge/or pour Gryff, vert/argent pour Slyth, bleu/bronze pour Raven,
+  brun/or pour Pouf) + accent `{kind:"symbol", shape:"lion|snake|eagle|badger"}`
+  pour graver l'emblème centré sur la silhouette.
+- Génération : `python3 tools/icon_factory.py heaume_vaillant cape_godric
+  coeur_lion pendentif_mamba cape_sibylline couronne_basilic manteau_encre
+  oeil_aigle anneau_savoir cape_loyaute coiffe_blaireau medaillon_helga`
+  → 60 PNG (12 × 5 mipmaps) dans `img/icons_new/`.
+- `js/item-icons.js — ITEM_ICON_NEW_REGISTRY` : 12 entrées pointant
+  vers les `_64.png`. Les anciens alias placeholder dans
+  `ITEM_ICON_REGISTRY` sont retirés (NEW_REGISTRY a priorité 1).
 
 Composition finale :
 
