@@ -261,6 +261,16 @@ function _resolveSlotForItem(item, c) {
 
 // ── Menu de sélection du personnage pour équiper ─────────────
 // Remplace temporairement la grille par un prompt de choix.
+// Tag « SET du Lion (1/4) » affiché dans le titre de showEquipMenu si
+// l'item appartient à un set Maison. Cf. plan houses-2.0.md §B (Étape 5).
+function _equipMenuSetBadge(item) {
+  if (!item || !item.setKey || typeof HOUSE_SETS === 'undefined') return '';
+  const set = Object.values(HOUSE_SETS).find(s => s.setKey === item.setKey);
+  if (!set) return '';
+  const piece = item.setPiece ? `${item.setPiece}/4` : '?';
+  return `<span class="equip-menu-set-badge">${set.setLabel} (${piece})</span>`;
+}
+
 function showEquipMenu(item, idx) {
   const isRing = item.slot === 'ring';
 
@@ -268,6 +278,7 @@ function showEquipMenu(item, idx) {
   if (partySize === 1 && !isRing) { equipItem(idx, 0); return; }
 
   const grid = document.getElementById('inv-grid');
+  const setBadge = _equipMenuSetBadge(item);
 
   // Mode solo + anneau : choisir l'anneau cible (Harry uniquement)
   if (partySize === 1 && isRing) {
@@ -279,7 +290,7 @@ function showEquipMenu(item, idx) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;padding:14px;text-align:center">
         <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
-          Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}
+          Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}${setBadge}
         </div>
         <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
         <div style="max-width:200px;margin:0 auto">
@@ -323,7 +334,7 @@ function showEquipMenu(item, idx) {
   grid.innerHTML = `
     <div style="grid-column:1/-1;padding:14px;text-align:center">
       <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
-        Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}
+        Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}${setBadge}
       </div>
       <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
       <div style="max-width:200px;margin:0 auto">

@@ -4743,6 +4743,115 @@ async function scenarioHouseSetQuest() {
   await browser.close();
 }
 
+// ── Scénario Maisons 2.0 — UI Set Maison sur fiche perso (Étape 5) ──
+// Vérifie le rendu de l'encart « Set du Lion » dans openCharacter :
+// 4 médaillons, état par pièce (équipée / au sac / en attente /
+// manquante), grille de bonus 2/3/4 active selon le compte. Vérifie
+// aussi le tag SET dans le menu d'équipement (showEquipMenu).
+async function scenarioHouseSetUI() {
+  console.log('\n── Scénario Maisons 2.0 : UI Set Maison sur fiche perso ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : aucun équipement → encart visible avec 4 cellules manquantes,
+  // 0 bonus actif.
+  const t1 = await page.evaluate(() => {
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    pendingHouseRewards = new Set();
+    recalculateStats();
+    openCharacter(0);
+    const panel = document.querySelector('.section-houseset');
+    const cells = panel ? panel.querySelectorAll('.set-cell') : [];
+    const bonuses = panel ? panel.querySelectorAll('.set-bonus-row') : [];
+    return {
+      panelOpen:    !!panel,
+      title:        panel ? panel.querySelector('.panel-title').textContent.trim() : null,
+      cellCount:    cells.length,
+      missingCount: panel ? panel.querySelectorAll('.set-cell-missing').length : 0,
+      bonusRows:    bonuses.length,
+      activeBonus:  panel ? panel.querySelectorAll('.set-bonus-row.active').length : 0
+    };
+  });
+  console.log('  T1 vide →', t1);
+  assert(t1.panelOpen,           'encart Set Maison non rendu');
+  assert(/Set du Lion/i.test(t1.title || ''), `titre inattendu : ${t1.title}`);
+  assert(t1.cellCount === 4,     `4 médaillons attendus, obtenu ${t1.cellCount}`);
+  assert(t1.missingCount === 4,  '4 cellules doivent être en état missing');
+  assert(t1.bonusRows === 3,     '3 paliers de bonus attendus (2/3/4)');
+  assert(t1.activeBonus === 0,   'aucun palier ne doit être actif à 0/4');
+
+  // T2 : 2 pièces équipées → 2 cellules « equipped », 1 palier actif.
+  const t2 = await page.evaluate(() => {
+    party[0].equipped.hands = { ...ITEMS.find(i => i.id === 'brassard_lion') };
+    party[0].equipped.head  = { ...ITEMS.find(i => i.id === 'heaume_vaillant') };
+    recalculateStats();
+    openCharacter(0);
+    const panel = document.querySelector('.section-houseset');
+    return {
+      title:         panel.querySelector('.panel-title').textContent.trim(),
+      equippedCount: panel.querySelectorAll('.set-cell-equipped').length,
+      missingCount:  panel.querySelectorAll('.set-cell-missing').length,
+      activeBonus:   panel.querySelectorAll('.set-bonus-row.active').length
+    };
+  });
+  console.log('  T2 2/4 équipées →', t2);
+  assert(/2\/4/.test(t2.title),     `titre doit refléter 2/4 : ${t2.title}`);
+  assert(t2.equippedCount === 2,   `2 cellules equipped attendues, obtenu ${t2.equippedCount}`);
+  assert(t2.missingCount === 2,    `2 cellules missing attendues, obtenu ${t2.missingCount}`);
+  assert(t2.activeBonus === 1,     `1 palier actif (2/4) attendu, obtenu ${t2.activeBonus}`);
+
+  // T3 : 1 pièce au sac + 1 pièce en attente chez le Chef.
+  const t3 = await page.evaluate(() => {
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'cape_godric') }];
+    pendingHouseRewards = new Set(['coeur_lion']);
+    recalculateStats();
+    openCharacter(0);
+    const panel = document.querySelector('.section-houseset');
+    return {
+      inInvCount:    panel.querySelectorAll('.set-cell-in_inv').length,
+      pendingCount:  panel.querySelectorAll('.set-cell-pending').length,
+      missingCount:  panel.querySelectorAll('.set-cell-missing').length
+    };
+  });
+  console.log('  T3 mix états →', t3);
+  assert(t3.inInvCount === 1,    `1 cellule in_inv attendue, obtenu ${t3.inInvCount}`);
+  assert(t3.pendingCount === 1,  `1 cellule pending attendue, obtenu ${t3.pendingCount}`);
+  assert(t3.missingCount === 0,  `0 cellule missing attendue, obtenu ${t3.missingCount}`);
+
+  // T4 : aucune Maison choisie → encart absent.
+  const t4 = await page.evaluate(() => {
+    chosenHouse = null;
+    openCharacter(0);
+    return { panelOpen: !!document.querySelector('.section-houseset') };
+  });
+  console.log('  T4 sans Maison →', t4);
+  assert(!t4.panelOpen, 'encart Set Maison ne doit pas apparaître sans chosenHouse');
+
+  // T5 : tag SET dans showEquipMenu pour une pièce de set.
+  const t5 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    partySize = 2;                                 // duo pour forcer le menu (vs équipement direct)
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'heaume_vaillant') }];
+    openInventory();
+    showEquipMenu(player.inventory[0], 0);
+    const badge = document.querySelector('#inv-grid .equip-menu-set-badge');
+    return { hasBadge: !!badge, badgeText: badge ? badge.textContent.trim() : '' };
+  });
+  console.log('  T5 badge SET dans showEquipMenu →', t5);
+  assert(t5.hasBadge,                       'tag SET absent du menu d\'équipement');
+  assert(/Set du Lion/i.test(t5.badgeText), `texte du badge inattendu : ${t5.badgeText}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Encart Set Maison + tag SET conformes');
+  await browser.close();
+}
+
 // ── Scénario Maisons 2.0 — Set bonus 4 pièces ─────────────────
 // Vérifie la détection progressive d'un set Maison (Set du Lion,
 // Gryffondor) à 2 / 3 / 4 pièces équipées et l'application correcte
@@ -5684,7 +5793,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSet, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

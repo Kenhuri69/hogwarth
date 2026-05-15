@@ -2,7 +2,7 @@
 
 > Branche actuelle : `claude/house-system-step-three-Ual5V` (basée sur
 > `claude/house-system-expansion-OYuhx`).
-> Statut : 🟢 Étapes 1-2-3-4 livrées · 🟡 Étapes 5-6 à faire
+> Statut : 🟢 Étapes 1-2-3-4-5 livrées · 🟡 Étape 6 à faire
 
 ## Contexte & écart avec le brief initial
 
@@ -307,20 +307,40 @@ Critères :
 
 **Commit** : `feat(houses): activate 2/3-piece set bonuses and tier 6 legendary passive`
 
-### Étape 5 — UI/UX écran Maisons + journal d'équipement
+### Étape 5 — UI/UX écran Maisons + journal d'équipement ✅
 
-**Objectif** : améliorer la lisibilité.
+**Statut** : 🟢 livré sur `claude/house-system-step-three-Ual5V`.
 
-Fichiers touchés :
-- `js/ui.js` / `index.html` / `css/style.css` : nouvel encart « Set
-  Maison » dans la modale Personnage (`openCharacter`) affichant 3
-  cases (remplie/vide), bonus actuel, bonus suivant.
-- `js/inventory.js — showEquipMenu` : tag visuel `[SET]` sur les pièces
-  appartenant à un set.
+**Réajustement** : le plan d'origine évoquait « 3 médaillons » — sur la
+base 16 paliers + sets 4 pièces de l'Étape 1bis/2, on rend désormais
+**4 cellules** côte à côte (1 par pièce) et **3 paliers de bonus**
+(2/3/4 pièces équipées).
 
-Critères :
-- L'écran Personnage montre 3 médaillons (vides ou remplis) côte à côte.
-- Hover/tap → tooltip décrivant le bonus de set.
+**Découpage exécution** :
+
+- [x] `_renderHouseSetPanel(c)` dans `js/ui.js` : titre + 4 cellules
+  (icône + numéro de pièce) + 3 paliers de bonus formatés via
+  `_formatSetBonus`. Affichage conditionnel à `chosenHouse`.
+- [x] État par cellule (`_setPieceState`) : `equipped` (or +
+  glow), `in_inv` (vert), `pending` (animation pulse orange), `missing`
+  (grisé). Lookup `pendingHouseRewards` pour la cérémonie head-of-house.
+- [x] Tooltip au survol via `data-tooltip` (déjà géré par `UX.showTooltip`
+  pour `[data-tooltip]`).
+- [x] Intégration dans `openCharacter` : nouvelle grid-area `houseset`
+  insérée entre `equip` et `spells` (desktop **et** mobile).
+- [x] CSS dédié dans `css/style.css` (`.section-houseset`, `.set-cell-*`,
+  `.set-bonus-row.active/inactive`, `@keyframes setCellPulse`). Mobile
+  responsive (icônes 24px sous 700px).
+- [x] Tag `Set du Lion (n/4)` dans `showEquipMenu` (`js/inventory.js`)
+  via `_equipMenuSetBadge(item)` — affiché dans le titre du menu si
+  `item.setKey` est défini.
+- [x] Smoke `scenarioHouseSetUI` (T1-T5) : vide → 2/4 → mix états
+  (in_inv + pending) → sans Maison → tag SET dans showEquipMenu. ✅
+
+**Validation** : `node tests/smoke.js` vert (96 globals, tous scénarios
+passent dont les 5 scénarios Maison).
+
+**Commit** : `feat(houses): UI Set Maison sur fiche perso + tag SET menu équipement`
 
 **Commit** : `feat(houses): UI pass — set artifact tracker on character sheet`
 

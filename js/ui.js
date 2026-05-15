@@ -404,6 +404,95 @@ function _renderStatValueWithBonus(c, key, baseKey) {
   return `${base} <span class="stat-bonus">+${bonus}</span>`;
 }
 
+// ── Encart Set Maison sur la fiche perso (Étape 5 Maisons 2.0) ──
+// Affiche les 4 médaillons du set de la Maison choisie + l'état de
+// chaque pièce (équipée / au sac / en attente chez le Chef / à
+// découvrir) + la grille de bonus 2/3/4 pièces avec les paliers
+// futurs grisés. Cf. .claude/plans/houses-2.0.md §B.
+const _SET_PIECE_STATE_LABELS = {
+  equipped: 'équipée',
+  in_inv:   'au sac',
+  pending:  'en attente chez le Chef de Maison',
+  missing:  'à découvrir'
+};
+
+function _setPieceState(itemId, c) {
+  const equipped = c && c.equipped &&
+    Object.values(c.equipped).some(it => it && it.id === itemId);
+  if (equipped) return 'equipped';
+  const inInv = (player.inventory || []).some(it => it && it.id === itemId);
+  if (inInv) return 'in_inv';
+  const pending = (typeof pendingHouseRewards !== 'undefined') &&
+    pendingHouseRewards.has(itemId);
+  if (pending) return 'pending';
+  return 'missing';
+}
+
+function _formatSetBonus(b) {
+  if (!b) return '';
+  const parts = [];
+  if (b.bonusAtk)            parts.push(`+${b.bonusAtk} ATK`);
+  if (b.bonusDef)            parts.push(`+${b.bonusDef} DEF`);
+  if (b.bonusMag)            parts.push(`+${b.bonusMag} MAG`);
+  if (b.bonusLck)            parts.push(`+${b.bonusLck} LCK`);
+  if (b.bonusStr)            parts.push(`+${b.bonusStr} FOR`);
+  if (b.bonusInt)            parts.push(`+${b.bonusInt} INT`);
+  if (b.bonusAgi)            parts.push(`+${b.bonusAgi} AGI`);
+  if (b.bonusEnd)            parts.push(`+${b.bonusEnd} END`);
+  if (b.bonusCritChance)     parts.push(`+${b.bonusCritChance}% crit`);
+  if (b.bonusDodgeChance)    parts.push(`+${b.bonusDodgeChance}% esquive`);
+  if (b.regenHp)             parts.push(`+${b.regenHp} PV/tour`);
+  if (b.regenSp)             parts.push(`+${b.regenSp} PM/tour`);
+  if (b.spellLifesteal)      parts.push(`drain ${Math.round(b.spellLifesteal*100)}% sur sort`);
+  if (b.spellCostReduction)  parts.push(`-${Math.round(b.spellCostReduction*100)}% coût sort`);
+  if (b.immuneDisarm)        parts.push('immunité désarmement');
+  return parts.join(' · ') || '—';
+}
+
+function _renderHouseSetPanel(c) {
+  if (typeof chosenHouse === 'undefined' || !chosenHouse) return '';
+  if (typeof HOUSE_SETS === 'undefined') return '';
+  const set = HOUSE_SETS[chosenHouse];
+  if (!set) return '';
+
+  const cells = set.pieceIds.map((id, i) => {
+    const item  = ITEMS.find(it => it.id === id);
+    const state = _setPieceState(id, c);
+    const label = _SET_PIECE_STATE_LABELS[state] || '';
+    const icon  = item ? getItemIconHtml(item, 'ui-icon-md') : '';
+    const name  = item ? item.name : id;
+    const tip   = item ? `${name} — ${label}<br>${item.desc || ''}` : '';
+    return `
+      <div class="set-cell set-cell-${state}" data-tooltip="${tip}">
+        <div class="set-cell-icon">${icon}</div>
+        <div class="set-cell-num">${i + 1}/4</div>
+      </div>
+    `;
+  }).join('');
+
+  const count = c['_' + set.setKey + 'Count'] | 0;
+  const tiers = [
+    { n: 2, b: set.setBonus2 },
+    { n: 3, b: set.setBonus3 },
+    { n: 4, b: set.setBonus4 }
+  ];
+  const bonusRows = tiers.map(({n, b}) => {
+    const active = count >= n;
+    return `<div class="set-bonus-row ${active ? 'active' : 'inactive'}">
+      <span class="set-bonus-tier">${n}/4</span>
+      <span class="set-bonus-text">${_formatSetBonus(b)}</span>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="section section-houseset">
+      <div class="panel-title">⸻ ${set.setLabel.toUpperCase()} (${count}/4) ⸻</div>
+      <div class="set-cells">${cells}</div>
+      <div class="set-bonuses">${bonusRows}</div>
+    </div>
+  `;
+}
+
 // Fiche de personnage v2 — grid-template-areas :
 //   "stats equip"
 //   "stats spells"
@@ -438,6 +527,11 @@ function openCharacter(charIdx = 0) {
   // Panneau d'allocation : visible uniquement si des points sont en attente.
   const statPts = c.unallocatedStatPoints || 0;
   const allocPanel = statPts > 0 ? _renderStatAllocPanel(charIdx, statPts) : '';
+
+  // Panneau Set Maison : visible uniquement si une Maison est choisie.
+  // Cf. .claude/plans/houses-2.0.md §B (Étape 5) — encart 4 médaillons +
+  // bonus paliers 2/3/4 pièces.
+  const houseSetPanel = _renderHouseSetPanel(c);
 
   // Sortilèges sous forme de badges PNG. c.spells = liste de noms.
   const spellsHtml = (c.spells || []).map(_renderSpellBadge).join('');
@@ -489,6 +583,8 @@ function openCharacter(charIdx = 0) {
           </div>
         </div>
       </div>
+
+      ${houseSetPanel}
 
       <!-- Sortilèges (grid-area:spells) -->
       <div class="section section-spells char-spells-panel">
