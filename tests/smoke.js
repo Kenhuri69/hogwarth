@@ -4512,43 +4512,56 @@ async function scenarioLibraryUpgrade() {
   await browser.close();
 }
 
-// ── Scénario endgame Tranche 2 — 3 : Maison Tier 5 ──────────
+// ── Scénario endgame Tranche 2 — 3 : Maison Tier 16 (Légende) ───
+// Architecture Maisons 2.0 : 16 paliers (Bronze/Argent/Or × 5 phases
+// + Légende). Le gate endgame (victoryAchieved) s'applique au palier
+// 16 (Légende) à 25000 pts. Tous les paliers intermédiaires sont
+// accessibles sans victoire ; les Or de Confirmé/Maître/Virtuose
+// portent les jalons narratifs (artefacts, quête de Maison).
+// Cf. .claude/plans/houses-2.0.md §A.
 async function scenarioHouseTier5() {
-  console.log('\n── Scénario endgame T2.3 : Maison Tier 5 ──');
+  console.log('\n── Scénario endgame T2.3 : Maison Tier 16 ──');
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
 
-  // T1 : pré-victoire, 2000 points → reste tier 4 (gated)
+  // T1 : pré-victoire, 16000 points → Virtuose Or (tier 15) accessible sans gate.
   const t1 = await page.evaluate(() => {
     victoryAchieved = false;
-    housePoints     = 2000;
+    housePoints     = 16000;
     houseTier       = 0; // simule restart
     checkHouseLevelUp();
     return { tier: houseTier, hasLame: player.inventory.some(i => i.id === 'lame_godric') };
   });
-  console.log('  T1 pré-victoire 2000 pts →', t1);
-  assert(t1.tier === 4,         'tier doit s\'arrêter à 4 sans victoire');
-  assert(t1.hasLame === false,  'lame_godric NON ajoutée pré-victoire');
+  console.log('  T1 pré-victoire 16000 pts →', t1);
+  assert(t1.tier === 15,        'tier 15 (Virtuose Or) accessible sans victoire');
+  assert(t1.hasLame === false,  'lame_godric pas livrée directement (vient de la quête de Maison)');
 
-  // T2 : post-victoire, 2000 points → tier 5 + lame_godric
+  // T2 : pré-victoire, 25000 points → reste à 15 (tier 16 Légende est gated).
   const t2 = await page.evaluate(() => {
+    housePoints = 25000;
+    checkHouseLevelUp();
+    return { tier: houseTier };
+  });
+  console.log('  T2 pré-victoire 25000 pts →', t2);
+  assert(t2.tier === 15, 'tier 16 (Légende) doit rester verrouillé sans victoire');
+
+  // T3 : post-victoire, 25000 points → tier 16 + bonus passif.
+  const t3 = await page.evaluate(() => {
     victoryAchieved = true;
     checkHouseLevelUp();
     return {
       tier: houseTier,
-      hasLame: player.inventory.some(i => i.id === 'lame_godric'),
       atkBase: party[0]._baseAtk
     };
   });
-  console.log('  T2 post-victoire →', t2);
-  assert(t2.tier === 5,            'tier passe à 5 post-victoire');
-  assert(t2.hasLame === true,      'lame_godric ajoutée à l\'inventaire');
+  console.log('  T3 post-victoire 25000 pts →', t3);
+  assert(t3.tier === 16, 'tier 16 (Légende) franchi post-victoire');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Maison Tier 5 OK');
+  console.log('  ✅ Maison Tier 16 OK');
   await browser.close();
 }
 
@@ -4558,26 +4571,26 @@ async function scenarioHouseRewardFlow() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
 
-  // T1 : franchir seuil tier 2 → item en attente, pas dans inventaire
+  // T1 : franchir seuil Apprenti Or (tier 3, 300 pts) → item en attente, pas dans inventaire.
+  // Architecture 16 paliers : brassard_lion est désormais distribué au
+  // tier 3 (Apprenti Or). On démarre à tier 2 (Apprenti Argent, 150 pts)
+  // pour vérifier le franchissement vers Or.
   const t1 = await page.evaluate(() => {
     chosenHouse = 'Gryffondor';
     housePoints = 300;
-    houseTier   = 1;
+    houseTier   = 2;
     pendingHouseRewards = new Set();
-    const atkBefore = party[0]._baseAtk;
     checkHouseLevelUp();
     return {
       tier:       houseTier,
       pending:    pendingHouseRewards.has('brassard_lion'),
-      inInv:      (player.inventory || []).some(i => i && i.id === 'brassard_lion'),
-      atkBoosted: party[0]._baseAtk > atkBefore
+      inInv:      (player.inventory || []).some(i => i && i.id === 'brassard_lion')
     };
   });
   console.log('  T1 seuil 300 →', t1);
-  assert(t1.tier === 2,    'tier non passé à 2');
+  assert(t1.tier === 3,    'tier non passé à 3 (Apprenti Or)');
   assert(t1.pending,       'brassard_lion non mis en attente');
   assert(!t1.inInv,        'brassard_lion distribué automatiquement (bug)');
-  assert(t1.atkBoosted,    'bonus ATK tier 2 non appliqué');
 
   // T2 : visite McGonagall → réception
   const t2 = await page.evaluate(() => {
@@ -4619,6 +4632,482 @@ async function scenarioHouseRewardFlow() {
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
   console.log('  ✅ Flow récompense Maison conforme');
+  await browser.close();
+}
+
+// ── Scénario Maisons 2.0 — Quête de Maison (Étape 3) ──────────
+// Vérifie le flow : franchissement tier 12 → quête `quest_set_<house>`
+// pushée dans `availableQuests` → acceptation → simulation kills →
+// remise au PNJ → pièce #4 du set dans `pendingHouseRewards` →
+// récupération via la cérémonie `claim_house_reward`. Couvre aussi
+// le verrou avant tier 12 (la quête ne doit pas être disponible).
+// Cf. .claude/plans/houses-2.0.md §D (Étape 3).
+async function scenarioHouseSetQuest() {
+  console.log('\n── Scénario Maisons 2.0 : Quête de Maison (tier 12) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T0 : avant le palier 12, la quête de Maison ne doit pas être proposée.
+  const t0 = await page.evaluate(() => ({
+    inAvailable: availableQuests.has('quest_set_gryff'),
+    tierUnlock:  HOUSE_BONUSES.Gryffondor.tiers[11].bonus.unlockSetQuest === true
+  }));
+  console.log('  T0 état initial →', t0);
+  assert(!t0.inAvailable, 'quest_set_gryff ne devrait pas être disponible avant tier 12');
+  assert(t0.tierUnlock,   'tier 12 (Maître Or) devrait porter unlockSetQuest:true');
+
+  // T1 : franchir le palier 12 (8000 pts) → quête débloquée + cape_godric en attente.
+  const t1 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    houseTier   = 11;
+    housePoints = 8000;
+    pendingHouseRewards = new Set();
+    checkHouseLevelUp();
+    return {
+      tier:        houseTier,
+      questOpen:   availableQuests.has('quest_set_gryff'),
+      capePending: pendingHouseRewards.has('cape_godric')
+    };
+  });
+  console.log('  T1 tier 12 franchi →', t1);
+  assert(t1.tier === 12,    'tier non passé à 12 (Maître Or)');
+  assert(t1.questOpen,      'quest_set_gryff non ajoutée à availableQuests');
+  assert(t1.capePending,    'cape_godric (pièce #3) non mise en attente chez McGonagall');
+
+  // T2 : accepter la quête → activée, retirée de availableQuests.
+  const t2 = await page.evaluate(() => {
+    acceptQuest('quest_set_gryff');
+    return {
+      isActive:    activeQuests.some(q => q.id === 'quest_set_gryff'),
+      stillAvail:  availableQuests.has('quest_set_gryff')
+    };
+  });
+  console.log('  T2 acceptation →', t2);
+  assert(t2.isActive,    'quest_set_gryff n\'est pas dans activeQuests après acceptation');
+  assert(!t2.stillAvail, 'quest_set_gryff toujours dans availableQuests après acceptation');
+
+  // T3 : simuler 3 kills de Chimère → étape complétée mais quête reste active
+  // tant qu'elle n'est pas remise au PNJ.
+  const t3 = await page.evaluate(() => {
+    checkKillQuests('chimere');
+    checkKillQuests('chimere');
+    checkKillQuests('chimere');
+    const q = activeQuests.find(x => x.id === 'quest_set_gryff');
+    return {
+      progress:    q ? q.objectives[0].progress  : -1,
+      stepDone:    q ? q.objectives[0].completed : false,
+      stillActive: !!q
+    };
+  });
+  console.log('  T3 après 3 kills →', t3);
+  assert(t3.progress === 3,  'progression kill incorrecte');
+  assert(t3.stepDone,        'étape kill non marquée complétée');
+  assert(t3.stillActive,     'la quête doit rester active jusqu\'à la remise');
+
+  // T4 : remise via dialogue PNJ → pièce #4 (coeur_lion) en attente,
+  // PAS dans l'inventaire (route cérémonie head-of-house).
+  const t4 = await page.evaluate(() => {
+    turnInQuestById('quest_set_gryff');
+    return {
+      completed:     completedQuests.has('quest_set_gryff'),
+      stillActive:   activeQuests.some(q => q.id === 'quest_set_gryff'),
+      heartPending:  pendingHouseRewards.has('coeur_lion'),
+      heartInInv:    (player.inventory || []).some(i => i && i.id === 'coeur_lion')
+    };
+  });
+  console.log('  T4 remise →', t4);
+  assert(t4.completed,     'quest_set_gryff non marquée complétée');
+  assert(!t4.stillActive,  'la quête doit avoir quitté activeQuests');
+  assert(t4.heartPending,  'coeur_lion (pièce #4) non poussé dans pendingHouseRewards');
+  assert(!t4.heartInInv,   'coeur_lion distribué directement dans l\'inventaire (bug)');
+
+  // T5 : cérémonie head-of-house → coeur_lion + cape_godric reçus.
+  const t5 = await page.evaluate(() => {
+    triggerNpcSpecialAction('mcgonagall');
+    return {
+      heartInInv:   (player.inventory || []).some(i => i && i.id === 'coeur_lion'),
+      capeInInv:    (player.inventory || []).some(i => i && i.id === 'cape_godric'),
+      pendingLeft:  Array.from(pendingHouseRewards || [])
+    };
+  });
+  console.log('  T5 réclamation →', t5);
+  assert(t5.heartInInv,    'coeur_lion absent de l\'inventaire après réclamation');
+  assert(t5.capeInInv,     'cape_godric absente de l\'inventaire après réclamation');
+  assert(t5.pendingLeft.length === 0, `pendingHouseRewards résiduel : ${t5.pendingLeft.join(',')}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Quête de Maison + remise cérémonielle conformes');
+  await browser.close();
+}
+
+// ── Scénario Maisons 2.0 — UI Set Maison sur fiche perso (Étape 5) ──
+// Vérifie le rendu de l'encart « Set du Lion » dans openCharacter :
+// 4 médaillons, état par pièce (équipée / au sac / en attente /
+// manquante), grille de bonus 2/3/4 active selon le compte. Vérifie
+// aussi le tag SET dans le menu d'équipement (showEquipMenu).
+async function scenarioHouseSetUI() {
+  console.log('\n── Scénario Maisons 2.0 : UI Set Maison sur fiche perso ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : aucun équipement → encart visible avec 4 cellules manquantes,
+  // 0 bonus actif.
+  const t1 = await page.evaluate(() => {
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    pendingHouseRewards = new Set();
+    recalculateStats();
+    openCharacter(0);
+    const panel = document.querySelector('.section-houseset');
+    const cells = panel ? panel.querySelectorAll('.set-cell') : [];
+    const bonuses = panel ? panel.querySelectorAll('.set-bonus-row') : [];
+    return {
+      panelOpen:    !!panel,
+      title:        panel ? panel.querySelector('.panel-title').textContent.trim() : null,
+      cellCount:    cells.length,
+      missingCount: panel ? panel.querySelectorAll('.set-cell-missing').length : 0,
+      bonusRows:    bonuses.length,
+      activeBonus:  panel ? panel.querySelectorAll('.set-bonus-row.active').length : 0
+    };
+  });
+  console.log('  T1 vide →', t1);
+  assert(t1.panelOpen,           'encart Set Maison non rendu');
+  assert(/Set du Lion/i.test(t1.title || ''), `titre inattendu : ${t1.title}`);
+  assert(t1.cellCount === 4,     `4 médaillons attendus, obtenu ${t1.cellCount}`);
+  assert(t1.missingCount === 4,  '4 cellules doivent être en état missing');
+  assert(t1.bonusRows === 3,     '3 paliers de bonus attendus (2/3/4)');
+  assert(t1.activeBonus === 0,   'aucun palier ne doit être actif à 0/4');
+
+  // T2 : 2 pièces équipées → 2 cellules « equipped », 1 palier actif.
+  const t2 = await page.evaluate(() => {
+    party[0].equipped.hands = { ...ITEMS.find(i => i.id === 'brassard_lion') };
+    party[0].equipped.head  = { ...ITEMS.find(i => i.id === 'heaume_vaillant') };
+    recalculateStats();
+    openCharacter(0);
+    const panel = document.querySelector('.section-houseset');
+    return {
+      title:         panel.querySelector('.panel-title').textContent.trim(),
+      equippedCount: panel.querySelectorAll('.set-cell-equipped').length,
+      missingCount:  panel.querySelectorAll('.set-cell-missing').length,
+      activeBonus:   panel.querySelectorAll('.set-bonus-row.active').length
+    };
+  });
+  console.log('  T2 2/4 équipées →', t2);
+  assert(/2\/4/.test(t2.title),     `titre doit refléter 2/4 : ${t2.title}`);
+  assert(t2.equippedCount === 2,   `2 cellules equipped attendues, obtenu ${t2.equippedCount}`);
+  assert(t2.missingCount === 2,    `2 cellules missing attendues, obtenu ${t2.missingCount}`);
+  assert(t2.activeBonus === 1,     `1 palier actif (2/4) attendu, obtenu ${t2.activeBonus}`);
+
+  // T3 : 1 pièce au sac + 1 pièce en attente chez le Chef.
+  const t3 = await page.evaluate(() => {
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'cape_godric') }];
+    pendingHouseRewards = new Set(['coeur_lion']);
+    recalculateStats();
+    openCharacter(0);
+    const panel = document.querySelector('.section-houseset');
+    return {
+      inInvCount:    panel.querySelectorAll('.set-cell-in_inv').length,
+      pendingCount:  panel.querySelectorAll('.set-cell-pending').length,
+      missingCount:  panel.querySelectorAll('.set-cell-missing').length
+    };
+  });
+  console.log('  T3 mix états →', t3);
+  assert(t3.inInvCount === 1,    `1 cellule in_inv attendue, obtenu ${t3.inInvCount}`);
+  assert(t3.pendingCount === 1,  `1 cellule pending attendue, obtenu ${t3.pendingCount}`);
+  assert(t3.missingCount === 0,  `0 cellule missing attendue, obtenu ${t3.missingCount}`);
+
+  // T4 : aucune Maison choisie → encart absent.
+  const t4 = await page.evaluate(() => {
+    chosenHouse = null;
+    openCharacter(0);
+    return { panelOpen: !!document.querySelector('.section-houseset') };
+  });
+  console.log('  T4 sans Maison →', t4);
+  assert(!t4.panelOpen, 'encart Set Maison ne doit pas apparaître sans chosenHouse');
+
+  // T5 : tag SET dans showEquipMenu pour une pièce de set.
+  const t5 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    partySize = 2;                                 // duo pour forcer le menu (vs équipement direct)
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'heaume_vaillant') }];
+    openInventory();
+    showEquipMenu(player.inventory[0], 0);
+    const badge = document.querySelector('#inv-grid .equip-menu-set-badge');
+    return { hasBadge: !!badge, badgeText: badge ? badge.textContent.trim() : '' };
+  });
+  console.log('  T5 badge SET dans showEquipMenu →', t5);
+  assert(t5.hasBadge,                       'tag SET absent du menu d\'équipement');
+  assert(/Set du Lion/i.test(t5.badgeText), `texte du badge inattendu : ${t5.badgeText}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Encart Set Maison + tag SET conformes');
+  await browser.close();
+}
+
+// ── Scénario Maisons 2.0 — Set bonus 4 pièces ─────────────────
+// Vérifie la détection progressive d'un set Maison (Set du Lion,
+// Gryffondor) à 2 / 3 / 4 pièces équipées et l'application correcte
+// des bonus cumulatifs depuis HOUSE_SETS. Cf.
+// .claude/plans/houses-2.0.md §B + js/inventory.js — recalculateStats.
+async function scenarioHouseSet() {
+  console.log('\n── Scénario Maisons 2.0 : Set du Lion (4 pièces) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : 0 pièce équipée → pas de bonus de set
+  const t1 = await page.evaluate(() => {
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    recalculateStats();
+    return { count: party[0]._gryff_setCount | 0, atk: party[0].atk, crit: party[0].critChance };
+  });
+  console.log('  T1 0/4 →', t1);
+  assert(t1.count === 0, '_gryff_setCount === 0 à vide');
+
+  // T2 : 2 pièces équipées (brassard hands + heaume head) → setBonus2 +1 ATK +3 crit
+  const t2 = await page.evaluate(() => {
+    party[0].equipped.hands = { ...ITEMS.find(i => i.id === 'brassard_lion') };
+    party[0].equipped.head  = { ...ITEMS.find(i => i.id === 'heaume_vaillant') };
+    recalculateStats();
+    return { count: party[0]._gryff_setCount | 0, atk: party[0].atk, crit: party[0].critChance };
+  });
+  console.log('  T2 2/4 →', t2);
+  assert(t2.count === 2,                'compte 2/4');
+  assert(t2.atk   >= t1.atk + 4,        'ATK +4 minimum (2+2 stats items + 1 setBonus2 dépend de calibration)');
+  assert(t2.crit  >= t1.crit + 3 - 0.5, '+3 crit du setBonus2');
+
+  // T3 : 3 pièces (+ cape_godric cloak) → setBonus2 + setBonus3 cumulés
+  const t3 = await page.evaluate(() => {
+    party[0].equipped.cloak = { ...ITEMS.find(i => i.id === 'cape_godric') };
+    recalculateStats();
+    return { count: party[0]._gryff_setCount | 0, atk: party[0].atk, crit: party[0].critChance };
+  });
+  console.log('  T3 3/4 →', t3);
+  assert(t3.count === 3,                'compte 3/4');
+  assert(t3.crit  >= t2.crit + 7 - 0.5, '+7 crit cumulé du setBonus3');
+
+  // T4 : 4 pièces (+ coeur_lion amulet) → tous les bonus actifs
+  const t4 = await page.evaluate(() => {
+    party[0].equipped.amulet = { ...ITEMS.find(i => i.id === 'coeur_lion') };
+    recalculateStats();
+    return { count: party[0]._gryff_setCount | 0, atk: party[0].atk, crit: party[0].critChance };
+  });
+  console.log('  T4 4/4 →', t4);
+  assert(t4.count === 4,                 'compte 4/4');
+  assert(t4.crit  >= t3.crit + 12 - 0.5, '+12 crit du setBonus4 (immuneDisarm hors-stats)');
+
+  // T5 : set Poufsouffle 4/4 → regenHp +2/tour dans applyEquipmentRegen
+  const t5 = await page.evaluate(() => {
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    party[0].equipped.belt   = { ...ITEMS.find(i => i.id === 'ceinture_blaireau') };
+    party[0].equipped.cloak  = { ...ITEMS.find(i => i.id === 'cape_loyaute') };
+    party[0].equipped.head   = { ...ITEMS.find(i => i.id === 'coiffe_blaireau') };
+    party[0].equipped.amulet = { ...ITEMS.find(i => i.id === 'medaillon_helga') };
+    recalculateStats();
+    party[0].hp = Math.max(1, party[0].hpMax - 10);
+    const hpBefore = party[0].hp;
+    if (typeof applyEquipmentRegen === 'function') applyEquipmentRegen();
+    return { count: party[0]._pouf_setCount | 0, hpDelta: party[0].hp - hpBefore };
+  });
+  console.log('  T5 Pouf 4/4 regen →', t5);
+  assert(t5.count === 4,    'Pouf 4/4 détecté');
+  assert(t5.hpDelta >= 3,   'regenHp ≥ 3 (1 du medaillon_helga + 2 du setBonus4)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Set Maison Lion + Blaireau OK');
+  await browser.close();
+}
+
+// ── Scénario Maisons 2.0 — Étape 6 : Feedback Set 4/4 ──────
+// Vérifie que la transition <4 → 4 du Set du Lion déclenche
+// AudioSystem.playSetComplete + un message « complet » dans #msg-log,
+// et que l'équipement d'une pièce hors-set ou d'une 4ᵉ déjà atteinte
+// reste silencieux (no double-trigger).
+async function scenarioHouseSetCompleteFeedback() {
+  console.log('\n── Scénario Maisons 2.0 — Étape 6 : feedback Set 4/4 ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Setup : spy sur AudioSystem.playSetComplete (compteur d'appels)
+  await page.evaluate(() => {
+    window.__setCompleteCalls = 0;
+    const orig = AudioSystem.playSetComplete.bind(AudioSystem);
+    AudioSystem.playSetComplete = function () {
+      window.__setCompleteCalls++;
+      // Ne joue pas le son en headless (le contexte audio peut être bloqué).
+    };
+    // Reset équipement à vide
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    recalculateStats();
+    // Préempte les 4 pièces du Set du Lion dans l'inventaire
+    player.inventory = [];
+    ['brassard_lion', 'heaume_vaillant', 'cape_godric', 'coeur_lion'].forEach(id => {
+      const it = ITEMS.find(i => i.id === id);
+      if (it) player.inventory.push({ ...it });
+    });
+  });
+
+  // T1 : équipe la 1re pièce (brassard, hands) → pas de complétion
+  const t1 = await page.evaluate(() => {
+    const idx = player.inventory.findIndex(i => i.id === 'brassard_lion');
+    equipItem(idx, 0);
+    return { calls: window.__setCompleteCalls, count: party[0]._gryff_setCount | 0 };
+  });
+  console.log('  T1 1/4 →', t1);
+  assert(t1.calls === 0, 'aucun appel à playSetComplete à 1/4');
+  assert(t1.count === 1, 'compteur Gryff = 1');
+
+  // T2 : 2ᵉ pièce (heaume, head) → pas de complétion
+  const t2 = await page.evaluate(() => {
+    const idx = player.inventory.findIndex(i => i.id === 'heaume_vaillant');
+    equipItem(idx, 0);
+    return { calls: window.__setCompleteCalls, count: party[0]._gryff_setCount | 0 };
+  });
+  console.log('  T2 2/4 →', t2);
+  assert(t2.calls === 0, 'aucun appel à 2/4');
+  assert(t2.count === 2, 'compteur Gryff = 2');
+
+  // T3 : 3ᵉ pièce (cape, cloak) → pas de complétion
+  const t3 = await page.evaluate(() => {
+    const idx = player.inventory.findIndex(i => i.id === 'cape_godric');
+    equipItem(idx, 0);
+    return { calls: window.__setCompleteCalls, count: party[0]._gryff_setCount | 0 };
+  });
+  console.log('  T3 3/4 →', t3);
+  assert(t3.calls === 0, 'aucun appel à 3/4');
+  assert(t3.count === 3, 'compteur Gryff = 3');
+
+  // T4 : 4ᵉ pièce (coeur_lion, amulet) → 1 appel + message
+  const t4 = await page.evaluate(() => {
+    const idx = player.inventory.findIndex(i => i.id === 'coeur_lion');
+    equipItem(idx, 0);
+    const log = document.getElementById('msg-log');
+    const txt = log ? log.textContent : '';
+    return {
+      calls: window.__setCompleteCalls,
+      count: party[0]._gryff_setCount | 0,
+      hasMsg: txt.includes('Set du Lion complet') || txt.includes('complet (4/4)')
+    };
+  });
+  console.log('  T4 4/4 →', t4);
+  assert(t4.calls === 1,  '1 appel à playSetComplete à 4/4');
+  assert(t4.count === 4,  'compteur Gryff = 4');
+  assert(t4.hasMsg,       'message « Set du Lion complet » présent dans msg-log');
+
+  // T5 : remplacer une pièce non-set par une rare hors-set (ex : bottes)
+  //      → le compteur reste à 4, pas de re-trigger.
+  const t5 = await page.evaluate(() => {
+    // ajoute des bottes basiques en inventaire et équipe-les
+    const bottes = ITEMS.find(i => i.id === 'bottes_apprenti');
+    if (!bottes) return { skipped: true };
+    player.inventory.push({ ...bottes });
+    const idx = player.inventory.length - 1;
+    equipItem(idx, 0);
+    return { calls: window.__setCompleteCalls, count: party[0]._gryff_setCount | 0, skipped: false };
+  });
+  console.log('  T5 équipe hors-set →', t5);
+  if (!t5.skipped) {
+    assert(t5.calls === 1,  'pas de re-trigger en équipant hors-set');
+    assert(t5.count === 4,  'compteur Gryff reste à 4');
+  }
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Feedback Set 4/4 OK');
+  await browser.close();
+}
+
+// ── Scénario Maisons 2.0 — Étape 6 : Save round-trip ─────────
+// Vérifie que chosenHouse / housePoints / houseTier / pendingHouseRewards
+// (incluant les NEW set piece IDs) survivent à _serializeState ↔
+// _applyState sans perte.
+async function scenarioHouseSaveRoundTrip() {
+  console.log('\n── Scénario Maisons 2.0 — Étape 6 : save round-trip ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Setup : injecte un état Maison riche (paliers franchis + pièces
+  // pending) puis serialize → reset → applyState → compare.
+  const result = await page.evaluate(() => {
+    // 1) État avant save
+    housePoints = 8200;          // au-delà du palier 12 (8000 = Maître Or)
+    houseTier   = 12;            // tier 12 atteint
+    pendingHouseRewards = new Set(['heaume_vaillant', 'cape_godric']);
+    chosenHouse = 'Gryffondor';
+
+    const before = {
+      house:    chosenHouse,
+      points:   housePoints,
+      tier:     houseTier,
+      pending:  Array.from(pendingHouseRewards).sort(),
+    };
+
+    // 2) Serialize
+    const snapshot = _serializeState();
+
+    // 3) Reset runtime (simule un nouveau slot)
+    housePoints         = 0;
+    houseTier           = 0;
+    pendingHouseRewards = new Set();
+    chosenHouse         = null;
+
+    // 4) ApplyState
+    _applyState(snapshot);
+
+    const after = {
+      house:    chosenHouse,
+      points:   housePoints,
+      tier:     houseTier,
+      pending:  Array.from(pendingHouseRewards).sort(),
+    };
+
+    return { before, after, serializedPending: snapshot.pendingHouseRewards };
+  });
+
+  console.log('  before →', result.before);
+  console.log('  after  →', result.after);
+  console.log('  snapshot.pendingHouseRewards →', result.serializedPending);
+
+  assert(result.after.house  === result.before.house,  'chosenHouse restauré');
+  assert(result.after.points === result.before.points, 'housePoints restauré');
+  assert(result.after.tier   === result.before.tier,   'houseTier restauré');
+  // Les IDs sauvegardés (heaume_vaillant, cape_godric) doivent survivre.
+  // `_migrateHouseRewards` peut en ajouter d'autres (paliers franchis dont
+  // l'item n'est ni en inv ni équipé : brassard_lion tier 3, sword_gryff
+  // tier 9). On vérifie donc le subset, pas l'égalité.
+  for (const id of result.before.pending) {
+    assert(result.after.pending.includes(id),
+           `pendingHouseRewards préserve ${id} après round-trip`);
+  }
+  assert(Array.isArray(result.serializedPending),
+         'pendingHouseRewards sérialisé comme Array (et non Set)');
+  // Sanity : les IDs sérialisés sont bien les inputs (snapshot pré-migrate).
+  assert(
+    JSON.stringify([...result.serializedPending].sort()) ===
+      JSON.stringify(['cape_godric', 'heaume_vaillant']),
+    'snapshot.pendingHouseRewards reflète strictement l\'input'
+  );
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Save round-trip Maison OK');
   await browser.close();
 }
 
@@ -5485,7 +5974,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

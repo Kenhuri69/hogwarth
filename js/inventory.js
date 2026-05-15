@@ -108,6 +108,39 @@ function recalculateStats() {
       if (c._tenebresSetCount >= 2) { critBonus += 10; dodgeBonus += 5;  }
       if (c._tenebresSetCount >= 3) { critBonus += 5;  dodgeBonus += 5;  }
     }
+
+    // Sets Maison 2.0 — 4 pièces par Maison (cf. .claude/plans/houses-2.0.md
+    // §B). Bonus 2/3/4 pièces additifs : applique setBonus2 puis setBonus3
+    // puis setBonus4 selon le compte équipé. Stocke le compte sur
+    // c._<setKey>Count pour les tests et l'UI.
+    if (typeof HOUSE_SETS !== 'undefined' && c.equipped) {
+      const equippedIds = new Set();
+      for (const item of Object.values(c.equipped)) {
+        if (item && item.id) equippedIds.add(item.id);
+      }
+      for (const houseName of Object.keys(HOUSE_SETS)) {
+        const set = HOUSE_SETS[houseName];
+        const count = set.pieceIds.filter(id => equippedIds.has(id)).length;
+        c['_' + set.setKey + 'Count'] = count;
+        const bonuses = [];
+        if (count >= 2 && set.setBonus2) bonuses.push(set.setBonus2);
+        if (count >= 3 && set.setBonus3) bonuses.push(set.setBonus3);
+        if (count >= 4 && set.setBonus4) bonuses.push(set.setBonus4);
+        for (const b of bonuses) {
+          if (b.bonusAtk) c.atk += b.bonusAtk;
+          if (b.bonusDef) c.def += b.bonusDef;
+          if (b.bonusMag) c.mag += b.bonusMag;
+          if (b.bonusLck) c.lck += b.bonusLck;
+          if (b.bonusStr) c.str += b.bonusStr;
+          if (b.bonusInt) c.int += b.bonusInt;
+          if (b.bonusAgi) c.agi += b.bonusAgi;
+          if (b.bonusEnd) c.end += b.bonusEnd;
+          if (b.bonusCritChance)  critBonus  += b.bonusCritChance;
+          if (b.bonusDodgeChance) dodgeBonus += b.bonusDodgeChance;
+        }
+      }
+    }
+
     c.critChance     = Math.max(0, Math.min(40, 5 + c.lck * 0.5 + critBonus));
     c.dodgeChance    = Math.max(0, Math.min(35, 5 + c.agi * 0.4 + dodgeBonus));
     c.critMultiplier = 1.5;
@@ -228,6 +261,16 @@ function _resolveSlotForItem(item, c) {
 
 // ── Menu de sélection du personnage pour équiper ─────────────
 // Remplace temporairement la grille par un prompt de choix.
+// Tag « SET du Lion (1/4) » affiché dans le titre de showEquipMenu si
+// l'item appartient à un set Maison. Cf. plan houses-2.0.md §B (Étape 5).
+function _equipMenuSetBadge(item) {
+  if (!item || !item.setKey || typeof HOUSE_SETS === 'undefined') return '';
+  const set = Object.values(HOUSE_SETS).find(s => s.setKey === item.setKey);
+  if (!set) return '';
+  const piece = item.setPiece ? `${item.setPiece}/4` : '?';
+  return `<span class="equip-menu-set-badge">${set.setLabel} (${piece})</span>`;
+}
+
 function showEquipMenu(item, idx) {
   const isRing = item.slot === 'ring';
 
@@ -235,6 +278,7 @@ function showEquipMenu(item, idx) {
   if (partySize === 1 && !isRing) { equipItem(idx, 0); return; }
 
   const grid = document.getElementById('inv-grid');
+  const setBadge = _equipMenuSetBadge(item);
 
   // Mode solo + anneau : choisir l'anneau cible (Harry uniquement)
   if (partySize === 1 && isRing) {
@@ -246,7 +290,7 @@ function showEquipMenu(item, idx) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;padding:14px;text-align:center">
         <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
-          Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}
+          Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}${setBadge}
         </div>
         <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
         <div style="max-width:200px;margin:0 auto">
@@ -290,7 +334,7 @@ function showEquipMenu(item, idx) {
   grid.innerHTML = `
     <div style="grid-column:1/-1;padding:14px;text-align:center">
       <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
-        Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}
+        Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}${setBadge}
       </div>
       <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
       <div style="max-width:200px;margin:0 auto">
@@ -323,6 +367,12 @@ function equipItem(inventoryIdx, charIdx, targetSlot) {
     addMsg(`${c.name} déséquipe : ${old.name}`, '');
   }
 
+  // Capture du compteur de set AVANT recalc (pour détecter la transition
+  // <4 → 4 et déclencher le feedback de complétion).
+  const prevSetCount = (item.setKey && typeof c['_' + item.setKey + 'Count'] === 'number')
+    ? c['_' + item.setKey + 'Count']
+    : 0;
+
   // Équiper le nouvel objet
   c.equipped[slot] = { ...item };
 
@@ -342,6 +392,24 @@ function equipItem(inventoryIdx, charIdx, targetSlot) {
 
   // Recalculer les stats effectives
   recalculateStats();
+
+  // Feedback Set 4/4 — uniquement si l'item équipé porte `setKey` et
+  // qu'on vient de basculer de <4 à 4 sur ce perso. Garde-fou
+  // `chosenHouse` : on n'annonce que le set de la Maison du joueur,
+  // pour éviter le spam si jamais un personnage équipe les 4 pièces
+  // d'une Maison qui n'est pas la sienne (cas dev/triche).
+  if (item.setKey && typeof HOUSE_SETS !== 'undefined' && typeof chosenHouse !== 'undefined' && chosenHouse) {
+    const houseSet = HOUSE_SETS[chosenHouse];
+    if (houseSet && houseSet.setKey === item.setKey) {
+      const newCount = c['_' + item.setKey + 'Count'] | 0;
+      if (prevSetCount < 4 && newCount >= 4) {
+        if (typeof AudioSystem !== 'undefined' && AudioSystem.playSetComplete) {
+          AudioSystem.playSetComplete();
+        }
+        addMsg(`✨ <b>${houseSet.setLabel} complet (4/4)</b> — bonus majeur activé !`, 'magic');
+      }
+    }
+  }
 
   // Si l'équipement enseigne un sort, l'apprendre à tout le groupe
   if (item.grantsSpell) {

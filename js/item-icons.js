@@ -108,6 +108,28 @@ const ITEM_ICON_REGISTRY = {
   bague_salazar:       'img/icons/items/locket_slytherin.png',
   bouclier_helga:      'img/icons/items/coupe_poufsouffle.png',
   codex_rowena:        'img/icons/items/diademe_serdaigle.png',
+  // Sets Maison 2.0 — pièces #2/#3/#4. Les PNG painterly dédiés
+  // (générés par tools/icon_factory.py) sont déclarés dans
+  // ITEM_ICON_NEW_REGISTRY plus bas (priorité 1 au runtime). Les
+  // entrées ci-dessous servent de fallback legacy si jamais le
+  // _64.png échoue à charger (et satisfont la couverture 100 % du
+  // smoke `scenarioItemIcons`).
+  // Set du Lion (Gryffondor)
+  heaume_vaillant:     'img/icons/items/chapeau_pointu.png',
+  cape_godric:         'img/icons/items/cape_invis.png',
+  coeur_lion:          'img/icons/items/locket_slytherin.png',
+  // Set du Serpent (Serpentard)
+  pendentif_mamba:     'img/icons/items/locket_slytherin.png',
+  cape_sibylline:      'img/icons/items/cape_invis.png',
+  couronne_basilic:    'img/icons/items/diademe_serdaigle.png',
+  // Set de l'Aigle (Serdaigle)
+  manteau_encre:       'img/icons/items/cape_invis.png',
+  oeil_aigle:          'img/icons/items/locket_slytherin.png',
+  anneau_savoir:       'img/icons/items/anneau_runique.png',
+  // Set du Blaireau (Poufsouffle)
+  cape_loyaute:        'img/icons/items/cape_invis.png',
+  coiffe_blaireau:     'img/icons/items/chapeau_pointu.png',
+  medaillon_helga:     'img/icons/items/locket_slytherin.png',
   // Livres de sorts
   livre_sortileges:   'img/icons/items/livre_sortileges.png',
   livre_soin:         'img/icons/items/livre_soin.png',
@@ -174,7 +196,26 @@ const ITEM_ICON_NEW_REGISTRY = {
   brassard_lion:        'img/icons_new/brassard_lion_64.png',
   anneau_serpent:       'img/icons_new/anneau_serpent_64.png',
   plume_aigle:          'img/icons_new/plume_aigle_64.png',
-  ceinture_blaireau:    'img/icons_new/ceinture_blaireau_64.png'
+  ceinture_blaireau:    'img/icons_new/ceinture_blaireau_64.png',
+  // Sets de Maison 2.0 — pièces #2/#3/#4 (cf. .claude/plans/houses-2.0.md §B)
+  // Générées via `python3 tools/icon_factory.py <id…>` — recettes dans
+  // tools/icon_factory.py, emblème de Maison via accent symbol.
+  // Set du Lion (Gryffondor)
+  heaume_vaillant:      'img/icons_new/heaume_vaillant_64.png',
+  cape_godric:          'img/icons_new/cape_godric_64.png',
+  coeur_lion:           'img/icons_new/coeur_lion_64.png',
+  // Set du Serpent (Serpentard)
+  pendentif_mamba:      'img/icons_new/pendentif_mamba_64.png',
+  cape_sibylline:       'img/icons_new/cape_sibylline_64.png',
+  couronne_basilic:     'img/icons_new/couronne_basilic_64.png',
+  // Set de l'Aigle (Serdaigle)
+  manteau_encre:        'img/icons_new/manteau_encre_64.png',
+  oeil_aigle:           'img/icons_new/oeil_aigle_64.png',
+  anneau_savoir:        'img/icons_new/anneau_savoir_64.png',
+  // Set du Blaireau (Poufsouffle)
+  cape_loyaute:         'img/icons_new/cape_loyaute_64.png',
+  coiffe_blaireau:      'img/icons_new/coiffe_blaireau_64.png',
+  medaillon_helga:      'img/icons_new/medaillon_helga_64.png'
 };
 
 // Status effects (battle.js consomme ce registre via STATUS_DEFS[id].iconSrc)

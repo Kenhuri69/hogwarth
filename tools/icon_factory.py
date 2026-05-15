@@ -647,6 +647,206 @@ RECIPES: Dict[str, Recipe] = {
              "color": (240, 199,  94), "size": 100},
         ],
     ),
+
+    # ── Sets de Maison 2.0 — pièces #2/#3/#4 ─────────────────────────────────
+    # Cf. .claude/plans/houses-2.0.md §B. Mêmes palettes de Maison que la
+    # piece #1 (Tier 2), rarity epic/legendary, emblème de Maison via
+    # accent `symbol`. Les régions inconnues d'un part sont ignorées
+    # silencieusement par le factory — on garde une map cohérente.
+
+    # ── Set du Lion (Gryffondor) — rouge #740001, or #D3A625, "lion" ───
+    "heaume_vaillant": Recipe(
+        id="heaume_vaillant", name="Heaume du Vaillant", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "hat-pointy.svg"},
+        fills={
+            "cone":   (116,   0,   1),    # rouge Gryffondor
+            "band":   (211, 166,  37),    # or Gryffondor
+            "brim":   ( 76,   0,   1),    # rouge profond
+            "buckle": (240, 208, 128),    # or clair
+        },
+        accents=[
+            {"kind": "emboss", "region": "cone",  "color": ( 60,   0,   0)},
+            {"kind": "symbol", "region": "cone",  "shape": "lion",
+             "color": (224, 184,  76), "size": 130},
+        ],
+    ),
+    "cape_godric": Recipe(
+        id="cape_godric", name="Cape de Godric", rarity="epic", material="matte",
+        silhouette={"kind": "svg", "file": "hood.svg"},
+        fills={
+            "cloth":  (116,   0,   1),    # rouge Gryffondor
+            "cavity": ( 56,   0,   0),
+            "lining": ( 76,   0,   0),    # ignoré si absent
+            "clasp":  (211, 166,  37),    # ignoré si absent
+        },
+        accents=[
+            {"kind": "emboss", "region": "cloth", "color": ( 60,   0,   0)},
+            {"kind": "symbol", "region": "cloth", "shape": "lion",
+             "color": (224, 184,  76), "size": 140},
+        ],
+    ),
+    "coeur_lion": Recipe(
+        id="coeur_lion", name="Cœur de Lion", rarity="legendary", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={
+            "chain":   (211, 166,  37),   # or Gryffondor
+            "setting": (211, 166,  37),
+            "gem":     (180,  20,  28),   # grenat rouge
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (255, 140, 140)},
+            {"kind": "orb_glow",        "region": "gem", "color": (220,  60,  60)},
+            {"kind": "symbol", "region": "setting", "shape": "lion",
+             "color": (240, 208, 128), "size": 90},
+        ],
+        sparkles=True,
+    ),
+
+    # ── Set du Serpent (Serpentard) — vert #1A472A, argent #AAAAAA, "snake" ──
+    "pendentif_mamba": Recipe(
+        id="pendentif_mamba", name="Pendentif du Mamba", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={
+            "chain":   (170, 170, 170),   # argent Serpentard
+            "setting": (140, 140, 140),
+            "gem":     ( 26,  71,  42),   # vert Serpentard
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (120, 220, 160)},
+            {"kind": "orb_glow",        "region": "gem", "color": ( 60, 200, 140)},
+            {"kind": "symbol", "region": "setting", "shape": "snake",
+             "color": (200, 200, 200), "size": 90},
+        ],
+    ),
+    "cape_sibylline": Recipe(
+        id="cape_sibylline", name="Cape Sibylline", rarity="epic", material="matte",
+        silhouette={"kind": "svg", "file": "hood.svg"},
+        fills={
+            "cloth":  ( 26,  71,  42),    # vert Serpentard
+            "cavity": ( 12,  36,  20),
+            "lining": ( 16,  44,  26),
+            "clasp":  (170, 170, 170),    # argent
+        },
+        accents=[
+            {"kind": "emboss", "region": "cloth", "color": ( 12,  32,  18)},
+            {"kind": "symbol", "region": "cloth", "shape": "snake",
+             "color": (200, 200, 200), "size": 140},
+        ],
+    ),
+    "couronne_basilic": Recipe(
+        id="couronne_basilic", name="Couronne du Basilic", rarity="legendary", material="metal",
+        silhouette={"kind": "svg", "file": "tiara.svg"},
+        fills={
+            "band":   (170, 170, 170),    # argent Serpentard
+            "points": (200, 200, 200),
+            "gem":    ( 36, 156,  92),    # émeraude
+            "side":   ( 80, 168, 120),
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (160, 240, 200)},
+            {"kind": "orb_glow",        "region": "gem", "color": ( 80, 220, 150)},
+            {"kind": "symbol", "region": "band", "shape": "snake",
+             "color": (220, 220, 220), "size": 100},
+        ],
+        sparkles=True,
+    ),
+
+    # ── Set de l'Aigle (Serdaigle) — bleu #0E1A40, bronze #946B2D, "eagle" ───
+    "manteau_encre": Recipe(
+        id="manteau_encre", name="Manteau d'Encre", rarity="epic", material="matte",
+        silhouette={"kind": "svg", "file": "hood.svg"},
+        fills={
+            "cloth":  ( 14,  26,  64),    # bleu Serdaigle
+            "cavity": (  6,  14,  36),
+            "lining": (  8,  18,  48),
+            "clasp":  (148, 107,  45),    # bronze
+        },
+        accents=[
+            {"kind": "emboss", "region": "cloth", "color": (  6,  14,  36)},
+            {"kind": "symbol", "region": "cloth", "shape": "eagle",
+             "color": (200, 156,  76), "size": 140},
+        ],
+    ),
+    "oeil_aigle": Recipe(
+        id="oeil_aigle", name="Œil de l'Aigle", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={
+            "chain":   (148, 107,  45),   # bronze Serdaigle
+            "setting": (124,  88,  36),
+            "gem":     ( 36,  88, 188),   # saphir
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (140, 200, 255)},
+            {"kind": "orb_glow",        "region": "gem", "color": ( 80, 160, 255)},
+            {"kind": "symbol", "region": "setting", "shape": "eagle",
+             "color": (200, 156,  76), "size": 90},
+        ],
+    ),
+    "anneau_savoir": Recipe(
+        id="anneau_savoir", name="Anneau du Savoir", rarity="legendary", material="metal",
+        silhouette={"kind": "shape", "name": "ring_band",
+                    "params": {"radius": 170, "thickness": 38,
+                               "bezel": True, "gem": True}},
+        fills={
+            "metal": (148, 107,  45),     # bronze Serdaigle
+            "gem":   ( 36,  88, 188),     # saphir
+        },
+        accents=[
+            {"kind": "runes", "region": "metal", "color": (220, 200, 140),
+             "count": 8, "around": "ring"},
+            {"kind": "gem_facet_shine", "region": "gem", "color": (160, 220, 255)},
+            {"kind": "orb_glow",        "region": "gem", "color": ( 80, 180, 255)},
+        ],
+        sparkles=True,
+    ),
+
+    # ── Set du Blaireau (Poufsouffle) — brun #372E29, or #F0C75E, "badger" ──
+    "cape_loyaute": Recipe(
+        id="cape_loyaute", name="Cape de Loyauté", rarity="epic", material="matte",
+        silhouette={"kind": "svg", "file": "hood.svg"},
+        fills={
+            "cloth":  ( 55,  46,  41),    # brun Poufsouffle
+            "cavity": ( 28,  22,  18),
+            "lining": ( 36,  28,  22),
+            "clasp":  (240, 199,  94),    # or
+        },
+        accents=[
+            {"kind": "emboss", "region": "cloth", "color": ( 26,  20,  16)},
+            {"kind": "symbol", "region": "cloth", "shape": "badger",
+             "color": (240, 199,  94), "size": 140},
+        ],
+    ),
+    "coiffe_blaireau": Recipe(
+        id="coiffe_blaireau", name="Coiffe du Blaireau", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "hat-pointy.svg"},
+        fills={
+            "cone":   ( 88,  56,  32),    # cuir brun
+            "band":   (240, 199,  94),    # or Poufsouffle
+            "brim":   ( 64,  40,  24),
+            "buckle": (220, 180,  80),
+        },
+        accents=[
+            {"kind": "emboss", "region": "cone",  "color": ( 52,  32,  16)},
+            {"kind": "symbol", "region": "cone",  "shape": "badger",
+             "color": (240, 199,  94), "size": 130},
+        ],
+    ),
+    "medaillon_helga": Recipe(
+        id="medaillon_helga", name="Médaillon de Helga", rarity="legendary", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={
+            "chain":   (240, 199,  94),   # or Poufsouffle
+            "setting": (211, 166,  37),
+            "gem":     (224, 168,  44),   # topaze
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (255, 224, 144)},
+            {"kind": "orb_glow",        "region": "gem", "color": (240, 200, 100)},
+            {"kind": "symbol", "region": "setting", "shape": "badger",
+             "color": (255, 220, 140), "size": 90},
+        ],
+        sparkles=True,
+    ),
 }
 
 

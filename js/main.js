@@ -108,7 +108,12 @@ function chooseHouse(house) {
   if (typeof seenNpcs !== 'undefined') seenNpcs = new Set();
   if (typeof activeQuests !== 'undefined' && typeof QUEST_TEMPLATES !== 'undefined') {
     activeQuests    = [];
-    availableQuests = new Set(QUEST_TEMPLATES.map(t => t.id));
+    // Les quêtes de Maison (`houseSetQuest: true`) sont gated par le palier
+    // 12 (Maître Or) via `unlockHouseQuest` — on ne les ajoute pas à
+    // `availableQuests` au démarrage.
+    availableQuests = new Set(
+      QUEST_TEMPLATES.filter(t => !t.houseSetQuest).map(t => t.id)
+    );
     completedQuests = new Set();
   }
   if (typeof lastQuestCompletion !== 'undefined') lastQuestCompletion = {};
@@ -181,10 +186,12 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
     const tierNum = i + 1;
     if (houseTier >= tierNum) return;            // déjà atteint
     if (housePoints < tier.threshold) return;   // pas encore
-    // Endgame Tranche 2 : Tier 5 gated par victoryAchieved. Reste à
-    // tier 4 tant que Voldemort n'a pas été vaincu, même si les
-    // points sont accumulés. Cf. ENDGAME_PLAN.md §7.7.
-    if (tierNum >= 5 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return;
+    // Endgame Tranche 2 : Tier 16 (Légende) gated par victoryAchieved.
+    // Architecture 16 paliers (Bronze/Argent/Or × 5 phases + Légende) ;
+    // tous les sous-paliers sont accessibles sans victoire, seul le
+    // dernier reste réservé au post-endgame. Cf. ENDGAME_PLAN.md §7.7
+    // + .claude/plans/houses-2.0.md §A.
+    if (tierNum >= 16 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return;
 
     houseTier = tierNum;
     addMsg(tier.msg, 'magic');
@@ -198,18 +205,19 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
       if (tier.bonus._baseLck) c._baseLck += tier.bonus._baseLck;
     });
 
-    // Items : tier 2 et tier 4 sont remis en main propre par le Chef de
-    // Maison (pendingHouseRewards). Tier 5 reste distribué directement
-    // (cinématique post-victoire endgame, cf. ENDGAME_PLAN.md §7.7).
+    // Tous les items de palier passent par le Chef de Maison
+    // (`pendingHouseRewards` → cérémonie `claim_house_reward`). Le tier 16
+    // (Légende) reste gated par `victoryAchieved` au-dessus, donc l'item
+    // endgame `lame_godric` & co n'arrivent qu'après victoire.
+    // Cf. .claude/plans/houses-2.0.md §B (Étape 3) — unification du flow.
     if (tier.bonus.item) {
-      if (tierNum >= 5) {
-        const item = ITEMS.find(it => it.id === tier.bonus.item);
-        if (item && tryAddItem(item, { silent: true })) {
-          addMsg(`🎁 ${item.icon} ${item.name} ajouté à l'inventaire !`, 'good');
-        }
-      } else {
-        pendingHouseRewards.add(tier.bonus.item);
-      }
+      pendingHouseRewards.add(tier.bonus.item);
+    }
+
+    // Palier Maître Or (tier 12) : ouvre la quête de Maison qui débloquera
+    // la pièce #4 du set à la remise (cf. quests.js — unlockHouseQuest).
+    if (tier.bonus.unlockSetQuest) {
+      safeCall('unlockHouseQuest', chosenHouse);
     }
 
     recalculateStats();
