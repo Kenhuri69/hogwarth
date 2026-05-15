@@ -63,7 +63,7 @@ const DIFFICULTY_SETTINGS = {
 // ============================================================
 let chosenHouse = null;
 let housePoints = 0;
-let houseTier   = 0;  // 0 = aucun palier atteint, 1-6 = palier actuel
+let houseTier   = 0;  // 0 = aucun palier atteint, 1-16 = palier actuel
 // Items Tier 2 / Tier 4 Maison franchis mais pas encore remis. Le Chef de
 // Maison (HOUSE_BONUSES[house].headOfHouse) les distribue lors d'une visite
 // via specialAction `claim_house_reward`. Le bonus de stats reste appliqué
@@ -71,6 +71,19 @@ let houseTier   = 0;  // 0 = aucun palier atteint, 1-6 = palier actuel
 // item directement (cinématique post-victoire endgame).
 let pendingHouseRewards = new Set();
 
+// ── Architecture 16 paliers (Bronze/Argent/Or × 5 phases + Légende) ──
+// Chaque phase narrative (Apprenti → Confirmé → Expert → Maître →
+// Virtuose) se décompose en 3 sous-paliers (Bronze, Argent, Or) :
+//   • Bronze → +1 LCK
+//   • Argent → +1 stat principale
+//   • Or     → récompense narrative (item via head-of-house ou quête)
+// Le 16ᵉ palier (Légende) est endgame, gated par victoryAchieved dans
+// js/main.js — checkHouseLevelUp.
+//
+// Étape 1bis (.claude/plans/houses-2.0.md §A) : la grille passe de 6 à
+// 16 paliers actifs, avec calibration marathon (max 25000 pts ≈ étages
+// 25+). Les Or de Confirmé/Expert/Virtuose recevront leurs items
+// (set artifacts) en Étape 2/3 ; le placeholder reste vide d'item ici.
 const HOUSE_BONUSES = {
   Gryffondor: {
     color: '#740001', accent: '#D3A625', emoji: '🦁',
@@ -78,15 +91,32 @@ const HOUSE_BONUSES = {
     desc: 'Bravoure, courage et chevalerie.',
     headOfHouse: 'mcgonagall',
     tiers: [
-      { threshold: 100,  label: 'Aspirant',  bonus: { _baseAtk: 1 },              msg: '🦁 Courage naissant ! +1 ATK' },
-      { threshold: 300,  label: 'Élève',     bonus: { _baseAtk: 1, _baseLck: 1, item: 'brassard_lion' }, msg: '🦁 Bravoure éprouvée ! +1 ATK +1 LCK — le Brassard du Lion vous attend auprès du Pr McGonagall.' },
-      { threshold: 600,  label: 'Vaillant',  bonus: { _baseAtk: 2 },              msg: '🦁 Digne de Gryffondor ! +2 ATK' },
-      { threshold: 1000, label: 'Maître',    bonus: { item: 'sword_gryff' },      msg: "🦁 L'Épée de Gryffondor vous attend auprès du Pr McGonagall." },
-      // Tier 5 — Virtuose. Le palier débloque la quête de Maison qui
-      // remettra le 3ᵉ artefact de set (cf. .claude/plans/houses-2.0.md §D).
-      { threshold: 2000, label: 'Virtuose',  bonus: { _baseAtk: 1, _baseLck: 1, unlockSetQuest: true }, msg: '🦁 Virtuose de Gryffondor ! +1 ATK +1 LCK — une quête légendaire t\'attend.' },
-      // Tier 6 — endgame Tranche 2 (gated par victoryAchieved dans main.js).
-      { threshold: 3500, label: 'Légende',   bonus: { _baseAtk: 2, legendaryPassive: true }, msg: "🦁 Légende vivante de Gryffondor ! +2 ATK · Maîtrise Légendaire éveillée." },
+      // Phase 1 — Apprenti
+      { threshold: 50,    label: 'Apprenti Bronze', bonus: { _baseLck: 1 }, msg: '🦁 Premiers exploits ! +1 LCK' },
+      { threshold: 150,   label: 'Apprenti Argent', bonus: { _baseAtk: 1 }, msg: '🦁 Le courage s\'affirme ! +1 ATK' },
+      { threshold: 300,   label: 'Apprenti Or',     bonus: { item: 'brassard_lion' }, msg: '🦁 Bravoure éprouvée — le Brassard du Lion vous attend auprès du Pr McGonagall.' },
+      // Phase 2 — Confirmé
+      { threshold: 500,   label: 'Confirmé Bronze', bonus: { _baseLck: 1 }, msg: '🦁 Lion confirmé ! +1 LCK' },
+      { threshold: 800,   label: 'Confirmé Argent', bonus: { _baseAtk: 1 }, msg: '🦁 Crocs aiguisés ! +1 ATK' },
+      // Confirmé Or — jalon Or sans artefact (la pièce #1 est livrée à Apprenti Or).
+      { threshold: 1200,  label: 'Confirmé Or',     bonus: { _baseAtk: 1, _baseLck: 1 }, msg: '🦁 Confirmé d\'or ! +1 ATK +1 LCK · le Lion en toi gronde.' },
+      // Phase 3 — Expert
+      { threshold: 1700,  label: 'Expert Bronze',   bonus: { _baseLck: 1 }, msg: '🦁 Expertise naissante ! +1 LCK' },
+      { threshold: 2500,  label: 'Expert Argent',   bonus: { _baseAtk: 1 }, msg: '🦁 Maître d\'armes ! +1 ATK' },
+      // Expert Or — Set artifact #2 = sword_gryff (déjà existant).
+      { threshold: 3500,  label: 'Expert Or',       bonus: { item: 'sword_gryff' }, msg: "🦁 L'Épée de Gryffondor vous attend auprès du Pr McGonagall." },
+      // Phase 4 — Maître
+      { threshold: 4500,  label: 'Maître Bronze',   bonus: { _baseLck: 1 }, msg: '🦁 Maîtrise éprouvée ! +1 LCK' },
+      { threshold: 6000,  label: 'Maître Argent',   bonus: { _baseAtk: 1 }, msg: '🦁 Le Lion rugit ! +1 ATK' },
+      // Maître Or — débloque la quête de Maison (cf. .claude/plans/houses-2.0.md §D).
+      { threshold: 8000,  label: 'Maître Or',       bonus: { _baseAtk: 1, unlockSetQuest: true }, msg: '🦁 Maître d\'or ! +1 ATK — une quête légendaire s\'ouvre à toi.' },
+      // Phase 5 — Virtuose
+      { threshold: 10000, label: 'Virtuose Bronze', bonus: { _baseLck: 1 }, msg: '🦁 Virtuose montant ! +1 LCK' },
+      { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseAtk: 1 }, msg: '🦁 Virtuose accompli ! +1 ATK' },
+      // Virtuose Or — Set artifact #3 = lame_godric (récompense de la quête, item livré ici uniquement si la quête est validée — câblage Étape 3).
+      { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🦁 Virtuose d\'or — la dernière relique attend que tu termines la quête du Lion.' },
+      // Phase 6 — Légende (endgame, gated victoryAchieved)
+      { threshold: 25000, label: 'Légende',         bonus: { _baseAtk: 2, _baseLck: 1, legendaryPassive: true }, msg: '🦁 Légende vivante de Gryffondor ! +2 ATK +1 LCK · Maîtrise Légendaire éveillée.' },
     ]
   },
   Serpentard: {
@@ -95,12 +125,22 @@ const HOUSE_BONUSES = {
     desc: 'Ambition, ruse et détermination.',
     headOfHouse: 'rogue',
     tiers: [
-      { threshold: 100,  label: 'Aspirant',  bonus: { _baseMag: 1 },              msg: "🐍 L'ambition vous galvanise ! +1 MAG" },
-      { threshold: 300,  label: 'Élève',     bonus: { _baseMag: 1, _baseLck: 1, item: 'anneau_serpent' }, msg: "🐍 Ruse affûtée ! +1 MAG +1 LCK — l'Anneau du Serpent vous attend auprès du Pr Rogue." },
-      { threshold: 600,  label: 'Rusé',      bonus: { _baseMag: 2 },              msg: '🐍 Serpentard vous honore ! +2 MAG' },
-      { threshold: 1000, label: 'Maître',    bonus: { item: 'locket_slytherin' }, msg: '🐍 Le Médaillon de Serpentard vous attend auprès du Pr Rogue.' },
-      { threshold: 2000, label: 'Virtuose',  bonus: { _baseMag: 1, _baseLck: 1, unlockSetQuest: true }, msg: '🐍 Virtuose de Serpentard ! +1 MAG +1 LCK — une quête sombre s\'ouvre à toi.' },
-      { threshold: 3500, label: 'Légende',   bonus: { _baseMag: 2, legendaryPassive: true }, msg: '🐍 Légende de Serpentard ! +2 MAG · Maîtrise Légendaire éveillée.' },
+      { threshold: 50,    label: 'Apprenti Bronze', bonus: { _baseLck: 1 }, msg: "🐍 Premier souffle ! +1 LCK" },
+      { threshold: 150,   label: 'Apprenti Argent', bonus: { _baseMag: 1 }, msg: "🐍 L'ambition vous galvanise ! +1 MAG" },
+      { threshold: 300,   label: 'Apprenti Or',     bonus: { item: 'anneau_serpent' }, msg: "🐍 Ruse affûtée — l'Anneau du Serpent vous attend auprès du Pr Rogue." },
+      { threshold: 500,   label: 'Confirmé Bronze', bonus: { _baseLck: 1 }, msg: '🐍 Souffle confirmé ! +1 LCK' },
+      { threshold: 800,   label: 'Confirmé Argent', bonus: { _baseMag: 1 }, msg: '🐍 Venin distillé ! +1 MAG' },
+      { threshold: 1200,  label: 'Confirmé Or',     bonus: { _baseMag: 1, _baseLck: 1 }, msg: '🐍 Confirmé d\'or ! +1 MAG +1 LCK · ta présence rend les autres méfiants.' },
+      { threshold: 1700,  label: 'Expert Bronze',   bonus: { _baseLck: 1 }, msg: '🐍 Expertise discrète ! +1 LCK' },
+      { threshold: 2500,  label: 'Expert Argent',   bonus: { _baseMag: 1 }, msg: '🐍 Maître alchimiste ! +1 MAG' },
+      { threshold: 3500,  label: 'Expert Or',       bonus: { item: 'locket_slytherin' }, msg: '🐍 Le Médaillon de Serpentard vous attend auprès du Pr Rogue.' },
+      { threshold: 4500,  label: 'Maître Bronze',   bonus: { _baseLck: 1 }, msg: '🐍 Maîtrise sombre ! +1 LCK' },
+      { threshold: 6000,  label: 'Maître Argent',   bonus: { _baseMag: 1 }, msg: '🐍 Sortilèges affûtés ! +1 MAG' },
+      { threshold: 8000,  label: 'Maître Or',       bonus: { _baseMag: 1, unlockSetQuest: true }, msg: '🐍 Maître d\'or ! +1 MAG — une quête sombre s\'ouvre à toi.' },
+      { threshold: 10000, label: 'Virtuose Bronze', bonus: { _baseLck: 1 }, msg: '🐍 Virtuose des ombres ! +1 LCK' },
+      { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseMag: 1 }, msg: '🐍 Maître absolu ! +1 MAG' },
+      { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🐍 Virtuose d\'or — la dernière relique attend que tu termines la quête du Serpent.' },
+      { threshold: 25000, label: 'Légende',         bonus: { _baseMag: 2, _baseLck: 1, legendaryPassive: true }, msg: '🐍 Légende de Serpentard ! +2 MAG +1 LCK · Maîtrise Légendaire éveillée.' },
     ]
   },
   Serdaigle: {
@@ -109,12 +149,22 @@ const HOUSE_BONUSES = {
     desc: 'Sagesse, intelligence et esprit vif.',
     headOfHouse: 'flitwick',
     tiers: [
-      { threshold: 100,  label: 'Aspirant',  bonus: { _baseMag: 1 },              msg: "🦅 L'intellect s'éveille ! +1 MAG" },
-      { threshold: 300,  label: 'Élève',     bonus: { _baseMag: 1, _baseLck: 1, item: 'plume_aigle' }, msg: "🦅 Esprit acéré ! +1 MAG +1 LCK — la Plume d'Aigle vous attend auprès du Pr Flitwick." },
-      { threshold: 600,  label: 'Savant',    bonus: { _baseMag: 2 },              msg: '🦅 Digne de Serdaigle ! +2 MAG' },
-      { threshold: 1000, label: 'Maître',    bonus: { item: 'diademe_serdaigle' },msg: '🦅 Le Diadème de Serdaigle vous attend auprès du Pr Flitwick.' },
-      { threshold: 2000, label: 'Virtuose',  bonus: { _baseMag: 1, _baseLck: 1, unlockSetQuest: true }, msg: '🦅 Virtuose de Serdaigle ! +1 MAG +1 LCK — un savoir oublié t\'appelle.' },
-      { threshold: 3500, label: 'Légende',   bonus: { _baseMag: 2, legendaryPassive: true }, msg: '🦅 Légende de Serdaigle ! +2 MAG · Maîtrise Légendaire éveillée.' },
+      { threshold: 50,    label: 'Apprenti Bronze', bonus: { _baseLck: 1 }, msg: "🦅 Premier savoir ! +1 LCK" },
+      { threshold: 150,   label: 'Apprenti Argent', bonus: { _baseMag: 1 }, msg: "🦅 L'intellect s'éveille ! +1 MAG" },
+      { threshold: 300,   label: 'Apprenti Or',     bonus: { item: 'plume_aigle' }, msg: "🦅 Esprit acéré — la Plume d'Aigle vous attend auprès du Pr Flitwick." },
+      { threshold: 500,   label: 'Confirmé Bronze', bonus: { _baseLck: 1 }, msg: '🦅 Savoir confirmé ! +1 LCK' },
+      { threshold: 800,   label: 'Confirmé Argent', bonus: { _baseMag: 1 }, msg: '🦅 Esprit aiguisé ! +1 MAG' },
+      { threshold: 1200,  label: 'Confirmé Or',     bonus: { _baseMag: 1, _baseLck: 1 }, msg: '🦅 Confirmé d\'or ! +1 MAG +1 LCK · les énigmes te sourient.' },
+      { threshold: 1700,  label: 'Expert Bronze',   bonus: { _baseLck: 1 }, msg: '🦅 Expertise reconnue ! +1 LCK' },
+      { threshold: 2500,  label: 'Expert Argent',   bonus: { _baseMag: 1 }, msg: '🦅 Maître ès arcanes ! +1 MAG' },
+      { threshold: 3500,  label: 'Expert Or',       bonus: { item: 'diademe_serdaigle' }, msg: '🦅 Le Diadème de Serdaigle vous attend auprès du Pr Flitwick.' },
+      { threshold: 4500,  label: 'Maître Bronze',   bonus: { _baseLck: 1 }, msg: '🦅 Maîtrise aérienne ! +1 LCK' },
+      { threshold: 6000,  label: 'Maître Argent',   bonus: { _baseMag: 1 }, msg: '🦅 Sage accompli ! +1 MAG' },
+      { threshold: 8000,  label: 'Maître Or',       bonus: { _baseMag: 1, unlockSetQuest: true }, msg: '🦅 Maître d\'or ! +1 MAG — un savoir oublié t\'appelle.' },
+      { threshold: 10000, label: 'Virtuose Bronze', bonus: { _baseLck: 1 }, msg: '🦅 Virtuose lettré ! +1 LCK' },
+      { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseMag: 1 }, msg: '🦅 Maître des sorts ! +1 MAG' },
+      { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🦅 Virtuose d\'or — la dernière relique attend que tu termines la quête de l\'Aigle.' },
+      { threshold: 25000, label: 'Légende',         bonus: { _baseMag: 2, _baseLck: 1, legendaryPassive: true }, msg: '🦅 Légende de Serdaigle ! +2 MAG +1 LCK · Maîtrise Légendaire éveillée.' },
     ]
   },
   Poufsouffle: {
@@ -123,12 +173,22 @@ const HOUSE_BONUSES = {
     desc: 'Loyauté, patience et travail acharné.',
     headOfHouse: 'sprout',
     tiers: [
-      { threshold: 100,  label: 'Aspirant',  bonus: { _baseDef: 1 },              msg: '🦡 Résistance naturelle ! +1 DEF' },
-      { threshold: 300,  label: 'Élève',     bonus: { _baseDef: 1, _baseLck: 1, item: 'ceinture_blaireau' }, msg: '🦡 Loyauté récompensée ! +1 DEF +1 LCK — la Ceinture du Blaireau vous attend auprès du Pr Chourave.' },
-      { threshold: 600,  label: 'Tenace',    bonus: { _baseDef: 2 },              msg: '🦡 Indomptable ! +2 DEF' },
-      { threshold: 1000, label: 'Maître',    bonus: { item: 'coupe_poufsouffle' },msg: '🦡 La Coupe de Poufsouffle vous attend auprès du Pr Chourave.' },
-      { threshold: 2000, label: 'Virtuose',  bonus: { _baseDef: 1, _baseLck: 1, unlockSetQuest: true }, msg: '🦡 Virtuose de Poufsouffle ! +1 DEF +1 LCK — un dernier serment t\'attend.' },
-      { threshold: 3500, label: 'Légende',   bonus: { _baseDef: 2, legendaryPassive: true }, msg: '🦡 Légende de Poufsouffle ! +2 DEF · Maîtrise Légendaire éveillée.' },
+      { threshold: 50,    label: 'Apprenti Bronze', bonus: { _baseLck: 1 }, msg: '🦡 Premier serment ! +1 LCK' },
+      { threshold: 150,   label: 'Apprenti Argent', bonus: { _baseDef: 1 }, msg: '🦡 Résistance naturelle ! +1 DEF' },
+      { threshold: 300,   label: 'Apprenti Or',     bonus: { item: 'ceinture_blaireau' }, msg: '🦡 Loyauté récompensée — la Ceinture du Blaireau vous attend auprès du Pr Chourave.' },
+      { threshold: 500,   label: 'Confirmé Bronze', bonus: { _baseLck: 1 }, msg: '🦡 Patience confirmée ! +1 LCK' },
+      { threshold: 800,   label: 'Confirmé Argent', bonus: { _baseDef: 1 }, msg: '🦡 Carapace renforcée ! +1 DEF' },
+      { threshold: 1200,  label: 'Confirmé Or',     bonus: { _baseDef: 1, _baseLck: 1 }, msg: '🦡 Confirmé d\'or ! +1 DEF +1 LCK · tes amis sentent ta présence rassurante.' },
+      { threshold: 1700,  label: 'Expert Bronze',   bonus: { _baseLck: 1 }, msg: '🦡 Travail acharné ! +1 LCK' },
+      { threshold: 2500,  label: 'Expert Argent',   bonus: { _baseDef: 1 }, msg: '🦡 Indomptable ! +1 DEF' },
+      { threshold: 3500,  label: 'Expert Or',       bonus: { item: 'coupe_poufsouffle' }, msg: '🦡 La Coupe de Poufsouffle vous attend auprès du Pr Chourave.' },
+      { threshold: 4500,  label: 'Maître Bronze',   bonus: { _baseLck: 1 }, msg: '🦡 Maîtrise tenace ! +1 LCK' },
+      { threshold: 6000,  label: 'Maître Argent',   bonus: { _baseDef: 1 }, msg: '🦡 Bouclier vivant ! +1 DEF' },
+      { threshold: 8000,  label: 'Maître Or',       bonus: { _baseDef: 1, unlockSetQuest: true }, msg: '🦡 Maître d\'or ! +1 DEF — un dernier serment t\'attend.' },
+      { threshold: 10000, label: 'Virtuose Bronze', bonus: { _baseLck: 1 }, msg: '🦡 Virtuose patient ! +1 LCK' },
+      { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseDef: 1 }, msg: '🦡 Forteresse vivante ! +1 DEF' },
+      { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🦡 Virtuose d\'or — la dernière relique attend que tu termines la quête du Blaireau.' },
+      { threshold: 25000, label: 'Légende',         bonus: { _baseDef: 2, _baseLck: 1, legendaryPassive: true }, msg: '🦡 Légende de Poufsouffle ! +2 DEF +1 LCK · Maîtrise Légendaire éveillée.' },
     ]
   },
 };

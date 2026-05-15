@@ -4512,39 +4512,40 @@ async function scenarioLibraryUpgrade() {
   await browser.close();
 }
 
-// ── Scénario endgame Tranche 2 — 3 : Maison Tier 6 (Légende) ────
-// Architecture Maisons 2.0 : 6 paliers. Le gate endgame
-// (victoryAchieved) s'applique désormais au palier 6 (Légende), pas
-// au 5 (Virtuose). Le 5 débloque la quête de Maison qui livrera
-// l'artefact #3 du set (câblage en Étape 3, cf.
-// .claude/plans/houses-2.0.md §A).
+// ── Scénario endgame Tranche 2 — 3 : Maison Tier 16 (Légende) ───
+// Architecture Maisons 2.0 : 16 paliers (Bronze/Argent/Or × 5 phases
+// + Légende). Le gate endgame (victoryAchieved) s'applique au palier
+// 16 (Légende) à 25000 pts. Tous les paliers intermédiaires sont
+// accessibles sans victoire ; les Or de Confirmé/Maître/Virtuose
+// portent les jalons narratifs (artefacts, quête de Maison).
+// Cf. .claude/plans/houses-2.0.md §A.
 async function scenarioHouseTier5() {
-  console.log('\n── Scénario endgame T2.3 : Maison Tier 6 ──');
+  console.log('\n── Scénario endgame T2.3 : Maison Tier 16 ──');
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
 
-  // T1 : pré-victoire, 2000 points → Virtuose (tier 5) accessible sans gate
+  // T1 : pré-victoire, 16000 points → Virtuose Or (tier 15) accessible sans gate.
   const t1 = await page.evaluate(() => {
     victoryAchieved = false;
-    housePoints     = 2000;
+    housePoints     = 16000;
     houseTier       = 0; // simule restart
     checkHouseLevelUp();
     return { tier: houseTier, hasLame: player.inventory.some(i => i.id === 'lame_godric') };
   });
-  console.log('  T1 pré-victoire 2000 pts →', t1);
-  assert(t1.tier === 5,         'tier 5 (Virtuose) accessible sans victoire');
-  assert(t1.hasLame === false,  'lame_godric pas livrée au palier 5 (vient de la quête de Maison)');
+  console.log('  T1 pré-victoire 16000 pts →', t1);
+  assert(t1.tier === 15,        'tier 15 (Virtuose Or) accessible sans victoire');
+  assert(t1.hasLame === false,  'lame_godric pas livrée directement (vient de la quête de Maison)');
 
-  // T2 : pré-victoire, 3500 points → reste à 5 (tier 6 Légende est gated)
+  // T2 : pré-victoire, 25000 points → reste à 15 (tier 16 Légende est gated).
   const t2 = await page.evaluate(() => {
-    housePoints = 3500;
+    housePoints = 25000;
     checkHouseLevelUp();
     return { tier: houseTier };
   });
-  console.log('  T2 pré-victoire 3500 pts →', t2);
-  assert(t2.tier === 5, 'tier 6 (Légende) doit rester verrouillé sans victoire');
+  console.log('  T2 pré-victoire 25000 pts →', t2);
+  assert(t2.tier === 15, 'tier 16 (Légende) doit rester verrouillé sans victoire');
 
-  // T3 : post-victoire, 3500 points → tier 6 + bonus passif
+  // T3 : post-victoire, 25000 points → tier 16 + bonus passif.
   const t3 = await page.evaluate(() => {
     victoryAchieved = true;
     checkHouseLevelUp();
@@ -4553,14 +4554,14 @@ async function scenarioHouseTier5() {
       atkBase: party[0]._baseAtk
     };
   });
-  console.log('  T3 post-victoire 3500 pts →', t3);
-  assert(t3.tier === 6, 'tier 6 (Légende) franchi post-victoire');
+  console.log('  T3 post-victoire 25000 pts →', t3);
+  assert(t3.tier === 16, 'tier 16 (Légende) franchi post-victoire');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Maison Tier 6 OK');
+  console.log('  ✅ Maison Tier 16 OK');
   await browser.close();
 }
 
@@ -4570,26 +4571,26 @@ async function scenarioHouseRewardFlow() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
 
-  // T1 : franchir seuil tier 2 → item en attente, pas dans inventaire
+  // T1 : franchir seuil Apprenti Or (tier 3, 300 pts) → item en attente, pas dans inventaire.
+  // Architecture 16 paliers : brassard_lion est désormais distribué au
+  // tier 3 (Apprenti Or). On démarre à tier 2 (Apprenti Argent, 150 pts)
+  // pour vérifier le franchissement vers Or.
   const t1 = await page.evaluate(() => {
     chosenHouse = 'Gryffondor';
     housePoints = 300;
-    houseTier   = 1;
+    houseTier   = 2;
     pendingHouseRewards = new Set();
-    const atkBefore = party[0]._baseAtk;
     checkHouseLevelUp();
     return {
       tier:       houseTier,
       pending:    pendingHouseRewards.has('brassard_lion'),
-      inInv:      (player.inventory || []).some(i => i && i.id === 'brassard_lion'),
-      atkBoosted: party[0]._baseAtk > atkBefore
+      inInv:      (player.inventory || []).some(i => i && i.id === 'brassard_lion')
     };
   });
   console.log('  T1 seuil 300 →', t1);
-  assert(t1.tier === 2,    'tier non passé à 2');
+  assert(t1.tier === 3,    'tier non passé à 3 (Apprenti Or)');
   assert(t1.pending,       'brassard_lion non mis en attente');
   assert(!t1.inInv,        'brassard_lion distribué automatiquement (bug)');
-  assert(t1.atkBoosted,    'bonus ATK tier 2 non appliqué');
 
   // T2 : visite McGonagall → réception
   const t2 = await page.evaluate(() => {

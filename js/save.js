@@ -443,11 +443,13 @@ function _applyState(gs) {
 // en regardant chaque tier déjà franchi : si l'item correspondant n'est
 // nulle part chez le joueur, on l'ajoute en attente.
 //
-// Tier 5 est exclu : il conserve la distribution directe (cinématique
-// post-victoire, cf. checkHouseLevelUp). Si le joueur l'a vendu, tant pis.
+// Architecture 16 paliers (.claude/plans/houses-2.0.md §A) : aucun tier
+// n'utilise plus la distribution directe d'item ; le tier 16 (Légende
+// endgame) ne porte qu'un bonus passif. Tous les `bonus.item` passent
+// désormais par pendingHouseRewards via le head-of-house.
 //
 // Limitation : on ne distingue pas « possédé puis vendu » de « jamais reçu ».
-// Si un joueur tier 4 a vendu son légendaire avant cette PR, il sera remis
+// Si un joueur a vendu un légendaire avant cette PR, il sera remis
 // en attente. Cas extrême et avantageux pour le joueur. Cf. plan §8.
 function _migrateHouseRewards() {
   if (typeof pendingHouseRewards === 'undefined') return;
@@ -458,7 +460,6 @@ function _migrateHouseRewards() {
     const tierNum = i + 1;
     if (houseTier < tierNum) return;
     if (!tier.bonus.item) return;
-    if (tierNum >= 5) return;
     const itemId = tier.bonus.item;
     const inInventory = (player.inventory || []).some(it => it && it.id === itemId);
     const equipped    = party.some(c => c.equipped &&

@@ -24,33 +24,55 @@ cinématique endgame).
 
 ## Décisions & assumptions (à valider en marche)
 
-### A. Articulation des 6 paliers (extension, pas réécriture)
+### A. Articulation 16 paliers (Bronze/Argent/Or × 5 phases + Légende)
 
-On **conserve** les 5 paliers actuels + on **ajoute un 6e palier**. La
-nomenclature évolue conformément à la demande utilisateur :
+Décision finale (cf. itération utilisateur du 15 mai 2026) : on n'arrête
+pas à 6 paliers. La grille passe à **16 paliers actifs**, chacun avec
+un bonus tangible, conçue pour scaler jusqu'aux étages 25+.
 
-| # | Nouveau nom (FR) | Seuil (pts) | Bonus stat   | Récompense item                                  | Cinématique |
-|---|------------------|-------------|--------------|--------------------------------------------------|-------------|
-| 1 | Apprenti         | 100         | +1 stat principale | —                                          | inline |
-| 2 | Confirmé         | 300         | +1 stat +1 LCK     | `brassard_lion`/`anneau_serpent`/`plume_aigle`/`ceinture_blaireau` (existant) | head-of-house |
-| 3 | Expert           | 600         | +1 stat +1 LCK     | **Set artifact #1** (NOUVEAU) — direct           | head-of-house |
-| 4 | Maître           | 1000        | +2 stat            | **Set artifact #2** (NOUVEAU, remplace `sword_gryff`/etc.) | head-of-house |
-| 5 | Virtuose         | 2000        | +1 stat +1 LCK     | **Quête débloquée** → récompense = **Set artifact #3** | quête |
-| 6 | Légende          | 3500        | +2 stat + titre    | Bonus passif "Maîtrise Légendaire" (cf. §C)      | inline, gated `victoryAchieved` |
+Schéma générique par phase :
+- **Bronze** → +1 LCK
+- **Argent** → +1 stat principale (ATK Gry / MAG Slyth&Raven / DEF Pouf)
+- **Or** → récompense narrative (item via head-of-house ou quête)
+
+| # | Nom              | Seuil  | Stat bonus           | Récompense narrative                                      |
+|---|------------------|--------|----------------------|----------------------------------------------------------|
+| 1 | Apprenti Bronze  | 50     | +1 LCK               | —                                                        |
+| 2 | Apprenti Argent  | 150    | +1 stat              | —                                                        |
+| 3 | Apprenti Or      | 300    | —                    | **Set piece #1** = `brassard_lion`/`anneau_serpent`/`plume_aigle`/`ceinture_blaireau` (head-of-house, existant) |
+| 4 | Confirmé Bronze  | 500    | +1 LCK               | —                                                        |
+| 5 | Confirmé Argent  | 800    | +1 stat              | —                                                        |
+| 6 | Confirmé Or      | 1200   | +1 stat +1 LCK       | jalon Or (pas d'artefact, le set part du tier 3)         |
+| 7 | Expert Bronze    | 1700   | +1 LCK               | —                                                        |
+| 8 | Expert Argent    | 2500   | +1 stat              | —                                                        |
+| 9 | Expert Or        | 3500   | —                    | **Set piece #2** = `sword_gryff`/`locket_slytherin`/`diademe_serdaigle`/`coupe_poufsouffle` (head-of-house, existant) |
+| 10| Maître Bronze    | 4500   | +1 LCK               | —                                                        |
+| 11| Maître Argent    | 6000   | +1 stat              | —                                                        |
+| 12| Maître Or        | 8000   | +1 stat              | **Quête de Maison débloquée** (Étape 3)                  |
+| 13| Virtuose Bronze  | 10000  | +1 LCK               | —                                                        |
+| 14| Virtuose Argent  | 13000  | +1 stat              | —                                                        |
+| 15| Virtuose Or      | 16000  | —                    | **Set piece #3** = `lame_godric`/`bague_salazar`/`codex_rowena`/`bouclier_helga` (récompense de la quête de Maison, recyclé) |
+| 16| **Légende**      | 25000  | +2 stat + 1 LCK      | **Maîtrise Légendaire** (gated `victoryAchieved`)        |
+
+Total bonus stats à Légende = +7 stat principale + +5 LCK répartis sur
+14 paliers à bonus. Les Or de Confirmé/Expert/Virtuose n'apportent que
+l'item (no-op stat) car l'item lui-même portera ses propres bonus.
 
 Notes :
-- Les items existants au palier 4 (`sword_gryff`, `locket_slytherin`,
-  `diademe_serdaigle`, `coupe_poufsouffle`) **deviennent** les Set
-  artifacts #2 — refonte cosmétique + ajout du champ `setKey` pour la
-  détection (cf. §B). Pas de suppression de l'ID, donc les saves
-  existantes restent compatibles.
-- Les items palier 5 actuels (`lame_godric`/`bague_salazar`/
-  `codex_rowena`/`bouclier_helga`) **deviennent** les Set artifacts #3.
-  Leur acquisition passe de « directe à l'atteinte du palier endgame »
-  à « via quête débloquée au palier 5 ». L'endgame gating
-  (`victoryAchieved`) **glisse** sur le palier 6 (Légende).
+- **Les 3 pièces du set sont des items existants** (correction
+  utilisateur du 15 mai 2026) : `brassard_lion`+ frères au tier 3,
+  `sword_gryff`+ frères au tier 9, `lame_godric`+ frères au tier 15.
+  Étape 2 se simplifie : pas de création d'artefacts, juste annoter
+  les 12 items existants avec `setKey`/`setPiece`.
+- L'endgame gate (`victoryAchieved`) s'applique désormais au tier 16.
+- Confirmé Or (tier 6) ne porte pas d'artefact : on lui donne +1 stat
+  +1 LCK pour qu'il se sente comme un jalon Or quand même.
 
-### B. Modèle des Sets (3 pièces)
+Vision long-terme : on pourra ajouter une 7ᵉ phase ("Mythe", 40000 pts ?)
+pour les étages 40+, ou ajouter des sous-paliers Diamant/Platine entre
+Or et le palier suivant si on veut plus de granularité.
+
+### B. Modèle des Sets (3 pièces — items existants annotés)
 
 Champs ajoutés sur les items du set (dans `js/data.js`) :
 
@@ -59,8 +81,20 @@ setKey: "gryff_set"   // identifie l'appartenance au set
 setPiece: 1 | 2 | 3   // numéro de pièce dans le set
 ```
 
-Chaque Maison a **un seul set de 3 pièces**, avec slots variés pour
-qu'elles soient cumulables (ex : Gry = ring + body + wand).
+Composition (12 items existants annotés, **aucune création**) :
+
+| Set         | Pièce 1 (Apprenti Or) | Pièce 2 (Expert Or)   | Pièce 3 (Virtuose Or via quête) |
+|-------------|-----------------------|-----------------------|----------------------------------|
+| Gryffondor  | `brassard_lion` (hands) | `sword_gryff` (wand)  | `lame_godric` (wand)             |
+| Serpentard  | `anneau_serpent` (ring) | `locket_slytherin` (amulet) | `bague_salazar` (ring)         |
+| Serdaigle   | `plume_aigle` (trinket) | `diademe_serdaigle` (head) | `codex_rowena` (trinket)        |
+| Poufsouffle | `ceinture_blaireau` (belt) | `coupe_poufsouffle` (body) | `bouclier_helga` (cloak)       |
+
+⚠️ Slot Gryffondor : `sword_gryff` et `lame_godric` sont tous deux
+`wand` — mutuellement exclusifs. Solution simple à trancher Étape 2 :
+soit on crée un nouvel item Gry (set piece #3 sur slot libre), soit
+on accepte le conflit (joueur choisit). Décision casuelle, non
+bloquante pour Étape 1bis.
 
 Bonus de set (calculés à `recalculateStats()` après agrégation des
 bonus pièce-par-pièce) :

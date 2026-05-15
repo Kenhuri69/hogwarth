@@ -181,11 +181,12 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
     const tierNum = i + 1;
     if (houseTier >= tierNum) return;            // déjà atteint
     if (housePoints < tier.threshold) return;   // pas encore
-    // Endgame Tranche 2 : Tier 6 (Légende) gated par victoryAchieved.
-    // Le tier 5 (Virtuose) est désormais accessible sans victoire — il
-    // débloque la quête de Maison qui livrera l'artefact #3 du set.
-    // Cf. ENDGAME_PLAN.md §7.7 + .claude/plans/houses-2.0.md §A.
-    if (tierNum >= 6 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return;
+    // Endgame Tranche 2 : Tier 16 (Légende) gated par victoryAchieved.
+    // Architecture 16 paliers (Bronze/Argent/Or × 5 phases + Légende) ;
+    // tous les sous-paliers sont accessibles sans victoire, seul le
+    // dernier reste réservé au post-endgame. Cf. ENDGAME_PLAN.md §7.7
+    // + .claude/plans/houses-2.0.md §A.
+    if (tierNum >= 16 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return;
 
     houseTier = tierNum;
     addMsg(tier.msg, 'magic');

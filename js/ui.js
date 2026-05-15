@@ -100,7 +100,7 @@ function _updateHouseBadge() {
   const tiers = h.tiers;
 
   // Trouver le seuil du prochain palier
-  const nextTier = tiers[houseTier];  // houseTier = nombre de paliers atteints (0-4)
+  const nextTier = tiers[houseTier];  // houseTier = nombre de paliers atteints (0-16)
   const prevThreshold = houseTier > 0 ? tiers[houseTier - 1].threshold : 0;
   const nextThreshold = nextTier ? nextTier.threshold : tiers[tiers.length - 1].threshold;
 
