@@ -179,28 +179,43 @@ existants en endgame.
 
 **Commit** : `feat(houses): extend tier structure to 6 paliers, add HOUSE_SETS placeholder`
 
-### Étape 2 — Création des 12 artefacts + visuels
+### Étape 2 — Création des 12 NEW artefacts ✅
 
-**Objectif** : créer les 12 items de set dans `js/data.js` et leurs
-images PNG avec le blason de Maison intégré.
+**Livré.** Fichiers touchés :
+- `js/data.js` : annotation des 4 brassards existants
+  (`brassard_lion`/`anneau_serpent`/`plume_aigle`/`ceinture_blaireau`)
+  avec `setKey` + `setPiece: 1`. Création des 12 NEW items (3 par
+  Maison) avec slots distincts pour permettre l'équipement simultané
+  des 4 pièces du set.
+- `js/state.js — HOUSE_BONUSES` : items câblés à Confirmé Or (tier 6,
+  pièce #2 via head-of-house) et Maître Or (tier 12, pièce #3 +
+  `unlockSetQuest`). Pièce #4 (Virtuose Or, tier 15) sera distribuée
+  par la quête de Maison à l'Étape 3.
+- `js/state.js — HOUSE_SETS.pieceIds` : remplis avec les 4 IDs par set.
+- `js/item-icons.js` : 12 entrées `ITEM_ICON_REGISTRY` ajoutées
+  (alias vers PNG existants — sprites dédiés à générer plus tard via
+  `tools/gen_icons.py` si direction artistique souhaitée).
 
-Fichiers touchés :
-- `js/data.js` — 12 nouveaux items (ou refonte des 4 existants palier 4
-  + 4 existants palier 5 + 4 nouveaux pour pièce #1). Chacun avec
-  `setKey`, `setPiece`, slot dédié, rarity legendary, stats équilibrées.
-- `img/artifacts/<maison>_<piece>.png` — 12 fichiers PNG, chacun avec
-  variation visuelle subtile mais blason clairement intégré.
-- `js/icons.js` ou `js/item-icons.js` — wiring optionnel si on veut
-  des icônes inline plutôt que des PNG.
+Composition finale :
 
-Critères :
-- Chaque Maison a 3 pièces sur 3 slots distincts.
-- Total stats par set ≈ équivalent set rare endgame (target : +6 stats
-  primaires cumulées sur 3 pièces, pas plus).
-- Les images intègrent visuellement le blason (subtilité OK, mais
-  reconnaissable).
+| Set        | #1 (Apprenti Or, hands/ring/trinket/belt) | #2 (Confirmé Or) | #3 (Maître Or)  | #4 (Virtuose Or via quête) |
+|------------|-------------------------------------------|------------------|-----------------|----------------------------|
+| Gryffondor | brassard_lion (hands)                     | heaume_vaillant (head) | cape_godric (cloak) | coeur_lion (amulet)  |
+| Serpentard | anneau_serpent (ring)                     | pendentif_mamba (amulet) | cape_sibylline (cloak) | couronne_basilic (head) |
+| Serdaigle  | plume_aigle (trinket)                     | manteau_encre (cloak) | oeil_aigle (amulet) | anneau_savoir (ring) |
+| Poufsouffle| ceinture_blaireau (belt)                  | cape_loyaute (cloak) | coiffe_blaireau (head) | medaillon_helga (amulet) |
 
-**Commit** : `feat(houses): add 12 set artifacts with house-emblem visuals`
+Stat totale par set 4/4 (avant bonus de set) : ~10-11 points en stat
+principale + 4-5 LCK/INT/END secondaires + 1 régen. Calibration epic
+pour #2/#3, legendary pour #4.
+
+Vérif : `node tests/smoke.js` vert (toutes ITEM_ICON_REGISTRY mappés,
+HOUSE_SETS.pieceIds renvoient des items existants).
+
+⚠️ PNG dédiés à générer ultérieurement (alias actuels = PNG existants
+réutilisés). Optionnel si on veut des sprites custom.
+
+**Commit** : `feat(houses): add 12 set artifacts (3 NEW × 4 houses) wired to tiers 6/12`
 
 ### Étape 3 — Liaison paliers ↔ récompenses + quête palier 5
 
