@@ -367,6 +367,12 @@ function equipItem(inventoryIdx, charIdx, targetSlot) {
     addMsg(`${c.name} déséquipe : ${old.name}`, '');
   }
 
+  // Capture du compteur de set AVANT recalc (pour détecter la transition
+  // <4 → 4 et déclencher le feedback de complétion).
+  const prevSetCount = (item.setKey && typeof c['_' + item.setKey + 'Count'] === 'number')
+    ? c['_' + item.setKey + 'Count']
+    : 0;
+
   // Équiper le nouvel objet
   c.equipped[slot] = { ...item };
 
@@ -386,6 +392,24 @@ function equipItem(inventoryIdx, charIdx, targetSlot) {
 
   // Recalculer les stats effectives
   recalculateStats();
+
+  // Feedback Set 4/4 — uniquement si l'item équipé porte `setKey` et
+  // qu'on vient de basculer de <4 à 4 sur ce perso. Garde-fou
+  // `chosenHouse` : on n'annonce que le set de la Maison du joueur,
+  // pour éviter le spam si jamais un personnage équipe les 4 pièces
+  // d'une Maison qui n'est pas la sienne (cas dev/triche).
+  if (item.setKey && typeof HOUSE_SETS !== 'undefined' && typeof chosenHouse !== 'undefined' && chosenHouse) {
+    const houseSet = HOUSE_SETS[chosenHouse];
+    if (houseSet && houseSet.setKey === item.setKey) {
+      const newCount = c['_' + item.setKey + 'Count'] | 0;
+      if (prevSetCount < 4 && newCount >= 4) {
+        if (typeof AudioSystem !== 'undefined' && AudioSystem.playSetComplete) {
+          AudioSystem.playSetComplete();
+        }
+        addMsg(`✨ <b>${houseSet.setLabel} complet (4/4)</b> — bonus majeur activé !`, 'magic');
+      }
+    }
+  }
 
   // Si l'équipement enseigne un sort, l'apprendre à tout le groupe
   if (item.grantsSpell) {

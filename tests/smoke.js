@@ -4930,6 +4930,187 @@ async function scenarioHouseSet() {
   await browser.close();
 }
 
+// ── Scénario Maisons 2.0 — Étape 6 : Feedback Set 4/4 ──────
+// Vérifie que la transition <4 → 4 du Set du Lion déclenche
+// AudioSystem.playSetComplete + un message « complet » dans #msg-log,
+// et que l'équipement d'une pièce hors-set ou d'une 4ᵉ déjà atteinte
+// reste silencieux (no double-trigger).
+async function scenarioHouseSetCompleteFeedback() {
+  console.log('\n── Scénario Maisons 2.0 — Étape 6 : feedback Set 4/4 ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Setup : spy sur AudioSystem.playSetComplete (compteur d'appels)
+  await page.evaluate(() => {
+    window.__setCompleteCalls = 0;
+    const orig = AudioSystem.playSetComplete.bind(AudioSystem);
+    AudioSystem.playSetComplete = function () {
+      window.__setCompleteCalls++;
+      // Ne joue pas le son en headless (le contexte audio peut être bloqué).
+    };
+    // Reset équipement à vide
+    party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                          cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    recalculateStats();
+    // Préempte les 4 pièces du Set du Lion dans l'inventaire
+    player.inventory = [];
+    ['brassard_lion', 'heaume_vaillant', 'cape_godric', 'coeur_lion'].forEach(id => {
+      const it = ITEMS.find(i => i.id === id);
+      if (it) player.inventory.push({ ...it });
+    });
+  });
+
+  // T1 : équipe la 1re pièce (brassard, hands) → pas de complétion
+  const t1 = await page.evaluate(() => {
+    const idx = player.inventory.findIndex(i => i.id === 'brassard_lion');
+    equipItem(idx, 0);
+    return { calls: window.__setCompleteCalls, count: party[0]._gryff_setCount | 0 };
+  });
+  console.log('  T1 1/4 →', t1);
+  assert(t1.calls === 0, 'aucun appel à playSetComplete à 1/4');
+  assert(t1.count === 1, 'compteur Gryff = 1');
+
+  // T2 : 2ᵉ pièce (heaume, head) → pas de complétion
+  const t2 = await page.evaluate(() => {
+    const idx = player.inventory.findIndex(i => i.id === 'heaume_vaillant');
+    equipItem(idx, 0);
+    return { calls: window.__setCompleteCalls, count: party[0]._gryff_setCount | 0 };
+  });
+  console.log('  T2 2/4 →', t2);
+  assert(t2.calls === 0, 'aucun appel à 2/4');
+  assert(t2.count === 2, 'compteur Gryff = 2');
+
+  // T3 : 3ᵉ pièce (cape, cloak) → pas de complétion
+  const t3 = await page.evaluate(() => {
+    const idx = player.inventory.findIndex(i => i.id === 'cape_godric');
+    equipItem(idx, 0);
+    return { calls: window.__setCompleteCalls, count: party[0]._gryff_setCount | 0 };
+  });
+  console.log('  T3 3/4 →', t3);
+  assert(t3.calls === 0, 'aucun appel à 3/4');
+  assert(t3.count === 3, 'compteur Gryff = 3');
+
+  // T4 : 4ᵉ pièce (coeur_lion, amulet) → 1 appel + message
+  const t4 = await page.evaluate(() => {
+    const idx = player.inventory.findIndex(i => i.id === 'coeur_lion');
+    equipItem(idx, 0);
+    const log = document.getElementById('msg-log');
+    const txt = log ? log.textContent : '';
+    return {
+      calls: window.__setCompleteCalls,
+      count: party[0]._gryff_setCount | 0,
+      hasMsg: txt.includes('Set du Lion complet') || txt.includes('complet (4/4)')
+    };
+  });
+  console.log('  T4 4/4 →', t4);
+  assert(t4.calls === 1,  '1 appel à playSetComplete à 4/4');
+  assert(t4.count === 4,  'compteur Gryff = 4');
+  assert(t4.hasMsg,       'message « Set du Lion complet » présent dans msg-log');
+
+  // T5 : remplacer une pièce non-set par une rare hors-set (ex : bottes)
+  //      → le compteur reste à 4, pas de re-trigger.
+  const t5 = await page.evaluate(() => {
+    // ajoute des bottes basiques en inventaire et équipe-les
+    const bottes = ITEMS.find(i => i.id === 'bottes_apprenti');
+    if (!bottes) return { skipped: true };
+    player.inventory.push({ ...bottes });
+    const idx = player.inventory.length - 1;
+    equipItem(idx, 0);
+    return { calls: window.__setCompleteCalls, count: party[0]._gryff_setCount | 0, skipped: false };
+  });
+  console.log('  T5 équipe hors-set →', t5);
+  if (!t5.skipped) {
+    assert(t5.calls === 1,  'pas de re-trigger en équipant hors-set');
+    assert(t5.count === 4,  'compteur Gryff reste à 4');
+  }
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Feedback Set 4/4 OK');
+  await browser.close();
+}
+
+// ── Scénario Maisons 2.0 — Étape 6 : Save round-trip ─────────
+// Vérifie que chosenHouse / housePoints / houseTier / pendingHouseRewards
+// (incluant les NEW set piece IDs) survivent à _serializeState ↔
+// _applyState sans perte.
+async function scenarioHouseSaveRoundTrip() {
+  console.log('\n── Scénario Maisons 2.0 — Étape 6 : save round-trip ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Setup : injecte un état Maison riche (paliers franchis + pièces
+  // pending) puis serialize → reset → applyState → compare.
+  const result = await page.evaluate(() => {
+    // 1) État avant save
+    housePoints = 8200;          // au-delà du palier 12 (8000 = Maître Or)
+    houseTier   = 12;            // tier 12 atteint
+    pendingHouseRewards = new Set(['heaume_vaillant', 'cape_godric']);
+    chosenHouse = 'Gryffondor';
+
+    const before = {
+      house:    chosenHouse,
+      points:   housePoints,
+      tier:     houseTier,
+      pending:  Array.from(pendingHouseRewards).sort(),
+    };
+
+    // 2) Serialize
+    const snapshot = _serializeState();
+
+    // 3) Reset runtime (simule un nouveau slot)
+    housePoints         = 0;
+    houseTier           = 0;
+    pendingHouseRewards = new Set();
+    chosenHouse         = null;
+
+    // 4) ApplyState
+    _applyState(snapshot);
+
+    const after = {
+      house:    chosenHouse,
+      points:   housePoints,
+      tier:     houseTier,
+      pending:  Array.from(pendingHouseRewards).sort(),
+    };
+
+    return { before, after, serializedPending: snapshot.pendingHouseRewards };
+  });
+
+  console.log('  before →', result.before);
+  console.log('  after  →', result.after);
+  console.log('  snapshot.pendingHouseRewards →', result.serializedPending);
+
+  assert(result.after.house  === result.before.house,  'chosenHouse restauré');
+  assert(result.after.points === result.before.points, 'housePoints restauré');
+  assert(result.after.tier   === result.before.tier,   'houseTier restauré');
+  // Les IDs sauvegardés (heaume_vaillant, cape_godric) doivent survivre.
+  // `_migrateHouseRewards` peut en ajouter d'autres (paliers franchis dont
+  // l'item n'est ni en inv ni équipé : brassard_lion tier 3, sword_gryff
+  // tier 9). On vérifie donc le subset, pas l'égalité.
+  for (const id of result.before.pending) {
+    assert(result.after.pending.includes(id),
+           `pendingHouseRewards préserve ${id} après round-trip`);
+  }
+  assert(Array.isArray(result.serializedPending),
+         'pendingHouseRewards sérialisé comme Array (et non Set)');
+  // Sanity : les IDs sérialisés sont bien les inputs (snapshot pré-migrate).
+  assert(
+    JSON.stringify([...result.serializedPending].sort()) ===
+      JSON.stringify(['cape_godric', 'heaume_vaillant']),
+    'snapshot.pendingHouseRewards reflète strictement l\'input'
+  );
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Save round-trip Maison OK');
+  await browser.close();
+}
+
 // ── Scénario endgame Tranche 2 — 4 : Set bonus Ténèbres ─────
 async function scenarioTenebresSet() {
   console.log('\n── Scénario endgame T2.4 : Set bonus Ténèbres ──');
@@ -5793,7 +5974,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

@@ -172,6 +172,44 @@ Object.assign(AudioSystem, {
     });
   },
 
+  // ── Complétion d'un Set de Maison (4/4) ──────────────────────
+  // Chord majestueux brillant — distinct de playLevelUp : on tient un
+  // accord majeur ouvert (root + 5te + octave + 10e), puis on superpose
+  // un arpège ascendant qui culmine sur la quinte octave. Couleur
+  // « palier majeur atteint », plus solennel que le levelUp 5-notes.
+  playSetComplete() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+
+    // 1) Accord soutenu (triangle, doux)
+    [392, 587, 784, 988].forEach((freq, i) => {
+      const osc  = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, now + i * 0.03);
+      gain.gain.linearRampToValueAtTime(0.22, now + i * 0.03 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+      osc.connect(gain).connect(this.sfxGain);
+      osc.start(now + i * 0.03); osc.stop(now + 1.7);
+    });
+
+    // 2) Arpège brillant par dessus (sine, plus aigu)
+    [784, 988, 1175, 1568, 1976].forEach((freq, i) => {
+      const delay = 0.45 + i * 0.08;
+      const osc   = this.ctx.createOscillator();
+      const gain  = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, now + delay);
+      gain.gain.linearRampToValueAtTime(0.30, now + delay + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.45);
+      osc.connect(gain).connect(this.sfxGain);
+      osc.start(now + delay); osc.stop(now + delay + 0.5);
+    });
+  },
+
   // ── Victoire de combat ────────────────────────────────────────
   playVictory() {
     if (this.isMuted) return;

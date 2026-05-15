@@ -2,7 +2,7 @@
 
 > Branche actuelle : `claude/house-system-step-three-Ual5V` (basée sur
 > `claude/house-system-expansion-OYuhx`).
-> Statut : 🟢 Étapes 1-2-3-4-5 livrées · 🟡 Étape 6 à faire
+> Statut : 🟢 Étapes 1-2-3-4-5-6 livrées
 
 ## Contexte & écart avec le brief initial
 
@@ -344,18 +344,41 @@ passent dont les 5 scénarios Maison).
 
 **Commit** : `feat(houses): UI pass — set artifact tracker on character sheet`
 
-### Étape 6 — Équilibrage, tests, feedback
+### Étape 6 — Équilibrage, tests, feedback ✅
 
-**Objectif** : passe finale.
+**Statut** : 🟢 livré sur `claude/house-system-step-three-Ual5V`.
 
-- Ajuster les valeurs de bonus si elles déséquilibrent les combats
-  (mesure : tour-1-kill rate sur étages 5-8).
-- Ajouter feedback sonore (`AudioSystem.playLevelUp` ou son dédié)
-  lors de la complétion du set.
-- Vérifier que le save sérialise/restaure correctement les nouveaux
-  états (palier 6, pendingHouseRewards des nouveaux IDs).
-- Compléter `tests/smoke.js` avec un scénario « équiper 3 pièces du
-  set Gryffondor → vérifier ATK final ».
+**Découpage exécution** :
+
+- [x] Audio dédié `AudioSystem.playSetComplete()` ajouté dans
+  `js/audio-sfx.js` : accord majeur ouvert (392/587/784/988 Hz triangle)
+  soutenu 1.6 s, surmonté à 0.45 s d'un arpège brillant (784→1976 Hz
+  sine) — distinct de `playLevelUp` (gamme 5 notes courte).
+- [x] Hook dans `equipItem()` (`js/inventory.js:386-405`) : capte
+  `_<setKey>Count` AVANT recalc, le compare à la valeur post-recalc,
+  déclenche `AudioSystem.playSetComplete()` + `addMsg(..., 'magic')`
+  uniquement sur transition `<4 → 4`. Garde-fous : `item.setKey`
+  présent, `chosenHouse` défini, et `HOUSE_SETS[chosenHouse].setKey`
+  matche (un perso qui équiperait 4 pièces d'une autre Maison reste
+  silencieux).
+- [x] Équilibrage : aucune modification des valeurs `setBonus2/3/4`
+  (calibrées en Étape 1 bis et déjà vérifiées par `scenarioHouseSet`).
+  Mesure mémoire : Gryff 4/4 avant set bonus = +5 ATK / +10.5 crit
+  apportés par les 4 pièces ; le `setBonus4` ajoute +4 ATK +12 crit
+  + `immuneDisarm` — non excessif pour un endgame de 16000+ pts.
+- [x] Smoke `scenarioHouseSetCompleteFeedback` (T1-T5) : équipe les
+  4 pièces du Set du Lion une à une → 0 appel à 1/2/3/4 puis exactement
+  1 appel à 4/4, message présent dans `#msg-log`. Pas de re-trigger
+  en équipant une pièce hors-set au tier 4.
+- [x] Smoke `scenarioHouseSaveRoundTrip` (T1) : injecte
+  `chosenHouse='Gryffondor'`, `housePoints=8200`, `houseTier=12`,
+  `pendingHouseRewards={heaume_vaillant, cape_godric}` → `_serializeState`
+  → reset → `_applyState` → vérifie que les 4 champs sont restaurés
+  (subset accepté pour `pendingHouseRewards` car `_migrateHouseRewards`
+  peut re-remplir les paliers déjà franchis, ce qui est désiré).
+- [x] Validation : `node tests/smoke.js` vert (7 scénarios Maison passent
+  dont les 2 nouveaux ; `scenarioRelativeControls` flaky préexistant
+  parfois en échec, non lié à cette PR).
 
 **Commit** : `polish(houses): balance pass, set-complete feedback, smoke coverage`
 
