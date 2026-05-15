@@ -4512,13 +4512,18 @@ async function scenarioLibraryUpgrade() {
   await browser.close();
 }
 
-// ── Scénario endgame Tranche 2 — 3 : Maison Tier 5 ──────────
+// ── Scénario endgame Tranche 2 — 3 : Maison Tier 6 (Légende) ────
+// Architecture Maisons 2.0 : 6 paliers. Le gate endgame
+// (victoryAchieved) s'applique désormais au palier 6 (Légende), pas
+// au 5 (Virtuose). Le 5 débloque la quête de Maison qui livrera
+// l'artefact #3 du set (câblage en Étape 3, cf.
+// .claude/plans/houses-2.0.md §A).
 async function scenarioHouseTier5() {
-  console.log('\n── Scénario endgame T2.3 : Maison Tier 5 ──');
+  console.log('\n── Scénario endgame T2.3 : Maison Tier 6 ──');
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
 
-  // T1 : pré-victoire, 2000 points → reste tier 4 (gated)
+  // T1 : pré-victoire, 2000 points → Virtuose (tier 5) accessible sans gate
   const t1 = await page.evaluate(() => {
     victoryAchieved = false;
     housePoints     = 2000;
@@ -4527,28 +4532,35 @@ async function scenarioHouseTier5() {
     return { tier: houseTier, hasLame: player.inventory.some(i => i.id === 'lame_godric') };
   });
   console.log('  T1 pré-victoire 2000 pts →', t1);
-  assert(t1.tier === 4,         'tier doit s\'arrêter à 4 sans victoire');
-  assert(t1.hasLame === false,  'lame_godric NON ajoutée pré-victoire');
+  assert(t1.tier === 5,         'tier 5 (Virtuose) accessible sans victoire');
+  assert(t1.hasLame === false,  'lame_godric pas livrée au palier 5 (vient de la quête de Maison)');
 
-  // T2 : post-victoire, 2000 points → tier 5 + lame_godric
+  // T2 : pré-victoire, 3500 points → reste à 5 (tier 6 Légende est gated)
   const t2 = await page.evaluate(() => {
+    housePoints = 3500;
+    checkHouseLevelUp();
+    return { tier: houseTier };
+  });
+  console.log('  T2 pré-victoire 3500 pts →', t2);
+  assert(t2.tier === 5, 'tier 6 (Légende) doit rester verrouillé sans victoire');
+
+  // T3 : post-victoire, 3500 points → tier 6 + bonus passif
+  const t3 = await page.evaluate(() => {
     victoryAchieved = true;
     checkHouseLevelUp();
     return {
       tier: houseTier,
-      hasLame: player.inventory.some(i => i.id === 'lame_godric'),
       atkBase: party[0]._baseAtk
     };
   });
-  console.log('  T2 post-victoire →', t2);
-  assert(t2.tier === 5,            'tier passe à 5 post-victoire');
-  assert(t2.hasLame === true,      'lame_godric ajoutée à l\'inventaire');
+  console.log('  T3 post-victoire 3500 pts →', t3);
+  assert(t3.tier === 6, 'tier 6 (Légende) franchi post-victoire');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Maison Tier 5 OK');
+  console.log('  ✅ Maison Tier 6 OK');
   await browser.close();
 }
 

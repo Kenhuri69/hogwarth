@@ -63,7 +63,7 @@ const DIFFICULTY_SETTINGS = {
 // ============================================================
 let chosenHouse = null;
 let housePoints = 0;
-let houseTier   = 0;  // 0 = aucun palier atteint, 1-5 = palier actuel
+let houseTier   = 0;  // 0 = aucun palier atteint, 1-6 = palier actuel
 // Items Tier 2 / Tier 4 Maison franchis mais pas encore remis. Le Chef de
 // Maison (HOUSE_BONUSES[house].headOfHouse) les distribue lors d'une visite
 // via specialAction `claim_house_reward`. Le bonus de stats reste appliqué
@@ -81,9 +81,12 @@ const HOUSE_BONUSES = {
       { threshold: 100,  label: 'Aspirant',  bonus: { _baseAtk: 1 },              msg: '🦁 Courage naissant ! +1 ATK' },
       { threshold: 300,  label: 'Élève',     bonus: { _baseAtk: 1, _baseLck: 1, item: 'brassard_lion' }, msg: '🦁 Bravoure éprouvée ! +1 ATK +1 LCK — le Brassard du Lion vous attend auprès du Pr McGonagall.' },
       { threshold: 600,  label: 'Vaillant',  bonus: { _baseAtk: 2 },              msg: '🦁 Digne de Gryffondor ! +2 ATK' },
-      { threshold: 1000, label: 'Champion',  bonus: { item: 'sword_gryff' },      msg: "🦁 L'Épée de Gryffondor vous attend auprès du Pr McGonagall." },
-      // Tier 5 — endgame Tranche 2 (gated par victoryAchieved dans main.js).
-      { threshold: 2000, label: 'Légende',   bonus: { _baseAtk: 3, item: 'lame_godric' }, msg: "🦁 Légende vivante de Gryffondor ! +3 ATK · La Lame de Godric s'incline." },
+      { threshold: 1000, label: 'Maître',    bonus: { item: 'sword_gryff' },      msg: "🦁 L'Épée de Gryffondor vous attend auprès du Pr McGonagall." },
+      // Tier 5 — Virtuose. Le palier débloque la quête de Maison qui
+      // remettra le 3ᵉ artefact de set (cf. .claude/plans/houses-2.0.md §D).
+      { threshold: 2000, label: 'Virtuose',  bonus: { _baseAtk: 1, _baseLck: 1, unlockSetQuest: true }, msg: '🦁 Virtuose de Gryffondor ! +1 ATK +1 LCK — une quête légendaire t\'attend.' },
+      // Tier 6 — endgame Tranche 2 (gated par victoryAchieved dans main.js).
+      { threshold: 3500, label: 'Légende',   bonus: { _baseAtk: 2, legendaryPassive: true }, msg: "🦁 Légende vivante de Gryffondor ! +2 ATK · Maîtrise Légendaire éveillée." },
     ]
   },
   Serpentard: {
@@ -95,8 +98,9 @@ const HOUSE_BONUSES = {
       { threshold: 100,  label: 'Aspirant',  bonus: { _baseMag: 1 },              msg: "🐍 L'ambition vous galvanise ! +1 MAG" },
       { threshold: 300,  label: 'Élève',     bonus: { _baseMag: 1, _baseLck: 1, item: 'anneau_serpent' }, msg: "🐍 Ruse affûtée ! +1 MAG +1 LCK — l'Anneau du Serpent vous attend auprès du Pr Rogue." },
       { threshold: 600,  label: 'Rusé',      bonus: { _baseMag: 2 },              msg: '🐍 Serpentard vous honore ! +2 MAG' },
-      { threshold: 1000, label: 'Champion',  bonus: { item: 'locket_slytherin' }, msg: '🐍 Le Médaillon de Serpentard vous attend auprès du Pr Rogue.' },
-      { threshold: 2000, label: 'Légende',   bonus: { _baseMag: 3, _baseLck: 1, item: 'bague_salazar' }, msg: '🐍 Légende de Serpentard ! +3 MAG +1 LCK · La Bague de Salazar t\'élit.' },
+      { threshold: 1000, label: 'Maître',    bonus: { item: 'locket_slytherin' }, msg: '🐍 Le Médaillon de Serpentard vous attend auprès du Pr Rogue.' },
+      { threshold: 2000, label: 'Virtuose',  bonus: { _baseMag: 1, _baseLck: 1, unlockSetQuest: true }, msg: '🐍 Virtuose de Serpentard ! +1 MAG +1 LCK — une quête sombre s\'ouvre à toi.' },
+      { threshold: 3500, label: 'Légende',   bonus: { _baseMag: 2, legendaryPassive: true }, msg: '🐍 Légende de Serpentard ! +2 MAG · Maîtrise Légendaire éveillée.' },
     ]
   },
   Serdaigle: {
@@ -108,8 +112,9 @@ const HOUSE_BONUSES = {
       { threshold: 100,  label: 'Aspirant',  bonus: { _baseMag: 1 },              msg: "🦅 L'intellect s'éveille ! +1 MAG" },
       { threshold: 300,  label: 'Élève',     bonus: { _baseMag: 1, _baseLck: 1, item: 'plume_aigle' }, msg: "🦅 Esprit acéré ! +1 MAG +1 LCK — la Plume d'Aigle vous attend auprès du Pr Flitwick." },
       { threshold: 600,  label: 'Savant',    bonus: { _baseMag: 2 },              msg: '🦅 Digne de Serdaigle ! +2 MAG' },
-      { threshold: 1000, label: 'Champion',  bonus: { item: 'diademe_serdaigle' },msg: '🦅 Le Diadème de Serdaigle vous attend auprès du Pr Flitwick.' },
-      { threshold: 2000, label: 'Légende',   bonus: { _baseMag: 2, item: 'codex_rowena' }, msg: '🦅 Légende de Serdaigle ! +2 MAG · Le Codex de Rowena t\'est révélé.' },
+      { threshold: 1000, label: 'Maître',    bonus: { item: 'diademe_serdaigle' },msg: '🦅 Le Diadème de Serdaigle vous attend auprès du Pr Flitwick.' },
+      { threshold: 2000, label: 'Virtuose',  bonus: { _baseMag: 1, _baseLck: 1, unlockSetQuest: true }, msg: '🦅 Virtuose de Serdaigle ! +1 MAG +1 LCK — un savoir oublié t\'appelle.' },
+      { threshold: 3500, label: 'Légende',   bonus: { _baseMag: 2, legendaryPassive: true }, msg: '🦅 Légende de Serdaigle ! +2 MAG · Maîtrise Légendaire éveillée.' },
     ]
   },
   Poufsouffle: {
@@ -121,9 +126,49 @@ const HOUSE_BONUSES = {
       { threshold: 100,  label: 'Aspirant',  bonus: { _baseDef: 1 },              msg: '🦡 Résistance naturelle ! +1 DEF' },
       { threshold: 300,  label: 'Élève',     bonus: { _baseDef: 1, _baseLck: 1, item: 'ceinture_blaireau' }, msg: '🦡 Loyauté récompensée ! +1 DEF +1 LCK — la Ceinture du Blaireau vous attend auprès du Pr Chourave.' },
       { threshold: 600,  label: 'Tenace',    bonus: { _baseDef: 2 },              msg: '🦡 Indomptable ! +2 DEF' },
-      { threshold: 1000, label: 'Champion',  bonus: { item: 'coupe_poufsouffle' },msg: '🦡 La Coupe de Poufsouffle vous attend auprès du Pr Chourave.' },
-      { threshold: 2000, label: 'Légende',   bonus: { _baseDef: 3, item: 'bouclier_helga' }, msg: '🦡 Légende de Poufsouffle ! +3 DEF · Le Bouclier de Helga te défend.' },
+      { threshold: 1000, label: 'Maître',    bonus: { item: 'coupe_poufsouffle' },msg: '🦡 La Coupe de Poufsouffle vous attend auprès du Pr Chourave.' },
+      { threshold: 2000, label: 'Virtuose',  bonus: { _baseDef: 1, _baseLck: 1, unlockSetQuest: true }, msg: '🦡 Virtuose de Poufsouffle ! +1 DEF +1 LCK — un dernier serment t\'attend.' },
+      { threshold: 3500, label: 'Légende',   bonus: { _baseDef: 2, legendaryPassive: true }, msg: '🦡 Légende de Poufsouffle ! +2 DEF · Maîtrise Légendaire éveillée.' },
     ]
+  },
+};
+
+// ============================================================
+// SYSTÈME DE SETS DE MAISON — placeholder Étape 1
+// ============================================================
+// Chaque Maison aura à terme 3 artefacts (slots distincts) liés par
+// un `setKey`. Bonus 2/3 pièces appliqués dans recalculateStats() à
+// partir de l'Étape 4. Les pieceIds restent vides ici : ils seront
+// remplis lors de la création des items en Étape 2, et reliés aux
+// paliers 3-5 en Étape 3. Cf. .claude/plans/houses-2.0.md §B.
+const HOUSE_SETS = {
+  Gryffondor: {
+    setKey:    'gryff_set',
+    setLabel:  'Set du Lion',
+    pieceIds:  [],                                 // [piece1, piece2, piece3]
+    setBonus2: { bonusAtk: 1, bonusCritChance: 5 },
+    setBonus3: { bonusAtk: 3, bonusCritChance: 10, immuneDisarm: true },
+  },
+  Serpentard: {
+    setKey:    'slyth_set',
+    setLabel:  'Set du Serpent',
+    pieceIds:  [],
+    setBonus2: { bonusMag: 1, bonusLck: 1 },
+    setBonus3: { bonusMag: 3, bonusLck: 2, spellLifesteal: 0.10 },
+  },
+  Serdaigle: {
+    setKey:    'raven_set',
+    setLabel:  "Set de l'Aigle",
+    pieceIds:  [],
+    setBonus2: { bonusMag: 1, bonusInt: 1 },
+    setBonus3: { bonusMag: 3, bonusInt: 2, spellCostReduction: 0.10 },
+  },
+  Poufsouffle: {
+    setKey:    'pouf_set',
+    setLabel:  'Set du Blaireau',
+    pieceIds:  [],
+    setBonus2: { bonusDef: 1, bonusEnd: 1 },
+    setBonus3: { bonusDef: 3, bonusEnd: 2, regenHp: 2 },
   },
 };
 

@@ -181,10 +181,11 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
     const tierNum = i + 1;
     if (houseTier >= tierNum) return;            // déjà atteint
     if (housePoints < tier.threshold) return;   // pas encore
-    // Endgame Tranche 2 : Tier 5 gated par victoryAchieved. Reste à
-    // tier 4 tant que Voldemort n'a pas été vaincu, même si les
-    // points sont accumulés. Cf. ENDGAME_PLAN.md §7.7.
-    if (tierNum >= 5 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return;
+    // Endgame Tranche 2 : Tier 6 (Légende) gated par victoryAchieved.
+    // Le tier 5 (Virtuose) est désormais accessible sans victoire — il
+    // débloque la quête de Maison qui livrera l'artefact #3 du set.
+    // Cf. ENDGAME_PLAN.md §7.7 + .claude/plans/houses-2.0.md §A.
+    if (tierNum >= 6 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return;
 
     houseTier = tierNum;
     addMsg(tier.msg, 'magic');
