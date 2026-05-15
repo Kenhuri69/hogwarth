@@ -236,11 +236,39 @@ const ITEMS = [
   { id:"locket_slytherin", name:"Médaillon de Serpentard",icon:"🐍", desc:"MAG+6 LCK+3 — Légendaire Serpentard", type:"acc", slot:"amulet", family:"locket_slyth",  rarity:"legendary", power:6, bonusMag:6, bonusLck:3, price:0 },
   { id:"diademe_serdaigle",name:"Diadème de Serdaigle", icon:"👑",  desc:"MAG+4 LCK+5 — Légendaire Serdaigle",  type:"acc", slot:"head",   family:"diademe_serd",  rarity:"legendary", power:4, bonusMag:4, bonusLck:5, price:0 },
   { id:"coupe_poufsouffle",name:"Coupe de Poufsouffle", icon:"🏆",  desc:"DEF+6 — Légendaire Poufsouffle",   type:"armor", slot:"body",   family:"coupe_pouf",    rarity:"legendary", power:6, bonusDef:6,              price:0 },
-  // ── Items Tier 2 Maison (cf. .claude/plans/house-intermediate-tier.md) — remis par les Chefs de Maison ──
-  { id:"brassard_lion",    name:"Brassard du Lion",      icon:"🥊", desc:"ATK+2 LCK+1 — Tier 2 Gryffondor",   type:"acc",   slot:"hands",  family:"gryff_t2",     rarity:"rare", power:2, bonusAtk:2, bonusLck:1, price:0 },
-  { id:"anneau_serpent",   name:"Anneau du Serpent",     icon:"💍", desc:"MAG+2 LCK+1 — Tier 2 Serpentard",   type:"acc",   slot:"ring",   family:"slyth_t2",     rarity:"rare", power:2, bonusMag:2, bonusLck:1, price:0 },
-  { id:"plume_aigle",      name:"Plume d'Aigle",         icon:"🪶", desc:"MAG+2 INT+1 — Tier 2 Serdaigle",    type:"acc",   slot:"trinket",family:"raven_t2",     rarity:"rare", power:2, bonusMag:2, bonusInt:1, price:0 },
-  { id:"ceinture_blaireau",name:"Ceinture du Blaireau",  icon:"🪢", desc:"DEF+2 END+1 — Tier 2 Poufsouffle",  type:"acc",   slot:"belt",   family:"pouf_t2",      rarity:"rare", power:2, bonusDef:2, bonusEnd:1, price:0 },
+  // ── Pièces #1 des 4 Sets Maison (Apprenti Or, tier 3, head-of-house) ──
+  // Items existants annotés setKey/setPiece pour la détection de set
+  // dans recalculateStats (cf. .claude/plans/houses-2.0.md §B).
+  { id:"brassard_lion",    name:"Brassard du Lion",      icon:"🥊", desc:"ATK+2 LCK+1 — Set du Lion (1/4)",        type:"acc",   slot:"hands",  family:"gryff_t2",     rarity:"rare", power:2, bonusAtk:2, bonusLck:1, price:0, setKey:"gryff_set", setPiece:1 },
+  { id:"anneau_serpent",   name:"Anneau du Serpent",     icon:"💍", desc:"MAG+2 LCK+1 — Set du Serpent (1/4)",     type:"acc",   slot:"ring",   family:"slyth_t2",     rarity:"rare", power:2, bonusMag:2, bonusLck:1, price:0, setKey:"slyth_set", setPiece:1 },
+  { id:"plume_aigle",      name:"Plume d'Aigle",         icon:"🪶", desc:"MAG+2 INT+1 — Set de l'Aigle (1/4)",     type:"acc",   slot:"trinket",family:"raven_t2",     rarity:"rare", power:2, bonusMag:2, bonusInt:1, price:0, setKey:"raven_set", setPiece:1 },
+  { id:"ceinture_blaireau",name:"Ceinture du Blaireau",  icon:"🪢", desc:"DEF+2 END+1 — Set du Blaireau (1/4)",    type:"acc",   slot:"belt",   family:"pouf_t2",      rarity:"rare", power:2, bonusDef:2, bonusEnd:1, price:0, setKey:"pouf_set",  setPiece:1 },
+
+  // ── Pièces #2, #3, #4 des 4 Sets Maison (Étape 2 Maisons 2.0) ────
+  // Distribuées via head-of-house aux paliers Confirmé Or (tier 6),
+  // Maître Or (tier 12), et Virtuose Or (tier 15, via quête de Maison).
+  // Cf. .claude/plans/houses-2.0.md §B. Slots distincts par set pour
+  // permettre l'équipement simultané des 4 pièces sur un perso.
+
+  // Set du Lion (Gryffondor)
+  { id:"heaume_vaillant", name:"Heaume du Vaillant",   icon:"⛑️", desc:"ATK+2 LCK+1 — Set du Lion (2/4)",       type:"armor", slot:"head",   family:"gryff_set_2",  rarity:"epic",      power:3, bonusAtk:2, bonusLck:1, price:0, setKey:"gryff_set", setPiece:2 },
+  { id:"cape_godric",     name:"Cape de Godric",       icon:"🦁", desc:"DEF+2 ATK+2 — Set du Lion (3/4)",       type:"acc",   slot:"cloak",  family:"gryff_set_3",  rarity:"epic",      power:4, bonusAtk:2, bonusDef:2, price:0, setKey:"gryff_set", setPiece:3 },
+  { id:"coeur_lion",      name:"Cœur de Lion",         icon:"❤️", desc:"ATK+3 LCK+2 · Régen +1 PM — Set du Lion (4/4)", type:"acc", slot:"amulet", family:"gryff_set_4", rarity:"legendary", power:6, bonusAtk:3, bonusLck:2, regenSp:1, price:0, setKey:"gryff_set", setPiece:4 },
+
+  // Set du Serpent (Serpentard)
+  { id:"pendentif_mamba", name:"Pendentif du Mamba",   icon:"🐍", desc:"MAG+2 LCK+1 — Set du Serpent (2/4)",    type:"acc",   slot:"amulet", family:"slyth_set_2",  rarity:"epic",      power:3, bonusMag:2, bonusLck:1, price:0, setKey:"slyth_set", setPiece:2 },
+  { id:"cape_sibylline",  name:"Cape Sibylline",       icon:"🌫️", desc:"MAG+2 INT+2 — Set du Serpent (3/4)",    type:"acc",   slot:"cloak",  family:"slyth_set_3",  rarity:"epic",      power:4, bonusMag:2, bonusInt:2, price:0, setKey:"slyth_set", setPiece:3 },
+  { id:"couronne_basilic",name:"Couronne du Basilic",  icon:"👑", desc:"MAG+3 LCK+2 · Régen +1 PM — Set du Serpent (4/4)", type:"armor", slot:"head", family:"slyth_set_4", rarity:"legendary", power:6, bonusMag:3, bonusLck:2, regenSp:1, price:0, setKey:"slyth_set", setPiece:4 },
+
+  // Set de l'Aigle (Serdaigle)
+  { id:"manteau_encre",   name:"Manteau d'Encre",      icon:"📜", desc:"MAG+2 INT+1 — Set de l'Aigle (2/4)",    type:"acc",   slot:"cloak",  family:"raven_set_2",  rarity:"epic",      power:3, bonusMag:2, bonusInt:1, price:0, setKey:"raven_set", setPiece:2 },
+  { id:"oeil_aigle",      name:"Œil de l'Aigle",       icon:"👁️", desc:"MAG+2 INT+2 · Régen +1 PM — Set de l'Aigle (3/4)", type:"acc", slot:"amulet", family:"raven_set_3", rarity:"epic", power:4, bonusMag:2, bonusInt:2, regenSp:1, price:0, setKey:"raven_set", setPiece:3 },
+  { id:"anneau_savoir",   name:"Anneau du Savoir",     icon:"💍", desc:"MAG+3 INT+2 LCK+1 — Set de l'Aigle (4/4)", type:"acc", slot:"ring", family:"raven_set_4",   rarity:"legendary", power:6, bonusMag:3, bonusInt:2, bonusLck:1, price:0, setKey:"raven_set", setPiece:4 },
+
+  // Set du Blaireau (Poufsouffle)
+  { id:"cape_loyaute",    name:"Cape de Loyauté",      icon:"🟡", desc:"DEF+2 END+1 — Set du Blaireau (2/4)",   type:"acc",   slot:"cloak",  family:"pouf_set_2",   rarity:"epic",      power:3, bonusDef:2, bonusEnd:1, price:0, setKey:"pouf_set",  setPiece:2 },
+  { id:"coiffe_blaireau", name:"Coiffe du Blaireau",   icon:"🦡", desc:"DEF+2 END+2 — Set du Blaireau (3/4)",   type:"armor", slot:"head",   family:"pouf_set_3",   rarity:"epic",      power:4, bonusDef:2, bonusEnd:2, price:0, setKey:"pouf_set",  setPiece:3 },
+  { id:"medaillon_helga", name:"Médaillon de Helga",   icon:"🏅", desc:"DEF+3 END+2 · Régen +1 PV — Set du Blaireau (4/4)", type:"acc", slot:"amulet", family:"pouf_set_4", rarity:"legendary", power:6, bonusDef:3, bonusEnd:2, regenHp:1, price:0, setKey:"pouf_set",  setPiece:4 },
   { id:"choco_sorcier",name:"Chocolat aux Sorciers", icon:"🍫", desc:"+10 PV +5 PM",       type:"consumable", effect:"both",       power:10, price:20 },
   { id:"potion_force", name:"Potion de Force",       icon:"💪", desc:"+8 ATK pendant 3 tours", type:"consumable", effect:"heal",      power:8,  price:45 },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5",           type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, power:5, price:400 },

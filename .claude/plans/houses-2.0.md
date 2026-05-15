@@ -89,10 +89,10 @@ Composition cible (Étape 2 livrera les NEW items) :
 
 | Set         | Pièce 1 (Apprenti Or, existant) | Pièce 2 (Confirmé Or, NEW) | Pièce 3 (Maître Or, NEW)     | Pièce 4 (Virtuose Or via quête, NEW) |
 |-------------|----------------------------------|----------------------------|------------------------------|----------------------------------------|
-| Gryffondor  | `brassard_lion` (hands)          | NEW slot TBD               | NEW slot TBD                 | NEW slot TBD                           |
-| Serpentard  | `anneau_serpent` (ring)          | NEW slot TBD               | NEW slot TBD                 | NEW slot TBD                           |
-| Serdaigle   | `plume_aigle` (trinket)          | NEW slot TBD               | NEW slot TBD                 | NEW slot TBD                           |
-| Poufsouffle | `ceinture_blaireau` (belt)       | NEW slot TBD               | NEW slot TBD                 | NEW slot TBD                           |
+| Gryffondor  | `brassard_lion` (hands)          | `heaume_vaillant` (head)   | `cape_godric` (cloak)        | `coeur_lion` (amulet)                  |
+| Serpentard  | `anneau_serpent` (ring)          | `pendentif_mamba` (amulet) | `cape_sibylline` (cloak)     | `couronne_basilic` (head)              |
+| Serdaigle   | `plume_aigle` (trinket)          | `manteau_encre` (cloak)    | `oeil_aigle` (amulet)        | `anneau_savoir` (ring)                 |
+| Poufsouffle | `ceinture_blaireau` (belt)       | `cape_loyaute` (cloak)     | `coiffe_blaireau` (head)     | `medaillon_helga` (amulet)             |
 
 Items existants conservés en récompense **NON-set** (pas de `setKey`) :
 - `sword_gryff`/`locket_slytherin`/`diademe_serdaigle`/`coupe_poufsouffle`

@@ -108,6 +108,25 @@ const ITEM_ICON_REGISTRY = {
   bague_salazar:       'img/icons/items/locket_slytherin.png',
   bouclier_helga:      'img/icons/items/coupe_poufsouffle.png',
   codex_rowena:        'img/icons/items/diademe_serdaigle.png',
+  // Sets Maison 2.0 — pièces #2/#3/#4 (cf. .claude/plans/houses-2.0.md
+  // §B). Alias vers les PNG des items existants partageant le slot,
+  // en attendant la génération de sprites dédiés via gen_icons.py.
+  // Set du Lion (Gryffondor)
+  heaume_vaillant:     'img/icons/items/chapeau_pointu.png',
+  cape_godric:         'img/icons/items/cape_invis.png',
+  coeur_lion:          'img/icons/items/locket_slytherin.png',
+  // Set du Serpent (Serpentard)
+  pendentif_mamba:     'img/icons/items/locket_slytherin.png',
+  cape_sibylline:      'img/icons/items/cape_invis.png',
+  couronne_basilic:    'img/icons/items/diademe_serdaigle.png',
+  // Set de l'Aigle (Serdaigle)
+  manteau_encre:       'img/icons/items/cape_invis.png',
+  oeil_aigle:          'img/icons/items/locket_slytherin.png',
+  anneau_savoir:       'img/icons/items/anneau_runique.png',
+  // Set du Blaireau (Poufsouffle)
+  cape_loyaute:        'img/icons/items/cape_invis.png',
+  coiffe_blaireau:     'img/icons/items/chapeau_pointu.png',
+  medaillon_helga:     'img/icons/items/locket_slytherin.png',
   // Livres de sorts
   livre_sortileges:   'img/icons/items/livre_sortileges.png',
   livre_soin:         'img/icons/items/livre_soin.png',
