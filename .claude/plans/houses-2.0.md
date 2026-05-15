@@ -1,7 +1,8 @@
 # Plan — Maisons 2.0 : Paliers Avancés & Artefacts de Set
 
-> Branche : `claude/house-system-expansion-OYuhx`
-> Statut : 🟢 Étape 1 livrée · 🟡 Étape 2 à faire
+> Branche actuelle : `claude/house-system-step-three-Ual5V` (basée sur
+> `claude/house-system-expansion-OYuhx`).
+> Statut : 🟢 Étapes 1-2-3-4 livrées · 🟡 Étapes 5-6 à faire
 
 ## Contexte & écart avec le brief initial
 
@@ -217,30 +218,71 @@ réutilisés). Optionnel si on veut des sprites custom.
 
 **Commit** : `feat(houses): add 12 set artifacts (3 NEW × 4 houses) wired to tiers 6/12`
 
-### Étape 3 — Liaison paliers ↔ récompenses + quête palier 5
+### Étape 3 — Liaison paliers ↔ récompenses + quête de Maison ✅
 
-**Objectif** : câbler la livraison des artefacts.
+**Statut** : 🟢 livré sur `claude/house-system-step-three-Ual5V`.
 
-Fichiers touchés :
-- `js/state.js — HOUSE_BONUSES.*.tiers[2]` (palier 3) : ajouter
-  `bonus.item = <set_piece_1_id>`.
-- `HOUSE_BONUSES.*.tiers[3]` (palier 4) : changer `bonus.item` pour
-  pointer vers le nouveau ID du set piece 2 (l'ancien ID
-  `sword_gryff`/etc. devient l'ID du set piece 2 ou alias).
-- `js/main.js — checkHouseLevelUp` : ajouter au passage du palier 5 un
-  appel `unlockHouseQuest(chosenHouse)` (nouvelle fn dans `quests.js`).
-- `js/quests.js` (ou `state.js` selon où sont les quêtes) : 4 nouvelles
-  définitions de quête (`quest_set_gryff`, etc.) avec objectif + reward.
-- `js/npc-dialog.js` ou `quests.js` : flow « quête active → kill cible
-  → remise PNJ → reçoit Set artifact #3 ».
+**Réajustement** : les paliers de l'objectif original (3/4/5) sont
+caduques depuis l'extension à 16 paliers (Étape 1 bis). Mapping réel :
+- *Palier 3 (Apprenti Or, 300 pts)* — pièce #1 (`brassard_lion`/…)
+  déjà câblée via `pendingHouseRewards` (héritage Étape 0).
+- *Palier 6 (Confirmé Or, 1200 pts)* — pièce #2 (`heaume_vaillant`/…)
+  déjà câblée à `bonus.item` (Étape 2).
+- *Palier 9 (Expert Or, 3500 pts)* — item legendary historique
+  (`sword_gryff`/…) déjà câblé.
+- *Palier 12 (Maître Or, 8000 pts)* — pièce #3 + `unlockSetQuest`.
+  C'est là que la quête de Maison s'ouvre.
+- *Palier 15 (Virtuose Or, 16000 pts)* — pièce #4 livrée comme
+  récompense de la quête (et seulement à ce moment-là).
+- *Palier 16 (Légende, 25000 pts)* — relique historique
+  (`lame_godric`/…) gated `victoryAchieved`.
 
-Critères :
-- Atteindre 600 pts → badge clignote, visiter McGonagall → recevoir
-  artefact #1 dans l'inventaire.
-- Atteindre 2000 pts → log « nouvelle quête disponible » + ajout
-  dans le journal.
+**Découpage exécution** :
 
-**Commit** : `feat(houses): wire tier 3/4 to deliver set artifacts, unlock set quest at tier 5`
+- [x] Marquer Étape 3 en cours dans le plan.
+- [x] Cibles de quête : 3 kills d'un boss signature par Maison —
+  Chimère (Gry, étage 6+), Basilic Mineur (Slyth, 6+), Hécate la
+  Maudisseuse (Raven, 7+), Troll des Cavernes (Pouf, 5+). Single-boss =
+  trop punitif au palier 12 ; 3 kills étalés sur des étages déjà
+  accessibles à 8000 pts.
+- [x] 4 templates `quest_set_<house>` dans `QUEST_TEMPLATES`, taggés
+  `houseSetQuest: true` + `house` + `reward.houseSetReward` (pièce #4).
+- [x] Helper `unlockHouseQuest(house)` exposé sur `window`, résout
+  `HOUSE_SET_QUESTS[house]` et l'ajoute à `availableQuests`
+  (idempotent : no-op si déjà active/dispo/complétée).
+- [x] `checkHouseLevelUp` (`js/main.js`) câblé : `tier.bonus.unlockSetQuest`
+  déclenche `safeCall('unlockHouseQuest', chosenHouse)`.
+- [x] `_grantQuestReward` (`js/quests.js`) route `reward.houseSetReward`
+  vers `pendingHouseRewards` (route cérémonie head-of-house, pas drop
+  direct).
+- [x] Garde `tierNum >= 5` supprimée dans `checkHouseLevelUp` : **tous**
+  les `bonus.item` passent désormais par `pendingHouseRewards`. Le
+  tier 16 (Légende) reste gated `victoryAchieved` au-dessus du loop.
+- [x] Filtrage `houseSetQuest` dans `chooseHouse` (`js/main.js`) +
+  `save.js` (init + forward-fill) — les quêtes de Maison ne sont
+  jamais visibles avant le franchissement du palier 12.
+- [x] Migration rétroactive : `_migrateHouseRewards` (`save.js`)
+  ajoute la quête à `availableQuests` si le palier `unlockSetQuest`
+  est déjà franchi sur une vieille save.
+- [x] `_houseClaimableItems(house)` extrait dans `npc-dialog.js` —
+  union `HOUSE_BONUSES.tiers[].bonus.item` ∪ `HOUSE_SETS[].pieceIds` →
+  couvre la pièce #4 livrée par quête.
+- [x] Head-of-house NPCs (`npcs.js`) : `questsGiven` étendus + bloc
+  `dialoguesByQuest` propre à `quest_set_<house>` (Offer/Active/Ready).
+- [x] Smoke scénario `scenarioHouseSetQuest` (T0-T5) : ✅ verdict
+  vert. Tier 12 franchi → quête poussée → acceptée → 3 kills simulés
+  → remise → pièce #4 en attente → cérémonie head-of-house → tout
+  l'inventaire reçoit `cape_godric` (tier 12) + `coeur_lion` (quête).
+
+**Validation finale** : `node tests/smoke.js` — tous les scénarios
+Maison passent (Tier 16, Récompense Maison, Quête de Maison, Set 4
+pièces). Les flaky tests `scenarioRelativeControls` /
+`scenarioGuardAndFerula` qui apparaissent par intermittence sont
+préexistants à cette PR et ne touchent aucun fichier modifié ici.
+
+**Commit** : `feat(houses): tier 12 unlocks house set quest, all artifacts via head-of-house`
+
+**Commit** : `feat(houses): tier 12 unlocks house set quest, all artifacts via head-of-house`
 
 ### Étape 4 — Bonus de set + effet passif palier 6
 

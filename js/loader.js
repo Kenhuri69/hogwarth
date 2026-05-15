@@ -155,6 +155,8 @@ window.UX_safe = new Proxy({}, {
     // ── Quêtes ──
     { name: 'openQuestLog',       source: 'quests.js',       kind: 'fn'  },
     { name: 'completeQuest',      source: 'quests.js',       kind: 'fn'  },
+    { name: 'unlockHouseQuest',   source: 'quests.js',       kind: 'fn'  },
+    { name: 'HOUSE_SET_QUESTS',   source: 'quests.js',       kind: 'obj' },
 
     // ── Boutique ──
     { name: 'openShop',           source: 'shop.js',         kind: 'fn'  },

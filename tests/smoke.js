@@ -4635,6 +4635,114 @@ async function scenarioHouseRewardFlow() {
   await browser.close();
 }
 
+// ── Scénario Maisons 2.0 — Quête de Maison (Étape 3) ──────────
+// Vérifie le flow : franchissement tier 12 → quête `quest_set_<house>`
+// pushée dans `availableQuests` → acceptation → simulation kills →
+// remise au PNJ → pièce #4 du set dans `pendingHouseRewards` →
+// récupération via la cérémonie `claim_house_reward`. Couvre aussi
+// le verrou avant tier 12 (la quête ne doit pas être disponible).
+// Cf. .claude/plans/houses-2.0.md §D (Étape 3).
+async function scenarioHouseSetQuest() {
+  console.log('\n── Scénario Maisons 2.0 : Quête de Maison (tier 12) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T0 : avant le palier 12, la quête de Maison ne doit pas être proposée.
+  const t0 = await page.evaluate(() => ({
+    inAvailable: availableQuests.has('quest_set_gryff'),
+    tierUnlock:  HOUSE_BONUSES.Gryffondor.tiers[11].bonus.unlockSetQuest === true
+  }));
+  console.log('  T0 état initial →', t0);
+  assert(!t0.inAvailable, 'quest_set_gryff ne devrait pas être disponible avant tier 12');
+  assert(t0.tierUnlock,   'tier 12 (Maître Or) devrait porter unlockSetQuest:true');
+
+  // T1 : franchir le palier 12 (8000 pts) → quête débloquée + cape_godric en attente.
+  const t1 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    houseTier   = 11;
+    housePoints = 8000;
+    pendingHouseRewards = new Set();
+    checkHouseLevelUp();
+    return {
+      tier:        houseTier,
+      questOpen:   availableQuests.has('quest_set_gryff'),
+      capePending: pendingHouseRewards.has('cape_godric')
+    };
+  });
+  console.log('  T1 tier 12 franchi →', t1);
+  assert(t1.tier === 12,    'tier non passé à 12 (Maître Or)');
+  assert(t1.questOpen,      'quest_set_gryff non ajoutée à availableQuests');
+  assert(t1.capePending,    'cape_godric (pièce #3) non mise en attente chez McGonagall');
+
+  // T2 : accepter la quête → activée, retirée de availableQuests.
+  const t2 = await page.evaluate(() => {
+    acceptQuest('quest_set_gryff');
+    return {
+      isActive:    activeQuests.some(q => q.id === 'quest_set_gryff'),
+      stillAvail:  availableQuests.has('quest_set_gryff')
+    };
+  });
+  console.log('  T2 acceptation →', t2);
+  assert(t2.isActive,    'quest_set_gryff n\'est pas dans activeQuests après acceptation');
+  assert(!t2.stillAvail, 'quest_set_gryff toujours dans availableQuests après acceptation');
+
+  // T3 : simuler 3 kills de Chimère → étape complétée mais quête reste active
+  // tant qu'elle n'est pas remise au PNJ.
+  const t3 = await page.evaluate(() => {
+    checkKillQuests('chimere');
+    checkKillQuests('chimere');
+    checkKillQuests('chimere');
+    const q = activeQuests.find(x => x.id === 'quest_set_gryff');
+    return {
+      progress:    q ? q.objectives[0].progress  : -1,
+      stepDone:    q ? q.objectives[0].completed : false,
+      stillActive: !!q
+    };
+  });
+  console.log('  T3 après 3 kills →', t3);
+  assert(t3.progress === 3,  'progression kill incorrecte');
+  assert(t3.stepDone,        'étape kill non marquée complétée');
+  assert(t3.stillActive,     'la quête doit rester active jusqu\'à la remise');
+
+  // T4 : remise via dialogue PNJ → pièce #4 (coeur_lion) en attente,
+  // PAS dans l'inventaire (route cérémonie head-of-house).
+  const t4 = await page.evaluate(() => {
+    turnInQuestById('quest_set_gryff');
+    return {
+      completed:     completedQuests.has('quest_set_gryff'),
+      stillActive:   activeQuests.some(q => q.id === 'quest_set_gryff'),
+      heartPending:  pendingHouseRewards.has('coeur_lion'),
+      heartInInv:    (player.inventory || []).some(i => i && i.id === 'coeur_lion')
+    };
+  });
+  console.log('  T4 remise →', t4);
+  assert(t4.completed,     'quest_set_gryff non marquée complétée');
+  assert(!t4.stillActive,  'la quête doit avoir quitté activeQuests');
+  assert(t4.heartPending,  'coeur_lion (pièce #4) non poussé dans pendingHouseRewards');
+  assert(!t4.heartInInv,   'coeur_lion distribué directement dans l\'inventaire (bug)');
+
+  // T5 : cérémonie head-of-house → coeur_lion + cape_godric reçus.
+  const t5 = await page.evaluate(() => {
+    triggerNpcSpecialAction('mcgonagall');
+    return {
+      heartInInv:   (player.inventory || []).some(i => i && i.id === 'coeur_lion'),
+      capeInInv:    (player.inventory || []).some(i => i && i.id === 'cape_godric'),
+      pendingLeft:  Array.from(pendingHouseRewards || [])
+    };
+  });
+  console.log('  T5 réclamation →', t5);
+  assert(t5.heartInInv,    'coeur_lion absent de l\'inventaire après réclamation');
+  assert(t5.capeInInv,     'cape_godric absente de l\'inventaire après réclamation');
+  assert(t5.pendingLeft.length === 0, `pendingHouseRewards résiduel : ${t5.pendingLeft.join(',')}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Quête de Maison + remise cérémonielle conformes');
+  await browser.close();
+}
+
 // ── Scénario Maisons 2.0 — Set bonus 4 pièces ─────────────────
 // Vérifie la détection progressive d'un set Maison (Set du Lion,
 // Gryffondor) à 2 / 3 / 4 pièces équipées et l'application correcte
@@ -5576,7 +5684,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSet, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSet, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

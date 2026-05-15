@@ -119,9 +119,29 @@ function _canClaimHouseReward(npc) {
   if (!action || action.type !== 'claim_house_reward') return false;
   if (typeof chosenHouse === 'undefined' || chosenHouse !== action.house) return false;
   if (typeof pendingHouseRewards === 'undefined' || !pendingHouseRewards.size) return false;
-  const house = HOUSE_BONUSES && HOUSE_BONUSES[chosenHouse];
-  if (!house) return false;
-  return house.tiers.some(t => t.bonus.item && pendingHouseRewards.has(t.bonus.item));
+  return _houseClaimableItems(chosenHouse).some(id => pendingHouseRewards.has(id));
+}
+
+// Liste les IDs d'items « appartenant » à la Maison du joueur : items
+// déclarés dans les paliers (HOUSE_BONUSES.tiers[].bonus.item) plus les
+// pièces du set Maison (HOUSE_SETS.pieceIds). Ce dernier couvre la pièce
+// #4 distribuée par la quête de Maison (Maître Or, tier 12) qui n'est
+// référencée nulle part dans HOUSE_BONUSES. Cf. Maisons 2.0 §C/D.
+function _houseClaimableItems(house) {
+  const ids = [];
+  const bonuses = (typeof HOUSE_BONUSES !== 'undefined') ? HOUSE_BONUSES[house] : null;
+  if (bonuses) {
+    for (const tier of bonuses.tiers || []) {
+      if (tier.bonus.item) ids.push(tier.bonus.item);
+    }
+  }
+  const set = (typeof HOUSE_SETS !== 'undefined') ? HOUSE_SETS[house] : null;
+  if (set && Array.isArray(set.pieceIds)) {
+    for (const id of set.pieceIds) {
+      if (!ids.includes(id)) ids.push(id);
+    }
+  }
+  return ids;
 }
 
 function _isSpecialActionSpent(npc) {
@@ -258,8 +278,7 @@ function triggerNpcSpecialAction(npcId) {
       if (typeof addMsg === 'function') addMsg('Ce professeur ne dirige pas votre Maison.', 'bad');
       return;
     }
-    const houseItems = (HOUSE_BONUSES[chosenHouse].tiers || [])
-      .map(t => t.bonus.item).filter(Boolean);
+    const houseItems = _houseClaimableItems(chosenHouse);
     const claimable = houseItems.filter(id => pendingHouseRewards.has(id));
     if (!claimable.length) {
       if (typeof addMsg === 'function') addMsg('Rien à recevoir pour le moment.');

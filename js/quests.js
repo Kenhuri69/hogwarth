@@ -244,8 +244,93 @@ const QUEST_TEMPLATES = [
     location: "Étages 4 à 9",
     repeatable: { everyLevels: 3 },
     rollOnAccept: { kind: "item", pool: ["mandragore", "choco_sorcier", "potion_s", "potion_m"], minAmount: 3, maxAmount: 5 }
+  },
+  // ── Quêtes de Maison (Maisons 2.0 §C) ──────────────────────────────
+  // Débloquées au franchissement du palier 12 (Maître Or, 8000 pts) par
+  // `unlockHouseQuest(chosenHouse)`. Données par le Chef de Maison
+  // correspondant ; à la remise, la pièce #4 du set de Maison entre dans
+  // `pendingHouseRewards` (réception cérémonielle au prochain dialogue,
+  // pas un drop direct). Cf. .claude/plans/houses-2.0.md §B/D.
+  {
+    id: "quest_set_gryff",
+    title: "L'épreuve du Lion",
+    giver: "Professeur McGonagall",
+    desc: "Une Chimère de Poudlard rôde dans les profondeurs. Abats-en trois — leurs trois têtes cachent toujours un cœur de lion. Reviens me voir : tu auras gagné ta dernière relique.",
+    objectives: [
+      { type: "kill", monsterId: "chimere", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 600, gold: 300, houseSetReward: "coeur_lion" },
+    location: "Tour de Gryffondor (étage 5)",
+    houseSetQuest: true,
+    house: "Gryffondor"
+  },
+  {
+    id: "quest_set_slyth",
+    title: "Le souffle du Serpent",
+    giver: "Professeur Rogue",
+    desc: "Trois Basilics Mineurs hantent les cachots oubliés. Élimine-les en silence et rapporte-moi leur preuve — la couronne du grand Salazar t'attendra.",
+    objectives: [
+      { type: "kill", monsterId: "basilic", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 600, gold: 300, houseSetReward: "couronne_basilic" },
+    location: "Cachots (étage 4)",
+    houseSetQuest: true,
+    house: "Serpentard"
+  },
+  {
+    id: "quest_set_raven",
+    title: "Le savoir de l'Aigle",
+    giver: "Professeur Flitwick",
+    desc: "Hécate la Maudisseuse dévore les grimoires interdits. Anéantis trois de ses avatars pour préserver ce que nous savons — le savoir de l'Aigle te récompensera.",
+    objectives: [
+      { type: "kill", monsterId: "hecate_sorciere", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 600, gold: 300, houseSetReward: "anneau_savoir" },
+    location: "Salle de Sortilèges (étage 6)",
+    houseSetQuest: true,
+    house: "Serdaigle"
+  },
+  {
+    id: "quest_set_pouf",
+    title: "Le serment du Blaireau",
+    giver: "Professeur Chourave",
+    desc: "Trois Trolls des Cavernes terrorisent les passages du château. Tiens bon, abats-les — la patience et la loyauté seront récompensées.",
+    objectives: [
+      { type: "kill", monsterId: "troll_grotte", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 600, gold: 300, houseSetReward: "medaillon_helga" },
+    location: "Serres de Botanique (étage 3)",
+    houseSetQuest: true,
+    house: "Poufsouffle"
   }
 ];
+
+// Map Maison → quête de Maison (Maître Or, tier 12).
+const HOUSE_SET_QUESTS = {
+  Gryffondor:  'quest_set_gryff',
+  Serpentard:  'quest_set_slyth',
+  Serdaigle:   'quest_set_raven',
+  Poufsouffle: 'quest_set_pouf',
+};
+
+// Ouvre la quête de Maison au franchissement du palier Maître Or (tier 12).
+// Idempotent : silencieusement ignoré si la quête est déjà connue (active,
+// disponible ou rendue).
+function unlockHouseQuest(house) {
+  const qid = HOUSE_SET_QUESTS[house];
+  if (!qid) return false;
+  if (activeQuests.some(q => q.id === qid)) return false;
+  if (completedQuests.has(qid)) return false;
+  if (availableQuests.has(qid)) return false;
+  availableQuests.add(qid);
+  if (typeof addMsg === 'function') {
+    const tpl = getQuestTemplate(qid);
+    addMsg(`📜 Nouvelle quête de Maison : « ${tpl ? tpl.title : qid} »`, 'magic');
+  }
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
+  return true;
+}
+window.unlockHouseQuest = unlockHouseQuest;
 
 // IDs de monstres exclus du pool farming (bosses uniques scénaristiques).
 const FARMING_KILL_BLACKLIST = new Set([
@@ -770,6 +855,16 @@ function _grantQuestReward(reward) {
     const item = ITEMS.find(i => i.id === reward.item);
     if (item && tryAddItem(item, { silent: true })) {
       addMsg(`Récompense : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name}`, 'good');
+    }
+  }
+  // Pièce #4 de set : route via pendingHouseRewards. La remise effective
+  // se fait au prochain dialogue avec le Chef de Maison via
+  // `claim_house_reward` (cohérence cérémonielle avec les autres pièces).
+  if (reward.houseSetReward && typeof pendingHouseRewards !== 'undefined') {
+    pendingHouseRewards.add(reward.houseSetReward);
+    const item = ITEMS.find(i => i.id === reward.houseSetReward);
+    if (item) {
+      addMsg(`🎁 Le Chef de votre Maison conserve la relique : ${item.icon} ${item.name}. Allez la réclamer.`, 'magic');
     }
   }
   if (reward.spell) {

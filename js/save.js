@@ -362,6 +362,7 @@ function _applyState(gs) {
     if (typeof QUEST_TEMPLATES !== 'undefined') {
       for (const tpl of QUEST_TEMPLATES) {
         if (acceptedIds.has(tpl.id) || completedQuests.has(tpl.id)) continue;
+        if (tpl.houseSetQuest) continue;       // gated par `unlockHouseQuest` (tier 12)
         availableQuests.add(tpl.id);
       }
     }
@@ -371,13 +372,16 @@ function _applyState(gs) {
   // ajoutée comme dispo. Couvre les saves créées avant l'ajout d'une
   // nouvelle quête (ex. chaîne Dumbledore Phase 3) : sans cette passe,
   // les nouvelles quêtes restaient invisibles côté joueur — Dumbledore
-  // ne proposait pas la suite après une remise.
+  // ne proposait pas la suite après une remise. Les quêtes de Maison
+  // (`houseSetQuest: true`) restent verrouillées tant que le palier 12
+  // n'a pas été franchi.
   if (typeof QUEST_TEMPLATES !== 'undefined') {
     const activeIds = new Set((activeQuests || []).map(q => q.id));
     for (const tpl of QUEST_TEMPLATES) {
       if (activeIds.has(tpl.id))       continue;
       if (completedQuests.has(tpl.id)) continue;
       if (availableQuests.has(tpl.id)) continue;
+      if (tpl.houseSetQuest)           continue;
       availableQuests.add(tpl.id);
     }
   }
@@ -456,9 +460,11 @@ function _migrateHouseRewards() {
   if (!chosenHouse) return;
   const house = HOUSE_BONUSES[chosenHouse];
   if (!house) return;
+  let unlockSet = false;
   house.tiers.forEach((tier, i) => {
     const tierNum = i + 1;
     if (houseTier < tierNum) return;
+    if (tier.bonus.unlockSetQuest) unlockSet = true;
     if (!tier.bonus.item) return;
     const itemId = tier.bonus.item;
     const inInventory = (player.inventory || []).some(it => it && it.id === itemId);
@@ -467,6 +473,18 @@ function _migrateHouseRewards() {
     if (inInventory || equipped) return;
     pendingHouseRewards.add(itemId);
   });
+  // Rétroactif : si le palier qui déclenche la quête de Maison a déjà
+  // été franchi sur une save antérieure (avant l'ajout de
+  // `unlockHouseQuest`), on l'ouvre maintenant — sinon elle resterait
+  // invisible à jamais (filtrée par houseSetQuest dans la forward-fill).
+  if (unlockSet && typeof unlockHouseQuest === 'function') {
+    const qid = (typeof HOUSE_SET_QUESTS !== 'undefined') ? HOUSE_SET_QUESTS[chosenHouse] : null;
+    const alreadyActive    = qid && (activeQuests || []).some(q => q.id === qid);
+    const alreadyCompleted = qid && (completedQuests && completedQuests.has(qid));
+    if (qid && !alreadyActive && !alreadyCompleted) {
+      availableQuests.add(qid);
+    }
+  }
 }
 
 function saveGame() {

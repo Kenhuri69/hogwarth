@@ -254,8 +254,8 @@ const NPCS = [
       house: "Gryffondor",
       label: "🎁 Recevoir votre récompense"
     },
-    questsGiven:    ["golem_passage"],
-    questsTurnedIn: ["golem_passage"],
+    questsGiven:    ["golem_passage", "quest_set_gryff"],
+    questsTurnedIn: ["golem_passage", "quest_set_gryff"],
     dialogues: {
       greeting:    [
         "Un Gardien du Portail s'est éveillé dans les passages secrets. Il bloque l'accès à des connaissances précieuses.",
@@ -266,6 +266,13 @@ const NPCS = [
       questActive: "Le Gardien est-il vaincu ?",
       questReady:  "Excellent travail. Voici votre récompense, bien méritée.",
       questDone:   "Vous avez prouvé votre valeur. Gryffondor peut être fier."
+    },
+    dialoguesByQuest: {
+      quest_set_gryff: {
+        questOffer:  "Une Chimère rôde dans les profondeurs. Trois de ces bêtes — pas une de moins — et vous aurez gagné le Cœur du Lion. M'accordez-vous ce service ?",
+        questActive: "Les Chimères tiennent-elles encore tête à un lion ?",
+        questReady:  "Trois Chimères abattues. Le Cœur du Lion vous revient — repassez le réclamer, comme il sied à un héritier de Godric."
+      }
     }
   },
   {
@@ -280,12 +287,21 @@ const NPCS = [
       house: "Serpentard",
       label: "🎁 Recevoir votre récompense"
     },
+    questsGiven:    ["quest_set_slyth"],
+    questsTurnedIn: ["quest_set_slyth"],
     dialogues: {
       greeting: [
         "Tiens, tiens... un élève de ma maison qui ose s'aventurer ici.",
         "L'ambition n'est rien sans la maîtrise. Voyons si vous méritez ce qui vous attend."
       ],
       idle: "Concentrez-vous. La distraction tue plus vite que les sortilèges."
+    },
+    dialoguesByQuest: {
+      quest_set_slyth: {
+        questOffer:  "Trois Basilics Mineurs souillent les cachots oubliés. Élimine-les. Sans bruit, sans gloire. La Couronne du Basilic n'est pas pour les vantards.",
+        questActive: "Encore en vie ? Surprenant. Le travail n'est pas terminé.",
+        questReady:  "Trois Basilics, trois preuves. La Couronne vous attend — venez la chercher quand l'ambition vous le dictera."
+      }
     }
   },
   {
@@ -300,12 +316,21 @@ const NPCS = [
       house: "Serdaigle",
       label: "🎁 Recevoir votre récompense"
     },
+    questsGiven:    ["quest_set_raven"],
+    questsTurnedIn: ["quest_set_raven"],
     dialogues: {
       greeting: [
         "Oh ! Un esprit aiguisé, n'est-ce pas ? L'aigle de Serdaigle se reconnaît au premier regard.",
         "Approchez, approchez. Le savoir récompense ceux qui le cultivent avec assiduité."
       ],
       idle: "Un sortilège bien exécuté vaut mille incantations brouillonnes. Travaillez vos gestes."
+    },
+    dialoguesByQuest: {
+      quest_set_raven: {
+        questOffer:  "Hécate la Maudisseuse dévore nos grimoires interdits. Trois de ses avatars, voilà ce qu'il faut anéantir — et l'Anneau du Savoir sera vôtre.",
+        questActive: "Le savoir s'écrit dans le silence — combien d'avatars d'Hécate avez-vous réduits au néant ?",
+        questReady:  "Trois maudisseuses, trois pages préservées. L'Anneau du Savoir vous attend — revenez le réclamer."
+      }
     }
   },
   {
@@ -320,12 +345,21 @@ const NPCS = [
       house: "Poufsouffle",
       label: "🎁 Recevoir votre récompense"
     },
+    questsGiven:    ["quest_set_pouf"],
+    questsTurnedIn: ["quest_set_pouf"],
     dialogues: {
       greeting: [
         "Ah, un Poufsouffle ! La loyauté finit toujours par porter ses fruits — comme mes plantes.",
         "Ne sous-estimez jamais le travail acharné. C'est ce qui distingue les vrais sorciers."
       ],
       idle: "Patience et persévérance, comme on l'enseigne aux racines."
+    },
+    dialoguesByQuest: {
+      quest_set_pouf: {
+        questOffer:  "Trois Trolls des Cavernes terrorisent les passages — patience et loyauté, racine après racine. Le Médaillon de Helga récompensera ton serment.",
+        questActive: "Trois trolls, et pas un de moins. Garde la tête haute.",
+        questReady:  "Trois trolls vaincus — le serment est tenu. Le Médaillon de Helga vous attend, repassez le réclamer."
+      }
     }
   },
 
