@@ -22,18 +22,20 @@ chaque). Les points sont ordonnés par risque croissant.
   `__loaderReport.missingCritical === 0`.
 - **Statut** : [x] proposé · [x] validé · [x] implémenté (108 globals vérifiés)
 
-## P2 — item-icons.js : purger les entrées legacy mortes
+## P2 — item-icons.js : purger les entrées legacy mortes — ÉCARTÉ
 
-- **Constat** : `ITEM_ICON_REGISTRY` contient ~30 entrées masquées en runtime
-  par `ITEM_ICON_NEW_REGISTRY` (priorité 1). Le commentaire du fichier admet
-  qu'elles sont des fallbacks morts.
-- **Proposition** : recenser les IDs présents dans les deux registres, retirer
-  de `ITEM_ICON_REGISTRY` ceux strictement couverts par le registre « new ».
-- **Risque** : faible — à condition de vérifier que chaque entrée retirée a bien
-  les 5 PNG mipmaps dans `img/icons_new/`. Sinon la garder.
-- **Vérification** : ouvrir le jeu, inventaire/boutique : toutes les icônes
-  s'affichent ; smoke test vert.
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Constat initial** : `ITEM_ICON_REGISTRY` contient ~30 entrées masquées en
+  runtime par `ITEM_ICON_NEW_REGISTRY` (priorité 1), supposées « mortes ».
+- **Analyse (2026-05-16)** : faux positif. Ces entrées ne sont pas mortes :
+  1. **Contrat de test** — `scenarioItemIcons` (tests/smoke.js:2633) exige que
+     *chaque* item de `ITEMS[]` ait une entrée dans `ITEM_ICON_REGISTRY`
+     (`t1.missing.length === 0`, `t1.mapped === t1.total`) et que tous les PNG
+     du registre se chargent. Les purger casserait le smoke test.
+  2. **Fallback runtime réel** — elles servent si un PNG painterly `_64.png`
+     échoue à charger (cf. commentaire item-icons.js:111-116).
+- **Décision** : point écarté. Le gain est nul (simples mappings de chaînes) et
+  le risque (casse de la suite de tests) réel.
+- **Statut** : [x] proposé · [x] analysé · ❌ écarté (faux positif)
 
 ## P3 — renderer-effects.js : supprimer le code mort de drawCellMarker
 
@@ -46,7 +48,12 @@ chaque). Les points sont ordonnés par risque croissant.
 - **Risque** : faible (suppression de code mort vérifié).
 - **Vérification** : portes toujours visibles en vue 3D ; coffres/boutiques/
   fontaines/escaliers toujours rendus (sprites) ; smoke test vert.
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Statut** : [x] proposé · [x] validé · [x] implémenté
+- **Note implémentation** : confirmé que `FOUNTAIN` n'est pas dans la liste
+  `pendingSprite` (renderer.js:216) — les fontaines n'ont aucun rendu 3D, la
+  branche `FOUNTAIN` de `drawCellMarker` était donc déjà inatteignable. Deux
+  lignes de `CLAUDE.md` corrigées (descriptif `drawCellMarker` + ligne « Visuel
+  canvas » du tableau Fontaine, qui décrivait ce code mort).
 
 ## P4 — forge.js / library.js : helper de matériau partagé
 
@@ -163,3 +170,5 @@ chaque). Les points sont ordonnés par risque croissant.
 
 ## Journal
 - Plan créé. En attente de validation point par point.
+- P1 implémenté (commit `c2dc00c`) — 11 globals ajoutés au MANIFEST.
+- P2 écarté après analyse : faux positif (fallback volontaire + contrat smoke).
