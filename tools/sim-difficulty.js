@@ -492,11 +492,12 @@ function eligiblePool(floor, cfg) {
 
 // Reproduit _hydrateCharacter() + recalculateStats() pour les
 // stats dérivées de base, puis applique les level-ups.
-// Effets par point alloué (Phase 2 du plan)
-//   STR → +1 ATK, INT → +1 MAG, AGI → +0.4 % esquive, END → +5 HP, LCK → +0.5 % crit
+// Effets par point alloué (Phase 2 du plan + refonte stats mai 2026)
+//   STR → +1 ATK, INT → +1 INT (maîtrise : soin + DoT), AGI → +0.4 % esquive
+//   /crit sort, END → +5 HP, LCK → +0.5 % crit physique
 function applyStatPoints(c, points) {
   c._baseAtk += points.str || 0;
-  c._baseMag += points.int || 0;
+  c._baseInt += points.int || 0;
   c._baseAgi += points.agi || 0;
   c._baseEnd += points.end || 0;
   c.hpMax    += 5 * (points.end || 0);
@@ -576,11 +577,13 @@ function createHero(key, level, cfg, floor, partySize) {
   }
   // Bonus de set (Maison 4/4 + Ténèbres 3/3) — après l'équipement.
   applySetBonuses(c, cfg, key, partySize);
-  // LCK plafonne à 40 % ; les bonus équipement/set s'ajoutent au-dessus
-  // (plafond absolu 100 %). Deux canaux de crit : physique et sort.
+  // Deux canaux de crit. Physique : base LCK (plafond 40 %). Sort : base
+  // AGI (plafond 35 %) — rôle offensif de l'AGI (cf. agi-spell-crit.md).
+  // Les bonus équipement/set s'ajoutent au-dessus (plafond absolu 100 %).
   const lckCrit = Math.min(40, 5 + c.lck * 0.5);
+  const agiCrit = Math.min(35, 5 + c.agi * 0.4);
   c.critChance          = Math.max(5, Math.min(100, lckCrit + (c._critBonus || 0) + (c._setCrit || 0)));
-  c.spellCritChance     = Math.max(5, Math.min(100, lckCrit + (c._spellCritBonus || 0) + (c._setSpellCrit || 0)));
+  c.spellCritChance     = Math.max(5, Math.min(100, agiCrit + (c._spellCritBonus || 0) + (c._setSpellCrit || 0)));
   c.dodgeChance         = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0) + (c._setDodge || 0)));
   c.critMultiplier      = 1.5 + (c._critDmgBonus || 0) + (c._setCritDmg || 0);
   c.spellCritMultiplier = 1.5 + (c._spellCritDmgBon || 0) + (c._setSpellCritDmg || 0);
@@ -726,26 +729,32 @@ function heroAct(char, enemies) {
   }
 
   // 1b. Auto-heal sort si hp < 40 % (fallback si potions épuisées)
+  //     Soin = power + INT/4 + END/4 (battle-spells.js — _spellHeal).
   if (char.hp < char.hpMax * 0.40) {
     const heal = pickHealSpell(char);
     if (heal && char.sp >= heal.cost) {
       char.sp -= heal.cost;
-      char.hp = Math.min(char.hpMax, char.hp + heal.power);
+      const amount = heal.power + Math.floor((char.int || 0) / 4)
+                                + Math.floor((char.end || 0) / 4);
+      char.hp = Math.min(char.hpMax, char.hp + amount);
       return;
     }
   }
 
-  // 2. Best damage spell
-  const dmgSpell = pickDamageSpell(char);
+  // 2. Best damage spell — choix sensible à l'élément de la cible
+  const dmgSpell = pickDamageSpell(char, target);
   if (dmgSpell && char.sp >= dmgSpell.cost) {
     char.sp -= dmgSpell.cost;
     let dmg = dmgSpell.power + Math.floor(char.mag / 2);
-    if (target.resist?.includes(dmgSpell.effect)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
-    if (target.weak?.includes(dmgSpell.effect))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
-    // Crit de sort (battle-spells.js — rollSpellCrit)
+    // resist/weak sur l'ÉLÉMENT du sort (système élémentaire — elemental-system.md)
+    if (dmgSpell.element && target.resist?.includes(dmgSpell.element)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
+    if (dmgSpell.element && target.weak?.includes(dmgSpell.element))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
+    // Crit de sort (battle-spells.js — rollSpellCrit, base AGI)
     if (Math.random() * 100 < (char.spellCritChance || 0)) {
       dmg = Math.floor(dmg * (char.spellCritMultiplier || 1.5));
     }
+    // DoT élémentaire : espérance ajoutée à la frappe (INT/LCK = maîtrise)
+    dmg += expectedDotDamage(dmgSpell, char);
     target.currentHp -= dmg;
     return;
   }
@@ -779,17 +788,40 @@ function pickHealSpell(char) {
   return candidates[0] ? simSpellForCaster(candidates[0], char) : undefined;
 }
 
-// Meilleur sort de dégât accessible (cost <= SP), priorité puissance brute
-function pickDamageSpell(char) {
-  const damaging = ['Avada...', 'Sectumsempra', 'Diffindo', 'Incendio', 'Wingardium Leviosa', 'Stupefix']
+// DoT des sorts élémentaires (battle-spells.js — _spellElementalDamage).
+// Espérance de dégâts sur la durée : chance × dotPower × durée. INT + LCK
+// pilotent la fiabilité et la durée (« INT = maîtrise »). Approximation :
+// l'espérance est ajoutée à la frappe immédiate (léger front-loading).
+const SIM_DOT_SPELLS = new Set(['Incendio', 'Diffindo', 'Sectumsempra', 'Glacius']);
+function expectedDotDamage(spell, char) {
+  if (!spell || !SIM_DOT_SPELLS.has(spell.name)) return 0;
+  const int = char.int || 0, lck = char.lck || 0;
+  const chance   = Math.min(0.50, 0.10 + int * 0.0075 + lck * 0.0075);
+  const dotPower = Math.max(1, Math.floor(spell.power * 0.25));
+  const turns    = Math.min(5, 2 + Math.floor(int / 24) + Math.floor(lck / 24));
+  return Math.round(chance * dotPower * turns);
+}
+
+// Meilleur sort de dégât accessible (cost <= SP). Score = puissance
+// effective × modulateur élémentaire : exploite la faiblesse de la cible
+// et évite sa résistance quand une alternative existe (jeu intentionnel).
+function pickDamageSpell(char, target) {
+  const damaging = ['Avada...', 'Sectumsempra', 'Diffindo', 'Incendio',
+                    'Glacius', 'Fulgari', 'Lumos Solem',
+                    'Wingardium Leviosa', 'Stupefix']
     .filter(n => char.spells.includes(n))
     .map(n => spellByName[n])
     .filter(s => s && !s.locked)
     .map(s => simSpellForCaster(s, char));
-  // Filtre par SP dispo
   const affordable = damaging.filter(s => char.sp >= s.cost);
-  // Trie par puissance + mag/2 décroissant (puissance effective)
-  affordable.sort((a, b) => (b.power + char.mag / 2) - (a.power + char.mag / 2));
+  if (!affordable.length) return undefined;
+  const score = s => {
+    let m = 1.0;
+    if (target && s.element && target.weak?.includes(s.element))   m = WEAK_MULTIPLIER;
+    if (target && s.element && target.resist?.includes(s.element)) m = RESIST_MULTIPLIER;
+    return (s.power + char.mag / 2) * m;
+  };
+  affordable.sort((a, b) => score(b) - score(a));
   return affordable[0];
 }
 

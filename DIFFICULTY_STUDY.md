@@ -9,12 +9,22 @@
 > silencieusement la modélisation des quêtes, de l'équipement et des
 > potions. Corrigé. Les chiffres ci-dessous sont la mesure honnête.
 >
-> 🔄 **Recalcul (mai 2026)** — chiffres re-mesurés après la refonte du
-> critique (deux canaux physique/sort, crit damage, crit > 40 %). Le jeu
-> normal (§3-4) bouge peu (+2-4 pts, buff léger). En revanche les tables
-> endgame (§8) étaient **obsolètes et trop optimistes** : les ajouts de
-> monstres récents ont durci la Boucle au-delà de l'étage ~17 — §8
-> ré-étalonné ci-dessous.
+> 🔄 **Recalcul (mai 2026, v2)** — chiffres re-mesurés après trois
+> refontes de combat :
+> - **crit de sort piloté par l'AGI** (`spellCritChance = 5 + agi×0.4`,
+>   plafond 35 %) — canal distinct du crit physique (LCK) ;
+> - **INT = maîtrise** : l'INT ne donne plus de MAG brute mais boost les
+>   soins (`+int/4 + end/4`) et la fiabilité/durée des DoT élémentaires ;
+> - **système élémentaire découplé** : chaque sort porte un `element`
+>   (feu/glace/foudre/lumière/ténèbres/physique), les 50 monstres ont
+>   été re-taggés avec des résistances/faiblesses élémentaires.
+>
+> Le sim (`tools/sim-difficulty.js`) a été corrigé pour modéliser ces
+> trois systèmes — dont un joueur qui **exploite les faiblesses
+> élémentaires** de la cible (jeu intentionnel : choix du sort selon le
+> bestiaire). Effet net : **détente nette de la courbe**, surtout en
+> milieu de partie et en Duo (+10-20 pts selon l'étage par rapport au
+> recalcul précédent).
 
 ---
 
@@ -26,8 +36,8 @@ et en récupérant des artefacts — exactement comme prévu par le design.
 
 | Mode | Jeu normal (sans farming) | Avec farming + artefacts |
 |------|---------------------------|--------------------------|
-| Solo | confortable 1-6, tendu 7, difficile 8-9, dur 10-12 (~30 %) | 96 % à l'étage 8, 68-88 % aux étages 9-12 |
-| Duo  | confortable 1-8, tendu 9, difficile 10-12 (59-65 %) | confortable, 89-100 % selon le farming |
+| Solo | confortable 1-7, tendu 8, difficile 9-12 (35-58 %) | 99 % à l'étage 8, 78-94 % aux étages 9-12 |
+| Duo  | confortable 1-9, tendu 10-12 (73-85 %) | confortable, 95-100 % selon le farming |
 
 **Il n'y a pas de mur infranchissable.** La zone « difficile » de fin de partie
 est la récompense attendue de l'investissement (niveaux + équipement légendaire).
@@ -68,18 +78,21 @@ boutique, stock de potions, 3 points de stats alloués par niveau (build
 | Étage | Solo (niv.) | Win % Solo | Duo (niv.) | Win % Duo |
 |------:|:-----------:|-----------:|:----------:|----------:|
 | 1-4  | 1→6  | 100 %        | 1→7  | 100 % |
-| 5    | 8    | 95 %         | 8    | 100 % |
-| 6    | 8    | 86 %         | 8    | 100 % |
-| 7    | 9    | 76 %         | 9    | 98 %  |
-| 8    | 9    | 60 %         | 10   | 93 %  |
-| 9    | 10   | 45 %         | 10   | 77 %  |
-| 10   | 10   | 33 %         | 11   | 65 %  |
-| 11   | 11   | 31 %         | 11   | 60 %  |
-| 12   | 11   | 28 %         | 12   | 59 %  |
+| 5    | 8    | 100 %        | 8    | 100 % |
+| 6    | 8    | 93 %         | 8    | 100 % |
+| 7    | 9    | 87 %         | 9    | 100 % |
+| 8    | 9    | 70 %         | 10   | 99 %  |
+| 9    | 10   | 58 %         | 10   | 89 %  |
+| 10   | 10   | 43 %         | 11   | 85 %  |
+| 11   | 11   | 44 %         | 11   | 73 %  |
+| 12   | 11   | 35 %         | 12   | 75 %  |
 
 **Lecture** : la difficulté monte progressivement, sans spike brutal. Le Solo
-de fin de partie (étages 10-12, ~30 %) signale au joueur qu'il doit se
+de fin de partie (étages 10-12, ~35-44 %) signale au joueur qu'il doit se
 renforcer avant de continuer — ce n'est pas un blocage, c'est un signal.
+L'exploitation des faiblesses élémentaires détend nettement le milieu de
+partie (un joueur qui ignore les éléments reste proche des chiffres du
+recalcul précédent, ~10-15 pts plus bas).
 
 > Note : les XP de quêtes font naturellement « sur-monter » le joueur en
 > niveau (étage 10 → niveau 11). Le sur-leveling fait déjà partie du jeu
@@ -93,11 +106,11 @@ Mesure avec farming (`--bonus-levels`) et artefacts légendaires (`--artifacts`)
 
 | Étage | Solo +8 niv. +artefacts | Duo +5 niv. +artefacts | Duo +12 niv. +artefacts |
 |------:|------------------------:|-----------------------:|------------------------:|
-| 8     | 96 %                    | 100 %                  | 100 % |
-| 9     | 88 %                    | 96 %                   | 100 % |
-| 10    | 81 %                    | 95 %                   | 99 %  |
-| 11    | 73 %                    | 91 %                   | 98 %  |
-| 12    | 68 %                    | 89 %                   | 97 %  |
+| 8     | 99 %                    | 100 %                  | 100 % |
+| 9     | 94 %                    | 100 %                  | 100 % |
+| 10    | 86 %                    | 99 %                   | 100 % |
+| 11    | 84 %                    | 96 %                   | 100 % |
+| 12    | 78 %                    | 95 %                   | 100 % |
 
 **Conclusion : le design tient.** Investir des niveaux (farming respawn 20 %,
 revisites d'étage) et récupérer les artefacts transforme une zone « difficile »
@@ -192,16 +205,17 @@ récursion via le flag `--endgame` (`tools/sim-difficulty.js`).
 
 | Étage | Win % Solo | Win % Duo | Niveau joueur |
 |------:|-----------:|----------:|--------------:|
-| 11-15 | 93-100 %   | 100 %     | 11-12 |
-| 18    | 48 %       | 77 %      | 11-12 |
-| 20    | 18 %       | 42 %      | 12-13 |
-| 25    | 8 %        | 20 %      | 13-14 |
-| 30    | 2 %        | 13 %      | 14-15 |
+| 11-15 | 99-100 %   | 100 %     | 11-12 |
+| 18    | 58 %       | 90 %      | 11-12 |
+| 20    | 27 %       | 64 %      | 12-13 |
+| 25    | 11 %       | 24 %      | 13-14 |
+| 30    | 4 %        | 17 %      | 14-15 |
 
 En jeu « normal » (≈ 4 combats/étage, sans grind dédié), la Boucle
-décroche vers l'**étage 17-19** puis devient très dure. Le décrochage est
-plus précoce que dans la version précédente de cette étude : les monstres
-profonds ajoutés depuis (Strigoï, Hécate, etc.) durcissent la récursion.
+décroche vers l'**étage 18-21** puis devient très dure. Les systèmes de
+combat récents (crit de sort AGI, exploitation élémentaire) repoussent le
+décrochage d'environ un étage par rapport au recalcul précédent, sans
+supprimer le mur.
 
 ### 8.2 Cause structurelle — le joueur ne suit pas en niveau
 
@@ -220,13 +234,13 @@ principal où l'XP des quêtes maintenait le joueur sur la courbe.
 
 | Étage | Duo +10 niv. | Duo +25 niv. | Duo +45 niv. |
 |------:|-------------:|-------------:|-------------:|
-| 20    | 78 %         | 97 %         | 100 % |
-| 25    | 37 %         | 72 %         | 92 %  |
-| 30    | 27 %         | 49 %         | 81 %  |
+| 20    | 91 %         | 100 %        | 100 % |
+| 25    | 53 %         | 84 %         | 98 %  |
+| 30    | 38 %         | 60 %         | 92 %  |
 
-Règle empirique : **~+20-22 niveaux farmés par tranche de 10 étages** de
-Boucle pour rester en zone confortable — le farming demande nettement plus
-d'investissement que ce que mesurait l'ancienne version de l'étude.
+Règle empirique : **~+18-20 niveaux farmés par tranche de 10 étages** de
+Boucle pour rester en zone confortable (l'étage 30 reste confortable à
+partir de ~+40 niveaux farmés).
 
 ### 8.4 Forge des Ténèbres + Bibliothèque interdite
 
@@ -242,15 +256,15 @@ Impact mesuré (Duo, endgame, +10 niveaux farmés) :
 
 | Étage | Artefacts seuls | + Forge 5 + Biblio 3 |
 |------:|----------------:|---------------------:|
-| 22    | 59 %            | 82 % |
-| 24    | 56 %            | 76 % |
-| 26    | 44 %            | 66 % |
-| 28    | 43 %            | 59 % |
-| 30    | 35 %            | 50 % |
+| 22    | 78 %            | 93 % |
+| 24    | 70 %            | 84 % |
+| 26    | 57 %            | 78 % |
+| 28    | 50 %            | 71 % |
+| 30    | 41 %            | 63 % |
 
 Le kit complet (artefacts + Forge 5 + Bibliothèque 3 + ~25 niveaux
-farmés) maintient le Duo **confortable (81-97 %) jusqu'à l'étage 30**.
-Forge et Bibliothèque valent à eux deux ~+15-20 pts de win rate dans le
+farmés) maintient le Duo **confortable (86-99 %) jusqu'à l'étage 30**.
+Forge et Bibliothèque valent à eux deux ~+15-22 pts de win rate dans le
 deep endgame — un troisième axe de farming qui complète niveaux + artefacts.
 
 ### 8.6 Sets de Maison + set Ténèbres
@@ -293,11 +307,11 @@ sets répartis Gryffondor + Ténèbres) :
 
 | Étage | Sans set | Avec sets (post-refonte) |
 |------:|---------:|-------------------------:|
-| 26    | 79 %     | 81 % |
-| 28    | 78 %     | 79 % |
-| 30    | 66 %     | 71 % |
+| 26    | 77 %     | 79 % |
+| 28    | 72 %     | 76 % |
+| 30    | 60 %     | 69 % |
 
-Apport modéré (~+5 pts à l'étage 30) mais désormais **réel et non gaspillé**.
+Apport modéré (~+5-9 pts, jusqu'à +9 à l'étage 30) mais désormais **réel et non gaspillé**.
 L'effet reste contenu car la sim privilégie les sorts : le set Gryffondor
 (crit *physique*) profite surtout à un build qui attaque physiquement, le
 set Ténèbres et les sets caster (crit de *sort*) aux builds magiques. La
@@ -308,14 +322,18 @@ refonte aligne donc chaque set sur son archétype de jeu.
 - ✅ La Boucle Ténébreuse est un **gate infini farmable** sur quatre axes
   (niveaux, artefacts, Forge/Bibliothèque, sets) — cohérent avec le design.
 - ⚠️ **Différence avec le jeu principal** : l'endgame n'a **aucune voie
-  de progression passive**. Il *impose* le farming actif dès l'étage ~17.
+  de progression passive**. Il *impose* le farming actif dès l'étage ~18.
   Choix de design assumable (mode infini façon roguelike), mais à
-  connaître — descendre sans farmer heurte un mur réel vers l'étage 18.
-- ⚠️ **Le mur endgame s'est durci** depuis la dernière étude (monstres
-  profonds ajoutés) : le farming nécessaire a quasi doublé (~+20-22 niv.
-  /10 étages contre ~+12-15 avant). À surveiller — si la Boucle devient
-  trop punitive, réduire le `weight` ou le `scale` des monstres 6-7+ les
-  plus lourds (Strigoï Ancien HP 110, Hécate HP 130) est le levier direct.
+  connaître — descendre sans farmer heurte un mur réel vers l'étage 19-21.
+- ✅ **Les refontes de combat (crit de sort AGI, INT-maîtrise, système
+  élémentaire) ont détendu la courbe** : milieu de partie +10-20 pts,
+  décrochage endgame repoussé d'~1 étage, farming requis ramené à
+  ~+18-20 niv./10 étages. Le mur reste réel mais moins abrupt que ne le
+  laissait croire le recalcul intermédiaire.
+- 💡 Le bénéfice élémentaire suppose un joueur qui **consulte le
+  bestiaire** et choisit son sort selon la faiblesse de la cible. Un
+  joueur qui spamme un seul sort reste ~10-15 pts plus bas — l'écart
+  *récompense la connaissance du jeu*, ce qui est l'intention du système.
 - 💡 Si l'on veut adoucir : ralentir `xpNext` en endgame, ou ajouter une
   XP passive de Boucle par étage franchi. Optionnel — à ne pas faire si
   le farming forcé est l'intention.
