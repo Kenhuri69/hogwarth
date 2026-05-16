@@ -155,11 +155,13 @@ function recalculateStats() {
       }
     }
 
-    // LCK plafonne à 40 % ; les bonus équipement/set s'ajoutent au-dessus
-    // (plafond absolu 100 %). Deux canaux : physique et sort.
+    // Deux canaux de crit. Crit physique : base LCK (plafonne à 40 %).
+    // Crit de sort : base AGI (plafonne à 35 %) — rôle offensif de l'AGI.
+    // Les bonus équipement/set s'ajoutent PAR-DESSUS (plafond absolu 100 %).
     const lckCrit = Math.min(40, 5 + c.lck * 0.5);
+    const agiCrit = Math.min(35, 5 + c.agi * 0.4);
     c.critChance          = Math.max(5, Math.min(100, lckCrit + critBonus));
-    c.spellCritChance     = Math.max(5, Math.min(100, lckCrit + spellCritBonus));
+    c.spellCritChance     = Math.max(5, Math.min(100, agiCrit + spellCritBonus));
     c.dodgeChance         = Math.max(0, Math.min(35, 5 + c.agi * 0.4 + dodgeBonus));
     c.critMultiplier      = 1.5 + critDmgBonus;
     c.spellCritMultiplier = 1.5 + spellCritDmgBonus;

@@ -91,9 +91,10 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
 
 const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed' };
 
-// Crit de sort : roll spellCritChance, applique spellCritMultiplier sur les
-// dégâts. Canal distinct du crit physique (cf. .claude/plans/crit-rework.md).
-// Saves antérieures : champs absents → pas de crit (fallback 0 / 1.5).
+// Crit de sort : roll spellCritChance (dérivée de l'AGI dans
+// recalculateStats), applique spellCritMultiplier sur les dégâts. Canal
+// distinct du crit physique (cf. .claude/plans/crit-rework.md +
+// agi-spell-crit.md). Saves antérieures : champs absents → pas de crit.
 function rollSpellCrit(dmg, char) {
   const chance = (char && char.spellCritChance != null) ? char.spellCritChance : 0;
   if (Math.random() * 100 < chance) {
