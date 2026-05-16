@@ -7139,8 +7139,97 @@ async function scenarioLoader() {
   await browser.close();
 }
 
+async function scenarioDelayedSearch() {
+  console.log('\n── Scénario : fouille renouvelée (réactivation différée) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Délai de recharge piloté par la difficulté.
+  const delays = await page.evaluate(() => {
+    const out = {};
+    for (const d of ['Facile', 'Normal', 'Difficile', 'Expert']) {
+      difficulty = d;
+      out[d] = _searchRechargeSteps();
+    }
+    difficulty = 'Normal';
+    return out;
+  });
+  assert(delays.Facile === 45,    `Facile doit recharger en 45 pas (obtenu ${delays.Facile})`);
+  assert(delays.Normal === 60,    `Normal doit recharger en 60 pas (obtenu ${delays.Normal})`);
+  assert(delays.Difficile === 80, `Difficile doit recharger en 80 pas (obtenu ${delays.Difficile})`);
+  assert(delays.Expert === 100,   `Expert doit recharger en 100 pas (obtenu ${delays.Expert})`);
+
+  // 2) Machine d'état : fresh → recharging → ready → recharging.
+  const fsm = await page.evaluate(() => {
+    difficulty   = 'Normal';
+    searchedCells = new Map();
+    stepCount    = 0;
+    const key = `${playerX},${playerY}`;
+    const fresh = _searchCellStatus(key).state;
+    searchRoom();
+    const afterSearch = _searchCellStatus(key);
+    stepCount += 59;
+    const justBefore = _searchCellStatus(key).state;
+    stepCount += 1;                       // total 60 pas écoulés
+    const ready = _searchCellStatus(key);
+    searchRoom();                          // re-fouille
+    const afterRepeat = _searchCellStatus(key);
+    return {
+      fresh,
+      searchState: afterSearch.state, searchCount: afterSearch.count,
+      justBefore,
+      readyState: ready.state,
+      repeatState: afterRepeat.state, repeatCount: afterRepeat.count
+    };
+  });
+  assert(fsm.fresh === 'fresh',            'case neuve doit être fresh');
+  assert(fsm.searchState === 'recharging', 'case doit être recharging juste après fouille');
+  assert(fsm.searchCount === 1,            'count doit valoir 1 après 1re fouille');
+  assert(fsm.justBefore === 'recharging',  'case doit rester recharging à 59 pas (< 60)');
+  assert(fsm.readyState === 'ready',       'case doit être ready à 60 pas écoulés');
+  assert(fsm.repeatState === 'recharging', 'case doit redevenir recharging après re-fouille');
+  assert(fsm.repeatCount === 2,            'count doit valoir 2 après re-fouille');
+
+  // 3) Round-trip save : searchedCells (Map) + stepCount conservés.
+  const rt = await page.evaluate(() => {
+    searchedCells = new Map();
+    searchedCells.set('9,9', { at: 5, count: 3 });
+    stepCount = 42;
+    const snap = _serializeState();
+    searchedCells = new Map();
+    stepCount = 0;
+    _applyState(snap);
+    const rec = searchedCells.get('9,9');
+    return {
+      isMap: searchedCells instanceof Map,
+      stepCount,
+      at: rec && rec.at,
+      count: rec && rec.count
+    };
+  });
+  assert(rt.isMap,           'searchedCells doit rester une Map après _applyState');
+  assert(rt.stepCount === 42,'stepCount doit survivre au round-trip save');
+  assert(rt.at === 5,        'champ at doit survivre au round-trip save');
+  assert(rt.count === 3,     'champ count doit survivre au round-trip save');
+
+  // 4) Migration legacy : ancien format (tableau de chaînes) → Map vide.
+  const legacy = await page.evaluate(() => {
+    const m = _searchedCellsFromArray(['1,1', '2,2', '3,3']);
+    return { isMap: m instanceof Map, size: m.size };
+  });
+  assert(legacy.isMap,      '_searchedCellsFromArray doit retourner une Map');
+  assert(legacy.size === 0, 'entrées legacy (chaînes) doivent être ignorées');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Fouille renouvelée OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

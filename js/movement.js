@@ -37,6 +37,7 @@ function _step(dir, faceDir) {
   const [dx, dy] = DIRECTIONS[dir];
   playerX += dx; playerY += dy;
   visited[playerY][playerX] = true;
+  stepCount++;
   if (restCooldown > 0) restCooldown--;
   if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) healSpellCooldown--;
   if (typeof _tickShopRestock === 'function') _tickShopRestock();
@@ -249,7 +250,7 @@ function _restoreFloorFromCache(floor) {
   enemyMap = c.enemyMap;
   itemMap  = c.itemMap;
   playerX  = c.px; playerY = c.py; playerDir = c.dir;
-  searchedCells = new Set(c.searchedCells || []);
+  searchedCells = _searchedCellsFromArray(c.searchedCells);
   npcPlacements = new Map(c.npcPlacements || []);
   // Nouvelle visite = nouvelle eau dans la fontaine et nouvelles larmes Fumseck
   usedFountains = new Set();
@@ -346,7 +347,7 @@ function _changeFloor(delta, opts) {
 
   _floorTransition(currentFloor, locName, () => {
     if (!_restoreFloorFromCache(currentFloor)) {
-      searchedCells = new Set();
+      searchedCells = new Map();
       generateDungeon(currentFloor);
     }
     restCooldown = 0;
@@ -467,14 +468,48 @@ function openChest() {
   renderMinimap();
 }
 
+// ── Fouille renouvelée — réactivation différée ───────────────
+// Délai de recharge (en pas) selon la difficulté courante.
+function _searchRechargeSteps() {
+  const ds = (typeof DIFFICULTY_SETTINGS !== 'undefined') && DIFFICULTY_SETTINGS[difficulty];
+  return (ds && ds.searchRechargeSteps) || 60;
+}
+
+// Reconstruit la Map des cases fouillées depuis un tableau sérialisé.
+// Format courant : [["x,y", {at, count}], …]. Les entrées legacy
+// (simples chaînes "x,y") sont ignorées — le mode redémarre proprement.
+function _searchedCellsFromArray(arr) {
+  const m = new Map();
+  if (Array.isArray(arr)) {
+    for (const e of arr) {
+      if (Array.isArray(e) && e.length === 2 && e[1] && typeof e[1] === 'object') {
+        m.set(e[0], { at: e[1].at || 0, count: e[1].count || 1 });
+      }
+    }
+  }
+  return m;
+}
+
+// État de fouille d'une case : 'fresh' (jamais fouillée),
+// 'recharging' (fouillée récemment) ou 'ready' (recharge écoulée).
+function _searchCellStatus(key) {
+  const rec = (searchedCells instanceof Map) ? searchedCells.get(key) : null;
+  if (!rec) return { state: 'fresh', count: 0, left: 0 };
+  const elapsed  = stepCount - rec.at;
+  const recharge = _searchRechargeSteps();
+  if (elapsed >= recharge) return { state: 'ready', count: rec.count, left: 0 };
+  return { state: 'recharging', count: rec.count, left: recharge - elapsed };
+}
+
 // ── Mise à jour visuelle du bouton Fouiller ──────────────────
 function _updateSearchBtn() {
   const btn = document.getElementById('btn-search');
   if (!btn) return;
-  const key = `${playerX},${playerY}`;
-  const already = searchedCells.has(key);
-  btn.classList.toggle('searched', already);
-  btn.title = already ? 'Case déjà fouillée' : 'Fouiller la pièce';
+  const st = _searchCellStatus(`${playerX},${playerY}`);
+  btn.classList.toggle('searched', st.state === 'recharging');
+  btn.title = st.state === 'recharging'
+    ? `Fouillé récemment — de nouveau fouillable dans ~${st.left} pas`
+    : 'Fouiller la pièce';
   if (typeof updateRoomStatus === 'function') updateRoomStatus();
 }
 
@@ -482,28 +517,33 @@ function searchRoom() {
   if (inBattle) return;
 
   const key = `${playerX},${playerY}`;
-  if (searchedCells.has(key)) {
-    setNarrative("Vous avez déjà fouillé cet endroit. Il ne reste rien ici.");
-    addMsg("Déjà fouillé.", '');
+  const st  = _searchCellStatus(key);
+  if (st.state === 'recharging') {
+    setNarrative(`Vous avez fouillé cet endroit récemment. Les recoins ne se regarniront pas avant ~${st.left} pas.`);
+    addMsg("Fouillé récemment.", '');
     return;
   }
-  searchedCells.add(key);
+
+  // 'ready' = case déjà fouillée au moins une fois → butin dégressif.
+  const repeat = st.count > 0;
+  searchedCells.set(key, { at: stepCount, count: st.count + 1 });
   _updateSearchBtn();
 
   const roll = Math.random();
   if (roll < SEARCH_GOLD_THRESHOLD) {
-    const gold = Math.floor(Math.random() * 15 + 5);
+    let gold = Math.floor(Math.random() * 15 + 5);
+    if (repeat) gold = Math.max(1, Math.floor(gold * 0.5));
     player.gold += gold;
     setNarrative(NARRATIVES.gold_found(gold));
     addMsg(`+${gold} Gallions`, 'good');
     updateUI();
-  } else if (roll < SEARCH_ITEM_THRESHOLD) {
+  } else if (!repeat && roll < SEARCH_ITEM_THRESHOLD) {
     const item = ITEMS.find(i => i.id === 'mandragore') || ITEMS[0];
     if (tryAddItem(item, { silent: true })) {
       setNarrative(NARRATIVES.item_found(item.name));
       addMsg(`Trouvé : ${item.name}`, 'good');
     }
-  } else if (roll < SEARCH_ITEM_THRESHOLD + 0.20) {
+  } else if (!repeat && roll < SEARCH_ITEM_THRESHOLD + 0.20) {
     // Cueillette d'une herbe du palier de l'étage courant → besace.
     const tier = (currentFloor >= 7) ? 3 : (currentFloor >= 4) ? 2 : 1;
     const herbs = ITEMS.filter(i => i.type === 'herb' && i.tier === tier);
@@ -516,7 +556,9 @@ function searchRoom() {
       addMsg("Rien trouvé.", '');
     }
   } else {
-    setNarrative(NARRATIVES.nothing);
+    setNarrative(repeat
+      ? "Vous fouillez à nouveau, mais l'endroit a déjà livré ses meilleurs secrets."
+      : NARRATIVES.nothing);
     addMsg("Rien trouvé.", '');
   }
 }

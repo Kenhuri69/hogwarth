@@ -27,7 +27,8 @@ const DIFFICULTY_SETTINGS = {
     xpMultiplier:         1.4,
     dropChanceMultiplier: 1.5,
     startingGold:         60,
-    startingHpBonus:      12
+    startingHpBonus:      12,
+    searchRechargeSteps:  45    // pas avant qu'une case se refouille
   },
   Normal: {
     enemyGroupMultiplier: 1.0,
@@ -36,7 +37,8 @@ const DIFFICULTY_SETTINGS = {
     xpMultiplier:         1.0,
     dropChanceMultiplier: 1.0,
     startingGold:         25,
-    startingHpBonus:      0
+    startingHpBonus:      0,
+    searchRechargeSteps:  60
   },
   Difficile: {
     enemyGroupMultiplier: 1.35,
@@ -45,7 +47,8 @@ const DIFFICULTY_SETTINGS = {
     xpMultiplier:         0.9,
     dropChanceMultiplier: 0.7,
     startingGold:         15,
-    startingHpBonus:      -4
+    startingHpBonus:      -4,
+    searchRechargeSteps:  80
   },
   Expert: {
     enemyGroupMultiplier: 1.65,
@@ -54,7 +57,8 @@ const DIFFICULTY_SETTINGS = {
     xpMultiplier:         0.75,
     dropChanceMultiplier: 0.45,
     startingGold:         8,
-    startingHpBonus:      -8
+    startingHpBonus:      -8,
+    searchRechargeSteps:  100
   }
 };
 
@@ -264,8 +268,14 @@ let pendingSpell    = null;
 let seenMonsters = new Set();
 
 // ── Anti-exploit ─────────────────────────────────────────────
-// Cases déjà fouillées (clé "x,y") — réinitialisé par étage
-let searchedCells = new Set();
+// Cases fouillées : Map "x,y" → { at, count }.
+//   at    = valeur de stepCount au moment de la fouille
+//   count = nombre de fouilles cumulées sur la case
+// Une case redevient fouillable après `searchRechargeSteps` pas.
+// Réinitialisée par étage.
+let searchedCells = new Map();
+// Compteur global de pas de marche — pilote la recharge de fouille.
+let stepCount = 0;
 // Cache des étages déjà visités (pour éviter la régénération des coffres)
 let floorDungeons = {};
 // Cooldown de repos (nombre de déplacements avant nouveau repos)

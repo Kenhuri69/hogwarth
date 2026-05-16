@@ -233,7 +233,8 @@ function updateRoomStatus() {
   if (!el || !dungeon) return;
   if (typeof searchedCells === 'undefined') return;
   const cell = dungeon[playerY] && dungeon[playerY][playerX];
-  const searched = searchedCells && searchedCells.has(`${playerX},${playerY}`);
+  const searched = (typeof _searchCellStatus === 'function')
+    && _searchCellStatus(`${playerX},${playerY}`).state === 'recharging';
   let label = '— COULOIR —';
   if (cell === CELL.CHEST)    label = '📦 COFFRE';
   else if (cell === CELL.SHOP)    label = '🏪 BOUTIQUE';
