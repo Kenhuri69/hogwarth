@@ -117,11 +117,19 @@ const NPCS = [
         "Par Merlin ! L'infirmerie est saturée et il me manque des Mandragores. Aurais-tu un instant, jeune sorcier ?",
         "Ces racines poussent dans les coffres et chez les marchands ambulants. Trois suffisent pour préparer l'antidote — files ne traînent pas."
       ],
-      idle:        "Tant de pétrifiés, si peu de mains pour les soigner...",
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "Encore une égratignure ? Vous, les aventuriers, collectionnez les bandages comme d'autres les Chocogrenouilles.",
+        "Une potion, du repos, et surtout pas de visiteurs : je chasse les curieux à coups de bassine.",
+        "Tant de pétrifiés, si peu de mains pour les soigner...",
+        "Je peux ressouder un os en une nuit. Reconstruire un courage, c'est une autre affaire.",
+        "Grâce à toi, l'infirmerie respire un peu. Reviens si tu as besoin de soins.",
+        "Certains lits, je ne les refais plus tout de suite. J'attends. Au cas où leur occupant me manquerait moins vite.",
+        "On m'a amené des enfants que la magie noire avait touchés. Pour eux, je n'avais que des mots. Et les mots ne guérissent pas tout."
+      ],
       questOffer:  "Si tu pouvais m'apporter trois Racines de Mandragore, tu sauverais des vies !",
       questActive: "As-tu déjà trouvé les Mandragores ? Le temps presse...",
-      questReady:  "Oh ! Tu les as ramenées ! Donne, donne — je te récompense aussitôt.",
-      questDone:   "Grâce à toi, l'infirmerie respire enfin. Reviens si tu as besoin de soins."
+      questReady:  "Oh ! Tu les as ramenées ! Donne, donne — je te récompense aussitôt."
     }
   },
   {
@@ -138,11 +146,19 @@ const NPCS = [
         "Snif... Personne ne vient jamais me voir... Personne, jamais, je suis tellement seule...",
         "Sauf ce sale Troll qui pollue MES toilettes ! Il sent affreusement mauvais et il fait du bruit toute la nuit. Tu pourrais le faire taire ?"
       ],
-      idle:        "Snif... pourquoi est-ce toujours moi qui dois supporter ça ?",
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "Si quelqu'un tire la chasse pendant que je parle, je hante sa baignoire pour l'éternité. C'est une promesse.",
+        "Snif... pourquoi est-ce toujours moi qui dois supporter ça ?",
+        "Ces toilettes redeviennent presque accueillantes... pour un fantôme.",
+        "On ne m'invite jamais aux fêtes des fantômes. Trop déprimante, qu'ils disent. Comme si EUX étaient gais.",
+        "J'aurais pu hanter une jolie tour, un grand escalier… Mais non. Des toilettes. Toujours des toilettes.",
+        "Je suis morte ici, tu sais. À cause d'une remarque sur mes lunettes. Une simple remarque… puis deux grands yeux jaunes.",
+        "Avoir treize ans pour toujours, ce n'est pas un cadeau. C'est une porte qui ne se referme jamais."
+      ],
       questOffer:  "Tu pourrais m'en débarrasser ? Élimine le Troll des Toilettes, je t'en supplie !",
       questActive: "Il sent toujours aussi mauvais... fais vite !",
-      questReady:  "Tu l'as terrassé ? Oh ! Mes toilettes vont enfin retrouver leur calme...",
-      questDone:   "Ces toilettes redeviennent presque accueillantes... pour un fantôme."
+      questReady:  "Tu l'as terrassé ? Oh ! Mes toilettes vont enfin retrouver leur calme..."
     }
   },
   {
@@ -159,11 +175,19 @@ const NPCS = [
         "Oh ! Un visiteur ! Mes Niffleurs se sont... euh... échappés. Encore.",
         "Ils volent tout ce qui brille — surveille bien ton or si tu en croises. Pourrais-tu m'aider à en neutraliser trois ?"
       ],
-      idle:        "Ces petites créatures sont fascinantes, mais incroyablement filous.",
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "J'ai cru avoir tout récupéré. Puis ma valise a éternué. Une valise ne devrait jamais éternuer.",
+        "Ces petites créatures sont fascinantes, mais incroyablement filous.",
+        "Tu as un don pour les bêtes magiques, jeune sorcier.",
+        "Il n'existe pas de créature monstrueuse. Seulement des créatures incomprises — et des sorciers paresseux.",
+        "On les appelle « bêtes ». Pourtant, ce sont rarement elles qui déclenchent les guerres.",
+        "J'ai vu des Niffleurs vidés de leur or, des dragons écorchés pour leur peau. L'avidité ne s'arrête jamais à temps.",
+        "Certaines espèces que j'ai connues n'existent plus. Je suis parfois le dernier à me souvenir qu'elles ont chanté."
+      ],
       questOffer:  "Élimine 3 Niffleurs avant qu'ils ne dévalisent les sous-sols !",
       questActive: "Combien en as-tu déjà attrapé ? Continue, je te prie.",
-      questReady:  "Magnifique ! Les Niffleurs sont calmés. Voici ta récompense.",
-      questDone:   "Tu as un don pour les bêtes magiques, jeune sorcier."
+      questReady:  "Magnifique ! Les Niffleurs sont calmés. Voici ta récompense."
     }
   },
   {
@@ -180,11 +204,19 @@ const NPCS = [
         "Ah, un admirateur ! Approche, approche. As-tu lu mes mémoires ? Non ? Quel dommage — je te recommande chaudement le tome trois.",
         "Eh bien, j'aurais une petite mission pour toi. Une bagatelle, vraiment. Pour quelqu'un de mon talent ce serait trivial — mais je suis un peu... occupé."
       ],
-      idle:        "J'aurais bien récupéré ce livre moi-même, mais... mes cheveux n'aiment pas la poussière.",
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "J'ai été élu cinq fois Sourire le Plus Charmeur de Sorcière-Hebdo. Cinq fois ! La concurrence était… inexistante.",
+        "J'aurais bien récupéré ce livre moi-même, mais... mes cheveux n'aiment pas la poussière.",
+        "Mes mémoires te seront dédiées... peut-être. Si je ne t'oublie pas d'ici là.",
+        "Le secret d'une bonne autobiographie ? Choisir des héros discrets. Très discrets. Qui ne se plaindront pas.",
+        "Signer des autographes m'épuise plus qu'un duel. Enfin, j'imagine — pour le duel.",
+        "Un petit sortilège d'Amnésie bien placé, et l'exploit devient le mien. Le héros, lui, ne se souvient même plus d'avoir eu peur. C'est presque un cadeau que je lui fais.",
+        "Tant de braves gens m'ont tout donné : leurs récits, leurs cicatrices, leurs souvenirs. Surtout leurs souvenirs. Ils n'en avaient plus l'usage… enfin, plus après."
+      ],
       questOffer:  "Récupère le Livre des Monstres dans la Bibliothèque Interdite — pour la science, bien entendu.",
       questActive: "Tu as déjà mis la main sur ce satané ouvrage ?",
-      questReady:  "Tu as réussi ? Magnifique ! Je dirai à tout le monde que c'est moi qui l'ai trouvé.",
-      questDone:   "Mes mémoires te seront dédiées... peut-être. Si je ne t'oublie pas d'ici là."
+      questReady:  "Tu as réussi ? Magnifique ! Je dirai à tout le monde que c'est moi qui l'ai trouvé."
     }
   },
   {
@@ -201,11 +233,19 @@ const NPCS = [
         "Bienvenue, jeune sorcier. Je peux t'enseigner un sort puissant — mais d'abord, tu dois affronter ta peur la plus sombre.",
         "Le Patronus exige un souvenir heureux, pur, indéfectible. Sans lui, le Détraqueur t'engloutira. Es-tu prêt à passer cette épreuve ?"
       ],
-      idle:        "Le Patronus exige plus que de la magie : il exige du courage.",
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "Le chocolat soigne presque tout. Pour le reste… eh bien, il y a un peu plus de chocolat.",
+        "Le Patronus exige plus que de la magie : il exige du courage.",
+        "Souviens-toi : un souvenir heureux est ta meilleure arme. Spero patronum !",
+        "Mes meilleurs amis m'ont accepté tel que j'étais. C'est la magie la plus puissante que j'aie connue — et la plus rare.",
+        "Une fois par mois, je dois m'enfermer loin de tout ce que j'aime. Le pire détraqueur, parfois, c'est le calendrier.",
+        "Il y a une bête en moi. Je passe ma vie à lui enseigner la patience. Certaines nuits, elle n'écoute pas.",
+        "On apprend à craindre les loups-garous bien avant d'en croiser un. Crois-moi : je sais exactement ce que tu vois en me regardant."
+      ],
       questOffer:  "Affronte un Détraqueur, puis rapporte-moi un Chocolat aux Sorciers. Je t'enseignerai alors le sort du Patronus.",
       questActive: "As-tu trouvé un Détraqueur ? Et le chocolat ?",
-      questReady:  "Tu reviens vivant — et avec le chocolat. Approche : voici le sort du Patronus.",
-      questDone:   "Souviens-toi : un souvenir heureux est ta meilleure arme. Spero patronum !"
+      questReady:  "Tu reviens vivant — et avec le chocolat. Approche : voici le sort du Patronus."
     }
   },
   {
@@ -222,8 +262,16 @@ const NPCS = [
         "Ah, te v'là ! Tu tombes bien — j'ai perdu une de mes chouettes ensorcelées dans la Forêt Interdite.",
         "Elle est têtue comme une mule, c'te bestiole. Mais c'est qu'un'amour, j'te jure. Tu pourrais m'aider à la r'trouver ?"
       ],
-      idle:        "Y'a tant de bestioles à surveiller dans c'te Forêt...",
-      questDone:   "Merci encore pour tout c'que t'as fait. Reviens quand tu veux pour boire un thé !"
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "C'te bestiole a trois rangées d'dents et crache du feu, mais au fond c'est qu'un gros câlin, j'te jure.",
+        "Y'a tant de bestioles à surveiller dans c'te Forêt...",
+        "Merci encore pour tout c'que t'as fait. Reviens quand tu veux pour boire un thé !",
+        "Les gens voient ma taille et changent d'trottoir. Si seulement ils prenaient l'temps d'un thé.",
+        "On m'a renvoyé d'l'école quand j'étais gamin. Pour une faute qu'j'avais pas commise. Ça… ça reste, tu sais.",
+        "J'ai élevé une araignée, autrefois. Aragog. Ses enfants, eux, m'ont jamais r'connu comme un ami. Faut pas leur en vouloir — c'est leur nature.",
+        "La Forêt prend c'qu'on lui laisse traîner. Élèves, créatures, secrets… Elle rend rien. Jamais."
+      ]
     },
     // Dialogues spécifiques par quête (chaîne + répétable)
     dialoguesByQuest: {
@@ -261,11 +309,19 @@ const NPCS = [
         "Un Gardien du Portail s'est éveillé dans les passages secrets. Il bloque l'accès à des connaissances précieuses.",
         "Soyez prudent : ce gardien est de pierre vivante, ses coups peuvent rompre un os. Préparez vos contre-sorts. Êtes-vous prêt à l'affronter ?"
       ],
-      idle:        "L'ordre doit être maintenu, même dans ces souterrains.",
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "Cinquante points pour le courage. Et cinquante de moins si vous claquez encore cette porte.",
+        "L'ordre doit être maintenu, même dans ces souterrains.",
+        "Vous avez prouvé votre valeur. Gryffondor peut être fier.",
+        "Le courage n'est pas l'absence de peur, mais le choix de la regarder en face. Notez-le.",
+        "J'ai vu des élèves que j'avais grondés le matin tomber au combat le soir même. Je gronde quand même : c'est ma façon de les garder en vie.",
+        "Ce château, je l'ai défendu pierre par pierre. Certaines portent encore des noms que je préférerais oublier.",
+        "On me croit de pierre. C'est faux. Je me suis seulement entraînée, très longtemps, à ne pas pleurer devant vous."
+      ],
       questOffer:  "Neutralisez le Gardien du Portail. Je vous récompenserai à la hauteur du danger.",
       questActive: "Le Gardien est-il vaincu ?",
-      questReady:  "Excellent travail. Voici votre récompense, bien méritée.",
-      questDone:   "Vous avez prouvé votre valeur. Gryffondor peut être fier."
+      questReady:  "Excellent travail. Voici votre récompense, bien méritée."
     },
     dialoguesByQuest: {
       quest_set_gryff: {
@@ -294,7 +350,16 @@ const NPCS = [
         "Tiens, tiens... un élève de ma maison qui ose s'aventurer ici.",
         "L'ambition n'est rien sans la maîtrise. Voyons si vous méritez ce qui vous attend."
       ],
-      idle: "Concentrez-vous. La distraction tue plus vite que les sortilèges."
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "Trois élèves m'ont demandé aujourd'hui si une potion ratée pouvait exploser. Elle le peut. Eux aussi, désormais.",
+        "Concentrez-vous. La distraction tue plus vite que les sortilèges.",
+        "Je n'enseigne pas pour être aimé. L'affection est un luxe ; la survie, une discipline.",
+        "Vous me trouvez injuste. Bien. Le monde l'est davantage, et lui ne vous préviendra pas.",
+        "J'ai commis, étant jeune, une erreur dont le prix ne cesse jamais d'augmenter. Veillez à ne pas m'imiter.",
+        "Certaines fautes ne se rachètent pas. On apprend seulement à les porter sans trébucher.",
+        "Il y a un souvenir que je garderai jusqu'au dernier souffle. Toujours. Ne me demandez pas lequel."
+      ]
     },
     dialoguesByQuest: {
       quest_set_slyth: {
@@ -323,7 +388,16 @@ const NPCS = [
         "Oh ! Un esprit aiguisé, n'est-ce pas ? L'aigle de Serdaigle se reconnaît au premier regard.",
         "Approchez, approchez. Le savoir récompense ceux qui le cultivent avec assiduité."
       ],
-      idle: "Un sortilège bien exécuté vaut mille incantations brouillonnes. Travaillez vos gestes."
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "On me prend pour un bibelot posé sur une pile de livres. Puis je lève ma baguette. On me reprend rarement deux fois.",
+        "J'ai fait léviter un piano à queue, une fois. Le pianiste jouait encore — il a très bien terminé son morceau.",
+        "Un sortilège bien exécuté vaut mille incantations brouillonnes. Travaillez vos gestes.",
+        "La taille d'un sorcier ne dit rien de la portée de sa baguette. Retenez-le.",
+        "J'ai été champion de duel, jadis. Ce n'est pas un titre qu'on remporte sans laisser quelques adversaires… diminués.",
+        "On néglige toujours les petites choses : une étincelle, un mot, un homme menu. C'est ce qu'on néglige qui finit par tout embraser.",
+        "J'ai vu des duels où l'on riait au premier sort. Plus personne ne riait au dernier."
+      ]
     },
     dialoguesByQuest: {
       quest_set_raven: {
@@ -352,7 +426,16 @@ const NPCS = [
         "Ah, un Poufsouffle ! La loyauté finit toujours par porter ses fruits — comme mes plantes.",
         "Ne sous-estimez jamais le travail acharné. C'est ce qui distingue les vrais sorciers."
       ],
-      idle: "Patience et persévérance, comme on l'enseigne aux racines."
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "Une Tentacula vénéneuse m'a encore mordu le chapeau ce matin. Ce chapeau en a vu d'autres. Moi aussi.",
+        "Patience et persévérance, comme on l'enseigne aux racines.",
+        "Une plante pousse dans le noir sans se plaindre. Il y a là une leçon que bien des sorciers refusent d'apprendre.",
+        "Le terreau le plus riche est toujours celui qui a recouvert quelque chose. Ne creusez pas trop, parfois.",
+        "Le cri d'une Mandragore adulte tue net. Je fais répéter les protections à mes élèves jusqu'à ce qu'ils en rêvent.",
+        "Le Filet du Diable n'attaque jamais. Il attend, simplement, que vous cessiez de vous débattre.",
+        "On m'a un jour demandé des Mandragores pour ranimer des enfants pétrifiés. Je les ai cultivées en pleurant. Une serre garde bien les secrets."
+      ]
     },
     dialoguesByQuest: {
       quest_set_pouf: {
@@ -391,7 +474,16 @@ const NPCS = [
         "Souviens-toi : ce n'est pas le sorcier qui choisit la baguette, c'est la baguette qui choisit le sorcier. Garde précieusement la tienne — elle se souvient de chaque sort.",
         "Si une de tes baguettes ne te convient plus, je te la rachèterai à bon prix. Et si tu cherches plus puissant que ton bois actuel, j'ai peut-être ce qu'il te faut."
       ],
-      idle: "Le bois se souvient, le crin de licorne pardonne, mais le cœur de phénix... il choisit."
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "Je me souviens de chaque baguette vendue en cent ans. En revanche, où ai-je posé mes lunettes…",
+        "Le bois se souvient, le crin de licorne pardonne, mais le cœur de phénix... il choisit.",
+        "Une baguette épouse son sorcier. Elle apprend ses gestes, ses humeurs… et parfois, ses regrets.",
+        "Curieux… ta baguette a une sœur, quelque part. Les baguettes sœurs se reconnaissent. Et se craignent.",
+        "Certaines baguettes que j'ai façonnées ont accompli de grandes choses. D'autres, des choses terribles. Je me souviens des deux — surtout des secondes.",
+        "Il existe une baguette qui passe de main en main par le meurtre. Prie pour ne jamais sentir son bois t'appeler.",
+        "Je vends des baguettes, pas des destins. Mais parfois, en tendant la boîte, je sais déjà comment l'histoire finira. Et je la tends quand même."
+      ]
     }
   },
   {
@@ -419,7 +511,16 @@ const NPCS = [
         "Une bonne robe de sorcier, c'est plus qu'un vêtement : c'est une seconde peau qui résiste aux sortilèges. La tienne en a vu, dis-moi.",
         "Et si tu as une vieille pièce qui ne te sert plus, dépose-la sur le comptoir : je la reprends à prix d'amie."
       ],
-      idle: "Une couture en zigzag tient mieux contre les sortilèges qu'un point droit. Note-le."
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "Tiens-toi droit ! Une robe mal portée, c'est une insulte à l'aiguille qui l'a cousue.",
+        "Une couture en zigzag tient mieux contre les sortilèges qu'un point droit. Note-le.",
+        "Une bonne robe de sorcier, c'est une seconde peau. La tienne en a vu, dis-moi.",
+        "Je reconnais le tissu d'un sorcier rien qu'à son usure. Les ourlets racontent plus que les bavards.",
+        "J'ai recousu des capes trouées par des sortilèges. Certaines, je n'ai pas pu. Leur propriétaire non plus n'est pas revenu.",
+        "On m'apporte parfois des robes à retoucher pour un enterrement. Ce sont les coutures les plus silencieuses que je fasse.",
+        "Le fil se souvient de chaque tension. Comme les gens. Tire trop fort, trop longtemps, et un jour quelque chose cède."
+      ]
     }
   },
   {
