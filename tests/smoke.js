@@ -4040,6 +4040,84 @@ async function scenarioElementSpells() {
   await browser.close();
 }
 
+// ── Scénario : UX sorts (apprentissage mono-perso, filtre, aperçu) ──
+async function scenarioSpellUx() {
+  console.log('\n── Scénario : UX sorts ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+
+  // T1 : un livre n'est appris que par le perso choisi
+  const t1 = await page.evaluate(() => {
+    const livre = ITEMS.find(i => i.id === 'livre_glacius');
+    player.inventory.push({ ...livre });
+    const idx = player.inventory.findIndex(i => i.id === 'livre_glacius');
+    learnSpellbook(idx, 0);   // Harry uniquement
+    return {
+      harryKnows:    party[0].spells.includes('Glacius'),
+      hermioneKnows: party[1].spells.includes('Glacius'),
+      bookGone:      !player.inventory.some(i => i.id === 'livre_glacius'),
+      teachTwice:    _teachSpellToOne('Glacius', 0),  // déjà connu → false
+    };
+  });
+  console.log('  T1 apprentissage mono-perso:', t1);
+  assert(t1.harryKnows,     'Harry doit apprendre Glacius');
+  assert(!t1.hermioneKnows, 'Hermione ne doit PAS apprendre Glacius');
+  assert(t1.bookGone,       'le livre doit être consommé');
+  assert(t1.teachTwice === false, '_teachSpellToOne refuse un sort déjà connu');
+
+  // T2 : spellCategory + filtre de la modale Sorts
+  const t2 = await page.evaluate(() => {
+    const cat = (n) => spellCategory(SPELLS.find(s => s.name === n));
+    const countVisible = () => document.querySelectorAll('#spell-list .spell-item').length;
+    openSpells(0);
+    const total = countVisible();
+    setSpellFilter('feu', 'spell', 0);
+    const feu = countVisible();
+    setSpellFilter('soutien', 'spell', 0);
+    const soutien = countVisible();
+    setSpellFilter('tous', 'spell', 0);
+    return {
+      catIncendio: cat('Incendio'), catGlacius: cat('Glacius'),
+      catEpiskey: cat('Episkey'),   catExpelliarmus: cat('Expelliarmus'),
+      total, feu, soutien, backToTotal: countVisible(),
+    };
+  });
+  console.log('  T2 filtre:', t2);
+  assert(t2.catIncendio === 'feu',        'Incendio → feu');
+  assert(t2.catGlacius === 'glace',       'Glacius → glace');
+  assert(t2.catEpiskey === 'soutien',     'Episkey → soutien');
+  assert(t2.catExpelliarmus === 'utilitaire', 'Expelliarmus → utilitaire');
+  assert(t2.feu < t2.total && t2.feu >= 1, `filtre feu réduit la liste (${t2.feu}/${t2.total})`);
+  assert(t2.soutien >= 1,                 'filtre soutien montre des sorts');
+  assert(t2.backToTotal === t2.total,     'filtre Tous restaure la liste complète');
+
+  // T3 : aperçu d'effet calculé selon les stats du lanceur
+  const t3 = await page.evaluate(() => {
+    const reparo   = SPELLS.find(s => s.name === 'Reparo');    // heal power 20
+    const incendio = SPELLS.find(s => s.name === 'Incendio');  // burn power 14
+    const weak   = { int: 0,  end: 0,  mag: 0 };
+    const strong = { int: 16, end: 8,  mag: 10 };
+    return {
+      healWeak:   spellEffectPreview(reparo, weak),
+      healStrong: spellEffectPreview(reparo, strong),
+      dmgStrong:  spellEffectPreview(incendio, strong),
+      shieldNone: spellEffectPreview(SPELLS.find(s => s.name === 'Protego'), strong),
+    };
+  });
+  console.log('  T3 aperçu:', t3);
+  assert(/20 PV/.test(t3.healWeak),   `Reparo sans stats ≈ 20 PV, got "${t3.healWeak}"`);
+  assert(/26 PV/.test(t3.healStrong), `Reparo INT16/END8 ≈ 26 PV, got "${t3.healStrong}"`);
+  assert(/19 dégâts/.test(t3.dmgStrong), `Incendio MAG10 ≈ 19 dégâts, got "${t3.dmgStrong}"`);
+  assert(t3.shieldNone === '',        'Protego (shield) → pas d\'aperçu chiffré');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ UX sorts OK');
+  await browser.close();
+}
+
 // ── Scénario 27 : loader (manifeste de globals + helpers) ────
 async function scenarioRelativeControls() {
   console.log('\n── Scénario : contrôles relatifs (avancer/reculer/pivoter) ──');
@@ -6490,7 +6568,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

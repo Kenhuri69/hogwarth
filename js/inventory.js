@@ -461,28 +461,78 @@ function _teachSpellToParty(spellName) {
   return learned;
 }
 
+// Enseigne un sort à un seul personnage. Retourne false si verrouillé,
+// inconnu, ou déjà connu par ce perso.
+function _teachSpellToOne(spellName, charIdx) {
+  const spellDef = SPELLS.find(s => s.name === spellName);
+  if (!spellDef || spellDef.locked) return false;
+  const c = party[charIdx];
+  if (!c || c.spells.includes(spellName)) return false;
+  c.spells.push(spellName);
+  return true;
+}
+
+// Prompt « qui apprend ce sort ? ». En solo, apprend directement à
+// Harry ; en duo, affiche un bouton par personnage dans #inv-grid
+// (même patron visuel que showEquipMenu).
+function showLearnMenu(item, idx) {
+  if (partySize === 1) { learnSpellbook(idx, 0); return; }
+
+  const grid = document.getElementById('inv-grid');
+  const charButtons = party.slice(0, partySize).map((c, ci) => {
+    const knows = c.spells.includes(item.spell);
+    return `<button class="cmd-btn" style="width:100%;margin-bottom:6px"
+              ${knows ? 'disabled' : ''}
+              onclick="learnSpellbook(${idx},${ci})">
+              ${c.icon} ${c.name.split(' ')[0]}${knows ? ' — déjà connu' : ''}
+            </button>`;
+  }).join('');
+
+  grid.innerHTML = `
+    <div style="grid-column:1/-1;padding:14px;text-align:center">
+      <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
+        Apprendre ${getItemIconHtml(item, 'ui-icon-md')} ${item.spell}
+      </div>
+      <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
+      <div style="max-width:200px;margin:0 auto">
+        ${charButtons}
+        <button class="cmd-btn" style="width:100%;margin-top:4px;opacity:.7"
+          onclick="renderInventory(false)">← Annuler</button>
+      </div>
+    </div>
+  `;
+}
+
+// Enseigne le sort du livre `inventoryIdx` au seul personnage `charIdx`,
+// puis consomme le livre. Refus si le perso connaît déjà le sort.
+function learnSpellbook(inventoryIdx, charIdx) {
+  const item = player.inventory[inventoryIdx];
+  if (!item || item.type !== 'spellbook') return;
+  const c = party[charIdx];
+  if (!c) return;
+  if (_teachSpellToOne(item.spell, charIdx)) {
+    AudioSystem.playLevelUp();
+    AudioSystem.speakSpell(item.spell);
+    addMsg(`✨ ${c.name} apprend : ${item.spell} !`, 'magic');
+    player.inventory.splice(inventoryIdx, 1);
+  } else {
+    addMsg(`${c.name} connaît déjà ${item.spell}.`, '');
+  }
+  updateUI();
+  closeModal('inventory-modal');
+}
+
 // ── Utiliser / équiper un objet ──────────────────────────────
 function useItem(idx, battleMode) {
   const item = player.inventory[idx];
   if (!item) return;
 
-  // Livre de sorts → apprentissage immédiat (hors combat seulement)
+  // Livre de sorts → choix du personnage qui apprend (hors combat seulement)
   if (item.type === 'spellbook') {
     if (battleMode) return; // non utilisable en combat
     const spellDef = SPELLS.find(s => s.name === item.spell);
     if (!spellDef) { addMsg(`Sort inconnu : ${item.spell}`, 'bad'); return; }
-
-    const learned = _teachSpellToParty(item.spell);
-    if (learned) {
-      AudioSystem.playLevelUp();
-      AudioSystem.speakSpell(item.spell);
-      addMsg(`✨ Sort appris : ${item.spell} !`, 'magic');
-      player.inventory.splice(idx, 1);
-    } else {
-      addMsg(`Le sort ${item.spell} est déjà connu par tout le groupe.`, '');
-    }
-    updateUI();
-    closeModal('inventory-modal');
+    showLearnMenu(item, idx);
     return;
   }
 
@@ -544,6 +594,49 @@ function useItem(idx, battleMode) {
 // SORTS
 // ============================================================
 
+// ── Filtre par catégorie de la modale Sorts ──────────────────
+// Axe unique = élément (cf. .claude/plans/spell-ux-improvements.md §2).
+const SPELL_FILTERS = [
+  { id: 'tous',       label: 'Tous',        icon: '' },
+  { id: 'feu',        label: 'Feu',         icon: '🔥' },
+  { id: 'glace',      label: 'Glace',       icon: '❄️' },
+  { id: 'foudre',     label: 'Foudre',      icon: '⚡' },
+  { id: 'lumière',    label: 'Lumière',     icon: '✨' },
+  { id: 'ténèbres',   label: 'Ténèbres',    icon: '🌑' },
+  { id: 'physique',   label: 'Physique',    icon: '⚔️' },
+  { id: 'soutien',    label: 'Soutien',     icon: '💚' },
+  { id: 'utilitaire', label: 'Utilitaires', icon: '🔧' },
+];
+let _spellFilter = 'tous';
+
+// Re-render de la modale Sorts après changement de filtre.
+function setSpellFilter(id, mode, charIdx) {
+  _spellFilter = id;
+  if (mode === 'battle') openBattleSpells();
+  else                   openSpells(charIdx);
+}
+
+// Barre de chips : n'affiche que les catégories présentes chez le perso
+// (+ « Tous »). Si le filtre courant n'a plus de sort → retombe sur Tous.
+function _spellFilterBarHtml(spellNames, mode, charIdx) {
+  const present = new Set();
+  spellNames.forEach(n => {
+    const sp = SPELLS.find(s => s.name === n);
+    if (sp) present.add(spellCategory(sp));
+  });
+  if (_spellFilter !== 'tous' && !present.has(_spellFilter)) _spellFilter = 'tous';
+  const chips = SPELL_FILTERS.filter(f => f.id === 'tous' || present.has(f.id));
+  if (chips.length <= 2) return '';   // 1 seule catégorie → filtre inutile
+  return `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">` +
+    chips.map(f => {
+      const on = _spellFilter === f.id;
+      return `<div onclick="setSpellFilter('${f.id}','${mode}',${charIdx})"
+        style="cursor:pointer;padding:3px 7px;border-radius:2px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;
+        background:${on ? '#2a1a08' : '#0a0705'};border:1px solid ${on ? 'var(--gold-dark)' : '#2a1a08'};color:${on ? 'var(--gold-light)' : '#6a5030'}">
+        ${f.icon} ${f.label}</div>`;
+    }).join('') + `</div>`;
+}
+
 // Hors combat : liste les sorts du personnage sélectionné (onglets)
 function openSpells(charIdx = 0) {
   // En mode solo, on ne montre que Harry (partySize=1).
@@ -559,11 +652,13 @@ function openSpells(charIdx = 0) {
     </div>`
   ).join('');
 
-  list.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:10px">${tabs}</div>`;
+  list.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:10px">${tabs}</div>`
+                 + _spellFilterBarHtml(c.spells, 'spell', charIdx);
 
   for (const sName of c.spells) {
     const spell = SPELLS.find(s => s.name === sName);
     if (!spell) continue;
+    if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
     const div = document.createElement('div');
     div.className = 'spell-item';
     // Sorts utilisables hors combat (teleport + heal pour V1). Les autres
@@ -593,11 +688,16 @@ function openSpells(charIdx = 0) {
     } else {
       hint = '<span style="font-size:9px;color:#6a8030">▶ cliquer pour lancer</span>';
     }
+    const preview     = spellEffectPreview(spell, c);
+    const previewHtml = preview
+      ? `<div style="font-size:9px;color:var(--gold-dark);margin-top:2px">${preview}</div>`
+      : '';
     div.innerHTML = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
         <div class="spell-name">${spell.name}</div>
         <div class="spell-desc">${spell.desc}</div>
+        ${previewHtml}
         <div style="margin-top:3px">${hint}</div>
       </div>
       <div class="spell-cost">${costLabel}</div>`;
@@ -700,11 +800,12 @@ function openBattleSpells() {
   list.innerHTML = `
     <div style="font-family:'Cinzel',serif;font-size:10px;color:var(--gold);text-align:center;margin-bottom:8px;letter-spacing:2px">
       ${c.icon} SORTS DE ${c.name.toUpperCase().split(' ')[0]}
-    </div>`;
+    </div>` + _spellFilterBarHtml(c.spells, 'battle', 0);
 
   for (const sName of c.spells) {
     const spell    = SPELLS.find(s => s.name === sName);
     if (!spell) continue;
+    if (_spellFilter !== 'tous' && spellCategory(spell) !== _spellFilter) continue;
     // Portus en combat : bloqué si déjà utilisé ce combat OU si cooldown actif.
     const fightCd = (spell.effect === 'teleport' && typeof portusFightCooldown === 'number')
                     ? portusFightCooldown : 0;
@@ -719,11 +820,16 @@ function openBattleSpells() {
     const cdHint = (spell.effect === 'teleport' && cdBlocked)
       ? `<div style="font-size:9px;color:#a04020;margin-top:2px">⏳ ${alreadyUsed ? 'déjà utilisé ce combat' : `recharge ${fightCd} combat${fightCd > 1 ? 's' : ''}`}</div>`
       : '';
+    const preview     = spellEffectPreview(spell, c);
+    const previewHtml = preview
+      ? `<div style="font-size:9px;color:var(--gold-dark);margin-top:2px">${preview}</div>`
+      : '';
     div.innerHTML  = `
       <div class="spell-icon">${getSpellIconHtml(spell, 'ui-icon-xl')}</div>
       <div class="spell-info">
         <div class="spell-name">${spell.name}</div>
         <div class="spell-desc">${spell.desc}</div>
+        ${previewHtml}
         ${cdHint}
       </div>
       <div class="spell-cost">${spell.cost} PM</div>`;
@@ -788,7 +894,7 @@ function unequipFromSlot(charIdx, slot) {
 // Utiliser/équiper un item du sac directement depuis la fiche, sur le
 // perso affiché — sans passer par le prompt party de showEquipMenu.
 // - consommable : applique l'effet sur party[charIdx]
-// - spellbook   : enseigne à tout le groupe
+// - spellbook   : enseigne au seul party[charIdx]
 // - équipement  : equipItem(idx, charIdx) (anneau routé ring1→ring2)
 function useItemFromChar(inventoryIdx, charIdx) {
   const item = player.inventory[inventoryIdx];
@@ -811,14 +917,13 @@ function useItemFromChar(inventoryIdx, charIdx) {
   }
 
   if (item.type === 'spellbook') {
-    const learned = _teachSpellToParty(item.spell);
-    if (learned) {
+    if (_teachSpellToOne(item.spell, charIdx)) {
       AudioSystem.playLevelUp();
       AudioSystem.speakSpell(item.spell);
-      addMsg(`✨ Sort appris : ${item.spell} !`, 'magic');
+      addMsg(`✨ ${target.name} apprend : ${item.spell} !`, 'magic');
       player.inventory.splice(inventoryIdx, 1);
     } else {
-      addMsg(`Le sort ${item.spell} est déjà connu par tout le groupe.`, '');
+      addMsg(`${target.name} connaît déjà ${item.spell}.`, '');
     }
     updateUI();
     openCharacter(charIdx);

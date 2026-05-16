@@ -114,9 +114,35 @@ function rollSpellCrit(dmg, char) {
   return { dmg, crit: false };
 }
 
+// ── Formules pures (partagées handlers + aperçu de fiche) ────
+// INT = maîtrise + END = domaine du soin (addition à parts égales).
+function healAmount(spell, char) {
+  return spell.power + Math.floor((char.int || 0) / 4) + Math.floor((char.end || 0) / 4);
+}
+// MAG pilote les dégâts de sort (hors résist/faiblesse, crit).
+function spellDamage(spell, char) {
+  return spell.power + Math.floor((char.mag || 0) / 2);
+}
+// Aperçu chiffré de l'effet pour le perso courant, affiché en fiche.
+// Chaîne vide pour les sorts sans valeur chiffrable simple (shield,
+// disarm, steal, teleport).
+function spellEffectPreview(spell, char) {
+  if (!spell || !char) return '';
+  switch (spell.effect) {
+    case 'heal':          return `≈ ${healAmount(spell, char)} PV rendus`;
+    case 'support_regen': return `≈ ${healAmount(spell, char)} PV + régénération`;
+    case 'lifesteal': {
+      const d = spellDamage(spell, char);
+      return `≈ ${d} dégâts · +${Math.floor(d / 2)} PV drainés`;
+    }
+    case 'stun': case 'burn': case 'instant': case 'curse':
+      return `≈ ${spellDamage(spell, char)} dégâts`;
+    default:              return '';
+  }
+}
+
 function _spellHeal(spell, char) {
-  // INT = maîtrise + END = domaine du soin (addition à parts égales).
-  const amount = spell.power + Math.floor((char.int || 0) / 4) + Math.floor((char.end || 0) / 4);
+  const amount = healAmount(spell, char);
   char.hp = Math.min(char.hpMax, char.hp + amount);
   const msg = `💚 ${char.name} : ${spell.name} +${amount} PV !`;
   addMsg(msg, 'good');
@@ -153,7 +179,7 @@ function _spellShield(spell, char) {
 function _spellElementalDamage(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
-    let dmg    = spell.power + Math.floor(char.mag / 2);
+    let dmg    = spellDamage(spell, char);
     let suffix = '';
     if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
     if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
@@ -188,7 +214,7 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
 function _spellLifesteal(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
-    let dmg = spell.power + Math.floor(char.mag / 2);
+    let dmg = spellDamage(spell, char);
     let suffix = '';
     if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
     if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
@@ -209,7 +235,7 @@ function _spellLifesteal(spell, char, enemy, targetIdx) {
 function _spellCurse(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
-    let dmg = spell.power + Math.floor(char.mag / 2);
+    let dmg = spellDamage(spell, char);
     if (enemy.resist?.includes(spell.element)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
     if (enemy.weak?.includes(spell.element))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
     const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
@@ -243,9 +269,7 @@ function _spellSupportRegen(spell, char, _enemy, _enemyIdx, targetAllyIdx) {
     addMsg(msg, 'bad');
     return msg;
   }
-  // INT = maîtrise + END = domaine du soin (addition à parts égales).
-  const healBonus  = Math.floor((char.int || 0) / 4) + Math.floor((char.end || 0) / 4);
-  const burst = Math.min(ally.hpMax - ally.hp, spell.power + healBonus);
+  const burst = Math.min(ally.hpMax - ally.hp, healAmount(spell, char));
   if (burst > 0) {
     ally.hp += burst;
     UX_safe.floatDmg('ally', burst, 'heal');
