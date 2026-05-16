@@ -290,7 +290,7 @@ const NPCS = [
     name:  "Manon",
     title: "L'inconnue du troisième étage",
     icon:  "🌙",
-    // portraitImg: "img/npc/manon.png",  // à activer quand le PNG existe
+    portraitImg: "img/npc/manon.png",
     placement: { floor: 3, anchor: "any" },
     questsGiven:    ["manon_secret", "manon_pardon"],
     questsTurnedIn: ["manon_secret", "manon_pardon"],

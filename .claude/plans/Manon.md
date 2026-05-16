@@ -130,4 +130,4 @@ sang.
 - [x] `js/quests.js` — templates + fix `_renderQuestStep`
 - [x] `js/npcs.js` — PNJ Manon + répliques Lupin
 - [x] `node tests/smoke.js` vert
-- [ ] Portrait `img/npc/manon.png` (utilisateur) + activation `portraitImg`
+- [x] Portrait `img/npc/manon.png` (256×256) + activation `portraitImg`
