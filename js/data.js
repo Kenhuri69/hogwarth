@@ -46,6 +46,12 @@ const HOUSE_POINTS_PER_KILL = { Facile: 8, Normal: 10, Difficile: 14, Expert: 18
 const RESIST_MULTIPLIER = 0.5;
 const WEAK_MULTIPLIER   = 1.5;
 
+// Plancher de dégâts (cf. DIFFICULTY_STUDY.md §4 levier B). Un coup inflige
+// toujours au moins cette fraction de l'ATK brute, même contre une DEF très
+// élevée — supprime la falaise « attaque à 1 dégât ». La soustraction
+// atk − def reste utilisée tant qu'elle dépasse ce plancher.
+const DAMAGE_MIN_FRACTION = 0.25;
+
 // Fouille de salle (movement.js — searchRoom) : seuils cumulatifs sur un
 // Math.random(). roll < GOLD : trouve de l'or. roll < ITEM (et ≥ GOLD) :
 // trouve un item. Sinon : rien.

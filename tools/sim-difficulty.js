@@ -82,6 +82,14 @@ const { MONSTERS, SPELLS, CHARACTERS, LEVEL_UP_XP_MULTIPLIER,
 
 const spellByName = Object.fromEntries(SPELLS.map(s => [s.name, s]));
 
+// Miroir de battle.js — mitigatedDamage (DIFFICULTY_STUDY.md §4 levier B).
+// Plancher à 25 % de l'ATK brute, soustraction au-delà.
+const DAMAGE_MIN_FRACTION = 0.25;
+function mitigatedDamage(rawAtk, def) {
+  const floorDmg = Math.round(Math.max(0, rawAtk) * DAMAGE_MIN_FRACTION);
+  return Math.max(floorDmg, rawAtk - Math.max(0, def || 0));
+}
+
 // ── Récompenses de quêtes : modélisation "joueur normal" ─────
 //
 // Étage où une quête est considérée comme complétée. Pour les quêtes
@@ -589,7 +597,7 @@ function heroAct(char, enemies) {
 
   // 3. Attaque physique
   const bonus = target.disarmed > 0 ? 2 : 0;
-  let dmg = Math.max(1, char.atk + Math.floor(Math.random() * 4) - (target.def - bonus));
+  let dmg = Math.max(1, mitigatedDamage(char.atk + Math.floor(Math.random() * 4), target.def - bonus));
   if (target.disarmed > 0) target.disarmed--;
   if (Math.random() * 100 < char.critChance) dmg = Math.floor(dmg * char.critMultiplier);
   target.currentHp -= dmg;
@@ -651,7 +659,7 @@ function enemyAct(enemy, target, partySize) {
   }
   // Attaque physique simple : pas de RNG côté ennemi dans le code réel
   if (Math.random() * 100 < (target.dodgeChance || 0)) return 0;
-  const dmg = Math.max(1, enemy.atk - target.def);
+  const dmg = mitigatedDamage(enemy.atk, target.def);
   target.hp = Math.max(0, target.hp - dmg);
   return dmg;
 }

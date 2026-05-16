@@ -8,6 +8,17 @@ function getFirstLivingEnemy() { return enemyGroup.findIndex(e => e.currentHp > 
 function livingEnemies()       { return enemyGroup.filter(e => e.currentHp > 0); }
 function allPartyKO()          { return party.slice(0, partySize).every(c => c.hp <= 0); }
 
+// Dégât atténué par la DEF avec plancher (cf. DIFFICULTY_STUDY.md §4 levier B).
+// Conserve la soustraction `rawAtk − def` tant qu'elle dépasse 25 % de l'ATK
+// brute ; en deçà, le coup inflige ce plancher. Supprime la falaise « attaque
+// physique à 1 dégât » contre les hautes DEF. Retourne un entier ≥ 0.
+function mitigatedDamage(rawAtk, def) {
+  const frac = (typeof DAMAGE_MIN_FRACTION === 'number') ? DAMAGE_MIN_FRACTION : 0.25;
+  const floorDmg = Math.round(Math.max(0, rawAtk) * frac);
+  const subtractive = rawAtk - Math.max(0, def || 0);
+  return Math.max(floorDmg, subtractive);
+}
+
 // ── Système de statuts persistants ──────────────────────────
 // Chaque combattant porte statusEffects: [{ id, icon, power, turns }]
 // id ∈ "burn" (🔥) | "poison" (☠️) | "bleed" (🩸) | "weaken" (🛡️↓)
@@ -280,8 +291,9 @@ function battleAction(action) {
 function executeAttack(targetIdx) {
   const char  = getActiveChar();
   const enemy = enemyGroup[targetIdx];
-  const bonus = enemy.disarmed > 0 ? 2 : 0;
-  const dmg   = Math.max(1, char.atk + Math.floor(Math.random() * 4) - (enemy.def - bonus));
+  const bonus  = enemy.disarmed > 0 ? 2 : 0;
+  const rawAtk = char.atk + Math.floor(Math.random() * 4);
+  const dmg    = Math.max(1, mitigatedDamage(rawAtk, enemy.def - bonus));
   enemy.currentHp -= dmg;
   if (enemy.disarmed > 0) enemy.disarmed--;
 
@@ -360,14 +372,14 @@ function enemyTurn() {
       UX_safe.floatDmg('ally', 0, 'miss');
       UX_safe.logCombat(`💨 ${target.name} esquive ${enemy.name}`, 'good');
     } else if (guardTurns[charIdx] > 0) {
-      const dmg = Math.max(0, enemy.atk - target.def + Math.floor(Math.random() * 3));
+      const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
       const mitigated = Math.max(0, Math.floor(dmg / 2));
       target.hp = Math.max(0, target.hp - mitigated);
       log += `🛡️ ${target.name} mitige : -${mitigated} (au lieu de -${dmg}). `;
       UX_safe.floatDmg('ally', mitigated, 'dmg');
       UX_safe.logCombat(`🛡️ ${target.name} mitige ${enemy.name} : <b>−${mitigated}</b> <small>(au lieu de −${dmg})</small>`, 'magic');
     } else {
-      const dmg = Math.max(0, enemy.atk - target.def + Math.floor(Math.random() * 3));
+      const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
       target.hp = Math.max(0, target.hp - dmg);
       log += `${enemy.icon} → ${target.name} : -${dmg} PV. `;
       UX_safe.floatDmg('ally', dmg === 0 ? 0 : dmg, dmg === 0 ? 'miss' : 'dmg');
