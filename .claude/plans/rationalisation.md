@@ -130,13 +130,21 @@ chaque). Les points sont ordonnés par risque croissant.
 
 - **Constat** : `importSaveFromFile` et `importSaveFromFileToHub` sont ~90 %
   copier-coller (même flux FileReader, même map `reasonLabel`).
-- **Proposition** : extraire `_readSaveFile(file, { onDone })` ; les deux
-  fonctions ne diffèrent plus que par le retour visuel (`addMsg` vs `alert`)
-  et la cible de rafraîchissement.
+- **Proposition** : extraire `_pickAndImportSave(inputId, { onError, onSuccess })` ;
+  les deux fonctions deviennent des façades qui ne diffèrent plus que par
+  l'ID d'input, le retour visuel (`addMsg` vs `alert`) et la cible de
+  rafraîchissement. `onError(reasonLabel)` reçoit le libellé d'échec
+  d'import, ou `null` pour une erreur de lecture du fichier.
 - **Risque** : faible-moyen.
-- **Vérification** : smoke test si couvert ; sinon test manuel d'import dans
+- **Vérification** : smoke test (parsing du module + globals chargés). Le
+  flux FileReader/`<input type=file>` n'est pas exercé par le smoke —
+  non-régression UI non garantie ; test manuel d'import recommandé dans
   les deux contextes (modale slots + hub).
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Écart constaté** : la diff de point final entre les deux messages
+  « Import refusé » (point présent côté modale `addMsg`, absent côté hub
+  `alert`) est **préservée** telle quelle — chaque façade formate son
+  propre message.
+- **Statut** : [x] proposé · [x] validé · [x] implémenté
 
 ## P9 — npc-dialog.js : factoriser la cascade d'état
 
