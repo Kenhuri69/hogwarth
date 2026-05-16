@@ -143,13 +143,12 @@ Trois vecteurs :
 3. **Expérimentation au chaudron** — seul moyen d'obtenir `brew_potion_force`
    et `brew_potion_xl`, et alternative pour toutes les autres.
 
-### Mode expérimentation
+### Résolution du brassage
 
-Dans la modale de brassage, un onglet « Expérimenter » laisse le joueur
-choisir librement des herbes de sa besace (sélecteurs de quantité), puis
-« Tenter le brassage ». Le moteur construit le multiset d'herbes choisi et
-cherche une correspondance **exacte** (mêmes herbes, mêmes quantités) dans
-`POTION_RECIPES` :
+Quel que soit le mode (recette pré-remplie ou herbes posées à la main),
+« Lancer le brassage » résout **le contenu du chaudron** : le moteur
+construit le multiset d'herbes et cherche une correspondance **exacte**
+(mêmes herbes, mêmes quantités) dans `POTION_RECIPES` :
 
 | Cas | Effet |
 |-----|-------|
@@ -165,6 +164,115 @@ cherche une correspondance **exacte** (mêmes herbes, mêmes quantités) dans
 Nouveau champ optionnel sur `reward` d'une quête. `completeQuest()`
 (`quests.js`) itère `reward.recipes` et pousse chaque id absent dans
 `player.knownRecipes` (avec message + son).
+
+## UX de la concoction — `#brewing-modal`
+
+Le chaudron est le **centre** de l'interface : on remplit visuellement le
+chaudron, puis on lance. Pas d'onglets — un seul écran, deux façons de
+remplir le chaudron qui convergent vers le même bouton « Lancer ».
+
+### Maquette (desktop)
+
+```
+┌──────────────────────────────────────────────┐
+│  🧪 Le Chaudron de Slughorn               [×] │
+├──────────────────────────────────────────────┤
+│              ╔════════════╗                   │
+│              ║  CHAUDRON  ║   ← SVG dessiné,   │
+│              ║  (SVG) ~~~ ║     liquide animé  │
+│              ╚════╤══╤════╝                    │
+│   Dans le chaudron :              [ Vider ]    │
+│   🌿 Armoise ×2   🍀 Ortie ×1                  │  ← clic = retirer 1
+│                                                │
+│         [ Lancer le brassage ]                 │  ← désactivé si vide
+│         Réussite estimée : 78 %                │
+├──────────────────────────────────────────────┤
+│  Recettes connues                              │
+│  🧪 Potion de Soin   armoise×2      [Préparer] │  ← remplit le chaudron
+│  🧪 Potion Magique   ortie×2        [Préparer] │
+├──────────────────────────────────────────────┤
+│  Ta besace d'herboriste (clic = ajouter)       │
+│  🌿 Armoise ×5   🍀 Ortie ×3   🌼 Asphodèle ×1 │  ← clic = +1 au chaudron
+└──────────────────────────────────────────────┘
+```
+
+### Le chaudron dessiné
+
+SVG inline dans `js/potions.js` (const `_CAULDRON_SVG`, même approche que
+`SCENE_ICONS`) : marmite noire ventrue, trois pieds, anse, surface de
+liquide. Le liquide est un `<ellipse>` dont la **couleur reflète le mélange
+courant** (teinte dominante des herbes posées ; gris-vert quand vide).
+Bulles animées en CSS (`@keyframes`), comme le glow de torche existant.
+Fallback : si le SVG ne rend pas, un emoji 🥣 de secours.
+
+### Deux façons de remplir le chaudron
+
+1. **À la main (expérimentation)** — clic sur une tuile d'herbe de la
+   besace → `+1` de cette herbe dans le chaudron. Clic sur une herbe
+   *dans* le chaudron → la retire (`-1`). C'est le seul moyen de
+   **découvrir** une recette inconnue.
+2. **Recette pré-définie** — bouton « Préparer » sur une ligne de recette
+   connue → remplit le chaudron avec exactement ses ingrédients. Désactivé
+   (grisé + raison au survol) si la besace n'a pas les herbes. Le joueur
+   voit le chaudron se remplir, puis confirme avec « Lancer le brassage ».
+
+> Décision UX : « Préparer » remplit mais **ne brasse pas** — un seul
+> chemin de brassage (le bouton principal), le chaudron est toujours le
+> reflet de ce qui va être brassé. Évite les brassages accidentels.
+> Un raccourci « préparer + lancer » en un clic est notable hors V1.
+
+### État local de la modale
+
+`_cauldronMix = { herbId: qty, … }` — tampon **local** à la modale. Les
+herbes ne sont **pas** retirées de `player.herbs` tant que « Lancer » n'est
+pas pressé : la besace affiche `player.herbs[id] − _cauldronMix[id]`
+(disponible réel), le chaudron affiche `_cauldronMix`. Fermer la modale
+sans brasser → `_cauldronMix` jeté, aucune herbe perdue.
+
+### Interactions & retours visuels
+
+| Action | Effet UI |
+|--------|----------|
+| Clic herbe besace | `_cauldronMix[id]++`, re-render ; bloqué si dispo réelle = 0 |
+| Clic herbe chaudron | `_cauldronMix[id]--`, re-render |
+| « Vider » | `_cauldronMix = {}`, re-render |
+| « Préparer » (recette) | `_cauldronMix` = ingrédients de la recette |
+| « Lancer le brassage » | `attemptBrew(_cauldronMix)` → résolution |
+| Brassage **réussite** | Glow vert sur le chaudron, potion qui « sort », son `playChestOpen` |
+| Brassage **critique** | Étincelles dorées, mention « ×2 » |
+| Brassage **échec** | Chaudron qui s'assombrit, volute de fumée, message rouge |
+| **Découverte** de recette | Bandeau « Nouvelle recette : … », son `playLevelUp`, la recette rejoint la liste |
+
+Après résolution : `_cauldronMix` vidé, modale re-rendue (besace + recettes
+à jour). La modale **reste ouverte** pour enchaîner les brassages.
+
+### Réussite estimée
+
+Sous le bouton, `_brewChance(recipe)` affiche le % pré-calculé à partir de
+la meilleure INT du groupe et de `recipe.difficulty`. En mode
+expérimentation pur (mélange ne correspondant à aucune recette connue *ni*
+inconnue détectable côté UI), on n'affiche pas de % — juste « Résultat
+incertain… » pour ne pas divulguer si le mélange est valide.
+
+### Mobile (≤ 700 px)
+
+Tout en colonne unique, modale `96vw` scrollable : chaudron → mélange
+courant → bouton → recettes → besace. Tuiles d'herbes en grille `flex-wrap`,
+cibles tactiles ≥ 44 px. Pas de drag-and-drop (clic uniquement) — robuste
+tactile, hors V1 le drag.
+
+### Visibilité des herbes hors brassage
+
+V1 : la besace n'est consultable que dans `#brewing-modal`. Une section
+« Besace d'herboriste » en lecture seule dans `#inventory-modal` est
+notée hors périmètre (faible coût, à ajouter si le besoin se confirme).
+
+### Icônes d'herbes
+
+Pas de PNG painterly en V1 (cf. hors périmètre). Pour rester lisible, chaque
+herbe reçoit un **emoji distinct** dans son champ `icon` : Armoise 🌿,
+Ortie 🍀, Asphodèle 🌼, Branchiflore 🪴, Aconit ☘️, Dictame 🍃.
+`getItemIconHtml()` retombe sur cet emoji (aucun PNG enregistré).
 
 ## Besace — `player.herbs` (`js/state.js`)
 
@@ -195,7 +303,7 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 |---------|-----------|
 | `js/data.js` | 6 items herbes + `POTION_RECIPES` |
 | `js/state.js` | `player.herbs = {}` + `player.knownRecipes = []` à l'init + quête `quest_potions_slughorn` dans `activeQuests` |
-| `js/potions.js` | **NOUVEAU** : besace (`addHerb`/`getHerbCount`/`consumeHerbs`), `_isBrewingUnlocked()`, `learnRecipe()`, `openBrewingModal()` (onglets connues/expérimenter), `_renderBrewingList()`, `_renderExperimentTab()`, `attemptBrew(recipeId)`, `attemptExperiment(herbSelection)` (correspondance multiset + découverte), `_brewChance()` |
+| `js/potions.js` | **NOUVEAU** : besace (`addHerb`/`getHerbCount`/`consumeHerbs`), `_isBrewingUnlocked()`, `learnRecipe()`, `_CAULDRON_SVG`, `_cauldronMix` (tampon local), `openBrewingModal()` (vue chaudron unique), `_renderBrewingModal()` (chaudron + mélange + recettes + besace), `_addToCauldron`/`_removeFromCauldron`/`_fillFromRecipe`/`_clearCauldron`, `attemptBrew(_cauldronMix)` (résolution multiset : match connu / découverte / échec, puis jet INT), `_matchRecipe(mix)`, `_brewChance()` |
 | `js/quests.js` | `completeQuest()` : traiter `reward.recipes` → `learnRecipe()` pour chaque id |
 | `js/inventory.js` (ou site de `tryAddItem`) | `tryAddItem` : si `item.type==='herb'` → `addHerb()`, retourne `true` |
 | `js/movement.js` | `searchRoom()` : nouvelle branche « herbe trouvée » (herbe du palier de l'étage courant) |
@@ -205,7 +313,7 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 | `js/save.js` | sérialiser/restaurer `player.herbs` **et** `player.knownRecipes` dans `_serializeState`/`_applyState` |
 | `index.html` | `<script src="js/potions.js">` dans l'ordre de chargement + markup `#brewing-modal` |
 | `js/loader.js` | entrée MANIFEST pour `openBrewingModal` |
-| `css/style.css` | style de `#brewing-modal` (réutilise les classes modale existantes) |
+| `css/style.css` | style de `#brewing-modal` (réutilise les classes modale) : chaudron, tuiles d'herbes, bulles animées (`@keyframes`), états réussite/échec ; bloc responsive ≤ 700 px |
 | `tests/smoke.js` | scénario brassage |
 
 ## Étapes & vérifications
@@ -226,12 +334,16 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
    `_isBrewingUnlocked()`.
    → vérif : après remise de la quête, le bouton « Concocter » apparaît ;
    clic ouvre `#brewing-modal`.
-5. **UI brassage + jet INT** : modale, onglet « Recettes connues »
-   (`attemptBrew`) + onglet « Expérimenter » (`attemptExperiment`).
-   → vérif : recette connue réalisable → potion ajoutée ; herbes insuffisantes
-   → bouton désactivé ; échec/critique observables en forçant l'INT ;
-   expérimenter une combinaison inconnue valide → recette découverte et
-   ajoutée à `knownRecipes` ; combinaison invalide → échec.
+5. **UI chaudron + jet INT** : modale vue chaudron, SVG dessiné, besace
+   cliquable → `_cauldronMix`, « Préparer » (recette) / clic herbe (manuel),
+   `attemptBrew`.
+   → vérif : clic herbe besace remplit le chaudron, clic herbe chaudron la
+   retire ; « Préparer » sur recette connue pré-remplit ; « Lancer »
+   d'une recette connue → potion ajoutée ; herbes insuffisantes → boutons
+   désactivés ; échec/critique observables en forçant l'INT ; mélange manuel
+   = recette inconnue valide → recette découverte et ajoutée à
+   `knownRecipes` ; mélange invalide → échec ; fermer la modale sans brasser
+   ne consomme aucune herbe.
 6. **Persistance** : besace + recettes connues dans le save.
    → vérif : sauver/charger conserve `player.herbs` et `player.knownRecipes` ;
    l'état `completed` de la quête (donc le déverrouillage) survit au save/load.
@@ -243,11 +355,14 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 ## Hors périmètre V1
 
 - Potager persistant qui pousse (écarté par l'utilisateur).
-- Icônes PNG painterly des herbes (fallback emoji en V1).
 - Parchemins de recette à trouver dans les coffres (vecteur écarté au profit
   de l'expérimentation au chaudron).
 - Indices / correspondance partielle en mode expérimentation (V1 = match
   exact strict).
+- Drag-and-drop des herbes vers le chaudron (V1 = clic pour ajouter/retirer).
+- Raccourci « préparer + lancer » en un clic sur une ligne de recette.
+- Section « Besace d'herboriste » en lecture seule dans `#inventory-modal`.
+- Icônes PNG painterly des herbes (emoji distinct par herbe en V1).
 - Bonus de qualité de potion (tier supérieur sur critique) — le critique
   donne ×2 quantité, pas un upgrade de tier.
 
@@ -259,4 +374,9 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 - 2026-05-16 — Obtention des recettes arrêtée : 3 vecteurs (base offerte par
   quête, récompense de quête, expérimentation au chaudron). Ajout de
   `player.knownRecipes`, du mode expérimentation et du champ `reward.recipes`.
-  En attente du feu vert pour implémenter.
+- 2026-05-16 — Section UX ajoutée : `#brewing-modal` est une **vue chaudron
+  unique** (SVG dessiné), pas d'onglets. Le joueur remplit le chaudron par
+  clic (besace → chaudron, manuel/expérimentation) ou via « Préparer » sur
+  une recette connue, puis « Lancer le brassage ». Tampon local
+  `_cauldronMix` (herbes consommées seulement au lancement). En attente du
+  feu vert pour implémenter.
