@@ -2,19 +2,68 @@
 // INITIALISATION DU JEU
 // ============================================================
 
-// Affiche l'écran de sélection du nombre de joueurs
-function showPlayerSelect() {
-  document.getElementById('title-screen').style.display = 'none';
-  document.getElementById('player-select-screen').style.display = 'flex';
-  // Initialiser la sélection par défaut : Solo + Harry
-  selectedPartySize = 1;
-  selectedHeroes = ['harry'];
-  refreshHeroSelectionUI();
-}
-
 // État de sélection des héros
 let selectedPartySize = 1;
 let selectedHeroes = ['harry'];
+
+// ── Sélection guidée en étapes ───────────────────────────────────
+// La phase d'introduction découpe la sélection en 3 étapes (mode →
+// héros → difficulté), chacune ponctuée d'une voix narrative
+// mystérieuse. Cf. .claude/plans/intro-ux-rework.md.
+let pselStep = 1;
+
+const PSEL_STEPS = {
+  1: { title: 'Le Voyage Commence', sub: 'Affronteras-tu Poudlard seul, ou accompagné ?', voice: 'narrator_mode' },
+  2: { title: 'Choisis tes Héros',  sub: 'Leur cœur comptera autant que leur magie.',     voice: 'narrator_heroes' },
+  3: { title: "L'Épreuve",          sub: 'Quel défi ton courage est-il prêt à relever ?',  voice: 'narrator_difficulty' },
+};
+
+// Affiche l'écran de sélection des héros (depuis l'écran titre)
+function showPlayerSelect() {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('player-select-screen').style.display = 'flex';
+  pselReset();
+}
+
+// Réinitialise la sélection guidée : étape 1, Solo + Harry
+function pselReset() {
+  selectedPartySize = 1;
+  selectedHeroes = ['harry'];
+  setPartyMode(1);
+  pselGoStep(1);
+}
+
+// Navigue vers une étape de la sélection guidée
+function pselGoStep(n) {
+  if (n < 1 || n > 3) return;
+  // Garde-fou : pas d'accès à l'étape difficulté sans sélection valide
+  if (n >= 3 && selectedHeroes.length !== selectedPartySize) return;
+  pselStep = n;
+  document.querySelectorAll('#player-select-screen .psel-step').forEach(el => {
+    el.style.display = (Number(el.dataset.step) === n) ? 'block' : 'none';
+  });
+  document.querySelectorAll('#psel-steps .psel-crumb').forEach(crumb => {
+    const s = Number(crumb.dataset.step);
+    crumb.classList.toggle('active', s === n);
+    crumb.classList.toggle('done',   s <  n);
+  });
+  const meta = PSEL_STEPS[n];
+  if (meta) {
+    const t = document.getElementById('psel-title');
+    const sub = document.getElementById('psel-sub');
+    if (t)   t.textContent   = meta.title;
+    if (sub) sub.textContent = meta.sub;
+    if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playVoice === 'function') {
+      AudioSystem.playVoice(meta.voice);
+    }
+  }
+}
+
+// Clic sur le fil d'Ariane : ne permet que de revenir à une étape
+// déjà franchie (ou de rester sur l'étape courante).
+function pselCrumbClick(n) {
+  if (n <= pselStep) pselGoStep(n);
+}
 
 // Bascule mode solo/duo
 function setPartyMode(n) {
@@ -52,12 +101,12 @@ function refreshHeroSelectionUI() {
     const badge = card.querySelector('.hero-badge');
     if (badge) badge.textContent = i >= 0 ? (i + 1) : '';
   });
-  const btn  = document.getElementById('start-adventure-btn');
+  const btn  = document.getElementById('psel-next-2');
   const hint = document.getElementById('hero-hint');
   const need = selectedPartySize;
   const have = selectedHeroes.length;
   if (have === need) {
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
     if (need === 1) {
       const c = CHARACTERS[selectedHeroes[0]];
       hint.textContent = `${c.name} entrera à Poudlard en solitaire.`;
@@ -67,7 +116,7 @@ function refreshHeroSelectionUI() {
       hint.textContent = `${a.name.split(' ')[0]} & ${b.name.split(' ')[0]} formeront votre groupe.`;
     }
   } else {
-    btn.disabled = true;
+    if (btn) btn.disabled = true;
     const remaining = need - have;
     hint.textContent = `Sélectionnez ${remaining} héros supplémentaire${remaining > 1 ? 's' : ''}…`;
   }
@@ -85,6 +134,11 @@ function confirmHeroSelection() {
   _pendingHeroKeys  = [...selectedHeroes];
   document.getElementById('player-select-screen').style.display = 'none';
   document.getElementById('house-select-screen').style.display  = 'flex';
+  // La voix narrative accompagne le choix de Maison (toujours pas
+  // identifiée — la révélation a lieu à l'écran d'intro).
+  if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playVoice === 'function') {
+    AudioSystem.playVoice('narrator_house');
+  }
 }
 
 // Appelé depuis les boutons de l'écran des Maisons. Insère un écran

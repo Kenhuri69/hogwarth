@@ -115,17 +115,41 @@
 <!-- Écran de sélection des personnages + difficulté -->
 <div id="player-select-screen">
   <div class="select-box" style="max-width:640px">
-    <div class="select-title"><img class="ui-icon ui-icon-xl" src="img/icons/hp.png" alt=""> Choisissez votre Aventure</div>
-    <div class="select-sub">Composez votre groupe — 1 ou 2 sorciers</div>
+    <div class="select-title" id="psel-title"><img class="ui-icon ui-icon-xl" src="img/icons/hp.png" alt=""> Le Voyage Commence</div>
+    <div class="select-sub" id="psel-sub">Affronteras-tu Poudlard seul, ou accompagné ?</div>
 
-    <!-- Mode Solo / Duo -->
-    <div style="display:flex;gap:8px;justify-content:center;margin:18px 0 14px">
-      <button id="mode-btn-1" class="mode-toggle active" onclick="setPartyMode(1)">SOLO · 1 héros</button>
-      <button id="mode-btn-2" class="mode-toggle"        onclick="setPartyMode(2)">DUO · 2 héros</button>
+    <!-- Fil d'Ariane — libellés sur desktop, icônes sur mobile -->
+    <div class="psel-steps" id="psel-steps">
+      <span class="psel-crumb" data-step="1" onclick="pselCrumbClick(1)">
+        <span class="psel-crumb-icon">👥</span><span class="psel-crumb-label">Mode</span>
+      </span>
+      <span class="psel-crumb-sep" aria-hidden="true">›</span>
+      <span class="psel-crumb" data-step="2" onclick="pselCrumbClick(2)">
+        <span class="psel-crumb-icon">🧙</span><span class="psel-crumb-label">Héros</span>
+      </span>
+      <span class="psel-crumb-sep" aria-hidden="true">›</span>
+      <span class="psel-crumb" data-step="3" onclick="pselCrumbClick(3)">
+        <span class="psel-crumb-icon">⚔️</span><span class="psel-crumb-label">Difficulté</span>
+      </span>
     </div>
 
-    <!-- Grille de personnages -->
-    <div class="hero-grid" id="hero-grid">
+    <!-- ÉTAPE 1 — Mode Solo / Duo -->
+    <div class="psel-step" data-step="1">
+      <div style="display:flex;gap:8px;justify-content:center;margin:8px 0 4px">
+        <button id="mode-btn-1" class="mode-toggle active" onclick="setPartyMode(1)">SOLO · 1 héros</button>
+        <button id="mode-btn-2" class="mode-toggle"        onclick="setPartyMode(2)">DUO · 2 héros</button>
+      </div>
+      <div class="psel-nav">
+        <button id="psel-next-1" class="start-btn" onclick="pselGoStep(2)">Continuer ▸</button>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 2 — Sélection des héros (2 regroupements) -->
+    <div class="psel-step" data-step="2" style="display:none">
+    <!-- Groupe 1 — héros canon du film -->
+    <div class="hero-section">
+    <div class="hero-section-title">Les Héros du Film</div>
+    <div class="hero-grid">
       <button class="hero-card" data-key="harry" onclick="toggleHero('harry')">
         <div class="hero-portrait-wrap">
           <img src="img/harry.png" alt="Harry">
@@ -144,6 +168,12 @@
         <div class="hero-role">Mage · Gryffondor</div>
         <div class="hero-tag">Brillante érudite — la magie par le savoir.</div>
       </button>
+    </div>
+    </div>
+    <!-- Groupe 2 — personnages originaux -->
+    <div class="hero-section">
+    <div class="hero-section-title">Le Cercle des Astres</div>
+    <div class="hero-grid">
       <button class="hero-card" data-key="celeste" onclick="toggleHero('celeste')">
         <div class="hero-portrait-wrap">
           <img src="img/celeste.png" alt="Céleste">
@@ -199,25 +229,35 @@
         <div class="hero-tag">Ses sortilèges chantent comme des étoiles.</div>
       </button>
     </div>
-
-    <!-- Sélecteur de difficulté -->
-    <div style="margin:18px 0 14px">
-      <label style="display:block;margin-bottom:8px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold)">DIFFICULTÉ</label>
-      <select id="difficulty-select"
-        style="width:100%;padding:10px 12px;background:#0a0705;border:2px solid var(--gold-dark);
-               color:var(--parchment);font-size:14px;font-family:'Crimson Text',serif;border-radius:3px;cursor:pointer">
-        <option value="Facile">🟢  Facile — Pour découvrir Poudlard tranquillement</option>
-        <option value="Normal" selected>🟡  Normal — Expérience classique (référence)</option>
-        <option value="Difficile">🟠  Difficile — Un vrai défi de sorcier</option>
-        <option value="Expert">🔴  Expert — Mode survie (très dur)</option>
-      </select>
+    </div>
+      <div id="hero-hint" class="hero-hint">Sélectionnez 1 héros pour commencer</div>
+      <div class="psel-nav">
+        <button class="psel-back" onclick="pselGoStep(1)">◂ Retour</button>
+        <button id="psel-next-2" class="start-btn" onclick="pselGoStep(3)" disabled>Continuer ▸</button>
+      </div>
     </div>
 
-    <!-- Action -->
-    <button id="start-adventure-btn" class="start-btn" onclick="confirmHeroSelection()" disabled>
-      ✦ Commencer l'aventure ✦
-    </button>
-    <div id="hero-hint" class="hero-hint">Sélectionnez 1 héros pour commencer</div>
+    <!-- ÉTAPE 3 — Difficulté -->
+    <div class="psel-step" data-step="3" style="display:none">
+      <!-- Sélecteur de difficulté -->
+      <div style="margin:8px 0 4px">
+        <label style="display:block;margin-bottom:8px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--gold)">DIFFICULTÉ</label>
+        <select id="difficulty-select"
+          style="width:100%;padding:10px 12px;background:#0a0705;border:2px solid var(--gold-dark);
+                 color:var(--parchment);font-size:14px;font-family:'Crimson Text',serif;border-radius:3px;cursor:pointer">
+          <option value="Facile">🟢  Facile — Pour découvrir Poudlard tranquillement</option>
+          <option value="Normal" selected>🟡  Normal — Expérience classique (référence)</option>
+          <option value="Difficile">🟠  Difficile — Un vrai défi de sorcier</option>
+          <option value="Expert">🔴  Expert — Mode survie (très dur)</option>
+        </select>
+      </div>
+      <div class="psel-nav">
+        <button class="psel-back" onclick="pselGoStep(2)">◂ Retour</button>
+        <button id="start-adventure-btn" class="start-btn" onclick="confirmHeroSelection()">
+          ✦ Commencer l'aventure ✦
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 

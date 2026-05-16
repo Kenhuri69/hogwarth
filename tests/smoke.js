@@ -1187,21 +1187,37 @@ async function scenarioMobileSelect() {
     return el && getComputedStyle(el).display !== 'none';
   });
 
-  // Le bouton "Commencer" doit pouvoir être amené dans la viewport
+  // Sélection guidée en 3 étapes : étape 1 (mode) visible au départ.
+  const step1 = await page.evaluate(() => {
+    const visible = (s) => {
+      const el = document.querySelector(`#player-select-screen .psel-step[data-step="${s}"]`);
+      return el && getComputedStyle(el).display !== 'none';
+    };
+    return { s1: visible(1), s2: visible(2), s3: visible(3),
+             overflow: getComputedStyle(document.getElementById('player-select-screen')).overflowY };
+  });
+  console.log('  player-select étape 1 :', step1);
+  assert(step1.s1 && !step1.s2 && !step1.s3, 'étape 1 du stepper non isolée');
+  assert(step1.overflow === 'auto',          'overflow-y devrait être auto sur mobile');
+
+  // Étape 1 → 2 (mode), puis 2 → 3 (héros : Harry sélectionné par défaut).
+  await page.evaluate(() => document.getElementById('psel-next-1').click());
+  await page.waitForFunction(() =>
+    getComputedStyle(document.querySelector('.psel-step[data-step="2"]')).display !== 'none');
+  await page.evaluate(() => document.getElementById('psel-next-2').click());
+  await page.waitForFunction(() =>
+    getComputedStyle(document.querySelector('.psel-step[data-step="3"]')).display !== 'none');
+
+  // Le bouton "Commencer" de l'étape 3 doit être atteignable et actif.
   const reach = await page.evaluate(() => {
     const btn = document.getElementById('start-adventure-btn');
     btn.scrollIntoView({ block: 'center' });
     const r = btn.getBoundingClientRect();
-    return {
-      visible:  r.top >= 0 && r.bottom <= window.innerHeight,
-      disabled: btn.disabled,
-      overflow: getComputedStyle(document.getElementById('player-select-screen')).overflowY
-    };
+    return { visible: r.top >= 0 && r.bottom <= window.innerHeight, disabled: btn.disabled };
   });
-  console.log('  player-select :', reach);
-  assert(reach.visible,             'bouton "Commencer" hors viewport mobile');
-  assert(!reach.disabled,           'bouton désactivé alors que Harry est sélectionné par défaut');
-  assert(reach.overflow === 'auto', 'overflow-y devrait être auto sur mobile');
+  console.log('  player-select étape 3 :', reach);
+  assert(reach.visible,   'bouton "Commencer" hors viewport mobile');
+  assert(!reach.disabled, 'bouton "Commencer" désactivé à l\'étape difficulté');
 
   // Cliquer "Commencer" puis vérifier que l'écran Maison apparaît et son bouton atteignable
   await page.evaluate(() => document.getElementById('start-adventure-btn').click());
