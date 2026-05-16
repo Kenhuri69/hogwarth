@@ -555,9 +555,18 @@ Cliquer un livre hors combat enseigne le sort à **tout le groupe actif** et con
 | `livre_sortileges` | Sortilèges Standards, Vol.3 | Wingardium Leviosa | Boutique, coffre ≥ étage 2 |
 | `livre_soin` | Potions & Remèdes Magiques | Reparo | Boutique, coffre ≥ étage 3 |
 | `book_monsters` | Livre des Monstres | Diffindo | Coffre ≥ étage 3 (quête Lockhart) |
+| `livre_glacius` | Givre & Engelures | Glacius | Boutique ≥ étage 3 |
+| `livre_fulgari` | Foudre Canalisée | Fulgari | Boutique ≥ étage 5 |
+| `livre_lumos_solem` | Lumière Solaire | Lumos Solem | Coffre ≥ étage 5 |
 | `livre_prince` | Manuel du Demi-Sang | Sectumsempra | Coffre ≥ étage 6 (rare) |
 
 Les livres apparaissent avec l'étiquette 📖 violette dans l'inventaire.
+
+> **Sorts élémentaires** (`data.js`) : `Glacius` (glace, applique le statut
+> DoT `gel` via `STATUS_BY_SPELL`), `Fulgari` (foudre, dégâts purs),
+> `Lumos Solem` (lumière, `bonusVsUndead:1.5` — ×1.5 contre les
+> morts-vivants : catégorie `fantôme` + ids listés dans `UNDEAD_IDS` de
+> `battle-spells.js`). Statut `gel` ❄️ : 4ᵉ DoT après burn/poison/bleed.
 
 ---
 
@@ -654,10 +663,20 @@ chaque capacité est tentée selon sa `chance` (0.0–1.0).
 - `"weaken"` → réduit la DEF de la cible
 - `"drain"`  → draine des PV et s'en soigne à moitié
 
-### Résistances / Faiblesses
-`enemy.resist[]` → sorts atténués de 50%, affiche 🔰
-`enemy.weak[]`   → sorts amplifiés de 50%, affiche 💥
-Valeurs possibles : `"stun"` `"burn"` `"disarm"` `"instant"`
+### Résistances / Faiblesses (système élémentaire)
+`enemy.resist[]` → sorts atténués de 50% (`RESIST_MULTIPLIER`), affiche 🔰
+`enemy.weak[]`   → sorts amplifiés de 50% (`WEAK_MULTIPLIER`), affiche 💥
+
+Le matching se fait sur **`spell.element`** (pas `spell.effect`, qui ne
+sert qu'au routage vers le handler). 6 éléments :
+`"feu"` 🔥 · `"glace"` ❄️ · `"foudre"` ⚡ · `"lumière"` ✨ · `"ténèbres"` 🌑
+· `"physique"` ⚔️. La clé `"disarm"` reste une **résistance mécanique**
+(bloque Expelliarmus) — orthogonale aux éléments.
+
+Chaque sort de dégâts porte un `element` (cf. `SPELLS` dans `data.js`).
+`battle-spells.js — _spellElementalDamage / _spellLifesteal / _spellCurse`
+applique le multiplicateur. Bestiaire : `_renderResistWeakHtml` affiche
+l'emoji par élément. Plan : `.claude/plans/elemental-system.md`.
 
 ### Drops
 Après victoire, `endBattle()` tire indépendamment chaque entrée de `enemy.drops[]`.

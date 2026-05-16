@@ -173,10 +173,21 @@ function _renderDropsHtml(monster, seen) {
   </div>`;
 }
 
+// Emoji par élément (et clé mécanique disarm) pour l'affichage bestiaire.
+const ELEMENT_EMOJI = {
+  feu: '🔥', glace: '❄️', foudre: '⚡', lumière: '✨',
+  ténèbres: '🌑', physique: '⚔️', disarm: '🚫',
+};
+function _elementLabel(key) {
+  const e = ELEMENT_EMOJI[key];
+  return e ? `${e} ${key}` : key;
+}
+
 // Appelé sous garde ${seen ? ...} ; on n'a pas besoin de re-checker seen ici.
 function _renderResistWeakHtml(monster) {
-  const r = monster.resist?.length ? `<span>🔰 Résistances : <em>${monster.resist.join(', ')}</em></span>` : '';
-  const w = monster.weak?.length   ? `<span>💥 Faiblesses : <em>${monster.weak.join(', ')}</em></span>`   : '';
+  const fmt = (arr) => arr.map(_elementLabel).join(', ');
+  const r = monster.resist?.length ? `<span>🔰 Résistances : <em>${fmt(monster.resist)}</em></span>` : '';
+  const w = monster.weak?.length   ? `<span>💥 Faiblesses : <em>${fmt(monster.weak)}</em></span>`   : '';
   return (r || w) ? `<div class="bestiary-resist-line">${r}${w}</div>` : '';
 }
 

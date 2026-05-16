@@ -33,6 +33,8 @@ const SHOP_CATALOG = [
   { id: "potion_l",            minFloor: 5 },
   { id: "potion_l_sp",         minFloor: 5 },
   { id: "livre_patronum",      minFloor: 6 },
+  { id: "livre_glacius",       minFloor: 3 },
+  { id: "livre_fulgari",       minFloor: 5 },
   { id: "cape_invis",          minFloor: 7 },
   { id: "bottes_dragon",       minFloor: 7 },
   { id: "retourneur_temps",    minFloor: 7 },

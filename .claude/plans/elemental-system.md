@@ -122,10 +122,11 @@ Décision : ne PAS les implémenter dans ce lot — re-tag seulement.
 
 ## Suivi
 
-- [ ] Étape 1 — `element` sur les 17 sorts
-- [ ] Étape 2 — matching moteur sur `element`
-- [ ] Étape 3 — re-tag des 50 monstres
-- [ ] Étape 4 — emoji bestiaire
-- [ ] Étape 5 — smoke scénario élémentaire
-- [ ] Étape 6 — doc CLAUDE.md
-- [ ] `node tests/smoke.js` vert
+- [x] Étape 1 — `element` sur les 17 sorts
+- [x] Étape 2 — matching moteur sur `element`
+- [x] Étape 3 — re-tag des 50 monstres (script jetable `tools/_retag.js`)
+- [x] Étape 4 — emoji bestiaire (`ELEMENT_EMOJI`, `_elementLabel`)
+- [x] Étape 5 — smoke `scenarioElementalSystem` (T1 multiplicateurs, T2
+      sorts taggés, T3 zéro clé legacy)
+- [x] Étape 6 — doc CLAUDE.md
+- [x] `node tests/smoke.js` vert

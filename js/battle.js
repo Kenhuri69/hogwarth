@@ -21,14 +21,15 @@ function mitigatedDamage(rawAtk, def) {
 
 // ── Système de statuts persistants ──────────────────────────
 // Chaque combattant porte statusEffects: [{ id, icon, power, turns }]
-// id ∈ "burn" (🔥) | "poison" (☠️) | "bleed" (🩸) | "weaken" (🛡️↓)
-// Les DoT (burn/poison/bleed) infligent des dégâts au tick.
+// id ∈ "burn" (🔥) | "poison" (☠️) | "bleed" (🩸) | "gel" (❄️) | "weaken" (🛡️↓)
+// Les DoT (burn/poison/bleed/gel) infligent des dégâts au tick.
 // "weaken" applique un malus DEF persistant (power = DEF perdue) :
 // le malus est appliqué au moment de applyStatus, restauré à l'expiry.
 const STATUS_DEFS = {
   burn:   { icon: '🔥',   label: 'Brûlure',           color: '#e85a2c' },
   poison: { icon: '☠️',   label: 'Empoisonné',        color: '#7ab836' },
   bleed:  { icon: '🩸',   label: 'Saignement',        color: '#c0392b' },
+  gel:    { icon: '❄️',   label: 'Engelures',         color: '#5fa8d3' },
   weaken: { icon: '🛡️↓', label: 'Affaiblissement',   color: '#9b59b6' },
   regen:  { icon: '🩹',   label: 'Régénération',      color: '#3aa55a' }
 };
@@ -50,8 +51,8 @@ function tickStatuses(target, isEnemy) {
   let log = '';
   const remaining = [];
   target.statusEffects.forEach(s => {
-    // Statuts DoT : burn / poison / bleed → dégâts par tour
-    if (s.id === 'burn' || s.id === 'poison' || s.id === 'bleed') {
+    // Statuts DoT : burn / poison / bleed / gel → dégâts par tour
+    if (s.id === 'burn' || s.id === 'poison' || s.id === 'bleed' || s.id === 'gel') {
       let dmg = s.power;
       if (isEnemy && target.resist?.includes(s.id)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
       if (isEnemy && target.weak?.includes(s.id))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);

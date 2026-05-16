@@ -3908,6 +3908,138 @@ async function scenarioCritDodge() {
   await browser.close();
 }
 
+// ── Scénario : système élémentaire (faiblesse/résistance par élément) ──
+async function scenarioElementalSystem() {
+  console.log('\n── Scénario : système élémentaire ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : spell.element matche resist/weak — multiplicateurs 0.5 / 1 / 1.5
+  const t1 = await page.evaluate(() => {
+    const spell = { name: 'TestFire', effect: 'stun', element: 'feu', power: 20 };
+    const char  = party[0];
+    char.mag = 10;                 // dmg base = 20 + floor(10/2) = 25
+    char.spellCritChance = 0;      // isole le crit
+    const hit = (resist, weak) => {
+      const e = { name: 'E', currentHp: 1000, resist, weak };
+      _spellElementalDamage(spell, char, e, 0);
+      return 1000 - e.currentHp;
+    };
+    return { neutre: hit([], []), faible: hit([], ['feu']), resist: hit(['feu'], []) };
+  });
+  console.log('  T1 multiplicateurs élémentaires:', t1);
+  assert(t1.neutre === 25, `neutre attendu 25, got ${t1.neutre}`);
+  assert(t1.faible === 37, `faiblesse feu attendu floor(25*1.5)=37, got ${t1.faible}`);
+  assert(t1.resist === 12, `résistance feu attendu floor(25*0.5)=12, got ${t1.resist}`);
+
+  // T2 : les sorts de dégâts portent tous un element du roster
+  const t2 = await page.evaluate(() => {
+    const ELEMS = ['feu', 'glace', 'foudre', 'lumière', 'ténèbres', 'physique'];
+    const dmgEffects = ['stun', 'burn', 'instant', 'lifesteal', 'curse'];
+    const bad = SPELLS
+      .filter(s => dmgEffects.includes(s.effect))
+      .filter(s => !ELEMS.includes(s.element))
+      .map(s => s.name);
+    return { bad };
+  });
+  console.log('  T2 sorts sans element valide:', t2.bad);
+  assert(t2.bad.length === 0, `sorts de dégâts sans element : ${t2.bad.join(', ')}`);
+
+  // T3 : aucun monstre ne porte encore les anciennes clés burn/stun/instant
+  const t3 = await page.evaluate(() => {
+    const OLD = ['burn', 'stun', 'instant'];
+    const bad = MONSTERS
+      .filter(m => [...(m.resist || []), ...(m.weak || [])].some(k => OLD.includes(k)))
+      .map(m => m.id);
+    return { bad };
+  });
+  console.log('  T3 monstres avec anciennes clés:', t3.bad);
+  assert(t3.bad.length === 0, `monstres avec clé legacy resist/weak : ${t3.bad.join(', ')}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Système élémentaire OK');
+  await browser.close();
+}
+
+// ── Scénario : nouveaux sorts élémentaires (Glacius/Fulgari/Lumos Solem) ──
+async function scenarioElementSpells() {
+  console.log('\n── Scénario : sorts élémentaires ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : les 3 sorts existent avec le bon element
+  const t1 = await page.evaluate(() => {
+    const get = (n) => SPELLS.find(s => s.name === n);
+    const g = get('Glacius'), f = get('Fulgari'), l = get('Lumos Solem');
+    return {
+      glacius: g && g.element, fulgari: f && f.element,
+      lumos: l && l.element, lumosBonus: l && l.bonusVsUndead,
+    };
+  });
+  console.log('  T1 sorts:', t1);
+  assert(t1.glacius === 'glace', 'Glacius element glace');
+  assert(t1.fulgari === 'foudre', 'Fulgari element foudre');
+  assert(t1.lumos === 'lumière', 'Lumos Solem element lumière');
+  assert(t1.lumosBonus === 1.5, 'Lumos Solem bonusVsUndead 1.5');
+
+  // T2 : Lumos Solem — bonus ×1.5 vs morts-vivants uniquement
+  const t2 = await page.evaluate(() => {
+    const spell = SPELLS.find(s => s.name === 'Lumos Solem');
+    const char = party[0];
+    char.mag = 10; char.spellCritChance = 0;     // base = 16 + 5 = 21
+    const hit = (cat, id) => {
+      const e = { name: 'E', category: cat, id, currentHp: 1000, resist: [], weak: [] };
+      _spellElementalDamage(spell, char, e, 0);
+      return 1000 - e.currentHp;
+    };
+    return {
+      vsFantome: hit('fantôme', 'x'),
+      vsInferius: hit('créature', 'inferius'),
+      vsBete: hit('bête', 'loup_garou'),
+    };
+  });
+  console.log('  T2 Lumos Solem:', t2);
+  assert(t2.vsFantome === 31, `vs fantôme floor(21*1.5)=31, got ${t2.vsFantome}`);
+  assert(t2.vsInferius === 31, `vs inferius (id morts-vivants) =31, got ${t2.vsInferius}`);
+  assert(t2.vsBete === 21, `vs bête sans bonus =21, got ${t2.vsBete}`);
+
+  // T3 : statut gel — DoT + câblage STATUS_BY_SPELL
+  const t3 = await page.evaluate(() => {
+    const e = { name: 'Gel', currentHp: 100, resist: [], weak: [], statusEffects: [] };
+    applyStatus(e, 'gel', 6, 2);
+    tickStatuses(e, true);
+    return {
+      defExists: !!STATUS_DEFS.gel,
+      bySpell: STATUS_BY_SPELL['Glacius'],
+      hpAfterTick: e.currentHp,
+    };
+  });
+  console.log('  T3 gel:', t3);
+  assert(t3.defExists, 'STATUS_DEFS.gel défini');
+  assert(t3.bySpell === 'gel', 'STATUS_BY_SPELL.Glacius = gel');
+  assert(t3.hpAfterTick === 94, `gel DoT 6 → hp 94, got ${t3.hpAfterTick}`);
+
+  // T4 : les 3 grimoires enseignent le bon sort
+  const t4 = await page.evaluate(() => {
+    const bk = (id) => { const it = ITEMS.find(i => i.id === id); return it && { type: it.type, spell: it.spell }; };
+    return { g: bk('livre_glacius'), f: bk('livre_fulgari'), l: bk('livre_lumos_solem') };
+  });
+  console.log('  T4 grimoires:', t4);
+  assert(t4.g && t4.g.type === 'spellbook' && t4.g.spell === 'Glacius', 'livre_glacius → Glacius');
+  assert(t4.f && t4.f.spell === 'Fulgari', 'livre_fulgari → Fulgari');
+  assert(t4.l && t4.l.spell === 'Lumos Solem', 'livre_lumos_solem → Lumos Solem');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Sorts élémentaires OK');
+  await browser.close();
+}
+
 // ── Scénario 27 : loader (manifeste de globals + helpers) ────
 async function scenarioRelativeControls() {
   console.log('\n── Scénario : contrôles relatifs (avancer/reculer/pivoter) ──');
@@ -6358,7 +6490,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
