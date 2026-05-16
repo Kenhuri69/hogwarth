@@ -654,10 +654,20 @@ chaque capacité est tentée selon sa `chance` (0.0–1.0).
 - `"weaken"` → réduit la DEF de la cible
 - `"drain"`  → draine des PV et s'en soigne à moitié
 
-### Résistances / Faiblesses
-`enemy.resist[]` → sorts atténués de 50%, affiche 🔰
-`enemy.weak[]`   → sorts amplifiés de 50%, affiche 💥
-Valeurs possibles : `"stun"` `"burn"` `"disarm"` `"instant"`
+### Résistances / Faiblesses (système élémentaire)
+`enemy.resist[]` → sorts atténués de 50% (`RESIST_MULTIPLIER`), affiche 🔰
+`enemy.weak[]`   → sorts amplifiés de 50% (`WEAK_MULTIPLIER`), affiche 💥
+
+Le matching se fait sur **`spell.element`** (pas `spell.effect`, qui ne
+sert qu'au routage vers le handler). 6 éléments :
+`"feu"` 🔥 · `"glace"` ❄️ · `"foudre"` ⚡ · `"lumière"` ✨ · `"ténèbres"` 🌑
+· `"physique"` ⚔️. La clé `"disarm"` reste une **résistance mécanique**
+(bloque Expelliarmus) — orthogonale aux éléments.
+
+Chaque sort de dégâts porte un `element` (cf. `SPELLS` dans `data.js`).
+`battle-spells.js — _spellElementalDamage / _spellLifesteal / _spellCurse`
+applique le multiplicateur. Bestiaire : `_renderResistWeakHtml` affiche
+l'emoji par élément. Plan : `.claude/plans/elemental-system.md`.
 
 ### Drops
 Après victoire, `endBattle()` tire indépendamment chaque entrée de `enemy.drops[]`.

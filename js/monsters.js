@@ -50,8 +50,9 @@
 //  ai        {string}   Comportement en combat (utilisé pour évolutions futures) :
 //                       "aggressive" | "cautious" | "random"
 //
-//  resist    [string]   Sorts atténués de 50% sur cet ennemi :
-//                       "stun" | "burn" | "disarm" | "instant"
+//  resist    [string]   Sorts atténués de 50% sur cet ennemi. Éléments :
+//                       "feu" | "glace" | "foudre" | "lumière" | "ténèbres"
+//                       | "physique" — plus la clé mécanique "disarm".
 //  weak      [string]   Sorts amplifiés de 50% sur cet ennemi (mêmes valeurs)
 //
 //  xp        {number}   XP de base accordée (avant mise à l'échelle)
@@ -90,7 +91,7 @@ const MONSTERS = [
     abilities: [],
     ai: "cautious",
     resist: [],
-    weak:   ["burn"],
+    weak:   ["feu"],
     xp: 5, gold: { min: 0, max: 3 },
     drops:  []
   },
@@ -110,8 +111,8 @@ const MONSTERS = [
       { name: "Éclair Aveuglant", icon: "💡", desc: "Flash lumineux qui perturbe la vision", effect: "weaken", power: 1, chance: 0.35 }
     ],
     ai: "random",
-    resist: [],
-    weak:   ["stun"],
+    resist: ["feu"],
+    weak:   ["glace"],
     xp: 4, gold: { min: 0, max: 2 },
     drops:  []
   },
@@ -132,7 +133,7 @@ const MONSTERS = [
     ],
     ai: "aggressive",
     resist: [],
-    weak:   ["stun"],
+    weak:   ["physique"],
     xp: 6, gold: { min: 1, max: 4 },
     drops:  [{ itemId: "mandragore", chance: 0.10 }]
   },
@@ -153,8 +154,8 @@ const MONSTERS = [
       { name: "Insulte Démoralisante",icon: "😤", desc: "Affaiblit la volonté",       effect: "weaken", power: 2, chance: 0.25 }
     ],
     ai: "random",
-    resist: ["stun", "disarm", "burn"],
-    weak:   [],
+    resist: ["foudre", "disarm"],
+    weak:   ["feu"],
     xp: 5, gold: { min: 0, max: 3 },
     drops:  []
   },
@@ -174,8 +175,8 @@ const MONSTERS = [
       { name: "Rire Tonitruant", icon: "😂", desc: "Déstabilise la cible", effect: "weaken", power: 1, chance: 0.30 }
     ],
     ai: "random",
-    resist: ["stun", "disarm"],
-    weak:   [],
+    resist: ["physique", "disarm"],
+    weak:   ["lumière"],
     xp: 8, gold: { min: 2, max: 6 },
     drops:  [{ itemId: "mandragore", chance: 0.10 }]
   },
@@ -195,8 +196,8 @@ const MONSTERS = [
       { name: "Plainte Stridente", icon: "😭", desc: "Cri perçant qui affaiblit", effect: "weaken", power: 2, chance: 0.35 }
     ],
     ai: "random",
-    resist: ["stun", "disarm", "burn"],
-    weak:   [],
+    resist: ["physique", "feu", "disarm"],
+    weak:   ["lumière"],
     xp: 6, gold: { min: 0, max: 4 },
     drops:  []
   },
@@ -217,7 +218,7 @@ const MONSTERS = [
     ],
     ai: "aggressive",
     resist: [],
-    weak:   ["burn"],
+    weak:   ["glace"],
     xp: 12, gold: { min: 5, max: 10 },
     drops:  [{ itemId: "potion_s", chance: 0.08 }]
   },
@@ -242,7 +243,7 @@ const MONSTERS = [
     ],
     ai: "aggressive",
     resist: [],
-    weak:   ["stun"],
+    weak:   ["foudre"],
     xp: 9, gold: { min: 2, max: 7 },
     drops:  []
   },
@@ -263,8 +264,8 @@ const MONSTERS = [
       { name: "Racines Étranglantes", icon: "🌱", desc: "Immobilise et draine",        effect: "drain",  power: 5, chance: 0.25 }
     ],
     ai: "aggressive",
-    resist: ["burn"],
-    weak:   [],
+    resist: [],
+    weak:   ["feu"],
     xp: 15, gold: { min: 5, max: 12 },
     drops:  [{ itemId: "mandragore", chance: 0.35 }]
   },
@@ -286,8 +287,8 @@ const MONSTERS = [
       { name: "Crachat Acide",    icon: "🧪", desc: "Acide corrosif qui brûle",  effect: "status", statusId: "burn", power: 3, chance: 0.20, turns: 2 }
     ],
     ai: "cautious",
-    resist: [],
-    weak:   ["burn"],
+    resist: ["glace"],
+    weak:   ["foudre"],
     xp: 20, gold: { min: 8, max: 15 },
     drops:  [{ itemId: "potion_s", chance: 0.12 }]
   },
@@ -308,8 +309,8 @@ const MONSTERS = [
       { name: "Terreur Absolue",       icon: "🌑", desc: "Paralyse de frayeur",        effect: "weaken", power: 3, chance: 0.25 }
     ],
     ai: "random",
-    resist: ["stun", "disarm"],
-    weak:   [],
+    resist: ["ténèbres", "disarm"],
+    weak:   ["lumière"],
     xp: 18, gold: { min: 6, max: 14 },
     drops:  []
   },
@@ -328,7 +329,7 @@ const MONSTERS = [
     abilities: [],
     ai: "aggressive",
     resist: [],
-    weak:   ["stun"],
+    weak:   ["physique"],
     xp: 18, gold: { min: 10, max: 22 },
     drops:  [
       { itemId: "mandragore",    chance: 0.20 },
@@ -353,7 +354,7 @@ const MONSTERS = [
     ],
     ai: "aggressive",
     resist: [],
-    weak:   ["burn"],
+    weak:   ["feu"],
     xp: 14, gold: { min: 6, max: 12 },
     drops:  [{ itemId: "mandragore", chance: 0.15 }]
   },
@@ -378,8 +379,8 @@ const MONSTERS = [
       { name: "Multiplication",       icon: "✂️", desc: "Se divise pour attaquer",          effect: "damage", power: 4, chance: 0.20 }
     ],
     ai: "cautious",
-    resist: ["burn"],
-    weak:   [],
+    resist: ["ténèbres"],
+    weak:   ["feu"],
     xp: 14, gold: { min: 5, max: 10 },
     drops:  [
       { itemId: "bottes_apprenti", chance: 0.05 }
@@ -403,7 +404,7 @@ const MONSTERS = [
     ],
     ai: "aggressive",
     resist: [],
-    weak:   ["burn"],
+    weak:   ["feu"],
     xp: 22, gold: { min: 10, max: 18 },
     drops:  [{ itemId: "mandragore", chance: 0.20 }]
   },
@@ -424,8 +425,8 @@ const MONSTERS = [
       { name: "Venin Paralysant",        icon: "💜", desc: "Venin qui affaiblit",    effect: "weaken", power: 3, chance: 0.30 }
     ],
     ai: "cautious",
-    resist: ["burn"],
-    weak:   ["stun"],
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
     xp: 24, gold: { min: 8, max: 16 },
     drops:  [{ itemId: "potion_s", chance: 0.10 }]
   },
@@ -445,8 +446,8 @@ const MONSTERS = [
       { name: "Coup de Massue", icon: "🪨", desc: "Frappe dévastatrice", effect: "damage", power: 8, chance: 0.25 }
     ],
     ai: "aggressive",
-    resist: ["stun"],
-    weak:   [],
+    resist: ["physique"],
+    weak:   ["feu"],
     xp: 20, gold: { min: 12, max: 18 },
     drops:  [
       { itemId: "potion_s",       chance: 0.20 },
@@ -472,7 +473,7 @@ const MONSTERS = [
     ],
     ai: "cautious",
     resist: [],
-    weak:   [],
+    weak:   ["foudre"],
     xp: 22, gold: { min: 10, max: 18 },
     drops:  [
       { itemId: "potion_s",      chance: 0.10 },
@@ -499,8 +500,8 @@ const MONSTERS = [
       { name: "Baiser du Détraqueur", icon: "💀", desc: "Draine l'âme de la cible", effect: "drain", power: 10, chance: 0.35 }
     ],
     ai: "cautious",
-    resist: ["burn", "stun", "disarm"],
-    weak:   [],
+    resist: ["ténèbres", "glace", "disarm"],
+    weak:   ["lumière"],
     xp: 25, gold: { min: 8, max: 14 },
     drops:  [{ itemId: "potion_m", chance: 0.12 }]
   },
@@ -529,7 +530,7 @@ const MONSTERS = [
     ],
     ai: "aggressive",
     resist: [],
-    weak:   ["stun"],
+    weak:   ["foudre"],
     xp: 38, gold: { min: 16, max: 26 },
     drops:  [
       { itemId: "potion_s",         chance: 0.15 },
@@ -555,8 +556,8 @@ const MONSTERS = [
       { name: "Griffes Putrides",   icon: "🩸", desc: "Griffes infectées qui font saigner",  effect: "status", statusId: "bleed", power: 3, chance: 0.25, turns: 3 }
     ],
     ai: "aggressive",
-    resist: ["stun", "disarm"],
-    weak:   ["burn"],
+    resist: ["ténèbres", "glace", "disarm"],
+    weak:   ["feu"],
     xp: 35, gold: { min: 12, max: 20 },
     drops:  []
   },
@@ -581,7 +582,7 @@ const MONSTERS = [
     ],
     ai: "aggressive",
     resist: [],
-    weak:   ["burn"],
+    weak:   ["feu"],
     xp: 45, gold: { min: 14, max: 22 },
     drops:  [
       { itemId: "mandragore", chance: 0.25 },
@@ -606,8 +607,8 @@ const MONSTERS = [
       { name: "Affaiblissement Sombre", icon: "⚫", desc: "Réduit les défenses",       effect: "weaken", power: 2,  chance: 0.20 }
     ],
     ai: "cautious",
-    resist: [],
-    weak:   ["stun"],
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
     xp: 36, gold: { min: 16, max: 26 },
     drops:  [
       { itemId: "potion_m", chance: 0.15 },
@@ -635,8 +636,8 @@ const MONSTERS = [
       { name: "Expelliarmus Sombre",    icon: "⚡", desc: "Affaiblit les défenses",  effect: "weaken", power: 2,  chance: 0.20 }
     ],
     ai: "aggressive",
-    resist: [],
-    weak:   ["stun"],
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
     xp: 40, gold: { min: 20, max: 30 },
     drops:  [
       { itemId: "potion_s",      chance: 0.25 },
@@ -664,7 +665,7 @@ const MONSTERS = [
     ],
     ai: "aggressive",
     resist: [],
-    weak:   ["burn"],
+    weak:   ["feu"],
     xp: 48, gold: { min: 18, max: 28 },
     drops:  [
       { itemId: "potion_s",       chance: 0.20 },
@@ -693,8 +694,8 @@ const MONSTERS = [
       { name: "Cri de Terreur",   icon: "😱", desc: "Sort de désespoir pur",        effect: "damage", power: 10, chance: 0.20 }
     ],
     ai: "cautious",
-    resist: ["burn", "stun", "disarm"],
-    weak:   [],
+    resist: ["ténèbres", "glace", "disarm"],
+    weak:   ["lumière"],
     xp: 55, gold: { min: 20, max: 32 },
     drops:  [{ itemId: "potion_m", chance: 0.15 }]
   },
@@ -718,8 +719,8 @@ const MONSTERS = [
       { name: "Coup de Tête",      icon: "💥", desc: "Charge brutale",                effect: "damage", power: 10, chance: 0.20 }
     ],
     ai: "aggressive",
-    resist: ["stun", "burn"],
-    weak:   [],
+    resist: ["physique", "ténèbres"],
+    weak:   ["feu"],
     xp: 50, gold: { min: 20, max: 32 },
     drops:  [
       { itemId: "potion_m", chance: 0.20 },
@@ -746,8 +747,8 @@ const MONSTERS = [
       { name: "Soins des Ténèbres",  icon: "💚", desc: "Se soigne par magie sombre",  effect: "heal",   power: 12, chance: 0.25 }
     ],
     ai: "cautious",
-    resist: [],
-    weak:   [],
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
     xp: 35, gold: { min: 18, max: 28 },
     drops:  [
       { itemId: "potion_m",         chance: 0.20 },
@@ -779,8 +780,8 @@ const MONSTERS = [
       { name: "Morsure du Roi",    icon: "🐍", desc: "Morsure venimeuse mortelle",         effect: "damage", power: 16, chance: 0.25 }
     ],
     ai: "aggressive",
-    resist: ["stun", "disarm", "burn"],
-    weak:   [],
+    resist: ["feu", "physique", "disarm"],
+    weak:   ["glace"],
     xp: 80, gold: { min: 35, max: 50 },
     drops:  [
       { itemId: "felix",    chance: 0.15 },
@@ -806,8 +807,8 @@ const MONSTERS = [
       { name: "Charge de Chèvre",  icon: "🐐", desc: "Coup de cornes qui affaiblit",   effect: "weaken", power: 4,  chance: 0.20 }
     ],
     ai: "aggressive",
-    resist: ["burn"],
-    weak:   ["stun"],
+    resist: ["feu"],
+    weak:   ["glace"],
     xp: 75, gold: { min: 30, max: 48 },
     drops:  [
       { itemId: "potion_m", chance: 0.20 },
@@ -832,8 +833,8 @@ const MONSTERS = [
       { name: "Contre-Sort Rapide",icon: "💚", desc: "Récupère de l'énergie",          effect: "heal",   power: 14, chance: 0.20 }
     ],
     ai: "cautious",
-    resist: ["disarm"],
-    weak:   [],
+    resist: ["ténèbres", "disarm"],
+    weak:   ["lumière"],
     xp: 65, gold: { min: 28, max: 44 },
     drops:  [
       { itemId: "wand1",    chance: 0.10 },
@@ -860,8 +861,8 @@ const MONSTERS = [
       { name: "Régénération Sombre", icon: "🟢", desc: "Récupère des PV",           effect: "heal",  power: 15, chance: 0.20 }
     ],
     ai: "cautious",
-    resist: ["disarm", "stun"],
-    weak:   ["burn"],
+    resist: ["ténèbres", "disarm"],
+    weak:   ["feu"],
     xp: 70, gold: { min: 30, max: 45 },
     drops:  [
       { itemId: "wand2",    chance: 0.08 },
@@ -894,8 +895,8 @@ const MONSTERS = [
       { name: "Marque Brûlante",     icon: "🔥", desc: "Marque incandescente sur la peau", effect: "status", statusId: "burn", power: 5, chance: 0.25, turns: 3 }
     ],
     ai: "aggressive",
-    resist: [],
-    weak:   ["stun"],
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
     xp: 70, gold: { min: 28, max: 42 },
     drops:  [
       { itemId: "potion_m",     chance: 0.25 },
@@ -931,8 +932,8 @@ const MONSTERS = [
       { name: "Sortilège Sanglant",  icon: "🩸", desc: "Inflige une plaie qui saigne",  effect: "status", statusId: "bleed", power: 6, chance: 0.30, turns: 3 }
     ],
     ai: "aggressive",
-    resist: ["stun", "disarm"],
-    weak:   [],
+    resist: ["ténèbres", "disarm"],
+    weak:   ["lumière"],
     xp: 130, gold: { min: 50, max: 80 },
     drops:  [
       { itemId: "felix",          chance: 0.30 },
@@ -959,8 +960,8 @@ const MONSTERS = [
       { name: "Ombre Tenace",   icon: "🌑", desc: "Récupère de l'énergie obscure", effect: "heal",   power: 20, chance: 0.20 }
     ],
     ai: "aggressive",
-    resist: ["disarm", "stun", "burn"],
-    weak:   [],
+    resist: ["ténèbres", "feu", "disarm"],
+    weak:   ["lumière"],
     xp: 200, gold: { min: 80, max: 120 },
     drops:  [
       { itemId: "felix",    chance: 0.50 },
@@ -994,8 +995,8 @@ const MONSTERS = [
       { name: "Marque des Ténèbres",icon: "🌑", desc: "Marque qui ronge les défenses",   effect: "weaken", power: 6,  chance: 0.15 }
     ],
     ai: "aggressive",
-    resist: ["stun", "disarm", "burn", "instant"],
-    weak:   [],
+    resist: ["ténèbres", "feu", "glace", "disarm"],
+    weak:   ["lumière"],
     xp: 350, gold: { min: 120, max: 200 },
     drops:  [
       { itemId: "felix",            chance: 0.60 },
@@ -1018,7 +1019,7 @@ const MONSTERS = [
       { name: "Vol de Gallions", icon: "🪙", desc: "Vole 5-15 Gallions",
         effect: "drain", power: 5, chance: 0.40 }
     ],
-    ai: "cautious", resist: [], weak: ["stun"],
+    ai: "cautious", resist: [], weak: ["physique"],
     xp: 20, gold: { min: 8, max: 25 },
     drops: [{ itemId: "mandragore", chance: 0.20 }]
   },
@@ -1034,7 +1035,7 @@ const MONSTERS = [
       { name: "Assiette Volante", icon: "🍽️", desc: "Projectile (8 dégâts)",
         effect: "damage", power: 8, chance: 0.35 }
     ],
-    ai: "random", resist: ["disarm"], weak: ["burn"],
+    ai: "random", resist: ["disarm"], weak: ["feu"],
     xp: 25, gold: { min: 6, max: 18 },
     drops: [{ itemId: "choco_sorcier", chance: 0.30 }]
   },
@@ -1050,7 +1051,7 @@ const MONSTERS = [
       { name: "Griffes de Branche", icon: "🌱", desc: "Réduit DEF (-1)",
         effect: "weaken", power: 1, chance: 0.25 }
     ],
-    ai: "aggressive", resist: [], weak: ["burn"],
+    ai: "aggressive", resist: [], weak: ["feu"],
     xp: 12, gold: { min: 3, max: 10 },
     drops: [{ itemId: "wand1", chance: 0.08 }]
   },
@@ -1068,7 +1069,7 @@ const MONSTERS = [
       { name: "Aura Glaciale", icon: "❄️", desc: "Affaiblit les deux adversaires",
         effect: "weaken", power: 2, chance: 0.20 }
     ],
-    ai: "aggressive", resist: ["stun", "instant"], weak: ["burn"],
+    ai: "aggressive", resist: ["physique", "ténèbres"], weak: ["lumière"],
     xp: 60, gold: { min: 20, max: 50 },
     drops: [{ itemId: "robe1", chance: 0.15 }, { itemId: "potion_s", chance: 0.25 }]
   },
@@ -1086,7 +1087,7 @@ const MONSTERS = [
       { name: "Surcharge Arcanique", icon: "🔮", desc: "Dégâts magiques (12)",
         effect: "damage", power: 12, chance: 0.25 }
     ],
-    ai: "random", resist: ["burn"], weak: ["stun"],
+    ai: "random", resist: ["feu"], weak: ["foudre"],
     xp: 35, gold: { min: 10, max: 28 },
     drops: [{ itemId: "potion_m", chance: 0.20 }]
   },
@@ -1104,7 +1105,7 @@ const MONSTERS = [
       { name: "Rugissement Terrifiant", icon: "😱", desc: "Affaiblit toute la troupe",
         effect: "weaken", power: 3, chance: 0.25 }
     ],
-    ai: "aggressive", resist: ["disarm", "instant"], weak: [],
+    ai: "aggressive", resist: ["ténèbres", "disarm"], weak: ["glace"],
     xp: 90, gold: { min: 30, max: 70 },
     drops: [{ itemId: "felix", chance: 0.10 }, { itemId: "potion_force", chance: 0.20 }]
   },
@@ -1122,7 +1123,7 @@ const MONSTERS = [
       { name: "Régénération de Pierre", icon: "🏔️", desc: "Récupère 12 PV",
         effect: "heal", power: 12, chance: 0.20 }
     ],
-    ai: "aggressive", resist: ["stun", "burn"], weak: [],
+    ai: "aggressive", resist: ["physique", "feu"], weak: ["foudre"],
     xp: 75, gold: { min: 25, max: 55 },
     drops: [{ itemId: "chapeau_pointu", chance: 0.08 }, { itemId: "robe1", chance: 0.18 }]
   },
@@ -1140,7 +1141,7 @@ const MONSTERS = [
       { name: "Possession Partielle", icon: "🌀", desc: "Drain PV (8)",
         effect: "drain", power: 8, chance: 0.30 }
     ],
-    ai: "cautious", resist: ["stun", "disarm"], weak: ["instant"],
+    ai: "cautious", resist: ["physique", "disarm"], weak: ["lumière"],
     xp: 45, gold: { min: 12, max: 35 },
     drops: [{ itemId: "livre_soin", chance: 0.05 }]
   },
@@ -1162,7 +1163,7 @@ const MONSTERS = [
       { name: "Morsure Sanguinaire", icon: "🩸", desc: "Drain de sang",
         effect: "drain", power: 6, chance: 0.45 }
     ],
-    ai: "aggressive", resist: [], weak: ["burn", "stun"],
+    ai: "aggressive", resist: [], weak: ["lumière", "feu"],
     xp: 22, gold: { min: 6, max: 14 },
     drops: [{ itemId: "potion_s", chance: 0.15 }]
   },
@@ -1182,7 +1183,7 @@ const MONSTERS = [
       { name: "Regard Hypnotique", icon: "👁️", desc: "Réduit la défense",
         effect: "weaken", power: 2, chance: 0.20 }
     ],
-    ai: "cautious", resist: ["stun", "instant"], weak: ["burn"],
+    ai: "cautious", resist: ["ténèbres"], weak: ["lumière", "feu"],
     xp: 50, gold: { min: 18, max: 32 },
     drops: [
       { itemId: "potion_m", chance: 0.20 },
@@ -1205,7 +1206,7 @@ const MONSTERS = [
       { name: "Brume Sanglante", icon: "🌫️", desc: "Affaiblit l'âme",
         effect: "weaken", power: 3, chance: 0.25 }
     ],
-    ai: "aggressive", resist: ["stun", "instant", "disarm"], weak: ["burn"],
+    ai: "aggressive", resist: ["ténèbres", "disarm"], weak: ["lumière", "feu"],
     xp: 110, gold: { min: 35, max: 60 },
     drops: [
       { itemId: "felix", chance: 0.12 },
@@ -1233,7 +1234,7 @@ const MONSTERS = [
       { name: "Brise-Force", icon: "💔", desc: "Affaiblit la cible",
         effect: "weaken", power: 2, chance: 0.30 }
     ],
-    ai: "random", resist: ["stun"], weak: ["burn"],
+    ai: "random", resist: ["ténèbres"], weak: ["feu"],
     xp: 40, gold: { min: 12, max: 22 },
     drops: [{ itemId: "livre_prince", chance: 0.04 }]
   },
@@ -1253,7 +1254,7 @@ const MONSTERS = [
       { name: "Marque du Tourment", icon: "🩻", desc: "Affaiblit ATK et DEF",
         effect: "weaken", power: 3, chance: 0.25 }
     ],
-    ai: "aggressive", resist: ["instant", "disarm"], weak: ["stun"],
+    ai: "aggressive", resist: ["ténèbres", "disarm"], weak: ["lumière"],
     xp: 75, gold: { min: 22, max: 38 },
     drops: [
       { itemId: "potion_m", chance: 0.25 },
@@ -1278,7 +1279,7 @@ const MONSTERS = [
       { name: "Drain de Sortilège", icon: "🩸", desc: "Vol de vie magique",
         effect: "drain", power: 12, chance: 0.25 }
     ],
-    ai: "cautious", resist: ["disarm", "instant"], weak: ["stun"],
+    ai: "cautious", resist: ["ténèbres", "disarm"], weak: ["lumière"],
     xp: 130, gold: { min: 45, max: 75 },
     drops: [
       { itemId: "wand2", chance: 0.15 },
@@ -1310,8 +1311,8 @@ const MONSTERS = [
 //     // effect:"status" → ajouter statusId:"burn" et turns:2
 //   ],
 //   ai: "aggressive",            // aggressive | cautious | random
-//   resist: [],                  // stun | burn | disarm | instant
-//   weak:   ["burn"],
+//   resist: [],                  // feu|glace|foudre|lumière|ténèbres|physique|disarm
+//   weak:   ["feu"],
 //   xp: 15, gold: { min: 5, max: 15 },
 //   drops: [
 //     { itemId: "mandragore", chance: 0.15 },

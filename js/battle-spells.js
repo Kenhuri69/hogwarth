@@ -145,8 +145,8 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
   if (enemy) {
     let dmg    = spell.power + Math.floor(char.mag / 2);
     let suffix = '';
-    if (enemy.resist?.includes(spell.effect)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
-    if (enemy.weak?.includes(spell.effect))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
+    if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
+    if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
     const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
     if (_cr.crit) suffix += ' 💥CRIT';
     enemy.currentHp -= dmg;
@@ -179,8 +179,8 @@ function _spellLifesteal(spell, char, enemy, targetIdx) {
   if (enemy) {
     let dmg = spell.power + Math.floor(char.mag / 2);
     let suffix = '';
-    if (enemy.resist?.includes('lifesteal')) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
-    if (enemy.weak?.includes('lifesteal'))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
+    if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
+    if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
     const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
     if (_cr.crit) suffix += ' 💥CRIT';
     enemy.currentHp -= dmg;
@@ -199,8 +199,8 @@ function _spellCurse(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
     let dmg = spell.power + Math.floor(char.mag / 2);
-    if (enemy.resist?.includes('curse')) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
-    if (enemy.weak?.includes('curse'))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
+    if (enemy.resist?.includes(spell.element)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
+    if (enemy.weak?.includes(spell.element))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
     const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
     enemy.currentHp -= dmg;
     enemy.atk = Math.max(0, (enemy.atk || 0) - 3);
