@@ -204,6 +204,7 @@ function _serializeState() {
     chosenHouse, housePoints, houseTier,
     pendingHouseRewards: Array.from(pendingHouseRewards),
     searchedCells: Array.from(searchedCells),
+    stepCount,
     floorDungeons,
     restCooldown,
     usedFountains: Array.from(usedFountains),
@@ -405,7 +406,8 @@ function _applyState(gs) {
   // éviter une fuite de l'état d'un précédent slot quand le nouveau
   // slot ne porte pas la clé (ex. save legacy ou partie démarrée
   // avant l'ajout du champ).
-  searchedCells = new Set(gs.searchedCells || []);
+  searchedCells = _searchedCellsFromArray(gs.searchedCells);
+  stepCount = (typeof gs.stepCount === 'number') ? gs.stepCount : 0;
   floorDungeons = gs.floorDungeons || {};
   if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
   usedFountains = new Set(gs.usedFountains || []);
