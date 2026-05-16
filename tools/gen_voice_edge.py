@@ -57,8 +57,9 @@ VOICES = {
     # McGonagall : féminine posée, autoritaire. Voix multilingue —
     # lit le français nativement avec un timbre distinct des voix fr-FR.
     "mcgonagall": dict(voice="de-DE-SeraphinaMultilingualNeural", rate="-7%", pitch="+0Hz"),
-    # Rogue : masculin grave, lent, presque chuchoté.
-    "rogue": dict(voice="fr-FR-HenriNeural", rate="-12%", pitch="-8Hz"),
+    # Rogue : masculin grave, lent, presque chuchoté. Voix multilingue
+    # au timbre sombre — lit le français nativement.
+    "rogue": dict(voice="de-DE-FlorianMultilingualNeural", rate="-12%", pitch="-8Hz"),
     # Flitwick : registre aigu, vif. Voix multilingue jeune/légère
     # pitchée modérément — moins d'artefacts que l'ancien Henri +32 Hz.
     "flitwick": dict(voice="en-US-AndrewMultilingualNeural", rate="+10%", pitch="+24Hz"),
