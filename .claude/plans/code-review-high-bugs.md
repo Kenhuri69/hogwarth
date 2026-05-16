@@ -49,9 +49,39 @@ le bug #3 est un **faux positif** (cf. ci-dessous). 3 corrections réelles.
 - `node tests/smoke.js` doit rester vert.
 - Commit + push sur `claude/code-review-bugs-7zdJf`.
 
-## Suivi
+## Suivi HIGH
 - [x] Étape 1 — teleport.js
 - [x] Étape 2 — save.js
 - [x] Étape 3 — faux positif, aucune action
 - [x] Étape 4 — battle-spells.js
 - [x] Smoke test
+
+---
+
+# Correction des bugs MED
+
+8 bugs MED identifiés. Vérification : 2 faux positifs écartés.
+
+- [x] **M1 — battle.js `doFlee`** : la fuite garantie testait `c.equipped.acc`,
+  clé supprimée par la migration ; le Balai est `slot:"trinket"`. Fix :
+  balayer tous les slots via `Object.values(c.equipped)`.
+- [x] **M2 — FAUX POSITIF** : `endBattle` `e.gold` ne peut pas être un objet,
+  `scaleMonster` (dungeon.js:96) normalise déjà `{min,max}` en nombre.
+- [x] **M3 — movement.js `rest()`** : `restCooldown` non posé quand le repos
+  déclenche une rencontre → spam possible. Fix : `restCooldown = 5` avant
+  `startBattle`.
+- [x] **M4 — shop.js `_purchase`** : `player.gold < price` laissait passer un
+  `gold` non-numérique. Fix : garde `Number.isFinite` (cohérent avec les
+  gardes `(player.gold||0)` déjà présentes dans le fichier).
+- [x] **M5 — save.js `_applyState`** : ne masquait que `encounter-overlay` et
+  `explore-overlay`. Fix : masquer aussi `npc-dialog-overlay`
+  (`style.display`) et `floor-transition` (`classList.remove('active')`).
+- [x] **M6 — ui-bestiary.js `_renderDangerHtml`** : label `/10` alors que
+  l'échelle danger est 1–11. Fix : `/11`.
+- [x] **M7 — swipe-canvas.js `_swipeBlocked`** : testait `style.display`
+  inline ; `floor-transition` est piloté par `classList`. Fix :
+  `getComputedStyle(el).display`.
+- [x] **M8 — NON-BUG** : `sel.querySelector('div')` (teleport.js) renvoie bien
+  le div titre (premier descendant en ordre document). Fragile mais correct ;
+  aucune correction.
+- [x] Smoke test final

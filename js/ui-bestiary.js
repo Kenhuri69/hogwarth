@@ -134,7 +134,7 @@ function _renderDangerHtml(monster) {
               : v >= 4  ? '#c0a020'
               :           '#608040';
   return `<span class="bestiary-danger" style="color:${color}">
-            ${'⚠️'.repeat(Math.min(v, 5))} Danger&nbsp;${v}/10
+            ${'⚠️'.repeat(Math.min(v, 5))} Danger&nbsp;${v}/11
           </span>`;
 }
 

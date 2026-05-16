@@ -226,7 +226,7 @@ function _renderSellGrid(grid) {
 // ── Achat / vente ─────────────────────────────────────────────
 
 function _purchase(item, price) {
-  if (player.gold < price) return;
+  if (!Number.isFinite(player.gold) || player.gold < price) return;
   if (player.inventory.length >= 16) { addMsg("Sac plein !", 'bad'); return; }
   player.gold -= price;
   player.inventory.push({ ...item });
