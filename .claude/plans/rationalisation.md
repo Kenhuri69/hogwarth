@@ -82,7 +82,12 @@ chaque). Les points sont ordonnés par risque croissant.
 - **Risque** : faible-moyen — risque de léger changement sonore ; à valider à
   l'oreille en plus du smoke test.
 - **Vérification** : smoke test vert ; écoute manuelle des 6 sons.
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Statut** : [x] proposé · [x] validé · [x] implémenté
+- **Note implémentation** : `_playArpeggio` monolithique écarté (enveloppes trop
+  variées : attaque présente/absente, décroissance relative/absolue). Helper
+  mono-note `_playTone({freq,type,start,peak,attack,decayAt,stop})` ajouté en
+  tête de `audio-sfx.js`. Les 6 fonctions gardent leur boucle ; tous les
+  paramètres reportés à l'identique → son strictement inchangé.
 
 ## P6 — battle-spells.js : helper `_computeSpellDamage`
 
