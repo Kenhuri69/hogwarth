@@ -8,9 +8,8 @@ personnalité de chaque PNJ.
 
 ## Périmètre (décision utilisateur)
 
-- **PNJ concernés** : uniquement les PNJ lore — `sir_nicolas`,
-  `moine_gras`, `rusard`, `trelawney`.
-- **Vendeurs exclus** : `rosmerta`, `mundungus` gardent leur `idle` fixe.
+- **PNJ concernés** : PNJ lore — `sir_nicolas`, `moine_gras`, `rusard`,
+  `trelawney` — puis extension aux vendeurs `rosmerta`, `mundungus`.
 - **« En fonction du personnage » = le PNJ lui-même** : chaque pool
   d'anecdotes reflète le caractère du PNJ, pas le héros joueur.
 - Mécanique inchangée : `idleRandom` (array piochée au hasard par
@@ -37,3 +36,13 @@ personnalité de chaque PNJ.
 - [x] Étape 3 — rusard (4 → 9 anecdotes)
 - [x] Étape 4 — trelawney (4 → 9 anecdotes)
 - [x] Étape 5 — smoke test vert
+
+## Extension — vendeurs (suite)
+
+`rosmerta` et `mundungus` n'avaient qu'une ligne `idle` fixe. Remplacée
+par un pool `idleRandom` de 8 anecdotes graduées rigolo → sombre :
+- `rosmerta` : buvette joviale → habitués disparus, sortilège d'Imperium.
+- `mundungus` : combines comiques → pillage des morts, abandon coupable.
+
+- [x] Vendeurs — rosmerta + mundungus (1 → 8 anecdotes)
+- [x] smoke test vert
