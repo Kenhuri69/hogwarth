@@ -509,7 +509,17 @@ const NPCS = [
         "Tiens, un sorcier en vadrouille ! Une petite Bièreaubeurre, ça vous tente ?",
         "J'ai aussi tout ce qu'il faut pour tenir le coup dans les couloirs. Servez-vous, vous me payez après."
       ],
-      idle: "Les bonnes affaires sont rarement deux fois au même endroit, jeune sorcier."
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "Les bonnes affaires sont rarement deux fois au même endroit, jeune sorcier.",
+        "Une Bièreaubeurre bien moussue, et hop, le donjon paraît deux fois moins sombre. Presque de la magie.",
+        "On me dit toujours tout, à la buvette. Les murs ont des oreilles — moi, j'ai un comptoir.",
+        "Tu as la tête de quelqu'un qui n'a pas dormi depuis trois étages. Tiens, celle-là, c'est ma tournée.",
+        "J'ai servi des héros et des crapules au même tonneau. Crois-moi, de loin, on les distingue mal.",
+        "Des habitués descendaient boire un verre ici… et ne sont jamais remontés le commander. J'ai arrêté de compter.",
+        "Pendant la guerre, ma buvette servait de refuge. Et de piège, aussi. On ne choisit pas toujours.",
+        "Un soir, je me suis surprise à faire des choses sans savoir pourquoi — quelqu'un tirait les ficelles dans ma tête. Méfie-toi de ceux qui te fixent trop longtemps dans les yeux."
+      ]
     }
   },
   {
@@ -537,7 +547,17 @@ const NPCS = [
         "Pst... approche, jeune sorcier. J'ai des... acquisitions exclusives.",
         "Pas de questions, juste des prix. Tu jettes un œil ?"
       ],
-      idle: "T'inquiète, c'est honnête. Enfin presque."
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
+      idleRandom: [
+        "T'inquiète, c'est honnête. Enfin presque.",
+        "Ce chaudron ? Tombé d'une charrette. La charrette aussi, d'ailleurs. Tout est tombé. C'est ballot.",
+        "Si on te demande, tu ne m'as jamais vu. Si on te demande qui, tu ne sais pas non plus.",
+        "J'ai un principe : ne jamais voler un type plus pauvre que moi. Le souci, c'est qu'il n'y en a pas beaucoup.",
+        "Les gobelins me cherchent. Les Aurors aussi. C'est flatteur, au fond, d'être autant demandé.",
+        "Ce médaillon-là ? Disons qu'il vient d'une maison où plus personne ne le réclamera. Les morts ne portent pas plainte.",
+        "Un jour, j'ai paniqué et j'ai filé en laissant quelqu'un de bien derrière moi. Il n'a pas survécu. Je ne dors plus très bien depuis.",
+        "Tu sais ce qui fait peur, dans ces couloirs ? Pas les monstres. C'est de comprendre qu'on en est devenu un, à force."
+      ]
     }
   },
 
