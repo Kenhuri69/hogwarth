@@ -166,6 +166,20 @@ function _placeNpcInRoom(npc, room, isSpawnRoom) {
   return true;
 }
 
+// Place un PNJ random dans la première salle intermédiaire libre, repli
+// sur l'avant-dernière salle. Met à jour `occupied`. Retourne true si placé.
+function _placeRandomNpcInRooms(npc, rooms, occupied) {
+  for (let i = 1; i < rooms.length - 1; i++) {
+    if (occupied.has(i)) continue;
+    if (_placeNpcInRoom(npc, rooms[i], false)) { occupied.add(i); return true; }
+  }
+  if (rooms.length >= 2) {
+    const fallback = rooms.length - 2;
+    if (_placeNpcInRoom(npc, rooms[fallback], false)) { occupied.add(fallback); return true; }
+  }
+  return false;
+}
+
 function generateDungeon(floor) {
   dungeon = Array.from({length:MAP_H}, () => Array(MAP_W).fill(CELL.WALL));
   visited = Array.from({length:MAP_H}, () => Array(MAP_W).fill(false));
@@ -270,27 +284,32 @@ function generateDungeon(floor) {
     }
   }
 
-  // Rencontre aléatoire (PNJ random — vendeur OU lore) : 50% par étage.
-  // Pool combiné via getRandomEncountersForFloor, filtré par minFloor /
-  // maxFloor. Un seul random par étage maximum (vendeur ou lore exclusif).
-  if (Math.random() < 0.50 && typeof getRandomEncountersForFloor === 'function') {
-    const pool = getRandomEncountersForFloor(floor);
+  // Rencontres aléatoires — deux tirages indépendants par étage :
+  //   1) Donneur de quête répétable (70 %) : pool dédié pour que ces
+  //      quêtes soient découvrables de façon fiable. On ne tire que parmi
+  //      les donneurs dont la quête est offrable ou prête à rendre, pour
+  //      que chaque spawn forcé montre vraiment une quête actionnable.
+  //   2) PNJ ambiant vendeur/lore (50 %) : saveur d'exploration.
+  // Cf. .claude/plans/repeatable-quest-spawn.md.
+  if (Math.random() < 0.70 && typeof getRandomQuestGiversForFloor === 'function') {
+    let givers = getRandomQuestGiversForFloor(floor);
+    if (typeof getNpcQuestState === 'function') {
+      givers = givers.filter(n => {
+        const st = getNpcQuestState(n);
+        return st === 'offer' || st === 'ready';
+      });
+    }
+    if (givers.length) {
+      const npc = givers[Math.floor(Math.random() * givers.length)];
+      _placeRandomNpcInRooms(npc, rooms, occupied);
+    }
+  }
+
+  if (Math.random() < 0.50 && typeof getRandomAmbientNpcsForFloor === 'function') {
+    const pool = getRandomAmbientNpcsForFloor(floor);
     if (pool.length) {
       const npc = pool[Math.floor(Math.random() * pool.length)];
-      // Première room intermédiaire libre, sinon repli avant-dernière.
-      let placed = false;
-      for (let i = 1; i < rooms.length - 1; i++) {
-        if (occupied.has(i)) continue;
-        if (_placeNpcInRoom(npc, rooms[i], false)) {
-          occupied.add(i); placed = true; break;
-        }
-      }
-      if (!placed && rooms.length >= 2) {
-        const fallback = rooms.length - 2;
-        if (_placeNpcInRoom(npc, rooms[fallback], false)) {
-          occupied.add(fallback);
-        }
-      }
+      _placeRandomNpcInRooms(npc, rooms, occupied);
     }
   }
 
