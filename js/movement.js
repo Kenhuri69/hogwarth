@@ -500,6 +500,18 @@ function searchRoom() {
       setNarrative(NARRATIVES.item_found(item.name));
       addMsg(`Trouvé : ${item.name}`, 'good');
     }
+  } else if (roll < SEARCH_ITEM_THRESHOLD + 0.20) {
+    // Cueillette d'une herbe du palier de l'étage courant → besace.
+    const tier = (currentFloor >= 7) ? 3 : (currentFloor >= 4) ? 2 : 1;
+    const herbs = ITEMS.filter(i => i.type === 'herb' && i.tier === tier);
+    const herb = herbs.length ? herbs[Math.floor(Math.random() * herbs.length)] : null;
+    if (herb && tryAddItem(herb, { silent: true })) {
+      setNarrative(`Entre deux pierres, une herbe a poussé : ${herb.name}. Vous la cueillez.`);
+      addMsg(`Herbe cueillie : ${herb.name}`, 'good');
+    } else {
+      setNarrative(NARRATIVES.nothing);
+      addMsg("Rien trouvé.", '');
+    }
   } else {
     setNarrative(NARRATIVES.nothing);
     addMsg("Rien trouvé.", '');

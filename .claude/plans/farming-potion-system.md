@@ -1,7 +1,7 @@
 # Système de Farming d'Herbes & Concoction de Potions
 
 > Branche : `claude/farming-potion-system-SXjie`
-> Statut : **plan validé, implémentation à confirmer**
+> Statut : **implémenté — smoke test vert**
 
 ## Objectif
 
@@ -355,22 +355,26 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 
 | Fichier | Changement |
 |---------|-----------|
-| `js/data.js` | 6 items herbes + `POTION_RECIPES` |
-| `js/state.js` | `player.herbs = {}` + `player.knownRecipes = []` à l'init + quête `quest_potions_slughorn` dans `activeQuests` |
-| `js/potions.js` | **NOUVEAU** : besace (`addHerb`/`getHerbCount`/`consumeHerbs`), `_isBrewingUnlocked()`, `learnRecipe()`, `_CAULDRON_SVG`, `_cauldronMix` (tampon local), `openBrewingModal()` (vue chaudron unique), `_renderBrewingModal()` (chaudron + mélange + recettes + besace), `_addToCauldron`/`_removeFromCauldron`/`_fillFromRecipe`/`_clearCauldron`, `attemptBrew(_cauldronMix)` (résolution multiset : match connu / découverte / échec, puis jet INT), `_matchRecipe(mix)`, `_brewChance()` |
-| `js/quests.js` | `completeQuest()` : traiter `reward.recipes` → `learnRecipe()` pour chaque id |
-| `js/item-icons.js` | nouveau `ITEM_ICON_SVG_REGISTRY` (6 herbes + potions brassées) ; `getItemIconHtml()` le consulte **en premier** (SVG inline avant PNG/emoji) |
+| `js/data.js` | 6 items herbes (`type:"herb"`, `tier`) + `POTION_RECIPES` (6 recettes) |
+| `js/state.js` | `player.herbs = {}` + `player.knownRecipes = []` à l'init |
+| `js/potions.js` | **NOUVEAU** : besace (`addHerb`/`getHerbCount`/`_ingredientCount`/`_consumeIngredient`), `_isBrewingUnlocked()`, `learnRecipe()`, `_cauldronSvg()`, `_cauldronMix` (tampon local), `openBrewingModal()`, `_renderBrewingModal()`, `_addToCauldron`/`_removeFromCauldron`/`_fillFromRecipe`/`_clearCauldron`, `attemptBrew()` (résolution multiset : match connu / découverte / échec, puis jet INT), `_matchRecipe()`, `_brewChance()` |
+| `js/quests.js` | 2 quêtes (`quest_potions_slughorn` + suivi `quest_potions_slughorn_2`) dans `QUEST_TEMPLATES` ; `_grantQuestReward()` traite `reward.recipes` ; `_renderRewardParts()` affiche les recettes |
+| `js/item-icons.js` | `ITEM_ICON_SVG_REGISTRY` (6 herbes + 6 potions) + helper `_potionSvg()` ; `getItemIconHtml()` le consulte **en premier** |
 | `js/audio-sfx.js` | nouvelle méthode `playBrew()` — bouillonnement de chaudron synthétisé |
-| `js/inventory.js` (ou site de `tryAddItem`) | `tryAddItem` : si `item.type==='herb'` → `addHerb()`, retourne `true` |
-| `js/movement.js` | `searchRoom()` : nouvelle branche « herbe trouvée » (herbe du palier de l'étage courant) |
-| `js/monsters.js` | drops d'herbes sur ~6 monstres botaniques/bêtes (Mandragore Sauvage, Bowtruckle Géant, Bundimun, Niffleur, Kappa, Loup-Garou) |
-| `js/npcs.js` | nouveau PNJ `slughorn` : `questsGiven`/`questsTurnedIn` = `["quest_potions_slughorn"]`, `dialoguesByQuest`, `specialAction { type:"open_brewing", label:"🧪 Concocter une potion" }` |
-| `js/npc-dialog.js` | `triggerNpcSpecialAction` : branche `open_brewing` → garde `_isBrewingUnlocked()` puis `openBrewingModal()`, **hors** garde `_isSpecialActionSpent` (répétable). `_npcDialogActions` : bouton brassage masqué tant que `_isBrewingUnlocked()` est faux |
-| `js/save.js` | sérialiser/restaurer `player.herbs` **et** `player.knownRecipes` dans `_serializeState`/`_applyState` |
-| `index.html` | `<script src="js/potions.js">` dans l'ordre de chargement + markup `#brewing-modal` |
-| `js/loader.js` | entrées MANIFEST : `openBrewingModal` (+ vérif que `ITEM_ICON_SVG_REGISTRY` existe) |
-| `css/style.css` | style de `#brewing-modal` (réutilise les classes modale) : chaudron, tuiles d'herbes, bulles animées (`@keyframes`), états réussite/échec ; classe `.svg-icon` pour les SVG inline d'items ; bloc responsive ≤ 700 px |
-| `tests/smoke.js` | scénario brassage |
+| `js/inventory.js` | `tryAddItem` : si `item.type==='herb'` → `addHerb()`, retourne `true` |
+| `js/movement.js` | `searchRoom()` : branche « herbe cueillie » (herbe du palier de l'étage, ~20 %) |
+| `js/monsters.js` | drops d'herbes sur 6 monstres (Mandragore Sauvage, Bowtruckle, Bundimun, Niffleur, Kappa, Loup-Garou) |
+| `js/npcs.js` | nouveau PNJ `slughorn` (étage 2) : `questsGiven`/`questsTurnedIn` des 2 quêtes, `dialoguesByQuest`, `specialAction { type:"open_brewing" }` |
+| `js/npc-dialog.js` | `triggerNpcSpecialAction` : branche `open_brewing` (répétable, hors `_isSpecialActionSpent`) ; `_npcDialogActions` : bouton masqué tant que `_isBrewingUnlocked()` faux, onClick sans ré-ouverture du dialogue |
+| `js/loader.js` | MANIFEST : `POTION_RECIPES`, `ITEM_ICON_SVG_REGISTRY`, `openBrewingModal`, `attemptBrew`, `addHerb` |
+| `index.html` | `<script src="js/potions.js">` + markup `#brewing-modal` |
+| `css/style.css` | style `#brewing-modal` : chaudron, tuiles d'herbes, bulles animées (`@keyframes`), états réussite/échec ; classe `.svg-icon` ; bloc responsive ≤ 700 px |
+| `tests/smoke.js` | scénario `scenarioBrewing` ; ajustements (étage 2 = 4 PNJ, couverture icônes SVG, inventaire potion_s en SVG) |
+
+> `js/save.js` : **aucun changement nécessaire** — `player.herbs` et
+> `player.knownRecipes` sont des propriétés de `player`, déjà sérialisé
+> en entier via `party: [player, player2]` dans `_serializeState`, et
+> restauré par `Object.assign(player, …)` dans `_applyState`.
 
 ## Étapes & vérifications
 
@@ -449,4 +453,15 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
   (`ITEM_ICON_SVG_REGISTRY`) pour les 6 herbes et les potions brassées,
   consulté en premier par `getItemIconHtml()`. Nouveau son `playBrew()`
   (bouillonnement de chaudron synthétisé) joué au lancement du brassage.
-  En attente du feu vert pour implémenter.
+- 2026-05-16 — **Implémentation complète**. Écarts vs plan :
+  • Les quêtes vivent dans `QUEST_TEMPLATES` (`quests.js`), pas dans
+    `activeQuests` de `state.js` — le plan suivait une description CLAUDE.md
+    périmée. `quest_potions_slughorn_2` (suivi, prereq) porte les recettes
+    de Grande Potion.
+  • `save.js` n'a pas eu besoin de modification (herbs/knownRecipes
+    voyagent avec `player`).
+  • `_isBrewingUnlocked()` teste `completedQuests` (Set) et non un flag
+    `completed` sur la quête active.
+  • `mandragore` (item sac, pas besace) géré comme ingrédient via
+    `_ingredientCount`/`_consumeIngredient`.
+  Smoke test : `scenarioBrewing` ajouté, suite verte.

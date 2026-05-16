@@ -345,6 +345,39 @@ const ITEMS = [
   { id:"livre_morsmordre", name:"Marque des Ténèbres",            icon:"📕", desc:"Apprend Morsmordre",            type:"spellbook", spell:"Morsmordre",    price:600 },
   // Sort utilitaire premium (cf. .claude/plans/teleportation-spell.md).
   { id:"livre_portus",     name:"Traité de la Téléportation",     icon:"📘", desc:"Apprend Portus — téléportation tactique (combat + hors combat)", type:"spellbook", spell:"Portus", price:2800 },
+  // ── Herbes (ingrédients de potion) — type:"herb" ─────────────
+  // Routées vers la besace d'herboriste (player.herbs), pas le sac.
+  // Voir .claude/plans/farming-potion-system.md.
+  { id:"herbe_armoise",      name:"Armoise",          icon:"🌿", desc:"Ingrédient de potion (palier 1).", type:"herb", tier:1, price:6 },
+  { id:"herbe_ortie",        name:"Ortie séchée",     icon:"🍀", desc:"Ingrédient de potion (palier 1).", type:"herb", tier:1, price:6 },
+  { id:"herbe_asphodele",    name:"Asphodèle",        icon:"🌼", desc:"Ingrédient de potion (palier 2).", type:"herb", tier:2, price:12 },
+  { id:"herbe_branchiflore", name:"Branchiflore",     icon:"🪴", desc:"Ingrédient de potion (palier 2).", type:"herb", tier:2, price:12 },
+  { id:"herbe_aconit",       name:"Aconit",           icon:"☘️", desc:"Ingrédient de potion (palier 3).", type:"herb", tier:3, price:20 },
+  { id:"herbe_dictame",      name:"Dictame",          icon:"🍃", desc:"Ingrédient de potion (palier 3).", type:"herb", tier:3, price:20 },
+];
+
+// ── Recettes de potion (concoction chez Slughorn) ─────────────
+// Voir .claude/plans/farming-potion-system.md. `difficulty` pilote le
+// jet INT ; `ingredients` est un multiset { itemId: qty }.
+const POTION_RECIPES = [
+  { id:"brew_potion_s",     name:"Potion de Soin",        resultItemId:"potion_s",
+    ingredients:{ herbe_armoise:2 },                                    difficulty:8,
+    lore:"La concoction curative de base — deux brins d'armoise suffisent." },
+  { id:"brew_potion_m",     name:"Potion Magique",        resultItemId:"potion_m",
+    ingredients:{ herbe_ortie:2 },                                      difficulty:8,
+    lore:"L'ortie séchée libère l'énergie magique à l'infusion." },
+  { id:"brew_potion_l",     name:"Grande Potion de Soin", resultItemId:"potion_l",
+    ingredients:{ herbe_asphodele:2, herbe_armoise:1 },                 difficulty:12,
+    lore:"L'asphodèle décuple la vertu curative de l'armoise." },
+  { id:"brew_potion_l_sp",  name:"Grande Potion Magique", resultItemId:"potion_l_sp",
+    ingredients:{ herbe_branchiflore:2, herbe_ortie:1 },                difficulty:12,
+    lore:"La branchiflore amplifie le flux magique de l'ortie." },
+  { id:"brew_potion_force", name:"Potion de Force",       resultItemId:"potion_force",
+    ingredients:{ herbe_aconit:1, mandragore:2 },                       difficulty:14,
+    lore:"L'aconit, dosé avec soin, exalte la vigueur du buveur." },
+  { id:"brew_potion_xl",    name:"Élixir Suprême",        resultItemId:"potion_xl",
+    ingredients:{ herbe_dictame:2, herbe_aconit:1, herbe_asphodele:1 }, difficulty:18,
+    lore:"Le dictame, herbe légendaire, parachève l'élixir des maîtres." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];

@@ -743,6 +743,15 @@
   </div>
 </div>
 
+<!-- Concoction de potions — Le Chaudron de Slughorn -->
+<div id="brewing-modal" role="dialog" aria-modal="true" aria-labelledby="brewing-modal-title" style="display:none">
+  <div class="brewing-box modal-box">
+    <span class="modal-close" onclick="closeModal('brewing-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <div class="modal-title" id="brewing-modal-title">🧪 Le Chaudron de Slughorn</div>
+    <div id="brewing-body"></div>
+  </div>
+</div>
+
 <div id="death-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center">
   <img class="death-art" src="img/scenes/death.jpg" alt="Couloir pétrifié de Poudlard">
   <div class="death-title">✝ Pétrification ✝</div>
@@ -792,6 +801,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/battle-spells.js?v=1"></script>
 <script src="js/battle-ui.js?v=1"></script>
 <script src="js/inventory.js?v=2"></script>
+<script src="js/potions.js?v=1"></script>
 <script src="js/quests.js?v=5"></script>
 <script src="js/npc-dialog.js?v=6"></script>
 <script src="js/karaoke.js?v=1"></script>

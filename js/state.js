@@ -336,6 +336,11 @@ const player = {
   _baseAtk: 5, _baseDef: 2, _baseMag: 10, _baseLck: 15,
   gold: 25,
   inventory: [],
+  // Besace d'herboriste (partagée) : { herbId: count }, non plafonnée.
+  // Recettes de potion connues : tableau d'ids POTION_RECIPES.
+  // Voir .claude/plans/farming-potion-system.md.
+  herbs: {},
+  knownRecipes: [],
   // 11 slots étendus — voir .claude/plans/equipment-extended.md §2.1
   equipped: {
     wand: null, head: null, body: null, hands: null, feet: null, cloak: null,
