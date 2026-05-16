@@ -270,15 +270,35 @@ function _renderHubSlotList() {
 //   fixture). La liste vide est rendue avec un placeholder doux.
 let _introNarrationStarted = false;
 
+// ── Amorçage de la musique de menu dès le 1er geste ──────────────
+// La politique d'autoplay des navigateurs interdit tout son tant que
+// le joueur n'a pas interagi avec la page. On amorce donc le thème de
+// menu au tout premier geste (clic, touche ou toucher), y compris sur
+// l'écran titre : la musique accompagne le joueur dès qu'il interagit,
+// sans attendre la navigation vers le hub.
+let _menuAudioArmed = false;
+function _armMenuAudio() {
+  if (_menuAudioArmed) return;
+  _menuAudioArmed = true;
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.removeEventListener(ev, _armMenuAudio, true));
+  if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playMenuMusic === 'function') {
+    AudioSystem.playMenuMusic();
+  }
+}
+['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+  document.addEventListener(ev, _armMenuAudio, true));
+
 function enterStartHub() {
   const titleEl = document.getElementById('title-screen');
   if (titleEl) titleEl.style.display = 'none';
   migrateLegacyKey();
   _renderHubSlotList();
   document.getElementById('start-hub-screen').style.display = 'flex';
-  // Musique dès le 1er clic : le geste utilisateur (clic sur l'écran
-  // titre) débloque l'AudioContext. La voix narrative mystérieuse
-  // accueille le joueur — il ne sait pas encore que c'est Dumbledore.
+  // La musique de menu est normalement déjà lancée par `_armMenuAudio`
+  // (1er geste) ; cet appel reste un filet de sécurité idempotent. La
+  // voix narrative mystérieuse accueille le joueur — il ne sait pas
+  // encore que c'est Dumbledore.
   if (typeof AudioSystem !== 'undefined') {
     if (typeof AudioSystem.playMenuMusic === 'function') AudioSystem.playMenuMusic();
     if (!_introNarrationStarted && typeof AudioSystem.playVoice === 'function') {
