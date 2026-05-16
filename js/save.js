@@ -433,7 +433,7 @@ function _applyState(gs) {
   }
 
   recalculateStats();
-  _migrateHouseRewards();
+  if (!('pendingHouseRewards' in gs)) _migrateHouseRewards();
   updateUI();
   updateCompass();
   renderMinimap();
