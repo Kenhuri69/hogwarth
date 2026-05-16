@@ -1,13 +1,20 @@
 # Étude de la difficulté & équations de puissance
 
 > Méthode : lecture du code réel + simulation Monte-Carlo
-> `tools/sim-difficulty.js` (400 combats / étage / mode).
+> `tools/sim-difficulty.js` (600-800 combats / étage / mode).
 >
 > ⚠️ **Correction importante** — une première version de cette étude
 > concluait que le jeu était « ingagnable » en fin de partie. C'était faux :
 > le harness de simulation comportait un bug (voir §2) qui désactivait
 > silencieusement la modélisation des quêtes, de l'équipement et des
 > potions. Corrigé. Les chiffres ci-dessous sont la mesure honnête.
+>
+> 🔄 **Recalcul (mai 2026)** — chiffres re-mesurés après la refonte du
+> critique (deux canaux physique/sort, crit damage, crit > 40 %). Le jeu
+> normal (§3-4) bouge peu (+2-4 pts, buff léger). En revanche les tables
+> endgame (§8) étaient **obsolètes et trop optimistes** : les ajouts de
+> monstres récents ont durci la Boucle au-delà de l'étage ~17 — §8
+> ré-étalonné ci-dessous.
 
 ---
 
@@ -19,8 +26,8 @@ et en récupérant des artefacts — exactement comme prévu par le design.
 
 | Mode | Jeu normal (sans farming) | Avec farming + artefacts |
 |------|---------------------------|--------------------------|
-| Solo | confortable 1-5, tendu 6-7, difficile 8-9, dur 10-12 (~30 %) | 100 % jusqu'à l'étage 8, 64-86 % aux étages 9-12 |
-| Duo  | confortable 1-8, tendu 9, difficile 10-12 (55-65 %) | ≥ 93 % partout |
+| Solo | confortable 1-6, tendu 7, difficile 8-9, dur 10-12 (~30 %) | 96 % à l'étage 8, 68-88 % aux étages 9-12 |
+| Duo  | confortable 1-8, tendu 9, difficile 10-12 (59-65 %) | confortable, 89-100 % selon le farming |
 
 **Il n'y a pas de mur infranchissable.** La zone « difficile » de fin de partie
 est la récompense attendue de l'investissement (niveaux + équipement légendaire).
@@ -61,14 +68,14 @@ boutique, stock de potions, 3 points de stats alloués par niveau (build
 | Étage | Solo (niv.) | Win % Solo | Duo (niv.) | Win % Duo |
 |------:|:-----------:|-----------:|:----------:|----------:|
 | 1-4  | 1→6  | 100 %        | 1→7  | 100 % |
-| 5    | 8    | 96 %         | 8    | 100 % |
-| 6    | 8    | 85 %         | 8    | 99 %  |
-| 7    | 9    | 78 %         | 9    | 97 %  |
-| 8    | 9    | 57 %         | 10   | 91 %  |
-| 9    | 10   | 41 %         | 10   | 74 %  |
-| 10   | 10   | 31 %         | 11   | 65 %  |
-| 11   | 11   | 27 %         | 11   | 57 %  |
-| 12   | 11   | 26 %         | 12   | 55 %  |
+| 5    | 8    | 95 %         | 8    | 100 % |
+| 6    | 8    | 86 %         | 8    | 100 % |
+| 7    | 9    | 76 %         | 9    | 98 %  |
+| 8    | 9    | 60 %         | 10   | 93 %  |
+| 9    | 10   | 45 %         | 10   | 77 %  |
+| 10   | 10   | 33 %         | 11   | 65 %  |
+| 11   | 11   | 31 %         | 11   | 60 %  |
+| 12   | 11   | 28 %         | 12   | 59 %  |
 
 **Lecture** : la difficulté monte progressivement, sans spike brutal. Le Solo
 de fin de partie (étages 10-12, ~30 %) signale au joueur qu'il doit se
@@ -86,11 +93,11 @@ Mesure avec farming (`--bonus-levels`) et artefacts légendaires (`--artifacts`)
 
 | Étage | Solo +8 niv. +artefacts | Duo +5 niv. +artefacts | Duo +12 niv. +artefacts |
 |------:|------------------------:|-----------------------:|------------------------:|
-| 8     | 94 %                    | 100 %                  | 100 % |
-| 9     | 86 %                    | 99 %                   | 100 % |
-| 10    | 72 %                    | 93 %                   | 99 %  |
-| 11    | 73 %                    | 84 %                   | 96 %  |
-| 12    | 64 %                    | 86 %                   | 96 %  |
+| 8     | 96 %                    | 100 %                  | 100 % |
+| 9     | 88 %                    | 96 %                   | 100 % |
+| 10    | 81 %                    | 95 %                   | 99 %  |
+| 11    | 73 %                    | 91 %                   | 98 %  |
+| 12    | 68 %                    | 89 %                   | 97 %  |
 
 **Conclusion : le design tient.** Investir des niveaux (farming respawn 20 %,
 revisites d'étage) et récupérer les artefacts transforme une zone « difficile »
@@ -185,14 +192,16 @@ récursion via le flag `--endgame` (`tools/sim-difficulty.js`).
 
 | Étage | Win % Solo | Win % Duo | Niveau joueur |
 |------:|-----------:|----------:|--------------:|
-| 11-15 | 99-100 %   | 100 %     | 11-12 |
-| 18    | 72 %       | 96 %      | 11-12 |
-| 20    | 36 %       | 70 %      | 12-13 |
-| 25    | 13 %       | 40 %      | 13-14 |
-| 30    | 7 %        | 26 %      | 14-15 |
+| 11-15 | 93-100 %   | 100 %     | 11-12 |
+| 18    | 48 %       | 77 %      | 11-12 |
+| 20    | 18 %       | 42 %      | 12-13 |
+| 25    | 8 %        | 20 %      | 13-14 |
+| 30    | 2 %        | 13 %      | 14-15 |
 
 En jeu « normal » (≈ 4 combats/étage, sans grind dédié), la Boucle
-décroche vers l'**étage 19-21** puis devient très dure.
+décroche vers l'**étage 17-19** puis devient très dure. Le décrochage est
+plus précoce que dans la version précédente de cette étude : les monstres
+profonds ajoutés depuis (Strigoï, Hécate, etc.) durcissent la récursion.
 
 ### 8.2 Cause structurelle — le joueur ne suit pas en niveau
 
@@ -211,12 +220,13 @@ principal où l'XP des quêtes maintenait le joueur sur la courbe.
 
 | Étage | Duo +10 niv. | Duo +25 niv. | Duo +45 niv. |
 |------:|-------------:|-------------:|-------------:|
-| 20    | 97 %         | 99 %         | 100 % |
-| 25    | 70 %         | 92 %         | 100 % |
-| 30    | 54 %         | 85 %         | 97 %  |
+| 20    | 78 %         | 97 %         | 100 % |
+| 25    | 37 %         | 72 %         | 92 %  |
+| 30    | 27 %         | 49 %         | 81 %  |
 
-Règle empirique : **~+12-15 niveaux farmés par tranche de 10 étages** de
-Boucle pour rester en zone confortable.
+Règle empirique : **~+20-22 niveaux farmés par tranche de 10 étages** de
+Boucle pour rester en zone confortable — le farming demande nettement plus
+d'investissement que ce que mesurait l'ancienne version de l'étude.
 
 ### 8.4 Forge des Ténèbres + Bibliothèque interdite
 
@@ -232,15 +242,15 @@ Impact mesuré (Duo, endgame, +10 niveaux farmés) :
 
 | Étage | Artefacts seuls | + Forge 5 + Biblio 3 |
 |------:|----------------:|---------------------:|
-| 22    | 80 %            | 90 % |
-| 24    | 73 %            | 86 % |
-| 26    | 62 %            | 83 % |
-| 28    | 56 %            | 75 % |
-| 30    | 54 %            | 64 % |
+| 22    | 59 %            | 82 % |
+| 24    | 56 %            | 76 % |
+| 26    | 44 %            | 66 % |
+| 28    | 43 %            | 59 % |
+| 30    | 35 %            | 50 % |
 
 Le kit complet (artefacts + Forge 5 + Bibliothèque 3 + ~25 niveaux
-farmés) maintient le Duo **confortable (88-100 %) jusqu'à l'étage 30**.
-Forge et Bibliothèque valent à eux deux ~+10-15 pts de win rate dans le
+farmés) maintient le Duo **confortable (81-97 %) jusqu'à l'étage 30**.
+Forge et Bibliothèque valent à eux deux ~+15-20 pts de win rate dans le
 deep endgame — un troisième axe de farming qui complète niveaux + artefacts.
 
 ### 8.6 Sets de Maison + set Ténèbres
@@ -298,9 +308,14 @@ refonte aligne donc chaque set sur son archétype de jeu.
 - ✅ La Boucle Ténébreuse est un **gate infini farmable** sur quatre axes
   (niveaux, artefacts, Forge/Bibliothèque, sets) — cohérent avec le design.
 - ⚠️ **Différence avec le jeu principal** : l'endgame n'a **aucune voie
-  de progression passive**. Il *impose* le farming actif dès l'étage ~19.
+  de progression passive**. Il *impose* le farming actif dès l'étage ~17.
   Choix de design assumable (mode infini façon roguelike), mais à
-  connaître — descendre sans farmer heurte un mur réel vers l'étage 20.
+  connaître — descendre sans farmer heurte un mur réel vers l'étage 18.
+- ⚠️ **Le mur endgame s'est durci** depuis la dernière étude (monstres
+  profonds ajoutés) : le farming nécessaire a quasi doublé (~+20-22 niv.
+  /10 étages contre ~+12-15 avant). À surveiller — si la Boucle devient
+  trop punitive, réduire le `weight` ou le `scale` des monstres 6-7+ les
+  plus lourds (Strigoï Ancien HP 110, Hécate HP 130) est le levier direct.
 - 💡 Si l'on veut adoucir : ralentir `xpNext` en endgame, ou ajouter une
   XP passive de Boucle par étage franchi. Optionnel — à ne pas faire si
   le farming forcé est l'intention.
