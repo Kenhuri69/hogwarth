@@ -195,6 +195,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },
     { name: 'showIntroScreen',    source: 'intro.js',        kind: 'fn',    optional: true },
     { name: 'getNpcById',         source: 'npcs.js',         kind: 'fn',    optional: true },
+    { name: 'Karaoke',            source: 'karaoke.js',      kind: 'obj',   optional: true },
   ];
 
   // ── Vérification d'un identifiant nu via typeof ──────────────

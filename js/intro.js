@@ -79,6 +79,12 @@ function _renderIntroPage() {
   if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playVoice === 'function') {
     AudioSystem.playVoice('dumbledore_intro_' + (_introPage + 1));
   }
+
+  // Sous-titres karaoké : surligne le texte au rythme de la voix.
+  if (typeof Karaoke !== 'undefined') {
+    const pageEl = document.querySelector('#intro-text .intro-page-text');
+    if (pageEl) { Karaoke.wrap(pageEl); Karaoke.start(pageEl); }
+  }
 }
 
 function _advanceIntro() {
@@ -95,6 +101,7 @@ function _finishIntro() {
   if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.stopVoice === 'function') {
     AudioSystem.stopVoice();
   }
+  if (typeof Karaoke !== 'undefined') Karaoke.stop();
   // Acceptation auto de la 1re quête : c'est le contrat narratif de l'intro.
   if (typeof acceptQuest === 'function') acceptQuest('intro_tutoriel');
   // Marquer le PNJ guide comme rencontré : le greeting ne se rejouera pas
