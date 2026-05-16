@@ -284,6 +284,18 @@ let defeatedCellsByFloor = new Map();
 // cap +40 %), n ≥ 5 active la prob trio (+10%/(n-4), cap +40 %). Persisté.
 let floorKillCount = new Map();
 
+// ── Boutique fixe : stock fini & réassort (anti-farming) ─────
+// Stock courant de la boutique fixe (Mme Malkins). `null` = pas encore
+// tiré → tirage paresseux à la première ouverture. Tableau d'entrées
+// { item, price, sold } : `sold:true` = objet revendu par le joueur,
+// rachetable au prix plein mais perdu au réassort.
+let shopStock = null;
+// Pas effectués depuis le dernier réassort. À 40, le stock est invalidé.
+let shopStepsSinceRestock = 0;
+// Livres de sorts déjà achetés (toute la partie) — ne réapparaissent
+// jamais à l'achat, ni en boutique fixe ni chez les vendeurs. Persisté.
+let purchasedSpellbooks = new Set();
+
 // Étages déjà visités par le joueur — alimentés par goDeeper/goUp et le
 // démarrage de partie (1 = couloir d'entrée). Consommés par la modale de
 // téléportation hors combat (Portus) pour proposer la liste des destinations.

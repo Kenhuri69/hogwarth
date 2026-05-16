@@ -2688,6 +2688,7 @@ async function scenarioItemIcons() {
   const t3 = await page.evaluate(() => {
     closeModal('inventory-modal');
     currentFloor = 6;  // pour débloquer wand2 dans shop
+    shopStock = null;  // re-tirage déterministe pour l'étage courant
     openShop();
     const list = document.getElementById('shop-grid');
     const imgs = Array.from(list.querySelectorAll('img.ui-icon')).map(i => i.getAttribute('src'));
@@ -3051,6 +3052,7 @@ async function scenarioPhase3Catalog() {
   // T6 : ouverture boutique étage 1 → nouveaux items présents
   const t6 = await page.evaluate(() => {
     currentFloor = 1;
+    shopStock = null;  // re-tirage déterministe pour l'étage courant
     openShop();
     const ids = Array.from(document.querySelectorAll('#shop-grid .shop-item'))
       .map(el => el.dataset.itemId);
@@ -6231,19 +6233,24 @@ async function scenarioTeleportation() {
   assert(t1.initial.includes(1),                   'visitedFloors doit contenir l\'étage 1 au démarrage');
   assert(t1.after.includes(2) && t1.after.includes(3), 'add() doit alimenter visitedFloors');
 
-  // T2 : le livre_portus est en boutique à floor 6 et achetable.
+  // T2 : le livre_portus est éligible à floor 6 et s'affiche en boutique.
+  // Le stock est tiré au hasard → on le force pour un test déterministe.
   const t2 = await page.evaluate(() => {
     currentFloor = 6;
     player.gold = 5000;
+    const eligible = SHOP_CATALOG.some(e => e.id === 'livre_portus' && e.minFloor <= 6);
+    const livre = ITEMS.find(i => i.id === 'livre_portus');
+    shopStock = [{ item: { ...livre }, price: livre.price, sold: false }];
     openShop();
     const grid  = document.getElementById('shop-grid');
     const found = Array.from(grid.querySelectorAll('.shop-item')).find(el =>
       el.dataset.itemId === 'livre_portus'
     );
-    return { hasEntry: !!found, price: found ? found.querySelector('.shop-price').textContent : null };
+    return { eligible, hasEntry: !!found, price: found ? found.querySelector('.shop-price').textContent : null };
   });
   console.log('  T2 shop →', t2);
-  assert(t2.hasEntry,                              'livre_portus doit apparaître en boutique floor 6+');
+  assert(t2.eligible,                              'livre_portus doit être éligible en boutique floor 6+');
+  assert(t2.hasEntry,                              'livre_portus doit s\'afficher quand il est dans le stock');
   assert(/2800/.test(t2.price || ''),              'livre_portus doit coûter 2800G');
 
   // T3 : achat + apprentissage automatique → sort dans player.spells.
@@ -6669,6 +6676,102 @@ async function scenarioBrewing() {
   await browser.close();
 }
 
+// ── Scénario : boutique anti-abus (stock fini, achat unique, réassort) ─
+async function scenarioShopLimits() {
+  console.log('\n── Scénario : boutique anti-abus ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : le stock est un tableau borné à SHOP_STOCK_SIZE.
+  const t1 = await page.evaluate(() => {
+    shopStock = null;
+    player.gold = 999999;
+    openShop();
+    return { isArray: Array.isArray(shopStock), size: shopStock.length, cap: SHOP_STOCK_SIZE };
+  });
+  console.log('  T1 stock →', t1);
+  assert(t1.isArray,                 'shopStock doit être un tableau après openShop');
+  assert(t1.size <= t1.cap,          `stock ${t1.size} > cap ${t1.cap}`);
+
+  // T2 : achat unique — l'objet acheté quitte le stock et la grille.
+  const t2 = await page.evaluate(() => {
+    const before = shopStock.length;
+    const first  = document.querySelector('#shop-grid .shop-item');
+    const id     = first.dataset.itemId;
+    first.click();
+    const stillThere = Array.from(document.querySelectorAll('#shop-grid .shop-item'))
+      .some(el => el.dataset.itemId === id);
+    return { boughtId: id, before, after: shopStock.length, stillThere };
+  });
+  console.log('  T2 achat unique →', t2);
+  assert(t2.after === t2.before - 1, 'le stock doit perdre une entrée après achat');
+  assert(!t2.stillThere,             'l\'objet acheté ne doit plus figurer dans la grille');
+
+  // T3 : livre de sorts acheté → retiré globalement (boutique fixe ET vendeur).
+  const t3 = await page.evaluate(() => {
+    const livre = ITEMS.find(i => i.id === 'livre_sortileges');
+    shopStock = [{ item: { ...livre }, price: livre.price, sold: false }];
+    openShop();
+    document.querySelector('#shop-grid .shop-item').click();
+    const recorded = purchasedSpellbooks.has('livre_sortileges');
+    // Vendeur Mundungus vend livre_sortileges + livre_soin : le 1er doit disparaître.
+    openVendorShop('mundungus');
+    const ids = Array.from(document.querySelectorAll('#shop-grid .shop-item'))
+      .map(el => el.dataset.itemId);
+    return { recorded, vendorIds: ids };
+  });
+  console.log('  T3 livre global →', t3);
+  assert(t3.recorded,                          'purchasedSpellbooks doit mémoriser le livre acheté');
+  assert(!t3.vendorIds.includes('livre_sortileges'),
+         'un livre déjà acheté ne doit plus être proposé par les vendeurs');
+  assert(t3.vendorIds.includes('livre_soin'),  'les autres livres restent proposés');
+
+  // T4 : revente → entrée rachetable ; réassort après 40 pas → stock neuf, reventes perdues.
+  const t4 = await page.evaluate(() => {
+    openShop();                       // contexte 'static'
+    const potion = ITEMS.find(i => i.id === 'potion_s');
+    player.inventory.push({ ...potion });
+    const idx = player.inventory.length - 1;
+    sellItem(idx, 10);
+    const soldEntry = shopStock.some(s => s.sold && s.item.id === 'potion_s');
+    // Réassort par les pas.
+    shopStepsSinceRestock = SHOP_RESTOCK_STEPS - 1;
+    _tickShopRestock();
+    const invalidated = shopStock === null;
+    openShop();                       // re-tirage
+    const noSoldLeft = shopStock.every(s => !s.sold);
+    return { soldEntry, invalidated, noSoldLeft, counter: shopStepsSinceRestock };
+  });
+  console.log('  T4 revente + réassort →', t4);
+  assert(t4.soldEntry,        'un objet revendu doit rejoindre le stock (rachat)');
+  assert(t4.invalidated,      'le stock doit être invalidé au bout de SHOP_RESTOCK_STEPS pas');
+  assert(t4.noSoldLeft,       'les objets revendus sont perdus au réassort');
+  assert(t4.counter === 0,    'le compteur de pas est remis à zéro au réassort');
+
+  // T5 : persistance — shopStock / purchasedSpellbooks survivent au round-trip save.
+  const t5 = await page.evaluate(() => {
+    const gs = _serializeState();
+    const snapLen = shopStock.length;
+    const snapBooks = Array.from(purchasedSpellbooks);
+    shopStock = null; shopStepsSinceRestock = 0; purchasedSpellbooks = new Set();
+    _applyState(gs);
+    return {
+      lenOk:   Array.isArray(shopStock) && shopStock.length === snapLen,
+      booksOk: snapBooks.every(b => purchasedSpellbooks.has(b)) && snapBooks.length > 0
+    };
+  });
+  console.log('  T5 persistance →', t5);
+  assert(t5.lenOk,   'shopStock doit survivre au round-trip de sauvegarde');
+  assert(t5.booksOk, 'purchasedSpellbooks doit survivre au round-trip de sauvegarde');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Boutique anti-abus OK (stock fini + achat unique + livres globaux + réassort)');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -6726,7 +6829,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
