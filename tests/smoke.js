@@ -5418,6 +5418,67 @@ async function scenarioFarmingQuests() {
   assert(!t10.hasOfferClass,      'minimap ne doit pas appliquer .map-npc-offer en parallèle');
   assert(t10.sign === '!',        `dataset.sign attendu "!", got ${t10.sign}`);
 
+  // T11 : pools de rencontre cloisonnés — donneurs de quête vs ambiants.
+  const t11 = await page.evaluate(() => {
+    const givers5  = getRandomQuestGiversForFloor(5).map(n => n.id).sort();
+    const ambient5 = getRandomAmbientNpcsForFloor(5).map(n => n.id).sort();
+    return {
+      hasGiverFn:   typeof getRandomQuestGiversForFloor === 'function',
+      hasAmbientFn: typeof getRandomAmbientNpcsForFloor === 'function',
+      givers5,
+      ambient5,
+      giverHasScamander: givers5.includes('scamander_random'),
+      giverHasHagrid:    givers5.includes('hagrid_random'),
+      ambientNoGivers:   !ambient5.includes('scamander_random') && !ambient5.includes('hagrid_random'),
+      ambientHasVendor:  ambient5.includes('rosmerta')
+    };
+  });
+  console.log('  T11 pools cloisonnés:', t11);
+  assert(t11.hasGiverFn,        'getRandomQuestGiversForFloor absent');
+  assert(t11.hasAmbientFn,      'getRandomAmbientNpcsForFloor absent');
+  assert(t11.giverHasScamander, 'scamander_random doit être dans le pool donneurs étage 5');
+  assert(t11.giverHasHagrid,    'hagrid_random doit être dans le pool donneurs étage 5');
+  assert(t11.ambientNoGivers,   'le pool ambiant ne doit PAS contenir les donneurs de quête');
+  assert(t11.ambientHasVendor,  'le pool ambiant doit contenir les vendeurs (rosmerta)');
+
+  // T12 : test statistique — sur N donjons étage 5 (chasse offrable), le
+  // pool donneurs (70 %) doit faire apparaître un PNJ random porteur d'une
+  // quête de farming bien plus souvent que l'ancien ~6 %.
+  const t12 = await page.evaluate(() => {
+    const N = 60;
+    let withGiver = 0;
+    for (let i = 0; i < N; i++) {
+      generateDungeon(5);
+      const ids = Array.from(npcPlacements.values());
+      if (ids.includes('scamander_random') || ids.includes('hagrid_random')) withGiver++;
+    }
+    return { N, withGiver, ratio: withGiver / N };
+  });
+  console.log('  T12 spawn statistique:', t12);
+  assert(t12.ratio >= 0.40,
+    `donneur de quête répétable doit spawner ≥ 40 % des donjons étage 5, got ${(t12.ratio * 100).toFixed(0)} %`);
+
+  // T13 : flux dialogue — PNJ random placé → état 'offer' → bouton
+  // « Accepter la quête » présent → acceptQuest active bien la quête.
+  const t13 = await page.evaluate(() => {
+    activeQuests = activeQuests.filter(q => q.id !== 'chasse_magizoologiste');
+    completedQuests.delete('chasse_magizoologiste');
+    availableQuests.add('chasse_magizoologiste');
+    delete lastQuestCompletion['chasse_magizoologiste'];
+    const npc   = getNpcById('scamander_random');
+    const state = getNpcQuestState(npc);
+    seenNpcs.delete('scamander_random');           // forcer le greeting puis offer
+    const actions = _npcDialogActions(npc, state).map(a => a.label);
+    const accepted  = acceptQuest('chasse_magizoologiste');
+    const activeNow = activeQuests.some(q => q.id === 'chasse_magizoologiste');
+    return { state, actions, hasAccept: actions.some(l => /Accepter/.test(l)), accepted, activeNow };
+  });
+  console.log('  T13 flux dialogue:', t13);
+  assert(t13.state === 'offer',  `scamander_random doit être 'offer', got ${t13.state}`);
+  assert(t13.hasAccept,          'le dialogue doit proposer « Accepter la quête »');
+  assert(t13.accepted,           'acceptQuest doit activer chasse_magizoologiste');
+  assert(t13.activeNow,          'chasse_magizoologiste doit être dans activeQuests après acceptation');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);

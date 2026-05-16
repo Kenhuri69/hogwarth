@@ -727,3 +727,25 @@ function getRandomEncountersForFloor(floor) {
     (n.maxFloor === undefined || n.maxFloor === null || floor <= n.maxFloor)
   );
 }
+
+function getRandomQuestGiversForFloor(floor) {
+  // PNJ ambulants donneurs de quête (random + questsGiven non vide).
+  // Tirés dans un pool dédié pour que les quêtes répétables de farming
+  // soient découvrables de façon fiable (cf. .claude/plans/repeatable-quest-spawn.md).
+  return NPCS.filter(n =>
+    n.random === true &&
+    Array.isArray(n.questsGiven) && n.questsGiven.length > 0 &&
+    (n.minFloor === undefined || floor >= n.minFloor) &&
+    (n.maxFloor === undefined || n.maxFloor === null || floor <= n.maxFloor)
+  );
+}
+
+function getRandomAmbientNpcsForFloor(floor) {
+  // PNJ ambulants sans quête (vendeurs + lore) — saveur d'exploration.
+  return NPCS.filter(n =>
+    n.random === true &&
+    !(Array.isArray(n.questsGiven) && n.questsGiven.length > 0) &&
+    (n.minFloor === undefined || floor >= n.minFloor) &&
+    (n.maxFloor === undefined || n.maxFloor === null || floor <= n.maxFloor)
+  );
+}
