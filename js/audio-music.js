@@ -177,6 +177,23 @@ Object.assign(AudioSystem, {
     rogue_idle_1:              'audio/voice/rogue_idle_1.ogg',
     flitwick_idle_1:           'audio/voice/flitwick_idle_1.ogg',
     sprout_idle_1:             'audio/voice/sprout_idle_1.ogg',
+    // ── Tour guidé d'aide aux novices (js/help-tour.js) ──
+    // Narration des 15 étapes de HELP_TOUR_STEPS par McGonagall.
+    mcgonagall_help_1:         'audio/voice/mcgonagall_help_1.ogg',
+    mcgonagall_help_2:         'audio/voice/mcgonagall_help_2.ogg',
+    mcgonagall_help_3:         'audio/voice/mcgonagall_help_3.ogg',
+    mcgonagall_help_4:         'audio/voice/mcgonagall_help_4.ogg',
+    mcgonagall_help_5:         'audio/voice/mcgonagall_help_5.ogg',
+    mcgonagall_help_6:         'audio/voice/mcgonagall_help_6.ogg',
+    mcgonagall_help_7:         'audio/voice/mcgonagall_help_7.ogg',
+    mcgonagall_help_8:         'audio/voice/mcgonagall_help_8.ogg',
+    mcgonagall_help_9:         'audio/voice/mcgonagall_help_9.ogg',
+    mcgonagall_help_10:        'audio/voice/mcgonagall_help_10.ogg',
+    mcgonagall_help_11:        'audio/voice/mcgonagall_help_11.ogg',
+    mcgonagall_help_12:        'audio/voice/mcgonagall_help_12.ogg',
+    mcgonagall_help_13:        'audio/voice/mcgonagall_help_13.ogg',
+    mcgonagall_help_14:        'audio/voice/mcgonagall_help_14.ogg',
+    mcgonagall_help_15:        'audio/voice/mcgonagall_help_15.ogg',
     // ── Incantations des sortilèges (Vague B voice-extensions-v2) ──
     // 13 sorts ciblés ; mapping nom de sort → clé via SPELL_VOICE_MAP
     // (js/audio-sfx.js). speakSpell joue l'OGG si mappé, sinon retombe

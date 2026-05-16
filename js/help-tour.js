@@ -6,11 +6,11 @@
 // nouvelle partie (sauf opt-out) et relançable via le bouton
 // « Aide » de la barre de commandes.
 //
-// Chaque étape est aussi lue à voix haute via l'API Web Speech
-// (`speechSynthesis`), en privilégiant une voix Microsoft française
-// (Microsoft Hortense/Caroline/Paul… selon l'OS). Aucune dépendance
-// ni clé d'API : ce sont les voix synthétiques installées sur le
-// système, exposées par le navigateur — comme pour `speakSpell`.
+// Chaque étape est aussi narrée à voix haute par McGonagall : des
+// OGG pré-synthétisés via edge-tts (voix neurale Microsoft Azure
+// `de-DE-SeraphinaMultilingualNeural`, identique à ses dialogues PNJ),
+// joués par `AudioSystem.playVoice` — clés `mcgonagall_help_<n>`.
+// Régénération : `tools/gen_voice_edge.py mcgonagall_help`.
 // ============================================================
 
 const HELP_TOUR_OPTOUT_KEY = 'hh_help_tour_optout';
@@ -137,7 +137,12 @@ function _htOptedOut() {
   catch (e) { return false; }
 }
 
-// ── Synthèse vocale (API Web Speech / voix Microsoft) ──────────
+// ── Narration vocale (voix McGonagall — OGG pré-synthétisés) ───
+//
+// Chaque étape est narrée par McGonagall : OGG générés via edge-tts
+// (voix neurale Microsoft Azure de-DE-SeraphinaMultilingualNeural) et
+// joués par AudioSystem.playVoice — clés `mcgonagall_help_<n>` dans
+// AudioSystem._VOICE_SAMPLES (js/audio-music.js).
 
 // La voix est active par défaut ; '0' en localStorage = coupée.
 function _htVoiceEnabled() {
@@ -145,56 +150,19 @@ function _htVoiceEnabled() {
   catch (e) { return true; }
 }
 
-let _htCachedVoice;
-
-// Choisit la meilleure voix : Microsoft française en priorité,
-// puis n'importe quelle voix française, puis n'importe quelle voix
-// Microsoft, enfin la voix par défaut.
-function _htPickVoice() {
-  if (_htCachedVoice) return _htCachedVoice;
-  if (!window.speechSynthesis) return null;
-  const voices = speechSynthesis.getVoices();
-  if (!voices.length) return null;   // pas encore chargées (event async)
-  const isFr = v => v.lang && v.lang.toLowerCase().slice(0, 2) === 'fr';
-  const isMs = v => /microsoft/i.test(v.name || '');
-  const pref = [
-    v => isMs(v) && isFr(v),
-    v => isFr(v),
-    v => isMs(v),
-    v => true,
-  ];
-  for (const test of pref) {
-    const found = voices.find(test);
-    if (found) { _htCachedVoice = found; return found; }
-  }
-  return voices[0];
-}
-
 function _htStopSpeak() {
-  if (window.speechSynthesis) speechSynthesis.cancel();
+  if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.stopVoice === 'function') {
+    AudioSystem.stopVoice();
+  }
 }
 
-function _htSpeak(text) {
-  if (!window.speechSynthesis) return;
-  speechSynthesis.cancel();   // coupe toute lecture en cours
-  if (!_htVoiceEnabled()) return;
-  // Respecte la coupure audio globale du jeu si elle existe.
-  if (typeof AudioSystem !== 'undefined' && AudioSystem.isMuted) return;
-  const utt   = new SpeechSynthesisUtterance(text);
-  const voice = _htPickVoice();
-  if (voice) { utt.voice = voice; utt.lang = voice.lang; }
-  else utt.lang = 'fr-FR';
-  utt.rate   = 0.96;
-  utt.pitch  = 1.0;
-  utt.volume = 1.0;
-  speechSynthesis.speak(utt);
-}
-
-// Lit à voix haute l'étape courante (titre + texte).
+// Narre l'étape courante avec la voix de McGonagall.
 function _htSpeakStep() {
-  const step = HELP_TOUR_STEPS[_helpTourStep];
-  if (!step) return;
-  _htSpeak(step.title + '. ' + step.text);
+  _htStopSpeak();   // coupe toute narration en cours
+  if (!_htVoiceEnabled()) return;
+  if (typeof AudioSystem === 'undefined' || typeof AudioSystem.playVoice !== 'function') return;
+  // playVoice gère lui-même la coupure audio globale (isMuted).
+  AudioSystem.playVoice('mcgonagall_help_' + (_helpTourStep + 1));
 }
 
 function _htUpdateVoiceBtn() {
