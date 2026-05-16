@@ -8,9 +8,10 @@ Pré-requis :
     pip install edge-tts
 
 Usage :
-    python3 tools/gen_voice_edge.py                 # les 4 chefs (20 MP3)
+    python3 tools/gen_voice_edge.py                 # tout (4 chefs + sorts)
     python3 tools/gen_voice_edge.py mcgonagall      # un seul PNJ
     python3 tools/gen_voice_edge.py rogue flitwick  # plusieurs
+    python3 tools/gen_voice_edge.py hermione        # les 13 incantations
 
 Sortie : audio/voice/_raw/<key>.mp3
 
@@ -61,6 +62,8 @@ VOICES = {
     "flitwick": dict(voice="fr-FR-HenriNeural", rate="+10%", pitch="+32Hz"),
     # Chourave : féminine chaleureuse, ronde, médium.
     "sprout": dict(voice="fr-FR-VivienneMultilingualNeural", rate="-3%", pitch="+0Hz"),
+    # Hermione : féminine jeune, claire — incantations des sortilèges.
+    "hermione": dict(voice="fr-FR-EloiseNeural", rate="-4%", pitch="+0Hz"),
 }
 
 # Textes — copie exacte de npcs.js (dialogues.greeting + dialoguesByQuest).
@@ -133,6 +136,24 @@ LINES = {
         ("sprout_ready_1",
          "Trois trolls vaincus — le serment est tenu. Le Médaillon de Helga "
          "vous attend, repassez le réclamer."),
+    ],
+    # Incantations des sortilèges (Vague B). Le texte synthétisé est
+    # l'incantation prononcée ; la clé OGG est mappée 1:1 dans
+    # AudioSystem.SPELL_VOICE_MAP (js/audio-sfx.js).
+    "hermione": [
+        ("spell_expelliarmus",       "Expelliarmus !"),
+        ("spell_stupefix",           "Stupéfix !"),
+        ("spell_episkey",            "Episkey."),
+        ("spell_protego",            "Protego !"),
+        ("spell_incendio",           "Incendio !"),
+        ("spell_reparo",             "Reparo."),
+        ("spell_wingardium_leviosa", "Wingardium Leviosa !"),
+        ("spell_accio",              "Accio !"),
+        ("spell_ferula",             "Ferula."),
+        ("spell_diffindo",           "Diffindo !"),
+        ("spell_sectumsempra",       "Sectumsempra !"),
+        ("spell_avada",              "Avada Kedavra !"),
+        ("spell_portus",             "Portus !"),
     ],
 }
 

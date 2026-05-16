@@ -1,74 +1,40 @@
 # Plan — Voix in-game V2 : extensions
 
 > Plan vivant (cf. `.claude/guidelines.md` §5).
-> Statut au 2026-05-16 : **Vague A — code livré, génération audio en
-> attente.** Branche `claude/launch-voice-extension-grPyO` (2 commits
-> poussés : `f5934cc` câblage, `da3d731` script edge-tts). Le jeu tourne
-> avec fallback silencieux ; il ne manque que les 20 fichiers OGG.
+> Statut au 2026-05-16 : **Vagues A et B — LIVRÉES** sur la branche
+> `claude/extend-house-quest-paths-Bh7MD` (A : 20 OGG chefs de Maison ;
+> B : 13 OGG incantations + câblage `speakSpell`). Vagues C/D ouvertes.
 
 ---
 
-## 0. Reprise de session — à faire à la prochaine session
+## 0. Reprise de session — Vague A close
 
-**Contexte en une phrase** : tout le code de la Vague A (câblage des voix
-des 4 chefs de Maison) est fait, testé et poussé ; il ne reste qu'à
-**générer les 20 fichiers audio** puis les déposer dans le repo.
+**Contexte en une phrase** : la Vague A (voix des 4 chefs de Maison) est
+**terminée** — code livré PR #127, 20 OGG générés via edge-tts et encodés.
 
-### 0.1 — Ce qui est DÉJÀ fait (ne pas refaire)
+### 0.1 — Ce qui a été livré
 
-- `js/audio-music.js` : 20 clés ajoutées à `_VOICE_SAMPLES`.
+- `js/audio-music.js` : 20 clés ajoutées à `_VOICE_SAMPLES` (PR #127).
 - `js/npc-dialog.js` : helper `_npcDialogSource`, `_voiceKeyForPage`
-  étendu aux 4 chefs (greeting + offer/active/ready).
+  étendu aux 4 chefs (greeting + offer/active/ready) (PR #127).
 - `tests/smoke.js` : `scenarioHeadOfHouseVoice` (4 sous-cas) — **vert**.
-- `tools/gen_voice_edge.py` : script de génération edge-tts prêt.
-- Le jeu fonctionne déjà : `playVoice` retourne en silence tant qu'un
-  OGG manque (aucune erreur console).
+- `tools/gen_voice_edge.py` : script de génération edge-tts.
+- **20 fichiers `audio/voice/<key>.ogg`** générés (edge-tts FR neural)
+  + encodés OGG Vorbis (`-ac 1 -ar 22050 -q:a 3`), ~728 Ko cumulé.
+  MP3 intermédiaires dans `audio/voice/_raw/`.
 
-### 0.2 — Bloquant unique
+### 0.2 — Note réseau (résolu)
 
-La génération audio dépend du réseau. `tools/gen_voice_edge.py` appelle
-`speech.platform.bing.com`, **hors allowlist** de l'environnement web
-(le proxy renvoie `403 host_not_allowed`). ElevenLabs n'est pas une
-option immédiate : quota free épuisé.
+La génération edge-tts cible `speech.platform.bing.com`. Lors de la
+reprise du 2026-05-16, ce domaine était joignable depuis l'environnement
+web — `python3 tools/gen_voice_edge.py` a produit les 20 MP3 sans erreur.
+Si un futur run échoue en `403 host_not_allowed` : exécuter le script en
+local (réseau libre), ou générer via ElevenLabs avec les prompts §A.6.
 
-### 0.3 — Étapes de reprise (dans l'ordre)
+### 0.3 — Suite
 
-1. **Débloquer la génération** — choisir UNE voie :
-   - **Voie A (recommandée)** : l'utilisateur autorise
-     `speech.platform.bing.com` dans la politique réseau de
-     l'environnement web (ou passe en accès réseau complet). Puis, dans
-     la session : `pip install edge-tts && python3 tools/gen_voice_edge.py`
-     → produit `audio/voice/_raw/*.mp3` (20 fichiers).
-   - **Voie B** : l'utilisateur lance `tools/gen_voice_edge.py` sur sa
-     machine locale (réseau libre) et dépose les 20 MP3 dans la session
-     (ou les commit dans `audio/voice/_raw/`).
-   - **Voie C** : attendre le reset mensuel du quota ElevenLabs, générer
-     les 20 MP3 manuellement avec les prompts acteurs du §A.6, déposer.
-2. **Écouter un échantillon** (`mcgonagall_greeting_1`) — vérifier le
-   pacing / le pitch. Ajuster `VOICES` dans `gen_voice_edge.py` si besoin
-   (rate/pitch) et régénérer.
-3. **Encoder en OGG** — installer `ffmpeg` puis, pour chaque MP3 :
-   `ffmpeg -i audio/voice/_raw/<key>.mp3 -ac 1 -ar 22050 -c:a libvorbis -q:a 3 audio/voice/<key>.ogg`
-   Cible : ≤ 50 Ko/fichier, ≤ 1 Mo cumulé. Durées 4–10 s.
-4. **Vérifier** : `node tests/smoke.js` reste vert (les OGG sont
-   optionnels — le smoke teste le mapping, pas les fichiers). Puis test
-   navigateur HTTP : ouvrir un dialogue McGonagall, confirmer que la voix
-   joue par page et s'arrête à la fermeture.
-5. **Commit + push** : ajouter `audio/voice/*.ogg` (les 20). Les MP3 de
-   `_raw/` sont des intermédiaires — les commiter est optionnel (cohérent
-   avec les `_raw/*.mp3` Dumbledore déjà versionnés).
-6. **Cocher** les cases restantes du §3 Vague A et clore la vague.
-
-### 0.4 — Points d'attention pour la reprise
-
-- Naming **exact** des fichiers : voir le tableau §A.5. Toute faute de
-  frappe = fallback silencieux (pas d'erreur, mais pas de voix).
-- Le test `scenarioRelativeControls` du smoke est **flaky** (timing) —
-  s'il échoue isolément, relancer `node tests/smoke.js` ; il n'est pas
-  lié à cette tâche.
-- Ne PAS pousser sur une PR mergée (`.claude/guidelines.md` §6) :
-  vérifier l'état de la branche `claude/launch-voice-extension-grPyO`
-  avant tout `git push`.
+Vague B (voix incantation sorts) **livrée** — voir §3. Vagues C
+(sous-titres karaoké) et D (localisation) restent ouvertes.
 
 ---
 
@@ -197,14 +163,13 @@ forte.
       T3 état offer, T4 régression Dumbledore).
 - [x] Script de génération `tools/gen_voice_edge.py` (plan de secours
       edge-tts, voir §B ci-dessous).
-- [ ] Génération des 20 MP3 — **bloquée** : edge-tts cible
-      `speech.platform.bing.com`, hors allowlist réseau de l'environnement
-      web (`403 host_not_allowed`). Débloquer en autorisant ce domaine
-      dans la politique réseau de l'environnement, ou lancer le script
-      en local. Sur ElevenLabs : attendre le reset mensuel du quota free.
-- [ ] Encodage OGG Vorbis (`ffmpeg -ac 1 -ar 22050 -c:a libvorbis -q:a 3`).
-- [ ] Placement dans `audio/voice/<key>.ogg`.
-- [ ] Commit + push (PR séparée éventuelle pour les assets binaires).
+- [x] Génération des 20 MP3 via `tools/gen_voice_edge.py` (edge-tts FR
+      neural). Le domaine `speech.platform.bing.com` était joignable le
+      2026-05-16 — génération sans erreur.
+- [x] Encodage OGG Vorbis (`ffmpeg -ac 1 -ar 22050 -c:a libvorbis -q:a 3`).
+- [x] Placement dans `audio/voice/<key>.ogg` (20 fichiers, ~728 Ko).
+- [x] Smoke `node tests/smoke.js` vert (`scenarioHeadOfHouseVoice` OK).
+- [ ] Commit + push.
 
 #### B — Plan de secours TTS gratuit : edge-tts
 
@@ -290,13 +255,21 @@ Settings : stability 55, style 0.
 > Les 20 textes exacts à enregistrer sont dans le §A.5 ci-dessus et
 > dans `tools/gen_voice_edge.py` (dict `LINES`).
 
-### Vague B — Voix incantation sorts
+### Vague B — Voix incantation sorts ✅
 
-- [ ] Briefing ElevenLabs Hermione (1 acteur, 12 prompts).
-- [ ] Génération MP3 + encodage OGG.
-- [ ] `SPELL_VOICE_MAP` dans `audio-sfx.js`.
-- [ ] Modifier `speakSpell` : tenter OGG d'abord, fallback `SpeechSynthesis`.
-- [ ] Smoke `scenarioSpellVoiceMapping` (3 sorts au minimum).
+> Décision : edge-tts (voix `fr-FR-EloiseNeural`, jeune féminine) au lieu
+> d'ElevenLabs — quota épuisé, cohérent avec la Vague A. 13 sorts ciblés
+> (cf. §2). Limite assumée V1 : la voix d'incantation est unique, jouée
+> pour les sorts de Harry comme d'Hermione.
+
+- [x] Génération MP3 via `tools/gen_voice_edge.py hermione` (cible
+      `hermione` ajoutée : `VOICES` + `LINES`, 13 incantations).
+- [x] Encodage OGG Vorbis (`-ac 1 -ar 22050 -q:a 3`), 13 fichiers
+      `audio/voice/spell_<id>.ogg` (~132 Ko cumulé).
+- [x] 13 entrées `spell_*` ajoutées à `_VOICE_SAMPLES` (`audio-music.js`).
+- [x] `SPELL_VOICE_MAP` (nom de sort → clé OGG) dans `audio-sfx.js`.
+- [x] `speakSpell` : OGG via `playVoice` si mappé, sinon `SpeechSynthesis`.
+- [x] Smoke `scenarioSpellVoiceMapping` (T1 cohérence map, T2 routing) — vert.
 - [ ] Commit + push.
 
 ### Vague C — Sous-titres karaoké
