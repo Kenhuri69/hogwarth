@@ -4,6 +4,8 @@
 
 function renderMinimap() {
   _buildMinimapCells(document.getElementById('minimap'), 14);
+  // Mini-carte du coin (mobile) — masquée en CSS sur desktop.
+  _buildMinimapCells(document.getElementById('minimap-corner'), 6);
   // Si l'overlay mobile est ouvert, le mettre à jour aussi
   const overlay = document.getElementById('map-overlay');
   if (overlay && overlay.style.display === 'flex') {
