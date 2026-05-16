@@ -513,16 +513,25 @@ body {
 @media (max-width: 700px) {
   #minimap-corner {
     display: grid;
-    gap: 2px;
+    gap: 1px;
     position: absolute;
     top: 8px;
     right: 8px;
-    padding: 4px;
+    /* Taille adaptative : ~30 % de la largeur d'écran, bornée pour
+       rester lisible sur petits téléphones et raisonnable sur grands. */
+    width: clamp(88px, 30vw, 168px);
+    padding: 3px;
     background: rgba(10, 7, 5, 0.78);
     border: 1px solid var(--gold-dark);
     border-radius: 4px;
     pointer-events: none;
     z-index: 5;
+  }
+  /* Cellules fluides : largeur via la grille (1fr), hauteur = carré. */
+  #minimap-corner .map-cell {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
   }
   /* Marqueurs !/? des PNJ illisibles à cette échelle — la teinte de
      case suffit. */

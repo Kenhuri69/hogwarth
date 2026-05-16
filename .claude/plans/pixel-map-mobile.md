@@ -28,10 +28,14 @@ Réutilise le rendu minimap existant. Purement informative
 ## Décisions
 - Comportement tactile : **purement informative** (`pointer-events:none`).
   L'overlay carte complet (bouton 🗺️, avec légende) reste inchangé.
-- Taille de cellule : 6px → grille 12×12 ≈ 94px de côté.
+- Taille **adaptative** : `width: clamp(88px, 30vw, 168px)`, cellules
+  fluides (grille `1fr` + `aspect-ratio:1`). `_buildMinimapCells` accepte
+  `cellSize === 'auto'` pour ce mode (px fixe conservé pour les 2 autres
+  cartes).
 
 ## Suivi
 - [x] Étape 1 — HTML
 - [x] Étape 2 — CSS
 - [x] Étape 3 — JS
 - [x] Étape 4 — Test smoke
+- [x] Amendement — taille fixe 6px → adaptative 30vw (demande utilisateur)
