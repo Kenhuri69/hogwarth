@@ -230,7 +230,20 @@ chaque). Les points sont ordonnés par risque croissant.
   en dernier, avec capture d'écran avant/après.
 - **Vérification** : `node tests/screenshot-*.js` + comparaison visuelle ;
   smoke test vert.
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Note implémentation** : (a) les 3 littéraux `dirs`/`dirs2` (`getCellAhead`,
+  scan de sprite, scan d'ennemi) sont remplacés par `DIRECTIONS` (data.js,
+  chargé avant renderer.js — valeur byte-identique). (b) `_drawSideWall(side,
+  d, near, far, di, edgeA)` extrait : les blocs mur-gauche / mur-droit
+  deviennent deux appels. Paramétrage par `nearX`/`farX` (= `.x0` à gauche,
+  `.x1` à droite) ; le trapèze, les patterns, la fog, `drawSideLines`, les
+  arêtes dorées et le dégradé d'ouverture sont strictement identiques.
+  **Asymétrie historique préservée** : `drawStoneBlocks` bornait les joints
+  à `far.y1` à gauche et `near.y1` à droite — conservé via
+  `isLeft ? far.y1 : near.y1`. Les `fillRect` de texture utilisent
+  `Math.min`/`Math.abs` (résultat identique à l'original côté par côté).
+  Vérifié : capture du donjon en vue 3D (deux murs latéraux + mur du fond +
+  sol/plafond rendus), smoke test vert.
+- **Statut** : [x] proposé · [x] validé · [x] implémenté
 
 ---
 
@@ -238,3 +251,5 @@ chaque). Les points sont ordonnés par risque croissant.
 - Plan créé. En attente de validation point par point.
 - P1 implémenté (commit `c2dc00c`) — 11 globals ajoutés au MANIFEST.
 - P2 écarté après analyse : faux positif (fallback volontaire + contrat smoke).
+- P12 implémenté (commit final) — `DIRECTIONS` réutilisé + `_drawSideWall`
+  extrait. Lot P1-P12 terminé.
