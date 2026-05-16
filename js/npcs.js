@@ -154,7 +154,9 @@ const NPCS = [
         "On ne m'invite jamais aux fêtes des fantômes. Trop déprimante, qu'ils disent. Comme si EUX étaient gais.",
         "J'aurais pu hanter une jolie tour, un grand escalier… Mais non. Des toilettes. Toujours des toilettes.",
         "Je suis morte ici, tu sais. À cause d'une remarque sur mes lunettes. Une simple remarque… puis deux grands yeux jaunes.",
-        "Avoir treize ans pour toujours, ce n'est pas un cadeau. C'est une porte qui ne se referme jamais."
+        "Avoir treize ans pour toujours, ce n'est pas un cadeau. C'est une porte qui ne se referme jamais.",
+        // Accroche vers Manon (PNJ étage 3) — teaser sans spoiler.
+        "Une fille se cache un étage plus bas — pas une élève, personne ne l'a inscrite nulle part. Elle dort dans les salles vides et file dès qu'on approche. J'ai voulu bavarder ; même elle me fuit. Une solitaire qui fuit une autre solitaire… tu imagines la tristesse ?"
       ],
       questOffer:  "Tu pourrais m'en débarrasser ? Élimine le Troll des Toilettes, je t'en supplie !",
       questActive: "Il sent toujours aussi mauvais... fais vite !",

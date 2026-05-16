@@ -123,6 +123,14 @@ puis tranche : *« il te faut une maison qui ne te demandera jamais de
 mériter d'y entrer »* → POUFSOUFFLE. Celle qui n'avait sa place nulle
 part trouve enfin une maison.
 
+## 7bis. Accroche en jeu
+
+Une réplique ajoutée au pool `idleRandom` de **Mimi Geignarde** (PNJ
+fixe étage 2, juste avant Manon) : un fantôme solitaire qui remarque une
+autre solitaire. Teaser sans spoiler — « une fille qui se cache », « pas
+une élève ». Pioche aléatoire : c'est une accroche d'ambiance, pas un
+beat garanti.
+
 ## 7. Lupin — voix complémentaire
 
 3 répliques ajoutées au pool `idleRandom` de Lupin (additif), pour
