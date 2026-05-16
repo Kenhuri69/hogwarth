@@ -5,7 +5,8 @@
 function renderMinimap() {
   _buildMinimapCells(document.getElementById('minimap'), 14);
   // Mini-carte du coin (mobile) — masquée en CSS sur desktop.
-  _buildMinimapCells(document.getElementById('minimap-corner'), 6);
+  // 'auto' : cellules dimensionnées par la grille CSS (adaptatif).
+  _buildMinimapCells(document.getElementById('minimap-corner'), 'auto');
   // Si l'overlay mobile est ouvert, le mettre à jour aussi
   const overlay = document.getElementById('map-overlay');
   if (overlay && overlay.style.display === 'flex') {
@@ -15,14 +16,21 @@ function renderMinimap() {
 
 function _buildMinimapCells(mm, cellSize) {
   if (!mm || !dungeon) return;
-  mm.style.gridTemplateColumns = `repeat(${MAP_W}, ${cellSize}px)`;
+  // cellSize === 'auto' → cellules fluides (grille 1fr + aspect-ratio CSS).
+  // Sinon → taille fixe en pixels (minimap desktop / overlay mobile).
+  const adaptive = (cellSize === 'auto');
+  mm.style.gridTemplateColumns = adaptive
+    ? `repeat(${MAP_W}, 1fr)`
+    : `repeat(${MAP_W}, ${cellSize}px)`;
   mm.innerHTML = '';
   for (let y = 0; y < MAP_H; y++) {
     for (let x = 0; x < MAP_W; x++) {
       const div = document.createElement('div');
       div.className = 'map-cell';
-      div.style.width  = cellSize + 'px';
-      div.style.height = cellSize + 'px';
+      if (!adaptive) {
+        div.style.width  = cellSize + 'px';
+        div.style.height = cellSize + 'px';
+      }
       if (x === playerX && y === playerY) {
         div.classList.add('map-player');
         // Flèche d'orientation : matérialise la direction de la vue 3D centrale.
