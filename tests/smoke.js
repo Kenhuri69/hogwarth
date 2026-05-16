@@ -5828,6 +5828,9 @@ async function scenarioGuardAndFerula() {
       currentBattleChar = 0;
       party[0].spells.push('Ferula');
       party[0].sp = 20; party[0].mag = 10;
+      // INT (maîtrise) + END (domaine du soin) pilotent la régen Ferula.
+      // regenPower = power(4) + floor(int/8) + floor(end/8) = 4 + 1 + 1 = 6.
+      party[0].int = 12; party[0].end = 8;
       party[1].hp = 5; party[1].hpMax = 30;
       party[1].statusEffects = [];
       // Cast direct avec targetAllyIdx (saute la modale de sélection)
@@ -5842,17 +5845,17 @@ async function scenarioGuardAndFerula() {
     });
     assert(fer.hp > 5,                  `Ferula : Hermione pas soignée (hp=${fer.hp})`);
     assert(fer.regenTurns === 3,        `regen attendu 3 tours, obtenu ${fer.regenTurns}`);
-    assert(fer.regenPower === 4,        `regen power attendu 4, obtenu ${fer.regenPower}`);
+    assert(fer.regenPower === 6,        `regen power attendu 6 (4 + int/8 + end/8), obtenu ${fer.regenPower}`);
     assert(fer.sp === 14,               `PM Harry attendu 20-6=14, obtenu ${fer.sp}`);
 
-    // T3 : tick du statut regen — Hermione récupère 4 PV
+    // T3 : tick du statut regen — Hermione récupère 6 PV
     const tick = await ctx.page.evaluate(() => {
       const before = party[1].hp;
       tickStatuses(party[1], false);
       return { before, after: party[1].hp };
     });
-    assert(tick.after - tick.before === 4,
-      `regen tick attendu +4 PV, obtenu +${tick.after - tick.before}`);
+    assert(tick.after - tick.before === 6,
+      `regen tick attendu +6 PV, obtenu +${tick.after - tick.before}`);
 
     if (ctx.errors.length) {
       ctx.errors.forEach(e => console.log('  ⚠️ ', e));

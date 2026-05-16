@@ -617,7 +617,7 @@ function openCharacter(charIdx = 0) {
 // Chaque bouton consomme 1 point et applique l'effet via allocateStatPoint().
 function _renderStatAllocPanel(charIdx, points) {
   const keys = ['STR', 'INT', 'AGI', 'END', 'LCK'];
-  const labels = { STR: '+1 ATK', INT: '+1 MAG', AGI: '+1 AGI',
+  const labels = { STR: '+1 ATK', INT: '+1 INT', AGI: '+1 AGI',
                    END: '+5 PV',  LCK: '+1 LCK' };
   const buttons = keys.map(k =>
     `<button class="cmd-btn alloc-btn"
