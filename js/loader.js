@@ -167,15 +167,26 @@ window.UX_safe = new Proxy({}, {
     { name: 'loadGame',           source: 'save.js',         kind: 'fn'  },
     { name: 'autoSave',           source: 'save.js',         kind: 'fn'  },
     { name: 'listSaveSlots',      source: 'save.js',         kind: 'fn'  },
+    { name: 'readSlot',           source: 'save.js',         kind: 'fn'  },
+    { name: 'writeSlot',          source: 'save.js',         kind: 'fn'  },
+    { name: 'deleteSlot',         source: 'save.js',         kind: 'fn'  },
+    { name: 'migrateLegacyKey',   source: 'save.js',         kind: 'fn'  },
     { name: 'exportSaveStore',    source: 'save.js',         kind: 'fn'  },
     { name: 'importSaveStore',    source: 'save.js',         kind: 'fn'  },
     { name: 'openSaveDialog',     source: 'save-ui.js',      kind: 'fn'  },
+    { name: 'openLoadDialog',     source: 'save-ui.js',      kind: 'fn'  },
     { name: 'exportSaveToFile',   source: 'save-ui.js',      kind: 'fn'  },
     { name: 'importSaveFromFile', source: 'save-ui.js',      kind: 'fn'  },
+    { name: 'enterStartHub',      source: 'save-ui.js',      kind: 'fn'  },
+    { name: 'startHubNewGame',    source: 'save-ui.js',      kind: 'fn'  },
+    { name: 'loadSlotAndStart',   source: 'save-ui.js',      kind: 'fn'  },
 
     // ── Main / démarrage ──
     { name: 'showPlayerSelect',   source: 'main.js',         kind: 'fn'  },
     { name: 'startGame',          source: 'main.js',         kind: 'fn'  },
+    { name: 'chooseHouse',        source: 'main.js',         kind: 'fn'  },
+    { name: 'confirmHeroSelection',source: 'main.js',        kind: 'fn'  },
+    { name: 'checkHouseLevelUp',  source: 'main.js',         kind: 'fn'  },
 
     // ── Endgame (écran de victoire + boucle Ténébreuse) ──
     { name: 'victoryAchieved',    source: 'state.js',        kind: 'obj' },
