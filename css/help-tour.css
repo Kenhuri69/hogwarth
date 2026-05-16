@@ -1,0 +1,141 @@
+/* ============================================================
+   help-tour.css — Tour guidé d'aide pour novices
+   ============================================================ */
+
+#help-tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: none;
+}
+
+/* Voile plein écran pour les étapes centrées (sans cible). */
+#help-tour-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 2, 0, 0.78);
+  pointer-events: auto;
+}
+
+/* Spotlight : le box-shadow géant assombrit tout l'écran SAUF la
+   zone de la cible mise en surbrillance. */
+#help-tour-spotlight {
+  position: absolute;
+  display: none;
+  border-radius: 8px;
+  border: 2px solid var(--gold, #c9a84c);
+  box-shadow: 0 0 0 9999px rgba(5, 2, 0, 0.78),
+              0 0 16px 2px rgba(240, 208, 128, 0.55);
+  pointer-events: none;
+  transition: top .18s ease, left .18s ease, width .18s ease, height .18s ease;
+}
+
+#help-tour-bubble {
+  position: absolute;
+  width: 340px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #1a0f05 0%, #120a03 100%);
+  border: 2px solid var(--gold, #c9a84c);
+  border-radius: 6px;
+  padding: 16px 18px 14px;
+  color: #e7d6b0;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.7);
+}
+
+#help-tour-bubble.help-tour-centered {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%);
+}
+
+#help-tour-x {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--gold, #c9a84c);
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+}
+#help-tour-x:hover { color: var(--gold-light, #f0d080); }
+
+#help-tour-step-count {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gold-dark, #7a5c1e);
+  margin-bottom: 4px;
+}
+
+#help-tour-title {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  color: var(--gold-light, #f0d080);
+  margin-bottom: 8px;
+  padding-right: 18px;
+}
+
+#help-tour-text {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #d8c7a0;
+  margin-bottom: 12px;
+}
+
+#help-tour-optout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #a89878;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+#help-tour-optout input { cursor: pointer; }
+
+#help-tour-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+#help-tour-nav-right {
+  display: flex;
+  gap: 8px;
+}
+
+#help-tour-nav button {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  padding: 7px 14px;
+  background: #1a0f05;
+  border: 1px solid var(--gold, #c9a84c);
+  color: var(--gold-light, #f0d080);
+  border-radius: 4px;
+  cursor: pointer;
+}
+#help-tour-nav button:hover {
+  background: #2a1a08;
+}
+#help-tour-nav button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+#help-tour-skip {
+  border-color: var(--gold-dark, #7a5c1e) !important;
+  color: #a89878 !important;
+}
+#help-tour-next {
+  background: var(--gold-dark, #7a5c1e) !important;
+  color: #fff3d6 !important;
+}
+
+@media (max-width: 700px) {
+  #help-tour-bubble { width: 300px; padding: 14px; }
+  #help-tour-title  { font-size: 14px; }
+  #help-tour-text   { font-size: 12px; }
+}

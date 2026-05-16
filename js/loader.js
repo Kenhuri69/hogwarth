@@ -210,6 +210,10 @@ window.UX_safe = new Proxy({}, {
     { name: 'upgradeSpellAtLibrary',source: 'library.js',    kind: 'fn'  },
     { name: 'TENEBRES_SET',         source: 'data.js',       kind: 'obj' },
 
+    // ── Aide / tour guidé ──
+    { name: 'startHelpTour',        source: 'help-tour.js',  kind: 'fn'  },
+    { name: 'maybeAutoStartHelpTour',source: 'help-tour.js', kind: 'fn'  },
+
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },
     { name: 'showIntroScreen',    source: 'intro.js',        kind: 'fn',    optional: true },
