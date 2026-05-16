@@ -185,6 +185,10 @@ function equipmentBuffForFloor(floor) {
     const cur = bestBySlot[it.slot];
     if (!cur || score > cur.score) bestBySlot[it.slot] = { item: it, score };
   }
+  // Forge des Ténèbres : --forge=N ajoute +N au bonus principal de chaque
+  // item (la stat la plus élevée parmi atk/def/mag/lck). Miroir de
+  // forge.js — forgeBonus + inventory.js — recalculateStats.
+  const forgeLvl = (typeof ARGS !== 'undefined') ? Math.min(5, ARGS.forge || 0) : 0;
   for (const slot of Object.keys(bestBySlot)) {
     const it = bestBySlot[slot].item;
     buff.atk += it.bonusAtk || 0;
@@ -197,6 +201,12 @@ function equipmentBuffForFloor(floor) {
     buff.end += it.bonusEnd || 0;
     buff.crit  += it.bonusCritChance  || 0;
     buff.dodge += it.bonusDodgeChance || 0;
+    if (forgeLvl > 0) {
+      const prim = [['atk', it.bonusAtk|0], ['def', it.bonusDef|0],
+                    ['mag', it.bonusMag|0], ['lck', it.bonusLck|0]]
+                   .sort((a, b) => b[1] - a[1]);
+      if (prim[0][1] > 0) buff[prim[0][0]] += forgeLvl;
+    }
   }
   return buff;
 }
@@ -233,7 +243,7 @@ function parseArgs(argv) {
                 build: 'balanced', mode: 'single',
                 useQuests: true, useEquipment: true, usePotions: true,
                 kills: 0, bonusLevels: 0, artifacts: false,
-                endgame: false, maxFloor: 40 };
+                endgame: false, maxFloor: 40, forge: 0, library: 0 };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
@@ -258,6 +268,8 @@ function parseArgs(argv) {
     else if (k === 'kills')     out.kills = parseInt(v, 10);
     else if (k === 'bonus-levels') out.bonusLevels = parseInt(v, 10) || 0;
     else if (k === 'max-floor')    out.maxFloor = parseInt(v, 10) || 40;
+    else if (k === 'forge')        out.forge   = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
+    else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
   }
   return out;
 }
@@ -295,6 +307,8 @@ Options:
   --artifacts             Best-in-slot inclut les artefacts légendaires (hors boutique)
   --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
   --max-floor=N           Étage max en mode --endgame (def 40)
+  --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
+  --library=N             Niveau de Bibliothèque (0-3) sur chaque sort (power/cost)
   --compare               Lance baseline ET proposition (hp×1.5 xp×1.3 stats=3 balanced), tableau comparatif
 
 Exemples:
@@ -505,6 +519,8 @@ function createHero(key, level, cfg, floor) {
   c.dodgeChance   = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0)));
   c.critMultiplier = 1.5;
   c.level = level;
+  // Bibliothèque interdite : niveau d'upgrade appliqué à tous les sorts.
+  c.libraryLevel = cfg.library || 0;
   return c;
 }
 
@@ -672,13 +688,25 @@ function heroAct(char, enemies) {
   target.currentHp -= dmg;
 }
 
+// Bibliothèque interdite — battle-spells.js — _spellForCaster :
+// power +2×niveau, cost −1×niveau (plancher 1). La sim n'utilise pas
+// `chance` (pas de DoT modélisé), on l'ignore.
+function simSpellForCaster(spell, char) {
+  const lvl = char && char.libraryLevel || 0;
+  if (!spell || lvl <= 0) return spell;
+  const out = { ...spell };
+  if (typeof spell.power === 'number') out.power = spell.power + 2 * lvl;
+  if (typeof spell.cost  === 'number') out.cost  = Math.max(1, spell.cost - lvl);
+  return out;
+}
+
 // Sorts de soin dispo, le plus puissant prioritaire
 function pickHealSpell(char) {
   const candidates = ['Reparo', 'Episkey']
     .filter(n => char.spells.includes(n))
     .map(n => spellByName[n])
     .filter(Boolean);
-  return candidates[0];
+  return candidates[0] ? simSpellForCaster(candidates[0], char) : undefined;
 }
 
 // Meilleur sort de dégât accessible (cost <= SP), priorité puissance brute
@@ -686,7 +714,8 @@ function pickDamageSpell(char) {
   const damaging = ['Avada...', 'Sectumsempra', 'Diffindo', 'Incendio', 'Wingardium Leviosa', 'Stupefix']
     .filter(n => char.spells.includes(n))
     .map(n => spellByName[n])
-    .filter(s => s && !s.locked);
+    .filter(s => s && !s.locked)
+    .map(s => simSpellForCaster(s, char));
   // Filtre par SP dispo
   const affordable = damaging.filter(s => char.sp >= s.cost);
   // Trie par puissance + mag/2 décroissant (puissance effective)

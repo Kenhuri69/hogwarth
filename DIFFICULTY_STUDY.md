@@ -207,32 +207,53 @@ Le coût d'XP du joueur compose plus vite que l'XP gagnée. La progression
 passive (marcher vers le bas) ne suit donc pas — contrairement au jeu
 principal où l'XP des quêtes maintenait le joueur sur la courbe.
 
-### 8.3 Avec farming — le gate se résout
+### 8.3 Avec farming de niveaux — le gate se résout
 
 | Étage | Duo +10 niv. | Duo +25 niv. | Duo +45 niv. |
 |------:|-------------:|-------------:|-------------:|
-| 20    | 96 %         | 99 %         | 100 % |
+| 20    | 97 %         | 99 %         | 100 % |
 | 25    | 70 %         | 92 %         | 100 % |
-| 30    | 49 %         | 85 %         | 97 %  |
+| 30    | 54 %         | 85 %         | 97 %  |
 
 Règle empirique : **~+12-15 niveaux farmés par tranche de 10 étages** de
-Boucle pour rester en zone confortable. Le gate est franchissable sans
-limite — c'est un mode infini « jusqu'où peux-tu descendre », sain dans
-son principe.
+Boucle pour rester en zone confortable.
 
-### 8.4 Verdict endgame
+### 8.4 Forge des Ténèbres + Bibliothèque interdite
 
-- ✅ La Boucle Ténébreuse est un **gate infini farmable** — cohérent avec
-  le design (le mur se résout par le farming + les artefacts).
+Les deux mécaniques de farming endgame sont désormais modélisées
+(`--forge=N`, `--library=N`) :
+
+- **Forge** (`forge.js`, max 5) : `+upgradeLevel` sur le bonus principal
+  de chaque item équipé. Coût : Gallions + Essence des Ténèbres.
+- **Bibliothèque** (`library.js`, max 3) : par sort, `power +2×niveau`,
+  `cost −1×niveau`. Coût : Gallions + Pages de Grimoire.
+
+Impact mesuré (Duo, endgame, +10 niveaux farmés) :
+
+| Étage | Artefacts seuls | + Forge 5 + Biblio 3 |
+|------:|----------------:|---------------------:|
+| 22    | 80 %            | 90 % |
+| 24    | 73 %            | 86 % |
+| 26    | 62 %            | 83 % |
+| 28    | 56 %            | 75 % |
+| 30    | 54 %            | 64 % |
+
+Le kit complet (artefacts + Forge 5 + Bibliothèque 3 + ~25 niveaux
+farmés) maintient le Duo **confortable (88-100 %) jusqu'à l'étage 30**.
+Forge et Bibliothèque valent à eux deux ~+10-15 pts de win rate dans le
+deep endgame — un troisième axe de farming qui complète niveaux + artefacts.
+
+### 8.5 Verdict endgame
+
+- ✅ La Boucle Ténébreuse est un **gate infini farmable** sur trois axes
+  (niveaux, artefacts, Forge/Bibliothèque) — cohérent avec le design.
 - ⚠️ **Différence avec le jeu principal** : l'endgame n'a **aucune voie
   de progression passive**. Il *impose* le farming actif dès l'étage ~19.
-  C'est un choix de design assumable (mode infini de type roguelike),
-  mais à connaître — un joueur qui « descend » sans farmer heurte un mur
-  réel vers l'étage 20.
-- 💡 Si l'on veut adoucir : soit ralentir `xpNext` en endgame, soit ajouter
-  une source d'XP passive (XP de Boucle par étage franchi). Optionnel —
-  ne pas faire si le farming forcé est l'intention.
-- ⚠️ Limite du modèle : la sim ne modélise pas les bonus de **Forge**
-  (upgradeLevel), **Bibliothèque** (spellUpgrades) ni les bonus de **set**
-  (Ténèbres / Maison) — le joueur endgame réel est donc un peu plus fort
-  que ces chiffres. Les conclusions qualitatives tiennent.
+  Choix de design assumable (mode infini façon roguelike), mais à
+  connaître — descendre sans farmer heurte un mur réel vers l'étage 20.
+- 💡 Si l'on veut adoucir : ralentir `xpNext` en endgame, ou ajouter une
+  XP passive de Boucle par étage franchi. Optionnel — à ne pas faire si
+  le farming forcé est l'intention.
+- ⚠️ Limite résiduelle du modèle : les **bonus de set** (Ténèbres /
+  Maison 2-4 pièces : crit, regen, lifesteal…) ne sont pas modélisés —
+  le joueur endgame réel est donc encore un peu plus fort que ces chiffres.
