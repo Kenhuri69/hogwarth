@@ -2023,7 +2023,15 @@ button.shop-tab.active {
   transition: all .25s;
   cursor: default;
 }
-.psel-crumb-icon { font-size: 13px; line-height: 1; }
+.psel-crumb-icon {
+  width: 15px; height: 15px;
+  object-fit: contain;
+  display: block;
+  opacity: .45;
+  transition: opacity .25s;
+}
+.psel-crumb.done .psel-crumb-icon,
+.psel-crumb.active .psel-crumb-icon { opacity: 1; }
 .psel-crumb.done {
   color: var(--parchment);
   cursor: pointer;
@@ -2045,7 +2053,7 @@ button.shop-tab.active {
     justify-content: center;
     gap: 0;
   }
-  .psel-crumb-icon { font-size: 15px; }
+  .psel-crumb-icon { width: 19px; height: 19px; }
 }
 
 /* Regroupements de héros (étape 2) */
@@ -2053,13 +2061,18 @@ button.shop-tab.active {
 .hero-section-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   margin: 6px 0 8px;
   font-family: 'Cinzel', serif;
   font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--gold-dark);
+  color: var(--gold);
+}
+.hero-section-emblem {
+  width: 22px; height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 .hero-section-title::before,
 .hero-section-title::after {
