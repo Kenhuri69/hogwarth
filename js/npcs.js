@@ -558,11 +558,17 @@ const NPCS = [
         "Bonjour, jeune Gryffondor ! Ou… Serdaigle ? Pardonnez-moi, ma tête a tendance à dodeliner.",
         "Si vous avez un moment, je voulais partager quelques anecdotes sur ce vieux château."
       ],
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
       idleRandom: [
-        "On dit qu'au troisième étage, un miroir reflète plus que votre image…",
-        "Le Baron Sanglant n'apparaît qu'aux nuits d'orage. Évitez les cachots ce soir.",
+        "Le Chasseur Sans Tête m'a encore refusé l'entrée de son club. Une tête qui pend par un lambeau de peau ne compte pas comme « décapitée », paraît-il. Quelle injustice !",
+        "Mon dernier anniversaire de mort fut somptueux : pâté pourri, gâteau couvert d'asticots, orchestre de scies musicales… Vous auriez adoré. Enfin, peut-être pas.",
         "J'ai connu Godric Gryffondor en personne. Charmant, mais bien trop grand pour les portes.",
-        "La Salle Sur Demande change selon le besoin. Certains la trouvent. D'autres y restent."
+        "On dit qu'au troisième étage, un miroir reflète plus que votre image…",
+        "La Salle Sur Demande change selon le besoin. Certains la trouvent. D'autres y restent.",
+        "Quatre siècles que j'arpente ces couloirs. Les visages changent, les peurs jamais.",
+        "Le Baron Sanglant n'apparaît qu'aux nuits d'orage. Évitez les cachots ce soir.",
+        "Quarante-cinq coups de hache émoussée. Voilà ce qu'il a fallu pour me séparer de ce monde. Le bourreau n'était pas… doué.",
+        "Devenir fantôme fut mon choix : j'ai eu peur de ce qui venait après. Aujourd'hui encore, je ne sais pas si j'ai bien fait."
       ]
     }
   },
@@ -580,11 +586,17 @@ const NPCS = [
         "Ah, un voyageur fatigué ! Approche, mon enfant, et reprends souffle un instant.",
         "Le donjon est rude, mais la patience finit toujours par triompher de la furie."
       ],
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
       idleRandom: [
-        "Une bonne assiette et un cœur tranquille — voilà mes secrets de longévité.",
-        "Tu sais, mourir n'est pas si terrible. C'est de mal vivre qui devrait t'inquiéter.",
+        "Une bonne assiette et un cœur tranquille — voilà mes secrets de longévité. Ironique, pour un fantôme.",
+        "Je bénis encore chaque repas des cuisines, par habitude. Les elfes font mine de ne pas voir le fantôme qui salive au-dessus du ragoût.",
         "Helga Poufsouffle disait : « Tous égaux devant la marmite. » Ça m'a toujours plu.",
-        "Méfie-toi des Inferius. Ils n'ont ni faim ni pitié."
+        "La patience n'est pas une vertu lente, mon enfant. C'est une force qui ne se fatigue jamais.",
+        "Tu sais, mourir n'est pas si terrible. C'est de mal vivre qui devrait t'inquiéter.",
+        "Méfie-toi des Inferius. Ils n'ont ni faim ni pitié.",
+        "J'ai vu passer tant d'élèves rieurs… Je les ai vus revenir vieillis, courbés, puis ne plus revenir du tout. C'est cela, l'éternité.",
+        "Le froid du donjon ne me dérange plus. C'est le froid de ne plus rien sentir qui pèse, certaines nuits.",
+        "Un de ces Inferius, là-bas… je l'ai connu vivant. Il riait fort. Ne le laisse pas t'approcher : ce n'est plus lui."
       ]
     }
   },
@@ -602,11 +614,17 @@ const NPCS = [
         "Encore un cancre qui erre dans MES couloirs ! Miss Teigne, surveille-le.",
         "Je n'ai pas le droit de te punir, MAIS Rogue m'avait promis qu'on ramènerait les chaînes…"
       ],
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
       idleRandom: [
         "Touche pas aux portraits. Touche pas aux vitrines. TOUCHE A RIEN.",
-        "J'ai vu trois élèves disparaître dans ce couloir hier. Bon débarras.",
+        "J'astique ces chaînes tous les matins. Pour rien, qu'ils disent. On verra bien.",
         "Miss Teigne te fixe. Elle sait. Elle sait toujours.",
-        "De mon temps, on suspendait les fauteurs de troubles par les pouces."
+        "De mon temps, on suspendait les fauteurs de troubles par les pouces.",
+        "J'ai un tiroir entier de fiches de retenue. La tienne y est déjà — j'ai juste laissé la date en blanc.",
+        "J'ai vu trois élèves disparaître dans ce couloir hier. Bon débarras.",
+        "Tout ce château déborde de magie. Et moi, rien. Pas une étincelle. Tu n'imagines pas ce que ça fait, de balayer le miracle des autres.",
+        "Il y a une cellule, tout en bas. On y enfermait les punis, autrefois. Parfois j'y descends. Juste pour me rappeler le bon vieux temps.",
+        "Le jour où je coince l'un de vous en faute… je ne le lâcherai plus. Plus jamais. Miss Teigne et moi, on a tout notre temps."
       ]
     }
   },
@@ -676,11 +694,17 @@ const NPCS = [
         "Oh ! Mon œil intérieur t'a vu venir depuis trois jours. Ou trois minutes. Le temps est si flou…",
         "Approche, mon enfant. Les ombres autour de toi me parlent."
       ],
+      // Anecdotes graduées du rigolo au sombre (piochées au hasard).
       idleRandom: [
         "Je vois… je vois… une tasse de thé. Et un péril mortel. Probablement les deux.",
         "Tes lignes de la main indiquent un long voyage. Ou un déjeuner. C'est confus.",
         "Méfie-toi du chiffre 7 cette semaine. Ou du 3. Ou des deux.",
-        "Le marc de café m'a révélé que ton destin est… intéressant. C'est tout ce que je peux dire."
+        "Le marc de café m'a révélé que ton destin est… intéressant. C'est tout ce que je peux dire.",
+        "Ton aura est trouble aujourd'hui. Mauve, peut-être. À moins que ce ne soit ma lampe.",
+        "J'ai rêvé d'une porte close, et de coups frappés de l'autre côté. Trois coups. Toujours trois.",
+        "Le Sinistros rôde dans ton sillage, mon enfant. Je l'ai vu dans les feuilles. Je le vois… souvent. Trop souvent.",
+        "(Sa voix se brise soudain, grave et lointaine.) Celui qui t'attend dans les profondeurs ne respire plus… et pourtant, il compte tes pas. (Elle cligne des yeux.) Pardon — vous disiez ?",
+        "(Elle te saisit le poignet, le regard fixe.) L'un de vous ne remontera pas tous ces escaliers. Les présages ne mentent jamais — seuls mentent ceux qui les lisent. (Elle te relâche, confuse.) Du thé ?"
       ]
     }
   }
