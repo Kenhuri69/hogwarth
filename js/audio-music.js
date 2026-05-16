@@ -161,6 +161,23 @@ Object.assign(AudioSystem, {
     sprout_offer_1:        'audio/voice/sprout_offer_1.ogg',
     sprout_active_1:       'audio/voice/sprout_active_1.ogg',
     sprout_ready_1:        'audio/voice/sprout_ready_1.ogg',
+    // ── Incantations des sortilèges (Vague B voice-extensions-v2) ──
+    // 13 sorts ciblés ; mapping nom de sort → clé via SPELL_VOICE_MAP
+    // (js/audio-sfx.js). speakSpell joue l'OGG si mappé, sinon retombe
+    // sur SpeechSynthesis. Fallback silencieux si le fichier manque.
+    spell_expelliarmus:       'audio/voice/spell_expelliarmus.ogg',
+    spell_stupefix:           'audio/voice/spell_stupefix.ogg',
+    spell_episkey:            'audio/voice/spell_episkey.ogg',
+    spell_protego:            'audio/voice/spell_protego.ogg',
+    spell_incendio:           'audio/voice/spell_incendio.ogg',
+    spell_reparo:             'audio/voice/spell_reparo.ogg',
+    spell_wingardium_leviosa: 'audio/voice/spell_wingardium_leviosa.ogg',
+    spell_accio:              'audio/voice/spell_accio.ogg',
+    spell_ferula:             'audio/voice/spell_ferula.ogg',
+    spell_diffindo:           'audio/voice/spell_diffindo.ogg',
+    spell_sectumsempra:       'audio/voice/spell_sectumsempra.ogg',
+    spell_avada:              'audio/voice/spell_avada.ogg',
+    spell_portus:             'audio/voice/spell_portus.ogg',
   },
 
   // ── Lecture d'une voix narrative (one-shot, avec ducking music) ──

@@ -5596,6 +5596,62 @@ async function scenarioHeadOfHouseVoice() {
   await browser.close();
 }
 
+// ── Scénario : voix d'incantation des sorts (Vague B) ─────────
+
+async function scenarioSpellVoiceMapping() {
+  console.log('\n── Scénario : voix d\'incantation des sorts ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : SPELL_VOICE_MAP cohérent — noms valides + OGG enregistrés
+  const t1 = await page.evaluate(() => {
+    const map = AudioSystem.SPELL_VOICE_MAP;
+    const sm  = AudioSystem._VOICE_SAMPLES;
+    const spellNames = SPELLS.map(s => s.name);
+    const entries = Object.entries(map);
+    const orphanNames   = entries.filter(([n]) => !spellNames.includes(n)).map(([n]) => n);
+    const missingSamples = entries.filter(([, k]) => !sm[k]).map(([, k]) => k);
+    return { count: entries.length, orphanNames, missingSamples,
+             expelliarmus: map['Expelliarmus'] };
+  });
+  console.log('  T1 mapping:', t1);
+  assert(t1.count >= 12, `attendu ≥12 sorts mappés, got ${t1.count}`);
+  assert(t1.orphanNames.length === 0,
+    `noms de sorts inconnus dans SPELL_VOICE_MAP : ${t1.orphanNames.join(', ')}`);
+  assert(t1.missingSamples.length === 0,
+    `clés OGG non enregistrées dans _VOICE_SAMPLES : ${t1.missingSamples.join(', ')}`);
+  assert(t1.expelliarmus === 'spell_expelliarmus',
+    `Expelliarmus → attendu spell_expelliarmus, got ${t1.expelliarmus}`);
+
+  // T2 : speakSpell route un sort mappé vers playVoice, pas un sort absent
+  const t2 = await page.evaluate(() => {
+    let calledWith = null;
+    const orig = AudioSystem.playVoice;
+    AudioSystem.playVoice = (k) => { calledWith = k; return Promise.resolve(); };
+    AudioSystem.voiceEnabled = true;
+    AudioSystem.isMuted = false;
+    AudioSystem.speakSpell('Incendio');
+    const mapped = calledWith;
+    calledWith = null;
+    AudioSystem.speakSpell('Lumos Maxima');   // hors map → pas de playVoice
+    const unmapped = calledWith;
+    AudioSystem.playVoice = orig;
+    return { mapped, unmapped };
+  });
+  console.log('  T2 routing:', t2);
+  assert(t2.mapped === 'spell_incendio',
+    `Incendio devait router vers spell_incendio, got ${t2.mapped}`);
+  assert(t2.unmapped === null,
+    'un sort non mappé ne doit pas appeler playVoice (fallback SpeechSynthesis)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS pendant voix d'incantation`);
+  }
+  console.log('  ✅ Voix d\'incantation OK');
+  await browser.close();
+}
+
 // ── Scénario : action Garde + sort Ferula ────────────────────
 
 async function scenarioGuardAndFerula() {
@@ -6144,7 +6200,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

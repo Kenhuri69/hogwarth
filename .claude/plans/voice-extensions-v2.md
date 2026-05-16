@@ -1,9 +1,9 @@
 # Plan — Voix in-game V2 : extensions
 
 > Plan vivant (cf. `.claude/guidelines.md` §5).
-> Statut au 2026-05-16 : **Vague A — LIVRÉE.** Code câblé (PR #127) +
-> 20 fichiers OGG générés et encodés sur la branche
-> `claude/extend-house-quest-paths-Bh7MD`. Vagues B/C/D restent ouvertes.
+> Statut au 2026-05-16 : **Vagues A et B — LIVRÉES** sur la branche
+> `claude/extend-house-quest-paths-Bh7MD` (A : 20 OGG chefs de Maison ;
+> B : 13 OGG incantations + câblage `speakSpell`). Vagues C/D ouvertes.
 
 ---
 
@@ -33,8 +33,8 @@ local (réseau libre), ou générer via ElevenLabs avec les prompts §A.6.
 
 ### 0.3 — Suite
 
-Vagues B (voix incantation sorts), C (sous-titres karaoké) et D
-(localisation) restent ouvertes — voir §3.
+Vague B (voix incantation sorts) **livrée** — voir §3. Vagues C
+(sous-titres karaoké) et D (localisation) restent ouvertes.
 
 ---
 
@@ -255,13 +255,21 @@ Settings : stability 55, style 0.
 > Les 20 textes exacts à enregistrer sont dans le §A.5 ci-dessus et
 > dans `tools/gen_voice_edge.py` (dict `LINES`).
 
-### Vague B — Voix incantation sorts
+### Vague B — Voix incantation sorts ✅
 
-- [ ] Briefing ElevenLabs Hermione (1 acteur, 12 prompts).
-- [ ] Génération MP3 + encodage OGG.
-- [ ] `SPELL_VOICE_MAP` dans `audio-sfx.js`.
-- [ ] Modifier `speakSpell` : tenter OGG d'abord, fallback `SpeechSynthesis`.
-- [ ] Smoke `scenarioSpellVoiceMapping` (3 sorts au minimum).
+> Décision : edge-tts (voix `fr-FR-EloiseNeural`, jeune féminine) au lieu
+> d'ElevenLabs — quota épuisé, cohérent avec la Vague A. 13 sorts ciblés
+> (cf. §2). Limite assumée V1 : la voix d'incantation est unique, jouée
+> pour les sorts de Harry comme d'Hermione.
+
+- [x] Génération MP3 via `tools/gen_voice_edge.py hermione` (cible
+      `hermione` ajoutée : `VOICES` + `LINES`, 13 incantations).
+- [x] Encodage OGG Vorbis (`-ac 1 -ar 22050 -q:a 3`), 13 fichiers
+      `audio/voice/spell_<id>.ogg` (~132 Ko cumulé).
+- [x] 13 entrées `spell_*` ajoutées à `_VOICE_SAMPLES` (`audio-music.js`).
+- [x] `SPELL_VOICE_MAP` (nom de sort → clé OGG) dans `audio-sfx.js`.
+- [x] `speakSpell` : OGG via `playVoice` si mappé, sinon `SpeechSynthesis`.
+- [x] Smoke `scenarioSpellVoiceMapping` (T1 cohérence map, T2 routing) — vert.
 - [ ] Commit + push.
 
 ### Vague C — Sous-titres karaoké

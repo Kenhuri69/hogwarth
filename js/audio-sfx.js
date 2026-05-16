@@ -247,7 +247,25 @@ Object.assign(AudioSystem, {
     });
   },
 
-  // ── Voix des sortilèges (SpeechSynthesis) ────────────────────
+  // ── Voix des sortilèges ──────────────────────────────────────
+  // Mapping nom de sort (SPELLS[].name) → clé OGG (_VOICE_SAMPLES).
+  // Les sorts absents de cette table retombent sur SpeechSynthesis.
+  SPELL_VOICE_MAP: {
+    'Expelliarmus':       'spell_expelliarmus',
+    'Stupefix':           'spell_stupefix',
+    'Episkey':            'spell_episkey',
+    'Protego':            'spell_protego',
+    'Incendio':           'spell_incendio',
+    'Reparo':             'spell_reparo',
+    'Wingardium Leviosa': 'spell_wingardium_leviosa',
+    'Accio':              'spell_accio',
+    'Ferula':             'spell_ferula',
+    'Diffindo':           'spell_diffindo',
+    'Sectumsempra':       'spell_sectumsempra',
+    'Avada...':           'spell_avada',
+    'Portus':             'spell_portus',
+  },
+
   _pickVoice() {
     if (this._cachedVoice) return this._cachedVoice;
     const voices = speechSynthesis.getVoices();
@@ -269,6 +287,15 @@ Object.assign(AudioSystem, {
 
   speakSpell(spellName) {
     if (!this.voiceEnabled || this.isMuted) return;
+
+    // OGG enregistré prioritaire : voix d'incantation dédiée.
+    const voiceKey = this.SPELL_VOICE_MAP[spellName];
+    if (voiceKey && this._VOICE_SAMPLES[voiceKey]) {
+      this.playVoice(voiceKey);
+      return;
+    }
+
+    // Repli : synthèse vocale du navigateur.
     if (!window.speechSynthesis) return;
     speechSynthesis.cancel();
     setTimeout(() => {
