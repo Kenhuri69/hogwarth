@@ -1,12 +1,76 @@
 # Plan — Voix in-game V2 : extensions
 
 > Plan vivant (cf. `.claude/guidelines.md` §5).
-> Statut au 2026-05-15 : **Vague A en cours** — code + smoke posés sous
-> branche `claude/launch-voice-extension-grPyO`, fallback silencieux en
-> attente des 20 OGG ElevenLabs (utilisateur).
-> Pré-requis : 15 OGG `voice-dumbledore-chain` livrés (vérifié dans
-> `audio/voice/`) + 6 OGG farming (Hagrid/Scamander) — mécanique
-> `playVoice` éprouvée.
+> Statut au 2026-05-16 : **Vague A — code livré, génération audio en
+> attente.** Branche `claude/launch-voice-extension-grPyO` (2 commits
+> poussés : `f5934cc` câblage, `da3d731` script edge-tts). Le jeu tourne
+> avec fallback silencieux ; il ne manque que les 20 fichiers OGG.
+
+---
+
+## 0. Reprise de session — à faire à la prochaine session
+
+**Contexte en une phrase** : tout le code de la Vague A (câblage des voix
+des 4 chefs de Maison) est fait, testé et poussé ; il ne reste qu'à
+**générer les 20 fichiers audio** puis les déposer dans le repo.
+
+### 0.1 — Ce qui est DÉJÀ fait (ne pas refaire)
+
+- `js/audio-music.js` : 20 clés ajoutées à `_VOICE_SAMPLES`.
+- `js/npc-dialog.js` : helper `_npcDialogSource`, `_voiceKeyForPage`
+  étendu aux 4 chefs (greeting + offer/active/ready).
+- `tests/smoke.js` : `scenarioHeadOfHouseVoice` (4 sous-cas) — **vert**.
+- `tools/gen_voice_edge.py` : script de génération edge-tts prêt.
+- Le jeu fonctionne déjà : `playVoice` retourne en silence tant qu'un
+  OGG manque (aucune erreur console).
+
+### 0.2 — Bloquant unique
+
+La génération audio dépend du réseau. `tools/gen_voice_edge.py` appelle
+`speech.platform.bing.com`, **hors allowlist** de l'environnement web
+(le proxy renvoie `403 host_not_allowed`). ElevenLabs n'est pas une
+option immédiate : quota free épuisé.
+
+### 0.3 — Étapes de reprise (dans l'ordre)
+
+1. **Débloquer la génération** — choisir UNE voie :
+   - **Voie A (recommandée)** : l'utilisateur autorise
+     `speech.platform.bing.com` dans la politique réseau de
+     l'environnement web (ou passe en accès réseau complet). Puis, dans
+     la session : `pip install edge-tts && python3 tools/gen_voice_edge.py`
+     → produit `audio/voice/_raw/*.mp3` (20 fichiers).
+   - **Voie B** : l'utilisateur lance `tools/gen_voice_edge.py` sur sa
+     machine locale (réseau libre) et dépose les 20 MP3 dans la session
+     (ou les commit dans `audio/voice/_raw/`).
+   - **Voie C** : attendre le reset mensuel du quota ElevenLabs, générer
+     les 20 MP3 manuellement avec les prompts acteurs du §A.6, déposer.
+2. **Écouter un échantillon** (`mcgonagall_greeting_1`) — vérifier le
+   pacing / le pitch. Ajuster `VOICES` dans `gen_voice_edge.py` si besoin
+   (rate/pitch) et régénérer.
+3. **Encoder en OGG** — installer `ffmpeg` puis, pour chaque MP3 :
+   `ffmpeg -i audio/voice/_raw/<key>.mp3 -ac 1 -ar 22050 -c:a libvorbis -q:a 3 audio/voice/<key>.ogg`
+   Cible : ≤ 50 Ko/fichier, ≤ 1 Mo cumulé. Durées 4–10 s.
+4. **Vérifier** : `node tests/smoke.js` reste vert (les OGG sont
+   optionnels — le smoke teste le mapping, pas les fichiers). Puis test
+   navigateur HTTP : ouvrir un dialogue McGonagall, confirmer que la voix
+   joue par page et s'arrête à la fermeture.
+5. **Commit + push** : ajouter `audio/voice/*.ogg` (les 20). Les MP3 de
+   `_raw/` sont des intermédiaires — les commiter est optionnel (cohérent
+   avec les `_raw/*.mp3` Dumbledore déjà versionnés).
+6. **Cocher** les cases restantes du §3 Vague A et clore la vague.
+
+### 0.4 — Points d'attention pour la reprise
+
+- Naming **exact** des fichiers : voir le tableau §A.5. Toute faute de
+  frappe = fallback silencieux (pas d'erreur, mais pas de voix).
+- Le test `scenarioRelativeControls` du smoke est **flaky** (timing) —
+  s'il échoue isolément, relancer `node tests/smoke.js` ; il n'est pas
+  lié à cette tâche.
+- Ne PAS pousser sur une PR mergée (`.claude/guidelines.md` §6) :
+  vérifier l'état de la branche `claude/launch-voice-extension-grPyO`
+  avant tout `git push`.
+
+---
 
 ## 1. Contexte
 
@@ -195,6 +259,36 @@ au-dessus de `SpeechSynthesis` navigateur. Lancement :
 > sur le texte de `golem_passage` — léger décalage texte/voix accepté en V1
 > (tons cohérents). Override par quête possible plus tard via mapping
 > dédié dans `_voiceKeyForPage` (cf. modèle Dumbledore).
+
+#### A.6 — Prompts acteurs (voie C : génération manuelle ElevenLabs)
+
+Settings ElevenLabs communs : modèle `eleven_multilingual_v2`,
+stability 50, similarity 75, style 0, speaker_boost ON. Ajuster
+stability/style par PNJ ci-dessous.
+
+**McGonagall** — voix féminine fin 60 ans, diction nette, accent
+écossais transposé en français raffiné. Autorité calme, exigence
+bienveillante, aucun effet théâtral. Voix suggérée : Charlotte ou
+clone Maggie Smith. Settings : stability 50, style 0.
+
+**Rogue** — voix masculine fin 40 ans, grave, presque chuchotée par
+moments. Débit lent, silences prolongés, mépris affleurant sans
+éclat. Aucune chaleur. Voix suggérée : Adam/Antoni ou clone Alan
+Rickman. Settings : stability 60 (bloquer la variation théâtrale),
+style 0.
+
+**Flitwick** — voix masculine registre aigu, vive, pétillante,
+enthousiasme académique sincère, articulation maniérée. Voix
+suggérée : Sam/Josh + pitch +15 % en post (Audacity → +2 demi-tons).
+Settings : stability 45, style 10 (autoriser la malice).
+
+**Chourave** — voix féminine 50 ans, timbre chaud, médium, terrien,
+phrasé posé presque maternel, sourire dans la voix sans mièvrerie.
+Voix suggérée : Nicole/Emily ou clone Miriam Margolyes apaisé.
+Settings : stability 55, style 0.
+
+> Les 20 textes exacts à enregistrer sont dans le §A.5 ci-dessus et
+> dans `tools/gen_voice_edge.py` (dict `LINES`).
 
 ### Vague B — Voix incantation sorts
 
