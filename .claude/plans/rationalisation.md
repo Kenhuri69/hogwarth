@@ -66,7 +66,11 @@ chaque). Les points sont ordonnés par risque croissant.
 - **Risque** : faible-moyen — vérifier l'ordre de chargement (inventory.js avant
   forge.js et library.js : oui d'après l'ordre des `<script>`).
 - **Vérification** : smoke test forge + bibliothèque ; consommation correcte.
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Statut** : [x] proposé · [x] validé · [x] implémenté
+- **Note implémentation** : `_countMaterial`/`_consumeMaterial` ajoutés dans
+  inventory.js (après `tryAddItem`). `_countEssence`/`_consumeEssence` (forge.js)
+  et `_countPages`/`_consumePages` (library.js) deviennent des wrappers d'une
+  ligne — call-sites inchangés. Pas d'ajout MANIFEST (helpers internes).
 
 ## P5 — audio-sfx.js : helper `_playArpeggio`
 

@@ -24,20 +24,14 @@ const LIBRARY_COSTS = {
 // État UI : index du perso sélectionné dans les onglets.
 let _libraryCharIdx = 0;
 
+// Compte / consomme les Pages de Grimoire via les helpers de matériau
+// partagés (inventory.js).
 function _countPages() {
-  if (typeof player === 'undefined' || !player.inventory) return 0;
-  return player.inventory.filter(it => it && it.id === 'page_grimoire').length;
+  return _countMaterial('page_grimoire');
 }
 
 function _consumePages(n) {
-  let removed = 0;
-  for (let i = player.inventory.length - 1; i >= 0 && removed < n; i--) {
-    if (player.inventory[i] && player.inventory[i].id === 'page_grimoire') {
-      player.inventory.splice(i, 1);
-      removed++;
-    }
-  }
-  return removed;
+  return _consumeMaterial('page_grimoire', n);
 }
 
 // Initialise spellUpgrades = {} sur tous les persos qui en sont dépourvus.

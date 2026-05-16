@@ -22,22 +22,14 @@ const FORGE_COSTS = {
   5: { gold: 1280, essence: 8 },
 };
 
-// Retourne le compte d'Essence des Ténèbres dans l'inventaire partagé.
+// Compte / consomme l'Essence des Ténèbres via les helpers de matériau
+// partagés (inventory.js).
 function _countEssence() {
-  if (typeof player === 'undefined' || !player.inventory) return 0;
-  return player.inventory.filter(it => it && it.id === 'essence_tenebres').length;
+  return _countMaterial('essence_tenebres');
 }
 
-// Retire `n` essences de l'inventaire. Retourne le nombre effectivement retiré.
 function _consumeEssence(n) {
-  let removed = 0;
-  for (let i = player.inventory.length - 1; i >= 0 && removed < n; i--) {
-    if (player.inventory[i] && player.inventory[i].id === 'essence_tenebres') {
-      player.inventory.splice(i, 1);
-      removed++;
-    }
-  }
-  return removed;
+  return _consumeMaterial('essence_tenebres', n);
 }
 
 // Détermine la stat principale d'un item (la plus élevée parmi bonusAtk/Def/Mag/Lck).

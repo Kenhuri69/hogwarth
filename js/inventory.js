@@ -24,6 +24,25 @@ function tryAddItem(itemOrId, opts = {}) {
   return true;
 }
 
+// Compte les exemplaires d'un matériau (par id) dans le sac partagé.
+function _countMaterial(itemId) {
+  if (typeof player === 'undefined' || !player.inventory) return 0;
+  return player.inventory.filter(it => it && it.id === itemId).length;
+}
+
+// Retire jusqu'à `n` exemplaires d'un matériau du sac partagé.
+// Retourne le nombre effectivement retiré.
+function _consumeMaterial(itemId, n) {
+  let removed = 0;
+  for (let i = player.inventory.length - 1; i >= 0 && removed < n; i--) {
+    if (player.inventory[i] && player.inventory[i].id === itemId) {
+      player.inventory.splice(i, 1);
+      removed++;
+    }
+  }
+  return removed;
+}
+
 // ── Calcul des stats réelles (base + équipement) ────────────
 // Doit être appelé après chaque équipement et après chaque level-up.
 // Itère dynamiquement sur tous les slots de c.equipped pour supporter
