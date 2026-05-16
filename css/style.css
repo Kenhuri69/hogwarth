@@ -1700,6 +1700,10 @@ body {
 .svg-icon { display: inline-block; line-height: 0; }
 .svg-icon svg { width: 100%; height: 100%; display: block; }
 
+/* Besace d'herboriste — onglet de l'inventaire : consultation seule. */
+.inv-besace .brew-tile { cursor: default; }
+.inv-besace .brew-tile:hover { border-color: #2a1a08; background: #0a0705; }
+
 /* ── Concoction de potions — #brewing-modal ───────────────── */
 #brewing-modal {
   display: none;

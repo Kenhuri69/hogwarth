@@ -197,8 +197,70 @@ function recalculateStats() {
 }
 
 // ── Ouvre l'inventaire hors combat ──────────────────────────
+// Onglet actif de la modale d'inventaire : 'sac' (objets) ou 'besace'
+// (herbes d'herboriste — consultation seule).
+let _invTab = 'sac';
+
+// Affiche le pane correspondant à l'onglet et synchronise l'état actif
+// des boutons. `tabsVisible` masque la barre d'onglets (combat).
+function _applyInvTab(tab, tabsVisible) {
+  _invTab = tab;
+  const tabs   = document.getElementById('inv-tabs');
+  const paneS  = document.getElementById('inv-pane-sac');
+  const paneB  = document.getElementById('inv-pane-besace');
+  if (tabs) tabs.style.display = tabsVisible ? 'flex' : 'none';
+  if (paneS) paneS.style.display = (tab === 'sac')    ? '' : 'none';
+  if (paneB) paneB.style.display = (tab === 'besace') ? '' : 'none';
+  const btnS = document.getElementById('inv-tab-sac');
+  const btnB = document.getElementById('inv-tab-besace');
+  if (btnS) btnS.classList.toggle('active', tab === 'sac');
+  if (btnB) btnB.classList.toggle('active', tab === 'besace');
+}
+
+function switchInvTab(tab) {
+  if (tab === 'besace') renderBesace();
+  _applyInvTab(tab, true);
+}
+
+// Rendu de la besace d'herboriste (player.herbs) — purement informatif.
+// La concoction se fait au chaudron de Slughorn (cf. potions.js).
+function renderBesace() {
+  const pane = document.getElementById('inv-pane-besace');
+  if (!pane) return;
+  const herbs = player.herbs || {};
+  const ids = Object.keys(herbs).filter(id => herbs[id] > 0);
+  // Ordre stable : suit l'ordre de ITEMS.
+  ids.sort((a, b) => {
+    const ia = (typeof ITEMS !== 'undefined') ? ITEMS.findIndex(i => i.id === a) : 0;
+    const ib = (typeof ITEMS !== 'undefined') ? ITEMS.findIndex(i => i.id === b) : 0;
+    return ia - ib;
+  });
+  let html = '';
+  if (ids.length) {
+    html += '<div class="brew-tiles">';
+    for (const id of ids) {
+      const it = (typeof ITEMS !== 'undefined') ? ITEMS.find(i => i.id === id) : null;
+      const name = it ? it.name : id;
+      const icon = (typeof getItemIconHtml === 'function' && it)
+        ? getItemIconHtml(it, 'ui-icon-xl')
+        : (it && it.icon ? it.icon : '🌿');
+      html += `<div class="brew-tile" title="${name}">`
+        + `<div class="brew-tile-icon">${icon}</div>`
+        + `<div class="brew-tile-name">${name}</div>`
+        + `<span class="brew-tile-qty">×${herbs[id]}</span></div>`;
+    }
+    html += '</div>';
+  } else {
+    html += `<div class="brew-empty">Ta besace est vide. Fouille les salles et affronte les créatures botaniques pour récolter des herbes.</div>`;
+  }
+  html += `<div style="margin-top:12px; font-size:11px; color:#6a5030; text-align:center;">Concocte tes potions au chaudron de Slughorn.</div>`;
+  pane.innerHTML = html;
+}
+
 function openInventory() {
   renderInventory(false);
+  renderBesace();
+  _applyInvTab('sac', true);
   document.getElementById('inventory-modal').style.display = 'flex';
 }
 
@@ -893,6 +955,8 @@ function openBattleItems() {
   const consumables = player.inventory.filter(i => i.type === 'consumable');
   if (consumables.length === 0) { addMsg("Aucun objet utilisable !", ''); return; }
   renderInventory(true);
+  // Pas de besace en combat (herbes non utilisables) : onglets masqués.
+  _applyInvTab('sac', false);
   document.getElementById('inventory-modal').style.display = 'flex';
 }
 

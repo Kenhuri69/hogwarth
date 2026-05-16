@@ -26,7 +26,11 @@
     for (const id of overlayIds) {
       const el = document.getElementById(id);
       if (!el) continue;
-      if (getComputedStyle(el).display !== 'none') return true;
+      // Un overlay ne bloque le swipe que s'il est affiché ET interactif.
+      // `#floor-transition` est en permanence `display:flex` : sa
+      // visibilité passe par `opacity`/`pointer-events` (classe `.active`).
+      const cs = getComputedStyle(el);
+      if (cs.display !== 'none' && cs.pointerEvents !== 'none') return true;
     }
     return false;
   }

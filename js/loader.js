@@ -147,6 +147,7 @@ window.UX_safe = new Proxy({}, {
 
     // ── Inventaire ──
     { name: 'openInventory',      source: 'inventory.js',    kind: 'fn'  },
+    { name: 'switchInvTab',       source: 'inventory.js',    kind: 'fn'  },
     { name: 'useItem',            source: 'inventory.js',    kind: 'fn'  },
     { name: 'equipItem',          source: 'inventory.js',    kind: 'fn'  },
     { name: 'recalculateStats',   source: 'inventory.js',    kind: 'fn'  },
