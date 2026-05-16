@@ -121,15 +121,15 @@
     <!-- Fil d'Ariane — libellés sur desktop, icônes sur mobile -->
     <div class="psel-steps" id="psel-steps">
       <span class="psel-crumb" data-step="1" onclick="pselCrumbClick(1)">
-        <span class="psel-crumb-icon">👥</span><span class="psel-crumb-label">Mode</span>
+        <img class="psel-crumb-icon" src="img/icons/step_mode.png" alt=""><span class="psel-crumb-label">Mode</span>
       </span>
       <span class="psel-crumb-sep" aria-hidden="true">›</span>
       <span class="psel-crumb" data-step="2" onclick="pselCrumbClick(2)">
-        <span class="psel-crumb-icon">🧙</span><span class="psel-crumb-label">Héros</span>
+        <img class="psel-crumb-icon" src="img/icons/step_heroes.png" alt=""><span class="psel-crumb-label">Héros</span>
       </span>
       <span class="psel-crumb-sep" aria-hidden="true">›</span>
       <span class="psel-crumb" data-step="3" onclick="pselCrumbClick(3)">
-        <span class="psel-crumb-icon">⚔️</span><span class="psel-crumb-label">Difficulté</span>
+        <img class="psel-crumb-icon" src="img/icons/step_difficulty.png" alt=""><span class="psel-crumb-label">Difficulté</span>
       </span>
     </div>
 
@@ -148,7 +148,7 @@
     <div class="psel-step" data-step="2" style="display:none">
     <!-- Groupe 1 — héros canon du film -->
     <div class="hero-section">
-    <div class="hero-section-title">Les Héros du Film</div>
+    <div class="hero-section-title"><img class="hero-section-emblem" src="img/icons/crest_film.png" alt="">Les Héros du Film</div>
     <div class="hero-grid">
       <button class="hero-card" data-key="harry" onclick="toggleHero('harry')">
         <div class="hero-portrait-wrap">
@@ -172,7 +172,7 @@
     </div>
     <!-- Groupe 2 — personnages originaux -->
     <div class="hero-section">
-    <div class="hero-section-title">Le Cercle des Astres</div>
+    <div class="hero-section-title"><img class="hero-section-emblem" src="img/icons/crest_astres.png" alt="">Le Cercle des Astres</div>
     <div class="hero-grid">
       <button class="hero-card" data-key="celeste" onclick="toggleHero('celeste')">
         <div class="hero-portrait-wrap">
