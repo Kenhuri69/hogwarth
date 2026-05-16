@@ -6805,6 +6805,108 @@ async function scenarioShopLimits() {
   await browser.close();
 }
 
+// ── Scénario Stun : statut d'étourdissement + monstres porteurs ──
+
+async function scenarioStun() {
+  console.log('\n── Scénario Stun : étourdissement + nouveaux monstres ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 80 });
+
+  // T1 : STATUS_DEFS.stun défini
+  const t1 = await page.evaluate(() => ({
+    defined: typeof STATUS_DEFS !== 'undefined' && !!STATUS_DEFS.stun,
+    icon:    STATUS_DEFS?.stun?.icon,
+    label:   STATUS_DEFS?.stun?.label
+  }));
+  console.log('  T1 def   :', t1);
+  assert(t1.defined,            'STATUS_DEFS.stun absent');
+  assert(t1.label === 'Étourdi', 'label stun incorrect');
+
+  // T2 : stun n'est pas un DoT — tickStatuses ne décrémente ni ne blesse
+  const t2 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.statusEffects = [];
+    applyStatus(e, 'stun', 0, 2);
+    const hpBefore = e.currentHp;
+    tickStatuses(e, true);
+    return {
+      hpBefore, hpAfter: e.currentHp,
+      turns: e.statusEffects.find(s => s.id === 'stun')?.turns
+    };
+  });
+  console.log('  T2 tick  :', t2);
+  assert(t2.hpAfter === t2.hpBefore, 'stun ne doit pas infliger de dégâts');
+  assert(t2.turns === 2,             'tickStatuses ne doit pas décrémenter stun');
+
+  // T3 : consumeStun consomme 1 tour, retire le statut à 0
+  const t3 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.statusEffects = [];
+    applyStatus(e, 'stun', 0, 2);
+    const r1 = consumeStun(e);
+    const turnsAfter1 = e.statusEffects.find(s => s.id === 'stun')?.turns;
+    const r2 = consumeStun(e);
+    const stillThere = e.statusEffects.some(s => s.id === 'stun');
+    const r3 = consumeStun(e);
+    return { r1, turnsAfter1, r2, stillThere, r3 };
+  });
+  console.log('  T3 consume:', t3);
+  assert(t3.r1 === true && t3.turnsAfter1 === 1, 'consumeStun #1 invalide');
+  assert(t3.r2 === true && t3.stillThere === false, 'stun non retiré à turns=0');
+  assert(t3.r3 === false, 'consumeStun doit retourner false sans stun');
+
+  // T4 : un ennemi étourdi saute son tour (aucun dégât au groupe)
+  const t4 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.statusEffects = [];
+    e.atk = 60;                       // dégât évident s'il agissait
+    applyStatus(e, 'stun', 0, 1);
+    party[0].statusEffects = [];
+    const hpBefore = party[0].hp;
+    enemyTurn();
+    return {
+      hpBefore, hpAfter: party[0].hp,
+      stunGone: !e.statusEffects.some(s => s.id === 'stun')
+    };
+  });
+  console.log('  T4 enemy :', t4);
+  assert(t4.hpAfter === t4.hpBefore, 'ennemi étourdi a quand même frappé');
+  assert(t4.stunGone,                'stun ennemi non consommé');
+
+  // T5 : les 4 nouveaux monstres existent et portent une capacité stun
+  const t5 = await page.evaluate(() => {
+    const ids = ['lutin_cornouailles', 'strangulot', 'pitiponk', 'gargouille'];
+    return ids.map(id => {
+      const m = MONSTERS.find(x => x.id === id);
+      if (!m) return { id, found: false };
+      const stunAb = (m.abilities || []).find(a => a.effect === 'status' && a.statusId === 'stun');
+      const pool = MONSTERS.filter(x =>
+        x.minFloor <= m.minFloor && (x.maxFloor == null || x.maxFloor >= m.minFloor));
+      return {
+        id, found: true,
+        hasStun: !!stunAb,
+        turns: stunAb?.turns,
+        inPool: pool.some(x => x.id === id)
+      };
+    });
+  });
+  console.log('  T5 monstres:', t5);
+  t5.forEach(m => {
+    assert(m.found,   `monstre ${m.id} absent de MONSTERS`);
+    assert(m.hasStun, `monstre ${m.id} sans capacité stun`);
+    assert(m.turns >= 1, `monstre ${m.id} : turns de stun invalide`);
+    assert(m.inPool,  `monstre ${m.id} absent du pool de son étage`);
+  });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Stun OK (statut + saut de tour + 4 monstres porteurs)');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -6862,7 +6964,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

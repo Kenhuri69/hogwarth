@@ -22,16 +22,22 @@ function mitigatedDamage(rawAtk, def) {
 // ── Système de statuts persistants ──────────────────────────
 // Chaque combattant porte statusEffects: [{ id, icon, power, turns }]
 // id ∈ "burn" (🔥) | "poison" (☠️) | "bleed" (🩸) | "gel" (❄️) | "weaken" (🛡️↓)
+//   | "regen" (🩹) | "stun" (💫)
 // Les DoT (burn/poison/bleed/gel) infligent des dégâts au tick.
 // "weaken" applique un malus DEF persistant (power = DEF perdue) :
 // le malus est appliqué au moment de applyStatus, restauré à l'expiry.
+// "stun" fait sauter le prochain tour du combattant (non-DoT) : sa durée
+// (turns = nombre de tours sautés) est décrémentée par consumeStun() au
+// point de saut, jamais par tickStatuses (sinon l'expiry l'annulerait
+// avant qu'il ne serve).
 const STATUS_DEFS = {
   burn:   { icon: '🔥',   label: 'Brûlure',           color: '#e85a2c' },
   poison: { icon: '☠️',   label: 'Empoisonné',        color: '#7ab836' },
   bleed:  { icon: '🩸',   label: 'Saignement',        color: '#c0392b' },
   gel:    { icon: '❄️',   label: 'Engelures',         color: '#5fa8d3' },
   weaken: { icon: '🛡️↓', label: 'Affaiblissement',   color: '#9b59b6' },
-  regen:  { icon: '🩹',   label: 'Régénération',      color: '#3aa55a' }
+  regen:  { icon: '🩹',   label: 'Régénération',      color: '#3aa55a' },
+  stun:   { icon: '💫',   label: 'Étourdi',           color: '#d9a521' }
 };
 
 function applyStatus(target, id, power, turns) {
@@ -46,11 +52,33 @@ function applyStatus(target, id, power, turns) {
   }
 }
 
+// ── Stun : étourdissement (saut de tour) ─────────────────────
+// isStunned : le combattant a-t-il un stun actif ?
+function isStunned(actor) {
+  return !!(actor && actor.statusEffects &&
+            actor.statusEffects.some(s => s.id === 'stun' && s.turns > 0));
+}
+// consumeStun : consomme 1 tour de stun. Retourne true si le tour de
+// l'acteur doit être sauté. Retire le statut quand sa durée atteint 0.
+function consumeStun(actor) {
+  if (!actor || !actor.statusEffects) return false;
+  const s = actor.statusEffects.find(st => st.id === 'stun' && st.turns > 0);
+  if (!s) return false;
+  s.turns--;
+  if (s.turns <= 0) {
+    actor.statusEffects = actor.statusEffects.filter(st => st !== s);
+  }
+  return true;
+}
+
 function tickStatuses(target, isEnemy) {
   if (!target || !target.statusEffects || !target.statusEffects.length) return '';
   let log = '';
   const remaining = [];
   target.statusEffects.forEach(s => {
+    // Stun : non-DoT, durée gérée par consumeStun() au point de saut.
+    // tickStatuses le porte tel quel, sans tick ni décompte.
+    if (s.id === 'stun') { remaining.push(s); return; }
     // Statuts DoT : burn / poison / bleed / gel → dégâts par tour
     if (s.id === 'burn' || s.id === 'poison' || s.id === 'bleed' || s.id === 'gel') {
       let dmg = s.power;
@@ -336,6 +364,10 @@ function advanceBattleChar() {
     if (party[currentBattleChar].hp <= 0) {
       setBattleLog(`${party[currentBattleChar].name} est hors combat, tour des ennemis...`);
       setTimeout(enemyTurn, 700);
+    } else if (consumeStun(party[currentBattleChar])) {
+      setBattleLog(`💫 ${party[currentBattleChar].name} est étourdi et perd son tour...`);
+      UX_safe.logCombat(`💫 ${party[currentBattleChar].name} est étourdi`, 'bad');
+      setTimeout(enemyTurn, 900);
     } else {
       setBattleLog(`À ${party[currentBattleChar].name} d'agir...`);
     }
@@ -354,6 +386,13 @@ function enemyTurn() {
   if (checkAllEnemiesDead()) { setBattleLog(log || '...'); renderEnemyGroup(); return; }
 
   livingEnemies().forEach(enemy => {
+    // Étourdi : l'ennemi perd son tour.
+    if (consumeStun(enemy)) {
+      log += `💫 ${enemy.name} est étourdi et perd son tour ! `;
+      UX_safe.logCombat(`💫 ${enemy.name} est étourdi`, 'good');
+      return;
+    }
+
     const target  = alive[Math.floor(Math.random() * alive.length)];
     if (!target) return;
     const charIdx = party.indexOf(target);
@@ -418,7 +457,17 @@ function enemyTurn() {
   currentBattleChar = (partySize === 1 || party[0].hp > 0) ? 0 : 1;
   updateBattleCharIndicator();
   UX_safe.renderTimeline();
-  setBattleLog((log || '...') + `\nÀ ${party[currentBattleChar].name} d'agir...`);
+
+  // Le perso qui ouvre le segment héros est-il étourdi ? Si oui, son tour
+  // est sauté — advanceBattleChar enchaîne (perso suivant ou tour ennemi).
+  const opener = party[currentBattleChar];
+  if (opener && opener.hp > 0 && consumeStun(opener)) {
+    setBattleLog((log || '...') + `\n💫 ${opener.name} est étourdi et perd son tour...`);
+    UX_safe.logCombat(`💫 ${opener.name} est étourdi`, 'bad');
+    setTimeout(advanceBattleChar, 900);
+  } else {
+    setBattleLog((log || '...') + `\nÀ ${party[currentBattleChar].name} d'agir...`);
+  }
 }
 
 // tryEnemyAbility() + castSpellInBattle() → battle-spells.js

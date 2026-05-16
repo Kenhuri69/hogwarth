@@ -607,6 +607,20 @@ Ennemis agissent (tryEnemyAbility ou attaque physique) → retour Harry
 ```
 Si un personnage est KO, son tour est sauté automatiquement.
 
+### Statut `stun` (étourdissement)
+Statut non-DoT (`STATUS_DEFS.stun` 💫) qui fait **sauter le prochain tour**
+du combattant — héros comme ennemi. `turns` = nombre de tours sautés.
+- `applyStatus(target, 'stun', 0, turns)` le pose ; le `power` est ignoré.
+- `consumeStun(actor)` consomme 1 tour au **point de saut** (retire le statut
+  à 0). `tickStatuses` porte `stun` sans le décompter — sinon l'expiry de fin
+  de round l'annulerait avant qu'il ne serve.
+- Ennemis : skip dans la boucle `enemyTurn`. Héros : skip à l'ouverture du
+  segment (`enemyTurn` fin + `advanceBattleChar`). Si tout le groupe est
+  étourdi, le segment héros est sauté — jamais d'état figé.
+- Vecteur d'injection : capacité ennemie `effect:"status", statusId:"stun"`.
+  Monstres porteurs : `lutin_cornouailles`, `strangulot`, `pitiponk`,
+  `gargouille`.
+
 ### Level-up (battle.js — checkLevelUp)
 Au level-up, on incrémente `c._baseAtk / _baseDef / _baseMag` (pas `c.atk` directement),
 puis on appelle `recalculateStats()` pour reconstruire les stats effectives avec l'équipement.
@@ -930,7 +944,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | `gold` | number\|{min,max} | Or de base (scalé automatiquement) |
 | `drops` | [{itemId, chance}] | Drops potentiels après victoire |
 
-### Monstres définis (50 au total)
+### Monstres définis (54 au total)
 | Étages | Monstres |
 |--------|---------|
 | 1–3    | Chat de Mme Norris, Luciole des Marais, Cornichon de Cornouailles, Portrait Hostile, Peeve, Mimi Geignarde, Serpent des Cachots |
@@ -943,6 +957,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | 8+     | Bellatrix Lestrange, Voldemort Affaibli |
 | 10+    | Voldemort Ressuscité |
 | **+14 ajouts récents** | Niffleur, Elfe de Maison Rebelle, Bowtruckle Géant, Chevalier Fantôme, Gremlin Magique, Manticore Juvénile, Gardien du Portail, Fantôme du Sang Noir, Chauve-Souris Vampire, Vampire Novice, Strigoï Ancien, Poupée Maudite, Spectre Maudit, Hécate la Maudisseuse — voir `monsters.js` pour `minFloor`/`maxFloor` |
+| **+4 monstres étourdissants** | Lutin de Cornouailles (1–4), Strangulot (3–7), Pitiponk (4–8), Gargouille Éveillée (5–10) — capacité `effect:"status", statusId:"stun"`. Pas encore de PNG dédié (fallback emoji/SVG catégorie en attendant les visuels). |
 
 **Icônes SVG** définies dans `icons.js` pour tous les monstres majeurs.
 Les monstres sans SVG propre héritent du SVG de leur catégorie.

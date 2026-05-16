@@ -1291,6 +1291,110 @@ const MONSTERS = [
     ]
   },
 
+  // ════════════════════════════════════════════
+  // MONSTRES ÉTOURDISSANTS (statut "stun")
+  // ════════════════════════════════════════════
+
+  {
+    id:       "lutin_cornouailles",
+    name:     "Lutin de Cornouailles",
+    icon:     "🧚",
+    category: "être magique",
+    desc:     "Un lutin bleu électrique fuse vers vous en piaillant !",
+    lore:     "Petite créature turbulente d'un bleu vif, le Lutin de Cornouailles ne tient pas en place. Incapable de voler bien longtemps, il préfère saisir oreilles et cheveux, et ses cris stridents suffisent à étourdir un sorcier mal préparé.",
+    habitat:  "Couloirs des étages supérieurs, salles de classe abandonnées",
+    anecdote: "Gilderoy Lockhart en libéra toute une cage lors d'un cours de Défense contre les Forces du Mal — un fiasco resté célèbre.",
+    danger:   3,
+    minFloor: 1, maxFloor: 4, weight: 9,
+    hp: 11, atk: 3, def: 0, mag: 4, agi: 19, lck: 12,
+    scale: 0.18,
+    abilities: [
+      { name: "Bourrasque Désorientante", icon: "💫", desc: "Cris stridents qui étourdissent la cible",
+        effect: "status", statusId: "stun", power: 0, chance: 0.25, turns: 1 }
+    ],
+    ai: "random",
+    resist: ["foudre"],
+    weak:   ["physique"],
+    xp: 7, gold: { min: 1, max: 5 },
+    drops:  []
+  },
+
+  {
+    id:       "strangulot",
+    name:     "Strangulot",
+    icon:     "🦑",
+    category: "créature",
+    desc:     "Des doigts gluants jaillissent de l'eau noire et agrippent vos chevilles !",
+    lore:     "Petit démon aquatique cornu, le Strangulot tapisse le fond des douves de Poudlard. Ses longs doigts fins sont étonnamment puissants : une étreinte bien placée immobilise une proie le temps de la noyer.",
+    habitat:  "Douves, citernes et galeries inondées des cachots",
+    anecdote: "Lors de la deuxième tâche du Tournoi des Trois Sorciers, une nuée de Strangulots tenta de retenir les champions au fond du lac.",
+    danger:   5,
+    minFloor: 3, maxFloor: 7, weight: 6,
+    hp: 34, atk: 8, def: 4, mag: 3, agi: 12, lck: 9,
+    scale: 0.26,
+    abilities: [
+      { name: "Étreinte Gluante", icon: "💫", desc: "Saisit la cible et l'immobilise",
+        effect: "status", statusId: "stun", power: 0, chance: 0.25, turns: 1 }
+    ],
+    ai: "aggressive",
+    resist: ["glace"],
+    weak:   ["foudre"],
+    xp: 28, gold: { min: 8, max: 18 },
+    drops:  [{ itemId: "mandragore", chance: 0.10 }]
+  },
+
+  {
+    id:       "pitiponk",
+    name:     "Pitiponk",
+    icon:     "🏮",
+    category: "être magique",
+    desc:     "Une lueur vacillante danse devant vous — puis le piège se referme.",
+    lore:     "Créature unijambiste et frêle, le Pitiponk tient une lanterne dont la lumière trompeuse attire les voyageurs vers les marécages. Fixer sa flamme trop longtemps engourdit l'esprit et fige les jambes.",
+    habitat:  "Galeries embrumées, marais souterrains des étages profonds",
+    anecdote: "Étudié en troisième année à Poudlard, le Pitiponk figure parmi les créatures que tout sorcier apprend à ne jamais suivre la nuit.",
+    danger:   6,
+    minFloor: 4, maxFloor: 8, weight: 6,
+    hp: 42, atk: 7, def: 3, mag: 12, agi: 15, lck: 14,
+    scale: 0.28,
+    abilities: [
+      { name: "Lanterne Trompeuse", icon: "💫", desc: "Sa flamme hypnotique étourdit la cible",
+        effect: "status", statusId: "stun", power: 0, chance: 0.30, turns: 1 },
+      { name: "Feu Follet", icon: "🔥", desc: "Projette une gerbe d'étincelles",
+        effect: "damage", power: 8, chance: 0.25 }
+    ],
+    ai: "cautious",
+    resist: ["feu", "disarm"],
+    weak:   ["physique"],
+    xp: 40, gold: { min: 12, max: 25 },
+    drops:  []
+  },
+
+  {
+    id:       "gargouille",
+    name:     "Gargouille Éveillée",
+    icon:     "🗿",
+    category: "créature",
+    desc:     "La gargouille de pierre ouvre les yeux — son regard pèse comme du granit.",
+    lore:     "Sculptée pour garder les passages de Poudlard, la Gargouille Éveillée s'anime à l'approche des intrus. Son regard minéral pétrifie brièvement quiconque le croise, et ses poings de granit fendent la roche.",
+    habitat:  "Escaliers gardés, entrées de bureaux et passages scellés",
+    anecdote: "Une gargouille identique garde l'entrée du bureau du directeur et n'ouvre le passage qu'au bon mot de passe.",
+    danger:   7,
+    minFloor: 5, maxFloor: 10, weight: 4,
+    hp: 95, atk: 13, def: 12, mag: 6, agi: 6, lck: 8,
+    scale: 0.30,
+    abilities: [
+      { name: "Regard Pétrifiant", icon: "💫", desc: "Son regard de pierre fige la cible",
+        effect: "status", statusId: "stun", power: 0, chance: 0.25, turns: 2 },
+      { name: "Coup de Granit", icon: "🪨", desc: "Un poing de pierre s'abat",
+        effect: "damage", power: 14, chance: 0.30 }
+    ],
+    ai: "aggressive",
+    resist: ["physique", "disarm"],
+    weak:   ["glace"],
+    xp: 95, gold: { min: 30, max: 55 },
+    drops:  [{ itemId: "potion_m", chance: 0.12 }]
+  },
+
 ];
 
 // ════════════════════════════════════════════

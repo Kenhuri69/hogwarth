@@ -54,7 +54,8 @@ Formule générale : `bonus = floor(INT/k) + floor(statDomaine/k)`.
 
 ## Hors scope
 
-- Vrai mécanisme de `stun` (P2 de la revue).
+- ~~Vrai mécanisme de `stun` (P2 de la revue).~~ → **Livré** dans
+  `.claude/plans/new-monsters-stun.md` (statut `stun`, saut de tour).
 - Voie d'allocation MAG (arbre de compétences, futur).
 - Correctifs P1 de la revue des sorts (sorts inaccessibles, ciblage
   lifesteal/curse, Alohomora) — lot séparé.
