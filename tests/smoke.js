@@ -7023,11 +7023,63 @@ async function scenarioHelpTour() {
   console.log('  T7 bouton Aide →', t7);
   assert(t7.exists, 'bouton « Aide » absent de la barre de commandes');
 
+  // T8 : narration McGonagall — bouton voix, bascule persistée,
+  //      OGG enregistrés, lecture sans exception.
+  const t8 = await page.evaluate(() => {
+    try { localStorage.removeItem('hh_help_tour_voice'); } catch (e) { /* noop */ }
+    startHelpTour();   // relance propre
+    const btn = document.getElementById('help-tour-voice');
+    const defaultOn  = _htVoiceEnabled();
+    const defaultGlyph = btn && btn.textContent;
+    // _htSpeakStep ne doit pas lever d'exception (playVoice gère les
+    // échecs de chargement OGG silencieusement).
+    let speakThrew = false;
+    try { _htSpeakStep(); } catch (e) { speakThrew = true; }
+    // Toutes les clés de narration doivent être enregistrées.
+    const samples = AudioSystem._VOICE_SAMPLES || {};
+    const total = (typeof HELP_TOUR_STEPS !== 'undefined') ? HELP_TOUR_STEPS.length : 0;
+    let allKeys = true, sampleUrl = '';
+    for (let i = 1; i <= total; i++) {
+      const k = 'mcgonagall_help_' + i;
+      if (!samples[k]) { allKeys = false; break; }
+      if (i === 1) sampleUrl = samples[k];
+    }
+    // Bascule OFF
+    helpTourToggleVoice();
+    const offStored = localStorage.getItem('hh_help_tour_voice');
+    const offGlyph  = btn && btn.textContent;
+    const offState  = _htVoiceEnabled();
+    // Bascule ON de nouveau
+    helpTourToggleVoice();
+    const onStored = localStorage.getItem('hh_help_tour_voice');
+    const onState  = _htVoiceEnabled();
+    helpTourEnd();
+    return {
+      hasBtn: !!btn, defaultOn, defaultGlyph, speakThrew,
+      offStored, offGlyph, offState, onStored, onState,
+      allKeys, sampleUrl, total
+    };
+  });
+  console.log('  T8 narration McGonagall →', t8);
+  assert(t8.hasBtn,                 'bouton voix absent de la bulle');
+  assert(t8.defaultOn === true,     'la voix doit être active par défaut');
+  assert(t8.defaultGlyph === '🔊',  'glyphe voix par défaut incorrect');
+  assert(t8.speakThrew === false,   '_htSpeakStep ne doit pas lever d\'exception');
+  assert(t8.total >= 10,            'HELP_TOUR_STEPS trop court');
+  assert(t8.allKeys,                'clés OGG mcgonagall_help_<n> manquantes dans _VOICE_SAMPLES');
+  assert(/audio\/voice\/mcgonagall_help_1\.ogg$/.test(t8.sampleUrl),
+         'URL OGG de narration incorrecte');
+  assert(t8.offStored === '0' && t8.offState === false,
+         'la coupure de voix doit être persistée (=0)');
+  assert(t8.offGlyph === '🔇',      'glyphe voix coupée incorrect');
+  assert(t8.onStored === '1' && t8.onState === true,
+         'la réactivation de voix doit être persistée (=1)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Help Tour OK (auto-affichage, navigation, spotlight, opt-out, relance)');
+  console.log('  ✅ Help Tour OK (auto-affichage, navigation, spotlight, opt-out, relance, voix McGonagall)');
   await browser.close();
 }
 

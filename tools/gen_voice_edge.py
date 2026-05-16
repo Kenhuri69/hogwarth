@@ -27,26 +27,23 @@ import os
 import ssl
 import sys
 
-# Certains environnements interposent un proxy MITM avec un certificat
-# auto-signé. On désactive la vérification côté client : le trafic reste
-# chiffré entre le proxy et Microsoft, seule la chaîne locale est ignorée.
-_orig_ctx = ssl.create_default_context
-
-
-def _unverified_ctx(*args, **kwargs):
-    ctx = _orig_ctx(*args, **kwargs)
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    return ctx
-
-
-ssl.create_default_context = _unverified_ctx
-ssl._create_default_https_context = _unverified_ctx
-
 try:
     import edge_tts
+    import edge_tts.communicate as _ec
+    import edge_tts.voices as _ev
 except ImportError:
     sys.exit("edge-tts manquant — installer avec : pip install edge-tts")
+
+# Certains environnements interposent un proxy MITM avec un certificat
+# auto-signé. edge-tts construit son contexte SSL avec le bundle `certifi`,
+# qui ignore ce certificat. On le remplace par un contexte basé sur le
+# bundle CA système — qui, lui, contient le certificat du proxy — de sorte
+# que la vérification TLS reste active et passe à travers le proxy.
+_SYS_CA = "/etc/ssl/certs/ca-certificates.crt"
+if os.path.exists(_SYS_CA):
+    _ctx = ssl.create_default_context(cafile=_SYS_CA)
+    _ec._SSL_CTX = _ctx
+    _ev._SSL_CTX = _ctx
 
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "audio", "voice", "_raw")
 
@@ -67,6 +64,9 @@ VOICES = {
     "sprout": dict(voice="fr-FR-VivienneMultilingualNeural", rate="-3%", pitch="+0Hz"),
     # Hermione : féminine jeune, claire — incantations des sortilèges.
     "hermione": dict(voice="fr-FR-EloiseNeural", rate="-4%", pitch="+0Hz"),
+    # Tour guidé d'aide aux novices — narré par McGonagall (même voix
+    # et réglages que ses dialogues PNJ).
+    "mcgonagall_help": dict(voice="de-DE-SeraphinaMultilingualNeural", rate="-7%", pitch="+0Hz"),
 }
 
 # Textes — copie exacte de npcs.js (dialogues.greeting + dialoguesByQuest).
@@ -177,6 +177,66 @@ LINES = {
         ("spell_sectumsempra",       "Sectumsempra !"),
         ("spell_avada",              "Avada Kedavra !"),
         ("spell_portus",             "Portus !"),
+    ],
+    # Tour guidé d'aide — une clé par étape de HELP_TOUR_STEPS
+    # (js/help-tour.js). Texte = titre + paragraphe de l'étape.
+    "mcgonagall_help": [
+        ("mcgonagall_help_1",
+         "Bienvenue à Poudlard ! Ce petit tour présente les commandes du "
+         "jeu. Tu peux le passer à tout moment, et le relancer plus tard "
+         "via le bouton Aide."),
+        ("mcgonagall_help_2",
+         "La vue du donjon. Le château se parcourt en vue trois "
+         "dimensions : couloirs, portes en bois, coffres, escaliers et "
+         "fontaines apparaissent devant toi."),
+        ("mcgonagall_help_3",
+         "Se déplacer. Avance, recule et pivote la caméra avec les touches "
+         "directionnelles ou les flèches du clavier. Sur mobile, glisse un "
+         "doigt sur la vue."),
+        ("mcgonagall_help_4",
+         "Te repérer. La minimap montre les salles explorées et ta "
+         "position. La boussole indique la direction de ton regard."),
+        ("mcgonagall_help_5",
+         "Ton groupe. Chaque héros a des points de vie, en rouge, des "
+         "points de magie, en bleu, pour lancer des sorts, et partage la "
+         "barre d'expérience du groupe."),
+        ("mcgonagall_help_6",
+         "Le Sac. Ton inventaire : potions, objets et équipement. Clique "
+         "un objet pour l'utiliser ou l'équiper sur un personnage."),
+        ("mcgonagall_help_7",
+         "Les Sortilèges. La liste des sorts appris. On apprend de "
+         "nouveaux sorts en montant de niveau, via des livres ou certains "
+         "équipements."),
+        ("mcgonagall_help_8",
+         "La Fiche personnage. Toutes les statistiques détaillées. À "
+         "chaque montée de niveau, un badge signale des points de "
+         "caractéristique à répartir ici."),
+        ("mcgonagall_help_9",
+         "Le Bestiaire. La fiche de chaque créature déjà rencontrée : son "
+         "histoire, son niveau de danger, ses résistances et ses "
+         "faiblesses élémentaires."),
+        ("mcgonagall_help_10",
+         "Les Quêtes. Le journal de tes objectifs en cours et leurs "
+         "récompenses. Remets une quête terminée pour gagner de "
+         "l'expérience, de l'or et des objets."),
+        ("mcgonagall_help_11",
+         "Fouiller. Inspecte la salle courante pour dénicher des objets "
+         "cachés. Pense à fouiller chaque pièce que tu traverses."),
+        ("mcgonagall_help_12",
+         "Se reposer. Récupère des points de vie et de magie hors combat. "
+         "Le repos a un délai de récupération : à utiliser entre deux "
+         "affrontements."),
+        ("mcgonagall_help_13",
+         "Le combat. Les combats sont au tour par tour. À chaque tour : "
+         "Attaquer, lancer un Sortilège, se mettre en Garde, utiliser un "
+         "Objet ou Fuir. Exploite les faiblesses élémentaires des "
+         "ennemis !"),
+        ("mcgonagall_help_14",
+         "Sauvegarder. Trois emplacements de sauvegarde manuels, plus une "
+         "sauvegarde automatique. Charge une partie via le bouton voisin."),
+        ("mcgonagall_help_15",
+         "Besoin d'aide ? Ce bouton Aide rouvre ce guide quand tu veux. "
+         "Bonne aventure à Poudlard !"),
     ],
 }
 

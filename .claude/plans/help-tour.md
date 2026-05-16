@@ -36,6 +36,29 @@ vrais éléments de l'UI + bulle explicative étape par étape.
 - [x] Étape 5 — maybeAutoStartHelpTour() branché dans startGame().
 - [x] Étape 6 — smoke.js : opt-out global + scenarioHelpTour ajouté.
 
+## Ajout — Narration vocale McGonagall (suivi)
+Demande utilisateur : narrer tous les textes de l'aide avec la voix de
+McGonagall, celle déjà produite via l'API Microsoft (edge-tts).
+- [x] `tools/gen_voice_edge.py` : correctif SSL (bundle CA système au lieu
+  de `certifi`, pour traverser le proxy MITM) + cible `mcgonagall_help`
+  (15 lignes, voix `de-DE-SeraphinaMultilingualNeural`, rate -7%).
+- [x] Génération des 15 MP3 → conversion OGG (mono 22 kHz, libvorbis q3).
+- [x] `audio/voice/mcgonagall_help_1..15.ogg` + sources `_raw/*.mp3`.
+- [x] `_VOICE_SAMPLES` (audio-music.js) : 15 clés `mcgonagall_help_<n>`.
+- [x] `help-tour.js` : `_htSpeakStep` joue `AudioSystem.playVoice` au lieu
+  de `speechSynthesis` (suppression de `_htSpeak`/`_htPickVoice`).
+- [x] Bouton 🔊/🔇 dans la bulle + préférence persistée (`hh_help_tour_voice`).
+  Arrêt via `AudioSystem.stopVoice()` à la fermeture / coupure.
+- [x] `tests/smoke.js` T8 : bouton voix, bascule persistée, clés OGG
+  enregistrées, lecture sans exception. Décodage des 15 OGG vérifié en
+  navigateur (HTTP).
+
+> Première itération (voix navigateur `speechSynthesis`) remplacée : seules
+> les voix OS étaient disponibles, jamais la voix exacte de McGonagall.
+> Celle-ci est une voix neurale Azure (`de-DE-SeraphinaMultilingualNeural`)
+> qui ne peut être obtenue qu'en pré-générant les fichiers — même pipeline
+> que les dialogues PNJ (`tools/gen_voice_edge.py`).
+
 ## Écarts constatés
 - Le bouton « Aide » utilise un glyphe texte (📖) faute d'icône PNG dédiée ;
   cohérent avec l'absence d'asset, sans casser `scenarioCmdBtnIcons` qui ne

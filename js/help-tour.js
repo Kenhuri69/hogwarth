@@ -5,9 +5,16 @@
 // explicative étape par étape. Lancé automatiquement à chaque
 // nouvelle partie (sauf opt-out) et relançable via le bouton
 // « Aide » de la barre de commandes.
+//
+// Chaque étape est aussi narrée à voix haute par McGonagall : des
+// OGG pré-synthétisés via edge-tts (voix neurale Microsoft Azure
+// `de-DE-SeraphinaMultilingualNeural`, identique à ses dialogues PNJ),
+// joués par `AudioSystem.playVoice` — clés `mcgonagall_help_<n>`.
+// Régénération : `tools/gen_voice_edge.py mcgonagall_help`.
 // ============================================================
 
 const HELP_TOUR_OPTOUT_KEY = 'hh_help_tour_optout';
+const HELP_TOUR_VOICE_KEY  = 'hh_help_tour_voice';
 
 // Chaque étape : { targets:[sélecteurs] (1er visible utilisé), title, text }.
 // targets absent/null → bulle centrée sans spotlight.
@@ -130,6 +137,42 @@ function _htOptedOut() {
   catch (e) { return false; }
 }
 
+// ── Narration vocale (voix McGonagall — OGG pré-synthétisés) ───
+//
+// Chaque étape est narrée par McGonagall : OGG générés via edge-tts
+// (voix neurale Microsoft Azure de-DE-SeraphinaMultilingualNeural) et
+// joués par AudioSystem.playVoice — clés `mcgonagall_help_<n>` dans
+// AudioSystem._VOICE_SAMPLES (js/audio-music.js).
+
+// La voix est active par défaut ; '0' en localStorage = coupée.
+function _htVoiceEnabled() {
+  try { return localStorage.getItem(HELP_TOUR_VOICE_KEY) !== '0'; }
+  catch (e) { return true; }
+}
+
+function _htStopSpeak() {
+  if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.stopVoice === 'function') {
+    AudioSystem.stopVoice();
+  }
+}
+
+// Narre l'étape courante avec la voix de McGonagall.
+function _htSpeakStep() {
+  _htStopSpeak();   // coupe toute narration en cours
+  if (!_htVoiceEnabled()) return;
+  if (typeof AudioSystem === 'undefined' || typeof AudioSystem.playVoice !== 'function') return;
+  // playVoice gère lui-même la coupure audio globale (isMuted).
+  AudioSystem.playVoice('mcgonagall_help_' + (_helpTourStep + 1));
+}
+
+function _htUpdateVoiceBtn() {
+  const btn = document.getElementById('help-tour-voice');
+  if (!btn) return;
+  const on = _htVoiceEnabled();
+  btn.textContent = on ? '🔊' : '🔇';
+  btn.title = on ? 'Couper la voix' : 'Activer la voix';
+}
+
 function _htBuildDom() {
   if (document.getElementById('help-tour-overlay')) return;
   const root = document.createElement('div');
@@ -138,7 +181,10 @@ function _htBuildDom() {
     '<div id="help-tour-backdrop"></div>' +
     '<div id="help-tour-spotlight"></div>' +
     '<div id="help-tour-bubble" role="dialog" aria-modal="true" aria-labelledby="help-tour-title">' +
-      '<button id="help-tour-x" type="button" aria-label="Fermer l\'aide">✕</button>' +
+      '<div id="help-tour-head-btns">' +
+        '<button id="help-tour-voice" type="button" aria-label="Activer ou couper la voix">🔊</button>' +
+        '<button id="help-tour-x" type="button" aria-label="Fermer l\'aide">✕</button>' +
+      '</div>' +
       '<div id="help-tour-step-count"></div>' +
       '<div id="help-tour-title"></div>' +
       '<div id="help-tour-text"></div>' +
@@ -157,6 +203,7 @@ function _htBuildDom() {
   root.querySelector('#help-tour-skip').addEventListener('click', helpTourEnd);
   root.querySelector('#help-tour-prev').addEventListener('click', helpTourPrev);
   root.querySelector('#help-tour-next').addEventListener('click', helpTourNext);
+  root.querySelector('#help-tour-voice').addEventListener('click', helpTourToggleVoice);
   root.querySelector('#help-tour-optout-cb').addEventListener('change', function () {
     try {
       if (this.checked) localStorage.setItem(HELP_TOUR_OPTOUT_KEY, '1');
@@ -176,6 +223,7 @@ function _htRender() {
   document.getElementById('help-tour-text').textContent  = step.text;
   document.getElementById('help-tour-step-count').textContent =
     'Étape ' + (_helpTourStep + 1) + ' / ' + HELP_TOUR_STEPS.length;
+  _htUpdateVoiceBtn();
 
   const prevBtn = document.getElementById('help-tour-prev');
   const nextBtn = document.getElementById('help-tour-next');
@@ -258,23 +306,37 @@ function startHelpTour() {
   document.addEventListener('keydown', _htKeyHandler, true);
   window.addEventListener('resize', _htRender);
   _htRender();
+  _htSpeakStep();
 }
 
 function helpTourNext() {
   if (_helpTourStep >= HELP_TOUR_STEPS.length - 1) { helpTourEnd(); return; }
   _helpTourStep++;
   _htRender();
+  _htSpeakStep();
 }
 
 function helpTourPrev() {
   if (_helpTourStep <= 0) return;
   _helpTourStep--;
   _htRender();
+  _htSpeakStep();
+}
+
+// Bascule la voix synthétisée ; relit l'étape courante si réactivée.
+function helpTourToggleVoice() {
+  const on = !_htVoiceEnabled();
+  try { localStorage.setItem(HELP_TOUR_VOICE_KEY, on ? '1' : '0'); }
+  catch (e) { /* localStorage indisponible : préférence non persistée */ }
+  _htUpdateVoiceBtn();
+  if (on) _htSpeakStep();
+  else _htStopSpeak();
 }
 
 function helpTourEnd() {
   _helpTourActive = false;
   window._helpTourActive = false;
+  _htStopSpeak();
   document.removeEventListener('keydown', _htKeyHandler, true);
   window.removeEventListener('resize', _htRender);
   const root = document.getElementById('help-tour-overlay');
@@ -291,4 +353,5 @@ window.startHelpTour        = startHelpTour;
 window.helpTourNext         = helpTourNext;
 window.helpTourPrev         = helpTourPrev;
 window.helpTourEnd          = helpTourEnd;
+window.helpTourToggleVoice  = helpTourToggleVoice;
 window.maybeAutoStartHelpTour = maybeAutoStartHelpTour;
