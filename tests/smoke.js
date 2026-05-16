@@ -3815,6 +3815,33 @@ async function scenarioCritDodge() {
   assert(t5.after === t5.before,
     `dodgeChance=100% : aucun dégât attendu, got ${t5.before}→${t5.after}`);
 
+  // T6 : refonte crit — crit damage, crit de sort, crit équipement > 40 %
+  const t6 = await page.evaluate(() => {
+    const c = party[0];
+    // Item factice avec crit damage + crit chance + spell crit
+    c.equipped = c.equipped || {};
+    c.equipped.trinket = {
+      id: '_crittest', name: 'Test', slot: 'trinket',
+      bonusCritChance: 50, bonusCritDamage: 0.50,
+      bonusSpellCritChance: 30, bonusSpellCritDamage: 0.40
+    };
+    c._baseLck = 30;             // LCK seule → 20 % (plafonné 40)
+    recalculateStats();
+    const out = {
+      critChance: c.critChance, critMult: c.critMultiplier,
+      spellCritChance: c.spellCritChance, spellCritMult: c.spellCritMultiplier
+    };
+    c.equipped.trinket = null;
+    c._baseLck = 15;
+    recalculateStats();
+    return out;
+  });
+  console.log('  T6 refonte crit:', t6);
+  assert(t6.critChance > 40,  `crit équipement doit dépasser 40 %, got ${t6.critChance}`);
+  assert(Math.abs(t6.critMult - 2.0) < 0.01, `critMultiplier attendu 2.0, got ${t6.critMult}`);
+  assert(t6.spellCritChance > 40, `spellCritChance doit pouvoir dépasser 40 %, got ${t6.spellCritChance}`);
+  assert(Math.abs(t6.spellCritMult - 1.9) < 0.01, `spellCritMultiplier attendu 1.9, got ${t6.spellCritMult}`);
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);

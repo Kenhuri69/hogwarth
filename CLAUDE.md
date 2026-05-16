@@ -618,19 +618,30 @@ puis on appelle `recalculateStats()` pour reconstruire les stats effectives avec
 3. **Équipement** (`grantsSpell`) : enseigne le sort de façon permanente à l'équipement (ex: Amulette → Reparo)
 
 ### Crit + Esquive (stats dérivées)
-`recalculateStats()` calcule deux stats dérivées exposées sur chaque
-personnage et affichées dans la modale Personnage :
+`recalculateStats()` calcule les stats dérivées exposées sur chaque
+personnage et affichées dans la modale Personnage. **Deux canaux de
+critique** : physique et sort (cf. `.claude/plans/crit-rework.md`).
 
-| Stat            | Formule                                       | Plage   |
-|-----------------|-----------------------------------------------|---------|
-| `critChance`    | `5 + lck * 0.5 + bonusCritChance`             | 5–40 %  |
-| `dodgeChance`   | `5 + agi * 0.4 + bonusDodgeChance`            | 5–35 %  |
-| `critMultiplier`| `1.5` (constant V1)                           | —       |
+| Stat                  | Formule                                              | Plage   |
+|-----------------------|------------------------------------------------------|---------|
+| `critChance`          | `min(40, 5 + lck*0.5) + Σ bonusCritChance`           | 5–100 % |
+| `spellCritChance`     | `min(40, 5 + lck*0.5) + Σ bonusSpellCritChance`      | 5–100 % |
+| `dodgeChance`         | `5 + agi*0.4 + Σ bonusDodgeChance`                   | 5–35 %  |
+| `critMultiplier`      | `1.5 + Σ bonusCritDamage`                            | ≥ 1.5   |
+| `spellCritMultiplier` | `1.5 + Σ bonusSpellCritDamage`                       | ≥ 1.5   |
 
-- **Crit physique** (`battle.js — executeAttack`) : roll `Math.random() * 100 < critChance`. Si crit, dégâts × `critMultiplier`. Log `💥 (CRITIQUE !)`.
-- **Esquive** (`battle.js — enemyTurn`) : pour chaque attaque ennemie, roll `Math.random() * 100 < target.dodgeChance`. Si esquive, attaque annulée. Log `💨 esquive`.
-- Les sorts ne déclenchent pas le crit dans cette V1 (les multiplicateurs viennent des résistances/faiblesses).
-- Champs optionnels d'équipement `bonusCritChance` / `bonusDodgeChance` câblés dans `recalculateStats` mais pas encore portés par les items existants — préparé pour V2.
+- La part **LCK** du crit chance plafonne à 40 % ; les bonus d'équipement
+  et de set s'ajoutent **au-dessus** (peuvent dépasser 40 %, plafond 100 %).
+- **Crit physique** (`battle.js — executeAttack`) : roll `< critChance`,
+  dégâts × `critMultiplier`.
+- **Crit de sort** (`battle-spells.js — rollSpellCrit`) : les sorts
+  offensifs (`_spellElementalDamage`, `_spellLifesteal`, `_spellCurse`)
+  roll `< spellCritChance`, dégâts × `spellCritMultiplier`.
+- **Esquive** (`battle.js — enemyTurn`) : roll `< target.dodgeChance` → attaque annulée.
+- Champs d'item/set : `bonusCritChance`, `bonusCritDamage`,
+  `bonusSpellCritChance`, `bonusSpellCritDamage`, `bonusDodgeChance`.
+  Les sets de Maison (physique : Gryffondor ; sort : Serpentard/Serdaigle)
+  et le set Ténèbres portent ces bonus.
 
 ### Capacités spéciales des ennemis (tryEnemyAbility)
 Chaque ennemi peut avoir un tableau `abilities[]`. À chaque tour ennemi,

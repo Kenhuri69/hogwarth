@@ -174,7 +174,7 @@ function equipmentBuffForFloor(floor) {
     (SHOP_CATALOG || []).filter(e => (e.minFloor || 1) <= floor).map(e => e.id)
   );
   const buff = { atk: 0, def: 0, mag: 0, lck: 0, str: 0, int: 0, agi: 0, end: 0,
-                 crit: 0, dodge: 0 };
+                 crit: 0, dodge: 0, critDmg: 0, spellCrit: 0, spellCritDmg: 0 };
   const bestBySlot = {};
   for (const it of ITEMS) {
     if (!it.slot) continue;
@@ -201,6 +201,9 @@ function equipmentBuffForFloor(floor) {
     buff.end += it.bonusEnd || 0;
     buff.crit  += it.bonusCritChance  || 0;
     buff.dodge += it.bonusDodgeChance || 0;
+    buff.critDmg      += it.bonusCritDamage      || 0;
+    buff.spellCrit    += it.bonusSpellCritChance || 0;
+    buff.spellCritDmg += it.bonusSpellCritDamage || 0;
     if (forgeLvl > 0) {
       const prim = [['atk', it.bonusAtk|0], ['def', it.bonusDef|0],
                     ['mag', it.bonusMag|0], ['lck', it.bonusLck|0]]
@@ -225,8 +228,11 @@ function applyEquipmentBuff(c, floor) {
   c.int = (c.int || 0) + b.int;
   c.agi = (c.agi || 0) + b.agi;
   c.end = (c.end || 0) + b.end;
-  c._critBonus  = b.crit  || 0;
-  c._dodgeBonus = b.dodge || 0;
+  c._critBonus       = b.crit         || 0;
+  c._dodgeBonus      = b.dodge        || 0;
+  c._critDmgBonus    = b.critDmg      || 0;
+  c._spellCritBonus  = b.spellCrit    || 0;
+  c._spellCritDmgBon = b.spellCritDmg || 0;
 }
 
 // ── Bonus de set (state.js — HOUSE_SETS / inventory.js — recalculateStats) ──
@@ -234,10 +240,11 @@ function applyEquipmentBuff(c, floor) {
 // HOUSE_SETS (state.js). int/end n'influent pas le combat simulé ; on les
 // applique quand même pour cohérence.
 const HOUSE_SET_BONUS = {
-  gryffondor:  { atk: 7, critChance: 22 },               // 1+2+4 atk, 3+7+12 crit
-  serpentard:  { mag: 7, lck: 4 },                       // 1+2+4 mag, 1+1+2 lck
-  serdaigle:   { mag: 7, int: 4 },                       // 1+2+4 mag, 1+1+2 int
-  poufsouffle: { def: 7, end: 4 },                       // 1+2+4 def, 1+1+2 end
+  // 4/4 cumulés. critDamage / spellCrit* : cf. crit-rework.md.
+  gryffondor:  { atk: 7, critChance: 22, critDamage: 0.50 },
+  serpentard:  { mag: 7, lck: 4, spellCritChance: 20, spellCritDamage: 0.50 },
+  serdaigle:   { mag: 7, int: 4, spellCritChance: 20, spellCritDamage: 0.50 },
+  poufsouffle: { def: 7, end: 4 },
 };
 // Applique le set de Maison choisi (4/4) et/ou le set Ténèbres (3/3).
 // Un perso ne peut porter qu'UN set entier (les deux se disputent les
@@ -245,8 +252,8 @@ const HOUSE_SET_BONUS = {
 // set Ténèbres sur Hermione → la party bénéficie des deux. En solo, le
 // perso unique porte un seul set (Maison prioritaire si les deux flags).
 function applySetBonuses(c, cfg, key, partySize) {
-  c._setCrit = 0;
-  c._setDodge = 0;
+  c._setCrit = 0;        c._setDodge = 0;
+  c._setCritDmg = 0;     c._setSpellCrit = 0;     c._setSpellCritDmg = 0;
   const isHermione = (key === 'hermione');
   const solo = (partySize === 1);
   // Set de Maison → Harry (jamais Hermione : elle porte le set Ténèbres en duo).
@@ -258,15 +265,21 @@ function applySetBonuses(c, cfg, key, partySize) {
     c.lck += hs.lck || 0;
     c.int  = (c.int || 0) + (hs.int || 0);
     c.end  = (c.end || 0) + (hs.end || 0);
-    c._setCrit += hs.critChance || 0;
+    c._setCrit         += hs.critChance      || 0;
+    c._setCritDmg      += hs.critDamage      || 0;
+    c._setSpellCrit    += hs.spellCritChance || 0;
+    c._setSpellCritDmg += hs.spellCritDamage || 0;
   }
   // Set Ténèbres 3/3 : sur Hermione en duo ; sur Harry en solo si pas de
-  // set de Maison. inventory.js — recalculateStats (≥3 : +15 crit, +10 esquive).
+  // set de Maison. inventory.js — recalculateStats (≥3 : +15 crit, +10 esquive,
+  // +0.30 crit damage physique ET sort).
   const tenebresHere = cfg.tenebresSet &&
     (isHermione || (solo && !cfg.houseSet));
   if (tenebresHere) {
     c._setCrit  += 15;
     c._setDodge += 10;
+    c._setCritDmg      += 0.30;
+    c._setSpellCritDmg += 0.30;
   }
 }
 
@@ -563,9 +576,14 @@ function createHero(key, level, cfg, floor, partySize) {
   }
   // Bonus de set (Maison 4/4 + Ténèbres 3/3) — après l'équipement.
   applySetBonuses(c, cfg, key, partySize);
-  c.critChance    = Math.max(5, Math.min(40, 5 + c.lck * 0.5 + (c._critBonus  || 0) + (c._setCrit  || 0)));
-  c.dodgeChance   = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0) + (c._setDodge || 0)));
-  c.critMultiplier = 1.5;
+  // LCK plafonne à 40 % ; les bonus équipement/set s'ajoutent au-dessus
+  // (plafond absolu 100 %). Deux canaux de crit : physique et sort.
+  const lckCrit = Math.min(40, 5 + c.lck * 0.5);
+  c.critChance          = Math.max(5, Math.min(100, lckCrit + (c._critBonus || 0) + (c._setCrit || 0)));
+  c.spellCritChance     = Math.max(5, Math.min(100, lckCrit + (c._spellCritBonus || 0) + (c._setSpellCrit || 0)));
+  c.dodgeChance         = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0) + (c._setDodge || 0)));
+  c.critMultiplier      = 1.5 + (c._critDmgBonus || 0) + (c._setCritDmg || 0);
+  c.spellCritMultiplier = 1.5 + (c._spellCritDmgBon || 0) + (c._setSpellCritDmg || 0);
   c.level = level;
   // Bibliothèque interdite : niveau d'upgrade appliqué à tous les sorts.
   c.libraryLevel = cfg.library || 0;
@@ -724,6 +742,10 @@ function heroAct(char, enemies) {
     let dmg = dmgSpell.power + Math.floor(char.mag / 2);
     if (target.resist?.includes(dmgSpell.effect)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
     if (target.weak?.includes(dmgSpell.effect))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
+    // Crit de sort (battle-spells.js — rollSpellCrit)
+    if (Math.random() * 100 < (char.spellCritChance || 0)) {
+      dmg = Math.floor(dmg * (char.spellCritMultiplier || 1.5));
+    }
     target.currentHp -= dmg;
     return;
   }

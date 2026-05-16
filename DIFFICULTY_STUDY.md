@@ -265,25 +265,33 @@ Virtuose Or 16000). Il **aide donc sur toute la partie** — d'abord en
 pièces isolées et bonus partiel 2/4, puis en set complet 4/4 en endgame.
 Le set Ténèbres, lui, est purement endgame (drops Ténèbres).
 
-**Impact mesuré** (600 sims — Duo, endgame, +10 niv., kit Forge 5 + Biblio 3) :
+**Refonte du critique** — un premier passage avait montré que les sets
+crit étaient *gaspillés* en endgame (le crit chance plafonnait à 40 %,
+déjà atteint). Le système a été revu (cf. `.claude/plans/crit-rework.md`) :
 
-| Étage | Sans set | Maison + Ténèbres (répartis) |
-|------:|---------:|-----------------------------:|
-| 26    | 78 %     | 80 % |
-| 28    | 74 %     | 77 % |
-| 30    | 67 %     | 65 % |
+- Deux canaux : **crit physique** et **crit de sort** (les sorts peuvent
+  désormais crit).
+- Une stat de **dégâts critiques** (`critMultiplier`, `spellCritMultiplier`)
+  augmentable par équipement/set — axe non plafonné.
+- Le crit chance d'équipement/set s'ajoute **au-dessus** du plafond LCK de
+  40 % (plus de point gaspillé ; plafond absolu 100 %).
+- Les sets portent ce crit damage : Gryffondor → crit physique ;
+  Serpentard/Serdaigle → crit de sort ; Ténèbres → les deux.
 
-**Apport faible en deep endgame — au niveau du bruit statistique.** Raison :
-le crit plafonne à **40 %**, et un joueur endgame avec LCK élevée +
-artefacts de crit y est déjà. Les bonus de crit des sets (Gryffondor,
-Ténèbres) sont donc largement gaspillés. Seules les parts non-crit (+7
-ATK/DEF/MAG, +10 esquive) apportent quelque chose, modestement.
+**Impact mesuré** (600 sims — Duo, endgame, +10 niv., kit Forge 5 + Biblio 3,
+sets répartis Gryffondor + Ténèbres) :
 
-> Conséquence de design : les sets crit ont un rendement décroissant
-> en endgame. Ils sont surtout utiles **avant** la saturation du crit —
-> c.-à-d. en milieu de partie, ce qui rejoint leur disponibilité
-> progressive. Si l'on voulait leur redonner du poids en endgame, il
-> faudrait relever le cap de crit ou orienter leurs bonus hors-crit.
+| Étage | Sans set | Avec sets (post-refonte) |
+|------:|---------:|-------------------------:|
+| 26    | 79 %     | 81 % |
+| 28    | 78 %     | 79 % |
+| 30    | 66 %     | 71 % |
+
+Apport modéré (~+5 pts à l'étage 30) mais désormais **réel et non gaspillé**.
+L'effet reste contenu car la sim privilégie les sorts : le set Gryffondor
+(crit *physique*) profite surtout à un build qui attaque physiquement, le
+set Ténèbres et les sets caster (crit de *sort*) aux builds magiques. La
+refonte aligne donc chaque set sur son archétype de jeu.
 
 ### 8.7 Verdict endgame
 
@@ -296,8 +304,8 @@ ATK/DEF/MAG, +10 esquive) apportent quelque chose, modestement.
 - 💡 Si l'on veut adoucir : ralentir `xpNext` en endgame, ou ajouter une
   XP passive de Boucle par étage franchi. Optionnel — à ne pas faire si
   le farming forcé est l'intention.
-- 💡 Les sets crit saturent le cap de crit 40 % en endgame (§8.6) : ils
-  pèsent peu là où le joueur en aurait le plus besoin. À considérer si
-  l'on veut que les sets restent pertinents dans la Boucle.
+- ✅ Refonte du critique (§8.6) : deux canaux physique/sort, crit damage
+  augmentable, crit d'équipement au-delà de 40 % — les sets crit ne sont
+  plus gaspillés et s'alignent sur leur archétype.
 - ⚠️ Limite résiduelle du modèle : effets de set non chiffrables en sim
   (regen passif, lifesteal de sorts, réduction de coût) — impact mineur.

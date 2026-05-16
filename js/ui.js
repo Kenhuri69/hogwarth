@@ -440,6 +440,9 @@ function _formatSetBonus(b) {
   if (b.bonusAgi)            parts.push(`+${b.bonusAgi} AGI`);
   if (b.bonusEnd)            parts.push(`+${b.bonusEnd} END`);
   if (b.bonusCritChance)     parts.push(`+${b.bonusCritChance}% crit`);
+  if (b.bonusCritDamage)     parts.push(`+${Math.round(b.bonusCritDamage*100)}% dég. crit`);
+  if (b.bonusSpellCritChance)parts.push(`+${b.bonusSpellCritChance}% crit sort`);
+  if (b.bonusSpellCritDamage)parts.push(`+${Math.round(b.bonusSpellCritDamage*100)}% dég. crit sort`);
   if (b.bonusDodgeChance)    parts.push(`+${b.bonusDodgeChance}% esquive`);
   if (b.regenHp)             parts.push(`+${b.regenHp} PV/tour`);
   if (b.regenSp)             parts.push(`+${b.regenSp} PM/tour`);
@@ -521,7 +524,12 @@ function openCharacter(charIdx = 0) {
   const slotsRight  = ['cloak','amulet','ring1','ring2'].map(s => _renderPaperDollSlot(s, c, charIdx)).join('');
   const slotsBottom = ['wand','belt','trinket']        .map(s => _renderPaperDollSlot(s, c, charIdx)).join('');
 
-  const critPct  = (c.critChance  != null) ? `${Math.round(c.critChance)}%`  : '—';
+  const critMult  = (c.critMultiplier != null) ? c.critMultiplier : 1.5;
+  const sCritMult = (c.spellCritMultiplier != null) ? c.spellCritMultiplier : 1.5;
+  const critPct      = (c.critChance != null)
+    ? `${Math.round(c.critChance)}% ×${critMult.toFixed(2)}` : '—';
+  const spellCritPct = (c.spellCritChance != null)
+    ? `${Math.round(c.spellCritChance)}% ×${sCritMult.toFixed(2)}` : '—';
   const dodgePct = (c.dodgeChance != null) ? `${Math.round(c.dodgeChance)}%` : '—';
 
   // Panneau d'allocation : visible uniquement si des points sont en attente.
@@ -563,8 +571,9 @@ function openCharacter(charIdx = 0) {
         ${_renderStatLine('img/icons/int.png', 'Intelligence',_renderStatValueWithBonus(c, 'int', '_baseInt'))}
         ${_renderStatLine('img/icons/agi.png', 'Agilité',     _renderStatValueWithBonus(c, 'agi', '_baseAgi'))}
         ${_renderStatLine('img/icons/xp.png',  'Chance',      _renderStatValueWithBonus(c, 'lck', '_baseLck'))}
-        ${_renderStatLine('img/icons/atk.png', 'Critique',    critPct,  true)}
-        ${_renderStatLine('img/icons/agi.png', 'Esquive',     dodgePct, true)}
+        ${_renderStatLine('img/icons/atk.png', 'Critique',    critPct,      true)}
+        ${_renderStatLine('img/icons/mag.png', 'Crit. sort',  spellCritPct, true)}
+        ${_renderStatLine('img/icons/agi.png', 'Esquive',     dodgePct,     true)}
       </div>
 
       <!-- Équipement (grid-area:equip) -->
