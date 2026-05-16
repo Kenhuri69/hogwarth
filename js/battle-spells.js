@@ -91,6 +91,18 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
 
 const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed' };
 
+// Crit de sort : roll spellCritChance, applique spellCritMultiplier sur les
+// dégâts. Canal distinct du crit physique (cf. .claude/plans/crit-rework.md).
+// Saves antérieures : champs absents → pas de crit (fallback 0 / 1.5).
+function rollSpellCrit(dmg, char) {
+  const chance = (char && char.spellCritChance != null) ? char.spellCritChance : 0;
+  if (Math.random() * 100 < chance) {
+    const mult = (char && char.spellCritMultiplier) || 1.5;
+    return { dmg: Math.floor(dmg * mult), crit: true };
+  }
+  return { dmg, crit: false };
+}
+
 function _spellHeal(spell, char) {
   char.hp = Math.min(char.hpMax, char.hp + spell.power);
   const msg = `💚 ${char.name} : ${spell.name} +${spell.power} PV !`;
@@ -132,6 +144,8 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
     let suffix = '';
     if (enemy.resist?.includes(spell.effect)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
     if (enemy.weak?.includes(spell.effect))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
+    const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
+    if (_cr.crit) suffix += ' 💥CRIT';
     enemy.currentHp -= dmg;
     msg = `${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} sur ${enemy.name} !`;
 
@@ -162,6 +176,8 @@ function _spellLifesteal(spell, char, enemy, targetIdx) {
     let suffix = '';
     if (enemy.resist?.includes('lifesteal')) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
     if (enemy.weak?.includes('lifesteal'))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
+    const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
+    if (_cr.crit) suffix += ' 💥CRIT';
     enemy.currentHp -= dmg;
     const heal = Math.floor(dmg / 2);
     char.hp = Math.min(char.hpMax, char.hp + heal);
@@ -180,10 +196,11 @@ function _spellCurse(spell, char, enemy, targetIdx) {
     let dmg = spell.power + Math.floor(char.mag / 2);
     if (enemy.resist?.includes('curse')) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
     if (enemy.weak?.includes('curse'))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
+    const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
     enemy.currentHp -= dmg;
     enemy.atk = Math.max(0, (enemy.atk || 0) - 3);
     enemy.def = Math.max(0, (enemy.def || 0) - 3);
-    msg = `☠️ ${char.name} : ${spell.name} → ${dmg} dégâts et ${enemy.name} maudit (−3 ATK/DEF) !`;
+    msg = `☠️ ${char.name} : ${spell.name} → ${dmg} dégâts${_cr.crit ? ' 💥CRIT' : ''} et ${enemy.name} maudit (−3 ATK/DEF) !`;
     UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'crit');
     UX_safe.logCombat(`☠️ ${char.name} maudit ${enemy.name} : <b>−${dmg}</b>, −3 ATK/DEF`, 'magic');
   }

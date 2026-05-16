@@ -82,6 +82,14 @@ const { MONSTERS, SPELLS, CHARACTERS, LEVEL_UP_XP_MULTIPLIER,
 
 const spellByName = Object.fromEntries(SPELLS.map(s => [s.name, s]));
 
+// Miroir de battle.js — mitigatedDamage (DIFFICULTY_STUDY.md §4 levier B).
+// Plancher à 25 % de l'ATK brute, soustraction au-delà.
+const DAMAGE_MIN_FRACTION = 0.25;
+function mitigatedDamage(rawAtk, def) {
+  const floorDmg = Math.round(Math.max(0, rawAtk) * DAMAGE_MIN_FRACTION);
+  return Math.max(floorDmg, rawAtk - Math.max(0, def || 0));
+}
+
 // ── Récompenses de quêtes : modélisation "joueur normal" ─────
 //
 // Étage où une quête est considérée comme complétée. Pour les quêtes
@@ -157,20 +165,30 @@ function applyQuestStatRewards(c, floor) {
 // item avec la somme de bonus la plus élevée parmi les items éligibles.
 // Approche conservative : un seul perso équipé, pas de doublon ring1/2.
 function equipmentBuffForFloor(floor) {
-  if (!ITEMS || !SHOP_CATALOG) return null;
-  const eligibleIds = new Set(
-    SHOP_CATALOG.filter(e => (e.minFloor || 1) <= floor).map(e => e.id)
+  if (!ITEMS) return null;
+  // --artifacts : best-in-slot sur TOUS les items équipables, y compris les
+  // légendaires hors boutique (récompenses de Maison, Forge, quêtes, drops).
+  // Sinon : uniquement les items débloqués en boutique à cet étage.
+  const useArtifacts = (typeof ARGS !== 'undefined') && ARGS.artifacts;
+  const eligibleIds = useArtifacts ? null : new Set(
+    (SHOP_CATALOG || []).filter(e => (e.minFloor || 1) <= floor).map(e => e.id)
   );
-  const buff = { atk: 0, def: 0, mag: 0, lck: 0, str: 0, int: 0, agi: 0, end: 0 };
+  const buff = { atk: 0, def: 0, mag: 0, lck: 0, str: 0, int: 0, agi: 0, end: 0,
+                 crit: 0, dodge: 0, critDmg: 0, spellCrit: 0, spellCritDmg: 0 };
   const bestBySlot = {};
   for (const it of ITEMS) {
     if (!it.slot) continue;
-    if (!eligibleIds.has(it.id)) continue;
+    if (eligibleIds && !eligibleIds.has(it.id)) continue;
     const score = (it.bonusAtk||0)+(it.bonusDef||0)+(it.bonusMag||0)+(it.bonusLck||0)
-                + (it.bonusStr||0)+(it.bonusInt||0)+(it.bonusAgi||0)+(it.bonusEnd||0);
+                + (it.bonusStr||0)+(it.bonusInt||0)+(it.bonusAgi||0)+(it.bonusEnd||0)
+                + (it.bonusCritChance||0)+(it.bonusDodgeChance||0);
     const cur = bestBySlot[it.slot];
     if (!cur || score > cur.score) bestBySlot[it.slot] = { item: it, score };
   }
+  // Forge des Ténèbres : --forge=N ajoute +N au bonus principal de chaque
+  // item (la stat la plus élevée parmi atk/def/mag/lck). Miroir de
+  // forge.js — forgeBonus + inventory.js — recalculateStats.
+  const forgeLvl = (typeof ARGS !== 'undefined') ? Math.min(5, ARGS.forge || 0) : 0;
   for (const slot of Object.keys(bestBySlot)) {
     const it = bestBySlot[slot].item;
     buff.atk += it.bonusAtk || 0;
@@ -181,6 +199,17 @@ function equipmentBuffForFloor(floor) {
     buff.int += it.bonusInt || 0;
     buff.agi += it.bonusAgi || 0;
     buff.end += it.bonusEnd || 0;
+    buff.crit  += it.bonusCritChance  || 0;
+    buff.dodge += it.bonusDodgeChance || 0;
+    buff.critDmg      += it.bonusCritDamage      || 0;
+    buff.spellCrit    += it.bonusSpellCritChance || 0;
+    buff.spellCritDmg += it.bonusSpellCritDamage || 0;
+    if (forgeLvl > 0) {
+      const prim = [['atk', it.bonusAtk|0], ['def', it.bonusDef|0],
+                    ['mag', it.bonusMag|0], ['lck', it.bonusLck|0]]
+                   .sort((a, b) => b[1] - a[1]);
+      if (prim[0][1] > 0) buff[prim[0][0]] += forgeLvl;
+    }
   }
   return buff;
 }
@@ -199,10 +228,64 @@ function applyEquipmentBuff(c, floor) {
   c.int = (c.int || 0) + b.int;
   c.agi = (c.agi || 0) + b.agi;
   c.end = (c.end || 0) + b.end;
+  c._critBonus       = b.crit         || 0;
+  c._dodgeBonus      = b.dodge        || 0;
+  c._critDmgBonus    = b.critDmg      || 0;
+  c._spellCritBonus  = b.spellCrit    || 0;
+  c._spellCritDmgBon = b.spellCritDmg || 0;
+}
+
+// ── Bonus de set (state.js — HOUSE_SETS / inventory.js — recalculateStats) ──
+// Bonus cumulés 2+3+4 pièces d'un set de Maison 4/4. Valeurs miroir de
+// HOUSE_SETS (state.js). int/end n'influent pas le combat simulé ; on les
+// applique quand même pour cohérence.
+const HOUSE_SET_BONUS = {
+  // 4/4 cumulés. critDamage / spellCrit* : cf. crit-rework.md.
+  gryffondor:  { atk: 7, critChance: 22, critDamage: 0.50 },
+  serpentard:  { mag: 7, lck: 4, spellCritChance: 20, spellCritDamage: 0.50 },
+  serdaigle:   { mag: 7, int: 4, spellCritChance: 20, spellCritDamage: 0.50 },
+  poufsouffle: { def: 7, end: 4 },
+};
+// Applique le set de Maison choisi (4/4) et/ou le set Ténèbres (3/3).
+// Un perso ne peut porter qu'UN set entier (les deux se disputent les
+// slots cloak + amulet). En DUO on répartit : set de Maison sur Harry,
+// set Ténèbres sur Hermione → la party bénéficie des deux. En solo, le
+// perso unique porte un seul set (Maison prioritaire si les deux flags).
+function applySetBonuses(c, cfg, key, partySize) {
+  c._setCrit = 0;        c._setDodge = 0;
+  c._setCritDmg = 0;     c._setSpellCrit = 0;     c._setSpellCritDmg = 0;
+  const isHermione = (key === 'hermione');
+  const solo = (partySize === 1);
+  // Set de Maison → Harry (jamais Hermione : elle porte le set Ténèbres en duo).
+  const hs = (cfg.houseSet && !isHermione) ? HOUSE_SET_BONUS[cfg.houseSet] : null;
+  if (hs) {
+    c.atk += hs.atk || 0;
+    c.def += hs.def || 0;
+    c.mag += hs.mag || 0;
+    c.lck += hs.lck || 0;
+    c.int  = (c.int || 0) + (hs.int || 0);
+    c.end  = (c.end || 0) + (hs.end || 0);
+    c._setCrit         += hs.critChance      || 0;
+    c._setCritDmg      += hs.critDamage      || 0;
+    c._setSpellCrit    += hs.spellCritChance || 0;
+    c._setSpellCritDmg += hs.spellCritDamage || 0;
+  }
+  // Set Ténèbres 3/3 : sur Hermione en duo ; sur Harry en solo si pas de
+  // set de Maison. inventory.js — recalculateStats (≥3 : +15 crit, +10 esquive,
+  // +0.30 crit damage physique ET sort).
+  const tenebresHere = cfg.tenebresSet &&
+    (isHermione || (solo && !cfg.houseSet));
+  if (tenebresHere) {
+    c._setCrit  += 15;
+    c._setDodge += 10;
+    c._setCritDmg      += 0.30;
+    c._setSpellCritDmg += 0.30;
+  }
 }
 
 // ── Constantes simulation ───────────────────────────────────
-const FLOORS = Array.from({ length: 12 }, (_, i) => i + 1);
+// 1-12 par défaut ; remplacé par 11..maxFloor en mode --endgame (après ARGS).
+let FLOORS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 // Hypothèse : ~4 combats par étage en moyenne (8 rooms - shop/chest - escaliers,
 // densité 0.6 → ~4 enemy spawns; cf. dungeon.js:202)
@@ -213,7 +296,9 @@ function parseArgs(argv) {
   const out = { nSims: 400, hpMult: 1.0, xpMult: 1.0, statPoints: 0,
                 build: 'balanced', mode: 'single',
                 useQuests: true, useEquipment: true, usePotions: true,
-                kills: 0 };
+                kills: 0, bonusLevels: 0, artifacts: false,
+                endgame: false, maxFloor: 40, forge: 0, library: 0,
+                houseSet: null, tenebresSet: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
@@ -222,6 +307,9 @@ function parseArgs(argv) {
     if (a === '--no-equipment')         { out.useEquipment = false; continue; }
     if (a === '--no-potions')           { out.usePotions = false; continue; }
     if (a === '--pessimistic')          { out.useQuests = false; out.useEquipment = false; out.usePotions = false; continue; }
+    if (a === '--artifacts')            { out.artifacts = true; continue; }
+    if (a === '--endgame')              { out.endgame = true; continue; }
+    if (a === '--tenebres-set')         { out.tenebresSet = true; continue; }
     if (!a.includes('=')) {
       // Compat : `node sim-difficulty.js 800` → nSims positionnel
       const n = parseInt(a, 10);
@@ -234,6 +322,11 @@ function parseArgs(argv) {
     else if (k === 'stat-points') out.statPoints = parseInt(v, 10);
     else if (k === 'build')     out.build = v;
     else if (k === 'kills')     out.kills = parseInt(v, 10);
+    else if (k === 'bonus-levels') out.bonusLevels = parseInt(v, 10) || 0;
+    else if (k === 'max-floor')    out.maxFloor = parseInt(v, 10) || 40;
+    else if (k === 'forge')        out.forge   = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
+    else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
+    else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
   }
   return out;
 }
@@ -267,36 +360,91 @@ Options:
   --xp-mult=F             Multiplicateur XP des monstres (def 1.0)
   --stat-points=N         Points libres alloués au joueur par niveau (def 0)
   --build=BUILD           tank | balanced | offensive (def balanced)
+  --bonus-levels=N        Niveaux gagnés au-delà de l'étage (farming) (def 0)
+  --artifacts             Best-in-slot inclut les artefacts légendaires (hors boutique)
+  --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
+  --max-floor=N           Étage max en mode --endgame (def 40)
+  --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
+  --library=N             Niveau de Bibliothèque (0-3) sur chaque sort (power/cost)
+  --house-set=NAME        Set de Maison 4/4 : gryffondor|serpentard|serdaigle|poufsouffle
+  --tenebres-set          Set Ténèbres 3/3 (+15 crit, +10 esquive)
   --compare               Lance baseline ET proposition (hp×1.5 xp×1.3 stats=3 balanced), tableau comparatif
 
 Exemples:
   node tools/sim-difficulty.js                      # baseline 400 sims
   node tools/sim-difficulty.js 800                  # baseline 800 sims
   node tools/sim-difficulty.js --compare            # baseline vs proposition validée
-  node tools/sim-difficulty.js --hp-mult=1.5 --xp-mult=1.3 --stat-points=3 800`);
+  node tools/sim-difficulty.js --hp-mult=1.5 --xp-mult=1.3 --stat-points=3 800
+  node tools/sim-difficulty.js --endgame --artifacts --stat-points=3   # Boucle Ténébreuse`);
   process.exit(0);
+}
+
+// Mode endgame : la grille d'étages couvre la Boucle Ténébreuse (11..maxFloor).
+if (ARGS.endgame) {
+  FLOORS = [];
+  for (let f = 11; f <= ARGS.maxFloor; f++) FLOORS.push(f);
 }
 
 // ── Reproduction des formules du jeu ─────────────────────────
 
-// dungeon.js:16 — scaleMonster (Normal = diffMult 1.0, on ignore shiny pour la sim)
+// ── Endgame : Boucle Ténébreuse (dungeon.js — ENDGAME_SCALING) ────
+// Post-victoire, floor 11+ : le pool rebase sur effectiveFloor (floor−10)
+// et une récursion `stat × scal + fixEff` est appliquée `n` fois
+// (n = palier de 10 étages). Activée par cfg.endgame.
+const ENDGAME_SCALING = {
+  baseFix: { hp: 80, atk: 10, def: 5, mag: 8, xp: 50, gold: 80 },
+  scalDelta: 0.5,
+};
+function simEffectiveFloor(floor, cfg) {
+  return (cfg && cfg.endgame && floor >= 11) ? floor - 10 : floor;
+}
+function simEndgameTier(floor, cfg) {
+  return (cfg && cfg.endgame && floor >= 11) ? Math.floor((floor - 1) / 10) : 0;
+}
+function _endgameRecurse(stat, n, fixEff, scal) {
+  for (let i = 0; i < n; i++) stat = stat * scal + fixEff;
+  return stat;
+}
+// Valeur scalée d'une stat (hp/atk/def/xp/gold), récursion endgame incluse.
+// Miroir fidèle de dungeon.js — scaleMonster.
+function scaledStatValue(rawBase, scale, key, floor, cfg) {
+  const ef        = simEffectiveFloor(floor, cfg);
+  const n         = simEndgameTier(floor, cfg);
+  const intraMult = 1 + (ef - 1) * (scale || 0.25);
+  const stat0     = rawBase * intraMult;
+  if (n <= 0) return stat0;
+  const scal = 1 + ENDGAME_SCALING.scalDelta / intraMult;
+  return _endgameRecurse(stat0, n, ENDGAME_SCALING.baseFix[key] / intraMult, scal);
+}
+
+// dungeon.js — scaleMonster (Normal = diffMult 1.0, on ignore shiny pour la sim)
 // `cfg` injecte les multiplicateurs HP/XP testés (cf. Phase 2 du plan).
 function scaleMonster(base, floor, cfg) {
-  const mult   = 1 + (floor - 1) * (base.scale || 0.25);
-  const hpRaw  = base.hp * mult * cfg.hpMult;
-  const xpRaw  = base.xp * mult * cfg.xpMult;
-  return {
+  const scale  = base.scale || 0.25;
+  const hpRaw  = scaledStatValue(base.hp, scale, 'hp', floor, cfg) * cfg.hpMult;
+  const xpRaw  = scaledStatValue(base.xp, scale, 'xp', floor, cfg) * cfg.xpMult;
+  const goldBase = (typeof base.gold === 'object')
+    ? (base.gold.min + base.gold.max) / 2 : base.gold;
+  const out = {
     ...JSON.parse(JSON.stringify(base)),
     hp:  Math.floor(hpRaw),
-    atk: Math.floor(base.atk * mult),
-    def: Math.floor(base.def * mult),
+    atk: Math.floor(scaledStatValue(base.atk, scale, 'atk', floor, cfg)),
+    def: Math.floor(scaledStatValue(base.def, scale, 'def', floor, cfg)),
     xp:  Math.floor(xpRaw),
-    gold: Math.floor((typeof base.gold === 'object'
-            ? (base.gold.min + base.gold.max) / 2
-            : base.gold) * mult),
+    gold: Math.floor(scaledStatValue(goldBase, scale, 'gold', floor, cfg)),
     currentHp: Math.floor(hpRaw),
     disarmed: 0,
   };
+  // mag : non scalée pré-victoire, mais participe à la récursion endgame.
+  const n = simEndgameTier(floor, cfg);
+  if (n > 0 && base.mag) {
+    const ef = simEffectiveFloor(floor, cfg);
+    const intraMult = 1 + (ef - 1) * scale;
+    const scal = 1 + ENDGAME_SCALING.scalDelta / intraMult;
+    out.mag = Math.floor(_endgameRecurse(base.mag, n,
+      ENDGAME_SCALING.baseFix.mag / intraMult, scal));
+  }
+  return out;
 }
 
 // battle.js:122 — rollGroupSize (Normal = m = 1.0)
@@ -334,8 +482,10 @@ function weightedPick(pool) {
   return pool[pool.length - 1];
 }
 
-function eligiblePool(floor) {
-  return MONSTERS.filter(m => m.minFloor <= floor && (m.maxFloor === null || floor <= m.maxFloor));
+function eligiblePool(floor, cfg) {
+  const ef = simEffectiveFloor(floor, cfg);
+  const p = MONSTERS.filter(m => m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor));
+  return p.length ? p : MONSTERS;
 }
 
 // ── Création des personnages ─────────────────────────────────
@@ -353,7 +503,7 @@ function applyStatPoints(c, points) {
   c._baseLck += points.lck || 0;
 }
 
-function createHero(key, level, cfg, floor) {
+function createHero(key, level, cfg, floor, partySize) {
   const def = CHARACTERS[key];
   const c = {
     name: def.name,
@@ -424,10 +574,19 @@ function createHero(key, level, cfg, floor) {
   if (cfg.usePotions && typeof floor === 'number') {
     c.potionStock = Math.min(8, 2 + Math.floor(floor / 2));
   }
-  c.critChance    = Math.max(5, Math.min(40, 5 + c.lck * 0.5));
-  c.dodgeChance   = Math.max(5, Math.min(35, 5 + c.agi * 0.4));
-  c.critMultiplier = 1.5;
+  // Bonus de set (Maison 4/4 + Ténèbres 3/3) — après l'équipement.
+  applySetBonuses(c, cfg, key, partySize);
+  // LCK plafonne à 40 % ; les bonus équipement/set s'ajoutent au-dessus
+  // (plafond absolu 100 %). Deux canaux de crit : physique et sort.
+  const lckCrit = Math.min(40, 5 + c.lck * 0.5);
+  c.critChance          = Math.max(5, Math.min(100, lckCrit + (c._critBonus || 0) + (c._setCrit || 0)));
+  c.spellCritChance     = Math.max(5, Math.min(100, lckCrit + (c._spellCritBonus || 0) + (c._setSpellCrit || 0)));
+  c.dodgeChance         = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0) + (c._setDodge || 0)));
+  c.critMultiplier      = 1.5 + (c._critDmgBonus || 0) + (c._setCritDmg || 0);
+  c.spellCritMultiplier = 1.5 + (c._spellCritDmgBon || 0) + (c._setSpellCritDmg || 0);
   c.level = level;
+  // Bibliothèque interdite : niveau d'upgrade appliqué à tous les sorts.
+  c.libraryLevel = cfg.library || 0;
   return c;
 }
 
@@ -452,12 +611,12 @@ function levelFromXp(totalXp) {
 
 // XP moyenne d'un combat à l'étage f (cfg.xpMult appliqué)
 function avgCombatXp(floor, partySize, cfg) {
-  const pool = eligiblePool(floor);
+  const pool = eligiblePool(floor, cfg);
   if (!pool.length) return 0;
   const totalW = pool.reduce((s, m) => s + (m.weight || 1), 0);
   const avgXpScaled = pool.reduce((s, m) => {
-    const mult = 1 + (floor - 1) * (m.scale || 0.25);
-    return s + (m.weight || 1) * m.xp * mult * cfg.xpMult;
+    const xp = scaledStatValue(m.xp, m.scale || 0.25, 'xp', floor, cfg) * cfg.xpMult;
+    return s + (m.weight || 1) * xp;
   }, 0) / totalW;
   const samples = 200;
   let totalSize = 0;
@@ -480,12 +639,12 @@ function expectedLevelAtFloor(floor, partySize, cfg) {
 // ── Stats moyennes du pool ennemi à l'étage f ────────────────
 
 function poolStats(floor, cfg) {
-  const pool = eligiblePool(floor);
+  const pool = eligiblePool(floor, cfg);
   if (!pool.length) return null;
   const totalW = pool.reduce((s, m) => s + (m.weight || 1), 0);
   const wAvg = (key, postMult = 1) => pool.reduce((s, m) => {
-    const mult = 1 + (floor - 1) * (m.scale || 0.25);
-    return s + (m.weight || 1) * Math.floor(m[key] * mult * postMult);
+    const v = scaledStatValue(m[key] || 0, m.scale || 0.25, key, floor, cfg);
+    return s + (m.weight || 1) * Math.floor(v * postMult);
   }, 0) / totalW;
   return {
     poolSize: pool.length,
@@ -583,16 +742,32 @@ function heroAct(char, enemies) {
     let dmg = dmgSpell.power + Math.floor(char.mag / 2);
     if (target.resist?.includes(dmgSpell.effect)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
     if (target.weak?.includes(dmgSpell.effect))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
+    // Crit de sort (battle-spells.js — rollSpellCrit)
+    if (Math.random() * 100 < (char.spellCritChance || 0)) {
+      dmg = Math.floor(dmg * (char.spellCritMultiplier || 1.5));
+    }
     target.currentHp -= dmg;
     return;
   }
 
   // 3. Attaque physique
   const bonus = target.disarmed > 0 ? 2 : 0;
-  let dmg = Math.max(1, char.atk + Math.floor(Math.random() * 4) - (target.def - bonus));
+  let dmg = Math.max(1, mitigatedDamage(char.atk + Math.floor(Math.random() * 4), target.def - bonus));
   if (target.disarmed > 0) target.disarmed--;
   if (Math.random() * 100 < char.critChance) dmg = Math.floor(dmg * char.critMultiplier);
   target.currentHp -= dmg;
+}
+
+// Bibliothèque interdite — battle-spells.js — _spellForCaster :
+// power +2×niveau, cost −1×niveau (plancher 1). La sim n'utilise pas
+// `chance` (pas de DoT modélisé), on l'ignore.
+function simSpellForCaster(spell, char) {
+  const lvl = char && char.libraryLevel || 0;
+  if (!spell || lvl <= 0) return spell;
+  const out = { ...spell };
+  if (typeof spell.power === 'number') out.power = spell.power + 2 * lvl;
+  if (typeof spell.cost  === 'number') out.cost  = Math.max(1, spell.cost - lvl);
+  return out;
 }
 
 // Sorts de soin dispo, le plus puissant prioritaire
@@ -601,7 +776,7 @@ function pickHealSpell(char) {
     .filter(n => char.spells.includes(n))
     .map(n => spellByName[n])
     .filter(Boolean);
-  return candidates[0];
+  return candidates[0] ? simSpellForCaster(candidates[0], char) : undefined;
 }
 
 // Meilleur sort de dégât accessible (cost <= SP), priorité puissance brute
@@ -609,7 +784,8 @@ function pickDamageSpell(char) {
   const damaging = ['Avada...', 'Sectumsempra', 'Diffindo', 'Incendio', 'Wingardium Leviosa', 'Stupefix']
     .filter(n => char.spells.includes(n))
     .map(n => spellByName[n])
-    .filter(s => s && !s.locked);
+    .filter(s => s && !s.locked)
+    .map(s => simSpellForCaster(s, char));
   // Filtre par SP dispo
   const affordable = damaging.filter(s => char.sp >= s.cost);
   // Trie par puissance + mag/2 décroissant (puissance effective)
@@ -651,7 +827,7 @@ function enemyAct(enemy, target, partySize) {
   }
   // Attaque physique simple : pas de RNG côté ennemi dans le code réel
   if (Math.random() * 100 < (target.dodgeChance || 0)) return 0;
-  const dmg = Math.max(1, enemy.atk - target.def);
+  const dmg = mitigatedDamage(enemy.atk, target.def);
   target.hp = Math.max(0, target.hp - dmg);
   return dmg;
 }
@@ -662,19 +838,19 @@ function runSimulations(cfg) {
   const rows = [];
 
   for (const floor of FLOORS) {
-    const pool = eligiblePool(floor);
+    const pool = eligiblePool(floor, cfg);
     const stats = poolStats(floor, cfg);
     if (!stats) { rows.push({ floor, skip: true }); continue; }
 
     for (const partySize of [1, 2]) {
-      const level = expectedLevelAtFloor(floor, partySize, cfg);
+      const level = expectedLevelAtFloor(floor, partySize, cfg) + (cfg.bonusLevels || 0);
       const wins = { count: 0, turns: 0, hpPct: 0, dmgTaken: 0 };
       const groupSizes = { 1: 0, 2: 0, 3: 0 };
 
       for (let i = 0; i < cfg.nSims; i++) {
         const party = partySize === 1
-          ? [createHero('harry', level, cfg, floor)]
-          : [createHero('harry', level, cfg, floor), createHero('hermione', level, cfg, floor)];
+          ? [createHero('harry', level, cfg, floor, 1)]
+          : [createHero('harry', level, cfg, floor, 2), createHero('hermione', level, cfg, floor, 2)];
         const size = rollGroupSize(floor, partySize, cfg);
         groupSizes[size]++;
         const enemyGroup = Array.from({ length: size },
@@ -849,8 +1025,8 @@ if (ARGS.mode === 'compare') {
   const propRows = runSimulations(cfgProp);
   emitComparison(baseRows, propRows, cfgProp);
 } else {
-  const cfg = { nSims: ARGS.nSims, hpMult: ARGS.hpMult, xpMult: ARGS.xpMult,
-                statPoints: ARGS.statPoints, build: ARGS.build };
-  const rows = runSimulations(cfg);
-  emitReport(rows, cfg);
+  // cfg = ARGS complet : conserve useQuests/useEquipment/usePotions/
+  // bonusLevels/artifacts (sinon le modèle joueur serait amputé).
+  const rows = runSimulations(ARGS);
+  emitReport(rows, ARGS);
 }

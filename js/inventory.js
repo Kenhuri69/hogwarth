@@ -83,15 +83,20 @@ function recalculateStats() {
       }
     }
 
-    // Stats dérivées : crit chance via LCK (5–25 %), esquive via AGI (5–20 %).
-    // Bonus optionnels d'équipement (`bonusCritChance`, `bonusDodgeChance`)
-    // pris en compte si présents.
+    // Stats dérivées — deux canaux de crit (physique + sort) :
+    //   critChance / spellCritChance  : LCK plafonne à 40 %, les bonus
+    //     d'équipement/set s'ajoutent par-dessus (peuvent dépasser 40 %).
+    //   critMultiplier / spellCritMultiplier : 1.5 + bonusCritDamage cumulés.
     let critBonus = 0, dodgeBonus = 0;
+    let critDmgBonus = 0, spellCritBonus = 0, spellCritDmgBonus = 0;
     if (c.equipped) {
       for (const item of Object.values(c.equipped)) {
         if (!item) continue;
-        if (item.bonusCritChance)  critBonus  += item.bonusCritChance;
-        if (item.bonusDodgeChance) dodgeBonus += item.bonusDodgeChance;
+        if (item.bonusCritChance)      critBonus         += item.bonusCritChance;
+        if (item.bonusDodgeChance)     dodgeBonus        += item.bonusDodgeChance;
+        if (item.bonusCritDamage)      critDmgBonus      += item.bonusCritDamage;
+        if (item.bonusSpellCritChance) spellCritBonus    += item.bonusSpellCritChance;
+        if (item.bonusSpellCritDamage) spellCritDmgBonus += item.bonusSpellCritDamage;
       }
     }
 
@@ -105,8 +110,14 @@ function recalculateStats() {
         if (item && item.id) equippedIds.add(item.id);
       }
       c._tenebresSetCount = TENEBRES_SET.filter(id => equippedIds.has(id)).length;
-      if (c._tenebresSetCount >= 2) { critBonus += 10; dodgeBonus += 5;  }
-      if (c._tenebresSetCount >= 3) { critBonus += 5;  dodgeBonus += 5;  }
+      if (c._tenebresSetCount >= 2) {
+        critBonus += 10; dodgeBonus += 5;
+        critDmgBonus += 0.15; spellCritDmgBonus += 0.15;
+      }
+      if (c._tenebresSetCount >= 3) {
+        critBonus += 5; dodgeBonus += 5;
+        critDmgBonus += 0.15; spellCritDmgBonus += 0.15;
+      }
     }
 
     // Sets Maison 2.0 — 4 pièces par Maison (cf. .claude/plans/houses-2.0.md
@@ -135,15 +146,23 @@ function recalculateStats() {
           if (b.bonusInt) c.int += b.bonusInt;
           if (b.bonusAgi) c.agi += b.bonusAgi;
           if (b.bonusEnd) c.end += b.bonusEnd;
-          if (b.bonusCritChance)  critBonus  += b.bonusCritChance;
-          if (b.bonusDodgeChance) dodgeBonus += b.bonusDodgeChance;
+          if (b.bonusCritChance)      critBonus         += b.bonusCritChance;
+          if (b.bonusDodgeChance)     dodgeBonus        += b.bonusDodgeChance;
+          if (b.bonusCritDamage)      critDmgBonus      += b.bonusCritDamage;
+          if (b.bonusSpellCritChance) spellCritBonus    += b.bonusSpellCritChance;
+          if (b.bonusSpellCritDamage) spellCritDmgBonus += b.bonusSpellCritDamage;
         }
       }
     }
 
-    c.critChance     = Math.max(0, Math.min(40, 5 + c.lck * 0.5 + critBonus));
-    c.dodgeChance    = Math.max(0, Math.min(35, 5 + c.agi * 0.4 + dodgeBonus));
-    c.critMultiplier = 1.5;
+    // LCK plafonne à 40 % ; les bonus équipement/set s'ajoutent au-dessus
+    // (plafond absolu 100 %). Deux canaux : physique et sort.
+    const lckCrit = Math.min(40, 5 + c.lck * 0.5);
+    c.critChance          = Math.max(5, Math.min(100, lckCrit + critBonus));
+    c.spellCritChance     = Math.max(5, Math.min(100, lckCrit + spellCritBonus));
+    c.dodgeChance         = Math.max(0, Math.min(35, 5 + c.agi * 0.4 + dodgeBonus));
+    c.critMultiplier      = 1.5 + critDmgBonus;
+    c.spellCritMultiplier = 1.5 + spellCritDmgBonus;
   });
 }
 
