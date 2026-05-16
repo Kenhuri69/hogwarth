@@ -5805,6 +5805,34 @@ async function scenarioHeadOfHouseVoice() {
   assert(t4.keyReady === 'dumbledore_revelation_ready_1',
     `Dumbledore ready cassé : ${t4.keyReady}`);
 
+  // T5 : extension — autres dialogues des chefs (golem_passage, idle, done)
+  const t5 = await page.evaluate(() => {
+    const sm = AudioSystem._VOICE_SAMPLES;
+    const extraKeys = [
+      'mcgonagall_golem_offer_1', 'mcgonagall_golem_active_1',
+      'mcgonagall_golem_ready_1', 'mcgonagall_idle_1', 'mcgonagall_done_1',
+      'rogue_idle_1', 'flitwick_idle_1', 'sprout_idle_1',
+    ];
+    return {
+      missing:    extraKeys.filter(k => !sm[k]),
+      golemOffer: _voiceKeyForPage('mcgonagall', 'offer', 'golem_passage', 0, 'offer'),
+      setOffer:   _voiceKeyForPage('mcgonagall', 'offer', 'quest_set_gryff', 0, 'offer'),
+      rogueIdle:  _voiceKeyForPage('rogue', 'none', null, 0, 'idle'),
+      mcgoDone:   _voiceKeyForPage('mcgonagall', 'done', null, 0, 'done'),
+    };
+  });
+  console.log('  T5 autres dialogues:', t5);
+  assert(t5.missing.length === 0,
+    `clés voice étendues manquantes : ${t5.missing.join(', ')}`);
+  assert(t5.golemOffer === 'mcgonagall_golem_offer_1',
+    `golem_passage offer → attendu mcgonagall_golem_offer_1, got ${t5.golemOffer}`);
+  assert(t5.setOffer === 'mcgonagall_offer_1',
+    `quest_set offer → attendu mcgonagall_offer_1, got ${t5.setOffer}`);
+  assert(t5.rogueIdle === 'rogue_idle_1',
+    `idle Rogue → attendu rogue_idle_1, got ${t5.rogueIdle}`);
+  assert(t5.mcgoDone === 'mcgonagall_done_1',
+    `done McGonagall → attendu mcgonagall_done_1, got ${t5.mcgoDone}`);
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS pendant voix Chefs de Maison`);

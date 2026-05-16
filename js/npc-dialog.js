@@ -409,10 +409,18 @@ const _DUMBLEDORE_QID_SUFFIX = {
 const _HEAD_OF_HOUSE_VOICE = new Set(['mcgonagall', 'rogue', 'flitwick', 'sprout']);
 
 function _voiceKeyForPage(npcId, state, qid, pageIdx, source) {
-  // Chefs de Maison : couvrir greeting + 3 états quête (Vague A).
+  // Chefs de Maison : greeting + 3 états quête + idle/done (Vague A étendue).
   if (_HEAD_OF_HOUSE_VOICE.has(npcId)) {
     if (source === 'greeting') return `${npcId}_greeting_${pageIdx + 1}`;
+    if (source === 'idle')     return `${npcId}_idle_${pageIdx + 1}`;
+    if (source === 'done')     return `${npcId}_done_${pageIdx + 1}`;
     if (source === 'offer' || source === 'active' || source === 'ready') {
+      // McGonagall donne 2 quêtes : la quête de Set garde la clé
+      // canonique ; golem_passage a ses propres samples (sinon la voix
+      // de la Chimère se jouerait sur le texte du Gardien du Portail).
+      if (npcId === 'mcgonagall' && qid === 'golem_passage') {
+        return `mcgonagall_golem_${source}_${pageIdx + 1}`;
+      }
       return `${npcId}_${source}_${pageIdx + 1}`;
     }
     return null;

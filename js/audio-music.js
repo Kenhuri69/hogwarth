@@ -165,6 +165,18 @@ Object.assign(AudioSystem, {
     sprout_offer_1:        'audio/voice/sprout_offer_1.ogg',
     sprout_active_1:       'audio/voice/sprout_active_1.ogg',
     sprout_ready_1:        'audio/voice/sprout_ready_1.ogg',
+    // ── Chefs de Maison : autres dialogues (extension Vague A) ──
+    // McGonagall donne une 2e quête (golem_passage) → clés dédiées pour
+    // éviter le décalage texte/voix. + idle des 4 chefs et questDone de
+    // McGonagall (les 3 autres retombent sur idle en état 'done').
+    mcgonagall_golem_offer_1:  'audio/voice/mcgonagall_golem_offer_1.ogg',
+    mcgonagall_golem_active_1: 'audio/voice/mcgonagall_golem_active_1.ogg',
+    mcgonagall_golem_ready_1:  'audio/voice/mcgonagall_golem_ready_1.ogg',
+    mcgonagall_idle_1:         'audio/voice/mcgonagall_idle_1.ogg',
+    mcgonagall_done_1:         'audio/voice/mcgonagall_done_1.ogg',
+    rogue_idle_1:              'audio/voice/rogue_idle_1.ogg',
+    flitwick_idle_1:           'audio/voice/flitwick_idle_1.ogg',
+    sprout_idle_1:             'audio/voice/sprout_idle_1.ogg',
     // ── Incantations des sortilèges (Vague B voice-extensions-v2) ──
     // 13 sorts ciblés ; mapping nom de sort → clé via SPELL_VOICE_MAP
     // (js/audio-sfx.js). speakSpell joue l'OGG si mappé, sinon retombe
