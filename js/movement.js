@@ -39,6 +39,7 @@ function _step(dir, faceDir) {
   visited[playerY][playerX] = true;
   if (restCooldown > 0) restCooldown--;
   if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) healSpellCooldown--;
+  if (typeof _tickShopRestock === 'function') _tickShopRestock();
   AudioSystem.playFootstep();
 
   const cell = dungeon[playerY][playerX];
@@ -337,6 +338,8 @@ function _changeFloor(delta, opts) {
   currentFloor += delta;
   if (typeof visitedFloors !== 'undefined') visitedFloors.add(currentFloor);
   if (typeof portusOocCooldown === 'number' && portusOocCooldown > 0) portusOocCooldown--;
+  // Réassort de la boutique fixe à chaque changement d'étage.
+  if (typeof _invalidateShopStock === 'function') _invalidateShopStock();
   if (opts.beforeTransition) opts.beforeTransition();
 
   const locName = LOCATIONS[Math.min(currentFloor - 1, LOCATIONS.length - 1)];

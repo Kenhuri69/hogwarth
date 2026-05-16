@@ -56,9 +56,70 @@ const SHOP_CATALOG = [
 // vendeurs ambulants peuvent override via npc.buyback.
 const STATIC_SHOP_BUYBACK = { default: 0.50 };
 
+// ── Stock fini & réassort (boutique fixe — anti-farming) ──────
+// Voir .claude/plans/shop-purchase-limits.md
+const SHOP_STOCK_SIZE    = 8;   // objets tirés au hasard par réassort
+const SHOP_RESTOCK_STEPS = 40;  // pas avant réassort automatique
+
 // État courant du shop ouvert (kind 'static' | 'vendor', mode 'buy' | 'sell')
 let _shopContext = { kind: 'static', npcId: null };
 let _shopMode    = 'buy';
+
+// Tire `count` éléments distincts au hasard d'un tableau (sans le muter).
+function _pickRandom(pool, count) {
+  const bag = pool.slice();
+  const out = [];
+  while (bag.length && out.length < count) {
+    out.push(bag.splice(Math.floor(Math.random() * bag.length), 1)[0]);
+  }
+  return out;
+}
+
+// Tire un nouveau stock pour la boutique fixe : sous-ensemble aléatoire
+// du catalogue éligible à l'étage courant, livres déjà achetés exclus,
+// avec ≥ 2 consommables garantis si disponibles (anti-softlock soin).
+function _rollShopStock() {
+  const floor = (typeof currentFloor === 'number' && currentFloor > 0) ? currentFloor : 1;
+  let eligible = SHOP_CATALOG.filter(e => e.minFloor <= floor);
+  if (eligible.length === 0) eligible = SHOP_CATALOG.filter(e => e.minFloor <= 1);
+  eligible = eligible.filter(e => {
+    const it = ITEMS.find(i => i.id === e.id);
+    if (!it) return false;
+    if (it.type === 'spellbook' && purchasedSpellbooks.has(e.id)) return false;
+    return true;
+  });
+  const consumables = eligible.filter(e => {
+    const it = ITEMS.find(i => i.id === e.id);
+    return it && it.type === 'consumable';
+  });
+  const consumablePicks = _pickRandom(consumables, Math.min(2, consumables.length, SHOP_STOCK_SIZE));
+  const rest      = eligible.filter(e => !consumablePicks.includes(e));
+  const restPicks = _pickRandom(rest, SHOP_STOCK_SIZE - consumablePicks.length);
+  return consumablePicks.concat(restPicks).map(e => {
+    const it    = ITEMS.find(i => i.id === e.id);
+    const price = (typeof e.price === 'number') ? e.price : it.price;
+    return { item: { ...it }, price, sold: false };
+  });
+}
+
+// Tirage paresseux : ne (re)tire que si le stock n'existe pas encore.
+function _ensureShopStock() {
+  if (!Array.isArray(shopStock)) shopStock = _rollShopStock();
+}
+
+// Invalide le stock courant (perd aussi les objets revendus) et remet
+// le compteur de pas à zéro. Le prochain affichage retire un stock neuf.
+function _invalidateShopStock() {
+  shopStock = null;
+  shopStepsSinceRestock = 0;
+}
+
+// Appelé à chaque pas (movement.js — _step) : déclenche le réassort
+// automatique au bout de SHOP_RESTOCK_STEPS pas.
+function _tickShopRestock() {
+  shopStepsSinceRestock++;
+  if (shopStepsSinceRestock >= SHOP_RESTOCK_STEPS) _invalidateShopStock();
+}
 
 // Calcule le prix de rachat pour un item donné selon une politique buyback.
 // Le multiplicateur final = max(default, byType, byRarity, bySlot) — la
@@ -83,6 +144,7 @@ function _computeSellPrice(item, buyback) {
 function openShop() {
   _shopContext = { kind: 'static', npcId: null };
   _shopMode    = 'buy';
+  _ensureShopStock();
   _renderShopHeader();
   _renderShopGrid();
   document.getElementById('shop-modal').style.display = 'flex';
@@ -145,33 +207,41 @@ function _renderShopGrid() {
 }
 
 function _renderBuyGrid(grid) {
-  let entries;
+  // Lignes à afficher : { item, price, stockEntry } — stockEntry non null
+  // uniquement pour la boutique fixe (pilote l'achat unique).
+  let rows = [];
   if (_shopContext.kind === 'static') {
-    const floor = (typeof currentFloor === 'number' && currentFloor > 0) ? currentFloor : 1;
-    entries = SHOP_CATALOG.filter(e => e.minFloor <= floor);
-    if (entries.length === 0) entries = SHOP_CATALOG.filter(e => e.minFloor <= 1);
+    _ensureShopStock();
+    rows = shopStock.map(s => ({ item: s.item, price: s.price, stockEntry: s }));
   } else {
-    const npc = getNpcById(_shopContext.npcId);
-    entries = (npc && npc.wares) || [];
+    const npc   = getNpcById(_shopContext.npcId);
+    const wares = (npc && npc.wares) || [];
+    for (const entry of wares) {
+      const item = ITEMS.find(i => i.id === entry.id);
+      if (!item) continue;
+      // Livre de sort déjà acheté → retiré globalement (vendeurs inclus).
+      if (item.type === 'spellbook' && purchasedSpellbooks.has(item.id)) continue;
+      const price = (typeof entry.price === 'number') ? entry.price : item.price;
+      rows.push({ item, price, stockEntry: null });
+    }
   }
 
   let added = 0;
-  for (const entry of entries) {
-    const item = ITEMS.find(i => i.id === entry.id);
-    if (!item) continue;
-    const price = (typeof entry.price === 'number') ? entry.price : item.price;
+  for (const { item, price, stockEntry } of rows) {
     const canAfford = (player.gold || 0) >= price;
     const div = document.createElement('div');
     div.className = 'shop-item';
     div.dataset.itemId = item.id;
     div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #5a4020;border-radius:6px;background:rgba(30,20,10,0.55);cursor:' + (canAfford ? 'pointer' : 'default') + ';opacity:' + (canAfford ? '1' : '0.5');
+    const soldTag = (stockEntry && stockEntry.sold)
+      ? ' <span style="color:#a8d878;font-size:0.85em">♻️ revendu</span>' : '';
     div.innerHTML = `<div class="shop-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div>
       <div class="shop-info">
-        <div class="shop-name">${item.name}</div>
+        <div class="shop-name">${item.name}${soldTag}</div>
         <div class="shop-desc">${item.desc}</div>
       </div>
       <div class="shop-price">${price}G</div>`;
-    if (canAfford) div.onclick = () => _purchase(item, price);
+    if (canAfford) div.onclick = () => _purchase(item, price, stockEntry);
     grid.appendChild(div);
     added++;
   }
@@ -227,11 +297,18 @@ function _renderSellGrid(grid) {
 
 // ── Achat / vente ─────────────────────────────────────────────
 
-function _purchase(item, price) {
+function _purchase(item, price, stockEntry) {
   if (!Number.isFinite(player.gold) || player.gold < price) return;
   if (player.inventory.length >= 16) { addMsg("Sac plein !", 'bad'); return; }
   player.gold -= price;
   player.inventory.push({ ...item });
+  // Livre de sort : achetable une seule fois pour toute la partie.
+  if (item.type === 'spellbook') purchasedSpellbooks.add(item.id);
+  // Boutique fixe : l'objet quitte le stock (achat unique jusqu'au réassort).
+  if (stockEntry && Array.isArray(shopStock)) {
+    const i = shopStock.indexOf(stockEntry);
+    if (i !== -1) shopStock.splice(i, 1);
+  }
   document.getElementById('shop-gold').textContent = player.gold;
   addMsg(`Acheté : ${item.name}`, 'good');
   updateUI();
@@ -243,6 +320,12 @@ function sellItem(idx, sellPrice) {
   if (!item) return;
   player.inventory.splice(idx, 1);
   player.gold += sellPrice;
+  // Boutique fixe : l'objet revendu rejoint le stock, rachetable au prix
+  // plein — mais sera perdu au prochain réassort.
+  if (_shopContext.kind === 'static' && typeof item.price === 'number' && item.price > 0) {
+    _ensureShopStock();
+    shopStock.push({ item: { ...item }, price: item.price, sold: true });
+  }
   document.getElementById('shop-gold').textContent = player.gold;
   addMsg(`Vendu : ${item.name} (+${sellPrice}G)`, 'good');
   updateUI();
