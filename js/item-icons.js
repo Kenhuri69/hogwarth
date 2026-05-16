@@ -265,6 +265,48 @@ const SPELL_ICON_REGISTRY = {
   'Lumos Solem':        'img/icons/spells/lumos_solem.png'
 };
 
+// ── Registre d'icônes SVG inline (herbes + potions) ──────────
+// Voir .claude/plans/farming-potion-system.md. Consulté EN PREMIER
+// par getItemIconHtml() : si l'id y figure, on rend le SVG inline.
+// Sinon, comportement inchangé (PNG painterly → PNG legacy → emoji).
+// Chaque <clipPath> porte un id unique pour éviter les collisions
+// quand plusieurs icônes sont inlinées sur la même page.
+const ITEM_ICON_SVG_REGISTRY = {
+  herbe_armoise: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M32 56 L32 14" stroke="#3c7a2e" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M32 44 Q18 40 14 28 Q26 30 32 42 Z" fill="#5fae3f"/><path d="M32 44 Q46 40 50 28 Q38 30 32 42 Z" fill="#6fbf4a"/><path d="M32 32 Q20 28 17 18 Q28 21 32 31 Z" fill="#5fae3f"/><path d="M32 32 Q44 28 47 18 Q36 21 32 31 Z" fill="#6fbf4a"/><path d="M32 20 Q26 14 32 7 Q38 14 32 20 Z" fill="#7fce5a"/></svg>`,
+  herbe_ortie: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M32 56 L32 16" stroke="#5a6b2a" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M32 40 L16 34 L22 32 L14 26 L24 26 L20 19 L30 24 L32 38 Z" fill="#6e7d33"/><path d="M32 40 L48 34 L42 32 L50 26 L40 26 L44 19 L34 24 L32 38 Z" fill="#828f3f"/><path d="M32 24 L24 18 L29 16 L24 10 L32 13 L40 10 L35 16 L40 18 Z" fill="#909a4a"/></svg>`,
+  herbe_asphodele: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M32 58 L32 20" stroke="#2f8f7e" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M32 46 Q22 44 20 36 Q30 38 32 44 Z" fill="#3aa890"/><path d="M32 40 Q42 38 44 30 Q34 32 32 38 Z" fill="#3aa890"/><g fill="#eef6f2"><circle cx="32" cy="16" r="6.5"/><circle cx="22" cy="24" r="5"/><circle cx="42" cy="22" r="5"/></g><g fill="#ffd24a"><circle cx="32" cy="16" r="2.2"/><circle cx="22" cy="24" r="1.7"/><circle cx="42" cy="22" r="1.7"/></g></svg>`,
+  herbe_branchiflore: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke-width="4.2" stroke-linecap="round"><path d="M32 58 Q22 46 30 36 Q40 26 30 13" stroke="#2a8d9d"/><path d="M32 58 Q42 46 34 36 Q26 26 36 13" stroke="#37a7b5"/><path d="M32 50 Q24 42 30 31" stroke="#52c8d2"/></g></svg>`,
+  herbe_aconit: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M32 58 L32 26" stroke="#3c6a3e" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M32 40 Q22 38 20 30 Q30 32 32 38 Z" fill="#4c8a4e"/><path d="M32 40 Q42 38 44 30 Q34 32 32 38 Z" fill="#5c9a5e"/><g fill="#7a3a9d"><path d="M32 27 Q23 25 25 15 Q32 18 32 27 Z"/><path d="M32 27 Q41 25 39 15 Q32 18 32 27 Z"/></g><g fill="#9a5abd"><path d="M32 18 Q26 16 28 7 Q33 11 32 18 Z"/><path d="M32 18 Q38 16 36 7 Q31 11 32 18 Z"/></g></svg>`,
+  herbe_dictame: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M32 58 L32 24" stroke="#6a7a5a" stroke-width="3" fill="none" stroke-linecap="round"/><g><circle cx="21" cy="35" r="9.5" fill="#b89ac8"/><circle cx="44" cy="31" r="9.5" fill="#c8aad8"/><circle cx="32" cy="17" r="9.5" fill="#d8bae8"/></g><g fill="#9a7aaa" opacity="0.55"><circle cx="21" cy="35" r="4"/><circle cx="44" cy="31" r="4"/><circle cx="32" cy="17" r="4"/></g></svg>`,
+  potion_s: _potionSvg('cl_ps', 40, '#d83a3a', '#f06a6a', '#b07a3a'),
+  potion_m: _potionSvg('cl_pm', 40, '#9a3ad8', '#b86ae0', '#b07a3a'),
+  potion_l: _potionSvg('cl_pl', 33, '#d83a3a', '#f06a6a', '#b07a3a'),
+  potion_l_sp: _potionSvg('cl_plsp', 33, '#9a3ad8', '#b86ae0', '#b07a3a'),
+  potion_force: _potionSvg('cl_pf', 33, '#e8862a', '#f4a85a', '#b07a3a'),
+  potion_xl: _potionSvg('cl_pxl', 27, '#e8324a', '#ff6a78', '#e8c14a', true),
+};
+
+// Génère le SVG d'une fiole : `liqY` = niveau du liquide (y, plus petit
+// = plus rempli), `liq`/`liq2` couleurs, `cap` couleur du bouchon,
+// `sparkle` ajoute des étincelles (potion suprême).
+function _potionSvg(clipId, liqY, liq, liq2, cap, sparkle) {
+  const body = 'M27 25 L27 31 A17 17 0 1 0 37 31 L37 25 Z';
+  const stars = sparkle
+    ? '<g fill="#fff7d0"><circle cx="45" cy="19" r="1.8"/><circle cx="19" cy="45" r="1.4"/></g>'
+    : '';
+  return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">`
+    + `<defs><clipPath id="${clipId}"><path d="${body}"/></clipPath></defs>`
+    + `<path d="${body}" fill="#1a2230" opacity="0.22"/>`
+    + `<g clip-path="url(#${clipId})"><rect x="10" y="${liqY}" width="44" height="44" fill="${liq}"/>`
+    + `<ellipse cx="32" cy="${liqY}" rx="14" ry="3" fill="${liq2}"/></g>`
+    + `<path d="${body}" fill="none" stroke="#d6e4ee" stroke-width="2.4"/>`
+    + `<rect x="27" y="12" width="10" height="14" fill="none" stroke="#d6e4ee" stroke-width="2.4"/>`
+    + `<rect x="24" y="7" width="16" height="8" rx="2.5" fill="${cap}"/>`
+    + `<ellipse cx="25" cy="40" rx="2.6" ry="7" fill="#ffffff" opacity="0.4"/>`
+    + stars
+    + `</svg>`;
+}
+
 // ── API publique ────────────────────────────────────────────
 
 function getItemIconSrc(item) {
@@ -283,6 +325,12 @@ function getItemIconSrc(item) {
 // d'une même famille — voir .claude/plans/equipment-extended.md §2.4.
 function getItemIconHtml(item, sizeClass) {
   const cls = sizeClass || 'ui-icon-md';
+  // SVG inline dédié (herbes, potions) — priorité absolue.
+  if (item && item.id
+      && typeof ITEM_ICON_SVG_REGISTRY !== 'undefined'
+      && ITEM_ICON_SVG_REGISTRY[item.id]) {
+    return `<span class="ui-icon svg-icon ${cls}">${ITEM_ICON_SVG_REGISTRY[item.id]}</span>`;
+  }
   // Le pipeline painterly (étape 9) supplante le système tinted 2-calques
   // pour les items mappés : si l'id figure dans ITEM_ICON_NEW_REGISTRY,
   // on utilise directement le PNG painterly (déjà coloré par recipe).

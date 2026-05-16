@@ -1696,6 +1696,131 @@ body {
   box-shadow: 0 0 6px #a040ff;
 }
 
+/* ── Icônes SVG inline (herbes, potions) ──────────────────── */
+.svg-icon { display: inline-block; line-height: 0; }
+.svg-icon svg { width: 100%; height: 100%; display: block; }
+
+/* ── Concoction de potions — #brewing-modal ───────────────── */
+#brewing-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at center, rgba(14,26,14,0.94) 0%, rgba(0,0,0,0.96) 70%);
+  z-index: 600;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.brewing-box {
+  max-width: 520px; width: 100%;
+  max-height: 86vh; overflow-y: auto;
+}
+.brewing-cauldron-wrap {
+  position: relative;
+  display: flex; justify-content: center;
+  margin: 4px 0 10px;
+}
+.brewing-cauldron svg { width: 150px; height: auto; }
+.brewing-cauldron { transition: filter 0.3s; }
+.brewing-cauldron-wrap.is-success .brewing-cauldron { filter: drop-shadow(0 0 12px #5fd060); }
+.brewing-cauldron-wrap.is-crit    .brewing-cauldron { filter: drop-shadow(0 0 14px #f0c84a); }
+.brewing-cauldron-wrap.is-fail    .brewing-cauldron { filter: grayscale(0.6) brightness(0.7); }
+.brew-bubble {
+  position: absolute;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,0.45);
+  bottom: 52px; left: 50%;
+  opacity: 0;
+  animation: brewBubble 2.4s ease-in infinite;
+}
+.brew-bubble-1 { margin-left: -16px; animation-delay: 0s;    }
+.brew-bubble-2 { margin-left: 2px;   animation-delay: 0.8s;  }
+.brew-bubble-3 { margin-left: 14px;  animation-delay: 1.6s;  }
+@keyframes brewBubble {
+  0%   { opacity: 0;   transform: translateY(0) scale(0.6); }
+  25%  { opacity: 0.7; }
+  100% { opacity: 0;   transform: translateY(-34px) scale(1.1); }
+}
+.brewing-section { margin: 12px 0; }
+.brewing-section-label {
+  font-family: 'Cinzel', serif; font-size: 12px;
+  color: var(--gold-light); letter-spacing: 1px;
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.brew-tiles { display: flex; flex-wrap: wrap; gap: 6px; }
+.brew-tile {
+  background: #0a0705; border: 1px solid #2a1a08; border-radius: 4px;
+  padding: 6px; width: 76px; min-height: 76px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.brew-tile:hover { border-color: var(--gold-dark); background: #120a03; }
+.brew-tile-disabled { opacity: 0.35; cursor: not-allowed; }
+.brew-tile-disabled:hover { border-color: #2a1a08; background: #0a0705; }
+.brew-tile-icon { width: 40px; height: 40px; }
+.brew-tile-icon .ui-icon { width: 40px; height: 40px; vertical-align: 0; }
+.brew-tile-name { font-size: 9.5px; color: #b0905a; line-height: 1.1; }
+.brew-tile-qty { font-size: 11px; color: var(--gold); font-weight: 700; }
+.brew-empty {
+  text-align: center; padding: 14px; color: #8a7050;
+  font-style: italic; font-size: 12px;
+}
+.brew-launch-btn {
+  display: block; width: 100%; margin: 6px 0 4px;
+  background: linear-gradient(180deg, #4f9d3f, #2f6d28);
+  color: #f0fae8; border: 1px solid #1a3d12; border-radius: 4px;
+  padding: 11px; font-family: 'Cinzel', serif; font-size: 13px;
+  letter-spacing: 1.5px; cursor: pointer; transition: filter 0.15s;
+}
+.brew-launch-btn:hover { filter: brightness(1.12); }
+.brew-launch-btn:disabled {
+  background: #2a2a2a; color: #6a6a6a; border-color: #1a1a1a;
+  cursor: not-allowed; filter: none;
+}
+.brew-chance {
+  text-align: center; font-size: 12px; color: var(--parchment);
+  margin-bottom: 4px;
+}
+.brew-chance b { color: var(--gold-light); }
+.brew-result {
+  border-radius: 4px; padding: 9px 12px; margin: 8px 0;
+  font-size: 12.5px; text-align: center;
+}
+.brew-result.is-success { background: rgba(60,120,50,0.25);  border: 1px solid #4f9d3f; color: #c8e8b8; }
+.brew-result.is-crit    { background: rgba(160,130,40,0.25); border: 1px solid #e0b840; color: #f4e2a0; }
+.brew-result.is-fail    { background: rgba(140,50,40,0.22);  border: 1px solid #b04030; color: #e8b0a0; }
+.brew-result-discover {
+  font-family: 'Cinzel', serif; color: var(--gold);
+  margin-bottom: 4px;
+}
+.brew-recipes { display: flex; flex-direction: column; gap: 6px; }
+.brew-recipe-row {
+  display: flex; align-items: center; gap: 10px;
+  background: #0a0705; border: 1px solid #2a1a08;
+  border-radius: 4px; padding: 7px 11px;
+}
+.brew-recipe-info { flex: 1; min-width: 0; }
+.brew-recipe-name {
+  font-family: 'Cinzel', serif; font-size: 12.5px; color: var(--gold-light);
+}
+.brew-recipe-ing { font-size: 10.5px; color: #8a7050; font-style: italic; }
+.brew-mini-btn {
+  background: linear-gradient(180deg, #c89048, #a06820);
+  color: #1a0f05; border: none; border-radius: 3px;
+  padding: 5px 12px; font-family: 'Cinzel', serif; font-size: 10.5px;
+  letter-spacing: 1px; cursor: pointer; transition: filter 0.15s;
+}
+.brew-mini-btn:hover { filter: brightness(1.1); }
+.brew-mini-btn:disabled {
+  background: #3a2a1a; color: #6a5030; cursor: not-allowed; filter: none;
+}
+@media (max-width: 700px) {
+  .brewing-box { max-width: 100vw; width: 96vw; }
+  .brew-tile { width: 72px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brew-bubble { animation: none; }
+}
+
 /* Shop */
 .shop-tabs {
   display: flex;

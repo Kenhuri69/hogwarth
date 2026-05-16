@@ -14,6 +14,15 @@ function tryAddItem(itemOrId, opts = {}) {
     ? (typeof ITEMS !== 'undefined' && ITEMS.find(i => i.id === itemOrId))
     : itemOrId;
   if (!item) return false;
+  // Les herbes ne vont pas dans le sac 16 slots : elles sont routées vers
+  // la besace d'herboriste (player.herbs), non plafonnée.
+  if (item.type === 'herb' && typeof addHerb === 'function') {
+    addHerb(item.id, 1);
+    if (!opts.silent && typeof addMsg === 'function') {
+      addMsg(`${item.name} ajoutée à ta besace.`, 'good');
+    }
+    return true;
+  }
   if (player.inventory.length >= INVENTORY_MAX) {
     if (!opts.silent && typeof addMsg === 'function') {
       addMsg(`Sac plein, ${item.name || 'objet'} non récupéré.`, 'bad');

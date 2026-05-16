@@ -263,13 +263,24 @@ function _npcDialogActions(npc, state) {
   // Cas particulier `claim_house_reward` : on bypass `_isSpecialActionSpent`
   // et on utilise `_canClaimHouseReward` (cf. plan house-intermediate-tier.md §2.5).
   if (npc.specialAction) {
-    const isClaim = npc.specialAction.type === 'claim_house_reward';
-    const available = isClaim ? _canClaimHouseReward(npc) : !_isSpecialActionSpent(npc);
+    const saType = npc.specialAction.type;
+    let available;
+    if (saType === 'claim_house_reward') {
+      available = _canClaimHouseReward(npc);
+    } else if (saType === 'open_brewing') {
+      available = (typeof _isBrewingUnlocked === 'function') && _isBrewingUnlocked();
+    } else {
+      available = !_isSpecialActionSpent(npc);
+    }
     if (available) {
       const label = npc.specialAction.label || 'Action spéciale';
+      // open_brewing ouvre une modale : ne pas ré-ouvrir le dialogue PNJ
+      // par-dessus (il masquerait la modale de brassage).
       out.push({
         label,
-        onClick: `triggerNpcSpecialAction('${npc.id}'); openNpcDialog('${npc.id}');`
+        onClick: saType === 'open_brewing'
+          ? `triggerNpcSpecialAction('${npc.id}')`
+          : `triggerNpcSpecialAction('${npc.id}'); openNpcDialog('${npc.id}');`
       });
     }
   }
@@ -315,6 +326,18 @@ function triggerNpcSpecialAction(npcId) {
       if (typeof updateUI === 'function') updateUI();
       safeCall('autoSave', 'house-reward');
     }
+    return;
+  }
+  // open_brewing : ouvre la modale de concoction. Répétable (pas de garde
+  // _isSpecialActionSpent). Le gating réel passe par la quête de
+  // déverrouillage (_isBrewingUnlocked).
+  if (action.type === 'open_brewing') {
+    if (typeof _isBrewingUnlocked === 'function' && !_isBrewingUnlocked()) {
+      if (typeof addMsg === 'function') addMsg("Slughorn ne t'a pas encore confié son chaudron.", 'bad');
+      return;
+    }
+    closeNpcDialog();
+    if (typeof openBrewingModal === 'function') openBrewingModal();
     return;
   }
   if (_isSpecialActionSpent(npc)) {

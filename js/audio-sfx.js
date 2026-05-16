@@ -179,6 +179,48 @@ Object.assign(AudioSystem, {
     });
   },
 
+  // ── Brassage de potion (bouillonnement de chaudron) ──────────
+  playBrew() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    const dur = 1.1;
+
+    // Nappe de bouillonnement : bruit blanc filtré passe-bas.
+    const buf  = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * dur), this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < buf.length; i++) data[i] = Math.random() * 2 - 1;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    const lpf = this.ctx.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.setValueAtTime(280, now);
+    lpf.frequency.linearRampToValueAtTime(420, now + dur);
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0, now);
+    noiseGain.gain.linearRampToValueAtTime(0.18, now + 0.15);
+    noiseGain.gain.setValueAtTime(0.18, now + dur - 0.25);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    src.connect(lpf).connect(noiseGain).connect(this.sfxGain);
+    src.start(now); src.stop(now + dur);
+
+    // Bulles : oscillateurs sinus brefs au pitch montant.
+    for (let i = 0; i < 7; i++) {
+      const delay = 0.1 + Math.random() * (dur - 0.35);
+      const osc  = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      const f0 = 160 + Math.random() * 120;
+      osc.frequency.setValueAtTime(f0, now + delay);
+      osc.frequency.exponentialRampToValueAtTime(f0 * 2.2, now + delay + 0.12);
+      gain.gain.setValueAtTime(0, now + delay);
+      gain.gain.linearRampToValueAtTime(0.16, now + delay + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.16);
+      osc.connect(gain).connect(this.sfxGain);
+      osc.start(now + delay); osc.stop(now + delay + 0.2);
+    }
+  },
+
   // ── Complétion d'un Set de Maison (4/4) ──────────────────────
   // Chord majestueux brillant — distinct de playLevelUp : on tient un
   // accord majeur ouvert (root + 5te + octave + 10e), puis on superpose

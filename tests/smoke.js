@@ -603,7 +603,7 @@ async function scenarioNpcIntegration() {
   assert(t1.cellNpc === 8,               'CELL.NPC doit valoir 8');
   assert(t1.dumbledore,                  'PNJ Dumbledore introuvable');
   assert(t1.floor1Count === 1,           'étage 1 doit avoir 1 PNJ (Dumbledore)');
-  assert(t1.floor2Count === 3,           'étage 2 doit avoir 3 PNJ');
+  assert(t1.floor2Count === 4,           'étage 2 doit avoir 4 PNJ (incl. Slughorn)');
   assert(t1.floor4Count === 3,           'étage 4 doit avoir 3 PNJ (incl. Rogue chef Serpentard)');
 
   // T2 : génération étage 1 — Dumbledore présent + npcPlacements peuplé
@@ -2630,8 +2630,12 @@ async function scenarioItemIcons() {
   // T1 : couverture 100% — chaque ITEMS[] a une entrée registry, chargée
   const t1 = await page.evaluate(async () => {
     const total   = ITEMS.length;
-    const mapped  = ITEMS.filter(it => ITEM_ICON_REGISTRY[it.id]).length;
-    const missing = ITEMS.filter(it => !ITEM_ICON_REGISTRY[it.id]).map(it => it.id);
+    // Un item est couvert par un PNG legacy OU un SVG inline dédié
+    // (herbes/potions — voir ITEM_ICON_SVG_REGISTRY).
+    const hasSvg  = typeof ITEM_ICON_SVG_REGISTRY !== 'undefined';
+    const covered = it => ITEM_ICON_REGISTRY[it.id] || (hasSvg && ITEM_ICON_SVG_REGISTRY[it.id]);
+    const mapped  = ITEMS.filter(covered).length;
+    const missing = ITEMS.filter(it => !covered(it)).map(it => it.id);
     const tries = await Promise.all(Object.values(ITEM_ICON_REGISTRY).map(src =>
       new Promise(resolve => {
         const im = new Image();
@@ -2651,7 +2655,7 @@ async function scenarioItemIcons() {
   assert(t1.mapped === t1.total,         `${t1.mapped}/${t1.total} mappés`);
   assert(t1.allLoaded,                   `PNG manquants : ${t1.failed.join(', ')}`);
 
-  // T2 : grille inventaire utilise les PNG
+  // T2 : grille inventaire utilise les PNG / SVG inline
   const t2 = await page.evaluate(() => {
     // Donner quelques items à Harry
     player.inventory = [
@@ -2664,16 +2668,20 @@ async function scenarioItemIcons() {
     const elems = Array.from(grid.querySelectorAll('img.ui-icon, .tinted-icon'));
     // Pour `<img>` on lit src ; pour `.tinted-icon` on lit data-mask
     // (équivalent fonctionnel : sprite source identifiant l'item).
-    return elems.map(e => e.getAttribute('src') || e.getAttribute('data-mask') || '');
+    return {
+      imgs:     elems.map(e => e.getAttribute('src') || e.getAttribute('data-mask') || ''),
+      svgCount: grid.querySelectorAll('.svg-icon svg').length
+    };
   });
   console.log('  T2 inventaire →', t2);
+  // potion_s est désormais rendue via SVG inline (ITEM_ICON_SVG_REGISTRY).
+  assert(t2.svgCount >= 1,
+         'inventaire doit afficher potion_s en SVG inline');
   // Accepte l'ancien chemin (items/<id>.png) ou le nouveau pipeline painterly
   // (icons_new/<id>_<size>.png — étape 9 du redesign).
-  assert(t2.some(s => /(items\/potion_s\.png|icons_new\/potion_s_\d+\.png)$/.test(s)),
-         'inventaire doit afficher potion_s');
-  assert(t2.some(s => /(items\/wand1\.png|icons_new\/wand1_\d+\.png)$/.test(s) || s === 'wand_shaft_base'),
+  assert(t2.imgs.some(s => /(items\/wand1\.png|icons_new\/wand1_\d+\.png)$/.test(s) || s === 'wand_shaft_base'),
          'inventaire doit afficher wand1 OU wrapper tinted (mask=wand_shaft_base)');
-  assert(t2.some(s => /(items\/livre_sortileges\.png|icons_new\/livre_sortileges_\d+\.png)$/.test(s)),
+  assert(t2.imgs.some(s => /(items\/livre_sortileges\.png|icons_new\/livre_sortileges_\d+\.png)$/.test(s)),
          'inventaire doit afficher livre_sortileges');
 
   // T3 : grille boutique utilise les PNG (déclencher openShop avec un currentFloor>=1)
@@ -6542,6 +6550,125 @@ async function scenarioHealOoc() {
   await browser.close();
 }
 
+async function scenarioBrewing() {
+  console.log('\n── Scénario : concoction de potions (chaudron Slughorn) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : données — 6 herbes, POTION_RECIPES, besace routée par tryAddItem
+  const t1 = await page.evaluate(() => {
+    const herbCount = ITEMS.filter(i => i.type === 'herb').length;
+    player.herbs = {};
+    const before = player.inventory.length;
+    const added  = tryAddItem('herbe_armoise', { silent: true });
+    return {
+      herbCount,
+      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 6,
+      added,
+      herbInBesace: getHerbCount('herbe_armoise'),
+      inventoryUnchanged: player.inventory.length === before,
+      slughornExists: !!getNpcById('slughorn')
+    };
+  });
+  console.log('  T1 données →', t1);
+  assert(t1.herbCount === 6,          '6 items herbe attendus');
+  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 6 recettes');
+  assert(t1.added,                    'tryAddItem(herbe) doit réussir');
+  assert(t1.herbInBesace === 1,       'la herbe doit aller dans la besace');
+  assert(t1.inventoryUnchanged,       'la herbe ne doit pas occuper le sac');
+  assert(t1.slughornExists,           'PNJ Slughorn introuvable');
+
+  // T2 : brassage verrouillé tant que la quête n'est pas remise
+  const t2 = await page.evaluate(() => {
+    const unlockedBefore = _isBrewingUnlocked();
+    openBrewingModal();
+    const shown = document.getElementById('brewing-modal').style.display === 'flex';
+    return { unlockedBefore, shown };
+  });
+  console.log('  T2 verrou →', t2);
+  assert(t2.unlockedBefore === false, 'brassage doit être verrouillé au départ');
+  assert(t2.shown === false,          'la modale ne doit pas s\'ouvrir verrouillée');
+
+  // T3 : remise de la quête de déverrouillage → recettes de base apprises
+  const t3 = await page.evaluate(() => {
+    acceptQuest('quest_potions_slughorn');
+    for (let i = 0; i < 3; i++) {
+      player.inventory.push({ ...ITEMS.find(x => x.id === 'mandragore') });
+    }
+    _refreshObjectives();
+    const idx = activeQuests.findIndex(q => q.id === 'quest_potions_slughorn');
+    completeQuest(idx);
+    return {
+      unlocked: _isBrewingUnlocked(),
+      knows: (player.knownRecipes || []).slice()
+    };
+  });
+  console.log('  T3 déverrouillage →', t3);
+  assert(t3.unlocked,                          'la quête remise doit déverrouiller le brassage');
+  assert(t3.knows.includes('brew_potion_s'),   'brew_potion_s doit être appris');
+  assert(t3.knows.includes('brew_potion_m'),   'brew_potion_m doit être appris');
+
+  // T4 : brassage d'une recette connue (INT forcée → réussite garantie)
+  const t4 = await page.evaluate(() => {
+    party[0].int = 100;
+    player.herbs = { herbe_armoise: 2 };
+    player.inventory = [];
+    _cauldronMix = { herbe_armoise: 2 };
+    attemptBrew();
+    return {
+      potions: player.inventory.filter(it => it && it.id === 'potion_s').length,
+      herbsLeft: getHerbCount('herbe_armoise'),
+      cauldronCleared: Object.keys(_cauldronMix).length === 0
+    };
+  });
+  console.log('  T4 brassage connu →', t4);
+  assert(t4.potions >= 1,        'le brassage réussi doit ajouter au moins 1 potion_s');
+  assert(t4.herbsLeft === 0,     'les herbes doivent être consommées');
+  assert(t4.cauldronCleared,     'le chaudron doit être vidé après brassage');
+
+  // T5 : découverte d'une recette inconnue par expérimentation
+  const t5 = await page.evaluate(() => {
+    party[0].int = 100;
+    player.herbs = { herbe_aconit: 1 };
+    player.inventory = [
+      { ...ITEMS.find(x => x.id === 'mandragore') },
+      { ...ITEMS.find(x => x.id === 'mandragore') }
+    ];
+    const knewBefore = (player.knownRecipes || []).includes('brew_potion_force');
+    _cauldronMix = { herbe_aconit: 1, mandragore: 2 };
+    attemptBrew();
+    return {
+      knewBefore,
+      knowsNow: (player.knownRecipes || []).includes('brew_potion_force')
+    };
+  });
+  console.log('  T5 découverte →', t5);
+  assert(t5.knewBefore === false, 'brew_potion_force ne doit pas être connu d\'avance');
+  assert(t5.knowsNow,             'l\'expérimentation valide doit découvrir brew_potion_force');
+
+  // T6 : mélange invalide → échec, herbes consommées, rien appris
+  const t6 = await page.evaluate(() => {
+    player.herbs = { herbe_armoise: 1, herbe_dictame: 1 };
+    const recipesBefore = (player.knownRecipes || []).length;
+    _cauldronMix = { herbe_armoise: 1, herbe_dictame: 1 };
+    attemptBrew();
+    return {
+      herbsLeft: getHerbCount('herbe_armoise') + getHerbCount('herbe_dictame'),
+      recipesUnchanged: (player.knownRecipes || []).length === recipesBefore
+    };
+  });
+  console.log('  T6 mélange raté →', t6);
+  assert(t6.herbsLeft === 0,        'un mélange raté consomme quand même les herbes');
+  assert(t6.recipesUnchanged,       'un mélange invalide n\'apprend aucune recette');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Concoction OK (besace + verrou + déverrouillage + brassage + découverte)');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -6599,7 +6726,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

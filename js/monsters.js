@@ -267,7 +267,7 @@ const MONSTERS = [
     resist: [],
     weak:   ["feu"],
     xp: 15, gold: { min: 5, max: 12 },
-    drops:  [{ itemId: "mandragore", chance: 0.35 }]
+    drops:  [{ itemId: "mandragore", chance: 0.35 }, { itemId: "herbe_ortie", chance: 0.20 }]
   },
 
   {
@@ -290,7 +290,7 @@ const MONSTERS = [
     resist: ["glace"],
     weak:   ["foudre"],
     xp: 20, gold: { min: 8, max: 15 },
-    drops:  [{ itemId: "potion_s", chance: 0.12 }]
+    drops:  [{ itemId: "potion_s", chance: 0.12 }, { itemId: "herbe_asphodele", chance: 0.18 }]
   },
 
   {
@@ -383,7 +383,8 @@ const MONSTERS = [
     weak:   ["feu"],
     xp: 14, gold: { min: 5, max: 10 },
     drops:  [
-      { itemId: "bottes_apprenti", chance: 0.05 }
+      { itemId: "bottes_apprenti", chance: 0.05 },
+      { itemId: "herbe_branchiflore", chance: 0.18 }
     ]
   },
 
@@ -585,8 +586,10 @@ const MONSTERS = [
     weak:   ["feu"],
     xp: 45, gold: { min: 14, max: 22 },
     drops:  [
-      { itemId: "mandragore", chance: 0.25 },
-      { itemId: "potion_s",   chance: 0.12 }
+      { itemId: "mandragore",     chance: 0.25 },
+      { itemId: "potion_s",       chance: 0.12 },
+      { itemId: "herbe_aconit",   chance: 0.16 },
+      { itemId: "herbe_dictame",  chance: 0.10 }
     ]
   },
 
@@ -1021,7 +1024,7 @@ const MONSTERS = [
     ],
     ai: "cautious", resist: [], weak: ["physique"],
     xp: 20, gold: { min: 8, max: 25 },
-    drops: [{ itemId: "mandragore", chance: 0.20 }]
+    drops: [{ itemId: "mandragore", chance: 0.20 }, { itemId: "herbe_armoise", chance: 0.15 }]
   },
 
   {
@@ -1053,7 +1056,7 @@ const MONSTERS = [
     ],
     ai: "aggressive", resist: [], weak: ["feu"],
     xp: 12, gold: { min: 3, max: 10 },
-    drops: [{ itemId: "wand1", chance: 0.08 }]
+    drops: [{ itemId: "wand1", chance: 0.08 }, { itemId: "herbe_armoise", chance: 0.25 }]
   },
 
   {

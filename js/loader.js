@@ -158,6 +158,13 @@ window.UX_safe = new Proxy({}, {
     { name: 'unlockHouseQuest',   source: 'quests.js',       kind: 'fn'  },
     { name: 'HOUSE_SET_QUESTS',   source: 'quests.js',       kind: 'obj' },
 
+    // ── Concoction de potions ──
+    { name: 'POTION_RECIPES',     source: 'data.js',         kind: 'obj' },
+    { name: 'ITEM_ICON_SVG_REGISTRY', source: 'item-icons.js', kind: 'obj' },
+    { name: 'openBrewingModal',   source: 'potions.js',      kind: 'fn'  },
+    { name: 'attemptBrew',        source: 'potions.js',      kind: 'fn'  },
+    { name: 'addHerb',            source: 'potions.js',      kind: 'fn'  },
+
     // ── Boutique ──
     { name: 'openShop',           source: 'shop.js',         kind: 'fn'  },
     { name: 'buyItem',            source: 'shop.js',         kind: 'fn'  },

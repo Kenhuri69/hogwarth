@@ -82,6 +82,33 @@ const QUEST_TEMPLATES = [
     reward: { xp: 80, gold: 40, item: "potion_m", spell: "Episkey" },
     location: "Infirmerie (étage 2)"
   },
+  // Quête de déverrouillage de la concoction de potions. Tant qu'elle
+  // n'est pas remise, l'action « Concocter » de Slughorn reste masquée.
+  // Voir .claude/plans/farming-potion-system.md.
+  {
+    id: "quest_potions_slughorn",
+    title: "L'Apprenti Potionniste",
+    giver: "Horace Slughorn",
+    desc: "Slughorn ne confie son chaudron qu'aux élèves sérieux. Rapporte-lui 3 Racines de Mandragore pour prouver ta valeur.",
+    objectives: [
+      { type: "item", itemId: "mandragore", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 60, gold: 40, recipes: ["brew_potion_s", "brew_potion_m"] },
+    location: "Salle des Potions (étage 2)"
+  },
+  // Quête de suivi Slughorn : déverrouille les recettes de Grande Potion.
+  {
+    id: "quest_potions_slughorn_2",
+    title: "Ingrédients de Maître",
+    giver: "Horace Slughorn",
+    desc: "Slughorn veut des ingrédients frais. Élimine 3 Mandragores Sauvages — leurs racines valent de l'or pour un potionniste.",
+    prereq: "quest_potions_slughorn",
+    objectives: [
+      { type: "kill", monsterId: "mandragore_sauvage", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 180, gold: 90, recipes: ["brew_potion_l", "brew_potion_l_sp"] },
+    location: "Salle des Potions (étage 2)"
+  },
   {
     id: "livre_interdit",
     title: "Le livre qui mord",
@@ -734,6 +761,12 @@ function _renderRewardParts(reward) {
     if (it) parts.push(`${getItemIconHtml(it, 'ui-icon-sm')} ${it.name}`);
   }
   if (reward.spell) parts.push(`✨ Sort : ${reward.spell}`);
+  if (Array.isArray(reward.recipes) && typeof POTION_RECIPES !== 'undefined') {
+    reward.recipes.forEach(rid => {
+      const r = POTION_RECIPES.find(x => x.id === rid);
+      if (r) parts.push(`📜 Recette : ${r.name}`);
+    });
+  }
   return parts.join(' · ');
 }
 
@@ -872,6 +905,10 @@ function _grantQuestReward(reward) {
       if (!c.spells.includes(reward.spell)) c.spells.push(reward.spell);
     });
     addMsg(`✨ Nouveau sort débloqué : ${reward.spell} !`, 'magic');
+  }
+  // Recettes de potion : apprises au groupe (besace partagée).
+  if (Array.isArray(reward.recipes) && typeof learnRecipe === 'function') {
+    reward.recipes.forEach(rid => learnRecipe(rid));
   }
   if (reward.stats) _applyStatsReward(reward.stats);
 }
