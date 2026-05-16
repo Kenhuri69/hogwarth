@@ -2095,7 +2095,7 @@ button.shop-tab.active {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 192px;
+  aspect-ratio: 896 / 1195;
   padding: 22px 16px;
   border: 1.5px solid var(--gold-dark);
   border-radius: 8px;
@@ -2130,15 +2130,22 @@ button.shop-tab.active {
   line-height: 1.35;
   max-width: 210px;
 }
-/* Tuile illustrée — scène de classe en fond */
-.psel-tile-image { background: #0a0603; }
+/* Tuile illustrée — scène de classe en fond, image entière visible */
+.psel-tile-image {
+  background: #0a0603;
+  justify-content: flex-end;
+}
 .psel-tile-photo {
   position: absolute; inset: 0;
-  background: url('../img/scenes/classroom.jpg') center 20% / cover no-repeat;
+  background: url('../img/scenes/classroom.jpg') center / cover no-repeat;
 }
 .psel-tile-veil {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(6,4,2,.30) 0%, rgba(6,4,2,.90) 80%);
+  background: linear-gradient(180deg,
+    rgba(6,4,2,.06) 0%,
+    rgba(6,4,2,.04) 42%,
+    rgba(6,4,2,.44) 66%,
+    rgba(6,4,2,.90) 100%);
 }
 .psel-tile-body {
   position: relative;
@@ -2198,7 +2205,6 @@ button.shop-tab.active {
   .hero-grid { grid-template-columns: 1fr; }
   .hero-portrait-wrap, .hero-portrait-wrap img { width: 72px; height: 72px; }
   .psel-group-tiles { grid-template-columns: 1fr; }
-  .psel-group-tile { min-height: 148px; }
 }
 
 /* Sur viewport bas / mobile : permettre le scroll des écrans de sélection
