@@ -1200,10 +1200,21 @@ async function scenarioMobileSelect() {
   assert(step1.s1 && !step1.s2 && !step1.s3, 'étape 1 du stepper non isolée');
   assert(step1.overflow === 'auto',          'overflow-y devrait être auto sur mobile');
 
-  // Étape 1 → 2 (mode), puis 2 → 3 (héros : Harry sélectionné par défaut).
+  // Étape 1 → 2 (mode). L'étape Héros s'ouvre sur le choix du groupe.
   await page.evaluate(() => document.getElementById('psel-next-1').click());
   await page.waitForFunction(() =>
     getComputedStyle(document.querySelector('.psel-step[data-step="2"]')).display !== 'none');
+  const groupFilter = await page.evaluate(() => ({
+    pickerShown: getComputedStyle(document.getElementById('psel-group-picker')).display !== 'none',
+    listHidden:  getComputedStyle(document.getElementById('psel-group-list')).display === 'none',
+  }));
+  console.log('  player-select étape 2 (filtre groupe) :', groupFilter);
+  assert(groupFilter.pickerShown && groupFilter.listHidden, 'étape Héros doit s\'ouvrir sur le choix du groupe');
+
+  // Choisir le groupe « Héros du Film », puis valider (Harry pré-sélectionné).
+  await page.evaluate(() => document.getElementById('psel-tile-film').click());
+  await page.waitForFunction(() =>
+    getComputedStyle(document.getElementById('psel-group-list')).display !== 'none');
   await page.evaluate(() => document.getElementById('psel-next-2').click());
   await page.waitForFunction(() =>
     getComputedStyle(document.querySelector('.psel-step[data-step="3"]')).display !== 'none');

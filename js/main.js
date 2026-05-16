@@ -47,6 +47,8 @@ function pselGoStep(n) {
     crumb.classList.toggle('active', s === n);
     crumb.classList.toggle('done',   s <  n);
   });
+  // L'étape Héros s'ouvre toujours sur le choix du groupe
+  if (n === 2) pselShowGroupPicker();
   const meta = PSEL_STEPS[n];
   if (meta) {
     const t = document.getElementById('psel-title');
@@ -63,6 +65,32 @@ function pselGoStep(n) {
 // déjà franchie (ou de rester sur l'étape courante).
 function pselCrumbClick(n) {
   if (n <= pselStep) pselGoStep(n);
+}
+
+// Étape Héros : vue active (null = choix du groupe ; sinon 'film'|'astres').
+// La sélection est filtrée par groupe pour alléger l'écran.
+let pselGroupView = null;
+
+// Revient à l'écran de choix du groupe
+function pselShowGroupPicker() {
+  pselGroupView = null;
+  const picker = document.getElementById('psel-group-picker');
+  const list   = document.getElementById('psel-group-list');
+  if (picker) picker.style.display = 'block';
+  if (list)   list.style.display   = 'none';
+}
+
+// Ouvre la liste des héros d'un groupe ('film' | 'astres')
+function pselOpenGroup(group) {
+  pselGroupView = group;
+  const picker = document.getElementById('psel-group-picker');
+  const list   = document.getElementById('psel-group-list');
+  if (picker) picker.style.display = 'none';
+  if (list)   list.style.display   = 'block';
+  document.querySelectorAll('#psel-group-list .hero-section').forEach(sec => {
+    sec.style.display = (sec.dataset.group === group) ? 'block' : 'none';
+  });
+  refreshHeroSelectionUI();
 }
 
 // Bascule mode solo/duo
