@@ -289,7 +289,7 @@ const NPCS = [
   // et maternel (Sandrine a menti seize ans). Cf. .claude/plans/Manon.md.
   {
     id:    "manon",
-    name:  "Manon",
+    name:  "Manon Aubin",
     title: "L'inconnue du troisième étage",
     icon:  "🌙",
     portraitImg: "img/npc/manon.png",
@@ -299,7 +299,7 @@ const NPCS = [
     dialogues: {
       greeting: [
         "Ne fais pas de bruit. S'il te plaît. (Elle est tapie dans l'ombre d'une salle de classe vide, les genoux contre la poitrine.) Tu n'es pas un professeur. Tant mieux — eux, je les évite.",
-        "Je m'appelle Manon. Je vis dans ce château sans y être inscrite : je dors dans les salles vides, je mange ce que je trouve. Personne ne sait que je suis là. Personne ne doit savoir.",
+        "Je m'appelle Manon. Manon Aubin — le nom de ma mère ; c'est le seul que j'aie le droit de dire. Je vis dans ce château sans y être inscrite : je dors dans les salles vides, je mange ce que je trouve. Personne ne sait que je suis là. Personne ne doit savoir.",
         "Il y a deux mois, ma mère est morte. Sandrine. C'est elle qui m'a élevée — seule, loin d'ici — et qui m'a répété toute ma vie que mon père était tombé en héros à la guerre. En vidant sa maison, j'ai trouvé une photographie cousue dans la doublure d'une vieille malle : un homme qui me tenait, bébé, et qui ne souriait pas. Au dos, un seul mot. Un nom : Lupin.",
         "Ce nom, il vit. Ici, plus bas, à l'étage de la Défense. C'est mon père. (Sa voix se serre.) Ma mère m'a menti chaque jour pendant seize ans, et elle est partie avant que je puisse lui demander pourquoi, en face. Alors il me reste lui. Depuis des semaines je tourne dans ces couloirs sans oser descendre lui dire que j'existe encore. Tu veux bien m'écouter ? Ça fait si longtemps que je n'ai parlé à personne."
       ],
