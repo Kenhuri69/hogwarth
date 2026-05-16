@@ -99,7 +99,12 @@ chaque). Les points sont ordonnés par risque croissant.
   identique (mêmes arrondis).
 - **Vérification** : smoke test combats (dégâts, resist/weak) ; comparer les
   valeurs avant/après sur un combat scripté.
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Statut** : [x] proposé · [x] validé · [x] implémenté
+- **Note implémentation** : `SPELL_HANDLERS` est indexé par `spell.effect`
+  (ligne 339) — les littéraux `'lifesteal'`/`'curse'` valaient déjà
+  `spell.effect`. `_computeSpellDamage(spell, char, enemy)` retourne
+  `{ dmg, suffix }` ; appelé dans les 3 handlers (curse ignore `suffix`).
+  Calcul inchangé.
 
 ## P7 — battle-ui.js : fusionner les sélecteurs de cible
 
