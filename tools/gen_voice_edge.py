@@ -56,8 +56,9 @@ OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "audio", "voice", "_raw"
 VOICES = {
     # McGonagall : féminine claire, posée, autoritaire.
     "mcgonagall": dict(voice="fr-FR-DeniseNeural", rate="-7%", pitch="+0Hz"),
-    # Rogue : masculin grave, lent, presque chuchoté.
-    "rogue": dict(voice="fr-FR-HenriNeural", rate="-12%", pitch="-8Hz"),
+    # Rogue : masculin grave, lent, presque chuchoté. Voix multilingue
+    # au timbre sombre — lit le français nativement.
+    "rogue": dict(voice="de-DE-FlorianMultilingualNeural", rate="-12%", pitch="-8Hz"),
     # Flitwick : registre aigu, vif — pitch nettement remonté.
     "flitwick": dict(voice="fr-FR-HenriNeural", rate="+10%", pitch="+32Hz"),
     # Chourave : féminine chaleureuse, ronde, médium.
