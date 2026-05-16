@@ -177,6 +177,17 @@ const SPELLS = [
   { name:"Morsmordre",        icon:"💀",   desc:"Marque des Ténèbres (26 dégâts)",     cost:18, effect:"burn", element:"ténèbres", power:26 },
 ];
 
+// Catégorie d'un sort pour le filtre de la modale Sorts. Soutien et
+// utilitaire priment sur l'élément (ces sorts n'ont pas d'`element`) ;
+// sinon on retombe sur l'élément du sort.
+function spellCategory(spell) {
+  if (!spell) return 'utilitaire';
+  const e = spell.effect;
+  if (e === 'heal' || e === 'support_regen' || e === 'shield') return 'soutien';
+  if (e === 'disarm' || e === 'steal' || e === 'teleport')     return 'utilitaire';
+  return spell.element || 'utilitaire';
+}
+
 const ITEMS = [
   { id:"potion_s", name:"Potion de Soin", icon:"🧪", desc:"+15 PV", type:"consumable", effect:"heal", power:15, price:30 },
   { id:"potion_m", name:"Potion Magique", icon:"💜", desc:"+12 PM", type:"consumable", effect:"restore_sp", power:12, price:25 },

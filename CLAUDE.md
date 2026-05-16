@@ -548,7 +548,10 @@ En combat, les équipements sont grisés et non cliquables dans l'inventaire.
 
 ### Items spellbook (data.js)
 Les livres de sorts ont `type:"spellbook"` et un champ `spell` (nom exact dans SPELLS).
-Cliquer un livre hors combat enseigne le sort à **tout le groupe actif** et consomme le livre.
+Cliquer un livre hors combat ouvre `showLearnMenu()` : en solo le sort va à
+Harry, en duo un prompt Harry/Hermione choisit **un seul** apprenant
+(`learnSpellbook`/`_teachSpellToOne`). Le livre est consommé après
+apprentissage réussi. (`grantsSpell` d'équipement reste groupe entier.)
 
 | ID | Nom | Sort enseigné | Disponible |
 |----|-----|--------------|------------|
@@ -623,8 +626,16 @@ puis on appelle `recalculateStats()` pour reconstruire les stats effectives avec
 
 #### 3 vecteurs d'apprentissage de sorts
 1. **Level-up** : table ci-dessus, automatique
-2. **Livres de sorts** (`type:"spellbook"`) : cliquer dans l'inventaire → enseigne à tout le groupe actif
+2. **Livres de sorts** (`type:"spellbook"`) : cliquer dans l'inventaire → `showLearnMenu` → enseigne à **un** perso choisi (solo : Harry direct)
 3. **Équipement** (`grantsSpell`) : enseigne le sort de façon permanente à l'équipement (ex: Amulette → Reparo)
+
+#### Modale Sorts — filtre + aperçu (`inventory.js`)
+`openSpells`/`openBattleSpells` affichent en tête une barre de filtres
+par catégorie (`spellCategory()` dans `data.js` : élément du sort, ou
+`soutien`/`utilitaire`) ; chips masqués si le perso n'a aucun sort de la
+catégorie. Sous chaque sort, `spellEffectPreview()` (`battle-spells.js`)
+affiche l'effet chiffré pour le lanceur — soin via `healAmount()`,
+dégâts via `spellDamage()`, helpers purs partagés avec les handlers.
 
 ### Crit + Esquive (stats dérivées)
 `recalculateStats()` calcule les stats dérivées exposées sur chaque
