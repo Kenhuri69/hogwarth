@@ -272,11 +272,75 @@ const NPCS = [
         "Mes meilleurs amis m'ont accepté tel que j'étais. C'est la magie la plus puissante que j'aie connue — et la plus rare.",
         "Une fois par mois, je dois m'enfermer loin de tout ce que j'aime. Le pire détraqueur, parfois, c'est le calendrier.",
         "Il y a une bête en moi. Je passe ma vie à lui enseigner la patience. Certaines nuits, elle n'écoute pas.",
-        "On apprend à craindre les loups-garous bien avant d'en croiser un. Crois-moi : je sais exactement ce que tu vois en me regardant."
+        "On apprend à craindre les loups-garous bien avant d'en croiser un. Crois-moi : je sais exactement ce que tu vois en me regardant.",
+        "Le pire des sortilèges, ce n'est pas la morsure. C'est de regarder un berceau et de n'y voir qu'une condamnation. Je n'ai jamais trouvé le contre-sort à celui-là.",
+        "On peut écrire une lettre par mois pendant seize ans sans jamais en poster une seule. La lâcheté, vois-tu, est très organisée.",
+        "Quelque part vit une personne qui porte mon sang et mon malheur. Je prie pour qu'elle ne porte jamais mon nom — et je n'ai jamais rien tant regretté."
       ],
       questOffer:  "Affronte un Détraqueur, puis rapporte-moi un Chocolat aux Sorciers. Je t'enseignerai alors le sort du Patronus.",
       questActive: "As-tu trouvé un Détraqueur ? Et le chocolat ?",
       questReady:  "Tu reviens vivant — et avec le chocolat. Approche : voici le sort du Patronus."
+    }
+  },
+  // PNJ original : fille cachée de Lupin. Pseudo-quête en deux volets
+  // qui révèle son histoire et les raisons du secret paternel.
+  // Cf. .claude/plans/Manon.md.
+  {
+    id:    "manon",
+    name:  "Manon",
+    title: "L'inconnue du troisième étage",
+    icon:  "🌙",
+    // portraitImg: "img/npc/manon.png",  // à activer quand le PNG existe
+    placement: { floor: 3, anchor: "any" },
+    questsGiven:    ["manon_secret", "manon_pardon"],
+    questsTurnedIn: ["manon_secret", "manon_pardon"],
+    dialogues: {
+      greeting: [
+        "Ne fais pas de bruit. S'il te plaît. (Elle est tapie dans l'ombre d'une salle de classe vide, les genoux contre la poitrine.) Tu n'es pas un professeur. Tant mieux — eux, je les évite.",
+        "Je m'appelle Manon. Je vis dans ce château sans y être inscrite : je dors dans les salles vides, je mange ce que je trouve. Personne ne sait que je suis là. Personne ne doit savoir.",
+        "Je suis venue pour un homme. Un professeur, plus bas, à l'étage de la Défense. (Sa voix se serre.) C'est mon père. Il m'a fait disparaître avant que je sache marcher — et depuis des semaines je tourne dans ces couloirs sans oser descendre lui dire que j'existe encore. Tu veux bien m'écouter ? Ça fait si longtemps que je n'ai parlé à personne."
+      ],
+      idle: "(Elle n'est plus tapie dans l'ombre : elle se tient près de la fenêtre, le visage tourné vers la lumière.)",
+      // Répliques post-réconciliation (état `done` → idleRandom).
+      idleRandom: [
+        "On prend le thé, maintenant. Tous les quinze jours, dans sa classe. On ne sait pas encore quoi se dire, alors on parle des élèves, des créatures, de la pluie. C'est maladroit. C'est précieux.",
+        "Il a commencé à m'apprendre : la lune, la bête, comment lui parler au lieu de la combattre. Seize ans trop tard — mais il le fait.",
+        "J'ai gardé le premier carré de chocolat, celui que tu m'as rapporté. Je ne le mangerai jamais. Certaines choses, on les garde pour se souvenir d'avoir eu peur.",
+        "Les lettres, il me les a toutes données. Je les lis une par mois, le soir de la pleine lune — comme il les a écrites. C'est notre rendez-vous, désormais. Avec seize ans de retard.",
+        "Je porte enfin son nom. Lupin. Ça sonne encore étrange dans ma bouche — mais c'est le mien. On me l'avait volé, je l'ai repris.",
+        "On m'a cousu une écharpe jaune et noir. Je la porte même pour dormir. Tu trouves ça idiot ? Quand on a passé seize ans sans maison, on n'enlève pas la première qu'on vous donne.",
+        "Je ne dirai pas que tout est réparé : un père ne se rattrape pas comme on rattrape un train. Mais il est là, je suis là, et la lune se lève sur nous deux au lieu de nous séparer."
+      ]
+    },
+    dialoguesByQuest: {
+      manon_secret: {
+        questOffer: [
+          "Tu redescends vers les étages profonds, n'est-ce pas ? Alors fais quelque chose pour moi. Va jusqu'à la classe de Défense, l'étage en dessous. Regarde-le. Je veux seulement savoir qu'il est réel — que je n'ai pas remonté toute cette histoire pour un fantôme.",
+          "Tu le reconnaîtras sans peine : des cicatrices anciennes, un manteau trop usé, l'air de quelqu'un qui dort mal. Il s'appelle Lupin. Tu as sans doute entendu ce qu'il est — la pleine lune, la bête. On ne le dit qu'à voix basse.",
+          "Ce qu'on ne dit pas, c'est que ça se transmet. Pas la morsure : le sang. Moi, je ne me change pas en loup. Mais les nuits de pleine lune, quelque chose se réveille là-dedans (elle touche sa poitrine) et gratte pour sortir. J'ai grandi en me croyant un monstre, sans personne pour m'expliquer pourquoi. Va le voir. Reviens me dire qu'il existe."
+        ],
+        questActive: "Tu ne l'as pas encore trouvé ? La classe de Défense, étage quatre. (Elle remonte ses genoux.) Prends ton temps. J'ai attendu seize ans — je peux bien attendre que tu descendes un escalier.",
+        questReady: [
+          "Tu l'as vu. Je le lis sur ton visage. (Elle ferme les yeux un instant.) Alors c'est vrai. Il est là, à un étage de moi, à enseigner le courage à des enfants — pendant qu'il n'a jamais eu celui de me regarder.",
+          "Le pire ? Je ne lui en veux même pas d'avoir eu peur ; la peur, je connais. C'est d'en avoir fait du silence que je n'arrive pas à lui pardonner. Seize ans. Un mensonge à la place d'un père. J'ai pleuré un héros qui buvait son thé deux étages plus bas.",
+          "Merci. Reviens me voir — il me reste une chose à te demander. La dernière, je crois. Celle qui me fait le plus peur."
+        ]
+      },
+      manon_pardon: {
+        questOffer: [
+          "Voilà ce que je sais, maintenant que j'ai eu le temps d'y penser. Pourquoi il m'a cachée. (Elle compte sur ses doigts, lentement.) Un : son sang. Il était sûr de me condamner — et il avait raison, à moitié. Deux : le monde. Une enfant marquée « fille du loup-garou » ne trouve ni école, ni travail, ni amis ; le Ministère m'aurait inscrite sur un registre avant mes dix ans.",
+          "Trois — et celle-là, il ne l'a jamais dite à personne : pendant la guerre, l'enfant de Remus Lupin aurait été une arme. Un otage contre lui, contre l'Ordre. Me faire disparaître, c'était peut-être la seule façon de me garder en vie. (Un silence.) Je me répète tout ça chaque nuit. Certaines nuits, j'y crois presque.",
+          "Mais il me manque une pièce, et je ne l'aurai qu'en l'affrontant. Aide-moi une dernière fois. On raconte qu'il offre du chocolat à tous les élèves qui ont eu peur — à tous, sans exception. Va lui en demander, comme une élève ordinaire. Rapporte-m'en un carré. Je veux tenir dans ma main quelque chose qui vient de lui. Même s'il ignore que c'est pour sa fille."
+        ],
+        questActive: "Tu l'as, ce chocolat ? (Elle sourit faiblement.) C'est ridicule, je sais. Toute cette route, ces seize ans — et je remets mon courage à un carré de chocolat. Mais il faut bien commencer petit.",
+        questReady: [
+          "(Elle prend le carré de chocolat, le serre, ne le mange pas.) J'y suis allée. Tout de suite. Je ne me suis pas laissé réfléchir, sinon je n'y serais jamais allée. Je me suis plantée dans l'encadrement de sa porte et j'ai dit : « Bonjour. Je suis Manon. »",
+          "Il a laissé tomber sa tasse. Je crois qu'il m'a reconnue avant même mon nom — à mes yeux, peut-être : les nuits de lune, ils virent à l'or. Comme les siens. Il n'a pas fait semblant, il n'a pas demandé « Manon qui ? ». Il a juste dit, très bas : « Tu as ses cheveux. Et mon malheur. »",
+          "Puis il a ouvert un tiroir de son bureau. Plein de lettres. Des dizaines, datées, cachetées — jamais envoyées. Une par mois, depuis ma naissance. « Je les écrivais les soirs de pleine lune, m'a-t-il dit. Quand la bête me rappelait pourquoi je n'avais pas le droit de t'approcher. Te savoir loin et vivante, c'était tout ce que je pouvais t'offrir. »",
+          "Je lui en veux encore. Longtemps, sans doute. Mais il ne m'a pas abandonnée par indifférence : il s'est cru un poison, et il a confondu la fuite avec de la tendresse. Ce n'est pas un pardon. C'est un début.",
+          "(Elle hésite, puis sourit pour la première fois.) Et il y a ceci. Lupin a tenu à ce que je passe enfin sous le Choixpeau — chez la Directrice, sur un tabouret bancal, seize ans trop tard. Le chapeau a longtemps hésité : il voyait Gryffondor, le sang de mon père, le courage. Puis il a soufflé : « Non — toi, il te faut une maison qui ne te demandera jamais de mériter d'y entrer. » Et il a crié POUFSOUFFLE. La maison de ceux qu'on accueille sans condition. Pour la première fois, j'ai une place. (Elle te tend la main.) Merci. Sans toi, je serais encore tapie dans le noir à compter les pas que je n'osais pas faire."
+        ]
+      }
     }
   },
   {
