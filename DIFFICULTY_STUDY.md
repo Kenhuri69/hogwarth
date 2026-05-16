@@ -243,7 +243,37 @@ farmés) maintient le Duo **confortable (88-100 %) jusqu'à l'étage 30**.
 Forge et Bibliothèque valent à eux deux ~+10-15 pts de win rate dans le
 deep endgame — un troisième axe de farming qui complète niveaux + artefacts.
 
-### 8.5 Verdict endgame
+### 8.6 Sets de Maison + set Ténèbres
+
+Les deux sets sont modélisés (`--house-set=NAME`, `--tenebres-set`) :
+
+- **Set de Maison 4/4** (`HOUSE_SETS`, state.js) — bonus cumulés 2+3+4
+  pièces. Ex. Gryffondor : +7 ATK, +22 % crit ; Serpentard : +7 MAG,
+  +4 LCK ; Serdaigle : +7 MAG ; Poufsouffle : +7 DEF.
+- **Set Ténèbres 3/3** (`TENEBRES_SET`) — +15 % crit, +10 % esquive.
+
+⚠️ **Les deux sets ne peuvent pas être portés en entier simultanément** :
+chaque set de Maison occupe un slot `cloak` **et** un slot `amulet`, or le
+set Ténèbres réclame `cloak` + `amulet` + `trinket`. En pratique on
+complète **un set entier + l'autre partiellement** (set partiel < 2 pièces
+→ aucun bonus de set). Le build réaliste est donc « Maison 4/4 » **ou**
+« Ténèbres 3/3 », pas les deux.
+
+Impact mesuré (Duo, endgame, +10 niveaux, kit Forge 5 + Biblio 3) :
+
+| Étage | Sans set | Maison 4/4 | Ténèbres 3/3 |
+|------:|---------:|-----------:|-------------:|
+| 25    | 84 %     | 79 %       | 87 % |
+| 27    | 72 %     | 74 %       | 83 % |
+| 29    | 67 %     | 71 %       | 74 % |
+| 30    | 65 %     | 68 %       | 73 % |
+
+Apport modéré (~+5-10 pts). Le crit plafonnant à 40 %, empiler les bonus
+de crit (Gryffondor + Ténèbres) a un rendement décroissant — d'où l'écart
+faible entre les deux sets. Le set Ténèbres ressort légèrement devant pour
+un build déjà très crit.
+
+### 8.7 Verdict endgame
 
 - ✅ La Boucle Ténébreuse est un **gate infini farmable** sur trois axes
   (niveaux, artefacts, Forge/Bibliothèque) — cohérent avec le design.

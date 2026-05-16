@@ -5630,6 +5630,7 @@ async function scenarioGuardAndFerula() {
   // T2 : ennemi attaque Harry (guardTurns[0]=1 actif) → mitigation 50 %
   const tMitig = await page.evaluate(() => {
     // Forcer le ciblage sur Harry et un coup déterministe
+    enemyGroup.length = 1;       // startBattle a pu créer un groupe : isole le mannequin
     party[0].hp = 50; party[0].hpMax = 50; party[0].def = 0;
     party[1].hp = 0;             // Hermione KO pour forcer la cible Harry
     party[0].dodgeChance = 0;    // pas d'esquive

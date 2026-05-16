@@ -229,6 +229,40 @@ function applyEquipmentBuff(c, floor) {
   c._dodgeBonus = b.dodge || 0;
 }
 
+// ── Bonus de set (state.js — HOUSE_SETS / inventory.js — recalculateStats) ──
+// Bonus cumulés 2+3+4 pièces d'un set de Maison 4/4. Valeurs miroir de
+// HOUSE_SETS (state.js). int/end n'influent pas le combat simulé ; on les
+// applique quand même pour cohérence.
+const HOUSE_SET_BONUS = {
+  gryffondor:  { atk: 7, critChance: 22 },               // 1+2+4 atk, 3+7+12 crit
+  serpentard:  { mag: 7, lck: 4 },                       // 1+2+4 mag, 1+1+2 lck
+  serdaigle:   { mag: 7, int: 4 },                       // 1+2+4 mag, 1+1+2 int
+  poufsouffle: { def: 7, end: 4 },                       // 1+2+4 def, 1+1+2 end
+};
+// Applique le set de Maison choisi (4/4) et/ou le set Ténèbres (3/3).
+// ⚠️ Les deux sets se disputent les slots cloak + amulet : en pratique on
+// complète un set entier + l'autre partiellement. Activer les deux flags
+// donne donc une borne haute (cf. DIFFICULTY_STUDY.md §8.6).
+function applySetBonuses(c, cfg) {
+  c._setCrit = 0;
+  c._setDodge = 0;
+  const hs = cfg.houseSet && HOUSE_SET_BONUS[cfg.houseSet];
+  if (hs) {
+    c.atk += hs.atk || 0;
+    c.def += hs.def || 0;
+    c.mag += hs.mag || 0;
+    c.lck += hs.lck || 0;
+    c.int  = (c.int || 0) + (hs.int || 0);
+    c.end  = (c.end || 0) + (hs.end || 0);
+    c._setCrit += hs.critChance || 0;
+  }
+  // Set Ténèbres 3/3 : inventory.js — recalculateStats (≥2 : +10/+5 ; ≥3 : +5/+5).
+  if (cfg.tenebresSet) {
+    c._setCrit  += 15;
+    c._setDodge += 10;
+  }
+}
+
 // ── Constantes simulation ───────────────────────────────────
 // 1-12 par défaut ; remplacé par 11..maxFloor en mode --endgame (après ARGS).
 let FLOORS = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -243,7 +277,8 @@ function parseArgs(argv) {
                 build: 'balanced', mode: 'single',
                 useQuests: true, useEquipment: true, usePotions: true,
                 kills: 0, bonusLevels: 0, artifacts: false,
-                endgame: false, maxFloor: 40, forge: 0, library: 0 };
+                endgame: false, maxFloor: 40, forge: 0, library: 0,
+                houseSet: null, tenebresSet: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
@@ -254,6 +289,7 @@ function parseArgs(argv) {
     if (a === '--pessimistic')          { out.useQuests = false; out.useEquipment = false; out.usePotions = false; continue; }
     if (a === '--artifacts')            { out.artifacts = true; continue; }
     if (a === '--endgame')              { out.endgame = true; continue; }
+    if (a === '--tenebres-set')         { out.tenebresSet = true; continue; }
     if (!a.includes('=')) {
       // Compat : `node sim-difficulty.js 800` → nSims positionnel
       const n = parseInt(a, 10);
@@ -270,6 +306,7 @@ function parseArgs(argv) {
     else if (k === 'max-floor')    out.maxFloor = parseInt(v, 10) || 40;
     else if (k === 'forge')        out.forge   = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
     else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
+    else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
   }
   return out;
 }
@@ -309,6 +346,8 @@ Options:
   --max-floor=N           Étage max en mode --endgame (def 40)
   --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
   --library=N             Niveau de Bibliothèque (0-3) sur chaque sort (power/cost)
+  --house-set=NAME        Set de Maison 4/4 : gryffondor|serpentard|serdaigle|poufsouffle
+  --tenebres-set          Set Ténèbres 3/3 (+15 crit, +10 esquive)
   --compare               Lance baseline ET proposition (hp×1.5 xp×1.3 stats=3 balanced), tableau comparatif
 
 Exemples:
@@ -515,8 +554,10 @@ function createHero(key, level, cfg, floor) {
   if (cfg.usePotions && typeof floor === 'number') {
     c.potionStock = Math.min(8, 2 + Math.floor(floor / 2));
   }
-  c.critChance    = Math.max(5, Math.min(40, 5 + c.lck * 0.5 + (c._critBonus  || 0)));
-  c.dodgeChance   = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0)));
+  // Bonus de set (Maison 4/4 + Ténèbres 3/3) — après l'équipement.
+  applySetBonuses(c, cfg);
+  c.critChance    = Math.max(5, Math.min(40, 5 + c.lck * 0.5 + (c._critBonus  || 0) + (c._setCrit  || 0)));
+  c.dodgeChance   = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0) + (c._setDodge || 0)));
   c.critMultiplier = 1.5;
   c.level = level;
   // Bibliothèque interdite : niveau d'upgrade appliqué à tous les sorts.
