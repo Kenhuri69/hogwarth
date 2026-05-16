@@ -4253,6 +4253,14 @@ async function scenarioCanvasSwipe() {
   assert(exposed.dispatch, '_dispatchCanvasSwipe absent');
   assert(exposed.blocked,  '_isCanvasSwipeBlocked absent');
 
+  // 1bis) Hors combat et sans overlay couvrant, le swipe NE doit PAS
+  //       être bloqué. Régression : `#floor-transition` est en permanence
+  //       `display:flex` (visibilité via opacity/pointer-events) — un test
+  //       sur `display` seul le croyait couvrant et bloquait tout swipe.
+  const idleBlocked = await page.evaluate(() => window._isCanvasSwipeBlocked());
+  assert(!idleBlocked,
+    '_isCanvasSwipeBlocked doit être faux en exploration normale');
+
   // 2) Mapping rotation : swipe horizontal → turnLeft / turnRight,
   //    position inchangée.
   const rot = await page.evaluate(() => {
@@ -6668,11 +6676,36 @@ async function scenarioBrewing() {
   assert(t6.herbsLeft === 0,        'un mélange raté consomme quand même les herbes');
   assert(t6.recipesUnchanged,       'un mélange invalide n\'apprend aucune recette');
 
+  // T7 : besace consultable via l'onglet de l'inventaire — accessible
+  //      même sans chaudron débloqué.
+  const t7 = await page.evaluate(() => {
+    player.herbs = { herbe_armoise: 3, herbe_aconit: 1 };
+    openInventory();
+    const tabsVisible = getComputedStyle(document.getElementById('inv-tabs')).display !== 'none';
+    switchInvTab('besace');
+    const pane = document.getElementById('inv-pane-besace');
+    const besaceShown = getComputedStyle(pane).display !== 'none';
+    const sacHidden   = getComputedStyle(document.getElementById('inv-pane-sac')).display === 'none';
+    const tiles = pane.querySelectorAll('.brew-tile').length;
+    const hasArmoise = pane.textContent.includes('Armoise');
+    switchInvTab('sac');
+    const backToSac = getComputedStyle(document.getElementById('inv-pane-sac')).display !== 'none';
+    closeModal('inventory-modal');
+    return { tabsVisible, besaceShown, sacHidden, tiles, hasArmoise, backToSac };
+  });
+  console.log('  T7 besace inventaire →', t7);
+  assert(t7.tabsVisible,   'la barre d\'onglets de l\'inventaire doit être visible');
+  assert(t7.besaceShown,   'le pane besace doit s\'afficher sur l\'onglet Besace');
+  assert(t7.sacHidden,     'le pane sac doit être masqué sur l\'onglet Besace');
+  assert(t7.tiles === 2,   'la besace doit lister les 2 herbes possédées');
+  assert(t7.hasArmoise,    'la besace doit nommer l\'Armoise');
+  assert(t7.backToSac,     'le retour sur l\'onglet Sac doit ré-afficher le sac');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Concoction OK (besace + verrou + déverrouillage + brassage + découverte)');
+  console.log('  ✅ Concoction OK (besace + verrou + déverrouillage + brassage + découverte + onglet inventaire)');
   await browser.close();
 }
 
