@@ -82,6 +82,10 @@ Object.assign(AudioSystem, {
     abyss:   'audio/ambient_abyss.ogg',
   },
 
+  // ── Sample du thème de menu (phase d'intro) ───────────────────
+  // Absent/undefined → synthèse procédurale (_playMenuTheme).
+  _MENU_SAMPLE: 'audio/menu_theme.ogg',
+
   // ── Registre difficulté → fichier OGG de combat ───────────────
   // Mêmes règles que _ZONE_SAMPLES : entrée absente → procédural.
   // Les clés sont préfixées 'combat_' pour cohabiter dans le même
@@ -451,7 +455,22 @@ Object.assign(AudioSystem, {
     if (this.isMuted) return;   // restera muet jusqu'au toggleMute
     this.init();
     this.musicPlaying = true;
-    this._playMenuTheme();
+
+    // Sample OGG si disponible, sinon synthèse procédurale (fallback).
+    const url = this._MENU_SAMPLE;
+    if (!url) { this._playMenuTheme(); return; }
+    this._loadSample('menu', url)
+      .then(() => {
+        if (this.musicPlaying && this.inMenu && !this.inCombat) {
+          this._playSampleLoop('menu', () => this.inMenu && !this.inCombat);
+        }
+      })
+      .catch(err => {
+        console.warn('[audio] sample "menu" unavailable, fallback to procedural:', err && err.message);
+        if (this.musicPlaying && this.inMenu && !this.inCombat) {
+          this._playMenuTheme();
+        }
+      });
   },
 
   _playMenuTheme() {

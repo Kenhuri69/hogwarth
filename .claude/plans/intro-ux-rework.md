@@ -92,10 +92,61 @@ Encodage (Phase B) : `ffmpeg -i src.mp3 -ac 1 -ar 22050 -c:a libvorbis -q:a 3 au
 
 - Régénération des OGG `dumbledore_intro_*` existants.
 - Localisation (FR uniquement).
-- Thème de menu en sample OGG (procédural suffit ; swap possible plus tard
-  comme les zones ambiantes).
 
-## 7. Journal
+## 7. Musique d'intro à l'aventure — prompt de génération
+
+Le thème de menu est aujourd'hui **procédural** (`audio-music.js —
+_playMenuTheme`). Pour le remplacer par un vrai sample, générer une piste
+avec un outil de génération musicale (Suno, Udio, Gemini Lyria, ElevenLabs
+Music…) à partir du prompt ci-dessous, puis partager le fichier dans la
+conversation pour encodage + intégration (`audio/menu_theme.ogg`, le
+procédural restant en fallback).
+
+### Prompt principal (EN — à coller dans le générateur)
+
+> Instrumental orchestral theme for the main menu of a magical fantasy RPG
+> set in an old wizarding-school castle. Warm, wondrous and inviting, with a
+> gentle undercurrent of mystery — the feeling of a great adventure about to
+> begin at twilight. A lilting 3/4 waltz in a major key, around 76 BPM.
+> Sparkling celesta and glockenspiel float over soft harp arpeggios; a tender
+> legato string section carries a simple, hopeful melody, answered in
+> call-and-response by solo clarinet and flute. Warm cello and double bass
+> hold the harmony underneath. Intimate chamber-orchestra scale — no drums,
+> no vocals, no brass fanfare. Soft, even dynamics so a narrator's voice can
+> sit on top. Enchanted, tender, slightly nostalgic. Seamless loop with no
+> hard ending and no big climax.
+
+### Tags de style (champ court type Suno / Udio)
+
+`orchestral fantasy score, magical, whimsical waltz, celesta, harp, strings,
+clarinet, cinematic, instrumental, gentle, loopable`
+
+### À éviter (negative prompt)
+
+`vocals, lyrics, drums, percussion, heavy brass, epic climax, key-change
+ending, fade-out, sound effects`
+
+> ⚠️ Composition **originale** : ne pas reproduire « Hedwig's Theme » ni
+> aucune musique existante de la saga — seulement le même esprit
+> (émerveillement, celesta, valse féérique).
+
+### Réglages techniques cibles
+
+| Paramètre | Cible |
+|-----------|-------|
+| Format    | instrumental uniquement |
+| Tempo     | ~76 BPM, mesure 3/4 |
+| Tonalité  | majeur lumineux (Do majeur, couleurs passagères en La mineur) |
+| Durée     | 40-60 s, **bouclable sans couture** (dernière mesure qui repart sur la première — pas de tonique finale tenue ni de ralenti) |
+| Dynamique | douce et régulière (la voix narrative passe par-dessus) |
+| Export    | WAV ou MP3 haute qualité → ré-encodé ensuite en OGG |
+
+Une fois le fichier validé : `ffmpeg -i src.wav -ac 1 -ar 44100 -c:a libvorbis
+-q:a 4 audio/menu_theme.ogg` (cible ≤ 250 KB), puis bascule dans
+`playMenuMusic()` — sample si chargé, sinon `_playMenuTheme()` procédural en
+fallback (même schéma que le plan archivé `audio-intro-sample.md`).
+
+## 8. Journal
 
 | Date | Étape | Notes |
 |------|-------|-------|
@@ -104,3 +155,7 @@ Encodage (Phase B) : `ffmpeg -i src.mp3 -ac 1 -ar 22050 -c:a libvorbis -q:a 3 au
 | 2026-05-16 | Phase A livrée | 5 OGG `narrator_*` générés (ElevenLabs « My Dumbledore ») et encodés mono 22 kHz, fade-out 300 ms, ≤ 50 KB chacun. Sources dans `audio/voice/_raw/`. |
 | 2026-05-16 | Retour utilisateur | Fil d'Ariane libellé (desktop) / pastilles à icône (mobile) en remplacement des points ; scène de classe (`img/scenes/classroom.jpg`) en fond assombri de l'écran de sélection ; héros scindés en 2 regroupements — « Les Héros du Film » (Harry, Hermione) et « Le Cercle des Astres » (6 personnages). Smoke vert. |
 | 2026-05-16 | Icônes PNG | Remplacement des emoji par 5 PNG dorés générés via `tools/gen_intro_icons.py` : 3 icônes de fil d'Ariane (Mode/Héros/Difficulté) + 2 emblèmes de groupe (éclair « Héros du Film », lune « Cercle des Astres »). En-têtes de groupe passés en doré vif (`var(--gold)`) pour les rendre bien visibles. Smoke vert. |
+| 2026-05-16 | Filtre par groupe | L'étape Héros s'ouvre désormais sur un choix de groupe (2 tuiles) au lieu d'afficher les 8 héros d'un coup. Tuile « Héros du Film » en texte seul (en attente de personnages + illustration), tuile « Cercle des Astres » illustrée par `img/scenes/classroom.jpg`. Cliquer une tuile filtre la grille sur ce groupe ; lien « Choisir un autre groupe » pour revenir. `pselOpenGroup`/`pselShowGroupPicker` dans `main.js`. Smoke mis à jour (navigation via `psel-tile-film`). Vert. |
+| 2026-05-16 | Musique au 1er geste | `_armMenuAudio` (`save-ui.js`) : écouteurs `pointerdown`/`keydown`/`touchstart` en capture qui lancent `playMenuMusic()` au tout premier geste du joueur, y compris sur l'écran titre. La politique d'autoplay des navigateurs interdit le son avant toute interaction — c'est donc le démarrage le plus précoce possible. L'appel dans `enterStartHub` devient un filet de sécurité idempotent. |
+| 2026-05-16 | Prompt musique d'intro | Prompt de génération du thème de menu rédigé (§7) — valse féérique 3/4, ~76 BPM, celesta/harpe/cordes, bouclable. En attente du fichier audio pour encodage `audio/menu_theme.ogg` + intégration (fallback procédural conservé). |
+| 2026-05-16 | Sample musique d'intro | Fichier « Lanterns in the Keep » fourni, encodé `audio/menu_theme.ogg` (mono 44,1 kHz, OGG q4, 282 KB, 30,8 s). `playMenuMusic()` charge le sample via `_loadSample('menu', …)` + boucle crossfadée `_playSampleLoop` ; `_playMenuTheme()` procédural conservé en fallback sur erreur. Vérifié au navigateur (HTTP) : buffer décodé, loop active, AudioContext running. Smoke vert. |

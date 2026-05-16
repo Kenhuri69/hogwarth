@@ -146,8 +146,35 @@
 
     <!-- ÉTAPE 2 — Sélection des héros (2 regroupements) -->
     <div class="psel-step" data-step="2" style="display:none">
+
+      <!-- Vue A — choix du groupe (filtre pour alléger la sélection) -->
+      <div id="psel-group-picker">
+        <div class="psel-group-tiles">
+          <button type="button" id="psel-tile-film" class="psel-group-tile psel-tile-text" onclick="pselOpenGroup('film')">
+            <img class="psel-tile-emblem" src="img/icons/crest_film.png" alt="">
+            <span class="psel-tile-name">Les Héros du Film</span>
+            <span class="psel-tile-note">Harry &amp; Hermione — d'autres héros et une illustration arriveront bientôt.</span>
+          </button>
+          <button type="button" id="psel-tile-astres" class="psel-group-tile psel-tile-image" onclick="pselOpenGroup('astres')">
+            <span class="psel-tile-photo"></span>
+            <span class="psel-tile-veil"></span>
+            <span class="psel-tile-body">
+              <img class="psel-tile-emblem" src="img/icons/crest_astres.png" alt="">
+              <span class="psel-tile-name">Le Cercle des Astres</span>
+              <span class="psel-tile-note">6 héros originaux de Poudlard.</span>
+            </span>
+          </button>
+        </div>
+        <div class="psel-nav">
+          <button class="psel-back" onclick="pselGoStep(1)">◂ Retour</button>
+        </div>
+      </div>
+
+      <!-- Vue B — héros du groupe sélectionné -->
+      <div id="psel-group-list" style="display:none">
+        <button type="button" class="psel-group-back" onclick="pselShowGroupPicker()">‹ Choisir un autre groupe</button>
     <!-- Groupe 1 — héros canon du film -->
-    <div class="hero-section">
+    <div class="hero-section" data-group="film" style="display:none">
     <div class="hero-section-title"><img class="hero-section-emblem" src="img/icons/crest_film.png" alt="">Les Héros du Film</div>
     <div class="hero-grid">
       <button class="hero-card" data-key="harry" onclick="toggleHero('harry')">
@@ -171,7 +198,7 @@
     </div>
     </div>
     <!-- Groupe 2 — personnages originaux -->
-    <div class="hero-section">
+    <div class="hero-section" data-group="astres" style="display:none">
     <div class="hero-section-title"><img class="hero-section-emblem" src="img/icons/crest_astres.png" alt="">Le Cercle des Astres</div>
     <div class="hero-grid">
       <button class="hero-card" data-key="celeste" onclick="toggleHero('celeste')">
@@ -230,10 +257,11 @@
       </button>
     </div>
     </div>
-      <div id="hero-hint" class="hero-hint">Sélectionnez 1 héros pour commencer</div>
-      <div class="psel-nav">
-        <button class="psel-back" onclick="pselGoStep(1)">◂ Retour</button>
-        <button id="psel-next-2" class="start-btn" onclick="pselGoStep(3)" disabled>Continuer ▸</button>
+        <div id="hero-hint" class="hero-hint">Sélectionnez 1 héros pour commencer</div>
+        <div class="psel-nav">
+          <button class="psel-back" onclick="pselShowGroupPicker()">◂ Retour</button>
+          <button id="psel-next-2" class="start-btn" onclick="pselGoStep(3)" disabled>Continuer ▸</button>
+        </div>
       </div>
     </div>
 
