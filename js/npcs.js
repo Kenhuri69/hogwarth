@@ -283,8 +283,8 @@ const NPCS = [
     }
   },
   // PNJ original : fille cachée de Lupin. Pseudo-quête en deux volets
-  // qui révèle son histoire et les raisons du secret paternel.
-  // Cf. .claude/plans/Manon.md.
+  // qui révèle son histoire et le double secret — paternel (Remus a fui)
+  // et maternel (Sandrine a menti seize ans). Cf. .claude/plans/Manon.md.
   {
     id:    "manon",
     name:  "Manon",
@@ -298,7 +298,8 @@ const NPCS = [
       greeting: [
         "Ne fais pas de bruit. S'il te plaît. (Elle est tapie dans l'ombre d'une salle de classe vide, les genoux contre la poitrine.) Tu n'es pas un professeur. Tant mieux — eux, je les évite.",
         "Je m'appelle Manon. Je vis dans ce château sans y être inscrite : je dors dans les salles vides, je mange ce que je trouve. Personne ne sait que je suis là. Personne ne doit savoir.",
-        "Je suis venue pour un homme. Un professeur, plus bas, à l'étage de la Défense. (Sa voix se serre.) C'est mon père. Il m'a fait disparaître avant que je sache marcher — et depuis des semaines je tourne dans ces couloirs sans oser descendre lui dire que j'existe encore. Tu veux bien m'écouter ? Ça fait si longtemps que je n'ai parlé à personne."
+        "Il y a deux mois, ma mère est morte. Sandrine. C'est elle qui m'a élevée — seule, loin d'ici — et qui m'a répété toute ma vie que mon père était tombé en héros à la guerre. En vidant sa maison, j'ai trouvé une photographie cousue dans la doublure d'une vieille malle : un homme qui me tenait, bébé, et qui ne souriait pas. Au dos, un seul mot. Un nom : Lupin.",
+        "Ce nom, il vit. Ici, plus bas, à l'étage de la Défense. C'est mon père. (Sa voix se serre.) Ma mère m'a menti chaque jour pendant seize ans, et elle est partie avant que je puisse lui demander pourquoi, en face. Alors il me reste lui. Depuis des semaines je tourne dans ces couloirs sans oser descendre lui dire que j'existe encore. Tu veux bien m'écouter ? Ça fait si longtemps que je n'ai parlé à personne."
       ],
       idle: "(Elle n'est plus tapie dans l'ombre : elle se tient près de la fenêtre, le visage tourné vers la lumière.)",
       // Répliques post-réconciliation (état `done` → idleRandom).
@@ -309,7 +310,9 @@ const NPCS = [
         "Les lettres, il me les a toutes données. Je les lis une par mois, le soir de la pleine lune — comme il les a écrites. C'est notre rendez-vous, désormais. Avec seize ans de retard.",
         "Je porte enfin son nom. Lupin. Ça sonne encore étrange dans ma bouche — mais c'est le mien. On me l'avait volé, je l'ai repris.",
         "On m'a cousu une écharpe jaune et noir. Je la porte même pour dormir. Tu trouves ça idiot ? Quand on a passé seize ans sans maison, on n'enlève pas la première qu'on vous donne.",
-        "Je ne dirai pas que tout est réparé : un père ne se rattrape pas comme on rattrape un train. Mais il est là, je suis là, et la lune se lève sur nous deux au lieu de nous séparer."
+        "Je ne dirai pas que tout est réparé : un père ne se rattrape pas comme on rattrape un train. Mais il est là, je suis là, et la lune se lève sur nous deux au lieu de nous séparer.",
+        "La photographie, je ne la cache plus : elle est posée près de ma fenêtre. Mes deux parents tiennent dans ce petit cadre. L'un boit le thé deux étages plus bas ; l'autre, je ne peux plus que la regarder.",
+        "Je n'en veux plus à ma mère. Je ne lui ai pas pardonné — on ne pardonne pas à une tombe. Mais j'ai compris. Mentir seize ans, c'était son courage et sa lâcheté mêlés : se perdre pour me garder. Sa dernière ruse aura été de me rendre à mon père sans jamais avoir à dire tout haut « j'ai menti »."
       ]
     },
     dialoguesByQuest: {
@@ -322,7 +325,7 @@ const NPCS = [
         questActive: "Tu ne l'as pas encore trouvé ? La classe de Défense, étage quatre. (Elle remonte ses genoux.) Prends ton temps. J'ai attendu seize ans — je peux bien attendre que tu descendes un escalier.",
         questReady: [
           "Tu l'as vu. Je le lis sur ton visage. (Elle ferme les yeux un instant.) Alors c'est vrai. Il est là, à un étage de moi, à enseigner le courage à des enfants — pendant qu'il n'a jamais eu celui de me regarder.",
-          "Le pire ? Je ne lui en veux même pas d'avoir eu peur ; la peur, je connais. C'est d'en avoir fait du silence que je n'arrive pas à lui pardonner. Seize ans. Un mensonge à la place d'un père. J'ai pleuré un héros qui buvait son thé deux étages plus bas.",
+          "Le pire ? Je ne lui en veux même pas d'avoir eu peur ; la peur, je connais. Et le mensonge — « ton père est mort en héros » — ce n'est même pas lui qui l'a prononcé. C'est ma mère. Chaque matin, pendant seize ans. Lui a fui une seule fois ; elle, elle a menti à chaque petit-déjeuner. Et elle est morte avant que je puisse lui hurler pourquoi. J'ai pleuré un héros imaginaire qui buvait son thé deux étages plus bas.",
           "Merci. Reviens me voir — il me reste une chose à te demander. La dernière, je crois. Celle qui me fait le plus peur."
         ]
       },
@@ -337,7 +340,8 @@ const NPCS = [
           "(Elle prend le carré de chocolat, le serre, ne le mange pas.) J'y suis allée. Tout de suite. Je ne me suis pas laissé réfléchir, sinon je n'y serais jamais allée. Je me suis plantée dans l'encadrement de sa porte et j'ai dit : « Bonjour. Je suis Manon. »",
           "Il a laissé tomber sa tasse. Je crois qu'il m'a reconnue avant même mon nom — à mes yeux, peut-être : les nuits de lune, ils virent à l'or. Comme les siens. Il n'a pas fait semblant, il n'a pas demandé « Manon qui ? ». Il a juste dit, très bas : « Tu as ses cheveux. Et mon malheur. »",
           "Puis il a ouvert un tiroir de son bureau. Plein de lettres. Des dizaines, datées, cachetées — jamais envoyées. Une par mois, depuis ma naissance. « Je les écrivais les soirs de pleine lune, m'a-t-il dit. Quand la bête me rappelait pourquoi je n'avais pas le droit de t'approcher. Te savoir loin et vivante, c'était tout ce que je pouvais t'offrir. »",
-          "Je lui en veux encore. Longtemps, sans doute. Mais il ne m'a pas abandonnée par indifférence : il s'est cru un poison, et il a confondu la fuite avec de la tendresse. Ce n'est pas un pardon. C'est un début.",
+          "Et sous les siennes, il en gardait une autre — la seule qu'il n'avait pas écrite. Elle venait de ma mère. Sandrine la lui avait envoyée il y a deux mois, en sachant qu'elle ne verrait pas l'hiver : « Elle viendra te trouver. Je n'ai jamais su défaire mon mensonge — alors j'ai cousu la vérité dans sa malle, pour qu'elle bute dessus quand je ne serai plus là. Ne la fais pas attendre comme tu m'as fait attendre, moi. » Cette photographie que j'ai trouvée… ce n'était pas un oubli. C'était ma mère qui me parlait une dernière fois, faute d'avoir jamais osé le faire en face.",
+          "Je leur en veux encore. Aux deux, longtemps sans doute. Mais aucun ne m'a abandonnée par indifférence. Mon père n'a jamais posté ses lettres ; ma mère n'a jamais dédit son mensonge ; et moi, je suis restée des semaines en haut de cet escalier sans oser le descendre. Nous sommes une famille de gens qui aiment trop pour oser le dernier pas. Au moins l'un de nous l'aura fait. Ce n'est pas un pardon — c'est un début.",
           "(Elle hésite, puis sourit pour la première fois.) Et il y a ceci. Lupin a tenu à ce que je passe enfin sous le Choixpeau — chez la Directrice, sur un tabouret bancal, seize ans trop tard. Le chapeau a longtemps hésité : il voyait Gryffondor, le sang de mon père, le courage. Puis il a soufflé : « Non — toi, il te faut une maison qui ne te demandera jamais de mériter d'y entrer. » Et il a crié POUFSOUFFLE. La maison de ceux qu'on accueille sans condition. Pour la première fois, j'ai une place. (Elle te tend la main.) Merci. Sans toi, je serais encore tapie dans le noir à compter les pas que je n'osais pas faire."
         ]
       }

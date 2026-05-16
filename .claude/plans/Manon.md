@@ -49,18 +49,38 @@ seule. Le monde sorcier n'a pas de case pour elle : ni louve, ni
 sorcière ordinaire. Élevée sans personne pour lui expliquer ce qu'elle
 portait, elle a grandi en se croyant un monstre.
 
-## 5. Histoire & relation avec Lupin
+## 5. Histoire — le double secret
 
-Remus aime brièvement une sorcière avant/pendant la guerre. À l'annonce
-de la grossesse, la terreur l'emporte : sa malédiction va souiller
-l'enfant. Via Dumbledore, il fait élever Manon sous un autre nom, loin,
-avec un mensonge — *« ton père est mort en héros à la guerre »*. Il
-croit que la distance est le seul cadeau qu'il puisse offrir.
+Remus aime brièvement **Sandrine**, une sorcière, avant/pendant la guerre.
+À l'annonce de la grossesse, la terreur l'emporte : sa malédiction va
+souiller l'enfant. Il fuit — mais supplie Sandrine de cacher Manon et de
+la dire orpheline d'un père héroïque. C'est le seul cadeau qu'il croit
+pouvoir offrir : la distance.
 
-À 16 ans, Manon découvre la vérité (une photographie et le nom *Lupin*
-cousus dans la doublure d'une vieille malle). Elle entre dans le château
-et se terre à l'étage 3, incapable de faire les trois derniers pas vers
-son père.
+### Axe 1 — le père (Remus)
+Il a fui **une fois**, puis a aimé de loin : un tiroir de lettres
+écrites chaque pleine lune, jamais postées. Sa faute est une lâcheté
+unique, prolongée en silence. Réconciliation **possible** — il est
+vivant, au château.
+
+### Axe 2 — la mère (Sandrine)
+Elle, elle est **restée** — et a menti chaque jour pendant seize ans :
+*« ton père est mort en héros à la guerre »*. Trahison de texture
+inverse : non l'abandon, mais la déception quotidienne par le parent
+présent. Prise au piège de son propre mensonge (l'avouer = se perdre,
+Manon avec). **Morte récemment** (maladie) : c'est l'élément
+déclencheur. En vidant la maison, Manon trouve la photographie et le
+nom *Lupin* cousus dans une malle — non par oubli, mais parce
+que Sandrine, mourante, l'y a placée *exprès* : sa seule façon de défaire
+le mensonge sans jamais avoir à le confesser. Réconciliation
+**impossible** — on ne pardonne pas à une tombe ; il ne reste que
+comprendre.
+
+### Le thème qui noue les deux axes
+Une famille de gens qui aiment trop pour oser le dernier pas : Remus n'a
+jamais posté ses lettres, Sandrine n'a jamais dédit son mensonge, Manon
+n'osait pas descendre l'escalier. Le joueur est celui qui débloque la
+paralysie.
 
 ### Les quatre raisons du secret (révélées par la quête)
 
@@ -90,11 +110,12 @@ Chaîne de 2 quêtes données et rendues par Manon (étage 3) :
 | 1 | `manon_secret` | `floor` → étage 4 | Elle se cache ; le sang de loup ; le mensonge de seize ans |
 | 2 | `manon_pardon` (`prereq`) | `item` → 1 Chocolat aux Sorciers | Les 4 raisons ; les retrouvailles ; les lettres ; la Répartition |
 
-- `greeting` : scène de rencontre (1er contact).
+- `greeting` (4 pages) : rencontre + mort de la mère comme élément déclencheur.
 - `dialoguesByQuest` : déroule l'arc dans l'ordre (offer/active/ready).
-- Climax (`manon_pardon` questReady, 5 pages) : retrouvailles + citation
-  directe de Lupin + Répartition à Poufsouffle.
-- `idleRandom` (post-quête) : Manon réconciliée, apaisée.
+- Climax (`manon_pardon` questReady, 6 pages) : retrouvailles, lettres
+  du père, lettre posthume de Sandrine, thème des deux axes, Répartition.
+- `idleRandom` (post-quête, 9 lignes) : Manon réconciliée — paix vive
+  avec le père, paix sourde avec la mère morte.
 
 **Coda Poufsouffle** : une fois Lupin retrouvé, il fait passer le
 Choixpeau à sa fille. Le chapeau hésite (Gryffondor — le sang du père),
