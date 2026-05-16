@@ -1798,7 +1798,12 @@ button.shop-tab.active {
 /* ── ÉCRAN DE SÉLECTION JOUEURS ── */
 #player-select-screen {
   position: fixed; inset: 0;
-  background: radial-gradient(ellipse at center, #1a0a2e 0%, #050510 60%, #000 100%);
+  /* Scène de classe de Poudlard en fond, fortement assombrie par un
+     dégradé radial (clair au centre, sombre aux bords) pour garder
+     la lisibilité de la boîte de sélection. */
+  background:
+    radial-gradient(ellipse at center, rgba(10,5,2,0.78) 0%, rgba(3,2,1,0.96) 100%),
+    url('../img/scenes/classroom.jpg') center/cover no-repeat;
   display: none;
   flex-direction: column;
   align-items: center; justify-content: center;
@@ -1994,24 +1999,74 @@ button.shop-tab.active {
 }
 
 /* ── Sélection guidée en étapes (phase d'introduction) ── */
+/* Fil d'Ariane : libellés sur desktop, pastilles à icône sur mobile. */
 .psel-steps {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  align-items: center;
+  gap: 6px;
   margin: 4px 0 20px;
+  flex-wrap: wrap;
 }
-.psel-dot {
-  width: 9px; height: 9px;
-  border-radius: 50%;
-  background: #2a1c0a;
+.psel-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 14px;
   border: 1.5px solid var(--gold-dark);
+  background: #0d0805;
+  color: #8a7050;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 1.5px;
   transition: all .25s;
+  cursor: default;
 }
-.psel-dot.done { background: var(--gold-dark); }
-.psel-dot.active {
-  background: var(--gold);
+.psel-crumb-icon { font-size: 13px; line-height: 1; }
+.psel-crumb.done {
+  color: var(--parchment);
+  cursor: pointer;
+}
+.psel-crumb.done:hover { border-color: var(--gold); color: var(--gold); }
+.psel-crumb.active {
+  color: var(--gold);
   border-color: var(--gold);
-  box-shadow: 0 0 10px rgba(201,168,76,.6);
+  background: linear-gradient(180deg, #3a2a10 0%, #1f1408 100%);
+  box-shadow: 0 0 12px rgba(201,168,76,.3);
+}
+.psel-crumb-sep { color: var(--gold-dark); font-size: 13px; }
+@media (max-width: 560px) {
+  .psel-crumb-label, .psel-crumb-sep { display: none; }
+  .psel-crumb {
+    padding: 0;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    justify-content: center;
+    gap: 0;
+  }
+  .psel-crumb-icon { font-size: 15px; }
+}
+
+/* Regroupements de héros (étape 2) */
+.hero-section { margin-bottom: 10px; }
+.hero-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 8px;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold-dark);
+}
+.hero-section-title::before,
+.hero-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-dark), transparent);
 }
 .psel-step { animation: pselFade .35s ease; }
 @keyframes pselFade {

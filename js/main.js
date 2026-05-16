@@ -42,10 +42,10 @@ function pselGoStep(n) {
   document.querySelectorAll('#player-select-screen .psel-step').forEach(el => {
     el.style.display = (Number(el.dataset.step) === n) ? 'block' : 'none';
   });
-  document.querySelectorAll('#psel-steps .psel-dot').forEach(dot => {
-    const s = Number(dot.dataset.step);
-    dot.classList.toggle('active', s === n);
-    dot.classList.toggle('done',   s <  n);
+  document.querySelectorAll('#psel-steps .psel-crumb').forEach(crumb => {
+    const s = Number(crumb.dataset.step);
+    crumb.classList.toggle('active', s === n);
+    crumb.classList.toggle('done',   s <  n);
   });
   const meta = PSEL_STEPS[n];
   if (meta) {
@@ -57,6 +57,12 @@ function pselGoStep(n) {
       AudioSystem.playVoice(meta.voice);
     }
   }
+}
+
+// Clic sur le fil d'Ariane : ne permet que de revenir à une étape
+// déjà franchie (ou de rester sur l'étape courante).
+function pselCrumbClick(n) {
+  if (n <= pselStep) pselGoStep(n);
 }
 
 // Bascule mode solo/duo

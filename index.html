@@ -118,11 +118,19 @@
     <div class="select-title" id="psel-title"><img class="ui-icon ui-icon-xl" src="img/icons/hp.png" alt=""> Le Voyage Commence</div>
     <div class="select-sub" id="psel-sub">Affronteras-tu Poudlard seul, ou accompagné ?</div>
 
-    <!-- Indicateur d'étapes -->
+    <!-- Fil d'Ariane — libellés sur desktop, icônes sur mobile -->
     <div class="psel-steps" id="psel-steps">
-      <span class="psel-dot" data-step="1"></span>
-      <span class="psel-dot" data-step="2"></span>
-      <span class="psel-dot" data-step="3"></span>
+      <span class="psel-crumb" data-step="1" onclick="pselCrumbClick(1)">
+        <span class="psel-crumb-icon">👥</span><span class="psel-crumb-label">Mode</span>
+      </span>
+      <span class="psel-crumb-sep" aria-hidden="true">›</span>
+      <span class="psel-crumb" data-step="2" onclick="pselCrumbClick(2)">
+        <span class="psel-crumb-icon">🧙</span><span class="psel-crumb-label">Héros</span>
+      </span>
+      <span class="psel-crumb-sep" aria-hidden="true">›</span>
+      <span class="psel-crumb" data-step="3" onclick="pselCrumbClick(3)">
+        <span class="psel-crumb-icon">⚔️</span><span class="psel-crumb-label">Difficulté</span>
+      </span>
     </div>
 
     <!-- ÉTAPE 1 — Mode Solo / Duo -->
@@ -136,10 +144,12 @@
       </div>
     </div>
 
-    <!-- ÉTAPE 2 — Sélection des héros -->
+    <!-- ÉTAPE 2 — Sélection des héros (2 regroupements) -->
     <div class="psel-step" data-step="2" style="display:none">
-    <!-- Grille de personnages -->
-    <div class="hero-grid" id="hero-grid">
+    <!-- Groupe 1 — héros canon du film -->
+    <div class="hero-section">
+    <div class="hero-section-title">Les Héros du Film</div>
+    <div class="hero-grid">
       <button class="hero-card" data-key="harry" onclick="toggleHero('harry')">
         <div class="hero-portrait-wrap">
           <img src="img/harry.png" alt="Harry">
@@ -158,6 +168,12 @@
         <div class="hero-role">Mage · Gryffondor</div>
         <div class="hero-tag">Brillante érudite — la magie par le savoir.</div>
       </button>
+    </div>
+    </div>
+    <!-- Groupe 2 — la classe de Poudlard -->
+    <div class="hero-section">
+    <div class="hero-section-title">La Classe de Poudlard</div>
+    <div class="hero-grid">
       <button class="hero-card" data-key="celeste" onclick="toggleHero('celeste')">
         <div class="hero-portrait-wrap">
           <img src="img/celeste.png" alt="Céleste">
@@ -212,6 +228,7 @@
         <div class="hero-role">Charmeuse · Gryffondor</div>
         <div class="hero-tag">Ses sortilèges chantent comme des étoiles.</div>
       </button>
+    </div>
     </div>
       <div id="hero-hint" class="hero-hint">Sélectionnez 1 héros pour commencer</div>
       <div class="psel-nav">

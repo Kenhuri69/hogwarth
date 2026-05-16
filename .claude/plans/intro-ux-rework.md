@@ -101,4 +101,5 @@ Encodage (Phase B) : `ffmpeg -i src.mp3 -ac 1 -ar 22050 -c:a libvorbis -q:a 3 au
 |------|-------|-------|
 | 2026-05-16 | Plan rédigé | Design validé (3 questions). Implémentation en cours. |
 | 2026-05-16 | Étapes 1-8 livrées | Thème de menu procédural, voix narrative câblée, sélection en 3 étapes, animation de révélation Dumbledore. `node tests/smoke.js` vert. |
-| 2026-05-16 | Phase A livrée | 5 OGG `narrator_*` générés (ElevenLabs « My Dumbledore ») et encodés mono 22 kHz, fade-out 300 ms, ≤ 50 KB chacun. Sources dans `audio/voice/_raw/`. Feature complète. |
+| 2026-05-16 | Phase A livrée | 5 OGG `narrator_*` générés (ElevenLabs « My Dumbledore ») et encodés mono 22 kHz, fade-out 300 ms, ≤ 50 KB chacun. Sources dans `audio/voice/_raw/`. |
+| 2026-05-16 | Retour utilisateur | Fil d'Ariane libellé (desktop) / pastilles à icône (mobile) en remplacement des points ; scène de classe (`img/scenes/classroom.jpg`) en fond assombri de l'écran de sélection ; héros scindés en 2 regroupements — « Les Héros du Film » (Harry, Hermione) et « La Classe de Poudlard » (6 personnages). Smoke vert. |
