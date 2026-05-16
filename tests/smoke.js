@@ -5663,6 +5663,75 @@ async function scenarioSpellVoiceMapping() {
   await browser.close();
 }
 
+// ── Scénario : sous-titres karaoké (Vague C) ──────────────────
+
+async function scenarioKaraokeIntro() {
+  console.log('\n── Scénario : sous-titres karaoké (intro) ──');
+  const { browser, page, errors } = await launchGame();
+
+  // Aller jusqu'à l'écran d'intro Dumbledore sans le terminer.
+  await page.evaluate(() => {
+    selectedPartySize = 1;
+    selectedHeroes    = ['harry'];
+    confirmHeroSelection();
+    chooseHouse('Gryffondor');
+  });
+  await page.waitForFunction(() =>
+    document.getElementById('intro-screen') &&
+    document.getElementById('intro-screen').style.display === 'flex',
+    { timeout: 3000 });
+
+  // T1 : le texte de la page d'intro est enveloppé en <span class="kw">
+  const t1 = await page.evaluate(() => {
+    const pageEl = document.querySelector('#intro-text .intro-page-text');
+    const kw = pageEl ? pageEl.querySelectorAll('.kw') : [];
+    return { hasPageEl: !!pageEl, kwCount: kw.length };
+  });
+  console.log('  T1 wrapping:', t1);
+  assert(t1.hasPageEl, '.intro-page-text introuvable');
+  assert(t1.kwCount >= 5, `attendu ≥5 spans .kw, obtenu ${t1.kwCount}`);
+
+  // T2 : progression déterministe — getVoiceProgress mocké
+  const t2 = await page.evaluate(async () => {
+    const pageEl = document.querySelector('#intro-text .intro-page-text');
+    AudioSystem.getVoiceProgress = () => 0.5;        // mi-parcours
+    Karaoke.wrap(pageEl);
+    const n = pageEl.querySelectorAll('.kw').length;
+    Karaoke.start(pageEl);
+    await new Promise(r => setTimeout(r, 160));
+    const mid = pageEl.querySelectorAll('.kw.spoken').length;
+    AudioSystem.getVoiceProgress = () => -1;         // voix terminée
+    await new Promise(r => setTimeout(r, 160));
+    const end = pageEl.querySelectorAll('.kw.spoken').length;
+    return { n, mid, end };
+  });
+  console.log('  T2 progression:', t2);
+  assert(t2.mid > 0 && t2.mid < t2.n,
+    `à 50% attendu un surlignage partiel, obtenu ${t2.mid}/${t2.n}`);
+  assert(t2.end === t2.n,
+    `à la fin tous les mots surlignés, obtenu ${t2.end}/${t2.n}`);
+
+  // T3 : voix jamais lancée (muet / sample absent) → texte neutre
+  const t3 = await page.evaluate(async () => {
+    const pageEl = document.querySelector('#intro-text .intro-page-text');
+    AudioSystem.getVoiceProgress = () => -1;
+    Karaoke.wrap(pageEl);
+    Karaoke.start(pageEl);
+    await new Promise(r => setTimeout(r, 160));
+    return { spoken: pageEl.querySelectorAll('.kw.spoken').length };
+  });
+  console.log('  T3 voix absente:', t3);
+  assert(t3.spoken === 0,
+    `voix absente : aucun mot surligné attendu, obtenu ${t3.spoken}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS pendant karaoké intro`);
+  }
+  console.log('  ✅ Sous-titres karaoké OK');
+  await browser.close();
+}
+
 // ── Scénario : action Garde + sort Ferula ────────────────────
 
 async function scenarioGuardAndFerula() {
@@ -6211,7 +6280,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

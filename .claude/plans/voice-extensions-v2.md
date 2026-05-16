@@ -115,21 +115,36 @@ Avada Kedavra, Portus.
 
 **Acteur** : voix Hermione (féminine jeune, prononciation soignée).
 
-### Vague C — Sous-titres karaoké (qualité de vie)
+### Vague C — Sous-titres karaoké (qualité de vie) — EN COURS
 
 **Spec** :
-- Pendant lecture vocale, surligner mot par mot dans le texte du
-  dialogue (équivalent karaoké).
-- Synchronisation : enregistrer un fichier `.json` côté assets avec
-  timestamps `[{word: "Bienvenue", t: 0.2}, ...]`.
-- Génération : ElevenLabs renvoie un timecodes JSON optionnel à l'API.
+- Pendant la lecture vocale, surligner progressivement le texte du
+  dialogue (effet karaoké).
+
+**Décision de synchronisation (V1)** : pas de fichier de timecodes.
+edge-tts n'émet de façon fiable que des `SentenceBoundary` (vérifié sur
+`fr-FR-HenriNeural` — aucun `WordBoundary`). Plutôt que de dépendre d'une
+métadonnée absente ou de régénérer tous les OGG, V1 utilise un **timing
+proportionnel au nombre de caractères** : chaque mot est surligné à
+`frac = caractères cumulés / total`, comparé à la progression réelle de
+la voix (`AudioSystem.getVoiceProgress()`). Approximation correcte pour
+une narration au débit régulier ; raffinement possible en V2 (ancrage
+sur les `SentenceBoundary`).
 
 **Implémentation** :
-- Dans `npc-dialog.js`, parser le texte du dialogue, wrapper chaque mot
-  en `<span data-w-idx="N">`.
-- `AudioSystem.playVoice(id)` retourne un `<audio>` ; `setInterval` à
-  100 ms compare `currentTime` au JSON timecodes, ajoute `.spoken`
-  class au span courant.
+- `AudioSystem.getVoiceProgress()` : fraction 0..1 de la voix en cours
+  (0 si en chargement, -1 si aucune). S'appuie sur `_voicePlayback`
+  (instant de départ + durée du buffer) posé par `playVoice`.
+- Module `js/karaoke.js` (`window.Karaoke`) : `wrap(el)` enveloppe
+  chaque mot en `<span class="kw">`, `start(el)` lance une boucle
+  `setInterval(~90 ms)` qui ajoute `.spoken`, `stop()` / `reset()`.
+- Pilote : écran d'intro Dumbledore (`intro.js — _renderIntroPage`).
+  Généralisation aux dialogues PNJ : itération suivante (même helper).
+
+**Mobile vs desktop** : logique JS identique. Desktop → surlignage seul.
+Mobile (≤700px) → `scrollIntoView({block:'nearest'})` sur le mot courant
+pour les modales scrollables (no-op si déjà visible). `prefers-reduced-
+motion` respecté (pas de transition ni de smooth-scroll).
 
 **ROI** : cosmétique, mais très immersif si bien fait.
 
@@ -274,15 +289,16 @@ Settings : stability 55, style 0.
 
 ### Vague C — Sous-titres karaoké
 
-- [ ] Choisir un dialogue pilote (intro Dumbledore, déjà OGG).
-- [ ] Récupérer timecodes JSON ElevenLabs ou générer manuellement.
-- [ ] Wrapper texte en `<span data-w-idx>` dans `intro.js — _renderIntroPage`.
-- [ ] Boucle 100 ms compare `currentTime` ↔ timecodes.
-- [ ] CSS `.spoken { background: rgba(255, 215, 0, 0.3); }`.
-- [ ] Itération polissage UX (vitesse, opacité).
-- [ ] Smoke `scenarioKaraokeIntro` (vérifier au moins 1 span `.spoken`
-      après 1 s de lecture).
+- [x] Dialogue pilote : écran d'intro Dumbledore (déjà en OGG).
+- [x] Décision sync : timing proportionnel (pas de timecodes — edge-tts
+      n'expose pas de `WordBoundary` fiable).
+- [x] `AudioSystem.getVoiceProgress()` + tracking `_voicePlayback`.
+- [x] Module `js/karaoke.js` (`wrap` / `start` / `stop` / `reset`).
+- [x] Câblage `intro.js — _renderIntroPage` (+ `stop` sur `_finishIntro`).
+- [x] CSS `.kw` / `.kw.spoken` + `prefers-reduced-motion`.
+- [x] Smoke `scenarioKaraokeIntro` (wrapping + progression `.spoken`).
 - [ ] Commit + push.
+- [ ] (Itération suivante) Généraliser aux dialogues PNJ (`npc-dialog.js`).
 
 ### Vague D — Localisation (différée)
 

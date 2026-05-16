@@ -208,11 +208,15 @@ Object.assign(AudioSystem, {
         src.connect(this.voiceGain);
         src.start(now);
         this._voiceSources.push(src);
+        this._voicePlayback = { key: voiceKey, startAt: now, duration: buf.duration };
         this._duckMusic(true);
         src.onended = () => {
           const i = this._voiceSources.indexOf(src);
           if (i >= 0) this._voiceSources.splice(i, 1);
-          if (this._voiceSources.length === 0) this._duckMusic(false);
+          if (this._voiceSources.length === 0) {
+            this._duckMusic(false);
+            this._voicePlayback = null;
+          }
         };
       })
       .catch(err => {
@@ -224,11 +228,26 @@ Object.assign(AudioSystem, {
   // ── Stoppe toutes les voix actives et restaure la musique ─────
   stopVoice() {
     this._voicePending = null;
+    this._voicePlayback = null;
     for (const src of this._voiceSources) {
       try { src.stop(); } catch (_) { /* déjà arrêté */ }
     }
     this._voiceSources = [];
     this._duckMusic(false);
+  },
+
+  // ── Progression de la voix en cours (consommé par js/karaoke.js) ──
+  // Renvoie une fraction 0..1, 0 si la voix est encore en chargement,
+  // -1 si aucune voix n'est active (ou terminée).
+  getVoiceProgress() {
+    const p = this._voicePlayback;
+    if (p && this.ctx) {
+      const elapsed = this.ctx.currentTime - p.startAt;
+      if (elapsed >= p.duration) return -1;
+      return elapsed > 0 ? elapsed / p.duration : 0;
+    }
+    if (this._voicePending) return 0;   // sample en cours de fetch/décodage
+    return -1;
   },
 
   // ── Ducking : musique × 0.30 pendant la voix, restaurée après ─

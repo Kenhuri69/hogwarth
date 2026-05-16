@@ -2956,6 +2956,20 @@ button.shop-tab.active {
   font-style: italic;
 }
 .intro-page-text { padding: 6px 4px; }
+
+/* Sous-titres karaoké (js/karaoke.js) — surlignage progressif du texte
+   au rythme de la voix. `.kw` neutre tant que le mot n'est pas prononcé. */
+.kw {
+  border-radius: 3px;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+.kw.spoken {
+  background: rgba(212, 166, 55, 0.32);
+  color: #3a2a12;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kw { transition: none; }
+}
 .intro-pager {
   margin-top: 14px;
   font-family: 'Cinzel', serif;
