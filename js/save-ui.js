@@ -268,12 +268,24 @@ function _renderHubSlotList() {
 // - Affiche toujours le hub : le bouton "Importer une sauvegarde" doit
 //   rester accessible même sans slot existant (cas typique : test d'une
 //   fixture). La liste vide est rendue avec un placeholder doux.
+let _introNarrationStarted = false;
+
 function enterStartHub() {
   const titleEl = document.getElementById('title-screen');
   if (titleEl) titleEl.style.display = 'none';
   migrateLegacyKey();
   _renderHubSlotList();
   document.getElementById('start-hub-screen').style.display = 'flex';
+  // Musique dès le 1er clic : le geste utilisateur (clic sur l'écran
+  // titre) débloque l'AudioContext. La voix narrative mystérieuse
+  // accueille le joueur — il ne sait pas encore que c'est Dumbledore.
+  if (typeof AudioSystem !== 'undefined') {
+    if (typeof AudioSystem.playMenuMusic === 'function') AudioSystem.playMenuMusic();
+    if (!_introNarrationStarted && typeof AudioSystem.playVoice === 'function') {
+      _introNarrationStarted = true;
+      AudioSystem.playVoice('narrator_welcome');
+    }
+  }
 }
 
 // Bouton "📥 Importer une sauvegarde" du hub démarrage. Wiring séparé
@@ -315,15 +327,10 @@ function importSaveFromFileToHub() {
 // player-select (flux existant).
 function startHubNewGame() {
   document.getElementById('start-hub-screen').style.display = 'none';
-  if (typeof showPlayerSelect === 'function') {
-    const psEl = document.getElementById('player-select-screen');
-    if (psEl) psEl.style.display = 'flex';
-    if (typeof selectedPartySize !== 'undefined') {
-      selectedPartySize = 1;
-      selectedHeroes    = ['harry'];
-      if (typeof refreshHeroSelectionUI === 'function') refreshHeroSelectionUI();
-    }
-  }
+  const psEl = document.getElementById('player-select-screen');
+  if (psEl) psEl.style.display = 'flex';
+  // Réinitialise la sélection guidée en étapes (étape 1, Solo + Harry).
+  if (typeof pselReset === 'function') pselReset();
 }
 
 // Charge un slot et bascule directement en jeu (skip player/house-select).

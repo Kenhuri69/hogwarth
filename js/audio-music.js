@@ -17,12 +17,14 @@ Object.assign(AudioSystem, {
     // entre showIntroScreen() et startGame() (cf. js/intro.js), ou entre
     // deux étages d'une même zone (1→2, 3→4, 5→6, 7→8).
     const targetFloor = (floor !== undefined) ? floor : this.currentFloor;
-    if (this.musicPlaying && !this.isMuted &&
+    if (this.musicPlaying && !this.isMuted && !this.inMenu &&
         this._sameAmbientZone(targetFloor, this.currentFloor)) {
       this.currentFloor = targetFloor;
       return;
     }
     this.stopMusic();
+    // Quitte le thème de menu (intro UX) : on entre dans le jeu.
+    this.inMenu = false;
     if (floor !== undefined) this.currentFloor = floor;
     if (this.isMuted) { this.musicPlaying = true; return; }
     this.init();
@@ -95,6 +97,16 @@ Object.assign(AudioSystem, {
   _VOICE_SAMPLES: {
     dumbledore_intro_1: 'audio/voice/dumbledore_intro_1.ogg',
     dumbledore_intro_2: 'audio/voice/dumbledore_intro_2.ogg',
+    // ── Voix narrative de la phase d'introduction (intro UX) ──
+    // La voix guide le joueur AVANT toute révélation : aucun nom ni
+    // portrait n'est affiché. C'est Dumbledore, mais le joueur ne le
+    // comprend qu'à l'écran #intro-screen. Fallback silencieux tant
+    // que les OGG ne sont pas générés (cf. .claude/plans/intro-ux-rework.md §5).
+    narrator_welcome:    'audio/voice/narrator_welcome.ogg',
+    narrator_mode:       'audio/voice/narrator_mode.ogg',
+    narrator_heroes:     'audio/voice/narrator_heroes.ogg',
+    narrator_difficulty: 'audio/voice/narrator_difficulty.ogg',
+    narrator_house:      'audio/voice/narrator_house.ogg',
     // ── Chaîne d'épreuves Dumbledore (Phase 3) ──
     // 15 samples = 5 quêtes × 3 moments (offer / active / ready).
     // Cf. .claude/plans/voice-dumbledore-chain.md §3 pour les textes.
@@ -384,6 +396,106 @@ Object.assign(AudioSystem, {
     osc.stop(this.ctx.currentTime + 15);
   },
 
+  // ── Thème de menu (titre / hub / sélection) — procédural ──────
+  // Distinct de l'ambiance de jeu : progression d'accords lumineuse
+  // et féérique qui accompagne toute la phase d'introduction. À
+  // l'entrée en jeu (`showIntroScreen` → `playAmbientMusic`), le
+  // thème cède la place à l'ambiance du donjon.
+  playMenuMusic() {
+    // No-op si le thème de menu tourne déjà.
+    if (this.musicPlaying && this.inMenu && !this.isMuted) return;
+    this.stopMusic();
+    this.inMenu = true;
+    if (this.isMuted) return;   // restera muet jusqu'au toggleMute
+    this.init();
+    this.musicPlaying = true;
+    this._playMenuTheme();
+  },
+
+  _playMenuTheme() {
+    // 4 accords (Do – Sol – La min – Fa) : cadence douce et hopeful.
+    const chords = [
+      [261.63, 329.63, 392.00, 523.25],  // Do majeur
+      [196.00, 246.94, 392.00, 493.88],  // Sol majeur
+      [220.00, 261.63, 329.63, 440.00],  // La mineur
+      [174.61, 261.63, 349.23, 440.00],  // Fa majeur
+    ];
+    const bass    = [65.41, 49.00, 55.00, 43.65];   // fondamentales graves
+    const stepDur = 0.40;                            // durée d'un arpège (s)
+    let step = 0;
+
+    const tick = () => {
+      if (!this.musicPlaying || !this.inMenu || this.inCombat) return;
+      const ci    = (step >> 2) % chords.length;     // accord : change ttes les 4 notes
+      const chord = chords[ci];
+      const t0    = this.ctx.currentTime;
+      const note  = chord[step % chord.length];
+
+      // Note arpégée (sine douce)
+      const osc  = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = note;
+      gain.gain.setValueAtTime(0, t0);
+      gain.gain.linearRampToValueAtTime(0.11, t0 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 1.6);
+      osc.connect(gain).connect(this.musicGain);
+      osc.start(t0);
+      osc.stop(t0 + 1.7);
+
+      // Scintillement à l'octave (une note sur deux)
+      if (step % 2 === 0) {
+        const sp = this.ctx.createOscillator();
+        const sg = this.ctx.createGain();
+        sp.type = 'triangle';
+        sp.frequency.value = note * 2;
+        sg.gain.setValueAtTime(0, t0);
+        sg.gain.linearRampToValueAtTime(0.03, t0 + 0.08);
+        sg.gain.exponentialRampToValueAtTime(0.001, t0 + 1.1);
+        sp.connect(sg).connect(this.musicGain);
+        sp.start(t0);
+        sp.stop(t0 + 1.2);
+      }
+
+      // Basse + nappe douce à chaque changement d'accord
+      if (step % 4 === 0) {
+        const padDur = stepDur * 4;
+        const b  = this.ctx.createOscillator();
+        const bg = this.ctx.createGain();
+        const bl = this.ctx.createBiquadFilter();
+        b.type = 'triangle';
+        b.frequency.value = bass[ci];
+        bl.type = 'lowpass'; bl.frequency.value = 320;
+        bg.gain.setValueAtTime(0, t0);
+        bg.gain.linearRampToValueAtTime(0.10, t0 + 0.3);
+        bg.gain.linearRampToValueAtTime(0.07, t0 + padDur - 0.2);
+        bg.gain.exponentialRampToValueAtTime(0.001, t0 + padDur + 0.1);
+        b.connect(bl).connect(bg).connect(this.musicGain);
+        b.start(t0);
+        b.stop(t0 + padDur + 0.2);
+
+        [chord[1], chord[2]].forEach(f => {
+          const p  = this.ctx.createOscillator();
+          const pg = this.ctx.createGain();
+          p.type = 'sine';
+          p.frequency.value = f / 2;
+          pg.gain.setValueAtTime(0, t0);
+          pg.gain.linearRampToValueAtTime(0.035, t0 + 0.6);
+          pg.gain.linearRampToValueAtTime(0.025, t0 + padDur - 0.4);
+          pg.gain.exponentialRampToValueAtTime(0.001, t0 + padDur);
+          p.connect(pg).connect(this.musicGain);
+          p.start(t0);
+          p.stop(t0 + padDur + 0.1);
+        });
+      }
+
+      step++;
+      this._noteTimer = setTimeout(tick, stepDur * 1000);
+    };
+
+    tick();
+  },
+
   // ── Musique de combat ─────────────────────────────────────────
   // Difficulté Normale : sample OGG (audio/combat_normal.ogg) si dispo,
   // sinon procédural. Difficile / Expert : procédural (variantes
@@ -391,6 +503,7 @@ Object.assign(AudioSystem, {
   startCombatMusic() {
     if (this.inCombat) return;
     this.inCombat = true;
+    this.inMenu   = false;
     this.stopMusic();
     if (this.isMuted) return;
     this.init();

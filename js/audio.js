@@ -11,6 +11,7 @@ const AudioSystem = {
   isMuted:       false,
   musicPlaying:  false,
   inCombat:      false,
+  inMenu:        false,   // true tant que le thème de menu (intro UX) joue
   currentFloor:  1,
   _noteTimer:    null,
   _combatTimer:  null,
@@ -69,6 +70,7 @@ const AudioSystem = {
     } else {
       if (img) img.src = 'img/icons/music_on.png';
       if (this.inCombat) this.startCombatMusic();
+      else if (this.inMenu) this.playMenuMusic();
       else this.playAmbientMusic(this.currentFloor);
     }
     return this.isMuted;
