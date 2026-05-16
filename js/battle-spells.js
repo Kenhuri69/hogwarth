@@ -91,9 +91,10 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
 
 const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed' };
 
-// Crit de sort : roll spellCritChance, applique spellCritMultiplier sur les
-// dégâts. Canal distinct du crit physique (cf. .claude/plans/crit-rework.md).
-// Saves antérieures : champs absents → pas de crit (fallback 0 / 1.5).
+// Crit de sort : roll spellCritChance (dérivée de l'AGI dans
+// recalculateStats), applique spellCritMultiplier sur les dégâts. Canal
+// distinct du crit physique (cf. .claude/plans/crit-rework.md +
+// agi-spell-crit.md). Saves antérieures : champs absents → pas de crit.
 function rollSpellCrit(dmg, char) {
   const chance = (char && char.spellCritChance != null) ? char.spellCritChance : 0;
   if (Math.random() * 100 < chance) {
@@ -104,11 +105,13 @@ function rollSpellCrit(dmg, char) {
 }
 
 function _spellHeal(spell, char) {
-  char.hp = Math.min(char.hpMax, char.hp + spell.power);
-  const msg = `💚 ${char.name} : ${spell.name} +${spell.power} PV !`;
+  // INT = maîtrise + END = domaine du soin (addition à parts égales).
+  const amount = spell.power + Math.floor((char.int || 0) / 4) + Math.floor((char.end || 0) / 4);
+  char.hp = Math.min(char.hpMax, char.hp + amount);
+  const msg = `💚 ${char.name} : ${spell.name} +${amount} PV !`;
   addMsg(msg, 'good');
-  UX_safe.floatDmg('ally', spell.power, 'heal');
-  UX_safe.logCombat(`💚 ${char.name} lance ${spell.name} : <b>+${spell.power} PV</b>`, 'good');
+  UX_safe.floatDmg('ally', amount, 'heal');
+  UX_safe.logCombat(`💚 ${char.name} lance ${spell.name} : <b>+${amount} PV</b>`, 'good');
   return msg;
 }
 
@@ -152,13 +155,15 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
     // Application probabiliste d'un statut DoT
     const statusId = STATUS_BY_SPELL[spell.name];
     if (statusId && enemy.currentHp > 0) {
-      const chance = Math.min(0.50, 0.10 + char.mag * 0.01);
+      // INT = maîtrise + LCK = domaine des afflictions (addition à parts égales).
+      const chance = Math.min(0.50, 0.10 + (char.int || 0) * 0.0075 + (char.lck || 0) * 0.0075);
       if (Math.random() < chance) {
         const dotPower = Math.max(1, Math.floor(spell.power * 0.25));
-        applyStatus(enemy, statusId, dotPower, 2);
+        const dotTurns = Math.min(5, 2 + Math.floor((char.int || 0) / 24) + Math.floor((char.lck || 0) / 24));
+        applyStatus(enemy, statusId, dotPower, dotTurns);
         const def  = STATUS_DEFS[statusId];
         msg += ` ${def.icon} ${def.label} appliqué !`;
-        UX_safe.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, 2 tours)`, 'magic');
+        UX_safe.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, ${dotTurns} tours)`, 'magic');
       }
     }
 
@@ -227,12 +232,15 @@ function _spellSupportRegen(spell, char, _enemy, _enemyIdx, targetAllyIdx) {
     addMsg(msg, 'bad');
     return msg;
   }
-  const burst = Math.min(ally.hpMax - ally.hp, spell.power + Math.floor((char.mag || 0) / 2));
+  // INT = maîtrise + END = domaine du soin (addition à parts égales).
+  const healBonus  = Math.floor((char.int || 0) / 4) + Math.floor((char.end || 0) / 4);
+  const burst = Math.min(ally.hpMax - ally.hp, spell.power + healBonus);
   if (burst > 0) {
     ally.hp += burst;
     UX_safe.floatDmg('ally', burst, 'heal');
   }
-  applyStatus(ally, 'regen', spell.power, 3);
+  const regenPower = spell.power + Math.floor((char.int || 0) / 8) + Math.floor((char.end || 0) / 8);
+  applyStatus(ally, 'regen', regenPower, 3);
   const msg = `🩹 ${char.name} → ${ally.name} : ${spell.name} (+${burst} PV, régen 3 tours).`;
   addMsg(msg, 'good');
   UX_safe.logCombat(`🩹 <b>${char.name}</b> bande ${ally.name} : <b>+${burst} PV</b> · régen 3 tours`, 'good');

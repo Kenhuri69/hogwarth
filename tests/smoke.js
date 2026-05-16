@@ -3785,12 +3785,14 @@ async function scenarioCritDodge() {
     const txt = document.getElementById('char-detail').textContent;
     return {
       hasCritLabel:  txt.includes('Critique'),
+      hasSpellCrit:  txt.includes('Crit. sort'),
       hasDodgeLabel: txt.includes('Esquive'),
       hasPercent:    /\d+%/.test(txt)
     };
   });
   console.log('  T3 modale:', t3);
   assert(t3.hasCritLabel,  'modale doit afficher "Critique"');
+  assert(t3.hasSpellCrit,  'modale doit afficher "Crit. sort"');
   assert(t3.hasDodgeLabel, 'modale doit afficher "Esquive"');
   assert(t3.hasPercent,    'modale doit afficher un %');
 
@@ -3826,7 +3828,9 @@ async function scenarioCritDodge() {
   assert(t5.after === t5.before,
     `dodgeChance=100% : aucun dégât attendu, got ${t5.before}→${t5.after}`);
 
-  // T6 : refonte crit — crit damage, crit de sort, crit équipement > 40 %
+  // T6 : refonte crit — crit damage, crit de sort, crit équipement > 40 %.
+  // Crit physique piloté par LCK, crit de sort par AGI : on monte les deux
+  // pour vérifier le dépassement du plafond via les bonus d'équipement.
   const t6 = await page.evaluate(() => {
     const c = party[0];
     // Item factice avec crit damage + crit chance + spell crit
@@ -3837,6 +3841,7 @@ async function scenarioCritDodge() {
       bonusSpellCritChance: 30, bonusSpellCritDamage: 0.40
     };
     c._baseLck = 30;             // LCK seule → 20 % (plafonné 40)
+    c._baseAgi = 30;             // AGI seule → 17 % (plafonné 35)
     recalculateStats();
     const out = {
       critChance: c.critChance, critMult: c.critMultiplier,
@@ -3844,6 +3849,7 @@ async function scenarioCritDodge() {
     };
     c.equipped.trinket = null;
     c._baseLck = 15;
+    c._baseAgi = 12;
     recalculateStats();
     return out;
   });
@@ -3852,6 +3858,47 @@ async function scenarioCritDodge() {
   assert(Math.abs(t6.critMult - 2.0) < 0.01, `critMultiplier attendu 2.0, got ${t6.critMult}`);
   assert(t6.spellCritChance > 40, `spellCritChance doit pouvoir dépasser 40 %, got ${t6.spellCritChance}`);
   assert(Math.abs(t6.spellCritMult - 1.9) < 0.01, `spellCritMultiplier attendu 1.9, got ${t6.spellCritMult}`);
+
+  // T7 : spellCritChance dérivé d'AGI (rôle offensif de l'AGI).
+  const t7 = await page.evaluate(() => {
+    party[0]._baseAgi = 12;
+    recalculateStats();
+    const mid = party[0].spellCritChance;
+    party[0]._baseAgi = 100;
+    recalculateStats();
+    const high = party[0].spellCritChance;
+    party[0]._baseAgi = 0;
+    recalculateStats();
+    const low = party[0].spellCritChance;
+    party[0]._baseAgi = 12;
+    recalculateStats();
+    return { mid, high, low };
+  });
+  console.log('  T7 spellCritChance AGI 12/100/0:', t7);
+  assert(typeof t7.mid === 'number',  'spellCritChance doit être un nombre');
+  assert(t7.low === 5,                `AGI 0 → spellCritChance plancher 5%, got ${t7.low}`);
+  assert(t7.high === 35,              `AGI 100 → spellCritChance cap 35%, got ${t7.high}`);
+  assert(t7.mid > t7.low,             'spellCritChance doit croître avec AGI');
+
+  // T8 : le crit de sort applique spellCritMultiplier sur les dégâts.
+  const t8 = await page.evaluate(() => {
+    const spell = { name: 'TestBolt', power: 20, effect: 'stun' };
+    const char  = party[0];
+    char.mag = 10; // dmg base = 20 + floor(10/2) = 25
+    char.spellCritChance = 0;
+    const e1 = { name: 'E', currentHp: 1000, resist: [], weak: [] };
+    _spellElementalDamage(spell, char, e1, 0);
+    const noCrit = 1000 - e1.currentHp;
+    char.spellCritChance = 100;
+    const e2 = { name: 'E', currentHp: 1000, resist: [], weak: [] };
+    _spellElementalDamage(spell, char, e2, 0);
+    const crit = 1000 - e2.currentHp;
+    return { noCrit, crit, mult: char.spellCritMultiplier };
+  });
+  console.log('  T8 dmg sort sans/avec crit:', t8);
+  assert(t8.noCrit === 25, `dmg sort sans crit attendu 25, got ${t8.noCrit}`);
+  assert(t8.crit === Math.floor(25 * t8.mult),
+    `dmg sort crit attendu floor(25*${t8.mult})=${Math.floor(25 * t8.mult)}, got ${t8.crit}`);
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
@@ -5828,6 +5875,9 @@ async function scenarioGuardAndFerula() {
       currentBattleChar = 0;
       party[0].spells.push('Ferula');
       party[0].sp = 20; party[0].mag = 10;
+      // INT (maîtrise) + END (domaine du soin) pilotent la régen Ferula.
+      // regenPower = power(4) + floor(int/8) + floor(end/8) = 4 + 1 + 1 = 6.
+      party[0].int = 12; party[0].end = 8;
       party[1].hp = 5; party[1].hpMax = 30;
       party[1].statusEffects = [];
       // Cast direct avec targetAllyIdx (saute la modale de sélection)
@@ -5842,17 +5892,17 @@ async function scenarioGuardAndFerula() {
     });
     assert(fer.hp > 5,                  `Ferula : Hermione pas soignée (hp=${fer.hp})`);
     assert(fer.regenTurns === 3,        `regen attendu 3 tours, obtenu ${fer.regenTurns}`);
-    assert(fer.regenPower === 4,        `regen power attendu 4, obtenu ${fer.regenPower}`);
+    assert(fer.regenPower === 6,        `regen power attendu 6 (4 + int/8 + end/8), obtenu ${fer.regenPower}`);
     assert(fer.sp === 14,               `PM Harry attendu 20-6=14, obtenu ${fer.sp}`);
 
-    // T3 : tick du statut regen — Hermione récupère 4 PV
+    // T3 : tick du statut regen — Hermione récupère 6 PV
     const tick = await ctx.page.evaluate(() => {
       const before = party[1].hp;
       tickStatuses(party[1], false);
       return { before, after: party[1].hp };
     });
-    assert(tick.after - tick.before === 4,
-      `regen tick attendu +4 PV, obtenu +${tick.after - tick.before}`);
+    assert(tick.after - tick.before === 6,
+      `regen tick attendu +6 PV, obtenu +${tick.after - tick.before}`);
 
     if (ctx.errors.length) {
       ctx.errors.forEach(e => console.log('  ⚠️ ', e));

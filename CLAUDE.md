@@ -620,18 +620,21 @@ puis on appelle `recalculateStats()` pour reconstruire les stats effectives avec
 ### Crit + Esquive (stats dérivées)
 `recalculateStats()` calcule les stats dérivées exposées sur chaque
 personnage et affichées dans la modale Personnage. **Deux canaux de
-critique** : physique et sort (cf. `.claude/plans/crit-rework.md`).
+critique** : physique et sort (cf. `.claude/plans/crit-rework.md` +
+`agi-spell-crit.md`).
 
 | Stat                  | Formule                                              | Plage   |
 |-----------------------|------------------------------------------------------|---------|
 | `critChance`          | `min(40, 5 + lck*0.5) + Σ bonusCritChance`           | 5–100 % |
-| `spellCritChance`     | `min(40, 5 + lck*0.5) + Σ bonusSpellCritChance`      | 5–100 % |
+| `spellCritChance`     | `min(35, 5 + agi*0.4) + Σ bonusSpellCritChance`      | 5–100 % |
 | `dodgeChance`         | `5 + agi*0.4 + Σ bonusDodgeChance`                   | 5–35 %  |
 | `critMultiplier`      | `1.5 + Σ bonusCritDamage`                            | ≥ 1.5   |
 | `spellCritMultiplier` | `1.5 + Σ bonusSpellCritDamage`                       | ≥ 1.5   |
 
-- La part **LCK** du crit chance plafonne à 40 % ; les bonus d'équipement
-  et de set s'ajoutent **au-dessus** (peuvent dépasser 40 %, plafond 100 %).
+- Le crit physique est piloté par **LCK** (plafonne à 40 %), le crit de
+  sort par l'**AGI** (plafonne à 35 %) — c'est le rôle offensif de l'AGI.
+  Les bonus d'équipement et de set s'ajoutent **au-dessus** de ces
+  plafonds (peuvent les dépasser, plafond absolu 100 %).
 - **Crit physique** (`battle.js — executeAttack`) : roll `< critChance`,
   dégâts × `critMultiplier`.
 - **Crit de sort** (`battle-spells.js — rollSpellCrit`) : les sorts
