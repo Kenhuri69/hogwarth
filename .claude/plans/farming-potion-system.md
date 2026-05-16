@@ -35,8 +35,9 @@ Ajouter une boucle de jeu « herboristerie » :
   d'ids, sérialisé). 3 vecteurs d'obtention — voir section dédiée.
 - **Brasseur** : le jet utilise la **meilleure INT** du groupe actif vivant
   (« le meilleur potionniste du groupe »).
-- **Icônes** : V1 = fallback emoji 🌿. PNG painterly (`icon_factory.py`) =
-  suivi optionnel.
+- **Icônes** : V1 = **SVG inline dédiés** pour les 6 herbes et les potions
+  brassées (voir section « Iconographie SVG »). PNG painterly
+  (`icon_factory.py`) reste un suivi optionnel.
 - **Déverrouillage par quête** : voir section dédiée ci-dessous.
 
 ## Quête de déverrouillage
@@ -267,12 +268,65 @@ V1 : la besace n'est consultable que dans `#brewing-modal`. Une section
 « Besace d'herboriste » en lecture seule dans `#inventory-modal` est
 notée hors périmètre (faible coût, à ajouter si le besoin se confirme).
 
-### Icônes d'herbes
+## Iconographie SVG
 
-Pas de PNG painterly en V1 (cf. hors périmètre). Pour rester lisible, chaque
-herbe reçoit un **emoji distinct** dans son champ `icon` : Armoise 🌿,
-Ortie 🍀, Asphodèle 🌼, Branchiflore 🪴, Aconit ☘️, Dictame 🍃.
-`getItemIconHtml()` retombe sur cet emoji (aucun PNG enregistré).
+Le jeu rend ses icônes d'items via `getItemIconHtml(item, size)`, qui
+résout aujourd'hui PNG painterly → PNG legacy → emoji. Le pipeline PNG
+(`icon_factory.py`) est lourd pour 6 herbes + potions ; on ajoute donc un
+**niveau SVG inline**, dans l'esprit de `icons.js` (monstres) et
+`scene-icons.js` (objets de scène).
+
+### Registre `ITEM_ICON_SVG_REGISTRY` (`js/item-icons.js`)
+
+```js
+const ITEM_ICON_SVG_REGISTRY = {
+  herbe_armoise:  '<svg viewBox="0 0 64 64">…</svg>',
+  …
+  potion_s:       '<svg …>…</svg>',
+};
+```
+
+`getItemIconHtml()` consulte ce registre **en premier** : si `item.id` y
+figure, retourne le SVG inline (enveloppé dans un `<span class="svg-icon
+ui-icon-<size>">`). Sinon, comportement actuel inchangé (PNG → emoji).
+Aucune régression sur les items existants non listés.
+
+### SVG à créer
+
+| Sujet | Nb | Style |
+|-------|----|-------|
+| 6 herbes (armoise, ortie, asphodèle, branchiflore, aconit, dictame) | 6 | Silhouette botanique distincte : feuille dentelée, tige fleurie, racine… couleur par palier (palier 1 verts francs, 2 bleu-vert, 3 violacé). |
+| Potions brassées (`potion_s`, `potion_m`, `potion_l`, `potion_l_sp`, `potion_force`, `potion_xl`) | jusqu'à 6 | Fiole de base partagée + variation : volume de liquide (S/L), teinte (soin = rouge, magie = violet, force = orange), reflet ; les XL ont un bouchon doré. |
+
+> Les potions `potion_s`/`potion_m`/`potion_l`/… **existent déjà** dans
+> `data.js` (icône emoji). Leur donner un SVG améliore leur rendu
+> **partout** (boutique, inventaire, drops) — changement voulu, pas un
+> effet de bord. Aucun nouvel item potion n'est créé.
+
+> Les herbes utilisent quand même un emoji distinct dans leur champ `icon`
+> (Armoise 🌿, Ortie 🍀, Asphodèle 🌼, Branchiflore 🪴, Aconit ☘️,
+> Dictame 🍃) comme **fallback** si le SVG venait à manquer.
+
+Le `_CAULDRON_SVG` de la modale (déjà prévu) suit la même technique
+d'inline SVG, mais vit dans `potions.js` (élément d'UI, pas d'item).
+
+## Audio — son de préparation de potion
+
+`AudioSystem` n'a pas de son de brassage. On ajoute **`playBrew()`** dans
+`js/audio-sfx.js` (synthèse Web Audio, comme `playChestOpen` /
+`playLevelUp` — aucun fichier sample).
+
+| Méthode | Déclenchée par | Sonorité |
+|---------|----------------|----------|
+| `playBrew()` | `attemptBrew()`, au lancement du brassage | Bouillonnement de chaudron : bruit filtré passe-bas modulé + quelques « bulles » (oscillateurs sinus brefs montants), ~1 s. |
+
+Les **résultats** réutilisent l'existant pour rester sobres :
+- réussite / critique → `playChestOpen()` (arpège ascendant) ;
+- découverte de recette → `playLevelUp()` ;
+- échec → `playDeath()` (descente chromatique courte).
+
+`playBrew()` est appelé de façon défensive (`AudioSystem?.playBrew?.()`),
+cohérent avec les autres call-sites SFX. À ajouter au `MANIFEST` du loader.
 
 ## Besace — `player.herbs` (`js/state.js`)
 
@@ -305,6 +359,8 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 | `js/state.js` | `player.herbs = {}` + `player.knownRecipes = []` à l'init + quête `quest_potions_slughorn` dans `activeQuests` |
 | `js/potions.js` | **NOUVEAU** : besace (`addHerb`/`getHerbCount`/`consumeHerbs`), `_isBrewingUnlocked()`, `learnRecipe()`, `_CAULDRON_SVG`, `_cauldronMix` (tampon local), `openBrewingModal()` (vue chaudron unique), `_renderBrewingModal()` (chaudron + mélange + recettes + besace), `_addToCauldron`/`_removeFromCauldron`/`_fillFromRecipe`/`_clearCauldron`, `attemptBrew(_cauldronMix)` (résolution multiset : match connu / découverte / échec, puis jet INT), `_matchRecipe(mix)`, `_brewChance()` |
 | `js/quests.js` | `completeQuest()` : traiter `reward.recipes` → `learnRecipe()` pour chaque id |
+| `js/item-icons.js` | nouveau `ITEM_ICON_SVG_REGISTRY` (6 herbes + potions brassées) ; `getItemIconHtml()` le consulte **en premier** (SVG inline avant PNG/emoji) |
+| `js/audio-sfx.js` | nouvelle méthode `playBrew()` — bouillonnement de chaudron synthétisé |
 | `js/inventory.js` (ou site de `tryAddItem`) | `tryAddItem` : si `item.type==='herb'` → `addHerb()`, retourne `true` |
 | `js/movement.js` | `searchRoom()` : nouvelle branche « herbe trouvée » (herbe du palier de l'étage courant) |
 | `js/monsters.js` | drops d'herbes sur ~6 monstres botaniques/bêtes (Mandragore Sauvage, Bowtruckle Géant, Bundimun, Niffleur, Kappa, Loup-Garou) |
@@ -312,8 +368,8 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 | `js/npc-dialog.js` | `triggerNpcSpecialAction` : branche `open_brewing` → garde `_isBrewingUnlocked()` puis `openBrewingModal()`, **hors** garde `_isSpecialActionSpent` (répétable). `_npcDialogActions` : bouton brassage masqué tant que `_isBrewingUnlocked()` est faux |
 | `js/save.js` | sérialiser/restaurer `player.herbs` **et** `player.knownRecipes` dans `_serializeState`/`_applyState` |
 | `index.html` | `<script src="js/potions.js">` dans l'ordre de chargement + markup `#brewing-modal` |
-| `js/loader.js` | entrée MANIFEST pour `openBrewingModal` |
-| `css/style.css` | style de `#brewing-modal` (réutilise les classes modale) : chaudron, tuiles d'herbes, bulles animées (`@keyframes`), états réussite/échec ; bloc responsive ≤ 700 px |
+| `js/loader.js` | entrées MANIFEST : `openBrewingModal` (+ vérif que `ITEM_ICON_SVG_REGISTRY` existe) |
+| `css/style.css` | style de `#brewing-modal` (réutilise les classes modale) : chaudron, tuiles d'herbes, bulles animées (`@keyframes`), états réussite/échec ; classe `.svg-icon` pour les SVG inline d'items ; bloc responsive ≤ 700 px |
 | `tests/smoke.js` | scénario brassage |
 
 ## Étapes & vérifications
@@ -344,13 +400,22 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
    = recette inconnue valide → recette découverte et ajoutée à
    `knownRecipes` ; mélange invalide → échec ; fermer la modale sans brasser
    ne consomme aucune herbe.
-6. **Persistance** : besace + recettes connues dans le save.
+6. **Iconographie SVG** : `ITEM_ICON_SVG_REGISTRY` (6 herbes + potions
+   brassées) + `getItemIconHtml()` consulte le registre SVG en premier.
+   → vérif : herbes et potions affichent leur SVG dans la besace, le
+   chaudron, l'inventaire et la boutique ; un item non listé garde son
+   rendu PNG/emoji (aucune régression).
+7. **Audio** : `playBrew()` dans `audio-sfx.js`, appelé par `attemptBrew()` ;
+   résultats câblés sur `playChestOpen`/`playLevelUp`/`playDeath`.
+   → vérif : lancer un brassage joue le bouillonnement ; muet si
+   `AudioSystem.isMuted`.
+8. **Persistance** : besace + recettes connues dans le save.
    → vérif : sauver/charger conserve `player.herbs` et `player.knownRecipes` ;
    l'état `completed` de la quête (donc le déverrouillage) survit au save/load.
-7. **Loader + index.html + CSS**.
-   → vérif : pas de bandeau rouge loader ; modale stylée.
-8. **Test smoke** : `node tests/smoke.js` vert + cas brassage ajouté
-   (déverrouillage, brassage d'une recette connue, découverte par expérimentation).
+9. **Loader + index.html + CSS**.
+   → vérif : pas de bandeau rouge loader ; modale stylée ; `.svg-icon` rend.
+10. **Test smoke** : `node tests/smoke.js` vert + cas brassage ajouté
+    (déverrouillage, brassage d'une recette connue, découverte par expérimentation).
 
 ## Hors périmètre V1
 
@@ -362,7 +427,8 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 - Drag-and-drop des herbes vers le chaudron (V1 = clic pour ajouter/retirer).
 - Raccourci « préparer + lancer » en un clic sur une ligne de recette.
 - Section « Besace d'herboriste » en lecture seule dans `#inventory-modal`.
-- Icônes PNG painterly des herbes (emoji distinct par herbe en V1).
+- Icônes PNG painterly des herbes/potions (`icon_factory.py`) — V1 livre
+  des SVG inline, le PNG painterly reste un upgrade artistique optionnel.
 - Bonus de qualité de potion (tier supérieur sur critique) — le critique
   donne ×2 quantité, pas un upgrade de tier.
 
@@ -378,5 +444,9 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
   unique** (SVG dessiné), pas d'onglets. Le joueur remplit le chaudron par
   clic (besace → chaudron, manuel/expérimentation) ou via « Préparer » sur
   une recette connue, puis « Lancer le brassage ». Tampon local
-  `_cauldronMix` (herbes consommées seulement au lancement). En attente du
-  feu vert pour implémenter.
+  `_cauldronMix` (herbes consommées seulement au lancement).
+- 2026-05-16 — Iconographie & audio : ajout d'un registre SVG inline
+  (`ITEM_ICON_SVG_REGISTRY`) pour les 6 herbes et les potions brassées,
+  consulté en premier par `getItemIconHtml()`. Nouveau son `playBrew()`
+  (bouillonnement de chaudron synthétisé) joué au lancement du brassage.
+  En attente du feu vert pour implémenter.
