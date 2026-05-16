@@ -131,11 +131,39 @@ forte.
 - [x] Helper `_npcDialogSource(npc, state)` pour tracker l'origine des pages.
 - [x] Smoke `scenarioHeadOfHouseVoice` (T1 mapping clés, T2 greeting,
       T3 état offer, T4 régression Dumbledore).
-- [ ] Briefing ElevenLabs : 4 acteurs choisis + textes dans un .md de prompt.
-- [ ] Génération MP3 (utilisateur) — voir §3.A.5 pour la liste exacte.
+- [x] Script de génération `tools/gen_voice_edge.py` (plan de secours
+      edge-tts, voir §B ci-dessous).
+- [ ] Génération des 20 MP3 — **bloquée** : edge-tts cible
+      `speech.platform.bing.com`, hors allowlist réseau de l'environnement
+      web (`403 host_not_allowed`). Débloquer en autorisant ce domaine
+      dans la politique réseau de l'environnement, ou lancer le script
+      en local. Sur ElevenLabs : attendre le reset mensuel du quota free.
 - [ ] Encodage OGG Vorbis (`ffmpeg -ac 1 -ar 22050 -c:a libvorbis -q:a 3`).
 - [ ] Placement dans `audio/voice/<key>.ogg`.
 - [ ] Commit + push (PR séparée éventuelle pour les assets binaires).
+
+#### B — Plan de secours TTS gratuit : edge-tts
+
+ElevenLabs free tier épuisé → `tools/gen_voice_edge.py` génère les voix
+via **edge-tts** (voix neurales Microsoft Azure, gratuit, illimité, sans
+clé API). Mapping voix FR par chef :
+
+| PNJ        | Voix edge-tts                       | rate   | pitch   |
+|------------|-------------------------------------|--------|---------|
+| McGonagall | `fr-FR-DeniseNeural`                | -7 %   | +0 Hz   |
+| Rogue      | `fr-FR-HenriNeural`                 | -12 %  | -8 Hz   |
+| Flitwick   | `fr-FR-HenriNeural`                 | +10 %  | +32 Hz  |
+| Chourave   | `fr-FR-VivienneMultilingualNeural`  | -3 %   | +0 Hz   |
+
+Qualité en dessous d'ElevenLabs sur l'expressivité, mais nettement
+au-dessus de `SpeechSynthesis` navigateur. Lancement :
+`pip install edge-tts && python3 tools/gen_voice_edge.py`.
+
+> Contrainte réseau : le endpoint `speech.platform.bing.com` doit être
+> joignable. Dans l'environnement web actuel il est hors allowlist (le
+> proxy renvoie `403 host_not_allowed`). Solutions : (1) autoriser ce
+> domaine dans la politique réseau de l'environnement, (2) exécuter le
+> script en local sur une machine au réseau libre.
 
 #### A.5 — Liste des 20 OGG attendus (textes existants dans `npcs.js`)
 
