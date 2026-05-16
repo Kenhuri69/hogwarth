@@ -324,12 +324,12 @@ silhouette en combat **et** en sprite de couloir 3D ; tintage variant
       existant suffit avec `statusId:"stun"`).
 - [x] Étape 3 — 4 nouveaux monstres (`lutin_cornouailles`, `strangulot`,
       `pitiponk`, `gargouille`).
-- [ ] Étape 4 — **visuels : Voie B retenue** — PNG fournis par l'utilisateur,
-      à traiter via `process_monster_png.py`. **Différé** (passe ultérieure).
-      En attendant : fallback emoji / SVG de catégorie.
+- [x] Étape 4 — **visuels : Voie B** — 4 PNG fournis par l'utilisateur,
+      détourés via `process_monster_png.py` → `img/monsters/<id>.png`,
+      `imgSrc` renseigné dans `monsters.js`.
 - [x] Étape 5 — doc (`CLAUDE.md`) + cache-bust (`battle.js?v=4`,
-      `monsters.js?v=3`).
-- [ ] Étape 6 — commit + push.
+      `monsters.js?v=4`).
+- [x] Étape 6 — commit + push.
 
 ## Journal
 
@@ -337,3 +337,4 @@ silhouette en combat **et** en sprite de couloir 3D ; tintage variant
 |------|-------|------|
 | 2026-05-16 | Plan | Rédigé. Décision utilisateur : voie visuelle **B** (PNG fournis), périmètre = moteur + monstres d'abord, visuels différés. Stun des sorts joueurs hors scope. |
 | 2026-05-16 | Étapes 1-3, 5 | Moteur stun livré dans `battle.js` : statut `stun` non-DoT, helpers `isStunned`/`consumeStun`, `tickStatuses` porte stun sans le décompter, skip ennemi (`enemyTurn` forEach) + skip héros (ouverture segment dans `enemyTurn` fin + `advanceBattleChar`). 4 monstres ajoutés à `monsters.js` (sans `imgSrc` — fallback emoji/SVG). Aucune modif de `battle-spells.js` (case `status` réutilisé). Smoke : nouveau `scenarioStun` (T1-T5), suite complète verte. `CLAUDE.md` : section « Statut stun » + compteur 50→54. Reste : visuels (Voie B, en attente des PNG) + commit/push. |
+| 2026-05-16 | Étape 4 | Visuels Voie B livrés. 4 PNG sources fournis par l'utilisateur (Gemini), détourés via `tools/process_monster_png.py` → `img/monsters/{lutin_cornouailles,strangulot,pitiponk,gargouille}.png` (512×512 RGBA). `pitiponk` détouré avec `--model u2net` (birefnet rabotait le corps vaporeux semi-transparent — ne gardait que la lanterne) ; les 3 autres en birefnet par défaut. `imgSrc` renseigné dans `monsters.js`, cache-bust `monsters.js?v=4`. Smoke complet vert (flake connu `scenarioRelativeControls` ignoré, vert au re-run). |

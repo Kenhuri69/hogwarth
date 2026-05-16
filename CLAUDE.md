@@ -957,7 +957,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | 8+     | Bellatrix Lestrange, Voldemort Affaibli |
 | 10+    | Voldemort Ressuscité |
 | **+14 ajouts récents** | Niffleur, Elfe de Maison Rebelle, Bowtruckle Géant, Chevalier Fantôme, Gremlin Magique, Manticore Juvénile, Gardien du Portail, Fantôme du Sang Noir, Chauve-Souris Vampire, Vampire Novice, Strigoï Ancien, Poupée Maudite, Spectre Maudit, Hécate la Maudisseuse — voir `monsters.js` pour `minFloor`/`maxFloor` |
-| **+4 monstres étourdissants** | Lutin de Cornouailles (1–4), Strangulot (3–7), Pitiponk (4–8), Gargouille Éveillée (5–10) — capacité `effect:"status", statusId:"stun"`. Pas encore de PNG dédié (fallback emoji/SVG catégorie en attendant les visuels). |
+| **+4 monstres étourdissants** | Lutin de Cornouailles (1–4), Strangulot (3–7), Pitiponk (4–8), Gargouille Éveillée (5–10) — capacité `effect:"status", statusId:"stun"`. PNG dédiés dans `img/monsters/`. |
 
 **Icônes SVG** définies dans `icons.js` pour tous les monstres majeurs.
 Les monstres sans SVG propre héritent du SVG de leur catégorie.
