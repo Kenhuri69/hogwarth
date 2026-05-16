@@ -206,9 +206,18 @@ chaque). Les points sont ordonnés par risque croissant.
   deviennent des appels `_changeFloor(+1)` / `_changeFloor(-1)` avec les
   spécificités passées en options.
 - **Risque** : moyen — transitions d'étage, cache de donjon, auto-save.
-- **Vérification** : smoke test descente/montée d'étage, fontaine reset,
-  auto-save `floor-down`/`floor-up`.
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Vérification** : `node tests/smoke.js` vert — scénarios « migration des
+  escaliers » et « gate stairs étage 10 » (qui exerce le guard de `goDeeper`)
+  passants.
+- **Note implémentation** : `_changeFloor(delta, opts)` avec 4 hooks
+  optionnels — `guard()` (annulation : escalier scellé / sol atteint),
+  `beforeTransition()` (toast Ténèbres, synchrone avant l'animation),
+  `onArrive()` (« Niveau X atteint », dans le callback de `_floorTransition`),
+  plus `saveReason` et `narrative(floor)`. Les deux hooks distincts sont
+  nécessaires car les spécificités de `goDeeper` s'exécutent à deux moments
+  différents. Ordre des appels et timings strictement préservés. Helper
+  interne — pas d'ajout MANIFEST.
+- **Statut** : [x] proposé · [x] validé · [x] implémenté
 
 ## P12 — renderer.js : `DIRECTIONS` + fusion murs latéraux
 
