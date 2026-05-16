@@ -51,7 +51,9 @@ portait, elle a grandi en se croyant un monstre.
 
 ## 5. Histoire — le double secret
 
-Remus aime brièvement **Sandrine**, une sorcière, avant/pendant la guerre.
+Remus aime brièvement **Sandrine Aubin**, une sorcière, avant/pendant la
+guerre. Manon porte le nom maternel (**Manon Aubin**) — le seul qu'elle
+ait le droit de dire ; *Lupin* reste le secret cousu dans la malle.
 À l'annonce de la grossesse, la terreur l'emporte : sa malédiction va
 souiller l'enfant. Il fuit — mais supplie Sandrine de cacher Manon et de
 la dire orpheline d'un père héroïque. C'est le seul cadeau qu'il croit
