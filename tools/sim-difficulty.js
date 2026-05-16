@@ -165,17 +165,23 @@ function applyQuestStatRewards(c, floor) {
 // item avec la somme de bonus la plus élevée parmi les items éligibles.
 // Approche conservative : un seul perso équipé, pas de doublon ring1/2.
 function equipmentBuffForFloor(floor) {
-  if (!ITEMS || !SHOP_CATALOG) return null;
-  const eligibleIds = new Set(
-    SHOP_CATALOG.filter(e => (e.minFloor || 1) <= floor).map(e => e.id)
+  if (!ITEMS) return null;
+  // --artifacts : best-in-slot sur TOUS les items équipables, y compris les
+  // légendaires hors boutique (récompenses de Maison, Forge, quêtes, drops).
+  // Sinon : uniquement les items débloqués en boutique à cet étage.
+  const useArtifacts = (typeof ARGS !== 'undefined') && ARGS.artifacts;
+  const eligibleIds = useArtifacts ? null : new Set(
+    (SHOP_CATALOG || []).filter(e => (e.minFloor || 1) <= floor).map(e => e.id)
   );
-  const buff = { atk: 0, def: 0, mag: 0, lck: 0, str: 0, int: 0, agi: 0, end: 0 };
+  const buff = { atk: 0, def: 0, mag: 0, lck: 0, str: 0, int: 0, agi: 0, end: 0,
+                 crit: 0, dodge: 0 };
   const bestBySlot = {};
   for (const it of ITEMS) {
     if (!it.slot) continue;
-    if (!eligibleIds.has(it.id)) continue;
+    if (eligibleIds && !eligibleIds.has(it.id)) continue;
     const score = (it.bonusAtk||0)+(it.bonusDef||0)+(it.bonusMag||0)+(it.bonusLck||0)
-                + (it.bonusStr||0)+(it.bonusInt||0)+(it.bonusAgi||0)+(it.bonusEnd||0);
+                + (it.bonusStr||0)+(it.bonusInt||0)+(it.bonusAgi||0)+(it.bonusEnd||0)
+                + (it.bonusCritChance||0)+(it.bonusDodgeChance||0);
     const cur = bestBySlot[it.slot];
     if (!cur || score > cur.score) bestBySlot[it.slot] = { item: it, score };
   }
@@ -189,6 +195,8 @@ function equipmentBuffForFloor(floor) {
     buff.int += it.bonusInt || 0;
     buff.agi += it.bonusAgi || 0;
     buff.end += it.bonusEnd || 0;
+    buff.crit  += it.bonusCritChance  || 0;
+    buff.dodge += it.bonusDodgeChance || 0;
   }
   return buff;
 }
@@ -207,6 +215,8 @@ function applyEquipmentBuff(c, floor) {
   c.int = (c.int || 0) + b.int;
   c.agi = (c.agi || 0) + b.agi;
   c.end = (c.end || 0) + b.end;
+  c._critBonus  = b.crit  || 0;
+  c._dodgeBonus = b.dodge || 0;
 }
 
 // ── Constantes simulation ───────────────────────────────────
@@ -221,7 +231,7 @@ function parseArgs(argv) {
   const out = { nSims: 400, hpMult: 1.0, xpMult: 1.0, statPoints: 0,
                 build: 'balanced', mode: 'single',
                 useQuests: true, useEquipment: true, usePotions: true,
-                kills: 0 };
+                kills: 0, bonusLevels: 0, artifacts: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
@@ -230,6 +240,7 @@ function parseArgs(argv) {
     if (a === '--no-equipment')         { out.useEquipment = false; continue; }
     if (a === '--no-potions')           { out.usePotions = false; continue; }
     if (a === '--pessimistic')          { out.useQuests = false; out.useEquipment = false; out.usePotions = false; continue; }
+    if (a === '--artifacts')            { out.artifacts = true; continue; }
     if (!a.includes('=')) {
       // Compat : `node sim-difficulty.js 800` → nSims positionnel
       const n = parseInt(a, 10);
@@ -242,6 +253,7 @@ function parseArgs(argv) {
     else if (k === 'stat-points') out.statPoints = parseInt(v, 10);
     else if (k === 'build')     out.build = v;
     else if (k === 'kills')     out.kills = parseInt(v, 10);
+    else if (k === 'bonus-levels') out.bonusLevels = parseInt(v, 10) || 0;
   }
   return out;
 }
@@ -275,6 +287,8 @@ Options:
   --xp-mult=F             Multiplicateur XP des monstres (def 1.0)
   --stat-points=N         Points libres alloués au joueur par niveau (def 0)
   --build=BUILD           tank | balanced | offensive (def balanced)
+  --bonus-levels=N        Niveaux gagnés au-delà de l'étage (farming) (def 0)
+  --artifacts             Best-in-slot inclut les artefacts légendaires (hors boutique)
   --compare               Lance baseline ET proposition (hp×1.5 xp×1.3 stats=3 balanced), tableau comparatif
 
 Exemples:
@@ -432,8 +446,8 @@ function createHero(key, level, cfg, floor) {
   if (cfg.usePotions && typeof floor === 'number') {
     c.potionStock = Math.min(8, 2 + Math.floor(floor / 2));
   }
-  c.critChance    = Math.max(5, Math.min(40, 5 + c.lck * 0.5));
-  c.dodgeChance   = Math.max(5, Math.min(35, 5 + c.agi * 0.4));
+  c.critChance    = Math.max(5, Math.min(40, 5 + c.lck * 0.5 + (c._critBonus  || 0)));
+  c.dodgeChance   = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0)));
   c.critMultiplier = 1.5;
   c.level = level;
   return c;
@@ -675,7 +689,7 @@ function runSimulations(cfg) {
     if (!stats) { rows.push({ floor, skip: true }); continue; }
 
     for (const partySize of [1, 2]) {
-      const level = expectedLevelAtFloor(floor, partySize, cfg);
+      const level = expectedLevelAtFloor(floor, partySize, cfg) + (cfg.bonusLevels || 0);
       const wins = { count: 0, turns: 0, hpPct: 0, dmgTaken: 0 };
       const groupSizes = { 1: 0, 2: 0, 3: 0 };
 
@@ -857,8 +871,8 @@ if (ARGS.mode === 'compare') {
   const propRows = runSimulations(cfgProp);
   emitComparison(baseRows, propRows, cfgProp);
 } else {
-  const cfg = { nSims: ARGS.nSims, hpMult: ARGS.hpMult, xpMult: ARGS.xpMult,
-                statPoints: ARGS.statPoints, build: ARGS.build };
-  const rows = runSimulations(cfg);
-  emitReport(rows, cfg);
+  // cfg = ARGS complet : conserve useQuests/useEquipment/usePotions/
+  // bonusLevels/artifacts (sinon le modèle joueur serait amputé).
+  const rows = runSimulations(ARGS);
+  emitReport(rows, ARGS);
 }

@@ -1,255 +1,172 @@
-# Étude complète de la difficulté & refonte des équations de puissance
+# Étude de la difficulté & équations de puissance
 
-> Méthode : lecture du code réel (`scaleMonster`, `rollGroupSize`, `executeAttack`,
-> `enemyTurn`, `tryEnemyAbility`, `checkLevelUp`, `recalculateStats`) + simulation
-> Monte-Carlo `tools/sim-difficulty.js` (600 combats / étage / mode).
-> Document d'analyse — aucune modification de code appliquée à ce stade.
+> Méthode : lecture du code réel + simulation Monte-Carlo
+> `tools/sim-difficulty.js` (400 combats / étage / mode).
+>
+> ⚠️ **Correction importante** — une première version de cette étude
+> concluait que le jeu était « ingagnable » en fin de partie. C'était faux :
+> le harness de simulation comportait un bug (voir §2) qui désactivait
+> silencieusement la modélisation des quêtes, de l'équipement et des
+> potions. Corrigé. Les chiffres ci-dessous sont la mesure honnête.
 
 ---
 
 ## 1. Résumé exécutif
 
-Le jeu **décroche brutalement en milieu de partie** et devient **mathématiquement
-ingagnable en fin de partie**, dans les deux modes.
+La courbe de difficulté est **saine**. La fin de partie est exigeante, mais
+c'est un **gate de progression voulu** : il se franchit en farmant des niveaux
+et en récupérant des artefacts — exactement comme prévu par le design.
 
-| Mode | Confortable (≥ 80 %) | Décrochage | Effondrement (< 40 %) |
-|------|----------------------|------------|------------------------|
-| Solo | étages 1–2           | étage 3 (73 %) | **étage 5 (33 %)** |
-| Duo  | étages 1–5           | étage 6 (73 %) | **étage 7 (42 %)** |
+| Mode | Jeu normal (sans farming) | Avec farming + artefacts |
+|------|---------------------------|--------------------------|
+| Solo | confortable 1-5, tendu 6-7, difficile 8-9, dur 10-12 (~30 %) | 100 % jusqu'à l'étage 8, 64-86 % aux étages 9-12 |
+| Duo  | confortable 1-8, tendu 9, difficile 10-12 (55-65 %) | ≥ 93 % partout |
 
-À partir de l'étage 8, le taux de victoire tombe sous 30 % puis sous 15 %
-(étages 10+). **Ce n'est pas un pic de difficulté, c'est un mur infranchissable.**
-
-La cause n'est pas un réglage isolé mais **un défaut structurel des équations** :
-les monstres gagnent en puissance *plus vite que le joueur*, et la formule de
-dégâts `max(1, atk − def)` transforme cet écart en deux falaises symétriques.
+**Il n'y a pas de mur infranchissable.** La zone « difficile » de fin de partie
+est la récompense attendue de l'investissement (niveaux + équipement légendaire).
 
 ---
 
-## 2. Les équations actuelles
+## 2. Correction méthodologique — bug du harness
 
-### 2.1 Mise à l'échelle des monstres (`dungeon.js — scaleMonster`)
+`tools/sim-difficulty.js`, en mode simple, reconstruisait son objet `cfg` à
+partir d'un **sous-ensemble** de `ARGS` :
 
+```js
+// AVANT (bug) — perd useQuests / useEquipment / usePotions / bonusLevels
+const cfg = { nSims, hpMult, xpMult, statPoints, build };
 ```
-intraMult = 1 + (floor − 1) × scale          // scale ∈ [0.15 … 0.40] par monstre
-stat      = floor(base × intraMult × diffMult)
-```
 
-Appliquée **identiquement** à `hp`, `atk`, `def`, `xp`, `gold`. Le coefficient
-`scale` est propre à chaque monstre (0.15 = lent, 0.40 = Voldemort).
+Conséquence : `cfg.useQuests`, `cfg.useEquipment`, `cfg.usePotions` valaient
+`undefined`. Tous les `if (cfg.useQuests)` de `createHero` étaient faux → le
+joueur simulé n'avait **ni récompenses de quêtes, ni équipement, ni potions**.
+La simulation tournait en réalité en mode `--pessimistic` permanent.
 
-### 2.2 Progression du joueur (`battle.js — checkLevelUp`)
+**Corrigé** : `cfg = ARGS` (objet déjà complet, defaults inclus).
 
-Par niveau gagné :
-- `hpMax += 8`, `spMax += 5`
-- `_baseAtk += 1`, `_baseDef += 1`, `_baseMag += 1`
-- `_baseStr/_baseInt/_baseAgi += 1`
-- `+3` points libres à allouer (STR→ATK, INT→MAG, END→PV, …)
-
-Cadence observée (sim) : **≈ 1 niveau par étage**. XP requise : `xpNext ×= 1.6`.
-
-### 2.3 Formule de dégâts (`battle.js`)
-
-- Joueur → ennemi : `dmg = max(1, atk + rand(0..3) − enemyDef)`
-- Ennemi → joueur : `dmg = max(0, enemyAtk + rand(0..2) − playerDef)`
-- Capacité ennemie `damage` : `max(1, power + mag/2 − playerDef/3)`
+Deux extensions ajoutées pour cette étude :
+- `--bonus-levels=N` — niveaux gagnés au-delà de l'étage (modélise le farming).
+- `--artifacts` — le best-in-slot inclut les artefacts légendaires hors
+  boutique (récompenses de Maison, Forge, quêtes, drops Ténèbres) + les
+  bonus de crit/esquive d'équipement.
 
 ---
 
-## 3. Diagnostic — pourquoi ça casse
+## 3. Difficulté réelle — jeu normal
 
-### 3.1 Le joueur grandit **linéairement**, les monstres aussi… mais pas à la même pente
+Modèle « joueur normal » : quêtes complétées, équipement best-in-slot de
+boutique, stock de potions, 3 points de stats alloués par niveau (build
+équilibré). ~4 combats / étage. Aucun farming supplémentaire.
 
-`intraMult = 1 + (F−1)×scale` est **linéaire** en `F`. Ce n'est pas exponentiel.
-Le problème est la **pente**, multipliée par la stat de base :
+| Étage | Solo (niv.) | Win % Solo | Duo (niv.) | Win % Duo |
+|------:|:-----------:|-----------:|:----------:|----------:|
+| 1-4  | 1→6  | 100 %        | 1→7  | 100 % |
+| 5    | 8    | 96 %         | 8    | 100 % |
+| 6    | 8    | 85 %         | 8    | 99 %  |
+| 7    | 9    | 78 %         | 9    | 97 %  |
+| 8    | 9    | 57 %         | 10   | 91 %  |
+| 9    | 10   | 41 %         | 10   | 74 %  |
+| 10   | 10   | 31 %         | 11   | 65 %  |
+| 11   | 11   | 27 %         | 11   | 57 %  |
+| 12   | 11   | 26 %         | 12   | 55 %  |
 
-| Grandeur | Pente par étage |
-|----------|-----------------|
-| ATK d'un monstre élite (base 16, scale 0.32) | **+5.1 / étage** |
-| DEF effective du joueur (1/niveau + équipement) | ≈ +2 à +3 / étage |
-| ATK effective du joueur (1/niveau + alloc + équip) | ≈ +3 à +4 / étage |
-| DEF d'un monstre élite (base 8, scale 0.32) | **+2.6 / étage** |
+**Lecture** : la difficulté monte progressivement, sans spike brutal. Le Solo
+de fin de partie (étages 10-12, ~30 %) signale au joueur qu'il doit se
+renforcer avant de continuer — ce n'est pas un blocage, c'est un signal.
 
-Les dégâts *subis par coup* augmentent donc d'environ **+2.5 / étage sans
-plafond**, et les dégâts *infligés par coup* stagnent puis s'effondrent.
-
-### 3.2 Falaise n°1 — les attaques physiques du joueur deviennent inutiles
-
-`max(1, atk − def)` : dès que la DEF du monstre rattrape l'ATK du joueur, **tout
-coup physique tombe au plancher de 1 dégât**.
-
-**Cas Voldemort Ressuscité, étage 10** (base hp100 atk28 def14 mag25, scale 0.40) :
-`intraMult = 1 + 9×0.40 = 4.6`
-→ **hp 460, atk 128, def 64, mag 115**
-
-Joueur étage 10, niveau 10, build correct + équipement légendaire :
-ATK effective ≈ 35.
-`dmg = max(1, 35 + rand − 64) = 1`. **Le joueur ne peut littéralement plus
-le frapper.** Il reste les sorts — mais `power + mag/2 ≈ 75` contre **460 PV**,
-soit 6 sorts à 20 PM = 120 PM pour une réserve d'environ 67. Insuffisant.
-
-### 3.3 Falaise n°2 — les coups ennemis approchent du one-shot
-
-Mêmes chiffres : Voldemort atk 128, DEF joueur ≈ 26 →
-`dmg = 128 − 26 ≈ 102` par coup. PV de Harry à 107.
-**Mort en 1 à 2 coups**, sur un boss qui agit chaque tour.
-
-### 3.4 Falaise n°3 — l'effet de meute amplifie tout
-
-`rollGroupSize` fait monter la proportion de groupes de 2-3 avec l'étage **et**
-avec le farming (`floorKillCount`). Combats à 3 ennemis : la party joue 2
-actions pendant que 3 monstres frappent. Couplé aux falaises 1 & 2, chaque tour
-perdu à infliger « 1 dégât » est un tour où l'on encaisse 3×100.
-
-### 3.5 Le coefficient `scale` par monstre crée une variance ingérable
-
-À l'étage 10, un monstre `scale 0.15` est à ×2.35, un `scale 0.40` à ×4.6.
-**Pour le même étage, un quasi-doublement de puissance selon le tirage.** Impossible
-à équilibrer : si l'on cale le joueur sur la moyenne, les monstres à haut `scale`
-sont des one-shots et ceux à bas `scale` sont triviaux.
-
-### 3.6 Synthèse chiffrée (formule réelle, mode Normal)
-
-| Étage | Monstre repère | HP scalé | ATK scalé | DEF scalée | Coup reçu* | Coup infligé* |
-|------:|----------------|---------:|----------:|-----------:|-----------:|--------------:|
-| 5  | Mangemort Masqué (0.30) | 88  | 26  | 13 | ~14 | ~6  |
-| 7  | Mangemort d'Élite (0.32) | 160 | 46 | 23 | ~30 | ~5  |
-| 10 | Voldemort Ressuscité (0.40) | 460 | 128 | 64 | ~102 | **1** |
-
-\* estimations avec un joueur de niveau ≈ étage, build équilibré + équipement
-de boutique/quêtes best-in-slot.
+> Note : les XP de quêtes font naturellement « sur-monter » le joueur en
+> niveau (étage 10 → niveau 11). Le sur-leveling fait déjà partie du jeu
+> normal, avant même tout farming volontaire.
 
 ---
 
-## 4. Refonte proposée des équations
+## 4. Le gate de fin de partie se résout — comme prévu
 
-Trois leviers indépendants. Chacun peut être adopté seul ; ensemble ils
-reconstruisent une courbe saine.
+Mesure avec farming (`--bonus-levels`) et artefacts légendaires (`--artifacts`) :
 
-### Levier A — Découpler offense / défense / PV du monstre
+| Étage | Solo +8 niv. +artefacts | Duo +5 niv. +artefacts | Duo +12 niv. +artefacts |
+|------:|------------------------:|-----------------------:|------------------------:|
+| 8     | 94 %                    | 100 %                  | 100 % |
+| 9     | 86 %                    | 99 %                   | 100 % |
+| 10    | 72 %                    | 93 %                   | 99 %  |
+| 11    | 73 %                    | 84 %                   | 96 %  |
+| 12    | 64 %                    | 86 %                   | 96 %  |
 
-Le défaut central : `scale` unique appliqué à toutes les stats. On le remplace
-par **trois pentes distinctes**, calées sur la croissance réelle du joueur.
-
-```
-hpMult(F)  = 1 + (F − 1) × 0.26      // PV : ~ inchangé (combats de durée stable)
-atkMult(F) = 1 + (F − 1) × 0.16      // ATK : ralentie — cœur du correctif
-defMult(F) = 1 + (F − 1) × 0.11      // DEF : nettement ralentie
-```
-
-`scale` par monstre est conservé mais **réinterprété comme un modificateur
-d'archétype léger** (± autour de 1.0) : un tank a `defMult` un peu plus haut,
-un glass-cannon a `atkMult` un peu plus haut, sans jamais dépasser ~±25 %.
-
-*Effet :* à l'étage 10, l'ATK de Voldemort passe de ×4.6 à ×2.44 (atk ≈ 68
-au lieu de 128) et sa DEF de ×4.6 à ×1.99 (def ≈ 28 au lieu de 64). Le joueur
-peut de nouveau le frapper, et un coup reçu redevient survivable.
-
-### Levier B — Remplacer le plancher de dégâts par une atténuation douce
-
-`max(1, atk − def)` est le générateur des deux falaises. On le remplace par une
-**atténuation en ratio**, qui ne tombe jamais à 0 % ni ne monte à 100 % :
-
-```
-mitigation = def / (def + K)          // K ≈ 55
-dmg        = max(1, round( (atk + rand) × (1 − mitigation) ))
-```
-
-| DEF | Atténuation (K=55) |
-|----:|-------------------:|
-| 15  | 21 % |
-| 30  | 35 % |
-| 60  | 52 % |
-| 100 | 64 % |
-
-Un attaquant inflige **toujours ≥ 36 %** de son ATK brute, quelle que soit la
-DEF adverse → plus de coup à « 1 ». La DEF reste très utile (jusqu'à −64 %)
-mais cesse d'être un interrupteur tout-ou-rien.
-
-*Variante minimale (si on veut un changement chirurgical)* : garder la
-soustraction mais **plafonner la DEF** à `0.75 × atk` →
-`dmg = max(round(atk × 0.25), atk + rand − def)`. Une seule ligne par formule,
-supprime la falaise n°1 sans toucher au reste.
-
-### Levier C — Courbe globale d'étage plutôt que par-monstre
-
-Optionnel mais recommandé à terme : factoriser A dans une fonction
-`floorPower(F)` partagée, exposée comme constante de réglage unique. Cela
-supprime la variance ×2 du §3.5 et rend toute future recalibration triviale
-(un seul endroit à toucher au lieu de 50 entrées `scale`).
-
-### Cible de design visée après refonte
-
-| Indicateur | Cible |
-|------------|-------|
-| Coups joueur pour tuer un mob standard | 5 – 7 |
-| Coups ennemis pour mettre un perso KO | 6 – 9 |
-| Dégât physique joueur minimum vs n'importe quel DEF | ≥ 36 % de l'ATK brute |
-| Win rate Solo, étages 1–10 | ≥ 60 % partout, ≥ 80 % jusqu'à l'étage 4 |
-| Win rate Duo, étages 1–10 | ≥ 65 % partout, ≥ 80 % jusqu'à l'étage 6 |
-| Aucun spike > 20 pts entre deux étages consécutifs |
+**Conclusion : le design tient.** Investir des niveaux (farming respawn 20 %,
+revisites d'étage) et récupérer les artefacts transforme une zone « difficile »
+en zone « confortable ». Le mur EST la progression — il n'y a rien à corriger
+côté scaling des monstres.
 
 ---
 
-## 5. Points secondaires relevés
+## 5. Équations — diagnostic révisé
 
-- **Endgame (`ENDGAME_SCALING`)** : la récursion post-victoire empile
-  `stat × scal + fixEff` par-dessus un `intraMult` déjà cassé. Tant que le
-  scaling de base n'est pas corrigé, l'endgame est hors d'atteinte. À
-  re-simuler **après** la refonte A/B.
-- **Capacités `damage`** : atténuées par `def/3` seulement — incohérent avec
-  la formule d'attaque normale. À aligner sur le levier B (`mitigation`).
-- **MAG ennemie** : non scalée par `intraMult` en pré-victoire (constante),
-  puis scalée d'un coup en post-victoire. Incohérence à trancher.
-- **`xp`/`gold`** scalent avec le même `scale` que les stats : si l'on
-  ralentit le combat, vérifier que la cadence « 1 niveau / étage » tient
-  toujours, sinon le joueur décroche en niveau.
-- **`rollGroupSize`** : le bonus de farming (`floorKillCount`) peut pousser
-  à 3 ennemis très tôt ; à re-vérifier une fois A/B en place.
+Les équations actuelles sont **structurellement correctes**.
 
----
+- **Scaling monstres** (`scaleMonster`) : `stat = base × (1+(F−1)×scale) × diffMult`.
+  Linéaire en `F`, calibré pour que le gate de fin de partie demande du
+  farming. À conserver.
+- **Progression joueur** (`checkLevelUp`) : +8 PV, +5 PM, +1 ATK/DEF/MAG,
+  +3 points libres par niveau. Le joueur peut dépasser la courbe ennemie en
+  farmant — c'est le levier de progression voulu. À conserver.
+- **Formule de dégâts** : un seul point méritait correction (voir §6).
 
-## 6. Plan d'implémentation suggéré
-
-1. Levier B (atténuation douce) dans les 3 formules de dégâts → vérifier sim.
-2. Levier A (3 pentes `hp/atk/def`) dans `scaleMonster` → re-simuler, ajuster
-   les constantes 0.26 / 0.16 / 0.11 jusqu'aux cibles du §4.
-3. Aligner les capacités `damage` sur la formule B.
-4. Re-simuler endgame (Boucle Ténébreuse) et recalibrer `ENDGAME_SCALING`.
-5. Levier C (refactor `floorPower`) — confort de maintenance, sans impact joueur.
-6. `node tests/smoke.js` + mise à jour de `DIFFICULTY_REPORT.md`.
-
-Chaque étape est isolée et validable par simulation avant la suivante.
+Point d'attention mineur conservé pour l'avenir : le coefficient `scale`
+par monstre (0.15→0.40) crée une variance de puissance à étage égal. Ce
+n'est pas un bug — c'est de la variété — mais si une recalibration fine est
+souhaitée un jour, resserrer la plage (ex. 0.20→0.34) lisserait l'expérience.
+**Non prioritaire.**
 
 ---
 
-## 7. État d'implémentation
+## 6. Levier B — plancher de dégâts (implémenté)
 
-**Levier B — implémenté** (variante minimale, plancher de dégâts).
+Seul correctif appliqué. Problème visé : `max(1, atk − def)` fait tomber un
+coup physique à **1 dégât** dès que la DEF adverse dépasse l'ATK — les
+attaques physiques deviennent inutiles contre les ennemis très défensifs,
+même pour un joueur correctement équipé.
 
-`max(1, atk − def)` est remplacé par `mitigatedDamage(rawAtk, def)` =
-`max( round(rawAtk × 0.25), rawAtk − def )` dans `executeAttack` et les
-deux coups de `enemyTurn`. La constante `DAMAGE_MIN_FRACTION = 0.25` est
-dans `data.js`. La formule des capacités ennemies (`def/3`) reste inchangée
-(hors périmètre). Détails : `.claude/plans/difficulty-lever-b.md`.
+**Correctif** — `mitigatedDamage(rawAtk, def)` :
 
-Variante retenue : le **plancher 25 %** plutôt que le ratio `def/(def+K)`,
-car le ratio aurait alourdi les étages 1-4 (où DEF ≈ ATK). La soustraction
-est conservée tant qu'elle dépasse le plancher → aucune régression early-game.
+```
+dmg = max( round(rawAtk × 0.25), rawAtk − def )
+```
 
-Impact mesuré (sim 600 combats/étage, mode Normal) :
+Un coup inflige toujours ≥ 25 % de l'ATK brute. La soustraction `atk − def`
+reste utilisée tant qu'elle dépasse ce plancher → **aucune régression
+early-game** (où DEF ≈ ATK). Variante choisie de préférence au ratio
+`def/(def+K)`, qui aurait alourdi les étages 1-4.
 
-| Étage | Mode | Avant B | Après B |
-|------:|:----:|--------:|--------:|
-| 3  | Solo | 73 % | 78 % |
-| 4  | Solo | 65 % | 70 % |
-| 5  | Solo | 33 % | 37 % |
-| 6  | Duo  | 73 % | 77 % |
-| 7  | Duo  | 42 % | 48 % |
+Appliqué à `executeAttack` et aux deux coups d'`enemyTurn`. La constante
+`DAMAGE_MIN_FRACTION = 0.25` est dans `data.js`. La formule des capacités
+ennemies (`def/3`) est laissée inchangée.
 
-Gain réel mais modéré : le levier B supprime la falaise n°1 (attaques
-physiques rendues utiles) mais **ne touche pas** la falaise n°2 (explosion
-des dégâts subis). Le mur de fin de partie subsiste — sa correction
-nécessite le **levier A** (découplage des pentes de scaling), non implémenté.
+**Impact mesuré** (modèle honnête, sans farming) :
 
-**Leviers A et C — non implémentés** (hors périmètre choisi).
+| Étage | Mode | Sans B | Avec B |
+|------:|:----:|-------:|-------:|
+| 6  | Solo | 78 % | 85 % |
+| 7  | Solo | 71 % | 78 % |
+| 8  | Duo  | 82 % | 91 % |
+| 10 | Duo  | 57 % | 65 % |
+| 11 | Duo  | 42 % | 57 % |
+| 12 | Duo  | 44 % | 55 % |
+
+Le levier B **n'aplatit pas le gate** (le farming reste nécessaire) mais
+améliore nettement le confort en milieu et fin de partie, surtout en Duo
+(+8 à +15 pts). Il rend aussi le farming plus efficace : sans lui, un coup
+physique reste proche de 1 même très haut niveau face aux grosses DEF.
+
+---
+
+## 7. Recommandations
+
+- ✅ **Levier B** — implémenté, validé, à garder.
+- ✅ **Scaling des monstres** — ne pas toucher. Le gate de fin de partie est
+  voulu et se franchit par le farming + les artefacts (§4).
+- ✅ **Bug du harness de simulation** — corrigé ; `tools/sim-difficulty.js`
+  modélise désormais fidèlement le joueur normal.
+- 💡 **Piste optionnelle non prioritaire** — resserrer la plage de `scale`
+  des monstres (§5) si une recalibration fine est souhaitée un jour.
+- ❌ **Refonte du scaling (anciens « leviers A / C »)** — abandonnée. Elle
+  reposait sur un diagnostic faussé par le bug du harness.

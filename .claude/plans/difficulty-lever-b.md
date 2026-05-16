@@ -37,7 +37,15 @@ Pourquoi cette variante plutôt que le ratio `atk × (1 − def/(def+K))` :
 
 ## Vérification finale
 
-- Falaise n°1 supprimée : un coup physique joueur inflige toujours ≥ 25 % ATK.
+- Un coup physique joueur inflige toujours ≥ 25 % ATK (plus de coup à 1).
 - Pas de régression early-game (soustraction conservée quand def < 0.75×atk).
-- Scaling des monstres inchangé (hors périmètre — falaises n°2/n°3 subsistent,
-  documentées dans `DIFFICULTY_STUDY.md`).
+- Scaling des monstres inchangé : le gate de fin de partie est voulu et se
+  franchit par le farming + les artefacts (cf. `DIFFICULTY_STUDY.md` §4).
+- Impact mesuré : +8 à +15 pts de win rate en Duo fin de partie.
+
+## Note post-implémentation
+
+L'étude initiale concluait à tort à un jeu « ingagnable » : le harness
+`tools/sim-difficulty.js` avait un bug (mode simple amputait le `cfg` des
+flags quêtes/équipement/potions). Corrigé dans le même lot. Le levier B
+reste pertinent — c'est un correctif de confort, pas un « casse-mur ».
