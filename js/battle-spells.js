@@ -89,7 +89,17 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
 // stun/burn/instant partagent _spellElementalDamage — la nature du
 // statut DoT est déterminée par STATUS_BY_SPELL.
 
-const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed' };
+const STATUS_BY_SPELL = { 'Incendio': 'burn', 'Diffindo': 'bleed', 'Sectumsempra': 'bleed', 'Glacius': 'gel' };
+
+// Morts-vivants : cible du bonus `spell.bonusVsUndead` (Lumos Solem).
+// Tous les fantômes + une liste d'ids non-fantômes mais sans vie.
+const UNDEAD_IDS = new Set([
+  'inferius', 'detraqueur', 'dementor_garde', 'vampire_mineur',
+  'strigoi', 'chauve_souris_vampire', 'poupee_maudite',
+]);
+function _isUndead(enemy) {
+  return !!enemy && (enemy.category === 'fantôme' || UNDEAD_IDS.has(enemy.id));
+}
 
 // Crit de sort : roll spellCritChance (dérivée de l'AGI dans
 // recalculateStats), applique spellCritMultiplier sur les dégâts. Canal
@@ -147,6 +157,7 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
     let suffix = '';
     if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
     if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
+    if (spell.bonusVsUndead && _isUndead(enemy)) { dmg = Math.floor(dmg * spell.bonusVsUndead); suffix += ' ☀️'; }
     const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
     if (_cr.crit) suffix += ' 💥CRIT';
     enemy.currentHp -= dmg;

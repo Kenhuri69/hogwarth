@@ -555,9 +555,18 @@ Cliquer un livre hors combat enseigne le sort à **tout le groupe actif** et con
 | `livre_sortileges` | Sortilèges Standards, Vol.3 | Wingardium Leviosa | Boutique, coffre ≥ étage 2 |
 | `livre_soin` | Potions & Remèdes Magiques | Reparo | Boutique, coffre ≥ étage 3 |
 | `book_monsters` | Livre des Monstres | Diffindo | Coffre ≥ étage 3 (quête Lockhart) |
+| `livre_glacius` | Givre & Engelures | Glacius | Boutique ≥ étage 3 |
+| `livre_fulgari` | Foudre Canalisée | Fulgari | Boutique ≥ étage 5 |
+| `livre_lumos_solem` | Lumière Solaire | Lumos Solem | Coffre ≥ étage 5 |
 | `livre_prince` | Manuel du Demi-Sang | Sectumsempra | Coffre ≥ étage 6 (rare) |
 
 Les livres apparaissent avec l'étiquette 📖 violette dans l'inventaire.
+
+> **Sorts élémentaires** (`data.js`) : `Glacius` (glace, applique le statut
+> DoT `gel` via `STATUS_BY_SPELL`), `Fulgari` (foudre, dégâts purs),
+> `Lumos Solem` (lumière, `bonusVsUndead:1.5` — ×1.5 contre les
+> morts-vivants : catégorie `fantôme` + ids listés dans `UNDEAD_IDS` de
+> `battle-spells.js`). Statut `gel` ❄️ : 4ᵉ DoT après burn/poison/bleed.
 
 ---
 

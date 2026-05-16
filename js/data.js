@@ -155,6 +155,10 @@ const SPELLS = [
   { name:"Riddikulus",        icon:"🤡",   desc:"Neutralise les créatures du chaos",  cost:6,  effect:"stun",    element:"lumière",  power:8  },
   { name:"Alohomora",         icon:"🔓",   desc:"Vole 15-30 Gallions à l'ennemi",    cost:5,  effect:"steal",   power:20 },
   { name:"Patronum",          icon:"✨",   desc:"Patronus : 18 dégâts anti-Détraqueur", cost:12, effect:"burn",  element:"lumière",  power:18 },
+  // ── Sorts élémentaires (glace / foudre / lumière) ────────────
+  { name:"Glacius",           icon:"❄️",   desc:"Givre mordant (14 dégâts, engelures)", cost:8,  effect:"stun",  element:"glace",    power:14 },
+  { name:"Fulgari",           icon:"⚡",   desc:"Foudre canalisée (16 dégâts)",         cost:9,  effect:"stun",  element:"foudre",   power:16 },
+  { name:"Lumos Solem",       icon:"☀️",   desc:"Lumière solaire — ravage les morts-vivants", cost:10, effect:"burn", element:"lumière", power:16, bonusVsUndead:1.5 },
   // ── Sort interdit (débloqué au niveau 9) ─────────────────────
   { name:"Avada...",          icon:"💚✨", desc:"Malédiction mortelle (50 dégâts)",   cost:20, effect:"instant", element:"ténèbres", power:50, locked:true },
   // ── Sort utilitaire — Téléportation (Portus) ─────────────────
@@ -317,6 +321,10 @@ const ITEMS = [
   { id:"livre_prince",     name:"Manuel du Demi-Sang",         icon:"📓", desc:"Apprend Sectumsempra (24 dégâts) — sort maudit", type:"spellbook", spell:"Sectumsempra", price:500 },
   { id:"livre_bombarda",   name:"Traité de Magie Explosive",   icon:"📙", desc:"Apprend Bombarda (20 dégâts)",  type:"spellbook", spell:"Bombarda",   price:150 },
   { id:"livre_patronum",   name:"Guide du Patronus",            icon:"📒", desc:"Apprend Patronum",              type:"spellbook", spell:"Patronum",   price:200 },
+  // ── Grimoires élémentaires ───────────────────────────────────
+  { id:"livre_glacius",    name:"Givre & Engelures",            icon:"📘", desc:"Apprend Glacius (14 dégâts de glace)", type:"spellbook", spell:"Glacius",     price:140 },
+  { id:"livre_fulgari",    name:"Foudre Canalisée",             icon:"📙", desc:"Apprend Fulgari (16 dégâts de foudre)", type:"spellbook", spell:"Fulgari",     price:200 },
+  { id:"livre_lumos_solem",name:"Lumière Solaire",              icon:"📒", desc:"Apprend Lumos Solem — ravage les morts-vivants", type:"spellbook", spell:"Lumos Solem", price:260 },
   // ── Grimoires de Vampirisme & Malédictions ───────────────────
   { id:"livre_sanguini",   name:"Traité du Sang Vivant",         icon:"📕", desc:"Apprend Sanguini (vol de vie)", type:"spellbook", spell:"Sanguini",      price:180 },
   { id:"livre_vampyrus",   name:"Codex des Strigoï",             icon:"📕", desc:"Apprend Vampyrus (drain magique)", type:"spellbook", spell:"Vampyrus",   price:380 },

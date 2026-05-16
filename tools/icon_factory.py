@@ -274,6 +274,39 @@ RECIPES: Dict[str, Recipe] = {
              "color": (180, 188, 208), "size": 130},
         ],
     ),
+    "livre_glacius": Recipe(
+        id="livre_glacius", name="Givre & Engelures", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 40,  86, 140), "pages": (224, 232, 240),
+               "spine": ( 26,  58,  98), "gilt":  (150, 200, 232)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 20,  44,  76)},
+            {"kind": "symbol", "region": "cover", "shape": "snowflake",
+             "color": (228, 244, 255), "size": 130},
+        ],
+    ),
+    "livre_fulgari": Recipe(
+        id="livre_fulgari", name="Foudre Canalisée", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 36,  42,  78), "pages": (228, 210, 168),
+               "spine": ( 22,  26,  52), "gilt":  (224, 188,  84)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 16,  20,  40)},
+            {"kind": "symbol", "region": "cover", "shape": "lightning",
+             "color": (255, 228, 108), "size": 130},
+        ],
+    ),
+    "livre_lumos_solem": Recipe(
+        id="livre_lumos_solem", name="Lumière Solaire", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": (214, 158,  52), "pages": (244, 228, 184),
+               "spine": (150, 104,  28), "gilt":  (255, 224, 128)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": (140,  96,  24)},
+            {"kind": "symbol", "region": "cover", "shape": "sun",
+             "color": (255, 240, 168), "size": 132},
+        ],
+    ),
     "livre_sanguini": Recipe(
         id="livre_sanguini", name="Traité du Sang Vivant", rarity="rare", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},
@@ -1039,6 +1072,8 @@ _SYMBOL_PATHS = {
     "snake":     'M 12 30 C 36 18 64 50 88 38 C 64 50 36 82 12 70 C 36 60 64 60 88 70 Z',
     "deer":      'M 36 6 L 30 28 L 22 22 L 28 38 L 16 36 L 28 48 L 50 56 L 72 48 L 84 36 L 72 38 L 78 22 L 70 28 L 64 6 L 56 26 L 50 18 L 44 26 Z',
     "wand":      'M 12 88 L 76 24 L 88 36 L 24 100 Z M 76 16 L 80 4 L 86 12 L 98 12 L 90 20 L 98 28 L 86 28 L 84 38 Z',
+    "snowflake": 'M 50.00 8.00 L 58.50 35.28 L 86.37 29.00 L 67.00 50.00 L 86.37 71.00 L 58.50 64.72 L 50.00 92.00 L 41.50 64.72 L 13.63 71.00 L 33.00 50.00 L 13.63 29.00 L 41.50 35.28 Z',
+    "sun":       'M 50.00 5.00 L 56.99 23.92 L 72.50 11.03 L 69.09 30.91 L 88.97 27.50 L 76.08 43.01 L 95.00 50.00 L 76.08 56.99 L 88.97 72.50 L 69.09 69.09 L 72.50 88.97 L 56.99 76.08 L 50.00 95.00 L 43.01 76.08 L 27.50 88.97 L 30.91 69.09 L 11.03 72.50 L 23.92 56.99 L 5.00 50.00 L 23.92 43.01 L 11.03 27.50 L 30.91 30.91 L 27.50 11.03 L 43.01 23.92 Z',
     # House emblems — used for Tier 2 Maison items (cf. .claude/plans/house-intermediate-tier.md §2.7.2)
     "lion":      'M 50.0 10.0 L 55.7 28.7 L 70.0 15.4 L 65.6 34.4 L 84.6 30.0 L 71.3 44.3 L 90.0 50.0 L 71.3 55.7 L 84.6 70.0 L 65.6 65.6 L 70.0 84.6 L 55.7 71.3 L 50.0 90.0 L 44.3 71.3 L 30.0 84.6 L 34.4 65.6 L 15.4 70.0 L 28.7 55.7 L 10.0 50.0 L 28.7 44.3 L 15.4 30.0 L 34.4 34.4 L 30.0 15.4 L 44.3 28.7 Z',
     "eagle":     'M 50 30 L 8 18 L 16 44 L 30 38 L 22 60 L 50 44 L 78 60 L 70 38 L 84 44 L 92 18 Z M 46 44 L 54 44 L 54 84 L 50 92 L 46 84 Z',

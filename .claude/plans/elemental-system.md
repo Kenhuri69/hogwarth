@@ -129,4 +129,4 @@ Décision : ne PAS les implémenter dans ce lot — re-tag seulement.
 - [x] Étape 5 — smoke `scenarioElementalSystem` (T1 multiplicateurs, T2
       sorts taggés, T3 zéro clé legacy)
 - [x] Étape 6 — doc CLAUDE.md
-- [ ] `node tests/smoke.js` vert
+- [x] `node tests/smoke.js` vert

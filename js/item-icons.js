@@ -137,6 +137,9 @@ const ITEM_ICON_REGISTRY = {
   livre_prince:       'img/icons/items/livre_prince.png',
   livre_bombarda:     'img/icons/items/livre_bombarda.png',
   livre_patronum:     'img/icons/items/livre_patronum.png',
+  livre_glacius:      'img/icons/items/livre_glacius.png',
+  livre_fulgari:      'img/icons/items/livre_fulgari.png',
+  livre_lumos_solem:  'img/icons/items/livre_lumos_solem.png',
   livre_sanguini:     'img/icons/items/livre_sanguini.png',
   livre_vampyrus:     'img/icons/items/livre_vampyrus.png',
   livre_taranta:      'img/icons/items/livre_taranta.png',
@@ -169,6 +172,9 @@ const ITEM_ICON_NEW_REGISTRY = {
   livre_maledictus:     'img/icons_new/livre_maledictus_64.png',
   livre_crucio:         'img/icons_new/livre_crucio_64.png',
   livre_morsmordre:     'img/icons_new/livre_morsmordre_64.png',
+  livre_glacius:        'img/icons_new/livre_glacius_64.png',
+  livre_fulgari:        'img/icons_new/livre_fulgari_64.png',
+  livre_lumos_solem:    'img/icons_new/livre_lumos_solem_64.png',
   amulette:             'img/icons_new/amulette_64.png',
   amulette_protection:  'img/icons_new/amulette_protection_64.png',
   locket_slytherin:     'img/icons_new/locket_slytherin_64.png',
@@ -253,7 +259,10 @@ const SPELL_ICON_REGISTRY = {
   'Maledictus':         'img/icons/spells/maledictus.png',
   'Crucio':             'img/icons/spells/crucio.png',
   'Morsmordre':         'img/icons/spells/morsmordre.png',
-  'Portus':             'img/icons/spells/teleportation.png'
+  'Portus':             'img/icons/spells/teleportation.png',
+  'Glacius':            'img/icons/spells/glacius.png',
+  'Fulgari':            'img/icons/spells/fulgari.png',
+  'Lumos Solem':        'img/icons/spells/lumos_solem.png'
 };
 
 // ── API publique ────────────────────────────────────────────

@@ -407,10 +407,11 @@ function openChest() {
   // Livres de sorts disponibles selon l'étage courant
   const booksAvailable = ITEMS.filter(i => {
     if (i.type !== 'spellbook') return false;
-    if (i.id === 'livre_sortileges') return currentFloor >= 2;
-    if (i.id === 'livre_soin')       return currentFloor >= 3;
-    if (i.id === 'book_monsters')    return currentFloor >= 3;
-    if (i.id === 'livre_prince')     return currentFloor >= 6; // rare et puissant
+    if (i.id === 'livre_sortileges')  return currentFloor >= 2;
+    if (i.id === 'livre_soin')        return currentFloor >= 3;
+    if (i.id === 'book_monsters')     return currentFloor >= 3;
+    if (i.id === 'livre_lumos_solem') return currentFloor >= 5;
+    if (i.id === 'livre_prince')      return currentFloor >= 6; // rare et puissant
     return false;
   });
 
