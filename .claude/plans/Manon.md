@@ -152,3 +152,30 @@ sang.
 - [x] `js/npcs.js` — PNJ Manon + répliques Lupin
 - [x] `node tests/smoke.js` vert
 - [x] Portrait `img/npc/manon.png` (256×256) + activation `portraitImg`
+
+## 10. Pitch / teaser (sans spoiler)
+
+Accroche destinée à intriguer le joueur sans dévoiler les points clés
+(père Lupin, sang de loup, la mère Sandrine, les lettres, la Répartition).
+Tout reste voilé : « élève cachée », « quelqu'un », « une photographie »,
+« un secret de famille ».
+
+**Accroche (1 ligne)**
+> Une élève que nul registre ne connaît se terre au troisième étage.
+> Il lui manque le courage de faire trois pas.
+
+**Teaser court (blurb)**
+> Dans les salles désertes du château vit une jeune fille dont le nom
+> n'apparaît sur aucune liste d'élèves. Elle fuit les professeurs, dort
+> là où personne ne passe, et serre contre elle une photographie
+> jaunie. Elle est venue retrouver quelqu'un — et n'ose pas. Aide-la à
+> descendre l'escalier qui la sépare de la vérité, et découvre pourquoi
+> certains secrets de famille mettent si longtemps à remonter à la
+> surface.
+
+**Teaser atmosphérique**
+> Elle évite la lumière. Elle compte les pas qu'elle n'ose pas faire.
+> Et les nuits de pleine lune, quelque chose en elle refuse de dormir.
+> Un étage plus bas se tient la réponse à une question qu'elle porte
+> depuis l'enfance — encore faut-il oser aller la chercher.
+
