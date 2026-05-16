@@ -115,7 +115,16 @@ chaque). Les points sont ordonnés par risque croissant.
 - **Risque** : moyen — UI de combat ; conserver les IDs `#target-selection` /
   `#target-buttons` et le câblage `pendingAction`/`pendingSpell`.
 - **Vérification** : smoke test sélection de cible ennemie ET alliée (duo).
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Statut** : [x] proposé · [x] validé · [x] implémenté
+- **Note implémentation** : `_showTargets(entries, onPick)` ajouté ; les deux
+  fonctions publiques construisent leurs `entries` ([{label, idx}]) puis
+  délèguent. IDs `#target-selection`/`#target-buttons` et câblage `pending*`
+  inchangés ; labels identiques au caractère près.
+- **Limite de couverture** : le smoke test ne déclenche pas le flux de clic
+  de `showTargetSelection`/`showAllyTargetSelection` (scénario Ferula = solo
+  auto-ciblé ; scénario Portus = overlay A/B distinct). Le test vert ne
+  garantit ici que le parsing du module + le chargement des globals, pas la
+  sélection de cible interactive.
 
 ## P8 — save-ui.js : factoriser l'import de sauvegarde
 

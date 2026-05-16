@@ -3,27 +3,40 @@
 // ============================================================
 
 // ── Sélection de cible ───────────────────────────────────────
-function showTargetSelection(actionType) {
-  pendingAction = actionType;
+// Scaffold partagé : construit les boutons dans #target-buttons et
+// affiche #target-selection. `entries` = [{label, idx}] déjà filtré ;
+// `onPick(idx)` est appelé au clic (le wrap est masqué avant l'appel).
+function _showTargets(entries, onPick) {
   const wrap = document.getElementById('target-selection');
   const btns = document.getElementById('target-buttons');
   btns.innerHTML = '';
-  enemyGroup.forEach((e, i) => {
-    if (e.currentHp <= 0) return;
+  entries.forEach(({ label, idx }) => {
     const btn = document.createElement('button');
     btn.className = 'cmd-btn';
     btn.style.fontSize = '10px';
-    btn.textContent = `${e.icon} ${e.name} (${e.currentHp} PV)`;
+    btn.textContent = label;
     btn.onclick = () => {
       wrap.style.display = 'none';
-      if      (pendingAction === 'attack')    executeAttack(i);
-      else if (pendingAction === 'spell_dmg') castSpellInBattle(pendingSpell, i);
-      pendingAction = null;
-      pendingSpell  = null;
+      onPick(idx);
     };
     btns.appendChild(btn);
   });
   wrap.style.display = 'flex';
+}
+
+function showTargetSelection(actionType) {
+  pendingAction = actionType;
+  const entries = [];
+  enemyGroup.forEach((e, i) => {
+    if (e.currentHp <= 0) return;
+    entries.push({ label: `${e.icon} ${e.name} (${e.currentHp} PV)`, idx: i });
+  });
+  _showTargets(entries, (i) => {
+    if      (pendingAction === 'attack')    executeAttack(i);
+    else if (pendingAction === 'spell_dmg') castSpellInBattle(pendingSpell, i);
+    pendingAction = null;
+    pendingSpell  = null;
+  });
 }
 
 // Sélection d'un allié vivant pour les sorts de soutien (Ferula, etc.).
@@ -31,25 +44,17 @@ function showTargetSelection(actionType) {
 // avec le 3ᵉ argument `targetAllyIdx`.
 function showAllyTargetSelection(spellName) {
   pendingSpell = spellName;
-  const wrap = document.getElementById('target-selection');
-  const btns = document.getElementById('target-buttons');
-  btns.innerHTML = '';
+  const entries = [];
   party.slice(0, partySize).forEach((c, i) => {
     if (c.hp <= 0) return;
-    const btn = document.createElement('button');
-    btn.className = 'cmd-btn';
-    btn.style.fontSize = '10px';
-    btn.textContent = `${c.icon || ''} ${c.name} (${c.hp}/${c.hpMax} PV)`;
-    btn.onclick = () => {
-      wrap.style.display = 'none';
-      const spell = pendingSpell;
-      pendingSpell  = null;
-      pendingAction = null;
-      castSpellInBattle(spell, null, i);
-    };
-    btns.appendChild(btn);
+    entries.push({ label: `${c.icon || ''} ${c.name} (${c.hp}/${c.hpMax} PV)`, idx: i });
   });
-  wrap.style.display = 'flex';
+  _showTargets(entries, (i) => {
+    const spell = pendingSpell;
+    pendingSpell  = null;
+    pendingAction = null;
+    castSpellInBattle(spell, null, i);
+  });
 }
 
 // ── Pilules de statut (brûlure / poison / saignement / weaken / Protego) ─
