@@ -23,7 +23,7 @@ function filterBestiary() {
   grid.innerHTML = '';
 
   const filtered = MONSTERS.filter(m => {
-    const matchSearch = !search      || m.name.toLowerCase().includes(search) || m.lore.toLowerCase().includes(search);
+    const matchSearch = !search      || m.name.toLowerCase().includes(search) || (m.lore || '').toLowerCase().includes(search);
     const matchCat    = !cat         || m.category === cat;
     const matchFloor  = !floorFilter || m.minFloor >= floorFilter;
     return matchSearch && matchCat && matchFloor;

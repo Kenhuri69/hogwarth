@@ -40,7 +40,11 @@
 //                       "heal"    → l'ennemi se soigne de power PV
 //                       "weaken"  → réduit la DEF de la cible de power (permanent ce combat)
 //                       "drain"   → draine power PV de la cible et s'en soigne à moitié
+//                       "status"  → applique un statut persistant à la cible
+//                                   (requiert .statusId + .turns ; ex. burn/bleed/poison)
 //    .power  {number}   Valeur de base de l'effet
+//    .statusId {string} (effect:"status" uniquement) id du statut appliqué
+//    .turns  {number}   (effect:"status" uniquement) durée du statut en tours
 //    .chance {number}   Probabilité d'utilisation à chaque tour (0.0 à 1.0)
 //
 //  ai        {string}   Comportement en combat (utilisé pour évolutions futures) :
@@ -1301,8 +1305,9 @@ const MONSTERS = [
 //   scale: 0.25,
 //   abilities: [
 //     { name: "Nom Capacité", icon: "💥", desc: "Description",
-//       effect: "damage",    // damage | heal | weaken | drain
+//       effect: "damage",    // damage | heal | weaken | drain | status
 //       power: 8, chance: 0.30 }
+//     // effect:"status" → ajouter statusId:"burn" et turns:2
 //   ],
 //   ai: "aggressive",            // aggressive | cautious | random
 //   resist: [],                  // stun | burn | disarm | instant

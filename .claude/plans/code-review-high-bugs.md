@@ -85,3 +85,24 @@ le bug #3 est un **faux positif** (cf. ci-dessous). 3 corrections réelles.
   le div titre (premier descendant en ordre document). Fragile mais correct ;
   aucune correction.
 - [x] Smoke test final
+
+---
+
+# Correction des bugs LOW
+
+5 bugs LOW identifiés, tous corrigés.
+
+- [x] **L1 — ui-bestiary.js** : `m.lore.toLowerCase()` plantait la recherche
+  si un monstre n'avait pas de `lore`. Fix : `(m.lore || '')`.
+- [x] **L2 — ui.js `closeModal`** : `getElementById(id).style` non gardé.
+  Fix : passe par le helper `safeEl` (recommandé par CLAUDE.md).
+- [x] **L3 — data.js `STAT_POINT_EFFECTS`** : allouer un point STR/INT
+  modifiait `baseAtk`/`baseMag` sans toucher `_baseStr`/`_baseInt` → stat
+  affichée figée. Fix : ajout de `baseStr`/`baseInt` (cohérent avec END ;
+  `allocateStatPoint` gère déjà ces clés ; `c.str`/`c.int` ne servent qu'à
+  l'affichage, aucun impact balance).
+- [x] **L4 — monsters.js** : doc d'en-tête + TEMPLATE ne mentionnaient pas
+  `effect:"status"` (utilisé par 5 monstres). Fix : doc complétée.
+- [x] **L5 — inventory.js `useItem`** : variable `used` toujours `true`,
+  branche `else` morte. Fix : suppression du code mort.
+- [x] Smoke test final
