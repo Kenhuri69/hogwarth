@@ -252,31 +252,43 @@ Les deux sets sont modélisés (`--house-set=NAME`, `--tenebres-set`) :
   +4 LCK ; Serdaigle : +7 MAG ; Poufsouffle : +7 DEF.
 - **Set Ténèbres 3/3** (`TENEBRES_SET`) — +15 % crit, +10 % esquive.
 
-⚠️ **Les deux sets ne peuvent pas être portés en entier simultanément** :
-chaque set de Maison occupe un slot `cloak` **et** un slot `amulet`, or le
-set Ténèbres réclame `cloak` + `amulet` + `trinket`. En pratique on
-complète **un set entier + l'autre partiellement** (set partiel < 2 pièces
-→ aucun bonus de set). Le build réaliste est donc « Maison 4/4 » **ou**
-« Ténèbres 3/3 », pas les deux.
+**Répartition en Duo** — un perso ne porte qu'un set entier (les deux se
+disputent les slots `cloak` + `amulet`), mais **en Duo on répartit** :
+Harry porte le set de Maison, Hermione le set Ténèbres → la party
+bénéficie des **deux**. Seul le Solo est limité à un set. La sim modélise
+exactement ça (Maison → héros 1, Ténèbres → héros 2).
 
-Impact mesuré (Duo, endgame, +10 niveaux, kit Forge 5 + Biblio 3) :
+**Progression hors endgame** — le set de Maison n'est pas qu'endgame : ses
+pièces s'obtiennent aux paliers de Maison. Pièce 1 dès ~l'étage 5 (palier
+Apprenti Or, 300 pts), pièces 3-4 en deep endgame (Maître Or 8000,
+Virtuose Or 16000). Il **aide donc sur toute la partie** — d'abord en
+pièces isolées et bonus partiel 2/4, puis en set complet 4/4 en endgame.
+Le set Ténèbres, lui, est purement endgame (drops Ténèbres).
 
-| Étage | Sans set | Maison 4/4 | Ténèbres 3/3 |
-|------:|---------:|-----------:|-------------:|
-| 25    | 84 %     | 79 %       | 87 % |
-| 27    | 72 %     | 74 %       | 83 % |
-| 29    | 67 %     | 71 %       | 74 % |
-| 30    | 65 %     | 68 %       | 73 % |
+**Impact mesuré** (600 sims — Duo, endgame, +10 niv., kit Forge 5 + Biblio 3) :
 
-Apport modéré (~+5-10 pts). Le crit plafonnant à 40 %, empiler les bonus
-de crit (Gryffondor + Ténèbres) a un rendement décroissant — d'où l'écart
-faible entre les deux sets. Le set Ténèbres ressort légèrement devant pour
-un build déjà très crit.
+| Étage | Sans set | Maison + Ténèbres (répartis) |
+|------:|---------:|-----------------------------:|
+| 26    | 78 %     | 80 % |
+| 28    | 74 %     | 77 % |
+| 30    | 67 %     | 65 % |
+
+**Apport faible en deep endgame — au niveau du bruit statistique.** Raison :
+le crit plafonne à **40 %**, et un joueur endgame avec LCK élevée +
+artefacts de crit y est déjà. Les bonus de crit des sets (Gryffondor,
+Ténèbres) sont donc largement gaspillés. Seules les parts non-crit (+7
+ATK/DEF/MAG, +10 esquive) apportent quelque chose, modestement.
+
+> Conséquence de design : les sets crit ont un rendement décroissant
+> en endgame. Ils sont surtout utiles **avant** la saturation du crit —
+> c.-à-d. en milieu de partie, ce qui rejoint leur disponibilité
+> progressive. Si l'on voulait leur redonner du poids en endgame, il
+> faudrait relever le cap de crit ou orienter leurs bonus hors-crit.
 
 ### 8.7 Verdict endgame
 
-- ✅ La Boucle Ténébreuse est un **gate infini farmable** sur trois axes
-  (niveaux, artefacts, Forge/Bibliothèque) — cohérent avec le design.
+- ✅ La Boucle Ténébreuse est un **gate infini farmable** sur quatre axes
+  (niveaux, artefacts, Forge/Bibliothèque, sets) — cohérent avec le design.
 - ⚠️ **Différence avec le jeu principal** : l'endgame n'a **aucune voie
   de progression passive**. Il *impose* le farming actif dès l'étage ~19.
   Choix de design assumable (mode infini façon roguelike), mais à
@@ -284,6 +296,8 @@ un build déjà très crit.
 - 💡 Si l'on veut adoucir : ralentir `xpNext` en endgame, ou ajouter une
   XP passive de Boucle par étage franchi. Optionnel — à ne pas faire si
   le farming forcé est l'intention.
-- ⚠️ Limite résiduelle du modèle : les **bonus de set** (Ténèbres /
-  Maison 2-4 pièces : crit, regen, lifesteal…) ne sont pas modélisés —
-  le joueur endgame réel est donc encore un peu plus fort que ces chiffres.
+- 💡 Les sets crit saturent le cap de crit 40 % en endgame (§8.6) : ils
+  pèsent peu là où le joueur en aurait le plus besoin. À considérer si
+  l'on veut que les sets restent pertinents dans la Boucle.
+- ⚠️ Limite résiduelle du modèle : effets de set non chiffrables en sim
+  (regen passif, lifesteal de sorts, réduction de coût) — impact mineur.

@@ -240,13 +240,17 @@ const HOUSE_SET_BONUS = {
   poufsouffle: { def: 7, end: 4 },                       // 1+2+4 def, 1+1+2 end
 };
 // Applique le set de Maison choisi (4/4) et/ou le set Ténèbres (3/3).
-// ⚠️ Les deux sets se disputent les slots cloak + amulet : en pratique on
-// complète un set entier + l'autre partiellement. Activer les deux flags
-// donne donc une borne haute (cf. DIFFICULTY_STUDY.md §8.6).
-function applySetBonuses(c, cfg) {
+// Un perso ne peut porter qu'UN set entier (les deux se disputent les
+// slots cloak + amulet). En DUO on répartit : set de Maison sur Harry,
+// set Ténèbres sur Hermione → la party bénéficie des deux. En solo, le
+// perso unique porte un seul set (Maison prioritaire si les deux flags).
+function applySetBonuses(c, cfg, key, partySize) {
   c._setCrit = 0;
   c._setDodge = 0;
-  const hs = cfg.houseSet && HOUSE_SET_BONUS[cfg.houseSet];
+  const isHermione = (key === 'hermione');
+  const solo = (partySize === 1);
+  // Set de Maison → Harry (jamais Hermione : elle porte le set Ténèbres en duo).
+  const hs = (cfg.houseSet && !isHermione) ? HOUSE_SET_BONUS[cfg.houseSet] : null;
   if (hs) {
     c.atk += hs.atk || 0;
     c.def += hs.def || 0;
@@ -256,8 +260,11 @@ function applySetBonuses(c, cfg) {
     c.end  = (c.end || 0) + (hs.end || 0);
     c._setCrit += hs.critChance || 0;
   }
-  // Set Ténèbres 3/3 : inventory.js — recalculateStats (≥2 : +10/+5 ; ≥3 : +5/+5).
-  if (cfg.tenebresSet) {
+  // Set Ténèbres 3/3 : sur Hermione en duo ; sur Harry en solo si pas de
+  // set de Maison. inventory.js — recalculateStats (≥3 : +15 crit, +10 esquive).
+  const tenebresHere = cfg.tenebresSet &&
+    (isHermione || (solo && !cfg.houseSet));
+  if (tenebresHere) {
     c._setCrit  += 15;
     c._setDodge += 10;
   }
@@ -483,7 +490,7 @@ function applyStatPoints(c, points) {
   c._baseLck += points.lck || 0;
 }
 
-function createHero(key, level, cfg, floor) {
+function createHero(key, level, cfg, floor, partySize) {
   const def = CHARACTERS[key];
   const c = {
     name: def.name,
@@ -555,7 +562,7 @@ function createHero(key, level, cfg, floor) {
     c.potionStock = Math.min(8, 2 + Math.floor(floor / 2));
   }
   // Bonus de set (Maison 4/4 + Ténèbres 3/3) — après l'équipement.
-  applySetBonuses(c, cfg);
+  applySetBonuses(c, cfg, key, partySize);
   c.critChance    = Math.max(5, Math.min(40, 5 + c.lck * 0.5 + (c._critBonus  || 0) + (c._setCrit  || 0)));
   c.dodgeChance   = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0) + (c._setDodge || 0)));
   c.critMultiplier = 1.5;
@@ -820,8 +827,8 @@ function runSimulations(cfg) {
 
       for (let i = 0; i < cfg.nSims; i++) {
         const party = partySize === 1
-          ? [createHero('harry', level, cfg, floor)]
-          : [createHero('harry', level, cfg, floor), createHero('hermione', level, cfg, floor)];
+          ? [createHero('harry', level, cfg, floor, 1)]
+          : [createHero('harry', level, cfg, floor, 2), createHero('hermione', level, cfg, floor, 2)];
         const size = rollGroupSize(floor, partySize, cfg);
         groupSizes[size]++;
         const enemyGroup = Array.from({ length: size },
