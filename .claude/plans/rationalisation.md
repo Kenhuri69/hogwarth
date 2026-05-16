@@ -171,12 +171,32 @@ chaque). Les points sont ordonnés par risque croissant.
   ajouté 2× dans `renderInventory` ; (c) nombre magique `16` au lieu de
   `INVENTORY_MAX` dans `equipItem`.
 - **Proposition** : extraire `_applyConsumableEffect(item, target)` et
-  `_teachSpellbook(item)` partagés ; supprimer la ligne `rarity-` redondante ;
-  remplacer `16` par `INVENTORY_MAX`.
+  `_teachSpellbook(item, invIdx)` partagés ; supprimer la ligne `rarity-`
+  redondante ; remplacer `16` par `INVENTORY_MAX`.
 - **Risque** : moyen — gros fichier, chemins solo/duo.
-- **Vérification** : smoke test inventaire (consommable, livre de sort, équip
-  solo + duo, sac plein).
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Vérification** : `node tests/smoke.js` vert (suite complète, 5 passages
+  consécutifs).
+- **Décision utilisateur** : `_applyConsumableEffect` unifie les 5 effets
+  (`heal`/`restore_sp`/`heal_full`/`restore_sp_full`/`both`). `useItemFromChar`
+  n'en gérait que 3 — il **ignorait silencieusement** `heal_full`/
+  `restore_sp_full` (deux items existants, `data.js:185,187`, potions de
+  restauration totale à 200 or). Bug latent : ces potions, utilisées depuis
+  la fiche perso, étaient consommées sans effet. **Choix validé : unifier**
+  → le bug est corrigé. Seul écart de comportement de tout le lot P1-P12.
+- **Note implémentation** : `_teachSpellbook(item, invIdx)` inclut le garde
+  `spellDef` (présent dans `useItem`, absent de `useItemFromChar`) — pour les
+  livres réels (tous référencent un sort valide) le comportement est
+  identique ; la divergence ne concerne qu'une donnée invalide impossible.
+  `16` remplacé dans `equipItem` uniquement (le `const slots = 16` de
+  `renderInventory` est laissé : hors périmètre, c'est la taille de grille).
+- **Correctif test (hors P10)** : `scenarioGuardAndFerula` (T2) était
+  **flaky** indépendamment de P10 — `startBattle` roule `rollGroupSize()`
+  (1-3 ennemis) mais le test ne configurait que `enemyGroup[0]`. Un 2ᵉ
+  ennemi (~35 % en duo étage 1) frappait Harry → HP < 45 attendu.
+  Corrigé : `enemyGroup.length = 1` épingle un mannequin unique. Confirmé
+  pré-existant par analyse de cause (aucun lien causal inventory.js →
+  `rollGroupSize`).
+- **Statut** : [x] proposé · [x] validé · [x] implémenté
 
 ## P11 — movement.js : `_changeFloor(delta)`
 
