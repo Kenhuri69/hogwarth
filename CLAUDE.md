@@ -822,7 +822,7 @@ d'**1 utilisation par visite d'étage**. Apparaît aux étages **2, 5, 8,
 | État "tarie" | Set global `usedFountains` (clés `"x,y"` pour l'étage courant) |
 | Reset | `usedFountains.clear()` à chaque entrée d'étage (généré ou restauré) |
 | Persistance | Sauvegardé dans `_serializeState/_applyState` via `Array.from(usedFountains)` |
-| Visuel canvas | `drawCellMarker()` cas `CELL.FOUNTAIN` — anneau d'eau bleuté |
+| Visuel canvas | Pas de sprite 3D dédié — repérée via minimap + overlay d'exploration |
 | Minimap | Classe `.map-fountain` (bleu pâle) |
 
 ### Cycle de vie
@@ -1117,7 +1117,7 @@ Pour chaque `d` de `wallDist` à `1` :
 - `drawStoneBlocks()` : joints de maçonnerie sur les murs frontaux
 - `addTorchGlow()` : halo atmosphérique chaud
 - `drawForegroundFrame()` : bordure dorée décorative au premier plan
-- `drawCellMarker()` : marqueur de cellule spéciale (escalier, boutique, coffre...)
+- `drawCellMarker()` : rendu de la porte en bois en vue 3D (cellule `CELL.DOOR`)
 
 ---
 

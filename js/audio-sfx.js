@@ -5,6 +5,27 @@
 
 Object.assign(AudioSystem, {
 
+  // ── Note unique (oscillateur + enveloppe) ─────────────────────
+  // Brique partagée des arpèges/accords SFX. `attack` > 0 → ramp
+  // linéaire 0→peak ; sinon le pic est posé directement à `start`.
+  // `decayAt` et `stop` sont des temps absolus du contexte audio.
+  _playTone({ freq, type, start, peak, attack, decayAt, stop }) {
+    const osc  = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    if (attack) {
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(peak, start + attack);
+    } else {
+      gain.gain.setValueAtTime(peak, start);
+    }
+    gain.gain.exponentialRampToValueAtTime(0.001, decayAt);
+    osc.connect(gain).connect(this.sfxGain);
+    osc.start(start);
+    osc.stop(stop);
+  },
+
   // ── Pas dans le couloir ───────────────────────────────────────
   playFootstep() {
     if (this.isMuted) return;
@@ -121,15 +142,10 @@ Object.assign(AudioSystem, {
 
     // Deux notes douces type cloche : une fondamentale + sa quinte
     [[523, 0, 0.30], [784, 0.08, 0.20]].forEach(([freq, delay, peak]) => {
-      const osc  = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type   = 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, now + delay);
-      gain.gain.linearRampToValueAtTime(peak, now + delay + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.9);
-      osc.connect(gain).connect(this.sfxGain);
-      osc.start(now + delay); osc.stop(now + delay + 0.95);
+      this._playTone({
+        freq, type: 'sine', start: now + delay, peak, attack: 0.04,
+        decayAt: now + delay + 0.9, stop: now + delay + 0.95,
+      });
     });
   },
 
@@ -140,14 +156,10 @@ Object.assign(AudioSystem, {
     const now = this.ctx.currentTime;
 
     [[330, 0], [523, 0.15], [659, 0.3], [880, 0.45]].forEach(([freq, delay]) => {
-      const osc  = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.35, now + delay);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.6);
-      osc.connect(gain).connect(this.sfxGain);
-      osc.start(now + delay); osc.stop(now + delay + 0.65);
+      this._playTone({
+        freq, type: 'sine', start: now + delay, peak: 0.35,
+        decayAt: now + delay + 0.6, stop: now + delay + 0.65,
+      });
     });
   },
 
@@ -160,15 +172,10 @@ Object.assign(AudioSystem, {
 
     notes.forEach((freq, i) => {
       const delay = i * 0.10;
-      const osc   = this.ctx.createOscillator();
-      const gain  = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, now + delay);
-      gain.gain.linearRampToValueAtTime(0.45, now + delay + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.55);
-      osc.connect(gain).connect(this.sfxGain);
-      osc.start(now + delay); osc.stop(now + delay + 0.6);
+      this._playTone({
+        freq, type: 'sine', start: now + delay, peak: 0.45, attack: 0.05,
+        decayAt: now + delay + 0.55, stop: now + delay + 0.6,
+      });
     });
   },
 
@@ -184,29 +191,19 @@ Object.assign(AudioSystem, {
 
     // 1) Accord soutenu (triangle, doux)
     [392, 587, 784, 988].forEach((freq, i) => {
-      const osc  = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, now + i * 0.03);
-      gain.gain.linearRampToValueAtTime(0.22, now + i * 0.03 + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
-      osc.connect(gain).connect(this.sfxGain);
-      osc.start(now + i * 0.03); osc.stop(now + 1.7);
+      this._playTone({
+        freq, type: 'triangle', start: now + i * 0.03, peak: 0.22, attack: 0.05,
+        decayAt: now + 1.6, stop: now + 1.7,
+      });
     });
 
     // 2) Arpège brillant par dessus (sine, plus aigu)
     [784, 988, 1175, 1568, 1976].forEach((freq, i) => {
       const delay = 0.45 + i * 0.08;
-      const osc   = this.ctx.createOscillator();
-      const gain  = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, now + delay);
-      gain.gain.linearRampToValueAtTime(0.30, now + delay + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.45);
-      osc.connect(gain).connect(this.sfxGain);
-      osc.start(now + delay); osc.stop(now + delay + 0.5);
+      this._playTone({
+        freq, type: 'sine', start: now + delay, peak: 0.30, attack: 0.03,
+        decayAt: now + delay + 0.45, stop: now + delay + 0.5,
+      });
     });
   },
 
@@ -218,14 +215,10 @@ Object.assign(AudioSystem, {
     const chord = [392, 494, 587, 784];
 
     chord.forEach((freq, i) => {
-      const osc  = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.18, now + i * 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-      osc.connect(gain).connect(this.sfxGain);
-      osc.start(now + i * 0.04); osc.stop(now + 1.3);
+      this._playTone({
+        freq, type: 'triangle', start: now + i * 0.04, peak: 0.18,
+        decayAt: now + 1.2, stop: now + 1.3,
+      });
     });
   },
 
@@ -236,14 +229,10 @@ Object.assign(AudioSystem, {
     const now = this.ctx.currentTime;
 
     [440, 392, 330, 294, 220].forEach((freq, i) => {
-      const osc  = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.25, now + i * 0.18);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.18 + 0.4);
-      osc.connect(gain).connect(this.sfxGain);
-      osc.start(now + i * 0.18); osc.stop(now + i * 0.18 + 0.45);
+      this._playTone({
+        freq, type: 'sawtooth', start: now + i * 0.18, peak: 0.25,
+        decayAt: now + i * 0.18 + 0.4, stop: now + i * 0.18 + 0.45,
+      });
     });
   },
 

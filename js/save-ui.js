@@ -188,8 +188,12 @@ function exportSaveToFile() {
   }
 }
 
-function importSaveFromFile() {
-  const input = document.getElementById('slot-modal-file-input');
+// Pipeline partagé d'import de sauvegarde depuis un <input type=file>.
+// `onError(reasonLabel)` : reasonLabel = libellé d'échec d'import, ou
+// null pour une erreur de lecture du fichier. `onSuccess(res)` reçoit
+// le résultat d'importSaveStore.
+function _pickAndImportSave(inputId, { onError, onSuccess }) {
+  const input = document.getElementById(inputId);
   if (!input || typeof importSaveStore !== 'function') return;
   input.onchange = () => {
     const file = input.files && input.files[0];
@@ -205,9 +209,24 @@ function importSaveFromFile() {
           empty: 'aucun emplacement reconnu',
           write: 'écriture impossible (espace local saturé ?)'
         }[res.reason] || 'erreur inconnue';
-        if (typeof addMsg === 'function') addMsg(`Import refusé : ${reasonLabel}.`, 'bad');
+        onError(reasonLabel);
         return;
       }
+      onSuccess(res);
+    };
+    reader.onerror = () => onError(null);
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function importSaveFromFile() {
+  _pickAndImportSave('slot-modal-file-input', {
+    onError: (label) => {
+      if (typeof addMsg !== 'function') return;
+      addMsg(label ? `Import refusé : ${label}.` : 'Lecture du fichier impossible.', 'bad');
+    },
+    onSuccess: (res) => {
       if (typeof addMsg === 'function')
         addMsg(`Import OK — ${res.imported} slot(s) importé(s).`, 'good');
       // Rafraîchit la liste en mode courant si la modale est ouverte
@@ -215,13 +234,8 @@ function importSaveFromFile() {
       const isSave  = titleEl && titleEl.textContent && titleEl.textContent.includes('Sauvegarder');
       _renderSlotList(isSave ? 'save' : 'load');
       _bindSlotModalEvents(isSave ? 'save' : 'load');
-    };
-    reader.onerror = () => {
-      if (typeof addMsg === 'function') addMsg('Lecture du fichier impossible.', 'bad');
-    };
-    reader.readAsText(file);
-  };
-  input.click();
+    }
+  });
 }
 
 // ============================================================
@@ -313,34 +327,17 @@ function enterStartHub() {
 // pré-ouverte à rafraîchir). Après import, on rebascule sur le hub si
 // au moins un slot a été importé, sinon on reste où on est.
 function importSaveFromFileToHub() {
-  const input = document.getElementById('hub-import-file-input');
-  if (!input || typeof importSaveStore !== 'function') return;
-  input.onchange = () => {
-    const file = input.files && input.files[0];
-    input.value = '';
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const res = importSaveStore(String(reader.result || ''));
-      if (!res.ok) {
-        const reasonLabel = {
-          json:  'fichier JSON invalide',
-          shape: 'structure inattendue',
-          empty: 'aucun emplacement reconnu',
-          write: 'écriture impossible (espace local saturé ?)'
-        }[res.reason] || 'erreur inconnue';
-        alert('Import refusé : ' + reasonLabel);
-        return;
-      }
+  _pickAndImportSave('hub-import-file-input', {
+    onError: (label) => {
+      alert(label ? 'Import refusé : ' + label : 'Lecture du fichier impossible.');
+    },
+    onSuccess: () => {
       // Rebascule sur le hub avec la nouvelle liste de slots.
       const hub = document.getElementById('start-hub-screen');
       if (hub) hub.style.display = 'none';
       enterStartHub();
-    };
-    reader.onerror = () => alert('Lecture du fichier impossible.');
-    reader.readAsText(file);
-  };
-  input.click();
+    }
+  });
 }
 
 // Bouton "Nouvelle aventure" du hub : on cache le hub et on enchaîne sur

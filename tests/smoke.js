@@ -5978,6 +5978,9 @@ async function scenarioGuardAndFerula() {
     party[0].dodgeChance = 0;    // pas d'esquive
     shieldTurns = [0, 0];        // pas de Protego
     guardTurns  = [1, 0];        // Garde actif
+    // startBattle peut rouler un groupe de 2-3 ennemis (rollGroupSize) :
+    // on épingle un mannequin unique pour un calcul de dégâts déterministe.
+    enemyGroup.length = 1;
     enemyGroup[0].atk = 10;
     // Patch Math.random pour rendre l'attaque déterministe (no random bonus)
     const origRand = Math.random;

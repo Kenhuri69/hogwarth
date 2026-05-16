@@ -170,42 +170,54 @@ function _interpolateFarmingText(raw, qid, state) {
   return Array.isArray(raw) ? raw.map(apply) : apply(raw);
 }
 
-// Retourne toujours un tableau de pages (array<string>). Un dialogue
-// peut être déclaré comme string (1 page) ou comme array (multi-page).
-// Les PNJ peuvent fournir un override par quête via `dialoguesByQuest`.
-function _npcDialogPages(npc, state) {
+// Cascade de priorité partagée par `_npcDialogPages` et `_npcDialogSource` :
+// greeting (1er contact) → questOffer → questActive → questReady →
+// questDone → idle. Retourne `{ source, raw, qid }` où `source` est
+// l'identifiant de l'origine choisie (pour le mapping voix), `raw` le
+// contenu brut non interpolé (string ou array de strings), et `qid` la
+// quête adressée par l'état (interpolation farming en aval).
+function _resolveDialogSource(npc, state) {
   const d   = npc.dialogues || {};
   const qid = _currentQuestForState(npc, state);
   const dq  = (qid && npc.dialoguesByQuest && npc.dialoguesByQuest[qid]) || {};
   const pick = (k) => (dq[k] !== undefined) ? dq[k] : d[k];
 
-  // Texte de saveur "idle" : si `d.idleRandom` est un array de strings,
-  // on en pioche un au hasard pour varier les visites (PNJ lore).
-  // Sinon on retombe sur `d.idle` classique.
-  const idleRandomPick = (Array.isArray(d.idleRandom) && d.idleRandom.length)
-    ? d.idleRandom[Math.floor(Math.random() * d.idleRandom.length)]
-    : null;
+  if (typeof seenNpcs !== 'undefined' && !seenNpcs.has(npc.id) && d.greeting)
+    return { source: 'greeting', raw: d.greeting, qid };
+  if (state === 'offer'  && pick('questOffer')  !== undefined)
+    return { source: 'offer',  raw: pick('questOffer'),  qid };
+  if (state === 'active' && pick('questActive') !== undefined)
+    return { source: 'active', raw: pick('questActive'), qid };
+  if (state === 'ready'  && pick('questReady')  !== undefined)
+    return { source: 'ready',  raw: pick('questReady'),  qid };
+  if (state === 'done'   && d.questDone)
+    return { source: 'done',   raw: d.questDone,         qid };
 
+  // Idle : priorités spéciales (Fumseck spent) > lore contextuel
+  // (Portrait Dumbledore) > idleRandom (PNJ lore) > idle générique
+  // > greeting > "...".
   let raw;
-  if (typeof seenNpcs !== 'undefined' && !seenNpcs.has(npc.id) && d.greeting) {
-    raw = d.greeting;
-  } else if (state === 'offer'  && pick('questOffer')  !== undefined) raw = pick('questOffer');
-  else if (state === 'active' && pick('questActive') !== undefined) raw = pick('questActive');
-  else if (state === 'ready'  && pick('questReady')  !== undefined) raw = pick('questReady');
-  else if (state === 'done'   && d.questDone)                       raw = d.questDone;
-  else {
-    // Idle : priorités spéciales (Fumseck spent) > lore contextuel
-    // (Portrait Dumbledore) > idleRandom (PNJ lore) > idle générique
-    // > greeting > "...".
-    if (_isSpecialActionSpent(npc) && d.idleSpent !== undefined) {
-      raw = d.idleSpent;
-    } else {
-      const lore = _pickContextualLore(npc);
-      raw = (lore !== null) ? lore
-          : (idleRandomPick !== null) ? idleRandomPick
-          : (d.idle || d.greeting || '...');
-    }
+  if (_isSpecialActionSpent(npc) && d.idleSpent !== undefined) {
+    raw = d.idleSpent;
+  } else {
+    const lore = _pickContextualLore(npc);
+    // Texte de saveur "idle" : si `d.idleRandom` est un array de strings,
+    // on en pioche un au hasard pour varier les visites (PNJ lore).
+    const idleRandomPick = (Array.isArray(d.idleRandom) && d.idleRandom.length)
+      ? d.idleRandom[Math.floor(Math.random() * d.idleRandom.length)]
+      : null;
+    raw = (lore !== null) ? lore
+        : (idleRandomPick !== null) ? idleRandomPick
+        : (d.idle || d.greeting || '...');
   }
+  return { source: 'idle', raw, qid };
+}
+
+// Retourne toujours un tableau de pages (array<string>). Un dialogue
+// peut être déclaré comme string (1 page) ou comme array (multi-page).
+// Les PNJ peuvent fournir un override par quête via `dialoguesByQuest`.
+function _npcDialogPages(npc, state) {
+  const { raw, qid } = _resolveDialogSource(npc, state);
   const pages = Array.isArray(raw) ? raw.slice() : [raw];
   // Interpolation des placeholders {target} / {amount} pour les quêtes
   // farming. No-op pour les autres dialogues (raw renvoyé tel quel).
@@ -346,20 +358,11 @@ function triggerNpcSpecialAction(npcId) {
 // déclenché par seenNpcs (premier contact) indépendamment de l'état quête.
 let _dialogState = { npcId: null, pages: [], page: 0, actions: [], source: 'idle' };
 
-// Reflète la même logique de sélection que `_npcDialogPages` mais renvoie
-// l'identifiant de la source choisie, pour le mapping audio. Doit être
+// Identifiant de la source choisie pour la page courante, pour le mapping
+// audio. Délègue à la cascade partagée `_resolveDialogSource`. Doit être
 // appelé AVANT `seenNpcs.add(npc.id)` pour distinguer le 1er contact.
 function _npcDialogSource(npc, state) {
-  const d   = npc.dialogues || {};
-  const qid = _currentQuestForState(npc, state);
-  const dq  = (qid && npc.dialoguesByQuest && npc.dialoguesByQuest[qid]) || {};
-  const pick = (k) => (dq[k] !== undefined) ? dq[k] : d[k];
-  if (typeof seenNpcs !== 'undefined' && !seenNpcs.has(npc.id) && d.greeting) return 'greeting';
-  if (state === 'offer'  && pick('questOffer')  !== undefined) return 'offer';
-  if (state === 'active' && pick('questActive') !== undefined) return 'active';
-  if (state === 'ready'  && pick('questReady')  !== undefined) return 'ready';
-  if (state === 'done'   && d.questDone)                       return 'done';
-  return 'idle';
+  return _resolveDialogSource(npc, state).source;
 }
 
 function _renderDialogPage() {

@@ -162,105 +162,27 @@ function drawForegroundFrame(cx, cy, scale) {
 }
 
 // ── Marqueur de cellule spéciale ────────────────────────────────
+// Seul appelant : renderer.js, gardé par fwdCell === CELL.DOOR.
+// Les autres types de cellule (escalier, coffre, boutique, fontaine)
+// sont rendus en sprites de couloir ailleurs.
 function drawCellMarker(cx, cy, bx, by, size, cell) {
-  if (cell === CELL.DOOR) {
-    // Porte en bois
-    ctx.fillStyle = '#5a3010';
-    ctx.fillRect(bx - size * 0.4, by - size * 0.85, size * 0.8, size * 1.7);
-    // Planches
-    for (let i = 1; i < 3; i++) {
-      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-      ctx.lineWidth = 2;
-      const hy = by - size * 0.85 + (size * 1.7 / 3) * i;
-      ctx.beginPath(); ctx.moveTo(bx - size * 0.4, hy); ctx.lineTo(bx + size * 0.4, hy); ctx.stroke();
-    }
-    ctx.strokeStyle = '#c9a84c';
-    ctx.lineWidth   = 1.5;
-    ctx.strokeRect(bx - size * 0.4, by - size * 0.85, size * 0.8, size * 1.7);
-    ctx.fillStyle = '#c9a84c';
-    ctx.beginPath();
-    ctx.arc(bx + size * 0.25, by, size * 0.08, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (cell === CELL.STAIRS_D || cell === CELL.STAIRS_U) {
-    // Mini icône d'escalier dessinée — marches en perspective
-    const w = size * 0.75, h = size * 1.1;
-    const stepN = 4;
-    const sh = h / stepN;
-    const taper = 0.55;
-    const top = by - h * 0.5;
-    const bottom = by + h * 0.5;
-    const dirDown = (cell === CELL.STAIRS_D);
-    for (let i = 0; i < stepN; i++) {
-      const t = i / (stepN - 1);
-      const yB = dirDown ? top + i * sh + sh : bottom - i * sh;
-      const yT = yB - sh * 0.55;
-      const ww = w * (1 - (1 - taper) * t);
-      ctx.fillStyle = `rgba(168,152,112,${0.85 - t * 0.35})`;
-      ctx.fillRect(bx - ww * 0.5, yT, ww, sh * 0.55);
-      ctx.fillStyle = `rgba(58,46,28,${0.9})`;
-      ctx.fillRect(bx - ww * 0.5, yT + sh * 0.55, ww, sh * 0.45);
-      ctx.strokeStyle = 'rgba(201,168,76,0.7)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(bx - ww * 0.5, yT, ww, sh * 0.55);
-    }
-    // Halo doré
-    ctx.shadowColor = 'rgba(201,168,76,0.6)';
-    ctx.shadowBlur = 6;
-    ctx.strokeStyle = 'rgba(201,168,76,0.5)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx - w * 0.5, top, w, h);
-    ctx.shadowBlur = 0;
-  } else if (cell === CELL.SHOP) {
-    ctx.font = `${Math.floor(size * 1.3)}px serif`;
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🏪', bx, by);
-  } else if (cell === CELL.CHEST) {
-    ctx.font = `${Math.floor(size * 1.3)}px serif`;
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('📦', bx, by);
-  } else if (cell === CELL.FOUNTAIN) {
-    // Fontaine — anneau d'eau bleuté avec halo
-    const dried = (typeof usedFountains !== 'undefined') &&
-                  usedFountains.has(`${cx},${cy}`);
-    ctx.save();
-    // halo
-    const grad = ctx.createRadialGradient(bx, by, 0, bx, by, size * 0.7);
-    grad.addColorStop(0, 'rgba(207,230,255,0.7)');
-    grad.addColorStop(0.6, 'rgba(94,155,214,0.25)');
-    grad.addColorStop(1, 'rgba(28,74,122,0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.ellipse(bx, by, size * 0.7, size * 0.35, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // bassin
-    ctx.fillStyle = '#5a4a32';
-    ctx.beginPath();
-    ctx.ellipse(bx, by + size * 0.2, size * 0.45, size * 0.18, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // eau
-    ctx.fillStyle = dried ? '#3a2e1c' : '#6ea8d8';
-    ctx.beginPath();
-    ctx.ellipse(bx, by + size * 0.16, size * 0.36, size * 0.12, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // pied + statue
-    ctx.fillStyle = '#8a7a5a';
-    ctx.fillRect(bx - size * 0.06, by - size * 0.5, size * 0.12, size * 0.6);
-    ctx.fillStyle = '#a89870';
-    ctx.beginPath();
-    ctx.arc(bx, by - size * 0.55, size * 0.13, 0, Math.PI * 2);
-    ctx.fill();
-    // halo doré
-    ctx.shadowColor = 'rgba(207,230,255,0.7)';
-    ctx.shadowBlur  = 8;
-    ctx.strokeStyle = 'rgba(201,168,76,0.5)';
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.ellipse(bx, by, size * 0.55, size * 0.25, 0, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
+  // Porte en bois
+  ctx.fillStyle = '#5a3010';
+  ctx.fillRect(bx - size * 0.4, by - size * 0.85, size * 0.8, size * 1.7);
+  // Planches
+  for (let i = 1; i < 3; i++) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 2;
+    const hy = by - size * 0.85 + (size * 1.7 / 3) * i;
+    ctx.beginPath(); ctx.moveTo(bx - size * 0.4, hy); ctx.lineTo(bx + size * 0.4, hy); ctx.stroke();
   }
+  ctx.strokeStyle = '#c9a84c';
+  ctx.lineWidth   = 1.5;
+  ctx.strokeRect(bx - size * 0.4, by - size * 0.85, size * 0.8, size * 1.7);
+  ctx.fillStyle = '#c9a84c';
+  ctx.beginPath();
+  ctx.arc(bx + size * 0.25, by, size * 0.08, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 // ── Coffre (sprite de couloir) ───────────────────────────────

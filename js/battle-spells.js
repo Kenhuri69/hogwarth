@@ -150,16 +150,29 @@ function _spellShield(spell, char) {
   return msg;
 }
 
+// Calcul de dégâts d'un sort offensif : base power + mag/2, modulée par
+// les resist/weak de l'ennemi (clé = spell.element), le bonus anti-mort-vivant
+// optionnel (opts.undead), puis le critique. `suffix` porte les pictogrammes
+// 🔰/💥/☀️/💥CRIT (avec leur espace de tête) pour les messages.
+function _computeSpellDamage(spell, char, enemy, opts) {
+  opts = opts || {};
+  let dmg    = spell.power + Math.floor(char.mag / 2);
+  let suffix = '';
+  if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
+  if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
+  if (opts.undead && spell.bonusVsUndead && _isUndead(enemy)) {
+    dmg = Math.floor(dmg * spell.bonusVsUndead); suffix += ' ☀️';
+  }
+  const cr = rollSpellCrit(dmg, char);
+  dmg = cr.dmg;
+  if (cr.crit) suffix += ' 💥CRIT';
+  return { dmg, suffix, crit: cr.crit };
+}
+
 function _spellElementalDamage(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
-    let dmg    = spell.power + Math.floor(char.mag / 2);
-    let suffix = '';
-    if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
-    if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
-    if (spell.bonusVsUndead && _isUndead(enemy)) { dmg = Math.floor(dmg * spell.bonusVsUndead); suffix += ' ☀️'; }
-    const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
-    if (_cr.crit) suffix += ' 💥CRIT';
+    const { dmg, suffix } = _computeSpellDamage(spell, char, enemy, { undead: true });
     enemy.currentHp -= dmg;
     msg = `${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} sur ${enemy.name} !`;
 
@@ -188,12 +201,7 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
 function _spellLifesteal(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
-    let dmg = spell.power + Math.floor(char.mag / 2);
-    let suffix = '';
-    if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
-    if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
-    const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
-    if (_cr.crit) suffix += ' 💥CRIT';
+    const { dmg, suffix } = _computeSpellDamage(spell, char, enemy);
     enemy.currentHp -= dmg;
     const heal = Math.floor(dmg / 2);
     char.hp = Math.min(char.hpMax, char.hp + heal);
@@ -209,14 +217,11 @@ function _spellLifesteal(spell, char, enemy, targetIdx) {
 function _spellCurse(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
-    let dmg = spell.power + Math.floor(char.mag / 2);
-    if (enemy.resist?.includes(spell.element)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
-    if (enemy.weak?.includes(spell.element))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
-    const _cr = rollSpellCrit(dmg, char); dmg = _cr.dmg;
+    const { dmg, crit } = _computeSpellDamage(spell, char, enemy);
     enemy.currentHp -= dmg;
     enemy.atk = Math.max(0, (enemy.atk || 0) - 3);
     enemy.def = Math.max(0, (enemy.def || 0) - 3);
-    msg = `☠️ ${char.name} : ${spell.name} → ${dmg} dégâts${_cr.crit ? ' 💥CRIT' : ''} et ${enemy.name} maudit (−3 ATK/DEF) !`;
+    msg = `☠️ ${char.name} : ${spell.name} → ${dmg} dégâts${crit ? ' 💥CRIT' : ''} et ${enemy.name} maudit (−3 ATK/DEF) !`;
     UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'crit');
     UX_safe.logCombat(`☠️ ${char.name} maudit ${enemy.name} : <b>−${dmg}</b>, −3 ATK/DEF`, 'magic');
   }

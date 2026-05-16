@@ -324,29 +324,20 @@ function _announceRespawn(floor, respawnCount) {
 // Non persisté (volontaire — un reload ré-affiche le toast).
 let _darknessToastShown = false;
 
-function goDeeper() {
-  // Endgame : l'escalier descendant de l'étage 10 est scellé tant que
-  // Voldemort Ressuscité n'a pas été vaincu. Voir ENDGAME_PLAN.md §7.1ter.
-  if (currentFloor === 10 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) {
-    if (typeof addMsg === 'function') {
-      addMsg("L'escalier reste scellé — une ombre veille encore.", 'bad');
-    }
-    return;
-  }
+// Transition d'étage partagée par goDeeper/goUp. `delta` = +1 / -1.
+//  opts.guard()            → true pour annuler (escalier scellé / sol atteint)
+//  opts.beforeTransition() → exécuté après l'incrément, avant l'animation
+//  opts.onArrive()         → exécuté dans le callback, après le rendu
+//  opts.saveReason         → raison passée à autoSave
+//  opts.narrative(floor)   → texte de setNarrative
+function _changeFloor(delta, opts) {
+  if (opts.guard && opts.guard()) return;
   _saveFloorToCache(currentFloor);
   if (typeof _clearFarmingPreviews === 'function') _clearFarmingPreviews();
-  currentFloor++;
+  currentFloor += delta;
   if (typeof visitedFloors !== 'undefined') visitedFloors.add(currentFloor);
   if (typeof portusOocCooldown === 'number' && portusOocCooldown > 0) portusOocCooldown--;
-
-  // Endgame §7.1 : toast narratif à la 1re entrée en étage 11+ post-victoire.
-  if (!_darknessToastShown
-      && typeof victoryAchieved !== 'undefined' && victoryAchieved
-      && currentFloor >= 11
-      && typeof addMsg === 'function') {
-    _darknessToastShown = true;
-    addMsg("L'air devient glacial. Les murs eux-mêmes semblent te haïr.", 'bad');
-  }
+  if (opts.beforeTransition) opts.beforeTransition();
 
   const locName = LOCATIONS[Math.min(currentFloor - 1, LOCATIONS.length - 1)];
 
@@ -362,41 +353,49 @@ function goDeeper() {
     renderMinimap();
     drawDungeon();
     updateCompass();
-    addMsg(`Niveau ${currentFloor} atteint !`, 'good');
+    if (opts.onArrive) opts.onArrive();
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
-    safeCall('autoSave', 'floor-down');
+    safeCall('autoSave', opts.saveReason);
   });
-  setNarrative(`Le groupe descend au niveau ${currentFloor} des donjons de Poudlard...`);
+  setNarrative(opts.narrative(currentFloor));
+}
+
+function goDeeper() {
+  _changeFloor(1, {
+    // Endgame : l'escalier descendant de l'étage 10 est scellé tant que
+    // Voldemort Ressuscité n'a pas été vaincu. Voir ENDGAME_PLAN.md §7.1ter.
+    guard() {
+      if (currentFloor === 10 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) {
+        if (typeof addMsg === 'function') {
+          addMsg("L'escalier reste scellé — une ombre veille encore.", 'bad');
+        }
+        return true;
+      }
+      return false;
+    },
+    // Endgame §7.1 : toast narratif à la 1re entrée en étage 11+ post-victoire.
+    beforeTransition() {
+      if (!_darknessToastShown
+          && typeof victoryAchieved !== 'undefined' && victoryAchieved
+          && currentFloor >= 11
+          && typeof addMsg === 'function') {
+        _darknessToastShown = true;
+        addMsg("L'air devient glacial. Les murs eux-mêmes semblent te haïr.", 'bad');
+      }
+    },
+    onArrive() { addMsg(`Niveau ${currentFloor} atteint !`, 'good'); },
+    saveReason: 'floor-down',
+    narrative: (floor) => `Le groupe descend au niveau ${floor} des donjons de Poudlard...`
+  });
 }
 
 function goUp() {
-  if (currentFloor <= 1) return;
-  _saveFloorToCache(currentFloor);
-  if (typeof _clearFarmingPreviews === 'function') _clearFarmingPreviews();
-  currentFloor--;
-  if (typeof visitedFloors !== 'undefined') visitedFloors.add(currentFloor);
-  if (typeof portusOocCooldown === 'number' && portusOocCooldown > 0) portusOocCooldown--;
-
-  const locName = LOCATIONS[Math.min(currentFloor - 1, LOCATIONS.length - 1)];
-
-  _floorTransition(currentFloor, locName, () => {
-    if (!_restoreFloorFromCache(currentFloor)) {
-      searchedCells = new Set();
-      generateDungeon(currentFloor);
-    }
-    restCooldown = 0;
-    updateLocationDisplay();
-    document.getElementById('btn-interact').style.display = 'none';
-    _updateSearchBtn();
-    renderMinimap();
-    drawDungeon();
-    updateCompass();
-    AudioSystem.playAmbientMusic(currentFloor);
-    if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
-    safeCall('autoSave', 'floor-up');
+  _changeFloor(-1, {
+    guard() { return currentFloor <= 1; },
+    saveReason: 'floor-up',
+    narrative: (floor) => `Le groupe remonte au niveau ${floor}...`
   });
-  setNarrative(`Le groupe remonte au niveau ${currentFloor}...`);
 }
 
 function openChest() {

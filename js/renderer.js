@@ -156,8 +156,7 @@ function drawDungeon() {
 }
 
 function getCellAhead(dx, dy, dist) {
-  const dirs = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
-  const [fx, fy] = dirs[playerDir];
+  const [fx, fy] = DIRECTIONS[playerDir];
   const rx = fy, ry = -fx;
   const nx = playerX + fx * dist + rx * dx;
   const ny = playerY + fy * dist + ry * dy;
@@ -167,6 +166,70 @@ function getCellAhead(dx, dy, dist) {
 
 function hasWall(dx, dy, dist) {
   return getCellAhead(dx, dy, dist) === CELL.WALL;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Mur latéral (gauche ou droit) — bloc miroir paramétré par le côté.
+// ─────────────────────────────────────────────────────────────
+function _drawSideWall(side, d, near, far, di, edgeA) {
+  const isLeft = (side === 'left');
+  const nearX  = isLeft ? near.x0 : near.x1;
+  const farX   = isLeft ? far.x0  : far.x1;
+
+  const trapezoid = () => {
+    ctx.beginPath();
+    ctx.moveTo(nearX, near.y0);
+    ctx.lineTo(farX,  far.y0);
+    ctx.lineTo(farX,  far.y1);
+    ctx.lineTo(nearX, near.y1);
+    ctx.closePath();
+  };
+
+  if (hasWall(isLeft ? -1 : 1, 0, d)) {
+    // Baseline couleur + stone-blocks (toujours visible)
+    ctx.fillStyle = SIDE_C[di];
+    trapezoid();
+    ctx.fill();
+    // Asymétrie historique préservée : le mur gauche borne les joints à
+    // far.y1, le mur droit à near.y1.
+    drawStoneBlocks(Math.min(nearX, farX), near.y0,
+                    Math.max(nearX, farX), isLeft ? far.y1 : near.y1,
+                    edgeA * 0.8);
+
+    // Texture tuilée (pattern 'repeat' + clip trapèze, alpha plein) — via cache
+    const sideKey  = (d > 3) ? 'stone2' : 'wood';
+    const _pattern = _patternForKey('walls', sideKey);
+    if (_pattern) {
+      ctx.save();
+      trapezoid();
+      ctx.clip();
+      ctx.fillStyle = _pattern;
+      ctx.fillRect(Math.min(nearX, farX), near.y0,
+                   Math.abs(farX - nearX), near.y1 - near.y0);
+      // Fog de distance
+      ctx.fillStyle = `rgba(6,4,2,${0.18 + di * 0.14})`;
+      ctx.fillRect(Math.min(nearX, farX), near.y0,
+                   Math.abs(farX - nearX), near.y1 - near.y0);
+      ctx.restore();
+    }
+
+    drawSideLines(nearX, near.y0, near.y1, farX, far.y0, far.y1, edgeA);
+
+    ctx.strokeStyle = `rgba(201,168,76,${edgeA * 0.75})`;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(nearX, near.y0); ctx.lineTo(farX, far.y0);
+    ctx.moveTo(nearX, near.y1); ctx.lineTo(farX, far.y1);
+    ctx.stroke();
+  } else {
+    // Ouverture latérale : ombre pour indiquer le couloir
+    const grad = ctx.createLinearGradient(nearX, 0, farX, 0);
+    grad.addColorStop(0, 'rgba(0,0,0,0.5)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    trapezoid();
+    ctx.fill();
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -215,8 +278,7 @@ function drawCorridor(cx, cy, scale, W, H) {
     if (cell === CELL.WALL) { wallDist = d; break; }
     if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY)) {
       const nearS = getRect(cx, cy, scale, d - 1);
-      const dirs2 = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
-      const [_fdx, _fdy] = dirs2[playerDir];
+      const [_fdx, _fdy] = DIRECTIONS[playerDir];
       pendingSprite = { cell, x: cx, baseY: nearS.y1, sz: nearS.hw * 1.1,
                         mapX: playerX + _fdx * d, mapY: playerY + _fdy * d,
                         clipX0: nearS.x0, clipY0: nearS.y0, clipX1: nearS.x1, clipY1: nearS.y1 };
@@ -351,120 +413,11 @@ function drawCorridor(cx, cy, scale, W, H) {
     ctx.stroke();
 
     // === FIX TEXTURES FINALES === murs latéraux : pattern clippé sur le trapèze
-
-    // Mur gauche
-    if (hasWall(-1, 0, d)) {
-      // Baseline couleur + stone-blocks (toujours visible)
-      ctx.fillStyle = SIDE_C[di];
-      ctx.beginPath();
-      ctx.moveTo(near.x0, near.y0);
-      ctx.lineTo(far.x0,  far.y0);
-      ctx.lineTo(far.x0,  far.y1);
-      ctx.lineTo(near.x0, near.y1);
-      ctx.closePath();
-      ctx.fill();
-      drawStoneBlocks(near.x0, near.y0, far.x0, far.y1, edgeA * 0.8);
-
-      // Texture tuilée (pattern 'repeat' + clip trapèze, alpha plein) — via cache
-      const sideKeyL  = (d > 3) ? 'stone2' : 'wood';
-      const _lpattern = _patternForKey('walls', sideKeyL);
-      if (_lpattern) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(near.x0, near.y0);
-        ctx.lineTo(far.x0,  far.y0);
-        ctx.lineTo(far.x0,  far.y1);
-        ctx.lineTo(near.x0, near.y1);
-        ctx.closePath();
-        ctx.clip();
-        ctx.fillStyle = _lpattern;
-        ctx.fillRect(near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
-        // Fog de distance
-        ctx.fillStyle = `rgba(6,4,2,${0.18 + di * 0.14})`;
-        ctx.fillRect(near.x0, near.y0, far.x0 - near.x0, near.y1 - near.y0);
-        ctx.restore();
-      }
-
-      drawSideLines(near.x0, near.y0, near.y1, far.x0, far.y0, far.y1, edgeA);
-
-      ctx.strokeStyle = `rgba(201,168,76,${edgeA * 0.75})`;
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.moveTo(near.x0, near.y0); ctx.lineTo(far.x0, far.y0);
-      ctx.moveTo(near.x0, near.y1); ctx.lineTo(far.x0, far.y1);
-      ctx.stroke();
-    } else {
-      // Ouverture à gauche : ombre pour indiquer le couloir
-      const grad = ctx.createLinearGradient(near.x0, 0, far.x0, 0);
-      grad.addColorStop(0, 'rgba(0,0,0,0.5)');
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.moveTo(near.x0, near.y0);
-      ctx.lineTo(far.x0,  far.y0);
-      ctx.lineTo(far.x0,  far.y1);
-      ctx.lineTo(near.x0, near.y1);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    // Mur droit (même logique)
-    if (hasWall(1, 0, d)) {
-      // Baseline couleur + stone-blocks
-      ctx.fillStyle = SIDE_C[di];
-      ctx.beginPath();
-      ctx.moveTo(near.x1, near.y0);
-      ctx.lineTo(far.x1,  far.y0);
-      ctx.lineTo(far.x1,  far.y1);
-      ctx.lineTo(near.x1, near.y1);
-      ctx.closePath();
-      ctx.fill();
-      drawStoneBlocks(far.x1, near.y0, near.x1, near.y1, edgeA * 0.8);
-
-      const sideKeyR  = (d > 3) ? 'stone2' : 'wood';
-      const _rpattern = _patternForKey('walls', sideKeyR);
-      if (_rpattern) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(near.x1, near.y0);
-        ctx.lineTo(far.x1,  far.y0);
-        ctx.lineTo(far.x1,  far.y1);
-        ctx.lineTo(near.x1, near.y1);
-        ctx.closePath();
-        ctx.clip();
-        ctx.fillStyle = _rpattern;
-        ctx.fillRect(far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
-        // Fog
-        ctx.fillStyle = `rgba(6,4,2,${0.18 + di * 0.14})`;
-        ctx.fillRect(far.x1, near.y0, near.x1 - far.x1, near.y1 - near.y0);
-        ctx.restore();
-      }
-
-      drawSideLines(near.x1, near.y0, near.y1, far.x1, far.y0, far.y1, edgeA);
-
-      ctx.strokeStyle = `rgba(201,168,76,${edgeA * 0.75})`;
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.moveTo(near.x1, near.y0); ctx.lineTo(far.x1, far.y0);
-      ctx.moveTo(near.x1, near.y1); ctx.lineTo(far.x1, far.y1);
-      ctx.stroke();
-    } else {
-      const grad = ctx.createLinearGradient(near.x1, 0, far.x1, 0);
-      grad.addColorStop(0, 'rgba(0,0,0,0.5)');
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.moveTo(near.x1, near.y0);
-      ctx.lineTo(far.x1,  far.y0);
-      ctx.lineTo(far.x1,  far.y1);
-      ctx.lineTo(near.x1, near.y1);
-      ctx.closePath();
-      ctx.fill();
-    }
+    _drawSideWall('left',  d, near, far, di, edgeA);
+    _drawSideWall('right', d, near, far, di, edgeA);
 
     // ── Ennemi visible dans le couloir ────────────────────────
-    const dirs2 = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
-    const [fdx, fdy] = dirs2[playerDir];
+    const [fdx, fdy] = DIRECTIONS[playerDir];
     const eMapX = playerX + fdx * d;
     const eMapY = playerY + fdy * d;
     if (eMapX >= 0 && eMapY >= 0 && eMapX < MAP_W && eMapY < MAP_H && enemyMap[eMapY][eMapX]) {

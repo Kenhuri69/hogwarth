@@ -24,6 +24,25 @@ function tryAddItem(itemOrId, opts = {}) {
   return true;
 }
 
+// Compte les exemplaires d'un matériau (par id) dans le sac partagé.
+function _countMaterial(itemId) {
+  if (typeof player === 'undefined' || !player.inventory) return 0;
+  return player.inventory.filter(it => it && it.id === itemId).length;
+}
+
+// Retire jusqu'à `n` exemplaires d'un matériau du sac partagé.
+// Retourne le nombre effectivement retiré.
+function _consumeMaterial(itemId, n) {
+  let removed = 0;
+  for (let i = player.inventory.length - 1; i >= 0 && removed < n; i--) {
+    if (player.inventory[i] && player.inventory[i].id === itemId) {
+      player.inventory.splice(i, 1);
+      removed++;
+    }
+  }
+  return removed;
+}
+
 // ── Calcul des stats réelles (base + équipement) ────────────
 // Doit être appelé après chaque équipement et après chaque level-up.
 // Itère dynamiquement sur tous les slots de c.equipped pour supporter
@@ -231,8 +250,6 @@ function renderInventory(battleMode) {
       const typeLabel = (isEquip || isSpellbook)
         ? `<div class="inv-type-badge" style="font-size:9px;color:${isSpellbook ? '#8060c0' : '#b08040'};margin-top:1px">${typeIcon}</div>`
         : '';
-      // Bordure de rareté inv-slot ↔ classe rarity-*
-      if (item.rarity) div.classList.add(`rarity-${item.rarity}`);
       const ttHtml = (typeof _renderItemTooltip === 'function')
         ? _renderItemTooltip(item, null, battleMode && !isEquip ? 'cliquer pour utiliser' : (isEquip ? 'cliquer pour équiper' : (isSpellbook ? 'cliquer pour apprendre' : 'cliquer pour utiliser')))
         : '';
@@ -379,7 +396,7 @@ function equipItem(inventoryIdx, charIdx, targetSlot) {
 
   // Déséquiper l'ancien objet → retour en inventaire si place dispo
   const old = c.equipped && c.equipped[slot];
-  if (old && player.inventory.length >= 16) {
+  if (old && player.inventory.length >= INVENTORY_MAX) {
     addMsg(`Inventaire plein — libérez une place avant d'équiper ${item.name}.`, 'bad');
     return;
   }
@@ -461,6 +478,38 @@ function _teachSpellToParty(spellName) {
   return learned;
 }
 
+// Applique l'effet d'un consommable sur la cible (hp/sp). No-op si
+// l'effet n'est pas un effet de restauration reconnu.
+function _applyConsumableEffect(item, target) {
+  if (item.effect === 'heal')                  target.hp = Math.min(target.hpMax, target.hp + item.power);
+  else if (item.effect === 'restore_sp')       target.sp = Math.min(target.spMax, target.sp + item.power);
+  else if (item.effect === 'heal_full')        target.hp = target.hpMax;
+  else if (item.effect === 'restore_sp_full')  target.sp = target.spMax;
+  else if (item.effect === 'both') {
+    target.hp = Math.min(target.hpMax, target.hp + item.power);
+    target.sp = Math.min(target.spMax, target.sp + 10);
+  }
+}
+
+// Enseigne le sort d'un livre à tout le groupe actif. `invIdx` = index du
+// livre dans le sac (consommé si le sort est appris). Retourne true si le
+// livre a été consommé, false sinon (sort déjà connu ou inconnu — un
+// message a déjà été affiché).
+function _teachSpellbook(item, invIdx) {
+  const spellDef = SPELLS.find(s => s.name === item.spell);
+  if (!spellDef) { addMsg(`Sort inconnu : ${item.spell}`, 'bad'); return false; }
+  const learned = _teachSpellToParty(item.spell);
+  if (learned) {
+    AudioSystem.playLevelUp();
+    AudioSystem.speakSpell(item.spell);
+    addMsg(`✨ Sort appris : ${item.spell} !`, 'magic');
+    player.inventory.splice(invIdx, 1);
+  } else {
+    addMsg(`Le sort ${item.spell} est déjà connu par tout le groupe.`, '');
+  }
+  return learned;
+}
+
 // ── Utiliser / équiper un objet ──────────────────────────────
 function useItem(idx, battleMode) {
   const item = player.inventory[idx];
@@ -469,18 +518,7 @@ function useItem(idx, battleMode) {
   // Livre de sorts → apprentissage immédiat (hors combat seulement)
   if (item.type === 'spellbook') {
     if (battleMode) return; // non utilisable en combat
-    const spellDef = SPELLS.find(s => s.name === item.spell);
-    if (!spellDef) { addMsg(`Sort inconnu : ${item.spell}`, 'bad'); return; }
-
-    const learned = _teachSpellToParty(item.spell);
-    if (learned) {
-      AudioSystem.playLevelUp();
-      AudioSystem.speakSpell(item.spell);
-      addMsg(`✨ Sort appris : ${item.spell} !`, 'magic');
-      player.inventory.splice(idx, 1);
-    } else {
-      addMsg(`Le sort ${item.spell} est déjà connu par tout le groupe.`, '');
-    }
+    _teachSpellbook(item, idx);
     updateUI();
     closeModal('inventory-modal');
     return;
@@ -510,14 +548,7 @@ function useItem(idx, battleMode) {
 
   const target = (battleMode && inBattle) ? party[currentBattleChar] : player;
 
-  if (item.effect === 'heal')                  target.hp = Math.min(target.hpMax, target.hp + item.power);
-  else if (item.effect === 'restore_sp')       target.sp = Math.min(target.spMax, target.sp + item.power);
-  else if (item.effect === 'heal_full')        target.hp = target.hpMax;
-  else if (item.effect === 'restore_sp_full')  target.sp = target.spMax;
-  else if (item.effect === 'both') {
-    target.hp = Math.min(target.hpMax, target.hp + item.power);
-    target.sp = Math.min(target.spMax, target.sp + 10);
-  }
+  _applyConsumableEffect(item, target);
   addMsg(`${target.name} utilise : ${item.name}`, 'good');
   player.inventory.splice(idx, 1);
 
@@ -797,12 +828,7 @@ function useItemFromChar(inventoryIdx, charIdx) {
   if (!target) return;
 
   if (item.type === 'consumable') {
-    if (item.effect === 'heal')            target.hp = Math.min(target.hpMax, target.hp + item.power);
-    else if (item.effect === 'restore_sp') target.sp = Math.min(target.spMax, target.sp + item.power);
-    else if (item.effect === 'both') {
-      target.hp = Math.min(target.hpMax, target.hp + item.power);
-      target.sp = Math.min(target.spMax, target.sp + 10);
-    }
+    _applyConsumableEffect(item, target);
     addMsg(`${target.name} utilise : ${item.name}`, 'good');
     player.inventory.splice(inventoryIdx, 1);
     updateUI();
@@ -811,15 +837,7 @@ function useItemFromChar(inventoryIdx, charIdx) {
   }
 
   if (item.type === 'spellbook') {
-    const learned = _teachSpellToParty(item.spell);
-    if (learned) {
-      AudioSystem.playLevelUp();
-      AudioSystem.speakSpell(item.spell);
-      addMsg(`✨ Sort appris : ${item.spell} !`, 'magic');
-      player.inventory.splice(inventoryIdx, 1);
-    } else {
-      addMsg(`Le sort ${item.spell} est déjà connu par tout le groupe.`, '');
-    }
+    _teachSpellbook(item, inventoryIdx);
     updateUI();
     openCharacter(charIdx);
     return;
