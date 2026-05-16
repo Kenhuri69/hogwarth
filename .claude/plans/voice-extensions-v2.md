@@ -234,11 +234,9 @@ au-dessus de `SpeechSynthesis` navigateur. Lancement :
 | `sprout_active_1`        | « Trois trolls, et pas un de moins. Garde la tête haute. »                          |
 | `sprout_ready_1`         | « Trois trolls vaincus — le serment est tenu. Le Médaillon de Helga vous attend […] » |
 
-> Limite connue : si un PNJ propose une autre quête avant `quest_set_<house>`
-> (ex. McGonagall donne aussi `golem_passage`), la voix `_offer_1` jouera
-> sur le texte de `golem_passage` — léger décalage texte/voix accepté en V1
-> (tons cohérents). Override par quête possible plus tard via mapping
-> dédié dans `_voiceKeyForPage` (cf. modèle Dumbledore).
+> ~~Limite connue~~ **résolue (extension §A.7)** : McGonagall donne aussi
+> `golem_passage`. `_voiceKeyForPage` route désormais cette quête vers des
+> clés dédiées `mcgonagall_golem_<state>_1` — plus de décalage texte/voix.
 
 #### A.6 — Prompts acteurs (voie C : génération manuelle ElevenLabs)
 
@@ -269,6 +267,28 @@ Settings : stability 55, style 0.
 
 > Les 20 textes exacts à enregistrer sont dans le §A.5 ci-dessus et
 > dans `tools/gen_voice_edge.py` (dict `LINES`).
+
+#### A.7 — Extension : autres dialogues des chefs de Maison ✅
+
+Au-delà du greeting + quête de Set, 8 OGG supplémentaires couvrent les
+dialogues restants des 4 chefs.
+
+| Voice key | Source (`npcs.js`) |
+|-----------|--------------------|
+| `mcgonagall_golem_offer_1` / `_active_1` / `_ready_1` | quête `golem_passage` (2e quête de McGonagall) |
+| `mcgonagall_idle_1`, `rogue_idle_1`, `flitwick_idle_1`, `sprout_idle_1` | `dialogues.idle` |
+| `mcgonagall_done_1` | `dialogues.questDone` |
+
+- [x] 8 lignes ajoutées à `LINES` (`tools/gen_voice_edge.py`).
+- [x] 8 OGG générés + encodés (`audio/voice/`).
+- [x] 8 entrées dans `_VOICE_SAMPLES` (`audio-music.js`).
+- [x] `_voiceKeyForPage` : routage `idle`/`done` + clés `golem` dédiées.
+- [x] Smoke `scenarioHeadOfHouseVoice` T5 (clés + routage golem/idle/done).
+- [ ] Commit + push.
+
+> Rogue / Flitwick / Chourave n'ont pas de `questDone` : en état `done`,
+> `_npcDialogSource` retombe sur `idle` — déjà voisé. Aucun OGG `done`
+> dédié pour eux (pas de texte source à enregistrer).
 
 ### Vague B — Voix incantation sorts ✅
 

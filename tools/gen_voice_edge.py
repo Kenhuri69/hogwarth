@@ -85,6 +85,19 @@ LINES = {
         ("mcgonagall_ready_1",
          "Trois Chimères abattues. Le Cœur du Lion vous revient — repassez "
          "le réclamer, comme il sied à un héritier de Godric."),
+        # Quête golem_passage (2e quête de McGonagall) — clés dédiées pour
+        # éviter le décalage texte/voix avec la quête de Set.
+        ("mcgonagall_golem_offer_1",
+         "Neutralisez le Gardien du Portail. Je vous récompenserai à la "
+         "hauteur du danger."),
+        ("mcgonagall_golem_active_1",
+         "Le Gardien est-il vaincu ?"),
+        ("mcgonagall_golem_ready_1",
+         "Excellent travail. Voici votre récompense, bien méritée."),
+        ("mcgonagall_idle_1",
+         "L'ordre doit être maintenu, même dans ces souterrains."),
+        ("mcgonagall_done_1",
+         "Vous avez prouvé votre valeur. Gryffondor peut être fier."),
     ],
     "rogue": [
         ("rogue_greeting_1",
@@ -101,6 +114,8 @@ LINES = {
         ("rogue_ready_1",
          "Trois Basilics, trois preuves. La Couronne vous attend — venez la "
          "chercher quand l'ambition vous le dictera."),
+        ("rogue_idle_1",
+         "Concentrez-vous. La distraction tue plus vite que les sortilèges."),
     ],
     "flitwick": [
         ("flitwick_greeting_1",
@@ -119,6 +134,9 @@ LINES = {
         ("flitwick_ready_1",
          "Trois maudisseuses, trois pages préservées. L'Anneau du Savoir "
          "vous attend — revenez le réclamer."),
+        ("flitwick_idle_1",
+         "Un sortilège bien exécuté vaut mille incantations brouillonnes. "
+         "Travaillez vos gestes."),
     ],
     "sprout": [
         ("sprout_greeting_1",
@@ -136,6 +154,8 @@ LINES = {
         ("sprout_ready_1",
          "Trois trolls vaincus — le serment est tenu. Le Médaillon de Helga "
          "vous attend, repassez le réclamer."),
+        ("sprout_idle_1",
+         "Patience et persévérance, comme on l'enseigne aux racines."),
     ],
     # Incantations des sortilèges (Vague B). Le texte synthétisé est
     # l'incantation prononcée ; la clé OGG est mappée 1:1 dans
