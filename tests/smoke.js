@@ -32,6 +32,12 @@ function isIgnorableError(text) {
 async function launchGame() {
   const browser = await chromium.launch({ headless: true });
   const ctx     = await browser.newContext();
+  // Opt-out par défaut du tour guidé d'aide : les scénarios existants ne
+  // doivent pas voir l'overlay s'afficher au démarrage (cf. js/help-tour.js).
+  // scenarioHelpTour lève explicitement ce flag pour tester le tour.
+  await ctx.addInitScript(() => {
+    try { localStorage.setItem('hh_help_tour_optout', '1'); } catch (e) { /* noop */ }
+  });
   const page    = await ctx.newPage();
   const errors  = [];
 
@@ -6907,6 +6913,124 @@ async function scenarioStun() {
   await browser.close();
 }
 
+// ── Scénario Help Tour : tour guidé d'aide pour novices ──
+
+async function scenarioHelpTour() {
+  console.log('\n── Scénario Help Tour : tour guidé d\'aide ──');
+  const { browser, page, errors } = await launchGame();
+
+  // Lève l'opt-out posé par launchGame pour que le tour s'auto-affiche.
+  await page.evaluate(() => {
+    try { localStorage.removeItem('hh_help_tour_optout'); } catch (e) { /* noop */ }
+  });
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : le tour s'affiche automatiquement au démarrage (étape 1).
+  const t1 = await page.evaluate(() => {
+    const ov = document.getElementById('help-tour-overlay');
+    return {
+      overlay:   !!ov && ov.style.display === 'block',
+      active:    window._helpTourActive === true,
+      count:     document.getElementById('help-tour-step-count')?.textContent,
+      title:     document.getElementById('help-tour-title')?.textContent,
+      total:     typeof HELP_TOUR_STEPS !== 'undefined' && HELP_TOUR_STEPS.length,
+      prevDis:   document.getElementById('help-tour-prev')?.disabled
+    };
+  });
+  console.log('  T1 auto-affichage →', t1);
+  assert(t1.overlay,  'overlay du tour absent au démarrage');
+  assert(t1.active,   '_helpTourActive doit être true');
+  assert(t1.total >= 10, 'HELP_TOUR_STEPS trop court');
+  assert(t1.count === 'Étape 1 / ' + t1.total, 'compteur d\'étape incorrect');
+  assert(t1.prevDis === true, 'bouton Précédent doit être désactivé en étape 1');
+
+  // T2 : helpTourNext avance et affiche le spotlight sur une vraie cible.
+  const t2 = await page.evaluate(() => {
+    helpTourNext();
+    const spot = document.getElementById('help-tour-spotlight');
+    return {
+      count:     document.getElementById('help-tour-step-count')?.textContent,
+      spotShown: spot && spot.style.display === 'block',
+      spotW:     spot && parseFloat(spot.style.width)
+    };
+  });
+  console.log('  T2 étape suivante + spotlight →', t2);
+  assert(/Étape 2 \//.test(t2.count), 'helpTourNext n\'a pas avancé');
+  assert(t2.spotShown, 'spotlight doit être visible sur une étape ciblée');
+  assert(t2.spotW > 0, 'spotlight doit avoir une largeur');
+
+  // T3 : navigation jusqu'à la dernière étape → bouton "Terminer".
+  const t3 = await page.evaluate(() => {
+    while (document.getElementById('help-tour-next').textContent.indexOf('Terminer') === -1) {
+      helpTourNext();
+    }
+    return {
+      count: document.getElementById('help-tour-step-count')?.textContent,
+      next:  document.getElementById('help-tour-next').textContent
+    };
+  });
+  console.log('  T3 dernière étape →', t3);
+  assert(/Terminer/.test(t3.next), 'dernière étape doit afficher "Terminer"');
+
+  // T4 : Terminer ferme le tour (overlay retiré du DOM).
+  const t4 = await page.evaluate(() => {
+    helpTourNext();   // depuis la dernière étape → helpTourEnd()
+    return {
+      overlay: !!document.getElementById('help-tour-overlay'),
+      active:  window._helpTourActive === true
+    };
+  });
+  console.log('  T4 fermeture →', t4);
+  assert(t4.overlay === false, 'overlay doit être retiré du DOM après Terminer');
+  assert(t4.active === false,  '_helpTourActive doit repasser à false');
+
+  // T5 : startHelpTour relance le tour à la demande.
+  const t5 = await page.evaluate(() => {
+    startHelpTour();
+    return {
+      overlay: !!document.getElementById('help-tour-overlay'),
+      count:   document.getElementById('help-tour-step-count')?.textContent
+    };
+  });
+  console.log('  T5 relance manuelle →', t5);
+  assert(t5.overlay, 'startHelpTour doit recréer l\'overlay');
+  assert(/Étape 1 \//.test(t5.count), 'relance doit repartir de l\'étape 1');
+
+  // T6 : la case opt-out persiste le choix et bloque l'auto-affichage.
+  const t6 = await page.evaluate(() => {
+    const cb = document.getElementById('help-tour-optout-cb');
+    cb.checked = true;
+    cb.dispatchEvent(new Event('change'));
+    const stored = localStorage.getItem('hh_help_tour_optout');
+    helpTourEnd();
+    // maybeAutoStartHelpTour ne doit rien faire avec l'opt-out actif.
+    maybeAutoStartHelpTour();
+    return {
+      stored,
+      overlayAfter: !!document.getElementById('help-tour-overlay')
+    };
+  });
+  console.log('  T6 opt-out →', t6);
+  assert(t6.stored === '1', 'opt-out non persisté en localStorage');
+  assert(t6.overlayAfter === false,
+         'maybeAutoStartHelpTour ne doit pas afficher le tour avec opt-out actif');
+
+  // T7 : le bouton "Aide" de la barre de commandes est bien câblé.
+  const t7 = await page.evaluate(() => {
+    const btn = document.querySelector('button[onclick="startHelpTour()"]');
+    return { exists: !!btn };
+  });
+  console.log('  T7 bouton Aide →', t7);
+  assert(t7.exists, 'bouton « Aide » absent de la barre de commandes');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Help Tour OK (auto-affichage, navigation, spotlight, opt-out, relance)');
+  await browser.close();
+}
+
 async function scenarioLoader() {
   console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
   const { browser, page, errors } = await launchGame();
@@ -6964,7 +7088,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

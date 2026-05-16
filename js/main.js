@@ -365,6 +365,10 @@ async function startGame(count = 2) {
   // Note : l'intro Dumbledore est désormais gérée AVANT startGame() par
   // showIntroScreen() dans le flow chooseHouse. Pas de popup en jeu.
 
+  // Tour guidé d'aide pour novices — auto-affiché à chaque nouvelle partie
+  // sauf opt-out localStorage (cf. js/help-tour.js).
+  if (typeof maybeAutoStartHelpTour === 'function') maybeAutoStartHelpTour();
+
   // === FIX TEXTURE MISSING === re-render appuyés jusqu'à ce que tous les patterns soient prêts
   // Puis cadence normale (~500 ms) une fois l'état stable
   let frame = 0;

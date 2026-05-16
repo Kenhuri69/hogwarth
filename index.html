@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="css/ux-improvements.css?v=1">
 <link rel="stylesheet" href="css/save-ui.css?v=1">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
+<link rel="stylesheet" href="css/help-tour.css?v=1">
 </head>
 <body>
 
@@ -570,6 +571,7 @@
       <button class="cmd-btn" data-group="system" onclick="openSaveDialog()" title="Sauvegarder la partie"><span class="btn-icon"><img src="img/icons/save.png" alt="Sauver"></span><span class="btn-label">Sauver</span></button>
       <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon"><img src="img/icons/load.png" alt="Charger"></span><span class="btn-label">Charger</span></button>
       <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon"><img src="img/icons/gear.png" alt="Diff."></span><span class="btn-label">Diff.</span></button>
+      <button class="cmd-btn" data-group="system" onclick="startHelpTour()" title="Aide / Tutoriel"><span class="btn-icon" style="font-size:18px">📖</span><span class="btn-label">Aide</span></button>
       <button class="cmd-btn mobile-map-btn" data-group="system" onclick="toggleMobileMap()" title="Carte"><span class="btn-icon"><img src="img/icons/map.png" alt="Carte"></span></button>
       <button class="cmd-btn" id="btn-interact" data-group="adventure" style="display:none"><span class="btn-icon"><img src="img/icons/door.png" alt="Interact"></span></button>
     </div>
@@ -820,6 +822,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=1"></script>
 <script src="js/library.js?v=1"></script>
+<script src="js/help-tour.js?v=1"></script>
 <script src="js/loader.js?v=2"></script>
 
 </body>
