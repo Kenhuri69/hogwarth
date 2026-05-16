@@ -26,8 +26,7 @@
     for (const id of overlayIds) {
       const el = document.getElementById(id);
       if (!el) continue;
-      const disp = el.style.display;
-      if (disp && disp !== 'none') return true;
+      if (getComputedStyle(el).display !== 'none') return true;
     }
     return false;
   }

@@ -263,7 +263,7 @@ function addMsg(text, type = '') {
 // MODALES
 // ============================================================
 
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function closeModal(id) { const el = safeEl(id); if (el) el.style.display = 'none'; }
 
 // ── Rendu de la grille d'équipement (fiche perso) ────────────
 // 11 slots étendus, ordre stable. Chaque ligne = icône slot ou icône

@@ -488,7 +488,6 @@ function useItem(idx, battleMode) {
   }
 
   const target = (battleMode && inBattle) ? party[currentBattleChar] : player;
-  let used = false;
 
   if (item.effect === 'heal')                  target.hp = Math.min(target.hpMax, target.hp + item.power);
   else if (item.effect === 'restore_sp')       target.sp = Math.min(target.spMax, target.sp + item.power);
@@ -500,28 +499,23 @@ function useItem(idx, battleMode) {
   }
   addMsg(`${target.name} utilise : ${item.name}`, 'good');
   player.inventory.splice(idx, 1);
-  used = true;
 
   updateUI();
+  closeModal('inventory-modal');
 
-  if (used) {
-    closeModal('inventory-modal');
-    if (battleMode && inBattle) {
-      // Les ennemis contre-attaquent après utilisation d'objet
-      let log = `${target.name} utilise ${item.name}.`;
-      livingEnemies().forEach(e => {
-        const dmg = Math.max(0, e.atk - target.def + Math.floor(Math.random() * 3));
-        target.hp  = Math.max(0, target.hp - dmg);
-        log += ` ${e.icon}-${dmg} PV.`;
-      });
-      setBattleLog(log);
-      renderEnemyGroup();
-      updateUI();
-      if (allPartyKO()) { inBattle = false; triggerDeath('Le groupe a été vaincu...'); }
-      else advanceBattleChar();
-    }
-  } else {
-    renderInventory(battleMode);
+  if (battleMode && inBattle) {
+    // Les ennemis contre-attaquent après utilisation d'objet
+    let log = `${target.name} utilise ${item.name}.`;
+    livingEnemies().forEach(e => {
+      const dmg = Math.max(0, e.atk - target.def + Math.floor(Math.random() * 3));
+      target.hp  = Math.max(0, target.hp - dmg);
+      log += ` ${e.icon}-${dmg} PV.`;
+    });
+    setBattleLog(log);
+    renderEnemyGroup();
+    updateUI();
+    if (allPartyKO()) { inBattle = false; triggerDeath('Le groupe a été vaincu...'); }
+    else advanceBattleChar();
   }
 }
 

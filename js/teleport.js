@@ -387,7 +387,7 @@ function _portusTriggerTrap() {
   if (typeof setNarrative === 'function') {
     setNarrative(`Un piège jaillit à l'arrivée — ${target.name} encaisse le choc.`);
   }
-  if (party.every(c => c.hp <= 0) && typeof triggerDeath === 'function') {
+  if (party.slice(0, partySize).every(c => c.hp <= 0) && typeof triggerDeath === 'function') {
     triggerDeath('Le vortex de Portus a précipité le groupe dans un piège mortel...');
   }
 }

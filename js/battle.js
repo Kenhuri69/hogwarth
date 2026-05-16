@@ -416,7 +416,8 @@ function doFlee() {
   const firstEnemy = livingEnemies()[0];
   const chance    = char.agi > (firstEnemy?.atk || 5) ? 0.7 : 0.4;
   const hasBroom  = player.inventory.some(i => i.id === 'broom')
-                 || party.some(c => c.equipped && c.equipped.acc && c.equipped.acc.id === 'broom');
+                 || party.some(c => c.equipped &&
+                      Object.values(c.equipped).some(it => it && it.id === 'broom'));
 
   if (hasBroom || Math.random() < chance) {
     endBattle(false);

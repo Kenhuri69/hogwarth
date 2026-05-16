@@ -30,8 +30,8 @@ const STAT_POINTS_PER_LEVEL = 3;
 // pour persister à travers les futurs level-ups via `recalculateStats`.
 // Clés UI : STR / INT / AGI / END / LCK.
 const STAT_POINT_EFFECTS = {
-  STR: { baseAtk: 1 },          // +1 ATK permanent
-  INT: { baseMag: 1 },          // +1 MAG permanent
+  STR: { baseAtk: 1, baseStr: 1 },// +1 ATK (+1 STR pour cohérence affichage)
+  INT: { baseMag: 1, baseInt: 1 },// +1 MAG (+1 INT pour cohérence affichage)
   AGI: { baseAgi: 1 },          // +1 AGI (impacte dodge dans recalculateStats)
   END: { hpMax: 5, baseEnd: 1 },// +5 HP max (+ +1 END pour cohérence affichage)
   LCK: { baseLck: 1 },          // +1 LCK (impacte crit dans recalculateStats)

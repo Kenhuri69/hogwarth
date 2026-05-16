@@ -23,7 +23,7 @@ function filterBestiary() {
   grid.innerHTML = '';
 
   const filtered = MONSTERS.filter(m => {
-    const matchSearch = !search      || m.name.toLowerCase().includes(search) || m.lore.toLowerCase().includes(search);
+    const matchSearch = !search      || m.name.toLowerCase().includes(search) || (m.lore || '').toLowerCase().includes(search);
     const matchCat    = !cat         || m.category === cat;
     const matchFloor  = !floorFilter || m.minFloor >= floorFilter;
     return matchSearch && matchCat && matchFloor;
@@ -134,7 +134,7 @@ function _renderDangerHtml(monster) {
               : v >= 4  ? '#c0a020'
               :           '#608040';
   return `<span class="bestiary-danger" style="color:${color}">
-            ${'⚠️'.repeat(Math.min(v, 5))} Danger&nbsp;${v}/10
+            ${'⚠️'.repeat(Math.min(v, 5))} Danger&nbsp;${v}/11
           </span>`;
 }
 

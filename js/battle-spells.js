@@ -332,7 +332,10 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   closeModal('spell-modal');
   document.getElementById('target-selection').style.display = 'none';
 
-  const enemy   = enemyGroup[targetIdx >= 0 ? targetIdx : 0];
+  let enemy     = enemyGroup[targetIdx >= 0 ? targetIdx : 0];
+  if ((!enemy || enemy.currentHp <= 0) && typeof livingEnemies === 'function') {
+    enemy = livingEnemies()[0] || enemy;
+  }
   const handler = SPELL_HANDLERS[spell.effect];
   let msg = '';
   if (handler) {

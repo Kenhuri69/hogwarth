@@ -541,6 +541,7 @@ function rest() {
     const restPool  = MONSTERS.filter(m => m.minFloor <= restFloor);
     const pool      = restPool.length ? restPool : MONSTERS;
     const enemy     = scaleMonster(weightedPick(pool), restFloor);
+    restCooldown = 5;
     startBattle(enemy);
     return;
   }

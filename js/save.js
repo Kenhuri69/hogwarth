@@ -341,6 +341,10 @@ function _applyState(gs) {
   if (btnInter) btnInter.style.display = 'none';
   const expl = document.getElementById('explore-overlay');
   if (expl) expl.style.display = 'none';
+  const npcOv = document.getElementById('npc-dialog-overlay');
+  if (npcOv) npcOv.style.display = 'none';
+  const ftOv = document.getElementById('floor-transition');
+  if (ftOv) ftOv.classList.remove('active');
 
   if (gs.activeQuests)   activeQuests = gs.activeQuests.map(_migrateQuestShape);
   // Migration v1 → v2+ : sépare les quêtes complétées et déduit
@@ -433,7 +437,7 @@ function _applyState(gs) {
   }
 
   recalculateStats();
-  _migrateHouseRewards();
+  if (!('pendingHouseRewards' in gs)) _migrateHouseRewards();
   updateUI();
   updateCompass();
   renderMinimap();
