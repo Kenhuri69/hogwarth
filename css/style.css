@@ -506,6 +506,29 @@ body {
   .map-npc-offer, .map-npc-ready, .map-npc-farming { animation: none; }
 }
 
+/* Mini-carte pixel dans le coin de la vue 3D — mobile uniquement.
+   Purement informative : pointer-events:none laisse passer les swipes
+   de déplacement (cf. js/swipe-canvas.js). */
+#minimap-corner { display: none; }
+@media (max-width: 700px) {
+  #minimap-corner {
+    display: grid;
+    gap: 2px;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 4px;
+    background: rgba(10, 7, 5, 0.78);
+    border: 1px solid var(--gold-dark);
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 5;
+  }
+  /* Marqueurs !/? des PNJ illisibles à cette échelle — la teinte de
+     case suffit. */
+  #minimap-corner .map-npc[data-sign]::after { display: none; }
+}
+
 .compass {
   display: grid; grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
