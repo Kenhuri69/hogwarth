@@ -46,3 +46,25 @@ par un pool `idleRandom` de 8 anecdotes graduées rigolo → sombre :
 
 - [x] Vendeurs — rosmerta + mundungus (1 → 8 anecdotes)
 - [x] smoke test vert
+
+## Extension — PNJ à quête (idle de fin de partie)
+
+Une fois leur quête terminée, les PNJ à quête retombaient sur une ligne
+`idle` ou `questDone` fixe. Conversion de leur `idle`/`questDone` en pool
+`idleRandom` (~7 anecdotes graduées rigolo → sombre). La ligne `questDone`
+d'origine est repliée comme entrée du pool, donc aucun changement moteur :
+l'état `done` retombe sur la branche idle qui pioche dans `idleRandom`.
+
+PNJ traités (12) : pomfresh, mimi, scamander, lockhart, lupin, hagrid,
+mcgonagall, rogue, flitwick, sprout, ollivander, guipure.
+
+Volontairement exclus : `dumbledore` (chaîne d'épreuves câblée à la voix,
+PNJ d'intro rarement revisité), `portrait_dumbledore` (déjà varié via
+`contextualLore`), `fumseck` (idle/idleSpent liés à l'action spéciale),
+`scamander_random` / `hagrid_random` (quêtes farming répétables, pas
+d'état `done` permanent).
+
+- [x] 5 PNJ sans questDone (rogue, flitwick, sprout, ollivander, guipure)
+- [x] 7 PNJ avec questDone repliée (pomfresh, mimi, scamander, lockhart,
+      lupin, hagrid, mcgonagall)
+- [x] smoke test vert
