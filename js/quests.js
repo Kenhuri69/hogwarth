@@ -195,6 +195,34 @@ const QUEST_TEMPLATES = [
     reward: { xp: 200, gold: 50, spell: "Patronum" },
     location: "Classe de Défense (étage 4+)"
   },
+  // ── Manon, fille cachée de Lupin — pseudo-quête en deux volets ──
+  // Données et rendues par Manon (PNJ étage 3, cf. npcs.js). Le volet 2
+  // (`prereq`) ne s'ouvre qu'après remise du volet 1 — chaîne classique.
+  // La révélation progressive de l'histoire passe par `dialoguesByQuest`
+  // de Manon. Cf. .claude/plans/Manon.md.
+  {
+    id: "manon_secret",
+    title: "L'inconnue du troisième étage",
+    giver: "Manon",
+    desc: "Manon, cachée à l'étage 3, cherche son père. Descends jusqu'à la classe de Défense (étage 4) et reviens lui confirmer que le professeur Lupin existe vraiment.",
+    objectives: [
+      { type: "floor", floor: 4, progress: 0, amount: 1, completed: false }
+    ],
+    reward: { xp: 90, gold: 30 },
+    location: "Étage 3 — salles de classe désertes"
+  },
+  {
+    id: "manon_pardon",
+    title: "Ce que la lune a laissé",
+    giver: "Manon",
+    desc: "Manon a trouvé le courage d'affronter Lupin. Rapporte-lui un Chocolat aux Sorciers — le geste qu'il offre à tous les élèves, sauf à elle.",
+    prereq: "manon_secret",
+    objectives: [
+      { type: "item", itemId: "choco_sorcier", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 260, gold: 120, stats: { hp: 12, lck: 2, agi: 1 } },
+    location: "Étage 3 — salles de classe désertes"
+  },
   // ── Phase 3b : quêtes secondaires PNJ → équipement étendu ──
   {
     id: "bottines_ollivander",
@@ -717,17 +745,16 @@ function _renderActiveQuestCard(q) {
 
 // HTML d'une étape d'objectif (✓ complétée, ▶ active avec barre, ◌ verrouillée).
 function _renderQuestStep(o, isActive, ready, isFirst) {
-  let displayName;
+  let label;
   if (o.type === 'kill') {
     const m = MONSTERS.find(x => x.id === o.monsterId);
-    displayName = m ? m.name : o.monsterId;
+    label = `Éliminer ${o.amount}× ${m ? m.name : o.monsterId}`;
+  } else if (o.type === 'floor') {
+    label = `Descendre jusqu'à l'étage ${o.floor}`;
   } else {
     const it = ITEMS.find(x => x.id === o.itemId);
-    displayName = it ? it.name : o.itemId;
+    label = `Apporter ${o.amount}× ${it ? it.name : o.itemId}`;
   }
-  const label = o.type === 'kill'
-    ? `Éliminer ${o.amount}× ${displayName}`
-    : `Apporter ${o.amount}× ${displayName}`;
   const icon  = o.completed ? '✓' : (isActive ? '▶' : '◌');
   const color = o.completed ? '#60c040' : (isActive ? 'var(--gold-light)' : '#4a3a20');
 
