@@ -36,6 +36,24 @@ vrais éléments de l'UI + bulle explicative étape par étape.
 - [x] Étape 5 — maybeAutoStartHelpTour() branché dans startGame().
 - [x] Étape 6 — smoke.js : opt-out global + scenarioHelpTour ajouté.
 
+## Ajout — Synthèse vocale (suivi)
+Demande utilisateur : lire à voix haute tous les textes de l'aide via une
+voix synthétisée Microsoft.
+- [x] `_htSpeak` / `_htSpeakStep` : lecture du titre + texte de chaque étape
+  via `speechSynthesis` (API Web Speech).
+- [x] `_htPickVoice` : priorité voix **Microsoft française**, puis toute voix
+  française, puis toute voix Microsoft, puis défaut.
+- [x] Bouton 🔊/🔇 dans la bulle + préférence persistée (`hh_help_tour_voice`).
+- [x] Coupure auto si `AudioSystem.isMuted`. Arrêt à la fermeture du tour.
+- [x] `tests/smoke.js` : sous-test T8 (bouton voix, bascule persistée,
+  lecture sans exception).
+
+> Décision : pas d'Azure Cognitive Services (clé API + réseau sortant requis,
+> incompatible avec le « zéro dépendance » du projet et GitHub Pages). On
+> réutilise les voix synthétiques du système exposées par le navigateur —
+> sur Windows ce sont les voix « Microsoft … » — comme le fait déjà
+> `speakSpell`.
+
 ## Écarts constatés
 - Le bouton « Aide » utilise un glyphe texte (📖) faute d'icône PNG dédiée ;
   cohérent avec l'absence d'asset, sans casser `scenarioCmdBtnIcons` qui ne

@@ -49,19 +49,28 @@
   transform: translate(-50%, -50%);
 }
 
-#help-tour-x {
+#help-tour-head-btns {
   position: absolute;
   top: 6px;
   right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+#help-tour-x,
+#help-tour-voice {
   background: none;
   border: none;
   color: var(--gold, #c9a84c);
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   line-height: 1;
   padding: 2px 4px;
 }
-#help-tour-x:hover { color: var(--gold-light, #f0d080); }
+#help-tour-x:hover,
+#help-tour-voice:hover { color: var(--gold-light, #f0d080); }
+#help-tour-voice { font-size: 14px; }
 
 #help-tour-step-count {
   font-size: 10px;
@@ -76,7 +85,7 @@
   font-size: 15px;
   color: var(--gold-light, #f0d080);
   margin-bottom: 8px;
-  padding-right: 18px;
+  padding-right: 46px;
 }
 
 #help-tour-text {

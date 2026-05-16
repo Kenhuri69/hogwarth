@@ -7023,11 +7023,51 @@ async function scenarioHelpTour() {
   console.log('  T7 bouton Aide →', t7);
   assert(t7.exists, 'bouton « Aide » absent de la barre de commandes');
 
+  // T8 : synthèse vocale — bouton voix, bascule persistée, lecture sans erreur.
+  const t8 = await page.evaluate(() => {
+    try { localStorage.removeItem('hh_help_tour_voice'); } catch (e) { /* noop */ }
+    startHelpTour();   // relance propre
+    const btn = document.getElementById('help-tour-voice');
+    const defaultOn  = _htVoiceEnabled();
+    const defaultGlyph = btn && btn.textContent;
+    // _htSpeak ne doit pas lever d'exception (voix synthétisée navigateur).
+    let speakThrew = false;
+    try { _htSpeakStep(); } catch (e) { speakThrew = true; }
+    // Bascule OFF
+    helpTourToggleVoice();
+    const offStored = localStorage.getItem('hh_help_tour_voice');
+    const offGlyph  = btn && btn.textContent;
+    const offState  = _htVoiceEnabled();
+    // Bascule ON de nouveau
+    helpTourToggleVoice();
+    const onStored = localStorage.getItem('hh_help_tour_voice');
+    const onState  = _htVoiceEnabled();
+    helpTourEnd();
+    return {
+      hasBtn: !!btn, defaultOn, defaultGlyph, speakThrew,
+      offStored, offGlyph, offState, onStored, onState,
+      hasSynth: typeof window.speechSynthesis !== 'undefined',
+      pickVoiceOk: typeof _htPickVoice === 'function'
+    };
+  });
+  console.log('  T8 voix synthétisée →', t8);
+  assert(t8.hasBtn,                 'bouton voix absent de la bulle');
+  assert(t8.hasSynth,               'API speechSynthesis indisponible');
+  assert(t8.pickVoiceOk,            '_htPickVoice absent');
+  assert(t8.defaultOn === true,     'la voix doit être active par défaut');
+  assert(t8.defaultGlyph === '🔊',  'glyphe voix par défaut incorrect');
+  assert(t8.speakThrew === false,   '_htSpeakStep ne doit pas lever d\'exception');
+  assert(t8.offStored === '0' && t8.offState === false,
+         'la coupure de voix doit être persistée (=0)');
+  assert(t8.offGlyph === '🔇',      'glyphe voix coupée incorrect');
+  assert(t8.onStored === '1' && t8.onState === true,
+         'la réactivation de voix doit être persistée (=1)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Help Tour OK (auto-affichage, navigation, spotlight, opt-out, relance)');
+  console.log('  ✅ Help Tour OK (auto-affichage, navigation, spotlight, opt-out, relance, voix)');
   await browser.close();
 }
 

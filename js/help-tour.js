@@ -5,9 +5,16 @@
 // explicative étape par étape. Lancé automatiquement à chaque
 // nouvelle partie (sauf opt-out) et relançable via le bouton
 // « Aide » de la barre de commandes.
+//
+// Chaque étape est aussi lue à voix haute via l'API Web Speech
+// (`speechSynthesis`), en privilégiant une voix Microsoft française
+// (Microsoft Hortense/Caroline/Paul… selon l'OS). Aucune dépendance
+// ni clé d'API : ce sont les voix synthétiques installées sur le
+// système, exposées par le navigateur — comme pour `speakSpell`.
 // ============================================================
 
 const HELP_TOUR_OPTOUT_KEY = 'hh_help_tour_optout';
+const HELP_TOUR_VOICE_KEY  = 'hh_help_tour_voice';
 
 // Chaque étape : { targets:[sélecteurs] (1er visible utilisé), title, text }.
 // targets absent/null → bulle centrée sans spotlight.
@@ -130,6 +137,74 @@ function _htOptedOut() {
   catch (e) { return false; }
 }
 
+// ── Synthèse vocale (API Web Speech / voix Microsoft) ──────────
+
+// La voix est active par défaut ; '0' en localStorage = coupée.
+function _htVoiceEnabled() {
+  try { return localStorage.getItem(HELP_TOUR_VOICE_KEY) !== '0'; }
+  catch (e) { return true; }
+}
+
+let _htCachedVoice;
+
+// Choisit la meilleure voix : Microsoft française en priorité,
+// puis n'importe quelle voix française, puis n'importe quelle voix
+// Microsoft, enfin la voix par défaut.
+function _htPickVoice() {
+  if (_htCachedVoice) return _htCachedVoice;
+  if (!window.speechSynthesis) return null;
+  const voices = speechSynthesis.getVoices();
+  if (!voices.length) return null;   // pas encore chargées (event async)
+  const isFr = v => v.lang && v.lang.toLowerCase().slice(0, 2) === 'fr';
+  const isMs = v => /microsoft/i.test(v.name || '');
+  const pref = [
+    v => isMs(v) && isFr(v),
+    v => isFr(v),
+    v => isMs(v),
+    v => true,
+  ];
+  for (const test of pref) {
+    const found = voices.find(test);
+    if (found) { _htCachedVoice = found; return found; }
+  }
+  return voices[0];
+}
+
+function _htStopSpeak() {
+  if (window.speechSynthesis) speechSynthesis.cancel();
+}
+
+function _htSpeak(text) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();   // coupe toute lecture en cours
+  if (!_htVoiceEnabled()) return;
+  // Respecte la coupure audio globale du jeu si elle existe.
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.isMuted) return;
+  const utt   = new SpeechSynthesisUtterance(text);
+  const voice = _htPickVoice();
+  if (voice) { utt.voice = voice; utt.lang = voice.lang; }
+  else utt.lang = 'fr-FR';
+  utt.rate   = 0.96;
+  utt.pitch  = 1.0;
+  utt.volume = 1.0;
+  speechSynthesis.speak(utt);
+}
+
+// Lit à voix haute l'étape courante (titre + texte).
+function _htSpeakStep() {
+  const step = HELP_TOUR_STEPS[_helpTourStep];
+  if (!step) return;
+  _htSpeak(step.title + '. ' + step.text);
+}
+
+function _htUpdateVoiceBtn() {
+  const btn = document.getElementById('help-tour-voice');
+  if (!btn) return;
+  const on = _htVoiceEnabled();
+  btn.textContent = on ? '🔊' : '🔇';
+  btn.title = on ? 'Couper la voix' : 'Activer la voix';
+}
+
 function _htBuildDom() {
   if (document.getElementById('help-tour-overlay')) return;
   const root = document.createElement('div');
@@ -138,7 +213,10 @@ function _htBuildDom() {
     '<div id="help-tour-backdrop"></div>' +
     '<div id="help-tour-spotlight"></div>' +
     '<div id="help-tour-bubble" role="dialog" aria-modal="true" aria-labelledby="help-tour-title">' +
-      '<button id="help-tour-x" type="button" aria-label="Fermer l\'aide">✕</button>' +
+      '<div id="help-tour-head-btns">' +
+        '<button id="help-tour-voice" type="button" aria-label="Activer ou couper la voix">🔊</button>' +
+        '<button id="help-tour-x" type="button" aria-label="Fermer l\'aide">✕</button>' +
+      '</div>' +
       '<div id="help-tour-step-count"></div>' +
       '<div id="help-tour-title"></div>' +
       '<div id="help-tour-text"></div>' +
@@ -157,6 +235,7 @@ function _htBuildDom() {
   root.querySelector('#help-tour-skip').addEventListener('click', helpTourEnd);
   root.querySelector('#help-tour-prev').addEventListener('click', helpTourPrev);
   root.querySelector('#help-tour-next').addEventListener('click', helpTourNext);
+  root.querySelector('#help-tour-voice').addEventListener('click', helpTourToggleVoice);
   root.querySelector('#help-tour-optout-cb').addEventListener('change', function () {
     try {
       if (this.checked) localStorage.setItem(HELP_TOUR_OPTOUT_KEY, '1');
@@ -176,6 +255,7 @@ function _htRender() {
   document.getElementById('help-tour-text').textContent  = step.text;
   document.getElementById('help-tour-step-count').textContent =
     'Étape ' + (_helpTourStep + 1) + ' / ' + HELP_TOUR_STEPS.length;
+  _htUpdateVoiceBtn();
 
   const prevBtn = document.getElementById('help-tour-prev');
   const nextBtn = document.getElementById('help-tour-next');
@@ -258,23 +338,37 @@ function startHelpTour() {
   document.addEventListener('keydown', _htKeyHandler, true);
   window.addEventListener('resize', _htRender);
   _htRender();
+  _htSpeakStep();
 }
 
 function helpTourNext() {
   if (_helpTourStep >= HELP_TOUR_STEPS.length - 1) { helpTourEnd(); return; }
   _helpTourStep++;
   _htRender();
+  _htSpeakStep();
 }
 
 function helpTourPrev() {
   if (_helpTourStep <= 0) return;
   _helpTourStep--;
   _htRender();
+  _htSpeakStep();
+}
+
+// Bascule la voix synthétisée ; relit l'étape courante si réactivée.
+function helpTourToggleVoice() {
+  const on = !_htVoiceEnabled();
+  try { localStorage.setItem(HELP_TOUR_VOICE_KEY, on ? '1' : '0'); }
+  catch (e) { /* localStorage indisponible : préférence non persistée */ }
+  _htUpdateVoiceBtn();
+  if (on) _htSpeakStep();
+  else _htStopSpeak();
 }
 
 function helpTourEnd() {
   _helpTourActive = false;
   window._helpTourActive = false;
+  _htStopSpeak();
   document.removeEventListener('keydown', _htKeyHandler, true);
   window.removeEventListener('resize', _htRender);
   const root = document.getElementById('help-tour-overlay');
@@ -291,4 +385,5 @@ window.startHelpTour        = startHelpTour;
 window.helpTourNext         = helpTourNext;
 window.helpTourPrev         = helpTourPrev;
 window.helpTourEnd          = helpTourEnd;
+window.helpTourToggleVoice  = helpTourToggleVoice;
 window.maybeAutoStartHelpTour = maybeAutoStartHelpTour;
