@@ -18,6 +18,7 @@ Ajouter une boucle de jeu « herboristerie » :
 | Source des herbes | Cueillette via `searchRoom()` **+** drops de monstres. Pas de nouvelle cellule, pas de potager qui pousse. |
 | Lieu de brassage | Chez un PNJ potionniste (action spéciale de dialogue). |
 | Risque | Oui — jet basé sur INT : échec / réussite / critique. |
+| Déverrouillage | La concoction est **verrouillée** tant qu'une quête dédiée n'est pas remise. |
 
 ### Décisions complémentaires (proposées)
 
@@ -36,6 +37,56 @@ Ajouter une boucle de jeu « herboristerie » :
   (« le meilleur potionniste du groupe »).
 - **Icônes** : V1 = fallback emoji 🌿. PNG painterly (`icon_factory.py`) =
   suivi optionnel.
+- **Déverrouillage par quête** : voir section dédiée ci-dessous.
+
+## Quête de déverrouillage
+
+Le brassage n'est pas disponible d'emblée. Slughorn donne une quête
+d'initiation ; tant qu'elle n'est pas remise, l'action « Concocter » ne
+s'affiche pas — seul le flux de quête est proposé.
+
+### Définition (`activeQuests` dans `js/state.js`)
+
+```js
+{
+  id:        "quest_potions_slughorn",
+  title:     "L'Apprenti Potionniste",
+  giver:     "Horace Slughorn",
+  desc:      "Slughorn ne confie son chaudron qu'aux élèves sérieux. " +
+             "Rapporte-lui 3 Racines de Mandragore pour prouver ta valeur.",
+  objective: { type:"item", itemId:"mandragore", amount:3 },
+  progress:  0,
+  reward:    { xp:60, gold:40 },
+  completed: false,
+  location:  "Salle des Potions (étage 2)"
+}
+```
+
+- Objectif de type `item` → réutilise tel quel `checkQuestCompletion()`
+  (compte les `mandragore` dans l'inventaire, les consomme à la remise).
+- `mandragore` est déjà obtenable (boutique étage 1, `searchRoom`).
+- **Récompense de déverrouillage** : il n'existe pas de type de reward
+  « unlock ». Le déverrouillage est **dérivé** de `quest.completed` —
+  pas de nouveau flag d'état. `activeQuests` est déjà sérialisé dans le
+  save, donc l'état persiste gratuitement.
+
+### Helper de gating (`js/potions.js`)
+
+```js
+function _isBrewingUnlocked() {
+  const q = activeQuests.find(q => q.id === 'quest_potions_slughorn');
+  return !!(q && q.completed);
+}
+```
+
+### Comportement chez Slughorn
+
+| État de la quête | Dialogue / action |
+|------------------|-------------------|
+| Non acceptée | `questOffer` + bouton « Accepter la quête » |
+| En cours | `questActive`, pas d'action de brassage |
+| Remettable | bouton « Remettre » (consomme 3 mandragores) |
+| Remise (`completed`) | action spéciale `open_brewing` disponible |
 
 ## Modèle de données
 
@@ -96,13 +147,13 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 | Fichier | Changement |
 |---------|-----------|
 | `js/data.js` | 6 items herbes + `POTION_RECIPES` |
-| `js/state.js` | `player.herbs = {}` à l'init |
-| `js/potions.js` | **NOUVEAU** : besace (`addHerb`/`getHerbCount`/`consumeHerbs`), `openBrewingModal()`, `_renderBrewingList()`, `attemptBrew()`, `_brewChance()` |
+| `js/state.js` | `player.herbs = {}` à l'init + quête `quest_potions_slughorn` dans `activeQuests` |
+| `js/potions.js` | **NOUVEAU** : besace (`addHerb`/`getHerbCount`/`consumeHerbs`), `_isBrewingUnlocked()`, `openBrewingModal()`, `_renderBrewingList()`, `attemptBrew()`, `_brewChance()` |
 | `js/inventory.js` (ou site de `tryAddItem`) | `tryAddItem` : si `item.type==='herb'` → `addHerb()`, retourne `true` |
 | `js/movement.js` | `searchRoom()` : nouvelle branche « herbe trouvée » (herbe du palier de l'étage courant) |
 | `js/monsters.js` | drops d'herbes sur ~6 monstres botaniques/bêtes (Mandragore Sauvage, Bowtruckle Géant, Bundimun, Niffleur, Kappa, Loup-Garou) |
-| `js/npcs.js` | nouveau PNJ `slughorn`, `specialAction { type:"open_brewing", label:"🧪 Concocter une potion" }` |
-| `js/npc-dialog.js` | `triggerNpcSpecialAction` : branche `open_brewing` → `openBrewingModal()`, **hors** garde `_isSpecialActionSpent` (action répétable, comme `claim_house_reward`) |
+| `js/npcs.js` | nouveau PNJ `slughorn` : `questsGiven`/`questsTurnedIn` = `["quest_potions_slughorn"]`, `dialoguesByQuest`, `specialAction { type:"open_brewing", label:"🧪 Concocter une potion" }` |
+| `js/npc-dialog.js` | `triggerNpcSpecialAction` : branche `open_brewing` → garde `_isBrewingUnlocked()` puis `openBrewingModal()`, **hors** garde `_isSpecialActionSpent` (répétable). `_npcDialogActions` : bouton brassage masqué tant que `_isBrewingUnlocked()` est faux |
 | `js/save.js` | sérialiser/restaurer `player.herbs` dans `_serializeState`/`_applyState` |
 | `index.html` | `<script src="js/potions.js">` dans l'ordre de chargement + markup `#brewing-modal` |
 | `js/loader.js` | entrée MANIFEST pour `openBrewingModal` |
@@ -117,16 +168,23 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 2. **Récolte** : `searchRoom()` herbe + drops monstres.
    → vérif : fouiller plusieurs cases finit par donner une herbe ; un kill de
    Mandragore Sauvage peut remplir la besace.
-3. **PNJ + dialogue** : Slughorn + branche `open_brewing`.
-   → vérif : parler à Slughorn affiche le bouton ; clic ouvre `#brewing-modal`.
-4. **UI brassage + jet INT** : modale, liste filtrée par étage, `attemptBrew`.
+3. **Quête de déverrouillage** : `quest_potions_slughorn` dans `activeQuests`,
+   Slughorn donneur + `dialoguesByQuest`.
+   → vérif : Slughorn propose la quête ; aucune action de brassage tant que
+   `completed` est faux.
+4. **PNJ + dialogue** : Slughorn + branche `open_brewing` gardée par
+   `_isBrewingUnlocked()`.
+   → vérif : après remise de la quête, le bouton « Concocter » apparaît ;
+   clic ouvre `#brewing-modal`.
+5. **UI brassage + jet INT** : modale, liste filtrée par étage, `attemptBrew`.
    → vérif : recette réalisable → potion ajoutée ; recette sans herbes →
    bouton désactivé ; échec/critique observables en forçant l'INT.
-5. **Persistance** : besace dans le save.
-   → vérif : sauver/charger conserve `player.herbs`.
-6. **Loader + index.html + CSS**.
+6. **Persistance** : besace dans le save.
+   → vérif : sauver/charger conserve `player.herbs` ; l'état `completed` de
+   la quête (donc le déverrouillage) survit au save/load.
+7. **Loader + index.html + CSS**.
    → vérif : pas de bandeau rouge loader ; modale stylée.
-7. **Test smoke** : `node tests/smoke.js` vert + cas brassage ajouté.
+8. **Test smoke** : `node tests/smoke.js` vert + cas brassage ajouté.
 
 ## Hors périmètre V1
 
@@ -138,5 +196,7 @@ margin ≥ 12       → CRITIQUE : herbes consommées, 2 potions
 
 ## Journal d'avancement
 
-- 2026-05-16 — Plan rédigé, design validé avec l'utilisateur. En attente du
-  feu vert pour implémenter.
+- 2026-05-16 — Plan rédigé, design validé avec l'utilisateur.
+- 2026-05-16 — Ajout d'une quête de déverrouillage (`quest_potions_slughorn`) :
+  le brassage n'est accessible qu'après l'avoir remise à Slughorn. En attente
+  du feu vert pour implémenter.
