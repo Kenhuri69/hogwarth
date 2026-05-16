@@ -170,3 +170,69 @@ physique reste proche de 1 même très haut niveau face aux grosses DEF.
   des monstres (§5) si une recalibration fine est souhaitée un jour.
 - ❌ **Refonte du scaling (anciens « leviers A / C »)** — abandonnée. Elle
   reposait sur un diagnostic faussé par le bug du harness.
+
+---
+
+## 8. Endgame — Boucle Ténébreuse (post-victoire, étages 11+)
+
+Après la victoire sur Voldemort Ressuscité, le jeu rejoue les étages par
+paliers de 10 (`effectiveFloor = floor − 10`) en empilant la récursion
+`ENDGAME_SCALING` : chaque palier applique `stat × scal + fixEff` une fois
+de plus (`n = ⌊(floor−1)/10⌋`). La simulation modélise désormais cette
+récursion via le flag `--endgame` (`tools/sim-difficulty.js`).
+
+### 8.1 Sans farming volontaire
+
+| Étage | Win % Solo | Win % Duo | Niveau joueur |
+|------:|-----------:|----------:|--------------:|
+| 11-15 | 99-100 %   | 100 %     | 11-12 |
+| 18    | 72 %       | 96 %      | 11-12 |
+| 20    | 36 %       | 70 %      | 12-13 |
+| 25    | 13 %       | 40 %      | 13-14 |
+| 30    | 7 %        | 26 %      | 14-15 |
+
+En jeu « normal » (≈ 4 combats/étage, sans grind dédié), la Boucle
+décroche vers l'**étage 19-21** puis devient très dure.
+
+### 8.2 Cause structurelle — le joueur ne suit pas en niveau
+
+Point clé : **le niveau du joueur stagne** — étage 30 atteint au niveau
+14-15 seulement, soit +3-4 niveaux sur 20 étages de Boucle.
+
+La raison est une course entre deux croissances géométriques :
+- puissance des monstres : **× ~1.5 par palier** de 10 étages (récursion) ;
+- coût d'un niveau joueur : `xpNext ×= 1.6` **par niveau**.
+
+Le coût d'XP du joueur compose plus vite que l'XP gagnée. La progression
+passive (marcher vers le bas) ne suit donc pas — contrairement au jeu
+principal où l'XP des quêtes maintenait le joueur sur la courbe.
+
+### 8.3 Avec farming — le gate se résout
+
+| Étage | Duo +10 niv. | Duo +25 niv. | Duo +45 niv. |
+|------:|-------------:|-------------:|-------------:|
+| 20    | 96 %         | 99 %         | 100 % |
+| 25    | 70 %         | 92 %         | 100 % |
+| 30    | 49 %         | 85 %         | 97 %  |
+
+Règle empirique : **~+12-15 niveaux farmés par tranche de 10 étages** de
+Boucle pour rester en zone confortable. Le gate est franchissable sans
+limite — c'est un mode infini « jusqu'où peux-tu descendre », sain dans
+son principe.
+
+### 8.4 Verdict endgame
+
+- ✅ La Boucle Ténébreuse est un **gate infini farmable** — cohérent avec
+  le design (le mur se résout par le farming + les artefacts).
+- ⚠️ **Différence avec le jeu principal** : l'endgame n'a **aucune voie
+  de progression passive**. Il *impose* le farming actif dès l'étage ~19.
+  C'est un choix de design assumable (mode infini de type roguelike),
+  mais à connaître — un joueur qui « descend » sans farmer heurte un mur
+  réel vers l'étage 20.
+- 💡 Si l'on veut adoucir : soit ralentir `xpNext` en endgame, soit ajouter
+  une source d'XP passive (XP de Boucle par étage franchi). Optionnel —
+  ne pas faire si le farming forcé est l'intention.
+- ⚠️ Limite du modèle : la sim ne modélise pas les bonus de **Forge**
+  (upgradeLevel), **Bibliothèque** (spellUpgrades) ni les bonus de **set**
+  (Ténèbres / Maison) — le joueur endgame réel est donc un peu plus fort
+  que ces chiffres. Les conclusions qualitatives tiennent.

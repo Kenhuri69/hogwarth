@@ -220,7 +220,8 @@ function applyEquipmentBuff(c, floor) {
 }
 
 // ── Constantes simulation ───────────────────────────────────
-const FLOORS = Array.from({ length: 12 }, (_, i) => i + 1);
+// 1-12 par défaut ; remplacé par 11..maxFloor en mode --endgame (après ARGS).
+let FLOORS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 // Hypothèse : ~4 combats par étage en moyenne (8 rooms - shop/chest - escaliers,
 // densité 0.6 → ~4 enemy spawns; cf. dungeon.js:202)
@@ -231,7 +232,8 @@ function parseArgs(argv) {
   const out = { nSims: 400, hpMult: 1.0, xpMult: 1.0, statPoints: 0,
                 build: 'balanced', mode: 'single',
                 useQuests: true, useEquipment: true, usePotions: true,
-                kills: 0, bonusLevels: 0, artifacts: false };
+                kills: 0, bonusLevels: 0, artifacts: false,
+                endgame: false, maxFloor: 40 };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
@@ -241,6 +243,7 @@ function parseArgs(argv) {
     if (a === '--no-potions')           { out.usePotions = false; continue; }
     if (a === '--pessimistic')          { out.useQuests = false; out.useEquipment = false; out.usePotions = false; continue; }
     if (a === '--artifacts')            { out.artifacts = true; continue; }
+    if (a === '--endgame')              { out.endgame = true; continue; }
     if (!a.includes('=')) {
       // Compat : `node sim-difficulty.js 800` → nSims positionnel
       const n = parseInt(a, 10);
@@ -254,6 +257,7 @@ function parseArgs(argv) {
     else if (k === 'build')     out.build = v;
     else if (k === 'kills')     out.kills = parseInt(v, 10);
     else if (k === 'bonus-levels') out.bonusLevels = parseInt(v, 10) || 0;
+    else if (k === 'max-floor')    out.maxFloor = parseInt(v, 10) || 40;
   }
   return out;
 }
@@ -289,36 +293,85 @@ Options:
   --build=BUILD           tank | balanced | offensive (def balanced)
   --bonus-levels=N        Niveaux gagnés au-delà de l'étage (farming) (def 0)
   --artifacts             Best-in-slot inclut les artefacts légendaires (hors boutique)
+  --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
+  --max-floor=N           Étage max en mode --endgame (def 40)
   --compare               Lance baseline ET proposition (hp×1.5 xp×1.3 stats=3 balanced), tableau comparatif
 
 Exemples:
   node tools/sim-difficulty.js                      # baseline 400 sims
   node tools/sim-difficulty.js 800                  # baseline 800 sims
   node tools/sim-difficulty.js --compare            # baseline vs proposition validée
-  node tools/sim-difficulty.js --hp-mult=1.5 --xp-mult=1.3 --stat-points=3 800`);
+  node tools/sim-difficulty.js --hp-mult=1.5 --xp-mult=1.3 --stat-points=3 800
+  node tools/sim-difficulty.js --endgame --artifacts --stat-points=3   # Boucle Ténébreuse`);
   process.exit(0);
+}
+
+// Mode endgame : la grille d'étages couvre la Boucle Ténébreuse (11..maxFloor).
+if (ARGS.endgame) {
+  FLOORS = [];
+  for (let f = 11; f <= ARGS.maxFloor; f++) FLOORS.push(f);
 }
 
 // ── Reproduction des formules du jeu ─────────────────────────
 
-// dungeon.js:16 — scaleMonster (Normal = diffMult 1.0, on ignore shiny pour la sim)
+// ── Endgame : Boucle Ténébreuse (dungeon.js — ENDGAME_SCALING) ────
+// Post-victoire, floor 11+ : le pool rebase sur effectiveFloor (floor−10)
+// et une récursion `stat × scal + fixEff` est appliquée `n` fois
+// (n = palier de 10 étages). Activée par cfg.endgame.
+const ENDGAME_SCALING = {
+  baseFix: { hp: 80, atk: 10, def: 5, mag: 8, xp: 50, gold: 80 },
+  scalDelta: 0.5,
+};
+function simEffectiveFloor(floor, cfg) {
+  return (cfg && cfg.endgame && floor >= 11) ? floor - 10 : floor;
+}
+function simEndgameTier(floor, cfg) {
+  return (cfg && cfg.endgame && floor >= 11) ? Math.floor((floor - 1) / 10) : 0;
+}
+function _endgameRecurse(stat, n, fixEff, scal) {
+  for (let i = 0; i < n; i++) stat = stat * scal + fixEff;
+  return stat;
+}
+// Valeur scalée d'une stat (hp/atk/def/xp/gold), récursion endgame incluse.
+// Miroir fidèle de dungeon.js — scaleMonster.
+function scaledStatValue(rawBase, scale, key, floor, cfg) {
+  const ef        = simEffectiveFloor(floor, cfg);
+  const n         = simEndgameTier(floor, cfg);
+  const intraMult = 1 + (ef - 1) * (scale || 0.25);
+  const stat0     = rawBase * intraMult;
+  if (n <= 0) return stat0;
+  const scal = 1 + ENDGAME_SCALING.scalDelta / intraMult;
+  return _endgameRecurse(stat0, n, ENDGAME_SCALING.baseFix[key] / intraMult, scal);
+}
+
+// dungeon.js — scaleMonster (Normal = diffMult 1.0, on ignore shiny pour la sim)
 // `cfg` injecte les multiplicateurs HP/XP testés (cf. Phase 2 du plan).
 function scaleMonster(base, floor, cfg) {
-  const mult   = 1 + (floor - 1) * (base.scale || 0.25);
-  const hpRaw  = base.hp * mult * cfg.hpMult;
-  const xpRaw  = base.xp * mult * cfg.xpMult;
-  return {
+  const scale  = base.scale || 0.25;
+  const hpRaw  = scaledStatValue(base.hp, scale, 'hp', floor, cfg) * cfg.hpMult;
+  const xpRaw  = scaledStatValue(base.xp, scale, 'xp', floor, cfg) * cfg.xpMult;
+  const goldBase = (typeof base.gold === 'object')
+    ? (base.gold.min + base.gold.max) / 2 : base.gold;
+  const out = {
     ...JSON.parse(JSON.stringify(base)),
     hp:  Math.floor(hpRaw),
-    atk: Math.floor(base.atk * mult),
-    def: Math.floor(base.def * mult),
+    atk: Math.floor(scaledStatValue(base.atk, scale, 'atk', floor, cfg)),
+    def: Math.floor(scaledStatValue(base.def, scale, 'def', floor, cfg)),
     xp:  Math.floor(xpRaw),
-    gold: Math.floor((typeof base.gold === 'object'
-            ? (base.gold.min + base.gold.max) / 2
-            : base.gold) * mult),
+    gold: Math.floor(scaledStatValue(goldBase, scale, 'gold', floor, cfg)),
     currentHp: Math.floor(hpRaw),
     disarmed: 0,
   };
+  // mag : non scalée pré-victoire, mais participe à la récursion endgame.
+  const n = simEndgameTier(floor, cfg);
+  if (n > 0 && base.mag) {
+    const ef = simEffectiveFloor(floor, cfg);
+    const intraMult = 1 + (ef - 1) * scale;
+    const scal = 1 + ENDGAME_SCALING.scalDelta / intraMult;
+    out.mag = Math.floor(_endgameRecurse(base.mag, n,
+      ENDGAME_SCALING.baseFix.mag / intraMult, scal));
+  }
+  return out;
 }
 
 // battle.js:122 — rollGroupSize (Normal = m = 1.0)
@@ -356,8 +409,10 @@ function weightedPick(pool) {
   return pool[pool.length - 1];
 }
 
-function eligiblePool(floor) {
-  return MONSTERS.filter(m => m.minFloor <= floor && (m.maxFloor === null || floor <= m.maxFloor));
+function eligiblePool(floor, cfg) {
+  const ef = simEffectiveFloor(floor, cfg);
+  const p = MONSTERS.filter(m => m.minFloor <= ef && (m.maxFloor === null || ef <= m.maxFloor));
+  return p.length ? p : MONSTERS;
 }
 
 // ── Création des personnages ─────────────────────────────────
@@ -474,12 +529,12 @@ function levelFromXp(totalXp) {
 
 // XP moyenne d'un combat à l'étage f (cfg.xpMult appliqué)
 function avgCombatXp(floor, partySize, cfg) {
-  const pool = eligiblePool(floor);
+  const pool = eligiblePool(floor, cfg);
   if (!pool.length) return 0;
   const totalW = pool.reduce((s, m) => s + (m.weight || 1), 0);
   const avgXpScaled = pool.reduce((s, m) => {
-    const mult = 1 + (floor - 1) * (m.scale || 0.25);
-    return s + (m.weight || 1) * m.xp * mult * cfg.xpMult;
+    const xp = scaledStatValue(m.xp, m.scale || 0.25, 'xp', floor, cfg) * cfg.xpMult;
+    return s + (m.weight || 1) * xp;
   }, 0) / totalW;
   const samples = 200;
   let totalSize = 0;
@@ -502,12 +557,12 @@ function expectedLevelAtFloor(floor, partySize, cfg) {
 // ── Stats moyennes du pool ennemi à l'étage f ────────────────
 
 function poolStats(floor, cfg) {
-  const pool = eligiblePool(floor);
+  const pool = eligiblePool(floor, cfg);
   if (!pool.length) return null;
   const totalW = pool.reduce((s, m) => s + (m.weight || 1), 0);
   const wAvg = (key, postMult = 1) => pool.reduce((s, m) => {
-    const mult = 1 + (floor - 1) * (m.scale || 0.25);
-    return s + (m.weight || 1) * Math.floor(m[key] * mult * postMult);
+    const v = scaledStatValue(m[key] || 0, m.scale || 0.25, key, floor, cfg);
+    return s + (m.weight || 1) * Math.floor(v * postMult);
   }, 0) / totalW;
   return {
     poolSize: pool.length,
@@ -684,7 +739,7 @@ function runSimulations(cfg) {
   const rows = [];
 
   for (const floor of FLOORS) {
-    const pool = eligiblePool(floor);
+    const pool = eligiblePool(floor, cfg);
     const stats = poolStats(floor, cfg);
     if (!stats) { rows.push({ floor, skip: true }); continue; }
 
