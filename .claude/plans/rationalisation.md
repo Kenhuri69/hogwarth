@@ -154,9 +154,15 @@ chaque). Les points sont ordonnés par risque croissant.
 - **Proposition** : une fonction `_resolveDialogSource(npc, state)` retournant
   `{ source, raw }` ; les deux consommateurs s'appuient dessus.
 - **Risque** : moyen — machine à états des dialogues PNJ.
-- **Vérification** : smoke test PNJ (greeting, accept quête, remise, done) ;
-  voix de page correcte.
-- **Statut** : [ ] proposé · [ ] validé · [ ] implémenté
+- **Vérification** : smoke test PNJ (scénario 3bis : génération + dialogue +
+  flux quête) reste vert.
+- **Note implémentation** : `_resolveDialogSource(npc, state)` retourne
+  `{ source, raw, qid }` (`qid` ajouté car `_npcDialogPages` en a besoin pour
+  l'interpolation farming). `_npcDialogPages` consomme `raw`/`qid` ;
+  `_npcDialogSource` se réduit à `.source`. Cascade strictement identique.
+  Le `idleRandomPick` est descendu dans la branche idle (calculé seulement
+  quand atteint) — `Math.random()` natif non seedé, aucun effet observable.
+- **Statut** : [x] proposé · [x] validé · [x] implémenté
 
 ## P10 — inventory.js : dédup `useItem`/`useItemFromChar` + nettoyages
 
