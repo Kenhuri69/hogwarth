@@ -341,7 +341,26 @@ function triggerNpcSpecialAction(npcId) {
 }
 
 // État courant du dialogue (multi-pages)
-let _dialogState = { npcId: null, pages: [], page: 0, actions: [] };
+// `source` mémorise l'origine des pages (greeting / offer / active / ready /
+// done / idle), nécessaire au mapping voix car le mode "greeting" est
+// déclenché par seenNpcs (premier contact) indépendamment de l'état quête.
+let _dialogState = { npcId: null, pages: [], page: 0, actions: [], source: 'idle' };
+
+// Reflète la même logique de sélection que `_npcDialogPages` mais renvoie
+// l'identifiant de la source choisie, pour le mapping audio. Doit être
+// appelé AVANT `seenNpcs.add(npc.id)` pour distinguer le 1er contact.
+function _npcDialogSource(npc, state) {
+  const d   = npc.dialogues || {};
+  const qid = _currentQuestForState(npc, state);
+  const dq  = (qid && npc.dialoguesByQuest && npc.dialoguesByQuest[qid]) || {};
+  const pick = (k) => (dq[k] !== undefined) ? dq[k] : d[k];
+  if (typeof seenNpcs !== 'undefined' && !seenNpcs.has(npc.id) && d.greeting) return 'greeting';
+  if (state === 'offer'  && pick('questOffer')  !== undefined) return 'offer';
+  if (state === 'active' && pick('questActive') !== undefined) return 'active';
+  if (state === 'ready'  && pick('questReady')  !== undefined) return 'ready';
+  if (state === 'done'   && d.questDone)                       return 'done';
+  return 'idle';
+}
 
 function _renderDialogPage() {
   const { pages, page, actions } = _dialogState;
@@ -378,7 +397,23 @@ const _DUMBLEDORE_QID_SUFFIX = {
   dumbledore_resistance: 'resistance',
   dumbledore_revelation: 'revelation',
 };
-function _voiceKeyForPage(npcId, state, qid, pageIdx) {
+
+// PNJ couverts par la Vague A voice-extensions-v2 : les 4 chefs de Maison.
+// Mapping uniforme `<id>_<state>_<pageIdx+1>` pour 'greeting', 'offer',
+// 'active', 'ready'. Le `source` est passé en paramètre depuis _dialogState
+// car 'greeting' est piloté par seenNpcs (premier contact), pas par l'état
+// quête courant.
+const _HEAD_OF_HOUSE_VOICE = new Set(['mcgonagall', 'rogue', 'flitwick', 'sprout']);
+
+function _voiceKeyForPage(npcId, state, qid, pageIdx, source) {
+  // Chefs de Maison : couvrir greeting + 3 états quête (Vague A).
+  if (_HEAD_OF_HOUSE_VOICE.has(npcId)) {
+    if (source === 'greeting') return `${npcId}_greeting_${pageIdx + 1}`;
+    if (source === 'offer' || source === 'active' || source === 'ready') {
+      return `${npcId}_${source}_${pageIdx + 1}`;
+    }
+    return null;
+  }
   if (state !== 'offer' && state !== 'active' && state !== 'ready') return null;
   if (npcId === 'dumbledore') {
     const suffix = _DUMBLEDORE_QID_SUFFIX[qid];
@@ -403,12 +438,12 @@ function _playPageVoice() {
   if (typeof AudioSystem === 'undefined' || typeof AudioSystem.playVoice !== 'function') return;
   if (typeof AudioSystem.stopVoice === 'function') AudioSystem.stopVoice();
   if (!_dialogState) return;
-  const { npcId, page } = _dialogState;
+  const { npcId, page, source } = _dialogState;
   const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
   if (!npc) return;
   const state = (typeof getNpcQuestState === 'function') ? getNpcQuestState(npc) : 'none';
   const qid   = (typeof _currentQuestForState === 'function') ? _currentQuestForState(npc, state) : null;
-  const key   = _voiceKeyForPage(npcId, state, qid, page);
+  const key   = _voiceKeyForPage(npcId, state, qid, page, source);
   if (key) AudioSystem.playVoice(key);
 }
 
@@ -440,12 +475,16 @@ function openNpcDialog(npcId) {
   if (titleEl) titleEl.textContent = npc.title || '';
 
   // État dialog → pages + actions calculés AVANT add(seenNpcs) pour
-  // que la 1re rencontre lise bien `greeting`.
+  // que la 1re rencontre lise bien `greeting`. `source` est figé ici
+  // pour rester cohérent sur toutes les pages du dialogue (greeting
+  // 2 pages, etc.) — sinon seenNpcs.add ci-dessous changerait la source
+  // à la page 2.
   _dialogState = {
     npcId,
     pages:   _npcDialogPages(npc, state),
     page:    0,
-    actions: _npcDialogActions(npc, state)
+    actions: _npcDialogActions(npc, state),
+    source:  _npcDialogSource(npc, state)
   };
   _renderDialogPage();
 

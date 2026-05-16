@@ -136,6 +136,31 @@ Object.assign(AudioSystem, {
     hagrid_course_offer_1:     'audio/voice/hagrid_course_offer_1.ogg',
     hagrid_course_active_1:    'audio/voice/hagrid_course_active_1.ogg',
     hagrid_course_ready_1:     'audio/voice/hagrid_course_ready_1.ogg',
+    // ── Chefs de Maison (Vague A voice-extensions-v2) ──
+    // 4 PNJ × 5 OGG (greeting ×2 + offer/active/ready ×1) = 20 samples.
+    // Mapping 1:1 sur les textes existants dans npcs.js
+    // (dialogues.greeting + dialoguesByQuest.quest_set_<house>).
+    // Fallback silencieux tant que les OGG ne sont pas générés.
+    mcgonagall_greeting_1: 'audio/voice/mcgonagall_greeting_1.ogg',
+    mcgonagall_greeting_2: 'audio/voice/mcgonagall_greeting_2.ogg',
+    mcgonagall_offer_1:    'audio/voice/mcgonagall_offer_1.ogg',
+    mcgonagall_active_1:   'audio/voice/mcgonagall_active_1.ogg',
+    mcgonagall_ready_1:    'audio/voice/mcgonagall_ready_1.ogg',
+    rogue_greeting_1:      'audio/voice/rogue_greeting_1.ogg',
+    rogue_greeting_2:      'audio/voice/rogue_greeting_2.ogg',
+    rogue_offer_1:         'audio/voice/rogue_offer_1.ogg',
+    rogue_active_1:        'audio/voice/rogue_active_1.ogg',
+    rogue_ready_1:         'audio/voice/rogue_ready_1.ogg',
+    flitwick_greeting_1:   'audio/voice/flitwick_greeting_1.ogg',
+    flitwick_greeting_2:   'audio/voice/flitwick_greeting_2.ogg',
+    flitwick_offer_1:      'audio/voice/flitwick_offer_1.ogg',
+    flitwick_active_1:     'audio/voice/flitwick_active_1.ogg',
+    flitwick_ready_1:      'audio/voice/flitwick_ready_1.ogg',
+    sprout_greeting_1:     'audio/voice/sprout_greeting_1.ogg',
+    sprout_greeting_2:     'audio/voice/sprout_greeting_2.ogg',
+    sprout_offer_1:        'audio/voice/sprout_offer_1.ogg',
+    sprout_active_1:       'audio/voice/sprout_active_1.ogg',
+    sprout_ready_1:        'audio/voice/sprout_ready_1.ogg',
   },
 
   // ── Lecture d'une voix narrative (one-shot, avec ducking music) ──

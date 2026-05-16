@@ -5503,6 +5503,99 @@ async function scenarioFarmingQuests() {
   await browser.close();
 }
 
+// ── Scénario : voix des Chefs de Maison (Vague A) ────────────
+
+async function scenarioHeadOfHouseVoice() {
+  console.log('\n── Scénario : voix Chefs de Maison ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : les 20 clés audio sont mappées (fallback silencieux côté OGG OK)
+  const t1 = await page.evaluate(() => {
+    const sm  = AudioSystem._VOICE_SAMPLES;
+    const ids = ['mcgonagall', 'rogue', 'flitwick', 'sprout'];
+    const expected = [];
+    for (const id of ids) {
+      expected.push(`${id}_greeting_1`, `${id}_greeting_2`,
+                    `${id}_offer_1`, `${id}_active_1`, `${id}_ready_1`);
+    }
+    const missing = expected.filter(k => !sm[k]);
+    return { total: expected.length, missing };
+  });
+  console.log('  T1 voice keys:', t1);
+  assert(t1.total === 20, `attendu 20 clés voice, expected.length=${t1.total}`);
+  assert(t1.missing.length === 0,
+    `clés voice manquantes : ${t1.missing.join(', ')}`);
+
+  // T2 : 1er contact McGonagall → source 'greeting' → key greeting_1
+  // (la quête `golem_passage` est offerable étage 5 mais le greeting prime
+  // tant que seenNpcs ne contient pas le PNJ).
+  const t2 = await page.evaluate(() => {
+    seenNpcs.delete('mcgonagall');
+    const npc = getNpcById('mcgonagall');
+    const state = getNpcQuestState(npc);
+    const source = _npcDialogSource(npc, state);
+    const key0 = _voiceKeyForPage('mcgonagall', state, null, 0, source);
+    const key1 = _voiceKeyForPage('mcgonagall', state, null, 1, source);
+    return { state, source, key0, key1, hasGreeting: Array.isArray(npc.dialogues.greeting) };
+  });
+  console.log('  T2 first contact:', t2);
+  assert(t2.hasGreeting,         'McGonagall doit avoir greeting array');
+  assert(t2.source === 'greeting', `source attendu 'greeting', got '${t2.source}'`);
+  assert(t2.key0 === 'mcgonagall_greeting_1',
+    `key page 0 attendu mcgonagall_greeting_1, got ${t2.key0}`);
+  assert(t2.key1 === 'mcgonagall_greeting_2',
+    `key page 1 attendu mcgonagall_greeting_2, got ${t2.key1}`);
+
+  // T3 : visites suivantes sur Rogue (1 seule quête = quest_set_slyth)
+  // — source 'offer' → key rogue_offer_1. Choisi à la place de McGonagall
+  // car cette dernière donne aussi golem_passage qui pourrait passer en
+  // premier sur l'itération de `questsGiven` et brouiller l'assert.
+  const t3 = await page.evaluate(() => {
+    seenNpcs.add('rogue');
+    activeQuests = activeQuests.filter(q => q.id !== 'quest_set_slyth');
+    availableQuests.add('quest_set_slyth');
+    completedQuests.delete('quest_set_slyth');
+    const npc = getNpcById('rogue');
+    const state = getNpcQuestState(npc);
+    const qid   = _currentQuestForState(npc, state);
+    const source = _npcDialogSource(npc, state);
+    const key   = _voiceKeyForPage('rogue', state, qid, 0, source);
+    return { state, qid, source, key };
+  });
+  console.log('  T3 quest_set_slyth offer:', t3);
+  assert(t3.state === 'offer', `state attendu 'offer', got '${t3.state}'`);
+  assert(t3.qid === 'quest_set_slyth',
+    `qid attendu 'quest_set_slyth', got '${t3.qid}'`);
+  assert(t3.source === 'offer', `source attendu 'offer', got '${t3.source}'`);
+  assert(t3.key === 'rogue_offer_1',
+    `key attendu 'rogue_offer_1', got '${t3.key}'`);
+
+  // T4 : régression Dumbledore — un état 'offer' sur la chaîne d'épreuves
+  // doit toujours produire `dumbledore_<suffix>_offer_1` malgré le refactor
+  // (param `source` ajouté).
+  const t4 = await page.evaluate(() => {
+    const key = _voiceKeyForPage('dumbledore', 'offer', 'dumbledore_eveil', 0, 'offer');
+    const keyActive = _voiceKeyForPage('dumbledore', 'active', 'dumbledore_courage', 0, 'active');
+    const keyReady  = _voiceKeyForPage('dumbledore', 'ready', 'dumbledore_revelation', 0, 'ready');
+    return { key, keyActive, keyReady };
+  });
+  console.log('  T4 Dumbledore regression:', t4);
+  assert(t4.key === 'dumbledore_eveil_offer_1',
+    `Dumbledore offer cassé : ${t4.key}`);
+  assert(t4.keyActive === 'dumbledore_courage_active_1',
+    `Dumbledore active cassé : ${t4.keyActive}`);
+  assert(t4.keyReady === 'dumbledore_revelation_ready_1',
+    `Dumbledore ready cassé : ${t4.keyReady}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS pendant voix Chefs de Maison`);
+  }
+  console.log('  ✅ Voix Chefs de Maison OK');
+  await browser.close();
+}
+
 // ── Scénario : action Garde + sort Ferula ────────────────────
 
 async function scenarioGuardAndFerula() {
@@ -6051,7 +6144,7 @@ async function scenarioLoader() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
