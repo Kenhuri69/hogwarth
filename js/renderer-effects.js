@@ -601,7 +601,7 @@ const NPC_SPRITE_SRC = {
   mage:    'img/npc/_npc_mage.png',
   prof_h:  'img/npc/_npc_prof_h.png',
   prof_f:  'img/npc/_npc_prof_f.png',
-  fantome: 'img/npc/_wizard_generic.png', // en attente : damier incrusté dans le corps translucide
+  fantome: 'img/npc/_npc_fantome.png',
   vendeur: 'img/npc/_npc_vendeur.png',
   phenix:  'img/npc/_npc_phenix.png',
 };

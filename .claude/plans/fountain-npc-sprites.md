@@ -156,9 +156,11 @@ no text, no watermark, no signature, no border frame, no ground line
 
 ## Intégration images (2026-05-17)
 
-- 5 PNG traités et intégrés : `_npc_mage`, `_npc_prof_h`, `_npc_prof_f`,
-  `_npc_vendeur`, `_npc_phenix` → `NPC_SPRITE_SRC` basculé.
-- Détourage : rembg `u2net` (opaques) / `birefnet` (phénix). Les images
-  Gemini sont livrées en RGB avec un damier opaque → rembg le retire.
-- **Fantôme en attente** : corps translucide → damier incrusté, garde le
-  générique. Regénérer avec le prompt `_npc_fantome` corrigé ci-dessus.
+- 6 PNG traités et intégrés : `_npc_mage`, `_npc_prof_h`, `_npc_prof_f`,
+  `_npc_vendeur`, `_npc_phenix`, `_npc_fantome` → `NPC_SPRITE_SRC`
+  entièrement basculé. Plus aucun type sur le générique.
+- Détourage : rembg `u2net` (opaques) / `birefnet` (phénix + fantôme).
+  Les images Gemini sont livrées en RGB avec un fond opaque → rembg le
+  retire.
+- Fantôme : 1re génération rejetée (damier incrusté dans le corps
+  translucide), regénérée avec fond noir plein + corps opaque → OK.
