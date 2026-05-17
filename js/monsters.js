@@ -895,7 +895,8 @@ const MONSTERS = [
       { name: "Cruciatus Noir",      icon: "⚡", desc: "Sort de torture intense",     effect: "drain",  power: 14, chance: 0.30 },
       { name: "Magie Noire Pure",    icon: "🟣", desc: "Magie des ténèbres absolue",  effect: "damage", power: 15, chance: 0.35 },
       { name: "Expelliarmus Sombre", icon: "⚫", desc: "Désarme et affaiblit",         effect: "weaken", power: 3,  chance: 0.20 },
-      { name: "Marque Brûlante",     icon: "🔥", desc: "Marque incandescente sur la peau", effect: "status", statusId: "burn", power: 5, chance: 0.25, turns: 3 }
+      { name: "Marque Brûlante",     icon: "🔥", desc: "Marque incandescente sur la peau", effect: "status", statusId: "burn", power: 5, chance: 0.25, turns: 3 },
+      { name: "Dissipation Noire",   icon: "❌", desc: "Dissipe les protections magiques", effect: "dispel", chance: 0.30 }
     ],
     ai: "aggressive",
     resist: ["ténèbres"],
@@ -932,7 +933,8 @@ const MONSTERS = [
       { name: "Cruciatus Intense",   icon: "⚡", desc: "Sort de torture suprême",        effect: "drain",  power: 16, chance: 0.30 },
       { name: "Sonore Maudit",       icon: "📣", desc: "Cri de démence déstabilisant",  effect: "weaken", power: 4,  chance: 0.20 },
       { name: "Régénération Noire",  icon: "💜", desc: "Se soigne par passion pour les ténèbres", effect: "heal", power: 16, chance: 0.15 },
-      { name: "Sortilège Sanglant",  icon: "🩸", desc: "Inflige une plaie qui saigne",  effect: "status", statusId: "bleed", power: 6, chance: 0.30, turns: 3 }
+      { name: "Sortilège Sanglant",  icon: "🩸", desc: "Inflige une plaie qui saigne",  effect: "status", statusId: "bleed", power: 6, chance: 0.30, turns: 3 },
+      { name: "Finite Incantatem",   icon: "❌", desc: "Brise les sortilèges de soutien", effect: "dispel", chance: 0.50 }
     ],
     ai: "aggressive",
     resist: ["ténèbres", "disarm"],
@@ -992,10 +994,11 @@ const MONSTERS = [
     hp: 100, atk: 28, def: 14, mag: 25, agi: 10, lck: 15,
     scale: 0.40,
     abilities: [
-      { name: "Avada Kedavra",      icon: "💚", desc: "Sort de la mort imparable",       effect: "damage", power: 35, chance: 0.30 },
+      { name: "Avada Kedavra",      icon: "💚", desc: "Sort de la mort imparable",       effect: "damage", power: 35, chance: 0.70 },
       { name: "Cruciatus Absolu",   icon: "⚡", desc: "Torture au-delà de l'imaginable", effect: "drain",  power: 22, chance: 0.25 },
       { name: "Nagini te Convoque", icon: "🐍", desc: "Invoque Nagini pour se soigner",  effect: "heal",   power: 25, chance: 0.20 },
-      { name: "Marque des Ténèbres",icon: "🌑", desc: "Marque qui ronge les défenses",   effect: "weaken", power: 6,  chance: 0.15 }
+      { name: "Marque des Ténèbres",icon: "🌑", desc: "Marque qui ronge les défenses",   effect: "weaken", power: 6,  chance: 0.15 },
+      { name: "Sortilège Brisé",    icon: "❌", desc: "Anéantit toute protection",        effect: "dispel", chance: 0.70 }
     ],
     ai: "aggressive",
     resist: ["ténèbres", "feu", "glace", "disarm"],

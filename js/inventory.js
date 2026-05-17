@@ -117,6 +117,7 @@ function recalculateStats() {
     //   critMultiplier / spellCritMultiplier : 1.5 + bonusCritDamage cumulés.
     let critBonus = 0, dodgeBonus = 0;
     let critDmgBonus = 0, spellCritBonus = 0, spellCritDmgBonus = 0;
+    let counterBonus = 0;
     if (c.equipped) {
       for (const item of Object.values(c.equipped)) {
         if (!item) continue;
@@ -125,6 +126,7 @@ function recalculateStats() {
         if (item.bonusCritDamage)      critDmgBonus      += item.bonusCritDamage;
         if (item.bonusSpellCritChance) spellCritBonus    += item.bonusSpellCritChance;
         if (item.bonusSpellCritDamage) spellCritDmgBonus += item.bonusSpellCritDamage;
+        if (item.bonusCounterChance)   counterBonus      += item.bonusCounterChance;
       }
     }
 
@@ -179,6 +181,7 @@ function recalculateStats() {
           if (b.bonusCritDamage)      critDmgBonus      += b.bonusCritDamage;
           if (b.bonusSpellCritChance) spellCritBonus    += b.bonusSpellCritChance;
           if (b.bonusSpellCritDamage) spellCritDmgBonus += b.bonusSpellCritDamage;
+          if (b.bonusCounterChance)   counterBonus      += b.bonusCounterChance;
         }
       }
     }
@@ -193,6 +196,9 @@ function recalculateStats() {
     c.dodgeChance         = Math.max(0, Math.min(35, 5 + c.agi * 0.4 + dodgeBonus));
     c.critMultiplier      = 1.5 + critDmgBonus;
     c.spellCritMultiplier = 1.5 + spellCritDmgBonus;
+    // Garde counter-attack : contribution d'équipement à la riposte. La
+    // base de 30 % et le plafond de 40 % sont appliqués dans _tryGuardCounter.
+    c.counterChance       = counterBonus;
   });
 }
 

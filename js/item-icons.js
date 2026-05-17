@@ -133,6 +133,7 @@ const ITEM_ICON_REGISTRY = {
   // Livres de sorts
   livre_sortileges:   'img/icons/items/livre_sortileges.png',
   livre_soin:         'img/icons/items/livre_soin.png',
+  livre_ferula:       'img/icons/items/livre_soin.png',
   book_monsters:      'img/icons/items/book_monsters.png',
   livre_prince:       'img/icons/items/livre_prince.png',
   livre_bombarda:     'img/icons/items/livre_bombarda.png',
@@ -239,6 +240,7 @@ const SPELL_ICON_REGISTRY = {
   'Stupefix':           'img/icons/spells/stupefix.png',
   'Episkey':            'img/icons/spells/episkey.png',
   'Ferula':             'img/icons/spells/ferula.png',
+  'Ferula Maxima':      'img/icons/spells/ferula.png',
   'Protego':            'img/icons/spells/protego.png',
   'Incendio':           'img/icons/spells/incendio.png',
   'Accio':              'img/icons/spells/accio.png',

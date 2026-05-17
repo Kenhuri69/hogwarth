@@ -7228,8 +7228,213 @@ async function scenarioDelayedSearch() {
   await browser.close();
 }
 
+// ── Scénario : Extensions combat V2 ──────────────────────────
+// Couvre les 4 vagues de combat-extensions-v2.md : Garde counter-attack,
+// Double-Garde (empilement), Ferula Maxima (régén AOE), ennemis dispel.
+async function scenarioCombatExtV2() {
+  console.log('\n── Scénario : Extensions combat V2 (counter / double-garde / Ferula Maxima / dispel) ──');
+
+  // ─── Bloc solo : counter, double-garde, dispel, monstres ──────
+  {
+    const { browser, page, errors } = await launchGame();
+    await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+    await startDummyFight(page, { hp: 300 });
+
+    // A1 — Garde counter-attack : la riposte touche l'ennemi.
+    const counterHit = await page.evaluate(() => {
+      currentBattleChar = 0;
+      enemyGroup.length = 1;
+      const e = enemyGroup[0];
+      e.abilities = []; e.atk = 10; e.def = 0; e.currentHp = 300;
+      party[0].hp = 200; party[0].hpMax = 200; party[0].def = 0;
+      party[0].atk = 20; party[0].dodgeChance = 0; party[0].counterChance = 0;
+      shieldTurns = [0, 0]; guardTurns = [1, 0];
+      const before = e.currentHp;
+      const orig = Math.random;
+      Math.random = () => 0.05;        // roll counter = 5 % < 30 % → riposte
+      enemyTurn();
+      Math.random = orig;
+      return { before, after: e.currentHp };
+    });
+    assert(counterHit.after < counterHit.before,
+      `counter : ennemi non touché par la riposte (${counterHit.before}→${counterHit.after})`);
+
+    // A2 — Pas de riposte quand le tirage échoue.
+    const counterMiss = await page.evaluate(() => {
+      currentBattleChar = 0;
+      const e = enemyGroup[0];
+      e.abilities = []; e.atk = 10; e.def = 0; e.currentHp = 300;
+      party[0].hp = 200; party[0].def = 0; party[0].dodgeChance = 0;
+      party[0].counterChance = 0;
+      shieldTurns = [0, 0]; guardTurns = [1, 0];
+      const before = e.currentHp;
+      const orig = Math.random;
+      Math.random = () => 0.95;        // roll counter = 95 % ≥ 30 % → pas de riposte
+      enemyTurn();
+      Math.random = orig;
+      return { before, after: e.currentHp };
+    });
+    assert(counterMiss.after === counterMiss.before,
+      `counter : riposte déclenchée alors que le tirage échoue (${counterMiss.before}→${counterMiss.after})`);
+
+    // B1 — Double-Garde : battleAction('guard') empile, plafond 3.
+    const stack = await page.evaluate(() => {
+      const origET = enemyTurn;
+      enemyTurn = () => {};            // neutralise le segment ennemi
+      currentBattleChar = 0;
+      guardTurns = [0, 0];
+      party[0].sp = 0; party[0].mag = 10; party[0].spMax = 50;
+      battleAction('guard'); const g1 = guardTurns[0]; const sp1 = party[0].sp;
+      currentBattleChar = 0; battleAction('guard'); const g2 = guardTurns[0];
+      currentBattleChar = 0; battleAction('guard'); const g3 = guardTurns[0];
+      currentBattleChar = 0; battleAction('guard'); const g4 = guardTurns[0];
+      enemyTurn = origET;
+      return { g1, g2, g3, g4, sp1 };
+    });
+    assert(stack.g1 === 1, `1re garde attendue 1, obtenu ${stack.g1}`);
+    assert(stack.g2 === 2, `2e garde attendue 2, obtenu ${stack.g2}`);
+    assert(stack.g3 === 3, `3e garde attendue 3, obtenu ${stack.g3}`);
+    assert(stack.g4 === 3, `garde plafonnée à 3, obtenu ${stack.g4}`);
+    assert(stack.sp1 >= 3, `regen PM attendue ≥ 3 à la pose, obtenu ${stack.sp1}`);
+
+    // B2 — Un coup mitigé consomme un seul palier (stack 2 → 1).
+    const consume = await page.evaluate(() => {
+      currentBattleChar = 0;
+      const e = enemyGroup[0];
+      e.abilities = []; e.atk = 10; e.def = 99; e.currentHp = 300;
+      party[0].hp = 200; party[0].hpMax = 200; party[0].def = 0;
+      party[0].dodgeChance = 0; party[0].counterChance = 0;
+      shieldTurns = [0, 0]; guardTurns = [2, 0];
+      const hpBefore = party[0].hp;
+      const orig = Math.random;
+      Math.random = () => 0;           // coup déterministe : dmg 10 → mitigé 5
+      enemyTurn();
+      Math.random = orig;
+      return { guard: guardTurns[0], dmg: hpBefore - party[0].hp };
+    });
+    assert(consume.guard === 1, `palier de garde attendu 1 après 1 coup, obtenu ${consume.guard}`);
+    assert(consume.dmg === 5,   `mitigation 50 % attendue (10→5), obtenu ${consume.dmg}`);
+
+    // D1 — Ennemi dispel : priorité shield > guard > regen.
+    const dispel = await page.evaluate(() => {
+      const e = enemyGroup[0];
+      e.abilities = [{ name: 'Dissipe', icon: '❌', effect: 'dispel', chance: 1,
+                       targets: ['shield', 'guard', 'regen'] }];
+      shieldTurns = [2, 0]; guardTurns = [1, 0];
+      party[0].statusEffects = [{ id: 'regen', power: 5, turns: 3, icon: '🩹' }];
+      const snap = () => ({ shield: shieldTurns[0], guard: guardTurns[0],
+                            regen: party[0].statusEffects.length });
+      const r1 = tryEnemyAbility(e, party[0], 0, () => {}); const a1 = snap();
+      const r2 = tryEnemyAbility(e, party[0], 0, () => {}); const a2 = snap();
+      const r3 = tryEnemyAbility(e, party[0], 0, () => {}); const a3 = snap();
+      const r4 = tryEnemyAbility(e, party[0], 0, () => {});  // plus rien
+      return { r1, a1, r2, a2, r3, a3, r4 };
+    });
+    assert(dispel.r1 && dispel.a1.shield === 0 && dispel.a1.guard === 1 && dispel.a1.regen === 1,
+      `dispel #1 doit retirer le bouclier en priorité (${JSON.stringify(dispel.a1)})`);
+    assert(dispel.r2 && dispel.a2.guard === 0,
+      `dispel #2 doit retirer la garde (${JSON.stringify(dispel.a2)})`);
+    assert(dispel.r3 && dispel.a3.regen === 0,
+      `dispel #3 doit retirer la régénération (${JSON.stringify(dispel.a3)})`);
+    assert(dispel.r4 === false,
+      'dispel sans buff doit renvoyer false (attaque normale)');
+
+    // D2 — Heuristique anti-stalling : weaken biaisé sous Double-Garde.
+    const bias = await page.evaluate(() => {
+      const e = enemyGroup[0];
+      e.abilities = [{ name: 'Sape', icon: '🛡️↓', effect: 'weaken',
+                       power: 3, chance: 0.5, turns: 2 }];
+      const orig = Math.random;
+      // roll 0.6 : échoue 0.5 sans bonus, passe 0.75 (= 0.5×1.5) sous garde ≥ 2.
+      guardTurns = [2, 0]; party[0].def = 10; party[0].statusEffects = [];
+      Math.random = () => 0.6;
+      const guarded = tryEnemyAbility(e, party[0], 0, () => {});
+      guardTurns = [0, 0]; party[0].def = 10; party[0].statusEffects = [];
+      Math.random = () => 0.6;
+      const plain = tryEnemyAbility(e, party[0], 0, () => {});
+      Math.random = orig;
+      return { guarded, plain };
+    });
+    assert(bias.guarded === true,  'weaken doit être biaisé (déclenché) sous Double-Garde');
+    assert(bias.plain === false,   'weaken ne doit pas se déclencher hors Double-Garde');
+
+    // E1 — Les 3 ennemis ciblés portent une capacité dispel.
+    const enemies = await page.evaluate(() => {
+      return ['mangemort_elite', 'bellatrix', 'voldemort_revenu'].map(id => {
+        const m = MONSTERS.find(x => x.id === id);
+        return { id, has: !!(m && (m.abilities || []).some(a => a.effect === 'dispel')) };
+      });
+    });
+    enemies.forEach(m => assert(m.has, `${m.id} sans capacité dispel`));
+
+    // E2 — livre_ferula existe et enseigne Ferula.
+    const book = await page.evaluate(() => {
+      const it = ITEMS.find(i => i.id === 'livre_ferula');
+      return { found: !!it, type: it && it.type, spell: it && it.spell };
+    });
+    assert(book.found && book.type === 'spellbook' && book.spell === 'Ferula',
+      'livre_ferula absent ou mal configuré');
+
+    if (errors.length) {
+      errors.forEach(e => console.log('  ⚠️ ', e));
+      throw new Error(`${errors.length} erreurs JS détectées (combat V2 solo)`);
+    }
+    await browser.close();
+  }
+
+  // ─── Bloc duo : Ferula Maxima (régén AOE) ─────────────────────
+  {
+    const ctx = await launchGame();
+    await startNewGame(ctx.page, { partySize: 2, heroes: ['harry', 'hermione'] });
+    await startDummyFight(ctx.page, { hp: 80 });
+
+    // C1 — Ferula Maxima dans SPELLS + apprentissage Hermione niveau 7.
+    const spellDef = await ctx.page.evaluate(() => {
+      const s = SPELLS.find(x => x.name === 'Ferula Maxima');
+      return { found: !!s, effect: s && s.effect };
+    });
+    assert(spellDef.found && spellDef.effect === 'support_regen_aoe',
+      'Ferula Maxima absent de SPELLS ou mal routé');
+
+    // C2 — Cast : le statut regen_ferula_max touche les DEUX alliés.
+    const cast = await ctx.page.evaluate(() => {
+      currentBattleChar = 0;
+      party[0].spells.push('Ferula Maxima');
+      party[0].sp = 30; party[0].mag = 10; party[0].spMax = 40;
+      party[0].hp = 10; party[0].hpMax = 50;
+      party[1].hp = 10; party[1].hpMax = 50; party[1].sp = 5; party[1].spMax = 40;
+      party[0].statusEffects = []; party[1].statusEffects = [];
+      castSpellInBattle('Ferula Maxima', 0);
+      const s0 = (party[0].statusEffects || []).find(s => s.id === 'regen_ferula_max');
+      const s1 = (party[1].statusEffects || []).find(s => s.id === 'regen_ferula_max');
+      return { s0: s0 ? s0.turns : 0, s1: s1 ? s1.turns : 0, sp: party[0].sp };
+    });
+    assert(cast.s0 === 3, `Ferula Maxima : Harry sans régén 3 tours (${cast.s0})`);
+    assert(cast.s1 === 3, `Ferula Maxima : Hermione sans régén 3 tours (${cast.s1})`);
+    assert(cast.sp === 18, `PM attendus 30−12=18 après cast, obtenu ${cast.sp}`);
+
+    // C3 — Tick : chaque allié récupère PV + PM.
+    const tick = await ctx.page.evaluate(() => {
+      party[1].hp = 10; party[1].sp = 5;
+      const hpB = party[1].hp, spB = party[1].sp;
+      tickStatuses(party[1], false);
+      return { dHp: party[1].hp - hpB, dSp: party[1].sp - spB };
+    });
+    assert(tick.dHp === 1, `tick Ferula Maxima : +1 PV attendu, obtenu +${tick.dHp}`);
+    assert(tick.dSp === 2, `tick Ferula Maxima : +2 PM attendu, obtenu +${tick.dSp}`);
+
+    if (ctx.errors.length) {
+      ctx.errors.forEach(e => console.log('  ⚠️ ', e));
+      throw new Error(`${ctx.errors.length} erreurs JS détectées (Ferula Maxima)`);
+    }
+    await ctx.browser.close();
+  }
+
+  console.log('  ✅ Extensions combat V2 conformes');
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

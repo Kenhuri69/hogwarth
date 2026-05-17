@@ -6,7 +6,15 @@
 // ── Utilisation d'une capacité spéciale par un ennemi ────────
 function tryEnemyAbility(enemy, target, charIdx, appendLog) {
   if (!enemy.abilities || !enemy.abilities.length) return false;
-  const ability = enemy.abilities.find(a => Math.random() < a.chance);
+  // Heuristique anti-stalling : face à une cible en Double-Garde
+  // (guardTurns ≥ 2), les ennemis privilégient `weaken` pour briser la
+  // posture (chance ×1.5). Cf. combat-extensions-v2.md §B.
+  const heavyGuard = (typeof guardTurns !== 'undefined') && guardTurns[charIdx] >= 2;
+  const ability = enemy.abilities.find(a => {
+    let ch = a.chance;
+    if (heavyGuard && a.effect === 'weaken') ch = Math.min(1, ch * 1.5);
+    return Math.random() < ch;
+  });
   if (!ability) return false;
 
   switch (ability.effect) {
@@ -75,6 +83,30 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       renderEnemyGroup();
       break;
     }
+    case 'dispel': {
+      // Retire un buff de la cible : priorité shield > guard > regen.
+      // Si la cible n'a aucun buff visé, l'ennemi ne gaspille pas son tour
+      // (return false → attaque physique normale dans enemyTurn).
+      const want = ability.targets || ['shield', 'guard', 'regen'];
+      let removed = null;
+      if (want.includes('shield') && shieldTurns[charIdx] > 0) {
+        shieldTurns[charIdx] = 0;
+        removed = 'Protego';
+      } else if (want.includes('guard') && typeof guardTurns !== 'undefined' && guardTurns[charIdx] > 0) {
+        guardTurns[charIdx] = 0;
+        removed = 'Garde';
+      } else if (want.includes('regen') && target.statusEffects) {
+        const i = target.statusEffects.findIndex(s => s.id === 'regen' || s.id === 'regen_ferula_max');
+        if (i >= 0) {
+          removed = STATUS_DEFS[target.statusEffects[i].id].label;
+          target.statusEffects.splice(i, 1);
+        }
+      }
+      if (!removed) return false;
+      appendLog(`❌ ${enemy.name} — ${ability.name} dissipe ${removed} de ${target.name} ! `);
+      UX_safe.logCombat(`❌ ${enemy.name} dissipe <b>${removed}</b> de ${target.name}`, 'bad');
+      break;
+    }
   }
   return true;
 }
@@ -129,8 +161,9 @@ function spellDamage(spell, char) {
 function spellEffectPreview(spell, char) {
   if (!spell || !char) return '';
   switch (spell.effect) {
-    case 'heal':          return `≈ ${healAmount(spell, char)} PV rendus`;
-    case 'support_regen': return `≈ ${healAmount(spell, char)} PV + régénération`;
+    case 'heal':              return `≈ ${healAmount(spell, char)} PV rendus`;
+    case 'support_regen':     return `≈ ${healAmount(spell, char)} PV + régénération`;
+    case 'support_regen_aoe': return 'PV + PM des deux alliés (3 tours)';
     case 'lifesteal': {
       const d = spellDamage(spell, char);
       return `≈ ${d} dégâts · +${Math.floor(d / 2)} PV drainés`;
@@ -287,6 +320,19 @@ function _spellSupportRegen(spell, char, _enemy, _enemyIdx, targetAllyIdx) {
   return msg;
 }
 
+// Ferula Maxima : régénération de soutien AOE. Applique le statut
+// regen_ferula_max (PV + PM par tour, 3 tours) sur TOUS les alliés vivants.
+// Pas de sélection de cible — l'effet touche le groupe entier.
+function _spellSupportRegenAoe(spell, char) {
+  const allies = party.slice(0, partySize).filter(c => c.hp > 0);
+  allies.forEach(ally => applyStatus(ally, 'regen_ferula_max', spell.power, 3));
+  const names = allies.map(a => a.name).join(' & ') || char.name;
+  const msg = `🩹✨ ${char.name} : ${spell.name} — régénération de groupe (${names}, 3 tours).`;
+  addMsg(msg, 'good');
+  UX_safe.logCombat(`🩹✨ <b>${char.name}</b> lance ${spell.name} sur ${names}`, 'good');
+  return msg;
+}
+
 // Sort de téléportation : pas de dégâts ni de cible directe — on ouvre
 // un overlay A/B (groupe vs ennemi). castSpellInBattle court-circuite la
 // boucle standard pour ce sort (cf. ci-dessous).
@@ -304,9 +350,10 @@ const SPELL_HANDLERS = {
   instant:        _spellElementalDamage,
   lifesteal:      _spellLifesteal,
   curse:          _spellCurse,
-  steal:          _spellSteal,
-  support_regen:  _spellSupportRegen,
-  teleport:       _spellTeleport,
+  steal:             _spellSteal,
+  support_regen:     _spellSupportRegen,
+  support_regen_aoe: _spellSupportRegenAoe,
+  teleport:          _spellTeleport,
 };
 
 // Sorts à cible alliée — pas de sélection d'ennemi, mais éventuellement
