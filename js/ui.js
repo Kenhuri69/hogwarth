@@ -490,6 +490,7 @@ function _renderHouseSetPanel(c) {
 
   return `
     <div class="section section-houseset">
+      <button class="section-toggle" onclick="_toggleCharSection(this)">Set Maison</button>
       <div class="panel-title">⸻ ${set.setLabel.toUpperCase()} (${count}/4) ⸻</div>
       <div class="set-cells">${cells}</div>
       <div class="set-bonuses">${bonusRows}</div>
@@ -556,6 +557,7 @@ function openCharacter(charIdx = 0) {
 
       <!-- Stats (grid-area:stats) -->
       <div class="section section-stats char-stats-panel">
+        <button class="section-toggle" onclick="_toggleCharSection(this)">Statistiques</button>
         <div class="level-banner">
           <div class="lvl">${c.name.split(' ')[0]} — Niveau ${c.level}</div>
           <div style="font-size:10px;color:#8a7050;margin-top:2px">${c.class}</div>
@@ -579,6 +581,7 @@ function openCharacter(charIdx = 0) {
 
       <!-- Équipement (grid-area:equip) -->
       <div class="section section-equip">
+        <button class="section-toggle" onclick="_toggleCharSection(this)">Équipement</button>
         <div class="paper-doll">
           <div class="paper-doll-main">
             <div class="paper-doll-col left">${slotsLeft}</div>
@@ -598,12 +601,14 @@ function openCharacter(charIdx = 0) {
 
       <!-- Sortilèges (grid-area:spells) -->
       <div class="section section-spells char-spells-panel">
+        <button class="section-toggle" onclick="_toggleCharSection(this)">Sortilèges</button>
         <div class="panel-title">⸻ SORTILÈGES CONNUS ⸻</div>
         <div class="spells-row">${spellsHtml}</div>
       </div>
 
       <!-- Sac (grid-area:inv) -->
       <div class="section section-inv">
+        <button class="section-toggle" onclick="_toggleCharSection(this)">Sac</button>
         <div class="panel-title">⸻ SAC — ${inv.length} / 16 ⸻</div>
         <div class="inv-grid">${invHtml}</div>
       </div>
@@ -611,6 +616,13 @@ function openCharacter(charIdx = 0) {
     </div>
   `;
   document.getElementById('character-modal').style.display = 'flex';
+}
+
+// Accordéon mobile de la fiche perso : plie / déplie une section.
+// Le bouton .section-toggle n'est cliquable qu'en ≤700px (masqué en
+// desktop via CSS) ; en desktop les 3 zones restent toujours visibles.
+function _toggleCharSection(btn) {
+  if (btn && btn.parentElement) btn.parentElement.classList.toggle('collapsed');
 }
 
 // ── Allocation de points de stats libres (Phase 3 — UX) ─────
