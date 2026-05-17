@@ -63,5 +63,6 @@ Plans 100 % terminés et livrés sur master. Conservés pour archéologie / déc
 | `ironman-icons-name-flow.md` | Icônes Ironman (crâne/coupe/médailles) + pseudonyme persistant + UID de run (anti double-classement) | `claude/ironman-icons-name-flow` |
 | `draco-malfoy-character.md` | Personnages jouables film : Drago Malefoy, Cho Chang, Cedric Diggory (portraits détourés + entrées `CHARACTERS`) | — |
 | `Manon.md` | PNJ original Manon (fille cachée de Lupin) : chaîne de quêtes `manon_secret`/`manon_pardon`, dialogues, portrait, coda Poufsouffle | — |
+| `voice-dumbledore-chain.md` | Voix in-game de Dumbledore sur la chaîne de 5 quêtes d'épreuves : 15 OGG `dumbledore_<qid>_<offer\|active\|ready>_1` + câblage `_voiceKeyForPage`/`_playPageVoice` | `claude/dumbledore-voice-chain` |
 
 > Pour un plan encore actif, voir le dossier parent `.claude/plans/`.
