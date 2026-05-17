@@ -327,6 +327,27 @@ function closeHallOfFame() {
   }
 }
 
+// Portraits des sorciers d'une entrée, résolus depuis le champ
+// `heroes` (noms complets séparés par « & ») vers CHARACTERS.imgSrc.
+function _hofHeroAvatars(heroesStr) {
+  const names = String(heroesStr || '').split('&')
+    .map(s => s.trim()).filter(Boolean);
+  if (!names.length) return '';
+  const chars = (typeof CHARACTERS !== 'undefined') ? CHARACTERS : {};
+  let inner = '';
+  names.forEach(name => {
+    let src = '';
+    for (const k in chars) {
+      if (chars[k] && chars[k].name === name) { src = chars[k].imgSrc; break; }
+    }
+    inner += src
+      ? `<span class="hof-hero-av"><img src="${_hofEsc(src)}"`
+        + ` alt="${_hofEsc(name)}" title="${_hofEsc(name)}"></span>`
+      : `<span class="hof-hero-av hof-hero-av-empty" title="${_hofEsc(name)}">🧙</span>`;
+  });
+  return `<div class="hof-heroes">${inner}</div>`;
+}
+
 async function _renderHallOfFame(projection) {
   const listEl = document.getElementById('hof-list');
   if (!listEl) return;
@@ -375,6 +396,7 @@ async function _renderHallOfFame(projection) {
       : '#' + rank;
     html += `<div class="hof-row hof-rank-${rank}${d.isProj ? ' hof-row-projection' : ''}">`
       + `<div class="hof-rank">${medal}</div>`
+      + _hofHeroAvatars(r.heroes)
       + `<div class="hof-main">`
       +   `<div class="hof-name">${d.isProj ? '★ ' : ''}${_hofEsc(r.player_name)}`
       +     `${d.isProj ? '<span class="hof-proj-tag">simulation</span>' : ''}</div>`
