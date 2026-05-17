@@ -22,9 +22,10 @@ function mitigatedDamage(rawAtk, def) {
 // ── Système de statuts persistants ──────────────────────────
 // Chaque combattant porte statusEffects: [{ id, icon, power, turns }]
 // id ∈ "burn" (🔥) | "poison" (☠️) | "bleed" (🩸) | "gel" (❄️) | "weaken" (🛡️↓)
-//   | "regen" (🩹) | "stun" (💫)
+//   | "disarm" (🪄↓) | "regen" (🩹) | "stun" (💫)
 // Les DoT (burn/poison/bleed/gel) infligent des dégâts au tick.
-// "weaken" applique un malus DEF persistant (power = DEF perdue) :
+// "weaken" applique un malus DEF persistant (power = DEF perdue) ;
+// "disarm" applique un malus ATK persistant (power = ATK perdue) :
 // le malus est appliqué au moment de applyStatus, restauré à l'expiry.
 // "stun" fait sauter le prochain tour du combattant (non-DoT) : sa durée
 // (turns = nombre de tours sautés) est décrémentée par consumeStun() au
@@ -36,6 +37,7 @@ const STATUS_DEFS = {
   bleed:  { icon: '🩸',   label: 'Saignement',        color: '#c0392b' },
   gel:    { icon: '❄️',   label: 'Engelures',         color: '#5fa8d3' },
   weaken: { icon: '🛡️↓', label: 'Affaiblissement',   color: '#9b59b6' },
+  disarm: { icon: '🪄↓', label: 'Désarmé',           color: '#c9a84c' },
   regen:  { icon: '🩹',   label: 'Régénération',      color: '#3aa55a' },
   stun:   { icon: '💫',   label: 'Étourdi',           color: '#d9a521' },
   // Ferula Maxima : régénération de soutien AOE (PV + PM) sur 3 tours.
@@ -116,8 +118,8 @@ function tickStatuses(target, isEnemy) {
         UX_safe.logCombat(`${STATUS_DEFS.regen_ferula_max.icon} ${target.name} : <b>+${heal} PV</b> / <b>+${restore} PM</b>`, 'good');
       }
     }
-    // (weaken : pas de tick de dégâts — le malus DEF est appliqué au cast,
-    //  restauré à l'expiry ci-dessous.)
+    // (weaken/disarm : pas de tick de dégâts — le malus DEF/ATK est
+    //  appliqué au cast, restauré à l'expiry ci-dessous.)
     s.turns--;
     if (s.turns > 0) {
       remaining.push(s);
@@ -126,6 +128,11 @@ function tickStatuses(target, isEnemy) {
       target.def = (target.def || 0) + s.power;
       log += `${STATUS_DEFS[s.id].icon} ${target.name} récupère ${s.power} DEF. `;
       UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} récupère <b>+${s.power} DEF</b>`, 'magic');
+    } else if (s.id === 'disarm') {
+      // Expiration → restaurer l'ATK perdue
+      target.atk = (target.atk || 0) + s.power;
+      log += `${STATUS_DEFS[s.id].icon} ${target.name} récupère ${s.power} ATK. `;
+      UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} récupère <b>+${s.power} ATK</b>`, 'magic');
     }
   });
   target.statusEffects = remaining;
@@ -226,7 +233,7 @@ function startBattle(baseEnemyData) {
   enemyGroup = [];
   for (let i = 0; i < size; i++) {
     const base = i === 0 ? baseEnemyData : pickSimilarEnemy(baseEnemyData);
-    enemyGroup.push({ ...base, currentHp: base.hp, disarmed: 0, statusEffects: [] });
+    enemyGroup.push({ ...base, currentHp: base.hp, statusEffects: [] });
   }
   party.forEach(c => { c.statusEffects = []; });
 
@@ -358,11 +365,9 @@ function battleAction(action) {
 function executeAttack(targetIdx) {
   const char  = getActiveChar();
   const enemy = enemyGroup[targetIdx];
-  const bonus  = enemy.disarmed > 0 ? 2 : 0;
   const rawAtk = char.atk + Math.floor(Math.random() * 4);
-  const dmg    = Math.max(1, mitigatedDamage(rawAtk, enemy.def - bonus));
+  const dmg    = Math.max(1, mitigatedDamage(rawAtk, enemy.def));
   enemy.currentHp -= dmg;
-  if (enemy.disarmed > 0) enemy.disarmed--;
 
   AudioSystem.playHit();
   // Crit pondéré par critChance/critMultiplier (calculés par recalculateStats).

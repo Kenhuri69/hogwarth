@@ -160,12 +160,12 @@ const CHARACTERS = {
 
 const SPELLS = [
   // ── Sorts de base ────────────────────────────────────────────
-  { name:"Expelliarmus",      icon:"✨",   desc:"Désarme l'ennemi (-3 ATK)",          cost:4,  effect:"disarm",  power:3  },
+  { name:"Expelliarmus",      icon:"✨",   desc:"Désarme l'ennemi (réduit son ATK)",  cost:4,  effect:"disarm",  power:3  },
   { name:"Stupefix",          icon:"⚡",   desc:"Étourdit l'ennemi (8 dégâts)",       cost:6,  effect:"stun",    element:"foudre",   power:8  },
   { name:"Episkey",           icon:"💚",   desc:"Soigne légèrement (12 PV)",          cost:5,  effect:"heal",    power:12 },
   { name:"Ferula",            icon:"🩹",   desc:"Bande un allié (+4 PV puis 4 PV/tour × 3 tours)", cost:6,  effect:"support_regen", power:4 },
   { name:"Ferula Maxima",     icon:"🩹",   desc:"Régénère PV + PM des deux alliés (3 tours)", cost:12, effect:"support_regen_aoe", power:1 },
-  { name:"Protego",           icon:"🛡️",  desc:"Bouclier magique (2 tours)",          cost:5,  effect:"shield",  power:5  },
+  { name:"Protego",           icon:"🛡️",  desc:"Bouclier magique (durée selon MAG)",  cost:5,  effect:"shield",  power:5  },
   { name:"Incendio",          icon:"🔥",   desc:"Flammes magiques (14 dégâts)",       cost:8,  effect:"burn",    element:"feu",      power:14 },
   { name:"Accio",             icon:"🌀",   desc:"Tire un objet ennemi (+or)",         cost:6,  effect:"steal",   power:0  },
   // ── Sorts avancés (appris en jeu) ────────────────────────────
@@ -178,7 +178,7 @@ const SPELLS = [
   { name:"Aguamenti",         icon:"💧",   desc:"Jet d'eau (10 dégâts, -2 DEF)",      cost:7,  effect:"burn",    element:"glace",    power:10 },
   { name:"Bombarda",          icon:"💥",   desc:"Explosion (20 dégâts tous ennemis)", cost:15, effect:"burn",    element:"feu",      power:20 },
   { name:"Riddikulus",        icon:"🤡",   desc:"Neutralise les créatures du chaos",  cost:6,  effect:"stun",    element:"lumière",  power:8  },
-  { name:"Alohomora",         icon:"🔓",   desc:"Vole 15-30 Gallions à l'ennemi",    cost:5,  effect:"steal",   power:20 },
+  { name:"Alohomora",         icon:"🔓",   desc:"Vole une grosse bourse de Gallions", cost:5,  effect:"steal",   power:20 },
   { name:"Patronum",          icon:"✨",   desc:"Patronus : 18 dégâts anti-Détraqueur", cost:12, effect:"burn",  element:"lumière",  power:18 },
   // ── Sorts élémentaires (glace / foudre / lumière) ────────────
   { name:"Glacius",           icon:"❄️",   desc:"Givre mordant (14 dégâts, engelures)", cost:8,  effect:"stun",  element:"glace",    power:14 },

@@ -155,6 +155,24 @@ function healAmount(spell, char) {
 function spellDamage(spell, char) {
   return spell.power + Math.floor((char.mag || 0) / 2);
 }
+// Expelliarmus — réduction d'ATK : `power` de base, AGI convenablement,
+// INT faiblement. Plafonnée par l'ATK de l'ennemi côté handler.
+function disarmAtkLoss(spell, char) {
+  return spell.power + Math.floor((char.agi || 0) / 8) + Math.floor((char.int || 0) / 16);
+}
+// Expelliarmus — durée du désarmement : INT faiblement, plafond 5 tours.
+function disarmTurns(spell, char) {
+  return Math.min(5, 2 + Math.floor((char.int || 0) / 16));
+}
+// Protego — durée du bouclier : MAG, plafond 5 tours.
+function shieldDuration(spell, char) {
+  return Math.min(5, 2 + Math.floor((char.mag || 0) / 25));
+}
+// Accio/Alohomora — part déterministe de l'or volé : MAG un peu, LCK
+// beaucoup. L'or réel = stealBaseGold + random(0..5).
+function stealBaseGold(spell, char) {
+  return (spell.power || 0) + Math.floor((char.mag || 0) / 8) + Math.floor((char.lck || 0) / 2);
+}
 // Aperçu chiffré de l'effet pour le perso courant, affiché en fiche.
 // Chaîne vide pour les sorts sans valeur chiffrable simple (shield,
 // disarm, steal, teleport).
@@ -170,6 +188,14 @@ function spellEffectPreview(spell, char) {
     }
     case 'stun': case 'burn': case 'instant': case 'curse':
       return `≈ ${spellDamage(spell, char)} dégâts`;
+    case 'disarm':
+      return `≈ −${disarmAtkLoss(spell, char)} ATK ennemie (${disarmTurns(spell, char)} tours)`;
+    case 'shield':
+      return `bouclier ${shieldDuration(spell, char)} tours`;
+    case 'steal': {
+      const b = stealBaseGold(spell, char);
+      return `≈ ${b}–${b + 5} 🪙`;
+    }
     default:              return '';
   }
 }
@@ -191,10 +217,13 @@ function _spellDisarm(spell, char, enemy, targetIdx) {
       msg = `✨ ${char.name} : ${spell.name} — ${enemy.name} y résiste 🔰 !`;
       UX_safe.logCombat(`🔰 ${enemy.name} résiste à ${spell.name}`, 'info');
     } else {
-      enemy.disarmed = 2;
-      msg = `✨ ${char.name} : ${spell.name} désarme ${enemy.name} !`;
+      const turns = disarmTurns(spell, char);
+      const lost  = Math.min(disarmAtkLoss(spell, char), enemy.atk || 0);
+      enemy.atk = Math.max(0, (enemy.atk || 0) - lost);
+      applyStatus(enemy, 'disarm', lost, turns);
+      msg = `✨ ${char.name} : ${spell.name} désarme ${enemy.name} (−${lost} ATK, ${turns} tours) !`;
       UX_safe.floatDmg(`enemy:${targetIdx}`, 0, 'shield');
-      UX_safe.logCombat(`✨ ${char.name} désarme ${enemy.name} (2 tours)`, 'magic');
+      UX_safe.logCombat(`✨ ${char.name} désarme ${enemy.name} : <b>−${lost} ATK</b> (${turns} tours)`, 'magic');
     }
   }
   addMsg(msg, 'magic');
@@ -202,10 +231,11 @@ function _spellDisarm(spell, char, enemy, targetIdx) {
 }
 
 function _spellShield(spell, char) {
-  shieldTurns[currentBattleChar] = 2;
-  const msg = `🛡️ ${char.name} : ${spell.name} — bouclier actif 2 tours !`;
+  const dur = shieldDuration(spell, char);
+  shieldTurns[currentBattleChar] = dur;
+  const msg = `🛡️ ${char.name} : ${spell.name} — bouclier actif ${dur} tours !`;
   addMsg(msg, 'magic');
-  UX_safe.logCombat(`🛡️ ${char.name} active Protego (2 tours)`, 'magic');
+  UX_safe.logCombat(`🛡️ ${char.name} active Protego (${dur} tours)`, 'magic');
   return msg;
 }
 
@@ -289,7 +319,7 @@ function _spellCurse(spell, char, enemy, targetIdx) {
 }
 
 function _spellSteal(spell, char) {
-  const gold = Math.floor(Math.random() * 10 + 5);
+  const gold = stealBaseGold(spell, char) + Math.floor(Math.random() * 6);
   player.gold += gold;
   const msg = `🌀 ${char.name} : ${spell.name} → +${gold} Gallions !`;
   addMsg(msg, 'good');

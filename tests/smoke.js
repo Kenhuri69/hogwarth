@@ -4520,20 +4520,33 @@ async function scenarioSpellUx() {
   const t3 = await page.evaluate(() => {
     const reparo   = SPELLS.find(s => s.name === 'Reparo');    // heal power 20
     const incendio = SPELLS.find(s => s.name === 'Incendio');  // burn power 14
-    const weak   = { int: 0,  end: 0,  mag: 0 };
-    const strong = { int: 16, end: 8,  mag: 10 };
+    const protego  = SPELLS.find(s => s.name === 'Protego');   // shield power 5
+    const expelli  = SPELLS.find(s => s.name === 'Expelliarmus'); // disarm power 3
+    const accio    = SPELLS.find(s => s.name === 'Accio');     // steal power 0
+    const weak   = { int: 0,  end: 0,  mag: 0,  agi: 0,  lck: 0  };
+    const strong = { int: 16, end: 8,  mag: 10, agi: 16, lck: 20 };
+    const mage   = { int: 16, end: 8,  mag: 50, agi: 16, lck: 20 };
     return {
       healWeak:   spellEffectPreview(reparo, weak),
       healStrong: spellEffectPreview(reparo, strong),
       dmgStrong:  spellEffectPreview(incendio, strong),
-      shieldNone: spellEffectPreview(SPELLS.find(s => s.name === 'Protego'), strong),
+      shieldWeak:   spellEffectPreview(protego, weak),
+      shieldMage:   spellEffectPreview(protego, mage),
+      disarmStrong: spellEffectPreview(expelli, strong),
+      stealStrong:  spellEffectPreview(accio, strong),
     };
   });
   console.log('  T3 aperçu:', t3);
   assert(/20 PV/.test(t3.healWeak),   `Reparo sans stats ≈ 20 PV, got "${t3.healWeak}"`);
   assert(/26 PV/.test(t3.healStrong), `Reparo INT16/END8 ≈ 26 PV, got "${t3.healStrong}"`);
   assert(/19 dégâts/.test(t3.dmgStrong), `Incendio MAG10 ≈ 19 dégâts, got "${t3.dmgStrong}"`);
-  assert(t3.shieldNone === '',        'Protego (shield) → pas d\'aperçu chiffré');
+  // Sorts utilitaires désormais scalés : Protego (MAG), Expelliarmus
+  // (AGI/INT), Accio (MAG/LCK) — l'aperçu doit refléter le scaling.
+  assert(/bouclier 2 tours/.test(t3.shieldWeak), `Protego sans MAG ≈ 2 tours, got "${t3.shieldWeak}"`);
+  assert(/bouclier 4 tours/.test(t3.shieldMage), `Protego MAG50 ≈ 4 tours, got "${t3.shieldMage}"`);
+  assert(/−6 ATK/.test(t3.disarmStrong) && /3 tours/.test(t3.disarmStrong),
+         `Expelliarmus AGI16/INT16 ≈ −6 ATK / 3 tours, got "${t3.disarmStrong}"`);
+  assert(/≈ 11–16/.test(t3.stealStrong), `Accio MAG10/LCK20 ≈ 11–16 or, got "${t3.stealStrong}"`);
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
