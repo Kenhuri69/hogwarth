@@ -170,6 +170,33 @@ function _interpolateFarmingText(raw, qid, state) {
   return Array.isArray(raw) ? raw.map(apply) : apply(raw);
 }
 
+// Longueur max d'une page de dialogue avant découpage automatique.
+// Au-delà, `_splitDialogPage` scinde la page aux frontières de phrase
+// pour qu'elle tienne à l'écran sans scroll. Le scroll de
+// `.npc-dialog-text` reste le filet de sécurité (phrase unique > seuil).
+const _DIALOG_PAGE_MAXLEN = 280;
+
+// Découpe `text` en sous-pages d'au plus `maxLen` caractères, aux
+// frontières de phrase (. ! ? …), sans jamais couper un mot. Une phrase
+// seule plus longue que `maxLen` forme une sous-page telle quelle.
+function _splitDialogPage(text, maxLen) {
+  const s = String(text);
+  if (s.length <= maxLen) return [s];
+  const sentences = s.match(/[^.!?…]+[.!?…]+[)\]»"']*\s*|[^.!?…]+$/g) || [s];
+  const out = [];
+  let buf = '';
+  for (const sentence of sentences) {
+    if (buf && (buf + sentence).length > maxLen) {
+      out.push(buf.trim());
+      buf = sentence;
+    } else {
+      buf += sentence;
+    }
+  }
+  if (buf.trim()) out.push(buf.trim());
+  return out.length ? out : [s];
+}
+
 // Cascade de priorité partagée par `_npcDialogPages` et `_npcDialogSource` :
 // greeting (1er contact) → questOffer → questActive → questReady →
 // questDone → idle. Retourne `{ source, raw, qid }` où `source` est
@@ -213,16 +240,28 @@ function _resolveDialogSource(npc, state) {
   return { source: 'idle', raw, qid };
 }
 
-// Retourne toujours un tableau de pages (array<string>). Un dialogue
-// peut être déclaré comme string (1 page) ou comme array (multi-page).
-// Les PNJ peuvent fournir un override par quête via `dialoguesByQuest`.
+// Retourne `{ pages, srcPages }`. `pages` est le tableau plat des
+// sous-pages affichables ; une page d'origine trop longue est scindée par
+// `_splitDialogPage`. `srcPages[i]` mémorise l'index de la page d'origine
+// (déclarée par le PNJ) dont vient la sous-page i — le mapping voix reste
+// calé sur les pages d'origine, pas sur les sous-pages.
+// Un dialogue peut être déclaré comme string (1 page) ou comme array
+// (multi-page) ; override par quête via `dialoguesByQuest`.
 function _npcDialogPages(npc, state) {
   const { raw, qid } = _resolveDialogSource(npc, state);
   const pages = Array.isArray(raw) ? raw.slice() : [raw];
   // Interpolation des placeholders {target} / {amount} pour les quêtes
   // farming. No-op pour les autres dialogues (raw renvoyé tel quel).
   const interpolated = _interpolateFarmingText(pages, qid, state);
-  return Array.isArray(interpolated) ? interpolated : [interpolated];
+  const authored = Array.isArray(interpolated) ? interpolated : [interpolated];
+  const out = [], srcPages = [];
+  authored.forEach((text, srcIdx) => {
+    for (const sub of _splitDialogPage(text, _DIALOG_PAGE_MAXLEN)) {
+      out.push(sub);
+      srcPages.push(srcIdx);
+    }
+  });
+  return { pages: out, srcPages };
 }
 
 function _npcDialogActions(npc, state) {
@@ -379,7 +418,7 @@ function triggerNpcSpecialAction(npcId) {
 // `source` mémorise l'origine des pages (greeting / offer / active / ready /
 // done / idle), nécessaire au mapping voix car le mode "greeting" est
 // déclenché par seenNpcs (premier contact) indépendamment de l'état quête.
-let _dialogState = { npcId: null, pages: [], page: 0, actions: [], source: 'idle' };
+let _dialogState = { npcId: null, pages: [], srcPages: [], page: 0, actions: [], source: 'idle' };
 
 // Identifiant de la source choisie pour la page courante, pour le mapping
 // audio. Délègue à la cascade partagée `_resolveDialogSource`. Doit être
@@ -479,12 +518,18 @@ function _playPageVoice() {
   if (typeof AudioSystem === 'undefined' || typeof AudioSystem.playVoice !== 'function') return;
   if (typeof AudioSystem.stopVoice === 'function') AudioSystem.stopVoice();
   if (!_dialogState) return;
-  const { npcId, page, source } = _dialogState;
+  const { npcId, page, source, srcPages } = _dialogState;
   const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
   if (!npc) return;
+  // Index de la page d'origine : une page longue scindée garde la clé
+  // voix de son authored-page (pas de décalage de sample).
+  const authoredIdx = (srcPages && srcPages[page] != null) ? srcPages[page] : page;
+  // Sous-page de continuation (même authored-page que la précédente) :
+  // ne pas relancer le sample depuis le début.
+  if (page > 0 && srcPages && srcPages[page - 1] === authoredIdx) return;
   const state = (typeof getNpcQuestState === 'function') ? getNpcQuestState(npc) : 'none';
   const qid   = (typeof _currentQuestForState === 'function') ? _currentQuestForState(npc, state) : null;
-  const key   = _voiceKeyForPage(npcId, state, qid, page, source);
+  const key   = _voiceKeyForPage(npcId, state, qid, authoredIdx, source);
   if (key) AudioSystem.playVoice(key);
 }
 
@@ -520,12 +565,14 @@ function openNpcDialog(npcId) {
   // pour rester cohérent sur toutes les pages du dialogue (greeting
   // 2 pages, etc.) — sinon seenNpcs.add ci-dessous changerait la source
   // à la page 2.
+  const _pageData = _npcDialogPages(npc, state);
   _dialogState = {
     npcId,
-    pages:   _npcDialogPages(npc, state),
-    page:    0,
-    actions: _npcDialogActions(npc, state),
-    source:  _npcDialogSource(npc, state)
+    pages:    _pageData.pages,
+    srcPages: _pageData.srcPages,
+    page:     0,
+    actions:  _npcDialogActions(npc, state),
+    source:   _npcDialogSource(npc, state)
   };
   _renderDialogPage();
 

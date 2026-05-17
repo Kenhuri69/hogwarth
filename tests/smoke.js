@@ -705,6 +705,39 @@ async function scenarioNpcIntegration() {
   assert(t5.hasGreetSound,       'AudioSystem.playNpcGreet absent');
   assert(t5.hasAnimLoop,         'startNpcAnimLoop absent');
 
+  // T6 : découpage automatique des pages de dialogue trop longues.
+  // Manon a des pages > 280 caractères → scindées en sous-pages aux
+  // frontières de phrase, sans perte de texte, srcPages calé sur les
+  // pages d'origine (mapping voix).
+  const t6 = await page.evaluate(() => {
+    const manon    = NPCS.find(n => n.id === 'manon');
+    const authored = manon.dialogues.greeting;
+    seenNpcs.delete('manon');
+    openNpcDialog('manon');
+    const { pages, srcPages } = _dialogState;
+    const rebuilt = [];
+    pages.forEach((p, i) => {
+      rebuilt[srcPages[i]] = (rebuilt[srcPages[i]] ? rebuilt[srcPages[i]] + ' ' : '') + p;
+    });
+    const norm = s => String(s).replace(/\s+/g, ' ').trim();
+    closeNpcDialog();
+    return {
+      authoredCount: authored.length,
+      pageCount:     pages.length,
+      srcLen:        srcPages.length,
+      srcMonotone:   srcPages.every((v, i) => i === 0 || v >= srcPages[i - 1]),
+      maxLen:        Math.max(...pages.map(p => p.length)),
+      lossless:      authored.every((a, i) => norm(rebuilt[i]) === norm(a)),
+      hadLongPage:   authored.some(a => a.length > 280)
+    };
+  });
+  console.log('  T6 découpage pages longues:', t6);
+  assert(t6.hadLongPage,                    'fixture manon doit contenir une page > 280');
+  assert(t6.pageCount > t6.authoredCount,   'une page longue doit être scindée en sous-pages');
+  assert(t6.srcLen === t6.pageCount,        'srcPages doit être parallèle à pages');
+  assert(t6.srcMonotone,                    'srcPages doit rester croissant (ordre préservé)');
+  assert(t6.lossless,                       'le découpage ne doit perdre aucun texte');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
