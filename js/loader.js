@@ -77,6 +77,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'CELL',               source: 'data.js',         kind: 'obj' },
     { name: 'MAP_W',              source: 'data.js',         kind: 'obj' },
     { name: 'NPCS',               source: 'npcs.js',         kind: 'obj' },
+    { name: 'FLOOR_THEMES',       source: 'floor-themes.js', kind: 'obj' },
+    { name: 'getFloorTheme',      source: 'floor-themes.js', kind: 'fn'  },
 
     // ── État global (critiques) ──
     { name: 'player',             source: 'state.js',        kind: 'obj' },

@@ -109,18 +109,11 @@ window._invalidatePatternCache = _invalidatePatternCache;
 function getWallTextureType(x, y, depth) {
   const VALID = ['stone1', 'stone2', 'wood', 'tapestry', 'cavern_wall', 'rune_wall'];
   const f = (typeof currentFloor === 'number' && currentFloor > 0) ? currentFloor : 1;
-  // Endgame : avance la bascule rune_wall à l'étage 11 post-victoire
-  // (matérialise l'entrée dans les Ténèbres — cf. ENDGAME_PLAN.md §7.1bis).
+  // Progression normale pilotée par la SoT FLOOR_THEMES (floor-themes.js).
+  // Endgame : override rune_wall à l'étage 11+ post-victoire — matérialise
+  // l'entrée dans les Ténèbres (cf. ENDGAME_PLAN.md §7.1bis).
   const dark = (typeof victoryAchieved !== 'undefined' && victoryAchieved) && f >= 11;
-  let key;
-  if      (f <= 2)  key = 'stone1';
-  else if (f <= 4)  key = 'stone2';
-  else if (f <= 6)  key = 'wood';
-  else if (f <= 8)  key = 'tapestry';
-  else if (f <= 10) key = 'cavern_wall';
-  else if (dark)    key = 'rune_wall';
-  else if (f <= 14) key = 'cavern_wall';
-  else              key = 'rune_wall';
+  let key = dark ? 'rune_wall' : getFloorTheme(f).wall;
   // Garantie finale : si la texture n'est pas chargée, on retombe sur une clé chargée
   if (window.TEXTURES && window.TEXTURES.walls) {
     const img = window.TEXTURES.walls[key];
@@ -359,7 +352,7 @@ function drawCorridor(cx, cy, scale, W, H) {
     const _floorDark = (typeof victoryAchieved !== 'undefined' && victoryAchieved)
                     && (typeof currentFloor === 'number') && currentFloor >= 11;
     const _floorKey  = _floorDark ? 'rune_floor'
-                     : (typeof currentFloor === 'number' && currentFloor >= 3) ? 'carpet' : 'stone';
+                     : getFloorTheme(currentFloor).floor;
     const _fpattern  = _patternForKey('floor', _floorKey);
     if (_fpattern) {
       ctx.fillStyle = _fpattern;
@@ -395,7 +388,7 @@ function drawCorridor(cx, cy, scale, W, H) {
     const _ceilDark = (typeof victoryAchieved !== 'undefined' && victoryAchieved)
                    && (typeof currentFloor === 'number') && currentFloor >= 11;
     const _ceilKey  = _ceilDark ? 'rune_ceiling'
-                    : (typeof currentFloor === 'number' && currentFloor <= 4) ? 'beams' : 'stone';
+                    : getFloorTheme(currentFloor).ceiling;
     const _cpattern = _patternForKey('ceiling', _ceilKey);
     if (_cpattern) {
       ctx.fillStyle = _cpattern;

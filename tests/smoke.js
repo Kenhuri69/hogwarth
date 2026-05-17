@@ -1347,16 +1347,18 @@ async function scenarioFloorTextures() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
 
-  // Charger les textures puis vérifier la sélection par étage
+  // Sélection par étage — pilotée par la SoT FLOOR_THEMES (3 tranches).
+  // Les murs wood/tapestry et rune_* ne sont plus tirés par la
+  // progression normale ; rune_* reste réservé à l'override post-victoire.
   const expected = [
     { floor: 1,  wall: 'stone1',      floorTex: 'stone',         ceil: 'beams' },
-    { floor: 4,  wall: 'stone2',      floorTex: 'carpet',        ceil: 'beams' },
-    { floor: 6,  wall: 'wood',        floorTex: 'carpet',        ceil: 'stone' },
-    { floor: 8,  wall: 'tapestry',    floorTex: 'carpet',        ceil: 'stone' },
+    { floor: 4,  wall: 'stone2',      floorTex: 'carpet',        ceil: 'stone' },
+    { floor: 6,  wall: 'stone2',      floorTex: 'carpet',        ceil: 'stone' },
+    { floor: 8,  wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
     { floor: 10, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
     { floor: 14, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
-    { floor: 15, wall: 'rune_wall',   floorTex: 'rune_floor',    ceil: 'rune_ceiling' },
-    { floor: 20, wall: 'rune_wall',   floorTex: 'rune_floor',    ceil: 'rune_ceiling' },
+    { floor: 15, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
+    { floor: 20, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
   ];
 
   // S'assurer que toutes les textures sont chargées avant de tester les patterns
@@ -7456,8 +7458,86 @@ async function scenarioDelayedSearch() {
   await browser.close();
 }
 
+// ── Scénario : theming par tranche d'étages ──
+// Valide la SoT FLOOR_THEMES (textures + ambiant), la sélection de
+// musique combat (axes epic/étage/difficulté) et la transition visuelle.
+async function scenarioFloorTheming() {
+  console.log('\n── Scénario : theming par tranche d\'étages ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : getFloorTheme — 3 tranches + fallback entrée invalide
+  const themes = await page.evaluate(() => {
+    const byFloor = [1, 3, 4, 6, 7, 13, 14].map(f => {
+      const t = getFloorTheme(f);
+      return { f, label: t.label, wall: t.wall, floor: t.floor, ceiling: t.ceiling, ambient: t.ambient };
+    });
+    const invalid = [getFloorTheme(0).label, getFloorTheme(-2).label,
+                     getFloorTheme(NaN).label, getFloorTheme(undefined).label];
+    return { byFloor, invalid };
+  });
+  console.log('  T1 thèmes:', JSON.stringify(themes.byFloor));
+  const T = themes.byFloor;
+  assert(T[0].label.includes('Couloirs') && T[1].label.includes('Couloirs'), 'Étages 1-3 = Couloirs');
+  assert(T[2].label.includes('Cachots') && T[3].label.includes('Cachots'),   'Étages 4-6 = Cachots');
+  assert(T[4].label.includes('Profondeurs') && T[5].label.includes('Profondeurs'), 'Étages 7-13 = Profondeurs');
+  assert(T[6].label.includes('Profondeurs'), 'Étage 14 = Profondeurs (depths ouvert)');
+  assert(T[0].wall === 'stone1' && T[2].wall === 'stone2' && T[4].wall === 'cavern_wall', 'clés mur cohérentes');
+  assert(T[0].floor === 'stone' && T[2].floor === 'carpet' && T[4].floor === 'cavern_floor', 'clés sol cohérentes');
+  assert(T[0].ambient === 'intro' && T[2].ambient === 'dungeon' && T[4].ambient === 'depths', 'clés ambiant cohérentes');
+  assert(themes.invalid.every(l => l.includes('Couloirs')), 'entrée invalide → fallback hogwarts');
+
+  // T2 : _combatSampleKey — epic > étage ≥ 10 > difficulté
+  const combat = await page.evaluate(() => {
+    const pick = (group, floor) => { currentFloor = floor; return AudioSystem._combatSampleKey(group); };
+    return {
+      early:   pick([{ id: 'peeve', epic: false }], 3),
+      late:    pick([{ id: 'mangemort_elite', epic: false }], 11),
+      epic:    pick([{ id: 'voldemort_revenu', epic: true }], 5),
+      samples: AudioSystem._COMBAT_SAMPLES
+    };
+  });
+  console.log('  T2 combat:', combat.early, combat.late, combat.epic);
+  assert(combat.early === 'combat_normal', `combat étage 3 = combat_normal, got ${combat.early}`);
+  assert(combat.late  === 'combat_late',   `combat étage 11 = combat_late, got ${combat.late}`);
+  assert(combat.epic  === 'combat_epic',   `combat vs boss épique = combat_epic, got ${combat.epic}`);
+  assert(combat.samples.combat_late.endsWith('combat_late.ogg'),  '_COMBAT_SAMPLES.combat_late mappé');
+  assert(combat.samples.combat_epic.endsWith('combat_epic.ogg'),  '_COMBAT_SAMPLES.combat_epic mappé');
+
+  // T3 : _maybePlayTierTransition — déclenche aux frontières, pas dans une tranche
+  const trans = await page.evaluate(() => {
+    const ov = document.getElementById('tier-transition-overlay');
+    ov.classList.remove('active'); ov.textContent = '';
+    _maybePlayTierTransition(2, 3);          // même tranche (hogwarts)
+    const sameTier = { active: ov.classList.contains('active'), text: ov.textContent };
+    _maybePlayTierTransition(3, 4);          // hogwarts → dungeons
+    const crossed  = { active: ov.classList.contains('active'), text: ov.textContent };
+    return { sameTier, crossed };
+  });
+  console.log('  T3 transition:', JSON.stringify(trans));
+  assert(trans.sameTier.active === false, 'pas de transition dans une même tranche (2→3)');
+  assert(trans.crossed.active === true,   'transition déclenchée à la frontière 3→4');
+  assert(trans.crossed.text.includes('Cachots'), `overlay affiche le libellé de tranche, got "${trans.crossed.text}"`);
+
+  // T4 : epic survit au clonage scaleMonster (le combat lit enemyGroup[].epic)
+  const cloned = await page.evaluate(() => {
+    const base = MONSTERS.find(m => m.id === 'voldemort_revenu');
+    const scaled = scaleMonster(base, 11);
+    return { baseEpic: base.epic === true, scaledEpic: scaled.epic === true };
+  });
+  assert(cloned.baseEpic,   'voldemort_revenu porte epic:true dans MONSTERS');
+  assert(cloned.scaledEpic, 'le flag epic survit à scaleMonster');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Floor theming conforme');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioFloorTheming, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

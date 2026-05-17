@@ -57,13 +57,11 @@ Object.assign(AudioSystem, {
       });
   },
 
-  // ── Mapping étage → clé de zone (5 paliers) ───────────────────
+  // ── Mapping étage → clé de zone (SoT FLOOR_THEMES) ────────────
+  // intro / dungeon / depths en V1 ; tension / abyss restent dans
+  // _ZONE_SAMPLES en réserve (variantes ou palier 14+).
   _zoneKeyForFloor(f) {
-    if (f <= 2) return 'intro';
-    if (f <= 4) return 'tension';
-    if (f <= 6) return 'dungeon';
-    if (f <= 8) return 'depths';
-    return 'abyss';
+    return getFloorTheme(f).ambient;
   },
 
   // ── Deux étages tombent dans la même zone musicale ? ──────────
@@ -92,6 +90,8 @@ Object.assign(AudioSystem, {
   // cache `_sampleBuffers` que les samples ambient.
   _COMBAT_SAMPLES: {
     combat_normal: 'audio/combat_normal.ogg',
+    combat_late:   'audio/combat_late.ogg',   // étage ≥ 10 — repli combat_normal si 404
+    combat_epic:   'audio/combat_epic.ogg',   // boss épique — repli combat_normal si 404
     // combat_hard, combat_expert : pas encore livrés → procédural
   },
 
@@ -609,7 +609,7 @@ Object.assign(AudioSystem, {
   // Difficulté Normale : sample OGG (audio/combat_normal.ogg) si dispo,
   // sinon procédural. Difficile / Expert : procédural (variantes
   // plus dures, samples à livrer plus tard si besoin).
-  startCombatMusic() {
+  startCombatMusic(enemyGroup) {
     if (this.inCombat) return;
     this.inCombat = true;
     this.inMenu   = false;
@@ -618,7 +618,7 @@ Object.assign(AudioSystem, {
     this.init();
     this.musicPlaying = true;
 
-    const combatKey = this._combatSampleKey();
+    const combatKey = this._combatSampleKey(enemyGroup);
     const url = this._COMBAT_SAMPLES[combatKey];
 
     if (!url) {
@@ -633,15 +633,34 @@ Object.assign(AudioSystem, {
         }
       })
       .catch(err => {
-        console.warn(`[audio] sample "${combatKey}" unavailable, fallback to procedural:`, err && err.message);
-        if (this.inCombat && this.musicPlaying) {
+        console.warn(`[audio] sample "${combatKey}" unavailable:`, err && err.message);
+        if (!(this.inCombat && this.musicPlaying)) return;
+        // Repli : sample de tranche absent → on tente combat_normal (garanti)
+        // avant de basculer sur la synthèse procédurale.
+        if (combatKey !== 'combat_normal') {
+          this._loadSample('combat_normal', this._COMBAT_SAMPLES.combat_normal)
+            .then(() => {
+              if (this.inCombat && this.musicPlaying) {
+                this._playSampleLoop('combat_normal', () => this.inCombat);
+              }
+            })
+            .catch(() => {
+              if (this.inCombat && this.musicPlaying) this._playProceduralCombat();
+            });
+        } else {
           this._playProceduralCombat();
         }
       });
   },
 
-  // ── Mapping difficulté courante → clé de sample combat ────────
-  _combatSampleKey() {
+  // ── Sélection du sample de combat — axes combinés ─────────────
+  // Priorité : boss épique > étage ≥ 10 > difficulté courante.
+  // `enemyGroup` optionnel : à défaut, lit le global `enemyGroup`.
+  _combatSampleKey(grpArg) {
+    const grp = (grpArg != null) ? grpArg
+              : (typeof enemyGroup !== 'undefined' ? enemyGroup : null);
+    if (Array.isArray(grp) && grp.some(e => e && e.epic)) return 'combat_epic';
+    if (typeof currentFloor === 'number' && currentFloor >= 10) return 'combat_late';
     const d = (typeof difficulty !== 'undefined') ? difficulty : 'Normal';
     if (d === 'Expert')    return 'combat_expert';
     if (d === 'Difficile') return 'combat_hard';
