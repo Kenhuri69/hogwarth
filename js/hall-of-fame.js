@@ -12,8 +12,8 @@
 // Setup : voir .claude/plans/ironman-hall-of-fame.md §"Setup Supabase".
 
 const HOF_CONFIG = {
-  supabaseUrl:     '',   // ex : https://abcd1234.supabase.co  (sans / final)
-  supabaseAnonKey: '',   // clé "anon public" du projet Supabase
+  supabaseUrl:     'https://hvdthitluhgevtuqhxpm.supabase.co',
+  supabaseAnonKey: 'sb_publishable_zz2fPlpthCU0cee7VrVl5w_fwV0wrOb',
   tableName:       'leaderboard',
 };
 

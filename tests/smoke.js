@@ -7464,6 +7464,10 @@ async function scenarioIronman() {
   // Coche la case Ironman avant de confirmer la sélection de héros.
   await page.evaluate(() => {
     localStorage.removeItem('hogwarts_rpg_hof');
+    // Neutralise la config Supabase : le scénario teste le repli local
+    // de façon déterministe, sans dépendre du réseau. Le chemin en ligne
+    // est vérifié manuellement (cf. .claude/plans/ironman-hall-of-fame.md).
+    if (typeof HOF_CONFIG !== 'undefined') HOF_CONFIG.supabaseUrl = '';
     const cb = document.getElementById('ironman-toggle');
     if (cb) cb.checked = true;
   });
