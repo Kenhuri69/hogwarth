@@ -4537,6 +4537,11 @@ async function scenarioCanvasSwipe() {
   //    On cherche une direction où la case devant est libre, puis on
   //    déclenche un swipe vers le haut (avancer) puis vers le bas (reculer).
   const trans = await page.evaluate(() => {
+    // Déterminisme : vider enemyMap → le swipe « avancer » ne peut pas
+    // tomber sur un ennemi (le combat bloquerait le swipe « reculer »).
+    for (let y = 0; y < enemyMap.length; y++) {
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    }
     const dirs = ['n','e','s','w'];
     const D = { n:[0,-1], e:[1,0], s:[0,1], w:[-1,0] };
     for (const d of dirs) {
