@@ -325,7 +325,12 @@ function _spellSupportRegen(spell, char, _enemy, _enemyIdx, targetAllyIdx) {
 // Pas de sélection de cible — l'effet touche le groupe entier.
 function _spellSupportRegenAoe(spell, char) {
   const allies = party.slice(0, partySize).filter(c => c.hp > 0);
-  allies.forEach(ally => applyStatus(ally, 'regen_ferula_max', spell.power, 3));
+  // Scaling atténué : plus doux que Ferula simple (INT/8 + END/8) car
+  // l'effet touche tout le groupe sur 3 tours.
+  const regenPower = spell.power
+    + Math.floor((char.int || 0) / 12)
+    + Math.floor((char.end || 0) / 16);
+  allies.forEach(ally => applyStatus(ally, 'regen_ferula_max', regenPower, 3));
   const names = allies.map(a => a.name).join(' & ') || char.name;
   const msg = `🩹✨ ${char.name} : ${spell.name} — régénération de groupe (${names}, 3 tours).`;
   addMsg(msg, 'good');
