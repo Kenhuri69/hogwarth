@@ -174,14 +174,16 @@ function equipmentBuffForFloor(floor) {
     (SHOP_CATALOG || []).filter(e => (e.minFloor || 1) <= floor).map(e => e.id)
   );
   const buff = { atk: 0, def: 0, mag: 0, lck: 0, str: 0, int: 0, agi: 0, end: 0,
-                 crit: 0, dodge: 0, critDmg: 0, spellCrit: 0, spellCritDmg: 0 };
+                 crit: 0, dodge: 0, critDmg: 0, spellCrit: 0, spellCritDmg: 0,
+                 hpMax: 0, spMax: 0 };
   const bestBySlot = {};
   for (const it of ITEMS) {
     if (!it.slot) continue;
     if (eligibleIds && !eligibleIds.has(it.id)) continue;
     const score = (it.bonusAtk||0)+(it.bonusDef||0)+(it.bonusMag||0)+(it.bonusLck||0)
                 + (it.bonusStr||0)+(it.bonusInt||0)+(it.bonusAgi||0)+(it.bonusEnd||0)
-                + (it.bonusCritChance||0)+(it.bonusDodgeChance||0);
+                + (it.bonusCritChance||0)+(it.bonusDodgeChance||0)
+                + (it.bonusHpMax||0)*0.2+(it.bonusSpMax||0)*0.2;
     const cur = bestBySlot[it.slot];
     if (!cur || score > cur.score) bestBySlot[it.slot] = { item: it, score };
   }
@@ -204,6 +206,8 @@ function equipmentBuffForFloor(floor) {
     buff.critDmg      += it.bonusCritDamage      || 0;
     buff.spellCrit    += it.bonusSpellCritChance || 0;
     buff.spellCritDmg += it.bonusSpellCritDamage || 0;
+    buff.hpMax        += it.bonusHpMax           || 0;
+    buff.spMax        += it.bonusSpMax           || 0;
     if (forgeLvl > 0) {
       const prim = [['atk', it.bonusAtk|0], ['def', it.bonusDef|0],
                     ['mag', it.bonusMag|0], ['lck', it.bonusLck|0]]
@@ -233,6 +237,12 @@ function applyEquipmentBuff(c, floor) {
   c._critDmgBonus    = b.critDmg      || 0;
   c._spellCritBonus  = b.spellCrit    || 0;
   c._spellCritDmgBon = b.spellCritDmg || 0;
+  // Équipement V2 vague B : bonusHpMax/SpMax (équipement-bonuses-v2.md).
+  // Relève le plafond ; le héros entre en combat reposé → hp/sp pleins.
+  c.hpMax += b.hpMax || 0;
+  c.spMax += b.spMax || 0;
+  c.hp = c.hpMax;
+  c.sp = c.spMax;
 }
 
 // ── Bonus de set (state.js — HOUSE_SETS / inventory.js — recalculateStats) ──
@@ -690,6 +700,8 @@ function simulateBattle(party, enemyGroup) {
         const survivors = party.filter(c => c.hp > 0).length;
         return { won: true, turns: turn, survivors, hpPct: avgHpPct(party), enemyDmg: totalEnemyDmg };
       }
+      // Étourdi : le héros perd son tour (new-monsters-stun.md).
+      if (char._stunTurns > 0) { char._stunTurns--; continue; }
       heroAct(char, enemies);
     }
 
@@ -853,6 +865,16 @@ function enemyAct(enemy, target, partySize) {
           target.hp = Math.max(0, target.hp - drained);
           enemy.currentHp = Math.min(enemy.hp, enemy.currentHp + Math.floor(drained / 2));
           return drained;
+        }
+        case 'status': {
+          // Étourdissement : le héros saute son(ses) prochain(s) tour(s)
+          // (new-monsters-stun.md). Les autres statuts (DoT ennemis) ne
+          // sont pas modélisés → on retombe sur l'attaque physique.
+          if (ability.statusId === 'stun') {
+            target._stunTurns = (target._stunTurns || 0) + (ability.turns || 1);
+            return 0;
+          }
+          break;
         }
       }
     }

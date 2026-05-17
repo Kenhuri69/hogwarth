@@ -25,6 +25,15 @@
 > bestiaire). Effet net : **détente nette de la courbe**, surtout en
 > milieu de partie et en Duo (+10-20 pts selon l'étage par rapport au
 > recalcul précédent).
+>
+> 🔄 **Re-validation (mai 2026, v3)** — analyse re-vérifiée après deux
+> ajouts master : le statut d'**étourdissement** (4 monstres porteurs aux
+> étages 1-10 — saut de tour) et les **bonus d'équipement V2**
+> (`bonusHpMax`/`bonusSpMax`, crit/esquive portés par 6 items). Les deux
+> sont désormais modélisés par le sim. **Impact net négligeable** : la
+> pénalité de stun est compensée par les bonus d'équipement — écarts dans
+> le bruit statistique (±0-8 pts), conclusions inchangées. Tables
+> rafraîchies ci-dessous.
 
 ---
 
@@ -36,8 +45,8 @@ et en récupérant des artefacts — exactement comme prévu par le design.
 
 | Mode | Jeu normal (sans farming) | Avec farming + artefacts |
 |------|---------------------------|--------------------------|
-| Solo | confortable 1-7, tendu 8, difficile 9-12 (35-58 %) | 99 % à l'étage 8, 78-94 % aux étages 9-12 |
-| Duo  | confortable 1-9, tendu 10-12 (73-85 %) | confortable, 95-100 % selon le farming |
+| Solo | confortable 1-7, tendu 8, difficile 9-12 (41-59 %) | 99 % à l'étage 8, 83-95 % aux étages 9-12 |
+| Duo  | confortable 1-9, tendu 10-12 (76-84 %) | confortable, 97-100 % selon le farming |
 
 **Il n'y a pas de mur infranchissable.** La zone « difficile » de fin de partie
 est la récompense attendue de l'investissement (niveaux + équipement légendaire).
@@ -78,17 +87,17 @@ boutique, stock de potions, 3 points de stats alloués par niveau (build
 | Étage | Solo (niv.) | Win % Solo | Duo (niv.) | Win % Duo |
 |------:|:-----------:|-----------:|:----------:|----------:|
 | 1-4  | 1→6  | 100 %        | 1→7  | 100 % |
-| 5    | 8    | 100 %        | 8    | 100 % |
-| 6    | 8    | 93 %         | 8    | 100 % |
-| 7    | 9    | 87 %         | 9    | 100 % |
-| 8    | 9    | 70 %         | 10   | 99 %  |
-| 9    | 10   | 58 %         | 10   | 89 %  |
-| 10   | 10   | 43 %         | 11   | 85 %  |
-| 11   | 11   | 44 %         | 11   | 73 %  |
-| 12   | 11   | 35 %         | 12   | 75 %  |
+| 5    | 8    | 99 %         | 8    | 100 % |
+| 6    | 8    | 92 %         | 8    | 100 % |
+| 7    | 9    | 89 %         | 9    | 99 %  |
+| 8    | 9    | 69 %         | 10   | 99 %  |
+| 9    | 10   | 59 %         | 10   | 91 %  |
+| 10   | 10   | 45 %         | 11   | 84 %  |
+| 11   | 11   | 44 %         | 11   | 79 %  |
+| 12   | 11   | 41 %         | 12   | 76 %  |
 
 **Lecture** : la difficulté monte progressivement, sans spike brutal. Le Solo
-de fin de partie (étages 10-12, ~35-44 %) signale au joueur qu'il doit se
+de fin de partie (étages 10-12, ~41-45 %) signale au joueur qu'il doit se
 renforcer avant de continuer — ce n'est pas un blocage, c'est un signal.
 L'exploitation des faiblesses élémentaires détend nettement le milieu de
 partie (un joueur qui ignore les éléments reste proche des chiffres du
@@ -107,10 +116,10 @@ Mesure avec farming (`--bonus-levels`) et artefacts légendaires (`--artifacts`)
 | Étage | Solo +8 niv. +artefacts | Duo +5 niv. +artefacts | Duo +12 niv. +artefacts |
 |------:|------------------------:|-----------------------:|------------------------:|
 | 8     | 99 %                    | 100 %                  | 100 % |
-| 9     | 94 %                    | 100 %                  | 100 % |
-| 10    | 86 %                    | 99 %                   | 100 % |
-| 11    | 84 %                    | 96 %                   | 100 % |
-| 12    | 78 %                    | 95 %                   | 100 % |
+| 9     | 95 %                    | 100 %                  | 100 % |
+| 10    | 88 %                    | 99 %                   | 100 % |
+| 11    | 87 %                    | 97 %                   | 100 % |
+| 12    | 83 %                    | 97 %                   | 100 % |
 
 **Conclusion : le design tient.** Investir des niveaux (farming respawn 20 %,
 revisites d'étage) et récupérer les artefacts transforme une zone « difficile »
@@ -206,10 +215,10 @@ récursion via le flag `--endgame` (`tools/sim-difficulty.js`).
 | Étage | Win % Solo | Win % Duo | Niveau joueur |
 |------:|-----------:|----------:|--------------:|
 | 11-15 | 99-100 %   | 100 %     | 11-12 |
-| 18    | 58 %       | 90 %      | 11-12 |
-| 20    | 27 %       | 64 %      | 12-13 |
-| 25    | 11 %       | 24 %      | 13-14 |
-| 30    | 4 %        | 17 %      | 14-15 |
+| 18    | 57 %       | 93 %      | 11-12 |
+| 20    | 30 %       | 63 %      | 12-13 |
+| 25    | 10 %       | 31 %      | 13-14 |
+| 30    | 7 %        | 19 %      | 14-15 |
 
 En jeu « normal » (≈ 4 combats/étage, sans grind dédié), la Boucle
 décroche vers l'**étage 18-21** puis devient très dure. Les systèmes de
@@ -234,9 +243,9 @@ principal où l'XP des quêtes maintenait le joueur sur la courbe.
 
 | Étage | Duo +10 niv. | Duo +25 niv. | Duo +45 niv. |
 |------:|-------------:|-------------:|-------------:|
-| 20    | 91 %         | 100 %        | 100 % |
-| 25    | 53 %         | 84 %         | 98 %  |
-| 30    | 38 %         | 60 %         | 92 %  |
+| 20    | 91 %         | 99 %         | 100 % |
+| 25    | 60 %         | 87 %         | 99 %  |
+| 30    | 34 %         | 69 %         | 95 %  |
 
 Règle empirique : **~+18-20 niveaux farmés par tranche de 10 étages** de
 Boucle pour rester en zone confortable (l'étage 30 reste confortable à
@@ -256,15 +265,15 @@ Impact mesuré (Duo, endgame, +10 niveaux farmés) :
 
 | Étage | Artefacts seuls | + Forge 5 + Biblio 3 |
 |------:|----------------:|---------------------:|
-| 22    | 78 %            | 93 % |
-| 24    | 70 %            | 84 % |
-| 26    | 57 %            | 78 % |
-| 28    | 50 %            | 71 % |
-| 30    | 41 %            | 63 % |
+| 22    | 81 %            | 94 % |
+| 24    | 69 %            | 89 % |
+| 26    | 61 %            | 82 % |
+| 28    | 56 %            | 78 % |
+| 30    | 49 %            | 69 % |
 
 Le kit complet (artefacts + Forge 5 + Bibliothèque 3 + ~25 niveaux
-farmés) maintient le Duo **confortable (86-99 %) jusqu'à l'étage 30**.
-Forge et Bibliothèque valent à eux deux ~+15-22 pts de win rate dans le
+farmés) maintient le Duo **confortable (90-99 %) jusqu'à l'étage 30**.
+Forge et Bibliothèque valent à eux deux ~+13-20 pts de win rate dans le
 deep endgame — un troisième axe de farming qui complète niveaux + artefacts.
 
 ### 8.6 Sets de Maison + set Ténèbres
@@ -307,11 +316,11 @@ sets répartis Gryffondor + Ténèbres) :
 
 | Étage | Sans set | Avec sets (post-refonte) |
 |------:|---------:|-------------------------:|
-| 26    | 77 %     | 79 % |
-| 28    | 72 %     | 76 % |
-| 30    | 60 %     | 69 % |
+| 26    | 78 %     | 86 % |
+| 28    | 74 %     | 77 % |
+| 30    | 68 %     | 71 % |
 
-Apport modéré (~+5-9 pts, jusqu'à +9 à l'étage 30) mais désormais **réel et non gaspillé**.
+Apport modéré (~+3-8 pts) mais désormais **réel et non gaspillé**.
 L'effet reste contenu car la sim privilégie les sorts : le set Gryffondor
 (crit *physique*) profite surtout à un build qui attaque physiquement, le
 set Ténèbres et les sets caster (crit de *sort*) aux builds magiques. La
@@ -334,6 +343,12 @@ refonte aligne donc chaque set sur son archétype de jeu.
   bestiaire** et choisit son sort selon la faiblesse de la cible. Un
   joueur qui spamme un seul sort reste ~10-15 pts plus bas — l'écart
   *récompense la connaissance du jeu*, ce qui est l'intention du système.
+- ✅ **Étourdissement + équipement V2 (re-validation v3)** : le statut de
+  stun (4 monstres, étages 1-10) et les bonus d'équipement V2 ont été
+  modélisés. Leur impact se compense — la courbe ne bouge pas hors du
+  bruit statistique. Limite connue du modèle : les statuts DoT *infligés
+  par les ennemis* (hors stun) ne sont pas simulés (approximés par une
+  attaque physique), comme avant cette passe.
 - 💡 Si l'on veut adoucir : ralentir `xpNext` en endgame, ou ajouter une
   XP passive de Boucle par étage franchi. Optionnel — à ne pas faire si
   le farming forcé est l'intention.
