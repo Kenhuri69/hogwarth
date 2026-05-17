@@ -34,5 +34,6 @@ Plans 100 % terminés et livrés sur master. Conservés pour archéologie / déc
 | `svg-c2-bellatrix.md` | PNG Bellatrix Lestrange (C31) Nano Banana | commit `1051b5e` |
 | `svg-c42-c43-scenes.md` | Illustrations grand format écran-titre (C42) + écran de mort (C43) | commit `c3dde25` |
 | `teleportation-spell.md` | Sort Portus (téléportation combat + hors combat) + Episkey/Reparo OOC avec cooldown | PR #121 |
+| `floor-tier-theming.md` | SoT `FLOOR_THEMES`/`getFloorTheme` (tileset + ambiant, 3 tranches) consommée par renderer/audio/movement + musique combat à axes combinés (epic/étage/difficulté) + transition de tranche | PR #168 |
 
 > Pour un plan encore actif, voir le dossier parent `.claude/plans/`.
