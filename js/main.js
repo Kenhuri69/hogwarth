@@ -276,6 +276,15 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
     // + .claude/plans/houses-2.0.md §A.
     if (tierNum >= 16 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return;
 
+    // Palier endgame V3 (« Mythe ») : `requiresDarkTier` impose un indice
+    // de Boucle Ténébreuse minimal — 1 = étages 11+, 2 = étages 21+.
+    // Symétrique de la garde `victoryAchieved` ci-dessus.
+    if (tier.requiresDarkTier) {
+      const ti = (typeof endgameTierIndex === 'function')
+        ? endgameTierIndex(currentFloor) : 0;
+      if (ti < tier.requiresDarkTier) return;
+    }
+
     houseTier = tierNum;
     addMsg(tier.msg, 'magic');
     AudioSystem.playLevelUp();
@@ -301,6 +310,14 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
     // la pièce #4 du set à la remise (cf. quests.js — unlockHouseQuest).
     if (tier.bonus.unlockSetQuest) {
       safeCall('unlockHouseQuest', chosenHouse);
+    }
+
+    // Palier Mythe (tier 17) : enseigne le sort exclusif de Maison à
+    // tout le groupe actif (mécanisme partagé avec les équipements `grantsSpell`).
+    if (tier.bonus.grantsSpell && typeof _teachSpellToParty === 'function') {
+      if (_teachSpellToParty(tier.bonus.grantsSpell)) {
+        addMsg(`✨ Sort de Maison débloqué : ${tier.bonus.grantsSpell} !`, 'magic');
+      }
     }
 
     recalculateStats();

@@ -17,6 +17,15 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
   });
   if (!ability) return false;
 
+  // Legilimens (palier Mythe Serdaigle) : la capacité repérée est
+  // anticipée et annulée — l'ennemi gaspille son tour.
+  if (legilimensCancelCharges > 0) {
+    legilimensCancelCharges--;
+    appendLog(`👁️ ${ability.name} de ${enemy.name} est anticipé et annulé par Legilimens ! `);
+    UX_safe.logCombat(`👁️ Legilimens annule ${ability.name} de ${enemy.name}`, 'good');
+    return true;
+  }
+
   switch (ability.effect) {
     case 'damage': {
       // La DEF de la cible atténue désormais les capacités spéciales
@@ -196,6 +205,10 @@ function spellEffectPreview(spell, char) {
       const b = stealBaseGold(spell, char);
       return `≈ ${b}–${b + 5} 🪙`;
     }
+    case 'imperius':        return `≈ ${spellDamage(spell, char)} dégâts · asservit 2 tours`;
+    case 'patronus_maxima': return 'Bouclier de groupe (2 tours)';
+    case 'legilimens':      return 'Annule la prochaine capacité ennemie';
+    case 'recolte':         return 'Groupe restauré · or +50%';
     default:              return '';
   }
 }
@@ -376,6 +389,75 @@ function _spellTeleport(spell, char) {
   return `🌀 ${char.name} canalise ${spell.name}...`;
 }
 
+// ── Sorts de Maison — palier 17 « Mythe » ────────────────────
+
+// Patronus Maxima (Gryffondor) : bouclier de groupe (2 tours) sur tous
+// les alliés vivants + dissipe l'étourdissement. Pas de cible ennemie.
+function _spellPatronusMaxima(spell, char) {
+  party.slice(0, partySize).forEach((c, idx) => {
+    if (c.hp <= 0) return;
+    shieldTurns[idx] = Math.max(shieldTurns[idx] || 0, 2);
+    if (c.statusEffects) c.statusEffects = c.statusEffects.filter(s => s.id !== 'stun');
+  });
+  UX_safe.floatDmg('ally', 0, 'shield');
+  const msg = `🦌 ${char.name} : ${spell.name} — un Patronus enveloppe tout le groupe (bouclier 2 tours) !`;
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(`🦌 ${char.name} invoque ${spell.name} — bouclier de groupe`, 'magic');
+  return msg;
+}
+
+// Sectumsempra Imperius (Serpentard) : dégâts ténèbres + saignement
+// lourd + asservit la cible 2 tours (elle frappera ses alliés).
+function _spellImperius(spell, char, enemy, targetIdx) {
+  let msg = '';
+  if (enemy) {
+    const { dmg, suffix } = _computeSpellDamage(spell, char, enemy);
+    enemy.currentHp -= dmg;
+    if (enemy.currentHp > 0) {
+      const dotPower = Math.max(3, Math.floor(spell.power * 0.4));
+      applyStatus(enemy, 'bleed', dotPower, 3);
+      applyStatus(enemy, 'imperius', 0, 2);
+    }
+    msg = `🩸 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} — ${enemy.name} saigne et tombe sous l'Imperium !`;
+    UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
+    UX_safe.logCombat(`🩸 ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix} · ${enemy.name} asservi 2 tours`, 'magic');
+  }
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Legilimens (Serdaigle) : révèle les capacités ennemies dans le journal
+// et arme une charge d'annulation (la prochaine capacité ennemie fizzle).
+function _spellLegilimens(spell, char) {
+  livingEnemies().forEach(e => {
+    const abs = (e.abilities && e.abilities.length)
+      ? e.abilities.map(a => a.name).join(', ')
+      : 'aucune capacité spéciale';
+    UX_safe.logCombat(`👁️ ${e.name} — capacités : ${abs}`, 'info');
+  });
+  legilimensCancelCharges += 1;
+  const msg = `👁️ ${char.name} : ${spell.name} — l'esprit ennemi est lu ; la prochaine capacité sera annulée.`;
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(`👁️ ${char.name} lance ${spell.name}`, 'magic');
+  return msg;
+}
+
+// Récolte Magique (Poufsouffle) : restaure PV + PM de tout le groupe et
+// majore l'or de ce combat de +50 % (recolteGoldBonus, lu par endBattle).
+function _spellRecolte(spell, char) {
+  party.slice(0, partySize).forEach(c => {
+    if (c.hp <= 0) return;
+    c.hp = c.hpMax;
+    c.sp = c.spMax;
+  });
+  recolteGoldBonus = true;
+  UX_safe.floatDmg('ally', 0, 'heal');
+  const msg = `🌾 ${char.name} : ${spell.name} — le groupe est revigoré ; les Gallions du combat sont majorés (+50%) !`;
+  addMsg(msg, 'good');
+  UX_safe.logCombat(`🌾 ${char.name} lance ${spell.name} — groupe restauré`, 'good');
+  return msg;
+}
+
 const SPELL_HANDLERS = {
   heal:           _spellHeal,
   disarm:         _spellDisarm,
@@ -389,6 +471,10 @@ const SPELL_HANDLERS = {
   support_regen:     _spellSupportRegen,
   support_regen_aoe: _spellSupportRegenAoe,
   teleport:          _spellTeleport,
+  patronus_maxima:   _spellPatronusMaxima,
+  imperius:          _spellImperius,
+  legilimens:        _spellLegilimens,
+  recolte:           _spellRecolte,
 };
 
 // Sorts à cible alliée — pas de sélection d'ennemi, mais éventuellement

@@ -5363,6 +5363,129 @@ async function scenarioHouseTier5() {
   await browser.close();
 }
 
+// ── Scénario Maison V3 : palier 17 « Mythe » + sorts exclusifs ──
+async function scenarioHouseMytheTier() {
+  console.log('\n── Scénario Maison V3 : palier 17 « Mythe » ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : 30000 pts mais hors Boucle Ténébreuse (floor 5) → tier 17 refusé.
+  const t1 = await page.evaluate(() => {
+    victoryAchieved = true;
+    currentFloor    = 5;
+    housePoints     = 30000;
+    houseTier       = 16;          // simule Légende déjà atteinte
+    checkHouseLevelUp();
+    return { tier: houseTier, hasSpell: party[0].spells.includes('Patronus Maxima') };
+  });
+  console.log('  T1 floor 5  →', t1);
+  assert(t1.tier === 16,        'tier 17 ne doit pas passer hors Boucle Ténébreuse');
+  assert(t1.hasSpell === false, 'sort de Maison ne doit pas être appris hors gate');
+
+  // T2 : floor 12 (Boucle Ténébreuse tier 1) → tier 17 franchi + sort enseigné.
+  const t2 = await page.evaluate(() => {
+    const atkBefore = party[0]._baseAtk;
+    currentFloor = 12;
+    checkHouseLevelUp();
+    return {
+      tier: houseTier,
+      hasSpell: party[0].spells.includes('Patronus Maxima'),
+      atkGain: party[0]._baseAtk - atkBefore,
+    };
+  });
+  console.log('  T2 floor 12 →', t2);
+  assert(t2.tier === 17,       'tier 17 « Mythe » non franchi en Boucle Ténébreuse');
+  assert(t2.hasSpell === true, 'Patronus Maxima non enseigné au passage du palier');
+  assert(t2.atkGain === 2,     'bonus +2 ATK du palier Mythe non appliqué');
+
+  // T3 : les 4 sorts de Maison existent et ont un handler routable.
+  const t3 = await page.evaluate(() => {
+    const names = ['Patronus Maxima', 'Sectumsempra Imperius', 'Legilimens', 'Récolte Magique'];
+    return names.map(n => {
+      const s = SPELLS.find(x => x.name === n);
+      return { n, found: !!s, handler: !!s && typeof SPELL_HANDLERS[s.effect] === 'function' };
+    });
+  });
+  t3.forEach(r => {
+    assert(r.found,   `sort ${r.n} absent de SPELLS`);
+    assert(r.handler, `handler du sort ${r.n} absent de SPELL_HANDLERS`);
+  });
+
+  // T4 : chaque Maison a son tier 17 correctement configuré.
+  const t4 = await page.evaluate(() => {
+    const want = { Gryffondor: 'Patronus Maxima', Serpentard: 'Sectumsempra Imperius',
+                   Serdaigle: 'Legilimens', Poufsouffle: 'Récolte Magique' };
+    return Object.keys(want).map(h => {
+      const t = HOUSE_BONUSES[h].tiers[16];   // index 16 = 17e palier
+      return { h, ok: !!t && t.label === 'Mythe' && t.requiresDarkTier === 1
+                     && t.bonus.grantsSpell === want[h] };
+    });
+  });
+  t4.forEach(r => assert(r.ok, `tier 17 mal configuré pour ${r.h}`));
+
+  // ── Mécaniques de combat des sorts exclusifs ──
+  await startDummyFight(page, { hp: 200 });
+
+  // T5 : Sectumsempra Imperius — l'ennemi asservi frappe son allié.
+  const t5 = await page.evaluate(() => {
+    const base = enemyGroup[0];
+    enemyGroup = [
+      { ...base, name: 'Alpha', currentHp: 200, hp: 200, atk: 30, def: 4, abilities: [], statusEffects: [] },
+      { ...base, name: 'Beta',  currentHp: 200, hp: 200, atk: 30, def: 4, abilities: [], statusEffects: [] },
+    ];
+    party[0].statusEffects = [];
+    party[0].hp = party[0].hpMax;
+    applyStatus(enemyGroup[0], 'imperius', 0, 2);
+    const betaBefore = enemyGroup[1].currentHp;
+    enemyTurn();
+    return {
+      betaDropped:  enemyGroup[1].currentHp < betaBefore,
+      imperiusLeft: enemyGroup[0].statusEffects.some(s => s.id === 'imperius'),
+    };
+  });
+  console.log('  T5 imperius →', t5);
+  assert(t5.betaDropped,  'l\'ennemi asservi n\'a pas frappé son allié');
+  assert(t5.imperiusLeft, 'imperius (2 tours) doit rester actif après 1 tour');
+
+  // T6 : Legilimens — la charge annule la prochaine capacité ennemie.
+  const t6 = await page.evaluate(() => {
+    const base = enemyGroup[0];
+    enemyGroup = [{ ...base, name: 'Sorcier', currentHp: 200, hp: 200, atk: 40, def: 4,
+      abilities: [{ name: 'Éclair', icon: '⚡', effect: 'damage', power: 60, chance: 1 }],
+      statusEffects: [] }];
+    party[0].statusEffects = [];
+    party[0].hp = party[0].hpMax;
+    shieldTurns = [0, 0];
+    legilimensCancelCharges = 1;
+    const hpBefore = party[0].hp;
+    enemyTurn();
+    return { chargeAfter: legilimensCancelCharges, allyUnharmed: party[0].hp === hpBefore };
+  });
+  console.log('  T6 legilimens →', t6);
+  assert(t6.chargeAfter === 0, 'charge Legilimens non consommée');
+  assert(t6.allyUnharmed,      'capacité ennemie non annulée par Legilimens');
+
+  // T7 : Récolte Magique — restaure le groupe + arme le bonus d'or.
+  const t7 = await page.evaluate(() => {
+    party[0].hp = 1; party[0].sp = 1;
+    recolteGoldBonus = false;
+    const spell = SPELLS.find(s => s.name === 'Récolte Magique');
+    SPELL_HANDLERS[spell.effect](spell, party[0]);
+    return { full: party[0].hp === party[0].hpMax && party[0].sp === party[0].spMax,
+             flag: recolteGoldBonus };
+  });
+  console.log('  T7 recolte →', t7);
+  assert(t7.full,          'Récolte Magique ne restaure pas entièrement le groupe');
+  assert(t7.flag === true, 'recolteGoldBonus non armé par Récolte Magique');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Maison V3 palier 17 OK (gate + 4 sorts exclusifs)');
+  await browser.close();
+}
+
 // ── Scénario : récompenses Maison remises par les Chefs de Maison ──
 async function scenarioHouseRewardFlow() {
   console.log('\n── Scénario : Récompense Maison remise par PNJ ──');
@@ -8285,7 +8408,7 @@ async function scenarioCombatExtV2() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

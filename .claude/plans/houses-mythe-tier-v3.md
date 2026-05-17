@@ -94,21 +94,42 @@ selon l'équilibrage observé du tier 17.
 
 > Vague A close. Étapes ci-dessous = Vagues B puis C.
 
-### Vague B — Palier 17 « Mythe »
+### Vague B — Palier 17 « Mythe » · ✅ LIVRÉE (2026-05-17)
 
-- [ ] Étendre `checkHouseLevelUp()` : garde `requiresDarkTier` via
-      `endgameTierIndex(currentFloor)`.
-- [ ] Ajouter le tier 17 aux 4 entrées `HOUSE_BONUSES[*].tiers[]`
-      (`threshold`, `label:'Mythe'`, `requiresDarkTier:1`, `bonus`, `msg`).
-- [ ] Définir les 4 sorts exclusifs dans `SPELLS` (`js/data.js`) +
-      handlers dans `battle-spells.js`.
-- [ ] Câbler l'apprentissage du sort au passage du tier 17 (bonus
-      `grantsSpell` ou équivalent palier).
-- [ ] Quête « don de 3000 gold » : entrée dans `quests.js` + hook Chef
-      de Maison.
-- [ ] Smoke `scenarioHouseMytheTier` : housePoints≥30000 + floor 11+
-      post-victoire ⇒ tier 17 atteint, sort appris ; floor ≤ 10 ⇒ refusé.
-- [ ] Commit + push.
+- [x] Étendre `checkHouseLevelUp()` : garde `requiresDarkTier` via
+      `endgameTierIndex(currentFloor)` (`js/main.js`).
+- [x] Tier 17 ajouté aux 4 entrées `HOUSE_BONUSES[*].tiers[]`
+      (`threshold:30000`, `label:'Mythe'`, `requiresDarkTier:1`, bonus
+      stat + `grantsSpell`, `msg`) — `js/state.js`.
+- [x] 4 sorts exclusifs dans `SPELLS` (`js/data.js`) + handlers
+      `_spellPatronusMaxima` / `_spellImperius` / `_spellLegilimens` /
+      `_spellRecolte` (`battle-spells.js`) + `SPELL_HANDLERS`.
+      Mécaniques neuves : statut `imperius` (`battle.js` —
+      `consumeImperius`, redirection dans `enemyTurn`) ; charge
+      `legilimensCancelCharges` (annulation dans `tryEnemyAbility`).
+- [x] Apprentissage câblé : `checkHouseLevelUp()` appelle
+      `_teachSpellToParty(tier.bonus.grantsSpell)` au tier 17.
+- [x] 4 icônes PNG (`tools/gen_element_spell_icons.py`) +
+      `SPELL_ICON_REGISTRY` (`js/item-icons.js`).
+- [x] Smoke `scenarioHouseMytheTier` : gate refusée floor 5, franchie
+      floor 12 + sort appris + bonus stat ; mécaniques imperius /
+      legilimens / recolte vérifiées. `node tests/smoke.js` vert.
+- [ ] Quête « don de gold » : **reportée** — voir §3bis.
+
+### §3bis — Écarts vs plan & report de la quête de don
+
+- **Quête « don de 3000 gold »** : reportée à une PR dédiée. C'est un
+  gold-sink autonome (nouveau type d'objectif `donate` + déclenchement
+  au tier 17), découplé des sorts. La sortir de cette PR la garde
+  focalisée et évite d'élargir le moteur de quêtes dans le même lot.
+- **Récolte Magique** : le plan proposait « +50 % gold sur le combat
+  *suivant* ». Implémenté « +50 % sur le combat *où il est lancé* »
+  (`recolteGoldBonus`, lu par `endBattle`). Raison : l'état de combat
+  n'est jamais sérialisé (`inBattle` bloque les sauvegardes) — une
+  sémantique « combat courant » tient en un booléen transient.
+- **Patronus Maxima** : le plan citait « retire `fear`/`stun` ». Le jeu
+  n'a pas de statut `fear` ; le sort dissipe `stun` (seul statut de
+  contrôle existant).
 
 ### Vague C — Palier 18 « Apothéose »
 

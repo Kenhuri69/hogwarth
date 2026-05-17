@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Génère les icônes des sorts élémentaires Glacius / Fulgari / Lumos Solem.
+"""Génère des icônes de sorts procédurales pour img/icons/spells/.
 
-Sorties 128×128 RGBA dans img/icons/spells/ — style cohérent avec les
-autres sorts (halo magique radial + motif central + scintillements).
-Procédural via Pillow. Lancer depuis la racine du projet :
+Couvre les sorts élémentaires (Glacius / Fulgari / Lumos Solem),
+Ferula Maxima, et les 4 sorts de Maison du palier 17 « Mythe »
+(Patronus Maxima / Sectumsempra Imperius / Legilimens / Récolte Magique).
+
+Sorties 128×128 RGBA — style cohérent avec les autres sorts (halo
+magique radial + motif central + scintillements). Procédural via Pillow.
+Lancer depuis la racine du projet :
     python3 tools/gen_element_spell_icons.py
 """
 import math
@@ -223,12 +227,155 @@ def ferula_maxima():
     return out
 
 
+# ── Patronus Maxima : cerf argenté (Patronus de groupe) ──────
+def patronus_maxima():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    # halo doré : marque la version « Maxima » amplifiée
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#b88a1e"), 0.46,
+                                               [46, 36, 26, 16]))
+    out = Image.alpha_composite(out, radial_base("#eef6ff", "#9fc4e8", "#23406e"))
+
+    stag = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(stag)
+    silver = hex_to_rgb("#eaf2ff") + (255,)
+    silver_d = hex_to_rgb("#bcd6f0") + (240,)
+    hx, hy = CENTER, CENTER + 14   # tête légèrement basse
+    # tête + museau
+    d.ellipse([hx - 9, hy - 10, hx + 9, hy + 14], fill=silver)
+    d.polygon([(hx - 5, hy + 10), (hx + 5, hy + 10), (hx, hy + 24)], fill=silver)
+    # oreilles
+    for sgn in (-1, 1):
+        d.polygon([(hx + sgn * 8, hy - 4), (hx + sgn * 18, hy - 9),
+                   (hx + sgn * 9, hy + 4)], fill=silver_d)
+    # bois ramifiés
+    for sgn in (-1, 1):
+        bx, by = hx + sgn * 4, hy - 9
+        d.line([(bx, by), (bx + sgn * 7, by - 16),
+                (bx + sgn * 3, by - 30), (bx + sgn * 20, by - 42)],
+               fill=silver, width=4, joint="curve")
+        d.line([(bx + sgn * 5, by - 13), (bx + sgn * 23, by - 17)],
+               fill=silver, width=3)
+        d.line([(bx + sgn * 4, by - 27), (bx + sgn * 21, by - 34)],
+               fill=silver, width=3)
+        d.line([(bx + sgn * 3, by - 30), (bx - sgn * 5, by - 44)],
+               fill=silver, width=3)
+    stag = stag.filter(ImageFilter.GaussianBlur(0.5))
+    out = Image.alpha_composite(out, stag)
+    out = Image.alpha_composite(out, sparks((255, 255, 255, 240), 18, 0.36, 71))
+    return out
+
+
+# ── Sectumsempra Imperius : entailles + spirale d'asservissement ─
+def sectumsempra_imperius():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#3a0a30"), 0.46,
+                                               [44, 34, 24, 14]))
+    out = Image.alpha_composite(out, radial_base("#ffe2e2", "#8a2530", "#2a0810"))
+
+    fx = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(fx)
+    blood = hex_to_rgb("#ff5a4a") + (235,)
+    blood_c = hex_to_rgb("#fff0ec") + (255,)
+    for off in (-16, 0, 16):
+        d.line([(CENTER - 26 + off, CENTER - 34),
+                (CENTER + 18 + off, CENTER + 38)], fill=blood, width=6)
+    for off in (-16, 0, 16):
+        d.line([(CENTER - 26 + off, CENTER - 34),
+                (CENTER + 18 + off, CENTER + 38)], fill=blood_c, width=2)
+    fx = fx.filter(ImageFilter.GaussianBlur(0.6))
+    out = Image.alpha_composite(out, fx)
+
+    # spirale de l'Imperium (violet)
+    sw = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    ds = ImageDraw.Draw(sw)
+    pts = []
+    for i in range(60):
+        t = i / 59
+        ang = t * 3.4 * math.pi
+        rad = 6 + t * 30
+        pts.append((CENTER + math.cos(ang) * rad, CENTER + math.sin(ang) * rad))
+    ds.line(pts, fill=hex_to_rgb("#c08aff") + (210,), width=3, joint="curve")
+    sw = sw.filter(ImageFilter.GaussianBlur(0.7))
+    out = Image.alpha_composite(out, sw)
+    out = Image.alpha_composite(out, sparks((255, 200, 220, 235), 16, 0.34, 82))
+    return out
+
+
+# ── Legilimens : oeil scrutateur ─────────────────────────────
+def legilimens():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#2a1a55"), 0.46,
+                                               [44, 34, 24, 14]))
+    out = Image.alpha_composite(out, radial_base("#ece8ff", "#7d5fb8", "#241a44"))
+
+    eye = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(eye)
+    ew, eh = SIZE * 0.36, SIZE * 0.20
+    d.ellipse([CENTER - ew, CENTER - eh, CENTER + ew, CENTER + eh],
+              fill=hex_to_rgb("#fbfaff") + (255,))
+    ir = SIZE * 0.16
+    d.ellipse([CENTER - ir, CENTER - ir, CENTER + ir, CENTER + ir],
+              fill=hex_to_rgb("#6e4ec0") + (255,),
+              outline=hex_to_rgb("#b89cff") + (255,), width=2)
+    pr = SIZE * 0.072
+    d.ellipse([CENTER - pr, CENTER - pr, CENTER + pr, CENTER + pr],
+              fill=hex_to_rgb("#140c2c") + (255,))
+    d.ellipse([CENTER - pr + 2, CENTER - pr, CENTER - pr + 7, CENTER - pr + 5],
+              fill=(255, 255, 255, 235))
+    line = hex_to_rgb("#3a2a66") + (255,)
+    d.arc([CENTER - ew, CENTER - eh - 2, CENTER + ew, CENTER + eh + 6],
+          200, 340, fill=line, width=3)
+    d.arc([CENTER - ew, CENTER - eh - 6, CENTER + ew, CENTER + eh + 2],
+          20, 160, fill=line, width=3)
+    eye = eye.filter(ImageFilter.GaussianBlur(0.4))
+    out = Image.alpha_composite(out, eye)
+    out = Image.alpha_composite(out, sparks((230, 220, 255, 235), 14, 0.32, 93))
+    return out
+
+
+# ── Récolte Magique : gerbe de blé doré ──────────────────────
+def recolte_magique():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#b88a1e"), 0.46,
+                                               [46, 36, 26, 16]))
+    out = Image.alpha_composite(out, radial_base("#f2ffe2", "#7cbf4a", "#2a5a18"))
+
+    wheat = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(wheat)
+    stalk = hex_to_rgb("#d8a838") + (255,)
+    grain = hex_to_rgb("#f4d56a") + (255,)
+    grain_d = hex_to_rgb("#c8902a") + (255,)
+    base = (CENTER, CENTER + 44)
+    for lean in (-0.26, 0.0, 0.26):
+        topx = CENTER + lean * 38
+        topy = CENTER - 36
+        d.line([base, (topx, topy)], fill=stalk, width=4)
+        for k in range(5):
+            t = 0.35 + k * 0.14
+            gx = base[0] + (topx - base[0]) * t
+            gy = base[1] + (topy - base[1]) * t
+            for s2 in (-1, 1):
+                ex, ey = gx + s2 * 7, gy - 4
+                d.ellipse([ex - 4, ey - 6, ex + 4, ey + 6],
+                          fill=grain, outline=grain_d, width=1)
+        d.ellipse([topx - 5, topy - 9, topx + 5, topy + 7],
+                  fill=grain, outline=grain_d, width=1)
+    wheat = wheat.filter(ImageFilter.GaussianBlur(0.4))
+    out = Image.alpha_composite(out, wheat)
+    out = Image.alpha_composite(out, sparks((255, 250, 210, 235), 14, 0.32, 104))
+    return out
+
+
 def main():
     os.makedirs(SPELLS_DIR, exist_ok=True)
     for slug, fn in (("glacius", glacius),
                      ("fulgari", fulgari),
                      ("lumos_solem", lumos_solem),
-                     ("ferula_maxima", ferula_maxima)):
+                     ("ferula_maxima", ferula_maxima),
+                     ("patronus_maxima", patronus_maxima),
+                     ("sectumsempra_imperius", sectumsempra_imperius),
+                     ("legilimens", legilimens),
+                     ("recolte_magique", recolte_magique)):
         path = os.path.join(SPELLS_DIR, slug + ".png")
         fn().save(path, "PNG", optimize=True)
         print(f"Wrote {path} ({os.path.getsize(path)} bytes)")
