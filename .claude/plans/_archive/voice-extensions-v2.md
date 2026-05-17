@@ -4,8 +4,8 @@
 > Statut au 2026-05-17 : **Vagues A, B et C — LIVRÉES** (A : 20 OGG chefs
 > de Maison ; B : 13 OGG incantations + câblage `speakSpell` ; C :
 > sous-titres karaoké intro + dialogues PNJ). Vague D (localisation
-> FR/EN) volontairement différée — décision GO/NO-GO sur demande
-> communautaire.
+> FR/EN) **annulée** — décision produit du 2026-05-17 : pas de
+> localisation. **Plan clos.**
 
 ---
 
@@ -150,18 +150,22 @@ motion` respecté (pas de transition ni de smooth-scroll).
 
 **ROI** : cosmétique, mais très immersif si bien fait.
 
-### Vague D — Localisation FR/EN
+### Vague D — Localisation FR/EN — ❌ ANNULÉE
 
-**Spec** :
+Décision produit du 2026-05-17 : **le jeu reste mono-langue (FR)**. La
+localisation FR/EN ne sera pas réalisée. Spec conservée ci-dessous pour
+mémoire si la décision était un jour revue.
+
+**Spec (non retenue)** :
 - Champ `dialogues` devient `dialogues: { fr: [...], en: [...] }`.
 - `AudioSystem.playVoice(id)` cherche `audio/voice/<lang>/<id>.ogg`.
 - Détection langue : `navigator.language.startsWith('fr')` → `fr`,
   sinon `en`.
 - Toggle UI dans le menu options.
 
-**Coût** : doubler tous les samples vocaux + tous les textes des
-dialogues. Probablement à différer V3 sauf si demande communautaire
-forte.
+**Raison de l'abandon** : coût disproportionné (doubler tous les samples
+vocaux + tous les textes des dialogues) pour un public cible
+francophone.
 
 ## 3. Étapes (Vague A à C)
 
@@ -325,9 +329,9 @@ dialogues restants des 4 chefs.
       la boucle. No-op silencieux pour les PNJ sans voix (`.kw` neutre).
       Smoke `scenarioKaraokeNpc` (T1 wrapping, T2 progression, T3 close).
 
-### Vague D — Localisation (différée)
+### Vague D — Localisation — ❌ ANNULÉE
 
-- Décision GO/NO-GO basée sur demandes utilisateurs.
+- Décision produit 2026-05-17 : pas de localisation FR/EN (cf. §2).
 
 ## 4. Risques
 
@@ -341,4 +345,5 @@ dialogues restants des 4 chefs.
 
 | Date | Étape | Notes |
 |------|-------|-------|
-| 2026-05-17 | Clôture C | Karaoké généralisé aux dialogues PNJ. `npc-dialog.js` : `_renderDialogPage` câble `Karaoke.wrap/start` sur `.npc-dialog-page` après `_playPageVoice`, `closeNpcDialog` appelle `Karaoke.stop`. Le `nextDialogPage` réutilise `_renderDialogPage` (la boucle précédente est annulée par `wrap → stop`). Smoke `scenarioKaraokeNpc` ajouté. Cases « Commit + push » obsolètes (code A/B/C déjà mergé) cochées. Vague D toujours différée. Suite smoke verte. |
+| 2026-05-17 | Clôture C | Karaoké généralisé aux dialogues PNJ. `npc-dialog.js` : `_renderDialogPage` câble `Karaoke.wrap/start` sur `.npc-dialog-page` après `_playPageVoice`, `closeNpcDialog` appelle `Karaoke.stop`. Le `nextDialogPage` réutilise `_renderDialogPage` (la boucle précédente est annulée par `wrap → stop`). Smoke `scenarioKaraokeNpc` ajouté. Cases « Commit + push » obsolètes (code A/B/C déjà mergé) cochées. Suite smoke verte. |
+| 2026-05-17 | Vague D annulée | Décision produit : pas de localisation FR/EN. Vagues A/B/C livrées, D abandonnée → **plan clos**. |
