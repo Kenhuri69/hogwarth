@@ -7481,11 +7481,13 @@ async function scenarioIronman() {
     modal.style.display = 'none';
     const before = difficulty;
     changeDifficulty();                 // doit être refusé en Ironman
-    return { ironmanMode, before, after: difficulty,
+    return { ironmanMode, runId: ironmanRunId, before, after: difficulty,
              modalOpened: modal.style.display === 'flex' };
   });
   console.log('  T1 mode + lock :', t1);
   assert(t1.ironmanMode === true,   'ironmanMode doit être true');
+  assert(typeof t1.runId === 'string' && t1.runId.length >= 8,
+    'ironmanRunId doit être généré au démarrage Ironman');
   assert(t1.before === t1.after,    'changeDifficulty ne doit pas changer la difficulté');
   assert(!t1.modalOpened,           'changeDifficulty ne doit pas ouvrir la modale en Ironman');
 
@@ -7518,38 +7520,48 @@ async function scenarioIronman() {
   assert(t3.mult === 1.4,  `multiplicateur Difficile attendu 1.4, obtenu ${t3.mult}`);
   assert(t3.score === 2450, `score attendu 2450, obtenu ${t3.score}`);
 
-  // 4) Mort en Ironman → écran de résultat (pas la pétrification).
+  // 4) Mort en Ironman → écran de résultat + permadeath stricte.
   const t4 = await page.evaluate(() => {
+    // Prépare un slot Ironman et un slot non-Ironman.
+    ironmanMode = true;
+    writeSlot('manual_1', 'run ironman');
+    ironmanMode = false;
+    writeSlot('manual_2', 'partie normale');
+    ironmanMode = true;
     triggerDeath('Test de mort Ironman');
     return {
       resultVisible: document.getElementById('ironman-result-screen').style.display === 'flex',
       deathVisible:  document.getElementById('death-screen').style.display === 'flex',
       score:         _ironmanLastResult && _ironmanLastResult.score,
-      autoCleared:   readSlot('auto') === null,
+      ironmanSlotGone: readSlot('manual_1') === null,
+      normalSlotKept:  readSlot('manual_2') !== null,
     };
   });
   console.log('  T4 mort :', t4);
   assert(t4.resultVisible,  'écran de résultat Ironman doit être visible');
   assert(!t4.deathVisible,  'écran de pétrification ne doit PAS être visible en Ironman');
   assert(t4.score === 2450, 'le résultat doit porter le score calculé');
-  assert(t4.autoCleared,    'le slot auto doit être supprimé à la mort Ironman');
+  assert(t4.ironmanSlotGone, 'le slot Ironman doit être supprimé à la mort (permadeath)');
+  assert(t4.normalSlotKept,  'un slot non-Ironman doit être préservé à la mort Ironman');
 
-  // 5) Soumission du score → stockage local (HOF_CONFIG vide).
-  await page.evaluate(() => {
+  // 5) Soumission du score → stockage local + pseudonyme persistant.
+  const t5 = await page.evaluate(async () => {
     document.getElementById('hof-name-input').value = 'Testeur';
-    return submitIronmanScore();
-  });
-  const t5 = await page.evaluate(() => {
+    await submitIronmanScore();
     const raw = localStorage.getItem('hogwarts_rpg_hof');
     const arr = raw ? JSON.parse(raw) : [];
-    return { count: arr.length, top: arr[0] };
+    return { count: arr.length, top: arr[0], savedName: getPlayerName() };
   });
-  console.log('  T5 soumission :', { count: t5.count, name: t5.top && t5.top.player_name });
-  assert(t5.count === 1,                       'le score doit être stocké localement');
-  assert(t5.top.player_name === 'Testeur',     'le nom soumis doit être conservé');
-  assert(t5.top.score === 2450,                'le score stocké doit valoir 2450');
+  console.log('  T5 soumission :', { count: t5.count, name: t5.top && t5.top.player_name,
+    savedName: t5.savedName });
+  assert(t5.count === 1,                   'le score doit être stocké localement');
+  assert(t5.top.player_name === 'Testeur', 'le nom soumis doit être conservé');
+  assert(t5.top.score === 2450,            'le score stocké doit valoir 2450');
+  assert(typeof t5.top.run_id === 'string' && t5.top.run_id.length >= 8,
+    "l'entrée doit porter un run_id");
+  assert(t5.savedName === 'Testeur',       'le pseudonyme doit être persisté en localStorage');
 
-  // 6) Écran Hall of Fame : rendu de la liste.
+  // 6) Écran Hall of Fame : rendu de la liste + médaille PNG.
   await page.evaluate(() => openHallOfFame());
   await page.waitForFunction(() =>
     document.querySelectorAll('#hof-list .hof-row').length > 0, { timeout: 3000 });
@@ -7557,27 +7569,61 @@ async function scenarioIronman() {
     screenVisible: document.getElementById('hall-of-fame-screen').style.display === 'flex',
     rows:          document.querySelectorAll('#hof-list .hof-row').length,
     firstName:     document.querySelector('#hof-list .hof-name')?.textContent,
+    hasMedal:      !!document.querySelector('#hof-list .hof-row .hof-medal'),
   }));
   console.log('  T6 Hall of Fame :', t6);
   assert(t6.screenVisible,          'écran Hall of Fame doit être visible');
   assert(t6.rows === 1,             'la liste doit afficher 1 entrée');
   assert(t6.firstName === 'Testeur','le top 1 doit être Testeur');
+  assert(t6.hasMedal,               'le rang 1 doit afficher une médaille PNG');
 
-  // 7) Round-trip save : ironmanMode / totalKills / defeatedBosses.
-  const t7 = await page.evaluate(() => {
+  // 7) Anti double-classement : run déjà soumis détecté + re-soumission bloquée.
+  const t7 = await page.evaluate(async () => {
+    const found = await _hofFindByRunId(ironmanRunId);
+    await verifyIronmanRunNotScored();
+    const btn = document.getElementById('hof-submit-btn');
+    await submitIronmanScore();                     // tentative de doublon
+    const raw = localStorage.getItem('hogwarts_rpg_hof');
+    const arr = raw ? JSON.parse(raw) : [];
+    return {
+      foundByRunId:    !!found,
+      runScored:       _ironmanRunScored,
+      btnDisabled:     btn.disabled,
+      countAfterRetry: arr.length,
+    };
+  });
+  console.log('  T7 anti-doublon :', t7);
+  assert(t7.foundByRunId,           '_hofFindByRunId doit retrouver le run soumis');
+  assert(t7.runScored,              'le run doit être marqué déjà classé');
+  assert(t7.btnDisabled,            'le bouton doit être désactivé pour un run déjà classé');
+  assert(t7.countAfterRetry === 1,  'une re-soumission ne doit pas créer de doublon');
+
+  // 8) Round-trip save : ironmanMode / totalKills / defeatedBosses / runId.
+  const t8 = await page.evaluate(() => {
     ironmanMode    = true;
     totalKills     = 42;
     defeatedBosses = new Set(['nagini']);
+    ironmanRunId   = 'fixed-run-12345678';
     const snap = _serializeState();
-    ironmanMode = false; totalKills = 0; defeatedBosses = new Set();
+    ironmanMode = false; totalKills = 0; defeatedBosses = new Set(); ironmanRunId = null;
     _applyState(snap);
-    return { ironmanMode, totalKills, bosses: Array.from(defeatedBosses) };
+    const kept = ironmanRunId;
+    // Save Ironman sans UID → régénération à _applyState.
+    delete snap.ironmanRunId;
+    ironmanRunId = null;
+    _applyState(snap);
+    return {
+      ironmanMode, totalKills, bosses: Array.from(defeatedBosses),
+      kept, regenerated: !!ironmanRunId && ironmanRunId !== 'fixed-run-12345678',
+    };
   });
-  console.log('  T7 round-trip :', t7);
-  assert(t7.ironmanMode === true,            'ironmanMode doit survivre au save');
-  assert(t7.totalKills === 42,               'totalKills doit survivre au save');
-  assert(t7.bosses.length === 1 && t7.bosses[0] === 'nagini',
+  console.log('  T8 round-trip :', t8);
+  assert(t8.ironmanMode === true,            'ironmanMode doit survivre au save');
+  assert(t8.totalKills === 42,               'totalKills doit survivre au save');
+  assert(t8.bosses.length === 1 && t8.bosses[0] === 'nagini',
     'defeatedBosses doit survivre au save');
+  assert(t8.kept === 'fixed-run-12345678',   'ironmanRunId doit survivre au round-trip');
+  assert(t8.regenerated, 'un save Ironman sans UID doit en générer un au chargement');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

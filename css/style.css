@@ -3379,3 +3379,15 @@ button.shop-tab.active {
   .hof-frame, .ironman-result-frame { padding: 20px 15px; }
   .hof-title { font-size: 20px; }
 }
+
+/* Icônes PNG Ironman / Hall of Fame (rendu lisse, hors classe .ui-icon) */
+.ir-icon { display: inline-block; vertical-align: middle; }
+.ironman-toggle-icon { width: 22px; height: 22px; }
+.ironman-title-icon  { width: 30px; height: 30px; vertical-align: -4px; filter: drop-shadow(0 0 6px rgba(224,64,64,0.5)); }
+.hof-btn-icon        { width: 16px; height: 16px; }
+.hof-title-icon      { width: 28px; height: 28px; vertical-align: -5px; }
+.hof-medal           { width: 26px; height: 26px; }
+.hof-name-label {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px;
+  color: var(--gold); text-align: center; margin-bottom: 2px;
+}

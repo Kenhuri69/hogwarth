@@ -311,13 +311,17 @@ Cumulable avec n'importe quelle difficulté ; la difficulté est ensuite
 let ironmanMode    = false;        // armé en confirmHeroSelection, persisté
 let totalKills     = 0;            // monstres vaincus (cumul partie)
 let defeatedBosses = new Set();    // ids de boss vaincus (faits d'armes)
+let ironmanRunId   = null;         // UID unique du run (anti double-classement)
 ```
 Réinitialisés dans `startGame()`, sérialisés dans `_serializeState`/`_applyState`.
+`ironmanRunId` est généré par `_genRunId()` au démarrage d'un run Ironman ;
+un save Ironman dépourvu d'UID en reçoit un à `_applyState`.
 
-### Mort & score
+### Mort & score — permadeath stricte
 En mode Ironman, `triggerDeath()` n'affiche pas la pétrification mais
 `showIronmanResult()` : écran `#ironman-result-screen` avec score chiffré.
-La mort est définitive — le slot `auto` est supprimé (anti-reload).
+La mort est **définitive** — `deleteIronmanSlots()` (save.js) supprime TOUS
+les slots dont `state.ironmanMode` est vrai (auto + manuels). Aucun reload.
 
 ```
 score = round(base × DIFFICULTY_SCORE_MULT[difficulty])
@@ -331,11 +335,21 @@ DIFFICULTY_SCORE_MULT = { Facile:0.8, Normal:1.0, Difficile:1.4, Expert:1.8 }
 ### Hall of Fame
 `openHallOfFame()` (bouton du hub démarrage + écran de résultat) affiche
 `#hall-of-fame-screen` — top 10. Stockage via `HOF_CONFIG` (REST Supabase :
-`select`/`insert` sous Row Level Security). Repli `localStorage`
-(`hogwarts_rpg_hof`) systématique si non configuré ou hors-ligne ; un score
-soumis est **toujours** écrit en local. `HOF_CONFIG` vide par défaut →
-renseigner `supabaseUrl` + `supabaseAnonKey` (cf.
-`.claude/plans/ironman-hall-of-fame.md`).
+`select`/`insert` sous Row Level Security ; index unique sur `run_id`).
+Repli `localStorage` (`hogwarts_rpg_hof`) systématique si non configuré ou
+hors-ligne ; un score soumis est **toujours** écrit en local.
+
+- **Pseudonyme** : `getPlayerName()`/`setPlayerName()` persistent le nom du
+  joueur (`localStorage` `hogwarts_rpg_player_name`). L'écran de résultat
+  pré-remplit et confirme ce nom avant la soumission.
+- **Anti double-classement** : chaque score porte `run_id = ironmanRunId`.
+  `verifyIronmanRunNotScored()` (mort) et `_hofPrecheckRunOnLoad()`
+  (chargement) vérifient via `_hofFindByRunId()` qu'aucun score n'existe
+  déjà pour l'UID ; l'index unique côté base bloque tout doublon (409).
+
+### Icônes
+`tools/gen_ironman_icons.py` génère les PNG dorés 64×64 dans `img/icons/` :
+`ironman.png` (crâne), `trophy.png` (coupe), `medal_{gold,silver,bronze}.png`.
 
 ---
 

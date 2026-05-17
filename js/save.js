@@ -95,6 +95,23 @@ function deleteSlot(id) {
   return true;
 }
 
+// Permadeath Ironman : supprime TOUS les slots appartenant à une partie
+// Ironman (repérés via `state.ironmanMode`). Appelé à la mort en mode
+// Ironman pour interdire tout rechargement. Retourne le nombre supprimé.
+function deleteIronmanSlots() {
+  const store = _readStore();
+  let removed = 0;
+  for (const id of ALL_SLOT_IDS) {
+    const s = store.slots[id];
+    if (s && s.state && s.state.ironmanMode) {
+      delete store.slots[id];
+      removed++;
+    }
+  }
+  if (removed) _writeStore(store);
+  return removed;
+}
+
 // ── Export / import du multi-slot store (debug / partage) ──────────
 // Retourne le JSON sérialisé du store complet (4 slots max).
 function exportSaveStore() {
@@ -229,6 +246,7 @@ function _serializeState() {
     ironmanMode,
     totalKills,
     defeatedBosses: Array.from(defeatedBosses),
+    ironmanRunId,
     _version:        3
   };
 }
@@ -409,6 +427,15 @@ function _applyState(gs) {
   ironmanMode     = !!gs.ironmanMode;
   totalKills      = (typeof gs.totalKills === 'number') ? gs.totalKills : 0;
   defeatedBosses  = new Set(gs.defeatedBosses || []);
+  ironmanRunId    = gs.ironmanRunId || null;
+  // Save Ironman antérieur à l'UID de run → on en génère un (anti double-
+  // classement). Vérification asynchrone qu'aucun score n'existe déjà.
+  if (ironmanMode && !ironmanRunId && typeof _genRunId === 'function') {
+    ironmanRunId = _genRunId();
+  }
+  if (ironmanMode && typeof _hofPrecheckRunOnLoad === 'function') {
+    _hofPrecheckRunOnLoad();
+  }
   // Réinitialise systématiquement (assignment inconditionnel) pour
   // éviter une fuite de l'état d'un précédent slot quand le nouveau
   // slot ne porte pas la clé (ex. save legacy ou partie démarrée
