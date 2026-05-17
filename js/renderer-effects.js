@@ -597,18 +597,13 @@ function drawEnemySprite(enemy, x, baseY, sz) {
 // Un PNG par type de PNJ (cf. getNpcSpriteType dans npcs.js). Le PNJ
 // exact est identifié via npcPlacements (Map "x,y" → npcId) côté
 // caller, qui nous transmet l'id pour le type + le signe ❗/❓.
-//
-// Tant que les PNG dédiés ne sont pas générés (cf.
-// .claude/plans/fountain-npc-sprites.md), toutes les entrées pointent
-// sur le générique — remplacer par 'img/npc/_npc_<type>.png' une fois
-// l'image traitée via tools/process_monster_png.py --dest img/npc.
 const NPC_SPRITE_SRC = {
-  mage:    'img/npc/_wizard_generic.png',
-  prof_h:  'img/npc/_wizard_generic.png',
-  prof_f:  'img/npc/_wizard_generic.png',
-  fantome: 'img/npc/_wizard_generic.png',
-  vendeur: 'img/npc/_wizard_generic.png',
-  phenix:  'img/npc/_wizard_generic.png',
+  mage:    'img/npc/_npc_mage.png',
+  prof_h:  'img/npc/_npc_prof_h.png',
+  prof_f:  'img/npc/_npc_prof_f.png',
+  fantome: 'img/npc/_wizard_generic.png', // en attente : damier incrusté dans le corps translucide
+  vendeur: 'img/npc/_npc_vendeur.png',
+  phenix:  'img/npc/_npc_phenix.png',
 };
 const _NPC_SPRITE_CACHE = Object.create(null);
 function _getNpcSprite(type) {

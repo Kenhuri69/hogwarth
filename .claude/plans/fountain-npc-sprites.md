@@ -101,16 +101,19 @@ no text, no watermark, no signature, no border frame, no ground line
 ```
 
 ### `_npc_fantome` — Fantôme (cas spécial)
+> ⚠️ 1re génération échouée : corps translucide → le damier de "fausse
+> transparence" transparaît et reste incrusté après détourage. Prompt
+> corrigé : fond **plein** + fantôme **opaque** (lueur, pas see-through).
 ```
 Concept art digital painting of a friendly Hogwarts ghost NPC, Harry Potter universe style,
-full body floating pose, gentle hovering posture, faint trailing mist at the hem,
-translucent body fading to mist at the edges, period clothing (ruffled collar, long robe),
-soft volumetric light, no harsh shadows,
-silvery blue palette with cyan glow,
-fully transparent background — preserve translucent areas in alpha, no border,
-floating subject occupying 80% of 512x512 square frame, vertically centered,
+full body floating pose, gentle hovering posture, lower robe trailing into wispy mist,
+the ghost rendered as a SOLID glowing silvery-blue figure, not see-through, opaque body,
+luminous cyan rim glow outlining the silhouette,
+solid flat pure black background (#000000),
+silvery blue and pale cyan palette,
+floating subject occupying 80% of the 512x512 square frame, vertically centered,
 ethereal painterly style, no outline, MTG-quality illustration,
-no text, no watermark, no signature, no border frame, no ground line
+no checkerboard, no transparency pattern, no text, no watermark, no signature, no border
 ```
 
 ### `_npc_vendeur` — Vendeur (cas spécial)
@@ -151,7 +154,11 @@ no text, no watermark, no signature, no border frame, no ground line
 - [x] Étape 6 — doc CLAUDE.md
 - [x] Smoke test vert (`node tests/smoke.js` — tous scénarios, loader 129/0)
 
-## Reste à faire (utilisateur)
+## Intégration images (2026-05-17)
 
-- Générer les 5 PNG via les prompts Gemini, traiter avec `--dest img/npc`,
-  fournir les fichiers → bascule de `NPC_SPRITE_SRC` sur les chemins dédiés.
+- 5 PNG traités et intégrés : `_npc_mage`, `_npc_prof_h`, `_npc_prof_f`,
+  `_npc_vendeur`, `_npc_phenix` → `NPC_SPRITE_SRC` basculé.
+- Détourage : rembg `u2net` (opaques) / `birefnet` (phénix). Les images
+  Gemini sont livrées en RGB avec un damier opaque → rembg le retire.
+- **Fantôme en attente** : corps translucide → damier incrusté, garde le
+  générique. Regénérer avec le prompt `_npc_fantome` corrigé ci-dessus.
