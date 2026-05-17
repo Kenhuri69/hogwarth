@@ -89,6 +89,22 @@ const CHARACTERS = {
     spells:["Expelliarmus","Stupefix","Protego","Episkey"],
     tagline:"Sang-pur ambitieux — la fierté avant tout."
   },
+  cho: { name:"Cho Chang", icon:"🦅", class:"Élève de Serdaigle",
+    imgSrc:"img/cho.png", role:"Attrapeuse",
+    hp:30, sp:30, str:6, int:14, agi:15, end:8, lck:13, mag:14,
+    atk:4, def:2,
+    wand:"Baguette de Frêne", armor:"Robe de Serdaigle", acc:"Vif d'Or",
+    spells:["Expelliarmus","Stupefix","Protego","Episkey"],
+    tagline:"Attrapeuse de Serdaigle — vive et perspicace."
+  },
+  cedric: { name:"Cedric Diggory", icon:"🦡", class:"Élève de Poufsouffle",
+    imgSrc:"img/cedric.png", role:"Champion",
+    hp:34, sp:26, str:9, int:12, agi:13, end:11, lck:13, mag:12,
+    atk:5, def:2,
+    wand:"Baguette de Frêne et Licorne", armor:"Robe de Poufsouffle", acc:"Insigne de Capitaine",
+    spells:["Expelliarmus","Stupefix","Protego","Episkey"],
+    tagline:"Champion de Poufsouffle — loyal et valeureux."
+  },
   // ── Personnages originaux ─────────────────────────────────
   celeste: { name:"Céleste Luneclair", icon:"🌙", class:"Élève de Serdaigle",
     imgSrc:"img/celeste.png", role:"Astromage",

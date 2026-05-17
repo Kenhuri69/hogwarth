@@ -1,6 +1,26 @@
-# Ajout du personnage : Drago Malefoy
+# Ajout de personnages de film : Drago Malefoy & Cho Chang
 
-Personnage jouable issu des films, à ajouter au groupe « Les Héros du Film ».
+Personnages jouables issus des films, ajoutés au groupe « Les Héros du Film ».
+
+## Cho Chang (ajout ultérieur)
+
+- Portrait : fond sombre quasi identique au noir de la robe → clé de
+  couleur impossible. Détourage via **GrabCut OpenCV** (rect prior +
+  plus grande composante connexe + feather). ✅ `img/cho.png` 128×128.
+- Données : entrée `cho` dans `CHARACTERS` (Serdaigle, Attrapeuse).
+- Carte de sélection : 4ᵉ carte de la section `data-group="film"`.
+- Le hibou tenu par Cho est retiré au détourage (portrait buste épuré).
+
+## Cedric Diggory (ajout ultérieur)
+
+- Portrait : fond hall flou (brun chaud + zones sombres). Détourage
+  **GrabCut OpenCV** ; un blob clair du fond accroché aux cheveux a été
+  retiré ciblé (pixels clairs en haut-gauche). ✅ `img/cedric.png` 128×128.
+- Données : entrée `cedric` dans `CHARACTERS` (Poufsouffle, Champion).
+- Carte de sélection : 5ᵉ carte de la section `data-group="film"`.
+
+---
+
 
 ## Étapes
 
