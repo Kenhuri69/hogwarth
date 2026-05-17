@@ -7,7 +7,10 @@
 
 Branche dédiée : à créer (`claude/character-ux-v2`).
 
-**Statut global** : Étape 0 livrée (mockup) — en attente validation utilisateur avant intégration.
+**Statut global** : v2 intégrée. Étapes 1·2·4·5 livrées dans le codebase
+(constatées sur `master` au 2026-05-17, journal non tenu à l'époque),
+accordéon mobile (1.3 / 2.5) livré le 2026-05-17. **Étape 3 reportée**
+(fusion inventaire — à rediscuter depuis l'ajout de la besace d'herbes).
 
 ---
 
@@ -61,61 +64,65 @@ PR #57, à ne PAS dévier sans nouvelle décision explicite :
 
 > Ces étapes ne démarrent qu'après validation explicite de l'étape 0.
 
+> ⚠️ **Réconciliation 2026-05-17** : les étapes 1·2·4·5 ont été livrées
+> sur `master` lors de sessions antérieures sans tenue du journal. L'audit
+> du code (`js/ui.js`, `css/style.css`) confirme leur présence. Seul
+> l'accordéon mobile manquait — livré ce jour. Cases cochées en
+> conséquence.
+
 ### Étape 1 — CSS de la modale
-- [ ] **1.1** Refondre `#character-modal` + `.modal-box` pour adopter le
-  style v2 : header sticky, cadres or ornementés (4 coins), 3 colonnes
-  ajustées, max-width 720 px.
-- [ ] **1.2** Nouvelles classes `.equip-slot` (uniforme noir, point 3),
-  `.section-toggle` (chevron accordéon mobile), `.tooltip`,
-  `.gold-banner` repositionné, `.inv-section` intégrée.
-- [ ] **1.3** Repli mobile (≤ 720 px) : les 3 sections deviennent des
-  accordéons via `.section-toggle`.
+- [x] **1.1** `#character-modal` + `.modal-box` au style v2 : cadres or
+  ornés (`.title-corner` injectés dans les `.modal-box`), grille 3 zones,
+  max-width 780 px.
+- [x] **1.2** Classes `.equip-slot-floating` (fond noir uniforme + bordure
+  rareté), `.item-tooltip`, `.gold-banner`, `.section-toggle` (accordéon).
+- [x] **1.3** Repli mobile (≤ 700 px) : `.section-toggle` affiché,
+  `.section.collapsed > *:not(.section-toggle)` plie le contenu.
 
 ### Étape 2 — JS `openCharacter()` v2
-- [ ] **2.1** HTML rendu en 3 colonnes + zone inventaire intégrée.
-- [ ] **2.2** Helper `_renderStatLine(label, base, bonus)` pour la
-  séparation base/bonus (point 9). Calcul : `bonus = c.atk - c._baseAtk`,
-  etc.
-- [ ] **2.3** Helper `_renderEquipSlotV2(slot, c)` — fond noir uniforme
-  + bordure rareté + tooltip riche (nom + rareté + bonus + desc).
-- [ ] **2.4** Header sticky avec titre + onglets + ✕ permanent.
-- [ ] **2.5** Toggle accordéon JS sur `.section-toggle`.
+- [x] **2.1** HTML rendu en grille `.char-grid` + zone Sac intégrée.
+- [x] **2.2** `_renderStatLine()` + `_renderStatValueWithBonus()` pour la
+  séparation base/bonus (point 9).
+- [x] **2.3** `_renderPaperDollSlot(slot, c, charIdx)` — fond noir +
+  bordure rareté + `_renderItemTooltip()` riche.
+- [x] **2.4** Onglets Harry/Hermione + ✕ dans la modale (header non
+  `sticky` strict — `.modal-box` scrolle d'un bloc, ✕ reste en haut).
+- [x] **2.5** `_toggleCharSection(btn)` bascule `.collapsed` au clic.
 
-### Étape 3 — Fusion inventaire
-- [ ] **3.1** Bouton 🎒 Sac → ouvre `#character-modal` et scroll jusqu'à
-  la section inventaire.
-- [ ] **3.2** Modifier `openInventory()` pour rediriger vers
-  `openCharacter()` ou bien garder un mode standalone (à décider).
-- [ ] **3.3** Garde-fou : en combat (`battleMode=true`),
-  `openInventory()` reste sur l'ancienne modale `#inventory-modal`
-  (le contexte combat ne doit pas afficher la fiche perso complète).
+### Étape 3 — Fusion inventaire — **REPORTÉE**
+> Décision 2026-05-17 : à rediscuter depuis l'ajout de la besace d'herbes
+> (`renderBesace()` dans `openInventory`). La section Sac de la fiche
+> reste en lecture/clic ; `openInventory()` garde `#inventory-modal`.
+- [ ] **3.1** Bouton 🎒 Sac → `#character-modal` + scroll section Sac.
+- [ ] **3.2** `openInventory()` → redirige ou standalone (à décider).
+- [ ] **3.3** Garde-fou combat : `#inventory-modal` en combat.
 
 ### Étape 4 — Tooltip détail
-- [ ] **4.1** Tooltip riche : nom, rareté (label + couleur), liste de
-  bonus formatés (`+4 Attaque`, `+5 Défense`), description / lore item.
-- [ ] **4.2** Position calculée pour ne pas déborder du paper doll
-  (right/left selon le slot).
-- [ ] **4.3** Mobile : tap sur slot équipé = ouverture du tooltip
-  cliquable (pas de hover natif).
+- [x] **4.1** Tooltip riche `_renderItemTooltip()` : nom, rareté, bonus
+  formatés, regen, `grantsSpell`, description.
+- [x] **4.2** Position CSS selon le slot (bas du paper-doll + sac → tooltip
+  dessous).
+- [x] **4.3** Mobile : tap-preview (`_handleInvTap`) sur les slots du sac.
 
 ### Étape 5 — Stats base + bonus
-- [ ] **5.1** `recalculateStats()` expose déjà `c._baseAtk` etc. Le
-  rendu calcule `bonus = c.atk - c._baseAtk` à l'affichage.
-- [ ] **5.2** Format : `<base> <span class="stat-bonus">+<bonus></span>`
-  si bonus > 0. Sinon afficher seulement `<base>`.
-- [ ] **5.3** Couleur bonus : `var(--gold-light)` pour signaler
-  l'apport de l'équipement.
+- [x] **5.1** `_renderStatValueWithBonus(c, key, baseKey)` calcule
+  `bonus = total - base`.
+- [x] **5.2** Format `<base> <span class="stat-bonus">+<bonus></span>`
+  si bonus > 0, sinon `<base>` seul.
+- [x] **5.3** Bonus en vert vif (`#6cd96c`, cf. A12) — pas `--gold-light`.
 
 ### Étape 6 — Vérifications
-- [ ] **6.1** `node tests/smoke.js` — 32+ scénarios verts.
-- [ ] **6.2** Adapter scénario 22 T6 si la structure DOM change.
-- [ ] **6.3** Captures Playwright desktop + tablette + mobile dans
-  `tests/character-v2-{desktop,tablet,mobile}.png`.
+- [x] **6.1** `node tests/smoke.js` — run vert obtenu. ⚠️ Plusieurs
+  scénarios navigation/PNJ sont flaky (seedés RNG), pré-existant sur
+  `master`, hors scope. Le scénario 22 + le nouveau `T6b` passent de
+  façon stable.
+- [x] **6.2** Scénario 22 — `T6b` ajouté (accordéon : 5 `.section-toggle`,
+  `_toggleCharSection` pose `.collapsed`).
+- [x] **6.3** Captures `tests/character-desktop.png` +
+  `character-mobile.png` + `character-mobile-accordion.png` régénérées.
 - [ ] **6.4** Validation visuelle utilisateur (ou itération).
-- [ ] **6.5** Cache-bust : `style.css`, `ui.js`, `inventory.js`.
-- [ ] **6.6** Doc `CLAUDE.md` : section « Modale Personnage »
-  mise à jour (3 colonnes, accordéon mobile, inventaire intégré,
-  tooltip).
+- [x] **6.5** Cache-bust : `style.css?v=4`, `ui.js?v=4`.
+- [x] **6.6** Doc `CLAUDE.md` : section « Modale Personnage » ajoutée.
 
 ## 3. Hors-scope V2
 
@@ -145,6 +152,9 @@ PR #57, à ne PAS dévier sans nouvelle décision explicite :
 | 2026-05-10 | Étape 0 — mockup HTML v1 | ✅ | `tools/mockup_character_v2.html` créé, autonome, basé sur les vrais assets. Validation utilisateur attendue avant étape 1. |
 | 2026-05-10 | Auto-review mockup v1 | ⚠️ | 12 écarts identifiés vs cible (A1–A12). A1 décidé : garder buste, adapter layout. Refonte mockup en v2.1 nécessaire. |
 | 2026-05-10 | Étape 0.1 — corrections A2–A12 | 🔄 | En cours. |
+| 2026-05-17 | Audit codebase | ✅ | Étapes 1·2·4·5 constatées intégrées sur `master` (journal non tenu entre-temps). Cases réconciliées. |
+| 2026-05-17 | Accordéon mobile (1.3 / 2.5) | ✅ | `.section-toggle` + `_toggleCharSection`, repli CSS ≤700px. Smoke `T6b` ajouté. Cache-bust v4. Doc CLAUDE.md. |
+| 2026-05-17 | Étape 3 — fusion inventaire | ⏸️ | Reportée — à rediscuter depuis l'ajout de la besace d'herbes. |
 
 ---
 

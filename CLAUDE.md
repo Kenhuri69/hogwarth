@@ -617,6 +617,59 @@ Les livres apparaissent avec l'étiquette 📖 violette dans l'inventaire.
 
 ---
 
+## Modale Personnage (fiche v2 — `js/ui.js`)
+
+`openCharacter(charIdx)` peuple `#char-detail` (conteneur partagé avec
+`openQuestLog()`) puis affiche `#character-modal`. Refonte v2 — cf.
+`.claude/plans/character-ux-v2.md`.
+
+### Layout — `.char-grid`
+Grille CSS à zones nommées (`css/style.css`) :
+
+```
+desktop (>700px)        mobile (≤700px)
+"stats equip"           "stats"
+"stats houseset"        "equip"
+"stats spells"          "houseset"
+"stats inv"             "spells"
+                        "inv"
+```
+
+Colonne `stats` (220 px) à gauche ; `equip` / `houseset` / `spells` /
+`inv` empilées à droite. En mobile, une seule colonne.
+
+### Sections et helpers de rendu
+| Zone | Classe section | Contenu |
+|------|----------------|---------|
+| Stats | `.section-stats char-stats-panel` | level-banner + lignes de stats, panneau d'allocation si points libres |
+| Équipement | `.section-equip` | paper-doll (4 slots gauche / buste / 4 slots droite + rangée wand·belt·trinket) + `.gold-banner` |
+| Set Maison | `.section-houseset` | 4 médaillons du set + bonus 2/3/4 pièces — `_renderHouseSetPanel()`, visible si `chosenHouse` |
+| Sortilèges | `.section-spells char-spells-panel` | badges PNG des sorts connus — `_renderSpellBadge()` |
+| Sac | `.section-inv` | grille fixe 16 slots — `_renderInvSlot()` |
+
+- `_renderPaperDollSlot(slot, c, charIdx)` — slot d'équipement (`.equip-slot-floating`),
+  bordure de rareté, tooltip riche, `onclick="unequipFromSlot(...)"` si rempli.
+- `_renderStatValueWithBonus(c, key, baseKey)` — affiche `base +bonus`
+  (bonus en vert) quand l'équipement augmente la stat ; sinon le total seul.
+- `_renderItemTooltip(item, slotLabel, action)` — tooltip au survol
+  (paper-doll + sac) : nom coloré par rareté, slot, bonus, regen, desc.
+
+### Accordéon mobile
+Chaque section porte un bouton `.section-toggle` (préfixé par
+`openCharacter`/`_renderHouseSetPanel`). Masqué en desktop via CSS ;
+en ≤700px il est affiché et `_toggleCharSection(btn)` bascule la classe
+`.collapsed` sur la section parente. La règle CSS
+`.section.collapsed > *:not(.section-toggle) { display:none }` (média
+≤700px) plie tout le contenu sauf le bouton. Sections dépliées au départ.
+
+### Hors-scope v2
+La fusion de `#inventory-modal` dans la fiche (bouton 🎒 redirigeant vers
+`openCharacter`) est **reportée** : à rediscuter depuis l'ajout de la
+besace d'herbes. La section Sac de la fiche reste un affichage en
+lecture/clic ; `openInventory()` garde sa modale `#inventory-modal`.
+
+---
+
 ## Système de combat
 
 ### Variables d'état (state.js)

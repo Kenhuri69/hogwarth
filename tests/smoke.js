@@ -2830,6 +2830,22 @@ async function scenarioExtendedEquipment() {
   assert(t6.slotIds.includes('equip-slot-ring1') && t6.slotIds.includes('equip-slot-ring2'),
          'classes equip-slot-ring1 / equip-slot-ring2 doivent être présentes');
 
+  // T6b : accordéon mobile — un .section-toggle par section, et
+  // _toggleCharSection bascule la classe .collapsed de sa section.
+  const t6b = await page.evaluate(() => {
+    openCharacter(0);
+    const toggles = document.querySelectorAll('#char-detail .section > .section-toggle');
+    const before = document.querySelector('#char-detail .section-stats').classList.contains('collapsed');
+    const stToggle = document.querySelector('#char-detail .section-stats > .section-toggle');
+    _toggleCharSection(stToggle);
+    const after = document.querySelector('#char-detail .section-stats').classList.contains('collapsed');
+    return { toggleCount: toggles.length, before, after };
+  });
+  console.log('  T6b accordéon →', t6b);
+  assert(t6b.toggleCount >= 3, `au moins 3 boutons .section-toggle attendus, got ${t6b.toggleCount}`);
+  assert(t6b.before === false && t6b.after === true,
+         'sections dépliées au départ, _toggleCharSection doit poser .collapsed');
+
   // T7 : bordure de rareté appliquée dans l'inventaire
   const t7 = await page.evaluate(() => {
     // Reset puis injection d'un item rare

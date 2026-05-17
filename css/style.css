@@ -1061,6 +1061,32 @@ body {
 .char-grid > .section-spells   { grid-area: spells;   }
 .char-grid > .section-inv      { grid-area: inv;      }
 
+/* Accordéon mobile — un bouton .section-toggle est préfixé à chaque
+   section de la fiche par openCharacter(). Masqué en desktop (les zones
+   restent toujours visibles) ; affiché en ≤700px où il plie/déplie sa
+   section (cf. .claude/plans/character-ux-v2.md étape 1.3 / 2.5). */
+.section-toggle {
+  display: none;
+  width: 100%;
+  background: rgba(40,28,12,0.55);
+  border: 1px solid rgba(201,168,76,0.30);
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  color: var(--gold-light);
+  letter-spacing: 0.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.section-toggle::after {
+  content: '▾';
+  float: right;
+  transition: transform 0.2s;
+}
+.section.collapsed .section-toggle::after { transform: rotate(-90deg); }
+
 /* ── Set Maison (Étape 5 Maisons 2.0) ───────────────────────── */
 .section-houseset {
   background: rgba(20,12,4,0.55);
@@ -1443,6 +1469,11 @@ body {
      rétractation (sinon le contenu min impose >60 px → débordement). */
   .section-inv .inv-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
   .section-inv .inv-slot .ui-icon { width: 32px; height: 32px; }
+
+  /* Accordéon : le bouton apparaît, une section repliée masque tout
+     son contenu sauf le bouton. */
+  .section-toggle { display: block; margin-bottom: 4px; }
+  .char-grid > .section.collapsed > *:not(.section-toggle) { display: none; }
 
   /* Safety : aucune section ne doit faire scroll horizontal */
   .char-grid > .section { min-width: 0; max-width: 100%; overflow-x: hidden; }
