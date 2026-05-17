@@ -25,6 +25,16 @@ const DIFFICULTY_SCORE_MULT = {
   Facile: 0.8, Normal: 1.0, Difficile: 1.4, Expert: 1.8,
 };
 
+// Multiplicateur de score selon la taille du groupe. Le solo est plus
+// exigeant (un seul tour d'action par segment, pas de soigneuse dédiée)
+// → bonus de score pour un classement équitable. Le duo est la référence.
+const PARTYSIZE_SCORE_MULT = { 1: 1.3, 2: 1.0 };
+
+// Plafond anti-farm : nombre de kills crédités par étage de profondeur
+// atteint. Poncer un même étage (respawn) ne gonfle plus le score —
+// seule la progression réelle (descendre) débloque plus de points.
+const KILLS_PER_FLOOR_CAP = 12;
+
 // Dernier résultat Ironman calculé — partagé avec hall-of-fame.js pour
 // la soumission. Scope global (script non-module).
 let _ironmanLastResult = null;
@@ -77,9 +87,15 @@ function computeIronmanScore() {
     }
   }
 
+  // Plafond anti-farm : les points de kills sont bornés par la
+  // profondeur atteinte. La profondeur pèse plus lourd (×150) pour
+  // recentrer le score sur la progression réelle.
+  const rawKills     = totalKills || 0;
+  const killsCounted = Math.min(rawKills, deepestFloor * KILLS_PER_FLOOR_CAP);
+
   const breakdown = {
-    kills:  (totalKills || 0) * 10,
-    floor:  deepestFloor * 100,
+    kills:  killsCounted * 10,
+    floor:  deepestFloor * 150,
     quests: quests * 150,
     level:  level * 50,
     gold:   Math.floor(gold * 0.5),
@@ -87,13 +103,16 @@ function computeIronmanScore() {
   };
   const raw = breakdown.kills + breakdown.floor + breakdown.quests
             + breakdown.level + breakdown.gold + breakdown.feats;
-  const mult = DIFFICULTY_SCORE_MULT[difficulty] || 1.0;
+  const mult      = DIFFICULTY_SCORE_MULT[difficulty] || 1.0;
+  const partyMult = PARTYSIZE_SCORE_MULT[partySize] || 1.0;
 
   return {
-    score: Math.round(raw * mult),
-    raw, mult, breakdown, feats,
+    score: Math.round(raw * mult * partyMult),
+    raw, mult, partyMult, breakdown, feats,
     deepestFloor, level, gold,
-    monstersKilled:  totalKills || 0,
+    monstersKilled:  rawKills,
+    killsCounted,
+    killsCapped:     killsCounted < rawKills,
     questsCompleted: quests,
   };
 }
@@ -110,11 +129,15 @@ function buildIronmanResult(cause) {
     deepestFloor:    s.deepestFloor,
     level:           s.level,
     monstersKilled:  s.monstersKilled,
+    killsCounted:    s.killsCounted,
+    killsCapped:     s.killsCapped,
     questsCompleted: s.questsCompleted,
     gold:            s.gold,
     feats:           s.feats,
     breakdown:       s.breakdown,
     mult:            s.mult,
+    partyMult:       s.partyMult,
+    partySize:       partySize || 1,
     score:           s.score,
   };
 }
@@ -183,8 +206,13 @@ function showIronmanResult(cause) {
     }
     html += '</ul>';
   }
-  html += `<div class="ir-mult">Difficulté <strong>${result.difficulty}</strong>`
-        + ` — multiplicateur ×${result.mult}</div>`;
+  if (result.killsCapped) {
+    html += `<div class="ir-cap-note">Kills comptabilisés : ${result.killsCounted}`
+          + ` — plafond anti-farm (étage atteint × 12)</div>`;
+  }
+  html += `<div class="ir-mult">Difficulté <strong>${result.difficulty}</strong> ×${result.mult}`
+        + ` · Groupe <strong>${result.partySize === 1 ? 'Solo' : 'Duo'}</strong>`
+        + ` ×${result.partyMult}</div>`;
 
   const bkEl = document.getElementById('ironman-result-breakdown');
   if (bkEl) bkEl.innerHTML = html;

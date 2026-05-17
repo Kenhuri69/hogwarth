@@ -3316,6 +3316,10 @@ button.shop-tab.active {
   font-size: 11px; color: #9a8060; font-style: italic;
   margin-top: 12px;
 }
+.ir-cap-note {
+  font-size: 10px; color: #b07a4a; font-style: italic;
+  margin-top: 8px;
+}
 .ironman-result-submit {
   margin: 18px 0 10px; display: flex; flex-direction: column; gap: 8px;
 }

@@ -324,13 +324,20 @@ La mort est **définitive** — `deleteIronmanSlots()` (save.js) supprime TOUS
 les slots dont `state.ironmanMode` est vrai (auto + manuels). Aucun reload.
 
 ```
-score = round(base × DIFFICULTY_SCORE_MULT[difficulty])
-base  = totalKills×10 + étageMax×100 + quêtes×150
+score = round(base × DIFFICULTY_SCORE_MULT × PARTYSIZE_SCORE_MULT)
+base  = killsCrédités×10 + étageMax×150 + quêtes×150
       + niveau×50 + or×0.5 + Σ faits d'armes
+killsCrédités = min(totalKills, étageMax×12)   ← plafond anti-farm
 DIFFICULTY_SCORE_MULT = { Facile:0.8, Normal:1.0, Difficile:1.4, Expert:1.8 }
+PARTYSIZE_SCORE_MULT  = { Solo:1.3, Duo:1.0 }
 ```
 `recordIronmanKills(enemies)` (appelé par `endBattle`) incrémente
 `totalKills` et ajoute les boss de `BOSS_FEATS` à `defeatedBosses`.
+
+**Équité du classement** : le solo (un seul tour d'action, pas de
+soigneuse) reçoit un bonus ×1.3 vs duo. Les points de kills sont
+plafonnés à `étageMax×12` — poncer un étage (respawn) ne gonfle plus
+le score ; seule la progression réelle (descendre) le fait monter.
 
 ### Hall of Fame
 `openHallOfFame()` (bouton du hub démarrage + écran de résultat) affiche

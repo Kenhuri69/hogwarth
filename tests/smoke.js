@@ -7544,11 +7544,41 @@ async function scenarioIronman() {
     player.gold     = 100;
     return computeIronmanScore();
   });
-  console.log('  T3 score :', { score: t3.score, raw: t3.raw, mult: t3.mult });
-  // raw = 20*10 + 5*100 + 2*150 + 8*50 + floor(100*0.5) + 300 = 1750
-  assert(t3.raw === 1750,  `raw attendu 1750, obtenu ${t3.raw}`);
-  assert(t3.mult === 1.4,  `multiplicateur Difficile attendu 1.4, obtenu ${t3.mult}`);
-  assert(t3.score === 2450, `score attendu 2450, obtenu ${t3.score}`);
+  console.log('  T3 score :', { score: t3.score, raw: t3.raw, mult: t3.mult,
+    partyMult: t3.partyMult });
+  // raw = 20*10 + 5*150 + 2*150 + 8*50 + floor(100*0.5) + 300 = 2000
+  assert(t3.raw === 2000,   `raw attendu 2000, obtenu ${t3.raw}`);
+  assert(t3.mult === 1.4,   `multiplicateur Difficile attendu 1.4, obtenu ${t3.mult}`);
+  assert(t3.partyMult === 1.3, `multiplicateur solo attendu 1.3, obtenu ${t3.partyMult}`);
+  // score = round(2000 × 1.4 × 1.3) = 3640
+  assert(t3.score === 3640, `score attendu 3640, obtenu ${t3.score}`);
+
+  // 3b) Plafond anti-farm sur les kills + multiplicateur de groupe.
+  const t3b = await page.evaluate(() => {
+    totalKills    = 999;                       // farm massif
+    currentFloor  = 4;
+    visitedFloors = new Set([1, 2, 3, 4]);
+    const capped  = computeIronmanScore();     // partySize = 1
+    const beforePS = partySize;
+    partySize = 2; const duo  = computeIronmanScore().partyMult;
+    partySize = 1; const solo = computeIronmanScore().partyMult;
+    partySize = beforePS;
+    // Restaure l'état de T3 pour la suite du scénario.
+    totalKills = 20; currentFloor = 3; visitedFloors = new Set([1, 2, 3, 4, 5]);
+    return {
+      killsPts:     capped.breakdown.kills,
+      killsCounted: capped.killsCounted,
+      killsCapped:  capped.killsCapped,
+      duo, solo,
+    };
+  });
+  console.log('  T3b plafond + groupe :', t3b);
+  // étage 4 → plafond 4×12 = 48 kills crédités (au lieu de 999)
+  assert(t3b.killsCounted === 48,  'kills plafonnés à étage×12 attendu 48');
+  assert(t3b.killsPts === 480,     'points de kills attendus 480 (48×10)');
+  assert(t3b.killsCapped === true, 'killsCapped doit être vrai au-delà du plafond');
+  assert(t3b.solo === 1.3 && t3b.duo === 1.0,
+    'partyMult attendu : solo ×1.3, duo ×1.0');
 
   // 4) Mort en Ironman → écran de résultat + permadeath stricte.
   const t4 = await page.evaluate(() => {
@@ -7570,7 +7600,7 @@ async function scenarioIronman() {
   console.log('  T4 mort :', t4);
   assert(t4.resultVisible,  'écran de résultat Ironman doit être visible');
   assert(!t4.deathVisible,  'écran de pétrification ne doit PAS être visible en Ironman');
-  assert(t4.score === 2450, 'le résultat doit porter le score calculé');
+  assert(t4.score === 3640, 'le résultat doit porter le score calculé');
   assert(t4.ironmanSlotGone, 'le slot Ironman doit être supprimé à la mort (permadeath)');
   assert(t4.normalSlotKept,  'un slot non-Ironman doit être préservé à la mort Ironman');
 
@@ -7586,7 +7616,7 @@ async function scenarioIronman() {
     savedName: t5.savedName });
   assert(t5.count === 1,                   'le score doit être stocké localement');
   assert(t5.top.player_name === 'Testeur', 'le nom soumis doit être conservé');
-  assert(t5.top.score === 2450,            'le score stocké doit valoir 2450');
+  assert(t5.top.score === 3640,            'le score stocké doit valoir 3640');
   assert(typeof t5.top.run_id === 'string' && t5.top.run_id.length >= 8,
     "l'entrée doit porter un run_id");
   assert(t5.savedName === 'Testeur',       'le pseudonyme doit être persisté en localStorage');
