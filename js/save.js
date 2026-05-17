@@ -226,6 +226,9 @@ function _serializeState() {
     lastQuestCompletion: { ...lastQuestCompletion },
     victoryAchieved,
     victoryAt,
+    ironmanMode,
+    totalKills,
+    defeatedBosses: Array.from(defeatedBosses),
     _version:        3
   };
 }
@@ -402,6 +405,10 @@ function _applyState(gs) {
   // Endgame : saves antérieures à l'introduction du flag → false/null.
   victoryAchieved = !!gs.victoryAchieved;
   victoryAt       = gs.victoryAt || null;
+  // Mode Ironman : saves antérieures à l'ajout du mode → false/0/vide.
+  ironmanMode     = !!gs.ironmanMode;
+  totalKills      = (typeof gs.totalKills === 'number') ? gs.totalKills : 0;
+  defeatedBosses  = new Set(gs.defeatedBosses || []);
   // Réinitialise systématiquement (assignment inconditionnel) pour
   // éviter une fuite de l'état d'un précédent slot quand le nouveau
   // slot ne porte pas la clé (ex. save legacy ou partie démarrée

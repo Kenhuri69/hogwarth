@@ -521,6 +521,8 @@ function endBattle(won) {
       const killsThisFight = enemyGroup.length;
       floorKillCount.set(currentFloor, (floorKillCount.get(currentFloor) || 0) + killsThisFight);
     }
+    // Compteurs de score Ironman (monstres vaincus + faits d'armes boss).
+    if (typeof recordIronmanKills === 'function') recordIronmanKills(enemyGroup);
     const diff     = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
     let totalXp = 0, totalGold = 0;
     enemyGroup.forEach(e => { totalXp += e.xp; totalGold += e.gold + Math.floor(Math.random() * 5); });
@@ -736,6 +738,13 @@ function closeLevelup() {
 // ── Mort et résurrection ─────────────────────────────────────
 function triggerDeath(msg) {
   AudioSystem.playDeath();
+  // Mode Ironman : la mort est définitive — écran de résultat chiffré
+  // + soumission au Hall of Fame, pas de pétrification ni de résurrection.
+  if (typeof ironmanMode !== 'undefined' && ironmanMode &&
+      typeof showIronmanResult === 'function') {
+    showIronmanResult(msg);
+    return;
+  }
   document.getElementById('death-msg').textContent = msg;
   document.getElementById('death-screen').style.display = 'flex';
 }

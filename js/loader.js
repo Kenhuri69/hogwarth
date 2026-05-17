@@ -214,6 +214,14 @@ window.UX_safe = new Proxy({}, {
     { name: 'startHelpTour',        source: 'help-tour.js',  kind: 'fn'  },
     { name: 'maybeAutoStartHelpTour',source: 'help-tour.js', kind: 'fn'  },
 
+    // ── Mode Ironman + Hall of Fame ──
+    { name: 'ironmanMode',          source: 'state.js',          kind: 'obj' },
+    { name: 'showIronmanResult',    source: 'ironman.js',        kind: 'fn'  },
+    { name: 'computeIronmanScore',  source: 'ironman.js',        kind: 'fn'  },
+    { name: 'recordIronmanKills',   source: 'ironman.js',        kind: 'fn'  },
+    { name: 'openHallOfFame',       source: 'hall-of-fame.js',   kind: 'fn'  },
+    { name: 'submitIronmanScore',   source: 'hall-of-fame.js',   kind: 'fn'  },
+
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },
     { name: 'showIntroScreen',    source: 'intro.js',        kind: 'fn',    optional: true },

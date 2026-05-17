@@ -66,6 +66,9 @@
     <button type="button" class="hub-import-btn" onclick="importSaveFromFileToHub()">
       📥 Importer une sauvegarde
     </button>
+    <button type="button" class="hub-import-btn hub-hof-btn" onclick="openHallOfFame()">
+      🏆 Hall of Fame
+    </button>
     <input type="file" id="hub-import-file-input" accept=".json,application/json" style="display:none">
   </div>
 </div>
@@ -307,6 +310,13 @@
           <option value="Expert">🔴  Expert — Mode survie (très dur)</option>
         </select>
       </div>
+      <label class="ironman-toggle" for="ironman-toggle">
+        <input type="checkbox" id="ironman-toggle">
+        <span class="ironman-toggle-body">
+          <span class="ironman-toggle-title">☠ Mode Ironman</span>
+          <span class="ironman-toggle-desc">Une seule vie. La mort est définitive et inscrit votre score au Hall of Fame. La difficulté est verrouillée pour toute la partie.</span>
+        </span>
+      </label>
       <div class="psel-nav">
         <button class="psel-back" onclick="pselGoStep(2)">◂ Retour</button>
         <button id="start-adventure-btn" class="start-btn" onclick="confirmHeroSelection()">
@@ -798,6 +808,35 @@
   <button class="cmd-btn" style="margin-top:24px; font-size:14px; padding:10px 28px; border-color:var(--danger); color:var(--danger)" onclick="resurrect()">Revenir à la Vie</button>
 </div>
 
+<!-- Écran de résultat Ironman (remplace la pétrification en mode Ironman) -->
+<div id="ironman-result-screen">
+  <div class="ironman-result-frame">
+    <div class="ironman-result-title">☠ Mort ☠</div>
+    <div class="ironman-result-msg" id="ironman-result-msg"></div>
+    <div class="ironman-result-score" id="ironman-result-score"></div>
+    <div class="ironman-result-breakdown" id="ironman-result-breakdown"></div>
+    <div class="ironman-result-submit">
+      <input type="text" id="hof-name-input" maxlength="24" placeholder="Votre nom de sorcier" autocomplete="off">
+      <button id="hof-submit-btn" class="ironman-btn" onclick="submitIronmanScore()">Soumettre au Hall of Fame</button>
+      <div id="hof-submit-status" class="ironman-submit-status"></div>
+    </div>
+    <div class="ironman-result-actions">
+      <button class="ironman-btn ironman-btn-ghost" onclick="openHallOfFame()">🏆 Hall of Fame</button>
+      <button class="ironman-btn" onclick="location.reload()">Nouvelle partie</button>
+    </div>
+  </div>
+</div>
+
+<!-- Écran Hall of Fame — top 10 des meilleurs scores Ironman -->
+<div id="hall-of-fame-screen">
+  <div class="hof-frame">
+    <div class="hof-title">🏆 Hall of Fame</div>
+    <div class="hof-sub">Les plus grandes légendes du mode Ironman</div>
+    <div id="hof-list" class="hof-list"></div>
+    <button type="button" class="hub-import-btn" onclick="closeHallOfFame()">◂ Retour</button>
+  </div>
+</div>
+
 <div id="msg-log" role="log" aria-live="polite" aria-atomic="false"></div>
 
 <!-- Scripts (ordre de chargement important) -->
@@ -848,6 +887,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/shop.js?v=5"></script>
 <script src="js/save.js?v=4"></script>
 <script src="js/save-ui.js?v=1"></script>
+<script src="js/ironman.js?v=1"></script>
+<script src="js/hall-of-fame.js?v=1"></script>
 <script src="js/main.js?v=3"></script>
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=1"></script>

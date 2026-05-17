@@ -63,6 +63,19 @@ const DIFFICULTY_SETTINGS = {
 };
 
 // ============================================================
+// MODE IRONMAN — vie unique + score classé (Hall of Fame)
+// ============================================================
+// `ironmanMode` est choisi à l'écran de difficulté (case à cocher) et
+// verrouillé pour toute la partie : la difficulté ne peut plus changer.
+// À la mort du groupe, au lieu de la pétrification (resurrect), un écran
+// de résultat chiffré s'affiche et le score peut être soumis au Hall of
+// Fame. `totalKills` et `defeatedBosses` alimentent le calcul du score.
+// Les trois sont persistés dans le save (_serializeState / _applyState).
+let ironmanMode    = false;
+let totalKills     = 0;          // monstres vaincus (cumul sur la partie)
+let defeatedBosses = new Set();  // ids de boss vaincus (faits d'armes)
+
+// ============================================================
 // SYSTÈME DES MAISONS
 // ============================================================
 let chosenHouse = null;

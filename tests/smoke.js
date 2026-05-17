@@ -7456,8 +7456,137 @@ async function scenarioDelayedSearch() {
   await browser.close();
 }
 
+// ── Scénario : mode Ironman + Hall of Fame ───────────────────
+async function scenarioIronman() {
+  console.log('\n── Scénario : mode Ironman + Hall of Fame ──');
+  const { browser, page, errors } = await launchGame();
+
+  // Coche la case Ironman avant de confirmer la sélection de héros.
+  await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_hof');
+    // Neutralise la config Supabase : le scénario teste le repli local
+    // de façon déterministe, sans dépendre du réseau. Le chemin en ligne
+    // est vérifié manuellement (cf. .claude/plans/ironman-hall-of-fame.md).
+    if (typeof HOF_CONFIG !== 'undefined') HOF_CONFIG.supabaseUrl = '';
+    const cb = document.getElementById('ironman-toggle');
+    if (cb) cb.checked = true;
+  });
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Le mode est armé et la difficulté verrouillée.
+  const t1 = await page.evaluate(() => {
+    const modal = document.getElementById('character-modal');
+    modal.style.display = 'none';
+    const before = difficulty;
+    changeDifficulty();                 // doit être refusé en Ironman
+    return { ironmanMode, before, after: difficulty,
+             modalOpened: modal.style.display === 'flex' };
+  });
+  console.log('  T1 mode + lock :', t1);
+  assert(t1.ironmanMode === true,   'ironmanMode doit être true');
+  assert(t1.before === t1.after,    'changeDifficulty ne doit pas changer la difficulté');
+  assert(!t1.modalOpened,           'changeDifficulty ne doit pas ouvrir la modale en Ironman');
+
+  // 2) Comptage des kills + faits d'armes boss.
+  const t2 = await page.evaluate(() => {
+    totalKills = 0; defeatedBosses = new Set();
+    recordIronmanKills([{ id: 'basilic' }, { id: 'chat_norris' }, { id: 'bellatrix' }]);
+    return { totalKills, bosses: Array.from(defeatedBosses).sort() };
+  });
+  console.log('  T2 kills :', t2);
+  assert(t2.totalKills === 3, 'recordIronmanKills doit compter 3 monstres');
+  assert(t2.bosses.length === 2 && t2.bosses.includes('basilic') && t2.bosses.includes('bellatrix'),
+    'seuls les boss doivent entrer dans defeatedBosses');
+
+  // 3) Calcul du score (formule + multiplicateur de difficulté).
+  const t3 = await page.evaluate(() => {
+    difficulty      = 'Difficile';        // multiplicateur ×1.4
+    totalKills      = 20;
+    defeatedBosses  = new Set(['basilic']); // +300
+    visitedFloors   = new Set([1, 2, 3, 4, 5]);
+    currentFloor    = 3;
+    completedQuests = new Set(['q1', 'q2']);
+    player.level    = 8;
+    player.gold     = 100;
+    return computeIronmanScore();
+  });
+  console.log('  T3 score :', { score: t3.score, raw: t3.raw, mult: t3.mult });
+  // raw = 20*10 + 5*100 + 2*150 + 8*50 + floor(100*0.5) + 300 = 1750
+  assert(t3.raw === 1750,  `raw attendu 1750, obtenu ${t3.raw}`);
+  assert(t3.mult === 1.4,  `multiplicateur Difficile attendu 1.4, obtenu ${t3.mult}`);
+  assert(t3.score === 2450, `score attendu 2450, obtenu ${t3.score}`);
+
+  // 4) Mort en Ironman → écran de résultat (pas la pétrification).
+  const t4 = await page.evaluate(() => {
+    triggerDeath('Test de mort Ironman');
+    return {
+      resultVisible: document.getElementById('ironman-result-screen').style.display === 'flex',
+      deathVisible:  document.getElementById('death-screen').style.display === 'flex',
+      score:         _ironmanLastResult && _ironmanLastResult.score,
+      autoCleared:   readSlot('auto') === null,
+    };
+  });
+  console.log('  T4 mort :', t4);
+  assert(t4.resultVisible,  'écran de résultat Ironman doit être visible');
+  assert(!t4.deathVisible,  'écran de pétrification ne doit PAS être visible en Ironman');
+  assert(t4.score === 2450, 'le résultat doit porter le score calculé');
+  assert(t4.autoCleared,    'le slot auto doit être supprimé à la mort Ironman');
+
+  // 5) Soumission du score → stockage local (HOF_CONFIG vide).
+  await page.evaluate(() => {
+    document.getElementById('hof-name-input').value = 'Testeur';
+    return submitIronmanScore();
+  });
+  const t5 = await page.evaluate(() => {
+    const raw = localStorage.getItem('hogwarts_rpg_hof');
+    const arr = raw ? JSON.parse(raw) : [];
+    return { count: arr.length, top: arr[0] };
+  });
+  console.log('  T5 soumission :', { count: t5.count, name: t5.top && t5.top.player_name });
+  assert(t5.count === 1,                       'le score doit être stocké localement');
+  assert(t5.top.player_name === 'Testeur',     'le nom soumis doit être conservé');
+  assert(t5.top.score === 2450,                'le score stocké doit valoir 2450');
+
+  // 6) Écran Hall of Fame : rendu de la liste.
+  await page.evaluate(() => openHallOfFame());
+  await page.waitForFunction(() =>
+    document.querySelectorAll('#hof-list .hof-row').length > 0, { timeout: 3000 });
+  const t6 = await page.evaluate(() => ({
+    screenVisible: document.getElementById('hall-of-fame-screen').style.display === 'flex',
+    rows:          document.querySelectorAll('#hof-list .hof-row').length,
+    firstName:     document.querySelector('#hof-list .hof-name')?.textContent,
+  }));
+  console.log('  T6 Hall of Fame :', t6);
+  assert(t6.screenVisible,          'écran Hall of Fame doit être visible');
+  assert(t6.rows === 1,             'la liste doit afficher 1 entrée');
+  assert(t6.firstName === 'Testeur','le top 1 doit être Testeur');
+
+  // 7) Round-trip save : ironmanMode / totalKills / defeatedBosses.
+  const t7 = await page.evaluate(() => {
+    ironmanMode    = true;
+    totalKills     = 42;
+    defeatedBosses = new Set(['nagini']);
+    const snap = _serializeState();
+    ironmanMode = false; totalKills = 0; defeatedBosses = new Set();
+    _applyState(snap);
+    return { ironmanMode, totalKills, bosses: Array.from(defeatedBosses) };
+  });
+  console.log('  T7 round-trip :', t7);
+  assert(t7.ironmanMode === true,            'ironmanMode doit survivre au save');
+  assert(t7.totalKills === 42,               'totalKills doit survivre au save');
+  assert(t7.bosses.length === 1 && t7.bosses[0] === 'nagini',
+    'defeatedBosses doit survivre au save');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Mode Ironman + Hall of Fame OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioIronman, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

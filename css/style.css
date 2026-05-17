@@ -3175,3 +3175,189 @@ button.shop-tab.active {
   .intro-header        { gap: 16px; }
   .intro-card          { max-width: 540px; padding: 28px 26px; gap: 18px; }
 }
+
+/* ============================================================
+   MODE IRONMAN — toggle, écran de résultat & Hall of Fame
+   ============================================================ */
+
+/* ── Case à cocher Ironman (étape Difficulté) ── */
+.ironman-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0 4px;
+  padding: 11px 13px;
+  background: rgba(40,8,8,0.55);
+  border: 2px solid #5a2424;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.ironman-toggle:hover { border-color: #8a3535; background: rgba(60,12,12,0.6); }
+.ironman-toggle input { margin-top: 3px; width: 16px; height: 16px; cursor: pointer; accent-color: #c0392b; }
+.ironman-toggle-body { display: flex; flex-direction: column; gap: 3px; }
+.ironman-toggle-title {
+  font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 1px; color: #e0726a;
+}
+.ironman-toggle-desc { font-size: 11px; color: #9a8060; line-height: 1.35; }
+.ironman-toggle:has(input:checked) { border-color: #c0392b; background: rgba(80,14,14,0.7); }
+
+/* ── Écran de résultat Ironman ── */
+#ironman-result-screen {
+  display: none;
+  position: fixed; inset: 0;
+  z-index: 950;
+  background: radial-gradient(circle at center, #1a0606 0%, #050202 92%);
+  align-items: center; justify-content: center;
+  padding: 20px; overflow-y: auto;
+}
+.ironman-result-frame {
+  width: 100%; max-width: 460px;
+  background: linear-gradient(180deg, #1c0c0c 0%, #0c0606 100%);
+  border: 2px solid #8a3535;
+  border-radius: 6px;
+  padding: 26px 22px;
+  box-shadow: 0 0 44px rgba(180,30,30,0.3);
+  text-align: center;
+}
+.ironman-result-title {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: 46px; color: #e04040;
+  text-shadow: 0 0 26px rgba(224,64,64,0.75);
+  margin-bottom: 6px;
+}
+.ironman-result-msg {
+  font-family: 'Crimson Text', serif; font-size: 13px;
+  color: #c89a90; font-style: italic; margin-bottom: 16px;
+}
+.ironman-result-score {
+  display: flex; flex-direction: column; align-items: center;
+  margin: 4px 0 18px;
+}
+.ir-score-num {
+  font-family: 'Cinzel', serif; font-size: 44px; font-weight: 700;
+  color: var(--gold-light); text-shadow: 0 0 20px rgba(201,168,76,0.5);
+  line-height: 1;
+}
+.ir-score-label {
+  font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 3px;
+  color: #8a7050; margin-top: 4px;
+}
+.ir-breakdown-table { width: 100%; border-collapse: collapse; }
+.ir-breakdown-table td {
+  padding: 6px 4px; font-size: 13px;
+  border-bottom: 1px solid rgba(138,53,53,0.25);
+}
+.ir-bk-label { text-align: left; color: var(--parchment); }
+.ir-bk-val   { text-align: right; color: #c9a84c; width: 56px; }
+.ir-bk-pts   { text-align: right; color: #7fae5f; width: 72px; font-weight: 700; }
+.ir-feats-title {
+  font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px;
+  color: var(--gold); margin: 14px 0 6px;
+}
+.ir-feats { list-style: none; padding: 0; margin: 0; }
+.ir-feats li {
+  display: flex; justify-content: space-between; gap: 10px;
+  font-size: 12px; color: #d0b890; padding: 3px 4px;
+}
+.ir-mult {
+  font-size: 11px; color: #9a8060; font-style: italic;
+  margin-top: 12px;
+}
+.ironman-result-submit {
+  margin: 18px 0 10px; display: flex; flex-direction: column; gap: 8px;
+}
+#hof-name-input {
+  width: 100%; padding: 9px 11px;
+  background: #0a0504; border: 2px solid var(--gold-dark);
+  color: var(--parchment); font-size: 14px; font-family: 'Crimson Text', serif;
+  border-radius: 3px; text-align: center;
+}
+.ironman-submit-status {
+  font-size: 12px; color: #7fae5f; min-height: 16px;
+}
+.ironman-result-actions { display: flex; gap: 10px; }
+.ironman-btn {
+  flex: 1; padding: 11px 14px;
+  background: linear-gradient(180deg, #c89048 0%, #a06820 100%);
+  color: #1a0f05; border: none; border-radius: 4px;
+  font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700;
+  letter-spacing: 1px; cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+}
+.ironman-btn:hover  { filter: brightness(1.1); }
+.ironman-btn:active { transform: translateY(1px); }
+.ironman-btn:disabled { filter: grayscale(0.6) brightness(0.8); cursor: default; }
+.ironman-btn-ghost {
+  background: transparent; color: #c9a84c;
+  border: 1px solid #7a5c1e;
+}
+.ironman-btn-ghost:hover { filter: none; color: #f0d080; border-color: #c9a84c; }
+
+/* ── Écran Hall of Fame ── */
+#hall-of-fame-screen {
+  display: none;
+  position: fixed; inset: 0;
+  z-index: 960;
+  background: radial-gradient(circle at center, #120a03 0%, #050300 90%);
+  align-items: center; justify-content: center;
+  padding: 20px; overflow-y: auto;
+}
+.hof-frame {
+  width: 100%; max-width: 520px;
+  background: linear-gradient(180deg, #1a0f05 0%, #0d0705 100%);
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  padding: 26px 22px;
+  box-shadow: 0 0 40px rgba(201,168,76,0.2);
+}
+.hof-title {
+  font-family: 'Cinzel', serif; font-size: 24px; color: var(--gold);
+  text-align: center; letter-spacing: 3px; margin-bottom: 4px;
+}
+.hof-sub {
+  font-family: 'Crimson Text', serif; font-size: 13px; color: #8a7050;
+  text-align: center; font-style: italic; margin-bottom: 18px;
+}
+.hof-list { margin-bottom: 16px; }
+.hof-empty {
+  text-align: center; color: #8a7050; font-style: italic;
+  font-size: 13px; padding: 30px 10px; line-height: 1.6;
+}
+.hof-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 10px; margin-bottom: 6px;
+  background: #0a0705; border: 1px solid #3a2c12; border-radius: 4px;
+}
+.hof-rank-1 { border-color: #c9a84c; box-shadow: 0 0 12px rgba(201,168,76,0.25); }
+.hof-rank-2 { border-color: #9aa0a8; }
+.hof-rank-3 { border-color: #b07a3a; }
+.hof-rank {
+  font-size: 18px; min-width: 38px; text-align: center;
+  font-family: 'Cinzel', serif; color: #8a7050;
+}
+.hof-main { flex: 1; min-width: 0; }
+.hof-name {
+  font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold-light);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hof-meta {
+  font-size: 11px; color: #8a7050; margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hof-score {
+  font-family: 'Cinzel', serif; font-size: 17px; font-weight: 700;
+  color: #c9a84c; min-width: 64px; text-align: right;
+}
+.hof-source {
+  text-align: center; font-size: 10px; color: #5a4a2a;
+  font-style: italic; margin-top: 4px;
+}
+.hub-hof-btn { margin-top: 8px; }
+
+@media (max-width: 700px) {
+  .ironman-result-title { font-size: 36px; }
+  .ir-score-num { font-size: 36px; }
+  .hof-frame, .ironman-result-frame { padding: 20px 15px; }
+  .hof-title { font-size: 20px; }
+}
