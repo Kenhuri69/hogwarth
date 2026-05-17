@@ -84,7 +84,7 @@ function _buildMinimapCells(mm, cellSize) {
         if (c === CELL.WALL)                                  div.classList.add('map-wall');
         else if (c === CELL.STAIRS_D || c === CELL.STAIRS_U) div.classList.add('map-stairs');
         else if (c === CELL.SHOP)                             div.classList.add('map-shop');
-        else if (c === CELL.FOUNTAIN)                         div.classList.add('map-special');
+        else if (c === CELL.FOUNTAIN)                         div.classList.add('map-fountain');
         else if (c === CELL.FORGE)                            div.classList.add('map-forge');
         else if (c === CELL.LIBRARY)                          div.classList.add('map-library');
         else if (c === CELL.NPC) {

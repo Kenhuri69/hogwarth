@@ -501,6 +501,39 @@ function drawLibrarySprite(x, baseY, sz) {
   ctx.restore();
 }
 
+// ── Fontaine (sprite de couloir) ─────────────────────────────
+// Bassin restaurateur (cf. Salle Fontaine). Halo bleu eau si active,
+// grisé si déjà bue (dried). Registre emoji comme coffre/forge/biblio.
+function drawFountainSprite(x, baseY, sz, dried) {
+  ctx.save();
+  // Ombre au sol
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.5, sz * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  // Halo — bleu eau si active, gris terne si tarie
+  const halo = ctx.createRadialGradient(x, baseY - sz * 0.45, 0, x, baseY - sz * 0.45, sz * 0.95);
+  if (dried) {
+    halo.addColorStop(0, 'rgba(120,120,120,0.22)');
+    halo.addColorStop(1, 'rgba(60,60,60,0)');
+  } else {
+    halo.addColorStop(0, 'rgba(110,180,230,0.42)');
+    halo.addColorStop(1, 'rgba(30,80,130,0)');
+  }
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.45, sz * 0.95, 0, Math.PI * 2); ctx.fill();
+  // Emoji fontaine
+  ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  if (dried) ctx.globalAlpha = 0.55;
+  ctx.fillText('⛲', x, baseY);
+  ctx.globalAlpha = 1;
+  // Panneau
+  ctx.font = `bold ${Math.floor(sz * 0.2)}px sans-serif`;
+  ctx.fillStyle = dried ? 'rgba(150,150,150,0.9)' : 'rgba(150,210,255,0.95)';
+  ctx.textBaseline = 'top';
+  ctx.fillText(dried ? 'FONTAINE TARIE' : 'FONTAINE', x, baseY - sz * 1.25);
+  ctx.restore();
+}
+
 // Cache d'images monstres pour le rendu 3D. Lazy : chaque PNG est chargé
 // à la première demande. Re-render automatique du donjon dès qu'une image
 // est prête (cf. pattern de textures.js).
@@ -561,16 +594,27 @@ function drawEnemySprite(enemy, x, baseY, sz) {
 }
 
 // ── Sprite PNJ dans le couloir ───────────────────────────────────
-// V1 : un seul PNG générique pour tous les PNJ. Le PNJ exact est
-// identifié via npcPlacements (Map "x,y" → npcId) côté caller, qui
-// nous transmet l'id pour calculer le signe ❗/❓.
-let _NPC_SPRITE = null;
-function _getNpcSprite() {
-  if (_NPC_SPRITE) return _NPC_SPRITE;
-  _NPC_SPRITE = { img: new Image(), ready: false };
-  _NPC_SPRITE.img.onload = () => { _NPC_SPRITE.ready = true; };
-  _NPC_SPRITE.img.src = 'img/npc/_wizard_generic.png';
-  return _NPC_SPRITE;
+// Un PNG par type de PNJ (cf. getNpcSpriteType dans npcs.js). Le PNJ
+// exact est identifié via npcPlacements (Map "x,y" → npcId) côté
+// caller, qui nous transmet l'id pour le type + le signe ❗/❓.
+const NPC_SPRITE_SRC = {
+  mage:    'img/npc/_npc_mage.png',
+  prof_h:  'img/npc/_npc_prof_h.png',
+  prof_f:  'img/npc/_npc_prof_f.png',
+  fantome: 'img/npc/_npc_fantome.png',
+  vendeur: 'img/npc/_npc_vendeur.png',
+  phenix:  'img/npc/_npc_phenix.png',
+};
+const _NPC_SPRITE_CACHE = Object.create(null);
+function _getNpcSprite(type) {
+  const src = NPC_SPRITE_SRC[type] || NPC_SPRITE_SRC.mage;
+  let entry = _NPC_SPRITE_CACHE[src];
+  if (entry) return entry;
+  entry = { img: new Image(), ready: false };
+  entry.img.onload = () => { entry.ready = true; };
+  entry.img.src = src;
+  _NPC_SPRITE_CACHE[src] = entry;
+  return entry;
 }
 
 // Silhouette vectorielle de secours, utilisée tant que le PNG n'est
@@ -638,7 +682,9 @@ function drawNpcSprite(npcId, x, baseY, sz) {
   ctx.fill();
 
   // PNG prioritaire ; fallback vectoriel sinon.
-  const entry = _getNpcSprite();
+  const spriteType = (typeof getNpcSpriteType === 'function')
+    ? getNpcSpriteType(npcId) : 'mage';
+  const entry = _getNpcSprite(spriteType);
   if (entry && entry.ready) {
     const drawSize = sz * 1.5;
     ctx.drawImage(entry.img, x - drawSize / 2, baseY - drawSize, drawSize, drawSize);

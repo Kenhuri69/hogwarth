@@ -231,9 +231,12 @@ rend :
 2. Aura chaude pulsée (driven par `_npcAnimPhase` rafraîchi 5 FPS via
    `startNpcAnimLoop` — boucle déclenchée par `startGame` + chargement
    de save quand `npcPlacements.size > 0`).
-3. Sprite PNG `img/npc/_wizard_generic.png` (V1 : un seul PNG pour
-   tous les PNJ). Fallback vectoriel `_drawNpcVectorFallback` tant que
-   l'image n'a pas chargé.
+3. Sprite PNG par type de PNJ — `getNpcSpriteType(npcId)` (npcs.js)
+   résout le champ `sprite` (`mage`/`prof_h`/`prof_f`/`fantome`/`vendeur`/`phenix`)
+   puis `NPC_SPRITE_SRC` (renderer-effects.js) mappe le type → PNG.
+   Tant que les PNG dédiés ne sont pas générés, toutes les entrées
+   pointent sur `img/npc/_wizard_generic.png`. Fallback vectoriel
+   `_drawNpcVectorFallback` tant que l'image n'a pas chargé.
 4. Signe ❗/❓ animé (bobbing vertical) au-dessus, basé sur
    `getNpcMarkerSign(npcId)`.
 
@@ -976,8 +979,8 @@ d'**1 utilisation par visite d'étage**. Apparaît aux étages **2, 5, 8,
 | État "tarie" | Set global `usedFountains` (clés `"x,y"` pour l'étage courant) |
 | Reset | `usedFountains.clear()` à chaque entrée d'étage (généré ou restauré) |
 | Persistance | Sauvegardé dans `_serializeState/_applyState` via `Array.from(usedFountains)` |
-| Visuel canvas | Pas de sprite 3D dédié — repérée via minimap + overlay d'exploration |
-| Minimap | Classe `.map-fountain` (bleu pâle) |
+| Visuel canvas | Sprite de couloir `drawFountainSprite()` (renderer-effects.js) — emoji ⛲ + halo bleu, état tari grisé |
+| Minimap | Classe `.map-fountain` (bleu eau, distincte de `.map-special`) |
 
 ### Cycle de vie
 ```
