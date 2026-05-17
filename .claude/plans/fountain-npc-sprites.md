@@ -41,15 +41,12 @@ Deux demandes :
 
 | sprite    | PNJ |
 |-----------|-----|
-| `mage`    | dumbledore, scamander, scamander_random, fumseck* |
+| `mage`    | dumbledore, scamander, scamander_random |
 | `prof_h`  | slughorn, lockhart, lupin, hagrid, rogue, flitwick, rusard, hagrid_random |
 | `prof_f`  | pomfresh, manon, mcgonagall, sprout, trelawney |
 | `fantome` | mimi, sir_nicolas, moine_gras, portrait_dumbledore |
 | `vendeur` | ollivander, guipure, rosmerta, mundungus |
-
-\* **Fumseck** est un phénix — ni sorcier ni fantôme. Repli `mage`
-(→ générique) faute de type adapté ; un prompt phénix dédié serait à
-prévoir si un visuel correct est souhaité.
+| `phenix`  | fumseck |
 
 ## Workflow images (à faire par l'utilisateur)
 
@@ -124,6 +121,21 @@ practical tradesman robe with a leather apron and a coin pouch at the belt,
 soft directional light from upper-left with cool cyan rim light,
 warm amber and brown palette with brass accents, warm skin tones,
 fully transparent background, no ground shadow, no border,
+subject occupies 80% of 512x512 square frame, vertically centered,
+painterly brush strokes, no outline, MTG concept art quality,
+no text, no watermark, no signature, no border frame, no ground line
+```
+
+### `_npc_phenix` — Phénix (cas spécial, Fumseck)
+> Créature animale (cf. IMG_STYLE.md §8.1) ; `--model birefnet` au
+> traitement (lueur de braise translucide).
+```
+Concept art digital painting of a phoenix, Harry Potter universe style (Fawkes),
+perched majestically on nothing, wings half-spread, head in 3/4 turned toward the viewer,
+brilliant crimson and gold plumage, long elegant tail feathers, faint translucent ember glow,
+soft directional light from upper-left with cool cyan rim light,
+scarlet red and radiant gold palette, amber eyes,
+fully transparent background — preserve the translucent glow in alpha, no ground shadow, no border,
 subject occupies 80% of 512x512 square frame, vertically centered,
 painterly brush strokes, no outline, MTG concept art quality,
 no text, no watermark, no signature, no border frame, no ground line

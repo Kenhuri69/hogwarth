@@ -608,6 +608,7 @@ const NPC_SPRITE_SRC = {
   prof_f:  'img/npc/_wizard_generic.png',
   fantome: 'img/npc/_wizard_generic.png',
   vendeur: 'img/npc/_wizard_generic.png',
+  phenix:  'img/npc/_wizard_generic.png',
 };
 const _NPC_SPRITE_CACHE = Object.create(null);
 function _getNpcSprite(type) {

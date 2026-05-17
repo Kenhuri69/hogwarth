@@ -679,7 +679,7 @@ const NPCS = [
     id:    "fumseck",
     name:  "Fumseck",
     title: "Phénix de Dumbledore",
-    sprite: "mage",
+    sprite: "phenix",
     icon:  "🔥",
     portraitImg: "img/npc/fumseck.png",
     placement: { floor: 7, anchor: "any" },
@@ -964,7 +964,7 @@ function getNpcById(id) {
 }
 
 // Type de sprite de couloir 3D d'un PNJ :
-// 'mage' | 'prof_h' | 'prof_f' | 'fantome' | 'vendeur'. Repli 'mage'.
+// 'mage' | 'prof_h' | 'prof_f' | 'fantome' | 'vendeur' | 'phenix'. Repli 'mage'.
 function getNpcSpriteType(id) {
   const npc = getNpcById(id);
   return (npc && npc.sprite) || 'mage';

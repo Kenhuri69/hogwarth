@@ -232,7 +232,7 @@ rend :
    `startNpcAnimLoop` — boucle déclenchée par `startGame` + chargement
    de save quand `npcPlacements.size > 0`).
 3. Sprite PNG par type de PNJ — `getNpcSpriteType(npcId)` (npcs.js)
-   résout le champ `sprite` (`mage`/`prof_h`/`prof_f`/`fantome`/`vendeur`)
+   résout le champ `sprite` (`mage`/`prof_h`/`prof_f`/`fantome`/`vendeur`/`phenix`)
    puis `NPC_SPRITE_SRC` (renderer-effects.js) mappe le type → PNG.
    Tant que les PNG dédiés ne sont pas générés, toutes les entrées
    pointent sur `img/npc/_wizard_generic.png`. Fallback vectoriel
