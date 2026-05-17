@@ -89,6 +89,14 @@ const CHARACTERS = {
     spells:["Expelliarmus","Stupefix","Protego","Episkey"],
     tagline:"Sang-pur ambitieux — la fierté avant tout."
   },
+  cho: { name:"Cho Chang", icon:"🦅", class:"Élève de Serdaigle",
+    imgSrc:"img/cho.png", role:"Attrapeuse",
+    hp:30, sp:30, str:6, int:14, agi:15, end:8, lck:13, mag:14,
+    atk:4, def:2,
+    wand:"Baguette de Frêne", armor:"Robe de Serdaigle", acc:"Vif d'Or",
+    spells:["Expelliarmus","Stupefix","Protego","Episkey"],
+    tagline:"Attrapeuse de Serdaigle — vive et perspicace."
+  },
   // ── Personnages originaux ─────────────────────────────────
   celeste: { name:"Céleste Luneclair", icon:"🌙", class:"Élève de Serdaigle",
     imgSrc:"img/celeste.png", role:"Astromage",
