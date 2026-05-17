@@ -905,7 +905,8 @@ const MONSTERS = [
       { itemId: "potion_m",     chance: 0.25 },
       { itemId: "wand1",        chance: 0.10 },
       { itemId: "wand2",        chance: 0.05 },
-      { itemId: "casque_aurore",chance: 0.04 }
+      { itemId: "casque_aurore",chance: 0.04 },
+      { itemId: "cor_pegasse",  chance: 0.05 }
     ]
   },
 

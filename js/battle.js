@@ -630,8 +630,10 @@ function checkLevelUp() {
     _grantLevelStats(c);
     _grantLevelStatPoints(c);
   });
-  // Recalculer atk/def/mag/lck = base + bonus équipement
+  // Recalculer atk/def/mag/lck + hpMax/spMax = base + bonus équipement
   recalculateStats();
+  // Full heal au passage de niveau (après recalc → inclut bonusHpMax/SpMax).
+  party.slice(0, partySize).forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; });
 
   AudioSystem.playLevelUp();
   document.getElementById('levelup-text').textContent = `Le groupe passe au niveau ${player.level} !`;
@@ -651,12 +653,16 @@ function _grantLevelStatPoints(c) {
   c.unallocatedStatPoints = (c.unallocatedStatPoints || 0) + STAT_POINTS_PER_LEVEL;
 }
 
-// Sync niveau/xp + grant PV/PM max +8/+5 et full heal au passage de niveau.
+// Sync niveau/xp + grant PV/PM max de BASE +8/+5 au passage de niveau.
+// Le full heal est appliqué après recalculateStats() dans checkLevelUp()
+// pour intégrer les bonus hpMax/spMax d'équipement.
 function _grantLevelHpSp(c) {
   c.level  = player.level;
   c.xpNext = player.xpNext;
-  c.hpMax += 8;  c.hp = c.hpMax;
-  c.spMax += 5;  c.sp = c.spMax;
+  if (c._baseHpMax === undefined) c._baseHpMax = c.hpMax;
+  if (c._baseSpMax === undefined) c._baseSpMax = c.spMax;
+  c._baseHpMax += 8;
+  c._baseSpMax += 5;
 }
 
 // Incrémenter les stats de BASE (indépendamment de l'équipement).

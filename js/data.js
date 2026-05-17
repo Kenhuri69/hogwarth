@@ -220,7 +220,7 @@ const ITEMS = [
   { id:"felix", name:"Félix Felicis", icon:"✨", desc:"+20 PV +10 PM", type:"consumable", effect:"both", power:20, price:80 },
   { id:"mandragore", name:"Racine de Mandragore", icon:"🌿", desc:"+8 PV", type:"consumable", effect:"heal", power:8, price:15 },
   { id:"wand1",   name:"Baguette de Saule",   icon:"🪄", desc:"ATK+2",                      type:"wand",  slot:"wand",   family:"wand_basic",    rarity:"common", power:2, bonusAtk:2,                                price:120, tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_basic", tint:"willow" },
-  { id:"wand2",   name:"Baguette de Sureau",  icon:"🪄", desc:"ATK+5 MAG+3",                type:"wand",  slot:"wand",   family:"wand_elder",    rarity:"rare",   power:5, bonusAtk:5, bonusMag:3,                       price:300, tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_runic", tint:"elder"  },
+  { id:"wand2",   name:"Baguette de Sureau",  icon:"🪄", desc:"ATK+5 MAG+3 · Crit +2% (×1.7)", type:"wand",  slot:"wand",   family:"wand_elder",    rarity:"rare",   power:5, bonusAtk:5, bonusMag:3, bonusCritChance:2, bonusCritDamage:0.2, price:300, tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_runic", tint:"elder"  },
   { id:"robe1",   name:"Robe Renforcée",      icon:"🧥", desc:"DEF+3",                      type:"armor", slot:"body",   family:"robe",          rarity:"common", power:3, bonusDef:3,                                    price:150 },
   { id:"amulette",name:"Amulette du Phénix",  icon:"💎", desc:"MAG+4 LCK+3 · Apprend Reparo", type:"acc", slot:"amulet", family:"amulet_phoenix",rarity:"epic",   power:4, bonusMag:4, bonusLck:3, grantsSpell:"Reparo", price:250 },
   { id:"broom",   name:"Balai Nimbus 2000",   icon:"🧹", desc:"Fuite garantie",             type:"acc",   slot:"trinket", family:"broom",        rarity:"rare",   power:0,                                                price:200 },
@@ -298,7 +298,7 @@ const ITEMS = [
   // Set du Lion (Gryffondor)
   { id:"heaume_vaillant", name:"Heaume du Vaillant",   icon:"⛑️", desc:"ATK+2 LCK+1 — Set du Lion (2/4)",       type:"armor", slot:"head",   family:"gryff_set_2",  rarity:"epic",      power:3, bonusAtk:2, bonusLck:1, price:0, setKey:"gryff_set", setPiece:2 },
   { id:"cape_godric",     name:"Cape de Godric",       icon:"🦁", desc:"DEF+2 ATK+2 — Set du Lion (3/4)",       type:"acc",   slot:"cloak",  family:"gryff_set_3",  rarity:"epic",      power:4, bonusAtk:2, bonusDef:2, price:0, setKey:"gryff_set", setPiece:3 },
-  { id:"coeur_lion",      name:"Cœur de Lion",         icon:"❤️", desc:"ATK+3 LCK+2 · Régen +1 PM — Set du Lion (4/4)", type:"acc", slot:"amulet", family:"gryff_set_4", rarity:"legendary", power:6, bonusAtk:3, bonusLck:2, regenSp:1, price:0, setKey:"gryff_set", setPiece:4 },
+  { id:"coeur_lion",      name:"Cœur de Lion",         icon:"❤️", desc:"ATK+3 LCK+2 · PV max +10 · Régen +1 PM — Set du Lion (4/4)", type:"acc", slot:"amulet", family:"gryff_set_4", rarity:"legendary", power:6, bonusAtk:3, bonusLck:2, bonusHpMax:10, regenSp:1, price:0, setKey:"gryff_set", setPiece:4 },
 
   // Set du Serpent (Serpentard)
   { id:"pendentif_mamba", name:"Pendentif du Mamba",   icon:"🐍", desc:"MAG+2 LCK+1 — Set du Serpent (2/4)",    type:"acc",   slot:"amulet", family:"slyth_set_2",  rarity:"epic",      power:3, bonusMag:2, bonusLck:1, price:0, setKey:"slyth_set", setPiece:2 },
@@ -316,7 +316,7 @@ const ITEMS = [
   { id:"medaillon_helga", name:"Médaillon de Helga",   icon:"🏅", desc:"DEF+3 END+2 · Régen +1 PV — Set du Blaireau (4/4)", type:"acc", slot:"amulet", family:"pouf_set_4", rarity:"legendary", power:6, bonusDef:3, bonusEnd:2, regenHp:1, price:0, setKey:"pouf_set",  setPiece:4 },
   { id:"choco_sorcier",name:"Chocolat aux Sorciers", icon:"🍫", desc:"+10 PV +5 PM",       type:"consumable", effect:"both",       power:10, price:20 },
   { id:"potion_force", name:"Potion de Force",       icon:"💪", desc:"+8 ATK pendant 3 tours", type:"consumable", effect:"heal",      power:8,  price:45 },
-  { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5",           type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, power:5, price:400 },
+  { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:400 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:200 },
   // ── Phase 3 : équipement étendu (slots head/hands/feet/cloak/amulet/ring/belt/trinket) ──
   // Tier commun étage 1-2
@@ -330,11 +330,13 @@ const ITEMS = [
   { id:"amulette_protection",name:"Amulette de Protection",icon:"🔱", desc:"DEF+3 MAG+1",     type:"acc",   slot:"amulet",family:"amulet_protect",rarity:"common", bonusDef:3, bonusMag:1, power:3, price:170 },
   // Tier rare étage 5+
   { id:"circlet_serdaigle",name:"Circlet d'Argent",      icon:"👑", desc:"MAG+3 INT+2",       type:"acc",   slot:"head",  family:"circlet",       rarity:"rare",   bonusMag:3,             power:3, price:240 },
-  { id:"anneau_runique",   name:"Anneau Runique",        icon:"💍", desc:"MAG+2 LCK+2",       type:"acc",   slot:"ring",  family:"ring_runed",    rarity:"rare",   bonusMag:2, bonusLck:2, power:2, price:260, tint:"#a060d0" },
-  { id:"ceinture_alchimiste",name:"Ceinture d'Alchimiste",icon:"➿", desc:"DEF+1 LCK+3",      type:"acc",   slot:"belt",  family:"belt_alch",     rarity:"rare",   bonusDef:1, bonusLck:3, power:1, price:230 },
+  { id:"anneau_runique",   name:"Anneau Runique",        icon:"💍", desc:"MAG+2 LCK+2 · Crit +3%", type:"acc",   slot:"ring",  family:"ring_runed",    rarity:"rare",   bonusMag:2, bonusLck:2, bonusCritChance:3, power:2, price:260, tint:"#a060d0" },
+  { id:"ceinture_alchimiste",name:"Ceinture d'Alchimiste",icon:"➿", desc:"DEF+1 LCK+3 · Crit +2%", type:"acc",   slot:"belt",  family:"belt_alch",     rarity:"rare",   bonusDef:1, bonusLck:3, bonusCritChance:2, power:1, price:230 },
   // Tier rare/épique étage 7+
-  { id:"bottes_dragon",    name:"Bottes en Peau de Dragon",icon:"🥾",desc:"DEF+3 AGI+2",      type:"acc",   slot:"feet",  family:"boots_dragon",  rarity:"rare",   bonusDef:3, bonusAgi:2, power:3, price:340 },
+  { id:"bottes_dragon",    name:"Bottes en Peau de Dragon",icon:"🥾",desc:"DEF+3 AGI+2 · Esquive +3%", type:"acc",   slot:"feet",  family:"boots_dragon",  rarity:"rare",   bonusDef:3, bonusAgi:2, bonusDodgeChance:3, power:3, price:340 },
   { id:"retourneur_temps", name:"Retourneur de Temps",   icon:"⌛", desc:"AGI+3 LCK+2",        type:"acc",   slot:"trinket",family:"timeturner",  rarity:"epic",   bonusAgi:3, bonusLck:2, power:3, price:550, tint:"#c9a84c" },
+  // Drop boss étage 7+ (Mangemort d'Élite) — bonus PV max (cf. equipment-bonuses-v2.md Vague B).
+  { id:"cor_pegasse",      name:"Cor du Pégase",          icon:"📯", desc:"PV max +8",          type:"acc",   slot:"trinket",family:"horn_pegasus", rarity:"epic",   bonusHpMax:8, power:4, price:0 },
   // ── Phase 3c : équipements mid-game (étages 3-7) ─────────────
   // Comblent les slots peu fournis. Apparaissent en boutique selon
   // minFloor et peuvent dropper sur les monstres élite de la zone.
@@ -348,7 +350,7 @@ const ITEMS = [
   // Anneau remis par le portrait de Dumbledore (quête `anneau_dumbledore`). Pierre noire sertie d'or.
   { id:"anneau_resurrection",name:"Anneau de la Résurrection",icon:"💍", desc:"MAG+3 LCK+4 · Apprend Reparo", type:"acc", slot:"ring",  family:"ring_resurrection", rarity:"epic", bonusMag:3, bonusLck:4, power:3, grantsSpell:"Reparo", price:0, tint:"#1a1a1a" },
   // Amulette remise par Fumseck (quête `bouclier_phenix`). Régénère 3 PV en début de tour ennemi.
-  { id:"larmes_phenix",      name:"Larmes du Phénix",         icon:"📿", desc:"DEF+2 MAG+2 · Régen +3 PV/tour",type:"acc", slot:"amulet",family:"amulet_tears",      rarity:"epic", bonusDef:2, bonusMag:2, power:2, regenHp:3,            price:0, tint:"#e84020" },
+  { id:"larmes_phenix",      name:"Larmes du Phénix",         icon:"📿", desc:"DEF+2 MAG+2 · PM max +5 · Régen +3 PV/tour · Esquive +3%",type:"acc", slot:"amulet",family:"amulet_tears",      rarity:"epic", bonusDef:2, bonusMag:2, bonusSpMax:5, bonusDodgeChance:3, power:2, regenHp:3,            price:0, tint:"#e84020" },
   // ── Livres de sorts ──────────────────────────────────────────
   { id:"livre_sortileges", name:"Sortilèges Standards, Vol.3", icon:"📗", desc:"Apprend Wingardium Leviosa",  type:"spellbook", spell:"Wingardium Leviosa", price:90  },
   { id:"livre_soin",       name:"Potions & Remèdes Magiques",  icon:"📘", desc:"Apprend Reparo (soin 20 PV)", type:"spellbook", spell:"Reparo",             price:70  },

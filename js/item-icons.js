@@ -74,6 +74,9 @@ const ITEM_ICON_REGISTRY = {
   ceinture_alchimiste: 'img/icons/items/ceinture_alchimiste.png',
   bottes_dragon:       'img/icons/items/bottes_dragon.png',
   retourneur_temps:    'img/icons/items/retourneur_temps.png',
+  // Cor du Pégase (equipment-bonuses-v2 Vague B) — fallback legacy ; le
+  // rendu effectif passe par le PNG painterly d'ITEM_ICON_NEW_REGISTRY.
+  cor_pegasse:         'img/icons/items/retourneur_temps.png',
   // Phase 3b — récompenses de quêtes PNJ
   anneau_resurrection: 'img/icons/items/anneau_resurrection.png',
   larmes_phenix:       'img/icons/items/larmes_phenix.png',
@@ -196,6 +199,7 @@ const ITEM_ICON_NEW_REGISTRY = {
   diademe_serdaigle:    'img/icons_new/diademe_serdaigle_64.png',
   coupe_poufsouffle:    'img/icons_new/coupe_poufsouffle_64.png',
   retourneur_temps:     'img/icons_new/retourneur_temps_64.png',
+  cor_pegasse:          'img/icons_new/cor_pegasse_64.png',
   mandragore:           'img/icons_new/mandragore_64.png',
   choco_sorcier:        'img/icons_new/choco_sorcier_64.png',
   // Tier 2 Maison (cf. .claude/plans/house-intermediate-tier.md)

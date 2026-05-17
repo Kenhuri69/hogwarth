@@ -3924,6 +3924,234 @@ async function scenarioCritDodge() {
   await browser.close();
 }
 
+// ── Scénario : Équipement V2 Vague A — bonusCritChance/DodgeChance ──
+// Valide que les 6 items annotés portent réellement le champ et que
+// recalculateStats l'agrège. Pour isoler le champ des effets AGI/LCK,
+// on compare le stat avec l'item complet vs le même item champ retiré.
+async function scenarioCritDodgeFromEquip() {
+  console.log('\n── Scénario : crit/dodge depuis l\'équipement (V2 Vague A) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const res = await page.evaluate(() => {
+    const c = party[0];
+    // Mesure la contribution isolée d'un champ : équipe l'item dans `slot`,
+    // recalc, lit `stat` ; supprime le champ ; recalc ; lit à nouveau.
+    const probe = (id, slot, stat, field) => {
+      c.equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                     cloak:null, amulet:null, ring1:null, ring2:null,
+                     belt:null, trinket:null };
+      c.equipped[slot] = { ...ITEMS.find(i => i.id === id) };
+      recalculateStats();
+      const withField = c[stat];
+      delete c.equipped[slot][field];
+      recalculateStats();
+      const without = c[stat];
+      return { id, delta: withField - without, raw: c.equipped[slot] };
+    };
+    return {
+      capeInvis:   probe('cape_invis',         'cloak', 'dodgeChance',  'bonusDodgeChance'),
+      bottesDragon:probe('bottes_dragon',      'feet',  'dodgeChance',  'bonusDodgeChance'),
+      larmesPhenix:probe('larmes_phenix',      'amulet','dodgeChance',  'bonusDodgeChance'),
+      anneauRunique:probe('anneau_runique',    'ring1', 'critChance',   'bonusCritChance'),
+      ceintureAlch:probe('ceinture_alchimiste','belt',  'critChance',   'bonusCritChance'),
+      wand2:       probe('wand2',              'wand',  'critChance',   'bonusCritChance'),
+    };
+  });
+  console.log('  résultats:', JSON.stringify(res));
+  assert(res.capeInvis.delta === 5,    `cape_invis : +5 dodge attendu, got ${res.capeInvis.delta}`);
+  assert(res.bottesDragon.delta === 3, `bottes_dragon : +3 dodge attendu, got ${res.bottesDragon.delta}`);
+  assert(res.larmesPhenix.delta === 3, `larmes_phenix : +3 dodge attendu, got ${res.larmesPhenix.delta}`);
+  assert(res.anneauRunique.delta === 3,`anneau_runique : +3 crit attendu, got ${res.anneauRunique.delta}`);
+  assert(res.ceintureAlch.delta === 2, `ceinture_alchimiste : +2 crit attendu, got ${res.ceintureAlch.delta}`);
+  assert(res.wand2.delta === 2,        `wand2 : +2 crit attendu, got ${res.wand2.delta}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Crit/Dodge depuis l\'équipement OK');
+  await browser.close();
+}
+
+// ── Scénario : Équipement V2 Vague B — bonusHpMax/SpMax ──
+// T1 bonus appliqué à hpMax sans toucher hp ; T2 clamp au déséquipement ;
+// T3 migration save legacy (lazy-init _baseHpMax) ; T4 spMax + cor_pegasse ;
+// T5 le bonus survit à un level-up (base + level-up + équipement).
+async function scenarioHpSpMaxBonus() {
+  console.log('\n── Scénario : PV/PM max depuis l\'équipement (V2 Vague B) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const clean = `(() => { party[0].equipped = { wand:null, head:null, body:null, hands:null, feet:null, cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null }; })()`;
+
+  // T1 : coeur_lion (+10 hpMax) — hpMax monte de 10, hp inchangé.
+  const t1 = await page.evaluate((cleanFn) => {
+    eval(cleanFn);
+    const c = party[0];
+    recalculateStats();
+    const baseHpMax = c.hpMax;
+    c.hp = baseHpMax - 5;            // perso légèrement blessé
+    c.equipped.amulet = { ...ITEMS.find(i => i.id === 'coeur_lion') };
+    recalculateStats();
+    return { baseHpMax, withItem: c.hpMax, hp: c.hp };
+  }, clean);
+  console.log('  T1 coeur_lion:', t1);
+  assert(t1.withItem === t1.baseHpMax + 10, `hpMax attendu ${t1.baseHpMax + 10}, got ${t1.withItem}`);
+  assert(t1.hp === t1.baseHpMax - 5,        `hp courant ne doit pas bouger, got ${t1.hp}`);
+
+  // T2 : déséquiper alors que hp est au plafond gonflé → clamp à la base.
+  const t2 = await page.evaluate((cleanFn) => {
+    eval(cleanFn);
+    const c = party[0];
+    c.equipped.amulet = { ...ITEMS.find(i => i.id === 'coeur_lion') };
+    recalculateStats();
+    c.hp = c.hpMax;                  // plein au max gonflé (base+10)
+    const inflated = c.hp;
+    c.equipped.amulet = null;
+    recalculateStats();
+    return { inflated, hpMax: c.hpMax, hp: c.hp };
+  }, clean);
+  console.log('  T2 clamp déséquipement:', t2);
+  assert(t2.hp === t2.hpMax, `hp doit être clampé à hpMax (${t2.hpMax}), got ${t2.hp}`);
+  assert(t2.hp < t2.inflated, `hp doit redescendre sous la valeur gonflée ${t2.inflated}, got ${t2.hp}`);
+
+  // T3 : save legacy sans _baseHpMax/_baseSpMax → lazy-init = valeur courante.
+  const t3 = await page.evaluate((cleanFn) => {
+    eval(cleanFn);
+    const c = party[0];
+    delete c._baseHpMax; delete c._baseSpMax;
+    c.hpMax = 99; c.spMax = 77;
+    recalculateStats();
+    return { baseHp: c._baseHpMax, baseSp: c._baseSpMax, hpMax: c.hpMax, spMax: c.spMax };
+  }, clean);
+  console.log('  T3 migration legacy:', t3);
+  assert(t3.baseHp === 99 && t3.hpMax === 99, `_baseHpMax doit s'initialiser à 99, got ${t3.baseHp}/${t3.hpMax}`);
+  assert(t3.baseSp === 77 && t3.spMax === 77, `_baseSpMax doit s'initialiser à 77, got ${t3.baseSp}/${t3.spMax}`);
+
+  // T4 : larmes_phenix (+5 spMax) et cor_pegasse (+8 hpMax).
+  const t4 = await page.evaluate((cleanFn) => {
+    eval(cleanFn);
+    const c = party[0];
+    recalculateStats();
+    const baseSp = c.spMax, baseHp = c.hpMax;
+    c.equipped.amulet  = { ...ITEMS.find(i => i.id === 'larmes_phenix') };
+    c.equipped.trinket = { ...ITEMS.find(i => i.id === 'cor_pegasse') };
+    recalculateStats();
+    return { baseSp, baseHp, spMax: c.spMax, hpMax: c.hpMax };
+  }, clean);
+  console.log('  T4 larmes_phenix + cor_pegasse:', t4);
+  assert(t4.spMax === t4.baseSp + 5, `larmes_phenix : spMax +5 attendu, got ${t4.spMax - t4.baseSp}`);
+  assert(t4.hpMax === t4.baseHp + 8, `cor_pegasse : hpMax +8 attendu, got ${t4.hpMax - t4.baseHp}`);
+
+  // T5 : le bonus d'équipement survit à un level-up (base bumpée +8/+5).
+  const t5 = await page.evaluate((cleanFn) => {
+    eval(cleanFn);
+    const c = party[0];
+    recalculateStats();
+    const before = c.hpMax;
+    c.equipped.amulet = { ...ITEMS.find(i => i.id === 'coeur_lion') };
+    recalculateStats();
+    const equipped = c.hpMax;        // base + 10
+    _grantLevelHpSp(c);              // base += 8
+    recalculateStats();
+    const afterLevel = c.hpMax;      // base+8 + 10
+    return { before, equipped, afterLevel };
+  }, clean);
+  console.log('  T5 level-up + équipement:', t5);
+  assert(t5.equipped === t5.before + 10,       `équipé : +10 attendu, got ${t5.equipped - t5.before}`);
+  assert(t5.afterLevel === t5.before + 8 + 10, `après level-up : base+8 + bonus 10 attendu, got ${t5.afterLevel}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ PV/PM max depuis l\'équipement OK');
+  await browser.close();
+}
+
+// ── Scénario : Équipement V2 Vague C — multiplicateur de crit capé ──
+// T1 wand2 porte bonusCritDamage 0.2 → critMultiplier 1.7 ;
+// T2 cap absolu à 2.5 ; T3 executeAttack applique bien le 1.7×.
+async function scenarioCritBonusMultiplier() {
+  console.log('\n── Scénario : multiplicateur de crit capé (V2 Vague C) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : wand2 → critMultiplier 1.5 + 0.2 = 1.7
+  const t1 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                   cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    recalculateStats();
+    const base = c.critMultiplier;
+    c.equipped.wand = { ...ITEMS.find(i => i.id === 'wand2') };
+    recalculateStats();
+    return { base, withWand: c.critMultiplier };
+  });
+  console.log('  T1 wand2:', t1);
+  assert(Math.abs(t1.base - 1.5) < 1e-9,     `critMultiplier de base attendu 1.5, got ${t1.base}`);
+  assert(Math.abs(t1.withWand - 1.7) < 1e-9, `wand2 → critMultiplier attendu 1.7, got ${t1.withWand}`);
+
+  // T2 : cap absolu — un bonus énorme est plafonné à 2.5.
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                   cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    c.equipped.trinket = { id:'_capt', name:'Cap', slot:'trinket',
+                           bonusCritDamage: 5, bonusSpellCritDamage: 5 };
+    recalculateStats();
+    const out = { crit: c.critMultiplier, spell: c.spellCritMultiplier };
+    c.equipped.trinket = null;
+    recalculateStats();
+    return out;
+  });
+  console.log('  T2 cap:', t2);
+  assert(t2.crit === 2.5,  `critMultiplier doit être capé à 2.5, got ${t2.crit}`);
+  assert(t2.spell === 2.5, `spellCritMultiplier doit être capé à 2.5, got ${t2.spell}`);
+
+  // T3 : executeAttack applique critMultiplier (1.7×) sur le dégât.
+  // Math.random=0 → rawAtk = atk (pas de variance), roll crit déterministe.
+  const t3 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                   cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    c.equipped.wand = { ...ITEMS.find(i => i.id === 'wand2') };
+    recalculateStats();
+    const mult = c.critMultiplier;
+    const orig = Math.random;
+    Math.random = () => 0;
+    const fight = (critPct) => {
+      inBattle = true;
+      currentBattleChar = 0;
+      enemyGroup = [{ id:'_t', name:'Mannequin', icon:'X', def:0,
+                      currentHp:100000, hp:100000, atk:0, statusEffects:[],
+                      disarmed:0 }];
+      c.critChance = critPct;
+      const before = enemyGroup[0].currentHp;
+      executeAttack(0);
+      const dmg = before - enemyGroup[0].currentHp;
+      inBattle = false;
+      return dmg;
+    };
+    const normal = fight(0);     // pas de crit
+    const crit   = fight(100);   // crit garanti
+    Math.random = orig;
+    return { mult, normal, crit };
+  });
+  console.log('  T3 executeAttack:', t3);
+  assert(Math.abs(t3.mult - 1.7) < 1e-9, `critMultiplier attendu 1.7, got ${t3.mult}`);
+  assert(t3.crit === Math.floor(t3.normal * 1.7),
+    `dégât crit attendu floor(${t3.normal}*1.7)=${Math.floor(t3.normal * 1.7)}, got ${t3.crit}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Multiplicateur de crit capé OK');
+  await browser.close();
+}
+
 // ── Scénario : système élémentaire (faiblesse/résistance par élément) ──
 async function scenarioElementalSystem() {
   console.log('\n── Scénario : système élémentaire ──');
@@ -7229,7 +7457,7 @@ async function scenarioDelayedSearch() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

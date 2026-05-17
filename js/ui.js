@@ -635,9 +635,9 @@ function _renderStatAllocPanel(charIdx, points) {
 }
 
 // Applique 1 point sur la stat choisie, via le mapping STAT_POINT_EFFECTS.
-// Mute `_baseX` (ou `hpMax`) — recalculateStats régénère les stats
-// effectives en intégrant l'équipement. Re-render la fiche pour montrer
-// le total restant.
+// Mute `_baseX` (ou `_baseHpMax`/`_baseSpMax`) — recalculateStats régénère
+// les stats effectives en intégrant l'équipement. Re-render la fiche pour
+// montrer le total restant.
 function allocateStatPoint(charIdx, statKey) {
   if (charIdx >= partySize) charIdx = 0;
   const c = party[charIdx];
@@ -653,8 +653,8 @@ function allocateStatPoint(charIdx, statKey) {
   if (eff.baseInt) c._baseInt = (c._baseInt || c.int || 0) + eff.baseInt;
   if (eff.baseAgi) c._baseAgi = (c._baseAgi || c.agi || 0) + eff.baseAgi;
   if (eff.baseEnd) c._baseEnd = (c._baseEnd || c.end || 0) + eff.baseEnd;
-  if (eff.hpMax)   { c.hpMax += eff.hpMax; c.hp = Math.min(c.hpMax, c.hp + eff.hpMax); }
-  if (eff.spMax)   { c.spMax += eff.spMax; c.sp = Math.min(c.spMax, c.sp + eff.spMax); }
+  if (eff.hpMax)   { c._baseHpMax = (c._baseHpMax ?? c.hpMax) + eff.hpMax; c.hp += eff.hpMax; }
+  if (eff.spMax)   { c._baseSpMax = (c._baseSpMax ?? c.spMax) + eff.spMax; c.sp += eff.spMax; }
   c.unallocatedStatPoints--;
   if (typeof recalculateStats === 'function') recalculateStats();
   if (typeof updateUI === 'function') updateUI();

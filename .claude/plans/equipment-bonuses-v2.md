@@ -113,19 +113,62 @@ plusieurs heures pour tester l'engagement réel.
 
 ## 3. Étapes (Vague A à C)
 
-- [ ] Vague A — ajouter les 6 champs `bonusCritChance/DodgeChance` dans `data.js`.
-- [ ] Vague A — smoke `scenarioCritDodgeFromEquip` (4 sous-cas).
-- [ ] Vague A — `node tests/smoke.js` vert.
-- [ ] Vague A — commit + push.
-- [ ] Vague B — étendre `recalculateStats` avec `_baseHpMax`/`_baseSpMax` + clamp `hp`/`sp`.
-- [ ] Vague B — ajouter `bonusHpMax`/`bonusSpMax` sur 4 items + `cor_pegasse` nouveau.
-- [ ] Vague B — migration save : init `_baseHpMax = hpMax` si absent.
-- [ ] Vague B — smoke `scenarioHpSpMaxBonus` (T1-T3).
-- [ ] Vague B — commit + push.
-- [ ] Vague C — étendre `critMultiplier` en `1.5 + sum(critBonus)` (cap 2.5).
-- [ ] Vague C — `wand2` `critBonus: 0.2` + Set Lion 4/4 `critBonus: 0.3`.
-- [ ] Vague C — smoke `scenarioCritBonusMultiplier`.
-- [ ] Vague C — commit + push.
+- [x] Vague A — ajouter les 6 champs `bonusCritChance/DodgeChance` dans `data.js`.
+- [x] Vague A — smoke `scenarioCritDodgeFromEquip` (4 sous-cas).
+- [x] Vague A — `node tests/smoke.js` vert.
+- [x] Vague B — étendre `recalculateStats` avec `_baseHpMax`/`_baseSpMax` + clamp `hp`/`sp`.
+- [x] Vague B — ajouter `bonusHpMax`/`bonusSpMax` sur 4 items + `cor_pegasse` nouveau.
+- [x] Vague B — migration save : init `_baseHpMax = hpMax` si absent.
+- [x] Vague B — smoke `scenarioHpSpMaxBonus` (T1-T5).
+- [x] Vague C — étendre `critMultiplier` en `1.5 + Σ bonusCritDamage` (cap 2.5).
+- [x] Vague C — `wand2` `bonusCritDamage: 0.2` ; Set Lion 4/4 déjà pourvu.
+- [x] Vague C — smoke `scenarioCritBonusMultiplier` (T1-T3).
+- [x] Vagues A+B+C — commit + push (un seul commit : les changements sont
+      entrelacés — `wand2` porte des champs A et C, `recalculateStats`
+      touche B et C — un découpage par vague serait artificiel).
+
+### Écarts constatés (mise à jour en cours d'implémentation)
+
+- **Vague C — nom de champ.** Le plan parlait d'un nouveau champ `critBonus`.
+  Le codebase porte déjà `bonusCritDamage` (items + `HOUSE_SETS`), et
+  `recalculateStats` calcule déjà `critMultiplier = 1.5 + Σ bonusCritDamage`
+  (non capé). Décision : on **réutilise `bonusCritDamage`** (pas de champ
+  doublon, cf. guidelines §2/§3) ; Vague C se réduit donc à **capper** le
+  multiplicateur à 2.5 et à poser `bonusCritDamage` sur `wand2`.
+- **Vague C — Set du Lion 4/4.** `HOUSE_SETS.Gryffondor.setBonus4` porte
+  déjà `bonusCritDamage: 0.25` (cumul set 2+3+4 = +0.50). La cible « +0.3
+  sur le passif » est donc **déjà satisfaite** — aucun changement sur
+  `HOUSE_SETS` (surgical §3).
+- **Vague B — Set Serpent 4/4 `bonusSpMax`.** Laissé hors scope (« à
+  brancher après » dans le plan d'origine). `recalculateStats` ne somme
+  `bonusHpMax/SpMax` que sur les items, pas sur les bonus de set.
+- **Vague B — bonus de difficulté (`main.js:322`).** Non touché : le bonus
+  PV de départ est appliqué **avant** tout appel à `recalculateStats`, donc
+  le lazy-init capture la bonne base. Confirmé par lecture du flux.
+- **`cor_pegasse`.** Slot `trinket`, rareté `epic`, drop sur
+  `mangemort_elite` (boss étage 7+), `chance: 0.05`.
+
+### Icône de `cor_pegasse` — pipeline painterly (correctif)
+
+Un premier jet utilisait un SVG inline dans `ITEM_ICON_SVG_REGISTRY` :
+shortcut **rejeté**. La règle du projet (CLAUDE.md §« Pipeline d'icônes
+d'items » + `tools/README.md`) impose le pipeline painterly pour tout
+nouvel item équipable. Procédure suivie :
+
+1. Dépendances installées : `pip install pillow cairosvg numpy scipy`
+   (cairo système déjà présent).
+2. Nouveau part silhouette `tools/parts/horn-pegasus.svg` (viewBox
+   `0 0 512 512`, 4 régions : `body`, `bell`, `mouth`, `band`).
+3. Recette `cor_pegasse` ajoutée au dict `RECIPES` de
+   `tools/icon_factory.py` (`material:"metal"`, `rarity:"epic"`,
+   accents `emboss` + `orb_glow`).
+4. Génération : `python3 tools/icon_factory.py cor_pegasse` →
+   `img/icons_new/cor_pegasse_{16,24,32,48,64}.png`.
+5. Câblage `js/item-icons.js` : entrée dans `ITEM_ICON_NEW_REGISTRY`
+   (`_64.png`, priorité runtime) + fallback legacy dans
+   `ITEM_ICON_REGISTRY` (alias `retourneur_temps.png`, satisfait la
+   couverture 100 % du smoke `scenarioItemIcons`). L'entrée SVG inline
+   provisoire a été retirée.
 
 ## 4. Décisions à valider en marche
 

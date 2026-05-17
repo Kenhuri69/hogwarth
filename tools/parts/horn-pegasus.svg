@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- regions : body (tapered curved cone) · bell (flared opening, left) · mouth (dark inner opening) · band (decorative ring) -->
+  <g fill="#000000">
+    <!-- bell : flared trumpet mouth bulging out to the left -->
+    <path data-region="bell" d="M 158 168
+      C 92 152, 52 192, 50 256
+      C 48 320, 98 360, 168 338
+      C 150 292, 148 218, 158 168
+      Z"/>
+    <!-- mouth : dark inner opening of the bell -->
+    <ellipse data-region="mouth" cx="86" cy="256" rx="26" ry="64"/>
+    <!-- body : tapered curved cone — wide at the bell (left), narrowing to a tip (right) -->
+    <path data-region="body" d="M 158 168
+      C 274 154, 384 202, 452 290
+      C 380 304, 264 326, 168 338
+      C 150 292, 148 218, 158 168
+      Z"/>
+    <!-- band : decorative metal ring crossing the cone -->
+    <path data-region="band" d="M 244 188
+      C 258 234, 260 286, 250 330
+      L 286 322
+      C 294 280, 292 232, 278 190
+      Z"/>
+  </g>
+</svg>
