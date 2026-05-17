@@ -419,35 +419,58 @@ function drawStairsSprite(x, baseY, sz, dir) {
 }
 
 // ── Boutique (sprite de couloir) ─────────────────────────────
-function drawShopSprite(x, baseY, sz) {
-  ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,0.35)';
-  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.65, sz * 0.13, 0, 0, Math.PI * 2); ctx.fill();
-  const tw = sz * 1.3, th = sz * 0.38;
+// Cache d'images SVG de scène pour le rendu 3D. Le SVG (SCENE_ICONS[key])
+// est rasterisé via data-URI ; même pattern lazy que _getMonsterImg.
+const _SCENE_SVG_CACHE = Object.create(null);
+function _getSceneSvgImg(key) {
+  let entry = _SCENE_SVG_CACHE[key];
+  if (entry) return entry;
+  entry = { img: new Image(), ready: false, failed: false };
+  const svg = (typeof SCENE_ICONS !== 'undefined') ? SCENE_ICONS[key] : null;
+  if (!svg) { entry.failed = true; _SCENE_SVG_CACHE[key] = entry; return entry; }
+  entry.img.onload  = () => {
+    entry.ready = true;
+    if (typeof window.drawDungeon === 'function') {
+      try { window.drawDungeon(); } catch (e) { /* dungeon pas prêt */ }
+    }
+  };
+  entry.img.onerror = () => { entry.failed = true; };
+  entry.img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  _SCENE_SVG_CACHE[key] = entry;
+  return entry;
+}
+
+// Étal sobre dessiné tant que le SVG d'échoppe n'est pas chargé (sans
+// texte ni emoji — cf. bug « boutique en emoji »).
+function _drawShopVectorFallback(x, baseY, sz) {
+  const tw = sz * 1.3, th = sz * 0.4;
   ctx.fillStyle = '#5a3a10';
   ctx.beginPath();
   ctx.moveTo(x - tw / 2, baseY); ctx.lineTo(x + tw / 2, baseY);
   ctx.lineTo(x + tw * 0.35, baseY - th); ctx.lineTo(x - tw * 0.35, baseY - th);
   ctx.closePath(); ctx.fill();
   ctx.strokeStyle = '#c9a84c'; ctx.lineWidth = sz * 0.04; ctx.stroke();
-  ['⚗️','📜','🪄'].forEach((ico, i) => {
-    const ox = x + (i - 1) * sz * 0.38;
-    ctx.font = `${Math.floor(sz * 0.28)}px serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-    ctx.fillText(ico, ox, baseY - th + 2);
-  });
-  const signY = baseY - th - sz * 0.52;
-  ctx.fillStyle = '#6a3a0a';
-  ctx.fillRect(x - sz * 0.5, signY, sz, sz * 0.33);
-  ctx.strokeStyle = '#c9a84c'; ctx.lineWidth = sz * 0.04;
-  ctx.strokeRect(x - sz * 0.5, signY, sz, sz * 0.33);
-  ctx.fillStyle = '#f0d080';
-  ctx.font = `bold ${Math.floor(sz * 0.18)}px sans-serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('BOUTIQUE', x, signY + sz * 0.165);
-  const glowS = ctx.createRadialGradient(x, signY, 0, x, signY, sz * 0.85);
-  glowS.addColorStop(0, 'rgba(30,100,60,0.3)'); glowS.addColorStop(1, 'rgba(30,100,60,0)');
-  ctx.fillStyle = glowS; ctx.fillRect(x - sz, signY - sz * 0.4, sz * 2, sz * 1.4);
+}
+
+function drawShopSprite(x, baseY, sz) {
+  ctx.save();
+  // Ombre au sol douce
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.6, sz * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  // Halo vert d'échoppe
+  const glowS = ctx.createRadialGradient(x, baseY - sz * 0.5, 0, x, baseY - sz * 0.5, sz * 0.95);
+  glowS.addColorStop(0, 'rgba(40,120,70,0.30)'); glowS.addColorStop(1, 'rgba(30,100,60,0)');
+  ctx.fillStyle = glowS;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.5, sz * 0.95, 0, Math.PI * 2); ctx.fill();
+  // Visuel SVG de l'échoppe (viewBox 130×110) ; fallback vectoriel sinon.
+  const entry = _getSceneSvgImg('shop');
+  if (entry && entry.ready) {
+    const h = sz * 1.1;
+    const w = h * (130 / 110);
+    ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
+  } else {
+    _drawShopVectorFallback(x, baseY, sz);
+  }
   ctx.restore();
 }
 
@@ -686,7 +709,10 @@ function drawNpcSprite(npcId, x, baseY, sz) {
     ? getNpcSpriteType(npcId) : 'mage';
   const entry = _getNpcSprite(spriteType);
   if (entry && entry.ready) {
-    const drawSize = sz * 1.5;
+    // Le sprite différé est clippé au cadre du couloir (hauteur ≈ sz*1.13).
+    // On cale le PNG sur cette hauteur pour que le PNJ tienne entier —
+    // sans ce calage la tête était tronquée par le clip (cf. bug iso 3D).
+    const drawSize = sz * 1.12;
     ctx.drawImage(entry.img, x - drawSize / 2, baseY - drawSize, drawSize, drawSize);
   } else {
     _drawNpcVectorFallback(x, baseY, sz, sign, phase);
