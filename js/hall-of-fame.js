@@ -238,6 +238,64 @@ async function submitIronmanScore() {
   if (btn) btn.textContent = 'Score soumis ✓';
 }
 
+// ── Simulation de rang (fiche perso) ────────────────────────
+// Construit une entrée de classement virtuelle pour le run Ironman en
+// cours — alimente la ligne de simulation affichée dans le Hall of Fame.
+function _hofBuildProjection() {
+  if (typeof computeIronmanScore !== 'function') return null;
+  const s = computeIronmanScore();
+  const live = (typeof party !== 'undefined' ? party : [])
+    .slice(0, (typeof partySize !== 'undefined' ? partySize : 1))
+    .filter(c => c && c.name);
+  return {
+    player_name:   getPlayerName() || 'Toi',
+    score:         s.score,
+    difficulty:    (typeof difficulty !== 'undefined') ? difficulty : 'Normal',
+    heroes:        live.map(c => c.name).join(' & ') || 'Sorcier inconnu',
+    deepest_floor: s.deepestFloor,
+    party_levels:  'Niv. ' + s.level,
+  };
+}
+
+// Rang projeté (1-based) d'un score dans le classement complet.
+// Lit jusqu'à 200 scores triés ; repli localStorage si hors-ligne.
+async function _hofRankForScore(score) {
+  const s = score | 0;
+  if (_hofConfigured()) {
+    try {
+      const url = `${HOF_CONFIG.supabaseUrl}/rest/v1/${HOF_CONFIG.tableName}`
+        + `?select=score&order=score.desc&limit=200`;
+      const res = await fetch(url, {
+        headers: {
+          'apikey':        HOF_CONFIG.supabaseAnonKey,
+          'Authorization': 'Bearer ' + HOF_CONFIG.supabaseAnonKey,
+        },
+      });
+      if (res.ok) {
+        const arr = await res.json();
+        if (Array.isArray(arr)) {
+          return arr.filter(e => e && (e.score | 0) > s).length + 1;
+        }
+      }
+    } catch (e) {
+      console.warn('[hof] rank query failed:', e);
+    }
+  }
+  return _hofLocalRead().filter(e => e && (e.score | 0) > s).length + 1;
+}
+
+// Ouvre le Hall of Fame depuis la fiche de personnage, avec la ligne
+// de simulation du run Ironman en cours insérée à son rang projeté.
+function openHofProjection() {
+  const screen = document.getElementById('hall-of-fame-screen');
+  if (!screen) return;
+  _hofReturnTo = 'game';
+  const hub = document.getElementById('start-hub-screen');
+  if (hub) hub.style.display = 'none';
+  screen.style.display = 'flex';
+  _renderHallOfFame(_hofBuildProjection());
+}
+
 // ── Écran Hall of Fame ──────────────────────────────────────
 function openHallOfFame() {
   const resultScreen = document.getElementById('ironman-result-screen');
@@ -260,13 +318,16 @@ function closeHallOfFame() {
   if (_hofReturnTo === 'result') {
     const rs = document.getElementById('ironman-result-screen');
     if (rs) rs.style.display = 'flex';
+  } else if (_hofReturnTo === 'game') {
+    // Ouvert depuis la fiche perso : le jeu et la modale sont restés
+    // affichés sous l'écran (z-index 960 > 500) — rien à restaurer.
   } else {
     const hub = document.getElementById('start-hub-screen');
     if (hub) hub.style.display = 'flex';
   }
 }
 
-async function _renderHallOfFame() {
+async function _renderHallOfFame(projection) {
   const listEl = document.getElementById('hof-list');
   if (!listEl) return;
   listEl.innerHTML = '<div class="hof-empty">Chargement du classement…</div>';
@@ -279,23 +340,44 @@ async function _renderHallOfFame() {
   }
   const rows = result.rows || [];
 
-  if (!rows.length) {
+  // Rang projeté du run en cours (si une simulation est demandée).
+  let projRank = null;
+  if (projection) {
+    try { projRank = await _hofRankForScore(projection.score); }
+    catch (e) { projRank = rows.length + 1; }
+  }
+
+  if (!rows.length && !projection) {
     listEl.innerHTML = '<div class="hof-empty">Aucun score enregistré.<br>'
       + 'Sois le premier à entrer dans la légende en mode Ironman !</div>';
     return;
   }
 
+  // Liste d'affichage : entrées réelles + ligne de projection à son rang.
+  const display = rows.map((r, i) => ({ row: r, rank: i + 1, isProj: false }));
+  if (projection) {
+    if (projRank <= 10 && projRank <= rows.length + 1) {
+      // S'insère dans le top visible : décale les rangs du dessous.
+      display.splice(projRank - 1, 0, { row: projection, rank: projRank, isProj: true });
+      for (let i = projRank; i < display.length; i++) display[i].rank = i + 1;
+    } else {
+      // Hors du top 10 : épinglée en pied de classement à son vrai rang.
+      display.push({ row: projection, rank: projRank, isProj: true });
+    }
+  }
+
   const MEDAL_IMG = { 1: 'medal_gold', 2: 'medal_silver', 3: 'medal_bronze' };
   let html = '';
-  rows.forEach((r, i) => {
-    const rank  = i + 1;
-    const medal = MEDAL_IMG[rank]
+  display.forEach((d) => {
+    const r = d.row, rank = d.rank;
+    const medal = (MEDAL_IMG[rank] && !d.isProj)
       ? `<img class="ir-icon hof-medal" src="img/icons/${MEDAL_IMG[rank]}.png" alt="${rank}">`
       : '#' + rank;
-    html += `<div class="hof-row hof-rank-${rank}">`
+    html += `<div class="hof-row hof-rank-${rank}${d.isProj ? ' hof-row-projection' : ''}">`
       + `<div class="hof-rank">${medal}</div>`
       + `<div class="hof-main">`
-      +   `<div class="hof-name">${_hofEsc(r.player_name)}</div>`
+      +   `<div class="hof-name">${d.isProj ? '★ ' : ''}${_hofEsc(r.player_name)}`
+      +     `${d.isProj ? '<span class="hof-proj-tag">simulation</span>' : ''}</div>`
       +   `<div class="hof-meta">${_hofEsc(r.heroes)} · ${_hofEsc(r.difficulty)}`
       +     ` · Étage ${r.deepest_floor | 0} · ${_hofEsc(r.party_levels || '')}</div>`
       + `</div>`
@@ -309,6 +391,13 @@ async function _renderHallOfFame() {
         ? 'Hors-ligne — classement local affiché'
         : 'Classement local (en ligne non configuré)');
   html += `<div class="hof-source">${note}</div>`;
+
+  if (projection) {
+    const place = projRank === 1 ? '1ᵉʳ' : projRank + 'ᵉ';
+    html += `<div class="hof-proj-note">★ Simulation : si ton run Ironman`
+      + ` s'arrêtait maintenant, tu serais <strong>${place}</strong>`
+      + ` avec ${(projection.score | 0).toLocaleString('fr-FR')} points.</div>`;
+  }
 
   listEl.innerHTML = html;
 }

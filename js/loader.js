@@ -225,6 +225,7 @@ window.UX_safe = new Proxy({}, {
     { name: '_genRunId',            source: 'ironman.js',        kind: 'fn'  },
     { name: 'deleteIronmanSlots',   source: 'save.js',           kind: 'fn'  },
     { name: 'openHallOfFame',       source: 'hall-of-fame.js',   kind: 'fn'  },
+    { name: 'openHofProjection',    source: 'hall-of-fame.js',   kind: 'fn'  },
     { name: 'submitIronmanScore',   source: 'hall-of-fame.js',   kind: 'fn'  },
     { name: 'verifyIronmanRunNotScored', source: 'hall-of-fame.js', kind: 'fn' },
     { name: 'getPlayerName',        source: 'hall-of-fame.js',   kind: 'fn'  },

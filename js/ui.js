@@ -519,6 +519,13 @@ function openCharacter(charIdx = 0) {
     `<button class="cmd-btn" style="font-size:10px;${i === charIdx ? 'border-color:var(--gold)' : ''}" onclick="openCharacter(${i})">${p.icon} ${p.name.split(' ')[0]}</button>`
   ).join('');
 
+  // Bouton « Mon rang » : ouvre le Hall of Fame avec une simulation du
+  // run en cours. Réservé au mode Ironman (seul mode classé).
+  const hofProjBtn = (typeof ironmanMode !== 'undefined' && ironmanMode)
+    ? `<button class="cmd-btn" style="font-size:10px;margin-left:auto"`
+      + ` onclick="openHofProjection()">🏆 Mon rang</button>`
+    : '';
+
   const xpPct = Math.max(0, Math.min(100, Math.floor((player.xp / Math.max(1, player.xpNext)) * 100)));
 
   // Slots regroupés par zone visuelle du paper-doll.
@@ -552,7 +559,7 @@ function openCharacter(charIdx = 0) {
   for (let i = 0; i < 16; i++) invHtml += _renderInvSlot(inv[i], i, charIdx);
 
   detail.innerHTML = `
-    <div style="display:flex;gap:6px;margin-bottom:10px">${tabs}</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">${tabs}${hofProjBtn}</div>
     <div class="char-grid">
 
       <!-- Stats (grid-area:stats) -->

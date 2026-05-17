@@ -72,5 +72,16 @@
 - `CLAUDE.md` : section Ironman mise à jour.
 - **Vérif** : `node tests/smoke.js` vert ; e2e Supabase.
 
+### 8. Équité du score (ajout post-revue)
+- `PARTYSIZE_SCORE_MULT = { 1:1.3, 2:1.0 }` — bonus solo (plus exigeant).
+- Plafond anti-farm : `killsCrédités = min(totalKills, étageMax×12)`.
+- Poids de la profondeur relevé (`×100 → ×150`) pour recentrer le score
+  sur la progression réelle plutôt que le grind.
+- `computeIronmanScore` expose `partyMult`, `killsCounted`, `killsCapped` ;
+  l'écran de résultat affiche les deux multiplicateurs + la note de plafond.
+- **Vérif** : smoke T3/T3b (raw 2000, score 3640, plafond 48, mult solo/duo).
+- Note : pas de handicap par héros — un score recentré sur la profondeur
+  s'auto-corrige (un héros fort descend plus loin légitimement).
+
 ## Action utilisateur
 Révoquer le Personal Access Token Supabase (plus nécessaire après l'ALTER).
