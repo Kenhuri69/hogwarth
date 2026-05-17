@@ -467,6 +467,8 @@ body {
 /* Type "spécial" : fontaine, PNJ neutre, et futurs éléments interactifs.
    Une teinte unifiée par défaut pour ne pas alourdir la légende. */
 .map-special { background: #6a4a18; box-shadow: inset 0 0 2px #f5d27a; }
+/* Salle Fontaine — bleu eau, distincte du type "spécial" générique. */
+.map-fountain { background: #2a5a8a; box-shadow: inset 0 0 3px #9fd0ff; }
 /* Endgame Tranche 2 — Forge des Ténèbres (rouge-orange braise). */
 .map-forge   { background: #7a2210; box-shadow: inset 0 0 2px #ffb070; }
 /* Endgame Tranche 2 — Bibliothèque interdite (violet grimoire). */

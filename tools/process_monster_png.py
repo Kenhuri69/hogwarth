@@ -65,8 +65,10 @@ def main() -> int:
                    help="modèle rembg (cf. IMG_STYLE.md §7)")
     p.add_argument("--margin", type=float, default=0.08, help="marge intérieure (default 0.08)")
     p.add_argument("--side",   type=int,   default=512,  help="taille finale carrée (default 512)")
+    p.add_argument("--dest",   default=None,
+                   help="dossier de destination (default: img/monsters ; ex: img/npc)")
     p.add_argument("--dry-run", action="store_true",
-                   help="écrit dans /tmp/<id>_check.png au lieu d'img/monsters/")
+                   help="écrit dans /tmp/<id>_check.png au lieu du dossier de destination")
     args = p.parse_args()
 
     src = Path(args.src).expanduser().resolve()
@@ -123,8 +125,9 @@ def main() -> int:
     if args.dry_run:
         out = Path(f"/tmp/{args.id}_check.png")
     else:
-        DEST_DIR.mkdir(parents=True, exist_ok=True)
-        out = DEST_DIR / f"{args.id}.png"
+        dest_dir = Path(args.dest).expanduser().resolve() if args.dest else DEST_DIR
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        out = dest_dir / f"{args.id}.png"
     final.save(out, optimize=True)
     weight_kb = out.stat().st_size // 1024
     print(f"  → {out}  ({weight_kb} KB)")
