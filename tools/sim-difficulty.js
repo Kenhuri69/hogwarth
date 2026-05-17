@@ -663,12 +663,17 @@ function poolStats(floor, cfg) {
 //   3. Si meilleur sort de dégât dispo et SP ok → cast sur 1er ennemi vivant
 //   4. Sinon attaque physique
 //
-// IA ennemi : tryEnemyAbility() puis attaque physique. On ignore les
-// statuts DoT (burn/bleed) pour simplifier — impact <5% sur l'issue.
+// IA ennemi : tryEnemyAbility() puis attaque physique. Les capacités
+// `effect:"status"` à DoT (burn/poison/bleed/gel) posent un statut
+// persistant qui tick chaque tour ennemi (cf. tickStatuses du runtime).
+// Le stun n'est pas modélisé (saut de tour).
+
+// Statuts DoT infligés par les ennemis et modélisés par la sim.
+const SIM_DOT_IDS = ['burn', 'poison', 'bleed', 'gel'];
 
 function simulateBattle(party, enemyGroup) {
   // Reset state pour la sim
-  party.forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; c.shieldTurns = 0; });
+  party.forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; c.shieldTurns = 0; c.statusEffects = []; });
   enemyGroup.forEach(e => { e.currentHp = e.hp; e.disarmed = 0; });
 
   const partySize = party.length;
@@ -700,6 +705,24 @@ function simulateBattle(party, enemyGroup) {
       const target = aliveTargets[Math.floor(Math.random() * aliveTargets.length)];
       if (!target || target.hp <= 0) continue;
       totalEnemyDmg += enemyAct(enemy, target, partySize);
+    }
+
+    // Tick des DoT sur les héros, en fin de tour ennemi
+    // (miroir de tickStatuses appelé dans battle.js — enemyTurn).
+    for (const char of party) {
+      if (char.hp <= 0 || !char.statusEffects.length) continue;
+      const remaining = [];
+      for (const s of char.statusEffects) {
+        const dmg = Math.max(1, s.power);
+        char.hp = Math.max(0, char.hp - dmg);
+        totalEnemyDmg += dmg;
+        s.turns--;
+        if (s.turns > 0) remaining.push(s);
+      }
+      char.statusEffects = remaining;
+    }
+    if (!party.some(c => c.hp > 0)) {
+      return { won: false, turns: turn, survivors: 0, hpPct: 0, enemyDmg: totalEnemyDmg };
     }
   }
 
@@ -760,7 +783,8 @@ function heroAct(char, enemies) {
 
 // Bibliothèque interdite — battle-spells.js — _spellForCaster :
 // power +2×niveau, cost −1×niveau (plancher 1). La sim n'utilise pas
-// `chance` (pas de DoT modélisé), on l'ignore.
+// `chance` des sorts héros (leur DoT n'est pas modélisé) ; seuls les
+// DoT infligés par les ennemis le sont (cf. SIM_DOT_IDS).
 function simSpellForCaster(spell, char) {
   const lvl = char && char.libraryLevel || 0;
   if (!spell || lvl <= 0) return spell;
@@ -821,6 +845,25 @@ function enemyAct(enemy, target, partySize) {
           target.hp = Math.max(0, target.hp - drained);
           enemy.currentHp = Math.min(enemy.hp, enemy.currentHp + Math.floor(drained / 2));
           return drained;
+        }
+        case 'status': {
+          // Statut persistant (cf. battle-spells.js — case 'status').
+          // Les DoT (burn/poison/bleed/gel) sont modélisés : le tick de
+          // dégâts est appliqué dans simulateBattle. Le stun (saut de
+          // tour) n'est pas modélisé — on l'ignore. Dans les deux cas
+          // le tour ennemi est consommé (pas d'attaque physique en plus).
+          if (SIM_DOT_IDS.includes(ability.statusId)) {
+            if (!target.statusEffects) target.statusEffects = [];
+            const turns = ability.turns || 3;
+            const existing = target.statusEffects.find(s => s.id === ability.statusId);
+            if (existing) {
+              existing.power = Math.max(existing.power, ability.power);
+              existing.turns = Math.max(existing.turns, turns);
+            } else {
+              target.statusEffects.push({ id: ability.statusId, power: ability.power, turns });
+            }
+          }
+          return 0;
         }
       }
     }
