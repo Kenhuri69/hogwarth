@@ -230,6 +230,17 @@ RECIPES: Dict[str, Recipe] = {
              "color": (216, 188, 108), "size": 120},
         ],
     ),
+    "livre_ferula": Recipe(
+        id="livre_ferula", name="Manuel du Soigneur de Champ", rarity="common", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": (170, 142,  96), "pages": (232, 220, 188),
+               "spine": (120,  96,  60), "gilt":  (201, 168,  76)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": (120,  96,  60)},
+            {"kind": "symbol", "region": "cover", "shape": "cross",
+             "color": (236, 226, 210), "size": 120},
+        ],
+    ),
     "book_monsters": Recipe(
         id="book_monsters", name="Livre des Monstres", rarity="common", material="leather",
         silhouette={"kind": "svg", "file": "book-cover.svg"},

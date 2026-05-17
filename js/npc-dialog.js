@@ -409,6 +409,13 @@ function _renderDialogPage() {
     }
   }
   _playPageVoice();
+
+  // Sous-titres karaoké : surligne le texte au rythme de la voix.
+  // No-op silencieux pour les PNJ sans sample (cf. js/karaoke.js).
+  if (typeof Karaoke !== 'undefined' && textEl) {
+    const pageEl = textEl.querySelector('.npc-dialog-page');
+    if (pageEl) { Karaoke.wrap(pageEl); Karaoke.start(pageEl); }
+  }
 }
 
 // ── Voix par page (Phase 3) ───────────────────────────────────
@@ -545,6 +552,7 @@ function closeNpcDialog() {
   if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.stopVoice === 'function') {
     AudioSystem.stopVoice();
   }
+  if (typeof Karaoke !== 'undefined') Karaoke.stop();
 }
 
 // ── Fermeture par Échap / clic backdrop ────────────────────────

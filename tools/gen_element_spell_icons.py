@@ -181,11 +181,54 @@ def lumos_solem():
     return out
 
 
+# ── Ferula Maxima : soin régénérant amplifié (AOE) ───────────
+def ferula_maxima():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    # halo doré : marque la version « Maxima » amplifiée
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#b88a1e"), 0.46,
+                                               [46, 36, 26, 16]))
+    out = Image.alpha_composite(out, radial_base("#eaffec", "#5fcf7a", "#1c5a2e"))
+
+    # rayons dorés derrière la croix (rayonnement de soin)
+    rays = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(rays)
+    gold = hex_to_rgb("#ffe9a0") + (200,)
+    r_in, r_out = SIZE * 0.16, SIZE * 0.43
+    for i in range(8):
+        ang = i * math.pi / 4 + math.pi / 8
+        half = 0.10
+        d.polygon([
+            (CENTER + math.cos(ang) * r_out, CENTER + math.sin(ang) * r_out),
+            (CENTER + math.cos(ang - half) * r_in,
+             CENTER + math.sin(ang - half) * r_in),
+            (CENTER + math.cos(ang + half) * r_in,
+             CENTER + math.sin(ang + half) * r_in),
+        ], fill=gold)
+    rays = rays.filter(ImageFilter.GaussianBlur(0.8))
+    out = Image.alpha_composite(out, rays)
+
+    # croix de soin blanche, liseré doré
+    cross = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dc = ImageDraw.Draw(cross)
+    arm, th = SIZE * 0.27, SIZE * 0.115
+    edge = hex_to_rgb("#e8c45a") + (255,)
+    core = hex_to_rgb("#ffffff") + (255,)
+    for col, pad in ((edge, 3), (core, 0)):
+        dc.rectangle([CENTER - th - pad, CENTER - arm - pad,
+                      CENTER + th + pad, CENTER + arm + pad], fill=col)
+        dc.rectangle([CENTER - arm - pad, CENTER - th - pad,
+                      CENTER + arm + pad, CENTER + th + pad], fill=col)
+    out = Image.alpha_composite(out, cross)
+    out = Image.alpha_composite(out, sparks((255, 252, 224, 240), 16, 0.34, 44))
+    return out
+
+
 def main():
     os.makedirs(SPELLS_DIR, exist_ok=True)
     for slug, fn in (("glacius", glacius),
                      ("fulgari", fulgari),
-                     ("lumos_solem", lumos_solem)):
+                     ("lumos_solem", lumos_solem),
+                     ("ferula_maxima", ferula_maxima)):
         path = os.path.join(SPELLS_DIR, slug + ".png")
         fn().save(path, "PNG", optimize=True)
         print(f"Wrote {path} ({os.path.getsize(path)} bytes)")

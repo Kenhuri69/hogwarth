@@ -123,6 +123,7 @@ function recalculateStats() {
     let critBonus = 0, dodgeBonus = 0;
     let critDmgBonus = 0, spellCritBonus = 0, spellCritDmgBonus = 0;
     let hpMaxBonus = 0, spMaxBonus = 0;
+    let counterBonus = 0;
     if (c.equipped) {
       for (const item of Object.values(c.equipped)) {
         if (!item) continue;
@@ -133,6 +134,7 @@ function recalculateStats() {
         if (item.bonusSpellCritDamage) spellCritDmgBonus += item.bonusSpellCritDamage;
         if (item.bonusHpMax)           hpMaxBonus        += item.bonusHpMax;
         if (item.bonusSpMax)           spMaxBonus        += item.bonusSpMax;
+        if (item.bonusCounterChance)   counterBonus      += item.bonusCounterChance;
       }
     }
 
@@ -187,6 +189,7 @@ function recalculateStats() {
           if (b.bonusCritDamage)      critDmgBonus      += b.bonusCritDamage;
           if (b.bonusSpellCritChance) spellCritBonus    += b.bonusSpellCritChance;
           if (b.bonusSpellCritDamage) spellCritDmgBonus += b.bonusSpellCritDamage;
+          if (b.bonusCounterChance)   counterBonus      += b.bonusCounterChance;
         }
       }
     }
@@ -211,6 +214,9 @@ function recalculateStats() {
     c.spMax = c._baseSpMax + spMaxBonus;
     if (c.hp > c.hpMax) c.hp = c.hpMax;
     if (c.sp > c.spMax) c.sp = c.spMax;
+    // Garde counter-attack : contribution d'équipement à la riposte. La
+    // base de 30 % et le plafond de 40 % sont appliqués dans _tryGuardCounter.
+    c.counterChance       = counterBonus;
   });
 }
 

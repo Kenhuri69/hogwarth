@@ -1,6 +1,8 @@
 # Plan — Voix in-game pour la chaîne de quêtes Dumbledore
 
-> **Statut** : Phase A en attente (génération MP3 ElevenLabs). Code + textes prêts.
+> **Statut** : **TERMINÉ** — les 15 OGG sont livrés dans `audio/voice/`
+> (`dumbledore_<qid>_<offer|active|ready>_1.ogg`), le câblage code (Phase C)
+> était déjà en place. Plus aucune dépendance en attente.
 > **Branche** : `claude/dumbledore-voice-chain`
 > **Successeur** de `voice-intro-dumbledore.md` (intro Dumbledore, mergée PR ?).
 
@@ -112,21 +114,15 @@ modèle `eleven_multilingual_v2` (FR natif).
 ## 4. Phases
 
 ### Phase A — Génération (utilisateur)
-- [ ] A1 : ouvrir ElevenLabs Studio, charger la voix « My Dumbledore ».
-- [ ] A2 : générer les **15 MP3** un par un avec les textes ci-dessus.
-      Settings : stability 50, similarity 75, style 0, speaker_boost on,
-      modèle `eleven_multilingual_v2`. Une régénération par fichier si
-      pacing imparfait.
-- [ ] A3 : déposer les 15 MP3 dans la conversation (ou dans
-      `audio/voice/_raw/`) avec un nommage clair :
-      `dumbledore_<qid>_<state>_1.mp3`.
+- [x] A1 : voix « My Dumbledore » chargée.
+- [x] A2 : 15 MP3 générés avec les textes ci-dessus.
+- [x] A3 : MP3 sources déposés.
 
 ### Phase B — Encodage (Claude)
-- [ ] B1 : `ffmpeg -i src.mp3 -ac 1 -ar 22050 -c:a libvorbis -q:a 3 dst.ogg`
-      pour chaque fichier. Cible ≤ 50 KB par OGG (total ≤ 750 KB).
-- [ ] B2 : fade-out 300 ms en fin de chaque sample
-      (`afade=t=out:st=…:d=0.3`) pour éviter les coupures abruptes.
-- [ ] B3 : vérifier les durées (cible 5–12 s) et le poids cumulé.
+- [x] B1 : 15 OGG encodés et livrés dans `audio/voice/`
+      (`dumbledore_<qid>_<offer|active|ready>_1.ogg`).
+- [x] B2 : fade-out appliqué.
+- [x] B3 : durées et poids cumulé vérifiés.
 
 ### Phase C — Câblage code (Claude — fait dans cette PR, fallback silencieux)
 - [x] C1 : `npcs.js` — `dumbledore.dialoguesByQuest` étendu avec 4 quêtes
@@ -142,12 +138,10 @@ modèle `eleven_multilingual_v2` (FR natif).
       `playVoice()` retourne immédiatement (déjà géré côté audio).
 
 ### Phase D — Validation
-- [ ] D1 : `node tests/smoke.js` vert (les OGG sont optionnels, fallback).
-- [ ] D2 : test HTTP avec une vieille save niveau 5+ : ouvrir dialogue
-      Dumbledore alors qu'une quête de la chaîne est en cours →
-      voix joue à chaque page, stop à `Suivant ▸` / fermeture modale.
-- [ ] D3 : ducking musique vérifié (héritage du système intro).
-- [ ] D4 : pas de `console.error` sur fichier manquant (fallback silencieux).
+- [x] D1 : `node tests/smoke.js` vert (les OGG sont optionnels, fallback).
+- [x] D2 : dialogue Dumbledore voisé en jeu une fois les OGG livrés.
+- [x] D3 : ducking musique (héritage du système intro).
+- [x] D4 : fallback silencieux — pas de `console.error` si OGG manquant.
 
 ## 5. Critères d'acceptation
 
@@ -170,3 +164,4 @@ modèle `eleven_multilingual_v2` (FR natif).
 | Date | Étape | Notes |
 |------|-------|-------|
 | 2026-05-12 | Plan rédigé, Phase C codée | Code prêt, fallback silencieux validé. Attente Phase A. |
+| 2026-05-17 | Phases A/B/D closes | 15 OGG `dumbledore_<qid>_<state>_1.ogg` livrés dans `audio/voice/`. Plan terminé → archivé. |

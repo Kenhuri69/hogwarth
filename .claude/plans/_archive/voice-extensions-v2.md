@@ -1,9 +1,11 @@
 # Plan — Voix in-game V2 : extensions
 
 > Plan vivant (cf. `.claude/guidelines.md` §5).
-> Statut au 2026-05-16 : **Vagues A et B — LIVRÉES** sur la branche
-> `claude/extend-house-quest-paths-Bh7MD` (A : 20 OGG chefs de Maison ;
-> B : 13 OGG incantations + câblage `speakSpell`). Vagues C/D ouvertes.
+> Statut au 2026-05-17 : **Vagues A, B et C — LIVRÉES** (A : 20 OGG chefs
+> de Maison ; B : 13 OGG incantations + câblage `speakSpell` ; C :
+> sous-titres karaoké intro + dialogues PNJ). Vague D (localisation
+> FR/EN) **annulée** — décision produit du 2026-05-17 : pas de
+> localisation. **Plan clos.**
 
 ---
 
@@ -148,18 +150,22 @@ motion` respecté (pas de transition ni de smooth-scroll).
 
 **ROI** : cosmétique, mais très immersif si bien fait.
 
-### Vague D — Localisation FR/EN
+### Vague D — Localisation FR/EN — ❌ ANNULÉE
 
-**Spec** :
+Décision produit du 2026-05-17 : **le jeu reste mono-langue (FR)**. La
+localisation FR/EN ne sera pas réalisée. Spec conservée ci-dessous pour
+mémoire si la décision était un jour revue.
+
+**Spec (non retenue)** :
 - Champ `dialogues` devient `dialogues: { fr: [...], en: [...] }`.
 - `AudioSystem.playVoice(id)` cherche `audio/voice/<lang>/<id>.ogg`.
 - Détection langue : `navigator.language.startsWith('fr')` → `fr`,
   sinon `en`.
 - Toggle UI dans le menu options.
 
-**Coût** : doubler tous les samples vocaux + tous les textes des
-dialogues. Probablement à différer V3 sauf si demande communautaire
-forte.
+**Raison de l'abandon** : coût disproportionné (doubler tous les samples
+vocaux + tous les textes des dialogues) pour un public cible
+francophone.
 
 ## 3. Étapes (Vague A à C)
 
@@ -184,7 +190,7 @@ forte.
 - [x] Encodage OGG Vorbis (`ffmpeg -ac 1 -ar 22050 -c:a libvorbis -q:a 3`).
 - [x] Placement dans `audio/voice/<key>.ogg` (20 fichiers, ~728 Ko).
 - [x] Smoke `node tests/smoke.js` vert (`scenarioHeadOfHouseVoice` OK).
-- [ ] Commit + push.
+- [x] Commit + push.
 
 #### B — Plan de secours TTS gratuit : edge-tts
 
@@ -284,7 +290,7 @@ dialogues restants des 4 chefs.
 - [x] 8 entrées dans `_VOICE_SAMPLES` (`audio-music.js`).
 - [x] `_voiceKeyForPage` : routage `idle`/`done` + clés `golem` dédiées.
 - [x] Smoke `scenarioHeadOfHouseVoice` T5 (clés + routage golem/idle/done).
-- [ ] Commit + push.
+- [x] Commit + push.
 
 > Rogue / Flitwick / Chourave n'ont pas de `questDone` : en état `done`,
 > `_npcDialogSource` retombe sur `idle` — déjà voisé. Aucun OGG `done`
@@ -305,7 +311,7 @@ dialogues restants des 4 chefs.
 - [x] `SPELL_VOICE_MAP` (nom de sort → clé OGG) dans `audio-sfx.js`.
 - [x] `speakSpell` : OGG via `playVoice` si mappé, sinon `SpeechSynthesis`.
 - [x] Smoke `scenarioSpellVoiceMapping` (T1 cohérence map, T2 routing) — vert.
-- [ ] Commit + push.
+- [x] Commit + push.
 
 ### Vague C — Sous-titres karaoké
 
@@ -317,12 +323,15 @@ dialogues restants des 4 chefs.
 - [x] Câblage `intro.js — _renderIntroPage` (+ `stop` sur `_finishIntro`).
 - [x] CSS `.kw` / `.kw.spoken` + `prefers-reduced-motion`.
 - [x] Smoke `scenarioKaraokeIntro` (wrapping + progression `.spoken`).
-- [ ] Commit + push.
-- [ ] (Itération suivante) Généraliser aux dialogues PNJ (`npc-dialog.js`).
+- [x] Commit + push.
+- [x] Généraliser aux dialogues PNJ (`npc-dialog.js`) : `_renderDialogPage`
+      enveloppe `.npc-dialog-page` (wrap + start), `closeNpcDialog` stoppe
+      la boucle. No-op silencieux pour les PNJ sans voix (`.kw` neutre).
+      Smoke `scenarioKaraokeNpc` (T1 wrapping, T2 progression, T3 close).
 
-### Vague D — Localisation (différée)
+### Vague D — Localisation — ❌ ANNULÉE
 
-- Décision GO/NO-GO basée sur demandes utilisateurs.
+- Décision produit 2026-05-17 : pas de localisation FR/EN (cf. §2).
 
 ## 4. Risques
 
@@ -331,3 +340,10 @@ dialogues restants des 4 chefs.
   Mitigation : lazy-load (charger sur premier cast).
 - Vague C : synchronisation fragile, dépend des timecodes ElevenLabs
   → tester sur 3 dialogues avant de généraliser.
+
+## 5. Journal
+
+| Date | Étape | Notes |
+|------|-------|-------|
+| 2026-05-17 | Clôture C | Karaoké généralisé aux dialogues PNJ. `npc-dialog.js` : `_renderDialogPage` câble `Karaoke.wrap/start` sur `.npc-dialog-page` après `_playPageVoice`, `closeNpcDialog` appelle `Karaoke.stop`. Le `nextDialogPage` réutilise `_renderDialogPage` (la boucle précédente est annulée par `wrap → stop`). Smoke `scenarioKaraokeNpc` ajouté. Cases « Commit + push » obsolètes (code A/B/C déjà mergé) cochées. Suite smoke verte. |
+| 2026-05-17 | Vague D annulée | Décision produit : pas de localisation FR/EN. Vagues A/B/C livrées, D abandonnée → **plan clos**. |
