@@ -1,116 +1,131 @@
-# Plan — Maisons V3 : palier « Mythe » + sprites set dédiés
+# Plan — Maisons V3 : paliers endgame « Mythe » & « Apothéose »
 
 > Plan vivant (cf. `.claude/guidelines.md` §5).
-> Statut au démarrage : **non démarré** — items hors-scope d'`houses-2.0.md` (archivé PR #123).
-> Pré-requis : `houses-2.0` joué et stabilisé sur master.
+> Révisé le 2026-05-17 après revue de l'état réel du code.
 
-## 1. Contexte
+## 1. Contexte & revue
 
-`houses-2.0.md` (archivé) a livré 16 paliers (Bronze/Argent/Or × 5 phases
-+ Légende), sets 4 pièces par Maison (1 existant + 3 nouveaux), bonus
-2/3/4 + passifs, UI fiche perso, audio set-complete, quête de Maison
-unlock palier 5.
+`houses-2.0.md` (archivé, PR #123) a livré les 16 paliers Maison
+(Bronze/Argent/Or × 5 phases + Légende), les sets 4 pièces et leurs
+bonus 2/3/4.
 
-Trois axes restent **explicitement hors scope** dans le plan archivé :
+### Revue 2026-05-17 — choix concurrents constatés
 
-| Axe | Statut | Raison |
-|-----|--------|--------|
-| 7e palier « Mythe » (post-Légende) | Hors scope | Pas encore d'endgame contenu pour le justifier |
-| Sous-paliers Diamant / Platine | Hors scope | Inflation paliers, ROI faible |
-| Sprites dédiés des 12 NEW set items | Placeholder (alias d'icônes existantes) | Pipeline `tools/icon_factory.py` 4627 lignes, 12 entrées à recetter |
+| Axe du plan d'origine | État réel constaté |
+|-----------------------|--------------------|
+| Vague A — sprites des 12 NEW set items | **✅ DÉJÀ LIVRÉE.** Les 16 items de `HOUSE_SETS` ont tous recette `icon_factory.py` + entrée `ITEM_ICON_NEW_REGISTRY` + PNG `img/icons_new/`. Vérifié visuellement. |
+| IDs des items de set listés par le plan | **Erronés.** Le plan anticipait `circlet_serpent`, `cape_basilic`, `casque_aigle`, `cape_terre`… `houses-2.0` a en fait livré `pendentif_mamba`, `cape_sibylline`, `couronne_basilic`, `manteau_encre`, `oeil_aigle`, `anneau_savoir`, `cape_loyaute`, `coiffe_blaireau`, `medaillon_helga`. Le plan avait été rédigé avant le gel du nommage. |
+| Vague B — palier « Mythe » | Non implémenté. |
+| Vague C — sous-paliers Diamant/Platine | Non implémenté (recommandation d'origine : abandonner). |
 
-Ce plan adresse les 3 axes en priorisant **le visuel** (axe 3) car
-c'est celui qui a la plus haute valeur perçue par le joueur.
+**Conséquence** : la Vague A est close. Ce plan ne porte plus que les
+**paliers endgame**, redéfinis ci-dessous pour s'ancrer sur la Boucle
+Ténébreuse existante plutôt que sur un palier hors-sol.
+
+### Infrastructure endgame réutilisée (déjà en place)
+
+- **Boucle Ténébreuse** (`js/dungeon.js`) : post-victoire (`victoryAchieved`),
+  les étages 11+ rejouent la progression 1-10.
+- `effectiveFloor(floor)` : 11→1, 12→2, …, 21→11, …
+- `endgameTierIndex(floor)` : **0** pour les étages 1-10, **1** pour 11-20,
+  **2** pour 21-30, etc. ⇒ c'est notre gate « late game 11+ / 21+ ».
+- `checkHouseLevelUp()` (`js/main.js`) : itère `HOUSE_BONUSES[h].tiers[]` ;
+  le palier 16 (Légende) est déjà gated par `victoryAchieved`.
 
 ## 2. Vagues
 
-### Vague A — Sprites dédiés des 12 NEW set items (priorité haute)
+### Vague A — Sprites des set items · ✅ CLOSE (livrée par `houses-2.0`)
 
-**Pourquoi en premier** : les items du Set Maison sont équipés en
-endgame, le manque de sprite dédié casse l'immersion. Le pipeline est
-déjà en place (`tools/icon_factory.py`), il faut juste 12 recettes.
+Aucune action. Voir la revue §1.
 
-**Items concernés** (extraits de `js/state.js — HOUSE_SETS`) :
+### Vague B — Palier 17 « Mythe » (gate : Boucle Ténébreuse tier 1)
 
-| Maison | Items NEW (3 par Maison) |
-|--------|--------------------------|
-| Gryffondor | `heaume_vaillant` (head), `cape_godric` (cloak), `coeur_lion` (amulet) |
-| Serpentard | `circlet_serpent` (head), `cape_basilic` (cloak), `crochet_basilic` (amulet) |
-| Serdaigle | `casque_aigle` (head), `cape_savant` (cloak), `plume_aigle` (amulet) |
-| Poufsouffle | `casque_blaireau` (head), `cape_terre` (cloak), `coupe_juste` (amulet) |
+**Principe** : un 17ᵉ palier, débloqué quand le joueur **progresse dans
+la Boucle Ténébreuse** (étages 11-20), pas seulement en accumulant des
+points. C'est le premier vrai contenu Maison réservé au late game.
 
-**Approche** :
-- Réutiliser les palettes Maison standardisées (cf. `CLAUDE.md §Pipeline d'icônes`).
-- Pour chaque item, identifier le `part SVG` pertinent (`hood.svg`,
-  `gem-pendant.svg`, `tiara.svg`, `hat-pointy.svg`) ou créer le part
-  manquant.
-- Recette dans `RECIPES` de `tools/icon_factory.py` avec accent
-  `{kind:"symbol", shape:"lion|snake|eagle|badger", color, size}`.
-- Générer 5 PNG par item (16/24/32/48/64) → `img/icons_new/<id>_<size>.png`.
-- Référencer dans `js/item-icons.js — ITEM_ICON_NEW_REGISTRY`.
+**Condition de déblocage** (double gate) :
+- `housePoints >= 30000` (à calibrer — au-dessus de Légende 25000), **et**
+- `endgameTierIndex(currentFloor) >= 1` (le joueur est à l'étage 11+).
 
-**Vérification** : ouvrir le jeu, équiper Set Lion 4/4 sur Harry,
-vérifier visuellement que les 4 cellules du panneau Set affichent bien
-les sprites dédiés (pas le placeholder).
+**Mécanique** : ajouter un champ `requiresDarkTier` sur l'objet `tier`.
+`checkHouseLevelUp()` ajoute une garde :
+`if (tier.requiresDarkTier && endgameTierIndex(currentFloor) < tier.requiresDarkTier) return;`
+— symétrique de la garde `victoryAchieved` existante.
 
-### Vague B — Palier 7 « Mythe » (priorité basse, attendre endgame mature)
+**Récompense — un sort exclusif par Maison** (enseigné à tout le groupe,
+via le mécanisme `grantsSpell`/apprentissage de palier) :
 
-**Pré-requis** : avoir joué jusqu'au palier 16 « Légende » au moins
-2 fois et confirmé que le contenu endgame justifie un palier supplémentaire.
+| Maison | Sort exclusif | Effet proposé |
+|--------|---------------|---------------|
+| Gryffondor | `Patronus Maxima` | Bouclier AOE groupe + retire `fear`/`stun` |
+| Serpentard | `Sectumsempra Imperius` | DoT lourd + force la cible à frapper ses alliés 2 tours |
+| Serdaigle | `Legilimens` | Révèle les abilities ennemies + annule 1 ability/combat |
+| Poufsouffle | `Récolte Magique` | Regen full groupe + +50 % gold sur le combat suivant |
 
-**Spec proposée** :
-- Palier 7 (Mythe) débloqué à `housePoints >= 5000` (vs 3000 Légende).
-- Récompense : item unique non-set (artefact « hors set »), enseigné
-  un sort exclusif :
-  - Gryffondor → Sort `Patronus Maxima` (AOE shield + retire fear).
-  - Serpentard → Sort `Sectumsempra Imperius` (DoT + force ennemi à
-    attaquer ses alliés 2 tours).
-  - Serdaigle → Sort `Legilimens` (révèle abilities ennemies + nullifie
-    1 ability/combat).
-  - Poufsouffle → Sort `Récolte Magique` (regen full party + +50 % gold
-    drop combat suivant).
-- Quête associée : « Faire don de 3000 gold à la Maison » (sink endgame).
+**Quête associée** (sink endgame) : « Faire don de 3000 gold à la
+Maison » via le Chef de Maison — déclenchée à l'entrée du tier 17.
 
-**Reporter ce chantier tant que** :
-- Aucun joueur n'a atteint le palier 16.
-- Ou aucun retour user demandant explicitement plus d'endgame Maison.
+### Vague C — Palier 18 « Apothéose » (gate : Boucle Ténébreuse tier 2)
 
-### Vague C — Sous-paliers Diamant / Platine (probablement à abandonner)
+**Réorientation** : la Vague C d'origine (sous-paliers horizontaux
+Diamant/Platine entre Or et Légende) est **abandonnée** — 4 paliers peu
+différenciés, ROI faible. À la place, un **18ᵉ palier vertical unique**,
+ancré sur le 2ᵉ palier de Boucle Ténébreuse (étages 21-30). C'est le
+sommet absolu de la progression Maison.
 
-**Pourquoi à abandonner** : 16 paliers est déjà beaucoup. L'ajout de
-Diamant/Platine entre Or et Légende crée 4 paliers supplémentaires (3
-phases × 4 maisons), peu différenciés, ROI faible.
+**Condition de déblocage** (double gate) :
+- `housePoints >= 45000` (à calibrer), **et**
+- `endgameTierIndex(currentFloor) >= 2` (le joueur est à l'étage 21+).
 
-**Décision recommandée** : NE PAS implémenter sauf demande utilisateur
-explicite. Si un sous-palier est ajouté, le faire **par Maison** (ex:
-Diamant Gryffondor uniquement) plutôt qu'horizontalement.
+**Récompense — capstone par Maison** (différenciée, conforme à la
+recommandation d'origine « par Maison plutôt qu'horizontalement ») :
+- Améliore le sort de Mythe en version « apex » (ex. `Patronus Maxima`
+  → soigne aussi 25 % PV), **ou**
+- Un passif légendaire de Maison (`legendaryPassive`-like) : aura
+  permanente thématique (Gryffondor : +crit ; Serpentard : spell
+  lifesteal ; Serdaigle : coût de sort −20 % ; Poufsouffle : regen PV/PM
+  hors combat).
 
-## 3. Étapes (Vague A uniquement, A et B selon roadmap)
+Décision apex-sort vs passif : à trancher au moment de l'implémentation,
+selon l'équilibrage observé du tier 17.
 
-### Vague A — Sprites NEW set items
+## 3. Étapes
 
-- [ ] Audit visuel : capturer screenshots des 12 cellules placeholder dans le panneau Set.
-- [ ] Identifier les 4 parts SVG manquants éventuels (cape, casque dédié Maison) → créer si besoin.
-- [ ] Recette `heaume_vaillant` (Gryffondor) dans `RECIPES` (palette `(116,0,1)` + emblème `lion`).
-- [ ] Recette `cape_godric` (Gryffondor cloak).
-- [ ] Recette `coeur_lion` (Gryffondor amulet, gem rouge centrée).
-- [ ] Idem Serpentard ×3 (palette `(26,71,42)` + `snake`).
-- [ ] Idem Serdaigle ×3 (palette `(14,26,64)` + `eagle`).
-- [ ] Idem Poufsouffle ×3 (palette `(55,46,41)` + `badger`).
-- [ ] `python3 tools/icon_factory.py heaume_vaillant cape_godric ...` (12 IDs).
-- [ ] Référencer 12 entrées dans `ITEM_ICON_NEW_REGISTRY` de `js/item-icons.js`.
-- [ ] Lancer le jeu, équiper Set Lion 4/4, capture comparée avant/après.
-- [ ] Smoke `scenarioHouseSetSpritesAvailable` : `getItemIconHtml('coeur_lion', 64)` doit contenir `img/icons_new/coeur_lion_64.png`.
+> Vague A close. Étapes ci-dessous = Vagues B puis C.
+
+### Vague B — Palier 17 « Mythe »
+
+- [ ] Étendre `checkHouseLevelUp()` : garde `requiresDarkTier` via
+      `endgameTierIndex(currentFloor)`.
+- [ ] Ajouter le tier 17 aux 4 entrées `HOUSE_BONUSES[*].tiers[]`
+      (`threshold`, `label:'Mythe'`, `requiresDarkTier:1`, `bonus`, `msg`).
+- [ ] Définir les 4 sorts exclusifs dans `SPELLS` (`js/data.js`) +
+      handlers dans `battle-spells.js`.
+- [ ] Câbler l'apprentissage du sort au passage du tier 17 (bonus
+      `grantsSpell` ou équivalent palier).
+- [ ] Quête « don de 3000 gold » : entrée dans `quests.js` + hook Chef
+      de Maison.
+- [ ] Smoke `scenarioHouseMytheTier` : housePoints≥30000 + floor 11+
+      post-victoire ⇒ tier 17 atteint, sort appris ; floor ≤ 10 ⇒ refusé.
 - [ ] Commit + push.
 
-### Vague B — Palier Mythe (différé, à activer après décision)
+### Vague C — Palier 18 « Apothéose »
 
-- [ ] Décision GO/NO-GO basée sur retours utilisateurs.
-- [ ] Si GO : sous-plan dédié `houses-mythe-spells.md` détaillant les 4 sorts exclusifs.
+- [ ] GO/NO-GO : à ne lancer qu'une fois le tier 17 joué et calibré.
+- [ ] Tier 18 dans les 4 `tiers[]` (`requiresDarkTier:2`).
+- [ ] Récompense capstone (apex-sort **ou** passif) selon décision §2.
+- [ ] Smoke `scenarioHouseApotheoseTier` (gate floor 21+).
+- [ ] Commit + push.
 
 ## 4. Risques
 
-- Vague A : pipeline lourd, 12 recettes × 30 min ≈ 6h de travail. Mitigation :
-  factoriser par Maison (palette + emblème → variantes par slot).
-- Vague B : créer du contenu endgame que personne ne voit → différer
-  tant que le ROI est incertain.
+- **Calibrage des seuils** : 30000 / 45000 sont indicatifs. Le gate
+  `endgameTierIndex` doit rester la contrainte mordante (sinon le palier
+  redevient « hors-sol »). Vérifier qu'un joueur atteint bien l'étage
+  11+ *avant* d'avoir 30000 points, sinon abaisser le seuil.
+- **Sorts exclusifs trop forts** : 4 sorts endgame peuvent casser
+  l'équilibrage de la Boucle Ténébreuse. Les tester via
+  `tools/sim-difficulty.js` avant de figer.
+- **Vague C dépend de B** : ne pas démarrer C tant que le tier 17 n'a
+  pas été joué — risque de concevoir un capstone déséquilibré.
