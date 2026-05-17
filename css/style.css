@@ -2322,7 +2322,6 @@ button.shop-tab.active {
   transform: translateY(-2px);
   box-shadow: 0 0 24px rgba(201,168,76,.3);
 }
-.psel-tile-text { background: linear-gradient(180deg, #150d05 0%, #0a0603 100%); }
 .psel-tile-emblem {
   width: 48px; height: 48px;
   object-fit: contain;
@@ -2349,6 +2348,9 @@ button.shop-tab.active {
 .psel-tile-photo {
   position: absolute; inset: 0;
   background: url('../img/scenes/classroom.jpg') center / cover no-repeat;
+}
+#psel-tile-film .psel-tile-photo {
+  background-image: url('../img/scenes/film_heroes.jpg');
 }
 .psel-tile-veil {
   position: absolute; inset: 0;
