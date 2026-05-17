@@ -625,6 +625,7 @@ apprentissage réussi. (`grantsSpell` d'équipement reste groupe entier.)
 |----|-----|--------------|------------|
 | `livre_sortileges` | Sortilèges Standards, Vol.3 | Wingardium Leviosa | Boutique, coffre ≥ étage 2 |
 | `livre_soin` | Potions & Remèdes Magiques | Reparo | Boutique, coffre ≥ étage 3 |
+| `livre_ferula` | Manuel du Soigneur de Champ | Ferula | Coffre étages 4-6 |
 | `book_monsters` | Livre des Monstres | Diffindo | Coffre ≥ étage 3 (quête Lockhart) |
 | `livre_glacius` | Givre & Engelures | Glacius | Boutique ≥ étage 3 |
 | `livre_fulgari` | Foudre Canalisée | Fulgari | Boutique ≥ étage 5 |
@@ -703,7 +704,7 @@ partySize         // 1 ou 2 — choisi à l'écran de démarrage
 enemyGroup        // [{...monsterData scalé, currentHp, disarmed}, …]  1 à 3 ennemis
 currentBattleChar // 0 = Harry, 1 = Hermione
 shieldTurns       // [0, 0]  — bouclier Protego par personnage
-guardTurns        // [0, 0]  — posture de Garde par personnage (1 tour, mitigation 50 %)
+guardTurns        // [0, 0]  — paliers de Garde par personnage (empilables, cap 3 ; mitigation 50 %)
 pendingAction     // 'attack' | 'spell_dmg' | null
 pendingSpell      // nom du sort en attente de sélection de cible (ennemi ou allié)
 ```
@@ -716,7 +717,7 @@ pendingSpell      // nom du sort en attente de sélection de cible (ennemi ou al
 |--------|------|-------|
 | 🗡️ Attaquer | — | Attaque physique (atk + 0-3 vs def, crit `critChance`) |
 | ✨ Sortilège | PM | Liste des sorts du perso (modale `#spell-modal`) |
-| 🛡️ Garde | — | `guardTurns[idx] = 1` ; mitige le prochain coup ennemi de 50 % ; restitue `3 + floor(mag/5)` PM (cap `spMax`). Priorité après Protego/Esquive. Consommée à la fin du segment ennemi (`enemyTurn` reset `guardTurns = [0, 0]`). |
+| 🛡️ Garde | — | `guardTurns[idx]` empilé (`min(3, +1)`) ; mitige les coups physiques de 50 % ; restitue `3 + floor(mag/5)` PM par pose (cap `spMax`). Priorité après Protego/Esquive. **Chaque coup mitigé consomme un palier** ; les paliers non touchés persistent (Double-Garde). Riposte probabiliste `_tryGuardCounter` (base 30 %, plafond 40 %, + `counterChance` d'équipement) — atk/2, sans consommer de tour. |
 | 🧪 Objet | — | Inventaire en mode combat (consommables uniquement) |
 | 💨 Fuir | — | `doFlee()` — chance basée sur AGI vs ATK ennemi, garantie avec Balai |
 
@@ -754,7 +755,7 @@ puis on appelle `recalculateStats()` pour reconstruire les stats effectives avec
 | 4 | Wingardium Leviosa | Ferula |
 | 5 | Reparo | Diffindo |
 | 6 | Ferula | — |
-| 7 | Diffindo | Wingardium Leviosa + Reparo |
+| 7 | Diffindo | Wingardium Leviosa + Reparo + Ferula Maxima |
 | 9 | Avada... (déverrouillé) | Avada... (déverrouillé) |
 
 `Avada...` est `locked:true` dans SPELLS jusqu'au niveau 9, où le flag est muté en `false` et le sort ajouté aux deux personnages.
@@ -808,6 +809,13 @@ chaque capacité est tentée selon sa `chance` (0.0–1.0).
 - `"heal"`   → l'ennemi se soigne
 - `"weaken"` → réduit la DEF de la cible
 - `"drain"`  → draine des PV et s'en soigne à moitié
+- `"status"` → inflige un statut persistant (`statusId` : burn/poison/bleed/stun…)
+- `"dispel"` → retire un buff de la cible (priorité shield > guard > regen) ;
+  si rien à dissiper, l'ennemi attaque normalement. Porteurs : `mangemort_elite`,
+  `bellatrix`, `voldemort_revenu`
+
+Heuristique anti-stalling : face à une cible en Double-Garde (`guardTurns ≥ 2`),
+les capacités `weaken` voient leur `chance` multipliée par 1,5.
 
 ### Résistances / Faiblesses (système élémentaire)
 `enemy.resist[]` → sorts atténués de 50% (`RESIST_MULTIPLIER`), affiche 🔰

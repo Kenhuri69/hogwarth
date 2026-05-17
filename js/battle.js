@@ -37,7 +37,9 @@ const STATUS_DEFS = {
   gel:    { icon: '❄️',   label: 'Engelures',         color: '#5fa8d3' },
   weaken: { icon: '🛡️↓', label: 'Affaiblissement',   color: '#9b59b6' },
   regen:  { icon: '🩹',   label: 'Régénération',      color: '#3aa55a' },
-  stun:   { icon: '💫',   label: 'Étourdi',           color: '#d9a521' }
+  stun:   { icon: '💫',   label: 'Étourdi',           color: '#d9a521' },
+  // Ferula Maxima : régénération de soutien AOE (PV + PM) sur 3 tours.
+  regen_ferula_max: { icon: '🩹✨', label: 'Régén. Ferula', color: '#5fc7a5' }
 };
 
 function applyStatus(target, id, power, turns) {
@@ -100,6 +102,18 @@ function tickStatuses(target, isEnemy) {
         log += `${STATUS_DEFS.regen.icon} ${target.name} récupère ${heal} PV (Régénération). `;
         UX_safe.floatDmg('ally', heal, 'heal');
         UX_safe.logCombat(`${STATUS_DEFS.regen.icon} ${target.name} régénère <b>+${heal} PV</b>`, 'good');
+      }
+    }
+    // Ferula Maxima : régén AOE — s.power PV + 2 PM par tour (plafonnés).
+    if (s.id === 'regen_ferula_max' && !isEnemy) {
+      const heal    = Math.min(target.hpMax - target.hp, s.power);
+      const restore = Math.min(target.spMax - target.sp, 2);
+      if (heal > 0)    target.hp += heal;
+      if (restore > 0) target.sp += restore;
+      if (heal > 0 || restore > 0) {
+        log += `${STATUS_DEFS.regen_ferula_max.icon} ${target.name} récupère ${heal} PV / ${restore} PM (Ferula Maxima). `;
+        if (heal > 0) UX_safe.floatDmg('ally', heal, 'heal');
+        UX_safe.logCombat(`${STATUS_DEFS.regen_ferula_max.icon} ${target.name} : <b>+${heal} PV</b> / <b>+${restore} PM</b>`, 'good');
       }
     }
     // (weaken : pas de tick de dégâts — le malus DEF est appliqué au cast,
@@ -177,6 +191,23 @@ function applyEquipmentRegen() {
     }
   });
   return log;
+}
+
+// Garde counter-attack : quand un coup physique est mitigé par la Garde,
+// le défenseur riposte avec une chance `counterChance` (base 30 %, plafond
+// 40 %, + bonus d'équipement). La riposte inflige atk/2 (mitigée par la DEF
+// ennemie) et ne consomme pas de tour. Retourne le log de la riposte.
+function _tryGuardCounter(defender, enemy) {
+  if (!defender || !enemy || enemy.currentHp <= 0) return '';
+  const pct = Math.min(40, 30 + (defender.counterChance || 0));
+  if (Math.random() * 100 >= pct) return '';
+  const dmg = Math.max(1, mitigatedDamage(Math.floor(defender.atk / 2), enemy.def || 0));
+  enemy.currentHp = Math.max(0, enemy.currentHp - dmg);
+  AudioSystem.playHit();
+  const idx = enemyGroup.indexOf(enemy);
+  UX_safe.floatDmg(`enemy:${idx}`, dmg, 'dmg');
+  UX_safe.logCombat(`🛡️→⚔️ <b>${defender.name}</b> contre ${enemy.name} : <b>−${dmg}</b>`, 'good');
+  return `🛡️→⚔️ ${defender.name} contre ${enemy.name} pour ${dmg} dégâts ! `;
 }
 
 // ── Démarrage du combat ──────────────────────────────────────
@@ -293,13 +324,20 @@ function battleAction(action) {
 
   if (action === 'guard') {
     const idx    = currentBattleChar;
-    guardTurns[idx] = 1;
+    // Double-Garde : empiler les tours de garde, plafond 3. Chaque garde
+    // bloque un coup physique (mitigation 50 %) ; un stack absorbe d'autant
+    // plus de coups. La regen PM est rendue à chaque pose.
+    const stacked = guardTurns[idx] > 0;
+    guardTurns[idx] = Math.min(3, guardTurns[idx] + 1);
     const pmTheo = 3 + Math.floor((char.mag || 0) / 5);
     const pmGain = Math.max(0, Math.min(pmTheo, char.spMax - char.sp));
     char.sp += pmGain;
-    setBattleLog(`🛡️ ${char.name} se met en garde${pmGain ? ` (+${pmGain} PM)` : ''}.`);
-    addMsg(`🛡️ ${char.name} se met en garde${pmGain ? ` (+${pmGain} PM)` : ''}.`, 'info');
-    UX_safe.logCombat(`🛡️ <b>${char.name}</b> se met en garde${pmGain ? ` <b>+${pmGain} PM</b>` : ''}`, 'magic');
+    const label = stacked
+      ? `🛡️ ${char.name} renforce sa garde (×${guardTurns[idx]})`
+      : `🛡️ ${char.name} se met en garde`;
+    setBattleLog(`${label}${pmGain ? ` (+${pmGain} PM)` : ''}.`);
+    addMsg(`${label}${pmGain ? ` (+${pmGain} PM)` : ''}.`, 'info');
+    UX_safe.logCombat(`${label}${pmGain ? ` <b>+${pmGain} PM</b>` : ''}`, 'magic');
     AudioSystem.playSpellCast('Protego');
     advanceBattleChar();
     return;
@@ -418,6 +456,10 @@ function enemyTurn() {
       log += `🛡️ ${target.name} mitige : -${mitigated} (au lieu de -${dmg}). `;
       UX_safe.floatDmg('ally', mitigated, 'dmg');
       UX_safe.logCombat(`🛡️ ${target.name} mitige ${enemy.name} : <b>−${mitigated}</b> <small>(au lieu de −${dmg})</small>`, 'magic');
+      // Chaque coup mitigé consomme un palier de garde.
+      guardTurns[charIdx] = Math.max(0, guardTurns[charIdx] - 1);
+      // Garde counter-attack : riposte probabiliste sans consommer de tour.
+      log += _tryGuardCounter(target, enemy);
     } else {
       const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
       target.hp = Math.max(0, target.hp - dmg);
@@ -426,6 +468,9 @@ function enemyTurn() {
       UX_safe.logCombat(`${enemy.icon} ${enemy.name} → ${target.name} : <b>−${dmg} PV</b>`, 'bad');
     }
   });
+
+  // Une riposte de garde a pu achever le dernier ennemi.
+  if (livingEnemies().length === 0) { setBattleLog(log || '...'); renderEnemyGroup(); endBattle(true); return; }
 
   // Statuts persistants : tick sur les alliés vivants en fin de round
   party.slice(0, partySize).forEach(c => {
@@ -449,9 +494,9 @@ function enemyTurn() {
     return;
   }
 
-  // Garde : consommée à la fin du segment ennemi (mitigation appliquée pendant le tour).
-  // Le perso peut re-Garder au prochain tour s'il le souhaite.
-  guardTurns = [0, 0];
+  // Garde : chaque coup mitigé consomme un palier (cf. branche guard ci-dessus).
+  // Les paliers non consommés (l'ennemi a frappé un autre allié, lancé une
+  // capacité, etc.) persistent — c'est le ressort de la Double-Garde.
 
   // En solo, on reste forcément sur le slot 0 ; en duo on bascule sur Hermione si Harry est KO.
   currentBattleChar = (partySize === 1 || party[0].hp > 0) ? 0 : 1;
@@ -718,6 +763,8 @@ function _grantLevelSpells(level) {
       teach(player,  'Diffindo');
       teach(player2, 'Wingardium Leviosa');
       teach(player2, 'Reparo');
+      // Hermione (soutien) maîtrise la régénération de groupe
+      teach(player2, 'Ferula Maxima');
       break;
     case 9: {
       // La Malédiction Impardonnable — déverrouillée pour les deux

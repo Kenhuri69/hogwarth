@@ -1,9 +1,9 @@
 # Plan — Extensions combat V2 (Garde + Ferula + ennemis)
 
 > Plan vivant (cf. `.claude/guidelines.md` §5).
-> Statut au démarrage : **non démarré** — items hors-scope V1 de
-> `combat-guard-support.md` (archivé).
-> Pré-requis : aucun.
+> Statut : **Vagues A-D livrées** (2026-05-17, branche
+> `claude/list-open-plans-eDYxT`). Vague E livrée (item `livre_ferula`).
+> Smoke `scenarioCombatExtV2` vert. Pré-requis : aucun.
 
 ## 1. Contexte
 
@@ -95,31 +95,42 @@ Bellatrix dispel → `shieldTurns[0] === 0`.
 
 ## 3. Étapes
 
-- [ ] Vague A — étendre `executeAttack` (battle.js) avec counter logic.
-- [ ] Vague A — champ `counterChance` sur perso + items (Coupe Poufsouffle 4/4 set passif ?).
-- [ ] Vague A — smoke `scenarioGuardCounter`.
-- [ ] Vague A — commit + push.
-- [ ] Vague B — étendre action Garde pour empiler `guardTurns`.
-- [ ] Vague B — heuristique ennemi : si `guardTurns ≥ 2` → biais weaken.
-- [ ] Vague B — smoke `scenarioDoubleGuard` + équilibrage 2 sessions test.
-- [ ] Vague B — commit + push.
-- [ ] Vague C — `SPELLS.ferula_maxima` + `castSpellInBattle` case.
-- [ ] Vague C — `applyStatus` regen_ferula_max sur les 2 alliés.
-- [ ] Vague C — smoke `scenarioFerulaMaxima`.
-- [ ] Vague C — commit + push.
-- [ ] Vague D — étendre `tryEnemyAbility` avec type `dispel`.
-- [ ] Vague D — enrichir `mangemort_elite`, `bellatrix`, `voldemort_revived`.
-- [ ] Vague D — smoke `scenarioEnemyDispel`.
-- [ ] Vague D — commit + push.
-- [ ] Vague E — `livre_ferula` dans `ITEMS` + drop coffre étage 4-6.
-- [ ] Vague E — `useItem` route spellbook → enseigne Ferula.
-- [ ] Vague E — commit + push.
+- [x] Vague A — counter logic dans `enemyTurn` (`_tryGuardCounter`, battle.js).
+- [x] Vague A — champ `counterChance` sur perso (`recalculateStats`, somme
+  `bonusCounterChance` des items/sets). Base 30 % + bonus, plafond 40 %.
+- [x] Vague A — smoke (section A de `scenarioCombatExtV2`).
+- [x] Vague B — `battleAction('guard')` empile `guardTurns` (cap 3).
+- [x] Vague B — `enemyTurn` ne réinitialise plus la garde : chaque coup
+  mitigé consomme un palier ; les paliers non touchés persistent.
+- [x] Vague B — heuristique ennemi : `guardTurns ≥ 2` → biais weaken ×1.5
+  dans `tryEnemyAbility`.
+- [x] Vague B — smoke (section B de `scenarioCombatExtV2`).
+- [x] Vague C — `SPELLS` « Ferula Maxima » (`effect:"support_regen_aoe"`).
+- [x] Vague C — `_spellSupportRegenAoe` applique `regen_ferula_max` sur les
+  deux alliés ; `tickStatuses` rend +power PV / +2 PM par tour.
+- [x] Vague C — apprentissage : Hermione niveau 7 (`_grantLevelSpells`).
+- [x] Vague C — smoke (section C de `scenarioCombatExtV2`).
+- [x] Vague D — `tryEnemyAbility` : nouveau `case 'dispel'` (priorité
+  shield > guard > regen ; `return false` si rien à dissiper).
+- [x] Vague D — `mangemort_elite` (0.30), `bellatrix` (0.50),
+  `voldemort_revenu` (0.70 + Avada à 0.70).
+- [x] Vague D — smoke (section D de `scenarioCombatExtV2`).
+- [x] Vague E — `livre_ferula` dans `ITEMS` + drop coffre étage 4-6
+  (`openChest` — filtre `booksAvailable`).
+- [x] Vague E — `useItem` route déjà les `type:"spellbook"` (aucun code).
 
 ## 4. Risques
 
-- Vague A : counter trop fréquent en solo → cap `counterChance` à 40 %.
-- Vague B : stalling abusif → instrumenter via test smoke
-  (`scenarioStallingPrevention`) qui vérifie qu'un ennemi avec dispel
-  brise la boucle en N tours.
-- Vague D : dispel sur Voldemort à 0.7 → infaisable sans Maître des
-  Maisons → re-tester après équilibrage.
+- Vague A : counter plafonné à 40 % via `_tryGuardCounter`. ✅
+- Vague B : la persistance des paliers de garde ouvre un risque de
+  stalling ; mitigé par le biais weaken (gt ≥ 2) et le cap 3. À surveiller
+  en jeu réel.
+- Vague D : `voldemort_revenu` cumule dispel 0.70 + Avada 0.70 ; l'ordre
+  du tableau `abilities` (Avada en tête) tempère le taux réalisé de dispel.
+  À re-tester après équilibrage endgame.
+
+## 5. Journal
+
+| Date | Étape | Notes |
+|------|-------|-------|
+| 2026-05-17 | Vagues A-E | Implémentées en un lot. `battle.js` : `STATUS_DEFS.regen_ferula_max`, tick PV/PM, garde empilable + consommée par coup, `_tryGuardCounter`, Ferula Maxima niveau 7. `battle-spells.js` : `case 'dispel'`, biais weaken, `_spellSupportRegenAoe`. `inventory.js` : `counterChance` dans `recalculateStats`. `data.js` : sort Ferula Maxima + item `livre_ferula`. `monsters.js` : dispel sur 3 ennemis. `movement.js` : `livre_ferula` au loot des coffres ét. 4-6. Smoke `scenarioCombatExtV2` (A counter / B double-garde / C Ferula Maxima / D dispel + biais) — suite complète verte. |
