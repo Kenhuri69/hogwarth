@@ -907,6 +907,95 @@ RECIPES: Dict[str, Recipe] = {
         ],
         sparkles=True,
     ),
+
+    # ── difficulty-polish-v3 Vague A — sprites des 6 équipements mid-game ──
+    # Items du commit a953376 (étages 3-7, drops élite). Jusqu'ici ils
+    # empruntaient l'icône d'un autre item (alias dans ITEM_ICON_REGISTRY).
+    "gants_duelliste": Recipe(
+        id="gants_duelliste", name="Gants du Duelliste", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={
+            "cuff":    ( 52,  56,  66),    # cuir gris acier
+            "palm":    ( 78,  82,  94),
+            "fingers": ( 66,  70,  82),
+            "stitch":  (196,  72,  60),    # surpiqûre cramoisie
+        },
+        accents=[
+            {"kind": "emboss", "region": "palm", "color": ( 30,  32,  40)},
+            {"kind": "runes",  "region": "cuff", "color": (208,  96,  80), "count": 3},
+        ],
+    ),
+    "casque_aurore": Recipe(
+        id="casque_aurore", name="Casque d'Auror", rarity="rare", material="metal",
+        silhouette={"kind": "svg", "file": "hat-pointy.svg"},
+        fills={
+            "cone":   ( 92, 100, 118),    # acier bleuté
+            "brim":   ( 60,  66,  82),
+            "band":   ( 58,  92, 152),    # bleu Auror
+            "buckle": (206, 216, 232),    # rivet argenté
+        },
+        accents=[
+            {"kind": "emboss", "region": "cone", "color": ( 40,  46,  60)},
+            {"kind": "gem_facet_shine", "region": "buckle", "color": (224, 236, 255)},
+        ],
+    ),
+    "ceinture_force": Recipe(
+        id="ceinture_force", name="Ceinture de Force", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "belt.svg"},
+        fills={
+            "strap":  ( 84,  52,  30),    # cuir épais brun foncé
+            "buckle": (150, 100,  52),    # boucle de fer bronzé
+            "holes":  ( 44,  26,  12),
+            "tongue": (118,  76,  44),
+        },
+        accents=[
+            {"kind": "emboss", "region": "strap", "color": ( 48,  28,  14)},
+            {"kind": "runes",  "region": "strap", "color": (196, 140,  72), "count": 4},
+        ],
+    ),
+    "anneau_courage": Recipe(
+        id="anneau_courage", name="Anneau du Courage", rarity="rare", material="metal",
+        silhouette={"kind": "shape", "name": "ring_band",
+                    "params": {"radius": 172, "thickness": 40,
+                               "bezel": True, "gem": True}},
+        fills={
+            "metal": (201, 168,  76),     # or
+            "gem":   (194,  69,  58),     # rubis (tint #c2453a)
+        },
+        accents=[
+            {"kind": "runes", "region": "metal", "color": ( 96,  60,  20),
+             "count": 6, "around": "ring"},
+            {"kind": "gem_facet_shine", "region": "gem", "color": (255, 168, 150)},
+            {"kind": "orb_glow", "region": "gem", "color": (224,  90,  72)},
+        ],
+    ),
+    "bottes_silence": Recipe(
+        id="bottes_silence", name="Bottes du Silence", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "boot.svg"},
+        fills={
+            "shaft": ( 46,  48,  60),     # cuir sombre feutré
+            "foot":  ( 34,  36,  46),
+            "sole":  ( 16,  18,  24),
+            "lace":  (120, 124, 142),     # lacet gris argenté
+        },
+        accents=[
+            {"kind": "emboss", "region": "shaft", "color": ( 20,  22,  30)},
+            {"kind": "orb_glow", "region": "shaft", "color": ( 96, 112, 150)},
+        ],
+    ),
+    "talisman_tactique": Recipe(
+        id="talisman_tactique", name="Talisman du Tacticien", rarity="rare", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={
+            "chain":   (150, 122,  62),   # chaîne bronze
+            "setting": (170, 138,  70),   # sertissage bronze
+            "gem":     ( 84, 132, 196),   # gemme bleu tacticien
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (200, 228, 255)},
+            {"kind": "orb_glow", "region": "gem", "color": (110, 170, 230)},
+        ],
+    ),
 }
 
 
