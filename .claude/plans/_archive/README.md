@@ -35,5 +35,33 @@ Plans 100 % terminés et livrés sur master. Conservés pour archéologie / déc
 | `svg-c42-c43-scenes.md` | Illustrations grand format écran-titre (C42) + écran de mort (C43) | commit `c3dde25` |
 | `teleportation-spell.md` | Sort Portus (téléportation combat + hors combat) + Episkey/Reparo OOC avec cooldown | PR #121 |
 | `floor-tier-theming.md` | SoT `FLOOR_THEMES`/`getFloorTheme` (tileset + ambiant, 3 tranches) consommée par renderer/audio/movement + musique combat à axes combinés (epic/étage/difficulté) + transition de tranche | PR #168 |
+| `SAVE_AND_START_PLAN.md` | Sauvegarde multi-slots (`_serializeState`/`_applyState`, 3 manuels + auto, migration legacy) + auto-save sur hooks + Hub démarrage + refonte title screen | PR #21 |
+| `ENDGAME_PLAN.md` | Écran de victoire (trigger Voldemort) + Boucle Ténébreuse (étages 11+, variant `darkness`, escalier scellé, textures runiques) + Forge + Bibliothèque interdite + Maison Tier 5 + Set Ténèbres | `claude/launch-endgame-plan-Nf9s4` / `claude/endgame-tranche-2` |
+| `difficulty-progression.md` | Étude difficulté Normal (`DIFFICULTY_REPORT.md` + `tools/sim-difficulty.js`) + Phase 3 : respawn 20 %, chaîne de quêtes Dumbledore, 6 équipements mid-game. Compléments §3.6 → `difficulty-polish-v3.md` | `claude/analyze-difficulty-progression-vyItb` |
+| `difficulty-lever-b.md` | Levier B — plancher de dégâts (`DAMAGE_MIN_FRACTION`, `mitigatedDamage`) supprimant la falaise « coup à 1 dégât » | — |
+| `intro-ux-rework.md` | Refonte intro : musique de menu (sample + procédural), 5 voix narratives `narrator_*`, sélection en 3 étapes guidées, révélation Dumbledore, fil d'Ariane, regroupements de héros | `claude/improve-intro-ux-0E995` |
+| `code-review-high-bugs.md` | Correction des bugs HIGH/MED/LOW de la revue de mai 2026 (teleport solo, ré-octroi récompenses Maison, sort sur cadavre, fuite Balai, etc.) | `claude/code-review-bugs-7zdJf` |
+| `rationalisation.md` | 12 points de rationalisation des sources (P1-P12 : MANIFEST, code mort `drawCellMarker`, helpers partagés forge/library/audio/sorts, `_changeFloor`, `_drawSideWall`…). P2 écarté (faux positif) | — |
+| `crit-rework.md` | Refonte du critique : 2 canaux (physique/sort), `critMultiplier`/`spellCritMultiplier`, `bonusCritDamage`, crit d'équipement > 40 % | — |
+| `agi-spell-crit.md` | AGI = crit magique (`spellCritChance`, roll dans les 3 handlers de sorts, ligne fiche perso) | — |
+| `elemental-system.md` | Système élémentaire : champ `spell.element` (6 éléments) découplé d'`effect`, re-tag des 17 sorts + 50 monstres, emoji bestiaire | — |
+| `element-spells.md` | 3 sorts élémentaires (Glacius/Fulgari/Lumos Solem) + statut `gel` (DoT) + 3 spellbooks + icônes PNG | — |
+| `int-stat-role.md` | Rôle réel de l'INT (« maîtrise ») : soins + fiabilité/durée des DoT (combinés END/LCK) | — |
+| `equipment-bonuses-v2.md` | Équipement V2 — bonus passifs : `bonusCritChance/DodgeChance` sur items, `bonusHpMax/SpMax` + `_baseHpMax`, cap `critMultiplier` 2.5. Vagues D/E reportées V3 | — |
+| `new-monsters-stun.md` | Mécanique de statut `stun` (saut de tour, bidirectionnel) + 4 monstres étourdissants (Lutin Cornouailles, Strangulot, Pitiponk, Gargouille) + PNG | `claude/plan-new-monsters-XfZRY` |
+| `enemy-dot-sim.md` | Modélisation des DoT ennemis (burn/poison/bleed/gel) dans `tools/sim-difficulty.js` | `claude/implement-enemy-dot-8AVb4` |
+| `delayed-search-reactivation.md` | Fouille renouvelable : recharge en pas de marche selon difficulté + anti-farm dégressif | — |
+| `farming-potion-system.md` | Système herboristerie : besace `player.herbs`, 6 herbes, `POTION_RECIPES`, PNJ Slughorn, modale chaudron `#brewing-modal`, jet INT, quête de déverrouillage | `claude/farming-potion-system-SXjie` |
+| `fix-slider-herb-bugs.md` | Correctifs post-herbes : swipe canvas débloqué, cache-bust `?v=`, onglet Besace dans l'inventaire | `claude/fix-slider-herb-bugs-opKOP` |
+| `shop-purchase-limits.md` | Anti-farm boutique : stock fini aléatoire (8 objets), achat unique, réassort 40 pas/étage, livres de sorts achetables une fois | — |
+| `spell-ux-improvements.md` | UX sorts : apprentissage de livre sur un seul perso, filtre par élément, aperçu d'effet chiffré | — |
+| `repeatable-quest-spawn.md` | Découvrabilité des quêtes répétables : double tirage PNJ par étage (70 % donneur de quête + 50 % ambiant) | — |
+| `npc-anecdote-variations.md` | Pools `idleRandom` enrichis (anecdotes rigolo→sombre) pour PNJ lore, vendeurs et PNJ à quête | — |
+| `help-tour.md` | Tour guidé interactif pour novices (`help-tour.js`, 15 étapes) + narration vocale McGonagall (15 OGG edge-tts) | — |
+| `pixel-map-mobile.md` | Mini-carte « pixel » dans le coin de la vue 3D (mobile uniquement, informative) | — |
+| `ironman-hall-of-fame.md` | Mode Ironman (vie unique + score chiffré) + Hall of Fame en ligne (Supabase + repli localStorage) | — |
+| `ironman-icons-name-flow.md` | Icônes Ironman (crâne/coupe/médailles) + pseudonyme persistant + UID de run (anti double-classement) | `claude/ironman-icons-name-flow` |
+| `draco-malfoy-character.md` | Personnages jouables film : Drago Malefoy, Cho Chang, Cedric Diggory (portraits détourés + entrées `CHARACTERS`) | — |
+| `Manon.md` | PNJ original Manon (fille cachée de Lupin) : chaîne de quêtes `manon_secret`/`manon_pardon`, dialogues, portrait, coda Poufsouffle | — |
 
 > Pour un plan encore actif, voir le dossier parent `.claude/plans/`.
