@@ -861,6 +861,24 @@ body {
   opacity: 1;
   pointer-events: all;
 }
+
+/* Transition de tranche d'étages (cf. floor-tier-theming.md §2.3) —
+   fondu noir court affichant le nom de la nouvelle tranche. */
+#tier-transition-overlay {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #000;
+  color: var(--gold);
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: 32px;
+  text-align: center;
+  text-shadow: 0 0 30px rgba(201,168,76,0.7);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transition: opacity 300ms ease;
+}
+#tier-transition-overlay.active { opacity: 1; }
 .floor-transition-content { text-align: center; }
 .floor-transition-level {
   font-family: 'UnifrakturMaguntia', cursive;

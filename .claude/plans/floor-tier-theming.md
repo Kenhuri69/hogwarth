@@ -1,7 +1,9 @@
 # Plan — Tileset & musique par tranche d'étages
 
 > Plan vivant (cf. `.claude/guidelines.md` §5).
-> Statut au démarrage : non implémenté.
+> Statut : **Étapes 1-7 livrées** — `node tests/smoke.js` vert
+> (`scenarioFloorTheming` + `scenarioFloorTextures` mis à jour).
+> Décisions arbitrées : voir §1.4. Reste : commit/push (Étape 8).
 >
 > **Source** : top-10 d'audit, point #4 — *« Tileset/musique par tranche d'étages (1-3 / 4-6 / 7+) »*.
 > Choix utilisateur arbitrés (voir §1.3).
@@ -39,7 +41,17 @@ Présents dans le repo, jamais utilisés par le code :
 | Transition visuelle 3→4 et 6→7 | **V1** : fondu noir court (~600 ms) + toast narratif |
 | Musique combat | **V1** : `combat_normal.ogg` < 10, `combat_late.ogg` ≥ 10, `combat_epic.ogg` override pour boss/créatures épiques |
 
-## 2. Conception
+## 1.4 Décisions arbitrées en cours d'implémentation
+
+| Sujet | Décision |
+|-------|----------|
+| Thème `rune_*` post-victoire (étage 11+) | **Conservé** : le renderer garde son override `victoryAchieved && f>=11 → rune_*` en **surcouche** au-dessus de `getFloorTheme`. `getFloorTheme` ne pilote que la progression normale. |
+| Musique combat | **Axes combinés** : priorité `epic` > étage ≥ 10 (`combat_late`) > difficulté (`combat_normal/hard/expert`). Le keying difficulté existant est préservé pour les étages < 10 non-épiques. |
+| Repli musique combat | Si `combat_late`/`combat_epic` absent (404) → repli sur le **sample** `combat_normal` (garanti) avant la synthèse procédurale — évite la régression « étage 10+ perd sa musique ». |
+| `depths` range | `[7, null]` (ouvert) au lieu de `[7, 13]` : sinon les étages 14+ retombent sur `hogwarts` (musique `intro` à l'étage 14 = bug audible, l'audio n'a pas d'override victoire). |
+| IDs bosses `epic` | IDs réels vérifiés dans `monsters.js` : `basilic`, `chimere`, `ombre_quirrell`, `nagini`, `bellatrix`, `voldemort_affaibli`, `voldemort_revenu`. `detraqueur` exclu (monstre commun étage 3-7, pas un boss). |
+| Hook transition | Placé une seule fois dans `_changeFloor` (helper partagé par `goDeeper`/`goUp`) plutôt que dupliqué. |
+
 
 ### 2.1 Mapping des tranches (source unique de vérité)
 

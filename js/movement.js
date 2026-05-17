@@ -332,8 +332,25 @@ let _darknessToastShown = false;
 //  opts.onArrive()         → exécuté dans le callback, après le rendu
 //  opts.saveReason         → raison passée à autoSave
 //  opts.narrative(floor)   → texte de setNarrative
+// Fondu noir + toast quand on franchit une frontière de tranche (cf.
+// floor-tier-theming.md §2.3). Ne se déclenche pas à l'intérieur d'une
+// même tranche : getFloorTheme renvoie la même référence d'objet.
+function _maybePlayTierTransition(prevFloor, nextFloor) {
+  if (typeof getFloorTheme !== 'function') return;
+  const next = getFloorTheme(nextFloor);
+  if (getFloorTheme(prevFloor) === next) return;
+  const overlay = safeEl('tier-transition-overlay');
+  if (overlay) {
+    overlay.textContent = next.label;
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active'), 600);
+  }
+  if (typeof addMsg === 'function') addMsg(`✨ ${next.label}`, 'narrative');
+}
+
 function _changeFloor(delta, opts) {
   if (opts.guard && opts.guard()) return;
+  const prevFloor = currentFloor;
   _saveFloorToCache(currentFloor);
   if (typeof _clearFarmingPreviews === 'function') _clearFarmingPreviews();
   currentFloor += delta;
@@ -357,6 +374,7 @@ function _changeFloor(delta, opts) {
     renderMinimap();
     drawDungeon();
     updateCompass();
+    _maybePlayTierTransition(prevFloor, currentFloor);
     if (opts.onArrive) opts.onArrive();
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
