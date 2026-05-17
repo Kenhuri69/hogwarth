@@ -836,6 +836,12 @@ body {
   max-width: 380px;
   font-style: italic;
   line-height: 1.6;
+  /* Texte long (quêtes bavardes) : scroll interne pour ne jamais
+     repousser les boutons d'action hors de l'écran. min-height:0
+     autorise le rétrécissement du flex-item dans la colonne. */
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .npc-dialog-pager {
   margin-top: 6px;
