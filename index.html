@@ -67,7 +67,7 @@
       📥 Importer une sauvegarde
     </button>
     <button type="button" class="hub-import-btn hub-hof-btn" onclick="openHallOfFame()">
-      🏆 Hall of Fame
+      <img class="ir-icon hof-btn-icon" src="img/icons/trophy.png" alt=""> Hall of Fame
     </button>
     <input type="file" id="hub-import-file-input" accept=".json,application/json" style="display:none">
   </div>
@@ -313,7 +313,7 @@
       <label class="ironman-toggle" for="ironman-toggle">
         <input type="checkbox" id="ironman-toggle">
         <span class="ironman-toggle-body">
-          <span class="ironman-toggle-title">☠ Mode Ironman</span>
+          <span class="ironman-toggle-title"><img class="ir-icon ironman-toggle-icon" src="img/icons/ironman.png" alt=""> Mode Ironman</span>
           <span class="ironman-toggle-desc">Une seule vie. La mort est définitive et inscrit votre score au Hall of Fame. La difficulté est verrouillée pour toute la partie.</span>
         </span>
       </label>
@@ -498,6 +498,8 @@
           </svg>
         </div>
       </div>
+
+      <div id="tier-transition-overlay" aria-hidden="true"></div>
 
       <div id="encounter-overlay">
         <div class="enemy-group-container" id="enemy-group"></div>
@@ -811,17 +813,18 @@
 <!-- Écran de résultat Ironman (remplace la pétrification en mode Ironman) -->
 <div id="ironman-result-screen">
   <div class="ironman-result-frame">
-    <div class="ironman-result-title">☠ Mort ☠</div>
+    <div class="ironman-result-title"><img class="ir-icon ironman-title-icon" src="img/icons/ironman.png" alt=""> Mort <img class="ir-icon ironman-title-icon" src="img/icons/ironman.png" alt=""></div>
     <div class="ironman-result-msg" id="ironman-result-msg"></div>
     <div class="ironman-result-score" id="ironman-result-score"></div>
     <div class="ironman-result-breakdown" id="ironman-result-breakdown"></div>
     <div class="ironman-result-submit">
+      <div class="hof-name-label" id="hof-name-label">Ton nom de sorcier</div>
       <input type="text" id="hof-name-input" maxlength="24" placeholder="Votre nom de sorcier" autocomplete="off">
       <button id="hof-submit-btn" class="ironman-btn" onclick="submitIronmanScore()">Soumettre au Hall of Fame</button>
       <div id="hof-submit-status" class="ironman-submit-status"></div>
     </div>
     <div class="ironman-result-actions">
-      <button class="ironman-btn ironman-btn-ghost" onclick="openHallOfFame()">🏆 Hall of Fame</button>
+      <button class="ironman-btn ironman-btn-ghost" onclick="openHallOfFame()"><img class="ir-icon hof-btn-icon" src="img/icons/trophy.png" alt=""> Hall of Fame</button>
       <button class="ironman-btn" onclick="location.reload()">Nouvelle partie</button>
     </div>
   </div>
@@ -830,7 +833,7 @@
 <!-- Écran Hall of Fame — top 10 des meilleurs scores Ironman -->
 <div id="hall-of-fame-screen">
   <div class="hof-frame">
-    <div class="hof-title">🏆 Hall of Fame</div>
+    <div class="hof-title"><img class="ir-icon hof-title-icon" src="img/icons/trophy.png" alt=""> Hall of Fame</div>
     <div class="hof-sub">Les plus grandes légendes du mode Ironman</div>
     <div id="hof-list" class="hof-list"></div>
     <button type="button" class="hub-import-btn" onclick="closeHallOfFame()">◂ Retour</button>
@@ -863,8 +866,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/monsters.js?v=4"></script>
 <script src="js/npcs.js?v=9"></script>
 <script src="js/data.js?v=4"></script>
+<script src="js/floor-themes.js?v=1"></script>
 <script src="js/item-icons.js?v=3"></script>
-<script src="js/state.js?v=4"></script>
+<script src="js/state.js?v=5"></script>
 <script src="js/ui.js?v=4"></script>
 <script src="js/ui-bestiary.js?v=1"></script>
 <script src="js/dungeon.js?v=5"></script>
@@ -885,16 +889,16 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/karaoke.js?v=1"></script>
 <script src="js/intro.js?v=2"></script>
 <script src="js/shop.js?v=5"></script>
-<script src="js/save.js?v=4"></script>
+<script src="js/save.js?v=5"></script>
 <script src="js/save-ui.js?v=1"></script>
-<script src="js/ironman.js?v=1"></script>
-<script src="js/hall-of-fame.js?v=1"></script>
-<script src="js/main.js?v=3"></script>
+<script src="js/ironman.js?v=2"></script>
+<script src="js/hall-of-fame.js?v=2"></script>
+<script src="js/main.js?v=4"></script>
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=1"></script>
 <script src="js/library.js?v=1"></script>
 <script src="js/help-tour.js?v=1"></script>
-<script src="js/loader.js?v=2"></script>
+<script src="js/loader.js?v=3"></script>
 
 </body>
 </html>

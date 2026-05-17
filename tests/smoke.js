@@ -1347,16 +1347,18 @@ async function scenarioFloorTextures() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
 
-  // Charger les textures puis vérifier la sélection par étage
+  // Sélection par étage — pilotée par la SoT FLOOR_THEMES (3 tranches).
+  // Les murs wood/tapestry et rune_* ne sont plus tirés par la
+  // progression normale ; rune_* reste réservé à l'override post-victoire.
   const expected = [
     { floor: 1,  wall: 'stone1',      floorTex: 'stone',         ceil: 'beams' },
-    { floor: 4,  wall: 'stone2',      floorTex: 'carpet',        ceil: 'beams' },
-    { floor: 6,  wall: 'wood',        floorTex: 'carpet',        ceil: 'stone' },
-    { floor: 8,  wall: 'tapestry',    floorTex: 'carpet',        ceil: 'stone' },
+    { floor: 4,  wall: 'stone2',      floorTex: 'carpet',        ceil: 'stone' },
+    { floor: 6,  wall: 'stone2',      floorTex: 'carpet',        ceil: 'stone' },
+    { floor: 8,  wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
     { floor: 10, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
     { floor: 14, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
-    { floor: 15, wall: 'rune_wall',   floorTex: 'rune_floor',    ceil: 'rune_ceiling' },
-    { floor: 20, wall: 'rune_wall',   floorTex: 'rune_floor',    ceil: 'rune_ceiling' },
+    { floor: 15, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
+    { floor: 20, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
   ];
 
   // S'assurer que toutes les textures sont chargées avant de tester les patterns
@@ -7509,11 +7511,13 @@ async function scenarioIronman() {
     modal.style.display = 'none';
     const before = difficulty;
     changeDifficulty();                 // doit être refusé en Ironman
-    return { ironmanMode, before, after: difficulty,
+    return { ironmanMode, runId: ironmanRunId, before, after: difficulty,
              modalOpened: modal.style.display === 'flex' };
   });
   console.log('  T1 mode + lock :', t1);
   assert(t1.ironmanMode === true,   'ironmanMode doit être true');
+  assert(typeof t1.runId === 'string' && t1.runId.length >= 8,
+    'ironmanRunId doit être généré au démarrage Ironman');
   assert(t1.before === t1.after,    'changeDifficulty ne doit pas changer la difficulté');
   assert(!t1.modalOpened,           'changeDifficulty ne doit pas ouvrir la modale en Ironman');
 
@@ -7546,38 +7550,48 @@ async function scenarioIronman() {
   assert(t3.mult === 1.4,  `multiplicateur Difficile attendu 1.4, obtenu ${t3.mult}`);
   assert(t3.score === 2450, `score attendu 2450, obtenu ${t3.score}`);
 
-  // 4) Mort en Ironman → écran de résultat (pas la pétrification).
+  // 4) Mort en Ironman → écran de résultat + permadeath stricte.
   const t4 = await page.evaluate(() => {
+    // Prépare un slot Ironman et un slot non-Ironman.
+    ironmanMode = true;
+    writeSlot('manual_1', 'run ironman');
+    ironmanMode = false;
+    writeSlot('manual_2', 'partie normale');
+    ironmanMode = true;
     triggerDeath('Test de mort Ironman');
     return {
       resultVisible: document.getElementById('ironman-result-screen').style.display === 'flex',
       deathVisible:  document.getElementById('death-screen').style.display === 'flex',
       score:         _ironmanLastResult && _ironmanLastResult.score,
-      autoCleared:   readSlot('auto') === null,
+      ironmanSlotGone: readSlot('manual_1') === null,
+      normalSlotKept:  readSlot('manual_2') !== null,
     };
   });
   console.log('  T4 mort :', t4);
   assert(t4.resultVisible,  'écran de résultat Ironman doit être visible');
   assert(!t4.deathVisible,  'écran de pétrification ne doit PAS être visible en Ironman');
   assert(t4.score === 2450, 'le résultat doit porter le score calculé');
-  assert(t4.autoCleared,    'le slot auto doit être supprimé à la mort Ironman');
+  assert(t4.ironmanSlotGone, 'le slot Ironman doit être supprimé à la mort (permadeath)');
+  assert(t4.normalSlotKept,  'un slot non-Ironman doit être préservé à la mort Ironman');
 
-  // 5) Soumission du score → stockage local (HOF_CONFIG vide).
-  await page.evaluate(() => {
+  // 5) Soumission du score → stockage local + pseudonyme persistant.
+  const t5 = await page.evaluate(async () => {
     document.getElementById('hof-name-input').value = 'Testeur';
-    return submitIronmanScore();
-  });
-  const t5 = await page.evaluate(() => {
+    await submitIronmanScore();
     const raw = localStorage.getItem('hogwarts_rpg_hof');
     const arr = raw ? JSON.parse(raw) : [];
-    return { count: arr.length, top: arr[0] };
+    return { count: arr.length, top: arr[0], savedName: getPlayerName() };
   });
-  console.log('  T5 soumission :', { count: t5.count, name: t5.top && t5.top.player_name });
-  assert(t5.count === 1,                       'le score doit être stocké localement');
-  assert(t5.top.player_name === 'Testeur',     'le nom soumis doit être conservé');
-  assert(t5.top.score === 2450,                'le score stocké doit valoir 2450');
+  console.log('  T5 soumission :', { count: t5.count, name: t5.top && t5.top.player_name,
+    savedName: t5.savedName });
+  assert(t5.count === 1,                   'le score doit être stocké localement');
+  assert(t5.top.player_name === 'Testeur', 'le nom soumis doit être conservé');
+  assert(t5.top.score === 2450,            'le score stocké doit valoir 2450');
+  assert(typeof t5.top.run_id === 'string' && t5.top.run_id.length >= 8,
+    "l'entrée doit porter un run_id");
+  assert(t5.savedName === 'Testeur',       'le pseudonyme doit être persisté en localStorage');
 
-  // 6) Écran Hall of Fame : rendu de la liste.
+  // 6) Écran Hall of Fame : rendu de la liste + médaille PNG.
   await page.evaluate(() => openHallOfFame());
   await page.waitForFunction(() =>
     document.querySelectorAll('#hof-list .hof-row').length > 0, { timeout: 3000 });
@@ -7585,27 +7599,61 @@ async function scenarioIronman() {
     screenVisible: document.getElementById('hall-of-fame-screen').style.display === 'flex',
     rows:          document.querySelectorAll('#hof-list .hof-row').length,
     firstName:     document.querySelector('#hof-list .hof-name')?.textContent,
+    hasMedal:      !!document.querySelector('#hof-list .hof-row .hof-medal'),
   }));
   console.log('  T6 Hall of Fame :', t6);
   assert(t6.screenVisible,          'écran Hall of Fame doit être visible');
   assert(t6.rows === 1,             'la liste doit afficher 1 entrée');
   assert(t6.firstName === 'Testeur','le top 1 doit être Testeur');
+  assert(t6.hasMedal,               'le rang 1 doit afficher une médaille PNG');
 
-  // 7) Round-trip save : ironmanMode / totalKills / defeatedBosses.
-  const t7 = await page.evaluate(() => {
+  // 7) Anti double-classement : run déjà soumis détecté + re-soumission bloquée.
+  const t7 = await page.evaluate(async () => {
+    const found = await _hofFindByRunId(ironmanRunId);
+    await verifyIronmanRunNotScored();
+    const btn = document.getElementById('hof-submit-btn');
+    await submitIronmanScore();                     // tentative de doublon
+    const raw = localStorage.getItem('hogwarts_rpg_hof');
+    const arr = raw ? JSON.parse(raw) : [];
+    return {
+      foundByRunId:    !!found,
+      runScored:       _ironmanRunScored,
+      btnDisabled:     btn.disabled,
+      countAfterRetry: arr.length,
+    };
+  });
+  console.log('  T7 anti-doublon :', t7);
+  assert(t7.foundByRunId,           '_hofFindByRunId doit retrouver le run soumis');
+  assert(t7.runScored,              'le run doit être marqué déjà classé');
+  assert(t7.btnDisabled,            'le bouton doit être désactivé pour un run déjà classé');
+  assert(t7.countAfterRetry === 1,  'une re-soumission ne doit pas créer de doublon');
+
+  // 8) Round-trip save : ironmanMode / totalKills / defeatedBosses / runId.
+  const t8 = await page.evaluate(() => {
     ironmanMode    = true;
     totalKills     = 42;
     defeatedBosses = new Set(['nagini']);
+    ironmanRunId   = 'fixed-run-12345678';
     const snap = _serializeState();
-    ironmanMode = false; totalKills = 0; defeatedBosses = new Set();
+    ironmanMode = false; totalKills = 0; defeatedBosses = new Set(); ironmanRunId = null;
     _applyState(snap);
-    return { ironmanMode, totalKills, bosses: Array.from(defeatedBosses) };
+    const kept = ironmanRunId;
+    // Save Ironman sans UID → régénération à _applyState.
+    delete snap.ironmanRunId;
+    ironmanRunId = null;
+    _applyState(snap);
+    return {
+      ironmanMode, totalKills, bosses: Array.from(defeatedBosses),
+      kept, regenerated: !!ironmanRunId && ironmanRunId !== 'fixed-run-12345678',
+    };
   });
-  console.log('  T7 round-trip :', t7);
-  assert(t7.ironmanMode === true,            'ironmanMode doit survivre au save');
-  assert(t7.totalKills === 42,               'totalKills doit survivre au save');
-  assert(t7.bosses.length === 1 && t7.bosses[0] === 'nagini',
+  console.log('  T8 round-trip :', t8);
+  assert(t8.ironmanMode === true,            'ironmanMode doit survivre au save');
+  assert(t8.totalKills === 42,               'totalKills doit survivre au save');
+  assert(t8.bosses.length === 1 && t8.bosses[0] === 'nagini',
     'defeatedBosses doit survivre au save');
+  assert(t8.kept === 'fixed-run-12345678',   'ironmanRunId doit survivre au round-trip');
+  assert(t8.regenerated, 'un save Ironman sans UID doit en générer un au chargement');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
@@ -7615,8 +7663,86 @@ async function scenarioIronman() {
   await browser.close();
 }
 
+// ── Scénario : theming par tranche d'étages ──
+// Valide la SoT FLOOR_THEMES (textures + ambiant), la sélection de
+// musique combat (axes epic/étage/difficulté) et la transition visuelle.
+async function scenarioFloorTheming() {
+  console.log('\n── Scénario : theming par tranche d\'étages ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : getFloorTheme — 3 tranches + fallback entrée invalide
+  const themes = await page.evaluate(() => {
+    const byFloor = [1, 3, 4, 6, 7, 13, 14].map(f => {
+      const t = getFloorTheme(f);
+      return { f, label: t.label, wall: t.wall, floor: t.floor, ceiling: t.ceiling, ambient: t.ambient };
+    });
+    const invalid = [getFloorTheme(0).label, getFloorTheme(-2).label,
+                     getFloorTheme(NaN).label, getFloorTheme(undefined).label];
+    return { byFloor, invalid };
+  });
+  console.log('  T1 thèmes:', JSON.stringify(themes.byFloor));
+  const T = themes.byFloor;
+  assert(T[0].label.includes('Couloirs') && T[1].label.includes('Couloirs'), 'Étages 1-3 = Couloirs');
+  assert(T[2].label.includes('Cachots') && T[3].label.includes('Cachots'),   'Étages 4-6 = Cachots');
+  assert(T[4].label.includes('Profondeurs') && T[5].label.includes('Profondeurs'), 'Étages 7-13 = Profondeurs');
+  assert(T[6].label.includes('Profondeurs'), 'Étage 14 = Profondeurs (depths ouvert)');
+  assert(T[0].wall === 'stone1' && T[2].wall === 'stone2' && T[4].wall === 'cavern_wall', 'clés mur cohérentes');
+  assert(T[0].floor === 'stone' && T[2].floor === 'carpet' && T[4].floor === 'cavern_floor', 'clés sol cohérentes');
+  assert(T[0].ambient === 'intro' && T[2].ambient === 'dungeon' && T[4].ambient === 'depths', 'clés ambiant cohérentes');
+  assert(themes.invalid.every(l => l.includes('Couloirs')), 'entrée invalide → fallback hogwarts');
+
+  // T2 : _combatSampleKey — epic > étage ≥ 10 > difficulté
+  const combat = await page.evaluate(() => {
+    const pick = (group, floor) => { currentFloor = floor; return AudioSystem._combatSampleKey(group); };
+    return {
+      early:   pick([{ id: 'peeve', epic: false }], 3),
+      late:    pick([{ id: 'mangemort_elite', epic: false }], 11),
+      epic:    pick([{ id: 'voldemort_revenu', epic: true }], 5),
+      samples: AudioSystem._COMBAT_SAMPLES
+    };
+  });
+  console.log('  T2 combat:', combat.early, combat.late, combat.epic);
+  assert(combat.early === 'combat_normal', `combat étage 3 = combat_normal, got ${combat.early}`);
+  assert(combat.late  === 'combat_late',   `combat étage 11 = combat_late, got ${combat.late}`);
+  assert(combat.epic  === 'combat_epic',   `combat vs boss épique = combat_epic, got ${combat.epic}`);
+  assert(combat.samples.combat_late.endsWith('combat_late.ogg'),  '_COMBAT_SAMPLES.combat_late mappé');
+  assert(combat.samples.combat_epic.endsWith('combat_epic.ogg'),  '_COMBAT_SAMPLES.combat_epic mappé');
+
+  // T3 : _maybePlayTierTransition — déclenche aux frontières, pas dans une tranche
+  const trans = await page.evaluate(() => {
+    const ov = document.getElementById('tier-transition-overlay');
+    ov.classList.remove('active'); ov.textContent = '';
+    _maybePlayTierTransition(2, 3);          // même tranche (hogwarts)
+    const sameTier = { active: ov.classList.contains('active'), text: ov.textContent };
+    _maybePlayTierTransition(3, 4);          // hogwarts → dungeons
+    const crossed  = { active: ov.classList.contains('active'), text: ov.textContent };
+    return { sameTier, crossed };
+  });
+  console.log('  T3 transition:', JSON.stringify(trans));
+  assert(trans.sameTier.active === false, 'pas de transition dans une même tranche (2→3)');
+  assert(trans.crossed.active === true,   'transition déclenchée à la frontière 3→4');
+  assert(trans.crossed.text.includes('Cachots'), `overlay affiche le libellé de tranche, got "${trans.crossed.text}"`);
+
+  // T4 : epic survit au clonage scaleMonster (le combat lit enemyGroup[].epic)
+  const cloned = await page.evaluate(() => {
+    const base = MONSTERS.find(m => m.id === 'voldemort_revenu');
+    const scaled = scaleMonster(base, 11);
+    return { baseEpic: base.epic === true, scaledEpic: scaled.epic === true };
+  });
+  assert(cloned.baseEpic,   'voldemort_revenu porte epic:true dans MONSTERS');
+  assert(cloned.scaledEpic, 'le flag epic survit à scaleMonster');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Floor theming conforme');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioIronman, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioIronman, scenarioFloorTheming, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

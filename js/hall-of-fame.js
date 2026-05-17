@@ -18,9 +18,25 @@ const HOF_CONFIG = {
 };
 
 const HOF_LOCAL_KEY = 'hogwarts_rpg_hof';
+const HOF_NAME_KEY  = 'hogwarts_rpg_player_name';
 
 // Écran d'où le Hall of Fame a été ouvert ('hub' ou 'result').
 let _hofReturnTo = 'hub';
+// Passe à true si l'UID du run courant a déjà un score au classement.
+let _ironmanRunScored = false;
+
+// ── Pseudonyme persistant du joueur ─────────────────────────
+function getPlayerName() {
+  try { return (localStorage.getItem(HOF_NAME_KEY) || '').trim(); }
+  catch (e) { return ''; }
+}
+
+function setPlayerName(name) {
+  try {
+    const clean = String(name || '').trim().slice(0, 24);
+    if (clean) localStorage.setItem(HOF_NAME_KEY, clean);
+  } catch (e) { /* noop */ }
+}
 
 function _hofConfigured() {
   return !!(HOF_CONFIG.supabaseUrl && HOF_CONFIG.supabaseAnonKey);
@@ -84,9 +100,12 @@ async function _hofSubmit(entry) {
           monsters_killed:  entry.monsters_killed,
           quests_completed: entry.quests_completed,
           gold:             entry.gold,
+          run_id:           entry.run_id || null,
         }),
       }
     );
+    // 409 = violation de l'index unique run_id → run déjà classé.
+    if (res.status === 409) return { ok: true, online: false, duplicate: true };
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return { ok: true, online: true };
   } catch (e) {
@@ -119,6 +138,65 @@ async function _hofFetchTop(limit) {
   return { source: 'local', rows: local };
 }
 
+// ── Anti double-classement (UID de run) ─────────────────────
+// Cherche un score existant pour un UID de run donné. Repli local
+// d'abord, puis Supabase. Retourne la ligne trouvée ou null.
+async function _hofFindByRunId(runId) {
+  if (!runId) return null;
+  const localHit = _hofLocalRead().find(e => e && e.run_id === runId);
+  if (localHit) return localHit;
+  if (!_hofConfigured()) return null;
+  try {
+    const url = `${HOF_CONFIG.supabaseUrl}/rest/v1/${HOF_CONFIG.tableName}`
+      + `?run_id=eq.${encodeURIComponent(runId)}&select=id,score,player_name&limit=1`;
+    const res = await fetch(url, {
+      headers: {
+        'apikey':        HOF_CONFIG.supabaseAnonKey,
+        'Authorization': 'Bearer ' + HOF_CONFIG.supabaseAnonKey,
+      },
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    return (Array.isArray(rows) && rows.length) ? rows[0] : null;
+  } catch (e) {
+    console.warn('[hof] run lookup failed:', e);
+    return null;
+  }
+}
+
+// Vérification au chargement d'un save Ironman : pré-positionne le flag
+// `_ironmanRunScored` (sans toucher au DOM — l'écran n'est pas affiché).
+async function _hofPrecheckRunOnLoad() {
+  const runId = (typeof ironmanRunId !== 'undefined') ? ironmanRunId : null;
+  if (!runId) return;
+  const existing = await _hofFindByRunId(runId);
+  if (existing) _ironmanRunScored = true;
+}
+
+// Vérification à la mort : bloque la soumission si l'UID est déjà classé.
+async function verifyIronmanRunNotScored() {
+  const btn      = document.getElementById('hof-submit-btn');
+  const statusEl = document.getElementById('hof-submit-status');
+  const runId    = (typeof ironmanRunId !== 'undefined') ? ironmanRunId : null;
+
+  if (!runId) { if (btn) btn.disabled = false; return; }
+  if (statusEl) statusEl.textContent = 'Vérification du run…';
+
+  const existing = await _hofFindByRunId(runId);
+  if (existing) {
+    _ironmanRunScored = true;
+    if (statusEl) {
+      statusEl.textContent = '⚠ Ce run est déjà inscrit au Hall of Fame ('
+        + ((existing.score | 0)).toLocaleString('fr-FR') + ' pts).';
+    }
+    if (btn) { btn.disabled = true; btn.textContent = 'Déjà classé'; }
+  } else {
+    _ironmanRunScored = false;
+    if (statusEl) statusEl.textContent = '';
+    if (btn) btn.disabled = false;
+  }
+}
+
 // ── Handler bouton « Soumettre au Hall of Fame » ────────────
 async function submitIronmanScore() {
   if (typeof _ironmanLastResult === 'undefined' || !_ironmanLastResult) return;
@@ -127,8 +205,15 @@ async function submitIronmanScore() {
   const btn      = document.getElementById('hof-submit-btn');
   const statusEl = document.getElementById('hof-submit-status');
 
+  if (_ironmanRunScored) {
+    if (statusEl) statusEl.textContent = '⚠ Ce run est déjà inscrit au Hall of Fame.';
+    if (btn) btn.disabled = true;
+    return;
+  }
+
   let name = ((input && input.value) || '').trim().slice(0, 24);
   if (!name) name = 'Sorcier Anonyme';
+  setPlayerName(name);                       // pseudonyme persistant
 
   if (btn)   btn.disabled = true;
   if (input) input.disabled = true;
@@ -137,6 +222,12 @@ async function submitIronmanScore() {
   const entry = ironmanResultToEntry(_ironmanLastResult, name);
   const r = await _hofSubmit(entry);
 
+  if (r.duplicate) {
+    _ironmanRunScored = true;
+    if (statusEl) statusEl.textContent = '⚠ Ce run est déjà inscrit au Hall of Fame.';
+    if (btn) btn.textContent = 'Déjà classé';
+    return;
+  }
   if (statusEl) {
     statusEl.textContent = r.online
       ? '✓ Score inscrit au Hall of Fame mondial !'
@@ -194,10 +285,13 @@ async function _renderHallOfFame() {
     return;
   }
 
+  const MEDAL_IMG = { 1: 'medal_gold', 2: 'medal_silver', 3: 'medal_bronze' };
   let html = '';
   rows.forEach((r, i) => {
     const rank  = i + 1;
-    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '#' + rank;
+    const medal = MEDAL_IMG[rank]
+      ? `<img class="ir-icon hof-medal" src="img/icons/${MEDAL_IMG[rank]}.png" alt="${rank}">`
+      : '#' + rank;
     html += `<div class="hof-row hof-rank-${rank}">`
       + `<div class="hof-rank">${medal}</div>`
       + `<div class="hof-main">`

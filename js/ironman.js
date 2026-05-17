@@ -29,6 +29,18 @@ const DIFFICULTY_SCORE_MULT = {
 // la soumission. Scope global (script non-module).
 let _ironmanLastResult = null;
 
+// Génère un UID de run unique. `crypto.randomUUID` quand disponible
+// (contexte sécurisé : HTTPS / localhost), repli sinon.
+function _genRunId() {
+  try {
+    if (window.crypto && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+  } catch (e) { /* noop */ }
+  return 'run-' + Date.now().toString(36) + '-'
+    + Math.random().toString(36).slice(2, 10);
+}
+
 // Incrémente les compteurs de score à la fin d'un combat gagné.
 // Appelée par battle.js — endBattle(). Inoffensive hors mode Ironman
 // (les compteurs sont remis à zéro à chaque nouvelle partie).
@@ -120,6 +132,7 @@ function ironmanResultToEntry(result, name) {
     monsters_killed:  result.monstersKilled,
     quests_completed: result.questsCompleted,
     gold:             result.gold,
+    run_id:           (typeof ironmanRunId !== 'undefined') ? ironmanRunId : null,
     created_at:       new Date().toISOString(),
   };
 }
@@ -129,9 +142,10 @@ function showIronmanResult(cause) {
   const result = buildIronmanResult(cause);
   _ironmanLastResult = result;
 
-  // Mort définitive : on retire la sauvegarde auto de cette partie pour
-  // empêcher de recharger l'état post-mortem.
-  if (typeof deleteSlot === 'function') deleteSlot('auto');
+  // Permadeath stricte : suppression de TOUS les slots de la partie
+  // Ironman (auto + manuels) — aucun rechargement possible.
+  if (typeof deleteIronmanSlots === 'function') deleteIronmanSlots();
+  else if (typeof deleteSlot === 'function') deleteSlot('auto');
 
   const screen = document.getElementById('ironman-result-screen');
   if (!screen) return;
@@ -175,22 +189,36 @@ function showIronmanResult(cause) {
   const bkEl = document.getElementById('ironman-result-breakdown');
   if (bkEl) bkEl.innerHTML = html;
 
-  // Réinitialise la zone de soumission au Hall of Fame.
+  // Zone de soumission : pré-remplit le pseudonyme persistant.
+  const savedName = (typeof getPlayerName === 'function') ? getPlayerName() : '';
   const nameInput = document.getElementById('hof-name-input');
   if (nameInput) {
     nameInput.disabled = false;
-    if (!nameInput.value) {
-      const first = (party[0] && party[0].name) ? party[0].name.split(' ')[0] : '';
-      nameInput.value = first;
-    }
+    nameInput.value = savedName
+      || ((party[0] && party[0].name) ? party[0].name.split(' ')[0] : '');
   }
+  const nameLabel = document.getElementById('hof-name-label');
+  if (nameLabel) {
+    nameLabel.textContent = savedName
+      ? 'Confirme ton nom de sorcier'
+      : 'Choisis ton nom de sorcier';
+  }
+
   const submitBtn = document.getElementById('hof-submit-btn');
   if (submitBtn) {
-    submitBtn.disabled = false;
     submitBtn.textContent = 'Soumettre au Hall of Fame';
+    submitBtn.disabled = true;          // réactivé après vérification de l'UID
   }
   const statusEl = document.getElementById('hof-submit-status');
   if (statusEl) statusEl.textContent = '';
 
   screen.style.display = 'flex';
+
+  // Anti double-classement : vérifie qu'aucun score n'existe déjà pour
+  // l'UID de ce run avant d'autoriser la soumission.
+  if (typeof verifyIronmanRunNotScored === 'function') {
+    verifyIronmanRunNotScored();
+  } else if (submitBtn) {
+    submitBtn.disabled = false;
+  }
 }

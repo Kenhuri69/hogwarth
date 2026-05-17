@@ -336,6 +336,7 @@ async function startGame(count = 2) {
   visitedFloors = new Set([1]);
   totalKills     = 0;
   defeatedBosses = new Set();
+  ironmanRunId   = (ironmanMode && typeof _genRunId === 'function') ? _genRunId() : null;
   shopStock = null;
   shopStepsSinceRestock = 0;
   purchasedSpellbooks = new Set();

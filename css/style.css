@@ -861,6 +861,24 @@ body {
   opacity: 1;
   pointer-events: all;
 }
+
+/* Transition de tranche d'étages (cf. floor-tier-theming.md §2.3) —
+   fondu noir court affichant le nom de la nouvelle tranche. */
+#tier-transition-overlay {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #000;
+  color: var(--gold);
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: 32px;
+  text-align: center;
+  text-shadow: 0 0 30px rgba(201,168,76,0.7);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  transition: opacity 300ms ease;
+}
+#tier-transition-overlay.active { opacity: 1; }
 .floor-transition-content { text-align: center; }
 .floor-transition-level {
   font-family: 'UnifrakturMaguntia', cursive;
@@ -3391,4 +3409,16 @@ button.shop-tab.active {
   .ir-score-num { font-size: 36px; }
   .hof-frame, .ironman-result-frame { padding: 20px 15px; }
   .hof-title { font-size: 20px; }
+}
+
+/* Icônes PNG Ironman / Hall of Fame (rendu lisse, hors classe .ui-icon) */
+.ir-icon { display: inline-block; vertical-align: middle; }
+.ironman-toggle-icon { width: 22px; height: 22px; }
+.ironman-title-icon  { width: 30px; height: 30px; vertical-align: -4px; filter: drop-shadow(0 0 6px rgba(224,64,64,0.5)); }
+.hof-btn-icon        { width: 16px; height: 16px; }
+.hof-title-icon      { width: 28px; height: 28px; vertical-align: -5px; }
+.hof-medal           { width: 26px; height: 26px; }
+.hof-name-label {
+  font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px;
+  color: var(--gold); text-align: center; margin-bottom: 2px;
 }

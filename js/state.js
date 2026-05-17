@@ -74,6 +74,10 @@ const DIFFICULTY_SETTINGS = {
 let ironmanMode    = false;
 let totalKills     = 0;          // monstres vaincus (cumul sur la partie)
 let defeatedBosses = new Set();  // ids de boss vaincus (faits d'armes)
+// UID unique de la partie Ironman en cours — généré au démarrage, persisté
+// dans le save, envoyé au Hall of Fame. Empêche le double-classement d'un
+// même run (index unique `run_id` côté base). null hors mode Ironman.
+let ironmanRunId   = null;
 
 // ============================================================
 // SYSTÈME DES MAISONS

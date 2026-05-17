@@ -33,6 +33,8 @@ js/
                       getRandomEncountersForFloor()
   data.js          →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
                       ENEMIES = MONSTERS (alias de compatibilité)
+  floor-themes.js  →  FLOOR_THEMES{} + getFloorTheme() — source unique de
+                      vérité tileset/ambiance par tranche d'étages (pur)
   item-icons.js    →  Registres ITEM_ICON_REGISTRY, EQUIPMENT_SLOT_ICONS,
                       STATUS_ICON_REGISTRY, SPELL_ICON_REGISTRY ;
                       getItemIconHtml(item, size), tinted variants via filter CSS
@@ -93,9 +95,10 @@ js/
 .github/workflows/deploy.yml   →  CI GitHub Pages (push master → déploiement automatique)
 ```
 
-Ordre de chargement des scripts dans `index.html` (31 modules) :
+Ordre de chargement des scripts dans `index.html` (32 modules) :
 `ux-improvements → audio → audio-music → audio-sfx → icons → scene-icons →
-monsters → npcs → data → item-icons → state → ui → ui-bestiary → dungeon →
+monsters → npcs → data → floor-themes → item-icons → state → ui →
+ui-bestiary → dungeon →
 textures → renderer → renderer-effects → renderer-minimap → movement →
 battle → battle-spells → battle-ui → inventory → quests → npc-dialog →
 intro → shop → save → save-ui → ironman → hall-of-fame → main → loader`
@@ -308,13 +311,17 @@ Cumulable avec n'importe quelle difficulté ; la difficulté est ensuite
 let ironmanMode    = false;        // armé en confirmHeroSelection, persisté
 let totalKills     = 0;            // monstres vaincus (cumul partie)
 let defeatedBosses = new Set();    // ids de boss vaincus (faits d'armes)
+let ironmanRunId   = null;         // UID unique du run (anti double-classement)
 ```
 Réinitialisés dans `startGame()`, sérialisés dans `_serializeState`/`_applyState`.
+`ironmanRunId` est généré par `_genRunId()` au démarrage d'un run Ironman ;
+un save Ironman dépourvu d'UID en reçoit un à `_applyState`.
 
-### Mort & score
+### Mort & score — permadeath stricte
 En mode Ironman, `triggerDeath()` n'affiche pas la pétrification mais
 `showIronmanResult()` : écran `#ironman-result-screen` avec score chiffré.
-La mort est définitive — le slot `auto` est supprimé (anti-reload).
+La mort est **définitive** — `deleteIronmanSlots()` (save.js) supprime TOUS
+les slots dont `state.ironmanMode` est vrai (auto + manuels). Aucun reload.
 
 ```
 score = round(base × DIFFICULTY_SCORE_MULT[difficulty])
@@ -328,11 +335,21 @@ DIFFICULTY_SCORE_MULT = { Facile:0.8, Normal:1.0, Difficile:1.4, Expert:1.8 }
 ### Hall of Fame
 `openHallOfFame()` (bouton du hub démarrage + écran de résultat) affiche
 `#hall-of-fame-screen` — top 10. Stockage via `HOF_CONFIG` (REST Supabase :
-`select`/`insert` sous Row Level Security). Repli `localStorage`
-(`hogwarts_rpg_hof`) systématique si non configuré ou hors-ligne ; un score
-soumis est **toujours** écrit en local. `HOF_CONFIG` vide par défaut →
-renseigner `supabaseUrl` + `supabaseAnonKey` (cf.
-`.claude/plans/ironman-hall-of-fame.md`).
+`select`/`insert` sous Row Level Security ; index unique sur `run_id`).
+Repli `localStorage` (`hogwarts_rpg_hof`) systématique si non configuré ou
+hors-ligne ; un score soumis est **toujours** écrit en local.
+
+- **Pseudonyme** : `getPlayerName()`/`setPlayerName()` persistent le nom du
+  joueur (`localStorage` `hogwarts_rpg_player_name`). L'écran de résultat
+  pré-remplit et confirme ce nom avant la soumission.
+- **Anti double-classement** : chaque score porte `run_id = ironmanRunId`.
+  `verifyIronmanRunNotScored()` (mort) et `_hofPrecheckRunOnLoad()`
+  (chargement) vérifient via `_hofFindByRunId()` qu'aucun score n'existe
+  déjà pour l'UID ; l'index unique côté base bloque tout doublon (409).
+
+### Icônes
+`tools/gen_ironman_icons.py` génère les PNG dorés 64×64 dans `img/icons/` :
+`ironman.png` (crâne), `trophy.png` (coupe), `medal_{gold,silver,bronze}.png`.
 
 ---
 
@@ -990,6 +1007,19 @@ Sons déclenchés automatiquement :
 - `playLevelUp()` → level-up et quête complétée (`battle.js`, `quests.js`)
 - `playDeath()` → mort du groupe (`battle.js — triggerDeath`)
 
+### Musique ambiante et de combat (`audio-music.js`)
+
+- **Ambiant** : `_zoneKeyForFloor(f)` retourne `getFloorTheme(f).ambient`
+  (`intro`/`dungeon`/`depths`) — voir « Thèmes par tranche d'étages ».
+  `_ZONE_SAMPLES` conserve 5 entrées (`tension`/`abyss` en réserve V2).
+- **Combat** : `_combatSampleKey(enemyGroup)` choisit le sample par
+  **axes combinés** — priorité `epic` (boss porteur de `epic:true` dans
+  `monsters.js`) > étage ≥ 10 (`combat_late`) > difficulté
+  (`combat_normal`/`combat_hard`/`combat_expert`). Si le sample de
+  tranche est absent (404), repli sur `combat_normal` puis synthèse
+  procédurale. `startCombatMusic(enemyGroup)` reçoit le groupe depuis
+  `battle.js — startBattle`.
+
 ---
 
 ## Bestiaire (ui.js)
@@ -1214,7 +1244,11 @@ TEXTURES = {
 - `_invalidatePatternCache()` : vidé après `resizeCanvas()` (nouveau contexte)
 
 **Fonctions clés** :
-- `getWallTextureType()` : choisit la texture murale selon `currentFloor`
+- `getWallTextureType()` : clé de texture murale via `getFloorTheme(currentFloor).wall`
+  (voir « Thèmes par tranche d'étages »). Override `rune_wall` à l'étage 11+
+  post-victoire conservé en surcouche.
+- Sol / plafond : clés `getFloorTheme(currentFloor).floor` / `.ceiling`
+  (même override `rune_floor`/`rune_ceiling` post-victoire).
 - `_getFloorPattern()` / `_getCeilPattern()` : retournent le pattern depuis le cache
 - `drawTexturedRect()` : draw rect avec texture + alpha (fallback si texture manquante)
 
@@ -1241,6 +1275,32 @@ Pour chaque `d` de `wallDist` à `1` :
 - `addTorchGlow()` : halo atmosphérique chaud
 - `drawForegroundFrame()` : bordure dorée décorative au premier plan
 - `drawCellMarker()` : rendu de la porte en bois en vue 3D (cellule `CELL.DOOR`)
+
+---
+
+## Thèmes par tranche d'étages (`floor-themes.js`)
+
+Source unique de vérité pour le tileset **et** la musique ambiante.
+`FLOOR_THEMES` mappe une tranche d'étages → clés de textures + zone
+ambiante ; `getFloorTheme(floor)` est pur et sûr (entrée invalide →
+`hogwarts`). Consommé par `renderer.js`, `audio-music.js` et
+`movement.js` — aucune dérive possible entre les couches.
+
+| Tranche | Étages | Murs | Sol | Plafond | Ambiance | Ton |
+|---------|--------|------|-----|---------|----------|-----|
+| **A** Couloirs de Poudlard | 1-3 | `stone1` | `stone` | `beams` | `intro` | Familier, école |
+| **B** Cachots de Poudlard | 4-6 | `stone2` | `carpet` | `stone` | `dungeon` | Descente, austère |
+| **C** Profondeurs Oubliées | 7+ | `cavern_wall` | `cavern_floor` | `cavern_ceiling` | `depths` | Inconnu, abyssal |
+
+- **Override post-victoire** : `renderer.js` bascule sur `rune_*` à
+  l'étage 11+ quand `victoryAchieved` — surcouche indépendante de
+  `getFloorTheme`. Un palier « Ruines Anciennes » (14+, assets `rune_*`)
+  est préparé en commentaire dans `FLOOR_THEMES` pour une V2.
+- **Transition de tranche** : `movement.js — _maybePlayTierTransition`
+  (appelé dans `_changeFloor`) affiche un fondu noir 600 ms
+  (`#tier-transition-overlay`) + un toast au franchissement d'une
+  frontière (3↔4, 6↔7). Pas de déclenchement à l'intérieur d'une
+  tranche (compare de référence d'objet).
 
 ---
 
