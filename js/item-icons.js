@@ -133,6 +133,8 @@ const ITEM_ICON_REGISTRY = {
   // Livres de sorts
   livre_sortileges:   'img/icons/items/livre_sortileges.png',
   livre_soin:         'img/icons/items/livre_soin.png',
+  // livre_ferula : painterly dédié dans ITEM_ICON_NEW_REGISTRY (priorité 1) ;
+  // alias legacy de secours + couverture smoke.
   livre_ferula:       'img/icons/items/livre_soin.png',
   book_monsters:      'img/icons/items/book_monsters.png',
   livre_prince:       'img/icons/items/livre_prince.png',
@@ -163,6 +165,7 @@ const ITEM_ICON_NEW_REGISTRY = {
   larmes_phenix:        'img/icons_new/larmes_phenix_64.png',
   wand1:                'img/icons_new/wand1_64.png',
   livre_soin:           'img/icons_new/livre_soin_64.png',
+  livre_ferula:         'img/icons_new/livre_ferula_64.png',
   book_monsters:        'img/icons_new/book_monsters_64.png',
   livre_prince:         'img/icons_new/livre_prince_64.png',
   livre_bombarda:       'img/icons_new/livre_bombarda_64.png',
@@ -240,7 +243,7 @@ const SPELL_ICON_REGISTRY = {
   'Stupefix':           'img/icons/spells/stupefix.png',
   'Episkey':            'img/icons/spells/episkey.png',
   'Ferula':             'img/icons/spells/ferula.png',
-  'Ferula Maxima':      'img/icons/spells/ferula.png',
+  'Ferula Maxima':      'img/icons/spells/ferula_maxima.png',
   'Protego':            'img/icons/spells/protego.png',
   'Incendio':           'img/icons/spells/incendio.png',
   'Accio':              'img/icons/spells/accio.png',
