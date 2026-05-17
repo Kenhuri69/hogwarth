@@ -3479,6 +3479,136 @@ async function scenarioEnsureStairs() {
   await browser.close();
 }
 
+// ── Scénario : respawn 20 % des ennemis au revisit d'étage ───────────
+// Couvre difficulty-polish-v3.md Vague C. _respawnEnemiesOnEntry roll
+// ENEMY_RESPAWN_CHANCE (0.20) par cellule défaite ; Math.random est
+// mocké (constante) pour un résultat exact, non-flaky.
+async function scenarioRespawn20Percent() {
+  console.log('\n── Scénario : respawn 20 % des ennemis au revisit d\'étage ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helpers exposés
+  const t1 = await page.evaluate(() => ({
+    hasFn:  typeof _respawnEnemiesOnEntry === 'function',
+    hasMap: typeof defeatedCellsByFloor !== 'undefined',
+    chance: typeof ENEMY_RESPAWN_CHANCE !== 'undefined' ? ENEMY_RESPAWN_CHANCE : null
+  }));
+  console.log('  T1 helpers:', t1);
+  assert(t1.hasFn,  '_respawnEnemiesOnEntry non exposée');
+  assert(t1.hasMap, 'defeatedCellsByFloor non exposé');
+  assert(t1.chance === 0.20, `ENEMY_RESPAWN_CHANCE attendu 0.20, got ${t1.chance}`);
+
+  // T2 : roll < 0.20 sur 5 cellules défaites → les 5 respawnent, set vidé
+  const t2 = await page.evaluate(() => {
+    const floor = currentFloor;
+    defeatedCellsByFloor.set(floor, new Set());
+    const set = defeatedCellsByFloor.get(floor);
+    const cells = [];
+    for (let y = 0; y < dungeon.length && cells.length < 5; y++) {
+      for (let x = 0; x < dungeon[y].length && cells.length < 5; x++) {
+        if (dungeon[y][x] !== CELL.FLOOR) continue;
+        if (enemyMap[y][x]) continue;
+        if (x === playerX && y === playerY) continue;
+        cells.push([x, y]);
+        set.add(`${x},${y}`);
+      }
+    }
+    const orig = Math.random;
+    Math.random = () => 0.05;            // < 0.20 → respawn garanti
+    let count;
+    try { count = _respawnEnemiesOnEntry(floor); }
+    finally { Math.random = orig; }
+    const filled = cells.filter(([x, y]) => !!enemyMap[y][x]).length;
+    return { picked: cells.length, count, filled, remaining: set.size };
+  });
+  console.log('  T2 roll<0.20:', t2);
+  assert(t2.picked === 5,    `setup : 5 cellules attendues, got ${t2.picked}`);
+  assert(t2.count === 5,     `5 respawns attendus, got ${t2.count}`);
+  assert(t2.filled === 5,    `enemyMap doit être peuplé sur les 5 cellules, got ${t2.filled}`);
+  assert(t2.remaining === 0, `set des défaites doit être vidé, reste ${t2.remaining}`);
+
+  // T3 : roll >= 0.20 sur 5 nouvelles cellules → aucun respawn, set intact
+  const t3 = await page.evaluate(() => {
+    const floor = currentFloor;
+    const set = defeatedCellsByFloor.get(floor);
+    const cells = [];
+    for (let y = 0; y < dungeon.length && cells.length < 5; y++) {
+      for (let x = 0; x < dungeon[y].length && cells.length < 5; x++) {
+        if (dungeon[y][x] !== CELL.FLOOR) continue;
+        if (enemyMap[y][x]) continue;
+        if (x === playerX && y === playerY) continue;
+        cells.push([x, y]);
+        set.add(`${x},${y}`);
+      }
+    }
+    const orig = Math.random;
+    Math.random = () => 0.90;            // >= 0.20 → aucun respawn
+    let count;
+    try { count = _respawnEnemiesOnEntry(floor); }
+    finally { Math.random = orig; }
+    const filled = cells.filter(([x, y]) => !!enemyMap[y][x]).length;
+    return { picked: cells.length, count, filled, remaining: set.size };
+  });
+  console.log('  T3 roll>=0.20:', t3);
+  assert(t3.picked === 5,    `setup T3 : 5 cellules attendues, got ${t3.picked}`);
+  assert(t3.count === 0,     `aucun respawn attendu, got ${t3.count}`);
+  assert(t3.filled === 0,    `enemyMap doit rester vide, got ${t3.filled}`);
+  assert(t3.remaining === 5, `set des défaites doit rester à 5, got ${t3.remaining}`);
+
+  // T4 : idempotence — les cellules respawnées sont retirées du set ;
+  // un 2e passage ne re-roll donc pas les mêmes cellules.
+  const t4 = await page.evaluate(() => {
+    const floor = currentFloor;
+    defeatedCellsByFloor.set(floor, new Set());
+    const set = defeatedCellsByFloor.get(floor);
+    let n = 0;
+    for (let y = 0; y < dungeon.length && n < 3; y++) {
+      for (let x = 0; x < dungeon[y].length && n < 3; x++) {
+        if (dungeon[y][x] !== CELL.FLOOR) continue;
+        if (enemyMap[y][x]) continue;
+        if (x === playerX && y === playerY) continue;
+        set.add(`${x},${y}`);
+        n++;
+      }
+    }
+    const orig = Math.random;
+    Math.random = () => 0.05;
+    let first, second;
+    try {
+      first  = _respawnEnemiesOnEntry(floor);
+      second = _respawnEnemiesOnEntry(floor);   // set déjà vidé
+    } finally { Math.random = orig; }
+    return { first, second, remaining: set.size };
+  });
+  console.log('  T4 idempotence:', t4);
+  assert(t4.first === 3,     `1er passage : 3 respawns, got ${t4.first}`);
+  assert(t4.second === 0,    `2e passage : 0 respawn (set vidé), got ${t4.second}`);
+  assert(t4.remaining === 0, `set doit rester vide, got ${t4.remaining}`);
+
+  // T5 : garde — une cellule défaite sur la case du joueur ne respawn pas
+  const t5 = await page.evaluate(() => {
+    const floor = currentFloor;
+    defeatedCellsByFloor.set(floor, new Set([`${playerX},${playerY}`]));
+    const orig = Math.random;
+    Math.random = () => 0.05;            // roll passant, mais garde joueur
+    let count;
+    try { count = _respawnEnemiesOnEntry(floor); }
+    finally { Math.random = orig; }
+    return { count, enemyOnPlayer: !!enemyMap[playerY][playerX] };
+  });
+  console.log('  T5 garde case joueur:', t5);
+  assert(t5.count === 0, `aucun respawn sur la case joueur, got ${t5.count}`);
+  assert(!t5.enemyOnPlayer, 'aucun ennemi ne doit apparaître sur la case du joueur');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ respawn 20 % conforme');
+  await browser.close();
+}
+
 // ── Scénario 3sexies : Itération 7.4 — câblage métier des 4 PNJ lore ─
 
 async function scenarioIteration74() {
@@ -8056,7 +8186,7 @@ async function scenarioCombatExtV2() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioIronman, scenarioFloorTheming, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

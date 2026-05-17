@@ -6,10 +6,11 @@
 > Pré-requis : Phase 3 de `difficulty-progression` (équipements mid-game
 > + respawn) livrée sur master.
 >
-> **MAJ 2026-05-17** : Vague A livrée. Vague B constatée **déjà faite**
-> — `dumbledore.dialoguesByQuest` couvre les 5 quêtes de la chaîne
-> (livré par le plan archivé `voice-dumbledore-chain`, routage par le
-> mécanisme générique `_npcDialogPages`). Seule la Vague C reste ouverte.
+> **MAJ 2026-05-17** : **Plan terminé.** Vague A livrée (6 sprites
+> painterly). Vague B constatée **déjà faite** — `dumbledore.dialoguesByQuest`
+> couvre les 5 quêtes de la chaîne (livré par le plan archivé
+> `voice-dumbledore-chain`, routage par le mécanisme générique
+> `_npcDialogPages`). Vague C livrée (`scenarioRespawn20Percent`).
 
 ## 1. Contexte
 
@@ -110,13 +111,23 @@ récupérés, capture comparée avant/après.
 - [ ] Smoke `scenarioDumbledoreChainDialogues` (3 sous-cas).
 - [ ] Commit + push.
 
-### Vague C — Smoke respawn
+### Vague C — Smoke respawn · ✅ LIVRÉE (2026-05-17)
 
-- [ ] Ajouter `scenarioRespawn20Percent` dans `tests/smoke.js`.
-- [ ] Mock `Math.random` déterministe (graine `respawn_smoke_v1`).
-- [ ] Asserter borne statistique.
-- [ ] `node tests/smoke.js` vert.
-- [ ] Commit + push.
+- [x] `scenarioRespawn20Percent` ajouté à `tests/smoke.js` (5 sous-cas
+      T1-T5) et enregistré dans le runner.
+- [x] `Math.random` mocké par **constante** dans chaque `page.evaluate`
+      (0.05 sous le seuil / 0.90 au-dessus), restauré en `finally`.
+- [x] Assertions **exactes** (et non une borne statistique) — supersede
+      la spec §2 : un mock à constante rend le résultat déterministe à
+      l'unité, donc on assert le compte exact (5 / 0 / 3) plutôt qu'une
+      borne floue. Couvre aussi l'idempotence (retrait du set) et la
+      garde « case du joueur ».
+- [x] `node tests/smoke.js` vert.
+
+> **Écart vs spec §2** : la spec prévoyait `N_after >= N_initial - 5 +
+> 0.15*5` (borne pour un random non mocké). Le mock à constante (exigé
+> par le plan lui-même) permet une assertion exacte, plus robuste et
+> sans flake — adoptée à la place de la borne.
 
 ## 4. Risques
 
