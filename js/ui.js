@@ -665,6 +665,13 @@ function allocateStatPoint(charIdx, statKey) {
 
 // ── Changement de difficulté en cours de partie ──────────────
 function changeDifficulty() {
+  // Mode Ironman : la difficulté est verrouillée pour toute la partie.
+  if (typeof ironmanMode !== 'undefined' && ironmanMode) {
+    if (typeof addMsg === 'function') {
+      addMsg("Difficulté verrouillée — mode Ironman.", 'bad');
+    }
+    return;
+  }
   const detail = document.getElementById('char-detail');
   if (!detail) return;
 

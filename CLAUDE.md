@@ -70,6 +70,11 @@ js/
   save-ui.js       →  Modale #slot-modal (openSaveDialog/openLoadDialog) +
                       Hub démarrage (enterStartHub, startHubNewGame,
                       loadSlotAndStart).
+  ironman.js       →  Mode Ironman : BOSS_FEATS, DIFFICULTY_SCORE_MULT,
+                      recordIronmanKills(), computeIronmanScore(),
+                      buildIronmanResult(), showIronmanResult()
+  hall-of-fame.js  →  Hall of Fame : HOF_CONFIG (Supabase), submitIronmanScore(),
+                      openHallOfFame()/closeHallOfFame(), repli localStorage
   npc-dialog.js    →  Dialogues PNJ : openNpcDialog(), nextDialogPage(),
                       closeNpcDialog(), triggerNpcSpecialAction(),
                       getNpcQuestState(), getNpcMarkerSign()
@@ -93,7 +98,7 @@ Ordre de chargement des scripts dans `index.html` (31 modules) :
 monsters → npcs → data → item-icons → state → ui → ui-bestiary → dungeon →
 textures → renderer → renderer-effects → renderer-minimap → movement →
 battle → battle-spells → battle-ui → inventory → quests → npc-dialog →
-intro → shop → save → save-ui → main → loader`
+intro → shop → save → save-ui → ironman → hall-of-fame → main → loader`
 
 > `loader.js` est volontairement chargé en dernier : il vérifie que tous
 > les globals attendus sont présents et affiche un bandeau d'erreur sinon.
@@ -289,6 +294,45 @@ endBattle() / completeQuest()
 
 `#house-crest` dans le HUD est rafraîchi par `_updateHouseBadge()` (ui.js:60)
 à chaque update. Le blason est un `<img>` cloné depuis l'écran de sélection.
+
+---
+
+## Mode Ironman & Hall of Fame (`js/ironman.js` + `js/hall-of-fame.js`)
+
+Mode optionnel coché à l'écran de difficulté (case `#ironman-toggle`).
+Cumulable avec n'importe quelle difficulté ; la difficulté est ensuite
+**verrouillée** (`changeDifficulty()` refuse si `ironmanMode`).
+
+### Globals (`state.js`)
+```js
+let ironmanMode    = false;        // armé en confirmHeroSelection, persisté
+let totalKills     = 0;            // monstres vaincus (cumul partie)
+let defeatedBosses = new Set();    // ids de boss vaincus (faits d'armes)
+```
+Réinitialisés dans `startGame()`, sérialisés dans `_serializeState`/`_applyState`.
+
+### Mort & score
+En mode Ironman, `triggerDeath()` n'affiche pas la pétrification mais
+`showIronmanResult()` : écran `#ironman-result-screen` avec score chiffré.
+La mort est définitive — le slot `auto` est supprimé (anti-reload).
+
+```
+score = round(base × DIFFICULTY_SCORE_MULT[difficulty])
+base  = totalKills×10 + étageMax×100 + quêtes×150
+      + niveau×50 + or×0.5 + Σ faits d'armes
+DIFFICULTY_SCORE_MULT = { Facile:0.8, Normal:1.0, Difficile:1.4, Expert:1.8 }
+```
+`recordIronmanKills(enemies)` (appelé par `endBattle`) incrémente
+`totalKills` et ajoute les boss de `BOSS_FEATS` à `defeatedBosses`.
+
+### Hall of Fame
+`openHallOfFame()` (bouton du hub démarrage + écran de résultat) affiche
+`#hall-of-fame-screen` — top 10. Stockage via `HOF_CONFIG` (REST Supabase :
+`select`/`insert` sous Row Level Security). Repli `localStorage`
+(`hogwarts_rpg_hof`) systématique si non configuré ou hors-ligne ; un score
+soumis est **toujours** écrit en local. `HOF_CONFIG` vide par défaut →
+renseigner `supabaseUrl` + `supabaseAnonKey` (cf.
+`.claude/plans/ironman-hall-of-fame.md`).
 
 ---
 

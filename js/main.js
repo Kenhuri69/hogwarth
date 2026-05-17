@@ -158,6 +158,7 @@ let _pendingHeroKeys = ['harry', 'hermione'];
 function confirmHeroSelection() {
   if (selectedHeroes.length !== selectedPartySize) return;
   difficulty        = document.getElementById('difficulty-select')?.value || 'Normal';
+  ironmanMode       = !!document.getElementById('ironman-toggle')?.checked;
   _pendingPartySize = selectedPartySize;
   _pendingHeroKeys  = [...selectedHeroes];
   document.getElementById('player-select-screen').style.display = 'none';
@@ -333,6 +334,8 @@ async function startGame(count = 2) {
   floorDungeons = {};   // reset du cache à chaque nouvelle partie
   searchedCells = new Set();
   visitedFloors = new Set([1]);
+  totalKills     = 0;
+  defeatedBosses = new Set();
   shopStock = null;
   shopStepsSinceRestock = 0;
   purchasedSpellbooks = new Set();

@@ -1,6 +1,14 @@
 # Plan — Mode Ironman + Hall of Fame
 
-> Statut : **EN COURS** — plan vivant, mis à jour à chaque étape (cf. guidelines §5).
+> Statut : **TERMINÉ** (code + smoke test verts). Reste à brancher : coller
+> les identifiants Supabase dans `HOF_CONFIG` (`js/hall-of-fame.js`) une fois
+> le projet Supabase créé — sans quoi le Hall of Fame fonctionne en local.
+
+## Suivi des étapes
+
+Toutes les étapes 1→11 sont implémentées et couvertes par le scénario
+`scenarioIronman` de `tests/smoke.js` (76 scénarios verts, loader 122 globals
+0 manquant). Détail des étapes ci-dessous (conservé pour référence).
 
 ## Objectif
 
