@@ -6068,6 +6068,53 @@ async function scenarioKaraokeIntro() {
   await browser.close();
 }
 
+// Karaoké généralisé aux dialogues PNJ (npc-dialog.js).
+async function scenarioKaraokeNpc() {
+  console.log('\n── Scénario : karaoké dialogues PNJ ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : ouvrir un dialogue PNJ → texte enveloppé en <span class="kw">
+  const t1 = await page.evaluate(() => {
+    openNpcDialog('mcgonagall');
+    const pageEl = document.querySelector('#npc-dialog-text .npc-dialog-page');
+    const kw = pageEl ? pageEl.querySelectorAll('.kw') : [];
+    return { hasPageEl: !!pageEl, kwCount: kw.length };
+  });
+  console.log('  T1 wrapping PNJ:', t1);
+  assert(t1.hasPageEl, '.npc-dialog-page introuvable');
+  assert(t1.kwCount >= 3, `attendu ≥3 spans .kw, obtenu ${t1.kwCount}`);
+
+  // T2 : progression déterministe — getVoiceProgress mocké à mi-parcours
+  const t2 = await page.evaluate(async () => {
+    const pageEl = document.querySelector('#npc-dialog-text .npc-dialog-page');
+    AudioSystem.getVoiceProgress = () => 0.5;
+    Karaoke.wrap(pageEl);
+    const n = pageEl.querySelectorAll('.kw').length;
+    Karaoke.start(pageEl);
+    await new Promise(r => setTimeout(r, 160));
+    return { n, mid: pageEl.querySelectorAll('.kw.spoken').length };
+  });
+  console.log('  T2 progression PNJ:', t2);
+  assert(t2.mid > 0 && t2.mid < t2.n,
+    `à 50% attendu un surlignage partiel, obtenu ${t2.mid}/${t2.n}`);
+
+  // T3 : fermer le dialogue stoppe la boucle karaoké
+  const t3 = await page.evaluate(() => {
+    closeNpcDialog();
+    return { timerCleared: Karaoke._timer === null };
+  });
+  console.log('  T3 close → stop:', t3);
+  assert(t3.timerCleared, 'closeNpcDialog doit stopper la boucle karaoké');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS pendant karaoké PNJ`);
+  }
+  console.log('  ✅ Karaoké dialogues PNJ OK');
+  await browser.close();
+}
+
 // ── Scénario : action Garde + sort Ferula ────────────────────
 
 async function scenarioGuardAndFerula() {
@@ -7436,7 +7483,7 @@ async function scenarioCombatExtV2() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
