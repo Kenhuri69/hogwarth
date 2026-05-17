@@ -3409,6 +3409,22 @@ button.shop-tab.active {
   text-align: center; font-size: 10px; color: #5a4a2a;
   font-style: italic; margin-top: 4px;
 }
+.hof-row-projection {
+  background: linear-gradient(180deg, #1c1405 0%, #120c03 100%);
+  border-color: var(--gold); border-style: dashed;
+  box-shadow: 0 0 14px rgba(201,168,76,0.35);
+}
+.hof-proj-tag {
+  display: inline-block; margin-left: 6px; padding: 1px 6px;
+  font-family: 'Crimson Text', serif; font-size: 9px; font-style: italic;
+  color: #120c03; background: var(--gold); border-radius: 8px;
+  vertical-align: middle; letter-spacing: 0.5px;
+}
+.hof-proj-note {
+  text-align: center; font-size: 11px; color: var(--gold-light);
+  margin-top: 8px; line-height: 1.4;
+}
+.hof-proj-note strong { color: var(--gold); }
 .hub-hof-btn { margin-top: 8px; }
 
 @media (max-width: 700px) {

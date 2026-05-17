@@ -7637,6 +7637,33 @@ async function scenarioIronman() {
   assert(t6.firstName === 'Testeur','le top 1 doit être Testeur');
   assert(t6.hasMedal,               'le rang 1 doit afficher une médaille PNG');
 
+  // 6b) Simulation de rang depuis la fiche perso (bouton « Mon rang »).
+  const t6b = await page.evaluate(async () => {
+    ironmanMode = true;
+    const proj = _hofBuildProjection();
+    const rank = await _hofRankForScore(proj.score);
+    await _renderHallOfFame(proj);
+    openCharacter(0);
+    const btnPresent = document.getElementById('char-detail')
+      .innerHTML.includes('openHofProjection');
+    document.getElementById('character-modal').style.display = 'none';
+    return {
+      score:    proj.score,
+      name:     proj.player_name,
+      rank,
+      projRow:  !!document.querySelector('#hof-list .hof-row-projection'),
+      projNote: !!document.querySelector('#hof-list .hof-proj-note'),
+      btnPresent,
+    };
+  });
+  console.log('  T6b simulation de rang :', t6b);
+  assert(t6b.score === 3640,  `score projeté attendu 3640, obtenu ${t6b.score}`);
+  assert(t6b.name === 'Testeur', `nom projeté attendu Testeur, obtenu ${t6b.name}`);
+  assert(t6b.rank === 1,      `rang projeté attendu 1, obtenu ${t6b.rank}`);
+  assert(t6b.projRow,         'la ligne de simulation doit être rendue');
+  assert(t6b.projNote,        'la note de simulation doit être affichée');
+  assert(t6b.btnPresent,      'le bouton « Mon rang » doit figurer sur la fiche Ironman');
+
   // 7) Anti double-classement : run déjà soumis détecté + re-soumission bloquée.
   const t7 = await page.evaluate(async () => {
     const found = await _hofFindByRunId(ironmanRunId);
