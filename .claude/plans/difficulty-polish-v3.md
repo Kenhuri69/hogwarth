@@ -5,6 +5,11 @@
 > faire ultérieurement » de `difficulty-progression.md` (encore ouvert).
 > Pré-requis : Phase 3 de `difficulty-progression` (équipements mid-game
 > + respawn) livrée sur master.
+>
+> **MAJ 2026-05-17** : Vague A livrée. Vague B constatée **déjà faite**
+> — `dumbledore.dialoguesByQuest` couvre les 5 quêtes de la chaîne
+> (livré par le plan archivé `voice-dumbledore-chain`, routage par le
+> mécanisme générique `_npcDialogPages`). Seule la Vague C reste ouverte.
 
 ## 1. Contexte
 
@@ -82,19 +87,18 @@ récupérés, capture comparée avant/après.
 
 ## 3. Étapes
 
-### Vague A — Sprites
+### Vague A — Sprites · ✅ LIVRÉE (2026-05-17)
 
-- [ ] Identifier les 6 IDs dans `js/data.js` (commit `a953376`).
-- [ ] Capturer screenshots actuels (alias).
-- [ ] Recette 1/6 dans `tools/icon_factory.py`.
-- [ ] Recette 2/6.
-- [ ] Recette 3/6.
-- [ ] Recette 4/6.
-- [ ] Recette 5/6.
-- [ ] Recette 6/6.
-- [ ] `python3 tools/icon_factory.py <6 ids>`.
-- [ ] Référencer dans `ITEM_ICON_NEW_REGISTRY`.
-- [ ] Capture comparée + commit + push.
+- [x] 6 IDs identifiés (`js/data.js`, commit `a953376`) : `gants_duelliste`,
+      `casque_aurore`, `ceinture_force`, `anneau_courage`, `bottes_silence`,
+      `talisman_tactique` — jusqu'ici alias dans `ITEM_ICON_REGISTRY`.
+- [x] 6 recettes ajoutées au dict `RECIPES` de `tools/icon_factory.py`
+      (parts réutilisés : `glove`, `hat-pointy`, `belt`, `ring_band`,
+      `boot`, `gem-pendant` — aucun nouveau part nécessaire).
+- [x] `python3 tools/icon_factory.py <6 ids>` → 30 PNG dans `img/icons_new/`.
+- [x] 6 entrées ajoutées à `ITEM_ICON_NEW_REGISTRY` (`js/item-icons.js`).
+      Les alias legacy de `ITEM_ICON_REGISTRY` sont conservés en fallback.
+- [x] Cache-bust `item-icons.js?v=6` ; `node tests/smoke.js` vert.
 
 ### Vague B — Dialogues Dumbledore
 

@@ -229,7 +229,14 @@ const ITEM_ICON_NEW_REGISTRY = {
   // Set du Blaireau (Poufsouffle)
   cape_loyaute:         'img/icons_new/cape_loyaute_64.png',
   coiffe_blaireau:      'img/icons_new/coiffe_blaireau_64.png',
-  medaillon_helga:      'img/icons_new/medaillon_helga_64.png'
+  medaillon_helga:      'img/icons_new/medaillon_helga_64.png',
+  // Équipements mid-game (cf. .claude/plans/difficulty-polish-v3.md Vague A)
+  gants_duelliste:      'img/icons_new/gants_duelliste_64.png',
+  casque_aurore:        'img/icons_new/casque_aurore_64.png',
+  ceinture_force:       'img/icons_new/ceinture_force_64.png',
+  anneau_courage:       'img/icons_new/anneau_courage_64.png',
+  bottes_silence:       'img/icons_new/bottes_silence_64.png',
+  talisman_tactique:    'img/icons_new/talisman_tactique_64.png'
 };
 
 // Status effects (battle.js consomme ce registre via STATUS_DEFS[id].iconSrc)
