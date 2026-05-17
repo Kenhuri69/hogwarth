@@ -214,7 +214,7 @@ function startBattle(baseEnemyData) {
   UX_safe.logCombatTurn(1);
   UX_safe.logCombat(`⚔️ Combat engagé contre ${size} ennemi${size>1?'s':''}.`, 'info');
   UX_safe.renderTimeline();
-  AudioSystem.startCombatMusic();
+  AudioSystem.startCombatMusic(enemyGroup);
 }
 
 // Renvoie 1, 2 ou 3. Politique de base selon mode et étage + scaling

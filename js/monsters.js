@@ -766,6 +766,7 @@ const MONSTERS = [
 
   {
     id:       "basilic",
+    epic:     true,
     name:     "Basilic Mineur",
     icon:     "🐉",
     imgSrc:   "img/monsters/basilic.png",
@@ -795,6 +796,7 @@ const MONSTERS = [
 
   {
     id:       "chimere",
+    epic:     true,
     name:     "Chimère de Poudlard",
     icon:     "🦁",
     imgSrc:   "img/monsters/chimere.png",
@@ -821,6 +823,7 @@ const MONSTERS = [
 
   {
     id:       "ombre_quirrell",
+    epic:     true,
     name:     "Ombre de Quirrell",
     icon:     "🎭",
     imgSrc:   "img/monsters/ombre_quirrell.png",
@@ -847,6 +850,7 @@ const MONSTERS = [
 
   {
     id:       "nagini",
+    epic:     true,
     name:     "Nagini",
     icon:     "🐲",
     imgSrc:   "img/monsters/nagini.png",
@@ -916,6 +920,7 @@ const MONSTERS = [
 
   {
     id:       "bellatrix",
+    epic:     true,
     name:     "Bellatrix Lestrange",
     icon:     "🧙‍♀️",
     imgSrc:   "img/monsters/bellatrix.png",
@@ -949,6 +954,7 @@ const MONSTERS = [
 
   {
     id:       "voldemort_affaibli",
+    epic:     true,
     name:     "Voldemort Affaibli",
     icon:     "🩻",
     imgSrc:   "img/monsters/voldemort_affaibli.png",
@@ -980,6 +986,7 @@ const MONSTERS = [
 
   {
     id:       "voldemort_revenu",
+    epic:     true,
     name:     "Voldemort Ressuscité",
     icon:     "💀",
     imgSrc:   "img/monsters/voldemort_revenu.png",
