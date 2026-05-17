@@ -81,6 +81,14 @@ const CHARACTERS = {
     spells:["Episkey","Protego","Incendio","Accio"],
     tagline:"Brillante érudite — la magie par le savoir."
   },
+  draco: { name:"Drago Malefoy", icon:"🐍", class:"Élève de Serpentard",
+    imgSrc:"img/draco.png", role:"Duelliste",
+    hp:29, sp:30, str:7, int:13, agi:13, end:8, lck:14, mag:14,
+    atk:4, def:2,
+    wand:"Baguette d'Aubépine", armor:"Robe de Serpentard", acc:"Insigne de Préfet",
+    spells:["Expelliarmus","Stupefix","Protego","Episkey"],
+    tagline:"Sang-pur ambitieux — la fierté avant tout."
+  },
   // ── Personnages originaux ─────────────────────────────────
   celeste: { name:"Céleste Luneclair", icon:"🌙", class:"Élève de Serdaigle",
     imgSrc:"img/celeste.png", role:"Astromage",
