@@ -64,5 +64,7 @@ Plans 100 % terminés et livrés sur master. Conservés pour archéologie / déc
 | `draco-malfoy-character.md` | Personnages jouables film : Drago Malefoy, Cho Chang, Cedric Diggory (portraits détourés + entrées `CHARACTERS`) | — |
 | `Manon.md` | PNJ original Manon (fille cachée de Lupin) : chaîne de quêtes `manon_secret`/`manon_pardon`, dialogues, portrait, coda Poufsouffle | — |
 | `voice-dumbledore-chain.md` | Voix in-game de Dumbledore sur la chaîne de 5 quêtes d'épreuves : 15 OGG `dumbledore_<qid>_<offer\|active\|ready>_1` + câblage `_voiceKeyForPage`/`_playPageVoice` | `claude/dumbledore-voice-chain` |
+| `combat-extensions-v2.md` | Extensions combat V2 : Garde counter-attack (`_tryGuardCounter`, `counterChance`), Double-Garde (empilement `guardTurns` cap 3), Ferula Maxima (régén AOE), ennemis dispel, spellbook `livre_ferula` | `claude/list-open-plans-eDYxT` |
+| `voice-extensions-v2.md` | Voix in-game V2 : 28 OGG chefs de Maison (Vague A), 13 OGG incantations + `SPELL_VOICE_MAP` (Vague B), karaoké généralisé intro + dialogues PNJ (Vague C). Vague D (localisation) annulée | `claude/extend-house-quest-paths-Bh7MD` / `claude/list-open-plans-eDYxT` |
 
 > Pour un plan encore actif, voir le dossier parent `.claude/plans/`.
