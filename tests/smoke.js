@@ -7630,12 +7630,15 @@ async function scenarioIronman() {
     rows:          document.querySelectorAll('#hof-list .hof-row').length,
     firstName:     document.querySelector('#hof-list .hof-name')?.textContent,
     hasMedal:      !!document.querySelector('#hof-list .hof-row .hof-medal'),
+    heroAvatar:    document.querySelector('#hof-list .hof-hero-av img')?.getAttribute('src'),
   }));
   console.log('  T6 Hall of Fame :', t6);
   assert(t6.screenVisible,          'écran Hall of Fame doit être visible');
   assert(t6.rows === 1,             'la liste doit afficher 1 entrée');
   assert(t6.firstName === 'Testeur','le top 1 doit être Testeur');
   assert(t6.hasMedal,               'le rang 1 doit afficher une médaille PNG');
+  assert(t6.heroAvatar === 'img/harry.png',
+    `le portrait du sorcier doit être affiché, obtenu ${t6.heroAvatar}`);
 
   // 6b) Simulation de rang depuis la fiche perso (bouton « Mon rang »).
   const t6b = await page.evaluate(async () => {
