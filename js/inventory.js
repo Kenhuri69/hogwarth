@@ -59,8 +59,8 @@ function _consumeMaterial(itemId, n) {
 // belt, trinket) ainsi que d'éventuels slots legacy (armor, acc) issus
 // d'anciennes saves non migrées.
 //
-// hpMax/spMax restent hors-scope V1 : `checkLevelUp()` les mute encore
-// directement, on n'y touche pas ici.
+// hpMax/spMax sont recalculés ici : `_baseHpMax`/`_baseSpMax` (croissent au
+// level-up et à l'allocation END) + Σ bonusHpMax/SpMax de l'équipement.
 function recalculateStats() {
   party.forEach(c => {
     // Lazy init des bases secondaires (str/int/agi/end) pour les saves
@@ -69,6 +69,11 @@ function recalculateStats() {
     if (c._baseInt === undefined) c._baseInt = c.int;
     if (c._baseAgi === undefined) c._baseAgi = c.agi;
     if (c._baseEnd === undefined) c._baseEnd = c.end;
+    // Lazy init des PV/PM max de base (Vague B — bonusHpMax/SpMax). Capture
+    // la valeur courante : aucun item legacy ne porte ces bonus, donc
+    // hpMax/spMax == base au moment de la migration d'une save antérieure.
+    if (c._baseHpMax === undefined) c._baseHpMax = c.hpMax;
+    if (c._baseSpMax === undefined) c._baseSpMax = c.spMax;
 
     // Repartir des stats de base (croissent au level-up via _base*)
     c.atk = c._baseAtk;
@@ -117,6 +122,7 @@ function recalculateStats() {
     //   critMultiplier / spellCritMultiplier : 1.5 + bonusCritDamage cumulés.
     let critBonus = 0, dodgeBonus = 0;
     let critDmgBonus = 0, spellCritBonus = 0, spellCritDmgBonus = 0;
+    let hpMaxBonus = 0, spMaxBonus = 0;
     if (c.equipped) {
       for (const item of Object.values(c.equipped)) {
         if (!item) continue;
@@ -125,6 +131,8 @@ function recalculateStats() {
         if (item.bonusCritDamage)      critDmgBonus      += item.bonusCritDamage;
         if (item.bonusSpellCritChance) spellCritBonus    += item.bonusSpellCritChance;
         if (item.bonusSpellCritDamage) spellCritDmgBonus += item.bonusSpellCritDamage;
+        if (item.bonusHpMax)           hpMaxBonus        += item.bonusHpMax;
+        if (item.bonusSpMax)           spMaxBonus        += item.bonusSpMax;
       }
     }
 
@@ -191,8 +199,18 @@ function recalculateStats() {
     c.critChance          = Math.max(5, Math.min(100, lckCrit + critBonus));
     c.spellCritChance     = Math.max(5, Math.min(100, agiCrit + spellCritBonus));
     c.dodgeChance         = Math.max(0, Math.min(35, 5 + c.agi * 0.4 + dodgeBonus));
-    c.critMultiplier      = 1.5 + critDmgBonus;
-    c.spellCritMultiplier = 1.5 + spellCritDmgBonus;
+    // Multiplicateurs de crit : 1.5 + Σ bonusCritDamage, capés à 2.5 pour
+    // éviter les one-shots de boss (cf. equipment-bonuses-v2.md Vague C).
+    c.critMultiplier      = Math.min(2.5, 1.5 + critDmgBonus);
+    c.spellCritMultiplier = Math.min(2.5, 1.5 + spellCritDmgBonus);
+
+    // PV/PM max = base (croît au level-up / allocation END) + bonus
+    // d'équipement. Le bonus n'affecte PAS hp/sp courants ; au
+    // déséquipement, on clamp hp/sp si le max a baissé.
+    c.hpMax = c._baseHpMax + hpMaxBonus;
+    c.spMax = c._baseSpMax + spMaxBonus;
+    if (c.hp > c.hpMax) c.hp = c.hpMax;
+    if (c.sp > c.spMax) c.sp = c.spMax;
   });
 }
 
