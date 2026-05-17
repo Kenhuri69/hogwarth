@@ -784,16 +784,33 @@ body {
   background: rgba(5,2,0,0.85);
   flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 14px;
   padding: 20px;
   z-index: 9;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
 }
 #npc-dialog-overlay[style*="flex"] { display: flex !important; }
+/* Boîte de dialogue parchemin : header épinglé en haut, texte scrollable
+   au centre, actions épinglées en bas. La hauteur max borne le panneau →
+   débordement impossible par construction (cf. fix-quest-mobile-overflow). */
+.npc-dialog-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 100%;
+  padding: 22px 26px;
+  background: linear-gradient(160deg, #241608, #160c04);
+  border: 1.5px solid var(--gold-dark);
+  border-radius: 8px;
+  box-shadow: 0 0 32px rgba(0,0,0,0.7), inset 0 0 44px rgba(201,168,76,0.06);
+}
 .npc-dialog-header {
   display: flex; align-items: center; gap: 18px;
   max-width: 520px;
+  flex-shrink: 0;
 }
 .npc-dialog-portrait {
   /* Desktop par défaut : portrait large pour bien voir le PNJ.
@@ -836,12 +853,20 @@ body {
   max-width: 380px;
   font-style: italic;
   line-height: 1.6;
-  /* Texte long (quêtes bavardes) : scroll interne pour ne jamais
-     repousser les boutons d'action hors de l'écran. min-height:0
-     autorise le rétrécissement du flex-item dans la colonne. */
+  /* Texte long (quêtes bavardes) : seul élément scrollable du panneau ;
+     header et actions restent épinglés. min-height:0 autorise le
+     rétrécissement du flex-item dans la colonne. */
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding: 0 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-dark) transparent;
+}
+.npc-dialog-text::-webkit-scrollbar { width: 6px; }
+.npc-dialog-text::-webkit-scrollbar-thumb {
+  background: var(--gold-dark); border-radius: 3px;
 }
 .npc-dialog-pager {
   margin-top: 6px;
@@ -854,6 +879,7 @@ body {
 .npc-dialog-actions {
   display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
   margin-top: 4px;
+  flex-shrink: 0;
 }
 
 /* ── FLOOR TRANSITION ── */
@@ -3234,6 +3260,7 @@ button.shop-tab.active {
 @media (max-width: 700px) {
   .npc-dialog-portrait { width: 64px; height: 64px; font-size: 36px; }
   .npc-dialog-header   { gap: 14px; max-width: 380px; }
+  .npc-dialog-panel    { padding: 16px 16px; gap: 12px; }
   .intro-portrait      { width: 96px; height: 96px; font-size: 56px; }
   .intro-header        { gap: 16px; }
   .intro-card          { max-width: 540px; padding: 28px 26px; gap: 18px; }
