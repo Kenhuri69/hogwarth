@@ -598,6 +598,22 @@ RECIPES: Dict[str, Recipe] = {
         sparkles=True,
     ),
 
+    # Cor du Pégase — trinket épique (drop boss étage 7, equipment-bonuses-v2)
+    "cor_pegasse": Recipe(
+        id="cor_pegasse", name="Cor du Pégase", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "horn-pegasus.svg"},
+        fills={
+            "body":  (198, 158,  70),      # laiton chaud
+            "bell":  (228, 196, 108),      # pavillon plus clair
+            "mouth": ( 78,  54,  24),      # ombre intérieure du pavillon
+            "band":  (150, 110,  44),      # anneaux bronze sombre
+        },
+        accents=[
+            {"kind": "emboss", "region": "body", "color": (150, 110,  44)},
+            {"kind": "orb_glow", "region": "bell", "color": (255, 226, 150)},
+        ],
+    ),
+
     # Mandragore
     "mandragore": Recipe(
         id="mandragore", name="Racine de Mandragore", rarity="common", material="matte",

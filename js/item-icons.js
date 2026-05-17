@@ -74,6 +74,9 @@ const ITEM_ICON_REGISTRY = {
   ceinture_alchimiste: 'img/icons/items/ceinture_alchimiste.png',
   bottes_dragon:       'img/icons/items/bottes_dragon.png',
   retourneur_temps:    'img/icons/items/retourneur_temps.png',
+  // Cor du Pégase (equipment-bonuses-v2 Vague B) — fallback legacy ; le
+  // rendu effectif passe par le PNG painterly d'ITEM_ICON_NEW_REGISTRY.
+  cor_pegasse:         'img/icons/items/retourneur_temps.png',
   // Phase 3b — récompenses de quêtes PNJ
   anneau_resurrection: 'img/icons/items/anneau_resurrection.png',
   larmes_phenix:       'img/icons/items/larmes_phenix.png',
@@ -196,6 +199,7 @@ const ITEM_ICON_NEW_REGISTRY = {
   diademe_serdaigle:    'img/icons_new/diademe_serdaigle_64.png',
   coupe_poufsouffle:    'img/icons_new/coupe_poufsouffle_64.png',
   retourneur_temps:     'img/icons_new/retourneur_temps_64.png',
+  cor_pegasse:          'img/icons_new/cor_pegasse_64.png',
   mandragore:           'img/icons_new/mandragore_64.png',
   choco_sorcier:        'img/icons_new/choco_sorcier_64.png',
   // Tier 2 Maison (cf. .claude/plans/house-intermediate-tier.md)
@@ -284,9 +288,6 @@ const ITEM_ICON_SVG_REGISTRY = {
   potion_l_sp: _potionSvg('cl_plsp', 33, '#9a3ad8', '#b86ae0', '#b07a3a'),
   potion_force: _potionSvg('cl_pf', 33, '#e8862a', '#f4a85a', '#b07a3a'),
   potion_xl: _potionSvg('cl_pxl', 27, '#e8324a', '#ff6a78', '#e8c14a', true),
-  // Cor du Pégase (équipement V2 — drop boss étage 7). SVG inline en
-  // attendant un éventuel PNG painterly (cf. equipment-bonuses-v2.md Vague B).
-  cor_pegasse: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><path d="M14 44 Q12 24 30 16 Q48 8 54 18 Q44 16 34 24 Q20 32 22 46 Z" fill="#e8c14a"/><path d="M14 44 Q12 24 30 16 Q48 8 54 18 Q44 16 34 24 Q20 32 22 46 Z" fill="none" stroke="#a07a1a" stroke-width="2"/><ellipse cx="18" cy="45" rx="8" ry="6" fill="#f4d77a"/><ellipse cx="18" cy="45" rx="8" ry="6" fill="none" stroke="#a07a1a" stroke-width="2"/><path d="M30 16 Q40 14 50 16" stroke="#fff3c0" stroke-width="2" fill="none" opacity="0.7"/></svg>`,
 };
 
 // Génère le SVG d'une fiole : `liqY` = niveau du liquide (y, plus petit

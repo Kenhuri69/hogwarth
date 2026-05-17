@@ -146,8 +146,29 @@ plusieurs heures pour tester l'engagement réel.
   PV de départ est appliqué **avant** tout appel à `recalculateStats`, donc
   le lazy-init capture la bonne base. Confirmé par lecture du flux.
 - **`cor_pegasse`.** Slot `trinket`, rareté `epic`, drop sur
-  `mangemort_elite` (boss étage 7+), `chance: 0.05`. Icône emoji 📯
-  (fallback — pas de PNG painterly généré pour cette V2).
+  `mangemort_elite` (boss étage 7+), `chance: 0.05`.
+
+### Icône de `cor_pegasse` — pipeline painterly (correctif)
+
+Un premier jet utilisait un SVG inline dans `ITEM_ICON_SVG_REGISTRY` :
+shortcut **rejeté**. La règle du projet (CLAUDE.md §« Pipeline d'icônes
+d'items » + `tools/README.md`) impose le pipeline painterly pour tout
+nouvel item équipable. Procédure suivie :
+
+1. Dépendances installées : `pip install pillow cairosvg numpy scipy`
+   (cairo système déjà présent).
+2. Nouveau part silhouette `tools/parts/horn-pegasus.svg` (viewBox
+   `0 0 512 512`, 4 régions : `body`, `bell`, `mouth`, `band`).
+3. Recette `cor_pegasse` ajoutée au dict `RECIPES` de
+   `tools/icon_factory.py` (`material:"metal"`, `rarity:"epic"`,
+   accents `emboss` + `orb_glow`).
+4. Génération : `python3 tools/icon_factory.py cor_pegasse` →
+   `img/icons_new/cor_pegasse_{16,24,32,48,64}.png`.
+5. Câblage `js/item-icons.js` : entrée dans `ITEM_ICON_NEW_REGISTRY`
+   (`_64.png`, priorité runtime) + fallback legacy dans
+   `ITEM_ICON_REGISTRY` (alias `retourneur_temps.png`, satisfait la
+   couverture 100 % du smoke `scenarioItemIcons`). L'entrée SVG inline
+   provisoire a été retirée.
 
 ## 4. Décisions à valider en marche
 
