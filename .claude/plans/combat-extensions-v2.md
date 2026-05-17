@@ -58,8 +58,11 @@ chance de tenter `weaken` (les forcer à briser la garde).
 **Spec** :
 - Nouveau sort `Ferula Maxima` (PM 12, niveau 5+, déverrouillage
   spellbook ou level-up Hermione 7).
-- Effet : applique `regenSp: 2` ET `regenHp: 1` sur **les deux** alliés
+- Effet : applique `regenSp: 2` ET `regenHp` sur **les deux** alliés
   pendant 3 tours.
+- `regenHp = power(1) + floor(INT/12) + floor(END/16)` du lanceur —
+  scaling atténué (Ferula simple utilise INT/8 + END/8) car l'effet
+  est AOE sur 3 tours.
 - Implémenté via `applyStatus` sur chaque allié avec ID `regen_ferula_max`.
 
 **Smoke** : `scenarioFerulaMaxima` : cast → tick 1/2/3 → perso 0 et 1
@@ -134,3 +137,5 @@ Bellatrix dispel → `shieldTurns[0] === 0`.
 | Date | Étape | Notes |
 |------|-------|-------|
 | 2026-05-17 | Vagues A-E | Implémentées en un lot. `battle.js` : `STATUS_DEFS.regen_ferula_max`, tick PV/PM, garde empilable + consommée par coup, `_tryGuardCounter`, Ferula Maxima niveau 7. `battle-spells.js` : `case 'dispel'`, biais weaken, `_spellSupportRegenAoe`. `inventory.js` : `counterChance` dans `recalculateStats`. `data.js` : sort Ferula Maxima + item `livre_ferula`. `monsters.js` : dispel sur 3 ennemis. `movement.js` : `livre_ferula` au loot des coffres ét. 4-6. Smoke `scenarioCombatExtV2` (A counter / B double-garde / C Ferula Maxima / D dispel + biais) — suite complète verte. |
+| 2026-05-17 | Icônes dédiées | `livre_ferula` (recette painterly `icon_factory.py` → `img/icons_new/`) et sort `Ferula Maxima` (`gen_element_spell_icons.py` → `img/icons/spells/ferula_maxima.png`) — remplacent les icônes réutilisées. |
+| 2026-05-17 | Scaling Maxima | `_spellSupportRegenAoe` : `regenHp` scale désormais `floor(INT/12)+floor(END/16)` du lanceur (atténué vs Ferula simple). Smoke C3 ajusté (+4 PV avec INT 24/END 16). Élément : aucun, conforme — sort de soutien hors système élémentaire. |

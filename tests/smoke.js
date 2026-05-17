@@ -7971,6 +7971,7 @@ async function scenarioCombatExtV2() {
       currentBattleChar = 0;
       party[0].spells.push('Ferula Maxima');
       party[0].sp = 30; party[0].mag = 10; party[0].spMax = 40;
+      party[0].int = 24; party[0].end = 16;   // scaling atténué : +2 +1
       party[0].hp = 10; party[0].hpMax = 50;
       party[1].hp = 10; party[1].hpMax = 50; party[1].sp = 5; party[1].spMax = 40;
       party[0].statusEffects = []; party[1].statusEffects = [];
@@ -7983,14 +7984,15 @@ async function scenarioCombatExtV2() {
     assert(cast.s1 === 3, `Ferula Maxima : Hermione sans régén 3 tours (${cast.s1})`);
     assert(cast.sp === 18, `PM attendus 30−12=18 après cast, obtenu ${cast.sp}`);
 
-    // C3 — Tick : chaque allié récupère PV + PM.
+    // C3 — Tick : chaque allié récupère PV (power 1 + INT/12 + END/16
+    //      du lanceur = 1+2+1 = 4) + 2 PM.
     const tick = await ctx.page.evaluate(() => {
       party[1].hp = 10; party[1].sp = 5;
       const hpB = party[1].hp, spB = party[1].sp;
       tickStatuses(party[1], false);
       return { dHp: party[1].hp - hpB, dSp: party[1].sp - spB };
     });
-    assert(tick.dHp === 1, `tick Ferula Maxima : +1 PV attendu, obtenu +${tick.dHp}`);
+    assert(tick.dHp === 4, `tick Ferula Maxima : +4 PV attendu (scaling), obtenu +${tick.dHp}`);
     assert(tick.dSp === 2, `tick Ferula Maxima : +2 PM attendu, obtenu +${tick.dSp}`);
 
     if (ctx.errors.length) {
