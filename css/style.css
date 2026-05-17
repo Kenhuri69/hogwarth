@@ -517,9 +517,10 @@ body {
     position: absolute;
     top: 8px;
     right: 8px;
-    /* Taille adaptative : ~30 % de la largeur d'écran, bornée pour
-       rester lisible sur petits téléphones et raisonnable sur grands. */
-    width: clamp(88px, 30vw, 168px);
+    /* Largeur pilotée par _sizeCornerMinimap() (renderer-minimap.js) :
+       elle est calculée pour tenir dans la marge libre autour du cadre
+       3D sans le recouvrir. Le 96px ci-dessous n'est qu'un fallback. */
+    width: 96px;
     padding: 3px;
     background: rgba(10, 7, 5, 0.78);
     border: 1px solid var(--gold-dark);

@@ -39,3 +39,8 @@ Réutilise le rendu minimap existant. Purement informative
 - [x] Étape 3 — JS
 - [x] Étape 4 — Test smoke
 - [x] Amendement — taille fixe 6px → adaptative 30vw (demande utilisateur)
+- [x] Amendement — 30vw chevauchait le cadre 3D. La taille est désormais
+      calculée depuis la géométrie réelle du cadre (`getRect`/`drawDungeon`)
+      pour tenir dans la marge libre (à droite ou au-dessus) sans le
+      recouvrir. `ResizeObserver` sur la vue 3D pour recalculer après le
+      settling du layout mobile.

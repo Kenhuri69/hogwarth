@@ -6,12 +6,52 @@ function renderMinimap() {
   _buildMinimapCells(document.getElementById('minimap'), 14);
   // Mini-carte du coin (mobile) — masquée en CSS sur desktop.
   // 'auto' : cellules dimensionnées par la grille CSS (adaptatif).
-  _buildMinimapCells(document.getElementById('minimap-corner'), 'auto');
+  const corner = document.getElementById('minimap-corner');
+  if (corner) {
+    _buildMinimapCells(corner, 'auto');
+    _sizeCornerMinimap(corner);
+    _ensureCornerObserver();
+  }
   // Si l'overlay mobile est ouvert, le mettre à jour aussi
   const overlay = document.getElementById('map-overlay');
   if (overlay && overlay.style.display === 'flex') {
     _buildMinimapCells(document.getElementById('minimap-mobile'), 20);
   }
+}
+
+// Recalcule la taille de la mini-carte dès que la vue 3D change de
+// dimensions (rotation, settling du layout mobile, barre d'URL…).
+// Le layout mobile se stabilise après le rendu initial : un simple
+// appel ponctuel produirait une taille périmée.
+let _cornerObserver = null;
+function _ensureCornerObserver() {
+  if (_cornerObserver || typeof ResizeObserver === 'undefined') return;
+  const vp = (typeof canvas !== 'undefined') && canvas && canvas.parentElement;
+  if (!vp) return;
+  _cornerObserver = new ResizeObserver(() => {
+    const c = document.getElementById('minimap-corner');
+    if (c) _sizeCornerMinimap(c);
+  });
+  _cornerObserver.observe(vp);
+}
+
+// Dimensionne la mini-carte du coin pour qu'elle tienne dans la marge
+// libre autour du cadre 3D — à droite ou au-dessus — sans le recouvrir.
+// La géométrie du cadre reproduit drawDungeon()/getRect() (renderer.js).
+function _sizeCornerMinimap(corner) {
+  const vp = (typeof canvas !== 'undefined') && canvas && canvas.parentElement;
+  if (!vp) return;
+  const W = vp.clientWidth, H = vp.clientHeight;
+  if (!W || !H) return;
+  const scale      = Math.min(W, H) * 0.42;   // cf. drawDungeon()
+  const frameRight = W / 2 + scale;            // bord droit du cadre 3D
+  const frameTop   = H / 2 - scale * 0.62;     // bord haut du cadre 3D
+  const inset = 8;                             // cf. top/right:8px en CSS
+  // Plus grand carré libre dans le coin haut-droit : soit à droite du
+  // cadre, soit au-dessus. On retient la plus grande des deux marges.
+  const free = Math.max(W - frameRight, frameTop) - inset;
+  const size = Math.max(58, Math.min(free, 168));
+  corner.style.width = Math.round(size) + 'px';
 }
 
 function _buildMinimapCells(mm, cellSize) {
