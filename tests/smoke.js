@@ -4414,6 +4414,12 @@ async function scenarioRelativeControls() {
   //    une case libre. Vérifie ensuite que moveBackward fait l'inverse SANS
   //    pivoter, puis que l'opposé du dx,dy correspond bien à playerDir.
   const stepCheck = await page.evaluate(() => {
+    // Déterminisme : vider enemyMap → moveForward ne peut pas tomber sur
+    // un ennemi (le combat poserait inBattle=true et bloquerait à la fois
+    // moveBackward et la rotation clavier testée plus bas).
+    for (let y = 0; y < enemyMap.length; y++) {
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    }
     const dirs = ['n','e','s','w'];
     const D = { n:[0,-1], e:[1,0], s:[0,1], w:[-1,0] };
     for (const d of dirs) {
@@ -4688,11 +4694,14 @@ async function scenarioNpcSprite3D() {
 
   // 4) Pas de PNJ devant → drawNpcSprite NE doit PAS être appelé.
   const noNpc = await page.evaluate(() => {
-    // Retire le PNJ posé plus haut, place du floor partout devant.
+    // Le renderer scanne jusqu'à DEPTH cases devant : ne nettoyer que les
+    // 3 premières laissait passer un CELL.NPC généré plus loin dans le
+    // couloir. On retire donc TOUTE case NPC de l'étage.
     if (typeof npcPlacements !== 'undefined') npcPlacements.clear();
-    for (let dy = 1; dy <= 3; dy++) {
-      const yy = playerY - dy;
-      if (yy >= 0) dungeon[yy][playerX] = CELL.FLOOR;
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.NPC) dungeon[y][x] = CELL.FLOOR;
+      }
     }
     const calls = [];
     const orig = window.drawNpcSprite;
