@@ -182,7 +182,7 @@ function teleportEnemyAway(enemyIdx) {
   const cell = _pickRandomFreeCell(currentFloor, { avoidPlayer: true });
   if (cell && enemyMap) {
     // Restaure les HP à 100 % au moment du replace (l'ennemi original est consommé).
-    enemyMap[cell.y][cell.x] = { ...enemy, currentHp: enemy.hp, disarmed: 0, statusEffects: [] };
+    enemyMap[cell.y][cell.x] = { ...enemy, currentHp: enemy.hp, statusEffects: [] };
   }
   // Retire l'ennemi de l'enemyGroup sans donner d'XP/loot.
   enemyGroup.splice(enemyIdx, 1);

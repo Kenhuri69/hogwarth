@@ -92,11 +92,15 @@
     } else if (spell.effect === 'heal') {
       body += `<div class="tt-section">${row('Soin', `+${spell.power} PV`, 'tt-good')}</div>`;
     } else if (spell.effect === 'shield') {
-      body += `<div class="tt-section">${row('Effet', 'Annule la prochaine attaque', 'tt-mag')}${row('Durée', '2 tours')}</div>`;
+      const dur = (c && typeof shieldDuration === 'function') ? shieldDuration(spell, c) : 2;
+      body += `<div class="tt-section">${row('Effet', 'Annule la prochaine attaque', 'tt-mag')}${row('Durée', `${dur} tours`)}</div>`;
     } else if (spell.effect === 'disarm') {
-      body += `<div class="tt-section">${row('Effet', `−${spell.power} ATK ennemie`, 'tt-mag')}${row('Durée', '2 tours')}</div>`;
+      const lost = (c && typeof disarmAtkLoss === 'function') ? disarmAtkLoss(spell, c) : spell.power;
+      const dur  = (c && typeof disarmTurns === 'function') ? disarmTurns(spell, c) : 2;
+      body += `<div class="tt-section">${row('Effet', `−${lost} ATK ennemie`, 'tt-mag')}${row('Durée', `${dur} tours`)}</div>`;
     } else if (spell.effect === 'steal') {
-      body += `<div class="tt-section">${row('Effet', '+5 à 15 Gallions', 'tt-good')}</div>`;
+      const b = (c && typeof stealBaseGold === 'function') ? stealBaseGold(spell, c) : (spell.power || 0);
+      body += `<div class="tt-section">${row('Effet', `+${b} à ${b + 5} Gallions`, 'tt-good')}</div>`;
     }
 
     // Coût + état
