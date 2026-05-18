@@ -200,6 +200,12 @@ const SPELLS = [
   { name:"Maledictus",        icon:"☠️",   desc:"Malédiction (10 dégâts, −3 ATK/DEF)", cost:9, effect:"curse",  element:"ténèbres", power:10 },
   { name:"Crucio",            icon:"😖",   desc:"Sort de douleur interdit (22 dégâts)", cost:14, effect:"burn", element:"feu",      power:22 },
   { name:"Morsmordre",        icon:"💀",   desc:"Marque des Ténèbres (26 dégâts)",     cost:18, effect:"burn", element:"ténèbres", power:26 },
+  // ── Sorts de Maison — palier 17 « Mythe » (1 sort exclusif/Maison) ──
+  // Enseignés au franchissement du palier Mythe via `grantsSpell`.
+  { name:"Patronus Maxima",       icon:"🦌", desc:"Bouclier de groupe (2 tours) + dissipe l'étourdissement", cost:22, effect:"patronus_maxima", power:0 },
+  { name:"Sectumsempra Imperius", icon:"🩸", desc:"Saignement lourd + asservit la cible (2 tours)",          cost:24, effect:"imperius", element:"ténèbres", power:20 },
+  { name:"Legilimens",            icon:"👁️", desc:"Lit l'esprit ennemi : annule la prochaine capacité",      cost:18, effect:"legilimens", power:0 },
+  { name:"Récolte Magique",       icon:"🌾", desc:"Restaure tout le groupe · or du combat majoré (+50%)",    cost:26, effect:"recolte", power:0 },
 ];
 
 // Catégorie d'un sort pour le filtre de la modale Sorts. Soutien et
@@ -208,8 +214,9 @@ const SPELLS = [
 function spellCategory(spell) {
   if (!spell) return 'utilitaire';
   const e = spell.effect;
-  if (e === 'heal' || e === 'support_regen' || e === 'support_regen_aoe' || e === 'shield') return 'soutien';
-  if (e === 'disarm' || e === 'steal' || e === 'teleport')     return 'utilitaire';
+  if (e === 'heal' || e === 'support_regen' || e === 'support_regen_aoe' || e === 'shield'
+      || e === 'patronus_maxima' || e === 'recolte') return 'soutien';
+  if (e === 'disarm' || e === 'steal' || e === 'teleport' || e === 'legilimens') return 'utilitaire';
   return spell.element || 'utilitaire';
 }
 

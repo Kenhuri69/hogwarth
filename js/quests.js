@@ -357,6 +357,62 @@ const QUEST_TEMPLATES = [
     location: "Serres de Botanique (étage 3)",
     houseSetQuest: true,
     house: "Poufsouffle"
+  },
+  // ── Quêtes de don de Maison (palier 17 « Mythe » — gold-sink endgame) ──
+  // Débloquées par `unlockHouseMytheQuest(chosenHouse)` au franchissement
+  // du palier Mythe. Objectif `donate` : faire don de 3000 Gallions à la
+  // Maison via le Chef de Maison. L'or est consommé à la remise.
+  {
+    id: "quest_don_gryff",
+    title: "Le tribut du Lion",
+    giver: "Professeur McGonagall",
+    desc: "Gryffondor finance ses œuvres et ses jeunes recrues. Fais don de 3000 Gallions à ta Maison — la générosité est une autre forme de courage.",
+    objectives: [
+      { type: "donate", amount: 3000, progress: 0, completed: false }
+    ],
+    reward: { xp: 1200, item: "felix" },
+    location: "Tour de Gryffondor (étage 5)",
+    houseMytheQuest: true,
+    house: "Gryffondor"
+  },
+  {
+    id: "quest_don_slyth",
+    title: "Le trésor du Serpent",
+    giver: "Professeur Rogue",
+    desc: "Serpentard sait que l'influence a un prix. Verse 3000 Gallions au trésor de ta Maison — l'ambition se nourrit aussi de moyens.",
+    objectives: [
+      { type: "donate", amount: 3000, progress: 0, completed: false }
+    ],
+    reward: { xp: 1200, item: "felix" },
+    location: "Cachots (étage 4)",
+    houseMytheQuest: true,
+    house: "Serpentard"
+  },
+  {
+    id: "quest_don_raven",
+    title: "Le legs de l'Aigle",
+    giver: "Professeur Flitwick",
+    desc: "Le savoir se protège, et protéger coûte cher. Offre 3000 Gallions à Serdaigle pour préserver ses grimoires et ses esprits.",
+    objectives: [
+      { type: "donate", amount: 3000, progress: 0, completed: false }
+    ],
+    reward: { xp: 1200, item: "felix" },
+    location: "Salle de Sortilèges (étage 6)",
+    houseMytheQuest: true,
+    house: "Serdaigle"
+  },
+  {
+    id: "quest_don_pouf",
+    title: "Le partage du Blaireau",
+    giver: "Professeur Chourave",
+    desc: "Poufsouffle prend soin des siens, sans exception. Fais don de 3000 Gallions — la loyauté se mesure aussi au partage.",
+    objectives: [
+      { type: "donate", amount: 3000, progress: 0, completed: false }
+    ],
+    reward: { xp: 1200, item: "felix" },
+    location: "Serres de Botanique (étage 3)",
+    houseMytheQuest: true,
+    house: "Poufsouffle"
   }
 ];
 
@@ -386,6 +442,33 @@ function unlockHouseQuest(house) {
   return true;
 }
 window.unlockHouseQuest = unlockHouseQuest;
+
+// Map Maison → quête de don (palier 17 « Mythe »).
+const HOUSE_MYTHE_QUESTS = {
+  Gryffondor:  'quest_don_gryff',
+  Serpentard:  'quest_don_slyth',
+  Serdaigle:   'quest_don_raven',
+  Poufsouffle: 'quest_don_pouf',
+};
+
+// Ouvre la quête de don au franchissement du palier Mythe (tier 17).
+// Idempotent : ignoré si la quête est déjà connue (active, disponible
+// ou rendue). Symétrique de `unlockHouseQuest` (tier 12).
+function unlockHouseMytheQuest(house) {
+  const qid = HOUSE_MYTHE_QUESTS[house];
+  if (!qid) return false;
+  if (activeQuests.some(q => q.id === qid)) return false;
+  if (completedQuests.has(qid)) return false;
+  if (availableQuests.has(qid)) return false;
+  availableQuests.add(qid);
+  if (typeof addMsg === 'function') {
+    const tpl = getQuestTemplate(qid);
+    addMsg(`📜 Nouvelle quête de Maison : « ${tpl ? tpl.title : qid} »`, 'magic');
+  }
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
+  return true;
+}
+window.unlockHouseMytheQuest = unlockHouseMytheQuest;
 
 // IDs de monstres exclus du pool farming (bosses uniques scénaristiques).
 const FARMING_KILL_BLACKLIST = new Set([
@@ -751,6 +834,8 @@ function _renderQuestStep(o, isActive, ready, isFirst) {
     label = `Éliminer ${o.amount}× ${m ? m.name : o.monsterId}`;
   } else if (o.type === 'floor') {
     label = `Descendre jusqu'à l'étage ${o.floor}`;
+  } else if (o.type === 'donate') {
+    label = `Faire don de ${o.amount} Gallions`;
   } else {
     const it = ITEMS.find(x => x.id === o.itemId);
     label = `Apporter ${o.amount}× ${it ? it.name : o.itemId}`;
@@ -834,6 +919,14 @@ function getActiveStep(q) {
 function _refreshObjectives() {
   for (const q of activeQuests) {
     for (const step of q.objectives) {
+      // Don de gold : évalué en continu dans les deux sens — l'or n'est
+      // consommé qu'à la remise, donc l'objectif se dé-complète si le
+      // joueur dépense ses Gallions avant d'aller voir le Chef de Maison.
+      if (step.type === 'donate') {
+        step.progress  = (player && player.gold) || 0;
+        step.completed = step.progress >= step.amount;
+        continue;
+      }
       if (step.completed) continue;
       if (step.type === 'item') {
         const count = (player && player.inventory)
@@ -887,6 +980,10 @@ function completeQuest(index) {
 // Consomme les items requis par les étapes "item" de la quête.
 function _consumeQuestItems(q) {
   for (const step of q.objectives) {
+    if (step.type === 'donate') {
+      player.gold = Math.max(0, player.gold - step.amount);
+      continue;
+    }
     if (step.type !== 'item') continue;
     let toConsume = step.amount;
     player.inventory = player.inventory.filter(i => {

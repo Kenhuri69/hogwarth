@@ -5363,6 +5363,344 @@ async function scenarioHouseTier5() {
   await browser.close();
 }
 
+// ── Scénario Maison V3 : palier 17 « Mythe » + sorts exclusifs ──
+async function scenarioHouseMytheTier() {
+  console.log('\n── Scénario Maison V3 : palier 17 « Mythe » ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : 30000 pts mais hors Boucle Ténébreuse (floor 5) → tier 17 refusé.
+  const t1 = await page.evaluate(() => {
+    victoryAchieved = true;
+    currentFloor    = 5;
+    housePoints     = 30000;
+    houseTier       = 16;          // simule Légende déjà atteinte
+    checkHouseLevelUp();
+    return { tier: houseTier, hasSpell: party[0].spells.includes('Patronus Maxima') };
+  });
+  console.log('  T1 floor 5  →', t1);
+  assert(t1.tier === 16,        'tier 17 ne doit pas passer hors Boucle Ténébreuse');
+  assert(t1.hasSpell === false, 'sort de Maison ne doit pas être appris hors gate');
+
+  // T2 : floor 12 (Boucle Ténébreuse tier 1) → tier 17 franchi + sort enseigné.
+  const t2 = await page.evaluate(() => {
+    const atkBefore = party[0]._baseAtk;
+    currentFloor = 12;
+    checkHouseLevelUp();
+    return {
+      tier: houseTier,
+      hasSpell: party[0].spells.includes('Patronus Maxima'),
+      atkGain: party[0]._baseAtk - atkBefore,
+    };
+  });
+  console.log('  T2 floor 12 →', t2);
+  assert(t2.tier === 17,       'tier 17 « Mythe » non franchi en Boucle Ténébreuse');
+  assert(t2.hasSpell === true, 'Patronus Maxima non enseigné au passage du palier');
+  assert(t2.atkGain === 2,     'bonus +2 ATK du palier Mythe non appliqué');
+
+  // T3 : les 4 sorts de Maison existent et ont un handler routable.
+  const t3 = await page.evaluate(() => {
+    const names = ['Patronus Maxima', 'Sectumsempra Imperius', 'Legilimens', 'Récolte Magique'];
+    return names.map(n => {
+      const s = SPELLS.find(x => x.name === n);
+      return { n, found: !!s, handler: !!s && typeof SPELL_HANDLERS[s.effect] === 'function' };
+    });
+  });
+  t3.forEach(r => {
+    assert(r.found,   `sort ${r.n} absent de SPELLS`);
+    assert(r.handler, `handler du sort ${r.n} absent de SPELL_HANDLERS`);
+  });
+
+  // T4 : chaque Maison a son tier 17 correctement configuré.
+  const t4 = await page.evaluate(() => {
+    const want = { Gryffondor: 'Patronus Maxima', Serpentard: 'Sectumsempra Imperius',
+                   Serdaigle: 'Legilimens', Poufsouffle: 'Récolte Magique' };
+    return Object.keys(want).map(h => {
+      const t = HOUSE_BONUSES[h].tiers[16];   // index 16 = 17e palier
+      return { h, ok: !!t && t.label === 'Mythe' && t.requiresDarkTier === 1
+                     && t.bonus.grantsSpell === want[h] };
+    });
+  });
+  t4.forEach(r => assert(r.ok, `tier 17 mal configuré pour ${r.h}`));
+
+  // ── Mécaniques de combat des sorts exclusifs ──
+  await startDummyFight(page, { hp: 200 });
+
+  // T5 : Sectumsempra Imperius — l'ennemi asservi frappe son allié.
+  const t5 = await page.evaluate(() => {
+    const base = enemyGroup[0];
+    enemyGroup = [
+      { ...base, name: 'Alpha', currentHp: 200, hp: 200, atk: 30, def: 4, abilities: [], statusEffects: [] },
+      { ...base, name: 'Beta',  currentHp: 200, hp: 200, atk: 30, def: 4, abilities: [], statusEffects: [] },
+    ];
+    party[0].statusEffects = [];
+    party[0].hp = party[0].hpMax;
+    applyStatus(enemyGroup[0], 'imperius', 0, 2);
+    const betaBefore = enemyGroup[1].currentHp;
+    enemyTurn();
+    return {
+      betaDropped:  enemyGroup[1].currentHp < betaBefore,
+      imperiusLeft: enemyGroup[0].statusEffects.some(s => s.id === 'imperius'),
+    };
+  });
+  console.log('  T5 imperius →', t5);
+  assert(t5.betaDropped,  'l\'ennemi asservi n\'a pas frappé son allié');
+  assert(t5.imperiusLeft, 'imperius (2 tours) doit rester actif après 1 tour');
+
+  // T6 : Legilimens — la charge annule la prochaine capacité ennemie.
+  const t6 = await page.evaluate(() => {
+    const base = enemyGroup[0];
+    enemyGroup = [{ ...base, name: 'Sorcier', currentHp: 200, hp: 200, atk: 40, def: 4,
+      abilities: [{ name: 'Éclair', icon: '⚡', effect: 'damage', power: 60, chance: 1 }],
+      statusEffects: [] }];
+    party[0].statusEffects = [];
+    party[0].hp = party[0].hpMax;
+    shieldTurns = [0, 0];
+    legilimensCancelCharges = 1;
+    const hpBefore = party[0].hp;
+    enemyTurn();
+    return { chargeAfter: legilimensCancelCharges, allyUnharmed: party[0].hp === hpBefore };
+  });
+  console.log('  T6 legilimens →', t6);
+  assert(t6.chargeAfter === 0, 'charge Legilimens non consommée');
+  assert(t6.allyUnharmed,      'capacité ennemie non annulée par Legilimens');
+
+  // T7 : Récolte Magique — restaure le groupe + arme le bonus d'or.
+  const t7 = await page.evaluate(() => {
+    party[0].hp = 1; party[0].sp = 1;
+    recolteGoldBonus = false;
+    const spell = SPELLS.find(s => s.name === 'Récolte Magique');
+    SPELL_HANDLERS[spell.effect](spell, party[0]);
+    return { full: party[0].hp === party[0].hpMax && party[0].sp === party[0].spMax,
+             flag: recolteGoldBonus };
+  });
+  console.log('  T7 recolte →', t7);
+  assert(t7.full,          'Récolte Magique ne restaure pas entièrement le groupe');
+  assert(t7.flag === true, 'recolteGoldBonus non armé par Récolte Magique');
+
+  // T8 : quête de don (gold-sink) ouverte au tier 17, remise consomme 3000.
+  const t8 = await page.evaluate(() => {
+    const offered = availableQuests.has('quest_don_gryff');
+    acceptQuest('quest_don_gryff');
+    const active = activeQuests.find(q => q.id === 'quest_don_gryff');
+    player.gold = 500;
+    _refreshObjectives();
+    const lowDone = active.objectives[0].completed;
+    const lowProg = active.objectives[0].progress;
+    player.gold = 4200;
+    _refreshObjectives();
+    const okDone = active.objectives[0].completed;
+    const goldBefore = player.gold;
+    const turnedIn = turnInQuestById('quest_don_gryff');
+    return {
+      offered, lowDone, lowProg, okDone, turnedIn,
+      goldSpent: goldBefore - player.gold,
+      questGone: !activeQuests.some(q => q.id === 'quest_don_gryff'),
+    };
+  });
+  console.log('  T8 quête de don →', t8);
+  assert(t8.offered,            'quest_don_gryff non ouverte au franchissement du tier 17');
+  assert(t8.lowDone === false,  'objectif donate validé à tort avec or insuffisant');
+  assert(t8.lowProg === 500,    'progress donate doit refléter l\'or courant');
+  assert(t8.okDone === true,    'objectif donate non validé avec or suffisant');
+  assert(t8.turnedIn === true,  'remise de la quête de don échouée');
+  assert(t8.goldSpent === 3000, 'le don doit consommer exactement 3000 Gallions');
+  assert(t8.questGone,          'quête de don non retirée des quêtes actives');
+
+  // T9 : statut « peur » — saut de tour + dissipation par Patronus Maxima.
+  const t9 = await page.evaluate(() => {
+    const out = { defDefined: typeof STATUS_DEFS !== 'undefined' && !!STATUS_DEFS.fear };
+    const base = enemyGroup[0] || { name: 'X', icon: '👹' };
+    enemyGroup = [{ ...base, name: 'Peureux', currentHp: 300, hp: 300, atk: 50, def: 4,
+      abilities: [], statusEffects: [] }];
+    party[0].statusEffects = [];
+    party[0].hp = party[0].hpMax;
+    shieldTurns = [0, 0];
+    guardTurns  = [0, 0];
+    applyStatus(enemyGroup[0], 'fear', 0, 3);
+    out.isFeared = isFeared(enemyGroup[0]);
+    const origRandom = Math.random;
+    Math.random = () => 0.0;            // force le jet de peur (skip garanti)
+    const hpBefore = party[0].hp;
+    enemyTurn();
+    Math.random = origRandom;
+    out.allyUnharmed = party[0].hp === hpBefore;
+    party[0].statusEffects = [];
+    applyStatus(party[0], 'fear', 0, 3);
+    const spell = SPELLS.find(s => s.name === 'Patronus Maxima');
+    SPELL_HANDLERS[spell.effect](spell, party[0]);
+    out.fearCleared = !party[0].statusEffects.some(s => s.id === 'fear');
+    return out;
+  });
+  console.log('  T9 peur →', t9);
+  assert(t9.defDefined,   'STATUS_DEFS.fear absent');
+  assert(t9.isFeared,     'isFeared ne détecte pas le statut peur');
+  assert(t9.allyUnharmed, 'ennemi apeuré (jet forcé) a quand même frappé');
+  assert(t9.fearCleared,  'Patronus Maxima ne dissipe pas la peur');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Maison V3 palier 17 OK (gate + 4 sorts + quête de don + peur)');
+  await browser.close();
+}
+
+// ── Scénario Maison V3 : palier 18 « Apothéose » ──────────────
+async function scenarioHouseApotheoseTier() {
+  console.log('\n── Scénario Maison V3 : palier 18 « Apothéose » ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : 45000 pts mais Boucle Ténébreuse tier 1 (floor 12) → tier 18 refusé.
+  const t1 = await page.evaluate(() => {
+    victoryAchieved = true;
+    currentFloor    = 12;
+    housePoints     = 45000;
+    houseTier       = 17;          // simule Mythe déjà atteint
+    checkHouseLevelUp();
+    return { tier: houseTier };
+  });
+  console.log('  T1 floor 12 →', t1);
+  assert(t1.tier === 17, 'tier 18 ne doit pas passer en Boucle Ténébreuse tier 1');
+
+  // T2 : floor 22 (Boucle Ténébreuse tier 2) → tier 18 franchi.
+  const t2 = await page.evaluate(() => {
+    const atkBefore = party[0]._baseAtk;
+    currentFloor = 22;
+    checkHouseLevelUp();
+    return { tier: houseTier, atkGain: party[0]._baseAtk - atkBefore,
+             passive: houseApotheosePassive() };
+  });
+  console.log('  T2 floor 22 →', t2);
+  assert(t2.tier === 18,              'tier 18 « Apothéose » non franchi en Boucle Ténébreuse tier 2');
+  assert(t2.atkGain === 3,            'bonus +3 ATK du palier Apothéose non appliqué');
+  assert(t2.passive === 'Gryffondor', 'houseApotheosePassive doit retourner la Maison au tier 18');
+
+  // T3 : chaque Maison a son tier 18 correctement configuré.
+  const t3 = await page.evaluate(() => {
+    return ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].map(h => {
+      const t = HOUSE_BONUSES[h].tiers[17];   // index 17 = 18e palier
+      return { h, ok: !!t && t.label === 'Apothéose' && t.requiresDarkTier === 2 };
+    });
+  });
+  t3.forEach(r => assert(r.ok, `tier 18 mal configuré pour ${r.h}`));
+
+  // T4 : passif Gryffondor — Cœur du Lion : +10 % crit (physique ET
+  // sort) + +15 % de dégâts critiques, appliqués au-dessus des plafonds.
+  const t4 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    houseTier = 17; recalculateStats();
+    const before = { crit: party[0].critChance, spellCrit: party[0].spellCritChance,
+                     critMult: party[0].critMultiplier, spellCritMult: party[0].spellCritMultiplier };
+    houseTier = 18; recalculateStats();
+    const after = { crit: party[0].critChance, spellCrit: party[0].spellCritChance,
+                    critMult: party[0].critMultiplier, spellCritMult: party[0].spellCritMultiplier };
+    return { before, after };
+  });
+  console.log('  T4 Gryffondor crit →', t4);
+  assert(t4.after.crit === Math.min(100, t4.before.crit + 10),
+    'passif Gryffondor doit ajouter +10 % de crit physique');
+  assert(t4.after.spellCrit === Math.min(100, t4.before.spellCrit + 10),
+    'passif Gryffondor doit ajouter +10 % de crit de sort');
+  assert(Math.abs(t4.after.critMult - Math.min(2.5, t4.before.critMult + 0.15)) < 1e-9,
+    'passif Gryffondor doit ajouter +15 % de dégâts critiques physiques');
+  assert(Math.abs(t4.after.spellCritMult - Math.min(2.5, t4.before.spellCritMult + 0.15)) < 1e-9,
+    'passif Gryffondor doit ajouter +15 % de dégâts critiques de sort');
+
+  // T7 : passif Poufsouffle — régénération hors combat à chaque pas.
+  const t7 = await page.evaluate(() => {
+    chosenHouse = 'Poufsouffle'; houseTier = 18;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    party[0].hp = 5; party[0].sp = 5;
+    const hpBefore = party[0].hp, spBefore = party[0].sp;
+    const x0 = playerX, y0 = playerY;
+    for (let i = 0; i < 4 && playerX === x0 && playerY === y0; i++) {
+      moveForward(); turnRight();
+    }
+    return { moved: playerX !== x0 || playerY !== y0,
+             hpGain: party[0].hp - hpBefore, spGain: party[0].sp - spBefore };
+  });
+  console.log('  T7 Poufsouffle régén →', t7);
+  assert(t7.moved,       'aucun pas possible pour tester la régén Poufsouffle');
+  assert(t7.hpGain >= 2, 'passif Poufsouffle doit régénérer ≥ 2 PV par pas');
+  assert(t7.spGain >= 2, 'passif Poufsouffle doit régénérer ≥ 2 PM par pas');
+
+  // T8 : passif Poufsouffle — Vigueur : ×1.23 dégâts au-dessus de 60 %
+  // PV, neutre en dessous, inactif hors Poufsouffle.
+  const t8 = await page.evaluate(() => {
+    chosenHouse = 'Poufsouffle'; houseTier = 18;
+    party[0].hpMax = 100;
+    party[0].hp = 80;  const high = _houseVigorMult(party[0]);
+    party[0].hp = 40;  const low  = _houseVigorMult(party[0]);
+    chosenHouse = 'Gryffondor';
+    party[0].hp = 80;  const off  = _houseVigorMult(party[0]);
+    return { high, low, off };
+  });
+  console.log('  T8 Poufsouffle Vigueur →', t8);
+  assert(t8.high === 1.23, 'Vigueur doit donner ×1.23 au-dessus de 60 % PV');
+  assert(t8.low === 1,    'Vigueur doit être neutre en dessous de 60 % PV');
+  assert(t8.off === 1,    'Vigueur ne doit pas s\'appliquer hors Poufsouffle');
+
+  // T9 : passif Gryffondor — Élan : un crit ajoute un palier (+8 %
+  // dégâts), un coup non-critique n'ajoute rien, cumul plafonné à 5.
+  const t9 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor'; houseTier = 18;
+    elanStacks = [0, 0];
+    const m0 = _houseElanMult(party[0]);          // 0 palier → ×1
+    _updateElan(party[0], false);                  // non-crit → rien
+    const afterMiss = elanStacks[0];
+    _updateElan(party[0], true);                   // crit → +1 palier
+    const m1 = _houseElanMult(party[0]);           // ×1.08
+    for (let i = 0; i < 10; i++) _updateElan(party[0], true);
+    const capped = elanStacks[0];                  // plafonné à 5
+    const mCap = _houseElanMult(party[0]);         // ×1.40
+    return { m0, afterMiss, m1, capped, mCap };
+  });
+  console.log('  T9 Gryffondor Élan →', t9);
+  assert(t9.m0 === 1,             'Élan : 0 palier → multiplicateur ×1');
+  assert(t9.afterMiss === 0,      'Élan : un coup non-critique n\'ajoute pas de palier');
+  assert(Math.abs(t9.m1 - 1.08) < 1e-9,  'Élan : 1 palier → ×1.08');
+  assert(t9.capped === 5,         'Élan : cumul plafonné à 5 paliers');
+  assert(Math.abs(t9.mCap - 1.40) < 1e-9, 'Élan : 5 paliers → ×1.40');
+
+  // ── Mécaniques en combat ──
+  await startDummyFight(page, { hp: 400 });
+
+  // T5 : passif Serpentard — un sort offensif draine des PV au lanceur.
+  const t5 = await page.evaluate(() => {
+    chosenHouse = 'Serpentard'; houseTier = 18;
+    party[0].hp = 10;
+    const spell = SPELLS.find(s => s.name === 'Incendio');
+    const hpBefore = party[0].hp;
+    SPELL_HANDLERS[spell.effect](spell, party[0], enemyGroup[0], 0);
+    return { hpGain: party[0].hp - hpBefore };
+  });
+  console.log('  T5 Serpentard lifesteal →', t5);
+  assert(t5.hpGain > 0, 'passif Serpentard doit drainer des PV sur un sort offensif');
+
+  // T6 : passif Serdaigle — coût des sorts réduit de 20 %.
+  const t6 = await page.evaluate(() => {
+    const spell = SPELLS.find(s => s.name === 'Incendio');
+    chosenHouse = 'Serdaigle'; houseTier = 18;
+    const reduced = _spellSpCost(spell);
+    chosenHouse = 'Gryffondor';
+    const full = _spellSpCost(spell);
+    return { full, reduced };
+  });
+  console.log('  T6 Serdaigle coût →', t6);
+  assert(t6.reduced === Math.max(1, Math.ceil(t6.full * 0.8)),
+    'passif Serdaigle doit réduire le coût des sorts de 20 %');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Maison V3 palier 18 OK (gate + passifs de Maison, Élan inclus)');
+  await browser.close();
+}
+
 // ── Scénario : récompenses Maison remises par les Chefs de Maison ──
 async function scenarioHouseRewardFlow() {
   console.log('\n── Scénario : Récompense Maison remise par PNJ ──');
@@ -8285,7 +8623,7 @@ async function scenarioCombatExtV2() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

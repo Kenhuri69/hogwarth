@@ -278,7 +278,12 @@ const SPELL_ICON_REGISTRY = {
   'Portus':             'img/icons/spells/teleportation.png',
   'Glacius':            'img/icons/spells/glacius.png',
   'Fulgari':            'img/icons/spells/fulgari.png',
-  'Lumos Solem':        'img/icons/spells/lumos_solem.png'
+  'Lumos Solem':        'img/icons/spells/lumos_solem.png',
+  // Sorts de Maison — palier 17 « Mythe »
+  'Patronus Maxima':       'img/icons/spells/patronus_maxima.png',
+  'Sectumsempra Imperius': 'img/icons/spells/sectumsempra_imperius.png',
+  'Legilimens':            'img/icons/spells/legilimens.png',
+  'Récolte Magique':       'img/icons/spells/recolte_magique.png'
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────

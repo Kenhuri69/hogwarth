@@ -207,6 +207,18 @@ function recalculateStats() {
     c.critMultiplier      = Math.min(2.5, 1.5 + critDmgBonus);
     c.spellCritMultiplier = Math.min(2.5, 1.5 + spellCritDmgBonus);
 
+    // Apothéose Gryffondor (palier 18 — Cœur du Lion) : +10 % de crit
+    // physique ET de sort, +15 % de dégâts critiques (physique + sort).
+    // Appliqué PAR-DESSUS les plafonds LCK/AGI (40/35) — le taux peut
+    // donc dépasser 40 % (plafond absolu 100 %), le multiplicateur 2.5.
+    // Le cumul « Élan » est un effet de combat à part (battle.js).
+    if (typeof houseApotheosePassive === 'function' && houseApotheosePassive() === 'Gryffondor') {
+      c.critChance          = Math.min(100, c.critChance + 10);
+      c.spellCritChance     = Math.min(100, c.spellCritChance + 10);
+      c.critMultiplier      = Math.min(2.5, c.critMultiplier + 0.15);
+      c.spellCritMultiplier = Math.min(2.5, c.spellCritMultiplier + 0.15);
+    }
+
     // PV/PM max = base (croît au level-up / allocation END) + bonus
     // d'équipement. Le bonus n'affecte PAS hp/sp courants ; au
     // déséquipement, on clamp hp/sp si le max a baissé.
@@ -961,7 +973,7 @@ function openBattleSpells() {
           castSpellInBattle(spell.name, -1);
           return;
         }
-        const needsTarget = ['stun','burn','instant','disarm'].includes(spell.effect);
+        const needsTarget = ['stun','burn','instant','disarm','imperius'].includes(spell.effect);
         if (needsTarget && livingEnemies().length > 1) {
           pendingSpell = spell.name;
           showTargetSelection('spell_dmg');

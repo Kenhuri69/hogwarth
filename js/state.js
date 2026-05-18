@@ -139,6 +139,13 @@ const HOUSE_BONUSES = {
       // Phase 6 — Légende (endgame, gated victoryAchieved). Restitue
       // lame_godric (existant) en récompense NON-set + bonus passif.
       { threshold: 25000, label: 'Légende',         bonus: { _baseAtk: 2, _baseLck: 1, legendaryPassive: true, item: 'lame_godric' }, msg: '🦁 Légende vivante de Gryffondor ! +2 ATK +1 LCK · Maîtrise Légendaire éveillée — la Lame de Godric vous attend.' },
+      // Phase 7 — Mythe (palier endgame V3, gated Boucle Ténébreuse tier 1 :
+      // étages 11+). Enseigne le sort exclusif de Maison à tout le groupe.
+      { threshold: 30000, label: 'Mythe',           requiresDarkTier: 1, bonus: { _baseAtk: 2, _baseLck: 1, grantsSpell: 'Patronus Maxima', unlockMytheQuest: true }, msg: '🦁 Mythe vivant de Gryffondor ! +2 ATK +1 LCK · le Patronus Maxima t\'est révélé.' },
+      // Phase 8 — Apothéose (palier capstone V3, gated Boucle Ténébreuse
+      // tier 2 : étages 21+). Éveille le passif légendaire de Maison —
+      // détecté par houseApotheosePassive() (main.js), pas de flag dédié.
+      { threshold: 45000, label: 'Apothéose',       requiresDarkTier: 2, bonus: { _baseAtk: 3, _baseLck: 1 }, msg: '🦁 Apothéose de Gryffondor ! +3 ATK +1 LCK · Cœur du Lion — +10 % de crit (physique ET sort), +15 % de dégâts critiques, et Élan : chaque crit accorde +8 % de dégâts (cumul, max 5).' },
     ]
   },
   Serpentard: {
@@ -163,6 +170,8 @@ const HOUSE_BONUSES = {
       { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseMag: 1 }, msg: '🐍 Maître absolu ! +1 MAG' },
       { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🐍 Virtuose d\'or — la dernière relique attend que tu termines la quête du Serpent.' },
       { threshold: 25000, label: 'Légende',         bonus: { _baseMag: 2, _baseLck: 1, legendaryPassive: true, item: 'bague_salazar' }, msg: '🐍 Légende de Serpentard ! +2 MAG +1 LCK · Maîtrise Légendaire éveillée — la Bague de Salazar vous attend.' },
+      { threshold: 30000, label: 'Mythe',           requiresDarkTier: 1, bonus: { _baseMag: 2, _baseLck: 1, grantsSpell: 'Sectumsempra Imperius', unlockMytheQuest: true }, msg: '🐍 Mythe vivant de Serpentard ! +2 MAG +1 LCK · le Sectumsempra Imperius t\'est révélé.' },
+      { threshold: 45000, label: 'Apothéose',       requiresDarkTier: 2, bonus: { _baseMag: 3, _baseLck: 1 }, msg: '🐍 Apothéose de Serpentard ! +3 MAG +1 LCK · Soif du Serpent — tes sorts offensifs te drainent 15 % des dégâts en PV.' },
     ]
   },
   Serdaigle: {
@@ -187,6 +196,8 @@ const HOUSE_BONUSES = {
       { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseMag: 1 }, msg: '🦅 Maître des sorts ! +1 MAG' },
       { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🦅 Virtuose d\'or — la dernière relique attend que tu termines la quête de l\'Aigle.' },
       { threshold: 25000, label: 'Légende',         bonus: { _baseMag: 2, _baseLck: 1, legendaryPassive: true, item: 'codex_rowena' }, msg: '🦅 Légende de Serdaigle ! +2 MAG +1 LCK · Maîtrise Légendaire éveillée — le Codex de Rowena vous attend.' },
+      { threshold: 30000, label: 'Mythe',           requiresDarkTier: 1, bonus: { _baseMag: 2, _baseLck: 1, grantsSpell: 'Legilimens', unlockMytheQuest: true }, msg: '🦅 Mythe vivant de Serdaigle ! +2 MAG +1 LCK · le Legilimens t\'est révélé.' },
+      { threshold: 45000, label: 'Apothéose',       requiresDarkTier: 2, bonus: { _baseMag: 3, _baseLck: 1 }, msg: '🦅 Apothéose de Serdaigle ! +3 MAG +1 LCK · Esprit de l\'Aigle — le coût de tes sorts baisse de 20 %.' },
     ]
   },
   Poufsouffle: {
@@ -211,6 +222,8 @@ const HOUSE_BONUSES = {
       { threshold: 13000, label: 'Virtuose Argent', bonus: { _baseDef: 1 }, msg: '🦡 Forteresse vivante ! +1 DEF' },
       { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🦡 Virtuose d\'or — la dernière relique attend que tu termines la quête du Blaireau.' },
       { threshold: 25000, label: 'Légende',         bonus: { _baseDef: 2, _baseLck: 1, legendaryPassive: true, item: 'bouclier_helga' }, msg: '🦡 Légende de Poufsouffle ! +2 DEF +1 LCK · Maîtrise Légendaire éveillée — le Bouclier de Helga vous attend.' },
+      { threshold: 30000, label: 'Mythe',           requiresDarkTier: 1, bonus: { _baseDef: 2, _baseLck: 1, grantsSpell: 'Récolte Magique', unlockMytheQuest: true }, msg: '🦡 Mythe vivant de Poufsouffle ! +2 DEF +1 LCK · la Récolte Magique t\'est révélée.' },
+      { threshold: 45000, label: 'Apothéose',       requiresDarkTier: 2, bonus: { _baseDef: 3, _baseLck: 1 }, msg: '🦡 Apothéose de Poufsouffle ! +3 DEF +1 LCK · Souffle du Blaireau — ton groupe régénère PV et PM à chaque pas et inflige +23 % de dégâts au-dessus de 60 % PV.' },
     ]
   },
 };
@@ -268,7 +281,12 @@ let enemyGroup      = [];   // tableau de {…enemyData, currentHp, statusEffect
 let currentBattleChar = 0;  // 0 = Harry, 1 = Hermione
 let shieldTurns     = [0, 0]; // bouclier par personnage (Protego)
 let guardTurns      = [0, 0]; // posture de Garde — mitigation 50 % sur le prochain coup ennemi
+let elanStacks      = [0, 0]; // Apothéose Gryffondor — cumul « Élan » par personnage (combat-scoped)
 let battleTurn      = 0;
+// Palier 17 « Mythe » — état transient de combat (réinitialisé par startBattle).
+// Non sérialisés : un combat ne peut pas être sauvegardé (inBattle bloque autoSave/writeSlot).
+let legilimensCancelCharges = 0;     // capacités ennemies à annuler (sort Legilimens)
+let recolteGoldBonus        = false; // or de fin de combat majoré +50 % (sort Récolte Magique)
 // Sélection de cible en combat (cycle producteur → consommateur) :
 //  - battle-ui.js — showTargetSelection(actionType)  écrit pendingAction
 //  - inventory.js — openBattleSpells onclick         écrit pendingSpell

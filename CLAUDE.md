@@ -301,6 +301,26 @@ endBattle() / completeQuest()
 `#house-crest` dans le HUD est rafraîchi par `_updateHouseBadge()` (ui.js:60)
 à chaque update. Le blason est un `<img>` cloné depuis l'écran de sélection.
 
+### Paliers endgame V3 — Mythe (17) & Apothéose (18)
+
+Au-delà des 16 paliers de base, deux paliers endgame réservés à la
+Boucle Ténébreuse (`tier.requiresDarkTier`, gate symétrique de
+`victoryAchieved` dans `checkHouseLevelUp`) :
+
+- **Tier 17 « Mythe »** (`requiresDarkTier:1`, étages 11+) : enseigne un
+  sort exclusif par Maison + ouvre la quête de don (gold-sink).
+- **Tier 18 « Apothéose »** (`requiresDarkTier:2`, étages 21+) : éveille
+  un **passif légendaire** propre à la Maison. `houseApotheosePassive()`
+  (`main.js`) retourne la Maison active quand `houseTier >= 18`, sinon
+  `null` — aucun flag dédié, `houseTier` est la source de vérité.
+
+| Maison | Passif Apothéose | Hook |
+|--------|------------------|------|
+| Gryffondor  | +10 % crit (phys.+sort) +15 % dégâts crit. + Élan (crit → +8 % dégâts, cumul ×5) | `recalculateStats()` (inventory.js) + `_houseElanMult`/`_updateElan` (battle.js) |
+| Serpentard  | 15 % spell-lifesteal    | `_applySerpentLifesteal` (battle-spells.js) |
+| Serdaigle   | −20 % coût des sorts    | `_spellSpCost` (battle-spells.js) |
+| Poufsouffle | +2 PV/PM par pas + Vigueur (+23 % dégâts >60 % PV) | `_step` (movement.js) + `_houseVigorMult` (battle.js) |
+
 ---
 
 ## Mode Ironman & Hall of Fame (`js/ironman.js` + `js/hall-of-fame.js`)
@@ -745,6 +765,19 @@ du combattant — héros comme ennemi. `turns` = nombre de tours sautés.
 - Vecteur d'injection : capacité ennemie `effect:"status", statusId:"stun"`.
   Monstres porteurs : `lutin_cornouailles`, `strangulot`, `pitiponk`,
   `gargouille`.
+
+### Statut `fear` (peur)
+Statut non-DoT (`STATUS_DEFS.fear` 😱) : à **chaque tour**, le combattant
+apeuré a **50 % de chance** de se figer et perdre son tour.
+- `applyStatus(target, 'fear', 0, turns)` le pose ; le `power` est ignoré.
+- Contrairement à `stun`, `fear` est **décompté normalement** par
+  `tickStatuses` (pas de fonction de consommation) — sa durée est en
+  rounds, pas en sauts. `rollFearSkip(actor)` fait le jet 50 % sans
+  rien consommer (héros à l'ouverture de segment, ennemis dans la
+  boucle `enemyTurn`).
+- Vecteur d'injection : capacité ennemie `effect:"status", statusId:"fear"`.
+  Monstres porteurs : `boggart` (Épouvantard), `detraqueur` (Détraqueur).
+- Dissipé par le sort `Patronus Maxima` (palier Maison 17).
 
 ### Level-up (battle.js — checkLevelUp)
 Au level-up, on incrémente `c._baseAtk / _baseDef / _baseMag` (pas `c.atk` directement),

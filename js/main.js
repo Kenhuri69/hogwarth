@@ -276,6 +276,15 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
     // + .claude/plans/houses-2.0.md §A.
     if (tierNum >= 16 && !(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return;
 
+    // Palier endgame V3 (« Mythe ») : `requiresDarkTier` impose un indice
+    // de Boucle Ténébreuse minimal — 1 = étages 11+, 2 = étages 21+.
+    // Symétrique de la garde `victoryAchieved` ci-dessus.
+    if (tier.requiresDarkTier) {
+      const ti = (typeof endgameTierIndex === 'function')
+        ? endgameTierIndex(currentFloor) : 0;
+      if (ti < tier.requiresDarkTier) return;
+    }
+
     houseTier = tierNum;
     addMsg(tier.msg, 'magic');
     AudioSystem.playLevelUp();
@@ -303,10 +312,36 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
       safeCall('unlockHouseQuest', chosenHouse);
     }
 
+    // Palier Mythe (tier 17) : enseigne le sort exclusif de Maison à
+    // tout le groupe actif (mécanisme partagé avec les équipements `grantsSpell`).
+    if (tier.bonus.grantsSpell && typeof _teachSpellToParty === 'function') {
+      if (_teachSpellToParty(tier.bonus.grantsSpell)) {
+        addMsg(`✨ Sort de Maison débloqué : ${tier.bonus.grantsSpell} !`, 'magic');
+      }
+    }
+
+    // Palier Mythe : ouvre la quête de don (gold-sink) chez le Chef de Maison.
+    if (tier.bonus.unlockMytheQuest) {
+      safeCall('unlockHouseMytheQuest', chosenHouse);
+    }
+
     recalculateStats();
     updateUI();
   });
 }
+
+// Palier capstone V3 (« Apothéose », tier 18) : éveille un passif
+// légendaire propre à la Maison choisie. Retourne le nom de la Maison
+// quand le passif est actif (tier 18 atteint), sinon null. Pas de flag
+// dédié — `houseTier >= 18` est la source de vérité, déjà sérialisée.
+// Effets par Maison (cf. .claude/plans/houses-mythe-tier-v3.md §Vague C) :
+//   Gryffondor  → +20 % crit physique      (inventory.js — recalculateStats)
+//   Serpentard  → 15 % spell-lifesteal      (battle-spells.js)
+//   Serdaigle   → −20 % coût des sorts      (battle-spells.js — castSpellInBattle)
+//   Poufsouffle → régen PV/PM hors combat   (movement.js — _step)
+window.houseApotheosePassive = function houseApotheosePassive() {
+  return (chosenHouse && houseTier >= 18) ? chosenHouse : null;
+};
 
 async function startGame(count = 2) {
   // === TEXTURES INTEGRATION ===

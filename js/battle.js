@@ -40,6 +40,13 @@ const STATUS_DEFS = {
   disarm: { icon: '🪄↓', label: 'Désarmé',           color: '#c9a84c' },
   regen:  { icon: '🩹',   label: 'Régénération',      color: '#3aa55a' },
   stun:   { icon: '💫',   label: 'Étourdi',           color: '#d9a521' },
+  // Peur : non-DoT. À chaque tour, le combattant apeuré a 50 % de
+  // chance de se figer et perdre son tour. Durée décomptée normalement
+  // par tickStatuses (contrairement à stun, consommé au point de saut).
+  fear:   { icon: '😱',   label: 'Apeuré',            color: '#5a6b8c' },
+  // Imperius (Sectumsempra Imperius) : non-DoT, l'ennemi frappe ses alliés.
+  // Durée gérée par consumeImperius() au point d'action, comme stun.
+  imperius: { icon: '🌀', label: 'Asservi',           color: '#7d3fa0' },
   // Ferula Maxima : régénération de soutien AOE (PV + PM) sur 3 tours.
   regen_ferula_max: { icon: '🩹✨', label: 'Régén. Ferula', color: '#5fc7a5' }
 };
@@ -75,14 +82,40 @@ function consumeStun(actor) {
   return true;
 }
 
+// ── Peur : 50 % de saut de tour tant que le statut est actif ──
+function isFeared(actor) {
+  return !!(actor && actor.statusEffects &&
+            actor.statusEffects.some(s => s.id === 'fear' && s.turns > 0));
+}
+// rollFearSkip : true si l'acteur est apeuré ET échoue le jet (50 %).
+// Ne consomme rien — la durée est décomptée par tickStatuses.
+function rollFearSkip(actor) {
+  return isFeared(actor) && Math.random() < 0.5;
+}
+
+// ── Imperius : asservissement (l'ennemi frappe ses alliés) ───
+// consumeImperius : consomme 1 tour d'asservissement. Retourne true si
+// l'ennemi doit agir sous contrôle ce tour. Retire le statut à 0.
+function consumeImperius(enemy) {
+  if (!enemy || !enemy.statusEffects) return false;
+  const s = enemy.statusEffects.find(st => st.id === 'imperius' && st.turns > 0);
+  if (!s) return false;
+  s.turns--;
+  if (s.turns <= 0) {
+    enemy.statusEffects = enemy.statusEffects.filter(st => st !== s);
+  }
+  return true;
+}
+
 function tickStatuses(target, isEnemy) {
   if (!target || !target.statusEffects || !target.statusEffects.length) return '';
   let log = '';
   const remaining = [];
   target.statusEffects.forEach(s => {
-    // Stun : non-DoT, durée gérée par consumeStun() au point de saut.
-    // tickStatuses le porte tel quel, sans tick ni décompte.
-    if (s.id === 'stun') { remaining.push(s); return; }
+    // Stun / Imperius : non-DoT, durée gérée par consumeStun() /
+    // consumeImperius() au point d'action. tickStatuses les porte tels
+    // quels, sans tick ni décompte.
+    if (s.id === 'stun' || s.id === 'imperius') { remaining.push(s); return; }
     // Statuts DoT : burn / poison / bleed / gel → dégâts par tour
     if (s.id === 'burn' || s.id === 'poison' || s.id === 'bleed' || s.id === 'gel') {
       let dmg = s.power;
@@ -222,10 +255,13 @@ function startBattle(baseEnemyData) {
   inBattle          = true;
   shieldTurns       = [0, 0];
   guardTurns        = [0, 0];
+  elanStacks        = [0, 0];
   battleTurn        = 0;
   currentBattleChar = 0;
   pendingAction     = null;
   pendingSpell      = null;
+  legilimensCancelCharges = 0;
+  recolteGoldBonus        = false;
   if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 
   // Générer un groupe de 1-3 ennemis selon l'étage
@@ -362,11 +398,46 @@ function battleAction(action) {
 // showTargetSelection() → battle-ui.js
 
 // ── Attaque physique ─────────────────────────────────────────
+// Apothéose Poufsouffle (palier 18 — Souffle du Blaireau) : +23 % de
+// dégâts (physiques ET sorts) tant que le combattant est au-dessus de
+// 60 % de ses PV max. Récompense la robustesse du blaireau.
+function _houseVigorMult(char) {
+  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Poufsouffle') return 1;
+  if (!char || !char.hpMax) return 1;
+  return char.hp > char.hpMax * 0.6 ? 1.23 : 1;
+}
+
+// Apothéose Gryffondor (palier 18 — Cœur du Lion) : « Élan » — chaque
+// coup critique (physique ou sort) accorde un palier de +8 % de dégâts ;
+// cumul propre au combat (remis à zéro par startBattle), cap 5 paliers.
+const ELAN_STEP = 0.08;
+const ELAN_CAP  = 5;
+function _houseElanMult(char) {
+  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Gryffondor') return 1;
+  const idx = party.indexOf(char);
+  if (idx < 0) return 1;
+  return 1 + ELAN_STEP * (elanStacks[idx] || 0);
+}
+// Met à jour le cumul d'un personnage après une action offensive : un
+// crit ajoute un palier (plafonné), un coup non-critique ne change rien
+// (decay écarté — cf. mesure sim, plan §6).
+function _updateElan(char, didCrit) {
+  if (!didCrit) return;
+  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Gryffondor') return;
+  const idx = party.indexOf(char);
+  if (idx < 0) return;
+  const before = elanStacks[idx] || 0;
+  elanStacks[idx] = Math.min(ELAN_CAP, before + 1);
+  if (elanStacks[idx] > before) {
+    UX_safe.logCombat(`🦁 <b>${char.name}</b> — Élan ×${elanStacks[idx]} (+${Math.round(ELAN_STEP * elanStacks[idx] * 100)} % dégâts)`, 'good');
+  }
+}
+
 function executeAttack(targetIdx) {
   const char  = getActiveChar();
   const enemy = enemyGroup[targetIdx];
   const rawAtk = char.atk + Math.floor(Math.random() * 4);
-  const dmg    = Math.max(1, mitigatedDamage(rawAtk, enemy.def));
+  const dmg    = Math.max(1, Math.floor(mitigatedDamage(rawAtk, enemy.def) * _houseVigorMult(char) * _houseElanMult(char)));
   enemy.currentHp -= dmg;
 
   AudioSystem.playHit();
@@ -379,6 +450,7 @@ function executeAttack(targetIdx) {
   if (isCrit) {
     enemy.currentHp -= (finalDmg - dmg); // ajoute le bonus crit
   }
+  _updateElan(char, isCrit);   // Apothéose Gryffondor — Élan
   setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${finalDmg} dégâts${isCrit?' (CRITIQUE !)':''} !`);
   UX_safe.floatDmg(`enemy:${targetIdx}`, finalDmg, isCrit ? 'crit' : 'dmg');
   UX_safe.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}`, isCrit?'magic':'good');
@@ -411,6 +483,10 @@ function advanceBattleChar() {
       setBattleLog(`💫 ${party[currentBattleChar].name} est étourdi et perd son tour...`);
       UX_safe.logCombat(`💫 ${party[currentBattleChar].name} est étourdi`, 'bad');
       setTimeout(enemyTurn, 900);
+    } else if (rollFearSkip(party[currentBattleChar])) {
+      setBattleLog(`😱 ${party[currentBattleChar].name} est tétanisé par la peur et perd son tour...`);
+      UX_safe.logCombat(`😱 ${party[currentBattleChar].name} est paralysé par la peur`, 'bad');
+      setTimeout(enemyTurn, 900);
     } else {
       setBattleLog(`À ${party[currentBattleChar].name} d'agir...`);
     }
@@ -429,10 +505,38 @@ function enemyTurn() {
   if (checkAllEnemiesDead()) { setBattleLog(log || '...'); renderEnemyGroup(); return; }
 
   livingEnemies().forEach(enemy => {
+    // Un allié asservi a pu l'achever pendant ce même round.
+    if (enemy.currentHp <= 0) return;
+
     // Étourdi : l'ennemi perd son tour.
     if (consumeStun(enemy)) {
       log += `💫 ${enemy.name} est étourdi et perd son tour ! `;
       UX_safe.logCombat(`💫 ${enemy.name} est étourdi`, 'good');
+      return;
+    }
+
+    // Apeuré : 50 % de chance de se figer et perdre son tour.
+    if (rollFearSkip(enemy)) {
+      log += `😱 ${enemy.name} est tétanisé par la peur ! `;
+      UX_safe.logCombat(`😱 ${enemy.name} est paralysé par la peur`, 'good');
+      return;
+    }
+
+    // Asservi (Sectumsempra Imperius) : l'ennemi frappe un de ses alliés.
+    if (consumeImperius(enemy)) {
+      const others = livingEnemies().filter(e => e !== enemy);
+      if (others.length) {
+        const victim = others[Math.floor(Math.random() * others.length)];
+        const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), victim.def);
+        victim.currentHp = Math.max(0, victim.currentHp - dmg);
+        log += `🌀 ${enemy.name}, asservi, frappe ${victim.name} : -${dmg} PV ! `;
+        UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(victim)}`, dmg, 'dmg');
+        UX_safe.logCombat(`🌀 ${enemy.name} (asservi) frappe ${victim.name} : <b>−${dmg}</b>`, 'good');
+        renderEnemyGroup();
+      } else {
+        log += `🌀 ${enemy.name}, asservi, se débat dans le vide ! `;
+        UX_safe.logCombat(`🌀 ${enemy.name} (asservi) perd son tour`, 'good');
+      }
       return;
     }
 
@@ -515,6 +619,10 @@ function enemyTurn() {
     setBattleLog((log || '...') + `\n💫 ${opener.name} est étourdi et perd son tour...`);
     UX_safe.logCombat(`💫 ${opener.name} est étourdi`, 'bad');
     setTimeout(advanceBattleChar, 900);
+  } else if (opener && opener.hp > 0 && rollFearSkip(opener)) {
+    setBattleLog((log || '...') + `\n😱 ${opener.name} est tétanisé par la peur et perd son tour...`);
+    UX_safe.logCombat(`😱 ${opener.name} est paralysé par la peur`, 'bad');
+    setTimeout(advanceBattleChar, 900);
   } else {
     setBattleLog((log || '...') + `\nÀ ${party[currentBattleChar].name} d'agir...`);
   }
@@ -574,12 +682,14 @@ function endBattle(won) {
     // Compteurs de score Ironman (monstres vaincus + faits d'armes boss).
     if (typeof recordIronmanKills === 'function') recordIronmanKills(enemyGroup);
     const diff     = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
+    // Récolte Magique (palier Mythe Poufsouffle) : or de ce combat +50 %.
+    const recolteMult = recolteGoldBonus ? 1.5 : 1;
     let totalXp = 0, totalGold = 0;
     enemyGroup.forEach(e => { totalXp += e.xp; totalGold += e.gold + Math.floor(Math.random() * 5); });
 
     // XP et or multipliés selon la difficulté
     player.xp   += Math.floor(totalXp   * diff.xpMultiplier);
-    player.gold += Math.floor(totalGold * diff.goldMultiplier);
+    player.gold += Math.floor(totalGold * diff.goldMultiplier * recolteMult);
 
     // Drops d'objets (chance modulée par la difficulté + bonus Ténèbres).
     // Endgame §7.9 : sur variant `darkness`, drop standards ×1.5 et roll
@@ -645,7 +755,10 @@ function endBattle(won) {
     enemyGroup.forEach(e => safeCall('checkVictoryTrigger', e.id));
 
     const xpEarned   = Math.floor(totalXp   * diff.xpMultiplier);
-    const goldEarned = Math.floor(totalGold * diff.goldMultiplier);
+    const goldEarned = Math.floor(totalGold * diff.goldMultiplier * recolteMult);
+    if (recolteGoldBonus) {
+      addMsg('🌾 Récolte Magique — Gallions du combat majorés (+50%) !', 'good');
+    }
 
     // Points de Maison selon la difficulté — Ténèbres ×1.5 (endgame §7.9).
     if (chosenHouse) {
@@ -665,6 +778,8 @@ function endBattle(won) {
     checkLevelUp();
     renderMinimap();
   }
+  // Effets de combat transient consommés à la sortie (Récolte Magique).
+  recolteGoldBonus = false;
   updateUI();
   safeCall('autoSave', won ? 'battle-end' : 'battle-flee');
 }
