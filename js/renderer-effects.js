@@ -199,16 +199,17 @@ function drawChestSprite(x, baseY, sz) {
   aura.addColorStop(1, 'rgba(180,120,10,0)');
   ctx.fillStyle = aura;
   ctx.beginPath(); ctx.arc(x, baseY - sz * 0.55, sz * 0.85, 0, Math.PI * 2); ctx.fill();
-  // Emoji coffre — même taille que les monstres
-  ctx.font = `${Math.floor(sz * 1.1)}px serif`;
-  ctx.textAlign    = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText('📦', x, baseY);
-  // Label
-  ctx.font = `bold ${Math.floor(sz * 0.22)}px sans-serif`;
-  ctx.fillStyle = 'rgba(240,200,80,0.9)';
-  ctx.textBaseline = 'top';
-  ctx.fillText('COFFRE', x, baseY - sz * 1.25);
+  // Visuel SVG du coffre (viewBox 110×100) ; emoji en repli au chargement.
+  const entry = _getSceneSvgImg('chest', () => SCENE_ICONS.chest);
+  if (entry && entry.ready) {
+    const h = sz * 1.05, w = h * (110 / 100);
+    ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
+  } else {
+    ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('📦', x, baseY);
+  }
   ctx.restore();
 }
 
@@ -419,15 +420,19 @@ function drawStairsSprite(x, baseY, sz, dir) {
 }
 
 // ── Boutique (sprite de couloir) ─────────────────────────────
-// Cache d'images SVG de scène pour le rendu 3D. Le SVG (SCENE_ICONS[key])
-// est rasterisé via data-URI ; même pattern lazy que _getMonsterImg.
+// Cache d'images SVG de scène pour le rendu 3D. Le SVG (SCENE_ICONS) est
+// rasterisé via data-URI ; même pattern lazy que _getMonsterImg. `makeSvg`
+// n'est évalué qu'au premier accès (cache miss) — utile pour les variantes
+// (ex. fontaine active / tarie).
 const _SCENE_SVG_CACHE = Object.create(null);
-function _getSceneSvgImg(key) {
-  let entry = _SCENE_SVG_CACHE[key];
+function _getSceneSvgImg(cacheKey, makeSvg) {
+  let entry = _SCENE_SVG_CACHE[cacheKey];
   if (entry) return entry;
   entry = { img: new Image(), ready: false, failed: false };
-  const svg = (typeof SCENE_ICONS !== 'undefined') ? SCENE_ICONS[key] : null;
-  if (!svg) { entry.failed = true; _SCENE_SVG_CACHE[key] = entry; return entry; }
+  _SCENE_SVG_CACHE[cacheKey] = entry;
+  let svg = null;
+  try { svg = makeSvg(); } catch (e) { svg = null; }
+  if (!svg) { entry.failed = true; return entry; }
   entry.img.onload  = () => {
     entry.ready = true;
     if (typeof window.drawDungeon === 'function') {
@@ -436,7 +441,6 @@ function _getSceneSvgImg(key) {
   };
   entry.img.onerror = () => { entry.failed = true; };
   entry.img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-  _SCENE_SVG_CACHE[key] = entry;
   return entry;
 }
 
@@ -463,7 +467,7 @@ function drawShopSprite(x, baseY, sz) {
   ctx.fillStyle = glowS;
   ctx.beginPath(); ctx.arc(x, baseY - sz * 0.5, sz * 0.95, 0, Math.PI * 2); ctx.fill();
   // Visuel SVG de l'échoppe (viewBox 130×110) ; fallback vectoriel sinon.
-  const entry = _getSceneSvgImg('shop');
+  const entry = _getSceneSvgImg('shop', () => SCENE_ICONS.shop);
   if (entry && entry.ready) {
     const h = sz * 1.1;
     const w = h * (130 / 110);
@@ -487,15 +491,16 @@ function drawForgeSprite(x, baseY, sz) {
   ember.addColorStop(1, 'rgba(120,30,10,0)');
   ctx.fillStyle = ember;
   ctx.beginPath(); ctx.arc(x, baseY - sz * 0.45, sz * 0.95, 0, Math.PI * 2); ctx.fill();
-  // Emoji enclume (même registre que coffre/boutique)
-  ctx.font = `${Math.floor(sz * 1.1)}px serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  ctx.fillText('⚒️', x, baseY);
-  // Panneau "FORGE"
-  ctx.font = `bold ${Math.floor(sz * 0.22)}px sans-serif`;
-  ctx.fillStyle = 'rgba(255,170,90,0.95)';
-  ctx.textBaseline = 'top';
-  ctx.fillText('FORGE', x, baseY - sz * 1.25);
+  // Visuel SVG de la forge (viewBox 120×110) ; emoji en repli au chargement.
+  const entry = _getSceneSvgImg('forge', () => SCENE_ICONS.forge);
+  if (entry && entry.ready) {
+    const h = sz * 1.05, w = h * (120 / 110);
+    ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
+  } else {
+    ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('⚒️', x, baseY);
+  }
   ctx.restore();
 }
 
@@ -512,21 +517,22 @@ function drawLibrarySprite(x, baseY, sz) {
   runic.addColorStop(1, 'rgba(50,20,80,0)');
   ctx.fillStyle = runic;
   ctx.beginPath(); ctx.arc(x, baseY - sz * 0.45, sz * 0.95, 0, Math.PI * 2); ctx.fill();
-  // Emoji livre ouvert
-  ctx.font = `${Math.floor(sz * 1.1)}px serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  ctx.fillText('📖', x, baseY);
-  // Panneau "BIBLIOTHÈQUE"
-  ctx.font = `bold ${Math.floor(sz * 0.2)}px sans-serif`;
-  ctx.fillStyle = 'rgba(210,160,255,0.95)';
-  ctx.textBaseline = 'top';
-  ctx.fillText('BIBLIOTHÈQUE', x, baseY - sz * 1.25);
+  // Visuel SVG de la bibliothèque (viewBox 120×110) ; emoji en repli.
+  const entry = _getSceneSvgImg('library', () => SCENE_ICONS.library);
+  if (entry && entry.ready) {
+    const h = sz * 1.05, w = h * (120 / 110);
+    ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
+  } else {
+    ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('📖', x, baseY);
+  }
   ctx.restore();
 }
 
 // ── Fontaine (sprite de couloir) ─────────────────────────────
 // Bassin restaurateur (cf. Salle Fontaine). Halo bleu eau si active,
-// grisé si déjà bue (dried). Registre emoji comme coffre/forge/biblio.
+// grisé si déjà bue (dried).
 function drawFountainSprite(x, baseY, sz, dried) {
   ctx.save();
   // Ombre au sol
@@ -543,17 +549,19 @@ function drawFountainSprite(x, baseY, sz, dried) {
   }
   ctx.fillStyle = halo;
   ctx.beginPath(); ctx.arc(x, baseY - sz * 0.45, sz * 0.95, 0, Math.PI * 2); ctx.fill();
-  // Emoji fontaine
-  ctx.font = `${Math.floor(sz * 1.1)}px serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-  if (dried) ctx.globalAlpha = 0.55;
-  ctx.fillText('⛲', x, baseY);
-  ctx.globalAlpha = 1;
-  // Panneau
-  ctx.font = `bold ${Math.floor(sz * 0.2)}px sans-serif`;
-  ctx.fillStyle = dried ? 'rgba(150,150,150,0.9)' : 'rgba(150,210,255,0.95)';
-  ctx.textBaseline = 'top';
-  ctx.fillText(dried ? 'FONTAINE TARIE' : 'FONTAINE', x, baseY - sz * 1.25);
+  // Visuel SVG de la fontaine (viewBox 120×130) — variante active / tarie.
+  const entry = _getSceneSvgImg(dried ? 'fountain_dried' : 'fountain',
+    () => SCENE_ICONS.fountain({ dried }));
+  if (entry && entry.ready) {
+    const h = sz * 1.1, w = h * (120 / 130);
+    ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
+  } else {
+    ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    if (dried) ctx.globalAlpha = 0.55;
+    ctx.fillText('⛲', x, baseY);
+    ctx.globalAlpha = 1;
+  }
   ctx.restore();
 }
 

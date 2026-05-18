@@ -36,3 +36,12 @@ Deux bugs signalés sur la vue pseudo-3D du couloir :
 ## Écarts constatés
 - Aucun. Le bug touchait aussi le desktop (clip identique) — corrigé des
   deux côtés puisque le calage est relatif à la taille du couloir.
+
+## Suite — généralisation SVG aux autres cellules
+Le coffre, la fontaine, la forge et la bibliothèque utilisaient encore des
+emoji + texte. `_getSceneSvgImg` généralisé (clé de cache + `makeSvg`
+paresseux pour la variante fontaine active/tarie). Les 4 fonctions
+`drawChestSprite` / `drawFountainSprite` / `drawForgeSprite` /
+`drawLibrarySprite` dessinent désormais le SVG `SCENE_ICONS`, emoji en
+repli au chargement. Vérifié par captures (coffre, fontaine, forge,
+bibliothèque) ; `node tests/smoke.js` vert.
