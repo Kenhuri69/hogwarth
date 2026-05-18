@@ -292,14 +292,13 @@ const SPELL_ICON_REGISTRY = {
   'Sectumsempra Imperius': 'img/icons/spells/sectumsempra_imperius.png',
   'Legilimens':            'img/icons/spells/legilimens.png',
   'Récolte Magique':       'img/icons/spells/recolte_magique.png',
-  // Sorts de zone (AoE) — icônes reprises du sort élémentaire de base,
-  // en attendant des PNG dédiés (cf. .claude/plans/aoe-spells.md).
-  'Glacius Tempête':       'img/icons/spells/glacius.png',
-  'Fulgur Catena':         'img/icons/spells/fulgari.png',
-  'Lux Aeterna':           'img/icons/spells/lumos_solem.png',
-  'Nox Vorax':             'img/icons/spells/vampyrus.png',
-  'Diffindo Maxima':       'img/icons/spells/diffindo.png',
-  'Vulnera Sanentur':      'img/icons/spells/ferula_maxima.png'
+  // Sorts de zone (AoE) — PNG dédiés (tools/gen_element_spell_icons.py).
+  'Glacius Tempête':       'img/icons/spells/glacius_tempete.png',
+  'Fulgur Catena':         'img/icons/spells/fulgur_catena.png',
+  'Lux Aeterna':           'img/icons/spells/lux_aeterna.png',
+  'Nox Vorax':             'img/icons/spells/nox_vorax.png',
+  'Diffindo Maxima':       'img/icons/spells/diffindo_maxima.png',
+  'Vulnera Sanentur':      'img/icons/spells/vulnera_sanentur.png'
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────

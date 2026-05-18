@@ -445,6 +445,14 @@ function openChest() {
     if (i.id === 'book_monsters')     return currentFloor >= 3;
     if (i.id === 'livre_lumos_solem') return currentFloor >= 5;
     if (i.id === 'livre_prince')      return currentFloor >= 6; // rare et puissant
+    // Grimoires de zone (AoE) — aussi achetables en boutique ; gating
+    // coffre aligné sur leur minFloor de SHOP_CATALOG.
+    if (i.id === 'livre_glacius_tempete') return currentFloor >= 6;
+    if (i.id === 'livre_diffindo_maxima') return currentFloor >= 6;
+    if (i.id === 'livre_vulnera')         return currentFloor >= 6;
+    if (i.id === 'livre_fulgur_catena')   return currentFloor >= 7;
+    if (i.id === 'livre_lux_aeterna')     return currentFloor >= 8;
+    if (i.id === 'livre_nox_vorax')       return currentFloor >= 9;
     return false;
   });
 
