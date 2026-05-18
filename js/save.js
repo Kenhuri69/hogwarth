@@ -245,6 +245,7 @@ function _serializeState() {
     victoryAt,
     ironmanMode,
     totalKills,
+    monsterKills:  { ...monsterKills },
     defeatedBosses: Array.from(defeatedBosses),
     ironmanRunId,
     _version:        3
@@ -429,6 +430,7 @@ function _applyState(gs) {
   // Mode Ironman : saves antérieures à l'ajout du mode → false/0/vide.
   ironmanMode     = !!gs.ironmanMode;
   totalKills      = (typeof gs.totalKills === 'number') ? gs.totalKills : 0;
+  monsterKills    = (gs.monsterKills && typeof gs.monsterKills === 'object') ? { ...gs.monsterKills } : {};
   defeatedBosses  = new Set(gs.defeatedBosses || []);
   ironmanRunId    = gs.ironmanRunId || null;
   // Save Ironman antérieur à l'UID de run → on en génère un (anti double-

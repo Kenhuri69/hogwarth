@@ -778,6 +778,54 @@ body {
 .explore-btn.secondary { border-color: var(--gold-dark); color: #8a7050; }
 .explore-btn.secondary:hover { color: var(--gold-light); border-color: var(--gold); }
 
+/* ── PANNEAU INFO MONSTRE (combat) ── */
+#monster-info-overlay {
+  position: absolute; inset: 0;
+  background: rgba(5,2,0,0.9);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 20px;
+  z-index: 20;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+#monster-info-overlay[style*="flex"] { display: flex !important; }
+.mi-panel {
+  width: 100%; max-width: 420px;
+  max-height: 92%;
+  display: flex; flex-direction: column; align-items: stretch;
+  gap: 14px;
+  padding: 20px 22px;
+  background: linear-gradient(160deg, #241608, #160c04);
+  border: 1.5px solid var(--gold-dark);
+  border-radius: 8px;
+  box-shadow: 0 0 32px rgba(0,0,0,0.7), inset 0 0 44px rgba(201,168,76,0.06);
+}
+.mi-content {
+  display: flex; flex-direction: column; gap: 12px;
+  overflow-y: auto;
+}
+.mi-panel > .explore-btn { align-self: center; flex-shrink: 0; }
+.mi-header { display: flex; gap: 14px; align-items: center; }
+.mi-icon { flex-shrink: 0; }
+.mi-name {
+  font-family: 'Cinzel', serif; color: var(--gold);
+  font-size: 18px; margin: 0 0 4px;
+}
+.mi-kills { font-size: 11px; color: #8a7050; margin-top: 4px; letter-spacing: 0.5px; }
+.mi-desc {
+  font-family: 'Crimson Text', serif; font-style: italic;
+  color: var(--parchment-dark); font-size: 13px; line-height: 1.5;
+}
+.mi-hp { font-family: 'Cinzel', serif; color: var(--gold-light); font-size: 13px; }
+.mi-section { border-top: 1px solid #2a1a08; padding-top: 10px; }
+.mi-locked {
+  border-top: 1px solid #2a1a08; padding-top: 10px;
+  font-size: 11px; color: #6a5030; font-style: italic; line-height: 1.5;
+}
+.mi-locked em { color: #8a7050; font-style: normal; }
+.mi-none { font-size: 11px; color: #8a7050; font-style: italic; }
+
 /* ── DIALOGUE PNJ ── */
 #npc-dialog-overlay {
   position: absolute; inset: 0;

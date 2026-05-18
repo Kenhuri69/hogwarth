@@ -522,6 +522,14 @@
           <button class="cmd-btn" onclick="battleAction('item')">🧪 Objet</button>
           <button class="cmd-btn" onclick="battleAction('flee')"><img class="ui-icon ui-icon-md" src="img/icons/agi.png" alt=""> Fuir</button>
         </div>
+
+        <!-- Panneau d'info monstre (clic / appui long sur une carte ennemie) -->
+        <div id="monster-info-overlay" style="display:none" onclick="if(event.target===this)closeMonsterCombatInfo()">
+          <div class="mi-panel">
+            <div class="mi-content" id="monster-info-content"></div>
+            <button class="explore-btn" onclick="closeMonsterCombatInfo()">Fermer</button>
+          </div>
+        </div>
       </div>
     </div>
     <div id="narrative-panel">Bienvenue à Poudlard, jeune sorcier. Les couloirs vous attendent...</div>

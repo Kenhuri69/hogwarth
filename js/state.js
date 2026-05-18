@@ -302,6 +302,11 @@ let pendingSpell    = null;
 // Monstres rencontrés en combat (bestiaire)
 let seenMonsters = new Set();
 
+// Kills cumulés par espèce de monstre — { monsterId: count }.
+// Alimente le panneau d'info en combat (révélation progressive des
+// caractéristiques / faiblesses / capacités selon le nombre de victoires).
+let monsterKills = {};
+
 // ── Anti-exploit ─────────────────────────────────────────────
 // Cases fouillées : Map "x,y" → { at, count }.
 //   at    = valeur de stepCount au moment de la fouille

@@ -679,6 +679,10 @@ function endBattle(won) {
       const killsThisFight = enemyGroup.length;
       floorKillCount.set(currentFloor, (floorKillCount.get(currentFloor) || 0) + killsThisFight);
     }
+    // Kills cumulés par espèce (panneau d'info combat — révélation progressive).
+    if (typeof monsterKills !== 'undefined') {
+      enemyGroup.forEach(e => { if (e.id) monsterKills[e.id] = (monsterKills[e.id] || 0) + 1; });
+    }
     // Compteurs de score Ironman (monstres vaincus + faits d'armes boss).
     if (typeof recordIronmanKills === 'function') recordIronmanKills(enemyGroup);
     const diff     = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
