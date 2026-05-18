@@ -97,8 +97,28 @@ LINES = {
          "Le Gardien est-il vaincu ?"),
         ("mcgonagall_golem_ready_1",
          "Excellent travail. Voici votre récompense, bien méritée."),
+        # idle — une clé par réplique de dialogues.idleRandom (npcs.js).
+        # Ordre et texte = copie exacte ; la voix jouée suit l'index tiré.
         ("mcgonagall_idle_1",
+         "Cinquante points pour le courage. Et cinquante de moins si "
+         "vous claquez encore cette porte."),
+        ("mcgonagall_idle_2",
          "L'ordre doit être maintenu, même dans ces souterrains."),
+        ("mcgonagall_idle_3",
+         "Vous avez prouvé votre valeur. Gryffondor peut être fier."),
+        ("mcgonagall_idle_4",
+         "Le courage n'est pas l'absence de peur, mais le choix de la "
+         "regarder en face. Notez-le."),
+        ("mcgonagall_idle_5",
+         "J'ai vu des élèves que j'avais grondés le matin tomber au "
+         "combat le soir même. Je gronde quand même : c'est ma façon de "
+         "les garder en vie."),
+        ("mcgonagall_idle_6",
+         "Ce château, je l'ai défendu pierre par pierre. Certaines "
+         "portent encore des noms que je préférerais oublier."),
+        ("mcgonagall_idle_7",
+         "On me croit de pierre. C'est faux. Je me suis seulement "
+         "entraînée, très longtemps, à ne pas pleurer devant vous."),
         ("mcgonagall_done_1",
          "Vous avez prouvé votre valeur. Gryffondor peut être fier."),
     ],
@@ -117,8 +137,27 @@ LINES = {
         ("rogue_ready_1",
          "Trois Basilics, trois preuves. La Couronne vous attend — venez la "
          "chercher quand l'ambition vous le dictera."),
+        # idle — copie exacte de dialogues.idleRandom (npcs.js).
         ("rogue_idle_1",
+         "Trois élèves m'ont demandé aujourd'hui si une potion ratée "
+         "pouvait exploser. Elle le peut. Eux aussi, désormais."),
+        ("rogue_idle_2",
          "Concentrez-vous. La distraction tue plus vite que les sortilèges."),
+        ("rogue_idle_3",
+         "Je n'enseigne pas pour être aimé. L'affection est un luxe ; la "
+         "survie, une discipline."),
+        ("rogue_idle_4",
+         "Vous me trouvez injuste. Bien. Le monde l'est davantage, et lui "
+         "ne vous préviendra pas."),
+        ("rogue_idle_5",
+         "J'ai commis, étant jeune, une erreur dont le prix ne cesse "
+         "jamais d'augmenter. Veillez à ne pas m'imiter."),
+        ("rogue_idle_6",
+         "Certaines fautes ne se rachètent pas. On apprend seulement à "
+         "les porter sans trébucher."),
+        ("rogue_idle_7",
+         "Il y a un souvenir que je garderai jusqu'au dernier souffle. "
+         "Toujours. Ne me demandez pas lequel."),
     ],
     "flitwick": [
         ("flitwick_greeting_1",
@@ -137,9 +176,28 @@ LINES = {
         ("flitwick_ready_1",
          "Trois maudisseuses, trois pages préservées. L'Anneau du Savoir "
          "vous attend — revenez le réclamer."),
+        # idle — copie exacte de dialogues.idleRandom (npcs.js).
         ("flitwick_idle_1",
+         "On me prend pour un bibelot posé sur une pile de livres. Puis je "
+         "lève ma baguette. On me reprend rarement deux fois."),
+        ("flitwick_idle_2",
+         "J'ai fait léviter un piano à queue, une fois. Le pianiste jouait "
+         "encore — il a très bien terminé son morceau."),
+        ("flitwick_idle_3",
          "Un sortilège bien exécuté vaut mille incantations brouillonnes. "
          "Travaillez vos gestes."),
+        ("flitwick_idle_4",
+         "La taille d'un sorcier ne dit rien de la portée de sa baguette. "
+         "Retenez-le."),
+        ("flitwick_idle_5",
+         "J'ai été champion de duel, jadis. Ce n'est pas un titre qu'on "
+         "remporte sans laisser quelques adversaires… diminués."),
+        ("flitwick_idle_6",
+         "On néglige toujours les petites choses : une étincelle, un mot, "
+         "un homme menu. C'est ce qu'on néglige qui finit par tout embraser."),
+        ("flitwick_idle_7",
+         "J'ai vu des duels où l'on riait au premier sort. Plus personne "
+         "ne riait au dernier."),
     ],
     "sprout": [
         ("sprout_greeting_1",
@@ -157,8 +215,28 @@ LINES = {
         ("sprout_ready_1",
          "Trois trolls vaincus — le serment est tenu. Le Médaillon de Helga "
          "vous attend, repassez le réclamer."),
+        # idle — copie exacte de dialogues.idleRandom (npcs.js).
         ("sprout_idle_1",
+         "Une Tentacula vénéneuse m'a encore mordu le chapeau ce matin. "
+         "Ce chapeau en a vu d'autres. Moi aussi."),
+        ("sprout_idle_2",
          "Patience et persévérance, comme on l'enseigne aux racines."),
+        ("sprout_idle_3",
+         "Une plante pousse dans le noir sans se plaindre. Il y a là une "
+         "leçon que bien des sorciers refusent d'apprendre."),
+        ("sprout_idle_4",
+         "Le terreau le plus riche est toujours celui qui a recouvert "
+         "quelque chose. Ne creusez pas trop, parfois."),
+        ("sprout_idle_5",
+         "Le cri d'une Mandragore adulte tue net. Je fais répéter les "
+         "protections à mes élèves jusqu'à ce qu'ils en rêvent."),
+        ("sprout_idle_6",
+         "Le Filet du Diable n'attaque jamais. Il attend, simplement, que "
+         "vous cessiez de vous débattre."),
+        ("sprout_idle_7",
+         "On m'a un jour demandé des Mandragores pour ranimer des enfants "
+         "pétrifiés. Je les ai cultivées en pleurant. Une serre garde bien "
+         "les secrets."),
     ],
     # Incantations des sortilèges (Vague B). Le texte synthétisé est
     # l'incantation prononcée ; la clé OGG est mappée 1:1 dans

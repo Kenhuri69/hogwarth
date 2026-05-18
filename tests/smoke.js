@@ -6371,6 +6371,32 @@ async function scenarioHeadOfHouseVoice() {
   assert(t5.mcgoDone === 'mcgonagall_done_1',
     `done McGonagall → attendu mcgonagall_done_1, got ${t5.mcgoDone}`);
 
+  // T6 : synchro voix/texte idle — chaque réplique idleRandom des 4 chefs
+  // doit avoir son OGG `<npc>_idle_<n>`, et _voiceKeyForPage doit suivre
+  // l'index tiré (idleIndex) plutôt que de jouer toujours _idle_1.
+  const t6 = await page.evaluate(() => {
+    const sm  = AudioSystem._VOICE_SAMPLES;
+    const ids = ['mcgonagall', 'rogue', 'flitwick', 'sprout'];
+    const missing = [];
+    const keyMismatch = [];
+    for (const id of ids) {
+      const npc = getNpcById(id);
+      const idle = (npc && npc.dialogues && npc.dialogues.idleRandom) || [];
+      idle.forEach((_, i) => {
+        const key = `${id}_idle_${i + 1}`;
+        if (!sm[key]) missing.push(key);
+        const got = _voiceKeyForPage(id, 'none', null, 0, 'idle', i);
+        if (got !== key) keyMismatch.push(`${got}≠${key}`);
+      });
+    }
+    return { missing, keyMismatch };
+  });
+  console.log('  T6 synchro idle voix/texte:', t6);
+  assert(t6.missing.length === 0,
+    `OGG idle manquants : ${t6.missing.join(', ')}`);
+  assert(t6.keyMismatch.length === 0,
+    `_voiceKeyForPage idle décalé : ${t6.keyMismatch.join(', ')}`);
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS pendant voix Chefs de Maison`);

@@ -210,34 +210,38 @@ function _resolveDialogSource(npc, state) {
   const pick = (k) => (dq[k] !== undefined) ? dq[k] : d[k];
 
   if (typeof seenNpcs !== 'undefined' && !seenNpcs.has(npc.id) && d.greeting)
-    return { source: 'greeting', raw: d.greeting, qid };
+    return { source: 'greeting', raw: d.greeting, qid, idleIndex: -1 };
   if (state === 'offer'  && pick('questOffer')  !== undefined)
-    return { source: 'offer',  raw: pick('questOffer'),  qid };
+    return { source: 'offer',  raw: pick('questOffer'),  qid, idleIndex: -1 };
   if (state === 'active' && pick('questActive') !== undefined)
-    return { source: 'active', raw: pick('questActive'), qid };
+    return { source: 'active', raw: pick('questActive'), qid, idleIndex: -1 };
   if (state === 'ready'  && pick('questReady')  !== undefined)
-    return { source: 'ready',  raw: pick('questReady'),  qid };
+    return { source: 'ready',  raw: pick('questReady'),  qid, idleIndex: -1 };
   if (state === 'done'   && d.questDone)
-    return { source: 'done',   raw: d.questDone,         qid };
+    return { source: 'done',   raw: d.questDone,         qid, idleIndex: -1 };
 
   // Idle : priorités spéciales (Fumseck spent) > lore contextuel
   // (Portrait Dumbledore) > idleRandom (PNJ lore) > idle générique
   // > greeting > "...".
-  let raw;
+  // `idleIndex` mémorise l'entrée tirée dans `idleRandom` (-1 sinon) pour
+  // que `_voiceKeyForPage` joue l'OGG correspondant à la réplique affichée.
+  let raw, idleIndex = -1;
   if (_isSpecialActionSpent(npc) && d.idleSpent !== undefined) {
     raw = d.idleSpent;
   } else {
     const lore = _pickContextualLore(npc);
     // Texte de saveur "idle" : si `d.idleRandom` est un array de strings,
     // on en pioche un au hasard pour varier les visites (PNJ lore).
-    const idleRandomPick = (Array.isArray(d.idleRandom) && d.idleRandom.length)
-      ? d.idleRandom[Math.floor(Math.random() * d.idleRandom.length)]
-      : null;
+    let idleRandomPick = null;
+    if (lore === null && Array.isArray(d.idleRandom) && d.idleRandom.length) {
+      idleIndex = Math.floor(Math.random() * d.idleRandom.length);
+      idleRandomPick = d.idleRandom[idleIndex];
+    }
     raw = (lore !== null) ? lore
         : (idleRandomPick !== null) ? idleRandomPick
         : (d.idle || d.greeting || '...');
   }
-  return { source: 'idle', raw, qid };
+  return { source: 'idle', raw, qid, idleIndex };
 }
 
 // Retourne `{ pages, srcPages }`. `pages` est le tableau plat des
@@ -247,8 +251,11 @@ function _resolveDialogSource(npc, state) {
 // calé sur les pages d'origine, pas sur les sous-pages.
 // Un dialogue peut être déclaré comme string (1 page) ou comme array
 // (multi-page) ; override par quête via `dialoguesByQuest`.
-function _npcDialogPages(npc, state) {
-  const { raw, qid } = _resolveDialogSource(npc, state);
+// `resolved` (optionnel) : objet déjà produit par `_resolveDialogSource`.
+// `openNpcDialog` le passe pour garantir un tirage `idleRandom` unique
+// partagé entre le texte affiché et la clé voix.
+function _npcDialogPages(npc, state, resolved) {
+  const { raw, qid } = resolved || _resolveDialogSource(npc, state);
   const pages = Array.isArray(raw) ? raw.slice() : [raw];
   // Interpolation des placeholders {target} / {amount} pour les quêtes
   // farming. No-op pour les autres dialogues (raw renvoyé tel quel).
@@ -418,7 +425,7 @@ function triggerNpcSpecialAction(npcId) {
 // `source` mémorise l'origine des pages (greeting / offer / active / ready /
 // done / idle), nécessaire au mapping voix car le mode "greeting" est
 // déclenché par seenNpcs (premier contact) indépendamment de l'état quête.
-let _dialogState = { npcId: null, pages: [], srcPages: [], page: 0, actions: [], source: 'idle' };
+let _dialogState = { npcId: null, pages: [], srcPages: [], page: 0, actions: [], source: 'idle', idleIndex: -1 };
 
 // Identifiant de la source choisie pour la page courante, pour le mapping
 // audio. Délègue à la cascade partagée `_resolveDialogSource`. Doit être
@@ -477,11 +484,16 @@ const _DUMBLEDORE_QID_SUFFIX = {
 // quête courant.
 const _HEAD_OF_HOUSE_VOICE = new Set(['mcgonagall', 'rogue', 'flitwick', 'sprout']);
 
-function _voiceKeyForPage(npcId, state, qid, pageIdx, source) {
+function _voiceKeyForPage(npcId, state, qid, pageIdx, source, idleIndex) {
   // Chefs de Maison : greeting + 3 états quête + idle/done (Vague A étendue).
   if (_HEAD_OF_HOUSE_VOICE.has(npcId)) {
     if (source === 'greeting') return `${npcId}_greeting_${pageIdx + 1}`;
-    if (source === 'idle')     return `${npcId}_idle_${pageIdx + 1}`;
+    if (source === 'idle') {
+      // L'OGG suit la réplique `idleRandom` tirée (idleIndex) pour éviter
+      // le décalage voix/texte ; repli sur la page si index absent.
+      const i = (typeof idleIndex === 'number' && idleIndex >= 0) ? idleIndex : pageIdx;
+      return `${npcId}_idle_${i + 1}`;
+    }
     if (source === 'done')     return `${npcId}_done_${pageIdx + 1}`;
     if (source === 'offer' || source === 'active' || source === 'ready') {
       // McGonagall donne 2 quêtes : la quête de Set garde la clé
@@ -518,7 +530,7 @@ function _playPageVoice() {
   if (typeof AudioSystem === 'undefined' || typeof AudioSystem.playVoice !== 'function') return;
   if (typeof AudioSystem.stopVoice === 'function') AudioSystem.stopVoice();
   if (!_dialogState) return;
-  const { npcId, page, source, srcPages } = _dialogState;
+  const { npcId, page, source, srcPages, idleIndex } = _dialogState;
   const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
   if (!npc) return;
   // Index de la page d'origine : une page longue scindée garde la clé
@@ -529,7 +541,7 @@ function _playPageVoice() {
   if (page > 0 && srcPages && srcPages[page - 1] === authoredIdx) return;
   const state = (typeof getNpcQuestState === 'function') ? getNpcQuestState(npc) : 'none';
   const qid   = (typeof _currentQuestForState === 'function') ? _currentQuestForState(npc, state) : null;
-  const key   = _voiceKeyForPage(npcId, state, qid, authoredIdx, source);
+  const key   = _voiceKeyForPage(npcId, state, qid, authoredIdx, source, idleIndex);
   if (key) AudioSystem.playVoice(key);
 }
 
@@ -565,14 +577,18 @@ function openNpcDialog(npcId) {
   // pour rester cohérent sur toutes les pages du dialogue (greeting
   // 2 pages, etc.) — sinon seenNpcs.add ci-dessous changerait la source
   // à la page 2.
-  const _pageData = _npcDialogPages(npc, state);
+  // Résolution unique : le tirage `idleRandom` est partagé entre le texte
+  // affiché et la clé voix (sinon deux tirages → voix décalée).
+  const _resolved = _resolveDialogSource(npc, state);
+  const _pageData = _npcDialogPages(npc, state, _resolved);
   _dialogState = {
     npcId,
-    pages:    _pageData.pages,
-    srcPages: _pageData.srcPages,
-    page:     0,
-    actions:  _npcDialogActions(npc, state),
-    source:   _npcDialogSource(npc, state)
+    pages:     _pageData.pages,
+    srcPages:  _pageData.srcPages,
+    page:      0,
+    actions:   _npcDialogActions(npc, state),
+    source:    _resolved.source,
+    idleIndex: _resolved.idleIndex
   };
   _renderDialogPage();
 
