@@ -449,6 +449,7 @@ async function scenarioChainedQuest() {
   assert(t1.step1Item === 'choco_sorcier',    'étape 1 doit cibler choco_sorcier');
 
   // T2 : simuler kill du Détraqueur → étape 0 complète, pas d'auto-completion
+  // L'id doit matcher MONSTERS (detraqueur) — c'est ce que endBattle passe.
   const t2 = await page.evaluate(() => {
     checkKillQuests('detraqueur');
     const q = activeQuests.find(x => x.id === 'lumiere_desespoir');
