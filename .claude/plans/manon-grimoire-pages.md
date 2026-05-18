@@ -45,6 +45,15 @@ total ×3 de 78/93/129, en tête du classement).
 | Sort de révélation | **Revelio**, enseigné par une quête préambule de Manon |
 | Nombre de pages | **5**, réparties étages **2 à 9** |
 | Fusion | **Hébergée par Manon** (PNJ donneur), UI inspirée de la besace |
+| Revelio — coût | 1-2 PM (bon marché) |
+| Revelio — hors combat | Révèle le brouillard sur ~2 cases ; une page dans la zone éclaircie apparaît en point vert sur la minimap |
+| Revelio — en combat | Révèle d'un coup le panneau d'info du monstre ciblé (voir §4b) |
+| Logo du sort | PNG dédié `img/icons/spells/revelio.png` à générer |
+
+> **Rebase effectué (2026-05-18).** La branche a été rebasée sur `master` :
+> elle intègre désormais le PR #190 « panneau d'info monstre en combat ».
+> Le système de connaissance que le volet combat de Revelio doit
+> contourner **existe déjà** — rien à construire, juste un bypass.
 
 ## 3. Structure des quêtes (Manon — Acte II)
 
@@ -69,20 +78,37 @@ Deux volets chaînés, après `manon_pardon` (`prereq`).
   fusion** (§6) → grimoire `livre_glacius_tempete` recréé.
 - Récompense : `item: "livre_glacius_tempete"` + `xp`/`gold` (+ stats ?).
 
-## 4. Sort Revelio (hors combat)
+## 4. Sort Revelio
 
-- `data.js — SPELLS` : nouvelle entrée
-  `{ name:"Revelio", effect:"reveal", cost:~6, element:"lumière",
-     icon:"🔎", desc:"Dévoile une page dissimulée à l'étage courant." }`.
-  Non offensif, `locked` non requis (acquis par quête).
+Sort acquis par la quête `manon_revelio` (§3a). Coût **1-2 PM**.
+Double usage selon le contexte. Logo PNG dédié à générer
+(`tools/gen_*` → `img/icons/spells/revelio.png` + `SPELL_ICON_REGISTRY`).
+
+### 4a. Hors combat — révélation du donjon
+- `data.js — SPELLS` : entrée
+  `{ name:"Revelio", effect:"reveal", cost:2, element:"lumière",
+     icon:"🔎", desc:"Dissipe le brouillard alentour et dévoile les
+     pages dissimulées." }`.
 - `inventory.js` :
   - `isOutOfCombatSpell` → ajouter `effect === 'reveal'`.
-  - `SPELL_OOC_HANDLERS.reveal` → handler : débite le PM, cherche une
-    page **non collectée** à l'étage courant ; si trouvée → l'ajoute à
-    `revealedPages`, marqueur vert minimap, message ; sinon « Revelio ne
-    dévoile rien ici. » (PM non débité si rien — à trancher).
-- Revelio est **inopérant en combat** (`castSpellInBattle` ignore
-  `effect:"reveal"` — message « ... qu'hors combat »).
+  - `SPELL_OOC_HANDLERS.reveal` → débite le PM, **dissipe le brouillard
+    sur ~2 cases** autour du joueur ; si une page non collectée tombe
+    dans la zone éclaircie → l'ajoute à `revealedPages` (point vert
+    minimap). Message selon le résultat.
+- La page ne se montre que via la minimap (pas de cue 3D — décidé V1).
+
+### 4b. En combat — révélation du monstre
+- Master fournit déjà `showMonsterCombatInfo(idx)` avec gating
+  `MONSTER_INFO_TIERS = { stats:1, weakness:3, deep:5 }` sur
+  `monsterKills[id]` (PR #190).
+- Revelio lancé en combat sur un ennemi → **ouvre son panneau d'info
+  avec les 3 paliers déverrouillés**, quel que soit `monsterKills`.
+  Implémentation : `showMonsterCombatInfo(idx, { revealed:true })` — le
+  flag force `kills` au-delà de `deep` pour ce rendu (aucun monstre
+  n'est modifié, juste l'affichage).
+- `castSpellInBattle` route `effect:"reveal"` vers ce panneau au lieu
+  d'un calcul de dégâts ; ne consomme pas le tour ? → **à trancher**
+  (proposition : consomme le tour + le PM, comme un sort utilitaire).
 
 ## 5. Pages dans le donjon
 
@@ -94,8 +120,8 @@ Approche **sans nouveau type de cellule** (plus chirurgical que
 | `pagePlacements` | `Map<floor, {x,y}>` — position déterministe (seed par étage), sur les 5 étages porteurs |
 | `revealedPages` | `Set` de clés `"floor:x,y"` — pages rendues visibles par Revelio |
 | `collectedPages` | `Set` des étages dont la page est ramassée (taille = progression quête) |
-| Révélation | Revelio (§4) ajoute à `revealedPages` |
-| Visuel | Point **vert** sur la minimap à la case révélée. Cue 3D : hors-scope V1 (minimap suffit) ou halo léger — à trancher |
+| Révélation | Revelio (§4a) dissipe le brouillard sur ~2 cases ; toute page de la zone éclaircie passe dans `revealedPages` |
+| Visuel | Point **vert** sur la minimap à la case révélée. **Pas de cue 3D** (décidé V1) |
 | Ramassage | `movement.js — searchRoom()` : si la case courante == page révélée non collectée → ajoute à `collectedPages`, son `playChestOpen`, message, `checkPageQuest()` |
 | Garde | Pages actives uniquement si `manon_revelio` rendu et `manon_grimoire` non terminé |
 | Persistance | `pagePlacements` / `revealedPages` / `collectedPages` sérialisés dans `_serializeState`/`_applyState` |
@@ -128,8 +154,11 @@ Nouvel objectif `type:"pages"` dans le moteur de quêtes (petit ajout).
 1. **Narratif & données** — prémisse validée ; SPELLS Revelio ;
    2 quêtes dans `quests.js`/`state.js` ; dialogues Manon.
    verify : `node tests/smoke.js` vert (chargement).
-2. **Revelio OOC** — `isOutOfCombatSpell` + handler `reveal`.
-   verify : caster Revelio hors combat, message cohérent.
+2. **Revelio — sort + logo** — entrée SPELLS, `isOutOfCombatSpell` +
+   handler `reveal` (dissipe le brouillard ~2 cases), bypass combat
+   via `showMonsterCombatInfo`, PNG du logo + `SPELL_ICON_REGISTRY`.
+   verify : Revelio hors combat dissipe le fog ; en combat ouvre le
+   panneau monstre complet à 0 kill.
 3. **Pages donjon** — `pagePlacements`/`revealedPages`/`collectedPages`,
    seed, hook `searchRoom`, marqueur minimap, persistance save.
    verify : révéler + fouiller une page → `collectedPages` grandit,
@@ -145,9 +174,11 @@ Nouvel objectif `type:"pages"` dans le moteur de quêtes (petit ajout).
 
 - La **2ᵉ quête « épique »** d'obtention d'un autre grimoire — à
   concevoir séparément (déjà annoncée « à discuter plus tard »).
-- Cue 3D de la page révélée (au-delà de la minimap).
+- Cue 3D de la page révélée (au-delà de la minimap) — décidé : non.
 - Revelio comme sort d'utilité générale (révéler coffres/passages) —
   reste cantonné aux pages pour cette V1.
 
 ## Suivi
-- [ ] Phase 0 — validation de la prémisse narrative (§1) par l'utilisateur.
+- [x] Phase 0 — prémisse narrative (§1) validée par l'utilisateur.
+- [x] Rebase de la branche sur `master` (intègre le PR #190).
+- [ ] Étages porteurs des 5 pages — à confirmer (proposé 2,3,5,7,9).
