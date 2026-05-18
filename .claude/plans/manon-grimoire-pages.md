@@ -1,7 +1,7 @@
 # Plan — Manon Acte II : le grimoire de givre éparpillé
 
-> Statut : **conception / discussion**. Aucune implémentation tant que la
-> prémisse narrative (§1) n'est pas validée.
+> Statut : **conception finalisée** — prémisse validée, derniers points
+> ouverts tranchés. Prêt pour le découpage en phases (§8).
 
 ## 1. Prémisse narrative (à valider)
 
@@ -30,11 +30,10 @@ pour qu'elle bute dessus »). Le grimoire reconstitué = **Glacius
 Tempête** (l'AoE la plus puissante du jeu, cf. `tools/sim-aoe.js` :
 total ×3 de 78/93/129, en tête du classement).
 
-**Points ouverts pour la discussion :**
-- Sandrine n'a aujourd'hui aucune spécialité magique décrite. Lui
-  attribuer le givre est une invention — OK ?
-- L'épithète givre/froid colle au personnage (mère distante, froide par
-  ses mensonges) — ou trop appuyé ?
+**Décisions prises :**
+- Sandrine reçoit la **spécialité givre** (invention assumée — elle
+  n'avait aucune spécialité magique décrite jusqu'ici). L'épithète
+  givre/froid double le motif de la mère distante.
 
 ## 2. Décisions déjà actées (échanges précédents)
 
@@ -48,7 +47,8 @@ total ×3 de 78/93/129, en tête du classement).
 | Fusion | **Hébergée par Manon** (PNJ donneur), UI inspirée de la besace |
 | Revelio — coût | 1-2 PM (bon marché) |
 | Revelio — hors combat | Révèle le brouillard sur ~2 cases ; une page dans la zone éclaircie apparaît en point vert sur la minimap |
-| Revelio — en combat | Révèle d'un coup le panneau d'info du monstre ciblé (voir §4b) |
+| Revelio — en combat | Révèle d'un coup le panneau d'info du monstre ciblé ; consomme le tour + le PM (voir §4b) |
+| Sandrine — magie | Spécialité **givre** (acté) |
 | Logo du sort | PNG dédié `img/icons/spells/revelio.png` à générer |
 
 > **Rebase effectué (2026-05-18).** La branche a été rebasée sur `master` :
@@ -108,8 +108,8 @@ Double usage selon le contexte. Logo PNG dédié à générer
   flag force `kills` au-delà de `deep` pour ce rendu (aucun monstre
   n'est modifié, juste l'affichage).
 - `castSpellInBattle` route `effect:"reveal"` vers ce panneau au lieu
-  d'un calcul de dégâts ; ne consomme pas le tour ? → **à trancher**
-  (proposition : consomme le tour + le PM, comme un sort utilitaire).
+  d'un calcul de dégâts. **Acté : consomme le tour + le PM**, comme un
+  sort utilitaire.
 
 ## 5. Pages dans le donjon
 
