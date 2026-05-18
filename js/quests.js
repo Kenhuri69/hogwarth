@@ -828,6 +828,11 @@ function _renderActiveQuestCard(q) {
   if (activeStep && activeStep.type === 'item') {
     activeStep.progress = player.inventory.filter(i => i.id === activeStep.itemId).length;
   }
+  // Étape `pages` : recompter depuis la besace de pages.
+  if (activeStep && activeStep.type === 'pages') {
+    activeStep.progress = Array.isArray(player.grimoirePages)
+      ? player.grimoirePages.length : 0;
+  }
   const ready = activeStep && activeStep.progress >= activeStep.amount;
 
   const rewardHtml = _renderRewardParts(q.reward);
@@ -864,6 +869,8 @@ function _renderQuestStep(o, isActive, ready, isFirst) {
     label = `Descendre jusqu'à l'étage ${o.floor}`;
   } else if (o.type === 'donate') {
     label = `Faire don de ${o.amount} Gallions`;
+  } else if (o.type === 'pages') {
+    label = `Réunir ${o.amount} pages du grimoire`;
   } else {
     const it = ITEMS.find(x => x.id === o.itemId);
     label = `Apporter ${o.amount}× ${it ? it.name : o.itemId}`;
@@ -952,6 +959,13 @@ function _refreshObjectives() {
       // joueur dépense ses Gallions avant d'aller voir le Chef de Maison.
       if (step.type === 'donate') {
         step.progress  = (player && player.gold) || 0;
+        step.completed = step.progress >= step.amount;
+        continue;
+      }
+      // Pages du grimoire : recomptées en continu depuis la besace.
+      if (step.type === 'pages') {
+        step.progress  = (player && Array.isArray(player.grimoirePages))
+          ? player.grimoirePages.length : 0;
         step.completed = step.progress >= step.amount;
         continue;
       }
@@ -1109,6 +1123,26 @@ window.checkKillQuests = function(monsterId) {
       addMsg(`📜 Quête « ${q.title} » : ${step.progress}/${step.amount}`, '');
     }
   });
+};
+
+// ── Appelée après le ramassage d'une page de grimoire ───────
+// Met à jour la progression de manon_grimoire depuis player.grimoirePages.
+window.checkPageQuest = function() {
+  const q = (typeof activeQuests !== 'undefined')
+    ? activeQuests.find(x => x.id === 'manon_grimoire') : null;
+  if (!q) return;
+  const step = q.objectives.find(o => o.type === 'pages');
+  if (!step || step.completed) return;
+  const n = (player && Array.isArray(player.grimoirePages))
+    ? player.grimoirePages.length : 0;
+  step.progress = n;
+  if (n >= step.amount) {
+    step.completed = true;
+    addMsg(`📜 Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+  } else {
+    addMsg(`📜 Quête « ${q.title} » : ${n}/${step.amount} pages.`, '');
+  }
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
 };
 
 // ── Appelée à chaque entrée d'étage (goDeeper / restoration) ──

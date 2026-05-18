@@ -244,18 +244,56 @@ function _applyInvTab(tab, tabsVisible) {
   const tabs   = document.getElementById('inv-tabs');
   const paneS  = document.getElementById('inv-pane-sac');
   const paneB  = document.getElementById('inv-pane-besace');
+  const paneG  = document.getElementById('inv-pane-grimoire');
   if (tabs) tabs.style.display = tabsVisible ? 'flex' : 'none';
-  if (paneS) paneS.style.display = (tab === 'sac')    ? '' : 'none';
-  if (paneB) paneB.style.display = (tab === 'besace') ? '' : 'none';
+  if (paneS) paneS.style.display = (tab === 'sac')      ? '' : 'none';
+  if (paneB) paneB.style.display = (tab === 'besace')   ? '' : 'none';
+  if (paneG) paneG.style.display = (tab === 'grimoire') ? '' : 'none';
   const btnS = document.getElementById('inv-tab-sac');
   const btnB = document.getElementById('inv-tab-besace');
+  const btnG = document.getElementById('inv-tab-grimoire');
   if (btnS) btnS.classList.toggle('active', tab === 'sac');
   if (btnB) btnB.classList.toggle('active', tab === 'besace');
+  if (btnG) btnG.classList.toggle('active', tab === 'grimoire');
 }
 
 function switchInvTab(tab) {
-  if (tab === 'besace') renderBesace();
+  if (tab === 'besace')   renderBesace();
+  if (tab === 'grimoire') renderGrimoirePouch();
   _applyInvTab(tab, true);
+}
+
+// La besace de pages n'apparaît que lorsque l'Acte II de Manon est en
+// jeu : quête de collecte active ou au moins une page déjà récoltée.
+function _grimoirePouchRelevant() {
+  if (Array.isArray(player.grimoirePages) && player.grimoirePages.length) return true;
+  return typeof activeQuests !== 'undefined'
+    && activeQuests.some(q => q.id === 'manon_grimoire');
+}
+
+// Rendu de la besace de pages du grimoire (player.grimoirePages) —
+// consultation seule, calquée sur renderBesace.
+function renderGrimoirePouch() {
+  const pane = document.getElementById('inv-pane-grimoire');
+  if (!pane) return;
+  const owned = Array.isArray(player.grimoirePages) ? player.grimoirePages : [];
+  const all   = (typeof GRIMOIRE_PAGES !== 'undefined') ? GRIMOIRE_PAGES : [];
+  const pages = all.filter(p => owned.includes(p.id));
+  let html = '';
+  if (pages.length) {
+    html += '<div class="brew-tiles">';
+    for (const p of pages) {
+      html += `<div class="brew-tile" title="${p.lore}">`
+        + `<div class="brew-tile-icon">${p.icon}</div>`
+        + `<div class="brew-tile-name">${p.name}</div>`
+        + `<span class="brew-tile-qty">étage ${p.floor}</span></div>`;
+    }
+    html += '</div>';
+  } else {
+    html += `<div class="brew-empty">Aucune page récoltée. Lance Revelio dans le donjon pour dévoiler les pages dissimulées par Sandrine.</div>`;
+  }
+  html += `<div style="margin-top:12px; font-size:11px; color:#6a5030; text-align:center;">Pages du grimoire de givre : ${pages.length} / ${all.length}. Rapporte-les à Manon (étage 3).</div>`;
+  pane.innerHTML = html;
 }
 
 // Rendu de la besace d'herboriste (player.herbs) — purement informatif.
@@ -296,6 +334,9 @@ function renderBesace() {
 function openInventory() {
   renderInventory(false);
   renderBesace();
+  const btnG = document.getElementById('inv-tab-grimoire');
+  if (btnG) btnG.style.display = _grimoirePouchRelevant() ? '' : 'none';
+  renderGrimoirePouch();
   _applyInvTab('sac', true);
   document.getElementById('inventory-modal').style.display = 'flex';
 }
@@ -925,6 +966,8 @@ const SPELL_OOC_HANDLERS = {
       return;
     }
     caster.sp -= spell.cost;
+    // S'assure que la page de l'étage est posée avant de tenter de la révéler.
+    if (typeof _ensurePagePlacement === 'function') _ensurePagePlacement(currentFloor);
     let cleared = 0;
     for (let dy = -2; dy <= 2; dy++) {
       for (let dx = -2; dx <= 2; dx++) {
@@ -933,12 +976,27 @@ const SPELL_OOC_HANDLERS = {
         if (visited[y] && !visited[y][x]) { visited[y][x] = true; cleared++; }
       }
     }
+    // Une page non collectée dans la zone éclaircie est dévoilée (minimap).
+    let pageRevealed = false;
+    const pagePos = (typeof pagePlacements !== 'undefined')
+      ? pagePlacements.get(currentFloor) : null;
+    if (pagePos && !revealedPages.has(currentFloor)) {
+      const [px, py] = pagePos.split(',').map(Number);
+      if (Math.abs(px - playerX) <= 2 && Math.abs(py - playerY) <= 2) {
+        revealedPages.add(currentFloor);
+        pageRevealed = true;
+      }
+    }
     AudioSystem.playSpellCast(spell.name);
     AudioSystem.speakSpell(spell.name);
-    addMsg(cleared > 0
-      ? `🔎 ${caster.name} lance ${spell.name} — le brouillard se dissipe alentour.`
-      : `🔎 ${caster.name} lance ${spell.name} — rien de neuf à dévoiler ici.`,
-      cleared > 0 ? 'good' : '');
+    if (pageRevealed) {
+      addMsg(`🔎 ${caster.name} lance ${spell.name} — une page du grimoire scintille sur la carte !`, 'good');
+    } else {
+      addMsg(cleared > 0
+        ? `🔎 ${caster.name} lance ${spell.name} — le brouillard se dissipe alentour.`
+        : `🔎 ${caster.name} lance ${spell.name} — rien de neuf à dévoiler ici.`,
+        cleared > 0 ? 'good' : '');
+    }
     closeModal('spell-modal');
     if (typeof renderMinimap === 'function') renderMinimap();
     updateUI();

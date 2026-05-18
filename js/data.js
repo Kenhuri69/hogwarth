@@ -239,6 +239,32 @@ function spellCategory(spell) {
   return spell.element || 'utilitaire';
 }
 
+// ── Pages du grimoire de givre de Sandrine (quête manon_grimoire) ──
+// Cinq feuillets dispersés et dissimulés, un par étage porteur. Le
+// joueur les dévoile avec Revelio puis les ramasse en fouillant. Une
+// fois les cinq réunis, Manon reconstitue le grimoire (établi de
+// fusion). Cf. .claude/plans/manon-grimoire-pages.md.
+const GRIMOIRE_PAGES = [
+  { id: "page_grimoire_1", name: "Page de garde", icon: "📄", floor: 2,
+    lore: "« À ma fille, si ces lignes te trouvent : le froid n'est pas l'absence de chaleur. C'est une chaleur qui a appris la patience. » — S." },
+  { id: "page_grimoire_2", name: "Le souffle de givre", icon: "📄", floor: 3,
+    lore: "Premiers exercices : givrer la rosée sans la briser. Sandrine a noté en marge : « recommencé onze fois — la onzième tient »." },
+  { id: "page_grimoire_3", name: "La rosée durcie", icon: "📄", floor: 5,
+    lore: "Le gel comme armure et non comme arme. L'encre y est pâlie, comme soufflée par un hiver ancien." },
+  { id: "page_grimoire_4", name: "Le miroir de glace", icon: "📄", floor: 7,
+    lore: "Une page presque entièrement raturée — sauf une ligne : « ce qu'on gèle, on le garde ; ce qu'on garde, on finit par devoir rendre »." },
+  { id: "page_grimoire_5", name: "La tempête apprivoisée", icon: "📄", floor: 9,
+    lore: "La dernière page : le tracé complet du grand sortilège de blizzard. Sous le schéma, deux mots tremblés : « pour toi »." }
+];
+
+// Étages porteurs d'une page (dérivé — source de vérité GRIMOIRE_PAGES).
+const PAGE_FLOORS = GRIMOIRE_PAGES.map(p => p.floor);
+
+// Retourne la page définie pour un étage donné, ou null.
+function getGrimoirePageForFloor(floor) {
+  return GRIMOIRE_PAGES.find(p => p.floor === floor) || null;
+}
+
 const ITEMS = [
   { id:"potion_s", name:"Potion de Soin", icon:"🧪", desc:"+15 PV", type:"consumable", effect:"heal", power:15, price:30 },
   { id:"potion_m", name:"Potion Magique", icon:"💜", desc:"+12 PM", type:"consumable", effect:"restore_sp", power:12, price:25 },

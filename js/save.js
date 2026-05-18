@@ -223,6 +223,8 @@ function _serializeState() {
     searchedCells: Array.from(searchedCells),
     stepCount,
     floorDungeons,
+    pagePlacements: Array.from(pagePlacements.entries()),
+    revealedPages:  Array.from(revealedPages),
     restCooldown,
     usedFountains: Array.from(usedFountains),
     usedSpecialNpcs: Array.from(usedSpecialNpcs),
@@ -455,6 +457,9 @@ function _applyState(gs) {
     (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])
   );
   floorKillCount = new Map(gs.floorKillCount || []);
+  // Pages du grimoire de Sandrine (quête manon_grimoire).
+  pagePlacements = new Map(gs.pagePlacements || []);
+  revealedPages  = new Set(gs.revealedPages || []);
   // Boutique fixe : stock & réassort. shopStock null → re-tirage paresseux.
   shopStock = Array.isArray(gs.shopStock) ? gs.shopStock : null;
   shopStepsSinceRestock = (typeof gs.shopStepsSinceRestock === 'number') ? gs.shopStepsSinceRestock : 0;

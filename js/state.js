@@ -334,6 +334,16 @@ let defeatedCellsByFloor = new Map();
 // cap +40 %), n ≥ 5 active la prob trio (+10%/(n-4), cap +40 %). Persisté.
 let floorKillCount = new Map();
 
+// ── Pages du grimoire de Sandrine (quête manon_grimoire) ─────
+// Reliques fixes invisibles, une par étage porteur (2,3,5,7,9).
+// pagePlacements : Map<floor, "x,y"> — position posée à la 1re
+// génération/visite de l'étage quand la quête est active.
+// revealedPages  : Set<floor> — étages dont la page a été dévoilée
+// par Revelio (point vert minimap). Les deux sont persistés.
+// Cf. .claude/plans/manon-grimoire-pages.md §5.
+let pagePlacements = new Map();
+let revealedPages  = new Set();
+
 // ── Boutique fixe : stock fini & réassort (anti-farming) ─────
 // Stock courant de la boutique fixe (Mme Malkins). `null` = pas encore
 // tiré → tirage paresseux à la première ouverture. Tableau d'entrées
@@ -403,6 +413,10 @@ const player = {
   // Voir .claude/plans/farming-potion-system.md.
   herbs: {},
   knownRecipes: [],
+  // Pages du grimoire de Sandrine récoltées (quête manon_grimoire) :
+  // tableau d'ids GRIMOIRE_PAGES, stocké comme une besace (partagé,
+  // non plafonné). Voir .claude/plans/manon-grimoire-pages.md.
+  grimoirePages: [],
   // 11 slots étendus — voir .claude/plans/equipment-extended.md §2.1
   equipped: {
     wand: null, head: null, body: null, hands: null, feet: null, cloak: null,

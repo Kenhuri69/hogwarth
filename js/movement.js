@@ -277,6 +277,10 @@ function _restoreFloorFromCache(floor) {
   if (typeof _ensureActiveKillQuestTargets === 'function') {
     _ensureActiveKillQuestTargets(floor);
   }
+  // Page du grimoire de Sandrine (quête manon_grimoire) si applicable.
+  if (typeof _ensurePagePlacement === 'function') {
+    _ensurePagePlacement(floor);
+  }
   // Migration : replace les escaliers manquants (softlock vieilles saves).
   if (typeof _ensureStairsExist === 'function') {
     _ensureStairsExist(floor);
@@ -551,8 +555,33 @@ function _updateSearchBtn() {
   if (typeof updateRoomStatus === 'function') updateRoomStatus();
 }
 
+// Ramasse la page du grimoire si la case courante en porte une, révélée
+// par Revelio et non encore collectée. Retourne true si une page a été
+// ramassée. Cf. .claude/plans/manon-grimoire-pages.md §5.
+function _tryCollectPage() {
+  if (typeof pagePlacements === 'undefined') return false;
+  if (pagePlacements.get(currentFloor) !== `${playerX},${playerY}`) return false;
+  if (!revealedPages.has(currentFloor)) return false;
+  const page = (typeof getGrimoirePageForFloor === 'function')
+    ? getGrimoirePageForFloor(currentFloor) : null;
+  if (!page) return false;
+  if (!Array.isArray(player.grimoirePages)) player.grimoirePages = [];
+  if (player.grimoirePages.includes(page.id)) return false;
+  player.grimoirePages.push(page.id);
+  AudioSystem.playChestOpen();
+  setNarrative(`Entre deux pierres, un feuillet givré : « ${page.name} ». Vous le glissez dans le grimoire.`);
+  addMsg(`📄 Page récoltée : ${page.name}`, 'good');
+  if (typeof checkPageQuest === 'function') checkPageQuest();
+  if (typeof renderMinimap === 'function') renderMinimap();
+  return true;
+}
+
 function searchRoom() {
   if (inBattle) return;
+
+  // Une page de grimoire révélée sur la case courante est ramassée en
+  // priorité — sans interagir avec la recharge de fouille.
+  if (_tryCollectPage()) return;
 
   const key = `${playerX},${playerY}`;
   const st  = _searchCellStatus(key);

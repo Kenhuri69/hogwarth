@@ -347,6 +347,39 @@ function generateDungeon(floor) {
   // Garde-fou : si la génération a écrasé un escalier (collision
   // rooms[0]/rooms[last] = mêmes centres), on en replace un.
   _ensureStairsExist(floor);
+
+  // Page du grimoire de Sandrine (quête manon_grimoire) si applicable.
+  _ensurePagePlacement(floor);
+}
+
+// Pose la page de grimoire de l'étage `floor` si la quête manon_grimoire
+// est active, que la page n'est pas déjà ramassée, et qu'aucune position
+// n'a encore été fixée pour cet étage. Position déterministe (seed par
+// étage) sur une case FLOOR ordinaire. Cf. manon-grimoire-pages.md §5.
+function _ensurePagePlacement(floor) {
+  if (typeof PAGE_FLOORS === 'undefined' || !PAGE_FLOORS.includes(floor)) return;
+  if (typeof pagePlacements === 'undefined' || pagePlacements.has(floor)) return;
+  const questActive = typeof activeQuests !== 'undefined'
+    && activeQuests.some(q => q.id === 'manon_grimoire');
+  if (!questActive) return;
+  const page = (typeof getGrimoirePageForFloor === 'function')
+    ? getGrimoirePageForFloor(floor) : null;
+  if (!page) return;
+  if (player && Array.isArray(player.grimoirePages)
+      && player.grimoirePages.includes(page.id)) return;
+  const candidates = [];
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (enemyMap[y] && enemyMap[y][x]) continue;
+      if (x === playerX && y === playerY) continue;
+      candidates.push(y * MAP_W + x);
+    }
+  }
+  if (!candidates.length) return;
+  candidates.sort((a, b) => a - b);
+  const cell = candidates[(floor * 7919) % candidates.length];
+  pagePlacements.set(floor, `${cell % MAP_W},${Math.floor(cell / MAP_W)}`);
 }
 
 // Spawn ciblé pour quête à l'acceptation. Place 1 monstre cible (par id) +

@@ -367,6 +367,10 @@ async function startGame(count = 2) {
   resizeCanvas();
   generateDungeon(1);
   floorDungeons = {};   // reset du cache à chaque nouvelle partie
+  // Pages du grimoire de Sandrine — état neuf à chaque partie.
+  pagePlacements = new Map();
+  revealedPages  = new Set();
+  player.grimoirePages = [];
   searchedCells = new Set();
   visitedFloors = new Set([1]);
   totalKills     = 0;

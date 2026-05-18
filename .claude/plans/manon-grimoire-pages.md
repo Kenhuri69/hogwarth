@@ -114,22 +114,26 @@ Double usage selon le contexte. Logo PNG dédié à générer
 ## 5. Pages dans le donjon
 
 Approche **sans nouveau type de cellule** (plus chirurgical que
-`CELL.PAGE` ; précédent : `npcPlacements`) :
+`CELL.PAGE` ; précédent : `npcPlacements`). Les 5 pages sont définies
+dans `GRIMOIRE_PAGES` (`data.js`) — `{id,name,icon,floor,lore}` —
+`PAGE_FLOORS` = `[2,3,5,7,9]` dérivé.
 
 | Élément | Détail |
 |---------|--------|
-| `pagePlacements` | `Map<floor, {x,y}>` — position déterministe (seed par étage), sur les 5 étages porteurs |
-| `revealedPages` | `Set` de clés `"floor:x,y"` — pages rendues visibles par Revelio |
-| `collectedPages` | `Set` des étages dont la page est ramassée (taille = progression quête) |
-| Révélation | Revelio (§4a) dissipe le brouillard sur ~2 cases ; toute page de la zone éclaircie passe dans `revealedPages` |
-| Visuel | Point **vert** sur la minimap à la case révélée. **Pas de cue 3D** (décidé V1) |
-| Ramassage | `movement.js — searchRoom()` : si la case courante == page révélée non collectée → ajoute à `collectedPages`, son `playChestOpen`, message, `checkPageQuest()` |
-| Garde | Pages actives uniquement si `manon_revelio` rendu et `manon_grimoire` non terminé |
-| Persistance | `pagePlacements` / `revealedPages` / `collectedPages` sérialisés dans `_serializeState`/`_applyState` |
+| `pagePlacements` | `Map<floor, "x,y">` — position posée par `_ensurePagePlacement(floor)` (dungeon.js), case FLOOR seedée par étage, à la 1re génération/visite quand la quête est active |
+| `revealedPages` | `Set<floor>` — étages dont la page a été dévoilée par Revelio (1 page/étage → un Set d'étages suffit, simplifié vs `"floor:x,y"`) |
+| `player.grimoirePages` | **Stockage besace** (décision utilisateur) : tableau d'ids de pages récoltées, partagé, non plafonné — calqué sur `player.herbs` |
+| Révélation | Revelio (§4a) dissipe le brouillard ; si la page de l'étage est dans le carré rayon 2 → `revealedPages.add(floor)` |
+| Visuel donjon | Point **vert** sur la minimap (`.map-page`) à la case révélée non collectée. **Pas de cue 3D** (décidé V1) |
+| Visuel besace | Onglet `📖 Grimoire` de `#inventory-modal` (`renderGrimoirePouch`), visible seulement si l'Acte II est en jeu |
+| Ramassage | `movement.js — searchRoom()` → `_tryCollectPage()` : case courante == page révélée non collectée → `player.grimoirePages.push(id)`, `playChestOpen`, message, `checkPageQuest()` |
+| Garde | `_ensurePagePlacement` ne pose la page que si `manon_grimoire` est active et la page non collectée |
+| Persistance | `pagePlacements` / `revealedPages` sérialisés dans `_serializeState`/`_applyState` ; `grimoirePages` voyage sur `player` |
 
-`quests.js` : `checkPageQuest()` (analogue à `checkKillQuests`) met à
-jour la progression de `manon_grimoire` sur `collectedPages.size`.
-Nouvel objectif `type:"pages"` dans le moteur de quêtes (petit ajout).
+`quests.js` : nouvel objectif `type:"pages"` — `_refreshObjectives`
+le recompte en continu sur `player.grimoirePages.length` (comme
+`item`/`donate`) ; `checkPageQuest()` donne le retour actif au
+ramassage. `_renderQuestStep` rend le libellé « Réunir N pages ».
 
 ## 6. Établi de fusion (hébergé par Manon)
 
@@ -192,12 +196,18 @@ jamais la position exacte, juste l'étage.
    verify : `node tests/smoke.js` vert (×3, non-régression). Le
    chemin de cast Revelio lui-même n'est pas encore couvert par le
    smoke — scénario dédié prévu en phase 6.
-3. **Pages donjon** — `pagePlacements`/`revealedPages`/`collectedPages`,
-   seed, hook `searchRoom`, marqueur minimap, persistance save.
-   verify : révéler + fouiller une page → `collectedPages` grandit,
-   survit à une sauvegarde/chargement.
-4. **Quête pages** — objectif `type:"pages"`, `checkPageQuest`.
-   verify : 5 pages → `manon_grimoire` passe `completable`.
+3. ✅ **Pages donjon** — `GRIMOIRE_PAGES`/`PAGE_FLOORS` (data.js) ;
+   `pagePlacements`/`revealedPages` (state.js) ; `_ensurePagePlacement`
+   (dungeon.js + hook `_restoreFloorFromCache`) ; révélation greffée
+   dans le handler OOC de Revelio ; `_tryCollectPage` dans
+   `searchRoom` ; marqueur minimap `.map-page` ; besace `📖 Grimoire`
+   (`player.grimoirePages` + onglet `#inventory-modal`) ; persistance
+   `_serializeState`/`_applyState` ; reset `startGame`.
+4. ✅ **Quête pages** — objectif `type:"pages"` géré par
+   `_refreshObjectives` + `_renderQuestStep` ; `checkPageQuest()`.
+   verify (3+4) : scénario smoke `scenarioGrimoirePages` — 6 cas
+   (data, Revelio combat, placement gardé, ramassage révélé,
+   complétion à 5, round-trip save). Suite complète **verte**.
 5. **Indices fantômes** — `_pageHintLine` + injection conditionnelle
    dans `idleRandom` des PNJ lore (§7b).
    verify : avec `manon_grimoire` en cours, un fantôme lore peut citer
@@ -205,8 +215,9 @@ jamais la position exacte, juste l'étage.
    les 5 pages prises.
 6. **Établi de fusion** — `specialAction` Manon + overlay + recette.
    verify : fusion → grimoire au sac, quête complétée.
-7. **Smoke test** — scénario dédié `scenarioManonGrimoire` (préambule →
-   Revelio → 5 pages → fusion). Suite complète verte.
+7. **Smoke test** — étendre `scenarioGrimoirePages` au volet fusion
+   (établi → grimoire au sac → quête complétée) une fois la phase 6
+   livrée. Suite complète verte.
 
 ## 9. Hors-scope V1
 
@@ -223,3 +234,7 @@ jamais la position exacte, juste l'étage.
 - [x] Indices fantômes ajoutés au design (§7b).
 - [x] Phase 1 — narratif & données livré (smoke vert).
 - [x] Phase 2 — handlers Revelio (combat + hors combat) livrés.
+- [x] Stockage des pages : **besace dédiée** (`player.grimoirePages` +
+      onglet `📖 Grimoire`) — décision utilisateur.
+- [x] Phases 3 & 4 — pages donjon + objectif de quête livrés
+      (`scenarioGrimoirePages` vert).
