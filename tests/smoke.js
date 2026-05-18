@@ -5587,7 +5587,7 @@ async function scenarioHouseApotheoseTier() {
   t3.forEach(r => assert(r.ok, `tier 18 mal configuré pour ${r.h}`));
 
   // T4 : passif Gryffondor — Cœur du Lion : +10 % crit (physique ET
-  // sort) + +10 % de dégâts critiques, appliqués au-dessus des plafonds.
+  // sort) + +15 % de dégâts critiques, appliqués au-dessus des plafonds.
   const t4 = await page.evaluate(() => {
     chosenHouse = 'Gryffondor';
     houseTier = 17; recalculateStats();
@@ -5603,10 +5603,10 @@ async function scenarioHouseApotheoseTier() {
     'passif Gryffondor doit ajouter +10 % de crit physique');
   assert(t4.after.spellCrit === Math.min(100, t4.before.spellCrit + 10),
     'passif Gryffondor doit ajouter +10 % de crit de sort');
-  assert(Math.abs(t4.after.critMult - Math.min(2.5, t4.before.critMult + 0.10)) < 1e-9,
-    'passif Gryffondor doit ajouter +10 % de dégâts critiques physiques');
-  assert(Math.abs(t4.after.spellCritMult - Math.min(2.5, t4.before.spellCritMult + 0.10)) < 1e-9,
-    'passif Gryffondor doit ajouter +10 % de dégâts critiques de sort');
+  assert(Math.abs(t4.after.critMult - Math.min(2.5, t4.before.critMult + 0.15)) < 1e-9,
+    'passif Gryffondor doit ajouter +15 % de dégâts critiques physiques');
+  assert(Math.abs(t4.after.spellCritMult - Math.min(2.5, t4.before.spellCritMult + 0.15)) < 1e-9,
+    'passif Gryffondor doit ajouter +15 % de dégâts critiques de sort');
 
   // T7 : passif Poufsouffle — régénération hors combat à chaque pas.
   const t7 = await page.evaluate(() => {
@@ -5627,7 +5627,7 @@ async function scenarioHouseApotheoseTier() {
   assert(t7.hpGain >= 2, 'passif Poufsouffle doit régénérer ≥ 2 PV par pas');
   assert(t7.spGain >= 2, 'passif Poufsouffle doit régénérer ≥ 2 PM par pas');
 
-  // T8 : passif Poufsouffle — Vigueur : ×1.2 dégâts au-dessus de 60 %
+  // T8 : passif Poufsouffle — Vigueur : ×1.23 dégâts au-dessus de 60 %
   // PV, neutre en dessous, inactif hors Poufsouffle.
   const t8 = await page.evaluate(() => {
     chosenHouse = 'Poufsouffle'; houseTier = 18;
@@ -5639,9 +5639,31 @@ async function scenarioHouseApotheoseTier() {
     return { high, low, off };
   });
   console.log('  T8 Poufsouffle Vigueur →', t8);
-  assert(t8.high === 1.2, 'Vigueur doit donner ×1.2 au-dessus de 60 % PV');
+  assert(t8.high === 1.23, 'Vigueur doit donner ×1.23 au-dessus de 60 % PV');
   assert(t8.low === 1,    'Vigueur doit être neutre en dessous de 60 % PV');
   assert(t8.off === 1,    'Vigueur ne doit pas s\'appliquer hors Poufsouffle');
+
+  // T9 : passif Gryffondor — Élan : un crit ajoute un palier (+8 %
+  // dégâts), un coup non-critique n'ajoute rien, cumul plafonné à 5.
+  const t9 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor'; houseTier = 18;
+    elanStacks = [0, 0];
+    const m0 = _houseElanMult(party[0]);          // 0 palier → ×1
+    _updateElan(party[0], false);                  // non-crit → rien
+    const afterMiss = elanStacks[0];
+    _updateElan(party[0], true);                   // crit → +1 palier
+    const m1 = _houseElanMult(party[0]);           // ×1.08
+    for (let i = 0; i < 10; i++) _updateElan(party[0], true);
+    const capped = elanStacks[0];                  // plafonné à 5
+    const mCap = _houseElanMult(party[0]);         // ×1.40
+    return { m0, afterMiss, m1, capped, mCap };
+  });
+  console.log('  T9 Gryffondor Élan →', t9);
+  assert(t9.m0 === 1,             'Élan : 0 palier → multiplicateur ×1');
+  assert(t9.afterMiss === 0,      'Élan : un coup non-critique n\'ajoute pas de palier');
+  assert(Math.abs(t9.m1 - 1.08) < 1e-9,  'Élan : 1 palier → ×1.08');
+  assert(t9.capped === 5,         'Élan : cumul plafonné à 5 paliers');
+  assert(Math.abs(t9.mCap - 1.40) < 1e-9, 'Élan : 5 paliers → ×1.40');
 
   // ── Mécaniques en combat ──
   await startDummyFight(page, { hp: 400 });
@@ -5675,7 +5697,7 @@ async function scenarioHouseApotheoseTier() {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Maison V3 palier 18 OK (gate + 5 effets de passifs de Maison)');
+  console.log('  ✅ Maison V3 palier 18 OK (gate + passifs de Maison, Élan inclus)');
   await browser.close();
 }
 

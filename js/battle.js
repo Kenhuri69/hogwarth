@@ -255,6 +255,7 @@ function startBattle(baseEnemyData) {
   inBattle          = true;
   shieldTurns       = [0, 0];
   guardTurns        = [0, 0];
+  elanStacks        = [0, 0];
   battleTurn        = 0;
   currentBattleChar = 0;
   pendingAction     = null;
@@ -397,20 +398,46 @@ function battleAction(action) {
 // showTargetSelection() → battle-ui.js
 
 // ── Attaque physique ─────────────────────────────────────────
-// Apothéose Poufsouffle (palier 18 — Souffle du Blaireau) : +20 % de
+// Apothéose Poufsouffle (palier 18 — Souffle du Blaireau) : +23 % de
 // dégâts (physiques ET sorts) tant que le combattant est au-dessus de
 // 60 % de ses PV max. Récompense la robustesse du blaireau.
 function _houseVigorMult(char) {
   if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Poufsouffle') return 1;
   if (!char || !char.hpMax) return 1;
-  return char.hp > char.hpMax * 0.6 ? 1.20 : 1;
+  return char.hp > char.hpMax * 0.6 ? 1.23 : 1;
+}
+
+// Apothéose Gryffondor (palier 18 — Cœur du Lion) : « Élan » — chaque
+// coup critique (physique ou sort) accorde un palier de +8 % de dégâts ;
+// cumul propre au combat (remis à zéro par startBattle), cap 5 paliers.
+const ELAN_STEP = 0.08;
+const ELAN_CAP  = 5;
+function _houseElanMult(char) {
+  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Gryffondor') return 1;
+  const idx = party.indexOf(char);
+  if (idx < 0) return 1;
+  return 1 + ELAN_STEP * (elanStacks[idx] || 0);
+}
+// Met à jour le cumul d'un personnage après une action offensive : un
+// crit ajoute un palier (plafonné), un coup non-critique ne change rien
+// (decay écarté — cf. mesure sim, plan §6).
+function _updateElan(char, didCrit) {
+  if (!didCrit) return;
+  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Gryffondor') return;
+  const idx = party.indexOf(char);
+  if (idx < 0) return;
+  const before = elanStacks[idx] || 0;
+  elanStacks[idx] = Math.min(ELAN_CAP, before + 1);
+  if (elanStacks[idx] > before) {
+    UX_safe.logCombat(`🦁 <b>${char.name}</b> — Élan ×${elanStacks[idx]} (+${Math.round(ELAN_STEP * elanStacks[idx] * 100)} % dégâts)`, 'good');
+  }
 }
 
 function executeAttack(targetIdx) {
   const char  = getActiveChar();
   const enemy = enemyGroup[targetIdx];
   const rawAtk = char.atk + Math.floor(Math.random() * 4);
-  const dmg    = Math.max(1, Math.floor(mitigatedDamage(rawAtk, enemy.def) * _houseVigorMult(char)));
+  const dmg    = Math.max(1, Math.floor(mitigatedDamage(rawAtk, enemy.def) * _houseVigorMult(char) * _houseElanMult(char)));
   enemy.currentHp -= dmg;
 
   AudioSystem.playHit();
@@ -423,6 +450,7 @@ function executeAttack(targetIdx) {
   if (isCrit) {
     enemy.currentHp -= (finalDmg - dmg); // ajoute le bonus crit
   }
+  _updateElan(char, isCrit);   // Apothéose Gryffondor — Élan
   setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${finalDmg} dégâts${isCrit?' (CRITIQUE !)':''} !`);
   UX_safe.floatDmg(`enemy:${targetIdx}`, finalDmg, isCrit ? 'crit' : 'dmg');
   UX_safe.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}`, isCrit?'magic':'good');

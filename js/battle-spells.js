@@ -259,7 +259,10 @@ function _spellShield(spell, char) {
 function _computeSpellDamage(spell, char, enemy, opts) {
   opts = opts || {};
   let dmg    = spell.power + Math.floor(char.mag / 2);
-  dmg = Math.floor(dmg * _houseVigorMult(char));   // Apothéose Poufsouffle — Vigueur
+  // Apothéose : Vigueur (Poufsouffle) + Élan (Gryffondor) — multiplicateurs
+  // de dégâts. _houseElanMult lit seulement le cumul ; la mise à jour des
+  // paliers (_updateElan) est faite par les handlers offensifs.
+  dmg = Math.floor(dmg * _houseVigorMult(char) * _houseElanMult(char));
   let suffix = '';
   if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
   if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }
@@ -295,8 +298,9 @@ function _applySerpentLifesteal(char, dmg) {
 function _spellElementalDamage(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
-    const { dmg, suffix } = _computeSpellDamage(spell, char, enemy, { undead: true });
+    const { dmg, suffix, crit } = _computeSpellDamage(spell, char, enemy, { undead: true });
     enemy.currentHp -= dmg;
+    _updateElan(char, crit);   // Apothéose Gryffondor — Élan
     msg = `${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} sur ${enemy.name} !`;
 
     // Application probabiliste d'un statut DoT
@@ -327,8 +331,9 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
 function _spellLifesteal(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
-    const { dmg, suffix } = _computeSpellDamage(spell, char, enemy);
+    const { dmg, suffix, crit } = _computeSpellDamage(spell, char, enemy);
     enemy.currentHp -= dmg;
+    _updateElan(char, crit);   // Apothéose Gryffondor — Élan
     const heal = Math.floor(dmg / 2);
     char.hp = Math.min(char.hpMax, char.hp + heal);
     msg = `🩸 ${char.name} : ${spell.name} → ${dmg} dégâts${suffix}, +${heal} PV drainés !`;
@@ -345,6 +350,7 @@ function _spellCurse(spell, char, enemy, targetIdx) {
   if (enemy) {
     const { dmg, crit } = _computeSpellDamage(spell, char, enemy);
     enemy.currentHp -= dmg;
+    _updateElan(char, crit);   // Apothéose Gryffondor — Élan
     enemy.atk = Math.max(0, (enemy.atk || 0) - 3);
     enemy.def = Math.max(0, (enemy.def || 0) - 3);
     const drain = _applySerpentLifesteal(char, dmg);

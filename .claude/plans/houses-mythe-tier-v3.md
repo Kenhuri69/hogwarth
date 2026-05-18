@@ -311,9 +311,22 @@ c'est lui qui alimente l'Élan.
    Poufsouffle (~28 %), sous Serdaigle et Serpentard. Spread des 4
    Maisons resserré et cohérent.
 
-### Statut
+### Statut — ✅ IMPLÉMENTÉ (2026-05-18)
 
-⏳ **Non implémenté en jeu — mesure seule.** En attente de validation
-des valeurs (8 %/palier, cap 5, sans decay) avant d'écrire le passif
-côté `battle.js` / `inventory.js` (reset à `startBattle`, cumul mis à
-jour dans `executeAttack` + handlers de sort offensifs).
+Décision utilisateur : Élan **s'ajoute** au bonus de dégâts critiques
+(ce n'est pas un remplacement). Passif Apothéose Gryffondor final :
++10 % crit (physique + sort) · **+15 % de dégâts critiques** (10 % + 5 %)
+· **Élan** 8 %/palier, cap 5, sans decay.
+
+Implémentation :
+- `inventory.js — recalculateStats()` : +10 % crit, +15 % dégâts crit.
+  (physique + sort), par-dessus les plafonds LCK/AGI.
+- `battle.js` : `elanStacks[]` (`state.js`, remis à zéro par
+  `startBattle`), helpers `_houseElanMult` (multiplicateur de dégâts)
+  et `_updateElan` (cumul +1 sur crit, cap 5). Câblés dans
+  `executeAttack` (physique) et `_computeSpellDamage` (lecture du
+  multiplicateur) + les handlers de sort offensifs `_spellElementalDamage`
+  / `_spellLifesteal` / `_spellCurse` (mise à jour du cumul).
+- Poufsouffle Vigueur relevée 20 % → **23 %** (`_houseVigorMult`).
+- Smoke `scenarioHouseApotheoseTier` étendu (T4 +15 %, T8 ×1.23,
+  T9 Élan : palier, non-crit, cap). `node tests/smoke.js` vert.

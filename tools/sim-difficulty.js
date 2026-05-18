@@ -333,7 +333,7 @@ function parseArgs(argv) {
                 kills: 0, bonusLevels: 0, artifacts: false,
                 endgame: false, maxFloor: 40, forge: 0, library: 0,
                 houseSet: null, tenebresSet: false, houseTier: 0,
-                gryffElan: false, elanStep: 8, elanCap: 5, elanDecay: 'none' };
+                elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
@@ -345,7 +345,6 @@ function parseArgs(argv) {
     if (a === '--artifacts')            { out.artifacts = true; continue; }
     if (a === '--endgame')              { out.endgame = true; continue; }
     if (a === '--tenebres-set')         { out.tenebresSet = true; continue; }
-    if (a === '--gryff-elan')           { out.gryffElan = true; continue; }
     if (!a.includes('=')) {
       // Compat : `node sim-difficulty.js 800` → nSims positionnel
       const n = parseInt(a, 10);
@@ -411,11 +410,8 @@ Options:
   --house-tier=N          Paliers endgame V3 (17 « Mythe » / 18 « Apothéose »).
                           Requiert --house-set. Modélise le delta de stats
                           tier 17/18 + le passif d'Apothéose (tier 18).
-  --gryff-elan            Candidat de design : remplace le +10 % dégâts crit.
-                          de Gryffondor par le cumul « Élan » (déclenché
-                          par les crits). Requiert --house-set=gryffondor
-                          --house-tier=18.
-  --elan-step=N           Élan : % de dégâts par palier (def 8)
+  --elan-step=N           Élan (Apothéose Gryffondor) : % de dégâts par
+                          palier (def 8) — knob de tuning
   --elan-cap=N            Élan : nombre max de paliers (def 5)
   --elan-decay=MODE       Élan : none = cumul gardé tout le combat (def) |
                           turn = −1 palier par tour offensif sans crit
@@ -427,8 +423,7 @@ Exemples:
   node tools/sim-difficulty.js --compare            # baseline vs proposition validée
   node tools/sim-difficulty.js --hp-mult=1.5 --xp-mult=1.3 --stat-points=3 800
   node tools/sim-difficulty.js --endgame --artifacts --stat-points=3   # Boucle Ténébreuse
-  node tools/sim-difficulty.js --endgame --house-set=gryffondor --house-tier=18 800   # capstone Apothéose
-  node tools/sim-difficulty.js --endgame --house-set=gryffondor --house-tier=18 --gryff-elan 800   # candidat Élan`);
+  node tools/sim-difficulty.js --endgame --house-set=gryffondor --house-tier=18 800   # capstone Apothéose (Élan inclus)`);
   process.exit(0);
 }
 
@@ -647,21 +642,17 @@ function createHero(key, level, cfg, floor, partySize) {
   // combat ; seule sa composante DPS « Vigueur » est mesurée.
   if ((cfg.houseTier || 0) >= 18) {
     if (cfg.houseSet === 'gryffondor') {
-      // +10 % crit (physique + sort) — inchangé, c'est le déclencheur d'Élan.
+      // Apothéose Cœur du Lion : +10 % crit (déclencheur d'Élan),
+      // +15 % dégâts crit. flat, et le cumul « Élan » (heroAct/_updateElan).
       c.critChance          = Math.min(100, c.critChance + 10);
       c.spellCritChance     = Math.min(100, c.spellCritChance + 10);
-      if (cfg.gryffElan) {
-        // Candidat « Élan » : remplace le +10 % dégâts crit. flat par un
-        // cumul de dégâts déclenché par les crits (cf. heroAct/_updateElan).
-        c._gryffElan  = true;
-        c._elanStep   = (cfg.elanStep || 8) / 100;
-        c._elanCap    = cfg.elanCap || 5;
-        c._elanDecay  = cfg.elanDecay || 'none';
-        c._elanStacks = 0;
-      } else {
-        c.critMultiplier      = Math.min(2.5, c.critMultiplier + 0.10);
-        c.spellCritMultiplier = Math.min(2.5, c.spellCritMultiplier + 0.10);
-      }
+      c.critMultiplier      = Math.min(2.5, c.critMultiplier + 0.15);
+      c.spellCritMultiplier = Math.min(2.5, c.spellCritMultiplier + 0.15);
+      c._gryffElan  = true;
+      c._elanStep   = (cfg.elanStep || 8) / 100;
+      c._elanCap    = cfg.elanCap || 5;
+      c._elanDecay  = cfg.elanDecay || 'none';
+      c._elanStacks = 0;
     } else if (cfg.houseSet === 'serpentard') {
       c._serpentLifesteal = 0.15;
     } else if (cfg.houseSet === 'serdaigle') {
@@ -833,7 +824,7 @@ function heroAct(char, enemies) {
   const target = enemies[0];
   // Apothéose Poufsouffle — Vigueur : +20 % de dégâts (physique + sort)
   // au-dessus de 60 % PV. Évalué à l'ouverture du tour du héros.
-  const vigor = (char._houseVigor && char.hp > char.hpMax * 0.6) ? 1.20 : 1;
+  const vigor = (char._houseVigor && char.hp > char.hpMax * 0.6) ? 1.23 : 1;
   // Candidat Élan : multiplicateur des paliers accumulés (lu en début de
   // tour, mis à jour après l'action offensive).
   const elan = char._gryffElan ? (1 + char._elanStep * (char._elanStacks || 0)) : 1;
