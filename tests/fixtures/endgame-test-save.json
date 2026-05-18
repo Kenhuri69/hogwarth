@@ -1208,7 +1208,7 @@
             "objectives": [
               {
                 "type": "kill",
-                "monsterId": "dementeur",
+                "monsterId": "detraqueur",
                 "amount": 1,
                 "progress": 0,
                 "completed": false
