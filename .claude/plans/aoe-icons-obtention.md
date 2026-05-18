@@ -38,3 +38,17 @@ Nox Vorax, Diffindo Maxima, Vulnera Sanentur) :
       (gating ≥ 6/6/6/7/8/9 aligné sur SHOP_CATALOG).
 - [x] Étape 4 — `node tests/smoke.js` vert (scénario 20 : 39 sorts
       mappés, tous les PNG chargés).
+
+## Étape 5 — grimoires-objets painterly + statut DoT `gel`
+Suivi : les 6 grimoires-objets réutilisaient le PNG painterly du livre
+élémentaire de base ; le 4ᵉ DoT `gel` (Engelures) n'avait aucun PNG.
+- [x] `tools/icon_factory.py` — 6 recettes painterly (variantes épiques
+      des livres de base : même emblème, teintes profondes, halo epic).
+      6×5 PNG écrits dans `img/icons_new/`.
+- [x] `js/item-icons.js` — ITEM_ICON_NEW_REGISTRY pointe les 6 grimoires
+      vers leurs PNG painterly dédiés (priorité 1) ; entrées legacy
+      conservées en fallback.
+- [x] `tools/gen_status_icons.py` (nouveau) — génère `img/icons/gel.png`
+      48×48 (flocon de givre, cohérent avec burn/poison/bleed).
+- [x] `js/item-icons.js` — STATUS_ICON_REGISTRY : entrée `gel`.
+- [x] `node tests/smoke.js` vert (scénarios 20/21 + icônes de statut).

@@ -154,8 +154,8 @@ const ITEM_ICON_REGISTRY = {
   livre_morsmordre:   'img/icons/items/livre_morsmordre.png',
   // Cf. .claude/plans/teleportation-spell.md — icône reprise du sort.
   livre_portus:       'img/icons/items/livre_portus.png',
-  // Grimoires de zone (AoE) — icônes legacy reprises du livre élémentaire
-  // de base, en attendant des PNG dédiés (cf. .claude/plans/aoe-spells.md).
+  // Grimoires de zone (AoE) — fallback legacy ; PNG painterly dédiés
+  // en priorité 1 dans ITEM_ICON_NEW_REGISTRY.
   livre_glacius_tempete: 'img/icons/items/livre_glacius.png',
   livre_fulgur_catena:   'img/icons/items/livre_fulgari.png',
   livre_lux_aeterna:     'img/icons/items/livre_lumos_solem.png',
@@ -190,6 +190,12 @@ const ITEM_ICON_NEW_REGISTRY = {
   livre_glacius:        'img/icons_new/livre_glacius_64.png',
   livre_fulgari:        'img/icons_new/livre_fulgari_64.png',
   livre_lumos_solem:    'img/icons_new/livre_lumos_solem_64.png',
+  livre_glacius_tempete:'img/icons_new/livre_glacius_tempete_64.png',
+  livre_fulgur_catena:  'img/icons_new/livre_fulgur_catena_64.png',
+  livre_lux_aeterna:    'img/icons_new/livre_lux_aeterna_64.png',
+  livre_nox_vorax:      'img/icons_new/livre_nox_vorax_64.png',
+  livre_diffindo_maxima:'img/icons_new/livre_diffindo_maxima_64.png',
+  livre_vulnera:        'img/icons_new/livre_vulnera_64.png',
   amulette:             'img/icons_new/amulette_64.png',
   amulette_protection:  'img/icons_new/amulette_protection_64.png',
   locket_slytherin:     'img/icons_new/locket_slytherin_64.png',
@@ -252,6 +258,7 @@ const STATUS_ICON_REGISTRY = {
   burn:   'img/icons/burn.png',
   poison: 'img/icons/poison.png',
   bleed:  'img/icons/bleed.png',
+  gel:    'img/icons/gel.png',
   heal:   'img/icons/heal.png',
   dead:   'img/icons/dead.png'
 };
