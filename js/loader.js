@@ -198,6 +198,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'chooseHouse',        source: 'main.js',         kind: 'fn'  },
     { name: 'confirmHeroSelection',source: 'main.js',        kind: 'fn'  },
     { name: 'checkHouseLevelUp',  source: 'main.js',         kind: 'fn'  },
+    { name: 'houseApotheosePassive', source: 'main.js',      kind: 'fn'  },
 
     // ── Endgame (écran de victoire + boucle Ténébreuse) ──
     { name: 'victoryAchieved',    source: 'state.js',        kind: 'obj' },

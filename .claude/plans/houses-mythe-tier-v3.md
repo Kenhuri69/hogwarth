@@ -90,6 +90,12 @@ recommandation d'origine « par Maison plutôt qu'horizontalement ») :
 Décision apex-sort vs passif : à trancher au moment de l'implémentation,
 selon l'équilibrage observé du tier 17.
 
+> **Décision (2026-05-18)** : passif légendaire retenu (choix utilisateur).
+> Pas de flag dédié — `houseApotheosePassive()` (`main.js`) lit
+> `houseTier >= 18`. Valeurs : Gryffondor +20 % crit physique ;
+> Serpentard 15 % spell-lifesteal ; Serdaigle −20 % coût des sorts ;
+> Poufsouffle +2 PV/PM par pas hors combat.
+
 ## 3. Étapes
 
 > Vague A close. Étapes ci-dessous = Vagues B puis C.
@@ -137,13 +143,31 @@ selon l'équilibrage observé du tier 17.
   l'Épouvantard est convertie en `effect:"status", statusId:"fear"`.
   `Patronus Maxima` dissipe désormais bien `fear` + `stun`.
 
-### Vague C — Palier 18 « Apothéose »
+### Vague C — Palier 18 « Apothéose » · ✅ LIVRÉE (2026-05-18)
 
-- [ ] GO/NO-GO : à ne lancer qu'une fois le tier 17 joué et calibré.
-- [ ] Tier 18 dans les 4 `tiers[]` (`requiresDarkTier:2`).
-- [ ] Récompense capstone (apex-sort **ou** passif) selon décision §2.
-- [ ] Smoke `scenarioHouseApotheoseTier` (gate floor 21+).
-- [ ] Commit + push.
+- [x] GO/NO-GO : franchi sur instruction utilisateur (« go next »).
+- [x] Tier 18 dans les 4 `tiers[]` (`threshold:45000`, `label:'Apothéose'`,
+      `requiresDarkTier:2`, bonus +3 stat primaire + 1 LCK) — `js/state.js`.
+      La garde `requiresDarkTier` existante (`checkHouseLevelUp`) couvre
+      le gate sans modification.
+- [x] Récompense capstone = passif légendaire de Maison (décision §2).
+      Helper `houseApotheosePassive()` exposé (`js/main.js`, MANIFEST loader).
+      Hooks : Gryffondor `recalculateStats()` (inventory.js) ;
+      Serpentard `_applySerpentLifesteal` + Serdaigle `_spellSpCost`
+      (battle-spells.js) ; Poufsouffle `_step` (movement.js).
+- [x] Smoke `scenarioHouseApotheoseTier` (T1-T7) : gate floor 12 vs 22,
+      franchissement tier 18, config des 4 Maisons, 4 passifs.
+      `node tests/smoke.js` vert.
+
+### §3ter — Écarts vs plan (Vague C)
+
+- **Pas de flag `apotheosePassive`** : le plan évoquait un mécanisme
+  « `legendaryPassive`-like ». Implémenté sans flag — `houseTier >= 18`
+  est la source de vérité (déjà sérialisée), `houseApotheosePassive()`
+  la lit. Évite un flag mort de plus (cf. `legendaryPassive` du tier 16,
+  jamais consommé).
+- **Poufsouffle régen** : +2 PV / +2 PM par pas (et non un pourcentage).
+  Valeur plate, lisible, plafonnée par `hpMax`/`spMax`.
 
 ## 4. Risques
 

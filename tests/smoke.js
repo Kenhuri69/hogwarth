@@ -5546,6 +5546,113 @@ async function scenarioHouseMytheTier() {
   await browser.close();
 }
 
+// ── Scénario Maison V3 : palier 18 « Apothéose » ──────────────
+async function scenarioHouseApotheoseTier() {
+  console.log('\n── Scénario Maison V3 : palier 18 « Apothéose » ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : 45000 pts mais Boucle Ténébreuse tier 1 (floor 12) → tier 18 refusé.
+  const t1 = await page.evaluate(() => {
+    victoryAchieved = true;
+    currentFloor    = 12;
+    housePoints     = 45000;
+    houseTier       = 17;          // simule Mythe déjà atteint
+    checkHouseLevelUp();
+    return { tier: houseTier };
+  });
+  console.log('  T1 floor 12 →', t1);
+  assert(t1.tier === 17, 'tier 18 ne doit pas passer en Boucle Ténébreuse tier 1');
+
+  // T2 : floor 22 (Boucle Ténébreuse tier 2) → tier 18 franchi.
+  const t2 = await page.evaluate(() => {
+    const atkBefore = party[0]._baseAtk;
+    currentFloor = 22;
+    checkHouseLevelUp();
+    return { tier: houseTier, atkGain: party[0]._baseAtk - atkBefore,
+             passive: houseApotheosePassive() };
+  });
+  console.log('  T2 floor 22 →', t2);
+  assert(t2.tier === 18,              'tier 18 « Apothéose » non franchi en Boucle Ténébreuse tier 2');
+  assert(t2.atkGain === 3,            'bonus +3 ATK du palier Apothéose non appliqué');
+  assert(t2.passive === 'Gryffondor', 'houseApotheosePassive doit retourner la Maison au tier 18');
+
+  // T3 : chaque Maison a son tier 18 correctement configuré.
+  const t3 = await page.evaluate(() => {
+    return ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].map(h => {
+      const t = HOUSE_BONUSES[h].tiers[17];   // index 17 = 18e palier
+      return { h, ok: !!t && t.label === 'Apothéose' && t.requiresDarkTier === 2 };
+    });
+  });
+  t3.forEach(r => assert(r.ok, `tier 18 mal configuré pour ${r.h}`));
+
+  // T4 : passif Gryffondor — Cœur du Lion ajoute +20 % de crit physique.
+  const t4 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    houseTier = 17; recalculateStats();
+    const critBefore = party[0].critChance;
+    houseTier = 18; recalculateStats();
+    return { critBefore, critAfter: party[0].critChance };
+  });
+  console.log('  T4 Gryffondor crit →', t4);
+  assert(t4.critAfter === Math.min(100, t4.critBefore + 20),
+    'passif Gryffondor doit ajouter +20 % de crit physique');
+
+  // T7 : passif Poufsouffle — régénération hors combat à chaque pas.
+  const t7 = await page.evaluate(() => {
+    chosenHouse = 'Poufsouffle'; houseTier = 18;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    party[0].hp = 5; party[0].sp = 5;
+    const hpBefore = party[0].hp, spBefore = party[0].sp;
+    const x0 = playerX, y0 = playerY;
+    for (let i = 0; i < 4 && playerX === x0 && playerY === y0; i++) {
+      moveForward(); turnRight();
+    }
+    return { moved: playerX !== x0 || playerY !== y0,
+             hpGain: party[0].hp - hpBefore, spGain: party[0].sp - spBefore };
+  });
+  console.log('  T7 Poufsouffle régén →', t7);
+  assert(t7.moved,       'aucun pas possible pour tester la régén Poufsouffle');
+  assert(t7.hpGain >= 2, 'passif Poufsouffle doit régénérer ≥ 2 PV par pas');
+  assert(t7.spGain >= 2, 'passif Poufsouffle doit régénérer ≥ 2 PM par pas');
+
+  // ── Mécaniques en combat ──
+  await startDummyFight(page, { hp: 400 });
+
+  // T5 : passif Serpentard — un sort offensif draine des PV au lanceur.
+  const t5 = await page.evaluate(() => {
+    chosenHouse = 'Serpentard'; houseTier = 18;
+    party[0].hp = 10;
+    const spell = SPELLS.find(s => s.name === 'Incendio');
+    const hpBefore = party[0].hp;
+    SPELL_HANDLERS[spell.effect](spell, party[0], enemyGroup[0], 0);
+    return { hpGain: party[0].hp - hpBefore };
+  });
+  console.log('  T5 Serpentard lifesteal →', t5);
+  assert(t5.hpGain > 0, 'passif Serpentard doit drainer des PV sur un sort offensif');
+
+  // T6 : passif Serdaigle — coût des sorts réduit de 20 %.
+  const t6 = await page.evaluate(() => {
+    const spell = SPELLS.find(s => s.name === 'Incendio');
+    chosenHouse = 'Serdaigle'; houseTier = 18;
+    const reduced = _spellSpCost(spell);
+    chosenHouse = 'Gryffondor';
+    const full = _spellSpCost(spell);
+    return { full, reduced };
+  });
+  console.log('  T6 Serdaigle coût →', t6);
+  assert(t6.reduced === Math.max(1, Math.ceil(t6.full * 0.8)),
+    'passif Serdaigle doit réduire le coût des sorts de 20 %');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Maison V3 palier 18 OK (gate + 4 passifs de Maison)');
+  await browser.close();
+}
+
 // ── Scénario : récompenses Maison remises par les Chefs de Maison ──
 async function scenarioHouseRewardFlow() {
   console.log('\n── Scénario : Récompense Maison remise par PNJ ──');
@@ -8468,7 +8575,7 @@ async function scenarioCombatExtV2() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

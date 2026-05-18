@@ -207,6 +207,12 @@ function recalculateStats() {
     c.critMultiplier      = Math.min(2.5, 1.5 + critDmgBonus);
     c.spellCritMultiplier = Math.min(2.5, 1.5 + spellCritDmgBonus);
 
+    // Apothéose Gryffondor (palier 18 — Cœur du Lion) : +20 % de crit
+    // physique, appliqué par-dessus le plafond LCK (plafond absolu 100 %).
+    if (typeof houseApotheosePassive === 'function' && houseApotheosePassive() === 'Gryffondor') {
+      c.critChance = Math.min(100, c.critChance + 20);
+    }
+
     // PV/PM max = base (croît au level-up / allocation END) + bonus
     // d'équipement. Le bonus n'affecte PAS hp/sp courants ; au
     // déséquipement, on clamp hp/sp si le max a baissé.

@@ -43,6 +43,17 @@ function _step(dir, faceDir) {
   if (typeof _tickShopRestock === 'function') _tickShopRestock();
   AudioSystem.playFootstep();
 
+  // Apothéose Poufsouffle (palier 18 — Souffle du Blaireau) : régénération
+  // hors combat, +2 PV / +2 PM par membre vivant du groupe à chaque pas.
+  if (typeof houseApotheosePassive === 'function' && houseApotheosePassive() === 'Poufsouffle') {
+    party.slice(0, partySize).forEach(c => {
+      if (c.hp > 0) {
+        c.hp = Math.min(c.hpMax, c.hp + 2);
+        c.sp = Math.min(c.spMax, c.sp + 2);
+      }
+    });
+  }
+
   const cell = dungeon[playerY][playerX];
   updateCompass();
   renderMinimap();

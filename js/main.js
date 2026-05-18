@@ -330,6 +330,19 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
   });
 }
 
+// Palier capstone V3 (« Apothéose », tier 18) : éveille un passif
+// légendaire propre à la Maison choisie. Retourne le nom de la Maison
+// quand le passif est actif (tier 18 atteint), sinon null. Pas de flag
+// dédié — `houseTier >= 18` est la source de vérité, déjà sérialisée.
+// Effets par Maison (cf. .claude/plans/houses-mythe-tier-v3.md §Vague C) :
+//   Gryffondor  → +20 % crit physique      (inventory.js — recalculateStats)
+//   Serpentard  → 15 % spell-lifesteal      (battle-spells.js)
+//   Serdaigle   → −20 % coût des sorts      (battle-spells.js — castSpellInBattle)
+//   Poufsouffle → régen PV/PM hors combat   (movement.js — _step)
+window.houseApotheosePassive = function houseApotheosePassive() {
+  return (chosenHouse && houseTier >= 18) ? chosenHouse : null;
+};
+
 async function startGame(count = 2) {
   // === TEXTURES INTEGRATION ===
   // Attendre le chargement complet des textures avant de générer le donjon.

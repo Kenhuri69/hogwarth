@@ -271,6 +271,26 @@ function _computeSpellDamage(spell, char, enemy, opts) {
   return { dmg, suffix, crit: cr.crit };
 }
 
+// Coût en PM effectif d'un sort — réduit de 20 % (arrondi au sup., plancher
+// 1) par l'Apothéose Serdaigle (palier 18 — Esprit de l'Aigle).
+function _spellSpCost(spell) {
+  if (typeof houseApotheosePassive === 'function' && houseApotheosePassive() === 'Serdaigle') {
+    return Math.max(1, Math.ceil(spell.cost * 0.8));
+  }
+  return spell.cost;
+}
+
+// Apothéose Serpentard (palier 18 — Soif du Serpent) : draine 15 % des
+// dégâts d'un sort offensif en PV pour le lanceur. Retourne le soin
+// effectif (0 si le passif est inactif ou le lanceur déjà au max).
+function _applySerpentLifesteal(char, dmg) {
+  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Serpentard') return 0;
+  if (!char || dmg <= 0) return 0;
+  const heal = Math.min(char.hpMax - char.hp, Math.max(1, Math.floor(dmg * 0.15)));
+  if (heal > 0) { char.hp += heal; UX_safe.floatDmg('ally', heal, 'heal'); }
+  return heal;
+}
+
 function _spellElementalDamage(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
@@ -292,6 +312,9 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
         UX_safe.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, ${dotTurns} tours)`, 'magic');
       }
     }
+
+    const drain = _applySerpentLifesteal(char, dmg);
+    if (drain > 0) msg += ` 🐍 +${drain} PV drainés !`;
 
     UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, suffix.includes('💥') ? 'crit' : 'dmg');
     UX_safe.logCombat(`${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → <b>−${dmg}</b>${suffix} sur ${enemy.name}`, 'magic');
@@ -323,7 +346,9 @@ function _spellCurse(spell, char, enemy, targetIdx) {
     enemy.currentHp -= dmg;
     enemy.atk = Math.max(0, (enemy.atk || 0) - 3);
     enemy.def = Math.max(0, (enemy.def || 0) - 3);
+    const drain = _applySerpentLifesteal(char, dmg);
     msg = `☠️ ${char.name} : ${spell.name} → ${dmg} dégâts${crit ? ' 💥CRIT' : ''} et ${enemy.name} maudit (−3 ATK/DEF) !`;
+    if (drain > 0) msg += ` 🐍 +${drain} PV drainés !`;
     UX_safe.floatDmg(`enemy:${targetIdx}`, dmg, 'crit');
     UX_safe.logCombat(`☠️ ${char.name} maudit ${enemy.name} : <b>−${dmg}</b>, −3 ATK/DEF`, 'magic');
   }
@@ -511,7 +536,7 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   const baseSpell = SPELLS.find(s => s.name === spellName);
   // Wrapping Bibliothèque : applique les upgrades du caster.
   const spell    = _spellForCaster(baseSpell, char);
-  if (!spell || char.sp < spell.cost) { addMsg("Pas assez de magie !", 'bad'); return; }
+  if (!spell || char.sp < _spellSpCost(spell)) { addMsg("Pas assez de magie !", 'bad'); return; }
 
   // Portus : 1 utilisation par combat. Le sort ouvre un overlay A/B —
   // pas de cycle pendingAction et pas d'avance de tour ici (les helpers
@@ -525,7 +550,7 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
       addMsg(`Portus se recharge — encore ${portusFightCooldown} combat${portusFightCooldown > 1 ? 's' : ''} à gagner.`, 'bad');
       return;
     }
-    char.sp -= spell.cost;
+    char.sp -= _spellSpCost(spell);
     AudioSystem.playSpellCast(spell.name);
     AudioSystem.speakSpell(spell.name);
     closeModal('spell-modal');
@@ -561,7 +586,7 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
     }
   }
 
-  char.sp -= spell.cost;
+  char.sp -= _spellSpCost(spell);
   AudioSystem.playSpellCast(spellName);
   AudioSystem.speakSpell(spellName);
   closeModal('spell-modal');
