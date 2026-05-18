@@ -153,7 +153,15 @@ const ITEM_ICON_REGISTRY = {
   livre_crucio:       'img/icons/items/livre_crucio.png',
   livre_morsmordre:   'img/icons/items/livre_morsmordre.png',
   // Cf. .claude/plans/teleportation-spell.md — icône reprise du sort.
-  livre_portus:       'img/icons/items/livre_portus.png'
+  livre_portus:       'img/icons/items/livre_portus.png',
+  // Grimoires de zone (AoE) — icônes legacy reprises du livre élémentaire
+  // de base, en attendant des PNG dédiés (cf. .claude/plans/aoe-spells.md).
+  livre_glacius_tempete: 'img/icons/items/livre_glacius.png',
+  livre_fulgur_catena:   'img/icons/items/livre_fulgari.png',
+  livre_lux_aeterna:     'img/icons/items/livre_lumos_solem.png',
+  livre_nox_vorax:       'img/icons/items/livre_vampyrus.png',
+  livre_diffindo_maxima: 'img/icons/items/book_monsters.png',
+  livre_vulnera:         'img/icons/items/livre_soin.png'
 };
 
 // Mapping painterly pipeline (étape 9 — voir SVG_PLAN / tools/icon_factory.py)
@@ -283,7 +291,15 @@ const SPELL_ICON_REGISTRY = {
   'Patronus Maxima':       'img/icons/spells/patronus_maxima.png',
   'Sectumsempra Imperius': 'img/icons/spells/sectumsempra_imperius.png',
   'Legilimens':            'img/icons/spells/legilimens.png',
-  'Récolte Magique':       'img/icons/spells/recolte_magique.png'
+  'Récolte Magique':       'img/icons/spells/recolte_magique.png',
+  // Sorts de zone (AoE) — icônes reprises du sort élémentaire de base,
+  // en attendant des PNG dédiés (cf. .claude/plans/aoe-spells.md).
+  'Glacius Tempête':       'img/icons/spells/glacius.png',
+  'Fulgur Catena':         'img/icons/spells/fulgari.png',
+  'Lux Aeterna':           'img/icons/spells/lumos_solem.png',
+  'Nox Vorax':             'img/icons/spells/vampyrus.png',
+  'Diffindo Maxima':       'img/icons/spells/diffindo.png',
+  'Vulnera Sanentur':      'img/icons/spells/ferula_maxima.png'
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────

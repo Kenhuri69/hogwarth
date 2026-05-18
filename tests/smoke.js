@@ -8776,8 +8776,93 @@ async function scenarioBombardaSplash() {
   await browser.close();
 }
 
+// ── Scénario : sorts de zone (AoE) ───────────────────────────
+
+async function scenarioAoeSpells() {
+  console.log('\n── Scénario : sorts de zone (AoE) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+  await startDummyFight(page, { hp: 300 });
+
+  const r = await page.evaluate(() => {
+    const out = {};
+    const mk = (n) => ({
+      id: 'aoe_d' + n, name: 'C' + n, icon: '🎯',
+      hp: 500, currentHp: 500, atk: 0, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 0, gold: 0, abilities: [], drops: [], resist: [], weak: [],
+      statusEffects: [], category: 'bête', desc: 't'
+    });
+    const reset3 = () => { enemyGroup.length = 0; enemyGroup.push(mk(0), mk(1), mk(2)); };
+    const harry = party[0];
+    harry.mag = 16; harry.int = 0; harry.end = 0; harry.str = 12;
+    harry.hp = harry.hpMax = 200;
+
+    // Vague (Lux Aeterna) : dégâts égaux à tous.
+    reset3();
+    let hp = enemyGroup.map(e => e.currentHp);
+    _spellAoeWave(SPELLS.find(s => s.name === 'Lux Aeterna'), harry);
+    out.wave = enemyGroup.map((e, i) => hp[i] - e.currentHp);
+
+    // Nappe (Glacius Tempête) : dégâts à tous + gel partout.
+    reset3();
+    hp = enemyGroup.map(e => e.currentHp);
+    _spellAoeField(SPELLS.find(s => s.name === 'Glacius Tempête'), harry);
+    out.field = enemyGroup.map((e, i) => hp[i] - e.currentHp);
+    out.fieldGel = enemyGroup.every(e => (e.statusEffects || []).some(s => s.id === 'gel'));
+
+    // Chaîne (Fulgur Catena) : dégâts décroissants.
+    reset3();
+    hp = enemyGroup.map(e => e.currentHp);
+    _spellAoeChain(SPELLS.find(s => s.name === 'Fulgur Catena'), harry);
+    out.chain = enemyGroup.map((e, i) => hp[i] - e.currentHp);
+
+    // Drain (Nox Vorax) : dégâts à tous + soin du lanceur.
+    reset3();
+    harry.hp = 50;
+    hp = enemyGroup.map(e => e.currentHp);
+    _spellAoeDrain(SPELLS.find(s => s.name === 'Nox Vorax'), harry);
+    out.drain = enemyGroup.map((e, i) => hp[i] - e.currentHp);
+    out.drainHeal = harry.hp - 50;
+
+    // Fauchage (Diffindo Maxima) : cible (idx 1) pleine + voisins ×0,6.
+    reset3();
+    hp = enemyGroup.map(e => e.currentHp);
+    _spellAoeCleave(SPELLS.find(s => s.name === 'Diffindo Maxima'), harry, enemyGroup[1], 1);
+    out.cleave = enemyGroup.map((e, i) => hp[i] - e.currentHp);
+
+    // Soin de groupe (Vulnera Sanentur).
+    party[0].hp = 10; party[0].hpMax = 100; party[0].int = 0; party[0].end = 0;
+    party[1].hp = 20; party[1].hpMax = 100;
+    _spellHealAoe(SPELLS.find(s => s.name === 'Vulnera Sanentur'), party[0]);
+    out.heal = [party[0].hp, party[1].hp];
+
+    return out;
+  });
+  console.log('  AoE :', r);
+  assert(r.wave[0] === 23 && r.wave[1] === 23 && r.wave[2] === 23,
+    `vague : 23 attendu à chaque ennemi, obtenu ${r.wave}`);
+  assert(r.field.every(d => d === 17), `nappe : 17 attendu, obtenu ${r.field}`);
+  assert(r.fieldGel, 'nappe : gel non appliqué à tous les ennemis');
+  assert(r.chain[0] === 26 && r.chain[1] === 16 && r.chain[2] === 10,
+    `chaîne : [26,16,10] attendu, obtenu ${r.chain}`);
+  assert(r.drain.every(d => d === 22), `drain : 22 attendu, obtenu ${r.drain}`);
+  assert(r.drainHeal === 33, `drain : +33 PV attendu, obtenu +${r.drainHeal}`);
+  assert(r.cleave[1] === 26, `fauchage : cible 26 attendu, obtenu ${r.cleave[1]}`);
+  assert(r.cleave[0] === 15 && r.cleave[2] === 15,
+    `fauchage : voisins 15 attendus, obtenu [${r.cleave[0]},${r.cleave[2]}]`);
+  assert(r.heal[0] === 32 && r.heal[1] === 42,
+    `soin de groupe : [32,42] attendu, obtenu ${r.heal}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (AoE)`);
+  }
+  console.log('  ✅ Sorts de zone conformes');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

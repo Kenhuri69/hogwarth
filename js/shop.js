@@ -35,6 +35,13 @@ const SHOP_CATALOG = [
   { id: "livre_patronum",      minFloor: 6 },
   { id: "livre_glacius",       minFloor: 3 },
   { id: "livre_fulgari",       minFloor: 5 },
+  // Grimoires de zone (AoE) — débloqués quand les groupes s'étoffent
+  { id: "livre_glacius_tempete", minFloor: 6 },
+  { id: "livre_diffindo_maxima", minFloor: 6 },
+  { id: "livre_vulnera",         minFloor: 6 },
+  { id: "livre_fulgur_catena",   minFloor: 7 },
+  { id: "livre_lux_aeterna",     minFloor: 8 },
+  { id: "livre_nox_vorax",       minFloor: 9 },
   { id: "cape_invis",          minFloor: 7 },
   { id: "bottes_dragon",       minFloor: 7 },
   { id: "retourneur_temps",    minFloor: 7 },

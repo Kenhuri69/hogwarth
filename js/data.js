@@ -206,6 +206,15 @@ const SPELLS = [
   { name:"Sectumsempra Imperius", icon:"🩸", desc:"Saignement lourd + asservit la cible (2 tours)",          cost:24, effect:"imperius", element:"ténèbres", power:20 },
   { name:"Legilimens",            icon:"👁️", desc:"Lit l'esprit ennemi : annule la prochaine capacité",      cost:18, effect:"legilimens", power:0 },
   { name:"Récolte Magique",       icon:"🌾", desc:"Restaure tout le groupe · or du combat majoré (+50%)",    cost:26, effect:"recolte", power:0 },
+  // ── Sorts de zone (AoE) — un mode distinct par élément + soin ──
+  // Modes : nappe (glace), chaîne (foudre), vague (lumière), drain
+  // (ténèbres), fauchage (physique). Voir .claude/plans/aoe-spells.md.
+  { name:"Glacius Tempête",   icon:"🌨️", desc:"Blizzard : dégâts de glace à tous les ennemis + gel",            cost:16, effect:"aoe_field",  element:"glace",    power:12 },
+  { name:"Fulgur Catena",     icon:"⚡",  desc:"Arc électrique : chaîne d'ennemi en ennemi (dégâts décroissants)", cost:15, effect:"aoe_chain",  element:"foudre",   power:18 },
+  { name:"Lux Aeterna",       icon:"🌟",  desc:"Onde de lumière : frappe tous les ennemis (×1,5 morts-vivants)",  cost:17, effect:"aoe_wave",   element:"lumière",  power:15, bonusVsUndead:1.5 },
+  { name:"Nox Vorax",         icon:"🌑",  desc:"Vague obscure : dégâts à tous + draine la vie pour le lanceur",   cost:18, effect:"aoe_drain",  element:"ténèbres", power:14 },
+  { name:"Diffindo Maxima",   icon:"⚔️", desc:"Fauchage : tranche la cible et les ennemis adjacents",            cost:14, effect:"aoe_cleave", element:"physique", power:18 },
+  { name:"Vulnera Sanentur",  icon:"💗",  desc:"Chant de guérison : soigne tout le groupe",                       cost:16, effect:"heal_aoe",  power:22 },
 ];
 
 // Catégorie d'un sort pour le filtre de la modale Sorts. Soutien et
@@ -215,7 +224,7 @@ function spellCategory(spell) {
   if (!spell) return 'utilitaire';
   const e = spell.effect;
   if (e === 'heal' || e === 'support_regen' || e === 'support_regen_aoe' || e === 'shield'
-      || e === 'patronus_maxima' || e === 'recolte') return 'soutien';
+      || e === 'patronus_maxima' || e === 'recolte' || e === 'heal_aoe') return 'soutien';
   if (e === 'disarm' || e === 'steal' || e === 'teleport' || e === 'legilimens') return 'utilitaire';
   return spell.element || 'utilitaire';
 }
@@ -378,6 +387,13 @@ const ITEMS = [
   { id:"livre_maledictus", name:"Grimoire des Maudits",          icon:"📓", desc:"Apprend Maledictus",            type:"spellbook", spell:"Maledictus",    price:220 },
   { id:"livre_crucio",     name:"Sortilèges Impardonnables, T.II", icon:"📕", desc:"Apprend Crucio (sort interdit)", type:"spellbook", spell:"Crucio",     price:450 },
   { id:"livre_morsmordre", name:"Marque des Ténèbres",            icon:"📕", desc:"Apprend Morsmordre",            type:"spellbook", spell:"Morsmordre",    price:600 },
+  // ── Grimoires de zone (sorts AoE) ────────────────────────────
+  { id:"livre_glacius_tempete", name:"Tempête de Givre",          icon:"📘", desc:"Apprend Glacius Tempête — zone de glace + gel",       type:"spellbook", spell:"Glacius Tempête",  price:340 },
+  { id:"livre_diffindo_maxima", name:"L'Art de la Lame Large",    icon:"📓", desc:"Apprend Diffindo Maxima — fauchage des ennemis adjacents", type:"spellbook", spell:"Diffindo Maxima", price:320 },
+  { id:"livre_vulnera",         name:"Chant des Guérisseurs",     icon:"📗", desc:"Apprend Vulnera Sanentur — soin de tout le groupe",   type:"spellbook", spell:"Vulnera Sanentur", price:300 },
+  { id:"livre_fulgur_catena",   name:"Chaîne d'Éclairs",          icon:"📙", desc:"Apprend Fulgur Catena — arc électrique en chaîne",    type:"spellbook", spell:"Fulgur Catena",    price:360 },
+  { id:"livre_lux_aeterna",     name:"Lumière Éternelle",         icon:"📒", desc:"Apprend Lux Aeterna — onde de lumière sur la zone",   type:"spellbook", spell:"Lux Aeterna",      price:380 },
+  { id:"livre_nox_vorax",       name:"Nuit Dévorante",            icon:"📕", desc:"Apprend Nox Vorax — vague obscure drainante",        type:"spellbook", spell:"Nox Vorax",        price:420 },
   // Sort utilitaire premium (cf. .claude/plans/teleportation-spell.md).
   { id:"livre_portus",     name:"Traité de la Téléportation",     icon:"📘", desc:"Apprend Portus — téléportation tactique (combat + hors combat)", type:"spellbook", spell:"Portus", price:2800 },
   // ── Herbes (ingrédients de potion) — type:"herb" ─────────────
