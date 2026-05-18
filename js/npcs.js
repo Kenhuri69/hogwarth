@@ -304,6 +304,11 @@ const NPCS = [
     placement: { floor: 3, anchor: "any" },
     questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire"],
     questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire"],
+    // Établi de fusion : disponible quand les 5 pages sont réunies.
+    // Ouvre l'overlay #fusion-modal qui reconstitue le grimoire (= remise
+    // de manon_grimoire). Cf. .claude/plans/manon-grimoire-pages.md §6.
+    specialAction: { type: "open_fusion", id: "manon_fusion_grimoire",
+                     label: "📖 Reconstituer le grimoire" },
     dialogues: {
       greeting: [
         "Ne fais pas de bruit. S'il te plaît. (Elle est tapie dans l'ombre d'une salle de classe vide, les genoux contre la poitrine.) Tu n'es pas un professeur. Tant mieux — eux, je les évite.",

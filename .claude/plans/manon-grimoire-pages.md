@@ -1,7 +1,8 @@
 # Plan — Manon Acte II : le grimoire de givre éparpillé
 
-> Statut : **conception finalisée** — prémisse validée, derniers points
-> ouverts tranchés. Prêt pour le découpage en phases (§8).
+> Statut : **livré** — les 7 phases (§8) sont implémentées et couvertes
+> par le scénario smoke `scenarioGrimoirePages` (8 cas). Seule la 2ᵉ
+> quête « épique » (§9) reste hors-scope, à concevoir séparément.
 
 ## 1. Prémisse narrative (à valider)
 
@@ -137,14 +138,20 @@ ramassage. `_renderQuestStep` rend le libellé « Réunir N pages ».
 
 ## 6. Établi de fusion (hébergé par Manon)
 
-- `npcs.js` : Manon reçoit une `specialAction`
-  `{ id:"manon_fusion_grimoire", label:"Reconstituer le grimoire" }`,
-  proposée quand `collectedPages.size === 5`.
-- `triggerNpcSpecialAction` → ouvre un overlay **établi** : 5 emplacements
-  de page qui se remplissent, bouton « Fusionner ». UI légère calquée
-  sur la besace/concoction (pas de modale lourde).
-- Fusion : vide `collectedPages`, ajoute `livre_glacius_tempete` au sac,
-  complète `manon_grimoire`, animation + `playLevelUp`.
+- `npcs.js` : Manon porte une `specialAction`
+  `{ type:"open_fusion", id:"manon_fusion_grimoire",
+     label:"📖 Reconstituer le grimoire" }`.
+- `npc-dialog.js` : le bouton n'apparaît que si `_grimoireFusionReady()`
+  (quête `manon_grimoire` active **et** 5 pages réunies). Le bouton
+  générique « Remettre la quête » est **supprimé** pour `manon_grimoire`
+  — l'établi est l'unique voie de remise.
+- `triggerNpcSpecialAction` (`open_fusion`) → `openFusionModal()` :
+  modale `#fusion-modal` (habillage réutilisé de `#brewing-modal`) avec
+  les 5 emplacements de page (`brew-tile`) + bouton « Reconstituer ».
+  Remplissage statique (pas d'animation par slot — hors-scope V1).
+- `fuseGrimoire()` : `turnInQuestById('manon_grimoire')` (récompense
+  `livre_glacius_tempete` + XP/or, `playLevelUp` via `completeQuest`),
+  vide `player.grimoirePages`, ferme la modale, narratif de clôture.
 
 ## 7. Dialogues Manon Acte II (`npcs.js`)
 
@@ -213,11 +220,12 @@ jamais la position exacte, juste l'étage.
    (npc-dialog.js) pour les PNJ `sprite:'fantome'` (§7b).
    verify : `scenarioGrimoirePages` T7 — indice ciblé tant qu'une page
    manque, aucun une fois les 5 prises ni sans le préambule rendu.
-6. **Établi de fusion** — `specialAction` Manon + overlay + recette.
-   verify : fusion → grimoire au sac, quête complétée.
-7. **Smoke test** — étendre `scenarioGrimoirePages` au volet fusion
-   (établi → grimoire au sac → quête complétée) une fois la phase 6
-   livrée. Suite complète verte.
+6. ✅ **Établi de fusion** — `specialAction` `open_fusion` (npcs.js) ;
+   gating `_grimoireFusionReady` + suppression du bouton générique de
+   remise (npc-dialog.js) ; `openFusionModal`/`fuseGrimoire` (quests.js)
+   + `#fusion-modal` (index.html/CSS).
+7. ✅ **Smoke test** — `scenarioGrimoirePages` T8 (établi → grimoire au
+   sac → quête complétée → besace vidée). Suite complète **verte**.
 
 ## 9. Hors-scope V1
 
@@ -240,3 +248,5 @@ jamais la position exacte, juste l'étage.
       (`scenarioGrimoirePages` vert).
 - [x] Phase 5 — indices des fantômes lore livrés (`scenarioGrimoirePages`
       T7 vert).
+- [x] Phases 6 & 7 — établi de fusion + couverture smoke (T8 vert).
+- [x] **Fonctionnalité complète** — les 7 phases sont livrées.

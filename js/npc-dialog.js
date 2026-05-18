@@ -299,7 +299,9 @@ function _npcDialogActions(npc, state) {
       const a = activeQuests.find(x => x.id === q);
       return a && (a.objectives || []).every(o => o.completed);
     });
-    if (qid) {
+    // manon_grimoire se remet via l'établi de fusion (specialAction
+    // open_fusion), pas par le bouton générique de remise.
+    if (qid && qid !== 'manon_grimoire') {
       out.push({
         label: 'Remettre la quête',
         onClick: `turnInQuestById('${qid}'); openNpcDialog('${npc.id}');`
@@ -325,16 +327,19 @@ function _npcDialogActions(npc, state) {
       available = _canClaimHouseReward(npc);
     } else if (saType === 'open_brewing') {
       available = (typeof _isBrewingUnlocked === 'function') && _isBrewingUnlocked();
+    } else if (saType === 'open_fusion') {
+      available = (typeof _grimoireFusionReady === 'function') && _grimoireFusionReady();
     } else {
       available = !_isSpecialActionSpent(npc);
     }
     if (available) {
       const label = npc.specialAction.label || 'Action spéciale';
-      // open_brewing ouvre une modale : ne pas ré-ouvrir le dialogue PNJ
-      // par-dessus (il masquerait la modale de brassage).
+      // open_brewing / open_fusion ouvrent une modale : ne pas ré-ouvrir le
+      // dialogue PNJ par-dessus (il masquerait la modale).
+      const opensModal = saType === 'open_brewing' || saType === 'open_fusion';
       out.push({
         label,
-        onClick: saType === 'open_brewing'
+        onClick: opensModal
           ? `triggerNpcSpecialAction('${npc.id}')`
           : `triggerNpcSpecialAction('${npc.id}'); openNpcDialog('${npc.id}');`
       });
@@ -394,6 +399,17 @@ function triggerNpcSpecialAction(npcId) {
     }
     closeNpcDialog();
     if (typeof openBrewingModal === 'function') openBrewingModal();
+    return;
+  }
+  // open_fusion : ouvre l'établi de Manon (reconstitution du grimoire).
+  // Gating via _grimoireFusionReady (5 pages + quête active).
+  if (action.type === 'open_fusion') {
+    if (typeof _grimoireFusionReady === 'function' && !_grimoireFusionReady()) {
+      if (typeof addMsg === 'function') addMsg('Il te manque encore des pages du grimoire.', 'bad');
+      return;
+    }
+    closeNpcDialog();
+    if (typeof openFusionModal === 'function') openFusionModal();
     return;
   }
   if (_isSpecialActionSpent(npc)) {

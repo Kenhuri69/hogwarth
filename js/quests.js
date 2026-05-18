@@ -735,6 +735,66 @@ function turnInQuestById(id) {
   return true;
 }
 
+// ── Établi de fusion du grimoire (Manon Acte II) ─────────────
+// Le joueur reconstitue le grimoire de givre de Sandrine à partir des 5
+// pages collectées. Cf. .claude/plans/manon-grimoire-pages.md §6.
+
+// Vrai si la quête manon_grimoire est active et les 5 pages réunies.
+function _grimoireFusionReady() {
+  if (typeof activeQuests === 'undefined') return false;
+  if (!activeQuests.some(q => q.id === 'manon_grimoire')) return false;
+  const total = (typeof GRIMOIRE_PAGES !== 'undefined') ? GRIMOIRE_PAGES.length : 5;
+  const owned = (typeof player !== 'undefined' && Array.isArray(player.grimoirePages))
+    ? player.grimoirePages.length : 0;
+  return owned >= total;
+}
+
+// Ouvre l'établi : les 5 emplacements de page + bouton de fusion.
+function openFusionModal() {
+  const body  = document.getElementById('fusion-body');
+  const modal = document.getElementById('fusion-modal');
+  if (!body || !modal) return;
+  const pages = (typeof GRIMOIRE_PAGES !== 'undefined') ? GRIMOIRE_PAGES : [];
+  const owned = (player && Array.isArray(player.grimoirePages)) ? player.grimoirePages : [];
+  let slots = '';
+  for (const p of pages) {
+    const has = owned.includes(p.id);
+    slots += `<div class="brew-tile${has ? '' : ' brew-tile-disabled'}" title="${p.lore}">`
+      + `<div class="brew-tile-icon">${p.icon}</div>`
+      + `<div class="brew-tile-name">${p.name}</div></div>`;
+  }
+  const ready = _grimoireFusionReady();
+  body.innerHTML = `
+    <p style="font-size:12px;color:var(--parchment-dark);line-height:1.5;text-align:center;margin:4px 0 12px">
+      Manon dispose les feuillets sur l'établi, près de la fenêtre givrée.
+      Le grimoire de sa mère ne demande qu'à redevenir entier.
+    </p>
+    <div class="brew-tiles" style="justify-content:center">${slots}</div>
+    <button type="button" class="brew-launch-btn" style="margin-top:14px"
+      onclick="fuseGrimoire()"${ready ? '' : ' disabled'}>
+      ✨ Reconstituer le grimoire
+    </button>`;
+  modal.style.display = 'flex';
+}
+
+// Fusionne les pages : remet manon_grimoire (récompense le grimoire
+// Tempête de Givre) et vide la besace de pages.
+function fuseGrimoire() {
+  if (!_grimoireFusionReady()) {
+    addMsg('Il te manque encore des pages du grimoire.', 'bad');
+    return;
+  }
+  if (!turnInQuestById('manon_grimoire')) {
+    addMsg('La reconstitution a échoué — réessaie.', 'bad');
+    return;
+  }
+  player.grimoirePages = [];
+  closeModal('fusion-modal');
+  addMsg('📖 Le grimoire de givre de Sandrine est reconstitué !', 'good');
+  setNarrative("Les cinq feuillets se ressoudent dans un souffle de givre. Manon serre le grimoire entier contre elle, sans un mot — c'est sa mère qu'elle retrouve, la sorcière, pas la menteuse.");
+  updateUI();
+}
+
 // ── Ouvre le journal des quêtes dans la modale personnage ────
 // On réutilise #char-detail pour ne pas casser openCharacter().
 function openQuestLog() {

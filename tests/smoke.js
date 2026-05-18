@@ -8872,6 +8872,34 @@ async function scenarioGrimoirePages() {
   assert(t7.doneFloor === null,  'aucun indice une fois les 5 pages collectées');
   assert(t7.noPreamble === null, 'aucun indice sans le préambule manon_revelio rendu');
 
+  // T8 — établi de fusion : 5 pages → grimoire reconstitué, quête remise.
+  const t8 = await page.evaluate(() => {
+    player.grimoirePages = GRIMOIRE_PAGES.slice(0, 4).map(p => p.id);
+    const readyAt4 = _grimoireFusionReady();
+    player.grimoirePages = GRIMOIRE_PAGES.map(p => p.id);
+    const readyAt5 = _grimoireFusionReady();
+    openFusionModal();
+    const modalShown = document.getElementById('fusion-modal').style.display === 'flex';
+    fuseGrimoire();
+    return {
+      readyAt4, readyAt5, modalShown,
+      questDone:    completedQuests.has('manon_grimoire'),
+      questGone:    !activeQuests.some(q => q.id === 'manon_grimoire'),
+      pagesEmptied: player.grimoirePages.length === 0,
+      gotGrimoire:  player.inventory.some(i => i.id === 'livre_glacius_tempete'),
+      modalClosed:  document.getElementById('fusion-modal').style.display === 'none'
+    };
+  });
+  console.log('  T8 fusion :', t8);
+  assert(!t8.readyAt4,    'la fusion ne doit pas être prête avec 4 pages');
+  assert(t8.readyAt5,     'la fusion doit être prête avec 5 pages');
+  assert(t8.modalShown,   'l\'établi de fusion ne s\'est pas affiché');
+  assert(t8.questDone,    'manon_grimoire doit passer en complétée après fusion');
+  assert(t8.questGone,    'manon_grimoire doit sortir des quêtes actives');
+  assert(t8.pagesEmptied, 'la besace de pages doit être vidée après fusion');
+  assert(t8.gotGrimoire,  'le grimoire livre_glacius_tempete doit être au sac');
+  assert(t8.modalClosed,  'l\'établi doit se fermer après la fusion');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS (pages du grimoire)`);
