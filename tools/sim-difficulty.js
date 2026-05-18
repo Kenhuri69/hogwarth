@@ -283,6 +283,40 @@ function applySetBonuses(c, cfg, key, partySize) {
   }
 }
 
+// ── Paliers endgame de Maison — tiers 17 « Mythe » + 18 « Apothéose » ──
+//
+// state.js — HOUSE_BONUSES[*].tiers[16..17]. La sim ne modélise PAS les
+// paliers 1-16 (ladder de base, ~+8 stat +8 LCK cumulés) : `--house-tier`
+// isole volontairement le DELTA endgame V3 pour mesurer son seul apport.
+//   tier 17 « Mythe »     : +2 stat primaire, +1 LCK
+//                           (+ sort exclusif — utilitaire/contrôle, hors
+//                            modèle DPS de la sim : non modélisé)
+//   tier 18 « Apothéose » : +3 stat primaire, +1 LCK (cumulatif)
+//                           + passif de Maison (modélisé dans createHero) :
+//                             Gryffondor  → +20 % crit physique
+//                             Serpentard  → 15 % spell-lifesteal
+//                             Serdaigle   → −20 % coût des sorts
+//                             Poufsouffle → régén PV/PM hors combat —
+//                               SANS effet sur la sim : chaque combat
+//                               repart PV/PM pleins (cf. simulateBattle).
+const HOUSE_PRIMARY_STAT = {
+  gryffondor: 'Atk', serpentard: 'Mag', serdaigle: 'Mag', poufsouffle: 'Def',
+};
+// Applique le delta de stats des paliers Mythe/Apothéose sur les _baseX.
+// Appelé dans createHero AVANT le calcul des stats effectives.
+function applyHouseTierBonuses(c, cfg) {
+  const tier = cfg.houseTier || 0;
+  const prim = HOUSE_PRIMARY_STAT[cfg.houseSet];
+  if (tier < 17 || !prim) return;
+  const primKey = '_base' + prim;
+  c[primKey]  = (c[primKey]  || 0) + 2;   // tier 17
+  c._baseLck  = (c._baseLck  || 0) + 1;
+  if (tier >= 18) {
+    c[primKey] = (c[primKey] || 0) + 3;   // tier 18 (cumulatif)
+    c._baseLck = (c._baseLck || 0) + 1;
+  }
+}
+
 // ── Constantes simulation ───────────────────────────────────
 // 1-12 par défaut ; remplacé par 11..maxFloor en mode --endgame (après ARGS).
 let FLOORS = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -298,7 +332,7 @@ function parseArgs(argv) {
                 useQuests: true, useEquipment: true, usePotions: true,
                 kills: 0, bonusLevels: 0, artifacts: false,
                 endgame: false, maxFloor: 40, forge: 0, library: 0,
-                houseSet: null, tenebresSet: false };
+                houseSet: null, tenebresSet: false, houseTier: 0 };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
@@ -327,6 +361,7 @@ function parseArgs(argv) {
     else if (k === 'forge')        out.forge   = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
     else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
     else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
+    else if (k === 'house-tier')   out.houseTier = parseInt(v, 10) || 0;
   }
   return out;
 }
@@ -368,6 +403,9 @@ Options:
   --library=N             Niveau de Bibliothèque (0-3) sur chaque sort (power/cost)
   --house-set=NAME        Set de Maison 4/4 : gryffondor|serpentard|serdaigle|poufsouffle
   --tenebres-set          Set Ténèbres 3/3 (+15 crit, +10 esquive)
+  --house-tier=N          Paliers endgame V3 (17 « Mythe » / 18 « Apothéose »).
+                          Requiert --house-set. Modélise le delta de stats
+                          tier 17/18 + le passif d'Apothéose (tier 18).
   --compare               Lance baseline ET proposition (hp×1.5 xp×1.3 stats=3 balanced), tableau comparatif
 
 Exemples:
@@ -375,7 +413,8 @@ Exemples:
   node tools/sim-difficulty.js 800                  # baseline 800 sims
   node tools/sim-difficulty.js --compare            # baseline vs proposition validée
   node tools/sim-difficulty.js --hp-mult=1.5 --xp-mult=1.3 --stat-points=3 800
-  node tools/sim-difficulty.js --endgame --artifacts --stat-points=3   # Boucle Ténébreuse`);
+  node tools/sim-difficulty.js --endgame --artifacts --stat-points=3   # Boucle Ténébreuse
+  node tools/sim-difficulty.js --endgame --house-set=gryffondor --house-tier=18 800   # capstone Apothéose`);
   process.exit(0);
 }
 
@@ -558,6 +597,8 @@ function createHero(key, level, cfg, floor, partySize) {
   if (cfg.useQuests && typeof floor === 'number') {
     applyQuestStatRewards(c, floor);
   }
+  // Paliers endgame de Maison (Mythe/Apothéose) — delta de stats sur _baseX.
+  applyHouseTierBonuses(c, cfg);
   // Soin complet après les level-ups (l'allocation END a augmenté hpMax)
   c.hp = c.hpMax; c.sp = c.spMax;
   // Stats effectives = _base* (avant équipement). Inclut les gains
@@ -584,6 +625,19 @@ function createHero(key, level, cfg, floor, partySize) {
   c.dodgeChance         = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0) + (c._setDodge || 0)));
   c.critMultiplier      = 1.5 + (c._critDmgBonus || 0) + (c._setCritDmg || 0);
   c.spellCritMultiplier = 1.5 + (c._spellCritDmgBon || 0) + (c._setSpellCritDmg || 0);
+  // Passif d'Apothéose (palier 18 — houseApotheosePassive). Gryffondor
+  // modélisé ici (crit) ; Serpentard / Serdaigle posent un flag consommé
+  // en combat (heroAct / simSpellForCaster). Poufsouffle (régén hors
+  // combat) reste sans effet — la sim repart PV/PM pleins à chaque combat.
+  if ((cfg.houseTier || 0) >= 18) {
+    if (cfg.houseSet === 'gryffondor') {
+      c.critChance = Math.min(100, c.critChance + 20);
+    } else if (cfg.houseSet === 'serpentard') {
+      c._serpentLifesteal = 0.15;
+    } else if (cfg.houseSet === 'serdaigle') {
+      c._spellCostMult = 0.8;
+    }
+  }
   c.level = level;
   // Bibliothèque interdite : niveau d'upgrade appliqué à tous les sorts.
   c.libraryLevel = cfg.library || 0;
@@ -770,6 +824,11 @@ function heroAct(char, enemies) {
       dmg = Math.floor(dmg * (char.spellCritMultiplier || 1.5));
     }
     target.currentHp -= dmg;
+    // Apothéose Serpentard — Soif du Serpent : 15 % des dégâts drainés
+    // en PV pour le lanceur (battle-spells.js — _applySerpentLifesteal).
+    if (char._serpentLifesteal && dmg > 0) {
+      char.hp = Math.min(char.hpMax, char.hp + Math.floor(dmg * char._serpentLifesteal));
+    }
     return;
   }
 
@@ -787,10 +846,15 @@ function heroAct(char, enemies) {
 // DoT infligés par les ennemis le sont (cf. SIM_DOT_IDS).
 function simSpellForCaster(spell, char) {
   const lvl = char && char.libraryLevel || 0;
-  if (!spell || lvl <= 0) return spell;
+  // Apothéose Serdaigle : −20 % de coût (ceil), appliqué APRÈS la
+  // Bibliothèque — miroir de battle-spells.js — _spellSpCost.
+  const costMult = (char && char._spellCostMult) || 1;
+  if (!spell || (lvl <= 0 && costMult === 1)) return spell;
   const out = { ...spell };
   if (typeof spell.power === 'number') out.power = spell.power + 2 * lvl;
-  if (typeof spell.cost  === 'number') out.cost  = Math.max(1, spell.cost - lvl);
+  if (typeof spell.cost  === 'number') {
+    out.cost = Math.max(1, Math.ceil(Math.max(1, spell.cost - lvl) * costMult));
+  }
   return out;
 }
 
@@ -932,8 +996,11 @@ function emitReport(rows, cfg) {
   console.log('# Étude de la difficulté — mode Normal\n');
   console.log(`Simulation : ${cfg.nSims} combats par couple (étage, mode). ` +
               `Hypothèse : ${COMBATS_PER_FLOOR_AVG} combats / étage en moyenne.\n`);
+  const houseInfo = cfg.houseSet
+    ? ` | set=${cfg.houseSet}${cfg.houseTier ? ` | palier Maison ${cfg.houseTier}` : ''}`
+    : '';
   console.log(`Paramètres : HP×${cfg.hpMult} | XP×${cfg.xpMult} | ` +
-              `${cfg.statPoints} pts libres/niveau | build=${cfg.build}\n`);
+              `${cfg.statPoints} pts libres/niveau | build=${cfg.build}${houseInfo}\n`);
 
   console.log('## 1. Progression joueur attendue\n');
   console.log('| Étage | Niveau Solo | XP cumul Solo | Niveau Duo | XP cumul Duo |');

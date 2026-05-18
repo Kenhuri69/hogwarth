@@ -180,3 +180,64 @@ selon l'équilibrage observé du tier 17.
   `tools/sim-difficulty.js` avant de figer.
 - **Vague C dépend de B** : ne pas démarrer C tant que le tier 17 n'a
   pas été joué — risque de concevoir un capstone déséquilibré.
+
+## 5. Étude sim-difficulty (2026-05-18)
+
+`tools/sim-difficulty.js` enrichi d'un flag `--house-tier=N` (requiert
+`--house-set`) : modélise le delta de stats des paliers 17/18 + le
+passif d'Apothéose. Étude lancée en mode `--endgame --max-floor=30
+--artifacts --stat-points=3`, 800 sims/cellule.
+
+### Win rate Solo (mode discriminant — Duo amortit tout)
+
+| Étage | tier 0 | Gryff 18 | Serp 18 | Serd 18 | Pouf 18 |
+|------:|-------:|---------:|--------:|--------:|--------:|
+| 20    | 53 %   | 55 %     | 71 %    | 71 %    | 59 %    |
+| 21    | 30 %   | 31 %     | 48 %    | 44 %    | 33 %    |
+| 25    | 20 %   | 24 %     | 37 %    | 33 %    | 25 %    |
+| 30    | 14 %   | 16 %     | 28 %    | 23 %    | 16 %    |
+
+Moyenne Solo étages 21-30 (cœur de la Boucle Ténébreuse) :
+baseline **21,8 %** → Serpentard **37,6 %** (+15,8) · Serdaigle
+**32,7 %** (+10,9) · Poufsouffle **25,7 %** (+3,9) · Gryffondor
+**23,6 %** (+1,8).
+
+### Constats
+
+1. **Tier 17 seul (stats) est négligeable** : `gryff17` ≈ `tier 0` à
+   ±2 pts. Le palier Mythe ne vaut que par son sort exclusif (non
+   modélisé, cf. limites).
+2. **Le +5 MAG des Maisons casteuses porte le gain.** Serpentard et
+   Serdaigle bondissent à 71 % (floor 20) surtout grâce à `mag` —
+   `dmg = power + mag/2`. Gryffondor (+5 ATK) et Poufsouffle (+5 DEF)
+   ne profitent pas du même levier.
+3. **Hiérarchie des passifs modélisés** : Serpentard (lifesteal) ≫
+   Serdaigle > Poufsouffle ≈ Gryffondor. Le lifesteal double presque
+   la survie Solo en profondeur.
+4. **Le passif Gryffondor est quasi invisible.** L'IA de la sim
+   privilégie toujours les sorts ; le crit *physique* et l'ATK ne sont
+   presque jamais sollicités. Un Harry casteur ne tire rien du
+   « Cœur du Lion ».
+
+### Limites du modèle (à lever en playtest manuel)
+
+- **IA mono-sort** : la sim ne fait d'attaque physique qu'en dernier
+  recours → sous-évalue structurellement Gryffondor (identité
+  physique). Chiffre à lire comme un plancher, pas un verdict.
+- **PV/PM pleins à chaque combat** : Poufsouffle (régén hors combat)
+  est un no-op dans la sim ; Serdaigle (−20 % coût) est sous-évalué —
+  l'économie de PM ne pèse que sur une succession de combats sans repos.
+- **Sorts de Mythe non modélisés** : Imperius / Legilimens (contrôle)
+  sortent du modèle DPS. Risque §4 « sorts trop forts » → reste un
+  point de playtest manuel.
+
+### Reco
+
+- L'écart Serpentard vs Gryffondor est en partie un artefact de sim,
+  mais le signal est réel : **le passif Gryffondor (crit physique)
+  est mal aligné** avec un Harry casteur. Piste : étendre « Cœur du
+  Lion » au crit de *sort* aussi, ou le requalifier en bonus que la
+  party utilise réellement. À trancher après playtest.
+- Pas de Maison sur-puissante au point de casser la courbe : même
+  Serpentard 18 reste sous 30 % en Solo à l'étage 30. Les seuils
+  `requiresDarkTier` tiennent leur rôle de garde-fou.
