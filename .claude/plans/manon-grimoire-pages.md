@@ -43,7 +43,8 @@ total ×3 de 78/93/129, en tête du classement).
 | Grimoire cible | Glacius Tempête (le plus puissant — sim-aoe.js) |
 | Mécanisme pages | Reliques fixes **invisibles** ; sort hors-combat révèle la case (point vert) ; `fouiller` ramasse |
 | Sort de révélation | **Revelio**, enseigné par une quête préambule de Manon |
-| Nombre de pages | **5**, réparties étages **2 à 9** |
+| Nombre de pages | **5**, une par étage : **2, 3, 5, 7, 9** (arbitré) |
+| Indices fantômes | Les PNJ lore aléatoires lâchent une réplique-blague pointant l'étage d'une page non collectée (voir §7b) |
 | Fusion | **Hébergée par Manon** (PNJ donneur), UI inspirée de la besace |
 | Revelio — coût | 1-2 PM (bon marché) |
 | Revelio — hors combat | Révèle le brouillard sur ~2 cases ; une page dans la zone éclaircie apparaît en point vert sur la minimap |
@@ -73,7 +74,7 @@ Deux volets chaînés, après `manon_pardon` (`prereq`).
 - `prereq: "manon_revelio"`.
 - Objectif : réunir les **5 pages** (suivi via `collectedPages`, cf.
   §5 — pas d'items qui encombrent le sac).
-- `desc` indique les **étages porteurs** (2, 3, 5, 7, 9 — à arbitrer).
+- `desc` indique les **étages porteurs** : 2, 3, 5, 7, 9.
 - Remise : parler à Manon avec les 5 pages → ouvre l'**établi de
   fusion** (§6) → grimoire `livre_glacius_tempete` recréé.
 - Récompense : `item: "livre_glacius_tempete"` + `xp`/`gold` (+ stats ?).
@@ -149,6 +150,27 @@ Nouvel objectif `type:"pages"` dans le moteur de quêtes (petit ajout).
   pour les deux quêtes, dans la voix établie de Manon.
 - `idleRandom` post-Acte II : 1-2 répliques sur le grimoire reconstitué.
 
+## 7b. Indices des fantômes (PNJ lore aléatoires)
+
+Les PNJ lore aléatoires (`getRandomLoreForFloor` dans `npcs.js`,
+`marker:'lore'`, sprite `fantome`) servent d'**indices doux** : ils
+ont vu une page traîner et le mentionnent — sur le ton de la blague,
+jamais la position exacte, juste l'étage.
+
+| Élément | Détail |
+|---------|--------|
+| Déclencheur | Dialogue actif **seulement** si `manon_revelio` rendu et `manon_grimoire` en cours (même garde que les pages, §5) |
+| Contenu | Une ligne `idleRandom` qui nomme l'étage d'**une page encore non collectée** + une petite blague de fantôme |
+| Ciblage de l'étage | Au moment d'ouvrir le dialogue : prendre un étage de `pagePlacements` absent de `collectedPages` ; piocher la réplique correspondante. Si tout est collecté → la ligne d'indice ne s'affiche pas (repli sur le lore normal) |
+| Implémentation | Helper `_pageHintLine(floor)` (npcs.js) qui renvoie un texte paramétré ; injecté dans le pool `idleRandom` du PNJ lore par `getRandomLoreForFloor` quand la garde est vraie |
+| Ton | Voix de fantôme : désinvolte, légèrement moqueur. Ex. : *« J'ai vu un bout de parchemin gribouillé de givre traîner au {étage}ᵉ. Je l'aurais bien ramassé… mais, tu sais, les mains. »* |
+
+- Pas de garantie d'apparition : c'est un coup de pouce ambiant, pas un
+  marqueur de quête. Revelio reste le moyen fiable de localiser la case.
+- Prévoir **3-4 variantes de blague** réparties pour éviter la
+  répétition (sélection seedée par étage, cohérente avec le reste des
+  PNJ aléatoires).
+
 ## 8. Découpage en phases (verify)
 
 1. **Narratif & données** — prémisse validée ; SPELLS Revelio ;
@@ -165,9 +187,14 @@ Nouvel objectif `type:"pages"` dans le moteur de quêtes (petit ajout).
    survit à une sauvegarde/chargement.
 4. **Quête pages** — objectif `type:"pages"`, `checkPageQuest`.
    verify : 5 pages → `manon_grimoire` passe `completable`.
-5. **Établi de fusion** — `specialAction` Manon + overlay + recette.
+5. **Indices fantômes** — `_pageHintLine` + injection conditionnelle
+   dans `idleRandom` des PNJ lore (§7b).
+   verify : avec `manon_grimoire` en cours, un fantôme lore peut citer
+   l'étage d'une page non collectée ; aucune ligne d'indice une fois
+   les 5 pages prises.
+6. **Établi de fusion** — `specialAction` Manon + overlay + recette.
    verify : fusion → grimoire au sac, quête complétée.
-6. **Smoke test** — scénario dédié `scenarioManonGrimoire` (préambule →
+7. **Smoke test** — scénario dédié `scenarioManonGrimoire` (préambule →
    Revelio → 5 pages → fusion). Suite complète verte.
 
 ## 9. Hors-scope V1
@@ -181,4 +208,5 @@ Nouvel objectif `type:"pages"` dans le moteur de quêtes (petit ajout).
 ## Suivi
 - [x] Phase 0 — prémisse narrative (§1) validée par l'utilisateur.
 - [x] Rebase de la branche sur `master` (intègre le PR #190).
-- [ ] Étages porteurs des 5 pages — à confirmer (proposé 2,3,5,7,9).
+- [x] Étages porteurs des 5 pages arbitrés : 2, 3, 5, 7, 9.
+- [x] Indices fantômes ajoutés au design (§7b).
