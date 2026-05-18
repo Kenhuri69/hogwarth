@@ -259,6 +259,7 @@ function _spellShield(spell, char) {
 function _computeSpellDamage(spell, char, enemy, opts) {
   opts = opts || {};
   let dmg    = spell.power + Math.floor(char.mag / 2);
+  dmg = Math.floor(dmg * _houseVigorMult(char));   // Apothéose Poufsouffle — Vigueur
   let suffix = '';
   if (enemy.resist?.includes(spell.element)) { dmg = Math.floor(dmg * RESIST_MULTIPLIER); suffix = ' 🔰'; }
   if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);   suffix = ' 💥'; }

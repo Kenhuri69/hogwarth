@@ -92,9 +92,11 @@ selon l'équilibrage observé du tier 17.
 
 > **Décision (2026-05-18)** : passif légendaire retenu (choix utilisateur).
 > Pas de flag dédié — `houseApotheosePassive()` (`main.js`) lit
-> `houseTier >= 18`. Valeurs : Gryffondor +20 % crit physique ;
+> `houseTier >= 18`. Valeurs **après rework sim** (cf. §3quater + §5) :
+> Gryffondor +10 % crit (physique ET sort) +10 % dégâts critiques ;
 > Serpentard 15 % spell-lifesteal ; Serdaigle −20 % coût des sorts ;
-> Poufsouffle +2 PV/PM par pas hors combat.
+> Poufsouffle +2 PV/PM par pas hors combat **+ Vigueur** (+20 % de
+> dégâts au-dessus de 60 % PV).
 
 ## 3. Étapes
 
@@ -169,6 +171,24 @@ selon l'équilibrage observé du tier 17.
 - **Poufsouffle régen** : +2 PV / +2 PM par pas (et non un pourcentage).
   Valeur plate, lisible, plafonnée par `hpMax`/`spMax`.
 
+### §3quater — Rework des passifs Gryffondor & Poufsouffle (2026-05-18)
+
+Suite à la 1ʳᵉ passe sim (§5) qui a montré Gryffondor et Poufsouffle
+quasi inertes en combat, deux passifs ont été retravaillés (décision
+utilisateur) :
+
+- **Gryffondor — Cœur du Lion** : `+20 % crit physique` → `+10 % crit
+  physique ET de sort, +10 % de dégâts critiques (physique + sort)`.
+  Le canal *sort* est désormais touché — un Harry casteur en profite.
+  Bonus appliqués PAR-DESSUS les plafonds LCK/AGI (40/35) :
+  `recalculateStats()` (`inventory.js`) ajoute après le clamp, le taux
+  peut donc dépasser 40 % (plafond absolu 100 %).
+- **Poufsouffle — Souffle du Blaireau** : régén PV/PM par pas
+  *conservée* + nouvelle composante DPS **Vigueur** : `+20 % de dégâts
+  (physique + sort) tant que le combattant est au-dessus de 60 % PV`.
+  Helper `_houseVigorMult(char)` (`battle.js`), consommé par
+  `executeAttack` (physique) et `_computeSpellDamage` (sorts).
+
 ## 4. Risques
 
 - **Calibrage des seuils** : 30000 / 45000 sont indicatifs. Le gate
@@ -176,8 +196,9 @@ selon l'équilibrage observé du tier 17.
   redevient « hors-sol »). Vérifier qu'un joueur atteint bien l'étage
   11+ *avant* d'avoir 30000 points, sinon abaisser le seuil.
 - **Sorts exclusifs trop forts** : 4 sorts endgame peuvent casser
-  l'équilibrage de la Boucle Ténébreuse. Les tester via
-  `tools/sim-difficulty.js` avant de figer.
+  l'équilibrage de la Boucle Ténébreuse. Les sorts de Mythe (contrôle :
+  Imperius / Legilimens) sortent du modèle DPS de `sim-difficulty.js` —
+  reste un point de playtest manuel.
 - **Vague C dépend de B** : ne pas démarrer C tant que le tier 17 n'a
   pas été joué — risque de concevoir un capstone déséquilibré.
 
@@ -188,56 +209,54 @@ selon l'équilibrage observé du tier 17.
 passif d'Apothéose. Étude lancée en mode `--endgame --max-floor=30
 --artifacts --stat-points=3`, 800 sims/cellule.
 
-### Win rate Solo (mode discriminant — Duo amortit tout)
+### 1ʳᵉ passe — diagnostic
+
+La 1ʳᵉ passe a établi que (a) le tier 17 seul (stats) est négligeable
+(±2 pts vs baseline) ; (b) Serpentard (lifesteal) et Serdaigle dominent
+grâce au lifesteal et au +5 MAG ; (c) **Gryffondor (+20 % crit
+physique) et Poufsouffle (régén hors combat) étaient quasi inertes** —
+un Harry casteur n'attaque presque jamais au physique, et la sim repart
+PV/PM pleins à chaque combat. → a motivé le rework §3quater.
+
+### 2ᵉ passe — post-rework (Win rate Solo, mode discriminant)
 
 | Étage | tier 0 | Gryff 18 | Serp 18 | Serd 18 | Pouf 18 |
 |------:|-------:|---------:|--------:|--------:|--------:|
-| 20    | 53 %   | 55 %     | 71 %    | 71 %    | 59 %    |
-| 21    | 30 %   | 31 %     | 48 %    | 44 %    | 33 %    |
-| 25    | 20 %   | 24 %     | 37 %    | 33 %    | 25 %    |
-| 30    | 14 %   | 16 %     | 28 %    | 23 %    | 16 %    |
+| 20    | 55 %   | 58 %     | 68 %    | 68 %    | 66 %    |
+| 21    | 31 %   | 35 %     | 49 %    | 46 %    | 42 %    |
+| 25    | 22 %   | 25 %     | 41 %    | 32 %    | 28 %    |
+| 30    | 16 %   | 16 %     | 30 %    | 22 %    | 20 %    |
 
 Moyenne Solo étages 21-30 (cœur de la Boucle Ténébreuse) :
-baseline **21,8 %** → Serpentard **37,6 %** (+15,8) · Serdaigle
-**32,7 %** (+10,9) · Poufsouffle **25,7 %** (+3,9) · Gryffondor
-**23,6 %** (+1,8).
+baseline **23,1 %** → Serpentard **38,0 %** (+14,9) · Serdaigle
+**32,6 %** (+9,5) · Poufsouffle **29,4 %** (+6,3) · Gryffondor
+**25,0 %** (+1,9).
 
-### Constats
+### Constats post-rework
 
-1. **Tier 17 seul (stats) est négligeable** : `gryff17` ≈ `tier 0` à
-   ±2 pts. Le palier Mythe ne vaut que par son sort exclusif (non
-   modélisé, cf. limites).
-2. **Le +5 MAG des Maisons casteuses porte le gain.** Serpentard et
-   Serdaigle bondissent à 71 % (floor 20) surtout grâce à `mag` —
-   `dmg = power + mag/2`. Gryffondor (+5 ATK) et Poufsouffle (+5 DEF)
-   ne profitent pas du même levier.
-3. **Hiérarchie des passifs modélisés** : Serpentard (lifesteal) ≫
-   Serdaigle > Poufsouffle ≈ Gryffondor. Le lifesteal double presque
-   la survie Solo en profondeur.
-4. **Le passif Gryffondor est quasi invisible.** L'IA de la sim
-   privilégie toujours les sorts ; le crit *physique* et l'ATK ne sont
-   presque jamais sollicités. Un Harry casteur ne tire rien du
-   « Cœur du Lion ».
+1. **Poufsouffle redressé** : Vigueur le fait passer de « ≈ baseline »
+   à +6,3 pts profonds (et +11 pts au floor 20-21). Il a désormais une
+   identité de combat claire, entre Serdaigle et Gryffondor.
+2. **Gryffondor reste le plus discret** : +1,9 pt profond. Le crit de
+   sort touché par le rework n'apporte que ~+4 % de dégâts attendus
+   (spellCrit ~10 %→20 %, ×1,6). C'est assumé — Gryffondor est la
+   Maison « burst/variance », pas « win rate moyen » : le passif paie
+   surtout sur les pics de dégâts, que la moyenne Monte Carlo lisse.
+3. **Hiérarchie finale** : Serpentard ≫ Serdaigle > Poufsouffle >
+   Gryffondor. Resserrée vs la 1ʳᵉ passe (où Pouf/Gryff étaient
+   confondus avec la baseline).
+4. **Aucune Maison ne casse la courbe** : même Serpentard 18 reste à
+   30 % Solo au floor 30. Les gates `requiresDarkTier` tiennent.
 
 ### Limites du modèle (à lever en playtest manuel)
 
-- **IA mono-sort** : la sim ne fait d'attaque physique qu'en dernier
-  recours → sous-évalue structurellement Gryffondor (identité
-  physique). Chiffre à lire comme un plancher, pas un verdict.
-- **PV/PM pleins à chaque combat** : Poufsouffle (régén hors combat)
-  est un no-op dans la sim ; Serdaigle (−20 % coût) est sous-évalué —
-  l'économie de PM ne pèse que sur une succession de combats sans repos.
+- **IA mono-sort** : la sim n'attaque au physique qu'en dernier recours
+  → sous-évalue toujours le volet *physique* de Gryffondor (crit phys.
+  +10 %, dégâts crit phys. +10 %). Chiffre Gryffondor à lire comme un
+  plancher.
+- **PV/PM pleins à chaque combat** : la régén hors combat de Poufsouffle
+  reste un no-op dans la sim (seule sa Vigueur est mesurée) ; Serdaigle
+  (−20 % coût) est sous-évalué — l'économie de PM ne pèse que sur une
+  série de combats sans repos.
 - **Sorts de Mythe non modélisés** : Imperius / Legilimens (contrôle)
-  sortent du modèle DPS. Risque §4 « sorts trop forts » → reste un
-  point de playtest manuel.
-
-### Reco
-
-- L'écart Serpentard vs Gryffondor est en partie un artefact de sim,
-  mais le signal est réel : **le passif Gryffondor (crit physique)
-  est mal aligné** avec un Harry casteur. Piste : étendre « Cœur du
-  Lion » au crit de *sort* aussi, ou le requalifier en bonus que la
-  party utilise réellement. À trancher après playtest.
-- Pas de Maison sur-puissante au point de casser la courbe : même
-  Serpentard 18 reste sous 30 % en Solo à l'étage 30. Les seuils
-  `requiresDarkTier` tiennent leur rôle de garde-fou.
+  sortent du modèle DPS — playtest manuel requis (cf. §4).

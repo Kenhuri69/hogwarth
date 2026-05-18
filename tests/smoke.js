@@ -5586,17 +5586,27 @@ async function scenarioHouseApotheoseTier() {
   });
   t3.forEach(r => assert(r.ok, `tier 18 mal configuré pour ${r.h}`));
 
-  // T4 : passif Gryffondor — Cœur du Lion ajoute +20 % de crit physique.
+  // T4 : passif Gryffondor — Cœur du Lion : +10 % crit (physique ET
+  // sort) + +10 % de dégâts critiques, appliqués au-dessus des plafonds.
   const t4 = await page.evaluate(() => {
     chosenHouse = 'Gryffondor';
     houseTier = 17; recalculateStats();
-    const critBefore = party[0].critChance;
+    const before = { crit: party[0].critChance, spellCrit: party[0].spellCritChance,
+                     critMult: party[0].critMultiplier, spellCritMult: party[0].spellCritMultiplier };
     houseTier = 18; recalculateStats();
-    return { critBefore, critAfter: party[0].critChance };
+    const after = { crit: party[0].critChance, spellCrit: party[0].spellCritChance,
+                    critMult: party[0].critMultiplier, spellCritMult: party[0].spellCritMultiplier };
+    return { before, after };
   });
   console.log('  T4 Gryffondor crit →', t4);
-  assert(t4.critAfter === Math.min(100, t4.critBefore + 20),
-    'passif Gryffondor doit ajouter +20 % de crit physique');
+  assert(t4.after.crit === Math.min(100, t4.before.crit + 10),
+    'passif Gryffondor doit ajouter +10 % de crit physique');
+  assert(t4.after.spellCrit === Math.min(100, t4.before.spellCrit + 10),
+    'passif Gryffondor doit ajouter +10 % de crit de sort');
+  assert(Math.abs(t4.after.critMult - Math.min(2.5, t4.before.critMult + 0.10)) < 1e-9,
+    'passif Gryffondor doit ajouter +10 % de dégâts critiques physiques');
+  assert(Math.abs(t4.after.spellCritMult - Math.min(2.5, t4.before.spellCritMult + 0.10)) < 1e-9,
+    'passif Gryffondor doit ajouter +10 % de dégâts critiques de sort');
 
   // T7 : passif Poufsouffle — régénération hors combat à chaque pas.
   const t7 = await page.evaluate(() => {
@@ -5616,6 +5626,22 @@ async function scenarioHouseApotheoseTier() {
   assert(t7.moved,       'aucun pas possible pour tester la régén Poufsouffle');
   assert(t7.hpGain >= 2, 'passif Poufsouffle doit régénérer ≥ 2 PV par pas');
   assert(t7.spGain >= 2, 'passif Poufsouffle doit régénérer ≥ 2 PM par pas');
+
+  // T8 : passif Poufsouffle — Vigueur : ×1.2 dégâts au-dessus de 60 %
+  // PV, neutre en dessous, inactif hors Poufsouffle.
+  const t8 = await page.evaluate(() => {
+    chosenHouse = 'Poufsouffle'; houseTier = 18;
+    party[0].hpMax = 100;
+    party[0].hp = 80;  const high = _houseVigorMult(party[0]);
+    party[0].hp = 40;  const low  = _houseVigorMult(party[0]);
+    chosenHouse = 'Gryffondor';
+    party[0].hp = 80;  const off  = _houseVigorMult(party[0]);
+    return { high, low, off };
+  });
+  console.log('  T8 Poufsouffle Vigueur →', t8);
+  assert(t8.high === 1.2, 'Vigueur doit donner ×1.2 au-dessus de 60 % PV');
+  assert(t8.low === 1,    'Vigueur doit être neutre en dessous de 60 % PV');
+  assert(t8.off === 1,    'Vigueur ne doit pas s\'appliquer hors Poufsouffle');
 
   // ── Mécaniques en combat ──
   await startDummyFight(page, { hp: 400 });
@@ -5649,7 +5675,7 @@ async function scenarioHouseApotheoseTier() {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Maison V3 palier 18 OK (gate + 4 passifs de Maison)');
+  console.log('  ✅ Maison V3 palier 18 OK (gate + 5 effets de passifs de Maison)');
   await browser.close();
 }
 

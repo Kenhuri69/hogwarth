@@ -397,11 +397,20 @@ function battleAction(action) {
 // showTargetSelection() → battle-ui.js
 
 // ── Attaque physique ─────────────────────────────────────────
+// Apothéose Poufsouffle (palier 18 — Souffle du Blaireau) : +20 % de
+// dégâts (physiques ET sorts) tant que le combattant est au-dessus de
+// 60 % de ses PV max. Récompense la robustesse du blaireau.
+function _houseVigorMult(char) {
+  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Poufsouffle') return 1;
+  if (!char || !char.hpMax) return 1;
+  return char.hp > char.hpMax * 0.6 ? 1.20 : 1;
+}
+
 function executeAttack(targetIdx) {
   const char  = getActiveChar();
   const enemy = enemyGroup[targetIdx];
   const rawAtk = char.atk + Math.floor(Math.random() * 4);
-  const dmg    = Math.max(1, mitigatedDamage(rawAtk, enemy.def));
+  const dmg    = Math.max(1, Math.floor(mitigatedDamage(rawAtk, enemy.def) * _houseVigorMult(char)));
   enemy.currentHp -= dmg;
 
   AudioSystem.playHit();

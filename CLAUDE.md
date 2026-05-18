@@ -316,10 +316,10 @@ Boucle Ténébreuse (`tier.requiresDarkTier`, gate symétrique de
 
 | Maison | Passif Apothéose | Hook |
 |--------|------------------|------|
-| Gryffondor  | +20 % crit physique     | `recalculateStats()` (inventory.js) |
+| Gryffondor  | +10 % crit (phys.+sort) +10 % dégâts crit. | `recalculateStats()` (inventory.js) |
 | Serpentard  | 15 % spell-lifesteal    | `_applySerpentLifesteal` (battle-spells.js) |
 | Serdaigle   | −20 % coût des sorts    | `_spellSpCost` (battle-spells.js) |
-| Poufsouffle | +2 PV/PM par pas (hors combat) | `_step` (movement.js) |
+| Poufsouffle | +2 PV/PM par pas + Vigueur (+20 % dégâts >60 % PV) | `_step` (movement.js) + `_houseVigorMult` (battle.js) |
 
 ---
 

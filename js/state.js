@@ -145,7 +145,7 @@ const HOUSE_BONUSES = {
       // Phase 8 — Apothéose (palier capstone V3, gated Boucle Ténébreuse
       // tier 2 : étages 21+). Éveille le passif légendaire de Maison —
       // détecté par houseApotheosePassive() (main.js), pas de flag dédié.
-      { threshold: 45000, label: 'Apothéose',       requiresDarkTier: 2, bonus: { _baseAtk: 3, _baseLck: 1 }, msg: '🦁 Apothéose de Gryffondor ! +3 ATK +1 LCK · Cœur du Lion — tes coups critiques gagnent +20 %.' },
+      { threshold: 45000, label: 'Apothéose',       requiresDarkTier: 2, bonus: { _baseAtk: 3, _baseLck: 1 }, msg: '🦁 Apothéose de Gryffondor ! +3 ATK +1 LCK · Cœur du Lion — +10 % de crit (physique ET sort) et +10 % de dégâts critiques.' },
     ]
   },
   Serpentard: {
@@ -223,7 +223,7 @@ const HOUSE_BONUSES = {
       { threshold: 16000, label: 'Virtuose Or',     bonus: {}, msg: '🦡 Virtuose d\'or — la dernière relique attend que tu termines la quête du Blaireau.' },
       { threshold: 25000, label: 'Légende',         bonus: { _baseDef: 2, _baseLck: 1, legendaryPassive: true, item: 'bouclier_helga' }, msg: '🦡 Légende de Poufsouffle ! +2 DEF +1 LCK · Maîtrise Légendaire éveillée — le Bouclier de Helga vous attend.' },
       { threshold: 30000, label: 'Mythe',           requiresDarkTier: 1, bonus: { _baseDef: 2, _baseLck: 1, grantsSpell: 'Récolte Magique', unlockMytheQuest: true }, msg: '🦡 Mythe vivant de Poufsouffle ! +2 DEF +1 LCK · la Récolte Magique t\'est révélée.' },
-      { threshold: 45000, label: 'Apothéose',       requiresDarkTier: 2, bonus: { _baseDef: 3, _baseLck: 1 }, msg: '🦡 Apothéose de Poufsouffle ! +3 DEF +1 LCK · Souffle du Blaireau — ton groupe régénère PV et PM à chaque pas.' },
+      { threshold: 45000, label: 'Apothéose',       requiresDarkTier: 2, bonus: { _baseDef: 3, _baseLck: 1 }, msg: '🦡 Apothéose de Poufsouffle ! +3 DEF +1 LCK · Souffle du Blaireau — ton groupe régénère PV et PM à chaque pas et inflige +20 % de dégâts au-dessus de 60 % PV.' },
     ]
   },
 };

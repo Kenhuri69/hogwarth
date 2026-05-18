@@ -625,17 +625,24 @@ function createHero(key, level, cfg, floor, partySize) {
   c.dodgeChance         = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0) + (c._setDodge || 0)));
   c.critMultiplier      = 1.5 + (c._critDmgBonus || 0) + (c._setCritDmg || 0);
   c.spellCritMultiplier = 1.5 + (c._spellCritDmgBon || 0) + (c._setSpellCritDmg || 0);
-  // Passif d'Apothéose (palier 18 — houseApotheosePassive). Gryffondor
-  // modélisé ici (crit) ; Serpentard / Serdaigle posent un flag consommé
-  // en combat (heroAct / simSpellForCaster). Poufsouffle (régén hors
-  // combat) reste sans effet — la sim repart PV/PM pleins à chaque combat.
+  // Passif d'Apothéose (palier 18 — houseApotheosePassive). Tous posés
+  // ici puis consommés selon le canal : Gryffondor sur les stats de crit,
+  // Serpentard / Serdaigle / Poufsouffle via un flag lu en combat
+  // (heroAct / simSpellForCaster). La régén PV/PM hors combat de
+  // Poufsouffle reste hors modèle — la sim repart PV/PM pleins à chaque
+  // combat ; seule sa composante DPS « Vigueur » est mesurée.
   if ((cfg.houseTier || 0) >= 18) {
     if (cfg.houseSet === 'gryffondor') {
-      c.critChance = Math.min(100, c.critChance + 20);
+      c.critChance          = Math.min(100, c.critChance + 10);
+      c.spellCritChance     = Math.min(100, c.spellCritChance + 10);
+      c.critMultiplier      = Math.min(2.5, c.critMultiplier + 0.10);
+      c.spellCritMultiplier = Math.min(2.5, c.spellCritMultiplier + 0.10);
     } else if (cfg.houseSet === 'serpentard') {
       c._serpentLifesteal = 0.15;
     } else if (cfg.houseSet === 'serdaigle') {
       c._spellCostMult = 0.8;
+    } else if (cfg.houseSet === 'poufsouffle') {
+      c._houseVigor = true;   // Vigueur : +20 % dégâts au-dessus de 60 % PV
     }
   }
   c.level = level;
@@ -790,6 +797,9 @@ function avgHpPct(party) {
 
 function heroAct(char, enemies) {
   const target = enemies[0];
+  // Apothéose Poufsouffle — Vigueur : +20 % de dégâts (physique + sort)
+  // au-dessus de 60 % PV. Évalué à l'ouverture du tour du héros.
+  const vigor = (char._houseVigor && char.hp > char.hpMax * 0.6) ? 1.20 : 1;
 
   // 1. Potion si hp critique (< 40 %) et stock dispo.
   //    Consomme le tour : pas d'attaque, mais restaure 25 PV (moyenne
@@ -816,7 +826,7 @@ function heroAct(char, enemies) {
   const dmgSpell = pickDamageSpell(char);
   if (dmgSpell && char.sp >= dmgSpell.cost) {
     char.sp -= dmgSpell.cost;
-    let dmg = dmgSpell.power + Math.floor(char.mag / 2);
+    let dmg = Math.floor((dmgSpell.power + Math.floor(char.mag / 2)) * vigor);
     if (target.resist?.includes(dmgSpell.effect)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
     if (target.weak?.includes(dmgSpell.effect))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
     // Crit de sort (battle-spells.js — rollSpellCrit)
@@ -834,7 +844,7 @@ function heroAct(char, enemies) {
 
   // 3. Attaque physique
   const bonus = target.disarmed > 0 ? 2 : 0;
-  let dmg = Math.max(1, mitigatedDamage(char.atk + Math.floor(Math.random() * 4), target.def - bonus));
+  let dmg = Math.max(1, Math.floor(mitigatedDamage(char.atk + Math.floor(Math.random() * 4), target.def - bonus) * vigor));
   if (target.disarmed > 0) target.disarmed--;
   if (Math.random() * 100 < char.critChance) dmg = Math.floor(dmg * char.critMultiplier);
   target.currentHp -= dmg;
