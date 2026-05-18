@@ -473,6 +473,8 @@ body {
 .map-forge   { background: #7a2210; box-shadow: inset 0 0 2px #ffb070; }
 /* Endgame Tranche 2 — Bibliothèque interdite (violet grimoire). */
 .map-library { background: #3a1a5a; box-shadow: inset 0 0 2px #c080ff; }
+/* Page de grimoire révélée par Revelio (quête manon_grimoire) — vert vif. */
+.map-page { background: #1e7a32; box-shadow: 0 0 5px #6fe88a, inset 0 0 2px #c8ffd4; }
 .map-npc     { position: relative; }
 /* PNJ avec quête disponible (offer) — jaune doré, pulse subtil */
 .map-npc-offer { background: #b8881c; box-shadow: 0 0 4px #ffd84a, inset 0 0 2px #fff0a0;
@@ -1872,7 +1874,9 @@ body {
 .inv-besace .brew-tile:hover { border-color: #2a1a08; background: #0a0705; }
 
 /* ── Concoction de potions — #brewing-modal ───────────────── */
-#brewing-modal {
+/* #fusion-modal (établi de Manon) réutilise le même habillage. */
+#brewing-modal,
+#fusion-modal {
   display: none;
   position: fixed; inset: 0;
   background: radial-gradient(ellipse at center, rgba(14,26,14,0.94) 0%, rgba(0,0,0,0.96) 70%);

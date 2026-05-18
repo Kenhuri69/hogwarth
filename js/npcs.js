@@ -302,8 +302,13 @@ const NPCS = [
     icon:  "🌙",
     portraitImg: "img/npc/manon.png",
     placement: { floor: 3, anchor: "any" },
-    questsGiven:    ["manon_secret", "manon_pardon"],
-    questsTurnedIn: ["manon_secret", "manon_pardon"],
+    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire"],
+    questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire"],
+    // Établi de fusion : disponible quand les 5 pages sont réunies.
+    // Ouvre l'overlay #fusion-modal qui reconstitue le grimoire (= remise
+    // de manon_grimoire). Cf. .claude/plans/manon-grimoire-pages.md §6.
+    specialAction: { type: "open_fusion", id: "manon_fusion_grimoire",
+                     label: "📖 Reconstituer le grimoire" },
     dialogues: {
       greeting: [
         "Ne fais pas de bruit. S'il te plaît. (Elle est tapie dans l'ombre d'une salle de classe vide, les genoux contre la poitrine.) Tu n'es pas un professeur. Tant mieux — eux, je les évite.",
@@ -314,6 +319,8 @@ const NPCS = [
       idle: "(Elle n'est plus tapie dans l'ombre : elle se tient près de la fenêtre, le visage tourné vers la lumière.)",
       // Répliques post-réconciliation (état `done` → idleRandom).
       idleRandom: [
+        "Le grimoire est entier, désormais. Je l'ouvre les soirs de gel, quand le froid dessine des fougères sur la vitre. L'écriture de ma mère y est nette, sûre — rien d'une menteuse. Le givre, elle l'aimait pour de vrai.",
+        "J'ai appris son premier sort de glace dans ces pages. Quand je le lance, l'air refroidit comme elle a dû le refroidir mille fois. Pour la première fois, je fais un geste que je tiens d'elle — et non un mensonge.",
         "On prend le thé, maintenant. Tous les quinze jours, dans sa classe. On ne sait pas encore quoi se dire, alors on parle des élèves, des créatures, de la pluie. C'est maladroit. C'est précieux.",
         "Il a commencé à m'apprendre : la lune, la bête, comment lui parler au lieu de la combattre. Seize ans trop tard — mais il le fait.",
         "J'ai gardé le premier carré de chocolat, celui que tu m'as rapporté. Je ne le mangerai jamais. Certaines choses, on les garde pour se souvenir d'avoir eu peur.",
@@ -353,6 +360,30 @@ const NPCS = [
           "Et sous les siennes, il en gardait une autre — la seule qu'il n'avait pas écrite. Elle venait de ma mère. Sandrine la lui avait envoyée il y a deux mois, en sachant qu'elle ne verrait pas l'hiver : « Elle viendra te trouver. Je n'ai jamais su défaire mon mensonge — alors j'ai cousu la vérité dans sa malle, pour qu'elle bute dessus quand je ne serai plus là. Ne la fais pas attendre comme tu m'as fait attendre, moi. » Cette photographie que j'ai trouvée… ce n'était pas un oubli. C'était ma mère qui me parlait une dernière fois, faute d'avoir jamais osé le faire en face.",
           "Je leur en veux encore. Aux deux, longtemps sans doute. Mais aucun ne m'a abandonnée par indifférence. Mon père n'a jamais posté ses lettres ; ma mère n'a jamais dédit son mensonge ; et moi, je suis restée des semaines en haut de cet escalier sans oser le descendre. Nous sommes une famille de gens qui aiment trop pour oser le dernier pas. Au moins l'un de nous l'aura fait. Ce n'est pas un pardon — c'est un début.",
           "(Elle hésite, puis sourit pour la première fois.) Et il y a ceci. Lupin a tenu à ce que je passe enfin sous le Choixpeau — chez la Directrice, sur un tabouret bancal, seize ans trop tard. Le chapeau a longtemps hésité : il voyait Gryffondor, le sang de mon père, le courage. Puis il a soufflé : « Non — toi, il te faut une maison qui ne te demandera jamais de mériter d'y entrer. » Et il a crié POUFSOUFFLE. La maison de ceux qu'on accueille sans condition. Pour la première fois, j'ai une place. (Elle te tend la main.) Merci. Sans toi, je serais encore tapie dans le noir à compter les pas que je n'osais pas faire."
+        ]
+      },
+      // ── Acte II — le grimoire de givre de Sandrine ──
+      manon_revelio: {
+        questOffer: [
+          "Reste encore un peu. J'ai trouvé autre chose dans la malle de ma mère — sous la doublure, contre la photographie. Un grimoire. Les pages arrachées, la reliure brisée, comme si on l'avait déchiré dans la colère. Ou dans la peur. C'était à elle.",
+          "Sandrine avait un don, je le comprends seulement maintenant : la magie du givre. Le froid lui obéissait. (Elle effleure la couverture abîmée.) Mais je ne sais plus rien d'elle qui soit vrai. Seize ans de mensonge — alors ce grimoire, est-ce un héritage qu'elle me laisse, ou sa dernière mise en scène ? Je veux le reconstituer pour le savoir. Pour décider moi-même du vrai et du faux.",
+          "Mon père m'a appris un charme pour ça : Revelio, celui qui dévoile ce qu'on a caché. Je peux te l'enseigner — mais le charme doit d'abord être accordé à un catalyseur de froid. Descends aux douves, terrasse un Strangulot : ces bestioles suintent un froid d'eau noire. Rapporte-m'en la trace."
+        ],
+        questActive: "Le Strangulot, tu l'as trouvé ? Cherche les douves, les galeries inondées des cachots. Le froid qu'il dégage — c'est exactement ce qu'il me faut pour accorder le charme à la magie de ma mère.",
+        questReady: [
+          "Tu rapportes le froid des douves sur toi ; je le sens d'ici. (Elle pose les mains sur le grimoire déchiré, ferme les yeux, murmure quelques mots.) Voilà — Revelio est accordé. Tends ta baguette.",
+          "C'est fait. Tu connais le charme. Hors d'un combat, il dissipera le brouillard autour de toi et fera briller sur ta carte ce qui se cache ; face à une créature, il t'en dévoilera tous les secrets d'un seul coup. Sers-t'en pour retrouver les pages de ma mère — et reviens : il faut que je te dise où elle les a dissimulées."
+        ]
+      },
+      manon_grimoire: {
+        questOffer: [
+          "J'ai compris ce que ma mère a fait du grimoire. Elle ne l'a pas seulement déchiré : elle a dispersé les pages dans le château et les a dissimulées par sortilège. Comme elle avait cousu la photographie dans la doublure de la malle — une vérité qu'il faut mériter de trouver.",
+          "Cinq pages. Je les situe sur cinq étages : le deuxième, le troisième, le cinquième, le septième et le neuvième. Lance Revelio en chemin — le brouillard s'écartera et la page brillera sur ta carte. Fouille alors la salle pour la ramasser.",
+          "Rapporte-les moi toutes les cinq. Nous reconstituerons le grimoire ensemble — et je saurai enfin si ma mère m'a légué une sorcière, ou seulement une menteuse de plus."
+        ],
+        questActive: "Combien de pages, déjà ? (Elle range les feuillets retrouvés dans un linge propre.) N'oublie pas Revelio — sans lui, tu passeras devant sans rien voir. Deuxième, troisième, cinquième, septième, neuvième étage.",
+        questReady: [
+          "Les cinq pages. Elles sont toutes là. (Sa voix tremble.) Viens — j'ai dressé un établi près de la fenêtre. Nous allons les assembler, et je verrai enfin le visage que ma mère voulait me laisser."
         ]
       }
     }
@@ -1046,4 +1077,36 @@ function getRandomAmbientNpcsForFloor(floor) {
     (n.minFloor === undefined || floor >= n.minFloor) &&
     (n.maxFloor === undefined || n.maxFloor === null || floor <= n.maxFloor)
   );
+}
+
+// ── Indices de pages de grimoire (fantômes lore) ─────────────
+// Pendant l'Acte II de Manon, les fantômes lore peuvent lâcher une
+// réplique-blague signalant un étage où traîne une page non collectée.
+// Cf. .claude/plans/manon-grimoire-pages.md §7b.
+const _PAGE_HINT_LINES = [
+  "Tiens, j'y pense — un feuillet couvert de givre traîne au {N}ᵉ étage. Je l'aurais bien ramassé… mais, vous savez, les mains. Tout le drame du métier de fantôme.",
+  "On gèle, au {N}ᵉ étage. Et au beau milieu du courant d'air, un bout de parchemin gribouillé qui refuse de prendre la poussière. Suspect, non ? Allez-y voir — moi, je traverse, ça ne compte pas.",
+  "J'ai vu une page errer au {N}ᵉ étage, posée là comme si elle attendait quelqu'un. J'ai tenté d'en corner le coin : ma main est passée au travers. Quatre siècles que ça m'agace.",
+  "Si vous cherchez du papier givré — et qui n'en cherche pas ? — le {N}ᵉ étage en cache un morceau. Je le surveille pour vous. Enfin, « surveiller »… je flotte au-dessus en soupirant, surtout."
+];
+
+// Réplique-blague d'indice pour un étage donné (variante seedée par étage).
+function _pageHintLine(floor) {
+  const v = _PAGE_HINT_LINES[floor % _PAGE_HINT_LINES.length];
+  return v.replace('{N}', floor);
+}
+
+// Étage d'une page de grimoire encore non collectée à signaler, ou null.
+// Garde : préambule `manon_revelio` rendu ET collecte `manon_grimoire`
+// en cours. Renvoie l'étage porteur le plus bas non encore collecté.
+function _pendingPageHintFloor() {
+  if (typeof completedQuests === 'undefined'
+      || !completedQuests.has('manon_revelio')) return null;
+  if (typeof activeQuests === 'undefined'
+      || !activeQuests.some(q => q.id === 'manon_grimoire')) return null;
+  if (typeof GRIMOIRE_PAGES === 'undefined') return null;
+  const owned = (typeof player !== 'undefined' && Array.isArray(player.grimoirePages))
+    ? player.grimoirePages : [];
+  const pending = GRIMOIRE_PAGES.filter(p => !owned.includes(p.id));
+  return pending.length ? pending[0].floor : null;
 }

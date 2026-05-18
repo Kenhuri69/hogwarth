@@ -76,6 +76,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'LOCATIONS',          source: 'data.js',         kind: 'obj' },
     { name: 'CELL',               source: 'data.js',         kind: 'obj' },
     { name: 'MAP_W',              source: 'data.js',         kind: 'obj' },
+    { name: 'GRIMOIRE_PAGES',     source: 'data.js',         kind: 'obj' },
     { name: 'NPCS',               source: 'npcs.js',         kind: 'obj' },
     { name: 'FLOOR_THEMES',       source: 'floor-themes.js', kind: 'obj' },
     { name: 'getFloorTheme',      source: 'floor-themes.js', kind: 'fn'  },

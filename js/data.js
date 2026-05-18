@@ -176,7 +176,7 @@ const SPELLS = [
   // ── Sorts intermédiaires ─────────────────────────────────────
   { name:"Lumos Maxima",      icon:"💡",   desc:"Éclat aveuglant (12 dégâts + stun)", cost:8,  effect:"stun",    element:"lumière",  power:12 },
   { name:"Aguamenti",         icon:"💧",   desc:"Jet d'eau (10 dégâts, -2 DEF)",      cost:7,  effect:"burn",    element:"glace",    power:10 },
-  { name:"Bombarda",          icon:"💥",   desc:"Explosion (20 dégâts tous ennemis)", cost:15, effect:"burn",    element:"feu",      power:20 },
+  { name:"Bombarda",          icon:"💥",   desc:"Explosion : 20 dégâts + éclaboussure sur les autres ennemis", cost:15, effect:"burn",    element:"feu",      power:20, splash:true },
   { name:"Riddikulus",        icon:"🤡",   desc:"Neutralise les créatures du chaos",  cost:6,  effect:"stun",    element:"lumière",  power:8  },
   { name:"Alohomora",         icon:"🔓",   desc:"Vole une grosse bourse de Gallions", cost:5,  effect:"steal",   power:20 },
   { name:"Patronum",          icon:"✨",   desc:"Patronus : 18 dégâts anti-Détraqueur", cost:12, effect:"burn",  element:"lumière",  power:18 },
@@ -192,6 +192,12 @@ const SPELLS = [
   // (rejoint un étage déjà visité, case libre random).
   // Coût hors combat : `outOfCombatCost` (38 PM). Voir js/teleport.js.
   { name:"Portus",            icon:"🌀",   desc:"Téléportation tactique (combat ou hors combat)", cost:52, outOfCombatCost:38, effect:"teleport", power:0 },
+  // ── Sort utilitaire — Révélation (Revelio) ───────────────────
+  // Enseigné par la quête « Le vrai du faux » de Manon (Acte II).
+  // Double usage : hors combat dissipe le brouillard alentour et
+  // dévoile les pages dissimulées ; en combat révèle d'un coup le
+  // panneau d'info du monstre ciblé. Voir .claude/plans/manon-grimoire-pages.md.
+  { name:"Revelio",           icon:"🔎",   desc:"Dévoile : le brouillard et les pages cachées (hors combat) ou les secrets d'un monstre (combat)", cost:2, effect:"reveal", element:"lumière", power:0 },
   // ── Sorts de Vampirisme ─────────────────────────────────────
   { name:"Sanguini",          icon:"🩸",   desc:"Vol de vie (12 dégâts, +6 PV)",      cost:8,  effect:"lifesteal", element:"ténèbres", power:12 },
   { name:"Vampyrus",          icon:"🦇",   desc:"Drain magique (18 dégâts, +9 PV)",   cost:14, effect:"lifesteal", element:"ténèbres", power:18 },
@@ -206,6 +212,18 @@ const SPELLS = [
   { name:"Sectumsempra Imperius", icon:"🩸", desc:"Saignement lourd + asservit la cible (2 tours)",          cost:24, effect:"imperius", element:"ténèbres", power:20 },
   { name:"Legilimens",            icon:"👁️", desc:"Lit l'esprit ennemi : annule la prochaine capacité",      cost:18, effect:"legilimens", power:0 },
   { name:"Récolte Magique",       icon:"🌾", desc:"Restaure tout le groupe · or du combat majoré (+50%)",    cost:26, effect:"recolte", power:0 },
+  // ── Sorts de zone (AoE) — un mode distinct par élément + soin ──
+  // Modes : nappe (glace), chaîne (foudre), vague (lumière), drain
+  // (ténèbres), fauchage (physique). Voir .claude/plans/aoe-spells.md.
+  // Dégâts : base = power + mag/magDiv + stat2/stat2Div (cf. aoeBaseDamage).
+  // magDiv/stat2Div varient par sort pour l'équilibrage — un sort à gros
+  // rider (gel, vol de vie) scale plus doucement. Défaut 3/3.
+  { name:"Glacius Tempête",   icon:"🌨️", desc:"Blizzard : dégâts de glace à tous les ennemis + gel",            cost:16, effect:"aoe_field",  element:"glace",    power:12, stat2:"int", magDiv:3, stat2Div:3 },
+  { name:"Fulgur Catena",     icon:"⚡",  desc:"Arc électrique : chaîne d'ennemi en ennemi (dégâts décroissants)", cost:15, effect:"aoe_chain",  element:"foudre",   power:18, stat2:"agi", magDiv:2, stat2Div:4 },
+  { name:"Lux Aeterna",       icon:"🌟",  desc:"Onde de lumière : frappe tous les ennemis (×1,5 morts-vivants)",  cost:17, effect:"aoe_wave",   element:"lumière",  power:15, bonusVsUndead:1.5, stat2:"int", magDiv:2, stat2Div:4 },
+  { name:"Nox Vorax",         icon:"🌑",  desc:"Vague obscure : dégâts à tous + draine la vie pour le lanceur",   cost:18, effect:"aoe_drain",  element:"ténèbres", power:14, stat2:"end", magDiv:3, stat2Div:3 },
+  { name:"Diffindo Maxima",   icon:"⚔️", desc:"Fauchage : tranche la cible et les ennemis adjacents",            cost:14, effect:"aoe_cleave", element:"physique", power:18, stat2:"str", magDiv:3, stat2Div:2 },
+  { name:"Vulnera Sanentur",  icon:"💗",  desc:"Chant de guérison : soigne tout le groupe",                       cost:16, effect:"heal_aoe",  power:22 },
 ];
 
 // Catégorie d'un sort pour le filtre de la modale Sorts. Soutien et
@@ -215,9 +233,36 @@ function spellCategory(spell) {
   if (!spell) return 'utilitaire';
   const e = spell.effect;
   if (e === 'heal' || e === 'support_regen' || e === 'support_regen_aoe' || e === 'shield'
-      || e === 'patronus_maxima' || e === 'recolte') return 'soutien';
-  if (e === 'disarm' || e === 'steal' || e === 'teleport' || e === 'legilimens') return 'utilitaire';
+      || e === 'patronus_maxima' || e === 'recolte' || e === 'heal_aoe') return 'soutien';
+  if (e === 'disarm' || e === 'steal' || e === 'teleport' || e === 'legilimens'
+      || e === 'reveal') return 'utilitaire';
   return spell.element || 'utilitaire';
+}
+
+// ── Pages du grimoire de givre de Sandrine (quête manon_grimoire) ──
+// Cinq feuillets dispersés et dissimulés, un par étage porteur. Le
+// joueur les dévoile avec Revelio puis les ramasse en fouillant. Une
+// fois les cinq réunis, Manon reconstitue le grimoire (établi de
+// fusion). Cf. .claude/plans/manon-grimoire-pages.md.
+const GRIMOIRE_PAGES = [
+  { id: "page_grimoire_1", name: "Page de garde", icon: "📄", floor: 2,
+    lore: "« À ma fille, si ces lignes te trouvent : le froid n'est pas l'absence de chaleur. C'est une chaleur qui a appris la patience. » — S." },
+  { id: "page_grimoire_2", name: "Le souffle de givre", icon: "📄", floor: 3,
+    lore: "Premiers exercices : givrer la rosée sans la briser. Sandrine a noté en marge : « recommencé onze fois — la onzième tient »." },
+  { id: "page_grimoire_3", name: "La rosée durcie", icon: "📄", floor: 5,
+    lore: "Le gel comme armure et non comme arme. L'encre y est pâlie, comme soufflée par un hiver ancien." },
+  { id: "page_grimoire_4", name: "Le miroir de glace", icon: "📄", floor: 7,
+    lore: "Une page presque entièrement raturée — sauf une ligne : « ce qu'on gèle, on le garde ; ce qu'on garde, on finit par devoir rendre »." },
+  { id: "page_grimoire_5", name: "La tempête apprivoisée", icon: "📄", floor: 9,
+    lore: "La dernière page : le tracé complet du grand sortilège de blizzard. Sous le schéma, deux mots tremblés : « pour toi »." }
+];
+
+// Étages porteurs d'une page (dérivé — source de vérité GRIMOIRE_PAGES).
+const PAGE_FLOORS = GRIMOIRE_PAGES.map(p => p.floor);
+
+// Retourne la page définie pour un étage donné, ou null.
+function getGrimoirePageForFloor(floor) {
+  return GRIMOIRE_PAGES.find(p => p.floor === floor) || null;
 }
 
 const ITEMS = [
@@ -378,6 +423,13 @@ const ITEMS = [
   { id:"livre_maledictus", name:"Grimoire des Maudits",          icon:"📓", desc:"Apprend Maledictus",            type:"spellbook", spell:"Maledictus",    price:220 },
   { id:"livre_crucio",     name:"Sortilèges Impardonnables, T.II", icon:"📕", desc:"Apprend Crucio (sort interdit)", type:"spellbook", spell:"Crucio",     price:450 },
   { id:"livre_morsmordre", name:"Marque des Ténèbres",            icon:"📕", desc:"Apprend Morsmordre",            type:"spellbook", spell:"Morsmordre",    price:600 },
+  // ── Grimoires de zone (sorts AoE) ────────────────────────────
+  { id:"livre_glacius_tempete", name:"Tempête de Givre",          icon:"📘", desc:"Apprend Glacius Tempête — zone de glace + gel",       type:"spellbook", spell:"Glacius Tempête",  price:340 },
+  { id:"livre_diffindo_maxima", name:"L'Art de la Lame Large",    icon:"📓", desc:"Apprend Diffindo Maxima — fauchage des ennemis adjacents", type:"spellbook", spell:"Diffindo Maxima", price:320 },
+  { id:"livre_vulnera",         name:"Chant des Guérisseurs",     icon:"📗", desc:"Apprend Vulnera Sanentur — soin de tout le groupe",   type:"spellbook", spell:"Vulnera Sanentur", price:300 },
+  { id:"livre_fulgur_catena",   name:"Chaîne d'Éclairs",          icon:"📙", desc:"Apprend Fulgur Catena — arc électrique en chaîne",    type:"spellbook", spell:"Fulgur Catena",    price:360 },
+  { id:"livre_lux_aeterna",     name:"Lumière Éternelle",         icon:"📒", desc:"Apprend Lux Aeterna — onde de lumière sur la zone",   type:"spellbook", spell:"Lux Aeterna",      price:380 },
+  { id:"livre_nox_vorax",       name:"Nuit Dévorante",            icon:"📕", desc:"Apprend Nox Vorax — vague obscure drainante",        type:"spellbook", spell:"Nox Vorax",        price:420 },
   // Sort utilitaire premium (cf. .claude/plans/teleportation-spell.md).
   { id:"livre_portus",     name:"Traité de la Téléportation",     icon:"📘", desc:"Apprend Portus — téléportation tactique (combat + hors combat)", type:"spellbook", spell:"Portus", price:2800 },
   // ── Herbes (ingrédients de potion) — type:"herb" ─────────────

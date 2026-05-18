@@ -366,6 +366,238 @@ def recolte_magique():
     return out
 
 
+# ── Sorts de zone (AoE) — version « zone » du sort élémentaire ─
+
+# ── Glacius Tempête : blizzard — bourrasques + flocons multiples ─
+def glacius_tempete():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#16325e"), 0.46,
+                                               [44, 34, 24, 14]))
+    out = Image.alpha_composite(out, radial_base("#e6f4ff", "#6fb4e4", "#16345f"))
+
+    storm = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(storm)
+    ice = hex_to_rgb("#eaf8ff") + (235,)
+    ice_d = hex_to_rgb("#9bd6f0") + (205,)
+    # bourrasques : arcs spiralés concentriques
+    for rad, a0, a1 in ((48, 200, 350), (36, 20, 175), (26, 235, 380)):
+        d.arc([CENTER - rad, CENTER - rad, CENTER + rad, CENTER + rad],
+              a0, a1, fill=ice_d, width=3)
+
+    def flake(cx, cy, arm):
+        for i in range(6):
+            ang = i * math.pi / 3
+            ux, uy = math.cos(ang), math.sin(ang)
+            d.line([(cx, cy), (cx + ux * arm, cy + uy * arm)], fill=ice, width=2)
+            for frac in (0.6,):
+                bx, by = cx + ux * arm * frac, cy + uy * arm * frac
+                for sign in (-1, 1):
+                    ba = ang + sign * math.pi / 3
+                    d.line([(bx, by), (bx + math.cos(ba) * arm * 0.28,
+                                       by + math.sin(ba) * arm * 0.28)],
+                           fill=ice_d, width=1)
+    flake(CENTER, CENTER, 17)
+    flake(CENTER - 31, CENTER - 25, 9)
+    flake(CENTER + 30, CENTER + 27, 9)
+    storm = storm.filter(ImageFilter.GaussianBlur(0.5))
+    out = Image.alpha_composite(out, storm)
+    out = Image.alpha_composite(out, sparks((255, 255, 255, 235), 24, 0.42, 201))
+    return out
+
+
+# ── Fulgur Catena : éclairs en chaîne — noeuds reliés par des arcs ─
+def fulgur_catena():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#2e2400"), 0.46,
+                                               [42, 32, 22, 14]))
+    out = Image.alpha_composite(out, radial_base("#fff6c8", "#3a4576", "#0e1228"))
+
+    glow = hex_to_rgb("#ffe96b") + (215,)
+    core = hex_to_rgb("#fffce6") + (255,)
+    nodes = [(26, 38), (CENTER, CENTER + 2), (102, 88)]
+
+    def zig(p, q):
+        mx, my = (p[0] + q[0]) / 2, (p[1] + q[1]) / 2
+        return [p, (mx + 9, my - 11), (mx - 7, my + 9), q]
+
+    arc = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    da = ImageDraw.Draw(arc)
+    for a, b in ((nodes[0], nodes[1]), (nodes[1], nodes[2])):
+        da.line(zig(a, b), fill=glow, width=5, joint="curve")
+    arc = arc.filter(ImageFilter.GaussianBlur(1.7))
+    out = Image.alpha_composite(out, arc)
+
+    sharp = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    ds = ImageDraw.Draw(sharp)
+    for a, b in ((nodes[0], nodes[1]), (nodes[1], nodes[2])):
+        ds.line(zig(a, b), fill=core, width=2, joint="curve")
+    for nx, ny in nodes:
+        ds.ellipse([nx - 9, ny - 9, nx + 9, ny + 9],
+                   outline=glow, width=2)
+        ds.ellipse([nx - 5, ny - 5, nx + 5, ny + 5], fill=core)
+    out = Image.alpha_composite(out, sharp)
+    out = Image.alpha_composite(out, sparks((255, 250, 200, 240), 18, 0.38, 202))
+    return out
+
+
+# ── Lux Aeterna : onde de lumière — anneaux concentriques + étoile ─
+def lux_aeterna():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#6a4a08"), 0.46,
+                                               [46, 36, 26, 16]))
+    out = Image.alpha_composite(out, radial_base("#fffdf2", "#ffe07a", "#9a6a14"))
+
+    wave = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dw = ImageDraw.Draw(wave)
+    for i, rad in enumerate((20, 33, 46)):
+        a = max(150, 245 - i * 45)
+        dw.ellipse([CENTER - rad, CENTER - rad, CENTER + rad, CENTER + rad],
+                   outline=hex_to_rgb("#e8a52e") + (a,), width=3)
+        dw.ellipse([CENTER - rad + 3, CENTER - rad + 3,
+                    CENTER + rad - 3, CENTER + rad - 3],
+                   outline=hex_to_rgb("#fffbe6") + (a,), width=2)
+    wave = wave.filter(ImageFilter.GaussianBlur(0.6))
+    out = Image.alpha_composite(out, wave)
+
+    star = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dd = ImageDraw.Draw(star)
+    gold = hex_to_rgb("#fff6c8") + (255,)
+    r_in, r_out = SIZE * 0.08, SIZE * 0.24
+    for i in range(8):
+        ang = i * math.pi / 4
+        long = r_out if i % 2 == 0 else r_out * 0.58
+        half = 0.16
+        dd.polygon([
+            (CENTER + math.cos(ang) * long, CENTER + math.sin(ang) * long),
+            (CENTER + math.cos(ang - half) * r_in,
+             CENTER + math.sin(ang - half) * r_in),
+            (CENTER + math.cos(ang + half) * r_in,
+             CENTER + math.sin(ang + half) * r_in),
+        ], fill=gold)
+    cr = SIZE * 0.075
+    dd.ellipse([CENTER - cr, CENTER - cr, CENTER + cr, CENTER + cr],
+               fill=hex_to_rgb("#fffef6") + (255,))
+    star = star.filter(ImageFilter.GaussianBlur(0.4))
+    out = Image.alpha_composite(out, star)
+    out = Image.alpha_composite(out, sparks((255, 252, 224, 240), 16, 0.34, 203))
+    return out
+
+
+# ── Nox Vorax : vague obscure — vortex spiralé + gueule dévorante ─
+def nox_vorax():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#1a0a2e"), 0.46,
+                                               [46, 36, 26, 16]))
+    out = Image.alpha_composite(out, radial_base("#c89aff", "#4a2470", "#0c0618"))
+
+    vortex = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dv = ImageDraw.Draw(vortex)
+    for spin in (0.0, math.pi):
+        pts = []
+        for i in range(64):
+            t = i / 63
+            ang = spin + t * 3.0 * math.pi
+            rad = 4 + (1 - t) * 42
+            pts.append((CENTER + math.cos(ang) * rad,
+                        CENTER + math.sin(ang) * rad))
+        dv.line(pts, fill=hex_to_rgb("#9a6ad0") + (205,), width=3, joint="curve")
+    vortex = vortex.filter(ImageFilter.GaussianBlur(0.7))
+    out = Image.alpha_composite(out, vortex)
+
+    maw = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dm = ImageDraw.Draw(maw)
+    dm.ellipse([CENTER - 22, CENTER - 22, CENTER + 22, CENTER + 22],
+               outline=hex_to_rgb("#b890ff") + (220,), width=2)
+    for rad, col in ((20, hex_to_rgb("#1a0a30") + (255,)),
+                     (12, hex_to_rgb("#050208") + (255,))):
+        dm.ellipse([CENTER - rad, CENTER - rad, CENTER + rad, CENTER + rad],
+                   fill=col)
+    maw = maw.filter(ImageFilter.GaussianBlur(0.6))
+    out = Image.alpha_composite(out, maw)
+    out = Image.alpha_composite(out, sparks((200, 160, 255, 220), 16, 0.36, 204))
+    return out
+
+
+# ── Diffindo Maxima : fauchage — trail de fauchée + entailles ─────
+def diffindo_maxima():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#3a1212"), 0.46,
+                                               [42, 32, 22, 14]))
+    out = Image.alpha_composite(out, radial_base("#fdeee8", "#a86f66", "#2a1410"))
+
+    # arc de fauchée reliant les pointes des entailles
+    trail = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dt = ImageDraw.Draw(trail)
+    dt.arc([CENTER - 50, CENTER - 50, CENTER + 50, CENTER + 50], 300, 60,
+           fill=hex_to_rgb("#ff8a66") + (160,), width=10)
+    trail = trail.filter(ImageFilter.GaussianBlur(2.2))
+    out = Image.alpha_composite(out, trail)
+
+    # 3 entailles en éventail depuis un point à gauche (le coup faucheur)
+    origin = (CENTER - 44, CENTER)
+    tips = [(CENTER + 46, CENTER - 34), (CENTER + 52, CENTER + 2),
+            (CENTER + 44, CENTER + 38)]
+    glow = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dg = ImageDraw.Draw(glow)
+    for t in tips:
+        dg.line([origin, t], fill=hex_to_rgb("#ff7a5a") + (210,), width=9)
+    glow = glow.filter(ImageFilter.GaussianBlur(1.8))
+    out = Image.alpha_composite(out, glow)
+
+    sharp = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    ds = ImageDraw.Draw(sharp)
+    steel = hex_to_rgb("#fff6f0") + (255,)
+    for i, t in enumerate(tips):
+        ds.line([origin, t], fill=steel, width=4 if i == 1 else 3)
+    out = Image.alpha_composite(out, sharp)
+    out = Image.alpha_composite(out, sparks((255, 240, 230, 235), 14, 0.34, 205))
+    return out
+
+
+# ── Vulnera Sanentur : soin de groupe — trois croix de guérison ───
+def vulnera_sanentur():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#1c6a3a"), 0.46,
+                                               [46, 36, 26, 16]))
+    out = Image.alpha_composite(out, radial_base("#eaffe8", "#5fce86", "#1a5630"))
+
+    rays = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dr = ImageDraw.Draw(rays)
+    gold = hex_to_rgb("#fff0b0") + (185,)
+    r_in, r_out = SIZE * 0.14, SIZE * 0.44
+    for i in range(10):
+        ang = i * 2 * math.pi / 10
+        half = 0.085
+        dr.polygon([
+            (CENTER + math.cos(ang) * r_out, CENTER + math.sin(ang) * r_out),
+            (CENTER + math.cos(ang - half) * r_in,
+             CENTER + math.sin(ang - half) * r_in),
+            (CENTER + math.cos(ang + half) * r_in,
+             CENTER + math.sin(ang + half) * r_in),
+        ], fill=gold)
+    rays = rays.filter(ImageFilter.GaussianBlur(0.8))
+    out = Image.alpha_composite(out, rays)
+
+    crosses = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dc = ImageDraw.Draw(crosses)
+    edge = hex_to_rgb("#e8c45a") + (255,)
+    core = hex_to_rgb("#ffffff") + (255,)
+
+    def cross(cx, cy, arm, th):
+        for col, pad in ((edge, 2), (core, 0)):
+            dc.rectangle([cx - th - pad, cy - arm - pad,
+                          cx + th + pad, cy + arm + pad], fill=col)
+            dc.rectangle([cx - arm - pad, cy - th - pad,
+                          cx + arm + pad, cy + th + pad], fill=col)
+    cross(CENTER - 29, CENTER + 21, 9, 4)
+    cross(CENTER + 29, CENTER + 21, 9, 4)
+    cross(CENTER, CENTER - 8, 19, 8)
+    crosses = crosses.filter(ImageFilter.GaussianBlur(0.4))
+    out = Image.alpha_composite(out, crosses)
+    out = Image.alpha_composite(out, sparks((255, 252, 224, 240), 16, 0.34, 206))
+    return out
+
+
 def main():
     os.makedirs(SPELLS_DIR, exist_ok=True)
     for slug, fn in (("glacius", glacius),
@@ -375,7 +607,13 @@ def main():
                      ("patronus_maxima", patronus_maxima),
                      ("sectumsempra_imperius", sectumsempra_imperius),
                      ("legilimens", legilimens),
-                     ("recolte_magique", recolte_magique)):
+                     ("recolte_magique", recolte_magique),
+                     ("glacius_tempete", glacius_tempete),
+                     ("fulgur_catena", fulgur_catena),
+                     ("lux_aeterna", lux_aeterna),
+                     ("nox_vorax", nox_vorax),
+                     ("diffindo_maxima", diffindo_maxima),
+                     ("vulnera_sanentur", vulnera_sanentur)):
         path = os.path.join(SPELLS_DIR, slug + ".png")
         fn().save(path, "PNG", optimize=True)
         print(f"Wrote {path} ({os.path.getsize(path)} bytes)")

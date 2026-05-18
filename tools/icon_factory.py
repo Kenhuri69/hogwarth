@@ -385,6 +385,75 @@ RECIPES: Dict[str, Recipe] = {
         ],
     ),
 
+    # Grimoires de zone (AoE) — variantes épiques des livres de base :
+    # même emblème, teintes plus profondes, halo de rareté supérieur.
+    "livre_glacius_tempete": Recipe(
+        id="livre_glacius_tempete", name="Tempête de Givre", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 24,  58, 108), "pages": (224, 232, 240),
+               "spine": ( 14,  38,  76), "gilt":  (180, 222, 248)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 12,  30,  58)},
+            {"kind": "symbol", "region": "cover", "shape": "snowflake",
+             "color": (238, 250, 255), "size": 132},
+        ],
+    ),
+    "livre_fulgur_catena": Recipe(
+        id="livre_fulgur_catena", name="Chaîne de Foudre", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 22,  26,  56), "pages": (228, 210, 168),
+               "spine": ( 12,  14,  34), "gilt":  (245, 210, 110)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": (  8,  10,  24)},
+            {"kind": "symbol", "region": "cover", "shape": "lightning",
+             "color": (255, 236, 128), "size": 134},
+        ],
+    ),
+    "livre_lux_aeterna": Recipe(
+        id="livre_lux_aeterna", name="Lumière Éternelle", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": (190, 134,  36), "pages": (244, 228, 184),
+               "spine": (124,  84,  16), "gilt":  (255, 236, 150)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": (118,  78,  16)},
+            {"kind": "symbol", "region": "cover", "shape": "sun",
+             "color": (255, 244, 188), "size": 134},
+        ],
+    ),
+    "livre_nox_vorax": Recipe(
+        id="livre_nox_vorax", name="Nuit Dévorante", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 28,  16,  40), "pages": (200, 180, 148),
+               "spine": ( 16,   8,  26), "gilt":  (164, 128, 200)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 10,   6,  16)},
+            {"kind": "symbol", "region": "cover", "shape": "bat",
+             "color": (206, 174, 224), "size": 142},
+        ],
+    ),
+    "livre_diffindo_maxima": Recipe(
+        id="livre_diffindo_maxima", name="Lames Tourbillonnantes", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 58,  50,  54), "pages": (208, 184, 148),
+               "spine": ( 34,  28,  32), "gilt":  (198, 110,  84)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 24,  20,  22)},
+            {"kind": "symbol", "region": "cover", "shape": "fang",
+             "color": (240, 224, 208), "size": 136},
+        ],
+    ),
+    "livre_vulnera": Recipe(
+        id="livre_vulnera", name="Vulnera Sanentur", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 32,  86,  56), "pages": (228, 222, 196),
+               "spine": ( 18,  54,  34), "gilt":  (236, 206, 120)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 14,  44,  28)},
+            {"kind": "symbol", "region": "cover", "shape": "cross",
+             "color": (244, 234, 206), "size": 126},
+        ],
+    ),
+
     # Amulets / pendants
     "amulette": Recipe(
         id="amulette", name="Amulette du Phénix", rarity="rare", material="metal",

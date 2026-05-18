@@ -8723,8 +8723,337 @@ async function scenarioMonsterCombatInfo() {
   await browser.close();
 }
 
+// ── Scénario : pages du grimoire (Manon Acte II) ─────────────
+
+async function scenarioGrimoirePages() {
+  console.log('\n── Scénario : pages du grimoire (Manon Acte II) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — sort Revelio + quêtes + pages bien définis.
+  const t1 = await page.evaluate(() => {
+    const spell = SPELLS.find(s => s.name === 'Revelio');
+    const qRev  = getQuestTemplate('manon_revelio');
+    const qGri  = getQuestTemplate('manon_grimoire');
+    return {
+      spellOk:   !!spell && spell.effect === 'reveal',
+      revOk:     !!qRev && qRev.prereq === 'manon_pardon' && qRev.reward.spell === 'Revelio',
+      griOk:     !!qGri && qGri.prereq === 'manon_revelio',
+      pagesObj:  !!qGri && qGri.objectives[0].type === 'pages' && qGri.objectives[0].amount === 5,
+      pageCount: (typeof GRIMOIRE_PAGES !== 'undefined') ? GRIMOIRE_PAGES.length : 0,
+      floors:    (typeof PAGE_FLOORS !== 'undefined') ? PAGE_FLOORS.slice() : []
+    };
+  });
+  console.log('  T1 data :', t1);
+  assert(t1.spellOk,  'sort Revelio absent ou mauvais effet');
+  assert(t1.revOk,    'manon_revelio mal défini (prereq/récompense)');
+  assert(t1.griOk,    'manon_grimoire mal défini (prereq)');
+  assert(t1.pagesObj, 'manon_grimoire doit avoir un objectif type pages ×5');
+  assert(t1.pageCount === 5, `5 pages attendues, obtenu ${t1.pageCount}`);
+  assert(JSON.stringify(t1.floors) === '[2,3,5,7,9]', 'étages porteurs attendus 2,3,5,7,9');
+
+  // T2 — Revelio en combat : showMonsterCombatInfo({revealed}) force les 3 paliers.
+  await startDummyFight(page, { hp: 50 });
+  const t2 = await page.evaluate(() => {
+    monsterKills = {};
+    showMonsterCombatInfo(0, { revealed: true });
+    const c = document.getElementById('monster-info-content');
+    return {
+      locked:   c.querySelectorAll('.mi-locked').length,
+      hasStats: !!c.querySelector('.bestiary-stat-grid'),
+      badge:    c.innerHTML.includes('Révélé par Revelio')
+    };
+  });
+  console.log('  T2 combat :', t2);
+  assert(t2.locked === 0,  'Revelio doit déverrouiller les 3 paliers (0 kill)');
+  assert(t2.hasStats,      'stats doivent être révélées par Revelio');
+  assert(t2.badge,         'badge « Révélé par Revelio » attendu');
+
+  // T3 — placement de page : aucune sans quête, posée avec la quête active.
+  const t3 = await page.evaluate(() => {
+    inBattle = false;
+    pagePlacements = new Map();
+    generateDungeon(3);
+    const withoutQuest = pagePlacements.has(3);
+    acceptQuest('manon_grimoire');
+    generateDungeon(3);
+    const withQuest = pagePlacements.has(3);
+    generateDungeon(4);            // étage non porteur
+    return { withoutQuest, withQuest, floor4: pagePlacements.has(4) };
+  });
+  console.log('  T3 place :', t3);
+  assert(!t3.withoutQuest, 'pas de page sans quête active');
+  assert(t3.withQuest,     'page non posée alors que la quête est active');
+  assert(!t3.floor4,       'aucune page sur un étage non porteur');
+
+  // T4 — ramassage : révélation requise, puis collecte → besace + quête.
+  const t4 = await page.evaluate(() => {
+    generateDungeon(3);            // quête active → page posée
+    currentFloor = 3;
+    const [px, py] = pagePlacements.get(3).split(',').map(Number);
+    playerX = px; playerY = py;
+    revealedPages = new Set();
+    player.grimoirePages = [];
+    const collectedUnrevealed = _tryCollectPage();   // doit échouer
+    revealedPages.add(3);
+    const collected = _tryCollectPage();             // doit réussir
+    const again     = _tryCollectPage();             // pas de doublon
+    const q = activeQuests.find(x => x.id === 'manon_grimoire');
+    return {
+      collectedUnrevealed,
+      collected, again,
+      pages:   player.grimoirePages.slice(),
+      qProg:   q && q.objectives[0].progress
+    };
+  });
+  console.log('  T4 collect:', t4);
+  assert(!t4.collectedUnrevealed, 'une page non révélée ne doit pas être ramassée');
+  assert(t4.collected,            'la page révélée doit être ramassée');
+  assert(!t4.again,               'une page déjà ramassée ne se reprend pas');
+  assert(t4.pages.includes('page_grimoire_2'), 'page de l\'étage 3 attendue (page_grimoire_2)');
+  assert(t4.qProg === 1,          'progression de quête attendue à 1');
+
+  // T5 — 5 pages réunies → l'objectif pages se complète.
+  const t5 = await page.evaluate(() => {
+    player.grimoirePages = GRIMOIRE_PAGES.map(p => p.id);
+    _refreshObjectives();
+    const q = activeQuests.find(x => x.id === 'manon_grimoire');
+    return { prog: q.objectives[0].progress, done: q.objectives[0].completed };
+  });
+  console.log('  T5 quête  :', t5);
+  assert(t5.prog === 5, 'progression attendue à 5');
+  assert(t5.done,       'objectif pages doit être complété à 5 pages');
+
+  // T6 — round-trip save : placements / révélations / besace conservés.
+  const t6 = await page.evaluate(() => {
+    pagePlacements = new Map([[3, '5,5'], [7, '8,8']]);
+    revealedPages  = new Set([3]);
+    player.grimoirePages = ['page_grimoire_2'];
+    // JSON round-trip : reproduit le passage réel par localStorage
+    // (sinon snap.party[0] reste une référence vive sur `player`).
+    const snap = JSON.parse(JSON.stringify(_serializeState()));
+    pagePlacements = new Map();
+    revealedPages  = new Set();
+    player.grimoirePages = [];
+    _applyState(snap);
+    return {
+      placementsOk: pagePlacements.get(3) === '5,5' && pagePlacements.get(7) === '8,8',
+      revealedOk:   (revealedPages instanceof Set) && revealedPages.has(3),
+      pagesOk:      Array.isArray(player.grimoirePages)
+                    && player.grimoirePages.includes('page_grimoire_2')
+    };
+  });
+  console.log('  T6 save   :', t6);
+  assert(t6.placementsOk, 'pagePlacements doit survivre au round-trip save');
+  assert(t6.revealedOk,   'revealedPages doit rester un Set après _applyState');
+  assert(t6.pagesOk,      'player.grimoirePages doit survivre au round-trip save');
+
+  // T7 — indices fantômes : étage signalé tant qu'une page manque.
+  const t7 = await page.evaluate(() => {
+    completedQuests.add('manon_revelio');   // préambule rendu
+    // manon_grimoire est actif (accepté en T3, restauré en T6).
+    player.grimoirePages = [];
+    const pendingFloor = _pendingPageHintFloor();
+    const line         = _pageHintLine(pendingFloor);
+    player.grimoirePages = GRIMOIRE_PAGES.map(p => p.id);
+    const doneFloor    = _pendingPageHintFloor();
+    completedQuests.delete('manon_revelio');
+    player.grimoirePages = [];
+    const noPreamble   = _pendingPageHintFloor();
+    return {
+      pendingFloor,
+      lineHasFloor: typeof line === 'string' && line.includes(String(pendingFloor)),
+      doneFloor, noPreamble
+    };
+  });
+  console.log('  T7 indice :', t7);
+  assert(t7.pendingFloor === 2,  'indice attendu sur l\'étage 2 (1re page non collectée)');
+  assert(t7.lineHasFloor,        'la réplique d\'indice doit citer le numéro d\'étage');
+  assert(t7.doneFloor === null,  'aucun indice une fois les 5 pages collectées');
+  assert(t7.noPreamble === null, 'aucun indice sans le préambule manon_revelio rendu');
+
+  // T8 — établi de fusion : 5 pages → grimoire reconstitué, quête remise.
+  const t8 = await page.evaluate(() => {
+    player.grimoirePages = GRIMOIRE_PAGES.slice(0, 4).map(p => p.id);
+    const readyAt4 = _grimoireFusionReady();
+    player.grimoirePages = GRIMOIRE_PAGES.map(p => p.id);
+    const readyAt5 = _grimoireFusionReady();
+    openFusionModal();
+    const modalShown = document.getElementById('fusion-modal').style.display === 'flex';
+    fuseGrimoire();
+    return {
+      readyAt4, readyAt5, modalShown,
+      questDone:    completedQuests.has('manon_grimoire'),
+      questGone:    !activeQuests.some(q => q.id === 'manon_grimoire'),
+      pagesEmptied: player.grimoirePages.length === 0,
+      gotGrimoire:  player.inventory.some(i => i.id === 'livre_glacius_tempete'),
+      modalClosed:  document.getElementById('fusion-modal').style.display === 'none'
+    };
+  });
+  console.log('  T8 fusion :', t8);
+  assert(!t8.readyAt4,    'la fusion ne doit pas être prête avec 4 pages');
+  assert(t8.readyAt5,     'la fusion doit être prête avec 5 pages');
+  assert(t8.modalShown,   'l\'établi de fusion ne s\'est pas affiché');
+  assert(t8.questDone,    'manon_grimoire doit passer en complétée après fusion');
+  assert(t8.questGone,    'manon_grimoire doit sortir des quêtes actives');
+  assert(t8.pagesEmptied, 'la besace de pages doit être vidée après fusion');
+  assert(t8.gotGrimoire,  'le grimoire livre_glacius_tempete doit être au sac');
+  assert(t8.modalClosed,  'l\'établi doit se fermer après la fusion');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (pages du grimoire)`);
+  }
+  console.log('  ✅ Pages du grimoire conformes');
+  await browser.close();
+}
+
+// ── Scénario : Bombarda — éclaboussure ───────────────────────
+
+async function scenarioBombardaSplash() {
+  console.log('\n── Scénario : Bombarda — éclaboussure ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 200 });
+
+  const r = await page.evaluate(() => {
+    currentBattleChar = 0;
+    const mk = (n) => ({
+      id: 'splash_dummy_' + n, name: 'Cible' + n, icon: '🎯',
+      hp: 200, currentHp: 200, atk: 0, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 0, gold: 0, abilities: [], drops: [], resist: [], weak: [],
+      statusEffects: [], desc: 'test'
+    });
+    enemyGroup.length = 0;
+    enemyGroup.push(mk(0), mk(1), mk(2));
+
+    const harry = party[0];
+    harry.mag = 16; harry.str = 12;
+    harry.sp = harry.spMax = 99;
+    shieldTurns = [0, 0]; guardTurns = [0, 0];
+
+    const bomb = SPELLS.find(s => s.name === 'Bombarda');
+    const expectSplash = Math.max(1, Math.floor(
+      bomb.power / 2 + harry.mag / 8 + harry.str / 4));
+
+    const hp = enemyGroup.map(e => e.currentHp);
+    castSpellInBattle('Bombarda', 0);
+
+    return {
+      hasSplashFlag: bomb.splash === true,
+      expectSplash,
+      primaryDelta: hp[0] - enemyGroup[0].currentHp,
+      splash1:      hp[1] - enemyGroup[1].currentHp,
+      splash2:      hp[2] - enemyGroup[2].currentHp
+    };
+  });
+  console.log('  Bombarda :', r);
+  assert(r.hasSplashFlag,                 'Bombarda doit porter splash:true');
+  assert(r.splash1 === r.expectSplash,    `éclaboussure cible 2 : attendu ${r.expectSplash}, obtenu ${r.splash1}`);
+  assert(r.splash2 === r.expectSplash,    `éclaboussure cible 3 : attendu ${r.expectSplash}, obtenu ${r.splash2}`);
+  assert(r.primaryDelta > r.expectSplash, `cible principale (${r.primaryDelta}) doit subir plus que l'éclaboussure (${r.expectSplash})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Bombarda)`);
+  }
+  console.log('  ✅ Bombarda éclaboussure conforme');
+  await browser.close();
+}
+
+// ── Scénario : sorts de zone (AoE) ───────────────────────────
+
+async function scenarioAoeSpells() {
+  console.log('\n── Scénario : sorts de zone (AoE) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+  await startDummyFight(page, { hp: 300 });
+
+  const r = await page.evaluate(() => {
+    const out = {};
+    const mk = (n) => ({
+      id: 'aoe_d' + n, name: 'C' + n, icon: '🎯',
+      hp: 500, currentHp: 500, atk: 0, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 0, gold: 0, abilities: [], drops: [], resist: [], weak: [],
+      statusEffects: [], category: 'bête', desc: 't'
+    });
+    const reset3 = () => { enemyGroup.length = 0; enemyGroup.push(mk(0), mk(1), mk(2)); };
+    const harry = party[0];
+    // Stats non nulles : la formule AoE lit MAG + une stat thématique
+    // (int/agi/end/str selon spell.stat2) — chaque stat doit peser.
+    harry.mag = 16; harry.int = 12; harry.end = 9; harry.str = 12; harry.agi = 12;
+    harry.hp = harry.hpMax = 200;
+
+    // Vague (Lux Aeterna) : dégâts égaux à tous.
+    reset3();
+    let hp = enemyGroup.map(e => e.currentHp);
+    _spellAoeWave(SPELLS.find(s => s.name === 'Lux Aeterna'), harry);
+    out.wave = enemyGroup.map((e, i) => hp[i] - e.currentHp);
+
+    // Nappe (Glacius Tempête) : dégâts à tous + gel partout.
+    reset3();
+    hp = enemyGroup.map(e => e.currentHp);
+    _spellAoeField(SPELLS.find(s => s.name === 'Glacius Tempête'), harry);
+    out.field = enemyGroup.map((e, i) => hp[i] - e.currentHp);
+    out.fieldGel = enemyGroup.every(e => (e.statusEffects || []).some(s => s.id === 'gel'));
+
+    // Chaîne (Fulgur Catena) : dégâts décroissants.
+    reset3();
+    hp = enemyGroup.map(e => e.currentHp);
+    _spellAoeChain(SPELLS.find(s => s.name === 'Fulgur Catena'), harry);
+    out.chain = enemyGroup.map((e, i) => hp[i] - e.currentHp);
+
+    // Drain (Nox Vorax) : dégâts à tous + soin du lanceur.
+    reset3();
+    harry.hp = 50;
+    hp = enemyGroup.map(e => e.currentHp);
+    _spellAoeDrain(SPELLS.find(s => s.name === 'Nox Vorax'), harry);
+    out.drain = enemyGroup.map((e, i) => hp[i] - e.currentHp);
+    out.drainHeal = harry.hp - 50;
+
+    // Fauchage (Diffindo Maxima) : cible (idx 1) pleine + voisins ×0,6.
+    reset3();
+    hp = enemyGroup.map(e => e.currentHp);
+    _spellAoeCleave(SPELLS.find(s => s.name === 'Diffindo Maxima'), harry, enemyGroup[1], 1);
+    out.cleave = enemyGroup.map((e, i) => hp[i] - e.currentHp);
+
+    // Soin de groupe (Vulnera Sanentur).
+    party[0].hp = 10; party[0].hpMax = 100; party[0].int = 0; party[0].end = 0;
+    party[1].hp = 20; party[1].hpMax = 100;
+    _spellHealAoe(SPELLS.find(s => s.name === 'Vulnera Sanentur'), party[0]);
+    out.heal = [party[0].hp, party[1].hp];
+
+    return out;
+  });
+  console.log('  AoE :', r);
+  // base = power + floor(mag/magDiv) + floor(stat2/stat2Div) — les
+  // diviseurs varient par sort. Stats : mag 16, int 12, agi 12, end 9, str 12.
+  assert(r.wave.every(d => d === 26),   // Lux : 15 + 16/2 + 12/4 (int)
+    `vague : 26 attendu à chaque ennemi, obtenu ${r.wave}`);
+  assert(r.field.every(d => d === 21),  // Glacius : 12 + 16/3 + 12/3 (int)
+    `nappe : 21 attendu, obtenu ${r.field}`);
+  assert(r.fieldGel, 'nappe : gel non appliqué à tous les ennemis');
+  assert(r.chain[0] === 29 && r.chain[1] === 18 && r.chain[2] === 12,  // Fulgur : 29 (18+16/2+12/4 agi) ×0,65
+    `chaîne : [29,18,12] attendu, obtenu ${r.chain}`);
+  assert(r.drain.every(d => d === 22),  // Nox : 14 + 16/3 + 9/3 (end)
+    `drain : 22 attendu, obtenu ${r.drain}`);
+  assert(r.drainHeal === 33, `drain : +33 PV attendu, obtenu +${r.drainHeal}`);
+  assert(r.cleave[1] === 29, `fauchage : cible 29 attendu, obtenu ${r.cleave[1]}`);  // Diffindo : 18+16/3+12/2 str
+  assert(r.cleave[0] === 17 && r.cleave[2] === 17,  // 29 ×0,6
+    `fauchage : voisins 17 attendus, obtenu [${r.cleave[0]},${r.cleave[2]}]`);
+  assert(r.heal[0] === 32 && r.heal[1] === 42,
+    `soin de groupe : [32,42] attendu, obtenu ${r.heal}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (AoE)`);
+  }
+  console.log('  ✅ Sorts de zone conformes');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

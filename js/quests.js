@@ -223,6 +223,34 @@ const QUEST_TEMPLATES = [
     reward: { xp: 260, gold: 120, stats: { hp: 12, lck: 2, agi: 1 } },
     location: "Étage 3 — salles de classe désertes"
   },
+  // ── Manon, Acte II — le grimoire de givre de Sandrine ──────────
+  // Suite de `manon_pardon`. Volet 1 (`manon_revelio`) enseigne le sort
+  // Revelio ; volet 2 (`manon_grimoire`) collecte les 5 pages dispersées.
+  // Cf. .claude/plans/manon-grimoire-pages.md.
+  {
+    id: "manon_revelio",
+    title: "Le vrai du faux",
+    giver: "Manon",
+    desc: "Manon a trouvé le grimoire déchiré de sa mère. Pour accorder le charme Revelio, rapporte-lui la trace d'une créature de froid : terrasse un Strangulot dans les douves.",
+    prereq: "manon_pardon",
+    objectives: [
+      { type: "kill", monsterId: "strangulot", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 200, gold: 80, spell: "Revelio" },
+    location: "Étage 3 — salles de classe désertes"
+  },
+  {
+    id: "manon_grimoire",
+    title: "Les pages de Sandrine",
+    giver: "Manon",
+    desc: "Sandrine a dispersé les pages de son grimoire de givre dans le château — étages 2, 3, 5, 7 et 9. Lance Revelio pour les dévoiler sur la carte, fouille les salles pour les ramasser, puis rends les 5 pages à Manon.",
+    prereq: "manon_revelio",
+    objectives: [
+      { type: "pages", amount: 5, progress: 0, completed: false }
+    ],
+    reward: { xp: 420, gold: 180, item: "livre_glacius_tempete" },
+    location: "Étage 3 — salles de classe désertes"
+  },
   // ── Phase 3b : quêtes secondaires PNJ → équipement étendu ──
   {
     id: "bottines_ollivander",
@@ -707,6 +735,66 @@ function turnInQuestById(id) {
   return true;
 }
 
+// ── Établi de fusion du grimoire (Manon Acte II) ─────────────
+// Le joueur reconstitue le grimoire de givre de Sandrine à partir des 5
+// pages collectées. Cf. .claude/plans/manon-grimoire-pages.md §6.
+
+// Vrai si la quête manon_grimoire est active et les 5 pages réunies.
+function _grimoireFusionReady() {
+  if (typeof activeQuests === 'undefined') return false;
+  if (!activeQuests.some(q => q.id === 'manon_grimoire')) return false;
+  const total = (typeof GRIMOIRE_PAGES !== 'undefined') ? GRIMOIRE_PAGES.length : 5;
+  const owned = (typeof player !== 'undefined' && Array.isArray(player.grimoirePages))
+    ? player.grimoirePages.length : 0;
+  return owned >= total;
+}
+
+// Ouvre l'établi : les 5 emplacements de page + bouton de fusion.
+function openFusionModal() {
+  const body  = document.getElementById('fusion-body');
+  const modal = document.getElementById('fusion-modal');
+  if (!body || !modal) return;
+  const pages = (typeof GRIMOIRE_PAGES !== 'undefined') ? GRIMOIRE_PAGES : [];
+  const owned = (player && Array.isArray(player.grimoirePages)) ? player.grimoirePages : [];
+  let slots = '';
+  for (const p of pages) {
+    const has = owned.includes(p.id);
+    slots += `<div class="brew-tile${has ? '' : ' brew-tile-disabled'}" title="${p.lore}">`
+      + `<div class="brew-tile-icon">${p.icon}</div>`
+      + `<div class="brew-tile-name">${p.name}</div></div>`;
+  }
+  const ready = _grimoireFusionReady();
+  body.innerHTML = `
+    <p style="font-size:12px;color:var(--parchment-dark);line-height:1.5;text-align:center;margin:4px 0 12px">
+      Manon dispose les feuillets sur l'établi, près de la fenêtre givrée.
+      Le grimoire de sa mère ne demande qu'à redevenir entier.
+    </p>
+    <div class="brew-tiles" style="justify-content:center">${slots}</div>
+    <button type="button" class="brew-launch-btn" style="margin-top:14px"
+      onclick="fuseGrimoire()"${ready ? '' : ' disabled'}>
+      ✨ Reconstituer le grimoire
+    </button>`;
+  modal.style.display = 'flex';
+}
+
+// Fusionne les pages : remet manon_grimoire (récompense le grimoire
+// Tempête de Givre) et vide la besace de pages.
+function fuseGrimoire() {
+  if (!_grimoireFusionReady()) {
+    addMsg('Il te manque encore des pages du grimoire.', 'bad');
+    return;
+  }
+  if (!turnInQuestById('manon_grimoire')) {
+    addMsg('La reconstitution a échoué — réessaie.', 'bad');
+    return;
+  }
+  player.grimoirePages = [];
+  closeModal('fusion-modal');
+  addMsg('📖 Le grimoire de givre de Sandrine est reconstitué !', 'good');
+  setNarrative("Les cinq feuillets se ressoudent dans un souffle de givre. Manon serre le grimoire entier contre elle, sans un mot — c'est sa mère qu'elle retrouve, la sorcière, pas la menteuse.");
+  updateUI();
+}
+
 // ── Ouvre le journal des quêtes dans la modale personnage ────
 // On réutilise #char-detail pour ne pas casser openCharacter().
 function openQuestLog() {
@@ -800,6 +888,11 @@ function _renderActiveQuestCard(q) {
   if (activeStep && activeStep.type === 'item') {
     activeStep.progress = player.inventory.filter(i => i.id === activeStep.itemId).length;
   }
+  // Étape `pages` : recompter depuis la besace de pages.
+  if (activeStep && activeStep.type === 'pages') {
+    activeStep.progress = Array.isArray(player.grimoirePages)
+      ? player.grimoirePages.length : 0;
+  }
   const ready = activeStep && activeStep.progress >= activeStep.amount;
 
   const rewardHtml = _renderRewardParts(q.reward);
@@ -836,6 +929,8 @@ function _renderQuestStep(o, isActive, ready, isFirst) {
     label = `Descendre jusqu'à l'étage ${o.floor}`;
   } else if (o.type === 'donate') {
     label = `Faire don de ${o.amount} Gallions`;
+  } else if (o.type === 'pages') {
+    label = `Réunir ${o.amount} pages du grimoire`;
   } else {
     const it = ITEMS.find(x => x.id === o.itemId);
     label = `Apporter ${o.amount}× ${it ? it.name : o.itemId}`;
@@ -924,6 +1019,13 @@ function _refreshObjectives() {
       // joueur dépense ses Gallions avant d'aller voir le Chef de Maison.
       if (step.type === 'donate') {
         step.progress  = (player && player.gold) || 0;
+        step.completed = step.progress >= step.amount;
+        continue;
+      }
+      // Pages du grimoire : recomptées en continu depuis la besace.
+      if (step.type === 'pages') {
+        step.progress  = (player && Array.isArray(player.grimoirePages))
+          ? player.grimoirePages.length : 0;
         step.completed = step.progress >= step.amount;
         continue;
       }
@@ -1081,6 +1183,26 @@ window.checkKillQuests = function(monsterId) {
       addMsg(`📜 Quête « ${q.title} » : ${step.progress}/${step.amount}`, '');
     }
   });
+};
+
+// ── Appelée après le ramassage d'une page de grimoire ───────
+// Met à jour la progression de manon_grimoire depuis player.grimoirePages.
+window.checkPageQuest = function() {
+  const q = (typeof activeQuests !== 'undefined')
+    ? activeQuests.find(x => x.id === 'manon_grimoire') : null;
+  if (!q) return;
+  const step = q.objectives.find(o => o.type === 'pages');
+  if (!step || step.completed) return;
+  const n = (player && Array.isArray(player.grimoirePages))
+    ? player.grimoirePages.length : 0;
+  step.progress = n;
+  if (n >= step.amount) {
+    step.completed = true;
+    addMsg(`📜 Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+  } else {
+    addMsg(`📜 Quête « ${q.title} » : ${n}/${step.amount} pages.`, '');
+  }
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
 };
 
 // ── Appelée à chaque entrée d'étage (goDeeper / restoration) ──

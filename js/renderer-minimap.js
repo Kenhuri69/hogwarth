@@ -110,6 +110,18 @@ function _buildMinimapCells(mm, cellSize) {
         else if (enemyMap[y][x])                              div.classList.add('map-enemy');
         else                                                  div.classList.add('map-floor');
       }
+      // Page de grimoire révélée non collectée → pastille verte. Ne
+      // recouvre pas le marqueur joueur (la page peut être sous lui).
+      if (typeof pagePlacements !== 'undefined'
+          && pagePlacements.get(currentFloor) === `${x},${y}`
+          && revealedPages.has(currentFloor)
+          && !(x === playerX && y === playerY)) {
+        const page = (typeof getGrimoirePageForFloor === 'function')
+          ? getGrimoirePageForFloor(currentFloor) : null;
+        const collected = page && Array.isArray(player.grimoirePages)
+          && player.grimoirePages.includes(page.id);
+        if (!collected) div.classList.add('map-page');
+      }
       mm.appendChild(div);
     }
   }

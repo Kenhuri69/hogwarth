@@ -164,6 +164,16 @@ function healAmount(spell, char) {
 function spellDamage(spell, char) {
   return spell.power + Math.floor((char.mag || 0) / 2);
 }
+// Dégâts de base AoE : MAG commune + une stat thématique par élément
+// (spell.stat2). Les diviseurs magDiv/stat2Div sont propres à chaque
+// sort — levier d'équilibrage : un sort à gros rider (gel, vol de vie)
+// scale plus doucement qu'un sort de dégâts purs. Défaut 3/3.
+function aoeBaseDamage(spell, char) {
+  const magDiv   = spell.magDiv   || 3;
+  const stat2Div = spell.stat2Div || 3;
+  const s2 = spell.stat2 ? Math.floor((char[spell.stat2] || 0) / stat2Div) : 0;
+  return spell.power + Math.floor((char.mag || 0) / magDiv) + s2;
+}
 // Expelliarmus — réduction d'ATK : `power` de base, AGI convenablement,
 // INT faiblement. Plafonnée par l'ATK de l'ennemi côté handler.
 function disarmAtkLoss(spell, char) {
@@ -195,8 +205,15 @@ function spellEffectPreview(spell, char) {
       const d = spellDamage(spell, char);
       return `≈ ${d} dégâts · +${Math.floor(d / 2)} PV drainés`;
     }
-    case 'stun': case 'burn': case 'instant': case 'curse':
-      return `≈ ${spellDamage(spell, char)} dégâts`;
+    case 'stun': case 'burn': case 'instant': case 'curse': {
+      let txt = `≈ ${spellDamage(spell, char)} dégâts`;
+      if (spell.splash) {
+        const sp = Math.max(1, Math.floor(
+          spell.power / 2 + (char.mag || 0) / 8 + (char.str || 0) / 4));
+        txt += ` · éclaboussure ≈ ${sp}`;
+      }
+      return txt;
+    }
     case 'disarm':
       return `≈ −${disarmAtkLoss(spell, char)} ATK ennemie (${disarmTurns(spell, char)} tours)`;
     case 'shield':
@@ -205,10 +222,16 @@ function spellEffectPreview(spell, char) {
       const b = stealBaseGold(spell, char);
       return `≈ ${b}–${b + 5} 🪙`;
     }
+    case 'aoe_wave': case 'aoe_chain': case 'aoe_drain': case 'aoe_cleave':
+      return `≈ ${aoeBaseDamage(spell, char)} dégâts · zone`;
+    case 'aoe_field':
+      return `≈ ${aoeBaseDamage(spell, char)} dégâts · zone · gel`;
+    case 'heal_aoe':        return `≈ ${healAmount(spell, char)} PV au groupe`;
     case 'imperius':        return `≈ ${spellDamage(spell, char)} dégâts · asservit 2 tours`;
     case 'patronus_maxima': return 'Bouclier de groupe (2 tours)';
     case 'legilimens':      return 'Annule la prochaine capacité ennemie';
     case 'recolte':         return 'Groupe restauré · or +50%';
+    case 'reveal':          return 'Dévoile tous les secrets du monstre';
     default:              return '';
   }
 }
@@ -316,6 +339,24 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
         msg += ` ${def.icon} ${def.label} appliqué !`;
         UX_safe.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, ${dotTurns} tours)`, 'magic');
       }
+    }
+
+    // Bombarda — éclaboussure : les autres ennemis vivants subissent
+    // floor(power/2 + mag/8 + str/4), modulée par resist/weak. Pas de
+    // crit, pas de DoT, pas de passif de Maison (réservés à la cible).
+    if (spell.splash) {
+      const splashBase = Math.max(1, Math.floor(
+        spell.power / 2 + (char.mag || 0) / 8 + (char.str || 0) / 4));
+      livingEnemies().filter(e => e !== enemy).forEach(other => {
+        let sd = splashBase, ssfx = '';
+        if (other.resist?.includes(spell.element)) { sd = Math.floor(sd * RESIST_MULTIPLIER); ssfx = ' 🔰'; }
+        if (other.weak?.includes(spell.element))   { sd = Math.floor(sd * WEAK_MULTIPLIER);   ssfx = ' 💥'; }
+        sd = Math.max(1, sd);
+        other.currentHp -= sd;
+        UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(other)}`, sd, 'dmg');
+        msg += ` 💥 ${other.name} −${sd}${ssfx}`;
+        UX_safe.logCombat(`💥 Éclaboussure sur ${other.name} : <b>−${sd}</b>${ssfx}`, 'magic');
+      });
     }
 
     const drain = _applySerpentLifesteal(char, dmg);
@@ -476,6 +517,22 @@ function _spellLegilimens(spell, char) {
   return msg;
 }
 
+// Revelio en combat : ouvre le panneau d'info du monstre ciblé avec les
+// trois paliers déverrouillés, quel que soit monsterKills. Consomme le
+// tour et le PM comme un sort utilitaire (cf. manon-grimoire-pages.md §4b).
+function _spellReveal(spell, char, enemy, targetIdx) {
+  const idx    = (typeof targetIdx === 'number' && targetIdx >= 0) ? targetIdx : 0;
+  const target = enemyGroup[idx] || enemy;
+  if (typeof showMonsterCombatInfo === 'function') {
+    showMonsterCombatInfo(idx, { revealed: true });
+  }
+  const name = (target && target.name) || 'la créature';
+  const msg  = `🔎 ${char.name} : ${spell.name} — ${name} n'a plus de secret.`;
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(`🔎 ${char.name} lance ${spell.name} sur ${name}`, 'info');
+  return msg;
+}
+
 // Récolte Magique (Poufsouffle) : restaure PV + PM de tout le groupe et
 // majore l'or de ce combat de +50 % (recolteGoldBonus, lu par endBattle).
 function _spellRecolte(spell, char) {
@@ -489,6 +546,128 @@ function _spellRecolte(spell, char) {
   const msg = `🌾 ${char.name} : ${spell.name} — le groupe est revigoré ; les Gallions du combat sont majorés (+50%) !`;
   addMsg(msg, 'good');
   UX_safe.logCombat(`🌾 ${char.name} lance ${spell.name} — groupe restauré`, 'good');
+  return msg;
+}
+
+// ── Sorts de zone (AoE) ──────────────────────────────────────
+// Applique des dégâts élémentaires bruts à un ennemi : resist/weak +
+// bonus morts-vivants optionnel. Pas de crit (les AoE ne crittent pas) ni
+// de passif de Maison — choix d'équité hérité de Bombarda. Mute currentHp,
+// retourne { dmg, suffix }.
+function _aoeHit(spell, char, enemy, raw, opts) {
+  opts = opts || {};
+  let dmg = Math.max(1, Math.floor(raw));
+  let suffix = '';
+  if (enemy.resist?.includes(spell.element)) { dmg = Math.max(1, Math.floor(dmg * RESIST_MULTIPLIER)); suffix = ' 🔰'; }
+  if (enemy.weak?.includes(spell.element))   { dmg = Math.floor(dmg * WEAK_MULTIPLIER);                 suffix = ' 💥'; }
+  if (opts.undead && spell.bonusVsUndead && _isUndead(enemy)) {
+    dmg = Math.floor(dmg * spell.bonusVsUndead); suffix += ' ☀️';
+  }
+  dmg = Math.max(1, dmg);
+  enemy.currentHp -= dmg;
+  return { dmg, suffix };
+}
+
+// Lux Aeterna (vague) : dégâts égaux à tous les ennemis, bonus morts-vivants.
+function _spellAoeWave(spell, char) {
+  const base = aoeBaseDamage(spell, char);
+  let msg = `${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} —`;
+  livingEnemies().forEach(e => {
+    const { dmg, suffix } = _aoeHit(spell, char, e, base, { undead: true });
+    UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(e)}`, dmg, 'dmg');
+    msg += ` ${e.name} −${dmg}${suffix}`;
+    UX_safe.logCombat(`${getSpellIconHtml(spell, 'ui-icon-md')} ${spell.name} → <b>−${dmg}</b>${suffix} sur ${e.name}`, 'magic');
+  });
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Glacius Tempête (nappe) : dégâts modérés à tous + statut gel sur chacun.
+function _spellAoeField(spell, char) {
+  const base     = aoeBaseDamage(spell, char);
+  const dotPower = Math.max(1, Math.floor(spell.power * 0.25));
+  const dotTurns = Math.min(5, 2 + Math.floor((char.int || 0) / 24));
+  let msg = `🌨️ ${char.name} : ${spell.name} —`;
+  livingEnemies().forEach(e => {
+    const { dmg, suffix } = _aoeHit(spell, char, e, base);
+    UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(e)}`, dmg, 'dmg');
+    if (e.currentHp > 0) applyStatus(e, 'gel', dotPower, dotTurns);
+    msg += ` ${e.name} −${dmg}${suffix} ❄️`;
+  });
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(`❄️ ${char.name} : ${spell.name} — le groupe ennemi est gelé`, 'magic');
+  return msg;
+}
+
+// Fulgur Catena (chaîne) : arc d'ennemi en ennemi, dégâts ×0,65 par saut.
+function _spellAoeChain(spell, char) {
+  const base = aoeBaseDamage(spell, char);
+  let mult = 1;
+  let msg = `⚡ ${char.name} : ${spell.name} —`;
+  livingEnemies().forEach((e, i) => {
+    const { dmg, suffix } = _aoeHit(spell, char, e, base * mult);
+    UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(e)}`, dmg, 'dmg');
+    msg += `${i ? ' →' : ''} ${e.name} −${dmg}${suffix}`;
+    UX_safe.logCombat(`⚡ ${spell.name} → <b>−${dmg}</b>${suffix} sur ${e.name}`, 'magic');
+    mult *= 0.65;
+  });
+  addMsg(msg, 'magic');
+  return msg;
+}
+
+// Nox Vorax (drain) : dégâts à tous ; le lanceur se soigne de la moitié du total.
+function _spellAoeDrain(spell, char) {
+  const base = aoeBaseDamage(spell, char);
+  let total = 0;
+  let msg = `🌑 ${char.name} : ${spell.name} —`;
+  livingEnemies().forEach(e => {
+    const { dmg, suffix } = _aoeHit(spell, char, e, base);
+    total += dmg;
+    UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(e)}`, dmg, 'dmg');
+    msg += ` ${e.name} −${dmg}${suffix}`;
+  });
+  const heal = Math.min(char.hpMax - char.hp, Math.floor(total / 2));
+  if (heal > 0) { char.hp += heal; UX_safe.floatDmg('ally', heal, 'heal'); }
+  msg += ` — +${heal} PV drainés !`;
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(`🌑 ${char.name} : ${spell.name} draine <b>+${heal} PV</b>`, 'magic');
+  return msg;
+}
+
+// Diffindo Maxima (fauchage) : cible pleine + voisins directs (±1) ×0,6.
+function _spellAoeCleave(spell, char, enemy, targetIdx) {
+  if (!enemy) return '';
+  const base = aoeBaseDamage(spell, char);
+  const ti   = enemyGroup.indexOf(enemy);
+  let msg = `⚔️ ${char.name} : ${spell.name} —`;
+  const main = _aoeHit(spell, char, enemy, base);
+  UX_safe.floatDmg(`enemy:${ti}`, main.dmg, 'dmg');
+  msg += ` ${enemy.name} −${main.dmg}${main.suffix}`;
+  [ti - 1, ti + 1].forEach(ni => {
+    const nb = enemyGroup[ni];
+    if (!nb || nb.currentHp <= 0) return;
+    const hit = _aoeHit(spell, char, nb, base * 0.6);
+    UX_safe.floatDmg(`enemy:${ni}`, hit.dmg, 'dmg');
+    msg += ` · ${nb.name} −${hit.dmg}${hit.suffix}`;
+  });
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(`⚔️ ${char.name} : ${spell.name} fauche le groupe`, 'magic');
+  return msg;
+}
+
+// Vulnera Sanentur (soin de groupe) : soin instantané à tous les alliés vivants.
+function _spellHealAoe(spell, char) {
+  const amount = healAmount(spell, char);
+  let msg = `💗 ${char.name} : ${spell.name} —`;
+  party.slice(0, partySize).forEach(c => {
+    if (c.hp <= 0) return;
+    const burst = Math.min(c.hpMax - c.hp, amount);
+    c.hp += burst;
+    msg += ` ${c.name} +${burst} PV`;
+  });
+  UX_safe.floatDmg('ally', amount, 'heal');
+  addMsg(msg, 'good');
+  UX_safe.logCombat(`💗 ${char.name} : ${spell.name} soigne tout le groupe`, 'good');
   return msg;
 }
 
@@ -509,6 +688,13 @@ const SPELL_HANDLERS = {
   imperius:          _spellImperius,
   legilimens:        _spellLegilimens,
   recolte:           _spellRecolte,
+  reveal:            _spellReveal,
+  aoe_wave:          _spellAoeWave,
+  aoe_field:         _spellAoeField,
+  aoe_chain:         _spellAoeChain,
+  aoe_drain:         _spellAoeDrain,
+  aoe_cleave:        _spellAoeCleave,
+  heal_aoe:          _spellHealAoe,
 };
 
 // Sorts à cible alliée — pas de sélection d'ennemi, mais éventuellement
