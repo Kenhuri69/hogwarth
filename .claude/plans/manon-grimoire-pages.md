@@ -173,12 +173,19 @@ jamais la position exacte, juste l'étage.
 
 ## 8. Découpage en phases (verify)
 
-1. **Narratif & données** — prémisse validée ; SPELLS Revelio ;
-   2 quêtes dans `quests.js`/`state.js` ; dialogues Manon.
-   verify : `node tests/smoke.js` vert (chargement).
-2. **Revelio — sort + logo** — entrée SPELLS, `isOutOfCombatSpell` +
-   handler `reveal` (dissipe le brouillard ~2 cases), bypass combat
-   via `showMonsterCombatInfo`, PNG du logo + `SPELL_ICON_REGISTRY`.
+1. ✅ **Narratif & données** — prémisse validée ; SPELLS Revelio
+   (`effect:"reveal"`, 2 PM) ; quêtes `manon_revelio` (kill Strangulot
+   → sort) et `manon_grimoire` (objectif `type:"pages"` ×5) dans
+   `quests.js` ; dialogues `dialoguesByQuest` Manon + 2 lignes
+   `idleRandom` post-Acte II ; logo `img/icons/spells/revelio.png`
+   généré (`tools/gen_revelio_icon.py`) et mappé.
+   verify : `node tests/smoke.js` — **vert** (27 scénarios).
+   note : le logo, prévu en phase 2, a été tiré en phase 1 car le
+   smoke test exige tout sort mappé dans `SPELL_ICON_REGISTRY`.
+2. **Revelio — handlers** — `isOutOfCombatSpell` + handler `reveal`
+   (dissipe le brouillard ~2 cases), bypass combat via
+   `showMonsterCombatInfo` ; consomme le tour + le PM. (Le logo a déjà
+   été livré en phase 1.)
    verify : Revelio hors combat dissipe le fog ; en combat ouvre le
    panneau monstre complet à 0 kill.
 3. **Pages donjon** — `pagePlacements`/`revealedPages`/`collectedPages`,
@@ -210,3 +217,4 @@ jamais la position exacte, juste l'étage.
 - [x] Rebase de la branche sur `master` (intègre le PR #190).
 - [x] Étages porteurs des 5 pages arbitrés : 2, 3, 5, 7, 9.
 - [x] Indices fantômes ajoutés au design (§7b).
+- [x] Phase 1 — narratif & données livré (smoke vert).

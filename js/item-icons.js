@@ -291,6 +291,7 @@ const SPELL_ICON_REGISTRY = {
   'Crucio':             'img/icons/spells/crucio.png',
   'Morsmordre':         'img/icons/spells/morsmordre.png',
   'Portus':             'img/icons/spells/teleportation.png',
+  'Revelio':            'img/icons/spells/revelio.png',
   'Glacius':            'img/icons/spells/glacius.png',
   'Fulgari':            'img/icons/spells/fulgari.png',
   'Lumos Solem':        'img/icons/spells/lumos_solem.png',

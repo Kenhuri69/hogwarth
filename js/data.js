@@ -192,6 +192,12 @@ const SPELLS = [
   // (rejoint un étage déjà visité, case libre random).
   // Coût hors combat : `outOfCombatCost` (38 PM). Voir js/teleport.js.
   { name:"Portus",            icon:"🌀",   desc:"Téléportation tactique (combat ou hors combat)", cost:52, outOfCombatCost:38, effect:"teleport", power:0 },
+  // ── Sort utilitaire — Révélation (Revelio) ───────────────────
+  // Enseigné par la quête « Le vrai du faux » de Manon (Acte II).
+  // Double usage : hors combat dissipe le brouillard alentour et
+  // dévoile les pages dissimulées ; en combat révèle d'un coup le
+  // panneau d'info du monstre ciblé. Voir .claude/plans/manon-grimoire-pages.md.
+  { name:"Revelio",           icon:"🔎",   desc:"Dévoile : le brouillard et les pages cachées (hors combat) ou les secrets d'un monstre (combat)", cost:2, effect:"reveal", element:"lumière", power:0 },
   // ── Sorts de Vampirisme ─────────────────────────────────────
   { name:"Sanguini",          icon:"🩸",   desc:"Vol de vie (12 dégâts, +6 PV)",      cost:8,  effect:"lifesteal", element:"ténèbres", power:12 },
   { name:"Vampyrus",          icon:"🦇",   desc:"Drain magique (18 dégâts, +9 PV)",   cost:14, effect:"lifesteal", element:"ténèbres", power:18 },
@@ -228,7 +234,8 @@ function spellCategory(spell) {
   const e = spell.effect;
   if (e === 'heal' || e === 'support_regen' || e === 'support_regen_aoe' || e === 'shield'
       || e === 'patronus_maxima' || e === 'recolte' || e === 'heal_aoe') return 'soutien';
-  if (e === 'disarm' || e === 'steal' || e === 'teleport' || e === 'legilimens') return 'utilitaire';
+  if (e === 'disarm' || e === 'steal' || e === 'teleport' || e === 'legilimens'
+      || e === 'reveal') return 'utilitaire';
   return spell.element || 'utilitaire';
 }
 

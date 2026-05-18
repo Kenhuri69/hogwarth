@@ -223,6 +223,34 @@ const QUEST_TEMPLATES = [
     reward: { xp: 260, gold: 120, stats: { hp: 12, lck: 2, agi: 1 } },
     location: "Étage 3 — salles de classe désertes"
   },
+  // ── Manon, Acte II — le grimoire de givre de Sandrine ──────────
+  // Suite de `manon_pardon`. Volet 1 (`manon_revelio`) enseigne le sort
+  // Revelio ; volet 2 (`manon_grimoire`) collecte les 5 pages dispersées.
+  // Cf. .claude/plans/manon-grimoire-pages.md.
+  {
+    id: "manon_revelio",
+    title: "Le vrai du faux",
+    giver: "Manon",
+    desc: "Manon a trouvé le grimoire déchiré de sa mère. Pour accorder le charme Revelio, rapporte-lui la trace d'une créature de froid : terrasse un Strangulot dans les douves.",
+    prereq: "manon_pardon",
+    objectives: [
+      { type: "kill", monsterId: "strangulot", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 200, gold: 80, spell: "Revelio" },
+    location: "Étage 3 — salles de classe désertes"
+  },
+  {
+    id: "manon_grimoire",
+    title: "Les pages de Sandrine",
+    giver: "Manon",
+    desc: "Sandrine a dispersé les pages de son grimoire de givre dans le château — étages 2, 3, 5, 7 et 9. Lance Revelio pour les dévoiler sur la carte, fouille les salles pour les ramasser, puis rends les 5 pages à Manon.",
+    prereq: "manon_revelio",
+    objectives: [
+      { type: "pages", amount: 5, progress: 0, completed: false }
+    ],
+    reward: { xp: 420, gold: 180, item: "livre_glacius_tempete" },
+    location: "Étage 3 — salles de classe désertes"
+  },
   // ── Phase 3b : quêtes secondaires PNJ → équipement étendu ──
   {
     id: "bottines_ollivander",
