@@ -332,7 +332,8 @@ function parseArgs(argv) {
                 useQuests: true, useEquipment: true, usePotions: true,
                 kills: 0, bonusLevels: 0, artifacts: false,
                 endgame: false, maxFloor: 40, forge: 0, library: 0,
-                houseSet: null, tenebresSet: false, houseTier: 0 };
+                houseSet: null, tenebresSet: false, houseTier: 0,
+                gryffElan: false, elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--compare')              { out.mode = 'compare'; continue; }
@@ -344,6 +345,7 @@ function parseArgs(argv) {
     if (a === '--artifacts')            { out.artifacts = true; continue; }
     if (a === '--endgame')              { out.endgame = true; continue; }
     if (a === '--tenebres-set')         { out.tenebresSet = true; continue; }
+    if (a === '--gryff-elan')           { out.gryffElan = true; continue; }
     if (!a.includes('=')) {
       // Compat : `node sim-difficulty.js 800` → nSims positionnel
       const n = parseInt(a, 10);
@@ -362,6 +364,9 @@ function parseArgs(argv) {
     else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
     else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
     else if (k === 'house-tier')   out.houseTier = parseInt(v, 10) || 0;
+    else if (k === 'elan-step')    out.elanStep = parseFloat(v) || 8;
+    else if (k === 'elan-cap')     out.elanCap  = parseInt(v, 10) || 5;
+    else if (k === 'elan-decay')   out.elanDecay = String(v || 'none').toLowerCase();
   }
   return out;
 }
@@ -406,6 +411,14 @@ Options:
   --house-tier=N          Paliers endgame V3 (17 « Mythe » / 18 « Apothéose »).
                           Requiert --house-set. Modélise le delta de stats
                           tier 17/18 + le passif d'Apothéose (tier 18).
+  --gryff-elan            Candidat de design : remplace le +10 % dégâts crit.
+                          de Gryffondor par le cumul « Élan » (déclenché
+                          par les crits). Requiert --house-set=gryffondor
+                          --house-tier=18.
+  --elan-step=N           Élan : % de dégâts par palier (def 8)
+  --elan-cap=N            Élan : nombre max de paliers (def 5)
+  --elan-decay=MODE       Élan : none = cumul gardé tout le combat (def) |
+                          turn = −1 palier par tour offensif sans crit
   --compare               Lance baseline ET proposition (hp×1.5 xp×1.3 stats=3 balanced), tableau comparatif
 
 Exemples:
@@ -414,7 +427,8 @@ Exemples:
   node tools/sim-difficulty.js --compare            # baseline vs proposition validée
   node tools/sim-difficulty.js --hp-mult=1.5 --xp-mult=1.3 --stat-points=3 800
   node tools/sim-difficulty.js --endgame --artifacts --stat-points=3   # Boucle Ténébreuse
-  node tools/sim-difficulty.js --endgame --house-set=gryffondor --house-tier=18 800   # capstone Apothéose`);
+  node tools/sim-difficulty.js --endgame --house-set=gryffondor --house-tier=18 800   # capstone Apothéose
+  node tools/sim-difficulty.js --endgame --house-set=gryffondor --house-tier=18 --gryff-elan 800   # candidat Élan`);
   process.exit(0);
 }
 
@@ -633,10 +647,21 @@ function createHero(key, level, cfg, floor, partySize) {
   // combat ; seule sa composante DPS « Vigueur » est mesurée.
   if ((cfg.houseTier || 0) >= 18) {
     if (cfg.houseSet === 'gryffondor') {
+      // +10 % crit (physique + sort) — inchangé, c'est le déclencheur d'Élan.
       c.critChance          = Math.min(100, c.critChance + 10);
       c.spellCritChance     = Math.min(100, c.spellCritChance + 10);
-      c.critMultiplier      = Math.min(2.5, c.critMultiplier + 0.10);
-      c.spellCritMultiplier = Math.min(2.5, c.spellCritMultiplier + 0.10);
+      if (cfg.gryffElan) {
+        // Candidat « Élan » : remplace le +10 % dégâts crit. flat par un
+        // cumul de dégâts déclenché par les crits (cf. heroAct/_updateElan).
+        c._gryffElan  = true;
+        c._elanStep   = (cfg.elanStep || 8) / 100;
+        c._elanCap    = cfg.elanCap || 5;
+        c._elanDecay  = cfg.elanDecay || 'none';
+        c._elanStacks = 0;
+      } else {
+        c.critMultiplier      = Math.min(2.5, c.critMultiplier + 0.10);
+        c.spellCritMultiplier = Math.min(2.5, c.spellCritMultiplier + 0.10);
+      }
     } else if (cfg.houseSet === 'serpentard') {
       c._serpentLifesteal = 0.15;
     } else if (cfg.houseSet === 'serdaigle') {
@@ -733,8 +758,9 @@ function poolStats(floor, cfg) {
 const SIM_DOT_IDS = ['burn', 'poison', 'bleed', 'gel'];
 
 function simulateBattle(party, enemyGroup) {
-  // Reset state pour la sim
-  party.forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; c.shieldTurns = 0; c.statusEffects = []; });
+  // Reset state pour la sim. Élan est un cumul de combat — il repart à
+  // zéro à chaque combat (jamais sérialisé, comme l'état de combat réel).
+  party.forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; c.shieldTurns = 0; c.statusEffects = []; c._elanStacks = 0; });
   enemyGroup.forEach(e => { e.currentHp = e.hp; e.disarmed = 0; });
 
   const partySize = party.length;
@@ -795,11 +821,22 @@ function avgHpPct(party) {
   return party.reduce((s, c) => s + Math.max(0, c.hp) / c.hpMax, 0) / party.length;
 }
 
+// Candidat « Élan » (Gryffondor) : met à jour le cumul après une action
+// offensive. Crit → +1 palier (cap) ; sinon, décroît selon le mode.
+function _updateElan(char, didCrit) {
+  if (!char._gryffElan) return;
+  if (didCrit) char._elanStacks = Math.min(char._elanCap, (char._elanStacks || 0) + 1);
+  else if (char._elanDecay === 'turn') char._elanStacks = Math.max(0, (char._elanStacks || 0) - 1);
+}
+
 function heroAct(char, enemies) {
   const target = enemies[0];
   // Apothéose Poufsouffle — Vigueur : +20 % de dégâts (physique + sort)
   // au-dessus de 60 % PV. Évalué à l'ouverture du tour du héros.
   const vigor = (char._houseVigor && char.hp > char.hpMax * 0.6) ? 1.20 : 1;
+  // Candidat Élan : multiplicateur des paliers accumulés (lu en début de
+  // tour, mis à jour après l'action offensive).
+  const elan = char._gryffElan ? (1 + char._elanStep * (char._elanStacks || 0)) : 1;
 
   // 1. Potion si hp critique (< 40 %) et stock dispo.
   //    Consomme le tour : pas d'attaque, mais restaure 25 PV (moyenne
@@ -826,14 +863,14 @@ function heroAct(char, enemies) {
   const dmgSpell = pickDamageSpell(char);
   if (dmgSpell && char.sp >= dmgSpell.cost) {
     char.sp -= dmgSpell.cost;
-    let dmg = Math.floor((dmgSpell.power + Math.floor(char.mag / 2)) * vigor);
+    let dmg = Math.floor((dmgSpell.power + Math.floor(char.mag / 2)) * vigor * elan);
     if (target.resist?.includes(dmgSpell.effect)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
     if (target.weak?.includes(dmgSpell.effect))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
     // Crit de sort (battle-spells.js — rollSpellCrit)
-    if (Math.random() * 100 < (char.spellCritChance || 0)) {
-      dmg = Math.floor(dmg * (char.spellCritMultiplier || 1.5));
-    }
+    const crit = Math.random() * 100 < (char.spellCritChance || 0);
+    if (crit) dmg = Math.floor(dmg * (char.spellCritMultiplier || 1.5));
     target.currentHp -= dmg;
+    _updateElan(char, crit);
     // Apothéose Serpentard — Soif du Serpent : 15 % des dégâts drainés
     // en PV pour le lanceur (battle-spells.js — _applySerpentLifesteal).
     if (char._serpentLifesteal && dmg > 0) {
@@ -844,10 +881,12 @@ function heroAct(char, enemies) {
 
   // 3. Attaque physique
   const bonus = target.disarmed > 0 ? 2 : 0;
-  let dmg = Math.max(1, Math.floor(mitigatedDamage(char.atk + Math.floor(Math.random() * 4), target.def - bonus) * vigor));
+  let dmg = Math.max(1, Math.floor(mitigatedDamage(char.atk + Math.floor(Math.random() * 4), target.def - bonus) * vigor * elan));
   if (target.disarmed > 0) target.disarmed--;
-  if (Math.random() * 100 < char.critChance) dmg = Math.floor(dmg * char.critMultiplier);
+  const critP = Math.random() * 100 < char.critChance;
+  if (critP) dmg = Math.floor(dmg * char.critMultiplier);
   target.currentHp -= dmg;
+  _updateElan(char, critP);
 }
 
 // Bibliothèque interdite — battle-spells.js — _spellForCaster :
@@ -1006,8 +1045,11 @@ function emitReport(rows, cfg) {
   console.log('# Étude de la difficulté — mode Normal\n');
   console.log(`Simulation : ${cfg.nSims} combats par couple (étage, mode). ` +
               `Hypothèse : ${COMBATS_PER_FLOOR_AVG} combats / étage en moyenne.\n`);
+  const elanInfo = cfg.gryffElan
+    ? ` | Élan ${cfg.elanStep}%/palier ×${cfg.elanCap} (decay=${cfg.elanDecay})`
+    : '';
   const houseInfo = cfg.houseSet
-    ? ` | set=${cfg.houseSet}${cfg.houseTier ? ` | palier Maison ${cfg.houseTier}` : ''}`
+    ? ` | set=${cfg.houseSet}${cfg.houseTier ? ` | palier Maison ${cfg.houseTier}` : ''}${elanInfo}`
     : '';
   console.log(`Paramètres : HP×${cfg.hpMult} | XP×${cfg.xpMult} | ` +
               `${cfg.statPoints} pts libres/niveau | build=${cfg.build}${houseInfo}\n`);

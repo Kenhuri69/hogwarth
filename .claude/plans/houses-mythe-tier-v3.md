@@ -260,3 +260,60 @@ baseline **23,1 %** → Serpentard **38,0 %** (+14,9) · Serdaigle
   série de combats sans repos.
 - **Sorts de Mythe non modélisés** : Imperius / Legilimens (contrôle)
   sortent du modèle DPS — playtest manuel requis (cf. §4).
+
+## 6. Mesure du candidat « Élan » (Gryffondor) — 2026-05-18
+
+Le passif livré de Gryffondor (+10 % crit, +10 % dégâts crit.) reste le
+plus discret en moyenne — le crit est du burst, lissé par Monte Carlo.
+Piste retenue : remplacer le **+10 % dégâts crit. *flat*** par un cumul
+« Élan » — chaque coup critique accorde un palier de +X % dégâts
+(physique + sort), cumul **propre au combat** (remis à zéro à chaque
+combat, jamais sérialisé). Le +10 % crit (physique + sort) est conservé :
+c'est lui qui alimente l'Élan.
+
+`sim-difficulty.js` reçoit un mode candidat : `--gryff-elan`
+(+ `--elan-step` / `--elan-cap` / `--elan-decay`). Étude Solo,
+`--endgame --max-floor=30 --artifacts --stat-points=3`, 800 sims.
+
+### Sweep des paramètres (moy. win% Solo étages 21-30, cap 5 paliers)
+
+| Variante                     | f21  | f30  | moy. 21-30 |
+|-------------------------------|-----:|-----:|-----------:|
+| Gryffondor livré (réf.)       | 31 % | 17 % | 24,4 %     |
+| Élan 6 %/palier, sans decay   | 35 % | 15 % | 26,2 %     |
+| Élan 8 %/palier, sans decay   | 39 % | 18 % | 27,5 %     |
+| Élan 10 %/palier, sans decay  | 40 % | 18 % | 27,3 %     |
+| Élan 8 %/palier, decay=turn   | 35 % | 20 % | 25,9 %     |
+
+### Classement cross-Maison (même run, 800 sims)
+
+| Maison                      | moy. win% Solo 21-30 |
+|-----------------------------|---------------------:|
+| tier 0 (baseline)           | 19,3 %               |
+| Gryffondor livré            | 25,4 %               |
+| **Gryffondor + Élan 8 %/5** | **28,1 %**           |
+| Poufsouffle                 | 28,5 %               |
+| Serdaigle                   | 33,0 %               |
+| Serpentard                  | 37,4 %               |
+
+### Constats
+
+1. **Réglage retenu : Élan 8 %/palier, cap 5 (+40 % max), sans decay.**
+   +2,7 pts moy. vs le passif livré, et surtout **+6 pts au floor 30** —
+   le snowball paie sur les combats profonds longs, l'effet recherché.
+2. **Le decay `turn` (−1 palier/tour sans crit) est contre-productif.**
+   À taux de crit réaliste (~20-30 %), la marche aléatoire est biaisée
+   vers le bas et le cumul ne monte presque jamais : le « retombe si
+   pas de crit » littéral étouffe la mécanique. Le reset par combat
+   suffit à empêcher le report — pas de decay intra-combat.
+3. **6 % trop faible ; 10 % ne bat pas 8 %** (cap atteint, bruit) → 8 %.
+4. Avec Élan, Gryffondor n'est plus la lanterne rouge : il rejoint
+   Poufsouffle (~28 %), sous Serdaigle et Serpentard. Spread des 4
+   Maisons resserré et cohérent.
+
+### Statut
+
+⏳ **Non implémenté en jeu — mesure seule.** En attente de validation
+des valeurs (8 %/palier, cap 5, sans decay) avant d'écrire le passif
+côté `battle.js` / `inventory.js` (reset à `startBattle`, cumul mis à
+jour dans `executeAttack` + handlers de sort offensifs).
