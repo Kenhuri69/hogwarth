@@ -8723,8 +8723,61 @@ async function scenarioMonsterCombatInfo() {
   await browser.close();
 }
 
+// ── Scénario : Bombarda — éclaboussure ───────────────────────
+
+async function scenarioBombardaSplash() {
+  console.log('\n── Scénario : Bombarda — éclaboussure ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 200 });
+
+  const r = await page.evaluate(() => {
+    currentBattleChar = 0;
+    const mk = (n) => ({
+      id: 'splash_dummy_' + n, name: 'Cible' + n, icon: '🎯',
+      hp: 200, currentHp: 200, atk: 0, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 0, gold: 0, abilities: [], drops: [], resist: [], weak: [],
+      statusEffects: [], desc: 'test'
+    });
+    enemyGroup.length = 0;
+    enemyGroup.push(mk(0), mk(1), mk(2));
+
+    const harry = party[0];
+    harry.mag = 16; harry.str = 12;
+    harry.sp = harry.spMax = 99;
+    shieldTurns = [0, 0]; guardTurns = [0, 0];
+
+    const bomb = SPELLS.find(s => s.name === 'Bombarda');
+    const expectSplash = Math.max(1, Math.floor(
+      bomb.power / 2 + harry.mag / 8 + harry.str / 4));
+
+    const hp = enemyGroup.map(e => e.currentHp);
+    castSpellInBattle('Bombarda', 0);
+
+    return {
+      hasSplashFlag: bomb.splash === true,
+      expectSplash,
+      primaryDelta: hp[0] - enemyGroup[0].currentHp,
+      splash1:      hp[1] - enemyGroup[1].currentHp,
+      splash2:      hp[2] - enemyGroup[2].currentHp
+    };
+  });
+  console.log('  Bombarda :', r);
+  assert(r.hasSplashFlag,                 'Bombarda doit porter splash:true');
+  assert(r.splash1 === r.expectSplash,    `éclaboussure cible 2 : attendu ${r.expectSplash}, obtenu ${r.splash1}`);
+  assert(r.splash2 === r.expectSplash,    `éclaboussure cible 3 : attendu ${r.expectSplash}, obtenu ${r.splash2}`);
+  assert(r.primaryDelta > r.expectSplash, `cible principale (${r.primaryDelta}) doit subir plus que l'éclaboussure (${r.expectSplash})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Bombarda)`);
+  }
+  console.log('  ✅ Bombarda éclaboussure conforme');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

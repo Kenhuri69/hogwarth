@@ -195,8 +195,15 @@ function spellEffectPreview(spell, char) {
       const d = spellDamage(spell, char);
       return `≈ ${d} dégâts · +${Math.floor(d / 2)} PV drainés`;
     }
-    case 'stun': case 'burn': case 'instant': case 'curse':
-      return `≈ ${spellDamage(spell, char)} dégâts`;
+    case 'stun': case 'burn': case 'instant': case 'curse': {
+      let txt = `≈ ${spellDamage(spell, char)} dégâts`;
+      if (spell.splash) {
+        const sp = Math.max(1, Math.floor(
+          spell.power / 2 + (char.mag || 0) / 8 + (char.str || 0) / 4));
+        txt += ` · éclaboussure ≈ ${sp}`;
+      }
+      return txt;
+    }
     case 'disarm':
       return `≈ −${disarmAtkLoss(spell, char)} ATK ennemie (${disarmTurns(spell, char)} tours)`;
     case 'shield':
@@ -316,6 +323,24 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
         msg += ` ${def.icon} ${def.label} appliqué !`;
         UX_safe.logCombat(`${def.icon} ${enemy.name} : ${def.label} (${dotPower}/tour, ${dotTurns} tours)`, 'magic');
       }
+    }
+
+    // Bombarda — éclaboussure : les autres ennemis vivants subissent
+    // floor(power/2 + mag/8 + str/4), modulée par resist/weak. Pas de
+    // crit, pas de DoT, pas de passif de Maison (réservés à la cible).
+    if (spell.splash) {
+      const splashBase = Math.max(1, Math.floor(
+        spell.power / 2 + (char.mag || 0) / 8 + (char.str || 0) / 4));
+      livingEnemies().filter(e => e !== enemy).forEach(other => {
+        let sd = splashBase, ssfx = '';
+        if (other.resist?.includes(spell.element)) { sd = Math.floor(sd * RESIST_MULTIPLIER); ssfx = ' 🔰'; }
+        if (other.weak?.includes(spell.element))   { sd = Math.floor(sd * WEAK_MULTIPLIER);   ssfx = ' 💥'; }
+        sd = Math.max(1, sd);
+        other.currentHp -= sd;
+        UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(other)}`, sd, 'dmg');
+        msg += ` 💥 ${other.name} −${sd}${ssfx}`;
+        UX_safe.logCombat(`💥 Éclaboussure sur ${other.name} : <b>−${sd}</b>${ssfx}`, 'magic');
+      });
     }
 
     const drain = _applySerpentLifesteal(char, dmg);

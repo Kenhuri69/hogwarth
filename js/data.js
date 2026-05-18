@@ -176,7 +176,7 @@ const SPELLS = [
   // ── Sorts intermédiaires ─────────────────────────────────────
   { name:"Lumos Maxima",      icon:"💡",   desc:"Éclat aveuglant (12 dégâts + stun)", cost:8,  effect:"stun",    element:"lumière",  power:12 },
   { name:"Aguamenti",         icon:"💧",   desc:"Jet d'eau (10 dégâts, -2 DEF)",      cost:7,  effect:"burn",    element:"glace",    power:10 },
-  { name:"Bombarda",          icon:"💥",   desc:"Explosion (20 dégâts tous ennemis)", cost:15, effect:"burn",    element:"feu",      power:20 },
+  { name:"Bombarda",          icon:"💥",   desc:"Explosion : 20 dégâts + éclaboussure sur les autres ennemis", cost:15, effect:"burn",    element:"feu",      power:20, splash:true },
   { name:"Riddikulus",        icon:"🤡",   desc:"Neutralise les créatures du chaos",  cost:6,  effect:"stun",    element:"lumière",  power:8  },
   { name:"Alohomora",         icon:"🔓",   desc:"Vole une grosse bourse de Gallions", cost:5,  effect:"steal",   power:20 },
   { name:"Patronum",          icon:"✨",   desc:"Patronus : 18 dégâts anti-Détraqueur", cost:12, effect:"burn",  element:"lumière",  power:18 },
