@@ -231,6 +231,7 @@ function spellEffectPreview(spell, char) {
     case 'patronus_maxima': return 'Bouclier de groupe (2 tours)';
     case 'legilimens':      return 'Annule la prochaine capacité ennemie';
     case 'recolte':         return 'Groupe restauré · or +50%';
+    case 'reveal':          return 'Dévoile tous les secrets du monstre';
     default:              return '';
   }
 }
@@ -516,6 +517,22 @@ function _spellLegilimens(spell, char) {
   return msg;
 }
 
+// Revelio en combat : ouvre le panneau d'info du monstre ciblé avec les
+// trois paliers déverrouillés, quel que soit monsterKills. Consomme le
+// tour et le PM comme un sort utilitaire (cf. manon-grimoire-pages.md §4b).
+function _spellReveal(spell, char, enemy, targetIdx) {
+  const idx    = (typeof targetIdx === 'number' && targetIdx >= 0) ? targetIdx : 0;
+  const target = enemyGroup[idx] || enemy;
+  if (typeof showMonsterCombatInfo === 'function') {
+    showMonsterCombatInfo(idx, { revealed: true });
+  }
+  const name = (target && target.name) || 'la créature';
+  const msg  = `🔎 ${char.name} : ${spell.name} — ${name} n'a plus de secret.`;
+  addMsg(msg, 'magic');
+  UX_safe.logCombat(`🔎 ${char.name} lance ${spell.name} sur ${name}`, 'info');
+  return msg;
+}
+
 // Récolte Magique (Poufsouffle) : restaure PV + PM de tout le groupe et
 // majore l'or de ce combat de +50 % (recolteGoldBonus, lu par endBattle).
 function _spellRecolte(spell, char) {
@@ -671,6 +688,7 @@ const SPELL_HANDLERS = {
   imperius:          _spellImperius,
   legilimens:        _spellLegilimens,
   recolte:           _spellRecolte,
+  reveal:            _spellReveal,
   aoe_wave:          _spellAoeWave,
   aoe_field:         _spellAoeField,
   aoe_chain:         _spellAoeChain,

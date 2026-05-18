@@ -182,12 +182,16 @@ jamais la position exacte, juste l'étage.
    verify : `node tests/smoke.js` — **vert** (27 scénarios).
    note : le logo, prévu en phase 2, a été tiré en phase 1 car le
    smoke test exige tout sort mappé dans `SPELL_ICON_REGISTRY`.
-2. **Revelio — handlers** — `isOutOfCombatSpell` + handler `reveal`
-   (dissipe le brouillard ~2 cases), bypass combat via
-   `showMonsterCombatInfo` ; consomme le tour + le PM. (Le logo a déjà
-   été livré en phase 1.)
-   verify : Revelio hors combat dissipe le fog ; en combat ouvre le
-   panneau monstre complet à 0 kill.
+2. ✅ **Revelio — handlers** — `isOutOfCombatSpell` += `reveal` ;
+   `SPELL_OOC_HANDLERS.reveal` dissipe le brouillard (carré rayon 2,
+   `visited[y][x]=true` + `renderMinimap`) ; `_spellReveal` (combat)
+   route vers `showMonsterCombatInfo(idx,{revealed:true})` — nouveau
+   flag `opts.revealed` qui force les 3 paliers ; `reveal` ajouté à
+   `needsTarget` + au dispatch `SPELL_HANDLERS` + preview. Consomme le
+   tour + le PM. (Logo livré en phase 1.)
+   verify : `node tests/smoke.js` vert (×3, non-régression). Le
+   chemin de cast Revelio lui-même n'est pas encore couvert par le
+   smoke — scénario dédié prévu en phase 6.
 3. **Pages donjon** — `pagePlacements`/`revealedPages`/`collectedPages`,
    seed, hook `searchRoom`, marqueur minimap, persistance save.
    verify : révéler + fouiller une page → `collectedPages` grandit,
@@ -218,3 +222,4 @@ jamais la position exacte, juste l'étage.
 - [x] Étages porteurs des 5 pages arbitrés : 2, 3, 5, 7, 9.
 - [x] Indices fantômes ajoutés au design (§7b).
 - [x] Phase 1 — narratif & données livré (smoke vert).
+- [x] Phase 2 — handlers Revelio (combat + hors combat) livrés.

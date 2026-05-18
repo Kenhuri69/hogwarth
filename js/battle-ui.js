@@ -186,13 +186,17 @@ function _miLocked(threshold, kills, label) {
     pour révéler : <em>${label}</em></div>`;
 }
 
-function showMonsterCombatInfo(idx) {
+// `opts.revealed` (sort Revelio) force les trois paliers à s'afficher
+// quel que soit `monsterKills` — la ligne « vaincue X fois » reste exacte.
+function showMonsterCombatInfo(idx, opts) {
   const enemy   = enemyGroup && enemyGroup[idx];
   const content = document.getElementById('monster-info-content');
   const overlay = document.getElementById('monster-info-overlay');
   if (!enemy || !content || !overlay) return;
 
-  const kills     = _monsterKillCount(enemy.id);
+  const realKills = _monsterKillCount(enemy.id);
+  const revealed  = !!(opts && opts.revealed);
+  const kills     = revealed ? MONSTER_INFO_TIERS.deep : realKills;
   const goldRange = (typeof enemy.gold === 'object')
     ? `${enemy.gold.min}–${enemy.gold.max}` : enemy.gold;
 
@@ -203,7 +207,8 @@ function showMonsterCombatInfo(idx) {
         <h2 class="mi-name">${enemy.name}</h2>
         <div class="bestiary-floor-tag">${(enemy.category || '').toUpperCase()}</div>
         ${_renderDangerHtml(enemy)}
-        <div class="mi-kills">⚔️ Espèce vaincue ${kills} fois</div>
+        <div class="mi-kills">⚔️ Espèce vaincue ${realKills} fois</div>
+        ${revealed ? '<div class="mi-kills">🔎 Révélé par Revelio</div>' : ''}
       </div>
     </div>
     <div class="mi-desc">${enemy.desc || ''}</div>

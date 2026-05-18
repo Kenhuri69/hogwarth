@@ -848,7 +848,8 @@ function openSpells(charIdx = 0) {
 // rester extensible. V1 : Portus (teleport) + sorts de soin (heal).
 function isOutOfCombatSpell(spell) {
   if (!spell) return false;
-  return spell.effect === 'teleport' || spell.effect === 'heal';
+  return spell.effect === 'teleport' || spell.effect === 'heal'
+      || spell.effect === 'reveal';
 }
 
 // Cooldown partagé entre tous les sorts de soin OOC (cf. .claude/plans/
@@ -908,6 +909,38 @@ const SPELL_OOC_HANDLERS = {
     addMsg(`💚 ${caster.name} → ${target.name} : ${spell.name} +${healed} PV.`, 'good');
     UX_safe.floatDmg('ally', healed, 'heal');
     closeModal('spell-modal');
+    updateUI();
+  },
+  // Revelio hors combat : dissipe le brouillard sur un carré de rayon 2
+  // autour du joueur (cf. manon-grimoire-pages.md §4a). La révélation des
+  // pages dissimulées sera greffée ici en phase 3.
+  reveal: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster || caster.hp <= 0) {
+      addMsg('Personne ne peut canaliser le sort.', 'bad');
+      return;
+    }
+    if (caster.sp < spell.cost) {
+      addMsg(`Pas assez de magie pour ${spell.name} (${spell.cost} PM).`, 'bad');
+      return;
+    }
+    caster.sp -= spell.cost;
+    let cleared = 0;
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const x = playerX + dx, y = playerY + dy;
+        if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H) continue;
+        if (visited[y] && !visited[y][x]) { visited[y][x] = true; cleared++; }
+      }
+    }
+    AudioSystem.playSpellCast(spell.name);
+    AudioSystem.speakSpell(spell.name);
+    addMsg(cleared > 0
+      ? `🔎 ${caster.name} lance ${spell.name} — le brouillard se dissipe alentour.`
+      : `🔎 ${caster.name} lance ${spell.name} — rien de neuf à dévoiler ici.`,
+      cleared > 0 ? 'good' : '');
+    closeModal('spell-modal');
+    if (typeof renderMinimap === 'function') renderMinimap();
     updateUI();
   }
 };
@@ -973,7 +1006,7 @@ function openBattleSpells() {
           castSpellInBattle(spell.name, -1);
           return;
         }
-        const needsTarget = ['stun','burn','instant','disarm','imperius','aoe_cleave'].includes(spell.effect);
+        const needsTarget = ['stun','burn','instant','disarm','imperius','aoe_cleave','reveal'].includes(spell.effect);
         if (needsTarget && livingEnemies().length > 1) {
           pendingSpell = spell.name;
           showTargetSelection('spell_dmg');
