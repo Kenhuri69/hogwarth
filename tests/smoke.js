@@ -3423,6 +3423,32 @@ async function scenarioEnsureKillTargets() {
   assert(t4.added === 0,     'objective completed → pas de spawn');
   assert(t4.chouettes === 0, 'aucune chouette ne doit être placée');
 
+  // T5 : _migrateQuestTargetIds — vieille save dont la quête de Lupin
+  // porte l'id de monstre obsolète `dementeur`. La migration doit le
+  // réaligner sur `detraqueur` (id canonique du template), sans toucher
+  // aux objectifs `item` ni aux quêtes farming (cible à id `null`).
+  const t5 = await page.evaluate(() => {
+    activeQuests = activeQuests.filter(q => q.id !== 'lumiere_desespoir');
+    const tpl  = QUEST_TEMPLATES.find(q => q.id === 'lumiere_desespoir');
+    const inst = JSON.parse(JSON.stringify(tpl));
+    inst.completed = false;
+    inst.objectives[0].monsterId = 'dementeur';   // id obsolète (vieille save)
+    activeQuests.push(inst);
+    _migrateQuestTargetIds();
+    const q = activeQuests.find(x => x.id === 'lumiere_desespoir');
+    // 2e passe → idempotence
+    _migrateQuestTargetIds();
+    return {
+      killId:   q.objectives[0].monsterId,
+      itemId:   q.objectives[1].itemId,
+      hasFn:    typeof _migrateQuestTargetIds === 'function'
+    };
+  });
+  console.log('  T5 migration ids cible:', t5);
+  assert(t5.hasFn,                       '_migrateQuestTargetIds non exposée');
+  assert(t5.killId === 'detraqueur',     `id kill attendu detraqueur, got ${t5.killId}`);
+  assert(t5.itemId === 'choco_sorcier',  `objectif item ne doit pas changer, got ${t5.itemId}`);
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);

@@ -372,6 +372,9 @@ function _applyState(gs) {
   if (ftOv) ftOv.classList.remove('active');
 
   if (gs.activeQuests)   activeQuests = gs.activeQuests.map(_migrateQuestShape);
+  // Migration : réconcilie les ids de cible des quêtes actives avec le
+  // catalogue — corrige les saves dont un objectif porte un id obsolète.
+  _migrateQuestTargetIds();
   // Migration v1 → v2+ : sépare les quêtes complétées et déduit
   // availableQuests à partir du catalogue. v2+ lit les Sets persistés.
   if (gs._version >= 2) {
@@ -571,6 +574,31 @@ function _migrateQuestShape(q) {
   if (q.objective.monsterId) step.monsterId = q.objective.monsterId;
   const { objective, progress, ...rest } = q;
   return { ...rest, objectives: [step] };
+}
+
+// Migration : aligne les ids de cible (`monsterId`/`itemId`) des quêtes
+// actives sur leur définition canonique dans QUEST_TEMPLATES. Corrige les
+// saves dont un objectif `kill`/`item` porte un id obsolète qui ne matche
+// plus aucune entité — ex. la quête de Lupin créée avant le fix
+// `dementeur` → `detraqueur`, dont l'objectif restait bloqué.
+// Idempotent. Les quêtes farming (cible tirée à l'acceptation, `null`
+// dans le template) sont ignorées : on ne corrige que les ids concrets.
+function _migrateQuestTargetIds() {
+  if (typeof getQuestTemplate !== 'function') return;
+  for (const q of (activeQuests || [])) {
+    const tpl = q && getQuestTemplate(q.id);
+    if (!tpl || !Array.isArray(tpl.objectives) || !Array.isArray(q.objectives)) continue;
+    q.objectives.forEach((o, i) => {
+      const t = tpl.objectives[i];
+      if (!t) return;
+      if (o.type === 'kill' && t.monsterId && o.monsterId !== t.monsterId) {
+        o.monsterId = t.monsterId;
+      }
+      if (o.type === 'item' && t.itemId && o.itemId !== t.itemId) {
+        o.itemId = t.itemId;
+      }
+    });
+  }
 }
 
 function loadGame() {
