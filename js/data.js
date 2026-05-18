@@ -209,11 +209,14 @@ const SPELLS = [
   // ── Sorts de zone (AoE) — un mode distinct par élément + soin ──
   // Modes : nappe (glace), chaîne (foudre), vague (lumière), drain
   // (ténèbres), fauchage (physique). Voir .claude/plans/aoe-spells.md.
-  { name:"Glacius Tempête",   icon:"🌨️", desc:"Blizzard : dégâts de glace à tous les ennemis + gel",            cost:16, effect:"aoe_field",  element:"glace",    power:12, stat2:"int" },
-  { name:"Fulgur Catena",     icon:"⚡",  desc:"Arc électrique : chaîne d'ennemi en ennemi (dégâts décroissants)", cost:15, effect:"aoe_chain",  element:"foudre",   power:18, stat2:"agi" },
-  { name:"Lux Aeterna",       icon:"🌟",  desc:"Onde de lumière : frappe tous les ennemis (×1,5 morts-vivants)",  cost:17, effect:"aoe_wave",   element:"lumière",  power:15, bonusVsUndead:1.5, stat2:"int" },
-  { name:"Nox Vorax",         icon:"🌑",  desc:"Vague obscure : dégâts à tous + draine la vie pour le lanceur",   cost:18, effect:"aoe_drain",  element:"ténèbres", power:14, stat2:"end" },
-  { name:"Diffindo Maxima",   icon:"⚔️", desc:"Fauchage : tranche la cible et les ennemis adjacents",            cost:14, effect:"aoe_cleave", element:"physique", power:18, stat2:"str" },
+  // Dégâts : base = power + mag/magDiv + stat2/stat2Div (cf. aoeBaseDamage).
+  // magDiv/stat2Div varient par sort pour l'équilibrage — un sort à gros
+  // rider (gel, vol de vie) scale plus doucement. Défaut 3/3.
+  { name:"Glacius Tempête",   icon:"🌨️", desc:"Blizzard : dégâts de glace à tous les ennemis + gel",            cost:16, effect:"aoe_field",  element:"glace",    power:12, stat2:"int", magDiv:3, stat2Div:3 },
+  { name:"Fulgur Catena",     icon:"⚡",  desc:"Arc électrique : chaîne d'ennemi en ennemi (dégâts décroissants)", cost:15, effect:"aoe_chain",  element:"foudre",   power:18, stat2:"agi", magDiv:2, stat2Div:4 },
+  { name:"Lux Aeterna",       icon:"🌟",  desc:"Onde de lumière : frappe tous les ennemis (×1,5 morts-vivants)",  cost:17, effect:"aoe_wave",   element:"lumière",  power:15, bonusVsUndead:1.5, stat2:"int", magDiv:2, stat2Div:4 },
+  { name:"Nox Vorax",         icon:"🌑",  desc:"Vague obscure : dégâts à tous + draine la vie pour le lanceur",   cost:18, effect:"aoe_drain",  element:"ténèbres", power:14, stat2:"end", magDiv:3, stat2Div:3 },
+  { name:"Diffindo Maxima",   icon:"⚔️", desc:"Fauchage : tranche la cible et les ennemis adjacents",            cost:14, effect:"aoe_cleave", element:"physique", power:18, stat2:"str", magDiv:3, stat2Div:2 },
   { name:"Vulnera Sanentur",  icon:"💗",  desc:"Chant de guérison : soigne tout le groupe",                       cost:16, effect:"heal_aoe",  power:22 },
 ];
 

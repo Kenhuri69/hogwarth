@@ -49,8 +49,20 @@ donner du sens aux stats secondaires et différencier les éléments.
 - [x] Étape 5 — smoke test vert ; `scenarioAoeSpells` renforcé avec
       int/agi/end/str non nuls pour exercer réellement la stat thématique.
 
-## Bilan dégâts (vérif équité)
-Globalement neutre vs ancien `power + mag/2`. Avec MAG 16 / stat2 ~12 :
-ancien Lux 23 → nouveau 24 ; chaîne 26→27 ; fauchage 26→27. La 2ᵉ stat
-compense la baisse du diviseur MAG (/2 → /3). Glacius Tempête utilisait
-déjà `mag/3` : +int/3 le fait monter de 17 à 21.
+## Étape 6 — variation par sort (équilibrage)
+Demande de suivi : les 5 sorts partageaient une formule identique
+(3/3) → rien ne les différenciait hors `power`. On rend les diviseurs
+`magDiv`/`stat2Div` propres à chaque sort, calibrés sur son identité.
+
+| Sort | power | magDiv | stat2Div | Logique |
+|------|-------|--------|----------|---------|
+| Lux Aeterna | 15 | 2 | 4 (INT) | Nuke lumière pur, scaling MAG fort |
+| Fulgur Catena | 18 | 2 | 4 (AGI) | Décroît en chaîne → gros 1er coup |
+| Glacius Tempête | 12 | 3 | 3 (INT) | Gros rider gel → dégâts directs bas |
+| Nox Vorax | 14 | 3 | 3 (END) | Rider vol de vie → dégâts directs bas |
+| Diffindo Maxima | 18 | 3 | 2 (STR) | Couverture partielle, identité STR |
+
+Helper `aoeBaseDamage` lit `spell.magDiv`/`spell.stat2Div` (défaut 3/3).
+- [x] data.js — magDiv/stat2Div sur les 5 entrées
+- [x] aoeBaseDamage — diviseurs paramétrés
+- [x] smoke test — valeurs recalculées, suite verte

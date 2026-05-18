@@ -8841,21 +8841,21 @@ async function scenarioAoeSpells() {
     return out;
   });
   console.log('  AoE :', r);
-  // base = power + floor(mag/3) + floor(stat2/3) — mag 16→5, stat2 → :
-  // int 12→4, agi 12→4, end 9→3, str 12→4.
-  assert(r.wave.every(d => d === 24),   // 15 + 5 + 4 (int)
-    `vague : 24 attendu à chaque ennemi, obtenu ${r.wave}`);
-  assert(r.field.every(d => d === 21),  // 12 + 5 + 4 (int)
+  // base = power + floor(mag/magDiv) + floor(stat2/stat2Div) — les
+  // diviseurs varient par sort. Stats : mag 16, int 12, agi 12, end 9, str 12.
+  assert(r.wave.every(d => d === 26),   // Lux : 15 + 16/2 + 12/4 (int)
+    `vague : 26 attendu à chaque ennemi, obtenu ${r.wave}`);
+  assert(r.field.every(d => d === 21),  // Glacius : 12 + 16/3 + 12/3 (int)
     `nappe : 21 attendu, obtenu ${r.field}`);
   assert(r.fieldGel, 'nappe : gel non appliqué à tous les ennemis');
-  assert(r.chain[0] === 27 && r.chain[1] === 17 && r.chain[2] === 11,  // 27 (18+5+4 agi) ×0,65
-    `chaîne : [27,17,11] attendu, obtenu ${r.chain}`);
-  assert(r.drain.every(d => d === 22),  // 14 + 5 + 3 (end)
+  assert(r.chain[0] === 29 && r.chain[1] === 18 && r.chain[2] === 12,  // Fulgur : 29 (18+16/2+12/4 agi) ×0,65
+    `chaîne : [29,18,12] attendu, obtenu ${r.chain}`);
+  assert(r.drain.every(d => d === 22),  // Nox : 14 + 16/3 + 9/3 (end)
     `drain : 22 attendu, obtenu ${r.drain}`);
   assert(r.drainHeal === 33, `drain : +33 PV attendu, obtenu +${r.drainHeal}`);
-  assert(r.cleave[1] === 27, `fauchage : cible 27 attendu, obtenu ${r.cleave[1]}`);  // 18+5+4 str
-  assert(r.cleave[0] === 16 && r.cleave[2] === 16,  // 27 ×0,6
-    `fauchage : voisins 16 attendus, obtenu [${r.cleave[0]},${r.cleave[2]}]`);
+  assert(r.cleave[1] === 29, `fauchage : cible 29 attendu, obtenu ${r.cleave[1]}`);  // Diffindo : 18+16/3+12/2 str
+  assert(r.cleave[0] === 17 && r.cleave[2] === 17,  // 29 ×0,6
+    `fauchage : voisins 17 attendus, obtenu [${r.cleave[0]},${r.cleave[2]}]`);
   assert(r.heal[0] === 32 && r.heal[1] === 42,
     `soin de groupe : [32,42] attendu, obtenu ${r.heal}`);
 

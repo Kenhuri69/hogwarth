@@ -165,11 +165,14 @@ function spellDamage(spell, char) {
   return spell.power + Math.floor((char.mag || 0) / 2);
 }
 // Dégâts de base AoE : MAG commune + une stat thématique par élément
-// (spell.stat2). Diviseur /3 (vs /2 mono-cible) — le scaling par cible
-// est plus doux puisque le sort frappe plusieurs ennemis.
+// (spell.stat2). Les diviseurs magDiv/stat2Div sont propres à chaque
+// sort — levier d'équilibrage : un sort à gros rider (gel, vol de vie)
+// scale plus doucement qu'un sort de dégâts purs. Défaut 3/3.
 function aoeBaseDamage(spell, char) {
-  const s2 = spell.stat2 ? Math.floor((char[spell.stat2] || 0) / 3) : 0;
-  return spell.power + Math.floor((char.mag || 0) / 3) + s2;
+  const magDiv   = spell.magDiv   || 3;
+  const stat2Div = spell.stat2Div || 3;
+  const s2 = spell.stat2 ? Math.floor((char[spell.stat2] || 0) / stat2Div) : 0;
+  return spell.power + Math.floor((char.mag || 0) / magDiv) + s2;
 }
 // Expelliarmus — réduction d'ATK : `power` de base, AGI convenablement,
 // INT faiblement. Plafonnée par l'ATK de l'ennemi côté handler.
