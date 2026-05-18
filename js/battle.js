@@ -40,6 +40,10 @@ const STATUS_DEFS = {
   disarm: { icon: '🪄↓', label: 'Désarmé',           color: '#c9a84c' },
   regen:  { icon: '🩹',   label: 'Régénération',      color: '#3aa55a' },
   stun:   { icon: '💫',   label: 'Étourdi',           color: '#d9a521' },
+  // Peur : non-DoT. À chaque tour, le combattant apeuré a 50 % de
+  // chance de se figer et perdre son tour. Durée décomptée normalement
+  // par tickStatuses (contrairement à stun, consommé au point de saut).
+  fear:   { icon: '😱',   label: 'Apeuré',            color: '#5a6b8c' },
   // Imperius (Sectumsempra Imperius) : non-DoT, l'ennemi frappe ses alliés.
   // Durée gérée par consumeImperius() au point d'action, comme stun.
   imperius: { icon: '🌀', label: 'Asservi',           color: '#7d3fa0' },
@@ -76,6 +80,17 @@ function consumeStun(actor) {
     actor.statusEffects = actor.statusEffects.filter(st => st !== s);
   }
   return true;
+}
+
+// ── Peur : 50 % de saut de tour tant que le statut est actif ──
+function isFeared(actor) {
+  return !!(actor && actor.statusEffects &&
+            actor.statusEffects.some(s => s.id === 'fear' && s.turns > 0));
+}
+// rollFearSkip : true si l'acteur est apeuré ET échoue le jet (50 %).
+// Ne consomme rien — la durée est décomptée par tickStatuses.
+function rollFearSkip(actor) {
+  return isFeared(actor) && Math.random() < 0.5;
 }
 
 // ── Imperius : asservissement (l'ennemi frappe ses alliés) ───
@@ -431,6 +446,10 @@ function advanceBattleChar() {
       setBattleLog(`💫 ${party[currentBattleChar].name} est étourdi et perd son tour...`);
       UX_safe.logCombat(`💫 ${party[currentBattleChar].name} est étourdi`, 'bad');
       setTimeout(enemyTurn, 900);
+    } else if (rollFearSkip(party[currentBattleChar])) {
+      setBattleLog(`😱 ${party[currentBattleChar].name} est tétanisé par la peur et perd son tour...`);
+      UX_safe.logCombat(`😱 ${party[currentBattleChar].name} est paralysé par la peur`, 'bad');
+      setTimeout(enemyTurn, 900);
     } else {
       setBattleLog(`À ${party[currentBattleChar].name} d'agir...`);
     }
@@ -456,6 +475,13 @@ function enemyTurn() {
     if (consumeStun(enemy)) {
       log += `💫 ${enemy.name} est étourdi et perd son tour ! `;
       UX_safe.logCombat(`💫 ${enemy.name} est étourdi`, 'good');
+      return;
+    }
+
+    // Apeuré : 50 % de chance de se figer et perdre son tour.
+    if (rollFearSkip(enemy)) {
+      log += `😱 ${enemy.name} est tétanisé par la peur ! `;
+      UX_safe.logCombat(`😱 ${enemy.name} est paralysé par la peur`, 'good');
       return;
     }
 
@@ -555,6 +581,10 @@ function enemyTurn() {
   if (opener && opener.hp > 0 && consumeStun(opener)) {
     setBattleLog((log || '...') + `\n💫 ${opener.name} est étourdi et perd son tour...`);
     UX_safe.logCombat(`💫 ${opener.name} est étourdi`, 'bad');
+    setTimeout(advanceBattleChar, 900);
+  } else if (opener && opener.hp > 0 && rollFearSkip(opener)) {
+    setBattleLog((log || '...') + `\n😱 ${opener.name} est tétanisé par la peur et perd son tour...`);
+    UX_safe.logCombat(`😱 ${opener.name} est paralysé par la peur`, 'bad');
     setTimeout(advanceBattleChar, 900);
   } else {
     setBattleLog((log || '...') + `\nÀ ${party[currentBattleChar].name} d'agir...`);

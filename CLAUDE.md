@@ -746,6 +746,19 @@ du combattant — héros comme ennemi. `turns` = nombre de tours sautés.
   Monstres porteurs : `lutin_cornouailles`, `strangulot`, `pitiponk`,
   `gargouille`.
 
+### Statut `fear` (peur)
+Statut non-DoT (`STATUS_DEFS.fear` 😱) : à **chaque tour**, le combattant
+apeuré a **50 % de chance** de se figer et perdre son tour.
+- `applyStatus(target, 'fear', 0, turns)` le pose ; le `power` est ignoré.
+- Contrairement à `stun`, `fear` est **décompté normalement** par
+  `tickStatuses` (pas de fonction de consommation) — sa durée est en
+  rounds, pas en sauts. `rollFearSkip(actor)` fait le jet 50 % sans
+  rien consommer (héros à l'ouverture de segment, ennemis dans la
+  boucle `enemyTurn`).
+- Vecteur d'injection : capacité ennemie `effect:"status", statusId:"fear"`.
+  Monstres porteurs : `boggart` (Épouvantard), `detraqueur` (Détraqueur).
+- Dissipé par le sort `Patronus Maxima` (palier Maison 17).
+
 ### Level-up (battle.js — checkLevelUp)
 Au level-up, on incrémente `c._baseAtk / _baseDef / _baseMag` (pas `c.atk` directement),
 puis on appelle `recalculateStats()` pour reconstruire les stats effectives avec l'équipement.

@@ -413,8 +413,8 @@ const NPCS = [
       house: "Gryffondor",
       label: "🎁 Recevoir votre récompense"
     },
-    questsGiven:    ["golem_passage", "quest_set_gryff"],
-    questsTurnedIn: ["golem_passage", "quest_set_gryff"],
+    questsGiven:    ["golem_passage", "quest_set_gryff", "quest_don_gryff"],
+    questsTurnedIn: ["golem_passage", "quest_set_gryff", "quest_don_gryff"],
     dialogues: {
       greeting:    [
         "Un Gardien du Portail s'est éveillé dans les passages secrets. Il bloque l'accès à des connaissances précieuses.",
@@ -439,6 +439,11 @@ const NPCS = [
         questOffer:  "Une Chimère rôde dans les profondeurs. Trois de ces bêtes — pas une de moins — et vous aurez gagné le Cœur du Lion. M'accordez-vous ce service ?",
         questActive: "Les Chimères tiennent-elles encore tête à un lion ?",
         questReady:  "Trois Chimères abattues. Le Cœur du Lion vous revient — repassez le réclamer, comme il sied à un héritier de Godric."
+      },
+      quest_don_gryff: {
+        questOffer:  "Gryffondor n'oublie jamais les siens, mais ses coffres, eux, ont une mémoire courte. Un don de 3000 Gallions soutiendrait nos jeunes recrues. La générosité, voyez-vous, est une forme de courage.",
+        questActive: "Avez-vous réuni les 3000 Gallions promis à la Maison ?",
+        questReady:  "Trois mille Gallions pour Gryffondor. Voilà un geste digne d'un lion — la Maison vous en sait gré."
       }
     }
   },
@@ -455,8 +460,8 @@ const NPCS = [
       house: "Serpentard",
       label: "🎁 Recevoir votre récompense"
     },
-    questsGiven:    ["quest_set_slyth"],
-    questsTurnedIn: ["quest_set_slyth"],
+    questsGiven:    ["quest_set_slyth", "quest_don_slyth"],
+    questsTurnedIn: ["quest_set_slyth", "quest_don_slyth"],
     dialogues: {
       greeting: [
         "Tiens, tiens... un élève de ma maison qui ose s'aventurer ici.",
@@ -478,6 +483,11 @@ const NPCS = [
         questOffer:  "Trois Basilics Mineurs souillent les cachots oubliés. Élimine-les. Sans bruit, sans gloire. La Couronne du Basilic n'est pas pour les vantards.",
         questActive: "Encore en vie ? Surprenant. Le travail n'est pas terminé.",
         questReady:  "Trois Basilics, trois preuves. La Couronne vous attend — venez la chercher quand l'ambition vous le dictera."
+      },
+      quest_don_slyth: {
+        questOffer:  "L'ambition sans moyens n'est qu'un rêve d'enfant. Verse 3000 Gallions au trésor de Serpentard, et la Maison saura s'en souvenir le moment venu.",
+        questActive: "Les 3000 Gallions. Serpentard attend — l'attente n'est pas une vertu que je cultive.",
+        questReady:  "Trois mille Gallions versés sans un mot. Voilà qui est… habile. Serpentard n'oubliera pas."
       }
     }
   },
@@ -494,8 +504,8 @@ const NPCS = [
       house: "Serdaigle",
       label: "🎁 Recevoir votre récompense"
     },
-    questsGiven:    ["quest_set_raven"],
-    questsTurnedIn: ["quest_set_raven"],
+    questsGiven:    ["quest_set_raven", "quest_don_raven"],
+    questsTurnedIn: ["quest_set_raven", "quest_don_raven"],
     dialogues: {
       greeting: [
         "Oh ! Un esprit aiguisé, n'est-ce pas ? L'aigle de Serdaigle se reconnaît au premier regard.",
@@ -517,6 +527,11 @@ const NPCS = [
         questOffer:  "Hécate la Maudisseuse dévore nos grimoires interdits. Trois de ses avatars, voilà ce qu'il faut anéantir — et l'Anneau du Savoir sera vôtre.",
         questActive: "Le savoir s'écrit dans le silence — combien d'avatars d'Hécate avez-vous réduits au néant ?",
         questReady:  "Trois maudisseuses, trois pages préservées. L'Anneau du Savoir vous attend — revenez le réclamer."
+      },
+      quest_don_raven: {
+        questOffer:  "Oh ! Préserver le savoir coûte cher, savez-vous ? Un don de 3000 Gallions, et nos grimoires resteront à l'abri une génération de plus. Y consentez-vous ?",
+        questActive: "Les 3000 Gallions pour la bibliothèque de Serdaigle — les avez-vous réunis ?",
+        questReady:  "Trois mille Gallions pour le savoir. Magnifique ! Chaque grimoire sauvé vous dira merci à sa façon."
       }
     }
   },
@@ -533,8 +548,8 @@ const NPCS = [
       house: "Poufsouffle",
       label: "🎁 Recevoir votre récompense"
     },
-    questsGiven:    ["quest_set_pouf"],
-    questsTurnedIn: ["quest_set_pouf"],
+    questsGiven:    ["quest_set_pouf", "quest_don_pouf"],
+    questsTurnedIn: ["quest_set_pouf", "quest_don_pouf"],
     dialogues: {
       greeting: [
         "Ah, un Poufsouffle ! La loyauté finit toujours par porter ses fruits — comme mes plantes.",
@@ -556,6 +571,11 @@ const NPCS = [
         questOffer:  "Trois Trolls des Cavernes terrorisent les passages — patience et loyauté, racine après racine. Le Médaillon de Helga récompensera ton serment.",
         questActive: "Trois trolls, et pas un de moins. Garde la tête haute.",
         questReady:  "Trois trolls vaincus — le serment est tenu. Le Médaillon de Helga vous attend, repassez le réclamer."
+      },
+      quest_don_pouf: {
+        questOffer:  "Poufsouffle prend soin de chacun des siens, et cela ne pousse pas tout seul, vois-tu. Un don de 3000 Gallions nourrirait bien des racines. Acceptes-tu de partager ?",
+        questActive: "Les 3000 Gallions pour la Maison — les as-tu rassemblés, mon petit ?",
+        questReady:  "Trois mille Gallions partagés de bon cœur. Voilà la vraie loyauté — Poufsouffle ne l'oubliera pas."
       }
     }
   },

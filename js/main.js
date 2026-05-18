@@ -320,6 +320,11 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
       }
     }
 
+    // Palier Mythe : ouvre la quête de don (gold-sink) chez le Chef de Maison.
+    if (tier.bonus.unlockMytheQuest) {
+      safeCall('unlockHouseMytheQuest', chosenHouse);
+    }
+
     recalculateStats();
     updateUI();
   });

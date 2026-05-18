@@ -392,12 +392,14 @@ function _spellTeleport(spell, char) {
 // ── Sorts de Maison — palier 17 « Mythe » ────────────────────
 
 // Patronus Maxima (Gryffondor) : bouclier de groupe (2 tours) sur tous
-// les alliés vivants + dissipe l'étourdissement. Pas de cible ennemie.
+// les alliés vivants + dissipe peur et étourdissement. Pas de cible ennemie.
 function _spellPatronusMaxima(spell, char) {
   party.slice(0, partySize).forEach((c, idx) => {
     if (c.hp <= 0) return;
     shieldTurns[idx] = Math.max(shieldTurns[idx] || 0, 2);
-    if (c.statusEffects) c.statusEffects = c.statusEffects.filter(s => s.id !== 'stun');
+    if (c.statusEffects) {
+      c.statusEffects = c.statusEffects.filter(s => s.id !== 'stun' && s.id !== 'fear');
+    }
   });
   UX_safe.floatDmg('ally', 0, 'shield');
   const msg = `🦌 ${char.name} : ${spell.name} — un Patronus enveloppe tout le groupe (bouclier 2 tours) !`;

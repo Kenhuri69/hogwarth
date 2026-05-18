@@ -111,25 +111,31 @@ selon l'équilibrage observé du tier 17.
       `_teachSpellToParty(tier.bonus.grantsSpell)` au tier 17.
 - [x] 4 icônes PNG (`tools/gen_element_spell_icons.py`) +
       `SPELL_ICON_REGISTRY` (`js/item-icons.js`).
-- [x] Smoke `scenarioHouseMytheTier` : gate refusée floor 5, franchie
-      floor 12 + sort appris + bonus stat ; mécaniques imperius /
-      legilimens / recolte vérifiées. `node tests/smoke.js` vert.
-- [ ] Quête « don de gold » : **reportée** — voir §3bis.
+- [x] Quête « don de 3000 gold » (gold-sink) : 4 templates
+      `quest_don_*` (`quests.js`) avec nouvel objectif `donate`
+      (`_refreshObjectives` bidirectionnel, consommation `_consumeQuestItems`,
+      rendu `_renderQuestStep`) ; `unlockHouseMytheQuest()` appelée au
+      tier 17 ; câblage Chefs de Maison (`questsGiven` / `dialoguesByQuest`).
+- [x] Statut `fear` 😱 (`STATUS_DEFS`, `isFeared` / `rollFearSkip`,
+      saut de tour 50 % ennemis + héros) ; injecté par `boggart` et
+      `detraqueur` ; dissipé par `Patronus Maxima`.
+- [x] Smoke `scenarioHouseMytheTier` (T1-T9) : gate, 4 sorts,
+      mécaniques imperius / legilimens / recolte, quête de don
+      (objectif bidirectionnel + remise consomme 3000), statut peur
+      (saut forcé + dissipation). `node tests/smoke.js` vert.
 
-### §3bis — Écarts vs plan & report de la quête de don
+### §3bis — Écarts vs plan
 
-- **Quête « don de 3000 gold »** : reportée à une PR dédiée. C'est un
-  gold-sink autonome (nouveau type d'objectif `donate` + déclenchement
-  au tier 17), découplé des sorts. La sortir de cette PR la garde
-  focalisée et évite d'élargir le moteur de quêtes dans le même lot.
 - **Récolte Magique** : le plan proposait « +50 % gold sur le combat
   *suivant* ». Implémenté « +50 % sur le combat *où il est lancé* »
   (`recolteGoldBonus`, lu par `endBattle`). Raison : l'état de combat
   n'est jamais sérialisé (`inBattle` bloque les sauvegardes) — une
   sémantique « combat courant » tient en un booléen transient.
-- **Patronus Maxima** : le plan citait « retire `fear`/`stun` ». Le jeu
-  n'a pas de statut `fear` ; le sort dissipe `stun` (seul statut de
-  contrôle existant).
+- **Statut `fear`** : le jeu n'avait pas de statut `fear`. Implémenté
+  comme contrôle non-DoT (50 % de saut de tour, décompté en rounds par
+  `tickStatuses`). L'ancienne capacité `weaken` « Terreur Absolue » de
+  l'Épouvantard est convertie en `effect:"status", statusId:"fear"`.
+  `Patronus Maxima` dissipe désormais bien `fear` + `stun`.
 
 ### Vague C — Palier 18 « Apothéose »
 

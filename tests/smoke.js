@@ -5478,11 +5478,71 @@ async function scenarioHouseMytheTier() {
   assert(t7.full,          'Récolte Magique ne restaure pas entièrement le groupe');
   assert(t7.flag === true, 'recolteGoldBonus non armé par Récolte Magique');
 
+  // T8 : quête de don (gold-sink) ouverte au tier 17, remise consomme 3000.
+  const t8 = await page.evaluate(() => {
+    const offered = availableQuests.has('quest_don_gryff');
+    acceptQuest('quest_don_gryff');
+    const active = activeQuests.find(q => q.id === 'quest_don_gryff');
+    player.gold = 500;
+    _refreshObjectives();
+    const lowDone = active.objectives[0].completed;
+    const lowProg = active.objectives[0].progress;
+    player.gold = 4200;
+    _refreshObjectives();
+    const okDone = active.objectives[0].completed;
+    const goldBefore = player.gold;
+    const turnedIn = turnInQuestById('quest_don_gryff');
+    return {
+      offered, lowDone, lowProg, okDone, turnedIn,
+      goldSpent: goldBefore - player.gold,
+      questGone: !activeQuests.some(q => q.id === 'quest_don_gryff'),
+    };
+  });
+  console.log('  T8 quête de don →', t8);
+  assert(t8.offered,            'quest_don_gryff non ouverte au franchissement du tier 17');
+  assert(t8.lowDone === false,  'objectif donate validé à tort avec or insuffisant');
+  assert(t8.lowProg === 500,    'progress donate doit refléter l\'or courant');
+  assert(t8.okDone === true,    'objectif donate non validé avec or suffisant');
+  assert(t8.turnedIn === true,  'remise de la quête de don échouée');
+  assert(t8.goldSpent === 3000, 'le don doit consommer exactement 3000 Gallions');
+  assert(t8.questGone,          'quête de don non retirée des quêtes actives');
+
+  // T9 : statut « peur » — saut de tour + dissipation par Patronus Maxima.
+  const t9 = await page.evaluate(() => {
+    const out = { defDefined: typeof STATUS_DEFS !== 'undefined' && !!STATUS_DEFS.fear };
+    const base = enemyGroup[0] || { name: 'X', icon: '👹' };
+    enemyGroup = [{ ...base, name: 'Peureux', currentHp: 300, hp: 300, atk: 50, def: 4,
+      abilities: [], statusEffects: [] }];
+    party[0].statusEffects = [];
+    party[0].hp = party[0].hpMax;
+    shieldTurns = [0, 0];
+    guardTurns  = [0, 0];
+    applyStatus(enemyGroup[0], 'fear', 0, 3);
+    out.isFeared = isFeared(enemyGroup[0]);
+    const origRandom = Math.random;
+    Math.random = () => 0.0;            // force le jet de peur (skip garanti)
+    const hpBefore = party[0].hp;
+    enemyTurn();
+    Math.random = origRandom;
+    out.allyUnharmed = party[0].hp === hpBefore;
+    party[0].statusEffects = [];
+    applyStatus(party[0], 'fear', 0, 3);
+    const spell = SPELLS.find(s => s.name === 'Patronus Maxima');
+    SPELL_HANDLERS[spell.effect](spell, party[0]);
+    out.fearCleared = !party[0].statusEffects.some(s => s.id === 'fear');
+    return out;
+  });
+  console.log('  T9 peur →', t9);
+  assert(t9.defDefined,   'STATUS_DEFS.fear absent');
+  assert(t9.isFeared,     'isFeared ne détecte pas le statut peur');
+  assert(t9.allyUnharmed, 'ennemi apeuré (jet forcé) a quand même frappé');
+  assert(t9.fearCleared,  'Patronus Maxima ne dissipe pas la peur');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Maison V3 palier 17 OK (gate + 4 sorts exclusifs)');
+  console.log('  ✅ Maison V3 palier 17 OK (gate + 4 sorts + quête de don + peur)');
   await browser.close();
 }
 

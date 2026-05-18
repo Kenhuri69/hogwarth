@@ -306,7 +306,7 @@ const MONSTERS = [
     scale: 0.22,
     abilities: [
       { name: "Forme Cauchemaresque", icon: "😱", desc: "Manifeste votre pire peur",  effect: "damage", power: 8, chance: 0.35 },
-      { name: "Terreur Absolue",       icon: "🌑", desc: "Paralyse de frayeur",        effect: "weaken", power: 3, chance: 0.25 }
+      { name: "Terreur Absolue",       icon: "😱", desc: "Paralyse de frayeur",        effect: "status", statusId: "fear", power: 0, chance: 0.25, turns: 2 }
     ],
     ai: "random",
     resist: ["ténèbres", "disarm"],
@@ -498,7 +498,8 @@ const MONSTERS = [
     hp: 25, atk: 10, def: 3, mag: 8, agi: 10, lck: 6,
     scale: 0.30,
     abilities: [
-      { name: "Baiser du Détraqueur", icon: "💀", desc: "Draine l'âme de la cible", effect: "drain", power: 10, chance: 0.35 }
+      { name: "Baiser du Détraqueur", icon: "💀", desc: "Draine l'âme de la cible",  effect: "drain",  power: 10, chance: 0.35 },
+      { name: "Désespoir Glacial",    icon: "😱", desc: "Glace la cible d'effroi",   effect: "status", statusId: "fear", power: 0, chance: 0.30, turns: 3 }
     ],
     ai: "cautious",
     resist: ["ténèbres", "glace", "disarm"],
