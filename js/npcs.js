@@ -202,6 +202,7 @@ const NPCS = [
     title: "Maître des Potions",
     sprite: "prof_h",
     icon:  "🧪",
+    portraitImg: "img/npc/slughorn.png",
     placement: { floor: 2, anchor: "any" },
     specialAction: {
       type:  "open_brewing",
