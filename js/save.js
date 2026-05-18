@@ -549,7 +549,17 @@ function saveGame() {
 // Convertit une quête en ancien format { objective:{}, progress:N } vers
 // le nouveau format { objectives:[{...}] }. Idempotent.
 function _migrateQuestShape(q) {
-  if (q.objectives) return q;
+  if (q.objectives) {
+    // Répare l'id de monstre erroné « dementeur » (le monstre s'appelle
+    // « detraqueur ») dans les saves créées avant le fix : sans cela,
+    // l'étape kill de `lumiere_desespoir` reste bloquée à 0/1.
+    for (const step of q.objectives) {
+      if (step && step.type === 'kill' && step.monsterId === 'dementeur') {
+        step.monsterId = 'detraqueur';
+      }
+    }
+    return q;
+  }
   if (!q.objective) return q;
   const step = {
     type:      q.objective.type,
