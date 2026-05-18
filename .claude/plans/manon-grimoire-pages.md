@@ -165,8 +165,8 @@ jamais la position exacte, juste l'étage.
 |---------|--------|
 | Déclencheur | Dialogue actif **seulement** si `manon_revelio` rendu et `manon_grimoire` en cours (même garde que les pages, §5) |
 | Contenu | Une ligne `idleRandom` qui nomme l'étage d'**une page encore non collectée** + une petite blague de fantôme |
-| Ciblage de l'étage | Au moment d'ouvrir le dialogue : prendre un étage de `pagePlacements` absent de `collectedPages` ; piocher la réplique correspondante. Si tout est collecté → la ligne d'indice ne s'affiche pas (repli sur le lore normal) |
-| Implémentation | Helper `_pageHintLine(floor)` (npcs.js) qui renvoie un texte paramétré ; injecté dans le pool `idleRandom` du PNJ lore par `getRandomLoreForFloor` quand la garde est vraie |
+| Ciblage de l'étage | `_pendingPageHintFloor()` (npcs.js) : étage porteur **non collecté** le plus bas (parmi `GRIMOIRE_PAGES`, qu'il soit atteint ou non — plus utile que se limiter à `pagePlacements`). `null` si tout collecté |
+| Implémentation | `_pageHintLine(floor)` (npcs.js) renvoie une variante (4 répliques, seedée `floor % 4`). Greffée comme **entrée supplémentaire** du pool `idleRandom` dans `_resolveDialogSource` (npc-dialog.js) quand le PNJ a `sprite:'fantome'` et que `_pendingPageHintFloor()` ≠ null → apparition 1/(N+1) |
 | Ton | Voix de fantôme : désinvolte, légèrement moqueur. Ex. : *« J'ai vu un bout de parchemin gribouillé de givre traîner au {étage}ᵉ. Je l'aurais bien ramassé… mais, tu sais, les mains. »* |
 
 - Pas de garantie d'apparition : c'est un coup de pouce ambiant, pas un
@@ -208,11 +208,11 @@ jamais la position exacte, juste l'étage.
    verify (3+4) : scénario smoke `scenarioGrimoirePages` — 6 cas
    (data, Revelio combat, placement gardé, ramassage révélé,
    complétion à 5, round-trip save). Suite complète **verte**.
-5. **Indices fantômes** — `_pageHintLine` + injection conditionnelle
-   dans `idleRandom` des PNJ lore (§7b).
-   verify : avec `manon_grimoire` en cours, un fantôme lore peut citer
-   l'étage d'une page non collectée ; aucune ligne d'indice une fois
-   les 5 pages prises.
+5. ✅ **Indices fantômes** — `_pageHintLine` + `_pendingPageHintFloor`
+   (npcs.js) ; greffe conditionnelle dans `_resolveDialogSource`
+   (npc-dialog.js) pour les PNJ `sprite:'fantome'` (§7b).
+   verify : `scenarioGrimoirePages` T7 — indice ciblé tant qu'une page
+   manque, aucun une fois les 5 prises ni sans le préambule rendu.
 6. **Établi de fusion** — `specialAction` Manon + overlay + recette.
    verify : fusion → grimoire au sac, quête complétée.
 7. **Smoke test** — étendre `scenarioGrimoirePages` au volet fusion
@@ -238,3 +238,5 @@ jamais la position exacte, juste l'étage.
       onglet `📖 Grimoire`) — décision utilisateur.
 - [x] Phases 3 & 4 — pages donjon + objectif de quête livrés
       (`scenarioGrimoirePages` vert).
+- [x] Phase 5 — indices des fantômes lore livrés (`scenarioGrimoirePages`
+      T7 vert).

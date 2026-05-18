@@ -8848,6 +8848,30 @@ async function scenarioGrimoirePages() {
   assert(t6.revealedOk,   'revealedPages doit rester un Set après _applyState');
   assert(t6.pagesOk,      'player.grimoirePages doit survivre au round-trip save');
 
+  // T7 — indices fantômes : étage signalé tant qu'une page manque.
+  const t7 = await page.evaluate(() => {
+    completedQuests.add('manon_revelio');   // préambule rendu
+    // manon_grimoire est actif (accepté en T3, restauré en T6).
+    player.grimoirePages = [];
+    const pendingFloor = _pendingPageHintFloor();
+    const line         = _pageHintLine(pendingFloor);
+    player.grimoirePages = GRIMOIRE_PAGES.map(p => p.id);
+    const doneFloor    = _pendingPageHintFloor();
+    completedQuests.delete('manon_revelio');
+    player.grimoirePages = [];
+    const noPreamble   = _pendingPageHintFloor();
+    return {
+      pendingFloor,
+      lineHasFloor: typeof line === 'string' && line.includes(String(pendingFloor)),
+      doneFloor, noPreamble
+    };
+  });
+  console.log('  T7 indice :', t7);
+  assert(t7.pendingFloor === 2,  'indice attendu sur l\'étage 2 (1re page non collectée)');
+  assert(t7.lineHasFloor,        'la réplique d\'indice doit citer le numéro d\'étage');
+  assert(t7.doneFloor === null,  'aucun indice une fois les 5 pages collectées');
+  assert(t7.noPreamble === null, 'aucun indice sans le préambule manon_revelio rendu');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS (pages du grimoire)`);

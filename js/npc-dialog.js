@@ -234,8 +234,18 @@ function _resolveDialogSource(npc, state) {
     // on en pioche un au hasard pour varier les visites (PNJ lore).
     let idleRandomPick = null;
     if (lore === null && Array.isArray(d.idleRandom) && d.idleRandom.length) {
-      idleIndex = Math.floor(Math.random() * d.idleRandom.length);
-      idleRandomPick = d.idleRandom[idleIndex];
+      let pool = d.idleRandom;
+      // Indice de page de grimoire (Manon Acte II) : un fantôme lore peut
+      // lâcher une réplique-blague pointant un étage porteur non collecté.
+      // Greffé comme entrée supplémentaire → apparition non garantie.
+      const hintFloor = (npc.sprite === 'fantome'
+        && typeof _pendingPageHintFloor === 'function')
+        ? _pendingPageHintFloor() : null;
+      if (hintFloor !== null && typeof _pageHintLine === 'function') {
+        pool = d.idleRandom.concat(_pageHintLine(hintFloor));
+      }
+      idleIndex = Math.floor(Math.random() * pool.length);
+      idleRandomPick = pool[idleIndex];
     }
     raw = (lore !== null) ? lore
         : (idleRandomPick !== null) ? idleRandomPick
