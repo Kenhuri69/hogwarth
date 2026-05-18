@@ -66,3 +66,25 @@ Helper `aoeBaseDamage` lit `spell.magDiv`/`spell.stat2Div` (défaut 3/3).
 - [x] data.js — magDiv/stat2Div sur les 5 entrées
 - [x] aoeBaseDamage — diviseurs paramétrés
 - [x] smoke test — valeurs recalculées, suite verte
+
+## Étape 7 — simulation de validation (`tools/sim-aoe.js`)
+Demande de suivi : vérifier le rendement dégâts/PM mono vs AoE à
+1/2/3 cibles. Script `tools/sim-aoe.js` — charge SPELLS depuis data.js,
+reproduit les formules de battle-spells.js, sort des tableaux Markdown
+sur 4 profils de joueur (Apprenti / Initié / Archimage / Brute MAG).
+
+Conclusions (équilibrage **conservé en l'état**) :
+- ×1 cible : les monos écrasent les AoE → lancer un AoE sur 1 ennemi
+  est volontairement inefficace.
+- ×2 cibles : croisement, mono ≈ AoE.
+- ×3 cibles : les AoE dominent (≈ ×1,5–1,8 le meilleur mono).
+- Hiérarchie saine **mono pur < Bombarda (semi-AoE) < AoE dédiées**.
+  Bombarda atterrit au bas du peloton AoE — correct, son éclaboussure
+  vaut ≈ la moitié d'un coup plein.
+- Classement interne AoE cohérent avec les riders : Glacius en tête
+  (DoT gel compté), Nox en bas (son soin ≈ Σ/2 n'est pas compté comme
+  dégâts). Riders inclus, les 5 sorts se tiennent.
+- [x] `tools/sim-aoe.js` créé et exécuté ; pas de modif de sort retenue.
+
+> Pas de smoke test : `sim-aoe.js` est un outil hors-runtime (ne touche
+> pas le jeu), exécuté manuellement.
