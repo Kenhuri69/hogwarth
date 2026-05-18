@@ -89,6 +89,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'DIFFICULTY_SETTINGS',source: 'state.js',        kind: 'obj' },
     { name: 'defeatedCellsByFloor',source: 'state.js',       kind: 'obj' },
     { name: 'floorKillCount',     source: 'state.js',        kind: 'obj' },
+    { name: 'monsterKills',       source: 'state.js',        kind: 'obj' },
     { name: 'visitedFloors',      source: 'state.js',        kind: 'obj' },
     { name: 'portusOocCooldown',  source: 'state.js',        kind: 'obj' },
     { name: 'portusFightCooldown',source: 'state.js',        kind: 'obj' },
@@ -146,6 +147,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'teleportEnemyAway',        source: 'teleport.js', kind: 'fn' },
     { name: 'teleportOutOfCombat',      source: 'teleport.js', kind: 'fn' },
     { name: 'renderEnemyGroup',   source: 'battle-ui.js',    kind: 'fn'  },
+    { name: 'showMonsterCombatInfo', source: 'battle-ui.js', kind: 'fn'  },
 
     // ── Inventaire ──
     { name: 'openInventory',      source: 'inventory.js',    kind: 'fn'  },

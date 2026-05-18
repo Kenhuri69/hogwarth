@@ -142,6 +142,7 @@ function renderEnemyGroup() {
       </div>
     `;
     container.appendChild(card);
+    _attachMonsterInfoHandlers(card, i);
   });
 }
 
@@ -167,4 +168,106 @@ function setBattleLog(text) {
   // innerHTML pour permettre <img> des sortilèges/status. Tous les
   // appelants construisent des templates contrôlés (pas d'input user).
   el.innerHTML = text;
+}
+
+// ── Panneau d'info monstre (clic / appui long sur une carte) ─────
+// Paliers de révélation progressive selon le nombre de victoires
+// cumulées sur l'espèce (monsterKills[id]).
+const MONSTER_INFO_TIERS = { stats: 1, weakness: 3, deep: 5 };
+
+function _monsterKillCount(id) {
+  return (typeof monsterKills !== 'undefined' && monsterKills[id]) || 0;
+}
+
+// Ligne « section verrouillée » avec le nombre de victoires restantes.
+function _miLocked(threshold, kills, label) {
+  const need = Math.max(1, threshold - kills);
+  return `<div class="mi-locked">🔒 Encore ${need} victoire${need > 1 ? 's' : ''}
+    pour révéler : <em>${label}</em></div>`;
+}
+
+function showMonsterCombatInfo(idx) {
+  const enemy   = enemyGroup && enemyGroup[idx];
+  const content = document.getElementById('monster-info-content');
+  const overlay = document.getElementById('monster-info-overlay');
+  if (!enemy || !content || !overlay) return;
+
+  const kills     = _monsterKillCount(enemy.id);
+  const goldRange = (typeof enemy.gold === 'object')
+    ? `${enemy.gold.min}–${enemy.gold.max}` : enemy.gold;
+
+  let html = `
+    <div class="mi-header">
+      <div class="mi-icon">${getMonsterIconHtml(enemy, 88)}</div>
+      <div class="mi-titles">
+        <h2 class="mi-name">${enemy.name}</h2>
+        <div class="bestiary-floor-tag">${(enemy.category || '').toUpperCase()}</div>
+        ${_renderDangerHtml(enemy)}
+        <div class="mi-kills">⚔️ Espèce vaincue ${kills} fois</div>
+      </div>
+    </div>
+    <div class="mi-desc">${enemy.desc || ''}</div>
+    <div class="mi-hp">PV : ${Math.max(0, enemy.currentHp)} / ${enemy.hp}</div>
+  `;
+
+  // Palier 1 — caractéristiques chiffrées + lore.
+  if (kills >= MONSTER_INFO_TIERS.stats) {
+    html += `<div class="mi-section">
+      ${_renderStatGrid(enemy, goldRange)}
+      ${enemy.lore ? `<p class="bestiary-lore-full">${enemy.lore}</p>` : ''}
+    </div>`;
+  } else {
+    html += _miLocked(MONSTER_INFO_TIERS.stats, kills, 'caractéristiques & historique');
+  }
+
+  // Palier 2 — résistances & faiblesses élémentaires.
+  if (kills >= MONSTER_INFO_TIERS.weakness) {
+    const rw = _renderResistWeakHtml(enemy);
+    html += `<div class="mi-section">
+      <div class="bestiary-section-title">Résistances & Faiblesses</div>
+      ${rw || '<div class="mi-none">Aucune affinité élémentaire connue.</div>'}
+    </div>`;
+  } else {
+    html += _miLocked(MONSTER_INFO_TIERS.weakness, kills, 'résistances & faiblesses élémentaires');
+  }
+
+  // Palier 3 — capacités spéciales + butin + habitat/anecdote.
+  if (kills >= MONSTER_INFO_TIERS.deep) {
+    const deep = (_renderAbilitiesHtml(enemy, true) || '')
+               + (_renderDropsHtml(enemy, true) || '')
+               + (_renderLoreBox(enemy, true) || '');
+    html += deep || `<div class="mi-section"><div class="mi-none">Aucune capacité ni butin notable.</div></div>`;
+  } else {
+    html += _miLocked(MONSTER_INFO_TIERS.deep, kills, 'capacités spéciales, butin & secrets');
+  }
+
+  content.innerHTML = html;
+  content.scrollTop = 0;
+  overlay.style.display = 'flex';
+}
+
+function closeMonsterCombatInfo() {
+  const overlay = document.getElementById('monster-info-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+// Câble clic (desktop) et appui long 500 ms (tactile) sur une carte ennemie.
+function _attachMonsterInfoHandlers(card, idx) {
+  card.style.cursor = 'pointer';
+  card.title = 'Cliquez (ou appui long) pour les informations';
+  let lpTimer = null, touchUsed = false;
+  const clearLp = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+  card.addEventListener('touchstart', () => {
+    touchUsed = true;
+    clearLp();
+    lpTimer = setTimeout(() => { lpTimer = null; showMonsterCombatInfo(idx); }, 500);
+  }, { passive: true });
+  card.addEventListener('touchmove',   clearLp, { passive: true });
+  card.addEventListener('touchend',    clearLp);
+  card.addEventListener('touchcancel', clearLp);
+  card.addEventListener('click', () => {
+    // Sur tactile, seul l'appui long ouvre le panneau — on ignore le clic synthétique.
+    if (touchUsed) { touchUsed = false; return; }
+    showMonsterCombatInfo(idx);
+  });
 }

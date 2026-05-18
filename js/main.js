@@ -370,6 +370,7 @@ async function startGame(count = 2) {
   searchedCells = new Set();
   visitedFloors = new Set([1]);
   totalKills     = 0;
+  monsterKills   = {};
   defeatedBosses = new Set();
   ironmanRunId   = (ironmanMode && typeof _genRunId === 'function') ? _genRunId() : null;
   shopStock = null;

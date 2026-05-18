@@ -8622,8 +8622,109 @@ async function scenarioCombatExtV2() {
   console.log('  ✅ Extensions combat V2 conformes');
 }
 
+// ── Scénario : panneau d'info monstre en combat ──────────────
+async function scenarioMonsterCombatInfo() {
+  console.log('\n── Scénario : panneau d\'info monstre (combat) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 50 });
+
+  // T1 — 0 kill : seule l'identité est révélée (3 sections verrouillées).
+  const t1 = await page.evaluate(() => {
+    monsterKills = {};
+    enemyGroup[0].weak = ['feu'];
+    enemyGroup[0].abilities = [{ icon: '💥', name: 'Charge', desc: 'fonce', chance: 0.5 }];
+    showMonsterCombatInfo(0);
+    const ov = document.getElementById('monster-info-overlay');
+    const c  = document.getElementById('monster-info-content');
+    return {
+      visible:  ov.style.display === 'flex',
+      locked:   c.querySelectorAll('.mi-locked').length,
+      hasStats: !!c.querySelector('.bestiary-stat-grid')
+    };
+  });
+  console.log('  T1 0 kill :', t1);
+  assert(t1.visible,      'overlay non affiché');
+  assert(t1.locked === 3, `3 sections verrouillées attendues, obtenu ${t1.locked}`);
+  assert(!t1.hasStats,    'stats ne doivent pas être révélées à 0 kill');
+
+  // T2 — 1 kill : stats révélées, faiblesses encore verrouillées.
+  const t2 = await page.evaluate(() => {
+    monsterKills = { test_dummy: 1 };
+    showMonsterCombatInfo(0);
+    const c = document.getElementById('monster-info-content');
+    return {
+      hasStats: !!c.querySelector('.bestiary-stat-grid'),
+      hasWeak:  c.innerHTML.includes('Résistances &amp; Faiblesses'),
+      locked:   c.querySelectorAll('.mi-locked').length
+    };
+  });
+  console.log('  T2 1 kill :', t2);
+  assert(t2.hasStats,     'stats non révélées à 1 kill');
+  assert(!t2.hasWeak,     'faiblesses ne doivent pas être révélées à 1 kill');
+  assert(t2.locked === 2, `2 sections verrouillées attendues, obtenu ${t2.locked}`);
+
+  // T3 — 3 kills : faiblesses révélées, capacités encore verrouillées.
+  const t3 = await page.evaluate(() => {
+    monsterKills = { test_dummy: 3 };
+    showMonsterCombatInfo(0);
+    const c = document.getElementById('monster-info-content');
+    return {
+      hasWeak:    c.innerHTML.includes('Résistances &amp; Faiblesses'),
+      hasAbility: c.innerHTML.includes('Capacités spéciales'),
+      locked:     c.querySelectorAll('.mi-locked').length
+    };
+  });
+  console.log('  T3 3 kills:', t3);
+  assert(t3.hasWeak,      'faiblesses non révélées à 3 kills');
+  assert(!t3.hasAbility,  'capacités ne doivent pas être révélées à 3 kills');
+  assert(t3.locked === 1, `1 section verrouillée attendue, obtenu ${t3.locked}`);
+
+  // T4 — 5 kills : capacités révélées, plus aucune section verrouillée.
+  const t4 = await page.evaluate(() => {
+    monsterKills = { test_dummy: 5 };
+    showMonsterCombatInfo(0);
+    const c = document.getElementById('monster-info-content');
+    return {
+      hasAbility: c.innerHTML.includes('Capacités spéciales'),
+      locked:     c.querySelectorAll('.mi-locked').length
+    };
+  });
+  console.log('  T4 5 kills:', t4);
+  assert(t4.hasAbility,   'capacités non révélées à 5 kills');
+  assert(t4.locked === 0, `0 section verrouillée attendue, obtenu ${t4.locked}`);
+
+  // T5 — un clic sur la carte ennemie ouvre le panneau.
+  const t5 = await page.evaluate(() => {
+    closeMonsterCombatInfo();
+    renderEnemyGroup();
+    document.querySelector('.enemy-card')
+      .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    return { visible: document.getElementById('monster-info-overlay').style.display === 'flex' };
+  });
+  console.log('  T5 clic   :', t5);
+  assert(t5.visible, 'le clic sur la carte ennemie n\'ouvre pas le panneau');
+
+  // T6 — endBattle(true) incrémente monsterKills par espèce.
+  const t6 = await page.evaluate(() => {
+    monsterKills = {};
+    enemyGroup[0].currentHp = 0;
+    endBattle(true);
+    return { kills: monsterKills.test_dummy || 0 };
+  });
+  console.log('  T6 kill   :', t6);
+  assert(t6.kills === 1, `monsterKills.test_dummy attendu 1, obtenu ${t6.kills}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (panneau info monstre)`);
+  }
+  console.log('  ✅ Panneau d\'info monstre conforme');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
