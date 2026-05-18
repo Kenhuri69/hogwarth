@@ -8794,7 +8794,9 @@ async function scenarioAoeSpells() {
     });
     const reset3 = () => { enemyGroup.length = 0; enemyGroup.push(mk(0), mk(1), mk(2)); };
     const harry = party[0];
-    harry.mag = 16; harry.int = 0; harry.end = 0; harry.str = 12;
+    // Stats non nulles : la formule AoE lit MAG + une stat thématique
+    // (int/agi/end/str selon spell.stat2) — chaque stat doit peser.
+    harry.mag = 16; harry.int = 12; harry.end = 9; harry.str = 12; harry.agi = 12;
     harry.hp = harry.hpMax = 200;
 
     // Vague (Lux Aeterna) : dégâts égaux à tous.
@@ -8839,17 +8841,21 @@ async function scenarioAoeSpells() {
     return out;
   });
   console.log('  AoE :', r);
-  assert(r.wave[0] === 23 && r.wave[1] === 23 && r.wave[2] === 23,
-    `vague : 23 attendu à chaque ennemi, obtenu ${r.wave}`);
-  assert(r.field.every(d => d === 17), `nappe : 17 attendu, obtenu ${r.field}`);
+  // base = power + floor(mag/3) + floor(stat2/3) — mag 16→5, stat2 → :
+  // int 12→4, agi 12→4, end 9→3, str 12→4.
+  assert(r.wave.every(d => d === 24),   // 15 + 5 + 4 (int)
+    `vague : 24 attendu à chaque ennemi, obtenu ${r.wave}`);
+  assert(r.field.every(d => d === 21),  // 12 + 5 + 4 (int)
+    `nappe : 21 attendu, obtenu ${r.field}`);
   assert(r.fieldGel, 'nappe : gel non appliqué à tous les ennemis');
-  assert(r.chain[0] === 26 && r.chain[1] === 16 && r.chain[2] === 10,
-    `chaîne : [26,16,10] attendu, obtenu ${r.chain}`);
-  assert(r.drain.every(d => d === 22), `drain : 22 attendu, obtenu ${r.drain}`);
+  assert(r.chain[0] === 27 && r.chain[1] === 17 && r.chain[2] === 11,  // 27 (18+5+4 agi) ×0,65
+    `chaîne : [27,17,11] attendu, obtenu ${r.chain}`);
+  assert(r.drain.every(d => d === 22),  // 14 + 5 + 3 (end)
+    `drain : 22 attendu, obtenu ${r.drain}`);
   assert(r.drainHeal === 33, `drain : +33 PV attendu, obtenu +${r.drainHeal}`);
-  assert(r.cleave[1] === 26, `fauchage : cible 26 attendu, obtenu ${r.cleave[1]}`);
-  assert(r.cleave[0] === 15 && r.cleave[2] === 15,
-    `fauchage : voisins 15 attendus, obtenu [${r.cleave[0]},${r.cleave[2]}]`);
+  assert(r.cleave[1] === 27, `fauchage : cible 27 attendu, obtenu ${r.cleave[1]}`);  // 18+5+4 str
+  assert(r.cleave[0] === 16 && r.cleave[2] === 16,  // 27 ×0,6
+    `fauchage : voisins 16 attendus, obtenu [${r.cleave[0]},${r.cleave[2]}]`);
   assert(r.heal[0] === 32 && r.heal[1] === 42,
     `soin de groupe : [32,42] attendu, obtenu ${r.heal}`);
 

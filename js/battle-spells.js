@@ -164,6 +164,13 @@ function healAmount(spell, char) {
 function spellDamage(spell, char) {
   return spell.power + Math.floor((char.mag || 0) / 2);
 }
+// Dégâts de base AoE : MAG commune + une stat thématique par élément
+// (spell.stat2). Diviseur /3 (vs /2 mono-cible) — le scaling par cible
+// est plus doux puisque le sort frappe plusieurs ennemis.
+function aoeBaseDamage(spell, char) {
+  const s2 = spell.stat2 ? Math.floor((char[spell.stat2] || 0) / 3) : 0;
+  return spell.power + Math.floor((char.mag || 0) / 3) + s2;
+}
 // Expelliarmus — réduction d'ATK : `power` de base, AGI convenablement,
 // INT faiblement. Plafonnée par l'ATK de l'ennemi côté handler.
 function disarmAtkLoss(spell, char) {
@@ -213,9 +220,9 @@ function spellEffectPreview(spell, char) {
       return `≈ ${b}–${b + 5} 🪙`;
     }
     case 'aoe_wave': case 'aoe_chain': case 'aoe_drain': case 'aoe_cleave':
-      return `≈ ${spellDamage(spell, char)} dégâts · zone`;
+      return `≈ ${aoeBaseDamage(spell, char)} dégâts · zone`;
     case 'aoe_field':
-      return `≈ ${spell.power + Math.floor((char.mag || 0) / 3)} dégâts · zone · gel`;
+      return `≈ ${aoeBaseDamage(spell, char)} dégâts · zone · gel`;
     case 'heal_aoe':        return `≈ ${healAmount(spell, char)} PV au groupe`;
     case 'imperius':        return `≈ ${spellDamage(spell, char)} dégâts · asservit 2 tours`;
     case 'patronus_maxima': return 'Bouclier de groupe (2 tours)';
@@ -543,7 +550,7 @@ function _aoeHit(spell, char, enemy, raw, opts) {
 
 // Lux Aeterna (vague) : dégâts égaux à tous les ennemis, bonus morts-vivants.
 function _spellAoeWave(spell, char) {
-  const base = spell.power + Math.floor((char.mag || 0) / 2);
+  const base = aoeBaseDamage(spell, char);
   let msg = `${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} —`;
   livingEnemies().forEach(e => {
     const { dmg, suffix } = _aoeHit(spell, char, e, base, { undead: true });
@@ -557,7 +564,7 @@ function _spellAoeWave(spell, char) {
 
 // Glacius Tempête (nappe) : dégâts modérés à tous + statut gel sur chacun.
 function _spellAoeField(spell, char) {
-  const base     = spell.power + Math.floor((char.mag || 0) / 3);
+  const base     = aoeBaseDamage(spell, char);
   const dotPower = Math.max(1, Math.floor(spell.power * 0.25));
   const dotTurns = Math.min(5, 2 + Math.floor((char.int || 0) / 24));
   let msg = `🌨️ ${char.name} : ${spell.name} —`;
@@ -574,7 +581,7 @@ function _spellAoeField(spell, char) {
 
 // Fulgur Catena (chaîne) : arc d'ennemi en ennemi, dégâts ×0,65 par saut.
 function _spellAoeChain(spell, char) {
-  const base = spell.power + Math.floor((char.mag || 0) / 2);
+  const base = aoeBaseDamage(spell, char);
   let mult = 1;
   let msg = `⚡ ${char.name} : ${spell.name} —`;
   livingEnemies().forEach((e, i) => {
@@ -590,7 +597,7 @@ function _spellAoeChain(spell, char) {
 
 // Nox Vorax (drain) : dégâts à tous ; le lanceur se soigne de la moitié du total.
 function _spellAoeDrain(spell, char) {
-  const base = spell.power + Math.floor((char.mag || 0) / 2);
+  const base = aoeBaseDamage(spell, char);
   let total = 0;
   let msg = `🌑 ${char.name} : ${spell.name} —`;
   livingEnemies().forEach(e => {
@@ -610,7 +617,7 @@ function _spellAoeDrain(spell, char) {
 // Diffindo Maxima (fauchage) : cible pleine + voisins directs (±1) ×0,6.
 function _spellAoeCleave(spell, char, enemy, targetIdx) {
   if (!enemy) return '';
-  const base = spell.power + Math.floor((char.mag || 0) / 2);
+  const base = aoeBaseDamage(spell, char);
   const ti   = enemyGroup.indexOf(enemy);
   let msg = `⚔️ ${char.name} : ${spell.name} —`;
   const main = _aoeHit(spell, char, enemy, base);
