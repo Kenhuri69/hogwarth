@@ -189,7 +189,7 @@ const QUEST_TEMPLATES = [
     giver: "Professeur Lupin",
     desc: "Affronte un Détraqueur pour prouver ton courage, puis rapporte un Chocolat aux Sorciers à Lupin pour qu'il t'enseigne le Patronus.",
     objectives: [
-      { type: "kill", monsterId: "dementeur",     amount: 1, progress: 0, completed: false },
+      { type: "kill", monsterId: "detraqueur",    amount: 1, progress: 0, completed: false },
       { type: "item", itemId:    "choco_sorcier", amount: 1, progress: 0, completed: false }
     ],
     reward: { xp: 200, gold: 50, spell: "Patronum" },

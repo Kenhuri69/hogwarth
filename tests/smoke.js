@@ -444,13 +444,13 @@ async function scenarioChainedQuest() {
   assert(t1.removedFromAvailable,             'quête doit sortir d\'availableQuests après acceptation');
   assert(t1.stepCount === 2,                  'doit avoir 2 étapes');
   assert(t1.step0Type === 'kill',             'étape 0 doit être un kill');
-  assert(t1.step0Monster === 'dementeur',     'étape 0 doit cibler dementeur');
+  assert(t1.step0Monster === 'detraqueur',    'étape 0 doit cibler detraqueur');
   assert(t1.step1Type === 'item',             'étape 1 doit être un item');
   assert(t1.step1Item === 'choco_sorcier',    'étape 1 doit cibler choco_sorcier');
 
   // T2 : simuler kill du Détraqueur → étape 0 complète, pas d'auto-completion
   const t2 = await page.evaluate(() => {
-    checkKillQuests('dementeur');
+    checkKillQuests('detraqueur');
     const q = activeQuests.find(x => x.id === 'lumiere_desespoir');
     return {
       step0Done: q.objectives[0].completed,
