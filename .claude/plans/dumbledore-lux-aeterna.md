@@ -160,3 +160,4 @@ collecte ✓ → énigme ▶ → boss ◌.
 - [x] Phase 1 — données & narratif livrés (smoke vert).
 - [x] Phases 2-4 — énigmes, modale, boss, remise + couverture smoke.
 - [x] **Fonctionnalité complète** — les 4 phases sont livrées.
+- [x] Art du boss — PNG 512² détouré (rembg) et câblé via `imgSrc`.

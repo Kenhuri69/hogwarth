@@ -857,6 +857,7 @@ const MONSTERS = [
     epic:     true,
     name:     "le Bibliothécaire d'Ombre",
     icon:     "📖",
+    imgSrc:   "img/monsters/bibliothecaire_ombre.png",
     category: "fantôme",
     desc:     "Une silhouette voûtée se redresse entre les rayonnages — un spectre dont les yeux sont deux pages noircies.",
     lore:     "Ancien bibliothécaire de Poudlard, il amassa par avidité de savoir un grimoire de lumière qu'il ne sut jamais lire. L'éclat du livre le consuma de l'intérieur ; l'ombre prit ce qu'il restait. Il garde encore le grimoire scellé, jaloux d'un trésor qu'il ne peut plus toucher.",
