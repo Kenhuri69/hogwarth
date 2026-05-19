@@ -1512,6 +1512,28 @@ async function scenarioCombatMobile() {
   await page.goto(INDEX_URL);
   await page.waitForFunction(() => typeof window.startGame === 'function');
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Hit-targets ≥ 44px (audit UX mobile P0 #4) : croix de fermeture des
+  // modales et chevrons d'accordéon de la fiche perso sur mobile.
+  const hitTargets = await page.evaluate(() => {
+    openCharacter(0);
+    const modal  = document.getElementById('character-modal');
+    const close  = modal.querySelector('.modal-close');
+    const toggle = modal.querySelector('.section-toggle');
+    const r = {
+      closeW:  close  ? close.offsetWidth   : 0,
+      closeH:  close  ? close.offsetHeight  : 0,
+      toggleH: toggle ? toggle.offsetHeight : 0
+    };
+    closeModal('character-modal');
+    return r;
+  });
+  console.log('  hit-targets :', hitTargets);
+  assert(hitTargets.closeW >= 44 && hitTargets.closeH >= 44,
+    `croix de modale doit être ≥ 44px (got ${hitTargets.closeW}×${hitTargets.closeH})`);
+  assert(hitTargets.toggleH >= 44,
+    `chevron accordéon fiche perso doit être ≥ 44px (got ${hitTargets.toggleH})`);
+
   await startDummyFight(page, { hp: 30 });
 
   const layout = await page.evaluate(() => {
