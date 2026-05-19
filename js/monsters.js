@@ -505,7 +505,7 @@ const MONSTERS = [
     resist: ["ténèbres", "glace", "disarm"],
     weak:   ["lumière"],
     xp: 25, gold: { min: 8, max: 14 },
-    drops:  [{ itemId: "potion_m", chance: 0.12 }]
+    drops:  [{ itemId: "potion_m", chance: 0.12 }, { itemId: "eclat_lumiere", chance: 0.35 }]
   },
 
   // ════════════════════════════════════════════
@@ -561,7 +561,7 @@ const MONSTERS = [
     resist: ["ténèbres", "glace", "disarm"],
     weak:   ["feu"],
     xp: 35, gold: { min: 12, max: 20 },
-    drops:  []
+    drops:  [{ itemId: "eclat_lumiere", chance: 0.35 }]
   },
 
   {
@@ -701,7 +701,7 @@ const MONSTERS = [
     resist: ["ténèbres", "glace", "disarm"],
     weak:   ["lumière"],
     xp: 55, gold: { min: 20, max: 32 },
-    drops:  [{ itemId: "potion_m", chance: 0.15 }]
+    drops:  [{ itemId: "potion_m", chance: 0.15 }, { itemId: "eclat_lumiere", chance: 0.35 }]
   },
 
   {
@@ -847,6 +847,38 @@ const MONSTERS = [
       { itemId: "wand1",    chance: 0.10 },
       { itemId: "potion_m", chance: 0.20 }
     ]
+  },
+
+  {
+    // Boss de quête (Épreuve de la Lumière Éternelle). weight:0 → jamais
+    // tiré dans le pool aléatoire ; apparaît uniquement via le spawn de
+    // quête. Cf. .claude/plans/dumbledore-lux-aeterna.md.
+    id:       "bibliothecaire_ombre",
+    epic:     true,
+    name:     "le Bibliothécaire d'Ombre",
+    icon:     "📖",
+    category: "fantôme",
+    desc:     "Une silhouette voûtée se redresse entre les rayonnages — un spectre dont les yeux sont deux pages noircies.",
+    lore:     "Ancien bibliothécaire de Poudlard, il amassa par avidité de savoir un grimoire de lumière qu'il ne sut jamais lire. L'éclat du livre le consuma de l'intérieur ; l'ombre prit ce qu'il restait. Il garde encore le grimoire scellé, jaloux d'un trésor qu'il ne peut plus toucher.",
+    habitat:  "Réserve oubliée de la bibliothèque, derrière les rayonnages scellés",
+    anecdote: "On dit qu'il classe encore les ouvrages la nuit, par ordre alphabétique d'âmes.",
+    danger:   10,
+    minFloor: 6, maxFloor: null, weight: 0,
+    hp: 95, atk: 16, def: 7, mag: 21, agi: 11, lck: 9,
+    scale: 0.32,
+    abilities: [
+      { name: "Murmure des Pages Mortes", icon: "🌑", desc: "Récite une malédiction d'encre",
+        effect: "damage", power: 15, chance: 0.40 },
+      { name: "Reliure d'Ombre",          icon: "🩸", desc: "Draine la lumière vitale",
+        effect: "drain",  power: 12, chance: 0.28 },
+      { name: "Silence Écrasant",         icon: "😱", desc: "Un calme de tombeau saisit la cible",
+        effect: "status", statusId: "fear", power: 0, chance: 0.22, turns: 2 }
+    ],
+    ai: "cautious",
+    resist: ["ténèbres", "disarm"],
+    weak:   ["lumière"],
+    xp: 130, gold: { min: 40, max: 70 },
+    drops:  [{ itemId: "potion_l", chance: 0.30 }]
   },
 
   {
@@ -1273,7 +1305,8 @@ const MONSTERS = [
     xp: 75, gold: { min: 22, max: 38 },
     drops: [
       { itemId: "potion_m", chance: 0.25 },
-      { itemId: "wand2", chance: 0.06 }
+      { itemId: "wand2", chance: 0.06 },
+      { itemId: "eclat_lumiere", chance: 0.35 }
     ]
   },
 

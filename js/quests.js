@@ -285,6 +285,24 @@ const QUEST_TEMPLATES = [
     reward: { xp: 320, gold: 120, item: "anneau_resurrection" },
     location: "Galerie des portraits (étage 6)"
   },
+  // ── Épreuve de la Lumière Éternelle — 2ᵉ quête de grimoire ──────
+  // Suite de `anneau_dumbledore`. Épreuve combinée en 3 temps :
+  // collecte (item) → énigme (riddle) → boss (kill).
+  // Cf. .claude/plans/dumbledore-lux-aeterna.md.
+  {
+    id: "dumbledore_lumiere",
+    title: "L'Épreuve de la Lumière Éternelle",
+    giver: "Portrait d'Albus Dumbledore",
+    desc: "Le portrait de Dumbledore garde le grimoire scellé de Lux Aeterna. Pour le mériter : réunis 3 Éclats de Lumière sur les morts-vivants, affronte les énigmes du portrait, puis défais le Bibliothécaire d'Ombre qui garde le livre.",
+    prereq: "anneau_dumbledore",
+    objectives: [
+      { type: "item",   itemId: "eclat_lumiere",          amount: 3, progress: 0, completed: false },
+      { type: "riddle",                                   amount: 3, progress: 0, completed: false },
+      { type: "kill",   monsterId: "bibliothecaire_ombre", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 600, gold: 250, item: "livre_lux_aeterna" },
+    location: "Galerie des portraits (étage 6)"
+  },
   {
     id: "bouclier_phenix",
     title: "Le Bouclier du Phénix",

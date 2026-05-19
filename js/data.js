@@ -265,6 +265,27 @@ function getGrimoirePageForFloor(floor) {
   return GRIMOIRE_PAGES.find(p => p.floor === floor) || null;
 }
 
+// ── Énigmes de Dumbledore — Épreuve de la Lumière Éternelle ───
+// 2ᵉ temps de la quête dumbledore_lumiere. QCM 4 choix ; `answer` est
+// l'index de la bonne réponse. Cf. .claude/plans/dumbledore-lux-aeterna.md.
+const RIDDLES_LUMIERE = [
+  {
+    question: "Je chasse l'ombre sans jamais la toucher ; on me partage sans jamais me diviser ; plus on me donne, plus on en a. Que suis-je ?",
+    choices: ["La flamme", "La lumière", "Le savoir", "La chaleur"],
+    answer: 1
+  },
+  {
+    question: "« Ce sont nos ______, bien plus que nos aptitudes, qui montrent ce que nous sommes vraiment. » Complète la phrase que j'aimais répéter.",
+    choices: ["nos peurs", "nos rêves", "nos choix", "nos amis"],
+    answer: 2
+  },
+  {
+    question: "Quel sortilège n'est pas un mur mais une lumière, et réclame non du courage mais un souvenir heureux ?",
+    choices: ["Protego", "Lumos Maxima", "Le Patronus", "Fiendfyre"],
+    answer: 2
+  }
+];
+
 const ITEMS = [
   { id:"potion_s", name:"Potion de Soin", icon:"🧪", desc:"+15 PV", type:"consumable", effect:"heal", power:15, price:30 },
   { id:"potion_m", name:"Potion Magique", icon:"💜", desc:"+12 PM", type:"consumable", effect:"restore_sp", power:12, price:25 },
@@ -296,6 +317,12 @@ const ITEMS = [
     type:"material", price:0 },
   { id:"page_grimoire",    name:"Page de Grimoire",     icon:"📜", desc:"Matériau · Bibliothèque interdite",
     type:"material", price:0 },
+  // Objet de quête — Épreuve de la Lumière Éternelle (portrait de Dumbledore).
+  // Tombe des morts-vivants ; réuni ×3 pour le 1er temps de l'épreuve.
+  // type:"quest" → non utilisable manuellement (useItem affiche un message).
+  { id:"eclat_lumiere",    name:"Éclat de Lumière",     icon:"✨",
+    desc:"Fragment de clarté arraché aux ténèbres — objet de quête.",
+    type:"quest", price:0 },
   // ── Items légendaires+ Maison Tier 5 (endgame Tranche 2) ─────
   // Récompenses du palier Tier 5 (2000 pts, gated par victoryAchieved).
   // Voir ENDGAME_PLAN.md §7.7. Cumulables avec les items Tier 4 si slots

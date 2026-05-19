@@ -455,7 +455,8 @@ function openChest() {
     if (i.id === 'livre_diffindo_maxima') return currentFloor >= 6;
     if (i.id === 'livre_vulnera')         return currentFloor >= 6;
     if (i.id === 'livre_fulgur_catena')   return currentFloor >= 7;
-    if (i.id === 'livre_lux_aeterna')     return currentFloor >= 8;
+    // livre_lux_aeterna : exclu du butin de coffre — exclusif à la quête
+    // dumbledore_lumiere (cf. .claude/plans/dumbledore-lux-aeterna.md).
     if (i.id === 'livre_nox_vorax')       return currentFloor >= 9;
     return false;
   });
