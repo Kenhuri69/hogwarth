@@ -381,7 +381,7 @@ body {
   line-height: 1.2;
 }
 .alloc-btn-effect {
-  font-size: 9px;
+  font-size: 11px;
   color: #8a7050;
   display: block;
 }
@@ -665,8 +665,8 @@ body {
 .bestiary-empty     { text-align: center; padding: 40px; color: #6a5030; font-style: italic; }
 
 /* Empty-states divers — pendants de .bestiary-empty / .slot-empty-state */
-.inv-empty-slot       { font-size: 10px; color: #2a1a08; }
-.quest-tracker-empty  { color: #3a2a10; font-style: italic; font-size: 9px; text-align: center; padding-top: 4px; }
+.inv-empty-slot       { font-size: 11px; color: #2a1a08; }
+.quest-tracker-empty  { color: #3a2a10; font-style: italic; font-size: 11px; text-align: center; padding-top: 4px; }
 .quest-list-empty     { text-align: center; padding: 30px; color: #8a7050; }
 /* Fiche détail */
 #bestiary-detail-panel { flex: 1; overflow-y: auto; }
@@ -679,7 +679,7 @@ body {
 .bestiary-stat-grid     { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
 .bestiary-stat          { background: #0a0705; border: 1px solid #2a1a08; border-radius: 4px; padding: 8px; text-align: center; }
 .bestiary-stat-val      { font-size: 14px; color: var(--parchment); }
-.bestiary-stat-lbl      { font-size: 9px; color: #6a5030; letter-spacing: 1px; margin-top: 2px; }
+.bestiary-stat-lbl      { font-size: 11px; color: #6a5030; letter-spacing: 1px; margin-top: 2px; }
 .bestiary-resist-line   { font-size: 11px; color: #8a7050; margin-bottom: 14px;
                            display: flex; gap: 20px; flex-wrap: wrap; }
 .bestiary-abilities     { border-top: 1px solid #2a1a08; padding-top: 12px; margin-bottom: 14px; }
@@ -1101,7 +1101,7 @@ body {
   .inv-slot .ui-icon-xl,
   .inv-slot .ui-icon { width: 48px; height: 48px; }
   .inv-slot .item-name {
-    font-size: 9px; line-height: 1.15;
+    font-size: 11px; line-height: 1.15;
     max-width: 100%; overflow: hidden;
     display: -webkit-box; -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -1487,8 +1487,8 @@ body {
 .item-tooltip .tt-rarity.rarity-epic      { color: #c89cdc; }
 .item-tooltip .tt-rarity.rarity-legendary { color: var(--gold); }
 .item-tooltip .tt-bonus  { color: #6cd96c; font-weight: 600; }
-.item-tooltip .tt-desc   { color: var(--parchment-dark); font-style: italic; margin-top: 4px; font-size: 10px; line-height: 1.4; }
-.item-tooltip .tt-action { color: var(--gold-light); margin-top: 4px; font-size: 10px; }
+.item-tooltip .tt-desc   { color: var(--parchment-dark); font-style: italic; margin-top: 4px; font-size: 11px; line-height: 1.4; }
+.item-tooltip .tt-action { color: var(--gold-light); margin-top: 4px; font-size: 11px; }
 /* Slots du bas du paper-doll (wand/belt/trinket) → tooltip dessous */
 .paper-doll-bottom .item-tooltip { bottom: auto; top: calc(100% + 6px); }
 /* Slots du sac : tooltip dessous pour ne pas sortir de la modale */
@@ -1946,7 +1946,7 @@ body {
 .brew-tile-disabled:hover { border-color: #2a1a08; background: #0a0705; }
 .brew-tile-icon { width: 40px; height: 40px; }
 .brew-tile-icon .ui-icon { width: 40px; height: 40px; vertical-align: 0; }
-.brew-tile-name { font-size: 9.5px; color: #b0905a; line-height: 1.1; }
+.brew-tile-name { font-size: 11px; color: #b0905a; line-height: 1.1; }
 .brew-tile-qty { font-size: 11px; color: var(--gold); font-weight: 700; }
 .brew-empty {
   text-align: center; padding: 14px; color: #8a7050;
@@ -1990,11 +1990,11 @@ body {
 .brew-recipe-name {
   font-family: 'Cinzel', serif; font-size: 12.5px; color: var(--gold-light);
 }
-.brew-recipe-ing { font-size: 10.5px; color: #8a7050; font-style: italic; }
+.brew-recipe-ing { font-size: 11px; color: #8a7050; font-style: italic; }
 .brew-mini-btn {
   background: linear-gradient(180deg, #c89048, #a06820);
   color: #1a0f05; border: none; border-radius: 3px;
-  padding: 5px 12px; font-family: 'Cinzel', serif; font-size: 10.5px;
+  padding: 5px 12px; font-family: 'Cinzel', serif; font-size: 11px;
   letter-spacing: 1px; cursor: pointer; transition: filter 0.15s;
 }
 .brew-mini-btn:hover { filter: brightness(1.1); }
@@ -2055,7 +2055,7 @@ button.shop-tab.active {
 .shop-icon { font-size: 24px; }
 .shop-info { flex: 1; }
 .shop-name { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold-light); }
-.shop-desc { font-size: 10px; color: #8a7050; }
+.shop-desc { font-size: 11px; color: #8a7050; }
 .shop-price { color: var(--gold); font-size: 12px; font-weight: 600; }
 
 .gold-display {
@@ -2269,7 +2269,7 @@ button.shop-tab.active {
 }
 .hero-tag {
   font-family: 'Crimson Text', serif;
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.3;
   color: #8a7050;
   margin-top: 4px;
