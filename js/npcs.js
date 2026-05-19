@@ -698,8 +698,12 @@ const NPCS = [
     icon:  "🖼️",
     portraitImg: "img/npc/portrait_dumbledore.png",
     placement: { floor: 6, anchor: "any" },
-    questsGiven:    ["anneau_dumbledore"],
-    questsTurnedIn: ["anneau_dumbledore"],
+    questsGiven:    ["anneau_dumbledore", "dumbledore_lumiere"],
+    questsTurnedIn: ["anneau_dumbledore", "dumbledore_lumiere"],
+    // Énigmes de l'Épreuve de la Lumière Éternelle : disponible quand la
+    // collecte des Éclats est faite. Ouvre #riddle-modal.
+    specialAction: { type: "open_riddle", id: "dumbledore_epreuve",
+                     label: "🕯️ Affronter les énigmes" },
     dialogues: {
       greeting: [
         "(Le portrait s'éveille en clignant des yeux.) Ah, jeune sorcier... même peint, je veille sur ces couloirs.",
@@ -724,6 +728,21 @@ const NPCS = [
         { monsterIds: ["araignee", "acromantula_jeune", "homme_araignee"],
           text: "Aragog respectait un pacte. Ses enfants n'ont rien promis. Méfie-toi." }
       ]
+    },
+    dialoguesByQuest: {
+      // Épreuve de la Lumière Éternelle (cf. dumbledore-lux-aeterna.md).
+      dumbledore_lumiere: {
+        questOffer: [
+          "(Le portrait repose ses lunettes en demi-lune.) Tu as rendu son repos à l'anneau. Bien. Alors je puis te parler d'un autre objet — un grimoire, celui-là. *Lux Aeterna* : la lumière faite sortilège.",
+          "Je ne te le donnerai pas. La lumière n'est pas un don, jeune sorcier — c'est une discipline. On ne la tient pas : on la mérite, puis on la porte. Il te faudra passer une épreuve, en trois temps.",
+          "D'abord, rassemble trois Éclats de Lumière. On les arrache aux morts-vivants — car la lumière se niche dans ce que l'ombre a englouti. Reviens quand tu les auras : je te soumettrai alors mes énigmes."
+        ],
+        questActive: "As-tu réuni les trois Éclats de Lumière ? Les morts-vivants en recèlent — Inferi, Détraqueurs, spectres maudits. La clarté dort en eux comme un remords. Reviens quand ta besace en contient trois.",
+        questReady: [
+          "Tu as défait le Bibliothécaire d'Ombre. (Le portrait incline la tête.) Il fut un homme avant d'être cette chose — un homme qui voulut tout savoir et ne sut rien partager. Le grimoire ne l'a jamais reconnu pour maître.",
+          "Toi, tu as réuni la lumière, affronté les énigmes, et porté l'épreuve jusqu'à son terme. *Lux Aeterna* est à toi. Souviens-toi seulement de ceci : une lumière qu'on garde pour soi finit toujours par s'éteindre. Fais-en profiter ceux qui marchent derrière toi."
+        ]
+      }
     }
   },
   {

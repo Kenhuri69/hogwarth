@@ -285,6 +285,24 @@ const QUEST_TEMPLATES = [
     reward: { xp: 320, gold: 120, item: "anneau_resurrection" },
     location: "Galerie des portraits (étage 6)"
   },
+  // ── Épreuve de la Lumière Éternelle — 2ᵉ quête de grimoire ──────
+  // Suite de `anneau_dumbledore`. Épreuve combinée en 3 temps :
+  // collecte (item) → énigme (riddle) → boss (kill).
+  // Cf. .claude/plans/dumbledore-lux-aeterna.md.
+  {
+    id: "dumbledore_lumiere",
+    title: "L'Épreuve de la Lumière Éternelle",
+    giver: "Portrait d'Albus Dumbledore",
+    desc: "Le portrait de Dumbledore garde le grimoire scellé de Lux Aeterna. Pour le mériter : réunis 3 Éclats de Lumière sur les morts-vivants, affronte les énigmes du portrait, puis défais le Bibliothécaire d'Ombre qui garde le livre.",
+    prereq: "anneau_dumbledore",
+    objectives: [
+      { type: "item",   itemId: "eclat_lumiere",          amount: 3, progress: 0, completed: false },
+      { type: "riddle",                                   amount: 3, progress: 0, completed: false },
+      { type: "kill",   monsterId: "bibliothecaire_ombre", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 600, gold: 250, item: "livre_lux_aeterna" },
+    location: "Galerie des portraits (étage 6)"
+  },
   {
     id: "bouclier_phenix",
     title: "Le Bouclier du Phénix",
@@ -795,6 +813,95 @@ function fuseGrimoire() {
   updateUI();
 }
 
+// ── Épreuve de la Lumière Éternelle — énigmes de Dumbledore ──
+// 2ᵉ temps de `dumbledore_lumiere`. Cf. dumbledore-lux-aeterna.md.
+
+// Vrai si l'étape `riddle` est jouable : quête active, collecte (étape
+// `item`) faite, énigmes (étape `riddle`) non terminées.
+function _riddleStepReady() {
+  if (typeof activeQuests === 'undefined') return false;
+  const q = activeQuests.find(x => x.id === 'dumbledore_lumiere');
+  if (!q) return false;
+  const collecte = q.objectives.find(o => o.type === 'item');
+  const riddle   = q.objectives.find(o => o.type === 'riddle');
+  if (!collecte || !riddle) return false;
+  return !!collecte.completed && !riddle.completed;
+}
+
+// Ouvre la modale d'énigme sur l'énigme courante (index = progress).
+function openRiddleModal() {
+  if (typeof _refreshObjectives === 'function') _refreshObjectives();
+  if (!_riddleStepReady()) {
+    addMsg("Le portrait n'a pas d'énigme pour toi en cet instant.", '');
+    return;
+  }
+  _renderRiddle(null);
+  const modal = document.getElementById('riddle-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+// Rendu interne de l'énigme courante ; `feedback` = message optionnel.
+function _renderRiddle(feedback) {
+  const body = document.getElementById('riddle-body');
+  if (!body) return;
+  const q    = activeQuests.find(x => x.id === 'dumbledore_lumiere');
+  const step = q && q.objectives.find(o => o.type === 'riddle');
+  if (!step) return;
+  const idx    = Math.min(step.progress | 0, RIDDLES_LUMIERE.length - 1);
+  const riddle = RIDDLES_LUMIERE[idx];
+  let choices = '';
+  riddle.choices.forEach((c, i) => {
+    choices += `<button type="button" class="brew-launch-btn" style="margin:6px 0"
+      onclick="answerRiddle(${i})">${c}</button>`;
+  });
+  body.innerHTML = `
+    <p style="font-size:11px;color:var(--gold);text-align:center;letter-spacing:1px;margin:2px 0 8px">
+      Énigme ${idx + 1} / ${RIDDLES_LUMIERE.length}
+    </p>
+    <p style="font-size:13px;color:var(--parchment);line-height:1.55;text-align:center;margin:0 0 14px;font-style:italic">
+      « ${riddle.question} »
+    </p>
+    ${choices}
+    ${feedback ? `<p style="font-size:11px;color:#c08040;text-align:center;margin-top:10px">${feedback}</p>` : ''}`;
+}
+
+// Traite une réponse. Bonne → énigme suivante / fin de l'étape ;
+// mauvaise → on rejoue la même, sans pénalité (épreuve de sagesse).
+function answerRiddle(choiceIdx) {
+  const q    = activeQuests.find(x => x.id === 'dumbledore_lumiere');
+  const step = q && q.objectives.find(o => o.type === 'riddle');
+  if (!step || step.completed) return;
+  const idx    = Math.min(step.progress | 0, RIDDLES_LUMIERE.length - 1);
+  const riddle = RIDDLES_LUMIERE[idx];
+  if (choiceIdx !== riddle.answer) {
+    _renderRiddle('« Réfléchis encore. La hâte est mauvaise conseillère. »');
+    return;
+  }
+  step.progress = (step.progress | 0) + 1;
+  if (step.progress >= step.amount) {
+    step.completed = true;
+    closeModal('riddle-modal');
+    _spawnLuxAeternaBoss();
+  } else {
+    _renderRiddle('« Bien vu. Passons à la suivante. »');
+  }
+}
+
+// Fait apparaître le Bibliothécaire d'Ombre sur l'étage courant.
+function _spawnLuxAeternaBoss() {
+  let placed = 0;
+  if (typeof spawnQuestMonsters === 'function') {
+    placed = spawnQuestMonsters('bibliothecaire_ombre', 0);
+  }
+  if (placed > 0) {
+    if (typeof renderMinimap === 'function') renderMinimap();
+    if (typeof drawDungeon === 'function') drawDungeon();
+  }
+  addMsg("🕯️ Les énigmes sont résolues — le Bibliothécaire d'Ombre se manifeste sur cet étage !", 'magic');
+  setNarrative("Le portrait hoche la tête. « Tu as l'esprit clair. Mais la lumière se garde aussi par les armes : son gardien t'attend, quelque part sur cet étage. »");
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
+}
+
 // ── Ouvre le journal des quêtes dans la modale personnage ────
 // On réutilise #char-detail pour ne pas casser openCharacter().
 function openQuestLog() {
@@ -931,6 +1038,8 @@ function _renderQuestStep(o, isActive, ready, isFirst) {
     label = `Faire don de ${o.amount} Gallions`;
   } else if (o.type === 'pages') {
     label = `Réunir ${o.amount} pages du grimoire`;
+  } else if (o.type === 'riddle') {
+    label = `Résoudre les énigmes de Dumbledore`;
   } else {
     const it = ITEMS.find(x => x.id === o.itemId);
     label = `Apporter ${o.amount}× ${it ? it.name : o.itemId}`;

@@ -265,6 +265,27 @@ function getGrimoirePageForFloor(floor) {
   return GRIMOIRE_PAGES.find(p => p.floor === floor) || null;
 }
 
+// ── Énigmes de Dumbledore — Épreuve de la Lumière Éternelle ───
+// 2ᵉ temps de la quête dumbledore_lumiere. QCM 4 choix ; `answer` est
+// l'index de la bonne réponse. Cf. .claude/plans/dumbledore-lux-aeterna.md.
+const RIDDLES_LUMIERE = [
+  {
+    question: "Je chasse l'ombre sans jamais la toucher ; on me partage sans jamais me diviser ; plus on me donne, plus on en a. Que suis-je ?",
+    choices: ["La flamme", "La lumière", "Le savoir", "La chaleur"],
+    answer: 1
+  },
+  {
+    question: "« Ce sont nos ______, bien plus que nos aptitudes, qui montrent ce que nous sommes vraiment. » Complète la phrase que j'aimais répéter.",
+    choices: ["nos peurs", "nos rêves", "nos choix", "nos amis"],
+    answer: 2
+  },
+  {
+    question: "Quel sortilège n'est pas un mur mais une lumière, et réclame non du courage mais un souvenir heureux ?",
+    choices: ["Protego", "Lumos Maxima", "Le Patronus", "Fiendfyre"],
+    answer: 2
+  }
+];
+
 const ITEMS = [
   { id:"potion_s", name:"Potion de Soin", icon:"🧪", desc:"+15 PV", type:"consumable", effect:"heal", power:15, price:30 },
   { id:"potion_m", name:"Potion Magique", icon:"💜", desc:"+12 PM", type:"consumable", effect:"restore_sp", power:12, price:25 },
@@ -296,6 +317,12 @@ const ITEMS = [
     type:"material", price:0 },
   { id:"page_grimoire",    name:"Page de Grimoire",     icon:"📜", desc:"Matériau · Bibliothèque interdite",
     type:"material", price:0 },
+  // Objet de quête — Épreuve de la Lumière Éternelle (portrait de Dumbledore).
+  // Tombe des morts-vivants ; réuni ×3 pour le 1er temps de l'épreuve.
+  // type:"quest" → non utilisable manuellement (useItem affiche un message).
+  { id:"eclat_lumiere",    name:"Éclat de Lumière",     icon:"✨",
+    desc:"Fragment de clarté arraché aux ténèbres — objet de quête.",
+    type:"quest", price:0 },
   // ── Items légendaires+ Maison Tier 5 (endgame Tranche 2) ─────
   // Récompenses du palier Tier 5 (2000 pts, gated par victoryAchieved).
   // Voir ENDGAME_PLAN.md §7.7. Cumulables avec les items Tier 4 si slots
@@ -405,31 +432,31 @@ const ITEMS = [
   // Amulette remise par Fumseck (quête `bouclier_phenix`). Régénère 3 PV en début de tour ennemi.
   { id:"larmes_phenix",      name:"Larmes du Phénix",         icon:"📿", desc:"DEF+2 MAG+2 · PM max +5 · Régen +3 PV/tour · Esquive +3%",type:"acc", slot:"amulet",family:"amulet_tears",      rarity:"epic", bonusDef:2, bonusMag:2, bonusSpMax:5, bonusDodgeChance:3, power:2, regenHp:3,            price:0, tint:"#e84020" },
   // ── Livres de sorts ──────────────────────────────────────────
-  { id:"livre_sortileges", name:"Sortilèges Standards, Vol.3", icon:"📗", desc:"Apprend Wingardium Leviosa",  type:"spellbook", spell:"Wingardium Leviosa", price:90  },
-  { id:"livre_soin",       name:"Potions & Remèdes Magiques",  icon:"📘", desc:"Apprend Reparo (soin 20 PV)", type:"spellbook", spell:"Reparo",             price:70  },
-  { id:"livre_ferula",     name:"Manuel du Soigneur de Champ", icon:"📗", desc:"Apprend Ferula (bandage régénérant)", type:"spellbook", spell:"Ferula",     price:120 },
+  { id:"livre_sortileges", name:"Sortilèges Standards, Vol.3", icon:"📗", desc:"Apprend Wingardium Leviosa",  type:"spellbook", spell:"Wingardium Leviosa", price:150  },
+  { id:"livre_soin",       name:"Potions & Remèdes Magiques",  icon:"📘", desc:"Apprend Reparo (soin 20 PV)", type:"spellbook", spell:"Reparo",             price:110  },
+  { id:"livre_ferula",     name:"Manuel du Soigneur de Champ", icon:"📗", desc:"Apprend Ferula (bandage régénérant)", type:"spellbook", spell:"Ferula",     price:180 },
   { id:"book_monsters",    name:"Livre des Monstres",          icon:"📚", desc:"Apprend Diffindo (16 dégâts)",type:"spellbook", spell:"Diffindo",           price:0   },
-  { id:"livre_prince",     name:"Manuel du Demi-Sang",         icon:"📓", desc:"Apprend Sectumsempra (24 dégâts) — sort maudit", type:"spellbook", spell:"Sectumsempra", price:500 },
-  { id:"livre_bombarda",   name:"Traité de Magie Explosive",   icon:"📙", desc:"Apprend Bombarda (20 dégâts)",  type:"spellbook", spell:"Bombarda",   price:150 },
-  { id:"livre_patronum",   name:"Guide du Patronus",            icon:"📒", desc:"Apprend Patronum",              type:"spellbook", spell:"Patronum",   price:200 },
+  { id:"livre_prince",     name:"Manuel du Demi-Sang",         icon:"📓", desc:"Apprend Sectumsempra (24 dégâts) — sort maudit", type:"spellbook", spell:"Sectumsempra", price:600 },
+  { id:"livre_bombarda",   name:"Traité de Magie Explosive",   icon:"📙", desc:"Apprend Bombarda (20 dégâts)",  type:"spellbook", spell:"Bombarda",   price:490 },
+  { id:"livre_patronum",   name:"Guide du Patronus",            icon:"📒", desc:"Apprend Patronum",              type:"spellbook", spell:"Patronum",   price:350 },
   // ── Grimoires élémentaires ───────────────────────────────────
-  { id:"livre_glacius",    name:"Givre & Engelures",            icon:"📘", desc:"Apprend Glacius (14 dégâts de glace)", type:"spellbook", spell:"Glacius",     price:140 },
-  { id:"livre_fulgari",    name:"Foudre Canalisée",             icon:"📙", desc:"Apprend Fulgari (16 dégâts de foudre)", type:"spellbook", spell:"Fulgari",     price:200 },
-  { id:"livre_lumos_solem",name:"Lumière Solaire",              icon:"📒", desc:"Apprend Lumos Solem — ravage les morts-vivants", type:"spellbook", spell:"Lumos Solem", price:260 },
+  { id:"livre_glacius",    name:"Givre & Engelures",            icon:"📘", desc:"Apprend Glacius (14 dégâts de glace)", type:"spellbook", spell:"Glacius",     price:220 },
+  { id:"livre_fulgari",    name:"Foudre Canalisée",             icon:"📙", desc:"Apprend Fulgari (16 dégâts de foudre)", type:"spellbook", spell:"Fulgari",     price:310 },
+  { id:"livre_lumos_solem",name:"Lumière Solaire",              icon:"📒", desc:"Apprend Lumos Solem — ravage les morts-vivants", type:"spellbook", spell:"Lumos Solem", price:440 },
   // ── Grimoires de Vampirisme & Malédictions ───────────────────
-  { id:"livre_sanguini",   name:"Traité du Sang Vivant",         icon:"📕", desc:"Apprend Sanguini (vol de vie)", type:"spellbook", spell:"Sanguini",      price:180 },
-  { id:"livre_vampyrus",   name:"Codex des Strigoï",             icon:"📕", desc:"Apprend Vampyrus (drain magique)", type:"spellbook", spell:"Vampyrus",   price:380 },
-  { id:"livre_taranta",    name:"Pas de la Sorcière Maudite",    icon:"📓", desc:"Apprend Tarantallegra",         type:"spellbook", spell:"Tarantallegra", price:80  },
-  { id:"livre_maledictus", name:"Grimoire des Maudits",          icon:"📓", desc:"Apprend Maledictus",            type:"spellbook", spell:"Maledictus",    price:220 },
-  { id:"livre_crucio",     name:"Sortilèges Impardonnables, T.II", icon:"📕", desc:"Apprend Crucio (sort interdit)", type:"spellbook", spell:"Crucio",     price:450 },
-  { id:"livre_morsmordre", name:"Marque des Ténèbres",            icon:"📕", desc:"Apprend Morsmordre",            type:"spellbook", spell:"Morsmordre",    price:600 },
+  { id:"livre_sanguini",   name:"Traité du Sang Vivant",         icon:"📕", desc:"Apprend Sanguini (vol de vie)", type:"spellbook", spell:"Sanguini",      price:270 },
+  { id:"livre_vampyrus",   name:"Codex des Strigoï",             icon:"📕", desc:"Apprend Vampyrus (drain magique)", type:"spellbook", spell:"Vampyrus",   price:540 },
+  { id:"livre_taranta",    name:"Pas de la Sorcière Maudite",    icon:"📓", desc:"Apprend Tarantallegra",         type:"spellbook", spell:"Tarantallegra", price:130  },
+  { id:"livre_maledictus", name:"Grimoire des Maudits",          icon:"📓", desc:"Apprend Maledictus",            type:"spellbook", spell:"Maledictus",    price:390 },
+  { id:"livre_crucio",     name:"Sortilèges Impardonnables, T.II", icon:"📕", desc:"Apprend Crucio (sort interdit)", type:"spellbook", spell:"Crucio",     price:580 },
+  { id:"livre_morsmordre", name:"Marque des Ténèbres",            icon:"📕", desc:"Apprend Morsmordre",            type:"spellbook", spell:"Morsmordre",    price:640 },
   // ── Grimoires de zone (sorts AoE) ────────────────────────────
-  { id:"livre_glacius_tempete", name:"Tempête de Givre",          icon:"📘", desc:"Apprend Glacius Tempête — zone de glace + gel",       type:"spellbook", spell:"Glacius Tempête",  price:340 },
-  { id:"livre_diffindo_maxima", name:"L'Art de la Lame Large",    icon:"📓", desc:"Apprend Diffindo Maxima — fauchage des ennemis adjacents", type:"spellbook", spell:"Diffindo Maxima", price:320 },
-  { id:"livre_vulnera",         name:"Chant des Guérisseurs",     icon:"📗", desc:"Apprend Vulnera Sanentur — soin de tout le groupe",   type:"spellbook", spell:"Vulnera Sanentur", price:300 },
-  { id:"livre_fulgur_catena",   name:"Chaîne d'Éclairs",          icon:"📙", desc:"Apprend Fulgur Catena — arc électrique en chaîne",    type:"spellbook", spell:"Fulgur Catena",    price:360 },
-  { id:"livre_lux_aeterna",     name:"Lumière Éternelle",         icon:"📒", desc:"Apprend Lux Aeterna — onde de lumière sur la zone",   type:"spellbook", spell:"Lux Aeterna",      price:380 },
-  { id:"livre_nox_vorax",       name:"Nuit Dévorante",            icon:"📕", desc:"Apprend Nox Vorax — vague obscure drainante",        type:"spellbook", spell:"Nox Vorax",        price:420 },
+  { id:"livre_vulnera",         name:"Chant des Guérisseurs",     icon:"📗", desc:"Apprend Vulnera Sanentur — soin de tout le groupe",   type:"spellbook", spell:"Vulnera Sanentur", price:700 },
+  { id:"livre_diffindo_maxima", name:"L'Art de la Lame Large",    icon:"📓", desc:"Apprend Diffindo Maxima — fauchage des ennemis adjacents", type:"spellbook", spell:"Diffindo Maxima", price:760 },
+  { id:"livre_glacius_tempete", name:"Tempête de Givre",          icon:"📘", desc:"Apprend Glacius Tempête — zone de glace + gel",       type:"spellbook", spell:"Glacius Tempête",  price:840 },
+  { id:"livre_fulgur_catena",   name:"Chaîne d'Éclairs",          icon:"📙", desc:"Apprend Fulgur Catena — arc électrique en chaîne",    type:"spellbook", spell:"Fulgur Catena",    price:920 },
+  { id:"livre_lux_aeterna",     name:"Lumière Éternelle",         icon:"📒", desc:"Apprend Lux Aeterna — onde de lumière sur la zone",   type:"spellbook", spell:"Lux Aeterna",      price:1050 },
+  { id:"livre_nox_vorax",       name:"Nuit Dévorante",            icon:"📕", desc:"Apprend Nox Vorax — vague obscure drainante",        type:"spellbook", spell:"Nox Vorax",        price:1200 },
   // Sort utilitaire premium (cf. .claude/plans/teleportation-spell.md).
   { id:"livre_portus",     name:"Traité de la Téléportation",     icon:"📘", desc:"Apprend Portus — téléportation tactique (combat + hors combat)", type:"spellbook", spell:"Portus", price:2800 },
   // ── Herbes (ingrédients de potion) — type:"herb" ─────────────

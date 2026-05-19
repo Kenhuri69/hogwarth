@@ -40,7 +40,8 @@ const SHOP_CATALOG = [
   { id: "livre_diffindo_maxima", minFloor: 6 },
   { id: "livre_vulnera",         minFloor: 6 },
   { id: "livre_fulgur_catena",   minFloor: 7 },
-  { id: "livre_lux_aeterna",     minFloor: 8 },
+  // livre_lux_aeterna : retiré du catalogue — exclusif à la quête
+  // dumbledore_lumiere (cf. .claude/plans/dumbledore-lux-aeterna.md).
   { id: "livre_nox_vorax",       minFloor: 9 },
   { id: "cape_invis",          minFloor: 7 },
   { id: "bottes_dragon",       minFloor: 7 },

@@ -328,6 +328,9 @@ const ITEM_ICON_SVG_REGISTRY = {
   potion_l_sp: _potionSvg('cl_plsp', 33, '#9a3ad8', '#b86ae0', '#b07a3a'),
   potion_force: _potionSvg('cl_pf', 33, '#e8862a', '#f4a85a', '#b07a3a'),
   potion_xl: _potionSvg('cl_pxl', 27, '#e8324a', '#ff6a78', '#e8c14a', true),
+  // Éclat de Lumière (objet de quête — dumbledore_lumiere) : étoile de
+  // clarté à 4 branches, halo doux. SVG inline (pas de PNG dédié).
+  eclat_lumiere: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="21" fill="#fff3b0" opacity="0.28"/><path d="M32 5 L38 26 L59 32 L38 38 L32 59 L26 38 L5 32 L26 26 Z" fill="#ffe98a"/><path d="M32 15 L36 28 L49 32 L36 36 L32 49 L28 36 L15 32 L28 28 Z" fill="#fff7d8"/><circle cx="32" cy="32" r="3.6" fill="#ffffff"/></svg>`,
 };
 
 // Génère le SVG d'une fiole : `liqY` = niveau du liquide (y, plus petit

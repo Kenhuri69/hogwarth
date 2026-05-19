@@ -705,6 +705,13 @@ function useItem(idx, battleMode) {
   const item = player.inventory[idx];
   if (!item) return;
 
+  // Objet de quête (matériau narratif) — non utilisable manuellement,
+  // conservé jusqu'à la remise au PNJ concerné.
+  if (item.type === 'quest') {
+    addMsg(`${item.name} : objet de quête — à rapporter au bon moment.`, '');
+    return;
+  }
+
   // Livre de sorts → choix du personnage qui apprend (hors combat seulement)
   if (item.type === 'spellbook') {
     if (battleMode) return; // non utilisable en combat
@@ -1124,6 +1131,11 @@ function useItemFromChar(inventoryIdx, charIdx) {
   if (!item) return;
   const target = party[charIdx];
   if (!target) return;
+
+  if (item.type === 'quest') {
+    addMsg(`${item.name} : objet de quête — à rapporter au bon moment.`, '');
+    return;
+  }
 
   if (item.type === 'consumable') {
     _applyConsumableEffect(item, target);
