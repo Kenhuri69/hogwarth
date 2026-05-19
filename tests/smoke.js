@@ -663,15 +663,17 @@ async function scenarioNpcIntegration() {
     const portraitEl = document.getElementById('npc-dialog-portrait');
     const img = portraitEl.querySelector('img.npc-portrait-img');
     const opened = overlay.style.display;
+    const overlayPosition = getComputedStyle(overlay).position;
     const portraitSrc = img ? img.getAttribute('src') : null;
     closeNpcDialog();
     const closed = overlay.style.display;
     const seen = seenNpcs.has('dumbledore');
-    return { opened, closed, seen, hasImg: !!img, portraitSrc };
+    return { opened, closed, seen, hasImg: !!img, portraitSrc, overlayPosition };
   });
   console.log('  T4 overlay:', t4);
   assert(t4.opened === 'flex',           'overlay non ouvert');
   assert(t4.closed === 'none',           'overlay non fermé');
+  assert(t4.overlayPosition === 'fixed', `overlay dialogue doit être fixed plein écran (got ${t4.overlayPosition})`);
   assert(t4.seen,                        'PNJ non marqué comme rencontré');
   assert(t4.hasImg,                      'portrait <img> absent');
   assert(t4.portraitSrc === 'img/npc/dumbledore.png',
@@ -1510,6 +1512,28 @@ async function scenarioCombatMobile() {
   await page.goto(INDEX_URL);
   await page.waitForFunction(() => typeof window.startGame === 'function');
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Hit-targets ≥ 44px (audit UX mobile P0 #4) : croix de fermeture des
+  // modales et chevrons d'accordéon de la fiche perso sur mobile.
+  const hitTargets = await page.evaluate(() => {
+    openCharacter(0);
+    const modal  = document.getElementById('character-modal');
+    const close  = modal.querySelector('.modal-close');
+    const toggle = modal.querySelector('.section-toggle');
+    const r = {
+      closeW:  close  ? close.offsetWidth   : 0,
+      closeH:  close  ? close.offsetHeight  : 0,
+      toggleH: toggle ? toggle.offsetHeight : 0
+    };
+    closeModal('character-modal');
+    return r;
+  });
+  console.log('  hit-targets :', hitTargets);
+  assert(hitTargets.closeW >= 44 && hitTargets.closeH >= 44,
+    `croix de modale doit être ≥ 44px (got ${hitTargets.closeW}×${hitTargets.closeH})`);
+  assert(hitTargets.toggleH >= 44,
+    `chevron accordéon fiche perso doit être ≥ 44px (got ${hitTargets.toggleH})`);
+
   await startDummyFight(page, { hp: 30 });
 
   const layout = await page.evaluate(() => {
