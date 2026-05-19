@@ -8908,6 +8908,121 @@ async function scenarioGrimoirePages() {
   await browser.close();
 }
 
+// ── Scénario : Épreuve de la Lumière Éternelle (Dumbledore) ──
+
+async function scenarioDumbledoreLux() {
+  console.log('\n── Scénario : Épreuve de la Lumière Éternelle ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — données : quête, item, énigmes, boss, retrait boutique.
+  const t1 = await page.evaluate(() => {
+    const q    = getQuestTemplate('dumbledore_lumiere');
+    const item = ITEMS.find(i => i.id === 'eclat_lumiere');
+    const boss = MONSTERS.find(m => m.id === 'bibliothecaire_ombre');
+    return {
+      questOk:   !!q && q.prereq === 'anneau_dumbledore',
+      objTypes:  q ? q.objectives.map(o => o.type).join(',') : '',
+      reward:    q && q.reward.item,
+      itemOk:    !!item && item.type === 'quest',
+      riddleN:   (typeof RIDDLES_LUMIERE !== 'undefined') ? RIDDLES_LUMIERE.length : 0,
+      bossOk:    !!boss && boss.weight === 0 && (boss.weak || []).includes('lumière'),
+      shopHasLux: SHOP_CATALOG.some(e => e.id === 'livre_lux_aeterna')
+    };
+  });
+  console.log('  T1 data :', t1);
+  assert(t1.questOk,                       'dumbledore_lumiere mal défini (prereq)');
+  assert(t1.objTypes === 'item,riddle,kill','3 objectifs item/riddle/kill attendus');
+  assert(t1.reward === 'livre_lux_aeterna', 'récompense livre_lux_aeterna attendue');
+  assert(t1.itemOk,                        'eclat_lumiere doit être type quest');
+  assert(t1.riddleN === 3,                 '3 énigmes attendues');
+  assert(t1.bossOk,                        'bibliothecaire_ombre : weight 0 + faible lumière');
+  assert(!t1.shopHasLux,                   'livre_lux_aeterna doit être retiré de la boutique');
+
+  // T2 — accept + collecte des 3 Éclats → étape item complétée.
+  const t2 = await page.evaluate(() => {
+    acceptQuest('dumbledore_lumiere');
+    for (let i = 0; i < 3; i++) {
+      player.inventory.push({ ...ITEMS.find(it => it.id === 'eclat_lumiere') });
+    }
+    _refreshObjectives();
+    const q = activeQuests.find(x => x.id === 'dumbledore_lumiere');
+    return {
+      itemDone:    q.objectives[0].completed,
+      riddleReady: _riddleStepReady()
+    };
+  });
+  console.log('  T2 collecte:', t2);
+  assert(t2.itemDone,    'étape de collecte non complétée avec 3 Éclats');
+  assert(t2.riddleReady, '_riddleStepReady doit être vrai après la collecte');
+
+  // T3 — énigmes : mauvaise réponse n'avance pas, 3 bonnes complètent + boss.
+  const t3 = await page.evaluate(() => {
+    openRiddleModal();
+    const modalShown = document.getElementById('riddle-modal').style.display === 'flex';
+    const step = () => activeQuests.find(x => x.id === 'dumbledore_lumiere')
+                       .objectives.find(o => o.type === 'riddle');
+    const wrong = (RIDDLES_LUMIERE[0].answer + 1) % 4;
+    answerRiddle(wrong);
+    const progAfterWrong = step().progress;
+    for (let i = 0; i < RIDDLES_LUMIERE.length; i++) {
+      answerRiddle(RIDDLES_LUMIERE[step().progress].answer);
+    }
+    let bossOnMap = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && enemyMap[y][x].id === 'bibliothecaire_ombre') bossOnMap++;
+    return {
+      modalShown, progAfterWrong,
+      riddleDone:  step().completed,
+      bossOnMap,
+      modalClosed: document.getElementById('riddle-modal').style.display === 'none'
+    };
+  });
+  console.log('  T3 énigmes:', t3);
+  assert(t3.modalShown,         'la modale d\'énigme ne s\'est pas ouverte');
+  assert(t3.progAfterWrong === 0,'une mauvaise réponse ne doit pas faire avancer');
+  assert(t3.riddleDone,         'l\'étape énigme doit être complétée après 3 bonnes réponses');
+  assert(t3.bossOnMap === 1,    'le Bibliothécaire d\'Ombre doit apparaître sur l\'étage');
+  assert(t3.modalClosed,        'la modale doit se fermer à la fin des énigmes');
+
+  // T4 — boss vaincu → quête prête.
+  const t4 = await page.evaluate(() => {
+    checkKillQuests('bibliothecaire_ombre');
+    const q = activeQuests.find(x => x.id === 'dumbledore_lumiere');
+    return {
+      killDone: q.objectives[2].completed,
+      allDone:  q.objectives.every(o => o.completed)
+    };
+  });
+  console.log('  T4 boss   :', t4);
+  assert(t4.killDone, 'l\'étape kill doit être complétée après le boss');
+  assert(t4.allDone,  'les 3 objectifs doivent être complétés');
+
+  // T5 — remise → grimoire au sac, Éclats consommés.
+  const t5 = await page.evaluate(() => {
+    const ok = turnInQuestById('dumbledore_lumiere');
+    return {
+      turnInOk:   ok,
+      questGone:  !activeQuests.some(x => x.id === 'dumbledore_lumiere'),
+      gotGrimoire: player.inventory.some(i => i.id === 'livre_lux_aeterna'),
+      eclatsGone:  !player.inventory.some(i => i.id === 'eclat_lumiere')
+    };
+  });
+  console.log('  T5 remise :', t5);
+  assert(t5.turnInOk,    'la remise de dumbledore_lumiere a échoué');
+  assert(t5.questGone,   'la quête doit sortir des quêtes actives');
+  assert(t5.gotGrimoire, 'livre_lux_aeterna doit être au sac après remise');
+  assert(t5.eclatsGone,  'les Éclats de Lumière doivent être consommés à la remise');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (Épreuve Lux Aeterna)`);
+  }
+  console.log('  ✅ Épreuve de la Lumière Éternelle conforme');
+  await browser.close();
+}
+
 // ── Scénario : Bombarda — éclaboussure ───────────────────────
 
 async function scenarioBombardaSplash() {
@@ -9053,7 +9168,7 @@ async function scenarioAoeSpells() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

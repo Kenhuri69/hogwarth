@@ -1874,9 +1874,11 @@ body {
 .inv-besace .brew-tile:hover { border-color: #2a1a08; background: #0a0705; }
 
 /* ── Concoction de potions — #brewing-modal ───────────────── */
-/* #fusion-modal (établi de Manon) réutilise le même habillage. */
+/* #fusion-modal (établi de Manon) et #riddle-modal (énigmes de
+   Dumbledore) réutilisent le même habillage. */
 #brewing-modal,
-#fusion-modal {
+#fusion-modal,
+#riddle-modal {
   display: none;
   position: fixed; inset: 0;
   background: radial-gradient(ellipse at center, rgba(14,26,14,0.94) 0%, rgba(0,0,0,0.96) 70%);

@@ -700,6 +700,10 @@ const NPCS = [
     placement: { floor: 6, anchor: "any" },
     questsGiven:    ["anneau_dumbledore", "dumbledore_lumiere"],
     questsTurnedIn: ["anneau_dumbledore", "dumbledore_lumiere"],
+    // Énigmes de l'Épreuve de la Lumière Éternelle : disponible quand la
+    // collecte des Éclats est faite. Ouvre #riddle-modal.
+    specialAction: { type: "open_riddle", id: "dumbledore_epreuve",
+                     label: "🕯️ Affronter les énigmes" },
     dialogues: {
       greeting: [
         "(Le portrait s'éveille en clignant des yeux.) Ah, jeune sorcier... même peint, je veille sur ces couloirs.",

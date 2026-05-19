@@ -1,7 +1,7 @@
 # Plan — Portrait de Dumbledore : l'Épreuve de la Lumière Éternelle
 
-> Statut : **conception validée** — prémisse et structure arrêtées,
-> point ouvert tranché. Prêt pour le découpage en phases (§7).
+> Statut : **livré** — les 4 phases (§7) sont implémentées et couvertes
+> par le scénario smoke `scenarioDumbledoreLux` (5 cas).
 
 ## 0. Décisions actées (questions utilisateur)
 
@@ -135,14 +135,17 @@ collecte ✓ → énigme ▶ → boss ◌.
    **vert**. note : SVG `eclat_lumiere` tiré en phase 1 (smoke exige
    tout item mappé) ; le `specialAction open_riddle` est différé en
    phase 2 avec son handler (pas de bouton orphelin).
-2. **Objectif `riddle` + modale** — `type:"riddle"` dans le moteur,
-   `#riddle-modal`, `openRiddleModal`/`answerRiddle`/`solveRiddleStep`,
-   `specialAction open_riddle`. verify : QCM résolu → étape complétée.
-3. **Boss + remise** — spawn garanti du boss à la résolution,
-   `kill` → `ready`, remise → `livre_lux_aeterna`.
-   verify : flux complet collecte → énigme → boss → grimoire.
-4. **Smoke test** — `scenarioDumbledoreLux` (accept → 3 éclats →
-   3 énigmes → boss → remise). Suite complète verte.
+2. ✅ **Objectif `riddle` + modale + boss** — `type:"riddle"` dans
+   `_renderQuestStep` (event-driven, ignoré par `_refreshObjectives`) ;
+   `#riddle-modal` ; `openRiddleModal`/`_renderRiddle`/`answerRiddle` ;
+   `specialAction open_riddle` (gating `_riddleStepReady`) + dispatch
+   `npc-dialog.js` ; `_spawnLuxAeternaBoss` (spawn garanti via
+   `spawnQuestMonsters` à la 3ᵉ bonne réponse).
+3. ✅ **Remise** — flux standard : `kill` complété par `checkKillQuests`
+   → état `ready` → bouton « Remettre la quête » → `livre_lux_aeterna`.
+   Aucune mécanique neuve (≠ établi de fusion Manon).
+4. ✅ **Smoke test** — `scenarioDumbledoreLux` (5 cas : données,
+   collecte, énigmes + spawn boss, boss vaincu, remise). Suite verte.
 
 ## 8. Hors-scope V1
 
@@ -155,3 +158,5 @@ collecte ✓ → énigme ▶ → boss ◌.
 - [x] Prémisse (§1) validée ; donneur/récompense/structure arrêtés.
 - [x] `livre_lux_aeterna` rendu exclusif à la quête (hors boutique/coffres).
 - [x] Phase 1 — données & narratif livrés (smoke vert).
+- [x] Phases 2-4 — énigmes, modale, boss, remise + couverture smoke.
+- [x] **Fonctionnalité complète** — les 4 phases sont livrées.
