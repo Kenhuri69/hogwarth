@@ -663,15 +663,17 @@ async function scenarioNpcIntegration() {
     const portraitEl = document.getElementById('npc-dialog-portrait');
     const img = portraitEl.querySelector('img.npc-portrait-img');
     const opened = overlay.style.display;
+    const overlayPosition = getComputedStyle(overlay).position;
     const portraitSrc = img ? img.getAttribute('src') : null;
     closeNpcDialog();
     const closed = overlay.style.display;
     const seen = seenNpcs.has('dumbledore');
-    return { opened, closed, seen, hasImg: !!img, portraitSrc };
+    return { opened, closed, seen, hasImg: !!img, portraitSrc, overlayPosition };
   });
   console.log('  T4 overlay:', t4);
   assert(t4.opened === 'flex',           'overlay non ouvert');
   assert(t4.closed === 'none',           'overlay non fermé');
+  assert(t4.overlayPosition === 'fixed', `overlay dialogue doit être fixed plein écran (got ${t4.overlayPosition})`);
   assert(t4.seen,                        'PNJ non marqué comme rencontré');
   assert(t4.hasImg,                      'portrait <img> absent');
   assert(t4.portraitSrc === 'img/npc/dumbledore.png',

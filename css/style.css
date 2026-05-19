@@ -830,12 +830,17 @@ body {
 
 /* ── DIALOGUE PNJ ── */
 #npc-dialog-overlay {
-  position: absolute; inset: 0;
+  /* `fixed` (et non `absolute`) : l'overlay est imbriqué dans
+     `.scene-viewport` ; en `absolute` son `inset:0` ne couvrait que la
+     zone canvas, laissant le header / la barre de commandes cliquables.
+     `fixed` le cale sur le viewport entier → HUD réellement sombré et
+     non-cliquable. Aucun ancêtre n'a transform/filter, le calage tient. */
+  position: fixed; inset: 0;
   background: rgba(5,2,0,0.85);
   flex-direction: column;
   align-items: center; justify-content: center;
   padding: 20px;
-  z-index: 9;
+  z-index: 150;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
 }
