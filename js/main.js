@@ -251,8 +251,8 @@ function _hydrateCharacter(target, key) {
   };
   // Met à jour la carte du groupe (portrait + nom + classe)
   const idx = (target === player) ? 0 : 1;
-  const portrait = document.querySelector(`#char-card-${idx} .party-portrait-img`);
-  if (portrait) { portrait.src = c.imgSrc; portrait.alt = c.name; }
+  const bg = document.getElementById(`pcard-bg-${idx}`);
+  if (bg && c.imgSrc) bg.style.backgroundImage = `url("${c.imgSrc}")`;
   const nameEl  = document.getElementById(`char-name-${idx}`);
   if (nameEl) nameEl.textContent = c.name;
   const classEl = document.getElementById(`char-class-${idx}`);

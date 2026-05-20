@@ -92,8 +92,8 @@ Données : tout existe déjà (`housePoints`, `houseTier`, `HOUSE_BONUSES`,
 ## Suivi
 
 - [x] P1 — header compact + blason vivant ✓
-- [ ] P2 — party-bar V3 portrait BG
+- [x] P2 — party-bar V3 portrait BG ✓ (`.pcard-bg` + `.pcard-veil` + `.pcard-content`)
 - [ ] P3 — XP rapatriée
 - [ ] P4 — popup maison
-- [ ] P5 — smoke tests
-- [x] P6 — cache-bust (`?v=8 → ?v=9`)
+- [x] P5 — smoke tests (P1+P2 couverts dans scénario 8)
+- [x] P6 — cache-bust (`?v=9 → ?v=10` pour P2)
