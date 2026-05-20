@@ -516,12 +516,21 @@ function _renderPaperDollSlot(slot, c, charIdx) {
 // Badge pour un sort connu. Cherche l'icône PNG sous img/icons/spells/
 // (slug normalisé du nom). Fallback emoji si l'image n'existe pas.
 function _renderSpellBadge(spellName) {
-  const slug = String(spellName)
-    .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-  const path = `img/icons/spells/${slug}.png`;
+  // SPELL_ICON_REGISTRY (item-icons.js) connaît les sorts dont le PNG
+  // n'a pas le même nom que le slug (ex: Portus → teleportation.png).
+  // Slug-only échoue silencieusement (onerror) pour ces sorts → carré
+  // noir vide dans le badge. On consulte le registry en priorité ;
+  // fallback sur le slug pour les sorts non listés.
+  let path = (typeof SPELL_ICON_REGISTRY === 'object' && SPELL_ICON_REGISTRY)
+    ? SPELL_ICON_REGISTRY[spellName] : null;
+  if (!path) {
+    const slug = String(spellName)
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    path = `img/icons/spells/${slug}.png`;
+  }
   return `<span class="spell-badge">
     <span class="icon"><img src="${path}" alt="" onerror="this.style.display='none'"></span>
     ${spellName}
