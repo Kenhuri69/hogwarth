@@ -1694,32 +1694,19 @@ body {
 }
 .section-inv .inv-slot {
   aspect-ratio: 1/1;
-  background:
-    linear-gradient(180deg, rgba(40,28,12,0.55) 0%, rgba(12,8,3,0.95) 100%),
-    radial-gradient(ellipse at center, rgba(122,92,30,0.10) 0%, transparent 70%);
-  border: 1px solid rgba(122,92,30,0.30);
-  border-radius: 6px;
+  background: #0a0705;
+  border: 1px solid #2a1a08;
+  border-radius: 4px;
   display: flex; align-items: center; justify-content: center;
   cursor: default;
-  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
-  box-shadow: inset 0 1px 0 rgba(240,208,128,0.05), inset 0 -1px 0 rgba(0,0,0,0.6);
+  transition: border-color 0.15s, transform 0.15s;
 }
-/* Slot rempli : bordure dorée chaude + halo subtil. */
-.section-inv .inv-slot.has-item {
-  border-color: rgba(201,168,76,0.55);
-  cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(240,208,128,0.18), inset 0 -1px 0 rgba(0,0,0,0.6),
-              0 0 6px rgba(201,168,76,0.10);
-}
-.section-inv .inv-slot.rarity-rare      { border-color: #4a8ad0; box-shadow: inset 0 1px 0 rgba(120,180,255,0.18), 0 0 8px rgba(74,138,208,0.20); }
-.section-inv .inv-slot.rarity-epic      { border-color: #a060d0; box-shadow: inset 0 1px 0 rgba(180,120,220,0.22), 0 0 8px rgba(160,96,208,0.25); }
-.section-inv .inv-slot.rarity-legendary { border-color: var(--gold); box-shadow: inset 0 1px 0 rgba(240,208,128,0.30), 0 0 10px rgba(201,168,76,0.35); }
-.section-inv .inv-slot.has-item:hover {
-  transform: scale(1.06); border-color: var(--gold-light);
-  box-shadow: inset 0 1px 0 rgba(240,208,128,0.25), 0 0 12px rgba(201,168,76,0.45);
-  z-index: 5;
-}
-.section-inv .inv-slot .ui-icon { width: 28px; height: 28px; object-fit: contain; }
+.section-inv .inv-slot.has-item             { border-color: #4a3010; cursor: pointer; }
+.section-inv .inv-slot.rarity-rare          { border-color: #4a8ad0; }
+.section-inv .inv-slot.rarity-epic          { border-color: #a060d0; }
+.section-inv .inv-slot.rarity-legendary     { border-color: var(--gold); }
+.section-inv .inv-slot.has-item:hover       { transform: scale(1.06); border-color: var(--gold-light); z-index: 5; }
+.section-inv .inv-slot .ui-icon { width: 32px; height: 32px; object-fit: contain; }
 
 /* Mobile : 1 colonne, paper-doll plus compact */
 @media (max-width: 700px) {
