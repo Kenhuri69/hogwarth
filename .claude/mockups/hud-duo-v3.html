@@ -58,8 +58,13 @@
   }
   .ghd-house  { font-size: 14px; }
   .ghd-floor  { font-weight: 700; }
-  .ghd-loc    { color: #d6c294; font-style: italic; font-family: 'Crimson Text', serif; font-size: 12px; }
-  .ghd-gold   { margin-left: auto; color: #d4b75c; font-size: 12px; }
+  .ghd-loc    {
+    color: #d6c294; font-style: italic;
+    font-family: 'Crimson Text', serif; font-size: 12px;
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ghd-gold   { color: #d4b75c; font-size: 12px; flex-shrink: 0; }
 
   /* Blason A.1 — anneau XP radial + ruban tier */
   .crest-wrap {
@@ -122,7 +127,7 @@
   /* Portrait en fond V3 — demi-portrait à gauche, voile dégradé droit */
   .pcard-bg {
     position: absolute; inset: 0;
-    background-size: 58% auto;
+    background-size: 50% auto;
     background-position: left 18%;
     background-repeat: no-repeat;
     filter: brightness(.88) saturate(1.02);
@@ -132,42 +137,43 @@
     background:
       linear-gradient(90deg,
         rgba(0,0,0,0.0)   0%,
-        rgba(0,0,0,0.10)  35%,
-        rgba(20,12,4,0.85) 50%,
-        rgba(20,12,4,0.95) 100%);
+        rgba(0,0,0,0.10)  28%,
+        rgba(20,12,4,0.85) 44%,
+        rgba(20,12,4,0.96) 100%);
   }
   .pcard-content {
     position: relative;
     height: 100%;
-    padding: 6px 8px 6px 52%;
+    padding: 6px 8px 6px 46%;
     display: flex; flex-direction: column; justify-content: center;
     gap: 4px;
   }
   .pname-row {
     display: flex; align-items: baseline; gap: 4px;
     text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+    overflow: hidden; white-space: nowrap;
   }
   .pname {
     font-family: 'Cinzel', serif;
     font-size: 11px;
     color: #ecd692;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     font-weight: 700;
+    overflow: hidden; text-overflow: ellipsis;
   }
   .plevel {
     font-family: 'Cinzel', serif;
     font-size: 9px;
     color: #c9a84c;
     opacity: .85;
+    flex-shrink: 0;
   }
   .pactive {
     margin-left: auto;
-    font-family: 'Cinzel', serif;
-    font-size: 8.5px;
-    font-weight: 700;
+    font-size: 12px;
     color: #c9a84c;
-    letter-spacing: 0.5px;
     text-shadow: 0 0 6px rgba(201,168,76,0.7);
+    flex-shrink: 0;
   }
   .pdot {
     margin-left: auto;
@@ -175,6 +181,7 @@
     border-radius: 50%;
     border: 1px solid #5a4020;
     background: rgba(20,12,4,0.55);
+    flex-shrink: 0;
   }
   .bar { display: flex; align-items: center; gap: 4px; }
   .bar-ico { font-size: 9px; width: 11px; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,0.85); }
@@ -265,7 +272,7 @@
         <div class="pname-row">
           <span class="pname">HARRY</span>
           <span class="plevel">N.5</span>
-          <span class="pactive">⚡ ACTIF</span>
+          <span class="pactive">⚡</span>
         </div>
         <div class="bar"><span class="bar-ico">⚡</span><div class="bar-track"><div class="bar-fill hp" style="width:100%"></div></div><span class="bar-val">35/35</span></div>
         <div class="bar"><span class="bar-ico">✦</span><div class="bar-track"><div class="bar-fill mp" style="width:100%"></div></div><span class="bar-val">22/22</span></div>
@@ -294,7 +301,7 @@
   </div>
 
   <!-- Barre d'actions placeholder -->
-  <div class="cmd-strip">— BARRE 14 ICÔNES + D-PAD (inchangée) —</div>
+  <div class="cmd-strip">— BARRE 14 ICÔNES —</div>
 </div></div>
 
 </body>
