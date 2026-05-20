@@ -51,7 +51,8 @@ function updateUI() {
   // ── Affichage selon partySize ────────────────────────────────
   applyPartyMode();
 
-  // ── Badge de Maison ─────────────────────────────────────────
+  // ── Anneaux header (XP gauche + Maison droite) ───────────────
+  _updateXpWrap();
   _updateHouseBadge();
 
   // ── Statut KO sur les cartes ─────────────────────────────────
@@ -90,6 +91,20 @@ function _tierShortLabel(fullLabel) {
   if (fullLabel === 'Mythe')       return 'MYT';
   if (fullLabel === 'Apothéose')   return 'APO';
   return fullLabel.slice(0, 3).toUpperCase();
+}
+
+// Pose l'anneau XP radial autour de l'icône Poudlard, à GAUCHE du header.
+// Symétrique du blason Maison à droite (un anneau de chaque côté).
+// Le ratio est player.xp / player.xpNext, le ruban affiche « Niv.X ».
+function _updateXpWrap() {
+  const wrap = document.getElementById('xp-wrap');
+  if (!wrap || typeof player === 'undefined') return;
+  const max = Math.max(1, player.xpNext || 1);
+  const ratio = Math.max(0, Math.min(1, (player.xp || 0) / max));
+  wrap.style.setProperty('--xp-ratio', String(ratio));
+  wrap.title = `Niveau ${player.level} · XP ${player.xp}/${player.xpNext}`;
+  const tier = document.getElementById('xp-tier');
+  if (tier) tier.textContent = `Niv.${player.level}`;
 }
 
 // Pose l'anneau XP radial + le ruban tier sur #crest-wrap.
@@ -288,6 +303,8 @@ function _updateCharBar(idx) {
       const want = `url("${c.imgSrc}")`;
       if (bg.style.backgroundImage !== want) bg.style.backgroundImage = want;
     }
+    const med = document.getElementById(`pcard-medaillon-${idx}`);
+    if (med && med.getAttribute('src') !== c.imgSrc) med.setAttribute('src', c.imgSrc);
   }
   const slot = document.getElementById(`status-slot-${idx}`);
   if (slot && typeof renderStatusBadges === 'function') slot.innerHTML = renderStatusBadges(c);
