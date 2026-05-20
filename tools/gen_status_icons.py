@@ -168,9 +168,185 @@ def protego():
     return img
 
 
+def _radial_halo(r_outer, r_inner, color_outer, color_inner=None, blur=3):
+    """Renvoie une layer transparente avec un halo circulaire gaussien."""
+    halo = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dh = ImageDraw.Draw(halo)
+    dh.ellipse([C - r_outer, C - r_outer, C + r_outer, C + r_outer], fill=color_outer)
+    if color_inner:
+        dh.ellipse([C - r_inner, C - r_inner, C + r_inner, C + r_inner], fill=color_inner)
+    return halo.filter(ImageFilter.GaussianBlur(blur))
+
+
+def disarm():
+    """Baguette brisée bronze-or — statut Désarmé."""
+    img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    img = Image.alpha_composite(img, _radial_halo(18, 0, (201, 168, 76, 80), blur=3))
+    d = ImageDraw.Draw(img)
+    rim   = (90, 55, 15, 255)
+    body  = (188, 145, 60, 255)
+    tip   = (235, 210, 140, 255)
+    crack = (35, 20, 5, 255)
+
+    # baguette : diagonale haut-gauche → bas-droite avec une rupture au centre
+    # segment haut (intact, plus large à la base)
+    d.polygon([(C - 17, C - 14), (C - 13, C - 18), (C - 4, C - 9), (C - 8, C - 5)], fill=body)
+    d.polygon([(C - 17, C - 14), (C - 13, C - 18), (C - 4, C - 9), (C - 8, C - 5)], outline=rim)
+    d.ellipse([C - 19, C - 16, C - 13, C - 10], fill=tip)   # embout en haut-gauche
+    d.ellipse([C - 19, C - 16, C - 13, C - 10], outline=rim)
+
+    # segment bas (fissuré, plus fin vers la pointe)
+    d.polygon([(C + 4, C + 5), (C + 1, C + 9), (C + 14, C + 18), (C + 17, C + 14)], fill=body)
+    d.polygon([(C + 4, C + 5), (C + 1, C + 9), (C + 14, C + 18), (C + 17, C + 14)], outline=rim)
+    d.ellipse([C + 13, C + 13, C + 19, C + 19], fill=tip)  # pointe en bas-droite
+    d.ellipse([C + 13, C + 13, C + 19, C + 19], outline=rim)
+
+    # fissure entre les deux segments
+    d.line([(C - 8, C - 5), (C - 4, C - 1)], fill=crack, width=2)
+    d.line([(C - 4, C - 1), (C + 4, C + 5)], fill=crack, width=2)
+    d.line([(C + 1, C + 9), (C + 4, C + 5)], fill=crack, width=2)
+    # éclats à la rupture
+    for px, py in ((C - 4, C - 1), (C + 1, C + 4)):
+        d.ellipse([px - 2, py - 2, px + 2, py + 2], fill=crack)
+    return img
+
+
+def regen():
+    """Croix médicale verte avec halo — statut Régénération."""
+    img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    img = Image.alpha_composite(img, _radial_halo(20, 12, (90, 200, 100, 80), (170, 240, 175, 60), blur=4))
+    d = ImageDraw.Draw(img)
+    rim   = (30, 95, 40, 255)
+    green = (58, 165, 90, 255)
+    light = (170, 240, 175, 255)
+
+    # disque fond
+    d.ellipse([C - 17, C - 17, C + 17, C + 17], fill=(20, 60, 30, 230), outline=rim)
+    # croix verte épaisse
+    arm = 12
+    th  = 5
+    d.rectangle([C - th, C - arm, C + th, C + arm], fill=green, outline=rim)
+    d.rectangle([C - arm, C - th, C + arm, C + th], fill=green, outline=rim)
+    # reflet clair sur l'épine verticale
+    d.line([(C - 2, C - arm + 2), (C - 2, C + arm - 2)], fill=light, width=1)
+    return img
+
+
+def stun():
+    """Spirale d'étoiles dorées tournoyantes — statut Étourdi."""
+    img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    img = Image.alpha_composite(img, _radial_halo(20, 0, (236, 214, 146, 110), blur=4))
+    d = ImageDraw.Draw(img)
+    gold      = (236, 198, 70, 255)
+    gold_lite = (255, 235, 165, 255)
+    outline   = (90, 55, 15, 255)
+
+    # 3 étoiles à 5 branches autour du centre, à des rayons et angles variés
+    def star(cx, cy, r_outer, r_inner=None, fill=gold, ol=outline):
+        if r_inner is None: r_inner = r_outer * 0.45
+        pts = []
+        for i in range(10):
+            ang = -math.pi / 2 + i * math.pi / 5
+            r   = r_outer if i % 2 == 0 else r_inner
+            pts.append((cx + math.cos(ang) * r, cy + math.sin(ang) * r))
+        d.polygon(pts, fill=fill, outline=ol)
+
+    star(C - 7, C - 6, 7, fill=gold_lite)
+    star(C + 8, C + 1, 6)
+    star(C - 4, C + 9, 5)
+    return img
+
+
+def fear():
+    """Visage spectral cyan-violet avec halo glacial — statut Apeuré."""
+    img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    img = Image.alpha_composite(img, _radial_halo(20, 12, (90, 107, 140, 90), (180, 195, 230, 50), blur=4))
+    d = ImageDraw.Draw(img)
+    ghost_body   = (210, 220, 245, 255)
+    ghost_shadow = (122, 138, 175, 255)
+    eye          = (15, 20, 35, 255)
+
+    # corps "fantôme" : cercle haut + draperie ondulée
+    d.ellipse([C - 13, C - 16, C + 13, C + 6], fill=ghost_body, outline=ghost_shadow)
+    # draperie : 3 vagues en bas
+    drape = [(C - 13, C),
+             (C - 13, C + 12),
+             (C - 8,  C + 8),
+             (C - 4,  C + 14),
+             (C,      C + 9),
+             (C + 4,  C + 14),
+             (C + 8,  C + 8),
+             (C + 13, C + 12),
+             (C + 13, C)]
+    d.polygon(drape, fill=ghost_body, outline=ghost_shadow)
+    # 2 yeux ronds noirs grands ouverts
+    d.ellipse([C - 7, C - 8, C - 2, C - 1], fill=eye)
+    d.ellipse([C + 2, C - 8, C + 7, C - 1], fill=eye)
+    # bouche petit "o" terrorisé
+    d.ellipse([C - 2, C, C + 2, C + 4], fill=eye)
+    return img
+
+
+def imperius():
+    """Spirale violette hypnotique — statut Asservi."""
+    img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    img = Image.alpha_composite(img, _radial_halo(20, 10, (125, 63, 160, 100), (190, 130, 220, 60), blur=4))
+    d = ImageDraw.Draw(img)
+    rim    = (60, 25, 90, 255)
+    purple = (138, 75, 175, 255)
+    light  = (220, 175, 240, 255)
+
+    # disque fond
+    d.ellipse([C - 17, C - 17, C + 17, C + 17], fill=(35, 18, 55, 235), outline=rim)
+    # spirale logarithmique en pointillés épais (3 boucles)
+    a = 1.0
+    b = 0.32
+    last = None
+    for i in range(50):
+        t = i * 0.32
+        r = a + b * t
+        if r > 14: break
+        x = C + math.cos(t) * r
+        y = C + math.sin(t) * r
+        if last:
+            col = light if i % 2 == 0 else purple
+            d.line([last, (x, y)], fill=col, width=2)
+        last = (x, y)
+    # point central clair
+    d.ellipse([C - 2, C - 2, C + 2, C + 2], fill=light)
+    return img
+
+
+def regen_ferula_max():
+    """Croix médicale verte + étincelles dorées — Ferula Maxima."""
+    img = regen()  # base = regen
+    d = ImageDraw.Draw(img)
+    spark = (250, 230, 130, 255)
+    # 4 étincelles aux coins
+    for dx, dy in ((-15, -15), (15, -15), (-15, 15), (15, 15)):
+        cx, cy = C + dx, C + dy
+        d.polygon([
+            (cx,     cy - 4),
+            (cx + 1, cy - 1),
+            (cx + 4, cy),
+            (cx + 1, cy + 1),
+            (cx,     cy + 4),
+            (cx - 1, cy + 1),
+            (cx - 4, cy),
+            (cx - 1, cy - 1),
+        ], fill=spark)
+    return img
+
+
 def main():
     os.makedirs(ICONS_DIR, exist_ok=True)
-    for slug, fn in (("gel", gel), ("weaken", weaken), ("protego", protego)):
+    recipes = (
+        ("gel", gel), ("weaken", weaken), ("protego", protego),
+        ("disarm", disarm), ("regen", regen), ("stun", stun),
+        ("fear", fear), ("imperius", imperius),
+        ("regen_ferula_max", regen_ferula_max),
+    )
+    for slug, fn in recipes:
         path = os.path.join(ICONS_DIR, slug + ".png")
         fn().save(path, "PNG", optimize=True)
         print(f"Wrote {path} ({os.path.getsize(path)} bytes)")
