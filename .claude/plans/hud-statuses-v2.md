@@ -138,8 +138,15 @@ mais sans tooltip au survol. Hovering = silence.
       (applied=false, DEF inchangée), 3 cycles d'expiry séquentiels
       (restaure 3 DEF par stack, retrait complet au dernier).
 - [x] Vague B — commit + push.
-- [ ] Vague C — smoke `scenarioDuoStatuses` (vérifier câblage existant).
-- [ ] Vague C — corriger éventuels bugs détectés.
+- [x] Vague C — smoke `scenarioDuoStatuses` (vérifier câblage existant).
+      → ajouté dans `tests/smoke.js` (5 tests : T1 Protego H., T2 Protego
+        Harry, T3 weaken cible Harry, T4 burn sur Hermione, T5 stacks
+        isolés). Verrou contre régression future si quelqu'un introduit
+        un raccourci « statuts groupe ».
+- [x] Vague C — corriger éventuels bugs détectés.
+      → aucun bug détecté. L'isolation est structurelle (statusEffects
+        portés par l'objet perso, shieldTurns indexé par charIdx).
+        Aucune modif de code de prod.
 - [ ] Vague D — étendre `_updateOneCharCard` avec `data-tooltip`.
 - [ ] Vague D — vérifier UX.showTooltip déclenché au survol.
 - [ ] Vague D — smoke `scenarioPartyEquipTooltip`.
