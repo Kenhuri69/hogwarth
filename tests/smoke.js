@@ -407,6 +407,118 @@ async function scenarioWeakenAndProtegoBadges() {
   await browser.close();
 }
 
+// ── Scénario 2quater : statuts duo isolés par perso (Vague C) ──────
+//
+// Le code stocke les statusEffects directement sur l'objet personnage
+// (party[0].statusEffects vs party[1].statusEffects) et shieldTurns
+// est indexé par charIdx. L'isolation devrait donc être structurelle.
+// Ce scénario verrouille cette garantie au cas où une refonte future
+// (« statuts groupe ») introduirait un raccourci dangereux.
+
+async function scenarioDuoStatuses() {
+  console.log('\n── Scénario 2quater : statuts duo isolés ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+  await startDummyFight(page, { hp: 50 });
+
+  // T1 : Protego par Hermione → shieldTurns[1] uniquement
+  const t1 = await page.evaluate(() => {
+    shieldTurns[0] = 0; shieldTurns[1] = 0;
+    currentBattleChar = 1;
+    const spell = SPELLS.find(s => s.name === 'Protego');
+    _spellShield(spell, party[1]);
+    return { s0: shieldTurns[0], s1: shieldTurns[1] };
+  });
+  console.log('  T1 Protego Hermione:', t1);
+  assert(t1.s0 === 0, 'Protego d\'Hermione ne doit PAS ouvrir le bouclier de Harry');
+  assert(t1.s1  >  0, 'Protego d\'Hermione doit ouvrir son propre bouclier');
+
+  // T2 : Protego par Harry → shieldTurns[0] uniquement
+  const t2 = await page.evaluate(() => {
+    shieldTurns[0] = 0; shieldTurns[1] = 0;
+    currentBattleChar = 0;
+    const spell = SPELLS.find(s => s.name === 'Protego');
+    _spellShield(spell, party[0]);
+    return { s0: shieldTurns[0], s1: shieldTurns[1] };
+  });
+  console.log('  T2 Protego Harry:', t2);
+  assert(t2.s0 >  0, 'Protego de Harry doit ouvrir son propre bouclier');
+  assert(t2.s1 === 0, 'Protego de Harry ne doit PAS ouvrir le bouclier d\'Hermione');
+
+  // T3 : weaken ciblé sur Harry uniquement (ability ennemi)
+  const t3 = await page.evaluate(() => {
+    party[0].statusEffects = []; party[1].statusEffects = [];
+    party[0].def = 10; party[1].def = 10;
+    const fakeEnemy = {
+      name: 'Détraqueur',
+      abilities: [{ name: 'Souffle Glacé', icon: '❄️', effect: 'weaken', power: 3, chance: 1.0, turns: 3 }]
+    };
+    const origRandom = Math.random;
+    Math.random = () => 0;
+    try { tryEnemyAbility(fakeEnemy, party[0], 0, () => {}); }
+    finally { Math.random = origRandom; }
+    return {
+      h0_status: party[0].statusEffects.length,
+      h1_status: party[1].statusEffects.length,
+      h0_def:    party[0].def,
+      h1_def:    party[1].def
+    };
+  });
+  console.log('  T3 weaken cible Harry:', t3);
+  assert(t3.h0_status === 1, 'weaken doit poser le statut sur Harry');
+  assert(t3.h1_status === 0, 'weaken sur Harry ne doit PAS apparaître sur Hermione');
+  assert(t3.h0_def    === 7, 'weaken doit retirer 3 DEF à Harry (10 → 7)');
+  assert(t3.h1_def    === 10, 'weaken sur Harry ne doit PAS retirer la DEF d\'Hermione');
+
+  // T4 : DoT (burn) sur Hermione uniquement, le tick ne saigne pas Harry
+  const t4 = await page.evaluate(() => {
+    party[0].statusEffects = []; party[1].statusEffects = [];
+    party[0].hp = 30; party[1].hp = 30;
+    applyStatus(party[1], 'burn', 5, 3);
+    tickStatuses(party[1], false);
+    tickStatuses(party[0], false);   // pas de statut → no-op
+    return {
+      h0_hp: party[0].hp,
+      h1_hp: party[1].hp,
+      h0_status: party[0].statusEffects.length,
+      h1_status: party[1].statusEffects.length
+    };
+  });
+  console.log('  T4 burn sur Hermione:', t4);
+  assert(t4.h0_hp === 30, 'burn sur Hermione ne doit PAS toucher les PV de Harry');
+  assert(t4.h1_hp  <  30, 'burn doit retirer des PV à Hermione');
+  assert(t4.h0_status === 0, 'burn ne doit pas se propager sur Harry');
+  assert(t4.h1_status === 1, 'burn doit rester sur Hermione');
+
+  // T5 : weaken empilé sur Hermione (3 stacks) — vérifier que Harry
+  // ne porte aucun stack après une telle salve sur sa coéquipière.
+  const t5 = await page.evaluate(() => {
+    party[0].statusEffects = []; party[1].statusEffects = [];
+    party[0].def = 12; party[1].def = 12;
+    for (let i = 0; i < 3; i++) {
+      const ok = applyStatus(party[1], 'weaken', 3, 4);
+      if (ok) party[1].def -= 3;
+    }
+    return {
+      h0_def: party[0].def, h1_def: party[1].def,
+      h0_stacks: party[0].statusEffects.length,
+      h1_stacks: party[1].statusEffects[0]?.stacks
+    };
+  });
+  console.log('  T5 stacks isolés:', t5);
+  assert(t5.h0_def === 12,    'Harry ne perd pas de DEF quand Hermione est weaken');
+  assert(t5.h1_def === 3,     'Hermione DEF 12 → 3 après 3 stacks');
+  assert(t5.h0_stacks === 0,  'Harry n\'a aucun statut');
+  assert(t5.h1_stacks === 3,  'Hermione porte 3 stacks');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ statuts duo strictement isolés par perso');
+  await browser.close();
+}
+
 // ── Scénario 2ter : mini-équipement party-card ──────────────────
 
 async function scenarioPartyEquipRow() {
@@ -9341,7 +9453,7 @@ async function scenarioAoeSpells() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
