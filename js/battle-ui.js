@@ -58,8 +58,12 @@ function showAllyTargetSelection(spellName) {
 }
 
 // ── Pilules de statut (brûlure / poison / saignement / weaken / Protego) ─
-function renderStatusBadges(target) {
-  const parts = [];
+// Variante "items" : retourne un tableau `[{key, turns, stacks, html}]`
+// avec une clé stable par pill (statusId, 'protego', 'guard'). Sert au
+// diff côté `_diffApplyStatusBadges` (Vague E) pour ne marquer enter/tick
+// que sur les badges réellement nouveaux ou décrémentés.
+function renderStatusBadgeItems(target) {
+  const items = [];
 
   if (target && target.statusEffects && target.statusEffects.length) {
     target.statusEffects.forEach(s => {
@@ -67,8 +71,6 @@ function renderStatusBadges(target) {
       const iconHtml = (typeof getStatusIconHtml === 'function')
         ? (getStatusIconHtml(s.id, 'ui-icon-sm') || s.icon)
         : s.icon;
-      // weaken = malus DEF (power = points perdus par stack, pas dmg/tour).
-      // Affiche `×N` quand le statut est empilé (Vague B).
       const stacks = s.stacks || 1;
       const tooltip = s.id === 'weaken'
         ? (stacks > 1
@@ -76,11 +78,15 @@ function renderStatusBadges(target) {
             : `${def.label || s.id} −${s.power} DEF`)
         : `${def.label || s.id} ${s.power}/tour`;
       const stackTag = stacks > 1 ? `<span class="status-pill-stack">×${stacks}</span>` : '';
-      parts.push(`<span class="status-pill" style="border-color:${def.color}" title="${tooltip}">${iconHtml}${s.turns}${stackTag}</span>`);
+      items.push({
+        key: s.id,
+        turns: s.turns,
+        stacks,
+        html: `<span class="status-pill" data-key="${s.id}" style="border-color:${def.color}" title="${tooltip}">${iconHtml}${s.turns}${stackTag}</span>`
+      });
     });
   }
 
-  // Badge Protego pour les alliés actifs (basé sur shieldTurns).
   if (typeof party !== 'undefined' && typeof shieldTurns !== 'undefined') {
     const idx = party.indexOf(target);
     if (idx === 0 || idx === 1) {
@@ -89,21 +95,34 @@ function renderStatusBadges(target) {
         const iconHtml = (typeof getStatusIconHtml === 'function')
           ? (getStatusIconHtml('protego', 'ui-icon-sm') || '🛡️')
           : '🛡️';
-        parts.push(`<span class="status-pill" style="border-color:#c9a84c" title="Protego — bloque l'attaque suivante (${t} tours)">${iconHtml}${t}</span>`);
+        items.push({
+          key: 'protego',
+          turns: t,
+          html: `<span class="status-pill" data-key="protego" style="border-color:#c9a84c" title="Protego — bloque l'attaque suivante (${t} tours)">${iconHtml}${t}</span>`
+        });
       }
     }
   }
 
-  // Badge Garde pour les alliés actifs (basé sur guardTurns).
   if (typeof party !== 'undefined' && typeof guardTurns !== 'undefined') {
     const idx = party.indexOf(target);
     if ((idx === 0 || idx === 1) && (guardTurns[idx] || 0) > 0) {
-      parts.push(`<span class="status-pill" style="border-color:#cda52d" title="Garde — atténue le prochain coup ennemi de 50 %">🛡️G</span>`);
+      items.push({
+        key: 'guard',
+        turns: guardTurns[idx],
+        html: `<span class="status-pill" data-key="guard" style="border-color:#cda52d" title="Garde — atténue le prochain coup ennemi de 50 %">🛡️G</span>`
+      });
     }
   }
+  return items;
+}
 
-  if (!parts.length) return '';
-  return '<div class="status-row">' + parts.join('') + '</div>';
+// Version legacy (string HTML). Toujours utilisée par renderEnemyGroup
+// (battle-ui.js:141) — les ennemis n'ont pas de diff anim.
+function renderStatusBadges(target) {
+  const items = renderStatusBadgeItems(target);
+  if (!items.length) return '';
+  return '<div class="status-row">' + items.map(i => i.html).join('') + '</div>';
 }
 
 // ── Rendu du groupe d'ennemis ────────────────────────────────

@@ -307,7 +307,7 @@ function _updateCharBar(idx) {
     if (med && med.getAttribute('src') !== c.imgSrc) med.setAttribute('src', c.imgSrc);
   }
   const slot = document.getElementById(`status-slot-${idx}`);
-  if (slot && typeof renderStatusBadges === 'function') slot.innerHTML = renderStatusBadges(c);
+  if (slot && typeof renderStatusBadgeItems === 'function') _diffApplyStatusBadges(slot, c);
 
   // Mini-équipement party-card : 3 slots (arme + armure + amulette)
   const er = document.getElementById(`equip-row-${idx}`);
@@ -335,6 +335,47 @@ function _updateCharBar(idx) {
         cell.classList.remove('filled');
       }
     });
+  }
+}
+
+// Diff l'état précédent de #status-slot-${idx} (stocké en slot.dataset.snap)
+// avec le rendu courant des badges. Marque chaque pill :
+//   • nouvelle (clé absente de snap)        → classe .status-badge-enter
+//   • turns/stacks décrémenté (re-rendu)    → classe .status-badge-tick
+//   • disparue (snap mais plus dans target) → ghost .status-badge-exit
+//     ré-injecté juste après le slot, supprimé après 350 ms.
+// Sans diff, le `slot.innerHTML = ...` rejouerait l'animation d'apparition
+// à chaque updateUI() (très fréquent en combat).
+function _diffApplyStatusBadges(slot, target) {
+  const items = renderStatusBadgeItems(target);
+  let prev = [];
+  try { prev = JSON.parse(slot.dataset.snap || '[]'); } catch (e) {}
+  const prevMap = new Map(prev.map(p => [p.key, p]));
+  const newKeys = new Set(items.map(i => i.key));
+
+  const pills = items.map(i => {
+    const p = prevMap.get(i.key);
+    let cls = '';
+    if (!p) cls = 'status-badge-enter';
+    else if (p.turns !== i.turns || (p.stacks || 1) !== (i.stacks || 1)) cls = 'status-badge-tick';
+    return cls ? i.html.replace('class="status-pill"', `class="status-pill ${cls}"`) : i.html;
+  });
+
+  const exits = prev
+    .filter(p => !newKeys.has(p.key))
+    .map(p => p.html.replace('class="status-pill"', 'class="status-pill status-badge-exit"'));
+
+  const allHtml = pills.concat(exits).join('');
+  slot.innerHTML = allHtml ? `<div class="status-row">${allHtml}</div>` : '';
+
+  slot.dataset.snap = JSON.stringify(items.map(i => ({
+    key: i.key, turns: i.turns, stacks: i.stacks || 1, html: i.html
+  })));
+
+  if (exits.length) {
+    setTimeout(() => {
+      slot.querySelectorAll('.status-badge-exit').forEach(e => e.remove());
+    }, 350);
   }
 }
 

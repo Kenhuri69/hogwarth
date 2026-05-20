@@ -163,9 +163,29 @@ mais sans tooltip au survol. Hovering = silence.
 - [x] Vague D — smoke `scenarioPartyEquipRow` T4 ajouté (slot rempli +
       slot vide → tooltip distinct dans chaque cas).
 - [x] Vague D — commit + push.
-- [ ] Vague E — animations CSS + classes ajoutées via JS.
-- [ ] Vague E — vérification visuelle (pas de smoke pour l'animation).
-- [ ] Vague E — commit + push.
+- [x] Vague E — animations CSS + classes ajoutées via JS.
+      → 3 keyframes (`status-badge-enter` 200ms back-out,
+        `status-badge-tick` 220ms pulse, `status-badge-exit` 300ms
+        flash rouge + scale-down).
+      → Refactor : `renderStatusBadges` (string legacy) ➜ nouvelle
+        primitive `renderStatusBadgeItems(target)` qui retourne
+        `[{key, turns, stacks, html}]` avec `data-key="${id}"` sur
+        chaque pill. Les ennemis (renderEnemyGroup) restent sur la
+        version string sans anim — combat re-render leur HTML à
+        chaque tour, anim non viable côté ennemi.
+      → Nouvelle fonction `_diffApplyStatusBadges(slot, c)` dans
+        `ui.js` : lit `slot.dataset.snap` (snapshot précédent),
+        compare clés/turns/stacks, applique :
+          • `.status-badge-enter` aux pills nouvelles
+          • `.status-badge-tick`  aux pills décrémentées
+          • injection ghost `.status-badge-exit` pour les sortantes,
+            nettoyé par setTimeout 350 ms.
+      → `_updateCharBar` appelle `_diffApplyStatusBadges` au lieu de
+        `slot.innerHTML = renderStatusBadges(c)`.
+- [x] Vague E — smoke `T6 anim diff` ajouté (couvre enter, tick, exit,
+      cleanup ghost). Smoke T2/T3 mis à jour pour exclure les ghosts
+      `.status-badge-exit` (cohérence Vague E).
+- [x] Vague E — commit + push.
 
 ## 4. Risques
 

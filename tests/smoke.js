@@ -289,7 +289,9 @@ async function scenarioWeakenAndProtegoBadges() {
     tickStatuses(c, false);
     updateUI();
     const slot = document.getElementById('status-slot-0');
-    const pill = slot ? slot.querySelector('.status-pill') : null;
+    // Vague E : le ghost .status-badge-exit reste 350 ms après l'expiry —
+    // on cible les pills actives uniquement (sans la classe exit).
+    const pill = slot ? slot.querySelector('.status-pill:not(.status-badge-exit)') : null;
     return {
       defAfter:    c.def,
       statusCount: c.statusEffects.length,
@@ -308,7 +310,8 @@ async function scenarioWeakenAndProtegoBadges() {
     shieldTurns[0] = 2;
     updateUI();
     const slot  = document.getElementById('status-slot-0');
-    const pills = slot ? slot.querySelectorAll('.status-pill') : [];
+    // Idem : on ignore les ghosts d'exit éventuels (cohérence Vague E).
+    const pills = slot ? slot.querySelectorAll('.status-pill:not(.status-badge-exit)') : [];
     let found = null;
     pills.forEach(p => {
       const hasEmoji = (p.textContent || '').includes('🛡️');
@@ -399,11 +402,49 @@ async function scenarioWeakenAndProtegoBadges() {
   assert(t5.afterTick2.present === 1 && t5.afterTick2.stacks === 1 && t5.afterTick2.def === 9,  'expiry 2nd stack → reste 1 stack');
   assert(t5.afterTick3.present === 0 && t5.afterTick3.def === 12, 'expiry final → statut retiré, DEF restaurée');
 
+  // T6 (Vague E) : animations enter/tick/exit appliquées par diff
+  //   - enter : statut nouveau → classe .status-badge-enter
+  //   - tick  : turns décrémenté → classe .status-badge-tick
+  //   - exit  : statut disparu → ghost .status-badge-exit (350 ms)
+  const t6 = await page.evaluate(async () => {
+    const c = party[0];
+    c.statusEffects = [];
+    shieldTurns[0] = 0;
+    updateUI();    // snapshot vide
+    // Enter : on pose un nouveau burn
+    applyStatus(c, 'burn', 3, 4);
+    updateUI();
+    const slot = document.getElementById('status-slot-0');
+    const enterPill = slot.querySelector('.status-pill[data-key="burn"]');
+    const hasEnter  = !!enterPill && enterPill.classList.contains('status-badge-enter');
+    // Tick : tickStatuses décrémente turns, on re-render → .status-badge-tick
+    tickStatuses(c, false);
+    updateUI();
+    const tickPill = slot.querySelector('.status-pill[data-key="burn"]');
+    const hasTick  = !!tickPill && tickPill.classList.contains('status-badge-tick');
+    // Exit : on tick jusqu'à l'expiry du statut
+    tickStatuses(c, false);
+    tickStatuses(c, false);
+    tickStatuses(c, false);
+    updateUI();
+    const exitGhost = slot.querySelector('.status-pill.status-badge-exit[data-key="burn"]');
+    const hasExit   = !!exitGhost;
+    // Attendre 400 ms → le ghost doit avoir été nettoyé par setTimeout
+    await new Promise(r => setTimeout(r, 400));
+    const cleaned = !slot.querySelector('.status-badge-exit');
+    return { hasEnter, hasTick, hasExit, cleaned };
+  });
+  console.log('  T6 anim diff:', t6);
+  assert(t6.hasEnter, 'nouveau statut doit recevoir la classe .status-badge-enter');
+  assert(t6.hasTick,  'décrément de turns doit recevoir la classe .status-badge-tick');
+  assert(t6.hasExit,  'statut expiré doit laisser un ghost .status-badge-exit');
+  assert(t6.cleaned,  'ghost .status-badge-exit doit être nettoyé après 350 ms');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ weaken/Protego/ability-status/stacks conformes');
+  console.log('  ✅ weaken/Protego/ability-status/stacks/anim conformes');
   await browser.close();
 }
 
