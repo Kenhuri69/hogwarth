@@ -255,12 +255,14 @@ const ITEM_ICON_NEW_REGISTRY = {
 
 // Status effects (battle.js consomme ce registre via STATUS_DEFS[id].iconSrc)
 const STATUS_ICON_REGISTRY = {
-  burn:   'img/icons/burn.png',
-  poison: 'img/icons/poison.png',
-  bleed:  'img/icons/bleed.png',
-  gel:    'img/icons/gel.png',
-  heal:   'img/icons/heal.png',
-  dead:   'img/icons/dead.png'
+  burn:    'img/icons/burn.png',
+  poison:  'img/icons/poison.png',
+  bleed:   'img/icons/bleed.png',
+  gel:     'img/icons/gel.png',
+  weaken:  'img/icons/weaken.png',
+  protego: 'img/icons/protego.png',
+  heal:    'img/icons/heal.png',
+  dead:    'img/icons/dead.png'
 };
 
 // Sortilèges (priorité 1 par nom canonique, fallback emoji icon)

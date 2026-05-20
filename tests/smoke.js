@@ -302,13 +302,19 @@ async function scenarioWeakenAndProtegoBadges() {
   assert(!t2.pillExists,                    'pilule weaken doit disparaître après expiry');
 
   // T3 : badge Protego rendu quand shieldTurns[0] > 0
+  // (depuis Vague A statuts V2 : icône PNG via STATUS_ICON_REGISTRY.protego,
+  //  fallback emoji 🛡️ si le PNG n'est pas chargé)
   const t3 = await page.evaluate(() => {
     shieldTurns[0] = 2;
     updateUI();
     const slot  = document.getElementById('status-slot-0');
     const pills = slot ? slot.querySelectorAll('.status-pill') : [];
     let found = null;
-    pills.forEach(p => { if ((p.textContent || '').includes('🛡️')) found = p; });
+    pills.forEach(p => {
+      const hasEmoji = (p.textContent || '').includes('🛡️');
+      const hasImg   = !!p.querySelector('img[src*="protego.png"]');
+      if (hasEmoji || hasImg) found = p;
+    });
     return {
       hasShield:    !!found,
       shieldTitle:  found ? found.getAttribute('title') : null,
