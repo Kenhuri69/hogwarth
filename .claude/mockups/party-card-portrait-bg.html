@@ -1,0 +1,209 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mockup — Party-card portrait BG</title>
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-dark: #7a5c1e;
+    --gold-light: #ecd692;
+    --parchment: #e8d7a8;
+    --parchment-dark: #d6c294;
+    --bg: #0d0705;
+    --card-border: #5a4020;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--parchment); font-family: 'Inter', system-ui, sans-serif; }
+  body { padding: 16px 12px 40px; }
+  .label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--gold-dark); margin: 18px 0 6px;
+  }
+  .label b { color: var(--gold); }
+
+  .pcard {
+    position: relative;
+    width: 100%;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1a0f05;
+  }
+  .pcard-bg {
+    position: absolute; inset: 0;
+    background-size: cover;
+    background-position: center 18%;
+  }
+  .pcard-content {
+    position: relative;
+    padding: 10px 12px 12px;
+  }
+
+  /* HUD style header inside card */
+  .pname {
+    font-family: 'Cinzel', serif;
+    font-size: 15px; font-weight: 700;
+    color: var(--gold-light);
+    letter-spacing: 1px;
+    text-shadow: 0 1px 4px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.6);
+  }
+  .pclass {
+    font-family: 'Crimson Text', serif;
+    font-size: 11px; font-style: italic;
+    color: var(--gold-dark); margin-top: 0;
+    text-shadow: 0 1px 3px rgba(0,0,0,.9);
+  }
+  .plevel {
+    position: absolute; top: 10px; right: 38px;
+    font-family: 'Cinzel', serif;
+    font-size: 11px; letter-spacing: 1px;
+    color: var(--parchment); opacity: .85;
+    text-shadow: 0 1px 3px rgba(0,0,0,.9);
+  }
+  .pswitch {
+    position: absolute; top: 8px; right: 10px;
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1px solid var(--gold-dark);
+    color: var(--gold);
+    background: rgba(20,12,4,0.55);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+
+  .bars { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .bar {
+    display: grid; grid-template-columns: 18px 1fr auto; gap: 6px; align-items: center;
+  }
+  .bar .ico {
+    font-size: 12px; text-align: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,.9);
+  }
+  .bar .track {
+    height: 7px; background: rgba(10,5,2,.75);
+    border: 1px solid rgba(0,0,0,.6); border-radius: 3px; overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,.6);
+  }
+  .bar .fill { height: 100%; border-radius: 2px; }
+  .hp .fill { background: linear-gradient(90deg, #1a7a1a, #27ae60); }
+  .mp .fill { background: linear-gradient(90deg, #5b1a8e, #8e44ad); }
+  .xp .fill { background: linear-gradient(90deg, #8e5a0a, #e67e22); }
+  .bar .val {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px; color: var(--parchment);
+    text-shadow: 0 1px 3px rgba(0,0,0,.9);
+    min-width: 64px; text-align: right;
+  }
+
+  .status-row {
+    display: flex; gap: 4px; margin-top: 6px;
+  }
+  .status-pill {
+    background: rgba(20,12,4,0.75);
+    border: 1px solid var(--gold-dark);
+    border-radius: 10px; padding: 1px 6px;
+    font-size: 10px;
+    text-shadow: 0 1px 2px rgba(0,0,0,.7);
+  }
+
+  .dots {
+    display: flex; justify-content: center; gap: 5px; margin-top: 8px;
+  }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold-dark); }
+  .dot.on { background: var(--gold); box-shadow: 0 0 6px rgba(201,168,76,.6); }
+
+  /* ── V1 — Portrait subtil + voile noir uni ── */
+  .v1 .pcard-bg { filter: brightness(.45) saturate(.85); opacity: .55; }
+  .v1 .pcard-veil {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.55) 70%, rgba(0,0,0,.75) 100%);
+  }
+
+  /* ── V2 — Portrait fort + gradient cinéma haut→bas ── */
+  .v2 .pcard-bg { filter: brightness(.7) saturate(1.05); opacity: 1; }
+  .v2 .pcard-veil {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,.0) 0%, rgba(0,0,0,.25) 35%, rgba(0,0,0,.78) 90%, rgba(0,0,0,.88) 100%);
+  }
+
+  /* ── V3 — Demi-portrait gauche + bloc droit lisible ── */
+  .v3 .pcard-bg { filter: brightness(.85) saturate(1); opacity: 1; background-position: left 18%; background-size: 55% auto; background-repeat: no-repeat; }
+  .v3 .pcard-veil {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(90deg, rgba(0,0,0,.05) 0%, rgba(0,0,0,.45) 38%, rgba(20,12,4,.92) 50%, rgba(20,12,4,.96) 100%);
+  }
+  .v3 .pcard-content { padding-left: 48%; min-height: 150px; }
+  .v3 .plevel, .v3 .pswitch { /* aligner sur la partie droite */ }
+</style>
+<body>
+
+<div class="label">Mockup B — Portrait en fond de <b>.party-card</b> (mobile 375 px)</div>
+
+<div class="label">V1 — <b>Subtil</b> : portrait ~55 % opacité + voile sombre uniforme</div>
+<div class="pcard v1">
+  <div class="pcard-bg" style="background-image:url('../../img/iris-original.png')"></div>
+  <div class="pcard-veil"></div>
+  <div class="pcard-content">
+    <div class="plevel">Niv. 12</div>
+    <div class="pswitch">⇄</div>
+    <div class="pname">IRIS PRISMARA</div>
+    <div class="pclass">Sorcière Serdaigle</div>
+    <div class="bars">
+      <div class="bar hp"><div class="ico">⚡</div><div class="track"><div class="fill" style="width:87%"></div></div><div class="val">131 / 150</div></div>
+      <div class="bar mp"><div class="ico">✦</div><div class="track"><div class="fill" style="width:95%"></div></div><div class="val">79 / 83</div></div>
+      <div class="bar xp"><div class="ico">★</div><div class="track"><div class="fill" style="width:93%"></div></div><div class="val">4861 / 5200</div></div>
+    </div>
+    <div class="status-row">
+      <div class="status-pill">🛡️ Protego</div>
+      <div class="status-pill">🔥 Brûlure 2t</div>
+    </div>
+    <div class="dots"><div class="dot on"></div><div class="dot"></div></div>
+  </div>
+</div>
+
+<div class="label">V2 — <b>Cinéma</b> : portrait pleine intensité + gradient sombre du bas</div>
+<div class="pcard v2">
+  <div class="pcard-bg" style="background-image:url('../../img/iris-original.png')"></div>
+  <div class="pcard-veil"></div>
+  <div class="pcard-content">
+    <div class="plevel">Niv. 12</div>
+    <div class="pswitch">⇄</div>
+    <div class="pname">IRIS PRISMARA</div>
+    <div class="pclass">Sorcière Serdaigle</div>
+    <div class="bars">
+      <div class="bar hp"><div class="ico">⚡</div><div class="track"><div class="fill" style="width:87%"></div></div><div class="val">131 / 150</div></div>
+      <div class="bar mp"><div class="ico">✦</div><div class="track"><div class="fill" style="width:95%"></div></div><div class="val">79 / 83</div></div>
+      <div class="bar xp"><div class="ico">★</div><div class="track"><div class="fill" style="width:93%"></div></div><div class="val">4861 / 5200</div></div>
+    </div>
+    <div class="status-row">
+      <div class="status-pill">🛡️ Protego</div>
+      <div class="status-pill">🔥 Brûlure 2t</div>
+    </div>
+    <div class="dots"><div class="dot on"></div><div class="dot"></div></div>
+  </div>
+</div>
+
+<div class="label">V3 — <b>Asymétrique</b> : demi-portrait gauche, bloc lisible droit (très contrasté)</div>
+<div class="pcard v3">
+  <div class="pcard-bg" style="background-image:url('../../img/iris-original.png')"></div>
+  <div class="pcard-veil"></div>
+  <div class="pcard-content">
+    <div class="plevel">Niv. 12</div>
+    <div class="pswitch">⇄</div>
+    <div class="pname">IRIS PRISMARA</div>
+    <div class="pclass">Sorcière Serdaigle</div>
+    <div class="bars">
+      <div class="bar hp"><div class="ico">⚡</div><div class="track"><div class="fill" style="width:87%"></div></div><div class="val">131 / 150</div></div>
+      <div class="bar mp"><div class="ico">✦</div><div class="track"><div class="fill" style="width:95%"></div></div><div class="val">79 / 83</div></div>
+      <div class="bar xp"><div class="ico">★</div><div class="track"><div class="fill" style="width:93%"></div></div><div class="val">4861 / 5200</div></div>
+    </div>
+    <div class="status-row">
+      <div class="status-pill">🛡️ Protego</div>
+      <div class="status-pill">🔥 Brûlure 2t</div>
+    </div>
+    <div class="dots"><div class="dot on"></div><div class="dot"></div></div>
+  </div>
+</div>
+
+</body>
