@@ -148,6 +148,16 @@
     return header(item.icon, item.name, tag) + body + `<div class="tt-flavor">${item.desc}</div>`;
   }
 
+  // Vague D — tooltip pour les slots vides de la mini-équipement party-card.
+  function emptySlotTooltip(slotName) {
+    const labels = { wand: 'Baguette', body: 'Robe / Armure', amulet: 'Amulette' };
+    const icons  = { wand: '🪄',       body: '🥼',           amulet: '📿' };
+    const name   = labels[slotName] || slotName || 'Slot';
+    const icon   = icons[slotName]  || '·';
+    return header(icon, name, 'Slot libre') +
+      `<div class="tt-flavor">Équiper un objet depuis le sac pour activer ce slot.</div>`;
+  }
+
   function statTooltip(key) {
     const map = {
       str: { i:'💪', n:'Force',         d:"Influence les attaques physiques. +1 par niveau." },
@@ -207,6 +217,22 @@
       const statEl = ev.target.closest('.stat-item[data-stat]');
       if (statEl) {
         showTooltip(statTooltip(statEl.dataset.stat), ev);
+        return;
+      }
+
+      // MINI-ÉQUIPEMENT party-card (Vague D) — par .party-equip-slot
+      const equipEl = ev.target.closest('.party-equip-slot');
+      if (equipEl) {
+        const row = equipEl.closest('.party-equip-row');
+        const charIdx = row ? parseInt((row.id || 'equip-row-0').replace('equip-row-', ''), 10) || 0 : 0;
+        const slotName = equipEl.dataset.slot;
+        const c = (typeof party !== 'undefined') ? party[charIdx] : null;
+        const item = c && c.equipped && c.equipped[slotName];
+        if (item) {
+          showTooltip(itemTooltip(item), ev);
+        } else {
+          showTooltip(emptySlotTooltip(slotName), ev);
+        }
         return;
       }
     });

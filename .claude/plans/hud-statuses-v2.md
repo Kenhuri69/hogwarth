@@ -147,10 +147,22 @@ mais sans tooltip au survol. Hovering = silence.
       → aucun bug détecté. L'isolation est structurelle (statusEffects
         portés par l'objet perso, shieldTurns indexé par charIdx).
         Aucune modif de code de prod.
-- [ ] Vague D — étendre `_updateOneCharCard` avec `data-tooltip`.
-- [ ] Vague D — vérifier UX.showTooltip déclenché au survol.
-- [ ] Vague D — smoke `scenarioPartyEquipTooltip`.
-- [ ] Vague D — commit + push.
+- [x] Vague D — tooltip riche au survol des slots party-card.
+      → 5ᵉ branche ajoutée à `attachTooltipDelegation` dans
+        `ux-improvements.js` : détecte `.party-equip-slot`, lit
+        `equip-row-${idx}` → `party[idx].equipped[slotName]`, appelle
+        `showTooltip(itemTooltip(item))` ou `emptySlotTooltip(slotName)`.
+      → Nouvelle fonction `emptySlotTooltip(slotName)` (icône + label
+        FR + helper « Équiper un objet depuis le sac »).
+      → Pas de modif côté `ui.js` — le rendu de `equip-row` exposait
+        déjà `data-slot` et la classe `.filled`.
+- [x] Vague D — vérifier UX.showTooltip déclenché au survol.
+      → Capture `.claude/mockups/status-v2d-tooltip.png` : tooltip riche
+        au survol de la cellule wand de Harry (« Baguette de Sureau ·
+        Attaque +5 · Magie +5 · Valeur 300 🪙 »).
+- [x] Vague D — smoke `scenarioPartyEquipRow` T4 ajouté (slot rempli +
+      slot vide → tooltip distinct dans chaque cas).
+- [x] Vague D — commit + push.
 - [ ] Vague E — animations CSS + classes ajoutées via JS.
 - [ ] Vague E — vérification visuelle (pas de smoke pour l'animation).
 - [ ] Vague E — commit + push.

@@ -568,11 +568,51 @@ async function scenarioPartyEquipRow() {
   console.log('  T3 unequip:', t3);
   assert(!t3.filled, 'cell wand doit perdre .filled après déséquipement');
 
+  // T4 (Vague D) : tooltip riche au survol de la mini-équipement.
+  // — slot rempli → tooltip avec nom item + rareté + bonuses
+  // — slot vide   → tooltip "Slot libre" + désc helper
+  const t4 = await page.evaluate(async () => {
+    const wand = ITEMS.find(i => i.id === 'wand1');
+    party[0].equipped.wand = JSON.parse(JSON.stringify(wand));
+    if (typeof recalculateStats === 'function') recalculateStats();
+    updateUI();
+    const cell = document.querySelector('#equip-row-0 .party-equip-slot[data-slot="wand"]');
+    const rect = cell.getBoundingClientRect();
+    const ev = new MouseEvent('mouseover', {
+      bubbles: true, cancelable: true,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + rect.height / 2
+    });
+    cell.dispatchEvent(ev);
+    await new Promise(r => setTimeout(r, 60));
+    const tt = document.getElementById('ux-tooltip');
+    const filledHtml = tt && tt.classList.contains('visible') ? tt.innerHTML : null;
+    // Vide
+    party[0].equipped.wand = null;
+    updateUI();
+    const cell2 = document.querySelector('#equip-row-0 .party-equip-slot[data-slot="wand"]');
+    const rect2 = cell2.getBoundingClientRect();
+    cell2.dispatchEvent(new MouseEvent('mouseover', {
+      bubbles: true, cancelable: true,
+      clientX: rect2.left + rect2.width / 2,
+      clientY: rect2.top + rect2.height / 2
+    }));
+    await new Promise(r => setTimeout(r, 60));
+    const tt2 = document.getElementById('ux-tooltip');
+    const emptyHtml = tt2 && tt2.classList.contains('visible') ? tt2.innerHTML : null;
+    return { filledHtml, emptyHtml };
+  });
+  console.log('  T4 tooltip:', { filled: !!t4.filledHtml, empty: !!t4.emptyHtml });
+  assert(t4.filledHtml, 'tooltip riche doit apparaître au survol d\'un slot rempli');
+  assert(/Baguette de Saule/.test(t4.filledHtml || ''), 'tooltip doit nommer l\'item équipé');
+  assert(t4.emptyHtml,  'tooltip "Slot libre" doit apparaître au survol d\'un slot vide');
+  assert(/Slot libre/.test(t4.emptyHtml || ''), 'tooltip vide doit mentionner "Slot libre"');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ party-equip-row conforme');
+  console.log('  ✅ party-equip-row conforme (DOM + tooltip riche)');
   await browser.close();
 }
 
