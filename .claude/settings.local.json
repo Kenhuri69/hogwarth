@@ -21,7 +21,10 @@
       "Bash(unzip -q /root/.claude/uploads/ea286b17-9a10-43c2-bddb-b654d1f764bc/a571e40b-tools.zip -d .)",
       "Bash(rm -rf tools/__pycache__)",
       "Bash(cp \"/root/.claude/uploads/ea286b17-9a10-43c2-bddb-b654d1f764bc/6219e21f-Compare_Icones.html\" \"./Compare Icones.html\")",
-      "Bash(cp \"/root/.claude/uploads/ea286b17-9a10-43c2-bddb-b654d1f764bc/2b1809a7-Audit_Icones.html\" \"./Audit Icones.html\")"
+      "Bash(cp \"/root/.claude/uploads/ea286b17-9a10-43c2-bddb-b654d1f764bc/2b1809a7-Audit_Icones.html\" \"./Audit Icones.html\")",
+      "Bash(node tests/_cap_perso.js)",
+      "Bash(mv /home/user/hogwarth/.claude/mockups/perso-audit-desktop.png /home/user/hogwarth/.claude/mockups/perso-after-desktop.png)",
+      "Bash(mv /home/user/hogwarth/.claude/mockups/perso-audit-mobile.png /home/user/hogwarth/.claude/mockups/perso-after-mobile.png)"
     ]
   }
 }
