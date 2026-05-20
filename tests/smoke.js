@@ -1517,11 +1517,68 @@ async function scenarioHouseCrests() {
     assert(c.hpInContent,   `#hp-text-${i} doit être imbriqué dans .pcard-content`);
   });
 
+  // P3 — XP rapatriée : chaque .pcard-content possède une .stat-bar-row.xp-row
+  // avec #xp-text-{idx} et #xp-bar-{idx} reflétant player.xp / player.xpNext.
+  const xpCheck = await page.evaluate(() => {
+    if (player) { player.xp = 30; player.xpNext = 80; }
+    if (typeof updateUI === 'function') updateUI();
+    return [0, 1].map(i => {
+      const row  = document.querySelector(`#char-card-${i} .stat-bar-row.xp-row`);
+      const text = document.getElementById(`xp-text-${i}`);
+      const bar  = document.getElementById(`xp-bar-${i}`);
+      return {
+        rowExists:  !!row,
+        textValue:  text ? text.textContent : null,
+        barWidth:   bar  ? bar.style.width  : null,
+        oldXpContainerGone: !document.getElementById('xp-container'),
+        oldBadgeGone:       !document.getElementById('house-badge')
+      };
+    });
+  });
+  console.log('  XP rapatriée →', xpCheck);
+  xpCheck.forEach((x, i) => {
+    assert(x.rowExists, `.stat-bar-row.xp-row absente dans #char-card-${i}`);
+    assert(x.textValue === '30/80', `#xp-text-${i} attendu "30/80", got "${x.textValue}"`);
+    assert(x.barWidth === '37.5%' || /3[67]\.\d*%/.test(x.barWidth || ''),
+      `#xp-bar-${i}.style.width incohérent, got ${x.barWidth}`);
+    assert(x.oldXpContainerGone, '#xp-container ne doit plus exister');
+    assert(x.oldBadgeGone,       '#house-badge ne doit plus exister');
+  });
+
+  // P4 — popup détail Maison : openHouseDetail() peuple #house-detail-content
+  // avec ≥ 4 lignes de paliers et marque le tier courant.
+  const popupCheck = await page.evaluate(() => {
+    // 230 pts → tier 1 (50 Bronze) ✓ et tier 2 (150 Argent) ✓ ; tier 3 (300 Or) = prochain
+    chosenHouse = 'Gryffondor'; housePoints = 230; houseTier = 2;
+    openHouseDetail();
+    const modal = document.getElementById('house-detail-modal');
+    const content = document.getElementById('house-detail-content');
+    const rows = content ? content.querySelectorAll('.hd-tier-row') : [];
+    const goalRow = content ? content.querySelector('.hd-tier-row[data-goal="true"]') : null;
+    const openDisplay = modal && modal.style.display;
+    closeModal('house-detail-modal');
+    const closeDisplay = modal && modal.style.display;
+    return {
+      modalDisplay:    openDisplay,
+      hasContent:      !!content && content.innerHTML.length > 0,
+      tierRowsCount:   rows.length,
+      hasGoalMarker:   !!goalRow,
+      goalLabel:       goalRow ? goalRow.querySelector('.hd-tier-label').textContent : null,
+      closeWorks:      closeDisplay === 'none'
+    };
+  });
+  console.log('  popup Maison →', popupCheck);
+  assert(popupCheck.modalDisplay === 'flex', `#house-detail-modal doit être en display:flex, got ${popupCheck.modalDisplay}`);
+  assert(popupCheck.hasContent,    '#house-detail-content doit être peuplé');
+  assert(popupCheck.tierRowsCount >= 4, `≥ 4 paliers attendus, got ${popupCheck.tierRowsCount}`);
+  assert(popupCheck.hasGoalMarker, 'le tier "►" (current goal) doit être marqué');
+  assert(popupCheck.closeWorks,    'closeModal("house-detail-modal") doit fonctionner');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ blasons PNG + party-cards V3 conformes');
+  console.log('  ✅ blasons + party-cards V3 + XP rapatriée + popup Maison conformes');
   await browser.close();
 }
 
@@ -2497,7 +2554,7 @@ async function scenarioUiChromeIcons() {
       mp0:       grabBarLabelByTextId('sp-text-0'),
       hp1:       grabBarLabelByTextId('hp-text-1'),
       mp1:       grabBarLabelByTextId('sp-text-1'),
-      xp:        grab('#xp-label'),
+      xp:        grabBarLabelByTextId('xp-text-0'),
       dpad:      grab('.dpad-center'),
       shopTitle: grab('#shop-title')
     };

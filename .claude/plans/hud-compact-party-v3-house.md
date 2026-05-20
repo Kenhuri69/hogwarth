@@ -93,7 +93,7 @@ Données : tout existe déjà (`housePoints`, `houseTier`, `HOUSE_BONUSES`,
 
 - [x] P1 — header compact + blason vivant ✓
 - [x] P2 — party-bar V3 portrait BG ✓ (`.pcard-bg` + `.pcard-veil` + `.pcard-content`)
-- [ ] P3 — XP rapatriée
-- [ ] P4 — popup maison
-- [x] P5 — smoke tests (P1+P2 couverts dans scénario 8)
-- [x] P6 — cache-bust (`?v=9 → ?v=10` pour P2)
+- [x] P3 — XP rapatriée ✓ (row XP dans chaque `.pcard-content`)
+- [x] P4 — popup Maison ✓ (`#house-detail-modal` + `openHouseDetail()`, `#house-badge` supprimé)
+- [x] P5 — smoke tests (P1+P2+P3+P4 couverts dans scénario 8)
+- [x] P6 — cache-bust (`?v=10 → ?v=11` pour P3+P4)
