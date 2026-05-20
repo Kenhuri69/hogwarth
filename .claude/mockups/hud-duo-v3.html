@@ -1,0 +1,300 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mockup HUD — header compact + duo party-bar</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #faf4e7; font-family: 'Inter', system-ui, sans-serif; }
+  body { padding: 28px 16px 60px; }
+  .label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: #6d4f15; margin: 0 0 10px;
+  }
+  .label b { color: #a37828; }
+  .legend { font-size: 12px; color: #4a3a2c; margin: 4px 0 14px; line-height: 1.5; }
+
+  /* ── Téléphone wrapper ────────────────────────────── */
+  .phone {
+    width: 375px; margin: 0 auto;
+    background: #0a0703;
+    border-radius: 28px;
+    padding: 8px;
+    box-shadow: 0 30px 60px -25px rgba(40,20,5,.45);
+    position: relative;
+  }
+  .phone-inner {
+    background: #0d0705;
+    color: #e8d7a8;
+    height: 740px;
+    border-radius: 22px;
+    overflow: hidden;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  .phone-inner::before {
+    content: '';
+    position: absolute; left: 50%; top: 6px; transform: translateX(-50%);
+    width: 80px; height: 18px; background: #000; border-radius: 0 0 14px 14px;
+    z-index: 50;
+  }
+  .statusbar {
+    height: 28px; flex-shrink: 0;
+    padding: 6px 24px 0;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Header compact (ligne unique) avec blason A.1 ── */
+  .ghd {
+    padding: 8px 12px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid rgba(122,92,30,0.35);
+    background: linear-gradient(180deg, #1f160a, #14100a);
+    font-family: 'Cinzel', serif;
+    color: #c9a84c;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+  .ghd-house  { font-size: 14px; }
+  .ghd-floor  { font-weight: 700; }
+  .ghd-loc    { color: #d6c294; font-style: italic; font-family: 'Crimson Text', serif; font-size: 12px; }
+  .ghd-gold   { margin-left: auto; color: #d4b75c; font-size: 12px; }
+
+  /* Blason A.1 — anneau XP radial + ruban tier */
+  .crest-wrap {
+    position: relative;
+    width: 38px; height: 44px;
+    flex-shrink: 0;
+    margin-left: 4px;
+  }
+  .crest-ring {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    /* conic = XP de Maison (ici 88 % du palier) */
+    background: conic-gradient(#ecd692 0%, #c9a84c 88%, rgba(60,40,15,0.35) 88% 100%);
+    padding: 2.5px;
+    box-shadow: 0 0 10px rgba(201,168,76,0.35);
+  }
+  .crest-ring-inner {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: radial-gradient(circle, #2a1d0c 0%, #0d0705 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    overflow: hidden;
+    border: 1px solid #3a2812;
+  }
+  .crest-tier {
+    position: absolute;
+    bottom: -1px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(180deg, #ecd692, #8a5a18);
+    color: #1a0f05;
+    font-family: 'Cinzel', serif;
+    font-size: 7.5px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    white-space: nowrap;
+  }
+
+  /* ── Bandeau d'équipe : 2 cartes côte à côte ─────── */
+  .party-bar {
+    display: flex; gap: 6px;
+    padding: 6px 6px 7px;
+    border-bottom: 1px solid rgba(122,92,30,0.25);
+    background: #120a03;
+  }
+  .pcard {
+    flex: 1;
+    position: relative;
+    min-height: 76px;
+    border: 1px solid #3a2812;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #1a0f05;
+  }
+  .pcard.active {
+    border: 1.5px solid #c9a84c;
+    box-shadow: 0 0 0 1px rgba(201,168,76,0.25), 0 0 12px rgba(201,168,76,0.35);
+  }
+  /* Portrait en fond V3 — demi-portrait à gauche, voile dégradé droit */
+  .pcard-bg {
+    position: absolute; inset: 0;
+    background-size: 58% auto;
+    background-position: left 18%;
+    background-repeat: no-repeat;
+    filter: brightness(.88) saturate(1.02);
+  }
+  .pcard-veil {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(90deg,
+        rgba(0,0,0,0.0)   0%,
+        rgba(0,0,0,0.10)  35%,
+        rgba(20,12,4,0.85) 50%,
+        rgba(20,12,4,0.95) 100%);
+  }
+  .pcard-content {
+    position: relative;
+    height: 100%;
+    padding: 6px 8px 6px 52%;
+    display: flex; flex-direction: column; justify-content: center;
+    gap: 4px;
+  }
+  .pname-row {
+    display: flex; align-items: baseline; gap: 4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+  }
+  .pname {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: #ecd692;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+  }
+  .plevel {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    color: #c9a84c;
+    opacity: .85;
+  }
+  .pactive {
+    margin-left: auto;
+    font-family: 'Cinzel', serif;
+    font-size: 8.5px;
+    font-weight: 700;
+    color: #c9a84c;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 6px rgba(201,168,76,0.7);
+  }
+  .pdot {
+    margin-left: auto;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    border: 1px solid #5a4020;
+    background: rgba(20,12,4,0.55);
+  }
+  .bar { display: flex; align-items: center; gap: 4px; }
+  .bar-ico { font-size: 9px; width: 11px; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,0.85); }
+  .bar-track {
+    flex: 1; height: 6px;
+    background: rgba(10,5,2,.7);
+    border: 1px solid rgba(0,0,0,.6);
+    border-radius: 3px; overflow: hidden;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.5);
+  }
+  .bar-fill { height: 100%; border-radius: 2px; }
+  .hp { background: linear-gradient(90deg, #1a7a1a, #27ae60); }
+  .mp { background: linear-gradient(90deg, #5b1a8e, #8e44ad); }
+  .bar-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5px;
+    color: #d6c294;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+    min-width: 36px; text-align: right;
+  }
+
+  /* ── Zone 3D placeholder ─────────────────────────── */
+  .gview {
+    flex: 1;
+    position: relative;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 60%, #2a1f10 0%, #0a0703 75%),
+      linear-gradient(180deg, #0d0a05 0%, #1a120a 50%, #251a0c 100%);
+    overflow: hidden;
+  }
+  .corridor {
+    position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+    width: 60%; height: 60%;
+    background:
+      linear-gradient(180deg, transparent 0%, transparent 30%, rgba(110,80,40,.18) 70%),
+      conic-gradient(from 270deg at 50% 100%, #1a1208 0%, #2a1d0c 20%, #1a1208 40%);
+    clip-path: polygon(10% 0, 90% 0, 75% 100%, 25% 100%);
+    opacity: 0.85;
+  }
+  .torch {
+    position: absolute; width: 12px; height: 12px; border-radius: 50%;
+    background: radial-gradient(circle, #fdcf6b 0%, #c47020 60%, transparent 80%);
+    box-shadow: 0 0 18px 6px rgba(253,207,107,.45);
+  }
+  .torch.l { top: 60%; left: 20%; }
+  .torch.r { top: 60%; right: 20%; }
+
+  /* placeholder bottom bar */
+  .cmd-strip {
+    height: 56px;
+    background: linear-gradient(180deg, #14100a, #0d0705);
+    border-top: 1px solid rgba(122,92,30,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif; font-size: 9px; color: #5a4020;
+    letter-spacing: 2px;
+  }
+</style>
+<body>
+
+<div class="label">Mockup HUD — <b>header compact + duo party-bar V3-style</b> (mobile 375 px)</div>
+<div class="legend">
+  Header compact 1 ligne (étage · location · or · blason vivant A.1). Bandeau d'équipe : 2 cartes V3 côte à côte
+  avec portrait en demi-fond et contenu réduit (nom · Niv · HP · MP). Carte active = bord doré + tag « ⚡ ACTIF » ;
+  inactive = point creux. La XP joueur, statuts et classe vivent dans la fiche perso.
+</div>
+
+<div class="phone"><div class="phone-inner">
+  <div class="statusbar"><span>19:24</span><span>● ●● ▮</span></div>
+
+  <!-- Header compact -->
+  <div class="ghd">
+    <span class="ghd-house">⌂</span>
+    <span class="ghd-floor">ÉT.3</span>
+    <span class="ghd-loc">Tour Astronomie</span>
+    <span class="ghd-gold">⦿ 1240</span>
+    <div class="crest-wrap" title="Tap → palier Maison">
+      <div class="crest-ring"><div class="crest-ring-inner">🦅</div></div>
+      <div class="crest-tier">OR</div>
+    </div>
+  </div>
+
+  <!-- Bandeau d'équipe -->
+  <div class="party-bar">
+    <div class="pcard active">
+      <div class="pcard-bg" style="background-image:url('../../img/harry.png')"></div>
+      <div class="pcard-veil"></div>
+      <div class="pcard-content">
+        <div class="pname-row">
+          <span class="pname">HARRY</span>
+          <span class="plevel">N.5</span>
+          <span class="pactive">⚡ ACTIF</span>
+        </div>
+        <div class="bar"><span class="bar-ico">⚡</span><div class="bar-track"><div class="bar-fill hp" style="width:100%"></div></div><span class="bar-val">35/35</span></div>
+        <div class="bar"><span class="bar-ico">✦</span><div class="bar-track"><div class="bar-fill mp" style="width:100%"></div></div><span class="bar-val">22/22</span></div>
+      </div>
+    </div>
+    <div class="pcard">
+      <div class="pcard-bg" style="background-image:url('../../img/hermione.png')"></div>
+      <div class="pcard-veil"></div>
+      <div class="pcard-content">
+        <div class="pname-row">
+          <span class="pname">HERMIONE</span>
+          <span class="plevel">N.5</span>
+          <span class="pdot"></span>
+        </div>
+        <div class="bar"><span class="bar-ico">⚡</span><div class="bar-track"><div class="bar-fill hp" style="width:100%"></div></div><span class="bar-val">28/28</span></div>
+        <div class="bar"><span class="bar-ico">✦</span><div class="bar-track"><div class="bar-fill mp" style="width:100%"></div></div><span class="bar-val">35/35</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vue 3D placeholder -->
+  <div class="gview">
+    <div class="corridor"></div>
+    <div class="torch l"></div>
+    <div class="torch r"></div>
+  </div>
+
+  <!-- Barre d'actions placeholder -->
+  <div class="cmd-strip">— BARRE 14 ICÔNES + D-PAD (inchangée) —</div>
+</div></div>
+
+</body>
