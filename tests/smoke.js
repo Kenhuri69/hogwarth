@@ -1467,20 +1467,29 @@ async function scenarioHouseCrests() {
     assert(t.loaded,              `${e.id} PNG non chargé (404 ou alpha vide)`);
   }
 
-  // Vérifier que _updateHouseBadge() clone bien l'<img> dans #house-crest.
-  // On appelle directement _updateHouseBadge (pas chooseHouse) pour ne pas
-  // déclencher le démarrage de partie ; on simule juste l'état post-choix.
+  // Vérifier que _updateHouseBadge() clone bien le logo PNG dans
+  // #crest-ring-inner (refonte blason vivant — audit P1 A.1) et que
+  // l'anneau conic-gradient porte un ratio cohérent.
   const cloneCheck = await page.evaluate(() => {
     chosenHouse = 'Gryffondor';
+    housePoints = 50; houseTier = 1; // Apprenti Bronze atteint (50 pts)
     _updateHouseBadge();
-    const c = document.getElementById('house-crest');
+    const wrap  = document.getElementById('crest-wrap');
+    const inner = document.getElementById('crest-ring-inner');
+    const tier  = document.getElementById('crest-tier');
     return {
-      hasContent: !!c && c.innerHTML.length > 0,
-      hasImg:    !!c && /<img[^>]+gryffondor\.png/.test(c.innerHTML)
+      wrapDisplayed: wrap && wrap.style.display !== 'none',
+      hasContent:    !!inner && inner.innerHTML.length > 0,
+      hasImg:        !!inner && /<img[^>]+gryffondor\.png/.test(inner.innerHTML),
+      ratioVar:      wrap && wrap.style.getPropertyValue('--crest-ratio'),
+      tierLabel:     tier && tier.textContent
     };
   });
-  console.log('  HUD clone →', cloneCheck);
-  assert(cloneCheck.hasContent && cloneCheck.hasImg, 'house-crest HUD ne reflète pas le PNG choisi');
+  console.log('  HUD crest →', cloneCheck);
+  assert(cloneCheck.wrapDisplayed, '#crest-wrap doit être visible après choix de Maison');
+  assert(cloneCheck.hasContent && cloneCheck.hasImg, 'crest-ring-inner ne reflète pas le PNG choisi');
+  assert(cloneCheck.ratioVar !== '', '--crest-ratio non posée sur #crest-wrap');
+  assert(cloneCheck.tierLabel === 'BRZ', `ruban tier attendu BRZ, got ${cloneCheck.tierLabel}`);
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
