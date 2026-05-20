@@ -1228,7 +1228,11 @@ body {
    ============================================================ */
 /* ============================================================
    FICHE PERSONNAGE v2 — grid-template-areas
-   stats prend 3 rows à gauche, equip/spells/inv s'empilent à droite.
+   Mobile / tablette : 2 colonnes (stats à gauche, autres empilées
+   à droite). Desktop large (≥ 980px de modale) : 3 colonnes — la
+   place horizontale dispo est utilisée pour étaler equip + spells
+   en col2, houseset + inv en col3. Plus de scroll vertical sur la
+   fiche desktop standard.
    ============================================================ */
 .char-grid {
   display: grid;
@@ -1247,6 +1251,22 @@ body {
 .char-grid > .section-houseset { grid-area: houseset; }
 .char-grid > .section-spells   { grid-area: spells;   }
 .char-grid > .section-inv      { grid-area: inv;      }
+
+/* Layout 3 colonnes pour grands écrans : la fiche prend toute la
+   largeur dispo et étale les sections horizontalement pour éviter
+   le scroll vertical. Activé à partir de 1100px de viewport
+   (modal-box élargie à 1080px). */
+@media (min-width: 1100px) {
+  #character-modal .modal-box { max-width: 1080px; }
+  #character-modal .char-grid {
+    grid-template-columns: 220px 1fr 1fr;
+    grid-template-areas:
+      "stats equip   houseset"
+      "stats equip   inv"
+      "stats spells  inv";
+    grid-template-rows: auto auto 1fr;
+  }
+}
 
 /* Accordéon mobile — un bouton .section-toggle est préfixé à chaque
    section de la fiche par openCharacter(). Masqué en desktop (les zones
