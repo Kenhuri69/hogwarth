@@ -1115,8 +1115,21 @@ body {
   position: relative;
   box-shadow: 0 0 40px rgba(201,168,76,0.2);
 }
-/* Fiche personnage v2 — beaucoup plus large pour contenir les 4 sections */
-#character-modal .modal-box { max-width: 780px; }
+/* Fiche personnage v2 — beaucoup plus large pour contenir les 4 sections.
+   max-height portée à 92vh (vs 80vh global) : sur un écran 800 px,
+   la box passe de 640 → 736 px (gain 96 px) — réduit nettement le
+   scroll desktop de la fiche perso, dont le contenu approche 800 px
+   avec toutes les sections (stats + paper-doll + set de Maison +
+   sorts + sac 16 slots). */
+#character-modal .modal-box { max-width: 780px; max-height: 92vh; }
+#character-modal .char-grid { gap: 8px; }
+#character-modal .paper-doll { padding: 6px; }
+#character-modal .paper-doll-main { gap: 6px; grid-template-columns: 46px auto 46px; }
+#character-modal .paper-doll-col { gap: 6px; }
+#character-modal .equip-slot-floating { width: 46px; height: 46px; }
+#character-modal .section-houseset { padding: 6px 8px; }
+#character-modal .section-houseset .set-cells { gap: 6px; }
+#character-modal .section-houseset .set-cell { padding: 4px; }
 .modal-title {
   font-family: 'Cinzel', serif;
   font-size: 18px;

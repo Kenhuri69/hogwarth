@@ -684,13 +684,24 @@ function _renderHouseSetPanel(c) {
     { n: 3, b: set.setBonus3 },
     { n: 4, b: set.setBonus4 }
   ];
-  const bonusRows = tiers.map(({n, b}) => {
-    const active = count >= n;
-    return `<div class="set-bonus-row ${active ? 'active' : 'inactive'}">
-      <span class="set-bonus-tier">${n}/4</span>
-      <span class="set-bonus-text">${_formatSetBonus(b)}</span>
+  // À 0/4 pièces, on remplace la liste détaillée des 3 bonus inactifs
+  // par une seule ligne de teasing (~80 px économisés sur la fiche
+  // desktop, qui débordait). À 1/4+, on affiche tous les bonus pour
+  // pousser à compléter le set.
+  let bonusRows;
+  if (count === 0) {
+    bonusRows = `<div class="set-bonus-row inactive set-bonus-teaser">
+      <span class="set-bonus-text">Équipe une pièce pour activer les bonus de set.</span>
     </div>`;
-  }).join('');
+  } else {
+    bonusRows = tiers.map(({n, b}) => {
+      const active = count >= n;
+      return `<div class="set-bonus-row ${active ? 'active' : 'inactive'}">
+        <span class="set-bonus-tier">${n}/4</span>
+        <span class="set-bonus-text">${_formatSetBonus(b)}</span>
+      </div>`;
+    }).join('');
+  }
 
   return `
     <div class="section section-houseset">

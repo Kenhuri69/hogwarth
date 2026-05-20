@@ -6280,7 +6280,10 @@ async function scenarioHouseSetUI() {
   assert(/Set du Lion/i.test(t1.title || ''), `titre inattendu : ${t1.title}`);
   assert(t1.cellCount === 4,     `4 médaillons attendus, obtenu ${t1.cellCount}`);
   assert(t1.missingCount === 4,  '4 cellules doivent être en état missing');
-  assert(t1.bonusRows === 3,     '3 paliers de bonus attendus (2/3/4)');
+  // À 0/4, on remplace les 3 paliers inactifs par 1 ligne de teasing
+  // (gain ~80 px sur la fiche desktop, contenu compact). Voir
+  // _renderHouseSetPanel (ui.js).
+  assert(t1.bonusRows === 1,     '1 seule ligne teaser attendue à 0/4 (vs 3 paliers détaillés)');
   assert(t1.activeBonus === 0,   'aucun palier ne doit être actif à 0/4');
 
   // T2 : 2 pièces équipées → 2 cellules « equipped », 1 palier actif.
