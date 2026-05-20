@@ -353,11 +353,57 @@ async function scenarioWeakenAndProtegoBadges() {
   assert(t4.power === 3,           'power non transféré');
   assert(t4.turns === 2,           'turns non transféré');
 
+  // T5 : weaken empilable (Vague B) — 2 stacks accumulent la perte DEF,
+  // l'expiry d'un stack restaure 1 stack et conserve le reste.
+  const t5 = await page.evaluate(() => {
+    const c = party[0];
+    c.statusEffects = [];
+    c.def = 12;
+    const power = 3;
+    // Cast 1 — pose 1 stack
+    const r1 = applyStatus(c, 'weaken', power, 4);
+    if (r1) c.def -= power;
+    const after1 = { def: c.def, stacks: c.statusEffects[0]?.stacks, turns: c.statusEffects[0]?.turns };
+    // Cast 2 — pose un 2e stack
+    const r2 = applyStatus(c, 'weaken', power, 4);
+    if (r2) c.def -= power;
+    const after2 = { def: c.def, stacks: c.statusEffects[0]?.stacks, applied: r2 };
+    // Cast 3 — pose un 3e stack (cap atteint)
+    const r3 = applyStatus(c, 'weaken', power, 4);
+    if (r3) c.def -= power;
+    const after3 = { def: c.def, stacks: c.statusEffects[0]?.stacks, applied: r3 };
+    // Cast 4 — refusé par le cap
+    const r4 = applyStatus(c, 'weaken', power, 4);
+    if (r4) c.def -= power;
+    const after4 = { def: c.def, stacks: c.statusEffects[0]?.stacks, applied: r4 };
+    // 4 ticks → expiry du 1er stack (restaure +3, stacks 3→2)
+    tickStatuses(c, false); tickStatuses(c, false);
+    tickStatuses(c, false); tickStatuses(c, false);
+    const afterTick1 = { def: c.def, stacks: c.statusEffects[0]?.stacks, present: c.statusEffects.length };
+    // 4 ticks → expiry du 2e stack (restaure +3, stacks 2→1)
+    tickStatuses(c, false); tickStatuses(c, false);
+    tickStatuses(c, false); tickStatuses(c, false);
+    const afterTick2 = { def: c.def, stacks: c.statusEffects[0]?.stacks, present: c.statusEffects.length };
+    // 4 ticks → expiry du dernier stack (restaure +3, retrait complet)
+    tickStatuses(c, false); tickStatuses(c, false);
+    tickStatuses(c, false); tickStatuses(c, false);
+    const afterTick3 = { def: c.def, present: c.statusEffects.length };
+    return { after1, after2, after3, after4, afterTick1, afterTick2, afterTick3 };
+  });
+  console.log('  T5 weaken stacks:', t5);
+  assert(t5.after1.stacks === 1 && t5.after1.def === 9,  'stack 1 : -3 DEF');
+  assert(t5.after2.applied && t5.after2.stacks === 2 && t5.after2.def === 6, 'stack 2 : -6 DEF cumul');
+  assert(t5.after3.applied && t5.after3.stacks === 3 && t5.after3.def === 3, 'stack 3 : -9 DEF cumul');
+  assert(t5.after4.applied === false && t5.after4.stacks === 3 && t5.after4.def === 3, 'cast au-delà du cap refuse l\'application DEF');
+  assert(t5.afterTick1.present === 1 && t5.afterTick1.stacks === 2 && t5.afterTick1.def === 6,  'expiry 1 stack → -3 DEF restauré, reste 2 stacks');
+  assert(t5.afterTick2.present === 1 && t5.afterTick2.stacks === 1 && t5.afterTick2.def === 9,  'expiry 2nd stack → reste 1 stack');
+  assert(t5.afterTick3.present === 0 && t5.afterTick3.def === 12, 'expiry final → statut retiré, DEF restaurée');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ weaken/Protego/ability-status conformes');
+  console.log('  ✅ weaken/Protego/ability-status/stacks conformes');
   await browser.close();
 }
 

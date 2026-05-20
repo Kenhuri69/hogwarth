@@ -3168,6 +3168,16 @@ button.shop-tab.active {
   color: #fff;
   font-family: 'Cinzel', serif;
 }
+/* Badge ×N quand un statut est empilé (cf. weaken Vague B). */
+.status-pill-stack {
+  margin-left: 3px;
+  padding: 0 3px;
+  border-radius: 6px;
+  background: rgba(201,168,76,0.85);
+  color: #1a0f05;
+  font-weight: 700;
+  font-size: 9px;
+}
 
 /* ── Mini-équipement party-card ── */
 .party-equip-row {
