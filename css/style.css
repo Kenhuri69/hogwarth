@@ -121,12 +121,26 @@ body {
   background: linear-gradient(180deg, #0d0705 0%, #1a0f05 100%);
   border-bottom: 2px solid var(--gold-dark);
   padding: 6px 12px;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; gap: 10px;
 }
 .game-title {
   font-family: 'UnifrakturMaguntia', cursive;
   font-size: 20px;
   color: var(--gold);
+  display: flex; align-items: center; gap: 6px;
+  flex-shrink: 0;
+}
+.ghd-floor {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 1.5px;
+  padding: 2px 6px;
+  border: 1px solid var(--gold-dark);
+  border-radius: 3px;
+  background: rgba(20,12,4,0.55);
+  flex-shrink: 0;
 }
 .location-display {
   font-family: 'Cinzel', serif;
@@ -134,6 +148,51 @@ body {
   color: var(--gold-light);
   text-align: center;
   letter-spacing: 2px;
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Blason vivant (audit P1 A.1) — anneau XP radial + ruban tier ── */
+.crest-wrap {
+  position: relative;
+  width: 38px; height: 44px;
+  flex-shrink: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.crest-wrap:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+.crest-ring {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  /* La var --crest-ratio (0..1) est posée par _updateCrestWrap() en JS.
+     L'anneau doré couvre l'arc 0 → ratio×360°, le reste est sombré. */
+  background: conic-gradient(#ecd692 0deg, #c9a84c calc(var(--crest-ratio, 0) * 360deg),
+                             rgba(60,40,15,0.35) calc(var(--crest-ratio, 0) * 360deg), rgba(60,40,15,0.35) 360deg);
+  padding: 2.5px;
+  box-shadow: 0 0 10px rgba(201,168,76,0.35);
+  transition: background 0.4s ease;
+}
+.crest-ring-inner {
+  width: 100%; height: 100%; border-radius: 50%;
+  background: radial-gradient(circle, #2a1d0c 0%, #0d0705 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; overflow: hidden;
+  border: 1px solid #3a2812;
+}
+.crest-ring-inner svg { width: 100%; height: 100%; }
+.crest-tier {
+  position: absolute;
+  bottom: -1px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(180deg, #ecd692, #8a5a18);
+  color: #1a0f05;
+  font-family: 'Cinzel', serif;
+  font-size: 7.5px; font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 /* LEFT PANEL - CHARACTER */
@@ -2996,11 +3055,18 @@ button.shop-tab.active {
   .main-view { overflow: hidden; }
   #narrative-panel { font-size: 12px; min-height: 40px; max-height: 50px; padding: 4px 8px; }
 
-  /* Header compact */
-  .game-header { flex-wrap: wrap; gap: 2px; padding: 4px 8px; }
+  /* Header compact mobile : on retire le texte du titre (l'icône suffit
+     d'identifiant), tout reste sur 1 ligne (gap:8px), location ellipsée. */
+  .game-header { flex-wrap: nowrap; gap: 8px; padding: 4px 8px; }
   .game-title { font-size: 16px; }
-  .location-display { font-size: 10px; letter-spacing: 1px; }
+  .game-title-text { display: none; }
+  .ghd-floor { font-size: 11px; padding: 2px 5px; letter-spacing: 1px; }
+  .location-display { font-size: 11px; letter-spacing: 1px; }
   .gold-display { font-size: 11px; }
+  .crest-wrap { width: 34px; height: 40px; }
+  .crest-ring { width: 34px; height: 34px; }
+  .crest-ring-inner { font-size: 16px; }
+  .crest-tier { font-size: 7px; padding: 1px 4px; }
 
   /* Barre de commandes */
   .commands-bar {

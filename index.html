@@ -10,7 +10,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 <link rel="stylesheet" href="css/ux-improvements.css?v=1">
 <link rel="stylesheet" href="css/save-ui.css?v=1">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -350,9 +350,19 @@
 <div id="game-container">
 
   <div class="game-header">
-    <div class="game-title"><img class="ui-icon ui-icon-xl" src="img/icons/hp.png" alt=""> Poudlard & Magie</div>
+    <div class="game-title"><img class="ui-icon ui-icon-xl" src="img/icons/hp.png" alt=""> <span class="game-title-text">Poudlard & Magie</span></div>
+    <div class="ghd-floor" id="ghd-floor" aria-label="Étage courant">ÉT.1</div>
     <div class="location-display" id="loc-display">Les Couloirs de Poudlard — Niveau 1</div>
     <div class="gold-display" id="gold-display"><img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> 0 Gallions</div>
+    <div class="crest-wrap" id="crest-wrap" style="display:none"
+         role="button" tabindex="0"
+         aria-label="Voir le détail de Maison"
+         onclick="openHouseDetail()">
+      <div class="crest-ring" id="crest-ring">
+        <div class="crest-ring-inner" id="crest-ring-inner"></div>
+      </div>
+      <div class="crest-tier" id="crest-tier">·</div>
+    </div>
   </div>
 
   <div class="left-panel">

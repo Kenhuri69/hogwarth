@@ -114,6 +114,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'updateUI',           source: 'ui.js',           kind: 'fn'  },
     { name: 'addMsg',             source: 'ui.js',           kind: 'fn'  },
     { name: 'openCharacter',      source: 'ui.js',           kind: 'fn'  },
+    { name: 'openHouseDetail',    source: 'ui.js',           kind: 'fn'  },
     { name: 'openBestiary',       source: 'ui-bestiary.js',  kind: 'fn'  },
 
     // ── Donjon / rendu ──
