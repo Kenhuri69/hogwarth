@@ -118,12 +118,26 @@ mais sans tooltip au survol. Hovering = silence.
       → présents (1.4–3.6 KB), style cohérent. weaken DoT loop les
         utilise déjà via le registre. Aucune modif nécessaire.
 - [x] Vague A — commit + push.
-- [ ] Vague B — étendre `STATUS_DEFS.weaken` avec `maxStacks: 3`.
-- [ ] Vague B — refondre `applyStatus` pour gérer stacks.
-- [ ] Vague B — refondre `tickStatuses` pour décrémenter 1 stack.
-- [ ] Vague B — patch `renderStatusBadges` pour afficher `×N`.
-- [ ] Vague B — smoke `scenarioWeakenStacks`.
-- [ ] Vague B — commit + push.
+- [x] Vague B — étendre `STATUS_DEFS.weaken` avec `maxStacks: 3`.
+- [x] Vague B — refondre `applyStatus` pour gérer stacks.
+      → renvoie désormais `true` si nouvel "instance" appliqué (création
+        ou stack supplémentaire), `false` si refresh seul (cap atteint).
+        Comportement non-empilable (sans `maxStacks`) inchangé. Champ
+        `maxTurns` stocké à la 1ʳᵉ pose pour reset à l'expiry d'un stack.
+- [x] Vague B — refondre `tickStatuses` pour décrémenter 1 stack à l'expiry.
+      → à `turns === 0` : restaure +power, `stacks--`, `turns = maxTurns`,
+        et garde le statut dans `remaining` si stacks ≥ 1.
+- [x] Vague B — patch cast `weaken` côté `battle-spells.js` : applique
+      le malus DEF seulement si `applyStatus` a renvoyé `true` (sinon
+      "résiste à l'affaiblissement" pour signaler le cap atteint).
+- [x] Vague B — patch `renderStatusBadges` pour afficher `×N` (Cinzel, fond or)
+      quand `s.stacks > 1`. Tooltip enrichi : `−9 DEF (3 stacks)`. CSS
+      `.status-pill-stack`.
+- [x] Vague B — smoke `T5 weaken stacks` ajouté dans le scénario 2bis.
+      Couvre 3 casts (1→3 stacks, DEF 12→9→6→3), 1 cast refusé au cap
+      (applied=false, DEF inchangée), 3 cycles d'expiry séquentiels
+      (restaure 3 DEF par stack, retrait complet au dernier).
+- [x] Vague B — commit + push.
 - [ ] Vague C — smoke `scenarioDuoStatuses` (vérifier câblage existant).
 - [ ] Vague C — corriger éventuels bugs détectés.
 - [ ] Vague D — étendre `_updateOneCharCard` avec `data-tooltip`.

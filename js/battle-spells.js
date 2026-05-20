@@ -58,13 +58,23 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
     }
     case 'weaken': {
       // Conversion en statusEffect typé : badge visible côté UI, durée,
-      // restauration auto via tickStatuses à l'expiration.
-      const turns = ability.turns || 3;
-      const lost  = Math.min(ability.power, target.def || 0);
-      target.def  = Math.max(0, (target.def || 0) - lost);
-      applyStatus(target, 'weaken', lost, turns);
-      appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : ${target.name} perd ${lost} DEF (${turns} tours) ! `);
-      UX_safe.logCombat(`${ability.icon} ${enemy.name} affaiblit ${target.name} : <b>−${lost} DEF</b> (${turns} tours)`, 'bad');
+      // restauration auto via tickStatuses à l'expiration. Empilable
+      // jusqu'à 3 stacks (cap dans STATUS_DEFS.weaken.maxStacks).
+      const turns   = ability.turns || 3;
+      const lost    = Math.min(ability.power, target.def || 0);
+      const applied = applyStatus(target, 'weaken', lost, turns);
+      // applied === false → cap stacks atteint, on ne soustrait pas la
+      // DEF (sinon le malus serait permanent : la restauration à
+      // l'expiry ne couvre que les stacks effectivement posés).
+      if (applied && lost > 0) {
+        target.def = Math.max(0, (target.def || 0) - lost);
+        appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : ${target.name} perd ${lost} DEF (${turns} tours) ! `);
+        UX_safe.logCombat(`${ability.icon} ${enemy.name} affaiblit ${target.name} : <b>−${lost} DEF</b> (${turns} tours)`, 'bad');
+      } else {
+        // Cap atteint ou DEF déjà à 0 — annonce une "résistance".
+        appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : ${target.name} résiste à l'affaiblissement. `);
+        UX_safe.logCombat(`${ability.icon} ${target.name} <i>résiste à l'affaiblissement</i>`, 'info');
+      }
       break;
     }
     case 'status': {

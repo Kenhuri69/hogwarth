@@ -67,11 +67,16 @@ function renderStatusBadges(target) {
       const iconHtml = (typeof getStatusIconHtml === 'function')
         ? (getStatusIconHtml(s.id, 'ui-icon-sm') || s.icon)
         : s.icon;
-      // weaken = malus DEF (power = points perdus, pas dmg/tour)
+      // weaken = malus DEF (power = points perdus par stack, pas dmg/tour).
+      // Affiche `×N` quand le statut est empilé (Vague B).
+      const stacks = s.stacks || 1;
       const tooltip = s.id === 'weaken'
-        ? `${def.label || s.id} −${s.power} DEF`
+        ? (stacks > 1
+            ? `${def.label || s.id} −${s.power * stacks} DEF (${stacks} stacks)`
+            : `${def.label || s.id} −${s.power} DEF`)
         : `${def.label || s.id} ${s.power}/tour`;
-      parts.push(`<span class="status-pill" style="border-color:${def.color}" title="${tooltip}">${iconHtml}${s.turns}</span>`);
+      const stackTag = stacks > 1 ? `<span class="status-pill-stack">×${stacks}</span>` : '';
+      parts.push(`<span class="status-pill" style="border-color:${def.color}" title="${tooltip}">${iconHtml}${s.turns}${stackTag}</span>`);
     });
   }
 

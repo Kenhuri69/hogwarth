@@ -36,7 +36,7 @@ const STATUS_DEFS = {
   poison: { icon: '☠️',   label: 'Empoisonné',        color: '#7ab836' },
   bleed:  { icon: '🩸',   label: 'Saignement',        color: '#c0392b' },
   gel:    { icon: '❄️',   label: 'Engelures',         color: '#5fa8d3' },
-  weaken: { icon: '🛡️↓', label: 'Affaiblissement',   color: '#9b59b6' },
+  weaken: { icon: '🛡️↓', label: 'Affaiblissement',   color: '#9b59b6', maxStacks: 3 },
   disarm: { icon: '🪄↓', label: 'Désarmé',           color: '#c9a84c' },
   regen:  { icon: '🩹',   label: 'Régénération',      color: '#3aa55a' },
   stun:   { icon: '💫',   label: 'Étourdi',           color: '#d9a521' },
@@ -51,16 +51,41 @@ const STATUS_DEFS = {
   regen_ferula_max: { icon: '🩹✨', label: 'Régén. Ferula', color: '#5fc7a5' }
 };
 
+// Pose ou rafraîchit un statut. Renvoie `true` si un nouvel "instance"
+// du statut a été appliqué (création ou stack supplémentaire), `false`
+// si seule la durée a été refresh (cap stacks atteint).
+//
+// Stacks (Vague B) : un statut peut déclarer `STATUS_DEFS[id].maxStacks`
+// pour devenir empilable (actuellement : `weaken` cap 3). Sans
+// `maxStacks` le comportement reste l'ancien (max power, max turns).
 function applyStatus(target, id, power, turns) {
-  if (!target) return;
+  if (!target) return false;
   if (!target.statusEffects) target.statusEffects = [];
+  const def = STATUS_DEFS[id];
+  const maxStacks = def && def.maxStacks ? def.maxStacks : 1;
   const existing = target.statusEffects.find(s => s.id === id);
   if (existing) {
+    if (maxStacks > 1) {
+      // Statut empilable : ajoute 1 stack si cap non atteint, refresh
+      // toujours la durée (au max de l'ancienne et de la nouvelle).
+      // On stocke `maxTurns` = durée canonique pour reset à l'expiry.
+      existing.maxTurns = Math.max(existing.maxTurns || existing.turns, turns);
+      existing.turns    = Math.max(existing.turns, turns);
+      if ((existing.stacks || 1) < maxStacks) {
+        existing.stacks = (existing.stacks || 1) + 1;
+        return true;
+      }
+      return false;
+    }
+    // Statut non empilable : ancien comportement (max power, max turns).
     existing.power = Math.max(existing.power, power);
     existing.turns = Math.max(existing.turns, turns);
-  } else {
-    target.statusEffects.push({ id, power, turns, icon: STATUS_DEFS[id].icon });
+    return false;
   }
+  const entry = { id, power, turns, icon: def.icon };
+  if (maxStacks > 1) { entry.stacks = 1; entry.maxTurns = turns; }
+  target.statusEffects.push(entry);
+  return true;
 }
 
 // ── Stun : étourdissement (saut de tour) ─────────────────────
@@ -157,10 +182,16 @@ function tickStatuses(target, isEnemy) {
     if (s.turns > 0) {
       remaining.push(s);
     } else if (s.id === 'weaken') {
-      // Expiration → restaurer la DEF perdue
+      // Expiration → restaurer 1 stack de DEF perdue. Si plus d'1 stack,
+      // le statut continue avec stacks-- et la durée canonique réinitialisée.
       target.def = (target.def || 0) + s.power;
       log += `${STATUS_DEFS[s.id].icon} ${target.name} récupère ${s.power} DEF. `;
       UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} récupère <b>+${s.power} DEF</b>`, 'magic');
+      if ((s.stacks || 1) > 1) {
+        s.stacks--;
+        s.turns = s.maxTurns || 3;
+        remaining.push(s);
+      }
     } else if (s.id === 'disarm') {
       // Expiration → restaurer l'ATK perdue
       target.atk = (target.atk || 0) + s.power;
