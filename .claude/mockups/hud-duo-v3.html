@@ -114,7 +114,7 @@
   .pcard {
     flex: 1;
     position: relative;
-    min-height: 76px;
+    min-height: 92px;
     border: 1px solid #3a2812;
     border-radius: 6px;
     overflow: hidden;
@@ -195,6 +195,9 @@
   .bar-fill { height: 100%; border-radius: 2px; }
   .hp { background: linear-gradient(90deg, #1a7a1a, #27ae60); }
   .mp { background: linear-gradient(90deg, #5b1a8e, #8e44ad); }
+  .xp { background: linear-gradient(90deg, #8e5a0a, #e67e22); }
+  /* L'XP est plus discrète (secondaire vs PV/PM) — track légèrement plus fine */
+  .bar.xp-row .bar-track { height: 4px; }
   .bar-val {
     font-family: 'JetBrains Mono', monospace;
     font-size: 8.5px;
@@ -244,8 +247,8 @@
 <div class="label">Mockup HUD — <b>header compact + duo party-bar V3-style</b> (mobile 375 px)</div>
 <div class="legend">
   Header compact 1 ligne (étage · location · or · blason vivant A.1). Bandeau d'équipe : 2 cartes V3 côte à côte
-  avec portrait en demi-fond et contenu réduit (nom · Niv · HP · MP). Carte active = bord doré + tag « ⚡ ACTIF » ;
-  inactive = point creux. La XP joueur, statuts et classe vivent dans la fiche perso.
+  avec portrait en demi-fond et contenu réduit (nom · Niv · HP · MP · XP). Carte active = bord doré + picto ⚡ ;
+  inactive = point creux. L'XP est partagée (player.xp), donc identique sur les 2 cartes.
 </div>
 
 <div class="phone"><div class="phone-inner">
@@ -276,6 +279,7 @@
         </div>
         <div class="bar"><span class="bar-ico">⚡</span><div class="bar-track"><div class="bar-fill hp" style="width:100%"></div></div><span class="bar-val">35/35</span></div>
         <div class="bar"><span class="bar-ico">✦</span><div class="bar-track"><div class="bar-fill mp" style="width:100%"></div></div><span class="bar-val">22/22</span></div>
+        <div class="bar xp-row"><span class="bar-ico">★</span><div class="bar-track"><div class="bar-fill xp" style="width:62%"></div></div><span class="bar-val">186/300</span></div>
       </div>
     </div>
     <div class="pcard">
@@ -289,6 +293,7 @@
         </div>
         <div class="bar"><span class="bar-ico">⚡</span><div class="bar-track"><div class="bar-fill hp" style="width:100%"></div></div><span class="bar-val">28/28</span></div>
         <div class="bar"><span class="bar-ico">✦</span><div class="bar-track"><div class="bar-fill mp" style="width:100%"></div></div><span class="bar-val">35/35</span></div>
+        <div class="bar xp-row"><span class="bar-ico">★</span><div class="bar-track"><div class="bar-fill xp" style="width:62%"></div></div><span class="bar-val">186/300</span></div>
       </div>
     </div>
   </div>
