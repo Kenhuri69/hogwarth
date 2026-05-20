@@ -153,6 +153,50 @@ body {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
+/* ── Anneau XP côté gauche du header (symétrique du blason Maison) ──
+   Le ratio --xp-ratio (0..1) est posé par _updateXpWrap() dans ui.js.
+   Le centre porte l'icône Poudlard ; le ruban affiche le niveau (équivalent
+   du ruban tier Maison côté droit). */
+.xp-wrap {
+  position: relative;
+  width: 38px; height: 44px;
+  flex-shrink: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.xp-wrap:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+.xp-ring {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: conic-gradient(#ecd692 0deg, #c9a84c calc(var(--xp-ratio, 0) * 360deg),
+                             rgba(60,40,15,0.35) calc(var(--xp-ratio, 0) * 360deg), rgba(60,40,15,0.35) 360deg);
+  padding: 2.5px;
+  box-shadow: 0 0 10px rgba(201,168,76,0.35);
+  transition: background 0.4s ease;
+}
+.xp-ring-inner {
+  width: 100%; height: 100%; border-radius: 50%;
+  background: radial-gradient(circle, #2a1d0c 0%, #0d0705 100%);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  border: 1px solid #3a2812;
+}
+.xp-ring-inner img { width: 70%; height: 70%; object-fit: contain; }
+.xp-tier {
+  position: absolute;
+  bottom: -1px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(180deg, #ecd692, #8a5a18);
+  color: #1a0f05;
+  font-family: 'Cinzel', serif;
+  font-size: 7.5px; font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.7);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* ── Blason vivant (audit P1 A.1) — anneau XP radial + ruban tier ── */
 .crest-wrap {
   position: relative;
@@ -2916,6 +2960,9 @@ button.shop-tab.active {
     rgba(15,9,3,0.96) 100%);
   pointer-events: none;
 }
+/* Médaillon rond — utilisé uniquement en mobile (voir @media). En
+   desktop, le portrait reste en BG plein avec le voile dégradé. */
+.pcard-medaillon { display: none; }
 .pcard-content {
   position: relative;
   padding: 6px 8px 6px 46%;
@@ -3224,37 +3271,38 @@ button.shop-tab.active {
   .stats-grid, .left-panel > div:last-child { display: none; }
   /* Garder seulement le titre du groupe */
   .left-panel > .panel-title { display: none; }
-  /* COMPACTAGE MOBILE V3.1 (retour utilisateur) :
-     - cartes ramenées de ~108 px à ~64 px (gain ~44 px de vue 3D par carte)
-     - XP cachée dans la carte (déjà visible via l'anneau radial du blason
-       header → redondante)
-     - étiquettes texte « PV » / « PM » cachées (l'icône + le ratio
-       chiffré suffisent à identifier la barre)
-     - classe/niveau et équipement déjà masqués depuis P2 */
+  /* COMPACTAGE MOBILE V3.2 (retour utilisateur) :
+     - cartes compactes (~64 px) — gain ~44 px de vue 3D vs V3.0
+     - XP cachée dans la carte (visible via l'anneau XP gauche du header)
+     - étiquettes texte « PV » / « PM » cachées (l'icône suffit)
+     - médaillon rond <img> à gauche au lieu du BG croppé : on voit le
+       portrait ENTIER (visage + épaules + robe + cadre or natif du PNG),
+       comme en vue paysage. */
   .party-card .pcard-class { display: none; }
   .party-card .party-equip-row { display: none; }
   .party-card .stat-bar-row.xp-row { display: none; }
   /* L'icône reste, le label texte (« PV », « PM ») saute */
   .party-card .stat-bar-row .bar-label > span:first-child > span { display: none; }
-  /* Barres plus fines mobile + label compact (ratio à droite uniquement) */
   .party-card .stat-bar-row { margin-top: 2px; }
   .party-card .stat-bar-row .bar-label { font-size: 10px; line-height: 1.1; }
   .party-card .stat-bar-row .bar-track { height: 4px; }
-  /* Portrait BG mobile : largeur ABSOLUE pour éviter le crop monstrueux
-     en solo (à 52 % du parent large, le portrait devenait un gros plan
-     du haut du visage). On affiche désormais le portrait en bandeau
-     vertical étroit (auto 110 % de hauteur), avec le visage centré
-     verticalement plus haut pour rester reconnaissable. */
-  .pcard-bg {
-    width: 56px;
-    background-size: auto 110%;
-    background-position: center 28%;
+  /* Médaillon rond mobile : on cache le BG croppé et le voile, on
+     affiche le PNG portrait natif (qui inclut déjà le cadre doré rond). */
+  .pcard-bg, .pcard-veil { display: none; }
+  .pcard-medaillon {
+    display: block;
+    position: absolute;
+    left: 4px; top: 50%;
+    transform: translateY(-50%);
+    width: 56px; height: 56px;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 4px rgba(0,0,0,0.55)) drop-shadow(0 0 4px rgba(201,168,76,0.25));
   }
   .pcard-content {
-    padding: 4px 6px 4px 62px;
+    padding: 4px 6px 4px 66px;
   }
   .pcard-name { font-size: 11px; line-height: 1.15; margin-bottom: 2px; }
-  /* Hauteur de carte minimale : portrait 56 × ~60 + content nom + 2 barres */
 
   /* Viewport 3D occupe tout l'espace */
   .main-view { overflow: hidden; }
@@ -3281,6 +3329,10 @@ button.shop-tab.active {
   .crest-ring { width: 30px; height: 30px; }
   .crest-ring-inner { font-size: 14px; }
   .crest-tier { font-size: 7px; padding: 1px 4px; }
+  /* Anneau XP côté gauche : mêmes dimensions que le blason droit */
+  .xp-wrap { width: 30px; height: 36px; flex-shrink: 0; }
+  .xp-ring { width: 30px; height: 30px; }
+  .xp-tier { font-size: 7px; padding: 1px 4px; }
 
   /* Barre de commandes */
   .commands-bar {

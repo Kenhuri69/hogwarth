@@ -2548,7 +2548,7 @@ async function scenarioUiChromeIcons() {
       return img ? { src: img.getAttribute('src'), loaded: img.complete && img.naturalWidth > 0 } : null;
     };
     return {
-      gameTitle: grab('.game-title'),
+      gameTitle: grab('#xp-wrap'),  // l'icône Poudlard vit dans l'anneau XP (header gauche)
       gold:      grab('#gold-display'),
       hp0:       grabBarLabelByTextId('hp-text-0'),
       mp0:       grabBarLabelByTextId('sp-text-0'),
