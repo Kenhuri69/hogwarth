@@ -3216,7 +3216,7 @@ button.shop-tab.active {
   .party-card {
     flex: 1 1 0;
     min-width: 0;
-    min-height: 76px;
+    min-height: 64px;
     margin-bottom: 0;
     max-width: 100%;
   }
@@ -3224,28 +3224,37 @@ button.shop-tab.active {
   .stats-grid, .left-panel > div:last-child { display: none; }
   /* Garder seulement le titre du groupe */
   .left-panel > .panel-title { display: none; }
-  /* Allègement carte joueur mobile : on ne garde que nom + PV + PM + XP
-     + statuts. La classe/niveau et les 3 icônes d'équipement sont
-     redondantes avec la fiche perso (📜) et l'inventaire (🎒). */
+  /* COMPACTAGE MOBILE V3.1 (retour utilisateur) :
+     - cartes ramenées de ~108 px à ~64 px (gain ~44 px de vue 3D par carte)
+     - XP cachée dans la carte (déjà visible via l'anneau radial du blason
+       header → redondante)
+     - étiquettes texte « PV » / « PM » cachées (l'icône + le ratio
+       chiffré suffisent à identifier la barre)
+     - classe/niveau et équipement déjà masqués depuis P2 */
   .party-card .pcard-class { display: none; }
   .party-card .party-equip-row { display: none; }
+  .party-card .stat-bar-row.xp-row { display: none; }
+  /* L'icône reste, le label texte (« PV », « PM ») saute */
+  .party-card .stat-bar-row .bar-label > span:first-child > span { display: none; }
+  /* Barres plus fines mobile + label compact (ratio à droite uniquement) */
+  .party-card .stat-bar-row { margin-top: 2px; }
+  .party-card .stat-bar-row .bar-label { font-size: 10px; line-height: 1.1; }
+  .party-card .stat-bar-row .bar-track { height: 4px; }
   /* Portrait BG mobile : largeur ABSOLUE pour éviter le crop monstrueux
      en solo (à 52 % du parent large, le portrait devenait un gros plan
      du haut du visage). On affiche désormais le portrait en bandeau
-     vertical étroit (auto 100 % de hauteur), avec le visage centré
+     vertical étroit (auto 110 % de hauteur), avec le visage centré
      verticalement plus haut pour rester reconnaissable. */
   .pcard-bg {
-    width: 64px;
+    width: 56px;
     background-size: auto 110%;
     background-position: center 28%;
   }
   .pcard-content {
-    padding: 4px 6px 4px 70px;
+    padding: 4px 6px 4px 62px;
   }
-  .pcard-name { font-size: 11px; }
-  /* XP row réduite sur mobile pour conserver de la place verticale */
-  .party-card .stat-bar-row.xp-row { margin-top: 2px; }
-  .party-card .stat-bar-row.xp-row .bar-track { height: 3px; }
+  .pcard-name { font-size: 11px; line-height: 1.15; margin-bottom: 2px; }
+  /* Hauteur de carte minimale : portrait 56 × ~60 + content nom + 2 barres */
 
   /* Viewport 3D occupe tout l'espace */
   .main-view { overflow: hidden; }
