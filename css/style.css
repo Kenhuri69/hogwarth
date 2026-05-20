@@ -1115,8 +1115,21 @@ body {
   position: relative;
   box-shadow: 0 0 40px rgba(201,168,76,0.2);
 }
-/* Fiche personnage v2 — beaucoup plus large pour contenir les 4 sections */
-#character-modal .modal-box { max-width: 780px; }
+/* Fiche personnage v2 — beaucoup plus large pour contenir les 4 sections.
+   max-height portée à 92vh (vs 80vh global) : sur un écran 800 px,
+   la box passe de 640 → 736 px (gain 96 px) — réduit nettement le
+   scroll desktop de la fiche perso, dont le contenu approche 800 px
+   avec toutes les sections (stats + paper-doll + set de Maison +
+   sorts + sac 16 slots). */
+#character-modal .modal-box { max-width: 780px; max-height: 92vh; }
+#character-modal .char-grid { gap: 8px; }
+#character-modal .paper-doll { padding: 6px; }
+#character-modal .paper-doll-main { gap: 6px; grid-template-columns: 46px auto 46px; }
+#character-modal .paper-doll-col { gap: 6px; }
+#character-modal .equip-slot-floating { width: 46px; height: 46px; }
+#character-modal .section-houseset { padding: 6px 8px; }
+#character-modal .section-houseset .set-cells { gap: 6px; }
+#character-modal .section-houseset .set-cell { padding: 4px; }
 .modal-title {
   font-family: 'Cinzel', serif;
   font-size: 18px;
@@ -1262,7 +1275,11 @@ body {
    ============================================================ */
 /* ============================================================
    FICHE PERSONNAGE v2 — grid-template-areas
-   stats prend 3 rows à gauche, equip/spells/inv s'empilent à droite.
+   Mobile / tablette : 2 colonnes (stats à gauche, autres empilées
+   à droite). Desktop large (≥ 980px de modale) : 3 colonnes — la
+   place horizontale dispo est utilisée pour étaler equip + spells
+   en col2, houseset + inv en col3. Plus de scroll vertical sur la
+   fiche desktop standard.
    ============================================================ */
 .char-grid {
   display: grid;
@@ -1281,6 +1298,22 @@ body {
 .char-grid > .section-houseset { grid-area: houseset; }
 .char-grid > .section-spells   { grid-area: spells;   }
 .char-grid > .section-inv      { grid-area: inv;      }
+
+/* Layout 3 colonnes pour grands écrans : la fiche prend toute la
+   largeur dispo et étale les sections horizontalement pour éviter
+   le scroll vertical. Activé à partir de 1100px de viewport
+   (modal-box élargie à 1080px). */
+@media (min-width: 1100px) {
+  #character-modal .modal-box { max-width: 1080px; }
+  #character-modal .char-grid {
+    grid-template-columns: 220px 1fr 1fr;
+    grid-template-areas:
+      "stats equip   houseset"
+      "stats equip   inv"
+      "stats spells  inv";
+    grid-template-rows: auto auto 1fr;
+  }
+}
 
 /* Accordéon mobile — un bouton .section-toggle est préfixé à chaque
    section de la fiche par openCharacter(). Masqué en desktop (les zones
@@ -1393,6 +1426,15 @@ body {
 }
 .section-houseset .set-bonus-row.inactive {
   color: #6a5030;
+}
+/* Variante teaser (affichée à 0/4 quand on cache les 3 paliers
+   détaillés) : pas de cellule "tier" → une seule colonne pleine
+   largeur, texte centré et italique. */
+.section-houseset .set-bonus-row.set-bonus-teaser {
+  grid-template-columns: 1fr;
+  font-style: italic;
+  text-align: center;
+  padding: 6px 8px;
 }
 .section-houseset .set-bonus-tier {
   font-family: 'Cinzel', serif;
@@ -1652,18 +1694,31 @@ body {
 }
 .section-inv .inv-slot {
   aspect-ratio: 1/1;
-  background: #0a0705;
-  border: 1px solid #2a1a08;
-  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(40,28,12,0.55) 0%, rgba(12,8,3,0.95) 100%),
+    radial-gradient(ellipse at center, rgba(122,92,30,0.10) 0%, transparent 70%);
+  border: 1px solid rgba(122,92,30,0.30);
+  border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: border-color 0.15s;
+  cursor: default;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  box-shadow: inset 0 1px 0 rgba(240,208,128,0.05), inset 0 -1px 0 rgba(0,0,0,0.6);
 }
-.section-inv .inv-slot:hover { border-color: var(--gold-dark); }
-.section-inv .inv-slot.has-item { border-color: #4a3010; }
-.section-inv .inv-slot.rarity-rare      { border-color: #4a8ad0; }
-.section-inv .inv-slot.rarity-epic      { border-color: #a060d0; }
-.section-inv .inv-slot.rarity-legendary { border-color: var(--gold); }
+/* Slot rempli : bordure dorée chaude + halo subtil. */
+.section-inv .inv-slot.has-item {
+  border-color: rgba(201,168,76,0.55);
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(240,208,128,0.18), inset 0 -1px 0 rgba(0,0,0,0.6),
+              0 0 6px rgba(201,168,76,0.10);
+}
+.section-inv .inv-slot.rarity-rare      { border-color: #4a8ad0; box-shadow: inset 0 1px 0 rgba(120,180,255,0.18), 0 0 8px rgba(74,138,208,0.20); }
+.section-inv .inv-slot.rarity-epic      { border-color: #a060d0; box-shadow: inset 0 1px 0 rgba(180,120,220,0.22), 0 0 8px rgba(160,96,208,0.25); }
+.section-inv .inv-slot.rarity-legendary { border-color: var(--gold); box-shadow: inset 0 1px 0 rgba(240,208,128,0.30), 0 0 10px rgba(201,168,76,0.35); }
+.section-inv .inv-slot.has-item:hover {
+  transform: scale(1.06); border-color: var(--gold-light);
+  box-shadow: inset 0 1px 0 rgba(240,208,128,0.25), 0 0 12px rgba(201,168,76,0.45);
+  z-index: 5;
+}
 .section-inv .inv-slot .ui-icon { width: 28px; height: 28px; object-fit: contain; }
 
 /* Mobile : 1 colonne, paper-doll plus compact */
@@ -1688,10 +1743,13 @@ body {
   .equip-slot-floating .ui-icon { width: 26px; height: 26px; }
   .paper-doll-bottom { gap: 8px; }
 
-  /* 16 slots → 4 colonnes × 4 rows en mobile. minmax(0,1fr) force la
-     rétractation (sinon le contenu min impose >60 px → débordement). */
-  .section-inv .inv-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-  .section-inv .inv-slot .ui-icon { width: 32px; height: 32px; }
+  /* 16 slots → 8 colonnes × 2 rows en mobile aussi : avant on était à
+     repeat(4) qui produisait des cellules ~120 px (aspect-ratio:1) sur
+     un viewport 540 px, soit 4 rangs × 120 = 480 px juste pour le sac
+     (scroll vertical interminable dans la fiche). À 8 colonnes, chaque
+     cellule fait ~58 px (>44 tap target) et la section tient en 2 rangs. */
+  .section-inv .inv-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+  .section-inv .inv-slot .ui-icon { width: 28px; height: 28px; }
 
   /* Accordéon : le bouton apparaît, une section repliée masque tout
      son contenu sauf le bouton. */
