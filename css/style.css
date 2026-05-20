@@ -1050,7 +1050,8 @@ body {
   from { text-shadow: 0 0 20px rgba(201,168,76,0.5); }
   to   { text-shadow: 0 0 60px rgba(201,168,76,1.0), 0 0 100px rgba(201,168,76,0.4); }
 }
-#inventory-modal, #shop-modal, #character-modal, #spell-modal, #slot-modal {
+#inventory-modal, #shop-modal, #character-modal, #spell-modal, #slot-modal,
+#house-detail-modal {
   display: none;
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.85);
@@ -1058,6 +1059,7 @@ body {
   align-items: center; justify-content: center;
   padding: 20px;
 }
+#house-detail-modal .modal-box { max-width: 560px; }
 .modal-box {
   background: linear-gradient(180deg, #1a0f05 0%, #120a03 100%);
   border: 2px solid var(--gold);
@@ -2931,6 +2933,151 @@ button.shop-tab.active {
   margin: 1px 0 4px 0;
   text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
+/* XP row dans chaque .pcard-content — plus discrète que HP/MP (P3) */
+.party-card .stat-bar-row.xp-row {
+  margin-top: 3px;
+  opacity: 0.92;
+}
+.party-card .stat-bar-row.xp-row .bar-label {
+  font-size: 10px;
+  color: #b08850;
+}
+.party-card .stat-bar-row.xp-row .bar-track { height: 4px; }
+
+/* ── Popup détail Maison (P4) ── */
+#house-detail-content { padding: 4px 2px 8px; }
+.hd-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.hd-crest {
+  flex-shrink: 0;
+  width: 96px; height: 96px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--gold-dark);
+  border-radius: 50%;
+  background: #0a0705;
+}
+.hd-crest svg, .hd-crest img { width: 80px; height: 80px; }
+.hd-meta { flex: 1; min-width: 0; }
+.hd-tier-current {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  color: var(--gold-light);
+  letter-spacing: 1px;
+}
+.hd-desc {
+  font-size: 12px;
+  color: #a08858;
+  font-style: italic;
+  margin-top: 3px;
+}
+.hd-victory {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #f0c060;
+  font-family: 'Cinzel', serif;
+  letter-spacing: 1px;
+}
+.hd-progress {
+  margin-bottom: 14px;
+}
+.hd-progress-track {
+  height: 8px;
+  background: #1a0e05;
+  border: 1px solid var(--gold-dark);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.hd-progress-fill {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+.hd-goal {
+  font-size: 11px;
+  color: #b08850;
+  margin-top: 4px;
+  text-align: right;
+}
+.hd-section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  color: var(--gold);
+  letter-spacing: 1px;
+  margin: 12px 0 6px;
+  border-bottom: 1px solid var(--gold-dark);
+  padding-bottom: 3px;
+}
+.hd-pending {
+  background: rgba(240,192,96,0.07);
+  border: 1px solid #6a5030;
+  border-radius: 4px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+.hd-pending-list {
+  font-size: 12px;
+  color: var(--gold-light);
+  margin: 4px 0;
+}
+.hd-pending-hint {
+  font-size: 10px;
+  color: #8a7050;
+  font-style: italic;
+}
+.hd-tier-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.hd-tier-row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  grid-template-areas: "marker label thresh" "marker bonus  bonus";
+  column-gap: 8px;
+  align-items: baseline;
+  padding: 4px 4px 6px;
+  border-bottom: 1px solid #1a0e05;
+  font-size: 11px;
+}
+.hd-tier-row[data-goal="true"] {
+  background: rgba(240,192,96,0.06);
+  border-color: var(--gold-dark);
+}
+.hd-tier-marker {
+  grid-area: marker;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  text-align: center;
+}
+.hd-tier-label {
+  grid-area: label;
+  color: var(--gold-light);
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.5px;
+}
+.hd-tier-threshold {
+  grid-area: thresh;
+  font-size: 10px;
+  color: #8a7050;
+}
+.hd-tier-bonus {
+  grid-area: bonus;
+  font-size: 10px;
+  color: #a08858;
+  margin-top: 1px;
+}
+@media (max-width: 700px) {
+  .hd-header { gap: 10px; }
+  .hd-crest { width: 72px; height: 72px; }
+  .hd-crest svg, .hd-crest img { width: 56px; height: 56px; }
+  .hd-tier-current { font-size: 15px; }
+  .hd-tier-list { max-height: 50vh; }
+}
 
 /* ── ENEMY GROUP (encounter overlay) ── */
 .enemy-group-container {
@@ -3061,8 +3208,6 @@ button.shop-tab.active {
   }
   /* Cartes côte à côte */
   .party-card { flex: 1; min-width: 130px; min-height: 88px; margin-bottom: 0; }
-  /* XP en ligne entière */
-  #xp-container { width: 100%; order: 10; }
   /* Cacher stats et équipement sur mobile */
   .stats-grid, .left-panel > div:last-child { display: none; }
   /* Garder seulement le titre du groupe */

@@ -10,7 +10,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=10">
+<link rel="stylesheet" href="css/style.css?v=11">
 <link rel="stylesheet" href="css/ux-improvements.css?v=1">
 <link rel="stylesheet" href="css/save-ui.css?v=1">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -383,6 +383,10 @@
           <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/mp.png" alt=""> PM</span><span id="sp-text-0">22/22</span></div>
           <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar-0" style="width:100%"></div></div>
         </div>
+        <div class="stat-bar-row xp-row">
+          <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/xp.png" alt=""> <span id="xp-label-0">Niv.1 — XP</span></span><span id="xp-text-0">0/50</span></div>
+          <div class="bar-track"><div class="bar-fill xp-fill" id="xp-bar-0" style="width:0%"></div></div>
+        </div>
         <div class="party-equip-row" id="equip-row-0">
           <span class="party-equip-slot" data-slot="wand"></span>
           <span class="party-equip-slot" data-slot="body"></span>
@@ -407,6 +411,10 @@
           <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/mp.png" alt=""> PM</span><span id="sp-text-1">35/35</span></div>
           <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar-1" style="width:100%"></div></div>
         </div>
+        <div class="stat-bar-row xp-row">
+          <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/xp.png" alt=""> <span id="xp-label-1">Niv.1 — XP</span></span><span id="xp-text-1">0/50</span></div>
+          <div class="bar-track"><div class="bar-fill xp-fill" id="xp-bar-1" style="width:0%"></div></div>
+        </div>
         <div class="party-equip-row" id="equip-row-1">
           <span class="party-equip-slot" data-slot="wand"></span>
           <span class="party-equip-slot" data-slot="body"></span>
@@ -416,24 +424,8 @@
       </div>
     </div>
 
-    <!-- XP partagée -->
-    <div class="stat-bar-row" id="xp-container" style="margin-top:4px">
-      <div class="bar-label"><span id="xp-label"><img class="ui-icon ui-icon-sm" src="img/icons/xp.png" alt=""> Niv.1 — XP</span><span id="xp-text">0/50</span></div>
-      <div class="bar-track"><div class="bar-fill xp-fill" id="xp-bar" style="width:0%"></div></div>
-    </div>
-
-    <!-- Badge de Maison -->
-    <div id="house-badge" style="display:none;margin-top:4px;padding:6px 8px;
-         border:1px solid var(--gold-dark);border-radius:3px;background:#0a0705">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-        <span id="house-badge-label" style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;color:var(--gold)"></span>
-        <span id="house-badge-tier"  style="font-size:9px;color:#8a7050"></span>
-      </div>
-      <div style="background:#1a0e05;border-radius:2px;height:4px;overflow:hidden">
-        <div id="house-badge-bar" style="height:100%;background:var(--gold-dark);transition:width .4s ease;width:0%"></div>
-      </div>
-      <div id="house-badge-pts" style="font-size:9px;color:#6a5030;margin-top:3px;text-align:right"></div>
-    </div>
+    <!-- XP rapatriée dans chaque party-card (P3) ; bandeau Maison
+         supprimé (P4) — détails accessibles via le blason du header. -->
 
     <!-- Blason de la Maison (affiché après choix) -->
     <div id="house-crest" style="display:none;text-align:center;margin:4px 0 2px"></div>
@@ -687,6 +679,15 @@
     <div class="modal-title" id="character-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/scroll.png" alt=""> Fiche de Personnage</div>
     <span class="modal-close" onclick="closeModal('character-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
     <div id="char-detail"></div>
+  </div>
+</div>
+
+<!-- Modale détail Maison (P4) — peuplée dynamiquement par openHouseDetail() -->
+<div id="house-detail-modal" role="dialog" aria-modal="true" aria-labelledby="house-detail-modal-title">
+  <div class="modal-box">
+    <div class="modal-title" id="house-detail-modal-title">Détail de la Maison</div>
+    <span class="modal-close" onclick="closeModal('house-detail-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <div id="house-detail-content"></div>
   </div>
 </div>
 

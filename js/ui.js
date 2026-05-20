@@ -20,10 +20,16 @@ function updateUI() {
   // ── Hermione (party[1]) ─────────────────────────────────────
   _updateCharBar(1);
 
-  // ── XP et or partagés ───────────────────────────────────────
-  document.getElementById('xp-label').innerHTML = `<img class="ui-icon ui-icon-sm" src="img/icons/xp.png" alt=""> Niv.${player.level} — XP`;
-  document.getElementById('xp-text').textContent  = `${player.xp}/${player.xpNext}`;
-  document.getElementById('xp-bar').style.width   = (player.xp / player.xpNext * 100) + '%';
+  // ── XP rapatriée dans chaque party-card (P3) ────────────────
+  const xpPct = Math.max(0, Math.min(100, player.xp / player.xpNext * 100));
+  for (let i = 0; i < 2; i++) {
+    const lbl = document.getElementById(`xp-label-${i}`);
+    const txt = document.getElementById(`xp-text-${i}`);
+    const bar = document.getElementById(`xp-bar-${i}`);
+    if (lbl) lbl.textContent  = `Niv.${player.level} — XP`;
+    if (txt) txt.textContent  = `${player.xp}/${player.xpNext}`;
+    if (bar) bar.style.width  = xpPct + '%';
+  }
   document.getElementById('gold-display').innerHTML = `<img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${player.gold} Gallions`;
   const floorEl = document.getElementById('ghd-floor');
   if (floorEl && typeof currentFloor === 'number') floorEl.textContent = `ÉT.${currentFloor}`;
@@ -133,50 +139,133 @@ function _updateCrestWrap() {
   }
 }
 
-// Stub pour P4 — la popup `#house-detail-modal` sera implémentée à la
-// phase suivante. Pour l'instant on no-op pour ne pas casser le onclick.
-function openHouseDetail() { /* TODO P4 */ }
+// Décrit le bonus d'un palier sous une forme courte affichable.
+function _houseTierBonusText(tier) {
+  if (!tier || !tier.bonus) return '';
+  const b = tier.bonus;
+  if (b.item) {
+    const it = (typeof ITEMS !== 'undefined') ? ITEMS.find(x => x.id === b.item) : null;
+    return it ? `🎁 ${it.name}` : `🎁 ${b.item}`;
+  }
+  if (b.spell) return `📖 ${b.spell}`;
+  const parts = [];
+  if (b._baseAtk) parts.push(`+${b._baseAtk} ATK`);
+  if (b._baseDef) parts.push(`+${b._baseDef} DEF`);
+  if (b._baseMag) parts.push(`+${b._baseMag} MAG`);
+  if (b._baseLck) parts.push(`+${b._baseLck} LCK`);
+  return parts.join(' · ');
+}
 
-function _updateHouseBadge() {
-  // Nouveau blason vivant (P1) : pris en charge même si l'ancien badge
-  // sidebar n'existe pas (modale future, ou page sans #house-badge).
-  _updateCrestWrap();
+// Popup détail Maison (P4). Lecture pure de chosenHouse / housePoints /
+// houseTier / pendingHouseRewards ; écriture DOM dans #house-detail-content.
+function openHouseDetail() {
+  const modal = document.getElementById('house-detail-modal');
+  if (!modal) return;
+  if (!chosenHouse) {
+    if (typeof addMsg === 'function') addMsg('Aucune Maison choisie.', 'magic');
+    return;
+  }
 
-  const badge = document.getElementById('house-badge');
-  if (!badge) return;
-
-  // Ancien blason de bandeau gauche : masqué (remplacé par le blason vivant
-  // du header). Sera retiré du DOM en Phase 4 avec la popup.
-  const crest = document.getElementById('house-crest');
-  if (crest) crest.style.display = 'none';
-
-  if (!chosenHouse) { badge.style.display = 'none'; return; }
-
-  badge.style.display = '';
   const h     = HOUSE_BONUSES[chosenHouse];
   const tiers = h.tiers;
-
-  // Trouver le seuil du prochain palier
-  const nextTier = tiers[houseTier];  // houseTier = nombre de paliers atteints (0-17)
+  const nextTier = tiers[houseTier];
   const prevThreshold = houseTier > 0 ? tiers[houseTier - 1].threshold : 0;
   const nextThreshold = nextTier ? nextTier.threshold : tiers[tiers.length - 1].threshold;
+  const ratio = nextTier
+    ? Math.max(0, Math.min(1, (housePoints - prevThreshold) / (nextThreshold - prevThreshold)))
+    : 1;
+  const currentLabel = houseTier > 0 ? tiers[houseTier - 1].label : 'Recrue';
 
-  const pts    = housePoints;
-  const pct    = nextTier
-    ? Math.min(100, Math.round((pts - prevThreshold) / (nextThreshold - prevThreshold) * 100))
-    : 100;
-  const tierLabel = houseTier > 0 ? tiers[houseTier - 1].label : 'Recrue';
+  // Titre
+  const titleEl = document.getElementById('house-detail-modal-title');
+  if (titleEl) titleEl.innerHTML = `${h.emoji} ${h.label}`;
 
+  // Crest clone — réutilise le SVG <house>-logo de l'écran de sélection.
+  const svgEl = document.getElementById(chosenHouse.toLowerCase() + '-logo');
+  const crestHtml = svgEl
+    ? svgEl.outerHTML.replace(/id="[^"]+"/, '').replace(/width="\d+"/, 'width="96"').replace(/height="\d+"/, 'height="96"')
+    : `<div style="font-size:64px">${h.emoji}</div>`;
+
+  // Liste des paliers
+  const rowsHtml = tiers.map((t, i) => {
+    const reached = housePoints >= t.threshold;
+    const isCurrentGoal = !reached && (i === houseTier);
+    const marker = reached ? '✓' : isCurrentGoal ? '►' : '·';
+    const markerColor = reached
+      ? 'var(--gold-light)'
+      : isCurrentGoal ? 'var(--gold)' : '#6a5030';
+    const opacity = reached ? '1' : isCurrentGoal ? '1' : '0.55';
+    const pendingMark = (t.bonus && t.bonus.item
+      && typeof pendingHouseRewards !== 'undefined'
+      && pendingHouseRewards.has(t.bonus.item))
+      ? ' <span style="color:#f0c060;font-size:10px;letter-spacing:1px">EN ATTENTE</span>'
+      : '';
+    return `
+      <li class="hd-tier-row" data-reached="${reached}" data-goal="${isCurrentGoal}"
+          style="opacity:${opacity}">
+        <span class="hd-tier-marker" style="color:${markerColor}">${marker}</span>
+        <span class="hd-tier-label">${t.label}</span>
+        <span class="hd-tier-threshold">${t.threshold} pts</span>
+        <span class="hd-tier-bonus">${_houseTierBonusText(t)}${pendingMark}</span>
+      </li>`;
+  }).join('');
+
+  // Section récompenses en attente (gold-sink à réclamer auprès du chef de Maison)
+  let pendingHtml = '';
+  if (typeof pendingHouseRewards !== 'undefined' && pendingHouseRewards.size > 0) {
+    const items = Array.from(pendingHouseRewards).map(id => {
+      if (typeof ITEMS === 'undefined') return id;
+      const it = ITEMS.find(x => x.id === id);
+      return it ? it.name : id;
+    });
+    pendingHtml = `
+      <div class="hd-pending">
+        <div class="hd-section-title">🎁 Récompenses à réclamer</div>
+        <div class="hd-pending-list">${items.join(' · ')}</div>
+        <div class="hd-pending-hint">Rends-toi auprès du chef de Maison.</div>
+      </div>`;
+  }
+
+  // Bonus de victoire
   const victoryMark = (typeof victoryAchieved !== 'undefined' && victoryAchieved)
-    ? ` <span class="house-badge-victory" title="Vainqueur de Voldemort">🏆</span>`
-    : '';
-  document.getElementById('house-badge-label').innerHTML = `${h.emoji} ${h.label}${victoryMark}`;
-  document.getElementById('house-badge-tier').textContent  = tierLabel;
-  document.getElementById('house-badge-bar').style.width   = pct + '%';
-  document.getElementById('house-badge-bar').style.background = h.accent;
-  document.getElementById('house-badge-pts').textContent   = nextTier
-    ? `${pts} / ${nextThreshold} pts`
-    : `${pts} pts — Palier max !`;
+    ? `<div class="hd-victory">🏆 Vainqueur de Voldemort</div>` : '';
+
+  const goal = nextTier
+    ? `<div class="hd-goal">Prochain palier : <strong>${nextTier.label}</strong> · ${housePoints}/${nextThreshold} pts</div>`
+    : `<div class="hd-goal">Tous les paliers atteints — ${housePoints} pts</div>`;
+
+  document.getElementById('house-detail-content').innerHTML = `
+    <div class="hd-header">
+      <div class="hd-crest">${crestHtml}</div>
+      <div class="hd-meta">
+        <div class="hd-tier-current">${currentLabel}</div>
+        <div class="hd-desc">${h.desc || ''}</div>
+        ${victoryMark}
+      </div>
+    </div>
+    <div class="hd-progress">
+      <div class="hd-progress-track">
+        <div class="hd-progress-fill" style="width:${Math.round(ratio*100)}%;background:${h.accent}"></div>
+      </div>
+      ${goal}
+    </div>
+    ${pendingHtml}
+    <div class="hd-section-title">📜 Paliers</div>
+    <ul class="hd-tier-list">${rowsHtml}</ul>
+  `;
+  modal.style.display = 'flex';
+}
+
+function _updateHouseBadge() {
+  // Depuis P4, le détail Maison vit dans la popup #house-detail-modal
+  // (ouverte via le blason du header). Cette fonction ne pilote plus
+  // qu'un seul affichage : le blason vivant du header.
+  _updateCrestWrap();
+
+  // L'ancien #house-crest de la sidebar est définitivement masqué — il
+  // sera retiré du HTML dans une PR ultérieure.
+  const crest = document.getElementById('house-crest');
+  if (crest) crest.style.display = 'none';
 }
 
 function _updateCharBar(idx) {
