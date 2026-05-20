@@ -2875,13 +2875,15 @@ button.shop-tab.active {
   pointer-events: none;
 }
 
-/* ── PARTY CARDS (left panel) ── */
+/* ── PARTY CARDS V3 (portrait BG plein + contenu droit) ── */
 .party-card {
+  position: relative;
+  overflow: hidden;
   background: rgba(15,9,3,0.7);
   border: 1px solid var(--gold-dark);
   border-radius: 4px;
-  padding: 6px 8px;
   margin-bottom: 6px;
+  min-height: 110px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .party-card.active-char {
@@ -2892,22 +2894,42 @@ button.shop-tab.active {
   opacity: 0.45;
   border-color: var(--danger);
 }
-.party-card-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 5px;
+.pcard-bg {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 52%;
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
 }
-.party-portrait {
-  font-size: 22px;
-  line-height: 1;
+.pcard-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    rgba(15,9,3,0)    0%,
+    rgba(15,9,3,0)   30%,
+    rgba(15,9,3,0.55) 44%,
+    rgba(15,9,3,0.92) 60%,
+    rgba(15,9,3,0.96) 100%);
+  pointer-events: none;
 }
-.party-portrait-img {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-  border-radius: 4px;
-  flex-shrink: 0;
+.pcard-content {
+  position: relative;
+  padding: 6px 8px 6px 46%;
+}
+.pcard-name {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  color: var(--gold);
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+.pcard-class {
+  font-size: 10px;
+  color: #b08850;
+  margin: 1px 0 4px 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
 
 /* ── ENEMY GROUP (encounter overlay) ── */
@@ -3038,7 +3060,7 @@ button.shop-tab.active {
     align-items: flex-start;
   }
   /* Cartes côte à côte */
-  .party-card { flex: 1; min-width: 130px; margin-bottom: 0; }
+  .party-card { flex: 1; min-width: 130px; min-height: 88px; margin-bottom: 0; }
   /* XP en ligne entière */
   #xp-container { width: 100%; order: 10; }
   /* Cacher stats et équipement sur mobile */
@@ -3048,8 +3070,13 @@ button.shop-tab.active {
   /* Allègement carte joueur mobile : on ne garde que nom + PV + PM
      + statuts. La classe/niveau et les 3 icônes d'équipement sont
      redondantes avec la fiche perso (📜) et l'inventaire (🎒). */
-  .party-card .char-class { display: none; }
+  .party-card .pcard-class { display: none; }
   .party-card .party-equip-row { display: none; }
+  /* Portrait BG occupe ~48 % en mobile (cartes plus étroites → laisser
+     un peu plus de place au texte). */
+  .pcard-bg { width: 48%; }
+  .pcard-content { padding: 4px 6px 4px 42%; }
+  .pcard-name { font-size: 11px; }
 
   /* Viewport 3D occupe tout l'espace */
   .main-view { overflow: hidden; }

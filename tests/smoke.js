@@ -1491,11 +1491,37 @@ async function scenarioHouseCrests() {
   assert(cloneCheck.ratioVar !== '', '--crest-ratio non posée sur #crest-wrap');
   assert(cloneCheck.tierLabel === 'BRZ', `ruban tier attendu BRZ, got ${cloneCheck.tierLabel}`);
 
+  // P2 — party-cards V3 portrait BG : chaque carte a une .pcard-bg avec
+  // background-image non vide, et le contenu droit (.pcard-content) existe.
+  const pcardCheck = await page.evaluate(() => {
+    const cards = [0, 1].map(i => {
+      const card = document.getElementById(`char-card-${i}`);
+      const bg = document.getElementById(`pcard-bg-${i}`);
+      const content = card ? card.querySelector('.pcard-content') : null;
+      return {
+        cardExists: !!card,
+        bgExists: !!bg,
+        bgImage: bg ? bg.style.backgroundImage : '',
+        contentExists: !!content,
+        hpInContent: content ? !!content.querySelector('#hp-text-' + i) : false
+      };
+    });
+    return cards;
+  });
+  console.log('  party-cards V3 →', pcardCheck);
+  pcardCheck.forEach((c, i) => {
+    assert(c.cardExists,    `#char-card-${i} doit exister`);
+    assert(c.bgExists,      `#pcard-bg-${i} doit exister`);
+    assert(/url\(/.test(c.bgImage), `pcard-bg-${i} doit avoir un background-image url(...) — got: ${c.bgImage}`);
+    assert(c.contentExists, `.pcard-content doit exister dans char-card-${i}`);
+    assert(c.hpInContent,   `#hp-text-${i} doit être imbriqué dans .pcard-content`);
+  });
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ blasons PNG conformes');
+  console.log('  ✅ blasons PNG + party-cards V3 conformes');
   await browser.close();
 }
 
@@ -2059,9 +2085,9 @@ async function scenarioStartHub() {
           document.getElementById('player-select-screen').style.display = 'none';
           document.getElementById('title-screen').style.display = 'flex';
           // Sabote volontairement le DOM pour reproduire l'état "fraîche
-          // ouverture de page" : le src par défaut harry.png + nom Harry.
-          const p = document.querySelector('#char-card-0 .party-portrait-img');
-          if (p) { p.src = 'img/harry.png'; p.alt = 'Harry'; }
+          // ouverture de page" : le portrait BG par défaut harry.png + nom Harry.
+          const p = document.getElementById('pcard-bg-0');
+          if (p) p.style.backgroundImage = 'url("img/harry.png")';
           const nm = document.getElementById('char-name-0');
           if (nm) nm.textContent = 'Harry Potter';
           enterStartHub();
@@ -2088,18 +2114,17 @@ async function scenarioStartHub() {
     }
   });
   const t5b = await page.evaluate(() => {
-    const portrait = document.querySelector('#char-card-0 .party-portrait-img');
+    const bg = document.getElementById('pcard-bg-0');
     return {
-      portraitSrc: portrait ? portrait.getAttribute('src') : null,
-      portraitAlt: portrait ? portrait.getAttribute('alt') : null,
-      playerName:  player && player.name,
-      playerImg:   player && player.imgSrc,
-      domName:     document.getElementById('char-name-0').textContent
+      portraitBg: bg ? bg.style.backgroundImage : null,
+      playerName: player && player.name,
+      playerImg:  player && player.imgSrc,
+      domName:    document.getElementById('char-name-0').textContent
     };
   });
   console.log('  T5 load celeste →', t5b);
-  assert(/celeste\.png$/.test(t5b.portraitSrc || ''),
-         `portrait DOM doit pointer sur celeste.png (était : ${t5b.portraitSrc})`);
+  assert(/celeste\.png/.test(t5b.portraitBg || ''),
+         `portrait BG doit pointer sur celeste.png (était : ${t5b.portraitBg})`);
   assert(/Céleste/.test(t5b.playerName || ''),  'player.name doit refléter Céleste chargée');
   assert(/celeste\.png$/.test(t5b.playerImg || ''), 'player.imgSrc doit pointer sur celeste.png');
   assert(/Céleste/.test(t5b.domName || ''),     'le nom affiché doit être Céleste');
@@ -2459,13 +2484,19 @@ async function scenarioUiChromeIcons() {
       const img = el ? el.querySelector('img') : null;
       return img ? { src: img.getAttribute('src'), loaded: img.complete && img.naturalWidth > 0 } : null;
     };
+    const grabBarLabelByTextId = (textId) => {
+      const span = document.getElementById(textId);
+      const label = span ? span.closest('.bar-label') : null;
+      const img = label ? label.querySelector('img') : null;
+      return img ? { src: img.getAttribute('src'), loaded: img.complete && img.naturalWidth > 0 } : null;
+    };
     return {
       gameTitle: grab('.game-title'),
       gold:      grab('#gold-display'),
-      hp0:       grab('#char-card-0 .stat-bar-row:nth-child(2) .bar-label'),
-      mp0:       grab('#char-card-0 .stat-bar-row:nth-child(3) .bar-label'),
-      hp1:       grab('#char-card-1 .stat-bar-row:nth-child(2) .bar-label'),
-      mp1:       grab('#char-card-1 .stat-bar-row:nth-child(3) .bar-label'),
+      hp0:       grabBarLabelByTextId('hp-text-0'),
+      mp0:       grabBarLabelByTextId('sp-text-0'),
+      hp1:       grabBarLabelByTextId('hp-text-1'),
+      mp1:       grabBarLabelByTextId('sp-text-1'),
       xp:        grab('#xp-label'),
       dpad:      grab('.dpad-center'),
       shopTitle: grab('#shop-title')

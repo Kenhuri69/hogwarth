@@ -194,10 +194,10 @@ function _updateCharBar(idx) {
   if (nm) nm.textContent   = c.name;
   if (cl) cl.textContent   = `${c.class} · Niv.${c.level}`;
   if (c.imgSrc) {
-    const portrait = document.querySelector(`#char-card-${idx} .party-portrait-img`);
-    if (portrait && portrait.getAttribute('src') !== c.imgSrc) {
-      portrait.src = c.imgSrc;
-      portrait.alt = c.name;
+    const bg = document.getElementById(`pcard-bg-${idx}`);
+    if (bg) {
+      const want = `url("${c.imgSrc}")`;
+      if (bg.style.backgroundImage !== want) bg.style.backgroundImage = want;
     }
   }
   const slot = document.getElementById(`status-slot-${idx}`);

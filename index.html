@@ -10,7 +10,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=9">
+<link rel="stylesheet" href="css/style.css?v=10">
 <link rel="stylesheet" href="css/ux-improvements.css?v=1">
 <link rel="stylesheet" href="css/save-ui.css?v=1">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -370,52 +370,50 @@
 
     <!-- Harry -->
     <div class="party-card" id="char-card-0">
-      <div class="party-card-header">
-        <img class="party-portrait-img" src="img/harry.png" alt="Harry">
-        <div>
-          <div class="char-name" id="char-name-0">Harry Potter</div>
-          <div class="char-class" id="char-class-0">Auror · Niv.1</div>
+      <div class="pcard-bg" id="pcard-bg-0" style="background-image:url('img/harry.png')"></div>
+      <div class="pcard-veil"></div>
+      <div class="pcard-content">
+        <div class="pcard-name" id="char-name-0">Harry Potter</div>
+        <div class="pcard-class" id="char-class-0">Auror · Niv.1</div>
+        <div class="stat-bar-row">
+          <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/hp.png" alt=""> PV</span><span id="hp-text-0">35/35</span></div>
+          <div class="bar-track"><div class="bar-fill hp-fill" id="hp-bar-0" style="width:100%"></div></div>
         </div>
+        <div class="stat-bar-row">
+          <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/mp.png" alt=""> PM</span><span id="sp-text-0">22/22</span></div>
+          <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar-0" style="width:100%"></div></div>
+        </div>
+        <div class="party-equip-row" id="equip-row-0">
+          <span class="party-equip-slot" data-slot="wand"></span>
+          <span class="party-equip-slot" data-slot="body"></span>
+          <span class="party-equip-slot" data-slot="amulet"></span>
+        </div>
+        <div id="status-slot-0"></div>
       </div>
-      <div class="stat-bar-row">
-        <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/hp.png" alt=""> PV</span><span id="hp-text-0">35/35</span></div>
-        <div class="bar-track"><div class="bar-fill hp-fill" id="hp-bar-0" style="width:100%"></div></div>
-      </div>
-      <div class="stat-bar-row">
-        <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/mp.png" alt=""> PM</span><span id="sp-text-0">22/22</span></div>
-        <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar-0" style="width:100%"></div></div>
-      </div>
-      <div class="party-equip-row" id="equip-row-0">
-        <span class="party-equip-slot" data-slot="wand"></span>
-        <span class="party-equip-slot" data-slot="body"></span>
-        <span class="party-equip-slot" data-slot="amulet"></span>
-      </div>
-      <div id="status-slot-0"></div>
     </div>
 
     <!-- Hermione -->
     <div class="party-card" id="char-card-1">
-      <div class="party-card-header">
-        <img class="party-portrait-img" src="img/hermione.png" alt="Hermione">
-        <div>
-          <div class="char-name" id="char-name-1">Hermione Granger</div>
-          <div class="char-class" id="char-class-1">Mage · Niv.1</div>
+      <div class="pcard-bg" id="pcard-bg-1" style="background-image:url('img/hermione.png')"></div>
+      <div class="pcard-veil"></div>
+      <div class="pcard-content">
+        <div class="pcard-name" id="char-name-1">Hermione Granger</div>
+        <div class="pcard-class" id="char-class-1">Mage · Niv.1</div>
+        <div class="stat-bar-row">
+          <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/hp.png" alt=""> PV</span><span id="hp-text-1">28/28</span></div>
+          <div class="bar-track"><div class="bar-fill hp-fill" id="hp-bar-1" style="width:100%"></div></div>
         </div>
+        <div class="stat-bar-row">
+          <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/mp.png" alt=""> PM</span><span id="sp-text-1">35/35</span></div>
+          <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar-1" style="width:100%"></div></div>
+        </div>
+        <div class="party-equip-row" id="equip-row-1">
+          <span class="party-equip-slot" data-slot="wand"></span>
+          <span class="party-equip-slot" data-slot="body"></span>
+          <span class="party-equip-slot" data-slot="amulet"></span>
+        </div>
+        <div id="status-slot-1"></div>
       </div>
-      <div class="stat-bar-row">
-        <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/hp.png" alt=""> PV</span><span id="hp-text-1">28/28</span></div>
-        <div class="bar-track"><div class="bar-fill hp-fill" id="hp-bar-1" style="width:100%"></div></div>
-      </div>
-      <div class="stat-bar-row">
-        <div class="bar-label"><span><img class="ui-icon ui-icon-sm" src="img/icons/mp.png" alt=""> PM</span><span id="sp-text-1">35/35</span></div>
-        <div class="bar-track"><div class="bar-fill sp-fill" id="sp-bar-1" style="width:100%"></div></div>
-      </div>
-      <div class="party-equip-row" id="equip-row-1">
-        <span class="party-equip-slot" data-slot="wand"></span>
-        <span class="party-equip-slot" data-slot="body"></span>
-        <span class="party-equip-slot" data-slot="amulet"></span>
-      </div>
-      <div id="status-slot-1"></div>
     </div>
 
     <!-- XP partagée -->
