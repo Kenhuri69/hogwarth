@@ -103,10 +103,21 @@ mais sans tooltip au survol. Hovering = silence.
 
 ## 3. Étapes
 
-- [ ] Vague A — capturer screenshots before pour les 5 badges.
-- [ ] Vague A — créer ou générer 2 SVG (weaken + protego) + intégrer.
-- [ ] Vague A — vérifier les 3 PNG existants (burn/poison/bleed) sont OK.
-- [ ] Vague A — commit + push.
+- [x] Vague A — capturer screenshots des badges.
+      → captures `.claude/mockups/status-v2a-{combat-full,party-cards}.png`
+- [x] Vague A — générer 2 PNG (weaken + protego) + intégrer.
+      → `tools/gen_status_icons.py` étendu (Pillow procédural, 48×48,
+        cohérent gel/burn/poison/bleed). `weaken.png` = bouclier brisé
+        violet, `protego.png` = bouclier doré + sigil étoile + halo.
+        Enregistrés dans `STATUS_ICON_REGISTRY` (`js/item-icons.js`).
+        Badge Protego (hardcodé dans `battle-ui.js`) bascule de l'emoji
+        🛡️ vers `getStatusIconHtml('protego')`. Bordure de la pill
+        passée de `#3498db` (bleu) à `#c9a84c` (or) pour cohérence avec
+        le PNG.
+- [x] Vague A — vérifier les 4 PNG existants (burn/poison/bleed/gel) OK.
+      → présents (1.4–3.6 KB), style cohérent. weaken DoT loop les
+        utilise déjà via le registre. Aucune modif nécessaire.
+- [x] Vague A — commit + push.
 - [ ] Vague B — étendre `STATUS_DEFS.weaken` avec `maxStacks: 3`.
 - [ ] Vague B — refondre `applyStatus` pour gérer stacks.
 - [ ] Vague B — refondre `tickStatuses` pour décrémenter 1 stack.

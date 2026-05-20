@@ -81,7 +81,10 @@ function renderStatusBadges(target) {
     if (idx === 0 || idx === 1) {
       const t = shieldTurns[idx] || 0;
       if (t > 0) {
-        parts.push(`<span class="status-pill" style="border-color:#3498db" title="Protego — bloque l'attaque suivante (${t} tours)">🛡️${t}</span>`);
+        const iconHtml = (typeof getStatusIconHtml === 'function')
+          ? (getStatusIconHtml('protego', 'ui-icon-sm') || '🛡️')
+          : '🛡️';
+        parts.push(`<span class="status-pill" style="border-color:#c9a84c" title="Protego — bloque l'attaque suivante (${t} tours)">${iconHtml}${t}</span>`);
       }
     }
   }
