@@ -25,6 +25,8 @@ function updateUI() {
   document.getElementById('xp-text').textContent  = `${player.xp}/${player.xpNext}`;
   document.getElementById('xp-bar').style.width   = (player.xp / player.xpNext * 100) + '%';
   document.getElementById('gold-display').innerHTML = `<img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${player.gold} Gallions`;
+  const floorEl = document.getElementById('ghd-floor');
+  if (floorEl && typeof currentFloor === 'number') floorEl.textContent = `ÉT.${currentFloor}`;
 
   // ── Stats de Harry (panneau gauche) ─────────────────────────
   document.getElementById('s-str').textContent = player.str;
@@ -70,28 +72,83 @@ function updateUI() {
   updateRoomStatus();
 }
 
+// Étiquette courte (3-4 chars) inscrite dans le ruban du blason vivant.
+// Suit le motif des paliers : « Apprenti Or » → OR, « Maître Argent » → ARG,
+// « Légende »/« Mythe »/« Apothéose » → 3 premières lettres en capitales.
+function _tierShortLabel(fullLabel) {
+  if (!fullLabel) return '·';
+  if (/ Or$/.test(fullLabel))      return 'OR';
+  if (/ Argent$/.test(fullLabel))  return 'ARG';
+  if (/ Bronze$/.test(fullLabel))  return 'BRZ';
+  if (fullLabel === 'Légende')     return 'LÉG';
+  if (fullLabel === 'Mythe')       return 'MYT';
+  if (fullLabel === 'Apothéose')   return 'APO';
+  return fullLabel.slice(0, 3).toUpperCase();
+}
+
+// Pose l'anneau XP radial + le ruban tier sur #crest-wrap.
+// Lecture pure de chosenHouse / housePoints / houseTier ; écriture DOM seule.
+function _updateCrestWrap() {
+  const wrap = document.getElementById('crest-wrap');
+  if (!wrap) return;
+  if (!chosenHouse) { wrap.style.display = 'none'; return; }
+
+  const h     = HOUSE_BONUSES[chosenHouse];
+  const tiers = h.tiers;
+  const nextTier      = tiers[houseTier]; // null si au max
+  const prevThreshold = houseTier > 0 ? tiers[houseTier - 1].threshold : 0;
+  const nextThreshold = nextTier ? nextTier.threshold : tiers[tiers.length - 1].threshold;
+  const ratio = nextTier
+    ? Math.max(0, Math.min(1, (housePoints - prevThreshold) / (nextThreshold - prevThreshold)))
+    : 1;
+  const tierFull  = houseTier > 0 ? tiers[houseTier - 1].label : null;
+  const tierShort = _tierShortLabel(tierFull);
+
+  wrap.style.display = '';
+  wrap.style.setProperty('--crest-ratio', String(ratio));
+  // Tooltip natif : ouvre la popup → texte explicite
+  wrap.title = tierFull
+    ? `${h.label} · ${tierFull} — ${housePoints}/${nextThreshold || housePoints} pts`
+    : `${h.label} — Recrue`;
+
+  const tierEl = document.getElementById('crest-tier');
+  if (tierEl) tierEl.textContent = tierShort;
+
+  // Garniture intérieure : clone du SVG du logo de Maison (existe dans
+  // l'écran de sélection sous l'id `<house>-logo`).
+  const inner = document.getElementById('crest-ring-inner');
+  if (inner && !inner.dataset.house) {
+    const svgEl = document.getElementById(chosenHouse.toLowerCase() + '-logo');
+    if (svgEl) {
+      const clone = svgEl.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.removeAttribute('width');
+      clone.removeAttribute('height');
+      inner.innerHTML = '';
+      inner.appendChild(clone);
+      inner.dataset.house = chosenHouse;
+    } else {
+      inner.textContent = h.emoji || '🏰';
+    }
+  }
+}
+
+// Stub pour P4 — la popup `#house-detail-modal` sera implémentée à la
+// phase suivante. Pour l'instant on no-op pour ne pas casser le onclick.
+function openHouseDetail() { /* TODO P4 */ }
+
 function _updateHouseBadge() {
+  // Nouveau blason vivant (P1) : pris en charge même si l'ancien badge
+  // sidebar n'existe pas (modale future, ou page sans #house-badge).
+  _updateCrestWrap();
+
   const badge = document.getElementById('house-badge');
   if (!badge) return;
 
-  // Blason dans le HUD
+  // Ancien blason de bandeau gauche : masqué (remplacé par le blason vivant
+  // du header). Sera retiré du DOM en Phase 4 avec la popup.
   const crest = document.getElementById('house-crest');
-  if (crest) {
-    if (!chosenHouse) {
-      crest.style.display = 'none';
-    } else {
-      const svgEl = document.getElementById(chosenHouse.toLowerCase() + '-logo');
-      if (svgEl) {
-        crest.style.display = '';
-        // Cloner le SVG et le réduire pour le HUD (60×70)
-        const clone = svgEl.cloneNode(true);
-        clone.removeAttribute('id');
-        clone.setAttribute('width',  '60');
-        clone.setAttribute('height', '70');
-        crest.innerHTML = clone.outerHTML;
-      }
-    }
-  }
+  if (crest) crest.style.display = 'none';
 
   if (!chosenHouse) { badge.style.display = 'none'; return; }
 

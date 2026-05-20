@@ -91,9 +91,9 @@ Données : tout existe déjà (`housePoints`, `houseTier`, `HOUSE_BONUSES`,
 
 ## Suivi
 
-- [ ] P1 — header compact + blason vivant
+- [x] P1 — header compact + blason vivant ✓
 - [ ] P2 — party-bar V3 portrait BG
 - [ ] P3 — XP rapatriée
 - [ ] P4 — popup maison
 - [ ] P5 — smoke tests
-- [ ] P6 — cache-bust
+- [x] P6 — cache-bust (`?v=8 → ?v=9`)
