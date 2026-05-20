@@ -21,6 +21,7 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+html, body { overflow-x: hidden; max-width: 100vw; }
 body {
   background: #0a0a0a;
   font-family: 'Crimson Text', serif;
@@ -3201,53 +3202,92 @@ button.shop-tab.active {
     flex-wrap: nowrap;
     border-right: none;
     border-bottom: 2px solid var(--gold-dark);
-    padding: 4px 8px;
-    gap: 6px;
-    overflow-x: auto;
-    align-items: flex-start;
+    padding: 4px 6px;
+    gap: 5px;
+    overflow-x: hidden;   /* pas de scroll H : les cartes sont contraintes */
+    overflow-y: hidden;
+    align-items: stretch;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
-  /* Cartes côte à côte */
-  .party-card { flex: 1; min-width: 130px; min-height: 88px; margin-bottom: 0; }
+  /* Cartes côte à côte — bornées pour ne JAMAIS déborder du viewport.
+     En solo, applyPartyMode masque char-card-1 (display:none) et la
+     carte 1 prend toute la largeur disponible (calc 100vw - padding). */
+  .party-card {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 76px;
+    margin-bottom: 0;
+    max-width: 100%;
+  }
   /* Cacher stats et équipement sur mobile */
   .stats-grid, .left-panel > div:last-child { display: none; }
   /* Garder seulement le titre du groupe */
   .left-panel > .panel-title { display: none; }
-  /* Allègement carte joueur mobile : on ne garde que nom + PV + PM
+  /* Allègement carte joueur mobile : on ne garde que nom + PV + PM + XP
      + statuts. La classe/niveau et les 3 icônes d'équipement sont
      redondantes avec la fiche perso (📜) et l'inventaire (🎒). */
   .party-card .pcard-class { display: none; }
   .party-card .party-equip-row { display: none; }
-  /* Portrait BG occupe ~48 % en mobile (cartes plus étroites → laisser
-     un peu plus de place au texte). */
-  .pcard-bg { width: 48%; }
-  .pcard-content { padding: 4px 6px 4px 42%; }
+  /* Portrait BG mobile : largeur ABSOLUE pour éviter le crop monstrueux
+     en solo (à 52 % du parent large, le portrait devenait un gros plan
+     du haut du visage). On affiche désormais le portrait en bandeau
+     vertical étroit (auto 100 % de hauteur), avec le visage centré
+     verticalement plus haut pour rester reconnaissable. */
+  .pcard-bg {
+    width: 64px;
+    background-size: auto 110%;
+    background-position: center 28%;
+  }
+  .pcard-content {
+    padding: 4px 6px 4px 70px;
+  }
   .pcard-name { font-size: 11px; }
+  /* XP row réduite sur mobile pour conserver de la place verticale */
+  .party-card .stat-bar-row.xp-row { margin-top: 2px; }
+  .party-card .stat-bar-row.xp-row .bar-track { height: 3px; }
 
   /* Viewport 3D occupe tout l'espace */
   .main-view { overflow: hidden; }
   #narrative-panel { font-size: 12px; min-height: 40px; max-height: 50px; padding: 4px 8px; }
 
   /* Header compact mobile : on retire le texte du titre (l'icône suffit
-     d'identifiant), tout reste sur 1 ligne (gap:8px), location ellipsée. */
-  .game-header { flex-wrap: nowrap; gap: 8px; padding: 4px 8px; }
-  .game-title { font-size: 16px; }
+     d'identifiant), tout reste sur 1 ligne, location ellipsée. Max-width
+     100vw + overflow hidden pour bloquer le débordement horizontal qui
+     scrollait toute la page sur les écrans étroits (375 px). */
+  .game-header {
+    flex-wrap: nowrap;
+    gap: 5px;
+    padding: 4px 6px;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .game-title { font-size: 16px; flex-shrink: 0; }
   .game-title-text { display: none; }
-  .ghd-floor { font-size: 11px; padding: 2px 5px; letter-spacing: 1px; }
-  .location-display { font-size: 11px; letter-spacing: 1px; }
-  .gold-display { font-size: 11px; }
-  .crest-wrap { width: 34px; height: 40px; }
-  .crest-ring { width: 34px; height: 34px; }
-  .crest-ring-inner { font-size: 16px; }
+  .ghd-floor { font-size: 10px; padding: 1px 4px; letter-spacing: 1px; flex-shrink: 0; }
+  .location-display { font-size: 11px; letter-spacing: 0.5px; }
+  .gold-display { font-size: 10px; flex-shrink: 0; }
+  .crest-wrap { width: 30px; height: 36px; flex-shrink: 0; }
+  .crest-ring { width: 30px; height: 30px; }
+  .crest-ring-inner { font-size: 14px; }
   .crest-tier { font-size: 7px; padding: 1px 4px; }
 
   /* Barre de commandes */
   .commands-bar {
-    padding: 6px 8px;
+    padding: 6px 6px;
     flex-wrap: nowrap;
     gap: 6px;
     justify-content: space-between;
     align-items: center;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow: hidden;
   }
+  /* Le bandeau de commande mobile contient D-pad + grille d'actions ;
+     la grille doit pouvoir scroller verticalement si trop d'actions
+     (5 lignes × 3 col), mais jamais déborder horizontalement. */
+  .commands-bar .action-group { max-width: 100%; overflow: hidden; }
   /* Cacher les boutons direction desktop, afficher le D-pad */
   .desktop-dir { display: none; }
   .mobile-dir  { display: flex; }
