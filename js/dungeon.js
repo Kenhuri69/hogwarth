@@ -360,6 +360,42 @@ function generateDungeon(floor) {
     }
   }
 
+  // ── Salle scellée (Phase 2 §2.C) ──────────────────────────────
+  // Une porte CELL.DOOR + un coffre creusés dans le mur, en alvéole :
+  // FLOOR accessible → DOOR → CHEST. Le coffre n'est atteignable qu'en
+  // ouvrant la porte (Clé du Donjon, attribuée plus bas à un monstre).
+  let vaultPlaced = false;
+  {
+    const DIRS4 = [[1,0],[-1,0],[0,1],[0,-1]];
+    const cands = [];
+    for (let y = 1; y < MAP_H - 1; y++) {
+      for (let x = 1; x < MAP_W - 1; x++) {
+        if (dungeon[y][x] !== CELL.FLOOR) continue;
+        for (const [dx, dy] of DIRS4) {
+          const w1x = x + dx,     w1y = y + dy;
+          const w2x = x + 2 * dx, w2y = y + 2 * dy;
+          if (w2x < 1 || w2x > MAP_W - 2 || w2y < 1 || w2y > MAP_H - 2) continue;
+          if (dungeon[w1y][w1x] !== CELL.WALL) continue;
+          if (dungeon[w2y][w2x] !== CELL.WALL) continue;
+          // Le coffre (w2) doit être un cul-de-sac : ses 3 autres voisins WALL.
+          let sealed = true;
+          for (const [ex, ey] of DIRS4) {
+            const nx = w2x + ex, ny = w2y + ey;
+            if (nx === w1x && ny === w1y) continue;
+            if (dungeon[ny][nx] !== CELL.WALL) { sealed = false; break; }
+          }
+          if (sealed) cands.push({ w1x, w1y, w2x, w2y });
+        }
+      }
+    }
+    if (cands.length) {
+      const v = cands[Math.floor(Math.random() * cands.length)];
+      dungeon[v.w1y][v.w1x] = CELL.DOOR;
+      dungeon[v.w2y][v.w2x] = CELL.CHEST;
+      vaultPlaced = true;
+    }
+  }
+
   // Escalier montant (étage 2+)
   if(floor>1) dungeon[rooms[0].cy][rooms[0].cx] = CELL.STAIRS_U;
 
@@ -476,6 +512,19 @@ function generateDungeon(floor) {
       if(dungeon[ey][ex]===CELL.FLOOR && !onSpawn) {
         enemyMap[ey][ex] = scaleMonster(weightedPick(pool), floor);
       }
+    }
+  }
+
+  // Clé de la salle scellée : attribuée aux drops d'un monstre de l'étage
+  // (chance garantie). Sans monstre sur l'étage, la salle reste close.
+  if (vaultPlaced) {
+    const mobs = [];
+    for (let y = 0; y < MAP_H; y++)
+      for (let x = 0; x < MAP_W; x++)
+        if (enemyMap[y][x]) mobs.push(enemyMap[y][x]);
+    if (mobs.length) {
+      const bearer = mobs[Math.floor(Math.random() * mobs.length)];
+      bearer.drops = (bearer.drops || []).concat([{ itemId: 'cle_donjon', chance: 1 }]);
     }
   }
 

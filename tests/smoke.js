@@ -9820,8 +9820,131 @@ async function scenarioDungeonAltars() {
   await browser.close();
 }
 
+// ── Scénario : salle scellée (porte + clé) ───────────────────────
+// Couvre dungeon-enrichment.md §2.C : alvéole DOOR+CHEST, clé attribuée
+// à un monstre, ouverture à la clé, blocage du pas sans clé.
+async function scenarioSealedRoom() {
+  console.log('\n── Scénario : salle scellée (Phase 2 §2.C) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : constante + item-clé + helper
+  const t1 = await page.evaluate(() => {
+    const key = ITEMS.find(i => i.id === 'cle_donjon');
+    return {
+      cellDoor:  CELL.DOOR,
+      keyExists: !!key,
+      keyType:   key && key.type,
+      opener:    typeof _tryOpenDoor === 'function',
+    };
+  });
+  console.log('  T1:', t1);
+  assert(t1.cellDoor === 2,      'CELL.DOOR doit valoir 2');
+  assert(t1.keyExists,           'l\'item cle_donjon doit exister');
+  assert(t1.keyType === 'key',   'cle_donjon doit être de type "key"');
+  assert(t1.opener,              '_tryOpenDoor non exposée');
+
+  // T2 : 20 générations — alvéole DOOR+CHEST scellée + clé attribuée
+  const t2 = await page.evaluate(() => {
+    const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    let withVault = 0, badStructure = 0, missingKey = 0;
+    for (let g = 0; g < 20; g++) {
+      generateDungeon(1 + (g % 8));
+      let dX = -1, dY = -1;
+      for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++)
+          if (dungeon[y][x] === CELL.DOOR) { dX = x; dY = y; }
+      if (dX < 0) continue;
+      withVault++;
+      let chest = null;
+      for (const [dx, dy] of DIRS) {
+        const cx = dX + dx, cy = dY + dy;
+        if (cx >= 0 && cy >= 0 && cx < MAP_W && cy < MAP_H
+            && dungeon[cy][cx] === CELL.CHEST) chest = [cx, cy];
+      }
+      if (!chest) { badStructure++; continue; }
+      let sealed = true;
+      for (const [dx, dy] of DIRS) {
+        const nx = chest[0] + dx, ny = chest[1] + dy;
+        if (nx === dX && ny === dY) continue;
+        if (!(nx >= 0 && ny >= 0 && nx < MAP_W && ny < MAP_H)
+            || dungeon[ny][nx] !== CELL.WALL) sealed = false;
+      }
+      if (!sealed) badStructure++;
+      let hasEnemies = false, hasKey = false;
+      for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++) {
+          const e = enemyMap[y][x];
+          if (e) {
+            hasEnemies = true;
+            if ((e.drops || []).some(d => d.itemId === 'cle_donjon')) hasKey = true;
+          }
+        }
+      if (hasEnemies && !hasKey) missingKey++;
+    }
+    return { withVault, badStructure, missingKey };
+  });
+  console.log('  T2 génération:', t2);
+  assert(t2.withVault >= 1,       'une salle scellée doit apparaître sur 20 générations');
+  assert(t2.badStructure === 0,   'toute salle scellée doit être DOOR + CHEST en cul-de-sac');
+  assert(t2.missingKey === 0,     'une clé doit être attribuée quand une salle scellée existe');
+
+  // T3 : _tryOpenDoor — refus sans clé, ouverture + consommation avec clé
+  const t3 = await page.evaluate(() => {
+    let placed = null;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const tx = playerX + dx, ty = playerY + dy;
+      if (tx >= 0 && ty >= 0 && tx < MAP_W && ty < MAP_H) {
+        dungeon[ty][tx] = CELL.DOOR; placed = [tx, ty]; break;
+      }
+    }
+    player.inventory = player.inventory.filter(it => it.id !== 'cle_donjon');
+    _tryOpenDoor(placed[0], placed[1]);
+    const stillLocked = dungeon[placed[1]][placed[0]] === CELL.DOOR;
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'cle_donjon') });
+    _tryOpenDoor(placed[0], placed[1]);
+    return {
+      stillLocked,
+      opened:  dungeon[placed[1]][placed[0]] === CELL.FLOOR,
+      keyGone: !player.inventory.some(it => it.id === 'cle_donjon'),
+    };
+  });
+  console.log('  T3 ouverture:', t3);
+  assert(t3.stillLocked, 'sans clé, la porte doit rester verrouillée');
+  assert(t3.opened,      'avec une clé, la porte doit s\'ouvrir');
+  assert(t3.keyGone,     'la clé doit être consommée à l\'ouverture');
+
+  // T4 : avancer vers une porte scellée sans clé ne déplace pas le joueur
+  const t4 = await page.evaluate(() => {
+    const dirs = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] };
+    let chosen = null;
+    for (const d in dirs) {
+      const [dx, dy] = dirs[d];
+      const tx = playerX + dx, ty = playerY + dy;
+      if (tx >= 1 && ty >= 1 && tx < MAP_W - 1 && ty < MAP_H - 1) {
+        chosen = d; dungeon[ty][tx] = CELL.DOOR; break;
+      }
+    }
+    player.inventory = player.inventory.filter(it => it.id !== 'cle_donjon');
+    const px = playerX, py = playerY;
+    playerDir = chosen;
+    moveForward();
+    return { chosen, moved: playerX !== px || playerY !== py };
+  });
+  console.log('  T4 blocage du pas:', t4);
+  assert(t4.chosen,   'setup : aucune direction in-bounds trouvée');
+  assert(!t4.moved,   'avancer vers une porte scellée ne doit pas déplacer le joueur');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (salle scellée)`);
+  }
+  console.log('  ✅ salle scellée — alvéole, clé, ouverture, blocage OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

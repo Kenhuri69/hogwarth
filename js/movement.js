@@ -35,6 +35,14 @@ function _step(dir, faceDir) {
     return;
   }
   const [dx, dy] = DIRECTIONS[dir];
+  // Porte scellée : avancer vers une porte tente de l'ouvrir (clé requise)
+  // sans franchir la case. Une fois ouverte (→ FLOOR) elle se traverse au
+  // pas suivant. Voir dungeon-enrichment §2.C.
+  if (dungeon[playerY + dy] && dungeon[playerY + dy][playerX + dx] === CELL.DOOR) {
+    _tryOpenDoor(playerX + dx, playerY + dy);
+    updateCompass();
+    return;
+  }
   playerX += dx; playerY += dy;
   visited[playerY][playerX] = true;
   stepCount++;
@@ -796,6 +804,28 @@ function useAltar(choice) {
     }
   }
   safeCall('autoSave', 'altar-used');
+}
+
+// ── Porte scellée — ouverture à la Clé du Donjon (§2.C) ──────
+// Appelée par _step quand le joueur avance vers une case CELL.DOOR.
+// Avec une clé : la consomme et ouvre la porte (→ FLOOR). Sinon : refus.
+function _tryOpenDoor(x, y) {
+  const inv = player.inventory || [];
+  const keyIdx = inv.findIndex(it => it && it.id === 'cle_donjon');
+  if (keyIdx < 0) {
+    setNarrative("Une lourde porte cloutée vous barre le chemin. Sa serrure ancienne réclame une clé.");
+    addMsg("Porte scellée — il vous faut une Clé du Donjon.", 'bad');
+    drawDungeon();
+    return false;
+  }
+  inv.splice(keyIdx, 1);
+  dungeon[y][x] = CELL.FLOOR;
+  setNarrative("La clé tourne dans la serrure rouillée — la porte s'ouvre en grinçant sur une salle oubliée.");
+  addMsg("🗝️ Porte déverrouillée.", 'good');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+  renderMinimap();
+  drawDungeon();
+  return true;
 }
 
 // ── Fontaine de pierre — soin total 1×/visite d'étage ──────

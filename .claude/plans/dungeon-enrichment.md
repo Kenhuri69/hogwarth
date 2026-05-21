@@ -7,7 +7,7 @@
 > **événements d'étage**, sans introduire de nouveau système lourd — tout
 > repose sur les `CELL.*` existants + quelques nouveaux types.
 
-Statut global : **Phase 1 livrée — 1 / 4 phases**.
+Statut global : **Phases 1 & 2 livrées — 2 / 4 phases**.
 Branche de travail : `claude/plans-bugs-review-Nhbt1` (ou nouvelle branche
 dédiée par phase — décidé au moment du commit).
 
@@ -144,28 +144,35 @@ l'étage du plan initial sont remplacés par des effets **instantanés**
 (soin / XP / or / dégâts) — un buff temporaire scopé à l'étage exigerait
 un suivi d'état + une logique de péremption hors-scope V1.
 
-### 2.C — Salle scellée (`CELL.DOOR` + clé)
+### 2.C — Salle scellée (`CELL.DOOR` + clé) — ✅ livré (2026-05-21)
 
-- [ ] **2.8** Génère une `CELL.DOOR` sur le couloir d'accès d'**une**
-      salle-branche, qui devient une **salle-trésor** (CHEST garanti, drops
-      enrichis). La porte est verrouillée.
-- [ ] **2.9** Nouvel item-clé `cle_donjon` (`data.js`, `type:"key"`,
-      non-équipable, non-vendable). Ajouté aux `drops` d'un monstre
-      désigné de l'étage à la génération (chance élevée), OU placé dans un
-      coffre d'épine — décision : **drop monstre** (réutilise le système
-      de drops, force le combat).
-- [ ] **2.10** `handleCellEntry` sur `DOOR` : sans clé → message
-      « verrouillée » + refus d'avancer ; avec clé → consomme la clé,
-      `DOOR → FLOOR`, ouvre l'accès. La clé est consommée à l'étage (ne
-      traverse pas les étages).
-- [ ] **2.11** Smoke : scénario « salles à événement » — assert présence
-      occasionnelle TRAP/ALTAR/DOOR sur N générations, déclenchement de
-      trap inflige bien un effet, autel consommé une seule fois.
+- [x] **2.8** Génère une **alvéole scellée** : un triplet
+      `FLOOR accessible → CELL.DOOR → CELL.CHEST` creusé dans le mur. Le
+      coffre est un cul-de-sac (3 voisins WALL) — atteignable seulement en
+      ouvrant la porte. Placement déterministe, indépendant de la
+      géométrie des salles.
+- [x] **2.9** Nouvel item-clé `cle_donjon` (`data.js`, `type:"key"`,
+      `price:0` ; `useItem` affiche un indice au lieu de l'équiper).
+      Ajouté aux `drops` (chance 1) d'un monstre aléatoire de l'étage.
+- [x] **2.10** `_step` intercepte un pas vers une `CELL.DOOR` :
+      `_tryOpenDoor` — sans clé, refus + message (pas de déplacement) ;
+      avec clé, la consomme et ouvre la porte (`DOOR → FLOOR`).
+- [x] **2.11** Smoke : `scenarioDungeonTraps`, `scenarioDungeonAltars`,
+      `scenarioSealedRoom` — un scénario dédié par sous-feature.
+
+**Écarts §2.C** : (a) la « salle-trésor branche » du plan devient une
+**alvéole de 2 cases creusée dans le mur** — plus simple et 100 %
+déterministe (pas de dépendance à la géométrie des couloirs de branche) ;
+(b) le coffre du vault est un **coffre standard** (pas de drops enrichis —
+hors V1) ; (c) la clé est un item d'inventaire normal qui **persiste entre
+étages** (non scopée à l'étage) — non exploitable (il faut tuer un monstre
+pour l'obtenir), et bien plus simple ; (d) gating via `_step` (la porte
+bloque le pas) plutôt que via `handleCellEntry`/un bouton d'interaction.
 
 ### Risque
-Faible — purement additif. Attention au cache `floorDungeons` : un `TRAP`
-déclenché (→ `FLOOR`) ou une `DOOR` ouverte doit rester ouvert au retour sur
-l'étage (l'état est dans le tableau `dungeon`, donc OK via le cache).
+Faible — purement additif. Le cache `floorDungeons` archive le tableau
+`dungeon` : un `TRAP` déclenché (→ `FLOOR`) ou une `DOOR` ouverte reste
+dans cet état au retour sur l'étage.
 
 ---
 
@@ -269,3 +276,4 @@ délicat côté persistance). Une PR par phase, smoke vert à chaque étape.
 |------|-------|--------|-------|
 | 2026-05-21 | Rédaction du plan | ✅ | Audit `dungeon.js` réalisé, 4 piliers validés par l'utilisateur, plan rédigé. Implémentation non démarrée. |
 | 2026-05-21 | Phase 1 — Layout branchu | ✅ | `generateDungeon` réécrit : topologie en arbre (épine 3 salles + 2 branches cul-de-sac), placement non-chevauchant, helpers `_carveCorridor`/`_assertDungeonConnected`, cellules spéciales (CHEST garanti en branche). Bug ennemi-sur-spawn corrigé. Scénario smoke `scenarioBranchyDungeon` (30 générations, connexité 100 %). Suite complète 88/88 verte. Itéré 8→6→5 salles pour la contrainte map 12×12. |
+| 2026-05-21 | Phase 2 — Salles à événement | ✅ | Livrée en 3 commits. §2.A pièges (`CELL.TRAP`, déclenchement/désamorçage). §2.B autels (`CELL.ALTAR`, offrande/pari, rendu complet, `usedAltars` persisté). §2.C salle scellée (alvéole `DOOR`+`CHEST`, item `cle_donjon` lâché par un monstre, ouverture à la clé via `_step`). 3 scénarios smoke dédiés. Suite 91/91 verte. |

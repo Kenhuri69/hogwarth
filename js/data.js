@@ -333,6 +333,12 @@ const ITEMS = [
   { id:"eclat_lumiere",    name:"Éclat de Lumière",     icon:"✨",
     desc:"Fragment de clarté arraché aux ténèbres — objet de quête.",
     type:"quest", price:0 },
+  // Clé de salle scellée (enrichissement du donjon §2.C). Lâchée par un
+  // monstre de l'étage ; ouvre une porte CELL.DOOR. type:"key" → non
+  // utilisable manuellement (useItem affiche un indice).
+  { id:"cle_donjon",       name:"Clé du Donjon",        icon:"🗝️",
+    desc:"Une lourde clé de fer rouillée. Ouvre une porte scellée du donjon.",
+    type:"key", price:0 },
   // ── Items légendaires+ Maison Tier 5 (endgame Tranche 2) ─────
   // Récompenses du palier Tier 5 (2000 pts, gated par victoryAchieved).
   // Voir ENDGAME_PLAN.md §7.7. Cumulables avec les items Tier 4 si slots
