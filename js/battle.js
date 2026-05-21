@@ -286,6 +286,7 @@ function startBattle(baseEnemyData) {
   inBattle          = true;
   shieldTurns       = [0, 0];
   guardTurns        = [0, 0];
+  guardRegenCooldown = [0, 0];
   elanStacks        = [0, 0];
   battleTurn        = 0;
   currentBattleChar = 0;
@@ -403,9 +404,15 @@ function battleAction(action) {
     // plus de coups. La regen PM est rendue à chaque pose.
     const stacked = guardTurns[idx] > 0;
     guardTurns[idx] = Math.min(3, guardTurns[idx] + 1);
-    const pmTheo = 3 + Math.floor((char.mag || 0) / 5);
-    const pmGain = Math.max(0, Math.min(pmTheo, char.spMax - char.sp));
-    char.sp += pmGain;
+    // Regen PM disponible 1 tour sur 2 : si le cooldown est actif, la pose
+    // de garde ne restitue pas de PM. Sinon, on rend les PM et on réarme.
+    let pmGain = 0;
+    if (guardRegenCooldown[idx] <= 0) {
+      const pmTheo = 3 + Math.floor((char.mag || 0) / 5);
+      pmGain = Math.max(0, Math.min(pmTheo, char.spMax - char.sp));
+      char.sp += pmGain;
+      guardRegenCooldown[idx] = 2;
+    }
     const label = stacked
       ? `🛡️ ${char.name} renforce sa garde (×${guardTurns[idx]})`
       : `🛡️ ${char.name} se met en garde`;
@@ -619,6 +626,9 @@ function enemyTurn() {
 
   // Régénération passive depuis l'équipement (regenHp / regenSp).
   log += applyEquipmentRegen();
+
+  // Cooldown de regen PM de la Garde : un décompte par round écoulé.
+  guardRegenCooldown = guardRegenCooldown.map(c => Math.max(0, c - 1));
 
   // Endgame §7.10 : Larme du Phénix Pure — auto-revive sur KO en combat.
   log += _tryAutoReviveKOChars();

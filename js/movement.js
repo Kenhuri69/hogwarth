@@ -597,6 +597,19 @@ function searchRoom() {
   searchedCells.set(key, { at: stepCount, count: st.count + 1 });
   _updateSearchBtn();
 
+  // Malus de fouille : jets indépendants (1 % chacun). Le monstre prime sur
+  // le piège — déranger une créature interrompt aussitôt la fouille.
+  if (Math.random() < SEARCH_MONSTER_CHANCE) {
+    setNarrative("En soulevant une dalle, vous dérangez une créature tapie dans l'ombre !");
+    addMsg("Votre fouille a réveillé un monstre !", 'bad');
+    startBattle(pickSimilarEnemy());
+    return;
+  }
+  if (Math.random() < SEARCH_TRAP_CHANCE) {
+    _triggerSearchTrap();
+    return;
+  }
+
   const roll = Math.random();
   if (roll < SEARCH_GOLD_THRESHOLD) {
     let gold = Math.floor(Math.random() * 15 + 5);
@@ -631,6 +644,43 @@ function searchRoom() {
   }
 }
 
+// ── Piège de fouille — effet aléatoire, jamais létal ───────
+// Trois variantes équiprobables : dégâts au groupe, dégâts à un seul
+// personnage, ou dégâts au groupe + drain de PM. Chaque cible conserve
+// toujours au moins 1 PV.
+function _triggerSearchTrap() {
+  const variant = Math.floor(Math.random() * 3);
+  if (variant === 0) {
+    party.slice(0, partySize).forEach(c => {
+      if (c.hp <= 0) return;
+      const dmg = Math.max(1, Math.floor(c.hpMax * 0.12));
+      c.hp = Math.max(1, c.hp - dmg);
+    });
+    setNarrative("Un déclic sec — des lames jaillissent des murs ! Le groupe est lacéré.");
+    addMsg("Piège ! Le groupe subit des dégâts.", 'bad');
+  } else if (variant === 1) {
+    const alive = party.slice(0, partySize).filter(c => c.hp > 0);
+    if (alive.length) {
+      const victim = alive[Math.floor(Math.random() * alive.length)];
+      const dmg = Math.max(1, Math.floor(victim.hpMax * 0.20));
+      victim.hp = Math.max(1, victim.hp - dmg);
+      setNarrative(`Une dalle bascule sous ${victim.name} — un dard empoisonné le frappe !`);
+      addMsg(`Piège ! ${victim.name} subit ${dmg} dégâts.`, 'bad');
+    }
+  } else {
+    party.slice(0, partySize).forEach(c => {
+      if (c.hp <= 0) return;
+      const dmg = Math.max(1, Math.floor(c.hpMax * 0.08));
+      c.hp = Math.max(1, c.hp - dmg);
+      c.sp = Math.max(0, c.sp - Math.floor(c.spMax * 0.10));
+    });
+    setNarrative("Le sol cède : une brume sourde enveloppe le groupe, sapant corps et magie.");
+    addMsg("Piège ! Le groupe est blessé et vidé d'une partie de sa magie.", 'bad');
+  }
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playHit) AudioSystem.playHit();
+  updateUI();
+}
+
 // ── Fontaine de pierre — soin total 1×/visite d'étage ──────
 function useFountain() {
   if (inBattle) return;
@@ -662,6 +712,15 @@ function rest() {
   }
   if (Math.random() < REST_ENCOUNTER_CHANCE) {
     addMsg("Une rencontre vous interrompt !", 'bad');
+    // Repos interrompu : le groupe conserve une fraction du soin de repos
+    // avant d'entrer en combat (cf. REST_INTERRUPT_HEAL_FRACTION).
+    party.forEach(c => {
+      const healAmt = Math.floor(c.hpMax * 0.3 * REST_INTERRUPT_HEAL_FRACTION);
+      const spAmt   = Math.floor(c.spMax * 0.3 * REST_INTERRUPT_HEAL_FRACTION);
+      c.hp = Math.min(c.hpMax, c.hp + healAmt);
+      c.sp = Math.min(c.spMax, c.sp + spAmt);
+    });
+    addMsg("Le groupe n'a eu qu'un répit partiel.", '');
     const restFloor = Math.max(1, currentFloor - 1);
     const restPool  = MONSTERS.filter(m => m.minFloor <= restFloor);
     const pool      = restPool.length ? restPool : MONSTERS;
