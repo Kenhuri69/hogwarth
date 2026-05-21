@@ -227,6 +227,7 @@ function _serializeState() {
     revealedPages:  Array.from(revealedPages),
     restCooldown,
     usedFountains: Array.from(usedFountains),
+    usedAltars: Array.from(usedAltars),
     usedSpecialNpcs: Array.from(usedSpecialNpcs),
     defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
                           .map(([f, set]) => [f, Array.from(set)]),
@@ -452,6 +453,7 @@ function _applyState(gs) {
   floorDungeons = gs.floorDungeons || {};
   if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
   usedFountains = new Set(gs.usedFountains || []);
+  usedAltars = new Set(gs.usedAltars || []);
   usedSpecialNpcs = new Set(gs.usedSpecialNpcs || []);
   defeatedCellsByFloor = new Map(
     (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])

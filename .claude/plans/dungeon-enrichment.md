@@ -125,17 +125,24 @@ appliquer un statut hors combat est risqué ; remplacé par dégâts/drain/
 embuscade ; (c) désamorçage en rayon 3×3 autour du joueur (et non « salle
 courante » — les bornes de salle ne sont pas connues à l'exécution).
 
-### 2.B — `CELL.ALTAR` (risque / récompense)
+### 2.B — `CELL.ALTAR` (risque / récompense) — ✅ livré (2026-05-21)
 
-- [ ] **2.5** `CELL.ALTAR = 12`. Génération : ~25 % des salles-branches
+- [x] **2.5** `CELL.ALTAR = 12`. Génération : ~25 % des salles-branches
       reçoivent un autel au lieu d'un coffre.
-- [ ] **2.6** `handleCellEntry` → overlay dédié (modèle `useFountain`) avec
-      2-3 choix : ex. « Offrande de sang » (−15 % PV max temporaire de
-      l'étage → +ATK/MAG), « Offrande d'or » (−or → soin + buff), « Pari »
-      (50/50 bonus XP ou statut). Une utilisation par autel.
-- [ ] **2.7** État `usedAltars` (Set, clés `"x,y"`), reset à l'entrée
-      d'étage — strictement analogue à `usedFountains`. Sérialisé dans
-      `_serializeState`/`_applyState`.
+- [x] **2.6** `handleCellEntry` → overlay d'exploration dédié + `useAltar`
+      avec 2 choix : **Offrande d'or** (−40 G/étage → soin complet du
+      groupe + 30 XP/étage) et **Pari du sang** (gratuit, 50/50 :
+      +60 XP +20 G/étage, ou ~22 % PV max encaissés). Une utilisation par
+      autel. Sprite 3D `drawAltarSprite` + SVG `SCENE_ICONS.altar` +
+      classe minimap `.map-altar`.
+- [x] **2.7** État `usedAltars` (Set, clés `"x,y"`), reset à l'entrée
+      d'étage (génération + restauration cache) — analogue à
+      `usedFountains`. Sérialisé dans `_serializeState`/`_applyState`.
+
+**Écart §2.B** : les choix « offrande de sang » / buffs temporaires de
+l'étage du plan initial sont remplacés par des effets **instantanés**
+(soin / XP / or / dégâts) — un buff temporaire scopé à l'étage exigerait
+un suivi d'état + une logique de péremption hors-scope V1.
 
 ### 2.C — Salle scellée (`CELL.DOOR` + clé)
 

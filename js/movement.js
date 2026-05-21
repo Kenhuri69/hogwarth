@@ -101,6 +101,8 @@ function move(dir) { _step(dir, true); }
 // btns). Les SVG eux-mêmes sont centralisés dans `js/scene-icons.js`.
 function _exploreDescriptors() {
   const fountainDried = usedFountains && usedFountains.has(`${playerX},${playerY}`);
+  const altarSpent    = usedAltars && usedAltars.has(`${playerX},${playerY}`);
+  const altarCost     = 40 * (currentFloor || 1);
   // L'escalier descendant de l'étage 10 est scellé tant que Voldemort
   // Ressuscité n'a pas été vaincu. Voir ENDGAME_PLAN.md §7.1ter.
   const stairsSealed = currentFloor === 10
@@ -149,6 +151,20 @@ function _exploreDescriptors() {
         ? `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
         : `<button class="explore-btn" onclick="useFountain();_hideExploreOverlay()">Boire à la fontaine</button>
            <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    },
+    // Enrichissement du donjon §2.B — Autel Ancien : tribut risque/récompense.
+    [CELL.ALTAR]: altarSpent ? {
+      icon:  SCENE_ICONS.altar,
+      title: 'Autel Ancien',
+      desc:  "L'autel est retombé dans le silence. Son pouvoir ne se ranimera qu'à votre prochaine visite de cet étage.",
+      btns:  `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    } : {
+      icon:  SCENE_ICONS.altar,
+      title: 'Autel Ancien',
+      desc:  "Une dalle de pierre runique pulse d'une lueur sourde. On raconte qu'un tribut bien choisi attire la faveur des anciens — ou leur courroux.",
+      btns:  `<button class="explore-btn" onclick="useAltar('gold')">Offrande d'or (${altarCost} G) — soin complet + XP</button>
+              <button class="explore-btn" onclick="useAltar('gamble')">Pari du sang — gratuit, 50/50</button>
+              <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     },
     // Endgame Tranche 2 — Forge des Ténèbres : upgrade des items équipés.
     // Voir ENDGAME_PLAN.md §7.5 + js/forge.js — openForge.
@@ -212,7 +228,7 @@ function handleCellEntry(cell) {
 
   if (cell === CELL.STAIRS_D || cell === CELL.STAIRS_U ||
       cell === CELL.SHOP     || cell === CELL.CHEST    ||
-      cell === CELL.FOUNTAIN ||
+      cell === CELL.FOUNTAIN || cell === CELL.ALTAR    ||
       cell === CELL.FORGE    || cell === CELL.LIBRARY) {
     _showExploreOverlay(cell);
   } else if (cell === CELL.TRAP) {
@@ -271,6 +287,7 @@ function _restoreFloorFromCache(floor) {
   npcPlacements = new Map(c.npcPlacements || []);
   // Nouvelle visite = nouvelle eau dans la fontaine et nouvelles larmes Fumseck
   usedFountains = new Set();
+  usedAltars = new Set();
   usedSpecialNpcs = new Set();
   _respawnEnemiesOnEntry(floor);
   // Migration : re-place les PNJ manquants pour les saves antérieures
@@ -724,6 +741,61 @@ function _triggerDungeonTrap() {
   // Variante dégâts/drain : réutilise les 3 sous-variantes non létales
   // de la fouille (lames, dard, brume) — narration compatible.
   _triggerSearchTrap();
+}
+
+// ── Autel Ancien — tribut risque/récompense, 1×/visite d'étage ──
+// 'gold'   : offrande payante — soin complet du groupe + XP. Sûr.
+// 'gamble' : pari gratuit 50/50 — gros gain XP+or, ou retour de flamme.
+function useAltar(choice) {
+  if (inBattle) return;
+  if (dungeon[playerY][playerX] !== CELL.ALTAR) return;
+  _hideExploreOverlay();
+  const key = `${playerX},${playerY}`;
+  if (usedAltars.has(key)) {
+    addMsg("L'autel est inerte : son pouvoir s'est éteint pour cette visite.", 'bad');
+    return;
+  }
+  const f = currentFloor || 1;
+  if (choice === 'gold') {
+    const cost = 40 * f;
+    if (player.gold < cost) {
+      addMsg(`Offrande refusée : il faut ${cost} Gallions.`, 'bad');
+      return;
+    }
+    player.gold -= cost;
+    party.forEach(c => { if (c.hp > 0) { c.hp = c.hpMax; c.sp = c.spMax; } });
+    const xpGain = 30 * f;
+    player.xp += xpGain;
+    usedAltars.add(key);
+    setNarrative("Vous déposez l'or sur la dalle runique. Une lumière tiède enveloppe le groupe — les blessures se referment, l'esprit s'éclaircit.");
+    addMsg(`Bénédiction de l'autel : groupe restauré, +${xpGain} XP (−${cost} Gallions).`, 'good');
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+    updateUI();
+    if (typeof checkLevelUp === 'function') checkLevelUp();
+  } else if (choice === 'gamble') {
+    usedAltars.add(key);
+    if (Math.random() < 0.5) {
+      const xpGain = 60 * f, goldGain = 20 * f;
+      player.xp += xpGain;
+      player.gold += goldGain;
+      setNarrative("Vous posez la main nue sur la pierre. Elle s'illumine d'or — le destin vous sourit !");
+      addMsg(`Pari gagné : +${xpGain} XP, +${goldGain} Gallions.`, 'good');
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+      updateUI();
+      if (typeof checkLevelUp === 'function') checkLevelUp();
+    } else {
+      party.slice(0, partySize).forEach(c => {
+        if (c.hp <= 0) return;
+        const dmg = Math.max(1, Math.floor(c.hpMax * 0.22));
+        c.hp = Math.max(1, c.hp - dmg);
+      });
+      setNarrative("La pierre vire au noir sous vos doigts — une douleur fulgurante traverse le groupe.");
+      addMsg("Pari perdu : le groupe encaisse le retour de flamme de l'autel.", 'bad');
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playHit) AudioSystem.playHit();
+      updateUI();
+    }
+  }
+  safeCall('autoSave', 'altar-used');
 }
 
 // ── Fontaine de pierre — soin total 1×/visite d'étage ──────

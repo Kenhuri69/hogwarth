@@ -8,9 +8,9 @@ const CELL = {
   // Endgame Tranche 2 — Forge des Ténèbres (upgrade items) et Bibliothèque
   // interdite (upgrade sorts). Voir ENDGAME_PLAN.md §7.5/§7.6.
   FORGE:9, LIBRARY:10,
-  // Enrichissement du donjon (Phase 2) — piège caché. Voir
-  // .claude/plans/dungeon-enrichment.md §2.A.
-  TRAP:11
+  // Enrichissement du donjon (Phase 2) — piège caché (§2.A) et autel
+  // risque/récompense (§2.B). Voir .claude/plans/dungeon-enrichment.md.
+  TRAP:11, ALTAR:12
 };
 
 // Vecteurs de déplacement par direction cardinale (N, S, E, O).

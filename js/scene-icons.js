@@ -378,4 +378,38 @@ const SCENE_ICONS = {
     </text>
   </svg>`,
 
+  // ── Autel Ancien (enrichissement du donjon §2.B) ─────────────
+  // Dalle de pierre runique sur socle, orbe pulsé violet-or au sommet.
+  altar: `<svg viewBox="0 0 120 110" width="130" height="120" xmlns="http://www.w3.org/2000/svg" style="display:block">
+    <defs>
+      <radialGradient id="altarGlow" cx="50%" cy="35%" r="60%">
+        <stop offset="0%" stop-color="#e0b840" stop-opacity="0.8"/>
+        <stop offset="55%" stop-color="#9050c0" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#2a1a3a" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="altarStone" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#6a6068"/>
+        <stop offset="100%" stop-color="#2a2630"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="60" cy="50" rx="46" ry="34" fill="url(#altarGlow)"/>
+    <path d="M 26 100 L 94 100 L 86 90 L 34 90 Z" fill="#3a3038" stroke="#5a4a52" stroke-width="1.2"/>
+    <rect x="40" y="60" width="40" height="30" fill="url(#altarStone)" stroke="#7a6a72" stroke-width="1.2"/>
+    <path d="M 34 60 L 86 60 L 80 52 L 40 52 Z" fill="#7a6e78" stroke="#9a8a92" stroke-width="1"/>
+    <path d="M 47 67 L 53 73 M 53 67 L 47 73" stroke="#b078e0" stroke-width="1.6" opacity="0.85">
+      <animate attributeName="opacity" values="0.85;0.3;0.85" dur="2.6s" repeatCount="indefinite"/>
+    </path>
+    <circle cx="67" cy="70" r="3.4" fill="none" stroke="#b078e0" stroke-width="1.6" opacity="0.8">
+      <animate attributeName="opacity" values="0.8;0.35;0.8" dur="2.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="46" r="6" fill="#e8c860">
+      <animate attributeName="r" values="6;7.5;6" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="46" r="11" fill="none" stroke="#c89be0" stroke-width="1" opacity="0.6">
+      <animate attributeName="r" values="11;15;11" dur="2.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;0;0.6" dur="2.8s" repeatCount="indefinite"/>
+    </circle>
+  </svg>`,
+
 };

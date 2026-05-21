@@ -327,7 +327,8 @@ function generateDungeon(floor) {
       if (roll < 0.30)      dungeon[r.cy][r.cx] = CELL.CHEST;
       else if (roll < 0.50) dungeon[r.cy][r.cx] = CELL.SHOP;
     } else if (r.kind === 'branch') {
-      dungeon[r.cy][r.cx] = CELL.CHEST;
+      // Cul-de-sac : autel (~25 %) ou coffre garanti — récompense du détour.
+      dungeon[r.cy][r.cx] = (Math.random() < 0.25) ? CELL.ALTAR : CELL.CHEST;
     }
   }
 
@@ -390,6 +391,8 @@ function generateDungeon(floor) {
 
   // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
   usedFountains = new Set();
+  // Réinitialise les autels utilisés : 1 usage par visite d'étage.
+  usedAltars = new Set();
   // Réinitialise les actions spéciales PNJ (Fumseck, etc.).
   usedSpecialNpcs = new Set();
 

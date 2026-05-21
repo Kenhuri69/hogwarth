@@ -269,7 +269,7 @@ function drawCorridor(cx, cy, scale, W, H) {
   for (let d = 1; d <= DEPTH; d++) {
     const cell = getCellAhead(0, 0, d);
     if (cell === CELL.WALL) { wallDist = d; break; }
-    if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN)) {
+    if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR)) {
       const nearS = getRect(cx, cy, scale, d - 1);
       const [_fdx, _fdy] = DIRECTIONS[playerDir];
       pendingSprite = { cell, x: cx, baseY: nearS.y1, sz: nearS.hw * 1.1,
@@ -435,6 +435,7 @@ function drawCorridor(cx, cy, scale, W, H) {
     else if (cell === CELL.SHOP)     drawShopSprite(x, baseY, sz);
     else if (cell === CELL.FORGE)    drawForgeSprite(x, baseY, sz);
     else if (cell === CELL.LIBRARY)  drawLibrarySprite(x, baseY, sz);
+    else if (cell === CELL.ALTAR)    drawAltarSprite(x, baseY, sz);
     else if (cell === CELL.FOUNTAIN) {
       const dried = (typeof usedFountains !== 'undefined') && usedFountains
         && usedFountains.has(`${pendingSprite.mapX},${pendingSprite.mapY}`);

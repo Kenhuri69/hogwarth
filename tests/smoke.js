@@ -9706,8 +9706,122 @@ async function scenarioDungeonTraps() {
   await browser.close();
 }
 
+// ── Scénario : autels du donjon (risque/récompense) ──────────────
+// Couvre dungeon-enrichment.md §2.B : génération en cul-de-sac, offrande
+// d'or, pari, usage unique, round-trip save de usedAltars.
+async function scenarioDungeonAltars() {
+  console.log('\n── Scénario : autels du donjon (Phase 2 §2.B) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : constante + helper + état
+  const t1 = await page.evaluate(() => ({
+    cellAltar: CELL.ALTAR,
+    useAltar:  typeof useAltar === 'function',
+    usedSet:   typeof usedAltars !== 'undefined',
+  }));
+  console.log('  T1:', t1);
+  assert(t1.cellAltar === 12, 'CELL.ALTAR doit valoir 12');
+  assert(t1.useAltar,         'useAltar non exposée');
+  assert(t1.usedSet,          'usedAltars non exposé');
+
+  // T2 : 30 générations — les autels n'apparaissent que sur des culs-de-sac
+  const t2 = await page.evaluate(() => {
+    let total = 0, offBranch = 0;
+    for (let g = 0; g < 30; g++) {
+      generateDungeon(1 + (g % 8));
+      const branchCenters = new Set(
+        lastDungeonRooms.filter(r => r.kind === 'branch').map(r => `${r.cx},${r.cy}`));
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.ALTAR) {
+            total++;
+            if (!branchCenters.has(`${x},${y}`)) offBranch++;
+          }
+    }
+    return { total, offBranch };
+  });
+  console.log('  T2 génération:', t2);
+  assert(t2.total >= 1,      'des autels doivent apparaître sur 30 générations');
+  assert(t2.offBranch === 0, 'un autel ne doit apparaître que sur un cul-de-sac');
+
+  // T3 : offrande d'or — débite l'or, soigne le groupe, octroie de l'XP
+  const t3 = await page.evaluate(() => {
+    currentFloor = 1;
+    dungeon[playerY][playerX] = CELL.ALTAR;
+    usedAltars = new Set();
+    player.gold = 500;
+    party[0].hp = 1; party[0].sp = 0;
+    // xpNext très élevé : neutralise un éventuel level-up qui consommerait
+    // l'XP et fausserait le delta mesuré.
+    player.xp = 0; player.xpNext = 100000;
+    const xpBefore = player.xp, goldBefore = player.gold;
+    useAltar('gold');
+    return {
+      goldSpent: goldBefore - player.gold,
+      healed:    party[0].hp === party[0].hpMax,
+      xpGain:    player.xp - xpBefore,
+      used:      usedAltars.has(`${playerX},${playerY}`),
+    };
+  });
+  console.log('  T3 offrande d\'or:', t3);
+  assert(t3.goldSpent === 40, `offrande doit coûter 40 G, débité ${t3.goldSpent}`);
+  assert(t3.healed,           'le groupe doit être soigné');
+  assert(t3.xpGain === 30,    `offrande doit donner 30 XP, donné ${t3.xpGain}`);
+  assert(t3.used,             'l\'autel doit être marqué utilisé');
+
+  // T4 : autel déjà utilisé → no-op
+  const t4 = await page.evaluate(() => {
+    const goldBefore = player.gold;
+    useAltar('gold');
+    return { unchanged: player.gold === goldBefore };
+  });
+  console.log('  T4 autel épuisé:', t4);
+  assert(t4.unchanged, 'un autel déjà utilisé ne doit rien débiter');
+
+  // T5 : pari gagné (Math.random < 0.5) — gain XP + or
+  const t5 = await page.evaluate(() => {
+    dungeon[playerY][playerX] = CELL.ALTAR;
+    usedAltars = new Set();
+    player.xp = 0; player.xpNext = 100000;   // neutralise le level-up
+    const xpBefore = player.xp, goldBefore = player.gold;
+    const orig = Math.random;
+    Math.random = () => 0.2;
+    try { useAltar('gamble'); } finally { Math.random = orig; }
+    return {
+      xpGain:   player.xp - xpBefore,
+      goldGain: player.gold - goldBefore,
+      used:     usedAltars.has(`${playerX},${playerY}`),
+    };
+  });
+  console.log('  T5 pari gagné:', t5);
+  assert(t5.xpGain === 60,   `pari gagné doit donner 60 XP, donné ${t5.xpGain}`);
+  assert(t5.goldGain === 20, `pari gagné doit donner 20 G, donné ${t5.goldGain}`);
+  assert(t5.used,            'l\'autel doit être marqué utilisé après un pari');
+
+  // T6 : round-trip save de usedAltars (Set)
+  const t6 = await page.evaluate(() => {
+    usedAltars = new Set(['3,3', '7,7']);
+    const snap = _serializeState();
+    usedAltars = new Set();
+    _applyState(snap);
+    return { isSet: usedAltars instanceof Set, size: usedAltars.size, has: usedAltars.has('3,3') };
+  });
+  console.log('  T6 round-trip save:', t6);
+  assert(t6.isSet,        'usedAltars doit rester un Set après _applyState');
+  assert(t6.size === 2,   'usedAltars doit survivre au round-trip save');
+  assert(t6.has,          'les clés de usedAltars doivent survivre au round-trip');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (autels)`);
+  }
+  console.log('  ✅ autels — génération, offrande, pari, persistance OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

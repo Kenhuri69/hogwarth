@@ -324,6 +324,9 @@ let restCooldown = 0;
 // Fontaines utilisées sur l'étage courant (clé "x,y") — vidée à chaque
 // entrée d'étage : la fontaine se ré-active si l'on quitte puis revient.
 let usedFountains = new Set();
+// Autels utilisés sur l'étage courant (clé "x,y") — même cycle que
+// `usedFountains` : 1 usage par visite d'étage. Voir dungeon-enrichment §2.B.
+let usedAltars = new Set();
 // Cellules où le joueur a tué un ennemi, indexées par étage.
 // Map<floor, Set<"x,y">>. À chaque retour sur un étage déjà visité, chaque
 // entrée a 20 % de chance de re-spawner un ennemi (`_respawnEnemiesOnEntry`).
