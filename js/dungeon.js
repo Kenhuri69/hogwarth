@@ -180,6 +180,69 @@ function _placeRandomNpcInRooms(npc, rooms, occupied) {
   return false;
 }
 
+// Perce un couloir en L entre deux points. N'écrase que les murs
+// (WALL → FLOOR) : les salles et cellules spéciales déjà posées sont
+// préservées si le tracé les traverse.
+function _carveCorridor(ax, ay, bx, by) {
+  let cx = ax, cy = ay;
+  while (cx !== bx) {
+    if (cy >= 0 && cy < MAP_H && cx >= 0 && cx < MAP_W
+        && dungeon[cy][cx] === CELL.WALL) dungeon[cy][cx] = CELL.FLOOR;
+    cx += cx < bx ? 1 : -1;
+  }
+  while (cy !== by) {
+    if (cy >= 0 && cy < MAP_H && cx >= 0 && cx < MAP_W
+        && dungeon[cy][cx] === CELL.WALL) dungeon[cy][cx] = CELL.FLOOR;
+    cy += cy < by ? 1 : -1;
+  }
+}
+
+// Filet de sécurité de connexité. La topologie en arbre (épine + branches)
+// garantit déjà que toutes les salles sont reliées ; cette passe couvre
+// les cas dégradés (placement de dernier recours chevauchant qui décale
+// un centre de salle). BFS depuis le spawn sur les cases non-WALL ; si
+// STAIRS_D reste injoignable, perce un couloir de secours vers la case
+// atteinte la plus proche. Appelée en fin de `generateDungeon`.
+function _assertDungeonConnected() {
+  if (typeof dungeon === 'undefined' || !dungeon.length) return true;
+  let downX = -1, downY = -1;
+  for (let y = 0; y < MAP_H; y++)
+    for (let x = 0; x < MAP_W; x++)
+      if (dungeon[y][x] === CELL.STAIRS_D) { downX = x; downY = y; }
+  if (downX < 0) return true;
+
+  const seen  = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(false));
+  const queue = [[playerX, playerY]];
+  seen[playerY][playerX] = true;
+  while (queue.length) {
+    const [x, y] = queue.shift();
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) continue;
+      if (seen[ny][nx] || dungeon[ny][nx] === CELL.WALL) continue;
+      seen[ny][nx] = true;
+      queue.push([nx, ny]);
+    }
+  }
+  if (seen[downY][downX]) return true;
+
+  // Escalier injoignable → couloir de secours depuis la case atteinte
+  // la plus proche (distance de Manhattan).
+  let bx = playerX, by = playerY, best = Infinity;
+  for (let y = 0; y < MAP_H; y++)
+    for (let x = 0; x < MAP_W; x++)
+      if (seen[y][x]) {
+        const d = Math.abs(x - downX) + Math.abs(y - downY);
+        if (d < best) { best = d; bx = x; by = y; }
+      }
+  _carveCorridor(bx, by, downX, downY);
+  return false;
+}
+
+// Instantané structurel des salles du dernier donjon généré (kind/rect).
+// Hook de test (smoke) — non consommé par le moteur de jeu.
+let lastDungeonRooms = [];
+
 function generateDungeon(floor) {
   dungeon = Array.from({length:MAP_H}, () => Array(MAP_W).fill(CELL.WALL));
   visited = Array.from({length:MAP_H}, () => Array(MAP_W).fill(false));
@@ -187,37 +250,91 @@ function generateDungeon(floor) {
   itemMap = Array.from({length:MAP_H}, () => Array(MAP_W).fill(null));
   npcPlacements = new Map();
 
-  // Génération des salles
+  // ── Génération des salles : 5 salles sans chevauchement ───────
+  // Map 12×12 (10×10 utile) → 5 salles, majoritairement 3×3, séparées
+  // par une marge d'au moins 1 case. La map ne sépare proprement que
+  // ~4 salles ; la 5e force souvent un léger chevauchement, accepté en
+  // dernier recours (deux salles fusionnent — cosmétique, jamais un
+  // softlock). 5 salles = épine de 3 + 2 culs-de-sac réellement isolés.
+  const ROOM_COUNT = 5;
   const rooms = [];
-  for(let i=0;i<8;i++) {
-    const rw = 3+Math.floor(Math.random()*3);
-    const rh = 3+Math.floor(Math.random()*3);
-    const rx = 1+Math.floor(Math.random()*(MAP_W-rw-2));
-    const ry = 1+Math.floor(Math.random()*(MAP_H-rh-2));
-    rooms.push({x:rx,y:ry,w:rw,h:rh,cx:Math.floor(rx+rw/2),cy:Math.floor(ry+rh/2)});
-    for(let dy=ry;dy<ry+rh;dy++) for(let dx=rx;dx<rx+rw;dx++) dungeon[dy][dx]=CELL.FLOOR;
+  for (let i = 0; i < ROOM_COUNT; i++) {
+    let pick = null, free = false;
+    for (let attempt = 0; attempt < 40 && !free; attempt++) {
+      const rw = 3 + (Math.random() < 0.35 ? 1 : 0);
+      const rh = 3 + (Math.random() < 0.35 ? 1 : 0);
+      const rx = 1 + Math.floor(Math.random() * (MAP_W - rw - 2));
+      const ry = 1 + Math.floor(Math.random() * (MAP_H - rh - 2));
+      const cand = { x: rx, y: ry, w: rw, h: rh };
+      const tooClose = rooms.some(o =>
+        rx < o.x + o.w + 1 && rx + rw + 1 > o.x &&
+        ry < o.y + o.h + 1 && ry + rh + 1 > o.y);
+      if (!tooClose) { pick = cand; free = true; }
+      else if (!pick) pick = cand;          // repli mémorisé
+    }
+    pick.cx = Math.floor(pick.x + pick.w / 2);
+    pick.cy = Math.floor(pick.y + pick.h / 2);
+    rooms.push(pick);
+    for (let dy = pick.y; dy < pick.y + pick.h; dy++)
+      for (let dx = pick.x; dx < pick.x + pick.w; dx++)
+        dungeon[dy][dx] = CELL.FLOOR;
   }
 
-  // Connexion des salles par des couloirs
-  for(let i=1;i<rooms.length;i++) {
-    const a=rooms[i-1], b=rooms[i];
-    let cx=a.cx, cy=a.cy;
-    while(cx!==b.cx) { if(cy>=0&&cy<MAP_H&&cx>=0&&cx<MAP_W) dungeon[cy][cx]=CELL.FLOOR; cx+=cx<b.cx?1:-1; }
-    while(cy!==b.cy) { if(cy>=0&&cy<MAP_H&&cx>=0&&cx<MAP_W) dungeon[cy][cx]=CELL.FLOOR; cy+=cy<b.cy?1:-1; }
-    dungeon[b.cy][b.cx]=CELL.FLOOR;
+  // ── Topologie en arbre : épine dorsale + branches en cul-de-sac ─
+  // Épine = 3 salles reliées en série (spawn → milieu → escalier).
+  // Branches = salles restantes, chacune greffée par un couloir sur la
+  // salle d'épine la plus proche → cul-de-sac. Un arbre est connexe par
+  // construction : l'escalier est toujours atteignable.
+  const SPINE_LEN = 3;
+  const spine    = rooms.slice(0, SPINE_LEN);
+  const branches = rooms.slice(SPINE_LEN);
+  spine[0].kind = 'spawn';
+  spine[SPINE_LEN - 1].kind = 'stairs';
+  for (let i = 1; i < SPINE_LEN - 1; i++) spine[i].kind = 'spine';
+  for (const b of branches) b.kind = 'branch';
+
+  // Couloirs de l'épine (en série)
+  for (let i = 1; i < spine.length; i++) {
+    _carveCorridor(spine[i - 1].cx, spine[i - 1].cy, spine[i].cx, spine[i].cy);
+  }
+  // Couloirs des branches → salle d'épine la plus proche
+  for (const b of branches) {
+    let near = spine[0], best = Infinity;
+    for (const s of spine) {
+      const d = Math.abs(s.cx - b.cx) + Math.abs(s.cy - b.cy);
+      if (d < best) { best = d; near = s; }
+    }
+    _carveCorridor(near.cx, near.cy, b.cx, b.cy);
   }
 
-  // Placement des cellules spéciales
-  for(let i=1;i<rooms.length;i++) {
-    const r = rooms[i];
-    if(i===rooms.length-1) {
-      dungeon[r.cy][r.cx] = CELL.STAIRS_D;
-    } else if(Math.random()<0.2) {
-      dungeon[r.cy][r.cx] = CELL.SHOP;
-    } else if(Math.random()<0.3) {
+  // Réordonne `rooms` en [spawn, …épine intermédiaire, …branches,
+  // escalier] pour préserver les invariants aval : rooms[0] = spawn,
+  // rooms[dernier] = salle de l'escalier descendant.
+  rooms.length = 0;
+  rooms.push(spine[0]);
+  for (let i = 1; i < SPINE_LEN - 1; i++) rooms.push(spine[i]);
+  for (const b of branches) rooms.push(b);
+  rooms.push(spine[SPINE_LEN - 1]);
+
+  // ── Cellules spéciales ────────────────────────────────────────
+  // Escalier descendant sur la dernière salle d'épine. Salles d'épine
+  // intermédiaires : coffre/boutique probabilistes. Salles-branches
+  // (cul-de-sac) : cellule spéciale garantie → récompense du détour.
+  dungeon[spine[SPINE_LEN - 1].cy][spine[SPINE_LEN - 1].cx] = CELL.STAIRS_D;
+  for (const r of rooms) {
+    if (r.kind === 'spine') {
+      const roll = Math.random();
+      if (roll < 0.30)      dungeon[r.cy][r.cx] = CELL.CHEST;
+      else if (roll < 0.50) dungeon[r.cy][r.cx] = CELL.SHOP;
+    } else if (r.kind === 'branch') {
       dungeon[r.cy][r.cx] = CELL.CHEST;
     }
   }
+
+  // Instantané structurel pour les tests fumée.
+  lastDungeonRooms = rooms.map(r => ({
+    x: r.x, y: r.y, w: r.w, h: r.h, cx: r.cx, cy: r.cy, kind: r.kind
+  }));
 
   // Escalier montant (étage 2+)
   if(floor>1) dungeon[rooms[0].cy][rooms[0].cx] = CELL.STAIRS_U;
@@ -325,7 +442,12 @@ function generateDungeon(floor) {
     if(Math.random()<0.6) {
       const ex = r.x+Math.floor(Math.random()*r.w);
       const ey = r.y+Math.floor(Math.random()*r.h);
-      if(dungeon[ey][ex]===CELL.FLOOR) {
+      // Jamais d'ennemi sur la case de spawn : avec un chevauchement de
+      // dernier recours, une salle de `slice(1)` peut couvrir le centre
+      // de la salle de départ. Garde cohérente avec _ensureStairsExist
+      // / spawnQuestMonsters / _findFreeNpcCell.
+      const onSpawn = ex === rooms[0].cx && ey === rooms[0].cy;
+      if(dungeon[ey][ex]===CELL.FLOOR && !onSpawn) {
         enemyMap[ey][ex] = scaleMonster(weightedPick(pool), floor);
       }
     }
@@ -347,6 +469,10 @@ function generateDungeon(floor) {
   // Garde-fou : si la génération a écrasé un escalier (collision
   // rooms[0]/rooms[last] = mêmes centres), on en replace un.
   _ensureStairsExist(floor);
+
+  // Filet de sécurité de connexité : garantit que l'escalier descendant
+  // est atteignable depuis le spawn (perce un couloir de secours sinon).
+  _assertDungeonConnected();
 
   // Page du grimoire de Sandrine (quête manon_grimoire) si applicable.
   _ensurePagePlacement(floor);

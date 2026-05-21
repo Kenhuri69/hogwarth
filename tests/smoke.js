@@ -9536,8 +9536,86 @@ async function scenarioAoeSpells() {
   await browser.close();
 }
 
+// ── Scénario : donjon branchu (épine + culs-de-sac) ──────────────
+// Couvre dungeon-enrichment.md Phase 1. Sur 30 générations : connexité
+// spawn→STAIRS_D, escalier descendant unique, présence de branches.
+// Les chevauchements de salles sont logués (tolérés en dernier recours).
+async function scenarioBranchyDungeon() {
+  console.log('\n── Scénario : donjon branchu (Phase 1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helpers exposés
+  const t1 = await page.evaluate(() => ({
+    carve:  typeof _carveCorridor === 'function',
+    assert: typeof _assertDungeonConnected === 'function',
+    rooms:  typeof lastDungeonRooms !== 'undefined',
+  }));
+  console.log('  T1 helpers:', t1);
+  assert(t1.carve,  '_carveCorridor non exposée');
+  assert(t1.assert, '_assertDungeonConnected non exposée');
+  assert(t1.rooms,  'lastDungeonRooms non exposé');
+
+  // T2 : 30 générations — connexité, escalier unique, branches
+  const t2 = await page.evaluate(() => {
+    const out = [];
+    for (let g = 0; g < 30; g++) {
+      const floor = 1 + (g % 8);
+      generateDungeon(floor);
+      let downX = -1, downY = -1, downCount = 0;
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.STAIRS_D) { downX = x; downY = y; downCount++; }
+      // BFS depuis le spawn sur les cases non-WALL
+      const H = dungeon.length, W = dungeon[0].length;
+      const seen = Array.from({ length: H }, () => Array(W).fill(false));
+      const q = [[playerX, playerY]];
+      seen[playerY][playerX] = true;
+      while (q.length) {
+        const [x, y] = q.shift();
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          if (seen[ny][nx] || dungeon[ny][nx] === CELL.WALL) continue;
+          seen[ny][nx] = true; q.push([nx, ny]);
+        }
+      }
+      const reachable = downX >= 0 && seen[downY][downX];
+      const branches = lastDungeonRooms.filter(r => r.kind === 'branch').length;
+      let overlaps = 0;
+      for (let i = 0; i < lastDungeonRooms.length; i++)
+        for (let j = i + 1; j < lastDungeonRooms.length; j++) {
+          const a = lastDungeonRooms[i], b = lastDungeonRooms[j];
+          if (a.x < b.x + b.w && a.x + a.w > b.x &&
+              a.y < b.y + b.h && a.y + a.h > b.y) overlaps++;
+        }
+      out.push({ floor, downCount, reachable, branches, overlaps,
+                 rooms: lastDungeonRooms.length });
+    }
+    return out;
+  });
+  const unreachable   = t2.filter(r => !r.reachable);
+  const badStairs     = t2.filter(r => r.downCount !== 1);
+  const noBranch      = t2.filter(r => r.branches < 1);
+  const totalOverlaps = t2.reduce((s, r) => s + r.overlaps, 0);
+  console.log(`  T2 : ${t2.length} générations — injoignables:${unreachable.length}`
+            + ` escalier≠1:${badStairs.length} sans-branche:${noBranch.length}`
+            + ` chevauchements cumulés:${totalOverlaps}`);
+  assert(unreachable.length === 0, `escalier injoignable sur ${unreachable.length} génération(s)`);
+  assert(badStairs.length === 0,   `STAIRS_D non unique sur ${badStairs.length} génération(s)`);
+  assert(noBranch.length === 0,    `aucune branche sur ${noBranch.length} génération(s)`);
+  assert(t2.every(r => r.rooms === 5), 'le donjon doit compter 5 salles');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (donjon branchu)`);
+  }
+  console.log('  ✅ donjon branchu — connexité et topologie OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

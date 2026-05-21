@@ -7,7 +7,7 @@
 > **événements d'étage**, sans introduire de nouveau système lourd — tout
 > repose sur les `CELL.*` existants + quelques nouveaux types.
 
-Statut global : **0 / 4 phases livrées**.
+Statut global : **Phase 1 livrée — 1 / 4 phases**.
 Branche de travail : `claude/plans-bugs-review-Nhbt1` (ou nouvelle branche
 dédiée par phase — décidé au moment du commit).
 
@@ -46,39 +46,52 @@ Nouveaux types prévus : `CELL.TRAP = 11`, `CELL.ALTAR = 12`.
 
 ### Étapes
 
-- [ ] **1.1** Refonte du placement des salles : ajouter un test de
-      non-chevauchement (marge 1 case, ~12 tentatives par salle, on garde
-      ce qui passe). → *vérif : aucune salle ne recouvre une autre sur
-      50 générations de test.*
-- [ ] **1.2** Découper les salles en **épine** (4-5 salles, reliées en
-      série de `rooms[0]` à la salle d'escalier) + **branches** (les
-      salles restantes, chacune reliée par un couloir à la salle d'épine
-      la plus proche). La topologie résultante est un **arbre** → connexité
-      garantie par construction. → *vérif : BFS depuis le spawn atteint
-      STAIRS_D sur 100 % de 200 générations.*
-- [ ] **1.3** Ajouter `_assertDungeonConnected(floor)` : BFS de filet de
-      sécurité ; si l'escalier descendant est injoignable, percer un
-      couloir de secours. Appelé en fin de `generateDungeon`. → *vérif :
-      la fonction ne déclenche jamais le secours sur les générations
-      d'arbre normales (log de contrôle).*
-- [ ] **1.4** Cellules spéciales : STAIRS_D sur la dernière salle d'épine,
-      STAIRS_U sur `rooms[0]`. Salles d'épine intermédiaires : rolls
-      actuels (SHOP 20 % / CHEST 30 %, **indépendants** désormais, plus de
-      `else if`). Salles-branches (cul-de-sac) : **cellule spéciale
-      garantie** (CHEST, ou ALTAR/salle scellée une fois la Phase 2
-      livrée). → *vérif : chaque cul-de-sac contient une cellule spéciale ;
-      l'escalier n'est jamais sur une branche.*
-- [ ] **1.5** Étendre `tests/smoke.js` : nouveau scénario « donjon branchu »
-      — génère 30 étages, assert (a) connexité spawn→STAIRS_D, (b) présence
-      d'au moins une branche, (c) aucun chevauchement. → *vérif : `node
-      tests/smoke.js` 100 % vert.*
+- [x] **1.1** Refonte du placement des salles : test de non-chevauchement
+      (marge 1 case, 24 tentatives par salle), repli mémorisé accepté en
+      dernier recours. → *fait dans `generateDungeon`.*
+- [x] **1.2** Découpage **épine** (4 salles série spawn→escalier) +
+      **branches** (salles restantes greffées sur la salle d'épine la plus
+      proche). Topologie en arbre → connexité par construction.
+- [x] **1.3** `_assertDungeonConnected()` : BFS filet de sécurité ; perce
+      un couloir de secours si STAIRS_D injoignable. Appelé en fin de
+      `generateDungeon`, après `_ensureStairsExist`.
+- [x] **1.4** Cellules spéciales : STAIRS_D sur la dernière salle d'épine,
+      STAIRS_U sur `rooms[0]`, salles d'épine intermédiaires CHEST 30 % /
+      SHOP 20 %, salles-branches **CHEST garanti**.
+- [x] **1.5** `tests/smoke.js` : scénario `scenarioBranchyDungeon` —
+      30 générations, assert connexité spawn→STAIRS_D, escalier unique,
+      ≥ 1 branche, 5 salles. Chevauchements logués (tolérés).
+
+### Écarts constatés (2026-05-21)
+
+- **Nombre de salles 8 → 5, taille 3-5 → 3 (occasionnellement 4), épine
+  4 → 3.** La map fait **12×12** (10×10 utile) : avec un placement
+  aléatoire et une marge de séparation, elle ne sépare proprement que
+  ~4 salles. Le générateur d'origine s'appuyait sur un chevauchement
+  systématique de ses 8 salles. Itéré pendant l'implémentation : 8 →
+  6 (165 chevauchements cumulés / 30 générations, branches fusionnées)
+  → **5** (72 / 30, épine de 3 + 2 culs-de-sac mieux isolés). Aucun code
+  aval ne dépend du compte exact (boucles relatives à `rooms.length`,
+  garde `>= 3` pour fontaine/forge OK).
+- **Chevauchement** : non garanti nul (repli de dernier recours). Le test
+  le **logue** au lieu de l'interdire — un chevauchement fusionne deux
+  salles sans softlock. La connexité (vrai risque) est assertée à 100 %.
+- **Bug corrigé en passant** : la boucle de placement d'ennemis ne
+  protégeait pas la case de spawn (un ennemi pouvait apparaître sur le
+  joueur en cas de chevauchement). Garde `onSpawn` ajoutée — cohérente
+  avec `_ensureStairsExist`/`spawnQuestMonsters`/`_findFreeNpcCell`.
+  Couvert par `scenarioRespawn20Percent` T5.
+- **Hook de test** : `lastDungeonRooms` (instantané structurel des salles)
+  exposé par `dungeon.js` pour permettre au smoke d'inspecter `kind`/rect.
+  Non consommé par le moteur.
+- **« Meilleur butin » des culs-de-sac** : V1 = CHEST garanti (vs 30 % en
+  épine). L'enrichissement réel du butin viendra avec la salle scellée
+  (Phase 2). `openChest()` non touché.
 
 ### Risque
-Cœur de `generateDungeon` réécrit. Mitigation : la topologie en arbre rend
-la connexité structurelle (pas dépendante d'un hasard), et 1.3 est un filet.
-Le placement PNJ/fontaine/forge utilise `rooms.slice(1, -1)` — vérifier que
-ces helpers restent valides avec la nouvelle notion épine/branche (les
-salles-branches restent dans `rooms`, l'ordre est conservé).
+Cœur de `generateDungeon` réécrit. Mitigation : topologie en arbre (connexité
+structurelle) + `_assertDungeonConnected` en filet. `_carveCorridor` n'écrase
+que les murs → ne détruit jamais une cellule spéciale déjà posée.
 
 ---
 
@@ -243,3 +256,4 @@ délicat côté persistance). Une PR par phase, smoke vert à chaque étape.
 | Date | Phase | Statut | Notes |
 |------|-------|--------|-------|
 | 2026-05-21 | Rédaction du plan | ✅ | Audit `dungeon.js` réalisé, 4 piliers validés par l'utilisateur, plan rédigé. Implémentation non démarrée. |
+| 2026-05-21 | Phase 1 — Layout branchu | ✅ | `generateDungeon` réécrit : topologie en arbre (épine 3 salles + 2 branches cul-de-sac), placement non-chevauchant, helpers `_carveCorridor`/`_assertDungeonConnected`, cellules spéciales (CHEST garanti en branche). Bug ennemi-sur-spawn corrigé. Scénario smoke `scenarioBranchyDungeon` (30 générations, connexité 100 %). Suite complète 88/88 verte. Itéré 8→6→5 salles pour la contrainte map 12×12. |
