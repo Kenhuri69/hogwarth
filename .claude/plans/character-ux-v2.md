@@ -7,10 +7,13 @@
 
 Branche dédiée : à créer (`claude/character-ux-v2`).
 
-**Statut global** : v2 intégrée. Étapes 1·2·4·5 livrées dans le codebase
-(constatées sur `master` au 2026-05-17, journal non tenu à l'époque),
-accordéon mobile (1.3 / 2.5) livré le 2026-05-17. **Étape 3 reportée**
-(fusion inventaire — à rediscuter depuis l'ajout de la besace d'herbes).
+**Statut global** : ✅ **plan clos** (2026-05-21). v2 intégrée — étapes
+1·2·4·5 livrées dans le codebase (constatées sur `master` au 2026-05-17,
+journal non tenu à l'époque), accordéon mobile (1.3 / 2.5) livré le
+2026-05-17. **Étape 3 (fusion inventaire) abandonnée** : décision
+utilisateur 2026-05-21 — la fusion est devenue superflue depuis que
+`#inventory-modal` héberge 3 onglets (Sac / Besace d'herbes / Grimoire).
+Les deux modales restent séparées (cf. Étape 3).
 
 ---
 
@@ -56,9 +59,10 @@ PR #57, à ne PAS dévier sans nouvelle décision explicite :
   navigateur sans serveur.
 
 ### 1.2 Validation
-- [ ] **0.V** Capture screenshot desktop + mobile via Playwright headless.
-- [ ] **0.U** Validation utilisateur : « OK go » ou ajustements demandés.
-  → **Bloque** l'étape 1.
+- [x] **0.V** Captures desktop + mobile régénérées (`tests/character-desktop.png`,
+  `character-mobile.png`, `character-mobile-accordion.png` — cf. 6.3).
+- [x] **0.U** Validé a posteriori : la v2 intégrée sur `master` est
+  acceptée en l'état (décision 2026-05-21, clôture du plan).
 
 ## 2. Intégration au jeu — Étapes 1 à 6
 
@@ -89,13 +93,18 @@ PR #57, à ne PAS dévier sans nouvelle décision explicite :
   `sticky` strict — `.modal-box` scrolle d'un bloc, ✕ reste en haut).
 - [x] **2.5** `_toggleCharSection(btn)` bascule `.collapsed` au clic.
 
-### Étape 3 — Fusion inventaire — **REPORTÉE**
-> Décision 2026-05-17 : à rediscuter depuis l'ajout de la besace d'herbes
-> (`renderBesace()` dans `openInventory`). La section Sac de la fiche
-> reste en lecture/clic ; `openInventory()` garde `#inventory-modal`.
-- [ ] **3.1** Bouton 🎒 Sac → `#character-modal` + scroll section Sac.
-- [ ] **3.2** `openInventory()` → redirige ou standalone (à décider).
-- [ ] **3.3** Garde-fou combat : `#inventory-modal` en combat.
+### Étape 3 — Fusion inventaire — **ABANDONNÉE** (décision 2026-05-21)
+> Décision utilisateur 2026-05-21 : on **ne fusionne pas**. Depuis le
+> report du 2026-05-17, `#inventory-modal` a gagné deux onglets
+> supplémentaires (Besace d'herbes `renderBesace()`, Grimoire de pages
+> `renderGrimoirePouch()`) — c'est devenu un outil multi-pane à part
+> entière. Le rapatrier dans la fiche Personnage déjà dense n'apporte
+> pas de gain UX. Les deux modales restent séparées.
+- [x] **3.1 / 3.2 / 3.3** — sans objet : le bouton 🎒 garde
+  `openInventory()` → `#inventory-modal` (3 onglets) ; la fiche
+  Personnage garde sa section Sac en lecture/clic. Le garde-fou combat
+  de l'inventaire (consommables seuls, onglets masqués) est déjà en
+  place dans `openBattleItems()`.
 
 ### Étape 4 — Tooltip détail
 - [x] **4.1** Tooltip riche `_renderItemTooltip()` : nom, rareté, bonus
@@ -120,7 +129,8 @@ PR #57, à ne PAS dévier sans nouvelle décision explicite :
   `_toggleCharSection` pose `.collapsed`).
 - [x] **6.3** Captures `tests/character-desktop.png` +
   `character-mobile.png` + `character-mobile-accordion.png` régénérées.
-- [ ] **6.4** Validation visuelle utilisateur (ou itération).
+- [x] **6.4** Validation visuelle : v2 intégrée acceptée en l'état
+  (décision utilisateur 2026-05-21).
 - [x] **6.5** Cache-bust : `style.css?v=4`, `ui.js?v=4`.
 - [x] **6.6** Doc `CLAUDE.md` : section « Modale Personnage » ajoutée.
 
@@ -155,6 +165,8 @@ PR #57, à ne PAS dévier sans nouvelle décision explicite :
 | 2026-05-17 | Audit codebase | ✅ | Étapes 1·2·4·5 constatées intégrées sur `master` (journal non tenu entre-temps). Cases réconciliées. |
 | 2026-05-17 | Accordéon mobile (1.3 / 2.5) | ✅ | `.section-toggle` + `_toggleCharSection`, repli CSS ≤700px. Smoke `T6b` ajouté. Cache-bust v4. Doc CLAUDE.md. |
 | 2026-05-17 | Étape 3 — fusion inventaire | ⏸️ | Reportée — à rediscuter depuis l'ajout de la besace d'herbes. |
+| 2026-05-21 | Étape 3 — fusion inventaire | ❌ | Abandonnée (décision utilisateur). `#inventory-modal` héberge désormais 3 onglets (Sac/Besace/Grimoire) — fusion superflue. Modales gardées séparées. |
+| 2026-05-21 | Clôture du plan | ✅ | v2 intégrée acceptée en l'état (0.U / 6.4). Plan clos. |
 
 ---
 
