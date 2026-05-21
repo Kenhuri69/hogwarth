@@ -14,13 +14,13 @@
 
 | Plan                                  | Statut                                    | Reste à faire                                                                                                           |
 |---------------------------------------|-------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `SVG_PLAN.md`                         | 36 / 76 (47 %)                            | Bloc B (31 SVG inline à affiner) + Bloc C (5 PNG monstres + 6 re-gen + 4 portraits PNJ + 2 scènes) + Z1 commit final.    |
+| `SVG_PLAN.md`                         | ✅ clos (2026-05-21)                      | Tous blocs A/B/C/D livrés. C32-C37 (re-gen optionnelle) abandonnés sur décision utilisateur ; Z1 résolu (livraison incrémentale). Archivé.   |
 | `code-improvements.md` — **Vague A**  | ✅ livrée (4/4)                           | —                                                                                                                       |
 | `code-improvements.md` — **Vague B**  | ⏳ 0/5                                    | B1 `safeUX` + migration ; B2 refactor `castSpellInBattle` ; B3 refactor `renderQuestList` ; B4 refactor `checkLevelUp` ; B5 audit code mort. |
 | `code-improvements.md` — **Vague C**  | ⏳ 0/4                                    | C1 doc CLAUDE.md ; C2 a11y ; C3 smoke loader ; C4 hygiène plans.                                                         |
 | `equipment-extended.md`               | 28 / 53 — Phase 6 restante                | 6.1 update SVG_PLAN si atlas items ajoutés ; 6.2 commit groupé ; 6.3 PR (sur demande). Phase 4 (atlas PNG items) reportée. |
-| `npc-integration.md`                  | Livré pour l'essentiel                    | (a) Corriger portrait Pomfresh (broche → caducée + mandragore + plume de phénix) ; (b) PNG 4 PNJ lore (Sir Nicolas, Moine Gras, Rusard, Trelawney). |
-| `character-ux-v2.md`                  | Étape 0 (mockup) livrée                   | Validation utilisateur 0.U pour débloquer 1.1 → 6.6 (refonte modale Personnage 3 colonnes + tooltip riche).               |
+| `npc-integration.md`                  | ✅ clos (itération 3, 2026-05-12)         | Portrait Pomfresh refondu (caducée d'argent) + 4 portraits PNJ lore livrés. Plan archivé.                                 |
+| `character-ux-v2.md`                  | ✅ clos (2026-05-21)                      | v2 intégrée acceptée. Étape 3 (fusion inventaire) abandonnée — `#inventory-modal` est devenu un outil multi-onglets.       |
 | `character-ux-refonte.md`             | Iter A + B livrées                        | Plan obsolète → **à archiver** dans `_archive/` (PR #57 mergée).                                                          |
 | `audio-intro-sample.md`               | Implémenté (commits récents)              | Plan obsolète (samples livrés dans commits `481c384`, `924b48c`, etc.) → **à archiver**.                                 |
 | `voice-intro-dumbledore.md`           | Implémenté (commit `a0962fa`)             | Plan obsolète → **à archiver**.                                                                                          |
@@ -253,11 +253,10 @@ sanity check.** Cibles prioritaires :
    temps.
 
 **Hors-scope code** (mais sur l'arriéré global) :
-- SVG_PLAN reste : 40 tâches visuelles à 2 mains (PNG génération utilisateur).
-- npc-integration : 4 portraits PNG manquants + correction Pomfresh.
+- SVG_PLAN : ✅ clos (2026-05-21) — re-gens C32-C37 abandonnés.
+- npc-integration : ✅ clos (itération 3) — tous les portraits livrés.
 - equipment-extended Phase 4 : atlas PNG items (reporté, hors V1).
-- character-ux-v2 : 6 phases en attente de validation utilisateur sur le
-  mockup `tools/mockup_character_v2.html`.
+- character-ux-v2 : ✅ clos (2026-05-21) — v2 intégrée, Étape 3 abandonnée.
 
 ---
 

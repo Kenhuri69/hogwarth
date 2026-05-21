@@ -9,8 +9,8 @@ Vanilla JS / HTML5 Canvas, zéro dépendance, zéro build step.
 > 31 monstres + 4 blasons + 2 scènes grand format livrés, plus 14 monstres
 > récents en PNG via Nano Banana (Bloc B pivoté).
 > Archive du plan : [`.claude/plans/_archive/SVG_PLAN.md`](./.claude/plans/_archive/SVG_PLAN.md).
-> Re-gens optionnels (C32-C37) listés dans la même archive si re-direction
-> artistique souhaitée.
+> Plan clos le 2026-05-21 : re-gens optionnels C32-C37 abandonnés (PNG
+> actuels conservés), aucune lacune raster fonctionnelle restante.
 
 ---
 
