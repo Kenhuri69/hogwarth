@@ -281,6 +281,36 @@ function _tryGuardCounter(defender, enemy) {
   return `🛡️→⚔️ ${defender.name} contre ${enemy.name} pour ${dmg} dégâts ! `;
 }
 
+// Résout une attaque physique ennemie sur un allié.
+// Priorité : Protego > Esquive > Garde > coup normal. Retourne le fragment de log.
+function _enemyPhysicalHit(enemy, target, charIdx) {
+  if (shieldTurns[charIdx] > 0) {
+    shieldTurns[charIdx]--;
+    UX_safe.floatDmg('ally', 0, 'shield');
+    UX_safe.logCombat(`🛡️ Protego bloque l'attaque de ${enemy.name} sur ${target.name}.`, 'magic');
+    return `🛡️ Protego protège ${target.name} ! `;
+  }
+  if (Math.random() * 100 < (target.dodgeChance || 0)) {
+    UX_safe.floatDmg('ally', 0, 'miss');
+    UX_safe.logCombat(`💨 ${target.name} esquive ${enemy.name}`, 'good');
+    return `💨 ${target.name} esquive l'attaque de ${enemy.name} ! `;
+  }
+  if (guardTurns[charIdx] > 0) {
+    const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
+    const mitigated = Math.max(0, Math.floor(dmg / 2));
+    target.hp = Math.max(0, target.hp - mitigated);
+    UX_safe.floatDmg('ally', mitigated, 'dmg');
+    UX_safe.logCombat(`🛡️ ${target.name} mitige ${enemy.name} : <b>−${mitigated}</b> <small>(au lieu de −${dmg})</small>`, 'magic');
+    guardTurns[charIdx] = Math.max(0, guardTurns[charIdx] - 1);
+    return `🛡️ ${target.name} mitige : -${mitigated} (au lieu de -${dmg}). ` + _tryGuardCounter(target, enemy);
+  }
+  const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
+  target.hp = Math.max(0, target.hp - dmg);
+  UX_safe.floatDmg('ally', dmg === 0 ? 0 : dmg, dmg === 0 ? 'miss' : 'dmg');
+  UX_safe.logCombat(`${enemy.icon} ${enemy.name} → ${target.name} : <b>−${dmg} PV</b>`, 'bad');
+  return `${enemy.icon} → ${target.name} : -${dmg} PV. `;
+}
+
 // ── Démarrage du combat ──────────────────────────────────────
 function startBattle(baseEnemyData) {
   inBattle          = true;
@@ -586,34 +616,7 @@ function enemyTurn() {
     if (tryEnemyAbility(enemy, target, charIdx, txt => { log += txt; })) return;
 
     // Attaque physique normale — priorité : Protego > Esquive > Garde > coup normal.
-    if (shieldTurns[charIdx] > 0) {
-      shieldTurns[charIdx]--;
-      log += `🛡️ Protego protège ${target.name} ! `;
-      UX_safe.floatDmg('ally', 0, 'shield');
-      UX_safe.logCombat(`🛡️ Protego bloque l'attaque de ${enemy.name} sur ${target.name}.`, 'magic');
-    } else if (Math.random() * 100 < (target.dodgeChance || 0)) {
-      // Esquive : AGI-based, calculé par recalculateStats. Annule l'attaque.
-      log += `💨 ${target.name} esquive l'attaque de ${enemy.name} ! `;
-      UX_safe.floatDmg('ally', 0, 'miss');
-      UX_safe.logCombat(`💨 ${target.name} esquive ${enemy.name}`, 'good');
-    } else if (guardTurns[charIdx] > 0) {
-      const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
-      const mitigated = Math.max(0, Math.floor(dmg / 2));
-      target.hp = Math.max(0, target.hp - mitigated);
-      log += `🛡️ ${target.name} mitige : -${mitigated} (au lieu de -${dmg}). `;
-      UX_safe.floatDmg('ally', mitigated, 'dmg');
-      UX_safe.logCombat(`🛡️ ${target.name} mitige ${enemy.name} : <b>−${mitigated}</b> <small>(au lieu de −${dmg})</small>`, 'magic');
-      // Chaque coup mitigé consomme un palier de garde.
-      guardTurns[charIdx] = Math.max(0, guardTurns[charIdx] - 1);
-      // Garde counter-attack : riposte probabiliste sans consommer de tour.
-      log += _tryGuardCounter(target, enemy);
-    } else {
-      const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
-      target.hp = Math.max(0, target.hp - dmg);
-      log += `${enemy.icon} → ${target.name} : -${dmg} PV. `;
-      UX_safe.floatDmg('ally', dmg === 0 ? 0 : dmg, dmg === 0 ? 'miss' : 'dmg');
-      UX_safe.logCombat(`${enemy.icon} ${enemy.name} → ${target.name} : <b>−${dmg} PV</b>`, 'bad');
-    }
+    log += _enemyPhysicalHit(enemy, target, charIdx);
   });
 
   // Une riposte de garde a pu achever le dernier ennemi.

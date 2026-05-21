@@ -753,16 +753,17 @@ function useItem(idx, battleMode) {
   closeModal('inventory-modal');
 
   if (battleMode && inBattle) {
-    // Les ennemis contre-attaquent après utilisation d'objet
-    let log = `${target.name} utilise ${item.name}.`;
+    // Les ennemis contre-attaquent après utilisation d'objet — mêmes règles
+    // que le tour ennemi (Protego > Esquive > Garde > coup normal).
+    let log = `${target.name} utilise ${item.name}. `;
     livingEnemies().forEach(e => {
-      const dmg = Math.max(0, e.atk - target.def + Math.floor(Math.random() * 3));
-      target.hp  = Math.max(0, target.hp - dmg);
-      log += ` ${e.icon}-${dmg} PV.`;
+      if (e.currentHp <= 0) return;
+      log += _enemyPhysicalHit(e, target, currentBattleChar);
     });
     setBattleLog(log);
     renderEnemyGroup();
     updateUI();
+    if (livingEnemies().length === 0) { endBattle(true); return; }
     if (allPartyKO()) { inBattle = false; triggerDeath('Le groupe a été vaincu...'); }
     else advanceBattleChar();
   }

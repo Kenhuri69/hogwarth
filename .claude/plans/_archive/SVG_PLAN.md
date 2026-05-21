@@ -147,14 +147,18 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 
 - [x] **C31** `bellatrix`
 
-### C.3 Re-génération optionnelle des 6 PNG existants
+### C.3 Re-génération optionnelle des 6 PNG existants — ❌ ABANDONNÉE (2026-05-21)
 
-- [ ] **C32** `basilic` (re-gen)
-- [ ] **C33** `nagini` (re-gen)
-- [ ] **C34** `detraqueur_gardien` (re-gen)
-- [ ] **C35** `sorciere_tenebres` (re-gen)
-- [ ] **C36** `voldemort_affaibli` (re-gen)
-- [ ] **C37** `voldemort_revenu` (re-gen)
+> Décision utilisateur 2026-05-21 : les 6 PNG actuels conviennent, aucune
+> re-direction artistique souhaitée. C32-C37 abandonnés (les PNG existent
+> déjà et fonctionnent en jeu). Aucune génération d'image requise.
+
+- [~] **C32** `basilic` (re-gen) — abandonné, PNG actuel conservé
+- [~] **C33** `nagini` (re-gen) — abandonné, PNG actuel conservé
+- [~] **C34** `detraqueur_gardien` (re-gen) — abandonné, PNG actuel conservé
+- [~] **C35** `sorciere_tenebres` (re-gen) — abandonné, PNG actuel conservé
+- [~] **C36** `voldemort_affaibli` (re-gen) — abandonné, PNG actuel conservé
+- [~] **C37** `voldemort_revenu` (re-gen) — abandonné, PNG actuel conservé
 
 ### C.4 Portraits PNJ donneurs de quête (optionnel)
 
@@ -213,7 +217,11 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 
 ## Finalisation
 
-- [ ] **Z1** Commit final groupé sur `claude/improve-game-svgs-0a3cf` + push.
+- [x] **Z1** Le plan a été livré de façon incrémentale (un commit/PR par
+      bloc, cf. journal) plutôt qu'en un commit final groupé — la branche
+      `claude/improve-game-svgs-0a3cf` n'a jamais servi. Tous les blocs
+      A/B/C/D sont intégrés ou clos ; C32-C37 abandonnés. Plan clos
+      le 2026-05-21.
 
 ---
 
@@ -256,4 +264,5 @@ Améliorations : meilleures proportions, gradients via les `<defs>` du A3, déta
 | 2026-05-11 | #33 | C24 mangemort intégré (sur branche `claude/monster-png-C24-mangemort`) | Source 1024×1024 RGBA livrée avec alpha déjà détouré (43,8% pixels α=0) → skip rembg, pipeline inline (trim bbox + recentrage 8% + resize 512 + optimize). Squelette masqué hood noir, baguette à étincelles violettes, robe noire en lambeaux. QA §9 : alpha=0 57%, alpha=255 22%, occupation 85×83%, 294 KB ✓. Constat : C25 `mangemort_masque` n'a jamais existé dans `monsters.js` (id "mangemort" porte déjà `name:"Mangemort Masqué"`) → marqué `[~]` n/a |
 | 2026-05-12 | #34 | C26 + C27 + C29 + C30 intégrés (sur branche `claude/svg-c1-monsters-png`) | 4 PNG livrés par Nano Banana en lot. 3 sources 1024×1024 RGBA déjà détourées (mangemort_elite α0=59%, sorcier_renegat α0=65%, chimere α0=48%) → pipeline inline trim+recentrage 8%+resize 512+optimize (cf. `.claude/plans/svg-c1-monsters.md`). 4ᵉ source ombre_quirrell 784×1168 JPG fond sombre dégradé → `process_monster_png.py --id ombre_quirrell` (rembg birefnet-general, modèle téléchargé 973 MB). Résultats : mangemort_elite 296 KB (77×84%), sorcier_renegat 240 KB (79×84%), chimere 396 KB (82×84%), ombre_quirrell 117 KB (60×84%, α255=8.6% acceptable car fantôme translucide). Smoke 34/34. Bloc C.1 désormais clos (C26-C30 ✓, C25 n/a) hors re-gens optionnels C32-C37. C.4 portraits PNJ cochés rétroactivement (déjà livrés via plan `npc-integration.md` it. 2/3). Statut global 36 → 44 (C26,C27,C29,C30 + C38,C39,C40,C41). |
 | 2026-05-12 | #35 | C31 bellatrix intégré (suite sur même branche `claude/svg-c1-monsters-png`) | Source 1024×1024 RGB avec décor gothique complet (donjon, arches, lueurs vert/violet) — cas difficile mais Bellatrix a un contour net (cheveux volants, robe en lambeaux, bottes lacées). Pipeline complet `process_monster_png.py --id bellatrix` (rembg birefnet-general). Dry-run validé visuellement avant run final : détourage impeccable, rim light cyan préservé subtilement, aucune bavure du fond. QA §9 tous critères verts : 139 KB, 512×512 RGBA, α0=78%, α255=17%, occupation 53×84%. Smoke 34/34. Bloc C.2 clos. Statut global 44 → 45/86. Mini-plan dédié `.claude/plans/svg-c2-bellatrix.md`. |
+| 2026-05-21 | clôture | C32-C37 abandonnés + Z1 résolu → plan clos | Audit raster : 55/55 monstres réels ont leur PNG, tous les items ont une icône (les 6 `brew_potion_*` sont des recettes du chaudron, pas des items — ils empruntent l'icône de leur `resultItemId`). Aucune lacune fonctionnelle. C32-C37 (re-gen des 6 PNG existants) abandonnés sur décision utilisateur : pas de re-direction artistique souhaitée. Z1 marqué résolu (livraison incrémentale par bloc, jamais de commit groupé). SVG_PLAN officiellement clos. |
 | 2026-05-12 | #36 | C42 + C43 intégrés (suite sur même branche) — clôture bloc C.5 | Choix utilisateur tranché : illustration centrale qui remplace les SVG (vs background d'ambiance ou hybride). C42 château nocturne (tours gothiques, lac réfléchissant, lune, brume violette) généré du premier coup. C43 v1 « collapsed body in corridor » bloqué par filtres Gemini → v2 « petrified statue » (canon HP : pétrification ≠ mort, victimes du Basilic ramenées par mandragore) → v3 plan B « still life sans figure » accepté (baguette, lunettes rondes brisées, écharpe Gryffondor, livre, œil du Basilic dans la flaque). 2 PNG 1024×1024 RGB → conversion JPEG q88 progressive optimize → `img/scenes/title.jpg` 182 KB + `img/scenes/death.jpg` 205 KB. `index.html` : SVG inline château (150 lignes, ~8.7 KB de markup) remplacé par `<img>` 1 ligne dans `.castle-art` ; SVG `death-seal` remplacé par `<img class="death-art">`. CSS : règle `.castle-art svg` étendue à `img`, anims orphelines supprimées (`.title-win-warm/.title-win-cold/.title-moon/.title-twinkle` + keyframes `titleFlickerWarm/titleFlickerCold/moonGlow/titleSvgTwinkle`) — vérifié `grep -rE` zéro référence orpheline. Nouvelle règle `.death-art` (width min(72vw, 320px), border-radius 12px, glow box-shadow rouge). Smoke 34/34. Statut global 45 → 47/86. Mini-plan dédié `.claude/plans/svg-c42-c43-scenes.md`. |
