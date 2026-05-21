@@ -276,6 +276,7 @@ function _saveFloorToCache(floor) {
     enemyMap:     JSON.parse(JSON.stringify(enemyMap)),
     itemMap:      JSON.parse(JSON.stringify(itemMap)),
     px: playerX, py: playerY, dir: playerDir,
+    floorEvent: currentFloorEvent,
     searchedCells: Array.from(searchedCells),
     npcPlacements: Array.from(npcPlacements.entries())
     // Note : on n'archive PAS usedFountains : la fontaine se ré-active
@@ -293,6 +294,7 @@ function _restoreFloorFromCache(floor) {
   playerX  = c.px; playerY = c.py; playerDir = c.dir;
   searchedCells = _searchedCellsFromArray(c.searchedCells);
   npcPlacements = new Map(c.npcPlacements || []);
+  currentFloorEvent = c.floorEvent || null;
   // Nouvelle visite = nouvelle eau dans la fontaine et nouvelles larmes Fumseck
   usedFountains = new Set();
   usedAltars = new Set();
@@ -394,6 +396,16 @@ function _maybePlayTierTransition(prevFloor, nextFloor) {
   if (typeof addMsg === 'function') addMsg(`✨ ${next.label}`, 'narrative');
 }
 
+// Toast d'événement d'étage (Phase 4) — affiché à l'entrée d'un étage
+// qui porte un `currentFloorEvent`. No-op si l'étage est ordinaire.
+function _announceFloorEvent() {
+  if (!currentFloorEvent) return;
+  const ev = (typeof getFloorEvent === 'function') ? getFloorEvent(currentFloorEvent) : null;
+  if (!ev) return;
+  setNarrative(ev.desc);
+  if (typeof addMsg === 'function') addMsg(`✦ ${ev.name} — ${ev.desc}`, 'magic');
+}
+
 function _changeFloor(delta, opts) {
   if (opts.guard && opts.guard()) return;
   const prevFloor = currentFloor;
@@ -422,6 +434,7 @@ function _changeFloor(delta, opts) {
     updateCompass();
     _maybePlayTierTransition(prevFloor, currentFloor);
     if (opts.onArrive) opts.onArrive();
+    _announceFloorEvent();
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
     safeCall('autoSave', opts.saveReason);

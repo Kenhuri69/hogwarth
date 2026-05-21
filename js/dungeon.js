@@ -250,6 +250,10 @@ function generateDungeon(floor) {
   itemMap = Array.from({length:MAP_H}, () => Array(MAP_W).fill(null));
   npcPlacements = new Map();
 
+  // Événement d'étage (Phase 4) : tiré une fois ici ; pilote la densité
+  // d'ennemis, le nombre de coffres/pièges et la boutique ci-dessous.
+  currentFloorEvent = (typeof rollFloorEvent === 'function') ? rollFloorEvent() : null;
+
   // ── Génération des salles : 5 salles sans chevauchement ───────
   // Map 12×12 (10×10 utile) → 5 salles, majoritairement 3×3, séparées
   // par une marge d'au moins 1 case. La map ne sépare proprement que
@@ -321,11 +325,15 @@ function generateDungeon(floor) {
   // intermédiaires : coffre/boutique probabilistes. Salles-branches
   // (cul-de-sac) : cellule spéciale garantie → récompense du détour.
   dungeon[spine[SPINE_LEN - 1].cy][spine[SPINE_LEN - 1].cx] = CELL.STAIRS_D;
+  // Événement « Veine de trésors » : double la probabilité de coffre en
+  // épine ; « Marché ambulant » : force la boutique sur la salle d'épine.
+  const chestP = (currentFloorEvent === 'tresor') ? 0.60 : 0.30;
   for (const r of rooms) {
     if (r.kind === 'spine') {
+      if (currentFloorEvent === 'marche') { dungeon[r.cy][r.cx] = CELL.SHOP; continue; }
       const roll = Math.random();
-      if (roll < 0.30)      dungeon[r.cy][r.cx] = CELL.CHEST;
-      else if (roll < 0.50) dungeon[r.cy][r.cx] = CELL.SHOP;
+      if (roll < chestP)             dungeon[r.cy][r.cx] = CELL.CHEST;
+      else if (roll < chestP + 0.20) dungeon[r.cy][r.cx] = CELL.SHOP;
     } else if (r.kind === 'branch') {
       // Cul-de-sac : autel (~25 %) ou coffre garanti — récompense du détour.
       dungeon[r.cy][r.cx] = (Math.random() < 0.25) ? CELL.ALTAR : CELL.CHEST;
@@ -354,7 +362,9 @@ function generateDungeon(floor) {
       const j = Math.floor(Math.random() * (i + 1));
       [trapCells[i], trapCells[j]] = [trapCells[j], trapCells[i]];
     }
-    const trapCount = 1 + (Math.random() < 0.5 ? 1 : 0);
+    // « Étage piégé » : +2 pièges au-dessus de la base de 1-2.
+    let trapCount = 1 + (Math.random() < 0.5 ? 1 : 0);
+    if (currentFloorEvent === 'pieges') trapCount += 2;
     for (let i = 0; i < trapCount && i < trapCells.length; i++) {
       dungeon[trapCells[i][1]][trapCells[i][0]] = CELL.TRAP;
     }
@@ -500,8 +510,12 @@ function generateDungeon(floor) {
   );
   const pool = eligibleTypes.length ? eligibleTypes : MONSTERS;
 
+  // Densité d'ennemis pilotée par l'événement d'étage : « Étage hanté »
+  // sature les salles, « Quiétude » les vide en partie.
+  const enemyChance = currentFloorEvent === 'hante' ? 0.85
+                    : currentFloorEvent === 'calme' ? 0.30 : 0.60;
   for(let r of rooms.slice(1)) {
-    if(Math.random()<0.6) {
+    if(Math.random()<enemyChance) {
       const ex = r.x+Math.floor(Math.random()*r.w);
       const ey = r.y+Math.floor(Math.random()*r.h);
       // Jamais d'ennemi sur la case de spawn : avec un chevauchement de

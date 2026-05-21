@@ -228,6 +228,7 @@ function _serializeState() {
     restCooldown,
     usedFountains: Array.from(usedFountains),
     usedAltars: Array.from(usedAltars),
+    currentFloorEvent,
     usedSpecialNpcs: Array.from(usedSpecialNpcs),
     defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
                           .map(([f, set]) => [f, Array.from(set)]),
@@ -454,6 +455,7 @@ function _applyState(gs) {
   if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
   usedFountains = new Set(gs.usedFountains || []);
   usedAltars = new Set(gs.usedAltars || []);
+  currentFloorEvent = gs.currentFloorEvent || null;
   usedSpecialNpcs = new Set(gs.usedSpecialNpcs || []);
   defeatedCellsByFloor = new Map(
     (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])

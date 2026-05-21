@@ -9655,10 +9655,11 @@ async function scenarioDungeonTraps() {
     }
     return out;
   });
-  const badCount = t2.filter(r => r.traps < 1 || r.traps > 2);
+  // 1-2 pièges en base ; jusqu'à 4 si l'événement d'étage « pieges » est tiré.
+  const badCount = t2.filter(r => r.traps < 1 || r.traps > 4);
   const badSpawn = t2.filter(r => r.nearSpawn > 0);
-  console.log(`  T2 : 20 générations — hors 1-2:${badCount.length} près du spawn:${badSpawn.length}`);
-  assert(badCount.length === 0, 'chaque étage doit compter 1 ou 2 pièges');
+  console.log(`  T2 : 20 générations — hors 1-4:${badCount.length} près du spawn:${badSpawn.length}`);
+  assert(badCount.length === 0, 'chaque étage doit compter 1 à 4 pièges');
   assert(badSpawn.length === 0, 'aucun piège dans le rayon de spawn');
 
   // T3 : la fouille désamorce un piège adjacent
@@ -9943,8 +9944,107 @@ async function scenarioSealedRoom() {
   await browser.close();
 }
 
+// ── Scénario : événements d'étage ────────────────────────────────
+// Couvre dungeon-enrichment.md §4 : registre FLOOR_EVENTS, tirage,
+// effets de génération (boutique / pièges / densité d'ennemis), save.
+async function scenarioFloorEvents() {
+  console.log('\n── Scénario : événements d\'étage (Phase 4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : registre + helpers + état
+  const t1 = await page.evaluate(() => ({
+    events: Array.isArray(FLOOR_EVENTS) ? FLOOR_EVENTS.length : -1,
+    roll:   typeof rollFloorEvent === 'function',
+    get:    typeof getFloorEvent === 'function',
+    state:  typeof currentFloorEvent !== 'undefined',
+  }));
+  console.log('  T1:', t1);
+  assert(t1.events === 5,  'FLOOR_EVENTS doit compter 5 événements');
+  assert(t1.roll && t1.get, 'rollFloorEvent / getFloorEvent non exposées');
+  assert(t1.state,          'currentFloorEvent non exposé');
+
+  // T2 : rollFloorEvent — null si random élevé, id valide sinon
+  const t2 = await page.evaluate(() => {
+    const orig = Math.random;
+    Math.random = () => 0.9;
+    const noEvent = rollFloorEvent();
+    Math.random = () => 0.05;
+    const someEvent = rollFloorEvent();
+    Math.random = orig;
+    return { noEvent, someEvent, validIds: FLOOR_EVENTS.map(e => e.id) };
+  });
+  console.log('  T2 tirage:', t2);
+  assert(t2.noEvent === null,                  'random élevé → aucun événement');
+  assert(t2.validIds.includes(t2.someEvent),   'random bas → un événement valide');
+
+  // T3 : effets de génération par événement (rollFloorEvent forcé)
+  const t3 = await page.evaluate(() => {
+    const orig = rollFloorEvent;
+    const count = (cell) => {
+      let n = 0;
+      for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++) if (dungeon[y][x] === cell) n++;
+      return n;
+    };
+    const enemies = () => {
+      let n = 0;
+      for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++) if (enemyMap[y][x]) n++;
+      return n;
+    };
+    try {
+      rollFloorEvent = () => 'marche';
+      generateDungeon(3);
+      const marcheShops = count(CELL.SHOP), marcheEv = currentFloorEvent;
+
+      rollFloorEvent = () => 'pieges';
+      generateDungeon(3);
+      const piegesTraps = count(CELL.TRAP);
+
+      rollFloorEvent = () => 'hante';
+      let hante = 0;
+      for (let i = 0; i < 12; i++) { generateDungeon(3); hante += enemies(); }
+
+      rollFloorEvent = () => 'calme';
+      let calme = 0;
+      for (let i = 0; i < 12; i++) { generateDungeon(3); calme += enemies(); }
+
+      rollFloorEvent = () => null;
+      generateDungeon(3);
+      const nullEv = currentFloorEvent;
+
+      return { marcheShops, marcheEv, piegesTraps, hante, calme, nullEv };
+    } finally { rollFloorEvent = orig; }
+  });
+  console.log('  T3 effets:', t3);
+  assert(t3.marcheEv === 'marche',  'currentFloorEvent doit refléter l\'événement tiré');
+  assert(t3.marcheShops >= 1,       'marché ambulant → au moins une boutique');
+  assert(t3.piegesTraps >= 3,       'étage piégé → au moins 3 pièges');
+  assert(t3.hante > t3.calme,       'étage hanté → plus d\'ennemis que quiétude');
+  assert(t3.nullEv === null,        'pas d\'événement → currentFloorEvent null');
+
+  // T4 : round-trip save de currentFloorEvent
+  const t4 = await page.evaluate(() => {
+    currentFloorEvent = 'hante';
+    const snap = _serializeState();
+    currentFloorEvent = null;
+    _applyState(snap);
+    return { restored: currentFloorEvent };
+  });
+  console.log('  T4 round-trip save:', t4);
+  assert(t4.restored === 'hante', 'currentFloorEvent doit survivre au round-trip save');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (événements d'étage)`);
+  }
+  console.log('  ✅ événements d\'étage — tirage, effets, persistance OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

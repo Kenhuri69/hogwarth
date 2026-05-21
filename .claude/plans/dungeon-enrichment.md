@@ -7,7 +7,7 @@
 > **événements d'étage**, sans introduire de nouveau système lourd — tout
 > repose sur les `CELL.*` existants + quelques nouveaux types.
 
-Statut global : **Phases 1 & 2 livrées — 2 / 4 phases**.
+Statut global : **Phases 1, 2 & 4 livrées — 3 / 4 phases** (reste Phase 3).
 Branche de travail : `claude/plans-bugs-review-Nhbt1` (ou nouvelle branche
 dédiée par phase — décidé au moment du commit).
 
@@ -210,30 +210,32 @@ isolée par le mur), pas créée à la volée — sinon le cache la perd.
 > Au franchissement d'un escalier, un événement ambiant peut colorer
 > l'étage. Narratif, léger, zéro nouveau système — un registre + un hook.
 
-### Étapes
+### Étapes — ✅ livré (2026-05-21)
 
-- [ ] **4.1** Registre `FLOOR_EVENTS` (nouveau fichier `js/floor-events.js`
-      ou section de `floor-themes.js`) : `[{id, name, desc, weight,
-      apply(floor)}]`. Ajouté à l'ordre de chargement `index.html` + au
-      MANIFEST du loader si fichier dédié.
-- [ ] **4.2** Hook dans `_changeFloor` (`movement.js`) : ~35 % de chance de
-      tirer un événement pondéré ; toast narratif à l'entrée.
-- [ ] **4.3** 4-5 événements V1 :
-      - **Couloir effondré** : mure le couloir d'une **branche** (jamais
-        l'épine — préserve la connexité escalier).
-      - **Brume épaisse** : réduit `DEPTH` de rendu pour l'étage.
-      - **Étage hanté** : +taux de spawn ennemi, +drops.
-      - **Quiétude** : quelques salles sans ennemi.
-      - **Marché ambulant** : une `SHOP` supplémentaire garantie.
-- [ ] **4.4** `currentFloorEvent` dans `state.js`, sérialisé. Les effets
-      passifs (brume, taux de spawn) lisent cette variable.
-- [ ] **4.5** Smoke : scénario « événements d'étage » — forcer un
-      événement, vérifier son application + sérialisation.
+- [x] **4.1** Registre `FLOOR_EVENTS` (nouveau fichier `js/floor-events.js`)
+      + `rollFloorEvent()` (35 % puis tirage pondéré) + `getFloorEvent(id)`.
+      Ajouté à l'ordre de chargement `index.html` et au MANIFEST du loader.
+- [x] **4.2** Hook dans `generateDungeon` (tirage) + `_announceFloorEvent`
+      appelé par `_changeFloor` (toast narratif à l'entrée d'étage).
+- [x] **4.3** 5 événements V1, **tous appliqués à la génération** :
+      - **Étage hanté** : densité d'ennemis 0,60 → 0,85.
+      - **Quiétude** : densité d'ennemis 0,60 → 0,30.
+      - **Marché ambulant** : boutique forcée sur la salle d'épine.
+      - **Veine de trésors** : probabilité de coffre en épine ×2 (0,30 → 0,60).
+      - **Étage piégé** : +2 pièges au-dessus de la base de 1-2.
+- [x] **4.4** `currentFloorEvent` dans `state.js`, mis en cache par étage
+      (`floorDungeons`) et sérialisé (`_serializeState`/`_applyState`).
+- [x] **4.5** Smoke : `scenarioFloorEvents` — tirage, effets de génération
+      (forçage de `rollFloorEvent`), round-trip save.
 
-### Risque
-Faible si « Couloir effondré » ne touche que les branches. Vérifier que la
-brume (`DEPTH` réduit) ne casse pas le renderer ni le smoke (qui lit le
-canvas).
+**Écarts §4** : (a) **« Couloir effondré » abandonné** — murer un couloir
+de branche réintroduit la dépendance géométrique évitée en Phase 1 ;
+(b) **« Brume » abandonnée** — réduire `DEPTH` de rendu fait apparaître un
+mur fantôme (le renderer peint un mur du fond à `wallDist`) ; un vrai
+brouillard demanderait une refonte du renderer, hors V1. Remplacés par
+« Veine de trésors » et « Étage piégé », tous deux appliqués à la
+génération — donc **zéro effet runtime** : pas de modification du
+renderer, tout est mis en cache naturellement dans `dungeon`/`enemyMap`.
 
 ---
 
@@ -277,3 +279,4 @@ délicat côté persistance). Une PR par phase, smoke vert à chaque étape.
 | 2026-05-21 | Rédaction du plan | ✅ | Audit `dungeon.js` réalisé, 4 piliers validés par l'utilisateur, plan rédigé. Implémentation non démarrée. |
 | 2026-05-21 | Phase 1 — Layout branchu | ✅ | `generateDungeon` réécrit : topologie en arbre (épine 3 salles + 2 branches cul-de-sac), placement non-chevauchant, helpers `_carveCorridor`/`_assertDungeonConnected`, cellules spéciales (CHEST garanti en branche). Bug ennemi-sur-spawn corrigé. Scénario smoke `scenarioBranchyDungeon` (30 générations, connexité 100 %). Suite complète 88/88 verte. Itéré 8→6→5 salles pour la contrainte map 12×12. |
 | 2026-05-21 | Phase 2 — Salles à événement | ✅ | Livrée en 3 commits. §2.A pièges (`CELL.TRAP`, déclenchement/désamorçage). §2.B autels (`CELL.ALTAR`, offrande/pari, rendu complet, `usedAltars` persisté). §2.C salle scellée (alvéole `DOOR`+`CHEST`, item `cle_donjon` lâché par un monstre, ouverture à la clé via `_step`). 3 scénarios smoke dédiés. Suite 91/91 verte. |
+| 2026-05-21 | Phase 4 — Événements d'étage | ✅ | Nouveau `js/floor-events.js` (registre `FLOOR_EVENTS` + `rollFloorEvent`). 5 événements appliqués à la génération (hanté/quiétude/marché/trésors/piégé). `currentFloorEvent` mis en cache + sérialisé, toast à l'entrée d'étage. Couloir-effondré et brume abandonnés (dépendance géométrique / refonte renderer). Scénario `scenarioFloorEvents`. Assertion de `scenarioDungeonTraps` élargie (1-4 pièges). Suite 92/92 verte. |
