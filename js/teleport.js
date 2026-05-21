@@ -317,7 +317,7 @@ function teleportOutOfCombat(targetFloor, charIdx) {
 
   _floorTransition(currentFloor, locName, () => {
     if (!_restoreFloorFromCache(currentFloor)) {
-      searchedCells = new Set();
+      searchedCells = new Map();
       generateDungeon(currentFloor);
     }
     // Re-positionner sur une case libre random (Portus = arrivée imprécise).
