@@ -277,6 +277,7 @@ function _saveFloorToCache(floor) {
     itemMap:      JSON.parse(JSON.stringify(itemMap)),
     px: playerX, py: playerY, dir: playerDir,
     floorEvent: currentFloorEvent,
+    secretWalls: Array.from(secretWalls),
     searchedCells: Array.from(searchedCells),
     npcPlacements: Array.from(npcPlacements.entries())
     // Note : on n'archive PAS usedFountains : la fontaine se ré-active
@@ -295,6 +296,7 @@ function _restoreFloorFromCache(floor) {
   searchedCells = _searchedCellsFromArray(c.searchedCells);
   npcPlacements = new Map(c.npcPlacements || []);
   currentFloorEvent = c.floorEvent || null;
+  secretWalls = new Set(c.secretWalls || []);
   // Nouvelle visite = nouvelle eau dans la fontaine et nouvelles larmes Fumseck
   usedFountains = new Set();
   usedAltars = new Set();
@@ -646,6 +648,25 @@ function searchRoom() {
     addMsg(`Piège${disarmed > 1 ? 's' : ''} désamorcé${disarmed > 1 ? 's' : ''} (${disarmed}).`, 'good');
     renderMinimap();
     return;
+  }
+
+  // Révélation de passage secret : un mur secret dans les 8 cases
+  // adjacentes est mis au jour par la fouille (Phase 3 §3.2). Effet
+  // prioritaire, sans consommer la recharge de fouille.
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const k = `${playerX + dx},${playerY + dy}`;
+      if (secretWalls && secretWalls.has(k)) {
+        secretWalls.delete(k);
+        dungeon[playerY + dy][playerX + dx] = CELL.FLOOR;
+        setNarrative("En tâtant la paroi, une pierre bascule — un passage dérobé s'ouvre dans le mur !");
+        addMsg("Passage secret découvert !", 'good');
+        if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+        renderMinimap();
+        drawDungeon();
+        return;
+      }
+    }
   }
 
   const key = `${playerX},${playerY}`;

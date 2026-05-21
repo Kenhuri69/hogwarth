@@ -7,7 +7,7 @@
 > **événements d'étage**, sans introduire de nouveau système lourd — tout
 > repose sur les `CELL.*` existants + quelques nouveaux types.
 
-Statut global : **Phases 1, 2 & 4 livrées — 3 / 4 phases** (reste Phase 3).
+Statut global : **✅ PLAN CLOS — 4 / 4 phases livrées (2026-05-21).**
 Branche de travail : `claude/plans-bugs-review-Nhbt1` (ou nouvelle branche
 dédiée par phase — décidé au moment du commit).
 
@@ -181,27 +181,32 @@ dans cet état au retour sur l'étage.
 > Donner un sens structurel à `searchRoom()` : aujourd'hui il ne produit
 > que du butin aléatoire. Demain il peut révéler de la **géographie**.
 
-### Étapes
+### Étapes — ✅ livré (2026-05-21)
 
-- [ ] **3.1** Notion de **mur secret** : 0-1 par étage, une case `WALL`
-      adjacente à une salle et à une **salle cachée** (hors arbre principal).
-      Suivi par un Set `secretWalls` (clés `"x,y"`) dans `state.js`.
-- [ ] **3.2** `searchRoom()` : si le joueur est adjacent à un mur secret
-      non révélé, la fouille le **révèle** (`WALL → DOOR` ou `FLOOR`),
-      ouvrant le passage. Message narratif dédié.
-- [ ] **3.3** La salle cachée contient une récompense au-dessus de la
-      moyenne (coffre riche, ou raccourci vers l'escalier). `secretWalls`
-      révélés sérialisés dans le save.
-- [ ] **3.4** Rendu minimap : la salle cachée n'apparaît qu'après
-      révélation. Indice visuel optionnel (fissure) sur le mur secret en
-      vue 3D — *à trancher : peut être hors-scope V1 si trop coûteux.*
-- [ ] **3.5** Smoke : scénario « secrets » — un mur secret généré, la
-      fouille adjacente le révèle, la salle cachée devient atteignable.
+- [x] **3.1** **Mur secret** : ~50 % des étages reçoivent une 2nde alvéole
+      `FLOOR → mur → CHEST` (helper partagé `_findWallPocket`, le même que
+      le coffre scellé). Le mur d'accès reste `CELL.WALL` (indiscernable) ;
+      sa clé `"x,y"` est ajoutée au Set `secretWalls` (`state.js`).
+- [x] **3.2** `searchRoom()` : un mur secret dans les 8 cases adjacentes
+      est **révélé** (`WALL → FLOOR`) et retiré de `secretWalls`. Message
+      narratif dédié, effet prioritaire sans consommer la recharge.
+- [x] **3.3** La cache contient un coffre standard (récompense du détour ;
+      pas de drops enrichis — hors V1, comme le coffre scellé §2.C).
+      `secretWalls` mis en cache par étage + sérialisé.
+- [~] **3.4** Minimap : la cache n'apparaît **automatiquement** qu'après
+      révélation (`renderMinimap` ne dessine que les cases `visited` — un
+      mur secret non franchi n'est jamais visité). **Indice 3D de fissure
+      abandonné** (hors V1) : le mur secret est indiscernable d'un mur
+      ordinaire — découverte par la fouille pure, mécanique de crawler
+      classique.
+- [x] **3.5** Smoke : `scenarioSecretPassage` — génération, révélation
+      par `searchRoom`, round-trip save de `secretWalls`.
 
 ### Risque
-Modéré : nouvel état persistant (`secretWalls`) + interaction avec le cache
-d'étage. La salle cachée doit être générée **dès** `generateDungeon` (mais
-isolée par le mur), pas créée à la volée — sinon le cache la perd.
+Modéré (état persistant `secretWalls`). Mitigé : la cache est générée
+**dès** `generateDungeon` (isolée par le mur), jamais à la volée ;
+`secretWalls` suit exactement le cycle de `searchedCells` (reset à la
+génération, mis en cache dans `floorDungeons`, sérialisé).
 
 ---
 
@@ -280,3 +285,4 @@ délicat côté persistance). Une PR par phase, smoke vert à chaque étape.
 | 2026-05-21 | Phase 1 — Layout branchu | ✅ | `generateDungeon` réécrit : topologie en arbre (épine 3 salles + 2 branches cul-de-sac), placement non-chevauchant, helpers `_carveCorridor`/`_assertDungeonConnected`, cellules spéciales (CHEST garanti en branche). Bug ennemi-sur-spawn corrigé. Scénario smoke `scenarioBranchyDungeon` (30 générations, connexité 100 %). Suite complète 88/88 verte. Itéré 8→6→5 salles pour la contrainte map 12×12. |
 | 2026-05-21 | Phase 2 — Salles à événement | ✅ | Livrée en 3 commits. §2.A pièges (`CELL.TRAP`, déclenchement/désamorçage). §2.B autels (`CELL.ALTAR`, offrande/pari, rendu complet, `usedAltars` persisté). §2.C salle scellée (alvéole `DOOR`+`CHEST`, item `cle_donjon` lâché par un monstre, ouverture à la clé via `_step`). 3 scénarios smoke dédiés. Suite 91/91 verte. |
 | 2026-05-21 | Phase 4 — Événements d'étage | ✅ | Nouveau `js/floor-events.js` (registre `FLOOR_EVENTS` + `rollFloorEvent`). 5 événements appliqués à la génération (hanté/quiétude/marché/trésors/piégé). `currentFloorEvent` mis en cache + sérialisé, toast à l'entrée d'étage. Couloir-effondré et brume abandonnés (dépendance géométrique / refonte renderer). Scénario `scenarioFloorEvents`. Assertion de `scenarioDungeonTraps` élargie (1-4 pièges). Suite 92/92 verte. |
+| 2026-05-21 | Phase 3 — Secrets & fouille | ✅ | Helper `_findWallPocket` extrait (partagé coffre scellé / passage secret). ~50 % des étages reçoivent un mur secret (`secretWalls` Set) révélable par `searchRoom`. État mis en cache + sérialisé. Indice 3D de fissure abandonné (découverte à la fouille pure). Scénario `scenarioSecretPassage`. Suite 93/93 verte. **Plan clos — 4/4 phases.** |

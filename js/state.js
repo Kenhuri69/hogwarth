@@ -330,6 +330,10 @@ let usedAltars = new Set();
 // Événement de l'étage courant (id de FLOOR_EVENTS) ou null. Tiré à la
 // génération, mis en cache par étage et persisté. Voir dungeon-enrichment §4.
 let currentFloorEvent = null;
+// Murs secrets non révélés de l'étage courant (clés "x,y"). Posés à la
+// génération, révélés par searchRoom. Mis en cache + persistés comme
+// `searchedCells`. Voir dungeon-enrichment §3.
+let secretWalls = new Set();
 // Cellules où le joueur a tué un ennemi, indexées par étage.
 // Map<floor, Set<"x,y">>. À chaque retour sur un étage déjà visité, chaque
 // entrée a 20 % de chance de re-spawner un ennemi (`_respawnEnemiesOnEntry`).

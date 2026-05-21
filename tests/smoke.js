@@ -10043,8 +10043,103 @@ async function scenarioFloorEvents() {
   await browser.close();
 }
 
+// ── Scénario : passages secrets (fouille) ────────────────────────
+// Couvre dungeon-enrichment.md §3 : mur secret généré, révélation par
+// searchRoom, round-trip save de secretWalls.
+async function scenarioSecretPassage() {
+  console.log('\n── Scénario : passages secrets (Phase 3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : état exposé
+  const t1 = await page.evaluate(() => ({
+    secretWalls: typeof secretWalls !== 'undefined' && secretWalls instanceof Set,
+    pocket:      typeof _findWallPocket === 'function',
+  }));
+  console.log('  T1:', t1);
+  assert(t1.secretWalls, 'secretWalls non exposé (ou pas un Set)');
+  assert(t1.pocket,      '_findWallPocket non exposée');
+
+  // T2 : 24 générations — mur secret = WALL avec un coffre adjacent
+  const t2 = await page.evaluate(() => {
+    let withSecret = 0, bad = 0;
+    for (let g = 0; g < 24; g++) {
+      generateDungeon(1 + (g % 8));
+      if (!secretWalls || secretWalls.size === 0) continue;
+      withSecret++;
+      for (const k of secretWalls) {
+        const [sx, sy] = k.split(',').map(Number);
+        if (dungeon[sy][sx] !== CELL.WALL) { bad++; continue; }
+        let chestAdj = false;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = sx + dx, ny = sy + dy;
+          if (nx >= 0 && ny >= 0 && nx < MAP_W && ny < MAP_H
+              && dungeon[ny][nx] === CELL.CHEST) chestAdj = true;
+        }
+        if (!chestAdj) bad++;
+      }
+    }
+    return { withSecret, bad };
+  });
+  console.log('  T2 génération:', t2);
+  assert(t2.withSecret >= 1, 'un passage secret doit apparaître sur 24 générations');
+  assert(t2.bad === 0,       'tout mur secret doit être WALL avec un coffre adjacent');
+
+  // T3 : searchRoom révèle un mur secret adjacent
+  const t3 = await page.evaluate(() => {
+    // Isole le test : retire les pièges proches (ils priment dans searchRoom).
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) {
+        const tx = playerX + dx, ty = playerY + dy;
+        if (tx >= 0 && ty >= 0 && tx < MAP_W && ty < MAP_H
+            && dungeon[ty][tx] === CELL.TRAP) dungeon[ty][tx] = CELL.FLOOR;
+      }
+    secretWalls = new Set();
+    let placed = null;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const tx = playerX + dx, ty = playerY + dy;
+      if (tx >= 0 && ty >= 0 && tx < MAP_W && ty < MAP_H) {
+        dungeon[ty][tx] = CELL.WALL;
+        secretWalls.add(`${tx},${ty}`);
+        placed = [tx, ty]; break;
+      }
+    }
+    searchedCells = new Map(); stepCount = 0;
+    searchRoom();
+    return {
+      placed,
+      revealed: dungeon[placed[1]][placed[0]] === CELL.FLOOR,
+      gone:     !secretWalls.has(`${placed[0]},${placed[1]}`),
+    };
+  });
+  console.log('  T3 révélation:', t3);
+  assert(t3.placed,    'setup : aucune case adjacente trouvée');
+  assert(t3.revealed,  'searchRoom doit révéler le mur secret adjacent (→ FLOOR)');
+  assert(t3.gone,      'le mur révélé doit sortir de secretWalls');
+
+  // T4 : round-trip save de secretWalls
+  const t4 = await page.evaluate(() => {
+    secretWalls = new Set(['4,4', '8,2']);
+    const snap = _serializeState();
+    secretWalls = new Set();
+    _applyState(snap);
+    return { isSet: secretWalls instanceof Set, size: secretWalls.size, has: secretWalls.has('4,4') };
+  });
+  console.log('  T4 round-trip save:', t4);
+  assert(t4.isSet,      'secretWalls doit rester un Set après _applyState');
+  assert(t4.size === 2, 'secretWalls doit survivre au round-trip save');
+  assert(t4.has,        'les clés de secretWalls doivent survivre au round-trip');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (passages secrets)`);
+  }
+  console.log('  ✅ passages secrets — génération, révélation, persistance OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

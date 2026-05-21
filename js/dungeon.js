@@ -239,6 +239,36 @@ function _assertDungeonConnected() {
   return false;
 }
 
+// Cherche une alvéole creusable dans le mur : un triplet
+// `FLOOR accessible → W1 (mur) → W2 (mur)` où W2 est un cul-de-sac
+// (ses 3 autres voisins sont des murs). Sert aux salles bonus de la
+// Phase 2/3 (coffre scellé, passage secret). Retourne {w1x,w1y,w2x,w2y}
+// au hasard parmi les candidats, ou null.
+function _findWallPocket() {
+  const DIRS4 = [[1,0],[-1,0],[0,1],[0,-1]];
+  const cands = [];
+  for (let y = 1; y < MAP_H - 1; y++) {
+    for (let x = 1; x < MAP_W - 1; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      for (const [dx, dy] of DIRS4) {
+        const w1x = x + dx,     w1y = y + dy;
+        const w2x = x + 2 * dx, w2y = y + 2 * dy;
+        if (w2x < 1 || w2x > MAP_W - 2 || w2y < 1 || w2y > MAP_H - 2) continue;
+        if (dungeon[w1y][w1x] !== CELL.WALL) continue;
+        if (dungeon[w2y][w2x] !== CELL.WALL) continue;
+        let sealed = true;
+        for (const [ex, ey] of DIRS4) {
+          const nx = w2x + ex, ny = w2y + ey;
+          if (nx === w1x && ny === w1y) continue;
+          if (dungeon[ny][nx] !== CELL.WALL) { sealed = false; break; }
+        }
+        if (sealed) cands.push({ w1x, w1y, w2x, w2y });
+      }
+    }
+  }
+  return cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
+}
+
 // Instantané structurel des salles du dernier donjon généré (kind/rect).
 // Hook de test (smoke) — non consommé par le moteur de jeu.
 let lastDungeonRooms = [];
@@ -370,39 +400,26 @@ function generateDungeon(floor) {
     }
   }
 
-  // ── Salle scellée (Phase 2 §2.C) ──────────────────────────────
-  // Une porte CELL.DOOR + un coffre creusés dans le mur, en alvéole :
-  // FLOOR accessible → DOOR → CHEST. Le coffre n'est atteignable qu'en
-  // ouvrant la porte (Clé du Donjon, attribuée plus bas à un monstre).
+  // ── Salle scellée (§2.C) + passage secret (§3) ────────────────
+  // Deux alvéoles `FLOOR → mur → CHEST` creusées dans le mur via
+  // `_findWallPocket`. La 1re est fermée par une porte CELL.DOOR (clé) ;
+  // la 2nde (~50 % des étages) par un mur secret laissé en CELL.WALL,
+  // révélé par la fouille (searchRoom). Le coffre n'est atteignable
+  // qu'en franchissant le gardien correspondant.
   let vaultPlaced = false;
-  {
-    const DIRS4 = [[1,0],[-1,0],[0,1],[0,-1]];
-    const cands = [];
-    for (let y = 1; y < MAP_H - 1; y++) {
-      for (let x = 1; x < MAP_W - 1; x++) {
-        if (dungeon[y][x] !== CELL.FLOOR) continue;
-        for (const [dx, dy] of DIRS4) {
-          const w1x = x + dx,     w1y = y + dy;
-          const w2x = x + 2 * dx, w2y = y + 2 * dy;
-          if (w2x < 1 || w2x > MAP_W - 2 || w2y < 1 || w2y > MAP_H - 2) continue;
-          if (dungeon[w1y][w1x] !== CELL.WALL) continue;
-          if (dungeon[w2y][w2x] !== CELL.WALL) continue;
-          // Le coffre (w2) doit être un cul-de-sac : ses 3 autres voisins WALL.
-          let sealed = true;
-          for (const [ex, ey] of DIRS4) {
-            const nx = w2x + ex, ny = w2y + ey;
-            if (nx === w1x && ny === w1y) continue;
-            if (dungeon[ny][nx] !== CELL.WALL) { sealed = false; break; }
-          }
-          if (sealed) cands.push({ w1x, w1y, w2x, w2y });
-        }
-      }
-    }
-    if (cands.length) {
-      const v = cands[Math.floor(Math.random() * cands.length)];
-      dungeon[v.w1y][v.w1x] = CELL.DOOR;
-      dungeon[v.w2y][v.w2x] = CELL.CHEST;
-      vaultPlaced = true;
+  const vault = _findWallPocket();
+  if (vault) {
+    dungeon[vault.w1y][vault.w1x] = CELL.DOOR;
+    dungeon[vault.w2y][vault.w2x] = CELL.CHEST;
+    vaultPlaced = true;
+  }
+  secretWalls = new Set();
+  if (Math.random() < 0.5) {
+    const secret = _findWallPocket();
+    if (secret) {
+      // w1 reste CELL.WALL — mur secret, indiscernable jusqu'à la fouille.
+      dungeon[secret.w2y][secret.w2x] = CELL.CHEST;
+      secretWalls.add(`${secret.w1x},${secret.w1y}`);
     }
   }
 

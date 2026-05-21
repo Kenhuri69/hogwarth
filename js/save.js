@@ -229,6 +229,7 @@ function _serializeState() {
     usedFountains: Array.from(usedFountains),
     usedAltars: Array.from(usedAltars),
     currentFloorEvent,
+    secretWalls: Array.from(secretWalls),
     usedSpecialNpcs: Array.from(usedSpecialNpcs),
     defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
                           .map(([f, set]) => [f, Array.from(set)]),
@@ -456,6 +457,7 @@ function _applyState(gs) {
   usedFountains = new Set(gs.usedFountains || []);
   usedAltars = new Set(gs.usedAltars || []);
   currentFloorEvent = gs.currentFloorEvent || null;
+  secretWalls = new Set(gs.secretWalls || []);
   usedSpecialNpcs = new Set(gs.usedSpecialNpcs || []);
   defeatedCellsByFloor = new Map(
     (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])
