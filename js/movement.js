@@ -672,7 +672,7 @@ function _triggerSearchTrap() {
       if (c.hp <= 0) return;
       const dmg = Math.max(1, Math.floor(c.hpMax * 0.08));
       c.hp = Math.max(1, c.hp - dmg);
-      c.sp = Math.max(0, c.sp - Math.floor(c.spMax * 0.20));
+      c.sp = Math.max(0, c.sp - Math.floor(c.spMax * 0.10));
     });
     setNarrative("Le sol cède : une brume sourde enveloppe le groupe, sapant corps et magie.");
     addMsg("Piège ! Le groupe est blessé et vidé d'une partie de sa magie.", 'bad');
