@@ -21,7 +21,11 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body { overflow-x: hidden; max-width: 100vw; }
+/* Verrouille le scroll du document : sur mobile, un scroll vertical replie
+   la barre d'URL du navigateur, ce qui change 100dvh et redimensionne la
+   vue 3D. Les overlays (sélection, modales) sont position:fixed avec leur
+   propre overflow-y:auto — ils scrollent en interne, pas le document. */
+html, body { overflow: hidden; max-width: 100vw; overscroll-behavior: none; }
 body {
   background: #0a0a0a;
   font-family: 'Crimson Text', serif;
