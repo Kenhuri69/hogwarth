@@ -61,7 +61,11 @@ function loadGameData() {
     `;exports.LEVEL_UP_XP_MULTIPLIER = LEVEL_UP_XP_MULTIPLIER;\n` +
     `;exports.RESIST_MULTIPLIER = RESIST_MULTIPLIER;\n` +
     `;exports.WEAK_MULTIPLIER = WEAK_MULTIPLIER;\n` +
-    `;exports.ITEMS = ITEMS;\n`;
+    `;exports.ITEMS = ITEMS;\n` +
+    `;exports.SEARCH_MONSTER_CHANCE = SEARCH_MONSTER_CHANCE;\n` +
+    `;exports.SEARCH_TRAP_CHANCE = SEARCH_TRAP_CHANCE;\n` +
+    `;exports.REST_ENCOUNTER_CHANCE = REST_ENCOUNTER_CHANCE;\n` +
+    `;exports.REST_INTERRUPT_HEAL_FRACTION = REST_INTERRUPT_HEAL_FRACTION;\n`;
   vm.runInContext(patchedData, sandbox, { filename: 'data.js' });
 
   // quests.js : seule la constante `QUEST_TEMPLATES` nous intéresse.
@@ -78,7 +82,9 @@ function loadGameData() {
 
 const { MONSTERS, SPELLS, CHARACTERS, LEVEL_UP_XP_MULTIPLIER,
         RESIST_MULTIPLIER, WEAK_MULTIPLIER, ITEMS,
-        QUEST_TEMPLATES, SHOP_CATALOG } = loadGameData();
+        QUEST_TEMPLATES, SHOP_CATALOG,
+        SEARCH_MONSTER_CHANCE, SEARCH_TRAP_CHANCE,
+        REST_ENCOUNTER_CHANCE, REST_INTERRUPT_HEAL_FRACTION } = loadGameData();
 
 const spellByName = Object.fromEntries(SPELLS.map(s => [s.name, s]));
 
@@ -324,6 +330,15 @@ let FLOORS = Array.from({ length: 12 }, (_, i) => i + 1);
 // Hypothèse : ~4 combats par étage en moyenne (8 rooms - shop/chest - escaliers,
 // densité 0.6 → ~4 enemy spawns; cf. dungeon.js:202)
 const COMBATS_PER_FLOOR_AVG = 4;
+
+// ── Run d'étage (modèle PR #213 : repos partiel + malus de fouille) ──
+// Le joueur fouille ~3 cases par étage (besace, gold, butin). Chaque
+// fouille porte les jets de malus de PR #213 (réveil monstre / piège).
+const SEARCHES_PER_FLOOR = 3;
+// Seuils de décision de repos : le groupe se repose avant une salle si
+// les PV moyens tombent sous 65 % ou les PM moyens sous 40 %.
+const REST_HP_THRESHOLD = 0.65;
+const REST_SP_THRESHOLD = 0.40;
 
 // ── CLI ─────────────────────────────────────────────────────
 function parseArgs(argv) {
@@ -748,10 +763,18 @@ function poolStats(floor, cfg) {
 // Statuts DoT infligés par les ennemis et modélisés par la sim.
 const SIM_DOT_IDS = ['burn', 'poison', 'bleed', 'gel'];
 
-function simulateBattle(party, enemyGroup) {
+function simulateBattle(party, enemyGroup, opts = {}) {
   // Reset state pour la sim. Élan est un cumul de combat — il repart à
   // zéro à chaque combat (jamais sérialisé, comme l'état de combat réel).
-  party.forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; c.shieldTurns = 0; c.statusEffects = []; c._elanStacks = 0; });
+  // `keepVitals` (run d'étage) : on conserve les PV/PM reportés du combat
+  // précédent ; sinon on repart à neuf. L'état de combat (bouclier, statuts,
+  // Élan, Garde) est toujours réinitialisé — il est combat-scoped, comme
+  // `startBattle` (battle.js) qui reset shieldTurns/guardTurns/guardRegenCooldown.
+  party.forEach(c => {
+    if (!opts.keepVitals) { c.hp = c.hpMax; c.sp = c.spMax; }
+    c.shieldTurns = 0; c.statusEffects = []; c._elanStacks = 0;
+    c.guardStacks = 0; c.guardRegenCD = 0;
+  });
   enemyGroup.forEach(e => { e.currentHp = e.hp; e.disarmed = 0; });
 
   const partySize = party.length;
@@ -798,6 +821,11 @@ function simulateBattle(party, enemyGroup) {
         if (s.turns > 0) remaining.push(s);
       }
       char.statusEffects = remaining;
+    }
+    // Cooldown de regen PM de la Garde — un décompte par round écoulé
+    // (miroir de battle.js — enemyTurn, fix PR #213).
+    for (const char of party) {
+      if (char.guardRegenCD > 0) char.guardRegenCD--;
     }
     if (!party.some(c => c.hp > 0)) {
       return { won: false, turns: turn, survivors: 0, hpPct: 0, enemyDmg: totalEnemyDmg };
@@ -848,6 +876,20 @@ function heroAct(char, enemies) {
       char.hp = Math.min(char.hpMax, char.hp + heal.power);
       return;
     }
+  }
+
+  // 1c. Garde — un héros blessé (40 % ≤ PV < 60 %) sans palier de garde
+  //     échange son tour d'attaque contre 50 % de mitigation sur les coups
+  //     physiques entrants (miroir de l'action Garde, battle.js). La regen
+  //     PM suit le cooldown 1t/2 introduit par PR #213 (guardRegenCD).
+  if (char.hp < char.hpMax * 0.60 && (char.guardStacks || 0) < 1) {
+    char.guardStacks = Math.min(3, (char.guardStacks || 0) + 1);
+    if ((char.guardRegenCD || 0) <= 0) {
+      const pmTheo = 3 + Math.floor((char.mag || 0) / 5);
+      char.sp = Math.min(char.spMax, char.sp + Math.max(0, pmTheo));
+      char.guardRegenCD = 2;
+    }
+    return;
   }
 
   // 2. Best damage spell
@@ -972,9 +1014,21 @@ function enemyAct(enemy, target, partySize) {
       }
     }
   }
-  // Attaque physique simple : pas de RNG côté ennemi dans le code réel
+  // Attaque physique simple : pas de RNG côté ennemi dans le code réel.
+  // Priorité miroir de battle.js — enemyTurn : Esquive > Garde > coup normal.
   if (Math.random() * 100 < (target.dodgeChance || 0)) return 0;
   const dmg = mitigatedDamage(enemy.atk, target.def);
+  if ((target.guardStacks || 0) > 0) {
+    // Garde : mitigation 50 %, consomme un palier, riposte probabiliste
+    // (30 %, atk/2 mitigée par la DEF ennemie — cf. _tryGuardCounter).
+    const mitigated = Math.max(0, Math.floor(dmg / 2));
+    target.hp = Math.max(0, target.hp - mitigated);
+    target.guardStacks--;
+    if (Math.random() * 100 < 30 && enemy.currentHp > 0) {
+      enemy.currentHp -= Math.max(1, mitigatedDamage(Math.floor(target.atk / 2), enemy.def || 0));
+    }
+    return mitigated;
+  }
   target.hp = Math.max(0, target.hp - dmg);
   return dmg;
 }
@@ -1023,6 +1077,145 @@ function runSimulations(cfg) {
     }
   }
 
+  return rows;
+}
+
+// ── Run d'étage complet (PR #213 : repos partiel + fouille) ──────────
+//
+// `simulateBattle` mesure un combat isolé (PV/PM pleins). Un run d'étage
+// enchaîne ~4 salles SANS reset des PV/PM (`keepVitals`), intercale les
+// décisions de repos et les jets de fouille. C'est le seul niveau de
+// modélisation où le repos partiel et le malus de fouille de PR #213
+// ont un sens — ils opèrent entre les combats, pas pendant.
+
+function avgSpPct(party) {
+  return party.reduce((s, c) => s + Math.max(0, c.sp) / Math.max(1, c.spMax), 0) / party.length;
+}
+
+// Le groupe se repose si les PV ou PM moyens passent sous les seuils.
+function partyNeedsRest(party) {
+  const alive = party.filter(c => c.hp > 0);
+  if (!alive.length) return false;
+  return avgHpPct(alive) < REST_HP_THRESHOLD || avgSpPct(alive) < REST_SP_THRESHOLD;
+}
+
+// Repos (movement.js — rest). `frac` = fraction du soin appliquée :
+// 1.0 hors interruption, REST_INTERRUPT_HEAL_FRACTION si une rencontre
+// interrompt. Soin de base = 30 % PV/PM max.
+function applyRest(party, frac) {
+  party.forEach(c => {
+    const healAmt = Math.floor(c.hpMax * 0.3 * frac);
+    const spAmt   = Math.floor(c.spMax * 0.3 * frac);
+    c.hp = Math.min(c.hpMax, c.hp + healAmt);
+    c.sp = Math.min(c.spMax, c.sp + spAmt);
+  });
+}
+
+// Piège de fouille (movement.js — _triggerSearchTrap). 3 variantes
+// équiprobables, jamais létal (chaque cible garde ≥ 1 PV).
+function applySearchTrap(party, partySize) {
+  const members = party.slice(0, partySize);
+  const variant = Math.floor(Math.random() * 3);
+  if (variant === 0) {
+    members.forEach(c => {
+      if (c.hp <= 0) return;
+      c.hp = Math.max(1, c.hp - Math.max(1, Math.floor(c.hpMax * 0.12)));
+    });
+  } else if (variant === 1) {
+    const alive = members.filter(c => c.hp > 0);
+    if (alive.length) {
+      const v = alive[Math.floor(Math.random() * alive.length)];
+      v.hp = Math.max(1, v.hp - Math.max(1, Math.floor(v.hpMax * 0.20)));
+    }
+  } else {
+    members.forEach(c => {
+      if (c.hp <= 0) return;
+      c.hp = Math.max(1, c.hp - Math.max(1, Math.floor(c.hpMax * 0.08)));
+      c.sp = Math.max(0, c.sp - Math.floor(c.spMax * 0.10));
+    });
+  }
+}
+
+// Simule un étage complet. Retourne { cleared, ...compteurs }.
+function simulateFloorRun(cfg, floor, partySize, level) {
+  const party = partySize === 1
+    ? [createHero('harry', level, cfg, floor, 1)]
+    : [createHero('harry', level, cfg, floor, 2), createHero('hermione', level, cfg, floor, 2)];
+  const pool = eligiblePool(floor, cfg);
+  const stats = { combats: 0, rests: 0, restInterrupts: 0, traps: 0, searchMonsters: 0 };
+
+  const fight = (group) => {
+    stats.combats++;
+    return simulateBattle(party, group, { keepVitals: true }).won;
+  };
+
+  for (let room = 0; room < COMBATS_PER_FLOOR_AVG; room++) {
+    // Décision de repos avant la salle.
+    if (partyNeedsRest(party)) {
+      stats.rests++;
+      if (Math.random() < REST_ENCOUNTER_CHANCE) {
+        // Repos interrompu : soin partiel (PR #213) puis combat contre un
+        // monstre de l'étage inférieur (movement.js — rest).
+        stats.restInterrupts++;
+        applyRest(party, REST_INTERRUPT_HEAL_FRACTION);
+        const restFloor = Math.max(1, floor - 1);
+        const restPool  = eligiblePool(restFloor, cfg);
+        if (!fight([scaleMonster(weightedPick(restPool), restFloor, cfg)])) {
+          return { cleared: false, ...stats };
+        }
+      } else {
+        applyRest(party, 1.0);
+      }
+    }
+    // Fouille (1 par salle, dans la limite de SEARCHES_PER_FLOOR).
+    if (room < SEARCHES_PER_FLOOR) {
+      if (Math.random() < SEARCH_MONSTER_CHANCE) {
+        stats.searchMonsters++;
+        if (!fight([scaleMonster(weightedPick(pool), floor, cfg)])) {
+          return { cleared: false, ...stats };
+        }
+      } else if (Math.random() < SEARCH_TRAP_CHANCE) {
+        stats.traps++;
+        applySearchTrap(party, partySize);
+      }
+    }
+    // Combat de salle.
+    const size  = rollGroupSize(floor, partySize, cfg);
+    const group = Array.from({ length: size },
+      () => scaleMonster(weightedPick(pool), floor, cfg));
+    if (!fight(group)) return { cleared: false, ...stats };
+  }
+  return { cleared: true, endHpPct: avgHpPct(party), ...stats };
+}
+
+function runFloorSimulations(cfg) {
+  const rows = [];
+  for (const floor of FLOORS) {
+    if (!eligiblePool(floor, cfg).length) continue;
+    for (const partySize of [1, 2]) {
+      const level = expectedLevelAtFloor(floor, partySize, cfg) + (cfg.bonusLevels || 0);
+      const agg = { cleared: 0, combats: 0, rests: 0, restInterrupts: 0,
+                    traps: 0, searchMonsters: 0, endHpPct: 0 };
+      for (let i = 0; i < cfg.nSims; i++) {
+        const r = simulateFloorRun(cfg, floor, partySize, level);
+        if (r.cleared) { agg.cleared++; agg.endHpPct += r.endHpPct; }
+        agg.combats += r.combats;
+        agg.rests += r.rests;
+        agg.restInterrupts += r.restInterrupts;
+        agg.traps += r.traps;
+        agg.searchMonsters += r.searchMonsters;
+      }
+      rows.push({
+        floor, partySize, level,
+        clearRate: agg.cleared / cfg.nSims,
+        avgCombats: agg.combats / cfg.nSims,
+        avgRests: agg.rests / cfg.nSims,
+        restInterruptRate: agg.restInterrupts / cfg.nSims,
+        badSearchRate: (agg.traps + agg.searchMonsters) / cfg.nSims,
+        endHpPct: agg.cleared ? agg.endHpPct / agg.cleared : null,
+      });
+    }
+  }
   return rows;
 }
 
@@ -1119,6 +1312,23 @@ function emitReport(rows, cfg) {
   }
 }
 
+// Section 7 : run d'étage complet (mécaniques PR #213).
+function emitFloorReport(rows, cfg) {
+  console.log('\n## 7. Run d\'étage complet — PR #213 (repos partiel + malus de fouille)\n');
+  console.log(`Enchaîne ${COMBATS_PER_FLOOR_AVG} salles sans reset des PV/PM, avec ` +
+    `décision de repos (seuils PV < ${REST_HP_THRESHOLD * 100} % / PM < ${REST_SP_THRESHOLD * 100} %) ` +
+    `et ${SEARCHES_PER_FLOOR} fouilles par étage (jets de malus PR #213). ` +
+    `« Étage réussi » = groupe vivant au bout des salles.\n`);
+  console.log('| Étage | Mode | Niv. | Étage réussi % | Combats moy. | Repos moy. | Repos interrompu % | Fouille néfaste % | PV fin (réussi) |');
+  console.log('|------:|:----:|-----:|---------------:|-------------:|-----------:|-------------------:|------------------:|----------------:|');
+  for (const r of rows) {
+    const mode = r.partySize === 1 ? 'Solo' : 'Duo ';
+    console.log(`| ${r.floor} | ${mode} | ${r.level} | ${pct(r.clearRate)} | ` +
+      `${num(r.avgCombats, 1)} | ${num(r.avgRests, 2)} | ${pct(r.restInterruptRate)} | ` +
+      `${pct(r.badSearchRate)} | ${r.endHpPct == null ? '—' : pct(r.endHpPct)} |`);
+  }
+}
+
 // ── Comparaison baseline vs proposition (mode --compare) ────
 function emitComparison(baseline, proposed, cfgProposed) {
   console.log('# Comparaison baseline vs proposition\n');
@@ -1182,4 +1392,5 @@ if (ARGS.mode === 'compare') {
   // bonusLevels/artifacts (sinon le modèle joueur serait amputé).
   const rows = runSimulations(ARGS);
   emitReport(rows, ARGS);
+  emitFloorReport(runFloorSimulations(ARGS), ARGS);
 }

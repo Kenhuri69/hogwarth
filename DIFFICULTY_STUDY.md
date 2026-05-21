@@ -1,13 +1,19 @@
 # Étude de la difficulté & équations de puissance
 
 > Méthode : lecture du code réel + simulation Monte-Carlo
-> `tools/sim-difficulty.js` (400 combats / étage / mode).
+> `tools/sim-difficulty.js` (600 combats / étage / mode).
 >
 > ⚠️ **Correction importante** — une première version de cette étude
 > concluait que le jeu était « ingagnable » en fin de partie. C'était faux :
 > le harness de simulation comportait un bug (voir §2) qui désactivait
 > silencieusement la modélisation des quêtes, de l'équipement et des
 > potions. Corrigé. Les chiffres ci-dessous sont la mesure honnête.
+>
+> 🔄 **Mise à jour 2026-05-21 (PR #213)** — le simulateur modélise
+> désormais l'action **Garde** (regen PM 1 tour sur 2), le **repos
+> partiel** et le **malus de fouille**. Ces deux dernières mécaniques
+> opèrent entre les combats : un nouveau modèle de **run d'étage**
+> (§9) les mesure. Les chiffres §3 (combat isolé) ont été rafraîchis.
 
 ---
 
@@ -17,13 +23,22 @@ La courbe de difficulté est **saine**. La fin de partie est exigeante, mais
 c'est un **gate de progression voulu** : il se franchit en farmant des niveaux
 et en récupérant des artefacts — exactement comme prévu par le design.
 
-| Mode | Jeu normal (sans farming) | Avec farming + artefacts |
-|------|---------------------------|--------------------------|
-| Solo | confortable 1-5, tendu 6-7, difficile 8-9, dur 10-12 (~30 %) | 100 % jusqu'à l'étage 8, 64-86 % aux étages 9-12 |
-| Duo  | confortable 1-8, tendu 9, difficile 10-12 (55-65 %) | ≥ 93 % partout |
+Deux niveaux de lecture, désormais mesurés séparément :
 
-**Il n'y a pas de mur infranchissable.** La zone « difficile » de fin de partie
-est la récompense attendue de l'investissement (niveaux + équipement légendaire).
+| Lecture | Solo | Duo |
+|---------|------|-----|
+| **Combat isolé** (§3, PV/PM pleins) | confortable 1-5, tendu 6-7, difficile 8-12 (~30-50 %) | confortable 1-8, tendu 9-12 (76-92 %) |
+| **Run d'étage** (§9, attrition + repos + fouille) | confortable 1-5, mur réel dès l'étage 6-7 | confortable 1-6, tendu 7-8, mur dès l'étage 9 |
+
+**L'écart entre les deux lectures est l'enseignement clé.** Gagner un
+combat isolé n'est pas gagner un étage : les 4 salles enchaînées drainent
+les PV/PM, et le repos (interrompu 1 fois sur 3) ne compense pas tout. Le
+Solo, sans second personnage pour absorber, décroche bien plus tôt que ne
+le laissait croire le seul taux de victoire par combat.
+
+**Il n'y a pas de mur infranchissable** : farming de niveaux + artefacts
+repoussent le mur (§4). Mais la zone « difficile » du Solo de milieu de
+partie est plus sévère que l'ancienne lecture par combat le suggérait.
 
 ---
 
@@ -52,31 +67,36 @@ Deux extensions ajoutées pour cette étude :
 
 ---
 
-## 3. Difficulté réelle — jeu normal
+## 3. Difficulté réelle — combat isolé
 
 Modèle « joueur normal » : quêtes complétées, équipement best-in-slot de
 boutique, stock de potions, 3 points de stats alloués par niveau (build
-équilibré). ~4 combats / étage. Aucun farming supplémentaire.
+équilibré). Chaque combat part **PV/PM pleins** — c'est une borne haute
+(optimiste) ; le run d'étage attrition-aware est en §9.
 
 | Étage | Solo (niv.) | Win % Solo | Duo (niv.) | Win % Duo |
 |------:|:-----------:|-----------:|:----------:|----------:|
 | 1-4  | 1→6  | 100 %        | 1→7  | 100 % |
-| 5    | 8    | 96 %         | 8    | 100 % |
-| 6    | 8    | 85 %         | 8    | 99 %  |
-| 7    | 9    | 78 %         | 9    | 97 %  |
-| 8    | 9    | 57 %         | 10   | 91 %  |
-| 9    | 10   | 41 %         | 10   | 74 %  |
-| 10   | 10   | 31 %         | 11   | 65 %  |
-| 11   | 11   | 27 %         | 11   | 57 %  |
-| 12   | 11   | 26 %         | 12   | 55 %  |
+| 5    | 8    | 98 %         | 8    | 100 % |
+| 6    | 8    | 87 %         | 8    | 100 % |
+| 7    | 9    | 83 %         | 9    | 100 % |
+| 8    | 9    | 63 %         | 10   | 99 %  |
+| 9    | 10   | 51 %         | 10   | 92 %  |
+| 10   | 10   | 43 %         | 11   | 89 %  |
+| 11   | 11   | 37 %         | 11   | 77 %  |
+| 12   | 11   | 32 %         | 12   | 76 %  |
 
-**Lecture** : la difficulté monte progressivement, sans spike brutal. Le Solo
-de fin de partie (étages 10-12, ~30 %) signale au joueur qu'il doit se
-renforcer avant de continuer — ce n'est pas un blocage, c'est un signal.
+**Lecture** : combat par combat, la difficulté monte progressivement, sans
+spike brutal. Le Duo reste confortable (≥ 76 %) sur toute la grille ; le
+Solo de fin de partie tombe vers 30-50 %. Modéliser la Garde a allongé les
+combats (un tour de garde = pas de dégâts) sans déstabiliser la courbe.
 
 > Note : les XP de quêtes font naturellement « sur-monter » le joueur en
 > niveau (étage 10 → niveau 11). Le sur-leveling fait déjà partie du jeu
 > normal, avant même tout farming volontaire.
+>
+> ⚠️ Cette table mesure des combats **isolés**. En conditions réelles, les
+> PV/PM ne se rechargent pas entre deux salles — voir §9.
 
 ---
 
@@ -309,3 +329,84 @@ refonte aligne donc chaque set sur son archétype de jeu.
   plus gaspillés et s'alignent sur leur archétype.
 - ⚠️ Limite résiduelle du modèle : effets de set non chiffrables en sim
   (regen passif, lifesteal de sorts, réduction de coût) — impact mineur.
+
+---
+
+## 9. PR #213 — Garde, repos partiel & run d'étage
+
+PR #213 a introduit trois ajustements d'équilibrage. Le simulateur les
+modélise désormais (`tools/sim-difficulty.js`).
+
+### 9.1 Action Garde (regen PM 1 tour sur 2)
+
+Modélisée dans la boucle de combat : un héros blessé (40 % ≤ PV < 60 %)
+qui n'a pas de palier de garde échange son tour d'attaque contre **50 %
+de mitigation** sur les coups physiques entrants (+ riposte 30 % à
+atk/2). La régénération de PM suit le cooldown 1t/2 de PR #213.
+
+Impact sur les combats isolés (§3) : combats légèrement plus longs (un
+tour de garde ne fait pas de dégâts), survie un peu meilleure dans les
+échanges tendus — courbe globalement inchangée. La Garde est un outil de
+mitigation, pas un levier de puissance.
+
+### 9.2 Run d'étage complet — l'attrition révélée
+
+Le **run d'étage** enchaîne 4 salles **sans recharger les PV/PM**, avec
+décision de repos entre les salles et 3 fouilles par étage (jets de
+malus PR #213). « Étage réussi » = groupe vivant au bout des 4 salles.
+
+| Étage | Solo (niv.) | Étage réussi Solo | Duo (niv.) | Étage réussi Duo |
+|------:|:-----------:|------------------:|:----------:|-----------------:|
+| 1-4  | 1→6  | 98-100 %           | 1→7  | 100 %  |
+| 5    | 8    | 75 %               | 8    | 100 %  |
+| 6    | 8    | 33 %               | 8    | 100 %  |
+| 7    | 9    | 20 %               | 9    | 84 %   |
+| 8    | 9    | 5 %                | 10   | 62 %   |
+| 9    | 10   | 1 %                | 10   | 21 %   |
+| 10   | 10   | 0 %                | 11   | 11 %   |
+| 11   | 11   | 0 %                | 11   | 5 %    |
+| 12   | 11   | 0 %                | 12   | 6 %    |
+
+**L'écart avec §3 est l'enseignement central.** Étage 6 Solo : 87 % par
+combat → **33 %** sur l'étage entier. Étage 8 Duo : 99 % → **62 %**.
+Gagner chaque combat à 87 % ne suffit pas : sur 4 combats enchaînés avec
+attrition, la probabilité composée s'effondre, et le repos (interrompu
+~1 fois sur 3, soin partiel via PR #213) ne reconstitue pas assez.
+
+Le malus de fouille est marginal (3 fouilles × 2 % → ~5-7 % de runs
+touchés par un piège ou un réveil) : il pimente sans déséquilibrer.
+
+### 9.3 Le mur recule avec le farming
+
+Run d'étage avec **+6 niveaux farmés + artefacts** :
+
+| Étage | Étage réussi Solo | Étage réussi Duo |
+|------:|------------------:|-----------------:|
+| 6  | 96 % | 100 % |
+| 8  | 54 % | 100 % |
+| 10 | 16 % | 85 %  |
+| 12 | 5 %  | 63 %  |
+
+Le farming repousse nettement le mur en Duo (étage 8 : 62 % → 100 %,
+étage 12 : 6 % → 63 %). Le Solo profite moins : sans second personnage
+pour partager l'attrition, il reste fragile sur un étage entier — c'est
+la pénalité structurelle du Solo, déjà compensée au classement Ironman
+par le multiplicateur ×1.3.
+
+### 9.4 Verdict PR #213
+
+- ✅ **Garde** : modélisée, effet sain (mitigation, pas de power-creep).
+  Le cooldown regen PM 1t/2 limite l'abus sans pénaliser l'usage défensif.
+- ✅ **Repos partiel** : un repos interrompu rend désormais 15 % PV/PM
+  (au lieu de 0) — amortisseur réel, surtout en Solo où le repos est
+  fréquent (~2 par étage en milieu de partie).
+- ✅ **Malus de fouille** : impact mesuré faible (~5-7 % de runs), conforme
+  à l'intention « pimenter sans punir ».
+- ⚠️ **Lecture run d'étage** : le Solo décroche dès l'étage 6-7 sur un
+  étage *entier*, bien plus tôt que ne le suggérait le combat isolé. À
+  surveiller si le Solo doit rester jouable sans farming dédié.
+- 📌 **Limites du modèle run d'étage** : ne modélise ni la fontaine
+  (restauration totale aux étages 2/5/8/11), ni le plein PV/PM offert
+  par un level-up en cours d'étage, ni le butin des coffres. C'est donc
+  une **borne basse** (pessimiste) ; la réalité se situe entre §3 (borne
+  haute) et §9 (borne basse).
