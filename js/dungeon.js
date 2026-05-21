@@ -336,6 +336,29 @@ function generateDungeon(floor) {
     x: r.x, y: r.y, w: r.w, h: r.h, cx: r.cx, cy: r.cy, kind: r.kind
   }));
 
+  // ── Pièges cachés (Phase 2 §2.A) ──────────────────────────────
+  // 1-2 pièges posés sur des cases FLOOR ordinaires, hors d'un rayon
+  // d'1 case autour du spawn. Invisibles : ils se déclenchent au passage
+  // (handleCellEntry) ou se désamorcent par la fouille (searchRoom).
+  {
+    const trapCells = [];
+    for (let y = 0; y < MAP_H; y++) {
+      for (let x = 0; x < MAP_W; x++) {
+        if (dungeon[y][x] !== CELL.FLOOR) continue;
+        if (Math.abs(x - rooms[0].cx) <= 1 && Math.abs(y - rooms[0].cy) <= 1) continue;
+        trapCells.push([x, y]);
+      }
+    }
+    for (let i = trapCells.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [trapCells[i], trapCells[j]] = [trapCells[j], trapCells[i]];
+    }
+    const trapCount = 1 + (Math.random() < 0.5 ? 1 : 0);
+    for (let i = 0; i < trapCount && i < trapCells.length; i++) {
+      dungeon[trapCells[i][1]][trapCells[i][0]] = CELL.TRAP;
+    }
+  }
+
   // Escalier montant (étage 2+)
   if(floor>1) dungeon[rooms[0].cy][rooms[0].cx] = CELL.STAIRS_U;
 

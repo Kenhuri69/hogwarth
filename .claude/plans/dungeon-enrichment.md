@@ -101,24 +101,29 @@ que les murs → ne détruit jamais une cellule spéciale déjà posée.
 > nouvelles branches dans `handleCellEntry` / `_showExploreOverlay` /
 > renderer / minimap. Aucune réécriture.
 
-### 2.A — `CELL.TRAP` (piège)
+### 2.A — `CELL.TRAP` (piège) — ✅ livré (2026-05-21)
 
-- [ ] **2.1** `CELL.TRAP = 11` dans `data.js`. Génération : 0-2 pièges par
-      étage posés sur des cases `FLOOR` de couloir/salle (pas un centre de
-      salle spéciale). **Caché** : non révélé sur la minimap tant que non
-      déclenché ni détecté.
-- [ ] **2.2** `handleCellEntry` : entrer sur un `TRAP` non détecté →
-      déclenche un effet tiré parmi 3 : (a) dégâts physiques au groupe
-      scalés à l'étage, (b) statut (poison/burn/gel) sur un perso,
-      (c) embuscade (`startBattle`). Après déclenchement, la case
-      redevient `FLOOR`.
-- [ ] **2.3** Détection : `searchRoom()` révèle les pièges de la salle
-      courante (les matérialise visuellement, les neutralise au passage).
-      Remplace le jet abstrait `SEARCH_TRAP_CHANCE` par une vraie
-      interaction si un `TRAP` est présent dans la salle.
-- [ ] **2.4** Rendu : sprite de couloir `drawTrapSprite()` (état détecté
-      uniquement) + classe minimap `.map-trap` (visible une fois
-      détecté/déclenché).
+- [x] **2.1** `CELL.TRAP = 11` dans `data.js`. Génération (`dungeon.js`) :
+      1-2 pièges par étage sur des cases `FLOOR` ordinaires, hors d'un
+      rayon d'1 case autour du spawn.
+- [x] **2.2** `handleCellEntry` : entrer sur un `TRAP` consomme la case
+      (→ `FLOOR`) puis `_triggerDungeonTrap()` : 50 % embuscade
+      (`startBattle`), 50 % dégâts/drain non létaux (réutilise les
+      3 sous-variantes de `_triggerSearchTrap`).
+- [x] **2.3** `searchRoom()` désamorce tout `TRAP` dans les 8 cases
+      adjacentes + la case courante. Effet prioritaire, sans consommer la
+      recharge de fouille.
+- [~] **2.4** **Reporté** : un piège est *caché* (ni minimap, ni sprite
+      jusqu'au déclenchement) — pas de `drawTrapSprite` ni `.map-trap`
+      nécessaires en V1. Le piège n'est jamais visible : il se déclenche
+      ou se désamorce. (Sprite envisageable en V2 si l'on veut un état
+      « détecté mais non désamorcé ».)
+
+**Écarts §2.A** : (a) 1-2 pièges (et non 0-2) — un étage a toujours au
+moins un piège ; (b) le statut de combat (option 2.2.b) est abandonné —
+appliquer un statut hors combat est risqué ; remplacé par dégâts/drain/
+embuscade ; (c) désamorçage en rayon 3×3 autour du joueur (et non « salle
+courante » — les bornes de salle ne sont pas connues à l'exécution).
 
 ### 2.B — `CELL.ALTAR` (risque / récompense)
 

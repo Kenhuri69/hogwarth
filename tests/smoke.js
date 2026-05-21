@@ -9622,8 +9622,92 @@ async function scenarioBranchyDungeon() {
   await browser.close();
 }
 
+// ── Scénario : pièges cachés du donjon ───────────────────────────
+// Couvre dungeon-enrichment.md §2.A : génération de 1-2 pièges/étage,
+// désamorçage par la fouille, déclenchement au passage.
+async function scenarioDungeonTraps() {
+  console.log('\n── Scénario : pièges cachés (Phase 2 §2.A) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : constante + helper
+  const t1 = await page.evaluate(() => ({
+    cellTrap: CELL.TRAP,
+    trigger:  typeof _triggerDungeonTrap === 'function',
+  }));
+  console.log('  T1:', t1);
+  assert(t1.cellTrap === 11,  'CELL.TRAP doit valoir 11');
+  assert(t1.trigger,          '_triggerDungeonTrap non exposée');
+
+  // T2 : 20 générations — 1-2 pièges, jamais dans le rayon de spawn
+  const t2 = await page.evaluate(() => {
+    const out = [];
+    for (let g = 0; g < 20; g++) {
+      generateDungeon(1 + (g % 8));
+      let traps = 0, nearSpawn = 0;
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.TRAP) {
+            traps++;
+            if (Math.abs(x - playerX) <= 1 && Math.abs(y - playerY) <= 1) nearSpawn++;
+          }
+      out.push({ traps, nearSpawn });
+    }
+    return out;
+  });
+  const badCount = t2.filter(r => r.traps < 1 || r.traps > 2);
+  const badSpawn = t2.filter(r => r.nearSpawn > 0);
+  console.log(`  T2 : 20 générations — hors 1-2:${badCount.length} près du spawn:${badSpawn.length}`);
+  assert(badCount.length === 0, 'chaque étage doit compter 1 ou 2 pièges');
+  assert(badSpawn.length === 0, 'aucun piège dans le rayon de spawn');
+
+  // T3 : la fouille désamorce un piège adjacent
+  const t3 = await page.evaluate(() => {
+    for (let y = 0; y < dungeon.length; y++)
+      for (let x = 0; x < dungeon[y].length; x++)
+        if (dungeon[y][x] === CELL.TRAP) dungeon[y][x] = CELL.FLOOR;
+    let placed = null;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const tx = playerX + dx, ty = playerY + dy;
+      if (tx >= 0 && ty >= 0 && tx < MAP_W && ty < MAP_H
+          && dungeon[ty][tx] === CELL.FLOOR) {
+        dungeon[ty][tx] = CELL.TRAP; placed = [tx, ty]; break;
+      }
+    }
+    searchedCells = new Map(); stepCount = 0;
+    searchRoom();
+    return { placed, stillTrap: placed && dungeon[placed[1]][placed[0]] === CELL.TRAP };
+  });
+  console.log('  T3 désamorçage:', t3);
+  assert(t3.placed,      'setup : aucune case FLOOR adjacente au joueur');
+  assert(!t3.stillTrap,  'searchRoom doit désamorcer le piège adjacent');
+
+  // T4 : marcher sur un piège consomme la case et inflige des dégâts
+  const t4 = await page.evaluate(() => {
+    difficulty = 'Normal';
+    dungeon[playerY][playerX] = CELL.TRAP;
+    const hpBefore = party.slice(0, partySize).reduce((s, c) => s + c.hp, 0);
+    const orig = Math.random;
+    Math.random = () => 0.9;            // > 0.5 → dégâts, pas d'embuscade
+    try { handleCellEntry(CELL.TRAP); }
+    finally { Math.random = orig; }
+    const hpAfter = party.slice(0, partySize).reduce((s, c) => s + c.hp, 0);
+    return { cleared: dungeon[playerY][playerX] === CELL.FLOOR, hpBefore, hpAfter };
+  });
+  console.log('  T4 déclenchement:', t4);
+  assert(t4.cleared,             'la case piège doit redevenir FLOOR après déclenchement');
+  assert(t4.hpAfter < t4.hpBefore, 'le piège doit infliger des dégâts au groupe');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (pièges)`);
+  }
+  console.log('  ✅ pièges cachés — génération, désamorçage, déclenchement OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

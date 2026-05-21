@@ -215,6 +215,12 @@ function handleCellEntry(cell) {
       cell === CELL.FOUNTAIN ||
       cell === CELL.FORGE    || cell === CELL.LIBRARY) {
     _showExploreOverlay(cell);
+  } else if (cell === CELL.TRAP) {
+    // Piège déclenché en marchant dessus : la case est consommée puis
+    // l'effet est appliqué (cf. _triggerDungeonTrap — Phase 2 §2.A).
+    dungeon[playerY][playerX] = CELL.FLOOR;
+    renderMinimap();
+    _triggerDungeonTrap();
   } else if (cell === CELL.NPC) {
     const npcId = npcPlacements.get(`${playerX},${playerY}`);
     if (npcId && typeof openNpcDialog === 'function') {
@@ -584,6 +590,26 @@ function searchRoom() {
   // priorité — sans interagir avec la recharge de fouille.
   if (_tryCollectPage()) return;
 
+  // Désamorçage de pièges : la fouille repère et neutralise tout piège
+  // dans les 8 cases adjacentes (+ la case courante). Effet prioritaire,
+  // sans consommer la recharge de fouille (Phase 2 §2.A).
+  let disarmed = 0;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const tx = playerX + dx, ty = playerY + dy;
+      if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) continue;
+      if (dungeon[ty][tx] === CELL.TRAP) { dungeon[ty][tx] = CELL.FLOOR; disarmed++; }
+    }
+  }
+  if (disarmed > 0) {
+    setNarrative(disarmed > 1
+      ? `Votre prudence paie : vous repérez et désamorcez ${disarmed} pièges dissimulés.`
+      : "Votre prudence paie : vous repérez et désamorcez un piège dissimulé.");
+    addMsg(`Piège${disarmed > 1 ? 's' : ''} désamorcé${disarmed > 1 ? 's' : ''} (${disarmed}).`, 'good');
+    renderMinimap();
+    return;
+  }
+
   const key = `${playerX},${playerY}`;
   const st  = _searchCellStatus(key);
   if (st.state === 'recharging') {
@@ -679,6 +705,25 @@ function _triggerSearchTrap() {
   }
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playHit) AudioSystem.playHit();
   updateUI();
+}
+
+// ── Piège de donjon — déclenché en marchant sur une case CELL.TRAP ──
+// 50 % embuscade, 50 % dégâts/drain non létaux. La case a déjà été
+// repassée en FLOOR par handleCellEntry. Le statut de combat n'est pas
+// utilisé (risque hors-combat) : on s'en tient à dégâts / drain / ambush.
+function _triggerDungeonTrap() {
+  if (Math.random() < 0.5) {
+    setNarrative("Le sol se dérobe en un déclic sec — une créature jaillit de la fosse !");
+    addMsg("Piège ! Une embuscade vous tombe dessus.", 'bad');
+    const f = currentFloor || 1;
+    const pool = MONSTERS.filter(m => m.minFloor <= f
+      && (m.maxFloor === null || f <= m.maxFloor));
+    startBattle(scaleMonster(weightedPick(pool.length ? pool : MONSTERS), f));
+    return;
+  }
+  // Variante dégâts/drain : réutilise les 3 sous-variantes non létales
+  // de la fouille (lames, dard, brume) — narration compatible.
+  _triggerSearchTrap();
 }
 
 // ── Fontaine de pierre — soin total 1×/visite d'étage ──────
