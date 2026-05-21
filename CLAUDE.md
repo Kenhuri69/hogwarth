@@ -740,7 +740,7 @@ pendingSpell      // nom du sort en attente de sélection de cible (ennemi ou al
 |--------|------|-------|
 | 🗡️ Attaquer | — | Attaque physique (atk + 0-3 vs def, crit `critChance`) |
 | ✨ Sortilège | PM | Liste des sorts du perso (modale `#spell-modal`) |
-| 🛡️ Garde | — | `guardTurns[idx]` empilé (`min(3, +1)`) ; mitige les coups physiques de 50 % ; restitue `3 + floor(mag/5)` PM par pose (cap `spMax`). Priorité après Protego/Esquive. **Chaque coup mitigé consomme un palier** ; les paliers non touchés persistent (Double-Garde). Riposte probabiliste `_tryGuardCounter` (base 30 %, plafond 40 %, + `counterChance` d'équipement) — atk/2, sans consommer de tour. |
+| 🛡️ Garde | — | `guardTurns[idx]` empilé (`min(3, +1)`) ; mitige les coups physiques de 50 % ; restitue `3 + floor(mag/5)` PM par pose (cap `spMax`) **disponible 1 tour sur 2** par personnage (`guardRegenCooldown[idx]`, réarmé à 2, décrémenté par round dans `enemyTurn`). Priorité après Protego/Esquive. **Chaque coup mitigé consomme un palier** ; les paliers non touchés persistent (Double-Garde). Riposte probabiliste `_tryGuardCounter` (base 30 %, plafond 40 %, + `counterChance` d'équipement) — atk/2, sans consommer de tour. |
 | 🧪 Objet | — | Inventaire en mode combat (consommables uniquement) |
 | 💨 Fuir | — | `doFlee()` — chance basée sur AGI vs ATK ennemi, garantie avec Balai |
 

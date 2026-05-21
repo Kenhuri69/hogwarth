@@ -58,8 +58,15 @@ const DAMAGE_MIN_FRACTION = 0.25;
 const SEARCH_GOLD_THRESHOLD = 0.20;
 const SEARCH_ITEM_THRESHOLD = 0.35;
 
+// Fouille de salle — malus (jets indépendants, avant le tirage de butin) :
+// 1 % de tomber sur un monstre de l'étage courant, 1 % de déclencher un piège.
+const SEARCH_MONSTER_CHANCE = 0.01;
+const SEARCH_TRAP_CHANCE    = 0.01;
+
 // Repos (movement.js — rest) : chance d'être interrompu par une rencontre.
 const REST_ENCOUNTER_CHANCE = 0.3;
+// Fraction du soin de repos conservée quand une rencontre interrompt le repos.
+const REST_INTERRUPT_HEAL_FRACTION = 0.5;
 
 // ============================================================
 // DONNÉES DU JEU

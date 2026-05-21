@@ -281,6 +281,7 @@ let enemyGroup      = [];   // tableau de {…enemyData, currentHp, statusEffect
 let currentBattleChar = 0;  // 0 = Harry, 1 = Hermione
 let shieldTurns     = [0, 0]; // bouclier par personnage (Protego)
 let guardTurns      = [0, 0]; // posture de Garde — mitigation 50 % sur le prochain coup ennemi
+let guardRegenCooldown = [0, 0]; // regen PM de la Garde — disponible 1 tour sur 2 par personnage
 let elanStacks      = [0, 0]; // Apothéose Gryffondor — cumul « Élan » par personnage (combat-scoped)
 let battleTurn      = 0;
 // Palier 17 « Mythe » — état transient de combat (réinitialisé par startBattle).
