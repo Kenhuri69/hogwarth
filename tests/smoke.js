@@ -8403,20 +8403,28 @@ async function scenarioDelayedSearch() {
   assert(delays.Expert === 100,   `Expert doit recharger en 100 pas (obtenu ${delays.Expert})`);
 
   // 2) Machine d'état : fresh → recharging → ready → recharging.
+  // Math.random est figé à 0.5 le temps des deux searchRoom() : sinon
+  // les jets de malus (monstre/piège, 1 % chacun) peuvent déclencher un
+  // combat et rendre la 2e fouille no-op (test sinon flaky ~1 %).
   const fsm = await page.evaluate(() => {
     difficulty   = 'Normal';
     searchedCells = new Map();
     stepCount    = 0;
     const key = `${playerX},${playerY}`;
     const fresh = _searchCellStatus(key).state;
-    searchRoom();
-    const afterSearch = _searchCellStatus(key);
-    stepCount += 59;
-    const justBefore = _searchCellStatus(key).state;
-    stepCount += 1;                       // total 60 pas écoulés
-    const ready = _searchCellStatus(key);
-    searchRoom();                          // re-fouille
-    const afterRepeat = _searchCellStatus(key);
+    const orig = Math.random;
+    Math.random = () => 0.5;
+    let afterSearch, justBefore, ready, afterRepeat;
+    try {
+      searchRoom();
+      afterSearch = _searchCellStatus(key);
+      stepCount += 59;
+      justBefore = _searchCellStatus(key).state;
+      stepCount += 1;                       // total 60 pas écoulés
+      ready = _searchCellStatus(key);
+      searchRoom();                          // re-fouille
+      afterRepeat = _searchCellStatus(key);
+    } finally { Math.random = orig; }
     return {
       fresh,
       searchState: afterSearch.state, searchCount: afterSearch.count,
