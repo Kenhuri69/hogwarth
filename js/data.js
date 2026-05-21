@@ -7,7 +7,10 @@ const CELL = {
   FOUNTAIN:7, NPC:8,
   // Endgame Tranche 2 — Forge des Ténèbres (upgrade items) et Bibliothèque
   // interdite (upgrade sorts). Voir ENDGAME_PLAN.md §7.5/§7.6.
-  FORGE:9, LIBRARY:10
+  FORGE:9, LIBRARY:10,
+  // Enrichissement du donjon (Phase 2) — piège caché (§2.A) et autel
+  // risque/récompense (§2.B). Voir .claude/plans/dungeon-enrichment.md.
+  TRAP:11, ALTAR:12
 };
 
 // Vecteurs de déplacement par direction cardinale (N, S, E, O).
@@ -330,6 +333,12 @@ const ITEMS = [
   { id:"eclat_lumiere",    name:"Éclat de Lumière",     icon:"✨",
     desc:"Fragment de clarté arraché aux ténèbres — objet de quête.",
     type:"quest", price:0 },
+  // Clé de salle scellée (enrichissement du donjon §2.C). Lâchée par un
+  // monstre de l'étage ; ouvre une porte CELL.DOOR. type:"key" → non
+  // utilisable manuellement (useItem affiche un indice).
+  { id:"cle_donjon",       name:"Clé du Donjon",        icon:"🗝️",
+    desc:"Une lourde clé de fer rouillée. Ouvre une porte scellée du donjon.",
+    type:"key", price:0 },
   // ── Items légendaires+ Maison Tier 5 (endgame Tranche 2) ─────
   // Récompenses du palier Tier 5 (2000 pts, gated par victoryAchieved).
   // Voir ENDGAME_PLAN.md §7.7. Cumulables avec les items Tier 4 si slots

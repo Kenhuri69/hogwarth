@@ -87,6 +87,7 @@ function _buildMinimapCells(mm, cellSize) {
         else if (c === CELL.FOUNTAIN)                         div.classList.add('map-fountain');
         else if (c === CELL.FORGE)                            div.classList.add('map-forge');
         else if (c === CELL.LIBRARY)                          div.classList.add('map-library');
+        else if (c === CELL.ALTAR)                            div.classList.add('map-altar');
         else if (c === CELL.NPC) {
           // PNJ : teinte spéciale + marqueur "!" / "?" si la quête liée
           // est offrable ou prête à rendre. La case est révélée d'office

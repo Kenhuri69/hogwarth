@@ -712,6 +712,12 @@ function useItem(idx, battleMode) {
     return;
   }
 
+  // Clé de salle scellée — s'utilise sur une porte, pas depuis le sac.
+  if (item.type === 'key') {
+    addMsg(`${item.name} : avancez vers une porte scellée pour l'utiliser.`, '');
+    return;
+  }
+
   // Livre de sorts → choix du personnage qui apprend (hors combat seulement)
   if (item.type === 'spellbook') {
     if (battleMode) return; // non utilisable en combat

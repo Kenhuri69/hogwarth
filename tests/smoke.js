@@ -8403,20 +8403,28 @@ async function scenarioDelayedSearch() {
   assert(delays.Expert === 100,   `Expert doit recharger en 100 pas (obtenu ${delays.Expert})`);
 
   // 2) Machine d'état : fresh → recharging → ready → recharging.
+  // Math.random est figé à 0.5 le temps des deux searchRoom() : sinon
+  // les jets de malus (monstre/piège, 1 % chacun) peuvent déclencher un
+  // combat et rendre la 2e fouille no-op (test sinon flaky ~1 %).
   const fsm = await page.evaluate(() => {
     difficulty   = 'Normal';
     searchedCells = new Map();
     stepCount    = 0;
     const key = `${playerX},${playerY}`;
     const fresh = _searchCellStatus(key).state;
-    searchRoom();
-    const afterSearch = _searchCellStatus(key);
-    stepCount += 59;
-    const justBefore = _searchCellStatus(key).state;
-    stepCount += 1;                       // total 60 pas écoulés
-    const ready = _searchCellStatus(key);
-    searchRoom();                          // re-fouille
-    const afterRepeat = _searchCellStatus(key);
+    const orig = Math.random;
+    Math.random = () => 0.5;
+    let afterSearch, justBefore, ready, afterRepeat;
+    try {
+      searchRoom();
+      afterSearch = _searchCellStatus(key);
+      stepCount += 59;
+      justBefore = _searchCellStatus(key).state;
+      stepCount += 1;                       // total 60 pas écoulés
+      ready = _searchCellStatus(key);
+      searchRoom();                          // re-fouille
+      afterRepeat = _searchCellStatus(key);
+    } finally { Math.random = orig; }
     return {
       fresh,
       searchState: afterSearch.state, searchCount: afterSearch.count,
@@ -9536,8 +9544,602 @@ async function scenarioAoeSpells() {
   await browser.close();
 }
 
+// ── Scénario : donjon branchu (épine + culs-de-sac) ──────────────
+// Couvre dungeon-enrichment.md Phase 1. Sur 30 générations : connexité
+// spawn→STAIRS_D, escalier descendant unique, présence de branches.
+// Les chevauchements de salles sont logués (tolérés en dernier recours).
+async function scenarioBranchyDungeon() {
+  console.log('\n── Scénario : donjon branchu (Phase 1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helpers exposés
+  const t1 = await page.evaluate(() => ({
+    carve:  typeof _carveCorridor === 'function',
+    assert: typeof _assertDungeonConnected === 'function',
+    rooms:  typeof lastDungeonRooms !== 'undefined',
+  }));
+  console.log('  T1 helpers:', t1);
+  assert(t1.carve,  '_carveCorridor non exposée');
+  assert(t1.assert, '_assertDungeonConnected non exposée');
+  assert(t1.rooms,  'lastDungeonRooms non exposé');
+
+  // T2 : 30 générations — connexité, escalier unique, branches
+  const t2 = await page.evaluate(() => {
+    const out = [];
+    for (let g = 0; g < 30; g++) {
+      const floor = 1 + (g % 8);
+      generateDungeon(floor);
+      let downX = -1, downY = -1, downCount = 0;
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.STAIRS_D) { downX = x; downY = y; downCount++; }
+      // BFS depuis le spawn sur les cases non-WALL
+      const H = dungeon.length, W = dungeon[0].length;
+      const seen = Array.from({ length: H }, () => Array(W).fill(false));
+      const q = [[playerX, playerY]];
+      seen[playerY][playerX] = true;
+      while (q.length) {
+        const [x, y] = q.shift();
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          if (seen[ny][nx] || dungeon[ny][nx] === CELL.WALL) continue;
+          seen[ny][nx] = true; q.push([nx, ny]);
+        }
+      }
+      const reachable = downX >= 0 && seen[downY][downX];
+      const branches = lastDungeonRooms.filter(r => r.kind === 'branch').length;
+      let overlaps = 0;
+      for (let i = 0; i < lastDungeonRooms.length; i++)
+        for (let j = i + 1; j < lastDungeonRooms.length; j++) {
+          const a = lastDungeonRooms[i], b = lastDungeonRooms[j];
+          if (a.x < b.x + b.w && a.x + a.w > b.x &&
+              a.y < b.y + b.h && a.y + a.h > b.y) overlaps++;
+        }
+      out.push({ floor, downCount, reachable, branches, overlaps,
+                 rooms: lastDungeonRooms.length });
+    }
+    return out;
+  });
+  const unreachable   = t2.filter(r => !r.reachable);
+  const badStairs     = t2.filter(r => r.downCount !== 1);
+  const noBranch      = t2.filter(r => r.branches < 1);
+  const totalOverlaps = t2.reduce((s, r) => s + r.overlaps, 0);
+  console.log(`  T2 : ${t2.length} générations — injoignables:${unreachable.length}`
+            + ` escalier≠1:${badStairs.length} sans-branche:${noBranch.length}`
+            + ` chevauchements cumulés:${totalOverlaps}`);
+  assert(unreachable.length === 0, `escalier injoignable sur ${unreachable.length} génération(s)`);
+  assert(badStairs.length === 0,   `STAIRS_D non unique sur ${badStairs.length} génération(s)`);
+  assert(noBranch.length === 0,    `aucune branche sur ${noBranch.length} génération(s)`);
+  assert(t2.every(r => r.rooms === 5), 'le donjon doit compter 5 salles');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (donjon branchu)`);
+  }
+  console.log('  ✅ donjon branchu — connexité et topologie OK');
+  await browser.close();
+}
+
+// ── Scénario : pièges cachés du donjon ───────────────────────────
+// Couvre dungeon-enrichment.md §2.A : génération de 1-2 pièges/étage,
+// désamorçage par la fouille, déclenchement au passage.
+async function scenarioDungeonTraps() {
+  console.log('\n── Scénario : pièges cachés (Phase 2 §2.A) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : constante + helper
+  const t1 = await page.evaluate(() => ({
+    cellTrap: CELL.TRAP,
+    trigger:  typeof _triggerDungeonTrap === 'function',
+  }));
+  console.log('  T1:', t1);
+  assert(t1.cellTrap === 11,  'CELL.TRAP doit valoir 11');
+  assert(t1.trigger,          '_triggerDungeonTrap non exposée');
+
+  // T2 : 20 générations — 1-2 pièges, jamais dans le rayon de spawn
+  const t2 = await page.evaluate(() => {
+    const out = [];
+    for (let g = 0; g < 20; g++) {
+      generateDungeon(1 + (g % 8));
+      let traps = 0, nearSpawn = 0;
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.TRAP) {
+            traps++;
+            if (Math.abs(x - playerX) <= 1 && Math.abs(y - playerY) <= 1) nearSpawn++;
+          }
+      out.push({ traps, nearSpawn });
+    }
+    return out;
+  });
+  // 1-2 pièges en base ; jusqu'à 4 si l'événement d'étage « pieges » est tiré.
+  const badCount = t2.filter(r => r.traps < 1 || r.traps > 4);
+  const badSpawn = t2.filter(r => r.nearSpawn > 0);
+  console.log(`  T2 : 20 générations — hors 1-4:${badCount.length} près du spawn:${badSpawn.length}`);
+  assert(badCount.length === 0, 'chaque étage doit compter 1 à 4 pièges');
+  assert(badSpawn.length === 0, 'aucun piège dans le rayon de spawn');
+
+  // T3 : la fouille désamorce un piège adjacent
+  const t3 = await page.evaluate(() => {
+    for (let y = 0; y < dungeon.length; y++)
+      for (let x = 0; x < dungeon[y].length; x++)
+        if (dungeon[y][x] === CELL.TRAP) dungeon[y][x] = CELL.FLOOR;
+    let placed = null;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const tx = playerX + dx, ty = playerY + dy;
+      if (tx >= 0 && ty >= 0 && tx < MAP_W && ty < MAP_H
+          && dungeon[ty][tx] === CELL.FLOOR) {
+        dungeon[ty][tx] = CELL.TRAP; placed = [tx, ty]; break;
+      }
+    }
+    searchedCells = new Map(); stepCount = 0;
+    searchRoom();
+    return { placed, stillTrap: placed && dungeon[placed[1]][placed[0]] === CELL.TRAP };
+  });
+  console.log('  T3 désamorçage:', t3);
+  assert(t3.placed,      'setup : aucune case FLOOR adjacente au joueur');
+  assert(!t3.stillTrap,  'searchRoom doit désamorcer le piège adjacent');
+
+  // T4 : marcher sur un piège consomme la case et inflige des dégâts
+  const t4 = await page.evaluate(() => {
+    difficulty = 'Normal';
+    dungeon[playerY][playerX] = CELL.TRAP;
+    const hpBefore = party.slice(0, partySize).reduce((s, c) => s + c.hp, 0);
+    const orig = Math.random;
+    Math.random = () => 0.9;            // > 0.5 → dégâts, pas d'embuscade
+    try { handleCellEntry(CELL.TRAP); }
+    finally { Math.random = orig; }
+    const hpAfter = party.slice(0, partySize).reduce((s, c) => s + c.hp, 0);
+    return { cleared: dungeon[playerY][playerX] === CELL.FLOOR, hpBefore, hpAfter };
+  });
+  console.log('  T4 déclenchement:', t4);
+  assert(t4.cleared,             'la case piège doit redevenir FLOOR après déclenchement');
+  assert(t4.hpAfter < t4.hpBefore, 'le piège doit infliger des dégâts au groupe');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (pièges)`);
+  }
+  console.log('  ✅ pièges cachés — génération, désamorçage, déclenchement OK');
+  await browser.close();
+}
+
+// ── Scénario : autels du donjon (risque/récompense) ──────────────
+// Couvre dungeon-enrichment.md §2.B : génération en cul-de-sac, offrande
+// d'or, pari, usage unique, round-trip save de usedAltars.
+async function scenarioDungeonAltars() {
+  console.log('\n── Scénario : autels du donjon (Phase 2 §2.B) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : constante + helper + état
+  const t1 = await page.evaluate(() => ({
+    cellAltar: CELL.ALTAR,
+    useAltar:  typeof useAltar === 'function',
+    usedSet:   typeof usedAltars !== 'undefined',
+  }));
+  console.log('  T1:', t1);
+  assert(t1.cellAltar === 12, 'CELL.ALTAR doit valoir 12');
+  assert(t1.useAltar,         'useAltar non exposée');
+  assert(t1.usedSet,          'usedAltars non exposé');
+
+  // T2 : 30 générations — les autels n'apparaissent que sur des culs-de-sac
+  const t2 = await page.evaluate(() => {
+    let total = 0, offBranch = 0;
+    for (let g = 0; g < 30; g++) {
+      generateDungeon(1 + (g % 8));
+      const branchCenters = new Set(
+        lastDungeonRooms.filter(r => r.kind === 'branch').map(r => `${r.cx},${r.cy}`));
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.ALTAR) {
+            total++;
+            if (!branchCenters.has(`${x},${y}`)) offBranch++;
+          }
+    }
+    return { total, offBranch };
+  });
+  console.log('  T2 génération:', t2);
+  assert(t2.total >= 1,      'des autels doivent apparaître sur 30 générations');
+  assert(t2.offBranch === 0, 'un autel ne doit apparaître que sur un cul-de-sac');
+
+  // T3 : offrande d'or — débite l'or, soigne le groupe, octroie de l'XP
+  const t3 = await page.evaluate(() => {
+    currentFloor = 1;
+    dungeon[playerY][playerX] = CELL.ALTAR;
+    usedAltars = new Set();
+    player.gold = 500;
+    party[0].hp = 1; party[0].sp = 0;
+    // xpNext très élevé : neutralise un éventuel level-up qui consommerait
+    // l'XP et fausserait le delta mesuré.
+    player.xp = 0; player.xpNext = 100000;
+    const xpBefore = player.xp, goldBefore = player.gold;
+    useAltar('gold');
+    return {
+      goldSpent: goldBefore - player.gold,
+      healed:    party[0].hp === party[0].hpMax,
+      xpGain:    player.xp - xpBefore,
+      used:      usedAltars.has(`${playerX},${playerY}`),
+    };
+  });
+  console.log('  T3 offrande d\'or:', t3);
+  assert(t3.goldSpent === 40, `offrande doit coûter 40 G, débité ${t3.goldSpent}`);
+  assert(t3.healed,           'le groupe doit être soigné');
+  assert(t3.xpGain === 30,    `offrande doit donner 30 XP, donné ${t3.xpGain}`);
+  assert(t3.used,             'l\'autel doit être marqué utilisé');
+
+  // T4 : autel déjà utilisé → no-op
+  const t4 = await page.evaluate(() => {
+    const goldBefore = player.gold;
+    useAltar('gold');
+    return { unchanged: player.gold === goldBefore };
+  });
+  console.log('  T4 autel épuisé:', t4);
+  assert(t4.unchanged, 'un autel déjà utilisé ne doit rien débiter');
+
+  // T5 : pari gagné (Math.random < 0.5) — gain XP + or
+  const t5 = await page.evaluate(() => {
+    dungeon[playerY][playerX] = CELL.ALTAR;
+    usedAltars = new Set();
+    player.xp = 0; player.xpNext = 100000;   // neutralise le level-up
+    const xpBefore = player.xp, goldBefore = player.gold;
+    const orig = Math.random;
+    Math.random = () => 0.2;
+    try { useAltar('gamble'); } finally { Math.random = orig; }
+    return {
+      xpGain:   player.xp - xpBefore,
+      goldGain: player.gold - goldBefore,
+      used:     usedAltars.has(`${playerX},${playerY}`),
+    };
+  });
+  console.log('  T5 pari gagné:', t5);
+  assert(t5.xpGain === 60,   `pari gagné doit donner 60 XP, donné ${t5.xpGain}`);
+  assert(t5.goldGain === 20, `pari gagné doit donner 20 G, donné ${t5.goldGain}`);
+  assert(t5.used,            'l\'autel doit être marqué utilisé après un pari');
+
+  // T6 : round-trip save de usedAltars (Set)
+  const t6 = await page.evaluate(() => {
+    usedAltars = new Set(['3,3', '7,7']);
+    const snap = _serializeState();
+    usedAltars = new Set();
+    _applyState(snap);
+    return { isSet: usedAltars instanceof Set, size: usedAltars.size, has: usedAltars.has('3,3') };
+  });
+  console.log('  T6 round-trip save:', t6);
+  assert(t6.isSet,        'usedAltars doit rester un Set après _applyState');
+  assert(t6.size === 2,   'usedAltars doit survivre au round-trip save');
+  assert(t6.has,          'les clés de usedAltars doivent survivre au round-trip');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (autels)`);
+  }
+  console.log('  ✅ autels — génération, offrande, pari, persistance OK');
+  await browser.close();
+}
+
+// ── Scénario : salle scellée (porte + clé) ───────────────────────
+// Couvre dungeon-enrichment.md §2.C : alvéole DOOR+CHEST, clé attribuée
+// à un monstre, ouverture à la clé, blocage du pas sans clé.
+async function scenarioSealedRoom() {
+  console.log('\n── Scénario : salle scellée (Phase 2 §2.C) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : constante + item-clé + helper
+  const t1 = await page.evaluate(() => {
+    const key = ITEMS.find(i => i.id === 'cle_donjon');
+    return {
+      cellDoor:  CELL.DOOR,
+      keyExists: !!key,
+      keyType:   key && key.type,
+      opener:    typeof _tryOpenDoor === 'function',
+    };
+  });
+  console.log('  T1:', t1);
+  assert(t1.cellDoor === 2,      'CELL.DOOR doit valoir 2');
+  assert(t1.keyExists,           'l\'item cle_donjon doit exister');
+  assert(t1.keyType === 'key',   'cle_donjon doit être de type "key"');
+  assert(t1.opener,              '_tryOpenDoor non exposée');
+
+  // T2 : 20 générations — alvéole DOOR+CHEST scellée + clé attribuée
+  const t2 = await page.evaluate(() => {
+    const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    let withVault = 0, badStructure = 0, missingKey = 0;
+    for (let g = 0; g < 20; g++) {
+      generateDungeon(1 + (g % 8));
+      let dX = -1, dY = -1;
+      for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++)
+          if (dungeon[y][x] === CELL.DOOR) { dX = x; dY = y; }
+      if (dX < 0) continue;
+      withVault++;
+      let chest = null;
+      for (const [dx, dy] of DIRS) {
+        const cx = dX + dx, cy = dY + dy;
+        if (cx >= 0 && cy >= 0 && cx < MAP_W && cy < MAP_H
+            && dungeon[cy][cx] === CELL.CHEST) chest = [cx, cy];
+      }
+      if (!chest) { badStructure++; continue; }
+      let sealed = true;
+      for (const [dx, dy] of DIRS) {
+        const nx = chest[0] + dx, ny = chest[1] + dy;
+        if (nx === dX && ny === dY) continue;
+        if (!(nx >= 0 && ny >= 0 && nx < MAP_W && ny < MAP_H)
+            || dungeon[ny][nx] !== CELL.WALL) sealed = false;
+      }
+      if (!sealed) badStructure++;
+      let hasEnemies = false, hasKey = false;
+      for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++) {
+          const e = enemyMap[y][x];
+          if (e) {
+            hasEnemies = true;
+            if ((e.drops || []).some(d => d.itemId === 'cle_donjon')) hasKey = true;
+          }
+        }
+      if (hasEnemies && !hasKey) missingKey++;
+    }
+    return { withVault, badStructure, missingKey };
+  });
+  console.log('  T2 génération:', t2);
+  assert(t2.withVault >= 1,       'une salle scellée doit apparaître sur 20 générations');
+  assert(t2.badStructure === 0,   'toute salle scellée doit être DOOR + CHEST en cul-de-sac');
+  assert(t2.missingKey === 0,     'une clé doit être attribuée quand une salle scellée existe');
+
+  // T3 : _tryOpenDoor — refus sans clé, ouverture + consommation avec clé
+  const t3 = await page.evaluate(() => {
+    let placed = null;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const tx = playerX + dx, ty = playerY + dy;
+      if (tx >= 0 && ty >= 0 && tx < MAP_W && ty < MAP_H) {
+        dungeon[ty][tx] = CELL.DOOR; placed = [tx, ty]; break;
+      }
+    }
+    player.inventory = player.inventory.filter(it => it.id !== 'cle_donjon');
+    _tryOpenDoor(placed[0], placed[1]);
+    const stillLocked = dungeon[placed[1]][placed[0]] === CELL.DOOR;
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'cle_donjon') });
+    _tryOpenDoor(placed[0], placed[1]);
+    return {
+      stillLocked,
+      opened:  dungeon[placed[1]][placed[0]] === CELL.FLOOR,
+      keyGone: !player.inventory.some(it => it.id === 'cle_donjon'),
+    };
+  });
+  console.log('  T3 ouverture:', t3);
+  assert(t3.stillLocked, 'sans clé, la porte doit rester verrouillée');
+  assert(t3.opened,      'avec une clé, la porte doit s\'ouvrir');
+  assert(t3.keyGone,     'la clé doit être consommée à l\'ouverture');
+
+  // T4 : avancer vers une porte scellée sans clé ne déplace pas le joueur
+  const t4 = await page.evaluate(() => {
+    const dirs = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] };
+    let chosen = null;
+    for (const d in dirs) {
+      const [dx, dy] = dirs[d];
+      const tx = playerX + dx, ty = playerY + dy;
+      if (tx >= 1 && ty >= 1 && tx < MAP_W - 1 && ty < MAP_H - 1) {
+        chosen = d; dungeon[ty][tx] = CELL.DOOR; break;
+      }
+    }
+    player.inventory = player.inventory.filter(it => it.id !== 'cle_donjon');
+    const px = playerX, py = playerY;
+    playerDir = chosen;
+    moveForward();
+    return { chosen, moved: playerX !== px || playerY !== py };
+  });
+  console.log('  T4 blocage du pas:', t4);
+  assert(t4.chosen,   'setup : aucune direction in-bounds trouvée');
+  assert(!t4.moved,   'avancer vers une porte scellée ne doit pas déplacer le joueur');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (salle scellée)`);
+  }
+  console.log('  ✅ salle scellée — alvéole, clé, ouverture, blocage OK');
+  await browser.close();
+}
+
+// ── Scénario : événements d'étage ────────────────────────────────
+// Couvre dungeon-enrichment.md §4 : registre FLOOR_EVENTS, tirage,
+// effets de génération (boutique / pièges / densité d'ennemis), save.
+async function scenarioFloorEvents() {
+  console.log('\n── Scénario : événements d\'étage (Phase 4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : registre + helpers + état
+  const t1 = await page.evaluate(() => ({
+    events: Array.isArray(FLOOR_EVENTS) ? FLOOR_EVENTS.length : -1,
+    roll:   typeof rollFloorEvent === 'function',
+    get:    typeof getFloorEvent === 'function',
+    state:  typeof currentFloorEvent !== 'undefined',
+  }));
+  console.log('  T1:', t1);
+  assert(t1.events === 5,  'FLOOR_EVENTS doit compter 5 événements');
+  assert(t1.roll && t1.get, 'rollFloorEvent / getFloorEvent non exposées');
+  assert(t1.state,          'currentFloorEvent non exposé');
+
+  // T2 : rollFloorEvent — null si random élevé, id valide sinon
+  const t2 = await page.evaluate(() => {
+    const orig = Math.random;
+    Math.random = () => 0.9;
+    const noEvent = rollFloorEvent();
+    Math.random = () => 0.05;
+    const someEvent = rollFloorEvent();
+    Math.random = orig;
+    return { noEvent, someEvent, validIds: FLOOR_EVENTS.map(e => e.id) };
+  });
+  console.log('  T2 tirage:', t2);
+  assert(t2.noEvent === null,                  'random élevé → aucun événement');
+  assert(t2.validIds.includes(t2.someEvent),   'random bas → un événement valide');
+
+  // T3 : effets de génération par événement (rollFloorEvent forcé)
+  const t3 = await page.evaluate(() => {
+    const orig = rollFloorEvent;
+    const count = (cell) => {
+      let n = 0;
+      for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++) if (dungeon[y][x] === cell) n++;
+      return n;
+    };
+    const enemies = () => {
+      let n = 0;
+      for (let y = 0; y < MAP_H; y++)
+        for (let x = 0; x < MAP_W; x++) if (enemyMap[y][x]) n++;
+      return n;
+    };
+    try {
+      rollFloorEvent = () => 'marche';
+      generateDungeon(3);
+      const marcheShops = count(CELL.SHOP), marcheEv = currentFloorEvent;
+
+      rollFloorEvent = () => 'pieges';
+      generateDungeon(3);
+      const piegesTraps = count(CELL.TRAP);
+
+      rollFloorEvent = () => 'hante';
+      let hante = 0;
+      for (let i = 0; i < 12; i++) { generateDungeon(3); hante += enemies(); }
+
+      rollFloorEvent = () => 'calme';
+      let calme = 0;
+      for (let i = 0; i < 12; i++) { generateDungeon(3); calme += enemies(); }
+
+      rollFloorEvent = () => null;
+      generateDungeon(3);
+      const nullEv = currentFloorEvent;
+
+      return { marcheShops, marcheEv, piegesTraps, hante, calme, nullEv };
+    } finally { rollFloorEvent = orig; }
+  });
+  console.log('  T3 effets:', t3);
+  assert(t3.marcheEv === 'marche',  'currentFloorEvent doit refléter l\'événement tiré');
+  assert(t3.marcheShops >= 1,       'marché ambulant → au moins une boutique');
+  assert(t3.piegesTraps >= 3,       'étage piégé → au moins 3 pièges');
+  assert(t3.hante > t3.calme,       'étage hanté → plus d\'ennemis que quiétude');
+  assert(t3.nullEv === null,        'pas d\'événement → currentFloorEvent null');
+
+  // T4 : round-trip save de currentFloorEvent
+  const t4 = await page.evaluate(() => {
+    currentFloorEvent = 'hante';
+    const snap = _serializeState();
+    currentFloorEvent = null;
+    _applyState(snap);
+    return { restored: currentFloorEvent };
+  });
+  console.log('  T4 round-trip save:', t4);
+  assert(t4.restored === 'hante', 'currentFloorEvent doit survivre au round-trip save');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (événements d'étage)`);
+  }
+  console.log('  ✅ événements d\'étage — tirage, effets, persistance OK');
+  await browser.close();
+}
+
+// ── Scénario : passages secrets (fouille) ────────────────────────
+// Couvre dungeon-enrichment.md §3 : mur secret généré, révélation par
+// searchRoom, round-trip save de secretWalls.
+async function scenarioSecretPassage() {
+  console.log('\n── Scénario : passages secrets (Phase 3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : état exposé
+  const t1 = await page.evaluate(() => ({
+    secretWalls: typeof secretWalls !== 'undefined' && secretWalls instanceof Set,
+    pocket:      typeof _findWallPocket === 'function',
+  }));
+  console.log('  T1:', t1);
+  assert(t1.secretWalls, 'secretWalls non exposé (ou pas un Set)');
+  assert(t1.pocket,      '_findWallPocket non exposée');
+
+  // T2 : 24 générations — mur secret = WALL avec un coffre adjacent
+  const t2 = await page.evaluate(() => {
+    let withSecret = 0, bad = 0;
+    for (let g = 0; g < 24; g++) {
+      generateDungeon(1 + (g % 8));
+      if (!secretWalls || secretWalls.size === 0) continue;
+      withSecret++;
+      for (const k of secretWalls) {
+        const [sx, sy] = k.split(',').map(Number);
+        if (dungeon[sy][sx] !== CELL.WALL) { bad++; continue; }
+        let chestAdj = false;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = sx + dx, ny = sy + dy;
+          if (nx >= 0 && ny >= 0 && nx < MAP_W && ny < MAP_H
+              && dungeon[ny][nx] === CELL.CHEST) chestAdj = true;
+        }
+        if (!chestAdj) bad++;
+      }
+    }
+    return { withSecret, bad };
+  });
+  console.log('  T2 génération:', t2);
+  assert(t2.withSecret >= 1, 'un passage secret doit apparaître sur 24 générations');
+  assert(t2.bad === 0,       'tout mur secret doit être WALL avec un coffre adjacent');
+
+  // T3 : searchRoom révèle un mur secret adjacent
+  const t3 = await page.evaluate(() => {
+    // Isole le test : retire les pièges proches (ils priment dans searchRoom).
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) {
+        const tx = playerX + dx, ty = playerY + dy;
+        if (tx >= 0 && ty >= 0 && tx < MAP_W && ty < MAP_H
+            && dungeon[ty][tx] === CELL.TRAP) dungeon[ty][tx] = CELL.FLOOR;
+      }
+    secretWalls = new Set();
+    let placed = null;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const tx = playerX + dx, ty = playerY + dy;
+      if (tx >= 0 && ty >= 0 && tx < MAP_W && ty < MAP_H) {
+        dungeon[ty][tx] = CELL.WALL;
+        secretWalls.add(`${tx},${ty}`);
+        placed = [tx, ty]; break;
+      }
+    }
+    searchedCells = new Map(); stepCount = 0;
+    searchRoom();
+    return {
+      placed,
+      revealed: dungeon[placed[1]][placed[0]] === CELL.FLOOR,
+      gone:     !secretWalls.has(`${placed[0]},${placed[1]}`),
+    };
+  });
+  console.log('  T3 révélation:', t3);
+  assert(t3.placed,    'setup : aucune case adjacente trouvée');
+  assert(t3.revealed,  'searchRoom doit révéler le mur secret adjacent (→ FLOOR)');
+  assert(t3.gone,      'le mur révélé doit sortir de secretWalls');
+
+  // T4 : round-trip save de secretWalls
+  const t4 = await page.evaluate(() => {
+    secretWalls = new Set(['4,4', '8,2']);
+    const snap = _serializeState();
+    secretWalls = new Set();
+    _applyState(snap);
+    return { isSet: secretWalls instanceof Set, size: secretWalls.size, has: secretWalls.has('4,4') };
+  });
+  console.log('  T4 round-trip save:', t4);
+  assert(t4.isSet,      'secretWalls doit rester un Set après _applyState');
+  assert(t4.size === 2, 'secretWalls doit survivre au round-trip save');
+  assert(t4.has,        'les clés de secretWalls doivent survivre au round-trip');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (passages secrets)`);
+  }
+  console.log('  ✅ passages secrets — génération, révélation, persistance OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

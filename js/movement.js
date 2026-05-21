@@ -35,6 +35,14 @@ function _step(dir, faceDir) {
     return;
   }
   const [dx, dy] = DIRECTIONS[dir];
+  // Porte scellée : avancer vers une porte tente de l'ouvrir (clé requise)
+  // sans franchir la case. Une fois ouverte (→ FLOOR) elle se traverse au
+  // pas suivant. Voir dungeon-enrichment §2.C.
+  if (dungeon[playerY + dy] && dungeon[playerY + dy][playerX + dx] === CELL.DOOR) {
+    _tryOpenDoor(playerX + dx, playerY + dy);
+    updateCompass();
+    return;
+  }
   playerX += dx; playerY += dy;
   visited[playerY][playerX] = true;
   stepCount++;
@@ -101,6 +109,8 @@ function move(dir) { _step(dir, true); }
 // btns). Les SVG eux-mêmes sont centralisés dans `js/scene-icons.js`.
 function _exploreDescriptors() {
   const fountainDried = usedFountains && usedFountains.has(`${playerX},${playerY}`);
+  const altarSpent    = usedAltars && usedAltars.has(`${playerX},${playerY}`);
+  const altarCost     = 40 * (currentFloor || 1);
   // L'escalier descendant de l'étage 10 est scellé tant que Voldemort
   // Ressuscité n'a pas été vaincu. Voir ENDGAME_PLAN.md §7.1ter.
   const stairsSealed = currentFloor === 10
@@ -149,6 +159,20 @@ function _exploreDescriptors() {
         ? `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
         : `<button class="explore-btn" onclick="useFountain();_hideExploreOverlay()">Boire à la fontaine</button>
            <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    },
+    // Enrichissement du donjon §2.B — Autel Ancien : tribut risque/récompense.
+    [CELL.ALTAR]: altarSpent ? {
+      icon:  SCENE_ICONS.altar,
+      title: 'Autel Ancien',
+      desc:  "L'autel est retombé dans le silence. Son pouvoir ne se ranimera qu'à votre prochaine visite de cet étage.",
+      btns:  `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    } : {
+      icon:  SCENE_ICONS.altar,
+      title: 'Autel Ancien',
+      desc:  "Une dalle de pierre runique pulse d'une lueur sourde. On raconte qu'un tribut bien choisi attire la faveur des anciens — ou leur courroux.",
+      btns:  `<button class="explore-btn" onclick="useAltar('gold')">Offrande d'or (${altarCost} G) — soin complet + XP</button>
+              <button class="explore-btn" onclick="useAltar('gamble')">Pari du sang — gratuit, 50/50</button>
+              <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     },
     // Endgame Tranche 2 — Forge des Ténèbres : upgrade des items équipés.
     // Voir ENDGAME_PLAN.md §7.5 + js/forge.js — openForge.
@@ -212,9 +236,15 @@ function handleCellEntry(cell) {
 
   if (cell === CELL.STAIRS_D || cell === CELL.STAIRS_U ||
       cell === CELL.SHOP     || cell === CELL.CHEST    ||
-      cell === CELL.FOUNTAIN ||
+      cell === CELL.FOUNTAIN || cell === CELL.ALTAR    ||
       cell === CELL.FORGE    || cell === CELL.LIBRARY) {
     _showExploreOverlay(cell);
+  } else if (cell === CELL.TRAP) {
+    // Piège déclenché en marchant dessus : la case est consommée puis
+    // l'effet est appliqué (cf. _triggerDungeonTrap — Phase 2 §2.A).
+    dungeon[playerY][playerX] = CELL.FLOOR;
+    renderMinimap();
+    _triggerDungeonTrap();
   } else if (cell === CELL.NPC) {
     const npcId = npcPlacements.get(`${playerX},${playerY}`);
     if (npcId && typeof openNpcDialog === 'function') {
@@ -246,6 +276,8 @@ function _saveFloorToCache(floor) {
     enemyMap:     JSON.parse(JSON.stringify(enemyMap)),
     itemMap:      JSON.parse(JSON.stringify(itemMap)),
     px: playerX, py: playerY, dir: playerDir,
+    floorEvent: currentFloorEvent,
+    secretWalls: Array.from(secretWalls),
     searchedCells: Array.from(searchedCells),
     npcPlacements: Array.from(npcPlacements.entries())
     // Note : on n'archive PAS usedFountains : la fontaine se ré-active
@@ -263,8 +295,11 @@ function _restoreFloorFromCache(floor) {
   playerX  = c.px; playerY = c.py; playerDir = c.dir;
   searchedCells = _searchedCellsFromArray(c.searchedCells);
   npcPlacements = new Map(c.npcPlacements || []);
+  currentFloorEvent = c.floorEvent || null;
+  secretWalls = new Set(c.secretWalls || []);
   // Nouvelle visite = nouvelle eau dans la fontaine et nouvelles larmes Fumseck
   usedFountains = new Set();
+  usedAltars = new Set();
   usedSpecialNpcs = new Set();
   _respawnEnemiesOnEntry(floor);
   // Migration : re-place les PNJ manquants pour les saves antérieures
@@ -363,6 +398,16 @@ function _maybePlayTierTransition(prevFloor, nextFloor) {
   if (typeof addMsg === 'function') addMsg(`✨ ${next.label}`, 'narrative');
 }
 
+// Toast d'événement d'étage (Phase 4) — affiché à l'entrée d'un étage
+// qui porte un `currentFloorEvent`. No-op si l'étage est ordinaire.
+function _announceFloorEvent() {
+  if (!currentFloorEvent) return;
+  const ev = (typeof getFloorEvent === 'function') ? getFloorEvent(currentFloorEvent) : null;
+  if (!ev) return;
+  setNarrative(ev.desc);
+  if (typeof addMsg === 'function') addMsg(`✦ ${ev.name} — ${ev.desc}`, 'magic');
+}
+
 function _changeFloor(delta, opts) {
   if (opts.guard && opts.guard()) return;
   const prevFloor = currentFloor;
@@ -391,6 +436,7 @@ function _changeFloor(delta, opts) {
     updateCompass();
     _maybePlayTierTransition(prevFloor, currentFloor);
     if (opts.onArrive) opts.onArrive();
+    _announceFloorEvent();
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
     safeCall('autoSave', opts.saveReason);
@@ -584,6 +630,45 @@ function searchRoom() {
   // priorité — sans interagir avec la recharge de fouille.
   if (_tryCollectPage()) return;
 
+  // Désamorçage de pièges : la fouille repère et neutralise tout piège
+  // dans les 8 cases adjacentes (+ la case courante). Effet prioritaire,
+  // sans consommer la recharge de fouille (Phase 2 §2.A).
+  let disarmed = 0;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const tx = playerX + dx, ty = playerY + dy;
+      if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) continue;
+      if (dungeon[ty][tx] === CELL.TRAP) { dungeon[ty][tx] = CELL.FLOOR; disarmed++; }
+    }
+  }
+  if (disarmed > 0) {
+    setNarrative(disarmed > 1
+      ? `Votre prudence paie : vous repérez et désamorcez ${disarmed} pièges dissimulés.`
+      : "Votre prudence paie : vous repérez et désamorcez un piège dissimulé.");
+    addMsg(`Piège${disarmed > 1 ? 's' : ''} désamorcé${disarmed > 1 ? 's' : ''} (${disarmed}).`, 'good');
+    renderMinimap();
+    return;
+  }
+
+  // Révélation de passage secret : un mur secret dans les 8 cases
+  // adjacentes est mis au jour par la fouille (Phase 3 §3.2). Effet
+  // prioritaire, sans consommer la recharge de fouille.
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const k = `${playerX + dx},${playerY + dy}`;
+      if (secretWalls && secretWalls.has(k)) {
+        secretWalls.delete(k);
+        dungeon[playerY + dy][playerX + dx] = CELL.FLOOR;
+        setNarrative("En tâtant la paroi, une pierre bascule — un passage dérobé s'ouvre dans le mur !");
+        addMsg("Passage secret découvert !", 'good');
+        if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+        renderMinimap();
+        drawDungeon();
+        return;
+      }
+    }
+  }
+
   const key = `${playerX},${playerY}`;
   const st  = _searchCellStatus(key);
   if (st.state === 'recharging') {
@@ -679,6 +764,102 @@ function _triggerSearchTrap() {
   }
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playHit) AudioSystem.playHit();
   updateUI();
+}
+
+// ── Piège de donjon — déclenché en marchant sur une case CELL.TRAP ──
+// 50 % embuscade, 50 % dégâts/drain non létaux. La case a déjà été
+// repassée en FLOOR par handleCellEntry. Le statut de combat n'est pas
+// utilisé (risque hors-combat) : on s'en tient à dégâts / drain / ambush.
+function _triggerDungeonTrap() {
+  if (Math.random() < 0.5) {
+    setNarrative("Le sol se dérobe en un déclic sec — une créature jaillit de la fosse !");
+    addMsg("Piège ! Une embuscade vous tombe dessus.", 'bad');
+    const f = currentFloor || 1;
+    const pool = MONSTERS.filter(m => m.minFloor <= f
+      && (m.maxFloor === null || f <= m.maxFloor));
+    startBattle(scaleMonster(weightedPick(pool.length ? pool : MONSTERS), f));
+    return;
+  }
+  // Variante dégâts/drain : réutilise les 3 sous-variantes non létales
+  // de la fouille (lames, dard, brume) — narration compatible.
+  _triggerSearchTrap();
+}
+
+// ── Autel Ancien — tribut risque/récompense, 1×/visite d'étage ──
+// 'gold'   : offrande payante — soin complet du groupe + XP. Sûr.
+// 'gamble' : pari gratuit 50/50 — gros gain XP+or, ou retour de flamme.
+function useAltar(choice) {
+  if (inBattle) return;
+  if (dungeon[playerY][playerX] !== CELL.ALTAR) return;
+  _hideExploreOverlay();
+  const key = `${playerX},${playerY}`;
+  if (usedAltars.has(key)) {
+    addMsg("L'autel est inerte : son pouvoir s'est éteint pour cette visite.", 'bad');
+    return;
+  }
+  const f = currentFloor || 1;
+  if (choice === 'gold') {
+    const cost = 40 * f;
+    if (player.gold < cost) {
+      addMsg(`Offrande refusée : il faut ${cost} Gallions.`, 'bad');
+      return;
+    }
+    player.gold -= cost;
+    party.forEach(c => { if (c.hp > 0) { c.hp = c.hpMax; c.sp = c.spMax; } });
+    const xpGain = 30 * f;
+    player.xp += xpGain;
+    usedAltars.add(key);
+    setNarrative("Vous déposez l'or sur la dalle runique. Une lumière tiède enveloppe le groupe — les blessures se referment, l'esprit s'éclaircit.");
+    addMsg(`Bénédiction de l'autel : groupe restauré, +${xpGain} XP (−${cost} Gallions).`, 'good');
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+    updateUI();
+    if (typeof checkLevelUp === 'function') checkLevelUp();
+  } else if (choice === 'gamble') {
+    usedAltars.add(key);
+    if (Math.random() < 0.5) {
+      const xpGain = 60 * f, goldGain = 20 * f;
+      player.xp += xpGain;
+      player.gold += goldGain;
+      setNarrative("Vous posez la main nue sur la pierre. Elle s'illumine d'or — le destin vous sourit !");
+      addMsg(`Pari gagné : +${xpGain} XP, +${goldGain} Gallions.`, 'good');
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+      updateUI();
+      if (typeof checkLevelUp === 'function') checkLevelUp();
+    } else {
+      party.slice(0, partySize).forEach(c => {
+        if (c.hp <= 0) return;
+        const dmg = Math.max(1, Math.floor(c.hpMax * 0.22));
+        c.hp = Math.max(1, c.hp - dmg);
+      });
+      setNarrative("La pierre vire au noir sous vos doigts — une douleur fulgurante traverse le groupe.");
+      addMsg("Pari perdu : le groupe encaisse le retour de flamme de l'autel.", 'bad');
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playHit) AudioSystem.playHit();
+      updateUI();
+    }
+  }
+  safeCall('autoSave', 'altar-used');
+}
+
+// ── Porte scellée — ouverture à la Clé du Donjon (§2.C) ──────
+// Appelée par _step quand le joueur avance vers une case CELL.DOOR.
+// Avec une clé : la consomme et ouvre la porte (→ FLOOR). Sinon : refus.
+function _tryOpenDoor(x, y) {
+  const inv = player.inventory || [];
+  const keyIdx = inv.findIndex(it => it && it.id === 'cle_donjon');
+  if (keyIdx < 0) {
+    setNarrative("Une lourde porte cloutée vous barre le chemin. Sa serrure ancienne réclame une clé.");
+    addMsg("Porte scellée — il vous faut une Clé du Donjon.", 'bad');
+    drawDungeon();
+    return false;
+  }
+  inv.splice(keyIdx, 1);
+  dungeon[y][x] = CELL.FLOOR;
+  setNarrative("La clé tourne dans la serrure rouillée — la porte s'ouvre en grinçant sur une salle oubliée.");
+  addMsg("🗝️ Porte déverrouillée.", 'good');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+  renderMinimap();
+  drawDungeon();
+  return true;
 }
 
 // ── Fontaine de pierre — soin total 1×/visite d'étage ──────
