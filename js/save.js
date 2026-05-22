@@ -318,6 +318,16 @@ function _migrateUnallocatedStatPoints(c, force) {
 // Applique un instantané au runtime — mute les objets en place pour
 // préserver les références partagées (party[0] === player, etc.).
 // Pas d'I/O, pas de message UI : pur applicateur.
+// Vrai si les tableaux de carte d'une save ne correspondent pas aux
+// dimensions MAP_W×MAP_H courantes. Cas typique : une save antérieure à
+// l'agrandissement de la carte (12×12 → 16×16). La géométrie d'un étage
+// (salles, couloirs, position du joueur) est exprimée dans l'ancien
+// repère et n'est pas transposable.
+function _mapDimsStale(grid) {
+  return !Array.isArray(grid) || grid.length !== MAP_H
+      || !Array.isArray(grid[0]) || grid[0].length !== MAP_W;
+}
+
 function _applyState(gs) {
   if (gs.party && gs.party[0]) Object.assign(player,  gs.party[0]);
   if (gs.party && gs.party[1]) Object.assign(player2, gs.party[1]);
@@ -497,6 +507,18 @@ function _applyState(gs) {
 
   recalculateStats();
   if (!('pendingHouseRewards' in gs)) _migrateHouseRewards();
+
+  // Migration : une save antérieure à l'agrandissement de la carte porte
+  // des tableaux 12×12. Leurs coordonnées ne sont pas transposables vers
+  // 16×16 → on régénère l'étage courant et on purge le cache d'étages
+  // (toutes ses entrées sont elles aussi de l'ancienne taille). Le
+  // personnage, l'inventaire, l'or, les quêtes et la progression Maison
+  // sont conservés ; seule la disposition de l'étage courant est refaite.
+  if (_mapDimsStale(dungeon)) {
+    floorDungeons = {};
+    generateDungeon(currentFloor || 1);
+  }
+
   updateUI();
   updateCompass();
   renderMinimap();
