@@ -94,6 +94,12 @@ function _buildMinimapCells(mm, cellSize) {
           if (typeof litRunes !== 'undefined' && litRunes
               && litRunes.has(`${x},${y}`)) div.classList.add('map-rune-lit');
         }
+        else if (c === CELL.STELE) {
+          // Stèle d'énigme : teinte cyan, atténuée une fois résolue.
+          div.classList.add('map-stele');
+          if (typeof runeStele !== 'undefined' && runeStele
+              && runeStele.solved) div.classList.add('map-stele-solved');
+        }
         else if (c === CELL.NPC) {
           // PNJ : teinte spéciale + marqueur "!" / "?" si la quête liée
           // est offrable ou prête à rendre. La case est révélée d'office

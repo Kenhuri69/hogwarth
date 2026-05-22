@@ -341,6 +341,11 @@ let secretWalls = new Set();
 // `secretWalls`. Voir dungeon-enrichment-v2.md.
 let runePuzzle = null;
 let litRunes   = new Set();
+// Stèle d'énigme de l'étage courant, ou null. Forme :
+// { cell:"x,y", riddleId:str, barrier:"x,y", solved:bool }. Posée à la
+// génération, mise en cache + persistée comme `runePuzzle`.
+// Voir dungeon-enrichment-v2.md §3.
+let runeStele = null;
 // Cellules où le joueur a tué un ennemi, indexées par étage.
 // Map<floor, Set<"x,y">>. À chaque retour sur un étage déjà visité, chaque
 // entrée a 20 % de chance de re-spawner un ennemi (`_respawnEnemiesOnEntry`).

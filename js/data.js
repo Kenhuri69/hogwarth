@@ -13,7 +13,10 @@ const CELL = {
   TRAP:11, ALTAR:12,
   // Enrichissement V2 — dalle-rune d'un puzzle d'exploration. Marchable
   // (≠ WALL) ; allumée en marchant dessus. Voir dungeon-enrichment-v2.md.
-  RUNE:13
+  RUNE:13,
+  // Enrichissement V2 Phase 3 — stèle d'énigme. Marchable (≠ WALL) ;
+  // marcher dessus ouvre un overlay de devinette. Voir dungeon-enrichment-v2.md §3.
+  STELE:14
 };
 
 // Identité des 3 dalles-runes d'un puzzle, indexée par position dans

@@ -660,6 +660,55 @@ function drawRuneSprite(x, baseY, sz, lit, idx) {
   ctx.restore();
 }
 
+// ── Stèle d'énigme (sprite de couloir, monolithe debout) ──────
+// Puzzle-devinette (dungeon-enrichment-v2 §3). Monolithe de pierre
+// gravé de glyphes : lueur cyan « savoir » tant que l'énigme n'est pas
+// résolue, gravure sourde une fois résolue. Dessin procédural simple.
+function drawSteleSprite(x, baseY, sz, solved) {
+  ctx.save();
+  const glow = solved ? '#5a6068' : '#8fe6f4';
+  const baseW = sz * 0.30, topW = sz * 0.16;
+  const top = baseY - sz * 0.92, bot = baseY - sz * 0.04;
+  // Halo cyan au sol — seulement si l'énigme reste à résoudre.
+  if (!solved) {
+    const g = ctx.createRadialGradient(x, baseY - sz * 0.10, 0,
+                                       x, baseY - sz * 0.10, sz * 0.70);
+    g.addColorStop(0, 'rgba(143,230,244,0.42)');
+    g.addColorStop(1, 'rgba(143,230,244,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(x, baseY - sz * 0.10, sz * 0.70, sz * 0.30, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Monolithe légèrement tapéré, sommet en pointe.
+  ctx.fillStyle   = solved ? '#2c2e36' : '#3a3d46';
+  ctx.strokeStyle = solved ? '#54565e' : '#9098a2';
+  ctx.lineWidth   = Math.max(1, sz * 0.04);
+  ctx.beginPath();
+  ctx.moveTo(x - baseW, bot);
+  ctx.lineTo(x + baseW, bot);
+  ctx.lineTo(x + topW,  top + sz * 0.10);
+  ctx.lineTo(x,         top);
+  ctx.lineTo(x - topW,  top + sz * 0.10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // Glyphes gravés, empilés sur la face.
+  ctx.strokeStyle = glow;
+  ctx.lineWidth   = Math.max(1.4, sz * 0.045);
+  ctx.lineCap     = 'round';
+  ctx.globalAlpha = solved ? 0.5 : 1;
+  const gw = sz * 0.10;
+  for (let i = 0; i < 3; i++) {
+    const gy = top + sz * (0.30 + i * 0.20);
+    ctx.beginPath();
+    ctx.moveTo(x - gw, gy);          ctx.lineTo(x + gw, gy);
+    ctx.moveTo(x,      gy - gw * 0.7); ctx.lineTo(x, gy + gw * 0.7);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 // ── Fontaine (sprite de couloir) ─────────────────────────────
 // Bassin restaurateur (cf. Salle Fontaine). Halo bleu eau si active,
 // grisé si déjà bue (dried).
