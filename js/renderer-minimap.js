@@ -15,7 +15,7 @@ function renderMinimap() {
   // Si l'overlay mobile est ouvert, le mettre à jour aussi
   const overlay = document.getElementById('map-overlay');
   if (overlay && overlay.style.display === 'flex') {
-    _buildMinimapCells(document.getElementById('minimap-mobile'), 16);
+    _buildMinimapCells(document.getElementById('minimap-mobile'), 14);
   }
 }
 

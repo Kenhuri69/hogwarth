@@ -443,8 +443,10 @@ function toggleMobileMap() {
   const opening = overlay.style.display !== 'flex';
   overlay.style.display = opening ? 'flex' : 'none';
   if (opening) {
-    // Construire la carte agrandie au moment de l'ouverture
-    _buildMinimapCells(document.getElementById('minimap-mobile'), 20);
+    // Construire la carte agrandie au moment de l'ouverture.
+    // 14 px/case : avec 16 colonnes la grille fait ~254 px — l'empreinte
+    // de l'ancienne carte 12×12, sans envahir l'écran mobile.
+    _buildMinimapCells(document.getElementById('minimap-mobile'), 14);
     // Mettre à jour le niveau affiché
     const lvlEl = document.getElementById('map-overlay-floor');
     if (lvlEl) lvlEl.textContent = `Niveau ${currentFloor}`;
