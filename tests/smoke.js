@@ -9612,7 +9612,7 @@ async function scenarioBranchyDungeon() {
   assert(unreachable.length === 0, `escalier injoignable sur ${unreachable.length} génération(s)`);
   assert(badStairs.length === 0,   `STAIRS_D non unique sur ${badStairs.length} génération(s)`);
   assert(noBranch.length === 0,    `aucune branche sur ${noBranch.length} génération(s)`);
-  assert(t2.every(r => r.rooms === 5), 'le donjon doit compter 5 salles');
+  assert(t2.every(r => r.rooms === 7), 'le donjon doit compter 7 salles');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
