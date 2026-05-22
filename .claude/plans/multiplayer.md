@@ -119,12 +119,41 @@ d'un défi/inspection, pas à chaque poll.
 
 ### 4.6 Interaction (overlay type PNJ)
 
-Face à un fantôme → overlay (style `openNpcDialog` / `_showExploreOverlay`)
-avec actions :
+Face à un fantôme → overlay (style `openNpcDialog` / `_showExploreOverlay`).
+
+**En-tête de la fenêtre** (visible avant tout choix d'action) :
+- **Composition du groupe** : les portraits-médaillons de chaque héros du
+  groupe adverse, côte à côte. Résolus côté client depuis `hero_keys` →
+  `CHARACTERS[key].imgSrc` (`data.js`) — aucune colonne ni asset
+  supplémentaire (les médaillons 128×128 existent déjà).
+- **Ligne d'identité** : `« <pseudo> · Niveau <n> »` — `name` et `level`
+  de la ligne `mp_presence`. La Maison est rendue par son blason
+  (réutilise `#house-crest`).
+- **Phrase d'accroche** : courte phrase de saveur sous l'identité,
+  produite par `ghostTagline(heroKeys, house)` (§4.9).
+
+Puis les actions :
 - ⚔️ **Défier en combat PvP** (§5)
 - 🎁 **Offrir or / objet** (§6)
 - 👋 **Saluer** (emote) (§6)
 - 🔍 **Inspecter le groupe** (§6)
+
+### 4.9 Phrase d'accroche du fantôme — `ghostTagline(heroKeys, house)`
+
+Fonction **pure et déterministe** (même fantôme → même phrase pour tous
+les observateurs) : aucune saisie libre, banque de phrases prédéfinie
+(cohérent avec §7).
+
+- La **Maison** sélectionne une banque de phrases au ton propre
+  (Gryffondor martial, Serpentard ambitieux, Serdaigle érudit,
+  Poufsouffle loyal).
+- La **composition de héros** sélectionne la phrase dans cette banque :
+  index dérivé de `heroKeys` (solo/duo + identité des héros). Une banque
+  par Maison contient assez d'entrées pour couvrir les combinaisons
+  courantes ; certaines phrases nomment explicitement un héros meneur.
+- Sans `house` (cas limite) → banque neutre par défaut.
+- Détail des banques à rédiger en Phase 2 ; la fonction vit dans
+  `js/multiplayer.js`.
 
 ### 4.7 Séparation hardcore / normal
 
@@ -244,7 +273,7 @@ xp   = round((15 +  8 × niveauAdversaire) × mult)
 
 | Interaction | Mécanique |
 |-------------|-----------|
-| 🔍 **Inspecter** | Lit le `snapshot` : niveaux, Maison, score Ironman, faits d'armes. Fiche lecture seule. Sert aussi à jauger un adversaire avant un défi. |
+| 🔍 **Inspecter** | Vue détaillée allant plus loin que l'en-tête de l'overlay (§4.6) : lit le `snapshot` complet — stats par héros, équipement, sorts, Maison, score Ironman, faits d'armes. Fiche lecture seule. Sert aussi à jauger un adversaire avant un défi. |
 | 👋 **Emote / salut** | Insère un petit « ping » que le destinataire voit à sa prochaine lecture (« X t'a salué »). Aucun effet de jeu. |
 | 🎁 **Offrir or / objet** | Insère une ligne `mp_gifts` (or ou objet sérialisé). Le receveur réclame ses cadeaux non lus à la connexion. Anti-abus : plafond/cooldown d'envoi. |
 | 📜 **Laisser un message** | Action sur une case vide (pas besoin d'un fantôme) : pose une note dans `mp_messages`. Les autres joueurs voient un marqueur lisible sur la case. **Messages à gabarits** (banque de mots prédéfinis, façon Dark Souls) — **pas de texte libre**, pour éviter toute modération. |
@@ -275,9 +304,11 @@ xp   = round((15 +  8 × niveauAdversaire) × mult)
   onglet Ironman ne voit pas un onglet normal ; `node tests/smoke.js` vert.
 
 ### Phase 2 — Interactions légères
-- Overlay d'interaction ; **Inspecter** et **Emote** (lecture seule /
-  ping). Pas d'écriture de jeu lourde.
-- verify : overlay s'ouvre face à un fantôme, fiche d'inspection correcte.
+- Overlay d'interaction + **en-tête** (portraits du groupe, pseudo ·
+  niveau, blason) ; banques de `ghostTagline` (§4.9) ; **Inspecter** et
+  **Emote** (lecture seule / ping). Pas d'écriture de jeu lourde.
+- verify : overlay s'ouvre face à un fantôme, en-tête (photos + pseudo ·
+  niveau + phrase d'accroche) et fiche d'inspection corrects.
 
 ### Phase 3 — Combat PvP snapshot asynchrone
 - Sérialisation/chargement du snapshot de groupe ; IA de groupe de héros ;
@@ -352,6 +383,9 @@ xp   = round((15 +  8 × niveauAdversaire) × mult)
       emote / inspecter / message.
 - [x] Ajout : cloisonnement hardcore (Ironman) / normal ; pseudo saisi au
       démarrage ; sprites de héros en vue 3D à générer.
+- [x] Ajout : en-tête de l'overlay d'interaction (portraits du groupe,
+      pseudo · niveau, blason) + phrase d'accroche `ghostTagline`
+      (banque par Maison + composition de héros).
 - [ ] Phase 0 — identité & tables.
 - [ ] Phase 1 — présence & rendu fantôme.
 - [ ] Phase 2 — interactions légères.
