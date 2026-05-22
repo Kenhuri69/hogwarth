@@ -148,16 +148,25 @@ carte au-delà de la stèle.
 
 ### Étapes
 
-- [ ] **4.1** Loot table dédiée pour les coffres de puzzle (qualité croissante
-      selon l'étage) — rejoint la piste « récompenses enrichies » du backlog.
-      Les coffres de puzzle ne sont plus des coffres standard.
-- [ ] **4.2** Événement d'étage `FLOOR_EVENTS` : « Étage runique » garantit
-      un puzzle et peut en doubler la récompense ; toast narratif à l'entrée.
-- [ ] **4.3** Dosage : au plus **un** puzzle (rune ou stèle) par étage ;
-      fréquences calibrées pour que le joueur en croise régulièrement sans
-      que ça devienne systématique.
-- [ ] **4.4** Smoke : `scenarioRuneRewards` — coffre de puzzle = butin dédié ;
-      forçage de l'événement « Étage runique ».
+- [x] **4.1** Loot table dédiée pour les coffres de puzzle. Champ
+      `rewardCell` sur `runePuzzle`/`runeStele` (la case du coffre).
+      `openChest` détecte la case via `_puzzleRewardAt` et délègue à
+      `_openPuzzleChest` : or généreux croissant avec l'étage +
+      équipement « best-of-N » (3 tirages de `pickChestEquipment`,
+      meilleure rareté retenue → biais qualité naturel par étage).
+- [x] **4.2** Événement d'étage `runique` ajouté à `FLOOR_EVENTS`.
+      `_generateRunePuzzle`/`_generateRuneStele` forcent la génération
+      quand `currentFloorEvent === 'runique'`. `_openPuzzleChest(doubled)`
+      double l'or et passe à 2 pièces (5 tirages). Le toast est gratuit
+      (`_announceFloorEvent` générique). _Décision : doublement
+      déterministe sur l'événement (rare, ~4 %/étage) plutôt qu'un
+      sous-tirage « peut doubler »._
+- [x] **4.3** Dosage : `generateDungeon` n'appelle `_generateRuneStele`
+      que si `!runePuzzle` → au plus un puzzle par étage. Fréquences :
+      20 % rune, puis 30 % des étages restants en stèle (~44 % au total).
+- [x] **4.4** Smoke : `scenarioRuneRewards` — dosage (0 double-puzzle /
+      200), `rewardCell` valide, garantie runique (40/40), butin simple
+      vs doublé. + `scenarioFloorEvents` mis à jour (6 événements).
 
 ### Risque
 Faible — additif, tout est appliqué à la génération (zéro effet runtime
@@ -206,3 +215,4 @@ Ordre recommandé : **1 → 2 → 3 → 4**. Une PR par phase, smoke vert à cha
 | 2026-05-22 | Phase 1 — Socle runique | ✅ | `CELL.RUNE=13`. `runePuzzle`/`litRunes` (state.js). Génération 20 %/étage (dungeon.js). `_activateRune` (movement.js). `drawRuneSprite` + minimap `.map-rune`. Persistance save + cache d'étage. Smoke `scenarioRunePuzzle`. |
 | 2026-05-22 | Phase 2 — Runes en séquence | ✅ | Champ `order`/`hint`/`hintCell` sur `runePuzzle` (½ des puzzles ordonnés). Reset des dalles sur faux pas. Inscription-indice nommant les runes par teinte. Smoke `scenarioRuneSequence`. |
 | 2026-05-22 | Phase 3 — Énigmes-devinettes | ✅ | `js/riddles.js` (8 devinettes, `getRiddleById`). `CELL.STELE=14`. `runeStele` (state.js). Génération 30 %/étage (dungeon.js). `answerSteleRiddle` + overlay réutilisant `_showExploreOverlay`. `drawSteleSprite` + minimap `.map-stele`. Persistance save + cache. Smoke `scenarioRiddleStele`. 98 scénarios verts. |
+| 2026-05-22 | Phase 4 — Récompenses & intégration | ✅ | Champ `rewardCell` sur `runePuzzle`/`runeStele`. `_puzzleRewardAt` + `_openPuzzleChest` (movement.js) — or croissant + équipement best-of-N. Événement `runique` (`FLOOR_EVENTS`) force un puzzle et double la récompense. Dosage : au plus un puzzle/étage (`generateDungeon`). Smoke `scenarioRuneRewards` + `scenarioFloorEvents` (6 événements). 99 scénarios verts. **Plan clos.** |

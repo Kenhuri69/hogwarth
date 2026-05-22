@@ -10093,7 +10093,7 @@ async function scenarioFloorEvents() {
     state:  typeof currentFloorEvent !== 'undefined',
   }));
   console.log('  T1:', t1);
-  assert(t1.events === 5,  'FLOOR_EVENTS doit compter 5 événements');
+  assert(t1.events === 6,  'FLOOR_EVENTS doit compter 6 événements');
   assert(t1.roll && t1.get, 'rollFloorEvent / getFloorEvent non exposées');
   assert(t1.state,          'currentFloorEvent non exposé');
 
@@ -10644,8 +10644,112 @@ async function scenarioRiddleStele() {
   await browser.close();
 }
 
+async function scenarioRuneRewards() {
+  console.log('\n── Scénario : récompenses de puzzle & étage runique (V2 Phase 4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : événement runique enregistré + helpers de butin exposés
+  const t1 = await page.evaluate(() => ({
+    eventOk:   typeof FLOOR_EVENTS !== 'undefined'
+               && FLOOR_EVENTS.some(e => e.id === 'runique' && e.name && e.desc),
+    getEvent:  typeof getFloorEvent === 'function'
+               && !!getFloorEvent('runique'),
+    rewardFn:  typeof _puzzleRewardAt === 'function',
+    chestFn:   typeof _openPuzzleChest === 'function',
+  }));
+  console.log('  T1:', t1);
+  assert(t1.eventOk,  "l'événement « runique » doit figurer dans FLOOR_EVENTS");
+  assert(t1.getEvent, 'getFloorEvent(\'runique\') doit retourner la définition');
+  assert(t1.rewardFn, '_puzzleRewardAt non exposée');
+  assert(t1.chestFn,  '_openPuzzleChest non exposée');
+
+  // T2 : dosage §4.3 — jamais deux puzzles sur le même étage ; chaque
+  // puzzle généré porte un rewardCell pointant sur un coffre.
+  const t2 = await page.evaluate(() => {
+    let both = 0, badReward = 0, withPuzzle = 0;
+    for (let g = 0; g < 200; g++) {
+      generateDungeon(1 + (g % 9));
+      if (runePuzzle && runeStele) both++;
+      const pz = runePuzzle || runeStele;
+      if (!pz) continue;
+      withPuzzle++;
+      if (!pz.rewardCell) { badReward++; continue; }
+      const [rx, ry] = pz.rewardCell.split(',').map(Number);
+      if (dungeon[ry][rx] !== CELL.CHEST) badReward++;
+    }
+    return { both, badReward, withPuzzle };
+  });
+  console.log('  T2 dosage:', t2);
+  assert(t2.both === 0,      'jamais deux puzzles sur le même étage');
+  assert(t2.withPuzzle >= 1, 'au moins un puzzle sur 200 générations');
+  assert(t2.badReward === 0, 'tout puzzle porte un rewardCell pointant sur un coffre');
+
+  // T3 : l'événement « runique » garantit un puzzle à chaque étage.
+  const t3 = await page.evaluate(() => {
+    const orig = rollFloorEvent;
+    rollFloorEvent = () => 'runique';
+    let withPuzzle = 0;
+    for (let g = 0; g < 40; g++) {
+      generateDungeon(2 + (g % 7));
+      if (runePuzzle || runeStele) withPuzzle++;
+    }
+    rollFloorEvent = orig;
+    return { runs: 40, withPuzzle };
+  });
+  console.log('  T3 garantie:', t3);
+  assert(t3.withPuzzle === 40, "l'étage runique doit garantir un puzzle à chaque génération");
+
+  // T4 : coffre de puzzle → butin dédié ; événement runique → doublé.
+  const t4 = await page.evaluate(() => {
+    function runChest(doubled) {
+      generateDungeon(5);
+      currentFloor = 5;
+      currentFloorEvent = doubled ? 'runique' : null;
+      player.inventory = [];
+      runePuzzle = { runes: [], barrier: '0,0', rewardCell: `${playerX},${playerY}`,
+                     order: null, hint: null, hintCell: null, solved: true };
+      runeStele = null;
+      dungeon[playerY][playerX] = CELL.CHEST;
+      const goldBefore = player.gold;
+      const detected = _puzzleRewardAt(playerX, playerY);
+      openChest();
+      return {
+        detected,
+        goldGain: player.gold - goldBefore,
+        invGain:  player.inventory.length,
+        chestConsumed: dungeon[playerY][playerX] === CELL.FLOOR,
+      };
+    }
+    const single  = runChest(false);
+    const doubled = runChest(true);
+    // Une case quelconque hors rewardCell n'est pas un coffre de puzzle.
+    const offCell = _puzzleRewardAt(playerX + 1, playerY + 1);
+    return { single, doubled, offCell };
+  });
+  console.log('  T4 butin:', t4);
+  assert(t4.single.detected === 'rune',  '_puzzleRewardAt doit reconnaître la case du coffre');
+  assert(t4.offCell === null,            '_puzzleRewardAt doit ignorer les cases hors récompense');
+  assert(t4.single.chestConsumed,        'le coffre de puzzle doit être consommé après ouverture');
+  assert(t4.single.goldGain >= 175 && t4.single.goldGain < 300,
+    'coffre de puzzle simple → or dans la fourchette dédiée');
+  assert(t4.doubled.goldGain >= 350 && t4.doubled.goldGain < 600,
+    'coffre de puzzle runique → or doublé');
+  assert(t4.doubled.goldGain > t4.single.goldGain,
+    "l'étage runique doit rapporter plus qu'un coffre de puzzle normal");
+  assert(t4.single.invGain >= 1,         'coffre de puzzle simple → au moins 1 équipement');
+  assert(t4.doubled.invGain >= 2,        'coffre de puzzle runique → 2 équipements');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (récompenses de puzzle)`);
+  }
+  console.log('  ✅ récompenses de puzzle — dosage, garantie runique, butin doublé OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
