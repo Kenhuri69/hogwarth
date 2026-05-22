@@ -19,6 +19,8 @@ const FLOOR_EVENTS = [
     desc: "Cet étage recèle plus de coffres qu'à l'accoutumée." },
   { id: 'pieges', weight: 8,  name: 'Étage piégé',
     desc: "Le sol est truffé de mécanismes anciens. Redoublez de prudence." },
+  { id: 'runique', weight: 6, name: 'Étage runique',
+    desc: "Une magie ancienne sature les murs : une énigme garde un trésor — et le récompense au double." },
 ];
 
 const FLOOR_EVENT_CHANCE = 0.35;

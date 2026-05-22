@@ -298,7 +298,10 @@ function _buildRuneHint(order) {
 function _generateRunePuzzle(rooms) {
   runePuzzle = null;
   litRunes   = new Set();
-  if (Math.random() >= 0.20) return;
+  // L'événement d'étage « Étage runique » force la génération (Phase 4.2).
+  const forced = (typeof currentFloorEvent !== 'undefined'
+    && currentFloorEvent === 'runique');
+  if (!forced && Math.random() >= 0.20) return;
   const pocket = _findWallPocket();
   if (!pocket) return;
   const floorCells = [];
@@ -325,10 +328,11 @@ function _generateRunePuzzle(rooms) {
     hintCell = `${hc[0]},${hc[1]}`;
   }
   runePuzzle = {
-    runes:   runeKeys,
-    barrier: `${pocket.w1x},${pocket.w1y}`,
+    runes:      runeKeys,
+    barrier:    `${pocket.w1x},${pocket.w1y}`,
+    rewardCell: `${pocket.w2x},${pocket.w2y}`,
     order, hint, hintCell,
-    solved:  false
+    solved:     false
   };
 }
 
@@ -339,8 +343,12 @@ function _generateRunePuzzle(rooms) {
 // `answerRiddle` dans movement.js). Voir dungeon-enrichment-v2.md §3.
 function _generateRuneStele(rooms) {
   runeStele = null;
-  if (Math.random() >= 0.30) return;
   if (typeof RIDDLES === 'undefined' || !RIDDLES.length) return;
+  // L'événement « Étage runique » force la stèle si aucune dalle-rune
+  // n'a pu être posée (cf. generateDungeon — Phase 4.2/4.3).
+  const forced = (typeof currentFloorEvent !== 'undefined'
+    && currentFloorEvent === 'runique');
+  if (!forced && Math.random() >= 0.30) return;
   const pocket = _findWallPocket();
   if (!pocket) return;
   const floorCells = [];
@@ -358,10 +366,11 @@ function _generateRuneStele(rooms) {
   dungeon[pocket.w2y][pocket.w2x] = CELL.CHEST;
   const riddle = RIDDLES[Math.floor(Math.random() * RIDDLES.length)];
   runeStele = {
-    cell:     `${sx},${sy}`,
-    riddleId: riddle.id,
-    barrier:  `${pocket.w1x},${pocket.w1y}`,
-    solved:   false
+    cell:       `${sx},${sy}`,
+    riddleId:   riddle.id,
+    barrier:    `${pocket.w1x},${pocket.w1y}`,
+    rewardCell: `${pocket.w2x},${pocket.w2y}`,
+    solved:     false
   };
 }
 
@@ -552,10 +561,11 @@ function generateDungeon(floor) {
   // cases FLOOR ordinaires. `_generateRunePuzzle` (re)met `runePuzzle` et
   // `litRunes` à leur état initial à chaque génération.
   _generateRunePuzzle(rooms);
-  // Stèle d'énigme (dungeon-enrichment-v2 §3) — même contrainte : posée
-  // après les autres cellules spéciales. (re)met `runeStele` à l'état
-  // initial à chaque génération.
-  _generateRuneStele(rooms);
+  // Stèle d'énigme (dungeon-enrichment-v2 §3) — au plus UN puzzle par
+  // étage (dosage §4.3) : la stèle n'est tentée que si aucune dalle-rune
+  // n'a été posée. (re)met `runeStele` à l'état initial à chaque appel.
+  if (!runePuzzle) _generateRuneStele(rooms);
+  else runeStele = null;
 
   // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
   usedFountains = new Set();

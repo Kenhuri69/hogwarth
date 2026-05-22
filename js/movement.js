@@ -527,10 +527,65 @@ function goUp() {
   });
 }
 
+// ── Coffre-récompense d'un puzzle (rune ou stèle) — Phase 4.1 ──
+// Rang de rareté, pour comparer deux pièces (best-of-N).
+const _RARITY_RANK = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 };
+
+// Retourne 'rune' / 'stele' si (x,y) est la case du coffre-récompense
+// d'un puzzle de l'étage courant, sinon null.
+function _puzzleRewardAt(x, y) {
+  const key = `${x},${y}`;
+  if (typeof runePuzzle !== 'undefined' && runePuzzle
+      && runePuzzle.rewardCell === key) return 'rune';
+  if (typeof runeStele !== 'undefined' && runeStele
+      && runeStele.rewardCell === key) return 'stele';
+  return null;
+}
+
+// Butin dédié d'un coffre de puzzle : or généreux (croissant avec
+// l'étage) + équipement « best-of-N » biaisé vers la qualité. `doubled`
+// (événement « Étage runique ») double l'or et ajoute une 2ᵉ pièce.
+// Voir dungeon-enrichment-v2.md §4.1.
+function _openPuzzleChest(doubled) {
+  const floor = currentFloor || 1;
+  let gold = Math.floor(Math.random() * 25 + 35) * floor;
+  if (doubled) gold *= 2;
+  player.gold += gold;
+  addMsg(`+${gold} Gallions (coffre runique)`, 'good');
+
+  const rolls = doubled ? 5 : 3;
+  const picks = doubled ? 2 : 1;
+  for (let p = 0; p < picks; p++) {
+    let best = null;
+    for (let i = 0; i < rolls; i++) {
+      const it = (typeof pickChestEquipment === 'function')
+        ? pickChestEquipment(floor) : null;
+      if (!it) continue;
+      if (!best || (_RARITY_RANK[it.rarity || 'common'] || 0)
+                 > (_RARITY_RANK[best.rarity || 'common'] || 0)) best = it;
+    }
+    if (best && tryAddItem(best, { silent: true })) {
+      addMsg(`Obtenu : ${getItemIconHtml(best, 'ui-icon-sm')} ${best.name}`, 'good');
+    }
+  }
+  setNarrative(doubled
+    ? "Le coffre scellé déborde de richesses — l'étage runique a redoublé sa récompense !"
+    : "Le coffre scellé récompense votre persévérance d'un trésor de choix.");
+  updateUI();
+  renderMinimap();
+}
+
 function openChest() {
+  // Coffre-récompense d'un puzzle : butin dédié (Phase 4.1). Détecté
+  // avant de consommer la case (le check porte sur la position courante).
+  const puzzleReward = _puzzleRewardAt(playerX, playerY);
   dungeon[playerY][playerX] = CELL.FLOOR;
   document.getElementById('btn-interact').style.display = 'none';
   AudioSystem.playChestOpen();
+  if (puzzleReward) {
+    _openPuzzleChest(currentFloorEvent === 'runique');
+    return;
+  }
 
   // Livres de sorts disponibles selon l'étage courant
   const booksAvailable = ITEMS.filter(i => {
