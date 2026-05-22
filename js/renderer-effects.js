@@ -166,23 +166,84 @@ function drawForegroundFrame(cx, cy, scale) {
 // Les autres types de cellule (escalier, coffre, boutique, fontaine)
 // sont rendus en sprites de couloir ailleurs.
 function drawCellMarker(cx, cy, bx, by, size, cell) {
-  // Porte en bois
-  ctx.fillStyle = '#5a3010';
-  ctx.fillRect(bx - size * 0.4, by - size * 0.85, size * 0.8, size * 1.7);
-  // Planches
+  ctx.save();
+  const dw = size * 0.84, dh = size * 1.7;
+  const dx = bx - dw / 2, dy = by - dh / 2;
+
+  // Battant : panneau de bois, dégradé vertical pour le volume.
+  const wood = ctx.createLinearGradient(dx, dy, dx, dy + dh);
+  wood.addColorStop(0, '#6a3c16');
+  wood.addColorStop(1, '#3a2208');
+  ctx.fillStyle = wood;
+  ctx.fillRect(dx, dy, dw, dh);
+
+  // Planches verticales (3 planches → 2 joints sombres).
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = Math.max(1, size * 0.035);
   for (let i = 1; i < 3; i++) {
-    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-    ctx.lineWidth = 2;
-    const hy = by - size * 0.85 + (size * 1.7 / 3) * i;
-    ctx.beginPath(); ctx.moveTo(bx - size * 0.4, hy); ctx.lineTo(bx + size * 0.4, hy); ctx.stroke();
+    const px = dx + (dw / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(px, dy + size * 0.05);
+    ctx.lineTo(px, dy + dh - size * 0.05);
+    ctx.stroke();
   }
+
+  // 2 ferrures horizontales cloutées (porte renforcée).
+  const bandH = size * 0.17;
+  for (const byy of [dy + dh * 0.18, dy + dh * 0.80]) {
+    ctx.fillStyle = '#2c2824';
+    ctx.fillRect(dx, byy, dw, bandH);
+    ctx.fillStyle = 'rgba(150,148,140,0.4)';        // liseré clair
+    ctx.fillRect(dx, byy, dw, Math.max(1, size * 0.035));
+    ctx.fillStyle = '#7a756c';                       // clous
+    for (let s = 0; s < 4; s++) {
+      const sx = dx + dw * (0.13 + s * 0.247);
+      ctx.beginPath();
+      ctx.arc(sx, byy + bandH / 2, size * 0.05, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Cadre doré (cohérent avec le thème or du jeu).
   ctx.strokeStyle = '#c9a84c';
-  ctx.lineWidth   = 1.5;
-  ctx.strokeRect(bx - size * 0.4, by - size * 0.85, size * 0.8, size * 1.7);
-  ctx.fillStyle = '#c9a84c';
+  ctx.lineWidth = Math.max(1.5, size * 0.055);
+  ctx.strokeRect(dx, dy, dw, dh);
+
+  // Écusson de serrure (plaque métallique sombre, centrée).
+  const lpW = size * 0.38, lpH = size * 0.50;
+  const lpx = bx - lpW / 2, lpy = by - lpH / 2;
+  ctx.fillStyle = '#181613';
+  ctx.fillRect(lpx, lpy, lpW, lpH);
+  ctx.fillStyle = 'rgba(170,158,120,0.3)';           // reflet haut
+  ctx.fillRect(lpx, lpy, lpW, size * 0.055);
+  ctx.strokeStyle = '#8a7a3a';
+  ctx.lineWidth = Math.max(1, size * 0.03);
+  ctx.strokeRect(lpx, lpy, lpW, lpH);
+
+  // Trou de serrure : disque + fente trapézoïdale en dessous.
+  const khx = bx, khy = by - size * 0.07, khr = size * 0.075;
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(khx, khy, khr, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath();
-  ctx.arc(bx + size * 0.25, by, size * 0.08, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.moveTo(khx - khr * 0.5, khy);
+  ctx.lineTo(khx + khr * 0.5, khy);
+  ctx.lineTo(khx + khr * 1.2, khy + size * 0.17);
+  ctx.lineTo(khx - khr * 1.2, khy + size * 0.17);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(201,168,76,0.7)';          // liseré or autour du trou
+  ctx.lineWidth = Math.max(1, size * 0.022);
+  ctx.beginPath(); ctx.arc(khx, khy, khr, 0, Math.PI * 2); ctx.stroke();
+
+  // Anneau de poignée, sous l'écusson.
+  const ringY = lpy + lpH + size * 0.14, ringR = size * 0.10;
+  ctx.strokeStyle = '#c9a84c';
+  ctx.lineWidth = Math.max(2, size * 0.07);
+  ctx.beginPath(); ctx.arc(bx, ringY, ringR, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = 'rgba(0,0,0,0.45)';              // ombre interne
+  ctx.lineWidth = Math.max(1, size * 0.025);
+  ctx.beginPath(); ctx.arc(bx, ringY, ringR - size * 0.035, 0, Math.PI * 2); ctx.stroke();
+
+  ctx.restore();
 }
 
 // ── Coffre (sprite de couloir) ───────────────────────────────
