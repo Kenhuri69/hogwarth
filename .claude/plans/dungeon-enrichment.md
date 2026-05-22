@@ -274,6 +274,10 @@ délicat côté persistance). Une PR par phase, smoke vert à chaque étape.
 - Indice 3D de mur secret si trop coûteux (cf. 3.4).
 - Re-direction artistique des sprites de scène (traps/altars) — V1 peut
   réutiliser des SVG inline simples dans `scene-icons.js`.
+- **Rendu de la porte verrouillée à améliorer** (`drawCellMarker`) : la
+  V1 (bois + ferrures + serrure + anneau, dessin canvas procédural) est
+  fonctionnelle et lisible mais pas qualitative — à reprendre plus tard
+  pour un visuel soigné (sprite PNG dédié, ou dessin enrichi).
 
 ---
 
