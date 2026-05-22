@@ -10271,8 +10271,125 @@ async function scenarioSecretPassage() {
   await browser.close();
 }
 
+// ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
+async function scenarioMultiplayerPresence() {
+  console.log('\n── Scénario : multijoueur présence fantôme ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Globals exposés par js/multiplayer.js + renderer-effects.js.
+  const exposed = await page.evaluate(() => ({
+    mpStartSession:   typeof mpStartSession === 'function',
+    mpStopSession:    typeof mpStopSession === 'function',
+    getGhostAt:       typeof getGhostAt === 'function',
+    getMpPlayerId:    typeof getMpPlayerId === 'function',
+    projectGhosts:    typeof _mpProjectGhosts === 'function',
+    drawGhostSprite:  typeof drawGhostSprite === 'function',
+    ghostPlacements:  typeof ghostPlacements !== 'undefined',
+  }));
+  Object.entries(exposed).forEach(([k, v]) => assert(v, `global manquant : ${k}`));
+
+  // 2) UUID joueur stable + persisté dans le localStorage.
+  const id = await page.evaluate(() => {
+    if (typeof mpStopSession === 'function') mpStopSession(); // coupe le réseau
+    mpActive = false;
+    const a = getMpPlayerId();
+    const b = getMpPlayerId();
+    return { a, b, stored: localStorage.getItem('hogwarts_rpg_player_id') };
+  });
+  assert(id.a && id.a.length > 0, 'getMpPlayerId doit retourner un id non vide');
+  assert(id.a === id.b,           "l'id joueur doit être stable entre deux appels");
+  assert(id.stored === id.a,      "l'id joueur doit être persisté dans le localStorage");
+
+  // 3) Projection : seules les cases FLOOR libres retiennent un fantôme.
+  const proj = await page.evaluate(() => {
+    playerX = 5; playerY = 5;
+    dungeon[3][5] = CELL.FLOOR;   // cible valide
+    dungeon[3][6] = CELL.WALL;    // mur → rejet
+    if (typeof npcPlacements !== 'undefined') npcPlacements.delete('5,3');
+    if (enemyMap[3]) enemyMap[3][5] = null;
+    _mpProjectGhosts([
+      { player_id: 'a', name: 'Alice', mode: 'normal', floor: 1, x: 5, y: 3,
+        level: 4, hero_keys: ['harry'], house: 'Gryffondor', status: 'exploring' },
+      { player_id: 'b', name: 'Bob',   mode: 'normal', floor: 1, x: 6, y: 3, level: 9 },
+      { player_id: 'c', name: 'Carol', mode: 'normal', floor: 1, x: 5, y: 5, level: 2 },
+    ]);
+    return {
+      size:      ghostPlacements.size,
+      hasFloor:  ghostPlacements.has('5,3'),
+      hasWall:   ghostPlacements.has('6,3'),
+      hasPlayer: ghostPlacements.has('5,5'),
+      atFloor:   getGhostAt(5, 3),
+    };
+  });
+  assert(proj.size === 1,     `un seul fantôme projeté attendu (obtenu ${proj.size})`);
+  assert(proj.hasFloor,       'le fantôme sur case FLOOR doit être projeté');
+  assert(!proj.hasWall,       'un fantôme sur une case WALL ne doit pas être projeté');
+  assert(!proj.hasPlayer,     'un fantôme sur la case du joueur ne doit pas être projeté');
+  assert(proj.atFloor && proj.atFloor.name === 'Alice', 'getGhostAt doit retrouver le fantôme');
+  assert(proj.atFloor.level === 4, 'le niveau du fantôme doit être conservé');
+
+  // 4) Rendu 3D : un fantôme pile devant → drawGhostSprite appelé.
+  const render = await page.evaluate(() => {
+    playerX = 5; playerY = 5; playerDir = 'n';
+    dungeon[5][5] = CELL.FLOOR;
+    dungeon[4][5] = CELL.FLOOR;     // case devant
+    if (enemyMap[4]) enemyMap[4][5] = null;
+    if (typeof npcPlacements !== 'undefined') npcPlacements.clear();
+    ghostPlacements = new Map();
+    ghostPlacements.set('5,4', { playerId: 'g', name: 'Spectre', level: 11,
+                                 heroKeys: ['harry'], house: 'Serdaigle' });
+    const calls = [];
+    const orig = window.drawGhostSprite;
+    window.drawGhostSprite = function (ghost, x, baseY, sz) {
+      calls.push({ name: ghost && ghost.name, x, baseY, sz });
+      return orig.apply(this, arguments);
+    };
+    drawDungeon();
+    window.drawGhostSprite = orig;
+    return { callCount: calls.length, last: calls[calls.length - 1] || null };
+  });
+  assert(render.callCount >= 1,
+    `drawGhostSprite doit être appelé avec un fantôme devant (obtenu ${render.callCount})`);
+  assert(render.last && render.last.name === 'Spectre',
+    'drawGhostSprite doit recevoir le bon fantôme');
+  assert(render.last.sz > 0, 'la taille du sprite fantôme doit être > 0');
+
+  // 5) Aucun fantôme → drawGhostSprite NE doit PAS être appelé.
+  const noGhost = await page.evaluate(() => {
+    ghostPlacements = new Map();
+    const calls = [];
+    const orig = window.drawGhostSprite;
+    window.drawGhostSprite = function () { calls.push(arguments); };
+    drawDungeon();
+    window.drawGhostSprite = orig;
+    return calls.length;
+  });
+  assert(noGhost === 0,
+    `drawGhostSprite ne doit pas être appelé sans fantôme (obtenu ${noGhost})`);
+
+  // 6) Minimap : un fantôme sur une case visitée → marqueur .map-ghost.
+  const minimap = await page.evaluate(() => {
+    playerX = 5; playerY = 5;
+    dungeon[4][5] = CELL.FLOOR;
+    visited[4][5] = true;
+    ghostPlacements = new Map();
+    ghostPlacements.set('5,4', { playerId: 'g', name: 'Spectre', level: 3 });
+    renderMinimap();
+    return document.querySelectorAll('#minimap .map-ghost').length;
+  });
+  assert(minimap >= 1, `un marqueur .map-ghost attendu sur la minimap (obtenu ${minimap})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (multijoueur)`);
+  }
+  console.log('  ✅ multijoueur — identité, projection, rendu fantôme OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader, scenarioMultiplayerPresence];
   for (const s of scenarios) {
     await s();
   }

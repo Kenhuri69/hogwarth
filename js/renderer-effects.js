@@ -16,7 +16,9 @@ let _npcAnimTimer = null;
 function startNpcAnimLoop() {
   if (_npcAnimTimer) return;
   _npcAnimTimer = setInterval(() => {
-    if (typeof npcPlacements === 'undefined' || npcPlacements.size === 0) return;
+    const hasNpc   = typeof npcPlacements !== 'undefined' && npcPlacements.size > 0;
+    const hasGhost = typeof ghostPlacements !== 'undefined' && ghostPlacements.size > 0;
+    if (!hasNpc && !hasGhost) return;
     _npcAnimPhase = performance.now() / 1000;
     if (typeof drawDungeon === 'function') drawDungeon();
   }, 200);
@@ -826,6 +828,74 @@ function drawNpcSprite(npcId, x, baseY, sz) {
     ctx.fillText(sign, x, baseY - sz * 1.65 + signBob);
     ctx.shadowBlur   = 0;
   }
+
+  ctx.restore();
+}
+
+// ── Sprite de fantôme multijoueur dans le couloir ────────────────
+// Un autre joueur projeté sur le donjon local (cf. js/multiplayer.js).
+// Rendu volontairement DISTINCT d'un PNJ : silhouette translucide à
+// teinte froide, halo spectral, nom + niveau du joueur flottant. Les
+// PNG plein-pied par héros (§4.8 du plan) sont différés — la silhouette
+// vectorielle est l'unique rendu en Phase 1.
+function drawGhostSprite(ghost, x, baseY, sz) {
+  const phase = (typeof _npcAnimPhase !== 'undefined') ? _npcAnimPhase : 0;
+  const bob   = Math.sin(phase * 1.5) * sz * 0.05;
+  const by    = baseY - bob;          // le fantôme flotte au-dessus du sol
+
+  ctx.save();
+
+  // Ombre au sol — faible : le fantôme ne touche pas vraiment le sol.
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.beginPath();
+  ctx.ellipse(x, baseY, sz * 0.30, sz * 0.08, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Halo spectral froid pulsé.
+  const pulse = 0.80 + 0.25 * Math.sin(phase * 2);
+  const aura = ctx.createRadialGradient(x, by - sz * 0.5, 0,
+                                        x, by - sz * 0.5, sz * 0.95 * pulse);
+  aura.addColorStop(0,   `rgba(150,220,255,${0.34 * pulse})`);
+  aura.addColorStop(0.6, `rgba(90,170,230,${0.14 * pulse})`);
+  aura.addColorStop(1,   'rgba(40,90,150,0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.ellipse(x, by - sz * 0.45, sz * 0.85 * pulse, sz * 1.0 * pulse, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Silhouette translucide (robe trapézoïdale + tête), teinte froide.
+  ctx.globalAlpha = 0.60;
+  ctx.fillStyle   = '#bfe6ff';
+  ctx.strokeStyle = 'rgba(60,110,160,0.7)';
+  ctx.lineWidth   = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(x - sz * 0.18, by - sz * 0.55);
+  ctx.lineTo(x + sz * 0.18, by - sz * 0.55);
+  ctx.lineTo(x + sz * 0.34, by - sz * 0.04);
+  ctx.lineTo(x - sz * 0.34, by - sz * 0.04);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, by - sz * 0.72, sz * 0.15, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Étiquette « nom · Niv.N » flottante.
+  const name  = (ghost && ghost.name) ? String(ghost.name) : 'Sorcier';
+  const lvl   = (ghost && ghost.level) ? ghost.level : 0;
+  const label = lvl ? `${name} · Niv.${lvl}` : name;
+  ctx.font         = `600 ${Math.floor(sz * 0.20)}px Cinzel, serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'alphabetic';
+  const lw = ctx.measureText(label).width;
+  const ly = by - sz * 1.05;
+  ctx.fillStyle = 'rgba(8,14,22,0.78)';
+  ctx.fillRect(x - lw / 2 - 6, ly - sz * 0.20, lw + 12, sz * 0.28);
+  ctx.fillStyle   = '#cfeaff';
+  ctx.shadowColor = 'rgba(0,0,0,0.85)';
+  ctx.shadowBlur  = 3;
+  ctx.fillText(label, x, ly);
+  ctx.shadowBlur  = 0;
 
   ctx.restore();
 }

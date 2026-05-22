@@ -10,7 +10,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=16">
+<link rel="stylesheet" href="css/style.css?v=17">
 <link rel="stylesheet" href="css/ux-improvements.css?v=1">
 <link rel="stylesheet" href="css/save-ui.css?v=1">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -142,6 +142,12 @@
       <div style="display:flex;gap:8px;justify-content:center;margin:8px 0 4px">
         <button id="mode-btn-1" class="mode-toggle active" onclick="setPartyMode(1)">SOLO · 1 héros</button>
         <button id="mode-btn-2" class="mode-toggle"        onclick="setPartyMode(2)">DUO · 2 héros</button>
+      </div>
+      <div class="psel-pseudo-row">
+        <label class="psel-pseudo-label" for="psel-pseudo-input">Ton nom de sorcier</label>
+        <input type="text" id="psel-pseudo-input" class="psel-pseudo-input"
+               maxlength="24" placeholder="Sorcier" autocomplete="off" spellcheck="false">
+        <span class="psel-pseudo-hint">Visible par les autres joueurs en ligne.</span>
       </div>
       <div class="psel-nav">
         <button id="psel-next-1" class="start-btn" onclick="pselGoStep(2)">Continuer ▸</button>
@@ -927,10 +933,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/ui-bestiary.js?v=1"></script>
 <script src="js/dungeon.js?v=11"></script>
 <script src="js/textures.js?v=1"></script>
-<script src="js/renderer.js?v=6"></script>
-<script src="js/renderer-effects.js?v=6"></script>
-<script src="js/renderer-minimap.js?v=2"></script>
-<script src="js/movement.js?v=10"></script>
+<script src="js/renderer.js?v=7"></script>
+<script src="js/renderer-effects.js?v=7"></script>
+<script src="js/renderer-minimap.js?v=3"></script>
+<script src="js/movement.js?v=11"></script>
 <script src="js/swipe-canvas.js?v=2"></script>
 <script src="js/battle.js?v=5"></script>
 <script src="js/teleport.js?v=1"></script>
@@ -944,15 +950,16 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/intro.js?v=2"></script>
 <script src="js/shop.js?v=5"></script>
 <script src="js/save.js?v=8"></script>
-<script src="js/save-ui.js?v=1"></script>
+<script src="js/save-ui.js?v=2"></script>
 <script src="js/ironman.js?v=3"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
-<script src="js/main.js?v=4"></script>
+<script src="js/multiplayer.js?v=1"></script>
+<script src="js/main.js?v=5"></script>
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=1"></script>
 <script src="js/library.js?v=1"></script>
 <script src="js/help-tour.js?v=1"></script>
-<script src="js/loader.js?v=4"></script>
+<script src="js/loader.js?v=5"></script>
 
 </body>
 </html>

@@ -123,6 +123,13 @@ function _buildMinimapCells(mm, cellSize) {
           && player.grimoirePages.includes(page.id);
         if (!collected) div.classList.add('map-page');
       }
+      // Fantôme multijoueur — surcouche cyan sur une case visitée.
+      if (typeof getGhostAt === 'function'
+          && visited[y][x]
+          && !(x === playerX && y === playerY)
+          && getGhostAt(x, y)) {
+        div.classList.add('map-ghost');
+      }
       mm.appendChild(div);
     }
   }

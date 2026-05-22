@@ -239,6 +239,13 @@ window.UX_safe = new Proxy({}, {
     { name: 'verifyIronmanRunNotScored', source: 'hall-of-fame.js', kind: 'fn' },
     { name: 'getPlayerName',        source: 'hall-of-fame.js',   kind: 'fn'  },
 
+    // ── Multijoueur — présence fantôme (optionnel : dégrade en silence) ──
+    { name: 'mpStartSession',     source: 'multiplayer.js',  kind: 'fn',    optional: true },
+    { name: 'getGhostAt',         source: 'multiplayer.js',  kind: 'fn',    optional: true },
+    { name: 'getMpPlayerId',      source: 'multiplayer.js',  kind: 'fn',    optional: true },
+    { name: 'ghostPlacements',    source: 'multiplayer.js',  kind: 'obj',   optional: true },
+    { name: 'drawGhostSprite',    source: 'renderer-effects.js', kind: 'fn', optional: true },
+
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },
     { name: 'showIntroScreen',    source: 'intro.js',        kind: 'fn',    optional: true },

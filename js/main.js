@@ -31,6 +31,11 @@ function pselReset() {
   selectedHeroes = ['harry'];
   setPartyMode(1);
   pselGoStep(1);
+  // Multijoueur — pré-remplit le champ pseudo avec le nom persistant.
+  const pseudoEl = document.getElementById('psel-pseudo-input');
+  if (pseudoEl && typeof getPlayerName === 'function') {
+    pseudoEl.value = getPlayerName();
+  }
 }
 
 // Navigue vers une étape de la sélection guidée
@@ -159,6 +164,9 @@ function confirmHeroSelection() {
   if (selectedHeroes.length !== selectedPartySize) return;
   difficulty        = document.getElementById('difficulty-select')?.value || 'Normal';
   ironmanMode       = !!document.getElementById('ironman-toggle')?.checked;
+  // Multijoueur — persiste le pseudo saisi au démarrage (défaut « Sorcier »).
+  const _pseudo = (document.getElementById('psel-pseudo-input')?.value || '').trim();
+  if (_pseudo && typeof setPlayerName === 'function') setPlayerName(_pseudo);
   _pendingPartySize = selectedPartySize;
   _pendingHeroKeys  = [...selectedHeroes];
   document.getElementById('player-select-screen').style.display = 'none';
@@ -408,6 +416,9 @@ async function startGame(count = 2) {
   AudioSystem.playAmbientMusic(1);
   // Note : l'intro Dumbledore est désormais gérée AVANT startGame() par
   // showIntroScreen() dans le flow chooseHouse. Pas de popup en jeu.
+
+  // Multijoueur — ouvre la session de présence fantôme (cf. multiplayer.js).
+  if (typeof mpStartSession === 'function') mpStartSession();
 
   // Tour guidé d'aide pour novices — auto-affiché à chaque nouvelle partie
   // sauf opt-out localStorage (cf. js/help-tour.js).

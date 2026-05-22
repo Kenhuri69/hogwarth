@@ -587,6 +587,8 @@ body {
 .map-altar   { background: #5a3a6a; box-shadow: inset 0 0 3px #e8c860; }
 /* Page de grimoire révélée par Revelio (quête manon_grimoire) — vert vif. */
 .map-page { background: #1e7a32; box-shadow: 0 0 5px #6fe88a, inset 0 0 2px #c8ffd4; }
+/* Fantôme multijoueur — autre joueur projeté sur l'étage (cyan spectral). */
+.map-ghost { background: #2f6f8f; box-shadow: 0 0 5px #7fd4ff, inset 0 0 2px #d4f2ff; }
 .map-npc     { position: relative; }
 /* PNJ avec quête disponible (offer) — jaune doré, pulse subtil */
 .map-npc-offer { background: #b8881c; box-shadow: 0 0 4px #ffd84a, inset 0 0 2px #fff0a0;
@@ -2659,6 +2661,39 @@ button.shop-tab.active {
 @keyframes pselFade {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+/* Champ pseudo multijoueur — étape 1 de la sélection. */
+.psel-pseudo-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 14px 0 2px;
+}
+.psel-pseudo-label {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+.psel-pseudo-input {
+  width: 240px; max-width: 80%;
+  padding: 8px 11px;
+  background: #0a0504;
+  border: 2px solid var(--gold-dark);
+  color: var(--parchment);
+  font-size: 14px; font-family: 'Crimson Text', serif;
+  border-radius: 3px; text-align: center;
+}
+.psel-pseudo-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+.psel-pseudo-hint {
+  font-size: 11px;
+  color: rgba(214, 195, 150, 0.55);
+  font-style: italic;
 }
 .psel-nav {
   display: flex;

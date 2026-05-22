@@ -377,6 +377,9 @@ async function loadSlotAndStart(id) {
   // Tweaks UI dépendants de partySize
   applyPartyMode();
 
+  // Multijoueur — ouvre la session de présence fantôme (cf. multiplayer.js).
+  if (typeof mpStartSession === 'function') mpStartSession();
+
   // Audio (le clic utilisateur sur un slot constitue le geste autorisant l'audio)
   if (typeof AudioSystem !== 'undefined') {
     AudioSystem.init();

@@ -368,6 +368,50 @@ xp   = round((15 +  8 × niveauAdversaire) × mult)
 - **Cohérence des sprites** : les 6 sprites de héros doivent être
   stylistiquement homogènes entre eux et avec les PNJ/monstres existants.
 
+## 11bis. Setup Supabase (Phase 0 — à exécuter par l'utilisateur)
+
+Le code pointe `MP_CONFIG` sur le **même projet Supabase que le Hall of
+Fame**. Tant que la table `mp_presence` n'existe pas, le multijoueur se
+désactive silencieusement (disjoncteur après 3 échecs). Pour l'activer,
+exécuter ce SQL dans le **SQL Editor** du dashboard Supabase :
+
+```sql
+create table if not exists public.mp_presence (
+  player_id  text primary key,
+  name       text not null default 'Sorcier',
+  mode       text not null default 'normal',   -- 'ironman' | 'normal'
+  floor      int  not null default 1,
+  x          int  not null default 0,
+  y          int  not null default 0,
+  hero_keys  jsonb not null default '[]'::jsonb,
+  house      text,
+  level      int  not null default 1,
+  status     text not null default 'exploring',-- 'exploring' | 'in_battle'
+  snapshot   jsonb,                             -- réservé Phase 3 (duel)
+  last_seen  timestamptz not null default now()
+);
+alter table public.mp_presence enable row level security;
+create policy "mp_presence_read"   on public.mp_presence for select using (true);
+create policy "mp_presence_insert" on public.mp_presence for insert with check (true);
+create policy "mp_presence_update" on public.mp_presence for update using (true) with check (true);
+create index if not exists mp_presence_lookup_idx
+  on public.mp_presence (floor, mode, last_seen);
+```
+
+## 11ter. Écarts d'implémentation (Phases 0-1)
+
+- **Sprite fantôme = silhouette vectorielle spectrale** (translucide,
+  teinte froide, nom flottant). Les PNG plein-pied des 6 héros (§4.8) et
+  le registre `PLAYER_SPRITE_SRC` sont **différés** : non générables ici,
+  inutile d'ajouter du code mort. Le vecteur couvre entièrement le
+  critère de vérif de Phase 1.
+- **Disjoncteur** : après `MP_MAX_FAILURES` (3) échecs réseau consécutifs,
+  la session multijoueur s'éteint d'elle-même — implémente la
+  « désactivation silencieuse » de §4.2.
+- **Pseudo non bloquant** : le champ est demandé au démarrage et
+  pré-rempli, mais un champ vide retombe sur « Sorcier » (pas de gate dur,
+  cohérent avec le défaut « Sorcier Anonyme » du Hall of Fame).
+
 ## 11. Hors-scope
 
 - Donjon réellement partagé / synchronisé, coopératif, spectateur.
@@ -386,8 +430,13 @@ xp   = round((15 +  8 × niveauAdversaire) × mult)
 - [x] Ajout : en-tête de l'overlay d'interaction (portraits du groupe,
       pseudo · niveau, blason) + phrase d'accroche `ghostTagline`
       (banque par Maison + composition de héros).
-- [ ] Phase 0 — identité & tables.
-- [ ] Phase 1 — présence & rendu fantôme.
+- [~] Phase 0 — identité & tables : code livré (`js/multiplayer.js`,
+      UUID joueur, pseudo au démarrage). Reste à l'utilisateur : exécuter
+      le SQL §11bis dans Supabase pour activer la couche réseau.
+- [~] Phase 1 — présence & rendu fantôme : heartbeat/poll/projection,
+      `drawGhostSprite` (vectoriel), marqueur minimap `.map-ghost`.
+      Vérifié en non-régression + scénario rendu fantôme (smoke). Vérif
+      réseau réelle (2 onglets) en attente du setup Supabase §11bis.
 - [ ] Phase 2 — interactions légères.
 - [ ] Phase 3 — combat PvP snapshot async.
 - [ ] Phase 4 — messages.

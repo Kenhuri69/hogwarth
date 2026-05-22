@@ -68,6 +68,9 @@ function _step(dir, faceDir) {
   drawDungeon();
   updateUI();
 
+  // Multijoueur — émet la nouvelle position (upsert throttlé).
+  if (typeof mpNotifyMove === 'function') mpNotifyMove();
+
   _updateSearchBtn();
 
   if (enemyMap[playerY][playerX]) {

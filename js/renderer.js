@@ -322,12 +322,21 @@ function drawCorridor(cx, cy, scale, W, H) {
     // mur du fond par drawCellMarker ci-dessous (cas non-sprite). Une
     // porte ouverte est repassée en FLOOR et n'arrête donc plus le scan.
     if (cell === CELL.WALL || cell === CELL.DOOR) { wallDist = d; break; }
-    if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR)) {
-      const nearS = getRect(cx, cy, scale, d - 1);
+    if (!pendingSprite) {
+      const _isCellSprite = (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR);
       const [_fdx, _fdy] = DIRECTIONS[playerDir];
-      pendingSprite = { cell, x: cx, baseY: nearS.y1, sz: nearS.hw * 1.1,
-                        mapX: playerX + _fdx * d, mapY: playerY + _fdy * d,
-                        clipX0: nearS.x0, clipY0: nearS.y0, clipX1: nearS.x1, clipY1: nearS.y1 };
+      const _mx = playerX + _fdx * d, _my = playerY + _fdy * d;
+      // Fantôme multijoueur : surcouche sur une case FLOOR praticable
+      // (cf. js/multiplayer.js — ghostPlacements).
+      const _ghost = (!_isCellSprite && cell === CELL.FLOOR && typeof getGhostAt === 'function')
+        ? getGhostAt(_mx, _my) : null;
+      if (_isCellSprite || _ghost) {
+        const nearS = getRect(cx, cy, scale, d - 1);
+        pendingSprite = { kind: _ghost ? 'ghost' : 'cell', cell, ghost: _ghost,
+                          x: cx, baseY: nearS.y1, sz: nearS.hw * 1.1,
+                          mapX: _mx, mapY: _my,
+                          clipX0: nearS.x0, clipY0: nearS.y0, clipX1: nearS.x1, clipY1: nearS.y1 };
+      }
     }
   }
 
@@ -476,13 +485,14 @@ function drawCorridor(cx, cy, scale, W, H) {
 
   // 4b. Sprite différé (coffre/escalier/boutique) — dessiné après toutes les couches
   if (pendingSprite) {
-    const { cell, x, baseY, sz, clipX0, clipY0, clipX1, clipY1 } = pendingSprite;
+    const { kind, cell, ghost, x, baseY, sz, clipX0, clipY0, clipX1, clipY1 } = pendingSprite;
     ctx.save();
     // Clip au rectangle du couloir visible pour éviter les débordements
     ctx.beginPath();
     ctx.rect(clipX0, clipY0, clipX1 - clipX0, clipY1 - clipY0);
     ctx.clip();
-    if (cell === CELL.CHEST)         drawChestSprite(x, baseY, sz);
+    if (kind === 'ghost')            drawGhostSprite(ghost, x, baseY, sz);
+    else if (cell === CELL.CHEST)    drawChestSprite(x, baseY, sz);
     else if (cell === CELL.STAIRS_D) drawStairsSprite(x, baseY, sz, 'down');
     else if (cell === CELL.STAIRS_U) drawStairsSprite(x, baseY, sz, 'up');
     else if (cell === CELL.SHOP)     drawShopSprite(x, baseY, sz);
