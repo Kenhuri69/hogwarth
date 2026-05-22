@@ -45,6 +45,8 @@ Conséquences techniques majeures :
 | Émission de position | Périodique, synchro lâche (pas de cohérence forte) |
 | Combat PvP | **Async d'abord** : duel contre un **snapshot IA** du groupe adverse. Duel **en direct** repoussé en phase ultérieure. |
 | Autres interactions | Offrir or/objet · Emote/salut · Inspecter le groupe · Laisser un message |
+| Populations | Joueurs **hardcore (Ironman)** et **normaux** cloisonnés : on ne voit et n'interagit qu'avec les joueurs de son propre mode |
+| Pseudo | Saisi au **démarrage de la partie** — identité requise dès le début, plus seulement à l'écran de score |
 
 ## 4. Architecture
 
@@ -54,6 +56,11 @@ Conséquences techniques majeures :
   `localStorage hogwarts_rpg_player_name`) → réutilisés.
 - Nouvel **ID joueur stable** : UUID généré une fois, persisté
   (`localStorage hogwarts_rpg_player_id`). Sert de clé d'upsert.
+- **Saisie du pseudo au démarrage** : le multijoueur exige une identité
+  dès le début de la partie. Ajouter un champ pseudo dans le flux de
+  démarrage (hub / écran de sélection des joueurs), pré-rempli via
+  `getPlayerName()` pour un joueur récurrent, confirmé avant l'entrée
+  en jeu.
 
 ### 4.2 Tables Supabase (REST sous RLS, modèle `HOF_CONFIG`)
 
@@ -63,9 +70,10 @@ Conséquences techniques majeures :
 | `mp_messages` | Notes laissées sur une case (style Dark Souls) | Persistantes, lues par étage |
 | `mp_gifts` | Or/objet offert à un joueur | Inséré par le donneur, réclamé par le receveur |
 
-`mp_presence` — colonnes : `player_id` (unique), `name`, `floor`, `x`,
-`y`, `hero_keys`, `house`, `level`, `status` (`exploring`/`in_battle`),
-`snapshot` (groupe sérialisé pour le duel async), `last_seen`.
+`mp_presence` — colonnes : `player_id` (unique), `name`, `mode`
+(`ironman`/`normal`), `floor`, `x`, `y`, `hero_keys`, `house`, `level`,
+`status` (`exploring`/`in_battle`), `snapshot` (groupe sérialisé pour le
+duel async), `last_seen`.
 La ligne de présence reste **légère** : `snapshot` n'est rafraîchi qu'au
 changement (level-up, équipement) et n'est **lu à la demande** que lors
 d'un défi/inspection, pas à chaque poll.
@@ -86,7 +94,8 @@ d'un défi/inspection, pas à chaque poll.
 ### 4.4 Lecture & projection des fantômes
 
 - Poll périodique (~8 s) : `SELECT` sur `mp_presence` où
-  `floor = currentFloor`, `last_seen > now()-60s`, `player_id != moi`.
+  `floor = currentFloor`, `mode = monMode`, `last_seen > now()-60s`,
+  `player_id != moi` (cloisonnement hardcore/normal — §4.7).
 - Pour chaque ligne : projeter `(x,y)` sur le donjon **local**. Afficher
   le fantôme **seulement si** la case est praticable, vide (pas un mur,
   pas une cellule spéciale, pas la case du joueur, pas un PNJ réel) et
@@ -113,6 +122,46 @@ avec actions :
 - 🎁 **Offrir or / objet** (§6)
 - 👋 **Saluer** (emote) (§6)
 - 🔍 **Inspecter le groupe** (§6)
+
+### 4.7 Séparation hardcore / normal
+
+Le jeu distingue déjà le mode **Ironman** (permadeath) du jeu normal
+(`ironmanMode`, `state.js`). Le multijoueur **cloisonne les deux
+populations** :
+- `mp_presence.mode ∈ {'ironman','normal'}`, fixé au démarrage du run.
+- Le poll de présence ne retourne que les joueurs **du même mode** → on
+  ne croise jamais de fantôme de l'autre population.
+- Toutes les interactions (défi, cadeau, emote, message) restent
+  **intra-mode**.
+
+Justification : profils de puissance, enjeux et culture de jeu
+différents ; préserve l'intégrité du mode Ironman.
+
+### 4.8 Sprites de joueur en vue 3D (assets)
+
+Les fantômes sont rendus en vue pseudo-3D comme des PNJ (§4.5). Il faut un
+**sprite de corps par héros jouable** (6 : Harry, Hermione, Céleste, Iris,
+Maxence, Anastasia) — les héros n'ont aujourd'hui qu'un **portrait
+médaillon**, pas de sprite plein pied.
+
+- Placement : `img/players/<key>.png`. Registre `PLAYER_SPRITE_SRC`
+  (miroir de `NPC_SPRITE_SRC` dans `renderer-effects.js`). Fallback
+  vectoriel tant que l'image n'a pas chargé.
+- **Effet spectral appliqué au rendu** (translucidité + teinte froide +
+  aura), pas dans l'asset : l'art source est un personnage normal, on le
+  « fantomise » dans `drawGhostSprite`. Évite de produire une 2ᵉ série
+  d'art dédiée.
+- **Prompts de génération à rédiger** — un par héros. Gabarit :
+
+  > « Sprite de personnage <nom du héros>, <description : tenue de
+  > sorcier, couleurs de Maison, traits distinctifs>, plan américain de
+  > face, pose neutre, fond transparent, style peinture numérique
+  > chaleureuse cohérente avec un RPG dark-fantasy inspiré de Poudlard,
+  > éclairage doux directionnel, ~512×512, sans cadre ni texte. »
+
+  La description par héros reprend `class` / `tagline` de `CHARACTERS`
+  (`data.js`). À produire comme tâche d'asset parallèle (pipeline PNG,
+  cf. monstres récents).
 
 ## 5. Combat PvP — duel snapshot asynchrone
 
@@ -156,14 +205,17 @@ avec actions :
 ## 8. Découpage en phases
 
 ### Phase 0 — Identité & tables
-- UUID joueur persistant ; création des tables `mp_presence` (+ RLS).
-- verify : ligne upsertée/lue depuis la console.
+- UUID joueur persistant ; **saisie du pseudo au démarrage** (§4.1).
+- Création de la table `mp_presence` (+ RLS), colonne `mode` incluse.
+- verify : pseudo demandé au lancement ; ligne upsertée/lue console.
 
 ### Phase 1 — Présence & rendu fantôme (cœur visible)
-- Heartbeat (émission) + poll (lecture) + projection « case vide ».
+- Heartbeat (émission) + poll (lecture, **filtré par mode** §4.7) +
+  projection « case vide ».
 - `drawGhostSprite` + marqueur minimap `.map-ghost`.
-- verify : deux onglets sur le même étage se voient mutuellement aux
-  bonnes cases ; `node tests/smoke.js` vert.
+- Génération des **6 sprites de héros** en vue 3D (§4.8) — tâche d'asset.
+- verify : deux onglets de même mode se voient aux bonnes cases ; un
+  onglet Ironman ne voit pas un onglet normal ; `node tests/smoke.js` vert.
 
 ### Phase 2 — Interactions légères
 - Overlay d'interaction ; **Inspecter** et **Emote** (lecture seule /
@@ -195,8 +247,10 @@ avec actions :
 
 | Fichier | Nature |
 |---------|--------|
-| `js/multiplayer.js` (nouveau) | Identité, heartbeat, poll, tables Supabase, `ghostPlacements`, interactions |
-| `js/renderer.js` / `renderer-effects.js` | Scan + `drawGhostSprite` |
+| `js/multiplayer.js` (nouveau) | Identité, heartbeat, poll, tables Supabase, `ghostPlacements`, interactions, filtrage par mode |
+| `js/main.js` / `js/save-ui.js` | Champ pseudo dans le flux de démarrage |
+| `js/renderer.js` / `renderer-effects.js` | Scan + `drawGhostSprite` + `PLAYER_SPRITE_SRC` |
+| `img/players/<key>.png` (nouveaux) | Sprites plein pied des 6 héros (§4.8) |
 | `js/renderer-minimap.js` | Marqueur `.map-ghost` |
 | `js/movement.js` | `checkObjectInFront` → détection fantôme ; hook heartbeat sur déplacement |
 | `js/battle.js` | `enemyGroup` issu d'un snapshot ; branche `endBattle` PvP |
@@ -218,6 +272,12 @@ avec actions :
   autoritaire, accepté en V1 (pas de classement PvP en jeu).
 - **Supabase Realtime** : nécessaire seulement en Phase 7 (duel direct).
 - **Volume de présence** : poll par étage + payload léger → négligeable.
+- **Enjeu d'un duel hardcore** : un duel async-snapshot ne touche jamais
+  le run réel (on affronte une copie). Si un futur duel **en direct**
+  (Phase 7) entre joueurs Ironman doit avoir des conséquences réelles
+  (mort = fin du run ?) → à trancher.
+- **Cohérence des sprites** : les 6 sprites de héros doivent être
+  stylistiquement homogènes entre eux et avec les PNJ/monstres existants.
 
 ## 11. Hors-scope
 
@@ -232,6 +292,8 @@ avec actions :
 - [x] Pivot vers le modèle présence fantôme asynchrone (2026-05-22).
 - [x] Décisions : combat async-snapshot d'abord ; interactions offrir /
       emote / inspecter / message.
+- [x] Ajout : cloisonnement hardcore (Ironman) / normal ; pseudo saisi au
+      démarrage ; sprites de héros en vue 3D à générer.
 - [ ] Phase 0 — identité & tables.
 - [ ] Phase 1 — présence & rendu fantôme.
 - [ ] Phase 2 — interactions légères.
