@@ -284,13 +284,12 @@ function generateDungeon(floor) {
   // d'ennemis, le nombre de coffres/pièges et la boutique ci-dessous.
   currentFloorEvent = (typeof rollFloorEvent === 'function') ? rollFloorEvent() : null;
 
-  // ── Génération des salles : 5 salles sans chevauchement ───────
-  // Map 12×12 (10×10 utile) → 5 salles, majoritairement 3×3, séparées
-  // par une marge d'au moins 1 case. La map ne sépare proprement que
-  // ~4 salles ; la 5e force souvent un léger chevauchement, accepté en
-  // dernier recours (deux salles fusionnent — cosmétique, jamais un
-  // softlock). 5 salles = épine de 3 + 2 culs-de-sac réellement isolés.
-  const ROOM_COUNT = 5;
+  // ── Génération des salles : 7 salles sans chevauchement ───────
+  // Map 16×16 (14×14 utile) → 7 salles, majoritairement 3×3, séparées
+  // par une marge d'au moins 1 case. Un léger chevauchement reste
+  // accepté en dernier recours (deux salles fusionnent — cosmétique,
+  // jamais un softlock). 7 salles = épine de 4 + 3 culs-de-sac isolés.
+  const ROOM_COUNT = 7;
   const rooms = [];
   for (let i = 0; i < ROOM_COUNT; i++) {
     let pick = null, free = false;
@@ -315,11 +314,11 @@ function generateDungeon(floor) {
   }
 
   // ── Topologie en arbre : épine dorsale + branches en cul-de-sac ─
-  // Épine = 3 salles reliées en série (spawn → milieu → escalier).
+  // Épine = 4 salles reliées en série (spawn → milieu → escalier).
   // Branches = salles restantes, chacune greffée par un couloir sur la
   // salle d'épine la plus proche → cul-de-sac. Un arbre est connexe par
   // construction : l'escalier est toujours atteignable.
-  const SPINE_LEN = 3;
+  const SPINE_LEN = 4;
   const spine    = rooms.slice(0, SPINE_LEN);
   const branches = rooms.slice(SPINE_LEN);
   spine[0].kind = 'spawn';

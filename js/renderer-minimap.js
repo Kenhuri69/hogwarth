@@ -3,7 +3,7 @@
 // ============================================================
 
 function renderMinimap() {
-  _buildMinimapCells(document.getElementById('minimap'), 14);
+  _buildMinimapCells(document.getElementById('minimap'), 10);
   // Mini-carte du coin (mobile) — masquée en CSS sur desktop.
   // 'auto' : cellules dimensionnées par la grille CSS (adaptatif).
   const corner = document.getElementById('minimap-corner');
@@ -15,7 +15,7 @@ function renderMinimap() {
   // Si l'overlay mobile est ouvert, le mettre à jour aussi
   const overlay = document.getElementById('map-overlay');
   if (overlay && overlay.style.display === 'flex') {
-    _buildMinimapCells(document.getElementById('minimap-mobile'), 20);
+    _buildMinimapCells(document.getElementById('minimap-mobile'), 16);
   }
 }
 
