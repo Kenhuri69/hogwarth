@@ -437,7 +437,11 @@ create index if not exists mp_presence_lookup_idx
       `drawGhostSprite` (vectoriel), marqueur minimap `.map-ghost`.
       Vérifié en non-régression + scénario rendu fantôme (smoke). Vérif
       réseau réelle (2 onglets) en attente du setup Supabase §11bis.
-- [ ] Phase 2 — interactions légères.
+- [~] Phase 2 — interactions légères : overlay `#ghost-overlay` (en-tête
+      portraits + pseudo·niveau + blason + `ghostTagline`), action
+      **Inspecter** (fiche lecture seule) et **Saluer** (emote local).
+      Déclenché en marchant sur la case d'un fantôme. Défier/Offrir
+      grisés (phases ultérieures). Vérifié par scénario smoke dédié.
 - [ ] Phase 3 — combat PvP snapshot async.
 - [ ] Phase 4 — messages.
 - [ ] Phase 5 — cadeaux.

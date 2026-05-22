@@ -21,6 +21,7 @@
       'encounter-overlay',
       'explore-overlay',
       'npc-dialog-overlay',
+      'ghost-overlay',
       'floor-transition'
     ];
     for (const id of overlayIds) {

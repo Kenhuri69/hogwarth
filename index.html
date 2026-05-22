@@ -10,7 +10,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=17">
+<link rel="stylesheet" href="css/style.css?v=18">
 <link rel="stylesheet" href="css/ux-improvements.css?v=1">
 <link rel="stylesheet" href="css/save-ui.css?v=1">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -498,6 +498,11 @@
         </div>
       </div>
 
+      <!-- Overlay interaction fantôme multijoueur (autre joueur croisé) -->
+      <div id="ghost-overlay" style="display:none" role="dialog" aria-modal="true">
+        <div class="ghost-panel" id="ghost-panel"></div>
+      </div>
+
       <!-- Transition d'étage -->
       <div id="floor-transition">
         <div class="floor-transition-content">
@@ -936,8 +941,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/renderer.js?v=7"></script>
 <script src="js/renderer-effects.js?v=7"></script>
 <script src="js/renderer-minimap.js?v=3"></script>
-<script src="js/movement.js?v=11"></script>
-<script src="js/swipe-canvas.js?v=2"></script>
+<script src="js/movement.js?v=12"></script>
+<script src="js/swipe-canvas.js?v=3"></script>
 <script src="js/battle.js?v=5"></script>
 <script src="js/teleport.js?v=1"></script>
 <script src="js/battle-spells.js?v=2"></script>
@@ -953,13 +958,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/save-ui.js?v=2"></script>
 <script src="js/ironman.js?v=3"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
-<script src="js/multiplayer.js?v=1"></script>
+<script src="js/multiplayer.js?v=2"></script>
 <script src="js/main.js?v=5"></script>
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=1"></script>
 <script src="js/library.js?v=1"></script>
 <script src="js/help-tour.js?v=1"></script>
-<script src="js/loader.js?v=5"></script>
+<script src="js/loader.js?v=6"></script>
 
 </body>
 </html>

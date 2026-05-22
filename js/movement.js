@@ -79,6 +79,15 @@ function _step(dir, faceDir) {
     return;
   }
 
+  // Multijoueur — un fantôme occupe la case : ouvre l'interaction.
+  if (typeof getGhostAt === 'function') {
+    const _ghost = getGhostAt(playerX, playerY);
+    if (_ghost && typeof openGhostInteraction === 'function') {
+      openGhostInteraction(_ghost);
+      return;
+    }
+  }
+
   handleCellEntry(cell);
 }
 

@@ -228,3 +228,194 @@ function getGhostAt(x, y) {
   if (!ghostPlacements || ghostPlacements.size === 0) return null;
   return ghostPlacements.get(x + ',' + y) || null;
 }
+
+// ============================================================
+// PHASE 2 — Interaction avec un fantôme (overlay type PNJ)
+// ============================================================
+
+// ── Phrase d'accroche (§4.9 du plan) ────────────────────────
+// Fonction PURE et déterministe : la Maison choisit la banque (ton), la
+// composition de héros (solo/duo + identités) sélectionne la phrase.
+const MP_TAGLINES = {
+  Gryffondor: [
+    'Le courage le précède dans chaque couloir.',
+    'Une lame tirée ne se rengaine qu\'au combat.',
+    'Là où le danger gronde, ce Gryffondor se tient déjà.',
+    'Le donjon ne l\'a pas fait reculer d\'un seul pas.',
+  ],
+  Serpentard: [
+    'Chaque pas le rapproche d\'un dessein qu\'il garde pour lui.',
+    'L\'ambition le guide là où d\'autres renoncent.',
+    'Rien d\'un hasard dans sa route — tout d\'un calcul.',
+    'Le pouvoir l\'attend au fond, et il le sait.',
+  ],
+  Serdaigle: [
+    'Le donjon n\'est pour lui qu\'une énigme de plus à résoudre.',
+    'Il lit ces murs comme d\'autres lisent un grimoire.',
+    'Sa baguette suit toujours l\'esprit, jamais l\'inverse.',
+    'Chaque secret arraché aux pierres le rend plus vif.',
+  ],
+  Poufsouffle: [
+    'Patient et tenace, il avance sans jamais flancher.',
+    'On le sait fidèle — le donjon n\'y changera rien.',
+    'Il ne brille pas, il dure : c\'est là toute sa force.',
+    'Le travail acharné l\'a mené ici, pierre après pierre.',
+  ],
+  _default: [
+    'Un sorcier de passage, son histoire encore à écrire.',
+    'Une présence amie arpente les mêmes pierres que toi.',
+  ],
+};
+
+function ghostTagline(heroKeys, house) {
+  const bank = MP_TAGLINES[house] || MP_TAGLINES._default;
+  const keys = Array.isArray(heroKeys) ? heroKeys.slice().sort() : [];
+  // Graine = nombre de héros (solo/duo) puis chaque caractère des clés.
+  let h = keys.length + 1;
+  for (const k of keys) {
+    const s = String(k);
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  }
+  return bank[Math.abs(h) % bank.length];
+}
+
+// ── Overlay d'interaction ───────────────────────────────────
+let _mpCurrentGhost = null;
+let _mpEmoted       = false;
+
+function _mpEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function _mpHouseCrest(house) {
+  const known = { Gryffondor: 1, Serpentard: 1, Serdaigle: 1, Poufsouffle: 1 };
+  if (!house || !known[house]) return '';
+  return `<img class="ghost-crest" src="img/houses/${house.toLowerCase()}.png"`
+    + ` alt="${_mpEsc(house)}" title="${_mpEsc(house)}">`;
+}
+
+// En-tête commun (portraits du groupe, pseudo · niveau, blason, accroche).
+function _mpGhostHeaderHtml(ghost) {
+  const chars = (typeof CHARACTERS !== 'undefined') ? CHARACTERS : {};
+  const keys  = Array.isArray(ghost.heroKeys) ? ghost.heroKeys : [];
+  let portraits = '';
+  keys.forEach(k => {
+    const c = chars[k];
+    if (c && c.imgSrc) {
+      portraits += `<img class="ghost-portrait" src="${_mpEsc(c.imgSrc)}"`
+        + ` alt="${_mpEsc(c.name)}" title="${_mpEsc(c.name)}">`;
+    } else {
+      portraits += '<span class="ghost-portrait ghost-portrait-empty">🧙</span>';
+    }
+  });
+  if (!portraits) portraits = '<span class="ghost-portrait ghost-portrait-empty">🧙</span>';
+  const sub = 'Niveau ' + (ghost.level | 0)
+    + (ghost.house ? ' · ' + _mpEsc(ghost.house) : '');
+  return ''
+    + '<div class="ghost-spectral-tag">✦ Spectre d\'un autre sorcier</div>'
+    + '<div class="ghost-header">'
+    +   '<div class="ghost-portraits">' + portraits + '</div>'
+    +   '<div class="ghost-id">'
+    +     '<div class="ghost-name">' + _mpEsc(ghost.name || 'Sorcier') + '</div>'
+    +     '<div class="ghost-sub">' + sub + '</div>'
+    +   '</div>'
+    +   _mpHouseCrest(ghost.house)
+    + '</div>'
+    + '<div class="ghost-tagline">« ' + _mpEsc(ghostTagline(keys, ghost.house)) + ' »</div>';
+}
+
+function openGhostInteraction(ghost) {
+  if (!ghost) return;
+  _mpCurrentGhost = ghost;
+  _mpEmoted = false;
+  _mpRenderGhostMain();
+  const overlay = document.getElementById('ghost-overlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function closeGhostOverlay() {
+  const overlay = document.getElementById('ghost-overlay');
+  if (overlay) overlay.style.display = 'none';
+  _mpCurrentGhost = null;
+}
+
+function _mpRenderGhostMain() {
+  const panel = document.getElementById('ghost-panel');
+  if (!panel || !_mpCurrentGhost) return;
+  const g = _mpCurrentGhost;
+  const saluer = _mpEmoted
+    ? '<button class="ghost-btn" disabled>✓ Salut adressé</button>'
+    : '<button class="ghost-btn" onclick="mpEmoteGhost()">👋 Saluer</button>';
+  panel.innerHTML = ''
+    + _mpGhostHeaderHtml(g)
+    + '<div class="ghost-actions">'
+    +   '<button class="ghost-btn" onclick="mpInspectGhost()">🔍 Inspecter</button>'
+    +   saluer
+    +   '<button class="ghost-btn ghost-btn-soon" disabled'
+    +     ' title="Combat PvP — phase ultérieure">⚔️ Défier</button>'
+    +   '<button class="ghost-btn ghost-btn-soon" disabled'
+    +     ' title="Cadeaux — phase ultérieure">🎁 Offrir</button>'
+    + '</div>'
+    + '<button class="ghost-btn ghost-btn-close" onclick="closeGhostOverlay()">'
+    +   'Reprendre l\'exploration</button>';
+}
+
+// Fiche d'inspection — lecture seule. Détaille la composition et les
+// méta-infos de présence. Les statistiques complètes (équipement, sorts)
+// arriveront avec le snapshot de duel (phase ultérieure).
+function mpInspectGhost() {
+  const panel = document.getElementById('ghost-panel');
+  if (!panel || !_mpCurrentGhost) return;
+  const g = _mpCurrentGhost;
+  const chars = (typeof CHARACTERS !== 'undefined') ? CHARACTERS : {};
+  const keys  = Array.isArray(g.heroKeys) ? g.heroKeys : [];
+  let heroes = '';
+  keys.forEach(k => {
+    const c = chars[k];
+    if (!c) return;
+    const av = c.imgSrc
+      ? `<img class="ghost-hero-av" src="${_mpEsc(c.imgSrc)}" alt="">`
+      : '<span class="ghost-hero-av">🧙</span>';
+    heroes += '<div class="ghost-inspect-hero">' + av
+      + '<div><b>' + _mpEsc(c.name) + '</b>'
+      + '<span>' + _mpEsc(c.role || '') + ' · ' + _mpEsc(c.class || '') + '</span></div>'
+      + '</div>';
+  });
+  if (!heroes) heroes = '<div class="ghost-inspect-hero"><span>Composition inconnue.</span></div>';
+  const rows = [
+    ['Maison',  g.house || '—'],
+    ['Niveau',  String(g.level | 0)],
+    ['Mode',    g.mode === 'ironman' ? 'Ironman ☠' : 'Normal'],
+    ['État',    g.status === 'in_battle' ? 'En combat' : 'En exploration'],
+  ].map(([k, v]) =>
+    '<div class="ghost-inspect-row"><span>' + _mpEsc(k) + '</span>'
+    + '<span>' + _mpEsc(v) + '</span></div>').join('');
+  panel.innerHTML = ''
+    + _mpGhostHeaderHtml(g)
+    + '<div class="ghost-inspect">'
+    +   rows
+    +   '<div class="ghost-inspect-heroes">' + heroes + '</div>'
+    +   '<p class="ghost-inspect-note">Statistiques détaillées révélées'
+    +     ' lors d\'un duel (phase ultérieure).</p>'
+    + '</div>'
+    + '<div class="ghost-actions">'
+    +   '<button class="ghost-btn" onclick="_mpRenderGhostMain()">← Retour</button>'
+    +   '<button class="ghost-btn ghost-btn-close" onclick="closeGhostOverlay()">'
+    +     'Fermer</button>'
+    + '</div>';
+}
+
+// Emote — salut cosmétique. La remise du « ping » au joueur distant
+// (table mp_messages) est différée à une phase ultérieure ; ici l'effet
+// est purement local.
+function mpEmoteGhost() {
+  if (!_mpCurrentGhost) return;
+  _mpEmoted = true;
+  const nm = _mpCurrentGhost.name || 'le spectre';
+  if (typeof addMsg === 'function') {
+    addMsg('👋 Tu salues ' + nm + ' d\'un signe de la main.', 'good');
+  }
+  _mpRenderGhostMain();
+}

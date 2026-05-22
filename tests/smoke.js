@@ -10388,8 +10388,121 @@ async function scenarioMultiplayerPresence() {
   await browser.close();
 }
 
+// ── Scénario : multijoueur — interaction fantôme (Phase 2) ──
+async function scenarioMultiplayerInteraction() {
+  console.log('\n── Scénario : multijoueur interaction fantôme ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Globals Phase 2 exposés.
+  const exposed = await page.evaluate(() => ({
+    ghostTagline:        typeof ghostTagline === 'function',
+    openGhostInteraction:typeof openGhostInteraction === 'function',
+    mpInspectGhost:      typeof mpInspectGhost === 'function',
+    mpEmoteGhost:        typeof mpEmoteGhost === 'function',
+    closeGhostOverlay:   typeof closeGhostOverlay === 'function',
+    overlayEl:           !!document.getElementById('ghost-overlay'),
+  }));
+  Object.entries(exposed).forEach(([k, v]) => assert(v, `global/élément manquant : ${k}`));
+
+  // 2) ghostTagline — pure, déterministe, banque par Maison.
+  const tag = await page.evaluate(() => ({
+    a:        ghostTagline(['harry'], 'Gryffondor'),
+    aBis:     ghostTagline(['harry'], 'Gryffondor'),
+    serp:     ghostTagline(['harry'], 'Serpentard'),
+    duo:      ghostTagline(['harry', 'hermione'], 'Gryffondor'),
+    fallback: ghostTagline([], null),
+  }));
+  assert(tag.a && tag.a.length > 0,  'ghostTagline doit retourner une phrase non vide');
+  assert(tag.a === tag.aBis,         'ghostTagline doit être déterministe');
+  assert(tag.serp !== tag.a,         'la Maison doit changer la banque de phrases');
+  assert(tag.fallback && tag.fallback.length > 0, 'ghostTagline doit gérer une Maison absente');
+
+  // 3) Overlay : en-tête (portrait, pseudo · niveau, phrase d'accroche).
+  const header = await page.evaluate(() => {
+    openGhostInteraction({
+      playerId: 'g1', name: 'Mage<b>Test', mode: 'ironman', level: 12,
+      heroKeys: ['harry', 'hermione'], house: 'Serdaigle', status: 'exploring',
+    });
+    const overlay = document.getElementById('ghost-overlay');
+    const panel   = document.getElementById('ghost-panel');
+    return {
+      shown:      overlay && overlay.style.display === 'flex',
+      hasName:    /Mage/.test(panel.innerHTML),
+      escaped:    !panel.querySelector('b'),           // nom non interprété en HTML
+      hasLevel:   /Niveau 12/.test(panel.textContent),
+      portraits:  panel.querySelectorAll('.ghost-portrait').length,
+      crest:      !!panel.querySelector('.ghost-crest'),
+      tagline:    !!panel.querySelector('.ghost-tagline'),
+      inspectBtn: /mpInspectGhost/.test(panel.innerHTML),
+    };
+  });
+  assert(header.shown,      "l'overlay fantôme doit s'afficher");
+  assert(header.hasName,    'le pseudo du fantôme doit apparaître');
+  assert(header.escaped,    'le pseudo distant doit être échappé (pas de HTML injecté)');
+  assert(header.hasLevel,   'le niveau du fantôme doit apparaître');
+  assert(header.portraits === 2, `2 portraits attendus (obtenu ${header.portraits})`);
+  assert(header.crest,      'le blason de Maison doit apparaître');
+  assert(header.tagline,    "la phrase d'accroche doit apparaître");
+  assert(header.inspectBtn, "l'action Inspecter doit être présente");
+
+  // 4) Inspecter — fiche lecture seule.
+  const inspect = await page.evaluate(() => {
+    mpInspectGhost();
+    const panel = document.getElementById('ghost-panel');
+    return {
+      rows:      panel.querySelectorAll('.ghost-inspect-row').length,
+      heroes:    panel.querySelectorAll('.ghost-inspect-hero').length,
+      hasMode:   /Ironman/.test(panel.textContent),
+      hasReturn: /_mpRenderGhostMain/.test(panel.innerHTML),
+    };
+  });
+  assert(inspect.rows >= 4,   `≥4 lignes d'inspection attendues (obtenu ${inspect.rows})`);
+  assert(inspect.heroes === 2, `2 héros listés attendus (obtenu ${inspect.heroes})`);
+  assert(inspect.hasMode,     'le mode Ironman doit apparaître dans la fiche');
+  assert(inspect.hasReturn,   'un bouton retour doit être présent');
+
+  // 5) Emote + fermeture.
+  const close = await page.evaluate(() => {
+    _mpRenderGhostMain();
+    mpEmoteGhost();
+    const emoted = _mpEmoted === true;
+    closeGhostOverlay();
+    const overlay = document.getElementById('ghost-overlay');
+    return { emoted, hidden: overlay.style.display === 'none' };
+  });
+  assert(close.emoted, 'mpEmoteGhost doit marquer le salut comme envoyé');
+  assert(close.hidden, 'closeGhostOverlay doit masquer l\'overlay');
+
+  // 6) Marcher sur la case d'un fantôme ouvre l'interaction.
+  const stepOn = await page.evaluate(() => {
+    playerX = 5; playerY = 5; playerDir = 'n';
+    dungeon[5][5] = CELL.FLOOR;
+    dungeon[4][5] = CELL.FLOOR;
+    if (enemyMap[4]) enemyMap[4][5] = null;
+    if (typeof npcPlacements !== 'undefined') npcPlacements.clear();
+    ghostPlacements = new Map();
+    ghostPlacements.set('5,4', { playerId: 'g2', name: 'Voisin', level: 5,
+                                 heroKeys: ['harry'], house: 'Poufsouffle' });
+    moveForward();
+    const overlay = document.getElementById('ghost-overlay');
+    const opened  = overlay && overlay.style.display === 'flex';
+    if (typeof closeGhostOverlay === 'function') closeGhostOverlay();
+    return { px: playerX, py: playerY, opened };
+  });
+  assert(stepOn.px === 5 && stepOn.py === 4, 'le joueur doit avoir avancé sur la case du fantôme');
+  assert(stepOn.opened, "marcher sur un fantôme doit ouvrir l'overlay d'interaction");
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (interaction fantôme)`);
+  }
+  console.log('  ✅ multijoueur — overlay, en-tête, inspection, déclenchement OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader, scenarioMultiplayerPresence];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction];
   for (const s of scenarios) {
     await s();
   }

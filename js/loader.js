@@ -244,6 +244,9 @@ window.UX_safe = new Proxy({}, {
     { name: 'getGhostAt',         source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: 'getMpPlayerId',      source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: 'ghostPlacements',    source: 'multiplayer.js',  kind: 'obj',   optional: true },
+    { name: 'ghostTagline',       source: 'multiplayer.js',  kind: 'fn',    optional: true },
+    { name: 'openGhostInteraction',source: 'multiplayer.js', kind: 'fn',    optional: true },
+    { name: 'mpInspectGhost',     source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: 'drawGhostSprite',    source: 'renderer-effects.js', kind: 'fn', optional: true },
 
     // ── Modules optionnels (warnings doux uniquement) ──
