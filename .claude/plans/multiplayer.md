@@ -47,6 +47,9 @@ Conséquences techniques majeures :
 | Autres interactions | Offrir or/objet · Emote/salut · Inspecter le groupe · Laisser un message |
 | Populations | Joueurs **hardcore (Ironman)** et **normaux** cloisonnés : on ne voit et n'interagit qu'avec les joueurs de son propre mode |
 | Pseudo | Saisi au **démarrage de la partie** — identité requise dès le début, plus seulement à l'écran de score |
+| Enjeu duel Ironman | Défaite → **mort** (permadeath, fin du run) ; victoire → **copie** d'un sort/équipement du vaincu (adversaire **non affecté**) |
+| Enjeu duel normal | Défaite → **aucune conséquence** ; victoire → **or + XP** mis à l'échelle du niveau adverse |
+| Anti-farm duel | `player_id` du vaincu mémorisé (`defeatedDuelists`, persisté) → un adversaire n'est défiable **qu'une fois** |
 
 ## 4. Architecture
 
@@ -165,6 +168,8 @@ médaillon**, pas de sprite plein pied.
 
 ## 5. Combat PvP — duel snapshot asynchrone
 
+### 5.1 Mécanique
+
 - Défier un fantôme → récupération de son `snapshot` (groupe : stats,
   équipement, sorts).
 - Le combat construit un `enemyGroup` **à partir du snapshot** au lieu
@@ -173,15 +178,67 @@ médaillon**, pas de sprite plein pied.
 - **Pas** de lockstep, pas de RNG déterministe, pas de Realtime — d'où le
   choix « async d'abord ».
 - Nouveau morceau de travail principal : une **IA de groupe de héros**
-  (choisir attaque/sort/garde pour un groupe `party`-like). L'IA actuelle
-  (`tryEnemyAbility`/`enemyTurn`) travaille sur les `abilities[]` de
-  monstres ; un snapshot de héros a des `spells[]` et de l'équipement.
-- `endBattle` : branche dédiée — **pas** de XP/or/loot/Maison/quêtes.
-  Résultat = victoire/défaite. Option : insérer le résultat dans une table
-  `mp_duels` et notifier le joueur défié à sa prochaine connexion.
-- **Duel en direct** (les deux joueurs pilotent en temps réel) : repoussé
-  en **Phase 7** — nécessitera lockstep + RNG déterministe + Realtime
-  (l'analyse de la première version du plan reste valable pour cette phase).
+  (`battle-ai.js`, choisir attaque/sort/garde pour un groupe `party`-like).
+  L'IA actuelle (`tryEnemyAbility`/`enemyTurn`) travaille sur les
+  `abilities[]` de monstres ; un snapshot de héros a des `spells[]` et de
+  l'équipement.
+- Le défi est **volontaire** : on choisit d'engager. L'action **Inspecter**
+  (§6) est le garde-fou — jauger le niveau adverse avant de risquer le
+  combat.
+
+### 5.2 Enjeux — population Ironman (hardcore)
+
+- **Défaite → mort.** Le run Ironman se termine (permadeath stricte) :
+  branche `endBattle` PvP → `triggerDeath()` → `showIronmanResult()`.
+  Risque réel et assumé — c'est la cohérence du mode.
+- **Victoire → copie.** Le vainqueur **copie** un sort *ou* un équipement
+  du snapshot vaincu (le vainqueur choisit lequel ; un sort inconnu est
+  appris, un équipement est ajouté à son inventaire). L'adversaire
+  **n'est pas affecté** : il conserve l'intégralité de ses biens (décision
+  utilisateur du 2026-05-22 — copie, pas vol). Repli **or** si le vainqueur
+  possède déjà tous les sorts/équipements du snapshot.
+
+### 5.3 Enjeux — population normale
+
+- **Défaite → aucune conséquence** (mode décontracté) : message de saveur,
+  run intact, aucune perte.
+- **Victoire → or + XP**, mis à l'échelle du niveau adverse et de l'écart
+  de niveau (formule §5.4).
+
+### 5.4 Récompense de duel normal (proposition, à affiner Phase 6)
+
+```
+gap  = niveauAdversaire − monNiveau
+mult = clamp(1 + gap × 0.15, 0.25, 2.0)
+or   = round((20 + 10 × niveauAdversaire) × mult)
+xp   = round((15 +  8 × niveauAdversaire) × mult)
+```
+
+- Défier plus fort que soi → récompense bonifiée ; tabasser un fantôme
+  bien plus faible → récompense réduite (plancher ×0.25). Décourage le
+  farm de bas niveau.
+
+### 5.5 Anti-farm — adversaire mémorisé
+
+- Après une victoire, le `player_id` du vaincu est ajouté à
+  `defeatedDuelists` (Set global, `state.js`, persisté dans
+  `_serializeState`/`_applyState`).
+- Un fantôme déjà vaincu **n'est plus défiable** par ce joueur (l'action
+  ⚔️ est grisée dans l'overlay). S'applique aux deux populations.
+- Liste **personnelle au vainqueur** : chacun mémorise les adversaires
+  qu'il a battus.
+
+### 5.6 Journal & notification (optionnel)
+
+- Insérer le résultat dans une table `mp_duels` et notifier le joueur
+  défié à sa prochaine connexion (« ton spectre a vaincu / perdu contre
+  X »). Purement cosmétique, non bloquant.
+
+### 5.7 Duel en direct (Phase 7)
+
+- Les deux joueurs pilotent en temps réel : repoussé en **Phase 7** —
+  nécessitera lockstep + RNG déterministe + Realtime. Mêmes enjeux
+  (§5.2 / §5.3) mais consentis des deux côtés.
 
 ## 6. Autres interactions
 
@@ -272,10 +329,11 @@ médaillon**, pas de sprite plein pied.
   autoritaire, accepté en V1 (pas de classement PvP en jeu).
 - **Supabase Realtime** : nécessaire seulement en Phase 7 (duel direct).
 - **Volume de présence** : poll par étage + payload léger → négligeable.
-- **Enjeu d'un duel hardcore** : un duel async-snapshot ne touche jamais
-  le run réel (on affronte une copie). Si un futur duel **en direct**
-  (Phase 7) entre joueurs Ironman doit avoir des conséquences réelles
-  (mort = fin du run ?) → à trancher.
+- **Enjeu d'un duel hardcore** : tranché (§5.2) — le duel async Ironman a
+  des conséquences réelles (défaite → mort/fin du run, victoire → copie
+  d'un bien du vaincu). Le défi est volontaire et garde-fou par
+  l'inspection préalable. Reste ouvert : faut-il un avertissement explicite
+  (« ce duel peut mettre fin à ton run ») avant l'engagement Ironman ?
 - **Cohérence des sprites** : les 6 sprites de héros doivent être
   stylistiquement homogènes entre eux et avec les PNJ/monstres existants.
 
