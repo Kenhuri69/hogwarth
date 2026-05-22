@@ -10508,8 +10508,144 @@ async function scenarioRuneSequence() {
   await browser.close();
 }
 
+// ── Scénario : stèle d'énigme (dungeon-enrichment-v2 Phase 3) ──
+
+async function scenarioRiddleStele() {
+  console.log('\n── Scénario : stèle d\'énigme (V2 Phase 3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : constante + état + registre + helpers exposés
+  const t1 = await page.evaluate(() => ({
+    cellStele: CELL.STELE,
+    steleOk:   typeof runeStele !== 'undefined',
+    riddles:   typeof RIDDLES !== 'undefined' && RIDDLES.length,
+    getFn:     typeof getRiddleById === 'function',
+    ansFn:     typeof answerSteleRiddle === 'function',
+    genFn:     typeof _generateRuneStele === 'function',
+    allValid:  typeof RIDDLES !== 'undefined' && RIDDLES.every(r =>
+                 r.id && r.question && Array.isArray(r.choices)
+                 && r.choices.length >= 2
+                 && Number.isInteger(r.answer)
+                 && r.answer >= 0 && r.answer < r.choices.length),
+  }));
+  console.log('  T1:', t1);
+  assert(t1.cellStele === 14,            'CELL.STELE doit valoir 14');
+  assert(t1.steleOk,                     'runeStele non exposé');
+  assert(t1.riddles >= 6 && t1.riddles <= 8, 'RIDDLES doit compter 6 à 8 devinettes');
+  assert(t1.getFn,                       'getRiddleById non exposée');
+  assert(t1.ansFn,                       'answerSteleRiddle non exposée');
+  assert(t1.genFn,                       '_generateRuneStele non exposée');
+  assert(t1.allValid,                    'chaque devinette doit être bien formée');
+
+  // T2 : 200 générations — au moins une stèle, structure toujours valide,
+  // l'escalier descendant n'est jamais supprimé.
+  const t2 = await page.evaluate(() => {
+    let withStele = 0, bad = 0, noStairs = 0;
+    for (let g = 0; g < 200; g++) {
+      generateDungeon(1 + (g % 9));
+      if (!runeStele) continue;
+      withStele++;
+      const [sx, sy] = runeStele.cell.split(',').map(Number);
+      if (dungeon[sy][sx] !== CELL.STELE) bad++;
+      if (!getRiddleById(runeStele.riddleId)) bad++;
+      const [bx, by] = runeStele.barrier.split(',').map(Number);
+      if (dungeon[by][bx] !== CELL.WALL) bad++;
+      let chestAdj = false;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = bx + dx, ny = by + dy;
+        if (nx >= 0 && ny >= 0 && nx < MAP_W && ny < MAP_H
+            && dungeon[ny][nx] === CELL.CHEST) chestAdj = true;
+      }
+      if (!chestAdj) bad++;
+      let hasStairsD = false;
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.STAIRS_D) hasStairsD = true;
+      if (!hasStairsD) noStairs++;
+    }
+    return { withStele, bad, noStairs };
+  });
+  console.log('  T2 génération:', t2);
+  assert(t2.withStele >= 1,  'au moins une stèle sur 200 générations');
+  assert(t2.bad === 0,       'structure de stèle toujours valide');
+  assert(t2.noStairs === 0,  "l'escalier descendant n'est jamais supprimé");
+
+  // T3 : overlay + mauvaise réponse (ré-essai) puis bonne réponse
+  const t3 = await page.evaluate(() => {
+    generateDungeon(3);
+    let barrier = null;
+    for (let y = 1; y < MAP_H - 1 && !barrier; y++)
+      for (let x = 1; x < MAP_W - 1 && !barrier; x++)
+        if (dungeon[y][x] === CELL.WALL) barrier = `${x},${y}`;
+    const riddle = RIDDLES[0];
+    runeStele = {
+      cell: `${playerX},${playerY}`, riddleId: riddle.id,
+      barrier, solved: false
+    };
+    _steleFeedback = '';
+    _showExploreOverlay(CELL.STELE);
+    const descEl = document.getElementById('explore-desc');
+    const overlayShown  = document.getElementById('explore-overlay').style.display === 'flex';
+    const questionShown = !!descEl && descEl.textContent.includes(riddle.question);
+    const btnCount = document.querySelectorAll('#explore-actions .explore-btn').length;
+    const [bx, by] = barrier.split(',').map(Number);
+    // Mauvaise réponse — index différent de la bonne.
+    const wrongIdx = (riddle.answer + 1) % riddle.choices.length;
+    answerSteleRiddle(wrongIdx);
+    const afterWrong = {
+      solved:     runeStele.solved,
+      barrierWall: dungeon[by][bx] === CELL.WALL,
+      feedback:   document.getElementById('explore-desc').textContent.indexOf('✗') >= 0,
+    };
+    // Bonne réponse.
+    answerSteleRiddle(riddle.answer);
+    const afterRight = {
+      solved:        runeStele.solved,
+      barrierIsFloor: dungeon[by][bx] === CELL.FLOOR,
+    };
+    return { overlayShown, questionShown, btnCount, choices: riddle.choices.length, afterWrong, afterRight };
+  });
+  console.log('  T3 overlay & réponses:', t3);
+  assert(t3.overlayShown,                        "l'overlay de stèle doit s'afficher");
+  assert(t3.questionShown,                       'la question doit apparaître dans l\'overlay');
+  assert(t3.btnCount === t3.choices + 1,         'un bouton par choix + « S\'éloigner »');
+  assert(!t3.afterWrong.solved,                  'mauvaise réponse → non résolu');
+  assert(t3.afterWrong.barrierWall,              'mauvaise réponse → barrière intacte');
+  assert(t3.afterWrong.feedback,                 'mauvaise réponse → feedback affiché dans l\'overlay');
+  assert(t3.afterRight.solved,                   'bonne réponse → résolu');
+  assert(t3.afterRight.barrierIsFloor,           'bonne réponse → barrière dissoute');
+
+  // T4 : round-trip save de runeStele
+  const t4 = await page.evaluate(() => {
+    runeStele = { cell: '7,7', riddleId: RIDDLES[2].id, barrier: '8,8', solved: true };
+    const snap = _serializeState();
+    runeStele = null;
+    _applyState(snap);
+    return {
+      cell:     runeStele && runeStele.cell,
+      riddleId: runeStele && runeStele.riddleId,
+      barrier:  runeStele && runeStele.barrier,
+      solved:   runeStele && runeStele.solved,
+    };
+  });
+  console.log('  T4 round-trip save:', t4);
+  assert(t4.cell === '7,7',                 'runeStele.cell doit survivre au save');
+  assert(typeof t4.riddleId === 'string' && t4.riddleId.length > 0,
+    'runeStele.riddleId doit survivre au save');
+  assert(t4.barrier === '8,8',              'runeStele.barrier doit survivre au save');
+  assert(t4.solved === true,                'runeStele.solved doit survivre au save');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (stèle d'énigme)`);
+  }
+  console.log('  ✅ stèle d\'énigme — génération, overlay, réponses, persistance OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }

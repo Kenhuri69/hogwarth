@@ -8,7 +8,7 @@
 > reconstituer, des devinettes — qui transforment certaines salles en défis
 > intellectuels gardant une récompense.
 
-Statut global : **🟡 EN COURS — 2 / 4 phases (1 & 2 livrées).**
+Statut global : **🟡 EN COURS — 3 / 4 phases (1, 2 & 3 livrées).**
 Branche de travail : `claude/lance-dungeon-enrichment-v2-ihE0E` (Phases 1 + 2
 groupées sur une seule branche, décision utilisateur 2026-05-22).
 Décision utilisateur (2026-05-22) : pilier **Énigmes & runes**, **plan multi-phases**.
@@ -116,19 +116,24 @@ en cours) doit être persistée ; sinon, repli sûr = reset à la restauration.
 
 ### Étapes
 
-- [ ] **3.1** Registre `RIDDLES` (nouveau `js/riddles.js`) — entrées
+- [x] **3.1** Registre `RIDDLES` (nouveau `js/riddles.js`) — entrées
       `{ id, question, choices:[…], answer, rewardHint }`. 6–8 devinettes V1,
       ajouté à l'ordre de chargement `index.html` + MANIFEST du loader.
-- [ ] **3.2** Génération : ~30 % des étages placent une **stèle** (réutilise
-      `CELL.RUNE` en variante « stèle », ou un `CELL.GLYPH` dédié — tranché
-      ici) gardant une alvéole-coffre.
-- [ ] **3.3** `handleCellEntry` sur la stèle → overlay de devinette (réutilise
-      la structure de `_showExploreOverlay` / `npc-dialog`) : question +
-      boutons de réponse. Bonne réponse → barrière levée + toast. Mauvaise →
-      message, ré-essai autorisé (pas de pénalité dure en V1).
-- [ ] **3.4** Persistance : devinettes résolues par étage (Set), même cycle.
-- [ ] **3.5** Smoke : `scenarioRiddleStele` — overlay, mauvaise puis bonne
-      réponse, ouverture, round-trip save.
+      _Livré : 8 devinettes, `getRiddleById()`._
+- [x] **3.2** Génération : ~30 % des étages placent une **stèle** gardant
+      une alvéole-coffre. _Décision : `CELL.STELE = 14` dédié (pas de
+      surcharge de `CELL.RUNE`) — sprite/minimap/handleCellEntry distincts._
+- [x] **3.3** `handleCellEntry` sur la stèle → overlay de devinette (réutilise
+      `_showExploreOverlay` : descripteur `[CELL.STELE]`, boutons de réponse).
+      Bonne réponse → barrière `WALL → FLOOR` + toast. Mauvaise → feedback
+      dans l'overlay (`_steleFeedback`), ré-essai autorisé sans pénalité.
+      _Écart : fonction nommée `answerSteleRiddle` — collision évitée avec
+      `answerRiddle` (quests.js — quête Lumière Éternelle)._
+- [x] **3.4** Persistance : `runeStele` (objet avec `solved`) sérialisé +
+      mis en cache par étage, même cycle que `runePuzzle`. _Écart : une
+      seule stèle/étage → booléen `solved` sur l'objet plutôt qu'un Set._
+- [x] **3.5** Smoke : `scenarioRiddleStele` — overlay, mauvaise puis bonne
+      réponse, ouverture de la barrière, round-trip save.
 
 ### Risque
 Faible — surcouche UI + registre de contenu. Pas de nouvelle mécanique de
@@ -200,3 +205,4 @@ Ordre recommandé : **1 → 2 → 3 → 4**. Une PR par phase, smoke vert à cha
 | 2026-05-22 | Rédaction du plan | ✅ | Audit `data.js`/`movement.js`/`dungeon.js`. Pilier « Énigmes & runes » et format multi-phases validés par l'utilisateur. 4 phases rédigées. Implémentation non démarrée. |
 | 2026-05-22 | Phase 1 — Socle runique | ✅ | `CELL.RUNE=13`. `runePuzzle`/`litRunes` (state.js). Génération 20 %/étage (dungeon.js). `_activateRune` (movement.js). `drawRuneSprite` + minimap `.map-rune`. Persistance save + cache d'étage. Smoke `scenarioRunePuzzle`. |
 | 2026-05-22 | Phase 2 — Runes en séquence | ✅ | Champ `order`/`hint`/`hintCell` sur `runePuzzle` (½ des puzzles ordonnés). Reset des dalles sur faux pas. Inscription-indice nommant les runes par teinte. Smoke `scenarioRuneSequence`. |
+| 2026-05-22 | Phase 3 — Énigmes-devinettes | ✅ | `js/riddles.js` (8 devinettes, `getRiddleById`). `CELL.STELE=14`. `runeStele` (state.js). Génération 30 %/étage (dungeon.js). `answerSteleRiddle` + overlay réutilisant `_showExploreOverlay`. `drawSteleSprite` + minimap `.map-stele`. Persistance save + cache. Smoke `scenarioRiddleStele`. 98 scénarios verts. |

@@ -412,4 +412,32 @@ const SCENE_ICONS = {
     </circle>
   </svg>`,
 
+  // Stèle d'énigme (V2 Phase 3) — monolithe gravé, lueur cyan « savoir ».
+  stele: `<svg viewBox="0 0 120 110" width="130" height="120" xmlns="http://www.w3.org/2000/svg" style="display:block">
+    <defs>
+      <radialGradient id="steleGlow" cx="50%" cy="40%" r="62%">
+        <stop offset="0%" stop-color="#7fe0f0" stop-opacity="0.75"/>
+        <stop offset="58%" stop-color="#3a7aa0" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="#10202a" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="steleStone" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#7a7e86"/>
+        <stop offset="100%" stop-color="#2e3038"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="60" cy="54" rx="44" ry="42" fill="url(#steleGlow)"/>
+    <path d="M 28 100 L 92 100 L 84 91 L 36 91 Z" fill="#3a3a42" stroke="#5a5a64" stroke-width="1.2"/>
+    <path d="M 44 91 L 76 91 L 72 26 L 60 15 L 48 26 Z" fill="url(#steleStone)" stroke="#9098a2" stroke-width="1.3"/>
+    <g stroke="#8fe6f4" stroke-width="1.7" fill="none" opacity="0.88" stroke-linecap="round">
+      <path d="M 53 40 L 67 40"/>
+      <path d="M 60 47 L 60 59 M 55 53 L 65 53"/>
+      <path d="M 53 68 L 67 68 M 53 68 L 56 74 M 67 68 L 64 74"/>
+      <animate attributeName="opacity" values="0.88;0.32;0.88" dur="2.8s" repeatCount="indefinite"/>
+    </g>
+    <circle cx="60" cy="24" r="5" fill="#aef0fa">
+      <animate attributeName="r" values="5;6.6;5" dur="2.1s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.65;1" dur="2.1s" repeatCount="indefinite"/>
+    </circle>
+  </svg>`,
+
 };

@@ -79,6 +79,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'GRIMOIRE_PAGES',     source: 'data.js',         kind: 'obj' },
     { name: 'RIDDLES_LUMIERE',    source: 'data.js',         kind: 'obj' },
     { name: 'NPCS',               source: 'npcs.js',         kind: 'obj' },
+    { name: 'RIDDLES',            source: 'riddles.js',      kind: 'obj' },
+    { name: 'getRiddleById',      source: 'riddles.js',      kind: 'fn'  },
     { name: 'FLOOR_THEMES',       source: 'floor-themes.js', kind: 'obj' },
     { name: 'getFloorTheme',      source: 'floor-themes.js', kind: 'fn'  },
     { name: 'FLOOR_EVENTS',       source: 'floor-events.js', kind: 'obj' },

@@ -232,6 +232,7 @@ function _serializeState() {
     secretWalls: Array.from(secretWalls),
     runePuzzle,
     litRunes: Array.from(litRunes),
+    runeStele,
     usedSpecialNpcs: Array.from(usedSpecialNpcs),
     defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
                           .map(([f, set]) => [f, Array.from(set)]),
@@ -472,6 +473,7 @@ function _applyState(gs) {
   secretWalls = new Set(gs.secretWalls || []);
   runePuzzle = gs.runePuzzle || null;
   litRunes = new Set(gs.litRunes || []);
+  runeStele = gs.runeStele || null;
   usedSpecialNpcs = new Set(gs.usedSpecialNpcs || []);
   defeatedCellsByFloor = new Map(
     (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])

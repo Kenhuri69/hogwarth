@@ -332,6 +332,39 @@ function _generateRunePuzzle(rooms) {
   };
 }
 
+// Pose une stèle d'énigme sur l'étage courant (~30 % de chance) : une
+// dalle STELE sur une case FLOOR ordinaire hors spawn + une alvéole
+// `FLOOR → mur-barrière → CHEST` via `_findWallPocket`. Une devinette de
+// `RIDDLES` est tirée ; sa bonne réponse dissout la barrière (cf.
+// `answerRiddle` dans movement.js). Voir dungeon-enrichment-v2.md §3.
+function _generateRuneStele(rooms) {
+  runeStele = null;
+  if (Math.random() >= 0.30) return;
+  if (typeof RIDDLES === 'undefined' || !RIDDLES.length) return;
+  const pocket = _findWallPocket();
+  if (!pocket) return;
+  const floorCells = [];
+  for (let y = 1; y < MAP_H - 1; y++) {
+    for (let x = 1; x < MAP_W - 1; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (Math.abs(x - rooms[0].cx) <= 1 && Math.abs(y - rooms[0].cy) <= 1) continue;
+      floorCells.push([x, y]);
+    }
+  }
+  if (!floorCells.length) return;
+  _shuffleInPlace(floorCells);
+  const [sx, sy] = floorCells[0];
+  dungeon[sy][sx] = CELL.STELE;
+  dungeon[pocket.w2y][pocket.w2x] = CELL.CHEST;
+  const riddle = RIDDLES[Math.floor(Math.random() * RIDDLES.length)];
+  runeStele = {
+    cell:     `${sx},${sy}`,
+    riddleId: riddle.id,
+    barrier:  `${pocket.w1x},${pocket.w1y}`,
+    solved:   false
+  };
+}
+
 // Instantané structurel des salles du dernier donjon généré (kind/rect).
 // Hook de test (smoke) — non consommé par le moteur de jeu.
 let lastDungeonRooms = [];
@@ -519,6 +552,10 @@ function generateDungeon(floor) {
   // cases FLOOR ordinaires. `_generateRunePuzzle` (re)met `runePuzzle` et
   // `litRunes` à leur état initial à chaque génération.
   _generateRunePuzzle(rooms);
+  // Stèle d'énigme (dungeon-enrichment-v2 §3) — même contrainte : posée
+  // après les autres cellules spéciales. (re)met `runeStele` à l'état
+  // initial à chaque génération.
+  _generateRuneStele(rooms);
 
   // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
   usedFountains = new Set();
