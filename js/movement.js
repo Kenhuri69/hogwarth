@@ -250,8 +250,18 @@ function handleCellEntry(cell) {
     if (npcId && typeof openNpcDialog === 'function') {
       openNpcDialog(npcId);
     }
+  } else if (cell === CELL.RUNE) {
+    // Dalle-rune d'un puzzle d'exploration : marcher dessus l'allume
+    // (cf. _activateRune — dungeon-enrichment-v2 §1/§2).
+    _activateRune();
   } else {
-    if (Math.random() < 0.15) {
+    // Inscription-indice d'un puzzle runique ordonné : la case courante
+    // peut porter le vers décrivant l'ordre d'éveil des runes.
+    if (runePuzzle && runePuzzle.hint
+        && runePuzzle.hintCell === `${playerX},${playerY}`) {
+      setNarrative(runePuzzle.hint);
+      if (typeof addMsg === 'function') addMsg('📜 ' + runePuzzle.hint, 'magic');
+    } else if (Math.random() < 0.15) {
       if (Math.random() < 0.08) {
         setNarrative(NARRATIVES.trap);
         const alive  = party.filter(c => c.hp > 0);
@@ -278,6 +288,8 @@ function _saveFloorToCache(floor) {
     px: playerX, py: playerY, dir: playerDir,
     floorEvent: currentFloorEvent,
     secretWalls: Array.from(secretWalls),
+    runePuzzle: runePuzzle ? JSON.parse(JSON.stringify(runePuzzle)) : null,
+    litRunes: Array.from(litRunes),
     searchedCells: Array.from(searchedCells),
     npcPlacements: Array.from(npcPlacements.entries())
     // Note : on n'archive PAS usedFountains : la fontaine se ré-active
@@ -297,6 +309,8 @@ function _restoreFloorFromCache(floor) {
   npcPlacements = new Map(c.npcPlacements || []);
   currentFloorEvent = c.floorEvent || null;
   secretWalls = new Set(c.secretWalls || []);
+  runePuzzle = c.runePuzzle || null;
+  litRunes = new Set(c.litRunes || []);
   // Nouvelle visite = nouvelle eau dans la fontaine et nouvelles larmes Fumseck
   usedFountains = new Set();
   usedAltars = new Set();
@@ -783,6 +797,70 @@ function _triggerDungeonTrap() {
   // Variante dégâts/drain : réutilise les 3 sous-variantes non létales
   // de la fouille (lames, dard, brume) — narration compatible.
   _triggerSearchTrap();
+}
+
+// ── Puzzle runique — activation d'une dalle-rune ────────────────
+// Marcher sur une dalle RUNE l'allume. Quand les 3 sont allumées, la
+// barrière runique se dissout (WALL → FLOOR) et le coffre-récompense
+// devient accessible. Pour un puzzle ordonné (`runePuzzle.order`),
+// allumer une rune hors séquence éteint toutes les dalles.
+// Voir dungeon-enrichment-v2.md §1/§2.
+function _activateRune() {
+  if (!runePuzzle || runePuzzle.solved) return;
+  const key = `${playerX},${playerY}`;
+  if (runePuzzle.runes.indexOf(key) === -1) return;  // pas une rune du puzzle
+  if (litRunes.has(key)) return;                     // déjà allumée
+
+  if (runePuzzle.order) {
+    // Puzzle ordonné : la rune attendue est `runes[order[litRunes.size]]`.
+    const expected = runePuzzle.runes[runePuzzle.order[litRunes.size]];
+    if (key !== expected) {
+      litRunes.clear();
+      setNarrative("La dalle s'embrase un instant — puis toutes les runes "
+        + "s'éteignent dans un grondement sourd. L'ordre était faux.");
+      if (typeof addMsg === 'function') {
+        addMsg('✦ Séquence brisée — les runes se rallument à éteindre.', 'bad');
+      }
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playHit) {
+        AudioSystem.playHit();
+      }
+      renderMinimap();
+      drawDungeon();
+      return;
+    }
+  }
+
+  litRunes.add(key);
+  const total     = runePuzzle.runes.length;
+  const remaining = total - litRunes.size;
+
+  if (remaining > 0) {
+    setNarrative("Sous vos pieds, la dalle runique s'illumine d'une lueur "
+      + `chaude. ${remaining} rune${remaining > 1 ? 's' : ''} reste`
+      + `${remaining > 1 ? 'nt' : ''} à éveiller.`);
+    if (typeof addMsg === 'function') {
+      addMsg(`✦ Rune éveillée (${litRunes.size}/${total}).`, 'good');
+    }
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) {
+      AudioSystem.playChestOpen();
+    }
+  } else {
+    runePuzzle.solved = true;
+    const [bx, by] = runePuzzle.barrier.split(',').map(Number);
+    if (dungeon[by] && dungeon[by][bx] === CELL.WALL) {
+      dungeon[by][bx] = CELL.FLOOR;
+    }
+    setNarrative("La dernière rune s'embrase — un grondement profond, et un "
+      + "pan de mur coulisse, révélant une alcôve scellée et son coffre.");
+    if (typeof addMsg === 'function') {
+      addMsg("✦ Sceau runique brisé — un passage s'ouvre !", 'good');
+    }
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) {
+      AudioSystem.playChestOpen();
+    }
+  }
+  renderMinimap();
+  drawDungeon();
 }
 
 // ── Autel Ancien — tribut risque/récompense, 1×/visite d'étage ──

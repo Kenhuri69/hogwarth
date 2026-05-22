@@ -618,6 +618,48 @@ function drawAltarSprite(x, baseY, sz) {
   ctx.restore();
 }
 
+// ── Dalle-rune (sprite de couloir, posée au sol) ──────────────
+// Puzzle runique (dungeon-enrichment-v2). Disque de pierre gravé d'un
+// glyphe ; teinte par index de rune (RUNE_LABELS) ; halo lumineux si
+// allumée, gravure sourde si éteinte. Dessin procédural simple — pas
+// d'asset dédié (cf. plan, hors-scope V2).
+function drawRuneSprite(x, baseY, sz, lit, idx) {
+  ctx.save();
+  const label = (typeof RUNE_LABELS !== 'undefined' && RUNE_LABELS[idx])
+    ? RUNE_LABELS[idx] : { color: '#e0c24a', rgb: '224,194,74' };
+  const cy = baseY - sz * 0.12;          // posée au sol, légèrement relevée
+  const rx = sz * 0.42, ry = sz * 0.17;  // disque en perspective écrasée
+  // Halo au sol — présent (statique) seulement si la rune est allumée.
+  if (lit) {
+    const glow = ctx.createRadialGradient(x, cy, 0, x, cy, sz * 0.72);
+    glow.addColorStop(0, `rgba(${label.rgb},0.5)`);
+    glow.addColorStop(1, `rgba(${label.rgb},0)`);
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.ellipse(x, cy, sz * 0.72, sz * 0.34, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Disque de pierre
+  ctx.fillStyle   = lit ? '#3a3024' : '#28241e';
+  ctx.strokeStyle = lit ? label.color : '#4a4438';
+  ctx.lineWidth   = Math.max(1, sz * 0.045);
+  ctx.beginPath();
+  ctx.ellipse(x, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // Glyphe gravé : étoile runique à 4 branches.
+  ctx.strokeStyle  = lit ? label.color : '#5a5448';
+  ctx.lineWidth    = Math.max(1.5, sz * 0.05);
+  ctx.globalAlpha  = lit ? 1 : 0.65;
+  ctx.beginPath();
+  ctx.moveTo(x, cy - ry * 0.62);  ctx.lineTo(x, cy + ry * 0.62);
+  ctx.moveTo(x - rx * 0.58, cy);  ctx.lineTo(x + rx * 0.58, cy);
+  ctx.moveTo(x - rx * 0.42, cy - ry * 0.42); ctx.lineTo(x + rx * 0.42, cy + ry * 0.42);
+  ctx.moveTo(x - rx * 0.42, cy + ry * 0.42); ctx.lineTo(x + rx * 0.42, cy - ry * 0.42);
+  ctx.stroke();
+  ctx.restore();
+}
+
 // ── Fontaine (sprite de couloir) ─────────────────────────────
 // Bassin restaurateur (cf. Salle Fontaine). Halo bleu eau si active,
 // grisé si déjà bue (dried).

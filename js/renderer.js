@@ -322,7 +322,7 @@ function drawCorridor(cx, cy, scale, W, H) {
     // mur du fond par drawCellMarker ci-dessous (cas non-sprite). Une
     // porte ouverte est repassée en FLOOR et n'arrête donc plus le scan.
     if (cell === CELL.WALL || cell === CELL.DOOR) { wallDist = d; break; }
-    if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR)) {
+    if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR || cell === CELL.RUNE)) {
       const nearS = getRect(cx, cy, scale, d - 1);
       const [_fdx, _fdy] = DIRECTIONS[playerDir];
       pendingSprite = { cell, x: cx, baseY: nearS.y1, sz: nearS.hw * 1.1,
@@ -499,6 +499,13 @@ function drawCorridor(cx, cy, scale, W, H) {
         ? npcPlacements.get(`${pendingSprite.mapX},${pendingSprite.mapY}`)
         : null;
       drawNpcSprite(npcId, x, baseY, sz);
+    }
+    else if (cell === CELL.RUNE) {
+      const k   = `${pendingSprite.mapX},${pendingSprite.mapY}`;
+      const lit = (typeof litRunes !== 'undefined') && litRunes && litRunes.has(k);
+      const idx = (typeof runePuzzle !== 'undefined' && runePuzzle)
+        ? runePuzzle.runes.indexOf(k) : -1;
+      drawRuneSprite(x, baseY, sz, lit, idx);
     }
     ctx.restore();
   }
