@@ -178,7 +178,12 @@ function _drawSideWall(side, d, near, far, di, edgeA) {
     ctx.closePath();
   };
 
-  if (hasWall(isLeft ? -1 : 1, 0, d)) {
+  // Le trapèze latéral couvre la case `d-1` (near=getRect(d-1) →
+  // far=getRect(d)) : pour d=1 c'est la paroi de la case du joueur
+  // lui-même. La présence du mur doit donc être testée à la profondeur
+  // `d-1`, pas `d` — sinon un couloir qui s'ouvre sur le côté de la
+  // case courante est masqué par la paroi de la case suivante.
+  if (hasWall(isLeft ? -1 : 1, 0, d - 1)) {
     // Baseline couleur + stone-blocks (toujours visible)
     ctx.fillStyle = SIDE_C[di];
     trapezoid();
@@ -189,8 +194,9 @@ function _drawSideWall(side, d, near, far, di, edgeA) {
                     Math.max(nearX, farX), isLeft ? far.y1 : near.y1,
                     edgeA * 0.8);
 
-    // Texture tuilée (pattern 'repeat' + clip trapèze, alpha plein) — via cache
-    const sideKey  = (d > 3) ? 'stone2' : 'wood';
+    // Texture tuilée (pattern 'repeat' + clip trapèze, alpha plein) — via cache.
+    // Pierre cohérente avec le mur du fond (plus de bois codé en dur).
+    const sideKey  = (d > 3) ? 'stone2' : 'stone1';
     const _pattern = _patternForKey('walls', sideKey);
     if (_pattern) {
       ctx.save();
