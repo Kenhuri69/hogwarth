@@ -148,17 +148,18 @@ function drawDungeon() {
   drawCorridor(cx, cy, scale, W, H);
 }
 
-function getCellAhead(dx, dy, dist) {
+// Cellule située à `forward` cases devant le joueur et `lateral` cases
+// sur le côté. Le vecteur perpendiculaire (fy,-fx) pointe vers la GAUCHE
+// du joueur → `lateral > 0` = gauche, `lateral < 0` = droite. Le décalage
+// latéral s'applique aux deux axes (le perpendiculaire est sur X cap n/s,
+// sur Y cap e/o). Hors carte → CELL.WALL.
+function getCellAhead(lateral, forward) {
   const [fx, fy] = DIRECTIONS[playerDir];
   const rx = fy, ry = -fx;
-  const nx = playerX + fx * dist + rx * dx;
-  const ny = playerY + fy * dist + ry * dy;
+  const nx = playerX + fx * forward + rx * lateral;
+  const ny = playerY + fy * forward + ry * lateral;
   if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) return CELL.WALL;
   return dungeon[ny][nx];
-}
-
-function hasWall(dx, dy, dist) {
-  return getCellAhead(dx, dy, dist) === CELL.WALL;
 }
 
 // Écusson de serrure dessiné sur un mur latéral porteur d'une porte
@@ -216,7 +217,7 @@ function _drawSideWall(side, d, near, far, di, edgeA) {
   //   • CELL.WALL  → mur de pierre plein
   //   • CELL.DOOR  → porte (bois + écusson de serrure)
   //   • autre      → ouverture de couloir (dégradé sombre)
-  const sideCell = getCellAhead(isLeft ? -1 : 1, 0, d - 1);
+  const sideCell = getCellAhead(isLeft ? 1 : -1, d - 1);
   const isDoor   = (sideCell === CELL.DOOR);
 
   if (sideCell === CELL.WALL || isDoor) {
@@ -316,7 +317,7 @@ function drawCorridor(cx, cy, scale, W, H) {
   let wallDist = DEPTH;
   let pendingSprite = null;
   for (let d = 1; d <= DEPTH; d++) {
-    const cell = getCellAhead(0, 0, d);
+    const cell = getCellAhead(0, d);
     // Mur OU porte fermée : bloque la vue. La porte est peinte sur le
     // mur du fond par drawCellMarker ci-dessous (cas non-sprite). Une
     // porte ouverte est repassée en FLOOR et n'arrête donc plus le scan.
@@ -337,7 +338,7 @@ function drawCorridor(cx, cy, scale, W, H) {
     const far  = getRect(cx, cy, scale, d);
     const edgeA = EDGE_A[di];
 
-    const fwdCell = getCellAhead(0, 0, d);
+    const fwdCell = getCellAhead(0, d);
     const isWall  = fwdCell === CELL.WALL;
 
     // === FIX TEXTURES FINALES === mur du fond : baseline + pattern alpha=1 + fog
