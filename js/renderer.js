@@ -268,7 +268,10 @@ function drawCorridor(cx, cy, scale, W, H) {
   let pendingSprite = null;
   for (let d = 1; d <= DEPTH; d++) {
     const cell = getCellAhead(0, 0, d);
-    if (cell === CELL.WALL) { wallDist = d; break; }
+    // Mur OU porte fermée : bloque la vue. La porte est peinte sur le
+    // mur du fond par drawCellMarker ci-dessous (cas non-sprite). Une
+    // porte ouverte est repassée en FLOOR et n'arrête donc plus le scan.
+    if (cell === CELL.WALL || cell === CELL.DOOR) { wallDist = d; break; }
     if (!pendingSprite && (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR)) {
       const nearS = getRect(cx, cy, scale, d - 1);
       const [_fdx, _fdy] = DIRECTIONS[playerDir];
