@@ -79,6 +79,14 @@ let defeatedBosses = new Set();  // ids de boss vaincus (faits d'armes)
 // même run (index unique `run_id` côté base). null hors mode Ironman.
 let ironmanRunId   = null;
 
+// ── Multijoueur — duel PvP snapshot (cf. .claude/plans/multiplayer.md §5) ──
+// mpDuelActive / mpDuelMeta : état transient d'un duel en cours — non
+// persisté (un save est refusé en combat). defeatedDuelists : `player_id`
+// des adversaires déjà vaincus (anti-farm §5.5) — persisté dans le save.
+let mpDuelActive     = false;
+let mpDuelMeta       = null;
+let defeatedDuelists = new Set();
+
 // ============================================================
 // SYSTÈME DES MAISONS
 // ============================================================

@@ -129,6 +129,7 @@ function _mpPresenceRow() {
     house:     (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
     level:     (typeof player !== 'undefined' && player.level) || 1,
     status:    (typeof inBattle !== 'undefined' && inBattle) ? 'in_battle' : 'exploring',
+    snapshot:  mpBuildSnapshot(),       // groupe sérialisé pour le duel (§5)
     last_seen: new Date().toISOString(),
   };
 }
@@ -348,13 +349,18 @@ function _mpRenderGhostMain() {
   const saluer = _mpEmoted
     ? '<button class="ghost-btn" disabled>✓ Salut adressé</button>'
     : '<button class="ghost-btn" onclick="mpEmoteGhost()">👋 Saluer</button>';
+  const beaten = (typeof defeatedDuelists !== 'undefined') && g.playerId
+    && defeatedDuelists.has(g.playerId);
+  const defier = beaten
+    ? '<button class="ghost-btn ghost-btn-soon" disabled'
+      + ' title="Adversaire déjà vaincu">⚔️ Déjà vaincu</button>'
+    : '<button class="ghost-btn ghost-btn-duel" onclick="mpChallengeGhost()">⚔️ Défier</button>';
   panel.innerHTML = ''
     + _mpGhostHeaderHtml(g)
     + '<div class="ghost-actions">'
     +   '<button class="ghost-btn" onclick="mpInspectGhost()">🔍 Inspecter</button>'
     +   saluer
-    +   '<button class="ghost-btn ghost-btn-soon" disabled'
-    +     ' title="Combat PvP — phase ultérieure">⚔️ Défier</button>'
+    +   defier
     +   '<button class="ghost-btn ghost-btn-soon" disabled'
     +     ' title="Cadeaux — phase ultérieure">🎁 Offrir</button>'
     + '</div>'
@@ -418,4 +424,271 @@ function mpEmoteGhost() {
     addMsg('👋 Tu salues ' + nm + ' d\'un signe de la main.', 'good');
   }
   _mpRenderGhostMain();
+}
+
+// ============================================================
+// PHASE 3 — Duel PvP contre un snapshot asynchrone (§5)
+// ============================================================
+// Le combat réutilise intégralement le moteur PvE : un snapshot de groupe
+// adverse est converti en `enemyGroup` (un ennemi par héros). L'« IA de
+// groupe de héros » du plan §5.1 est obtenue en mappant les sorts connus
+// vers les capacités ennemies existantes (`tryEnemyAbility`) — pas de
+// nouveau moteur d'IA, donc pas de `battle-ai.js` (écart assumé : voir
+// .claude/plans/multiplayer.md §11quater). startBattle reçoit le groupe
+// pré-construit via `opts.duelGroup` ; endBattle/enemyTurn branchent sur
+// `mpDuelActive` pour l'issue PvP.
+
+// ── Snapshot du groupe local ────────────────────────────────
+// Instantané sérialisable du groupe du joueur — émis dans `mp_presence`
+// et lu par un adversaire qui défie ce joueur.
+function mpBuildSnapshot() {
+  const size   = (typeof partySize !== 'undefined') ? partySize : 1;
+  const roster = (typeof party !== 'undefined' ? party : []).slice(0, size);
+  return {
+    name:  (typeof getPlayerName === 'function' && getPlayerName()) || 'Sorcier',
+    level: (typeof player !== 'undefined' && player.level) || 1,
+    house: (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
+    mode:  mpMode,
+    heroes: roster.map(c => ({
+      heroKey: c.heroKey || 'harry',
+      name: c.name, icon: c.icon, level: c.level || 1,
+      hpMax: c.hpMax | 0, spMax: c.spMax | 0,
+      atk: c.atk | 0, def: c.def | 0, mag: c.mag | 0,
+      agi: c.agi | 0, lck: c.lck | 0,
+      spells: Array.isArray(c.spells) ? c.spells.slice() : [],
+      equipment: c.equipped
+        ? Object.values(c.equipped).filter(Boolean).map(it => ({ ...it }))
+        : [],
+    })),
+  };
+}
+
+// ── Mapping snapshot → ennemi (« IA » de duelliste) ─────────
+function _mpSpellByName(name) {
+  if (typeof SPELLS === 'undefined') return null;
+  return SPELLS.find(s => s.name === name) || null;
+}
+function _mpHasOffensiveSpell(spells) {
+  return Array.isArray(spells) && spells.some(n => {
+    const sp = _mpSpellByName(n);
+    return sp && sp.element;          // tout sort élémentaire est offensif
+  });
+}
+function _mpHasHealSpell(spells) {
+  return Array.isArray(spells) && spells.some(n => {
+    const sp = _mpSpellByName(n);
+    return sp && /^heal|^support_regen/.test(sp.effect || '');
+  });
+}
+
+// Convertit un héros du snapshot en objet ennemi (forme « monstre »
+// attendue par le moteur de combat).
+function _mpHeroToEnemy(h, i) {
+  const chars = (typeof CHARACTERS !== 'undefined') ? CHARACTERS : {};
+  const c     = chars[h.heroKey] || null;
+  const mag   = h.mag | 0;
+  const abilities = [];
+  if (_mpHasOffensiveSpell(h.spells)) {
+    abilities.push({ name: 'Sortilège', icon: '✨', effect: 'damage',
+                     power: 7 + Math.floor(mag * 0.9), chance: 0.42 });
+  }
+  if (_mpHasHealSpell(h.spells)) {
+    abilities.push({ name: 'Sortilège de soin', icon: '💚', effect: 'heal',
+                     power: 9 + Math.floor(mag * 0.7), chance: 0.26 });
+  }
+  if (Array.isArray(h.spells) && h.spells.includes('Stupefix')) {
+    abilities.push({ name: 'Stupefix', icon: '💫', effect: 'status',
+                     statusId: 'stun', power: 0, turns: 1, chance: 0.14 });
+  }
+  return {
+    id: 'mp_duelist_' + i,
+    isDuelist: true,
+    name:     h.name || (c && c.name) || 'Duelliste',
+    icon:     h.icon || (c && c.icon) || '🧙',
+    imgSrc:   (c && c.imgSrc) || null,
+    category: 'humain',
+    desc:     (h.name || 'Un sorcier') + ' te défie en duel',
+    hp:  Math.max(1, h.hpMax | 0),
+    atk: Math.max(1, h.atk | 0),
+    def: Math.max(0, h.def | 0),
+    mag: mag,
+    agi: Math.max(0, h.agi | 0),
+    lck: Math.max(0, h.lck | 0),
+    abilities: abilities,
+    ai: 'aggressive',
+    resist: [], weak: [],
+    xp: 0, gold: 0, drops: [],
+    variant: 'normal',
+  };
+}
+
+// ── Lancement d'un duel ─────────────────────────────────────
+function mpStartDuel(snapshot, ghostMeta) {
+  if (!snapshot || !Array.isArray(snapshot.heroes) || !snapshot.heroes.length) return false;
+  if (typeof startBattle !== 'function') return false;
+  if (typeof inBattle !== 'undefined' && inBattle) return false;
+  const group = snapshot.heroes.slice(0, 3).map((h, i) => _mpHeroToEnemy(h, i));
+  mpDuelActive = true;
+  mpDuelMeta   = {
+    playerId: ghostMeta && ghostMeta.playerId,
+    name:     (ghostMeta && ghostMeta.name) || snapshot.name || 'Duelliste',
+    level:    snapshot.level || (ghostMeta && ghostMeta.level) || 1,
+    snapshot: snapshot,
+  };
+  startBattle(group[0], { duelGroup: group });
+  if (typeof addMsg === 'function') {
+    addMsg('⚔️ Duel engagé contre ' + mpDuelMeta.name + ' !', 'bad');
+  }
+  return true;
+}
+
+// Lit le snapshot d'un joueur à la demande (le poll ne le transporte pas).
+async function _mpFetchSnapshot(playerId) {
+  if (!_mpConfigured() || !playerId) return null;
+  try {
+    const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_CONFIG.presenceTable}`
+      + '?select=snapshot,name,level'
+      + `&player_id=eq.${encodeURIComponent(playerId)}`;
+    const res = await fetch(url, { headers: _mpHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    if (Array.isArray(rows) && rows[0] && rows[0].snapshot) {
+      const snap = rows[0].snapshot;
+      if (snap.name  == null) snap.name  = rows[0].name;
+      if (snap.level == null) snap.level = rows[0].level;
+      return snap;
+    }
+    return null;
+  } catch (e) { return null; }
+}
+
+// Action ⚔️ Défier de l'overlay : récupère le snapshot puis lance le duel.
+function mpChallengeGhost() {
+  const g = _mpCurrentGhost;
+  if (!g) return;
+  if (typeof defeatedDuelists !== 'undefined' && g.playerId
+      && defeatedDuelists.has(g.playerId)) {
+    if (typeof addMsg === 'function') addMsg('Tu as déjà vaincu ce spectre.', 'info');
+    return;
+  }
+  closeGhostOverlay();
+  if (typeof addMsg === 'function') {
+    addMsg('Tu défies ' + (g.name || 'le spectre') + '… invocation de son groupe.', 'info');
+  }
+  _mpFetchSnapshot(g.playerId).then(snap => {
+    if (!snap || !Array.isArray(snap.heroes) || !snap.heroes.length) {
+      if (typeof addMsg === 'function') {
+        addMsg('Ce spectre est trop ténu pour être défié — réessaie plus tard.', 'bad');
+      }
+      return;
+    }
+    if (snap.name == null)  snap.name  = g.name;
+    if (snap.level == null) snap.level = g.level;
+    mpStartDuel(snap, g);
+  });
+}
+
+// ── Issue du duel ───────────────────────────────────────────
+// Choisit le butin copié sur le vaincu : un sort inconnu en priorité,
+// sinon un équipement non possédé, sinon repli en or (§5.2). Le choix
+// explicite par le vainqueur est différé (polish — plan §11quater).
+function _mpPickDuelLoot(snapshot) {
+  const heroes = (snapshot && Array.isArray(snapshot.heroes)) ? snapshot.heroes : [];
+  const size   = (typeof partySize !== 'undefined') ? partySize : 1;
+  const mine   = (typeof party !== 'undefined' ? party : []).slice(0, size);
+  const known  = new Set();
+  mine.forEach(c => (c.spells || []).forEach(s => known.add(s)));
+  for (const h of heroes) {
+    for (const s of (h.spells || [])) {
+      if (!known.has(s)) return { kind: 'spell', spell: s };
+    }
+  }
+  const owned = new Set();
+  ((typeof player !== 'undefined' && player.inventory) || []).forEach(it => {
+    if (it && it.id) owned.add(it.id);
+  });
+  mine.forEach(c => {
+    if (c.equipped) Object.values(c.equipped).forEach(it => { if (it && it.id) owned.add(it.id); });
+  });
+  for (const h of heroes) {
+    for (const it of (h.equipment || [])) {
+      if (it && it.id && !owned.has(it.id)) return { kind: 'item', item: it };
+    }
+  }
+  return { kind: 'gold', gold: 120 };
+}
+
+function _mpResolveDuelVictory(meta) {
+  if (meta && meta.playerId && typeof defeatedDuelists !== 'undefined') {
+    defeatedDuelists.add(meta.playerId);
+  }
+  const advName  = (meta && meta.name) || 'ton adversaire';
+  const advLevel = Math.max(1, (meta && meta.level) | 0);
+  const ironman  = (typeof ironmanMode !== 'undefined') && ironmanMode;
+  const size     = (typeof partySize !== 'undefined') ? partySize : 1;
+
+  if (ironman) {
+    // §5.2 — victoire Ironman : copie d'un bien du vaincu (non affecté).
+    const loot = _mpPickDuelLoot(meta && meta.snapshot);
+    if (loot.kind === 'spell') {
+      party.slice(0, size).forEach(c => {
+        if (Array.isArray(c.spells) && !c.spells.includes(loot.spell)) {
+          c.spells.push(loot.spell);
+        }
+      });
+      if (typeof addMsg === 'function') {
+        addMsg('🏆 Duel remporté ! Tu copies le sort « ' + loot.spell + ' » de ' + advName + '.', 'magic');
+      }
+    } else if (loot.kind === 'item') {
+      const added = (typeof tryAddItem === 'function')
+        && tryAddItem(loot.item, { silent: true });
+      if (added && typeof addMsg === 'function') {
+        addMsg('🏆 Duel remporté ! Tu copies « ' + loot.item.name + ' » de ' + advName + '.', 'magic');
+      } else if (!added) {
+        player.gold += 80;
+        if (typeof addMsg === 'function') {
+          addMsg('🏆 Duel remporté ! Sac plein — butin converti en 80 Gallions.', 'good');
+        }
+      }
+    } else {
+      player.gold += loot.gold;
+      if (typeof addMsg === 'function') {
+        addMsg('🏆 Duel remporté ! Rien de neuf à copier — +' + loot.gold + ' Gallions.', 'good');
+      }
+    }
+    setNarrative('Victoire en duel sur ' + advName + ' !');
+  } else {
+    // §5.4 — victoire normale : or + XP modulés par l'écart de niveau.
+    const gap  = advLevel - Math.max(1, (player.level | 0));
+    const mult = Math.max(0.25, Math.min(2.0, 1 + gap * 0.15));
+    const gold = Math.round((20 + 10 * advLevel) * mult);
+    const xp   = Math.round((15 +  8 * advLevel) * mult);
+    player.gold += gold;
+    player.xp   += xp;
+    if (typeof addMsg === 'function') {
+      addMsg('🏆 Duel remporté contre ' + advName + ' !', 'good');
+      addMsg('+' + xp + ' XP, +' + gold + ' Gallions', 'good');
+    }
+    setNarrative('Victoire en duel ! +' + xp + ' XP, +' + gold + ' Gallions.');
+  }
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playVictory) AudioSystem.playVictory();
+  if (typeof checkLevelUp === 'function') checkLevelUp();
+  if (typeof renderMinimap === 'function') renderMinimap();
+}
+
+// §5.3 — défaite en duel normal : aucune conséquence, le groupe se relève.
+function _mpResolveDuelDefeatNormal() {
+  const size = (typeof partySize !== 'undefined') ? partySize : 1;
+  party.slice(0, size).forEach(c => {
+    if (c.hp <= 0) c.hp = Math.max(1, Math.floor(c.hpMax * 0.3));
+    c.sp = Math.max(c.sp || 0, Math.floor(c.spMax * 0.3));
+  });
+  if (typeof clearAllStatuses  === 'function') clearAllStatuses();
+  if (typeof recalculateStats  === 'function') recalculateStats();
+  if (typeof addMsg === 'function') {
+    addMsg('Duel perdu — en mode normal, aucune perte. Ton groupe se relève.', 'info');
+  }
+  setNarrative('Le duel tourne court, mais tu repars indemne.');
+  if (typeof updateUI    === 'function') updateUI();
+  if (typeof drawDungeon === 'function') drawDungeon();
 }

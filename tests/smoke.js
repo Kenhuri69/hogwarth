@@ -10501,8 +10501,143 @@ async function scenarioMultiplayerInteraction() {
   await browser.close();
 }
 
+// ── Scénario : multijoueur — duel PvP snapshot (Phase 3) ──
+async function scenarioMultiplayerDuel() {
+  console.log('\n── Scénario : multijoueur duel PvP ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Globals Phase 3 exposés.
+  const exposed = await page.evaluate(() => ({
+    mpBuildSnapshot:       typeof mpBuildSnapshot === 'function',
+    mpStartDuel:           typeof mpStartDuel === 'function',
+    heroToEnemy:           typeof _mpHeroToEnemy === 'function',
+    resolveVictory:        typeof _mpResolveDuelVictory === 'function',
+    duelActiveVar:         typeof mpDuelActive !== 'undefined',
+    defeatedDuelistsVar:   typeof defeatedDuelists !== 'undefined',
+  }));
+  Object.entries(exposed).forEach(([k, v]) => assert(v, `global manquant : ${k}`));
+
+  // 2) mpBuildSnapshot — forme sérialisable.
+  const snap = await page.evaluate(() => {
+    const s = mpBuildSnapshot();
+    return {
+      heroes:   Array.isArray(s.heroes) ? s.heroes.length : -1,
+      hasStats: !!(s.heroes[0] && typeof s.heroes[0].atk === 'number'
+                   && Array.isArray(s.heroes[0].spells)
+                   && Array.isArray(s.heroes[0].equipment)),
+      level:    s.level,
+    };
+  });
+  assert(snap.heroes === 1,  `snapshot solo = 1 héros (obtenu ${snap.heroes})`);
+  assert(snap.hasStats,      'chaque héros du snapshot doit porter stats/sorts/équipement');
+  assert(snap.level >= 1,    'le snapshot doit porter le niveau du joueur');
+
+  // 3) _mpHeroToEnemy — mappe sorts → capacités ennemies.
+  const enemy = await page.evaluate(() => {
+    const e = _mpHeroToEnemy({
+      heroKey: 'harry', name: 'Rival', hpMax: 30, atk: 6, def: 3,
+      mag: 10, agi: 5, lck: 5, spells: ['Incendio', 'Episkey'], equipment: [],
+    }, 0);
+    return {
+      isDuelist: e.isDuelist === true,
+      hp:        e.hp,
+      hasDamage: e.abilities.some(a => a.effect === 'damage'),
+      hasHeal:   e.abilities.some(a => a.effect === 'heal'),
+    };
+  });
+  assert(enemy.isDuelist,  "l'ennemi de duel doit être marqué isDuelist");
+  assert(enemy.hp === 30,  'les PV du duelliste viennent du snapshot');
+  assert(enemy.hasDamage,  'un sort offensif doit produire une capacité damage');
+  assert(enemy.hasHeal,    'un sort de soin doit produire une capacité heal');
+
+  // 4) Duel — démarrage puis victoire (mode normal).
+  const win = await page.evaluate(() => {
+    ironmanMode = false;
+    const goldBefore = player.gold;
+    const fakeSnap = { name: 'Rival', level: 6, house: 'Serpentard', mode: 'normal',
+      heroes: [{ heroKey: 'harry', name: 'Rival', icon: '🧙', hpMax: 20,
+                 atk: 5, def: 2, mag: 8, agi: 5, lck: 5,
+                 spells: ['Glacius'], equipment: [] }] };
+    const started = mpStartDuel(fakeSnap, { playerId: 'duel-1', name: 'Rival', level: 6 });
+    const inDuel  = mpDuelActive === true && inBattle === true;
+    const grp     = enemyGroup.length;
+    const duelist = enemyGroup[0] && enemyGroup[0].isDuelist === true;
+    // Achève les duellistes puis déclenche la fin de combat.
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    checkAllEnemiesDead();
+    return {
+      started, inDuel, grp, duelist,
+      duelCleared: mpDuelActive === false,
+      battleOver:  inBattle === false,
+      beaten:      defeatedDuelists.has('duel-1'),
+      goldGain:    player.gold - goldBefore,
+    };
+  });
+  assert(win.started,     'mpStartDuel doit réussir');
+  assert(win.inDuel,      'le duel doit activer mpDuelActive + inBattle');
+  assert(win.grp === 1,   `1 duelliste attendu dans enemyGroup (obtenu ${win.grp})`);
+  assert(win.duelist,     "l'enemyGroup doit contenir un duelliste");
+  assert(win.duelCleared, 'la victoire doit éteindre mpDuelActive');
+  assert(win.battleOver,  'la victoire doit terminer le combat');
+  assert(win.beaten,      "l'adversaire vaincu doit entrer dans defeatedDuelists");
+  assert(win.goldGain > 0, `une victoire normale doit rapporter de l'or (obtenu ${win.goldGain})`);
+
+  // 5) Victoire Ironman — copie d'un sort inconnu du vaincu.
+  const ironWin = await page.evaluate(() => {
+    ironmanMode = true;
+    const knewBefore = party[0].spells.includes('Sectumsempra');
+    const fakeSnap = { name: 'IronRival', level: 8, mode: 'ironman',
+      heroes: [{ heroKey: 'harry', name: 'IronRival', icon: '🧙', hpMax: 18,
+                 atk: 5, def: 2, mag: 8, agi: 5, lck: 5,
+                 spells: ['Sectumsempra'], equipment: [] }] };
+    mpStartDuel(fakeSnap, { playerId: 'duel-2', name: 'IronRival', level: 8 });
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    checkAllEnemiesDead();
+    ironmanMode = false;
+    return {
+      knewBefore,
+      learned: party[0].spells.includes('Sectumsempra'),
+      beaten:  defeatedDuelists.has('duel-2'),
+    };
+  });
+  assert(!ironWin.knewBefore, 'pré-condition : le sort copié doit être inconnu');
+  assert(ironWin.learned,     'une victoire Ironman doit copier un sort inconnu du vaincu');
+  assert(ironWin.beaten,      "l'adversaire Ironman vaincu doit entrer dans defeatedDuelists");
+
+  // 6) Défaite en duel normal — aucune conséquence, groupe relevé.
+  const loss = await page.evaluate(() => {
+    ironmanMode = false;
+    const fakeSnap = { name: 'Rival3', level: 5, mode: 'normal',
+      heroes: [{ heroKey: 'harry', name: 'Rival3', icon: '🧙', hpMax: 40,
+                 atk: 9, def: 4, mag: 9, agi: 5, lck: 5,
+                 spells: ['Incendio'], equipment: [] }] };
+    mpStartDuel(fakeSnap, { playerId: 'duel-3', name: 'Rival3', level: 5 });
+    party.slice(0, partySize).forEach(c => { c.hp = 0; });
+    enemyTurn();
+    const deathShown = document.getElementById('death-screen').style.display === 'flex';
+    return {
+      duelCleared: mpDuelActive === false,
+      revived:     party[0].hp > 0,
+      battleOver:  inBattle === false,
+      deathShown,
+    };
+  });
+  assert(loss.duelCleared, 'une défaite de duel doit éteindre mpDuelActive');
+  assert(loss.revived,     'mode normal : le groupe doit être relevé après une défaite de duel');
+  assert(loss.battleOver,  'la défaite doit terminer le combat');
+  assert(!loss.deathShown, 'mode normal : aucune mort sur défaite de duel');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (duel PvP)`);
+  }
+  console.log('  ✅ multijoueur — snapshot, duel, victoire/défaite PvP OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel];
   for (const s of scenarios) {
     await s();
   }

@@ -1029,6 +1029,11 @@ body {
 .ghost-btn:hover:not(:disabled)  { filter: brightness(1.25); }
 .ghost-btn:active:not(:disabled) { transform: translateY(1px); }
 .ghost-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.ghost-btn-duel {
+  background: linear-gradient(180deg, #5a1d22 0%, #371318 100%);
+  border-color: #b0564f;
+  color: #f3d6d4;
+}
 .ghost-btn-close { flex-basis: 100%; }
 .ghost-inspect { width: 100%; display: flex; flex-direction: column; gap: 6px; }
 .ghost-inspect-row {

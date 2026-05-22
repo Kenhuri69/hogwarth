@@ -387,7 +387,7 @@ create table if not exists public.mp_presence (
   house      text,
   level      int  not null default 1,
   status     text not null default 'exploring',-- 'exploring' | 'in_battle'
-  snapshot   jsonb,                             -- réservé Phase 3 (duel)
+  snapshot   jsonb,                             -- groupe sérialisé (duel §5)
   last_seen  timestamptz not null default now()
 );
 alter table public.mp_presence enable row level security;
@@ -411,6 +411,29 @@ create index if not exists mp_presence_lookup_idx
 - **Pseudo non bloquant** : le champ est demandé au démarrage et
   pré-rempli, mais un champ vide retombe sur « Sorcier » (pas de gate dur,
   cohérent avec le défaut « Sorcier Anonyme » du Hall of Fame).
+
+## 11quater. Écarts d'implémentation (Phase 3)
+
+- **Pas de `battle-ai.js`.** L'« IA de groupe de héros » (§5.1) est obtenue
+  en **mappant les sorts connus du snapshot vers les capacités ennemies
+  existantes** (`tryEnemyAbility` : `damage` / `heal` / `status`). Le
+  moteur de combat PvE est réutilisé tel quel — `startBattle` accepte un
+  `opts.duelGroup` pré-construit, `endBattle`/`enemyTurn` branchent sur
+  `mpDuelActive`. Aucun nouveau moteur d'IA : choix de moindre risque, le
+  combat reste un PvE classique contre des « duellistes ».
+- **Snapshot toujours frais.** `mp_presence.snapshot` est recalculé à
+  chaque upsert (`mpBuildSnapshot` dans `_mpPresenceRow`) plutôt que
+  rafraîchi à la volée — le payload reste léger, et la cohérence est
+  meilleure. Le `_mpFetchSnapshot` à la demande reste utilisé au moment
+  du défi.
+- **Butin de victoire Ironman auto-sélectionné.** §5.2 prévoit que le
+  vainqueur *choisit* le sort ou l'équipement copié ; en V1 la sélection
+  est automatique (sort inconnu prioritaire → équipement non possédé →
+  repli or). Le choix explicite par modale est différé en Phase 6 (polish).
+- **Sprite de duelliste = portrait médaillon.** Les cartes ennemies du
+  duel réutilisent le portrait `CHARACTERS[key].imgSrc` via le champ
+  `imgSrc` (rendu par `getMonsterIconHtml`). Pas de sprite plein-pied
+  dédié (cohérent avec l'écart §11ter sur les sprites de héros).
 
 ## 11. Hors-scope
 
@@ -442,7 +465,14 @@ create index if not exists mp_presence_lookup_idx
       **Inspecter** (fiche lecture seule) et **Saluer** (emote local).
       Déclenché en marchant sur la case d'un fantôme. Défier/Offrir
       grisés (phases ultérieures). Vérifié par scénario smoke dédié.
-- [ ] Phase 3 — combat PvP snapshot async.
+- [~] Phase 3 — combat PvP snapshot async : `mpBuildSnapshot`,
+      conversion snapshot → `enemyGroup` (`_mpHeroToEnemy`, sorts mappés
+      en capacités), `startBattle` via `opts.duelGroup`, branche PvP
+      d'`endBattle`/`enemyTurn`. Issues : victoire normale (or+XP §5.4),
+      victoire Ironman (copie de bien §5.2), défaite normale sans perte
+      (§5.3), défaite Ironman → permadeath. Anti-farm `defeatedDuelists`
+      persisté. Bouton ⚔️ Défier câblé. Écarts : §11quater. Vérifié par
+      scénario smoke dédié + capture d'un duel.
 - [ ] Phase 4 — messages.
 - [ ] Phase 5 — cadeaux.
 - [ ] Phase 6 — équilibrage & polish.
