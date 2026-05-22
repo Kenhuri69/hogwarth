@@ -47,7 +47,7 @@ inscriptions — décidé en Phase 2/3.)
 ### Étapes
 
 - [ ] **1.1** `CELL.RUNE = 13` (`data.js`). Génération (`dungeon.js`) :
-      ~40 % des étages reçoivent un *puzzle runique* — 3 dalles `RUNE` sur des
+      ~20 % des étages reçoivent un *puzzle runique* — 3 dalles `RUNE` sur des
       cases `FLOOR` ordinaires (hors spawn) + une alvéole-récompense
       `FLOOR → mur-barrière → CHEST` via `_findWallPocket`.
 - [ ] **1.2** Définition du puzzle dans un global `runePuzzle`
