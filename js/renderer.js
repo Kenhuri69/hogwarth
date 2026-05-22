@@ -161,6 +161,37 @@ function hasWall(dx, dy, dist) {
   return getCellAhead(dx, dy, dist) === CELL.WALL;
 }
 
+// Écusson de serrure dessiné sur un mur latéral porteur d'une porte
+// (case CELL.DOOR de côté). Centré sur le trapèze, atténué avec la
+// distance. Permet de distinguer une porte d'un mur et d'une ouverture.
+function _drawSideDoorMark(nearX, farX, near, far, di) {
+  const fade = Math.max(0.3, 1 - di * 0.2);
+  const lx = (nearX + farX) / 2;                  // milieu near↔far
+  const yT = (near.y0 + far.y0) / 2;
+  const yB = (near.y1 + far.y1) / 2;
+  const ly = (yT + yB) / 2;
+  const r  = (yB - yT) * 0.16;
+  if (r < 1.5) return;                            // trop loin → illisible
+  ctx.save();
+  // Clip au trapèze du mur latéral.
+  ctx.beginPath();
+  ctx.moveTo(nearX, near.y0); ctx.lineTo(farX, far.y0);
+  ctx.lineTo(farX, far.y1);   ctx.lineTo(nearX, near.y1);
+  ctx.closePath();
+  ctx.clip();
+  // Plaque métallique sombre + cadre doré.
+  ctx.fillStyle = `rgba(20,18,15,${0.9 * fade})`;
+  ctx.fillRect(lx - r, ly - r * 1.25, r * 2, r * 2.5);
+  ctx.strokeStyle = `rgba(201,168,76,${0.85 * fade})`;
+  ctx.lineWidth = Math.max(1, r * 0.3);
+  ctx.strokeRect(lx - r, ly - r * 1.25, r * 2, r * 2.5);
+  // Trou de serrure : disque + fente.
+  ctx.fillStyle = `rgba(0,0,0,${fade})`;
+  ctx.beginPath(); ctx.arc(lx, ly - r * 0.15, r * 0.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(lx - r * 0.22, ly - r * 0.15, r * 0.44, r);
+  ctx.restore();
+}
+
 // ─────────────────────────────────────────────────────────────
 // Mur latéral (gauche ou droit) — bloc miroir paramétré par le côté.
 // ─────────────────────────────────────────────────────────────
@@ -179,24 +210,32 @@ function _drawSideWall(side, d, near, far, di, edgeA) {
   };
 
   // Le trapèze latéral couvre la case `d-1` (near=getRect(d-1) →
-  // far=getRect(d)) : pour d=1 c'est la paroi de la case du joueur
-  // lui-même. La présence du mur doit donc être testée à la profondeur
-  // `d-1`, pas `d` — sinon un couloir qui s'ouvre sur le côté de la
-  // case courante est masqué par la paroi de la case suivante.
-  if (hasWall(isLeft ? -1 : 1, 0, d - 1)) {
-    // Baseline couleur + stone-blocks (toujours visible)
-    ctx.fillStyle = SIDE_C[di];
+  // far=getRect(d)) : pour d=1 c'est la paroi de la case du joueur.
+  // On lit le type EXACT de la case latérale (pas seulement « mur ou
+  // pas ») pour distinguer 3 rendus, indispensables à la navigation :
+  //   • CELL.WALL  → mur de pierre plein
+  //   • CELL.DOOR  → porte (bois + écusson de serrure)
+  //   • autre      → ouverture de couloir (dégradé sombre)
+  const sideCell = getCellAhead(isLeft ? -1 : 1, 0, d - 1);
+  const isDoor   = (sideCell === CELL.DOOR);
+
+  if (sideCell === CELL.WALL || isDoor) {
+    // Baseline couleur : bois pour une porte, pierre pour un mur.
+    ctx.fillStyle = isDoor ? '#4a2c10' : SIDE_C[di];
     trapezoid();
     ctx.fill();
+    // Joints de maçonnerie — uniquement sur un vrai mur de pierre.
     // Asymétrie historique préservée : le mur gauche borne les joints à
     // far.y1, le mur droit à near.y1.
-    drawStoneBlocks(Math.min(nearX, farX), near.y0,
-                    Math.max(nearX, farX), isLeft ? far.y1 : near.y1,
-                    edgeA * 0.8);
+    if (!isDoor) {
+      drawStoneBlocks(Math.min(nearX, farX), near.y0,
+                      Math.max(nearX, farX), isLeft ? far.y1 : near.y1,
+                      edgeA * 0.8);
+    }
 
-    // Texture tuilée (pattern 'repeat' + clip trapèze, alpha plein) — via cache.
-    // Pierre cohérente avec le mur du fond (plus de bois codé en dur).
-    const sideKey  = (d > 3) ? 'stone2' : 'stone1';
+    // Texture tuilée (pattern 'repeat' + clip trapèze, alpha plein) — via
+    // cache. Bois pour une porte, pierre du thème pour un mur.
+    const sideKey  = isDoor ? 'wood' : ((d > 3) ? 'stone2' : 'stone1');
     const _pattern = _patternForKey('walls', sideKey);
     if (_pattern) {
       ctx.save();
@@ -211,6 +250,10 @@ function _drawSideWall(side, d, near, far, di, edgeA) {
                    Math.abs(farX - nearX), near.y1 - near.y0);
       ctx.restore();
     }
+
+    // Écusson de serrure : marque la porte pour qu'elle ne se confonde
+    // ni avec un mur de pierre, ni avec une ouverture de couloir.
+    if (isDoor) _drawSideDoorMark(nearX, farX, near, far, di);
 
     drawSideLines(nearX, near.y0, near.y1, farX, far.y0, far.y1, edgeA);
 
