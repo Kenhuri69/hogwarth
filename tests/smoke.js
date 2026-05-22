@@ -2706,6 +2706,57 @@ async function scenarioCorruptSave() {
   await browser.close();
 }
 
+// ── Scénario : migration d'une save d'avant l'agrandissement de carte ──
+// Une save antérieure (carte 12×12) chargée dans le moteur 16×16 :
+// _applyState doit régénérer l'étage courant au lieu de planter, et la
+// minimap + le rendu 3D ne doivent pas lever d'exception.
+async function scenarioOldSaveMapMigration() {
+  console.log('\n── Scénario : migration save carte 12×12 → 16×16 ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const t1 = await page.evaluate(() => {
+    // Sérialise l'état courant puis rétrécit tous les tableaux carte vers
+    // 12×12 (format pré-agrandissement). _applyState doit s'en sortir.
+    const gs = _serializeState();
+    const crop = (arr) => arr.slice(0, 12)
+      .map(row => Array.isArray(row) ? row.slice(0, 12) : row);
+    if (Array.isArray(gs.dungeon))  gs.dungeon  = crop(gs.dungeon);
+    if (Array.isArray(gs.visited))  gs.visited  = crop(gs.visited);
+    if (Array.isArray(gs.enemyMap)) gs.enemyMap = crop(gs.enemyMap);
+    if (Array.isArray(gs.itemMap))  gs.itemMap  = crop(gs.itemMap);
+
+    let applyErr = null;
+    try { _applyState(gs); } catch (e) { applyErr = e.message; }
+
+    let drawErr = null, miniErr = null;
+    try { drawDungeon(); }   catch (e) { drawErr = e.message; }
+    try { renderMinimap(); } catch (e) { miniErr = e.message; }
+
+    return {
+      applyErr, drawErr, miniErr,
+      mapW: MAP_W, mapH: MAP_H,
+      dungeonRows: dungeon.length,
+      dungeonCols: Array.isArray(dungeon[0]) ? dungeon[0].length : -1,
+      visitedRows: visited.length,
+    };
+  });
+  console.log('  T1 chargement save 12×12 :', t1);
+  assert(t1.applyErr === null, `_applyState a planté : ${t1.applyErr}`);
+  assert(t1.drawErr  === null, `drawDungeon a planté : ${t1.drawErr}`);
+  assert(t1.miniErr  === null, `renderMinimap a planté : ${t1.miniErr}`);
+  assert(t1.dungeonRows === t1.mapH && t1.dungeonCols === t1.mapW,
+    `dungeon non régénéré aux dimensions courantes (${t1.dungeonRows}×${t1.dungeonCols})`);
+  assert(t1.visitedRows === t1.mapH, 'visited non régénéré aux dimensions courantes');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (migration carte)`);
+  }
+  console.log('  ✅ migration carte : étage régénéré, minimap et rendu 3D sains');
+  await browser.close();
+}
+
 // ── Scénario 17 : icônes pixel art de la barre de commandes ──
 
 async function scenarioCmdBtnIcons() {
@@ -10139,7 +10190,7 @@ async function scenarioSecretPassage() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader];
   for (const s of scenarios) {
     await s();
   }
