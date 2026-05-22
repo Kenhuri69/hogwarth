@@ -10,8 +10,21 @@ const CELL = {
   FORGE:9, LIBRARY:10,
   // Enrichissement du donjon (Phase 2) — piège caché (§2.A) et autel
   // risque/récompense (§2.B). Voir .claude/plans/dungeon-enrichment.md.
-  TRAP:11, ALTAR:12
+  TRAP:11, ALTAR:12,
+  // Enrichissement V2 — dalle-rune d'un puzzle d'exploration. Marchable
+  // (≠ WALL) ; allumée en marchant dessus. Voir dungeon-enrichment-v2.md.
+  RUNE:13
 };
+
+// Identité des 3 dalles-runes d'un puzzle, indexée par position dans
+// `runePuzzle.runes`. `color` teinte le glyphe (rendu 3D + minimap),
+// `rgb` alimente les halos rgba, `name` nomme la rune dans l'inscription
+// d'indice des puzzles ordonnés. Voir dungeon-enrichment-v2.md §1.4/§2.3.
+const RUNE_LABELS = [
+  { name: "l'émeraude",  color: '#3fae6b', rgb: '63,174,107'  },
+  { name: "l'or",        color: '#e0c24a', rgb: '224,194,74'  },
+  { name: "l'améthyste", color: '#a06fd8', rgb: '160,111,216' }
+];
 
 // Vecteurs de déplacement par direction cardinale (N, S, E, O).
 // Indexé par playerDir / cellule cible.
