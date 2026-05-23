@@ -490,6 +490,58 @@ create index if not exists mp_gifts_inbox_idx
   `imgSrc` (rendu par `getMonsterIconHtml`). Pas de sprite plein-pied
   dédié (cohérent avec l'écart §11ter sur les sprites de héros).
 
+## 11quinquies. Validation production (2026-05-23) — migration de schéma
+
+Validation en ligne sur le projet Supabase de prod (`hvdthitluhgevtuqhxpm`)
+le 2026-05-23 : **multijoueur cassé silencieusement** côté base. Les 6
+scénarios smoke MP passent (`tests/smoke.js` → `scenarioMultiplayer*`),
+mais aucun joueur n'apparaît jamais en jeu — symptôme remonté par
+l'utilisateur. Cause racine : les tables Supabase ont été créées avec
+un schéma **incomplet par rapport au SQL §11bis**. À l'upsert,
+Supabase renvoie HTTP 400 (`column does not exist`) ; le disjoncteur
+`MP_MAX_FAILURES` éteint la session au bout de 3 échecs.
+
+Colonnes manquantes constatées par probe REST `select=<col>&limit=1` :
+
+| Table | Manquantes | Présentes |
+|-------|-----------|-----------|
+| `mp_presence` | `name`, `hero_keys`, `status`, `snapshot`, `last_seen` | `player_id`, `mode`, `floor`, `x`, `y`, `house`, `level` |
+| `mp_messages` | `template`, `word`, `created_at` | `author_id`, `author_name`, `mode`, `floor`, `x`, `y` |
+| `mp_gifts` | — | schéma complet ✅ |
+
+SQL de migration idempotent (à exécuter dans le SQL Editor Supabase ;
+les `if not exists` rendent la commande sûre à rejouer) :
+
+```sql
+-- mp_presence : 5 colonnes manquantes
+alter table public.mp_presence
+  add column if not exists name      text not null default 'Sorcier',
+  add column if not exists hero_keys jsonb not null default '[]'::jsonb,
+  add column if not exists status    text not null default 'exploring',
+  add column if not exists snapshot  jsonb,
+  add column if not exists last_seen timestamptz not null default now();
+create index if not exists mp_presence_lookup_idx
+  on public.mp_presence (floor, mode, last_seen);
+
+-- mp_messages : 3 colonnes manquantes (template requis NOT NULL)
+alter table public.mp_messages
+  add column if not exists template   text,
+  add column if not exists word       text,
+  add column if not exists created_at timestamptz not null default now();
+update public.mp_messages set template = 'unknown' where template is null;
+alter table public.mp_messages alter column template set not null;
+create index if not exists mp_messages_lookup_idx
+  on public.mp_messages (floor, mode);
+
+-- Nettoyage : 2 cadeaux résiduels de smoke test
+delete from public.mp_gifts where sender_id like 'smoke_%';
+```
+
+Après application, valider en ligne : un onglet sur la prod → vérifier
+que `mp_presence` contient une ligne avec son `player_id`, ouvrir un
+deuxième onglet (autre `localStorage`) au même étage et même mode →
+chacun doit voir le fantôme de l'autre.
+
 ## 11. Hors-scope
 
 - Donjon réellement partagé / synchronisé, coopératif, spectateur.
@@ -563,5 +615,8 @@ create index if not exists mp_gifts_inbox_idx
         réutilisation. Différé §11quater clos.
       Vérifié par `scenarioMultiplayerPolish` ; aucune régression
       sur `scenarioMultiplayerDuel` (Ironman 1 option → auto-pick).
-- [ ] Phase 6 — équilibrage & polish.
 - [ ] Phase 7 — duel PvP en direct (optionnel).
+- [!] **Migration de schéma Supabase requise** (cf. §11quinquies,
+      2026-05-23). Code OK ; tables prod incomplètes. Bloquant pour
+      l'activation réelle du multijoueur. SQL idempotent fourni — à
+      exécuter par l'utilisateur dans le SQL Editor Supabase.
