@@ -22,6 +22,7 @@
       'explore-overlay',
       'npc-dialog-overlay',
       'ghost-overlay',
+      'mp-message-overlay',
       'floor-transition'
     ];
     for (const id of overlayIds) {

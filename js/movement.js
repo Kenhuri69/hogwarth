@@ -88,6 +88,14 @@ function _step(dir, faceDir) {
     }
   }
 
+  // Multijoueur — un message gravé sur la case : révélation non bloquante.
+  if (typeof getMessageAt === 'function') {
+    const _msg = getMessageAt(playerX, playerY);
+    if (_msg) {
+      addMsg('🪶 « ' + _msg.text + ' » — ' + (_msg.authorName || 'un sorcier'), 'info');
+    }
+  }
+
   handleCellEntry(cell);
 }
 

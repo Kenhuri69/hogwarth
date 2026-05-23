@@ -10636,8 +10636,133 @@ async function scenarioMultiplayerDuel() {
   await browser.close();
 }
 
+// ── Scénario : multijoueur — messages à gabarits (Phase 4) ──
+async function scenarioMultiplayerMessages() {
+  console.log('\n── Scénario : multijoueur messages ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Globals Phase 4 exposés.
+  const exposed = await page.evaluate(() => ({
+    mpComposeText:        typeof mpComposeText === 'function',
+    getMessageAt:         typeof getMessageAt === 'function',
+    mpPostMessage:        typeof mpPostMessage === 'function',
+    openMessageComposer:  typeof openMessageComposer === 'function',
+    drawMessageMarker:    typeof drawMessageMarker === 'function',
+    placementsVar:        typeof messagePlacements !== 'undefined',
+    banks:                Array.isArray(MP_MSG_TEMPLATES) && Array.isArray(MP_MSG_WORDS),
+    overlayEl:            !!document.getElementById('mp-message-overlay'),
+  }));
+  Object.entries(exposed).forEach(([k, v]) => assert(v, `global/élément manquant : ${k}`));
+
+  // 2) mpComposeText — recomposition par gabarit + mot, banque fermée.
+  const compose = await page.evaluate(() => ({
+    slot:    mpComposeText('beware', 'trap'),
+    noSlot:  mpComposeText('congrats', null),
+    badTpl:  mpComposeText('inexistant', 'trap'),
+    badWord: mpComposeText('beware', 'inexistant'),
+  }));
+  assert(/piège/.test(compose.slot),   'mpComposeText doit insérer le mot dans le gabarit');
+  assert(compose.noSlot && compose.noSlot.length > 0, 'un gabarit sans slot doit se composer seul');
+  assert(compose.badTpl === null,      'un gabarit hors banque doit donner null');
+  assert(compose.badWord === null,     'un mot hors banque doit donner null');
+
+  // 3) Projection — seuls gabarit/mot connus + case FLOOR sont retenus.
+  const proj = await page.evaluate(() => {
+    dungeon[3][5] = CELL.FLOOR;
+    dungeon[3][6] = CELL.FLOOR;
+    dungeon[3][7] = CELL.FLOOR;
+    _mpProjectMessages([
+      { author_id: 'a', author_name: 'Alice', x: 5, y: 3, template: 'beware',   word: 'trap' },
+      { author_id: 'b', author_name: 'Bob',   x: 5, y: 3, template: 'beware',   word: 'trap' },
+      { author_id: 'c', author_name: 'Carol', x: 6, y: 3, template: 'INCONNU',  word: 'trap' },
+      { author_id: 'd', author_name: 'Dave',  x: 7, y: 3, template: 'congrats' },
+    ]);
+    const at53 = getMessageAt(5, 3);
+    return {
+      size:    messagePlacements.size,
+      has53:   !!at53,
+      author:  at53 && at53.authorName,
+      hasBad:  !!getMessageAt(6, 3),
+      has73:   !!getMessageAt(7, 3),
+    };
+  });
+  assert(proj.size === 2,    `2 messages projetés attendus (obtenu ${proj.size})`);
+  assert(proj.has53,         'le message valide doit être projeté');
+  assert(proj.author === 'Alice', 'collision : le 1er (plus récent) doit gagner');
+  assert(!proj.hasBad,       'un message au gabarit inconnu doit être ignoré');
+  assert(proj.has73,         'un gabarit sans slot doit être projeté');
+
+  // 4) Compositeur — overlay + chips de gabarits/mots.
+  const composer = await page.evaluate(() => {
+    playerX = 5; playerY = 5;
+    dungeon[5][5] = CELL.FLOOR;
+    messagePlacements = new Map();
+    openMessageComposer();
+    const ov    = document.getElementById('mp-message-overlay');
+    const panel = document.getElementById('mp-message-panel');
+    return {
+      shown:   ov && ov.style.display === 'flex',
+      chips:   panel.querySelectorAll('.mp-chip').length,
+      preview: !!panel.querySelector('.mp-msg-preview'),
+    };
+  });
+  assert(composer.shown,       "le compositeur doit s'afficher sur une case libre");
+  assert(composer.chips > 0,   'le compositeur doit lister des chips gabarit/mot');
+  assert(composer.preview,     'le compositeur doit afficher un aperçu');
+
+  // 5) Gravure d'un message via le compositeur.
+  const post = await page.evaluate(() => {
+    _mpLastMsgPost = 0;                       // neutralise le cooldown
+    _mpSelectTemplate('beware');
+    _mpSelectWord('monster');
+    _mpConfirmMessage();
+    const ov  = document.getElementById('mp-message-overlay');
+    const msg = getMessageAt(playerX, playerY);
+    return {
+      closed: ov.style.display === 'none',
+      text:   msg && msg.text,
+      mine:   msg && msg.authorId === getMpPlayerId(),
+    };
+  });
+  assert(post.closed,            'graver un message doit fermer le compositeur');
+  assert(/monstre/.test(post.text || ''), 'le message gravé doit porter le texte composé');
+  assert(post.mine,              'le message gravé doit être attribué au joueur local');
+
+  // 6) Lecture — le marqueur 3D est rendu pour un message devant le joueur.
+  const render = await page.evaluate(() => {
+    playerX = 5; playerY = 5; playerDir = 'n';
+    dungeon[5][5] = CELL.FLOOR;
+    dungeon[4][5] = CELL.FLOOR;
+    ghostPlacements   = new Map();
+    messagePlacements = new Map();
+    messagePlacements.set('5,4', { x: 5, y: 4, text: 'Méfie-toi de un piège',
+                                   authorName: 'Alice', authorId: 'a' });
+    let calls = 0;
+    const orig = window.drawMessageMarker;
+    window.drawMessageMarker = function () { calls++; return orig.apply(this, arguments); };
+    drawDungeon();
+    window.drawMessageMarker = orig;
+    renderMinimap();
+    return {
+      markerCalls: calls,
+      mapMarks:    document.querySelectorAll('#minimap .map-message').length,
+    };
+  });
+  assert(render.markerCalls >= 1,
+    `drawMessageMarker doit être appelé pour un message devant (obtenu ${render.markerCalls})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (messages)`);
+  }
+  console.log('  ✅ multijoueur — gabarits, projection, gravure, marqueur OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+    scenarioMultiplayerMessages];
   for (const s of scenarios) {
     await s();
   }

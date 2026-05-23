@@ -10,7 +10,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=19">
+<link rel="stylesheet" href="css/style.css?v=20">
 <link rel="stylesheet" href="css/ux-improvements.css?v=1">
 <link rel="stylesheet" href="css/save-ui.css?v=1">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -503,6 +503,11 @@
         <div class="ghost-panel" id="ghost-panel"></div>
       </div>
 
+      <!-- Overlay messages multijoueur (compositeur à gabarits / lecture) -->
+      <div id="mp-message-overlay" style="display:none" role="dialog" aria-modal="true">
+        <div class="mp-message-panel" id="mp-message-panel"></div>
+      </div>
+
       <!-- Transition d'étage -->
       <div id="floor-transition">
         <div class="floor-transition-content">
@@ -639,6 +644,7 @@
       <button class="cmd-btn" data-group="adventure" onclick="openQuestLog()" title="Quêtes actives"><span class="btn-icon"><img src="img/icons/quest.png" alt="Quêtes"></span><span class="btn-label">Quêtes</span></button>
       <button class="cmd-btn" data-group="adventure" id="btn-search" onclick="searchRoom()" title="Fouiller la salle (F)"><span class="btn-icon"><img src="img/icons/search.png" alt="Fouiller"></span><span class="btn-label">Fouiller</span></button>
       <button class="cmd-btn" data-group="adventure" onclick="rest()" title="Repos (R)"><span class="btn-icon"><img src="img/icons/rest.png" alt="Repos"></span><span class="btn-label">Repos</span></button>
+      <button class="cmd-btn" data-group="adventure" id="btn-mp-message" onclick="openMessageComposer()" title="Laisser / lire un message"><span class="btn-icon" style="font-size:18px">🪶</span><span class="btn-label">Message</span></button>
 
       <div class="cmd-vsep"></div>
 
@@ -938,11 +944,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/ui-bestiary.js?v=1"></script>
 <script src="js/dungeon.js?v=11"></script>
 <script src="js/textures.js?v=1"></script>
-<script src="js/renderer.js?v=7"></script>
-<script src="js/renderer-effects.js?v=7"></script>
-<script src="js/renderer-minimap.js?v=3"></script>
-<script src="js/movement.js?v=12"></script>
-<script src="js/swipe-canvas.js?v=3"></script>
+<script src="js/renderer.js?v=8"></script>
+<script src="js/renderer-effects.js?v=8"></script>
+<script src="js/renderer-minimap.js?v=4"></script>
+<script src="js/movement.js?v=13"></script>
+<script src="js/swipe-canvas.js?v=4"></script>
 <script src="js/battle.js?v=6"></script>
 <script src="js/teleport.js?v=1"></script>
 <script src="js/battle-spells.js?v=2"></script>
@@ -958,13 +964,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/save-ui.js?v=2"></script>
 <script src="js/ironman.js?v=3"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
-<script src="js/multiplayer.js?v=3"></script>
+<script src="js/multiplayer.js?v=4"></script>
 <script src="js/main.js?v=5"></script>
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=1"></script>
 <script src="js/library.js?v=1"></script>
 <script src="js/help-tour.js?v=1"></script>
-<script src="js/loader.js?v=7"></script>
+<script src="js/loader.js?v=8"></script>
 
 </body>
 </html>

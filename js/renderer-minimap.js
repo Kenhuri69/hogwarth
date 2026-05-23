@@ -130,6 +130,13 @@ function _buildMinimapCells(mm, cellSize) {
           && getGhostAt(x, y)) {
         div.classList.add('map-ghost');
       }
+      // Message gravé multijoueur — surcouche dorée sur une case visitée.
+      if (typeof getMessageAt === 'function'
+          && visited[y][x]
+          && !(x === playerX && y === playerY)
+          && getMessageAt(x, y)) {
+        div.classList.add('map-message');
+      }
       mm.appendChild(div);
     }
   }

@@ -18,6 +18,7 @@ const MP_CONFIG = {
   supabaseUrl:     'https://hvdthitluhgevtuqhxpm.supabase.co',
   supabaseAnonKey: 'sb_publishable_zz2fPlpthCU0cee7VrVl5w_fwV0wrOb',
   presenceTable:   'mp_presence',
+  messagesTable:   'mp_messages',
 };
 
 const MP_ID_KEY = 'hogwarts_rpg_player_id';
@@ -26,6 +27,8 @@ const MP_ID_KEY = 'hogwarts_rpg_player_id';
 // déclenché par un déplacement.
 const MP_HEARTBEAT_MS     = 8000;
 const MP_POLL_MS          = 8000;
+const MP_MSG_POLL_MS      = 15000;          // les messages changent lentement
+const MP_MSG_POST_COOLDOWN_MS = 20000;      // anti-spam de gravure
 const MP_MOVE_THROTTLE_MS = 3000;
 // Un fantôme distant est « vivant » s'il a été vu il y a moins de 60 s.
 const MP_STALE_SEC = 60;
@@ -37,12 +40,16 @@ let mpActive = false;          // session multijoueur en cours
 let mpMode   = 'normal';       // 'ironman' | 'normal' — figé au démarrage
 // Fantômes projetés sur l'étage courant : Map "x,y" → ghost.
 let ghostPlacements = new Map();
+// Messages laissés par les joueurs sur l'étage courant : Map "x,y" → msg.
+let messagePlacements = new Map();
 
 let _mpHeartbeatTimer = null;
 let _mpPollTimer      = null;
+let _mpMsgTimer       = null;
 let _mpLastUpsert     = 0;
 let _mpUpsertInFlight = false;
 let _mpFailCount      = 0;
+let _mpLastMsgPost    = 0;
 
 // ── Identité joueur ─────────────────────────────────────────
 function _mpFallbackUuid() {
@@ -98,20 +105,24 @@ function _mpNoteFailure(e) {
 // timers existants. Appelé à l'entrée en jeu (startGame / loadSlotAndStart).
 function mpStartSession() {
   mpStopSession();
-  ghostPlacements = new Map();
+  ghostPlacements   = new Map();
+  messagePlacements = new Map();
   mpMode = (typeof ironmanMode !== 'undefined' && ironmanMode) ? 'ironman' : 'normal';
   _mpFailCount = 0;
   if (!_mpConfigured()) { mpActive = false; return; }
   mpActive = true;
   _mpUpsertPresence();
   _mpPollGhosts();
+  _mpPollMessages();
   _mpHeartbeatTimer = setInterval(_mpUpsertPresence, MP_HEARTBEAT_MS);
   _mpPollTimer      = setInterval(_mpPollGhosts,     MP_POLL_MS);
+  _mpMsgTimer       = setInterval(_mpPollMessages,   MP_MSG_POLL_MS);
 }
 
 function mpStopSession() {
   if (_mpHeartbeatTimer) { clearInterval(_mpHeartbeatTimer); _mpHeartbeatTimer = null; }
   if (_mpPollTimer)      { clearInterval(_mpPollTimer);      _mpPollTimer = null; }
+  if (_mpMsgTimer)       { clearInterval(_mpMsgTimer);       _mpMsgTimer = null; }
 }
 
 // ── Émission (heartbeat) ────────────────────────────────────
@@ -691,4 +702,249 @@ function _mpResolveDuelDefeatNormal() {
   setNarrative('Le duel tourne court, mais tu repars indemne.');
   if (typeof updateUI    === 'function') updateUI();
   if (typeof drawDungeon === 'function') drawDungeon();
+}
+
+// ============================================================
+// PHASE 4 — Messages à gabarits (§6, façon Dark Souls)
+// ============================================================
+// Aucun texte libre : un message = un gabarit + un mot, tous deux issus
+// de banques prédéfinies. Stocké par `id` dans `mp_messages` ; le texte
+// est recomposé côté lecteur depuis SES banques locales → toute ligne
+// dont le gabarit/mot est inconnu est simplement ignorée (anti-injection).
+
+// Gabarits — `%` est le point d'insertion du mot ; sans `%` = phrase fixe.
+const MP_MSG_TEMPLATES = [
+  { id: 'beware',   text: 'Méfie-toi de %' },
+  { id: 'try',      text: 'Essaie %' },
+  { id: 'here',     text: 'Ici, %' },
+  { id: 'ahead',    text: '% droit devant' },
+  { id: 'need',     text: 'Il te faut %' },
+  { id: 'ifonly',   text: 'Si seulement j\'avais eu %…' },
+  { id: 'hidefrom', text: 'Cache-toi de %' },
+  { id: 'luck',     text: 'Bonne chance, sorcier' },
+  { id: 'congrats', text: 'Félicitations !' },
+  { id: 'courage',  text: 'Courage — tu y es presque' },
+];
+
+// Mots — banque fermée.
+const MP_MSG_WORDS = [
+  { id: 'trap',     text: 'un piège' },
+  { id: 'monster',  text: 'un monstre' },
+  { id: 'boss',     text: 'un boss redoutable' },
+  { id: 'chest',    text: 'un coffre' },
+  { id: 'gold',     text: 'de l\'or' },
+  { id: 'secret',   text: 'un passage secret' },
+  { id: 'fountain', text: 'une fontaine' },
+  { id: 'exit',     text: 'la sortie' },
+  { id: 'stairs',   text: 'l\'escalier' },
+  { id: 'spell',    text: 'un sortilège' },
+  { id: 'fire',     text: 'la magie de feu' },
+  { id: 'ice',      text: 'la magie de glace' },
+  { id: 'dementor', text: 'un Détraqueur' },
+  { id: 'potion',   text: 'une potion' },
+  { id: 'caution',  text: 'la prudence' },
+  { id: 'wand',     text: 'une meilleure baguette' },
+  { id: 'courage',  text: 'du courage' },
+  { id: 'rest',     text: 'du repos' },
+];
+
+// Recompose le texte d'un message depuis les banques locales.
+function mpComposeText(templateId, wordId) {
+  const t = MP_MSG_TEMPLATES.find(x => x.id === templateId);
+  if (!t) return null;
+  if (t.text.indexOf('%') === -1) return t.text;
+  const w = MP_MSG_WORDS.find(x => x.id === wordId);
+  if (!w) return null;
+  return t.text.replace('%', w.text);
+}
+
+function getMessageAt(x, y) {
+  if (!messagePlacements || messagePlacements.size === 0) return null;
+  return messagePlacements.get(x + ',' + y) || null;
+}
+
+// ── Lecture & projection ────────────────────────────────────
+async function _mpPollMessages() {
+  if (!mpActive || !_mpConfigured()) return;
+  if (typeof currentFloor === 'undefined') return;
+  try {
+    const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_CONFIG.messagesTable}`
+      + '?select=author_id,author_name,floor,x,y,template,word'
+      + `&floor=eq.${currentFloor}`
+      + `&mode=eq.${encodeURIComponent(mpMode)}`
+      + '&order=created_at.desc&limit=80';
+    const res = await fetch(url, { headers: _mpHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    if (Array.isArray(rows)) _mpProjectMessages(rows);
+  } catch (e) {
+    _mpNoteFailure(e);
+  }
+}
+
+// Projette les messages distants sur les cases FLOOR du donjon local.
+function _mpProjectMessages(rows) {
+  const next = new Map();
+  if (typeof dungeon !== 'undefined' && dungeon && Array.isArray(rows)) {
+    for (const r of rows) {
+      if (!r) continue;
+      const x = r.x | 0, y = r.y | 0;
+      if (y < 0 || y >= dungeon.length || !dungeon[y]) continue;
+      if (x < 0 || x >= dungeon[y].length) continue;
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      const text = mpComposeText(r.template, r.word);
+      if (!text) continue;                    // gabarit/mot hors banque → ignoré
+      const key = x + ',' + y;
+      if (next.has(key)) continue;            // rows triés desc → le 1er = le + récent
+      next.set(key, {
+        x: x, y: y, text: text,
+        authorName: r.author_name || 'Sorcier',
+        authorId:   r.author_id,
+      });
+    }
+  }
+  messagePlacements = next;
+  if (typeof drawDungeon   === 'function') drawDungeon();
+  if (typeof renderMinimap === 'function') renderMinimap();
+}
+
+// ── Gravure d'un message ────────────────────────────────────
+function mpPostMessage(templateId, wordId) {
+  const text = mpComposeText(templateId, wordId);
+  if (!text) return false;
+  if (typeof playerX === 'undefined' || typeof playerY === 'undefined') return false;
+  // Feedback local immédiat (le message apparaît sans attendre un poll).
+  messagePlacements.set(playerX + ',' + playerY, {
+    x: playerX, y: playerY, text: text,
+    authorName: (typeof getPlayerName === 'function' && getPlayerName()) || 'Sorcier',
+    authorId:   getMpPlayerId(),
+  });
+  _mpLastMsgPost = Date.now();
+  if (typeof drawDungeon   === 'function') drawDungeon();
+  if (typeof renderMinimap === 'function') renderMinimap();
+  if (typeof addMsg === 'function') addMsg('🪶 Message gravé : « ' + text + ' »', 'good');
+  if (!_mpConfigured()) return true;          // file:// : gravure locale seule
+  (async () => {
+    try {
+      const res = await fetch(
+        `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_CONFIG.messagesTable}`
+          + '?on_conflict=author_id,floor,x,y',
+        {
+          method:  'POST',
+          headers: _mpHeaders({
+            'Content-Type': 'application/json',
+            'Prefer':       'resolution=merge-duplicates,return=minimal',
+          }),
+          body: JSON.stringify({
+            author_id:   getMpPlayerId(),
+            author_name: (typeof getPlayerName === 'function' && getPlayerName()) || 'Sorcier',
+            mode:  mpMode,
+            floor: currentFloor, x: playerX, y: playerY,
+            template: templateId, word: wordId,
+            created_at: new Date().toISOString(),
+          }),
+        }
+      );
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      _mpNoteSuccess();
+    } catch (e) {
+      _mpNoteFailure(e);
+    }
+  })();
+  return true;
+}
+
+// ── Overlay : composition / lecture ─────────────────────────
+let _mpMsgTemplate = null;
+let _mpMsgWord     = null;
+
+function closeMessageOverlay() {
+  const ov = document.getElementById('mp-message-overlay');
+  if (ov) ov.style.display = 'none';
+}
+
+// Point d'entrée du bouton 🪶 : lit le message de la case ou ouvre le
+// compositeur si la case (FLOOR) est libre.
+function openMessageComposer() {
+  if (typeof inBattle !== 'undefined' && inBattle) return;
+  const existing = (typeof playerX !== 'undefined') ? getMessageAt(playerX, playerY) : null;
+  if (existing) { _mpRenderMessageRead(existing); return; }
+  const onFloor = typeof dungeon !== 'undefined' && dungeon
+    && dungeon[playerY] && dungeon[playerY][playerX] === CELL.FLOOR;
+  if (!onFloor) {
+    if (typeof addMsg === 'function') {
+      addMsg('Tu ne peux graver un message que sur une case de couloir dégagée.', 'info');
+    }
+    return;
+  }
+  _mpMsgTemplate = null;
+  _mpMsgWord     = null;
+  _mpRenderComposer();
+  const ov = document.getElementById('mp-message-overlay');
+  if (ov) ov.style.display = 'flex';
+}
+
+function _mpRenderMessageRead(msg) {
+  const panel = document.getElementById('mp-message-panel');
+  if (!panel) return;
+  panel.innerHTML = ''
+    + '<div class="mp-msg-title">📜 Message gravé</div>'
+    + '<div class="mp-msg-quote">« ' + _mpEsc(msg.text) + ' »</div>'
+    + '<div class="mp-msg-author">— gravé par ' + _mpEsc(msg.authorName || 'Sorcier') + '</div>'
+    + '<button class="ghost-btn ghost-btn-close" onclick="closeMessageOverlay()">Fermer</button>';
+  const ov = document.getElementById('mp-message-overlay');
+  if (ov) ov.style.display = 'flex';
+}
+
+function _mpSelectTemplate(id) { _mpMsgTemplate = id; _mpRenderComposer(); }
+function _mpSelectWord(id)     { _mpMsgWord = id;     _mpRenderComposer(); }
+
+function _mpRenderComposer() {
+  const panel = document.getElementById('mp-message-panel');
+  if (!panel) return;
+  const tpl = MP_MSG_TEMPLATES.find(t => t.id === _mpMsgTemplate);
+  const needsWord = tpl && tpl.text.indexOf('%') !== -1;
+  const preview = tpl
+    ? (needsWord
+        ? (_mpMsgWord ? mpComposeText(_mpMsgTemplate, _mpMsgWord) : tpl.text.replace('%', '…'))
+        : tpl.text)
+    : '…';
+  const ready = !!tpl && (!needsWord || !!_mpMsgWord);
+
+  const tplBtns = MP_MSG_TEMPLATES.map(t =>
+    '<button class="mp-chip' + (t.id === _mpMsgTemplate ? ' mp-chip-on' : '') + '"'
+    + ' onclick="_mpSelectTemplate(\'' + t.id + '\')">'
+    + _mpEsc(t.text.replace('%', '___')) + '</button>').join('');
+  const wordBtns = MP_MSG_WORDS.map(w =>
+    '<button class="mp-chip' + (w.id === _mpMsgWord ? ' mp-chip-on' : '') + '"'
+    + (needsWord ? '' : ' disabled')
+    + ' onclick="_mpSelectWord(\'' + w.id + '\')">'
+    + _mpEsc(w.text) + '</button>').join('');
+
+  panel.innerHTML = ''
+    + '<div class="mp-msg-title">🪶 Graver un message</div>'
+    + '<div class="mp-msg-preview">« ' + _mpEsc(preview) + ' »</div>'
+    + '<div class="mp-msg-section">Gabarit</div>'
+    + '<div class="mp-chip-row">' + tplBtns + '</div>'
+    + '<div class="mp-msg-section' + (needsWord ? '' : ' mp-msg-dim') + '">Mot</div>'
+    + '<div class="mp-chip-row">' + wordBtns + '</div>'
+    + '<div class="ghost-actions">'
+    +   '<button class="ghost-btn' + (ready ? '' : ' ghost-btn-soon') + '"'
+    +     (ready ? '' : ' disabled')
+    +     ' onclick="_mpConfirmMessage()">Graver</button>'
+    +   '<button class="ghost-btn ghost-btn-close" onclick="closeMessageOverlay()">Annuler</button>'
+    + '</div>';
+}
+
+function _mpConfirmMessage() {
+  if (!_mpMsgTemplate) return;
+  const now = Date.now();
+  if (now - _mpLastMsgPost < MP_MSG_POST_COOLDOWN_MS) {
+    if (typeof addMsg === 'function') {
+      addMsg('Tu viens de graver un message — laisse un peu reposer ta plume.', 'info');
+    }
+    return;
+  }
+  if (mpPostMessage(_mpMsgTemplate, _mpMsgWord)) closeMessageOverlay();
 }

@@ -250,7 +250,12 @@ window.UX_safe = new Proxy({}, {
     { name: 'mpBuildSnapshot',    source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: 'mpStartDuel',        source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: 'defeatedDuelists',   source: 'state.js',        kind: 'obj',   optional: true },
+    { name: 'openMessageComposer',source: 'multiplayer.js',  kind: 'fn',    optional: true },
+    { name: 'mpPostMessage',      source: 'multiplayer.js',  kind: 'fn',    optional: true },
+    { name: 'getMessageAt',       source: 'multiplayer.js',  kind: 'fn',    optional: true },
+    { name: 'messagePlacements',  source: 'multiplayer.js',  kind: 'obj',   optional: true },
     { name: 'drawGhostSprite',    source: 'renderer-effects.js', kind: 'fn', optional: true },
+    { name: 'drawMessageMarker',  source: 'renderer-effects.js', kind: 'fn', optional: true },
 
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },

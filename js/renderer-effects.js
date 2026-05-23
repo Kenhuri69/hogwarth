@@ -18,7 +18,8 @@ function startNpcAnimLoop() {
   _npcAnimTimer = setInterval(() => {
     const hasNpc   = typeof npcPlacements !== 'undefined' && npcPlacements.size > 0;
     const hasGhost = typeof ghostPlacements !== 'undefined' && ghostPlacements.size > 0;
-    if (!hasNpc && !hasGhost) return;
+    const hasMsg   = typeof messagePlacements !== 'undefined' && messagePlacements.size > 0;
+    if (!hasNpc && !hasGhost && !hasMsg) return;
     _npcAnimPhase = performance.now() / 1000;
     if (typeof drawDungeon === 'function') drawDungeon();
   }, 200);
@@ -896,6 +897,47 @@ function drawGhostSprite(ghost, x, baseY, sz) {
   ctx.shadowBlur  = 3;
   ctx.fillText(label, x, ly);
   ctx.shadowBlur  = 0;
+
+  ctx.restore();
+}
+
+// ── Marqueur de message gravé multijoueur (§6, Phase 4) ──────────
+// Sigil lumineux posé au sol sur une case FLOOR : halo doré pulsé +
+// glyphe de plume. Cliché « note laissée par un joueur ».
+function drawMessageMarker(msg, x, baseY, sz) {
+  const phase = (typeof _npcAnimPhase !== 'undefined') ? _npcAnimPhase : 0;
+  const pulse = 0.75 + 0.25 * Math.sin(phase * 2.4);
+  const cy    = baseY - sz * 0.10;          // posé légèrement au-dessus du sol
+
+  ctx.save();
+
+  // Halo doré au sol.
+  const glow = ctx.createRadialGradient(x, cy, 0, x, cy, sz * 0.6 * pulse);
+  glow.addColorStop(0,   `rgba(232,206,140,${0.5 * pulse})`);
+  glow.addColorStop(0.6, `rgba(190,150,60,${0.2 * pulse})`);
+  glow.addColorStop(1,   'rgba(120,90,30,0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.ellipse(x, cy, sz * 0.55 * pulse, sz * 0.22 * pulse, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Cercle runique.
+  ctx.strokeStyle = `rgba(232,206,140,${0.85 * pulse})`;
+  ctx.lineWidth   = Math.max(1, sz * 0.018);
+  ctx.beginPath();
+  ctx.ellipse(x, cy, sz * 0.30, sz * 0.12, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Glyphe de plume flottant au centre.
+  const bob = Math.sin(phase * 1.8) * sz * 0.04;
+  ctx.font         = `${Math.floor(sz * 0.34)}px sans-serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor  = 'rgba(232,206,140,0.9)';
+  ctx.shadowBlur   = 8;
+  ctx.fillStyle    = '#f3e3b2';
+  ctx.fillText('🪶', x, cy - sz * 0.16 + bob);
+  ctx.shadowBlur   = 0;
 
   ctx.restore();
 }

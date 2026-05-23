@@ -398,6 +398,29 @@ create index if not exists mp_presence_lookup_idx
   on public.mp_presence (floor, mode, last_seen);
 ```
 
+Et la table `mp_messages` (Phase 4 — messages à gabarits) :
+
+```sql
+create table if not exists public.mp_messages (
+  author_id   text not null,
+  author_name text not null default 'Sorcier',
+  mode        text not null default 'normal',   -- 'ironman' | 'normal'
+  floor       int  not null,
+  x           int  not null,
+  y           int  not null,
+  template    text not null,                    -- id de gabarit (banque close)
+  word        text,                             -- id de mot (banque close, nullable)
+  created_at  timestamptz not null default now(),
+  primary key (author_id, floor, x, y)          -- 1 message/auteur/case
+);
+alter table public.mp_messages enable row level security;
+create policy "mp_messages_read"   on public.mp_messages for select using (true);
+create policy "mp_messages_insert" on public.mp_messages for insert with check (true);
+create policy "mp_messages_update" on public.mp_messages for update using (true) with check (true);
+create index if not exists mp_messages_lookup_idx
+  on public.mp_messages (floor, mode);
+```
+
 ## 11ter. Écarts d'implémentation (Phases 0-1)
 
 - **Sprite fantôme = silhouette vectorielle spectrale** (translucide,
@@ -473,7 +496,12 @@ create index if not exists mp_presence_lookup_idx
       (§5.3), défaite Ironman → permadeath. Anti-farm `defeatedDuelists`
       persisté. Bouton ⚔️ Défier câblé. Écarts : §11quater. Vérifié par
       scénario smoke dédié + capture d'un duel.
-- [ ] Phase 4 — messages.
+- [~] Phase 4 — messages : bouton 🪶, compositeur à gabarits/mots (banque
+      fermée — anti-injection), table `mp_messages` (SQL §11bis), poll
+      indépendant 15 s, projection sur cases FLOOR, marqueur 3D
+      `drawMessageMarker` + minimap `.map-message`, révélation step-on
+      non bloquante. Texte stocké par `id`, recomposé localement (toute
+      entrée hors banque locale est ignorée). Vérifié par scénario smoke.
 - [ ] Phase 5 — cadeaux.
 - [ ] Phase 6 — équilibrage & polish.
 - [ ] Phase 7 — duel PvP en direct (optionnel).
