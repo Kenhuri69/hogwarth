@@ -621,6 +621,97 @@ function drawAltarSprite(x, baseY, sz) {
   ctx.restore();
 }
 
+// ── Dalle-rune (sprite de couloir, posée au sol) ──────────────
+// Puzzle runique (dungeon-enrichment-v2). Disque de pierre gravé d'un
+// glyphe ; teinte par index de rune (RUNE_LABELS) ; halo lumineux si
+// allumée, gravure sourde si éteinte. Dessin procédural simple — pas
+// d'asset dédié (cf. plan, hors-scope V2).
+function drawRuneSprite(x, baseY, sz, lit, idx) {
+  ctx.save();
+  const label = (typeof RUNE_LABELS !== 'undefined' && RUNE_LABELS[idx])
+    ? RUNE_LABELS[idx] : { color: '#e0c24a', rgb: '224,194,74' };
+  const cy = baseY - sz * 0.12;          // posée au sol, légèrement relevée
+  const rx = sz * 0.42, ry = sz * 0.17;  // disque en perspective écrasée
+  // Halo au sol — présent (statique) seulement si la rune est allumée.
+  if (lit) {
+    const glow = ctx.createRadialGradient(x, cy, 0, x, cy, sz * 0.72);
+    glow.addColorStop(0, `rgba(${label.rgb},0.5)`);
+    glow.addColorStop(1, `rgba(${label.rgb},0)`);
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.ellipse(x, cy, sz * 0.72, sz * 0.34, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Disque de pierre
+  ctx.fillStyle   = lit ? '#3a3024' : '#28241e';
+  ctx.strokeStyle = lit ? label.color : '#4a4438';
+  ctx.lineWidth   = Math.max(1, sz * 0.045);
+  ctx.beginPath();
+  ctx.ellipse(x, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // Glyphe gravé : étoile runique à 4 branches.
+  ctx.strokeStyle  = lit ? label.color : '#5a5448';
+  ctx.lineWidth    = Math.max(1.5, sz * 0.05);
+  ctx.globalAlpha  = lit ? 1 : 0.65;
+  ctx.beginPath();
+  ctx.moveTo(x, cy - ry * 0.62);  ctx.lineTo(x, cy + ry * 0.62);
+  ctx.moveTo(x - rx * 0.58, cy);  ctx.lineTo(x + rx * 0.58, cy);
+  ctx.moveTo(x - rx * 0.42, cy - ry * 0.42); ctx.lineTo(x + rx * 0.42, cy + ry * 0.42);
+  ctx.moveTo(x - rx * 0.42, cy + ry * 0.42); ctx.lineTo(x + rx * 0.42, cy - ry * 0.42);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// ── Stèle d'énigme (sprite de couloir, monolithe debout) ──────
+// Puzzle-devinette (dungeon-enrichment-v2 §3). Monolithe de pierre
+// gravé de glyphes : lueur cyan « savoir » tant que l'énigme n'est pas
+// résolue, gravure sourde une fois résolue. Dessin procédural simple.
+function drawSteleSprite(x, baseY, sz, solved) {
+  ctx.save();
+  const glow = solved ? '#5a6068' : '#8fe6f4';
+  const baseW = sz * 0.30, topW = sz * 0.16;
+  const top = baseY - sz * 0.92, bot = baseY - sz * 0.04;
+  // Halo cyan au sol — seulement si l'énigme reste à résoudre.
+  if (!solved) {
+    const g = ctx.createRadialGradient(x, baseY - sz * 0.10, 0,
+                                       x, baseY - sz * 0.10, sz * 0.70);
+    g.addColorStop(0, 'rgba(143,230,244,0.42)');
+    g.addColorStop(1, 'rgba(143,230,244,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(x, baseY - sz * 0.10, sz * 0.70, sz * 0.30, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Monolithe légèrement tapéré, sommet en pointe.
+  ctx.fillStyle   = solved ? '#2c2e36' : '#3a3d46';
+  ctx.strokeStyle = solved ? '#54565e' : '#9098a2';
+  ctx.lineWidth   = Math.max(1, sz * 0.04);
+  ctx.beginPath();
+  ctx.moveTo(x - baseW, bot);
+  ctx.lineTo(x + baseW, bot);
+  ctx.lineTo(x + topW,  top + sz * 0.10);
+  ctx.lineTo(x,         top);
+  ctx.lineTo(x - topW,  top + sz * 0.10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // Glyphes gravés, empilés sur la face.
+  ctx.strokeStyle = glow;
+  ctx.lineWidth   = Math.max(1.4, sz * 0.045);
+  ctx.lineCap     = 'round';
+  ctx.globalAlpha = solved ? 0.5 : 1;
+  const gw = sz * 0.10;
+  for (let i = 0; i < 3; i++) {
+    const gy = top + sz * (0.30 + i * 0.20);
+    ctx.beginPath();
+    ctx.moveTo(x - gw, gy);          ctx.lineTo(x + gw, gy);
+    ctx.moveTo(x,      gy - gw * 0.7); ctx.lineTo(x, gy + gw * 0.7);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 // ── Fontaine (sprite de couloir) ─────────────────────────────
 // Bassin restaurateur (cf. Salle Fontaine). Halo bleu eau si active,
 // grisé si déjà bue (dried).

@@ -8,9 +8,11 @@
 > reconstituer, des devinettes — qui transforment certaines salles en défis
 > intellectuels gardant une récompense.
 
-Statut global : **🟡 EN COURS — 0 / 4 phases.**
-Branche de travail : une branche dédiée par phase (décidée au commit).
+Statut global : **🟡 EN COURS — 3 / 4 phases (1, 2 & 3 livrées).**
+Branche de travail : `claude/lance-dungeon-enrichment-v2-ihE0E` (Phases 1 + 2
+groupées sur une seule branche, décision utilisateur 2026-05-22).
 Décision utilisateur (2026-05-22) : pilier **Énigmes & runes**, **plan multi-phases**.
+Décision utilisateur (2026-05-22) : implémenter **Phases 1 + 2** dans cette session.
 
 ---
 
@@ -46,25 +48,26 @@ inscriptions — décidé en Phase 2/3.)
 
 ### Étapes
 
-- [ ] **1.1** `CELL.RUNE = 13` (`data.js`). Génération (`dungeon.js`) :
+- [x] **1.1** `CELL.RUNE = 13` (`data.js`). Génération (`dungeon.js`) :
       ~20 % des étages reçoivent un *puzzle runique* — 3 dalles `RUNE` sur des
       cases `FLOOR` ordinaires (hors spawn) + une alvéole-récompense
       `FLOOR → mur-barrière → CHEST` via `_findWallPocket`.
-- [ ] **1.2** Définition du puzzle dans un global `runePuzzle`
+- [x] **1.2** Définition du puzzle dans un global `runePuzzle`
       (`{ runes:["x,y"…], barrier:"x,y", solved:false }` ou `null`). État des
       dalles allumées : `litRunes` (Set `"x,y"`).
-- [ ] **1.3** `handleCellEntry` : marcher sur une `RUNE` l'allume
+- [x] **1.3** `handleCellEntry` : marcher sur une `RUNE` l'allume
       (`litRunes.add`), feedback (toast + son). Quand `litRunes` couvre toutes
       les `runePuzzle.runes` → la barrière `WALL → FLOOR` (coffre accessible),
       `solved = true`, toast de résolution.
-- [ ] **1.4** Rendu : sprite de dalle-rune au sol (`renderer-effects.js`),
-      glyphe gravé, halo éteint/allumé (pulsé si allumé). Classe minimap
-      `.map-rune` (+ teinte distincte allumé/éteint).
-- [ ] **1.5** Persistance : `runePuzzle` + `litRunes` sérialisés
+- [x] **1.4** Rendu : sprite de dalle-rune au sol (`renderer-effects.js`),
+      glyphe gravé, halo éteint/allumé. Classe minimap `.map-rune`
+      (+ `.map-rune-lit` allumé). _Écart : halo statique, pas de pulse temps
+      réel (pas de boucle d'anim dédiée — cohérent avec sprites de scène V1)._
+- [x] **1.5** Persistance : `runePuzzle` + `litRunes` sérialisés
       (`_serializeState`/`_applyState`) **et** mis en cache par étage
       (`_saveFloorToCache`/`_restoreFloorFromCache`), sur le modèle de
       `secretWalls`.
-- [ ] **1.6** Smoke : `scenarioRunePuzzle` — génération, activation des
+- [x] **1.6** Smoke : `scenarioRunePuzzle` — génération, activation des
       3 runes, assertion que la barrière tombe, round-trip save.
 
 ### Critère de succès
@@ -86,17 +89,18 @@ exactement le cycle de `secretWalls`. La barrière est un `CELL.WALL` généré
 
 ### Étapes
 
-- [ ] **2.1** `runePuzzle` gagne un champ optionnel `order: [idx…]`. ~½ des
+- [x] **2.1** `runePuzzle` gagne un champ optionnel `order: [idx…]`. ~½ des
       puzzles runiques sont ordonnés (les autres restent « toutes allumées »).
-- [ ] **2.2** Activation d'une rune hors séquence → toutes les runes
+- [x] **2.2** Activation d'une rune hors séquence → toutes les runes
       s'éteignent (`litRunes.clear()`), toast d'échec, son distinct. Bonne
       rune dans l'ordre → progression mémorisée.
-- [ ] **2.3** Indice : une case `FLOOR` du puzzle porte une **inscription**
-      consultable (overlay d'exploration ou ligne narrative à l'entrée) qui
-      décrit l'ordre de façon thématique (couleurs, symboles, vers).
-- [ ] **2.4** Rendu : une rune « prochaine attendue » peut pulser plus fort
-      (option) ; sinon état binaire éteint/allumé inchangé.
-- [ ] **2.5** Smoke : `scenarioRuneSequence` — bon ordre → résolu ; mauvais
+- [x] **2.3** Indice : une case `FLOOR` du puzzle porte une **inscription**
+      consultable — marcher dessus affiche un vers thématique nommant les
+      runes (« émeraude / or / améthyste ») dans l'ordre attendu. Champs
+      `runePuzzle.hint` + `runePuzzle.hintCell`.
+- [x] **2.4** Rendu : état binaire éteint/allumé inchangé ; les runes sont
+      teintées par index (émeraude/or/améthyste) pour matcher l'indice.
+- [x] **2.5** Smoke : `scenarioRuneSequence` — bon ordre → résolu ; mauvais
       ordre → reset ; round-trip save de la progression partielle.
 
 ### Risque
@@ -112,19 +116,24 @@ en cours) doit être persistée ; sinon, repli sûr = reset à la restauration.
 
 ### Étapes
 
-- [ ] **3.1** Registre `RIDDLES` (nouveau `js/riddles.js`) — entrées
+- [x] **3.1** Registre `RIDDLES` (nouveau `js/riddles.js`) — entrées
       `{ id, question, choices:[…], answer, rewardHint }`. 6–8 devinettes V1,
       ajouté à l'ordre de chargement `index.html` + MANIFEST du loader.
-- [ ] **3.2** Génération : ~30 % des étages placent une **stèle** (réutilise
-      `CELL.RUNE` en variante « stèle », ou un `CELL.GLYPH` dédié — tranché
-      ici) gardant une alvéole-coffre.
-- [ ] **3.3** `handleCellEntry` sur la stèle → overlay de devinette (réutilise
-      la structure de `_showExploreOverlay` / `npc-dialog`) : question +
-      boutons de réponse. Bonne réponse → barrière levée + toast. Mauvaise →
-      message, ré-essai autorisé (pas de pénalité dure en V1).
-- [ ] **3.4** Persistance : devinettes résolues par étage (Set), même cycle.
-- [ ] **3.5** Smoke : `scenarioRiddleStele` — overlay, mauvaise puis bonne
-      réponse, ouverture, round-trip save.
+      _Livré : 8 devinettes, `getRiddleById()`._
+- [x] **3.2** Génération : ~30 % des étages placent une **stèle** gardant
+      une alvéole-coffre. _Décision : `CELL.STELE = 14` dédié (pas de
+      surcharge de `CELL.RUNE`) — sprite/minimap/handleCellEntry distincts._
+- [x] **3.3** `handleCellEntry` sur la stèle → overlay de devinette (réutilise
+      `_showExploreOverlay` : descripteur `[CELL.STELE]`, boutons de réponse).
+      Bonne réponse → barrière `WALL → FLOOR` + toast. Mauvaise → feedback
+      dans l'overlay (`_steleFeedback`), ré-essai autorisé sans pénalité.
+      _Écart : fonction nommée `answerSteleRiddle` — collision évitée avec
+      `answerRiddle` (quests.js — quête Lumière Éternelle)._
+- [x] **3.4** Persistance : `runeStele` (objet avec `solved`) sérialisé +
+      mis en cache par étage, même cycle que `runePuzzle`. _Écart : une
+      seule stèle/étage → booléen `solved` sur l'objet plutôt qu'un Set._
+- [x] **3.5** Smoke : `scenarioRiddleStele` — overlay, mauvaise puis bonne
+      réponse, ouverture de la barrière, round-trip save.
 
 ### Risque
 Faible — surcouche UI + registre de contenu. Pas de nouvelle mécanique de
@@ -139,16 +148,25 @@ carte au-delà de la stèle.
 
 ### Étapes
 
-- [ ] **4.1** Loot table dédiée pour les coffres de puzzle (qualité croissante
-      selon l'étage) — rejoint la piste « récompenses enrichies » du backlog.
-      Les coffres de puzzle ne sont plus des coffres standard.
-- [ ] **4.2** Événement d'étage `FLOOR_EVENTS` : « Étage runique » garantit
-      un puzzle et peut en doubler la récompense ; toast narratif à l'entrée.
-- [ ] **4.3** Dosage : au plus **un** puzzle (rune ou stèle) par étage ;
-      fréquences calibrées pour que le joueur en croise régulièrement sans
-      que ça devienne systématique.
-- [ ] **4.4** Smoke : `scenarioRuneRewards` — coffre de puzzle = butin dédié ;
-      forçage de l'événement « Étage runique ».
+- [x] **4.1** Loot table dédiée pour les coffres de puzzle. Champ
+      `rewardCell` sur `runePuzzle`/`runeStele` (la case du coffre).
+      `openChest` détecte la case via `_puzzleRewardAt` et délègue à
+      `_openPuzzleChest` : or généreux croissant avec l'étage +
+      équipement « best-of-N » (3 tirages de `pickChestEquipment`,
+      meilleure rareté retenue → biais qualité naturel par étage).
+- [x] **4.2** Événement d'étage `runique` ajouté à `FLOOR_EVENTS`.
+      `_generateRunePuzzle`/`_generateRuneStele` forcent la génération
+      quand `currentFloorEvent === 'runique'`. `_openPuzzleChest(doubled)`
+      double l'or et passe à 2 pièces (5 tirages). Le toast est gratuit
+      (`_announceFloorEvent` générique). _Décision : doublement
+      déterministe sur l'événement (rare, ~4 %/étage) plutôt qu'un
+      sous-tirage « peut doubler »._
+- [x] **4.3** Dosage : `generateDungeon` n'appelle `_generateRuneStele`
+      que si `!runePuzzle` → au plus un puzzle par étage. Fréquences :
+      20 % rune, puis 30 % des étages restants en stèle (~44 % au total).
+- [x] **4.4** Smoke : `scenarioRuneRewards` — dosage (0 double-puzzle /
+      200), `rewardCell` valide, garantie runique (40/40), butin simple
+      vs doublé. + `scenarioFloorEvents` mis à jour (6 événements).
 
 ### Risque
 Faible — additif, tout est appliqué à la génération (zéro effet runtime
@@ -194,3 +212,7 @@ Ordre recommandé : **1 → 2 → 3 → 4**. Une PR par phase, smoke vert à cha
 | Date | Phase | Statut | Notes |
 |------|-------|--------|-------|
 | 2026-05-22 | Rédaction du plan | ✅ | Audit `data.js`/`movement.js`/`dungeon.js`. Pilier « Énigmes & runes » et format multi-phases validés par l'utilisateur. 4 phases rédigées. Implémentation non démarrée. |
+| 2026-05-22 | Phase 1 — Socle runique | ✅ | `CELL.RUNE=13`. `runePuzzle`/`litRunes` (state.js). Génération 20 %/étage (dungeon.js). `_activateRune` (movement.js). `drawRuneSprite` + minimap `.map-rune`. Persistance save + cache d'étage. Smoke `scenarioRunePuzzle`. |
+| 2026-05-22 | Phase 2 — Runes en séquence | ✅ | Champ `order`/`hint`/`hintCell` sur `runePuzzle` (½ des puzzles ordonnés). Reset des dalles sur faux pas. Inscription-indice nommant les runes par teinte. Smoke `scenarioRuneSequence`. |
+| 2026-05-22 | Phase 3 — Énigmes-devinettes | ✅ | `js/riddles.js` (8 devinettes, `getRiddleById`). `CELL.STELE=14`. `runeStele` (state.js). Génération 30 %/étage (dungeon.js). `answerSteleRiddle` + overlay réutilisant `_showExploreOverlay`. `drawSteleSprite` + minimap `.map-stele`. Persistance save + cache. Smoke `scenarioRiddleStele`. 98 scénarios verts. |
+| 2026-05-22 | Phase 4 — Récompenses & intégration | ✅ | Champ `rewardCell` sur `runePuzzle`/`runeStele`. `_puzzleRewardAt` + `_openPuzzleChest` (movement.js) — or croissant + équipement best-of-N. Événement `runique` (`FLOOR_EVENTS`) force un puzzle et double la récompense. Dosage : au plus un puzzle/étage (`generateDungeon`). Smoke `scenarioRuneRewards` + `scenarioFloorEvents` (6 événements). 99 scénarios verts. **Plan clos.** |

@@ -269,6 +269,111 @@ function _findWallPocket() {
   return cands.length ? cands[Math.floor(Math.random() * cands.length)] : null;
 }
 
+// Mélange Fisher-Yates en place — réutilisé par la génération des
+// puzzles runiques (choix des cases + ordre de séquence).
+function _shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Construit l'inscription-indice d'un puzzle runique ordonné : un vers
+// thématique nommant les 3 runes dans l'ordre attendu. `order` est un
+// tableau d'index dans RUNE_LABELS. Voir dungeon-enrichment-v2.md §2.3.
+function _buildRuneHint(order) {
+  const names = order.map(i => RUNE_LABELS[i].name);
+  return "Une inscription serpente le long de la pierre : « Pour briser le "
+       + `sceau, éveille les runes dans l'ordre du prisme — d'abord ${names[0]}, `
+       + `puis ${names[1]}, enfin ${names[2]}. »`;
+}
+
+// Pose un puzzle runique sur l'étage courant (~20 % de chance) : 3 dalles
+// RUNE sur des cases FLOOR ordinaires hors spawn + une alvéole-récompense
+// `FLOOR → mur-barrière → CHEST` via `_findWallPocket`. La barrière reste
+// CELL.WALL jusqu'à résolution (dissoute par `_activateRune`). ~½ des
+// puzzles sont ordonnés (champ `order` + inscription-indice).
+// Voir dungeon-enrichment-v2.md §1/§2.
+function _generateRunePuzzle(rooms) {
+  runePuzzle = null;
+  litRunes   = new Set();
+  // L'événement d'étage « Étage runique » force la génération (Phase 4.2).
+  const forced = (typeof currentFloorEvent !== 'undefined'
+    && currentFloorEvent === 'runique');
+  if (!forced && Math.random() >= 0.20) return;
+  const pocket = _findWallPocket();
+  if (!pocket) return;
+  const floorCells = [];
+  for (let y = 1; y < MAP_H - 1; y++) {
+    for (let x = 1; x < MAP_W - 1; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (Math.abs(x - rooms[0].cx) <= 1 && Math.abs(y - rooms[0].cy) <= 1) continue;
+      floorCells.push([x, y]);
+    }
+  }
+  if (floorCells.length < 4) return;
+  _shuffleInPlace(floorCells);
+  const runeCells = floorCells.slice(0, 3);
+  for (const [rx, ry] of runeCells) dungeon[ry][rx] = CELL.RUNE;
+  // La 1re paroi de l'alvéole (`w1`) reste WALL — c'est la barrière ;
+  // le coffre-récompense est scellé derrière en `w2`.
+  dungeon[pocket.w2y][pocket.w2x] = CELL.CHEST;
+  const runeKeys = runeCells.map(([rx, ry]) => `${rx},${ry}`);
+  let order = null, hint = null, hintCell = null;
+  if (Math.random() < 0.5) {
+    order    = _shuffleInPlace([0, 1, 2]);
+    hint     = _buildRuneHint(order);
+    const hc = floorCells[3];
+    hintCell = `${hc[0]},${hc[1]}`;
+  }
+  runePuzzle = {
+    runes:      runeKeys,
+    barrier:    `${pocket.w1x},${pocket.w1y}`,
+    rewardCell: `${pocket.w2x},${pocket.w2y}`,
+    order, hint, hintCell,
+    solved:     false
+  };
+}
+
+// Pose une stèle d'énigme sur l'étage courant (~30 % de chance) : une
+// dalle STELE sur une case FLOOR ordinaire hors spawn + une alvéole
+// `FLOOR → mur-barrière → CHEST` via `_findWallPocket`. Une devinette de
+// `RIDDLES` est tirée ; sa bonne réponse dissout la barrière (cf.
+// `answerRiddle` dans movement.js). Voir dungeon-enrichment-v2.md §3.
+function _generateRuneStele(rooms) {
+  runeStele = null;
+  if (typeof RIDDLES === 'undefined' || !RIDDLES.length) return;
+  // L'événement « Étage runique » force la stèle si aucune dalle-rune
+  // n'a pu être posée (cf. generateDungeon — Phase 4.2/4.3).
+  const forced = (typeof currentFloorEvent !== 'undefined'
+    && currentFloorEvent === 'runique');
+  if (!forced && Math.random() >= 0.30) return;
+  const pocket = _findWallPocket();
+  if (!pocket) return;
+  const floorCells = [];
+  for (let y = 1; y < MAP_H - 1; y++) {
+    for (let x = 1; x < MAP_W - 1; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (Math.abs(x - rooms[0].cx) <= 1 && Math.abs(y - rooms[0].cy) <= 1) continue;
+      floorCells.push([x, y]);
+    }
+  }
+  if (!floorCells.length) return;
+  _shuffleInPlace(floorCells);
+  const [sx, sy] = floorCells[0];
+  dungeon[sy][sx] = CELL.STELE;
+  dungeon[pocket.w2y][pocket.w2x] = CELL.CHEST;
+  const riddle = RIDDLES[Math.floor(Math.random() * RIDDLES.length)];
+  runeStele = {
+    cell:       `${sx},${sy}`,
+    riddleId:   riddle.id,
+    barrier:    `${pocket.w1x},${pocket.w1y}`,
+    rewardCell: `${pocket.w2x},${pocket.w2y}`,
+    solved:     false
+  };
+}
+
 // Instantané structurel des salles du dernier donjon généré (kind/rect).
 // Hook de test (smoke) — non consommé par le moteur de jeu.
 let lastDungeonRooms = [];
@@ -450,6 +555,17 @@ function generateDungeon(floor) {
       dungeon[room.cy][room.cx] = CELL.LIBRARY;
     }
   }
+
+  // Puzzle runique (dungeon-enrichment-v2 §1/§2) — placé après toutes les
+  // cellules spéciales pour que les dalles RUNE ne tombent que sur des
+  // cases FLOOR ordinaires. `_generateRunePuzzle` (re)met `runePuzzle` et
+  // `litRunes` à leur état initial à chaque génération.
+  _generateRunePuzzle(rooms);
+  // Stèle d'énigme (dungeon-enrichment-v2 §3) — au plus UN puzzle par
+  // étage (dosage §4.3) : la stèle n'est tentée que si aucune dalle-rune
+  // n'a été posée. (re)met `runeStele` à l'état initial à chaque appel.
+  if (!runePuzzle) _generateRuneStele(rooms);
+  else runeStele = null;
 
   // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
   usedFountains = new Set();

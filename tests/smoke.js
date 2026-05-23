@@ -10093,7 +10093,7 @@ async function scenarioFloorEvents() {
     state:  typeof currentFloorEvent !== 'undefined',
   }));
   console.log('  T1:', t1);
-  assert(t1.events === 5,  'FLOOR_EVENTS doit compter 5 événements');
+  assert(t1.events === 6,  'FLOOR_EVENTS doit compter 6 événements');
   assert(t1.roll && t1.get, 'rollFloorEvent / getFloorEvent non exposées');
   assert(t1.state,          'currentFloorEvent non exposé');
 
@@ -11125,8 +11125,485 @@ async function scenarioMultiplayerPolish() {
   await browser.close();
 }
 
+// ── Scénario : puzzle runique (dungeon-enrichment-v2 Phase 1) ──
+
+async function scenarioRunePuzzle() {
+  console.log('\n── Scénario : puzzle runique (V2 Phase 1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : constante + état + helpers exposés
+  const t1 = await page.evaluate(() => ({
+    cellRune: CELL.RUNE,
+    litSet:   typeof litRunes !== 'undefined' && litRunes instanceof Set,
+    puzzleOk: typeof runePuzzle !== 'undefined',
+    genFn:    typeof _generateRunePuzzle === 'function',
+    actFn:    typeof _activateRune === 'function',
+    labels:   typeof RUNE_LABELS !== 'undefined' && RUNE_LABELS.length === 3,
+  }));
+  console.log('  T1:', t1);
+  assert(t1.cellRune === 13, 'CELL.RUNE doit valoir 13');
+  assert(t1.litSet,   'litRunes non exposé (ou pas un Set)');
+  assert(t1.puzzleOk, 'runePuzzle non exposé');
+  assert(t1.genFn,    '_generateRunePuzzle non exposée');
+  assert(t1.actFn,    '_activateRune non exposée');
+  assert(t1.labels,   'RUNE_LABELS doit compter 3 entrées');
+
+  // T2 : 200 générations — au moins un puzzle, structure toujours valide,
+  // l'escalier descendant n'est jamais scellé par un puzzle.
+  const t2 = await page.evaluate(() => {
+    let withPuzzle = 0, bad = 0, noStairs = 0;
+    for (let g = 0; g < 200; g++) {
+      generateDungeon(1 + (g % 9));
+      if (!runePuzzle) continue;
+      withPuzzle++;
+      if (runePuzzle.runes.length !== 3) bad++;
+      for (const k of runePuzzle.runes) {
+        const [rx, ry] = k.split(',').map(Number);
+        if (dungeon[ry][rx] !== CELL.RUNE) bad++;
+      }
+      const [bx, by] = runePuzzle.barrier.split(',').map(Number);
+      if (dungeon[by][bx] !== CELL.WALL) bad++;
+      let chestAdj = false;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = bx + dx, ny = by + dy;
+        if (nx >= 0 && ny >= 0 && nx < MAP_W && ny < MAP_H
+            && dungeon[ny][nx] === CELL.CHEST) chestAdj = true;
+      }
+      if (!chestAdj) bad++;
+      let hasStairsD = false;
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.STAIRS_D) hasStairsD = true;
+      if (!hasStairsD) noStairs++;
+    }
+    return { withPuzzle, bad, noStairs };
+  });
+  console.log('  T2 génération:', t2);
+  assert(t2.withPuzzle >= 1,  'au moins un puzzle runique sur 200 générations');
+  assert(t2.bad === 0,        'structure de puzzle toujours valide');
+  assert(t2.noStairs === 0,   "l'escalier descendant n'est jamais supprimé");
+
+  // T3 : activation des 3 runes (puzzle non ordonné) → barrière dissoute
+  const t3 = await page.evaluate(() => {
+    generateDungeon(3);
+    const runes = [];
+    for (let y = 1; y < MAP_H - 1 && runes.length < 3; y++)
+      for (let x = 1; x < MAP_W - 1 && runes.length < 3; x++)
+        if (dungeon[y][x] === CELL.FLOOR && !(x === playerX && y === playerY)) {
+          dungeon[y][x] = CELL.RUNE; runes.push(`${x},${y}`);
+        }
+    let barrier = null;
+    for (let y = 1; y < MAP_H - 1 && !barrier; y++)
+      for (let x = 1; x < MAP_W - 1 && !barrier; x++)
+        if (dungeon[y][x] === CELL.WALL) barrier = `${x},${y}`;
+    runePuzzle = { runes, barrier, order: null, hint: null, hintCell: null, solved: false };
+    litRunes = new Set();
+    const steps = [];
+    for (const k of runes) {
+      const [rx, ry] = k.split(',').map(Number);
+      playerX = rx; playerY = ry;
+      _activateRune();
+      steps.push({ lit: litRunes.size, solved: runePuzzle.solved });
+    }
+    const [bx, by] = barrier.split(',').map(Number);
+    return { steps, barrierIsFloor: dungeon[by][bx] === CELL.FLOOR };
+  });
+  console.log('  T3 activation:', t3);
+  assert(t3.steps[0].lit === 1 && !t3.steps[0].solved, '1re rune : 1 allumée, non résolu');
+  assert(t3.steps[2].lit === 3 && t3.steps[2].solved,  '3e rune : 3 allumées, résolu');
+  assert(t3.barrierIsFloor, 'la barrière doit devenir FLOOR une fois résolu');
+
+  // T4 : round-trip save de runePuzzle + litRunes
+  const t4 = await page.evaluate(() => {
+    runePuzzle = {
+      runes: ['2,2', '3,3', '4,4'], barrier: '5,5', order: [1, 0, 2],
+      hint: 'indice', hintCell: '6,6', solved: false
+    };
+    litRunes = new Set(['2,2']);
+    const snap = _serializeState();
+    runePuzzle = null; litRunes = new Set();
+    _applyState(snap);
+    return {
+      runesLen: runePuzzle && runePuzzle.runes.length,
+      barrier:  runePuzzle && runePuzzle.barrier,
+      order:    runePuzzle && JSON.stringify(runePuzzle.order),
+      isSet:    litRunes instanceof Set,
+      litSize:  litRunes.size,
+      litHas:   litRunes.has('2,2'),
+    };
+  });
+  console.log('  T4 round-trip save:', t4);
+  assert(t4.runesLen === 3,       'runePuzzle.runes doit survivre au save');
+  assert(t4.barrier === '5,5',    'runePuzzle.barrier doit survivre au save');
+  assert(t4.order === '[1,0,2]',  'runePuzzle.order doit survivre au save');
+  assert(t4.isSet,                'litRunes doit rester un Set après _applyState');
+  assert(t4.litSize === 1 && t4.litHas, 'litRunes doit survivre au round-trip');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (puzzle runique)`);
+  }
+  console.log('  ✅ puzzle runique — génération, activation, barrière, persistance OK');
+  await browser.close();
+}
+
+// ── Scénario : runes en séquence (dungeon-enrichment-v2 Phase 2) ──
+
+async function scenarioRuneSequence() {
+  console.log('\n── Scénario : runes en séquence (V2 Phase 2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : ~½ des puzzles générés sont ordonnés (champ order + hint + hintCell)
+  const t1 = await page.evaluate(() => {
+    let puzzles = 0, ordered = 0, hintOk = 0;
+    for (let g = 0; g < 300; g++) {
+      generateDungeon(1 + (g % 9));
+      if (!runePuzzle) continue;
+      puzzles++;
+      if (runePuzzle.order) {
+        ordered++;
+        if (typeof runePuzzle.hint === 'string' && runePuzzle.hint.length > 10
+            && /^\d+,\d+$/.test(runePuzzle.hintCell || '')) hintOk++;
+      }
+    }
+    return { puzzles, ordered, hintOk };
+  });
+  console.log('  T1 proportion ordonnés:', t1);
+  assert(t1.puzzles >= 5,           'assez de puzzles générés pour le ratio');
+  assert(t1.ordered >= 1,           'au moins un puzzle ordonné');
+  assert(t1.ordered < t1.puzzles,   'tous les puzzles ne sont pas ordonnés');
+  assert(t1.hintOk === t1.ordered,  'tout puzzle ordonné porte un hint + hintCell valides');
+
+  // T2 : mauvais ordre → reset complet de litRunes (non résolu)
+  const t2 = await page.evaluate(() => {
+    runePuzzle = {
+      runes: ['2,2', '3,3', '4,4'], barrier: '5,5',
+      order: [0, 1, 2], hint: 'i', hintCell: '6,6', solved: false
+    };
+    litRunes = new Set();
+    // order[0]=0 → 1re rune attendue = runes[0]='2,2'. On active '3,3' → faux.
+    playerX = 3; playerY = 3; _activateRune();
+    return { lit: litRunes.size, solved: runePuzzle.solved };
+  });
+  console.log('  T2 mauvais ordre:', t2);
+  assert(t2.lit === 0,  'un faux pas doit éteindre toutes les runes');
+  assert(!t2.solved,    'le puzzle ne doit pas être résolu après un faux pas');
+
+  // T3 : bon ordre → résolu, barrière dissoute
+  const t3 = await page.evaluate(() => {
+    generateDungeon(4);
+    let barrier = null;
+    for (let y = 1; y < MAP_H - 1 && !barrier; y++)
+      for (let x = 1; x < MAP_W - 1 && !barrier; x++)
+        if (dungeon[y][x] === CELL.WALL) barrier = `${x},${y}`;
+    const order = [2, 0, 1];
+    const runes = ['7,7', '8,8', '9,9'];
+    runePuzzle = { runes, barrier, order, hint: 'i', hintCell: '1,1', solved: false };
+    litRunes = new Set();
+    const seq = [];
+    for (const idx of order) {
+      const [x, y] = runes[idx].split(',').map(Number);
+      playerX = x; playerY = y; _activateRune();
+      seq.push({ lit: litRunes.size, solved: runePuzzle.solved });
+    }
+    const [bx, by] = barrier.split(',').map(Number);
+    return { seq, barrierIsFloor: dungeon[by][bx] === CELL.FLOOR };
+  });
+  console.log('  T3 bon ordre:', t3);
+  assert(t3.seq[0].lit === 1,                      '1re bonne rune allumée');
+  assert(t3.seq[2].lit === 3 && t3.seq[2].solved,  'séquence complète → résolu');
+  assert(t3.barrierIsFloor,                        'barrière dissoute après séquence correcte');
+
+  // T4 : progression partielle survit au round-trip save
+  const t4 = await page.evaluate(() => {
+    runePuzzle = {
+      runes: ['2,2', '3,3', '4,4'], barrier: '5,5',
+      order: [1, 2, 0], hint: 'i', hintCell: '6,6', solved: false
+    };
+    litRunes = new Set();
+    // order[0]=1 → 1re rune = runes[1]='3,3'
+    playerX = 3; playerY = 3; _activateRune();
+    const beforeSave = litRunes.size;
+    const snap = _serializeState();
+    runePuzzle = null; litRunes = new Set();
+    _applyState(snap);
+    // Reprend : order[1]=2 → runes[2]='4,4', puis order[2]=0 → '2,2'
+    playerX = 4; playerY = 4; _activateRune();
+    playerX = 2; playerY = 2; _activateRune();
+    return { beforeSave, afterSize: litRunes.size, solved: runePuzzle.solved };
+  });
+  console.log('  T4 progression partielle:', t4);
+  assert(t4.beforeSave === 1, 'une rune allumée avant la sauvegarde');
+  assert(t4.solved,           'la séquence reprise après restore doit se résoudre');
+
+  // T5 : _buildRuneHint nomme les runes dans l'ordre demandé. On teste les
+  // phrases préfixées (d'abord/puis/enfin) — un indexOf nu de « l'or »
+  // matcherait « l'ordre » plus tôt dans le vers.
+  const t5 = await page.evaluate(() => {
+    const h = _buildRuneHint([2, 0, 1]);
+    return {
+      isStr:  typeof h === 'string',
+      aFirst: h.includes("d'abord " + RUNE_LABELS[2].name),
+      bMid:   h.includes('puis ' + RUNE_LABELS[0].name),
+      cLast:  h.includes('enfin ' + RUNE_LABELS[1].name),
+    };
+  });
+  console.log('  T5 hint:', t5);
+  assert(t5.isStr && t5.aFirst && t5.bMid && t5.cLast,
+    '_buildRuneHint ordonne les noms de runes');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (runes en séquence)`);
+  }
+  console.log('  ✅ runes en séquence — ordre, reset, indice, persistance partielle OK');
+  await browser.close();
+}
+
+// ── Scénario : stèle d'énigme (dungeon-enrichment-v2 Phase 3) ──
+
+async function scenarioRiddleStele() {
+  console.log('\n── Scénario : stèle d\'énigme (V2 Phase 3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : constante + état + registre + helpers exposés
+  const t1 = await page.evaluate(() => ({
+    cellStele: CELL.STELE,
+    steleOk:   typeof runeStele !== 'undefined',
+    riddles:   typeof RIDDLES !== 'undefined' && RIDDLES.length,
+    getFn:     typeof getRiddleById === 'function',
+    ansFn:     typeof answerSteleRiddle === 'function',
+    genFn:     typeof _generateRuneStele === 'function',
+    allValid:  typeof RIDDLES !== 'undefined' && RIDDLES.every(r =>
+                 r.id && r.question && Array.isArray(r.choices)
+                 && r.choices.length >= 2
+                 && Number.isInteger(r.answer)
+                 && r.answer >= 0 && r.answer < r.choices.length),
+  }));
+  console.log('  T1:', t1);
+  assert(t1.cellStele === 14,            'CELL.STELE doit valoir 14');
+  assert(t1.steleOk,                     'runeStele non exposé');
+  assert(t1.riddles >= 6 && t1.riddles <= 8, 'RIDDLES doit compter 6 à 8 devinettes');
+  assert(t1.getFn,                       'getRiddleById non exposée');
+  assert(t1.ansFn,                       'answerSteleRiddle non exposée');
+  assert(t1.genFn,                       '_generateRuneStele non exposée');
+  assert(t1.allValid,                    'chaque devinette doit être bien formée');
+
+  // T2 : 200 générations — au moins une stèle, structure toujours valide,
+  // l'escalier descendant n'est jamais supprimé.
+  const t2 = await page.evaluate(() => {
+    let withStele = 0, bad = 0, noStairs = 0;
+    for (let g = 0; g < 200; g++) {
+      generateDungeon(1 + (g % 9));
+      if (!runeStele) continue;
+      withStele++;
+      const [sx, sy] = runeStele.cell.split(',').map(Number);
+      if (dungeon[sy][sx] !== CELL.STELE) bad++;
+      if (!getRiddleById(runeStele.riddleId)) bad++;
+      const [bx, by] = runeStele.barrier.split(',').map(Number);
+      if (dungeon[by][bx] !== CELL.WALL) bad++;
+      let chestAdj = false;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = bx + dx, ny = by + dy;
+        if (nx >= 0 && ny >= 0 && nx < MAP_W && ny < MAP_H
+            && dungeon[ny][nx] === CELL.CHEST) chestAdj = true;
+      }
+      if (!chestAdj) bad++;
+      let hasStairsD = false;
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.STAIRS_D) hasStairsD = true;
+      if (!hasStairsD) noStairs++;
+    }
+    return { withStele, bad, noStairs };
+  });
+  console.log('  T2 génération:', t2);
+  assert(t2.withStele >= 1,  'au moins une stèle sur 200 générations');
+  assert(t2.bad === 0,       'structure de stèle toujours valide');
+  assert(t2.noStairs === 0,  "l'escalier descendant n'est jamais supprimé");
+
+  // T3 : overlay + mauvaise réponse (ré-essai) puis bonne réponse
+  const t3 = await page.evaluate(() => {
+    generateDungeon(3);
+    let barrier = null;
+    for (let y = 1; y < MAP_H - 1 && !barrier; y++)
+      for (let x = 1; x < MAP_W - 1 && !barrier; x++)
+        if (dungeon[y][x] === CELL.WALL) barrier = `${x},${y}`;
+    const riddle = RIDDLES[0];
+    runeStele = {
+      cell: `${playerX},${playerY}`, riddleId: riddle.id,
+      barrier, solved: false
+    };
+    _steleFeedback = '';
+    _showExploreOverlay(CELL.STELE);
+    const descEl = document.getElementById('explore-desc');
+    const overlayShown  = document.getElementById('explore-overlay').style.display === 'flex';
+    const questionShown = !!descEl && descEl.textContent.includes(riddle.question);
+    const btnCount = document.querySelectorAll('#explore-actions .explore-btn').length;
+    const [bx, by] = barrier.split(',').map(Number);
+    // Mauvaise réponse — index différent de la bonne.
+    const wrongIdx = (riddle.answer + 1) % riddle.choices.length;
+    answerSteleRiddle(wrongIdx);
+    const afterWrong = {
+      solved:     runeStele.solved,
+      barrierWall: dungeon[by][bx] === CELL.WALL,
+      feedback:   document.getElementById('explore-desc').textContent.indexOf('✗') >= 0,
+    };
+    // Bonne réponse.
+    answerSteleRiddle(riddle.answer);
+    const afterRight = {
+      solved:        runeStele.solved,
+      barrierIsFloor: dungeon[by][bx] === CELL.FLOOR,
+    };
+    return { overlayShown, questionShown, btnCount, choices: riddle.choices.length, afterWrong, afterRight };
+  });
+  console.log('  T3 overlay & réponses:', t3);
+  assert(t3.overlayShown,                        "l'overlay de stèle doit s'afficher");
+  assert(t3.questionShown,                       'la question doit apparaître dans l\'overlay');
+  assert(t3.btnCount === t3.choices + 1,         'un bouton par choix + « S\'éloigner »');
+  assert(!t3.afterWrong.solved,                  'mauvaise réponse → non résolu');
+  assert(t3.afterWrong.barrierWall,              'mauvaise réponse → barrière intacte');
+  assert(t3.afterWrong.feedback,                 'mauvaise réponse → feedback affiché dans l\'overlay');
+  assert(t3.afterRight.solved,                   'bonne réponse → résolu');
+  assert(t3.afterRight.barrierIsFloor,           'bonne réponse → barrière dissoute');
+
+  // T4 : round-trip save de runeStele
+  const t4 = await page.evaluate(() => {
+    runeStele = { cell: '7,7', riddleId: RIDDLES[2].id, barrier: '8,8', solved: true };
+    const snap = _serializeState();
+    runeStele = null;
+    _applyState(snap);
+    return {
+      cell:     runeStele && runeStele.cell,
+      riddleId: runeStele && runeStele.riddleId,
+      barrier:  runeStele && runeStele.barrier,
+      solved:   runeStele && runeStele.solved,
+    };
+  });
+  console.log('  T4 round-trip save:', t4);
+  assert(t4.cell === '7,7',                 'runeStele.cell doit survivre au save');
+  assert(typeof t4.riddleId === 'string' && t4.riddleId.length > 0,
+    'runeStele.riddleId doit survivre au save');
+  assert(t4.barrier === '8,8',              'runeStele.barrier doit survivre au save');
+  assert(t4.solved === true,                'runeStele.solved doit survivre au save');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (stèle d'énigme)`);
+  }
+  console.log('  ✅ stèle d\'énigme — génération, overlay, réponses, persistance OK');
+  await browser.close();
+}
+
+async function scenarioRuneRewards() {
+  console.log('\n── Scénario : récompenses de puzzle & étage runique (V2 Phase 4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : événement runique enregistré + helpers de butin exposés
+  const t1 = await page.evaluate(() => ({
+    eventOk:   typeof FLOOR_EVENTS !== 'undefined'
+               && FLOOR_EVENTS.some(e => e.id === 'runique' && e.name && e.desc),
+    getEvent:  typeof getFloorEvent === 'function'
+               && !!getFloorEvent('runique'),
+    rewardFn:  typeof _puzzleRewardAt === 'function',
+    chestFn:   typeof _openPuzzleChest === 'function',
+  }));
+  console.log('  T1:', t1);
+  assert(t1.eventOk,  "l'événement « runique » doit figurer dans FLOOR_EVENTS");
+  assert(t1.getEvent, 'getFloorEvent(\'runique\') doit retourner la définition');
+  assert(t1.rewardFn, '_puzzleRewardAt non exposée');
+  assert(t1.chestFn,  '_openPuzzleChest non exposée');
+
+  // T2 : dosage §4.3 — jamais deux puzzles sur le même étage ; chaque
+  // puzzle généré porte un rewardCell pointant sur un coffre.
+  const t2 = await page.evaluate(() => {
+    let both = 0, badReward = 0, withPuzzle = 0;
+    for (let g = 0; g < 200; g++) {
+      generateDungeon(1 + (g % 9));
+      if (runePuzzle && runeStele) both++;
+      const pz = runePuzzle || runeStele;
+      if (!pz) continue;
+      withPuzzle++;
+      if (!pz.rewardCell) { badReward++; continue; }
+      const [rx, ry] = pz.rewardCell.split(',').map(Number);
+      if (dungeon[ry][rx] !== CELL.CHEST) badReward++;
+    }
+    return { both, badReward, withPuzzle };
+  });
+  console.log('  T2 dosage:', t2);
+  assert(t2.both === 0,      'jamais deux puzzles sur le même étage');
+  assert(t2.withPuzzle >= 1, 'au moins un puzzle sur 200 générations');
+  assert(t2.badReward === 0, 'tout puzzle porte un rewardCell pointant sur un coffre');
+
+  // T3 : l'événement « runique » garantit un puzzle à chaque étage.
+  const t3 = await page.evaluate(() => {
+    const orig = rollFloorEvent;
+    rollFloorEvent = () => 'runique';
+    let withPuzzle = 0;
+    for (let g = 0; g < 40; g++) {
+      generateDungeon(2 + (g % 7));
+      if (runePuzzle || runeStele) withPuzzle++;
+    }
+    rollFloorEvent = orig;
+    return { runs: 40, withPuzzle };
+  });
+  console.log('  T3 garantie:', t3);
+  assert(t3.withPuzzle === 40, "l'étage runique doit garantir un puzzle à chaque génération");
+
+  // T4 : coffre de puzzle → butin dédié ; événement runique → doublé.
+  const t4 = await page.evaluate(() => {
+    function runChest(doubled) {
+      generateDungeon(5);
+      currentFloor = 5;
+      currentFloorEvent = doubled ? 'runique' : null;
+      player.inventory = [];
+      runePuzzle = { runes: [], barrier: '0,0', rewardCell: `${playerX},${playerY}`,
+                     order: null, hint: null, hintCell: null, solved: true };
+      runeStele = null;
+      dungeon[playerY][playerX] = CELL.CHEST;
+      const goldBefore = player.gold;
+      const detected = _puzzleRewardAt(playerX, playerY);
+      openChest();
+      return {
+        detected,
+        goldGain: player.gold - goldBefore,
+        invGain:  player.inventory.length,
+        chestConsumed: dungeon[playerY][playerX] === CELL.FLOOR,
+      };
+    }
+    const single  = runChest(false);
+    const doubled = runChest(true);
+    // Une case quelconque hors rewardCell n'est pas un coffre de puzzle.
+    const offCell = _puzzleRewardAt(playerX + 1, playerY + 1);
+    return { single, doubled, offCell };
+  });
+  console.log('  T4 butin:', t4);
+  assert(t4.single.detected === 'rune',  '_puzzleRewardAt doit reconnaître la case du coffre');
+  assert(t4.offCell === null,            '_puzzleRewardAt doit ignorer les cases hors récompense');
+  assert(t4.single.chestConsumed,        'le coffre de puzzle doit être consommé après ouverture');
+  assert(t4.single.goldGain >= 175 && t4.single.goldGain < 300,
+    'coffre de puzzle simple → or dans la fourchette dédiée');
+  assert(t4.doubled.goldGain >= 350 && t4.doubled.goldGain < 600,
+    'coffre de puzzle runique → or doublé');
+  assert(t4.doubled.goldGain > t4.single.goldGain,
+    "l'étage runique doit rapporter plus qu'un coffre de puzzle normal");
+  assert(t4.single.invGain >= 1,         'coffre de puzzle simple → au moins 1 équipement');
+  assert(t4.doubled.invGain >= 2,        'coffre de puzzle runique → 2 équipements');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (récompenses de puzzle)`);
+  }
+  console.log('  ✅ récompenses de puzzle — dosage, garantie runique, butin doublé OK');
+  await browser.close();
+}
+
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

@@ -31,6 +31,8 @@ js/
                       vendeurs, PNJ lore). getNpcById(), getNpcsForFloor(),
                       getRandomVendorsForFloor(), getRandomLoreForFloor(),
                       getRandomEncountersForFloor()
+  riddles.js       →  RIDDLES[] — registre des devinettes des stèles
+                      d'énigme du donjon. getRiddleById()
   data.js          →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
                       ENEMIES = MONSTERS (alias de compatibilité)
   floor-themes.js  →  FLOOR_THEMES{} + getFloorTheme() — source unique de
@@ -95,9 +97,9 @@ js/
 .github/workflows/deploy.yml   →  CI GitHub Pages (push master → déploiement automatique)
 ```
 
-Ordre de chargement des scripts dans `index.html` (32 modules) :
+Ordre de chargement des scripts dans `index.html` (33 modules) :
 `ux-improvements → audio → audio-music → audio-sfx → icons → scene-icons →
-monsters → npcs → data → floor-themes → item-icons → state → ui →
+monsters → npcs → riddles → data → floor-themes → item-icons → state → ui →
 ui-bestiary → dungeon →
 textures → renderer → renderer-effects → renderer-minimap → movement →
 battle → battle-spells → battle-ui → inventory → quests → npc-dialog →

@@ -323,7 +323,7 @@ function drawCorridor(cx, cy, scale, W, H) {
     // porte ouverte est repassée en FLOOR et n'arrête donc plus le scan.
     if (cell === CELL.WALL || cell === CELL.DOOR) { wallDist = d; break; }
     if (!pendingSprite) {
-      const _isCellSprite = (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR);
+      const _isCellSprite = (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR || cell === CELL.RUNE || cell === CELL.STELE);
       const [_fdx, _fdy] = DIRECTIONS[playerDir];
       const _mx = playerX + _fdx * d, _my = playerY + _fdy * d;
       // Fantôme multijoueur : surcouche sur une case FLOOR praticable
@@ -515,6 +515,18 @@ function drawCorridor(cx, cy, scale, W, H) {
         ? npcPlacements.get(`${pendingSprite.mapX},${pendingSprite.mapY}`)
         : null;
       drawNpcSprite(npcId, x, baseY, sz);
+    }
+    else if (cell === CELL.RUNE) {
+      const k   = `${pendingSprite.mapX},${pendingSprite.mapY}`;
+      const lit = (typeof litRunes !== 'undefined') && litRunes && litRunes.has(k);
+      const idx = (typeof runePuzzle !== 'undefined' && runePuzzle)
+        ? runePuzzle.runes.indexOf(k) : -1;
+      drawRuneSprite(x, baseY, sz, lit, idx);
+    }
+    else if (cell === CELL.STELE) {
+      const solved = (typeof runeStele !== 'undefined' && runeStele)
+        ? !!runeStele.solved : false;
+      drawSteleSprite(x, baseY, sz, solved);
     }
     ctx.restore();
   }

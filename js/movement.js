@@ -127,6 +127,10 @@ function move(dir) { _step(dir, true); }
 // ── Overlay exploration (coffre / escalier / boutique / fontaine) ───
 // Pour chaque cellule interactive : un descripteur (icon, title, desc,
 // btns). Les SVG eux-mêmes sont centralisés dans `js/scene-icons.js`.
+//
+// Feedback transitoire de la stèle d'énigme : préfixe affiché dans
+// l'overlay après une mauvaise réponse. Réinitialisé à chaque ouverture.
+let _steleFeedback = '';
 function _exploreDescriptors() {
   const fountainDried = usedFountains && usedFountains.has(`${playerX},${playerY}`);
   const altarSpent    = usedAltars && usedAltars.has(`${playerX},${playerY}`);
@@ -135,6 +139,16 @@ function _exploreDescriptors() {
   // Ressuscité n'a pas été vaincu. Voir ENDGAME_PLAN.md §7.1ter.
   const stairsSealed = currentFloor === 10
     && !(typeof victoryAchieved !== 'undefined' && victoryAchieved);
+  // Stèle d'énigme V2 §3 — devinette piochée dans RIDDLES gardant un coffre.
+  const steleSolved = !!(runeStele && runeStele.solved);
+  const steleRiddle = (runeStele && !steleSolved && typeof getRiddleById === 'function')
+    ? getRiddleById(runeStele.riddleId) : null;
+  const steleBtns = steleRiddle
+    ? steleRiddle.choices
+        .map((c, i) => `<button class="explore-btn" onclick="answerSteleRiddle(${i})">${c}</button>`)
+        .join('\n')
+      + `\n<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    : `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`;
   return {
     [CELL.CHEST]: {
       icon:  SCENE_ICONS.chest,
@@ -211,6 +225,17 @@ function _exploreDescriptors() {
       desc:  "Un pupitre sculpté porte un grimoire dont les pages flottent légèrement. Y déchiffrer un sort en amplifie la puissance — moyennant or et Pages de Grimoire.",
       btns:  `<button class="explore-btn" onclick="openLibrary();_hideExploreOverlay()">Étudier</button>
               <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    },
+    // Enrichissement V2 §3 — Stèle d'énigme : devinette gardant un coffre.
+    [CELL.STELE]: {
+      icon:  SCENE_ICONS.stele,
+      title: 'Stèle Runique',
+      desc:  steleRiddle
+        ? (_steleFeedback ? _steleFeedback + ' ' : '') + steleRiddle.question
+        : (steleSolved
+            ? "La stèle s'est tue, son énigme résolue : les glyphes ne brillent plus."
+            : "Une stèle de pierre couverte de glyphes inertes — aucune énigme ne s'y forme."),
+      btns:  steleBtns
     }
   };
 }
@@ -270,8 +295,23 @@ function handleCellEntry(cell) {
     if (npcId && typeof openNpcDialog === 'function') {
       openNpcDialog(npcId);
     }
+  } else if (cell === CELL.RUNE) {
+    // Dalle-rune d'un puzzle d'exploration : marcher dessus l'allume
+    // (cf. _activateRune — dungeon-enrichment-v2 §1/§2).
+    _activateRune();
+  } else if (cell === CELL.STELE) {
+    // Stèle d'énigme : ouvre l'overlay de devinette (cf. answerSteleRiddle —
+    // dungeon-enrichment-v2 §3). Feedback remis à zéro à chaque ouverture.
+    _steleFeedback = '';
+    _showExploreOverlay(CELL.STELE);
   } else {
-    if (Math.random() < 0.15) {
+    // Inscription-indice d'un puzzle runique ordonné : la case courante
+    // peut porter le vers décrivant l'ordre d'éveil des runes.
+    if (runePuzzle && runePuzzle.hint
+        && runePuzzle.hintCell === `${playerX},${playerY}`) {
+      setNarrative(runePuzzle.hint);
+      if (typeof addMsg === 'function') addMsg('📜 ' + runePuzzle.hint, 'magic');
+    } else if (Math.random() < 0.15) {
       if (Math.random() < 0.08) {
         setNarrative(NARRATIVES.trap);
         const alive  = party.filter(c => c.hp > 0);
@@ -298,6 +338,9 @@ function _saveFloorToCache(floor) {
     px: playerX, py: playerY, dir: playerDir,
     floorEvent: currentFloorEvent,
     secretWalls: Array.from(secretWalls),
+    runePuzzle: runePuzzle ? JSON.parse(JSON.stringify(runePuzzle)) : null,
+    litRunes: Array.from(litRunes),
+    runeStele: runeStele ? JSON.parse(JSON.stringify(runeStele)) : null,
     searchedCells: Array.from(searchedCells),
     npcPlacements: Array.from(npcPlacements.entries())
     // Note : on n'archive PAS usedFountains : la fontaine se ré-active
@@ -317,6 +360,9 @@ function _restoreFloorFromCache(floor) {
   npcPlacements = new Map(c.npcPlacements || []);
   currentFloorEvent = c.floorEvent || null;
   secretWalls = new Set(c.secretWalls || []);
+  runePuzzle = c.runePuzzle || null;
+  litRunes = new Set(c.litRunes || []);
+  runeStele = c.runeStele || null;
   // Nouvelle visite = nouvelle eau dans la fontaine et nouvelles larmes Fumseck
   usedFountains = new Set();
   usedAltars = new Set();
@@ -501,10 +547,65 @@ function goUp() {
   });
 }
 
+// ── Coffre-récompense d'un puzzle (rune ou stèle) — Phase 4.1 ──
+// Rang de rareté, pour comparer deux pièces (best-of-N).
+const _RARITY_RANK = { common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4 };
+
+// Retourne 'rune' / 'stele' si (x,y) est la case du coffre-récompense
+// d'un puzzle de l'étage courant, sinon null.
+function _puzzleRewardAt(x, y) {
+  const key = `${x},${y}`;
+  if (typeof runePuzzle !== 'undefined' && runePuzzle
+      && runePuzzle.rewardCell === key) return 'rune';
+  if (typeof runeStele !== 'undefined' && runeStele
+      && runeStele.rewardCell === key) return 'stele';
+  return null;
+}
+
+// Butin dédié d'un coffre de puzzle : or généreux (croissant avec
+// l'étage) + équipement « best-of-N » biaisé vers la qualité. `doubled`
+// (événement « Étage runique ») double l'or et ajoute une 2ᵉ pièce.
+// Voir dungeon-enrichment-v2.md §4.1.
+function _openPuzzleChest(doubled) {
+  const floor = currentFloor || 1;
+  let gold = Math.floor(Math.random() * 25 + 35) * floor;
+  if (doubled) gold *= 2;
+  player.gold += gold;
+  addMsg(`+${gold} Gallions (coffre runique)`, 'good');
+
+  const rolls = doubled ? 5 : 3;
+  const picks = doubled ? 2 : 1;
+  for (let p = 0; p < picks; p++) {
+    let best = null;
+    for (let i = 0; i < rolls; i++) {
+      const it = (typeof pickChestEquipment === 'function')
+        ? pickChestEquipment(floor) : null;
+      if (!it) continue;
+      if (!best || (_RARITY_RANK[it.rarity || 'common'] || 0)
+                 > (_RARITY_RANK[best.rarity || 'common'] || 0)) best = it;
+    }
+    if (best && tryAddItem(best, { silent: true })) {
+      addMsg(`Obtenu : ${getItemIconHtml(best, 'ui-icon-sm')} ${best.name}`, 'good');
+    }
+  }
+  setNarrative(doubled
+    ? "Le coffre scellé déborde de richesses — l'étage runique a redoublé sa récompense !"
+    : "Le coffre scellé récompense votre persévérance d'un trésor de choix.");
+  updateUI();
+  renderMinimap();
+}
+
 function openChest() {
+  // Coffre-récompense d'un puzzle : butin dédié (Phase 4.1). Détecté
+  // avant de consommer la case (le check porte sur la position courante).
+  const puzzleReward = _puzzleRewardAt(playerX, playerY);
   dungeon[playerY][playerX] = CELL.FLOOR;
   document.getElementById('btn-interact').style.display = 'none';
   AudioSystem.playChestOpen();
+  if (puzzleReward) {
+    _openPuzzleChest(currentFloorEvent === 'runique');
+    return;
+  }
 
   // Livres de sorts disponibles selon l'étage courant
   const booksAvailable = ITEMS.filter(i => {
@@ -803,6 +904,112 @@ function _triggerDungeonTrap() {
   // Variante dégâts/drain : réutilise les 3 sous-variantes non létales
   // de la fouille (lames, dard, brume) — narration compatible.
   _triggerSearchTrap();
+}
+
+// ── Puzzle runique — activation d'une dalle-rune ────────────────
+// Marcher sur une dalle RUNE l'allume. Quand les 3 sont allumées, la
+// barrière runique se dissout (WALL → FLOOR) et le coffre-récompense
+// devient accessible. Pour un puzzle ordonné (`runePuzzle.order`),
+// allumer une rune hors séquence éteint toutes les dalles.
+// Voir dungeon-enrichment-v2.md §1/§2.
+function _activateRune() {
+  if (!runePuzzle || runePuzzle.solved) return;
+  const key = `${playerX},${playerY}`;
+  if (runePuzzle.runes.indexOf(key) === -1) return;  // pas une rune du puzzle
+  if (litRunes.has(key)) return;                     // déjà allumée
+
+  if (runePuzzle.order) {
+    // Puzzle ordonné : la rune attendue est `runes[order[litRunes.size]]`.
+    const expected = runePuzzle.runes[runePuzzle.order[litRunes.size]];
+    if (key !== expected) {
+      litRunes.clear();
+      setNarrative("La dalle s'embrase un instant — puis toutes les runes "
+        + "s'éteignent dans un grondement sourd. L'ordre était faux.");
+      if (typeof addMsg === 'function') {
+        addMsg('✦ Séquence brisée — les runes se rallument à éteindre.', 'bad');
+      }
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playHit) {
+        AudioSystem.playHit();
+      }
+      renderMinimap();
+      drawDungeon();
+      return;
+    }
+  }
+
+  litRunes.add(key);
+  const total     = runePuzzle.runes.length;
+  const remaining = total - litRunes.size;
+
+  if (remaining > 0) {
+    setNarrative("Sous vos pieds, la dalle runique s'illumine d'une lueur "
+      + `chaude. ${remaining} rune${remaining > 1 ? 's' : ''} reste`
+      + `${remaining > 1 ? 'nt' : ''} à éveiller.`);
+    if (typeof addMsg === 'function') {
+      addMsg(`✦ Rune éveillée (${litRunes.size}/${total}).`, 'good');
+    }
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) {
+      AudioSystem.playChestOpen();
+    }
+  } else {
+    runePuzzle.solved = true;
+    const [bx, by] = runePuzzle.barrier.split(',').map(Number);
+    if (dungeon[by] && dungeon[by][bx] === CELL.WALL) {
+      dungeon[by][bx] = CELL.FLOOR;
+    }
+    setNarrative("La dernière rune s'embrase — un grondement profond, et un "
+      + "pan de mur coulisse, révélant une alcôve scellée et son coffre.");
+    if (typeof addMsg === 'function') {
+      addMsg("✦ Sceau runique brisé — un passage s'ouvre !", 'good');
+    }
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) {
+      AudioSystem.playChestOpen();
+    }
+  }
+  renderMinimap();
+  drawDungeon();
+}
+
+// ── Stèle d'énigme — réponse à une devinette ────────────────────
+// Appelée par les boutons de l'overlay de stèle (un par choix). Bonne
+// réponse : la barrière runique se dissout (WALL → FLOOR) et le coffre
+// scellé devient accessible. Mauvaise réponse : feedback dans l'overlay,
+// ré-essai autorisé sans pénalité. Voir dungeon-enrichment-v2.md §3.
+// Nommée `answerSteleRiddle` pour ne pas entrer en collision avec
+// `answerRiddle` (quests.js — quête Lumière Éternelle).
+function answerSteleRiddle(choiceIdx) {
+  if (!runeStele || runeStele.solved) { _hideExploreOverlay(); return; }
+  const riddle = (typeof getRiddleById === 'function')
+    ? getRiddleById(runeStele.riddleId) : null;
+  if (!riddle) { _hideExploreOverlay(); return; }
+
+  if (choiceIdx === riddle.answer) {
+    runeStele.solved = true;
+    _steleFeedback = '';
+    const [bx, by] = runeStele.barrier.split(',').map(Number);
+    if (dungeon[by] && dungeon[by][bx] === CELL.WALL) {
+      dungeon[by][bx] = CELL.FLOOR;
+    }
+    _hideExploreOverlay();
+    setNarrative('Votre réponse résonne juste. ' + (riddle.rewardHint || '')
+      + ' Un pan de mur coulisse, révélant un coffre scellé.');
+    if (typeof addMsg === 'function') {
+      addMsg("🗿 Énigme résolue — un passage s'ouvre !", 'good');
+    }
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) {
+      AudioSystem.playChestOpen();
+    }
+    renderMinimap();
+    drawDungeon();
+  } else {
+    // Mauvaise réponse : on redessine l'overlay avec un préfixe d'échec.
+    _steleFeedback = "✗ Les glyphes restent sombres — ce n'est pas la "
+      + 'bonne réponse. La stèle attend toujours :';
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playHit) {
+      AudioSystem.playHit();
+    }
+    _showExploreOverlay(CELL.STELE);
+  }
 }
 
 // ── Autel Ancien — tribut risque/récompense, 1×/visite d'étage ──
