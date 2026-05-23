@@ -593,6 +593,13 @@ que `mp_presence` contient une ligne avec son `player_id`, ouvrir un
 deuxième onglet (autre `localStorage`) au même étage et même mode →
 chacun doit voir le fantôme de l'autre.
 
+**Migration close (2026-05-23)**. Aller-retour REST de bout en bout
+validé sur les 3 tables : INSERT/UPSERT, SELECT avec les filtres exacts
+du jeu (`floor=eq.N&mode=eq.normal&last_seen=gt.…`), PATCH `claimed_at`,
+DELETE. Cloisonnement `ironman`/`normal` vérifié (un fantôme `normal`
+n'apparaît pas dans la requête `mode=eq.ironman`). Schémas désormais
+alignés avec le code applicatif.
+
 ## 11. Hors-scope
 
 - Donjon réellement partagé / synchronisé, coopératif, spectateur.
@@ -667,7 +674,12 @@ chacun doit voir le fantôme de l'autre.
       Vérifié par `scenarioMultiplayerPolish` ; aucune régression
       sur `scenarioMultiplayerDuel` (Ironman 1 option → auto-pick).
 - [ ] Phase 7 — duel PvP en direct (optionnel).
-- [!] **Migration de schéma Supabase requise** (cf. §11quinquies,
-      2026-05-23). Code OK ; tables prod incomplètes. Bloquant pour
-      l'activation réelle du multijoueur. SQL idempotent fourni — à
-      exécuter par l'utilisateur dans le SQL Editor Supabase.
+- [x] **Migration de schéma Supabase** (cf. §11quinquies, 2026-05-23).
+      3 phases SQL appliquées : (1) ADD COLUMN des colonnes manquantes
+      `name`/`mode`/`hero_keys`/`status`/`snapshot`/`last_seen` sur
+      `mp_presence` + `mode`/`template`/`word`/`created_at` sur
+      `mp_messages` ; (2) SET DEFAULT sur les 4 colonnes héritées du
+      schéma lockstep (`player_name`/`dir`/`hp`/`hp_max`) ; (3) SET
+      DEFAULT sur `template_id` legacy et policy DELETE sur `mp_gifts`.
+      Aller-retour REST validé end-to-end sur les 3 tables. Multijoueur
+      effectivement actif en production.
