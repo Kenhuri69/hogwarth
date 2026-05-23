@@ -68,12 +68,32 @@ function _step(dir, faceDir) {
   drawDungeon();
   updateUI();
 
+  // Multijoueur — émet la nouvelle position (upsert throttlé).
+  if (typeof mpNotifyMove === 'function') mpNotifyMove();
+
   _updateSearchBtn();
 
   if (enemyMap[playerY][playerX]) {
     _hideExploreOverlay();
     startBattle(enemyMap[playerY][playerX]);
     return;
+  }
+
+  // Multijoueur — un fantôme occupe la case : ouvre l'interaction.
+  if (typeof getGhostAt === 'function') {
+    const _ghost = getGhostAt(playerX, playerY);
+    if (_ghost && typeof openGhostInteraction === 'function') {
+      openGhostInteraction(_ghost);
+      return;
+    }
+  }
+
+  // Multijoueur — un message gravé sur la case : révélation non bloquante.
+  if (typeof getMessageAt === 'function') {
+    const _msg = getMessageAt(playerX, playerY);
+    if (_msg) {
+      addMsg('🪶 « ' + _msg.text + ' » — ' + (_msg.authorName || 'un sorcier'), 'info');
+    }
   }
 
   handleCellEntry(cell);

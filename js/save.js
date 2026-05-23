@@ -255,6 +255,7 @@ function _serializeState() {
     totalKills,
     monsterKills:  { ...monsterKills },
     defeatedBosses: Array.from(defeatedBosses),
+    defeatedDuelists: Array.from(defeatedDuelists),
     ironmanRunId,
     _version:        3
   };
@@ -450,6 +451,7 @@ function _applyState(gs) {
   totalKills      = (typeof gs.totalKills === 'number') ? gs.totalKills : 0;
   monsterKills    = (gs.monsterKills && typeof gs.monsterKills === 'object') ? { ...gs.monsterKills } : {};
   defeatedBosses  = new Set(gs.defeatedBosses || []);
+  defeatedDuelists = new Set(gs.defeatedDuelists || []);
   ironmanRunId    = gs.ironmanRunId || null;
   // Save Ironman antérieur à l'UID de run → on en génère un (anti double-
   // classement). Vérification asynchrone qu'aucun score n'existe déjà.

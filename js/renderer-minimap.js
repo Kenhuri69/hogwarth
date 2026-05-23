@@ -135,6 +135,29 @@ function _buildMinimapCells(mm, cellSize) {
           && player.grimoirePages.includes(page.id);
         if (!collected) div.classList.add('map-page');
       }
+      // Fantôme multijoueur — surcouche cyan sur une case visitée.
+      // Si plusieurs fantômes partagent la case, badge « +N » sur la cellule.
+      if (typeof getGhostAt === 'function'
+          && visited[y][x]
+          && !(x === playerX && y === playerY)) {
+        const ghost = getGhostAt(x, y);
+        if (ghost) {
+          div.classList.add('map-ghost');
+          if (ghost.extras | 0) {
+            const badge = document.createElement('span');
+            badge.className = 'map-ghost-badge';
+            badge.textContent = '+' + (ghost.extras | 0);
+            div.appendChild(badge);
+          }
+        }
+      }
+      // Message gravé multijoueur — surcouche dorée sur une case visitée.
+      if (typeof getMessageAt === 'function'
+          && visited[y][x]
+          && !(x === playerX && y === playerY)
+          && getMessageAt(x, y)) {
+        div.classList.add('map-message');
+      }
       mm.appendChild(div);
     }
   }

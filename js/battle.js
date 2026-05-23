@@ -312,7 +312,10 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
 }
 
 // ── Démarrage du combat ──────────────────────────────────────
-function startBattle(baseEnemyData) {
+// `opts.duelGroup` (multijoueur §5) : tableau d'ennemis pré-construit à
+// partir d'un snapshot de groupe adverse — court-circuite rollGroupSize /
+// pickSimilarEnemy. Le combat se déroule ensuite comme un PvE classique.
+function startBattle(baseEnemyData, opts) {
   inBattle          = true;
   shieldTurns       = [0, 0];
   guardTurns        = [0, 0];
@@ -326,17 +329,23 @@ function startBattle(baseEnemyData) {
   recolteGoldBonus        = false;
   if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 
-  // Générer un groupe de 1-3 ennemis selon l'étage
-  const size = rollGroupSize();
-  enemyGroup = [];
-  for (let i = 0; i < size; i++) {
-    const base = i === 0 ? baseEnemyData : pickSimilarEnemy(baseEnemyData);
-    enemyGroup.push({ ...base, currentHp: base.hp, statusEffects: [] });
+  // Duel multijoueur : groupe pré-construit ; sinon tirage 1-3 monstres.
+  const duelGroup = opts && opts.duelGroup;
+  if (duelGroup && duelGroup.length) {
+    enemyGroup = duelGroup.map(e => ({ ...e, currentHp: e.hp, statusEffects: [] }));
+  } else {
+    const size = rollGroupSize();
+    enemyGroup = [];
+    for (let i = 0; i < size; i++) {
+      const base = i === 0 ? baseEnemyData : pickSimilarEnemy(baseEnemyData);
+      enemyGroup.push({ ...base, currentHp: base.hp, statusEffects: [] });
+    }
   }
   party.forEach(c => { c.statusEffects = []; });
 
-  // Marquer les ennemis comme découverts dans le bestiaire
-  enemyGroup.forEach(e => { if (e.id) seenMonsters.add(e.id); });
+  // Marquer les ennemis comme découverts dans le bestiaire (hors duellistes).
+  enemyGroup.forEach(e => { if (e.id && !e.isDuelist) seenMonsters.add(e.id); });
+  const size = enemyGroup.length;
 
   document.getElementById('encounter-overlay').style.display = 'flex';
   document.body.classList.add('in-battle');
@@ -643,7 +652,19 @@ function enemyTurn() {
     document.getElementById('encounter-overlay').style.display = 'none';
     document.body.classList.remove('in-battle');
     inBattle = false;
-    triggerDeath('Le groupe a été mis hors combat...');
+    // Duel multijoueur perdu : en mode normal, aucune conséquence (§5.3) —
+    // le groupe est relevé. En Ironman, la défaite est définitive (§5.2)
+    // et suit la voie triggerDeath standard (→ showIronmanResult).
+    const wasDuel = mpDuelActive;
+    if (wasDuel) { mpDuelActive = false; mpDuelMeta = null; }
+    if (wasDuel && !ironmanMode && typeof _mpResolveDuelDefeatNormal === 'function') {
+      AudioSystem.stopCombatMusic();
+      _mpResolveDuelDefeatNormal();
+      return;
+    }
+    triggerDeath(wasDuel
+      ? 'Vaincu en duel — ton run s\'achève ici...'
+      : 'Le groupe a été mis hors combat...');
     return;
   }
 
@@ -705,6 +726,24 @@ function endBattle(won) {
   clearAllStatuses();
 
   AudioSystem.stopCombatMusic();
+
+  // Duel multijoueur (§5) : issue PvP — pas de drops/XP PvE. Une défaite
+  // arrive ici uniquement par fuite (`won` faux) ; un groupe vaincu passe
+  // par `triggerDeath` (intercepté dans enemyTurn). Victoire → récompense.
+  if (mpDuelActive) {
+    const meta = mpDuelMeta;
+    mpDuelActive = false;
+    mpDuelMeta   = null;
+    if (won && typeof _mpResolveDuelVictory === 'function') {
+      _mpResolveDuelVictory(meta);
+    } else {
+      setNarrative('Le duel s\'interrompt — chacun reprend sa route.');
+    }
+    recolteGoldBonus = false;
+    updateUI();
+    safeCall('autoSave', 'duel-end');
+    return;
+  }
 
   if (won) {
     enemyMap[playerY][playerX] = null;

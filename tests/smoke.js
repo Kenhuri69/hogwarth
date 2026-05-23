@@ -10271,6 +10271,860 @@ async function scenarioSecretPassage() {
   await browser.close();
 }
 
+// ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
+async function scenarioMultiplayerPresence() {
+  console.log('\n── Scénario : multijoueur présence fantôme ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Globals exposés par js/multiplayer.js + renderer-effects.js.
+  const exposed = await page.evaluate(() => ({
+    mpStartSession:   typeof mpStartSession === 'function',
+    mpStopSession:    typeof mpStopSession === 'function',
+    getGhostAt:       typeof getGhostAt === 'function',
+    getMpPlayerId:    typeof getMpPlayerId === 'function',
+    projectGhosts:    typeof _mpProjectGhosts === 'function',
+    drawGhostSprite:  typeof drawGhostSprite === 'function',
+    ghostPlacements:  typeof ghostPlacements !== 'undefined',
+  }));
+  Object.entries(exposed).forEach(([k, v]) => assert(v, `global manquant : ${k}`));
+
+  // 2) UUID joueur stable + persisté dans le localStorage.
+  const id = await page.evaluate(() => {
+    if (typeof mpStopSession === 'function') mpStopSession(); // coupe le réseau
+    mpActive = false;
+    const a = getMpPlayerId();
+    const b = getMpPlayerId();
+    return { a, b, stored: localStorage.getItem('hogwarts_rpg_player_id') };
+  });
+  assert(id.a && id.a.length > 0, 'getMpPlayerId doit retourner un id non vide');
+  assert(id.a === id.b,           "l'id joueur doit être stable entre deux appels");
+  assert(id.stored === id.a,      "l'id joueur doit être persisté dans le localStorage");
+
+  // 3) Projection : seules les cases FLOOR libres retiennent un fantôme.
+  const proj = await page.evaluate(() => {
+    playerX = 5; playerY = 5;
+    dungeon[3][5] = CELL.FLOOR;   // cible valide
+    dungeon[3][6] = CELL.WALL;    // mur → rejet
+    if (typeof npcPlacements !== 'undefined') npcPlacements.delete('5,3');
+    if (enemyMap[3]) enemyMap[3][5] = null;
+    _mpProjectGhosts([
+      { player_id: 'a', name: 'Alice', mode: 'normal', floor: 1, x: 5, y: 3,
+        level: 4, hero_keys: ['harry'], house: 'Gryffondor', status: 'exploring' },
+      { player_id: 'b', name: 'Bob',   mode: 'normal', floor: 1, x: 6, y: 3, level: 9 },
+      { player_id: 'c', name: 'Carol', mode: 'normal', floor: 1, x: 5, y: 5, level: 2 },
+    ]);
+    return {
+      size:      ghostPlacements.size,
+      hasFloor:  ghostPlacements.has('5,3'),
+      hasWall:   ghostPlacements.has('6,3'),
+      hasPlayer: ghostPlacements.has('5,5'),
+      atFloor:   getGhostAt(5, 3),
+    };
+  });
+  assert(proj.size === 1,     `un seul fantôme projeté attendu (obtenu ${proj.size})`);
+  assert(proj.hasFloor,       'le fantôme sur case FLOOR doit être projeté');
+  assert(!proj.hasWall,       'un fantôme sur une case WALL ne doit pas être projeté');
+  assert(!proj.hasPlayer,     'un fantôme sur la case du joueur ne doit pas être projeté');
+  assert(proj.atFloor && proj.atFloor.name === 'Alice', 'getGhostAt doit retrouver le fantôme');
+  assert(proj.atFloor.level === 4, 'le niveau du fantôme doit être conservé');
+
+  // 4) Rendu 3D : un fantôme pile devant → drawGhostSprite appelé.
+  const render = await page.evaluate(() => {
+    playerX = 5; playerY = 5; playerDir = 'n';
+    dungeon[5][5] = CELL.FLOOR;
+    dungeon[4][5] = CELL.FLOOR;     // case devant
+    if (enemyMap[4]) enemyMap[4][5] = null;
+    if (typeof npcPlacements !== 'undefined') npcPlacements.clear();
+    ghostPlacements = new Map();
+    ghostPlacements.set('5,4', { playerId: 'g', name: 'Spectre', level: 11,
+                                 heroKeys: ['harry'], house: 'Serdaigle' });
+    const calls = [];
+    const orig = window.drawGhostSprite;
+    window.drawGhostSprite = function (ghost, x, baseY, sz) {
+      calls.push({ name: ghost && ghost.name, x, baseY, sz });
+      return orig.apply(this, arguments);
+    };
+    drawDungeon();
+    window.drawGhostSprite = orig;
+    return { callCount: calls.length, last: calls[calls.length - 1] || null };
+  });
+  assert(render.callCount >= 1,
+    `drawGhostSprite doit être appelé avec un fantôme devant (obtenu ${render.callCount})`);
+  assert(render.last && render.last.name === 'Spectre',
+    'drawGhostSprite doit recevoir le bon fantôme');
+  assert(render.last.sz > 0, 'la taille du sprite fantôme doit être > 0');
+
+  // 5) Aucun fantôme → drawGhostSprite NE doit PAS être appelé.
+  const noGhost = await page.evaluate(() => {
+    ghostPlacements = new Map();
+    const calls = [];
+    const orig = window.drawGhostSprite;
+    window.drawGhostSprite = function () { calls.push(arguments); };
+    drawDungeon();
+    window.drawGhostSprite = orig;
+    return calls.length;
+  });
+  assert(noGhost === 0,
+    `drawGhostSprite ne doit pas être appelé sans fantôme (obtenu ${noGhost})`);
+
+  // 6) Minimap : un fantôme sur une case visitée → marqueur .map-ghost.
+  const minimap = await page.evaluate(() => {
+    playerX = 5; playerY = 5;
+    dungeon[4][5] = CELL.FLOOR;
+    visited[4][5] = true;
+    ghostPlacements = new Map();
+    ghostPlacements.set('5,4', { playerId: 'g', name: 'Spectre', level: 3 });
+    renderMinimap();
+    return document.querySelectorAll('#minimap .map-ghost').length;
+  });
+  assert(minimap >= 1, `un marqueur .map-ghost attendu sur la minimap (obtenu ${minimap})`);
+
+  // 7) Sprite PNG plein corps — registre exposé, 11 héros, fichiers
+  //    présents (file:// charge tout sauf erreur explicite).
+  const sprites = await page.evaluate(async () => {
+    if (typeof PLAYER_SPRITE_SRC === 'undefined') return { registered: false };
+    const keys = Object.keys(PLAYER_SPRITE_SRC);
+    // Attente passive : on laisse 800 ms au navigateur pour charger les
+    // images via _getPlayerSprite (l'appel paresseux n'a peut-être pas
+    // encore été déclenché).
+    keys.forEach(k => _getPlayerSprite(k));
+    await new Promise(r => setTimeout(r, 800));
+    return {
+      registered: true,
+      keys:       keys.length,
+      loaded:     keys.filter(k => {
+        const s = _getPlayerSprite(k);
+        return s && s.ready && !s.failed;
+      }).length,
+    };
+  });
+  assert(sprites.registered,    'PLAYER_SPRITE_SRC doit être exposé');
+  assert(sprites.keys === 11,   `11 héros attendus dans PLAYER_SPRITE_SRC (obtenu ${sprites.keys})`);
+  assert(sprites.loaded === 11, `11 PNG doivent charger (obtenu ${sprites.loaded})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (multijoueur)`);
+  }
+  console.log('  ✅ multijoueur — identité, projection, rendu fantôme OK');
+  await browser.close();
+}
+
+// ── Scénario : multijoueur — interaction fantôme (Phase 2) ──
+async function scenarioMultiplayerInteraction() {
+  console.log('\n── Scénario : multijoueur interaction fantôme ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Globals Phase 2 exposés.
+  const exposed = await page.evaluate(() => ({
+    ghostTagline:        typeof ghostTagline === 'function',
+    openGhostInteraction:typeof openGhostInteraction === 'function',
+    mpInspectGhost:      typeof mpInspectGhost === 'function',
+    mpEmoteGhost:        typeof mpEmoteGhost === 'function',
+    closeGhostOverlay:   typeof closeGhostOverlay === 'function',
+    overlayEl:           !!document.getElementById('ghost-overlay'),
+  }));
+  Object.entries(exposed).forEach(([k, v]) => assert(v, `global/élément manquant : ${k}`));
+
+  // 2) ghostTagline — pure, déterministe, banque par Maison.
+  const tag = await page.evaluate(() => ({
+    a:        ghostTagline(['harry'], 'Gryffondor'),
+    aBis:     ghostTagline(['harry'], 'Gryffondor'),
+    serp:     ghostTagline(['harry'], 'Serpentard'),
+    duo:      ghostTagline(['harry', 'hermione'], 'Gryffondor'),
+    fallback: ghostTagline([], null),
+  }));
+  assert(tag.a && tag.a.length > 0,  'ghostTagline doit retourner une phrase non vide');
+  assert(tag.a === tag.aBis,         'ghostTagline doit être déterministe');
+  assert(tag.serp !== tag.a,         'la Maison doit changer la banque de phrases');
+  assert(tag.fallback && tag.fallback.length > 0, 'ghostTagline doit gérer une Maison absente');
+
+  // 3) Overlay : en-tête (portrait, pseudo · niveau, phrase d'accroche).
+  const header = await page.evaluate(() => {
+    openGhostInteraction({
+      playerId: 'g1', name: 'Mage<b>Test', mode: 'ironman', level: 12,
+      heroKeys: ['harry', 'hermione'], house: 'Serdaigle', status: 'exploring',
+    });
+    const overlay = document.getElementById('ghost-overlay');
+    const panel   = document.getElementById('ghost-panel');
+    return {
+      shown:      overlay && overlay.style.display === 'flex',
+      hasName:    /Mage/.test(panel.innerHTML),
+      escaped:    !panel.querySelector('b'),           // nom non interprété en HTML
+      hasLevel:   /Niveau 12/.test(panel.textContent),
+      portraits:  panel.querySelectorAll('.ghost-portrait').length,
+      crest:      !!panel.querySelector('.ghost-crest'),
+      tagline:    !!panel.querySelector('.ghost-tagline'),
+      inspectBtn: /mpInspectGhost/.test(panel.innerHTML),
+    };
+  });
+  assert(header.shown,      "l'overlay fantôme doit s'afficher");
+  assert(header.hasName,    'le pseudo du fantôme doit apparaître');
+  assert(header.escaped,    'le pseudo distant doit être échappé (pas de HTML injecté)');
+  assert(header.hasLevel,   'le niveau du fantôme doit apparaître');
+  assert(header.portraits === 2, `2 portraits attendus (obtenu ${header.portraits})`);
+  assert(header.crest,      'le blason de Maison doit apparaître');
+  assert(header.tagline,    "la phrase d'accroche doit apparaître");
+  assert(header.inspectBtn, "l'action Inspecter doit être présente");
+
+  // 4) Inspecter — fiche lecture seule.
+  const inspect = await page.evaluate(() => {
+    mpInspectGhost();
+    const panel = document.getElementById('ghost-panel');
+    return {
+      rows:      panel.querySelectorAll('.ghost-inspect-row').length,
+      heroes:    panel.querySelectorAll('.ghost-inspect-hero').length,
+      hasMode:   /Ironman/.test(panel.textContent),
+      hasReturn: /_mpRenderGhostMain/.test(panel.innerHTML),
+    };
+  });
+  assert(inspect.rows >= 4,   `≥4 lignes d'inspection attendues (obtenu ${inspect.rows})`);
+  assert(inspect.heroes === 2, `2 héros listés attendus (obtenu ${inspect.heroes})`);
+  assert(inspect.hasMode,     'le mode Ironman doit apparaître dans la fiche');
+  assert(inspect.hasReturn,   'un bouton retour doit être présent');
+
+  // 5) Emote + fermeture.
+  const close = await page.evaluate(() => {
+    _mpRenderGhostMain();
+    mpEmoteGhost();
+    const emoted = _mpEmoted === true;
+    closeGhostOverlay();
+    const overlay = document.getElementById('ghost-overlay');
+    return { emoted, hidden: overlay.style.display === 'none' };
+  });
+  assert(close.emoted, 'mpEmoteGhost doit marquer le salut comme envoyé');
+  assert(close.hidden, 'closeGhostOverlay doit masquer l\'overlay');
+
+  // 6) Marcher sur la case d'un fantôme ouvre l'interaction.
+  const stepOn = await page.evaluate(() => {
+    playerX = 5; playerY = 5; playerDir = 'n';
+    dungeon[5][5] = CELL.FLOOR;
+    dungeon[4][5] = CELL.FLOOR;
+    if (enemyMap[4]) enemyMap[4][5] = null;
+    if (typeof npcPlacements !== 'undefined') npcPlacements.clear();
+    ghostPlacements = new Map();
+    ghostPlacements.set('5,4', { playerId: 'g2', name: 'Voisin', level: 5,
+                                 heroKeys: ['harry'], house: 'Poufsouffle' });
+    moveForward();
+    const overlay = document.getElementById('ghost-overlay');
+    const opened  = overlay && overlay.style.display === 'flex';
+    if (typeof closeGhostOverlay === 'function') closeGhostOverlay();
+    return { px: playerX, py: playerY, opened };
+  });
+  assert(stepOn.px === 5 && stepOn.py === 4, 'le joueur doit avoir avancé sur la case du fantôme');
+  assert(stepOn.opened, "marcher sur un fantôme doit ouvrir l'overlay d'interaction");
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (interaction fantôme)`);
+  }
+  console.log('  ✅ multijoueur — overlay, en-tête, inspection, déclenchement OK');
+  await browser.close();
+}
+
+// ── Scénario : multijoueur — duel PvP snapshot (Phase 3) ──
+async function scenarioMultiplayerDuel() {
+  console.log('\n── Scénario : multijoueur duel PvP ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Globals Phase 3 exposés.
+  const exposed = await page.evaluate(() => ({
+    mpBuildSnapshot:       typeof mpBuildSnapshot === 'function',
+    mpStartDuel:           typeof mpStartDuel === 'function',
+    heroToEnemy:           typeof _mpHeroToEnemy === 'function',
+    resolveVictory:        typeof _mpResolveDuelVictory === 'function',
+    duelActiveVar:         typeof mpDuelActive !== 'undefined',
+    defeatedDuelistsVar:   typeof defeatedDuelists !== 'undefined',
+  }));
+  Object.entries(exposed).forEach(([k, v]) => assert(v, `global manquant : ${k}`));
+
+  // 2) mpBuildSnapshot — forme sérialisable.
+  const snap = await page.evaluate(() => {
+    const s = mpBuildSnapshot();
+    return {
+      heroes:   Array.isArray(s.heroes) ? s.heroes.length : -1,
+      hasStats: !!(s.heroes[0] && typeof s.heroes[0].atk === 'number'
+                   && Array.isArray(s.heroes[0].spells)
+                   && Array.isArray(s.heroes[0].equipment)),
+      level:    s.level,
+    };
+  });
+  assert(snap.heroes === 1,  `snapshot solo = 1 héros (obtenu ${snap.heroes})`);
+  assert(snap.hasStats,      'chaque héros du snapshot doit porter stats/sorts/équipement');
+  assert(snap.level >= 1,    'le snapshot doit porter le niveau du joueur');
+
+  // 3) _mpHeroToEnemy — mappe sorts → capacités ennemies.
+  const enemy = await page.evaluate(() => {
+    const e = _mpHeroToEnemy({
+      heroKey: 'harry', name: 'Rival', hpMax: 30, atk: 6, def: 3,
+      mag: 10, agi: 5, lck: 5, spells: ['Incendio', 'Episkey'], equipment: [],
+    }, 0);
+    return {
+      isDuelist: e.isDuelist === true,
+      hp:        e.hp,
+      hasDamage: e.abilities.some(a => a.effect === 'damage'),
+      hasHeal:   e.abilities.some(a => a.effect === 'heal'),
+    };
+  });
+  assert(enemy.isDuelist,  "l'ennemi de duel doit être marqué isDuelist");
+  assert(enemy.hp === 30,  'les PV du duelliste viennent du snapshot');
+  assert(enemy.hasDamage,  'un sort offensif doit produire une capacité damage');
+  assert(enemy.hasHeal,    'un sort de soin doit produire une capacité heal');
+
+  // 4) Duel — démarrage puis victoire (mode normal).
+  const win = await page.evaluate(() => {
+    ironmanMode = false;
+    const goldBefore = player.gold;
+    const fakeSnap = { name: 'Rival', level: 6, house: 'Serpentard', mode: 'normal',
+      heroes: [{ heroKey: 'harry', name: 'Rival', icon: '🧙', hpMax: 20,
+                 atk: 5, def: 2, mag: 8, agi: 5, lck: 5,
+                 spells: ['Glacius'], equipment: [] }] };
+    const started = mpStartDuel(fakeSnap, { playerId: 'duel-1', name: 'Rival', level: 6 });
+    const inDuel  = mpDuelActive === true && inBattle === true;
+    const grp     = enemyGroup.length;
+    const duelist = enemyGroup[0] && enemyGroup[0].isDuelist === true;
+    // Achève les duellistes puis déclenche la fin de combat.
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    checkAllEnemiesDead();
+    return {
+      started, inDuel, grp, duelist,
+      duelCleared: mpDuelActive === false,
+      battleOver:  inBattle === false,
+      beaten:      defeatedDuelists.has('duel-1'),
+      goldGain:    player.gold - goldBefore,
+    };
+  });
+  assert(win.started,     'mpStartDuel doit réussir');
+  assert(win.inDuel,      'le duel doit activer mpDuelActive + inBattle');
+  assert(win.grp === 1,   `1 duelliste attendu dans enemyGroup (obtenu ${win.grp})`);
+  assert(win.duelist,     "l'enemyGroup doit contenir un duelliste");
+  assert(win.duelCleared, 'la victoire doit éteindre mpDuelActive');
+  assert(win.battleOver,  'la victoire doit terminer le combat');
+  assert(win.beaten,      "l'adversaire vaincu doit entrer dans defeatedDuelists");
+  assert(win.goldGain > 0, `une victoire normale doit rapporter de l'or (obtenu ${win.goldGain})`);
+
+  // 5) Victoire Ironman — copie d'un sort inconnu du vaincu.
+  const ironWin = await page.evaluate(() => {
+    ironmanMode = true;
+    const knewBefore = party[0].spells.includes('Sectumsempra');
+    const fakeSnap = { name: 'IronRival', level: 8, mode: 'ironman',
+      heroes: [{ heroKey: 'harry', name: 'IronRival', icon: '🧙', hpMax: 18,
+                 atk: 5, def: 2, mag: 8, agi: 5, lck: 5,
+                 spells: ['Sectumsempra'], equipment: [] }] };
+    mpStartDuel(fakeSnap, { playerId: 'duel-2', name: 'IronRival', level: 8 });
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    checkAllEnemiesDead();
+    ironmanMode = false;
+    return {
+      knewBefore,
+      learned: party[0].spells.includes('Sectumsempra'),
+      beaten:  defeatedDuelists.has('duel-2'),
+    };
+  });
+  assert(!ironWin.knewBefore, 'pré-condition : le sort copié doit être inconnu');
+  assert(ironWin.learned,     'une victoire Ironman doit copier un sort inconnu du vaincu');
+  assert(ironWin.beaten,      "l'adversaire Ironman vaincu doit entrer dans defeatedDuelists");
+
+  // 6) Défaite en duel normal — aucune conséquence, groupe relevé.
+  const loss = await page.evaluate(() => {
+    ironmanMode = false;
+    const fakeSnap = { name: 'Rival3', level: 5, mode: 'normal',
+      heroes: [{ heroKey: 'harry', name: 'Rival3', icon: '🧙', hpMax: 40,
+                 atk: 9, def: 4, mag: 9, agi: 5, lck: 5,
+                 spells: ['Incendio'], equipment: [] }] };
+    mpStartDuel(fakeSnap, { playerId: 'duel-3', name: 'Rival3', level: 5 });
+    party.slice(0, partySize).forEach(c => { c.hp = 0; });
+    enemyTurn();
+    const deathShown = document.getElementById('death-screen').style.display === 'flex';
+    return {
+      duelCleared: mpDuelActive === false,
+      revived:     party[0].hp > 0,
+      battleOver:  inBattle === false,
+      deathShown,
+    };
+  });
+  assert(loss.duelCleared, 'une défaite de duel doit éteindre mpDuelActive');
+  assert(loss.revived,     'mode normal : le groupe doit être relevé après une défaite de duel');
+  assert(loss.battleOver,  'la défaite doit terminer le combat');
+  assert(!loss.deathShown, 'mode normal : aucune mort sur défaite de duel');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (duel PvP)`);
+  }
+  console.log('  ✅ multijoueur — snapshot, duel, victoire/défaite PvP OK');
+  await browser.close();
+}
+
+// ── Scénario : multijoueur — messages à gabarits (Phase 4) ──
+async function scenarioMultiplayerMessages() {
+  console.log('\n── Scénario : multijoueur messages ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Globals Phase 4 exposés.
+  const exposed = await page.evaluate(() => ({
+    mpComposeText:        typeof mpComposeText === 'function',
+    getMessageAt:         typeof getMessageAt === 'function',
+    mpPostMessage:        typeof mpPostMessage === 'function',
+    openMessageComposer:  typeof openMessageComposer === 'function',
+    drawMessageMarker:    typeof drawMessageMarker === 'function',
+    placementsVar:        typeof messagePlacements !== 'undefined',
+    banks:                Array.isArray(MP_MSG_TEMPLATES) && Array.isArray(MP_MSG_WORDS),
+    overlayEl:            !!document.getElementById('mp-message-overlay'),
+  }));
+  Object.entries(exposed).forEach(([k, v]) => assert(v, `global/élément manquant : ${k}`));
+
+  // 2) mpComposeText — recomposition par gabarit + mot, banque fermée.
+  const compose = await page.evaluate(() => ({
+    slot:    mpComposeText('beware', 'trap'),
+    noSlot:  mpComposeText('congrats', null),
+    badTpl:  mpComposeText('inexistant', 'trap'),
+    badWord: mpComposeText('beware', 'inexistant'),
+  }));
+  assert(/piège/.test(compose.slot),   'mpComposeText doit insérer le mot dans le gabarit');
+  assert(compose.noSlot && compose.noSlot.length > 0, 'un gabarit sans slot doit se composer seul');
+  assert(compose.badTpl === null,      'un gabarit hors banque doit donner null');
+  assert(compose.badWord === null,     'un mot hors banque doit donner null');
+
+  // 3) Projection — seuls gabarit/mot connus + case FLOOR sont retenus.
+  const proj = await page.evaluate(() => {
+    dungeon[3][5] = CELL.FLOOR;
+    dungeon[3][6] = CELL.FLOOR;
+    dungeon[3][7] = CELL.FLOOR;
+    _mpProjectMessages([
+      { author_id: 'a', author_name: 'Alice', x: 5, y: 3, template: 'beware',   word: 'trap' },
+      { author_id: 'b', author_name: 'Bob',   x: 5, y: 3, template: 'beware',   word: 'trap' },
+      { author_id: 'c', author_name: 'Carol', x: 6, y: 3, template: 'INCONNU',  word: 'trap' },
+      { author_id: 'd', author_name: 'Dave',  x: 7, y: 3, template: 'congrats' },
+    ]);
+    const at53 = getMessageAt(5, 3);
+    return {
+      size:    messagePlacements.size,
+      has53:   !!at53,
+      author:  at53 && at53.authorName,
+      hasBad:  !!getMessageAt(6, 3),
+      has73:   !!getMessageAt(7, 3),
+    };
+  });
+  assert(proj.size === 2,    `2 messages projetés attendus (obtenu ${proj.size})`);
+  assert(proj.has53,         'le message valide doit être projeté');
+  assert(proj.author === 'Alice', 'collision : le 1er (plus récent) doit gagner');
+  assert(!proj.hasBad,       'un message au gabarit inconnu doit être ignoré');
+  assert(proj.has73,         'un gabarit sans slot doit être projeté');
+
+  // 4) Compositeur — overlay + chips de gabarits/mots.
+  const composer = await page.evaluate(() => {
+    playerX = 5; playerY = 5;
+    dungeon[5][5] = CELL.FLOOR;
+    messagePlacements = new Map();
+    openMessageComposer();
+    const ov    = document.getElementById('mp-message-overlay');
+    const panel = document.getElementById('mp-message-panel');
+    return {
+      shown:   ov && ov.style.display === 'flex',
+      chips:   panel.querySelectorAll('.mp-chip').length,
+      preview: !!panel.querySelector('.mp-msg-preview'),
+    };
+  });
+  assert(composer.shown,       "le compositeur doit s'afficher sur une case libre");
+  assert(composer.chips > 0,   'le compositeur doit lister des chips gabarit/mot');
+  assert(composer.preview,     'le compositeur doit afficher un aperçu');
+
+  // 5) Gravure d'un message via le compositeur.
+  const post = await page.evaluate(() => {
+    _mpLastMsgPost = 0;                       // neutralise le cooldown
+    _mpSelectTemplate('beware');
+    _mpSelectWord('monster');
+    _mpConfirmMessage();
+    const ov  = document.getElementById('mp-message-overlay');
+    const msg = getMessageAt(playerX, playerY);
+    return {
+      closed: ov.style.display === 'none',
+      text:   msg && msg.text,
+      mine:   msg && msg.authorId === getMpPlayerId(),
+    };
+  });
+  assert(post.closed,            'graver un message doit fermer le compositeur');
+  assert(/monstre/.test(post.text || ''), 'le message gravé doit porter le texte composé');
+  assert(post.mine,              'le message gravé doit être attribué au joueur local');
+
+  // 6) Lecture — le marqueur 3D est rendu pour un message devant le joueur.
+  const render = await page.evaluate(() => {
+    playerX = 5; playerY = 5; playerDir = 'n';
+    dungeon[5][5] = CELL.FLOOR;
+    dungeon[4][5] = CELL.FLOOR;
+    ghostPlacements   = new Map();
+    messagePlacements = new Map();
+    messagePlacements.set('5,4', { x: 5, y: 4, text: 'Méfie-toi de un piège',
+                                   authorName: 'Alice', authorId: 'a' });
+    let calls = 0;
+    const orig = window.drawMessageMarker;
+    window.drawMessageMarker = function () { calls++; return orig.apply(this, arguments); };
+    drawDungeon();
+    window.drawMessageMarker = orig;
+    renderMinimap();
+    return {
+      markerCalls: calls,
+      mapMarks:    document.querySelectorAll('#minimap .map-message').length,
+    };
+  });
+  assert(render.markerCalls >= 1,
+    `drawMessageMarker doit être appelé pour un message devant (obtenu ${render.markerCalls})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (messages)`);
+  }
+  console.log('  ✅ multijoueur — gabarits, projection, gravure, marqueur OK');
+  await browser.close();
+}
+
+// ── Scénario : multijoueur — cadeaux or/objet (Phase 5) ──
+async function scenarioMultiplayerGifts() {
+  console.log('\n── Scénario : multijoueur cadeaux ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Globals Phase 5 exposés.
+  const exposed = await page.evaluate(() => ({
+    mpOpenGiftView:    typeof mpOpenGiftView === 'function',
+    claimPendingGifts: typeof claimPendingGifts === 'function',
+    giftableHelper:    typeof _mpGiftableItems === 'function',
+    cap:               typeof MP_GIFT_GOLD_MAX === 'number' && MP_GIFT_GOLD_MAX === 500,
+    cooldownConst:     typeof MP_GIFT_RECIPIENT_COOLDOWN_MS === 'number',
+    cooldownMap:       typeof _mpGiftCooldowns !== 'undefined',
+  }));
+  Object.entries(exposed).forEach(([k, v]) => assert(v, `global manquant : ${k}`));
+
+  // 2) Bouton 🎁 actif dans l'overlay fantôme (plus de « phase ultérieure »).
+  const overlay = await page.evaluate(() => {
+    const ghost = { playerId: 'ally-1', name: 'Alice', level: 4, house: 'Gryffondor',
+      heroKeys: ['harry'], floor: 1, x: 0, y: 0, mode: 'normal', status: 'exploring' };
+    openGhostInteraction(ghost);
+    const panel = document.getElementById('ghost-panel');
+    const giftBtn = Array.from(panel.querySelectorAll('button'))
+      .find(b => /Offrir/.test(b.textContent));
+    return {
+      overlayShown: document.getElementById('ghost-overlay').style.display === 'flex',
+      hasGiftBtn:   !!giftBtn,
+      enabled:      !!(giftBtn && !giftBtn.disabled),
+    };
+  });
+  assert(overlay.overlayShown, "l'overlay fantôme doit s'afficher");
+  assert(overlay.hasGiftBtn,   'le bouton 🎁 Offrir doit exister');
+  assert(overlay.enabled,      'le bouton 🎁 Offrir doit être actif (phase 5 livrée)');
+
+  // 3) _mpGiftableItems — exclut les items requis par une quête active.
+  const filter = await page.evaluate(() => {
+    activeQuests = [{ id: 'q', completed: false,
+      objectives: [{ type: 'item', itemId: 'mandragore', amount: 1,
+                     progress: 0, completed: false }] }];
+    player.inventory = [
+      { id: 'potion_s',   name: 'Potion S' },
+      { id: 'mandragore', name: 'Mandragore' },        // quête → exclu
+      { id: 'wand1',      name: 'Baguette de Saule' },
+    ];
+    const list = _mpGiftableItems();
+    return { count: list.length, ids: list.map(({ item }) => item.id) };
+  });
+  assert(filter.count === 2,                'la mandragore quête doit être filtrée');
+  assert(filter.ids.includes('potion_s'),   'la potion doit rester offrable');
+  assert(filter.ids.includes('wand1'),      'la baguette doit rester offrable');
+  assert(!filter.ids.includes('mandragore'),'item de quête doit être exclu');
+
+  // 4) Vue cadeau — onglets + champ or présent, plafond respecté.
+  const view = await page.evaluate(() => {
+    player.gold = 320;
+    mpOpenGiftView();
+    const panel = document.getElementById('ghost-panel');
+    const tabs  = panel.querySelectorAll('.mp-gift-tabs .mp-chip');
+    const goldInput = panel.querySelector('input[type="number"]');
+    return {
+      tabs:    tabs.length,
+      hasGold: !!goldInput,
+      max:     goldInput && parseInt(goldInput.max, 10),
+    };
+  });
+  assert(view.tabs === 2,        'la vue cadeau doit afficher 2 onglets (or / objet)');
+  assert(view.hasGold,           "le champ or doit s'afficher");
+  assert(view.max === 320,       `le max doit être borné par l'or (obtenu ${view.max})`);
+
+  // 5) Stub réseau — force _mpConfigured et intercepte fetch.
+  await page.evaluate(() => {
+    window._mpFetchCalls = [];
+    window._mpConfigured = function () { return true; };
+    MP_CONFIG.supabaseUrl     = 'https://stub.supabase.test';
+    MP_CONFIG.supabaseAnonKey = 'stub-key';
+    window._mpStubInbox = [];
+    const realFetch = window.fetch;
+    window.fetch = async function (url, opts) {
+      const u = String(url || '');
+      const method = (opts && opts.method) || 'GET';
+      window._mpFetchCalls.push({ url: u, method,
+        body: opts && opts.body ? JSON.parse(opts.body) : null });
+      // SELECT sur mp_gifts → renvoyer la boîte simulée
+      if (u.includes('/mp_gifts') && method === 'GET') {
+        return new Response(JSON.stringify(window._mpStubInbox),
+          { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      // INSERT / UPDATE / autre → 200 vide
+      if (u.includes('/mp_gifts')) {
+        return new Response('', { status: 204 });
+      }
+      // Tout autre appel : repasse au fetch d'origine (ressources locales)
+      return realFetch.apply(this, arguments);
+    };
+  });
+
+  // 6) Envoi d'un cadeau or — payload conforme, gold débité, cooldown armé.
+  const send = await page.evaluate(async () => {
+    _mpGiftCooldowns.clear();
+    window._mpFetchCalls = [];
+    const before = player.gold;
+    _mpGiftSelectKind('gold');
+    _mpGiftSetGold(150);
+    _mpConfirmGift();
+    await new Promise(r => setTimeout(r, 40));         // attend le POST
+    const post = window._mpFetchCalls.find(c =>
+      c.method === 'POST' && /\/mp_gifts/.test(c.url));
+    return {
+      goldDelta: before - player.gold,
+      postBody:  post && post.body,
+      overlayClosed: document.getElementById('ghost-overlay').style.display === 'none',
+      cooldown:  _mpGiftCooldowns.has('ally-1'),
+    };
+  });
+  assert(send.goldDelta === 150,        `gold doit être débité de 150 (obtenu ${send.goldDelta})`);
+  assert(send.overlayClosed,            "envoyer un cadeau doit fermer l'overlay");
+  assert(send.postBody && send.postBody.kind === 'gold',
+    'le payload POST doit porter kind=gold');
+  assert(send.postBody.recipient_id === 'ally-1',
+    'le payload doit cibler le destinataire de l\'overlay');
+  assert(send.postBody.amount === 150,
+    `le payload doit porter amount=150 (obtenu ${send.postBody && send.postBody.amount})`);
+  assert(send.cooldown,                 'le cooldown destinataire doit être armé');
+
+  // 7) Cooldown — un 2e envoi immédiat au même destinataire est bloqué.
+  const cooldown = await page.evaluate(() => {
+    const before = player.gold;
+    const ghost = { playerId: 'ally-1', name: 'Alice', level: 4, house: 'Gryffondor',
+      heroKeys: ['harry'], floor: 1, x: 0, y: 0, mode: 'normal', status: 'exploring' };
+    openGhostInteraction(ghost);
+    mpOpenGiftView();
+    const panel = document.getElementById('ghost-panel');
+    const sendBtn = Array.from(panel.querySelectorAll('button'))
+      .find(b => /Offrir|Attends/.test(b.textContent));
+    const blocked = sendBtn && (sendBtn.disabled || /Attends/.test(sendBtn.textContent));
+    // Tente quand même un confirm — il doit être no-op.
+    _mpConfirmGift();
+    return { blocked, goldUnchanged: player.gold === before };
+  });
+  assert(cooldown.blocked,        'le bouton doit afficher « Attends … » sur cooldown');
+  assert(cooldown.goldUnchanged,  "le 2e envoi vers le même joueur ne doit rien débiter");
+
+  // 8) claimPendingGifts — applique or + item, PATCH claimed_at.
+  await page.evaluate(() => {
+    window._mpStubInbox = [
+      { id: 'g1', sender_name: 'Bob',   kind: 'gold', amount: 120 },
+      { id: 'g2', sender_name: 'Carol', kind: 'item',
+        item_id: 'potion_s', item_name: 'Potion S',
+        item_data: { id: 'potion_s', name: 'Potion S', type: 'consumable', icon: '🧪' } },
+      { id: 'g3', sender_name: 'Dave',  kind: 'gold', amount: 99999 },   // doit être clampé
+    ];
+    player.gold = 0;
+    player.inventory = [];                                                // sac vide
+  });
+  const claim = await page.evaluate(async () => {
+    window._mpFetchCalls = [];
+    const out = await claimPendingGifts();
+    return {
+      ok:       !!out && out.ok,
+      gold:     player.gold,
+      hasItem:  player.inventory.some(it => it && it.id === 'potion_s'),
+      patches:  window._mpFetchCalls.filter(c => c.method === 'PATCH'
+                 && /\/mp_gifts\?id=eq\./.test(c.url)).length,
+    };
+  });
+  assert(claim.ok,                'claimPendingGifts doit aboutir');
+  // 120 + 500 (clamp de 99999) = 620
+  assert(claim.gold === 620,
+    `or réclamé = 120 + clamp(99999→500) = 620 (obtenu ${claim.gold})`);
+  assert(claim.hasItem,           "l'item du cadeau doit arriver dans le sac");
+  assert(claim.patches === 3,
+    `3 PATCH claimed_at attendus (1/cadeau appliqué), obtenu ${claim.patches}`);
+
+  // 9) Sac plein — un item non claimé reste dans la boîte (pas de PATCH).
+  await page.evaluate(() => {
+    window._mpStubInbox = [
+      { id: 'g4', sender_name: 'Eve', kind: 'item',
+        item_id: 'potion_m', item_name: 'Potion M',
+        item_data: { id: 'potion_m', name: 'Potion M', type: 'consumable', icon: '🧪' } },
+    ];
+    // Remplit le sac à ras bord (16 slots).
+    player.inventory = [];
+    for (let i = 0; i < 16; i++) player.inventory.push({ id: 'filler', name: 'f', type: 'misc' });
+  });
+  const overflow = await page.evaluate(async () => {
+    window._mpFetchCalls = [];
+    await claimPendingGifts();
+    return {
+      patches: window._mpFetchCalls.filter(c => c.method === 'PATCH'
+                 && /\/mp_gifts\?id=eq\./.test(c.url)).length,
+      potion:  player.inventory.some(it => it && it.id === 'potion_m'),
+    };
+  });
+  assert(overflow.patches === 0,
+    `sac plein → 0 PATCH (cadeau préservé), obtenu ${overflow.patches}`);
+  assert(!overflow.potion, 'sac plein → la potion ne doit PAS être ajoutée');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (cadeaux)`);
+  }
+  console.log('  ✅ multijoueur — envoi, cooldown, boîte aux lettres OK');
+  await browser.close();
+}
+
+// ── Scénario : multijoueur — équilibrage & polish (Phase 6) ──
+async function scenarioMultiplayerPolish() {
+  console.log('\n── Scénario : multijoueur polish ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) _mpLevelGapTier — classification des écarts.
+  const tiers = await page.evaluate(() => ({
+    even:   _mpLevelGapTier(0),
+    safe:   _mpLevelGapTier(-4),
+    warn:   _mpLevelGapTier(4),
+    danger: _mpLevelGapTier(8),
+  }));
+  assert(tiers.even.cls   === 'even',   'gap=0 doit être "even"');
+  assert(tiers.safe.cls   === 'safe',   'gap=-4 doit être "safe"');
+  assert(tiers.warn.cls   === 'warn',   'gap=+4 doit être "warn"');
+  assert(tiers.danger.cls === 'danger', 'gap=+8 doit être "danger"');
+  assert(tiers.warn.warn   && tiers.warn.warn.length > 0,
+    'le tier warn doit porter un message d\'avertissement');
+  assert(tiers.danger.warn && tiers.danger.warn.length > 0,
+    'le tier danger doit porter un message d\'avertissement');
+  assert(tiers.even.warn === null, 'le tier even ne doit pas avertir');
+
+  // 2) Confirmation Ironman avant duel — sous-vue, pas d'engagement direct.
+  const confirm = await page.evaluate(() => {
+    ironmanMode = true;
+    player.level = 4;
+    const ghost = { playerId: 'iron-1', name: 'Voldemort Jr.', level: 12,
+      house: 'Serpentard', heroKeys: ['harry'], floor: 1, x: 0, y: 0,
+      mode: 'ironman', status: 'exploring' };
+    openGhostInteraction(ghost);
+    // Le clic sur ⚔️ Défier doit ouvrir la confirmation, PAS engager.
+    mpChallengeGhost();
+    const panel = document.getElementById('ghost-panel');
+    const hasWarn = !!panel.querySelector('.ghost-iron-warn');
+    const hasGap  = !!panel.querySelector('.ghost-gap-danger');
+    const recule  = Array.from(panel.querySelectorAll('button'))
+      .find(b => /Reculer/.test(b.textContent));
+    const engager = Array.from(panel.querySelectorAll('button'))
+      .find(b => /Engager le duel/.test(b.textContent));
+    // Le bouton Reculer doit ramener à la vue principale, pas engager.
+    recule.click();
+    const backHasGiftBtn = !!Array.from(
+      document.querySelectorAll('#ghost-panel button')
+    ).find(b => /Offrir/.test(b.textContent));
+    ironmanMode = false;
+    return {
+      hasWarn, hasGap, hasEngager: !!engager,
+      noBattle: !inBattle,
+      back: backHasGiftBtn,
+    };
+  });
+  assert(confirm.hasWarn,   'la sous-vue Ironman doit afficher le bandeau ☠');
+  assert(confirm.hasGap,    'la sous-vue doit colorer en danger un écart +8');
+  assert(confirm.hasEngager, 'la sous-vue doit exposer le bouton « Engager »');
+  assert(confirm.noBattle,  'la confirmation seule ne doit pas démarrer un combat');
+  assert(confirm.back,      'le bouton Reculer doit ramener à la vue principale');
+
+  // 3) Collision de fantômes — 3 fantômes sur la même case = 1 + extras=2.
+  const collide = await page.evaluate(() => {
+    // Force le joueur loin du point de test pour éviter la collision
+    // playerX/playerY=5,3 (flakiness selon le seed du donjon).
+    playerX = 0; playerY = 0;
+    dungeon[3][5] = CELL.FLOOR;
+    if (typeof npcPlacements !== 'undefined') npcPlacements.delete('5,3');
+    if (enemyMap[3]) enemyMap[3][5] = null;
+    _mpProjectGhosts([
+      { player_id: 'a', name: 'A', x: 5, y: 3, hero_keys: ['harry'], level: 2 },
+      { player_id: 'b', name: 'B', x: 5, y: 3, hero_keys: ['harry'], level: 3 },
+      { player_id: 'c', name: 'C', x: 5, y: 3, hero_keys: ['harry'], level: 4 },
+    ]);
+    const g = getGhostAt(5, 3);
+    return { size: ghostPlacements.size, extras: g && g.extras, first: g && g.name };
+  });
+  assert(collide.size === 1,       '3 fantômes sur même case = 1 placement (obtenu ' + collide.size + ')');
+  assert(collide.extras === 2,     'extras doit valoir 2 pour 3 fantômes (obtenu ' + collide.extras + ')');
+  assert(collide.first === 'A',    'le premier fantôme du poll doit gagner la case');
+
+  // 4) Badge minimap +N affiché.
+  const minimapBadge = await page.evaluate(() => {
+    if (typeof visited !== 'undefined' && visited[3]) visited[3][5] = true;
+    renderMinimap();
+    const badges = document.querySelectorAll('#minimap .map-ghost-badge');
+    return { count: badges.length, txt: badges[0] && badges[0].textContent };
+  });
+  assert(minimapBadge.count >= 1,    'la minimap doit porter un badge +N (obtenu ' + minimapBadge.count + ')');
+  assert(minimapBadge.txt === '+2',  'le badge doit afficher +2 (obtenu ' + minimapBadge.txt + ')');
+
+  // 5) Choix de butin Ironman — modale ouverte quand >1 option, pick applique.
+  const lootChoice = await page.evaluate(() => {
+    ironmanMode = true;
+    // Snapshot avec 2 sorts inconnus + 1 item non possédé → 3 options
+    const fakeSnap = { name: 'Multi', level: 6, mode: 'ironman',
+      heroes: [{ heroKey: 'harry', name: 'Multi', icon: '🧙',
+        hpMax: 12, atk: 4, def: 2, mag: 8, agi: 5, lck: 5,
+        spells: ['Sectumsempra', 'Glacius'],
+        equipment: [{ id: 'bottes_dragon', name: 'Bottes du Dragon',
+                      slot: 'feet', bonusDef: 2 }] }] };
+    party[0].spells = party[0].spells.filter(s =>
+      s !== 'Sectumsempra' && s !== 'Glacius');
+    mpStartDuel(fakeSnap, { playerId: 'iron-2', name: 'Multi', level: 6 });
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    checkAllEnemiesDead();
+    const ov = document.getElementById('mp-loot-overlay');
+    const cards = ov.querySelectorAll('.mp-loot-card');
+    const opened = ov.style.display === 'flex';
+    // Choisit l'item (Bottes du Dragon) — bouton avec mp-loot-item.
+    const itemCard = ov.querySelector('.mp-loot-item');
+    itemCard && itemCard.click();
+    const overlayClosed = ov.style.display === 'none';
+    const hasBoots = player.inventory.some(it => it && it.id === 'bottes_dragon');
+    ironmanMode = false;
+    return {
+      opened,
+      cards: cards.length,
+      overlayClosed,
+      hasBoots,
+      didNotLearn: !party[0].spells.includes('Sectumsempra'),
+      battleOver: inBattle === false,
+    };
+  });
+  assert(lootChoice.opened,        'la modale loot doit s\'ouvrir quand >1 option');
+  assert(lootChoice.cards === 3,   '3 cartes (2 sorts + 1 item) attendues, obtenu ' + lootChoice.cards);
+  assert(lootChoice.overlayClosed, 'le pick doit fermer la modale');
+  assert(lootChoice.hasBoots,      'le pick item doit ajouter les Bottes du Dragon');
+  assert(lootChoice.didNotLearn,   'le pick item ne doit PAS apprendre les sorts non choisis');
+  assert(lootChoice.battleOver,    'le combat doit être terminé après le pick');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (polish)`);
+  }
+  console.log('  ✅ multijoueur — écart, confirm Ironman, collision, choix butin OK');
+  await browser.close();
+}
+
 // ── Scénario : puzzle runique (dungeon-enrichment-v2 Phase 1) ──
 
 async function scenarioRunePuzzle() {
@@ -10749,7 +11603,8 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader];
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();
   }
