@@ -259,6 +259,7 @@ window.UX_safe = new Proxy({}, {
     { name: '_mpLevelGapTier',    source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: '_mpEnumerateDuelLoot',source: 'multiplayer.js', kind: 'fn',    optional: true },
     { name: 'drawGhostSprite',    source: 'renderer-effects.js', kind: 'fn', optional: true },
+    { name: 'PLAYER_SPRITE_SRC',  source: 'renderer-effects.js', kind: 'obj', optional: true },
     { name: 'drawMessageMarker',  source: 'renderer-effects.js', kind: 'fn', optional: true },
 
     // ── Modules optionnels (warnings doux uniquement) ──

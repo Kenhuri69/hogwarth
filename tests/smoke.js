@@ -10380,6 +10380,29 @@ async function scenarioMultiplayerPresence() {
   });
   assert(minimap >= 1, `un marqueur .map-ghost attendu sur la minimap (obtenu ${minimap})`);
 
+  // 7) Sprite PNG plein corps — registre exposé, 11 héros, fichiers
+  //    présents (file:// charge tout sauf erreur explicite).
+  const sprites = await page.evaluate(async () => {
+    if (typeof PLAYER_SPRITE_SRC === 'undefined') return { registered: false };
+    const keys = Object.keys(PLAYER_SPRITE_SRC);
+    // Attente passive : on laisse 800 ms au navigateur pour charger les
+    // images via _getPlayerSprite (l'appel paresseux n'a peut-être pas
+    // encore été déclenché).
+    keys.forEach(k => _getPlayerSprite(k));
+    await new Promise(r => setTimeout(r, 800));
+    return {
+      registered: true,
+      keys:       keys.length,
+      loaded:     keys.filter(k => {
+        const s = _getPlayerSprite(k);
+        return s && s.ready && !s.failed;
+      }).length,
+    };
+  });
+  assert(sprites.registered,    'PLAYER_SPRITE_SRC doit être exposé');
+  assert(sprites.keys === 11,   `11 héros attendus dans PLAYER_SPRITE_SRC (obtenu ${sprites.keys})`);
+  assert(sprites.loaded === 11, `11 PNG doivent charger (obtenu ${sprites.loaded})`);
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (multijoueur)`);
@@ -11026,7 +11049,12 @@ async function scenarioMultiplayerPolish() {
 
   // 3) Collision de fantômes — 3 fantômes sur la même case = 1 + extras=2.
   const collide = await page.evaluate(() => {
+    // Force le joueur loin du point de test pour éviter la collision
+    // playerX/playerY=5,3 (flakiness selon le seed du donjon).
+    playerX = 0; playerY = 0;
     dungeon[3][5] = CELL.FLOOR;
+    if (typeof npcPlacements !== 'undefined') npcPlacements.delete('5,3');
+    if (enemyMap[3]) enemyMap[3][5] = null;
     _mpProjectGhosts([
       { player_id: 'a', name: 'A', x: 5, y: 3, hero_keys: ['harry'], level: 2 },
       { player_id: 'b', name: 'B', x: 5, y: 3, hero_keys: ['harry'], level: 3 },

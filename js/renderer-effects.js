@@ -739,6 +739,39 @@ function _getNpcSprite(type) {
   return entry;
 }
 
+// ── Sprite plein corps des héros (Phase 6+) ──────────────────────
+// Un PNG par clé `CHARACTERS` (cf. data.js). Consommé par
+// `drawGhostSprite` pour rendre l'identité du joueur distant ; en
+// solo le PNG est centré, en duo les deux héros sont décalés. Tant
+// que le PNG n'a pas chargé (ou s'il manque), repli sur la silhouette
+// vectorielle cyan d'origine.
+const PLAYER_SPRITE_SRC = {
+  harry:     'img/players/harry.png',
+  hermione:  'img/players/hermione.png',
+  draco:     'img/players/draco.png',
+  cho:       'img/players/cho.png',
+  cedric:    'img/players/cedric.png',
+  celeste:   'img/players/celeste.png',
+  iris:      'img/players/iris.png',
+  maxence:   'img/players/maxence.png',
+  anastasia: 'img/players/anastasia.png',
+  louis:     'img/players/louis.png',
+  jeanne:    'img/players/jeanne.png',
+};
+const _PLAYER_SPRITE_CACHE = Object.create(null);
+function _getPlayerSprite(key) {
+  const src = PLAYER_SPRITE_SRC[key];
+  if (!src) return null;
+  let entry = _PLAYER_SPRITE_CACHE[src];
+  if (entry) return entry;
+  entry = { img: new Image(), ready: false };
+  entry.img.onload  = () => { entry.ready = true; };
+  entry.img.onerror = () => { entry.failed = true; };
+  entry.img.src = src;
+  _PLAYER_SPRITE_CACHE[src] = entry;
+  return entry;
+}
+
 // Silhouette vectorielle de secours, utilisée tant que le PNG n'est
 // pas chargé (ou s'il échoue). Conserve l'aspect doré + halo + bobbing
 // du signe — cohérent avec drawEnemySprite (PNG → emoji fallback).
@@ -839,6 +872,46 @@ function drawNpcSprite(npcId, x, baseY, sz) {
 // teinte froide, halo spectral, nom + niveau du joueur flottant. Les
 // PNG plein-pied par héros (§4.8 du plan) sont différés — la silhouette
 // vectorielle est l'unique rendu en Phase 1.
+// Rendu PNG plein corps (solo = centré ; duo = deux héros décalés).
+// Translucide (spectral) — ne tinte pas, l'identité reste lisible ;
+// l'effet "fantôme" vient de l'aura cyan + alpha 0.65 globale.
+function _drawGhostPngBody(sprites, x, by, sz) {
+  const count = sprites.length;
+  const h     = sz * 1.10;                 // hauteur cible du sprite
+  const w     = h;                         // canvas source carré
+  const span  = (count === 1) ? 0 : sz * 0.22;
+  ctx.save();
+  ctx.globalAlpha = 0.65;
+  sprites.forEach((s, i) => {
+    const cx = (count === 1) ? x : (x - span + (2 * span * i / (count - 1)));
+    const px = cx - w / 2;
+    const py = by - h * 0.95;              // pieds à la hauteur `by`
+    ctx.drawImage(s.img, px, py, w, h);
+  });
+  ctx.restore();
+}
+
+// Silhouette vectorielle de secours (trapèze + cercle) — utilisée tant
+// que les PNG ne sont pas chargés ou pour les `heroKeys` inconnus.
+function _drawGhostVectorFallback(x, by, sz) {
+  ctx.save();
+  ctx.globalAlpha = 0.60;
+  ctx.fillStyle   = '#bfe6ff';
+  ctx.strokeStyle = 'rgba(60,110,160,0.7)';
+  ctx.lineWidth   = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(x - sz * 0.18, by - sz * 0.55);
+  ctx.lineTo(x + sz * 0.18, by - sz * 0.55);
+  ctx.lineTo(x + sz * 0.34, by - sz * 0.04);
+  ctx.lineTo(x - sz * 0.34, by - sz * 0.04);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, by - sz * 0.72, sz * 0.15, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
 function drawGhostSprite(ghost, x, baseY, sz) {
   const phase = (typeof _npcAnimPhase !== 'undefined') ? _npcAnimPhase : 0;
   const bob   = Math.sin(phase * 1.5) * sz * 0.05;
@@ -864,22 +937,18 @@ function drawGhostSprite(ghost, x, baseY, sz) {
   ctx.ellipse(x, by - sz * 0.45, sz * 0.85 * pulse, sz * 1.0 * pulse, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Silhouette translucide (robe trapézoïdale + tête), teinte froide.
-  ctx.globalAlpha = 0.60;
-  ctx.fillStyle   = '#bfe6ff';
-  ctx.strokeStyle = 'rgba(60,110,160,0.7)';
-  ctx.lineWidth   = 1.4;
-  ctx.beginPath();
-  ctx.moveTo(x - sz * 0.18, by - sz * 0.55);
-  ctx.lineTo(x + sz * 0.18, by - sz * 0.55);
-  ctx.lineTo(x + sz * 0.34, by - sz * 0.04);
-  ctx.lineTo(x - sz * 0.34, by - sz * 0.04);
-  ctx.closePath();
-  ctx.fill(); ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(x, by - sz * 0.72, sz * 0.15, 0, Math.PI * 2);
-  ctx.fill(); ctx.stroke();
-  ctx.globalAlpha = 1;
+  // ── Corps du fantôme ────────────────────────────────────────
+  // PNG plein corps par héros si tous les sprites ont chargé, sinon
+  // repli sur la silhouette vectorielle d'origine (zéro régression).
+  const heroKeys = Array.isArray(ghost && ghost.heroKeys) ? ghost.heroKeys : [];
+  const sprites  = heroKeys.map(k => _getPlayerSprite(k));
+  const allReady = sprites.length > 0 && sprites.every(s => s && s.ready);
+
+  if (allReady) {
+    _drawGhostPngBody(sprites, x, by, sz);
+  } else {
+    _drawGhostVectorFallback(x, by, sz);
+  }
 
   // Étiquette « nom · Niv.N » flottante.
   const name  = (ghost && ghost.name) ? String(ghost.name) : 'Sorcier';

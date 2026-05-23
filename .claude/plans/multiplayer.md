@@ -448,11 +448,18 @@ create index if not exists mp_gifts_inbox_idx
 
 ## 11ter. Écarts d'implémentation (Phases 0-1)
 
-- **Sprite fantôme = silhouette vectorielle spectrale** (translucide,
-  teinte froide, nom flottant). Les PNG plein-pied des 6 héros (§4.8) et
-  le registre `PLAYER_SPRITE_SRC` sont **différés** : non générables ici,
-  inutile d'ajouter du code mort. Le vecteur couvre entièrement le
-  critère de vérif de Phase 1.
+- ~~**Sprite fantôme = silhouette vectorielle spectrale**~~ — **Clos
+  (2026-05-23)**. Les 11 PNG plein corps des héros ont été générés via
+  Nano Banana puis re-détourés avec rembg (modèle `isnet-general-use`),
+  cadrés à 512×512 RGBA centrés avec marge 4 %, placés dans
+  `img/players/<key>.png`. Le registre `PLAYER_SPRITE_SRC` +
+  `_getPlayerSprite` (lazy load type `_getNpcSprite`) sont posés dans
+  `renderer-effects.js`. `drawGhostSprite` choisit PNG si tous les
+  `heroKeys` ont chargé, sinon repli vectoriel — solo centré, duo
+  décalé de ±0.22·sz horizontalement. Alpha 0.65 globale + aura cyan
+  pulsée conservée par-dessus pour l'effet spectral. Vérifié par
+  l'étape 7 de `scenarioMultiplayerPresence` (registre exposé, 11
+  fichiers chargent).
 - **Disjoncteur** : après `MP_MAX_FAILURES` (3) échecs réseau consécutifs,
   la session multijoueur s'éteint d'elle-même — implémente la
   « désactivation silencieuse » de §4.2.
