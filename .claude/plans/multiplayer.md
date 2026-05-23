@@ -548,6 +548,27 @@ create index if not exists mp_messages_lookup_idx
 delete from public.mp_gifts where sender_id like 'smoke_%';
 ```
 
+**Phase 2 — colonnes étrangères héritées d'un ancien schéma**. Après le
+SQL ci-dessus, l'upsert échoue encore en 23502 : `mp_presence` contient
+4 colonnes NOT NULL sans default (`player_name`, `dir`, `hp`, `hp_max`)
+issues d'une version pré-pivot du schéma multijoueur (lockstep), avant
+le passage au modèle de présence asynchrone (§2). Le code applicatif
+actuel ne les écrit pas. Variante conservatrice retenue (les tables
+étaient vides — drop aurait été équivalent fonctionnellement, defaults
+préserve l'option de réutiliser ces colonnes plus tard) :
+
+```sql
+alter table public.mp_presence
+  alter column player_name set default '',
+  alter column dir         set default 'n',
+  alter column hp          set default 0,
+  alter column hp_max      set default 0;
+```
+
+`mp_presence.updated_at` et `mp_messages.updated_at` sont également
+présentes mais ne bloquent pas l'upsert (nullable ou default Supabase) ;
+laissées telles quelles.
+
 Après application, valider en ligne : un onglet sur la prod → vérifier
 que `mp_presence` contient une ligne avec son `player_id`, ouvrir un
 deuxième onglet (autre `localStorage`) au même étage et même mode →
