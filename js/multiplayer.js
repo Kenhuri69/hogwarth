@@ -845,11 +845,12 @@ function _mpRenderLootChoice() {
   const ctx = _mpLootContext;
 
   const spellBtns = ctx.opts.spells.map((opt, i) => {
-    const sp = (typeof SPELLS !== 'undefined') ? SPELLS.find(s => s.name === opt.spell) : null;
-    const icon = (sp && sp.icon) ? sp.icon : '✨';
+    const iconHtml = (typeof getSpellIconHtml === 'function')
+      ? getSpellIconHtml(opt.spell, 'ui-icon-xl')
+      : '✨';
     return ''
       + '<button class="mp-loot-card mp-loot-spell" onclick="_mpPickLoot(\'spell\',' + i + ')">'
-      +   '<span class="mp-loot-icon">' + _mpEsc(icon) + '</span>'
+      +   '<span class="mp-loot-icon">' + iconHtml + '</span>'
       +   '<span class="mp-loot-name">' + _mpEsc(opt.spell) + '</span>'
       +   '<span class="mp-loot-kind">Sort inconnu</span>'
       + '</button>';
@@ -857,7 +858,7 @@ function _mpRenderLootChoice() {
 
   const itemBtns = ctx.opts.items.map((opt, i) => {
     const icon = (typeof getItemIconHtml === 'function')
-      ? getItemIconHtml(opt.item, 'ui-icon-md') : (opt.item.icon || '🎁');
+      ? getItemIconHtml(opt.item, 'ui-icon-xl') : (opt.item.icon || '🎁');
     return ''
       + '<button class="mp-loot-card mp-loot-item" onclick="_mpPickLoot(\'item\',' + i + ')">'
       +   '<span class="mp-loot-icon">' + icon + '</span>'

@@ -11106,6 +11106,11 @@ async function scenarioMultiplayerPolish() {
     const ov = document.getElementById('mp-loot-overlay');
     const cards = ov.querySelectorAll('.mp-loot-card');
     const opened = ov.style.display === 'flex';
+    // Icônes : doivent être des <img> PNG (pas des emoji), pour les sorts
+    // ET pour les items — alignement avec le reste du jeu (modales sorts,
+    // inventaire, log combat).
+    const spellIconImgs = ov.querySelectorAll('.mp-loot-spell .mp-loot-icon img.ui-icon');
+    const itemIconImgs  = ov.querySelectorAll('.mp-loot-item  .mp-loot-icon img.ui-icon');
     // Choisit l'item (Bottes du Dragon) — bouton avec mp-loot-item.
     const itemCard = ov.querySelector('.mp-loot-item');
     itemCard && itemCard.click();
@@ -11115,6 +11120,8 @@ async function scenarioMultiplayerPolish() {
     return {
       opened,
       cards: cards.length,
+      spellImgs: spellIconImgs.length,
+      itemImgs:  itemIconImgs.length,
       overlayClosed,
       hasBoots,
       didNotLearn: !party[0].spells.includes('Sectumsempra'),
@@ -11123,6 +11130,10 @@ async function scenarioMultiplayerPolish() {
   });
   assert(lootChoice.opened,        'la modale loot doit s\'ouvrir quand >1 option');
   assert(lootChoice.cards === 3,   '3 cartes (2 sorts + 1 item) attendues, obtenu ' + lootChoice.cards);
+  assert(lootChoice.spellImgs === 2,
+    '2 icônes PNG attendues pour les sorts (pas d\'emoji), obtenu ' + lootChoice.spellImgs);
+  assert(lootChoice.itemImgs === 1,
+    '1 icône PNG attendue pour l\'item (pas d\'emoji), obtenu ' + lootChoice.itemImgs);
   assert(lootChoice.overlayClosed, 'le pick doit fermer la modale');
   assert(lootChoice.hasBoots,      'le pick item doit ajouter les Bottes du Dragon');
   assert(lootChoice.didNotLearn,   'le pick item ne doit PAS apprendre les sorts non choisis');
