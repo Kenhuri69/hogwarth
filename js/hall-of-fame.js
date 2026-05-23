@@ -100,6 +100,7 @@ async function _hofSubmit(entry) {
           monsters_killed:  entry.monsters_killed,
           quests_completed: entry.quests_completed,
           gold:             entry.gold,
+          house:            entry.house || null,
           run_id:           entry.run_id || null,
         }),
       }
@@ -254,6 +255,7 @@ function _hofBuildProjection() {
     heroes:        live.map(c => c.name).join(' & ') || 'Sorcier inconnu',
     deepest_floor: s.deepestFloor,
     party_levels:  'Niv. ' + s.level,
+    house:         (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
   };
 }
 
@@ -327,6 +329,20 @@ function closeHallOfFame() {
   }
 }
 
+// Blason de Maison d'une entrée (rond, style ingame). Retourne un
+// placeholder neutre si l'entrée n'a pas de Maison (entrées legacy
+// pré-migration de la colonne `house`).
+function _hofHouseBadge(house) {
+  if (!house) {
+    return `<span class="hof-house-badge hof-house-empty"`
+      + ` title="Maison inconnue">·</span>`;
+  }
+  const slug = String(house).toLowerCase();
+  const src  = `img/houses/${slug}.png`;
+  return `<span class="hof-house-badge" title="${_hofEsc(house)}">`
+    + `<img src="${_hofEsc(src)}" alt="${_hofEsc(house)}"></span>`;
+}
+
 // Portraits des sorciers d'une entrée, résolus depuis le champ
 // `heroes` (noms complets séparés par « & ») vers CHARACTERS.imgSrc.
 function _hofHeroAvatars(heroesStr) {
@@ -394,14 +410,25 @@ async function _renderHallOfFame(projection) {
     const medal = (MEDAL_IMG[rank] && !d.isProj)
       ? `<img class="ir-icon hof-medal" src="img/icons/${MEDAL_IMG[rank]}.png" alt="${rank}">`
       : '#' + rank;
+    // Extrait le niveau numérique de `party_levels` ("Niv. 8" → 8). Repli
+    // sur la chaîne brute si le format diverge (anciennes entrées).
+    const levelMatch = String(r.party_levels || '').match(/(\d+)/);
+    const levelText  = levelMatch ? levelMatch[1] : _hofEsc(r.party_levels || '?');
+    const floorText  = (r.deepest_floor | 0) || '?';
     html += `<div class="hof-row hof-rank-${rank}${d.isProj ? ' hof-row-projection' : ''}">`
       + `<div class="hof-rank">${medal}</div>`
       + _hofHeroAvatars(r.heroes)
+      + _hofHouseBadge(r.house)
       + `<div class="hof-main">`
       +   `<div class="hof-name">${d.isProj ? '★ ' : ''}${_hofEsc(r.player_name)}`
       +     `${d.isProj ? '<span class="hof-proj-tag">simulation</span>' : ''}</div>`
-      +   `<div class="hof-meta">${_hofEsc(r.heroes)} · ${_hofEsc(r.difficulty)}`
-      +     ` · Étage ${r.deepest_floor | 0} · ${_hofEsc(r.party_levels || '')}</div>`
+      +   `<div class="hof-meta">${_hofEsc(r.heroes)} · ${_hofEsc(r.difficulty)}</div>`
+      +   `<div class="hof-chips">`
+      +     `<span class="hof-chip hof-chip-floor" title="Étage le plus profond atteint">`
+      +       `<img class="hof-chip-icon" src="img/icons/map.png" alt="">Ét.${floorText}</span>`
+      +     `<span class="hof-chip hof-chip-level" title="Niveau de Harry">`
+      +       `<img class="hof-chip-icon" src="img/icons/xp.png" alt="">Niv.${levelText}</span>`
+      +   `</div>`
       + `</div>`
       + `<div class="hof-score">${(r.score | 0).toLocaleString('fr-FR')}</div>`
       + `</div>`;

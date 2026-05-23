@@ -155,6 +155,7 @@ function ironmanResultToEntry(result, name) {
     monsters_killed:  result.monstersKilled,
     quests_completed: result.questsCompleted,
     gold:             result.gold,
+    house:            (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
     run_id:           (typeof ironmanRunId !== 'undefined') ? ironmanRunId : null,
     created_at:       new Date().toISOString(),
   };
