@@ -490,6 +490,116 @@ create index if not exists mp_gifts_inbox_idx
   `imgSrc` (rendu par `getMonsterIconHtml`). Pas de sprite plein-pied
   dédié (cohérent avec l'écart §11ter sur les sprites de héros).
 
+## 11quinquies. Validation production (2026-05-23) — migration de schéma
+
+Validation en ligne sur le projet Supabase de prod (`hvdthitluhgevtuqhxpm`)
+le 2026-05-23 : **multijoueur cassé silencieusement** côté base. Les 6
+scénarios smoke MP passent (`tests/smoke.js` → `scenarioMultiplayer*`),
+mais aucun joueur n'apparaît jamais en jeu — symptôme remonté par
+l'utilisateur. Cause racine : les tables Supabase ont été créées avec
+un schéma **incomplet par rapport au SQL §11bis**. À l'upsert,
+Supabase renvoie HTTP 400 (`column does not exist`) ; le disjoncteur
+`MP_MAX_FAILURES` éteint la session au bout de 3 échecs.
+
+Colonnes manquantes constatées par probe REST `select=<col>&limit=1` :
+
+| Table | Manquantes | Présentes |
+|-------|-----------|-----------|
+| `mp_presence` | `name`, `mode`, `hero_keys`, `status`, `snapshot`, `last_seen` | `player_id`, `floor`, `x`, `y`, `house`, `level` |
+| `mp_messages` | `mode`, `template`, `word`, `created_at` | `author_id`, `author_name`, `floor`, `x`, `y` |
+| `mp_gifts` | — | schéma complet ✅ |
+
+> **Piège de probe** (méthodo) : `select=mode&limit=1` ne lève **pas**
+> `42703 column does not exist` quand la colonne est absente, mais
+> `42809 WITHIN GROUP is required for ordered-set aggregate mode` —
+> PostgreSQL tombe en repli sur la fonction d'agrégat statistique
+> `mode()`. Un probe REST naïf qui ne cherche que `42703` rapporte donc
+> `mode` comme « présente » par erreur. C'est l'index multi-colonnes
+> `create index ... on (floor, mode, last_seen)` qui exige un
+> identifiant de colonne et révèle la vraie absence.
+
+SQL de migration idempotent (à exécuter dans le SQL Editor Supabase ;
+les `if not exists` rendent la commande sûre à rejouer) :
+
+```sql
+-- mp_presence : 6 colonnes manquantes (mode incluse)
+alter table public.mp_presence
+  add column if not exists name      text not null default 'Sorcier',
+  add column if not exists mode      text not null default 'normal',
+  add column if not exists hero_keys jsonb not null default '[]'::jsonb,
+  add column if not exists status    text not null default 'exploring',
+  add column if not exists snapshot  jsonb,
+  add column if not exists last_seen timestamptz not null default now();
+create index if not exists mp_presence_lookup_idx
+  on public.mp_presence (floor, mode, last_seen);
+
+-- mp_messages : 4 colonnes manquantes (mode incluse ; template requis NOT NULL)
+alter table public.mp_messages
+  add column if not exists mode       text not null default 'normal',
+  add column if not exists template   text,
+  add column if not exists word       text,
+  add column if not exists created_at timestamptz not null default now();
+update public.mp_messages set template = 'unknown' where template is null;
+alter table public.mp_messages alter column template set not null;
+create index if not exists mp_messages_lookup_idx
+  on public.mp_messages (floor, mode);
+
+-- Nettoyage : 2 cadeaux résiduels de smoke test
+delete from public.mp_gifts where sender_id like 'smoke_%';
+```
+
+**Phase 2 — colonnes étrangères héritées d'un ancien schéma**. Après le
+SQL ci-dessus, l'upsert échoue encore en 23502 : `mp_presence` contient
+4 colonnes NOT NULL sans default (`player_name`, `dir`, `hp`, `hp_max`)
+issues d'une version pré-pivot du schéma multijoueur (lockstep), avant
+le passage au modèle de présence asynchrone (§2). Le code applicatif
+actuel ne les écrit pas. Variante conservatrice retenue (les tables
+étaient vides — drop aurait été équivalent fonctionnellement, defaults
+préserve l'option de réutiliser ces colonnes plus tard) :
+
+```sql
+alter table public.mp_presence
+  alter column player_name set default '',
+  alter column dir         set default 'n',
+  alter column hp          set default 0,
+  alter column hp_max      set default 0;
+```
+
+`mp_presence.updated_at` et `mp_messages.updated_at` sont également
+présentes mais ne bloquent pas l'upsert (nullable ou default Supabase) ;
+laissées telles quelles.
+
+**Phase 3 — colonne héritée sur `mp_messages` + policy DELETE manquante
+sur `mp_gifts`**. Validation post-phase 2 : `mp_presence` et `mp_gifts`
+inserts OK ; `mp_messages` plante encore en 23502 sur `template_id`
+(nom legacy du champ `template` envoyé par le code). Découvert aussi
+que `mp_gifts` n'a pas de policy DELETE — un DELETE REST renvoie 204
+mais ne supprime rien, l'outillage admin est cassé. Non bloquant pour
+le code applicatif (il fait PATCH `claimed_at`, jamais DELETE).
+
+```sql
+alter table public.mp_messages
+  alter column template_id set default '';
+
+-- Optionnel : policy DELETE sur mp_gifts (outillage admin)
+create policy "mp_gifts_delete" on public.mp_gifts for delete using (true);
+```
+
+`mp_messages.word_id` (legacy de `word`) est nullable — pas besoin de
+default.
+
+Après application, valider en ligne : un onglet sur la prod → vérifier
+que `mp_presence` contient une ligne avec son `player_id`, ouvrir un
+deuxième onglet (autre `localStorage`) au même étage et même mode →
+chacun doit voir le fantôme de l'autre.
+
+**Migration close (2026-05-23)**. Aller-retour REST de bout en bout
+validé sur les 3 tables : INSERT/UPSERT, SELECT avec les filtres exacts
+du jeu (`floor=eq.N&mode=eq.normal&last_seen=gt.…`), PATCH `claimed_at`,
+DELETE. Cloisonnement `ironman`/`normal` vérifié (un fantôme `normal`
+n'apparaît pas dans la requête `mode=eq.ironman`). Schémas désormais
+alignés avec le code applicatif.
+
 ## 11. Hors-scope
 
 - Donjon réellement partagé / synchronisé, coopératif, spectateur.
@@ -563,5 +673,13 @@ create index if not exists mp_gifts_inbox_idx
         réutilisation. Différé §11quater clos.
       Vérifié par `scenarioMultiplayerPolish` ; aucune régression
       sur `scenarioMultiplayerDuel` (Ironman 1 option → auto-pick).
-- [ ] Phase 6 — équilibrage & polish.
 - [ ] Phase 7 — duel PvP en direct (optionnel).
+- [x] **Migration de schéma Supabase** (cf. §11quinquies, 2026-05-23).
+      3 phases SQL appliquées : (1) ADD COLUMN des colonnes manquantes
+      `name`/`mode`/`hero_keys`/`status`/`snapshot`/`last_seen` sur
+      `mp_presence` + `mode`/`template`/`word`/`created_at` sur
+      `mp_messages` ; (2) SET DEFAULT sur les 4 colonnes héritées du
+      schéma lockstep (`player_name`/`dir`/`hp`/`hp_max`) ; (3) SET
+      DEFAULT sur `template_id` legacy et policy DELETE sur `mp_gifts`.
+      Aller-retour REST validé end-to-end sur les 3 tables. Multijoueur
+      effectivement actif en production.
