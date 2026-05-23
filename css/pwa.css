@@ -1,0 +1,82 @@
+/* =====================================================================
+   Bandeau de mise à jour PWA — discret, en bas d'écran, dismissible.
+   Apparaît quand sw.js détecte une nouvelle version en attente.
+   ===================================================================== */
+
+.pwa-update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%) translateY(120%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px 10px 18px;
+  max-width: calc(100vw - 32px);
+  background: linear-gradient(180deg, #2a1d0a 0%, #1a120c 100%);
+  border: 1px solid #c9a84c;
+  border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(201, 168, 76, 0.15);
+  color: #f0e0b8;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 14px;
+  letter-spacing: 0.4px;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+
+.pwa-update-banner.visible {
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+.pwa-update-banner__msg {
+  flex: 1 1 auto;
+}
+
+.pwa-update-banner__btn {
+  flex: 0 0 auto;
+  appearance: none;
+  background: linear-gradient(180deg, #d8b863 0%, #a78735 100%);
+  color: #1a0f06;
+  border: 1px solid #846314;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+
+.pwa-update-banner__btn:hover,
+.pwa-update-banner__btn:focus-visible {
+  filter: brightness(1.1);
+  outline: none;
+}
+
+.pwa-update-banner__dismiss {
+  flex: 0 0 auto;
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: #8a7240;
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.pwa-update-banner__dismiss:hover {
+  color: #c9a84c;
+}
+
+@media (max-width: 700px) {
+  .pwa-update-banner {
+    bottom: 8px;
+    font-size: 13px;
+    padding: 8px 10px 8px 14px;
+  }
+}

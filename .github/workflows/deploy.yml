@@ -36,6 +36,8 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html _site/
+          cp manifest.json _site/
+          cp sw.js _site/
           [ -s CNAME ] && cp CNAME _site/ || true
           cp -r css js img _site/
           [ -d audio ] && cp -r audio _site/ || true

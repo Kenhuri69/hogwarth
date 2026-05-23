@@ -1511,3 +1511,69 @@ Procédure détaillée et historique : `tools/README.md` +
 - URL publique : https://kenhuri69.github.io/hogwarth/
 - Pipeline : `.github/workflows/deploy.yml` — déclenché à chaque push sur `master`
 - Prérequis côté GitHub : Settings → Pages → Source = **GitHub Actions**
+
+---
+
+## PWA & cache offline (`manifest.json`, `sw.js`, `js/pwa.js`)
+
+Le jeu est installable (Android/iOS/desktop) et **jouable hors-ligne**
+après une première visite en ligne. Aucune dépendance npm — Service
+Worker vanilla, pas de Workbox, pas de build step.
+
+### Fichiers clés
+
+| Fichier | Rôle |
+|---------|------|
+| `manifest.json` | Manifeste Web App — nom, couleurs, icônes, `display: standalone`, `start_url: "./"` (relatif, fonctionne sur le sous-chemin `/hogwarth/`). |
+| `sw.js` | Service Worker : précache du shell + cache à la demande pour `img/`/`audio/`. Variable `CACHE_VERSION` pilote l'invalidation. |
+| `js/pwa.js` | Enregistre le SW au `load`, gère le bandeau « Nouvelle version disponible — Rafraîchir ». Défensif : silencieux en `file://` et si `serviceWorker` absent. |
+| `css/pwa.css` | Style du bandeau de mise à jour. |
+| `img/icons/pwa/` | 5 PNG : `icon-192/512.png` (any), `icon-192/512-maskable.png`, `apple-touch-icon.png` (180×180). Régénérables par `python3 tools/gen_pwa_icons.py`. |
+
+### Stratégie de cache (`sw.js`)
+
+| Type | Stratégie | Justification |
+|------|-----------|---------------|
+| `index.html` + navigation | **Network-First** (timeout 3 s → cache) | Récupère la dernière version en ligne, repli sur le cache si offline. |
+| `manifest.json` | Network-First | Idem. |
+| `js/*?v=N`, `css/*?v=N` | **Cache-First** | Cache-busté par URL : `?v=N` change → nouvelle entrée de cache. Pas de risque de servir une version périmée. |
+| `img/`, `audio/` | **Stale-While-Revalidate** + cache à la demande | 42 Mo d'assets : on ne précache rien (sauf `img/scenes/title.jpg` + icônes PWA). L'utilisateur télécharge ce qu'il utilise. |
+| Cross-origin (Supabase HoF, fonts CDN) | passthrough sans cache | `hall-of-fame.js` a déjà son repli localStorage. |
+
+### Bumper la version
+
+À chaque release qui touche le shell (HTML, JS du précache, ou logique
+du SW) :
+
+1. Incrémenter `CACHE_VERSION` dans `sw.js` (`'hogwarth-v1'` → `'hogwarth-v2'`).
+2. Si `sw.js` lui-même change, incrémenter aussi le `?v=N` de
+   `register('sw.js?v=N')` dans `js/pwa.js`.
+3. Pour un fichier JS/CSS individuel, bumper son `?v=N` dans
+   `index.html` **et** dans la liste `PRECACHE_URLS` de `sw.js`.
+
+Au prochain chargement, le navigateur installe le nouveau SW en
+background, et `js/pwa.js` affiche un bandeau discret « Nouvelle
+version disponible — Rafraîchir ». Click → `skipWaiting` → reload
+automatique. Pas d'auto-reload silencieux (perte de progression en
+plein combat = no-go).
+
+### Tests
+
+- `node tests/smoke.js` : tests fonctionnels (file:// — SW désactivé,
+  rien à faire de spécial, `js/pwa.js` est silencieux en file://).
+- `node tests/pwa-smoke.js` : tests PWA (démarre un mini serveur HTTP
+  local, vérifie manifest, SW activé, précache rempli, **chargement
+  offline** avec loader OK).
+
+### Hors-ligne et sauvegardes
+
+`hogwarts_rpg_saves` (localStorage) fonctionne nativement offline —
+aucune migration ni adaptation. Le seul flux online est la soumission
+au Hall of Fame Supabase, qui a déjà un repli `localStorage`
+(`hogwarts_rpg_hof`). Pas de file d'attente de sync à implémenter.
+
+### Désinstallation / debug
+
+Pendant le dev, ouvrir DevTools → Application → Service Workers →
+*Unregister*. En console : `PWA.unregister()` puis `PWA.clearCaches()`
+(exposés par `js/pwa.js`).

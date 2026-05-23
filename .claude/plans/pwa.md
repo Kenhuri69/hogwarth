@@ -218,14 +218,35 @@ Pas d'effort de 4-6 jours comme dans le plan initial — pas de Workbox, pas de 
 
 ---
 
-## 7. Suivi (à mettre à jour en cours)
+## 7. Suivi
 
-- [ ] Étape 1 — Manifest + meta
-- [ ] Étape 2 — Icônes
-- [ ] Étape 3 — Service Worker
-- [ ] Étape 4 — Enregistrement + UX update
-- [ ] Étape 5 — Pipeline deploy
-- [ ] Étape 6 — Test pwa-smoke.js
-- [ ] Étape 7 — Doc CLAUDE.md
+- [x] Étape 1 — Manifest + meta (`manifest.json` + `<head>` enrichi)
+- [x] Étape 2 — Icônes (5 PNG dans `img/icons/pwa/`, générées par `tools/gen_pwa_icons.py`)
+- [x] Étape 3 — Service Worker (`sw.js`, 58 entrées précachées)
+- [x] Étape 4 — Enregistrement + bandeau (`js/pwa.js` + `css/pwa.css`)
+- [x] Étape 5 — Pipeline deploy (`.github/workflows/deploy.yml` copie manifest + sw)
+- [x] Étape 6 — Test pwa-smoke.js (3 scénarios verts : manifest / SW install / offline reload)
+- [x] Étape 7 — Doc CLAUDE.md (section « PWA & cache offline » ajoutée)
 
-À chaque étape franchie : cocher, noter les écarts (par exemple un asset cassé, un comportement iOS inattendu), valider le critère de §5 correspondant.
+### Écarts vs plan initial
+
+- **5 icônes au lieu de 4** : ajout de `icon-512-maskable.png`
+  (certaines plateformes préfèrent la haute résolution pour maskable).
+  Coût marginal (~227 ko).
+- **Étape 6 – polling explicite** : le `waitForFunction` async de
+  Playwright n'attend pas correctement la résolution de la promesse
+  retournée (toute Promise est truthy). Helper `waitForActivatedSw`
+  remplace par un polling 250 ms.
+- **Critères §5 non encore validés** : Lighthouse, install Android/iOS
+  réelle, bump `CACHE_VERSION` manuel. À vérifier après merge + déploiement.
+
+### Critères restant à valider hors-CI
+
+Ces points ne sont pas couverts par le smoke test headless — à vérifier
+manuellement après déploiement de la branche sur Pages :
+
+- [ ] Lighthouse Mobile → PWA Installable : ✅
+- [ ] Lighthouse Mobile → Performance ±5 % du baseline
+- [ ] Installation Android (Chrome) : icône home, ouverture standalone
+- [ ] Installation iOS (Safari → Sur l'écran d'accueil) : icône, ouverture sans Safari chrome
+- [ ] Bandeau de mise à jour manuel : bump `CACHE_VERSION`, recharger, vérifier l'apparition + reload propre
