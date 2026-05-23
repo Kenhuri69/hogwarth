@@ -898,6 +898,23 @@ function drawGhostSprite(ghost, x, baseY, sz) {
   ctx.fillText(label, x, ly);
   ctx.shadowBlur  = 0;
 
+  // Badge « +N autres » si plusieurs fantômes occupent la même case.
+  const extras = (ghost && ghost.extras) | 0;
+  if (extras > 0) {
+    const bx = x + sz * 0.30, by2 = by - sz * 0.70;
+    const r  = sz * 0.13;
+    ctx.beginPath();
+    ctx.arc(bx, by2, r, 0, Math.PI * 2);
+    ctx.fillStyle   = 'rgba(40,90,150,0.92)';
+    ctx.strokeStyle = '#cfeaff';
+    ctx.lineWidth   = 1.2;
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle   = '#e8f4ff';
+    ctx.font        = `700 ${Math.floor(sz * 0.16)}px Cinzel, serif`;
+    ctx.textBaseline = 'middle';
+    ctx.fillText('+' + extras, bx, by2 + sz * 0.01);
+  }
+
   ctx.restore();
 }
 

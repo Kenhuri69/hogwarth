@@ -536,5 +536,25 @@ create index if not exists mp_gifts_inbox_idx
       clamp défensif côté receveur ; sac plein → cadeau préservé dans
       la boîte pour la prochaine session. Vérifié par
       `scenarioMultiplayerGifts`.
+- [x] Phase 6 — équilibrage & polish :
+      • **Écart de niveau** dans la fiche d'inspection — badge coloré
+        (`even`/`safe`/`warn`/`danger`) + bandeau d'alerte si gap ≥ +3
+        via `_mpLevelGapTier(gap)`.
+      • **Confirmation Ironman** avant duel — `mpChallengeGhost`
+        intercepte quand `ironmanMode=true` et ouvre une sous-vue
+        (`_mpRenderIronmanDuelConfirm`) avec rappel permadeath +
+        bouton « Reculer / Engager le duel ».
+      • **Collision de fantômes** — `_mpProjectGhosts` conserve le
+        premier fantôme par case et accumule les suivants dans
+        `extras` ; renderer 3D (badge bleu « +N ») et minimap
+        (`.map-ghost-badge`) rendent le surnombre.
+      • **Choix explicite du butin Ironman** —
+        `_mpEnumerateDuelLoot` énumère sorts inconnus + items non
+        possédés ; `_mpResolveDuelVictory` ouvre la modale
+        `#mp-loot-overlay` quand plus d'une option (sinon repli
+        auto comme avant). `_mpApplyIronmanLoot` extrait pour
+        réutilisation. Différé §11quater clos.
+      Vérifié par `scenarioMultiplayerPolish` ; aucune régression
+      sur `scenarioMultiplayerDuel` (Ironman 1 option → auto-pick).
 - [ ] Phase 6 — équilibrage & polish.
 - [ ] Phase 7 — duel PvP en direct (optionnel).

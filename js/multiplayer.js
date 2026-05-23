@@ -226,9 +226,15 @@ function _mpProjectGhosts(rows) {
       if (typeof playerX !== 'undefined' && x === playerX && y === playerY) continue;
       if (dungeon[y][x] !== CELL.FLOOR) continue;
       const key = x + ',' + y;
-      if (next.has(key)) continue;
       if (typeof npcPlacements !== 'undefined' && npcPlacements.has(key)) continue;
       if (typeof enemyMap !== 'undefined' && enemyMap[y] && enemyMap[y][x]) continue;
+      // Collision : on garde le premier fantôme (poll trié implicitement),
+      // les suivants alimentent `extras` (affichés en badge +N sur la case).
+      const prev = next.get(key);
+      if (prev) {
+        prev.extras = (prev.extras | 0) + 1;
+        continue;
+      }
       next.set(key, {
         playerId: r.player_id,
         name:     r.name || 'Sorcier',
@@ -239,6 +245,7 @@ function _mpProjectGhosts(rows) {
         house:    r.house || null,
         level:    r.level | 0,
         status:   r.status || 'exploring',
+        extras:   0,
       });
     }
   }
@@ -390,6 +397,18 @@ function _mpRenderGhostMain() {
     +   'Reprendre l\'exploration</button>';
 }
 
+// Classifie l'écart de niveau entre joueur local et fantôme distant.
+// Sert à colorer la fiche d'inspection et à brander le bandeau d'alerte
+// avant un défi PvP.
+function _mpLevelGapTier(gap) {
+  if (gap >= 6)  return { label: 'très fort', cls: 'danger',
+    warn: 'Adversaire bien plus puissant — défi très risqué.' };
+  if (gap >= 3)  return { label: 'fort',      cls: 'warn',
+    warn: 'Adversaire plus aguerri — sois prêt.' };
+  if (gap <= -3) return { label: 'inférieur', cls: 'safe', warn: null };
+  return { label: 'équilibré', cls: 'even', warn: null };
+}
+
 // Fiche d'inspection — lecture seule. Détaille la composition et les
 // méta-infos de présence. Les statistiques complètes (équipement, sorts)
 // arriveront avec le snapshot de duel (phase ultérieure).
@@ -412,21 +431,36 @@ function mpInspectGhost() {
       + '</div>';
   });
   if (!heroes) heroes = '<div class="ghost-inspect-hero"><span>Composition inconnue.</span></div>';
+  const myLevel = (typeof player !== 'undefined' && player.level) | 0 || 1;
+  const gap     = (g.level | 0) - myLevel;
+  const gapTier = _mpLevelGapTier(gap);     // {label, cls, warn}
+  const levelCell = String(g.level | 0)
+    + ' <span class="ghost-gap ghost-gap-' + gapTier.cls + '">'
+    + (gap >= 0 ? '+' + gap : String(gap)) + ' · ' + _mpEsc(gapTier.label)
+    + '</span>';
+
   const rows = [
-    ['Maison',  g.house || '—'],
-    ['Niveau',  String(g.level | 0)],
-    ['Mode',    g.mode === 'ironman' ? 'Ironman ☠' : 'Normal'],
-    ['État',    g.status === 'in_battle' ? 'En combat' : 'En exploration'],
+    ['Maison',  _mpEsc(g.house || '—')],
+    ['Niveau',  levelCell],                                  // déjà escape côté valeur
+    ['Mode',    _mpEsc(g.mode === 'ironman' ? 'Ironman ☠' : 'Normal')],
+    ['État',    _mpEsc(g.status === 'in_battle' ? 'En combat' : 'En exploration')],
   ].map(([k, v]) =>
     '<div class="ghost-inspect-row"><span>' + _mpEsc(k) + '</span>'
-    + '<span>' + _mpEsc(v) + '</span></div>').join('');
+    + '<span>' + v + '</span></div>').join('');
+
+  const warn = gapTier.warn
+    ? '<div class="ghost-warn ghost-warn-' + gapTier.cls + '">'
+      + _mpEsc(gapTier.warn) + '</div>'
+    : '';
+
   panel.innerHTML = ''
     + _mpGhostHeaderHtml(g)
     + '<div class="ghost-inspect">'
     +   rows
+    +   warn
     +   '<div class="ghost-inspect-heroes">' + heroes + '</div>'
-    +   '<p class="ghost-inspect-note">Statistiques détaillées révélées'
-    +     ' lors d\'un duel (phase ultérieure).</p>'
+    +   '<p class="ghost-inspect-note">Statistiques d\'équipement révélées'
+    +     ' lors d\'un duel.</p>'
     + '</div>'
     + '<div class="ghost-actions">'
     +   '<button class="ghost-btn" onclick="_mpRenderGhostMain()">← Retour</button>'
@@ -585,6 +619,8 @@ async function _mpFetchSnapshot(playerId) {
 }
 
 // Action ⚔️ Défier de l'overlay : récupère le snapshot puis lance le duel.
+// En mode Ironman, intercale une sous-vue de confirmation avant l'engagement
+// — un duel perdu = run terminé (§5.2), garde-fou essentiel.
 function mpChallengeGhost() {
   const g = _mpCurrentGhost;
   if (!g) return;
@@ -593,6 +629,51 @@ function mpChallengeGhost() {
     if (typeof addMsg === 'function') addMsg('Tu as déjà vaincu ce spectre.', 'info');
     return;
   }
+  if ((typeof ironmanMode !== 'undefined') && ironmanMode) {
+    _mpRenderIronmanDuelConfirm(g);
+    return;
+  }
+  _mpEngageDuel(g);
+}
+
+// Sous-vue de confirmation Ironman (§5.2 — garde-fou avant duel hardcore).
+function _mpRenderIronmanDuelConfirm(g) {
+  const panel = document.getElementById('ghost-panel');
+  if (!panel) return;
+  const myLevel = (typeof player !== 'undefined' && player.level) | 0 || 1;
+  const gap     = (g.level | 0) - myLevel;
+  const tier    = _mpLevelGapTier(gap);
+  const gapTxt  = (gap >= 0 ? '+' + gap : String(gap)) + ' · ' + tier.label;
+  panel.innerHTML = ''
+    + _mpGhostHeaderHtml(g)
+    + '<div class="ghost-inspect ghost-iron-warn">'
+    +   '<div class="ghost-iron-skull">☠</div>'
+    +   '<div class="ghost-iron-title">Duel Ironman — engagement définitif</div>'
+    +   '<p class="ghost-iron-body">'
+    +     'En mode Ironman, perdre ce duel mettra <b>fin à ton run</b> : '
+    +     'permadeath, score figé, slots Ironman supprimés.'
+    +   '</p>'
+    +   '<div class="ghost-inspect-row"><span>Niveau adverse</span>'
+    +     '<span>' + (g.level | 0)
+    +       ' <span class="ghost-gap ghost-gap-' + tier.cls + '">' + _mpEsc(gapTxt) + '</span>'
+    +     '</span></div>'
+    + '</div>'
+    + '<div class="ghost-actions">'
+    +   '<button class="ghost-btn" onclick="_mpRenderGhostMain()">← Reculer</button>'
+    +   '<button class="ghost-btn ghost-btn-duel" onclick="_mpConfirmIronmanDuel()">'
+    +     '⚔️ Engager le duel</button>'
+    + '</div>';
+}
+
+function _mpConfirmIronmanDuel() {
+  const g = _mpCurrentGhost;
+  if (!g) return;
+  _mpEngageDuel(g);
+}
+
+// Récupère le snapshot puis lance le duel. Sépare la décision (challenge)
+// de l'exécution (engage) — utilisée aussi après confirmation Ironman.
+function _mpEngageDuel(g) {
   closeGhostOverlay();
   if (typeof addMsg === 'function') {
     addMsg('Tu défies ' + (g.name || 'le spectre') + '… invocation de son groupe.', 'info');
@@ -611,32 +692,55 @@ function mpChallengeGhost() {
 }
 
 // ── Issue du duel ───────────────────────────────────────────
-// Choisit le butin copié sur le vaincu : un sort inconnu en priorité,
-// sinon un équipement non possédé, sinon repli en or (§5.2). Le choix
-// explicite par le vainqueur est différé (polish — plan §11quater).
-function _mpPickDuelLoot(snapshot) {
+// Enumère tous les butins potentiels copiables sur le vaincu (§5.2) :
+// sorts inconnus + items non possédés. Sert (1) au choix automatique
+// de repli quand 0/1 option, (2) à la modale de choix Ironman.
+function _mpEnumerateDuelLoot(snapshot) {
   const heroes = (snapshot && Array.isArray(snapshot.heroes)) ? snapshot.heroes : [];
   const size   = (typeof partySize !== 'undefined') ? partySize : 1;
   const mine   = (typeof party !== 'undefined' ? party : []).slice(0, size);
-  const known  = new Set();
+
+  const known = new Set();
   mine.forEach(c => (c.spells || []).forEach(s => known.add(s)));
+  const spells = [];
+  const seenSpell = new Set();
   for (const h of heroes) {
     for (const s of (h.spells || [])) {
-      if (!known.has(s)) return { kind: 'spell', spell: s };
+      if (!known.has(s) && !seenSpell.has(s)) {
+        seenSpell.add(s);
+        spells.push({ kind: 'spell', spell: s });
+      }
     }
   }
+
   const owned = new Set();
   ((typeof player !== 'undefined' && player.inventory) || []).forEach(it => {
     if (it && it.id) owned.add(it.id);
   });
   mine.forEach(c => {
-    if (c.equipped) Object.values(c.equipped).forEach(it => { if (it && it.id) owned.add(it.id); });
+    if (c.equipped) Object.values(c.equipped).forEach(it => {
+      if (it && it.id) owned.add(it.id);
+    });
   });
+  const items = [];
+  const seenItem = new Set();
   for (const h of heroes) {
     for (const it of (h.equipment || [])) {
-      if (it && it.id && !owned.has(it.id)) return { kind: 'item', item: it };
+      if (it && it.id && !owned.has(it.id) && !seenItem.has(it.id)) {
+        seenItem.add(it.id);
+        items.push({ kind: 'item', item: it });
+      }
     }
   }
+  return { spells: spells, items: items };
+}
+
+// Repli déterministe quand on n'a pas besoin (ou pas envie) d'ouvrir
+// la modale — 0 option : repli or ; 1 option : retourne celle-ci.
+function _mpPickDuelLoot(snapshot) {
+  const opts = _mpEnumerateDuelLoot(snapshot);
+  if (opts.spells.length) return opts.spells[0];
+  if (opts.items.length)  return opts.items[0];
   return { kind: 'gold', gold: 120 };
 }
 
@@ -647,55 +751,137 @@ function _mpResolveDuelVictory(meta) {
   const advName  = (meta && meta.name) || 'ton adversaire';
   const advLevel = Math.max(1, (meta && meta.level) | 0);
   const ironman  = (typeof ironmanMode !== 'undefined') && ironmanMode;
-  const size     = (typeof partySize !== 'undefined') ? partySize : 1;
 
   if (ironman) {
-    // §5.2 — victoire Ironman : copie d'un bien du vaincu (non affecté).
-    const loot = _mpPickDuelLoot(meta && meta.snapshot);
-    if (loot.kind === 'spell') {
-      party.slice(0, size).forEach(c => {
-        if (Array.isArray(c.spells) && !c.spells.includes(loot.spell)) {
-          c.spells.push(loot.spell);
-        }
-      });
-      if (typeof addMsg === 'function') {
-        addMsg('🏆 Duel remporté ! Tu copies le sort « ' + loot.spell + ' » de ' + advName + '.', 'magic');
+    // §5.2 — victoire Ironman : copie d'un bien du vaincu. Si plus
+    // d'une option, le vainqueur choisit via la modale `mp-loot-overlay`.
+    const opts = _mpEnumerateDuelLoot(meta && meta.snapshot);
+    const total = opts.spells.length + opts.items.length;
+    if (total <= 1) {
+      const loot = total === 1
+        ? (opts.spells[0] || opts.items[0])
+        : { kind: 'gold', gold: 120 };
+      _mpApplyIronmanLoot(loot, advName);
+      _mpFinishVictory();
+    } else {
+      _mpOpenLootChoice(opts, advName);   // pursuites différées au pick utilisateur
+    }
+    return;
+  }
+
+  // §5.4 — victoire normale : or + XP modulés par l'écart de niveau.
+  const gap  = advLevel - Math.max(1, (player.level | 0));
+  const mult = Math.max(0.25, Math.min(2.0, 1 + gap * 0.15));
+  const gold = Math.round((20 + 10 * advLevel) * mult);
+  const xp   = Math.round((15 +  8 * advLevel) * mult);
+  player.gold += gold;
+  player.xp   += xp;
+  if (typeof addMsg === 'function') {
+    addMsg('🏆 Duel remporté contre ' + advName + ' !', 'good');
+    addMsg('+' + xp + ' XP, +' + gold + ' Gallions', 'good');
+  }
+  setNarrative('Victoire en duel ! +' + xp + ' XP, +' + gold + ' Gallions.');
+  _mpFinishVictory();
+}
+
+// Applique un butin Ironman (sort ou item ou repli or) — extrait pour
+// être appelé soit en mode auto (0/1 option), soit après pick utilisateur.
+function _mpApplyIronmanLoot(loot, advName) {
+  const size = (typeof partySize !== 'undefined') ? partySize : 1;
+  if (loot.kind === 'spell') {
+    party.slice(0, size).forEach(c => {
+      if (Array.isArray(c.spells) && !c.spells.includes(loot.spell)) {
+        c.spells.push(loot.spell);
       }
-    } else if (loot.kind === 'item') {
-      const added = (typeof tryAddItem === 'function')
-        && tryAddItem(loot.item, { silent: true });
-      if (added && typeof addMsg === 'function') {
+    });
+    if (typeof addMsg === 'function') {
+      addMsg('🏆 Duel remporté ! Tu copies le sort « ' + loot.spell + ' » de ' + advName + '.', 'magic');
+    }
+  } else if (loot.kind === 'item') {
+    const added = (typeof tryAddItem === 'function')
+      && tryAddItem(loot.item, { silent: true });
+    if (added) {
+      if (typeof addMsg === 'function') {
         addMsg('🏆 Duel remporté ! Tu copies « ' + loot.item.name + ' » de ' + advName + '.', 'magic');
-      } else if (!added) {
-        player.gold += 80;
-        if (typeof addMsg === 'function') {
-          addMsg('🏆 Duel remporté ! Sac plein — butin converti en 80 Gallions.', 'good');
-        }
       }
     } else {
-      player.gold += loot.gold;
+      player.gold += 80;
       if (typeof addMsg === 'function') {
-        addMsg('🏆 Duel remporté ! Rien de neuf à copier — +' + loot.gold + ' Gallions.', 'good');
+        addMsg('🏆 Duel remporté ! Sac plein — butin converti en 80 Gallions.', 'good');
       }
     }
-    setNarrative('Victoire en duel sur ' + advName + ' !');
   } else {
-    // §5.4 — victoire normale : or + XP modulés par l'écart de niveau.
-    const gap  = advLevel - Math.max(1, (player.level | 0));
-    const mult = Math.max(0.25, Math.min(2.0, 1 + gap * 0.15));
-    const gold = Math.round((20 + 10 * advLevel) * mult);
-    const xp   = Math.round((15 +  8 * advLevel) * mult);
-    player.gold += gold;
-    player.xp   += xp;
+    player.gold += (loot.gold | 0) || 120;
     if (typeof addMsg === 'function') {
-      addMsg('🏆 Duel remporté contre ' + advName + ' !', 'good');
-      addMsg('+' + xp + ' XP, +' + gold + ' Gallions', 'good');
+      addMsg('🏆 Duel remporté ! Rien de neuf à copier — +' + ((loot.gold | 0) || 120) + ' Gallions.', 'good');
     }
-    setNarrative('Victoire en duel ! +' + xp + ' XP, +' + gold + ' Gallions.');
   }
+  setNarrative('Victoire en duel sur ' + advName + ' !');
+}
+
+// Boucle de fin de victoire (audio, checkLevelUp, renderMinimap).
+function _mpFinishVictory() {
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playVictory) AudioSystem.playVictory();
   if (typeof checkLevelUp === 'function') checkLevelUp();
   if (typeof renderMinimap === 'function') renderMinimap();
+}
+
+// ── Modale de choix de butin Ironman ───────────────────────────
+let _mpLootContext = null;
+
+function _mpOpenLootChoice(opts, advName) {
+  _mpLootContext = { opts: opts, advName: advName };
+  _mpRenderLootChoice();
+  const ov = document.getElementById('mp-loot-overlay');
+  if (ov) ov.style.display = 'flex';
+}
+
+function _mpRenderLootChoice() {
+  const panel = document.getElementById('mp-loot-panel');
+  if (!panel || !_mpLootContext) return;
+  const ctx = _mpLootContext;
+
+  const spellBtns = ctx.opts.spells.map((opt, i) => {
+    const sp = (typeof SPELLS !== 'undefined') ? SPELLS.find(s => s.name === opt.spell) : null;
+    const icon = (sp && sp.icon) ? sp.icon : '✨';
+    return ''
+      + '<button class="mp-loot-card mp-loot-spell" onclick="_mpPickLoot(\'spell\',' + i + ')">'
+      +   '<span class="mp-loot-icon">' + _mpEsc(icon) + '</span>'
+      +   '<span class="mp-loot-name">' + _mpEsc(opt.spell) + '</span>'
+      +   '<span class="mp-loot-kind">Sort inconnu</span>'
+      + '</button>';
+  }).join('');
+
+  const itemBtns = ctx.opts.items.map((opt, i) => {
+    const icon = (typeof getItemIconHtml === 'function')
+      ? getItemIconHtml(opt.item, 'ui-icon-md') : (opt.item.icon || '🎁');
+    return ''
+      + '<button class="mp-loot-card mp-loot-item" onclick="_mpPickLoot(\'item\',' + i + ')">'
+      +   '<span class="mp-loot-icon">' + icon + '</span>'
+      +   '<span class="mp-loot-name">' + _mpEsc(opt.item.name || opt.item.id) + '</span>'
+      +   '<span class="mp-loot-kind">Équipement</span>'
+      + '</button>';
+  }).join('');
+
+  panel.innerHTML = ''
+    + '<div class="mp-loot-title">🏆 Butin Ironman — choisis ta copie</div>'
+    + '<div class="mp-loot-sub">Tu as vaincu ' + _mpEsc(ctx.advName) + '. Choisis un bien à dérober.</div>'
+    + (spellBtns ? '<div class="mp-loot-section">Sorts inconnus</div>'
+                 + '<div class="mp-loot-grid">' + spellBtns + '</div>' : '')
+    + (itemBtns  ? '<div class="mp-loot-section">Équipements non possédés</div>'
+                 + '<div class="mp-loot-grid">' + itemBtns + '</div>' : '');
+}
+
+function _mpPickLoot(kind, idx) {
+  if (!_mpLootContext) return;
+  const list = kind === 'spell' ? _mpLootContext.opts.spells : _mpLootContext.opts.items;
+  const opt  = list && list[idx | 0];
+  if (!opt) return;
+  const ov = document.getElementById('mp-loot-overlay');
+  if (ov) ov.style.display = 'none';
+  _mpApplyIronmanLoot(opt, _mpLootContext.advName);
+  _mpLootContext = null;
+  _mpFinishVictory();
 }
 
 // §5.3 — défaite en duel normal : aucune conséquence, le groupe se relève.

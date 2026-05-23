@@ -10966,9 +10966,140 @@ async function scenarioMultiplayerGifts() {
   await browser.close();
 }
 
+// ── Scénario : multijoueur — équilibrage & polish (Phase 6) ──
+async function scenarioMultiplayerPolish() {
+  console.log('\n── Scénario : multijoueur polish ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) _mpLevelGapTier — classification des écarts.
+  const tiers = await page.evaluate(() => ({
+    even:   _mpLevelGapTier(0),
+    safe:   _mpLevelGapTier(-4),
+    warn:   _mpLevelGapTier(4),
+    danger: _mpLevelGapTier(8),
+  }));
+  assert(tiers.even.cls   === 'even',   'gap=0 doit être "even"');
+  assert(tiers.safe.cls   === 'safe',   'gap=-4 doit être "safe"');
+  assert(tiers.warn.cls   === 'warn',   'gap=+4 doit être "warn"');
+  assert(tiers.danger.cls === 'danger', 'gap=+8 doit être "danger"');
+  assert(tiers.warn.warn   && tiers.warn.warn.length > 0,
+    'le tier warn doit porter un message d\'avertissement');
+  assert(tiers.danger.warn && tiers.danger.warn.length > 0,
+    'le tier danger doit porter un message d\'avertissement');
+  assert(tiers.even.warn === null, 'le tier even ne doit pas avertir');
+
+  // 2) Confirmation Ironman avant duel — sous-vue, pas d'engagement direct.
+  const confirm = await page.evaluate(() => {
+    ironmanMode = true;
+    player.level = 4;
+    const ghost = { playerId: 'iron-1', name: 'Voldemort Jr.', level: 12,
+      house: 'Serpentard', heroKeys: ['harry'], floor: 1, x: 0, y: 0,
+      mode: 'ironman', status: 'exploring' };
+    openGhostInteraction(ghost);
+    // Le clic sur ⚔️ Défier doit ouvrir la confirmation, PAS engager.
+    mpChallengeGhost();
+    const panel = document.getElementById('ghost-panel');
+    const hasWarn = !!panel.querySelector('.ghost-iron-warn');
+    const hasGap  = !!panel.querySelector('.ghost-gap-danger');
+    const recule  = Array.from(panel.querySelectorAll('button'))
+      .find(b => /Reculer/.test(b.textContent));
+    const engager = Array.from(panel.querySelectorAll('button'))
+      .find(b => /Engager le duel/.test(b.textContent));
+    // Le bouton Reculer doit ramener à la vue principale, pas engager.
+    recule.click();
+    const backHasGiftBtn = !!Array.from(
+      document.querySelectorAll('#ghost-panel button')
+    ).find(b => /Offrir/.test(b.textContent));
+    ironmanMode = false;
+    return {
+      hasWarn, hasGap, hasEngager: !!engager,
+      noBattle: !inBattle,
+      back: backHasGiftBtn,
+    };
+  });
+  assert(confirm.hasWarn,   'la sous-vue Ironman doit afficher le bandeau ☠');
+  assert(confirm.hasGap,    'la sous-vue doit colorer en danger un écart +8');
+  assert(confirm.hasEngager, 'la sous-vue doit exposer le bouton « Engager »');
+  assert(confirm.noBattle,  'la confirmation seule ne doit pas démarrer un combat');
+  assert(confirm.back,      'le bouton Reculer doit ramener à la vue principale');
+
+  // 3) Collision de fantômes — 3 fantômes sur la même case = 1 + extras=2.
+  const collide = await page.evaluate(() => {
+    dungeon[3][5] = CELL.FLOOR;
+    _mpProjectGhosts([
+      { player_id: 'a', name: 'A', x: 5, y: 3, hero_keys: ['harry'], level: 2 },
+      { player_id: 'b', name: 'B', x: 5, y: 3, hero_keys: ['harry'], level: 3 },
+      { player_id: 'c', name: 'C', x: 5, y: 3, hero_keys: ['harry'], level: 4 },
+    ]);
+    const g = getGhostAt(5, 3);
+    return { size: ghostPlacements.size, extras: g && g.extras, first: g && g.name };
+  });
+  assert(collide.size === 1,       '3 fantômes sur même case = 1 placement (obtenu ' + collide.size + ')');
+  assert(collide.extras === 2,     'extras doit valoir 2 pour 3 fantômes (obtenu ' + collide.extras + ')');
+  assert(collide.first === 'A',    'le premier fantôme du poll doit gagner la case');
+
+  // 4) Badge minimap +N affiché.
+  const minimapBadge = await page.evaluate(() => {
+    if (typeof visited !== 'undefined' && visited[3]) visited[3][5] = true;
+    renderMinimap();
+    const badges = document.querySelectorAll('#minimap .map-ghost-badge');
+    return { count: badges.length, txt: badges[0] && badges[0].textContent };
+  });
+  assert(minimapBadge.count >= 1,    'la minimap doit porter un badge +N (obtenu ' + minimapBadge.count + ')');
+  assert(minimapBadge.txt === '+2',  'le badge doit afficher +2 (obtenu ' + minimapBadge.txt + ')');
+
+  // 5) Choix de butin Ironman — modale ouverte quand >1 option, pick applique.
+  const lootChoice = await page.evaluate(() => {
+    ironmanMode = true;
+    // Snapshot avec 2 sorts inconnus + 1 item non possédé → 3 options
+    const fakeSnap = { name: 'Multi', level: 6, mode: 'ironman',
+      heroes: [{ heroKey: 'harry', name: 'Multi', icon: '🧙',
+        hpMax: 12, atk: 4, def: 2, mag: 8, agi: 5, lck: 5,
+        spells: ['Sectumsempra', 'Glacius'],
+        equipment: [{ id: 'bottes_dragon', name: 'Bottes du Dragon',
+                      slot: 'feet', bonusDef: 2 }] }] };
+    party[0].spells = party[0].spells.filter(s =>
+      s !== 'Sectumsempra' && s !== 'Glacius');
+    mpStartDuel(fakeSnap, { playerId: 'iron-2', name: 'Multi', level: 6 });
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    checkAllEnemiesDead();
+    const ov = document.getElementById('mp-loot-overlay');
+    const cards = ov.querySelectorAll('.mp-loot-card');
+    const opened = ov.style.display === 'flex';
+    // Choisit l'item (Bottes du Dragon) — bouton avec mp-loot-item.
+    const itemCard = ov.querySelector('.mp-loot-item');
+    itemCard && itemCard.click();
+    const overlayClosed = ov.style.display === 'none';
+    const hasBoots = player.inventory.some(it => it && it.id === 'bottes_dragon');
+    ironmanMode = false;
+    return {
+      opened,
+      cards: cards.length,
+      overlayClosed,
+      hasBoots,
+      didNotLearn: !party[0].spells.includes('Sectumsempra'),
+      battleOver: inBattle === false,
+    };
+  });
+  assert(lootChoice.opened,        'la modale loot doit s\'ouvrir quand >1 option');
+  assert(lootChoice.cards === 3,   '3 cartes (2 sorts + 1 item) attendues, obtenu ' + lootChoice.cards);
+  assert(lootChoice.overlayClosed, 'le pick doit fermer la modale');
+  assert(lootChoice.hasBoots,      'le pick item doit ajouter les Bottes du Dragon');
+  assert(lootChoice.didNotLearn,   'le pick item ne doit PAS apprendre les sorts non choisis');
+  assert(lootChoice.battleOver,    'le combat doit être terminé après le pick');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (polish)`);
+  }
+  console.log('  ✅ multijoueur — écart, confirm Ironman, collision, choix butin OK');
+  await browser.close();
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();
   }
