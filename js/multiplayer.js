@@ -36,8 +36,11 @@ const MP_MOVE_THROTTLE_MS = 3000;
 // Cooldown en mémoire — soft UX guard (RLS ouvert côté base de toute façon).
 const MP_GIFT_GOLD_MAX        = 500;
 const MP_GIFT_RECIPIENT_COOLDOWN_MS = 3600000;
-// Un fantôme distant est « vivant » s'il a été vu il y a moins de 60 s.
-const MP_STALE_SEC = 60;
+// Un fantôme distant est « vivant » s'il a été vu il y a moins d'1 h.
+// Conservé long pour laisser les empreintes des amis hors-ligne visibles
+// pendant une session de jeu typique (positions fixes sur leur dernière
+// case connue). Le filtre est appliqué côté lecteur via `last_seen=gt.…`.
+const MP_STALE_SEC = 3600;
 // Disjoncteur : nombre d'échecs réseau consécutifs avant extinction.
 const MP_MAX_FAILURES = 3;
 
