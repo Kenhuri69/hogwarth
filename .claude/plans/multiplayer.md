@@ -505,17 +505,27 @@ Colonnes manquantes constatées par probe REST `select=<col>&limit=1` :
 
 | Table | Manquantes | Présentes |
 |-------|-----------|-----------|
-| `mp_presence` | `name`, `hero_keys`, `status`, `snapshot`, `last_seen` | `player_id`, `mode`, `floor`, `x`, `y`, `house`, `level` |
-| `mp_messages` | `template`, `word`, `created_at` | `author_id`, `author_name`, `mode`, `floor`, `x`, `y` |
+| `mp_presence` | `name`, `mode`, `hero_keys`, `status`, `snapshot`, `last_seen` | `player_id`, `floor`, `x`, `y`, `house`, `level` |
+| `mp_messages` | `mode`, `template`, `word`, `created_at` | `author_id`, `author_name`, `floor`, `x`, `y` |
 | `mp_gifts` | — | schéma complet ✅ |
+
+> **Piège de probe** (méthodo) : `select=mode&limit=1` ne lève **pas**
+> `42703 column does not exist` quand la colonne est absente, mais
+> `42809 WITHIN GROUP is required for ordered-set aggregate mode` —
+> PostgreSQL tombe en repli sur la fonction d'agrégat statistique
+> `mode()`. Un probe REST naïf qui ne cherche que `42703` rapporte donc
+> `mode` comme « présente » par erreur. C'est l'index multi-colonnes
+> `create index ... on (floor, mode, last_seen)` qui exige un
+> identifiant de colonne et révèle la vraie absence.
 
 SQL de migration idempotent (à exécuter dans le SQL Editor Supabase ;
 les `if not exists` rendent la commande sûre à rejouer) :
 
 ```sql
--- mp_presence : 5 colonnes manquantes
+-- mp_presence : 6 colonnes manquantes (mode incluse)
 alter table public.mp_presence
   add column if not exists name      text not null default 'Sorcier',
+  add column if not exists mode      text not null default 'normal',
   add column if not exists hero_keys jsonb not null default '[]'::jsonb,
   add column if not exists status    text not null default 'exploring',
   add column if not exists snapshot  jsonb,
@@ -523,8 +533,9 @@ alter table public.mp_presence
 create index if not exists mp_presence_lookup_idx
   on public.mp_presence (floor, mode, last_seen);
 
--- mp_messages : 3 colonnes manquantes (template requis NOT NULL)
+-- mp_messages : 4 colonnes manquantes (mode incluse ; template requis NOT NULL)
 alter table public.mp_messages
+  add column if not exists mode       text not null default 'normal',
   add column if not exists template   text,
   add column if not exists word       text,
   add column if not exists created_at timestamptz not null default now();
