@@ -19,6 +19,7 @@ const MP_CONFIG = {
   supabaseAnonKey: 'sb_publishable_zz2fPlpthCU0cee7VrVl5w_fwV0wrOb',
   presenceTable:   'mp_presence',
   messagesTable:   'mp_messages',
+  giftsTable:      'mp_gifts',
 };
 
 const MP_ID_KEY = 'hogwarts_rpg_player_id';
@@ -30,6 +31,11 @@ const MP_POLL_MS          = 8000;
 const MP_MSG_POLL_MS      = 15000;          // les messages changent lentement
 const MP_MSG_POST_COOLDOWN_MS = 20000;      // anti-spam de gravure
 const MP_MOVE_THROTTLE_MS = 3000;
+
+// Cadeaux (§6) — 500 Gallions max par envoi, 1 cadeau / destinataire / heure.
+// Cooldown en mémoire — soft UX guard (RLS ouvert côté base de toute façon).
+const MP_GIFT_GOLD_MAX        = 500;
+const MP_GIFT_RECIPIENT_COOLDOWN_MS = 3600000;
 // Un fantôme distant est « vivant » s'il a été vu il y a moins de 60 s.
 const MP_STALE_SEC = 60;
 // Disjoncteur : nombre d'échecs réseau consécutifs avant extinction.
@@ -50,6 +56,8 @@ let _mpLastUpsert     = 0;
 let _mpUpsertInFlight = false;
 let _mpFailCount      = 0;
 let _mpLastMsgPost    = 0;
+// Map<recipient_id, ts> — dernière offrande envoyée à chaque destinataire.
+let _mpGiftCooldowns  = new Map();
 
 // ── Identité joueur ─────────────────────────────────────────
 function _mpFallbackUuid() {
@@ -114,6 +122,10 @@ function mpStartSession() {
   _mpUpsertPresence();
   _mpPollGhosts();
   _mpPollMessages();
+  // Réclamation de la boîte aux lettres une seule fois par session — les
+  // cadeaux non claimés restent en base et sont rejoués à la prochaine
+  // connexion si l'inventaire était plein.
+  if (typeof claimPendingGifts === 'function') claimPendingGifts();
   _mpHeartbeatTimer = setInterval(_mpUpsertPresence, MP_HEARTBEAT_MS);
   _mpPollTimer      = setInterval(_mpPollGhosts,     MP_POLL_MS);
   _mpMsgTimer       = setInterval(_mpPollMessages,   MP_MSG_POLL_MS);
@@ -372,8 +384,7 @@ function _mpRenderGhostMain() {
     +   '<button class="ghost-btn" onclick="mpInspectGhost()">🔍 Inspecter</button>'
     +   saluer
     +   defier
-    +   '<button class="ghost-btn ghost-btn-soon" disabled'
-    +     ' title="Cadeaux — phase ultérieure">🎁 Offrir</button>'
+    +   '<button class="ghost-btn" onclick="mpOpenGiftView()">🎁 Offrir</button>'
     + '</div>'
     + '<button class="ghost-btn ghost-btn-close" onclick="closeGhostOverlay()">'
     +   'Reprendre l\'exploration</button>';
@@ -947,4 +958,314 @@ function _mpConfirmMessage() {
     return;
   }
   if (mpPostMessage(_mpMsgTemplate, _mpMsgWord)) closeMessageOverlay();
+}
+
+// ============================================================
+// PHASE 5 — Cadeaux or/objet (§6)
+// ============================================================
+// L'overlay fantôme offre un sous-mode « 🎁 Offrir ». L'envoi insère une
+// ligne `mp_gifts` ; à la connexion (mpStartSession), `claimPendingGifts`
+// lit la boîte aux lettres et applique les cadeaux non encore réclamés
+// (or → player.gold, item → tryAddItem). Items équipés non concernés —
+// seul `player.inventory` est exposé. Items de quête actifs filtrés.
+
+// Items du sac partageables — exclut ce qui sert à une quête en cours.
+function _mpIsQuestItem(itemId) {
+  if (typeof activeQuests === 'undefined' || !Array.isArray(activeQuests)) return false;
+  return activeQuests.some(q =>
+    q && !q.completed && Array.isArray(q.objectives)
+      && q.objectives.some(o => o && !o.completed
+        && o.type === 'item' && o.itemId === itemId));
+}
+
+function _mpGiftableItems() {
+  if (typeof player === 'undefined' || !Array.isArray(player.inventory)) return [];
+  const out = [];
+  player.inventory.forEach((it, idx) => {
+    if (!it || !it.id) return;
+    if (_mpIsQuestItem(it.id)) return;
+    out.push({ idx: idx, item: it });
+  });
+  return out;
+}
+
+// État transient de la sous-vue cadeau dans l'overlay fantôme.
+let _mpGiftKind = 'gold';            // 'gold' | 'item'
+let _mpGiftGold = 50;                // valeur du curseur (gold)
+let _mpGiftItemIdx = -1;             // index dans player.inventory
+
+function mpOpenGiftView() {
+  if (!_mpCurrentGhost) return;
+  _mpGiftKind = 'gold';
+  _mpGiftGold = Math.min(MP_GIFT_GOLD_MAX,
+    Math.max(10, Math.floor(((typeof player !== 'undefined' && player.gold) || 0) / 4)));
+  _mpGiftItemIdx = -1;
+  _mpRenderGiftView();
+}
+
+function _mpGiftCooldownLeftMs(recipientId) {
+  if (!recipientId) return 0;
+  const last = _mpGiftCooldowns.get(recipientId) || 0;
+  return Math.max(0, MP_GIFT_RECIPIENT_COOLDOWN_MS - (Date.now() - last));
+}
+
+function _mpFmtCooldown(ms) {
+  if (ms < 60000) return Math.ceil(ms / 1000) + ' s';
+  return Math.ceil(ms / 60000) + ' min';
+}
+
+function _mpRenderGiftView() {
+  const panel = document.getElementById('ghost-panel');
+  if (!panel || !_mpCurrentGhost) return;
+  const g       = _mpCurrentGhost;
+  const myGold  = (typeof player !== 'undefined' && player.gold) | 0;
+  const cdLeft  = _mpGiftCooldownLeftMs(g.playerId);
+  const items   = _mpGiftableItems();
+
+  // Onglets kind
+  const tabs = ''
+    + '<div class="mp-gift-tabs">'
+    +   '<button class="mp-chip' + (_mpGiftKind === 'gold' ? ' mp-chip-on' : '') + '"'
+    +     ' onclick="_mpGiftSelectKind(\'gold\')">💰 Or</button>'
+    +   '<button class="mp-chip' + (_mpGiftKind === 'item' ? ' mp-chip-on' : '') + '"'
+    +     ' onclick="_mpGiftSelectKind(\'item\')">🎒 Objet</button>'
+    + '</div>';
+
+  // Corps
+  let body = '';
+  if (_mpGiftKind === 'gold') {
+    const cap = Math.min(MP_GIFT_GOLD_MAX, myGold);
+    if (cap <= 0) {
+      body = '<div class="mp-gift-empty">Tu n\'as aucun Gallion à offrir.</div>';
+    } else {
+      const v = Math.min(cap, _mpGiftGold | 0);
+      body = ''
+        + '<div class="mp-gift-row">'
+        +   '<label for="mp-gift-gold-input">Montant (max ' + cap + ')</label>'
+        +   '<input id="mp-gift-gold-input" type="number" min="1" max="' + cap + '"'
+        +     ' value="' + v + '" oninput="_mpGiftSetGold(this.value)">'
+        + '</div>'
+        + '<div class="mp-gift-hint">Plafond par envoi : ' + MP_GIFT_GOLD_MAX + ' Gallions.</div>';
+    }
+  } else {
+    if (items.length === 0) {
+      body = '<div class="mp-gift-empty">Aucun objet partageable dans ton sac.</div>';
+    } else {
+      const list = items.map(({ idx, item }) => {
+        const sel = (idx === _mpGiftItemIdx) ? ' mp-gift-item-on' : '';
+        const icon = (typeof getItemIconHtml === 'function')
+          ? getItemIconHtml(item, 'ui-icon-sm') : (item.icon || '🎁');
+        return ''
+          + '<button class="mp-gift-item' + sel + '"'
+          +   ' onclick="_mpGiftSelectItem(' + idx + ')">'
+          +   '<span class="mp-gift-item-icon">' + icon + '</span>'
+          +   '<span class="mp-gift-item-name">' + _mpEsc(item.name || item.id) + '</span>'
+          + '</button>';
+      }).join('');
+      body = '<div class="mp-gift-items">' + list + '</div>';
+    }
+  }
+
+  // Validation du bouton
+  let canSend = false, sendLabel = 'Offrir';
+  if (cdLeft > 0) {
+    sendLabel = 'Attends ' + _mpFmtCooldown(cdLeft);
+  } else if (_mpGiftKind === 'gold') {
+    canSend = myGold > 0 && _mpGiftGold >= 1 && _mpGiftGold <= Math.min(myGold, MP_GIFT_GOLD_MAX);
+  } else {
+    canSend = _mpGiftItemIdx >= 0 && _mpGiftItemIdx < (player.inventory || []).length;
+  }
+
+  panel.innerHTML = ''
+    + _mpGhostHeaderHtml(g)
+    + '<div class="mp-gift-title">🎁 Offrir un présent à ' + _mpEsc(g.name || 'ce sorcier') + '</div>'
+    + tabs
+    + '<div class="mp-gift-body">' + body + '</div>'
+    + '<div class="ghost-actions">'
+    +   '<button class="ghost-btn" onclick="_mpRenderGhostMain()">← Retour</button>'
+    +   '<button class="ghost-btn' + (canSend ? '' : ' ghost-btn-soon') + '"'
+    +     (canSend ? '' : ' disabled') + ' onclick="_mpConfirmGift()">' + sendLabel + '</button>'
+    + '</div>';
+}
+
+function _mpGiftSelectKind(kind) {
+  if (kind !== 'gold' && kind !== 'item') return;
+  _mpGiftKind = kind;
+  _mpRenderGiftView();
+}
+
+function _mpGiftSetGold(v) {
+  const myGold = (typeof player !== 'undefined' && player.gold) | 0;
+  const cap = Math.min(MP_GIFT_GOLD_MAX, myGold);
+  const n = Math.max(1, Math.min(cap, parseInt(v, 10) || 0));
+  _mpGiftGold = n;
+}
+
+function _mpGiftSelectItem(idx) {
+  _mpGiftItemIdx = idx;
+  _mpRenderGiftView();
+}
+
+// Insère une ligne `mp_gifts`. Renvoie `true` si la requête est partie
+// (même en file:// où elle est court-circuitée).
+async function _mpInsertGift(payload) {
+  if (!_mpConfigured()) return true;             // file:// / tests : pas d'appel
+  try {
+    const res = await fetch(
+      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_CONFIG.giftsTable}`,
+      {
+        method: 'POST',
+        headers: _mpHeaders({
+          'Content-Type': 'application/json',
+          'Prefer':       'return=minimal',
+        }),
+        body: JSON.stringify(payload),
+      }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _mpNoteSuccess();
+    return true;
+  } catch (e) {
+    _mpNoteFailure(e);
+    return false;
+  }
+}
+
+// Confirmation du bouton « Offrir ». Déduit immédiatement l'or/l'item du
+// joueur (le geste est définitif côté donneur) avant l'appel réseau.
+function _mpConfirmGift() {
+  const g = _mpCurrentGhost;
+  if (!g || !g.playerId) return;
+  if (_mpGiftCooldownLeftMs(g.playerId) > 0) return;
+  const myGold = (typeof player !== 'undefined' && player.gold) | 0;
+  const senderName = (typeof getPlayerName === 'function' && getPlayerName()) || 'Sorcier';
+
+  if (_mpGiftKind === 'gold') {
+    const cap = Math.min(MP_GIFT_GOLD_MAX, myGold);
+    const amount = Math.max(1, Math.min(cap, _mpGiftGold | 0));
+    if (amount <= 0) return;
+    player.gold -= amount;
+    _mpInsertGift({
+      sender_id:    getMpPlayerId(),
+      sender_name:  senderName,
+      recipient_id: g.playerId,
+      mode:         mpMode,
+      kind:         'gold',
+      amount:       amount,
+    });
+    if (typeof addMsg === 'function') {
+      addMsg('🎁 Tu offres ' + amount + ' Gallions à ' + (g.name || 'ce sorcier') + '.', 'good');
+    }
+  } else {
+    const idx = _mpGiftItemIdx | 0;
+    const it  = player.inventory && player.inventory[idx];
+    if (!it || _mpIsQuestItem(it.id)) return;
+    const snapshot = { ...it };
+    player.inventory.splice(idx, 1);
+    _mpInsertGift({
+      sender_id:    getMpPlayerId(),
+      sender_name:  senderName,
+      recipient_id: g.playerId,
+      mode:         mpMode,
+      kind:         'item',
+      item_id:      it.id,
+      item_name:    it.name || it.id,
+      item_data:    snapshot,
+    });
+    if (typeof addMsg === 'function') {
+      addMsg('🎁 Tu offres « ' + (it.name || it.id) + ' » à ' + (g.name || 'ce sorcier') + '.', 'good');
+    }
+  }
+  _mpGiftCooldowns.set(g.playerId, Date.now());
+  if (typeof updateUI === 'function') updateUI();
+  closeGhostOverlay();
+}
+
+// ── Boîte aux lettres : lecture & réclamation ────────────────────
+// Appelée à la connexion. Tire toutes les lignes adressées au joueur
+// dont `claimed_at` est nul, applique l'effet localement (or / item
+// via tryAddItem), puis PATCH claimed_at=now pour chaque ligne réussie.
+async function claimPendingGifts() {
+  if (!_mpConfigured()) return { ok: false };
+  if (typeof player === 'undefined') return { ok: false };
+  const myId = getMpPlayerId();
+  let rows;
+  try {
+    const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_CONFIG.giftsTable}`
+      + '?select=id,sender_name,kind,amount,item_id,item_name,item_data,created_at'
+      + `&recipient_id=eq.${encodeURIComponent(myId)}`
+      + '&claimed_at=is.null'
+      + '&order=created_at.asc&limit=50';
+    const res = await fetch(url, { headers: _mpHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    rows = await res.json();
+    _mpNoteSuccess();
+  } catch (e) {
+    _mpNoteFailure(e);
+    return { ok: false };
+  }
+  if (!Array.isArray(rows) || rows.length === 0) return { ok: true, claimed: 0 };
+
+  const now = new Date().toISOString();
+  const summary = { gold: 0, items: 0, skipped: 0, senders: new Set() };
+
+  for (const row of rows) {
+    let applied = false;
+    if (row.kind === 'gold' && Number.isFinite(row.amount) && row.amount > 0) {
+      // Clamp défensif : un sender mal-veillant pourrait avoir posé une
+      // somme énorme — on borne au cap UI.
+      const amt = Math.min(MP_GIFT_GOLD_MAX, Math.max(1, row.amount | 0));
+      player.gold += amt;
+      summary.gold += amt;
+      applied = true;
+    } else if (row.kind === 'item' && row.item_id) {
+      const data = row.item_data || (typeof ITEMS !== 'undefined'
+        && ITEMS.find(i => i.id === row.item_id)) || null;
+      if (data && typeof tryAddItem === 'function' && tryAddItem(data, { silent: true })) {
+        summary.items++;
+        applied = true;
+      } else {
+        // Sac plein ou item inconnu — on laisse la ligne dans la boîte
+        // (claimed_at reste null), elle sera retentée à la prochaine session.
+        summary.skipped++;
+      }
+    }
+    if (applied && row.id) {
+      try {
+        await fetch(
+          `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_CONFIG.giftsTable}`
+            + `?id=eq.${encodeURIComponent(row.id)}`,
+          {
+            method:  'PATCH',
+            headers: _mpHeaders({
+              'Content-Type': 'application/json',
+              'Prefer':       'return=minimal',
+            }),
+            body: JSON.stringify({ claimed_at: now }),
+          }
+        );
+      } catch (e) { /* sera retenté à la prochaine connexion */ }
+      if (row.sender_name) summary.senders.add(row.sender_name);
+    }
+  }
+  _mpAnnounceClaim(summary);
+  if (typeof updateUI === 'function') updateUI();
+  return { ok: true, claimed: summary.gold > 0 || summary.items > 0, summary: summary };
+}
+
+function _mpAnnounceClaim(s) {
+  if (typeof addMsg !== 'function') return;
+  if (s.gold === 0 && s.items === 0) return;
+  const parts = [];
+  if (s.gold)  parts.push('+' + s.gold + ' Gallions');
+  if (s.items) parts.push(s.items + ' objet' + (s.items > 1 ? 's' : ''));
+  const senders = Array.from(s.senders);
+  const from = senders.length === 0 ? ''
+    : (senders.length === 1 ? ' de ' + senders[0]
+       : ' de ' + senders.slice(0, -1).join(', ') + ' et ' + senders[senders.length - 1]);
+  addMsg('🎁 Boîte aux lettres : ' + parts.join(', ') + from + '.', 'good');
+  if (s.skipped > 0) {
+    addMsg(s.skipped + ' cadeau' + (s.skipped > 1 ? 'x sont en attente' : ' est en attente')
+      + ' — fais de la place dans ton sac.', 'info');
+  }
 }

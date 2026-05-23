@@ -10760,9 +10760,215 @@ async function scenarioMultiplayerMessages() {
   await browser.close();
 }
 
+// ── Scénario : multijoueur — cadeaux or/objet (Phase 5) ──
+async function scenarioMultiplayerGifts() {
+  console.log('\n── Scénario : multijoueur cadeaux ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Globals Phase 5 exposés.
+  const exposed = await page.evaluate(() => ({
+    mpOpenGiftView:    typeof mpOpenGiftView === 'function',
+    claimPendingGifts: typeof claimPendingGifts === 'function',
+    giftableHelper:    typeof _mpGiftableItems === 'function',
+    cap:               typeof MP_GIFT_GOLD_MAX === 'number' && MP_GIFT_GOLD_MAX === 500,
+    cooldownConst:     typeof MP_GIFT_RECIPIENT_COOLDOWN_MS === 'number',
+    cooldownMap:       typeof _mpGiftCooldowns !== 'undefined',
+  }));
+  Object.entries(exposed).forEach(([k, v]) => assert(v, `global manquant : ${k}`));
+
+  // 2) Bouton 🎁 actif dans l'overlay fantôme (plus de « phase ultérieure »).
+  const overlay = await page.evaluate(() => {
+    const ghost = { playerId: 'ally-1', name: 'Alice', level: 4, house: 'Gryffondor',
+      heroKeys: ['harry'], floor: 1, x: 0, y: 0, mode: 'normal', status: 'exploring' };
+    openGhostInteraction(ghost);
+    const panel = document.getElementById('ghost-panel');
+    const giftBtn = Array.from(panel.querySelectorAll('button'))
+      .find(b => /Offrir/.test(b.textContent));
+    return {
+      overlayShown: document.getElementById('ghost-overlay').style.display === 'flex',
+      hasGiftBtn:   !!giftBtn,
+      enabled:      !!(giftBtn && !giftBtn.disabled),
+    };
+  });
+  assert(overlay.overlayShown, "l'overlay fantôme doit s'afficher");
+  assert(overlay.hasGiftBtn,   'le bouton 🎁 Offrir doit exister');
+  assert(overlay.enabled,      'le bouton 🎁 Offrir doit être actif (phase 5 livrée)');
+
+  // 3) _mpGiftableItems — exclut les items requis par une quête active.
+  const filter = await page.evaluate(() => {
+    activeQuests = [{ id: 'q', completed: false,
+      objectives: [{ type: 'item', itemId: 'mandragore', amount: 1,
+                     progress: 0, completed: false }] }];
+    player.inventory = [
+      { id: 'potion_s',   name: 'Potion S' },
+      { id: 'mandragore', name: 'Mandragore' },        // quête → exclu
+      { id: 'wand1',      name: 'Baguette de Saule' },
+    ];
+    const list = _mpGiftableItems();
+    return { count: list.length, ids: list.map(({ item }) => item.id) };
+  });
+  assert(filter.count === 2,                'la mandragore quête doit être filtrée');
+  assert(filter.ids.includes('potion_s'),   'la potion doit rester offrable');
+  assert(filter.ids.includes('wand1'),      'la baguette doit rester offrable');
+  assert(!filter.ids.includes('mandragore'),'item de quête doit être exclu');
+
+  // 4) Vue cadeau — onglets + champ or présent, plafond respecté.
+  const view = await page.evaluate(() => {
+    player.gold = 320;
+    mpOpenGiftView();
+    const panel = document.getElementById('ghost-panel');
+    const tabs  = panel.querySelectorAll('.mp-gift-tabs .mp-chip');
+    const goldInput = panel.querySelector('input[type="number"]');
+    return {
+      tabs:    tabs.length,
+      hasGold: !!goldInput,
+      max:     goldInput && parseInt(goldInput.max, 10),
+    };
+  });
+  assert(view.tabs === 2,        'la vue cadeau doit afficher 2 onglets (or / objet)');
+  assert(view.hasGold,           "le champ or doit s'afficher");
+  assert(view.max === 320,       `le max doit être borné par l'or (obtenu ${view.max})`);
+
+  // 5) Stub réseau — force _mpConfigured et intercepte fetch.
+  await page.evaluate(() => {
+    window._mpFetchCalls = [];
+    window._mpConfigured = function () { return true; };
+    MP_CONFIG.supabaseUrl     = 'https://stub.supabase.test';
+    MP_CONFIG.supabaseAnonKey = 'stub-key';
+    window._mpStubInbox = [];
+    const realFetch = window.fetch;
+    window.fetch = async function (url, opts) {
+      const u = String(url || '');
+      const method = (opts && opts.method) || 'GET';
+      window._mpFetchCalls.push({ url: u, method,
+        body: opts && opts.body ? JSON.parse(opts.body) : null });
+      // SELECT sur mp_gifts → renvoyer la boîte simulée
+      if (u.includes('/mp_gifts') && method === 'GET') {
+        return new Response(JSON.stringify(window._mpStubInbox),
+          { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      // INSERT / UPDATE / autre → 200 vide
+      if (u.includes('/mp_gifts')) {
+        return new Response('', { status: 204 });
+      }
+      // Tout autre appel : repasse au fetch d'origine (ressources locales)
+      return realFetch.apply(this, arguments);
+    };
+  });
+
+  // 6) Envoi d'un cadeau or — payload conforme, gold débité, cooldown armé.
+  const send = await page.evaluate(async () => {
+    _mpGiftCooldowns.clear();
+    window._mpFetchCalls = [];
+    const before = player.gold;
+    _mpGiftSelectKind('gold');
+    _mpGiftSetGold(150);
+    _mpConfirmGift();
+    await new Promise(r => setTimeout(r, 40));         // attend le POST
+    const post = window._mpFetchCalls.find(c =>
+      c.method === 'POST' && /\/mp_gifts/.test(c.url));
+    return {
+      goldDelta: before - player.gold,
+      postBody:  post && post.body,
+      overlayClosed: document.getElementById('ghost-overlay').style.display === 'none',
+      cooldown:  _mpGiftCooldowns.has('ally-1'),
+    };
+  });
+  assert(send.goldDelta === 150,        `gold doit être débité de 150 (obtenu ${send.goldDelta})`);
+  assert(send.overlayClosed,            "envoyer un cadeau doit fermer l'overlay");
+  assert(send.postBody && send.postBody.kind === 'gold',
+    'le payload POST doit porter kind=gold');
+  assert(send.postBody.recipient_id === 'ally-1',
+    'le payload doit cibler le destinataire de l\'overlay');
+  assert(send.postBody.amount === 150,
+    `le payload doit porter amount=150 (obtenu ${send.postBody && send.postBody.amount})`);
+  assert(send.cooldown,                 'le cooldown destinataire doit être armé');
+
+  // 7) Cooldown — un 2e envoi immédiat au même destinataire est bloqué.
+  const cooldown = await page.evaluate(() => {
+    const before = player.gold;
+    const ghost = { playerId: 'ally-1', name: 'Alice', level: 4, house: 'Gryffondor',
+      heroKeys: ['harry'], floor: 1, x: 0, y: 0, mode: 'normal', status: 'exploring' };
+    openGhostInteraction(ghost);
+    mpOpenGiftView();
+    const panel = document.getElementById('ghost-panel');
+    const sendBtn = Array.from(panel.querySelectorAll('button'))
+      .find(b => /Offrir|Attends/.test(b.textContent));
+    const blocked = sendBtn && (sendBtn.disabled || /Attends/.test(sendBtn.textContent));
+    // Tente quand même un confirm — il doit être no-op.
+    _mpConfirmGift();
+    return { blocked, goldUnchanged: player.gold === before };
+  });
+  assert(cooldown.blocked,        'le bouton doit afficher « Attends … » sur cooldown');
+  assert(cooldown.goldUnchanged,  "le 2e envoi vers le même joueur ne doit rien débiter");
+
+  // 8) claimPendingGifts — applique or + item, PATCH claimed_at.
+  await page.evaluate(() => {
+    window._mpStubInbox = [
+      { id: 'g1', sender_name: 'Bob',   kind: 'gold', amount: 120 },
+      { id: 'g2', sender_name: 'Carol', kind: 'item',
+        item_id: 'potion_s', item_name: 'Potion S',
+        item_data: { id: 'potion_s', name: 'Potion S', type: 'consumable', icon: '🧪' } },
+      { id: 'g3', sender_name: 'Dave',  kind: 'gold', amount: 99999 },   // doit être clampé
+    ];
+    player.gold = 0;
+    player.inventory = [];                                                // sac vide
+  });
+  const claim = await page.evaluate(async () => {
+    window._mpFetchCalls = [];
+    const out = await claimPendingGifts();
+    return {
+      ok:       !!out && out.ok,
+      gold:     player.gold,
+      hasItem:  player.inventory.some(it => it && it.id === 'potion_s'),
+      patches:  window._mpFetchCalls.filter(c => c.method === 'PATCH'
+                 && /\/mp_gifts\?id=eq\./.test(c.url)).length,
+    };
+  });
+  assert(claim.ok,                'claimPendingGifts doit aboutir');
+  // 120 + 500 (clamp de 99999) = 620
+  assert(claim.gold === 620,
+    `or réclamé = 120 + clamp(99999→500) = 620 (obtenu ${claim.gold})`);
+  assert(claim.hasItem,           "l'item du cadeau doit arriver dans le sac");
+  assert(claim.patches === 3,
+    `3 PATCH claimed_at attendus (1/cadeau appliqué), obtenu ${claim.patches}`);
+
+  // 9) Sac plein — un item non claimé reste dans la boîte (pas de PATCH).
+  await page.evaluate(() => {
+    window._mpStubInbox = [
+      { id: 'g4', sender_name: 'Eve', kind: 'item',
+        item_id: 'potion_m', item_name: 'Potion M',
+        item_data: { id: 'potion_m', name: 'Potion M', type: 'consumable', icon: '🧪' } },
+    ];
+    // Remplit le sac à ras bord (16 slots).
+    player.inventory = [];
+    for (let i = 0; i < 16; i++) player.inventory.push({ id: 'filler', name: 'f', type: 'misc' });
+  });
+  const overflow = await page.evaluate(async () => {
+    window._mpFetchCalls = [];
+    await claimPendingGifts();
+    return {
+      patches: window._mpFetchCalls.filter(c => c.method === 'PATCH'
+                 && /\/mp_gifts\?id=eq\./.test(c.url)).length,
+      potion:  player.inventory.some(it => it && it.id === 'potion_m'),
+    };
+  });
+  assert(overflow.patches === 0,
+    `sac plein → 0 PATCH (cadeau préservé), obtenu ${overflow.patches}`);
+  assert(!overflow.potion, 'sac plein → la potion ne doit PAS être ajoutée');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (cadeaux)`);
+  }
+  console.log('  ✅ multijoueur — envoi, cooldown, boîte aux lettres OK');
+  await browser.close();
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts];
   for (const s of scenarios) {
     await s();
   }

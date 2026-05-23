@@ -421,6 +421,31 @@ create index if not exists mp_messages_lookup_idx
   on public.mp_messages (floor, mode);
 ```
 
+Et la table `mp_gifts` (Phase 5 — cadeaux or/objet) :
+
+```sql
+create table if not exists public.mp_gifts (
+  id           uuid primary key default gen_random_uuid(),
+  sender_id    text not null,
+  sender_name  text not null default 'Sorcier',
+  recipient_id text not null,
+  mode         text not null default 'normal',   -- 'ironman' | 'normal'
+  kind         text not null check (kind in ('gold','item')),
+  amount       int,                              -- non nul si kind='gold'
+  item_id      text,                             -- non nul si kind='item'
+  item_name    text,                             -- snapshot pour affichage
+  item_data    jsonb,                            -- snapshot complet (rejouable)
+  created_at   timestamptz not null default now(),
+  claimed_at   timestamptz
+);
+alter table public.mp_gifts enable row level security;
+create policy "mp_gifts_read"   on public.mp_gifts for select using (true);
+create policy "mp_gifts_insert" on public.mp_gifts for insert with check (true);
+create policy "mp_gifts_update" on public.mp_gifts for update using (true) with check (true);
+create index if not exists mp_gifts_inbox_idx
+  on public.mp_gifts (recipient_id, claimed_at);
+```
+
 ## 11ter. Écarts d'implémentation (Phases 0-1)
 
 - **Sprite fantôme = silhouette vectorielle spectrale** (translucide,
@@ -502,6 +527,14 @@ create index if not exists mp_messages_lookup_idx
       `drawMessageMarker` + minimap `.map-message`, révélation step-on
       non bloquante. Texte stocké par `id`, recomposé localement (toute
       entrée hors banque locale est ignorée). Vérifié par scénario smoke.
-- [ ] Phase 5 — cadeaux.
+- [x] Phase 5 — cadeaux : table `mp_gifts` (SQL §11bis bloc 3) ; vue
+      cadeau dans l'overlay fantôme (onglets Or / Objet) ; plafond
+      500 Gallions / envoi, cooldown 1 h par destinataire (en mémoire) ;
+      items de quête actifs filtrés ; envoi déduit immédiatement chez
+      le donneur, INSERT non bloquant ; boîte aux lettres réclamée
+      automatiquement à `mpStartSession()` (PATCH `claimed_at`),
+      clamp défensif côté receveur ; sac plein → cadeau préservé dans
+      la boîte pour la prochaine session. Vérifié par
+      `scenarioMultiplayerGifts`.
 - [ ] Phase 6 — équilibrage & polish.
 - [ ] Phase 7 — duel PvP en direct (optionnel).

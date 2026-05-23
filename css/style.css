@@ -1127,6 +1127,57 @@ body {
   background: var(--gold); color: #1a130a; font-weight: 600;
   border-color: var(--gold);
 }
+/* Sous-vue cadeau (overlay fantôme — Phase 5). Réutilise les `mp-chip`
+   pour les onglets gold/objet et un layout flex simple pour la liste. */
+.mp-gift-title {
+  font-family: 'Cinzel', serif; font-size: 14px; letter-spacing: 1px;
+  color: var(--gold); text-align: center; margin-top: 4px;
+}
+.mp-gift-tabs { display: flex; gap: 6px; justify-content: center; margin: 4px 0; }
+.mp-gift-body { width: 100%; }
+.mp-gift-empty {
+  text-align: center; color: #b39a5e; font-style: italic;
+  padding: 14px 6px;
+}
+.mp-gift-row {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  margin: 6px 0;
+}
+.mp-gift-row label {
+  font-family: 'Cinzel', serif; font-size: 11px;
+  letter-spacing: 1.4px; text-transform: uppercase;
+  color: var(--gold);
+}
+.mp-gift-row input[type="number"] {
+  width: 110px; padding: 6px 8px;
+  background: #1a130a; color: #f3e3b2;
+  border: 1px solid var(--gold-dark); border-radius: 3px;
+  font-family: 'Crimson Text', serif; font-size: 16px; text-align: center;
+}
+.mp-gift-hint {
+  font-size: 11px; color: #8b7c52; font-style: italic; text-align: center;
+}
+.mp-gift-items {
+  display: flex; flex-direction: column; gap: 4px; width: 100%;
+  max-height: 240px; overflow-y: auto;
+  padding-right: 4px;
+}
+.mp-gift-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 8px;
+  background: #1c1408; color: #d8c79a;
+  border: 1px solid #5a4a22; border-radius: 3px;
+  font-family: 'Crimson Text', serif; font-size: 13px;
+  cursor: pointer; text-align: left;
+  transition: filter 0.12s, background 0.12s;
+}
+.mp-gift-item:hover { filter: brightness(1.25); }
+.mp-gift-item-on {
+  background: rgba(201,168,76,0.18); border-color: var(--gold);
+  color: #f3e3b2;
+}
+.mp-gift-item-icon { font-size: 18px; line-height: 1; }
+.mp-gift-item-name { flex: 1; }
 /* Boîte de dialogue parchemin : header épinglé en haut, texte scrollable
    au centre, actions épinglées en bas. La hauteur max borne le panneau →
    débordement impossible par construction (cf. fix-quest-mobile-overflow). */

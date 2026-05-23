@@ -254,6 +254,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'mpPostMessage',      source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: 'getMessageAt',       source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: 'messagePlacements',  source: 'multiplayer.js',  kind: 'obj',   optional: true },
+    { name: 'mpOpenGiftView',     source: 'multiplayer.js',  kind: 'fn',    optional: true },
+    { name: 'claimPendingGifts',  source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: 'drawGhostSprite',    source: 'renderer-effects.js', kind: 'fn', optional: true },
     { name: 'drawMessageMarker',  source: 'renderer-effects.js', kind: 'fn', optional: true },
 
