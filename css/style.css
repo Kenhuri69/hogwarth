@@ -4318,6 +4318,22 @@ button.shop-tab.active {
 }
 .hof-hero-av img { width: 100%; height: 100%; object-fit: cover; }
 .hof-row-projection .hof-hero-av { border-color: var(--gold-dark); }
+.hof-house-badge {
+  width: 30px; height: 30px; flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--gold-dark);
+  background: radial-gradient(circle, #2a1d0c 0%, #0d0705 100%);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 0 6px rgba(201,168,76,0.2);
+}
+.hof-house-badge img { width: 88%; height: 88%; object-fit: contain; }
+.hof-house-empty {
+  color: #5a4a2a; font-family: 'Cinzel', serif; font-size: 14px;
+  font-weight: 700; border-style: dashed; border-color: #3a2c12;
+  box-shadow: none;
+}
+.hof-row-projection .hof-house-badge { border-color: var(--gold); }
 .hof-main { flex: 1; min-width: 0; }
 .hof-name {
   font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold-light);
@@ -4327,6 +4343,28 @@ button.shop-tab.active {
   font-size: 11px; color: #8a7050; margin-top: 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.hof-chips {
+  display: flex; gap: 6px; margin-top: 4px;
+  flex-wrap: wrap;
+}
+.hof-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.5px;
+  color: var(--gold);
+  padding: 2px 7px;
+  border: 1px solid var(--gold-dark);
+  border-radius: 10px;
+  background: rgba(20,12,4,0.55);
+  white-space: nowrap;
+}
+.hof-chip-icon {
+  width: 11px; height: 11px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 1px rgba(201,168,76,0.4));
+}
+.hof-chip-floor { color: #d6b863; }
+.hof-chip-level { color: #b8c8e4; border-color: #4a5a78; }
+.hof-row-projection .hof-chip { border-color: var(--gold); }
 .hof-score {
   font-family: 'Cinzel', serif; font-size: 17px; font-weight: 700;
   color: #c9a84c; min-width: 64px; text-align: right;
@@ -4358,6 +4396,13 @@ button.shop-tab.active {
   .ir-score-num { font-size: 36px; }
   .hof-frame, .ironman-result-frame { padding: 20px 15px; }
   .hof-title { font-size: 20px; }
+  .hof-row { gap: 8px; padding: 8px 6px; }
+  .hof-house-badge { width: 26px; height: 26px; }
+  .hof-hero-av { width: 28px; height: 28px; }
+  .hof-rank { min-width: 28px; font-size: 14px; }
+  .hof-medal { width: 22px; height: 22px; }
+  .hof-chip { font-size: 9px; padding: 1px 5px; }
+  .hof-chip-icon { width: 9px; height: 9px; }
 }
 
 /* Icônes PNG Ironman / Hall of Fame (rendu lisse, hors classe .ui-icon) */

@@ -8737,15 +8737,17 @@ async function scenarioIronman() {
     return { count: arr.length, top: arr[0], savedName: getPlayerName() };
   });
   console.log('  T5 soumission :', { count: t5.count, name: t5.top && t5.top.player_name,
-    savedName: t5.savedName });
+    savedName: t5.savedName, house: t5.top && t5.top.house });
   assert(t5.count === 1,                   'le score doit être stocké localement');
   assert(t5.top.player_name === 'Testeur', 'le nom soumis doit être conservé');
   assert(t5.top.score === 3640,            'le score stocké doit valoir 3640');
   assert(typeof t5.top.run_id === 'string' && t5.top.run_id.length >= 8,
     "l'entrée doit porter un run_id");
   assert(t5.savedName === 'Testeur',       'le pseudonyme doit être persisté en localStorage');
+  assert(t5.top.house === 'Gryffondor',
+    `l'entrée doit porter la Maison du joueur, obtenu ${t5.top.house}`);
 
-  // 6) Écran Hall of Fame : rendu de la liste + médaille PNG.
+  // 6) Écran Hall of Fame : rendu de la liste + médaille PNG + blason + chips.
   await page.evaluate(() => openHallOfFame());
   await page.waitForFunction(() =>
     document.querySelectorAll('#hof-list .hof-row').length > 0, { timeout: 3000 });
@@ -8755,6 +8757,9 @@ async function scenarioIronman() {
     firstName:     document.querySelector('#hof-list .hof-name')?.textContent,
     hasMedal:      !!document.querySelector('#hof-list .hof-row .hof-medal'),
     heroAvatar:    document.querySelector('#hof-list .hof-hero-av img')?.getAttribute('src'),
+    houseBadge:    document.querySelector('#hof-list .hof-house-badge img')?.getAttribute('src'),
+    chipFloor:     document.querySelector('#hof-list .hof-chip-floor')?.textContent,
+    chipLevel:     document.querySelector('#hof-list .hof-chip-level')?.textContent,
   }));
   console.log('  T6 Hall of Fame :', t6);
   assert(t6.screenVisible,          'écran Hall of Fame doit être visible');
@@ -8763,6 +8768,12 @@ async function scenarioIronman() {
   assert(t6.hasMedal,               'le rang 1 doit afficher une médaille PNG');
   assert(t6.heroAvatar === 'img/harry.png',
     `le portrait du sorcier doit être affiché, obtenu ${t6.heroAvatar}`);
+  assert(t6.houseBadge === 'img/houses/gryffondor.png',
+    `le blason de Maison doit être affiché, obtenu ${t6.houseBadge}`);
+  assert(/Ét\.\s*5/.test(t6.chipFloor || ''),
+    `chip Étage doit afficher "Ét.5" (deepestFloor de T3), obtenu "${t6.chipFloor}"`);
+  assert(/Niv\.\s*8/.test(t6.chipLevel || ''),
+    `chip Niveau doit afficher "Niv.8", obtenu "${t6.chipLevel}"`);
 
   // 6b) Simulation de rang depuis la fiche perso (bouton « Mon rang »).
   const t6b = await page.evaluate(async () => {

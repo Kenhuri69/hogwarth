@@ -378,6 +378,12 @@ hors-ligne ; un score soumis est **toujours** écrit en local.
   `verifyIronmanRunNotScored()` (mort) et `_hofPrecheckRunOnLoad()`
   (chargement) vérifient via `_hofFindByRunId()` qu'aucun score n'existe
   déjà pour l'UID ; l'index unique côté base bloque tout doublon (409).
+- **Badges d'affichage** : chaque ligne du classement porte le blason
+  de Maison du joueur (`<img src="img/houses/<house>.png">` rond, style
+  ingame du `#crest-wrap`) + deux chips `🗺️ Ét.X` / `📈 Niv.Y`. Champ
+  `house` ajouté au payload Supabase — **migration requise** :
+  `ALTER TABLE leaderboard ADD COLUMN house TEXT;`. Les anciennes
+  entrées (sans Maison) affichent un placeholder pointillé neutre.
 
 ### Icônes
 `tools/gen_ironman_icons.py` génère les PNG dorés 64×64 dans `img/icons/` :
