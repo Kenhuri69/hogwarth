@@ -99,6 +99,44 @@
     background:#000; padding:6px; border-radius:3px; overflow:auto;
     max-height:200px; font-size:10px;
   }
+  /* Bandeau d'état progression */
+  .status-bar {
+    display:flex; flex-wrap:wrap; gap:14px; align-items:center;
+    background:rgba(11,8,5,0.6); border:1px solid var(--gold-d);
+    border-radius:5px; padding:8px 12px; margin-bottom:8px; font-size:13px;
+  }
+  .status-bar b { color:var(--gold); }
+  .xp-track {
+    flex:1; min-width:140px; position:relative; height:14px;
+    background:#000; border:1px solid var(--gold-d); border-radius:3px;
+    overflow:hidden;
+  }
+  .xp-track .xp-fill {
+    height:100%;
+    background:linear-gradient(to right, #5a7e3d, var(--good));
+    transition:width 600ms;
+  }
+  .xp-track .xp-label {
+    position:absolute; inset:0; display:flex; align-items:center;
+    justify-content:center; font-size:11px; color:var(--text);
+    text-shadow:0 0 3px #000;
+  }
+  .equip-list {
+    background:rgba(11,8,5,0.6); border:1px solid var(--gold-d);
+    border-radius:5px; padding:8px 12px; font-size:12px;
+    margin-bottom:8px; min-height:40px;
+  }
+  .equip-list .none { color:var(--muted); font-style:italic; }
+  .equip-list .slot {
+    display:inline-block; margin:2px 6px 2px 0;
+    padding:2px 6px; border-radius:3px;
+    background:rgba(201,168,76,0.12); color:var(--text);
+  }
+  .equip-list .slot .icon { margin-right:3px; }
+  .equip-list .slot .rarity-common    { color:#bcb29a; }
+  .equip-list .slot .rarity-rare      { color:#7aa6ff; }
+  .equip-list .slot .rarity-epic      { color:#c47cff; }
+  .equip-list .slot .rarity-legendary { color:#f0b65a; }
 </style>
 </head>
 <body>
@@ -139,6 +177,21 @@
   <button id="btn-start">▶ Démarrer le robot</button>
   <button id="btn-stop" disabled>⏹ Arrêter</button>
   <span class="status" id="status">Arrêté</span>
+</div>
+
+<div class="status-bar">
+  <span>Niv. <b id="st-level">1</b></span>
+  <div class="xp-track">
+    <div class="xp-fill" id="st-xp-fill"></div>
+    <div class="xp-label" id="st-xp-label">0 / 50 XP</div>
+  </div>
+  <span>💰 <b id="st-gold">0</b></span>
+  <span>🧪 <b id="st-potions">0</b></span>
+  <span>🎒 <b id="st-inv">0</b></span>
+  <span>Étage <b id="st-floor">1</b></span>
+</div>
+<div class="equip-list" id="st-equipped">
+  <span class="none">Aucun équipement</span>
 </div>
 
 <div class="layout">
@@ -193,8 +246,23 @@ const robot = {
   x:        8,
   y:        8,
   visited:  new Set(),
+  // Progression
+  xp:       0,
+  xpNext:   50,
+  gold:     0,
+  potions:  0,
+  inventory: [],          // items pas équipés (best-in-slot a priorité)
+  equipped:  {},          // dict slot → item, partagé par l'équipe
+  ticks:    0,            // compteur pour déclencher la descente d'étage
 };
 let _tickTimer = null;
+
+// data.js expose déjà LEVEL_UP_XP_MULTIPLIER (=1.6) au scope global :
+// on s'en sert directement sans le redéclarer (sinon SyntaxError).
+// Cadence de descente d'étage : ~12 ticks (≈1.6 min) ≈ 4 combats par étage
+// d'après DIFFICULTY_REPORT §1. Reset visited à chaque palier.
+const FLOOR_DOWN_EVERY_TICKS = 12;
+const MAX_FLOOR = 20;
 
 // ── UI : grille des héros (cartes cliquables, sélection 1 ou 2) ──
 function renderHeroGrid() {
@@ -277,6 +345,98 @@ function refreshStateDump() {
     }, null, 2);
 }
 
+// ── Progression XP + level-up (formule data.js — *1.6 par niveau) ──
+function gainXp(amount) {
+  robot.xp += amount;
+  let gained = 0;
+  while (robot.xp >= robot.xpNext && robot.level < 50) {
+    robot.xp -= robot.xpNext;
+    robot.level++;
+    robot.xpNext = Math.floor(robot.xpNext * LEVEL_UP_XP_MULTIPLIER);
+    gained++;
+  }
+  return gained;
+}
+
+// ── Loot ──
+// Score d'item pour l'auto-équipement : somme des bonus stats principaux.
+function _itemScore(it) {
+  if (!it) return -1;
+  return (it.bonusAtk | 0) + (it.bonusDef | 0)
+       + (it.bonusMag | 0) + (it.bonusLck | 0)
+       + (it.power    | 0);                // fallback pour items sans bonus*
+}
+
+function rollDrops() {
+  const f = robot.floor | 0;
+  // Or — 50 % de chance, montant scalé sur l'étage.
+  if (Math.random() < 0.5) {
+    const gold = 5 + f + Math.floor(Math.random() * (5 + f * 2));
+    robot.gold += gold;
+    log('💰 +' + gold + ' Gallions (total ' + robot.gold + ')', 'good');
+  }
+  // Potion — 15 % de chance, type selon l'étage.
+  if (Math.random() < 0.15) {
+    const moy = f >= 4;
+    robot.potions++;
+    log('🧪 Trouve une ' + (moy ? 'Potion Moyenne' : 'Potion Mineure'), 'good');
+  }
+  // Équipement — 8 % de chance, parmi ITEMS équipables abordables.
+  if (Math.random() < 0.08 && typeof ITEMS !== 'undefined') {
+    const pool = ITEMS.filter(it =>
+      it.slot && it.rarity !== 'legendary' && (it.price | 0) < 500);
+    if (pool.length) {
+      const it = pool[Math.floor(Math.random() * pool.length)];
+      const prev = robot.equipped[it.slot];
+      if (_itemScore(it) > _itemScore(prev)) {
+        if (prev) robot.inventory.push(prev);
+        robot.equipped[it.slot] = it;
+        log('⚔️ Équipe <b>' + it.name + '</b> ('
+          + (it.rarity || 'common') + ')'
+          + (prev ? ' — remplace ' + prev.name : ''), 'good');
+      } else {
+        robot.inventory.push(it);
+        log('🎒 Trouve ' + it.name + ' (gardé en sac)', 'info');
+      }
+    }
+  }
+}
+
+// XP par tick — scalé sur l'étage pour rester aligné avec la courbe
+// joueur (DIFFICULTY_REPORT §1). Un robot tickant 8 s gagne ~1 niveau
+// toutes les ~30-45 s aux premiers étages.
+function tickXpGain() {
+  const f = robot.floor | 0;
+  return 8 + f * 2 + Math.floor(Math.random() * (6 + f * 3));
+}
+
+// ── Affichage du bandeau d'état ──
+function refreshStatusBar() {
+  document.getElementById('st-level').textContent   = robot.level;
+  document.getElementById('st-floor').textContent   = robot.floor;
+  document.getElementById('st-gold').textContent    = robot.gold;
+  document.getElementById('st-potions').textContent = robot.potions;
+  document.getElementById('st-inv').textContent     = robot.inventory.length;
+  const pct = Math.max(0, Math.min(100, (robot.xp / robot.xpNext) * 100));
+  document.getElementById('st-xp-fill').style.width = pct.toFixed(0) + '%';
+  document.getElementById('st-xp-label').textContent =
+    robot.xp + ' / ' + robot.xpNext + ' XP';
+  // Liste des équipements (slots remplis).
+  const box = document.getElementById('st-equipped');
+  const slots = Object.entries(robot.equipped).filter(([_, v]) => !!v);
+  if (!slots.length) {
+    box.innerHTML = '<span class="none">Aucun équipement</span>';
+  } else {
+    box.innerHTML = slots.map(([slot, it]) =>
+      '<span class="slot">'
+      + '<span class="icon">' + (it.icon || '🎁') + '</span>'
+      + '<span class="rarity-' + (it.rarity || 'common') + '">'
+      + it.name + '</span>'
+      + ' <span style="color:var(--muted);font-size:10px">(' + slot + ')</span>'
+      + '</span>').join('');
+  }
+}
+
 // ── Snapshot riche (cohérent avec mpBuildSnapshot du jeu) ──
 function buildSnapshot() {
   const heroes = robot.heroKeys.map(key => {
@@ -296,7 +456,12 @@ function buildSnapshot() {
       agi:     (c.agi | 0),
       lck:     (c.lck | 0),
       spells:  Array.isArray(c.spells) ? c.spells.slice() : [],
-      equipment: [],
+      // Équipement courant du robot (partagé par l'équipe — réplique du
+      // modèle de jeu où l'inventaire est partagé). Chaque héros expose
+      // l'ensemble dans son snapshot pour que l'inspection/duel le voient.
+      equipment: Object.values(robot.equipped)
+        .filter(Boolean)
+        .map(it => ({ ...it })),
     };
   });
   return {
@@ -397,6 +562,17 @@ async function start() {
   robot.y = Math.floor(Math.random() * MAP_SIZE);
   robot.visited.clear();
   robot.visited.add(robot.x + '-' + robot.y);
+  // Reset progression (xp/or/inventaire) à chaque (re)démarrage — l'XP
+  // accompagne la "vie" du robot, pas de carry-over de session.
+  robot.xp = 0;
+  // xpNext correspond au niveau de départ choisi (formule du jeu).
+  robot.xpNext = 50;
+  for (let i = 1; i < robot.level; i++) robot.xpNext = Math.floor(robot.xpNext * LEVEL_UP_XP_MULTIPLIER);
+  robot.gold = 0;
+  robot.potions = 0;
+  robot.inventory = [];
+  robot.equipped = {};
+  robot.ticks = 0;
 
   document.getElementById('btn-start').disabled = true;
   document.getElementById('btn-stop').disabled = false;
@@ -409,6 +585,7 @@ async function start() {
     + ' · étage ' + robot.floor + ' · niv ' + robot.level
     + ' · position initiale (' + robot.x + ',' + robot.y + ')', 'good');
   refreshStateDump();
+  refreshStatusBar();
   paintMap();
 
   // Premier heartbeat immédiat, puis tick toutes les TICK_MS.
@@ -419,10 +596,41 @@ async function start() {
 
 async function tick() {
   if (!robot.active) return;
+  robot.ticks++;
+
+  // 1) Déplacement (random walk).
   const dir = step();
-  log('Pas vers ' + (dir || '—') + ' → (' + robot.x + ',' + robot.y + ')', 'info');
+  log('Pas vers ' + (dir || '—') + ' → (' + robot.x + ',' + robot.y + ')', 'muted');
+
+  // 2) Gain d'XP + level-up éventuel.
+  const xpGain = tickXpGain();
+  const lv = gainXp(xpGain);
+  if (lv > 0) {
+    log('✨ +' + xpGain + ' XP → <b>Niveau ' + robot.level + '</b> ! ('
+      + (lv > 1 ? lv + ' niveaux gagnés' : 'level up') + ')', 'good');
+  } else {
+    log('+' + xpGain + ' XP (' + robot.xp + '/' + robot.xpNext + ')', 'muted');
+  }
+
+  // 3) Rolls de loot (or, potion, équipement).
+  rollDrops();
+
+  // 4) Descente d'étage (cf. DIFFICULTY_REPORT §1, ~4 combats / étage).
+  if (robot.ticks >= FLOOR_DOWN_EVERY_TICKS && robot.floor < MAX_FLOOR) {
+    robot.floor++;
+    robot.ticks = 0;
+    robot.x = Math.floor(Math.random() * MAP_SIZE);
+    robot.y = Math.floor(Math.random() * MAP_SIZE);
+    robot.visited.clear();
+    robot.visited.add(robot.x + '-' + robot.y);
+    log('⬇️ Descend à l\'étage <b>' + robot.floor + '</b> en ('
+      + robot.x + ',' + robot.y + ')', 'good');
+  }
+
+  // 5) UI refresh + heartbeat Supabase.
   paintMap();
   refreshStateDump();
+  refreshStatusBar();
   await heartbeat();
 }
 
@@ -468,6 +676,7 @@ document.getElementById('btn-stop').onclick  = stop;
 renderHeroGrid();
 renderMap();
 refreshStateDump();
+refreshStatusBar();
 log('Prêt. Configure puis clique « Démarrer ».', 'muted');
 log('ID persistant : ' + robot.id, 'muted');
 </script>
