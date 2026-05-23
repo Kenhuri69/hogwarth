@@ -569,6 +569,25 @@ alter table public.mp_presence
 présentes mais ne bloquent pas l'upsert (nullable ou default Supabase) ;
 laissées telles quelles.
 
+**Phase 3 — colonne héritée sur `mp_messages` + policy DELETE manquante
+sur `mp_gifts`**. Validation post-phase 2 : `mp_presence` et `mp_gifts`
+inserts OK ; `mp_messages` plante encore en 23502 sur `template_id`
+(nom legacy du champ `template` envoyé par le code). Découvert aussi
+que `mp_gifts` n'a pas de policy DELETE — un DELETE REST renvoie 204
+mais ne supprime rien, l'outillage admin est cassé. Non bloquant pour
+le code applicatif (il fait PATCH `claimed_at`, jamais DELETE).
+
+```sql
+alter table public.mp_messages
+  alter column template_id set default '';
+
+-- Optionnel : policy DELETE sur mp_gifts (outillage admin)
+create policy "mp_gifts_delete" on public.mp_gifts for delete using (true);
+```
+
+`mp_messages.word_id` (legacy de `word`) est nullable — pas besoin de
+default.
+
 Après application, valider en ligne : un onglet sur la prod → vérifier
 que `mp_presence` contient une ligne avec son `player_id`, ouvrir un
 deuxième onglet (autre `localStorage`) au même étage et même mode →
