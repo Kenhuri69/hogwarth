@@ -137,6 +137,18 @@
   .equip-list .slot .rarity-rare      { color:#7aa6ff; }
   .equip-list .slot .rarity-epic      { color:#c47cff; }
   .equip-list .slot .rarity-legendary { color:#f0b65a; }
+  /* Titre au-dessus de la grille (étage + position) — gros et visible */
+  .map-title {
+    font-size:15px; color:var(--gold); font-weight:bold;
+    margin-bottom:4px; letter-spacing:0.5px;
+  }
+  .map-title .pos { color:var(--text); font-weight:normal; font-size:13px; }
+  .map-title .delta {
+    font-size:11px; padding:2px 6px; margin-left:6px; border-radius:3px;
+    color:var(--text); background:rgba(201,168,76,0.15);
+  }
+  .map-title .delta.safe   { background:rgba(125,192,110,0.18); color:#9bd58c; }
+  .map-title .delta.danger { background:rgba(216,105,75,0.20);  color:#e89b85; }
 </style>
 </head>
 <body>
@@ -196,6 +208,7 @@
 
 <div class="layout">
   <div class="map-wrap">
+    <div class="map-title" id="map-title">🗺️ Étage 1 — Position (8, 8)</div>
     <div class="map" id="map"></div>
     <div class="legend-map">
       Grille 16×16 · case dorée = position courante · sombre = visité
@@ -319,6 +332,17 @@ function paintMap() {
   });
   const here = document.getElementById('c-' + robot.x + '-' + robot.y);
   if (here) here.classList.add('bot');
+  // Titre : étage + position + badge écart niveau (vs étage)
+  const title = document.getElementById('map-title');
+  if (title) {
+    const delta = robot.level - robot.floor;
+    const cls = delta >= 1 ? 'safe' : (delta <= -2 ? 'danger' : '');
+    const sign = delta >= 0 ? '+' : '';
+    title.innerHTML = '🗺️ Étage <span style="color:var(--text)">'
+      + robot.floor + '</span>'
+      + ' <span class="pos">— Position (' + robot.x + ', ' + robot.y + ')</span>'
+      + ' <span class="delta ' + cls + '">Δ niv ' + sign + delta + '</span>';
+  }
 }
 
 // ── Log à l'écran ──
@@ -408,6 +432,25 @@ function rollDrops() {
 function tickXpGain() {
   const f = robot.floor | 0;
   return 8 + f * 2 + Math.floor(Math.random() * (6 + f * 3));
+}
+
+// ── Décision de changement d'étage — pondérée par delta = level - floor ──
+// Calé sur DIFFICULTY_REPORT §3 (Monte Carlo) : survie quasi 100 % quand
+// level >= floor + 2, ~70 % à niveau, mur orange/rouge en sous-levé. Le
+// robot mime un joueur prudent : surlevé → fonce ; à niveau → consolide ;
+// sous-levé → remonte. Retourne -1 (remonter), 0 (rester), +1 (descendre).
+function pickFloorMove(level, floor) {
+  const delta = level - floor;
+  let pDown, pStay, pUp;
+  if (delta >= 3)        { pDown = 0.80; pStay = 0.15; pUp = 0.05; }
+  else if (delta >= 1)   { pDown = 0.55; pStay = 0.35; pUp = 0.10; }
+  else if (delta === 0)  { pDown = 0.35; pStay = 0.45; pUp = 0.20; }
+  else if (delta >= -2)  { pDown = 0.15; pStay = 0.40; pUp = 0.45; }
+  else                   { pDown = 0.03; pStay = 0.17; pUp = 0.80; }
+  const r = Math.random();
+  if (r < pDown)         return +1;
+  if (r < pDown + pStay) return  0;
+  return -1;
 }
 
 // ── Affichage du bandeau d'état ──
@@ -615,16 +658,30 @@ async function tick() {
   // 3) Rolls de loot (or, potion, équipement).
   rollDrops();
 
-  // 4) Descente d'étage (cf. DIFFICULTY_REPORT §1, ~4 combats / étage).
-  if (robot.ticks >= FLOOR_DOWN_EVERY_TICKS && robot.floor < MAX_FLOOR) {
-    robot.floor++;
+  // 4) Décision de changement d'étage — pondérée par level vs floor
+  //    (cf. pickFloorMove + DIFFICULTY_REPORT §3 sur les taux de survie).
+  if (robot.ticks >= FLOOR_DOWN_EVERY_TICKS) {
+    const move = pickFloorMove(robot.level, robot.floor);
     robot.ticks = 0;
-    robot.x = Math.floor(Math.random() * MAP_SIZE);
-    robot.y = Math.floor(Math.random() * MAP_SIZE);
-    robot.visited.clear();
-    robot.visited.add(robot.x + '-' + robot.y);
-    log('⬇️ Descend à l\'étage <b>' + robot.floor + '</b> en ('
-      + robot.x + ',' + robot.y + ')', 'good');
+    const wantDown = move > 0 && robot.floor < MAX_FLOOR;
+    const wantUp   = move < 0 && robot.floor > 1;
+    if (wantDown || wantUp) {
+      robot.floor += (wantDown ? 1 : -1);
+      robot.x = Math.floor(Math.random() * MAP_SIZE);
+      robot.y = Math.floor(Math.random() * MAP_SIZE);
+      robot.visited.clear();
+      robot.visited.add(robot.x + '-' + robot.y);
+      const delta = robot.level - robot.floor;
+      if (wantDown) {
+        log('⬇️ Descend à l\'étage <b>' + robot.floor + '</b> (Δ niv '
+          + (delta >= 0 ? '+' : '') + delta + ')', 'good');
+      } else {
+        log('⬆️ Remonte à l\'étage <b>' + robot.floor + '</b> (sous-levé, Δ '
+          + delta + ')', 'info');
+      }
+    } else {
+      log('⌛ Reste à l\'étage <b>' + robot.floor + '</b> (consolide)', 'muted');
+    }
   }
 
   // 5) UI refresh + heartbeat Supabase.
