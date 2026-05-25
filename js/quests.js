@@ -195,6 +195,42 @@ const QUEST_TEMPLATES = [
     reward: { xp: 200, gold: 50, spell: "Patronum" },
     location: "Classe de Défense (étage 4+)"
   },
+  // ── Phase 3 — Tranche étage 8 « Le Seuil » ──────────────────────
+  // (cf. .claude/plans/content-audit-stabilization.md §5.1)
+  // 3 quêtes données par Kingsley Shacklebolt à l'étage 8.
+  {
+    id: "chasse_greyback",
+    title: "Chasse au loup-garou",
+    giver: "Kingsley Shacklebolt",
+    desc: "Abats Fenrir Greyback. Il rôde dans les Profondeurs depuis trop longtemps — pour Lupin, pour Bill Weasley, pour toutes ses victimes.",
+    objectives: [
+      { type: "kill", monsterId: "fenrir_greyback", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 280, gold: 150, stats: { hp: 15, atk: 2 }, item: "essence_tenebres" },
+    location: "Avant-garde de l'Ordre (étage 8)"
+  },
+  {
+    id: "garde_seuil",
+    title: "Le passage scellé",
+    giver: "Kingsley Shacklebolt",
+    desc: "Neutralise le Veilleur du Seuil pour ouvrir la voie vers les Profondeurs. Ses runes sont anciennes — mais pas éternelles.",
+    objectives: [
+      { type: "kill", monsterId: "veilleur_seuil", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 320, gold: 200, stats: { def: 2, mag: 2 }, item: "page_grimoire" },
+    location: "Avant-garde de l'Ordre (étage 8)"
+  },
+  {
+    id: "herbes_lupin",
+    title: "Aconit pour le loup",
+    giver: "Kingsley Shacklebolt",
+    desc: "Récolte 5 brins d'Aconit pour Lupin. Sans sa potion mensuelle, il devient un danger pour tous — et il sait que tu peux le sauver.",
+    objectives: [
+      { type: "item", itemId: "herbe_aconit", amount: 5, progress: 0, completed: false }
+    ],
+    reward: { xp: 200, gold: 100, item: "potion_lune" },
+    location: "Avant-garde de l'Ordre (étage 8)"
+  },
   // ── Manon, fille cachée de Lupin — pseudo-quête en deux volets ──
   // Données et rendues par Manon (PNJ étage 3, cf. npcs.js). Le volet 2
   // (`prereq`) ne s'ouvre qu'après remise du volet 1 — chaîne classique.
