@@ -348,10 +348,10 @@ const SPELL_ICON_REGISTRY = {
   'Nox Vorax':             'img/icons/spells/nox_vorax.png',
   'Diffindo Maxima':       'img/icons/spells/diffindo_maxima.png',
   'Vulnera Sanentur':      'img/icons/spells/vulnera_sanentur.png',
-  // Sort exclusif endgame (Grimoire Interdit) — sinks A+E. Réutilise
-  // incendio.png comme placeholder visuel (même élément feu) ; un PNG
-  // dédié pourra être ajouté à gen_element_spell_icons.py plus tard.
-  'Fiendfyre':             'img/icons/spells/incendio.png'
+  // Sort exclusif endgame (Grimoire Interdit) — sinks A+E. PNG dédié
+  // généré par tools/gen_element_spell_icons.py (Feu Maudit : flammes
+  // crimson + escarbilles ascendantes, plus sombre que Incendio).
+  'Fiendfyre':             'img/icons/spells/fiendfyre.png'
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────

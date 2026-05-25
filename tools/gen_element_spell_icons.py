@@ -598,6 +598,80 @@ def vulnera_sanentur():
     return out
 
 
+# ── Fiendfyre : Feu Maudit (Grimoire Interdit, sinks endgame) ──
+# Flammes vivantes, hostiles, presque animales. Palette plus sombre
+# que l'Incendio standard : noyau jaune-blanc, manteau crimson, bord
+# noir-sang. Trois langues de feu asymétriques évoquent une bête
+# hurlante (canon : Fiendfyre prend la forme de créatures).
+def fiendfyre():
+    out = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    out = Image.alpha_composite(out, glow_ring(hex_to_rgb("#3a0a00"), 0.46,
+                                               [44, 36, 26, 16]))
+    out = Image.alpha_composite(out, radial_base("#fff2c0", "#c8281c", "#1a0000"))
+
+    flames = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    d = ImageDraw.Draw(flames)
+    crimson = hex_to_rgb("#c8281c") + (235,)
+    ember   = hex_to_rgb("#ff8a2a") + (215,)
+    bone    = hex_to_rgb("#fff5d0") + (245,)
+    # Trois langues de feu — la centrale plus haute (gueule), les latérales
+    # courbées vers le centre (crocs/oreilles). Pas symétrique : organique.
+    central = [
+        (CENTER,        CENTER - 38),   # pointe haute
+        (CENTER - 14,   CENTER - 8),
+        (CENTER - 22,   CENTER + 18),
+        (CENTER + 0,    CENTER + 30),
+        (CENTER + 22,   CENTER + 18),
+        (CENTER + 14,   CENTER - 8),
+    ]
+    left = [
+        (CENTER - 30,   CENTER - 14),
+        (CENTER - 38,   CENTER + 4),
+        (CENTER - 22,   CENTER + 26),
+        (CENTER - 12,   CENTER + 14),
+        (CENTER - 16,   CENTER - 4),
+    ]
+    right = [
+        (CENTER + 32,   CENTER - 10),
+        (CENTER + 40,   CENTER + 10),
+        (CENTER + 22,   CENTER + 28),
+        (CENTER + 12,   CENTER + 16),
+        (CENTER + 18,   CENTER - 2),
+    ]
+    d.polygon(central, fill=crimson)
+    d.polygon(left,    fill=ember)
+    d.polygon(right,   fill=ember)
+    flames = flames.filter(ImageFilter.GaussianBlur(2.0))
+    # Coeur lumineux (gueule) — netteté ramenée.
+    core = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    dc = ImageDraw.Draw(core)
+    dc.polygon([
+        (CENTER,        CENTER - 22),
+        (CENTER - 8,    CENTER + 2),
+        (CENTER,        CENTER + 14),
+        (CENTER + 8,    CENTER + 2),
+    ], fill=bone)
+    core = core.filter(ImageFilter.GaussianBlur(0.5))
+    out = Image.alpha_composite(out, flames)
+    out = Image.alpha_composite(out, core)
+    # Escarbilles montantes (ascending embers) — biaisées vers le haut
+    # pour suggérer le mouvement des flammes.
+    random.seed(666)
+    ascending = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    da = ImageDraw.Draw(ascending)
+    for _ in range(22):
+        a = random.uniform(-math.pi * 0.85, -math.pi * 0.15)  # vers le haut
+        r = random.uniform(SIZE * 0.18, SIZE * 0.40)
+        x = CENTER + math.cos(a) * r
+        y = CENTER + math.sin(a) * r
+        s = random.uniform(0.8, 2.0)
+        da.ellipse([x - s, y - s, x + s, y + s],
+                   fill=hex_to_rgb("#ffb060") + (235,))
+    ascending = ascending.filter(ImageFilter.GaussianBlur(0.5))
+    out = Image.alpha_composite(out, ascending)
+    return out
+
+
 def main():
     os.makedirs(SPELLS_DIR, exist_ok=True)
     for slug, fn in (("glacius", glacius),
@@ -613,7 +687,8 @@ def main():
                      ("lux_aeterna", lux_aeterna),
                      ("nox_vorax", nox_vorax),
                      ("diffindo_maxima", diffindo_maxima),
-                     ("vulnera_sanentur", vulnera_sanentur)):
+                     ("vulnera_sanentur", vulnera_sanentur),
+                     ("fiendfyre", fiendfyre)):
         path = os.path.join(SPELLS_DIR, slug + ".png")
         fn().save(path, "PNG", optimize=True)
         print(f"Wrote {path} ({os.path.getsize(path)} bytes)")

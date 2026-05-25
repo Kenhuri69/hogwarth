@@ -9910,7 +9910,7 @@ async function scenarioDungeonAltars() {
     };
   });
   console.log('  T3 offrande d\'or:', t3);
-  assert(t3.goldSpent === 40, `offrande doit coûter 40 G, débité ${t3.goldSpent}`);
+  assert(t3.goldSpent === 25, `offrande doit coûter 25 G, débité ${t3.goldSpent}`);
   assert(t3.healed,           'le groupe doit être soigné');
   assert(t3.xpGain === 30,    `offrande doit donner 30 XP, donné ${t3.xpGain}`);
   assert(t3.used,             'l\'autel doit être marqué utilisé');

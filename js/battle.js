@@ -863,12 +863,17 @@ function endBattle(won) {
 
     const xpEarned   = Math.floor(totalXp   * diff.xpMultiplier);
     const goldEarned = Math.floor(totalGold * diff.goldMultiplier * recolteMult * equipGoldMult);
-    if (recolteGoldBonus) {
-      addMsg('🌾 Récolte Magique — Gallions du combat majorés (+50%) !', 'good');
-    }
+    // Fusionne les deux bonus or sur une seule ligne pour éviter le spam
+    // (un perso avec Récolte Magique + Reliquaire Lunaire affichait 2 lignes
+    // chaque combat). Ordre : Récolte (si actif) > Reliquaire (si actif).
+    const bonusLabels = [];
+    if (recolteGoldBonus)        bonusLabels.push('🌾 Récolte +50%');
     if (equipGoldMult > 1.001) {
       const pct = Math.round((equipGoldMult - 1) * 100);
-      addMsg(`🌙 Reliquaire — Gallions du combat majorés (+${pct}%).`, 'good');
+      bonusLabels.push(`🌙 Reliquaire +${pct}%`);
+    }
+    if (bonusLabels.length) {
+      addMsg(`Gallions majorés (${bonusLabels.join(' · ')})`, 'good');
     }
 
     // Points de Maison selon la difficulté — Ténèbres ×1.5 (endgame §7.9).

@@ -1247,7 +1247,10 @@ const NPCS = [
       idleRandom: [
         "Le Philtre d'Endurance ? Recette ancestrale. Trois ingrédients que la moitié des herboristes refusent même de nommer.",
         "Tu me reverras peut-être. Ou pas. Personne ne devine où je dors.",
-        "Mon prix est ferme. Mon temps aussi : j'aurai disparu avant ton prochain étage."
+        "Mon prix est ferme. Mon temps aussi : j'aurai disparu avant ton prochain étage.",
+        "Va. Quand tu reviendras, je serai parti — ou peut-être pas.",
+        "Garde tes pas légers, sorcier. Et tes Gallions plus encore.",
+        "Une Pierre d'Âme ? J'en trouve trois par siècle. La tienne est là, devant toi."
       ]
     }
   }
