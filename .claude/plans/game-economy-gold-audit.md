@@ -246,8 +246,38 @@ Tier 18 c'est un passif. Conséquence : Poufsouffle a un avantage
 économique systématique en endgame, **mais** comme la boucle ténébreuse
 n'a presque plus rien à acheter (Portus déjà acquis, tout le reste à
 1200 G max), ce bonus est essentiellement décoratif. Si on rééquilibre
-les prix ou ajoute des sinks endgame, ce bonus devient signifiant à
-auditer.
+les prix ou ajoute des sinks endgame (cf. §4.I + §5.6), ce bonus
+devient signifiant à auditer.
+
+### 4.I Trou endgame — or accumulé sans usage passé l'étage 10
+
+**Statut** : 🚨 **Confirmé par l'utilisateur (2026-05-25)** comme un
+manque de design à combler.
+
+**Constat** : une fois Portus acquis (2800 G, dernier palier boutique
+étage 6+) et tous les équipements pallier achetés, **il n'existe plus
+aucune raison économique de combattre**. Pourtant :
+
+- La boucle ténébreuse (étages 11+) booste les drops via
+  `ENDGAME_SCALING` (or de combat ~180+ G/combat).
+- Variantes Shiny (×2) + Darkness apparaissent fréquemment en endgame.
+- Bonus Poufsouffle Tier 17 ajoute +50 %.
+- La quête de don Tier 17 (`houses-mythe-tier-v3.md`) est un sink
+  **unique** (one-shot par Maison) — pas un canal récurrent.
+
+Résultat factuel : un joueur en boucle ténébreuse 2-3 cumule
+typiquement **5 000 à 15 000 G dormants**. Le système économique
+devient purement décoratif passé l'étage 12. L'or perd sa fonction
+motivante.
+
+**Impact ludique** :
+- Les combats endgame n'ont plus que l'XP et le score Ironman comme
+  motivation (et l'XP elle-même plafonne en pente raide).
+- Le bonus Poufsouffle Tier 17 (§4.G) devient nul → asymétrie cassée.
+- Pour le mode Ironman, l'or contribue au score (`× 0.5`) mais ne
+  débloque rien → pas de choix tactique « dépenser ou thésauriser ».
+
+Voir §5.6 pour les pistes chiffrées de résolution.
 
 ### 4.H Coffre énigme runique : ×2 or peu repérable
 
@@ -353,14 +383,119 @@ secondaire, mais devient **attractif** dans les zones sans fontaine
 (étages 3-4, 6-7, 9-10). Justifie une dépense régulière → réduit le
 stockage stérile.
 
-### 5.6 (Reco optionnelle) Ajouter un puits d'or endgame
+### 5.6 (Reco forte — endgame) Combler le trou de sinks après étage 10
 
-**Cible** : §4.G — donner du sens à l'or boucle ténébreuse.
+**Cible** : §4.I + §4.G.
 
-Idée : un PNJ vendeur de **reroll d'enchantement** au campement de
-fin d'étage 10+, qui consomme 200-500 G par tentative pour réassigner
-un slot d'équipement. Hors-scope V1 — à creuser dans un plan séparé
-si validé.
+**Constat à résoudre** : 5 000-15 000 G dormants en boucle ténébreuse,
+aucune motivation économique aux combats. **Plusieurs pistes
+combinables** (toutes indépendantes) ; je liste ce qui paraît le
+mieux aligné avec l'architecture existante, du plus simple au plus
+ambitieux. Chacune appelle une décision utilisateur avant
+implémentation.
+
+#### Piste A — Catalogue boutique endgame étendu (effort : faible)
+
+**Idée** : ajouter 4-6 items haut de gamme au `SHOP_CATALOG`
+(`shop.js`) avec `minFloor: 11`, 14, 17, accessibles uniquement en
+boucle ténébreuse. Profite du système existant sans refonte.
+
+| Type d'item | Prix indicatif | minFloor | Effet |
+|-------------|----------------|----------|-------|
+| **Élixir Permanent +PV** | 1500 G | 11 | +5 PV max permanent (consommable, cap 5 usages) |
+| **Élixir Permanent +PM** | 1500 G | 11 | +5 PM max permanent (cap 5) |
+| **Pierre d'Âme** | 3000 G | 14 | +1 stat permanente au choix (cap 3 par perso) |
+| **Grimoire Interdit** | 4000 G | 14 | Enseigne 1 sort exclusif endgame |
+| **Pendentif d'Ombre** | 6000 G | 17 | epic acc, regenHp:5 + bonusCritDamage |
+| **Reliquaire Lunaire** | 8000 G | 17 | legendary trinket, +20 % or de combat (stack avec Poufsouffle) |
+
+**Volume drainé estimé** : un joueur en boucle 2 cumulant 8000 G peut
+acheter 2-3 items → drain immédiat de l'essentiel du stock dormant,
+suivi d'un rythme régulier (1 item / boucle complète).
+
+**Avantages** : 0 refonte, réutilise filtrage `minFloor` existant,
+items eux-mêmes peuvent boucler dans `tools/icon_factory.py` (cf.
+section dédiée du CLAUDE.md).
+
+**Risques** : doit éviter de power-creep le mode Ironman (les
+Élixirs Permanents +PV/+PM rendent les runs « tankés » trop faciles
+si non plafonnés). Cap à 5-3 usages par catégorie résout ça.
+
+#### Piste B — Don à la Maison récurrent (effort : faible-moyen)
+
+**Idée** : étendre la « quête de don Tier 17 » (déjà gold-sink
+endgame, one-shot) en **mécanique récurrente** : un PNJ Maison
+(Directeur·trice) accepte de l'or contre des `housePoints`
+supplémentaires, au-delà du palier 1000 (Tier 16).
+
+**Taux proposé** : `1 housePoint = 5 G` (1000 G = 200 points). Les
+paliers existants s'arrêtent à 1000 points — on créerait **paliers
+20+** (1100, 1300, 1600, 2000…) chacun débloquant un mini-bonus
+cosmétique ou de stat. **Plan séparé requis** pour designer les
+paliers — celui-ci est complémentaire de `houses-mythe-tier-v3.md`.
+
+**Volume drainé** : illimité par construction. Sink le plus
+« propre » au sens design (canal narratif, non transactionnel).
+
+**Risques** : nécessite un plan dédié `house-post-tier-18.md` ; pas
+implémentable en V1.
+
+#### Piste C — Forge / Amélioration d'item (effort : moyen-élevé)
+
+**Idée** : un PNJ forgeron au campement endgame propose
+**d'améliorer** un item équipé (`+1`, `+2`, `+3`) contre or +
+matériau (drop monstre rare). Cap `+3` par item. Coût exponentiel :
+
+| Niveau | Coût or | Matériau (drop endgame) | Bonus |
+|--------|---------|--------------------------|-------|
+| +1 | 1000 G | 1 × Cristal Sombre | +10 % stats item |
+| +2 | 3000 G | 3 × Cristal Sombre | +25 % stats item |
+| +3 | 8000 G | 1 × Larme de Voldemort | +50 % stats item |
+
+**Volume drainé** : 12 000 G par item top → si le joueur a 4-5 items
+à améliorer, drain de 50 000+ G sur la durée. Forte motivation au
+combat (drop matériau + or).
+
+**Risques** : refonte majeure (`equipped[slot].level`, recalcul
+`recalculateStats`, UI inventaire), migration de save, équilibrage
+sensible. Doit faire l'objet d'un plan dédié `item-upgrade-system.md`.
+
+#### Piste D — Reroll d'enchantement (effort : moyen, version révisée)
+
+**Idée originale §5.6 v1** : un PNJ « Enchanteur » consomme 200-500 G
+par tentative pour réassigner un slot d'équipement (réroll des
+bonus aléatoires si on en introduit).
+
+**Statut révisé** : dépend d'un système d'enchantements aléatoires
+non encore implémenté. **Reporté** tant que les items n'ont pas de
+bonus randomisés (actuellement tous les items ont des bonus fixes
+dans `data.js`).
+
+#### Piste E — Marchand itinérant rare (effort : faible)
+
+**Idée** : extension de `getRandomVendorsForFloor()` (`npcs.js`) :
+ajouter un PNJ vendeur **rare** (~10 % spawn) en étages 11+ avec un
+inventaire premium tournant (1-3 items haut de gamme tirés au seed
+de l'étage). Items premium = sous-ensemble du catalogue Piste A,
+mais **avec prix +30-50 %** (premium itinérant). Le joueur qui le
+croise ressent un événement, et le surcoût est perçu comme légitime
+(« on est tombé sur le bon marchand au mauvais moment »).
+
+**Volume drainé** : ponctuel mais marquant. Bon compagnon de Piste A
+sans la remplacer.
+
+---
+
+#### Recommandation prioritaire
+
+**Piste A** (catalogue boutique endgame étendu) — meilleur ratio
+effort / impact, zéro refonte, drain immédiat de 30-50 % du stock
+dormant, ré-active le bonus Poufsouffle Tier 17.
+
+**+ Piste B** (don à la Maison récurrent) en V2, traitée dans un
+plan dédié — fournit le sink illimité pour les très longs runs.
+
+**Pistes C / D / E** : à plan séparé si validées plus tard.
 
 ### 5.7 (Reco optionnelle) Rééquilibrer prix item « trop forts »
 
@@ -463,8 +598,11 @@ pour les items pallier, et reste un choix tactique pour Portus.
 
 ## 9. Hors-scope V1 (à plan séparé si validé plus tard)
 
-- §5.6 : puits d'or endgame (reroll enchantement, achats PNJ
-  exclusifs Tier 17+).
+- §5.6 Pistes B / C / D / E : sinks endgame avancés (don récurrent à
+  la Maison, forge d'amélioration, reroll d'enchantement, marchand
+  itinérant rare). La **Piste A** (catalogue boutique endgame
+  étendu) est promue en V1 si validée — cf. §5.6 recommandation
+  prioritaire.
 - Rééquilibrage des **multiplicateurs de difficulté** eux-mêmes
   (`xpMultiplier` / `goldMultiplier`) — demande une revue plus large
   de la courbe XP, pas uniquement de l'or.
@@ -490,3 +628,13 @@ pour les items pallier, et reste un choix tactique pour Portus.
   pour préserver le ressenti « cher mais atteignable » de Portus
   (~25-30 combats post-étage 8 après lissage), §6 et §7 mis à jour.
   Recos actives restantes : **§5.2 + §5.3 + §5.4**.
+- **2026-05-25 (amendement 2)** : utilisateur signale un **trou de
+  design endgame** — l'or s'accumule sans usage passé l'étage 10.
+  → Ajout §4.I (constat chiffré : 5 000-15 000 G dormants en boucle
+  ténébreuse, bonus Poufsouffle Tier 17 devenu nul). §5.6 réécrite
+  comme section de réflexion ouverte avec 5 pistes chiffrées (A à E),
+  recommandation prioritaire **Piste A** (catalogue boutique endgame
+  étendu, 4-6 items 1500-8000 G `minFloor: 11-17`) — effort faible,
+  drain immédiat de 30-50 % du stock dormant. Pistes B-E reportées
+  en plans séparés. §9 mis à jour. **Décision utilisateur attendue**
+  avant implémentation de la Piste A.
