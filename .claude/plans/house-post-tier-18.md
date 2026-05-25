@@ -151,7 +151,251 @@ en une fois s'il veut. Risque : tap accidentel → confirmation explicite
 au-delà de 5000 G (« Donner 12 500 G ? Cela fera passer ta Maison de
 tier 19 à tier 20. Confirmer ? »).
 
-### 3.4 Effet de levée des paliers 19+
+### 3.4 Voix off des Directeurs (samples OGG)
+
+Tous les dialogues de Directeur sont déjà voicés via `tools/gen_voice_edge.py`
+(Microsoft Edge TTS, gratuit). Le don récurrent doit livrer **son propre lot
+de samples** pour ne pas casser l'immersion (un nouveau bouton silencieux
+trancherait avec les greeting/offer/ready/done existants).
+
+#### 3.4.1 Convention de naming
+
+`audio/voice/<chef>_donation_<contexte>_<n>.ogg`, déclenchée par
+`AudioSystem.playVoice('<chef>_donation_<contexte>_<n>')`.
+
+Mapping `<chef>` (existant dans `_VOICE_SAMPLES` + `gen_voice_edge.py`) :
+| Maison | `<chef>` | Voix Edge TTS |
+|--------|----------|---------------|
+| Gryffondor  | `mcgonagall` | `de-DE-SeraphinaMultilingualNeural` (rate -7 %, pitch ±0) |
+| Serpentard  | `rogue`      | `de-DE-FlorianMultilingualNeural` (rate -12 %, pitch -8 Hz) |
+| Serdaigle   | `flitwick`   | `en-US-AndrewMultilingualNeural` (rate +10 %, pitch +24 Hz) |
+| Poufsouffle | `sprout`     | `fr-FR-VivienneMultilingualNeural` (rate -3 %, pitch ±0) |
+
+#### 3.4.2 Inventaire des samples par chef (14 par chef × 4 = 56 OGG)
+
+| Contexte | Trigger | Variantes | Quand |
+|----------|---------|-----------|-------|
+| `donation_intro_1`   | Apparition du bouton « 💰 Faire un don » la 1ʳᵉ fois | 1 | Premier ouvrir du dialogue post-tier-17 |
+| `donation_offer_1/2` | Ouverture de `#house-donation-modal` | 2 | À chaque ouverture (aléatoire) |
+| `donation_small_1/2/3` | Don confirmé < 5 000 G | 3 | Après validation (aléatoire) |
+| `donation_large_1`   | Don confirmé ≥ 5 000 G | 1 | Solennel, jamais randomisé |
+| `donation_tier_19_1` | Franchissement tier 19 | 1 | `checkHouseLevelUp` détecte 60 000 pts |
+| `donation_tier_20_1` | Franchissement tier 20 | 1 | 80 000 pts |
+| `donation_tier_21_1` | Franchissement tier 21 | 1 | 110 000 pts |
+| `donation_tier_22_1` | Franchissement tier 22 | 1 | 150 000 pts |
+| `donation_tier_23_1` | Franchissement tier 23 | 1 | 200 000 pts |
+| `donation_tier_24_1` | Franchissement tier 24 (capstone) | 1 | 300 000 pts |
+| `donation_refuse_1`  | Tentative avec < 100 G en poche | 1 | Bouton grisé déclenche message |
+
+**Total : 56 samples.** Production via `gen_voice_edge.py` ≈ 5 min de batch
++ 10 min de QA d'écoute (Edge TTS peut bafouiller sur ponctuation rare).
+
+#### 3.4.3 Textes proposés — McGonagall (Gryffondor)
+
+Ton : autoritaire, fière, économe, n'aime pas la flatterie mais respecte
+le devoir accompli.
+
+- `mcgonagall_donation_intro_1`
+  > « Vous êtes parvenu au cœur de notre Maison, Potter. Si la fortune
+  > vous sourit, sachez que Gryffondor accueille les contributions de
+  > ses fils et filles les plus fidèles. »
+- `mcgonagall_donation_offer_1`
+  > « Que comptez-vous offrir à Gryffondor aujourd'hui ? »
+- `mcgonagall_donation_offer_2`
+  > « Notre Maison saura faire bon usage de votre or, comme toujours. »
+- `mcgonagall_donation_small_1`
+  > « Merci. Chaque galion compte pour les générations à venir. »
+- `mcgonagall_donation_small_2`
+  > « Bien. Continuez ainsi et nul ne pourra contester votre place. »
+- `mcgonagall_donation_small_3`
+  > « Reçu. Mes encouragements, Potter. »
+- `mcgonagall_donation_large_1`
+  > « Voilà une générosité digne du Lion. Gryffondor n'oublie pas ce
+  > que vous faites pour elle aujourd'hui. »
+- `mcgonagall_donation_tier_19_1`
+  > « Vous voici Légende vivante de notre Maison. Peu y sont parvenus. »
+- `mcgonagall_donation_tier_20_1`
+  > « Votre nom traversera les âges, Potter. Témoin des Maisons. »
+- `mcgonagall_donation_tier_21_1`
+  > « Vous êtes désormais le Cœur de Poudlard. Tâchez d'en être digne. »
+- `mcgonagall_donation_tier_22_1`
+  > « Au-delà des Maisons. Vous nous appartenez encore, mais à peine. »
+- `mcgonagall_donation_tier_23_1`
+  > « Aspect mythique. Je n'aurais pas cru voir cela de mon vivant. »
+- `mcgonagall_donation_tier_24_1`
+  > « Au-delà des dieux mêmes. Que les fondateurs vous accordent leur paix. »
+- `mcgonagall_donation_refuse_1`
+  > « Revenez quand vos poches seront plus garnies, Potter. Inutile
+  > d'humilier votre Maison. »
+
+#### 3.4.4 Textes proposés — Rogue (Serpentard)
+
+Ton : sarcastique, lent, intéressé par le pouvoir, méprisant du superflu
+mais respectueux du calcul.
+
+- `rogue_donation_intro_1`
+  > « Tiens, Potter. Vous découvrez enfin que l'ambition se paie en or
+  > aussi bien qu'en sang. Serpentard accepte vos offrandes. »
+- `rogue_donation_offer_1`
+  > « Combien êtes-vous prêt à laisser sur la table aujourd'hui ? »
+- `rogue_donation_offer_2`
+  > « Parlez. Mon temps est précieux, le vôtre… discutable. »
+- `rogue_donation_small_1`
+  > « Soit. Un début. »
+- `rogue_donation_small_2`
+  > « Mieux que rien. À peine. »
+- `rogue_donation_small_3`
+  > « Reçu. Ne vous attendez à aucun remerciement. »
+- `rogue_donation_large_1`
+  > « Voilà qui ressemble enfin à une ambition. Serpentard saura quoi
+  > en faire — soyez assuré que vous ne reverrez pas un galion. »
+- `rogue_donation_tier_19_1`
+  > « Légende. Le mot est galvaudé. Pour vous, je consens à l'employer. »
+- `rogue_donation_tier_20_1`
+  > « Témoin de l'âge, Potter. Les ombres de Salazar vous toisent. »
+- `rogue_donation_tier_21_1`
+  > « Cœur de Poudlard. Le château bat à votre rythme désormais. »
+- `rogue_donation_tier_22_1`
+  > « Au-delà des Maisons. Vous échappez même à Serpentard. Curieux. »
+- `rogue_donation_tier_23_1`
+  > « Aspect mythique. Quelque chose en vous échappe au temps. »
+- `rogue_donation_tier_24_1`
+  > « Au-delà des dieux. Je m'incline, Potter. Une seule fois. »
+- `rogue_donation_refuse_1`
+  > « Mendier serait plus digne que ceci. Revenez avec quelque chose
+  > à offrir, ou ne revenez pas. »
+
+#### 3.4.5 Textes proposés — Flitwick (Serdaigle)
+
+Ton : enthousiaste, pédagogue, vif, friand de précision et de chiffres.
+
+- `flitwick_donation_intro_1`
+  > « Oh, mais quelle agréable surprise ! Vous avez atteint le palier
+  > qui ouvre nos coffres aux contributions. Serdaigle vous remercie
+  > par avance. »
+- `flitwick_donation_offer_1`
+  > « Eh bien, eh bien ! Combien souhaitez-vous nous offrir ? »
+- `flitwick_donation_offer_2`
+  > « Chaque galion sera converti en points d'estime, c'est calculé ! »
+- `flitwick_donation_small_1`
+  > « Magnifique ! Vous voyez, tout s'additionne. »
+- `flitwick_donation_small_2`
+  > « Très bien, très bien. Continuons. »
+- `flitwick_donation_small_3`
+  > « Excellent ! Notre bibliothèque vous en sera reconnaissante. »
+- `flitwick_donation_large_1`
+  > « Stupéfiant ! Une telle générosité mérite tous nos honneurs.
+  > Serdaigle gravera votre nom dans le marbre. »
+- `flitwick_donation_tier_19_1`
+  > « Légende vivante ! Ah, je n'avais pas vu cela depuis Rowena
+  > elle-même. Ou presque. »
+- `flitwick_donation_tier_20_1`
+  > « Témoin de l'âge ! Vous voici inscrit dans les annales. »
+- `flitwick_donation_tier_21_1`
+  > « Cœur de Poudlard. Imaginez ! Les murs eux-mêmes vous écoutent. »
+- `flitwick_donation_tier_22_1`
+  > « Au-delà des Maisons. C'est presque… mathématiquement impossible
+  > et pourtant, vous y êtes ! »
+- `flitwick_donation_tier_23_1`
+  > « Aspect mythique. Vous dépassez les équations connues. »
+- `flitwick_donation_tier_24_1`
+  > « Au-delà des dieux. Je ferme mon livre. Aucune note ne saurait
+  > suivre cela. »
+- `flitwick_donation_refuse_1`
+  > « Hum, vos poches semblent un peu légères aujourd'hui. Revenez
+  > quand le compte y sera, voulez-vous ? »
+
+#### 3.4.6 Textes proposés — Chourave (Poufsouffle)
+
+Ton : chaleureuse, terrienne, maternelle, voit la valeur des petites
+choses.
+
+- `sprout_donation_intro_1`
+  > « Oh, mon cher enfant, comme c'est gentil de penser à nous !
+  > Poufsouffle accueille volontiers tout ce que tu voudras partager. »
+- `sprout_donation_offer_1`
+  > « Alors, dis-moi, combien souhaites-tu donner à notre Maison ? »
+- `sprout_donation_offer_2`
+  > « Que ce soit beaucoup ou peu, chaque geste compte chez nous. »
+- `sprout_donation_small_1`
+  > « Merci, c'est très généreux. Cela ira aux serres, sois-en sûr. »
+- `sprout_donation_small_2`
+  > « Bénédiction sur toi, mon enfant. Les blaireaux n'oublient pas. »
+- `sprout_donation_small_3`
+  > « Voilà qui fera grand bien. Merci, vraiment. »
+- `sprout_donation_large_1`
+  > « Mon Dieu, quelle générosité ! Tu nourriras nos plantes et nos
+  > élèves pour des saisons entières. Poufsouffle te bénit. »
+- `sprout_donation_tier_19_1`
+  > « Légende vivante. Toi, parmi les nôtres. Cela me rend si fière. »
+- `sprout_donation_tier_20_1`
+  > « Témoin de l'âge. Tu as vu plus que beaucoup de fondateurs. »
+- `sprout_donation_tier_21_1`
+  > « Cœur de Poudlard. Le château t'aime comme nous t'aimons. »
+- `sprout_donation_tier_22_1`
+  > « Au-delà des Maisons. Mais reviens-nous voir parfois, hein ? »
+- `sprout_donation_tier_23_1`
+  > « Aspect mythique. Les racines de Poudlard portent ton nom. »
+- `sprout_donation_tier_24_1`
+  > « Au-delà des dieux. Je n'ai plus rien à t'apprendre, mon enfant. »
+- `sprout_donation_refuse_1`
+  > « Allons, allons, ne te mets pas dans l'embarras. Reviens quand
+  > tu auras quelques galions de plus. »
+
+#### 3.4.7 Production des samples (`tools/gen_voice_edge.py`)
+
+Procédure batch :
+
+1. Ajouter les 14 entrées par chef dans le dict `LINES` du tool —
+   tuples `("<chef>_donation_<contexte>_<n>", "<texte>")`.
+2. Lancer :
+   ```bash
+   python3 tools/gen_voice_edge.py mcgonagall rogue flitwick sprout
+   ```
+3. QA : écouter au moins les `tier_*_1` (6 par chef × 4 = 24 samples
+   critiques narrativement). Edge TTS peut bafouiller sur les noms
+   propres rares (« Salazar » → « Salazaar »). Régénérer ces samples
+   isolément avec ponctuation ajustée si besoin.
+4. Mettre à jour `_VOICE_SAMPLES` dans `js/audio-music.js` :
+   ```diff
+   _VOICE_SAMPLES: {
+     // …
+   + mcgonagall_donation_intro_1:   'audio/voice/mcgonagall_donation_intro_1.ogg',
+   + mcgonagall_donation_offer_1:   'audio/voice/mcgonagall_donation_offer_1.ogg',
+   + // … 56 entrées au total
+   },
+   ```
+5. Précaches PWA : **rien à toucher**. La stratégie `audio/` est
+   stale-while-revalidate à la demande (cf. CLAUDE.md §PWA) — les
+   nouveaux OGG seront cachés au premier déclenchement.
+
+#### 3.4.8 Trigger côté code (helpers)
+
+Helper unifié à exposer dans `house-donation.js` :
+
+```js
+function _playDonationVoice(context) {
+  const chef = HOUSE_BONUSES[chosenHouse]?.headOfHouseVoiceKey;
+  if (!chef) return; // safety
+  const key = `${chef}_donation_${context}`;
+  if (typeof AudioSystem === 'undefined') return;
+  if (typeof AudioSystem.playVoice === 'function') AudioSystem.playVoice(key);
+}
+```
+
+`headOfHouseVoiceKey` à ajouter dans `HOUSE_BONUSES` (state.js) :
+`gryff: 'mcgonagall'` / `slyth: 'rogue'` / `raven: 'flitwick'` /
+`pouf: 'sprout'`. Évite le mapping en dur dans le helper et reste
+cohérent avec les autres lookups par Maison.
+
+Sélection variant : pour `offer_*` et `small_*`, picker aléatoire :
+```js
+const variants = { offer: 2, small: 3 };
+const n = variants[base] ? 1 + Math.floor(Math.random() * variants[base]) : 1;
+_playDonationVoice(`${base}_${n}`);
+```
+
+### 3.5 Effet de levée des paliers 19+
 
 `checkHouseLevelUp()` actuel (`main.js:273`) itère sur tous les tiers
 configurés. Il suffit d'ajouter les tiers 19-24 dans `HOUSE_BONUSES[house].tiers`
@@ -247,20 +491,40 @@ quand les points cumulent).
       ```
 - [ ] Ajout du fichier à `index.html` et au MANIFEST `loader.js`.
 
-### Étape 3 — UI (modale de don)
+### Étape 3 — Voix off (samples OGG)
+- [ ] Ajouter les 56 entrées (14 × 4 chefs) dans `tools/gen_voice_edge.py`
+      (dict `LINES`).
+- [ ] Batch génération `python3 tools/gen_voice_edge.py mcgonagall rogue
+      flitwick sprout`.
+- [ ] QA d'écoute des `tier_*_1` (24 samples critiques).
+- [ ] Référencer les 56 OGG dans `_VOICE_SAMPLES` (`js/audio-music.js`).
+- [ ] Ajouter `headOfHouseVoiceKey` dans `HOUSE_BONUSES` (`state.js`).
+
+### Étape 4 — UI (modale de don)
 - [ ] Nouvelle modale `#house-donation-modal` (CSS + HTML statique
       dans `index.html`).
 - [ ] Input numérique + 4 boutons rapides (1000 / 5000 / 10000 / Max).
 - [ ] Aperçu live des points gagnés + palier suivant.
 - [ ] Confirmation explicite au-delà de 5000 G (modale de safety).
 
-### Étape 4 — Intégration dialogue Chef de Maison
+### Étape 5 — Intégration dialogue Chef de Maison
 - [ ] `npc-dialog.js — _npcDialogActions` : ajouter le bouton
       « 💰 Faire un don » conditionnel sur `houseTier >= 17`.
 - [ ] Le bouton ouvre la modale (`openHouseDonationModal()`).
-- [ ] Smoke test : ajouter un cas dédié dans `tests/smoke.js`.
+- [ ] Brancher `_playDonationVoice('intro_1')` à la première ouverture
+      (tracker via `localStorage` ou flag `_donationIntroPlayed` du save).
+- [ ] Brancher `_playDonationVoice('offer_<n>')` à chaque ouverture
+      ultérieure (picker aléatoire 1-2).
+- [ ] Brancher `_playDonationVoice('small_<n>')` ou `'large_1'` sur
+      validation (seuil 5 000 G).
+- [ ] Brancher `_playDonationVoice('tier_<19-24>_1')` dans
+      `checkHouseLevelUp` au franchissement.
+- [ ] Brancher `_playDonationVoice('refuse_1')` sur clic d'un bouton
+      grisé (< 100 G).
+- [ ] Smoke test : ajouter un cas dédié dans `tests/smoke.js` (mock
+      `AudioSystem.playVoice` pour vérifier la séquence d'appels).
 
-### Étape 5 — Commit + PR
+### Étape 6 — Commit + PR
 - [ ] 1 commit par étape (révisable).
 - [ ] PR groupée vers master avec changelog.
 
@@ -282,3 +546,8 @@ quand les points cumulent).
 - **2026-05-25** : création du plan en suite de l'audit or
   (`game-economy-gold-audit.md` §5.6 Piste B). Validation utilisateur
   attendue avant implémentation.
+- **2026-05-25** : ajout §3.4 (Voix off des Directeurs) — 56 samples
+  OGG à générer via `tools/gen_voice_edge.py`, textes par chef
+  respectant le ton canon (McGonagall autoritaire, Rogue sarcastique,
+  Flitwick enthousiaste, Chourave maternelle). Phasage repensé en 6
+  étapes (production voix avant impl UI).
