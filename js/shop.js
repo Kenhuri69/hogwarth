@@ -61,6 +61,10 @@ const SHOP_CATALOG = [
   { id: "cape_combat",         minFloor: 8 },
   { id: "anneau_anti_magie",   minFloor: 8 },
   { id: "potion_lune",         minFloor: 8 },
+  // Phase 3 — Tranche étage 9 « Les Profondeurs » : équipement endgame mid
+  { id: "diademe_antique",     minFloor: 9 },
+  { id: "bague_protection",    minFloor: 9 },
+  { id: "robe_combat",         minFloor: 9 },
   // Consommables endgame (post-victoire) — voir ENDGAME_PLAN.md §7.10
   { id: "potion_xl",           minFloor: 15 },
   { id: "potion_xl_sp",        minFloor: 15 },

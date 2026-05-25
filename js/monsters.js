@@ -1571,6 +1571,132 @@ const MONSTERS = [
     ]
   },
 
+  // ════════════════════════════════════════════
+  // PHASE 3 — TRANCHE ÉTAGE 9 « LES PROFONDEURS »
+  // (cf. .claude/plans/content-audit-stabilization.md §5.2)
+  // 2 boss (canon + original) + 2 monstres d'appoint
+  // ════════════════════════════════════════════
+
+  {
+    id:       "aragog",
+    epic:     true,
+    name:     "Aragog",
+    icon:     "🕷️",
+    imgSrc:   "img/monsters/aragog.png",
+    category: "créature",
+    desc:     "Aragog s'avance, ses huit yeux brillant dans la pénombre, sa carapace cliquetant !",
+    lore:     "Le chef des Acromantules de la Forêt Interdite. Hagrid l'a élevé dès l'œuf, le cachant à Poudlard. Quand son humeur le permet, Aragog reconnaît ses bienfaiteurs — mais ses fils, eux, ne reconnaissent que la faim.",
+    habitat:  "Cœur de la Forêt Interdite et profondeurs araneennes",
+    anecdote: "Hagrid fut accusé à tort de l'avoir lâché en 1943. Aragog mourra de vieillesse en 1997, et Hagrid l'enterrera dignement — tandis que ses fils dévoreront les invités.",
+    danger:   9,
+    minFloor: 9, maxFloor: null, weight: 1,
+    hp: 135, atk: 22, def: 8, mag: 6, agi: 10, lck: 6,
+    scale: 0.32,
+    abilities: [
+      { name: "Crochets Venimeux", icon: "☠️", desc: "Injecte un venin tenace",      effect: "status", statusId: "poison", power: 7, chance: 0.40, turns: 4 },
+      { name: "Charge Arachnide",  icon: "🕷️", desc: "Ruée massive de pattes",       effect: "damage", power: 19, chance: 0.45 },
+      { name: "Appel aux Fils",    icon: "🕸️", desc: "Ses enfants accourent",         effect: "heal",   power: 16, chance: 0.20 },
+      { name: "Toile Étouffante",  icon: "🕸️", desc: "Enveloppe et paralyse",         effect: "status", statusId: "stun", power: 0, chance: 0.20, turns: 1 }
+    ],
+    ai: "aggressive",
+    weak:   ["feu"],
+    xp: 165, gold: { min: 80, max: 130 },
+    drops:  [
+      { itemId: "essence_tenebres",  chance: 0.80 },
+      { itemId: "essence_tenebres",  chance: 0.50 },
+      { itemId: "potion_l",          chance: 0.50 },
+      { itemId: "diademe_antique",   chance: 0.15 }
+    ]
+  },
+
+  {
+    id:       "maitre_detraqueur",
+    epic:     true,
+    name:     "Maître des Détraqueurs",
+    icon:     "👁️",
+    imgSrc:   "img/monsters/maitre_detraqueur.png",
+    category: "être magique",
+    desc:     "Un Détraqueur immense glisse vers vous, son capuchon vide aspirant la lumière même...",
+    lore:     "Figure tutélaire des Détraqueurs d'Azkaban. Plus vieux et plus avide que ses subordonnés, il préfère savourer ses victimes pendant des jours avant le Baiser fatal.",
+    habitat:  "Cellule centrale d'Azkaban et profondeurs glacées",
+    anecdote: "On dit qu'il aurait tenté de pratiquer le Baiser sur Sirius Black à plusieurs reprises — sans succès, grâce à Buck l'Hippogriffe.",
+    danger:   10,
+    minFloor: 9, maxFloor: null, weight: 1,
+    hp: 115, atk: 14, def: 10, mag: 24, agi: 8, lck: 4,
+    scale: 0.34,
+    abilities: [
+      { name: "Baiser du Détraqueur", icon: "💀", desc: "Drain de vie massif",          effect: "drain",  power: 20, chance: 0.35 },
+      { name: "Aura de Désespoir",    icon: "😱", desc: "Glace l'âme — paralyse de peur", effect: "status", statusId: "fear", power: 0, chance: 0.35, turns: 3 },
+      { name: "Murmure Mortel",       icon: "🌑", desc: "Voix qui fait saigner les oreilles", effect: "damage", power: 18, chance: 0.30 },
+      { name: "Dissipation Glaçante", icon: "❌", desc: "Brise les sortilèges de soutien", effect: "dispel", chance: 0.30 }
+    ],
+    ai: "cautious",
+    resist: ["ténèbres", "physique"],
+    weak:   ["lumière"],
+    xp: 180, gold: { min: 90, max: 140 },
+    drops:  [
+      { itemId: "page_grimoire",     chance: 0.80 },
+      { itemId: "page_grimoire",     chance: 0.50 },
+      { itemId: "essence_tenebres",  chance: 0.40 },
+      { itemId: "robe_combat",       chance: 0.15 }
+    ]
+  },
+
+  {
+    id:       "acromantule_adulte",
+    name:     "Acromantule Adulte",
+    icon:     "🕷️",
+    imgSrc:   "img/monsters/acromantule_adulte.png",
+    category: "créature",
+    desc:     "Une Acromantule adulte fonce, ses mandibules cliquetant de faim !",
+    lore:     "Acromantule arrivée à pleine maturité. Plus grande qu'un cheval, elle chasse en meute et préfère la chair humaine. La progéniture d'Aragog.",
+    habitat:  "Forêt Interdite et galeries souterraines",
+    danger:   8,
+    minFloor: 8, maxFloor: null, weight: 4,
+    hp: 78, atk: 18, def: 6, mag: 4, agi: 13, lck: 6,
+    scale: 0.28,
+    abilities: [
+      { name: "Morsure Venimeuse", icon: "☠️", desc: "Crochets remplis de venin",  effect: "status", statusId: "poison", power: 5, chance: 0.30, turns: 3 },
+      { name: "Toile Collante",    icon: "🕸️", desc: "Englue et affaiblit",         effect: "weaken", power: 3, chance: 0.30 },
+      { name: "Charge Multipattes",icon: "🕷️", desc: "Ruée fulgurante",             effect: "damage", power: 15, chance: 0.40 }
+    ],
+    ai: "aggressive",
+    weak:   ["feu"],
+    xp: 70, gold: { min: 25, max: 40 },
+    drops:  [
+      { itemId: "potion_m",         chance: 0.20 },
+      { itemId: "herbe_aconit",     chance: 0.20 }
+    ]
+  },
+
+  {
+    id:       "detraqueur_elite",
+    name:     "Détraqueur d'Élite",
+    icon:     "👻",
+    imgSrc:   "img/monsters/detraqueur_elite.png",
+    category: "être magique",
+    desc:     "Un Détraqueur d'élite vous fixe — vos joies s'évaporent une par une.",
+    lore:     "Détraqueur vétéran, plus âgé et plus avide que les gardiens standards. Sa proximité éteint les souvenirs heureux.",
+    habitat:  "Couloirs glacés et anciennes prisons",
+    danger:   8,
+    minFloor: 8, maxFloor: null, weight: 4,
+    hp: 60, atk: 12, def: 6, mag: 18, agi: 8, lck: 5,
+    scale: 0.30,
+    abilities: [
+      { name: "Baiser Partiel", icon: "💀", desc: "Aspire un peu de vie",          effect: "drain",  power: 12, chance: 0.35 },
+      { name: "Aura Glaciale",  icon: "❄️", desc: "Diffuse une peur sourde",        effect: "status", statusId: "fear", power: 0, chance: 0.25, turns: 2 },
+      { name: "Voile d'Effroi", icon: "🌑", desc: "Murmure paralysant",             effect: "damage", power: 14, chance: 0.30 }
+    ],
+    ai: "cautious",
+    resist: ["ténèbres", "physique"],
+    weak:   ["lumière"],
+    xp: 75, gold: { min: 30, max: 50 },
+    drops:  [
+      { itemId: "potion_l",         chance: 0.20 },
+      { itemId: "page_grimoire",    chance: 0.05 }
+    ]
+  },
+
 ];
 
 // ════════════════════════════════════════════

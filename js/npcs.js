@@ -1084,6 +1084,70 @@ const NPCS = [
         "L'Élixir de Lune, c'est ma fierté. Distillé moi-même. Goûte avant de juger."
       ]
     }
+  },
+
+  // ── Phase 3 — Tranche étage 9 « Les Profondeurs » ─────────────
+  // (cf. .claude/plans/content-audit-stabilization.md §5.2)
+  {
+    id:    "bill_weasley",
+    name:  "Bill Weasley",
+    title: "Briseur de sortilèges, Gringotts",
+    sprite: "prof_h",
+    icon:  "🗝️",
+    portraitImg: "img/npc/bill_weasley.png",
+    placement: { floor: 9, anchor: "any" },
+    questsGiven:    ["chasse_aragog", "baiser_detraqueur", "dictame_bill"],
+    questsTurnedIn: ["chasse_aragog", "baiser_detraqueur", "dictame_bill"],
+    dialogues: {
+      greeting: [
+        "Salut. Bill Weasley, briseur de sortilèges pour Gringotts — enfin, c'était mon métier d'avant. Maintenant je traque autre chose.",
+        "Mes cicatrices te rappellent quelqu'un ? Greyback. Il m'a mordu sous forme humaine — pas de pleine lune, pas de transformation complète, juste les goûts. Trois services, si tu acceptes."
+      ],
+      idleRandom: [
+        "Le Dictame fait toujours son effet, même sur les blessures lycanthropes. Pas la guérison — l'apaisement.",
+        "Aragog était l'ami de Hagrid. Ses fils, eux, n'ont jamais reconnu aucun ami.",
+        "Le Maître des Détraqueurs ne se nourrit pas — il savoure. Combats-le avant qu'il ne te savoure.",
+        "Maman dit que je suis devenu un peu loup-garou depuis Greyback. Disons que les steaks saignants me parlent davantage.",
+        "Fleur m'a épousé après les cicatrices. Elle dit qu'elles me donnent un genre. Je veux bien la croire."
+      ],
+      questOffer:  "Aragog dans la Forêt. Le Maître des Détraqueurs dans les cellules. Et du Dictame pour les blessures que Greyback a laissées. Choisis l'ordre.",
+      questActive: "Le travail avance ?",
+      questReady:  "Bien joué. Voilà ce qui était convenu."
+    }
+  },
+
+  {
+    id:    "apothicaire_tenebreux",
+    name:  "Apothicaire Ténébreux",
+    title: "Marchand d'élixirs et matériaux interdits",
+    sprite: "vendeur",
+    icon:  "⚗️",
+    portraitImg: "img/npc/apothicaire_tenebreux.png",
+    placement: { floor: 9, anchor: "any" },
+    // Vente directe d'Essence (Forge) et Page (Biblio) — atténue T5 du sprint
+    // endgame (matériaux uniquement via drop 3 %/2 % auparavant). Prix élevés
+    // pour que ce reste un secours, pas une alternative confortable au farm.
+    wares: [
+      { id: "potion_l",         price: 90 },
+      { id: "potion_l_sp",      price: 85 },
+      { id: "herbe_aconit",     price: 30 },
+      { id: "herbe_dictame",    price: 35 },
+      { id: "essence_tenebres", price: 380 },
+      { id: "page_grimoire",    price: 460 }
+    ],
+    buyback: { default: 0.30 },
+    dialogues: {
+      greeting: [
+        "Bienvenue. Ne touche à rien sans demander — certaines choses ici mordent en retour.",
+        "Élixirs, herbes, et matériaux que tu ne trouveras nulle part ailleurs. Prix négociables uniquement pour les morts."
+      ],
+      idleRandom: [
+        "L'Essence des Ténèbres, ça se cueille comme une fleur. Sauf que la fleur, elle pousse dans les organes.",
+        "Une Page de Grimoire, c'est un sort qui attend son livre. Bonne occasion pour ta Bibliothèque interdite.",
+        "Le Dictame guérit même les morsures lycanthropes. Demande à Bill — il connaît mes prix.",
+        "Mes potions ne sont pas autorisées. C'est précisément pourquoi elles fonctionnent."
+      ]
+    }
   }
 ];
 

@@ -469,6 +469,10 @@ const ITEMS = [
   { id:"cape_combat",       name:"Cape de Combat",       icon:"🧥", desc:"DEF+3 · Esquive +5 %",                          type:"armor", slot:"cloak", family:"cloak_combat",    rarity:"rare", bonusDef:3, bonusDodgeChance:5, power:3, price:700 },
   { id:"anneau_anti_magie", name:"Anneau Anti-Magie",    icon:"💍", desc:"DEF+2 INT+3 — Atténue les sortilèges",        type:"acc",   slot:"ring",  family:"ring_anti_magic", rarity:"rare", bonusDef:2, bonusInt:3, power:2, price:750 },
   { id:"potion_lune",       name:"Élixir de Lune",       icon:"🌕", desc:"+45 PV — distillé sous pleine lune",          type:"consumable", effect:"heal", power:45, price:90 },
+  // ── Phase 3 — Tranche étage 9 « Les Profondeurs » : équipement endgame mid (boutique + drop boss) ──
+  { id:"diademe_antique",   name:"Diadème Antique",      icon:"👑", desc:"MAG+5 LCK+2 — Couronne d'une reine oubliée",   type:"armor", slot:"head",  family:"tiara_antique",   rarity:"rare", bonusMag:5, bonusLck:2, power:5, price:900 },
+  { id:"bague_protection",  name:"Bague de Protection",  icon:"💍", desc:"DEF+3 END+3 — Sertie d'une perle de jade",     type:"acc",   slot:"ring",  family:"ring_protection", rarity:"rare", bonusDef:3, bonusEnd:3, power:3, price:780 },
+  { id:"robe_combat",       name:"Robe de Combat",       icon:"🥼", desc:"DEF+5 · PV max +5 — Renforcée de runes",       type:"armor", slot:"body",  family:"robe_combat",     rarity:"rare", bonusDef:5, bonusHpMax:5, power:5, price:950 },
   // ── Livres de sorts ──────────────────────────────────────────
   { id:"livre_sortileges", name:"Sortilèges Standards, Vol.3", icon:"📗", desc:"Apprend Wingardium Leviosa",  type:"spellbook", spell:"Wingardium Leviosa", price:150  },
   { id:"livre_soin",       name:"Potions & Remèdes Magiques",  icon:"📘", desc:"Apprend Reparo (soin 20 PV)", type:"spellbook", spell:"Reparo",             price:110  },
