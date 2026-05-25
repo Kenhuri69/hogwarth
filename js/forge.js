@@ -68,6 +68,36 @@ function forgeBonus(item) {
 
 window.forgeBonus = forgeBonus;
 
+// Récap de progression Forge par héros actif. Pure — utilisée par
+// `openForge()` (entête) + le smoke test. Pour chaque héros, compte les
+// items équipés `upgradable` (porteur de _primaryBonus), distingue ceux
+// au niveau MAX vs partiels, somme le gold restant pour tout maxer.
+// Cf. .claude/plans/forge-library-audit.md §4.5.
+function _forgeProgressSummary() {
+  const out = [];
+  for (let i = 0; i < (partySize || 1); i++) {
+    const c = party[i];
+    if (!c || !c.equipped) continue;
+    let upgradable = 0, maxed = 0, partial = 0, goldRemaining = 0;
+    for (const item of Object.values(c.equipped)) {
+      if (!item || !_primaryBonus(item)) continue;
+      upgradable++;
+      const lvl = item.upgradeLevel | 0;
+      if (lvl >= FORGE_MAX_LEVEL) { maxed++; continue; }
+      partial++;
+      for (let t = lvl + 1; t <= FORGE_MAX_LEVEL; t++) {
+        const cost = FORGE_COSTS[t];
+        if (cost) goldRemaining += (cost.gold | 0);
+      }
+    }
+    out.push({
+      heroName: (c.name || `Héros ${i + 1}`).split(' ')[0],
+      upgradable, maxed, partial, goldRemaining,
+    });
+  }
+  return out;
+}
+
 // Construit la liste des items équipés sur tous les persos actifs.
 // Retourne [{ charIdx, slot, item }] — items non-null uniquement.
 function _equippedItems() {
@@ -135,11 +165,23 @@ function openForge() {
   if (essCount) essCount.textContent = `${_countEssence()} Essence(s)`;
 
   if (!list) return;
+  // Entête : récap progression Forge du groupe (§4.5).
+  const summary = _forgeProgressSummary();
+  const summaryHtml = summary.length
+    ? `<div class="forge-progress-summary">
+         <div class="forge-progress-title">🔨 Forge — Progression du groupe</div>
+         ${summary.map(s => `
+           <div class="forge-progress-line">
+             <b>${s.heroName}</b> :
+             ${s.maxed}/${s.upgradable} items au max (+${FORGE_MAX_LEVEL})${s.partial ? ` · ${s.partial} partiels — ${s.goldRemaining} G pour tout maxer` : ' · tout est maxé'}
+           </div>`).join('')}
+       </div>`
+    : '';
   const items = _equippedItems();
   if (items.length === 0) {
-    list.innerHTML = `<div class="forge-empty">Aucun équipement à renforcer.</div>`;
+    list.innerHTML = `${summaryHtml}<div class="forge-empty">Aucun équipement à renforcer.</div>`;
   } else {
-    list.innerHTML = items.map(({ charIdx, slot, item }) => {
+    list.innerHTML = summaryHtml + items.map(({ charIdx, slot, item }) => {
       const lvl    = item.upgradeLevel | 0;
       const maxed  = lvl >= FORGE_MAX_LEVEL;
       const cost   = maxed ? null : FORGE_COSTS[lvl + 1];

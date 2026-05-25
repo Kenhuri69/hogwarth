@@ -2360,6 +2360,19 @@ body {
 .forge-empty, .library-empty {
   text-align: center; padding: 24px; color: #8a7050; font-style: italic;
 }
+.forge-progress-summary {
+  margin: 0 0 12px 0; padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(211, 166, 37, 0.35);
+  border-radius: 4px;
+}
+.forge-progress-title {
+  font-family: 'Cinzel', serif; font-size: 12px;
+  color: var(--gold); margin-bottom: 6px;
+}
+.forge-progress-line {
+  font-size: 12px; color: #c0a070; line-height: 1.4;
+}
 .forge-hint, .library-hint {
   margin-top: 12px; padding-top: 10px;
   border-top: 1px solid rgba(106, 80, 48, 0.4);
