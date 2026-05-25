@@ -781,11 +781,15 @@ function _openPierreAmeStatMenu(idx, charIdx) {
   const c = party[charIdx];
   if (!item || !c) return;
   const grid = document.getElementById('inv-grid');
-  const statButtons = _STAT_BOOST_CHOICES.map(s =>
-    `<button class="cmd-btn" style="width:100%;margin-bottom:6px;text-align:left;padding-left:10px"
+  const statButtons = _STAT_BOOST_CHOICES.map(s => {
+    const cur  = c[s.trigger] || 0;
+    const next = cur + 1;
+    return `<button class="cmd-btn" style="width:100%;margin-bottom:6px;text-align:left;padding-left:10px;display:flex;justify-content:space-between;align-items:center"
        onclick="_applyStatBoost(${idx},${charIdx},'${s.trigger}')">
-       ${s.label} <span style="color:#8a7050">(actuel : ${c[s.trigger] || 0})</span>
-     </button>`).join('');
+       <span>${s.label}</span>
+       <span style="color:#8a7050;font-size:11px">${cur} <span style="color:var(--gold)">→ ${next}</span></span>
+     </button>`;
+  }).join('');
   grid.innerHTML = `
     <div style="grid-column:1/-1;padding:14px;text-align:center">
       <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">

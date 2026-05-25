@@ -1045,7 +1045,9 @@ function useAltar(choice) {
   }
   const f = currentFloor || 1;
   if (choice === 'gold') {
-    const cost = 40 * f;
+    // Coût réduit (40 → 25 × floor) pour rendre l'autel attractif vs
+    // fontaine gratuite — cf. game-economy-gold-audit.md §5.5.
+    const cost = 25 * f;
     if (player.gold < cost) {
       addMsg(`Offrande refusée : il faut ${cost} Gallions.`, 'bad');
       return;
