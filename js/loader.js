@@ -270,6 +270,12 @@ window.UX_safe = new Proxy({}, {
     { name: 'PLAYER_SPRITE_SRC',  source: 'renderer-effects.js', kind: 'obj', optional: true },
     { name: 'drawMessageMarker',  source: 'renderer-effects.js', kind: 'fn', optional: true },
 
+    // ── Mondes parallèles — Cheminette Inter-Mondes (V1a Phase A) ──
+    // parallel-worlds.md §4. Optionnel : si portal-fx.js manque, le
+    // handler OOC le détecte et affiche un message d'erreur doux.
+    { name: 'playPortalOpen',     source: 'portal-fx.js',    kind: 'fn',    optional: true },
+    { name: 'playPortalClose',    source: 'portal-fx.js',    kind: 'fn',    optional: true },
+
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },
     { name: 'showIntroScreen',    source: 'intro.js',        kind: 'fn',    optional: true },

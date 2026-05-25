@@ -1295,8 +1295,25 @@ de Sang refusent de se nouer" pour `mp_threats`) — cohérent avec
       de Sang + économie cross-plan (4 canaux de récompense). Le visiteur
       a maintenant une agency dans le monde de l'autre, sans toucher son
       économie ni son XP/or solo.
+- [x] Décisions V1a §16.1/2/3/7 figées (2026-05-25) : Cheminette
+      Inter-Mondes, niv. 8, 25 PM, sprite host visible par défaut.
 - [ ] **V1a** — exploration découverte (13,5 j)
-    - [ ] Phase A — sort + animation locale (3 j).
+    - [x] Phase A — sort + animation locale (3 j) — **livré
+      2026-05-25**. Sort `Cheminette Inter-Mondes` (icône 🌀, 25 PM,
+      `effect:"portal"`) déclaré dans `SPELLS`, apprentissage Harry &
+      Hermione au niveau 8 (`_grantLevelSpells`), handler OOC dans
+      `SPELL_OOC_HANDLERS.portal`, animation 2,8 s (phases A→D) dans
+      `js/portal-fx.js`, fermeture 1,5 s, keyframes CSS dans
+      `css/portal.css`, overlay `#portal-fx-layer` dans `index.html`,
+      MANIFEST entries optionnelles, icône PNG dédiée générée par
+      `tools/gen_floo_icon.py` (flammes vertes torsadées + 4 runes
+      dorées). Double-gate Ironman : grisage dans `openSpells` (hint
+      « Voie solitaire — l'Ironman se joue seul ») + refus dans le
+      handler. Phase A = placeholder narratif sans réseau (« Le Réseau
+      de Cheminette astral reste silencieux »). Scénario smoke
+      `scenarioParallelPortal` (7 assertions T1→T7) vert. Prochaine
+      phase : B — invitation et matchmaking Supabase
+      (`mp_visit_requests`).
     - [ ] Phase B — invitation/acceptation (2 j).
     - [ ] Phase C — snapshot et rendu du donjon distant (3 j).
     - [ ] Phase D — limites de territoire + sprites + emotes (2 j).
@@ -1312,15 +1329,13 @@ de Sang refusent de se nouer" pour `mp_threats`) — cohérent avec
 ## 16. Décisions à confirmer avant Phase A
 
 ### V1a
-1. **Nom du sort** : *Apparition Astrale* (recommandé — sobre, fidèle
-   au canon), *Cheminette Inter-Mondes* (visuellement iconique), ou
-   *Portoloin de Conscience* (justifie le retour automatique) ?
-2. **Niveau de déblocage** : niveau 8 fixe, palier de Maison, ou
-   déclenché par un PNJ scripté (Dumbledore après un palier) ?
-3. **Coût en PM** : 25 (proposition), ou plus dissuasif (~40) pour en
-   faire un sort rituel ? Avec l'ajout V1b/c d'agency cross-plan, un
-   coût modéré (15-20) semble approprié — la barrière est désormais
-   l'investissement narratif, pas le coût mécanique.
+1. ✅ **Nom du sort** *(2026-05-25)* : **Cheminette Inter-Mondes**.
+   Choix utilisateur — variante visuellement iconique (flammes vertes
+   façon poudre de Cheminette). Palette anim : vert + or chaud.
+2. ✅ **Niveau de déblocage** *(2026-05-25)* : **niveau 8 fixe**.
+   Enseigné aux deux héros via `_grantLevelSpells(8)` dans `battle.js`,
+   pattern symétrique de Avada... (niveau 9).
+3. ✅ **Coût en PM** *(2026-05-25)* : **25 PM**.
 4. **Cooldown entre deux visites** : aucun, 5 minutes, ou une fois par
    étage ? Anti-flood léger souhaitable. À cumuler avec le cooldown
    défaite (5 min) de V1b.
@@ -1331,9 +1346,10 @@ de Sang refusent de se nouer" pour `mp_threats`) — cohérent avec
    priorité ? Reco : les 5 PNJ scénaristes (Pomfresh, Lockhart, Hagrid,
    Dumbledore portrait, Geignarde) + un dialogue générique pour tous
    les autres.
-7. **Présence du visiteur côté host** : on rend son sprite **par
-   défaut**, ou en option opt-in pour le host (qui peut le masquer
-   s'il veut jouer sans distraction) ?
+7. ✅ **Présence du visiteur côté host** *(2026-05-25)* : **visible par
+   défaut, toggle d'options pour masquer**. Choix utilisateur — préserve
+   la magie « quelqu'un te rend visite » tout en laissant la porte ouverte
+   au focus du host.
 
 ### V1b — combat local
 8. **Limite d'échos par étage** : 3 (proposé) suffisant pour la saveur

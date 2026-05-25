@@ -10539,6 +10539,141 @@ async function scenarioSecretPassage() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette Inter-Mondes — sort de portail (V1a Phase A) ──
+// Vérifie : déclaration SPELLS, apprentissage niv. 8, modale Sorts
+// cliquable en mode normal, grisage Ironman, cast → SP décompté +
+// overlay actif, fin d'anim → overlay disparu + save inchangée.
+// Cf. parallel-worlds.md §10 Phase A.
+async function scenarioParallelPortal() {
+  console.log('\n── Scénario : Cheminette Inter-Mondes (Phase A) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : sort déclaré avec les bons paramètres.
+  const t1 = await page.evaluate(() => {
+    const spell = SPELLS.find(s => s.name === 'Cheminette Inter-Mondes');
+    return spell
+      ? { found: true, cost: spell.cost, effect: spell.effect, icon: spell.icon }
+      : { found: false };
+  });
+  console.log('  T1 SPELLS →', t1);
+  assert(t1.found,                 'Cheminette Inter-Mondes doit être déclarée dans SPELLS');
+  assert(t1.cost === 25,           `Coût attendu 25 PM (vu ${t1.cost})`);
+  assert(t1.effect === 'portal',   `effect attendu "portal" (vu "${t1.effect}")`);
+
+  // T2 : apprentissage au niveau 8 pour les deux héros.
+  const t2 = await page.evaluate(() => {
+    const before = {
+      harry:    player.spells.includes('Cheminette Inter-Mondes'),
+      hermione: player2.spells.includes('Cheminette Inter-Mondes')
+    };
+    _grantLevelSpells(8);
+    return {
+      before,
+      harry:    player.spells.includes('Cheminette Inter-Mondes'),
+      hermione: player2.spells.includes('Cheminette Inter-Mondes')
+    };
+  });
+  console.log('  T2 apprentissage niv. 8 →', t2);
+  assert(!t2.before.harry && !t2.before.hermione, 'Sort non appris avant niv. 8');
+  assert(t2.harry,                                'Harry doit apprendre au niv. 8');
+  assert(t2.hermione,                             'Hermione doit apprendre au niv. 8');
+
+  // T3 : entrée cliquable dans la modale Sorts (mode normal, SP suffisants).
+  const t3 = await page.evaluate(() => {
+    player.sp = player.spMax = 50;
+    openSpells(0);
+    const items = Array.from(document.querySelectorAll('#spell-list .spell-item'));
+    const ch = items.find(el => /Cheminette Inter-Mondes/.test(el.textContent));
+    return {
+      hasEntry:    !!ch,
+      isClickable: !!(ch && typeof ch.onclick === 'function')
+    };
+  });
+  console.log('  T3 modale Sorts (normal) →', t3);
+  assert(t3.hasEntry,    'Cheminette doit apparaître dans la modale Sorts');
+  assert(t3.isClickable, 'Entrée doit être cliquable hors combat en mode normal');
+
+  // T4 : mode Ironman → visible mais non cliquable + hint dédié.
+  const t4 = await page.evaluate(() => {
+    closeModal('spell-modal');
+    const wasIronman = ironmanMode;
+    ironmanMode = true;
+    openSpells(0);
+    const items = Array.from(document.querySelectorAll('#spell-list .spell-item'));
+    const ch = items.find(el => /Cheminette Inter-Mondes/.test(el.textContent));
+    const out = {
+      hasEntry:    !!ch,
+      isClickable: !!(ch && typeof ch.onclick === 'function'),
+      hint:        ch ? ch.textContent : ''
+    };
+    ironmanMode = wasIronman;
+    closeModal('spell-modal');
+    return out;
+  });
+  console.log('  T4 Ironman →', t4);
+  assert(t4.hasEntry,                          'Cheminette doit rester visible en Ironman');
+  assert(!t4.isClickable,                      'Cheminette ne doit pas être cliquable en Ironman');
+  assert(/Voie solitaire|Ironman/.test(t4.hint), 'Hint Ironman doit mentionner la voie solitaire');
+
+  // T5 : cast → SP décompté + overlay portail actif.
+  const t5 = await page.evaluate(() => {
+    player.sp = 50;
+    const beforeSp = player.sp;
+    castSpellOutOfCombat('Cheminette Inter-Mondes', 0);
+    const layer = document.getElementById('portal-fx-layer');
+    return {
+      beforeSp,
+      afterSp: player.sp,
+      layerActive: !!(layer && layer.classList.contains('active'))
+    };
+  });
+  console.log('  T5 cast →', t5);
+  assert(t5.afterSp === t5.beforeSp - 25, `25 PM consommés (avant ${t5.beforeSp}, après ${t5.afterSp})`);
+  assert(t5.layerActive,                  'L\'overlay portal-fx-layer doit être actif pendant l\'anim');
+
+  // T6 : attendre la fin de l'anim (ouverture 2,8s + fermeture 1,5s).
+  await page.waitForFunction(() => {
+    const l = document.getElementById('portal-fx-layer');
+    return !l || !l.classList.contains('active');
+  }, { timeout: 8000 });
+  const t6 = await page.evaluate(() => ({
+    floor:    currentFloor,
+    inBattle: !!inBattle,
+    layerVisible: (() => {
+      const l = document.getElementById('portal-fx-layer');
+      if (!l) return false;
+      const style = getComputedStyle(l);
+      return style.display !== 'none';
+    })()
+  }));
+  console.log('  T6 retour Phase A →', t6);
+  assert(t6.floor === 1,      'Le joueur reste à son étage (pas de réseau en Phase A)');
+  assert(!t6.inBattle,        'Pas de combat enclenché par le cast');
+  assert(!t6.layerVisible,    'L\'overlay doit être masqué après l\'anim');
+
+  // T7 : double-gate handler — appel direct avec ironmanMode=true refuse.
+  const t7 = await page.evaluate(() => {
+    const wasIronman = ironmanMode;
+    ironmanMode = true;
+    player.sp = 50;
+    const beforeSp = player.sp;
+    castSpellOutOfCombat('Cheminette Inter-Mondes', 0);
+    const out = { beforeSp, afterSp: player.sp };
+    ironmanMode = wasIronman;
+    return out;
+  });
+  console.log('  T7 handler Ironman →', t7);
+  assert(t7.afterSp === t7.beforeSp, 'PM ne doivent pas être consommés en Ironman (handler refuse)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — Phase A OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -11882,7 +12017,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();
