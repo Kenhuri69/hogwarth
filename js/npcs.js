@@ -1253,6 +1253,38 @@ const NPCS = [
         "Une Pierre d'Âme ? J'en trouve trois par siècle. La tienne est là, devant toi."
       ]
     }
+  },
+
+  // ── Boucle Ténébreuse — Gardien à l'entrée du palier (étage 11) ─
+  // Combiné avec le recyclage `effectiveFloor` dans getNpcsForFloor,
+  // ce PNJ ajoute des quêtes répétables endgame — purger les boss
+  // Ténébreux qui se reforment dans la Boucle.
+  {
+    id:    "gardien_boucle",
+    name:  "Gardien de la Boucle",
+    title: "Esprit-veilleur des récurrences",
+    sprite: "fantome",
+    icon:  "♾️",
+    portraitImg: "img/npc/gardien_boucle.png",
+    placement: { floor: 11, anchor: "first-room" },
+    questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts"],
+    questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts"],
+    dialogues: {
+      greeting: [
+        "Tu reviens. Tous reviennent — c'est le sens de la Boucle. Je veille ici depuis la première récurrence.",
+        "Les ombres se reforment, et tu dois les défaire encore et encore. Pour chaque purge, je récompenserai — c'est tout ce que je peux offrir."
+      ],
+      idleRandom: [
+        "Greyback se reforme à chaque boucle. C'est sa malédiction. C'est aussi ton opportunité.",
+        "Aragog dort sous la racine du temps. Réveille-le, abats-le, recommence — il ne te tiendra jamais rancune.",
+        "Dolohov ne meurt jamais vraiment. Chaque mort le rend plus prévisible — étudie sa courbe violette.",
+        "Plus tu purges, plus la Boucle s'allège. C'est ainsi qu'on en sort — peut-être.",
+        "Je n'ai plus de nom propre. Trop de récurrences. Mais j'ai encore des récompenses."
+      ],
+      questOffer:  "Trois purges, à répétition. Loups, Acromantules, Mangemorts. Recommence quand tu veux — je récompense chaque cycle.",
+      questActive: "La purge avance.",
+      questReady:  "Bien. La Boucle te doit cela — pour cette fois."
+    }
   }
 ];
 
@@ -1270,8 +1302,13 @@ function getNpcSpriteType(id) {
 }
 
 function getNpcsForFloor(floor) {
-  // PNJ fixes : placement déterministe par étage.
-  return NPCS.filter(n => n.placement && n.placement.floor === floor);
+  // PNJ fixes : placement déterministe par étage. La Boucle Ténébreuse
+  // (effectiveFloor remappe 11→1, 18→8, etc.) recycle automatiquement
+  // les PNJ étages 1-10 : Kingsley apparaît à 8 ET 18, etc.
+  const ef = (typeof effectiveFloor === 'function') ? effectiveFloor(floor) : floor;
+  return NPCS.filter(n => n.placement && (
+    n.placement.floor === floor || n.placement.floor === ef
+  ));
 }
 
 function getRandomVendorsForFloor(floor) {
