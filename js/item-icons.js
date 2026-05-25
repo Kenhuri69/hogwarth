@@ -88,6 +88,13 @@ const ITEM_ICON_REGISTRY = {
   anneau_courage:      'img/icons/items/anneau_runique.png',
   bottes_silence:      'img/icons/items/bottes_dragon.png',
   talisman_tactique:   'img/icons/items/retourneur_temps.png',
+  // Phase 3 — Tranche étage 8 « Le Seuil » : équipement Auror clandestin
+  // Réutilisent les PNG des variantes rares en attendant des sprites dédiés.
+  casque_auror:        'img/icons/items/chapeau_pointu.png',
+  bottes_renforcees:   'img/icons/items/bottes_dragon.png',
+  cape_combat:         'img/icons/items/cape_voyageur.png',
+  anneau_anti_magie:   'img/icons/items/anneau_runique.png',
+  potion_lune:         'img/icons/items/potion_m.png',
   // Endgame — réutilisent les PNG existants en attendant la génération
   // de sprites dédiés via gen_icons.py. Cf. ENDGAME_PLAN.md §7.3/§7.10.
   potion_xl:           'img/icons/items/potion_s.png',

@@ -1024,6 +1024,66 @@ const NPCS = [
         "(Elle te saisit le poignet, le regard fixe.) L'un de vous ne remontera pas tous ces escaliers. Les présages ne mentent jamais — seuls mentent ceux qui les lisent. (Elle te relâche, confuse.) Du thé ?"
       ]
     }
+  },
+
+  // ── Phase 3 — Tranche étage 8 « Le Seuil » ────────────────────
+  // (cf. .claude/plans/content-audit-stabilization.md §5.1)
+  {
+    id:    "kingsley",
+    name:  "Kingsley Shacklebolt",
+    title: "Auror, avant-garde de l'Ordre",
+    sprite: "mage",
+    icon:  "🪄",
+    portraitImg: "img/npc/kingsley.png",
+    placement: { floor: 8, anchor: "any" },
+    questsGiven:    ["chasse_greyback", "garde_seuil", "herbes_lupin"],
+    questsTurnedIn: ["chasse_greyback", "garde_seuil", "herbes_lupin"],
+    dialogues: {
+      greeting: [
+        "Reste discret. Ce seuil est observé. Je suis Kingsley Shacklebolt — l'Ordre m'a posté ici en avant-garde.",
+        "Les Profondeurs grouillent de bêtes que le Ministère préfère ignorer. Si tu acceptes de m'aider, je récompenserai chaque service rendu."
+      ],
+      idleRandom: [
+        "Ne sous-estime jamais un Auror. Surtout corrompu — ils savent tout ce que nous savons.",
+        "Greyback rôde quelque part en bas. Ce monstre a contaminé Lupin enfant. Personne ne mérite davantage de tomber.",
+        "Le Veilleur n'est pas hostile par nature. Mais qui ouvre le passage signe sa perte.",
+        "Garde l'Aconit sur toi. Contre les morsures lycanthropes, c'est plus utile qu'un Patronus.",
+        "Trois services. Greyback abattu, le Veilleur neutralisé, l'Aconit récolté pour Lupin. Choisis dans l'ordre qui te convient."
+      ],
+      questOffer:  "J'ai trois besoins. Greyback à abattre, le Veilleur du Seuil à neutraliser, et de l'Aconit pour Lupin. Choisis.",
+      questActive: "Le travail avance ?",
+      questReady:  "Bien joué. L'Ordre te doit cela."
+    }
+  },
+
+  {
+    id:    "marchand_clandestin",
+    name:  "Marchand Clandestin",
+    title: "Receleur d'équipement Auror",
+    sprite: "vendeur",
+    icon:  "🎒",
+    portraitImg: "img/npc/marchand_clandestin.png",
+    placement: { floor: 8, anchor: "any" },
+    wares: [
+      { id: "casque_auror" },
+      { id: "bottes_renforcees" },
+      { id: "cape_combat" },
+      { id: "anneau_anti_magie" },
+      { id: "potion_lune" }
+    ],
+    buyback: { default: 0.40 },
+    dialogues: {
+      greeting: [
+        "Pssst. Ferme derrière toi. Je n'ai rien à vendre que des choses... récupérées. Sur le terrain.",
+        "Du matériel d'Auror, presque neuf. Les anciens propriétaires n'en ont plus besoin, eux. Tu vois ce que je veux dire."
+      ],
+      idleRandom: [
+        "Si on te demande, tu m'as jamais vu.",
+        "Le casque, j'l'ai retrouvé dans un tas de feuilles. Le sang est parti au lavage.",
+        "Cette cape arrête à peu près tout. Sauf le regard d'un Détraqueur — mais ça, rien ne l'arrête.",
+        "L'Élixir de Lune, c'est ma fierté. Distillé moi-même. Goûte avant de juger."
+      ]
+    }
   }
 ];
 

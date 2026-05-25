@@ -1445,6 +1445,132 @@ const MONSTERS = [
     drops:  [{ itemId: "potion_m", chance: 0.12 }]
   },
 
+  // ════════════════════════════════════════════
+  // PHASE 3 — TRANCHE ÉTAGE 8 « LE SEUIL »
+  // (cf. .claude/plans/content-audit-stabilization.md §5.1)
+  // 2 boss (canon + original) + 2 monstres d'appoint
+  // ════════════════════════════════════════════
+
+  {
+    id:       "fenrir_greyback",
+    epic:     true,
+    name:     "Fenrir Greyback",
+    icon:     "🐺",
+    imgSrc:   "img/monsters/fenrir_greyback.png",
+    category: "humain",
+    desc:     "Fenrir Greyback gronde, ses crocs jaunis dégoulinant de bave !",
+    lore:     "Le plus tristement célèbre des loups-garous. Il se délectait de mordre les enfants pour grossir sa meute. Allié de Voldemort, il aimait sa condition autant qu'il aimait l'imposer aux autres.",
+    habitat:  "Forêts profondes et abords corrompus du château",
+    anecdote: "C'est lui qui a contaminé Remus Lupin enfant, en représailles d'un refus paternel. Plus tard, sous forme humaine en pleine bataille, il mordra Bill Weasley — un loup-garou diurne, sans pleine lune.",
+    danger:   9,
+    minFloor: 8, maxFloor: null, weight: 1,
+    hp: 95, atk: 24, def: 6, mag: 5, agi: 14, lck: 9,
+    scale: 0.34,
+    abilities: [
+      { name: "Morsure Infectieuse", icon: "🦷", desc: "Une morsure brutale qui saigne", effect: "status", statusId: "bleed", power: 8, chance: 0.40, turns: 3 },
+      { name: "Frénésie Lycanthrope",icon: "🌕", desc: "Se gonfle de rage et se ressource", effect: "heal", power: 12, chance: 0.20 },
+      { name: "Coup de Griffes",     icon: "🩸", desc: "Lacération profonde",            effect: "damage", power: 18, chance: 0.45 },
+      { name: "Hurlement Glaçant",   icon: "😱", desc: "Pétrifie de terreur",            effect: "status", statusId: "fear", power: 0, chance: 0.20, turns: 2 }
+    ],
+    ai: "aggressive",
+    weak:   ["lumière"],
+    xp: 140, gold: { min: 60, max: 90 },
+    drops:  [
+      { itemId: "essence_tenebres",  chance: 0.80 },
+      { itemId: "essence_tenebres",  chance: 0.50 },
+      { itemId: "potion_lune",       chance: 0.50 },
+      { itemId: "anneau_runique",    chance: 0.20 }
+    ]
+  },
+
+  {
+    id:       "veilleur_seuil",
+    epic:     true,
+    name:     "Veilleur du Seuil",
+    icon:     "🗿",
+    imgSrc:   "img/monsters/veilleur_seuil.png",
+    category: "être magique",
+    desc:     "Un colosse runique se dresse, ses sceaux pulsent d'une lumière froide...",
+    lore:     "Gardien antique scellé dans la pierre par des runes oubliées avant la fondation de Poudlard. Il veille sur les passages qui mènent aux Profondeurs et n'autorise nul franchissement.",
+    habitat:  "Seuils runiques entre les paliers du château",
+    anecdote: "Façonné par des sorciers anonymes pour protéger les profondeurs de toute intrusion. Sa cible naturelle est quiconque s'attarde près d'un passage scellé — y compris ceux qui devraient pouvoir passer.",
+    danger:   9,
+    minFloor: 8, maxFloor: null, weight: 1,
+    hp: 140, atk: 14, def: 16, mag: 18, agi: 5, lck: 4,
+    scale: 0.30,
+    abilities: [
+      { name: "Onde Runique",        icon: "💠", desc: "Onde lumineuse qui étourdit",   effect: "status", statusId: "stun", power: 0, chance: 0.30, turns: 1 },
+      { name: "Sceau de Lumière",    icon: "✨", desc: "Frappe magique en croix",       effect: "damage", power: 16, chance: 0.40 },
+      { name: "Régénération Runique",icon: "💜", desc: "Les runes se rallument",        effect: "heal",   power: 18, chance: 0.20 },
+      { name: "Dissipation Sacrée",  icon: "❌", desc: "Brise les protections magiques",effect: "dispel", chance: 0.30 }
+    ],
+    ai: "cautious",
+    resist: ["physique", "ténèbres"],
+    weak:   ["foudre"],
+    xp: 160, gold: { min: 80, max: 120 },
+    drops:  [
+      { itemId: "page_grimoire",     chance: 0.80 },
+      { itemId: "page_grimoire",     chance: 0.50 },
+      { itemId: "essence_tenebres",  chance: 0.40 },
+      { itemId: "cor_pegasse",       chance: 0.20 }
+    ]
+  },
+
+  {
+    id:       "loup_garou_adulte",
+    name:     "Loup-Garou Adulte",
+    icon:     "🐺",
+    imgSrc:   "img/monsters/loup_garou_adulte.png",
+    category: "bête",
+    desc:     "Un loup-garou massif aux poils gris bondit hors des ombres !",
+    lore:     "Loup-garou en pleine maturité, dont la force et la rage ont décuplé. Sans potion Tue-Loup, il devient l'incarnation pure du mal lupin.",
+    habitat:  "Profondeurs et passages obscurs",
+    danger:   8,
+    minFloor: 8, maxFloor: null, weight: 4,
+    hp: 62, atk: 18, def: 5, mag: 4, agi: 13, lck: 7,
+    scale: 0.28,
+    abilities: [
+      { name: "Morsure Profonde", icon: "🦷", desc: "Saigne durablement",      effect: "status", statusId: "bleed", power: 6, chance: 0.30, turns: 3 },
+      { name: "Charge Bestiale",  icon: "💨", desc: "Course rageuse",          effect: "damage", power: 14, chance: 0.40 },
+      { name: "Hurlement",        icon: "🐺", desc: "Cri qui glace le sang",   effect: "status", statusId: "fear", power: 0, chance: 0.15, turns: 1 }
+    ],
+    ai: "aggressive",
+    weak:   ["lumière"],
+    xp: 60, gold: { min: 20, max: 35 },
+    drops:  [
+      { itemId: "potion_m",     chance: 0.20 },
+      { itemId: "herbe_aconit", chance: 0.30 }
+    ]
+  },
+
+  {
+    id:       "auror_corrompu",
+    name:     "Auror Corrompu",
+    icon:     "🪄",
+    imgSrc:   "img/monsters/auror_corrompu.png",
+    category: "humain",
+    desc:     "Un Auror dont la magie a viré au noir lève sa baguette contre vous...",
+    lore:     "Un Auror jadis fier de défendre le monde sorcier, retourné par les Ténèbres. Il manie les sortilèges qu'il combattait autrefois — avec la même précision mais une intention inverse.",
+    habitat:  "Avant-poste corrompu de l'Ordre, étages 7+",
+    danger:   7,
+    minFloor: 7, maxFloor: null, weight: 4,
+    hp: 50, atk: 14, def: 8, mag: 14, agi: 11, lck: 9,
+    scale: 0.28,
+    abilities: [
+      { name: "Stupefix Inversé",   icon: "⚡", desc: "Stupefix tourné contre vous", effect: "status", statusId: "stun", power: 0, chance: 0.20, turns: 1 },
+      { name: "Expelliarmus Sombre",icon: "⚫", desc: "Désarme et affaiblit",         effect: "weaken", power: 3, chance: 0.25 },
+      { name: "Confringo",          icon: "💥", desc: "Sortilège d'explosion",       effect: "damage", power: 14, chance: 0.35 }
+    ],
+    ai: "cautious",
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
+    xp: 65, gold: { min: 25, max: 45 },
+    drops:  [
+      { itemId: "potion_m", chance: 0.25 },
+      { itemId: "wand1",    chance: 0.08 }
+    ]
+  },
+
 ];
 
 // ════════════════════════════════════════════

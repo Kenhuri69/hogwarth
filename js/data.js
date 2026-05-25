@@ -463,6 +463,12 @@ const ITEMS = [
   { id:"anneau_resurrection",name:"Anneau de la Résurrection",icon:"💍", desc:"MAG+3 LCK+4 · Apprend Reparo", type:"acc", slot:"ring",  family:"ring_resurrection", rarity:"epic", bonusMag:3, bonusLck:4, power:3, grantsSpell:"Reparo", price:0, tint:"#1a1a1a" },
   // Amulette remise par Fumseck (quête `bouclier_phenix`). Régénère 3 PV en début de tour ennemi.
   { id:"larmes_phenix",      name:"Larmes du Phénix",         icon:"📿", desc:"DEF+2 MAG+2 · PM max +5 · Régen +3 PV/tour · Esquive +3%",type:"acc", slot:"amulet",family:"amulet_tears",      rarity:"epic", bonusDef:2, bonusMag:2, bonusSpMax:5, bonusDodgeChance:3, power:2, regenHp:3,            price:0, tint:"#e84020" },
+  // ── Phase 3 — Tranche étage 8 « Le Seuil » : équipement Auror (boutique + drop boss) ──
+  { id:"casque_auror",      name:"Casque d'Auror",       icon:"⛑️", desc:"DEF+4 MAG+2 — Casque réglementaire des Aurors", type:"armor", slot:"head",  family:"helmet_auror",    rarity:"rare", bonusDef:4, bonusMag:2, power:4, price:800 },
+  { id:"bottes_renforcees", name:"Bottes Renforcées",    icon:"🥾", desc:"DEF+3 AGI+2",                                   type:"armor", slot:"feet",  family:"boots_reinforced",rarity:"rare", bonusDef:3, bonusAgi:2, power:3, price:600 },
+  { id:"cape_combat",       name:"Cape de Combat",       icon:"🧥", desc:"DEF+3 · Esquive +5 %",                          type:"armor", slot:"cloak", family:"cloak_combat",    rarity:"rare", bonusDef:3, bonusDodgeChance:5, power:3, price:700 },
+  { id:"anneau_anti_magie", name:"Anneau Anti-Magie",    icon:"💍", desc:"DEF+2 INT+3 — Atténue les sortilèges",        type:"acc",   slot:"ring",  family:"ring_anti_magic", rarity:"rare", bonusDef:2, bonusInt:3, power:2, price:750 },
+  { id:"potion_lune",       name:"Élixir de Lune",       icon:"🌕", desc:"+45 PV — distillé sous pleine lune",          type:"consumable", effect:"heal", power:45, price:90 },
   // ── Livres de sorts ──────────────────────────────────────────
   { id:"livre_sortileges", name:"Sortilèges Standards, Vol.3", icon:"📗", desc:"Apprend Wingardium Leviosa",  type:"spellbook", spell:"Wingardium Leviosa", price:150  },
   { id:"livre_soin",       name:"Potions & Remèdes Magiques",  icon:"📘", desc:"Apprend Reparo (soin 20 PV)", type:"spellbook", spell:"Reparo",             price:110  },

@@ -55,6 +55,12 @@ const SHOP_CATALOG = [
   { id: "bottes_silence",      minFloor: 6 },
   // Premium utilitaire (cf. .claude/plans/teleportation-spell.md).
   { id: "livre_portus",        minFloor: 6 },
+  // Phase 3 — Tranche étage 8 « Le Seuil » : équipement Auror clandestin
+  { id: "casque_auror",        minFloor: 8 },
+  { id: "bottes_renforcees",   minFloor: 8 },
+  { id: "cape_combat",         minFloor: 8 },
+  { id: "anneau_anti_magie",   minFloor: 8 },
+  { id: "potion_lune",         minFloor: 8 },
   // Consommables endgame (post-victoire) — voir ENDGAME_PLAN.md §7.10
   { id: "potion_xl",           minFloor: 15 },
   { id: "potion_xl_sp",        minFloor: 15 },
