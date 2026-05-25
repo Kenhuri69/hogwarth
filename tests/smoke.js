@@ -6200,6 +6200,169 @@ async function scenarioHouseApotheoseTier() {
   await browser.close();
 }
 
+// ── Scénario : don récurrent + série Apothéose ★ N ──────────────
+// Couvre .claude/plans/house-post-tier-18.md — gold-sink endgame.
+async function scenarioHouseDonationAndStars() {
+  console.log('\n── Scénario : Don Maison + série Apothéose ★ N ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : sans tier 17 atteint, donateGoldToHouse refuse.
+  const t1 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    houseTier   = 16;
+    housePoints = 25000;
+    player.gold = 10000;
+    const ok = donateGoldToHouse(1000);
+    return { ok, gold: player.gold, points: housePoints };
+  });
+  console.log('  T1 sans tier 17 →', t1);
+  assert(t1.ok === false,        'donation doit être refusée tant que houseTier < 17');
+  assert(t1.gold === 10000,      'or ne doit pas bouger sur refus');
+  assert(t1.points === 25000,    'points ne doivent pas bouger sur refus');
+
+  // T2 : tier 17 atteint, donation de 1000 G = 200 points, or et points mis à jour.
+  const t2 = await page.evaluate(() => {
+    houseTier   = 17;
+    housePoints = 25000;
+    player.gold = 10000;
+    const ok = donateGoldToHouse(1000);
+    return { ok, gold: player.gold, points: housePoints, tier: houseTier };
+  });
+  console.log('  T2 don 1000 G →', t2);
+  assert(t2.ok === true,         'donation doit réussir avec tier 17');
+  assert(t2.gold === 9000,       '1000 G doivent être retirés');
+  assert(t2.points === 25200,    '1000 G doivent ajouter +200 points');
+
+  // T3 : plafonnement à player.gold (montant demandé > or disponible).
+  const t3 = await page.evaluate(() => {
+    houseTier   = 17;
+    housePoints = 25000;
+    player.gold = 999;
+    const ok = donateGoldToHouse(5000);
+    return { ok, gold: player.gold, points: housePoints };
+  });
+  console.log('  T3 plafonnement →', t3);
+  assert(t3.ok === true,         'donation doit accepter le plafonnement');
+  assert(t3.gold === 4,          'or restant = 999 % 5 = 4 G (reste non convertible)');
+  assert(t3.points === 25199,    '999 G plafonnés à 995 G = 199 points');
+
+  // T4 : franchissement tier 18 (Apothéose) — étage 22 (boucle 2) + don massif.
+  const t4 = await page.evaluate(() => {
+    victoryAchieved = true;
+    currentFloor    = 22;
+    chosenHouse     = 'Gryffondor';
+    houseTier       = 17;
+    housePoints     = 44999;   // 1 pt avant Apothéose
+    player.gold     = 100;
+    const atkBefore = party[0]._baseAtk;
+    donateGoldToHouse(50);    // +10 pts → 45009 → franchit Apothéose
+    return { tier: houseTier, points: housePoints, atkGain: party[0]._baseAtk - atkBefore };
+  });
+  console.log('  T4 franchit Apothéose →', t4);
+  assert(t4.tier === 18,         'tier 18 (Apothéose) doit se franchir via donation');
+  assert(t4.atkGain === 3,       'bonus +3 ATK du palier Apothéose doit s\'appliquer');
+
+  // T5 : franchir ★ 1 (61 000 pts) — étage 22, tier 18 déjà acquis.
+  const t5 = await page.evaluate(() => {
+    currentFloor = 22;
+    chosenHouse  = 'Gryffondor';
+    houseTier    = 18;
+    housePoints  = 60999;
+    player.gold  = 100;
+    const atkBefore = party[0]._baseAtk;
+    const strBefore = party[0]._baseStr;
+    donateGoldToHouse(50);    // +10 pts → 61009 → ★ 1 (seuil 61 000)
+    return { tier: houseTier, points: housePoints,
+             atkGain: party[0]._baseAtk - atkBefore,
+             strGain: party[0]._baseStr - strBefore };
+  });
+  console.log('  T5 ★ 1 franchi →', t5);
+  assert(t5.tier === 19,         '★ 1 → houseTier = 19');
+  assert(t5.atkGain === 1,       '★ 1 → +1 ATK (stat principale Gryffondor)');
+  assert(t5.strGain === 0,       '★ 1 → pas de STR (cadence tous les 2 ★)');
+
+  // T6 : franchir ★ 2 (79 000 pts) — vérifie +1 STR (secondaire, n%2=0).
+  const t6 = await page.evaluate(() => {
+    currentFloor = 22;
+    houseTier    = 19;
+    housePoints  = 78999;
+    player.gold  = 100;
+    const strBefore = party[0]._baseStr;
+    const lckBefore = party[0]._baseLck;
+    donateGoldToHouse(50);    // +10 → 79009 → ★ 2
+    return { tier: houseTier, strGain: party[0]._baseStr - strBefore,
+             lckGain: party[0]._baseLck - lckBefore };
+  });
+  console.log('  T6 ★ 2 franchi →', t6);
+  assert(t6.tier === 20,         '★ 2 → houseTier = 20');
+  assert(t6.strGain === 1,       '★ 2 → +1 STR (cadence tous les 2 ★)');
+  assert(t6.lckGain === 0,       '★ 2 → pas de LCK (cadence tous les 5 ★)');
+
+  // T7 : franchir ★ 5 d'un coup depuis ★ 2 (don massif), vérifier +1 LCK
+  // au passage et cumul correct de stats sur 3 étoiles (★3, ★4, ★5).
+  const t7 = await page.evaluate(() => {
+    currentFloor = 22;
+    houseTier    = 20;        // ★ 2
+    housePoints  = 79000;
+    // ★ 5 seuil = 45000 + 75000 + 25000 = 145000
+    // depuis 79 000 → besoin de 66 000 pts = 330 000 G
+    player.gold  = 500000;
+    const atkBefore = party[0]._baseAtk;
+    const strBefore = party[0]._baseStr;
+    const lckBefore = party[0]._baseLck;
+    donateGoldToHouse(400000);
+    return { tier: houseTier, points: housePoints,
+             atkGain: party[0]._baseAtk - atkBefore,
+             strGain: party[0]._baseStr - strBefore,
+             lckGain: party[0]._baseLck - lckBefore };
+  });
+  console.log('  T7 ★ 5 franchi en cascade →', t7);
+  // ★3 = +1 ATK seul, ★4 = +1 ATK + +1 STR (pair), ★5 = +1 ATK + +1 LCK (multiple de 5).
+  assert(t7.tier === 23,         '★ 5 → houseTier = 23 (18 + 5)');
+  assert(t7.atkGain === 3,       '3 étoiles franchies → +3 ATK');
+  assert(t7.strGain === 1,       'STR : ★ 4 seul (pair) → +1');
+  assert(t7.lckGain === 1,       '★ 5 multiple de 5 → +1 LCK');
+
+  // T8 : gate Boucle Ténébreuse 2 — étage 12 (boucle 1) doit bloquer ★ N
+  // malgré housePoints suffisants.
+  const t8 = await page.evaluate(() => {
+    currentFloor = 12;          // boucle 1, gate refusée
+    chosenHouse  = 'Gryffondor';
+    houseTier    = 18;
+    housePoints  = 200000;
+    checkHouseLevelUp();
+    return { tier: houseTier };
+  });
+  console.log('  T8 gate boucle 2 →', t8);
+  assert(t8.tier === 18,         'étoiles bloquées hors Boucle Ténébreuse 2');
+
+  // T9 : donationIntroPlayed bascule à true à la 1ʳᵉ ouverture de la modale.
+  const t9 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    houseTier   = 17;
+    donationIntroPlayed = false;
+    openHouseDonationModal();
+    const after1 = donationIntroPlayed;
+    closeHouseDonationModal();
+    // 2ème ouverture
+    openHouseDonationModal();
+    const after2 = donationIntroPlayed;
+    closeHouseDonationModal();
+    return { after1, after2 };
+  });
+  console.log('  T9 intro joué une fois →', t9);
+  assert(t9.after1 === true,     'intro doit basculer donationIntroPlayed à true');
+  assert(t9.after2 === true,     'donationIntroPlayed reste à true ensuite');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Don Maison + série Apothéose ★ N OK');
+  await browser.close();
+}
+
 // ── Scénario : récompenses Maison remises par les Chefs de Maison ──
 async function scenarioHouseRewardFlow() {
   console.log('\n── Scénario : Récompense Maison remise par PNJ ──');
@@ -11625,7 +11788,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

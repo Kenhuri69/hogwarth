@@ -191,6 +191,7 @@ function chooseHouse(house) {
   chosenHouse = house;
   housePoints = 0;
   houseTier   = 0;
+  donationIntroPlayed = false;
   pendingHouseRewards = new Set();
   document.getElementById('house-select-screen').style.display = 'none';
   applyHeroSelection(_pendingHeroKeys, _pendingPartySize);
@@ -336,6 +337,52 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
     recalculateStats();
     updateUI();
   });
+
+  // ── Série Apothéose ★ N (génératrice, post-tier 18) ──────────
+  // Décision .claude/plans/house-post-tier-18.md (amendée 2026-05-25).
+  // Une fois Apothéose franchi (tier 18) ET la Boucle Ténébreuse 2 active
+  // (étages 21+, `requiresDarkTier: 2`), `houseTier` continue d'incrémenter
+  // — chaque ★ N correspond à `houseTier = 18 + N`. Pas d'item ni de sort,
+  // uniquement des bonus de stats à 4 cadences. Helpers purs définis dans
+  // state.js : `_starGeneratorBonus(N, gen)` et `_starGeneratorMsg(N, b, gen)`.
+  if (houseTier >= 18 && bonuses.starGenerator) {
+    const gen = bonuses.starGenerator;
+    const ti  = (typeof endgameTierIndex === 'function')
+      ? endgameTierIndex(currentFloor) : 0;
+    if (ti >= (gen.requiresDarkTier || 0)) {
+      let starN = houseTier - 18;
+      while (true) {
+        const nextN     = starN + 1;
+        const threshold = 45000 + 15000 * nextN + 1000 * nextN * nextN;
+        if (housePoints < threshold) break;
+
+        const bonus = _starGeneratorBonus(nextN, gen);
+        houseTier   = 18 + nextN;
+        addMsg(_starGeneratorMsg(nextN, bonus, gen), 'magic');
+        AudioSystem.playLevelUp();
+
+        party.forEach(c => {
+          Object.keys(bonus).forEach(k => {
+            if (typeof c[k] !== 'number') return;
+            c[k] += bonus[k];
+            // hpMax / spMax : régénère aussi la valeur courante (sans dépasser).
+            if (k === 'hpMax') c.hp = Math.min(c.hpMax, c.hp + bonus[k]);
+            if (k === 'spMax') c.sp = Math.min(c.spMax, c.sp + bonus[k]);
+          });
+        });
+
+        // Voix off du Chef de Maison (samples optionnels — silence si absents).
+        const ctx = (nextN === 1)        ? 'apotheose_star_first'
+                  : (nextN % 10 === 0)   ? 'apotheose_star_milestone'
+                  :                        'apotheose_star';
+        if (typeof _playDonationVoice === 'function') _playDonationVoice(ctx);
+
+        starN = nextN;
+      }
+      recalculateStats();
+      updateUI();
+    }
+  }
 }
 
 // Palier capstone V3 (« Apothéose », tier 18) : éveille un passif

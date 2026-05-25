@@ -121,6 +121,30 @@ LINES = {
          "entraînée, très longtemps, à ne pas pleurer devant vous."),
         ("mcgonagall_done_1",
          "Vous avez prouvé votre valeur. Gryffondor peut être fier."),
+        # ── Don récurrent à la Maison (gold-sink endgame) ──
+        ("mcgonagall_donation_intro",
+         "Vous êtes parvenu au cœur de notre Maison, Potter. Si la fortune "
+         "vous sourit, sachez que Gryffondor accueille les contributions de "
+         "ses fils et filles les plus fidèles."),
+        ("mcgonagall_donation_offer",
+         "Que comptez-vous offrir à Gryffondor aujourd'hui ?"),
+        ("mcgonagall_donation_small",
+         "Merci. Chaque galion compte pour les générations à venir."),
+        ("mcgonagall_donation_large",
+         "Voilà une générosité digne du Lion. Gryffondor n'oublie pas ce "
+         "que vous faites pour elle aujourd'hui."),
+        ("mcgonagall_donation_refuse",
+         "Revenez quand vos poches seront plus garnies, Potter. Inutile "
+         "d'humilier votre Maison."),
+        # ── Série Apothéose ★ N (post-tier 18) ──
+        ("mcgonagall_apotheose_star_first",
+         "Vous voilà au-delà de tout ce que je pensais voir. Première étoile "
+         "de l'Apothéose, Potter. Le Lion vous reconnaît parmi les siens."),
+        ("mcgonagall_apotheose_star",
+         "Une étoile de plus à votre constellation. Continuez, Potter."),
+        ("mcgonagall_apotheose_star_milestone",
+         "Dix étoiles. Vous franchissez un seuil que peu pourront même "
+         "apercevoir. Gryffondor s'incline."),
     ],
     "rogue": [
         ("rogue_greeting_1",
@@ -158,6 +182,28 @@ LINES = {
         ("rogue_idle_7",
          "Il y a un souvenir que je garderai jusqu'au dernier souffle. "
          "Toujours. Ne me demandez pas lequel."),
+        # ── Don récurrent à la Maison (gold-sink endgame) ──
+        ("rogue_donation_intro",
+         "Tiens, Potter. Vous découvrez enfin que l'ambition se paie en or "
+         "aussi bien qu'en sang. Serpentard accepte vos offrandes."),
+        ("rogue_donation_offer",
+         "Combien êtes-vous prêt à laisser sur la table aujourd'hui ?"),
+        ("rogue_donation_small",
+         "Soit. Un début."),
+        ("rogue_donation_large",
+         "Voilà qui ressemble enfin à une ambition. Serpentard saura quoi "
+         "en faire — soyez assuré que vous ne reverrez pas un galion."),
+        ("rogue_donation_refuse",
+         "Mendier serait plus digne que ceci. Revenez avec quelque chose "
+         "à offrir, ou ne revenez pas."),
+        # ── Série Apothéose ★ N (post-tier 18) ──
+        ("rogue_apotheose_star_first",
+         "Une étoile au revers du Serpent. Vous m'étonnez, Potter. Une fois."),
+        ("rogue_apotheose_star",
+         "Une étoile de plus. Le venin se distille. Continuez."),
+        ("rogue_apotheose_star_milestone",
+         "Dix étoiles. Je consens à reconnaître la patience qu'il vous a "
+         "fallu. Serpentard vous garde."),
     ],
     "flitwick": [
         ("flitwick_greeting_1",
@@ -198,6 +244,30 @@ LINES = {
         ("flitwick_idle_7",
          "J'ai vu des duels où l'on riait au premier sort. Plus personne "
          "ne riait au dernier."),
+        # ── Don récurrent à la Maison (gold-sink endgame) ──
+        ("flitwick_donation_intro",
+         "Oh, mais quelle agréable surprise ! Vous avez atteint le palier "
+         "qui ouvre nos coffres aux contributions. Serdaigle vous remercie "
+         "par avance."),
+        ("flitwick_donation_offer",
+         "Eh bien, eh bien ! Combien souhaitez-vous nous offrir ?"),
+        ("flitwick_donation_small",
+         "Magnifique ! Vous voyez, tout s'additionne."),
+        ("flitwick_donation_large",
+         "Stupéfiant ! Une telle générosité mérite tous nos honneurs. "
+         "Serdaigle gravera votre nom dans le marbre."),
+        ("flitwick_donation_refuse",
+         "Hum, vos poches semblent un peu légères aujourd'hui. Revenez "
+         "quand le compte y sera, voulez-vous ?"),
+        # ── Série Apothéose ★ N (post-tier 18) ──
+        ("flitwick_apotheose_star_first",
+         "Première étoile ! Le calcul devient passionnant. Vous entrez dans "
+         "la constellation Serdaigle."),
+        ("flitwick_apotheose_star",
+         "Une étoile de plus dans votre ciel ! Excellent, excellent."),
+        ("flitwick_apotheose_star_milestone",
+         "Dix étoiles ! Mathématiquement remarquable. Je consigne ce résultat "
+         "dans nos archives sur-le-champ."),
     ],
     "sprout": [
         ("sprout_greeting_1",
@@ -237,6 +307,28 @@ LINES = {
          "On m'a un jour demandé des Mandragores pour ranimer des enfants "
          "pétrifiés. Je les ai cultivées en pleurant. Une serre garde bien "
          "les secrets."),
+        # ── Don récurrent à la Maison (gold-sink endgame) ──
+        ("sprout_donation_intro",
+         "Oh, mon cher enfant, comme c'est gentil de penser à nous ! "
+         "Poufsouffle accueille volontiers tout ce que tu voudras partager."),
+        ("sprout_donation_offer",
+         "Alors, dis-moi, combien souhaites-tu donner à notre Maison ?"),
+        ("sprout_donation_small",
+         "Merci, c'est très généreux. Cela ira aux serres, sois-en sûr."),
+        ("sprout_donation_large",
+         "Mon Dieu, quelle générosité ! Tu nourriras nos plantes et nos "
+         "élèves pour des saisons entières. Poufsouffle te bénit."),
+        ("sprout_donation_refuse",
+         "Allons, allons, ne te mets pas dans l'embarras. Reviens quand "
+         "tu auras quelques galions de plus."),
+        # ── Série Apothéose ★ N (post-tier 18) ──
+        ("sprout_apotheose_star_first",
+         "Une première étoile, mon enfant. Comme une fleur qui s'ouvre. "
+         "Poufsouffle est si fière de toi."),
+        ("sprout_apotheose_star",
+         "Encore une étoile. Tu fais notre joie."),
+        ("sprout_apotheose_star_milestone",
+         "Dix étoiles ! Les racines de Poudlard portent ton nom, mon enfant."),
     ],
     # Incantations des sortilèges (Vague B). Le texte synthétisé est
     # l'incantation prononcée ; la clé OGG est mappée 1:1 dans

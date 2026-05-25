@@ -216,6 +216,12 @@ window.UX_safe = new Proxy({}, {
     { name: 'closeVictoryScreen', source: 'endgame.js',      kind: 'fn'  },
     { name: 'returnToMenuFromVictory', source: 'endgame.js', kind: 'fn'  },
 
+    // ── Don à la Maison (gold-sink post-tier 17) ──
+    { name: 'donateGoldToHouse',       source: 'house-donation.js', kind: 'fn'  },
+    { name: 'openHouseDonationModal',  source: 'house-donation.js', kind: 'fn'  },
+    { name: 'closeHouseDonationModal', source: 'house-donation.js', kind: 'fn'  },
+    { name: 'confirmHouseDonation',    source: 'house-donation.js', kind: 'fn'  },
+
     // ── Endgame Tranche 2 (Forge + Bibliothèque + Set Ténèbres) ──
     { name: 'openForge',            source: 'forge.js',      kind: 'fn'  },
     { name: 'upgradeItemAtForge',   source: 'forge.js',      kind: 'fn'  },

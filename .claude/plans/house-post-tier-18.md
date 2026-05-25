@@ -1,14 +1,20 @@
 # Plan B — Don récurrent à la Maison (sink endgame illimité)
 
 **Date** : 2026-05-25
-**Branche** : `claude/plans-b-c-endgame-sinks`
-**Statut** : ⏳ Plan de design — **aucune modification de code à ce stade**.
+**Branche** : `claude/house-tier-plan-launch-6KQ9B`
+**Statut** : 🚧 En cours — design amendé 2026-05-25 (série Apothéose ★ N infinie).
 **Origine** : Piste B du `.claude/plans/game-economy-gold-audit.md §5.6`,
 hors-scope V1, validée en suite.
 
-> ⚠️ Plan vivant (§5 guidelines). Implémentation conditionnée à une
-> validation explicite. Tant que pas validé : aucune modification de
-> `js/state.js`, `js/quests.js`, `js/npc-dialog.js`, etc.
+> Plan vivant (§5 guidelines). Décisions utilisateur 2026-05-25 :
+> 1. Lancer ce plan (pas `houses-mythe-tier-v3.md`, déjà livré).
+> 2. Bouton don dispo **dès tier 17** (recommandation §4.3).
+> 3. Gate `requiresDarkTier: 2` (Option A §3.5).
+> 4. Tiers 19+ = **Apothéose ★ N génératif infini** (au lieu de 6 paliers durs 19-24).
+> 5. Bonus par étoile : +1 stat principale Maison · bonus complémentaire
+>    aux stades multiples de 5 (cadence à valider §3.2).
+> 6. Voix off : **1 sample générique par chef** pour toute la série étoile
+>    (au lieu de 56 samples). Voir §3.4 réécrit.
 
 ---
 
@@ -101,31 +107,70 @@ Justification :
   équivalents. Suffisant pour rendre le don attractif mais pas trivial.
 - Plafond auto : 50k G ≈ 10000 points = 1 palier endgame complet.
 
-### 3.2 Nouveaux paliers 19+ (capstone séries)
+### 3.2 Série « Apothéose ★ N » — paliers génératifs infinis
 
-Au-delà d'Apothéose, ajouter une série de paliers cosmétiques /
-mini-bonus, accessibles uniquement via don récurrent (les kills à eux
-seuls peuvent les atteindre, mais beaucoup plus lentement).
+**Décision 2026-05-25** : au lieu de 6 tiers durs 19-24, le palier 18
+(Apothéose) ouvre une série **génératrice infinie** `Apothéose ★ N`.
+`houseTier` continue d'incrémenter (19 = ★ 1, 20 = ★ 2, …) ; aucun item
+ni sort exclusif au-delà du tier 18 — la série apporte de petits bonus
+cumulatifs uniquement.
 
-| Tier | Label              | Threshold | Bonus proposé |
-|------|--------------------|-----------|---------------|
-| 19   | Légende vivante    | 60 000    | +1 stat de base (Maison) + cosmétique : couronne dorée sur portrait |
-| 20   | Témoin de l'âge    | 80 000    | +1 stat + halo doré permanent sur portrait |
-| 21   | Cœur de Poudlard   | 110 000   | +1 stat + 5 % réduction du coût des sorts |
-| 22   | Au-delà des Maisons| 150 000   | +1 stat + +5 % esquive |
-| 23   | Aspect mythique    | 200 000   | +1 stat + +10 % regen PV/PM hors combat |
-| 24   | Au-delà des dieux  | 300 000   | +2 stats + titre « Aspect mythique »|
+**Mécanique** : pas d'entrée statique dans `HOUSE_BONUSES[h].tiers[]`
+au-delà du tier 18. Un nouveau champ `starGenerator` est ajouté à chaque
+Maison ; `checkHouseLevelUp()` boucle dynamiquement quand `houseTier
+>= 18`. Cf. §3.5.
 
-**Tous accessibles via combinaison kills + dons.** Le don accélère mais
-ne court-circuite pas — c'est un cumul classique.
+#### Formule de seuil (décision 2026-05-25)
 
-**Coût total cumulé pour atteindre tier 24** : depuis 45 000 points
-(Apothéose) → 300 000 points = 255 000 housePoints supplémentaires.
-À 1pt = 5G, **1 275 000 G en don pur** (si zéro kills entre 18 et 24).
-Plus réaliste : 100-200k G en don + kills passifs.
+**Croissance polynomiale douce : `threshold(★ N) = 45 000 + 15 000 × N + 1 000 × N²`.**
 
-Ordre de grandeur : un run très long (50 heures+) peut atteindre tier 22.
-Tier 24 est explicitement utopique — c'est un objectif méta.
+| ★ N   | Seuil cumulé | Don pur si zéro kill (1pt=5G) |
+|-------|--------------|-------------------------------|
+| ★ 1   | 61 000       | 80 000 G                      |
+| ★ 2   | 79 000       | 170 000 G                     |
+| ★ 5   | 145 000      | 500 000 G                     |
+| ★ 10  | 295 000      | 1 250 000 G                   |
+| ★ 20  | 745 000      | 3 500 000 G                   |
+| ★ 50  | 3 295 000    | 16 250 000 G                  |
+
+Justification : la composante polynomiale `+1 000 × N²` ajoute une
+friction croissante sur les étoiles profondes, ce qui rend les premiers
+paliers accessibles (★ 1 ≈ +16k pts depuis Apothéose, atteignable par
+une session) et les paliers très profonds quasi-asymptotiques. Empêche
+un farm de don industriel qui transformerait ★ 50 en routine.
+
+#### Bonus par étoile (décision 2026-05-25)
+
+Stats principales / secondaires / réserve par Maison :
+
+| Maison | Principale | Secondaire (tous les 2 ★) | Réserve (tous les 10 ★) |
+|--------|-----------|----------------------------|--------------------------|
+| Gryffondor  | `_baseAtk` | `_baseStr` (force du Lion)   | `hpMax +5`               |
+| Serpentard  | `_baseMag` | `_baseInt` (esprit affûté)   | `spMax +5`               |
+| Serdaigle   | `_baseMag` | `_baseInt` (sagesse)         | `spMax +5`               |
+| Poufsouffle | `_baseDef` | `_baseEnd` (endurance)       | `hpMax +5`               |
+
+Cadence :
+
+| Cadence | Bonus |
+|---------|-------|
+| Chaque ★ | **+1 stat principale Maison** |
+| Tous les 2 ★ (★ 2, 4, 6, …) | **+1 stat secondaire Maison** |
+| Tous les 5 ★ (★ 5, 10, 15, …) | **+1 LCK** |
+| Tous les 10 ★ (★ 10, 20, …) | **+5 PV max** (Gryff/Pouf) ou **+5 PM max** (Slyth/Serd) |
+
+Cumul à ★ 10 (depuis tier 18) : +10 stat principale · +5 stat secondaire
+· +2 LCK · +5 PV/PM max. Power-creep mesuré, identité Maison renforcée.
+
+Pas d'item ni de sort exclusif. Pas de cosmétique — reporté §6 hors-scope.
+
+#### Coût total cumulé
+
+- ★ 10 = 250 000 pts depuis Apothéose = 1,25 M G en don pur.
+- ★ 20 = 700 000 pts = 3,5 M G.
+- ★ 50 = 3,25 M pts = 16 M G — purement théorique.
+
+Le sink illimité est tenu : aucun "fond" jamais atteint.
 
 ### 3.3 UI : dialogue Chef de Maison
 
@@ -151,17 +196,21 @@ en une fois s'il veut. Risque : tap accidentel → confirmation explicite
 au-delà de 5000 G (« Donner 12 500 G ? Cela fera passer ta Maison de
 tier 19 à tier 20. Confirmer ? »).
 
-### 3.4 Voix off des Directeurs (samples OGG)
+### 3.4 Voix off des Directeurs (samples OGG) — version minimale
 
-Tous les dialogues de Directeur sont déjà voicés via `tools/gen_voice_edge.py`
-(Microsoft Edge TTS, gratuit). Le don récurrent doit livrer **son propre lot
-de samples** pour ne pas casser l'immersion (un nouveau bouton silencieux
-trancherait avec les greeting/offer/ready/done existants).
+**Décision 2026-05-25** : au lieu des 56 samples initialement proposés
+(intro / offer × 2 / small × 3 / large / tier 19-24 × 6 + refuse), la
+série Apothéose ★ N étant génératrice infinie, on ne peut pas voicer
+chaque étoile individuellement. On passe à **8 samples par chef** =
+**32 OGG total**.
+
+Tous les dialogues de Directeur sont déjà voicés via
+`tools/gen_voice_edge.py` (Microsoft Edge TTS, gratuit).
 
 #### 3.4.1 Convention de naming
 
-`audio/voice/<chef>_donation_<contexte>_<n>.ogg`, déclenchée par
-`AudioSystem.playVoice('<chef>_donation_<contexte>_<n>')`.
+`audio/voice/<chef>_donation_<contexte>.ogg`, déclenchée par
+`AudioSystem.playVoice('<chef>_donation_<contexte>')`.
 
 Mapping `<chef>` (existant dans `_VOICE_SAMPLES` + `gen_voice_edge.py`) :
 | Maison | `<chef>` | Voix Edge TTS |
@@ -171,245 +220,265 @@ Mapping `<chef>` (existant dans `_VOICE_SAMPLES` + `gen_voice_edge.py`) :
 | Serdaigle   | `flitwick`   | `en-US-AndrewMultilingualNeural` (rate +10 %, pitch +24 Hz) |
 | Poufsouffle | `sprout`     | `fr-FR-VivienneMultilingualNeural` (rate -3 %, pitch ±0) |
 
-#### 3.4.2 Inventaire des samples par chef (14 par chef × 4 = 56 OGG)
+#### 3.4.2 Inventaire des samples par chef (8 × 4 chefs = 32 OGG)
 
-| Contexte | Trigger | Variantes | Quand |
-|----------|---------|-----------|-------|
-| `donation_intro_1`   | Apparition du bouton « 💰 Faire un don » la 1ʳᵉ fois | 1 | Premier ouvrir du dialogue post-tier-17 |
-| `donation_offer_1/2` | Ouverture de `#house-donation-modal` | 2 | À chaque ouverture (aléatoire) |
-| `donation_small_1/2/3` | Don confirmé < 5 000 G | 3 | Après validation (aléatoire) |
-| `donation_large_1`   | Don confirmé ≥ 5 000 G | 1 | Solennel, jamais randomisé |
-| `donation_tier_19_1` | Franchissement tier 19 | 1 | `checkHouseLevelUp` détecte 60 000 pts |
-| `donation_tier_20_1` | Franchissement tier 20 | 1 | 80 000 pts |
-| `donation_tier_21_1` | Franchissement tier 21 | 1 | 110 000 pts |
-| `donation_tier_22_1` | Franchissement tier 22 | 1 | 150 000 pts |
-| `donation_tier_23_1` | Franchissement tier 23 | 1 | 200 000 pts |
-| `donation_tier_24_1` | Franchissement tier 24 (capstone) | 1 | 300 000 pts |
-| `donation_refuse_1`  | Tentative avec < 100 G en poche | 1 | Bouton grisé déclenche message |
+| Contexte | Trigger | Quand |
+|----------|---------|-------|
+| `donation_intro`   | Apparition du bouton « 💰 Faire un don » la 1ʳᵉ fois | Premier ouvrir du dialogue post-tier-17 |
+| `donation_offer`   | Ouverture de `#house-donation-modal` | À chaque ouverture |
+| `donation_small`   | Don confirmé < 5 000 G | Après validation |
+| `donation_large`   | Don confirmé ≥ 5 000 G | Solennel |
+| `donation_refuse`  | Tentative avec < 100 G en poche | Bouton grisé déclenche message |
+| `apotheose_star`   | **Franchissement d'une ★ Apothéose** (toutes étoiles) | `checkHouseLevelUp` détecte ★ N atteinte |
+| `apotheose_star_first` | **Première étoile ★ 1 spécifiquement** | Plus solennelle, jouée une fois |
+| `apotheose_star_milestone` | **Toutes les 10 étoiles** (★ 10, ★ 20, …) | Reconnaissance des paliers profonds |
 
-**Total : 56 samples.** Production via `gen_voice_edge.py` ≈ 5 min de batch
-+ 10 min de QA d'écoute (Edge TTS peut bafouiller sur ponctuation rare).
+**Total : 32 samples.** Production via `gen_voice_edge.py` ≈ 2 min de
+batch + 5 min de QA d'écoute (le sample `apotheose_star` est joué le plus
+souvent — vérifier qu'il reste agréable sur 10-20 répétitions).
 
 #### 3.4.3 Textes proposés — McGonagall (Gryffondor)
 
 Ton : autoritaire, fière, économe, n'aime pas la flatterie mais respecte
 le devoir accompli.
 
-- `mcgonagall_donation_intro_1`
+- `mcgonagall_donation_intro`
   > « Vous êtes parvenu au cœur de notre Maison, Potter. Si la fortune
   > vous sourit, sachez que Gryffondor accueille les contributions de
   > ses fils et filles les plus fidèles. »
-- `mcgonagall_donation_offer_1`
+- `mcgonagall_donation_offer`
   > « Que comptez-vous offrir à Gryffondor aujourd'hui ? »
-- `mcgonagall_donation_offer_2`
-  > « Notre Maison saura faire bon usage de votre or, comme toujours. »
-- `mcgonagall_donation_small_1`
+- `mcgonagall_donation_small`
   > « Merci. Chaque galion compte pour les générations à venir. »
-- `mcgonagall_donation_small_2`
-  > « Bien. Continuez ainsi et nul ne pourra contester votre place. »
-- `mcgonagall_donation_small_3`
-  > « Reçu. Mes encouragements, Potter. »
-- `mcgonagall_donation_large_1`
+- `mcgonagall_donation_large`
   > « Voilà une générosité digne du Lion. Gryffondor n'oublie pas ce
   > que vous faites pour elle aujourd'hui. »
-- `mcgonagall_donation_tier_19_1`
-  > « Vous voici Légende vivante de notre Maison. Peu y sont parvenus. »
-- `mcgonagall_donation_tier_20_1`
-  > « Votre nom traversera les âges, Potter. Témoin des Maisons. »
-- `mcgonagall_donation_tier_21_1`
-  > « Vous êtes désormais le Cœur de Poudlard. Tâchez d'en être digne. »
-- `mcgonagall_donation_tier_22_1`
-  > « Au-delà des Maisons. Vous nous appartenez encore, mais à peine. »
-- `mcgonagall_donation_tier_23_1`
-  > « Aspect mythique. Je n'aurais pas cru voir cela de mon vivant. »
-- `mcgonagall_donation_tier_24_1`
-  > « Au-delà des dieux mêmes. Que les fondateurs vous accordent leur paix. »
-- `mcgonagall_donation_refuse_1`
+- `mcgonagall_donation_refuse`
   > « Revenez quand vos poches seront plus garnies, Potter. Inutile
   > d'humilier votre Maison. »
+- `mcgonagall_apotheose_star_first`
+  > « Vous voilà au-delà de tout ce que je pensais voir. Première étoile
+  > de l'Apothéose, Potter. Le Lion vous reconnaît parmi les siens. »
+- `mcgonagall_apotheose_star`
+  > « Une étoile de plus à votre constellation. Continuez, Potter. »
+- `mcgonagall_apotheose_star_milestone`
+  > « Dix étoiles. Vous franchissez un seuil que peu pourront même
+  > apercevoir. Gryffondor s'incline. »
 
 #### 3.4.4 Textes proposés — Rogue (Serpentard)
 
 Ton : sarcastique, lent, intéressé par le pouvoir, méprisant du superflu
 mais respectueux du calcul.
 
-- `rogue_donation_intro_1`
+- `rogue_donation_intro`
   > « Tiens, Potter. Vous découvrez enfin que l'ambition se paie en or
   > aussi bien qu'en sang. Serpentard accepte vos offrandes. »
-- `rogue_donation_offer_1`
+- `rogue_donation_offer`
   > « Combien êtes-vous prêt à laisser sur la table aujourd'hui ? »
-- `rogue_donation_offer_2`
-  > « Parlez. Mon temps est précieux, le vôtre… discutable. »
-- `rogue_donation_small_1`
+- `rogue_donation_small`
   > « Soit. Un début. »
-- `rogue_donation_small_2`
-  > « Mieux que rien. À peine. »
-- `rogue_donation_small_3`
-  > « Reçu. Ne vous attendez à aucun remerciement. »
-- `rogue_donation_large_1`
+- `rogue_donation_large`
   > « Voilà qui ressemble enfin à une ambition. Serpentard saura quoi
   > en faire — soyez assuré que vous ne reverrez pas un galion. »
-- `rogue_donation_tier_19_1`
-  > « Légende. Le mot est galvaudé. Pour vous, je consens à l'employer. »
-- `rogue_donation_tier_20_1`
-  > « Témoin de l'âge, Potter. Les ombres de Salazar vous toisent. »
-- `rogue_donation_tier_21_1`
-  > « Cœur de Poudlard. Le château bat à votre rythme désormais. »
-- `rogue_donation_tier_22_1`
-  > « Au-delà des Maisons. Vous échappez même à Serpentard. Curieux. »
-- `rogue_donation_tier_23_1`
-  > « Aspect mythique. Quelque chose en vous échappe au temps. »
-- `rogue_donation_tier_24_1`
-  > « Au-delà des dieux. Je m'incline, Potter. Une seule fois. »
-- `rogue_donation_refuse_1`
+- `rogue_donation_refuse`
   > « Mendier serait plus digne que ceci. Revenez avec quelque chose
   > à offrir, ou ne revenez pas. »
+- `rogue_apotheose_star_first`
+  > « Une étoile au revers du Serpent. Vous m'étonnez, Potter. Une fois. »
+- `rogue_apotheose_star`
+  > « Une étoile de plus. Le venin se distille. Continuez. »
+- `rogue_apotheose_star_milestone`
+  > « Dix étoiles. Je consens à reconnaître la patience qu'il vous a
+  > fallu. Serpentard vous garde. »
 
 #### 3.4.5 Textes proposés — Flitwick (Serdaigle)
 
 Ton : enthousiaste, pédagogue, vif, friand de précision et de chiffres.
 
-- `flitwick_donation_intro_1`
+- `flitwick_donation_intro`
   > « Oh, mais quelle agréable surprise ! Vous avez atteint le palier
   > qui ouvre nos coffres aux contributions. Serdaigle vous remercie
   > par avance. »
-- `flitwick_donation_offer_1`
+- `flitwick_donation_offer`
   > « Eh bien, eh bien ! Combien souhaitez-vous nous offrir ? »
-- `flitwick_donation_offer_2`
-  > « Chaque galion sera converti en points d'estime, c'est calculé ! »
-- `flitwick_donation_small_1`
+- `flitwick_donation_small`
   > « Magnifique ! Vous voyez, tout s'additionne. »
-- `flitwick_donation_small_2`
-  > « Très bien, très bien. Continuons. »
-- `flitwick_donation_small_3`
-  > « Excellent ! Notre bibliothèque vous en sera reconnaissante. »
-- `flitwick_donation_large_1`
+- `flitwick_donation_large`
   > « Stupéfiant ! Une telle générosité mérite tous nos honneurs.
   > Serdaigle gravera votre nom dans le marbre. »
-- `flitwick_donation_tier_19_1`
-  > « Légende vivante ! Ah, je n'avais pas vu cela depuis Rowena
-  > elle-même. Ou presque. »
-- `flitwick_donation_tier_20_1`
-  > « Témoin de l'âge ! Vous voici inscrit dans les annales. »
-- `flitwick_donation_tier_21_1`
-  > « Cœur de Poudlard. Imaginez ! Les murs eux-mêmes vous écoutent. »
-- `flitwick_donation_tier_22_1`
-  > « Au-delà des Maisons. C'est presque… mathématiquement impossible
-  > et pourtant, vous y êtes ! »
-- `flitwick_donation_tier_23_1`
-  > « Aspect mythique. Vous dépassez les équations connues. »
-- `flitwick_donation_tier_24_1`
-  > « Au-delà des dieux. Je ferme mon livre. Aucune note ne saurait
-  > suivre cela. »
-- `flitwick_donation_refuse_1`
+- `flitwick_donation_refuse`
   > « Hum, vos poches semblent un peu légères aujourd'hui. Revenez
   > quand le compte y sera, voulez-vous ? »
+- `flitwick_apotheose_star_first`
+  > « Première étoile ! Le calcul devient passionnant. Vous entrez dans
+  > la constellation Serdaigle. »
+- `flitwick_apotheose_star`
+  > « Une étoile de plus dans votre ciel ! Excellent, excellent. »
+- `flitwick_apotheose_star_milestone`
+  > « Dix étoiles ! Mathématiquement remarquable. Je consigne ce résultat
+  > dans nos archives sur-le-champ. »
 
 #### 3.4.6 Textes proposés — Chourave (Poufsouffle)
 
 Ton : chaleureuse, terrienne, maternelle, voit la valeur des petites
 choses.
 
-- `sprout_donation_intro_1`
+- `sprout_donation_intro`
   > « Oh, mon cher enfant, comme c'est gentil de penser à nous !
   > Poufsouffle accueille volontiers tout ce que tu voudras partager. »
-- `sprout_donation_offer_1`
+- `sprout_donation_offer`
   > « Alors, dis-moi, combien souhaites-tu donner à notre Maison ? »
-- `sprout_donation_offer_2`
-  > « Que ce soit beaucoup ou peu, chaque geste compte chez nous. »
-- `sprout_donation_small_1`
+- `sprout_donation_small`
   > « Merci, c'est très généreux. Cela ira aux serres, sois-en sûr. »
-- `sprout_donation_small_2`
-  > « Bénédiction sur toi, mon enfant. Les blaireaux n'oublient pas. »
-- `sprout_donation_small_3`
-  > « Voilà qui fera grand bien. Merci, vraiment. »
-- `sprout_donation_large_1`
+- `sprout_donation_large`
   > « Mon Dieu, quelle générosité ! Tu nourriras nos plantes et nos
   > élèves pour des saisons entières. Poufsouffle te bénit. »
-- `sprout_donation_tier_19_1`
-  > « Légende vivante. Toi, parmi les nôtres. Cela me rend si fière. »
-- `sprout_donation_tier_20_1`
-  > « Témoin de l'âge. Tu as vu plus que beaucoup de fondateurs. »
-- `sprout_donation_tier_21_1`
-  > « Cœur de Poudlard. Le château t'aime comme nous t'aimons. »
-- `sprout_donation_tier_22_1`
-  > « Au-delà des Maisons. Mais reviens-nous voir parfois, hein ? »
-- `sprout_donation_tier_23_1`
-  > « Aspect mythique. Les racines de Poudlard portent ton nom. »
-- `sprout_donation_tier_24_1`
-  > « Au-delà des dieux. Je n'ai plus rien à t'apprendre, mon enfant. »
-- `sprout_donation_refuse_1`
+- `sprout_donation_refuse`
   > « Allons, allons, ne te mets pas dans l'embarras. Reviens quand
   > tu auras quelques galions de plus. »
+- `sprout_apotheose_star_first`
+  > « Une première étoile, mon enfant. Comme une fleur qui s'ouvre.
+  > Poufsouffle est si fière de toi. »
+- `sprout_apotheose_star`
+  > « Encore une étoile. Tu fais notre joie. »
+- `sprout_apotheose_star_milestone`
+  > « Dix étoiles ! Les racines de Poudlard portent ton nom, mon enfant. »
 
 #### 3.4.7 Production des samples (`tools/gen_voice_edge.py`)
 
 Procédure batch :
 
-1. Ajouter les 14 entrées par chef dans le dict `LINES` du tool —
-   tuples `("<chef>_donation_<contexte>_<n>", "<texte>")`.
+1. Ajouter les 8 entrées par chef dans le dict `LINES` du tool —
+   tuples `("<chef>_<contexte>", "<texte>")`.
 2. Lancer :
    ```bash
    python3 tools/gen_voice_edge.py mcgonagall rogue flitwick sprout
    ```
-3. QA : écouter au moins les `tier_*_1` (6 par chef × 4 = 24 samples
-   critiques narrativement). Edge TTS peut bafouiller sur les noms
-   propres rares (« Salazar » → « Salazaar »). Régénérer ces samples
-   isolément avec ponctuation ajustée si besoin.
-4. Mettre à jour `_VOICE_SAMPLES` dans `js/audio-music.js` :
-   ```diff
-   _VOICE_SAMPLES: {
-     // …
-   + mcgonagall_donation_intro_1:   'audio/voice/mcgonagall_donation_intro_1.ogg',
-   + mcgonagall_donation_offer_1:   'audio/voice/mcgonagall_donation_offer_1.ogg',
-   + // … 56 entrées au total
-   },
-   ```
-5. Précaches PWA : **rien à toucher**. La stratégie `audio/` est
-   stale-while-revalidate à la demande (cf. CLAUDE.md §PWA) — les
-   nouveaux OGG seront cachés au premier déclenchement.
+3. QA : écouter `apotheose_star` (joué le plus souvent) + tous les
+   `apotheose_star_first/milestone` (4×2 = 8 narrativement critiques).
+4. Mettre à jour `_VOICE_SAMPLES` dans `js/audio-music.js`.
+5. Précaches PWA : **rien à toucher** (stale-while-revalidate sur audio/).
 
 #### 3.4.8 Trigger côté code (helpers)
 
-Helper unifié à exposer dans `house-donation.js` :
+Helper unifié à exposer dans `js/house-donation.js` :
 
 ```js
 function _playDonationVoice(context) {
   const chef = HOUSE_BONUSES[chosenHouse]?.headOfHouseVoiceKey;
-  if (!chef) return; // safety
-  const key = `${chef}_donation_${context}`;
+  if (!chef) return;
   if (typeof AudioSystem === 'undefined') return;
-  if (typeof AudioSystem.playVoice === 'function') AudioSystem.playVoice(key);
+  if (typeof AudioSystem.playVoice === 'function') {
+    AudioSystem.playVoice(`${chef}_${context}`);
+  }
 }
 ```
 
 `headOfHouseVoiceKey` à ajouter dans `HOUSE_BONUSES` (state.js) :
 `gryff: 'mcgonagall'` / `slyth: 'rogue'` / `raven: 'flitwick'` /
-`pouf: 'sprout'`. Évite le mapping en dur dans le helper et reste
-cohérent avec les autres lookups par Maison.
+`pouf: 'sprout'`.
 
-Sélection variant : pour `offer_*` et `small_*`, picker aléatoire :
+Sélection contexte étoile dans `checkHouseLevelUp` :
+- ★ 1 → `apotheose_star_first`
+- ★ N divisible par 10 (★ 10, 20, 30…) → `apotheose_star_milestone`
+- sinon → `apotheose_star`
+
+### 3.5 Effet de levée des étoiles ★ N (génératrice)
+
+**Décision 2026-05-25** : Option A retenue. Gate `requiresDarkTier: 2`
+sur la série entière (boucle ténébreuse 2, étages 21+).
+
+Comme la série est génératrice infinie, on n'étend pas `HOUSE_BONUSES[h].tiers[]`
+avec 6 entrées hard-codées (option initiale écartée). À la place, on
+**ajoute un champ `starGenerator`** à chaque entrée Maison de
+`HOUSE_BONUSES`, consommé par `checkHouseLevelUp()` après le franchissement
+du tier 18.
+
 ```js
-const variants = { offer: 2, small: 3 };
-const n = variants[base] ? 1 + Math.floor(Math.random() * variants[base]) : 1;
-_playDonationVoice(`${base}_${n}`);
+// HOUSE_BONUSES.Gryffondor (idem schéma pour les 3 autres) :
+starGenerator: {
+  requiresDarkTier: 2,           // gate boucle ténébreuse 2 (étages 21+)
+  primaryStat:      '_baseAtk',  // ATK / MAG / MAG / DEF selon Maison
+  secondaryStat:    '_baseStr',  // STR / INT / INT / END selon Maison
+  reserveStat:      'hpMax',     // hpMax / spMax / spMax / hpMax selon Maison
+  primaryLabel:     'ATK',       // 'ATK' / 'MAG' / 'MAG' / 'DEF'
+  secondaryLabel:   'STR',       // 'STR' / 'INT' / 'INT' / 'END'
+  reserveLabel:     'PV max',    // 'PV max' / 'PM max' / 'PM max' / 'PV max'
+  thresholdAt: (n) => 45000 + 15000 * n + 1000 * n * n,
+  bonusAt:     (n) => {
+    const b = { _baseAtk: 1 };
+    if (n % 2  === 0) b._baseStr = 1;
+    if (n % 5  === 0) b._baseLck = 1;
+    if (n % 10 === 0) b.hpMax    = 5;
+    return b;
+  },
+  labelAt: (n) => `Apothéose ★ ${n}`,
+  msgAt:   (n, b) => {
+    const parts = [];
+    if (b._baseAtk) parts.push(`+${b._baseAtk} ATK`);
+    if (b._baseStr) parts.push(`+${b._baseStr} STR`);
+    if (b._baseLck) parts.push(`+${b._baseLck} LCK`);
+    if (b.hpMax)    parts.push(`+${b.hpMax} PV max`);
+    return `🦁 Apothéose ★ ${n} ! ${parts.join(' · ')}`;
+  },
+},
 ```
 
-### 3.5 Effet de levée des paliers 19+
+L'application du bonus dans `checkHouseLevelUp` traite toutes les clés
+de `bonus` de façon générique : les stats `_base*` sont additionnées
+sur chaque membre du groupe, et `hpMax` / `spMax` augmentent à la fois
+le max et la valeur courante de PV/PM (cf. patch §3.5 ci-dessous).
 
-`checkHouseLevelUp()` actuel (`main.js:273`) itère sur tous les tiers
-configurés. Il suffit d'ajouter les tiers 19-24 dans `HOUSE_BONUSES[house].tiers`
-pour que la logique existante s'applique. **Aucun code de gatekeeping
-spécifique à écrire**, hors la mécanique de don elle-même.
+**Modification de `checkHouseLevelUp()` (main.js)** :
 
-`requiresDarkTier` pour les tiers 19+ : à débattre.
-- Option A : `requiresDarkTier: 2` (même que Apothéose) — tier 19+ ne
-  débloque qu'en boucle ténébreuse 2 (étage 21+).
-- Option B : `requiresDarkTier: 3` (boucle ténébreuse 3, étage 31+) —
-  plus restrictif, mais nécessite de générer du contenu boucle 3.
+```js
+// … (boucle existante sur tiers[] inchangée)
 
-Recommandation : **Option A** (tier 19+ reste accessible en boucle 2).
-Évite de bloquer le don sur du contenu pas encore généré.
+// Série Apothéose ★ N génératrice (post-tier 18)
+if (houseTier >= 18 && bonuses.starGenerator) {
+  const gen = bonuses.starGenerator;
+  const ti = (typeof endgameTierIndex === 'function')
+    ? endgameTierIndex(currentFloor) : 0;
+  if (ti < gen.requiresDarkTier) return;  // gate boucle ténébreuse 2
+
+  let starN = houseTier - 18;  // étoile actuelle (0 = pas encore atteint)
+  while (true) {
+    const nextN = starN + 1;
+    const threshold = gen.thresholdAt(nextN);
+    if (housePoints < threshold) break;
+
+    const bonus = gen.bonusAt(nextN);
+    houseTier = 18 + nextN;
+    addMsg(gen.msgAt(nextN, bonus), 'magic');
+    AudioSystem.playLevelUp();
+
+    party.forEach(c => {
+      Object.keys(bonus).forEach(k => {
+        if (typeof c[k] !== 'number') return;
+        c[k] += bonus[k];
+        // hpMax / spMax : on ajoute aussi à la valeur courante (régen
+        // implicite à chaque étoile, sans dépasser le nouveau max).
+        if (k === 'hpMax') c.hp = Math.min(c.hpMax, c.hp + bonus[k]);
+        if (k === 'spMax') c.sp = Math.min(c.spMax, c.sp + bonus[k]);
+      });
+    });
+
+    // Voix off du chef
+    const voiceCtx = (nextN === 1) ? 'apotheose_star_first'
+                   : (nextN % 10 === 0) ? 'apotheose_star_milestone'
+                   : 'apotheose_star';
+    safeCall('_playDonationVoice', voiceCtx);
+
+    starN = nextN;
+  }
+  recalculateStats();
+  updateUI();
+}
+```
+
+Persistance : `houseTier` continue d'incrémenter au-delà de 18. Aucune
+nouvelle variable. Saves antérieures : `houseTier > 18` n'existait pas
+jusqu'ici, donc tout save est rétro-compatible. **Migration nulle.**
 
 ---
 
@@ -456,77 +525,109 @@ celle-ci d'abord ? Bouton continue / Bouton fermer »).
 
 Aucun nouveau state requis. `housePoints` et `houseTier` existent déjà.
 La sérialisation `_serializeState` n'a pas à changer. **Migration
-transparente** des saves antérieures (tier 19-24 simplement débloqués
-quand les points cumulent).
+transparente** des saves antérieures (tier 19+ = étoiles, simplement
+débloqués quand les points cumulent et que la boucle ténébreuse 2 est
+active).
+
+### 4.5 Tracker `_donationIntroPlayed`
+
+Le sample `donation_intro` ne doit jouer **qu'une fois** par save.
+Stockage : nouveau champ booléen `donationIntroPlayed` sur le save
+(sérialisé dans `_serializeState`, restauré dans `_applyState`).
+Migration des saves antérieures : `donationIntroPlayed: false` par
+défaut. Coût : 1 bit, intrusion minimale.
 
 ---
 
 ## 5. Phasage proposé
 
-### Étape 1 — Paliers 19-24 (data)
-- [ ] Ajouter les 6 entrées tiers 19-24 dans `HOUSE_BONUSES[house].tiers`
-      (state.js) pour chaque Maison. Bonus différenciés par Maison
-      (e.g. Gryffondor +ATK/LCK, Serdaigle +MAG/INT, etc.).
-- [ ] Adapter `requiresDarkTier: 2` sur tous (Option A retenue).
-- [ ] Vérifier que `checkHouseLevelUp` itère correctement — pas de
-      changement de code attendu.
+> **Critère de succès par étape (§4 guidelines)** : à chaque étape,
+> `node tests/smoke.js` reste vert, et le scénario maison passe à vert
+> à l'étape 6.
 
-### Étape 2 — Mécanique de don
-- [ ] Nouveau helper `donateGoldToHouse(amount)` dans un nouveau fichier
-      `js/house-donation.js` (ou intégré à `quests.js`) :
-      ```js
-      function donateGoldToHouse(amount) {
-        if (!chosenHouse || houseTier < 17) return false;
-        if (!Number.isFinite(amount) || amount < 1) return false;
-        const realAmount = Math.min(amount, player.gold | 0);
-        if (realAmount < 1) return false;
-        player.gold -= realAmount;
-        const points = Math.floor(realAmount / 5);
-        housePoints += points;
-        addMsg(`Don à ${chosenHouse} : −${realAmount} G · +${points} points`, 'magic');
-        checkHouseLevelUp();
-        updateUI();
-        return true;
-      }
-      ```
-- [ ] Ajout du fichier à `index.html` et au MANIFEST `loader.js`.
+### Étape 1 — `starGenerator` data + checkHouseLevelUp génératif
+- [ ] Ajouter le champ `starGenerator` aux 4 entrées `HOUSE_BONUSES`
+      (Gryff/Slyth/Serd/Pouf) dans `js/state.js`. Stat principale par
+      Maison (ATK/MAG/MAG/DEF). +1 LCK tous les 5 ★.
+- [ ] Ajouter `headOfHouseVoiceKey` aux 4 entrées (`mcgonagall`/`rogue`/
+      `flitwick`/`sprout`) — utile aussi pour les samples de don.
+- [ ] Étendre `checkHouseLevelUp()` (`js/main.js`) : boucle while après
+      le forEach tiers[] pour franchir N étoiles en cascade (cf. §3.5).
+- [ ] **Vérification** : `node tests/smoke.js` vert. Aucun nouveau test
+      pour l'instant (couvert à l'étape 6).
 
-### Étape 3 — Voix off (samples OGG)
-- [ ] Ajouter les 56 entrées (14 × 4 chefs) dans `tools/gen_voice_edge.py`
-      (dict `LINES`).
-- [ ] Batch génération `python3 tools/gen_voice_edge.py mcgonagall rogue
-      flitwick sprout`.
-- [ ] QA d'écoute des `tier_*_1` (24 samples critiques).
-- [ ] Référencer les 56 OGG dans `_VOICE_SAMPLES` (`js/audio-music.js`).
-- [ ] Ajouter `headOfHouseVoiceKey` dans `HOUSE_BONUSES` (`state.js`).
+### Étape 2 — Helper `donateGoldToHouse` + état
+- [ ] Nouveau fichier `js/house-donation.js` avec `donateGoldToHouse(amount)`,
+      `openHouseDonationModal()`, helpers `_playDonationVoice(context)`,
+      `_previewDonation(amount)`.
+- [ ] Ajout dans `index.html` (ordre : après `npc-dialog.js`, avant `intro.js`).
+- [ ] Ajout au MANIFEST `js/loader.js` (`donateGoldToHouse` en fn critique).
+- [ ] Ajout `donationIntroPlayed` (let global) à `js/state.js`,
+      sérialisé dans `js/save.js` (`_serializeState`/`_applyState`).
+- [ ] **Vérification** : `node tests/smoke.js` vert. Pas de cassure du
+      loader (manifest complet).
 
-### Étape 4 — UI (modale de don)
-- [ ] Nouvelle modale `#house-donation-modal` (CSS + HTML statique
-      dans `index.html`).
-- [ ] Input numérique + 4 boutons rapides (1000 / 5000 / 10000 / Max).
-- [ ] Aperçu live des points gagnés + palier suivant.
-- [ ] Confirmation explicite au-delà de 5000 G (modale de safety).
+### Étape 3 — Voix off (32 samples OGG)
+- [ ] Ajouter les 32 entrées dans `tools/gen_voice_edge.py` (8 × 4 chefs).
+- [ ] Batch : `python3 tools/gen_voice_edge.py mcgonagall rogue flitwick sprout`.
+- [ ] QA d'écoute : `apotheose_star` (×4) + `apotheose_star_first` (×4)
+      + `apotheose_star_milestone` (×4) — 12 samples narrativement critiques.
+- [ ] Référencer les 32 OGG dans `_VOICE_SAMPLES` (`js/audio-music.js`).
+- [ ] **Vérification** : taille audio/ raisonnable (< 1 Mo nouveau).
+      `node tests/pwa-smoke.js` reste vert (le précache audio est SWR).
+
+### Étape 4 — UI modale `#house-donation-modal`
+- [ ] HTML statique dans `index.html` (avant `#shop-modal` pour proximité
+      logique). Structure : titre + input numérique + 4 boutons rapides
+      (1000 / 5000 / 10000 / Max) + zone aperçu (points gagnés, étoile
+      suivante, seuil) + boutons "Confirmer" / "Annuler".
+- [ ] CSS dans `css/style.css` (réutiliser styles modale existante).
+- [ ] Confirmation explicite au-delà de 5000 G via `confirm()` natif.
+- [ ] **Vérification** : modale s'ouvre/se ferme proprement, input
+      contraint à >= 1 et <= `player.gold`.
 
 ### Étape 5 — Intégration dialogue Chef de Maison
-- [ ] `npc-dialog.js — _npcDialogActions` : ajouter le bouton
-      « 💰 Faire un don » conditionnel sur `houseTier >= 17`.
-- [ ] Le bouton ouvre la modale (`openHouseDonationModal()`).
-- [ ] Brancher `_playDonationVoice('intro_1')` à la première ouverture
-      (tracker via `localStorage` ou flag `_donationIntroPlayed` du save).
-- [ ] Brancher `_playDonationVoice('offer_<n>')` à chaque ouverture
-      ultérieure (picker aléatoire 1-2).
-- [ ] Brancher `_playDonationVoice('small_<n>')` ou `'large_1'` sur
-      validation (seuil 5 000 G).
-- [ ] Brancher `_playDonationVoice('tier_<19-24>_1')` dans
-      `checkHouseLevelUp` au franchissement.
-- [ ] Brancher `_playDonationVoice('refuse_1')` sur clic d'un bouton
-      grisé (< 100 G).
-- [ ] Smoke test : ajouter un cas dédié dans `tests/smoke.js` (mock
-      `AudioSystem.playVoice` pour vérifier la séquence d'appels).
+- [ ] `js/npc-dialog.js — _npcDialogActions` : ajouter bouton
+      « 💰 Faire un don » conditionnel sur `houseTier >= 17` ET PNJ est
+      un `headOfHouse`. Action `open_house_donation` → appelle
+      `openHouseDonationModal()`.
+- [ ] Brancher samples voix off :
+  - `donation_intro` : à la **première** ouverture (tracker `donationIntroPlayed`).
+  - `donation_offer` : à toute ouverture ultérieure.
+  - `donation_small` : après validation `< 5000 G`.
+  - `donation_large` : après validation `≥ 5000 G`.
+  - `donation_refuse` : si le bouton "Confirmer" est cliqué avec `< 1 G`
+    déposable.
+  - `apotheose_star_*` : déclenchés par `checkHouseLevelUp` (étape 1).
 
-### Étape 6 — Commit + PR
-- [ ] 1 commit par étape (révisable).
-- [ ] PR groupée vers master avec changelog.
+### Étape 6 — Smoke test
+- [ ] Ajouter `scenarioHouseDonationAndStars` à `tests/smoke.js` :
+  - T1 : tier 17 atteint, bouton "Faire un don" visible.
+  - T2 : tier 16 (Légende) → pas de bouton don.
+  - T3 : `donateGoldToHouse(1000)` retire 1000 G + ajoute 200 points.
+  - T4 : `donateGoldToHouse(player.gold + 1)` plafonne au max disponible.
+  - T5 : franchir tier 18 → `houseTier === 18`.
+  - T6 : franchir ★ 1 (don massif jusqu'à 60000 pts) avec étage 22 →
+    `houseTier === 19`, +1 stat principale appliquée.
+  - T7 : franchir ★ 5 → +1 stat principale + +1 LCK (bonus complémentaire).
+  - T8 : mock `AudioSystem.playVoice` pour vérifier la séquence
+    d'appels (intro→offer→star_first→star→star_milestone).
+  - T9 : gate boucle ténébreuse 2 — étage 12 (boucle 1) bloque les
+    étoiles malgré housePoints > 60000.
+- [ ] **Vérification** : `node tests/smoke.js` vert avec le nouveau scénario.
+
+### Étape 7 — CLAUDE.md mise à jour
+- [ ] Mettre à jour la section « Système des Maisons » : ajouter une
+      sous-section « Tier 19+ — Série Apothéose ★ N » avec la formule
+      seuil et la cadence du bonus complémentaire.
+- [ ] Mettre à jour la section « Loader & helpers » : ajout de
+      `donateGoldToHouse`, `openHouseDonationModal` au MANIFEST.
+
+### Étape 8 — Commit + push
+- [ ] Plusieurs commits structurés (data / donation / voix / UI /
+      intégration / smoke / docs).
+- [ ] `git push -u origin claude/house-tier-plan-launch-6KQ9B`.
+- [ ] Pas de PR sans demande explicite utilisateur.
 
 ---
 
@@ -551,3 +652,50 @@ quand les points cumulent).
   respectant le ton canon (McGonagall autoritaire, Rogue sarcastique,
   Flitwick enthousiaste, Chourave maternelle). Phasage repensé en 6
   étapes (production voix avant impl UI).
+- **2026-05-25 — amendement majeur (branche `claude/house-tier-plan-launch-6KQ9B`)** :
+  décisions utilisateur appliquées —
+  - Plan lancé en implémentation.
+  - Tiers 19-24 hard-codés → **série Apothéose ★ N génératrice infinie**
+    (helper `starGenerator`, `houseTier` continue d'incrémenter).
+  - Seuil polynomial doux : `45 000 + 15 000 × N + 1 000 × N²`
+    (★ 1 = 61k, ★ 10 = 295k, ★ 50 = 3,3M). Friction croissante anti-farm.
+  - Bonus 4 cadences : chaque ★ = +1 stat principale ; tous les 2 ★ =
+    +1 stat secondaire (STR/INT/INT/END selon Maison) ; tous les 5 ★ =
+    +1 LCK ; tous les 10 ★ = +5 PV max (Gryff/Pouf) ou +5 PM max
+    (Slyth/Serd). Pas d'item ni de sort.
+  - Voix off : **8 samples par chef = 32 OGG** (au lieu de 56) —
+    `donation_intro/offer/small/large/refuse` (5 don) +
+    `apotheose_star_first/apotheose_star/apotheose_star_milestone` (3 étoile).
+  - Bouton don dispo dès tier 17 (recommandation §4.3 retenue).
+  - Gate `requiresDarkTier: 2` (Option A §3.5 retenue).
+  - Phasage repensé en **8 étapes** avec critères de vérification par étape.
+- **2026-05-25 — implémentation livrée** (branche `claude/house-tier-plan-launch-6KQ9B`) :
+  ✅ Étapes 1-7 terminées en une seule passe.
+  - `js/state.js` : ajout `donationIntroPlayed`, `starGenerator` +
+    `headOfHouseVoiceKey` sur les 4 entrées `HOUSE_BONUSES` + helpers
+    purs `_starGeneratorBonus` / `_starGeneratorMsg`.
+  - `js/main.js` : extension `checkHouseLevelUp` avec boucle génératrice
+    ★ N (cascade, gate `requiresDarkTier:2`). Reset `donationIntroPlayed`
+    dans `chooseHouse`.
+  - `js/house-donation.js` (NEW) : `donateGoldToHouse`,
+    `openHouseDonationModal`, `closeHouseDonationModal`,
+    `confirmHouseDonation`, `setHouseDonationAmount`, `_playDonationVoice`,
+    `_previewDonationPoints`, `_renderHouseDonationModal`.
+  - `js/save.js` : sérialisation `donationIntroPlayed`.
+  - `js/ui.js` : `_updateCrestWrap` + `_tierShortLabel` gèrent
+    `houseTier > tiers.length` (label « ★ N »).
+  - `js/npc-dialog.js` : bouton « 💰 Faire un don » dans le dialogue du
+    Chef de Maison quand `houseTier >= 17`.
+  - `js/audio-music.js` : 32 entrées dans `_VOICE_SAMPLES`.
+  - `js/loader.js` : 4 nouveaux globals critiques dans le MANIFEST
+    (`donateGoldToHouse`, `openHouseDonationModal`, `closeHouseDonationModal`,
+    `confirmHouseDonation`).
+  - `index.html` : modale `#house-donation-modal` + `<script>` +
+    cache-bust `npc-dialog.js?v=8` / `audio-music.js?v=3`.
+  - `tools/gen_voice_edge.py` : 32 textes ajoutés (8 × 4 chefs).
+  - `audio/voice/*.ogg` : 32 OGG générés via Edge TTS + ffmpeg.
+  - `CLAUDE.md` : section « Tier 19+ — Série Apothéose ★ N » + section
+    « Don à la Maison ».
+  - `tests/smoke.js` : nouveau scénario `scenarioHouseDonationAndStars`
+    (9 assertions) ; `node tests/smoke.js` reste vert (166 globals au
+    loader, +4).
