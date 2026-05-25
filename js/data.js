@@ -254,6 +254,12 @@ const SPELLS = [
   // Feu Maudit : flammes vivantes, dégâts massifs single-target,
   // brûlure persistante. Coût prohibitif → utilisation parcimonieuse.
   { name:"Fiendfyre",         icon:"🔥",  desc:"Feu Maudit : flammes vivantes (35 dégâts + brûle)",                cost:32, effect:"burn", element:"feu", power:35 },
+  // ── Sort de portail inter-mondes — Cheminette Inter-Mondes ────
+  // Voir .claude/plans/parallel-worlds.md §4. Hors combat uniquement,
+  // refusé en mode Ironman (§2.1). Apprentissage niv. 8 dans
+  // _grantLevelSpells. Phase A : animation locale 2,8 s sans réseau ;
+  // les phases suivantes brancheront le matchmaking Supabase.
+  { name:"Cheminette Inter-Mondes", icon:"🌀", desc:"Ouvre un portail vers le monde d'un autre sorcier (hors combat)", cost:25, effect:"portal", power:0 },
 ];
 
 // Catégorie d'un sort pour le filtre de la modale Sorts. Soutien et

@@ -351,7 +351,12 @@ const SPELL_ICON_REGISTRY = {
   // Sort exclusif endgame (Grimoire Interdit) — sinks A+E. PNG dédié
   // généré par tools/gen_element_spell_icons.py (Feu Maudit : flammes
   // crimson + escarbilles ascendantes, plus sombre que Incendio).
-  'Fiendfyre':             'img/icons/spells/fiendfyre.png'
+  'Fiendfyre':             'img/icons/spells/fiendfyre.png',
+  // Cheminette Inter-Mondes (V1a Phase A — parallel-worlds.md §4).
+  // PNG dédié généré par tools/gen_floo_icon.py : flammes vertes
+  // torsadées + 4 runes dorées en cardinal. Palette distincte de
+  // teleportation.png (Portus, vortex violet) pour éviter la confusion.
+  'Cheminette Inter-Mondes': 'img/icons/spells/cheminette_inter_mondes.png'
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────

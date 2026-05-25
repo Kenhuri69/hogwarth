@@ -1002,6 +1002,13 @@ function _grantLevelSpells(level) {
       // Hermione (soutien) maîtrise la régénération de groupe
       teach(player2, 'Ferula Maxima');
       break;
+    case 8:
+      // Cheminette Inter-Mondes — sort de portail vers un donjon
+      // parallèle. Voir parallel-worlds.md §4. Enseigné aux deux
+      // héros pour ne pas dépendre du choix solo/duo.
+      teach(player,  'Cheminette Inter-Mondes');
+      teach(player2, 'Cheminette Inter-Mondes');
+      break;
     case 9: {
       // La Malédiction Impardonnable — déverrouillée pour les deux
       const avada = SPELLS.find(s => s.name === 'Avada...');

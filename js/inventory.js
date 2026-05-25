@@ -1014,13 +1014,20 @@ function openSpells(charIdx = 0) {
       cdRemaining = healSpellCooldown;
       cdUnit = `pas`;
     }
-    const canCastOoc = isOoc && cdRemaining === 0 && c.sp >= (oocCost || spell.cost);
+    // Cheminette Inter-Mondes : verrouillée en mode Ironman
+    // (parallel-worlds.md §2.1 — la voie solitaire ne se partage pas).
+    const ironmanLock = spell.effect === 'portal'
+      && typeof ironmanMode !== 'undefined' && ironmanMode;
+    const canCastOoc = isOoc && cdRemaining === 0
+      && c.sp >= (oocCost || spell.cost) && !ironmanLock;
     const costLabel = oocCost
       ? `${oocCost} PM <span style="color:#6a5030;font-size:9px">(hors combat)</span>`
       : `${spell.cost} PM`;
     let hint;
     if (!isOoc) {
       hint = '<span style="font-size:9px;color:#6a5030">Combat uniquement</span>';
+    } else if (ironmanLock) {
+      hint = '<span style="font-size:9px;color:#6a5030">⚜ Voie solitaire — l\'Ironman se joue seul</span>';
     } else if (cdRemaining > 0) {
       hint = `<span style="font-size:9px;color:#a04020">⏳ Se recharge — ${cdRemaining} ${cdUnit}</span>`;
     } else if (!canCastOoc) {
@@ -1059,7 +1066,7 @@ function openSpells(charIdx = 0) {
 function isOutOfCombatSpell(spell) {
   if (!spell) return false;
   return spell.effect === 'teleport' || spell.effect === 'heal'
-      || spell.effect === 'reveal';
+      || spell.effect === 'reveal'   || spell.effect === 'portal';
 }
 
 // Cooldown partagé entre tous les sorts de soin OOC (cf. .claude/plans/
@@ -1169,6 +1176,44 @@ const SPELL_OOC_HANDLERS = {
     closeModal('spell-modal');
     if (typeof renderMinimap === 'function') renderMinimap();
     updateUI();
+  },
+  // Cheminette Inter-Mondes — Phase A : animation locale 2,8 s sans
+  // réseau. Les phases suivantes (parallel-worlds.md §10 Phases B+)
+  // brancheront snapshot Supabase + rendu du donjon distant après
+  // playPortalOpen. Refusé en Ironman (double-gate avec openSpells)
+  // et silencieux si portal-fx.js absent.
+  portal: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster || caster.hp <= 0) {
+      addMsg('Personne ne peut tracer le portail.', 'bad');
+      return;
+    }
+    if (typeof ironmanMode !== 'undefined' && ironmanMode) {
+      addMsg("Le mode Ironman se joue seul — la solitude est la promesse de la légende.", 'bad');
+      return;
+    }
+    if (caster.sp < spell.cost) {
+      addMsg(`Pas assez de magie pour ${spell.name} (${spell.cost} PM).`, 'bad');
+      return;
+    }
+    caster.sp -= spell.cost;
+    AudioSystem.playSpellCast(spell.name);
+    AudioSystem.speakSpell(spell.name);
+    addMsg(`🌀 ${caster.name} entonne ${spell.name}…`, 'magic');
+    closeModal('spell-modal');
+    updateUI();
+    const finish = () => updateUI();
+    const placeholder = () => {
+      addMsg("Le Réseau de Cheminette astral reste silencieux. Aucun sorcier ne répond depuis l'autre côté.", '');
+      if (typeof playPortalClose === 'function') playPortalClose({ caster }, finish);
+      else finish();
+    };
+    if (typeof playPortalOpen === 'function') {
+      playPortalOpen({ caster }, placeholder);
+    } else {
+      addMsg("Le portail vacille — animations indisponibles.", 'bad');
+      finish();
+    }
   }
 };
 

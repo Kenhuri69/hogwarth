@@ -1,0 +1,159 @@
+/* ============================================================
+   PORTAIL — Cheminette Inter-Mondes (parallel-worlds.md §4)
+   Overlay plein écran pour l'animation 2,8 s du sort. Palette :
+   flammes vertes (#3cdc5a façon poudre de Cheminette) + or chaud
+   (#d8b647). Tout en keyframes, sans dépendance d'asset.
+   ============================================================ */
+
+#portal-fx-layer {
+  position: fixed; inset: 0;
+  display: none;
+  pointer-events: none;
+  z-index: 9998;        /* juste sous #tier-transition-overlay (9999) */
+  overflow: hidden;
+}
+#portal-fx-layer.active { display: block; }
+
+/* ── Phase A — Incantation (rune + halo + vibration) ────────── */
+#portal-fx-layer.phase-a {
+  background: radial-gradient(ellipse at center,
+              rgba(40, 90, 30, 0.18) 0%,
+              rgba(0, 0, 0, 0.55) 100%);
+  animation: portalVibrate 80ms linear infinite;
+}
+#portal-fx-layer .portal-fx-rune {
+  position: absolute; top: 50%; left: 50%;
+  width: 200px; height: 200px;
+  margin: -100px 0 0 -100px;
+  border: 2px solid #d8b647;
+  border-radius: 50%;
+  box-shadow: 0 0 40px rgba(216, 182, 71, 0.6),
+              inset 0 0 30px rgba(60, 220, 90, 0.35);
+  opacity: 0;
+  animation: portalRuneIn 700ms ease-out forwards;
+}
+#portal-fx-layer .portal-fx-halo {
+  position: absolute; top: 50%; left: 50%;
+  width: 420px; height: 90px;
+  margin: 50px 0 0 -210px;
+  background: radial-gradient(ellipse at center,
+              rgba(216, 182, 71, 0.55) 0%,
+              rgba(60, 220, 90, 0.32) 45%,
+              transparent 80%);
+  opacity: 0;
+  animation: portalHaloPulse 700ms ease-out forwards;
+}
+
+/* ── Phase B — Déchirure (fissure verte verticale) ──────────── */
+#portal-fx-layer.phase-b {
+  background: rgba(0, 0, 0, 0.7);
+}
+#portal-fx-layer .portal-fx-fissure {
+  position: absolute; top: 0; bottom: 0;
+  left: 50%;
+  width: 4px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom,
+              transparent 0%,
+              rgba(216, 182, 71, 0.7) 10%,
+              rgba(60, 220, 90, 1)   50%,
+              rgba(216, 182, 71, 0.7) 90%,
+              transparent 100%);
+  box-shadow: 0 0 60px  rgba(60, 220, 90, 0.85),
+              0 0 120px rgba(60, 220, 90, 0.45);
+  animation: portalFissureGrow 800ms ease-out forwards;
+}
+
+/* ── Phase C — Passage (zoom + assombrissement) ─────────────── */
+#portal-fx-layer.phase-c {
+  background: rgba(0, 0, 0, 0.95);
+  animation: portalPassFade 800ms ease-in forwards;
+}
+#portal-fx-layer .portal-fx-fissure-engulf {
+  width: 4px;
+  filter: blur(6px);
+  animation: portalFissureEngulf 800ms ease-in forwards;
+}
+
+/* ── Phase D — Arrivée (bannière + retombée) ────────────────── */
+#portal-fx-layer.phase-d {
+  background: rgba(0, 0, 0, 0.4);
+  animation: portalArriveFade 500ms ease-out forwards;
+}
+#portal-fx-layer .portal-fx-banner {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: 22px;
+  color: #d8b647;
+  text-shadow: 0 0 24px rgba(60, 220, 90, 0.75),
+               0 0 40px rgba(216, 182, 71, 0.55);
+  white-space: nowrap;
+  text-align: center;
+  opacity: 0;
+  animation: portalBannerIn 500ms ease-out forwards;
+}
+
+/* ── Sortie (motion blur inverse) ───────────────────────────── */
+#portal-fx-layer.phase-close {
+  background: rgba(0, 0, 0, 0.85);
+  animation: portalCloseFade 1500ms ease-in forwards;
+}
+#portal-fx-layer .portal-fx-fissure-close {
+  position: absolute; top: 0; bottom: 0;
+  left: 50%;
+  width: 18px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom,
+              transparent 0%,
+              rgba(60, 220, 90, 0.95) 50%,
+              transparent 100%);
+  box-shadow: 0 0 80px rgba(60, 220, 90, 0.6);
+  filter: blur(4px);
+  animation: portalFissureShrink 1500ms ease-in forwards;
+}
+
+/* ── Keyframes ──────────────────────────────────────────────── */
+@keyframes portalVibrate {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(1px, -1px); }
+  50%  { transform: translate(-1px, 1px); }
+  75%  { transform: translate(1px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes portalRuneIn {
+  from { opacity: 0; transform: scale(0.4) rotate(-90deg); }
+  to   { opacity: 1; transform: scale(1)   rotate(0deg); }
+}
+@keyframes portalHaloPulse {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1.2); }
+}
+@keyframes portalFissureGrow {
+  from { width: 4px;  opacity: 0.4; }
+  to   { width: 22px; opacity: 1;   }
+}
+@keyframes portalFissureEngulf {
+  from { width: 22px; opacity: 1;   filter: blur(2px); }
+  to   { width: 120vw; opacity: 0.75; filter: blur(10px); }
+}
+@keyframes portalPassFade {
+  from { background: rgba(0, 0, 0, 0.7); }
+  to   { background: rgba(0, 0, 0, 1);   }
+}
+@keyframes portalArriveFade {
+  from { background: rgba(0, 0, 0, 0.4); }
+  to   { background: rgba(0, 0, 0, 0);   }
+}
+@keyframes portalBannerIn {
+  from { opacity: 0; transform: translate(-50%, -45%); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+@keyframes portalCloseFade {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes portalFissureShrink {
+  from { width: 18px; opacity: 0.95; }
+  to   { width: 0;    opacity: 0;    }
+}
