@@ -219,6 +219,7 @@ function _serializeState() {
     activeQuests,
     difficulty,
     chosenHouse, housePoints, houseTier,
+    donationIntroPlayed,
     pendingHouseRewards: Array.from(pendingHouseRewards),
     searchedCells: Array.from(searchedCells),
     stepCount,
@@ -442,6 +443,7 @@ function _applyState(gs) {
   if (gs.chosenHouse && HOUSE_BONUSES[gs.chosenHouse]) chosenHouse = gs.chosenHouse;
   if (gs.housePoints !== undefined) housePoints = gs.housePoints;
   if (gs.houseTier   !== undefined) houseTier   = gs.houseTier;
+  donationIntroPlayed = !!gs.donationIntroPlayed;  // false par défaut (saves antérieurs)
   // Saves antérieures au tier 2 intermédiaire → set vide par défaut.
   pendingHouseRewards = new Set(gs.pendingHouseRewards || []);
   // Endgame : saves antérieures à l'introduction du flag → false/null.

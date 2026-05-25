@@ -323,6 +323,47 @@ Boucle Ténébreuse (`tier.requiresDarkTier`, gate symétrique de
 | Serdaigle   | −20 % coût des sorts    | `_spellSpCost` (battle-spells.js) |
 | Poufsouffle | +2 PV/PM par pas + Vigueur (+23 % dégâts >60 % PV) | `_step` (movement.js) + `_houseVigorMult` (battle.js) |
 
+### Tier 19+ — Série Apothéose ★ N (gold-sink illimité)
+
+Une fois Apothéose franchi, `houseTier` continue d'incrémenter au-delà de
+18 : chaque ★ N correspond à `houseTier = 18 + N`. La série est
+**génératrice infinie** (pas d'entrée dans `tiers[]`), pilotée par
+`HOUSE_BONUSES[h].starGenerator` et la boucle finale de
+`checkHouseLevelUp()` (main.js). Gate `requiresDarkTier: 2` (étages 21+).
+
+**Seuil** (formule polynomiale douce, helpers purs `_starGeneratorBonus`
+et `_starGeneratorMsg` dans `state.js`) :
+`threshold(★ N) = 45 000 + 15 000 × N + 1 000 × N²`
+→ ★ 1 = 61k pts, ★ 5 = 145k, ★ 10 = 295k, ★ 20 = 745k.
+
+**Bonus par cadence** :
+- Chaque ★ : +1 stat principale Maison (ATK / MAG / MAG / DEF).
+- Tous les 2 ★ : +1 stat secondaire (STR / INT / INT / END).
+- Tous les 5 ★ : +1 LCK.
+- Tous les 10 ★ : +5 PV max (Gryff / Pouf) ou +5 PM max (Slyth / Serd).
+
+**Source d'or → points** : voir « Don à la Maison » ci-dessous.
+
+### Don à la Maison (`js/house-donation.js`, gold-sink endgame)
+
+Dès `houseTier >= 17`, le bouton « 💰 Faire un don » apparaît dans le
+dialogue du Chef de Maison (`headOfHouse` correspondant à `chosenHouse`).
+La modale `#house-donation-modal` permet de verser de l'or au taux
+**5 G = 1 point de Maison**. Les points franchissent les tiers 18
+(Apothéose) puis 19+ (série Apothéose ★ N) via la même mécanique
+`checkHouseLevelUp()`.
+
+Surface publique : `donateGoldToHouse(amount)`,
+`openHouseDonationModal()`, `closeHouseDonationModal()`,
+`confirmHouseDonation()`.
+
+État : `donationIntroPlayed` (booléen, sérialisé) — joue le sample voix
+`<chef>_donation_intro` à la 1ʳᵉ ouverture, puis `<chef>_donation_offer`
+ensuite. Voix par chef : `HOUSE_BONUSES[h].headOfHouseVoiceKey`
+(`mcgonagall` / `rogue` / `flitwick` / `sprout`). 32 samples au total
+(8 par chef : intro / offer / small / large / refuse + apotheose_star /
+apotheose_star_first / apotheose_star_milestone).
+
 ---
 
 ## Mode Ironman & Hall of Fame (`js/ironman.js` + `js/hall-of-fame.js`)

@@ -92,7 +92,10 @@ let defeatedDuelists = new Set();
 // ============================================================
 let chosenHouse = null;
 let housePoints = 0;
-let houseTier   = 0;  // 0 = aucun palier atteint, 1-16 = palier actuel
+let houseTier   = 0;  // 0 = aucun palier atteint, 1-16 = palier de base, 17/18 = Mythe/Apothéose, 19+ = série Apothéose ★ N
+// Sample d'intro de la modale de don de Maison joué une seule fois par save
+// (cf. .claude/plans/house-post-tier-18.md §4.5). Sérialisé par save.js.
+let donationIntroPlayed = false;
 // Items Tier 2 / Tier 4 Maison franchis mais pas encore remis. Le Chef de
 // Maison (HOUSE_BONUSES[house].headOfHouse) les distribue lors d'une visite
 // via specialAction `claim_house_reward`. Le bonus de stats reste appliqué
@@ -113,12 +116,42 @@ let pendingHouseRewards = new Set();
 // 16 paliers actifs, avec calibration marathon (max 25000 pts ≈ étages
 // 25+). Les Or de Confirmé/Expert/Virtuose recevront leurs items
 // (set artifacts) en Étape 2/3 ; le placeholder reste vide d'item ici.
+// ── Série Apothéose ★ N génératrice (post-tier 18, gold-sink illimité) ──
+// Décision .claude/plans/house-post-tier-18.md (amendée 2026-05-25).
+// `houseTier` continue d'incrémenter au-delà de 18 ; chaque étoile N
+// correspond à `houseTier = 18 + N`. Seuil polynomial doux et bonus à
+// quatre cadences (chaque ★ / 2 ★ / 5 ★ / 10 ★). Voir le helper
+// `_starGeneratorBonus(N, gen)` ci-dessous et `checkHouseLevelUp`.
+function _starGeneratorBonus(n, gen) {
+  const b = {};
+  b[gen.primaryStat] = 1;
+  if (n % 2  === 0) b[gen.secondaryStat] = 1;
+  if (n % 5  === 0) b._baseLck = 1;
+  if (n % 10 === 0) b[gen.reserveStat] = 5;
+  return b;
+}
+function _starGeneratorMsg(n, bonus, gen) {
+  const parts = [`+${bonus[gen.primaryStat]} ${gen.primaryLabel}`];
+  if (bonus[gen.secondaryStat]) parts.push(`+${bonus[gen.secondaryStat]} ${gen.secondaryLabel}`);
+  if (bonus._baseLck)           parts.push(`+${bonus._baseLck} LCK`);
+  if (bonus[gen.reserveStat])   parts.push(`+${bonus[gen.reserveStat]} ${gen.reserveLabel}`);
+  return `${gen.emoji} Apothéose ★ ${n} ! ${parts.join(' · ')}`;
+}
+
 const HOUSE_BONUSES = {
   Gryffondor: {
     color: '#740001', accent: '#D3A625', emoji: '🦁',
     label: 'Gryffondor',
     desc: 'Bravoure, courage et chevalerie.',
     headOfHouse: 'mcgonagall',
+    headOfHouseVoiceKey: 'mcgonagall',
+    starGenerator: {
+      requiresDarkTier: 2,
+      emoji:          '🦁',
+      primaryStat:    '_baseAtk', primaryLabel:   'ATK',
+      secondaryStat:  '_baseStr', secondaryLabel: 'STR',
+      reserveStat:    'hpMax',    reserveLabel:   'PV max',
+    },
     tiers: [
       // Phase 1 — Apprenti
       { threshold: 50,    label: 'Apprenti Bronze', bonus: { _baseLck: 1 }, msg: '🦁 Premiers exploits ! +1 LCK' },
@@ -161,6 +194,14 @@ const HOUSE_BONUSES = {
     label: 'Serpentard',
     desc: 'Ambition, ruse et détermination.',
     headOfHouse: 'rogue',
+    headOfHouseVoiceKey: 'rogue',
+    starGenerator: {
+      requiresDarkTier: 2,
+      emoji:          '🐍',
+      primaryStat:    '_baseMag', primaryLabel:   'MAG',
+      secondaryStat:  '_baseInt', secondaryLabel: 'INT',
+      reserveStat:    'spMax',    reserveLabel:   'PM max',
+    },
     tiers: [
       { threshold: 50,    label: 'Apprenti Bronze', bonus: { _baseLck: 1 }, msg: "🐍 Premier souffle ! +1 LCK" },
       { threshold: 150,   label: 'Apprenti Argent', bonus: { _baseMag: 1 }, msg: "🐍 L'ambition vous galvanise ! +1 MAG" },
@@ -187,6 +228,14 @@ const HOUSE_BONUSES = {
     label: 'Serdaigle',
     desc: 'Sagesse, intelligence et esprit vif.',
     headOfHouse: 'flitwick',
+    headOfHouseVoiceKey: 'flitwick',
+    starGenerator: {
+      requiresDarkTier: 2,
+      emoji:          '🦅',
+      primaryStat:    '_baseMag', primaryLabel:   'MAG',
+      secondaryStat:  '_baseInt', secondaryLabel: 'INT',
+      reserveStat:    'spMax',    reserveLabel:   'PM max',
+    },
     tiers: [
       { threshold: 50,    label: 'Apprenti Bronze', bonus: { _baseLck: 1 }, msg: "🦅 Premier savoir ! +1 LCK" },
       { threshold: 150,   label: 'Apprenti Argent', bonus: { _baseMag: 1 }, msg: "🦅 L'intellect s'éveille ! +1 MAG" },
@@ -213,6 +262,14 @@ const HOUSE_BONUSES = {
     label: 'Poufsouffle',
     desc: 'Loyauté, patience et travail acharné.',
     headOfHouse: 'sprout',
+    headOfHouseVoiceKey: 'sprout',
+    starGenerator: {
+      requiresDarkTier: 2,
+      emoji:          '🦡',
+      primaryStat:    '_baseDef', primaryLabel:   'DEF',
+      secondaryStat:  '_baseEnd', secondaryLabel: 'END',
+      reserveStat:    'hpMax',    reserveLabel:   'PV max',
+    },
     tiers: [
       { threshold: 50,    label: 'Apprenti Bronze', bonus: { _baseLck: 1 }, msg: '🦡 Premier serment ! +1 LCK' },
       { threshold: 150,   label: 'Apprenti Argent', bonus: { _baseDef: 1 }, msg: '🦡 Résistance naturelle ! +1 DEF' },

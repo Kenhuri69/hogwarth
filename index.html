@@ -715,6 +715,49 @@
   </div>
 </div>
 
+<!-- Modale de don à la Maison (gold-sink endgame, tier 17+) — voir js/house-donation.js -->
+<div id="house-donation-modal" role="dialog" aria-modal="true" aria-labelledby="house-donation-title" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title" id="house-donation-title">Don à la Maison</div>
+    <span class="modal-close" onclick="closeHouseDonationModal()" role="button" aria-label="Fermer" tabindex="0">✕</span>
+
+    <div style="text-align:right; margin-bottom:8px; font-family:'Cinzel',serif; font-size:12px; color:var(--gold)">
+      💰 <span id="house-donation-gold">0</span>
+    </div>
+
+    <p style="margin:6px 0 12px; font-size:13px; opacity:0.9">
+      Tu peux confier ton or au Chef de Maison pour gagner des points
+      (1 point pour 5 G).
+    </p>
+
+    <label for="house-donation-amount" style="display:block; font-family:'Cinzel',serif; font-size:12px; margin-bottom:4px">
+      Montant (en Gallions)
+    </label>
+    <input id="house-donation-amount" type="number" min="0" step="100" value="0"
+           oninput="_onHouseDonationAmountChange()"
+           style="width:100%; padding:8px 10px; box-sizing:border-box; font-family:'Cinzel',serif; font-size:14px; background:#1a120a; color:var(--gold); border:1px solid var(--gold); border-radius:4px">
+
+    <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap">
+      <button class="btn" onclick="setHouseDonationAmount(1000)">1 000</button>
+      <button class="btn" onclick="setHouseDonationAmount(5000)">5 000</button>
+      <button class="btn" onclick="setHouseDonationAmount(10000)">10 000</button>
+      <button class="btn" onclick="setHouseDonationAmount('max')">Tout</button>
+    </div>
+
+    <div style="margin-top:14px; padding:10px; background:rgba(0,0,0,0.25); border-radius:4px; font-size:13px">
+      <div style="font-family:'Cinzel',serif; font-size:11px; opacity:0.7; margin-bottom:2px">Aperçu</div>
+      <div id="house-donation-preview" style="color:var(--gold); font-weight:bold">—</div>
+      <div style="font-family:'Cinzel',serif; font-size:11px; opacity:0.7; margin-top:8px">Palier suivant</div>
+      <div id="house-donation-next" style="font-size:12px"></div>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:14px; justify-content:flex-end">
+      <button class="btn" onclick="closeHouseDonationModal()">Annuler</button>
+      <button class="btn primary" id="house-donation-confirm" onclick="confirmHouseDonation()">Confirmer le don</button>
+    </div>
+  </div>
+</div>
+
 <div id="character-modal" role="dialog" aria-modal="true" aria-labelledby="character-modal-title">
   <div class="modal-box">
     <div class="modal-title" id="character-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/scroll.png" alt=""> Fiche de Personnage</div>
@@ -941,7 +984,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script src="js/ux-improvements.js?v=1"></script>
 <script src="js/audio.js?v=1"></script>
-<script src="js/audio-music.js?v=2"></script>
+<script src="js/audio-music.js?v=3"></script>
 <script src="js/audio-sfx.js?v=2"></script>
 <script src="js/icons.js?v=1"></script>
 <script src="js/scene-icons.js?v=2"></script>
@@ -969,7 +1012,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/inventory.js?v=5"></script>
 <script src="js/potions.js?v=1"></script>
 <script src="js/quests.js?v=6"></script>
-<script src="js/npc-dialog.js?v=7"></script>
+<script src="js/npc-dialog.js?v=8"></script>
+<script src="js/house-donation.js?v=1"></script>
 <script src="js/karaoke.js?v=1"></script>
 <script src="js/intro.js?v=2"></script>
 <script src="js/shop.js?v=5"></script>

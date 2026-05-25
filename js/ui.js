@@ -90,6 +90,9 @@ function _tierShortLabel(fullLabel) {
   if (fullLabel === 'Légende')     return 'LÉG';
   if (fullLabel === 'Mythe')       return 'MYT';
   if (fullLabel === 'Apothéose')   return 'APO';
+  // Série Apothéose ★ N : label de la forme "Apothéose ★ 12".
+  const star = /★\s*(\d+)/.exec(fullLabel);
+  if (star) return `★${star[1]}`;
   return fullLabel.slice(0, 3).toUpperCase();
 }
 
@@ -116,13 +119,25 @@ function _updateCrestWrap() {
 
   const h     = HOUSE_BONUSES[chosenHouse];
   const tiers = h.tiers;
-  const nextTier      = tiers[houseTier]; // null si au max
-  const prevThreshold = houseTier > 0 ? tiers[houseTier - 1].threshold : 0;
-  const nextThreshold = nextTier ? nextTier.threshold : tiers[tiers.length - 1].threshold;
-  const ratio = nextTier
+  // Au-delà du tier 18 (Apothéose), on entre dans la série génératrice
+  // ★ N (cf. house-donation.js). `houseTier - 18` = numéro d'étoile actuel,
+  // seuils calculés par la formule polynomiale du plan.
+  const inStarSeries   = houseTier >= tiers.length;
+  const starThreshold  = (n) => 45000 + 15000 * n + 1000 * n * n;
+  const nextTier       = inStarSeries ? null : tiers[houseTier];
+  const prevThreshold  = inStarSeries
+    ? starThreshold(houseTier - 18)
+    : (houseTier > 0 ? tiers[houseTier - 1].threshold : 0);
+  const nextThreshold  = inStarSeries
+    ? starThreshold(houseTier - 18 + 1)
+    : (nextTier ? nextTier.threshold : tiers[tiers.length - 1].threshold);
+  const hasNext  = inStarSeries || !!nextTier;
+  const ratio    = hasNext
     ? Math.max(0, Math.min(1, (housePoints - prevThreshold) / (nextThreshold - prevThreshold)))
     : 1;
-  const tierFull  = houseTier > 0 ? tiers[houseTier - 1].label : null;
+  const tierFull = inStarSeries
+    ? `Apothéose ★ ${houseTier - 18}`
+    : (houseTier > 0 ? tiers[houseTier - 1].label : null);
   const tierShort = _tierShortLabel(tierFull);
 
   wrap.style.display = '';

@@ -348,6 +348,18 @@ function _npcDialogActions(npc, state) {
       });
     }
   }
+  // Don à la Maison (gold-sink endgame) : visible si le PNJ courant est
+  // le Chef de Maison choisi et que le tier Mythe (17) est atteint.
+  // Plan : .claude/plans/house-post-tier-18.md.
+  if (chosenHouse && houseTier >= 17) {
+    const bonuses = HOUSE_BONUSES[chosenHouse];
+    if (bonuses && bonuses.headOfHouse === npc.id) {
+      out.push({
+        label: '💰 Faire un don',
+        onClick: `closeNpcDialog(); openHouseDonationModal();`
+      });
+    }
+  }
   out.push({ label: 'S\'éloigner', onClick: 'closeNpcDialog()', secondary: true });
   return out;
 }
