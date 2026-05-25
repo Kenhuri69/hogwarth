@@ -387,6 +387,12 @@ let shopStepsSinceRestock = 0;
 // jamais à l'achat, ni en boutique fixe ni chez les vendeurs. Persisté.
 let purchasedSpellbooks = new Set();
 
+// Compteur d'achats des items endgame à prix progressif (rareté sur
+// le marché). Incrémenté à l'achat (pas à l'usage). Chaque achat
+// applique `basePrice × 1.5^n` au prochain prix affiché. Persisté.
+// Voir .claude/plans/game-economy-gold-audit.md §5.6 Piste A.
+let endgamePurchases = {};
+
 // Étages déjà visités par le joueur — alimentés par goDeeper/goUp et le
 // démarrage de partie (1 = couloir d'entrée). Consommés par la modale de
 // téléportation hors combat (Portus) pour proposer la liste des destinations.

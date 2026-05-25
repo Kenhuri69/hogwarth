@@ -634,6 +634,15 @@ function generateDungeon(floor) {
     }
   }
 
+  // ── Marchand d'Ombre (sinks endgame Piste E) ───────────────────
+  // Spawn rare et dédié sur les étages 11+ (boucle ténébreuse).
+  // 10 % par génération — déclenché indépendamment des pools ambiants.
+  // Voir .claude/plans/game-economy-gold-audit.md §5.6 Piste E.
+  if (floor >= 11 && Math.random() < 0.10 && typeof getNpcById === 'function') {
+    const npc = getNpcById('marchand_ombre');
+    if (npc) _placeRandomNpcInRooms(npc, rooms, occupied);
+  }
+
   // Sélection des ennemis éligibles à cet étage (rebase sur relFloor
   // en post-victoire pour la Boucle Ténébreuse — §7.2).
   const ef = effectiveFloor(floor);

@@ -240,6 +240,7 @@ function _serializeState() {
     shopStock,
     shopStepsSinceRestock,
     purchasedSpellbooks: Array.from(purchasedSpellbooks),
+    endgamePurchases: { ...endgamePurchases },
     visitedFloors:  Array.from(visitedFloors),
     portusOocCooldown,
     portusFightCooldown,
@@ -488,6 +489,9 @@ function _applyState(gs) {
   shopStock = Array.isArray(gs.shopStock) ? gs.shopStock : null;
   shopStepsSinceRestock = (typeof gs.shopStepsSinceRestock === 'number') ? gs.shopStepsSinceRestock : 0;
   purchasedSpellbooks = new Set(gs.purchasedSpellbooks || []);
+  // Saves antérieures aux sinks endgame → compteur vide (idempotent).
+  endgamePurchases = (gs.endgamePurchases && typeof gs.endgamePurchases === 'object')
+    ? { ...gs.endgamePurchases } : {};
   // visitedFloors : fallback sur l'étage courant pour les saves antérieures.
   visitedFloors = new Set(gs.visitedFloors || [currentFloor || 1]);
   if (currentFloor) visitedFloors.add(currentFloor);

@@ -1214,6 +1214,42 @@ const NPCS = [
         "Personne ne descend plus bas que cet étage avec mauvaise réputation. J'ai mauvaise réputation. Cherche l'erreur."
       ]
     }
+  },
+  // ── Marchand itinérant rare — sinks endgame Piste E ────────────
+  // Spawn dédié dans dungeon.js (10 % par génération d'étage 11+).
+  // Inventaire premium : items endgame à prix progressif (rarityScales)
+  // appliqués via priceMultiplier ×1.4 par le shop. Item exclusif :
+  // philtre_endurance (+3 END permanent, base 3500 G, prix progressif).
+  // Voir .claude/plans/game-economy-gold-audit.md §5.6 Piste E.
+  {
+    id:    "marchand_ombre",
+    name:  "Marchand d'Ombre",
+    title: "Voyageur sans étage",
+    sprite: "vendeur",
+    icon:  "🛒",
+    portraitImg: "img/npc/_wizard_generic.png",
+    // Pas de `placement` ni `random:true` : placement assuré par le
+    // hook dédié dans dungeon.js. Évite la concurrence avec les pools
+    // ambiants standards.
+    priceMultiplier: 1.4,
+    wares: [
+      { id: "elixir_perma_hp"   },
+      { id: "elixir_perma_mp"   },
+      { id: "pierre_ame"        },
+      { id: "philtre_endurance" }
+    ],
+    buyback: { default: 0.30 },
+    dialogues: {
+      greeting: [
+        "Tu m'as croisé. Peu de gens y parviennent — j'évite les chemins fixes.",
+        "Mes flacons viennent de très loin… leur prix s'en ressent. Mais ils ne se retrouvent nulle part ailleurs."
+      ],
+      idleRandom: [
+        "Le Philtre d'Endurance ? Recette ancestrale. Trois ingrédients que la moitié des herboristes refusent même de nommer.",
+        "Tu me reverras peut-être. Ou pas. Personne ne devine où je dors.",
+        "Mon prix est ferme. Mon temps aussi : j'aurai disparu avant ton prochain étage."
+      ]
+    }
   }
 ];
 

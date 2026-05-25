@@ -233,6 +233,21 @@ function _tryAutoReviveKOChars() {
 
 // Tick fin de round : applique regenHp/regenSp issus de l'équipement.
 // Plafonné par hpMax/spMax. Appelé depuis enemyTurn ; testable directement.
+// Multiplicateur d'or de combat issu de l'équipement du groupe (ex.
+// Reliquaire Lunaire = +0.20). Retourne 1 + Σ bonusGoldMult. Stack
+// multiplicatif avec recolteMult (cf. endBattle).
+// Voir .claude/plans/game-economy-gold-audit.md §5.6 Piste A.
+function _equipmentGoldMultiplier() {
+  let bonus = 0;
+  party.slice(0, partySize).forEach(c => {
+    if (!c || !c.equipped) return;
+    Object.values(c.equipped).forEach(item => {
+      if (item && typeof item.bonusGoldMult === 'number') bonus += item.bonusGoldMult;
+    });
+  });
+  return 1 + Math.max(0, bonus);
+}
+
 function applyEquipmentRegen() {
   let log = '';
   party.slice(0, partySize).forEach(c => {
@@ -771,12 +786,17 @@ function endBattle(won) {
     const diff     = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal'];
     // Récolte Magique (palier Mythe Poufsouffle) : or de ce combat +50 %.
     const recolteMult = recolteGoldBonus ? 1.5 : 1;
+    // Bonus d'équipement : somme des bonusGoldMult portés par tous les
+    // items équipés du groupe (ex. Reliquaire Lunaire = 0.20). Stack
+    // multiplicatif avec Récolte Magique. Cf. game-economy-gold-audit.md §5.6.
+    const equipGoldMult = (typeof _equipmentGoldMultiplier === 'function')
+      ? _equipmentGoldMultiplier() : 1;
     let totalXp = 0, totalGold = 0;
     enemyGroup.forEach(e => { totalXp += e.xp; totalGold += e.gold + Math.floor(Math.random() * 5); });
 
     // XP et or multipliés selon la difficulté
     player.xp   += Math.floor(totalXp   * diff.xpMultiplier);
-    player.gold += Math.floor(totalGold * diff.goldMultiplier * recolteMult);
+    player.gold += Math.floor(totalGold * diff.goldMultiplier * recolteMult * equipGoldMult);
 
     // Drops d'objets (chance modulée par la difficulté + bonus Ténèbres).
     // Endgame §7.9 : sur variant `darkness`, drop standards ×1.5 et roll
@@ -842,9 +862,13 @@ function endBattle(won) {
     enemyGroup.forEach(e => safeCall('checkVictoryTrigger', e.id));
 
     const xpEarned   = Math.floor(totalXp   * diff.xpMultiplier);
-    const goldEarned = Math.floor(totalGold * diff.goldMultiplier * recolteMult);
+    const goldEarned = Math.floor(totalGold * diff.goldMultiplier * recolteMult * equipGoldMult);
     if (recolteGoldBonus) {
       addMsg('🌾 Récolte Magique — Gallions du combat majorés (+50%) !', 'good');
+    }
+    if (equipGoldMult > 1.001) {
+      const pct = Math.round((equipGoldMult - 1) * 100);
+      addMsg(`🌙 Reliquaire — Gallions du combat majorés (+${pct}%).`, 'good');
     }
 
     // Points de Maison selon la difficulté — Ténèbres ×1.5 (endgame §7.9).

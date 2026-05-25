@@ -1065,6 +1065,143 @@ RECIPES: Dict[str, Recipe] = {
             {"kind": "orb_glow", "region": "gem", "color": (110, 170, 230)},
         ],
     ),
+
+    # ── Sinks endgame V1 (combo A+E) ───────────────────────────────
+    # Cf. .claude/plans/game-economy-gold-audit.md §5.6 et §7 Étape 6.
+
+    "elixir_perma_hp": Recipe(
+        id="elixir_perma_hp", name="Élixir Permanent de Vitalité",
+        rarity="epic", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={
+            "stopper": ( 90,  55,  30),
+            "body":    (200, 215, 220),
+        },
+        accents=[
+            {"kind": "liquid",   "region": "body",
+             "color": (180,  25,  45), "level": 0.72, "meniscus": True, "glow": True},
+            {"kind": "bubbles",  "region": "body", "color": (255, 200, 200), "count": 8},
+            {"kind": "orb_glow", "region": "body", "color": (220,  60,  80)},
+            {"kind": "symbol",   "region": "body", "shape": "cross",
+             "color": (255, 235, 235), "size": 90},
+        ],
+        sparkles=True,
+    ),
+
+    "elixir_perma_mp": Recipe(
+        id="elixir_perma_mp", name="Élixir Permanent de Mana",
+        rarity="epic", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={
+            "stopper": ( 40,  30,  70),
+            "body":    (200, 215, 220),
+        },
+        accents=[
+            {"kind": "liquid",   "region": "body",
+             "color": ( 40,  90, 220), "level": 0.72, "meniscus": True, "glow": True},
+            {"kind": "bubbles",  "region": "body", "color": (180, 220, 255), "count": 10},
+            {"kind": "orb_glow", "region": "body", "color": ( 80, 130, 255)},
+            {"kind": "symbol",   "region": "body", "shape": "star",
+             "color": (230, 240, 255), "size": 90},
+        ],
+        sparkles=True,
+    ),
+
+    "pierre_ame": Recipe(
+        id="pierre_ame", name="Pierre d'Âme",
+        rarity="legendary", material="glass",
+        silhouette={"kind": "svg", "file": "gem-octahedron.svg"},
+        fills={
+            "gem":       (140,  60, 180),
+            "gem_facet": (200, 140, 230),
+            "gem_base":  ( 70,  25, 100),
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem_facet", "color": (230, 200, 255)},
+            {"kind": "orb_glow", "region": "gem", "color": (180, 100, 220)},
+            {"kind": "symbol",   "region": "gem", "shape": "eye",
+             "color": (255, 230, 255), "size": 110},
+            {"kind": "runes",    "region": "gem", "color": (220, 180, 255), "count": 3},
+        ],
+        sparkles=True,
+    ),
+
+    "grimoire_interdit": Recipe(
+        id="grimoire_interdit", name="Grimoire Interdit",
+        rarity="legendary", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={
+            "cover": ( 28,  18,  22),
+            "spine": ( 18,  12,  16),
+            "pages": (210, 195, 165),
+            "gilt":  (170, 170, 175),
+        },
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 10,   6,   8)},
+            {"kind": "symbol", "region": "cover", "shape": "skull",
+             "color": (190, 175, 145), "size": 140},
+            {"kind": "runes",  "region": "cover", "color": (140,  30,  30), "count": 5},
+        ],
+        sparkles=True,
+    ),
+
+    "pendentif_ombre": Recipe(
+        id="pendentif_ombre", name="Pendentif d'Ombre",
+        rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={
+            "chain":     ( 90,  90, 100),
+            "setting":   ( 40,  40,  50),
+            "gem":       ( 15,  15,  25),
+            "gem_facet": ( 60,  50,  90),
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem_facet", "color": (130, 100, 200)},
+            {"kind": "orb_glow", "region": "gem", "color": ( 80,  40, 140)},
+            {"kind": "symbol",   "region": "setting", "shape": "bat",
+             "color": (150, 140, 170), "size": 60},
+        ],
+        sparkles=True,
+    ),
+
+    "reliquaire_lunaire": Recipe(
+        id="reliquaire_lunaire", name="Reliquaire Lunaire",
+        rarity="legendary", material="metal",
+        silhouette={"kind": "svg", "file": "chalice.svg"},
+        fills={
+            "bowl":  (205, 215, 230),
+            "rim":   (240, 245, 255),
+            "stem":  (160, 170, 185),
+            "foot":  (140, 150, 170),
+            "gem":   ( 50,  80, 160),
+        },
+        accents=[
+            {"kind": "symbol", "region": "bowl", "shape": "moon",
+             "color": (245, 245, 220), "size": 130},
+            {"kind": "runes",  "region": "bowl", "color": (200, 220, 255), "count": 4},
+            {"kind": "gem_facet_shine", "region": "gem", "color": (200, 220, 255)},
+            {"kind": "orb_glow", "region": "gem", "color": (120, 170, 255)},
+            {"kind": "emboss", "region": "foot", "color": ( 80,  90, 110)},
+        ],
+        sparkles=True,
+    ),
+
+    "philtre_endurance": Recipe(
+        id="philtre_endurance", name="Philtre d'Endurance",
+        rarity="rare", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={
+            "stopper": ( 80,  60,  35),
+            "body":    (190, 200, 195),
+        },
+        accents=[
+            {"kind": "liquid",  "region": "body",
+             "color": ( 95, 115,  50), "level": 0.75, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (170, 200, 130), "count": 6},
+            {"kind": "symbol",  "region": "body", "shape": "drop",
+             "color": (210, 230, 170), "size": 100},
+        ],
+    ),
 }
 
 

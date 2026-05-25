@@ -143,6 +143,26 @@ function _tickShopRestock() {
   if (shopStepsSinceRestock >= SHOP_RESTOCK_STEPS) _invalidateShopStock();
 }
 
+// ── Sinks endgame — prix progressif & multiplicateur vendeur ──────
+// Items marqués `rarityScales: true` (data.js) : chaque achat majore le
+// prix du prochain par ×1.5 via `endgamePurchases[id]`. Les vendeurs
+// itinérants peuvent porter `priceMultiplier` (ex. marchand_ombre = 1.4)
+// — appliqué au-dessus de l'éventuelle progression de rareté.
+// Voir .claude/plans/game-economy-gold-audit.md §5.6.
+function _endgameItemPrice(item, basePrice, npc) {
+  if (!item) return basePrice || 0;
+  let p = basePrice;
+  if (item.rarityScales) {
+    const n = (typeof endgamePurchases !== 'undefined' && endgamePurchases[item.id]) || 0;
+    const base = (typeof item.basePrice === 'number') ? item.basePrice : basePrice;
+    p = Math.round(base * Math.pow(1.5, n));
+  }
+  if (npc && typeof npc.priceMultiplier === 'number' && npc.priceMultiplier > 0) {
+    p = Math.round(p * npc.priceMultiplier);
+  }
+  return p;
+}
+
 // Calcule le prix de rachat pour un item donné selon une politique buyback.
 // Le multiplicateur final = max(default, byType, byRarity, bySlot) — la
 // spécialisation la plus avantageuse l'emporte. Plancher à 1G.
@@ -232,18 +252,24 @@ function _renderBuyGrid(grid) {
   // Lignes à afficher : { item, price, stockEntry } — stockEntry non null
   // uniquement pour la boutique fixe (pilote l'achat unique).
   let rows = [];
+  const ctxNpc = (_shopContext.kind === 'vendor')
+    ? getNpcById(_shopContext.npcId) : null;
   if (_shopContext.kind === 'static') {
     _ensureShopStock();
-    rows = shopStock.map(s => ({ item: s.item, price: s.price, stockEntry: s }));
+    rows = shopStock.map(s => ({
+      item:  s.item,
+      price: _endgameItemPrice(s.item, s.price, null),
+      stockEntry: s
+    }));
   } else {
-    const npc   = getNpcById(_shopContext.npcId);
-    const wares = (npc && npc.wares) || [];
+    const wares = (ctxNpc && ctxNpc.wares) || [];
     for (const entry of wares) {
       const item = ITEMS.find(i => i.id === entry.id);
       if (!item) continue;
       // Livre de sort déjà acheté → retiré globalement (vendeurs inclus).
       if (item.type === 'spellbook' && purchasedSpellbooks.has(item.id)) continue;
-      const price = (typeof entry.price === 'number') ? entry.price : item.price;
+      const basePrice = (typeof entry.price === 'number') ? entry.price : item.price;
+      const price = _endgameItemPrice(item, basePrice, ctxNpc);
       rows.push({ item, price, stockEntry: null });
     }
   }
@@ -257,9 +283,12 @@ function _renderBuyGrid(grid) {
     div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #5a4020;border-radius:6px;background:rgba(30,20,10,0.55);cursor:' + (canAfford ? 'pointer' : 'default') + ';opacity:' + (canAfford ? '1' : '0.5');
     const soldTag = (stockEntry && stockEntry.sold)
       ? ' <span style="color:#a8d878;font-size:0.85em">♻️ revendu</span>' : '';
+    // Indicateur rareté pour les items à prix progressif (sinks endgame).
+    const rareTag = (item.rarityScales)
+      ? ` <span style="color:#c9a84c;font-size:0.78em" title="Stock rare — chaque achat épuise davantage le marché.">⚜ rare</span>` : '';
     div.innerHTML = `<div class="shop-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div>
       <div class="shop-info">
-        <div class="shop-name">${item.name}${soldTag}</div>
+        <div class="shop-name">${item.name}${soldTag}${rareTag}</div>
         <div class="shop-desc">${item.desc}</div>
       </div>
       <div class="shop-price">${price}G</div>`;
@@ -326,8 +355,21 @@ function _purchase(item, price, stockEntry) {
   player.inventory.push({ ...item });
   // Livre de sort : achetable une seule fois pour toute la partie.
   if (item.type === 'spellbook') purchasedSpellbooks.add(item.id);
-  // Boutique fixe : l'objet quitte le stock (achat unique jusqu'au réassort).
-  if (stockEntry && Array.isArray(shopStock)) {
+  // Sinks endgame — items à prix progressif : on incrémente le compteur
+  // d'achats (qui pilote la formule basePrice × 1.5^n) AVANT le splice,
+  // pour que la prochaine ouverture de la boutique reflète le nouveau
+  // prix. Les items rarityScales **ne quittent pas** le stock — leur
+  // disponibilité est régulée par le prix qui grimpe.
+  if (item.rarityScales && typeof endgamePurchases !== 'undefined') {
+    endgamePurchases[item.id] = (endgamePurchases[item.id] || 0) + 1;
+    const n = endgamePurchases[item.id];
+    if (n === 3) {
+      addMsg(`Le marchand hausse un sourcil. « Encore un… ces flacons se font rares. »`, '');
+    }
+  }
+  // Boutique fixe : l'objet quitte le stock (achat unique jusqu'au réassort)
+  // — sauf pour les items rarityScales (ré-achetables au prix progressif).
+  if (stockEntry && Array.isArray(shopStock) && !item.rarityScales) {
     const i = shopStock.indexOf(stockEntry);
     if (i !== -1) shopStock.splice(i, 1);
   }
