@@ -896,7 +896,7 @@ const MONSTERS = [
     danger:   10,
     minFloor: 7, maxFloor: null, weight: 3,
     hp: 55, atk: 18, def: 7, mag: 15, agi: 12, lck: 8,
-    scale: 0.32,
+    scale: 0.36,
     abilities: [
       { name: "Morsure Horcruxe",    icon: "💀", desc: "Draine l'énergie vitale",  effect: "drain", power: 12, chance: 0.40 },
       { name: "Régénération Sombre", icon: "🟢", desc: "Récupère des PV",           effect: "heal",  power: 15, chance: 0.20 }
@@ -928,7 +928,7 @@ const MONSTERS = [
     danger:   9,
     minFloor: 7, maxFloor: null, weight: 4,
     hp: 55, atk: 16, def: 8, mag: 16, agi: 11, lck: 9,
-    scale: 0.32,
+    scale: 0.38,
     abilities: [
       { name: "Cruciatus Noir",      icon: "⚡", desc: "Sort de torture intense",     effect: "drain",  power: 14, chance: 0.30 },
       { name: "Magie Noire Pure",    icon: "🟣", desc: "Magie des ténèbres absolue",  effect: "damage", power: 15, chance: 0.35 },
@@ -967,7 +967,7 @@ const MONSTERS = [
     danger:   10,
     minFloor: 8, maxFloor: null, weight: 2,
     hp: 70, atk: 20, def: 8, mag: 20, agi: 13, lck: 12,
-    scale: 0.35,
+    scale: 0.40,
     abilities: [
       { name: "Avada Kedavra",       icon: "💚", desc: "Sort de la mort",               effect: "damage", power: 25, chance: 0.25 },
       { name: "Cruciatus Intense",   icon: "⚡", desc: "Sort de torture suprême",        effect: "drain",  power: 16, chance: 0.30 },
@@ -1146,7 +1146,7 @@ const MONSTERS = [
     lore: "Créature mi-lion mi-scorpion, classée parmi les plus dangereuses.",
     habitat: "Souterrains profonds et salles secrètes", danger: 8,
     minFloor: 6, maxFloor: null, weight: 4,
-    hp: 65, atk: 18, def: 10, mag: 5, agi: 12, lck: 7, scale: 0.32,
+    hp: 65, atk: 18, def: 10, mag: 5, agi: 12, lck: 7, scale: 0.38,
     abilities: [
       { name: "Piqûre de Venin", icon: "🦂", desc: "Poison (20 dégâts + drain)",
         effect: "drain", power: 20, chance: 0.30 },
