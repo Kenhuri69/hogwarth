@@ -58,6 +58,11 @@ function upgradeSpellAtLibrary(charIdx, spellName) {
     addMsg(`${c.name} ne connaît pas encore ce sort.`, '');
     return false;
   }
+  const spell = (typeof SPELLS !== 'undefined') ? SPELLS.find(s => s.name === spellName) : null;
+  if (spell && !(spell.power | 0)) {
+    addMsg(`${spellName} : effet utilitaire, non amplifiable.`, '');
+    return false;
+  }
   const current = getSpellUpgradeLevel(c, spellName);
   if (current >= LIBRARY_MAX_LEVEL) {
     addMsg(`${spellName} : niveau maximum atteint.`, '');
@@ -137,6 +142,10 @@ function openLibrary() {
     const lvl    = getSpellUpgradeLevel(c, name);
     const maxed  = lvl >= LIBRARY_MAX_LEVEL;
     const cost   = maxed ? null : LIBRARY_COSTS[lvl + 1];
+    // Sorts utilitaires sans `power` (Accio, Portus, Revelio, Patronus Maxima,
+    // Legilimens, Récolte Magique…) : non amplifiables — la formule
+    // power +2 / cost −1 n'a aucun sens pour un effet binaire ou narratif.
+    const utility = !(spell.power | 0);
     const pwrNow  = (spell.power | 0) + 2 * lvl;
     const pwrNext = pwrNow + 2;
     const cstNow  = Math.max(1, (spell.cost | 0) - lvl);
@@ -144,14 +153,16 @@ function openLibrary() {
     const iconHtml = (typeof getSpellIconHtml === 'function')
       ? getSpellIconHtml(spell, 'ui-icon-md') : (spell.icon || '✨');
     const lvlBadge  = lvl > 0 ? `<span class="forge-lvl-badge">+${lvl}</span>` : '';
-    const previewLine = maxed
+    const previewLine = utility
+      ? `<div class="library-preview forge-noupgrade">Effet utilitaire — non amplifiable</div>`
+      : maxed
       ? `<div class="library-preview forge-maxed">Niveau MAX</div>`
       : `<div class="library-preview">power ${pwrNow} → <b>${pwrNext}</b> · cost ${cstNow} → <b>${cstNext}</b> SP</div>`;
-    const costLine = cost
+    const costLine = (cost && !utility)
       ? `<div class="library-cost">${cost.gold} g · ${cost.pages} 📜</div>`
       : '';
     const affordable = cost && player.gold >= cost.gold && _countPages() >= cost.pages;
-    const btn = !maxed
+    const btn = (!maxed && !utility)
       ? `<button class="library-upgrade-btn ${affordable ? '' : 'disabled'}"
                  ${affordable ? '' : 'disabled'}
                  onclick="upgradeSpellAtLibrary(${_libraryCharIdx}, '${name.replace(/'/g, "\\'")}')">Amplifier</button>`

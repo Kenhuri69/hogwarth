@@ -32,17 +32,29 @@ function _consumeEssence(n) {
   return _consumeMaterial('essence_tenebres', n);
 }
 
-// Détermine la stat principale d'un item (la plus élevée parmi bonusAtk/Def/Mag/Lck).
-// Retourne un objet { key: 'bonusAtk', value: 5 } ou null.
+// Détermine la stat principale d'un item à forger.
+// Priorité 1 : la plus élevée parmi bonusAtk/Def/Mag/Lck (compat descendante).
+// Priorité 2 : si aucun primaire, la plus élevée parmi les bonus dérivés
+//              (crit, esquive, HpMax, SpMax) — permet de forger oeil_basilic,
+//              cor_pegasse, etc.
+// Retourne { key: 'bonusXxx', value: N } ou null si l'item n'a aucun bonus.
 function _primaryBonus(item) {
   if (!item) return null;
-  const keys = ['bonusAtk', 'bonusDef', 'bonusMag', 'bonusLck'];
-  let best = null;
-  for (const k of keys) {
-    const v = item[k] | 0;
-    if (v > 0 && (!best || v > best.value)) best = { key: k, value: v };
-  }
-  return best;
+  const primaryKeys = ['bonusAtk', 'bonusDef', 'bonusMag', 'bonusLck'];
+  const secondaryKeys = [
+    'bonusCritChance', 'bonusDodgeChance', 'bonusCritDamage',
+    'bonusSpellCritChance', 'bonusSpellCritDamage',
+    'bonusHpMax', 'bonusSpMax'
+  ];
+  const pickHighest = (keys) => {
+    let best = null;
+    for (const k of keys) {
+      const v = item[k] | 0;
+      if (v > 0 && (!best || v > best.value)) best = { key: k, value: v };
+    }
+    return best;
+  };
+  return pickHighest(primaryKeys) || pickHighest(secondaryKeys);
 }
 
 // Renvoie le bonus supplémentaire apporté par upgradeLevel (inclus dans recalculateStats).
@@ -140,7 +152,7 @@ function openForge() {
       const previewLine = upgradable && !maxed
         ? `<div class="forge-preview">${primBonus.key.replace('bonus','')} ${primBonus.value + lvl} → <b>${primBonus.value + lvl + 1}</b></div>`
         : maxed ? `<div class="forge-preview forge-maxed">Niveau MAX</div>`
-        : `<div class="forge-preview forge-noupgrade">Aucune stat à forger</div>`;
+        : `<div class="forge-preview forge-noupgrade">Effet spécial — non forgeable</div>`;
       const costLine = cost
         ? `<div class="forge-cost">${cost.gold} g · ${cost.essence} 🌑</div>`
         : '';
