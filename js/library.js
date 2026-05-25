@@ -14,11 +14,13 @@
 //   - Pas d'effet sur les sorts à coût/effet binaire (Avada Kedavra).
 //   - Persistance : ajouter à _serializeState (save.js) + lazy init.
 
-const LIBRARY_MAX_LEVEL = 3;
+const LIBRARY_MAX_LEVEL = 5;
 const LIBRARY_COSTS = {
-  1: { gold: 120, pages: 1 },
-  2: { gold: 240, pages: 2 },
-  3: { gold: 480, pages: 3 },
+  1: { gold: 120,  pages: 1 },
+  2: { gold: 240,  pages: 2 },
+  3: { gold: 480,  pages: 3 },
+  4: { gold: 960,  pages: 5 },
+  5: { gold: 1920, pages: 8 },
 };
 
 // État UI : index du perso sélectionné dans les onglets.
@@ -32,6 +34,37 @@ function _countPages() {
 
 function _consumePages(n) {
   return _consumeMaterial('page_grimoire', n);
+}
+
+// Récap de progression Bibliothèque par héros actif. Pure — utilisée
+// par `openLibrary()` (entête) + le smoke test. Pour chaque héros,
+// compte les sorts non-utilitaires (power > 0) connus, distingue ceux
+// au niveau MAX vs partiels, somme le gold restant pour tout maxer.
+// Cf. .claude/plans/forge-library-audit.md §4.5.
+function _libraryProgressSummary() {
+  const out = [];
+  for (let i = 0; i < (partySize || 1); i++) {
+    const c = party[i];
+    if (!c || !Array.isArray(c.spells)) continue;
+    let upgradable = 0, maxed = 0, partial = 0, goldRemaining = 0;
+    for (const name of c.spells) {
+      const spell = SPELLS.find(s => s.name === name);
+      if (!spell || !(spell.power | 0)) continue;  // utilitaires exclus
+      upgradable++;
+      const lvl = (c.spellUpgrades && c.spellUpgrades[name]) | 0;
+      if (lvl >= LIBRARY_MAX_LEVEL) { maxed++; continue; }
+      partial++;
+      for (let t = lvl + 1; t <= LIBRARY_MAX_LEVEL; t++) {
+        const cost = LIBRARY_COSTS[t];
+        if (cost) goldRemaining += (cost.gold | 0);
+      }
+    }
+    out.push({
+      heroName: (c.name || `Héros ${i + 1}`).split(' ')[0],
+      upgradable, maxed, partial, goldRemaining,
+    });
+  }
+  return out;
 }
 
 // Initialise spellUpgrades = {} sur tous les persos qui en sont dépourvus.
@@ -130,13 +163,26 @@ function openLibrary() {
   const list = document.getElementById('library-list');
   if (!list || !c) return;
 
+  // Entête : récap progression Bibliothèque du groupe (§4.5).
+  const summary = _libraryProgressSummary();
+  const summaryHtml = summary.length
+    ? `<div class="forge-progress-summary">
+         <div class="forge-progress-title">📚 Bibliothèque — Progression du groupe</div>
+         ${summary.map(s => `
+           <div class="forge-progress-line">
+             <b>${s.heroName}</b> :
+             ${s.maxed}/${s.upgradable} sorts au max (+${LIBRARY_MAX_LEVEL})${s.partial ? ` · ${s.partial} partiels — ${s.goldRemaining} G pour tout maxer` : ' · tout est maxé'}
+           </div>`).join('')}
+       </div>`
+    : '';
+
   if (!c.spells || c.spells.length === 0) {
-    list.innerHTML = `<div class="library-empty">${c.name} ne connaît aucun sort à étudier.</div>`;
+    list.innerHTML = `${summaryHtml}<div class="library-empty">${c.name} ne connaît aucun sort à étudier.</div>`;
     modal.style.display = 'flex';
     return;
   }
 
-  list.innerHTML = c.spells.map(name => {
+  list.innerHTML = summaryHtml + c.spells.map(name => {
     const spell = SPELLS.find(s => s.name === name);
     if (!spell) return '';
     const lvl    = getSpellUpgradeLevel(c, name);

@@ -837,15 +837,20 @@ function endBattle(won) {
             addMsg(`✨ Drop unique : ${item.name} !`, 'magic');
           }
         }
-        // Matériaux endgame (Tranche 2) — drops indépendants
-        // 3 % Essence des Ténèbres + 2 % Page de Grimoire (cf. ENDGAME_PLAN.md §7.10).
-        if (Math.random() < 0.03) {
+      }
+      // Matériaux endgame (Tranche 2) — gate étage 11+ (boucle ténébreuse).
+      // Variant darkness boost le drop ×2 (cf. .claude/plans/forge-library-audit.md §4.2).
+      if ((currentFloor || 0) >= 11) {
+        const isDark   = e.variant === 'darkness';
+        const essRate  = isDark ? 0.03 : 0.015;
+        const pageRate = isDark ? 0.02 : 0.01;
+        if (Math.random() < essRate) {
           const item = ITEMS.find(i => i.id === 'essence_tenebres');
           if (item && tryAddItem(item, { silent: true })) {
             addMsg(`🌑 Matériau : ${item.name}`, 'magic');
           }
         }
-        if (Math.random() < 0.02) {
+        if (Math.random() < pageRate) {
           const item = ITEMS.find(i => i.id === 'page_grimoire');
           if (item && tryAddItem(item, { silent: true })) {
             addMsg(`📜 Matériau : ${item.name}`, 'magic');

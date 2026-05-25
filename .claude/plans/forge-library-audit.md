@@ -448,3 +448,78 @@ Pas de risque d'avalanche.
   Bibliothèque existent déjà (pivot du Plan C original — forge from
   scratch — vers un audit/extension des systèmes en place).
   Validation utilisateur attendue avant implémentation.
+- **2026-05-25 (validation V1, branche `claude/gold-audit-quick-wins`)** :
+  utilisateur valide le **set prioritaire §4.1 + §4.2 + §4.4 + §4.5**
+  (synthèse §5). §4.3 + §4.6 reportés. Phasage en 6 étapes ci-dessous,
+  critères de vérification par étape (§4 guidelines). Implémentation
+  immédiate.
+
+## 10. Plan d'implémentation (V1)
+
+### Étape A — Bibliothèque +5 (§4.1)
+- [ ] Bump `LIBRARY_MAX_LEVEL` 3 → 5 dans `library.js`.
+- [ ] Ajouter `LIBRARY_COSTS[4] = {gold:960, pages:5}` et
+      `LIBRARY_COSTS[5] = {gold:1920, pages:8}`.
+- [ ] Vérification : `node tests/smoke.js` vert.
+
+### Étape B — Drops matériaux étendus (§4.2)
+- [ ] `battle.js` : sortir les 2 drops matériaux (essence_tenebres,
+      page_grimoire) du bloc `if (e.variant === 'darkness')`.
+- [ ] Gate explicite `currentFloor >= 11` pour conserver l'intention
+      « boucle ténébreuse uniquement ».
+- [ ] Seuils conditionnels : essence `0.03` (darkness) / `0.015`
+      (normal), page `0.02` / `0.01`.
+- [ ] Vérification : smoke vert.
+
+### Étape C — marchand_ombre vend matériaux (§4.4)
+- [ ] Ajouter `essence_tenebres` + `page_grimoire` à
+      `npcs.js — marchand_ombre.wares`. `priceMultiplier: 1.4` reste
+      automatique.
+- [ ] Vérification : smoke vert.
+
+### Étape D — Rapport UI Forge / Bibliothèque (§4.5)
+- [ ] Helper pur `_forgeProgressSummary()` dans `forge.js` —
+      retourne `[{ heroName, maxed, partial, total }, ...]`.
+- [ ] Helper pur `_libraryProgressSummary()` dans `library.js` — idem.
+- [ ] `openForge()` : préfixer la liste avec un bloc « 🔨 Forge —
+      Progression du groupe » listant maxed / partiels par héros.
+- [ ] `openLibrary()` : symétrique avec « 📚 Bibliothèque ».
+- [ ] CSS : reprendre les styles `.forge-empty` existants pour
+      l'encart récap (pas de nouveau fichier CSS).
+
+### Étape E — Smoke test
+- [ ] Ajouter cas `scenarioForgeLibraryAudit` : vérifie
+      `LIBRARY_MAX_LEVEL === 5`, `LIBRARY_COSTS[5]` défini, drops
+      matériaux possibles hors variant darkness mais avec floor 11+,
+      marchand_ombre.wares contient essence/page, helpers de récap
+      renvoient une structure exploitable.
+- [ ] Vérification : `node tests/smoke.js` vert avec ce scénario.
+
+### Étape F — Commit + push
+- [ ] Plusieurs commits structurés (1 par étape), 1 push final
+      `claude/gold-audit-quick-wins` (branche déjà créée pour le
+      doc-update, on l'enrichit avec l'audit).
+
+## 11. Livraison (2026-05-25)
+
+Toutes les étapes A-F **livrées** sur `claude/gold-audit-quick-wins` :
+
+- ✅ Étape A — `js/library.js` : `LIBRARY_MAX_LEVEL = 5`,
+  `LIBRARY_COSTS[4] = {gold:960, pages:5}`, `[5] = {gold:1920, pages:8}`.
+- ✅ Étape B — `js/battle.js` : drops matériaux sortis du bloc
+  `if (e.variant === 'darkness')`, gate explicite `currentFloor >= 11`,
+  seuils conditionnels (essence 0.03/0.015, page 0.02/0.01).
+- ✅ Étape C — `js/npcs.js` : `marchand_ombre.wares` étendu avec
+  `essence_tenebres` + `page_grimoire`. `priceMultiplier: 1.4` automatique.
+- ✅ Étape D — `js/forge.js` + `js/library.js` : nouveaux helpers
+  `_forgeProgressSummary()` + `_libraryProgressSummary()` (purs) +
+  bloc récap injecté en tête des modales `#forge-modal` /
+  `#library-modal`. CSS `.forge-progress-summary` ajouté à `css/style.css`.
+- ✅ Étape E — `tests/smoke.js` : scénario `scenarioForgeLibraryAudit`
+  (4 sous-tests). Smoke entièrement vert.
+- ✅ Étape F — commit + push sur `claude/gold-audit-quick-wins`,
+  cache-bust `forge.js?v=2` / `library.js?v=2` dans `index.html`.
+
+**Plan archivable** — set prioritaire intégralement livré. Recos
+restantes (§4.3 utilitaires amplifiables, §4.6 accès head-of-house)
+explicitement non retenues.

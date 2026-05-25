@@ -1236,7 +1236,9 @@ const NPCS = [
       { id: "elixir_perma_hp"   },
       { id: "elixir_perma_mp"   },
       { id: "pierre_ame"        },
-      { id: "philtre_endurance" }
+      { id: "philtre_endurance" },
+      { id: "essence_tenebres"  },
+      { id: "page_grimoire"     }
     ],
     buyback: { default: 0.30 },
     dialogues: {
