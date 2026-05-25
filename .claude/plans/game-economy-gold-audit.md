@@ -174,27 +174,38 @@ qu'en Normal sur tout le reste. Le ratio coffres/drops devient
 dominé par les coffres en haute difficulté → l'incitation à
 combattre baisse.
 
-### 4.B Plateau de drops étages 6-10 vs. inflation des prix
+### 4.B Plateau de drops étages 6-10 (hors items-trophées)
 
 **Constat** : entre l'étage 6 et l'étage 10, l'or par combat passe
 de ~65 à ~120 G (×1.85). Sur la même tranche, le prix max d'item
-passe de 1200 G (Nox Vorax) à 2800 G (Portus, déverrouillé étage 6
-déjà). Le ratio « combats nécessaires » culmine à **~37 combats** à
-l'étage 7. Le joueur est mécaniquement poussé vers le farming
-respawn — qui augmente la difficulté (cf. CLAUDE.md §scaling) sans
-augmenter proportionnellement le gold-loot (qui n'est plafonné qu'en
-mode Ironman via `étageMax×12`).
+« pallier » (hors items-trophées) passe de 700 G (Vulnera) à
+1200 G (Nox Vorax). Le ratio reste raisonnable (~10-18 combats par
+achat), **mais** l'enchaînement étage 6 → étage 7 voit les prix
+sauter sans que les drops suivent à la même pente. Une légère
+inflation des drops étage 7-10 lisserait la courbe d'équipement
+courante.
 
-### 4.C Prix de `livre_portus` (2800 G) atypique
+> Note : les items-trophées (Portus 2800 G, et tout autre objet
+> « spécieux » au-dessus de ~1200 G) sont **exclus de ce constat** —
+> ils sont positionnés comme objectifs longue durée et ne doivent
+> **pas** être alignés sur la pente standard. Cf. §4.C ci-dessous.
 
-**Constat** : Portus est à **2800 G**, soit 2.3× le second item le
-plus cher (Nox Vorax, 1200 G). Aucun autre item ne dépasse 1200 G.
-Cette discontinuité est :
-- soit volontaire (Portus est un « ultimate utility ») — auquel cas
-  il faudrait le **déverrouiller plus tard** (étage 9-10 plutôt
-  qu'étage 6) pour aligner accessibilité et puissance ;
-- soit une erreur héritée — auquel cas un retour à 1400-1600 G
-  remettrait la courbe d'achat à plat.
+### 4.C Items-trophées (Portus 2800 G) — barrière de coût voulue
+
+**Statut** : ✅ **Design intentionnel** confirmé par l'utilisateur.
+
+Portus (`livre_portus`, 2800 G, étage 6+) et tout futur item de la
+même classe sont des **objectifs économiques longue durée** :
+l'écart 1200 G → 2800 G n'est pas une anomalie, c'est la
+fonction de l'item. Ils servent de gold-sink endgame, motivent
+l'exploration des étages profonds (où l'or scale mieux), et
+récompensent le joueur patient. **Aucune action à prendre.**
+
+Conséquence pour les recommandations : tous les fixes ci-dessous
+doivent **préserver** ce ratio « combats pour un trophée » plutôt
+que le réduire. Si on augmente les drops étage 7-10 (§5.4), on
+doit s'assurer que Portus reste ressenti comme « cher mais
+atteignable » — pas comme un achat de routine.
 
 ### 4.D Boutique : `minFloor` non monotone
 
@@ -253,21 +264,11 @@ Toutes les propositions ci-dessous sont **indépendantes** : on peut
 en retenir une partie. Chacune affiche `avant → après` + impact
 estimé sur le ratio « combats / item top ».
 
-### 5.1 (Reco forte) Décaler ou réduire le prix de `livre_portus`
+### 5.1 ~~Repricer Portus~~ — **abandonnée**
 
-**Cible** : §4.B + §4.C — supprimer le pic à 2800 G qui crée le
-plateau.
-
-| Option | `minFloor` actuel | Nouveau `minFloor` | `price` actuel | Nouveau `price` | Effet |
-|--------|-------------------|---------------------|----------------|-----------------|-------|
-| **A — Réduction** | 6 | 6 (inchangé) | 2800 | **1600** | Ratio étage 7 : 37 → ~21 combats. Reste l'item le plus cher. |
-| **B — Repositionnement** | 6 | **9** | 2800 | 2000 | Portus devient un objectif endgame. Ratio étage 9 : 1 achat = 20 combats. |
-| **C — Hybride (recommandée)** | 6 | **8** | 2800 | **1800** | Compromis : accessible mid-late, ratio raisonnable. |
-
-> Mon avis : **option C**, parce que (a) elle préserve l'identité
-> « ultimate utility » de Portus, (b) elle nettoie la discontinuité,
-> (c) elle ne casse pas la rétro-compat des saves (le prix change,
-> le `minFloor` aussi, mais les items déjà possédés restent).
+Cette reco a été retirée après clarification : Portus (2800 G) est
+un item-trophée à barrière de coût **voulue**. Cf. §4.C. Ne pas
+toucher au prix ni au `minFloor` de `livre_portus`.
 
 ### 5.2 (Reco forte) Scaler la fouille par étage
 
@@ -318,20 +319,23 @@ sur ces sources (e.g. `min(1, goldMult + 0.20)` → 0.75 au lieu de
 
 ### 5.4 (Reco moyenne) Lisser le plateau drops monstres 6-10
 
-**Cible** : §4.B.
+**Cible** : §4.B — items pallier, **pas les trophées**.
 
 Augmenter le `scale` de 4 monstres clés étage 6+ pour que les drops
-suivent mieux la courbe :
+suivent mieux la courbe d'équipement courant. L'augmentation est
+volontairement **modérée** : un trophée à 2800 G doit toujours
+demander ~25-30 combats à l'étage 10 (pas moins).
 
 | Monstre | `scale` actuel | `scale` proposé | Or étage 10 (avant → après) |
 |---------|----------------|------------------|------------------------------|
-| Mangemort d'Élite | 0.32 | **0.40** | ~119 G → ~140 G |
-| Manticore Juvénile | 0.32 | **0.40** | ~150 G → ~175 G |
-| Bellatrix Lestrange | 0.35 | **0.42** | ~190 G → ~218 G |
-| Nagini | 0.32 | **0.38** | ~110 G → ~125 G |
+| Mangemort d'Élite | 0.32 | **0.38** | ~119 G → ~135 G |
+| Manticore Juvénile | 0.32 | **0.38** | ~150 G → ~170 G |
+| Bellatrix Lestrange | 0.35 | **0.40** | ~190 G → ~210 G |
+| Nagini | 0.32 | **0.36** | ~110 G → ~123 G |
 
-Impact global : ~+15 G/combat à l'étage 10 → ratio Portus (option C,
-1800 G) descend à ~13 combats. Sain.
+Impact global : ~+12 G/combat à l'étage 10 → ratio pour Nox Vorax
+(1200 G) descend de ~10 à ~9 combats. Ratio pour Portus (2800 G)
+descend de ~23 à ~21 combats — toujours « cher mais atteignable ».
 
 ### 5.5 (Reco faible) Réduire le coût de l'autel d'offrande
 
@@ -371,20 +375,37 @@ si validé.
 
 ---
 
-## 6. Synthèse — impact combiné des recommandations fortes
+## 6. Synthèse — impact combiné des recommandations retenues
 
-Si on applique **§5.1 (option C)** + **§5.2** + **§5.3** :
+Recos actives : **§5.2** (fouille scalée) + **§5.3** (goldMultiplier
+appliqué partout) + **§5.4** (lissage drops 6-10).
+Portus (2800 G) reste **inchangé** — c'est le trophée.
 
-| Étage | Combats / item top (avant) | Combats / item top (après) |
-|-------|-----------------------------|-----------------------------|
-| 6  | ~18 (Nox 1200 G)             | ~17 |
-| 7  | **~37 (Portus 2800 G)**      | — (Portus indispo, max = Nox 1200 G) → ~14 |
-| 8  | ~33                          | ~16 (Portus 1800 G accessible) |
-| 9  | ~28                          | ~13 |
-| 10 | ~23                          | ~10 |
+Ratios « combats pour un item pallier 1200 G » (Nox Vorax / Vulnera
+2.0) avant vs après :
 
-→ Le **mur de l'étage 7** disparaît, la courbe redevient monotone,
-et le farming respawn perd son intérêt mécanique.
+| Étage | Combats / item pallier (avant) | Combats / item pallier (après) |
+|-------|--------------------------------|---------------------------------|
+| 6  | ~18 | ~16 |
+| 7  | ~16 | ~13 |
+| 8  | ~14 | ~12 |
+| 9  | ~12 | ~10 |
+| 10 | ~10 | ~9  |
+
+Ratios « combats pour le trophée Portus 2800 G » avant vs après :
+
+| Étage | Combats / Portus (avant) | Combats / Portus (après) |
+|-------|--------------------------|---------------------------|
+| 6  | ~43 | ~38 |
+| 7  | ~37 | ~32 |
+| 8  | ~33 | ~28 |
+| 9  | ~28 | ~25 |
+| 10 | ~23 | ~21 |
+
+→ La courbe d'équipement courant redevient confortable, **la barrière
+du trophée reste sensible** (~25-30 combats post-étage 8, conforme à
+l'intention de design). Le farming respawn n'est plus indispensable
+pour les items pallier, et reste un choix tactique pour Portus.
 
 ---
 
@@ -393,9 +414,9 @@ et le farming respawn perd son intérêt mécanique.
 > ⛔ Aucune étape ci-dessous ne doit être exécutée sans validation
 > explicite de l'utilisateur sur les fixes retenus.
 
-### Étape 1 — `Reco fortes` (§5.1 + §5.2)
-- [ ] Modifier `js/data.js` (livre_portus : price, minFloor).
-- [ ] Modifier `js/movement.js` (formule fouille).
+### Étape 1 — `Reco forte` (§5.2)
+- [ ] Modifier `js/movement.js` (formule fouille scalée par étage +
+      `goldMultiplier`).
 - [ ] Vérif : `node tests/smoke.js` reste vert.
 - [ ] Capture inventaire post-fouille étage 5 (visuel).
 
@@ -461,3 +482,11 @@ et le farming respawn perd son intérêt mécanique.
 - **2026-05-25** : création du plan, diagnostic complet, propositions
   chiffrées (§5.1 à §5.7), priorité reco forte sur §5.1 + §5.2 + §5.3.
   En attente de validation utilisateur pour passer à l'implémentation.
+- **2026-05-25 (amendement)** : utilisateur précise que les items
+  « spécieux » (Portus 2800 G et équivalents) sont des **trophées à
+  barrière de coût voulue**, à ne pas aligner sur la pente standard.
+  → §5.1 retirée, §4.B reformulée pour exclure les trophées, §4.C
+  passée de « anomalie » à « design intentionnel », §5.4 ré-équilibrée
+  pour préserver le ressenti « cher mais atteignable » de Portus
+  (~25-30 combats post-étage 8 après lissage), §6 et §7 mis à jour.
+  Recos actives restantes : **§5.2 + §5.3 + §5.4**.
