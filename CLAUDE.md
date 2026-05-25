@@ -1139,15 +1139,42 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | 4–9    | Hippogriffe en Furie, Inférius, Loup-Garou Enragé, Sorcière des Ténèbres |
 | 5+     | Mangemort Masqué, Jeune Acromantule, Détraqueur Gardien, Troll des Cavernes, Sorcier Renégat |
 | 6+     | Basilic Mineur, Chimère de Poudlard, Ombre de Quirrell, Nagini |
-| 7+     | Mangemort d'Élite |
-| 8+     | Bellatrix Lestrange, Voldemort Affaibli |
-| 10+    | Voldemort Ressuscité |
+| 7+     | Mangemort d'Élite, **Auror Corrompu** |
+| 8+     | Bellatrix Lestrange, Voldemort Affaibli, **Fenrir Greyback** (boss canon, epic, weight 1), **Veilleur du Seuil** (boss original epic), **Loup-Garou Adulte** |
+| 9+     | **Aragog** (boss canon epic), **Maître des Détraqueurs** (boss original epic), **Acromantule Adulte**, **Détraqueur d'Élite**, **Mangemort Vétéran**, **Spectre Renforcé** |
+| 10+    | Voldemort Ressuscité, **Antonin Dolohov** (boss canon epic), **Héraut des Ténèbres** (boss original epic) |
 | **+14 ajouts récents** | Niffleur, Elfe de Maison Rebelle, Bowtruckle Géant, Chevalier Fantôme, Gremlin Magique, Manticore Juvénile, Gardien du Portail, Fantôme du Sang Noir, Chauve-Souris Vampire, Vampire Novice, Strigoï Ancien, Poupée Maudite, Spectre Maudit, Hécate la Maudisseuse — voir `monsters.js` pour `minFloor`/`maxFloor` |
 | **+4 monstres étourdissants** | Lutin de Cornouailles (1–4), Strangulot (3–7), Pitiponk (4–8), Gargouille Éveillée (5–10) — capacité `effect:"status", statusId:"stun"`. PNG dédiés dans `img/monsters/`. |
+
+> Le **sprint endgame étages 8-10** (mai 2026, PRs #241-#243, #247-#252) a ajouté 14 monstres dont 6 boss epic uniques + 6 PNJ déterministes + 9 quêtes. Plan d'audit : [`.claude/plans/content-audit-stabilization.md`](./.claude/plans/content-audit-stabilization.md). Prompts Nano Banana v2 (cadrage figure entière) : [`.claude/plans/nano-banana-prompts-floor-8-10.md`](./.claude/plans/nano-banana-prompts-floor-8-10.md).
 
 **Icônes SVG** définies dans `icons.js` pour tous les monstres majeurs.
 Les monstres sans SVG propre héritent du SVG de leur catégorie.
 Un **TEMPLATE commenté** se trouve en bas de `monsters.js`.
+
+### Boucle Ténébreuse — recyclage PNJ + quêtes répétables (étages 11+)
+
+Post-victoire, les étages 11+ recyclent automatiquement les monstres
+via `effectiveFloor(floor)` (`dungeon.js:52`). Depuis PR #255, **les PNJ
+déterministes recyclent aussi** : `getNpcsForFloor(floor)` filtre par
+`placement.floor === floor || placement.floor === effectiveFloor(floor)`.
+
+Conséquences :
+- Kingsley (placement floor:8) apparaît à étage 8 ET 18
+- Bill (floor:9) apparaît à étage 9 ET 19
+- Sirius (floor:10) apparaît à étage 10 ET 20
+- Apothicaire / Marchand / Forgeron : idem (vente d'Essence/Page accessible en Boucle)
+
+**Gardien de la Boucle** (`gardien_boucle`, placement floor:11, sprite
+`fantome`) est exclusif post-victoire (l'escalier étage 10 est scellé
+sans `victoryAchieved`). Il donne 3 quêtes répétables `everyLevels: 2` :
+- `purge_loups` (kill 2 Greyback) → essence + 250g
+- `purge_acromantules` (kill 2 Aragog) → page + 260g
+- `purge_mangemorts` (kill 2 Dolohov) → essence + 280g
+
+Cible volontaire des boss étage 8-10 (qui apparaissent en variant
+`Ténébreux` aux étages 18-20). C'est la boucle de farm matériaux
+Forge/Biblio principale en endgame.
 
 ---
 
