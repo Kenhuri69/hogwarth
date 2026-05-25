@@ -1148,6 +1148,72 @@ const NPCS = [
         "Mes potions ne sont pas autorisées. C'est précisément pourquoi elles fonctionnent."
       ]
     }
+  },
+
+  // ── Phase 3 — Tranche étage 10 « Le Précipice » ───────────────
+  // (cf. .claude/plans/content-audit-stabilization.md §5.3)
+  // Antichambre de Voldemort Ressuscité — esprits-guides et armurier.
+  {
+    id:    "sirius_esprit",
+    name:  "Esprit de Sirius Black",
+    title: "Filleul oublié, guide des Profondeurs",
+    sprite: "fantome",
+    icon:  "🐕",
+    portraitImg: "img/npc/sirius_esprit.png",
+    placement: { floor: 10, anchor: "any" },
+    questsGiven:    ["chasse_dolohov", "chasse_heraut", "purification_sirius"],
+    questsTurnedIn: ["chasse_dolohov", "chasse_heraut", "purification_sirius"],
+    dialogues: {
+      greeting: [
+        "Tu m'entends ? Bien. Voici une voix de l'au-delà — celle de Sirius Black, mort derrière le Voile au Ministère.",
+        "Je ne peux plus tenir une baguette. Mais je peux te guider — Dolohov, le Héraut, les Spectres. Tous les trois doivent tomber avant que Voldemort ne réapparaisse en pleine puissance."
+      ],
+      idleRandom: [
+        "Le Voile m'a pris à moi-même. C'était presque doux — un dernier rire avec Bellatrix.",
+        "Dis à Harry que je suis fier. Si tu le croises, dis-lui que les Maraudeurs ne meurent pas, ils s'attardent.",
+        "Dolohov porte une marque que je connais — il a torturé Caradoc Dearborn. Caradoc était mon ami.",
+        "Le Héraut sonne le retour du Maître. Si tu l'écoutes trop, ton cœur s'arrête en cadence avec son cor.",
+        "Les spectres de cette antichambre sont des sorciers qui ont franchi le Voile sans accepter. Apaise-les en les détruisant."
+      ],
+      questOffer:  "Trois cibles. Dolohov pour la justice, le Héraut pour gagner du temps, les Spectres pour leur repos. Choisis dans l'ordre que tu veux.",
+      questActive: "Le travail se poursuit ?",
+      questReady:  "Bien. Le Voile s'apaise un peu plus à chaque fin."
+    }
+  },
+
+  {
+    id:    "forgeron_tenebreux",
+    name:  "Forgeron Ténébreux",
+    title: "Armurier des dernières heures",
+    sprite: "vendeur",
+    icon:  "⚒️",
+    portraitImg: "img/npc/forgeron_tenebreux.png",
+    placement: { floor: 10, anchor: "any" },
+    // Vend Essence/Page à prix prohibitifs (vs Apothicaire étage 9) — pour
+    // les riches qui veulent maxer leur Forge sans grinder. Catalogue
+    // d'items légendaires tier équipement.
+    wares: [
+      { id: "pectoral_auror",        price: 1200 },
+      { id: "larme_phenix_mineure",  price: 1100 },
+      { id: "grimoire_avance",       price: 1000 },
+      { id: "felix",                 price: 220 },
+      { id: "potion_l",              price: 100 },
+      { id: "essence_tenebres",      price: 520 },
+      { id: "page_grimoire",         price: 620 }
+    ],
+    buyback: { default: 0.35 },
+    dialogues: {
+      greeting: [
+        "Approche, sorcier. Mes prix sont scandaleux et mes pièces sont parfaites — choisis ton scandale.",
+        "Pectoral d'Auror, Larme de Phénix, Grimoire avancé — tout ce qu'il te faut pour la dernière marche. Si tu peux payer."
+      ],
+      idleRandom: [
+        "Tu trouveras moins cher chez l'Apothicaire de l'étage du dessus. Mais sa marchandise n'a pas dormi sous ma forge.",
+        "L'Essence des Ténèbres, à mon prix, c'est une assurance. Au sien, c'est une loterie.",
+        "Mon Pectoral d'Auror a déjà sauvé deux Aurors. Le troisième a refusé le prix — il n'a pas survécu pour le regretter.",
+        "Personne ne descend plus bas que cet étage avec mauvaise réputation. J'ai mauvaise réputation. Cherche l'erreur."
+      ]
+    }
   }
 ];
 

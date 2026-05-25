@@ -1697,6 +1697,135 @@ const MONSTERS = [
     ]
   },
 
+  // ════════════════════════════════════════════
+  // PHASE 3 — TRANCHE ÉTAGE 10 « LE PRÉCIPICE »
+  // (cf. .claude/plans/content-audit-stabilization.md §5.3)
+  // 2 boss (canon + original) + 2 monstres d'appoint
+  // Antichambre de Voldemort Ressuscité (déjà présent étage 10+).
+  // ════════════════════════════════════════════
+
+  {
+    id:       "antonin_dolohov",
+    epic:     true,
+    name:     "Antonin Dolohov",
+    icon:     "🪄",
+    imgSrc:   "img/monsters/antonin_dolohov.png",
+    category: "humain",
+    desc:     "Antonin Dolohov esquisse sa signature : une courbe violette dans l'air.",
+    lore:     "Mangemort lieutenant du cercle intérieur. Spécialiste du sortilège mortel signature — une courbe violette qui transperce la chair et perfore les organes. Il a survécu à Azkaban deux fois et n'a jamais pardonné.",
+    habitat:  "Antichambre des Profondeurs",
+    anecdote: "Il a quasiment tué Hermione au Ministère (Tome 5) avec sa courbe violette — sortilège qu'elle n'a jamais nommé. Sa marque restera vissée à son sternum jusqu'à la Bataille de Poudlard.",
+    danger:   10,
+    minFloor: 10, maxFloor: null, weight: 1,
+    hp: 115, atk: 22, def: 8, mag: 22, agi: 11, lck: 10,
+    scale: 0.33,
+    abilities: [
+      { name: "Maléfice Violet",       icon: "🟣", desc: "Sa courbe signature, perforante", effect: "damage", power: 22, chance: 0.45 },
+      { name: "Cruciatus Méthodique",  icon: "⚡", desc: "Torture appliquée avec soin",     effect: "drain",  power: 16, chance: 0.30 },
+      { name: "Sectumsempra Inversé",  icon: "🩸", desc: "Lacération profonde qui saigne",  effect: "status", statusId: "bleed", power: 9, chance: 0.25, turns: 3 },
+      { name: "Silencio Forcé",        icon: "🤐", desc: "Étouffe la magie de la cible",    effect: "weaken", power: 3, chance: 0.20 }
+    ],
+    ai: "cautious",
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
+    xp: 200, gold: { min: 100, max: 160 },
+    drops:  [
+      { itemId: "essence_tenebres",  chance: 0.85 },
+      { itemId: "essence_tenebres",  chance: 0.55 },
+      { itemId: "pectoral_auror",    chance: 0.15 },
+      { itemId: "wand2",             chance: 0.20 }
+    ]
+  },
+
+  {
+    id:       "heraut_tenebres",
+    epic:     true,
+    name:     "Héraut des Ténèbres",
+    icon:     "📯",
+    imgSrc:   "img/monsters/heraut_tenebres.png",
+    category: "être magique",
+    desc:     "Le Héraut sonne un cor d'os. L'air se charge d'une malédiction lente.",
+    lore:     "Annonciateur de la résurrection du Seigneur des Ténèbres. Il ne combat pas pour vaincre — il combat pour préparer l'arrivée du Maître. Sa présence seule corrompt l'air.",
+    habitat:  "Antichambres de résurrection",
+    anecdote: "Aucun témoin n'a jamais vu son visage sous le capuchon. Ceux qui ont essayé n'ont pas survécu pour le décrire.",
+    danger:   10,
+    minFloor: 10, maxFloor: null, weight: 1,
+    hp: 150, atk: 16, def: 12, mag: 26, agi: 7, lck: 5,
+    scale: 0.34,
+    abilities: [
+      { name: "Hymne du Néant",       icon: "🌑", desc: "Onde de magie noire diffuse",     effect: "damage", power: 20, chance: 0.40 },
+      { name: "Aura Mortifère",       icon: "😱", desc: "Glace l'âme de tous",              effect: "status", statusId: "fear", power: 0, chance: 0.30, turns: 3 },
+      { name: "Régénération Spectrale",icon: "💜", desc: "Les ombres le reconstituent",     effect: "heal",   power: 20, chance: 0.20 },
+      { name: "Sceau de Dissolution", icon: "❌", desc: "Brise sortilèges et protections",  effect: "dispel", chance: 0.35 }
+    ],
+    ai: "cautious",
+    resist: ["ténèbres", "physique"],
+    weak:   ["lumière"],
+    xp: 220, gold: { min: 120, max: 180 },
+    drops:  [
+      { itemId: "page_grimoire",         chance: 0.85 },
+      { itemId: "page_grimoire",         chance: 0.55 },
+      { itemId: "larme_phenix_mineure",  chance: 0.15 },
+      { itemId: "grimoire_avance",       chance: 0.20 }
+    ]
+  },
+
+  {
+    id:       "mangemort_veteran",
+    name:     "Mangemort Vétéran",
+    icon:     "💀",
+    imgSrc:   "img/monsters/mangemort_veteran.png",
+    category: "humain",
+    desc:     "Un Mangemort vétéran sort de l'ombre, sa Marque pulse au rythme du combat.",
+    lore:     "Mangemort de la première heure, marqué depuis la Première Guerre. Ses sortilèges sont rouillés mais sa cruauté est intacte.",
+    habitat:  "Antichambres et chemins de résurrection",
+    danger:   8,
+    minFloor: 9, maxFloor: null, weight: 4,
+    hp: 72, atk: 18, def: 9, mag: 16, agi: 10, lck: 8,
+    scale: 0.30,
+    abilities: [
+      { name: "Cruciatus",          icon: "⚡", desc: "Sortilège de torture",            effect: "drain",  power: 12, chance: 0.30 },
+      { name: "Maléfice Sombre",    icon: "🟣", desc: "Sort impair, dégâts purs",        effect: "damage", power: 16, chance: 0.40 },
+      { name: "Stupefix Brutal",    icon: "⚫", desc: "Étourdit lourdement",             effect: "status", statusId: "stun", power: 0, chance: 0.20, turns: 1 }
+    ],
+    ai: "aggressive",
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
+    xp: 85, gold: { min: 35, max: 55 },
+    drops:  [
+      { itemId: "potion_m",          chance: 0.25 },
+      { itemId: "essence_tenebres",  chance: 0.08 }
+    ]
+  },
+
+  {
+    id:       "spectre_renforce",
+    name:     "Spectre Renforcé",
+    icon:     "👻",
+    imgSrc:   "img/monsters/spectre_renforce.png",
+    category: "fantôme",
+    desc:     "Un spectre dense et résolu vous fixe — ses contours brûlent d'une rage froide.",
+    lore:     "Esprit corrompu plus tangible que la norme, capable de matérialiser ses coups. Vestige d'un sorcier puissant retenu dans les Profondeurs.",
+    habitat:  "Couloirs hantés de l'antichambre",
+    danger:   8,
+    minFloor: 9, maxFloor: null, weight: 4,
+    hp: 85, atk: 14, def: 5, mag: 18, agi: 9, lck: 6,
+    scale: 0.28,
+    abilities: [
+      { name: "Drain Spectral",     icon: "💀", desc: "Aspire la force vitale",          effect: "drain",  power: 12, chance: 0.30 },
+      { name: "Onde Glaciale",      icon: "❄️", desc: "Diffuse un froid mortel",          effect: "damage", power: 14, chance: 0.40 },
+      { name: "Chant Effrayant",    icon: "😱", desc: "Mélopée qui paralyse",             effect: "status", statusId: "fear", power: 0, chance: 0.20, turns: 2 }
+    ],
+    ai: "cautious",
+    resist: ["physique", "ténèbres"],
+    weak:   ["lumière"],
+    xp: 80, gold: { min: 30, max: 50 },
+    drops:  [
+      { itemId: "potion_l",          chance: 0.15 },
+      { itemId: "page_grimoire",     chance: 0.06 }
+    ]
+  },
+
 ];
 
 // ════════════════════════════════════════════

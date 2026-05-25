@@ -99,6 +99,10 @@ const ITEM_ICON_REGISTRY = {
   diademe_antique:     'img/icons/items/circlet_serdaigle.png',
   bague_protection:    'img/icons/items/anneau_argent.png',
   robe_combat:         'img/icons/items/robe1.png',
+  // Phase 3 — Tranche étage 10 « Le Précipice » : équipement antichambre Voldemort
+  pectoral_auror:        'img/icons/items/robe1.png',
+  larme_phenix_mineure:  'img/icons/items/larmes_phenix.png',
+  grimoire_avance:       'img/icons/items/livre_sortileges.png',
   // Endgame — réutilisent les PNG existants en attendant la génération
   // de sprites dédiés via gen_icons.py. Cf. ENDGAME_PLAN.md §7.3/§7.10.
   potion_xl:           'img/icons/items/potion_s.png',
