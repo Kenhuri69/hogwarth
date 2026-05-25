@@ -3,9 +3,14 @@
 > Plan vivant (cf. `.claude/guidelines.md` §5).
 > Ouvert le 2026-05-25. **Phase de réflexion** — aucune ligne de code écrite.
 > Branche de travail : `claude/multi-sync-constraints-cost-73YTH`.
-> Révisé le 2026-05-25 : pivot de **co-op combat** vers **exploration
+> Révisé le 2026-05-25 (R1) : pivot de **co-op combat** vers **exploration
 > découverte** (cf. §1) ; le co-op est conservé en **branche annexe** à
 > réfléchir plus tard (§8).
+> Révisé le 2026-05-25 (R2) : retour partiel sur la non-violence —
+> **combat local asymétrique** vs échos de monstres + **Verrou de Sang**
+> (menace asynchrone déposée chez le host), avec économie cross-plan
+> dédiée (Essences d'Outremonde, Set Voyageur, cosmétiques, sorts
+> exclusifs, souvenirs passifs). Cf. §6.8 / §6.9 / §6.10.
 >
 > **Complémentaire** au plan `multiplayer.md` (présence fantôme asynchrone)
 > — ne le remplace pas. Le présent plan traite le point explicitement
@@ -26,8 +31,15 @@ autre joueur en ligne** — non pour y combattre à ses côtés, mais pour
 ses PNJ, tu vois ses choix d'architecture procédurale — tout est familier
 sans être identique.
 
-- Le visiteur **n'agit pas sur l'économie** du host (pas de coffres
-  pillés, pas de monstres tués pour son XP, pas d'achats en boutique).
+- Le visiteur **n'agit pas sur l'économie du host** (pas de coffres
+  pillés, pas de monstres réels tués pour son XP, pas d'achats en
+  boutique).
+- Le visiteur **a sa propre économie cross-plan** : des **Essences
+  d'Outremonde** qu'il gagne en combattant des *échos* de monstres
+  (§6.8) et en posant des **Verrous de Sang** (§6.9). Ces essences
+  alimentent un Set Voyageur, des cosmétiques, des sorts exclusifs et
+  des souvenirs passifs (§6.10). Aucune retombée sur le donjon du
+  host.
 - Le visiteur **ne peut explorer que les zones que le host a déjà
   débloquées** — étages descendus, cases découvertes. Le reste est un
   brouillard infranchissable (cf. §3.5). C'est la règle qui rend la
@@ -35,25 +47,30 @@ sans être identique.
   plus.
 - Les **PNJ ont des dialogues spéciaux** quand un voyageur d'un autre
   plan les aborde (cf. §6.2). C'est le sel narratif du mode.
-- Aucune mécanique de combat n'est requise en V1 — le visiteur est en
-  mode *incorporel* face aux monstres (cf. §6.3).
+- Le **combat est local et asymétrique** : le visiteur affronte des
+  *échos* des monstres du host (instance dédiée, scaling à son
+  niveau), sans toucher l'état réel du donjon adverse. Sa défaite
+  l'éjecte vers son monde — pas de permadeath, pas d'écho sur sa save
+  (cf. §6.8).
 
-C'est le modèle **Death Stranding asymétrique** (présence non-violente
-qui enrichit le monde de l'autre) plutôt que Souls (invocation pour
-combattre). Cohérent avec un RPG narratif inspiré de Poudlard, où
-"explorer un autre château" est une promesse plus forte que "co-op
-combat".
+Le modèle reste **Death Stranding asymétrique** dans l'esprit
+(présence enrichissante pour le host, non-destructrice pour son
+économie) mais avec **un canal d'agency pour le visiteur** : il a
+quelque chose à *faire* dans le monde de l'autre, pas seulement à
+regarder. Cohérent avec un RPG narratif inspiré de Poudlard, où
+"explorer un autre château et y semer une menace" devient une
+promesse forte.
 
 ### Pourquoi ce modèle plutôt qu'un vrai « multi-joueur »
 
-| Contrainte | Vraie sync multi (lockstep) | Co-op combat (annexe §8) | **Exploration découverte (V1)** |
-|------------|-----------------------------|--------------------------|-------------------------------|
-| Déterminisme RNG global | Obligatoire | Inutile (host autoritaire) | **Inutile** |
+| Contrainte | Vraie sync multi (lockstep) | Co-op combat (annexe §8) | **Exploration + combat local (V1 R2)** |
+|------------|-----------------------------|--------------------------|--------------------------------------|
+| Déterminisme RNG global | Obligatoire | Inutile (host autoritaire) | **Inutile — instances isolées** |
 | Refonte event-sourcing | ~10 j tous systèmes | Aucune | **Aucune** |
-| Extension moteur combat | Inhérente | +1 slot allié + tour 3-way | **Aucune — pas de combat** |
+| Extension moteur combat | Inhérente | +1 slot allié + tour 3-way | **Réutilise `battle.js` tel quel sur enemyGroup local** |
 | Overhead permanent | Oui en solo aussi | Zéro hors visite | **Zéro hors visite** |
-| Déconnexion partenaire | Casse la partie | Visiteur s'évapore | **Visiteur s'évapore** |
-| Estimation V1 | 15–30 j | 14 j | **~10 j** |
+| Déconnexion partenaire | Casse la partie | Visiteur s'évapore | **Visiteur s'évapore (combat local persiste localement)** |
+| Estimation V1 | 15–30 j | 14 j | **~20 j (vs 13,5 j R1 sans combat)** |
 
 ## 2. Cadre fonctionnel
 
@@ -91,16 +108,22 @@ Construits **par-dessus** la couche présence asynchrone livrée par
 | Palier | Mode | Effort | Risque | Lore |
 |--------|------|--------|--------|------|
 | **V0** | Trace asynchrone (Pensieve) | déjà couvert | minime | Souvenirs/messages déposés (cf. `multiplayer.md` Phase 4) |
-| **V1** | **Exploration découverte** (Voyageur des Plans) | ~10 j | faible | Tu visites le monde de l'autre, sans rien y changer |
-| **V2** | **Quêtes inter-mondes** | +5–8 j | moyen | Des PNJ te confient des missions à effectuer dans ton monde, ou réciproquement |
-| **Branche annexe** | Co-op combat (Patronus / Fumseck) | +14 j | moyen | Le visiteur combat aux côtés du host — modèle Souls. À réfléchir séparément (§8). |
+| **V1a** | Exploration découverte + dialogues + emotes | ~13,5 j | faible | Tu visites, parles aux PNJ, observes. Aucun combat. |
+| **V1b** | + Combat local asymétrique (échos) + amorce économie cross-plan | +4 j | moyen | Le visiteur combat des échos de monstres, gagne des Essences d'Outremonde |
+| **V1c** | + Verrou de Sang (menace asynchrone) + 4 canaux de récompense complets | +3 j | moyen | Set Voyageur (équipement), cosmétiques, sorts exclusifs, souvenirs passifs |
+| **V2** | Quêtes inter-mondes | +5–8 j | moyen | Des PNJ te confient des missions à effectuer dans ton monde |
+| **Branche annexe** | Co-op combat synchrone (Patronus / Fumseck) | +14 j | moyen | Le visiteur combat aux côtés du host *en simultané*. À réfléchir séparément (§8). |
 | **Branche annexe** | PvP duel direct | +5 j sur l'annexe | élevé | Affrontement temps réel |
 
-**Priorité immédiate** : V1 (exploration découverte). V2 (quêtes
-inter-mondes) est l'évolution naturelle une fois le canal de visite
-robuste. Les branches combat/PvP sont gelées sans date — elles
-réutiliseraient le même portail et la même infra, mais ouvriraient un
-mode d'interaction radicalement différent.
+**Priorité immédiate** : V1a → V1b → V1c en séquence, chaque palier
+restant **livrable indépendamment**. V1a (R1 originel) reste pertinent
+en tant que socle même si V1b/c sont reportés. V1b apporte l'agency
+combat sans toucher l'économie du host (échos isolés). V1c ouvre le
+canal **asynchrone** (Verrou de Sang) qui rend la fonctionnalité
+*intéressante en solo* — un visiteur peut gagner des essences sans
+qu'un host soit connecté en miroir au même moment, ce qui désamorce
+le problème classique du multi à faible base installée. Les branches
+combat synchrone et PvP restent gelées.
 
 ## 3. Architecture technique
 
@@ -454,6 +477,24 @@ Le visiteur affiche un overlay discret « <Pseudo> est en plein combat
 de visite reste interactif (sauf si le host change d'étage, ce qui
 attend la fin de la modale).
 
+### 5.4bis Événements V1b/c (combat astral et Verrou)
+
+Messages additionnels introduits par les paliers suivants :
+
+```js
+// V1b — visiteur engage un écho (purement informatif côté host)
+{ type: 'astralCombatStart', cellX, cellY, monsterId }
+{ type: 'astralCombatEnd', won: bool }
+
+// V1c — visiteur pose un Verrou de Sang (host voit l'animation + toast)
+{ type: 'bloodSealPosted', cellX, cellY, monsterId, threatId }
+```
+
+Aucun message pendant la boucle de combat astral (résolu localement),
+juste les bornes start/end pour l'overlay côté host. Pose de Verrou
+n'envoie qu'un événement éphémère — la persistance se fait via
+`mp_threats` (REST), indépendante du canal Realtime.
+
 ### 5.5 Sortie (bilatéral)
 
 ```js
@@ -506,24 +547,20 @@ sur `activeQuests` côté visiteur, qu'on ne touche pas. Les dialogues
 *évoquent* la possibilité (« si je te confiais… »), c'est la promesse
 narrative de V2 (§7).
 
-### 6.3 Monstres — incorporel
+### 6.3 Monstres — V1a incorporel, V1b combat d'échos
 
-Le visiteur est **invisible et intangible** pour les monstres du
-donjon visité. Concrètement :
+**En V1a** (palier socle livré sans combat) : le visiteur est
+**invisible et intangible**. Les monstres du donjon visité ne le
+voient pas, aucun combat ne se déclenche. Les présences hostiles sont
+rendues en silhouette translucide rouge sombre. *« Tu sens des
+présences hostiles, mais elles ne te voient pas. »*
 
-- Les monstres présents dans `npcs`/spawn du host ne le voient pas.
-- Aucun combat ne se déclenche au passage du visiteur sur leur case
-  (le visiteur peut traverser leur case ; les monstres n'ont d'ailleurs
-  pas de position fixe dans le code actuel — ils apparaissent à
-  l'entrée d'une room non visitée. Pour le visiteur, on **désactive
-  purement le déclenchement de combat**.).
-- Côté visuel : si un monstre est lié à une cellule particulière
-  (cf. PNJ hostiles affichés), il est rendu en silhouette translucide
-  rouge sombre. *« Tu sens des présences hostiles, mais elles ne te
-  voient pas. »*
-
-Side-effect heureux : le visiteur peut explorer librement sans risque,
-ce qui colle parfaitement au ton contemplatif voulu.
+**En V1b** (combat local asymétrique — détail complet §6.8) : le
+visiteur **peut** entrer en combat contre un *écho* du monstre
+rencontré. L'écho est une instance dédiée, scalée à son propre niveau,
+sans impact sur l'état réel du donjon du host. Le combat est **opt-in**
+(le visiteur déclenche l'engagement explicitement) pour préserver le
+mode contemplatif quand il le souhaite.
 
 ### 6.4 Coffres, fontaines, boutique — observation seule
 
@@ -560,16 +597,28 @@ inter-mondes (§7).
 
 ### 6.6 Sauvegarde et persistance
 
-- **Visiteur** : aucune écriture dans son save pendant la visite.
-  Au retour, son `mySavedState` est restauré tel quel. Aucun gain
-  XP/or/loot à appliquer (rien à gagner en V1, c'est volontaire).
-  `autoSave(reason: 'visit-end')` déclenché pour purger la session.
+- **Visiteur (V1a)** : aucune écriture dans son save pendant la visite.
+  Au retour, `mySavedState` restauré tel quel.
+- **Visiteur (V1b+)** : à la sortie, on **applique un patch ciblé** à
+  la save restaurée — uniquement les champs de l'économie cross-plan
+  (`outremondeEssence`, `outremondeStats`, `outremondeSouvenirs`) et
+  les éventuels objets du Set Voyageur craftés via portail (§6.10). Ces
+  champs sont **isolés** : le reste de la save n'est pas re-sérialisé
+  pendant la visite, donc pas de risque de fuir l'état du host dans la
+  save du visiteur. `autoSave(reason: 'visit-end')` déclenché en
+  sortie.
+- **Visiteur (V1c)** : ajoute les Verrous de Sang posés à
+  `outremondePendingSeals` (UID + cible + timestamp). Récompenses
+  asynchrones réclamées au prochain démarrage via lecture de
+  `mp_threats.resolved_at` (§6.9).
 - **Host** : sa partie progresse normalement. AutoSave hooks normaux.
-  Le visiteur n'apparaît **jamais** dans le snapshot du host.
-- **Trace persistante** (optionnelle V1.5) : à la sortie, le visiteur
-  peut laisser un *message Pensieve* sur la dernière case foulée
-  (réutilise `mp_messages` existant). Le host la trouvera au prochain
-  passage. Gratuit, cohérent avec V0 déjà en place.
+  Le visiteur n'apparaît **jamais** dans le snapshot du host. Les
+  Verrous de Sang à résoudre sont chargés depuis `mp_threats` au
+  démarrage et matérialisés en cellules du donjon (§6.9), sans
+  re-sérialisation du donjon lui-même (résolution éphémère).
+- **Trace Pensieve** (V0 existant) : à la sortie, le visiteur peut
+  laisser un message sur la dernière case foulée (`mp_messages`).
+  Indépendant du système Verrou de Sang.
 
 ### 6.7 Emotes et signaux (V1 light)
 
@@ -588,6 +637,247 @@ Pour le host, un seul emote en retour : 👋 *« Bienvenue »*.
 
 Banque fermée (anti-injection), 4-6 emotes côté visiteur, 1-2 côté
 host. ~0,5 j de travail.
+
+### 6.8 Combat local asymétrique — échos de monstres (V1b)
+
+**Principe** : le visiteur peut engager un combat contre un *écho* d'un
+monstre du donjon visité. L'écho est une **instance dédiée**, scalée à
+son propre niveau et à sa propre composition (mode solo/duo de la save
+du visiteur), résolue **entièrement côté client visiteur**. Aucun
+événement réseau pendant le combat, aucune écriture chez le host.
+
+#### Modèle d'engagement
+- **Opt-in** : aucun déclenchement automatique au passage sur une case.
+  Le visiteur ouvre un menu "Défier l'écho" sur les cellules contenant
+  une présence hostile (silhouette translucide rouge). Préserve le mode
+  contemplatif de V1a quand voulu.
+- **Cooldown par cellule** : un écho vaincu est marqué "dissipé" pour
+  la durée de la visite, plus de défi possible sur la même cellule.
+  Évite le farm trivial en boucle.
+- **Limite par étage** : maximum 3 échos affrontables par étage visité,
+  reset à chaque sortie/rentrée. Garde l'expérience compacte.
+
+#### Construction de l'écho
+- `monsters.js` reste source de vérité — `scaleMonster(template,
+  visitorLevel)` (helper existant utilisé par `dungeon.js`) appliqué au
+  niveau du visiteur, **pas** au niveau du host. Garantit un combat
+  équilibré pour le visiteur quel que soit l'étage où il atterrit.
+- Composition du groupe : `rollGroupSize` réutilisé avec le `partySize`
+  effectif du visiteur (au moins 1 — voir §6.1, le visiteur arrive seul).
+- Drops `monsters.js` **ignorés** : un écho ne lâche pas d'or, pas
+  d'items du loot table standard. À la place : **Essence d'Outremonde**
+  scalée au niveau du monstre (§6.10), plus une chance faible
+  (~5 %) de fragment cosmétique.
+
+#### Boucle de combat
+- Réutilise `battle.js` tel quel : `startBattle(echoGroup)`, tour
+  normal, sorts, items consommables (du visiteur — il *brought his kit*).
+- HP/SP du visiteur **réels** (lus depuis `mySavedState`), mais isolés :
+  les pertes pendant la visite sont **non persistantes** par défaut. À
+  la sortie de visite, HP/SP restaurés à leur valeur d'entrée. Décision
+  délibérée pour éviter le piège "je suis venu visiter, je sors avec
+  20 % HP, je dois rentrer en boutique".
+- **Défaite** : pas de pétrification, pas d'écran de mort. Animation
+  d'éjection (motion blur inverse), bannière *« Ton lien astral
+  vacille — tu retournes dans ton monde »*. Sort de portail mis en
+  cooldown 5 min (§13).
+- **Victoire** : essence ajoutée à `outremondeEssence`, message dans le
+  log. Pas d'XP, pas de level-up — la progression de niveau reste un
+  événement de la save propre du visiteur.
+
+#### Côté host
+- Le host **ne voit pas le combat** du visiteur (pas d'overlay, pas de
+  sons de combat broadcast). Le visiteur reste rendu sur la minimap
+  host avec un indicateur discret *« en combat astral »* (sprite
+  pulsant rouge). Pas de spoiler de difficulté.
+- Pas d'impact sur le monstre réel du donjon host : si le host se rend
+  sur la même cellule plus tard, le monstre standard s'y déclenche
+  normalement (instance différente).
+
+#### Verrouillage des sorts incompatibles
+- **`Apparition Astrale`** désactivé pendant un combat astral (cohérent
+  avec `inBattle === true`).
+- **`Avada Kedavra`** désactivé contre les échos — narratif (un écho
+  n'a pas d'âme à briser) et anti-trivialisation. Tooltip *« L'écho
+  refuse cette mort. »*
+
+### 6.9 Verrou de Sang — menace asynchrone déposée chez le host (V1c)
+
+**Principe** : le visiteur peut investir des Essences d'Outremonde
+pour **sceller une menace** dans le monde du host, persistée en base
+(`mp_threats`). Cette menace se matérialise dans le donjon du host à
+sa prochaine session, sur une cellule précise — et quand il la
+résout (combat normal), **le visiteur reçoit la récompense
+asynchrone** (essences bonus, fragments cosmétiques) au prochain
+chargement de sa propre save.
+
+C'est le **canal asymétrique** qui rend la fonctionnalité viable
+même à faible base installée : un visiteur peut "déposer" des
+verrous chez plusieurs hosts, gagner les essences au fil de leurs
+résolutions, sans qu'aucune session miroir ne soit nécessaire.
+
+#### Pose d'un verrou (côté visiteur)
+- Sort/rituel **« Verrou de Sang »** disponible hors combat astral,
+  sur une cellule libre du donjon visité (pas un escalier, pas un PNJ,
+  pas une fontaine).
+- Coût : **5 PM + 1 Essence d'Outremonde**.
+- Choix du **monstre à sceller** dans une liste filtrée par étage
+  courant du host (pioche dans `monsters.js` éligibles à `host.floor`).
+  Détermine la difficulté du futur combat host et la récompense.
+- Animation locale courte (~1,5 s) : rune rouge tracée au sol,
+  pulsation, fade. Côté host (si connecté) : toast *« <Pseudo> a
+  scellé quelque chose ici… »* + marqueur discret sur la minimap.
+- Insertion `mp_threats(visitor_id, host_id, floor, x, y, monster_id,
+  status='pending')`.
+
+#### Résolution (côté host)
+- Au démarrage / changement d'étage, le client host lit
+  `mp_threats where host_id = me and status = 'pending' and floor =
+  currentFloor` et matérialise les marqueurs sur les cellules
+  concernées (icône 🩸 distincte, halo rouge).
+- À l'entrée du host sur la cellule : encounter forcé contre le
+  monstre scellé, scalé à l'étage du host (combat normal via
+  `startBattle`).
+- **Loot bonus** : drops standards du monstre + **1 fragment de Set
+  Voyageur** *aléatoire* offert au host (sa propre récompense pour
+  jouer le jeu) + 50 or bonus. Suffisant pour incentiver, modeste
+  pour ne pas casser l'économie de boutique.
+- À la fin du combat (`endBattle`), update `mp_threats.status =
+  'resolved', resolved_at = now()`. Pas de validation server-side
+  pour la triche (V1 — voir §13).
+- Si le host fuit : `status = 'fled'`, le verrou reste actif jusqu'à
+  résolution réelle.
+
+#### Récompense asynchrone (côté visiteur)
+- Au démarrage de sa save, le visiteur lit `mp_threats where
+  visitor_id = me and status in ('resolved','fled') and not
+  claimed`. Pour chaque entrée :
+  - `resolved` → +3 Essences d'Outremonde + chance 20 % d'un fragment
+    cosmétique.
+  - `fled` → +1 Essence (consolation).
+- Modale discrète au démarrage *« 3 Verrous de Sang ont été
+  affrontés dans d'autres plans »* avec détail (pseudo host, étage,
+  monstre, gain). Marquage `claimed = true` après affichage.
+- Plafond : maximum 10 verrous en attente par visiteur (anti-spam).
+  Tentative au-delà → message *« Trop de verrous en attente. Attends
+  qu'ils se résolvent. »*
+
+#### Opt-out host
+- Option dans les paramètres host : *« Refuser les Verrous de Sang »*.
+  Si activée, les insertions `mp_threats` ciblant ce host sont
+  refusées (vérification à l'insert via RLS ou simple lecture d'un
+  champ `mp_presence.accepts_threats`). Le visiteur voit *« Ce
+  voyageur ne reçoit pas de Verrous. »*.
+- Par défaut **opt-in** (accepte les verrous) — c'est une fonctionnalité,
+  pas un piège.
+
+### 6.10 Économie cross-plan — Essences d'Outremonde et 4 canaux de récompense
+
+L'**Essence d'Outremonde** est la monnaie unique du système. Aucune
+conversion vers l'or normal du jeu : elle alimente exclusivement les
+récompenses cross-plan listées ci-dessous, isolées de l'économie
+solo.
+
+#### Sources d'essence
+| Source | Gain |
+|--------|------|
+| Écho vaincu en combat astral (§6.8) | 1 + floor(monsterLevel/3) |
+| Verrou de Sang résolu par un host (§6.9) | +3 |
+| Verrou fui par un host (§6.9) | +1 |
+| Première visite chez un nouveau pseudo | +5 (one-shot) |
+| Souvenir débloqué (§6.10 ci-dessous) | +2 (one-shot par souvenir) |
+
+#### Canal 1 — Set Voyageur (équipement isolé)
+5 pièces dédiées, **fabriquées hors combat** depuis une nouvelle modale
+"Atelier du Voyageur" accessible au hub démarrage et après une visite.
+Toutes portent `slot` standard mais sont taggées `family: 'voyageur'`
+(pour le bonus de set).
+
+| Pièce | Slot | Stats | Coût |
+|-------|------|-------|------|
+| Diadème du Plan | head | +1 INT, +1 LCK | 8 essences |
+| Cape du Voyageur | cloak | +1 AGI, regenSp:1 | 12 essences |
+| Bottes du Pas Astral | feet | +1 AGI | 6 essences |
+| Anneau de l'Outremonde | ring | +1 MAG, regenSp:1 | 10 essences |
+| Amulette du Lien | amulet | +1 LCK, +1 INT | 10 essences |
+
+Bonus de set (calculé dans `recalculateStats()` via comptage `family
+=== 'voyageur'`) :
+- **2 pièces** : +1 LCK, sprite des PNJ aperçus en visite légèrement
+  doré (cosmétique).
+- **3 pièces** : `bonusSpellCritChance: 5`.
+- **4 pièces** : `regenSp: +2` (cumulable avec items).
+- **5 pièces (set complet)** : déverrouille la prévisualisation du
+  donjon distant **avant** la visite (modale d'invitation affiche un
+  mini-aperçu de l'étage courant du host).
+
+Refusable par le moteur Ironman comme tout équipement (rien à
+adapter).
+
+#### Canal 2 — Cosmétiques (fragments)
+Drops occasionnels en combat astral (5 %) et en récompense de Verrou
+résolu (20 %). Les fragments donnent accès à :
+
+- **Auras de visite** : teinte alternative de l'aura dorée côté host
+  (argentée, violette, verte cendrée…). Choisie dans Options.
+- **Effets de portail** : variantes visuelles de l'animation §4.3
+  (fissure cyan, particules de neige, runes runiques bleues).
+- **Skins de fissure de Verrou** : forme du marqueur 🩸 côté host
+  (étoile noire, rune, croix gammée magique).
+
+Pas d'effet gameplay. Catalogue de ~12 cosmétiques, chacun coûtant 1-3
+fragments + 5 essences à débloquer.
+
+#### Canal 3 — Sorts exclusifs (cross-plan)
+Sorts qu'on **ne peut apprendre que via essences**, en grimoires
+disponibles à l'Atelier du Voyageur. Effets centrés sur le mode
+exploration/visite, pour rester thématiques :
+
+| Sort | Coût (essences) | Effet |
+|------|-----------------|-------|
+| **Sceau du Voyageur** | 15 | Rituel hors combat : révèle 3 cases adjacentes du donjon **propre** (utile hors visite aussi). 1 SP. |
+| **Mémoire d'Outremonde** | 20 | Hors combat, dans son propre monde : restaure 10 HP et 10 SP. Cooldown : 1 fois par étage. 3 SP. |
+| **Marque du Pèlerin** | 30 | En combat astral uniquement : double les essences d'un écho vaincu. 8 SP. |
+| **Rappel Astral** | 25 | Permet de revenir chez le **dernier host visité** sans repasser par la liste (1 fois par session). 10 SP. |
+
+Apprentissage permanent (s'ajoute aux `spells[]` du héros) — sortable
+dans tous les contextes éligibles (hors combat host, hors Ironman).
+
+#### Canal 4 — Souvenirs passifs
+Récompenses **non achetables**, débloquées automatiquement par
+*métriques de visite* (compteurs dans la save du visiteur).
+
+| Souvenir | Condition | Effet passif |
+|----------|-----------|-------------|
+| **Premier Pas** | 1ʳᵉ visite réussie | +1 AGI permanent |
+| **Voyageur** | 5 mondes différents visités | +1 LCK permanent |
+| **Diplomate** | 20 dialogues PNJ uniques en visite | +1 INT permanent |
+| **Astralien** | 15 mondes différents visités | +1 AGI, +1 LCK permanents |
+| **Maître des Plans** | 50 visites totales | Coût de `Apparition Astrale` réduit de 20 % |
+| **Sceau de Sang** | 10 Verrous résolus par des hosts | +5 % `bonusSpellCritDamage` |
+
+Chaque souvenir donne aussi +2 essences au déblocage (cf. tableau
+sources). Affichés dans la fiche perso (nouvelle sous-section "Carnet
+de Voyage").
+
+#### Persistance
+Nouveaux champs sur `player` :
+```js
+outremondeEssence:     0,            // int
+outremondeFragments:   0,            // int
+outremondeStats:       {},           // {auraColor, portalSkin, sealSkin, ...}
+outremondeSouvenirs:   {},           // {id: unlockedAt}
+outremondePendingSeals:[],           // [{uid, hostName, monsterId, postedAt}]
+outremondeMetrics:     {             // pour souvenirs
+  visitsTotal:           0,
+  uniqueHosts:           Set(),
+  uniqueNpcsDialogued:   Set(),
+  sealsResolved:         0,
+}
+```
+
+Sérialisés dans `_serializeState` / restaurés dans `_applyState`. Sets
+encodés en `Array.from()` (pattern existant `usedFountains`).
 
 ## 7. V2 — Quêtes inter-mondes (réflexion ouverte)
 
@@ -670,6 +960,8 @@ qui couvre 80 % du besoin pour 0 % du coût Realtime.
 
 ## 9. Fichiers concernés (V1 — prévisionnel)
 
+### V1a — socle exploration (R1 conservé)
+
 | Fichier | Nature |
 |---------|--------|
 | `js/portal-fx.js` (nouveau) | Animations d'ouverture/fermeture du portail (côtés visiteur et host) |
@@ -677,7 +969,7 @@ qui couvre 80 % du besoin pour 0 % du coût Realtime.
 | `js/multiplayer.js` (étendu) | Canal Realtime, invitation, état `visitSession`, snapshot/deltas |
 | `js/renderer.js` / `renderer-effects.js` | Rendu du donjon distant pour le visiteur ; `drawVisitorSprite` (aura dorée) |
 | `js/renderer-minimap.js` | Classe `.map-astral-visitor` ; minimap distante côté visiteur, restreinte au visitedMask |
-| `js/movement.js` | Hook : blocage de mouvement hors `remoteVisitedMask` ; suspension de la logique de combat pour le visiteur |
+| `js/movement.js` | Hook : blocage de mouvement hors `remoteVisitedMask` ; suspension de la logique de combat pour le visiteur en V1a |
 | `js/save.js` | `_takeVisitSnapshot()` / `_restoreFromVisit()` pour le visiteur (suspend/restore propre) |
 | `js/data.js` | Nouveau sort `Apparition Astrale` (à nommer §16) |
 | `js/inventory.js` | Le sort apparaît dans `openSpells`, désactivé en combat et en Ironman |
@@ -688,9 +980,38 @@ qui couvre 80 % du besoin pour 0 % du coût Realtime.
 | `tests/smoke.js` | Scénarios : invitation, snapshot, blocage hors visitedMask, sortie volontaire |
 | `CLAUDE.md` | Section « Mondes parallèles » une fois livré |
 
-> Comparé à la version précédente du plan : **plus de touche à
-> `battle.js` / `battle-ui.js`** en V1 — c'est le bénéfice direct de
-> retirer le combat coop.
+### V1b — combat local + amorce économie
+
+| Fichier | Nature |
+|---------|--------|
+| `js/battle.js` | Branche `inAstralCombat` : `startBattle` accepte un `echoGroup`, `endBattle` route les gains vers `outremondeEssence`, défaite → éjection au lieu de mort |
+| `js/battle-ui.js` | Indicateur "Combat astral" (bordure dorée vs rouge), HP restauré à la sortie |
+| `js/dungeon.js` | `buildEcho(monsterTemplate, visitorLevel, partySize)` — réutilise `scaleMonster` + `rollGroupSize` |
+| `js/movement.js` | Option "Défier l'écho" sur cellule hostile en visite ; gestion cooldown par cellule + limite 3/étage |
+| `js/state.js` | Globals visite-locaux : `astralEchoesDissipated`, `astralEchoesCount[floor]` |
+| `js/save.js` | `outremondeEssence`, `outremondeFragments`, `outremondeMetrics` sérialisés ; patch ciblé à la sortie de visite |
+| `js/data.js` | Nouveaux items `essence_outremonde`, `fragment_voyageur` (affichage inventaire spécial) |
+
+### V1c — Verrou de Sang + 4 canaux complets
+
+| Fichier | Nature |
+|---------|--------|
+| `js/data.js` | Sorts `Verrou de Sang`, `Sceau du Voyageur`, `Mémoire d'Outremonde`, `Marque du Pèlerin`, `Rappel Astral` ; 5 pièces du Set Voyageur (`family:'voyageur'`) ; ITEMS associés |
+| `js/inventory.js` | `recalculateStats()` détecte `family:'voyageur'` pour bonus de set (2/3/4/5 pièces) |
+| `js/multiplayer.js` | `postBloodSeal()`, `claimResolvedSeals()` ; lecture `mp_threats` au démarrage |
+| `js/battle.js` | Résolution d'une rencontre depuis un threat (loot bonus +50 or + fragment Voyageur) ; update `mp_threats.status` à `endBattle` |
+| `js/renderer-effects.js` | Marqueur 🩸 sur cellule porteuse d'un Verrou ; aura rouge |
+| `js/renderer-minimap.js` | Icône Verrou côté host |
+| `js/movement.js` | `handleCellEntry` détecte threat → encounter forcé |
+| `js/save.js` | `outremondePendingSeals`, `outremondeSouvenirs`, `outremondeStats` (cosmétiques) sérialisés |
+| `js/ui.js` | Nouvelle modale "Atelier du Voyageur" (craft Set + sorts + cosmétiques) ; sous-section "Carnet de Voyage" dans fiche perso ; modale "Verrous résolus" au démarrage |
+| `css/portal.css` | Skins de fissure cosmétiques |
+| `tests/smoke.js` | Scénarios : pose Verrou, résolution chez host, claim asynchrone, bonus de set, déblocage souvenir |
+
+> Comparé à R1 du plan : `battle.js` / `battle-ui.js` rentrent dans le
+> scope V1b (modifications minimales — réutilisation de la boucle
+> existante sur un `enemyGroup` isolé). `dungeon.js` reçoit un nouveau
+> helper pour fabriquer l'écho.
 
 ## 10. Découpage en phases et critères de vérification
 
@@ -757,23 +1078,66 @@ qui couvre 80 % du besoin pour 0 % du coût Realtime.
   voit le sort grisé avec tooltip ; coupure réseau simulée → visiteur
   rapatrié proprement.
 
+> **Fin de V1a — socle exploration livrable** (~13,5 j cumulé).
+
+### Phase G — Combat local + amorce économie (V1b) — **4 j**
+- `dungeon.js — buildEcho(template, visitorLevel, partySize)`.
+- Hook `movement.js` : option "Défier l'écho" sur cellule hostile,
+  cooldown par cellule, limite 3/étage.
+- `battle.js` : flag `inAstralCombat` ; `endBattle` route les gains
+  vers `outremondeEssence` (formule §6.10) ; défaite = éjection (anim
+  portail inverse + cooldown 5 min) au lieu de mort.
+- `battle-ui.js` : bordure dorée, HP restauré à la sortie de visite.
+- Vérification anti-trivialisation : `Avada Kedavra` désactivé en
+  combat astral.
+- verify : visiteur engage un écho, gagne 1+ essence, peut perdre sans
+  pétrification. Cooldown post-défaite respecté. `tests/smoke.js`
+  couvre engagement/victoire/défaite.
+
+### Phase H — Verrou de Sang + Atelier du Voyageur (V1c) — **3 j**
+- SQL : table `mp_threats` (§12) + champ `mp_presence.accepts_threats`
+  (default true).
+- Sort `Verrou de Sang` + flow de pose (sélection monstre, animation,
+  insertion).
+- Lecture des Verrous au démarrage host → matérialisation en cellules
+  marquées 🩸. `endBattle` met à jour `status`.
+- Modale "Verrous résolus" au démarrage visiteur, claim asynchrone.
+- Modale "Atelier du Voyageur" : craft Set Voyageur, achat sorts
+  exclusifs, déblocage cosmétiques.
+- Sous-section "Carnet de Voyage" dans la fiche perso (souvenirs +
+  métriques + essences).
+- verify : pose d'un Verrou consomme 1 essence ; sur un second onglet
+  host, le Verrou apparaît sur la minimap au démarrage, le combat se
+  déclenche à l'entrée, host reçoit fragment Voyageur, visiteur
+  redémarre et claim +3 essences. Set 5/5 actif débloque la preview
+  de donjon distant.
+
+> **Fin de V1c — système cross-plan complet** (~20,5 j cumulé).
+
 ## 11. Coûts résumés
 
-| Palier | Effort cumulé | Inclus |
-|--------|---------------|--------|
-| **V1 (Exploration découverte)** | **~13,5 j** | Phases A + B + C + D + E + F |
-| V2 (Quêtes inter-mondes) | +5–8 j | Banques de dialogues, items spéciaux, mécanique persistante |
-| **Branche annexe co-op combat** | +14 j sur V1 | Combat partagé, économie partagée, prédiction/réconciliation |
+| Palier | Effort cumulé | Effort additionnel | Inclus |
+|--------|---------------|--------------------|--------|
+| **V1a (Exploration découverte)** | **~13,5 j** | — | Phases A + B + C + D + E + F |
+| **V1b (+ Combat local)** | **~17,5 j** | +4 j | Phase G |
+| **V1c (+ Verrou de Sang + Atelier)** | **~20,5 j** | +3 j | Phase H |
+| V2 (Quêtes inter-mondes) | +5–8 j | — | Banques de dialogues, items spéciaux, mécanique persistante |
+| **Branche annexe co-op combat** | +14 j sur V1 | — | Combat partagé, économie partagée, prédiction/réconciliation |
 
 Infra Supabase :
 - Realtime channels : free tier (200 connexions, 2 M msg/mois).
   Charge V1 ~1 msg/sec : suffisant pour ~3000 visites
   simultanées (largement au-delà du besoin).
 - Table `mp_visit_requests` : volume négligeable.
+- Table `mp_threats` (V1c) : ~1 insert par Verrou + 1 update à la
+  résolution. Volume estimé < 10 K rangs/mois pour 100 joueurs
+  actifs — largement sous le free tier 500 MB.
 
 Hébergement : aucun changement, GitHub Pages reste valide.
 
-## 12. SQL — table d'invitation
+## 12. SQL
+
+### 12.1 Table d'invitation (V1a)
 
 ```sql
 create table if not exists public.mp_visit_requests (
@@ -797,19 +1161,52 @@ create index if not exists mp_visit_requests_host_idx
   on public.mp_visit_requests (host_id, status, expires_at);
 ```
 
-Disjoncteur : si la table n'existe pas, le sort de portail affiche
-"Le réseau astral est silencieux" et la fonctionnalité est désactivée
-silencieusement (cohérent avec `multiplayer.md` §11bis).
+### 12.2 Table Verrou de Sang (V1c)
+
+```sql
+create table if not exists public.mp_threats (
+  id            uuid primary key default gen_random_uuid(),
+  visitor_id    text not null,
+  visitor_name  text not null,
+  host_id       text not null,
+  floor         int  not null,
+  x             int  not null,
+  y             int  not null,
+  monster_id    text not null,                   -- clé de monsters.js
+  status        text not null default 'pending', -- pending|resolved|fled|expired
+  posted_at     timestamptz not null default now(),
+  resolved_at   timestamptz,
+  claimed_at    timestamptz,                     -- côté visiteur, marque comme réclamé
+  expires_at    timestamptz not null default (now() + interval '30 days')
+);
+alter table public.mp_threats enable row level security;
+create policy "mp_threats_read"   on public.mp_threats for select using (true);
+create policy "mp_threats_insert" on public.mp_threats for insert with check (true);
+create policy "mp_threats_update" on public.mp_threats for update using (true) with check (true);
+create index if not exists mp_threats_host_pending_idx
+  on public.mp_threats (host_id, status, floor) where status = 'pending';
+create index if not exists mp_threats_visitor_unclaimed_idx
+  on public.mp_threats (visitor_id, status) where claimed_at is null and status in ('resolved','fled');
+```
+
+Champ ajouté à `mp_presence` (V1c) pour l'opt-out host :
+```sql
+alter table public.mp_presence add column if not exists accepts_threats boolean not null default true;
+```
+
+Disjoncteur : si une de ces tables n'existe pas, la fonctionnalité
+concernée est désactivée silencieusement avec message contextuel ("Le
+réseau astral est silencieux" pour `mp_visit_requests` ; "Les Verrous
+de Sang refusent de se nouer" pour `mp_threats`) — cohérent avec
+`multiplayer.md` §11bis.
 
 ## 13. Risques et questions ouvertes
 
+### V1a (R1 conservés)
 - **Snapshot lourd pour un host avancé** : un host étage 20+ avec tout
   débloqué peut générer un snapshot de 300+ KB. Mitigation : limiter à
   l'étage courant + 2 étages au-dessus, charger les autres à la
   demande (`floorSnapshot` à l'approche d'un escalier).
-- **Triche par snapshot falsifié** : un host malicieux peut forger un
-  faux donjon pour le visiteur. Aucune conséquence côté visiteur en V1
-  (rien à gagner) → impact nul. Accepter en l'état.
 - **Lore du sort niveau 8** : on bloque la fonctionnalité derrière une
   progression — discutable. Alternative : sort offert dès le palier 100
   d'une Maison, ou lié à un PNJ Dumbledore. À trancher en §16.
@@ -818,10 +1215,6 @@ silencieusement (cohérent avec `multiplayer.md` §11bis).
 - **PNJ générés aléatoirement** côté host (`getRandomVendorsForFloor`,
   `getRandomLoreForFloor`) : seedés par étage donc déterministes pour
   une partie donnée — leur snapshot tient dans les 200 KB sans plus.
-- **Persistance d'un souvenir de visite** côté visiteur : actuellement
-  rien ne reste de la visite (cohérent avec V1 contemplatif). V1.5
-  pourra ajouter un "carnet de voyage" listant les mondes visités —
-  hors-scope V1.
 - **Cas du host déjà en combat** au moment de l'invitation : refus
   immédiat (`status='in_battle'` filtré). Pas de file d'attente —
   re-demander quand le combat finit.
@@ -829,17 +1222,68 @@ silencieusement (cohérent avec `multiplayer.md` §11bis).
   exactement le point ! `getRandomLoreForFloor` produit des PNJ
   différents selon l'identité de la partie. Bonus narratif.
 
+### V1b — combat local
+- **Triche par client visiteur** : le combat se résout entièrement
+  client-side, le visiteur peut éditer son `outremondeEssence`
+  manuellement. Mitigation V1 : aucun rate-limit serveur, on accepte le
+  risque (impact = leur propre progression cross-plan, isolée du jeu
+  solo et du Hall of Fame). Si nécessaire V2 : signer les gains côté
+  serveur via Edge Function.
+- **Équilibrage des échos vs progression visiteur** : un visiteur
+  niveau 5 visite un host niveau 20 — l'écho doit être à son niveau
+  pour rester jouable, mais quel niveau ? Décision : niveau du visiteur
+  (game over rapide sinon). Vérification empirique à faire en
+  playtest.
+- **Loop de farm sur un seul host** : limite 3 échos par étage par
+  visite + cooldown par cellule (déjà dans §6.8). À surveiller.
+- **Items consommables consommés en combat astral** : faut-il les
+  remettre à la sortie ? **Décision** : oui, ils sont restaurés (cohérent
+  avec restauration HP/SP). Coûte un peu plus de code de snapshot mais
+  évite le piège « j'ai brûlé toutes mes potions chez un autre ».
+
+### V1c — Verrou de Sang
+- **Triche par snapshot falsifié** : un host malicieux peut forger un
+  faux donjon pour ne jamais résoudre les Verrous. Conséquence visiteur :
+  pas d'essence asynchrone. Mitigation : si un Verrou reste `pending`
+  > 30 jours (`expires_at`), il est auto-classé `fled` et le visiteur
+  reçoit la consolation de 1 essence. Accepter en l'état pour le
+  reste.
+- **Un host peut spam des Verrous chez lui-même via 2 comptes** : si
+  un visiteur pose un Verrou et que le host le résout intentionnellement,
+  les deux profitent. Mitigation : la récompense host est modeste (50
+  or + 1 fragment, pas d'XP), donc le farm ne casse pas l'économie
+  solo. Le visiteur est plafonné à 10 Verrous en attente.
+- **Conflit de cellule** : un visiteur pose un Verrou sur une cellule
+  qui devient plus tard une cellule d'escalier (édition de map
+  impossible mais théorique). Décision : à la matérialisation, si la
+  cellule courante n'est pas FLOOR/walkable, on déplace au plus proche
+  voisin valide. Si aucun, on auto-classe `expired`.
+- **Combinatoire Set Voyageur vs équipement existant** : les pièces
+  Voyageur viennent s'ajouter au pool d'équipement, possible
+  optimisation overpowered avec d'autres items. Mitigation : stats
+  modestes par pièce (+1 stat, regen 1), bonus de set graduels. Tableau
+  §6.10 à itérer après playtest.
+
+### Transversal
+- **Persistance d'un souvenir de visite** côté visiteur : V1c apporte
+  le "Carnet de Voyage" via les souvenirs passifs (§6.10 canal 4), ce
+  qui couvre cette ouverture R1.
+
 ## 14. Hors-scope
 
 - Salons "open world" persistants (plusieurs visiteurs simultanés
   dans le même donjon).
 - Donjon généré conjointement par les deux joueurs.
-- Combat coop avec le visiteur (branche annexe §8, à
-  réfléchir séparément).
+- Combat coop *synchrone* avec le visiteur agissant aux côtés du host
+  sur les monstres réels (branche annexe §8). Le combat V1b reste
+  **local et isolé** : pas d'interaction entre les deux acteurs sur le
+  même `enemyGroup`.
 - PvP en direct (couvert par `multiplayer.md` Phase 7 si jamais).
 - Voix / chat texte libre en temps réel.
-- Classement compétitif des visites.
+- Classement compétitif des visites ou des essences (cf. §6.10 :
+  économie isolée).
 - Tout pour Ironman (gel ferme — cf. §2.1).
+- Conversion essences ↔ or normal ↔ XP (économies cloisonnées).
 
 ## 15. Suivi
 
@@ -847,27 +1291,39 @@ silencieusement (cohérent avec `multiplayer.md` §11bis).
       dimensionnelles. Ironman exclu.
 - [x] Pivot conceptuel n°2 (2026-05-25) : co-op combat → **exploration
       découverte**. Co-op déplacé en branche annexe §8.
-- [ ] Phase A — sort + animation locale (3 j).
-- [ ] Phase B — invitation/acceptation (2 j).
-- [ ] Phase C — snapshot et rendu du donjon distant (3 j).
-- [ ] Phase D — limites de territoire + sprites + emotes (2 j).
-- [ ] Phase E — dialogues PNJ « voyageur » + observation-only (2 j).
-- [ ] Phase F — polish (1,5 j).
+- [x] Pivot conceptuel n°3 (2026-05-25 R2) : ajout combat local + Verrou
+      de Sang + économie cross-plan (4 canaux de récompense). Le visiteur
+      a maintenant une agency dans le monde de l'autre, sans toucher son
+      économie ni son XP/or solo.
+- [ ] **V1a** — exploration découverte (13,5 j)
+    - [ ] Phase A — sort + animation locale (3 j).
+    - [ ] Phase B — invitation/acceptation (2 j).
+    - [ ] Phase C — snapshot et rendu du donjon distant (3 j).
+    - [ ] Phase D — limites de territoire + sprites + emotes (2 j).
+    - [ ] Phase E — dialogues PNJ « voyageur » + observation-only (2 j).
+    - [ ] Phase F — polish (1,5 j).
+- [ ] **V1b** — combat local + amorce économie (4 j)
+    - [ ] Phase G — combat local asymétrique + essences.
+- [ ] **V1c** — Verrou de Sang + Atelier complet (3 j)
+    - [ ] Phase H — Verrous + Set Voyageur + cosmétiques + sorts exclusifs + souvenirs.
 - [ ] V2 — Quêtes inter-mondes (5–8 j, à planifier après V1).
 - [ ] Branche annexe — Co-op combat (gelée).
 
 ## 16. Décisions à confirmer avant Phase A
 
+### V1a
 1. **Nom du sort** : *Apparition Astrale* (recommandé — sobre, fidèle
    au canon), *Cheminette Inter-Mondes* (visuellement iconique), ou
    *Portoloin de Conscience* (justifie le retour automatique) ?
 2. **Niveau de déblocage** : niveau 8 fixe, palier de Maison, ou
    déclenché par un PNJ scripté (Dumbledore après un palier) ?
 3. **Coût en PM** : 25 (proposition), ou plus dissuasif (~40) pour en
-   faire un sort rituel ? (En V1 il n'y a rien à gagner, donc le coût
-   PM est purement esthétique — peut-être 10–15 suffisent.)
+   faire un sort rituel ? Avec l'ajout V1b/c d'agency cross-plan, un
+   coût modéré (15-20) semble approprié — la barrière est désormais
+   l'investissement narratif, pas le coût mécanique.
 4. **Cooldown entre deux visites** : aucun, 5 minutes, ou une fois par
-   étage ? Anti-flood léger souhaitable.
+   étage ? Anti-flood léger souhaitable. À cumuler avec le cooldown
+   défaite (5 min) de V1b.
 5. **Étendue du snapshot** : envoyer tous les étages débloqués en une
    fois (jusqu'à 300 KB), ou charger à la demande (étage courant
    + ±1) ? Trade-off réactivité / charge.
@@ -878,3 +1334,34 @@ silencieusement (cohérent avec `multiplayer.md` §11bis).
 7. **Présence du visiteur côté host** : on rend son sprite **par
    défaut**, ou en option opt-in pour le host (qui peut le masquer
    s'il veut jouer sans distraction) ?
+
+### V1b — combat local
+8. **Limite d'échos par étage** : 3 (proposé) suffisant pour la saveur
+   sans dériver en farm ? Alternative : pas de limite mais cooldown
+   réel-temps (1 écho / 30 s).
+9. **Items consommables consommés en astral** : restaurés à la sortie
+   (proposé) ou perdus ? Restauration retire la tension mais évite la
+   frustration "j'ai brûlé tout mon stock". À trancher.
+10. **Récompense baseline d'un écho** : 1 + floor(level/3) essences
+    (proposé). Trop frugal, trop généreux ? Calibrage post-playtest.
+
+### V1c — Verrou de Sang + Atelier
+11. **Coût d'un Verrou en essences** : 1 (proposé). Si trop bas, spam
+    de Verrous chez tous les hosts visités ; si trop haut, jamais
+    posé.
+12. **Récompense host pour résolution de Verrou** : 50 or + 1 fragment
+    Voyageur (proposé). Faut-il aussi un peu d'XP (~25) pour le sentir
+    plus généreux côté host ?
+13. **Plafond de Verrous en attente par visiteur** : 10 (proposé).
+    Évite le spam asynchrone. Trop bas si le joueur visite beaucoup en
+    peu de temps ?
+14. **Set Voyageur — stats par pièce** : modestes (+1 stat, regen 1)
+    pour éviter de dominer l'équipement endgame. À itérer.
+15. **Catalogue cosmétique initial** : 12 items proposés (4 auras + 4
+    skins portail + 4 skins Verrou). Volume gérable ?
+16. **Sort `Rappel Astral`** : utile ou redondant avec la liste
+    standard d'invitation ? Décision : à conserver pour le confort
+    narratif (revenir chez un hôte croisé sans le re-chercher).
+17. **Affichage des Verrous côté host** : marqueur visible dès
+    l'entrée d'étage (proposé), ou révélé uniquement à proximité
+    immédiate (effet surprise) ?
