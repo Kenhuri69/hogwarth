@@ -267,6 +267,42 @@ const QUEST_TEMPLATES = [
     reward: { xp: 240, gold: 130, item: "potion_l" },
     location: "Refuge de Bill (étage 9)"
   },
+  // ── Phase 3 — Tranche étage 10 « Le Précipice » ──────────────────
+  // (cf. .claude/plans/content-audit-stabilization.md §5.3)
+  // 3 quêtes données par l'Esprit de Sirius Black à l'étage 10.
+  {
+    id: "chasse_dolohov",
+    title: "La courbe violette",
+    giver: "Esprit de Sirius Black",
+    desc: "Antonin Dolohov a torturé un ami à moi, Caradoc Dearborn, jusqu'à la disparition. Abats-le — pour Caradoc, pour Hermione qu'il a presque tuée, pour moi qui ne peux plus lever la baguette.",
+    objectives: [
+      { type: "kill", monsterId: "antonin_dolohov", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 450, gold: 280, stats: { atk: 3, mag: 2 }, item: "essence_tenebres" },
+    location: "Antichambre des Profondeurs (étage 10)"
+  },
+  {
+    id: "chasse_heraut",
+    title: "Faire taire le cor",
+    giver: "Esprit de Sirius Black",
+    desc: "Le Héraut sonne le retour du Maître. Tant qu'il chante, Voldemort puise dans son hymne. Brise le cor et tu gagneras un peu de temps.",
+    objectives: [
+      { type: "kill", monsterId: "heraut_tenebres", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 500, gold: 320, stats: { def: 3, mag: 3 }, item: "page_grimoire" },
+    location: "Antichambre des Profondeurs (étage 10)"
+  },
+  {
+    id: "purification_sirius",
+    title: "Repos des spectres",
+    giver: "Esprit de Sirius Black",
+    desc: "Trois spectres renforcés errent sans repos depuis qu'ils ont franchi le Voile sans accepter. Détruis-les — c'est la seule façon de les libérer. Je le sais mieux que personne.",
+    objectives: [
+      { type: "kill", monsterId: "spectre_renforce", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 400, gold: 220, stats: { hp: 20, lck: 2 }, item: "larme_phenix_mineure" },
+    location: "Couloirs hantés (étage 10)"
+  },
   // ── Manon, fille cachée de Lupin — pseudo-quête en deux volets ──
   // Données et rendues par Manon (PNJ étage 3, cf. npcs.js). Le volet 2
   // (`prereq`) ne s'ouvre qu'après remise du volet 1 — chaîne classique.

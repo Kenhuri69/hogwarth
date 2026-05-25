@@ -473,6 +473,10 @@ const ITEMS = [
   { id:"diademe_antique",   name:"Diadème Antique",      icon:"👑", desc:"MAG+5 LCK+2 — Couronne d'une reine oubliée",   type:"armor", slot:"head",  family:"tiara_antique",   rarity:"rare", bonusMag:5, bonusLck:2, power:5, price:900 },
   { id:"bague_protection",  name:"Bague de Protection",  icon:"💍", desc:"DEF+3 END+3 — Sertie d'une perle de jade",     type:"acc",   slot:"ring",  family:"ring_protection", rarity:"rare", bonusDef:3, bonusEnd:3, power:3, price:780 },
   { id:"robe_combat",       name:"Robe de Combat",       icon:"🥼", desc:"DEF+5 · PV max +5 — Renforcée de runes",       type:"armor", slot:"body",  family:"robe_combat",     rarity:"rare", bonusDef:5, bonusHpMax:5, power:5, price:950 },
+  // ── Phase 3 — Tranche étage 10 « Le Précipice » : équipement antichambre Voldemort (boutique + drop boss) ──
+  { id:"pectoral_auror",       name:"Pectoral des Aurors",       icon:"🛡️", desc:"DEF+6 · PV max +8 — Armure de fin de carrière", type:"armor", slot:"body",   family:"pectoral_auror",     rarity:"rare", bonusDef:6, bonusHpMax:8, power:6, price:1200 },
+  { id:"larme_phenix_mineure", name:"Larme du Phénix Mineure",   icon:"💧", desc:"MAG+4 · Régen +2 PV/tour",                      type:"acc",   slot:"amulet", family:"amulet_lesser_tears",rarity:"rare", bonusMag:4, regenHp:2, power:4, price:1100 },
+  { id:"grimoire_avance",      name:"Grimoire Avancé",           icon:"📚", desc:"MAG+3 INT+4 — Recueil tactique des Aurors",     type:"acc",   slot:"trinket",family:"trinket_grimoire",   rarity:"rare", bonusMag:3, bonusInt:4, power:3, price:1000 },
   // ── Livres de sorts ──────────────────────────────────────────
   { id:"livre_sortileges", name:"Sortilèges Standards, Vol.3", icon:"📗", desc:"Apprend Wingardium Leviosa",  type:"spellbook", spell:"Wingardium Leviosa", price:150  },
   { id:"livre_soin",       name:"Potions & Remèdes Magiques",  icon:"📘", desc:"Apprend Reparo (soin 20 PV)", type:"spellbook", spell:"Reparo",             price:110  },

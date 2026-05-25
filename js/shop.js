@@ -65,6 +65,10 @@ const SHOP_CATALOG = [
   { id: "diademe_antique",     minFloor: 9 },
   { id: "bague_protection",    minFloor: 9 },
   { id: "robe_combat",         minFloor: 9 },
+  // Phase 3 — Tranche étage 10 « Le Précipice » : équipement antichambre Voldemort
+  { id: "pectoral_auror",       minFloor: 10 },
+  { id: "larme_phenix_mineure", minFloor: 10 },
+  { id: "grimoire_avance",      minFloor: 10 },
   // Consommables endgame (post-victoire) — voir ENDGAME_PLAN.md §7.10
   { id: "potion_xl",           minFloor: 15 },
   { id: "potion_xl_sp",        minFloor: 15 },
