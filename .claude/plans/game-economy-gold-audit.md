@@ -394,32 +394,85 @@ mieux aligné avec l'architecture existante, du plus simple au plus
 ambitieux. Chacune appelle une décision utilisateur avant
 implémentation.
 
-#### Piste A — Catalogue boutique endgame étendu (effort : faible)
+#### Piste A — Catalogue boutique endgame étendu (effort : faible) ✅ **VALIDÉE V1**
 
-**Idée** : ajouter 4-6 items haut de gamme au `SHOP_CATALOG`
+**Idée** : ajouter 6 items haut de gamme au `SHOP_CATALOG`
 (`shop.js`) avec `minFloor: 11`, 14, 17, accessibles uniquement en
 boucle ténébreuse. Profite du système existant sans refonte.
 
-| Type d'item | Prix indicatif | minFloor | Effet |
-|-------------|----------------|----------|-------|
-| **Élixir Permanent +PV** | 1500 G | 11 | +5 PV max permanent (consommable, cap 5 usages) |
-| **Élixir Permanent +PM** | 1500 G | 11 | +5 PM max permanent (cap 5) |
-| **Pierre d'Âme** | 3000 G | 14 | +1 stat permanente au choix (cap 3 par perso) |
-| **Grimoire Interdit** | 4000 G | 14 | Enseigne 1 sort exclusif endgame |
-| **Pendentif d'Ombre** | 6000 G | 17 | epic acc, regenHp:5 + bonusCritDamage |
-| **Reliquaire Lunaire** | 8000 G | 17 | legendary trinket, +20 % or de combat (stack avec Poufsouffle) |
+| Type d'item | Prix de base | minFloor | Effet | Prix progressif ? |
+|-------------|--------------|----------|-------|-------------------|
+| **Élixir Permanent +PV** | 1500 G | 11 | +5 PV max permanent (consommable) | ✅ ×1.5 |
+| **Élixir Permanent +PM** | 1500 G | 11 | +5 PM max permanent | ✅ ×1.5 |
+| **Pierre d'Âme** | 3000 G | 14 | +1 stat permanente au choix | ✅ ×1.5 |
+| **Grimoire Interdit** | 4000 G | 14 | Enseigne 1 sort exclusif endgame | ❌ one-shot |
+| **Pendentif d'Ombre** | 6000 G | 17 | epic acc, regenHp:5 + bonusCritDamage | ❌ one-shot |
+| **Reliquaire Lunaire** | 8000 G | 17 | legendary trinket, +20 % or de combat (stack Poufsouffle) | ❌ one-shot |
 
-**Volume drainé estimé** : un joueur en boucle 2 cumulant 8000 G peut
-acheter 2-3 items → drain immédiat de l'essentiel du stock dormant,
-suivi d'un rythme régulier (1 item / boucle complète).
+##### Prix progressif des consommables permanents (validé)
 
-**Avantages** : 0 refonte, réutilise filtrage `minFloor` existant,
-items eux-mêmes peuvent boucler dans `tools/icon_factory.py` (cf.
-section dédiée du CLAUDE.md).
+**Mécanisme** : « effet de rareté sur le marché » — chaque achat
+augmente le prix du même item pour le prochain achat.
 
-**Risques** : doit éviter de power-creep le mode Ironman (les
-Élixirs Permanents +PV/+PM rendent les runs « tankés » trop faciles
-si non plafonnés). Cap à 5-3 usages par catégorie résout ça.
+```
+prixAffiché(itemId) = round( basePrice × 1.5 ^ nbAchetés(itemId) )
+```
+
+**Compteur** : nouveau global `endgamePurchases: { elixir_hp: 0,
+elixir_mp: 0, pierre_ame: 0 }` dans `state.js`, sérialisé dans
+`_serializeState`/`_applyState`. **Incrémenté à l'achat**, pas à
+l'usage (le marché réagit à la demande, pas à la consommation).
+Compteur **partagé groupe** (1 stock unique).
+
+Courbe résultante pour l'Élixir +PV (base 1500 G) :
+
+| Achat # | Prix | Or cumulé dépensé | PV max ajoutés |
+|---------|------|---------------------|----------------|
+| 1 | 1 500 G | 1 500 | +5 |
+| 2 | 2 250 G | 3 750 | +10 |
+| 3 | 3 375 G | 7 125 | +15 |
+| 4 | 5 062 G | 12 187 | +20 |
+| 5 | 7 593 G | 19 780 | +25 |
+| 6 | 11 390 G | 31 170 | +30 |
+| 7 | 17 085 G | 48 255 | +35 |
+
+Pas de cap dur — le 7e achat coûte ~17k G, devient prohibitif sans
+être bloqué. Le joueur **choisit** quand s'arrêter. Pour la Pierre
+d'Âme (base 3000 G) : 3000 → 4500 → 6750 → 10 125 → 15 187 G —
+même courbe, base plus haute.
+
+##### UX boutique
+
+- Le prix affiché par `openShop()` doit être calculé dynamiquement
+  via un helper `_endgameItemPrice(itemId)` (lit `endgamePurchases`,
+  applique la formule). Ne pas figer le `price` dans `data.js` pour
+  ces 3 items — utiliser un champ `basePrice` + flag `rarityScales:
+  true`.
+- Petit indicateur subtil dans l'overlay boutique : « Stock
+  rare — chaque achat épuise davantage le marché. » sous le tooltip
+  des 3 items concernés.
+- Message narratif au 3e achat : « Le marchand hausse un sourcil.
+  *Encore un… ces flacons se font rares.* »
+
+**Volume drainé estimé (combo A complet)** : un joueur en boucle 2
+avec 10 000 G cumulés peut :
+- 1× Élixir +PV (1500) + 1× Élixir +PM (1500) + 1× Pierre d'Âme (3000)
+  = 6000 G drain immédiat, +5 PV +5 PM +1 stat.
+- Restent 4000 G pour Grimoire Interdit.
+→ Drain immédiat ~10k G sur la première vague endgame, puis ~5-8k G
+par boucle complète suivante (courbe rareté ralentit).
+
+**Avantages** : 0 refonte du moteur, items peuvent boucler dans
+`tools/icon_factory.py` (cf. CLAUDE.md), prix progressif évite le
+power-creep Ironman sans cap dur arbitraire.
+
+**Risques** :
+- Ironman : 30 PV max via 6 Élixirs HP coûte 31k G — atteignable
+  uniquement en boucle 4-5, donc inaccessible à un run typique.
+  Le power-creep est auto-régulé par l'or atteignable. **Pas besoin
+  de cap dur.**
+- Migration save : `endgamePurchases` doit être initialisé à `{}` pour
+  les anciens saves (idempotent dans `_applyState`).
 
 #### Piste B — Don à la Maison récurrent (effort : faible-moyen)
 
@@ -471,31 +524,63 @@ non encore implémenté. **Reporté** tant que les items n'ont pas de
 bonus randomisés (actuellement tous les items ont des bonus fixes
 dans `data.js`).
 
-#### Piste E — Marchand itinérant rare (effort : faible)
+#### Piste E — Marchand itinérant rare (effort : faible) ✅ **VALIDÉE V1**
 
 **Idée** : extension de `getRandomVendorsForFloor()` (`npcs.js`) :
 ajouter un PNJ vendeur **rare** (~10 % spawn) en étages 11+ avec un
 inventaire premium tournant (1-3 items haut de gamme tirés au seed
 de l'étage). Items premium = sous-ensemble du catalogue Piste A,
-mais **avec prix +30-50 %** (premium itinérant). Le joueur qui le
-croise ressent un événement, et le surcoût est perçu comme légitime
-(« on est tombé sur le bon marchand au mauvais moment »).
+mais **avec prix +40 %** (premium itinérant).
 
-**Volume drainé** : ponctuel mais marquant. Bon compagnon de Piste A
-sans la remplacer.
+##### Détails d'implémentation
+
+- **Identité** : nouveau NPC `marchand_ombre` (PNJ catégorie
+  `vendor` dans `npcs.js`), portrait dédié à générer, dialogue court
+  (« Mes flacons viennent de très loin… leur prix s'en ressent. »).
+- **Spawn** : extension de `getRandomVendorsForFloor(floor)`, gate
+  `floor >= 11`, tirage seedé (~10 % par visite d'étage). Le seed
+  garantit reproductibilité save/load.
+- **Inventaire** : 1-3 items tirés du sous-ensemble suivant :
+  - Élixir +PV / +PM (×1.4 du prix progressif courant)
+  - Pierre d'Âme (×1.4)
+  - Élixir Rare Exclusif (seulement chez lui) : **Philtre
+    d'Endurance** 3500 G base, +3 END permanent ×1.5 rareté
+- **Interaction** : ouvre `openShop()` avec un catalogue filtré
+  contextuel (non pas le catalogue global). Nécessite un petit
+  refactor : `openShop(catalogOverride?)` accepte un tableau d'items
+  optionnel.
+
+##### Le surcoût est-il dissuasif ?
+
+À 40 % de surcoût, l'Élixir +PV au 2e achat passe de 2250 G à
+3150 G — ~3 combats endgame de différence. C'est un **arbitrage**,
+pas un piège : si le joueur a besoin de PV maintenant (sortie de
+combat difficile), il paye ; sinon il attend la prochaine
+fontaine + boutique fixe.
+
+**Volume drainé** : ponctuel (~3500-10 000 G par rencontre selon
+inventaire), 1 rencontre toutes les 10 visites d'étage en moyenne.
+Bon complément de la Piste A : draine quand le joueur ne se serait
+pas naturellement arrêté en boutique.
 
 ---
 
-#### Recommandation prioritaire
+#### Recommandation prioritaire — combo validé
 
-**Piste A** (catalogue boutique endgame étendu) — meilleur ratio
-effort / impact, zéro refonte, drain immédiat de 30-50 % du stock
-dormant, ré-active le bonus Poufsouffle Tier 17.
+**V1 = Piste A + Piste E** (catalogue boutique endgame étendu avec
+prix progressif des consommables permanents + marchand itinérant
+rare en bonus). Validé par l'utilisateur le 2026-05-25.
 
-**+ Piste B** (don à la Maison récurrent) en V2, traitée dans un
-plan dédié — fournit le sink illimité pour les très longs runs.
+- Drain combiné estimé : ~10k G immédiat + 5-8k G par boucle suivante
+  + 3.5-10k G ponctuel par rencontre du marchand itinérant.
+- Ré-active le bonus Poufsouffle Tier 17 (l'or gagné a enfin un usage).
+- Power-creep auto-régulé par la courbe ×1.5 de rareté + la rareté du
+  marchand itinérant.
 
-**Pistes C / D / E** : à plan séparé si validées plus tard.
+**V2 (plan séparé)** : Piste B (don récurrent à la Maison) — sink
+illimité pour très longs runs.
+
+**Pistes C / D** : à plan séparé si validées plus tard.
 
 ### 5.7 (Reco optionnelle) Rééquilibrer prix item « trop forts »
 
@@ -569,8 +654,63 @@ pour les items pallier, et reste un choix tactique pour Portus.
 ### Étape 4 (optionnelle) — `Autel + prix items` (§5.5 + §5.7)
 - [ ] À discuter — impact ressenti plus subtil, moins prioritaire.
 
-### Étape 5 — `Commit + push + PR`
-- [ ] 1 commit par étape (révisible isolément).
+### Étape 5 — `Sinks endgame combo A+E` (§5.6) ✅ validé
+
+#### 5a — Catalogue boutique endgame (Piste A)
+- [ ] Ajouter 6 items dans `js/data.js` : `elixir_perma_hp`,
+      `elixir_perma_mp`, `pierre_ame`, `grimoire_interdit`,
+      `pendentif_ombre`, `reliquaire_lunaire`. Champ `basePrice`
+      pour les 3 progressifs (au lieu de `price`), flag
+      `rarityScales: true`.
+- [ ] Ajouter ces 6 items à `SHOP_CATALOG` (`js/shop.js`) avec
+      `minFloor` correspondant (11/14/17).
+- [ ] Helper `_endgameItemPrice(item)` dans `shop.js` : si
+      `rarityScales` → `round(basePrice × 1.5^endgamePurchases[id])`,
+      sinon `item.price`.
+- [ ] Helper `_endgameItemBuy(item)` : incrémente
+      `endgamePurchases[id]` à l'achat (pas à l'usage).
+- [ ] Ajouter `endgamePurchases: {}` à `state.js` + initialisation
+      idempotente dans `_applyState` (compat anciens saves).
+- [ ] Logique d'effet des 3 consommables :
+  - Élixir +PV : `c.hpMax += 5; c.hp = c.hpMax;` (heal complet
+    bonus) — appelé via `useItem` sur le perso ciblé (prompt
+    Harry/Hermione en duo, comme spellbook).
+  - Élixir +PM : idem avec `spMax / sp`.
+  - Pierre d'Âme : modale de choix de stat (FOR/INT/AGI/END/LCK/MAG)
+    → mute `c._base<Stat>` puis `recalculateStats()`.
+- [ ] Logique du Grimoire Interdit : choix du sort à enseigner
+      (modale, comme spellbook ; sort exclusif à designer dans un
+      petit aller-retour).
+- [ ] Pendentif d'Ombre + Reliquaire Lunaire : items équipables
+      classiques, exploitent le système existant
+      (`bonusCritDamage`, `regenHp`, nouveau champ
+      `bonusGoldMult: 0.20` à câbler dans `endBattle`).
+- [ ] Indicateur subtil dans l'overlay boutique : « Stock rare —
+      chaque achat épuise davantage le marché. » sous le tooltip
+      des 3 items progressifs.
+- [ ] Message narratif au 3e achat (toast/log).
+- [ ] Génération des 6 PNG via `tools/icon_factory.py` (cf. CLAUDE.md
+      pour la procédure).
+
+#### 5b — Marchand itinérant rare (Piste E)
+- [ ] Nouveau NPC `marchand_ombre` dans `js/npcs.js` (portrait à
+      générer ou réutiliser un asset vendeur sombre existant).
+- [ ] Extension `getRandomVendorsForFloor(floor)` : gate `floor >= 11`,
+      tirage seedé ~10 %.
+- [ ] Refactor mineur `openShop(catalogOverride?)` pour accepter un
+      catalogue contextuel.
+- [ ] Inventaire dynamique : 1-3 items tirés (Élixir HP/MP, Pierre
+      d'Âme, Philtre d'Endurance), prix `_endgameItemPrice(item) × 1.4`.
+- [ ] Nouvel item exclusif `philtre_endurance` (3500 G base, +3 END
+      permanent, ×1.5 rareté).
+- [ ] Dialogue court via `npc-dialog.js`.
+- [ ] Pas d'auto-spawn rétroactif : les saves antérieures n'auront
+      pas le marchand jusqu'à la prochaine génération d'étage 11+.
+- [ ] Test smoke : nouveau scénario « rencontre marchand itinérant »
+      à ajouter dans `tests/smoke.js`.
+
+### Étape 6 — `Commit + push + PR`
+- [ ] 1 commit par sous-étape (révisible isolément).
 - [ ] PR groupée vers `master` avec changelog clair.
 - [ ] Vérifier l'état de PR existante avant `git push` (§6 des
       guidelines).
@@ -638,3 +778,18 @@ pour les items pallier, et reste un choix tactique pour Portus.
   drain immédiat de 30-50 % du stock dormant. Pistes B-E reportées
   en plans séparés. §9 mis à jour. **Décision utilisateur attendue**
   avant implémentation de la Piste A.
+- **2026-05-25 (amendement 3 — validation V1)** : utilisateur valide
+  le **combo Piste A + Piste E** et propose un **prix progressif des
+  consommables permanents** (rareté sur le marché) plutôt qu'un cap
+  dur. → §5.6 Piste A enrichie : formule `prix = basePrice × 1.5^n`
+  pour Élixir +PV, Élixir +PM, Pierre d'Âme ; compteur
+  `endgamePurchases` global incrémenté à l'achat (pas à l'usage),
+  sérialisé. UX boutique : prix recalculé dynamiquement,
+  indicateur subtil + message narratif au 3e achat. §5.6 Piste E
+  enrichie avec détails d'implémentation (PNJ `marchand_ombre`,
+  spawn seedé 10 % étage 11+, prix ×1.4, refactor mineur
+  `openShop(catalogOverride?)`, item exclusif Philtre d'Endurance).
+  §5.6 recommandation prioritaire mise à jour. §7 phasage : ajout
+  Étape 5 (5a + 5b) avec sous-tâches détaillées. **Implémentation
+  V1 en attente du go final de l'utilisateur** (et arbitrage sur
+  l'ordre d'attaque vs. les Étapes 1-3 §5.2/5.3/5.4).
