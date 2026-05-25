@@ -1177,11 +1177,11 @@ const SPELL_OOC_HANDLERS = {
     if (typeof renderMinimap === 'function') renderMinimap();
     updateUI();
   },
-  // Cheminette Inter-Mondes — Phase A : animation locale 2,8 s sans
-  // réseau. Les phases suivantes (parallel-worlds.md §10 Phases B+)
-  // brancheront snapshot Supabase + rendu du donjon distant après
-  // playPortalOpen. Refusé en Ironman (double-gate avec openSpells)
-  // et silencieux si portal-fx.js absent.
+  // Cheminette Inter-Mondes — Phase B : animation locale 2,8 s
+  // (incantation) puis ouverture de la modale des destinations
+  // (portal-matchmaking.js). L'animation de voyage est rejouée à
+  // l'acceptation par _onVisitorAccepted (parallel-worlds.md §10
+  // Phase B). Refusé en Ironman (double-gate avec openSpells).
   portal: function (spell, charIdx) {
     const caster = party[charIdx] || party[0];
     if (!caster || caster.hp <= 0) {
@@ -1199,20 +1199,21 @@ const SPELL_OOC_HANDLERS = {
     caster.sp -= spell.cost;
     AudioSystem.playSpellCast(spell.name);
     AudioSystem.speakSpell(spell.name);
-    addMsg(`🌀 ${caster.name} entonne ${spell.name}…`, 'magic');
+    addMsg(`🌀 ${caster.name} entonne ${spell.name} — la cheminée s'embrase.`, 'magic');
     closeModal('spell-modal');
     updateUI();
-    const finish = () => updateUI();
-    const placeholder = () => {
-      addMsg("Le Réseau de Cheminette astral reste silencieux. Aucun sorcier ne répond depuis l'autre côté.", '');
-      if (typeof playPortalClose === 'function') playPortalClose({ caster }, finish);
-      else finish();
+    const openTargets = () => {
+      if (typeof openPortalTargetModal === 'function') {
+        openPortalTargetModal();
+      } else {
+        addMsg("Le registre des sorciers reste muet — module matchmaking absent.", 'bad');
+      }
+      if (typeof updateUI === 'function') updateUI();
     };
     if (typeof playPortalOpen === 'function') {
-      playPortalOpen({ caster }, placeholder);
+      playPortalOpen({ caster }, openTargets);
     } else {
-      addMsg("Le portail vacille — animations indisponibles.", 'bad');
-      finish();
+      openTargets();
     }
   }
 };

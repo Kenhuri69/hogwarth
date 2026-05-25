@@ -549,6 +549,16 @@
       <div id="tier-transition-overlay" aria-hidden="true"></div>
       <div id="portal-fx-layer" aria-hidden="true"></div>
 
+      <!-- Mondes parallèles — modale destinations (visiteur) -->
+      <div id="portal-target-overlay" style="display:none" role="dialog" aria-modal="true">
+        <div class="portal-modal-panel" id="portal-target-panel"></div>
+      </div>
+
+      <!-- Mondes parallèles — modale acceptation (host) -->
+      <div id="portal-incoming-overlay" style="display:none" role="dialog" aria-modal="true">
+        <div class="portal-modal-panel" id="portal-incoming-panel"></div>
+      </div>
+
       <div id="encounter-overlay">
         <div class="enemy-group-container" id="enemy-group"></div>
         <div class="battle-char-indicator" id="battle-char-indicator">🧙 Tour de Harry Potter</div>
@@ -1023,8 +1033,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/save-ui.js?v=2"></script>
 <script src="js/ironman.js?v=3"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
-<script src="js/multiplayer.js?v=4"></script>
+<script src="js/multiplayer.js?v=5"></script>
 <script src="js/portal-fx.js?v=1"></script>
+<script src="js/portal-matchmaking.js?v=1"></script>
 <script src="js/main.js?v=5"></script>
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=2"></script>

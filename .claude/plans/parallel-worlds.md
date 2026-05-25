@@ -1299,22 +1299,32 @@ de Sang refusent de se nouer" pour `mp_threats`) — cohérent avec
       Inter-Mondes, niv. 8, 25 PM, sprite host visible par défaut.
 - [ ] **V1a** — exploration découverte (13,5 j)
     - [x] Phase A — sort + animation locale (3 j) — **livré
-      2026-05-25**. Sort `Cheminette Inter-Mondes` (icône 🌀, 25 PM,
-      `effect:"portal"`) déclaré dans `SPELLS`, apprentissage Harry &
-      Hermione au niveau 8 (`_grantLevelSpells`), handler OOC dans
-      `SPELL_OOC_HANDLERS.portal`, animation 2,8 s (phases A→D) dans
-      `js/portal-fx.js`, fermeture 1,5 s, keyframes CSS dans
-      `css/portal.css`, overlay `#portal-fx-layer` dans `index.html`,
-      MANIFEST entries optionnelles, icône PNG dédiée générée par
-      `tools/gen_floo_icon.py` (flammes vertes torsadées + 4 runes
-      dorées). Double-gate Ironman : grisage dans `openSpells` (hint
-      « Voie solitaire — l'Ironman se joue seul ») + refus dans le
-      handler. Phase A = placeholder narratif sans réseau (« Le Réseau
-      de Cheminette astral reste silencieux »). Scénario smoke
-      `scenarioParallelPortal` (7 assertions T1→T7) vert. Prochaine
-      phase : B — invitation et matchmaking Supabase
-      (`mp_visit_requests`).
-    - [ ] Phase B — invitation/acceptation (2 j).
+      2026-05-25** (PR #260). Sort `Cheminette Inter-Mondes` + anim
+      4 phases + icône PNG dédiée + double-gate Ironman. Scénario
+      smoke `scenarioParallelPortal` (T1→T7).
+    - [x] Phase B — invitation et matchmaking Supabase (2 j) —
+      **livré 2026-05-25**. API REST dans `js/multiplayer.js` :
+      `mpListAvailableHosts` (GET `mp_presence` filtré normal +
+      exploring + récent + pas moi), `mpPostVisitRequest` (POST
+      `mp_visit_requests`), `mpPollOutgoingVisitStatus` (GET status),
+      `mpRespondVisitRequest` (PATCH accepted/refused),
+      `_mpPollIncomingVisitRequests` (poll côté host toutes les 3 s
+      via `_mpVisitsAttach` branché à `mpStartSession`/`mpStopSession`).
+      Disjoncteur dédié `_mpVisitTableMissing` : si la table n'existe
+      pas (404), désactivation silencieuse. UI dans
+      `js/portal-matchmaking.js` : modale `#portal-target-overlay`
+      (liste destinations, écran d'attente, gestion timeout 60 s) +
+      modale `#portal-incoming-overlay` (acceptation host avec
+      décompte 30 s, refus implicite au timeout). Le handler `portal`
+      enchaîne désormais animation 2,8 s puis `openPortalTargetModal()`.
+      L'animation de voyage est rejouée à l'acceptation par
+      `_onVisitorAccepted` (hook `window.onVisitAccepted` pour Phase C).
+      Scénario smoke `scenarioPortalMatchmaking` (8 assertions T1→T8) :
+      liste vide / null / 2 hosts, clic → pose, poll → acceptation,
+      modale host → accepter/refuser. Stubs des fonctions `mp*` via
+      `window.*` pour rester déterministe en file://.
+      Prochaine phase : C — snapshot Supabase Realtime + rendu du
+      donjon distant via `_takeVisitSnapshot()` / `_restoreFromVisit()`.
     - [ ] Phase C — snapshot et rendu du donjon distant (3 j).
     - [ ] Phase D — limites de territoire + sprites + emotes (2 j).
     - [ ] Phase E — dialogues PNJ « voyageur » + observation-only (2 j).

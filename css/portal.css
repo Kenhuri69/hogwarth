@@ -157,3 +157,180 @@
   from { width: 18px; opacity: 0.95; }
   to   { width: 0;    opacity: 0;    }
 }
+
+/* ============================================================
+   PORTAIL — modales matchmaking (V1a Phase B)
+   #portal-target-overlay   → liste des destinations (visiteur)
+   #portal-incoming-overlay → demande d'acceptation (host)
+   Réutilise la palette flammes vertes (#3cdc5a) + or (#d8b647).
+   ============================================================ */
+
+#portal-target-overlay,
+#portal-incoming-overlay {
+  position: fixed; inset: 0;
+  align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 10000;
+  font-family: 'Cinzel', serif;
+}
+#portal-target-overlay[style*="flex"],
+#portal-incoming-overlay[style*="flex"] { display: flex; }
+
+.portal-modal-panel {
+  position: relative;
+  max-width: 480px;
+  width: min(92vw, 480px);
+  max-height: 84vh;
+  overflow-y: auto;
+  background: linear-gradient(160deg, #1a120a 0%, #0a0705 100%);
+  border: 2px solid #d8b647;
+  border-radius: 6px;
+  box-shadow: 0 0 60px rgba(60, 220, 90, 0.35),
+              0 0 100px rgba(216, 182, 71, 0.20);
+  color: #e9d6a3;
+  padding: 18px 22px;
+}
+
+.portal-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(216, 182, 71, 0.28);
+  padding-bottom: 10px; margin-bottom: 14px;
+}
+.portal-modal-head h2 {
+  font-family: 'UnifrakturMaguntia', cursive;
+  font-size: 22px;
+  color: #d8b647;
+  margin: 0;
+  text-shadow: 0 0 14px rgba(60, 220, 90, 0.45);
+}
+.portal-close-btn {
+  background: transparent;
+  border: 1px solid rgba(216, 182, 71, 0.45);
+  color: #d8b647;
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+.portal-close-btn:hover { background: rgba(216, 182, 71, 0.12); }
+
+.portal-modal-body {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.portal-intro { color: #b89a5a; margin: 0 0 12px; }
+.portal-hint  { color: #6a5030; font-size: 11px; font-style: italic; margin-top: 6px; }
+.portal-warn  { color: #c8643c; font-weight: 600; }
+
+.portal-loading,
+.portal-empty,
+.portal-waiting {
+  text-align: center;
+  padding: 24px 12px;
+}
+
+.portal-spinner {
+  width: 36px; height: 36px;
+  margin: 0 auto 14px;
+  border: 3px solid rgba(216, 182, 71, 0.25);
+  border-top-color: #3cdc5a;
+  border-radius: 50%;
+  animation: portalSpin 900ms linear infinite;
+}
+@keyframes portalSpin {
+  to { transform: rotate(360deg); }
+}
+
+.portal-host-list {
+  display: flex; flex-direction: column;
+  gap: 8px;
+}
+.portal-host-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(216, 182, 71, 0.30);
+  border-radius: 4px;
+  color: #e9d6a3;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.portal-host-row:hover {
+  background: rgba(60, 220, 90, 0.10);
+  border-color: rgba(60, 220, 90, 0.65);
+}
+.portal-host-crest {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(216, 182, 71, 0.10);
+  font-size: 18px;
+  overflow: hidden;
+}
+.portal-host-crest img {
+  width: 40px; height: 40px; object-fit: cover; border-radius: 50%;
+}
+.portal-host-name { color: #f0d782; font-weight: 600; font-size: 13px; }
+.portal-host-sub  { color: #8e7340; font-size: 11px; margin-top: 2px; }
+.portal-host-cta  { color: #3cdc5a; font-size: 11px; letter-spacing: 1px; }
+
+.portal-incoming-card {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 14px; align-items: center;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: rgba(60, 220, 90, 0.10);
+  border: 1px solid rgba(60, 220, 90, 0.45);
+  border-radius: 4px;
+}
+.portal-incoming-card .portal-host-crest { width: 52px; height: 52px; font-size: 22px; }
+.portal-incoming-card .portal-host-crest img { width: 52px; height: 52px; }
+
+.portal-countdown {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  color: #d8b647;
+  background: rgba(216, 182, 71, 0.10);
+  border: 1px solid rgba(216, 182, 71, 0.45);
+  border-radius: 3px;
+  padding: 2px 10px;
+  letter-spacing: 1px;
+}
+
+.portal-action-row {
+  display: flex; gap: 10px;
+  justify-content: center;
+  margin-top: 14px;
+}
+.portal-btn {
+  padding: 8px 18px;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-radius: 4px;
+  border: 1px solid;
+  min-width: 110px;
+}
+.portal-btn-accept {
+  background: linear-gradient(180deg, #2a8a3a 0%, #1f6328 100%);
+  color: #f0ffd0;
+  border-color: #3cdc5a;
+  text-shadow: 0 0 10px rgba(60, 220, 90, 0.4);
+}
+.portal-btn-accept:hover { background: linear-gradient(180deg, #36a047 0%, #2a8534 100%); }
+.portal-btn-refuse {
+  background: rgba(40, 20, 14, 0.7);
+  color: #d8b647;
+  border-color: rgba(216, 182, 71, 0.45);
+}
+.portal-btn-refuse:hover { background: rgba(60, 30, 22, 0.85); }

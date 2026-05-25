@@ -132,12 +132,14 @@ function mpStartSession() {
   _mpHeartbeatTimer = setInterval(_mpUpsertPresence, MP_HEARTBEAT_MS);
   _mpPollTimer      = setInterval(_mpPollGhosts,     MP_POLL_MS);
   _mpMsgTimer       = setInterval(_mpPollMessages,   MP_MSG_POLL_MS);
+  if (typeof _mpVisitsAttach === 'function') _mpVisitsAttach();
 }
 
 function mpStopSession() {
   if (_mpHeartbeatTimer) { clearInterval(_mpHeartbeatTimer); _mpHeartbeatTimer = null; }
   if (_mpPollTimer)      { clearInterval(_mpPollTimer);      _mpPollTimer = null; }
   if (_mpMsgTimer)       { clearInterval(_mpMsgTimer);       _mpMsgTimer = null; }
+  if (typeof _mpVisitsDetach === 'function') _mpVisitsDetach();
 }
 
 // ── Émission (heartbeat) ────────────────────────────────────
@@ -1458,4 +1460,176 @@ function _mpAnnounceClaim(s) {
     addMsg(s.skipped + ' cadeau' + (s.skipped > 1 ? 'x sont en attente' : ' est en attente')
       + ' — fais de la place dans ton sac.', 'info');
   }
+}
+
+// ============================================================
+// MONDES PARALLÈLES — invitation de visite (V1a Phase B)
+// ============================================================
+// Matchmaking pour la Cheminette Inter-Mondes. Le visiteur liste les
+// hosts en ligne (mp_presence filtré mode normal + status=exploring +
+// pas Ironman + autre joueur), pose une demande dans mp_visit_requests
+// (TTL 60s), puis poll son statut. Côté host, le poll des incoming
+// requests déclenche la modale d'acceptation (30s pour répondre).
+//
+// SQL : voir .claude/plans/parallel-worlds.md §12.1.
+// Disjoncteur : si la table absente / hors-ligne, dégrade en silence.
+// ============================================================
+
+const MP_VISITS_TABLE        = 'mp_visit_requests';
+const MP_VISIT_POLL_MS       = 3000;     // poll des demandes entrantes
+const MP_VISIT_EXPIRES_SEC   = 60;       // TTL d'une demande pending
+const MP_VISIT_RESPOND_MS    = 30000;    // 30s pour le host pour répondre
+const MP_VISIT_OUTGOING_POLL_MS = 2500;  // poll de réponse visiteur
+
+let _mpVisitPollTimer = null;
+let _mpVisitTableMissing = false;       // disjoncteur dédié
+
+// Renvoie la liste des hosts disponibles (asynchrone). Filtre :
+// mode normal + status='exploring' + last_seen récent + pas moi.
+// En file:// (smoke / dev local) ou si non-configuré : tableau vide.
+// Le smoke peut stubber cette fonction via window.mpListAvailableHosts.
+async function mpListAvailableHosts() {
+  if (!_mpConfigured()) return [];
+  try {
+    const sinceIso = new Date(Date.now() - MP_STALE_SEC * 1000).toISOString();
+    const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_CONFIG.presenceTable}`
+      + '?select=player_id,name,house,level,floor,hero_keys,status,last_seen'
+      + `&mode=eq.normal`
+      + `&status=eq.exploring`
+      + `&player_id=neq.${encodeURIComponent(getMpPlayerId())}`
+      + `&last_seen=gt.${encodeURIComponent(sinceIso)}`
+      + '&order=last_seen.desc'
+      + '&limit=20';
+    const res = await fetch(url, { headers: _mpHeaders() });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;     // null = erreur réseau (≠ tableau vide = personne)
+  }
+}
+
+// Pose une demande de visite. Renvoie l'objet inséré (avec id) ou null.
+async function mpPostVisitRequest(host) {
+  if (!_mpConfigured() || _mpVisitTableMissing) return null;
+  if (!host || !host.player_id) return null;
+  const row = {
+    visitor_id:    getMpPlayerId(),
+    visitor_name:  (typeof getPlayerName === 'function' && getPlayerName()) || 'Sorcier',
+    visitor_house: (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
+    visitor_level: (typeof player !== 'undefined' && player.level) || 1,
+    host_id:       host.player_id,
+    status:        'pending'
+  };
+  try {
+    const res = await fetch(
+      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISITS_TABLE}`,
+      {
+        method:  'POST',
+        headers: _mpHeaders({
+          'Content-Type': 'application/json',
+          'Prefer':       'return=representation'
+        }),
+        body: JSON.stringify(row)
+      }
+    );
+    if (res.status === 404) { _mpVisitTableMissing = true; return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;
+  }
+}
+
+// Récupère le statut courant d'une demande sortante. Renvoie l'objet
+// (status: pending|accepted|refused|expired) ou null en cas d'erreur.
+async function mpPollOutgoingVisitStatus(reqId) {
+  if (!_mpConfigured() || _mpVisitTableMissing || !reqId) return null;
+  try {
+    const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISITS_TABLE}`
+      + `?id=eq.${encodeURIComponent(reqId)}&select=id,status,responded_at,host_id`;
+    const res = await fetch(url, { headers: _mpHeaders() });
+    if (res.status === 404) { _mpVisitTableMissing = true; return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;
+  }
+}
+
+// Récupère les demandes entrantes pending pour le host courant. Le poll
+// est démarré par mpStartSession (boucle parallèle au heartbeat). Quand
+// au moins une demande non-expirée est détectée, déclenche la modale
+// d'acceptation via window.showIncomingVisitRequest.
+async function _mpPollIncomingVisitRequests() {
+  if (!mpActive || !_mpConfigured() || _mpVisitTableMissing) return;
+  // Ne pas poller si le host est lui-même en mode Ironman (filtré au
+  // démarrage), ni si une modale d'acceptation est déjà ouverte.
+  if (mpMode === 'ironman') return;
+  if (typeof window !== 'undefined' && window._mpVisitPendingReq) return;
+  try {
+    const sinceIso = new Date(Date.now() - MP_VISIT_EXPIRES_SEC * 1000).toISOString();
+    const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISITS_TABLE}`
+      + `?host_id=eq.${encodeURIComponent(getMpPlayerId())}`
+      + '&status=eq.pending'
+      + `&created_at=gt.${encodeURIComponent(sinceIso)}`
+      + '&order=created_at.desc'
+      + '&limit=1';
+    const res = await fetch(url, { headers: _mpHeaders() });
+    if (res.status === 404) { _mpVisitTableMissing = true; return; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    if (Array.isArray(rows) && rows[0]
+        && typeof showIncomingVisitRequest === 'function'
+        && (typeof inBattle === 'undefined' || !inBattle)) {
+      showIncomingVisitRequest(rows[0]);
+    }
+  } catch (e) {
+    _mpNoteFailure(e);
+  }
+}
+
+// Update du statut d'une demande (acceptation / refus côté host).
+async function mpRespondVisitRequest(reqId, status) {
+  if (!_mpConfigured() || _mpVisitTableMissing || !reqId) return null;
+  if (status !== 'accepted' && status !== 'refused') return null;
+  try {
+    const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISITS_TABLE}`
+      + `?id=eq.${encodeURIComponent(reqId)}`;
+    const res = await fetch(url, {
+      method:  'PATCH',
+      headers: _mpHeaders({
+        'Content-Type': 'application/json',
+        'Prefer':       'return=minimal'
+      }),
+      body: JSON.stringify({ status, responded_at: new Date().toISOString() })
+    });
+    if (res.status === 404) { _mpVisitTableMissing = true; return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _mpNoteSuccess();
+    return { id: reqId, status };
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;
+  }
+}
+
+// Démarre/arrête le poll des demandes entrantes — branché à
+// mpStartSession / mpStopSession via les helpers _mpVisitsAttach.
+function _mpVisitsAttach() {
+  if (_mpVisitPollTimer || !_mpConfigured()) return;
+  _mpVisitPollTimer = setInterval(_mpPollIncomingVisitRequests, MP_VISIT_POLL_MS);
+}
+
+function _mpVisitsDetach() {
+  if (_mpVisitPollTimer) { clearInterval(_mpVisitPollTimer); _mpVisitPollTimer = null; }
 }
