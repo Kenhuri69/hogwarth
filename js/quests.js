@@ -303,6 +303,50 @@ const QUEST_TEMPLATES = [
     reward: { xp: 400, gold: 220, stats: { hp: 20, lck: 2 }, item: "larme_phenix_mineure" },
     location: "Couloirs hantés (étage 10)"
   },
+  // ── Boucle Ténébreuse — Gardien de la Boucle (étage 11) ──────────
+  // 3 quêtes répétables endgame (cf. gardien_boucle dans npcs.js).
+  // Cibles : boss déjà connus qui se reforment à chaque récurrence
+  // (Greyback à floor 18 via effectiveFloor=8, etc.). Reward réduit
+  // sur les re-runs pour éviter le farm trivial.
+  {
+    id: "purge_loups",
+    title: "Purge de la meute",
+    giver: "Gardien de la Boucle",
+    desc: "Abats 2 Fenrir Greyback Ténébreux. La Boucle reforme la meute à chaque récurrence — chaque purge soulage un peu le palier.",
+    objectives: [
+      { type: "kill", monsterId: "fenrir_greyback", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 300, gold: 250, item: "essence_tenebres" },
+    repeatable: { everyLevels: 2 },
+    repeatableReward: { xp: 200, gold: 180, item: "essence_tenebres" },
+    location: "Boucle Ténébreuse (étage 11+)"
+  },
+  {
+    id: "purge_acromantules",
+    title: "Purge des araignées",
+    giver: "Gardien de la Boucle",
+    desc: "Abats 2 Aragog Ténébreux. La Boucle ressuscite le roi-Acromantule sous une forme plus dense à chaque récurrence.",
+    objectives: [
+      { type: "kill", monsterId: "aragog", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 320, gold: 260, item: "page_grimoire" },
+    repeatable: { everyLevels: 2 },
+    repeatableReward: { xp: 220, gold: 190, item: "page_grimoire" },
+    location: "Boucle Ténébreuse (étage 11+)"
+  },
+  {
+    id: "purge_mangemorts",
+    title: "Purge du serment noir",
+    giver: "Gardien de la Boucle",
+    desc: "Abats 2 Antonin Dolohov Ténébreux. Sa courbe violette signe la Marque — efface-la d'autant de cycles que possible.",
+    objectives: [
+      { type: "kill", monsterId: "antonin_dolohov", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 350, gold: 280, item: "essence_tenebres" },
+    repeatable: { everyLevels: 2 },
+    repeatableReward: { xp: 240, gold: 200, item: "essence_tenebres" },
+    location: "Boucle Ténébreuse (étage 11+)"
+  },
   // ── Manon, fille cachée de Lupin — pseudo-quête en deux volets ──
   // Données et rendues par Manon (PNJ étage 3, cf. npcs.js). Le volet 2
   // (`prereq`) ne s'ouvre qu'après remise du volet 1 — chaîne classique.
