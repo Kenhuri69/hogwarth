@@ -1,42 +1,59 @@
-# Plan — Mondes Parallèles : visite synchrone dans le monde d'un autre
+# Plan — Mondes Parallèles : exploration du donjon d'un autre joueur
 
 > Plan vivant (cf. `.claude/guidelines.md` §5).
 > Ouvert le 2026-05-25. **Phase de réflexion** — aucune ligne de code écrite.
 > Branche de travail : `claude/multi-sync-constraints-cost-73YTH`.
+> Révisé le 2026-05-25 : pivot de **co-op combat** vers **exploration
+> découverte** (cf. §1) ; le co-op est conservé en **branche annexe** à
+> réfléchir plus tard (§8).
 >
 > **Complémentaire** au plan `multiplayer.md` (présence fantôme asynchrone)
 > — ne le remplace pas. Le présent plan traite le point explicitement
 > listé comme **hors-scope** de `multiplayer.md` §11 : *« donjon
-> réellement partagé / synchronisé, coopératif »*.
+> réellement partagé / synchronisé »*.
 
 ## 1. Vision
 
 Chaque sauvegarde est un **plan** (au sens dimensionnel) : un donjon
-propre au joueur, sa progression, son économie. La majorité du temps
-de jeu reste **solo et asynchrone**, comme aujourd'hui.
+propre au joueur, sa progression, son économie, ses PNJ figés à l'état
+où il les a laissés. La majorité du temps de jeu reste **solo et
+asynchrone**, comme aujourd'hui.
 
-**Idée nouvelle** : un joueur peut **ouvrir un portail vers le monde d'un
-autre joueur en ligne**. Pendant la durée de la visite :
+**Idée centrale** : un joueur peut **ouvrir un portail vers le monde d'un
+autre joueur en ligne** — non pour y combattre à ses côtés, mais pour
+**explorer** ce monde-là, **différent du sien**. Tu débarques en
+*voyageur d'un plan parallèle* : tu découvres son donjon, tu rencontres
+ses PNJ, tu vois ses choix d'architecture procédurale — tout est familier
+sans être identique.
 
-- Les deux personnages évoluent dans **le même donjon** (celui du host).
-- Le visiteur **n'agit plus sur sa propre sauvegarde** — le donjon visité
-  est la seule source de vérité.
-- L'interaction est **pseudo-synchrone** : actions prédites localement,
-  validées par le host, animations de transition longues pour masquer la
-  latence réseau (~150–300 ms).
+- Le visiteur **n'agit pas sur l'économie** du host (pas de coffres
+  pillés, pas de monstres tués pour son XP, pas d'achats en boutique).
+- Le visiteur **ne peut explorer que les zones que le host a déjà
+  débloquées** — étages descendus, cases découvertes. Le reste est un
+  brouillard infranchissable (cf. §3.5). C'est la règle qui rend la
+  visite *intime* : tu vois ce que le voyageur d'en face a vécu, pas
+  plus.
+- Les **PNJ ont des dialogues spéciaux** quand un voyageur d'un autre
+  plan les aborde (cf. §6.2). C'est le sel narratif du mode.
+- Aucune mécanique de combat n'est requise en V1 — le visiteur est en
+  mode *incorporel* face aux monstres (cf. §6.3).
 
-C'est le modèle Souls / Elden Ring (invocation d'un allié dans son monde),
-adapté à l'univers Poudlard.
+C'est le modèle **Death Stranding asymétrique** (présence non-violente
+qui enrichit le monde de l'autre) plutôt que Souls (invocation pour
+combattre). Cohérent avec un RPG narratif inspiré de Poudlard, où
+"explorer un autre château" est une promesse plus forte que "co-op
+combat".
 
 ### Pourquoi ce modèle plutôt qu'un vrai « multi-joueur »
 
-| Contrainte | Vraie sync multi (lockstep) | Mondes parallèles |
-|------------|-----------------------------|-------------------|
-| Déterminisme RNG global | Obligatoire | Inutile — un seul donjon, le host est autoritaire |
-| Refonte event-sourcing | ~10 j sur tous les systèmes | Aucune — solo reste 100 % local |
-| Overhead permanent | Oui, en solo aussi | Zéro tant qu'aucune visite n'est en cours |
-| Déconnexion partenaire | Casse la partie | Visiteur s'évapore, host continue |
-| Estimation totale | 15–30 j | 6–15 j selon palier |
+| Contrainte | Vraie sync multi (lockstep) | Co-op combat (annexe §8) | **Exploration découverte (V1)** |
+|------------|-----------------------------|--------------------------|-------------------------------|
+| Déterminisme RNG global | Obligatoire | Inutile (host autoritaire) | **Inutile** |
+| Refonte event-sourcing | ~10 j tous systèmes | Aucune | **Aucune** |
+| Extension moteur combat | Inhérente | +1 slot allié + tour 3-way | **Aucune — pas de combat** |
+| Overhead permanent | Oui en solo aussi | Zéro hors visite | **Zéro hors visite** |
+| Déconnexion partenaire | Casse la partie | Visiteur s'évapore | **Visiteur s'évapore** |
+| Estimation V1 | 15–30 j | 14 j | **~10 j** |
 
 ## 2. Cadre fonctionnel
 
@@ -73,50 +90,66 @@ Construits **par-dessus** la couche présence asynchrone livrée par
 
 | Palier | Mode | Effort | Risque | Lore |
 |--------|------|--------|--------|------|
-| **V0** | Trace asynchrone (Pensieve) | ~2 j | minime | Souvenirs déposés dans le donjon |
-| **V1** | Visite spectateur (Cape d'invisibilité) | +6 j | faible | Le visiteur voit, ne touche pas |
-| **V2** | Visite co-op combat (Patronus / Fumseck) | +6 j | moyen | Le visiteur combat aux côtés du host |
-| **V3** | Visite PvP (duel direct) | +5 j | élevé | Affrontement en temps réel |
+| **V0** | Trace asynchrone (Pensieve) | déjà couvert | minime | Souvenirs/messages déposés (cf. `multiplayer.md` Phase 4) |
+| **V1** | **Exploration découverte** (Voyageur des Plans) | ~10 j | faible | Tu visites le monde de l'autre, sans rien y changer |
+| **V2** | **Quêtes inter-mondes** | +5–8 j | moyen | Des PNJ te confient des missions à effectuer dans ton monde, ou réciproquement |
+| **Branche annexe** | Co-op combat (Patronus / Fumseck) | +14 j | moyen | Le visiteur combat aux côtés du host — modèle Souls. À réfléchir séparément (§8). |
+| **Branche annexe** | PvP duel direct | +5 j sur l'annexe | élevé | Affrontement temps réel |
 
-V0 existe déjà partiellement dans `multiplayer.md` Phase 4 (messages à
-gabarits). Ce plan se concentre sur **V1 et V2** ; V0 est intégré pour
-mémoire, V3 est listé comme horizon mais hors-scope V1.
+**Priorité immédiate** : V1 (exploration découverte). V2 (quêtes
+inter-mondes) est l'évolution naturelle une fois le canal de visite
+robuste. Les branches combat/PvP sont gelées sans date — elles
+réutiliseraient le même portail et la même infra, mais ouvriraient un
+mode d'interaction radicalement différent.
 
 ## 3. Architecture technique
 
-### 3.1 Modèle host-autoritatif
+### 3.1 Modèle host-autoritatif (allégé)
 
-Pendant une visite :
+Pendant une visite V1 (exploration sans combat) :
 
-- Le **host** détient la vérité de monde : donjon, monstres, fontaines,
-  PNJ, coffres, état de combat. Sa boucle de jeu actuelle (`movement.js`,
-  `battle.js`) tourne normalement, avec un hook supplémentaire : les
-  actions du visiteur sont injectées dans la même file d'événements.
-- Le **visiteur** reçoit un *flux d'état* depuis le host et le rend dans
-  une vue clonée. Sa propre `state.js` est **suspendue** : sa sauvegarde
-  n'est pas touchée, ses stats sont projetées en lecture seule.
+- Le **host** détient la vérité de monde : donjon, PNJ, coffres,
+  fontaines, masque de cases découvertes. Sa boucle de jeu actuelle
+  (`movement.js`, `battle.js`) tourne **sans modification** — le
+  visiteur n'écrit rien dans son état, donc rien à valider/réconcilier.
+- Le **visiteur** reçoit un *snapshot de donjon* à l'entrée + des
+  *deltas* quand le host découvre de nouvelles cases (ou descend
+  d'étage). Sa propre `state.js` est **suspendue** : sauvegarde
+  intouchée, stats projetées en lecture seule.
 - À la fin de la visite, le visiteur revient dans son monde **à l'état
-  exact où il l'a quitté** (snapshot `_serializeState` mémorisé à l'entrée
-  dans le portail, restauré à la sortie).
+  exact où il l'a quitté** (snapshot `_serializeState` mémorisé à
+  l'entrée dans le portail, restauré à la sortie).
 
-Le visiteur conserve néanmoins ses **récompenses de visite** (cf. §6),
-modulées par l'écart de niveau (anti-grief).
+Conséquence majeure de l'absence de combat en V1 : **pas de prédiction
+client, pas de réconciliation, pas de file d'inputs**. Le visiteur
+décide seul où il se déplace dans les limites du territoire visited
+(§3.5). Le canal Realtime sert essentiellement à transporter les
+*événements de découverte* du host (et la position du visiteur quand le
+host veut le voir, voir §6.5).
 
 ### 3.2 Transport : Supabase Realtime broadcast
 
 `multiplayer.md` se limite à REST polling pour la présence asynchrone.
-Une visite synchrone exige un canal **temps réel**.
+Une visite synchrone exige un canal **temps réel** — mais le débit reste
+modeste en V1.
 
 - Canal Realtime ad-hoc par session de visite : `visit:<hostId>:<visitorId>`.
 - Messages broadcast (in-memory, pas de DB) — gratuit jusqu'à 2 M/mois.
-- Trois types de messages :
-  - `host → visiteur` : `state` (snapshot léger : positions, HP, combat
-    actif si nouveau), `event` (drop, sort lancé, monstre tué).
-  - `visiteur → host` : `input` (move/turn/attack/cast/item/flee).
+- Types de messages V1 :
+  - `host → visiteur` : `snapshot` (état du donjon à l'entrée, ~30 KB),
+    `cellRevealed` (le host vient de découvrir une case → débloquée
+    pour le visiteur), `floorChanged` (host change d'étage), `position`
+    (où est le host sur l'étage courant, pour rendre son sprite),
+    `bye` (sortie).
+  - `visiteur → host` : `position` (le visiteur s'est déplacé, pour
+    que le host voie son sprite), `npcTalked` (le visiteur a parlé à
+    un PNJ — purement informatif, le host voit un toast).
   - `bilatéral` : `ping` (keepalive 5 s), `bye` (sortie propre).
 
-Charge estimée : ~5–10 msg/sec en combat, ~1 msg/sec en exploration.
-Compatible free tier (max 100 msg/sec/canal).
+Charge estimée V1 : ~1 msg/sec en exploration tranquille. Charge V2
+(quêtes inter-mondes) similaire — la transmission de quête se fait via
+table REST persistante, pas via le canal éphémère. Largement sous le
+plafond Realtime (max 100 msg/sec/canal).
 
 ### 3.3 Invitation et matchmaking
 
@@ -147,8 +180,11 @@ Côté visiteur, un nouveau global `visitSession` :
   hostId, hostName, hostHouse,
   channel,                       // canal Supabase Realtime
   remoteDungeon,                 // snapshot du donjon host (reçu à l'entrée)
-  remoteParty,                   // composition du host
-  remoteCombat,                  // combat en cours (null si exploration)
+  remoteVisitedMask,             // Set<"x,y"> : cases que le host a découvertes (§3.5)
+  remoteFloorMax,                // étage max atteint par le host (visiteur peut visiter ≤ celui-ci)
+  remoteFloor,                   // étage actuellement chargé pour la visite (≤ remoteFloorMax)
+  remotePartyNames,              // composition du host (affichage seulement)
+  remoteHostPosition,            // {x,y,dir} — où est le host sur l'étage courant (sprite à rendre)
   myPosition: {x, y, dir},       // ma position dans le monde du host
   mySavedState,                  // _serializeState() pris à l'entrée — restauré à la sortie
 }
@@ -159,13 +195,53 @@ Côté host, miroir symétrique :
 ```js
 {
   role: 'host',
-  visitors: [ { id, name, house, party, position, hp, sp, equipment } ],
+  visitors: [ { id, name, house, level, position } ],   // 1 seul en V1
 }
 ```
 
 Le host **ne sauvegarde pas les visiteurs** dans son `_serializeState` :
 ils sont éphémères. Si le host save-and-load pendant une visite, le canal
 est fermé proprement et le visiteur reçoit `bye`.
+
+### 3.5 Limites de territoire — exploration restreinte aux cases débloquées
+
+**Règle centrale du mode** (décision utilisateur 2026-05-25) : le
+visiteur ne peut explorer que les zones que le host a **déjà
+débloquées** — autrement dit la "fog of war" du host définit l'enclos
+du visiteur.
+
+Côté implémentation, le donjon expose déjà un masque de cases visitées
+(`dungeon.visited` ou équivalent, lu par `renderer-minimap.js` pour
+afficher la minimap en clair / brouillard). On réutilise ce masque tel
+quel :
+
+- À l'entrée dans la visite, le host sérialise pour chaque étage
+  débloqué : `{ grid: dungeon.grid, visitedMask: Set<"x,y">, npcs,
+  chests, fountains, doors }`. Le tout dans `remoteDungeon`.
+- À chaque mouvement du visiteur, on vérifie : la case cible est-elle
+  dans `remoteVisitedMask` ? Si non → blocage doux avec message
+  *« Le brouillard t'empêche d'aller plus loin — ce passage n'a pas
+  encore été foulé par <Pseudo>. »*
+- Quand le host découvre une nouvelle case en jouant (sa boucle
+  `movement.js` met à jour son `visited`), il envoie un événement
+  `cellRevealed:{floor,x,y}` que le visiteur ajoute à son masque
+  local — les frontières du territoire s'élargissent en temps réel.
+- Les **étages non-encore atteints** par le host sont **inaccessibles**
+  au visiteur : l'escalier descendant est verrouillé visuellement
+  (chaîne dorée, message *« Ce plan reste à découvrir par
+  <Pseudo>. »*).
+- Quand le host descend un étage pour la première fois, le visiteur
+  reçoit le nouvel étage en snapshot et peut le suivre s'il le souhaite.
+
+**Conséquence narrative** : tu visites les *souvenirs explorés* du
+host, pas son donjon complet. Si tu lui rends visite très tôt dans sa
+partie, tu auras peu d'espace ; plus il a avancé, plus il y a à
+découvrir chez lui.
+
+**Conséquence technique** : le snapshot envoyé au visiteur ne contient
+que les étages atteints. Pour un joueur étage 1 → ~10 KB ; étage 15
+avec tous les étages débloqués → ~200 KB. Acceptable en un seul
+broadcast initial (Supabase Realtime accepte 256 KB/message).
 
 ## 4. Animations du sort de portail
 
@@ -276,7 +352,11 @@ Symétrique mais **plus rapide** (1,5 s totale). Déclenchée par :
   visiteur, ou sort « Disapparition Astrale » gratuit).
 - Déconnexion réseau (canal Realtime perdu > 10 s → sortie forcée).
 - Le host save-and-load ou retourne au hub (envoie `bye`).
-- Mort du visiteur dans le monde du host (cf. §6.4).
+- Le host atteint son TTL de session ou ferme l'onglet.
+
+> En V1 (exploration), aucun mécanisme de mort ne sort le visiteur — il
+> est incorporel face aux monstres (§6.3). La sortie est toujours
+> volontaire ou réseau.
 
 Animation côté visiteur : motion blur inverse + retour à `mySavedState`,
 banner « Retour dans ton monde ». Côté host : sprite du visiteur
@@ -298,230 +378,402 @@ s'estompe, fissure ascendante, banner « <Pseudo> regagne son monde ».
   procéduralement (gradients, particules, runes SVG). Aligné sur la
   philosophie « zéro asset binaire si possible » du projet.
 
-## 5. Synchronisation pseudo-temps-réel
+## 5. Synchronisation pseudo-temps-réel (V1 — exploration sans combat)
 
-### 5.1 Inputs visiteur → host
+L'absence de combat en V1 simplifie radicalement la couche réseau —
+plus de prédiction, plus de réconciliation, plus de file d'inputs.
 
-Le visiteur prédit localement (réactivité immédiate) puis envoie
-l'input. Le host valide et broadcast le résultat.
+### 5.1 Snapshot initial (host → visiteur, à l'entrée)
 
-Types d'input :
+Au moment où la visite est acceptée, le host construit un *snapshot* et
+l'envoie en un broadcast Realtime :
 
 ```js
-{ type: 'move',    dir: 'n'|'s'|'e'|'w' }
-{ type: 'turn',    side: 'left'|'right' }
-{ type: 'attack',  targetIdx }              // en combat
-{ type: 'cast',    spell, targetIdx }       // en combat
-{ type: 'item',    itemId, targetIdx }      // consommable
-{ type: 'flee'    }                         // en combat
-{ type: 'interact', cellAction }            // fontaine, coffre, PNJ
+{
+  type: 'snapshot',
+  hostMeta: { name, house, level, partyNames, currentFloor },
+  floors: {
+    1: { grid, visitedMask, npcs, chests, fountains, doors },
+    2: { grid, visitedMask, npcs, chests, fountains, doors },
+    // ... uniquement les étages que le host a atteints
+  },
+  hostPosition: { floor, x, y, dir },
+  visitorSpawn: { floor, x, y, dir },   // case adjacente au host par défaut
+}
 ```
 
-### 5.2 État host → visiteur
+Taille typique : ~10 KB pour étage 1, jusqu'à ~200 KB pour un host
+étage 15 avec masque complet. Sous le plafond Realtime (256 KB).
 
-Le host envoie deux flux distincts :
+À réception, le visiteur applique le snapshot à `visitSession`,
+remplace son rendu par celui du donjon distant, et la vue est prête.
 
-- **Snapshots de bas niveau** (~10/sec en combat, ~2/sec en
-  exploration) : position des deux personnages, HP/SP, position des
-  monstres si combat actif.
-- **Événements de haut niveau** (à la volée) : `spellCast`, `monsterKilled`,
-  `chestOpened`, `combatStarted`, `combatEnded`, `floorChanged`, etc.
+### 5.2 Position du visiteur (visiteur → host)
 
-Les snapshots permettent l'interpolation visuelle ; les événements
-permettent les animations et sons.
+Chaque déplacement du visiteur émet un message léger :
 
-### 5.3 Réconciliation
+```js
+{ type: 'position', x, y, dir, floor }
+```
 
-Si le visiteur prédit un mouvement qui s'avère invalide (collision
-modifiée par l'état host), le host renvoie l'état réel. Le visiteur
-**rollback** sa prédiction et applique la vérité host (avec une petite
-anim de "glissement de retour").
+Le host applique cette position à son `visitors[0]` (purement
+visuel — sprite à dessiner via `drawVisitorSprite`, cf. §6.5). Aucune
+collision n'est testée côté host : le visiteur ne peut occuper aucune
+case "réelle" du donjon (il est incorporel).
 
-Pour les combats : l'autorité est totale côté host. Le visiteur clique
-"Stupefix sur troll" → anim d'incantation locale immédiate (~1,2 s) →
-résultat reçu pendant l'anim → impact visuel cohérent. Si le troll
-était mort entre-temps, le sort fizzle (anim coupée).
+Émis seulement quand la position change → ~1 msg/sec en exploration
+active, 0 en stationnaire.
 
-### 5.4 Modales bloquantes
+### 5.3 Position et événements du host (host → visiteur)
 
-Si le host ouvre une modale (shop, NPC dialog, level-up, inventaire),
-les inputs visiteur sont **mis en file**. Le visiteur voit un overlay
-discret « <Pseudo> est occupé(e)… » avec `pointer-events: none` sur les
-contrôles.
+Le host envoie sa position à chaque move (~1 msg/sec) :
 
-Le visiteur peut quand même se déplacer si la cellule cible est libre
-(géré côté host, qui valide silencieusement les move). Pas d'inventaire
-visiteur en combat (idem solo).
+```js
+{ type: 'hostPosition', x, y, dir, floor }
+```
 
-## 6. Règles de jeu pendant la visite
+Plus des **événements de découverte**, dans les rares cas où ils
+modifient l'enclos du visiteur :
 
-### 6.1 Composition de groupe
+```js
+{ type: 'cellRevealed', floor, x, y }    // host découvre une case
+{ type: 'floorChanged', floor }          // host descend, snapshot du nouvel étage envoyé en suivi
+{ type: 'floorSnapshot', floor, grid, visitedMask, npcs, ... }
+```
 
-- **Le host conserve sa party complète** (Harry + Hermione si duo).
-- Le visiteur arrive avec **un seul de ses héros**, choisi à l'invitation
-  (typiquement le plus polyvalent). En duo strict, c'est par défaut
-  `party[0]` (le leader).
-- Le combat tourne donc avec **2 ou 3 alliés** (host duo + visiteur, ou
-  host solo + visiteur) contre les ennemis générés par le donjon du host.
-- L'IA et le tour de jeu (`advanceBattleChar`) doivent gérer un slot
-  visiteur supplémentaire — extension propre du système actuel à 2 héros.
+Le host **ne broadcast pas** ses combats, ses ouvertures de coffre, ses
+achats — le visiteur n'a pas à les voir. L'expérience visiteur est
+contemplative, pas voyeuriste.
 
-### 6.2 Stats et équipement
+### 5.4 Modales bloquantes côté host
 
-Le visiteur arrive avec ses **stats et équipement réels** (lus depuis sa
-sauvegarde au moment du portail). Pas de scaling — c'est le sens d'un
-"plan parallèle" : un sorcier puissant qui aide un débutant le fait
-*vraiment*.
+Quand le host ouvre une modale (combat, shop, NPC, level-up,
+inventaire), il envoie `{ type: 'busy', reason: 'combat'|'shop'|… }`.
+Le visiteur affiche un overlay discret « <Pseudo> est en plein combat
+— l'écho est faible » mais **peut continuer à explorer** : son monde
+de visite reste interactif (sauf si le host change d'étage, ce qui
+attend la fin de la modale).
 
-Mais : voir §6.5 (anti-grief).
+### 5.5 Sortie (bilatéral)
 
-### 6.3 Économie du donjon visité
+```js
+{ type: 'bye', reason: 'voluntary'|'host-quit'|'network'|'host-closed-visits' }
+```
 
-| Ressource | Qui en bénéficie | Justification |
-|-----------|------------------|---------------|
-| **XP de combat** | Host + visiteur, **part identique** | Combat partagé, encouragement à co-op |
-| **Or des kills** | Host (intégral) + visiteur (50 %) | Le donjon est celui du host, économie principale chez lui |
-| **Drops d'items** | Host (intégral) ; le visiteur peut recevoir un drop **dupliqué** uniquement si le host l'autorise | Pas de vol ; en pratique items rares = au host, items communs = bonus visiteur |
-| **Or des coffres** | Host uniquement | Le coffre appartient au donjon |
-| **Or des fontaines** | — | Soin pour les deux, mais usage compté pour le host |
-| **Achats boutique** | Host uniquement (sa boutique) | Le visiteur ne peut pas dépenser |
-| **Quêtes** | Host uniquement | Les quêtes du visiteur sont les siennes (autre plan) |
+Toujours suivi d'une fermeture propre du canal Realtime.
 
-À la sortie, les gains du visiteur sont injectés dans son state restauré
-(`mySavedState.player.xp += sessionXp`, etc.).
+## 6. Règles de visite (V1 — exploration)
 
-### 6.4 Mort du visiteur
+### 6.1 Composition côté visiteur
 
-Si le HP du personnage du visiteur tombe à 0 :
+- Le visiteur arrive avec **un seul héros**, choisi à l'invitation
+  (par défaut `party[0]`). C'est lui qui est rendu en sprite chez le
+  host (§6.5).
+- Le **partySize n'a pas d'incidence** côté visiteur — il est seul à
+  parcourir le donjon de l'autre, ses compagnons restent "en arrière
+  plan" dans son propre plan.
+- Stats et équipement réels (lecture seule). Aucun calcul de combat
+  n'utilise ses stats puisqu'il n'y a pas de combat en V1.
 
-- **Pas de game over** côté visiteur — il n'est pas dans son monde.
-- Anim de "rapatriement forcé" : `playPortalClose` mais avec teinte
-  rouge/violette, audio sourd.
-- Retour dans son monde, avec :
-  - HP **plafonné à 50 % de hpMax** (lore : "tu te réveilles affaibli"),
-  - SP **plafonné à 30 % de spMax**,
-  - **Pas de perte d'XP/or accumulés pendant la session** (encourage à
-    rejouer après une mort, pas de punition double).
-- Si le visiteur était en KO en arrivant chez lui (impossible
-  normalement, mais par sécurité), HP/SP forcés à 1.
+### 6.2 Dialogues PNJ — voyageur d'un autre plan (cœur du mode)
 
-Côté host : le combat continue avec son groupe seul (comme si un perso
-KO en duo — déjà géré).
+C'est l'expérience principale offerte par la V1. Quand le visiteur
+parle à un PNJ du host :
 
-### 6.5 Anti-grief — écart de niveau
+- L'overlay `openNpcDialog` actuel est réutilisé, mais **branché sur
+  une nouvelle banque de dialogues** : `npc.dialoguesAstral` (à
+  ajouter dans `npcs.js`) ou, à défaut, un dialogue **générique
+  procédural** construit à partir du rôle du PNJ.
+- Le ton : le PNJ perçoit que tu n'es pas d'ici. Selon son rôle :
+  - **Donneur de quête** : *« Étrange… tu n'es pas du château que je
+    connais. Si je te confiais une mission, irais-tu la mener dans
+    ton propre plan ? »* — amorce de §7 (quêtes inter-mondes V2).
+  - **Vendeur** : *« Mes potions n'ont pas de poids dans ton monde,
+    voyageur. Mais je peux te dire ce qu'on murmure ici. »* (lore
+    gratuit, pas de transaction).
+  - **PNJ lore** : *« Si ton plan ressemble au mien, alors la
+    Chambre des Secrets s'y cache aussi… ou peut-être pas. »*
+    (variation narrative).
+  - **Action spéciale** (Fumseck, portrait Dumbledore) : grisée avec
+    *« Ce don ne traverse pas les plans, voyageur. »*
+- Implémentation : ajouter un champ optionnel `dialoguesAstral` aux
+  PNJ dans `npcs.js`. Si absent → fallback générique par `npc.role`.
+  Aucune migration de save — les saves existantes ne contiennent pas
+  les PNJ.
 
-Aucune restriction dure : tu peux visiter un débutant avec un perso
-niveau 30, ça fait partie du fun ("Auror visitant l'école"). Mais :
+**Pas de quête acceptée en V1** : le système de quête actuel s'appuie
+sur `activeQuests` côté visiteur, qu'on ne touche pas. Les dialogues
+*évoquent* la possibilité (« si je te confiais… »), c'est la promesse
+narrative de V2 (§7).
 
-- **Si écart de niveau ≥ +10** entre visiteur et host : le visiteur voit
-  un avertissement à l'invitation (« tu vas trivialiser son donjon »).
-  Pas de blocage.
-- **Gains XP du visiteur réduits** quand l'écart est négatif (visiteur
-  plus haut que le donjon) : `xpGain *= max(0.1, 1 - (gap × 0.08))`.
-  Plancher 10 %. Décourage le farm de XP dans des donjons triviaux.
-- **Gains or du visiteur** : pas de réduction (cohérent avec le rôle de
-  "compagnonnage").
+### 6.3 Monstres — incorporel
+
+Le visiteur est **invisible et intangible** pour les monstres du
+donjon visité. Concrètement :
+
+- Les monstres présents dans `npcs`/spawn du host ne le voient pas.
+- Aucun combat ne se déclenche au passage du visiteur sur leur case
+  (le visiteur peut traverser leur case ; les monstres n'ont d'ailleurs
+  pas de position fixe dans le code actuel — ils apparaissent à
+  l'entrée d'une room non visitée. Pour le visiteur, on **désactive
+  purement le déclenchement de combat**.).
+- Côté visuel : si un monstre est lié à une cellule particulière
+  (cf. PNJ hostiles affichés), il est rendu en silhouette translucide
+  rouge sombre. *« Tu sens des présences hostiles, mais elles ne te
+  voient pas. »*
+
+Side-effect heureux : le visiteur peut explorer librement sans risque,
+ce qui colle parfaitement au ton contemplatif voulu.
+
+### 6.4 Coffres, fontaines, boutique — observation seule
+
+| Élément | Comportement V1 |
+|---------|------------------|
+| **Coffre fermé** | Visible en 3D, message au survol : *« Ce coffre attend la main de <Pseudo>, pas la tienne. »* Pas d'interaction. |
+| **Coffre ouvert (déjà fouillé par host)** | Affiché ouvert, vide. |
+| **Fontaine non utilisée** | Visible, halo bleu. *« L'eau scintille pour <Pseudo>, pas pour toi. »* Pas de soin. |
+| **Fontaine tarie** | Visible grisée, message *« <Pseudo> y a déjà bu. »* |
+| **Boutique** | Le marchand parle, mais le menu d'achat est désactivé. Dialogue spécial (cf. §6.2). |
+| **Stèle d'énigme** | Lisible (lore intéressant !). Réponse inopérante (pas de récompense pour le visiteur). |
+| **Escalier descendant** | Verrouillé si l'étage suivant n'a pas été débloqué par le host (§3.5). Sinon traversable. |
+| **Escalier montant** | Toujours traversable dans la limite des étages débloqués. |
+
+### 6.5 Présence du visiteur côté host
+
+Le host **voit le sprite du visiteur** dans son donjon, à la position
+reçue (§5.2) :
+
+- Réutilise `img/players/<key>.png` (déjà produits pour les fantômes
+  asynchrones, cf. `multiplayer.md` §11ter).
+- **Aura dorée pulsée** autour du sprite — visuellement distincte du
+  fantôme spectral asynchrone (aura cyan).
+- Petit nom flottant au-dessus *« <Pseudo> »* (toggle dans les
+  options host).
+- Sur la **minimap**, classe dédiée `.map-astral-visitor` (or, vs
+  cyan pour `.map-ghost`).
+
+Le host peut continuer à jouer normalement, voir occasionnellement
+son visiteur passer dans le décor. Lui aussi peut parler aux PNJ du
+visiteur ? **Non en V1** — la communication directe entre host et
+visiteur passe par les emotes (§6.7) et les futures quêtes
+inter-mondes (§7).
 
 ### 6.6 Sauvegarde et persistance
 
-- **Visiteur** : aucune écriture dans son save pendant la visite. Au
-  retour, son `mySavedState` est restauré, puis les gains de session
-  sont appliqués par-dessus, puis `autoSave(reason: 'visit-end')` est
-  déclenché.
+- **Visiteur** : aucune écriture dans son save pendant la visite.
+  Au retour, son `mySavedState` est restauré tel quel. Aucun gain
+  XP/or/loot à appliquer (rien à gagner en V1, c'est volontaire).
+  `autoSave(reason: 'visit-end')` déclenché pour purger la session.
 - **Host** : sa partie progresse normalement. AutoSave hooks normaux.
   Le visiteur n'apparaît **jamais** dans le snapshot du host.
+- **Trace persistante** (optionnelle V1.5) : à la sortie, le visiteur
+  peut laisser un *message Pensieve* sur la dernière case foulée
+  (réutilise `mp_messages` existant). Le host la trouvera au prochain
+  passage. Gratuit, cohérent avec V0 déjà en place.
 
-## 7. Fichiers concernés (prévisionnel)
+### 6.7 Emotes et signaux (V1 light)
+
+Sans chat texte libre (cohérent avec la politique anti-modération de
+`multiplayer.md` §7), un menu d'emotes prédéfinies est exposé au
+visiteur :
+
+- 👋 *« Salutations »* — toast côté host.
+- 🪄 *« Ce sortilège m'intrigue »* — host voit *« <Pseudo> admire ton
+  équipement »* (déclenché quand le visiteur clique sur une stat du
+  host).
+- 🏰 *« Joli château »* — compliment générique.
+- 🎯 *« Je file »* — pré-annonce de sortie.
+
+Pour le host, un seul emote en retour : 👋 *« Bienvenue »*.
+
+Banque fermée (anti-injection), 4-6 emotes côté visiteur, 1-2 côté
+host. ~0,5 j de travail.
+
+## 7. V2 — Quêtes inter-mondes (réflexion ouverte)
+
+L'évolution naturelle de V1. **Pas planifié pour l'implémentation
+immédiate**, mais déjà cadré pour ne pas peindre dans un coin lors de
+la conception V1.
+
+### 7.1 Principe
+
+Un PNJ du host **confie une mission au visiteur**, à accomplir dans
+**son propre plan** (le monde du visiteur). À l'inverse, un visiteur
+peut accepter de transmettre un message ou un objet pour un PNJ du
+host, dont la finalité est dans son propre monde.
+
+C'est asymétrique et asynchrone : la quête s'**inscrit dans la save
+du visiteur** au moment de l'acceptation, puis se résout chez lui
+sans nécessiter que le host soit reconnecté.
+
+### 7.2 Patterns candidats
+
+| Pattern | Description | Difficulté |
+|---------|-------------|------------|
+| **Témoignage** | « Quand tu reverras le portrait du Directeur, dis-lui que je tiens bon » → en parlant à Dumbledore *dans son propre monde*, le visiteur déclenche une réplique spéciale + récompense. | Faible — étend `npc-dialog.js`. |
+| **Échange de savoir** | « Voici un parchemin runique. Apporte-le au libraire du 3ᵉ étage de ton château. » → un PNJ du visiteur l'accepte et donne en retour un sort/livre/lore. | Moyen — nouveau type d'item temporaire. |
+| **Récolte croisée** | « Ramène-moi 3 mandragores de ton plan — les miennes ont gelé. » → quand le visiteur revient (V1.5 : avec un nouvel `Apparition Astrale`), il peut remettre les items. | Élevé — nécessite traversée bidirectionnelle. |
+| **Pèlerinage** | « Touche les 7 fontaines de ton château et reviens me le dire. » → progression côté visiteur, validation à la prochaine visite. | Moyen — flag persistant. |
+
+### 7.3 Conséquences
+
+- Encourage les visites **régulières** entre joueurs (pas one-shot).
+- Crée du **contenu narratif émergent** : chaque visite est une
+  rencontre, pas un raccourci de progression.
+- Aucun équilibre PvE à protéger — les récompenses peuvent être
+  généreuses (sorts uniques, équipement de saveur), ce sont des
+  ajouts, pas des shortcuts.
+
+### 7.4 Pré-requis V1 à anticiper
+
+Pour ne pas avoir à refaire V1 quand V2 arrivera :
+
+- Banque `dialoguesAstral` (§6.2) doit déjà supporter des **branches
+  conditionnelles** simples (`if questAccepted`).
+- `mp_messages` (déjà en place) pourra servir à transporter des
+  "objets" légers entre mondes (`type: 'gift'` ou `'quest_item'`).
+- L'identité stable `player_id` (UUID, déjà persistée) permet de
+  retracer un donneur de quête entre deux visites.
+
+Estimation V2 : **+5 à 8 j** sur V1, en grande partie du contenu
+(banques de dialogues, items spéciaux, récompenses) plutôt que du
+système.
+
+## 8. Branche annexe — Co-op combat (réflexion gelée)
+
+Le modèle Souls/Elden Ring décrit dans la **version précédente** de ce
+plan reste pertinent à long terme. Conservé ici comme branche annexe
+à réfléchir séparément, **pas avant V1 + V2 livrés et stabilisés**.
+
+### 8.1 Différences techniques vs V1
+
+- Le visiteur **agit** sur le monde du host : combat partagé, slot
+  allié supplémentaire dans `battle.js`, économie XP/or partagée.
+- Nécessite la couche prédiction/réconciliation (vraie sync).
+- Latence en combat critique → file d'inputs serrée.
+- Risque de désync, de griefing inter-niveau, d'équilibrage.
+- Coût additionnel : **~14 j** sur V1, plus tests.
+
+### 8.2 Pourquoi annexe et pas V3 obligatoire
+
+L'**exploration découverte** suffit potentiellement à porter
+l'expérience sociale du jeu. Investir 14 j dans le combat coop alors
+que les quêtes inter-mondes (V2) offrent déjà une asymétrie
+narrative riche est discutable. La décision se prendra **après V2**,
+informée par les usages observés.
+
+### 8.3 Branche PvP (duel direct)
+
+Hypothétique extension de la branche co-op. Hors-scope structurel — le
+plan `multiplayer.md` §5 traite déjà du PvP asynchrone (snapshot duels)
+qui couvre 80 % du besoin pour 0 % du coût Realtime.
+
+## 9. Fichiers concernés (V1 — prévisionnel)
 
 | Fichier | Nature |
 |---------|--------|
 | `js/portal-fx.js` (nouveau) | Animations d'ouverture/fermeture du portail (côtés visiteur et host) |
 | `css/portal.css` (nouveau) | Keyframes, gradients, fissures, particules |
-| `js/multiplayer.js` (étendu) | Canal Realtime, invitation, file d'inputs, état `visitSession` |
-| `js/battle.js` | Support d'un slot allié visiteur (3ᵉ perso friendly) |
-| `js/battle-ui.js` | Rendu de l'allié visiteur dans la rangée des alliés |
-| `js/renderer-effects.js` | `drawVisitorSprite` (aura dorée vs cyan spectral) |
-| `js/movement.js` | Hook : inputs visiteur → host ; rendu prédictif côté visiteur |
-| `js/save.js` | `_takeVisitSnapshot()` / `_restoreFromVisit()` pour le visiteur |
-| `js/data.js` | Nouveau sort `Apparition Astrale`, débloqué niveau 8 |
+| `js/multiplayer.js` (étendu) | Canal Realtime, invitation, état `visitSession`, snapshot/deltas |
+| `js/renderer.js` / `renderer-effects.js` | Rendu du donjon distant pour le visiteur ; `drawVisitorSprite` (aura dorée) |
+| `js/renderer-minimap.js` | Classe `.map-astral-visitor` ; minimap distante côté visiteur, restreinte au visitedMask |
+| `js/movement.js` | Hook : blocage de mouvement hors `remoteVisitedMask` ; suspension de la logique de combat pour le visiteur |
+| `js/save.js` | `_takeVisitSnapshot()` / `_restoreFromVisit()` pour le visiteur (suspend/restore propre) |
+| `js/data.js` | Nouveau sort `Apparition Astrale` (à nommer §16) |
 | `js/inventory.js` | Le sort apparaît dans `openSpells`, désactivé en combat et en Ironman |
+| `js/npcs.js` | Champ optionnel `dialoguesAstral` ; fallback générique par rôle |
+| `js/npc-dialog.js` | Branche dialogue voyageur si `visitSession.role === 'visitor'` |
 | `js/loader.js` | `MANIFEST` : `playPortalOpen`, `visitSession`, etc. |
 | `index.html` | Inclure `portal.css`, `portal-fx.js` ; overlay `#portal-fx-layer` |
-| `tests/smoke.js` | Scénarios : invitation, visite, mort visiteur, déconnexion |
+| `tests/smoke.js` | Scénarios : invitation, snapshot, blocage hors visitedMask, sortie volontaire |
 | `CLAUDE.md` | Section « Mondes parallèles » une fois livré |
 
-## 8. Découpage en phases et critères de vérification
+> Comparé à la version précédente du plan : **plus de touche à
+> `battle.js` / `battle-ui.js`** en V1 — c'est le bénéfice direct de
+> retirer le combat coop.
 
-> Chaque phase est livrable indépendamment. On peut s'arrêter à la
-> V1 si l'usage ne décolle pas.
+## 10. Découpage en phases et critères de vérification
+
+> Chaque phase est livrable indépendamment. Le plan vise V1
+> (exploration découverte) ; V2 (quêtes) et la branche co-op sont
+> séparées.
 
 ### Phase A — Sort + animation locale (sans réseau) — **3 j**
-- Ajouter le sort `Apparition Astrale` dans `SPELLS` (data.js).
-- Implémenter `playPortalOpen()` / `playPortalClose()` (animation locale
-  uniquement, pas de connexion).
+- Ajouter le sort *Apparition Astrale* (nom provisoire) dans `SPELLS`.
+- Implémenter `playPortalOpen()` / `playPortalClose()` (animation
+  locale uniquement, pas de connexion).
 - Désactiver le sort en mode Ironman et en combat.
 - verify : lancer le sort en jeu déclenche l'anim 2,8 s, l'écran
   s'assombrit, le sort est grisé en Ironman. Capture vidéo de l'anim
   jointe à la PR. `node tests/smoke.js` vert.
 
 ### Phase B — Invitation et matchmaking — **2 j**
-- Table `mp_visit_requests` (SQL §10) avec TTL.
-- Liste des destinations dans une nouvelle modale `#portal-target-modal`,
-  alimentée par `mp_presence` (filtré normal + exploring + connu).
+- Table `mp_visit_requests` (SQL §12).
+- Liste des destinations dans une nouvelle modale
+  `#portal-target-modal`, alimentée par `mp_presence` (filtrée
+  normal + `status='exploring'`).
 - Flux invite/accept côté host (toast 30 s, modale d'acceptation).
-- verify : depuis deux onglets différents, l'un peut demander, l'autre
-  accepter. Scénario smoke ajouté.
+- verify : depuis deux onglets différents, l'un peut demander,
+  l'autre accepter. Scénario smoke ajouté.
 
-### Phase C — Canal Realtime + visite spectateur (V1) — **4 j**
+### Phase C — Snapshot et rendu du donjon distant — **3 j**
 - Ouverture du canal Supabase Realtime sur acceptation.
-- Le visiteur reçoit les snapshots de position du host et **suit son
-  écran** (caméra clonée). Pas d'input visiteur encore.
-- Sprite visiteur affiché côté host avec aura dorée.
-- Bouton "Partir" côté visiteur ; déconnexion gérée des deux côtés.
-- verify : deux onglets en visite, le visiteur voit l'écran du host
-  bouger en temps réel. Test de déconnexion (close onglet host → visiteur
-  rapatrié dans son monde, save intact).
+- Le host envoie son snapshot complet (étages débloqués + masques).
+- Le visiteur **suspend** son `state.js` (`_takeVisitSnapshot`) et
+  rend le donjon distant en réutilisant `renderer.js` sur un état
+  injecté.
+- Bouton "Quitter ce monde" côté visiteur ; déconnexion gérée.
+- verify : deux onglets, le visiteur voit physiquement le donjon de
+  l'autre, peut s'y déplacer dans les cases visitées. Test de sortie
+  volontaire et de déco réseau (close onglet host → visiteur rapatrié,
+  save intact).
 
-### Phase D — Inputs visiteur + combat co-op (V2) — **5 j**
-- Le visiteur a sa propre position et peut se déplacer (prédiction +
-  réconciliation).
-- En combat, son personnage rejoint l'`enemyGroup`-mirror côté allié.
-  L'ordre de tour `advanceBattleChar` est étendu pour 3 alliés.
-- Économie XP/or/drops appliquée (§6.3).
-- Mort du visiteur → rapatriement avec malus (§6.4).
-- verify : deux onglets, combat à 3 alliés, kill = XP distribuée,
-  visiteur tué = rapatriement avec HP réduit. Scénario smoke ajouté.
+### Phase D — Limites de territoire + sprites + emotes — **2 j**
+- Blocage de mouvement hors `remoteVisitedMask` avec message brouillard.
+- Verrouillage des escaliers vers étages non débloqués.
+- Sprite du visiteur visible côté host (aura dorée + nom flottant).
+- Minimap distante côté visiteur (restreinte aux cases visited).
+- Emotes 👋 🪄 🏰 🎯 (§6.7).
+- verify : visiteur ne peut traverser le brouillard ; host voit le
+  sprite bouger en temps réel ; emotes échangées s'affichent dans
+  les deux onglets.
 
-### Phase E — Polish & robustesse — **2 j**
-- Anti-grief écart de niveau (§6.5).
-- Modale "host occupé" pour les modales bloquantes.
+### Phase E — Dialogues PNJ « voyageur » + interactions observation-only — **2 j**
+- Champ `dialoguesAstral` optionnel dans `npcs.js`, banques pour les
+  PNJ clés (Pomfresh, Lockhart, Hagrid, Dumbledore portrait, marchand).
+- Fallback générique par `npc.role` pour les PNJ non scriptés.
+- Coffres/fontaines/boutiques en mode observation (messages
+  contextuels, pas d'interaction).
+- verify : visiteur parle aux PNJ et reçoit des dialogues
+  spécifiques ; coffres affichent le message brouillard ; aucun gain
+  côté visiteur (XP/or/loot inchangés au retour).
+
+### Phase F — Polish & robustesse — **1,5 j**
 - Statut `closed` dans options host (désactiver les visites).
 - Tooltip Ironman pour le sort grisé.
 - Reconnexion automatique si Realtime drop < 5 s.
+- Indicateur de qualité réseau (badge discret).
+- verify : un host peut refuser les visites en un clic ; un Ironman
+  voit le sort grisé avec tooltip ; coupure réseau simulée → visiteur
+  rapatrié proprement.
 
-### Phase F (optionnelle, V3) — Duel PvP en visite — **5 j**
-- Étend le modèle co-op au modèle adverse : le visiteur peut **défier**
-  le host (au lieu de combattre avec lui).
-- Combat avec règles HP réduit + enjeux symboliques (couronne, classement
-  dédié).
-- Désactivé par défaut, opt-in.
-
-## 9. Coûts résumés
+## 11. Coûts résumés
 
 | Palier | Effort cumulé | Inclus |
 |--------|---------------|--------|
-| **V1 (Spectateur)** | 9 j | Phases A + B + C |
-| **V2 (Co-op combat)** | 14 j | + Phases D + E |
-| **V3 (PvP)** | 19 j | + Phase F |
+| **V1 (Exploration découverte)** | **~13,5 j** | Phases A + B + C + D + E + F |
+| V2 (Quêtes inter-mondes) | +5–8 j | Banques de dialogues, items spéciaux, mécanique persistante |
+| **Branche annexe co-op combat** | +14 j sur V1 | Combat partagé, économie partagée, prédiction/réconciliation |
 
 Infra Supabase :
-- Realtime channels : free tier (200 connexions, 2 M msg/mois). Suffisant
-  jusqu'à ~500 visites simultanées.
-- Table `mp_visit_requests` : volume négligeable, REST déjà en place.
+- Realtime channels : free tier (200 connexions, 2 M msg/mois).
+  Charge V1 ~1 msg/sec : suffisant pour ~3000 visites
+  simultanées (largement au-delà du besoin).
+- Table `mp_visit_requests` : volume négligeable.
 
 Hébergement : aucun changement, GitHub Pages reste valide.
 
-## 10. SQL — table d'invitation
+## 12. SQL — table d'invitation
 
 ```sql
 create table if not exists public.mp_visit_requests (
@@ -549,63 +801,80 @@ Disjoncteur : si la table n'existe pas, le sort de portail affiche
 "Le réseau astral est silencieux" et la fonctionnalité est désactivée
 silencieusement (cohérent avec `multiplayer.md` §11bis).
 
-## 11. Risques et questions ouvertes
+## 13. Risques et questions ouvertes
 
-- **Triche par état host falsifié** : un host malicieux peut faire
-  croire à un coffre légendaire pour donner un drop au visiteur. Sans
-  serveur autoritaire, accepté en V1 (pas d'économie compétitive
-  partagée — chacun joue dans son save).
-- **Désync persistante** : si la latence dépasse 1 s régulièrement, le
-  combat devient frustrant. Mitigation : timeout 10 s avant rapatriement
-  forcé ; UI affiche un indicateur de qualité de connexion.
-- **Composition trio en combat** : le moteur actuel (`battle.js`) est
-  câblé pour 1-2 alliés. Le passage à 3 ajoute un slot UI
-  (`#battle-char-indicator`), un tour de plus dans `advanceBattleChar`,
-  une carte alliée supplémentaire. Pas trivial mais propre — environ
-  1 j de travail dans Phase D.
-- **Boucle de tours déterministe** : avec un 3ᵉ allié pseudo-distant,
-  le timing des tours peut sembler erratique si la latence varie. Piste :
-  attendre l'ack du host avant de jouer le tour suivant (lockstep par
-  tour, pas par frame — naturel pour un jeu tour par tour, c'est ça la
-  beauté du genre).
+- **Snapshot lourd pour un host avancé** : un host étage 20+ avec tout
+  débloqué peut générer un snapshot de 300+ KB. Mitigation : limiter à
+  l'étage courant + 2 étages au-dessus, charger les autres à la
+  demande (`floorSnapshot` à l'approche d'un escalier).
+- **Triche par snapshot falsifié** : un host malicieux peut forger un
+  faux donjon pour le visiteur. Aucune conséquence côté visiteur en V1
+  (rien à gagner) → impact nul. Accepter en l'état.
 - **Lore du sort niveau 8** : on bloque la fonctionnalité derrière une
   progression — discutable. Alternative : sort offert dès le palier 100
-  d'une Maison, ou lié à un PNJ Dumbledore. À trancher en Phase A.
+  d'une Maison, ou lié à un PNJ Dumbledore. À trancher en §16.
 - **Visites multiples simultanées chez un host** : V1 = un seul
   visiteur à la fois. La file d'attente est repoussée à plus tard.
-- **Sauvegarde du donjon visité après la sortie** : le host continue
-  son donjon, le visiteur revient au sien. Pas de "souvenir" persistant
-  côté visiteur (sauf XP/or). Acceptable V1 — V0 (traces Pensieve)
-  couvre le besoin de persistance asynchrone.
+- **PNJ générés aléatoirement** côté host (`getRandomVendorsForFloor`,
+  `getRandomLoreForFloor`) : seedés par étage donc déterministes pour
+  une partie donnée — leur snapshot tient dans les 200 KB sans plus.
+- **Persistance d'un souvenir de visite** côté visiteur : actuellement
+  rien ne reste de la visite (cohérent avec V1 contemplatif). V1.5
+  pourra ajouter un "carnet de voyage" listant les mondes visités —
+  hors-scope V1.
+- **Cas du host déjà en combat** au moment de l'invitation : refus
+  immédiat (`status='in_battle'` filtré). Pas de file d'attente —
+  re-demander quand le combat finit.
+- **Le visiteur peut voir un PNJ qui n'existe pas chez lui** : c'est
+  exactement le point ! `getRandomLoreForFloor` produit des PNJ
+  différents selon l'identité de la partie. Bonus narratif.
 
-## 12. Hors-scope
+## 14. Hors-scope
 
-- Salons "open world" persistants (plusieurs visiteurs simultanés).
+- Salons "open world" persistants (plusieurs visiteurs simultanés
+  dans le même donjon).
 - Donjon généré conjointement par les deux joueurs.
-- Sauvegarde des actions du visiteur dans le donjon du host (au-delà
-  des kills/loots usuels).
-- Voix / chat texte en temps réel.
-- Classement compétitif des visites (couronne du meilleur visiteur, etc.).
+- Combat coop avec le visiteur (branche annexe §8, à
+  réfléchir séparément).
+- PvP en direct (couvert par `multiplayer.md` Phase 7 si jamais).
+- Voix / chat texte libre en temps réel.
+- Classement compétitif des visites.
 - Tout pour Ironman (gel ferme — cf. §2.1).
 
-## 13. Suivi
+## 15. Suivi
 
-- [x] Pivot conceptuel (2026-05-25) : multi-sync de saves → visites
+- [x] Pivot conceptuel n°1 (2026-05-25) : multi-sync de saves → visites
       dimensionnelles. Ironman exclu.
-- [ ] Phase A — sort + animation locale.
-- [ ] Phase B — invitation/acceptation.
-- [ ] Phase C — V1 spectateur.
-- [ ] Phase D — V2 co-op combat.
-- [ ] Phase E — polish.
-- [ ] Phase F — V3 PvP (optionnel).
+- [x] Pivot conceptuel n°2 (2026-05-25) : co-op combat → **exploration
+      découverte**. Co-op déplacé en branche annexe §8.
+- [ ] Phase A — sort + animation locale (3 j).
+- [ ] Phase B — invitation/acceptation (2 j).
+- [ ] Phase C — snapshot et rendu du donjon distant (3 j).
+- [ ] Phase D — limites de territoire + sprites + emotes (2 j).
+- [ ] Phase E — dialogues PNJ « voyageur » + observation-only (2 j).
+- [ ] Phase F — polish (1,5 j).
+- [ ] V2 — Quêtes inter-mondes (5–8 j, à planifier après V1).
+- [ ] Branche annexe — Co-op combat (gelée).
 
-## 14. Décisions à confirmer avant Phase A
+## 16. Décisions à confirmer avant Phase A
 
-1. **Nom du sort** : Apparition Astrale (recommandé), Cheminette
-   Inter-Mondes, ou Portoloin de Conscience ?
+1. **Nom du sort** : *Apparition Astrale* (recommandé — sobre, fidèle
+   au canon), *Cheminette Inter-Mondes* (visuellement iconique), ou
+   *Portoloin de Conscience* (justifie le retour automatique) ?
 2. **Niveau de déblocage** : niveau 8 fixe, palier de Maison, ou
    déclenché par un PNJ scripté (Dumbledore après un palier) ?
 3. **Coût en PM** : 25 (proposition), ou plus dissuasif (~40) pour en
-   faire un sort rituel ?
+   faire un sort rituel ? (En V1 il n'y a rien à gagner, donc le coût
+   PM est purement esthétique — peut-être 10–15 suffisent.)
 4. **Cooldown entre deux visites** : aucun, 5 minutes, ou une fois par
-   étage ? Anti-flood.
+   étage ? Anti-flood léger souhaitable.
+5. **Étendue du snapshot** : envoyer tous les étages débloqués en une
+   fois (jusqu'à 300 KB), ou charger à la demande (étage courant
+   + ±1) ? Trade-off réactivité / charge.
+6. **PNJ avec `dialoguesAstral` en Phase E** : on couvre lesquels en
+   priorité ? Reco : les 5 PNJ scénaristes (Pomfresh, Lockhart, Hagrid,
+   Dumbledore portrait, Geignarde) + un dialogue générique pour tous
+   les autres.
+7. **Présence du visiteur côté host** : on rend son sprite **par
+   défaut**, ou en option opt-in pour le host (qui peut le masquer
+   s'il veut jouer sans distraction) ?
