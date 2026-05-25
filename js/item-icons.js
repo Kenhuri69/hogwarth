@@ -95,6 +95,10 @@ const ITEM_ICON_REGISTRY = {
   cape_combat:         'img/icons/items/cape_voyageur.png',
   anneau_anti_magie:   'img/icons/items/anneau_runique.png',
   potion_lune:         'img/icons/items/potion_m.png',
+  // Phase 3 — Tranche étage 9 « Les Profondeurs » : équipement endgame mid
+  diademe_antique:     'img/icons/items/circlet_serdaigle.png',
+  bague_protection:    'img/icons/items/anneau_argent.png',
+  robe_combat:         'img/icons/items/robe1.png',
   // Endgame — réutilisent les PNG existants en attendant la génération
   // de sprites dédiés via gen_icons.py. Cf. ENDGAME_PLAN.md §7.3/§7.10.
   potion_xl:           'img/icons/items/potion_s.png',

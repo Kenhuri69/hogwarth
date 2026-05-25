@@ -231,6 +231,42 @@ const QUEST_TEMPLATES = [
     reward: { xp: 200, gold: 100, item: "potion_lune" },
     location: "Avant-garde de l'Ordre (étage 8)"
   },
+  // ── Phase 3 — Tranche étage 9 « Les Profondeurs » ────────────────
+  // (cf. .claude/plans/content-audit-stabilization.md §5.2)
+  // 3 quêtes données par Bill Weasley à l'étage 9.
+  {
+    id: "chasse_aragog",
+    title: "L'ami de Hagrid",
+    giver: "Bill Weasley",
+    desc: "Aragog est devenu trop dangereux pour le château. Hagrid a déjà fait son deuil — accomplis ce qu'il ne peut faire lui-même.",
+    objectives: [
+      { type: "kill", monsterId: "aragog", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 360, gold: 200, stats: { hp: 15, lck: 2 }, item: "essence_tenebres" },
+    location: "Profondeurs araneennes (étage 9)"
+  },
+  {
+    id: "baiser_detraqueur",
+    title: "Le Maître des Glaces",
+    giver: "Bill Weasley",
+    desc: "Affronte le Maître des Détraqueurs avant qu'il ne pratique le Baiser sur l'un des nôtres. Garde un Patronus prêt — ou un Élixir de Lune.",
+    objectives: [
+      { type: "kill", monsterId: "maitre_detraqueur", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 400, gold: 240, stats: { def: 2, mag: 3 }, item: "page_grimoire" },
+    location: "Cellules glacées (étage 9)"
+  },
+  {
+    id: "dictame_bill",
+    title: "Du Dictame pour les cicatrices",
+    giver: "Bill Weasley",
+    desc: "Récolte 5 brins de Dictame. Bill veut soulager ses cicatrices laissées par Greyback — la guérison n'existe plus, seul l'apaisement.",
+    objectives: [
+      { type: "item", itemId: "herbe_dictame", amount: 5, progress: 0, completed: false }
+    ],
+    reward: { xp: 240, gold: 130, item: "potion_l" },
+    location: "Refuge de Bill (étage 9)"
+  },
   // ── Manon, fille cachée de Lupin — pseudo-quête en deux volets ──
   // Données et rendues par Manon (PNJ étage 3, cf. npcs.js). Le volet 2
   // (`prereq`) ne s'ouvre qu'après remise du volet 1 — chaîne classique.
