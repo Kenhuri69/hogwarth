@@ -388,6 +388,7 @@ async function startGame(count = 2) {
   shopStock = null;
   shopStepsSinceRestock = 0;
   purchasedSpellbooks = new Set();
+  endgamePurchases    = {};
   portusOocCooldown   = 0;
   portusFightCooldown = 0;
   healSpellCooldown   = 0;

@@ -637,6 +637,27 @@ function _applyConsumableEffect(item, target) {
     target.hp = Math.min(target.hpMax, target.hp + item.power);
     target.sp = Math.min(target.spMax, target.sp + 10);
   }
+  // ── Sinks endgame (consommables permanents) ────────────────
+  // +PV max permanent + heal complet bonus. Le _baseHpMax (s'il
+  // existe pour le tracking équipement) n'a pas à être touché : on
+  // bouge directement hpMax, c'est la stat effective.
+  else if (item.effect === 'perma_hp') {
+    target.hpMax = (target.hpMax || 0) + (item.power || 0);
+    target.hp    = target.hpMax;
+  }
+  else if (item.effect === 'perma_sp') {
+    target.spMax = (target.spMax || 0) + (item.power || 0);
+    target.sp    = target.spMax;
+  }
+  else if (item.effect === 'perma_end') {
+    // _baseEnd lazy-init si absent (saves antérieures à l'extension).
+    if (typeof target._baseEnd !== 'number') target._baseEnd = target.end || 0;
+    target._baseEnd += (item.power || 0);
+    if (typeof recalculateStats === 'function') recalculateStats();
+  }
+  // 'stat_boost' (Pierre d'Âme) est intercepté en amont par useItem →
+  // _openStatBoostMenu (modale de choix de stat). Ne devrait jamais
+  // arriver ici, mais no-op par sécurité.
 }
 
 // Enseigne un sort à un seul personnage. Retourne false si verrouillé,
@@ -679,6 +700,123 @@ function showLearnMenu(item, idx) {
       </div>
     </div>
   `;
+}
+
+// ── Sinks endgame — consommables permanents (perma_*, stat_boost) ──
+// Ces consommables modifient durablement un perso : on demande au
+// joueur quel perso reçoit le bonus (en duo) puis on applique, plutôt
+// que de défaulter à Harry comme les soins. Cf. game-economy-gold-audit.md §5.6.
+
+function _openPermaTargetMenu(item, idx) {
+  if (partySize === 1) { _applyPermaToChar(idx, 0); return; }
+  const grid = document.getElementById('inv-grid');
+  const charButtons = party.slice(0, partySize).map((c, ci) =>
+    `<button class="cmd-btn" style="width:100%;margin-bottom:6px"
+       onclick="_applyPermaToChar(${idx},${ci})">
+       ${c.icon} ${c.name.split(' ')[0]}
+     </button>`).join('');
+  grid.innerHTML = `
+    <div style="grid-column:1/-1;padding:14px;text-align:center">
+      <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
+        Boire ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}
+      </div>
+      <div style="font-size:11px;color:#8a7050;margin-bottom:12px">Effet permanent — choisissez le bénéficiaire</div>
+      <div style="max-width:220px;margin:0 auto">
+        ${charButtons}
+        <button class="cmd-btn" style="width:100%;margin-top:4px;opacity:.7"
+          onclick="renderInventory(false)">← Annuler</button>
+      </div>
+    </div>`;
+}
+
+function _applyPermaToChar(idx, charIdx) {
+  const item = player.inventory[idx];
+  const target = party[charIdx];
+  if (!item || !target) return;
+  _applyConsumableEffect(item, target);
+  addMsg(`${target.name} consomme : ${item.name}`, 'good');
+  player.inventory.splice(idx, 1);
+  updateUI();
+  closeModal('inventory-modal');
+}
+
+// Pierre d'Âme — 2 étapes : choix du perso (en duo) puis choix de la stat.
+const _STAT_BOOST_CHOICES = [
+  { key: '_baseStr', label: 'Force (FOR)',     trigger: 'str' },
+  { key: '_baseInt', label: 'Intelligence (INT)', trigger: 'int' },
+  { key: '_baseAgi', label: 'Agilité (AGI)',   trigger: 'agi' },
+  { key: '_baseEnd', label: 'Endurance (END)', trigger: 'end' },
+  { key: '_baseLck', label: 'Chance (LCK)',    trigger: 'lck' },
+  { key: '_baseMag', label: 'Magie (MAG)',     trigger: 'mag' },
+  { key: '_baseAtk', label: 'Attaque (ATK)',   trigger: 'atk' },
+  { key: '_baseDef', label: 'Défense (DEF)',   trigger: 'def' },
+];
+
+function _openPierreAmeMenu(idx) {
+  if (partySize === 1) { _openPierreAmeStatMenu(idx, 0); return; }
+  const item = player.inventory[idx];
+  if (!item) return;
+  const grid = document.getElementById('inv-grid');
+  const charButtons = party.slice(0, partySize).map((c, ci) =>
+    `<button class="cmd-btn" style="width:100%;margin-bottom:6px"
+       onclick="_openPierreAmeStatMenu(${idx},${ci})">
+       ${c.icon} ${c.name.split(' ')[0]}
+     </button>`).join('');
+  grid.innerHTML = `
+    <div style="grid-column:1/-1;padding:14px;text-align:center">
+      <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
+        ${getItemIconHtml(item, 'ui-icon-md')} Pierre d'Âme
+      </div>
+      <div style="font-size:11px;color:#8a7050;margin-bottom:12px">+1 stat permanente — choisissez le bénéficiaire</div>
+      <div style="max-width:220px;margin:0 auto">
+        ${charButtons}
+        <button class="cmd-btn" style="width:100%;margin-top:4px;opacity:.7"
+          onclick="renderInventory(false)">← Annuler</button>
+      </div>
+    </div>`;
+}
+
+function _openPierreAmeStatMenu(idx, charIdx) {
+  const item = player.inventory[idx];
+  const c = party[charIdx];
+  if (!item || !c) return;
+  const grid = document.getElementById('inv-grid');
+  const statButtons = _STAT_BOOST_CHOICES.map(s =>
+    `<button class="cmd-btn" style="width:100%;margin-bottom:6px;text-align:left;padding-left:10px"
+       onclick="_applyStatBoost(${idx},${charIdx},'${s.trigger}')">
+       ${s.label} <span style="color:#8a7050">(actuel : ${c[s.trigger] || 0})</span>
+     </button>`).join('');
+  grid.innerHTML = `
+    <div style="grid-column:1/-1;padding:14px;text-align:center">
+      <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
+        ${c.icon} ${c.name.split(' ')[0]} — choix de la stat
+      </div>
+      <div style="font-size:11px;color:#8a7050;margin-bottom:12px">+1 permanent (cumulable avec équipement et level-up)</div>
+      <div style="max-width:260px;margin:0 auto">
+        ${statButtons}
+        <button class="cmd-btn" style="width:100%;margin-top:4px;opacity:.7"
+          onclick="renderInventory(false)">← Annuler</button>
+      </div>
+    </div>`;
+}
+
+function _applyStatBoost(idx, charIdx, statTrigger) {
+  const item = player.inventory[idx];
+  const target = party[charIdx];
+  if (!item || !target) return;
+  const choice = _STAT_BOOST_CHOICES.find(s => s.trigger === statTrigger);
+  if (!choice) return;
+  // Lazy-init du _base* à partir de la stat effective (saves antérieures).
+  if (typeof target[choice.key] !== 'number') {
+    target[choice.key] = target[choice.trigger] || 0;
+  }
+  target[choice.key] += 1;
+  if (typeof recalculateStats === 'function') recalculateStats();
+  addMsg(`✨ ${target.name} absorbe la Pierre d'Âme : +1 ${choice.label.match(/\(([A-Z]+)\)/)[1]} permanent !`, 'magic');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+  player.inventory.splice(idx, 1);
+  updateUI();
+  closeModal('inventory-modal');
 }
 
 // Enseigne le sort du livre `inventoryIdx` au seul personnage `charIdx`,
@@ -746,6 +884,19 @@ function useItem(idx, battleMode) {
   // consommable manuellement.
   if (item.effect === 'auto_revive') {
     addMsg(`${item.name} : effet passif — déclenchera à la prochaine perte d'un membre du groupe.`, '');
+    return;
+  }
+
+  // Sinks endgame : consommables permanents — requièrent un choix
+  // de bénéficiaire en duo (hors combat uniquement).
+  if (item.effect === 'stat_boost') {
+    if (battleMode) { addMsg(`${item.name} : à utiliser hors combat.`, ''); return; }
+    _openPierreAmeMenu(idx);
+    return;
+  }
+  if ((item.effect === 'perma_hp' || item.effect === 'perma_sp' || item.effect === 'perma_end')
+      && partySize === 2 && !battleMode) {
+    _openPermaTargetMenu(item, idx);
     return;
   }
 

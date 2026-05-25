@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <g fill="#000000">
+    <path data-region="gem" d="M 256 80 L 386 256 L 256 432 L 126 256 Z"></path>
+    <path data-region="gem_facet" d="M 256 80 L 256 432 M 126 256 L 386 256 M 196 168 L 316 168 M 196 344 L 316 344" stroke="#000" stroke-width="3" fill="none" opacity="0"></path>
+    <path data-region="gem_base" d="M 256 256 L 386 256 L 256 432 Z"></path>
+  </g>
+</svg>

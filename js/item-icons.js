@@ -176,7 +176,17 @@ const ITEM_ICON_REGISTRY = {
   livre_lux_aeterna:     'img/icons/items/livre_lumos_solem.png',
   livre_nox_vorax:       'img/icons/items/livre_vampyrus.png',
   livre_diffindo_maxima: 'img/icons/items/book_monsters.png',
-  livre_vulnera:         'img/icons/items/livre_soin.png'
+  livre_vulnera:         'img/icons/items/livre_soin.png',
+  // Sinks endgame V1 (combo A+E) — alias legacy ; le rendu effectif
+  // passe par les PNG painterly dans ITEM_ICON_NEW_REGISTRY (priorité 1).
+  // Cf. .claude/plans/game-economy-gold-audit.md §5.6 + §7 Étape 6.
+  elixir_perma_hp:       'img/icons/items/potion_s.png',
+  elixir_perma_mp:       'img/icons/items/potion_m.png',
+  pierre_ame:            'img/icons/items/amulette.png',
+  grimoire_interdit:     'img/icons/items/livre_morsmordre.png',
+  pendentif_ombre:       'img/icons/items/amulette_protection.png',
+  reliquaire_lunaire:    'img/icons/items/coupe_poufsouffle.png',
+  philtre_endurance:     'img/icons/items/potion_force.png'
 };
 
 // Mapping painterly pipeline (étape 9 — voir SVG_PLAN / tools/icon_factory.py)
@@ -265,7 +275,15 @@ const ITEM_ICON_NEW_REGISTRY = {
   ceinture_force:       'img/icons_new/ceinture_force_64.png',
   anneau_courage:       'img/icons_new/anneau_courage_64.png',
   bottes_silence:       'img/icons_new/bottes_silence_64.png',
-  talisman_tactique:    'img/icons_new/talisman_tactique_64.png'
+  talisman_tactique:    'img/icons_new/talisman_tactique_64.png',
+  // Sinks endgame V1 (combo A+E) — cf. game-economy-gold-audit.md §5.6 + §7 Étape 6.
+  elixir_perma_hp:      'img/icons_new/elixir_perma_hp_64.png',
+  elixir_perma_mp:      'img/icons_new/elixir_perma_mp_64.png',
+  pierre_ame:           'img/icons_new/pierre_ame_64.png',
+  grimoire_interdit:    'img/icons_new/grimoire_interdit_64.png',
+  pendentif_ombre:      'img/icons_new/pendentif_ombre_64.png',
+  reliquaire_lunaire:   'img/icons_new/reliquaire_lunaire_64.png',
+  philtre_endurance:    'img/icons_new/philtre_endurance_64.png'
 };
 
 // Status effects (battle.js consomme ce registre via STATUS_DEFS[id].iconSrc)
@@ -329,7 +347,11 @@ const SPELL_ICON_REGISTRY = {
   'Lux Aeterna':           'img/icons/spells/lux_aeterna.png',
   'Nox Vorax':             'img/icons/spells/nox_vorax.png',
   'Diffindo Maxima':       'img/icons/spells/diffindo_maxima.png',
-  'Vulnera Sanentur':      'img/icons/spells/vulnera_sanentur.png'
+  'Vulnera Sanentur':      'img/icons/spells/vulnera_sanentur.png',
+  // Sort exclusif endgame (Grimoire Interdit) — sinks A+E. Réutilise
+  // incendio.png comme placeholder visuel (même élément feu) ; un PNG
+  // dédié pourra être ajouté à gen_element_spell_icons.py plus tard.
+  'Fiendfyre':             'img/icons/spells/incendio.png'
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────

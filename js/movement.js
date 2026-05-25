@@ -10,6 +10,20 @@ function canMove(dir) {
   return dungeon[ny][nx] !== CELL.WALL;
 }
 
+// Cohérence économie or : applique le multiplicateur de difficulté à
+// toutes les sources hors-combat (coffres, fouille, autel) — alignées
+// sur le scaling appliqué aux drops dans battle.js. Plancher à 1G pour
+// éviter qu'un mode Expert (×0.55) ne réduise un petit gain à 0.
+// Voir .claude/plans/game-economy-gold-audit.md §5.3.
+function _applyGoldMult(amount) {
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  const m = (typeof DIFFICULTY_SETTINGS !== 'undefined'
+            && DIFFICULTY_SETTINGS[difficulty]
+            && typeof DIFFICULTY_SETTINGS[difficulty].goldMultiplier === 'number')
+    ? DIFFICULTY_SETTINGS[difficulty].goldMultiplier : 1;
+  return Math.max(1, Math.floor(amount * m));
+}
+
 // ─────────────────────────────────────────────────────────────
 // Helpers de rotation : indexés cycliquement n→e→s→w→n.
 // ─────────────────────────────────────────────────────────────
@@ -570,6 +584,7 @@ function _openPuzzleChest(doubled) {
   const floor = currentFloor || 1;
   let gold = Math.floor(Math.random() * 25 + 35) * floor;
   if (doubled) gold *= 2;
+  gold = _applyGoldMult(gold);
   player.gold += gold;
   addMsg(`+${gold} Gallions (coffre runique)`, 'good');
 
@@ -634,7 +649,7 @@ function openChest() {
 
   if (roll < 0.38) {
     // Or
-    const gold = Math.floor(Math.random() * 30 + 10) * currentFloor;
+    const gold = _applyGoldMult(Math.floor(Math.random() * 30 + 10) * currentFloor);
     player.gold += gold;
     setNarrative(NARRATIVES.gold_found(gold));
     addMsg(`+${gold} Gallions`, 'good');
@@ -660,7 +675,7 @@ function openChest() {
       addMsg(`Obtenu : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name}`, 'good');
     } else if (!item) {
       // Aucun équipement éligible pour cet étage — repli sur or
-      const gold = Math.floor(Math.random() * 30 + 10) * (currentFloor || 1);
+      const gold = _applyGoldMult(Math.floor(Math.random() * 30 + 10) * (currentFloor || 1));
       player.gold += gold;
       addMsg(`Coffre vide… mais +${gold} Gallions cachés au fond`, 'good');
       updateUI();
@@ -818,8 +833,12 @@ function searchRoom() {
 
   const roll = Math.random();
   if (roll < SEARCH_GOLD_THRESHOLD) {
-    let gold = Math.floor(Math.random() * 15 + 5);
+    // Scaling par étage (×0.20 par étage au-delà du 1ᵉʳ) puis multiplicateur
+    // de difficulté — cf. .claude/plans/game-economy-gold-audit.md §5.2.
+    const floor = currentFloor || 1;
+    let gold = Math.floor((Math.random() * 15 + 5) * (1 + (floor - 1) * 0.20));
     if (repeat) gold = Math.max(1, Math.floor(gold * 0.5));
+    gold = _applyGoldMult(gold);
     player.gold += gold;
     setNarrative(NARRATIVES.gold_found(gold));
     addMsg(`+${gold} Gallions`, 'good');
@@ -1044,7 +1063,8 @@ function useAltar(choice) {
   } else if (choice === 'gamble') {
     usedAltars.add(key);
     if (Math.random() < 0.5) {
-      const xpGain = 60 * f, goldGain = 20 * f;
+      const xpGain = 60 * f;
+      const goldGain = _applyGoldMult(20 * f);
       player.xp += xpGain;
       player.gold += goldGain;
       setNarrative("Vous posez la main nue sur la pierre. Elle s'illumine d'or — le destin vous sourit !");

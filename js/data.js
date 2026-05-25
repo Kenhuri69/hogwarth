@@ -250,6 +250,10 @@ const SPELLS = [
   { name:"Nox Vorax",         icon:"🌑",  desc:"Vague obscure : dégâts à tous + draine la vie pour le lanceur",   cost:18, effect:"aoe_drain",  element:"ténèbres", power:14, stat2:"end", magDiv:3, stat2Div:3 },
   { name:"Diffindo Maxima",   icon:"⚔️", desc:"Fauchage : tranche la cible et les ennemis adjacents",            cost:14, effect:"aoe_cleave", element:"physique", power:18, stat2:"str", magDiv:3, stat2Div:2 },
   { name:"Vulnera Sanentur",  icon:"💗",  desc:"Chant de guérison : soigne tout le groupe",                       cost:16, effect:"heal_aoe",  power:22 },
+  // ── Sort exclusif endgame (Grimoire Interdit, sinks A+E) ──────
+  // Feu Maudit : flammes vivantes, dégâts massifs single-target,
+  // brûlure persistante. Coût prohibitif → utilisation parcimonieuse.
+  { name:"Fiendfyre",         icon:"🔥",  desc:"Feu Maudit : flammes vivantes (35 dégâts + brûle)",                cost:32, effect:"burn", element:"feu", power:35 },
 ];
 
 // Catégorie d'un sort pour le filtre de la modale Sorts. Soutien et
@@ -505,6 +509,16 @@ const ITEMS = [
   { id:"livre_nox_vorax",       name:"Nuit Dévorante",            icon:"📕", desc:"Apprend Nox Vorax — vague obscure drainante",        type:"spellbook", spell:"Nox Vorax",        price:1200 },
   // Sort utilitaire premium (cf. .claude/plans/teleportation-spell.md).
   { id:"livre_portus",     name:"Traité de la Téléportation",     icon:"📘", desc:"Apprend Portus — téléportation tactique (combat + hors combat)", type:"spellbook", spell:"Portus", price:2800 },
+  // ── Sinks endgame — combo A+E (game-economy-gold-audit.md §5.6) ──
+  // Prix progressif (rareté marché) : items avec `rarityScales:true`
+  // voient leur prix × 1.5^endgamePurchases[id] à chaque achat.
+  { id:"elixir_perma_hp",   name:"Élixir Permanent de Vitalité",   icon:"❤️", desc:"+5 PV max permanent (heal complet bonus). Disponibilité limitée — chaque flacon vendu rend les suivants plus rares.", type:"consumable", effect:"perma_hp", power:5, basePrice:1500, price:1500, rarityScales:true, rarity:"epic" },
+  { id:"elixir_perma_mp",   name:"Élixir Permanent de Mana",       icon:"💙", desc:"+5 PM max permanent (heal complet bonus). Disponibilité limitée — chaque flacon vendu rend les suivants plus rares.", type:"consumable", effect:"perma_sp", power:5, basePrice:1500, price:1500, rarityScales:true, rarity:"epic" },
+  { id:"pierre_ame",        name:"Pierre d'Âme",                   icon:"💜", desc:"+1 stat permanente au choix (FOR/INT/AGI/END/LCK/MAG/ATK/DEF). Chaque pierre arrachée à la veine rend les suivantes plus introuvables.", type:"consumable", effect:"stat_boost", basePrice:3000, price:3000, rarityScales:true, rarity:"legendary" },
+  { id:"grimoire_interdit", name:"Grimoire Interdit",              icon:"📕", desc:"Apprend Fiendfyre — Feu Maudit (35 dégâts, brûle, coût élevé).", type:"spellbook", spell:"Fiendfyre", price:4000, rarity:"legendary" },
+  { id:"pendentif_ombre",   name:"Pendentif d'Ombre",              icon:"🦇", desc:"Acc — regen 3 PV/tour, dégâts critiques +20 %.", type:"acc", slot:"amulet", rarity:"epic", regenHp:3, bonusCritDamage:0.20, price:6000 },
+  { id:"reliquaire_lunaire", name:"Reliquaire Lunaire",            icon:"🌙", desc:"Bibelot — gain d'or de combat +20 % (cumulable avec Récolte Magique).", type:"trinket", slot:"trinket", rarity:"legendary", bonusGoldMult:0.20, price:8000 },
+  { id:"philtre_endurance", name:"Philtre d'Endurance",            icon:"🟢", desc:"+3 END permanent. Recette ancestrale — disponibilité fluctuante.", type:"consumable", effect:"perma_end", power:3, basePrice:3500, price:3500, rarityScales:true, rarity:"rare" },
   // ── Herbes (ingrédients de potion) — type:"herb" ─────────────
   // Routées vers la besace d'herboriste (player.herbs), pas le sac.
   // Voir .claude/plans/farming-potion-system.md.
