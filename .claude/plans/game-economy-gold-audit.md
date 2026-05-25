@@ -1056,3 +1056,31 @@ pour B si l'identité visuelle manque trop.
   Étape 5 (5a + 5b) avec sous-tâches détaillées. **Implémentation
   V1 en attente du go final de l'utilisateur** (et arbitrage sur
   l'ordre d'attaque vs. les Étapes 1-3 §5.2/5.3/5.4).
+
+- **2026-05-25 — clôture du plan** : audit confirmé livré dans son
+  intégralité, vérifié via inspection directe du code source à la
+  date du jour :
+  - §5.2 (fouille scalée par étage + `goldMultiplier`) ✅ livré PR #249
+    (`movement.js:839` — formule `× (1 + (floor-1) × 0.20)`,
+    `_applyGoldMult` en sortie).
+  - §5.3 (cohérence `goldMultiplier` partout) ✅ livré PR #249
+    (helper `_applyGoldMult` `movement.js:18`, appliqué aux 5 call-sites
+    de drops d'or — coffres standard/runique, fouille, pari, victoire).
+  - §5.4 (lissage drops monstres 6-10) ✅ livré PR #249 (nagini 0.36,
+    mangemort_elite 0.38, bellatrix 0.40, manticore_jeune 0.38 dans
+    `monsters.js`).
+  - §5.5 (autel d'offrande réduit) ✅ livré (`movement.js:1050` :
+    `cost = 25 * f`, baisse de 40 → 25).
+  - §5.6 Combo A+E (catalogue boutique endgame + marchand itinérant)
+    ✅ livré PR #250 (7 items endgame + `endgamePurchases` + scaling
+    ×1.5, marchand_ombre + spawn seedé étage 11+).
+  - §5.6 Piste B (don récurrent à la Maison + série Apothéose ★ N)
+    ✅ livré PR #257 (`house-donation.js`, série génératrice infinie,
+    32 samples voix off).
+  - §5.7 (rééquilibrage prix items) ✅ livré (wand1 = 80, cape_invis
+    = 550, bottes_silence = 520, talisman_tactique = 380 dans
+    `data.js`).
+  - §7 Étape 6 (PNG endgame) ✅ livré (`img/icons_new/` contient les
+    35 PNG des 7 items en 5 tailles + part `gem-octahedron.svg`).
+
+  **Plan archivable** — aucune action restante.
