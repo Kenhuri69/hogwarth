@@ -690,7 +690,7 @@ pour les items pallier, et reste un choix tactique pour Portus.
       des 3 items progressifs.
 - [ ] Message narratif au 3e achat (toast/log).
 - [ ] Génération des 6 PNG via `tools/icon_factory.py` (cf. CLAUDE.md
-      pour la procédure).
+      pour la procédure). **Recettes détaillées : voir Étape 6 §6.1.**
 
 #### 5b — Marchand itinérant rare (Piste E)
 - [ ] Nouveau NPC `marchand_ombre` dans `js/npcs.js` (portrait à
@@ -702,14 +702,266 @@ pour les items pallier, et reste un choix tactique pour Portus.
 - [ ] Inventaire dynamique : 1-3 items tirés (Élixir HP/MP, Pierre
       d'Âme, Philtre d'Endurance), prix `_endgameItemPrice(item) × 1.4`.
 - [ ] Nouvel item exclusif `philtre_endurance` (3500 G base, +3 END
-      permanent, ×1.5 rareté).
+      permanent, ×1.5 rareté). **Recette PNG : voir Étape 6 §6.1.**
 - [ ] Dialogue court via `npc-dialog.js`.
 - [ ] Pas d'auto-spawn rétroactif : les saves antérieures n'auront
       pas le marchand jusqu'à la prochaine génération d'étage 11+.
 - [ ] Test smoke : nouveau scénario « rencontre marchand itinérant »
       à ajouter dans `tests/smoke.js`.
 
-### Étape 6 — `Commit + push + PR`
+### Étape 6 — `Génération des PNG d'items endgame` (`tools/icon_factory.py`)
+
+Procédure complète : cf. CLAUDE.md « Pipeline d'icônes d'items ». 7 items
++ éventuellement 1 sprite NPC. Tous les PNG produits en 5 tailles
+(`16/24/32/48/64`) dans `img/icons_new/<id>_<size>.png`, référencés
+ensuite dans `ITEM_ICON_NEW_REGISTRY` (`js/item-icons.js`).
+
+#### 6.0 Parts SVG — inventaire & manques
+
+Parts existantes utilisables (vérifiées dans `tools/parts/`) :
+
+| Part | Régions | Usage prévu |
+|------|---------|-------------|
+| `flask.svg` | `stopper`, `body` | Élixirs ×2, Philtre d'Endurance |
+| `book-cover.svg` | `spine`, `pages`, `cover`, `gilt` | Grimoire Interdit |
+| `gem-pendant.svg` | `chain`, `setting`, `gem`, `gem_facet` | Pendentif d'Ombre |
+| `chalice.svg` | `bowl`, `rim`, `stem`, `foot`, `gem` | Reliquaire Lunaire (adapté) |
+
+**Part à créer** : `gem-octahedron.svg` (gemme libre, sans monture
+ni chaîne) pour la Pierre d'Âme. Silhouette mono-couleur `#000000`,
+viewBox `0 0 512 512`, 3 régions : `gem` (corps central),
+`gem_facet` (faces hautes), `gem_base` (faces basses pour ombre).
+Forme : octaèdre allongé verticalement (~280×400 px centré). À
+livrer avant la génération de `pierre_ame`.
+
+#### 6.1 Recettes détaillées (à insérer dans `RECIPES` de `icon_factory.py`)
+
+##### `elixir_perma_hp` — Élixir Permanent +PV
+
+```py
+{
+  id: "elixir_perma_hp", name: "Élixir Permanent de Vitalité",
+  rarity: "epic", material: "glass",
+  silhouette: {kind:"svg", file:"flask.svg"},
+  fills: {
+    "body":    (200, 215, 220),   # verre cristal très clair
+    "stopper": (90, 55, 30),      # bouchon liège sombre
+  },
+  accents: [
+    {kind:"liquid", region:"body",
+     color:(180, 25, 45), level:0.72, opacity:0.95},
+    {kind:"bubbles", region:"body", color:(255, 200, 200), count:8},
+    {kind:"orb_glow", region:"body", color:(220, 60, 80), radius:140},
+    {kind:"symbol", region:"body", shape:"cross",
+     color:(255, 235, 235), size:48},
+  ],
+  sparkles: True,  # epic → halo + 4 sparkles
+}
+```
+
+##### `elixir_perma_mp` — Élixir Permanent +PM
+
+```py
+{
+  id: "elixir_perma_mp", name: "Élixir Permanent de Mana",
+  rarity: "epic", material: "glass",
+  silhouette: {kind:"svg", file:"flask.svg"},
+  fills: {
+    "body":    (200, 215, 220),
+    "stopper": (40, 30, 70),      # bouchon bois teinté nuit
+  },
+  accents: [
+    {kind:"liquid", region:"body",
+     color:(40, 90, 220), level:0.72, opacity:0.95},
+    {kind:"bubbles", region:"body", color:(180, 220, 255), count:10},
+    {kind:"orb_glow", region:"body", color:(80, 130, 255), radius:160},
+    {kind:"symbol", region:"body", shape:"star",
+     color:(230, 240, 255), size:48},
+  ],
+  sparkles: True,
+}
+```
+
+##### `pierre_ame` — Pierre d'Âme
+
+```py
+{
+  id: "pierre_ame", name: "Pierre d'Âme",
+  rarity: "legendary", material: "glass",
+  silhouette: {kind:"svg", file:"gem-octahedron.svg"},  # à créer
+  fills: {
+    "gem":       (140, 60, 180),  # améthyste profonde
+    "gem_facet": (200, 140, 230), # faces hautes pâles
+    "gem_base":  (70, 25, 100),   # faces basses sombres
+  },
+  accents: [
+    {kind:"gem_facet_shine", region:"gem_facet", intensity:0.85},
+    {kind:"orb_glow", region:"gem", color:(180, 100, 220), radius:180},
+    {kind:"symbol", region:"gem", shape:"eye",
+     color:(255, 230, 255), size:54},  # œil pâle au cœur
+    {kind:"runes", region:"gem", count:3, color:(220, 180, 255)},
+  ],
+  sparkles: True,  # legendary → halo + 6 sparkles + cartouche or
+}
+```
+
+##### `grimoire_interdit` — Grimoire Interdit
+
+```py
+{
+  id: "grimoire_interdit", name: "Grimoire Interdit",
+  rarity: "legendary", material: "leather",
+  silhouette: {kind:"svg", file:"book-cover.svg"},
+  fills: {
+    "cover": (28, 18, 22),        # cuir noir profond
+    "spine": (18, 12, 16),
+    "pages": (210, 195, 165),     # parchemin jauni
+    "gilt":  (170, 170, 175),     # fermoir argent terni
+  },
+  accents: [
+    {kind:"symbol", region:"cover", shape:"skull",
+     color:(190, 175, 145), size:140},  # crâne en relief or-terne
+    {kind:"runes", region:"cover", count:5,
+     color:(140, 30, 30)},  # runes sang sec
+    {kind:"emboss", region:"cover", intensity:0.6},
+    {kind:"rim_light", region:"cover", color:(80, 20, 30)},
+  ],
+  sparkles: True,
+}
+```
+
+##### `pendentif_ombre` — Pendentif d'Ombre
+
+```py
+{
+  id: "pendentif_ombre", name: "Pendentif d'Ombre",
+  rarity: "epic", material: "metal",
+  silhouette: {kind:"svg", file:"gem-pendant.svg"},
+  fills: {
+    "chain":   (90, 90, 100),     # argent terni
+    "setting": (40, 40, 50),      # monture noire
+    "gem":     (15, 15, 25),      # noir bleu nuit
+    "gem_facet": (60, 50, 90),    # reflets violets sombres
+  },
+  accents: [
+    {kind:"gem_facet_shine", region:"gem_facet", intensity:0.7},
+    {kind:"symbol", region:"setting", shape:"bat",
+     color:(150, 140, 170), size:36},  # chauve-souris en relief
+    {kind:"rim_light", region:"gem", color:(120, 60, 180)},
+    {kind:"orb_glow", region:"gem", color:(80, 40, 140), radius:100},
+  ],
+  sparkles: True,  # epic
+}
+```
+
+##### `reliquaire_lunaire` — Reliquaire Lunaire
+
+```py
+{
+  id: "reliquaire_lunaire", name: "Reliquaire Lunaire",
+  rarity: "legendary", material: "metal",
+  silhouette: {kind:"svg", file:"chalice.svg"},
+  fills: {
+    "bowl":  (205, 215, 230),     # argent lunaire poli
+    "rim":   (240, 245, 255),     # liseré clair
+    "stem":  (160, 170, 185),
+    "foot":  (140, 150, 170),
+    "gem":   (50, 80, 160),       # saphir nuit
+  },
+  accents: [
+    {kind:"symbol", region:"bowl", shape:"moon",
+     color:(245, 245, 220), size:90},
+    {kind:"runes", region:"bowl", count:4, color:(200, 220, 255)},
+    {kind:"gem_facet_shine", region:"gem", intensity:0.9},
+    {kind:"orb_glow", region:"gem", color:(120, 170, 255), radius:140},
+    {kind:"emboss", region:"foot", intensity:0.4},  # phases gravées
+    {kind:"rim_light", region:"rim", color:(255, 255, 230)},
+  ],
+  sparkles: True,
+}
+```
+
+##### `philtre_endurance` — Philtre d'Endurance (exclusif marchand)
+
+```py
+{
+  id: "philtre_endurance", name: "Philtre d'Endurance",
+  rarity: "rare", material: "glass",
+  silhouette: {kind:"svg", file:"flask.svg"},
+  fills: {
+    "body":    (190, 200, 195),   # verre dépoli, teinte forêt
+    "stopper": (80, 60, 35),      # corde tressée brune
+  },
+  accents: [
+    {kind:"liquid", region:"body",
+     color:(95, 115, 50), level:0.75, opacity:0.92},
+    {kind:"bubbles", region:"body", color:(170, 200, 130), count:6},
+    {kind:"symbol", region:"body", shape:"leaf",
+     color:(210, 230, 170), size:50},
+    {kind:"rim_light", region:"body", color:(180, 160, 60)},  # liseré or doux
+  ],
+  sparkles: False,  # rare → halo seul, pas de sparkles
+}
+```
+
+#### 6.2 NPC sprite — `marchand_ombre`
+
+Le pipeline `icon_factory.py` **ne couvre pas** les sprites de PNJ
+(rendus 3D, format différent). Deux options :
+
+- **Option A (recommandée V1)** : réutiliser le sprite générique
+  `img/npc/_wizard_generic.png` (déjà fallback en place dans
+  `renderer-effects.js — NPC_SPRITE_SRC`) avec un nouveau type
+  `marchand_sombre` mappé vers le générique. Pas de nouvel asset
+  requis. UX préservée — l'aura pulsée et le signe ❗/❓ marquent
+  déjà la présence.
+- **Option B (V2 polish)** : générer un PNG dédié (silhouette
+  encapuchonnée, voile pourpre sombre, lanterne) via outil externe
+  (Stable Diffusion / commande artist). Hors-scope V1.
+
+Décision proposée : **Option A** pour la V1, ticket polish séparé
+pour B si l'identité visuelle manque trop.
+
+#### 6.3 Procédure d'exécution
+
+1. Créer `tools/parts/gem-octahedron.svg` (silhouette + 3 régions).
+2. Ajouter les 7 recettes au dict `RECIPES` de
+   `tools/icon_factory.py` (ordre alpha conseillé pour lisibilité).
+3. Générer en lot :
+   ```bash
+   python3 tools/icon_factory.py elixir_perma_hp elixir_perma_mp \
+     pierre_ame grimoire_interdit pendentif_ombre \
+     reliquaire_lunaire philtre_endurance
+   ```
+4. Vérifier visuellement les 7 × 5 = 35 PNG produits dans
+   `img/icons_new/`. Le `_64.png` est la référence (sera vu en
+   boutique et inventaire) — c'est le seul à inspecter en détail.
+5. Référencer dans `js/item-icons.js — ITEM_ICON_NEW_REGISTRY` :
+   ```js
+   elixir_perma_hp:    "img/icons_new/elixir_perma_hp_64.png",
+   elixir_perma_mp:    "img/icons_new/elixir_perma_mp_64.png",
+   pierre_ame:         "img/icons_new/pierre_ame_64.png",
+   grimoire_interdit:  "img/icons_new/grimoire_interdit_64.png",
+   pendentif_ombre:    "img/icons_new/pendentif_ombre_64.png",
+   reliquaire_lunaire: "img/icons_new/reliquaire_lunaire_64.png",
+   philtre_endurance:  "img/icons_new/philtre_endurance_64.png",
+   ```
+6. Smoke test : `node tests/smoke.js` + visite manuelle de la
+   boutique en étage 11+ (via save de debug) pour confirmer le
+   rendu à toutes les tailles.
+
+#### 6.4 Estimation de durée
+
+| Sous-tâche | Durée |
+|------------|-------|
+| Création part `gem-octahedron.svg` | ~20 min (silhouette propre) |
+| Ajout 7 recettes au factory | ~30 min (copy/paste + ajustement) |
+| Génération + vérif visuelle | ~10 min (pipeline rapide) |
+| Itérations couleurs / accents | ~30 min (1-2 passes par item si nécessaire) |
+| Référencement + test | ~10 min |
+| **Total** | **~1h40** |
+
+### Étape 7 — `Commit + push + PR`
 - [ ] 1 commit par sous-étape (révisible isolément).
 - [ ] PR groupée vers `master` avec changelog clair.
 - [ ] Vérifier l'état de PR existante avant `git push` (§6 des
@@ -778,6 +1030,17 @@ pour les items pallier, et reste un choix tactique pour Portus.
   drain immédiat de 30-50 % du stock dormant. Pistes B-E reportées
   en plans séparés. §9 mis à jour. **Décision utilisateur attendue**
   avant implémentation de la Piste A.
+- **2026-05-25 (amendement 4 — assets PNG planifiés)** : utilisateur
+  demande la planification des PNG pour tous les items endgame du
+  combo A+E. → Ajout §7 Étape 6 (« Génération des PNG d'items
+  endgame ») : inventaire des parts SVG existants (`flask`,
+  `book-cover`, `gem-pendant`, `chalice` réutilisables), 1 nouveau
+  part à créer (`gem-octahedron.svg` pour la Pierre d'Âme),
+  7 recettes complètes pour `tools/icon_factory.py` avec palettes /
+  accents / sparkles / rarity. NPC `marchand_ombre` → Option A
+  (réutiliser sprite générique en V1, dédié en V2). Procédure
+  d'exécution + estimation (~1h40 total). Étapes 5a/5b mises à
+  jour pour pointer vers §6.1.
 - **2026-05-25 (amendement 3 — validation V1)** : utilisateur valide
   le **combo Piste A + Piste E** et propose un **prix progressif des
   consommables permanents** (rareté sur le marché) plutôt qu'un cap
