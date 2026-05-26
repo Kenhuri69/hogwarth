@@ -132,6 +132,14 @@
     if (wasVisitor && typeof _restoreFromVisit === 'function') {
       _restoreFromVisit();
     }
+    if (typeof hideVisitHud === 'function') hideVisitHud();
+    if (wasVisitor) {
+      // Redraw immédiat — la modale "Quitter" se ferme et le visiteur
+      // retrouve son propre donjon sans intervention manuelle.
+      if (typeof drawDungeon   === 'function') drawDungeon();
+      if (typeof renderMinimap === 'function') renderMinimap();
+      if (typeof updateUI      === 'function') updateUI();
+    }
     return true;
   }
 
@@ -170,13 +178,22 @@
 
     if (msg.type === 'snapshot' && _role === 'visitor') {
       if (typeof mpApplyVisitSnapshot === 'function') {
-        mpApplyVisitSnapshot(msg.payload);
+        const ok = mpApplyVisitSnapshot(msg.payload);
         // Hooks de rendu sous garde — visibilité immédiate du donjon
-        // distant. Le C.3 ajoute le bouton "Quitter" et l'UI complète.
-        if (typeof drawDungeon  === 'function') drawDungeon();
+        // distant.
+        if (typeof drawDungeon   === 'function') drawDungeon();
         if (typeof renderMinimap === 'function') renderMinimap();
         if (typeof updateUI      === 'function') updateUI();
-        if (typeof addMsg        === 'function') {
+        // Phase C.3 — bandeau de visite + bouton "Quitter ce monde".
+        if (ok && typeof showVisitHud === 'function') {
+          const meta = (msg.payload && msg.payload.hostMeta) || {};
+          showVisitHud({
+            hostName:  meta.name  || _partnerName,
+            hostHouse: meta.house || null,
+            floor:     meta.currentFloor || null
+          });
+        }
+        if (typeof addMsg === 'function') {
           addMsg(`Tu apparais dans le monde de ${_partnerName}.`, 'good');
         }
       }
@@ -194,6 +211,14 @@
       _visitReset();
       if (wasVisitor && typeof _restoreFromVisit === 'function') {
         _restoreFromVisit();
+      }
+      if (typeof hideVisitHud === 'function') hideVisitHud();
+      if (wasVisitor) {
+        // Redraw après restore pour que le visiteur retrouve son propre
+        // donjon sans avoir à bouger.
+        if (typeof drawDungeon   === 'function') drawDungeon();
+        if (typeof renderMinimap === 'function') renderMinimap();
+        if (typeof updateUI      === 'function') updateUI();
       }
       if (typeof addMsg === 'function') {
         addMsg(`${partnerName} a refermé la cheminée — retour dans ton monde.`, '');

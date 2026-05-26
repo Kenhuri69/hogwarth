@@ -1424,6 +1424,42 @@ au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
           SQL `mp_visit_messages` à documenter dans §12.3 (TODO mineur).
         - [ ] C.3 — rendu du donjon distant + bouton "Quitter ce
           monde" + chargement paresseux multi-étages. ~1 j.
+            - [x] C.3a — bandeau de visite + bouton "Quitter ce monde"
+              + blocage des interactions chez le host
+              (parallel-worlds.md §6.4). **Livré 2026-05-26**.
+              Nouveau module `js/visit-hud.js` (`showVisitHud` /
+              `updateVisitHud` / `hideVisitHud` + handler
+              `_visitHudExit`), bandeau `#visit-hud` fixed top z-index
+              9000 dans `index.html`, CSS dédiée dans `css/portal.css`
+              (palette dorée/grenat + responsive ≤700px). Hooks
+              show/hide branchés dans `js/visit-channel.js`
+              (post-snapshot reçu + sortie via `mpExitVisit` +
+              réception `bye`). Redraw immédiat (drawDungeon /
+              renderMinimap / updateUI) après restore pour que le
+              visiteur retrouve son donjon sans avoir à bouger.
+              `movement.js — _exploreDescriptors` détecte
+              `visitSession.role === 'visitor'` et renvoie des
+              descripteurs observation-only (un seul bouton
+              "S'éloigner", message qui évoque le host) pour les 9
+              types de cellules interactives (CHEST, SHOP, STAIRS_D,
+              STAIRS_U, FOUNTAIN, ALTAR, FORGE, LIBRARY, STELE).
+              `handleCellEntry` ajoute un garde-fou pour TRAP / NPC /
+              RUNE qui ne passent pas par l'overlay — pas de mutation
+              du donjon distant, dialogue PNJ reporté à Phase E.
+              MANIFEST loader complété (3 entrées optional). Bumps de
+              version : `portal.css?v=2`, `visit-channel.js?v=2`,
+              `visit-hud.js?v=1`, `movement.js?v=14`, `loader.js?v=9`.
+              Scénario smoke `scenarioVisitHudAndBlock` (T1→T7) : 7
+              tests couvrent la surface du module, l'affichage avec
+              blason + étage, le pipeline complet snapshot → HUD,
+              le blocage des 4 types de cellules interactives, la
+              sortie volontaire via le bouton (bye posté + HUD masqué
+              + session refermée), et le retour à la normale hors
+              visite.
+            - [ ] C.3b — chargement paresseux multi-étages (host
+              repost de snapshot à chaque `_changeFloor`, visiteur
+              applique via nouveau type de message `floorSnapshot`).
+              ~0,4 j.
         - [ ] C.4 — détection de drop réseau (timeout 10 s),
           restauration automatique. ~0,5 j.
     - [ ] Phase D — limites de territoire + sprites + emotes (2 j).

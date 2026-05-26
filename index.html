@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="css/ornaments.css?v=1">
 <link rel="stylesheet" href="css/help-tour.css?v=1">
 <link rel="stylesheet" href="css/pwa.css?v=1">
-<link rel="stylesheet" href="css/portal.css?v=1">
+<link rel="stylesheet" href="css/portal.css?v=2">
 <link rel="manifest" href="manifest.json?v=2">
 <meta name="theme-color" content="#c9a84c">
 <link rel="apple-touch-icon" href="img/icons/pwa/apple-touch-icon.png?v=2">
@@ -549,6 +549,17 @@
       <div id="tier-transition-overlay" aria-hidden="true"></div>
       <div id="portal-fx-layer" aria-hidden="true"></div>
 
+      <!-- Mondes parallèles — bandeau de visite (visiteur) -->
+      <div id="visit-hud" aria-hidden="true" role="region" aria-label="Visite inter-monde">
+        <div class="visit-hud-info">
+          <div id="visit-hud-name">🌀 Sorcier</div>
+          <div id="visit-hud-meta"></div>
+        </div>
+        <button id="visit-hud-exit" type="button" onclick="_visitHudExit()" title="Quitter ce monde">
+          Quitter ce monde
+        </button>
+      </div>
+
       <!-- Mondes parallèles — modale destinations (visiteur) -->
       <div id="portal-target-overlay" style="display:none" role="dialog" aria-modal="true">
         <div class="portal-modal-panel" id="portal-target-panel"></div>
@@ -1015,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/renderer.js?v=8"></script>
 <script src="js/renderer-effects.js?v=8"></script>
 <script src="js/renderer-minimap.js?v=4"></script>
-<script src="js/movement.js?v=13"></script>
+<script src="js/movement.js?v=14"></script>
 <script src="js/swipe-canvas.js?v=4"></script>
 <script src="js/battle.js?v=6"></script>
 <script src="js/teleport.js?v=1"></script>
@@ -1036,13 +1047,14 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/multiplayer.js?v=6"></script>
 <script src="js/portal-fx.js?v=1"></script>
 <script src="js/portal-matchmaking.js?v=2"></script>
-<script src="js/visit-channel.js?v=1"></script>
+<script src="js/visit-channel.js?v=2"></script>
+<script src="js/visit-hud.js?v=1"></script>
 <script src="js/main.js?v=5"></script>
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=2"></script>
 <script src="js/library.js?v=2"></script>
 <script src="js/help-tour.js?v=1"></script>
-<script src="js/loader.js?v=8"></script>
+<script src="js/loader.js?v=9"></script>
 <script src="js/pwa.js?v=1"></script>
 
 </body>

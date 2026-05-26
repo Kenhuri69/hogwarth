@@ -294,6 +294,10 @@ window.UX_safe = new Proxy({}, {
     { name: 'mpStartVisitAsVisitor',    source: 'visit-channel.js',       kind: 'fn',  optional: true },
     { name: 'mpStartVisitAsHost',       source: 'visit-channel.js',       kind: 'fn',  optional: true },
     { name: 'mpExitVisit',              source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    // Phase C.3 — bandeau de visite (parallel-worlds.md §3.4 / §6.4).
+    { name: 'showVisitHud',             source: 'visit-hud.js',           kind: 'fn',  optional: true },
+    { name: 'updateVisitHud',           source: 'visit-hud.js',           kind: 'fn',  optional: true },
+    { name: 'hideVisitHud',             source: 'visit-hud.js',           kind: 'fn',  optional: true },
 
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },

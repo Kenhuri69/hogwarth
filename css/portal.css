@@ -334,3 +334,83 @@
   border-color: rgba(216, 182, 71, 0.45);
 }
 .portal-btn-refuse:hover { background: rgba(60, 30, 22, 0.85); }
+
+/* ── Bandeau de visite (Phase C.3) ──────────────────────────── */
+/* Bar fixe en haut de la fenêtre quand `visitSession` est ouverte
+   côté visiteur. Pose le contexte (pseudo + maison + étage) et
+   expose le bouton de sortie volontaire. */
+#visit-hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: linear-gradient(180deg,
+              rgba(20, 12, 6, 0.92) 0%,
+              rgba(40, 22, 12, 0.92) 100%);
+  border-bottom: 2px solid #d8b647;
+  box-shadow: 0 4px 18px rgba(216, 182, 71, 0.25),
+              0 0 24px rgba(60, 220, 90, 0.15);
+  color: #f7e4a8;
+  font-family: 'Cinzel', serif;
+  z-index: 9000;
+  pointer-events: auto;
+}
+#visit-hud.active { display: flex; }
+
+.visit-hud-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+#visit-hud-name {
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: #f7e4a8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#visit-hud-name .visit-hud-host {
+  color: #ffd76a;
+  text-shadow: 0 0 8px rgba(216, 182, 71, 0.45);
+}
+#visit-hud-meta {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: rgba(216, 182, 71, 0.75);
+  text-transform: uppercase;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#visit-hud-exit {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: 8px 14px;
+  cursor: pointer;
+  background: linear-gradient(180deg,
+              rgba(80, 30, 30, 0.85) 0%,
+              rgba(50, 18, 18, 0.85) 100%);
+  color: #f7e4a8;
+  border: 1px solid rgba(216, 182, 71, 0.55);
+  border-radius: 4px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+  transition: background 120ms ease, transform 120ms ease;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+#visit-hud-exit:hover  { background: linear-gradient(180deg, rgba(120, 50, 50, 0.95) 0%, rgba(80, 28, 28, 0.95) 100%); }
+#visit-hud-exit:active { transform: translateY(1px); }
+
+@media (max-width: 700px) {
+  #visit-hud { padding: 6px 10px; }
+  #visit-hud-name { font-size: 11px; }
+  #visit-hud-meta { font-size: 9px; }
+  #visit-hud-exit { font-size: 10px; padding: 6px 10px; letter-spacing: 0.5px; }
+}

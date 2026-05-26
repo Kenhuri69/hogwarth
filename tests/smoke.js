@@ -11266,6 +11266,168 @@ async function scenarioVisitChannelTransport() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette — HUD + interactions bloquées (Phase C.3) ──
+async function scenarioVisitHudAndBlock() {
+  console.log('\n── Scénario : Cheminette — HUD visite + interactions bloquées (Phase C.3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : surface publique du module HUD.
+  const t1 = await page.evaluate(() => ({
+    showHud:   typeof showVisitHud   === 'function',
+    updateHud: typeof updateVisitHud === 'function',
+    hideHud:   typeof hideVisitHud   === 'function',
+    exitBtn:   typeof window._visitHudExit === 'function',
+    hudEl:     !!document.getElementById('visit-hud'),
+    exitElInDOM: !!document.getElementById('visit-hud-exit')
+  }));
+  console.log('  T1 surface HUD →', t1);
+  assert(t1.showHud && t1.updateHud && t1.hideHud, 'show/update/hide exposés');
+  assert(t1.exitBtn,   'Handler _visitHudExit exposé');
+  assert(t1.hudEl,     '#visit-hud présent dans le DOM');
+  assert(t1.exitElInDOM, '#visit-hud-exit présent dans le DOM');
+
+  // T2 : showVisitHud affiche le bandeau avec les bonnes infos.
+  const t2 = await page.evaluate(() => {
+    const ok = showVisitHud({ hostName: 'Alice', hostHouse: 'Serdaigle', floor: 4 });
+    const hud  = document.getElementById('visit-hud');
+    const name = document.getElementById('visit-hud-name');
+    const meta = document.getElementById('visit-hud-meta');
+    return {
+      ok,
+      active:    hud.classList.contains('active'),
+      ariaHidden: hud.getAttribute('aria-hidden'),
+      nameHasAlice:   /Alice/.test(name.textContent),
+      nameHasCrest:   /🦅/.test(name.textContent),       // Serdaigle
+      metaHasHouse:   /Serdaigle/.test(meta.textContent),
+      metaHasFloor:   /Étage 4/.test(meta.textContent)
+    };
+  });
+  console.log('  T2 showVisitHud →', t2);
+  assert(t2.ok,             'showVisitHud retourne true');
+  assert(t2.active,         '#visit-hud.active activé');
+  assert(t2.ariaHidden === 'false', 'aria-hidden synchronisé');
+  assert(t2.nameHasAlice,   'Nom host rendu');
+  assert(t2.nameHasCrest,   'Blason de Maison rendu');
+  assert(t2.metaHasHouse,   'Méta porte la maison');
+  assert(t2.metaHasFloor,   'Méta porte l\'étage');
+
+  // T3 : hideVisitHud retire la classe active.
+  const t3 = await page.evaluate(() => {
+    const ok  = hideVisitHud();
+    const hud = document.getElementById('visit-hud');
+    return { ok, active: hud.classList.contains('active'), aria: hud.getAttribute('aria-hidden') };
+  });
+  console.log('  T3 hideVisitHud →', t3);
+  assert(t3.ok && !t3.active, 'HUD masqué après hide');
+  assert(t3.aria === 'true',  'aria-hidden remis à true');
+
+  // T4 : pipeline complet — mpStartVisitAsVisitor + snapshot → HUD affiché.
+  const t4 = await page.evaluate(async () => {
+    const fakeSnap = mpBuildVisitSnapshot({
+      hostId: 'host-x', hostName: 'Bob', hostHouse: 'Poufsouffle', hostLevel: 6, currentFloor: 3
+    });
+    // Force currentFloor dans le payload pour rendre le test déterministe.
+    fakeSnap.hostMeta.currentFloor = 3;
+    window.__visitPollCalls = 0;
+    window.mpPollVisitMessages = async () => {
+      window.__visitPollCalls++;
+      if (window.__visitPollCalls === 1) {
+        return [{
+          id: 'm1', sender: 'host', type: 'snapshot', payload: fakeSnap,
+          created_at: new Date().toISOString()
+        }];
+      }
+      return [];
+    };
+    window.mpPostVisitMessage = async () => ({ id: 'p1', created_at: new Date().toISOString() });
+    await mpStartVisitAsVisitor({ channelId: 'ch-hud-1', hostId: 'host-x', hostName: 'Bob', hostHouse: 'Poufsouffle' });
+    const hud = document.getElementById('visit-hud');
+    const name = document.getElementById('visit-hud-name');
+    const meta = document.getElementById('visit-hud-meta');
+    return {
+      active: hud.classList.contains('active'),
+      nameHasBob:   /Bob/.test(name.textContent),
+      metaHasFloor: /Étage 3/.test(meta.textContent),
+      sessionOpen: !!(visitSession && visitSession.role === 'visitor')
+    };
+  });
+  console.log('  T4 pipeline snapshot → HUD →', t4);
+  assert(t4.active,         'HUD activé après réception du snapshot');
+  assert(t4.nameHasBob,     'Nom host remonté depuis le snapshot');
+  assert(t4.metaHasFloor,   'Étage host remonté depuis le snapshot');
+  assert(t4.sessionOpen,    'visitSession ouverte');
+
+  // T5 : interactions bloquées en visite — _exploreDescriptors retourne
+  // les variantes observation-only quand visitSession.role === 'visitor'.
+  const t5 = await page.evaluate(() => {
+    const d = _exploreDescriptors();
+    return {
+      chestBtns:    d[CELL.CHEST] && d[CELL.CHEST].btns,
+      chestDesc:    d[CELL.CHEST] && d[CELL.CHEST].desc,
+      stairsBtns:   d[CELL.STAIRS_D] && d[CELL.STAIRS_D].btns,
+      stairsDesc:   d[CELL.STAIRS_D] && d[CELL.STAIRS_D].desc,
+      fountainBtns: d[CELL.FOUNTAIN] && d[CELL.FOUNTAIN].btns,
+      shopBtns:     d[CELL.SHOP] && d[CELL.SHOP].btns,
+      hostName:     visitSession && visitSession.hostName
+    };
+  });
+  console.log('  T5 interactions bloquées →', t5);
+  assert(/S'éloigner/.test(t5.chestBtns),     'Coffre : un seul bouton "S\'éloigner"');
+  assert(!/openChest/.test(t5.chestBtns),     'Coffre : pas de bouton "Ouvrir"');
+  assert(/Bob/.test(t5.chestDesc),            'Coffre : message évoque le host');
+  assert(/S'éloigner/.test(t5.stairsBtns),    'Escalier : pas de descente');
+  assert(!/goDeeper/.test(t5.stairsBtns),     'Escalier : pas d\'appel goDeeper');
+  assert(/Bob/.test(t5.stairsDesc),           'Escalier : message évoque le host');
+  assert(!/useFountain/.test(t5.fountainBtns),'Fontaine : pas d\'appel useFountain');
+  assert(!/openShop/.test(t5.shopBtns),       'Boutique : pas d\'appel openShop');
+
+  // T6 : sortie volontaire via le bouton → bye posté + HUD masqué.
+  const t6 = await page.evaluate(async () => {
+    window.__visitPosted = [];
+    window.mpPostVisitMessage = async (channelId, sender, type, payload) => {
+      window.__visitPosted.push({ channelId, sender, type, payload });
+      return { id: 'p2', created_at: new Date().toISOString() };
+    };
+    await window._visitHudExit();
+    const hud = document.getElementById('visit-hud');
+    return {
+      hudHidden:   !hud.classList.contains('active'),
+      byePosted:   window.__visitPosted.find(p => p.type === 'bye'),
+      sessionGone: visitSession === null,
+      role:        (typeof window._visitGetState === 'function')
+                     ? window._visitGetState().role : 'unknown'
+    };
+  });
+  console.log('  T6 sortie bouton →', t6);
+  assert(t6.hudHidden,                       'HUD masqué après exit');
+  assert(!!t6.byePosted,                     'Message bye posté');
+  assert(t6.byePosted.sender === 'visitor',  'bye signé visitor');
+  assert(t6.sessionGone,                     'visitSession refermée');
+  assert(t6.role === null,                   'État interne canal réinitialisé');
+
+  // T7 : descripteurs reviennent à la normale hors visite.
+  const t7 = await page.evaluate(() => {
+    const d = _exploreDescriptors();
+    return {
+      chestHasOpen:    /openChest/.test(d[CELL.CHEST] && d[CELL.CHEST].btns || ''),
+      shopHasOpen:     /openShop/.test(d[CELL.SHOP] && d[CELL.SHOP].btns || ''),
+      fountainHasUse:  /useFountain/.test(d[CELL.FOUNTAIN] && d[CELL.FOUNTAIN].btns || '')
+    };
+  });
+  console.log('  T7 retour à la normale →', t7);
+  assert(t7.chestHasOpen,    'Coffre : "Ouvrir" restauré hors visite');
+  assert(t7.shopHasOpen,     'Boutique : "Entrer" restauré hors visite');
+  assert(t7.fountainHasUse,  'Fontaine : "Boire" restauré hors visite');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — HUD visite + blocage Phase C.3 OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -12609,7 +12771,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();
