@@ -10674,6 +10674,178 @@ async function scenarioParallelPortal() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette Inter-Mondes — matchmaking (V1a Phase B) ──
+// Vérifie : modale destinations (vide / null / liste), pose de demande,
+// poll de réponse (accepté / refusé), modale d'acceptation côté host.
+// Stubs mpListAvailableHosts / mpPostVisitRequest / mpPollOutgoingVisitStatus /
+// mpRespondVisitRequest pour rester déterministe en file:// (pas de Supabase).
+// Cf. parallel-worlds.md §10 Phase B.
+async function scenarioPortalMatchmaking() {
+  console.log('\n── Scénario : Cheminette — matchmaking (Phase B) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : liste vide → message « Aucun sorcier ne médite ».
+  const t1 = await page.evaluate(async () => {
+    window.mpListAvailableHosts = async () => [];
+    await openPortalTargetModal();
+    await new Promise(r => setTimeout(r, 50));
+    const overlay = document.getElementById('portal-target-overlay');
+    const panel   = document.getElementById('portal-target-panel');
+    return {
+      visible:  overlay.style.display === 'flex',
+      hasEmpty: /[Aa]ucun sorcier|médite/.test(panel.textContent)
+    };
+  });
+  console.log('  T1 liste vide →', t1);
+  assert(t1.visible,  'overlay destinations doit être visible');
+  assert(t1.hasEmpty, 'message "aucun sorcier" attendu');
+
+  // T2 : null (erreur réseau) → message « réseau silencieux ».
+  const t2 = await page.evaluate(async () => {
+    closePortalTargetModal();
+    window.mpListAvailableHosts = async () => null;
+    await openPortalTargetModal();
+    await new Promise(r => setTimeout(r, 50));
+    const panel = document.getElementById('portal-target-panel');
+    return { hasSilent: /silencieux/.test(panel.textContent) };
+  });
+  console.log('  T2 réseau KO →', t2);
+  assert(t2.hasSilent, 'message "réseau silencieux" attendu');
+
+  // T3 : 2 hosts dans la liste → 2 cartes cliquables.
+  const t3 = await page.evaluate(async () => {
+    closePortalTargetModal();
+    window.mpListAvailableHosts = async () => [
+      { player_id: 'p1', name: 'Ginny',  house: 'Gryffondor', level: 7, floor: 3 },
+      { player_id: 'p2', name: 'Drago',  house: 'Serpentard', level: 9, floor: 5 }
+    ];
+    await openPortalTargetModal();
+    await new Promise(r => setTimeout(r, 50));
+    const rows = document.querySelectorAll('#portal-target-panel .portal-host-row');
+    return {
+      count: rows.length,
+      names: Array.from(rows).map(r => r.querySelector('.portal-host-name').textContent.trim())
+    };
+  });
+  console.log('  T3 deux hosts →', t3);
+  assert(t3.count === 2,                  'liste doit afficher 2 hosts');
+  assert(/Ginny/.test(t3.names[0] || ''), 'Ginny en tête');
+  assert(/Drago/.test(t3.names[1] || ''), 'Drago en 2e');
+
+  // T4 : click sur un host → mpPostVisitRequest appelée + écran d'attente.
+  // Le test réduit le poll à 200 ms via window.__portalPollMs pour rendre
+  // T5 déterministe sans attendre 2,5 s.
+  const t4 = await page.evaluate(async () => {
+    window.__portalPollMs = 200;
+    window.__postedHost = null;
+    window.__portalPollTicks = 0;
+    window.mpPostVisitRequest = async (h) => {
+      window.__postedHost = h;
+      return { id: 'req-test-1', status: 'pending' };
+    };
+    window.mpPollOutgoingVisitStatus = async () => ({ status: 'pending' });
+    _portalTargetClick(0);
+    await new Promise(r => setTimeout(r, 80));
+    const panel = document.getElementById('portal-target-panel');
+    return {
+      postedName: (window.__postedHost && window.__postedHost.name) || null,
+      hasWaiting: /attente|patiente/i.test(panel.textContent)
+    };
+  });
+  console.log('  T4 click → demande →', t4);
+  assert(t4.postedName === 'Ginny', 'Ginny doit être posté');
+  assert(t4.hasWaiting,             'écran "en attente" attendu');
+
+  // T5 : poll renvoie 'accepted' → fermeture modale + addMsg "accueilli".
+  // Poll réduit à 200 ms par T4 — on attend 500 ms pour 2 ticks.
+  const t5 = await page.evaluate(async () => {
+    window.__portalAcceptedCalls = 0;
+    window.mpPollOutgoingVisitStatus = async () => ({ status: 'accepted' });
+    await new Promise(r => setTimeout(r, 500));
+    const overlay = document.getElementById('portal-target-overlay');
+    return {
+      hidden:    overlay.style.display === 'none',
+      ticks:     window.__portalPollTicks || 0,
+      accepted:  window.__portalAcceptedCalls || 0
+    };
+  });
+  console.log('  T5 acceptation →', t5);
+  assert(t5.ticks > 0, 'le poll doit avoir tiré au moins 1 tick');
+  assert(t5.hidden,    'modale destinations doit se fermer après acceptation');
+
+  // T6 : showIncomingVisitRequest → modale host s'affiche avec nom + boutons.
+  const t6 = await page.evaluate(() => {
+    showIncomingVisitRequest({
+      id: 'req-host-1',
+      visitor_name:  'Luna',
+      visitor_house: 'Serdaigle',
+      visitor_level: 6
+    });
+    const overlay = document.getElementById('portal-incoming-overlay');
+    const panel   = document.getElementById('portal-incoming-panel');
+    return {
+      visible:      overlay.style.display === 'flex',
+      hasLuna:      /Luna/.test(panel.textContent),
+      hasAcceptBtn: !!panel.querySelector('.portal-btn-accept'),
+      hasRefuseBtn: !!panel.querySelector('.portal-btn-refuse')
+    };
+  });
+  console.log('  T6 incoming →', t6);
+  assert(t6.visible,      'overlay incoming doit être visible');
+  assert(t6.hasLuna,      'nom Luna doit être affiché');
+  assert(t6.hasAcceptBtn, 'bouton Accepter requis');
+  assert(t6.hasRefuseBtn, 'bouton Refuser requis');
+
+  // T7 : click Accepter → mpRespondVisitRequest('accepted') + fermeture.
+  const t7 = await page.evaluate(async () => {
+    window.__respCalled = null;
+    window.mpRespondVisitRequest = async (id, st) => {
+      window.__respCalled = { id, st };
+      return { id, status: st };
+    };
+    _portalIncomingAccept();
+    await new Promise(r => setTimeout(r, 60));
+    const overlay = document.getElementById('portal-incoming-overlay');
+    return {
+      respCalled: window.__respCalled,
+      hidden:     overlay.style.display === 'none'
+    };
+  });
+  console.log('  T7 accepter →', t7);
+  assert(t7.respCalled && t7.respCalled.id === 'req-host-1', 'mpRespondVisitRequest doit recevoir l\'id');
+  assert(t7.respCalled.st === 'accepted',                    'status accepted attendu');
+  assert(t7.hidden,                                          'overlay incoming doit se fermer');
+
+  // T8 : click Refuser → mpRespondVisitRequest('refused').
+  const t8 = await page.evaluate(async () => {
+    showIncomingVisitRequest({
+      id: 'req-host-2',
+      visitor_name:  'Cho',
+      visitor_house: 'Serdaigle',
+      visitor_level: 5
+    });
+    window.__respCalled = null;
+    window.mpRespondVisitRequest = async (id, st) => {
+      window.__respCalled = { id, st };
+      return { id, status: st };
+    };
+    _portalIncomingRefuse();
+    await new Promise(r => setTimeout(r, 60));
+    return { respCalled: window.__respCalled };
+  });
+  console.log('  T8 refuser →', t8);
+  assert(t8.respCalled && t8.respCalled.id === 'req-host-2', 'refus doit cibler la bonne demande');
+  assert(t8.respCalled.st === 'refused',                     'status refused attendu');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — matchmaking Phase B OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -12017,7 +12189,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();
