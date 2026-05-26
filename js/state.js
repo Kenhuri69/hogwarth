@@ -87,6 +87,20 @@ let mpDuelActive     = false;
 let mpDuelMeta       = null;
 let defeatedDuelists = new Set();
 
+// ── Mondes parallèles — session de visite (V1a Phase C) ─────
+// État transient d'une visite inter-mondes — non persisté (la save
+// du visiteur est figée à l'entrée, restaurée à la sortie). Forme :
+//   {
+//     role:           'visitor',         // toujours 'visitor' en C.1
+//     hostId, hostName, hostHouse,        // identité du host visité
+//     mySavedState,                       // snapshot de l'état du visiteur, restauré à la sortie
+//     remoteHostMeta,                     // métadonnées du host (level, partyNames, currentFloor)
+//   }
+// Tant que la visite est active, les globaux dungeon/visited/etc.
+// contiennent l'état injecté du host (cf. mpApplyVisitSnapshot).
+// Cf. .claude/plans/parallel-worlds.md §3.4.
+let visitSession = null;
+
 // ============================================================
 // SYSTÈME DES MAISONS
 // ============================================================

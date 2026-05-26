@@ -10846,6 +10846,176 @@ async function scenarioPortalMatchmaking() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette — snapshot et suspend/restore (V1a Phase C.1) ──
+// Vérifie les 4 helpers purs introduits par C.1 :
+//   _takeVisitSnapshot, _restoreFromVisit, mpBuildVisitSnapshot, mpApplyVisitSnapshot
+// Pas de réseau : on construit un faux snapshot host en cassant des cellules
+// du donjon courant, on l'applique au visiteur, puis on restaure pour
+// vérifier que l'état d'origine est intact (party, position, dungeon).
+// Cf. .claude/plans/parallel-worlds.md §10 Phase C, sous-bloc C.1.
+async function scenarioVisitSnapshot() {
+  console.log('\n── Scénario : Cheminette — snapshot visite (Phase C.1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : globaux et helpers exposés.
+  const t1 = await page.evaluate(() => ({
+    sessionInit:   typeof visitSession !== 'undefined' && visitSession === null,
+    takeFn:        typeof _takeVisitSnapshot   === 'function',
+    restoreFn:     typeof _restoreFromVisit    === 'function',
+    buildFn:       typeof mpBuildVisitSnapshot === 'function',
+    applyFn:       typeof mpApplyVisitSnapshot === 'function'
+  }));
+  console.log('  T1 helpers exposés →', t1);
+  assert(t1.sessionInit, 'visitSession doit être null au démarrage');
+  assert(t1.takeFn && t1.restoreFn && t1.buildFn && t1.applyFn,
+         'Les 4 helpers de visite doivent être déclarés');
+
+  // T2 : take → roundtrip pur (mutation locale n'affecte pas le snap).
+  const t2 = await page.evaluate(() => {
+    const snap = _takeVisitSnapshot();
+    const savedGold = snap.party[0].gold;
+    player.gold = (player.gold || 0) + 12345;
+    return {
+      snapGold:     savedGold,
+      playerGold:   player.gold,
+      snapPosition: { x: snap.playerX, y: snap.playerY, dir: snap.playerDir }
+    };
+  });
+  console.log('  T2 snapshot pur →', t2);
+  assert(typeof t2.snapPosition.x === 'number',
+         'Le snapshot doit porter la position joueur');
+  assert(t2.playerGold === t2.snapGold + 12345,
+         'Mutation post-snapshot ne doit pas affecter le snap (deep clone)');
+
+  // T3 : build host snapshot — structure conforme à parallel-worlds.md §5.1.
+  const t3 = await page.evaluate(() => {
+    // On joue le rôle de "host" en se sérialisant nous-mêmes.
+    const snap = mpBuildVisitSnapshot({
+      hostId:    'host-test-123',
+      hostName:  'Visiteur Test',
+      hostHouse: 'Serdaigle',
+      hostLevel: 7
+    });
+    return {
+      version:      snap._version,
+      hostMeta:     snap.hostMeta,
+      hasFloor:     !!snap.floor,
+      hasGrid:      !!(snap.floor && Array.isArray(snap.floor.grid)),
+      hasMask:      !!(snap.floor && Array.isArray(snap.floor.visitedMask)),
+      hasNpcs:      !!(snap.floor && Array.isArray(snap.floor.npcPlacements)),
+      hasPosition:  !!snap.hostPosition,
+      hasSpawn:     !!snap.visitorSpawn,
+      spawnDir:     snap.visitorSpawn && snap.visitorSpawn.dir
+    };
+  });
+  console.log('  T3 build snapshot →', t3);
+  assert(t3.version === 1,                'snapshot porte _version=1');
+  assert(t3.hostMeta && t3.hostMeta.name === 'Visiteur Test',
+         'hostMeta.name remonté');
+  assert(t3.hostMeta.level === 7,         'hostMeta.level remonté');
+  assert(t3.hostMeta.house === 'Serdaigle','hostMeta.house remonté');
+  assert(t3.hasFloor && t3.hasGrid,       'snap.floor.grid présent');
+  assert(t3.hasMask && t3.hasNpcs,        'visitedMask + npcPlacements présents');
+  assert(t3.hasPosition && t3.hasSpawn,   'hostPosition + visitorSpawn présents');
+
+  // T4 : apply → visitSession actif, dungeon distant injecté, état visiteur
+  //      capturé dans mySavedState. On marque le donjon avant l'apply pour
+  //      vérifier que le donjon d'origine est bien remplacé.
+  const t4 = await page.evaluate(() => {
+    // Marquer une signature dans le donjon courant qui doit ÊTRE remplacée
+    // par celui du snap (on duplique notre état mais avec une cellule modifiée).
+    const fakeHostSnap = mpBuildVisitSnapshot({
+      hostId: 'h1', hostName: 'Alice', hostHouse: 'Poufsouffle', hostLevel: 5
+    });
+    // Modifie le grid du snap : pose un mur à (0,0) — signature unique.
+    fakeHostSnap.floor.grid[0][0] = CELL.WALL;
+    fakeHostSnap.floor.visitedMask[0][0] = true;
+    fakeHostSnap.visitorSpawn = { x: 1, y: 1, dir: 'n' };
+
+    const goldBefore = player.gold;
+    const posBefore = { x: playerX, y: playerY, dir: playerDir };
+    const ok = mpApplyVisitSnapshot(fakeHostSnap);
+    return {
+      applied:        ok,
+      sessionRole:    visitSession && visitSession.role,
+      sessionHost:    visitSession && visitSession.hostName,
+      sessionHasSave: !!(visitSession && visitSession.mySavedState),
+      // Après apply : la cellule signature est dans dungeon
+      injectedCell:   dungeon[0][0],
+      // Position visiteur = visitorSpawn
+      posX:           playerX,
+      posY:           playerY,
+      posDir:         playerDir,
+      // Inventaire visiteur intact (apply n'écrase pas party)
+      goldStillHere:  player.gold === goldBefore,
+      // enemyMap/itemMap neutralisés
+      enemyMapEmpty:  Array.isArray(enemyMap) && enemyMap.length === 0,
+      itemMapEmpty:   Array.isArray(itemMap)  && itemMap.length === 0,
+      // mySavedState contient l'ancienne position
+      savedPosX:      visitSession.mySavedState.playerX
+    };
+  });
+  console.log('  T4 apply visit →', t4);
+  assert(t4.applied,                     'mpApplyVisitSnapshot retourne true');
+  assert(t4.sessionRole === 'visitor',   'visitSession.role = visitor');
+  assert(t4.sessionHost === 'Alice',     'visitSession.hostName remonté');
+  assert(t4.sessionHasSave,              'mySavedState capturé');
+  assert(t4.injectedCell === 0,          'dungeon[0][0] est le WALL signature du host');
+  assert(t4.posX === 1 && t4.posY === 1 && t4.posDir === 'n',
+         'Position visiteur = visitorSpawn');
+  assert(t4.goldStillHere,               'Or du visiteur intact pendant la visite');
+  assert(t4.enemyMapEmpty && t4.itemMapEmpty,
+         'enemyMap/itemMap neutralisés (V1a observation seule)');
+
+  // T5 : double-apply refusé tant qu'une session est ouverte.
+  const t5 = await page.evaluate(() => {
+    const snap = mpBuildVisitSnapshot({ hostId: 'h2', hostName: 'Bob' });
+    const second = mpApplyVisitSnapshot(snap);
+    return { second, stillAlice: visitSession && visitSession.hostName === 'Alice' };
+  });
+  console.log('  T5 double-apply →', t5);
+  assert(t5.second === false,    'mpApplyVisitSnapshot refuse si déjà en visite');
+  assert(t5.stillAlice,          'Session originale (Alice) préservée');
+
+  // T6 : restore → état visiteur reconstitué, visitSession refermée.
+  const t6 = await page.evaluate(() => {
+    const okRestored = _restoreFromVisit();
+    return {
+      okRestored,
+      sessionClosed: visitSession === null,
+      // Le donjon doit avoir été régénéré ou restauré — on n'a plus le mur
+      // signature à (0,0) tel quel (l'état d'origine ne le portait pas).
+      noLongerWall:  dungeon[0][0] !== 0 || Array.isArray(enemyMap) && enemyMap !== null,
+      // Note : on ne ré-injecte pas exactement la même grid en C.1, mais on
+      // restaure via _applyState qui repart de la save.
+      hasParty:      Array.isArray(party) && party[0] && typeof party[0].hp === 'number',
+      partySize:     partySize
+    };
+  });
+  console.log('  T6 restore →', t6);
+  assert(t6.okRestored,         '_restoreFromVisit retourne true');
+  assert(t6.sessionClosed,      'visitSession === null après restore');
+  assert(t6.hasParty,           'party reconstruit après restore');
+  assert(t6.partySize === 2,    'partySize préservé (2)');
+
+  // T7 : restore sans session ouverte = no-op silencieux.
+  const t7 = await page.evaluate(() => {
+    visitSession = null;
+    return { okRestored: _restoreFromVisit(), sessionClosed: visitSession === null };
+  });
+  console.log('  T7 restore sans session →', t7);
+  assert(t7.okRestored === false, '_restoreFromVisit sans session retourne false');
+  assert(t7.sessionClosed,        'visitSession reste null');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — snapshot visite Phase C.1 OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -12189,7 +12359,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

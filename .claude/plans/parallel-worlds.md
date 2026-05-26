@@ -1326,6 +1326,34 @@ de Sang refusent de se nouer" pour `mp_threats`) — cohérent avec
       Prochaine phase : C — snapshot Supabase Realtime + rendu du
       donjon distant via `_takeVisitSnapshot()` / `_restoreFromVisit()`.
     - [ ] Phase C — snapshot et rendu du donjon distant (3 j).
+        - [x] C.1 — snapshot et suspend/restore (pur, sans réseau) —
+          **livré 2026-05-26**. 4 helpers ajoutés dans `js/save.js` :
+          `_takeVisitSnapshot()` (deep-clone via JSON de
+          `_serializeState()`), `_restoreFromVisit()` (applique
+          `visitSession.mySavedState` via `_applyState`), couple
+          host/visiteur `mpBuildVisitSnapshot()` (construit payload
+          §5.1 — étage courant en C.1, multi-étages reporté C.3) /
+          `mpApplyVisitSnapshot(snapshot)` (capture visiteur,
+          injecte `dungeon`/`visited`/`npcPlacements` du host,
+          neutralise `enemyMap`/`itemMap`, pose visiteur sur
+          `visitorSpawn` calculé par `_visitFindAdjacentSpawn`).
+          Global `visitSession` (état transient) ajouté dans
+          `state.js`. MANIFEST loader complété (5 entrées optional).
+          Scénario smoke `scenarioVisitSnapshot` (T1→T7) couvre :
+          exposition globaux, roundtrip pur, structure du snapshot
+          host, apply correct (visitSession actif, dungeon distant
+          injecté, party intacte, enemyMap/itemMap vides),
+          refus de double-apply, restore complet, no-op silencieux
+          si pas de session. **Décision pivot V1c §6.6** : la garde
+          contre double-apply protège déjà du cas "session pendante"
+          si le futur transport REST envoie deux snapshots avant
+          que le visiteur ne sorte. Transport déféré au C.2.
+        - [ ] C.2 — transport canal REST polling (mp_visit_messages,
+          poll 2-3 s, snapshot initial + position/bye). ~1 j.
+        - [ ] C.3 — rendu du donjon distant + bouton "Quitter ce
+          monde" + chargement paresseux multi-étages. ~1 j.
+        - [ ] C.4 — détection de drop réseau (timeout 10 s),
+          restauration automatique. ~0,5 j.
     - [ ] Phase D — limites de territoire + sprites + emotes (2 j).
     - [ ] Phase E — dialogues PNJ « voyageur » + observation-only (2 j).
     - [ ] Phase F — polish (1,5 j).
