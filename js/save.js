@@ -844,11 +844,14 @@ function mpApplyVisitSnapshot(snapshot) {
   const floor = _visitDeepClone(snapshot.floor);
   dungeon  = floor.grid;
   visited  = floor.visitedMask;
-  // Vide enemyMap/itemMap : le visiteur ne combat pas, ne loote pas en V1a.
-  // Ces structures sont propres au monde du host ; on les neutralise pour
-  // éviter qu'une exploration déclenche un encounter ou un drop fantôme.
-  enemyMap = [];
-  itemMap  = [];
+  // Neutralise enemyMap/itemMap : le visiteur ne combat pas, ne loote
+  // pas en V1a (cf. §6.3 / §6.4). On garde des grilles 2D de la BONNE
+  // forme pour ne pas casser les accès `enemyMap[y][x]` du renderer.
+  const _gh = (dungeon && dungeon.length) || (typeof MAP_H !== 'undefined' ? MAP_H : 0);
+  const _gw = (dungeon && dungeon[0] && dungeon[0].length)
+            || (typeof MAP_W !== 'undefined' ? MAP_W : 0);
+  enemyMap = Array.from({ length: _gh }, () => new Array(_gw).fill(null));
+  itemMap  = Array.from({ length: _gh }, () => new Array(_gw).fill(null));
   npcPlacements = new Map(floor.npcPlacements || []);
   currentFloor  = floor.number || snapshot.hostMeta.currentFloor || 1;
 

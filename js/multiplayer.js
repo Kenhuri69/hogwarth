@@ -1547,12 +1547,13 @@ async function mpPostVisitRequest(host) {
 }
 
 // Récupère le statut courant d'une demande sortante. Renvoie l'objet
-// (status: pending|accepted|refused|expired) ou null en cas d'erreur.
+// (status: pending|accepted|refused|expired, channel_id si accepté) ou
+// null en cas d'erreur.
 async function mpPollOutgoingVisitStatus(reqId) {
   if (!_mpConfigured() || _mpVisitTableMissing || !reqId) return null;
   try {
     const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISITS_TABLE}`
-      + `?id=eq.${encodeURIComponent(reqId)}&select=id,status,responded_at,host_id`;
+      + `?id=eq.${encodeURIComponent(reqId)}&select=id,status,responded_at,host_id,channel_id`;
     const res = await fetch(url, { headers: _mpHeaders() });
     if (res.status === 404) { _mpVisitTableMissing = true; return null; }
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1599,24 +1600,28 @@ async function _mpPollIncomingVisitRequests() {
 }
 
 // Update du statut d'une demande (acceptation / refus côté host).
-async function mpRespondVisitRequest(reqId, status) {
+// `channelId` (optionnel, requis si status='accepted') : UUID partagé
+// que le visiteur lira au poll suivant pour ouvrir le canal de visite.
+async function mpRespondVisitRequest(reqId, status, channelId) {
   if (!_mpConfigured() || _mpVisitTableMissing || !reqId) return null;
   if (status !== 'accepted' && status !== 'refused') return null;
   try {
     const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISITS_TABLE}`
       + `?id=eq.${encodeURIComponent(reqId)}`;
+    const body = { status, responded_at: new Date().toISOString() };
+    if (status === 'accepted' && channelId) body.channel_id = channelId;
     const res = await fetch(url, {
       method:  'PATCH',
       headers: _mpHeaders({
         'Content-Type': 'application/json',
         'Prefer':       'return=minimal'
       }),
-      body: JSON.stringify({ status, responded_at: new Date().toISOString() })
+      body: JSON.stringify(body)
     });
     if (res.status === 404) { _mpVisitTableMissing = true; return null; }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     _mpNoteSuccess();
-    return { id: reqId, status };
+    return { id: reqId, status, channel_id: channelId || null };
   } catch (e) {
     _mpNoteFailure(e);
     return null;
@@ -1632,4 +1637,91 @@ function _mpVisitsAttach() {
 
 function _mpVisitsDetach() {
   if (_mpVisitPollTimer) { clearInterval(_mpVisitPollTimer); _mpVisitPollTimer = null; }
+}
+
+// ============================================================
+// MONDES PARALLÈLES — canal de visite REST polling (V1a Phase C.2)
+// ============================================================
+// Transport messages entre host et visiteur via la table
+// `mp_visit_messages`. Polling REST (~2,5 s) cohérent avec Phase B —
+// pas de Supabase Realtime SDK (philosophie zéro-dépendance). Le canal
+// est identifié par `channel_id` (UUID généré par le host à
+// l'acceptation, partagé via mp_visit_requests).
+//
+// Types V1a (cf. parallel-worlds.md §5) :
+//   host → visiteur : 'snapshot' (initial), 'hostPosition', 'bye'
+//   visiteur → host : 'position', 'bye'
+//
+// SQL : voir parallel-worlds.md §12.3.
+// Disjoncteur : si la table absente / hors-ligne, dégrade en silence.
+// ============================================================
+
+const MP_VISIT_MESSAGES_TABLE = 'mp_visit_messages';
+let _mpVisitMsgTableMissing   = false;       // disjoncteur dédié
+
+// Pose un message sur le canal. Retourne l'objet inséré (avec id +
+// created_at) ou null. `sender` ∈ {'host','visitor'}, `type` le kind
+// du message, `payload` un objet JSON sérialisable (peut être null).
+async function mpPostVisitMessage(channelId, sender, type, payload) {
+  if (!_mpConfigured() || _mpVisitMsgTableMissing) return null;
+  if (!channelId || !sender || !type) return null;
+  if (sender !== 'host' && sender !== 'visitor') return null;
+  const row = {
+    channel_id: channelId,
+    sender,
+    type,
+    payload: (payload === undefined) ? null : payload
+  };
+  try {
+    const res = await fetch(
+      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISIT_MESSAGES_TABLE}`,
+      {
+        method:  'POST',
+        headers: _mpHeaders({
+          'Content-Type': 'application/json',
+          'Prefer':       'return=representation'
+        }),
+        body: JSON.stringify(row)
+      }
+    );
+    if (res.status === 404) { _mpVisitMsgTableMissing = true; return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;
+  }
+}
+
+// Récupère les nouveaux messages du canal depuis `sinceIso`. Filtre
+// par `excludeSender` pour ne pas relire ses propres messages — on
+// passe son propre rôle. Retourne un tableau (ordre chronologique
+// croissant) ou null en cas d'erreur.
+async function mpPollVisitMessages(channelId, sinceIso, excludeSender) {
+  if (!_mpConfigured() || _mpVisitMsgTableMissing) return null;
+  if (!channelId) return null;
+  try {
+    let url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_VISIT_MESSAGES_TABLE}`
+      + `?channel_id=eq.${encodeURIComponent(channelId)}`
+      + '&select=id,sender,type,payload,created_at'
+      + '&order=created_at.asc'
+      + '&limit=50';
+    if (sinceIso) {
+      url += `&created_at=gt.${encodeURIComponent(sinceIso)}`;
+    }
+    if (excludeSender === 'host' || excludeSender === 'visitor') {
+      url += `&sender=neq.${excludeSender}`;
+    }
+    const res = await fetch(url, { headers: _mpHeaders() });
+    if (res.status === 404) { _mpVisitMsgTableMissing = true; return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;
+  }
 }

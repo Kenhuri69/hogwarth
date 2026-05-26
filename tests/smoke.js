@@ -10949,9 +10949,14 @@ async function scenarioVisitSnapshot() {
       posDir:         playerDir,
       // Inventaire visiteur intact (apply n'écrase pas party)
       goldStillHere:  player.gold === goldBefore,
-      // enemyMap/itemMap neutralisés
-      enemyMapEmpty:  Array.isArray(enemyMap) && enemyMap.length === 0,
-      itemMapEmpty:   Array.isArray(itemMap)  && itemMap.length === 0,
+      // enemyMap/itemMap neutralisés : grille de bonne forme, toutes cases null
+      enemyMapShape:  Array.isArray(enemyMap) && enemyMap.length === dungeon.length
+                       && Array.isArray(enemyMap[0]) && enemyMap[0].length === dungeon[0].length,
+      enemyMapEmpty:  Array.isArray(enemyMap) && enemyMap.every(row =>
+                       Array.isArray(row) && row.every(cell => !cell)),
+      itemMapShape:   Array.isArray(itemMap) && itemMap.length === dungeon.length,
+      itemMapEmpty:   Array.isArray(itemMap) && itemMap.every(row =>
+                       Array.isArray(row) && row.every(cell => !cell)),
       // mySavedState contient l'ancienne position
       savedPosX:      visitSession.mySavedState.playerX
     };
@@ -10965,8 +10970,10 @@ async function scenarioVisitSnapshot() {
   assert(t4.posX === 1 && t4.posY === 1 && t4.posDir === 'n',
          'Position visiteur = visitorSpawn');
   assert(t4.goldStillHere,               'Or du visiteur intact pendant la visite');
+  assert(t4.enemyMapShape && t4.itemMapShape,
+         'enemyMap/itemMap : grilles 2D de la même forme que dungeon');
   assert(t4.enemyMapEmpty && t4.itemMapEmpty,
-         'enemyMap/itemMap neutralisés (V1a observation seule)');
+         'enemyMap/itemMap neutralisés (V1a observation seule, toutes cases null)');
 
   // T5 : double-apply refusé tant qu'une session est ouverte.
   const t5 = await page.evaluate(() => {
@@ -11013,6 +11020,249 @@ async function scenarioVisitSnapshot() {
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
   console.log('  ✅ Cheminette Inter-Mondes — snapshot visite Phase C.1 OK');
+  await browser.close();
+}
+
+// ── Scénario : Cheminette — canal de visite REST polling (V1a Phase C.2) ──
+// Vérifie le data flow end-to-end avec stubs REST (pas de Supabase) :
+//   T1 : helpers de canal exposés
+//   T2 : start visiteur → premier poll → snapshot reçu → mpApplyVisitSnapshot
+//   T3 : exit visiteur → bye posté + restore
+//   T4 : start host → snapshot construit + posté
+//   T5 : visiteur reçoit bye du host → restore automatique
+// Cf. .claude/plans/parallel-worlds.md §5, §10 Phase C, sous-bloc C.2.
+async function scenarioVisitChannelTransport() {
+  console.log('\n── Scénario : Cheminette — canal de visite (Phase C.2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : surface publique.
+  const t1 = await page.evaluate(() => ({
+    asVisitor:    typeof mpStartVisitAsVisitor   === 'function',
+    asHost:       typeof mpStartVisitAsHost      === 'function',
+    exit:         typeof mpExitVisit             === 'function',
+    pollOnce:     typeof window._visitPollOnce   === 'function',
+    getState:     typeof window._visitGetState   === 'function',
+    genChannel:   typeof window._visitGenChannelId === 'function',
+    postMsg:      typeof mpPostVisitMessage      === 'function',
+    pollMsg:      typeof mpPollVisitMessages     === 'function',
+    initialState: window._visitGetState()
+  }));
+  console.log('  T1 surface →', t1);
+  assert(t1.asVisitor && t1.asHost && t1.exit, 'mpStart/Exit exposés');
+  assert(t1.pollOnce && t1.getState && t1.genChannel,
+         'Helpers internes exposés');
+  assert(t1.postMsg && t1.pollMsg, 'API transport bas-niveau exposée');
+  assert(t1.initialState.role === null, 'État initial : pas de visite');
+
+  // T2 : visiteur reçoit le snapshot par poll → applique.
+  // Stubs : pollVisitMessages renvoie un snapshot lors du 1er appel.
+  const t2 = await page.evaluate(async () => {
+    // Construit un faux snapshot host en se sérialisant.
+    const fakeSnap = mpBuildVisitSnapshot({
+      hostId: 'host-uuid-1', hostName: 'Alice', hostHouse: 'Serdaigle', hostLevel: 5
+    });
+    // Signature : pose un mur à (3,3) du faux donjon.
+    fakeSnap.floor.grid[3][3] = CELL.WALL;
+    fakeSnap.visitorSpawn = { x: 2, y: 2, dir: 's' };
+
+    // Stub poll : renvoie le snapshot puis tableau vide.
+    const polled = [];
+    window.__visitPollCalls = 0;
+    window.mpPollVisitMessages = async (channelId, sinceIso, excludeSender) => {
+      polled.push({ channelId, sinceIso, excludeSender });
+      window.__visitPollCalls++;
+      if (window.__visitPollCalls === 1) {
+        return [{
+          id: 'msg-1', sender: 'host', type: 'snapshot',
+          payload: fakeSnap,
+          created_at: new Date().toISOString()
+        }];
+      }
+      return [];
+    };
+    // Stub post : capture.
+    window.__visitPosted = [];
+    window.mpPostVisitMessage = async (channelId, sender, type, payload) => {
+      window.__visitPosted.push({ channelId, sender, type, payload });
+      return { id: 'post-' + window.__visitPosted.length, created_at: new Date().toISOString() };
+    };
+
+    const goldBefore = player.gold;
+    const okStart = await mpStartVisitAsVisitor({
+      channelId: 'ch-test-1',
+      hostId:    'host-uuid-1',
+      hostName:  'Alice',
+      hostHouse: 'Serdaigle'
+    });
+
+    const st = window._visitGetState();
+    return {
+      okStart,
+      role:           st.role,
+      partnerName:    st.partnerName,
+      channelId:      st.channelId,
+      pollCalled:     polled.length >= 1,
+      pollExcludes:   polled[0] && polled[0].excludeSender,
+      // visitSession actif après apply
+      sessionOpen:    visitSession && visitSession.role === 'visitor',
+      // dungeon contient la signature du faux snapshot
+      injectedWall:   dungeon[3][3] === CELL.WALL,
+      // Position visiteur = visitorSpawn
+      posX:           playerX,
+      posY:           playerY,
+      // Or visiteur intact
+      goldStillHere:  player.gold === goldBefore
+    };
+  });
+  console.log('  T2 visiteur poll + snapshot →', t2);
+  assert(t2.okStart === true,                'mpStartVisitAsVisitor retourne true');
+  assert(t2.role === 'visitor',              'État interne : role=visitor');
+  assert(t2.partnerName === 'Alice',         'partnerName remonté');
+  assert(t2.channelId === 'ch-test-1',       'channelId remonté');
+  assert(t2.pollCalled,                      'mpPollVisitMessages appelé au start');
+  assert(t2.pollExcludes === 'visitor',      'Poll exclut ses propres messages (visitor)');
+  assert(t2.sessionOpen,                     'visitSession ouverte après snapshot reçu');
+  assert(t2.injectedWall,                    'Donjon du host injecté (mur signature visible)');
+  assert(t2.posX === 2 && t2.posY === 2,     'Visiteur posé sur visitorSpawn');
+  assert(t2.goldStillHere,                   'Or du visiteur intact');
+
+  // T3 : exit visiteur → bye posté + restore.
+  const t3 = await page.evaluate(async () => {
+    window.__visitPosted = [];
+    const okExit = await mpExitVisit('voluntary');
+    const st = window._visitGetState();
+    return {
+      okExit,
+      roleNull:    st.role === null,
+      channelNull: st.channelId === null,
+      // bye posté avant reset
+      byePosted:   window.__visitPosted.find(p => p.type === 'bye'),
+      // visitSession refermée
+      sessionClosed: visitSession === null
+    };
+  });
+  console.log('  T3 exit visiteur →', t3);
+  assert(t3.okExit === true,                 'mpExitVisit retourne true');
+  assert(t3.roleNull && t3.channelNull,      'État interne réinitialisé');
+  assert(!!t3.byePosted,                     'Message bye posté');
+  assert(t3.byePosted.sender === 'visitor',  'bye signé visitor');
+  assert(t3.byePosted.channelId === 'ch-test-1', 'bye sur le bon canal');
+  assert(t3.sessionClosed,                   'visitSession refermée (restore)');
+
+  // T4 : start host → poste snapshot + démarre poll.
+  const t4 = await page.evaluate(async () => {
+    window.__visitPosted = [];
+    window.__visitPollCalls = 0;
+    window.mpPollVisitMessages = async () => [];
+
+    const okStart = await mpStartVisitAsHost({
+      channelId: 'ch-test-2',
+      req: { id: 'req-1', visitor_id: 'vid-1', visitor_name: 'Bob' }
+    });
+    const st = window._visitGetState();
+    const snapPost = window.__visitPosted.find(p => p.type === 'snapshot');
+    return {
+      okStart,
+      role:           st.role,
+      channelId:      st.channelId,
+      partnerName:    st.partnerName,
+      snapshotPosted: st.snapshotPosted,
+      hasSnap:        !!snapPost,
+      snapPayload:    snapPost && {
+        hasHostMeta: !!snapPost.payload.hostMeta,
+        hostName:    snapPost.payload.hostMeta && snapPost.payload.hostMeta.name,
+        hasFloor:    !!snapPost.payload.floor,
+        version:     snapPost.payload._version
+      }
+    };
+  });
+  console.log('  T4 host start →', t4);
+  assert(t4.okStart === true,                  'mpStartVisitAsHost retourne true');
+  assert(t4.role === 'host',                   'État interne : role=host');
+  assert(t4.channelId === 'ch-test-2',         'channelId remonté');
+  assert(t4.partnerName === 'Bob',             'partnerName = visitor_name');
+  assert(t4.snapshotPosted === true,           'flag snapshotPosted = true');
+  assert(t4.hasSnap,                           'Message type=snapshot posté');
+  assert(t4.snapPayload.hasHostMeta,           'snapshot contient hostMeta');
+  assert(t4.snapPayload.hasFloor,              'snapshot contient floor');
+  assert(t4.snapPayload.version === 1,         'snapshot _version=1');
+
+  // T5 : host reçoit bye du visiteur → sortie locale silencieuse, pas de
+  // restore (le host n'avait pas pris de snapshot de sa propre save).
+  const t5 = await page.evaluate(async () => {
+    window.__visitPollCalls = 0;
+    window.__visitPosted = [];
+    window.mpPollVisitMessages = async () => {
+      window.__visitPollCalls++;
+      if (window.__visitPollCalls === 1) {
+        return [{
+          id: 'msg-bye', sender: 'visitor', type: 'bye',
+          payload: { reason: 'voluntary' },
+          created_at: new Date().toISOString()
+        }];
+      }
+      return [];
+    };
+    await window._visitPollOnce();
+    const st = window._visitGetState();
+    return {
+      roleNull:   st.role === null,
+      // host ne poste pas de bye en réponse (le visiteur a déjà refermé)
+      noByeFromHost: !window.__visitPosted.find(p => p.type === 'bye')
+    };
+  });
+  console.log('  T5 host reçoit bye →', t5);
+  assert(t5.roleNull,        'Host quitte aussi après bye du visiteur');
+  assert(t5.noByeFromHost,   'Host ne poste pas de bye en réponse (évite la boucle)');
+
+  // T6 : start refuse double-start tant qu'une session est ouverte.
+  const t6 = await page.evaluate(async () => {
+    window.mpPollVisitMessages = async () => [];
+    window.mpPostVisitMessage  = async () => ({ id: 'p1', created_at: new Date().toISOString() });
+    await mpStartVisitAsHost({
+      channelId: 'ch-test-3',
+      req: { id: 'r2', visitor_id: 'vid-2', visitor_name: 'Carol' }
+    });
+    const second = await mpStartVisitAsVisitor({
+      channelId: 'ch-test-4', hostId: 'h2', hostName: 'Dave'
+    });
+    const st = window._visitGetState();
+    await mpExitVisit('cleanup');
+    return { second, role: st.role, partner: st.partnerName };
+  });
+  console.log('  T6 double-start →', t6);
+  assert(t6.second === false,    'Second start refusé tant que session ouverte');
+  assert(t6.role === 'host',     'Session host originale préservée');
+  assert(t6.partner === 'Carol', 'Partner originale préservée');
+
+  // T7 : hook window.onVisitAccepted déclenche mpStartVisitAsVisitor avec
+  // status.channel_id. Vérifie le branchement matchmaking → canal.
+  const t7 = await page.evaluate(async () => {
+    window.mpPollVisitMessages = async () => [];
+    window.mpPostVisitMessage  = async () => ({ id: 'p2', created_at: new Date().toISOString() });
+    // S'assure qu'on n'est plus en visite après T6
+    if (window._visitGetState().role) await mpExitVisit('cleanup');
+    window.onVisitAccepted(
+      { player_id: 'host-z', name: 'Eve', house: 'Poufsouffle' },
+      { id: 'req-z', status: 'accepted', channel_id: 'ch-via-hook' }
+    );
+    // Laisse le micro-task se résoudre
+    await new Promise(r => setTimeout(r, 30));
+    const st = window._visitGetState();
+    await mpExitVisit('cleanup');
+    return { role: st.role, channelId: st.channelId, partner: st.partnerName };
+  });
+  console.log('  T7 hook onVisitAccepted →', t7);
+  assert(t7.role === 'visitor',           'Hook démarre une visite visiteur');
+  assert(t7.channelId === 'ch-via-hook',  'channelId remonté depuis status');
+  assert(t7.partner === 'Eve',            'partnerName remonté depuis host');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — canal de visite Phase C.2 OK');
   await browser.close();
 }
 
@@ -12359,7 +12609,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

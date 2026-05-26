@@ -363,11 +363,16 @@
     if (typeof addMsg === 'function') {
       addMsg(`Tu accueilles ${_esc(req.visitor_name)} dans ton château.`, 'good');
     }
+    // Phase C.2 : génère un channelId que le visiteur lira au poll suivant.
+    // Fallback déterministe si le générateur n'est pas chargé (modules optionnels).
+    const channelId = (typeof window !== 'undefined' && typeof window._visitGenChannelId === 'function')
+      ? window._visitGenChannelId()
+      : ('ch-' + Date.now() + '-' + Math.random().toString(16).slice(2, 10));
     if (typeof mpRespondVisitRequest === 'function') {
-      await mpRespondVisitRequest(req.id, 'accepted');
+      await mpRespondVisitRequest(req.id, 'accepted', channelId);
     }
     if (typeof window !== 'undefined' && typeof window.onIncomingVisitAccepted === 'function') {
-      try { window.onIncomingVisitAccepted(req); } catch (e) { /* tolérant */ }
+      try { window.onIncomingVisitAccepted(req, channelId); } catch (e) { /* tolérant */ }
     }
   }
 
