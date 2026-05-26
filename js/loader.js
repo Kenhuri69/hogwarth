@@ -282,6 +282,18 @@ window.UX_safe = new Proxy({}, {
     { name: 'mpPostVisitRequest',       source: 'multiplayer.js',         kind: 'fn',  optional: true },
     { name: 'mpPollOutgoingVisitStatus',source: 'multiplayer.js',         kind: 'fn',  optional: true },
     { name: 'mpRespondVisitRequest',    source: 'multiplayer.js',         kind: 'fn',  optional: true },
+    // Phase C.1 — snapshot et suspend/restore (parallel-worlds.md §3.4 / §5.1).
+    { name: 'visitSession',             source: 'state.js',               kind: 'obj', optional: true },
+    { name: '_takeVisitSnapshot',       source: 'save.js',                kind: 'fn',  optional: true },
+    { name: '_restoreFromVisit',        source: 'save.js',                kind: 'fn',  optional: true },
+    { name: 'mpBuildVisitSnapshot',     source: 'save.js',                kind: 'fn',  optional: true },
+    { name: 'mpApplyVisitSnapshot',     source: 'save.js',                kind: 'fn',  optional: true },
+    // Phase C.2 — transport REST polling (parallel-worlds.md §5, §12.3).
+    { name: 'mpPostVisitMessage',       source: 'multiplayer.js',         kind: 'fn',  optional: true },
+    { name: 'mpPollVisitMessages',      source: 'multiplayer.js',         kind: 'fn',  optional: true },
+    { name: 'mpStartVisitAsVisitor',    source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    { name: 'mpStartVisitAsHost',       source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    { name: 'mpExitVisit',              source: 'visit-channel.js',       kind: 'fn',  optional: true },
 
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },

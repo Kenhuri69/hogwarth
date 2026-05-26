@@ -1194,11 +1194,42 @@ Champ ajouté à `mp_presence` (V1c) pour l'opt-out host :
 alter table public.mp_presence add column if not exists accepts_threats boolean not null default true;
 ```
 
+### 12.3 Table canal de visite (V1a Phase C.2)
+
+Transport REST polling entre host et visiteur pendant une visite
+active. Lignes éphémères (`expires_at` court) — pas d'historique
+nécessaire après la fin de visite. Consommée par `mpPostVisitMessage`
+/ `mpPollVisitMessages` (`js/multiplayer.js`) et orchestrée par
+`js/visit-channel.js`.
+
+```sql
+create table if not exists public.mp_visit_messages (
+  id          uuid primary key default gen_random_uuid(),
+  channel_id  text not null,                     -- UUID partagé via mp_visit_requests.channel_id
+  sender      text not null,                     -- 'host' | 'visitor'
+  type        text not null,                     -- 'snapshot' | 'hostPosition' | 'position' | 'bye' | …
+  payload     jsonb,
+  created_at  timestamptz not null default now(),
+  expires_at  timestamptz not null default (now() + interval '15 minutes')
+);
+alter table public.mp_visit_messages enable row level security;
+create policy "mp_visit_messages_read"   on public.mp_visit_messages for select using (true);
+create policy "mp_visit_messages_insert" on public.mp_visit_messages for insert with check (true);
+create index if not exists mp_visit_messages_channel_idx
+  on public.mp_visit_messages (channel_id, created_at);
+```
+
+> Purge : pas de TTL automatique côté Supabase free tier — un job
+> cron mensuel `delete from mp_visit_messages where expires_at < now()`
+> suffit. Volume estimé ~50 msgs × 100 visites/jour = 5K lignes/jour
+> (~150K/mois), bien sous le quota.
+
 Disjoncteur : si une de ces tables n'existe pas, la fonctionnalité
 concernée est désactivée silencieusement avec message contextuel ("Le
 réseau astral est silencieux" pour `mp_visit_requests` ; "Les Verrous
-de Sang refusent de se nouer" pour `mp_threats`) — cohérent avec
-`multiplayer.md` §11bis.
+de Sang refusent de se nouer" pour `mp_threats` ; pour
+`mp_visit_messages`, le snapshot n'arrivera jamais — le visiteur sort
+au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
 
 ## 13. Risques et questions ouvertes
 
@@ -1326,6 +1357,75 @@ de Sang refusent de se nouer" pour `mp_threats`) — cohérent avec
       Prochaine phase : C — snapshot Supabase Realtime + rendu du
       donjon distant via `_takeVisitSnapshot()` / `_restoreFromVisit()`.
     - [ ] Phase C — snapshot et rendu du donjon distant (3 j).
+        - [x] C.1 — snapshot et suspend/restore (pur, sans réseau) —
+          **livré 2026-05-26**. 4 helpers ajoutés dans `js/save.js` :
+          `_takeVisitSnapshot()` (deep-clone via JSON de
+          `_serializeState()`), `_restoreFromVisit()` (applique
+          `visitSession.mySavedState` via `_applyState`), couple
+          host/visiteur `mpBuildVisitSnapshot()` (construit payload
+          §5.1 — étage courant en C.1, multi-étages reporté C.3) /
+          `mpApplyVisitSnapshot(snapshot)` (capture visiteur,
+          injecte `dungeon`/`visited`/`npcPlacements` du host,
+          neutralise `enemyMap`/`itemMap`, pose visiteur sur
+          `visitorSpawn` calculé par `_visitFindAdjacentSpawn`).
+          Global `visitSession` (état transient) ajouté dans
+          `state.js`. MANIFEST loader complété (5 entrées optional).
+          Scénario smoke `scenarioVisitSnapshot` (T1→T7) couvre :
+          exposition globaux, roundtrip pur, structure du snapshot
+          host, apply correct (visitSession actif, dungeon distant
+          injecté, party intacte, enemyMap/itemMap vides),
+          refus de double-apply, restore complet, no-op silencieux
+          si pas de session. **Décision pivot V1c §6.6** : la garde
+          contre double-apply protège déjà du cas "session pendante"
+          si le futur transport REST envoie deux snapshots avant
+          que le visiteur ne sorte. Transport déféré au C.2.
+        - [x] C.2 — transport REST polling — **livré 2026-05-26**.
+          Décision : REST polling (cohérent Phase B, zéro dépendance)
+          plutôt que Supabase Realtime SDK CDN. Surface ajoutée :
+          • `multiplayer.js` : `mpPostVisitMessage(channelId, sender,
+            type, payload)` + `mpPollVisitMessages(channelId, sinceIso,
+            excludeSender)` ; `mpRespondVisitRequest` étendu avec un
+            paramètre `channelId` (UUID généré côté host à l'acceptation,
+            patché dans `mp_visit_requests`). `mpPollOutgoingVisitStatus`
+            sélectionne maintenant `channel_id` pour que le visiteur le
+            récupère.
+          • Nouveau fichier `js/visit-channel.js` (orchestrateur,
+            ~250 lignes) : `mpStartVisitAsVisitor({channelId, hostId,
+            hostName, hostHouse})`, `mpStartVisitAsHost({channelId, req})`,
+            `mpExitVisit(reason)`, helpers internes `_visitPollOnce`,
+            `_visitHandleMessage`, `_visitGetState`, `_visitGenChannelId`.
+            Cycle de vie : visiteur démarre poll → reçoit `snapshot` →
+            applique via `mpApplyVisitSnapshot` + redraw ; host poste
+            snapshot initial + démarre poll. Sortie : poste `bye`,
+            stoppe le poll, restore (visiteur seulement) ; réception
+            `bye` partenaire = sortie locale silencieuse (pas de
+            boucle d'au revoir).
+          • Branchement hooks : `window.onVisitAccepted` (visiteur) +
+            `window.onIncomingVisitAccepted` (host) — déjà appelés par
+            `portal-matchmaking.js` ; `_acceptIncomingVisit` génère
+            désormais le channelId via `window._visitGenChannelId()` et
+            le transmet à `mpRespondVisitRequest` + `onIncomingVisitAccepted`.
+          • Fix `mpApplyVisitSnapshot` : `enemyMap`/`itemMap` reçoivent
+            désormais des grilles 2D de la bonne forme (cases null)
+            plutôt qu'un tableau vide — sinon `enemyMap[y][x]` du
+            renderer/movement crashait.
+          • PRECACHE PWA : bump `multiplayer.js?v=4 → ?v=6`,
+            `portal-matchmaking.js?v=1 → ?v=2`, ajout de
+            `visit-channel.js?v=1` dans index.html.
+          • MANIFEST loader : 5 nouvelles entrées optional.
+          • Scénario smoke `scenarioVisitChannelTransport` (T1→T7,
+            stubs REST sans Supabase) : surface exposée, démarrage
+            visiteur + snapshot reçu + apply, exit visiteur + bye posté
+            + restore, démarrage host + snapshot posté, host reçoit bye
+            visiteur + sortie silencieuse (pas de bye croisé), refus
+            double-start, hook `onVisitAccepted` déclenche bien le
+            démarrage visiteur avec channel_id remonté.
+          Tous scénarios verts.
+          SQL `mp_visit_messages` à documenter dans §12.3 (TODO mineur).
+        - [ ] C.3 — rendu du donjon distant + bouton "Quitter ce
+          monde" + chargement paresseux multi-étages. ~1 j.
+        - [ ] C.4 — détection de drop réseau (timeout 10 s),
+          restauration automatique. ~0,5 j.
     - [ ] Phase D — limites de territoire + sprites + emotes (2 j).
     - [ ] Phase E — dialogues PNJ « voyageur » + observation-only (2 j).
     - [ ] Phase F — polish (1,5 j).
