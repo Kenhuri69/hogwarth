@@ -18,7 +18,13 @@
 (function () {
   'use strict';
 
-  const VISIT_POLL_MS = 2500;
+  const VISIT_POLL_MS    = 2500;
+  // C.4 — détection de drop réseau. Keepalive régulier (ping) pour ne
+  // pas dépasser le seuil de drop pendant les phases d'exploration
+  // statique (visiteur et host immobiles). Seuil > 2× pollMs pour
+  // tolérer un cycle de poll raté sur une connexion lente.
+  const VISIT_PING_MS    = 4000;
+  const VISIT_TIMEOUT_MS = 10000;
 
   // ── État interne ──────────────────────────────────────────
   let _role           = null;   // null | 'visitor' | 'host'
@@ -26,7 +32,9 @@
   let _partnerId      = null;
   let _partnerName    = null;
   let _pollTimer      = null;
+  let _pingTimer      = null;   // C.4 — keepalive ping
   let _lastIso        = null;   // cursor de poll (created_at du dernier msg vu)
+  let _lastSeen       = 0;      // C.4 — timestamp Date.now() du dernier message reçu du partenaire
   let _snapshotPosted = false;  // host : flag pour ne pas re-poster
 
   // ── Génération d'UUID v4 (sans dépendance) ────────────────
@@ -50,7 +58,8 @@
       partnerId:      _partnerId,
       partnerName:    _partnerName,
       snapshotPosted: _snapshotPosted,
-      lastIso:        _lastIso
+      lastIso:        _lastIso,
+      lastSeen:       _lastSeen
     };
   }
 
@@ -66,8 +75,10 @@
     _partnerId   = opts.hostId   || null;
     _partnerName = opts.hostName || 'Sorcier';
     _lastIso     = new Date(0).toISOString();   // tout depuis le début du canal
+    _lastSeen    = Date.now();                  // grace initiale (C.4)
 
     _pollTimer = setInterval(_visitPollOnce, VISIT_POLL_MS);
+    _pingTimer = setInterval(_sendPing,      VISIT_PING_MS);
     // Premier tick immédiat pour ne pas attendre 2,5 s le snapshot.
     await _visitPollOnce();
     return true;
@@ -86,6 +97,7 @@
     _partnerId   = opts.req.visitor_id   || null;
     _partnerName = opts.req.visitor_name || 'Voyageur';
     _lastIso     = new Date(0).toISOString();
+    _lastSeen    = Date.now();                  // grace initiale (C.4)
 
     // Construit le snapshot depuis les globaux du host (état runtime).
     if (typeof mpBuildVisitSnapshot !== 'function') {
@@ -106,6 +118,7 @@
     }
 
     _pollTimer = setInterval(_visitPollOnce, VISIT_POLL_MS);
+    _pingTimer = setInterval(_sendPing,      VISIT_PING_MS);
     return true;
   }
 
@@ -121,6 +134,7 @@
     // Arrête le poll AVANT de poster bye — on évite de traiter un
     // bye croisé du partenaire qui ré-entrerait dans cette fonction.
     if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+    if (_pingTimer) { clearInterval(_pingTimer); _pingTimer = null; }
     _visitReset();
 
     if (channel && typeof mpPostVisitMessage === 'function') {
@@ -150,6 +164,59 @@
     _partnerName    = null;
     _snapshotPosted = false;
     _lastIso        = null;
+    _lastSeen       = 0;
+  }
+
+  // ── C.4 — keepalive + détection de drop ────────────────────
+  // Post un ping toutes les VISIT_PING_MS pour signaler la présence.
+  // Tolérant : un échec réseau ne fait pas tomber la session — seule
+  // l'absence de message reçu pendant VISIT_TIMEOUT_MS déclenche le drop.
+  async function _sendPing() {
+    if (!_role || !_channelId) return;
+    if (typeof mpPostVisitMessage !== 'function') return;
+    try { await mpPostVisitMessage(_channelId, _role, 'ping', {}); }
+    catch (e) { /* tolérant */ }
+  }
+
+  // Vérifie si on a dépassé le seuil de silence du partenaire. Appelé à
+  // chaque cycle de poll, après traitement des messages reçus.
+  function _visitCheckTimeout() {
+    if (!_role || !_lastSeen) return false;
+    const elapsed = Date.now() - _lastSeen;
+    if (elapsed > VISIT_TIMEOUT_MS) {
+      _handleNetworkDrop();
+      return true;
+    }
+    return false;
+  }
+
+  // Restauration locale après drop réseau. Pas de message 'bye' posté —
+  // le partenaire est par hypothèse injoignable ; il détectera la
+  // rupture par son propre timeout. Côté visiteur, restaure la save
+  // d'origine et redessine pour qu'aucune trace du donjon distant ne
+  // subsiste.
+  function _handleNetworkDrop() {
+    const wasVisitor  = (_role === 'visitor');
+    const partnerName = _partnerName;
+    if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+    if (_pingTimer) { clearInterval(_pingTimer); _pingTimer = null; }
+    _visitReset();
+
+    if (wasVisitor && typeof _restoreFromVisit === 'function') {
+      _restoreFromVisit();
+    }
+    if (typeof hideVisitHud === 'function') hideVisitHud();
+    if (wasVisitor) {
+      if (typeof drawDungeon   === 'function') drawDungeon();
+      if (typeof renderMinimap === 'function') renderMinimap();
+      if (typeof updateUI      === 'function') updateUI();
+    }
+    if (typeof addMsg === 'function') {
+      const msg = wasVisitor
+        ? `Le lien astral s'est rompu — tu retournes dans ton monde.`
+        : `${partnerName} s'est dissipé — la connexion s'est éteinte.`;
+      addMsg(msg, 'bad');
+    }
   }
 
   // ── Poll d'un cycle ────────────────────────────────────────
@@ -159,17 +226,26 @@
 
     const exclude = _role;   // ignore ses propres messages
     const msgs = await mpPollVisitMessages(_channelId, _lastIso, exclude);
-    if (!Array.isArray(msgs) || msgs.length === 0) return;
 
-    for (const msg of msgs) {
-      if (msg && msg.created_at) _lastIso = msg.created_at;
-      try { await _visitHandleMessage(msg); }
-      catch (e) {
-        if (typeof console !== 'undefined') {
-          console.warn('[visit-channel] handler error', e);
+    if (Array.isArray(msgs) && msgs.length > 0) {
+      // C.4 — tout message reçu (y compris 'ping') prouve que le
+      // partenaire est encore là. Rafraîchit la fenêtre de timeout.
+      _lastSeen = Date.now();
+      for (const msg of msgs) {
+        if (msg && msg.created_at) _lastIso = msg.created_at;
+        try { await _visitHandleMessage(msg); }
+        catch (e) {
+          if (typeof console !== 'undefined') {
+            console.warn('[visit-channel] handler error', e);
+          }
         }
       }
     }
+
+    // C.4 — vérifie le seuil de silence quelle que soit l'issue du poll.
+    // Si dépassé, _handleNetworkDrop a déjà tout reset, le prochain
+    // appel sera no-op (garde initiale sur `_role`).
+    _visitCheckTimeout();
   }
 
   // ── Dispatcher de messages ─────────────────────────────────
@@ -234,6 +310,7 @@
       // On stoppe localement sans re-poster un bye (le partenaire
       // l'a déjà posté), puis on restaure si visiteur.
       if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+      if (_pingTimer) { clearInterval(_pingTimer); _pingTimer = null; }
       _visitReset();
       if (wasVisitor && typeof _restoreFromVisit === 'function') {
         _restoreFromVisit();
@@ -309,5 +386,10 @@
     window._visitGetState           = _visitGetState;
     window._visitGenChannelId       = _uuid;
     window._visitHostNotifyFloorChange = _visitHostNotifyFloorChange;
+    // C.4 — helpers exposés pour smoke tests (forcer un drop, injecter
+    // un timestamp). Pas appelés en runtime normal.
+    window._visitCheckTimeout       = _visitCheckTimeout;
+    window._visitSendPing           = _sendPing;
+    window._visitForceLastSeen      = function (ts) { _lastSeen = ts; };
   }
 })();
