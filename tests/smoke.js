@@ -11600,6 +11600,202 @@ async function scenarioVisitFloorUpdate() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette — drop réseau + keepalive (Phase C.4) ──
+async function scenarioVisitNetworkDrop() {
+  console.log('\n── Scénario : Cheminette — drop réseau + keepalive (Phase C.4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : surface — helpers C.4 exposés.
+  const t1 = await page.evaluate(() => ({
+    checkTimeout:    typeof window._visitCheckTimeout    === 'function',
+    sendPing:        typeof window._visitSendPing        === 'function',
+    forceLastSeen:   typeof window._visitForceLastSeen   === 'function',
+    initialState:    window._visitGetState()
+  }));
+  console.log('  T1 surface →', t1);
+  assert(t1.checkTimeout,  '_visitCheckTimeout exposé');
+  assert(t1.sendPing,      '_visitSendPing exposé');
+  assert(t1.forceLastSeen, '_visitForceLastSeen exposé');
+  assert(t1.initialState.lastSeen === 0, 'lastSeen=0 hors visite');
+
+  // T2 : hors session, _visitCheckTimeout est un no-op (pas de
+  // restauration parasite si rien n'est en cours).
+  const t2 = await page.evaluate(() => {
+    const ret = window._visitCheckTimeout();
+    return { ret, sessionStillNull: visitSession === null };
+  });
+  console.log('  T2 no-op hors session →', t2);
+  assert(t2.ret === false,    '_visitCheckTimeout retourne false hors session');
+  assert(t2.sessionStillNull, 'visitSession reste null');
+
+  // T3 : démarre une visite, lastSeen rafraîchi à l'arrivée du snapshot,
+  // puis force un lastSeen ancien et vérifie que le drop se déclenche.
+  const t3 = await page.evaluate(async () => {
+    const snap = mpBuildVisitSnapshot({
+      hostId: 'h', hostName: 'Alice', hostHouse: 'Serdaigle', hostLevel: 5
+    });
+    window.__pollCalls = 0;
+    window.mpPollVisitMessages = async () => {
+      window.__pollCalls++;
+      if (window.__pollCalls === 1) {
+        return [{
+          id: 'm1', sender: 'host', type: 'snapshot', payload: snap,
+          created_at: new Date().toISOString()
+        }];
+      }
+      return [];
+    };
+    window.__posted = [];
+    window.mpPostVisitMessage = async (channelId, sender, type, payload) => {
+      window.__posted.push({ channelId, sender, type, payload });
+      return { id: 'p', created_at: new Date().toISOString() };
+    };
+
+    const goldBefore = player.gold;
+    await mpStartVisitAsVisitor({ channelId: 'ch-drop', hostId: 'h', hostName: 'Alice', hostHouse: 'Serdaigle' });
+    const afterStart = {
+      role:      window._visitGetState().role,
+      lastSeenAfterSnapshot: window._visitGetState().lastSeen > 0,
+      sessionOpen: visitSession && visitSession.role === 'visitor'
+    };
+
+    // Simule 15 s sans aucun message reçu en arrière du curseur.
+    window._visitForceLastSeen(Date.now() - 15000);
+    await window._visitPollOnce();
+
+    const afterDrop = {
+      role:        window._visitGetState().role,
+      sessionGone: visitSession === null,
+      // pas de bye posté lors d'un drop (le partenaire est injoignable)
+      byePosted:   !!window.__posted.find(p => p.type === 'bye'),
+      goldRestored: player.gold === goldBefore
+    };
+    return { afterStart, afterDrop };
+  });
+  console.log('  T3 drop déclenché →', t3);
+  assert(t3.afterStart.role === 'visitor',         'Visite démarrée');
+  assert(t3.afterStart.lastSeenAfterSnapshot,      'lastSeen rafraîchi à réception du snapshot');
+  assert(t3.afterStart.sessionOpen,                'visitSession ouverte');
+  assert(t3.afterDrop.role === null,               'Drop ferme le canal (role=null)');
+  assert(t3.afterDrop.sessionGone,                 'visitSession refermée après drop');
+  assert(!t3.afterDrop.byePosted,                  'Aucun bye posté en cas de drop');
+  assert(t3.afterDrop.goldRestored,                'Save d\'origine restaurée (or visiteur retrouvé)');
+
+  // T4 : un ping reçu rafraîchit lastSeen — pas de drop après une
+  // période de silence couverte par le ping.
+  const t4 = await page.evaluate(async () => {
+    const snap = mpBuildVisitSnapshot({
+      hostId: 'h2', hostName: 'Bob', hostHouse: 'Poufsouffle', hostLevel: 3
+    });
+    window.__pollCalls = 0;
+    window.mpPollVisitMessages = async () => {
+      window.__pollCalls++;
+      if (window.__pollCalls === 1) {
+        return [{
+          id: 'm1', sender: 'host', type: 'snapshot', payload: snap,
+          created_at: new Date().toISOString()
+        }];
+      }
+      if (window.__pollCalls === 2) {
+        // Un ping arrive après une longue pause — devrait rafraîchir lastSeen.
+        return [{
+          id: 'm2', sender: 'host', type: 'ping', payload: {},
+          created_at: new Date().toISOString()
+        }];
+      }
+      return [];
+    };
+    window.mpPostVisitMessage = async () => ({ id: 'p', created_at: new Date().toISOString() });
+
+    await mpStartVisitAsVisitor({ channelId: 'ch-ping', hostId: 'h2', hostName: 'Bob', hostHouse: 'Poufsouffle' });
+    // Force lastSeen à un timestamp limite (5s ago) — sous le seuil de 10s.
+    window._visitForceLastSeen(Date.now() - 5000);
+    const beforePoll = window._visitGetState().lastSeen;
+    await window._visitPollOnce();   // reçoit le ping → lastSeen mis à jour
+    const afterPoll = window._visitGetState().lastSeen;
+
+    const stillIn = !!(visitSession && visitSession.role === 'visitor');
+    await mpExitVisit('cleanup');
+    return {
+      stillIn,
+      lastSeenRefreshed: afterPoll > beforePoll,
+      pollCalls: window.__pollCalls
+    };
+  });
+  console.log('  T4 ping garde la session →', t4);
+  assert(t4.stillIn,                'Session conservée après ping (pas de drop)');
+  assert(t4.lastSeenRefreshed,      'lastSeen rafraîchi par le ping');
+  assert(t4.pollCalls === 2,        'Deux tours de poll effectués');
+
+  // T5 : _sendPing poste un message ping signé par le rôle courant.
+  const t5 = await page.evaluate(async () => {
+    window.__posted = [];
+    window.mpPollVisitMessages = async () => [];
+    window.mpPostVisitMessage  = async (channelId, sender, type, payload) => {
+      window.__posted.push({ channelId, sender, type, payload });
+      return { id: 'p', created_at: new Date().toISOString() };
+    };
+    await mpStartVisitAsHost({
+      channelId: 'ch-host-ping',
+      req: { id: 'r', visitor_id: 'v', visitor_name: 'Carol' }
+    });
+    window.__posted = [];   // ignore le snapshot initial
+    await window._visitSendPing();
+    const ping = window.__posted.find(p => p.type === 'ping');
+    await mpExitVisit('cleanup');
+    return { hasPing: !!ping, sender: ping && ping.sender, channel: ping && ping.channelId };
+  });
+  console.log('  T5 _sendPing →', t5);
+  assert(t5.hasPing,           'Message ping posté');
+  assert(t5.sender === 'host', 'Ping signé par le rôle courant');
+  assert(t5.channel === 'ch-host-ping', 'Ping sur le bon canal');
+
+  // T6 : _sendPing hors session est un no-op (ne crash pas).
+  const t6 = await page.evaluate(async () => {
+    window.__posted = [];
+    window.mpPostVisitMessage = async (channelId, sender, type, payload) => {
+      window.__posted.push({ channelId, sender, type, payload });
+      return { id: 'p', created_at: new Date().toISOString() };
+    };
+    await window._visitSendPing();
+    return { posted: window.__posted.length };
+  });
+  console.log('  T6 ping hors session →', t6);
+  assert(t6.posted === 0,      'Aucun ping posté hors session');
+
+  // T7 : drop côté host — pas de restauration mais session refermée.
+  const t7 = await page.evaluate(async () => {
+    window.__posted = [];
+    window.mpPollVisitMessages = async () => [];
+    window.mpPostVisitMessage  = async (channelId, sender, type, payload) => {
+      window.__posted.push({ channelId, sender, type, payload });
+      return { id: 'p', created_at: new Date().toISOString() };
+    };
+    await mpStartVisitAsHost({
+      channelId: 'ch-host-drop',
+      req: { id: 'r2', visitor_id: 'v2', visitor_name: 'Dave' }
+    });
+    window._visitForceLastSeen(Date.now() - 20000);
+    window.__posted = [];
+    await window._visitPollOnce();
+    return {
+      role:      window._visitGetState().role,
+      byePosted: !!window.__posted.find(p => p.type === 'bye')
+    };
+  });
+  console.log('  T7 drop host →', t7);
+  assert(t7.role === null,    'Host drop ferme sa session');
+  assert(!t7.byePosted,       'Host ne poste pas de bye en cas de drop');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — drop réseau + keepalive Phase C.4 OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -12943,7 +13139,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

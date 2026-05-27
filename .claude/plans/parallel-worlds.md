@@ -1484,8 +1484,32 @@ au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
               donjon distant remplacé, HUD mis à jour), sortie propre
               après multi-étages, hook host poste floorSnapshot, no-op
               hors visite.
-        - [ ] C.4 — détection de drop réseau (timeout 10 s),
-          restauration automatique. ~0,5 j.
+        - [x] C.4 — détection de drop réseau (timeout 10 s),
+          restauration automatique. ~0,5 j — **livré 2026-05-27**.
+          Mécanisme keepalive + watchdog : chaque côté poste un
+          message `ping` toutes les 4 s (`VISIT_PING_MS`) via un
+          `setInterval` dédié `_pingTimer`. À chaque cycle de poll,
+          `_lastSeen` est rafraîchi sur toute réception (y compris
+          `ping`) ; `_visitCheckTimeout` est appelé en fin de poll
+          et déclenche `_handleNetworkDrop` si plus de 10 s
+          (`VISIT_TIMEOUT_MS`) sans message reçu. Le drop ne poste
+          AUCUN `bye` (partenaire injoignable par hypothèse) — la
+          rupture est détectée symétriquement de l'autre côté par son
+          propre timeout. Côté visiteur : `_restoreFromVisit` + redraw
+          + toast *« Le lien astral s'est rompu — tu retournes dans
+          ton monde. »*. Côté host : ferme la session silencieusement
+          + toast *« <Pseudo> s'est dissipé — la connexion s'est
+          éteinte. »*. Surface tests ajoutée :
+          `_visitCheckTimeout`, `_visitSendPing`,
+          `_visitForceLastSeen(ts)`. Bumps de version :
+          `visit-channel.js?v=4`. Scénario smoke
+          `scenarioVisitNetworkDrop` (T1→T7) : surface, no-op hors
+          session, drop déclenché côté visiteur (save restaurée + or
+          retrouvé + pas de bye posté), ping reçu rafraîchit
+          `lastSeen` (session conservée), `_sendPing` poste un
+          message signé par le rôle courant, `_sendPing` hors session
+          est no-op, drop côté host ferme la session sans poster de
+          bye.
     - [ ] Phase D — limites de territoire + sprites + emotes (2 j).
     - [ ] Phase E — dialogues PNJ « voyageur » + observation-only (2 j).
     - [ ] Phase F — polish (1,5 j).
