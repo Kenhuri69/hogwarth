@@ -1422,8 +1422,68 @@ au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
             démarrage visiteur avec channel_id remonté.
           Tous scénarios verts.
           SQL `mp_visit_messages` à documenter dans §12.3 (TODO mineur).
-        - [ ] C.3 — rendu du donjon distant + bouton "Quitter ce
-          monde" + chargement paresseux multi-étages. ~1 j.
+        - [x] Phase C.3 — rendu du donjon distant + bouton "Quitter ce
+          monde" + chargement paresseux multi-étages. ~1 j —
+          **livré 2026-05-26** (C.3a + C.3b).
+            - [x] C.3a — bandeau de visite + bouton "Quitter ce monde"
+              + blocage des interactions chez le host
+              (parallel-worlds.md §6.4). **Livré 2026-05-26**.
+              Nouveau module `js/visit-hud.js` (`showVisitHud` /
+              `updateVisitHud` / `hideVisitHud` + handler
+              `_visitHudExit`), bandeau `#visit-hud` fixed top z-index
+              9000 dans `index.html`, CSS dédiée dans `css/portal.css`
+              (palette dorée/grenat + responsive ≤700px). Hooks
+              show/hide branchés dans `js/visit-channel.js`
+              (post-snapshot reçu + sortie via `mpExitVisit` +
+              réception `bye`). Redraw immédiat (drawDungeon /
+              renderMinimap / updateUI) après restore pour que le
+              visiteur retrouve son donjon sans avoir à bouger.
+              `movement.js — _exploreDescriptors` détecte
+              `visitSession.role === 'visitor'` et renvoie des
+              descripteurs observation-only (un seul bouton
+              "S'éloigner", message qui évoque le host) pour les 9
+              types de cellules interactives (CHEST, SHOP, STAIRS_D,
+              STAIRS_U, FOUNTAIN, ALTAR, FORGE, LIBRARY, STELE).
+              `handleCellEntry` ajoute un garde-fou pour TRAP / NPC /
+              RUNE qui ne passent pas par l'overlay — pas de mutation
+              du donjon distant, dialogue PNJ reporté à Phase E.
+              MANIFEST loader complété (3 entrées optional). Bumps de
+              version : `portal.css?v=2`, `visit-channel.js?v=2`,
+              `visit-hud.js?v=1`, `movement.js?v=14`, `loader.js?v=9`.
+              Scénario smoke `scenarioVisitHudAndBlock` (T1→T7) : 7
+              tests couvrent la surface du module, l'affichage avec
+              blason + étage, le pipeline complet snapshot → HUD,
+              le blocage des 4 types de cellules interactives, la
+              sortie volontaire via le bouton (bye posté + HUD masqué
+              + session refermée), et le retour à la normale hors
+              visite.
+            - [x] C.3b — chargement paresseux multi-étages
+              (parallel-worlds.md §3.5 / §5.3). **Livré 2026-05-26**.
+              Nouveau message Realtime `floorSnapshot` (forme
+              identique à `snapshot` mais sans recapture de la
+              `mySavedState` du visiteur — préserve la save d'origine
+              à travers les changements d'étage). Côté host : nouvelle
+              fonction `_visitHostNotifyFloorChange()` (exposée
+              globalement) qui construit puis poste le snapshot, hook
+              dans `movement.js — _changeFloor` à la fin de la
+              transition (idempotent : no-op silencieux hors visite).
+              Côté visiteur : nouveau handler dans
+              `_visitHandleMessage` pour `floorSnapshot` qui appelle
+              `mpApplyVisitFloorUpdate(payload)` (helper ajouté dans
+              `save.js`) — patch `dungeon`/`visited`/`npcPlacements`/
+              `currentFloor`/`playerX`/`playerY`/`playerDir` +
+              neutralise `enemyMap`/`itemMap`, met à jour
+              `visitSession.remoteHostMeta` (HUD reflète le nouvel
+              étage), redraw immédiat. MANIFEST loader complété
+              (1 entrée optional). Bumps de version : `save.js?v=10`,
+              `visit-channel.js?v=3`, `movement.js?v=15`,
+              `loader.js?v=10`. Scénario smoke
+              `scenarioVisitFloorUpdate` (T1→T6) : surface des
+              helpers, refus hors session, pipeline complet snapshot
+              étage 3 → floorSnapshot étage 4 (mySavedState préservée,
+              donjon distant remplacé, HUD mis à jour), sortie propre
+              après multi-étages, hook host poste floorSnapshot, no-op
+              hors visite.
         - [ ] C.4 — détection de drop réseau (timeout 10 s),
           restauration automatique. ~0,5 j.
     - [ ] Phase D — limites de territoire + sprites + emotes (2 j).

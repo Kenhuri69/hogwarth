@@ -145,7 +145,76 @@ function move(dir) { _step(dir, true); }
 // Feedback transitoire de la stèle d'énigme : préfixe affiché dans
 // l'overlay après une mauvaise réponse. Réinitialisé à chaque ouverture.
 let _steleFeedback = '';
+// Descripteurs en mode visite (parallel-worlds.md §6.4) : le visiteur
+// voit les éléments du donjon de l'autre mais ne peut pas les utiliser.
+// Message contextuel par type de cellule, un seul bouton "S'éloigner".
+function _visitorExploreDescriptors() {
+  const hostName = (typeof visitSession !== 'undefined' && visitSession && visitSession.hostName)
+    ? visitSession.hostName : 'le sorcier';
+  const close = `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`;
+  return {
+    [CELL.CHEST]: {
+      icon:  SCENE_ICONS.chest,
+      title: 'Coffre Magique',
+      desc:  `Ce coffre attend la main de ${hostName}, pas la tienne. Tu n'es qu'un voyageur dans ce plan.`,
+      btns:  close
+    },
+    [CELL.SHOP]: {
+      icon:  SCENE_ICONS.shop,
+      title: 'Échoppe Ambulante',
+      desc:  `Le marchand te jette un regard distrait — tes piécettes n'ont pas cours dans ce plan.`,
+      btns:  close
+    },
+    [CELL.STAIRS_D]: {
+      icon:  SCENE_ICONS.stairs_d,
+      title: 'Escalier Descendant',
+      desc:  `Ce plan reste à découvrir par ${hostName} — les marches refusent de te porter plus bas.`,
+      btns:  close
+    },
+    [CELL.STAIRS_U]: {
+      icon:  SCENE_ICONS.stairs_u,
+      title: 'Escalier Montant',
+      desc:  `Ce plan reste à découvrir par ${hostName} — les marches refusent de te porter plus haut.`,
+      btns:  close
+    },
+    [CELL.FOUNTAIN]: {
+      icon:  SCENE_ICONS.fountain({ dried: false }),
+      title: 'Fontaine de Pierre',
+      desc:  `L'eau scintille pour ${hostName}, pas pour toi.`,
+      btns:  close
+    },
+    [CELL.ALTAR]: {
+      icon:  SCENE_ICONS.altar,
+      title: 'Autel Ancien',
+      desc:  `Les runes te toisent en silence — ce tribut appartient à ${hostName}.`,
+      btns:  close
+    },
+    [CELL.FORGE]: {
+      icon:  SCENE_ICONS.forge,
+      title: 'Forge des Ténèbres',
+      desc:  `L'enclume reste froide à ton approche — ce métal n'obéit qu'à ${hostName}.`,
+      btns:  close
+    },
+    [CELL.LIBRARY]: {
+      icon:  SCENE_ICONS.library,
+      title: 'Bibliothèque interdite',
+      desc:  `Les pages refusent de tourner pour toi — ce grimoire ne se livre qu'à ${hostName}.`,
+      btns:  close
+    },
+    [CELL.STELE]: {
+      icon:  SCENE_ICONS.stele,
+      title: 'Stèle Runique',
+      desc:  `Les glyphes attendent la main de ${hostName} — leur énigme t'est étrangère.`,
+      btns:  close
+    }
+  };
+}
+
 function _exploreDescriptors() {
+  // Mondes parallèles §6.4 — en visite, tout est observation-only.
+  if (typeof visitSession !== 'undefined' && visitSession && visitSession.role === 'visitor') {
+    return _visitorExploreDescriptors();
+  }
   const fountainDried = usedFountains && usedFountains.has(`${playerX},${playerY}`);
   const altarSpent    = usedAltars && usedAltars.has(`${playerX},${playerY}`);
   const altarCost     = 40 * (currentFloor || 1);
@@ -293,23 +362,42 @@ function handleCellEntry(cell) {
   _hideExploreOverlay();
   updateRoomStatus();
 
+  // Mondes parallèles §6.4 — en visite, le visiteur observe sans agir :
+  // pas de piège déclenché (mutation du donjon distant), pas de PNJ
+  // (Phase E pour les dialogues astraux), pas d'activation de rune.
+  const inVisit = typeof visitSession !== 'undefined' && visitSession
+    && visitSession.role === 'visitor';
+
   if (cell === CELL.STAIRS_D || cell === CELL.STAIRS_U ||
       cell === CELL.SHOP     || cell === CELL.CHEST    ||
       cell === CELL.FOUNTAIN || cell === CELL.ALTAR    ||
       cell === CELL.FORGE    || cell === CELL.LIBRARY) {
     _showExploreOverlay(cell);
   } else if (cell === CELL.TRAP) {
+    if (inVisit) {
+      // Le piège dort — il n'a pas été tendu pour cette présence.
+      return;
+    }
     // Piège déclenché en marchant dessus : la case est consommée puis
     // l'effet est appliqué (cf. _triggerDungeonTrap — Phase 2 §2.A).
     dungeon[playerY][playerX] = CELL.FLOOR;
     renderMinimap();
     _triggerDungeonTrap();
   } else if (cell === CELL.NPC) {
+    if (inVisit) {
+      // Phase E branchera les dialogues 'voyageur'. Pour C.3, message
+      // muet pour ne pas casser l'immersion sans contenu écrit.
+      if (typeof addMsg === 'function') {
+        addMsg('Le personnage ne te perçoit pas — tu n\'es qu\'une ombre dans son plan.', '');
+      }
+      return;
+    }
     const npcId = npcPlacements.get(`${playerX},${playerY}`);
     if (npcId && typeof openNpcDialog === 'function') {
       openNpcDialog(npcId);
     }
   } else if (cell === CELL.RUNE) {
+    if (inVisit) return;
     // Dalle-rune d'un puzzle d'exploration : marcher dessus l'allume
     // (cf. _activateRune — dungeon-enrichment-v2 §1/§2).
     _activateRune();
@@ -519,6 +607,12 @@ function _changeFloor(delta, opts) {
     _announceFloorEvent();
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
+    // Mondes parallèles — si une visite est active côté host, reposter
+    // un snapshot avec le nouvel étage pour que le visiteur le suive.
+    // No-op silencieux hors visite (cf. visit-channel.js C.3b).
+    if (typeof _visitHostNotifyFloorChange === 'function') {
+      _visitHostNotifyFloorChange();
+    }
     safeCall('autoSave', opts.saveReason);
   });
   setNarrative(opts.narrative(currentFloor));

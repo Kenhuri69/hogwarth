@@ -863,3 +863,43 @@ function mpApplyVisitSnapshot(snapshot) {
   return true;
 }
 
+// Côté visiteur — patch d'étage envoyé par le host quand il descend
+// ou remonte. Réutilise la même forme que mpBuildVisitSnapshot (champs
+// floor, hostPosition, visitorSpawn, hostMeta) mais ne remet PAS
+// `visitSession.mySavedState` à plat : la save d'origine du visiteur
+// reste capturée, prête à être restaurée à la sortie.
+//
+// Idempotent côté no-op : si aucune session n'est active, retourne
+// false sans rien muter. Si la session est active mais l'étage est
+// identique à `currentFloor`, applique quand même (le host peut avoir
+// regénéré l'étage — c'est le cas après une remontée).
+function mpApplyVisitFloorUpdate(snapshot) {
+  if (!snapshot || !snapshot.floor) return false;
+  if (!visitSession) return false;
+
+  const floor = _visitDeepClone(snapshot.floor);
+  dungeon  = floor.grid;
+  visited  = floor.visitedMask;
+  const _gh = (dungeon && dungeon.length) || (typeof MAP_H !== 'undefined' ? MAP_H : 0);
+  const _gw = (dungeon && dungeon[0] && dungeon[0].length)
+            || (typeof MAP_W !== 'undefined' ? MAP_W : 0);
+  enemyMap = Array.from({ length: _gh }, () => new Array(_gw).fill(null));
+  itemMap  = Array.from({ length: _gh }, () => new Array(_gw).fill(null));
+  npcPlacements = new Map(floor.npcPlacements || []);
+  currentFloor  = floor.number
+                || (snapshot.hostMeta && snapshot.hostMeta.currentFloor)
+                || currentFloor;
+
+  // Met à jour la méta affichée par le HUD (étage notamment).
+  if (snapshot.hostMeta) {
+    visitSession.remoteHostMeta = { ...snapshot.hostMeta };
+  }
+
+  const spawn = snapshot.visitorSpawn || { x: 0, y: 0, dir: 's' };
+  playerX   = spawn.x;
+  playerY   = spawn.y;
+  playerDir = spawn.dir;
+
+  return true;
+}
+
