@@ -298,6 +298,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'showVisitHud',             source: 'visit-hud.js',           kind: 'fn',  optional: true },
     { name: 'updateVisitHud',           source: 'visit-hud.js',           kind: 'fn',  optional: true },
     { name: 'hideVisitHud',             source: 'visit-hud.js',           kind: 'fn',  optional: true },
+    // Phase C.3b — chargement paresseux multi-étages.
+    { name: 'mpApplyVisitFloorUpdate',  source: 'save.js',                kind: 'fn',  optional: true },
 
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },

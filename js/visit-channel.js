@@ -200,6 +200,32 @@
       return;
     }
 
+    if (msg.type === 'floorSnapshot' && _role === 'visitor') {
+      // Le host a changé d'étage — on applique le patch sans réinitialiser
+      // visitSession.mySavedState (chargement paresseux multi-étages, C.3b).
+      if (typeof mpApplyVisitFloorUpdate === 'function') {
+        const ok = mpApplyVisitFloorUpdate(msg.payload);
+        if (ok) {
+          if (typeof drawDungeon   === 'function') drawDungeon();
+          if (typeof renderMinimap === 'function') renderMinimap();
+          if (typeof updateUI      === 'function') updateUI();
+          if (typeof updateVisitHud === 'function') {
+            const meta = (msg.payload && msg.payload.hostMeta) || {};
+            updateVisitHud({
+              hostName:  meta.name  || _partnerName,
+              hostHouse: meta.house || null,
+              floor:     meta.currentFloor || null
+            });
+          }
+          if (typeof addMsg === 'function') {
+            const f = (msg.payload && msg.payload.hostMeta && msg.payload.hostMeta.currentFloor) || '?';
+            addMsg(`${_partnerName} change de plan — tu le suis à l'étage ${f}.`, 'info');
+          }
+        }
+      }
+      return;
+    }
+
     if (msg.type === 'bye') {
       // Le partenaire quitte — on referme proprement de notre côté.
       // mpExitVisit() est idempotent (no-op si déjà sorti).
@@ -231,6 +257,29 @@
     // En C.2 on les ignore silencieusement.
   }
 
+  // ── Hook côté host : changement d'étage (C.3b) ─────────────
+  // Appelé par movement.js — _changeFloor à la fin d'une transition
+  // d'étage. Si une visite est ouverte (role === 'host'), reposte le
+  // snapshot avec le nouvel étage pour que le visiteur le découvre en
+  // temps réel. No-op silencieux hors visite.
+  async function _visitHostNotifyFloorChange() {
+    if (_role !== 'host' || !_channelId) return false;
+    if (typeof mpBuildVisitSnapshot !== 'function') return false;
+    if (typeof mpPostVisitMessage   !== 'function') return false;
+
+    const snap = mpBuildVisitSnapshot({
+      hostId:    (typeof getMpPlayerId === 'function') ? getMpPlayerId() : null,
+      hostName:  (typeof getPlayerName === 'function') ? (getPlayerName() || 'Sorcier') : 'Sorcier',
+      hostHouse: (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
+      hostLevel: (typeof player !== 'undefined' && player.level) || 1
+    });
+
+    try {
+      await mpPostVisitMessage(_channelId, 'host', 'floorSnapshot', snap);
+      return true;
+    } catch (e) { return false; }
+  }
+
   // ── Hooks d'intégration ────────────────────────────────────
   // Côté visiteur : matchmaking nous notifie de l'acceptation.
   if (typeof window !== 'undefined') {
@@ -253,11 +302,12 @@
       mpStartVisitAsHost({ channelId, req });
     };
 
-    window.mpStartVisitAsVisitor = mpStartVisitAsVisitor;
-    window.mpStartVisitAsHost    = mpStartVisitAsHost;
-    window.mpExitVisit           = mpExitVisit;
-    window._visitPollOnce        = _visitPollOnce;
-    window._visitGetState        = _visitGetState;
-    window._visitGenChannelId    = _uuid;
+    window.mpStartVisitAsVisitor    = mpStartVisitAsVisitor;
+    window.mpStartVisitAsHost       = mpStartVisitAsHost;
+    window.mpExitVisit              = mpExitVisit;
+    window._visitPollOnce           = _visitPollOnce;
+    window._visitGetState           = _visitGetState;
+    window._visitGenChannelId       = _uuid;
+    window._visitHostNotifyFloorChange = _visitHostNotifyFloorChange;
   }
 })();

@@ -607,6 +607,12 @@ function _changeFloor(delta, opts) {
     _announceFloorEvent();
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
+    // Mondes parallèles — si une visite est active côté host, reposter
+    // un snapshot avec le nouvel étage pour que le visiteur le suive.
+    // No-op silencieux hors visite (cf. visit-channel.js C.3b).
+    if (typeof _visitHostNotifyFloorChange === 'function') {
+      _visitHostNotifyFloorChange();
+    }
     safeCall('autoSave', opts.saveReason);
   });
   setNarrative(opts.narrative(currentFloor));
