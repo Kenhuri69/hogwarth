@@ -225,6 +225,18 @@ function _serializeState() {
     outremondeFragments,
     outremondePendingSeals,
     astralExileCooldownUntil,
+    outremondeMetrics: {
+      visitsTotal:   outremondeMetrics.visitsTotal,
+      uniqueHosts:   Array.from(outremondeMetrics.uniqueHosts),
+      sealsResolved: outremondeMetrics.sealsResolved,
+      echosDefeated: outremondeMetrics.echosDefeated,
+      pilgrimMark:   outremondeMetrics.pilgrimMark
+    },
+    outremondeSouvenirs:        Array.from(outremondeSouvenirs),
+    outremondeCosmetics:        Array.from(outremondeCosmetics),
+    outremondeActiveAura,
+    outremondeActivePortalSkin,
+    outremondeActiveFissureSkin,
     pendingHouseRewards: Array.from(pendingHouseRewards),
     searchedCells: Array.from(searchedCells),
     stepCount,
@@ -458,6 +470,26 @@ function _applyState(gs) {
   // Phase H — fragments cosmétiques + verrous en attente.
   outremondeFragments    = (typeof gs.outremondeFragments === 'number') ? gs.outremondeFragments : 0;
   outremondePendingSeals = Array.isArray(gs.outremondePendingSeals) ? gs.outremondePendingSeals : [];
+  // V1c.1 — métriques + souvenirs + cosmétiques. Defensif vs. saves
+  // antérieures qui n'ont aucun de ces champs.
+  const m = gs.outremondeMetrics || {};
+  outremondeMetrics = {
+    visitsTotal:   (typeof m.visitsTotal   === 'number') ? m.visitsTotal   : 0,
+    uniqueHosts:   new Set(Array.isArray(m.uniqueHosts) ? m.uniqueHosts : []),
+    sealsResolved: (typeof m.sealsResolved === 'number') ? m.sealsResolved : 0,
+    echosDefeated: (typeof m.echosDefeated === 'number') ? m.echosDefeated : 0,
+    pilgrimMark:   m.pilgrimMark || null
+  };
+  outremondeSouvenirs       = new Set(Array.isArray(gs.outremondeSouvenirs) ? gs.outremondeSouvenirs : []);
+  outremondeCosmetics       = new Set(Array.isArray(gs.outremondeCosmetics) ? gs.outremondeCosmetics : []);
+  outremondeActiveAura      = gs.outremondeActiveAura      || null;
+  outremondeActivePortalSkin = gs.outremondeActivePortalSkin || null;
+  outremondeActiveFissureSkin = gs.outremondeActiveFissureSkin || null;
+  // V1c.1 — applique les CSS variables des cosmétiques restaurés et
+  // re-vérifie les souvenirs (au cas où la save a été éditée à la main
+  // ou la liste a évolué).
+  if (typeof _applyCosmeticVisuals === 'function') _applyCosmeticVisuals();
+  if (typeof _checkSouvenirs       === 'function') _checkSouvenirs();
   // Saves antérieures au tier 2 intermédiaire → set vide par défaut.
   pendingHouseRewards = new Set(gs.pendingHouseRewards || []);
   // Endgame : saves antérieures à l'introduction du flag → false/null.

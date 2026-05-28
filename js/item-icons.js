@@ -380,7 +380,15 @@ const SPELL_ICON_REGISTRY = {
   // + or pâle, 4 runes triangulaires aux cardinaux pointant vers le
   // centre. Palette distincte de Cheminette (rouge sang vs. vert flamme)
   // pour signaler l'engagement contractuel violent vs. le voyage paisible.
-  'Verrou de Sang': 'img/icons/spells/verrou_de_sang.png'
+  'Verrou de Sang': 'img/icons/spells/verrou_de_sang.png',
+  // V1c.1 §6.10 — sorts exclusifs cross-plan (achetés à l'Atelier).
+  // Pas d'icônes PNG dédiées pour le MVP V1c.1 — alias temporaires
+  // sur des PNG existants thématiquement proches. À régénérer via
+  // tools/gen_*.py dans une vague future si l'usage le justifie.
+  'Sceau du Voyageur':     'img/icons/spells/verrou_de_sang.png',
+  "Mémoire d'Outremonde":  'img/icons/spells/cheminette_inter_mondes.png',
+  'Marque du Pèlerin':     'img/icons/spells/cheminette_inter_mondes.png',
+  'Rappel Astral':         'img/icons/spells/cheminette_inter_mondes.png'
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────

@@ -71,6 +71,13 @@
     }
     hud.classList.add('active');
     hud.setAttribute('aria-hidden', 'false');
+    // V1c.1 — applique l'aura cosmétique active sur le HUD (CSS
+    // variable --om-aura déjà posée par _applyCosmeticVisuals).
+    if (typeof outremondeActiveAura !== 'undefined' && outremondeActiveAura) {
+      hud.classList.add('aura-on');
+    } else {
+      hud.classList.remove('aura-on');
+    }
     return true;
   }
 

@@ -1115,6 +1115,14 @@ function _finishAstralCombat(won) {
       });
     }
     if (typeof outremondeEssence === 'number') outremondeEssence += totalEss;
+    // V1c.1 — métriques cross-plan : un écho dissipé compte par
+    // monstre vaincu (les groupes de 2-3 échos sont rares mais comptés
+    // individuellement). Déclenche le check des souvenirs.
+    if (typeof outremondeMetrics !== 'undefined' && outremondeMetrics
+        && Array.isArray(enemyGroup)) {
+      outremondeMetrics.echosDefeated += enemyGroup.length;
+    }
+    if (typeof _checkSouvenirs === 'function') _checkSouvenirs();
 
     // Marque la cellule + incrémente compteur d'étage (visite courante).
     if (typeof astralCellsDefeated !== 'undefined' && astralCellsDefeated) {
@@ -1137,17 +1145,31 @@ function _finishAstralCombat(won) {
 
   // Défaite astrale — éjection.
   AudioSystem.playDeath();
-  // Cooldown 5 min sur le sort de portail (anti-flood de retentatives).
-  // Persiste dans la save d'origine restaurée par _restoreFromVisit puisque
-  // la save du visiteur a été capturée AVANT la visite — le cooldown qu'on
-  // pose ici n'y est pas. On le pose donc directement dans mySavedState
-  // pour qu'il survive à la restauration.
-  const cooldownUntil = Date.now() + 5 * 60 * 1000;
-  if (typeof visitSession !== 'undefined' && visitSession
-      && visitSession.role === 'visitor' && visitSession.mySavedState) {
-    visitSession.mySavedState.astralExileCooldownUntil = cooldownUntil;
+  // V1c.1 — Sceau du Voyageur : si un membre du groupe connaît le sort,
+  // l'ancrage astral neutralise le cooldown 5 min. C'est l'unique effet
+  // mécanique du Sceau (sort passif, identifié par sa présence dans
+  // player.spells / party[].spells).
+  const heroHasSeal = typeof party !== 'undefined' && Array.isArray(party)
+    && party.some(c => c && Array.isArray(c.spells) && c.spells.includes('Sceau du Voyageur'));
+  if (heroHasSeal) {
+    if (typeof addMsg === 'function') {
+      addMsg('🪬 Le Sceau du Voyageur absorbe le choc — aucun cooldown.', 'magic');
+    }
+    // Pas de cooldown posé. astralExileCooldownUntil reste à sa valeur
+    // précédente (0 ou expirée).
+  } else {
+    // Cooldown 5 min sur le sort de portail (anti-flood de retentatives).
+    // Persiste dans la save d'origine restaurée par _restoreFromVisit puisque
+    // la save du visiteur a été capturée AVANT la visite — le cooldown qu'on
+    // pose ici n'y est pas. On le pose donc directement dans mySavedState
+    // pour qu'il survive à la restauration.
+    const cooldownUntil = Date.now() + 5 * 60 * 1000;
+    if (typeof visitSession !== 'undefined' && visitSession
+        && visitSession.role === 'visitor' && visitSession.mySavedState) {
+      visitSession.mySavedState.astralExileCooldownUntil = cooldownUntil;
+    }
+    astralExileCooldownUntil = cooldownUntil;
   }
-  astralExileCooldownUntil = cooldownUntil;
 
   setNarrative('Ton lien astral vacille — tu retournes dans ton monde.');
   addMsg('💫 Ton lien astral vacille — tu retournes dans ton monde.', 'bad');

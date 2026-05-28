@@ -375,6 +375,31 @@
         if (typeof addMsg === 'function') {
           addMsg(`Tu apparais dans le monde de ${_partnerName}.`, 'good');
         }
+        // V1c.1 — métriques cross-plan : compte la visite + le host
+        // unique, puis check les souvenirs débloqués. `_partnerId` est
+        // l'id stable côté serveur (cf. matchmaking).
+        if (typeof outremondeMetrics !== 'undefined' && outremondeMetrics) {
+          outremondeMetrics.visitsTotal += 1;
+          if (_partnerId && outremondeMetrics.uniqueHosts) {
+            outremondeMetrics.uniqueHosts.add(_partnerId);
+          }
+        }
+        if (typeof _checkSouvenirs === 'function') _checkSouvenirs();
+        // V1c.1 — sort exclusif « Mémoire d'Outremonde » (s'il est
+        // appris) : restaure 100 % PV + 100 % PM à l'entrée. One-shot
+        // par visite : ne se ré-applique pas tant qu'on n'a pas requitté
+        // et rééntré en visite (flag _memoryUsed sur la session).
+        if (typeof party !== 'undefined' && Array.isArray(party)) {
+          const heroHasMemory = party.some(c => c && Array.isArray(c.spells)
+            && c.spells.includes("Mémoire d'Outremonde"));
+          if (heroHasMemory && visitSession && !visitSession._memoryUsed) {
+            party.forEach(c => { if (c) { c.hp = c.hpMax; c.sp = c.spMax; } });
+            visitSession._memoryUsed = true;
+            if (typeof addMsg === 'function') {
+              addMsg("🌌 Mémoire d'Outremonde — tes forces se renouvellent au seuil de ce plan.", 'good');
+            }
+          }
+        }
       }
       return;
     }

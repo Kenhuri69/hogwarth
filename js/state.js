@@ -157,6 +157,34 @@ let outremondePendingSeals = [];
 let hostSealsByFloor      = new Map();
 let currentBloodSeal      = null;
 
+// ── Mondes parallèles V1c.1 §6.10 — souvenirs / cosmétiques / sorts ──
+// `outremondeMetrics`     : { visitsTotal, uniqueHosts:Set, sealsResolved,
+//                            echosDefeated, pilgrimMark: {floor,x,y}|null }
+//                           Métriques pour le déblocage automatique des
+//                           souvenirs passifs. Persisté (Set sérialisé).
+// `outremondeSouvenirs`   : Set des ids de souvenirs débloqués. Les bonus
+//                           stat sont appliqués dans recalculateStats().
+// `outremondeCosmetics`   : Set des ids de cosmétiques achetés (auras,
+//                           portails, fissures). Le coût en essences +
+//                           fragments est déduit à l'achat.
+// `outremondeActiveAura`,
+// `outremondeActivePortalSkin`,
+// `outremondeActiveFissureSkin` : id du cosmétique actif par catégorie,
+//                                 ou null. Lus par les couches visuelles
+//                                 (CSS variables + portal-fx).
+let outremondeMetrics = {
+  visitsTotal:   0,
+  uniqueHosts:   new Set(),
+  sealsResolved: 0,
+  echosDefeated: 0,
+  pilgrimMark:   null
+};
+let outremondeSouvenirs        = new Set();
+let outremondeCosmetics        = new Set();
+let outremondeActiveAura       = null;
+let outremondeActivePortalSkin = null;
+let outremondeActiveFissureSkin = null;
+
 // ============================================================
 // SYSTÈME DES MAISONS
 // ============================================================
