@@ -1674,8 +1674,73 @@ au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
         Ironman non-régression. Tous scénarios verts.
 
 > **Fin de V1a — socle exploration livrable** (~13,5 j cumulé, A→F).
-- [ ] **V1b** — combat local + amorce économie (4 j)
-    - [ ] Phase G — combat local asymétrique + essences.
+- [x] **V1b** — combat local + amorce économie (4 j)
+    - [x] Phase G — combat local asymétrique + essences — **livré 2026-05-28**.
+      • `state.js` : 5 nouveaux globaux. `inAstralCombat` (flag combat
+        astral), `outremondeEssence` (monnaie cross-plan, persistée),
+        `astralCellsDefeated` (Set des cellules dissipées dans la
+        visite courante), `astralFloorKills` (compteur d'écho par
+        étage), `astralExileCooldownUntil` (timestamp 5 min après une
+        défaite, persisté).
+      • `save.js` : sérialisation de `outremondeEssence` et
+        `astralExileCooldownUntil` dans `_serializeState` /
+        `_applyState`. Repli à 0 pour les saves antérieures.
+      • `dungeon.js — buildEcho(monsterId, visitorLevel)` : helper pur
+        qui construit un écho scalé au niveau du visiteur (pas au
+        floor du host), drop/or neutralisés, marqueur `_echo:true` et
+        préfixe « Écho · ». Le caller passe l'écho à
+        `startBattle(echo, {astral:true, echoGroup:[echo]})`.
+      • `battle.js — startBattle` accepte `opts.astral` qui pose
+        `inAstralCombat = true` et la classe body `in-astral-combat`
+        (bordure dorée CSS). `opts.echoGroup` court-circuite le tirage
+        de groupe — l'écho est posé seul (pas d'escalade duo).
+      • `battle.js — endBattle / triggerDeath` : interception du mode
+        astral via `_finishAstralCombat(won)`. Victoire → essence
+        ajoutée selon §6.10 (`1 + floor(_level/3)` par écho),
+        cellule marquée dissipée, `astralFloorKills++`. Pas d'XP, pas
+        d'or, pas de drops, pas de quêtes kill, pas de points de
+        Maison, pas d'Ironman. Défaite → pas de pétrification ;
+        cooldown 5 min posé sur `astralExileCooldownUntil` (aussi dans
+        `visitSession.mySavedState` pour survivre à
+        `_restoreFromVisit`), `mpExitVisit('astral-defeat')` ramène le
+        visiteur dans son monde.
+      • `battle-spells.js — castSpellInBattle` : Avada Kedavra
+        (`effect:'instant'`) refusée en combat astral avec message
+        narratif (« L'écho refuse cette mort »).
+      • `inventory.js — openSpells` : cooldown 5 min sur la
+        Cheminette Inter-Mondes après défaite (calculé depuis
+        `astralExileCooldownUntil`). Bouton grisé + tooltip
+        « 💫 Ton lien astral se reforme — X min Ys ».
+      • `visit-channel.js` : helpers `_canEngageAstralCombat()` (vrai
+        si visiteur + hors combat + cellule pas dissipée + sous la
+        limite 3/étage), `_astralFightsRemaining()`, `engageAstralCombat()`
+        qui tire un monstre éligible au floor distant
+        (`MONSTERS.filter` sur `[minFloor, maxFloor]`), construit
+        l'écho via `buildEcho` et lance le combat. `_refreshAstralButton()`
+        synchronise l'UI. Compteurs reset à chaque `snapshot`/
+        `floorSnapshot`.
+      • `movement.js` : hook `_refreshAstralButton` après chaque pas
+        en visite (le `canEngage` dépend de la cellule courante).
+      • `visit-hud.js` + `index.html` + `portal.css` : bouton
+        `#visit-hud-astral` avec compteur « x/3 ». Caché côté host,
+        désactivé en cellule dissipée ou limite atteinte. Bordure
+        dorée du combat astral via `body.in-astral-combat` (CSS).
+      • MANIFEST loader complété (11 entrées optional). Bumps :
+        `portal.css?v=5`, `state.js?v=11`, `dungeon.js?v=12`,
+        `movement.js?v=18`, `battle.js?v=7`, `battle-spells.js?v=3`,
+        `inventory.js?v=6`, `save.js?v=12`, `visit-channel.js?v=7`,
+        `visit-hud.js?v=4`, `loader.js?v=14`. `CACHE_VERSION` v5 → v6.
+      • Scénario smoke `scenarioVisitPhaseG` (T1→T7) : surface
+        (globaux + helpers + bouton DOM), `buildEcho` (gold/drops
+        neutralisés, préfixe, `_level`, id inconnu → null), engagement
+        (`inAstralCombat=true`, enemyGroup peuplé, classe body posée),
+        victoire (gold/XP/level intacts, essence incrémentée, cellule
+        marquée, compteur incrémenté, flags reset), limite 3/étage
+        (engageAstralCombat refuse au-delà), défaite (pas de
+        death-screen, cooldown 5 min, mpExitVisit appelé, flags reset),
+        Avada refusée en astral. Tous scénarios verts
+        (`node tests/smoke.js`).
+
 - [ ] **V1c** — Verrou de Sang + Atelier complet (3 j)
     - [ ] Phase H — Verrous + Set Voyageur + cosmétiques + sorts exclusifs + souvenirs.
 - [ ] V2 — Quêtes inter-mondes (5–8 j, à planifier après V1).

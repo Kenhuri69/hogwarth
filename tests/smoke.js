@@ -12450,6 +12450,225 @@ async function scenarioVisitPhaseF() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette — combat local + amorce économie (Phase G) ──
+async function scenarioVisitPhaseG() {
+  console.log('\n── Scénario : Cheminette — combat local Phase G ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : surface — globals + helpers Phase G.
+  const t1 = await page.evaluate(() => ({
+    inAstralCombat:        typeof inAstralCombat        !== 'undefined',
+    outremondeEssence:     typeof outremondeEssence     === 'number',
+    astralCellsDefeated:   typeof astralCellsDefeated   !== 'undefined',
+    astralFloorKills:      typeof astralFloorKills      === 'number',
+    astralExileCooldown:   typeof astralExileCooldownUntil === 'number',
+    buildEcho:             typeof buildEcho             === 'function',
+    engage:                typeof engageAstralCombat    === 'function',
+    canEngage:             typeof _canEngageAstralCombat === 'function',
+    remaining:             typeof _astralFightsRemaining === 'function',
+    updateBtn:             typeof updateAstralFightButton === 'function',
+    btnInDom:              !!document.getElementById('visit-hud-astral')
+  }));
+  console.log('  T1 surface →', t1);
+  assert(t1.inAstralCombat,       'inAstralCombat déclaré');
+  assert(t1.outremondeEssence,    'outremondeEssence déclaré');
+  assert(t1.astralCellsDefeated,  'astralCellsDefeated déclaré');
+  assert(t1.astralFloorKills,     'astralFloorKills déclaré');
+  assert(t1.astralExileCooldown,  'astralExileCooldownUntil déclaré');
+  assert(t1.buildEcho,            'buildEcho exposé');
+  assert(t1.engage,               'engageAstralCombat exposé');
+  assert(t1.canEngage,            '_canEngageAstralCombat exposé');
+  assert(t1.remaining,            '_astralFightsRemaining exposé');
+  assert(t1.updateBtn,            'updateAstralFightButton exposé');
+  assert(t1.btnInDom,             '#visit-hud-astral dans le DOM');
+
+  // T2 : buildEcho — retourne un monstre scaled sans gold/drops, marqué _echo.
+  const t2 = await page.evaluate(() => {
+    const echo = buildEcho('chat_norris', 5);
+    const bogus = buildEcho('does_not_exist', 5);
+    return {
+      hasEcho:      !!echo,
+      hasMarker:    !!(echo && echo._echo),
+      goldZero:     echo && echo.gold === 0,
+      dropsEmpty:   !!(echo && Array.isArray(echo.drops) && echo.drops.length === 0),
+      hasPrefix:    !!(echo && /Écho · /.test(echo.name)),
+      hasLevel:     !!(echo && typeof echo._level === 'number' && echo._level >= 1),
+      bogus:        bogus === null
+    };
+  });
+  console.log('  T2 buildEcho →', t2);
+  assert(t2.hasEcho,     'Écho construit');
+  assert(t2.hasMarker,   'Marqueur _echo posé');
+  assert(t2.goldZero,    'Gold neutralisé');
+  assert(t2.dropsEmpty,  'Drops standards neutralisés');
+  assert(t2.hasPrefix,   'Nom préfixé "Écho · "');
+  assert(t2.hasLevel,    '_level posé');
+  assert(t2.bogus,       'Monstre inconnu → null');
+
+  // T3 : engagement — démarre un combat astral avec inAstralCombat=true.
+  // Pose une session visiteur factice pour passer le guard.
+  const t3 = await page.evaluate(() => {
+    if (typeof visitSession !== 'undefined') {
+      visitSession = {
+        role:'visitor', hostId:'h-G', hostName:'Alice', hostHouse:'Gryffondor',
+        mySavedState: { player: { gold: 999 } }
+      };
+    }
+    astralCellsDefeated = new Set();
+    astralFloorKills = 0;
+    const before = { canEngage: _canEngageAstralCombat(), remaining: _astralFightsRemaining() };
+    const id = engageAstralCombat();
+    const after = {
+      inBattle: inBattle,
+      inAstralCombat: inAstralCombat,
+      enemyGroupLen: enemyGroup.length,
+      firstHasEcho:  !!(enemyGroup[0] && enemyGroup[0]._echo),
+      bodyHasClass:  document.body.classList.contains('in-astral-combat')
+    };
+    return { id, before, after };
+  });
+  console.log('  T3 engagement →', t3);
+  assert(t3.before.canEngage,           'Engagement autorisé au départ');
+  assert(t3.before.remaining === 3,     'Compteur = 3 au départ');
+  assert(typeof t3.id === 'string',     'engageAstralCombat retourne un id de monstre');
+  assert(t3.after.inBattle,             'inBattle = true');
+  assert(t3.after.inAstralCombat,       'inAstralCombat = true');
+  assert(t3.after.enemyGroupLen >= 1,   'enemyGroup non vide');
+  assert(t3.after.firstHasEcho,         'Marqueur _echo sur le 1er ennemi');
+  assert(t3.after.bodyHasClass,         'body.in-astral-combat posé');
+
+  // T4 : victoire — gains routés vers outremondeEssence (pas vers gold/XP).
+  const t4 = await page.evaluate(() => {
+    const goldBefore = player.gold;
+    const xpBefore   = player.xp;
+    const essBefore  = outremondeEssence;
+    const levelBefore = player.level;
+    // Pose les HP des ennemis à 0 (kill) puis appelle endBattle(true).
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    endBattle(true);
+    return {
+      goldUnchanged: player.gold === goldBefore,
+      xpUnchanged:   player.xp === xpBefore,
+      levelUnchanged: player.level === levelBefore,
+      essGained:     outremondeEssence > essBefore,
+      inAstralReset: inAstralCombat === false,
+      inBattleReset: inBattle === false,
+      cellDefeated:  astralCellsDefeated.has(`${playerX},${playerY}`),
+      floorKillIncr: astralFloorKills === 1,
+      noBodyClass:   !document.body.classList.contains('in-astral-combat')
+    };
+  });
+  console.log('  T4 victoire →', t4);
+  assert(t4.goldUnchanged,    'Or du visiteur intact (pas de drop standard)');
+  assert(t4.xpUnchanged,      'XP intacte');
+  assert(t4.levelUnchanged,   'Niveau intact');
+  assert(t4.essGained,        'outremondeEssence incrémenté');
+  assert(t4.inAstralReset,    'inAstralCombat reset');
+  assert(t4.inBattleReset,    'inBattle reset');
+  assert(t4.cellDefeated,     'Cellule marquée dissipée');
+  assert(t4.floorKillIncr,    'astralFloorKills = 1');
+  assert(t4.noBodyClass,      'Classe in-astral-combat retirée');
+
+  // T5 : limite 3/étage — 3e victoire OK, 4e refusée.
+  const t5 = await page.evaluate(() => {
+    // On a déjà 1 kill (T4). On force 2 + 1 supplémentaires.
+    astralFloorKills = 3;        // simule 3 kills déjà faits
+    astralCellsDefeated = new Set();   // libère les cellules
+    const before = _astralFightsRemaining();
+    const canFight = _canEngageAstralCombat();
+    const id = engageAstralCombat();
+    return {
+      remainingBefore: before,
+      canFight,
+      idIsNull: id === null
+    };
+  });
+  console.log('  T5 limite 3/étage →', t5);
+  assert(t5.remainingBefore === 0,  'Compteur = 0 quand limite atteinte');
+  assert(t5.canFight === false,     'canEngage = false quand limite atteinte');
+  assert(t5.idIsNull,               'engageAstralCombat refuse (retourne null)');
+
+  // T6 : défaite astrale — cooldown 5 min posé, pas de triggerDeath/death-screen.
+  const t6 = await page.evaluate(() => {
+    // Reset pour engager un nouveau combat.
+    astralCellsDefeated = new Set();
+    astralFloorKills = 0;
+    if (typeof visitSession !== 'undefined') {
+      visitSession = {
+        role:'visitor', hostId:'h-G', hostName:'Alice', hostHouse:'Gryffondor',
+        mySavedState: { player: { gold: 999 }, astralExileCooldownUntil: 0 }
+      };
+    }
+    astralExileCooldownUntil = 0;
+    engageAstralCombat();
+    // Stub mpExitVisit pour ne pas tenter le poste 'bye' (pas de réseau).
+    let exited = false;
+    window.mpExitVisit = async () => { exited = true; visitSession = null; return true; };
+    // Force la défaite : tous les persos à 0 PV, puis triggerDeath.
+    party.forEach(c => { c.hp = 0; });
+    triggerDeath('test-defeat');
+    const deathScreen = document.getElementById('death-screen');
+    const cooldownSet = astralExileCooldownUntil > Date.now();
+    return {
+      noDeathScreen: deathScreen ? deathScreen.style.display !== 'flex' : true,
+      cooldownSet,
+      cooldownMinutes: Math.round((astralExileCooldownUntil - Date.now()) / 60000),
+      inAstralReset: inAstralCombat === false,
+      inBattleReset: inBattle === false,
+      exitCalled:    exited
+    };
+  });
+  console.log('  T6 défaite →', t6);
+  assert(t6.noDeathScreen,        'Pas d\'écran de mort en défaite astrale');
+  assert(t6.cooldownSet,          'Cooldown 5 min posé');
+  assert(t6.cooldownMinutes >= 4, `Cooldown ~5 min (${t6.cooldownMinutes} min mesurés)`);
+  assert(t6.inAstralReset,        'inAstralCombat reset après défaite');
+  assert(t6.inBattleReset,        'inBattle reset après défaite');
+  assert(t6.exitCalled,           'mpExitVisit appelé en défaite');
+
+  // T7 : Avada Kedavra refusée en combat astral.
+  const t7 = await page.evaluate(() => {
+    // Reset clean.
+    astralCellsDefeated = new Set();
+    astralFloorKills = 0;
+    astralExileCooldownUntil = 0;
+    if (typeof visitSession !== 'undefined') {
+      visitSession = {
+        role:'visitor', hostId:'h-G', hostName:'Alice', hostHouse:'Gryffondor',
+        mySavedState: { player: { gold: 999 } }
+      };
+    }
+    // Restore les persos pour pouvoir caster.
+    party.forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; });
+    if (!player.spells.includes('Avada...')) player.spells.push('Avada...');
+    // Débloque le sort dans SPELLS (sinon castSpellInBattle refuse).
+    const av = SPELLS.find(s => s.name === 'Avada...');
+    if (av) av.locked = false;
+    engageAstralCombat();
+    // Compte les messages avant cast.
+    const enemyHpBefore = enemyGroup[0].currentHp;
+    castSpellInBattle('Avada...', 0);
+    const enemyHpAfter = enemyGroup[0].currentHp;
+    // Cleanup : sort du combat en triggerant la victoire factice.
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    endBattle(true);
+    return {
+      enemyHpUnchanged: enemyHpAfter === enemyHpBefore,
+      stillAlive:       enemyHpAfter > 0
+    };
+  });
+  console.log('  T7 Avada bloqué →', t7);
+  assert(t7.enemyHpUnchanged,  'PV ennemi inchangés (Avada refusée)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — Phase G OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -13793,7 +14012,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

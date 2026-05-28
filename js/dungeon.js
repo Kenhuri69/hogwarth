@@ -137,6 +137,35 @@ function scaleMonster(base, floor) {
   return monster;
 }
 
+// ── Mondes parallèles Phase G §6.8 — écho de monstre (combat astral) ───
+// Construit une instance dédiée d'un monstre pour le combat astral du
+// visiteur. Scalée au NIVEAU DU VISITEUR (pas au floor du host) pour
+// garantir un combat équilibré quel que soit l'étage où il atterrit.
+// Drops/or standards neutralisés — les gains passent par l'économie
+// cross-plan (`outremondeEssence` côté endBattle).
+//
+// Pur : ne mute aucune variable globale (le caller posera `_echo:true`
+// sur l'objet retourné, et endBattle routera les gains via le flag
+// `inAstralCombat`).
+function buildEcho(monsterId, visitorLevel) {
+  const template = (typeof MONSTERS !== 'undefined' && Array.isArray(MONSTERS))
+    ? MONSTERS.find(m => m.id === monsterId) : null;
+  if (!template) return null;
+  // Plancher 1 : un visiteur niveau 0 (théorique) tomberait sinon en NaN
+  // dans scaleMonster. Plafond : pas de cap explicite — un visiteur très
+  // haut niveau peut affronter un écho coriace, c'est le risque assumé.
+  const effFloor = Math.max(1, visitorLevel | 0);
+  const scaled = scaleMonster(template, effFloor);
+  scaled._echo  = true;     // marqueur astral — lu par endBattle
+  scaled._level = effFloor; // niveau effectif (pour la formule essence)
+  scaled.gold   = 0;        // pas d'or de loot standard (§6.8)
+  scaled.drops  = [];       // pas de drops standard
+  // Préfixe « Écho » pour distinguer du monstre normal côté UI combat.
+  // On garde la variante (shiny/dark/etc.) calculée par scaleMonster.
+  if (!/^Écho/.test(scaled.name)) scaled.name = 'Écho · ' + scaled.name;
+  return scaled;
+}
+
 // Place un PNJ dans une salle. Préfère le centre s'il est libre, sinon
 // une autre case FLOOR. Skippe la case de spawn pour la salle 0 afin
 // que l'entrée sur la cellule PNJ soit déclenchable par un mouvement

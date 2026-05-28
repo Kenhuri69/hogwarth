@@ -352,11 +352,16 @@
     if (msg.type === 'snapshot' && _role === 'visitor') {
       if (typeof mpApplyVisitSnapshot === 'function') {
         const ok = mpApplyVisitSnapshot(msg.payload);
+        // Phase G §6.8 — nouvelle visite : reset des compteurs astral.
+        // Le cooldown des cellules et le quota par étage repartent à zéro.
+        if (typeof astralCellsDefeated !== 'undefined') astralCellsDefeated = new Set();
+        if (typeof astralFloorKills === 'number') astralFloorKills = 0;
         // Hooks de rendu sous garde — visibilité immédiate du donjon
         // distant.
         if (typeof drawDungeon   === 'function') drawDungeon();
         if (typeof renderMinimap === 'function') renderMinimap();
         if (typeof updateUI      === 'function') updateUI();
+        _refreshAstralButton();
         // Phase C.3 — bandeau de visite + bouton "Quitter ce monde".
         if (ok && typeof showVisitHud === 'function') {
           const meta = (msg.payload && msg.payload.hostMeta) || {};
@@ -380,9 +385,13 @@
       if (typeof mpApplyVisitFloorUpdate === 'function') {
         const ok = mpApplyVisitFloorUpdate(msg.payload);
         if (ok) {
+          // Phase G §6.8 — nouvel étage : reset des compteurs astral.
+          if (typeof astralCellsDefeated !== 'undefined') astralCellsDefeated = new Set();
+          if (typeof astralFloorKills === 'number') astralFloorKills = 0;
           if (typeof drawDungeon   === 'function') drawDungeon();
           if (typeof renderMinimap === 'function') renderMinimap();
           if (typeof updateUI      === 'function') updateUI();
+          _refreshAstralButton();
           if (typeof updateVisitHud === 'function') {
             const meta = (msg.payload && msg.payload.hostMeta) || {};
             updateVisitHud({
@@ -483,6 +492,77 @@
       }
       return;
     }
+  }
+
+  // ── Phase G §6.8 — combat astral : helpers d'engagement ──────
+  // Plafonds documentés §6.8 : cooldown par cellule (1 fois par visite)
+  // et limite par étage (3 échos affrontables / étage de visite).
+  const ASTRAL_FLOOR_LIMIT = 3;
+
+  // Vrai si le visiteur peut défier un écho sur la case courante.
+  function _canEngageAstralCombat() {
+    if (typeof visitSession === 'undefined' || !visitSession
+        || visitSession.role !== 'visitor') return false;
+    if (typeof inBattle !== 'undefined' && inBattle) return false;
+    // Cellule déjà dissipée pendant cette visite.
+    if (typeof astralCellsDefeated !== 'undefined' && astralCellsDefeated
+        && astralCellsDefeated.has(`${playerX},${playerY}`)) return false;
+    // Limite par étage (§6.8) — 3 échos par étage de visite.
+    if (typeof astralFloorKills === 'number' && astralFloorKills >= ASTRAL_FLOOR_LIMIT) {
+      return false;
+    }
+    return true;
+  }
+
+  // Compteur restant (UI tooltip / bouton "x/3").
+  function _astralFightsRemaining() {
+    const used = (typeof astralFloorKills === 'number') ? astralFloorKills : 0;
+    return Math.max(0, ASTRAL_FLOOR_LIMIT - used);
+  }
+
+  // Lance un combat astral : tire un monstre éligible au floor courant
+  // (du donjon distant), construit l'écho et démarre le combat avec
+  // `opts.astral = true`. Retourne le monsterId tiré ou null si refusé.
+  function engageAstralCombat() {
+    if (!_canEngageAstralCombat()) return null;
+    if (typeof MONSTERS === 'undefined' || !Array.isArray(MONSTERS)) return null;
+    if (typeof buildEcho !== 'function') return null;
+    const floor = (typeof currentFloor === 'number') ? currentFloor : 1;
+    // Tire un monstre dont la fenêtre [minFloor, maxFloor] couvre le floor.
+    // Sans pondération — un tirage uniforme suffit en V1b. La fenêtre garantit
+    // un monstre cohérent avec la zone explorée par le host.
+    const pool = MONSTERS.filter(m =>
+      (m.minFloor === undefined || floor >= m.minFloor) &&
+      (m.maxFloor === undefined || m.maxFloor === null || floor <= m.maxFloor));
+    if (!pool.length) return null;
+    const tpl = pool[Math.floor(Math.random() * pool.length)];
+    const visitorLevel = (typeof player !== 'undefined' && player.level) || 1;
+    const echo = buildEcho(tpl.id, visitorLevel);
+    if (!echo) return null;
+    if (typeof startBattle !== 'function') return null;
+    // L'écho est posé seul (pas d'escalade duo). Le visiteur affronte
+    // exactement ce qu'il a choisi de défier.
+    startBattle(echo, { astral: true, echoGroup: [echo] });
+    if (typeof addMsg === 'function') {
+      addMsg(`🌀 Tu défies l'écho de ${tpl.name} dans le plan de ${visitSession.hostName || 'ton hôte'}.`, 'info');
+    }
+    if (typeof _refreshAstralButton === 'function') _refreshAstralButton();
+    return tpl.id;
+  }
+
+  // Rafraîchit l'état (visible / désactivé / compteur) du bouton de défi
+  // astral dans le bandeau de visite. No-op silencieux si la fonction HUD
+  // n'a pas chargé (compat tests sans HUD complet).
+  function _refreshAstralButton() {
+    if (typeof window === 'undefined') return;
+    if (typeof window.updateAstralFightButton !== 'function') return;
+    const role = (typeof visitSession !== 'undefined' && visitSession)
+      ? visitSession.role : null;
+    window.updateAstralFightButton({
+      visible:    role === 'visitor',
+      canEngage:  _canEngageAstralCombat(),
+      remaining:  _astralFightsRemaining(),
+    });
   }
 
   // ── Phase D §6.5 — accès au visiteur projeté sur une case ──────
@@ -655,6 +735,11 @@
     // Phase F — qualité réseau (badge HUD) + helpers tests.
     window._visitGetQuality         = _visitGetQuality;
     window._visitIsReconnecting     = function () { return _reconnectMode; };
+    // Phase G — combat astral (§6.8).
+    window.engageAstralCombat       = engageAstralCombat;
+    window._canEngageAstralCombat   = _canEngageAstralCombat;
+    window._astralFightsRemaining   = _astralFightsRemaining;
+    window._refreshAstralButton     = _refreshAstralButton;
     window.VISITOR_EMOTES           = VISITOR_EMOTES;
     window.HOST_EMOTES              = HOST_EMOTES;
     // Test helper : remettre à zéro les throttles d'émission entre deux

@@ -123,6 +123,9 @@ function _step(dir, faceDir) {
   const _inVisit = typeof visitSession !== 'undefined' && visitSession;
   if (_inVisit && visitSession.role === 'visitor') {
     if (typeof _visitNotifyVisitorMove === 'function') _visitNotifyVisitorMove();
+    // Phase G — rafraîchit le bouton "Défier l'écho" : le canEngage
+    // dépend de la cellule courante (cooldown par cellule §6.8).
+    if (typeof _refreshAstralButton === 'function') _refreshAstralButton();
   } else if (_inVisit && visitSession.role === 'host') {
     if (typeof _visitNotifyHostMove === 'function') _visitNotifyHostMove();
     if (typeof mpNotifyMove === 'function') mpNotifyMove();

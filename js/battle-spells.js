@@ -741,6 +741,15 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   const spell    = _spellForCaster(baseSpell, char);
   if (!spell || char.sp < _spellSpCost(spell)) { addMsg("Pas assez de magie !", 'bad'); return; }
 
+  // Phase G §6.8 — Avada Kedavra refusé contre les échos. Narratif (un
+  // écho n'a pas d'âme à briser) et anti-trivialisation : un sort de mort
+  // instantanée rendrait le combat astral sans intérêt.
+  if (typeof inAstralCombat !== 'undefined' && inAstralCombat
+      && spell.effect === 'instant') {
+    addMsg("L'écho refuse cette mort — la lumière verte se dissipe sans cible.", 'bad');
+    return;
+  }
+
   // Portus : 1 utilisation par combat. Le sort ouvre un overlay A/B —
   // pas de cycle pendingAction et pas d'avance de tour ici (les helpers
   // dans teleport.js gèrent la suite : fuite/banissement/annulation).

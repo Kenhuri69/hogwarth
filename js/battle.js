@@ -332,6 +332,10 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
 // pickSimilarEnemy. Le combat se déroule ensuite comme un PvE classique.
 function startBattle(baseEnemyData, opts) {
   inBattle          = true;
+  // Phase G — combat astral : flag global lu par endBattle pour router les
+  // gains vers outremondeEssence (au lieu d'XP/or/drops) et par triggerDeath
+  // pour ouvrir l'éjection astrale (au lieu de la pétrification).
+  inAstralCombat    = !!(opts && opts.astral);
   shieldTurns       = [0, 0];
   guardTurns        = [0, 0];
   guardRegenCooldown = [0, 0];
@@ -345,9 +349,15 @@ function startBattle(baseEnemyData, opts) {
   if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 
   // Duel multijoueur : groupe pré-construit ; sinon tirage 1-3 monstres.
+  // Combat astral (§6.8) : groupe pré-construit aussi (1 écho passé par
+  // engageAstralCombat — pas d'escalade automatique en duo, le visiteur
+  // affronte exactement ce qu'il a choisi de défier).
   const duelGroup = opts && opts.duelGroup;
+  const echoGroup = opts && opts.echoGroup;
   if (duelGroup && duelGroup.length) {
     enemyGroup = duelGroup.map(e => ({ ...e, currentHp: e.hp, statusEffects: [] }));
+  } else if (echoGroup && echoGroup.length) {
+    enemyGroup = echoGroup.map(e => ({ ...e, currentHp: e.hp, statusEffects: [] }));
   } else {
     const size = rollGroupSize();
     enemyGroup = [];
@@ -364,6 +374,9 @@ function startBattle(baseEnemyData, opts) {
 
   document.getElementById('encounter-overlay').style.display = 'flex';
   document.body.classList.add('in-battle');
+  // Phase G — marqueur visuel astral (bordure dorée via CSS).
+  if (inAstralCombat) document.body.classList.add('in-astral-combat');
+  else                document.body.classList.remove('in-astral-combat');
   document.getElementById('target-selection').style.display  = 'none';
   renderEnemyGroup();
   updateBattleCharIndicator();
@@ -733,6 +746,7 @@ function doFlee() {
 function endBattle(won) {
   document.getElementById('encounter-overlay').style.display = 'none';
   document.body.classList.remove('in-battle');
+  document.body.classList.remove('in-astral-combat');
   document.getElementById('target-selection').style.display  = 'none';
   inBattle = false;
 
@@ -741,6 +755,15 @@ function endBattle(won) {
   clearAllStatuses();
 
   AudioSystem.stopCombatMusic();
+
+  // Phase G §6.8 — combat astral : court-circuite la mécanique standard
+  // (pas d'XP/or/drops dans la save, pas de quêtes kill, pas de points de
+  // Maison, pas d'ironman). Gains routés vers outremondeEssence — voir
+  // `_finishAstralCombat` ci-dessous.
+  if (inAstralCombat) {
+    _finishAstralCombat(won);
+    return;
+  }
 
   // Duel multijoueur (§5) : issue PvP — pas de drops/XP PvE. Une défaite
   // arrive ici uniquement par fuite (`won` faux) ; un groupe vaincu passe
@@ -1031,7 +1054,96 @@ function closeLevelup() {
 }
 
 // ── Mort et résurrection ─────────────────────────────────────
+// ── Mondes parallèles Phase G §6.8 — résolution combat astral ───────
+// Victoire :
+//   • Pas d'XP, pas d'or sur player.gold, pas de drops standards.
+//   • Essence d'Outremonde gagnée selon la formule §6.10 :
+//     `1 + floor(monsterLevel/3)` par écho vaincu, où monsterLevel est
+//     soit `_level` (posé par buildEcho), soit le niveau du player en repli.
+//   • Marque la cellule courante comme "dissipée" pour la visite et
+//     incrémente le compteur d'étage (limite 3/étage côté §6.8).
+// Défaite :
+//   • Pas de triggerDeath, pas de pétrification.
+//   • Restaure HP/SP du visiteur à 100 % (le combat reste isolé).
+//   • Pose le cooldown 5 min sur `Apparition Astrale`
+//     (`astralExileCooldownUntil`).
+//   • Sort de la visite via `mpExitVisit('astral-defeat')` — la save
+//     d'origine est restaurée par `_restoreFromVisit`.
+function _finishAstralCombat(won) {
+  // Reset du flag global : on quitte le mode astral immédiatement quelle
+  // que soit l'issue, pour que les hooks (autoSave / hostNotify / etc.)
+  // qui pourraient s'exécuter en aval reviennent au comportement normal.
+  inAstralCombat = false;
+
+  if (won) {
+    let totalEss = 0;
+    if (Array.isArray(enemyGroup)) {
+      enemyGroup.forEach(e => {
+        const lvl = (typeof e._level === 'number') ? e._level
+                  : (typeof e.level  === 'number') ? e.level
+                  : (typeof player !== 'undefined' && player.level) || 1;
+        totalEss += 1 + Math.floor(lvl / 3);
+      });
+    }
+    if (typeof outremondeEssence === 'number') outremondeEssence += totalEss;
+
+    // Marque la cellule + incrémente compteur d'étage (visite courante).
+    if (typeof astralCellsDefeated !== 'undefined' && astralCellsDefeated) {
+      astralCellsDefeated.add(`${playerX},${playerY}`);
+    }
+    if (typeof astralFloorKills === 'number') astralFloorKills++;
+
+    AudioSystem.playVictory();
+    setNarrative(`Écho dissipé. +${totalEss} ✨ Essence d'Outremonde.`);
+    addMsg(`✨ +${totalEss} Essence d'Outremonde (total : ${outremondeEssence}).`, 'magic');
+
+    if (typeof updateUI === 'function') updateUI();
+    if (typeof renderMinimap === 'function') renderMinimap();
+    if (typeof drawDungeon   === 'function') drawDungeon();
+    if (typeof window !== 'undefined' && typeof window._refreshAstralButton === 'function') {
+      window._refreshAstralButton();
+    }
+    return;
+  }
+
+  // Défaite astrale — éjection.
+  AudioSystem.playDeath();
+  // Cooldown 5 min sur le sort de portail (anti-flood de retentatives).
+  // Persiste dans la save d'origine restaurée par _restoreFromVisit puisque
+  // la save du visiteur a été capturée AVANT la visite — le cooldown qu'on
+  // pose ici n'y est pas. On le pose donc directement dans mySavedState
+  // pour qu'il survive à la restauration.
+  const cooldownUntil = Date.now() + 5 * 60 * 1000;
+  if (typeof visitSession !== 'undefined' && visitSession
+      && visitSession.role === 'visitor' && visitSession.mySavedState) {
+    visitSession.mySavedState.astralExileCooldownUntil = cooldownUntil;
+  }
+  astralExileCooldownUntil = cooldownUntil;
+
+  setNarrative('Ton lien astral vacille — tu retournes dans ton monde.');
+  addMsg('💫 Ton lien astral vacille — tu retournes dans ton monde.', 'bad');
+
+  // Sortie via mpExitVisit — restaure la save d'origine (HP/SP + or + tout).
+  if (typeof mpExitVisit === 'function') {
+    // Tolérant : un échec de poste 'bye' ne doit pas empêcher la sortie locale.
+    Promise.resolve(mpExitVisit('astral-defeat')).catch(() => {});
+  }
+}
+
 function triggerDeath(msg) {
+  // Phase G §6.8 — combat astral : pas de pétrification, pas d'Ironman.
+  // Bascule vers _finishAstralCombat qui fait l'éjection propre.
+  if (typeof inAstralCombat !== 'undefined' && inAstralCombat) {
+    // L'overlay combat n'a pas encore été fermé par endBattle (on est dans
+    // enemyTurn). On le ferme et reset les flags ici, puis on délègue.
+    inBattle = false;
+    document.getElementById('encounter-overlay').style.display = 'none';
+    document.body.classList.remove('in-battle');
+    document.body.classList.remove('in-astral-combat');
+    AudioSystem.stopCombatMusic();
+    _finishAstralCombat(false);
+    return;
+  }
   AudioSystem.playDeath();
   // Mode Ironman : la mort est définitive — écran de résultat chiffré
   // + soumission au Hall of Fame, pas de pétrification ni de résurrection.

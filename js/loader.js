@@ -322,6 +322,18 @@ window.UX_safe = new Proxy({}, {
     { name: 'updateVisitQualityBadge',  source: 'visit-hud.js',           kind: 'fn',  optional: true },
     { name: '_visitGetQuality',         source: 'visit-channel.js',       kind: 'fn',  optional: true },
     { name: '_visitIsReconnecting',     source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    // Phase G — combat local + amorce économie cross-plan (§6.8 / §6.10).
+    { name: 'inAstralCombat',           source: 'state.js',               kind: 'obj', optional: true },
+    { name: 'outremondeEssence',        source: 'state.js',               kind: 'obj', optional: true },
+    { name: 'astralCellsDefeated',      source: 'state.js',               kind: 'obj', optional: true },
+    { name: 'astralFloorKills',         source: 'state.js',               kind: 'obj', optional: true },
+    { name: 'astralExileCooldownUntil', source: 'state.js',               kind: 'obj', optional: true },
+    { name: 'buildEcho',                source: 'dungeon.js',             kind: 'fn',  optional: true },
+    { name: 'engageAstralCombat',       source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    { name: '_canEngageAstralCombat',   source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    { name: '_astralFightsRemaining',   source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    { name: 'updateAstralFightButton',  source: 'visit-hud.js',           kind: 'fn',  optional: true },
+    { name: '_visitHudAstralFight',     source: 'visit-hud.js',           kind: 'fn',  optional: true },
 
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },

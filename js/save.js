@@ -221,6 +221,8 @@ function _serializeState() {
     chosenHouse, housePoints, houseTier,
     donationIntroPlayed,
     visitsClosed,
+    outremondeEssence,
+    astralExileCooldownUntil,
     pendingHouseRewards: Array.from(pendingHouseRewards),
     searchedCells: Array.from(searchedCells),
     stepCount,
@@ -446,6 +448,11 @@ function _applyState(gs) {
   if (gs.houseTier   !== undefined) houseTier   = gs.houseTier;
   donationIntroPlayed = !!gs.donationIntroPlayed;  // false par défaut (saves antérieurs)
   visitsClosed        = !!gs.visitsClosed;         // Phase F : false par défaut (accueil ouvert)
+  // Phase G — économie cross-plan + cooldown défaite astrale. 0 par défaut
+  // pour les saves antérieures (visiteur n'a encore rien gagné en astral).
+  outremondeEssence       = (typeof gs.outremondeEssence === 'number') ? gs.outremondeEssence : 0;
+  astralExileCooldownUntil = (typeof gs.astralExileCooldownUntil === 'number')
+    ? gs.astralExileCooldownUntil : 0;
   // Saves antérieures au tier 2 intermédiaire → set vide par défaut.
   pendingHouseRewards = new Set(gs.pendingHouseRewards || []);
   // Endgame : saves antérieures à l'introduction du flag → false/null.

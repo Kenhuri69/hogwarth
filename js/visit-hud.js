@@ -101,6 +101,37 @@
     try { await window._visitSendEmote(kind); } catch (e) { /* tolérant */ }
   }
 
+  // Phase G §6.8 — handler du bouton "Défier l'écho".
+  function _visitHudAstralFight() {
+    if (typeof window === 'undefined') return;
+    if (typeof window.engageAstralCombat !== 'function') return;
+    window.engageAstralCombat();
+  }
+
+  // Phase G §6.8 — synchronise le bouton de défi avec l'état runtime.
+  // `opts` = { visible:bool, canEngage:bool, remaining:int }.
+  function updateAstralFightButton(opts) {
+    const btn = document.getElementById('visit-hud-astral');
+    if (!btn) return false;
+    const o = opts || {};
+    if (!o.visible) {
+      btn.style.display = 'none';
+      return true;
+    }
+    btn.style.display = '';
+    btn.disabled = !o.canEngage;
+    const counter = document.getElementById('visit-hud-astral-counter');
+    if (counter) counter.textContent = `${o.remaining || 0}/3`;
+    if (o.remaining === 0) {
+      btn.title = 'Limite atteinte (3 défis par étage)';
+    } else if (!o.canEngage) {
+      btn.title = 'Cellule déjà dissipée — déplace-toi pour défier ailleurs';
+    } else {
+      btn.title = `Défier un écho ici (${o.remaining || 0}/3 restants sur cet étage)`;
+    }
+    return true;
+  }
+
   function updateVisitHud(opts) {
     const hud = document.getElementById(HUD_ID);
     if (!hud || !hud.classList.contains('active')) return false;
@@ -141,11 +172,13 @@
   }
 
   if (typeof window !== 'undefined') {
-    window.showVisitHud           = showVisitHud;
-    window.updateVisitHud         = updateVisitHud;
-    window.hideVisitHud           = hideVisitHud;
-    window._visitHudExit          = _visitHudExit;
-    window._visitHudEmote         = _visitHudEmote;
+    window.showVisitHud            = showVisitHud;
+    window.updateVisitHud          = updateVisitHud;
+    window.hideVisitHud            = hideVisitHud;
+    window._visitHudExit           = _visitHudExit;
+    window._visitHudEmote          = _visitHudEmote;
     window.updateVisitQualityBadge = updateVisitQualityBadge;
+    window._visitHudAstralFight    = _visitHudAstralFight;
+    window.updateAstralFightButton = updateAstralFightButton;
   }
 })();
