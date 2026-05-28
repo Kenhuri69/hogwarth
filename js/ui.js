@@ -54,6 +54,7 @@ function updateUI() {
   // ── Anneaux header (XP gauche + Maison droite) ───────────────
   _updateXpWrap();
   _updateHouseBadge();
+  if (typeof _updateVisitsBtn === 'function') _updateVisitsBtn();
 
   // ── Statut KO sur les cartes ─────────────────────────────────
   party.forEach((c, i) => {
@@ -922,6 +923,37 @@ function allocateStatPoint(charIdx, statKey) {
 // Bestiaire (openBestiary, filterBestiary, showMonsterDetail, etc.) → ui-bestiary.js
 
 // ── Changement de difficulté en cours de partie ──────────────
+// Mondes parallèles Phase F (§16.7) — toggle d'accueil des voyageurs.
+// Bascule `visitsClosed`, rafraîchit l'icône du bouton, persiste via
+// autoSave('visits-toggled'). Le statut envoyé à mp_presence est mis à
+// jour au prochain heartbeat (≤ MP_HEARTBEAT_MS).
+function toggleVisitsClosed() {
+  if (typeof visitsClosed === 'undefined') return;
+  visitsClosed = !visitsClosed;
+  _updateVisitsBtn();
+  if (typeof addMsg === 'function') {
+    addMsg(visitsClosed
+      ? '🔒 Accueil des voyageurs refermé — tu ne recevras plus de visites.'
+      : '🚪 Accueil des voyageurs ouvert — les autres sorciers peuvent te rejoindre.',
+      visitsClosed ? '' : 'good');
+  }
+  if (typeof autoSave === 'function') autoSave('visits-toggled');
+}
+
+// Met à jour l'icône et le titre du bouton #btn-visits selon `visitsClosed`.
+// Appelé au toggle et à chaque updateUI (pour refléter une sync de save).
+function _updateVisitsBtn() {
+  const btn = document.getElementById('btn-visits');
+  if (!btn) return;
+  const closed = typeof visitsClosed !== 'undefined' && visitsClosed;
+  const icon = btn.querySelector('.btn-icon');
+  if (icon) icon.textContent = closed ? '🔒' : '🚪';
+  btn.title = closed
+    ? 'Accueil des voyageurs : fermé (cliquer pour rouvrir)'
+    : 'Accueil des voyageurs : ouvert (cliquer pour fermer)';
+  btn.setAttribute('aria-pressed', closed ? 'true' : 'false');
+}
+
 function changeDifficulty() {
   // Mode Ironman : la difficulté est verrouillée pour toute la partie.
   if (typeof ironmanMode !== 'undefined' && ironmanMode) {

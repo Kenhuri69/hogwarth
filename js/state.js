@@ -101,6 +101,14 @@ let defeatedDuelists = new Set();
 // Cf. .claude/plans/parallel-worlds.md §3.4.
 let visitSession = null;
 
+// Mondes parallèles Phase F (§16.7 — toggle d'options pour masquer) :
+// le host peut désactiver l'accueil des visites pour jouer concentré.
+// Quand `true`, _mpPresenceRow envoie `status='closed'` (filtré par
+// mpListAvailableHosts qui n'accepte que `exploring`) et toute demande
+// entrante est refusée silencieusement (cf. _mpPollIncomingVisitRequests).
+// Persisté dans la save pour rester stable entre sessions.
+let visitsClosed = false;
+
 // ============================================================
 // SYSTÈME DES MAISONS
 // ============================================================

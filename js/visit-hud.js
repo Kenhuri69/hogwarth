@@ -17,11 +17,17 @@
 (function () {
   'use strict';
 
-  const HUD_ID    = 'visit-hud';
-  const NAME_ID   = 'visit-hud-name';
-  const META_ID   = 'visit-hud-meta';
-  const EXIT_ID   = 'visit-hud-exit';
-  const EMOTES_ID = 'visit-hud-emotes';
+  const HUD_ID     = 'visit-hud';
+  const NAME_ID    = 'visit-hud-name';
+  const META_ID    = 'visit-hud-meta';
+  const EXIT_ID    = 'visit-hud-exit';
+  const EMOTES_ID  = 'visit-hud-emotes';
+  const QUALITY_ID = 'visit-hud-quality';
+  const QUALITY_LABEL = {
+    good:     { label: 'Stable',     title: 'Connexion stable' },
+    degraded: { label: 'Instable',   title: 'Le partenaire ne répond plus — tentative de reconnexion…' },
+    lost:     { label: 'Rompue',     title: 'Connexion perdue — sortie en cours' },
+  };
   const EXIT_LABEL = {
     visitor: 'Quitter ce monde',
     host:    'Refermer la cheminée',
@@ -106,6 +112,23 @@
     if (!hud) return false;
     hud.classList.remove('active');
     hud.setAttribute('aria-hidden', 'true');
+    // Reset du badge à l'état "good" pour qu'une prochaine visite parte
+    // d'un visuel propre sans flash résiduel.
+    updateVisitQualityBadge('good');
+    return true;
+  }
+
+  // Phase F (§F.4) — met à jour le badge de qualité réseau. `quality` ∈
+  // 'good' | 'degraded' | 'lost'. No-op silencieux si le badge n'est pas
+  // dans le DOM (compat tests qui n'incluent pas le bandeau complet).
+  function updateVisitQualityBadge(quality) {
+    const el = document.getElementById(QUALITY_ID);
+    if (!el) return false;
+    const def = QUALITY_LABEL[quality] || QUALITY_LABEL.good;
+    el.setAttribute('data-quality', quality);
+    el.setAttribute('title', def.title);
+    const labelEl = el.querySelector('.visit-hud-quality-label');
+    if (labelEl) labelEl.textContent = def.label;
     return true;
   }
 
@@ -118,10 +141,11 @@
   }
 
   if (typeof window !== 'undefined') {
-    window.showVisitHud   = showVisitHud;
-    window.updateVisitHud = updateVisitHud;
-    window.hideVisitHud   = hideVisitHud;
-    window._visitHudExit  = _visitHudExit;
-    window._visitHudEmote = _visitHudEmote;
+    window.showVisitHud           = showVisitHud;
+    window.updateVisitHud         = updateVisitHud;
+    window.hideVisitHud           = hideVisitHud;
+    window._visitHudExit          = _visitHudExit;
+    window._visitHudEmote         = _visitHudEmote;
+    window.updateVisitQualityBadge = updateVisitQualityBadge;
   }
 })();
