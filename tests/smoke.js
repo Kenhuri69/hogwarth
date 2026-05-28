@@ -12929,6 +12929,131 @@ async function scenarioVisitPhaseH() {
   await browser.close();
 }
 
+// ── Scénario : V1c.1 — souvenirs + cosmétiques + sorts cross ──
+async function scenarioVisitV1c1() {
+  console.log('\n── Scénario : Cheminette — V1c.1 (souvenirs/cosm/sorts) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : surface — globaux + registres + helpers.
+  const t1 = await page.evaluate(() => ({
+    metrics:        typeof outremondeMetrics    === 'object' && outremondeMetrics !== null,
+    souvenirs:      typeof outremondeSouvenirs  === 'object',
+    cosmetics:      typeof outremondeCosmetics  === 'object',
+    activeAura:     typeof outremondeActiveAura !== 'undefined',
+    souvList:       Array.isArray(OUTREMONDE_SOUVENIRS) && OUTREMONDE_SOUVENIRS.length === 6,
+    cosmList:       Array.isArray(OUTREMONDE_COSMETICS) && OUTREMONDE_COSMETICS.length === 12,
+    crossSpells:    SPELLS.filter(s => s._cross).length === 4,
+    hasCheck:       typeof _checkSouvenirs    === 'function',
+    hasBuyCos:      typeof _buyCosmetic       === 'function',
+    hasToggleCos:   typeof _toggleCosmetic    === 'function',
+    hasBuySpell:    typeof _buyCrossSpell     === 'function',
+    hasAnim:        typeof _playBloodSealAnim === 'function',
+    hasApplyVis:    typeof _applyCosmeticVisuals === 'function'
+  }));
+  console.log('  T1 surface →', t1);
+  assert(t1.metrics && t1.souvenirs && t1.cosmetics && t1.activeAura, 'globaux présents');
+  assert(t1.souvList,  '6 souvenirs définis');
+  assert(t1.cosmList,  '12 cosmétiques définis');
+  assert(t1.crossSpells, '4 sorts _cross définis');
+  assert(t1.hasCheck && t1.hasBuyCos && t1.hasToggleCos && t1.hasBuySpell, '4 helpers exposés');
+  assert(t1.hasAnim && t1.hasApplyVis, 'anim + visuals exposés');
+
+  // T2 : souvenir débloqué par métrique (Premier Pas via visitsTotal).
+  const t2 = await page.evaluate(() => {
+    outremondeSouvenirs = new Set();
+    outremondeMetrics.visitsTotal = 0;
+    _checkSouvenirs();
+    const beforeLck = party[0].lck;
+    outremondeMetrics.visitsTotal = 1;
+    _checkSouvenirs();
+    const unlocked = outremondeSouvenirs.has('premier_pas');
+    recalculateStats();
+    const afterLck = party[0].lck;
+    return { unlocked, lckGain: afterLck - beforeLck };
+  });
+  console.log('  T2 souvenir Premier Pas →', t2);
+  assert(t2.unlocked,        'Souvenir débloqué');
+  assert(t2.lckGain === 1,   '+1 LCK appliqué via recalculateStats');
+
+  // T3 : achat + activation d'un cosmétique aura.
+  const t3 = await page.evaluate(() => {
+    outremondeEssence  = 20;
+    outremondeFragments = 5;
+    outremondeCosmetics = new Set();
+    outremondeActiveAura = null;
+    _buyCosmetic('aura_or');
+    const owned = outremondeCosmetics.has('aura_or');
+    const essAfterBuy = outremondeEssence;
+    _toggleCosmetic('aura_or');
+    const activeAfter = outremondeActiveAura;
+    const cssAura = document.documentElement.style.getPropertyValue('--om-aura');
+    return { owned, essAfterBuy, activeAfter, cssAura };
+  });
+  console.log('  T3 cosmétique →', t3);
+  assert(t3.owned,                     'Aura possédée après achat');
+  assert(t3.essAfterBuy === 15,        '20 - 5 = 15 essences');
+  assert(t3.activeAfter === 'aura_or', 'Aura activée');
+  assert(t3.cssAura.indexOf('d8b647') !== -1, 'CSS variable posée');
+
+  // T4 : achat d'un sort cross-plan (Marque du Pèlerin).
+  const t4 = await page.evaluate(() => {
+    outremondeEssence = 30;
+    party.forEach(c => { c.spells = c.spells.filter(n => !/Pèlerin|Astral/.test(n)); });
+    _buyCrossSpell('Marque du Pèlerin');
+    const harryHas    = party[0].spells.includes('Marque du Pèlerin');
+    const hermioneHas = party[1].spells.includes('Marque du Pèlerin');
+    return { essAfter: outremondeEssence, harryHas, hermioneHas };
+  });
+  console.log('  T4 sort cross →', t4);
+  assert(t4.essAfter === 26,    '30 - 4 = 26 essences');
+  assert(t4.harryHas,           'Harry a appris');
+  assert(t4.hermioneHas,        'Hermione a appris');
+
+  // T5 : Marque du Pèlerin + Rappel Astral effectif en visite.
+  const t5 = await page.evaluate(() => {
+    visitSession = { role:'visitor', hostId:'h-X', hostName:'Bob' };
+    currentFloor = 2;
+    playerX = 3; playerY = 4;
+    party[0].sp = 30; party[0].spells = ['Marque du Pèlerin', 'Rappel Astral'];
+    outremondeMetrics.pilgrimMark = null;
+    // Pose la marque.
+    SPELL_OOC_HANDLERS.pilgrim_mark(SPELLS.find(s => s.name === 'Marque du Pèlerin'), 0);
+    const mark = outremondeMetrics.pilgrimMark;
+    // Déplace le joueur puis rappel.
+    playerX = 7; playerY = 8;
+    party[0].sp = 30;
+    SPELL_OOC_HANDLERS.astral_recall(SPELLS.find(s => s.name === 'Rappel Astral'), 0);
+    return { mark, recallX: playerX, recallY: playerY };
+  });
+  console.log('  T5 marque + rappel →', t5);
+  assert(t5.mark && t5.mark.x === 3 && t5.mark.y === 4, 'Marque posée à 3,4');
+  assert(t5.recallX === 3 && t5.recallY === 4, 'Rappel restaure 3,4');
+
+  // T6 : Sceau du Voyageur — pas de cooldown sur défaite astrale.
+  const t6 = await page.evaluate(() => {
+    party.forEach(c => { if (!c.spells.includes('Sceau du Voyageur')) c.spells.push('Sceau du Voyageur'); });
+    visitSession = { role:'visitor', hostId:'h-Y', hostName:'C', mySavedState:{} };
+    inAstralCombat = true;
+    enemyGroup = [{ id:'chat_norris', name:'Écho · Chat', currentHp:1, hp:1, _level:1 }];
+    party.forEach(c => { if (c) c.hp = 0; });
+    astralExileCooldownUntil = 0;
+    // Stub mpExitVisit pour ne pas crasher.
+    window.mpExitVisit = () => {};
+    _finishAstralCombat(false);
+    return { cooldown: astralExileCooldownUntil };
+  });
+  console.log('  T6 Sceau du Voyageur →', t6);
+  assert(t6.cooldown === 0, 'Pas de cooldown posé avec Sceau');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ V1c.1 OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -14272,7 +14397,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

@@ -353,6 +353,19 @@ window.UX_safe = new Proxy({}, {
     { name: 'mpUpdateSealStatus',       source: 'multiplayer.js',         kind: 'fn',  optional: true },
     { name: 'mpListVisitorResolvedSeals', source: 'multiplayer.js',       kind: 'fn',  optional: true },
     { name: 'mpClaimSeal',              source: 'multiplayer.js',         kind: 'fn',  optional: true },
+    // V1c.1 — souvenirs / cosmétiques / sorts cross-plan.
+    { name: 'outremondeMetrics',        source: 'state.js',               kind: 'obj', optional: true },
+    { name: 'outremondeSouvenirs',      source: 'state.js',               kind: 'obj', optional: true },
+    { name: 'outremondeCosmetics',      source: 'state.js',               kind: 'obj', optional: true },
+    { name: 'OUTREMONDE_SOUVENIRS',     source: 'data.js',                kind: 'obj', optional: true },
+    { name: 'OUTREMONDE_COSMETICS',     source: 'data.js',                kind: 'obj', optional: true },
+    { name: '_checkSouvenirs',          source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
+    { name: '_souvenirsBonuses',        source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
+    { name: '_buyCosmetic',             source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
+    { name: '_toggleCosmetic',          source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
+    { name: '_applyCosmeticVisuals',    source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
+    { name: '_playBloodSealAnim',       source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
+    { name: '_buyCrossSpell',           source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
 
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },

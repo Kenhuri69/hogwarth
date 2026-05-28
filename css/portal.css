@@ -682,3 +682,82 @@ button.atelier-card { font: inherit; }
   letter-spacing: 0.5px;
 }
 .atelier-claims li:last-child { border-bottom: none; }
+
+/* ============================================================
+   V1c.1 — Atelier multi-onglets + cosmétiques + anim rune
+   ============================================================ */
+.atelier-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 10px;
+  border-bottom: 1px solid rgba(216, 182, 71, 0.3);
+}
+.atelier-tab {
+  flex: 1 1 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(247, 228, 168, 0.6);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 6px 4px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.atelier-tab:hover  { color: #ffd76a; }
+.atelier-tab.active {
+  color: #ffd76a;
+  border-bottom-color: #d8b647;
+}
+.atelier-section { margin-bottom: 12px; }
+.atelier-craft-btn.active {
+  background: linear-gradient(180deg, rgba(216, 182, 71, 0.85) 0%, rgba(160, 122, 32, 0.85) 100%);
+  color: #1a1424;
+  font-weight: bold;
+}
+
+/* Anim rune rouge à la pose du Verrou de Sang. Tracée 1.2 s puis fade. */
+#blood-seal-fx {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  z-index: 9700;
+}
+#blood-seal-fx.active {
+  opacity: 1;
+  animation: bloodSealFade 1.2s ease-out forwards;
+}
+.blood-seal-svg {
+  width: 240px;
+  height: 240px;
+  filter: drop-shadow(0 0 20px rgba(217, 69, 69, 0.55));
+}
+.bs-outer  { fill: none; stroke: #6e1a1a; stroke-width: 4; stroke-dasharray: 502; stroke-dashoffset: 502; animation: bsDraw 1s ease-out forwards; }
+.bs-inner  { fill: none; stroke: #d94545; stroke-width: 3; stroke-dasharray: 314; stroke-dashoffset: 314; animation: bsDraw 1s ease-out 0.15s forwards; }
+.bs-core   { fill: #d94545; opacity: 0; animation: bsCore 1s ease-out 0.3s forwards; }
+.bs-rune   { stroke: #d8b647; stroke-width: 3; opacity: 0; animation: bsCore 1s ease-out 0.5s forwards; }
+@keyframes bsDraw { to { stroke-dashoffset: 0; } }
+@keyframes bsCore { to { opacity: 1; } }
+@keyframes bloodSealFade {
+  0% { opacity: 0; transform: scale(0.6); }
+  20% { opacity: 1; transform: scale(1.0); }
+  85% { opacity: 1; transform: scale(1.0); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+
+/* Aura cosmétique : halo coloré autour du HUD de visite. Couleur lue
+   via --om-aura, posée par _applyCosmeticVisuals. */
+#visit-hud {
+  --om-aura: transparent;
+  box-shadow: 0 0 0 0 var(--om-aura);
+  transition: box-shadow 200ms ease;
+}
+#visit-hud.aura-on {
+  box-shadow: 0 0 18px 4px var(--om-aura), 0 0 32px 8px var(--om-aura);
+}

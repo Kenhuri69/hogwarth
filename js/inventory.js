@@ -215,6 +215,17 @@ function recalculateStats() {
       // 5/5 : pas de stat dérivée — l'effet est cosmétique (preview UI).
     }
 
+    // V1c.1 §6.10 — Souvenirs passifs cross-plan. Bonus stat additifs
+    // des souvenirs débloqués (cf. OUTREMONDE_SOUVENIRS dans data.js).
+    // Appliqué à TOUT le groupe (effet d'âme, pas d'équipement).
+    if (typeof _souvenirsBonuses === 'function') {
+      const sb = _souvenirsBonuses();
+      c.atk += sb.bonusAtk; c.def += sb.bonusDef;
+      c.mag += sb.bonusMag; c.lck += sb.bonusLck;
+      c.str += sb.bonusStr; c.int += sb.bonusInt;
+      c.agi += sb.bonusAgi; c.end += sb.bonusEnd;
+    }
+
     // Deux canaux de crit. Crit physique : base LCK (plafonne à 40 %).
     // Crit de sort : base AGI (plafonne à 35 %) — rôle offensif de l'AGI.
     // Les bonus équipement/set s'ajoutent PAR-DESSUS (plafond absolu 100 %).
@@ -1097,9 +1108,11 @@ function openSpells(charIdx = 0) {
 // rester extensible. V1 : Portus (teleport) + sorts de soin (heal).
 function isOutOfCombatSpell(spell) {
   if (!spell) return false;
-  return spell.effect === 'teleport' || spell.effect === 'heal'
-      || spell.effect === 'reveal'   || spell.effect === 'portal'
-      || spell.effect === 'blood_seal';
+  return spell.effect === 'teleport'      || spell.effect === 'heal'
+      || spell.effect === 'reveal'        || spell.effect === 'portal'
+      || spell.effect === 'blood_seal'    || spell.effect === 'voyager_seal'
+      || spell.effect === 'outremonde_memory' || spell.effect === 'pilgrim_mark'
+      || spell.effect === 'astral_recall';
 }
 
 // Cooldown partagé entre tous les sorts de soin OOC (cf. .claude/plans/
@@ -1296,6 +1309,84 @@ const SPELL_OOC_HANDLERS = {
       // Repli silencieux si la modale n'est pas chargée.
       addMsg("Le rituel ne se forme pas — module absent.", 'bad');
     }
+  },
+  // ── V1c.1 — Sorts exclusifs cross-plan (achetés à l'Atelier) ────
+  // Sceau du Voyageur : sort passif. Son seul effet est sa présence
+  // dans player.spells — consommé par _finishAstralCombat(false) qui
+  // saute le cooldown 5 min. Le lancement OOC ne fait que rappeler
+  // l'ancrage.
+  voyager_seal: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster) return;
+    addMsg(`🪬 ${caster.name} renforce le Sceau du Voyageur — ton ancrage astral est intact.`, 'magic');
+    closeModal('spell-modal');
+  },
+  // Mémoire d'Outremonde : sort passif. Consommé à l'entrée d'une
+  // visite (visit-channel.js) — restaure 100 % PV/PM puis pose
+  // visitSession._memoryUsed. Le lancement OOC hors visite est un
+  // no-op informatif.
+  outremonde_memory: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster) return;
+    addMsg(`🌌 ${caster.name} médite — la Mémoire s'éveillera à ta prochaine visite.`, 'magic');
+    closeModal('spell-modal');
+  },
+  // Marque du Pèlerin : pose un marqueur sur la cellule courante en
+  // visite. Persiste dans outremondeMetrics.pilgrimMark jusqu'au
+  // prochain Rappel Astral ou écrasement.
+  pilgrim_mark: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster) return;
+    if (typeof visitSession === 'undefined' || !visitSession || visitSession.role !== 'visitor') {
+      addMsg("La Marque ne tient que dans le plan d'un autre sorcier.", 'bad');
+      return;
+    }
+    if (caster.sp < spell.cost) {
+      addMsg(`Pas assez de magie (${spell.cost} PM).`, 'bad');
+      return;
+    }
+    caster.sp -= spell.cost;
+    outremondeMetrics.pilgrimMark = {
+      floor: currentFloor,
+      x: playerX,
+      y: playerY,
+      hostId: visitSession.hostId
+    };
+    addMsg(`📍 ${caster.name} grave une Marque du Pèlerin — ${playerX},${playerY}.`, 'magic');
+    closeModal('spell-modal');
+    if (typeof renderMinimap === 'function') renderMinimap();
+    if (typeof updateUI === 'function') updateUI();
+  },
+  // Rappel Astral : téléporte le visiteur à la dernière Marque posée
+  // (même hôte, même étage). Refuse si pas de Marque ou hôte différent
+  // ou étage différent.
+  astral_recall: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster) return;
+    if (typeof visitSession === 'undefined' || !visitSession || visitSession.role !== 'visitor') {
+      addMsg("Le Rappel n'opère que pendant une visite.", 'bad');
+      return;
+    }
+    const mark = outremondeMetrics && outremondeMetrics.pilgrimMark;
+    if (!mark) {
+      addMsg("Aucune Marque du Pèlerin n'a été posée.", 'bad');
+      return;
+    }
+    if (mark.hostId !== visitSession.hostId || mark.floor !== currentFloor) {
+      addMsg("La Marque est dans un autre plan — impossible de la rappeler.", 'bad');
+      return;
+    }
+    if (caster.sp < spell.cost) {
+      addMsg(`Pas assez de magie (${spell.cost} PM).`, 'bad');
+      return;
+    }
+    caster.sp -= spell.cost;
+    playerX = mark.x; playerY = mark.y;
+    addMsg(`🌠 ${caster.name} se replie sur la Marque — ${mark.x},${mark.y}.`, 'magic');
+    closeModal('spell-modal');
+    if (typeof drawDungeon   === 'function') drawDungeon();
+    if (typeof renderMinimap === 'function') renderMinimap();
+    if (typeof updateUI === 'function') updateUI();
   }
 };
 

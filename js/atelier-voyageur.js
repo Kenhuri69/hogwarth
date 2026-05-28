@@ -131,6 +131,8 @@
     if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playSpellCast === 'function') {
       AudioSystem.playSpellCast('Verrou de Sang');
     }
+    // V1c.1 — animation rune rouge tracée au sol (overlay 1,2 s).
+    _playBloodSealAnim();
     if (typeof updateUI === 'function') updateUI();
   }
 
@@ -152,19 +154,52 @@
     if (modal) modal.style.display = 'none';
   }
 
-  // ── Atelier du Voyageur — craft Set Voyageur ─────────────────
-  // 5 items taggés family:'voyageur' (cf. data.js). Le coût est lu sur
-  // `_outremondeCost` (essences). Aucun coût en or (économies cloisonnées
-  // §6.10).
-  function openAtelierVoyageur() {
+  // ── Atelier du Voyageur — modale multi-onglets ────────────────
+  // 4 onglets : Set Voyageur (craft 5 pièces) / Sorts cross-plan (4
+  // sorts exclusifs) / Cosmétiques (12 unlocks) / Souvenirs (6 passifs
+  // débloqués automatiquement). État d'onglet local au module.
+  let _atelierTab = 'set';
+
+  function openAtelierVoyageur(tab) {
+    if (tab) _atelierTab = tab;
     const modal = _ensureModalElement();
     if (!modal) return;
+
+    const tabs = [
+      ['set',       '🧥 Set Voyageur'],
+      ['spells',    '🌌 Sorts'],
+      ['cosmetics', '✨ Cosmétiques'],
+      ['souvenirs', '📜 Souvenirs']
+    ];
+    const tabsHtml = tabs.map(([id, label]) =>
+      `<button class="atelier-tab ${_atelierTab === id ? 'active' : ''}" type="button"`
+      + ` onclick="openAtelierVoyageur('${id}')">${_esc(label)}</button>`).join('');
+
+    let body = '';
+    if (_atelierTab === 'set')        body = _renderAtelierSetTab();
+    else if (_atelierTab === 'spells') body = _renderAtelierSpellsTab();
+    else if (_atelierTab === 'cosmetics') body = _renderAtelierCosmeticsTab();
+    else if (_atelierTab === 'souvenirs') body = _renderAtelierSouvenirsTab();
+
+    modal.innerHTML = `
+      <div class="atelier-panel atelier-panel-wide">
+        <button class="atelier-close" type="button" onclick="closeAtelierVoyageur()" aria-label="Fermer">✕</button>
+        <h2 class="atelier-title">✨ Atelier du Voyageur</h2>
+        <p class="atelier-subtitle">
+          Réserve d'Essences d'Outremonde : <strong>${outremondeEssence}</strong> ✨ ·
+          Fragments : <strong>${outremondeFragments}</strong> 🔹
+        </p>
+        <div class="atelier-tabs">${tabsHtml}</div>
+        <div class="atelier-tabbody">${body}</div>
+      </div>`;
+    modal.style.display = 'flex';
+  }
+
+  function _renderAtelierSetTab() {
     const items = (typeof ITEMS !== 'undefined' && Array.isArray(ITEMS))
       ? ITEMS.filter(it => it.family === 'voyageur') : [];
-
     const owned = (typeof player !== 'undefined' && Array.isArray(player.inventory))
       ? new Set(player.inventory.map(it => it.id)) : new Set();
-    // Équipement : déjà porté par un perso ?
     const equipped = new Set();
     if (typeof party !== 'undefined' && Array.isArray(party)) {
       party.forEach(c => {
@@ -172,17 +207,16 @@
         Object.values(c.equipped).forEach(it => { if (it && it.id) equipped.add(it.id); });
       });
     }
-
     const cards = items.map(it => {
       const cost = it._outremondeCost || 0;
       const isOwned    = owned.has(it.id);
       const isEquipped = equipped.has(it.id);
-      const affordable = (typeof outremondeEssence === 'number') && outremondeEssence >= cost;
+      const affordable = outremondeEssence >= cost;
       let badge = '';
-      if (isEquipped)      badge = '<span class="atelier-badge done">Équipé</span>';
-      else if (isOwned)    badge = '<span class="atelier-badge done">Possédé</span>';
+      if (isEquipped)       badge = '<span class="atelier-badge done">Équipé</span>';
+      else if (isOwned)     badge = '<span class="atelier-badge done">Possédé</span>';
       else if (!affordable) badge = '<span class="atelier-badge locked">' + cost + ' ✨</span>';
-      else                 badge = '<button class="atelier-craft-btn" type="button" onclick="_craftVoyageurPiece(\'' + _esc(it.id) + '\')">Forger (' + cost + ' ✨)</button>';
+      else                  badge = '<button class="atelier-craft-btn" type="button" onclick="_craftVoyageurPiece(\'' + _esc(it.id) + '\')">Forger (' + cost + ' ✨)</button>';
       const stats = [];
       if (it.bonusInt) stats.push('+' + it.bonusInt + ' INT');
       if (it.bonusAgi) stats.push('+' + it.bonusAgi + ' AGI');
@@ -198,22 +232,139 @@
           <div class="atelier-card-action">${badge}</div>
         </div>`;
     }).join('');
+    return `
+      <div class="atelier-grid atelier-grid-set">${cards || '<p>Aucune pièce disponible.</p>'}</div>
+      <p class="atelier-footnote">
+        Bonus de Set : 2 → +1 LCK ; 3 → +5 % crit de sort ; 4 → +2 regen SP ; 5 → preview donjon distant.
+      </p>`;
+  }
 
-    modal.innerHTML = `
-      <div class="atelier-panel atelier-panel-wide">
-        <button class="atelier-close" type="button" onclick="closeAtelierVoyageur()" aria-label="Fermer">✕</button>
-        <h2 class="atelier-title">✨ Atelier du Voyageur</h2>
-        <p class="atelier-subtitle">
-          Réserve d'Essences d'Outremonde : <strong>${outremondeEssence}</strong> ✨ ·
-          Fragments cosmétiques : <strong>${outremondeFragments}</strong> 🔹
-        </p>
-        <div class="atelier-grid atelier-grid-set">${cards || '<p>Aucune pièce disponible.</p>'}</div>
-        <p class="atelier-footnote">
-          Set complet (5 pièces) : déverrouille la prévisualisation du donjon
-          distant. Bonus 2/3/4 pièces : LCK, crit de sort, regen SP.
-        </p>
-      </div>`;
-    modal.style.display = 'flex';
+  function _renderAtelierSpellsTab() {
+    if (typeof SPELLS === 'undefined') return '<p>Sorts indisponibles.</p>';
+    const crossSpells = SPELLS.filter(s => s._cross);
+    const ownedSet = new Set();
+    if (typeof party !== 'undefined' && Array.isArray(party)) {
+      party.forEach(c => { if (c && Array.isArray(c.spells)) c.spells.forEach(n => ownedSet.add(n)); });
+    }
+    const cards = crossSpells.map(s => {
+      const known = ownedSet.has(s.name);
+      const cost = s.cost || 0;   // coût d'achat = coût PM canonique pour V1
+      const affordable = outremondeEssence >= cost;
+      let badge = '';
+      if (known)            badge = '<span class="atelier-badge done">Appris</span>';
+      else if (!affordable) badge = '<span class="atelier-badge locked">' + cost + ' ✨</span>';
+      else                  badge = '<button class="atelier-craft-btn" type="button" onclick="_buyCrossSpell(\'' + _esc(s.name) + '\')">Apprendre (' + cost + ' ✨)</button>';
+      return `
+        <div class="atelier-card ${known ? 'owned' : ''} ${affordable ? '' : 'locked'}">
+          <div class="atelier-card-icon">${_esc(s.icon || '✨')}</div>
+          <div class="atelier-card-name">${_esc(s.name)}</div>
+          <div class="atelier-card-desc">${_esc(s.desc || '')}</div>
+          <div class="atelier-card-action">${badge}</div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="atelier-grid atelier-grid-set">${cards || '<p>Aucun sort disponible.</p>'}</div>
+      <p class="atelier-footnote">Les sorts cross-plan sont appris par TOUS les membres du groupe.</p>`;
+  }
+
+  function _renderAtelierCosmeticsTab() {
+    if (typeof OUTREMONDE_COSMETICS === 'undefined') return '<p>Aucun cosmétique.</p>';
+    const sections = [
+      { key:'aura',    title:'Auras de visite' },
+      { key:'portal',  title:'Skins de portail' },
+      { key:'fissure', title:'Skins de fissure' }
+    ];
+    const activeId = {
+      aura:    outremondeActiveAura,
+      portal:  outremondeActivePortalSkin,
+      fissure: outremondeActiveFissureSkin
+    };
+    const html = sections.map(sec => {
+      const items = OUTREMONDE_COSMETICS.filter(c => c.kind === sec.key);
+      const cards = items.map(c => {
+        const owned    = outremondeCosmetics.has(c.id);
+        const active   = activeId[sec.key] === c.id;
+        const afford   = outremondeEssence >= c.essCost && outremondeFragments >= c.fragCost;
+        let badge = '';
+        if (active)       badge = '<button class="atelier-craft-btn active" type="button" onclick="_toggleCosmetic(\'' + _esc(c.id) + '\')">Actif — désactiver</button>';
+        else if (owned)   badge = '<button class="atelier-craft-btn" type="button" onclick="_toggleCosmetic(\'' + _esc(c.id) + '\')">Activer</button>';
+        else if (!afford) badge = '<span class="atelier-badge locked">' + c.essCost + ' ✨ + ' + c.fragCost + ' 🔹</span>';
+        else              badge = '<button class="atelier-craft-btn" type="button" onclick="_buyCosmetic(\'' + _esc(c.id) + '\')">Acheter (' + c.essCost + ' ✨ + ' + c.fragCost + ' 🔹)</button>';
+        return `
+          <div class="atelier-card ${owned ? 'owned' : ''} ${afford ? '' : 'locked'}" style="border-color:${c.palette}">
+            <div class="atelier-card-icon">${_esc(c.icon || '✨')}</div>
+            <div class="atelier-card-name">${_esc(c.name)}</div>
+            <div class="atelier-card-desc">${_esc(c.desc || '')}</div>
+            <div class="atelier-card-action">${badge}</div>
+          </div>`;
+      }).join('');
+      return `
+        <div class="atelier-section">
+          <div class="panel-title" style="margin:8px 0 6px">⸻ ${_esc(sec.title)} ⸻</div>
+          <div class="atelier-grid atelier-grid-set">${cards}</div>
+        </div>`;
+    }).join('');
+    return html;
+  }
+
+  function _renderAtelierSouvenirsTab() {
+    if (typeof OUTREMONDE_SOUVENIRS === 'undefined') return '<p>Aucun souvenir défini.</p>';
+    const m = outremondeMetrics || {};
+    const metricsLine = `Voyages : ${m.visitsTotal || 0} · Hôtes uniques : ${(m.uniqueHosts && m.uniqueHosts.size) || 0} · Verrous résolus : ${m.sealsResolved || 0} · Échos défaits : ${m.echosDefeated || 0}`;
+    const cards = OUTREMONDE_SOUVENIRS.map(s => {
+      const unlocked = outremondeSouvenirs && outremondeSouvenirs.has(s.id);
+      const bonuses = [];
+      const b = s.bonus || {};
+      if (b.bonusAtk) bonuses.push('+' + b.bonusAtk + ' ATK');
+      if (b.bonusMag) bonuses.push('+' + b.bonusMag + ' MAG');
+      if (b.bonusInt) bonuses.push('+' + b.bonusInt + ' INT');
+      if (b.bonusAgi) bonuses.push('+' + b.bonusAgi + ' AGI');
+      if (b.bonusLck) bonuses.push('+' + b.bonusLck + ' LCK');
+      const badge = unlocked
+        ? '<span class="atelier-badge done">Débloqué</span>'
+        : '<span class="atelier-badge locked">Verrouillé</span>';
+      return `
+        <div class="atelier-card ${unlocked ? 'owned' : 'locked'}">
+          <div class="atelier-card-icon">${_esc(s.icon || '📜')}</div>
+          <div class="atelier-card-name">${_esc(s.name)}</div>
+          <div class="atelier-card-stats">${bonuses.join(' · ')}</div>
+          <div class="atelier-card-desc">${_esc(s.desc || '')}</div>
+          <div class="atelier-card-action">${badge}</div>
+        </div>`;
+    }).join('');
+    return `
+      <p class="atelier-footnote" style="margin:0 0 8px">${_esc(metricsLine)}</p>
+      <div class="atelier-grid atelier-grid-set">${cards}</div>`;
+  }
+
+  function _buyCrossSpell(name) {
+    if (typeof SPELLS === 'undefined') return;
+    const sp = SPELLS.find(s => s.name === name);
+    if (!sp) return;
+    const cost = sp.cost || 0;
+    if (outremondeEssence < cost) {
+      if (typeof addMsg === 'function') addMsg("Pas assez d'essences.", 'bad');
+      return;
+    }
+    // Évite double-paiement si déjà appris par un perso.
+    if (Array.isArray(party) && party.some(c => c && Array.isArray(c.spells) && c.spells.includes(name))) {
+      if (typeof addMsg === 'function') addMsg('Ce sort est déjà appris.', '');
+      return;
+    }
+    outremondeEssence -= cost;
+    party.forEach(c => {
+      if (!c) return;
+      if (!Array.isArray(c.spells)) c.spells = [];
+      if (!c.spells.includes(name)) c.spells.push(name);
+    });
+    if (typeof addMsg === 'function') {
+      addMsg(`🌌 ${name} appris par le groupe. Réserve : ${outremondeEssence} ✨.`, 'good');
+    }
+    if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playLevelUp === 'function') {
+      AudioSystem.playLevelUp();
+    }
+    openAtelierVoyageur();
+    if (typeof safeCall === 'function') safeCall('autoSave', 'cross-spell-bought');
   }
 
   function _craftVoyageurPiece(itemId) {
@@ -267,6 +418,10 @@
       }
       outremondeEssence  += gainEss;
       outremondeFragments += gainFrag;
+      // V1c.1 — incrémente la métrique sealsResolved pour les souvenirs
+      // passifs (un Verrou « fled » compte aussi : c'est un voyage qui a
+      // déclenché un événement chez le host).
+      if (outremondeMetrics) outremondeMetrics.sealsResolved += 1;
       // Retire du tableau pending local si présent.
       if (Array.isArray(outremondePendingSeals)) {
         outremondePendingSeals = outremondePendingSeals.filter(s => s.id !== row.id);
@@ -281,6 +436,8 @@
     if (claims.length) {
       _showClaimsModal(claims);
       if (typeof updateUI === 'function') updateUI();
+      // V1c.1 — métriques mises à jour → check des souvenirs.
+      _checkSouvenirs();
       if (typeof safeCall === 'function') safeCall('autoSave', 'seals-claimed');
     }
     return claims;
@@ -373,6 +530,137 @@
     return true;
   }
 
+  // ── V1c.1 — Souvenirs passifs (auto-débloqués via métriques) ──
+  // Appelé à chaque mutation des métriques (visite, claim, fight gagné).
+  // Un souvenir débloqué reste verrouillé dans outremondeSouvenirs ; le
+  // bonus stat est appliqué à recalculateStats() — pas de removal.
+  function _checkSouvenirs() {
+    if (typeof OUTREMONDE_SOUVENIRS === 'undefined') return;
+    if (!outremondeSouvenirs) outremondeSouvenirs = new Set();
+    let any = false;
+    for (const s of OUTREMONDE_SOUVENIRS) {
+      if (outremondeSouvenirs.has(s.id)) continue;
+      if (typeof s.cond === 'function' && s.cond(outremondeMetrics)) {
+        outremondeSouvenirs.add(s.id);
+        any = true;
+        if (typeof addMsg === 'function') {
+          addMsg(`📜 Souvenir débloqué — ${s.icon} ${s.name} : ${s.desc}`, 'good');
+        }
+        if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playLevelUp === 'function') {
+          AudioSystem.playLevelUp();
+        }
+      }
+    }
+    if (any) {
+      if (typeof recalculateStats === 'function') recalculateStats();
+      if (typeof updateUI === 'function') updateUI();
+      if (typeof safeCall === 'function') safeCall('autoSave', 'souvenir-unlocked');
+    }
+  }
+
+  // Helper pur consommé par recalculateStats — retourne les bonus
+  // cumulés des souvenirs débloqués (additifs).
+  function _souvenirsBonuses() {
+    const out = { bonusAtk:0, bonusDef:0, bonusMag:0, bonusLck:0,
+                  bonusStr:0, bonusInt:0, bonusAgi:0, bonusEnd:0 };
+    if (typeof OUTREMONDE_SOUVENIRS === 'undefined') return out;
+    if (!outremondeSouvenirs) return out;
+    for (const s of OUTREMONDE_SOUVENIRS) {
+      if (!outremondeSouvenirs.has(s.id)) continue;
+      const b = s.bonus || {};
+      for (const k of Object.keys(out)) {
+        if (b[k]) out[k] += b[k];
+      }
+    }
+    return out;
+  }
+
+  // ── V1c.1 — Achat de cosmétique à l'Atelier ───────────────────
+  function _buyCosmetic(id) {
+    if (typeof OUTREMONDE_COSMETICS === 'undefined') return;
+    const cos = OUTREMONDE_COSMETICS.find(c => c.id === id);
+    if (!cos) return;
+    if (outremondeCosmetics.has(id)) {
+      if (typeof addMsg === 'function') addMsg('Tu possèdes déjà ce cosmétique.', '');
+      return;
+    }
+    if (outremondeEssence < cos.essCost || outremondeFragments < cos.fragCost) {
+      if (typeof addMsg === 'function') addMsg("Pas assez d'essences ou de fragments.", 'bad');
+      return;
+    }
+    outremondeEssence  -= cos.essCost;
+    outremondeFragments -= cos.fragCost;
+    outremondeCosmetics.add(id);
+    if (typeof addMsg === 'function') {
+      addMsg(`✨ Cosmétique acquis — ${cos.icon} ${cos.name}.`, 'good');
+    }
+    if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playLevelUp === 'function') {
+      AudioSystem.playLevelUp();
+    }
+    _applyCosmeticVisuals();
+    openAtelierVoyageur();
+    if (typeof safeCall === 'function') safeCall('autoSave', 'cosmetic-bought');
+  }
+
+  // Activation/désactivation d'un cosmétique (un actif par catégorie).
+  // Le re-clic du cosmétique actif le désactive.
+  function _toggleCosmetic(id) {
+    const cos = (OUTREMONDE_COSMETICS || []).find(c => c.id === id);
+    if (!cos) return;
+    if (!outremondeCosmetics.has(id)) return;
+    const cur = (cos.kind === 'aura')    ? outremondeActiveAura
+              : (cos.kind === 'portal')  ? outremondeActivePortalSkin
+              : (cos.kind === 'fissure') ? outremondeActiveFissureSkin
+              : null;
+    const next = (cur === id) ? null : id;
+    if (cos.kind === 'aura')         outremondeActiveAura       = next;
+    else if (cos.kind === 'portal')  outremondeActivePortalSkin = next;
+    else if (cos.kind === 'fissure') outremondeActiveFissureSkin = next;
+    _applyCosmeticVisuals();
+    openAtelierVoyageur();
+    if (typeof safeCall === 'function') safeCall('autoSave', 'cosmetic-toggled');
+  }
+
+  // Applique les CSS variables sur :root selon les cosmétiques actifs.
+  // Lu par css/portal.css (--aura-color, --portal-skin, --fissure-skin).
+  function _applyCosmeticVisuals() {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    if (!root || !root.style) return;
+    const auraCos    = (OUTREMONDE_COSMETICS || []).find(c => c.id === outremondeActiveAura);
+    const portalCos  = (OUTREMONDE_COSMETICS || []).find(c => c.id === outremondeActivePortalSkin);
+    const fissureCos = (OUTREMONDE_COSMETICS || []).find(c => c.id === outremondeActiveFissureSkin);
+    root.style.setProperty('--om-aura',    auraCos    ? auraCos.palette    : 'transparent');
+    root.style.setProperty('--om-portal',  portalCos  ? portalCos.palette  : '#3cdc5a');
+    root.style.setProperty('--om-fissure', fissureCos ? fissureCos.palette : '#d8b647');
+  }
+
+  // ── V1c.1 — Anim rune rouge à la pose du Verrou ─────────────────
+  // Overlay 1.2 s : trace une rune circulaire écarlate au sol qui pulse
+  // puis disparaît. Appelé depuis _chooseBloodSealMonster après le post
+  // REST réussi. Tolérant : no-op si document absent.
+  function _playBloodSealAnim() {
+    if (typeof document === 'undefined') return;
+    let layer = document.getElementById('blood-seal-fx');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.id = 'blood-seal-fx';
+      document.body.appendChild(layer);
+    }
+    layer.innerHTML = `
+      <svg viewBox="0 0 200 200" class="blood-seal-svg">
+        <circle cx="100" cy="100" r="80" class="bs-outer"/>
+        <circle cx="100" cy="100" r="50" class="bs-inner"/>
+        <circle cx="100" cy="100" r="14" class="bs-core"/>
+        <line x1="100" y1="20" x2="100" y2="40" class="bs-rune"/>
+        <line x1="100" y1="180" x2="100" y2="160" class="bs-rune"/>
+        <line x1="20" y1="100" x2="40" y2="100" class="bs-rune"/>
+        <line x1="180" y1="100" x2="160" y2="100" class="bs-rune"/>
+      </svg>`;
+    layer.classList.add('active');
+    setTimeout(() => layer.classList.remove('active'), 1200);
+  }
+
   if (typeof window !== 'undefined') {
     window.openBloodSealTargetModal = openBloodSealTargetModal;
     window._chooseBloodSealMonster  = _chooseBloodSealMonster;
@@ -384,5 +672,12 @@
     window.loadHostSealsForCurrentFloor = loadHostSealsForCurrentFloor;
     window.getBloodSealAt           = getBloodSealAt;
     window._triggerHostBloodSeal    = _triggerHostBloodSeal;
+    window._checkSouvenirs          = _checkSouvenirs;
+    window._souvenirsBonuses        = _souvenirsBonuses;
+    window._buyCosmetic             = _buyCosmetic;
+    window._toggleCosmetic          = _toggleCosmetic;
+    window._applyCosmeticVisuals    = _applyCosmeticVisuals;
+    window._playBloodSealAnim       = _playBloodSealAnim;
+    window._buyCrossSpell           = _buyCrossSpell;
   }
 })();

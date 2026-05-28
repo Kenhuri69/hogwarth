@@ -1785,11 +1785,88 @@ au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
         pièces, host load + minimap, combat de résolution. Tous
         scénarios verts.
 
-> **Différé en V1c.1** : cosmétiques (catalogue 12 items — auras,
-> skins portail, skins fissure), sorts exclusifs (4 sorts cross-plan
-> — Sceau du Voyageur, Mémoire d'Outremonde, Marque du Pèlerin,
-> Rappel Astral), souvenirs passifs (6 souvenirs avec métriques
-> automatiques), animation rune rouge dédiée à la pose du Verrou.
+> ~~**Différé en V1c.1**~~ : livré 2026-05-28 (cf. ci-dessous).
+
+- [x] **V1c.1** — Souvenirs / cosmétiques / sorts cross / anim rune —
+  **livré 2026-05-28**. V1 du système de mondes parallèles est désormais
+  **complète** (Phases A→H + V1c.1, ~22,5 j cumulés).
+    - `state.js` : 6 nouveaux globaux. `outremondeMetrics` (object —
+      `visitsTotal`, `uniqueHosts:Set`, `sealsResolved`, `echosDefeated`,
+      `pilgrimMark`), `outremondeSouvenirs:Set`, `outremondeCosmetics:Set`,
+      `outremondeActiveAura`, `outremondeActivePortalSkin`,
+      `outremondeActiveFissureSkin`. Tous persistés (Sets sérialisés en
+      Arrays).
+    - `data.js` :
+      • 4 sorts cross-plan tagués `_cross:true` — `Sceau du Voyageur`,
+        `Mémoire d'Outremonde`, `Marque du Pèlerin`, `Rappel Astral`.
+        Tous OOC, gating dans `SPELL_OOC_HANDLERS`.
+      • `OUTREMONDE_SOUVENIRS` — 6 souvenirs passifs avec `cond(m)` et
+        `bonus` stat. Conditions : visitsTotal≥1 (Premier Pas, +1 LCK),
+        uniqueHosts≥3 (Voyageur Familier, +1 INT), sealsResolved≥5
+        (Astralien, +1 MAG), echosDefeated≥10 (Trame Cousue, +1 AGI),
+        visitsTotal≥20 (Cartographe, +1 LCK +1 INT), sealsResolved≥10 &&
+        echosDefeated≥15 (Plénipotentiaire, +1 ATK +1 MAG).
+      • `OUTREMONDE_COSMETICS` — 12 cosmétiques en 3 catégories : 4 auras
+        (Or, Glace, Brume, Lune), 4 skins de portail (Émeraude,
+        Améthyste, Rubis, Saphir), 4 skins de fissure (Or, Argent,
+        Cuivre, Obsidienne). Coût : 5-8 essences + 1-2 fragments.
+    - `atelier-voyageur.js` : modale Atelier transformée en
+      **multi-onglets** (Set Voyageur / Sorts / Cosmétiques /
+      Souvenirs). Helpers `_checkSouvenirs()` (idempotent, +toast +
+      sauvegarde), `_souvenirsBonuses()` (purs, consommé par
+      `recalculateStats`), `_buyCosmetic`, `_toggleCosmetic` (un actif
+      par catégorie, re-click désactive), `_applyCosmeticVisuals` (CSS
+      variables `--om-aura`, `--om-portal`, `--om-fissure`),
+      `_buyCrossSpell` (apprend à tout le groupe), `_playBloodSealAnim`
+      (overlay SVG 1,2 s à la pose du Verrou).
+    - Hooks de métriques :
+      • `visit-channel.js` : à l'acceptation visiteur,
+        `visitsTotal++` + `uniqueHosts.add(hostId)` + `_checkSouvenirs()`
+        + déclenchement Mémoire d'Outremonde si apprise (PV+PM 100 %,
+        flag `_memoryUsed` one-shot par session).
+      • `atelier-voyageur.js — _claimResolvedSeals` :
+        `sealsResolved += claims.length` + `_checkSouvenirs()`.
+      • `battle.js — _finishAstralCombat(true)` :
+        `echosDefeated += enemyGroup.length` + `_checkSouvenirs()`.
+    - `battle.js — _finishAstralCombat(false)` : si un membre connaît
+      **Sceau du Voyageur**, court-circuite le cooldown 5 min — message
+      magic, `astralExileCooldownUntil` non posé.
+    - `inventory.js — SPELL_OOC_HANDLERS` : 4 nouveaux handlers.
+      • `voyager_seal` / `outremonde_memory` : passifs (effet déclenché
+        ailleurs), lancement OOC = message d'évocation.
+      • `pilgrim_mark` (4 PM) : pose un marqueur sur la cellule
+        courante en visite (`outremondeMetrics.pilgrimMark`), refusé
+        hors visite.
+      • `astral_recall` (12 PM) : téléporte à la dernière Marque (même
+        hôte + même étage), refusé si conditions non remplies.
+      • `isOutOfCombatSpell` étendu aux 4 nouveaux effets.
+    - `inventory.js — recalculateStats` : applique
+      `_souvenirsBonuses()` à TOUT le groupe (effet d'âme, pas
+      d'équipement).
+    - `visit-hud.js — showVisitHud` : ajoute/retire la classe
+      `aura-on` selon `outremondeActiveAura`.
+    - `save.js` : sérialisation des 6 nouveaux globaux + ré-apply des
+      cosmétiques (CSS vars) + re-check des souvenirs au chargement
+      (vs. saves antérieures ou ajouts ultérieurs au registre).
+    - `css/portal.css` : onglets Atelier, anim `bloodSealFade` 1,2 s
+      (SVG runé écarlate), aura HUD via `--om-aura`.
+    - `item-icons.js` : 4 alias temporaires pour les sorts cross-plan
+      (PNG dédiés différés ; les sorts restent fonctionnels avec ces
+      icônes de famille).
+    - MANIFEST loader complété (12 entrées optional supplémentaires).
+      Bumps : `state.js?v=13`, `data.js?v=11`, `save.js?v=14`,
+      `battle.js?v=9`, `inventory.js?v=8`, `atelier-voyageur.js?v=2`,
+      `visit-channel.js?v=8`, `visit-hud.js?v=5`, `portal.css?v=7`,
+      `item-icons.js?v=10`, `loader.js?v=16`. `CACHE_VERSION` v8 → v9.
+    - Scénario smoke `scenarioVisitV1c1` (T1→T6) : surface, déblocage
+      souvenir + bonus stat appliqué, achat + activation cosmétique +
+      CSS variable, achat sort cross-plan (Marque) appris à tout le
+      groupe, Marque + Rappel effectifs, Sceau du Voyageur neutralise
+      le cooldown 5 min. Tous scénarios verts.
+
+> **V1 du système de mondes parallèles complète** (Phases A→H + V1c.1,
+> ~22,5 j cumulés sur ~21,5 j estimés). Pause sur V2 (quêtes
+> inter-mondes, 5-8 j) jusqu'à décision ultérieure.
 - [ ] V2 — Quêtes inter-mondes (5–8 j, à planifier après V1).
 - [ ] Branche annexe — Co-op combat (gelée).
 
