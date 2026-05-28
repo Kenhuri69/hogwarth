@@ -1202,6 +1202,69 @@ RECIPES: Dict[str, Recipe] = {
              "color": (210, 230, 170), "size": 100},
         ],
     ),
+
+    # ============================================================
+    # Mondes parallèles Phase H §6.10 — Set du Voyageur (5 pièces)
+    # ============================================================
+    # Palette commune : violet astral (40-110 R, 20-80 G, 110-180 B) +
+    # or pâle (216, 192, 132). Distincte des sets Maison (rouge / vert /
+    # bleu / brun). Toutes les pièces sont `rarity:"rare"` (halo bleuté).
+    "voyageur_diademe": Recipe(
+        id="voyageur_diademe", name="Diadème du Plan", rarity="rare", material="metal",
+        silhouette={"kind": "svg", "file": "tiara.svg"},
+        fills={"band":   ( 92,  60, 156), "points": (148, 116, 196),
+               "gem":    (108,  56, 172), "side":   (180, 148, 232)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (220, 180, 255)},
+            {"kind": "orb_glow",        "region": "gem", "color": (172, 124, 232)},
+        ],
+    ),
+    "voyageur_cape": Recipe(
+        id="voyageur_cape", name="Cape du Voyageur (astrale)", rarity="rare", material="matte",
+        silhouette={"kind": "svg", "file": "hood.svg"},
+        fills={"cloth":  ( 60,  36, 108), "lining": ( 96,  72, 160),
+               "clasp":  (216, 192, 132)},
+        accents=[
+            {"kind": "emboss",  "region": "cloth", "color": ( 36,  20,  76)},
+            {"kind": "runes",   "region": "cloth", "color": (180, 144, 232), "count": 3},
+            {"kind": "orb_glow","region": "clasp", "color": (232, 200, 140)},
+        ],
+    ),
+    "voyageur_bottes": Recipe(
+        id="voyageur_bottes", name="Bottes du Pas Astral", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "boot.svg"},
+        fills={"shaft": ( 60,  36, 108), "foot":  ( 48,  28,  92),
+               "sole":  ( 24,  12,  52), "lace":  (216, 192, 132)},
+        accents=[
+            {"kind": "emboss", "region": "shaft", "color": ( 32,  16,  68)},
+            {"kind": "runes",  "region": "shaft", "color": (180, 144, 232), "count": 3},
+        ],
+    ),
+    "voyageur_anneau": Recipe(
+        id="voyageur_anneau", name="Anneau de l'Outremonde", rarity="rare", material="metal",
+        silhouette={"kind": "shape", "name": "ring_band",
+                    "params": {"radius": 175, "thickness": 36,
+                               "bezel": True, "gem": True}},
+        fills={"metal": (148, 116, 196), "gem":   (108,  56, 172)},
+        accents=[
+            {"kind": "runes",           "region": "metal", "color": ( 48,  24,  80),
+             "count": 6, "around": "ring"},
+            {"kind": "gem_facet_shine", "region": "gem",   "color": (224, 188, 255)},
+            {"kind": "orb_glow",        "region": "gem",   "color": (172, 124, 232)},
+        ],
+    ),
+    "voyageur_amulette": Recipe(
+        id="voyageur_amulette", name="Amulette du Lien", rarity="rare", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (216, 192, 132), "bezel": (148, 116, 196),
+               "gem":   (108,  56, 172)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (224, 188, 255)},
+            {"kind": "orb_glow",        "region": "gem", "color": (172, 124, 232)},
+            {"kind": "symbol",          "region": "gem", "shape": "star",
+             "color": (240, 220, 255), "size": 90},
+        ],
+    ),
 }
 
 
