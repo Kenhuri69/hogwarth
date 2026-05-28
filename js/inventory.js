@@ -194,6 +194,27 @@ function recalculateStats() {
       }
     }
 
+    // Mondes parallèles Phase H §6.10 — Set Voyageur (4 paliers).
+    // 5 pièces taggées family:'voyageur'. Bonus 2/3/4/5 pièces cumulatifs
+    // (additifs avec les bonus individuels). Le set 5/5 déverrouille la
+    // preview du donjon distant — geré côté portal-matchmaking.
+    if (c.equipped) {
+      let voyageurCount = 0;
+      for (const item of Object.values(c.equipped)) {
+        if (item && item.family === 'voyageur') voyageurCount++;
+      }
+      c._voyageurSetCount = voyageurCount;
+      if (voyageurCount >= 2) c.lck += 1;
+      if (voyageurCount >= 3) spellCritBonus += 5;
+      if (voyageurCount >= 4) {
+        // regenSp:+2 — additionné en applyEquipmentRegen via une marker
+        // stat exposée pour battle.js. On la pose sur c pour usage runtime
+        // (cumul avec items qui portent regenSp).
+        c._voyageurRegenSpBonus = 2;
+      }
+      // 5/5 : pas de stat dérivée — l'effet est cosmétique (preview UI).
+    }
+
     // Deux canaux de crit. Crit physique : base LCK (plafonne à 40 %).
     // Crit de sort : base AGI (plafonne à 35 %) — rôle offensif de l'AGI.
     // Les bonus équipement/set s'ajoutent PAR-DESSUS (plafond absolu 100 %).
@@ -1077,7 +1098,8 @@ function openSpells(charIdx = 0) {
 function isOutOfCombatSpell(spell) {
   if (!spell) return false;
   return spell.effect === 'teleport' || spell.effect === 'heal'
-      || spell.effect === 'reveal'   || spell.effect === 'portal';
+      || spell.effect === 'reveal'   || spell.effect === 'portal'
+      || spell.effect === 'blood_seal';
 }
 
 // Cooldown partagé entre tous les sorts de soin OOC (cf. .claude/plans/
@@ -1225,6 +1247,54 @@ const SPELL_OOC_HANDLERS = {
       playPortalOpen({ caster }, openTargets);
     } else {
       openTargets();
+    }
+  },
+  // Mondes parallèles Phase H §6.9 — Verrou de Sang. Lancé en visite,
+  // hors combat. Coût 5 PM + 1 Essence d'Outremonde. Pose un Verrou sur
+  // la cellule courante (FLOOR uniquement, libre). Ouvre la modale de
+  // sélection du monstre à sceller (parmi ceux éligibles à l'étage du
+  // host).
+  blood_seal: function (spell, charIdx) {
+    const caster = party[charIdx] || party[0];
+    if (!caster || caster.hp <= 0) {
+      addMsg('Personne ne peut tracer le Verrou.', 'bad');
+      return;
+    }
+    // Gating : uniquement en visite, hors combat astral.
+    if (typeof visitSession === 'undefined' || !visitSession
+        || visitSession.role !== 'visitor') {
+      addMsg("Tu ne peux poser un Verrou que dans le monde d'un autre sorcier.", 'bad');
+      return;
+    }
+    if (typeof inAstralCombat !== 'undefined' && inAstralCombat) {
+      addMsg("Pas pendant un combat astral.", 'bad');
+      return;
+    }
+    // Anti-spam : plafond 10 Verrous en attente par visiteur (§6.9).
+    if (Array.isArray(outremondePendingSeals) && outremondePendingSeals.length >= 10) {
+      addMsg("Trop de Verrous en attente — attends qu'ils se résolvent.", 'bad');
+      return;
+    }
+    // Coût : 5 PM + 1 Essence.
+    if (caster.sp < spell.cost) {
+      addMsg(`Pas assez de magie (${spell.cost} PM).`, 'bad');
+      return;
+    }
+    if (typeof outremondeEssence !== 'number' || outremondeEssence < 1) {
+      addMsg("Il te faut au moins 1 Essence d'Outremonde — gagne-en en défiant des échos.", 'bad');
+      return;
+    }
+    // La cellule doit être un sol libre (pas escalier, fontaine, etc.).
+    if (typeof dungeon !== 'undefined' && dungeon[playerY] && dungeon[playerY][playerX] !== CELL.FLOOR) {
+      addMsg("Le Verrou ne s'enracine que sur un sol nu.", 'bad');
+      return;
+    }
+    closeModal('spell-modal');
+    if (typeof openBloodSealTargetModal === 'function') {
+      openBloodSealTargetModal(caster);
+    } else {
+      // Repli silencieux si la modale n'est pas chargée.
+      addMsg("Le rituel ne se forme pas — module absent.", 'bad');
     }
   }
 };

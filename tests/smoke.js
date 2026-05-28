@@ -12669,6 +12669,266 @@ async function scenarioVisitPhaseG() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette — Verrou de Sang + Atelier du Voyageur (Phase H) ──
+async function scenarioVisitPhaseH() {
+  console.log('\n── Scénario : Cheminette — Verrou + Atelier Phase H ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : surface — globaux + helpers Phase H + sort + items.
+  const t1 = await page.evaluate(() => {
+    const spell = SPELLS.find(s => s.name === 'Verrou de Sang');
+    const items = ITEMS.filter(it => it.family === 'voyageur');
+    return {
+      inSealedCombat:      typeof inSealedCombat        !== 'undefined',
+      outremondeFragments: typeof outremondeFragments   === 'number',
+      outremondePendingSeals: Array.isArray(outremondePendingSeals),
+      hostSealsByFloor:    typeof hostSealsByFloor       !== 'undefined',
+      currentBloodSeal:    typeof currentBloodSeal       !== 'undefined',
+      hasSpell:            !!spell,
+      spellEffect:         spell && spell.effect,
+      voyageurItemsCount:  items.length,
+      hasMpPost:           typeof mpPostBloodSeal        === 'function',
+      hasMpListHost:       typeof mpListHostSealsForFloor === 'function',
+      hasMpUpdate:         typeof mpUpdateSealStatus     === 'function',
+      hasMpListVisitor:    typeof mpListVisitorResolvedSeals === 'function',
+      hasMpClaim:          typeof mpClaimSeal            === 'function',
+      hasOpenAtelier:      typeof openAtelierVoyageur    === 'function',
+      hasOpenSealTarget:   typeof openBloodSealTargetModal === 'function',
+      hasClaim:            typeof _claimResolvedSeals    === 'function',
+      hasTrigger:          typeof _triggerHostBloodSeal  === 'function',
+      hasGetSeal:          typeof getBloodSealAt         === 'function',
+      hasBtnAtelier:       !!document.getElementById('btn-atelier'),
+    };
+  });
+  console.log('  T1 surface →', t1);
+  assert(t1.inSealedCombat,       'inSealedCombat déclaré');
+  assert(t1.outremondeFragments,  'outremondeFragments déclaré');
+  assert(t1.outremondePendingSeals, 'outremondePendingSeals déclaré');
+  assert(t1.hostSealsByFloor,     'hostSealsByFloor déclaré');
+  assert(t1.hasSpell,             'Sort "Verrou de Sang" présent');
+  assert(t1.spellEffect === 'blood_seal', 'Effet blood_seal');
+  assert(t1.voyageurItemsCount === 5, '5 items Set Voyageur définis');
+  assert(t1.hasMpPost && t1.hasMpListHost && t1.hasMpUpdate
+      && t1.hasMpListVisitor && t1.hasMpClaim, '5 helpers REST exposés');
+  assert(t1.hasOpenAtelier && t1.hasOpenSealTarget, 'Modales exposées');
+  assert(t1.hasClaim && t1.hasTrigger && t1.hasGetSeal, 'Helpers exposés');
+  assert(t1.hasBtnAtelier,        '#btn-atelier dans le HUD');
+
+  // T2 : pose de Verrou — modale ouverte, sélection d'un monstre, post
+  // REST stubbé, ajout à outremondePendingSeals + coût débité.
+  const t2 = await page.evaluate(async () => {
+    // Pose une session visiteur factice.
+    if (typeof visitSession !== 'undefined') {
+      visitSession = {
+        role:'visitor', hostId:'h-H', hostName:'Alice', hostHouse:'Gryffondor',
+        mySavedState: { player: { gold: 999 } }
+      };
+    }
+    outremondeEssence = 5;
+    outremondePendingSeals = [];
+    player.sp = 30;
+    party.forEach(c => { c.sp = c.spMax || 30; });
+    // S'assure d'être sur une case FLOOR.
+    playerX = 4; playerY = 4;
+    dungeon[4][4] = CELL.FLOOR;
+    // Stub mp post.
+    let posted = null;
+    window.mpPostBloodSeal = async (row) => {
+      posted = { ...row };
+      return { ...row, id: 'seal-T2' };
+    };
+    // Ouvre la modale (le sort blood_seal handler la lance).
+    openBloodSealTargetModal(party[0]);
+    const modal = document.getElementById('atelier-voyageur-overlay');
+    const modalOpen = modal && modal.style.display === 'flex';
+    // Choisit un monstre via _chooseBloodSealMonster.
+    const essBefore = outremondeEssence;
+    const spBefore  = party[0].sp;
+    await _chooseBloodSealMonster('chat_norris', party[0].name);
+    return {
+      modalOpen,
+      essDebit: essBefore - outremondeEssence,
+      spDebit:  spBefore - party[0].sp,
+      pendingCount: outremondePendingSeals.length,
+      firstId: outremondePendingSeals[0] && outremondePendingSeals[0].id,
+      hostId:  outremondePendingSeals[0] && outremondePendingSeals[0].hostId,
+      posted
+    };
+  });
+  console.log('  T2 pose Verrou →', t2);
+  assert(t2.modalOpen,           'Modale de pose ouverte');
+  assert(t2.essDebit === 1,      '1 essence débitée');
+  assert(t2.spDebit === 5,       '5 PM débités');
+  assert(t2.pendingCount === 1,  '1 Verrou en attente');
+  assert(t2.firstId === 'seal-T2', 'ID serveur remonté');
+  assert(t2.hostId === 'h-H',    'hostId mémorisé');
+  assert(t2.posted && t2.posted.monster_id === 'chat_norris', 'Post REST avec bon monsterId');
+
+  // T3 : claim asynchrone des Verrous résolus — modale + essence ajoutée
+  // + claim côté REST.
+  const t3 = await page.evaluate(async () => {
+    outremondeEssence = 0;
+    outremondeFragments = 0;
+    outremondePendingSeals = [{ id: 'sealA', hostId:'h-H', hostName:'Bob', monsterId:'chat_norris', floor:2, x:5, y:5 }];
+    let claimed = [];
+    window.mpListVisitorResolvedSeals = async () => [
+      { id: 'sealA', host_id:'h-H', floor:2, x:5, y:5, monster_id:'chat_norris', status:'resolved', visitor_name:'Bob' },
+      { id: 'sealB', host_id:'h-I', floor:3, x:6, y:6, monster_id:'peeves',      status:'fled',     visitor_name:'Carol' }
+    ];
+    window.mpClaimSeal = async (id) => { claimed.push(id); return true; };
+    const claims = await _claimResolvedSeals();
+    const modal = document.getElementById('atelier-voyageur-overlay');
+    return {
+      claimsLen: claims && claims.length,
+      ess: outremondeEssence,
+      pendingCount: outremondePendingSeals.length,
+      claimed,
+      modalOpen: modal && modal.style.display === 'flex',
+      modalHasResolved: /Verrous résolus/.test(modal ? modal.innerHTML : ''),
+    };
+  });
+  console.log('  T3 claim asynchrone →', t3);
+  assert(t3.claimsLen === 2,         '2 verrous claimés');
+  assert(t3.ess === 4,               '+3 (resolved) +1 (fled) = 4 essences');
+  assert(t3.pendingCount === 0,      'Pending purgé');
+  assert(t3.claimed.length === 2,    'Claim REST appelé pour chacun');
+  assert(t3.modalOpen,               'Modale claim affichée');
+  assert(t3.modalHasResolved,        'Modale titre "Verrous résolus"');
+
+  // T4 : craft Set Voyageur — débit d'essence + item dans inventaire.
+  const t4 = await page.evaluate(() => {
+    closeAtelierVoyageur();
+    outremondeEssence = 30;
+    player.inventory = [];
+    // Forge le Diadème du Plan (8 essences).
+    _craftVoyageurPiece('voyageur_diademe');
+    const inInv = player.inventory.find(it => it.id === 'voyageur_diademe');
+    return {
+      essAfter: outremondeEssence,
+      hasItem: !!inInv,
+      itemFamily: inInv && inInv.family
+    };
+  });
+  console.log('  T4 craft Voyageur →', t4);
+  assert(t4.essAfter === 22,         '30 - 8 = 22 essences');
+  assert(t4.hasItem,                 'Item ajouté à l\'inventaire');
+  assert(t4.itemFamily === 'voyageur', 'Family voyageur préservée');
+
+  // T5 : bonus de Set Voyageur 2/3 pièces dans recalculateStats.
+  const t5 = await page.evaluate(() => {
+    if (typeof visitSession !== 'undefined') visitSession = null;
+    const c = party[0];
+    // Reset des slots et équipe 2 puis 3 pièces.
+    c.equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                   cloak:null, amulet:null, ring1:null, ring2:null,
+                   belt:null, trinket:null };
+    const lckBase = c._baseLck;
+    // 0 pièce
+    recalculateStats();
+    const lck0 = c.lck;
+    const spellCrit0 = c.spellCritChance;
+    // 2 pièces
+    c.equipped.head  = ITEMS.find(it => it.id === 'voyageur_diademe');
+    c.equipped.cloak = ITEMS.find(it => it.id === 'voyageur_cape');
+    recalculateStats();
+    const lck2 = c.lck;
+    const set2Count = c._voyageurSetCount;
+    // 3 pièces
+    c.equipped.feet  = ITEMS.find(it => it.id === 'voyageur_bottes');
+    recalculateStats();
+    const spellCrit3 = c.spellCritChance;
+    const set3Count = c._voyageurSetCount;
+    // 4 pièces
+    c.equipped.ring1 = ITEMS.find(it => it.id === 'voyageur_anneau');
+    recalculateStats();
+    const set4Count = c._voyageurSetCount;
+    const regenBonus = c._voyageurRegenSpBonus;
+    return { lckBase, lck0, lck2, set2Count, spellCrit0, spellCrit3, set3Count, set4Count, regenBonus };
+  });
+  console.log('  T5 bonus Set Voyageur →', t5);
+  // 2 pièces ajoute +1 INT/LCK PAR PIÈCE individuelles + bonus set +1 LCK.
+  // Donc lck2 = lckBase + 1 (diadème) + 0 (cape pas de LCK) + 1 (set 2/2) = +2.
+  assert(t5.set2Count === 2,         'Set 2/2 détecté');
+  assert(t5.lck2 - t5.lck0 >= 2,     '+1 LCK item + +1 LCK bonus set 2 = +2 minimum');
+  assert(t5.set3Count === 3,         'Set 3/3 détecté');
+  assert(t5.spellCrit3 > t5.spellCrit0, 'bonusSpellCritChance +5 appliqué au palier 3');
+  assert(t5.set4Count === 4,         'Set 4/4 détecté');
+  assert(t5.regenBonus === 2,        '_voyageurRegenSpBonus posé à 2 (palier 4)');
+
+  // T6 : host — chargement des Verrous + matérialisation minimap.
+  const t6 = await page.evaluate(async () => {
+    if (typeof visitSession !== 'undefined') visitSession = null;
+    hostSealsByFloor = new Map();
+    window.mpListHostSealsForFloor = async () => [
+      { id:'sealH1', visitor_id:'v', visitor_name:'Carol', floor:1, x:7, y:7, monster_id:'chat_norris' }
+    ];
+    await loadHostSealsForCurrentFloor();
+    const seal = getBloodSealAt(7, 7);
+    const noSeal = getBloodSealAt(0, 0);
+    // Vérifie la classe minimap
+    dungeon[7][7] = CELL.FLOOR;
+    visited[7][7] = true;
+    renderMinimap();
+    // Cherche dans la minimap une cellule avec map-blood-seal
+    const cells = document.querySelectorAll('#minimap .map-cell.map-blood-seal');
+    return {
+      hasSeal: !!seal,
+      noSealForOther: noSeal === null,
+      minimapHasClass: cells.length >= 1
+    };
+  });
+  console.log('  T6 host load Verrous →', t6);
+  assert(t6.hasSeal,         'getBloodSealAt(7,7) retourne le Verrou');
+  assert(t6.noSealForOther,  'getBloodSealAt(0,0) = null');
+  assert(t6.minimapHasClass, '.map-blood-seal posé sur la minimap');
+
+  // T7 : déclenchement du combat de résolution + update status à endBattle.
+  const t7 = await page.evaluate(() => {
+    let updatedSeal = null;
+    window.mpUpdateSealStatus = async (id, status) => { updatedSeal = { id, status }; return true; };
+    // Pose le joueur sur la case du Verrou (déjà 7,7 depuis T6).
+    playerX = 7; playerY = 7;
+    const ok = _triggerHostBloodSeal(7, 7);
+    const inBattleNow = inBattle;
+    const inSealed = inSealedCombat;
+    const enemyNameSealed = enemyGroup[0] && enemyGroup[0].name;
+    // Force victoire.
+    const goldBefore = player.gold;
+    const fragBefore = outremondeFragments;
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    endBattle(true);
+    return {
+      triggered: ok,
+      inBattleNow,
+      inSealed,
+      enemyHasMarker: /🩸/.test(enemyNameSealed || ''),
+      sealRemovedFromMap: getBloodSealAt(7,7) === null,
+      sealUpdate: updatedSeal,
+      sealedReset: inSealedCombat === false,
+      bonusGoldAdded: player.gold - goldBefore >= 50,
+      fragmentAdded: outremondeFragments - fragBefore === 1
+    };
+  });
+  console.log('  T7 combat de résolution →', t7);
+  assert(t7.triggered,             '_triggerHostBloodSeal retourne true');
+  assert(t7.inBattleNow,           'Combat lancé');
+  assert(t7.inSealed,              'inSealedCombat actif pendant le combat');
+  assert(t7.enemyHasMarker,        'Nom ennemi préfixé 🩸');
+  assert(t7.sealRemovedFromMap,    'Verrou retiré de la liste locale');
+  assert(t7.sealUpdate && t7.sealUpdate.status === 'resolved', 'mpUpdateSealStatus(resolved) appelé');
+  assert(t7.sealedReset,           'inSealedCombat reset après combat');
+  assert(t7.bonusGoldAdded,        '+50 G bonus distribués');
+  assert(t7.fragmentAdded,         '+1 fragment côté host');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — Phase H OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -14012,7 +14272,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

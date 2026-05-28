@@ -132,6 +132,31 @@ let astralCellsDefeated     = new Set();
 let astralFloorKills        = 0;
 let astralExileCooldownUntil = 0;
 
+// ── Mondes parallèles Phase H §6.9/§6.10 — Verrou de Sang + atelier ─────
+// `inSealedCombat`      : flag combat de résolution d'un Verrou (côté
+//                         host). Routé par endBattle pour mettre à jour
+//                         le statut `mp_threats` et distribuer le loot
+//                         bonus. Non persisté.
+// `outremondeFragments` : compteur de fragments cosmétiques (drop bonus
+//                         des Verrous résolus). Persisté.
+// `outremondePendingSeals` : tableau de Verrous posés par CE visiteur
+//                            (côté visiteur). Forme : { id, hostId,
+//                            hostName, monsterId, floor, postedAt }.
+//                            La résolution asynchrone se lit via REST
+//                            au prochain démarrage. Persisté.
+// `hostSealsByFloor`     : Map<floor, [{id, x, y, monster_id,
+//                          visitor_name}]> — Verrous actifs côté host
+//                          pour l'étage donné. Chargé à l'entrée
+//                          d'étage. Non persisté.
+// `currentBloodSeal`     : ref du Verrou ciblé par le combat courant
+//                          côté host (utilisé par endBattle pour
+//                          marquer `resolved`). Non persisté.
+let inSealedCombat        = false;
+let outremondeFragments   = 0;
+let outremondePendingSeals = [];
+let hostSealsByFloor      = new Map();
+let currentBloodSeal      = null;
+
 // ============================================================
 // SYSTÈME DES MAISONS
 // ============================================================

@@ -260,6 +260,13 @@ const SPELLS = [
   // _grantLevelSpells. Phase A : animation locale 2,8 s sans réseau ;
   // les phases suivantes brancheront le matchmaking Supabase.
   { name:"Cheminette Inter-Mondes", icon:"🌀", desc:"Ouvre un portail vers le monde d'un autre sorcier (hors combat)", cost:25, effect:"portal", power:0 },
+  // ── Mondes parallèles Phase H §6.9 — Verrou de Sang ───────────
+  // Lancé hors combat astral, en visite, sur une cellule libre. Coût
+  // 5 PM + 1 Essence d'Outremonde. Insère une ligne dans `mp_threats` —
+  // le host la résoudra plus tard (combat forcé sur la cellule) et le
+  // visiteur récupérera des essences/fragments en asynchrone au
+  // prochain démarrage.
+  { name:"Verrou de Sang", icon:"🩸", desc:"Scelle une menace pour le sorcier hôte (1 essence + 5 PM, en visite)", cost:5, effect:"blood_seal", power:0 },
 ];
 
 // Catégorie d'un sort pour le filtre de la modale Sorts. Soutien et
@@ -534,6 +541,17 @@ const ITEMS = [
   { id:"herbe_branchiflore", name:"Branchiflore",     icon:"🪴", desc:"Ingrédient de potion (palier 2).", type:"herb", tier:2, price:12 },
   { id:"herbe_aconit",       name:"Aconit",           icon:"☘️", desc:"Ingrédient de potion (palier 3).", type:"herb", tier:3, price:20 },
   { id:"herbe_dictame",      name:"Dictame",          icon:"🍃", desc:"Ingrédient de potion (palier 3).", type:"herb", tier:3, price:20 },
+
+  // ── Mondes parallèles Phase H §6.10 — Set Voyageur ────────────
+  // 5 pièces craftées à l'Atelier du Voyageur avec des Essences
+  // d'Outremonde. Tagged family:'voyageur' pour le bonus de set (2/3/4/5
+  // pièces, calculé dans recalculateStats). Stats modestes par pièce —
+  // l'intérêt vient du bonus cumulé. Aucun gold price (non vendables).
+  { id:"voyageur_diademe",   name:"Diadème du Plan",      icon:"👑", desc:"Tissé d'éclats d'outremonde. +1 INT, +1 LCK.", type:"equip", slot:"head",   family:"voyageur", rarity:"rare", bonusInt:1, bonusLck:1, _outremondeCost:8,  price:0 },
+  { id:"voyageur_cape",      name:"Cape du Voyageur",     icon:"🧥", desc:"Tournoie au moindre vent d'un autre plan. +1 AGI, regen SP.", type:"equip", slot:"cloak",  family:"voyageur", rarity:"rare", bonusAgi:1, regenSp:1, _outremondeCost:12, price:0 },
+  { id:"voyageur_bottes",    name:"Bottes du Pas Astral", icon:"👢", desc:"Effleurent le sol, jamais ne l'usent. +1 AGI.", type:"equip", slot:"feet",   family:"voyageur", rarity:"rare", bonusAgi:1, _outremondeCost:6,  price:0 },
+  { id:"voyageur_anneau",    name:"Anneau de l'Outremonde", icon:"💍", desc:"Une rune froide pulse au doigt. +1 MAG, regen SP.", type:"equip", slot:"ring",   family:"voyageur", rarity:"rare", bonusMag:1, regenSp:1, _outremondeCost:10, price:0 },
+  { id:"voyageur_amulette",  name:"Amulette du Lien",     icon:"📿", desc:"Frémit quand les mondes se touchent. +1 LCK, +1 INT.", type:"equip", slot:"amulet", family:"voyageur", rarity:"rare", bonusLck:1, bonusInt:1, _outremondeCost:10, price:0 },
 ];
 
 // ── Recettes de potion (concoction chez Slughorn) ─────────────

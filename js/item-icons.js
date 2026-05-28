@@ -53,6 +53,14 @@ const ITEM_ICON_REGISTRY = {
   // Armures
   robe1:              'img/icons/items/robe1.png',
   coupe_poufsouffle:  'img/icons/items/coupe_poufsouffle.png',
+  // Mondes parallèles Phase H §6.10 — Set Voyageur. Pas de PNG dédiés
+  // pour V1c MVP : alias sur les visuels existants les plus proches
+  // thématiquement. À régénérer en V1c.1 via tools/icon_factory.py.
+  voyageur_diademe:   'img/icons/items/diademe_serdaigle.png',
+  voyageur_cape:      'img/icons/items/cape_voyageur.png',
+  voyageur_bottes:    'img/icons/items/bottes_dragon.png',
+  voyageur_anneau:    'img/icons/items/anneau_runique.png',
+  voyageur_amulette:  'img/icons/items/amulette.png',
   chapeau_pointu:     'img/icons/items/chapeau_pointu.png',
   // Accessoires
   amulette:           'img/icons/items/amulette.png',
@@ -356,7 +364,12 @@ const SPELL_ICON_REGISTRY = {
   // PNG dédié généré par tools/gen_floo_icon.py : flammes vertes
   // torsadées + 4 runes dorées en cardinal. Palette distincte de
   // teleportation.png (Portus, vortex violet) pour éviter la confusion.
-  'Cheminette Inter-Mondes': 'img/icons/spells/cheminette_inter_mondes.png'
+  'Cheminette Inter-Mondes': 'img/icons/spells/cheminette_inter_mondes.png',
+  // Verrou de Sang (V1c Phase H — parallel-worlds.md §6.9). Pas d'icône
+  // PNG dédiée pour l'instant — mappe sur un asset existant pour passer
+  // le smoke (`sorts non mappés`). À régénérer en V1c.1 via
+  // tools/icon_factory.py si la pose justifie un visuel unique.
+  'Verrou de Sang': 'img/icons/spells/cheminette_inter_mondes.png'
 };
 
 // ── Registre d'icônes SVG inline (herbes + potions) ──────────
