@@ -156,7 +156,12 @@ function _mpPresenceRow() {
     hero_keys: roster.map(c => (c && c.heroKey) || 'harry'),
     house:     (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
     level:     (typeof player !== 'undefined' && player.level) || 1,
-    status:    (typeof inBattle !== 'undefined' && inBattle) ? 'in_battle' : 'exploring',
+    // Phase F (§16.7) — `closed` quand le host refuse les visites.
+    // mpListAvailableHosts filtre sur `exploring` → les hosts `closed`
+    // disparaissent de la liste des destinations.
+    status:    (typeof inBattle !== 'undefined' && inBattle) ? 'in_battle'
+             : (typeof visitsClosed !== 'undefined' && visitsClosed) ? 'closed'
+             : 'exploring',
     snapshot:  mpBuildSnapshot(),       // groupe sérialisé pour le duel (§5)
     last_seen: new Date().toISOString(),
   };
@@ -1590,9 +1595,20 @@ async function _mpPollIncomingVisitRequests() {
     const rows = await res.json();
     _mpNoteSuccess();
     if (Array.isArray(rows) && rows[0]
-        && typeof showIncomingVisitRequest === 'function'
         && (typeof inBattle === 'undefined' || !inBattle)) {
-      showIncomingVisitRequest(rows[0]);
+      // Phase F — auto-refus silencieux si le host a fermé son accueil.
+      // La requête est marquée 'refused' pour que le visiteur cesse de
+      // poller, mais aucune modale n'est ouverte ici.
+      if (typeof visitsClosed !== 'undefined' && visitsClosed) {
+        if (typeof mpRespondVisitRequest === 'function') {
+          try { await mpRespondVisitRequest(rows[0].id, 'refused'); }
+          catch (e) { /* tolérant */ }
+        }
+        return;
+      }
+      if (typeof showIncomingVisitRequest === 'function') {
+        showIncomingVisitRequest(rows[0]);
+      }
     }
   } catch (e) {
     _mpNoteFailure(e);

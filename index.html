@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="css/ornaments.css?v=1">
 <link rel="stylesheet" href="css/help-tour.css?v=1">
 <link rel="stylesheet" href="css/pwa.css?v=1">
-<link rel="stylesheet" href="css/portal.css?v=3">
+<link rel="stylesheet" href="css/portal.css?v=4">
 <link rel="manifest" href="manifest.json?v=2">
 <meta name="theme-color" content="#c9a84c">
 <link rel="apple-touch-icon" href="img/icons/pwa/apple-touch-icon.png?v=2">
@@ -555,6 +555,12 @@
           <div id="visit-hud-name">🌀 Sorcier</div>
           <div id="visit-hud-meta"></div>
         </div>
+        <!-- Phase F — indicateur de qualité réseau (good / degraded / lost) -->
+        <div id="visit-hud-quality" class="visit-hud-quality" data-quality="good"
+             aria-label="Qualité de la connexion" title="Connexion stable">
+          <span class="visit-hud-quality-dot"></span>
+          <span class="visit-hud-quality-label">Stable</span>
+        </div>
         <!-- Emotes (Phase D §6.7) — banque fermée selon le rôle. Peuplé
              dynamiquement par showVisitHud / updateVisitHud. -->
         <div id="visit-hud-emotes" class="visit-hud-emotes" aria-label="Émoticônes"></div>
@@ -688,6 +694,7 @@
 
       <button id="btn-music" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleMute()" title="Musique On/Off"><span class="btn-icon"><img src="img/icons/music_on.png" alt="Musique"></span></button>
       <button id="btn-voice" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleVoice()" title="Voix des sorts On/Off"><span class="btn-icon"><img src="img/icons/voice_on.png" alt="Voix"></span></button>
+      <button id="btn-visits" class="cmd-btn" data-group="audio" onclick="toggleVisitsClosed()" title="Accueil des voyageurs"><span class="btn-icon" style="font-size:18px">🚪</span></button>
 
       <div class="cmd-vsep"></div>
 
@@ -1021,8 +1028,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/floor-themes.js?v=1"></script>
 <script src="js/floor-events.js?v=1"></script>
 <script src="js/item-icons.js?v=7"></script>
-<script src="js/state.js?v=9"></script>
-<script src="js/ui.js?v=4"></script>
+<script src="js/state.js?v=10"></script>
+<script src="js/ui.js?v=5"></script>
 <script src="js/ui-bestiary.js?v=1"></script>
 <script src="js/dungeon.js?v=11"></script>
 <script src="js/textures.js?v=1"></script>
@@ -1043,21 +1050,21 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/karaoke.js?v=1"></script>
 <script src="js/intro.js?v=2"></script>
 <script src="js/shop.js?v=5"></script>
-<script src="js/save.js?v=10"></script>
+<script src="js/save.js?v=11"></script>
 <script src="js/save-ui.js?v=2"></script>
 <script src="js/ironman.js?v=3"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
-<script src="js/multiplayer.js?v=6"></script>
+<script src="js/multiplayer.js?v=7"></script>
 <script src="js/portal-fx.js?v=1"></script>
 <script src="js/portal-matchmaking.js?v=2"></script>
-<script src="js/visit-channel.js?v=5"></script>
-<script src="js/visit-hud.js?v=2"></script>
+<script src="js/visit-channel.js?v=6"></script>
+<script src="js/visit-hud.js?v=3"></script>
 <script src="js/main.js?v=5"></script>
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=2"></script>
 <script src="js/library.js?v=2"></script>
 <script src="js/help-tour.js?v=1"></script>
-<script src="js/loader.js?v=12"></script>
+<script src="js/loader.js?v=13"></script>
 <script src="js/pwa.js?v=1"></script>
 
 </body>

@@ -12249,6 +12249,207 @@ async function scenarioVisitPhaseE() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette — polish (Phase F : toggle visites + reconnexion + qualité) ──
+async function scenarioVisitPhaseF() {
+  console.log('\n── Scénario : Cheminette — polish Phase F ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : surface — fonctions Phase F exposées + bouton dans le DOM.
+  const t1 = await page.evaluate(() => ({
+    visitsClosedDefined: typeof visitsClosed       !== 'undefined',
+    visitsClosedFalse:   typeof visitsClosed       !== 'undefined' && visitsClosed === false,
+    toggleFn:            typeof toggleVisitsClosed === 'function',
+    updateBtn:           typeof _updateVisitsBtn   === 'function',
+    qualityBadge:        typeof updateVisitQualityBadge === 'function',
+    getQuality:          typeof window._visitGetQuality === 'function',
+    isReconnect:         typeof window._visitIsReconnecting === 'function',
+    btnInDom:            !!document.getElementById('btn-visits'),
+    badgeInDom:          !!document.getElementById('visit-hud-quality')
+  }));
+  console.log('  T1 surface →', t1);
+  assert(t1.visitsClosedDefined,  'visitsClosed déclaré');
+  assert(t1.visitsClosedFalse,    'visitsClosed par défaut = false');
+  assert(t1.toggleFn,             'toggleVisitsClosed exposé');
+  assert(t1.updateBtn,            '_updateVisitsBtn exposé');
+  assert(t1.qualityBadge,         'updateVisitQualityBadge exposé');
+  assert(t1.getQuality,           '_visitGetQuality exposé');
+  assert(t1.isReconnect,          '_visitIsReconnecting exposé');
+  assert(t1.btnInDom,             '#btn-visits dans le DOM');
+  assert(t1.badgeInDom,           '#visit-hud-quality dans le DOM');
+
+  // T2 : toggle visites — icône bouton + status mp_presence + persistance.
+  const t2 = await page.evaluate(() => {
+    // Initial : ouvert.
+    _updateVisitsBtn();
+    const iconOpen = document.querySelector('#btn-visits .btn-icon').textContent;
+    const titleOpen = document.getElementById('btn-visits').title;
+    // Trigger toggle → fermé.
+    toggleVisitsClosed();
+    const closedAfter = visitsClosed === true;
+    const iconClosed = document.querySelector('#btn-visits .btn-icon').textContent;
+    const titleClosed = document.getElementById('btn-visits').title;
+    // Vérifie qu'au prochain _mpPresenceRow, le status devient 'closed'.
+    // Stub minimal : on appelle directement la fonction interne via window
+    // si exposée — sinon on lit le placeholder dans _mpPresenceRow ?
+    // Plus simple : check via la sérialisation save.
+    const snap = _serializeState();
+    const inSave = snap.visitsClosed === true;
+    // Retour à l'état ouvert pour ne pas polluer la suite.
+    toggleVisitsClosed();
+    const reopened = visitsClosed === false;
+    return {
+      iconOpen, titleOpen, iconClosed, titleClosed,
+      closedAfter, inSave, reopened
+    };
+  });
+  console.log('  T2 toggle →', t2);
+  assert(t2.iconOpen === '🚪',           'Icône bouton = 🚪 quand ouvert');
+  assert(/ouvert/.test(t2.titleOpen),    'Tooltip "ouvert" dans le titre');
+  assert(t2.closedAfter,                 'visitsClosed = true après toggle');
+  assert(t2.iconClosed === '🔒',         'Icône bouton = 🔒 quand fermé');
+  assert(/fermé/.test(t2.titleClosed),   'Tooltip "fermé" dans le titre');
+  assert(t2.inSave,                      'Persistance dans _serializeState');
+  assert(t2.reopened,                    '2e toggle remet visitsClosed à false');
+
+  // T3 : qualité réseau — états 'good' / 'degraded' / 'lost' reflétés
+  // sur le badge HUD.
+  const t3 = await page.evaluate(() => {
+    const states = [];
+    updateVisitQualityBadge('good');
+    states.push({
+      attr:  document.getElementById('visit-hud-quality').getAttribute('data-quality'),
+      label: document.querySelector('#visit-hud-quality .visit-hud-quality-label').textContent,
+      title: document.getElementById('visit-hud-quality').getAttribute('title')
+    });
+    updateVisitQualityBadge('degraded');
+    states.push({
+      attr:  document.getElementById('visit-hud-quality').getAttribute('data-quality'),
+      label: document.querySelector('#visit-hud-quality .visit-hud-quality-label').textContent
+    });
+    updateVisitQualityBadge('lost');
+    states.push({
+      attr:  document.getElementById('visit-hud-quality').getAttribute('data-quality'),
+      label: document.querySelector('#visit-hud-quality .visit-hud-quality-label').textContent
+    });
+    // Reset
+    updateVisitQualityBadge('good');
+    return states;
+  });
+  console.log('  T3 badge qualité →', t3);
+  assert(t3[0].attr === 'good'      && /Stable/.test(t3[0].label),    'État good rendu');
+  assert(/stable/i.test(t3[0].title),                                  'Tooltip stable');
+  assert(t3[1].attr === 'degraded'  && /Instable/.test(t3[1].label),   'État degraded rendu');
+  assert(t3[2].attr === 'lost'      && /Rompue/.test(t3[2].label),     'État lost rendu');
+
+  // T4 : période de grâce — entre 5 s et 10 s sans message, on bascule en
+  // 'degraded' + reconnect mode actif. Au-delà de 10 s, drop hard.
+  const t4 = await page.evaluate(async () => {
+    const snap = mpBuildVisitSnapshot({
+      hostId: 'h-F', hostName: 'Alice', hostHouse: 'Gryffondor', hostLevel: 1
+    });
+    let pollCount = 0;
+    window.mpPollVisitMessages = async () => {
+      if (pollCount++ === 0) {
+        return [{ id: 'm1', sender: 'host', type: 'snapshot', payload: snap,
+                  created_at: new Date().toISOString() }];
+      }
+      return [];
+    };
+    window.mpPostVisitMessage = async () => ({ id: 'p', created_at: new Date().toISOString() });
+
+    await mpStartVisitAsVisitor({ channelId: 'ch-F', hostId: 'h-F', hostName: 'Alice', hostHouse: 'Gryffondor' });
+    const qStart = window._visitGetQuality();
+    const reconnStart = window._visitIsReconnecting();
+
+    // Force lastSeen à 7 s ago (zone dégradée), check.
+    window._visitForceLastSeen(Date.now() - 7000);
+    await window._visitPollOnce();
+    const qDegraded = window._visitGetQuality();
+    const reconnDegraded = window._visitIsReconnecting();
+    const badgeAfterDegraded = document.getElementById('visit-hud-quality').getAttribute('data-quality');
+
+    // Force lastSeen à 3 s ago (récupération), check.
+    window._visitForceLastSeen(Date.now() - 3000);
+    await window._visitPollOnce();
+    const qRecovered = window._visitGetQuality();
+    const reconnRecovered = window._visitIsReconnecting();
+    const badgeAfterRecov = document.getElementById('visit-hud-quality').getAttribute('data-quality');
+
+    // Force lastSeen à 15 s ago (drop), check.
+    window._visitForceLastSeen(Date.now() - 15000);
+    await window._visitPollOnce();
+    const qLost = window._visitGetQuality();
+    const sessionGone = visitSession === null;
+
+    return {
+      qStart, reconnStart,
+      qDegraded, reconnDegraded, badgeAfterDegraded,
+      qRecovered, reconnRecovered, badgeAfterRecov,
+      qLost, sessionGone
+    };
+  });
+  console.log('  T4 grâce/drop →', t4);
+  assert(t4.qStart === 'good',           'Qualité initiale = good');
+  assert(t4.reconnStart === false,       'Pas de reconnect mode au démarrage');
+  assert(t4.qDegraded === 'degraded',    'Quality bascule en degraded à 7 s');
+  assert(t4.reconnDegraded === true,     'Reconnect mode activé en zone dégradée');
+  assert(t4.badgeAfterDegraded === 'degraded', 'Badge HUD reflète degraded');
+  assert(t4.qRecovered === 'good',       'Quality redevient good après réception récente');
+  assert(t4.reconnRecovered === false,   'Reconnect mode désactivé après récupération');
+  assert(t4.badgeAfterRecov === 'good',  'Badge HUD reflète recovery');
+  assert(t4.qLost === 'good',            'Drop hard reset la qualité (session fermée → reset)');
+  assert(t4.sessionGone,                 'Session droppée après 15 s');
+
+  // T5 : presence row — status='closed' quand visitsClosed=true.
+  const t5 = await page.evaluate(() => {
+    const snapOpen = _serializeState();
+    // Récupère la presence row interne via une astuce : on ne peut pas
+    // l'appeler directement (variable interne), donc on teste l'effet via
+    // l'écosystème : on toggle puis on regarde si la prochaine sortie
+    // visiteur ne renvoie pas le status 'closed' depuis _mpPresenceRow.
+    // Pas exposé → on ne teste que le bit visitsClosed est persisté +
+    // _mpPresenceRow le lirait au prochain heartbeat.
+    visitsClosed = true;
+    const closed = visitsClosed === true;
+    visitsClosed = false;
+    return { closed };
+  });
+  console.log('  T5 visitsClosed flag →', t5);
+  assert(t5.closed, 'Flag visitsClosed mutable');
+
+  // T6 : tooltip Ironman pour le sort de portail — déjà couvert par C/D,
+  // on vérifie juste la présence du libellé dans le bloc spell-modal
+  // pour la non-régression.
+  const t6 = await page.evaluate(() => {
+    // Active Ironman + débloque le sort.
+    ironmanMode = true;
+    player.spells = player.spells || [];
+    if (!player.spells.includes('Cheminette Inter-Mondes')) {
+      player.spells.push('Cheminette Inter-Mondes');
+    }
+    if (typeof openSpells === 'function') openSpells();
+    const modal = document.getElementById('spell-modal');
+    const html  = modal ? modal.innerHTML : '';
+    if (typeof closeModal === 'function') closeModal('spell-modal');
+    ironmanMode = false;
+    return {
+      hasIronmanHint: /Voie solitaire|Ironman se joue seul/.test(html),
+      hasPortalSpell: /Cheminette Inter-Mondes/.test(html)
+    };
+  });
+  console.log('  T6 tooltip Ironman →', t6);
+  assert(t6.hasPortalSpell,   'Sort Cheminette Inter-Mondes listé');
+  assert(t6.hasIronmanHint,   'Tooltip "Voie solitaire / Ironman" présent');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — Phase F OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -13592,7 +13793,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

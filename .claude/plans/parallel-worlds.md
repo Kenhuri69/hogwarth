@@ -1619,7 +1619,61 @@ au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
         (overlay ouvert avec tag voyageur), retour à `openNpcDialog`
         normal hors visite (pas de tag voyageur). Tous scénarios verts
         (`node tests/smoke.js`).
-    - [ ] Phase F — polish (1,5 j).
+    - [x] Phase F — polish (1,5 j) — **livré 2026-05-28**.
+      • **Toggle d'accueil côté host** (§16.7) : nouveau global
+        `visitsClosed` (state.js), persisté dans
+        `_serializeState`/`_applyState` (false par défaut pour les
+        anciennes saves). Bouton 🚪/🔒 ajouté à la barre HUD
+        (`#btn-visits`), handler `toggleVisitsClosed` (`ui.js`) qui
+        bascule la valeur, met à jour l'icône via `_updateVisitsBtn`,
+        affiche un toast et déclenche `autoSave('visits-toggled')`.
+        `_updateVisitsBtn` est aussi appelé par `updateUI` pour
+        synchroniser le bouton à un load de save. Propagation au
+        réseau : `_mpPresenceRow` envoie `status='closed'` au lieu de
+        `'exploring'` quand `visitsClosed` — `mpListAvailableHosts`
+        filtre déjà sur `exploring` donc le host disparaît
+        automatiquement de la liste des destinations. Auto-refus côté
+        entrant : `_mpPollIncomingVisitRequests` détecte `visitsClosed`
+        et appelle `mpRespondVisitRequest(..., 'refused')`
+        silencieusement, sans afficher la modale d'acceptation.
+      • **Tooltip Ironman** : déjà en place depuis Phase A
+        (`inventory.js — openSpells`, libellé « ⚜ Voie solitaire —
+        l'Ironman se joue seul »). Phase F ajoute un test de
+        non-régression dédié.
+      • **Reconnexion automatique** (`visit-channel.js`) : fenêtre de
+        grâce entre 5 s et 10 s sans message reçu.
+        `_visitCheckTimeout` détermine 3 paliers — `good` (< 5 s),
+        `degraded` (5–10 s, `_enterReconnectMode` bascule les timers
+        vers une cadence resserrée — poll 800 ms / ping 1,5 s au lieu
+        de 2,5 s / 4 s), `lost` (> 10 s, drop hard). Au retour sous
+        le seuil dégradé, `_exitReconnectMode` rétablit la cadence
+        normale. Drapeau `_reconnectMode` évite de re-poser les
+        intervals à chaque check. Helpers `_visitGetQuality` /
+        `_visitIsReconnecting` exposés pour tests.
+      • **Badge de qualité réseau** (`visit-hud.js` + `portal.css`) :
+        `#visit-hud-quality` (pastille + label),
+        `updateVisitQualityBadge(quality)` met à jour `data-quality`,
+        le label (Stable / Instable / Rompue) et le tooltip. Pastille
+        verte (good), or pulsé (degraded, animation
+        `visitQualityPulse`), rouge fixe (lost). Reset à `good` à
+        `hideVisitHud`.
+      • MANIFEST loader complété (6 entrées optional) : `visitsClosed`,
+        `toggleVisitsClosed`, `_updateVisitsBtn`,
+        `updateVisitQualityBadge`, `_visitGetQuality`,
+        `_visitIsReconnecting`. Bumps : `portal.css?v=4`,
+        `state.js?v=10`, `ui.js?v=5`, `save.js?v=11`,
+        `multiplayer.js?v=7`, `visit-channel.js?v=6`,
+        `visit-hud.js?v=3`, `loader.js?v=13`. `CACHE_VERSION`
+        `hogwarth-v4 → hogwarth-v5`.
+      • Scénario smoke `scenarioVisitPhaseF` (T1→T6) : surface,
+        toggle (icône 🚪↔🔒, tooltip, persistance dans
+        `_serializeState`, double-toggle restaure), badge dans les
+        3 états, fenêtre de grâce (good → degraded à 7 s →
+        reconnect mode actif → recovery à 3 s → good → reconnect
+        désactivé), drop hard à 15 s (session refermée), tooltip
+        Ironman non-régression. Tous scénarios verts.
+
+> **Fin de V1a — socle exploration livrable** (~13,5 j cumulé, A→F).
 - [ ] **V1b** — combat local + amorce économie (4 j)
     - [ ] Phase G — combat local asymétrique + essences.
 - [ ] **V1c** — Verrou de Sang + Atelier complet (3 j)

@@ -408,6 +408,46 @@
 #visit-hud-exit:hover  { background: linear-gradient(180deg, rgba(120, 50, 50, 0.95) 0%, rgba(80, 28, 28, 0.95) 100%); }
 #visit-hud-exit:active { transform: translateY(1px); }
 
+/* Phase F (§F.4) — badge de qualité réseau. Pastille colorée + label
+   compact ; clignote en degraded pour signaler la tentative de
+   reconnexion en cours. */
+.visit-hud-quality {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-family: 'Cinzel', serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #f7e4a8;
+  background: rgba(20, 12, 6, 0.45);
+  border: 1px solid rgba(216, 182, 71, 0.35);
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+.visit-hud-quality-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #6fd07a;
+  box-shadow: 0 0 4px rgba(111, 208, 122, 0.7);
+  transition: background 180ms ease, box-shadow 180ms ease;
+}
+.visit-hud-quality[data-quality="degraded"] .visit-hud-quality-dot {
+  background: #f0b94a;
+  box-shadow: 0 0 6px rgba(240, 185, 74, 0.85);
+  animation: visitQualityPulse 0.6s ease-in-out infinite;
+}
+.visit-hud-quality[data-quality="lost"] .visit-hud-quality-dot {
+  background: #d04a4a;
+  box-shadow: 0 0 8px rgba(208, 74, 74, 0.95);
+}
+@keyframes visitQualityPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.25); opacity: 0.6; }
+}
+
 /* Phase D §6.7 — boutons d'emote dans le bandeau. Banque fermée,
    peuplée par showVisitHud(opts.role). */
 .visit-hud-emotes {

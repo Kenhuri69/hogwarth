@@ -25,6 +25,12 @@
   // tolérer un cycle de poll raté sur une connexion lente.
   const VISIT_PING_MS    = 4000;
   const VISIT_TIMEOUT_MS = 10000;
+  // Phase F — fenêtre de grâce avant drop : entre 5 s et 10 s sans
+  // message reçu, on tente de re-pinger plus agressivement et on poll
+  // plus fréquemment pour rattraper la session. Au-delà, drop hard.
+  const VISIT_DEGRADED_MS = 5000;
+  const VISIT_RECONNECT_POLL_MS = 800;
+  const VISIT_RECONNECT_PING_MS = 1500;
   // Phase D §5.2/§5.3 — throttle d'émission de position. La réception est
   // gouvernée par le cycle de poll (2,5 s), inutile d'aller plus vite.
   const VISIT_MOVE_THROTTLE_MS = 1200;
@@ -44,6 +50,8 @@
   let _snapshotPosted = false;  // host : flag pour ne pas re-poster
   let _lastMoveSent   = 0;      // D §5 — throttle position/hostPosition
   let _lastEmoteSent  = 0;      // D §6.7 — throttle emote
+  let _quality        = 'good'; // F — 'good' | 'degraded' | 'lost'
+  let _reconnectMode  = false;  // F — flag pour ne pas re-poser les intervals à chaque check
 
   // ── Génération d'UUID v4 (sans dépendance) ────────────────
   function _uuid() {
@@ -197,6 +205,9 @@
     _lastSeen       = 0;
     _lastMoveSent   = 0;
     _lastEmoteSent  = 0;
+    _quality        = 'good';
+    _reconnectMode  = false;
+    _refreshQualityBadge();
     // Côté host : visitSession est posé par mpStartVisitAsHost, à nettoyer
     // ici pour ne pas laisser de visiteur fantôme dans le rendu après le
     // drop / bye. Côté visiteur, visitSession est levé par _restoreFromVisit
@@ -220,14 +231,60 @@
 
   // Vérifie si on a dépassé le seuil de silence du partenaire. Appelé à
   // chaque cycle de poll, après traitement des messages reçus.
+  // Phase F — 3 paliers :
+  //   • elapsed < VISIT_DEGRADED_MS (5 s) → qualité 'good', cadence normale
+  //   • elapsed ∈ [5 s, 10 s] → 'degraded', resserre poll/ping pour
+  //     rattraper rapidement la session. _refreshQualityBadge informe le HUD.
+  //   • elapsed > VISIT_TIMEOUT_MS (10 s) → 'lost' → drop hard.
   function _visitCheckTimeout() {
     if (!_role || !_lastSeen) return false;
     const elapsed = Date.now() - _lastSeen;
     if (elapsed > VISIT_TIMEOUT_MS) {
+      _setQuality('lost');
       _handleNetworkDrop();
       return true;
     }
+    if (elapsed > VISIT_DEGRADED_MS) {
+      _setQuality('degraded');
+      _enterReconnectMode();
+    } else {
+      _setQuality('good');
+      _exitReconnectMode();
+    }
     return false;
+  }
+
+  function _setQuality(q) {
+    if (_quality === q) return;
+    _quality = q;
+    _refreshQualityBadge();
+  }
+
+  function _refreshQualityBadge() {
+    if (typeof window === 'undefined') return;
+    if (typeof window.updateVisitQualityBadge !== 'function') return;
+    window.updateVisitQualityBadge(_quality);
+  }
+
+  function _visitGetQuality() { return _quality; }
+
+  // Phase F — bascule les timers vers la cadence resserrée pour tenter
+  // de réveiller la session avant le drop hard. Idempotent (le flag
+  // _reconnectMode évite de re-poser les intervals à chaque check).
+  function _enterReconnectMode() {
+    if (!_role || _reconnectMode) return;
+    _reconnectMode = true;
+    if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = setInterval(_visitPollOnce, VISIT_RECONNECT_POLL_MS); }
+    if (_pingTimer) { clearInterval(_pingTimer); _pingTimer = setInterval(_sendPing,      VISIT_RECONNECT_PING_MS); }
+  }
+
+  // Phase F — repasse en cadence normale dès qu'un message confirme la
+  // récupération du partenaire (lastSeen revient sous VISIT_DEGRADED_MS).
+  function _exitReconnectMode() {
+    if (!_role || !_reconnectMode) return;
+    _reconnectMode = false;
+    if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = setInterval(_visitPollOnce, VISIT_POLL_MS); }
+    if (_pingTimer) { clearInterval(_pingTimer); _pingTimer = setInterval(_sendPing,      VISIT_PING_MS); }
   }
 
   // Restauration locale après drop réseau. Pas de message 'bye' posté —
@@ -595,6 +652,9 @@
     window._visitSendEmote          = _visitSendEmote;
     window.getVisitorAt             = getVisitorAt;
     window.getRemoteHostAt          = getRemoteHostAt;
+    // Phase F — qualité réseau (badge HUD) + helpers tests.
+    window._visitGetQuality         = _visitGetQuality;
+    window._visitIsReconnecting     = function () { return _reconnectMode; };
     window.VISITOR_EMOTES           = VISITOR_EMOTES;
     window.HOST_EMOTES              = HOST_EMOTES;
     // Test helper : remettre à zéro les throttles d'émission entre deux
