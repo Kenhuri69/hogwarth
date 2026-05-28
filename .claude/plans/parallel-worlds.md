@@ -1741,8 +1741,55 @@ au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
         Avada refusée en astral. Tous scénarios verts
         (`node tests/smoke.js`).
 
-- [ ] **V1c** — Verrou de Sang + Atelier complet (3 j)
-    - [ ] Phase H — Verrous + Set Voyageur + cosmétiques + sorts exclusifs + souvenirs.
+- [x] **V1c** — Verrou de Sang + Atelier (MVP, 3 j) — **livré 2026-05-28**
+    - [x] Phase H — Verrous + Set Voyageur — **livré 2026-05-28** (MVP V1c).
+      • `state.js` : `inSealedCombat`, `outremondeFragments`,
+        `outremondePendingSeals` (persistés), `hostSealsByFloor` et
+        `currentBloodSeal` (transients).
+      • `data.js` : sort `Verrou de Sang` (effet `blood_seal`, 5 PM, OOC
+        en visite) + 5 items Set Voyageur (slot head/cloak/feet/ring/amulet,
+        `family:'voyageur'`, `_outremondeCost` 8/12/6/10/10).
+      • `multiplayer.js` : 5 helpers REST sur `mp_threats` —
+        `mpPostBloodSeal`, `mpListHostSealsForFloor`,
+        `mpUpdateSealStatus`, `mpListVisitorResolvedSeals`,
+        `mpClaimSeal`. Disjoncteur dédié `_mpThreatsTableMissing` (404
+        → désactivation silencieuse).
+      • `js/atelier-voyageur.js` (nouveau, ~280 lignes) : modale
+        `#atelier-voyageur-overlay` partagée par 3 vues —
+        `openBloodSealTargetModal(caster)`, `openAtelierVoyageur()`,
+        `_showClaimsModal`. Helpers `loadHostSealsForCurrentFloor`,
+        `getBloodSealAt(x,y)`, `_triggerHostBloodSeal(x,y)`,
+        `_claimResolvedSeals()`.
+      • Hooks d'intégration : `mpStartSession` (claim + chargement host
+        à la connexion), `movement.js — _changeFloor` (recharge host
+        par étage), `_step` (interception prioritaire), `endBattle`
+        (update status + bonus 50 G + 1 fragment côté host),
+        `recalculateStats` (bonus Set 2/3/4 pièces),
+        `SPELL_OOC_HANDLERS.blood_seal` (gating + modale),
+        `_renderCarnetVoyagePanel` (sous-section fiche perso).
+      • `renderer-minimap.js` : classe `.map-blood-seal` (rouge grenat
+        pulsé). `index.html` : `#btn-atelier` (HUD). `css/portal.css`
+        + `css/style.css` : modale atelier + minimap keyframes.
+      • `js/item-icons.js` : 5 entrées Set Voyageur (alias temporaires)
+        + sort `Verrou de Sang` (alias). À régénérer via
+        `tools/icon_factory.py` en V1c.1.
+      • MANIFEST loader complété (19 entrées optional). Bumps :
+        `portal.css?v=6`, `style.css?v=22`, `state.js?v=12`,
+        `data.js?v=10`, `ui.js?v=6`, `save.js?v=13`,
+        `multiplayer.js?v=8`, `battle.js?v=8`, `inventory.js?v=7`,
+        `movement.js?v=19`, `renderer-minimap.js?v=6`,
+        `item-icons.js?v=8`, `loader.js?v=15`. Nouveau
+        `atelier-voyageur.js?v=1`. `CACHE_VERSION` v6 → v7.
+      • Scénario smoke `scenarioVisitPhaseH` (T1→T7) : surface, pose
+        Verrou, claim asynchrone, craft Voyageur, bonus Set 2/3/4
+        pièces, host load + minimap, combat de résolution. Tous
+        scénarios verts.
+
+> **Différé en V1c.1** : cosmétiques (catalogue 12 items — auras,
+> skins portail, skins fissure), sorts exclusifs (4 sorts cross-plan
+> — Sceau du Voyageur, Mémoire d'Outremonde, Marque du Pèlerin,
+> Rappel Astral), souvenirs passifs (6 souvenirs avec métriques
+> automatiques), animation rune rouge dédiée à la pose du Verrou.
 - [ ] V2 — Quêtes inter-mondes (5–8 j, à planifier après V1).
 - [ ] Branche annexe — Co-op combat (gelée).
 

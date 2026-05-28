@@ -596,6 +596,19 @@ body {
 /* Fantôme multijoueur — autre joueur projeté sur l'étage (cyan spectral). */
 .map-ghost { background: #2f6f8f; box-shadow: 0 0 5px #7fd4ff, inset 0 0 2px #d4f2ff;
              position: relative; }
+/* Mondes parallèles Phase H §6.9 — Verrou de Sang côté host. Rouge
+   profond pulsé pour signaler une menace asynchrone scellée par un
+   visiteur. Distincte du rouge clignotant des quêtes farming
+   (`.map-npc-farming`) — ici pulse lent et grenat. */
+.map-blood-seal {
+  background: #6e1a1a;
+  box-shadow: 0 0 6px #d94545, inset 0 0 2px #ffb0b0;
+  animation: mapBloodSealPulse 1.8s ease-in-out infinite;
+}
+@keyframes mapBloodSealPulse {
+  0%, 100% { box-shadow: 0 0 4px #b13030, inset 0 0 2px #ffb0b0; }
+  50%      { box-shadow: 0 0 10px #ff5555, inset 0 0 3px #ffd0d0; }
+}
 /* Mondes parallèles §6.5 — visiteur incarné (côté host). Or pulsé chaud,
    distinct du cyan froid des fantômes asynchrones. */
 .map-astral-visitor { background: #8a6a26;

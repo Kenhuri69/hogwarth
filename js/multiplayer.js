@@ -129,6 +129,12 @@ function mpStartSession() {
   // cadeaux non claimés restent en base et sont rejoués à la prochaine
   // connexion si l'inventaire était plein.
   if (typeof claimPendingGifts === 'function') claimPendingGifts();
+  // Phase H §6.9 — claim asynchrone des Verrous résolus par d'autres
+  // joueurs pendant que ce visiteur était offline.
+  if (typeof _claimResolvedSeals === 'function') _claimResolvedSeals();
+  // Phase H §6.9 — host : précharge les Verrous actifs sur l'étage
+  // initial pour matérialiser les marqueurs minimap dès l'apparition.
+  if (typeof loadHostSealsForCurrentFloor === 'function') loadHostSealsForCurrentFloor();
   _mpHeartbeatTimer = setInterval(_mpUpsertPresence, MP_HEARTBEAT_MS);
   _mpPollTimer      = setInterval(_mpPollGhosts,     MP_POLL_MS);
   _mpMsgTimer       = setInterval(_mpPollMessages,   MP_MSG_POLL_MS);
@@ -1736,6 +1742,151 @@ async function mpPollVisitMessages(channelId, sinceIso, excludeSender) {
     const rows = await res.json();
     _mpNoteSuccess();
     return Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;
+  }
+}
+
+// ============================================================
+// MONDES PARALLÈLES — Verrou de Sang (V1c Phase H §6.9)
+// ============================================================
+// Persistance asynchrone des menaces déposées par les visiteurs chez
+// leurs hôtes. Le visiteur pose une ligne (status='pending') ; le host
+// la lit à l'entrée d'étage, la résout en combat, met à jour le status
+// (`resolved`/`fled`) ; le visiteur claim le gain au prochain démarrage.
+//
+// Disjoncteur dédié `_mpThreatsTableMissing` : si la table n'existe
+// pas (404), désactivation silencieuse cohérente avec les autres
+// tables MP.
+//
+// SQL : voir parallel-worlds.md §12.2.
+// ============================================================
+
+const MP_THREATS_TABLE       = 'mp_threats';
+let   _mpThreatsTableMissing = false;
+
+// Visiteur → pose un Verrou. `row` ∈ { visitor_id, visitor_name,
+// host_id, floor, x, y, monster_id, status:'pending' }. Retourne la
+// ligne insérée (avec id) ou null.
+async function mpPostBloodSeal(row) {
+  if (!_mpConfigured() || _mpThreatsTableMissing) return null;
+  if (!row) return null;
+  try {
+    const res = await fetch(
+      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_THREATS_TABLE}`,
+      {
+        method:  'POST',
+        headers: _mpHeaders({
+          'Content-Type': 'application/json',
+          'Prefer':       'return=representation'
+        }),
+        body: JSON.stringify(row)
+      }
+    );
+    if (res.status === 404) { _mpThreatsTableMissing = true; return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;
+  }
+}
+
+// Host → liste les Verrous actifs sur un étage donné (status='pending').
+async function mpListHostSealsForFloor(hostId, floor) {
+  if (!_mpConfigured() || _mpThreatsTableMissing) return [];
+  if (!hostId || typeof floor !== 'number') return [];
+  try {
+    const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_THREATS_TABLE}`
+      + `?host_id=eq.${encodeURIComponent(hostId)}`
+      + `&floor=eq.${floor}`
+      + '&status=eq.pending'
+      + '&select=id,visitor_id,visitor_name,floor,x,y,monster_id,posted_at'
+      + '&order=posted_at.asc'
+      + '&limit=50';
+    const res = await fetch(url, { headers: _mpHeaders() });
+    if (res.status === 404) { _mpThreatsTableMissing = true; return []; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    _mpNoteFailure(e);
+    return [];
+  }
+}
+
+// Host → met à jour le statut d'un Verrou après combat. `status` ∈
+// {'resolved','fled'}.
+async function mpUpdateSealStatus(sealId, status) {
+  if (!_mpConfigured() || _mpThreatsTableMissing) return null;
+  if (!sealId || (status !== 'resolved' && status !== 'fled')) return null;
+  try {
+    const res = await fetch(
+      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_THREATS_TABLE}?id=eq.${encodeURIComponent(sealId)}`,
+      {
+        method:  'PATCH',
+        headers: _mpHeaders({
+          'Content-Type': 'application/json',
+          'Prefer':       'return=representation'
+        }),
+        body: JSON.stringify({ status, resolved_at: new Date().toISOString() })
+      }
+    );
+    if (res.status === 404) { _mpThreatsTableMissing = true; return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _mpNoteSuccess();
+    return true;
+  } catch (e) {
+    _mpNoteFailure(e);
+    return null;
+  }
+}
+
+// Visiteur → liste les Verrous résolus/fuis non encore claimés.
+async function mpListVisitorResolvedSeals(visitorId) {
+  if (!_mpConfigured() || _mpThreatsTableMissing) return [];
+  if (!visitorId) return [];
+  try {
+    const url = `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_THREATS_TABLE}`
+      + `?visitor_id=eq.${encodeURIComponent(visitorId)}`
+      + '&status=in.(resolved,fled)'
+      + '&claimed_at=is.null'
+      + '&select=id,host_id,floor,x,y,monster_id,status,resolved_at,visitor_name'
+      + '&order=resolved_at.asc'
+      + '&limit=20';
+    const res = await fetch(url, { headers: _mpHeaders() });
+    if (res.status === 404) { _mpThreatsTableMissing = true; return []; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    _mpNoteSuccess();
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    _mpNoteFailure(e);
+    return [];
+  }
+}
+
+// Visiteur → marque un Verrou comme claimé après affichage de la modale.
+async function mpClaimSeal(sealId) {
+  if (!_mpConfigured() || _mpThreatsTableMissing) return null;
+  if (!sealId) return null;
+  try {
+    const res = await fetch(
+      `${MP_CONFIG.supabaseUrl}/rest/v1/${MP_THREATS_TABLE}?id=eq.${encodeURIComponent(sealId)}`,
+      {
+        method:  'PATCH',
+        headers: _mpHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ claimed_at: new Date().toISOString() })
+      }
+    );
+    if (res.status === 404) { _mpThreatsTableMissing = true; return null; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _mpNoteSuccess();
+    return true;
   } catch (e) {
     _mpNoteFailure(e);
     return null;

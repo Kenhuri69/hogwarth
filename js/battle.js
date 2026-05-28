@@ -264,6 +264,8 @@ function applyEquipmentRegen() {
     // Set du Blaireau 4/4 : +2 regen HP / tour
     // (cf. .claude/plans/houses-2.0.md §B — HOUSE_SETS.Poufsouffle.setBonus4).
     if ((c._pouf_setCount | 0) >= 4) hpRegen += 2;
+    // Mondes parallèles Phase H §6.10 — Set Voyageur 4/5 : +2 regen SP / tour.
+    if ((c._voyageurRegenSpBonus | 0) > 0) spRegen += c._voyageurRegenSpBonus;
     if (hpRegen > 0 && c.hp < c.hpMax) {
       const heal = Math.min(hpRegen, c.hpMax - c.hp);
       c.hp += heal;
@@ -755,6 +757,33 @@ function endBattle(won) {
   clearAllStatuses();
 
   AudioSystem.stopCombatMusic();
+
+  // Phase H §6.9 — combat de résolution d'un Verrou de Sang (côté host).
+  // En complément du flow normal (XP / or / drops / quêtes), on remonte
+  // le statut au serveur et on distribue un loot bonus (50 or + 1
+  // fragment Voyageur côté host). Le flag est consommé ici puisque la
+  // mécanique standard continue ensuite.
+  if (typeof inSealedCombat !== 'undefined' && inSealedCombat) {
+    const seal = currentBloodSeal;
+    inSealedCombat   = false;
+    currentBloodSeal = null;
+    if (seal && typeof mpUpdateSealStatus === 'function') {
+      try { mpUpdateSealStatus(seal.id, won ? 'resolved' : 'fled'); }
+      catch (e) { /* tolérant */ }
+    }
+    if (won) {
+      const bonusGold = 50;
+      player.gold += bonusGold;
+      if (typeof addMsg === 'function') {
+        addMsg(`🩸 Verrou résolu — ${seal && seal.visitor_name ? seal.visitor_name + ' te remercie depuis son plan' : 'un voyageur lointain te salue'}. +${bonusGold} G.`, 'magic');
+      }
+      if (typeof outremondeFragments === 'number') outremondeFragments += 1;
+      if (typeof addMsg === 'function') {
+        addMsg(`🔹 +1 fragment cosmétique du Voyageur (réserve : ${outremondeFragments}).`, 'good');
+      }
+    }
+    // Le flow normal continue (XP / or / drops du monstre).
+  }
 
   // Phase G §6.8 — combat astral : court-circuite la mécanique standard
   // (pas d'XP/or/drops dans la save, pas de quêtes kill, pas de points de

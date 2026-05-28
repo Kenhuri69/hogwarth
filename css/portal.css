@@ -540,3 +540,145 @@ body.in-astral-combat #encounter-overlay {
   .visit-hud-emote { font-size: 14px; width: 28px; height: 28px; }
   .visit-hud-emotes { gap: 3px; margin-right: 6px; }
 }
+
+/* ============================================================
+   ATELIER DU VOYAGEUR + Verrou de Sang (Phase H §6.9 / §6.10)
+   Modale plein écran réutilisée par 3 vues distinctes (pose Verrou,
+   craft Set Voyageur, claim des Verrous résolus). Palette : violet
+   profond + or chaud, distincte du portail (vert + or) et du HUD de
+   visite (rouge + or).
+   ============================================================ */
+#atelier-voyageur-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 4, 12, 0.78);
+  z-index: 9500;
+  padding: 16px;
+}
+#atelier-voyageur-overlay[style*="display: flex"],
+#atelier-voyageur-overlay[style*="display:flex"] { display: flex; }
+.atelier-panel {
+  position: relative;
+  max-width: 720px;
+  width: 100%;
+  max-height: 88vh;
+  overflow: auto;
+  padding: 20px 24px;
+  background: linear-gradient(180deg,
+              rgba(36, 18, 48, 0.96) 0%,
+              rgba(20, 10, 28, 0.96) 100%);
+  border: 2px solid #d8b647;
+  border-radius: 8px;
+  box-shadow: 0 0 32px rgba(216, 182, 71, 0.35);
+  color: #f7e4a8;
+  font-family: 'Cinzel', serif;
+}
+.atelier-panel-wide { max-width: 900px; }
+.atelier-close {
+  position: absolute;
+  top: 8px; right: 12px;
+  background: none;
+  border: none;
+  color: rgba(247, 228, 168, 0.75);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+.atelier-close:hover { color: #ffd76a; }
+.atelier-title {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  letter-spacing: 3px;
+  text-align: center;
+  margin: 0 0 12px;
+  color: #ffd76a;
+  text-shadow: 0 0 12px rgba(216, 182, 71, 0.45);
+}
+.atelier-subtitle {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: rgba(247, 228, 168, 0.85);
+  text-align: center;
+  margin: 0 0 16px;
+}
+.atelier-footnote {
+  font-size: 9px;
+  color: rgba(247, 228, 168, 0.55);
+  text-align: center;
+  margin-top: 14px;
+  letter-spacing: 0.5px;
+}
+.atelier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+.atelier-grid-set { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.atelier-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: rgba(20, 12, 28, 0.65);
+  border: 1px solid rgba(216, 182, 71, 0.35);
+  border-radius: 6px;
+  font-family: 'Cinzel', serif;
+  color: #f7e4a8;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+button.atelier-card { font: inherit; }
+.atelier-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 215, 106, 0.8);
+  background: rgba(40, 22, 56, 0.85);
+}
+.atelier-card.owned   { opacity: 0.55; cursor: default; }
+.atelier-card.locked  { opacity: 0.55; }
+.atelier-card-icon { font-size: 26px; line-height: 1; }
+.atelier-card-name { font-size: 11px; letter-spacing: 1px; color: #ffd76a; }
+.atelier-card-meta { font-size: 9px; letter-spacing: 0.5px; color: rgba(247,228,168,0.6); }
+.atelier-card-stats { font-size: 9px; color: #c8e08c; letter-spacing: 0.5px; }
+.atelier-card-desc { font-size: 9px; color: rgba(247,228,168,0.55); font-style: italic; }
+.atelier-card-action { margin-top: 6px; }
+.atelier-craft-btn {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: #f7e4a8;
+  background: linear-gradient(180deg, rgba(100, 50, 150, 0.85) 0%, rgba(50, 18, 80, 0.85) 100%);
+  border: 1px solid rgba(216, 182, 71, 0.6);
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.atelier-craft-btn:hover { background: linear-gradient(180deg, rgba(140, 70, 190, 0.95) 0%, rgba(70, 28, 100, 0.95) 100%); }
+.atelier-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 9px;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+}
+.atelier-badge.done   { background: rgba(80, 110, 60, 0.65); color: #d2ebb6; border: 1px solid #6e9a3a; }
+.atelier-badge.locked { background: rgba(60, 40, 60, 0.65); color: #cfb4ce; border: 1px solid #765076; }
+.atelier-claims {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-family: 'Cinzel', serif;
+  color: rgba(247, 228, 168, 0.85);
+}
+.atelier-claims li {
+  padding: 6px 8px;
+  border-bottom: 1px dashed rgba(216, 182, 71, 0.25);
+  letter-spacing: 0.5px;
+}
+.atelier-claims li:last-child { border-bottom: none; }

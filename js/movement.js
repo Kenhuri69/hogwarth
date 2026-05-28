@@ -135,6 +135,17 @@ function _step(dir, faceDir) {
 
   _updateSearchBtn();
 
+  // Mondes parallèles Phase H §6.9 — Verrou de Sang : si la case courante
+  // porte un Verrou actif, déclenche un combat de résolution prioritaire.
+  // Le helper `_triggerHostBloodSeal` consomme le Verrou local et lance
+  // `startBattle({sealed:true, sealRef:...})`. Skippé en visite (le
+  // visiteur est l'auteur, pas la cible).
+  if (!_inVisit && typeof _triggerHostBloodSeal === 'function'
+      && _triggerHostBloodSeal(playerX, playerY)) {
+    _hideExploreOverlay();
+    return;
+  }
+
   if (enemyMap[playerY][playerX]) {
     _hideExploreOverlay();
     startBattle(enemyMap[playerY][playerX]);
@@ -663,6 +674,12 @@ function _changeFloor(delta, opts) {
     // No-op silencieux hors visite (cf. visit-channel.js C.3b).
     if (typeof _visitHostNotifyFloorChange === 'function') {
       _visitHostNotifyFloorChange();
+    }
+    // Phase H §6.9 — host : recharge les Verrous actifs pour le nouvel
+    // étage. No-op silencieux en visite (les Verrous ne s'appliquent
+    // qu'aux étages propres du host).
+    if (typeof loadHostSealsForCurrentFloor === 'function') {
+      loadHostSealsForCurrentFloor();
     }
     safeCall('autoSave', opts.saveReason);
   });

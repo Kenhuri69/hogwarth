@@ -135,6 +135,16 @@ function _buildMinimapCells(mm, cellSize) {
           && player.grimoirePages.includes(page.id);
         if (!collected) div.classList.add('map-page');
       }
+      // Mondes parallèles Phase H §6.9 — Verrou de Sang côté host :
+      // surcouche rouge pulsée sur la cellule scellée. Priorité haute
+      // dans le rendu pour rester visible même si une autre couche
+      // (visiteur, fantôme) coexiste sur la même case.
+      if (typeof getBloodSealAt === 'function'
+          && visited[y][x]
+          && !(x === playerX && y === playerY)) {
+        const seal = getBloodSealAt(x, y);
+        if (seal) div.classList.add('map-blood-seal');
+      }
       // Mondes parallèles §6.5 — visiteur incarné (côté host) :
       // surcouche dorée distincte du fantôme cyan asynchrone.
       if (typeof getVisitorAt === 'function'

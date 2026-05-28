@@ -853,6 +853,8 @@ function openCharacter(charIdx = 0) {
         <div class="spells-row">${spellsHtml}</div>
       </div>
 
+      ${_renderCarnetVoyagePanel(c)}
+
       <!-- Sac (grid-area:inv) -->
       <div class="section section-inv">
         <button class="section-toggle" onclick="_toggleCharSection(this)">Sac</button>
@@ -863,6 +865,46 @@ function openCharacter(charIdx = 0) {
     </div>
   `;
   document.getElementById('character-modal').style.display = 'flex';
+}
+
+// Mondes parallèles Phase H §6.10 — sous-section Carnet de Voyage de
+// la fiche perso. Affiche la réserve d'Essences/fragments, les Verrous
+// en attente, et le compteur de Set Voyageur du perso courant. Section
+// masquée si le joueur n'a aucune activité cross-plan (essence = 0,
+// pas de verrou pending, pas de pièce du Set).
+function _renderCarnetVoyagePanel(c) {
+  const essence  = (typeof outremondeEssence === 'number') ? outremondeEssence : 0;
+  const fragments = (typeof outremondeFragments === 'number') ? outremondeFragments : 0;
+  const pending  = Array.isArray(outremondePendingSeals) ? outremondePendingSeals : [];
+  const setCount = (c && c._voyageurSetCount) || 0;
+  // Si le joueur n'a rien touché du système, on plie complètement la
+  // section pour éviter la pollution UI en début de partie.
+  if (essence === 0 && fragments === 0 && pending.length === 0 && setCount === 0) {
+    return '';
+  }
+  const pendingHtml = pending.length === 0
+    ? '<div style="font-size:10px;color:#8a7050">Aucun Verrou en attente.</div>'
+    : '<ul style="list-style:none;padding:0;margin:4px 0 0;font-size:10px;color:rgba(247,228,168,0.85)">'
+      + pending.map(s => {
+          const m = (typeof MONSTERS !== 'undefined' && MONSTERS.find(x => x.id === s.monsterId)) || {};
+          return `<li style="padding:3px 0;border-bottom:1px dashed rgba(216,182,71,0.18)">`
+               + `🩸 ${m.name || s.monsterId} · chez ${s.hostName || '?'} (étage ${s.floor || '?'})`
+               + `</li>`;
+        }).join('')
+      + '</ul>';
+  return `
+    <div class="section section-carnet">
+      <button class="section-toggle" onclick="_toggleCharSection(this)">Carnet de Voyage</button>
+      <div class="panel-title">⸻ CARNET DE VOYAGE ⸻</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#f7e4a8;margin-bottom:6px">
+        <div>✨ Essences : <strong>${essence}</strong></div>
+        <div>🔹 Fragments : <strong>${fragments}</strong></div>
+        <div>🧥 Set Voyageur : <strong>${setCount}/5</strong></div>
+      </div>
+      <div style="font-size:10px;color:rgba(247,228,168,0.65);letter-spacing:0.5px">Verrous en attente</div>
+      ${pendingHtml}
+      <button class="cmd-btn" style="font-size:10px;margin-top:8px" onclick="openAtelierVoyageur()">✨ Ouvrir l'Atelier du Voyageur</button>
+    </div>`;
 }
 
 // Accordéon mobile de la fiche perso : plie / déplie une section.

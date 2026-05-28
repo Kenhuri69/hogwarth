@@ -222,6 +222,8 @@ function _serializeState() {
     donationIntroPlayed,
     visitsClosed,
     outremondeEssence,
+    outremondeFragments,
+    outremondePendingSeals,
     astralExileCooldownUntil,
     pendingHouseRewards: Array.from(pendingHouseRewards),
     searchedCells: Array.from(searchedCells),
@@ -453,6 +455,9 @@ function _applyState(gs) {
   outremondeEssence       = (typeof gs.outremondeEssence === 'number') ? gs.outremondeEssence : 0;
   astralExileCooldownUntil = (typeof gs.astralExileCooldownUntil === 'number')
     ? gs.astralExileCooldownUntil : 0;
+  // Phase H — fragments cosmétiques + verrous en attente.
+  outremondeFragments    = (typeof gs.outremondeFragments === 'number') ? gs.outremondeFragments : 0;
+  outremondePendingSeals = Array.isArray(gs.outremondePendingSeals) ? gs.outremondePendingSeals : [];
   // Saves antérieures au tier 2 intermédiaire → set vide par défaut.
   pendingHouseRewards = new Set(gs.pendingHouseRewards || []);
   // Endgame : saves antérieures à l'introduction du flag → false/null.
