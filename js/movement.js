@@ -7,7 +7,28 @@ function canMove(dir) {
   const [dx, dy] = DIRECTIONS[dir];
   const nx = playerX + dx, ny = playerY + dy;
   if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) return false;
-  return dungeon[ny][nx] !== CELL.WALL;
+  if (dungeon[ny][nx] === CELL.WALL) return false;
+  // Mondes parallèles §3.5 — en visite, le visiteur ne franchit que les cases
+  // déjà foulées par le host (brouillard infranchissable). Le blocage est
+  // doux : `_step` affiche un message dédié plutôt que le « mur de pierre ».
+  if (typeof visitSession !== 'undefined' && visitSession
+      && visitSession.role === 'visitor'
+      && visited && visited[ny] && !visited[ny][nx]) {
+    return false;
+  }
+  return true;
+}
+
+// Mondes parallèles §3.5 — détecte si la case visée est bloquée par le
+// brouillard (pas un mur). Sert à choisir le message d'erreur dans `_step`.
+function _isVisitorFogBlock(dir) {
+  if (!(typeof visitSession !== 'undefined' && visitSession
+        && visitSession.role === 'visitor')) return false;
+  const [dx, dy] = DIRECTIONS[dir];
+  const nx = playerX + dx, ny = playerY + dy;
+  if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) return false;
+  if (dungeon[ny][nx] === CELL.WALL) return false;
+  return !!(visited && visited[ny] && !visited[ny][nx]);
 }
 
 // Cohérence économie or : applique le multiplicateur de difficulté à
@@ -43,7 +64,19 @@ function _step(dir, faceDir) {
   if (inBattle) return;
   if (faceDir) playerDir = dir;
   if (!canMove(dir)) {
-    setNarrative("Un mur de pierre solide bloque le passage.");
+    // Mondes parallèles §3.5 — brouillard prioritaire sur le mur de pierre :
+    // si la case n'est pas un mur mais simplement hors `visited` du host,
+    // on affiche le message dédié plutôt que le narratif générique.
+    const fogBlock = _isVisitorFogBlock(dir);
+    if (fogBlock) {
+      const hostName = (typeof visitSession !== 'undefined' && visitSession
+                       && visitSession.hostName) ? visitSession.hostName : 'le sorcier';
+      const msg = `Le brouillard t'empêche d'aller plus loin — ce passage n'a pas encore été foulé par ${hostName}.`;
+      setNarrative(msg);
+      if (typeof addMsg === 'function') addMsg('🌫️ ' + msg, '');
+    } else {
+      setNarrative("Un mur de pierre solide bloque le passage.");
+    }
     updateCompass();
     drawDungeon();
     return;
@@ -83,7 +116,19 @@ function _step(dir, faceDir) {
   updateUI();
 
   // Multijoueur — émet la nouvelle position (upsert throttlé).
-  if (typeof mpNotifyMove === 'function') mpNotifyMove();
+  // Mondes parallèles §5.2/§5.3 — pendant une visite, on route plutôt vers
+  // le canal de visite : le visiteur informe le host de sa position dans son
+  // donjon, le host informe le visiteur de la sienne. Hors visite, pipeline
+  // normal mp_presence pour la présence asynchrone.
+  const _inVisit = typeof visitSession !== 'undefined' && visitSession;
+  if (_inVisit && visitSession.role === 'visitor') {
+    if (typeof _visitNotifyVisitorMove === 'function') _visitNotifyVisitorMove();
+  } else if (_inVisit && visitSession.role === 'host') {
+    if (typeof _visitNotifyHostMove === 'function') _visitNotifyHostMove();
+    if (typeof mpNotifyMove === 'function') mpNotifyMove();
+  } else {
+    if (typeof mpNotifyMove === 'function') mpNotifyMove();
+  }
 
   _updateSearchBtn();
 

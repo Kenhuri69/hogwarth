@@ -135,6 +135,22 @@ function _buildMinimapCells(mm, cellSize) {
           && player.grimoirePages.includes(page.id);
         if (!collected) div.classList.add('map-page');
       }
+      // Mondes parallèles §6.5 — visiteur incarné (côté host) :
+      // surcouche dorée distincte du fantôme cyan asynchrone.
+      if (typeof getVisitorAt === 'function'
+          && visited[y][x]
+          && !(x === playerX && y === playerY)) {
+        const v = getVisitorAt(x, y);
+        if (v) div.classList.add('map-astral-visitor');
+      }
+      // Mondes parallèles §5.3 — position du host (côté visiteur).
+      // Marqueur or-vert pour le distinguer du visiteur (or pur).
+      if (typeof getRemoteHostAt === 'function'
+          && visited[y][x]
+          && !(x === playerX && y === playerY)) {
+        const h = getRemoteHostAt(x, y);
+        if (h) div.classList.add('map-host-self');
+      }
       // Fantôme multijoueur — surcouche cyan sur une case visitée.
       // Si plusieurs fantômes partagent la case, badge « +N » sur la cellule.
       if (typeof getGhostAt === 'function'

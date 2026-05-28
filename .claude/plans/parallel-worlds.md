@@ -1510,7 +1510,75 @@ au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
           message signé par le rôle courant, `_sendPing` hors session
           est no-op, drop côté host ferme la session sans poster de
           bye.
-    - [ ] Phase D — limites de territoire + sprites + emotes (2 j).
+    - [x] Phase D — limites de territoire + sprites + emotes (2 j) —
+      **livré 2026-05-28**.
+      • `movement.js` : `canMove` rejette toute case hors
+        `visited[ny][nx]` quand `visitSession.role === 'visitor'` ;
+        `_step` distingue brouillard vs mur et affiche un message dédié
+        (« Le brouillard t'empêche d'aller plus loin — ce passage n'a
+        pas encore été foulé par <Pseudo>. ») via `setNarrative` + toast
+        `addMsg`. Helper `_isVisitorFogBlock(dir)` exposé. Hook position
+        routé : pendant une visite, `_step` appelle
+        `_visitNotifyVisitorMove` (visiteur) ou `_visitNotifyHostMove`
+        (host) au lieu de l'upsert `mp_presence` (le visiteur n'apparaît
+        pas comme une présence asynchrone aux coords du host).
+      • Verrouillage des escaliers : déjà couvert par les descripteurs
+        observation-only de C.3a (`_visitorExploreDescriptors`) — un
+        seul bouton « S'éloigner » sur `STAIRS_D` / `STAIRS_U`, pas de
+        `goDeeper`/`goUp` accessible au visiteur. Le suivi du host à
+        travers les étages reste piloté par `floorSnapshot` (C.3b).
+      • `visit-channel.js` : pose `visitSession = { role:'host',
+        visitorId, visitorName, visitors:[] }` au démarrage host ; nouveaux
+        handlers `position` (host → maj `visitors[0]` + redraw) et
+        `hostPosition` (visiteur → maj `remoteHostPosition` + redraw) ;
+        helpers `_visitNotifyVisitorMove` / `_visitNotifyHostMove`
+        throttlés (1,2 s) ; `_visitSendEmote(kind)` throttlé (1,5 s)
+        avec banque fermée validée à l'envoi ET à la réception ; helpers
+        de lecture `getVisitorAt(x,y)` / `getRemoteHostAt(x,y)` filtrés
+        par étage courant (anti stale position après changement d'étage).
+        Reset `visitSession` host à `_visitReset` ; redraw forcé à la
+        sortie/drop/bye dans les deux sens. Banques `VISITOR_EMOTES`
+        (4 : 👋 🪄 🏰 🎯) et `HOST_EMOTES` (1 : 👋) exposées sur window.
+      • `renderer-effects.js` : `drawVisitorSprite(visitor, x, baseY, sz)`
+        — silhouette warm + aura DORÉE pulsée + étiquette nom flottante,
+        distincte du cyan spectral des fantômes asynchrones
+        (`drawGhostSprite`). Pas de PNG plein-pied requis en V1a.
+      • `renderer.js` : scan `pendingSprite` détecte un visiteur via
+        `getVisitorAt` AVANT le ghost asynchrone (priorité : incarné >
+        écho > message gravé). Branche `kind: 'visitor'` dans la
+        boucle de dessin.
+      • `renderer-minimap.js` : classes `.map-astral-visitor` (or pulsé,
+        côté host) et `.map-host-self` (or-vert, côté visiteur) posées
+        sur les cases concernées, distinctes de `.map-ghost` (cyan
+        spectral) et `.map-message` (or message gravé).
+      • `style.css` : palettes dédiées + keyframes `mapVisitorPulse`.
+      • `visit-hud.js` : `showVisitHud(opts.role)` peuple la barre
+        `#visit-hud-emotes` selon la banque du rôle, libellé du bouton
+        sortie distinct (« Quitter ce monde » visiteur / « Refermer
+        la cheminée » host). `_visitHudEmote(kind)` délègue à
+        `_visitSendEmote`. Banque close côté UI (les boutons ne sont
+        rendus QUE pour les kinds existants).
+      • `portal.css` : style `.visit-hud-emote` (32×32 carré or chaud,
+        hover + active states) + responsive ≤700px (28×28).
+      • `index.html` : `<div id="visit-hud-emotes">` ajouté dans
+        `#visit-hud`. Bumps de version : `style.css?v=21`,
+        `portal.css?v=3`, `renderer.js?v=9`, `renderer-effects.js?v=9`,
+        `renderer-minimap.js?v=5`, `movement.js?v=16`,
+        `visit-channel.js?v=5`, `visit-hud.js?v=2`, `loader.js?v=11`.
+      • `sw.js` : `CACHE_VERSION` bumpé `hogwarth-v2 → hogwarth-v3` +
+        PRECACHE versions alignées (movement / loader / style /
+        renderer*).
+      • MANIFEST loader complété (10 entrées optional) — fog block,
+        notify hooks, send emote, getVisitorAt/getRemoteHostAt,
+        drawVisitorSprite, _visitHudEmote, VISITOR_EMOTES / HOST_EMOTES.
+      • Scénario smoke `scenarioVisitPhaseD` (T1→T7) : surface, blocage
+        brouillard (canMove rejette puis accepte après révélation),
+        émission position visiteur (message posté avec coords/dir/floor),
+        réception position côté host (visitSession.visitors peuplé,
+        getVisitorAt OK, HUD côté host avec emote 👋), envoi/réception
+        emote (banque close, emote inconnue ignorée silencieusement),
+        sortie host (visitSession nullée, sprite/marqueur disparaît,
+        bye posté). Tous scénarios verts (`node tests/smoke.js`).
     - [ ] Phase E — dialogues PNJ « voyageur » + observation-only (2 j).
     - [ ] Phase F — polish (1,5 j).
 - [ ] **V1b** — combat local + amorce économie (4 j)

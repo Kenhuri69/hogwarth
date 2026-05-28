@@ -25,6 +25,12 @@
   // tolérer un cycle de poll raté sur une connexion lente.
   const VISIT_PING_MS    = 4000;
   const VISIT_TIMEOUT_MS = 10000;
+  // Phase D §5.2/§5.3 — throttle d'émission de position. La réception est
+  // gouvernée par le cycle de poll (2,5 s), inutile d'aller plus vite.
+  const VISIT_MOVE_THROTTLE_MS = 1200;
+  // Phase D §6.7 — anti-flood emote. Banque fermée, mais on protège quand
+  // même de la tenue de bouton involontaire ou du clic répété.
+  const VISIT_EMOTE_THROTTLE_MS = 1500;
 
   // ── État interne ──────────────────────────────────────────
   let _role           = null;   // null | 'visitor' | 'host'
@@ -36,6 +42,8 @@
   let _lastIso        = null;   // cursor de poll (created_at du dernier msg vu)
   let _lastSeen       = 0;      // C.4 — timestamp Date.now() du dernier message reçu du partenaire
   let _snapshotPosted = false;  // host : flag pour ne pas re-poster
+  let _lastMoveSent   = 0;      // D §5 — throttle position/hostPosition
+  let _lastEmoteSent  = 0;      // D §6.7 — throttle emote
 
   // ── Génération d'UUID v4 (sans dépendance) ────────────────
   function _uuid() {
@@ -117,6 +125,29 @@
       _snapshotPosted = !!posted;
     }
 
+    // Phase D §3.4 — miroir symétrique côté host : pose visitSession pour
+    // que le rendu puisse projeter le visiteur (sprite 3D, minimap dorée).
+    // Forme distincte de la version visiteur (pas de mySavedState).
+    if (typeof visitSession !== 'undefined') {
+      visitSession = {
+        role:        'host',
+        visitorId:   _partnerId,
+        visitorName: _partnerName,
+        visitors:    [],   // peuplé à la 1re réception de 'position'
+      };
+    }
+
+    // Phase D §6.7 — bandeau côté host : informe le joueur qu'un visiteur
+    // arrive, expose l'emote 👋 et le bouton "Refermer la cheminée".
+    if (typeof showVisitHud === 'function') {
+      showVisitHud({
+        role:      'host',
+        hostName:  _partnerName,                       // nom du partenaire visiteur
+        hostHouse: (opts.req && opts.req.visitor_house) || null,
+        floor:     (typeof currentFloor === 'number') ? currentFloor : null,
+      });
+    }
+
     _pollTimer = setInterval(_visitPollOnce, VISIT_POLL_MS);
     _pingTimer = setInterval(_sendPing,      VISIT_PING_MS);
     return true;
@@ -147,13 +178,12 @@
       _restoreFromVisit();
     }
     if (typeof hideVisitHud === 'function') hideVisitHud();
-    if (wasVisitor) {
-      // Redraw immédiat — la modale "Quitter" se ferme et le visiteur
-      // retrouve son propre donjon sans intervention manuelle.
-      if (typeof drawDungeon   === 'function') drawDungeon();
-      if (typeof renderMinimap === 'function') renderMinimap();
-      if (typeof updateUI      === 'function') updateUI();
-    }
+    // Redraw immédiat dans les deux sens : côté visiteur pour retrouver
+    // son donjon, côté host pour faire disparaître le sprite et le
+    // marqueur minimap du visiteur (visitSession a été nulled par _visitReset).
+    if (typeof drawDungeon   === 'function') drawDungeon();
+    if (typeof renderMinimap === 'function') renderMinimap();
+    if (wasVisitor && typeof updateUI === 'function') updateUI();
     return true;
   }
 
@@ -165,6 +195,16 @@
     _snapshotPosted = false;
     _lastIso        = null;
     _lastSeen       = 0;
+    _lastMoveSent   = 0;
+    _lastEmoteSent  = 0;
+    // Côté host : visitSession est posé par mpStartVisitAsHost, à nettoyer
+    // ici pour ne pas laisser de visiteur fantôme dans le rendu après le
+    // drop / bye. Côté visiteur, visitSession est levé par _restoreFromVisit
+    // — ne pas y toucher ici.
+    if (typeof visitSession !== 'undefined' && visitSession
+        && visitSession.role === 'host') {
+      visitSession = null;
+    }
   }
 
   // ── C.4 — keepalive + détection de drop ────────────────────
@@ -206,11 +246,11 @@
       _restoreFromVisit();
     }
     if (typeof hideVisitHud === 'function') hideVisitHud();
-    if (wasVisitor) {
-      if (typeof drawDungeon   === 'function') drawDungeon();
-      if (typeof renderMinimap === 'function') renderMinimap();
-      if (typeof updateUI      === 'function') updateUI();
-    }
+    // Redraw immédiat dans les deux sens (cf. mpExitVisit). Côté host le
+    // sprite/marqueur visiteur disparaît immédiatement après le drop.
+    if (typeof drawDungeon   === 'function') drawDungeon();
+    if (typeof renderMinimap === 'function') renderMinimap();
+    if (wasVisitor && typeof updateUI === 'function') updateUI();
     if (typeof addMsg === 'function') {
       const msg = wasVisitor
         ? `Le lien astral s'est rompu — tu retournes dans ton monde.`
@@ -264,6 +304,7 @@
         if (ok && typeof showVisitHud === 'function') {
           const meta = (msg.payload && msg.payload.hostMeta) || {};
           showVisitHud({
+            role:      'visitor',
             hostName:  meta.name  || _partnerName,
             hostHouse: meta.house || null,
             floor:     meta.currentFloor || null
@@ -288,6 +329,7 @@
           if (typeof updateVisitHud === 'function') {
             const meta = (msg.payload && msg.payload.hostMeta) || {};
             updateVisitHud({
+              role:      'visitor',
               hostName:  meta.name  || _partnerName,
               hostHouse: meta.house || null,
               floor:     meta.currentFloor || null
@@ -316,22 +358,178 @@
         _restoreFromVisit();
       }
       if (typeof hideVisitHud === 'function') hideVisitHud();
-      if (wasVisitor) {
-        // Redraw après restore pour que le visiteur retrouve son propre
-        // donjon sans avoir à bouger.
-        if (typeof drawDungeon   === 'function') drawDungeon();
-        if (typeof renderMinimap === 'function') renderMinimap();
-        if (typeof updateUI      === 'function') updateUI();
-      }
+      // Redraw dans les deux sens : visiteur retrouve son donjon, host
+      // perd le sprite/marqueur visiteur (visitSession nullée par _visitReset).
+      if (typeof drawDungeon   === 'function') drawDungeon();
+      if (typeof renderMinimap === 'function') renderMinimap();
+      if (wasVisitor && typeof updateUI === 'function') updateUI();
       if (typeof addMsg === 'function') {
         addMsg(`${partnerName} a refermé la cheminée — retour dans ton monde.`, '');
       }
       return;
     }
 
-    // 'position' / 'hostPosition' / autres : seront branchés en C.3
-    // (rendu du sprite visiteur côté host, suivi du host côté visiteur).
-    // En C.2 on les ignore silencieusement.
+    // Phase D §5.2 — position du visiteur reçue côté host : met à jour
+    // visitSession.visitors[0] avec sa case courante (sprite + minimap).
+    if (msg.type === 'position' && _role === 'host') {
+      const p = msg.payload || {};
+      if (typeof visitSession !== 'undefined' && visitSession
+          && visitSession.role === 'host') {
+        const next = {
+          id:    _partnerId,
+          name:  _partnerName,
+          floor: (typeof p.floor === 'number') ? p.floor : null,
+          x:     (typeof p.x === 'number') ? p.x : -1,
+          y:     (typeof p.y === 'number') ? p.y : -1,
+          dir:   p.dir || 's',
+        };
+        visitSession.visitors = [next];
+        if (typeof drawDungeon   === 'function') drawDungeon();
+        if (typeof renderMinimap === 'function') renderMinimap();
+      }
+      return;
+    }
+
+    // Phase D §5.3 — position du host reçue côté visiteur : met à jour
+    // visitSession.remoteHostPosition (marqueur minimap discret + sprite).
+    if (msg.type === 'hostPosition' && _role === 'visitor') {
+      const p = msg.payload || {};
+      if (typeof visitSession !== 'undefined' && visitSession
+          && visitSession.role === 'visitor') {
+        visitSession.remoteHostPosition = {
+          floor: (typeof p.floor === 'number') ? p.floor : null,
+          x:     (typeof p.x === 'number') ? p.x : -1,
+          y:     (typeof p.y === 'number') ? p.y : -1,
+          dir:   p.dir || 's',
+        };
+        if (typeof drawDungeon   === 'function') drawDungeon();
+        if (typeof renderMinimap === 'function') renderMinimap();
+      }
+      return;
+    }
+
+    // Phase D §6.7 — emote reçue : toast léger côté partenaire. Banque
+    // fermée, validée à l'envoi (_visitSendEmote) ET à la réception
+    // (ignore les payload inconnus pour éviter l'injection texte).
+    if (msg.type === 'emote') {
+      const p = msg.payload || {};
+      const kind  = String(p.kind || '');
+      const isFromVisitor = (msg.sender === 'visitor');
+      const banque = isFromVisitor ? VISITOR_EMOTES : HOST_EMOTES;
+      const def = banque[kind];
+      if (!def) return;   // banque fermée
+      const who = isFromVisitor
+        ? (visitSession && visitSession.visitorName) || _partnerName || 'Le voyageur'
+        : (visitSession && visitSession.hostName)    || _partnerName || 'Le sorcier';
+      if (typeof addMsg === 'function') {
+        addMsg(`${def.icon} ${who} : « ${def.text} »`, 'info');
+      }
+      return;
+    }
+  }
+
+  // ── Phase D §6.5 — accès au visiteur projeté sur une case ──────
+  // Consommé par renderer.js (sprite 3D) et renderer-minimap.js (case
+  // dorée). Filtre par étage courant : un message position arrivé après
+  // un changement d'étage côté host pourrait pointer vers un étage
+  // périmé, on l'ignore pour ne pas projeter le visiteur "fantôme".
+  function getVisitorAt(x, y) {
+    if (typeof visitSession === 'undefined' || !visitSession
+        || visitSession.role !== 'host') return null;
+    const list = visitSession.visitors || [];
+    for (const v of list) {
+      if (!v || v.x !== x || v.y !== y) continue;
+      if (typeof currentFloor === 'number'
+          && typeof v.floor === 'number'
+          && v.floor !== currentFloor) continue;
+      return v;
+    }
+    return null;
+  }
+
+  // ── Phase D §5.3 — accès à la position du host (côté visiteur) ──
+  // Consommée par renderer-minimap.js pour rendre un marqueur discret
+  // sur la case courante du host. Même filtre d'étage que ci-dessus.
+  function getRemoteHostAt(x, y) {
+    if (typeof visitSession === 'undefined' || !visitSession
+        || visitSession.role !== 'visitor') return null;
+    const p = visitSession.remoteHostPosition;
+    if (!p || p.x !== x || p.y !== y) return null;
+    if (typeof currentFloor === 'number'
+        && typeof p.floor === 'number'
+        && p.floor !== currentFloor) return null;
+    return p;
+  }
+
+  // ── Phase D §6.7 — banques d'emotes (sources de vérité) ─────────
+  // Fermées côté envoi ET côté réception : tout `kind` inconnu est
+  // silencieusement ignoré.
+  const VISITOR_EMOTES = {
+    wave:   { icon: '👋', text: 'Salutations !' },
+    wand:   { icon: '🪄', text: 'Ce sortilège m\'intrigue.' },
+    castle: { icon: '🏰', text: 'Joli château !' },
+    bye:    { icon: '🎯', text: 'Je file.' },
+  };
+  const HOST_EMOTES = {
+    welcome: { icon: '👋', text: 'Bienvenue !' },
+  };
+
+  // ── Phase D §5.2 — visiteur informe le host de sa position ──────
+  // Throttle 1,2 s côté visiteur. Tolérant aux erreurs réseau.
+  async function _visitNotifyVisitorMove() {
+    if (_role !== 'visitor' || !_channelId) return false;
+    const now = Date.now();
+    if (now - _lastMoveSent < VISIT_MOVE_THROTTLE_MS) return false;
+    _lastMoveSent = now;
+    if (typeof mpPostVisitMessage !== 'function') return false;
+    const payload = {
+      x:     (typeof playerX === 'number') ? playerX : -1,
+      y:     (typeof playerY === 'number') ? playerY : -1,
+      dir:   (typeof playerDir !== 'undefined') ? playerDir : 's',
+      floor: (typeof currentFloor === 'number') ? currentFloor : null,
+    };
+    try { await mpPostVisitMessage(_channelId, 'visitor', 'position', payload); }
+    catch (e) { /* tolérant */ }
+    return true;
+  }
+
+  // ── Phase D §5.3 — host informe le visiteur de sa position ──────
+  async function _visitNotifyHostMove() {
+    if (_role !== 'host' || !_channelId) return false;
+    const now = Date.now();
+    if (now - _lastMoveSent < VISIT_MOVE_THROTTLE_MS) return false;
+    _lastMoveSent = now;
+    if (typeof mpPostVisitMessage !== 'function') return false;
+    const payload = {
+      x:     (typeof playerX === 'number') ? playerX : -1,
+      y:     (typeof playerY === 'number') ? playerY : -1,
+      dir:   (typeof playerDir !== 'undefined') ? playerDir : 's',
+      floor: (typeof currentFloor === 'number') ? currentFloor : null,
+    };
+    try { await mpPostVisitMessage(_channelId, 'host', 'hostPosition', payload); }
+    catch (e) { /* tolérant */ }
+    return true;
+  }
+
+  // ── Phase D §6.7 — envoie une emote ─────────────────────────────
+  // `kind` doit appartenir à la banque du rôle courant (sinon ignoré).
+  // Retourne true si le message a été posté, false sinon.
+  async function _visitSendEmote(kind) {
+    if (!_role || !_channelId) return false;
+    const banque = (_role === 'visitor') ? VISITOR_EMOTES : HOST_EMOTES;
+    if (!banque[kind]) return false;
+    const now = Date.now();
+    if (now - _lastEmoteSent < VISIT_EMOTE_THROTTLE_MS) return false;
+    _lastEmoteSent = now;
+    if (typeof mpPostVisitMessage !== 'function') return false;
+    try { await mpPostVisitMessage(_channelId, _role, 'emote', { kind }); }
+    catch (e) { /* tolérant */ }
+    // Feedback local : un toast discret confirme l'envoi côté lanceur.
+    if (typeof addMsg === 'function') {
+      const def = banque[kind];
+      addMsg(`${def.icon} Tu envoies : « ${def.text} »`, '');
+    }
+    return true;
   }
 
   // ── Hook côté host : changement d'étage (C.3b) ─────────────
@@ -391,5 +589,16 @@
     window._visitCheckTimeout       = _visitCheckTimeout;
     window._visitSendPing           = _sendPing;
     window._visitForceLastSeen      = function (ts) { _lastSeen = ts; };
+    // Phase D §5/§6.7 — hooks de position + emotes.
+    window._visitNotifyVisitorMove  = _visitNotifyVisitorMove;
+    window._visitNotifyHostMove     = _visitNotifyHostMove;
+    window._visitSendEmote          = _visitSendEmote;
+    window.getVisitorAt             = getVisitorAt;
+    window.getRemoteHostAt          = getRemoteHostAt;
+    window.VISITOR_EMOTES           = VISITOR_EMOTES;
+    window.HOST_EMOTES              = HOST_EMOTES;
+    // Test helper : remettre à zéro les throttles d'émission entre deux
+    // assertions (sinon la 2e émission rapide est rejetée).
+    window._visitResetThrottles     = function () { _lastMoveSent = 0; _lastEmoteSent = 0; };
   }
 })();

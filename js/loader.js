@@ -300,6 +300,17 @@ window.UX_safe = new Proxy({}, {
     { name: 'hideVisitHud',             source: 'visit-hud.js',           kind: 'fn',  optional: true },
     // Phase C.3b — chargement paresseux multi-étages.
     { name: 'mpApplyVisitFloorUpdate',  source: 'save.js',                kind: 'fn',  optional: true },
+    // Phase D — limites de territoire + sprites + emotes (§3.5/§5.2/§6.5/§6.7).
+    { name: '_isVisitorFogBlock',       source: 'movement.js',            kind: 'fn',  optional: true },
+    { name: '_visitNotifyVisitorMove',  source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    { name: '_visitNotifyHostMove',     source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    { name: '_visitSendEmote',          source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    { name: 'getVisitorAt',             source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    { name: 'getRemoteHostAt',          source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    { name: 'drawVisitorSprite',        source: 'renderer-effects.js',    kind: 'fn',  optional: true },
+    { name: '_visitHudEmote',           source: 'visit-hud.js',           kind: 'fn',  optional: true },
+    { name: 'VISITOR_EMOTES',           source: 'visit-channel.js',       kind: 'obj', optional: true },
+    { name: 'HOST_EMOTES',              source: 'visit-channel.js',       kind: 'obj', optional: true },
 
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },
