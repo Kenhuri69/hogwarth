@@ -109,6 +109,29 @@ let visitSession = null;
 // Persisté dans la save pour rester stable entre sessions.
 let visitsClosed = false;
 
+// ── Mondes parallèles Phase G — combat local + amorce économie cross-plan ──
+// `inAstralCombat`     : flag global posé par startBattle({astral:true}) pour
+//                        que endBattle route les gains vers outremondeEssence
+//                        (formule §6.10) au lieu de l'or/XP/drops standards.
+//                        Non persisté (un save est refusé en combat).
+// `outremondeEssence`  : monnaie cross-plan unique (Phase G/H). Cumulée à
+//                        chaque écho vaincu. Persistée dans la save du
+//                        visiteur — isolée de player.gold (cf. §6.10).
+// `astralCellsDefeated`: Set "x,y" — cellules de la visite courante où un
+//                        écho a été dissipé. Reset à mpApplyVisitSnapshot
+//                        et à chaque floorSnapshot. Pas persisté.
+// `astralFloorKills`   : compteur d'échos vaincus sur l'étage courant de
+//                        la visite. Limite §6.8 : 3 par étage. Reset à
+//                        chaque floorSnapshot. Pas persisté.
+// `astralExileCooldownUntil` : timestamp ms — bloque `Apparition Astrale`
+//                        pendant 5 minutes après une défaite astrale
+//                        (§6.8). Persisté pour résister au reload.
+let inAstralCombat         = false;
+let outremondeEssence       = 0;
+let astralCellsDefeated     = new Set();
+let astralFloorKills        = 0;
+let astralExileCooldownUntil = 0;
+
 // ============================================================
 // SYSTÈME DES MAISONS
 // ============================================================

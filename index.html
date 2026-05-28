@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="css/ornaments.css?v=1">
 <link rel="stylesheet" href="css/help-tour.css?v=1">
 <link rel="stylesheet" href="css/pwa.css?v=1">
-<link rel="stylesheet" href="css/portal.css?v=4">
+<link rel="stylesheet" href="css/portal.css?v=5">
 <link rel="manifest" href="manifest.json?v=2">
 <meta name="theme-color" content="#c9a84c">
 <link rel="apple-touch-icon" href="img/icons/pwa/apple-touch-icon.png?v=2">
@@ -561,6 +561,13 @@
           <span class="visit-hud-quality-dot"></span>
           <span class="visit-hud-quality-label">Stable</span>
         </div>
+        <!-- Phase G §6.8 — bouton "Défier l'écho" (visiteur uniquement) -->
+        <button id="visit-hud-astral" class="visit-hud-astral" type="button"
+                style="display:none" onclick="_visitHudAstralFight()"
+                title="Défier un écho local">
+          🌀 <span>Défier</span>
+          <span id="visit-hud-astral-counter" class="visit-hud-astral-counter">3/3</span>
+        </button>
         <!-- Emotes (Phase D §6.7) — banque fermée selon le rôle. Peuplé
              dynamiquement par showVisitHud / updateVisitHud. -->
         <div id="visit-hud-emotes" class="visit-hud-emotes" aria-label="Émoticônes"></div>
@@ -1028,21 +1035,21 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/floor-themes.js?v=1"></script>
 <script src="js/floor-events.js?v=1"></script>
 <script src="js/item-icons.js?v=7"></script>
-<script src="js/state.js?v=10"></script>
+<script src="js/state.js?v=11"></script>
 <script src="js/ui.js?v=5"></script>
 <script src="js/ui-bestiary.js?v=1"></script>
-<script src="js/dungeon.js?v=11"></script>
+<script src="js/dungeon.js?v=12"></script>
 <script src="js/textures.js?v=1"></script>
 <script src="js/renderer.js?v=9"></script>
 <script src="js/renderer-effects.js?v=9"></script>
 <script src="js/renderer-minimap.js?v=5"></script>
-<script src="js/movement.js?v=17"></script>
+<script src="js/movement.js?v=18"></script>
 <script src="js/swipe-canvas.js?v=4"></script>
-<script src="js/battle.js?v=6"></script>
+<script src="js/battle.js?v=7"></script>
 <script src="js/teleport.js?v=1"></script>
-<script src="js/battle-spells.js?v=2"></script>
+<script src="js/battle-spells.js?v=3"></script>
 <script src="js/battle-ui.js?v=1"></script>
-<script src="js/inventory.js?v=5"></script>
+<script src="js/inventory.js?v=6"></script>
 <script src="js/potions.js?v=1"></script>
 <script src="js/quests.js?v=6"></script>
 <script src="js/npc-dialog.js?v=9"></script>
@@ -1050,21 +1057,21 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/karaoke.js?v=1"></script>
 <script src="js/intro.js?v=2"></script>
 <script src="js/shop.js?v=5"></script>
-<script src="js/save.js?v=11"></script>
+<script src="js/save.js?v=12"></script>
 <script src="js/save-ui.js?v=2"></script>
 <script src="js/ironman.js?v=3"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
 <script src="js/multiplayer.js?v=7"></script>
 <script src="js/portal-fx.js?v=1"></script>
 <script src="js/portal-matchmaking.js?v=2"></script>
-<script src="js/visit-channel.js?v=6"></script>
-<script src="js/visit-hud.js?v=3"></script>
+<script src="js/visit-channel.js?v=7"></script>
+<script src="js/visit-hud.js?v=4"></script>
 <script src="js/main.js?v=5"></script>
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=2"></script>
 <script src="js/library.js?v=2"></script>
 <script src="js/help-tour.js?v=1"></script>
-<script src="js/loader.js?v=13"></script>
+<script src="js/loader.js?v=14"></script>
 <script src="js/pwa.js?v=1"></script>
 
 </body>

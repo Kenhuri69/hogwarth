@@ -448,6 +448,57 @@
   50%      { transform: scale(1.25); opacity: 0.6; }
 }
 
+/* Phase G §6.8 — bouton "Défier l'écho" dans le bandeau de visite.
+   Visible côté visiteur uniquement ; désactivé si la cellule est dissipée
+   ou si la limite par étage est atteinte. Le compteur "x/3" reste lisible
+   même quand le bouton est disabled. */
+.visit-hud-astral {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  color: #f7e4a8;
+  background: linear-gradient(180deg,
+              rgba(70, 30, 70, 0.85) 0%,
+              rgba(40, 18, 40, 0.85) 100%);
+  border: 1px solid rgba(216, 182, 71, 0.55);
+  border-radius: 4px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+  transition: background 120ms ease, transform 120ms ease, border-color 120ms ease;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.visit-hud-astral:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(110, 50, 110, 0.95) 0%, rgba(70, 28, 70, 0.95) 100%);
+  border-color: rgba(255, 215, 106, 0.9);
+}
+.visit-hud-astral:active:not(:disabled) { transform: translateY(1px); }
+.visit-hud-astral:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.visit-hud-astral-counter {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(20, 12, 6, 0.55);
+  border: 1px solid rgba(216, 182, 71, 0.35);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
+
+/* Phase G §6.8 — bordure dorée sur l'overlay de combat astral pour le
+   distinguer visuellement d'un combat normal. Le flag .in-astral-combat
+   est posé sur <body> par startBattle(opts.astral). */
+body.in-astral-combat #encounter-overlay {
+  box-shadow: inset 0 0 0 3px rgba(216, 182, 71, 0.55),
+              inset 0 0 36px rgba(216, 182, 71, 0.18);
+}
+
 /* Phase D §6.7 — boutons d'emote dans le bandeau. Banque fermée,
    peuplée par showVisitHud(opts.role). */
 .visit-hud-emotes {

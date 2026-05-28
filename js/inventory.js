@@ -1018,8 +1018,17 @@ function openSpells(charIdx = 0) {
     // (parallel-worlds.md §2.1 — la voie solitaire ne se partage pas).
     const ironmanLock = spell.effect === 'portal'
       && typeof ironmanMode !== 'undefined' && ironmanMode;
+    // Phase G §6.8 — après une défaite astrale, cooldown 5 min pour éviter
+    // les retentatives en boucle.
+    const exileMs = (spell.effect === 'portal'
+      && typeof astralExileCooldownUntil === 'number')
+      ? Math.max(0, astralExileCooldownUntil - Date.now()) : 0;
+    const exileLock    = exileMs > 0;
+    const exileSec     = Math.ceil(exileMs / 1000);
+    const exileMin     = Math.floor(exileSec / 60);
+    const exileLabel   = exileMin > 0 ? `${exileMin} min ${exileSec % 60}s` : `${exileSec}s`;
     const canCastOoc = isOoc && cdRemaining === 0
-      && c.sp >= (oocCost || spell.cost) && !ironmanLock;
+      && c.sp >= (oocCost || spell.cost) && !ironmanLock && !exileLock;
     const costLabel = oocCost
       ? `${oocCost} PM <span style="color:#6a5030;font-size:9px">(hors combat)</span>`
       : `${spell.cost} PM`;
@@ -1028,6 +1037,8 @@ function openSpells(charIdx = 0) {
       hint = '<span style="font-size:9px;color:#6a5030">Combat uniquement</span>';
     } else if (ironmanLock) {
       hint = '<span style="font-size:9px;color:#6a5030">⚜ Voie solitaire — l\'Ironman se joue seul</span>';
+    } else if (exileLock) {
+      hint = `<span style="font-size:9px;color:#a04020">💫 Ton lien astral se reforme — ${exileLabel}</span>`;
     } else if (cdRemaining > 0) {
       hint = `<span style="font-size:9px;color:#a04020">⏳ Se recharge — ${cdRemaining} ${cdUnit}</span>`;
     } else if (!canCastOoc) {
