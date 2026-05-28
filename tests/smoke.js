@@ -12064,6 +12064,191 @@ async function scenarioVisitPhaseD() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette — dialogues PNJ « voyageur » (Phase E) ──
+async function scenarioVisitPhaseE() {
+  console.log('\n── Scénario : Cheminette — dialogues PNJ voyageur (Phase E) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : surface — fonctions Phase E exposées.
+  const t1 = await page.evaluate(() => ({
+    openAstral:        typeof openAstralNpcDialog === 'function',
+    astralCategory:    typeof _astralCategory     === 'function',
+    astralFallback:    typeof _astralFallbackPages === 'function',
+    overlayInDOM:      !!document.getElementById('npc-dialog-overlay')
+  }));
+  console.log('  T1 surface →', t1);
+  assert(t1.openAstral,     'openAstralNpcDialog exposé');
+  assert(t1.astralCategory, '_astralCategory exposé');
+  assert(t1.astralFallback, '_astralFallbackPages exposé');
+  assert(t1.overlayInDOM,   '#npc-dialog-overlay présent');
+
+  // T2 : catégorisation par type de PNJ. Cascade prioritaire :
+  // quest > vendor > special > lore > default.
+  const t2 = await page.evaluate(() => {
+    const pomfresh = getNpcById('pomfresh');           // questsGiven non vide
+    const rosmerta = getNpcById('rosmerta');           // wares uniquement (pas de questsGiven)
+    const fumseck  = getNpcById('fumseck');            // specialAction + questsGiven (quest gagne)
+    const mimi     = getNpcById('mimi');               // questsGiven + fantome (quest gagne)
+    return {
+      catPomfresh: _astralCategory(pomfresh),
+      catRosmerta: _astralCategory(rosmerta),
+      catFumseck:  _astralCategory(fumseck),
+      catMimi:     _astralCategory(mimi)
+    };
+  });
+  console.log('  T2 catégories →', t2);
+  assert(t2.catPomfresh === 'quest',  'Pomfresh = quest (questsGiven)');
+  assert(t2.catRosmerta === 'vendor', 'Rosmerta = vendor (wares pur)');
+  assert(t2.catFumseck  === 'quest',  'Fumseck = quest (priorité questsGiven > specialAction)');
+  assert(t2.catMimi     === 'quest',  'Mimi = quest (questsGiven prioritaire)');
+
+  // T3 : ouverture d'un dialogue astral avec banque authored (Pomfresh).
+  // On force `visitSession` côté visiteur pour que les guards passent.
+  const t3 = await page.evaluate(() => {
+    if (typeof visitSession !== 'undefined') {
+      visitSession = {
+        role:      'visitor',
+        hostId:    'h-E',
+        hostName:  'Alice',
+        hostHouse: 'Gryffondor',
+        mySavedState: null
+      };
+    }
+    const beforeQuests = activeQuests.length;
+    openAstralNpcDialog('pomfresh');
+    const overlay  = document.getElementById('npc-dialog-overlay');
+    const titleEl  = document.getElementById('npc-dialog-title');
+    const textEl   = document.getElementById('npc-dialog-text');
+    const display  = overlay.style.display;
+    const titleTxt = titleEl ? titleEl.textContent : '';
+    const text1    = textEl ? textEl.textContent : '';
+    // Avance jusqu'à la dernière page pour voir les actions finales.
+    while (_dialogState && _dialogState.page < _dialogState.pages.length - 1) {
+      nextDialogPage();
+    }
+    const actionsEl = document.getElementById('npc-dialog-actions');
+    const text     = textEl ? textEl.textContent : text1;
+    const actions  = actionsEl ? actionsEl.innerHTML : '';
+    closeNpcDialog();
+    const afterQuests = activeQuests.length;
+    if (typeof visitSession !== 'undefined') visitSession = null;
+    return {
+      display, titleTxt, text1, text, actions,
+      questsUnchanged: beforeQuests === afterQuests,
+      hasVoyageurTag:  /voyageur d'un autre plan/.test(titleTxt),
+      hasAuthored:     /silhouette familière|Mandragores n'ont rien/.test(text1 + text),
+      hasAccept:       /Accepter la quête/.test(actions),
+      hasShop:         /Voir les marchandises/.test(actions),
+      hasSpecial:      /Action spéciale|Recevoir les larmes/.test(actions),
+      hasGoAway:       /S'éloigner/.test(actions)
+    };
+  });
+  console.log('  T3 Pomfresh authored →', t3);
+  assert(t3.display === 'flex',     'Overlay PNJ ouvert');
+  assert(t3.hasVoyageurTag,         'Titre suffixé « voyageur d\'un autre plan »');
+  assert(t3.hasAuthored,             'Texte authored de dialoguesAstral affiché');
+  assert(!t3.hasAccept,              'Pas de bouton "Accepter la quête"');
+  assert(!t3.hasShop,                'Pas de bouton "Voir les marchandises"');
+  assert(!t3.hasSpecial,             'Pas de bouton d\'action spéciale');
+  assert(t3.hasGoAway,               'Bouton "S\'éloigner" présent');
+  assert(t3.questsUnchanged,         'activeQuests intact après dialogue astral');
+
+  // T4 : ouverture d'un dialogue astral sans banque authored — fallback
+  // générique. On choisit un PNJ sans dialoguesAstral : 'manon' (quête).
+  const t4 = await page.evaluate(() => {
+    if (typeof visitSession !== 'undefined') {
+      visitSession = {
+        role:'visitor', hostId:'h', hostName:'B', hostHouse:'Serdaigle', mySavedState:null
+      };
+    }
+    const manon = getNpcById('manon');
+    const hasAuthored = !!(manon && manon.dialoguesAstral);
+    openAstralNpcDialog('manon');
+    const textEl = document.getElementById('npc-dialog-text');
+    const text = textEl ? textEl.textContent : '';
+    closeNpcDialog();
+    if (typeof visitSession !== 'undefined') visitSession = null;
+    return {
+      hasAuthored,
+      fallbackQuest: /mission|liens entre nos mondes/.test(text)
+    };
+  });
+  console.log('  T4 fallback quête →', t4);
+  assert(!t4.hasAuthored,      'Manon n\'a pas de dialoguesAstral (banque générique attendue)');
+  assert(t4.fallbackQuest,     'Fallback "quest" affiché (mission / liens entre mondes)');
+
+  // T5 : fallback vendor — Rosmerta (vendeur pur sans dialoguesAstral).
+  const t5 = await page.evaluate(() => {
+    if (typeof visitSession !== 'undefined') {
+      visitSession = { role:'visitor', hostId:'h', hostName:'C', hostHouse:'Serpentard', mySavedState:null };
+    }
+    const rosmerta = getNpcById('rosmerta');
+    const hasAuthored = !!(rosmerta && rosmerta.dialoguesAstral);
+    openAstralNpcDialog('rosmerta');
+    const text = (document.getElementById('npc-dialog-text') || {}).textContent || '';
+    closeNpcDialog();
+    if (typeof visitSession !== 'undefined') visitSession = null;
+    return { hasAuthored, fallbackVendor: /marchandises n'ont pas de poids|murmure/.test(text) };
+  });
+  console.log('  T5 fallback vendeur →', t5);
+  assert(!t5.hasAuthored,      'Rosmerta sans dialoguesAstral');
+  assert(t5.fallbackVendor,    'Fallback "vendor" affiché');
+
+  // T6 : intégration handleCellEntry — sur une case NPC en visite,
+  // ouvre le dialogue astral (pas le dialogue normal).
+  const t6 = await page.evaluate(() => {
+    if (typeof visitSession !== 'undefined') {
+      visitSession = { role:'visitor', hostId:'h', hostName:'D', hostHouse:'Poufsouffle', mySavedState:null };
+    }
+    // Pose un PNJ pomfresh sur la case courante.
+    playerX = 10; playerY = 10;
+    dungeon[10][10] = CELL.NPC;
+    npcPlacements.set('10,10', 'pomfresh');
+    visited[10][10] = true;
+    // Simule l'entrée sur la case.
+    handleCellEntry(CELL.NPC);
+    const overlay = document.getElementById('npc-dialog-overlay');
+    const displayed = overlay.style.display === 'flex';
+    const title = (document.getElementById('npc-dialog-title') || {}).textContent || '';
+    closeNpcDialog();
+    npcPlacements.delete('10,10');
+    if (typeof visitSession !== 'undefined') visitSession = null;
+    return { displayed, hasVoyageurTag: /voyageur d'un autre plan/.test(title) };
+  });
+  console.log('  T6 intégration cell entry →', t6);
+  assert(t6.displayed,       'Overlay ouvert via handleCellEntry en visite');
+  assert(t6.hasVoyageurTag,  'Dialogue ouvert en mode astral (titre tagué)');
+
+  // T7 : hors visite, handleCellEntry route toujours vers openNpcDialog
+  // normal. On vérifie qu'aucune régression : titre SANS le tag astral.
+  const t7 = await page.evaluate(() => {
+    playerX = 11; playerY = 11;
+    dungeon[11][11] = CELL.NPC;
+    npcPlacements.set('11,11', 'pomfresh');
+    visited[11][11] = true;
+    // S'assure qu'on est hors visite.
+    if (typeof visitSession !== 'undefined') visitSession = null;
+    handleCellEntry(CELL.NPC);
+    const title = (document.getElementById('npc-dialog-title') || {}).textContent || '';
+    closeNpcDialog();
+    npcPlacements.delete('11,11');
+    return {
+      noVoyageurTag: !/voyageur d'un autre plan/.test(title),
+      titleContent:  title
+    };
+  });
+  console.log('  T7 hors visite normal →', t7);
+  assert(t7.noVoyageurTag,   'Hors visite, dialogue normal (pas de tag voyageur)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — Phase E OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -13407,7 +13592,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

@@ -311,6 +311,10 @@ window.UX_safe = new Proxy({}, {
     { name: '_visitHudEmote',           source: 'visit-hud.js',           kind: 'fn',  optional: true },
     { name: 'VISITOR_EMOTES',           source: 'visit-channel.js',       kind: 'obj', optional: true },
     { name: 'HOST_EMOTES',              source: 'visit-channel.js',       kind: 'obj', optional: true },
+    // Phase E — dialogues PNJ « voyageur » (§6.2). Banque close + fallback.
+    { name: 'openAstralNpcDialog',      source: 'npc-dialog.js',          kind: 'fn',  optional: true },
+    { name: '_astralCategory',          source: 'npc-dialog.js',          kind: 'fn',  optional: true },
+    { name: '_astralFallbackPages',     source: 'npc-dialog.js',          kind: 'fn',  optional: true },
 
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },

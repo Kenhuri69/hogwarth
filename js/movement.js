@@ -429,15 +429,18 @@ function handleCellEntry(cell) {
     renderMinimap();
     _triggerDungeonTrap();
   } else if (cell === CELL.NPC) {
+    const npcId = npcPlacements.get(`${playerX},${playerY}`);
     if (inVisit) {
-      // Phase E branchera les dialogues 'voyageur'. Pour C.3, message
-      // muet pour ne pas casser l'immersion sans contenu écrit.
-      if (typeof addMsg === 'function') {
+      // Mondes parallèles §6.2 / Phase E — dialogue voyageur.
+      // Banque `dialoguesAstral` ou fallback générique par rôle, sans
+      // aucune action engageante (quête / vendeur / spéciale grisées).
+      if (npcId && typeof openAstralNpcDialog === 'function') {
+        openAstralNpcDialog(npcId);
+      } else if (typeof addMsg === 'function') {
         addMsg('Le personnage ne te perçoit pas — tu n\'es qu\'une ombre dans son plan.', '');
       }
       return;
     }
-    const npcId = npcPlacements.get(`${playerX},${playerY}`);
     if (npcId && typeof openNpcDialog === 'function') {
       openNpcDialog(npcId);
     }
