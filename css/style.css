@@ -596,6 +596,19 @@ body {
 /* Fantôme multijoueur — autre joueur projeté sur l'étage (cyan spectral). */
 .map-ghost { background: #2f6f8f; box-shadow: 0 0 5px #7fd4ff, inset 0 0 2px #d4f2ff;
              position: relative; }
+/* Mondes parallèles §6.5 — visiteur incarné (côté host). Or pulsé chaud,
+   distinct du cyan froid des fantômes asynchrones. */
+.map-astral-visitor { background: #8a6a26;
+  box-shadow: 0 0 6px #ffd84a, inset 0 0 2px #fff0a0;
+  animation: mapVisitorPulse 1.4s ease-in-out infinite; }
+/* Mondes parallèles §5.3 — position du host (côté visiteur). Or-vert
+   discret pour rester lisible parmi les autres marqueurs. */
+.map-host-self { background: #4a6e2e;
+  box-shadow: 0 0 5px #c8e08c, inset 0 0 2px #e8f5c8; }
+@keyframes mapVisitorPulse {
+  0%, 100% { box-shadow: 0 0 4px #ffd84a, inset 0 0 2px #fff0a0; }
+  50%      { box-shadow: 0 0 8px #ffe87a, inset 0 0 3px #fff5b0; }
+}
 /* Badge « +N » sur une case de minimap occupée par plusieurs fantômes. */
 .map-ghost-badge {
   position: absolute; top: -3px; right: -3px;

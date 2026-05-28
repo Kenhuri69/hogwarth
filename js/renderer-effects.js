@@ -1078,6 +1078,73 @@ function drawGhostSprite(ghost, x, baseY, sz) {
   ctx.restore();
 }
 
+// ── Sprite du visiteur incarné (Mondes parallèles — Phase D §6.5) ────
+// Distingue visuellement le visiteur (aura DORÉE, chaude) du fantôme
+// asynchrone (aura cyan, froide). On réutilise la silhouette vectorielle
+// du fallback NPC — pas de PNG plein-pied requis en V1a (les sprites
+// `img/players/*.png` du multijoueur asynchrone restent réservés au
+// rendu de présence ; un visiteur incarné est un autre cas).
+function drawVisitorSprite(visitor, x, baseY, sz) {
+  const phase = (typeof _npcAnimPhase !== 'undefined') ? _npcAnimPhase : 0;
+  const bob   = Math.sin(phase * 1.4) * sz * 0.04;
+  const by    = baseY - bob;
+
+  ctx.save();
+
+  // Ombre au sol (visiteur incarné, donc plus marquée qu'un fantôme).
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath();
+  ctx.ellipse(x, baseY, sz * 0.34, sz * 0.10, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Halo doré pulsé — palette warm distincte du cyan spectral des
+  // fantômes (cf. drawGhostSprite). Marque l'identité "voyageur d'un
+  // autre plan" à la première seconde de regard.
+  const pulse = 0.85 + 0.25 * Math.sin(phase * 1.8);
+  const aura = ctx.createRadialGradient(x, by - sz * 0.5, 0,
+                                        x, by - sz * 0.5, sz * 0.95 * pulse);
+  aura.addColorStop(0,   `rgba(255,220,140,${0.40 * pulse})`);
+  aura.addColorStop(0.55, `rgba(220,170,60,${0.18 * pulse})`);
+  aura.addColorStop(1,   'rgba(160,110,30,0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.ellipse(x, by - sz * 0.45, sz * 0.85 * pulse, sz * 1.0 * pulse, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Corps : robe trapézoïdale + tête (couleurs warm pour cohérence
+  // avec l'aura). Pas de translucidité : le visiteur EST là, pas en écho.
+  ctx.fillStyle   = '#e6c977';
+  ctx.strokeStyle = 'rgba(70,40,12,0.85)';
+  ctx.lineWidth   = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(x - sz * 0.20, by - sz * 0.55);
+  ctx.lineTo(x + sz * 0.20, by - sz * 0.55);
+  ctx.lineTo(x + sz * 0.38, by - sz * 0.04);
+  ctx.lineTo(x - sz * 0.38, by - sz * 0.04);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, by - sz * 0.72, sz * 0.17, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+
+  // Étiquette « <Pseudo> » flottante au-dessus.
+  const name  = (visitor && visitor.name) ? String(visitor.name) : 'Voyageur';
+  ctx.font         = `600 ${Math.floor(sz * 0.20)}px Cinzel, serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'alphabetic';
+  const lw = ctx.measureText(name).width;
+  const ly = by - sz * 1.05;
+  ctx.fillStyle = 'rgba(34,22,8,0.85)';
+  ctx.fillRect(x - lw / 2 - 6, ly - sz * 0.20, lw + 12, sz * 0.28);
+  ctx.fillStyle   = '#f6e2a8';
+  ctx.shadowColor = 'rgba(0,0,0,0.85)';
+  ctx.shadowBlur  = 3;
+  ctx.fillText(name, x, ly);
+  ctx.shadowBlur  = 0;
+
+  ctx.restore();
+}
+
 // ── Marqueur de message gravé multijoueur (§6, Phase 4) ──────────
 // Sigil lumineux posé au sol sur une case FLOOR : halo doré pulsé +
 // glyphe de plume. Cliché « note laissée par un joueur ».

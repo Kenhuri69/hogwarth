@@ -11796,6 +11796,274 @@ async function scenarioVisitNetworkDrop() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette — limites territoire + sprites + emotes (Phase D) ──
+async function scenarioVisitPhaseD() {
+  console.log('\n── Scénario : Cheminette — limites + sprites + emotes (Phase D) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // T1 : surface — helpers Phase D exposés.
+  const t1 = await page.evaluate(() => ({
+    fogBlock:        typeof _isVisitorFogBlock     === 'function',
+    notifyVisitor:   typeof _visitNotifyVisitorMove === 'function',
+    notifyHost:      typeof _visitNotifyHostMove   === 'function',
+    sendEmote:       typeof _visitSendEmote        === 'function',
+    getVisitor:      typeof getVisitorAt           === 'function',
+    getRemoteHost:   typeof getRemoteHostAt        === 'function',
+    drawVisitor:     typeof drawVisitorSprite      === 'function',
+    hudEmote:        typeof _visitHudEmote         === 'function',
+    visitorEmotes:   typeof VISITOR_EMOTES         === 'object' && Object.keys(VISITOR_EMOTES).length === 4,
+    hostEmotes:      typeof HOST_EMOTES            === 'object' && Object.keys(HOST_EMOTES).length === 1,
+    emotesContainer: !!document.getElementById('visit-hud-emotes')
+  }));
+  console.log('  T1 surface →', t1);
+  assert(t1.fogBlock,        '_isVisitorFogBlock exposé');
+  assert(t1.notifyVisitor,   '_visitNotifyVisitorMove exposé');
+  assert(t1.notifyHost,      '_visitNotifyHostMove exposé');
+  assert(t1.sendEmote,       '_visitSendEmote exposé');
+  assert(t1.getVisitor,      'getVisitorAt exposé');
+  assert(t1.getRemoteHost,   'getRemoteHostAt exposé');
+  assert(t1.drawVisitor,     'drawVisitorSprite exposé');
+  assert(t1.hudEmote,        '_visitHudEmote exposé');
+  assert(t1.visitorEmotes,   'VISITOR_EMOTES : 4 entrées (👋 🪄 🏰 🎯)');
+  assert(t1.hostEmotes,      'HOST_EMOTES : 1 entrée (👋)');
+  assert(t1.emotesContainer, '#visit-hud-emotes présent dans le DOM');
+
+  // T2 : blocage brouillard — pose une case FLOOR atteignable mais non
+  // visitée, vérifie que canMove la rejette en visite (et autorise hors visite).
+  const t2 = await page.evaluate(() => {
+    // Hors visite : on s'attend à pouvoir traverser une case FLOOR visited.
+    // On force le contexte : pose le joueur à (5,5) regardant nord.
+    playerX = 5; playerY = 5; playerDir = 'n';
+    dungeon[5][5] = CELL.FLOOR;
+    dungeon[4][5] = CELL.FLOOR;
+    visited[5][5] = true;
+    visited[4][5] = true;
+    const canOutside = canMove('n');
+
+    // Snapshot factice — masque visited = tout faux SAUF (5,5) (pas (4,5)).
+    const fake = mpBuildVisitSnapshot({
+      hostId: 'h', hostName: 'Alice', hostHouse: 'Gryffondor', hostLevel: 1
+    });
+    // Maille petite : on remet une grille basique pour le test.
+    // (On garde la grille originale pour ne pas casser d'autres invariants.)
+    // Injecte la session manuellement (sans passer par le canal réseau).
+    if (typeof visitSession !== 'undefined') {
+      visitSession = {
+        role:        'visitor',
+        hostId:      'h',
+        hostName:    'Alice',
+        hostHouse:   'Gryffondor',
+        mySavedState: null,    // on ne va pas restaurer dans ce test
+      };
+    }
+    // Recopie la grille / visited pour avoir un contrôle direct.
+    playerX = 5; playerY = 5; playerDir = 'n';
+    dungeon[5][5] = CELL.FLOOR;
+    dungeon[4][5] = CELL.FLOOR;
+    visited[5][5] = true;
+    visited[4][5] = false;          // brouillard sur la case au nord
+    const fogBlocked = _isVisitorFogBlock('n');
+    const canDuringVisit = canMove('n');
+
+    // Lève maintenant le brouillard et vérifie que canMove passe.
+    visited[4][5] = true;
+    const fogClear = _isVisitorFogBlock('n');
+    const canAfterReveal = canMove('n');
+
+    // Nettoie pour ne pas polluer les T suivants.
+    if (typeof visitSession !== 'undefined') visitSession = null;
+    return { canOutside, fogBlocked, canDuringVisit, fogClear, canAfterReveal };
+  });
+  console.log('  T2 blocage brouillard →', t2);
+  assert(t2.canOutside === true,       'Hors visite, canMove passe normalement');
+  assert(t2.fogBlocked === true,       'En visite, _isVisitorFogBlock détecte la case non foulée');
+  assert(t2.canDuringVisit === false,  'En visite, canMove rejette la case brouillard');
+  assert(t2.fogClear === false,        'Après révélation, plus de brouillard détecté');
+  assert(t2.canAfterReveal === true,   'Après révélation, canMove passe');
+
+  // T3 : visiteur émet sa position via _visitNotifyVisitorMove — message posté.
+  const t3 = await page.evaluate(async () => {
+    window.__postedD = [];
+    window.mpPostVisitMessage = async (channelId, sender, type, payload) => {
+      window.__postedD.push({ channelId, sender, type, payload });
+      return { id: 'p', created_at: new Date().toISOString() };
+    };
+    window.mpPollVisitMessages = async () => [];
+    const fake = mpBuildVisitSnapshot({
+      hostId: 'h-pos', hostName: 'Beatrice', hostHouse: 'Serdaigle', hostLevel: 4
+    });
+    fake.hostMeta.currentFloor = 2;
+    fake.floor.number = 2;
+    fake.visitorSpawn = { x: 3, y: 3, dir: 's' };
+    fake.floor.grid[3][3] = CELL.FLOOR;
+    fake.floor.visitedMask[3][3] = true;
+    window.__pollCount = 0;
+    window.mpPollVisitMessages = async () => {
+      if (window.__pollCount++ === 0) {
+        return [{ id: 'm1', sender: 'host', type: 'snapshot', payload: fake,
+                  created_at: new Date().toISOString() }];
+      }
+      return [];
+    };
+    await mpStartVisitAsVisitor({ channelId: 'ch-D-pos', hostId: 'h-pos', hostName: 'Beatrice', hostHouse: 'Serdaigle' });
+    // Throttle reset pour autoriser l'émission immédiate.
+    window._visitResetThrottles();
+    playerX = 4; playerY = 3; playerDir = 'e';
+    const sent = await window._visitNotifyVisitorMove();
+    const posMsg = window.__postedD.find(p => p.type === 'position');
+    return {
+      sent,
+      hasPosition: !!posMsg,
+      sender:      posMsg && posMsg.sender,
+      x:           posMsg && posMsg.payload.x,
+      y:           posMsg && posMsg.payload.y,
+      dir:         posMsg && posMsg.payload.dir,
+      floor:       posMsg && posMsg.payload.floor
+    };
+  });
+  console.log('  T3 position visiteur →', t3);
+  assert(t3.sent === true,         'Visiteur a émis position');
+  assert(t3.hasPosition,           'Message position trouvé');
+  assert(t3.sender === 'visitor',  'Signé visitor');
+  assert(t3.x === 4 && t3.y === 3, 'Coords posées correctement');
+  assert(t3.dir === 'e',           'Direction posée correctement');
+  assert(t3.floor === 2,           'Étage posé correctement');
+
+  // T4 : host reçoit position visiteur → visitSession.visitors + getVisitorAt.
+  // On reconfigure une session côté host (la précédente est encore active
+  // côté visiteur — on la ferme d'abord).
+  const t4 = await page.evaluate(async () => {
+    await mpExitVisit('cleanup');
+    window.__postedD = [];
+    window.mpPostVisitMessage = async (channelId, sender, type, payload) => {
+      window.__postedD.push({ channelId, sender, type, payload });
+      return { id: 'p', created_at: new Date().toISOString() };
+    };
+    let pollCount = 0;
+    window.mpPollVisitMessages = async () => {
+      if (pollCount++ === 0) {
+        // Le visiteur arrive sur la case (6, 7), regard est, étage 1.
+        return [{ id: 'm-pos', sender: 'visitor', type: 'position',
+                  payload: { x: 6, y: 7, dir: 'e', floor: currentFloor },
+                  created_at: new Date().toISOString() }];
+      }
+      return [];
+    };
+    await mpStartVisitAsHost({
+      channelId: 'ch-D-host',
+      req: { id: 'r-D', visitor_id: 'v-D', visitor_name: 'Carla', visitor_house: 'Poufsouffle' }
+    });
+    // Force un poll pour traiter la position.
+    await window._visitPollOnce();
+    const v = window.getVisitorAt(6, 7);
+    return {
+      sessionRole: visitSession && visitSession.role,
+      hasVisitor:  !!v,
+      visitorName: v && v.name,
+      visitorDir:  v && v.dir,
+      visitorsLen: visitSession && visitSession.visitors && visitSession.visitors.length,
+      nonHit:      window.getVisitorAt(0, 0),
+      hudActive:   document.getElementById('visit-hud').classList.contains('active'),
+      hudExitLbl:  document.getElementById('visit-hud-exit').textContent,
+      emotesRendered: document.querySelectorAll('#visit-hud-emotes .visit-hud-emote').length
+    };
+  });
+  console.log('  T4 host reçoit visiteur →', t4);
+  assert(t4.sessionRole === 'host', 'visitSession.role = host côté host');
+  assert(t4.hasVisitor,             'getVisitorAt retourne le visiteur sur la case');
+  assert(t4.visitorName === 'Carla', 'Nom du visiteur transmis');
+  assert(t4.visitorDir === 'e',     'Direction du visiteur transmise');
+  assert(t4.visitorsLen === 1,      'Un visiteur dans la liste');
+  assert(t4.nonHit === null,        'getVisitorAt(0,0) hors présence → null');
+  assert(t4.hudActive,              'HUD activé côté host');
+  assert(/Refermer/.test(t4.hudExitLbl), 'Bouton sortie : "Refermer la cheminée" côté host');
+  assert(t4.emotesRendered === 1,   'Bandeau host : 1 emote (👋)');
+
+  // T5 : envoi d'emote côté host → message 'emote' posté + banque verrouillée.
+  const t5 = await page.evaluate(async () => {
+    window.__postedD = [];
+    window.mpPostVisitMessage = async (channelId, sender, type, payload) => {
+      window.__postedD.push({ channelId, sender, type, payload });
+      return { id: 'p', created_at: new Date().toISOString() };
+    };
+    window._visitResetThrottles();
+    const sentOk = await window._visitSendEmote('welcome');
+    window._visitResetThrottles();
+    const sentBad = await window._visitSendEmote('wave');   // hors banque host
+    const emoteMsg = window.__postedD.find(p => p.type === 'emote' && p.payload && p.payload.kind === 'welcome');
+    return {
+      sentOk, sentBad,
+      hasEmote: !!emoteMsg,
+      sender:   emoteMsg && emoteMsg.sender,
+      kind:     emoteMsg && emoteMsg.payload && emoteMsg.payload.kind,
+      noWaveMsg: !window.__postedD.find(p => p.type === 'emote' && p.payload && p.payload.kind === 'wave')
+    };
+  });
+  console.log('  T5 emote host →', t5);
+  assert(t5.sentOk === true,        'Emote welcome envoyée');
+  assert(t5.sentBad === false,      'Emote wave (banque visiteur) rejetée côté host');
+  assert(t5.hasEmote,               'Message emote trouvé');
+  assert(t5.sender === 'host',      'Signé host');
+  assert(t5.kind === 'welcome',     'Kind welcome');
+  assert(t5.noWaveMsg,              'Aucun message wave posté (banque close)');
+
+  // T6 : réception d'emote inconnue → ignorée silencieusement.
+  const t6 = await page.evaluate(async () => {
+    // Simule la réception d'un emote forgé.
+    const initialMsgCount = document.querySelectorAll('#message-log .msg, .msg').length;
+    let pollCount = 0;
+    window.mpPollVisitMessages = async () => {
+      if (pollCount++ === 0) {
+        return [{ id: 'm-bad', sender: 'visitor', type: 'emote',
+                  payload: { kind: 'pwn_attack' },
+                  created_at: new Date().toISOString() }];
+      }
+      return [];
+    };
+    await window._visitPollOnce();
+    // Aucune erreur, le toast d'addMsg n'apparaît pas avec ce kind inconnu.
+    // On vérifie juste que la session reste vivante (pas d'erreur de handler).
+    return {
+      sessionStill: !!visitSession,
+      role:         visitSession && visitSession.role
+    };
+  });
+  console.log('  T6 emote inconnue ignorée →', t6);
+  assert(t6.sessionStill,         'Session vivante après emote inconnue');
+  assert(t6.role === 'host',      'Role inchangé');
+
+  // T7 : sortie host → visitSession nullée + sprite/marqueur disparaît
+  // (visitors vide).
+  const t7 = await page.evaluate(async () => {
+    window.__postedD = [];
+    window.mpPostVisitMessage = async (channelId, sender, type, payload) => {
+      window.__postedD.push({ channelId, sender, type, payload });
+      return { id: 'p', created_at: new Date().toISOString() };
+    };
+    await mpExitVisit('voluntary');
+    const v = (typeof window.getVisitorAt === 'function') ? window.getVisitorAt(6, 7) : null;
+    return {
+      sessionGone:  visitSession === null,
+      noVisitor:    v === null,
+      byePosted:    !!window.__postedD.find(p => p.type === 'bye'),
+      hudHidden:    !document.getElementById('visit-hud').classList.contains('active')
+    };
+  });
+  console.log('  T7 sortie host →', t7);
+  assert(t7.sessionGone,  'visitSession refermée côté host');
+  assert(t7.noVisitor,    'getVisitorAt retourne null après sortie');
+  assert(t7.byePosted,    'bye posté à la sortie volontaire');
+  assert(t7.hudHidden,    'HUD masqué après sortie');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — Phase D OK');
+  await browser.close();
+}
+
 // ── Scénario : multijoueur — présence fantôme (Phases 0-1) ──
 async function scenarioMultiplayerPresence() {
   console.log('\n── Scénario : multijoueur présence fantôme ──');
@@ -13139,7 +13407,7 @@ async function scenarioRuneRewards() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
   for (const s of scenarios) {
     await s();

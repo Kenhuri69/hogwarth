@@ -17,10 +17,15 @@
 (function () {
   'use strict';
 
-  const HUD_ID  = 'visit-hud';
-  const NAME_ID = 'visit-hud-name';
-  const META_ID = 'visit-hud-meta';
-  const EXIT_ID = 'visit-hud-exit';
+  const HUD_ID    = 'visit-hud';
+  const NAME_ID   = 'visit-hud-name';
+  const META_ID   = 'visit-hud-meta';
+  const EXIT_ID   = 'visit-hud-exit';
+  const EMOTES_ID = 'visit-hud-emotes';
+  const EXIT_LABEL = {
+    visitor: 'Quitter ce monde',
+    host:    'Refermer la cheminée',
+  };
 
   const HOUSE_CREST = {
     Gryffondor:  '🦁',
@@ -51,9 +56,43 @@
       if (typeof o.floor === 'number') parts.push(`Étage ${o.floor}`);
       metaEl.textContent = parts.join(' · ');
     }
+    _renderEmotes(o.role || 'visitor');
+    const exitEl = document.getElementById(EXIT_ID);
+    if (exitEl) {
+      const label = EXIT_LABEL[o.role] || EXIT_LABEL.visitor;
+      exitEl.textContent = label;
+      exitEl.setAttribute('title', label);
+    }
     hud.classList.add('active');
     hud.setAttribute('aria-hidden', 'false');
     return true;
+  }
+
+  // Phase D §6.7 — rend les boutons d'emote dans le bandeau, banque
+  // déterminée par le rôle. Bouton désactivé si la surface globale n'a
+  // pas chargé (visit-channel.js absent ou pas encore initialisé).
+  function _renderEmotes(role) {
+    const host = document.getElementById(EMOTES_ID);
+    if (!host) return;
+    const banque = (role === 'host')
+      ? (typeof window !== 'undefined' ? (window.HOST_EMOTES || {}) : {})
+      : (typeof window !== 'undefined' ? (window.VISITOR_EMOTES || {}) : {});
+    const keys = Object.keys(banque);
+    if (keys.length === 0) { host.innerHTML = ''; return; }
+    host.innerHTML = keys.map(k => {
+      const def = banque[k];
+      const title = _esc(def.text || k);
+      return `<button class="visit-hud-emote" type="button"
+                onclick="_visitHudEmote('${_esc(k)}')"
+                title="${title}" aria-label="${title}">${_esc(def.icon || k)}</button>`;
+    }).join('');
+  }
+
+  // Handler partagé par tous les boutons d'emote — délègue à visit-channel.
+  async function _visitHudEmote(kind) {
+    if (typeof window === 'undefined') return;
+    if (typeof window._visitSendEmote !== 'function') return;
+    try { await window._visitSendEmote(kind); } catch (e) { /* tolérant */ }
   }
 
   function updateVisitHud(opts) {
@@ -83,5 +122,6 @@
     window.updateVisitHud = updateVisitHud;
     window.hideVisitHud   = hideVisitHud;
     window._visitHudExit  = _visitHudExit;
+    window._visitHudEmote = _visitHudEmote;
   }
 })();

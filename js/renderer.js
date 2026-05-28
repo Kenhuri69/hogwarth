@@ -326,18 +326,24 @@ function drawCorridor(cx, cy, scale, W, H) {
       const _isCellSprite = (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR || cell === CELL.RUNE || cell === CELL.STELE);
       const [_fdx, _fdy] = DIRECTIONS[playerDir];
       const _mx = playerX + _fdx * d, _my = playerY + _fdy * d;
+      // Mondes parallèles §6.5 — visiteur incarné (côté host) : prioritaire
+      // sur le fantôme asynchrone (un visiteur incarné est une présence
+      // réelle, pas un écho de présence).
+      const _visitor = (!_isCellSprite && cell === CELL.FLOOR && typeof getVisitorAt === 'function')
+        ? getVisitorAt(_mx, _my) : null;
       // Fantôme multijoueur : surcouche sur une case FLOOR praticable
       // (cf. js/multiplayer.js — ghostPlacements).
-      const _ghost = (!_isCellSprite && cell === CELL.FLOOR && typeof getGhostAt === 'function')
+      const _ghost = (!_isCellSprite && !_visitor && cell === CELL.FLOOR && typeof getGhostAt === 'function')
         ? getGhostAt(_mx, _my) : null;
       // Message gravé multijoueur — priorité après fantôme (cf. multiplayer.js).
-      const _msg = (!_isCellSprite && !_ghost && cell === CELL.FLOOR
+      const _msg = (!_isCellSprite && !_visitor && !_ghost && cell === CELL.FLOOR
                     && typeof getMessageAt === 'function')
         ? getMessageAt(_mx, _my) : null;
-      if (_isCellSprite || _ghost || _msg) {
+      if (_isCellSprite || _visitor || _ghost || _msg) {
         const nearS = getRect(cx, cy, scale, d - 1);
-        pendingSprite = { kind: _ghost ? 'ghost' : (_msg ? 'message' : 'cell'),
-                          cell, ghost: _ghost, msg: _msg,
+        const _kind = _visitor ? 'visitor' : (_ghost ? 'ghost' : (_msg ? 'message' : 'cell'));
+        pendingSprite = { kind: _kind,
+                          cell, visitor: _visitor, ghost: _ghost, msg: _msg,
                           x: cx, baseY: nearS.y1, sz: nearS.hw * 1.1,
                           mapX: _mx, mapY: _my,
                           clipX0: nearS.x0, clipY0: nearS.y0, clipX1: nearS.x1, clipY1: nearS.y1 };
@@ -490,13 +496,14 @@ function drawCorridor(cx, cy, scale, W, H) {
 
   // 4b. Sprite différé (coffre/escalier/boutique) — dessiné après toutes les couches
   if (pendingSprite) {
-    const { kind, cell, ghost, msg, x, baseY, sz, clipX0, clipY0, clipX1, clipY1 } = pendingSprite;
+    const { kind, cell, visitor, ghost, msg, x, baseY, sz, clipX0, clipY0, clipX1, clipY1 } = pendingSprite;
     ctx.save();
     // Clip au rectangle du couloir visible pour éviter les débordements
     ctx.beginPath();
     ctx.rect(clipX0, clipY0, clipX1 - clipX0, clipY1 - clipY0);
     ctx.clip();
-    if (kind === 'ghost')            drawGhostSprite(ghost, x, baseY, sz);
+    if (kind === 'visitor')          drawVisitorSprite(visitor, x, baseY, sz);
+    else if (kind === 'ghost')       drawGhostSprite(ghost, x, baseY, sz);
     else if (kind === 'message')     drawMessageMarker(msg, x, baseY, sz);
     else if (cell === CELL.CHEST)    drawChestSprite(x, baseY, sz);
     else if (cell === CELL.STAIRS_D) drawStairsSprite(x, baseY, sz, 'down');

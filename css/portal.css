@@ -408,9 +408,44 @@
 #visit-hud-exit:hover  { background: linear-gradient(180deg, rgba(120, 50, 50, 0.95) 0%, rgba(80, 28, 28, 0.95) 100%); }
 #visit-hud-exit:active { transform: translateY(1px); }
 
+/* Phase D §6.7 — boutons d'emote dans le bandeau. Banque fermée,
+   peuplée par showVisitHud(opts.role). */
+.visit-hud-emotes {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin-left: auto;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.visit-hud-emote {
+  font-size: 16px;
+  line-height: 1;
+  width: 32px; height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: linear-gradient(180deg,
+              rgba(60, 40, 18, 0.75) 0%,
+              rgba(34, 20, 8, 0.75) 100%);
+  color: #f7e4a8;
+  border: 1px solid rgba(216, 182, 71, 0.5);
+  border-radius: 4px;
+  transition: background 120ms ease, transform 80ms ease, border-color 120ms ease;
+  padding: 0;
+}
+.visit-hud-emote:hover {
+  background: linear-gradient(180deg, rgba(110, 75, 30, 0.85) 0%, rgba(70, 42, 16, 0.85) 100%);
+  border-color: rgba(255, 215, 106, 0.9);
+}
+.visit-hud-emote:active { transform: translateY(1px); }
+
 @media (max-width: 700px) {
   #visit-hud { padding: 6px 10px; }
   #visit-hud-name { font-size: 11px; }
   #visit-hud-meta { font-size: 9px; }
   #visit-hud-exit { font-size: 10px; padding: 6px 10px; letter-spacing: 0.5px; }
+  .visit-hud-emote { font-size: 14px; width: 28px; height: 28px; }
+  .visit-hud-emotes { gap: 3px; margin-right: 6px; }
 }
