@@ -9,6 +9,29 @@ const path = require('path');
 
 const INDEX_URL = 'file://' + path.resolve(__dirname, '../index.html');
 
+// ── Sélection de scénarios (filtre CLI / env) ────────────────
+// Permet de ne lancer qu'un sous-ensemble pertinent au lieu des 121
+// scénarios (chacun relance un Chromium). Rétro-compatible : sans
+// filtre, TOUS les scénarios tournent — `node tests/smoke.js` inchangé.
+//
+//   node tests/smoke.js crit visit        → scénarios contenant "crit" OU "visit"
+//   node tests/smoke.js --only=crit,visit  → idem (forme explicite)
+//   SMOKE_ONLY=crit,visit node tests/smoke.js
+//
+// Le matching est insensible à la casse sur le nom de la fonction
+// (`scenarioCritDodge` → match "crit", "critdodge", "dodge"…).
+// Consommé par tests/select.js (mapping fichiers modifiés → scénarios).
+function parseScenarioFilters() {
+  const out = [];
+  const fromEnv = (process.env.SMOKE_ONLY || '').trim();
+  if (fromEnv) out.push(...fromEnv.split(','));
+  for (const arg of process.argv.slice(2)) {
+    if (arg.startsWith('--only=')) out.push(...arg.slice('--only='.length).split(','));
+    else if (!arg.startsWith('-')) out.push(arg);
+  }
+  return out.map(s => s.trim().toLowerCase()).filter(Boolean);
+}
+
 // ── Helpers réutilisables ────────────────────────────────────
 
 function isIgnorableError(text) {
@@ -14399,10 +14422,22 @@ async function scenarioRuneRewards() {
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
-  for (const s of scenarios) {
+  const filters = parseScenarioFilters();
+  const selected = filters.length
+    ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))
+    : scenarios;
+  if (filters.length) {
+    console.log(`\n🎯 Filtre actif (${filters.join(', ')}) → ${selected.length}/${scenarios.length} scénario(s) sélectionné(s) :`);
+    console.log('   ' + selected.map(s => s.name.replace(/^scenario/, '')).join(', '));
+    if (!selected.length) {
+      console.error('\n❌ Aucun scénario ne correspond au filtre : ' + filters.join(', '));
+      process.exit(2);
+    }
+  }
+  for (const s of selected) {
     await s();
   }
-  console.log('\n✅ Tous les scénarios sont passés.');
+  console.log(`\n✅ ${selected.length} scénario(s) passé(s)${filters.length ? ' (filtré)' : ' — suite complète'}.`);
 })().catch(err => {
   console.error('\n❌ Échec :', err.message);
   process.exit(1);
