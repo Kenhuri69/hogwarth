@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v3';
+const CACHE_VERSION = 'hogwarth-v4';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -43,7 +43,7 @@ const PRECACHE_URLS = [
   './js/icons.js?v=1',
   './js/scene-icons.js?v=2',
   './js/monsters.js?v=5',
-  './js/npcs.js?v=9',
+  './js/npcs.js?v=10',
   './js/riddles.js?v=1',
   './js/data.js?v=9',
   './js/floor-themes.js?v=1',
@@ -57,7 +57,7 @@ const PRECACHE_URLS = [
   './js/renderer.js?v=9',
   './js/renderer-effects.js?v=9',
   './js/renderer-minimap.js?v=5',
-  './js/movement.js?v=16',
+  './js/movement.js?v=17',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=6',
   './js/teleport.js?v=1',
@@ -66,7 +66,7 @@ const PRECACHE_URLS = [
   './js/inventory.js?v=5',
   './js/potions.js?v=1',
   './js/quests.js?v=6',
-  './js/npc-dialog.js?v=7',
+  './js/npc-dialog.js?v=9',
   './js/karaoke.js?v=1',
   './js/intro.js?v=2',
   './js/shop.js?v=5',
@@ -80,7 +80,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=1',
   './js/library.js?v=1',
   './js/help-tour.js?v=1',
-  './js/loader.js?v=11',
+  './js/loader.js?v=12',
   './js/pwa.js?v=1',
 
   // Icônes PWA + premier écran

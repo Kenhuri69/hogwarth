@@ -197,7 +197,108 @@ function _splitDialogPage(text, maxLen) {
   return out.length ? out : [s];
 }
 
-// Cascade de priorité partagée par `_npcDialogPages` et `_npcDialogSource` :
+// ── Mondes parallèles §6.2 — dialogue PNJ en mode visite (Phase E) ─────
+// Quand le visiteur parle à un PNJ du host : ouvre le même overlay que
+// `openNpcDialog` mais branche sur une banque dédiée (`dialoguesAstral`
+// dans `npcs.js`). Le PNJ perçoit que tu n'es pas d'ici. Aucune action
+// engageante (pas de quête, pas d'achat, pas d'action spéciale) — un
+// seul bouton « S'éloigner ». Le visiteur n'écrit RIEN dans la save
+// (l'overlay est local).
+//
+// Cascade :
+//   1. `npc.dialoguesAstral` si présent → texte authored.
+//   2. Sinon, fallback générique par catégorie :
+//      - donneur de quête (questsGiven non vide) → amorce de §7 (V2)
+//      - vendeur (wares non vide) → lore gratuit
+//      - action spéciale (specialAction) → grisée
+//      - PNJ lore (sprite fantome) → variation narrative
+//      - défaut → présence étrange
+function _astralCategory(npc) {
+  if (!npc) return 'default';
+  if (Array.isArray(npc.questsGiven) && npc.questsGiven.length) return 'quest';
+  if (Array.isArray(npc.wares)       && npc.wares.length)       return 'vendor';
+  if (npc.specialAction)                                         return 'special';
+  if (npc.sprite === 'fantome')                                  return 'lore';
+  return 'default';
+}
+
+function _astralFallbackPages(npc) {
+  const banque = {
+    quest:   [
+      "Étrange... tu n'es pas du château que je connais. Si je te confiais une mission, irais-tu la mener dans ton propre plan ?",
+      "Hélas, les liens entre nos mondes sont encore trop fragiles pour cela. Reviens si jamais ils s'épaississent, voyageur."
+    ],
+    vendor:  [
+      "Mes marchandises n'ont pas de poids dans ton monde, voyageur — et ton or n'a aucun éclat ici.",
+      "Mais je puis te dire ce qu'on murmure dans ces couloirs : c'est gratuit, et ça voyage bien."
+    ],
+    special: "Ce don ne traverse pas les plans, voyageur. Garde ta route — d'autres dans ton monde sauront t'offrir leur secours.",
+    lore:    [
+      "(L'esprit te scrute en silence.) Tu n'as pas le même éclat que ceux d'ici... un autre Poudlard t'a façonné.",
+      "Si ton plan ressemble au mien, alors les mêmes peurs s'y cachent. Ou peut-être d'autres, pires encore. Bonne chance, voyageur."
+    ],
+    default: "(Le personnage te dévisage avec une perplexité polie.) Étrange présence... tu n'es pas d'ici, voyageur. Mais tu n'es pas non plus une menace. Passe ton chemin."
+  };
+  const cat = _astralCategory(npc);
+  return banque[cat];
+}
+
+// Récupère les pages astrales (authored OU fallback) sous forme de tableau.
+function _astralPagesFor(npc) {
+  if (!npc) return ['...'];
+  const raw = npc.dialoguesAstral || _astralFallbackPages(npc);
+  const arr = Array.isArray(raw) ? raw.slice() : [raw];
+  const out = [];
+  for (const text of arr) {
+    for (const sub of _splitDialogPage(text, _DIALOG_PAGE_MAXLEN)) out.push(sub);
+  }
+  return out;
+}
+
+function openAstralNpcDialog(npcId) {
+  const npc = (typeof getNpcById === 'function') ? getNpcById(npcId) : null;
+  if (!npc) return;
+
+  // Portrait : même rendu que `openNpcDialog` — raster > SVG > emoji.
+  const portraitEl = document.getElementById('npc-dialog-portrait');
+  if (portraitEl) {
+    if (npc.portraitImg) {
+      portraitEl.innerHTML = `<img src="${npc.portraitImg}" alt="${npc.name || ''}" class="npc-portrait-img">`;
+    } else {
+      portraitEl.innerHTML = npc.portraitSvg || (npc.icon || '🧙');
+    }
+  }
+  const nameEl  = document.getElementById('npc-dialog-name');
+  if (nameEl)  nameEl.textContent  = npc.name  || '';
+  const titleEl = document.getElementById('npc-dialog-title');
+  // Sous-titre teinté "voyageur" pour rappeler le mode au lecteur.
+  if (titleEl) titleEl.textContent = (npc.title || '') + ' · 🌀 voyageur d\'un autre plan';
+
+  const pages = _astralPagesFor(npc);
+  _dialogState = {
+    npcId,
+    pages,
+    srcPages:  pages.map((_, i) => i),
+    page:      0,
+    actions:   [{ label: 'S\'éloigner', onClick: 'closeNpcDialog()', secondary: true }],
+    source:    'astral',
+    idleIndex: -1
+  };
+  _renderDialogPage();
+
+  const overlay = document.getElementById('npc-dialog-overlay');
+  if (overlay) {
+    const wasOpen = overlay.style.display === 'flex';
+    overlay.style.display = 'flex';
+    if (!wasOpen && typeof AudioSystem !== 'undefined'
+        && typeof AudioSystem.playNpcGreet === 'function') {
+      AudioSystem.playNpcGreet();
+    }
+  }
+  if (typeof drawDungeon === 'function') drawDungeon();
+}
+
+// ── Cascade de priorité partagée par `_npcDialogPages` et `_npcDialogSource` :
 // greeting (1er contact) → questOffer → questActive → questReady →
 // questDone → idle. Retourne `{ source, raw, qid }` où `source` est
 // l'identifiant de l'origine choisie (pour le mapping voix), `raw` le

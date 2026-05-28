@@ -1579,7 +1579,46 @@ au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
         emote (banque close, emote inconnue ignorée silencieusement),
         sortie host (visitSession nullée, sprite/marqueur disparaît,
         bye posté). Tous scénarios verts (`node tests/smoke.js`).
-    - [ ] Phase E — dialogues PNJ « voyageur » + observation-only (2 j).
+    - [x] Phase E — dialogues PNJ « voyageur » + observation-only (2 j) —
+      **livré 2026-05-28**.
+      • `npcs.js` : champ optionnel `dialoguesAstral` (string | array)
+        ajouté à 5 PNJ scénaristes — Pomfresh (quête), Lockhart (quête,
+        ego), Hagrid (quête), Mimi Geignarde (fantôme + quête), Portrait
+        Dumbledore (action spéciale). Banque authored réutilisée par
+        `_astralPagesFor`.
+      • `npc-dialog.js` : nouveau dispatcher `openAstralNpcDialog(npcId)`
+        qui réutilise l'overlay `#npc-dialog-overlay` mais branche sur
+        `npc.dialoguesAstral` OU sur `_astralFallbackPages(npc)` (cascade
+        `_astralCategory` : `quest` > `vendor` > `special` > `lore` >
+        `default`). Pose `_dialogState.source = 'astral'`, sous-titre
+        suffixé « · 🌀 voyageur d'un autre plan » pour signaler le mode
+        au lecteur. Actions réduites à un seul bouton « S'éloigner » —
+        aucune mutation possible de l'état du host (pas d'`acceptQuest`,
+        pas d'`openVendorShop`, pas de `triggerNpcSpecialAction`).
+        Banque fallback fermée : pas d'injection de chaînes externes.
+      • `movement.js — handleCellEntry` : sur `CELL.NPC` en mode visite,
+        route vers `openAstralNpcDialog` si présent ; repli sur le toast
+        muet existant sinon (sécurité). Aucun side-effect côté visiteur :
+        pas de modification de `seenNpcs`, `activeQuests`,
+        `availableQuests`, `completedQuests` ni `usedSpecialNpcs` —
+        l'overlay ne déclenche que la fermeture de session standard.
+      • MANIFEST loader complété (3 entrées optional) :
+        `openAstralNpcDialog`, `_astralCategory`, `_astralFallbackPages`.
+        Bumps de version : `npcs.js?v=10`, `npc-dialog.js?v=9`,
+        `movement.js?v=17`, `loader.js?v=12`. `CACHE_VERSION`
+        `hogwarth-v3 → hogwarth-v4`.
+      • Scénario smoke `scenarioVisitPhaseE` (T1→T7) : surface
+        (`openAstralNpcDialog`/`_astralCategory`/`_astralFallbackPages`),
+        catégorisation (`pomfresh→quest`, `rosmerta→vendor`,
+        `fumseck→quest` car questsGiven prioritaire, `mimi→quest`),
+        ouverture authored (Pomfresh, banque custom + tag voyageur +
+        absence de boutons engageants + `activeQuests` inchangé),
+        fallback `quest` (Manon — « mission / liens entre mondes »),
+        fallback `vendor` (Rosmerta — « marchandises n'ont pas de
+        poids / murmure »), intégration `handleCellEntry` en visite
+        (overlay ouvert avec tag voyageur), retour à `openNpcDialog`
+        normal hors visite (pas de tag voyageur). Tous scénarios verts
+        (`node tests/smoke.js`).
     - [ ] Phase F — polish (1,5 j).
 - [ ] **V1b** — combat local + amorce économie (4 j)
     - [ ] Phase G — combat local asymétrique + essences.

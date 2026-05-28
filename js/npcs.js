@@ -132,7 +132,15 @@ const NPCS = [
       questOffer:  "Si tu pouvais m'apporter trois Racines de Mandragore, tu sauverais des vies !",
       questActive: "As-tu déjà trouvé les Mandragores ? Le temps presse...",
       questReady:  "Oh ! Tu les as ramenées ! Donne, donne — je te récompense aussitôt."
-    }
+    },
+    // Phase E §6.2 — dialogue voyageur (visite inter-mondes). Le PNJ
+    // perçoit que la présence n'est pas d'ici. Pas de bouton quête, pas
+    // de transaction. Banque close, fallback générique géré par
+    // npc-dialog.js — _astralFallbackPages.
+    dialoguesAstral: [
+      "Oh ! Te voilà... non, pas toi exactement. Une silhouette familière sans l'être. Tu portes la blouse d'un autre infirmier, voyageur.",
+      "Mes Mandragores n'ont rien à faire dans ton plan, et les tiennes ne soigneront pas mes patients ici. Garde-les pour ceux qui ont besoin de toi, là-bas."
+    ]
   },
   {
     id:    "mimi",
@@ -164,7 +172,11 @@ const NPCS = [
       questOffer:  "Tu pourrais m'en débarrasser ? Élimine le Troll des Toilettes, je t'en supplie !",
       questActive: "Il sent toujours aussi mauvais... fais vite !",
       questReady:  "Tu l'as terrassé ? Oh ! Mes toilettes vont enfin retrouver leur calme..."
-    }
+    },
+    dialoguesAstral: [
+      "Oh ! Oh ! Un fantôme d'un autre Poudlard ? Non... pas un fantôme. Pire. UN VIVANT D'AILLEURS.",
+      "Personne, jamais, ne vient me voir ici — et voilà qu'on vient même d'un autre PLAN ! Snif... ironie cruelle. Si tu meurs un jour, voyageur, reviens hanter mes toilettes. On sera deux à pleurer."
+    ]
   },
   {
     id:    "scamander",
@@ -256,7 +268,11 @@ const NPCS = [
       questOffer:  "Récupère le Livre des Monstres dans la Bibliothèque Interdite — pour la science, bien entendu.",
       questActive: "Tu as déjà mis la main sur ce satané ouvrage ?",
       questReady:  "Tu as réussi ? Magnifique ! Je dirai à tout le monde que c'est moi qui l'ai trouvé."
-    }
+    },
+    dialoguesAstral: [
+      "Mon admirateur d'un autre plan ! Quelle aubaine — un public élargi pour mes mémoires. Dis-moi, dans ton monde, suis-je aussi célèbre ?",
+      "Hélas, hélas, je ne puis t'envoyer chercher mon livre ici — tu le rapporterais chez toi, et il manquerait sur mes étagères. Reviens quand les plans se toucheront mieux, voyageur."
+    ]
   },
   {
     id:    "lupin",
@@ -429,7 +445,11 @@ const NPCS = [
         questActive: "T'en es à combien ? Faut pas qu'elles s'approchent de Crockdur, hein.",
         questReady:  "Trois d'moins ! Bien joué. Tiens, prends c'tte potion — j'la garde pour les soirs d'orage."
       }
-    }
+    },
+    dialoguesAstral: [
+      "Eh ben dis donc ! T'as l'odeur d'un sorcier, mais pas l'goût d'ici. T'es de quel château, toi ?",
+      "M'enfin... même si j'te confiais une chouette à cherche', tu la r'trouverais dans TON plan, pas l'mien. Ça serait pas bien utile, hein ? Reviens m'voir si jamais les mondes s'recroisent vraiment."
+    ]
   },
   {
     id:    "mcgonagall",
@@ -729,6 +749,11 @@ const NPCS = [
           text: "Aragog respectait un pacte. Ses enfants n'ont rien promis. Méfie-toi." }
       ]
     },
+    dialoguesAstral: [
+      "(Le portrait ouvre un œil, intrigué.) Un voyageur d'un autre plan... voilà qui ne s'était plus produit depuis l'an mille. Approche, étranger.",
+      "Mes énigmes appartiennent à celui qui foule ce château. Tu portes peut-être un autre Dumbledore en toi, peint sur d'autres murs — c'est à lui qu'il te faudra rendre des comptes, pas à moi.",
+      "Va, et dis à ton directeur, si tu le revois, que celui-ci le salue."
+    ],
     dialoguesByQuest: {
       // Épreuve de la Lumière Éternelle (cf. dumbledore-lux-aeterna.md).
       dumbledore_lumiere: {
