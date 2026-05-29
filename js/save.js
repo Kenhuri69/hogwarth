@@ -70,6 +70,7 @@ function _serializeState() {
     lastQuestCompletion: { ...lastQuestCompletion },
     victoryAchieved,
     victoryAt,
+    combatTutorialSeen,
     ironmanMode,
     totalKills,
     monsterKills:  { ...monsterKills },
@@ -295,6 +296,8 @@ function _applyState(gs) {
   // Endgame : saves antérieures à l'introduction du flag → false/null.
   victoryAchieved = !!gs.victoryAchieved;
   victoryAt       = gs.victoryAt || null;
+  // Saves antérieures à D2 : champ absent → tuto réaffiché au prochain combat.
+  combatTutorialSeen = !!gs.combatTutorialSeen;
   // Mode Ironman : saves antérieures à l'ajout du mode → false/0/vide.
   ironmanMode     = !!gs.ironmanMode;
   totalKills      = (typeof gs.totalKills === 'number') ? gs.totalKills : 0;

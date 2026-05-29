@@ -3101,6 +3101,14 @@ button.shop-tab.active {
   margin-top: 18px;
 }
 .psel-nav .start-btn { margin-top: 0; }
+/* Quick Start (LOT D1) — chemin rapide, présenté en bouton secondaire. */
+.psel-quickstart {
+  flex-shrink: 0;
+  background: #0d0805;
+  color: var(--gold-light, #f0d080);
+  border: 1.5px solid var(--gold-dark);
+}
+.psel-quickstart:hover { background: #1a1108; color: var(--parchment); }
 .psel-back {
   flex-shrink: 0;
   padding: 14px 16px;
