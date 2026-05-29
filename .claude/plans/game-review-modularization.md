@@ -284,3 +284,40 @@ fonction du changement appliqué » :
   test-map.js, CLAUDE.md. Validé : suite complète verte (122/122 — la suite a
   gagné 1 scénario via la PR externe #280 LOT B, mergée en parallèle).
   **Plan §4 terminé** : les 7 god-files sont modularisés.
+
+## 8. Extension post-§4 (gros fichiers restants)
+
+Sur demande, poursuite au-delà des 7 god-files de logique :
+
+- **#284** `renderer-effects.js` (1187 l.) → `renderer-effects` (effets
+  structurels) + `renderer-sprites` (sprites de scène) + `renderer-entities`
+  (sprites d'entités). 8 / 11 / 11 fns.
+- **#285** `multiplayer.js` (1894 l.) → `multiplayer` (cœur : transport REST,
+  présence, duels) + `multiplayer-social` (messages, cadeaux) +
+  `multiplayer-visits` (matchmaking, visites, verrous). 17 entrées MANIFEST
+  remappées.
+- **#286** `data.js` (1162 → 724 l.) : extraction de `ICON_RECIPES`
+  (439 l. inertes au runtime navigateur, mirror du pipeline Python) →
+  `data-icon-recipes.js`.
+- **#287** `npcs.js` (1424 l.) → `npcs.js` (registre de données `NPCS[]`) +
+  `npcs-helpers.js` (helpers de requête).
+
+### Laissés intacts — registres uniques / modules cohérents
+
+Découpage **délibérément non fait** (serait artificiel, contraire à §2
+simplicité — la donnée resterait monolithique, pour un risque non nul) :
+
+| Fichier | Nature | Raison |
+|---------|--------|--------|
+| `monsters.js` (1876 l.) | un seul `const MONSTERS = [...]` | tableau de données unique, zéro logique |
+| `icons.js` (1227 l.) | `MONSTER_ICONS` (~1122 l. SVG) + 2 petites fns | registre SVG unique ; la logique (≈50 l.) ne justifie pas un split |
+| `audio-music.js` (843 l.) | méthodes `AudioSystem` (musique) | module cohérent à concern unique, sous le seuil god-file |
+
+### Bilan modularisation
+
+11 PR de modularisation (verbatim, suite smoke verte à chaque étape) :
+save (#273), dungeon (#274), quests (#276), inventory (#277), battle (#278),
+movement (#281), ui (#282), renderer-effects (#284), multiplayer (#285),
+data/ICON_RECIPES (#286), npcs (#287). `CACHE_VERSION` sw.js : v9 → v20.
+Plus aucun fichier de **logique** ne dépasse ~785 lignes ; les fichiers
+> 1000 l. restants sont des registres de **données** cohérents.
