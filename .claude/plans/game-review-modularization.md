@@ -116,7 +116,7 @@ Ordre recommandé (du plus rentable / moins risqué au plus délicat) :
 | 1 | ~~`save.js` (951 l.)~~ ✅ | `save-slots.js` (store) · `save.js` (serialize/apply + façades) · `save-visit-snapshot.js` | Faible (peu d'UI) | fait — 121/121 verts |
 | 2 | ~~`dungeon.js` (1010 l.)~~ ✅ | `dungeon-scaling.js` (scaling + astral) · `dungeon.js` (génération) · `dungeon-spawning.js` | Faible (0 accès DOM) | fait — 121/121 verts |
 | 3 | ~~`quests.js` (1483 l.)~~ ✅ | `quests-templates.js` (data ~600 l.) · `quests.js` (logique + journal UI) · `quests-riddles.js` (fusion + énigmes Dumbledore) | Moyen | fait — 121/121 verts |
-| 4 | `inventory.js` (1554 l.) | `inventory-core` · `inventory-ui` · `equipment` · `spellbook` | Moyen | equip/item/spell |
+| 4 | ~~`inventory.js` (1554 l.)~~ ✅ | `inventory-core.js` (add/materials/recalculateStats) · `inventory.js` (UI sac + équipement + usage) · `inventory-spells.js` (modales sorts + OOC) | Moyen | fait — 121/121 verts |
 | 5 | `battle.js` (1227 l.) | `battle-core` · `battle-status` · `battle-rewards` (+level-up) · `battle-death` | Élevé (état combat) | combat/status/crit/victory |
 | 6 | `movement.js` (1334 l.) | `movement-core` · `floor-transitions` · `exploration-ui` · `dungeon-search` | Élevé (overlay couplé) | fountain/search/floorevent |
 | 7 | `ui.js` (1047 l.) | `ui-core` · `ui-character-sheet` · `ui-settings` | Élevé (50 `getElementById`) | startup/houseset/uichrome |
@@ -247,3 +247,12 @@ fonction du changement appliqué » :
   sw.js (PRECACHE + CACHE_VERSION v11→v12), test-map.js, CLAUDE.md. MANIFEST
   inchangé (aucune entrée ne pointait les symboles déplacés). Validé : suite
   complète verte.
+- 2026-05-28 — Modularisation #4 (§4) : `inventory.js` (1554 l.) découpé en
+  `inventory-core.js` (tryAddItem/_consumeMaterial/recalculateStats, 4 fns) +
+  `inventory.js` (UI sac + équipement + usage d'objets, 25 fns) +
+  `inventory-spells.js` (modales Sorts/combat + SPELL_OOC_HANDLERS +
+  castSpellOutOfCombat, 8 fns). Déplacement verbatim (cœur réassemblé depuis 2
+  portions). Câblage : index.html (ordre core → inventory → spells + `?v`),
+  sw.js (PRECACHE + CACHE_VERSION v12→v13), MANIFEST loader (recalculateStats →
+  inventory-core, openSpells → inventory-spells), test-map.js, CLAUDE.md.
+  Validé : suite complète verte.

@@ -48,8 +48,12 @@ const TEST_MAP = {
   'js/ux-improvements.js':['spellux', 'combatext', 'combat', 'status', 'aoe'],
 
   // ── Inventaire / objets / équipement ──
-  'js/inventory.js':     ['equip', 'item', 'tryadd', 'spell', 'crit', 'hpspmax',
-                          'houseset', 'tenebres', 'phase3'],
+  'js/inventory.js':       ['equip', 'item', 'tryadd', 'spell', 'crit', 'hpspmax',
+                            'houseset', 'tenebres', 'phase3'],
+  'js/inventory-core.js':  ['equip', 'item', 'tryadd', 'crit', 'hpspmax', 'houseset',
+                            'tenebres', 'combat'],
+  'js/inventory-spells.js':['spell', 'aoe', 'elemental', 'healooc', 'bombarda',
+                            'combat'],
   'js/potions.js':       ['brewing'],
   'js/shop.js':          ['shop', 'vendors', 'phase3catalog'],
 

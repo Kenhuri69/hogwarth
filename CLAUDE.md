@@ -69,8 +69,15 @@ js/
   battle.js        →  startBattle(), battleAction(), enemyTurn(), endBattle(), checkLevelUp()
   battle-spells.js →  castSpellInBattle(), tryEnemyAbility()
   battle-ui.js     →  renderEnemyGroup(), showTargetSelection(), updateBattleCharIndicator()
-  inventory.js     →  openInventory(), useItem(), showEquipMenu(), equipItem(),
-                      recalculateStats(), openSpells(), openBattleSpells(), openBattleItems()
+  inventory-core.js → tryAddItem(), _countMaterial/_consumeMaterial,
+                      recalculateStats() (stats effectives). Chargé AVANT
+                      inventory.js ; recalculateStats() consommé par ~13 modules
+  inventory.js     →  UI sac/onglets, équipement (showEquipMenu, equipItem,
+                      unequipFromSlot), usage d'objets (useItem, consommables,
+                      learnSpellbook)
+  inventory-spells.js → openSpells(), openBattleSpells(), openBattleItems(),
+                      SPELL_OOC_HANDLERS, castSpellOutOfCombat(). Chargé APRÈS
+                      inventory.js
   quests-templates.js → QUEST_TEMPLATES (catalogue inerte) + maps de quêtes
                       de Maison. Données pures. Chargé AVANT quests.js
   quests.js        →  Logique + journal UI : acceptQuest(), completeQuest(),
