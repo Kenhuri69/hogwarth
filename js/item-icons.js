@@ -196,7 +196,14 @@ const ITEM_ICON_REGISTRY = {
   grimoire_interdit:     'img/icons/items/livre_morsmordre.png',
   pendentif_ombre:       'img/icons/items/amulette_protection.png',
   reliquaire_lunaire:    'img/icons/items/coupe_poufsouffle.png',
-  philtre_endurance:     'img/icons/items/potion_force.png'
+  philtre_endurance:     'img/icons/items/potion_force.png',
+  // Consommables à effet + équipement trade-off (réutilisent des PNG existants).
+  elixir_antidote:       'img/icons/items/potion_s.png',
+  elixir_regen:          'img/icons/items/potion_s.png',
+  potion_bouclier:       'img/icons/items/potion_m.png',
+  lame_sanguinaire:      'img/icons/items/sword_gryff.png',
+  armure_lourde:         'img/icons/items/robe1.png',
+  anneau_furie:          'img/icons/items/anneau_runique.png'
 };
 
 // Mapping painterly pipeline (étape 9 — voir SVG_PLAN / tools/icon_factory.py)

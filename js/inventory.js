@@ -410,6 +410,27 @@ function _applyConsumableEffect(item, target) {
     target.hp = Math.min(target.hpMax, target.hp + item.power);
     target.sp = Math.min(target.spMax, target.sp + 10);
   }
+  // ── Consommables à effet (réutilisent les statuts/boucliers du combat) ──
+  // Antidote : purge les statuts néfastes de DoT (pas weaken, dont la DEF
+  // est restaurée à l'expiry par tickStatuses — la retirer la figerait).
+  else if (item.effect === 'cure') {
+    if (Array.isArray(target.statusEffects)) {
+      target.statusEffects = target.statusEffects.filter(
+        s => !['burn', 'poison', 'bleed', 'gel'].includes(s.id));
+    }
+  }
+  // Régénération : pose le statut `regen` existant (soin par tour).
+  else if (item.effect === 'regen_buff') {
+    if (typeof applyStatus === 'function') applyStatus(target, 'regen', item.power || 5, item.turns || 4);
+  }
+  // Bouclier : érige un Protego (paliers shieldTurns) sur le porteur.
+  // Surtout utile en combat ; hors combat, shieldTurns est inactif.
+  else if (item.effect === 'shield_buff') {
+    if (typeof shieldTurns !== 'undefined') {
+      const i = party.indexOf(target);
+      if (i >= 0) shieldTurns[i] = Math.max(shieldTurns[i] || 0, item.power || 3);
+    }
+  }
   // ── Sinks endgame (consommables permanents) ────────────────
   // +PV max permanent + heal complet bonus. Le _baseHpMax (s'il
   // existe pour le tracking équipement) n'a pas à être touché : on

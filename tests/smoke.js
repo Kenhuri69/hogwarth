@@ -14502,9 +14502,86 @@ async function scenarioEnemyAiAndBossPhases() {
   await browser.close();
 }
 
+// ── Scénario : consommables à effet + équipement à compromis (LOT C) ──
+async function scenarioContentConsumablesTradeoffs() {
+  console.log('\n── Scénario : consommables à effet + items trade-off ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 200 });
+
+  // T1 — Antidote purge les DoT (burn/poison) mais pas weaken.
+  const t1 = await page.evaluate(() => {
+    const c = party[0];
+    c.statusEffects = [];
+    applyStatus(c, 'burn',   5, 3);
+    applyStatus(c, 'poison', 3, 3);
+    applyStatus(c, 'weaken', 2, 3);
+    const item = ITEMS.find(i => i.id === 'elixir_antidote');
+    _applyConsumableEffect(item, c);
+    return { ids: c.statusEffects.map(s => s.id) };
+  });
+  console.log('  T1 cure   :', t1);
+  assert(!t1.ids.includes('burn') && !t1.ids.includes('poison'), 'antidote doit purger burn/poison');
+  assert(t1.ids.includes('weaken'), 'antidote ne doit pas retirer weaken');
+
+  // T2 — Régénération pose le statut regen.
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    c.statusEffects = [];
+    _applyConsumableEffect(ITEMS.find(i => i.id === 'elixir_regen'), c);
+    const r = c.statusEffects.find(s => s.id === 'regen');
+    return { has: !!r, power: r && r.power, turns: r && r.turns };
+  });
+  console.log('  T2 regen  :', t2);
+  assert(t2.has && t2.power === 6 && t2.turns === 4, 'élixir de régén doit poser regen 6/4');
+
+  // T3 — Bouclier érige un Protego sur le porteur.
+  const t3 = await page.evaluate(() => {
+    shieldTurns = [0, 0];
+    currentBattleChar = 0;
+    _applyConsumableEffect(ITEMS.find(i => i.id === 'potion_bouclier'), party[0]);
+    return { shield: shieldTurns[0] };
+  });
+  console.log('  T3 shield :', t3);
+  assert(t3.shield === 3, `potion de bouclier doit poser 3 paliers (obtenu ${t3.shield})`);
+
+  // T4 — Item trade-off : ATK+7 / DEF−2 appliqué par recalculateStats.
+  const t4 = await page.evaluate(() => {
+    const c = party[0];
+    const atk0 = c.atk, def0 = c.def;
+    const clone = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'lame_sanguinaire')));
+    player.inventory.push(clone);
+    equipItem(player.inventory.length - 1, 0);
+    return { datk: c.atk - atk0, ddef: c.def - def0 };
+  });
+  console.log('  T4 trade  :', t4);
+  assert(t4.datk === 7,  `lame sanguinaire ATK+7 attendu, obtenu ${t4.datk}`);
+  assert(t4.ddef === -2, `lame sanguinaire DEF−2 attendu, obtenu ${t4.ddef}`);
+
+  // T5 — Anneau de Furie : crit +12 / esquive −6 sur les stats dérivées.
+  const t5 = await page.evaluate(() => {
+    const c = party[0];
+    const crit0 = c.critChance, dodge0 = c.dodgeChance;
+    const clone = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'anneau_furie')));
+    player.inventory.push(clone);
+    equipItem(player.inventory.length - 1, 0);
+    return { dcrit: c.critChance - crit0, ddodge: c.dodgeChance - dodge0 };
+  });
+  console.log('  T5 furie  :', t5);
+  assert(t5.dcrit === 12, `anneau de furie crit +12 attendu, obtenu ${t5.dcrit}`);
+  assert(t5.ddodge === -6, `anneau de furie esquive −6 attendu, obtenu ${t5.ddodge}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (contenu C)`);
+  }
+  console.log('  ✅ consommables à effet + items trade-off OK');
+  await browser.close();
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))
