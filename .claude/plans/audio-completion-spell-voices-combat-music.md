@@ -48,13 +48,16 @@ Audit icônes/décoration/audio : **0 lacune d'image** (items 94/94, monstres
 - [x] Rédiger 2 prompts Gemini détaillés (epic = boss intense ;
       late = profondeurs sombres, étage ≥ 10). Livrés à l'utilisateur
       (voir §Prompts ci-dessous).
-- [ ] À réception des MP3 : convertir en OGG 44100 Hz mono (~30 s, loop)
-      → `audio/combat_epic.ogg` + `audio/combat_late.ogg`.
-      Commande : `ffmpeg -i <in>.mp3 -ac 1 -ar 44100 -c:a libvorbis -q:a 3 <out>.ogg`
-- [ ] Vérifier : le code les référence déjà (`_COMBAT_SAMPLES`,
+- [x] MP3 fournis par l'utilisateur (Gemini, 30,77 s / 44,1 kHz stéréo),
+      convertis en OGG 44100 Hz mono vorbis q3 (mêmes specs que
+      `combat_normal.ogg`) :
+      - `iron_crown_falling` → `audio/combat_epic.ogg`
+      - `siege_of_bone`      → `audio/combat_late.ogg`
+- [x] Vérifié : le code les référence déjà (`_COMBAT_SAMPLES`,
       audio-music.js) → aucune modif JS. `audio/` est en
       stale-while-revalidate (sw.js) → pas de bump `CACHE_VERSION`.
-- [ ] `node tests/smoke.js` vert + écoute de contrôle.
+- [x] Re-audit refs audio : **0 fichier manquant, 0 orphelin**.
+- [x] `node tests/smoke.js` → 124 scénarios verts.
 
 ## Prompts Gemini — musiques de combat
 
