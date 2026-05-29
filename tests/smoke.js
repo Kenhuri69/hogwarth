@@ -7589,7 +7589,7 @@ async function scenarioSpellVoiceMapping() {
     AudioSystem.speakSpell('Incendio');
     const mapped = calledWith;
     calledWith = null;
-    AudioSystem.speakSpell('Lumos Maxima');   // hors map → pas de playVoice
+    AudioSystem.speakSpell('Sortilège Inconnu');   // hors map → pas de playVoice
     const unmapped = calledWith;
     AudioSystem.playVoice = orig;
     return { mapped, unmapped };
