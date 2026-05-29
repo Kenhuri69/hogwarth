@@ -478,7 +478,7 @@
 
   <div class="main-view">
     <div class="scene-viewport">
-      <canvas id="dungeon-canvas"></canvas>
+      <canvas id="dungeon-canvas" role="application" aria-label="Vue du donjon en trois dimensions. Utilisez les flèches ou le pavé directionnel pour vous déplacer."></canvas>
 
       <!-- Mini-carte pixel dans le coin (mobile uniquement, informatif) -->
       <div id="minimap-corner" aria-hidden="true"></div>
@@ -674,14 +674,14 @@
     </div>
 
     <!-- D-Pad mobile — contrôles relatifs -->
-    <div class="dpad mobile-dir">
-      <button class="dpad-btn" onclick="moveForward()">▲</button>
+    <div class="dpad mobile-dir" role="group" aria-label="Déplacement">
+      <button class="dpad-btn" onclick="moveForward()" aria-label="Avancer">▲</button>
       <div class="dpad-mid">
-        <button class="dpad-btn" onclick="turnLeft()">↺</button>
+        <button class="dpad-btn" onclick="turnLeft()" aria-label="Pivoter à gauche">↺</button>
         <div class="dpad-center"><img class="ui-icon ui-icon-md" src="img/icons/hp.png" alt=""></div>
-        <button class="dpad-btn" onclick="turnRight()">↻</button>
+        <button class="dpad-btn" onclick="turnRight()" aria-label="Pivoter à droite">↻</button>
       </div>
-      <button class="dpad-btn" onclick="moveBackward()">▼</button>
+      <button class="dpad-btn" onclick="moveBackward()" aria-label="Reculer">▼</button>
     </div>
 
     <div class="cmd-vsep"></div>

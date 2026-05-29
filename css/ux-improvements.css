@@ -293,6 +293,17 @@
   50%     { filter: drop-shadow(0 0 14px #7fff8f) brightness(1.2); }
 }
 
+/* ── ACCESSIBILITÉ : mouvement réduit ──────────────────────────
+   Neutralise les animations de combat (dégâts flottants, secousse,
+   flash de soin) pour les joueurs sensibles au mouvement. Le float-dmg
+   reste affiché (info utile) mais sans la montée animée. */
+@media (prefers-reduced-motion: reduce) {
+  .float-dmg { animation: none; }
+  .shake-hit { animation: none; }
+  .flash-heal { animation: none; }
+  #combat-log-list .clp-entry { animation: none; }
+}
+
 /* ── RESPONSIVE MOBILE ─────────────────────────────────────── */
 @media (max-width: 700px) {
   #combat-log-panel {
