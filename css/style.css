@@ -17,9 +17,29 @@
   --hp-bar: #27ae60;
   --sp-bar: #8e44ad;
   --exp-bar: #e67e22;
+  /* Texte de label informatif atténué, mais lisible (≥4.5:1 sur fonds sombres
+     #0a0705/#1a0f05). À NE PAS confondre avec #6a5030 réservé aux états
+     désactivés (exemptés WCAG). */
+  --label-muted: #b09464;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Accessibilité clavier : repère de focus doré sur tout élément interactif.
+   :focus-visible n'apparaît qu'au clavier (pas au clic souris), donc sans
+   bruit visuel pour les joueurs à la souris/tactile. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible,
+.cmd-btn:focus-visible,
+.dpad-btn:focus-visible,
+.explore-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
 
 /* Verrouille le scroll du document : sur mobile, un scroll vertical replie
    la barre d'URL du navigateur, ce qui change 100dvh et redimensionne la
@@ -125,7 +145,9 @@ body {
   grid-area: header;
   background: linear-gradient(180deg, #0d0705 0%, #1a0f05 100%);
   border-bottom: 2px solid var(--gold-dark);
-  padding: 6px 12px;
+  /* safe-area : évite le notch/encoche en haut sur iOS. env()=0 sur desktop
+     → max() conserve les valeurs de base, aucun impact hors mobile à encoche. */
+  padding: max(6px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left));
   display: flex; align-items: center; gap: 10px;
 }
 .game-title {
@@ -321,7 +343,7 @@ body {
   font-size: 10px;
 }
 .stat-item .sval { color: var(--gold-light); font-weight: 600; }
-.stat-item .skey { color: #6a5030; }
+.stat-item .skey { color: var(--label-muted); }
 
 /* MAIN VIEW */
 .main-view {
@@ -427,7 +449,8 @@ body {
   background: linear-gradient(180deg, #110803 0%, #060300 100%);
   border-top: 2px solid var(--gold-dark);
   box-shadow: 0 -4px 16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(201,168,76,0.08);
-  padding: 8px 10px;
+  /* safe-area : marge basse sur iOS (barre home/encoche). env()=0 sur desktop. */
+  padding: 8px max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
   display: flex; gap: 8px; flex-wrap: nowrap; align-items: center;
   justify-content: center;
   overflow-x: auto;
@@ -814,12 +837,12 @@ body {
   font-size: 13px; font-weight: bold;
 }
 .bestiary-info      { flex: 1; }
-.bestiary-cat-tag   { font-size: 10px; color: #6a5030; font-family: sans-serif; font-weight: normal; }
-.bestiary-floor-tag { font-size: 10px; color: #6a5030; margin: 2px 0 4px; letter-spacing: 1px; text-transform: uppercase; }
+.bestiary-cat-tag   { font-size: 10px; color: var(--label-muted); font-family: sans-serif; font-weight: normal; }
+.bestiary-floor-tag { font-size: 10px; color: var(--label-muted); margin: 2px 0 4px; letter-spacing: 1px; text-transform: uppercase; }
 .bestiary-lore      { font-size: 12px; color: var(--parchment-dark); line-height: 1.4; }
 .bestiary-drops     { font-size: 11px; color: #8a7050; margin-top: 5px; }
 .bestiary-stats     { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: #8a7050; margin-top: 6px; }
-.bestiary-empty     { text-align: center; padding: 40px; color: #6a5030; font-style: italic; }
+.bestiary-empty     { text-align: center; padding: 40px; color: var(--label-muted); font-style: italic; }
 
 /* Empty-states divers — pendants de .bestiary-empty / .slot-empty-state */
 .inv-empty-slot       { font-size: 11px; color: #2a1a08; }
@@ -836,14 +859,14 @@ body {
 .bestiary-stat-grid     { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
 .bestiary-stat          { background: #0a0705; border: 1px solid #2a1a08; border-radius: 4px; padding: 8px; text-align: center; }
 .bestiary-stat-val      { font-size: 14px; color: var(--parchment); }
-.bestiary-stat-lbl      { font-size: 11px; color: #6a5030; letter-spacing: 1px; margin-top: 2px; }
+.bestiary-stat-lbl      { font-size: 11px; color: var(--label-muted); letter-spacing: 1px; margin-top: 2px; }
 .bestiary-resist-line   { font-size: 11px; color: #8a7050; margin-bottom: 14px;
                            display: flex; gap: 20px; flex-wrap: wrap; }
 .bestiary-abilities     { border-top: 1px solid #2a1a08; padding-top: 12px; margin-bottom: 14px; }
 .bestiary-section-title { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold); margin-bottom: 8px; letter-spacing: 1px; }
 .bestiary-ability       { font-size: 12px; color: var(--parchment-dark); padding: 4px 0;
                            border-bottom: 1px solid #1a0f05; line-height: 1.4; }
-.bestiary-chance        { color: #6a5030; }
+.bestiary-chance        { color: var(--label-muted); }
 .bestiary-danger        { display: inline-block; font-size: 12px; font-weight: bold;
                            margin: 4px 0; letter-spacing: 0.5px; }
 .bestiary-detail-titles { flex: 1; }
@@ -1850,7 +1873,7 @@ body {
   border-radius: 3px; padding: 2px;
   border: 1px solid rgba(122,92,30,0.25);
 }
-.char-stats-panel .stat-label { color: #8a7050; font-size: 10px; letter-spacing: 0.3px; }
+.char-stats-panel .stat-label { color: var(--label-muted); font-size: 10px; letter-spacing: 0.3px; }
 .char-stats-panel .stat-value { color: var(--parchment); font-weight: 600; font-variant-numeric: tabular-nums; }
 .char-stats-panel .stat-line.derived .stat-value { color: var(--gold-light); }
 .char-stats-panel .stat-bonus {
@@ -3585,7 +3608,7 @@ button.shop-tab.active {
 .hd-tier-threshold {
   grid-area: thresh;
   font-size: 10px;
-  color: #8a7050;
+  color: var(--label-muted);
 }
 .hd-tier-bonus {
   grid-area: bonus;
