@@ -13,6 +13,10 @@
 //     effets binaires (cf. plan §7.5 « Cas spécial »).
 
 const FORGE_MAX_LEVEL = 5;
+// C3a — deux voies d'amélioration, verrouillées au 1er upgrade (item.forgePath) :
+//   'power' (défaut/legacy) → +upgradeLevel sur la stat principale.
+//   'crit'                  → +upgradeLevel × FORGE_CRIT_PER_LEVEL % de crit.
+const FORGE_CRIT_PER_LEVEL = 2;
 const FORGE_COSTS = {
   // [niveau cible] → { gold, essence }
   1: { gold:   80, essence: 1 },
@@ -114,12 +118,14 @@ function _equippedItems() {
 
 // Effectue l'upgrade : vérifie ressources, débite, incrémente le niveau,
 // recalcule les stats. Retourne true si l'upgrade a réussi.
-function upgradeItemAtForge(charIdx, slot) {
+function upgradeItemAtForge(charIdx, slot, path) {
   const c = party[charIdx];
   if (!c || !c.equipped) return false;
   const item = c.equipped[slot];
   if (!item) return false;
   const currentLvl = item.upgradeLevel | 0;
+  // La voie est verrouillée au 1er upgrade ; ensuite on suit item.forgePath.
+  if (currentLvl === 0) item.forgePath = (path === 'crit') ? 'crit' : 'power';
   if (currentLvl >= FORGE_MAX_LEVEL) {
     addMsg(`${item.name} : niveau maximum atteint.`, '');
     return false;
@@ -145,7 +151,8 @@ function upgradeItemAtForge(charIdx, slot) {
   item.upgradeLevel = targetLvl;
   if (typeof recalculateStats === 'function') recalculateStats();
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
-  addMsg(`🔨 ${item.name} forgée au niveau ${targetLvl} !`, 'magic');
+  const voie = item.forgePath === 'crit' ? 'Critique' : 'Puissance';
+  addMsg(`🔨 ${item.name} forgée au niveau ${targetLvl} (voie ${voie}) !`, 'magic');
   if (typeof updateUI === 'function') updateUI();
   // Re-render
   openForge();
@@ -190,20 +197,37 @@ function openForge() {
       const heroName = (party[charIdx] && party[charIdx].name) ? party[charIdx].name.split(' ')[0] : `Perso ${charIdx + 1}`;
       const iconHtml = (typeof getItemIconHtml === 'function')
         ? getItemIconHtml(item, 'ui-icon-md') : (item.icon || '⚔️');
+      const path     = item.forgePath || 'power';
+      const voieLbl  = path === 'crit' ? 'Critique' : 'Puissance';
       const lvlBadge  = lvl > 0 ? `<span class="forge-lvl-badge">+${lvl}</span>` : '';
-      const previewLine = upgradable && !maxed
-        ? `<div class="forge-preview">${primBonus.key.replace('bonus','')} ${primBonus.value + lvl} → <b>${primBonus.value + lvl + 1}</b></div>`
-        : maxed ? `<div class="forge-preview forge-maxed">Niveau MAX</div>`
-        : `<div class="forge-preview forge-noupgrade">Effet spécial — non forgeable</div>`;
       const costLine = cost
         ? `<div class="forge-cost">${cost.gold} g · ${cost.essence} 🌑</div>`
         : '';
       const affordable = cost && player.gold >= cost.gold && _countEssence() >= cost.essence;
-      const btn = (upgradable && !maxed)
-        ? `<button class="forge-upgrade-btn ${affordable ? '' : 'disabled'}"
-                   ${affordable ? '' : 'disabled'}
-                   onclick="upgradeItemAtForge(${charIdx}, '${slot}')">Améliorer</button>`
-        : '';
+      const dis = affordable ? '' : 'disabled';
+      let previewLine = '', btn = '';
+      if (!upgradable) {
+        previewLine = `<div class="forge-preview forge-noupgrade">Effet spécial — non forgeable</div>`;
+      } else if (maxed) {
+        previewLine = `<div class="forge-preview forge-maxed">Niveau MAX (${voieLbl})</div>`;
+      } else if (lvl === 0) {
+        // 1er upgrade : choix entre les deux voies.
+        const statName = primBonus.key.replace('bonus', '');
+        previewLine = `<div class="forge-preview forge-choose">Choisir une voie :</div>`;
+        btn = `<div class="forge-path-choice">
+                 <button class="forge-upgrade-btn ${dis}" ${dis}
+                   onclick="upgradeItemAtForge(${charIdx}, '${slot}', 'power')">⚔️ +${statName}</button>
+                 <button class="forge-upgrade-btn ${dis}" ${dis}
+                   onclick="upgradeItemAtForge(${charIdx}, '${slot}', 'crit')">✯ +${FORGE_CRIT_PER_LEVEL}% Crit</button>
+               </div>`;
+      } else {
+        // Voie verrouillée : aperçu + bouton unique.
+        previewLine = (path === 'crit')
+          ? `<div class="forge-preview">✯ Crit +${lvl * FORGE_CRIT_PER_LEVEL}% → <b>+${(lvl + 1) * FORGE_CRIT_PER_LEVEL}%</b></div>`
+          : `<div class="forge-preview">${primBonus.key.replace('bonus', '')} ${primBonus.value + lvl} → <b>${primBonus.value + lvl + 1}</b></div>`;
+        btn = `<button class="forge-upgrade-btn ${dis}" ${dis}
+                 onclick="upgradeItemAtForge(${charIdx}, '${slot}')">Améliorer (${voieLbl})</button>`;
+      }
       return `
         <div class="forge-item">
           <div class="forge-item-icon">${iconHtml}${lvlBadge}</div>

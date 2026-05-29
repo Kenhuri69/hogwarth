@@ -5764,11 +5764,35 @@ async function scenarioForgeUpgrade() {
   assert(t3.ok === false,   'refusé si gold insuffisant');
   assert(t3.lvl === 0,      'upgradeLevel inchangé');
 
+  // T4 (C3a) — voie Critique : le bonus va sur critChance, pas la stat.
+  const t4 = await page.evaluate(() => {
+    const wand = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'wand1')));
+    wand.upgradeLevel = 0; delete wand.forgePath;
+    party[0].equipped.wand = wand;
+    player.gold = 5000;
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'essence_tenebres') });
+    recalculateStats();
+    const atkBefore  = party[0].atk;
+    const critBefore = party[0].critChance;
+    const ok = upgradeItemAtForge(0, 'wand', 'crit');
+    return {
+      ok, path: party[0].equipped.wand.forgePath,
+      atkBefore, atkAfter: party[0].atk,
+      critBefore, critAfter: party[0].critChance,
+      per: (typeof FORGE_CRIT_PER_LEVEL === 'number') ? FORGE_CRIT_PER_LEVEL : null
+    };
+  });
+  console.log('  T4 voie crit →', t4);
+  assert(t4.ok === true,                      'upgrade voie crit réussit');
+  assert(t4.path === 'crit',                  'forgePath verrouillé sur crit');
+  assert(t4.atkAfter === t4.atkBefore,        'voie crit : la stat ATK ne bouge pas');
+  assert(t4.critAfter === t4.critBefore + t4.per, 'voie crit : critChance +FORGE_CRIT_PER_LEVEL');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Forge des Ténèbres OK');
+  console.log('  ✅ Forge des Ténèbres (2 voies) OK');
   await browser.close();
 }
 

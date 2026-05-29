@@ -88,6 +88,8 @@ function recalculateStats() {
     c.agi = c._baseAgi;
     c.end = c._baseEnd;
 
+    // C3a — voie Forge 'crit' : accumulée ici, versée dans critBonus plus bas.
+    let forgeCritBonus = 0;
     if (c.equipped) {
       // Itérer sur tous les slots présents (extensible sans toucher au code).
       // Bonus Forge : `upgradeLevel` ajoute +N au bonus principal de l'item
@@ -103,18 +105,25 @@ function recalculateStats() {
         if (item.bonusInt) c.int += item.bonusInt;
         if (item.bonusAgi) c.agi += item.bonusAgi;
         if (item.bonusEnd) c.end += item.bonusEnd;
-        // Forge des Ténèbres : +upgradeLevel sur la stat principale.
+        // Forge des Ténèbres : +upgradeLevel selon la voie choisie.
         const lvl = item.upgradeLevel | 0;
         if (lvl > 0) {
-          // Détermine la stat principale (plus élevée parmi atk/def/mag/lck).
-          const bonuses = [
-            ['atk', item.bonusAtk | 0],
-            ['def', item.bonusDef | 0],
-            ['mag', item.bonusMag | 0],
-            ['lck', item.bonusLck | 0],
-          ];
-          bonuses.sort((a, b) => b[1] - a[1]);
-          if (bonuses[0][1] > 0) c[bonuses[0][0]] += lvl;
+          if (item.forgePath === 'crit') {
+            // Voie Critique : +N % de crit physique par niveau.
+            const per = (typeof FORGE_CRIT_PER_LEVEL === 'number') ? FORGE_CRIT_PER_LEVEL : 2;
+            forgeCritBonus += lvl * per;
+          } else {
+            // Voie Puissance (défaut/legacy) : +N sur la stat principale
+            // (plus élevée parmi atk/def/mag/lck).
+            const bonuses = [
+              ['atk', item.bonusAtk | 0],
+              ['def', item.bonusDef | 0],
+              ['mag', item.bonusMag | 0],
+              ['lck', item.bonusLck | 0],
+            ];
+            bonuses.sort((a, b) => b[1] - a[1]);
+            if (bonuses[0][1] > 0) c[bonuses[0][0]] += lvl;
+          }
         }
       }
     }
@@ -123,7 +132,7 @@ function recalculateStats() {
     //   critChance / spellCritChance  : LCK plafonne à 40 %, les bonus
     //     d'équipement/set s'ajoutent par-dessus (peuvent dépasser 40 %).
     //   critMultiplier / spellCritMultiplier : 1.5 + bonusCritDamage cumulés.
-    let critBonus = 0, dodgeBonus = 0;
+    let critBonus = forgeCritBonus, dodgeBonus = 0;
     let critDmgBonus = 0, spellCritBonus = 0, spellCritDmgBonus = 0;
     let hpMaxBonus = 0, spMaxBonus = 0;
     let counterBonus = 0;
