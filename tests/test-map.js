@@ -142,6 +142,9 @@ const TEST_MAP = {
   // représentatif. `startup` (baseline) exerce déjà updateUI.
   'js/ui.js':          ['startup', 'houseset', 'crest', 'uichrome', 'partyequip',
                        'status', 'ironman', 'mobileselect'],
+  'js/ui-character-sheet.js': ['houseset', 'partyequip', 'extendedequipment',
+                              'tenebres', 'crit', 'item'],
+  'js/ui-settings.js':        ['startup', 'visit', 'ironman'],
   'js/ui-bestiary.js': ['monster'],
   'js/help-tour.js':   ['helptour'],
 
