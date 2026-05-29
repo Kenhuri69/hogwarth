@@ -14419,9 +14419,92 @@ async function scenarioRuneRewards() {
   await browser.close();
 }
 
+// ── Scénario : IA ennemie (ciblage/choix) + phases de boss (LOT B) ──
+async function scenarioEnemyAiAndBossPhases() {
+  console.log('\n── Scénario : IA ennemie + phases de boss ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+  await startDummyFight(page, { hp: 100 });
+
+  // T1 — _chooseEnemyTarget : 'aggressive' vise les PV les plus bas.
+  const t1 = await page.evaluate(() => {
+    const alive = [
+      { name: 'A', hp: 30, atk: 5 },
+      { name: 'B', hp: 8,  atk: 12 }
+    ];
+    const aggr = _chooseEnemyTarget({ ai: 'aggressive' }, alive);
+    const caut = _chooseEnemyTarget({ ai: 'cautious' },   alive);
+    return { aggr: aggr.name, caut: caut.name };
+  });
+  console.log('  T1 ciblage:', t1);
+  assert(t1.aggr === 'B', 'aggressive doit viser la cible la plus basse en PV');
+  assert(t1.caut === 'B', 'cautious doit viser la plus haute ATK (B)');
+
+  // T2 — choix de capacité : un ennemi 'cautious' à bas PV se soigne plutôt
+  // que d'attaquer, quand heal et damage réussissent tous deux leur jet.
+  const t2 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.ai = 'cautious';
+    e.hp = 100; e.currentHp = 20; e.mag = 0;
+    e.abilities = [
+      { name: 'Frappe', icon: '⚔️', effect: 'damage', power: 10, chance: 1 },
+      { name: 'Soin',   icon: '💚', effect: 'heal',   power: 15, chance: 1 }
+    ];
+    party[0].hp = 100; party[0].hpMax = 100;
+    const beforeEnemy = e.currentHp, beforeAlly = party[0].hp;
+    const orig = Math.random; Math.random = () => 0.01;  // tous les jets réussissent
+    tryEnemyAbility(e, party[0], 0, () => {});
+    Math.random = orig;
+    return { healed: e.currentHp > beforeEnemy, allyHurt: party[0].hp < beforeAlly };
+  });
+  console.log('  T2 choix  :', t2);
+  assert(t2.healed,    'cautious à bas PV doit se soigner');
+  assert(!t2.allyHurt, 'cautious à bas PV ne doit pas frapper l\'allié quand il peut se soigner');
+
+  // T3 — _checkBossPhases : enrage + gain de capacité au seuil, une seule fois.
+  const t3 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.atk = 20; e.hp = 100; e.currentHp = 100;
+    e.abilities = [];
+    e._phaseIdx = 0;
+    e.phases = [
+      { atPct: 0.5, atkMult: 2,
+        gainAbility: { name: 'Rage', icon: '😱', effect: 'status', statusId: 'fear', power: 0, chance: 0.5, turns: 2 } }
+    ];
+    // Au-dessus du seuil : rien.
+    const above = _checkBossPhases(e);
+    // Sous le seuil : déclenche.
+    e.currentHp = 40;
+    const fire1 = _checkBossPhases(e);
+    const atkAfter = e.atk, abilCount = e.abilities.length, idx = e._phaseIdx;
+    // Re-appel : ne re-déclenche pas.
+    const fire2 = _checkBossPhases(e);
+    return {
+      aboveEmpty: above === '',
+      fired: fire1.length > 0,
+      atkAfter, abilCount, idx,
+      noRetrigger: fire2 === '' && e.atk === atkAfter
+    };
+  });
+  console.log('  T3 phases :', t3);
+  assert(t3.aboveEmpty,    'aucune phase ne doit se déclencher au-dessus du seuil');
+  assert(t3.fired,         'la phase doit se déclencher sous le seuil');
+  assert(t3.atkAfter === 40, `enrage atkMult×2 attendu 40, obtenu ${t3.atkAfter}`);
+  assert(t3.abilCount === 1, 'la phase doit ajouter une capacité');
+  assert(t3.idx === 1,       '_phaseIdx doit avancer à 1');
+  assert(t3.noRetrigger,     'la phase ne doit pas se re-déclencher');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (IA / phases)`);
+  }
+  console.log('  ✅ IA ennemie (ciblage + choix) + phases de boss OK');
+  await browser.close();
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))

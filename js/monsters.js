@@ -785,6 +785,13 @@ const MONSTERS = [
       { name: "Morsure du Roi",    icon: "🐍", desc: "Morsure venimeuse mortelle",         effect: "damage", power: 16, chance: 0.25 }
     ],
     ai: "aggressive",
+    // À mi-vie, le basilic entre en frénésie et empoisonne par sa morsure.
+    phases: [
+      { atPct: 0.5, atkMult: 1.3,
+        msg: "Le basilic siffle de rage et frappe avec une violence redoublée !",
+        gainAbility: { name: "Venin Mortel", icon: "🟢", desc: "Inocule un venin rongeur",
+          effect: "status", statusId: "poison", power: 5, chance: 0.5, turns: 3 } }
+    ],
     resist: ["feu", "physique", "disarm"],
     weak:   ["glace"],
     xp: 80, gold: { min: 35, max: 50 },
@@ -1043,6 +1050,16 @@ const MONSTERS = [
       { name: "Sortilège Brisé",    icon: "❌", desc: "Anéantit toute protection",        effect: "dispel", chance: 0.70 }
     ],
     ai: "aggressive",
+    // Phases (triées par seuil de PV décroissant). Le Seigneur des Ténèbres
+    // déchaîne sa fureur à mi-vie, puis terrifie le groupe quand il est acculé.
+    phases: [
+      { atPct: 0.5,  atkMult: 1.25, magMult: 1.2,
+        msg: "Voldemort déchaîne sa fureur — sa magie redouble de puissance !" },
+      { atPct: 0.25, magMult: 1.15,
+        msg: "Acculé, Voldemort invoque les Ténèbres pour terrifier ses adversaires !",
+        gainAbility: { name: "Terreur Mortelle", icon: "😱", desc: "Insuffle une peur paralysante",
+          effect: "status", statusId: "fear", power: 0, chance: 0.5, turns: 2 } }
+    ],
     resist: ["ténèbres", "feu", "glace", "disarm"],
     weak:   ["lumière"],
     xp: 350, gold: { min: 120, max: 200 },

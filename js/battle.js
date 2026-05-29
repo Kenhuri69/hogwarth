@@ -604,6 +604,50 @@ function advanceBattleChar() {
 }
 
 // ── Tour des ennemis ─────────────────────────────────────────
+// Choix de la cible d'un ennemi selon son tempérament `enemy.ai`.
+// En solo (une seule cible vivante), le résultat est trivial.
+function _chooseEnemyTarget(enemy, alive) {
+  if (!alive || !alive.length) return null;
+  if (alive.length === 1) return alive[0];
+  const ai = enemy.ai || 'random';
+  if (ai === 'aggressive') {
+    // Concentre le feu : achève la cible la plus basse en PV.
+    return alive.reduce((a, b) => (b.hp < a.hp ? b : a));
+  }
+  if (ai === 'cautious') {
+    // Neutralise d'abord la plus grosse menace offensive (ATK la plus haute).
+    return alive.reduce((a, b) => ((b.atk || 0) > (a.atk || 0) ? b : a));
+  }
+  return alive[Math.floor(Math.random() * alive.length)];
+}
+
+// Phases de boss (data-driven). Un monstre peut porter `phases: [...]`, trié
+// par seuil décroissant (`atPct`). Quand ses PV passent sous un seuil non
+// encore déclenché, la phase s'applique une fois : enrage (atkMult/magMult),
+// soin (healPct), et/ou gain d'une capacité (gainAbility). `_phaseIdx` suit
+// l'avancement (réinitialisé car enemyGroup est reconstruit à chaque combat).
+function _checkBossPhases(enemy) {
+  if (!enemy.phases || !enemy.phases.length) return '';
+  const maxHp = enemy.hp || enemy.currentHp || 1;
+  const pct = enemy.currentHp / maxHp;
+  enemy._phaseIdx = enemy._phaseIdx || 0;
+  let out = '';
+  for (let i = enemy._phaseIdx; i < enemy.phases.length; i++) {
+    const ph = enemy.phases[i];
+    if (pct > ph.atPct) break;          // seuil pas encore atteint (phases triées ↓)
+    enemy._phaseIdx = i + 1;
+    if (ph.atkMult) enemy.atk = Math.round((enemy.atk || 0) * ph.atkMult);
+    if (ph.magMult && enemy.mag) enemy.mag = Math.round(enemy.mag * ph.magMult);
+    if (ph.healPct) enemy.currentHp = Math.min(maxHp, enemy.currentHp + Math.round(maxHp * ph.healPct));
+    if (ph.gainAbility) { enemy.abilities = enemy.abilities || []; enemy.abilities.push({ ...ph.gainAbility }); }
+    const msg = ph.msg || `${enemy.name} entre dans une rage nouvelle !`;
+    out += `⚡ ${msg} `;
+    UX_safe.logCombat(`⚡ ${msg}`, 'bad');
+  }
+  if (out) renderEnemyGroup();
+  return out;
+}
+
 function enemyTurn() {
   battleTurn++;
   UX_safe.logCombatTurn(battleTurn + 1);
@@ -650,7 +694,11 @@ function enemyTurn() {
       return;
     }
 
-    const target  = alive[Math.floor(Math.random() * alive.length)];
+    // Phases de boss : un seuil de PV franchi peut déclencher rage / nouvelle
+    // capacité. Évalué juste avant que l'ennemi agisse (il en bénéficie ce tour).
+    log += _checkBossPhases(enemy);
+
+    const target  = _chooseEnemyTarget(enemy, alive);
     if (!target) return;
     const charIdx = party.indexOf(target);
 
