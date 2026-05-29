@@ -114,7 +114,7 @@ Ordre recommandé (du plus rentable / moins risqué au plus délicat) :
 | # | Cible | Découpage proposé | Risque | Pré-requis test |
 |---|-------|-------------------|--------|-----------------|
 | 1 | ~~`save.js` (951 l.)~~ ✅ | `save-slots.js` (store) · `save.js` (serialize/apply + façades) · `save-visit-snapshot.js` | Faible (peu d'UI) | fait — 121/121 verts |
-| 2 | `dungeon.js` (1010 l.) | `dungeon-generation` · `dungeon-scaling` · `dungeon-spawning` · `dungeon-astral` | Faible (0 accès DOM) | dungeon/rune/respawn |
+| 2 | ~~`dungeon.js` (1010 l.)~~ ✅ | `dungeon-scaling.js` (scaling + astral) · `dungeon.js` (génération) · `dungeon-spawning.js` | Faible (0 accès DOM) | fait — 121/121 verts |
 | 3 | `quests.js` (1483 l.) | `quests-templates` (data ~600 l.) · `quests-logic` · `quests-ui` · `riddles-dumbledore` | Moyen | quest/riddle/grimoire |
 | 4 | `inventory.js` (1554 l.) | `inventory-core` · `inventory-ui` · `equipment` · `spellbook` | Moyen | equip/item/spell |
 | 5 | `battle.js` (1227 l.) | `battle-core` · `battle-status` · `battle-rewards` (+level-up) · `battle-death` | Élevé (état combat) | combat/status/crit/victory |
@@ -232,3 +232,10 @@ fonction du changement appliqué » :
   save-slots → save → save-visit-snapshot + `?v`), sw.js (PRECACHE + CACHE_VERSION
   v9→v10), MANIFEST loader (sources), test-map.js, CLAUDE.md. Validé : suite
   complète verte.
+- 2026-05-28 — Modularisation #2 (§4) : `dungeon.js` (1010 l.) découpé en
+  `dungeon-scaling.js` (weightedPick/effectiveFloor/scaleMonster/buildEcho, 6
+  fns) + `dungeon.js` (génération procédurale, 11 fns) + `dungeon-spawning.js`
+  (spawn de quête + garde-fous de maintenance, 6 fns). Déplacement verbatim.
+  Câblage : index.html (ordre scaling → dungeon → spawning + `?v`), sw.js
+  (PRECACHE + CACHE_VERSION v10→v11), MANIFEST loader, test-map.js, CLAUDE.md.
+  Validé : suite complète verte.

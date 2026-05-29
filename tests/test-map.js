@@ -67,6 +67,9 @@ const TEST_MAP = {
                           'sealedroom', 'secretpass', 'rune', 'floortheming',
                           'floortextures', 'respawn', 'repeatablequestspawn',
                           'darkvariant', 'stairsgated', 'iteration74'],
+  'js/dungeon-scaling.js':  ['darkvariant', 'darkrewards', 'respawn', 'monster', 'combat'],
+  'js/dungeon-spawning.js': ['ensurestairs', 'ensurekill', 'respawn',
+                            'repeatablequestspawn', 'farming', 'npc'],
   'js/floor-events.js':  ['floorevent', 'rune', 'trap', 'altar', 'secretpass'],
   'js/floor-themes.js':  ['floortheming', 'floortextures', 'floorevent'],
 
