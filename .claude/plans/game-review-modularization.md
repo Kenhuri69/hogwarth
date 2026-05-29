@@ -115,7 +115,7 @@ Ordre recommandé (du plus rentable / moins risqué au plus délicat) :
 |---|-------|-------------------|--------|-----------------|
 | 1 | ~~`save.js` (951 l.)~~ ✅ | `save-slots.js` (store) · `save.js` (serialize/apply + façades) · `save-visit-snapshot.js` | Faible (peu d'UI) | fait — 121/121 verts |
 | 2 | ~~`dungeon.js` (1010 l.)~~ ✅ | `dungeon-scaling.js` (scaling + astral) · `dungeon.js` (génération) · `dungeon-spawning.js` | Faible (0 accès DOM) | fait — 121/121 verts |
-| 3 | `quests.js` (1483 l.) | `quests-templates` (data ~600 l.) · `quests-logic` · `quests-ui` · `riddles-dumbledore` | Moyen | quest/riddle/grimoire |
+| 3 | ~~`quests.js` (1483 l.)~~ ✅ | `quests-templates.js` (data ~600 l.) · `quests.js` (logique + journal UI) · `quests-riddles.js` (fusion + énigmes Dumbledore) | Moyen | fait — 121/121 verts |
 | 4 | `inventory.js` (1554 l.) | `inventory-core` · `inventory-ui` · `equipment` · `spellbook` | Moyen | equip/item/spell |
 | 5 | `battle.js` (1227 l.) | `battle-core` · `battle-status` · `battle-rewards` (+level-up) · `battle-death` | Élevé (état combat) | combat/status/crit/victory |
 | 6 | `movement.js` (1334 l.) | `movement-core` · `floor-transitions` · `exploration-ui` · `dungeon-search` | Élevé (overlay couplé) | fountain/search/floorevent |
@@ -239,3 +239,11 @@ fonction du changement appliqué » :
   Câblage : index.html (ordre scaling → dungeon → spawning + `?v`), sw.js
   (PRECACHE + CACHE_VERSION v10→v11), MANIFEST loader, test-map.js, CLAUDE.md.
   Validé : suite complète verte.
+- 2026-05-28 — Modularisation #3 (§4) : `quests.js` (1483 l.) découpé en
+  `quests-templates.js` (QUEST_TEMPLATES, données pures, 0 fn) + `quests.js`
+  (logique + journal UI, 25 fns) + `quests-riddles.js` (fusion grimoire +
+  énigmes Dumbledore, 8 fns). Déplacement verbatim (cœur réassemblé depuis 2
+  portions). Câblage : index.html (ordre templates → quests → riddles + `?v`),
+  sw.js (PRECACHE + CACHE_VERSION v11→v12), test-map.js, CLAUDE.md. MANIFEST
+  inchangé (aucune entrée ne pointait les symboles déplacés). Validé : suite
+  complète verte.
