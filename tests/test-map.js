@@ -78,9 +78,12 @@ const TEST_MAP = {
   'js/textures.js':         ['floortextures', 'floortheming'],
 
   // ── Sauvegarde ──
-  'js/save.js':    ['save', 'slot', 'export', 'autosave', 'corrupt', 'migration',
-                   'roundtrip', 'starthub', 'visitsnapshot'],
-  'js/save-ui.js': ['slot', 'starthub', 'export', 'save'],
+  'js/save.js':       ['save', 'slot', 'export', 'autosave', 'corrupt', 'migration',
+                      'roundtrip', 'starthub', 'visitsnapshot'],
+  'js/save-slots.js': ['save', 'slot', 'export', 'autosave', 'corrupt', 'migration',
+                      'starthub'],
+  'js/save-visit-snapshot.js': ['visit', 'save', 'roundtrip'],
+  'js/save-ui.js':    ['slot', 'starthub', 'export', 'save'],
 
   // ── Mondes parallèles / réseau ──
   'js/multiplayer.js':        ['multiplayer', 'visit', 'portal', 'parallel'],

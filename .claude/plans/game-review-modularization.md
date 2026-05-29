@@ -113,7 +113,7 @@ Ordre recommandé (du plus rentable / moins risqué au plus délicat) :
 
 | # | Cible | Découpage proposé | Risque | Pré-requis test |
 |---|-------|-------------------|--------|-----------------|
-| 1 | `save.js` (951 l.) | `save-slots` · `save-serialize` (+migrations) · `save-visit-snapshot` | Faible (peu d'UI) | `node tests/select.js` → save/slot/visit |
+| 1 | ~~`save.js` (951 l.)~~ ✅ | `save-slots.js` (store) · `save.js` (serialize/apply + façades) · `save-visit-snapshot.js` | Faible (peu d'UI) | fait — 121/121 verts |
 | 2 | `dungeon.js` (1010 l.) | `dungeon-generation` · `dungeon-scaling` · `dungeon-spawning` · `dungeon-astral` | Faible (0 accès DOM) | dungeon/rune/respawn |
 | 3 | `quests.js` (1483 l.) | `quests-templates` (data ~600 l.) · `quests-logic` · `quests-ui` · `riddles-dumbledore` | Moyen | quest/riddle/grimoire |
 | 4 | `inventory.js` (1554 l.) | `inventory-core` · `inventory-ui` · `equipment` · `spellbook` | Moyen | equip/item/spell |
@@ -225,3 +225,10 @@ fonction du changement appliqué » :
   portable), `package.json` minimal, `.github/workflows/test.yml` (smoke + pwa
   sur PR/master). Stratégie : suite complète en CI, `select.js` en local. Suivi :
   flake SW de `pwa-smoke.js` (préexistant).
+- 2026-05-28 — Modularisation #1 (§4) : `save.js` (951 l.) découpé en
+  `save-slots.js` (store multi-slots, 12 fns) + `save.js` (serialize/apply +
+  façades, 10 fns) + `save-visit-snapshot.js` (visite inter-mondes, 7 fns).
+  Déplacement verbatim, aucune logique modifiée. Câblage : index.html (ordre
+  save-slots → save → save-visit-snapshot + `?v`), sw.js (PRECACHE + CACHE_VERSION
+  v9→v10), MANIFEST loader (sources), test-map.js, CLAUDE.md. Validé : suite
+  complète verte.
