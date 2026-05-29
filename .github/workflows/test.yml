@@ -36,7 +36,7 @@ jobs:
       - name: Installer Chromium (Playwright)
         run: npx playwright install --with-deps chromium
 
-      - name: Suite smoke (121 scénarios)
+      - name: Suite smoke (124 scénarios)
         run: node tests/smoke.js
 
       - name: Tests PWA (manifest + Service Worker + offline)
