@@ -119,7 +119,7 @@ Ordre recommandé (du plus rentable / moins risqué au plus délicat) :
 | 4 | ~~`inventory.js` (1554 l.)~~ ✅ | `inventory-core.js` (add/materials/recalculateStats) · `inventory.js` (UI sac + équipement + usage) · `inventory-spells.js` (modales sorts + OOC) | Moyen | fait — 121/121 verts |
 | 5 | ~~`battle.js` (1227 l.)~~ ✅ | `battle.js` (helpers + statuts + boucle) · `battle-rewards.js` (endBattle + level-up) · `battle-death.js` (mort + astral) | Élevé (état combat) | fait — 121/121 verts |
 | 6 | ~~`movement.js` (1334 l.)~~ ✅ | `movement.js` (déplacement + overlay + handleCellEntry) · `movement-floors.js` (cache/respawn/transitions) · `movement-interactions.js` (coffre/fouille/pièges/runes/autel/fontaine/repos) | Élevé (overlay couplé) | fait — 121/121 verts |
-| 7 | `ui.js` (1047 l.) | `ui-core` · `ui-character-sheet` · `ui-settings` | Élevé (50 `getElementById`) | startup/houseset/uichrome |
+| 7 | ~~`ui.js` (1047 l.)~~ ✅ | `ui.js` (HUD/updateUI/addMsg) · `ui-character-sheet.js` (openCharacter + paper-doll) · `ui-settings.js` (difficulté/visites) | Élevé (50 `getElementById`) | fait — 121/121 verts |
 
 Règles de découpage (à respecter à chaque PR) :
 - **Une cible par PR**, validée par `node tests/select.js` avant push.
@@ -273,3 +273,14 @@ fonction du changement appliqué » :
   (movement → floors → interactions + `?v`), sw.js (PRECACHE + CACHE_VERSION
   v14→v15), MANIFEST loader (searchRoom + rest → movement-interactions),
   test-map.js, CLAUDE.md. Validé : suite complète verte.
+- 2026-05-28 — Modularisation #7 (§4, risque élevé) : `ui.js` (1047 l.) découpé
+  par coupes en fin de fichier : `ui.js` (HUD : updateUI + helpers barres/blason/
+  boussole/tracker + addMsg + closeModal + openHouseDetail, 17 fns) +
+  `ui-character-sheet.js` (openCharacter + paper-doll + Set Maison + sac +
+  allocation + carnet, 14 fns) + `ui-settings.js` (changeDifficulty +
+  toggleVisitsClosed, 3 fns). Déplacement verbatim. Câblage : index.html (ui →
+  character-sheet → settings + `?v`), sw.js (PRECACHE + CACHE_VERSION v15→v16),
+  MANIFEST loader (openCharacter + allocateStatPoint → ui-character-sheet),
+  test-map.js, CLAUDE.md. Validé : suite complète verte (122/122 — la suite a
+  gagné 1 scénario via la PR externe #280 LOT B, mergée en parallèle).
+  **Plan §4 terminé** : les 7 god-files sont modularisés.

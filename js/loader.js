@@ -102,7 +102,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'healSpellCooldown',  source: 'state.js',        kind: 'obj' },
     { name: 'STAT_POINTS_PER_LEVEL',source: 'data.js',       kind: 'obj' },
     { name: 'STAT_POINT_EFFECTS', source: 'data.js',         kind: 'obj' },
-    { name: 'allocateStatPoint',  source: 'ui.js',           kind: 'fn'  },
+    { name: 'allocateStatPoint',  source: 'ui-character-sheet.js', kind: 'fn'  },
 
     // ── Audio (critique) ──
     { name: 'AudioSystem',        source: 'audio.js',        kind: 'obj' },
@@ -117,7 +117,7 @@ window.UX_safe = new Proxy({}, {
     // ── UI (critiques) ──
     { name: 'updateUI',           source: 'ui.js',           kind: 'fn'  },
     { name: 'addMsg',             source: 'ui.js',           kind: 'fn'  },
-    { name: 'openCharacter',      source: 'ui.js',           kind: 'fn'  },
+    { name: 'openCharacter',      source: 'ui-character-sheet.js', kind: 'fn'  },
     { name: 'openHouseDetail',    source: 'ui.js',           kind: 'fn'  },
     { name: 'openBestiary',       source: 'ui-bestiary.js',  kind: 'fn'  },
 

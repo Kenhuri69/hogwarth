@@ -44,7 +44,11 @@ js/
                       dungeon, combat, seenMonsters, activeQuests, usedFountains,
                       searchedCells, floorDungeons, restCooldown,
                       chosenHouse, housePoints, houseTier, HOUSE_BONUSES, DIFFICULTY_SETTINGS)
-  ui.js            →  updateUI(), openCharacter(), addMsg(), closeModal(), changeDifficulty()
+  ui.js            →  updateUI(), addMsg(), closeModal(), openHouseDetail() +
+                      helpers HUD (barres, blason, boussole, tracker de quête)
+  ui-character-sheet.js → openCharacter() : paper-doll, Set Maison, sorts,
+                      sac, allocation de points, carnet de voyage. APRÈS ui.js
+  ui-settings.js   →  changeDifficulty(), toggleVisitsClosed(). APRÈS ui.js
   ui-bestiary.js   →  openBestiary(), filterBestiary(), showMonsterDetail(), showBestiaryList()
   dungeon-scaling.js → weightedPick(), effectiveFloor(), endgameTierIndex(),
                       scaleMonster(), buildEcho() — mise à l'échelle des
