@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v13';
+const CACHE_VERSION = 'hogwarth-v14';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -61,7 +61,9 @@ const PRECACHE_URLS = [
   './js/renderer-minimap.js?v=6',
   './js/movement.js?v=19',
   './js/swipe-canvas.js?v=4',
-  './js/battle.js?v=9',
+  './js/battle.js?v=10',
+  './js/battle-rewards.js?v=1',
+  './js/battle-death.js?v=1',
   './js/teleport.js?v=1',
   './js/battle-spells.js?v=3',
   './js/battle-ui.js?v=1',

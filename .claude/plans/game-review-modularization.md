@@ -117,7 +117,7 @@ Ordre recommandé (du plus rentable / moins risqué au plus délicat) :
 | 2 | ~~`dungeon.js` (1010 l.)~~ ✅ | `dungeon-scaling.js` (scaling + astral) · `dungeon.js` (génération) · `dungeon-spawning.js` | Faible (0 accès DOM) | fait — 121/121 verts |
 | 3 | ~~`quests.js` (1483 l.)~~ ✅ | `quests-templates.js` (data ~600 l.) · `quests.js` (logique + journal UI) · `quests-riddles.js` (fusion + énigmes Dumbledore) | Moyen | fait — 121/121 verts |
 | 4 | ~~`inventory.js` (1554 l.)~~ ✅ | `inventory-core.js` (add/materials/recalculateStats) · `inventory.js` (UI sac + équipement + usage) · `inventory-spells.js` (modales sorts + OOC) | Moyen | fait — 121/121 verts |
-| 5 | `battle.js` (1227 l.) | `battle-core` · `battle-status` · `battle-rewards` (+level-up) · `battle-death` | Élevé (état combat) | combat/status/crit/victory |
+| 5 | ~~`battle.js` (1227 l.)~~ ✅ | `battle.js` (helpers + statuts + boucle) · `battle-rewards.js` (endBattle + level-up) · `battle-death.js` (mort + astral) | Élevé (état combat) | fait — 121/121 verts |
 | 6 | `movement.js` (1334 l.) | `movement-core` · `floor-transitions` · `exploration-ui` · `dungeon-search` | Élevé (overlay couplé) | fountain/search/floorevent |
 | 7 | `ui.js` (1047 l.) | `ui-core` · `ui-character-sheet` · `ui-settings` | Élevé (50 `getElementById`) | startup/houseset/uichrome |
 
@@ -256,3 +256,11 @@ fonction du changement appliqué » :
   sw.js (PRECACHE + CACHE_VERSION v12→v13), MANIFEST loader (recalculateStats →
   inventory-core, openSpells → inventory-spells), test-map.js, CLAUDE.md.
   Validé : suite complète verte.
+- 2026-05-28 — Modularisation #5 (§4, risque élevé) : `battle.js` (1227 l.)
+  découpé par coupes en fin de fichier (zéro extraction au milieu pour limiter
+  le risque) : `battle.js` (helpers + système de statuts + boucle de combat,
+  30 fns) + `battle-rewards.js` (endBattle + checkLevelUp + _grantLevel*, 7
+  fns) + `battle-death.js` (triggerDeath + resurrect + _finishAstralCombat, 3
+  fns). Déplacement verbatim. Câblage : index.html (battle → rewards → death +
+  `?v`), sw.js (PRECACHE + CACHE_VERSION v13→v14), MANIFEST loader (endBattle →
+  battle-rewards), test-map.js, CLAUDE.md. Validé : suite complète verte.

@@ -146,7 +146,7 @@ window.UX_safe = new Proxy({}, {
 
     // ── Combat ──
     { name: 'startBattle',        source: 'battle.js',       kind: 'fn'  },
-    { name: 'endBattle',          source: 'battle.js',       kind: 'fn'  },
+    { name: 'endBattle',          source: 'battle-rewards.js', kind: 'fn'  },
     { name: 'battleAction',       source: 'battle.js',       kind: 'fn'  },
     { name: 'castSpellInBattle',  source: 'battle-spells.js',kind: 'fn'  },
     { name: 'openCombatTeleportChoice', source: 'teleport.js', kind: 'fn' },
