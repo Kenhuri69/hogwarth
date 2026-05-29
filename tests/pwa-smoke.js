@@ -11,7 +11,7 @@
 //     Pour les tests de jeu, voir smoke.js.
 // ============================================================
 
-const { chromium } = require('/opt/node22/lib/node_modules/playwright/index.js');
+const { chromium } = require('./_playwright.js');
 const http = require('http');
 const fs   = require('fs');
 const path = require('path');

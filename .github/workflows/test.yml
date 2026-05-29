@@ -1,0 +1,43 @@
+name: Tests
+
+# Garde-fou de non-régression : exécute la suite smoke (Playwright + Chromium
+# headless) + les tests PWA. Bloquant si activé en "required check" dans
+# Settings → Branches → Branch protection. Cf. .claude/plans/game-review-modularization.md §5.2.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+# Annule un run précédent encore en cours sur la même réf (PR ou branche).
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Smoke + PWA
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Installer les dépendances de test
+        run: npm install
+
+      - name: Installer Chromium (Playwright)
+        run: npx playwright install --with-deps chromium
+
+      - name: Suite smoke (121 scénarios)
+        run: node tests/smoke.js
+
+      - name: Tests PWA (manifest + Service Worker + offline)
+        run: node tests/pwa-smoke.js

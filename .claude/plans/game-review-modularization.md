@@ -174,22 +174,38 @@ fonction du changement appliqué » :
 - Cohérence de la carte : **0 motif mort**, **0 scénario non atteignable** (les
   121 scénarios sont couverts par au moins un motif).
 
-### 5.2 Recommandé (NON fait — propositions)
-- **Gate CI** : ajouter `.github/workflows/test.yml` (`push`/`pull_request`)
-  installant Playwright puis lançant `node tests/select.js origin/master` sur les
-  PR et `node tests/smoke.js` sur `master`. C'est le manque le plus impactant.
-- **Portabilité Playwright** : remplacer le `require('/opt/node22/...')` codé en
-  dur par une résolution standard (`require('playwright')`) + un `package.json`
-  minimal (devDependency + scripts `test`, `test:select`). Débloque la CI sans
-  build step de prod.
+### 5.2 Gate CI — **implémenté**
+- **Portabilité Playwright** : `tests/_playwright.js` résout `chromium` via
+  `require('playwright')` (CI / `npm install`) avec repli sur le chemin global du
+  conteneur de dev. Les 5 fichiers de test (`smoke`, `pwa-smoke`, 3 `screenshot-*`)
+  l'utilisent.
+- **`package.json`** minimal (racine) : `playwright@1.56.1` en devDependency +
+  scripts `test` / `test:select` / `test:pwa`. N'affecte pas le jeu (le workflow
+  Pages ne copie pas `package.json`/`node_modules` ; `node_modules/` déjà gitignoré).
+- **`.github/workflows/test.yml`** : sur `pull_request` et `push: master` →
+  `npm install` → `npx playwright install --with-deps chromium` →
+  `node tests/smoke.js` (121 scénarios) → `node tests/pwa-smoke.js`.
+  `concurrency` annule les runs obsolètes ; `timeout-minutes: 25`.
+- **Stratégie retenue** : suite **complète** sur PR et master (exhaustif, ne
+  dépend pas de `test-map.js`) ; `select.js` reste l'outil d'itération **locale**.
+- **Pour rendre le gate bloquant** : Settings → Branches → Branch protection →
+  *Require status checks* → cocher `Smoke + PWA` (non configurable depuis le dépôt).
+
+> ⚠️ Suivi connu : `pwa-smoke.js` montre un flake d'enregistrement Service Worker
+> intermittent (`Execution context was destroyed … navigation`, ~1 run sur 3 dans
+> le sandbox de dev, **préexistant**). Peut être durci par un retry ciblé autour
+> des `page.evaluate` post-navigation — non fait (hors périmètre « gate »).
+
+### 5.3 Recommandé (NON fait — propositions)
 - **Découper `smoke.js`** par domaine en suivant le même registre de scénarios
   (cosmétique, à faire après la modularisation source pour aligner les frontières).
+- Durcir `pwa-smoke.js` contre le flake SW (cf. suivi ci-dessus).
 
 ---
 
 ## 6. Backlog priorisé (suggestion)
 
-1. 🔴 **CI test gate** + `package.json` minimal + Playwright portable.
+1. 🔴 ~~**CI test gate**~~ ✅ fait (§5.2) + `package.json` minimal + Playwright portable.
 2. 🟠 **Resynchroniser CLAUDE.md** : sections Mondes Parallèles, Endgame
    (forge/library/potions), UX (help-tour/karaoke), textures.
 3. 🟠 **Modularisation** par étapes §4 (1 cible / PR, validée par `select.js`).
@@ -205,3 +221,7 @@ fonction du changement appliqué » :
   validé (`tests/smoke.js` filtre, `tests/test-map.js`, `tests/select.js`).
   Modularisation laissée en propositions (§4). Reste ouvert : gate CI,
   resync doc, découpages source.
+- 2026-05-28 — Gate CI implémenté (§5.2) : `tests/_playwright.js` (résolveur
+  portable), `package.json` minimal, `.github/workflows/test.yml` (smoke + pwa
+  sur PR/master). Stratégie : suite complète en CI, `select.js` en local. Suivi :
+  flake SW de `pwa-smoke.js` (préexistant).
