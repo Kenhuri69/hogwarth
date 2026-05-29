@@ -141,8 +141,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'turnRight',          source: 'movement.js',     kind: 'fn'  },
     { name: 'initCanvasSwipeGestures', source: 'swipe-canvas.js', kind: 'fn' },
     { name: 'handleCellEntry',    source: 'movement.js',     kind: 'fn'  },
-    { name: 'searchRoom',         source: 'movement.js',     kind: 'fn'  },
-    { name: 'rest',               source: 'movement.js',     kind: 'fn'  },
+    { name: 'searchRoom',         source: 'movement-interactions.js', kind: 'fn' },
+    { name: 'rest',               source: 'movement-interactions.js', kind: 'fn' },
 
     // ── Combat ──
     { name: 'startBattle',        source: 'battle.js',       kind: 'fn'  },
