@@ -14740,9 +14740,70 @@ async function scenarioOnboarding() {
   console.log('  ✅ onboarding (Quick Start + tuto combat + bonus Maison chiffrés) OK');
 }
 
+// ── Scénario : polish feedback de combat (LOT E) ──
+async function scenarioCombatFeedback() {
+  console.log('\n── Scénario : feedback de combat (SFX + timeline + journal) ──');
+
+  // E1 — SFX crit / faiblesse : méthodes présentes et appelables sans erreur.
+  {
+    const { browser, page } = await launchGame();
+    const e1 = await page.evaluate(() => {
+      const has = typeof AudioSystem !== 'undefined'
+        && typeof AudioSystem.playCrit === 'function'
+        && typeof AudioSystem.playWeakHit === 'function';
+      AudioSystem.isMuted = true;   // chemin défensif : retour anticipé, pas de ctx
+      let threw = false;
+      try { AudioSystem.playCrit(); AudioSystem.playWeakHit(); } catch (e) { threw = true; }
+      return { has, threw };
+    });
+    console.log('  E1 sfx:', e1);
+    assert(e1.has,   'playCrit + playWeakHit définis sur AudioSystem');
+    assert(!e1.threw, 'SFX crit/faiblesse ne lèvent pas d\'erreur');
+    await browser.close();
+  }
+
+  // E2 — Timeline : un allié KO est masqué de l'ordre d'initiative.
+  {
+    const { browser, page, errors } = await launchGame();
+    await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+    await startDummyFight(page, { hp: 200 });
+    const e2 = await page.evaluate(() => {
+      party[1].hp = 0;             // Hermione KO
+      currentBattleChar = 0;
+      UX.renderTimeline();
+      const tl = document.getElementById('turn-timeline');
+      return { allies: tl ? tl.querySelectorAll('.tl-ally').length : -1 };
+    });
+    console.log('  E2 timeline:', e2);
+    assert(e2.allies === 1, 'allié KO masqué de la frise (1 allié vivant restant)');
+    if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS (E2 timeline)'); }
+    await browser.close();
+  }
+
+  // E3 — Journal mobile : replié par défaut + pulse de hint au 1er combat.
+  {
+    const { browser, page } = await launchGame();
+    await page.setViewportSize({ width: 400, height: 800 });
+    const e3 = await page.evaluate(() => {
+      UX.logCombat('test', 'info');   // crée le panneau de log
+      const p = document.getElementById('combat-log-panel');
+      return {
+        collapsed: !!(p && p.classList.contains('collapsed')),
+        hinted:    !!(p && p.classList.contains('clp-hint'))
+      };
+    });
+    console.log('  E3 journal:', e3);
+    assert(e3.collapsed, 'journal mobile replié par défaut (portrait du monstre visible)');
+    assert(e3.hinted,    'journal mobile : hint pulse signalé au 1er combat');
+    await browser.close();
+  }
+
+  console.log('  ✅ feedback de combat (SFX + timeline + journal mobile) OK');
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))

@@ -372,6 +372,11 @@ function _spellElementalDamage(spell, char, enemy, targetIdx) {
   if (enemy) {
     const { dmg, suffix, crit } = _computeSpellDamage(spell, char, enemy, { undead: true });
     enemy.currentHp -= dmg;
+    // Accent SFX : crit prioritaire, sinon faiblesse élémentaire touchée.
+    if (typeof AudioSystem !== 'undefined') {
+      if (crit && AudioSystem.playCrit) AudioSystem.playCrit();
+      else if (enemy.weak?.includes(spell.element) && AudioSystem.playWeakHit) AudioSystem.playWeakHit();
+    }
     _updateElan(char, crit);   // Apothéose Gryffondor — Élan
     msg = `${getSpellIconHtml(spell, 'ui-icon-md')} ${char.name} : ${spell.name} → ${dmg} dégâts${suffix} sur ${enemy.name} !`;
 

@@ -119,6 +119,14 @@
   transition: color .15s;
 }
 #combat-log-panel .clp-toggle:hover { color: var(--gold); }
+/* Hint one-shot (1er combat mobile) : pulse doré pour signaler le journal. */
+#combat-log-panel.clp-hint .clp-header {
+  animation: clp-hint-pulse 1.1s ease-in-out 3;
+}
+@keyframes clp-hint-pulse {
+  0%, 100% { background: #120a03; box-shadow: none; }
+  50%      { background: #3a2606; box-shadow: 0 0 10px 2px rgba(211,166,37,0.55); }
+}
 #combat-log-list {
   flex: 1;
   overflow-y: auto;
