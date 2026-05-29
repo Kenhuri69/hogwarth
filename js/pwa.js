@@ -37,6 +37,7 @@
 
     el.querySelector('.pwa-update-banner__btn').addEventListener('click', () => {
       if (pendingWorker) {
+        skipWaitingRequested = true;
         pendingWorker.postMessage({ type: 'SKIP_WAITING' });
       }
     });
@@ -76,11 +77,17 @@
     });
   }
 
+  let skipWaitingRequested = false;
   let reloadingAfterSkip = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    // Déclenché après skipWaiting → un nouveau SW prend le contrôle.
-    // On recharge pour servir l'index.html à jour.
-    if (reloadingAfterSkip) return;
+    // controllerchange se déclenche dans deux cas :
+    //   1. Premier chargement : le SW fraîchement activé adopte la page via
+    //      clients.claim() (pas de contrôleur préalable) → AUCUN reload requis.
+    //   2. Mise à jour validée par l'utilisateur (bouton Rafraîchir →
+    //      skipWaiting) → on recharge pour servir l'index.html à jour.
+    // On ne recharge donc que si l'utilisateur a explicitement demandé la MAJ,
+    // sinon le reload du cas 1 casse la navigation en cours (et les tests).
+    if (!skipWaitingRequested || reloadingAfterSkip) return;
     reloadingAfterSkip = true;
     window.location.reload();
   });
