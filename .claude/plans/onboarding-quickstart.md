@@ -42,11 +42,25 @@ tuto **au moment où le joueur en a besoin** — son premier combat (D2).
 - Versions PWA bumpées (style.css, help-tour/state/battle/save/main/loader.js)
   + `CACHE_VERSION` v20→v21.
 
+### D3 — Bonus de Maison chiffrés + reco playstyle (livré 2026-05-29)
+- [x] `_renderHouseSelectBonuses()` (main.js) : génère pour chaque Maison un
+  aperçu des **3 premiers paliers** depuis `HOUSE_BONUSES` (source unique de
+  vérité → reste cohérent si la grille évolue). Ex. Gryffondor :
+  « +ATK par palier · 50 : +1 LCK · 150 : +1 ATK · 300 : ⚜️ ».
+- [x] Appelé aux **deux** points de révélation (`quickStart` +
+  `confirmHeroSelection`). Texte statique HTML conservé comme repli.
+- [x] Ligne **reco playstyle** sous le sous-titre (statique) : +ATK = combat
+  physique (Harry) · +MAG = sortilèges (Hermione) · +DEF = résistance.
+- [x] PWA : `main.js` v6→v7 (index.html + sw.js PRECACHE), `CACHE_VERSION`
+  v21→v22.
+- [x] **Vérif** : `scenarioOnboarding` D3 — bonus chiffrés présents et
+  cohérents avec `HOUSE_BONUSES` (palier 150 = +1 ATK).
+
 ## Reportés (suivi LOT D)
-- **D3** — Bonus de Maison **chiffrés** à l'écran de choix + reco héros/difficulté.
 - **D4** — Help-tour relançable **par section** (menu « Quelle aide ? »).
 
 ## Journal
 | Date | Note |
 |------|------|
 | 2026-05-29 | D1+D2 implémentés et testés. Suite 125/125. D3/D4 reportés. |
+| 2026-05-29 | D3 implémenté et testé (bonus chiffrés + reco). D4 reporté. |
