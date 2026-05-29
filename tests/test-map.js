@@ -124,7 +124,8 @@ const TEST_MAP = {
   'js/hall-of-fame.js':   ['ironman'],
 
   // ── PNJ / dialogues ──
-  'js/npcs.js':       ['npc', 'vendors', 'lore', 'headofhouse', 'chain'],
+  'js/npcs.js':         ['npc', 'vendors', 'lore', 'headofhouse', 'chain'],
+  'js/npcs-helpers.js': ['npc', 'vendors', 'lore', 'chain', 'repeatablequestspawn'],
   'js/npc-dialog.js': ['npc', 'vendors', 'dumbledorelux'],
 
   // ── Icônes / assets ──
