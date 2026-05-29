@@ -87,8 +87,12 @@
   <div style="font-family:'Cinzel',serif;font-size:22px;color:var(--gold);margin-bottom:6px;letter-spacing:3px">
     LE CHOIXPEAU MAGIQUE
   </div>
-  <div style="font-family:'Crimson Text',serif;font-size:14px;color:#8a7050;margin-bottom:28px;text-align:center;max-width:400px">
+  <div style="font-family:'Crimson Text',serif;font-size:14px;color:#8a7050;margin-bottom:10px;text-align:center;max-width:400px">
     Quelle Maison vous correspond le mieux ? Votre choix débloquera des bonus uniques en accumulant des points de Maison.
+  </div>
+  <div style="font-family:'Crimson Text',serif;font-size:12px;color:#b89968;margin-bottom:22px;text-align:center;max-width:430px;line-height:1.5">
+    💡 Chaque palier renforce une stat. <b style="color:#D3A625">+ATK</b> = combat physique (style Harry) ·
+    <b style="color:#7da0d0">+MAG</b> = sortilèges (style Hermione) · <b style="color:#F0C75E">+DEF</b> = résistance.
   </div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:540px">
@@ -97,28 +101,28 @@
     <button class="house-btn" onclick="chooseHouse('Gryffondor')" style="--hc:#740001;--ha:#D3A625">
       <img id="gryffondor-logo" src="img/houses/gryffondor.png" alt="Blason Gryffondor"
            width="105" height="105" style="object-fit:contain;display:block">
-      <div class="house-btn-desc">Bravoure · Courage<br><span style="color:#D3A625;font-size:10px">+ATK par palier</span></div>
+      <div class="house-btn-desc">Bravoure · Courage<br><span id="house-bonus-gryffondor" class="house-bonus-line" style="color:#D3A625;font-size:10px">+ATK par palier</span></div>
     </button>
 
     <!-- Serpentard -->
     <button class="house-btn" onclick="chooseHouse('Serpentard')" style="--hc:#1A472A;--ha:#AAAAAA">
       <img id="serpentard-logo" src="img/houses/serpentard.png" alt="Blason Serpentard"
            width="105" height="105" style="object-fit:contain;display:block">
-      <div class="house-btn-desc">Ambition · Ruse<br><span style="color:#AAAAAA;font-size:10px">+MAG par palier</span></div>
+      <div class="house-btn-desc">Ambition · Ruse<br><span id="house-bonus-serpentard" class="house-bonus-line" style="color:#AAAAAA;font-size:10px">+MAG par palier</span></div>
     </button>
 
     <!-- Serdaigle -->
     <button class="house-btn" onclick="chooseHouse('Serdaigle')" style="--hc:#0E1A40;--ha:#946B2D">
       <img id="serdaigle-logo" src="img/houses/serdaigle.png" alt="Blason Serdaigle"
            width="105" height="105" style="object-fit:contain;display:block">
-      <div class="house-btn-desc">Sagesse · Intelligence<br><span style="color:#946B2D;font-size:10px">+MAG par palier</span></div>
+      <div class="house-btn-desc">Sagesse · Intelligence<br><span id="house-bonus-serdaigle" class="house-bonus-line" style="color:#946B2D;font-size:10px">+MAG par palier</span></div>
     </button>
 
     <!-- Poufsouffle -->
     <button class="house-btn" onclick="chooseHouse('Poufsouffle')" style="--hc:#3a2a00;--ha:#F0C75E">
       <img id="poufsouffle-logo" src="img/houses/poufsouffle.png" alt="Blason Poufsouffle"
            width="105" height="105" style="object-fit:contain;display:block">
-      <div class="house-btn-desc">Loyauté · Travail<br><span style="color:#F0C75E;font-size:10px">+DEF par palier</span></div>
+      <div class="house-btn-desc">Loyauté · Travail<br><span id="house-bonus-poufsouffle" class="house-bonus-line" style="color:#F0C75E;font-size:10px">+DEF par palier</span></div>
     </button>
 
   </div>
@@ -1090,7 +1094,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/visit-channel.js?v=8"></script>
 <script src="js/visit-hud.js?v=5"></script>
 <script src="js/atelier-voyageur.js?v=2"></script>
-<script src="js/main.js?v=6"></script>
+<script src="js/main.js?v=7"></script>
 <script src="js/endgame.js?v=1"></script>
 <script src="js/forge.js?v=2"></script>
 <script src="js/library.js?v=2"></script>

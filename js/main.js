@@ -173,6 +173,7 @@ function quickStart() {
   const psel = document.getElementById('player-select-screen');
   if (psel) psel.style.display = 'none';
   const house = document.getElementById('house-select-screen');
+  _renderHouseSelectBonuses();
   if (house) house.style.display = 'flex';
   if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playVoice === 'function') {
     AudioSystem.playVoice('narrator_house');
@@ -189,6 +190,7 @@ function confirmHeroSelection() {
   _pendingPartySize = selectedPartySize;
   _pendingHeroKeys  = [...selectedHeroes];
   document.getElementById('player-select-screen').style.display = 'none';
+  _renderHouseSelectBonuses();
   document.getElementById('house-select-screen').style.display  = 'flex';
   // La voix narrative accompagne le choix de Maison (toujours pas
   // identifiée — la révélation a lieu à l'écran d'intro).
@@ -206,6 +208,31 @@ function confirmHeroSelection() {
 // Important : on reset ICI seenNpcs / availableQuests / activeQuests /
 // completedQuests pour que les effets appliqués par _finishIntro
 // (acceptQuest + seenNpcs.add) soient préservés ensuite par startGame.
+// LOT D.3 — Bonus de Maison chiffrés à l'écran de choix.
+// Génère un aperçu concret des 3 premiers paliers depuis HOUSE_BONUSES
+// (source unique de vérité) → reste cohérent si la grille évolue. Le texte
+// statique du HTML sert de repli si le module n'a pas chargé.
+function _renderHouseSelectBonuses() {
+  if (typeof HOUSE_BONUSES === 'undefined') return;
+  ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].forEach(h => {
+    const data = HOUSE_BONUSES[h];
+    const el   = document.getElementById('house-bonus-' + h.toLowerCase());
+    if (!data || !el) return;
+    const primary = data.starGenerator?.primaryLabel || '';
+    const parts = (data.tiers || []).slice(0, 3).map(t => {
+      let b = '✦';
+      if (t.bonus?.item) b = '⚜️';
+      else {
+        const k = Object.keys(t.bonus || {}).find(x => x.startsWith('_base'));
+        if (k) b = '+' + t.bonus[k] + ' ' + k.replace('_base', '').toUpperCase();
+      }
+      return t.threshold + ' : ' + b;
+    });
+    el.innerHTML = (primary ? '+' + primary + ' par palier<br>' : '') +
+      '<span style="opacity:.75">' + parts.join(' · ') + '</span>';
+  });
+}
+
 function chooseHouse(house) {
   chosenHouse = house;
   housePoints = 0;

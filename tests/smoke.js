@@ -14715,7 +14715,29 @@ async function scenarioOnboarding() {
     await browser.close();
   }
 
-  console.log('  ✅ onboarding (Quick Start + tuto combat) OK');
+  // D3 — Bonus de Maison chiffrés à l'écran de choix (depuis HOUSE_BONUSES).
+  {
+    const { browser, page } = await launchGame();
+    const d3 = await page.evaluate(() => {
+      showPlayerSelect();
+      quickStart();   // révèle l'écran Maison + peuple les bonus
+      const gryff = document.getElementById('house-bonus-gryffondor').innerHTML;
+      const serp  = document.getElementById('house-bonus-serpentard').innerHTML;
+      const pouf  = document.getElementById('house-bonus-poufsouffle').innerHTML;
+      // Cohérence avec HOUSE_BONUSES : 2e palier Gryff = +1 ATK à 150 pts.
+      const t2 = HOUSE_BONUSES.Gryffondor.tiers[1];
+      return { gryff, serp, pouf, t2thr: t2.threshold, t2atk: t2.bonus._baseAtk };
+    });
+    console.log('  D3 bonus:', { gryff: d3.gryff });
+    assert(/\+ATK par palier/.test(d3.gryff),  'Gryffondor affiche +ATK par palier');
+    assert(d3.gryff.includes(String(d3.t2thr)) && /\+1 ATK/.test(d3.gryff),
+      'Gryffondor affiche le palier chiffré 150 : +1 ATK (cohérent HOUSE_BONUSES)');
+    assert(/\+MAG par palier/.test(d3.serp),   'Serpentard affiche +MAG par palier');
+    assert(/\+DEF par palier/.test(d3.pouf),   'Poufsouffle affiche +DEF par palier');
+    await browser.close();
+  }
+
+  console.log('  ✅ onboarding (Quick Start + tuto combat + bonus Maison chiffrés) OK');
 }
 
 (async () => {
