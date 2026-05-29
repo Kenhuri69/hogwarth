@@ -130,6 +130,9 @@ const TEST_MAP = {
   // ── Icônes / assets ──
   'js/icons.js':       ['monsterimages', 'npcsprite3d', 'icons'],
   'js/item-icons.js':  ['itemicons', 'icons', 'tintcss'],
+  // data-icon-recipes.js : données inertes au runtime (pipeline Python) ;
+  // un changement ne peut rien casser côté jeu → baseline suffit.
+  'js/data-icon-recipes.js': ['itemicons'],
   'js/scene-icons.js': ['sceneicons'],
 
   // ── Audio / voix ──

@@ -35,6 +35,8 @@ js/
                       d'énigme du donjon. getRiddleById()
   data.js          →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
                       ENEMIES = MONSTERS (alias de compatibilité)
+  data-icon-recipes.js → ICON_RECIPES : schéma du pipeline d'icônes (mirror du
+                      dict Python). Inerte au runtime navigateur. APRÈS data.js
   floor-themes.js  →  FLOOR_THEMES{} + getFloorTheme() — source unique de
                       vérité tileset/ambiance par tranche d'étages (pur)
   item-icons.js    →  Registres ITEM_ICON_REGISTRY, EQUIPMENT_SLOT_ICONS,
