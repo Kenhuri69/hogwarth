@@ -106,6 +106,8 @@ const TEST_MAP = {
 
   // ── Mondes parallèles / réseau ──
   'js/multiplayer.js':        ['multiplayer', 'visit', 'portal', 'parallel'],
+  'js/multiplayer-social.js': ['multiplayer'],
+  'js/multiplayer-visits.js': ['visit', 'portal', 'parallel'],
   'js/visit-channel.js':      ['visit', 'multiplayer'],
   'js/visit-hud.js':          ['visit'],
   'js/portal-matchmaking.js': ['portal', 'visit'],
