@@ -272,6 +272,12 @@
     if (isSmall) {
       panel.classList.add('collapsed');
       panel.querySelector('.clp-toggle').textContent = '+';
+      // Premier combat (mobile) : pulse le header pour signaler le journal au
+      // joueur, sans le déplier (ne masque pas le portrait du monstre). Le
+      // panneau étant créé une seule fois par session, le hint ne joue qu'au
+      // tout premier combat.
+      panel.classList.add('clp-hint');
+      setTimeout(() => panel.classList.remove('clp-hint'), 4500);
     }
     panel.querySelector('.clp-toggle').addEventListener('click', () => {
       panel.classList.toggle('collapsed');
@@ -331,18 +337,19 @@
     const ps = (typeof partySize !== 'undefined') ? partySize : 2;
     const startIdx = (typeof currentBattleChar !== 'undefined') ? currentBattleChar : 0;
 
-    // Alliés à partir du courant
+    // Alliés à partir du courant — un allié KO ne joue pas ce tour, on le
+    // masque de la frise pour ne pas induire en erreur (visible sur sa carte).
     for (let i = 0; i < ps; i++) {
       const idx = (startIdx + i) % ps;
       const c = party[idx];
-      if (!c) continue;
+      if (!c || c.hp <= 0) continue;
       order.push({
         kind: 'ally',
         name: c.name.split(' ')[0],
         img:  c.imgSrc,
         emoji: c.icon,
-        ko: c.hp <= 0,
-        active: idx === startIdx && c.hp > 0
+        ko: false,
+        active: idx === startIdx
       });
     }
     // Ennemis vivants

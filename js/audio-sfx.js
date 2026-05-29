@@ -134,6 +134,39 @@ Object.assign(AudioSystem, {
     sub.start(now); sub.stop(now + 0.22);
   },
 
+  // ── Accent de coup critique (ping métallique brillant ascendant) ──
+  playCrit() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    // Deux tons aigus rapides + montée → éclat « ting ! » par-dessus playHit.
+    [[880, 0, 0.28], [1320, 0.05, 0.22], [1760, 0.10, 0.16]].forEach(([freq, delay, peak]) => {
+      this._playTone({ freq, type: 'triangle', start: now + delay, peak,
+        attack: 0.004, decayAt: now + delay + 0.18, stop: now + delay + 0.30 });
+    });
+  },
+
+  // ── Accent de coup en faiblesse élémentaire (éclat de verre brisé) ──
+  playWeakHit() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    // Bouffée de bruit filtrée aigu (« crack ») + ton descendant : impact amplifié.
+    const buf  = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.18), this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < buf.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / buf.length);
+    const src  = this.ctx.createBufferSource(); src.buffer = buf;
+    const bpf  = this.ctx.createBiquadFilter();
+    bpf.type   = 'bandpass'; bpf.frequency.value = 2600; bpf.Q.value = 1.2;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    src.connect(bpf).connect(gain).connect(this.sfxGain);
+    src.start(now);
+    this._playTone({ freq: 520, type: 'sawtooth', start: now, peak: 0.18,
+      attack: 0.004, decayAt: now + 0.12, stop: now + 0.22 });
+  },
+
   // ── Salutation PNJ (cloche douce à l'ouverture du dialogue) ──
   playNpcGreet() {
     if (this.isMuted) return;

@@ -569,6 +569,7 @@ function executeAttack(targetIdx) {
   if (isCrit) {
     enemy.currentHp -= (finalDmg - dmg); // ajoute le bonus crit
   }
+  if (isCrit && typeof AudioSystem !== 'undefined' && AudioSystem.playCrit) AudioSystem.playCrit();
   _updateElan(char, isCrit);   // Apothéose Gryffondor — Élan
   const comboTxt = combo.label ? ` ${combo.label}` : '';
   setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${finalDmg} dégâts${isCrit?' (CRITIQUE !)':''}${comboTxt} !`);
