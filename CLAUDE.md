@@ -59,8 +59,14 @@ js/
   renderer-effects.js → drawTorch(), drawStoneBlocks(), drawFloorLines(), drawCellMarker()…
   renderer-minimap.js → renderMinimap(), _buildMinimapCells()
   movement.js      →  moveForward(), moveBackward(), turnLeft(), turnRight(),
-                      move() (legacy absolu), handleCellEntry(), searchRoom(),
-                      rest(), checkObjectInFront()
+                      move() (legacy absolu), handleCellEntry(), overlay
+                      d'exploration (_showExploreOverlay)
+  movement-floors.js → cache d'étage (_saveFloorToCache/_restoreFloorFromCache),
+                      respawn, _changeFloor(), goDeeper(), goUp() + transitions
+                      de tranche. Chargé APRÈS movement.js
+  movement-interactions.js → openChest(), searchRoom(), pièges, runes/stèle
+                      (answerSteleRiddle), useAltar(), useFountain(), rest().
+                      Chargé APRÈS movement.js
   swipe-canvas.js  →  Gestes tactiles sur #dungeon-canvas (mobile) :
                       swipe vertical → avancer/reculer, swipe horizontal →
                       tourner. initCanvasSwipeGestures(),

@@ -118,7 +118,7 @@ Ordre recommandé (du plus rentable / moins risqué au plus délicat) :
 | 3 | ~~`quests.js` (1483 l.)~~ ✅ | `quests-templates.js` (data ~600 l.) · `quests.js` (logique + journal UI) · `quests-riddles.js` (fusion + énigmes Dumbledore) | Moyen | fait — 121/121 verts |
 | 4 | ~~`inventory.js` (1554 l.)~~ ✅ | `inventory-core.js` (add/materials/recalculateStats) · `inventory.js` (UI sac + équipement + usage) · `inventory-spells.js` (modales sorts + OOC) | Moyen | fait — 121/121 verts |
 | 5 | ~~`battle.js` (1227 l.)~~ ✅ | `battle.js` (helpers + statuts + boucle) · `battle-rewards.js` (endBattle + level-up) · `battle-death.js` (mort + astral) | Élevé (état combat) | fait — 121/121 verts |
-| 6 | `movement.js` (1334 l.) | `movement-core` · `floor-transitions` · `exploration-ui` · `dungeon-search` | Élevé (overlay couplé) | fountain/search/floorevent |
+| 6 | ~~`movement.js` (1334 l.)~~ ✅ | `movement.js` (déplacement + overlay + handleCellEntry) · `movement-floors.js` (cache/respawn/transitions) · `movement-interactions.js` (coffre/fouille/pièges/runes/autel/fontaine/repos) | Élevé (overlay couplé) | fait — 121/121 verts |
 | 7 | `ui.js` (1047 l.) | `ui-core` · `ui-character-sheet` · `ui-settings` | Élevé (50 `getElementById`) | startup/houseset/uichrome |
 
 Règles de découpage (à respecter à chaque PR) :
@@ -264,3 +264,12 @@ fonction du changement appliqué » :
   fns). Déplacement verbatim. Câblage : index.html (battle → rewards → death +
   `?v`), sw.js (PRECACHE + CACHE_VERSION v13→v14), MANIFEST loader (endBattle →
   battle-rewards), test-map.js, CLAUDE.md. Validé : suite complète verte.
+- 2026-05-28 — Modularisation #6 (§4, risque élevé) : `movement.js` (1334 l.)
+  découpé par coupes en fin de fichier : `movement.js` (déplacement relatif +
+  overlay d'exploration + handleCellEntry, 17 fns) + `movement-floors.js`
+  (cache d'étage, respawn, _changeFloor, goDeeper, goUp, 9 fns) +
+  `movement-interactions.js` (coffres, fouille, pièges, runes/stèle, autel,
+  porte, fontaine, repos, 17 fns). Déplacement verbatim. Câblage : index.html
+  (movement → floors → interactions + `?v`), sw.js (PRECACHE + CACHE_VERSION
+  v14→v15), MANIFEST loader (searchRoom + rest → movement-interactions),
+  test-map.js, CLAUDE.md. Validé : suite complète verte.
