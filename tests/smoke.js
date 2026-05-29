@@ -14645,9 +14645,82 @@ async function scenarioSpellCombos() {
   await browser.close();
 }
 
+// ── Scénario : onboarding — Quick Start + tuto premier combat (LOT D) ──
+async function scenarioOnboarding() {
+  console.log('\n── Scénario : onboarding (Quick Start + tuto combat) ──');
+
+  // D1 — Quick Start : depuis la sélection, saute droit au choix de Maison
+  // avec les presets Solo · Harry · Normal.
+  {
+    const { browser, page } = await launchGame();
+    const d1 = await page.evaluate(() => {
+      showPlayerSelect();
+      quickStart();
+      return {
+        pselHidden: document.getElementById('player-select-screen').style.display === 'none',
+        houseShown: document.getElementById('house-select-screen').style.display === 'flex',
+        solo:       selectedPartySize === 1 && selectedHeroes[0] === 'harry',
+        diff:       difficulty
+      };
+    });
+    console.log('  D1 quickstart:', d1);
+    assert(d1.pselHidden && d1.houseShown, 'Quick Start saute au choix de Maison');
+    assert(d1.solo, 'Quick Start présélectionne Solo · Harry');
+    assert(d1.diff === 'Normal', 'Quick Start force la difficulté Normal');
+    await browser.close();
+  }
+
+  // D2 — tuto contextuel du premier combat (une fois par partie).
+  {
+    const { browser, page, errors } = await launchGame();
+    await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+    // Fermer le tour guidé auto : le tuto combat ne s'y superpose jamais.
+    await page.evaluate(() => { if (window.helpTourEnd) helpTourEnd(); });
+    const seenBefore = await page.evaluate(() => combatTutorialSeen);
+    assert(seenBefore === false, 'flag tuto combat à false avant le 1er combat');
+
+    await startDummyFight(page, { hp: 200 });
+    // Tuto différé (setTimeout 350 ms) — attendre la bulle ciblée.
+    await page.waitForFunction(() => {
+      const o = document.getElementById('help-tour-overlay');
+      const t = document.getElementById('help-tour-title');
+      return o && o.style.display === 'block' && /premier combat/i.test(t?.textContent || '');
+    }, { timeout: 3000 });
+    const d2 = await page.evaluate(() => ({
+      seen:            combatTutorialSeen,
+      stepCountHidden: document.getElementById('help-tour-step-count').style.display === 'none',
+      voiceHidden:     document.getElementById('help-tour-voice').style.display === 'none',
+      optoutHidden:    document.getElementById('help-tour-optout').style.display === 'none'
+    }));
+    console.log('  D2 tuto:', d2);
+    assert(d2.seen === true,         'flag tuto combat passé à true');
+    assert(d2.stepCountHidden,       'bulle à étape unique : compteur masqué');
+    assert(d2.voiceHidden,           'tuto combat : bouton voix masqué');
+    assert(d2.optoutHidden,          'tuto combat : opt-out global masqué');
+
+    // Combat suivant : ne réapparaît pas.
+    await page.evaluate(() => { helpTourEnd(); inBattle = false; });
+    await startDummyFight(page, { hp: 50 });
+    await new Promise(r => setTimeout(r, 600));
+    const reappeared = await page.evaluate(() => {
+      const o = document.getElementById('help-tour-overlay');
+      return !!(o && o.style.display === 'block');
+    });
+    assert(reappeared === false, 'tuto combat ne réapparaît pas au 2e combat');
+
+    if (errors.length) {
+      errors.forEach(e => console.log('  ⚠️ ', e));
+      throw new Error(`${errors.length} erreurs JS détectées (onboarding)`);
+    }
+    await browser.close();
+  }
+
+  console.log('  ✅ onboarding (Quick Start + tuto combat) OK');
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))

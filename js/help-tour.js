@@ -112,8 +112,27 @@ const HELP_TOUR_STEPS = [
   }
 ];
 
+// Tuto contextuel du premier combat (LOT D2). Une seule étape ciblée sur
+// la barre d'actions — réutilise l'infra du tour guidé (bulle + spotlight)
+// sans voix ni opt-out global. Affiché une fois par partie via le flag de
+// save `combatTutorialSeen` (cf. state.js / save.js).
+const COMBAT_TUTORIAL_STEPS = [
+  {
+    targets: ['.battle-actions', '#encounter-overlay'],
+    title: 'Ton premier combat !',
+    text: 'Les affrontements sont au tour par tour. À chaque tour, choisis : ' +
+          '🗡️ Attaquer (coup physique), ✨ Sortilège (coûte des PM, exploite ' +
+          'les faiblesses élémentaires 💥), 🛡️ Garde (réduit les dégâts reçus ' +
+          'et régénère des PM), 🧪 Objet (potions) ou 💨 Fuir. Astuce : gèle ou ' +
+          'fais saigner un ennemi puis frappe-le pour un bonus de combo !'
+  }
+];
+const COMBAT_TUTO_SEEN_FALLBACK_KEY = 'hh_combat_tuto_seen';
+
 let _helpTourStep   = 0;
 let _helpTourActive = false;
+let _htSteps        = HELP_TOUR_STEPS;   // jeu d'étapes courant (override possible)
+let _htOpts         = {};                // options du lancement courant
 
 function _htIsVisible(el) {
   if (!el) return false;
@@ -160,6 +179,7 @@ function _htStopSpeak() {
 function _htSpeakStep() {
   _htStopSpeak();   // coupe toute narration en cours
   if (!_htVoiceEnabled()) return;
+  if (_htOpts.noVoice) return;             // tuto ciblé : pas de narration
   if (typeof AudioSystem === 'undefined' || typeof AudioSystem.playVoice !== 'function') return;
   // playVoice gère lui-même la coupure audio globale (isMuted).
   AudioSystem.playVoice('mcgonagall_help_' + (_helpTourStep + 1));
@@ -213,7 +233,7 @@ function _htBuildDom() {
 }
 
 function _htRender() {
-  const step   = HELP_TOUR_STEPS[_helpTourStep];
+  const step   = _htSteps[_helpTourStep];
   const target = _htResolveTarget(step.targets);
   const spot   = document.getElementById('help-tour-spotlight');
   const bubble = document.getElementById('help-tour-bubble');
@@ -221,15 +241,25 @@ function _htRender() {
 
   document.getElementById('help-tour-title').textContent = step.title;
   document.getElementById('help-tour-text').textContent  = step.text;
-  document.getElementById('help-tour-step-count').textContent =
-    'Étape ' + (_helpTourStep + 1) + ' / ' + HELP_TOUR_STEPS.length;
+  // Le compteur d'étapes n'a de sens qu'au-delà d'une seule étape.
+  const stepCount = document.getElementById('help-tour-step-count');
+  stepCount.style.display = _htSteps.length > 1 ? '' : 'none';
+  stepCount.textContent =
+    'Étape ' + (_helpTourStep + 1) + ' / ' + _htSteps.length;
+  // Voix / opt-out masqués pour un tuto ciblé.
+  const voiceBtn = document.getElementById('help-tour-voice');
+  if (voiceBtn) voiceBtn.style.display = _htOpts.noVoice ? 'none' : '';
+  const optoutRow = document.getElementById('help-tour-optout');
+  if (optoutRow) optoutRow.style.display = _htOpts.hideOptout ? 'none' : '';
   _htUpdateVoiceBtn();
 
   const prevBtn = document.getElementById('help-tour-prev');
   const nextBtn = document.getElementById('help-tour-next');
+  // Bouton « Précédent » inutile sur un tuto à étape unique.
+  prevBtn.style.display = _htSteps.length > 1 ? '' : 'none';
   prevBtn.disabled = _helpTourStep === 0;
-  const isLast = _helpTourStep === HELP_TOUR_STEPS.length - 1;
-  nextBtn.textContent = isLast ? 'Terminer ✓' : 'Suivant ›';
+  const isLast = _helpTourStep === _htSteps.length - 1;
+  nextBtn.textContent = isLast ? (_htSteps.length > 1 ? 'Terminer ✓' : 'Compris ✓') : 'Suivant ›';
 
   const backdrop = document.getElementById('help-tour-backdrop');
   const PAD = 8;
@@ -294,10 +324,12 @@ function _htKeyHandler(e) {
   }
 }
 
-function startHelpTour() {
+function startHelpTour(stepsOverride, opts) {
   if (_helpTourActive) return;
   _helpTourActive = true;
   window._helpTourActive = true;
+  _htSteps = (Array.isArray(stepsOverride) && stepsOverride.length) ? stepsOverride : HELP_TOUR_STEPS;
+  _htOpts  = opts || {};
   _helpTourStep = 0;
   _htBuildDom();
   document.getElementById('help-tour-overlay').style.display = 'block';
@@ -310,7 +342,7 @@ function startHelpTour() {
 }
 
 function helpTourNext() {
-  if (_helpTourStep >= HELP_TOUR_STEPS.length - 1) { helpTourEnd(); return; }
+  if (_helpTourStep >= _htSteps.length - 1) { helpTourEnd(); return; }
   _helpTourStep++;
   _htRender();
   _htSpeakStep();
@@ -341,6 +373,9 @@ function helpTourEnd() {
   window.removeEventListener('resize', _htRender);
   const root = document.getElementById('help-tour-overlay');
   if (root) root.remove();
+  // Retour au jeu d'étapes par défaut pour le prochain lancement (bouton Aide).
+  _htSteps = HELP_TOUR_STEPS;
+  _htOpts  = {};
 }
 
 // Lancement auto à chaque nouvelle partie, sauf opt-out.
@@ -349,7 +384,27 @@ function maybeAutoStartHelpTour() {
   startHelpTour();
 }
 
+// Tuto contextuel du premier combat (LOT D2). Affiché une seule fois par
+// partie : la source de vérité est le flag de save `combatTutorialSeen`,
+// avec repli localStorage si l'état de jeu n'est pas disponible. Ne se
+// superpose jamais au tour guidé ni à lui-même.
+function maybeShowCombatTutorial() {
+  if (_helpTourActive) return;
+  // Flag de partie prioritaire (réinitialisé par startGame, sérialisé).
+  if (typeof combatTutorialSeen !== 'undefined') {
+    if (combatTutorialSeen) return;
+    combatTutorialSeen = true;
+  } else {
+    let seen = false;
+    try { seen = localStorage.getItem(COMBAT_TUTO_SEEN_FALLBACK_KEY) === '1'; } catch (e) {}
+    if (seen) return;
+    try { localStorage.setItem(COMBAT_TUTO_SEEN_FALLBACK_KEY, '1'); } catch (e) {}
+  }
+  startHelpTour(COMBAT_TUTORIAL_STEPS, { noVoice: true, hideOptout: true });
+}
+
 window.startHelpTour        = startHelpTour;
+window.maybeShowCombatTutorial = maybeShowCombatTutorial;
 window.helpTourNext         = helpTourNext;
 window.helpTourPrev         = helpTourPrev;
 window.helpTourEnd          = helpTourEnd;

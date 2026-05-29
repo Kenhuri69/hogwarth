@@ -340,3 +340,5 @@ testable. Ce fichier est mis à jour au fil de l'eau (cocher, noter les écarts)
 | Date | Décision | Par |
 |------|----------|-----|
 | 2026-05-29 | Revue livrée. Plan d'amélioration rédigé (lots A-F). Aucune implémentation engagée — en attente du choix de lot par l'utilisateur. | revue |
+| 2026-05-29 | LOT A (accessibilité/mobile #279), B (IA ennemie + phases de boss #280), C.1 (consommables + items à compromis #283), C.4 (combos de sorts #288) livrés et mergés. | impl |
+| 2026-05-29 | LOT D.1+D.2 (Quick Start + tuto premier combat) livrés. D3 (bonus Maison chiffrés) / D4 (aide par section) reportés. cf. `.claude/plans/onboarding-quickstart.md`. | impl |

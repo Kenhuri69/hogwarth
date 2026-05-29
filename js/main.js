@@ -160,6 +160,25 @@ let _pendingPartySize = 2;
 let _pendingHeroKeys = ['harry', 'hermione'];
 
 // Confirme la sélection et passe à l'écran des Maisons
+// Quick Start (LOT D1) — présélectionne Solo · Harry · Normal et saute
+// l'assistant en 3 étapes pour aller droit au choix de Maison. Le joueur
+// peut toujours personnaliser ensuite via « Nouvelle aventure ».
+function quickStart() {
+  selectedPartySize = 1;
+  selectedHeroes    = ['harry'];
+  difficulty        = 'Normal';
+  ironmanMode       = false;
+  _pendingPartySize = 1;
+  _pendingHeroKeys  = ['harry'];
+  const psel = document.getElementById('player-select-screen');
+  if (psel) psel.style.display = 'none';
+  const house = document.getElementById('house-select-screen');
+  if (house) house.style.display = 'flex';
+  if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playVoice === 'function') {
+    AudioSystem.playVoice('narrator_house');
+  }
+}
+
 function confirmHeroSelection() {
   if (selectedHeroes.length !== selectedPartySize) return;
   difficulty        = document.getElementById('difficulty-select')?.value || 'Normal';
@@ -430,6 +449,7 @@ async function startGame(count = 2) {
   visitedFloors = new Set([1]);
   totalKills     = 0;
   monsterKills   = {};
+  combatTutorialSeen = false;   // tuto premier combat rejoué à chaque partie (LOT D2)
   defeatedBosses = new Set();
   ironmanRunId   = (ironmanMode && typeof _genRunId === 'function') ? _genRunId() : null;
   shopStock = null;

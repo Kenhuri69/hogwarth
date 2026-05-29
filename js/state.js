@@ -649,6 +649,11 @@ const party = [player, player2];
 let victoryAchieved = false;
 let victoryAt       = null;
 
+// Tuto contextuel du premier combat (LOT D2) — true une fois la bulle
+// affichée. Réinitialisé par startGame, persisté via _serializeState /
+// _applyState pour ne s'afficher qu'une fois par partie.
+let combatTutorialSeen = false;
+
 // ============================================================
 // QUÊTES SECONDAIRES
 // ============================================================

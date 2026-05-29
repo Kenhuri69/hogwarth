@@ -393,6 +393,12 @@ function startBattle(baseEnemyData, opts) {
   UX_safe.logCombat(`⚔️ Combat engagé contre ${size} ennemi${size>1?'s':''}.`, 'info');
   UX_safe.renderTimeline();
   AudioSystem.startCombatMusic(enemyGroup);
+
+  // Tuto contextuel du premier combat (LOT D2) — une fois par partie, hors
+  // combat astral. Différé pour laisser l'overlay se peindre (mesure DOM).
+  if (!inAstralCombat && typeof maybeShowCombatTutorial === 'function') {
+    setTimeout(maybeShowCombatTutorial, 350);
+  }
 }
 
 // Renvoie 1, 2 ou 3. Politique de base selon mode et étage + scaling
