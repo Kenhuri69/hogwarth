@@ -66,11 +66,19 @@ js/
   quests.js        →  openQuestLog(), renderQuestList(), checkQuestCompletion(),
                       completeQuest(), checkKillQuests()
   shop.js          →  openShop(), buyItem() — catalogue progressif selon étage + garde-fous
-  save.js          →  Multi-slots : _serializeState/_applyState (purs),
-                      saveGame/loadGame (façades legacy), listSaveSlots,
-                      readSlot, writeSlot, deleteSlot, migrateLegacyKey,
-                      autoSave(reason). LocalStorage : hogwarts_rpg_saves
+  save-slots.js    →  Modèle multi-slots (store localStorage) : _readStore/
+                      _writeStore, listSaveSlots, readSlot, writeSlot,
+                      deleteSlot, deleteIronmanSlots, exportSaveStore/
+                      importSaveStore, autoSave(reason), migrateLegacyKey.
+                      Chargé AVANT save.js. LocalStorage : hogwarts_rpg_saves
                       (multi-slots) + hogwarts_rpg_save (legacy migré once).
+  save.js          →  Sérialisation/application d'état (purs) :
+                      _serializeState/_applyState + migrations de save,
+                      saveGame/loadGame (façades legacy).
+  save-visit-snapshot.js → Snapshots de visite inter-mondes (Mondes
+                      Parallèles) : _takeVisitSnapshot/_restoreFromVisit,
+                      mpBuildVisitSnapshot/mpApplyVisitSnapshot/
+                      mpApplyVisitFloorUpdate. Chargé APRÈS save.js.
   save-ui.js       →  Modale #slot-modal (openSaveDialog/openLoadDialog) +
                       Hub démarrage (enterStartHub, startHubNewGame,
                       loadSlotAndStart).
@@ -1453,19 +1461,19 @@ Deux clés cohabitent dans `localStorage` :
 }
 ```
 
-### API publique (`js/save.js`)
+### API publique (répartie sur 3 fichiers depuis le découpage)
 
-| Fonction                   | Rôle                                                            |
-|----------------------------|-----------------------------------------------------------------|
-| `_serializeState()`        | Pur — instantané sérialisable de l'état runtime                 |
-| `_applyState(gs)`          | Pur — applique un instantané (mute en place, drawDungeon, etc.) |
-| `saveGame()` / `loadGame()`| Façades legacy (toujours valides, écrivent sur la clé legacy)    |
-| `listSaveSlots()`          | `[{id, meta, isAuto}]` triés selon `ALL_SLOT_IDS`               |
-| `readSlot(id)`             | `{meta, state}` ou `null`                                       |
-| `writeSlot(id, label)`     | Écriture manuelle. Refusé en combat (`inBattle`)                |
-| `deleteSlot(id)`           | Supprime un slot précis                                         |
-| `migrateLegacyKey()`       | Une seule fois : `hogwarts_rpg_save` → `manual_1`. Idempotent.  |
-| `autoSave(reason)`         | Slot `auto`. Throttle 1500 ms. Refusé en combat ou sans `chosenHouse`. |
+| Fonction                   | Fichier | Rôle                                                  |
+|----------------------------|---------|-------------------------------------------------------|
+| `_serializeState()`        | save.js | Pur — instantané sérialisable de l'état runtime       |
+| `_applyState(gs)`          | save.js | Pur — applique un instantané (mute en place, drawDungeon, etc.) |
+| `saveGame()` / `loadGame()`| save.js | Façades legacy (toujours valides, écrivent sur la clé legacy) |
+| `listSaveSlots()`          | save-slots.js | `[{id, meta, isAuto}]` triés selon `ALL_SLOT_IDS`        |
+| `readSlot(id)`             | save-slots.js | `{meta, state}` ou `null`                                |
+| `writeSlot(id, label)`     | save-slots.js | Écriture manuelle. Refusé en combat (`inBattle`)         |
+| `deleteSlot(id)`           | save-slots.js | Supprime un slot précis                                  |
+| `migrateLegacyKey()`       | save-slots.js | Une seule fois : `hogwarts_rpg_save` → `manual_1`. Idempotent. |
+| `autoSave(reason)`         | save-slots.js | Slot `auto`. Throttle 1500 ms. Refusé en combat ou sans `chosenHouse`. |
 
 ### Hooks d'auto-sauvegarde
 - `js/movement.js` : fin de `goDeeper()` (`floor-down`) et `goUp()` (`floor-up`).
