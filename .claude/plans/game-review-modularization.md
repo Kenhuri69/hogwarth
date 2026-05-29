@@ -313,6 +313,11 @@ simplicité — la donnée resterait monolithique, pour un risque non nul) :
 | `icons.js` (1227 l.) | `MONSTER_ICONS` (~1122 l. SVG) + 2 petites fns | registre SVG unique ; la logique (≈50 l.) ne justifie pas un split |
 | `audio-music.js` (843 l.) | méthodes `AudioSystem` (musique) | module cohérent à concern unique, sous le seuil god-file |
 
+> **À surveiller** : ces 3 fichiers sont identifiés comme candidats au
+> découpage *uniquement si leur taille augmente significativement* — par
+> ajout de **logique** (et non de simples entrées de données / SVG). Tant
+> qu'ils restent des registres mono-concern, on n'y touche pas.
+
 ### Bilan modularisation
 
 11 PR de modularisation (verbatim, suite smoke verte à chaque étape) :
