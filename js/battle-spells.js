@@ -10,12 +10,29 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
   // (guardTurns ≥ 2), les ennemis privilégient `weaken` pour briser la
   // posture (chance ×1.5). Cf. combat-extensions-v2.md §B.
   const heavyGuard = (typeof guardTurns !== 'undefined') && guardTurns[charIdx] >= 2;
-  const ability = enemy.abilities.find(a => {
+  // Capacités dont le jet probabiliste réussit ce tour.
+  const fired = enemy.abilities.filter(a => {
     let ch = a.chance;
     if (heavyGuard && a.effect === 'weaken') ch = Math.min(1, ch * 1.5);
     return Math.random() < ch;
   });
-  if (!ability) return false;
+  if (!fired.length) return false;
+
+  // Choix de la capacité piloté par le tempérament `enemy.ai` (jusqu'ici
+  // déclaratif mais inexploité). Le défaut `random` conserve le comportement
+  // historique (première capacité déclarée dont le jet a réussi).
+  const ai    = enemy.ai || 'random';
+  const lowHp = enemy.currentHp < (enemy.hp || enemy.currentHp || 1) * 0.35;
+  let ability;
+  if (ai === 'aggressive') {
+    // Cherche à infliger un maximum de dégâts.
+    ability = fired.find(a => a.effect === 'damage' || a.effect === 'drain');
+  } else if (ai === 'cautious') {
+    // En danger, privilégie de se soigner ; sinon temporise (affaiblit/dissipe).
+    if (lowHp) ability = fired.find(a => a.effect === 'heal') || fired.find(a => a.effect === 'drain');
+    ability = ability || fired.find(a => a.effect === 'weaken' || a.effect === 'dispel');
+  }
+  ability = ability || fired[0];
 
   // Legilimens (palier Mythe Serdaigle) : la capacité repérée est
   // anticipée et annulée — l'ennemi gaspille son tour.
