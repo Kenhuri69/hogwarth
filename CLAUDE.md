@@ -66,7 +66,12 @@ js/
                       tourner. initCanvasSwipeGestures(),
                       _dispatchCanvasSwipe(dx,dy), _isCanvasSwipeBlocked().
                       Le D-pad tactile reste affiché en fallback.
-  battle.js        →  startBattle(), battleAction(), enemyTurn(), endBattle(), checkLevelUp()
+  battle.js        →  startBattle(), battleAction(), enemyTurn(), doFlee() +
+                      système de statuts (applyStatus, tickStatuses) + boucle de combat
+  battle-rewards.js →  endBattle(), checkLevelUp(), _grantLevel*, closeLevelup().
+                      Chargé APRÈS battle.js
+  battle-death.js  →  triggerDeath(), resurrect(), _finishAstralCombat() (combat
+                      astral Mondes Parallèles). Chargé APRÈS battle.js
   battle-spells.js →  castSpellInBattle(), tryEnemyAbility()
   battle-ui.js     →  renderEnemyGroup(), showTargetSelection(), updateBattleCharIndicator()
   inventory-core.js → tryAddItem(), _countMaterial/_consumeMaterial,
