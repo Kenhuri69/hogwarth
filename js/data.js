@@ -344,6 +344,10 @@ const ITEMS = [
   { id:"potion_l_sp",  name:"Grande Potion Magique", icon:"💜", desc:"+30 PM", type:"consumable", effect:"restore_sp", power:30, price:70 },
   { id:"felix", name:"Félix Felicis", icon:"✨", desc:"+20 PV +10 PM", type:"consumable", effect:"both", power:20, price:80 },
   { id:"mandragore", name:"Racine de Mandragore", icon:"🌿", desc:"+8 PV", type:"consumable", effect:"heal", power:8, price:15 },
+  // ── Consommables à effet (au-delà du +PV/PM) ────────────────
+  { id:"elixir_antidote",  name:"Élixir d'Antidote",      icon:"🧴", desc:"Purge brûlure, poison, saignement et engelures", type:"consumable", effect:"cure",        price:45 },
+  { id:"elixir_regen",     name:"Élixir de Régénération", icon:"🌱", desc:"Régénère 6 PV/tour pendant 4 tours",            type:"consumable", effect:"regen_buff",  power:6, turns:4, price:55 },
+  { id:"potion_bouclier",  name:"Potion de Bouclier",     icon:"🛡️", desc:"Érige un Protego (bloque les coups)",           type:"consumable", effect:"shield_buff", power:3, price:50 },
   { id:"wand1",   name:"Baguette de Saule",   icon:"🪄", desc:"ATK+2",                      type:"wand",  slot:"wand",   family:"wand_basic",    rarity:"common", power:2, bonusAtk:2,                                price:80,  tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_basic", tint:"willow" },
   { id:"wand2",   name:"Baguette de Sureau",  icon:"🪄", desc:"ATK+5 MAG+3 · Crit +2% (×1.7)", type:"wand",  slot:"wand",   family:"wand_elder",    rarity:"rare",   power:5, bonusAtk:5, bonusMag:3, bonusCritChance:2, bonusCritDamage:0.2, price:300, tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_runic", tint:"elder"  },
   { id:"robe1",   name:"Robe Renforcée",      icon:"🧥", desc:"DEF+3",                      type:"armor", slot:"body",   family:"robe",          rarity:"common", power:3, bonusDef:3,                                    price:150 },
@@ -471,6 +475,10 @@ const ITEMS = [
   { id:"ceinture_alchimiste",name:"Ceinture d'Alchimiste",icon:"➿", desc:"DEF+1 LCK+3 · Crit +2%", type:"acc",   slot:"belt",  family:"belt_alch",     rarity:"rare",   bonusDef:1, bonusLck:3, bonusCritChance:2, power:1, price:230 },
   // Tier rare/épique étage 7+
   { id:"bottes_dragon",    name:"Bottes en Peau de Dragon",icon:"🥾",desc:"DEF+3 AGI+2 · Esquive +3%", type:"acc",   slot:"feet",  family:"boots_dragon",  rarity:"rare",   bonusDef:3, bonusAgi:2, bonusDodgeChance:3, power:3, price:340 },
+  // ── Équipement à compromis (trade-off : un bonus fort, un malus) ──
+  { id:"lame_sanguinaire", name:"Lame Sanguinaire",       icon:"🗡️", desc:"ATK+7 mais DEF−2 — frappe sans retenue",        type:"wand",  slot:"wand",  rarity:"rare",   power:7, bonusAtk:7,  bonusDef:-2,                        price:300 },
+  { id:"armure_lourde",    name:"Armure de Plates",       icon:"🛡️", desc:"DEF+6 mais AGI−3 — lourde et protectrice",      type:"armor", slot:"body",  rarity:"rare",   power:6, bonusDef:6,  bonusAgi:-3,                        price:320 },
+  { id:"anneau_furie",     name:"Anneau de Furie",        icon:"💍", desc:"Crit +12% mais Esquive −6% — tout en attaque", type:"acc",   slot:"ring",  rarity:"rare",   power:2, bonusCritChance:12, bonusDodgeChance:-6,            price:300 },
   { id:"retourneur_temps", name:"Retourneur de Temps",   icon:"⌛", desc:"AGI+3 LCK+2",        type:"acc",   slot:"trinket",family:"timeturner",  rarity:"epic",   bonusAgi:3, bonusLck:2, power:3, price:550, tint:"#c9a84c" },
   // Drop boss étage 7+ (Mangemort d'Élite) — bonus PV max (cf. equipment-bonuses-v2.md Vague B).
   { id:"cor_pegasse",      name:"Cor du Pégase",          icon:"📯", desc:"PV max +8",          type:"acc",   slot:"trinket",family:"horn_pegasus", rarity:"epic",   bonusHpMax:8, power:4, price:0 },
