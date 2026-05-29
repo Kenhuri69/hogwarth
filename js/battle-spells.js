@@ -306,6 +306,25 @@ function _spellShield(spell, char) {
 // les resist/weak de l'ennemi (clé = spell.element), le bonus anti-mort-vivant
 // optionnel (opts.undead), puis le critique. `suffix` porte les pictogrammes
 // 🔰/💥/☀️/💥CRIT (avec leur espace de tête) pour les messages.
+// ── Combos tactiques ────────────────────────────────────────
+// Un statut présent sur la cible amplifie le coup entrant, récompensant
+// l'enchaînement de sorts/attaques. Première règle qui matche l'emporte.
+//   • Cible gelée (gel)   → +30 % (« on brise la glace »), tous éléments.
+//   • Cible qui saigne    → +20 % pour les coups physiques (« plaie ouverte »).
+// Pur : ne mute rien, retourne { mult, label }.
+const COMBO_RULES = [
+  { status: 'gel',   element: null,       mult: 1.3, label: '❄️ Éclat de glace' },
+  { status: 'bleed', element: 'physique', mult: 1.2, label: '🩸 Plaie ouverte' },
+];
+function comboDamageMult(target, element) {
+  if (!target || !Array.isArray(target.statusEffects)) return { mult: 1, label: null };
+  for (const r of COMBO_RULES) {
+    if (r.element && r.element !== element) continue;
+    if (target.statusEffects.some(s => s.id === r.status)) return { mult: r.mult, label: r.label };
+  }
+  return { mult: 1, label: null };
+}
+
 function _computeSpellDamage(spell, char, enemy, opts) {
   opts = opts || {};
   let dmg    = spell.power + Math.floor(char.mag / 2);
@@ -319,6 +338,9 @@ function _computeSpellDamage(spell, char, enemy, opts) {
   if (opts.undead && spell.bonusVsUndead && _isUndead(enemy)) {
     dmg = Math.floor(dmg * spell.bonusVsUndead); suffix += ' ☀️';
   }
+  // Combo : amplification si la cible porte un statut déclencheur.
+  const combo = comboDamageMult(enemy, spell.element);
+  if (combo.mult !== 1) { dmg = Math.floor(dmg * combo.mult); suffix += ' ' + combo.label; }
   const cr = rollSpellCrit(dmg, char);
   dmg = cr.dmg;
   if (cr.crit) suffix += ' 💥CRIT';

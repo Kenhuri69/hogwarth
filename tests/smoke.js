@@ -14579,9 +14579,75 @@ async function scenarioContentConsumablesTradeoffs() {
   await browser.close();
 }
 
+// ── Scénario : combos de sorts (synergie statut → dégâts) (LOT C.4) ──
+async function scenarioSpellCombos() {
+  console.log('\n── Scénario : combos de sorts ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 500 });
+
+  // T1 — comboDamageMult (pur) : matrice statut × élément.
+  const t1 = await page.evaluate(() => {
+    const frozen   = { statusEffects: [{ id: 'gel' }] };
+    const bleeding = { statusEffects: [{ id: 'bleed' }] };
+    const clean    = { statusEffects: [] };
+    return {
+      gelAny:       comboDamageMult(frozen,   'feu').mult,        // gel = tous éléments
+      bleedPhys:    comboDamageMult(bleeding, 'physique').mult,   // bleed = physique only
+      bleedMagic:   comboDamageMult(bleeding, 'feu').mult,        // bleed + feu → pas de combo
+      none:         comboDamageMult(clean,    'physique').mult
+    };
+  });
+  console.log('  T1 matrice:', t1);
+  assert(t1.gelAny === 1.3,    'cible gelée → ×1.3 tous éléments');
+  assert(t1.bleedPhys === 1.2, 'cible qui saigne + physique → ×1.2');
+  assert(t1.bleedMagic === 1,  'cible qui saigne + élément non physique → pas de combo');
+  assert(t1.none === 1,        'aucun statut → pas de combo');
+
+  // T2 — intégration _computeSpellDamage : geler amplifie le sort suivant.
+  const t2 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.statusEffects = []; e.resist = []; e.weak = [];
+    const spell = { name: 'Test', power: 20, element: 'feu' };
+    const orig = Math.random; Math.random = () => 0.99;   // pas de crit
+    const base = _computeSpellDamage(spell, party[0], e).dmg;
+    applyStatus(e, 'gel', 3, 3);
+    const frozen = _computeSpellDamage(spell, party[0], e).dmg;
+    Math.random = orig;
+    return { base, frozen };
+  });
+  console.log('  T2 sort   :', t2);
+  assert(t2.frozen > t2.base, `sort sur cible gelée doit faire plus (${t2.base}→${t2.frozen})`);
+
+  // T3 — intégration executeAttack : coup physique amplifié sur cible gelée.
+  const t3 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.currentHp = 500; e.def = 0; e.statusEffects = [];
+    party[0].atk = 30; party[0].critChance = 0;
+    currentBattleChar = 0;
+    const orig = Math.random; Math.random = () => 0;       // rawAtk +0, pas de crit
+    const hp0 = e.currentHp; executeAttack(0);
+    const noCombo = hp0 - e.currentHp;
+    e.currentHp = 500; applyStatus(e, 'gel', 3, 3);
+    const hp1 = e.currentHp; executeAttack(0);
+    const withCombo = hp1 - e.currentHp;
+    Math.random = orig;
+    return { noCombo, withCombo };
+  });
+  console.log('  T3 phys   :', t3);
+  assert(t3.withCombo > t3.noCombo, `coup physique sur cible gelée doit faire plus (${t3.noCombo}→${t3.withCombo})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (combos)`);
+  }
+  console.log('  ✅ combos de sorts (sort + physique) OK');
+  await browser.close();
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))

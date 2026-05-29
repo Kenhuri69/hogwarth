@@ -547,7 +547,10 @@ function executeAttack(targetIdx) {
   const char  = getActiveChar();
   const enemy = enemyGroup[targetIdx];
   const rawAtk = char.atk + Math.floor(Math.random() * 4);
-  const dmg    = Math.max(1, Math.floor(mitigatedDamage(rawAtk, enemy.def) * _houseVigorMult(char) * _houseElanMult(char)));
+  let dmg    = Math.max(1, Math.floor(mitigatedDamage(rawAtk, enemy.def) * _houseVigorMult(char) * _houseElanMult(char)));
+  // Combo : un coup physique sur une cible gelée / qui saigne est amplifié.
+  const combo = (typeof comboDamageMult === 'function') ? comboDamageMult(enemy, 'physique') : { mult: 1, label: null };
+  if (combo.mult !== 1) dmg = Math.max(1, Math.floor(dmg * combo.mult));
   enemy.currentHp -= dmg;
 
   AudioSystem.playHit();
@@ -561,9 +564,10 @@ function executeAttack(targetIdx) {
     enemy.currentHp -= (finalDmg - dmg); // ajoute le bonus crit
   }
   _updateElan(char, isCrit);   // Apothéose Gryffondor — Élan
-  setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${finalDmg} dégâts${isCrit?' (CRITIQUE !)':''} !`);
+  const comboTxt = combo.label ? ` ${combo.label}` : '';
+  setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${finalDmg} dégâts${isCrit?' (CRITIQUE !)':''}${comboTxt} !`);
   UX_safe.floatDmg(`enemy:${targetIdx}`, finalDmg, isCrit ? 'crit' : 'dmg');
-  UX_safe.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}`, isCrit?'magic':'good');
+  UX_safe.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}${comboTxt}`, isCrit?'magic':'good');
   renderEnemyGroup();
   if (checkAllEnemiesDead()) return;
   advanceBattleChar();
