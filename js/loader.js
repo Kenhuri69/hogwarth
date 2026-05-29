@@ -128,9 +128,9 @@ window.UX_safe = new Proxy({}, {
     { name: '_ensureStairsExist', source: 'dungeon-spawning.js', kind: 'fn' },
     { name: 'effectiveFloor',     source: 'dungeon-scaling.js', kind: 'fn'  },
     { name: 'drawDungeon',        source: 'renderer.js',     kind: 'fn'  },
-    { name: 'drawNpcSprite',      source: 'renderer-effects.js', kind: 'fn' },
-    { name: 'drawForgeSprite',    source: 'renderer-effects.js', kind: 'fn' },
-    { name: 'drawLibrarySprite',  source: 'renderer-effects.js', kind: 'fn' },
+    { name: 'drawNpcSprite',      source: 'renderer-entities.js', kind: 'fn' },
+    { name: 'drawForgeSprite',    source: 'renderer-sprites.js', kind: 'fn' },
+    { name: 'drawLibrarySprite',  source: 'renderer-sprites.js', kind: 'fn' },
     { name: 'renderMinimap',      source: 'renderer-minimap.js', kind: 'fn' },
 
     // ── Mouvement ──
@@ -266,9 +266,9 @@ window.UX_safe = new Proxy({}, {
     { name: 'claimPendingGifts',  source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: '_mpLevelGapTier',    source: 'multiplayer.js',  kind: 'fn',    optional: true },
     { name: '_mpEnumerateDuelLoot',source: 'multiplayer.js', kind: 'fn',    optional: true },
-    { name: 'drawGhostSprite',    source: 'renderer-effects.js', kind: 'fn', optional: true },
-    { name: 'PLAYER_SPRITE_SRC',  source: 'renderer-effects.js', kind: 'obj', optional: true },
-    { name: 'drawMessageMarker',  source: 'renderer-effects.js', kind: 'fn', optional: true },
+    { name: 'drawGhostSprite',    source: 'renderer-entities.js', kind: 'fn', optional: true },
+    { name: 'PLAYER_SPRITE_SRC',  source: 'renderer-entities.js', kind: 'obj', optional: true },
+    { name: 'drawMessageMarker',  source: 'renderer-entities.js', kind: 'fn', optional: true },
 
     // ── Mondes parallèles — Cheminette Inter-Mondes (V1a Phases A+B) ──
     // parallel-worlds.md §4 (anim) + §3.3 (matchmaking). Optionnels :

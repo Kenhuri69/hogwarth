@@ -61,6 +61,11 @@ js/
                       spawn de quête & garde-fous. Chargé APRÈS dungeon.js
   renderer.js      →  drawDungeon(), drawCorridor() — rendu 3D canvas + textures + fog
   renderer-effects.js → drawTorch(), drawStoneBlocks(), drawFloorLines(), drawCellMarker()…
+  renderer-sprites.js → sprites de scène : drawChestSprite/Stairs/Shop/Forge/
+                      Library/Altar/Rune/Stele/Fountain. APRÈS renderer-effects.js
+  renderer-entities.js → sprites d'entités : drawEnemySprite, drawNpcSprite,
+                      drawGhostSprite, drawVisitorSprite, drawMessageMarker.
+                      APRÈS renderer-effects.js
   renderer-minimap.js → renderMinimap(), _buildMinimapCells()
   movement.js      →  moveForward(), moveBackward(), turnLeft(), turnRight(),
                       move() (legacy absolu), handleCellEntry(), overlay

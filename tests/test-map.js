@@ -90,7 +90,9 @@ const TEST_MAP = {
   // ── Rendu ──
   'js/renderer.js':         ['floortextures', 'floortheming', 'sidedoor', 'sidewall',
                             'npcsprite3d', 'monsterimages'],
-  'js/renderer-effects.js': ['npcsprite3d', 'sidedoor', 'sidewall', 'fountain'],
+  'js/renderer-effects.js':  ['npcsprite3d', 'sidedoor', 'sidewall', 'fountain'],
+  'js/renderer-sprites.js':  ['fountain', 'sceneicons', 'monsterimages', 'npcsprite3d'],
+  'js/renderer-entities.js': ['npcsprite3d', 'monsterimages', 'visit'],
   'js/renderer-minimap.js': ['relativecontrols'],
   'js/textures.js':         ['floortextures', 'floortheming'],
 
