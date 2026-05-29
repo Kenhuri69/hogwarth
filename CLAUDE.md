@@ -27,10 +27,11 @@ js/
   scene-icons.js   →  SCENE_ICONS{} — SVG inline pour objets de scène (coffre,
                       boutique, escaliers, fontaine) consommés par _showExploreOverlay()
   monsters.js      →  ⭐ FICHIER ENRICHISSABLE : registre complet des créatures (MONSTERS[])
-  npcs.js          →  NPCS[] (502 lignes) — registre des PNJ (donneurs de quêtes,
-                      vendeurs, PNJ lore). getNpcById(), getNpcsForFloor(),
-                      getRandomVendorsForFloor(), getRandomLoreForFloor(),
-                      getRandomEncountersForFloor()
+  npcs.js          →  NPCS[] — registre de données des PNJ (donneurs de quêtes,
+                      vendeurs, PNJ lore)
+  npcs-helpers.js  →  Helpers de requête : getNpcById(), getNpcsForFloor(),
+                      getRandom{Vendors,Lore,Encounters,QuestGivers,Ambient}ForFloor().
+                      Chargé APRÈS npcs.js
   riddles.js       →  RIDDLES[] — registre des devinettes des stèles
                       d'énigme du donjon. getRiddleById()
   data.js          →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
