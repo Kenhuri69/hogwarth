@@ -2,7 +2,7 @@
 // Usage : node tests/screenshot-character.js
 // Output : tests/character-desktop.png + tests/character-mobile.png
 
-const { chromium } = require('/opt/node22/lib/node_modules/playwright/index.js');
+const { chromium } = require('./_playwright.js');
 const path = require('path');
 
 const INDEX_URL = 'file://' + path.resolve(__dirname, '../index.html');
