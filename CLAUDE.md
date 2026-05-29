@@ -46,7 +46,15 @@ js/
                       chosenHouse, housePoints, houseTier, HOUSE_BONUSES, DIFFICULTY_SETTINGS)
   ui.js            →  updateUI(), openCharacter(), addMsg(), closeModal(), changeDifficulty()
   ui-bestiary.js   →  openBestiary(), filterBestiary(), showMonsterDetail(), showBestiaryList()
-  dungeon.js       →  generateDungeon(), weightedPick(), scaleMonster()
+  dungeon-scaling.js → weightedPick(), effectiveFloor(), endgameTierIndex(),
+                      scaleMonster(), buildEcho() — mise à l'échelle des
+                      monstres (purs). Chargé AVANT dungeon.js
+  dungeon.js       →  generateDungeon() + helpers de génération procédurale
+                      (salles, couloirs, cellules spéciales, puzzles, PNJ)
+  dungeon-spawning.js → spawnQuestMonsters(), spawnFarmingMonsters(),
+                      _ensureActiveKillQuestTargets(), _ensureStairsExist(),
+                      _migrateMissingNpcsForFloor(), _findFreeNpcCell() —
+                      spawn de quête & garde-fous. Chargé APRÈS dungeon.js
   renderer.js      →  drawDungeon(), drawCorridor() — rendu 3D canvas + textures + fog
   renderer-effects.js → drawTorch(), drawStoneBlocks(), drawFloorLines(), drawCellMarker()…
   renderer-minimap.js → renderMinimap(), _buildMinimapCells()

@@ -123,10 +123,10 @@ window.UX_safe = new Proxy({}, {
 
     // ── Donjon / rendu ──
     { name: 'generateDungeon',    source: 'dungeon.js',      kind: 'fn'  },
-    { name: '_migrateMissingNpcsForFloor', source: 'dungeon.js', kind: 'fn' },
-    { name: '_ensureActiveKillQuestTargets', source: 'dungeon.js', kind: 'fn' },
-    { name: '_ensureStairsExist', source: 'dungeon.js', kind: 'fn' },
-    { name: 'effectiveFloor',     source: 'dungeon.js', kind: 'fn'  },
+    { name: '_migrateMissingNpcsForFloor', source: 'dungeon-spawning.js', kind: 'fn' },
+    { name: '_ensureActiveKillQuestTargets', source: 'dungeon-spawning.js', kind: 'fn' },
+    { name: '_ensureStairsExist', source: 'dungeon-spawning.js', kind: 'fn' },
+    { name: 'effectiveFloor',     source: 'dungeon-scaling.js', kind: 'fn'  },
     { name: 'drawDungeon',        source: 'renderer.js',     kind: 'fn'  },
     { name: 'drawNpcSprite',      source: 'renderer-effects.js', kind: 'fn' },
     { name: 'drawForgeSprite',    source: 'renderer-effects.js', kind: 'fn' },
