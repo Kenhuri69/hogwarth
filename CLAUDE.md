@@ -71,8 +71,14 @@ js/
   battle-ui.js     →  renderEnemyGroup(), showTargetSelection(), updateBattleCharIndicator()
   inventory.js     →  openInventory(), useItem(), showEquipMenu(), equipItem(),
                       recalculateStats(), openSpells(), openBattleSpells(), openBattleItems()
-  quests.js        →  openQuestLog(), renderQuestList(), checkQuestCompletion(),
-                      completeQuest(), checkKillQuests()
+  quests-templates.js → QUEST_TEMPLATES (catalogue inerte) + maps de quêtes
+                      de Maison. Données pures. Chargé AVANT quests.js
+  quests.js        →  Logique + journal UI : acceptQuest(), completeQuest(),
+                      openQuestLog(), renderQuestList(), checkKillQuests(),
+                      farming, getQuestTemplate()
+  quests-riddles.js → Mini-jeux : fusion du grimoire (Manon) + énigmes de
+                      Dumbledore (openRiddleModal, _spawnLuxAeternaBoss).
+                      Chargé APRÈS quests.js
   shop.js          →  openShop(), buyItem() — catalogue progressif selon étage + garde-fous
   save-slots.js    →  Modèle multi-slots (store localStorage) : _readStore/
                       _writeStore, listSaveSlots, readSlot, writeSlot,

@@ -54,8 +54,11 @@ const TEST_MAP = {
   'js/shop.js':          ['shop', 'vendors', 'phase3catalog'],
 
   // ── Quêtes / énigmes ──
-  'js/quests.js':        ['quest', 'chain', 'farming', 'riddle', 'grimoire',
-                          'dumbledorelux', 'ensurekill'],
+  'js/quests.js':           ['quest', 'chain', 'farming', 'riddle', 'grimoire',
+                            'dumbledorelux', 'ensurekill'],
+  'js/quests-templates.js': ['quest', 'chain', 'farming', 'ensurekill',
+                            'repeatablequestspawn'],
+  'js/quests-riddles.js':   ['riddle', 'grimoire', 'dumbledorelux'],
   'js/riddles.js':       ['riddle', 'rune', 'riddlestele'],
 
   // ── Déplacement / donjon ──
