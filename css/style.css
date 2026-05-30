@@ -2594,6 +2594,13 @@ body {
   font-family: 'Cinzel', serif; font-size: 12.5px; color: var(--gold-light);
 }
 .brew-recipe-ing { font-size: 11px; color: #8a7050; font-style: italic; }
+.brew-recipe-locked { opacity: 0.55; border-style: dashed; }
+.brew-recipe-locked .brew-recipe-name { color: #7a6038; letter-spacing: 2px; }
+.brew-recipe-locked .brew-recipe-ing { color: #6a5838; }
+.brew-codex-count {
+  font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold);
+  margin-left: 6px;
+}
 .brew-mini-btn {
   background: linear-gradient(180deg, #c89048, #a06820);
   color: #1a0f05; border: none; border-radius: 3px;

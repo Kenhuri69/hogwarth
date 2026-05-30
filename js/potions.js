@@ -104,6 +104,25 @@ function _getRecipe(id) {
     : null;
 }
 
+// Indice NON-SPOILER d'une recette non encore découverte (codex P6.a).
+// Révèle le palier d'herbes et le nombre d'ingrédients, jamais le combo
+// exact ni le produit. `advanced` = la recette consomme un ingrédient de
+// sac (potion de rang inférieur, Éclat, mandragore) et non que des herbes.
+function _recipeHint(recipe) {
+  const ing = (recipe && recipe.ingredients) || {};
+  let ingCount = 0, palier = 0, advanced = false;
+  for (const id of Object.keys(ing)) {
+    ingCount += ing[id];
+    if (_isHerbIngredient(id)) {
+      const it = (typeof ITEMS !== 'undefined') ? ITEMS.find(i => i.id === id) : null;
+      palier = Math.max(palier, (it && it.tier) || 1);
+    } else {
+      advanced = true;
+    }
+  }
+  return { palier, ingCount, advanced };
+}
+
 // Cherche la recette dont le multiset d'ingrédients correspond
 // EXACTEMENT au mélange (mêmes ids, mêmes quantités).
 function _matchRecipe(mix) {
@@ -401,26 +420,38 @@ function _renderBrewingModal() {
     html += `</div>`;
   }
 
-  // 5) Recettes connues
-  const known = (player.knownRecipes || [])
-    .map(_getRecipe).filter(Boolean);
-  html += `<div class="brewing-section"><div class="brewing-section-label">Recettes connues `
+  // 5) Codex des recettes — connues (lisibles + « Préparer ») vs à découvrir
+  //    (silhouette masquée + indice non-spoiler de palier/ingrédients). P6.a.
+  const allRecipes = (typeof POTION_RECIPES !== 'undefined') ? POTION_RECIPES : [];
+  const knownSet   = new Set(player.knownRecipes || []);
+  const discovered = allRecipes.filter(r => knownSet.has(r.id)).length;
+  html += `<div class="brewing-section"><div class="brewing-section-label">Codex des recettes `
+    + `<span class="brew-codex-count">${discovered}/${allRecipes.length} découvertes</span>`
     + `<span class="brew-potency-note">✨ Brassage maison : +${Math.round(BREW_POTENCY_TIERS.success * 100)}% · critique +${Math.round(BREW_POTENCY_TIERS.crit * 100)}%</span></div>`;
-  if (known.length) {
+  if (allRecipes.length) {
     html += `<div class="brew-recipes">`;
-    for (const r of known) {
-      const ingTxt = Object.keys(r.ingredients).map(id => {
-        const it = (typeof ITEMS !== 'undefined') ? ITEMS.find(i => i.id === id) : null;
-        return `${(it && it.name) || id}×${r.ingredients[id]}`;
-      }).join(', ');
-      const afford = _canAffordRecipe(r);
-      html += `<div class="brew-recipe-row">`
-        + `<div class="brew-recipe-info"><div class="brew-recipe-name">${r.name}</div>`
-        + `<div class="brew-recipe-ing">${ingTxt}</div></div>`
-        + `<button type="button" class="brew-mini-btn" `
-        + (afford ? '' : 'disabled title="Herbes manquantes" ')
-        + `onclick="_fillFromRecipe('${r.id}')">Préparer</button>`
-        + `</div>`;
+    for (const r of allRecipes) {
+      if (knownSet.has(r.id)) {
+        const ingTxt = Object.keys(r.ingredients).map(id => {
+          const it = (typeof ITEMS !== 'undefined') ? ITEMS.find(i => i.id === id) : null;
+          return `${(it && it.name) || id}×${r.ingredients[id]}`;
+        }).join(', ');
+        const afford = _canAffordRecipe(r);
+        html += `<div class="brew-recipe-row">`
+          + `<div class="brew-recipe-info"><div class="brew-recipe-name">${r.name}</div>`
+          + `<div class="brew-recipe-ing">${ingTxt}</div></div>`
+          + `<button type="button" class="brew-mini-btn" `
+          + (afford ? '' : 'disabled title="Herbes manquantes" ')
+          + `onclick="_fillFromRecipe('${r.id}')">Préparer</button>`
+          + `</div>`;
+      } else {
+        const h = _recipeHint(r);
+        const noun = `${h.ingCount} ingrédient${h.ingCount > 1 ? 's' : ''}`;
+        const hintTxt = h.advanced ? `Recette avancée · ${noun}` : `Palier ${h.palier} · ${noun}`;
+        html += `<div class="brew-recipe-row brew-recipe-locked">`
+          + `<div class="brew-recipe-info"><div class="brew-recipe-name">🔒 ? ? ?</div>`
+          + `<div class="brew-recipe-ing">${hintTxt}</div></div></div>`;
+      }
     }
     html += `</div>`;
   } else {
