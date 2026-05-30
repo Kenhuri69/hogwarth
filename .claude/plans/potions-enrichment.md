@@ -107,21 +107,24 @@ Remplacer le `+25 %` fixe par une **potency variable bakée dans la potion** au
 moment du brassage.
 
 - **Design** : au lieu de `props:{ brewed:true }`, stocker
-  `props:{ brewed:true, brewPotency:<float> }` calculé par `attemptBrew()` :
-  - **réussite normale** → potency de base (ex. `+20 %`) ;
-  - **brassage critique** → potency haute (ex. `+40 %`) — le crit devient
-    qualitatif, pas seulement ×2 quantité ;
-  - **bonus de maîtrise** optionnel indexé sur l'INT du brasseur
-    (ex. `+1 %` par point d'INT au-dessus d'un seuil, plafonné).
+  `props:{ brewed:true, brewPotency:<float> }` calculé par `attemptBrew()`
+  selon la **qualité du jet** (barème figé, décision §6.2) :
+  - **ratée** (recette connue mais jet manqué, `margin < 0`) → **1 fiole
+    diluée `−15 %`** au lieu de 0 potion aujourd'hui (le ratage *réduit*, il ne
+    gâche plus tout) ;
+  - **réussite** (`0 ≤ margin < 12`) → `+20 %` ;
+  - **critique** (`margin ≥ 12`) → `+40 %` (le crit devient qualitatif, pas
+    seulement ×2 quantité) ;
+  - **bonus de maîtrise** : `+1 %` par point d'INT au-dessus de 15, le tout
+    plafonné `[−15 %, +50 %]`.
+  - Un mélange **sans recette** (charabia) reste 0 potion (inchangé).
 - `_applyConsumableEffect` lit `item.brewPotency` (fallback : `brewed` legacy →
-  potency de base actuelle `0.25`). **Compat totale** : potions d'anciens saves
-  sans `brewPotency` = `+25 %`.
-- UI : le tooltip et le résultat de brassage affichent la potency réelle de la
-  fiole (« ✨ Concentrée +40 % » pour une critique).
-- *Vérif* : smoke — un brassage critique forcé produit `brewPotency` haute ; le
-  soin appliqué reflète la potency ; legacy `brewed:true` → `0.25`.
-
-> Barème exact (base/crit/coeff INT/plafond) à figer en §6 avant impl.
+  `+25 %` ; pas de flag → 0). Potency **négative** = soin réduit. Compat totale.
+- **Revente** : `_computeSellPrice` (shop.js) multiplie le prix par
+  `(1 + brewPotency)` → une fiole concentrée se revend plus cher, une diluée
+  moins (décision §6, exigence utilisateur).
+- UI : tooltip + résultat de brassage affichent la potency réelle (« Concentrée
+  +40 % » / « Fiole diluée −15 % »).
 
 ### LOT P2 — Potions de buff de combat (catalogue + moteur) · ~2 j · risque moyen
 
@@ -191,19 +194,21 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 
 ---
 
-## 6. Décisions à confirmer avant implémentation
+## 6. Décisions (figées 2026-05-30)
 
-1. **`potion_force`** : (a) corriger la desc en « +8 PV » (trivial, P0) **ou**
-   (b) en faire une vraie potion de buff ATK (P2, recommandé). → *défaut
-   proposé : (b)*.
-2. **Barème P1 (maîtrise)** : réussite normale `+20 %` / critique `+40 %` ;
-   bonus INT `+1 %`/pt au-delà de INT 15, plafond `+50 %` ? → *à valider*.
-3. **P2 buffs** : quelles stats (ATK/DEF/AGI/MAG ?), quelle ampleur (+X), quelle
-   durée (3 tours ?), cumul avec Garde/Protego autorisé ou non ?
-4. **Déblocage** des nouvelles recettes utilitaires : 3ᵉ quête Slughorn **ou**
-   découverte par expérimentation **ou** mixte ?
-5. **Périmètre première vague** : confirme-t-on **P0 + P1** comme premier PR,
-   P2 ensuite ?
+1. ✅ **`potion_force`** → (b) **vraie potion de buff ATK** (tire le moteur
+   `temp_buff` minimal dans la 1ʳᵉ vague élargie / 2ᵉ PR).
+2. ✅ **Barème P1** → ratée **−15 %** · réussite **+20 %** · critique **+40 %** ;
+   bonus INT `+1 %`/pt au-delà de 15 ; plafond `[−15 %, +50 %]`. Le **ratage
+   produit une fiole diluée** (au lieu de 0). La **potency influe sur la
+   revente**.
+3. ⏳ **P2 buffs** : stats/ampleur/durée/cumul Garde — à figer à l'ouverture du
+   2ᵉ PR (potion_force = premier cas concret).
+4. ⏳ **Déblocage** recettes utilitaires (P0) : à figer (proposé : mixte —
+   antidote/bouclier par expérimentation, +1 quête Slughorn pour le reste).
+5. ✅ **Première vague** = **P0 + P1**. Découpage en 2 PR pour la revue :
+   **PR 1 = P1** (brassage à maîtrise, ce commit) ; **PR 2 = P0** (recettes
+   manquantes + `potion_force` buff via moteur `temp_buff`).
 
 ---
 
@@ -223,3 +228,4 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 | Date | Note |
 |------|------|
 | 2026-05-30 | Plan rédigé après audit. Constats : potion_force buggée, potion_xl_sp & 3 potions utilitaires sans recette, crit purement quantitatif. Lots P0→P4 cadrés ; première vague P0+P1 (dont l'idée « brassage à maîtrise » validée). Décisions §6 en attente. |
+| 2026-05-30 | Décisions §6 figées. **P1 livré** (PR 1) : potency bakée (`brewPotency`) ratée −15 % / réussite +20 % / critique +40 % + maîtrise INT (plafond [−15 %, +50 %]) ; ratage produit une fiole diluée (au lieu de 0) ; revente indexée sur la potency (`_computeSellPrice`). Smoke T8/T9 + 126/126 + pwa v28. **Reste PR 2 = P0** (recettes manquantes + `potion_force` buff via moteur `temp_buff`). |

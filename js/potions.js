@@ -9,10 +9,30 @@
 //   verrouillé tant que la quête `quest_potions_slughorn` n'est pas remise.
 //
 // LOT C5 — « Brassage maison » : une potion issue du chaudron porte le flag
-// `brewed:true` et restaure BREW_POTENCY_BONUS de plus qu'une potion achetée
-// (appliqué dans inventory.js — _applyConsumableEffect). Récompense la boucle
-// de brassage face à l'achat en boutique.
-const BREW_POTENCY_BONUS = 0.25;   // +25 % pour les potions brassées soi-même
+// `brewed:true` et restaure plus qu'une potion achetée (appliqué dans
+// inventory.js — _applyConsumableEffect). Récompense la boucle de brassage.
+//
+// LOT P1 — « Brassage à maîtrise » : la potency est désormais BAKÉE dans la
+// fiole (`brewPotency`), variable selon la qualité du jet :
+//   ratée (jet manqué, recette connue) → -15 % (fiole diluée, au lieu de 0)
+//   réussite                           → +20 %
+//   critique                           → +40 % (qualitatif, pas que ×2)
+//   + maîtrise : +1 %/pt d'INT au-dessus de 15, plafonné [-15 %, +50 %].
+// `BREW_POTENCY_BONUS` reste le fallback legacy (fioles brassées avant P1,
+// flag `brewed:true` sans `brewPotency`).
+const BREW_POTENCY_BONUS  = 0.25;   // fallback legacy (potions d'avant P1)
+const BREW_POTENCY_TIERS  = { fail: -0.15, success: 0.20, crit: 0.40 };
+const BREW_INT_THRESHOLD  = 15;     // INT au-delà duquel la maîtrise bonifie
+const BREW_INT_BONUS_PER  = 0.01;   // +1 % de potency / pt d'INT au-dessus du seuil
+const BREW_POTENCY_CAP    = 0.50;   // plafond de potency
+const BREW_POTENCY_FLOOR  = -0.15;  // plancher (fiole diluée)
+
+// Potency bakée dans une fiole selon la qualité de brassage + l'INT du brasseur.
+function _brewPotencyFor(kind) {
+  const base = BREW_POTENCY_TIERS[kind] || 0;
+  const intBonus = Math.max(0, _bestBrewerInt() - BREW_INT_THRESHOLD) * BREW_INT_BONUS_PER;
+  return Math.max(BREW_POTENCY_FLOOR, Math.min(BREW_POTENCY_CAP, base + intBonus));
+}
 
 // ── Besace d'herboriste ──────────────────────────────────────
 
@@ -225,41 +245,49 @@ function attemptBrew() {
     discovered = true;
   }
 
-  // Jet INT : échec / réussite / critique.
+  // Jet INT : ratée / réussite / critique. P1 — une recette CONNUE dont le jet
+  // échoue produit désormais 1 fiole diluée (au lieu de 0) ; seul un mélange
+  // sans recette (capté plus haut) ne donne rien.
   const roll   = 1 + Math.floor(Math.random() * 20);
   const margin = _bestBrewerInt() + roll - recipe.difficulty;
   let potions, kind;
-  if (margin < 0)       { potions = 0; kind = 'fail'; }
+  if (margin < 0)       { potions = 1; kind = 'fail'; }
   else if (margin < 12) { potions = 1; kind = 'success'; }
   else                  { potions = 2; kind = 'crit'; }
 
+  // P1 — potency bakée dans la fiole selon la qualité du jet + l'INT.
+  const potency = _brewPotencyFor(kind);
+
   let added = 0;
   for (let i = 0; i < potions; i++) {
-    // `brewed:true` → bonus de puissance à la consommation (C5).
-    if (tryAddItem(recipe.resultItemId, { silent: true, props: { brewed: true } })) added++;
+    if (tryAddItem(recipe.resultItemId, { silent: true, props: { brewed: true, brewPotency: potency } })) added++;
   }
   const lost = potions - added;
 
   const resultItem = (typeof ITEMS !== 'undefined')
     ? ITEMS.find(i => i.id === recipe.resultItemId) : null;
   const potName = resultItem ? resultItem.name : recipe.name;
+  const pctTxt  = (potency >= 0 ? '+' : '') + Math.round(potency * 100) + '%';
 
   let html = '';
   if (kind === 'fail') {
+    // Jet manqué : la fiole est diluée (potency négative), pas perdue.
     _brewResult = { cls: 'is-fail',
-      html: `Le brassage échoue : ${recipe.name} n'a pas pris.` };
-    if (typeof addMsg === 'function') addMsg(`Brassage raté : ${recipe.name}.`, 'bad');
+      html: `Brassage médiocre : ${added}× ${potName} `
+        + `<span class="brew-potency-note">🧪 fiole diluée (${pctTxt} d'effet)</span>.`
+        + (lost > 0 ? ` (${lost} perdue${lost > 1 ? 's' : ''} — sac plein.)` : '') };
+    if (typeof addMsg === 'function') addMsg(`Brassage médiocre : ${added}× ${potName} diluée (${pctTxt}).`, 'bad');
     if (typeof AudioSystem !== 'undefined' && AudioSystem.playDeath) AudioSystem.playDeath();
   } else {
     const cls = (kind === 'crit') ? 'is-crit' : 'is-success';
     const tag = (kind === 'crit') ? ' <b>Brassage critique ×2 !</b>' : '';
-    const potencyPct = Math.round(BREW_POTENCY_BONUS * 100);
+    const qual = (kind === 'crit') ? 'Concentrée' : 'Brassage maison';
     html = `Succès : ${added}× ${potName}.${tag}`
-      + ` <span class="brew-potency-note">✨ Brassage maison : +${potencyPct}% d'effet.</span>`;
+      + ` <span class="brew-potency-note">✨ ${qual} : ${pctTxt} d'effet.</span>`;
     if (lost > 0) html += ` (${lost} perdue${lost > 1 ? 's' : ''} — sac plein.)`;
     _brewResult = { cls, html };
     if (typeof addMsg === 'function') {
-      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/items/potion_m.png" alt=""> Brassage réussi : ${added}× ${potName}${kind === 'crit' ? ' (critique !)' : ''}.`, 'good');
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/items/potion_m.png" alt=""> Brassage réussi : ${added}× ${potName}${kind === 'crit' ? ' (critique !)' : ''} — ${pctTxt} d'effet.`, 'good');
       if (lost > 0) addMsg(`Sac plein — ${lost} potion(s) perdue(s).`, 'bad');
     }
     if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
@@ -369,7 +397,7 @@ function _renderBrewingModal() {
   const known = (player.knownRecipes || [])
     .map(_getRecipe).filter(Boolean);
   html += `<div class="brewing-section"><div class="brewing-section-label">Recettes connues `
-    + `<span class="brew-potency-note">✨ +${Math.round(BREW_POTENCY_BONUS * 100)}% d'effet (brassage maison)</span></div>`;
+    + `<span class="brew-potency-note">✨ Brassage maison : +${Math.round(BREW_POTENCY_TIERS.success * 100)}% · critique +${Math.round(BREW_POTENCY_TIERS.crit * 100)}%</span></div>`;
   if (known.length) {
     html += `<div class="brew-recipes">`;
     for (const r of known) {
