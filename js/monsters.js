@@ -1569,7 +1569,8 @@ const MONSTERS = [
     xp: 60, gold: { min: 20, max: 35 },
     drops:  [
       { itemId: "potion_m",     chance: 0.20 },
-      { itemId: "herbe_aconit", chance: 0.30 }
+      { itemId: "herbe_aconit", chance: 0.30 },
+      { itemId: "herbe_dictame", chance: 0.12 }
     ]
   },
 

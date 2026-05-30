@@ -215,15 +215,44 @@ découvrables (cohérent avec « pas de verrou » §6bis). Décision : **découv
   `_ingredientCount` lit bien une potion depuis le sac ; pas de collision
   d'ingrédients.
 
-### LOT P5 — Économie, ancrage & idées longues (backlog) · effort variable
+### LOT P5 — Économie des herbes (sources fiabilisées) · ✅ LIVRÉ 2026-05-30
 
-- Équilibrage des **sources d'herbes** (cueillette `searchRoom` / drops / boutique)
-  par palier d'étage.
+> Décisions utilisateur (2026-05-30) : enrichir les 3 sources — **boutique
+> (herboriste)** + **cueillette (Fouiller)** + **drops monstres**.
+
+**Audit de l'existant** : la cueillette (searchRoom, ~20 % par fouille, herbe du
+palier de l'étage) et les drops (~9 monstres botaniques) **fonctionnent déjà**.
+Le **trou** était la **boutique** : `_purchase()` poussait tout dans
+`player.inventory` (sac 16) — il **bypassait** le routage herbe→besace de
+`tryAddItem`. Une herbe achetée (déjà vendue par l'Apothicaire Ténébreux !)
+tombait à tort dans le sac, **invisible au brassage** (qui lit `player.herbs`).
+
+- [x] **P5.1 — Fix routage boutique (bloquant)** · `shop.js — _purchase()` :
+  `type:"herb"` → `addHerb(id, 1)` (besace) au lieu de `inventory.push`. Le
+  garde « sac plein » est sauté pour les herbes, et l'herbe **ne quitte pas le
+  stock** (ré-achat libre — besace illimitée, source fiable).
+- [x] **P5.2 — Herbes au catalogue** · 6 herbes ajoutées à `SHOP_CATALOG` :
+  T1 (armoise/ortie) étage ≥ 1, T2 (asphodèle/branchiflore) ≥ 4,
+  T3 (aconit/dictame) ≥ 7. Prix = `item.price` (6/12/20).
+- [x] **P5.3 — Cueillette améliorée** · `movement-interactions.js — searchRoom` :
+  récolte **double** (×2) sur jet chanceux (25 %), sinon 1. Narratif dédié.
+- [x] **P5.4 — Drops équilibrés** · audit : chaque tier avait déjà une source de
+  drop sauf **dictame** (T3) dont l'unique source (Loup-Garou Enragé @0.10)
+  plafonne à l'étage 9. Ajout d'un drop dictame @0.12 au **Loup-Garou Adulte**
+  [8+] — tie-in canon (« le Dictame guérit les morsures lycanthropes »).
+
+- [x] *Vérif* : `scenarioHerbEconomy` (smoke) — achat herbe → besace (pas sac),
+  achat possible sac plein, herbe ré-achetable (stock conservé), catalogue
+  filtré par palier, cueillette double (2) vs simple (1). Suite complète :
+  **133/133 verts**.
+
+### LOT P6 — Ancrage & idées longues (backlog) · effort variable
+
 - Ancrage narratif : herbe **rare endgame**, lien Maison/Slughorn, jardin
   d'herbes (récolte passive).
 - **Potions offensives jetables** en combat (flacon de feu/poison lancé) —
   **gros scope** (touche la boucle de combat), à flag et à cadrer séparément.
-- *Hors première vague.*
+- Codex de recettes dans la modale chaudron (P3 original, reporté).
 
 ---
 

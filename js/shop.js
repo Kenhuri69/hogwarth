@@ -83,6 +83,15 @@ const SHOP_CATALOG = [
   // Consommables endgame (post-victoire) — voir ENDGAME_PLAN.md §7.10
   { id: "potion_xl",           minFloor: 15 },
   { id: "potion_xl_sp",        minFloor: 15 },
+  // Herbes d'herboriste (ingrédients de potion → besace) — déblocage par
+  // palier cohérent avec les tiers d'herbe. Source d'appoint fiable :
+  // achat répétable (cf. _purchase, herbes non spliced du stock).
+  { id: "herbe_armoise",       minFloor: 1 },
+  { id: "herbe_ortie",         minFloor: 1 },
+  { id: "herbe_asphodele",     minFloor: 4 },
+  { id: "herbe_branchiflore",  minFloor: 4 },
+  { id: "herbe_aconit",        minFloor: 7 },
+  { id: "herbe_dictame",       minFloor: 7 },
 ];
 
 // Politique de rachat par défaut (boutique fixe Madame Malkins). Les
@@ -366,9 +375,18 @@ function _renderSellGrid(grid) {
 
 function _purchase(item, price, stockEntry) {
   if (!Number.isFinite(player.gold) || player.gold < price) return;
-  if (player.inventory.length >= 16) { addMsg("Sac plein !", 'bad'); return; }
+  // Les herbes vivent dans la besace d'herboriste (player.herbs, non
+  // plafonnée), pas dans le sac 16 slots : le garde « sac plein » ne les
+  // concerne pas, et l'achat les route vers addHerb (sinon le brassage,
+  // qui lit player.herbs, ne les verrait jamais).
+  const isHerb = item.type === 'herb';
+  if (!isHerb && player.inventory.length >= 16) { addMsg("Sac plein !", 'bad'); return; }
   player.gold -= price;
-  player.inventory.push({ ...item });
+  if (isHerb && typeof addHerb === 'function') {
+    addHerb(item.id, 1);
+  } else {
+    player.inventory.push({ ...item });
+  }
   // Livre de sort : achetable une seule fois pour toute la partie.
   if (item.type === 'spellbook') purchasedSpellbooks.add(item.id);
   // Sinks endgame — items à prix progressif : on incrémente le compteur
@@ -384,8 +402,9 @@ function _purchase(item, price, stockEntry) {
     }
   }
   // Boutique fixe : l'objet quitte le stock (achat unique jusqu'au réassort)
-  // — sauf pour les items rarityScales (ré-achetables au prix progressif).
-  if (stockEntry && Array.isArray(shopStock) && !item.rarityScales) {
+  // — sauf pour les items rarityScales (ré-achetables au prix progressif)
+  // et les herbes (besace illimitée → ré-achat libre, source fiable).
+  if (stockEntry && Array.isArray(shopStock) && !item.rarityScales && !isHerb) {
     const i = shopStock.indexOf(stockEntry);
     if (i !== -1) shopStock.splice(i, 1);
   }

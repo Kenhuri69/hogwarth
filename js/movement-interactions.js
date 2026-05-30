@@ -306,8 +306,15 @@ function searchRoom() {
     const herbs = ITEMS.filter(i => i.type === 'herb' && i.tier === tier);
     const herb = herbs.length ? herbs[Math.floor(Math.random() * herbs.length)] : null;
     if (herb && tryAddItem(herb, { silent: true })) {
-      setNarrative(`Entre deux pierres, une herbe a poussé : ${herb.name}. Vous la cueillez.`);
-      addMsg(`Herbe cueillie : ${herb.name}`, 'good');
+      // Jet chanceux (~25 %) : la touffe est généreuse, deux brins d'un coup.
+      const bumper = Math.random() < 0.25 && tryAddItem(herb, { silent: true });
+      if (bumper) {
+        setNarrative(`Une touffe généreuse a poussé entre les pierres : ${herb.name}. Vous en cueillez deux brins.`);
+        addMsg(`Herbe cueillie : ${herb.name} ×2`, 'good');
+      } else {
+        setNarrative(`Entre deux pierres, une herbe a poussé : ${herb.name}. Vous la cueillez.`);
+        addMsg(`Herbe cueillie : ${herb.name}`, 'good');
+      }
     } else {
       setNarrative(NARRATIVES.nothing);
       addMsg("Rien trouvé.", '');
