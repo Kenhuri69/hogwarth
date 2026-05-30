@@ -2407,9 +2407,10 @@ body {
   background: #3a2a1a; color: #6a5030; cursor: not-allowed; filter: none;
 }
 /* C3a — choix entre les deux voies de forge (1er upgrade). */
-.forge-path-choice { display: flex; flex-direction: column; gap: 5px; }
-.forge-path-choice .forge-upgrade-btn { padding: 5px 10px; font-size: 10px; }
-.forge-preview.forge-choose { color: var(--gold); font-style: italic; }
+.forge-path-choice, .library-path-choice { display: flex; flex-direction: column; gap: 5px; }
+.forge-path-choice .forge-upgrade-btn,
+.library-path-choice .library-upgrade-btn { padding: 5px 10px; font-size: 10px; }
+.forge-preview.forge-choose, .library-preview.forge-choose { color: var(--gold); font-style: italic; }
 .forge-empty, .library-empty {
   text-align: center; padding: 24px; color: #8a7050; font-style: italic;
 }

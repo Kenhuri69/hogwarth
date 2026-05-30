@@ -5833,20 +5833,60 @@ async function scenarioLibraryUpgrade() {
   assert(t2.goldLeft === 5000 - 120, 'gold débité de 120');
   assert(t2.pagesLeft === 0,    'page consommée');
 
-  // T3 : _spellForCaster applique le bonus
+  // T3 : C3b — voie 'power' (défaut de T2, appel legacy sans path) :
+  // _spellForCaster augmente power, laisse cost INCHANGÉ.
   const t3 = await page.evaluate(() => {
     const baseSpell = SPELLS.find(s => s.name === 'Incendio');
     const augmented = _spellForCaster(baseSpell, party[0]);
     return {
+      path:      getSpellPath(party[0], 'Incendio'),
       basePower: baseSpell.power,
       basecost:  baseSpell.cost,
       augPower:  augmented.power,
       augCost:   augmented.cost,
     };
   });
-  console.log('  T3 _spellForCaster Incendio →', t3);
-  assert(t3.augPower === t3.basePower + 2, 'power +2 × level');
-  assert(t3.augCost  === Math.max(1, t3.basecost - 1), 'cost −1 × level (min 1)');
+  console.log('  T3 voie power (Incendio) →', t3);
+  assert(t3.path === 'power',                'voie verrouillée à power (défaut)');
+  assert(t3.augPower === t3.basePower + 2,   'power +2 × level');
+  assert(t3.augCost  === t3.basecost,        'cost INCHANGÉ en voie power');
+
+  // T4 : C3b — voie 'focus' sur Stupefix : cost réduit, power INCHANGÉ.
+  const t4 = await page.evaluate(() => {
+    player.gold = 5000;
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'page_grimoire') });
+    const ok = upgradeSpellAtLibrary(0, 'Stupefix', 'focus');
+    const baseSpell = SPELLS.find(s => s.name === 'Stupefix');
+    const aug = _spellForCaster(baseSpell, party[0]);
+    return {
+      ok, path: getSpellPath(party[0], 'Stupefix'),
+      basePower: baseSpell.power, baseCost: baseSpell.cost,
+      augPower: aug.power, augCost: aug.cost,
+    };
+  });
+  console.log('  T4 voie focus (Stupefix) →', t4);
+  assert(t4.ok === true,                       'upgrade voie focus réussit');
+  assert(t4.path === 'focus',                  'voie verrouillée à focus');
+  assert(t4.augCost === Math.max(1, t4.baseCost - 1), 'cost −1 × level en voie focus');
+  assert(t4.augPower === t4.basePower,         'power INCHANGÉ en voie focus');
+
+  // T5 : compat legacy — un sort upgradé AVANT C3b (spellUpgrades sans
+  // spellPaths) garde la formule combinée (power +2 ET cost −1).
+  const t5 = await page.evaluate(() => {
+    party[0].spellUpgrades['Expelliarmus'] = 1;
+    if (party[0].spellPaths) delete party[0].spellPaths['Expelliarmus'];
+    const baseSpell = SPELLS.find(s => s.name === 'Expelliarmus');
+    const aug = _spellForCaster(baseSpell, party[0]);
+    return {
+      path: getSpellPath(party[0], 'Expelliarmus'),
+      basePower: baseSpell.power, baseCost: baseSpell.cost,
+      augPower: aug.power, augCost: aug.cost,
+    };
+  });
+  console.log('  T5 legacy combiné (Expelliarmus) →', t5);
+  assert(t5.path === undefined,                'aucune voie enregistrée (legacy)');
+  assert(t5.augPower === t5.basePower + 2,     'legacy : power +2');
+  assert(t5.augCost  === Math.max(1, t5.baseCost - 1), 'legacy : cost −1');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

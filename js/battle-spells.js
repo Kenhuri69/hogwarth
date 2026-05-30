@@ -756,24 +756,33 @@ const SPELL_HANDLERS = {
 const ALLY_TARGET_EFFECTS = new Set(['support_regen']);
 
 // Bibliothèque interdite (endgame Tranche 2) — renvoie une copie augmentée
-// du sort en appliquant le `spellUpgrades` du caster :
-//   - power  : +2 × level
-//   - cost   : −1 × level (plancher 1)
-//   - chance : +0.05 × level (cap 0.50, pour les sorts à statut)
+// du sort en appliquant le `spellUpgrades` du caster. C3b : deux voies,
+// verrouillées au 1ᵉʳ upgrade (`char.spellPaths[name]`) :
+//   - 'power' (défaut/legacy)  → power +2 × level
+//   - 'focus'                  → cost −1 × level (plancher 1)
+//                                + chance +0.05 × level (cap 0.50, sorts à statut)
+// Cas legacy : une entrée upgradée AVANT C3b (pas de spellPaths) conserve la
+// formule combinée d'origine (power+2 / cost−1 / chance+0.05) — pas de nerf.
 // Si le caster n'a pas d'upgrade sur ce sort, retourne le sort tel quel.
-// Voir ENDGAME_PLAN.md §7.6 + js/library.js.
+// Voir ENDGAME_PLAN.md §7.6 + js/library.js + .claude/plans/library-spell-axis-c3b.md.
 function _spellForCaster(spell, char) {
   if (!spell || !char) return spell;
   const ups = char.spellUpgrades;
   if (!ups) return spell;
   const lvl = (ups[spell.name] | 0);
   if (lvl <= 0) return spell;
+  const path = char.spellPaths && char.spellPaths[spell.name];
   const out = { ...spell };
-  if (typeof spell.power === 'number') out.power = spell.power + 2 * lvl;
-  if (typeof spell.cost  === 'number') out.cost  = Math.max(1, spell.cost - lvl);
-  if (typeof spell.chance === 'number') {
-    out.chance = Math.min(0.5, spell.chance + 0.05 * lvl);
-  }
+  const applyPower = () => {
+    if (typeof spell.power === 'number') out.power = spell.power + 2 * lvl;
+  };
+  const applyFocus = () => {
+    if (typeof spell.cost  === 'number') out.cost  = Math.max(1, spell.cost - lvl);
+    if (typeof spell.chance === 'number') out.chance = Math.min(0.5, spell.chance + 0.05 * lvl);
+  };
+  if (path === 'power')      applyPower();
+  else if (path === 'focus') applyFocus();
+  else { applyPower(); applyFocus(); }  // legacy combiné (sans spellPaths)
   return out;
 }
 window._spellForCaster = _spellForCaster;
