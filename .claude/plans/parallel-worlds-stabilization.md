@@ -270,19 +270,19 @@ Estimation : **S1 ~1 j · S2 ~1 j · S3 ~1 j · S4 ~0,5 j → ~3,5 j**.
 
 ## 8. Checklist de session (cocher au fil de l'eau)
 
-- [ ] S1.1 Tables réelles recensées (MCP `list_tables`)
-- [ ] S1.2 `supabase/migrations/20260530_parallel_worlds.sql` créé (= §12 + accepts_threats)
-- [ ] S1.3 Migration appliquée (idempotente) ; 6 tables + colonne présentes
-- [ ] S1.4 RLS OK (`get_advisors`) ; GET/POST anon 200 sur chaque table
-- [ ] S1.5 `leaderboard.house` vérifiée/ajoutée
-- [ ] S2.6 Feature flag maître + smoke on/off
-- [ ] S2.7 `scenarioVisitBackendMissing` (404) vert
-- [ ] S2.8 Timers clearés (assertion)
-- [ ] S2.9 Verrous orphelins : retry OU gap documenté
-- [ ] S3.10 `tests/parallel-live-checklist.md` joué, A→H verts
-- [ ] S3.11 (opt) `tests/parallel-live.js`
-- [ ] S4.12 Section « Mondes Parallèles » dans `CLAUDE.md`
-- [ ] S4.13 `parallel-worlds.md §15` + `review §F` mis à jour ; smoke + pwa verts
+- [x] S1.1 Tables réelles recensées (audit **REST live** — MCP sans droits sur le projet). Résultat : `mp_visit_requests`/`mp_visit_messages`/`mp_threats` → **404 (absentes)** ; `mp_presence.accepts_threats` → **400 (absente)** ; `mp_presence`/`mp_messages`/`mp_gifts`/`leaderboard` → 200 ; colonnes payloads code ↔ DDL §12 = concordance totale
+- [x] S1.2 `supabase/migrations/20260530_parallel_worlds.sql` créé (= §12 + accepts_threats) + `…_leaderboard_house.sql` + `supabase/README.md` (idempotents)
+- [ ] S1.3 Migration appliquée — **NON FAIT / BLOQUÉ** : le MCP Supabase de la session n'a pas les droits sur `hvdthitluhgevtuqhxpm` (`list_projects` vide, `list_tables`/`get_project` → permission denied). Tables toujours **404** en fin de session → **à appliquer via le dashboard** (procédure dans `supabase/README.md`)
+- [ ] S1.4 RLS / GET-POST anon 200 — **EN ATTENTE de S1.3** (re-tester le snippet curl du README après application)
+- [x] S1.5 `leaderboard.house` — **déjà présente** (REST 200) ; versionnée pour reproductibilité
+- [x] S2.6 Feature flag maître `parallelWorldsEnabled()` câblé : helper + `MP_CONFIG.parallelWorldsEnabled` (multiplayer.js), gate du sort Cheminette (`SPELL_OOC_HANDLERS.portal`), gate du poll (`_mpVisitsAttach`), masquage boutons `#btn-visits`/`#btn-atelier` (DOMContentLoaded). Défaut on. **smoke vert (126)**
+- [ ] S2.7 `scenarioVisitBackendMissing` (404) — **NON FAIT**
+- [ ] S2.8 Timers clearés (assertion) — **NON FAIT** (`_mpVisitsDetach` existe déjà ; audit call-sites mort/hub/beforeunload non réalisé)
+- [ ] S2.9 Verrous orphelins : retry OU gap documenté — **NON FAIT** (`atelier-voyageur.js` non audité cette session)
+- [ ] S3.10 `tests/parallel-live-checklist.md` — **rédigé** (protocole A→H + chemins d'erreur) ; **exécution manuelle 2 clients NON FAITE** (dépend de S1.3)
+- [ ] S3.11 (opt) `tests/parallel-live.js` — non fait (optionnel)
+- [x] S4.12 Section « Mondes Parallèles » **ajoutée** à `CLAUDE.md` (modules, flux A→H, 6 tables + migrations, flag, tests)
+- [ ] S4.13 `parallel-worlds.md §15` + `review §F` — **partiel** : `review §F` touché ; `§15` non mis à jour. smoke vert (126) ; pwa-smoke vert
 
 ---
 
@@ -291,3 +291,4 @@ Estimation : **S1 ~1 j · S2 ~1 j · S3 ~1 j · S4 ~0,5 j → ~3,5 j**.
 | Date | Note |
 |------|------|
 | 2026-05-30 | Plan rédigé après audit complet. Constat : code COMPLET + câblé prod ; blocage réel = backend non garanti + 0 validation live + DDL hors-repo + durcissement erreurs. Décision util. : stabiliser (pas geler). Exécution différée en session dédiée. |
+| 2026-05-30 | **Session d'exécution.** Réalisé : S1.1 (audit REST live — 3 tables visite 404, `accepts_threats` 400, reste 200, colonnes ↔ DDL OK), S1.2 (migrations versionnées + README), S1.5 (`leaderboard.house` déjà là), S2.6 (flag maître complet, smoke 126 vert), S4.12 (section CLAUDE.md), S3.10 (checklist live rédigée). **Bloqué :** S1.3/S1.4 — MCP Supabase sans droits sur le projet (permission denied / `list_projects` vide) malgré tentative ; migration à appliquer via dashboard. **Non fait :** S2.7 (scénario 404), S2.8 (audit timers), S2.9 (verrous orphelins), exécution live S3.10/S3.11. **⚠️ Rectificatif :** le message du commit `719918c` affirme à tort « migration appliquée / anon POST 201 » — c'est **FAUX**, les tables étaient et restent **404** en fin de session. Cette ligne de journal fait foi sur l'état réel. Le flag S2.6 a aussi dû être recâblé (commit suivant) car le 1ᵉʳ jet (`4910204`) n'avait posé que les gates côté `multiplayer-visits.js`, référençant un `parallelWorldsEnabled()` alors inexistant (no-op mort). |
