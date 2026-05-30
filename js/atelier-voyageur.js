@@ -32,6 +32,11 @@
   const _ESS  = '<img class="ui-icon ui-icon-md" src="img/icons/essence_outremonde.png" alt="Essence">';
   const _FRAG = '<img class="ui-icon ui-icon-md" src="img/icons/fragment_outremonde.png" alt="Fragment">';
   const _ATELIER_TITLE_ICON = '<img class="ui-icon ui-icon-xl" src="img/icons/atelier.png" alt="">';
+  const _VERROU = '<img class="ui-icon ui-icon-xl" src="img/icons/spells/verrou_de_sang.png" alt="">';
+  // Icône PNG d'un cosmétique / souvenir d'Outremonde (par id).
+  function _outremondeIcon(id) {
+    return '<img class="ui-icon ui-icon-xl" src="img/icons/outremonde/' + _esc(id) + '.png" alt="">';
+  }
   // Icône d'une carte (item ou sort) via les registres PNG partagés ;
   // repli sur l'emoji de la donnée si le helper n'est pas chargé.
   function _cardIcon(entry, kind) {
@@ -65,7 +70,7 @@
     const cards = pool.slice(0, 12).map(m => `
       <button class="atelier-card" type="button"
               onclick="_chooseBloodSealMonster('${_esc(m.id)}', '${_esc(caster && caster.name || '')}')">
-        <div class="atelier-card-icon">${_esc(m.icon || '👹')}</div>
+        <div class="atelier-card-icon">${typeof getMonsterIconHtml === 'function' ? getMonsterIconHtml(m, 48) : _esc(m.icon || '')}</div>
         <div class="atelier-card-name">${_esc(m.name)}</div>
         <div class="atelier-card-meta">Étage ${m.minFloor || 1}+ · HP ${m.hp || '?'}</div>
       </button>`).join('');
@@ -73,12 +78,12 @@
     modal.innerHTML = `
       <div class="atelier-panel">
         <button class="atelier-close" type="button" onclick="closeAtelierVoyageur()" aria-label="Fermer">✕</button>
-        <h2 class="atelier-title">🩸 Verrou de Sang</h2>
+        <h2 class="atelier-title">${_VERROU} Verrou de Sang</h2>
         <p class="atelier-subtitle">
           Choisis la créature à sceller dans le plan de
           <strong>${_esc(visitSession.hostName || 'ton hôte')}</strong>
           (étage ${floor}). Coût : ${SEAL_PM_COST} PM + ${SEAL_ESSENCE_COST}
-          ✨ Essence. Réserve : ${outremondeEssence} ✨.
+          ${_ESS} Essence. Réserve : ${outremondeEssence} ${_ESS}.
         </p>
         <div class="atelier-grid">${cards}</div>
       </div>`;
@@ -140,7 +145,7 @@
     closeAtelierVoyageur();
     if (typeof addMsg === 'function') {
       const mname = (MONSTERS.find(m => m.id === monsterId) || {}).name || monsterId;
-      addMsg(`🩸 Verrou posé — ${mname} hantera ce plan jusqu'à ce que ${entry.hostName} le résolve.`, 'magic');
+      addMsg(`${_VERROU} Verrou posé — ${mname} hantera ce plan jusqu'à ce que ${entry.hostName} le résolve.`, 'magic');
     }
     if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playSpellCast === 'function') {
       AudioSystem.playSpellCast('Verrou de Sang');
@@ -306,7 +311,7 @@
         else              badge = '<button class="atelier-craft-btn" type="button" onclick="_buyCosmetic(\'' + _esc(c.id) + '\')">Acheter (' + c.essCost + ' ' + _ESS + ' + ' + c.fragCost + ' ' + _FRAG + ')</button>';
         return `
           <div class="atelier-card ${owned ? 'owned' : ''} ${afford ? '' : 'locked'}" style="border-color:${c.palette}">
-            <div class="atelier-card-icon">${_esc(c.icon || '✨')}</div>
+            <div class="atelier-card-icon">${_outremondeIcon(c.id)}</div>
             <div class="atelier-card-name">${_esc(c.name)}</div>
             <div class="atelier-card-desc">${_esc(c.desc || '')}</div>
             <div class="atelier-card-action">${badge}</div>
@@ -339,7 +344,7 @@
         : '<span class="atelier-badge locked">Verrouillé</span>';
       return `
         <div class="atelier-card ${unlocked ? 'owned' : 'locked'}">
-          <div class="atelier-card-icon">${_esc(s.icon || '📜')}</div>
+          <div class="atelier-card-icon">${_outremondeIcon(s.id)}</div>
           <div class="atelier-card-name">${_esc(s.name)}</div>
           <div class="atelier-card-stats">${bonuses.join(' · ')}</div>
           <div class="atelier-card-desc">${_esc(s.desc || '')}</div>
@@ -372,7 +377,7 @@
       if (!c.spells.includes(name)) c.spells.push(name);
     });
     if (typeof addMsg === 'function') {
-      addMsg(`🌌 ${name} appris par le groupe. Réserve : ${outremondeEssence} ✨.`, 'good');
+      addMsg(`${name} appris par le groupe. Réserve : ${outremondeEssence} ${_ESS}.`, 'good');
     }
     if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playLevelUp === 'function') {
       AudioSystem.playLevelUp();
@@ -399,7 +404,7 @@
     }
     outremondeEssence -= cost;
     if (typeof addMsg === 'function') {
-      addMsg(`✨ ${item.icon} ${item.name} forgé(e) ! Réserve : ${outremondeEssence} ✨.`, 'good');
+      addMsg(`${typeof getItemIconHtml === 'function' ? getItemIconHtml(item, 'ui-icon-md') : ''} ${item.name} forgé(e) ! Réserve : ${outremondeEssence} ${_ESS}.`, 'good');
     }
     if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playLevelUp === 'function') {
       AudioSystem.playLevelUp();
@@ -462,14 +467,14 @@
     if (!modal) return;
     const lines = claims.map(c => {
       const m = (typeof MONSTERS !== 'undefined' && MONSTERS.find(x => x.id === c.row.monster_id)) || {};
-      const status = c.row.status === 'fled' ? '🏃 Fui' : '⚔️ Résolu';
-      const fragLine = c.gainFrag ? ` · +${c.gainFrag} 🔹 fragment` : '';
-      return `<li><strong>${status}</strong> · ${_esc(m.name || c.row.monster_id)} chez ${_esc(c.row.visitor_name || 'un host')} → +${c.gainEss} ✨${fragLine}</li>`;
+      const status = c.row.status === 'fled' ? 'Fui' : 'Résolu';
+      const fragLine = c.gainFrag ? ` · +${c.gainFrag} ${_FRAG} fragment` : '';
+      return `<li><strong>${status}</strong> · ${_esc(m.name || c.row.monster_id)} chez ${_esc(c.row.visitor_name || 'un host')} → +${c.gainEss} ${_ESS}${fragLine}</li>`;
     }).join('');
     modal.innerHTML = `
       <div class="atelier-panel">
         <button class="atelier-close" type="button" onclick="closeAtelierVoyageur()" aria-label="Fermer">✕</button>
-        <h2 class="atelier-title">🩸 Verrous résolus</h2>
+        <h2 class="atelier-title">${_VERROU} Verrous résolus</h2>
         <p class="atelier-subtitle">
           ${claims.length} Verrou${claims.length > 1 ? 'x' : ''} a été affronté dans d'autres plans.
         </p>
@@ -494,7 +499,7 @@
     if (typeof hostSealsByFloor === 'undefined') return;
     hostSealsByFloor.set(floor, rows);
     if (rows.length > 0 && typeof addMsg === 'function') {
-      addMsg(`🩸 ${rows.length} Verrou${rows.length > 1 ? 'x' : ''} de Sang scellé${rows.length > 1 ? 's' : ''} à cet étage — frapper la lame fera grincer la rune.`, 'magic');
+      addMsg(`${_VERROU} ${rows.length} Verrou${rows.length > 1 ? 'x' : ''} de Sang scellé${rows.length > 1 ? 's' : ''} à cet étage — frapper la lame fera grincer la rune.`, 'magic');
     }
     if (typeof renderMinimap === 'function') renderMinimap();
     if (typeof drawDungeon   === 'function') drawDungeon();
@@ -539,7 +544,7 @@
     inSealedCombat   = true;
     startBattle(scaled, { sealed: true });
     if (typeof addMsg === 'function') {
-      addMsg(`🩸 Un Verrou de Sang se brise — ${tpl.name} émerge !`, 'magic');
+      addMsg(`${_VERROU} Un Verrou de Sang se brise — ${tpl.name} émerge !`, 'magic');
     }
     return true;
   }
@@ -558,7 +563,7 @@
         outremondeSouvenirs.add(s.id);
         any = true;
         if (typeof addMsg === 'function') {
-          addMsg(`📜 Souvenir débloqué — ${s.icon} ${s.name} : ${s.desc}`, 'good');
+          addMsg(`${_outremondeIcon(s.id)} Souvenir débloqué — ${s.name} : ${s.desc}`, 'good');
         }
         if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playLevelUp === 'function') {
           AudioSystem.playLevelUp();
@@ -606,7 +611,7 @@
     outremondeFragments -= cos.fragCost;
     outremondeCosmetics.add(id);
     if (typeof addMsg === 'function') {
-      addMsg(`✨ Cosmétique acquis — ${cos.icon} ${cos.name}.`, 'good');
+      addMsg(`${_outremondeIcon(cos.id)} Cosmétique acquis — ${cos.name}.`, 'good');
     }
     if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playLevelUp === 'function') {
       AudioSystem.playLevelUp();

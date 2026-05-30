@@ -36,7 +36,28 @@ emoji littéraux (constatés sur captures mobiles). Ce plan ferme ces trous.
 - Vrai portrait Slughorn (Nano Banana) : le placeholder prof générique
   retire l'emoji ; le PNG dédié pourra le remplacer plus tard.
 
-## Statut : ✅ terminé — `node tests/smoke.js` = 126 scénarios verts.
+## Statut lot 1 : ✅ — `node tests/smoke.js` = 126 scénarios verts.
+
+## Extension (demande « clairement aussi ») — lots structurels
+
+_Statut lots 7-10 : ✅ — `node tests/smoke.js` = 126 scénarios verts._
+
+7. ☑ **Modales Verrou de Sang** (atelier-voyageur.js) : titres 🩸 →
+   `verrou_de_sang.png` ; picker monstre 👹 → `getMonsterIconHtml` ;
+   statuts/monnaie (🏃⚔️🔹✨) → texte / `_ESS`/`_FRAG`.
+8. ☐ **Cartes Cosmétiques (12) + Souvenirs (6)** : nouveaux PNG
+   `img/icons/outremonde/<id>.png` (`tools/gen_outremonde_cosmetics.py`),
+   câblés via `_outremondeIcon(id)`.
+9. ☐ **Labels d'action PNJ** (npcs.js + npc-dialog.js) : 🧪🎁📖🕯️✨🛒💰
+   → `<img>` (potion_m, gold, spellbook, scroll, larmes_phenix, shop_sign).
+10. ☐ **Logs atelier** (`addMsg`) : 🩸🌌📜✨ → icônes PNG correspondantes.
+
+### Laissé sciemment
+- `scaled.name = '🩸 ' + name` (marqueur de combat rendu aussi sur canvas —
+  un `<img>` n'y est pas rendable).
+- **Log de combat/quêtes global** (~75 `addMsg` hors atelier, dans battle/
+  quests/movement/teleport…) : transformation large et discutable (mini-images
+  inline dans un flux de texte). À confirmer avant de balayer.
 
 ## Étapes
 1. ☐ `tools/gen_outremonde_icons.py` → génère 4 PNG 48×48 :

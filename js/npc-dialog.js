@@ -412,7 +412,7 @@ function _npcDialogActions(npc, state) {
   // Vendeur ambulant : bouton dédié pour ouvrir sa boutique
   if (Array.isArray(npc.wares) && npc.wares.length) {
     out.push({
-      label: '🛒 Voir les marchandises',
+      label: '<img class="ui-icon ui-icon-md" src="img/icons/shop_sign.png" alt=""> Voir les marchandises',
       onClick: `closeNpcDialog(); openVendorShop('${npc.id}');`
     });
   }
@@ -456,7 +456,7 @@ function _npcDialogActions(npc, state) {
     const bonuses = HOUSE_BONUSES[chosenHouse];
     if (bonuses && bonuses.headOfHouse === npc.id) {
       out.push({
-        label: '💰 Faire un don',
+        label: '<img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> Faire un don',
         onClick: `closeNpcDialog(); openHouseDonationModal();`
       });
     }
