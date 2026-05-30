@@ -14,6 +14,7 @@ const SHOP_CATALOG = [
   { id: "gants_apprenti",      minFloor: 1 },
   { id: "bottes_apprenti",     minFloor: 1 },
   { id: "potion_m",            minFloor: 2 },
+  { id: "eclat_vitalite",      minFloor: 3 },
   { id: "elixir_antidote",     minFloor: 2 },
   { id: "elixir_regen",        minFloor: 3 },
   { id: "potion_resistance",   minFloor: 3 },

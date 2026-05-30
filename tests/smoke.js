@@ -8304,7 +8304,7 @@ async function scenarioBrewing() {
     const added  = tryAddItem('herbe_armoise', { silent: true });
     return {
       herbCount,
-      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 10,
+      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 17,
       added,
       herbInBesace: getHerbCount('herbe_armoise'),
       inventoryUnchanged: player.inventory.length === before,
@@ -8313,7 +8313,7 @@ async function scenarioBrewing() {
   });
   console.log('  T1 données →', t1);
   assert(t1.herbCount === 6,          '6 items herbe attendus');
-  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 10 recettes');
+  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 17 recettes');
   assert(t1.added,                    'tryAddItem(herbe) doit réussir');
   assert(t1.herbInBesace === 1,       'la herbe doit aller dans la besace');
   assert(t1.inventoryUnchanged,       'la herbe ne doit pas occuper le sac');
@@ -8673,6 +8673,116 @@ async function scenarioPotionResistance() {
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
   console.log('  ✅ Potion de Résistance OK (item, mitigation, recettes, quête Slughorn 3)');
+  await browser.close();
+}
+
+// ── Scénario : chaîne d'upgrade-craft des potions (LOT P4) ──
+// Vérifie : (1) items/ressource/recettes présents ; (2) une potion du sac est
+// un ingrédient valide (potion_s + eclat → potion_l) ; (3) la chaîne Mineure
+// se brasse ; (4) _ingredientCount lit bien une potion depuis l'inventaire ;
+// (5) Éclat non buvable (material) ; (6) pas de collision d'ingrédients.
+async function scenarioPotionUpgradeCraft() {
+  console.log('\n── Scénario : upgrade-craft des potions (chaîne de soin + Éclat) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — données : items, ressource, recettes, icônes.
+  const t1 = await page.evaluate(() => {
+    const ids = ['potion_soin_mineure', 'potion_soin_mineure_plus', 'potion_soin_mineure_pp', 'eclat_vitalite'];
+    const items = ids.map(id => ITEMS.find(i => i.id === id));
+    const recipes = ['brew_potion_soin_mineure', 'brew_potion_soin_mineure_plus', 'brew_potion_soin_mineure_pp',
+                     'brew_up_potion_l', 'brew_up_potion_l_sp', 'brew_up_potion_xl', 'brew_up_potion_xl_sp'];
+    return {
+      itemsOk: items.every(Boolean),
+      eclatMaterial: items[3] && items[3].type === 'material',
+      heals: [items[0].power, items[1].power, items[2].power],
+      recipesOk: recipes.every(rid => POTION_RECIPES.some(r => r.id === rid)),
+      iconsOk: ids.every(id => !!ITEM_ICON_NEW_REGISTRY[id]),
+      count: POTION_RECIPES.length,
+    };
+  });
+  console.log('  T1 données :', t1);
+  assert(t1.itemsOk && t1.eclatMaterial, 'chaîne Mineure + Éclat (material) présents');
+  assert(t1.heals[0] === 15 && t1.heals[1] === 30 && t1.heals[2] === 55, 'paliers de soin 15/30/55');
+  assert(t1.recipesOk, 'les 7 recettes P4 doivent exister');
+  assert(t1.iconsOk, 'les 4 nouveaux items doivent avoir une icône PNG');
+  assert(t1.count === 17, `POTION_RECIPES doit compter 17 recettes (obtenu ${t1.count})`);
+
+  // T2 — pas de collision d'ingrédients (chaque set est unique).
+  const t2 = await page.evaluate(() => {
+    const seen = {}; let dup = null;
+    for (const r of POTION_RECIPES) {
+      const key = Object.keys(r.ingredients).sort().map(k => k + ':' + r.ingredients[k]).join('|');
+      if (seen[key]) dup = [seen[key], r.id]; seen[key] = r.id;
+    }
+    return { dup };
+  });
+  console.log('  T2 collision:', t2);
+  assert(!t2.dup, `aucune collision d'ingrédients (${JSON.stringify(t2.dup)})`);
+
+  // T3 — upgrade-craft : potion_s (sac) + eclat (sac) → potion_l.
+  const t3 = await page.evaluate(() => {
+    // INT élevée pour garantir la réussite du jet.
+    party[0].int = 99;
+    player.herbs = {};
+    player.inventory = player.inventory.filter(i => i.id !== 'potion_l');
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'potion_s') });
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'eclat_vitalite') });
+    const sBefore = player.inventory.filter(i => i.id === 'potion_s').length;
+    const eBefore = player.inventory.filter(i => i.id === 'eclat_vitalite').length;
+    const matched = _matchRecipe({ potion_s: 1, eclat_vitalite: 1 });
+    _cauldronMix = { potion_s: 1, eclat_vitalite: 1 };
+    attemptBrew();
+    return {
+      matchedId: matched && matched.id,
+      sBefore, eBefore,
+      sAfter: player.inventory.filter(i => i.id === 'potion_s').length,
+      eAfter: player.inventory.filter(i => i.id === 'eclat_vitalite').length,
+      gotL: player.inventory.some(i => i.id === 'potion_l'),
+    };
+  });
+  console.log('  T3 upgrade :', t3);
+  assert(t3.matchedId === 'brew_up_potion_l', 'potion_s + eclat doit matcher brew_up_potion_l');
+  assert(t3.sAfter === t3.sBefore - 1 && t3.eAfter === t3.eBefore - 1, 'ingrédients (potion + éclat) consommés depuis le sac');
+  assert(t3.gotL, 'le brassage doit produire potion_l');
+
+  // T4 — _ingredientCount lit une potion depuis le sac (pas la besace).
+  const t4 = await page.evaluate(() => {
+    player.inventory = player.inventory.filter(i => i.id !== 'potion_soin_mineure');
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'potion_soin_mineure') });
+    return { count: _ingredientCount('potion_soin_mineure'), herbCount: _ingredientCount('herbe_armoise') };
+  });
+  console.log('  T4 lecture :', t4);
+  assert(t4.count === 1, '_ingredientCount doit lire une potion depuis le sac');
+
+  // T5 — chaîne Mineure : Mineure + eclat → Mineure+.
+  const t5 = await page.evaluate(() => {
+    party[0].int = 99; player.herbs = {};
+    player.inventory = player.inventory.filter(i => i.id !== 'potion_soin_mineure_plus');
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'potion_soin_mineure') });
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'eclat_vitalite') });
+    _cauldronMix = { potion_soin_mineure: 1, eclat_vitalite: 1 };
+    attemptBrew();
+    return { gotPlus: player.inventory.some(i => i.id === 'potion_soin_mineure_plus') };
+  });
+  console.log('  T5 chaîne  :', t5);
+  assert(t5.gotPlus, 'Mineure + Éclat doit produire Mineure +');
+
+  // T6 — Éclat non buvable (material refusé par useItem).
+  const t6 = await page.evaluate(() => {
+    const c = party[0]; c.hpMax = 100; c.hp = 50;
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'eclat_vitalite') }];
+    useItem(0, false);
+    return { hp: c.hp, stillThere: player.inventory.some(i => i.id === 'eclat_vitalite') };
+  });
+  console.log('  T6 material:', t6);
+  assert(t6.hp === 50 && t6.stillThere, 'Éclat de Vitalité ne doit pas être consommable directement');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Upgrade-craft OK (chaîne soin, potion-ingrédient, Éclat, no-collision)');
   await browser.close();
 }
 
@@ -15424,7 +15534,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioPotionResistance, scenarioShopLimits, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

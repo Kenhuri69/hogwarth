@@ -38,6 +38,12 @@ const ITEM_ICON_REGISTRY = {
   // Consommables
   potion_s:           'img/icons/items/potion_s.png',
   potion_m:           'img/icons/items/potion_m.png',
+  // Chaîne de soin à paliers + Éclat (P4) — fallback legacy (PNG painterly
+  // dédiés dans ITEM_ICON_NEW_REGISTRY).
+  potion_soin_mineure:      'img/icons/items/potion_s.png',
+  potion_soin_mineure_plus: 'img/icons/items/potion_s.png',
+  potion_soin_mineure_pp:   'img/icons/items/potion_s.png',
+  eclat_vitalite:           'img/icons/items/potion_s.png',
   // Versions "++" étage 5+ : réutilisent les PNG des petites en attendant
   // la génération de sprites dédiés via tools/gen_icons.py.
   potion_l:           'img/icons/items/potion_s.png',
@@ -214,6 +220,10 @@ const ITEM_ICON_NEW_REGISTRY = {
   anneau_runique:       'img/icons_new/anneau_runique_64.png',
   livre_sortileges:     'img/icons_new/livre_sortileges_64.png',
   potion_m:             'img/icons_new/potion_m_64.png',
+  potion_soin_mineure:      'img/icons_new/potion_soin_mineure_64.png',
+  potion_soin_mineure_plus: 'img/icons_new/potion_soin_mineure_plus_64.png',
+  potion_soin_mineure_pp:   'img/icons_new/potion_soin_mineure_pp_64.png',
+  eclat_vitalite:           'img/icons_new/eclat_vitalite_64.png',
   potion_force:         'img/icons_new/potion_force_64.png',
   potion_resistance:    'img/icons_new/potion_resistance_64.png',
   larmes_phenix:        'img/icons_new/larmes_phenix_64.png',

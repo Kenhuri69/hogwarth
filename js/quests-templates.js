@@ -93,7 +93,7 @@ const QUEST_TEMPLATES = [
     objectives: [
       { type: "item", itemId: "mandragore", amount: 3, progress: 0, completed: false }
     ],
-    reward: { xp: 60, gold: 40, recipes: ["brew_potion_s", "brew_potion_m"] },
+    reward: { xp: 60, gold: 40, recipes: ["brew_potion_s", "brew_potion_m", "brew_potion_soin_mineure"] },
     location: "Salle des Potions (étage 2)"
   },
   // Quête de suivi Slughorn : déverrouille les recettes de Grande Potion.
