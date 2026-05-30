@@ -570,6 +570,10 @@ const ITEMS = [
   { id:"herbe_branchiflore", name:"Branchiflore",     icon:"🪴", desc:"Ingrédient de potion (palier 2).", type:"herb", tier:2, price:12 },
   { id:"herbe_aconit",       name:"Aconit",           icon:"☘️", desc:"Ingrédient de potion (palier 3).", type:"herb", tier:3, price:20 },
   { id:"herbe_dictame",      name:"Dictame",          icon:"🍃", desc:"Ingrédient de potion (palier 3).", type:"herb", tier:3, price:20 },
+  // Palier 4 — herbe rare endgame, ne pousse qu'en Boucle Ténébreuse (étages
+  // 11+). Source : cueillette haut-étage + drop du Héraut des Ténèbres +
+  // Apothicaire Ténébreux. Réservée aux Élixirs Suprêmes de prestige.
+  { id:"herbe_asphodele_noire", name:"Asphodèle des Ténèbres", icon:"🥀", desc:"Ingrédient de potion (palier 4 — Boucle Ténébreuse).", type:"herb", tier:4, price:40 },
 
   // ── Mondes parallèles Phase H §6.10 — Set Voyageur ────────────
   // 5 pièces craftées à l'Atelier du Voyageur avec des Essences
@@ -659,6 +663,16 @@ const POTION_RECIPES = [
   { id:"brew_up_potion_xl_sp", name:"Élixir d'Esprit Suprême (raffinage)", resultItemId:"potion_xl_sp",
     ingredients:{ potion_l_sp:1, eclat_vitalite:2 },                    difficulty:18,
     lore:"Deux Éclats subliment une Grande Potion Magique en Élixir d'Esprit." },
+  // ── Recettes de prestige (P6.b1) — Asphodèle des Ténèbres ────────────────
+  // Voie endgame : la fleur corrompue de la Boucle Ténébreuse distille un
+  // Élixir Suprême sans intermédiaire. Réemploient les items résultats
+  // existants (potion_xl / potion_xl_sp). Découvrables librement.
+  { id:"brew_xl_tenebres",    name:"Élixir Suprême (Ténèbres)",        resultItemId:"potion_xl",
+    ingredients:{ herbe_asphodele_noire:2 },                            difficulty:18,
+    lore:"L'asphodèle des Ténèbres, à elle seule, vaut tout un autel d'ingrédients." },
+  { id:"brew_xl_sp_tenebres", name:"Élixir d'Esprit Suprême (Ténèbres)", resultItemId:"potion_xl_sp",
+    ingredients:{ herbe_asphodele_noire:3 },                            difficulty:18,
+    lore:"Trois fleurs noires ouvrent l'esprit aux confins de la magie." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];

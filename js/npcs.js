@@ -1163,6 +1163,7 @@ const NPCS = [
       { id: "potion_l_sp",      price: 85 },
       { id: "herbe_aconit",     price: 30 },
       { id: "herbe_dictame",    price: 35 },
+      { id: "herbe_asphodele_noire", price: 40 },
       { id: "essence_tenebres", price: 380 },
       { id: "page_grimoire",    price: 460 }
     ],

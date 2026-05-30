@@ -311,6 +311,85 @@ progression « Codex — X/21 découvertes ».
 **Hors-scope P6.a** (différé) : ancrage narratif des herbes, jardin passif,
 potions offensives jetables — restent dans le backlog P6.
 
+#### P6.b — ANCRAGE NARRATIF DES HERBES · sous-lots décomposés
+
+> Audit 2026-05-30 (session ancrage). État réel de l'économie d'herbes :
+> - **6 herbes**, 3 paliers (T1 ét.1+, T2 ét.4+, T3 ét.7+). `tier` max = 3.
+> - **3 sources fiables** (livrées P5) : cueillette (`searchRoom`, ~20 %,
+>   herbe du palier de l'étage + 25 % double), drops monstres botaniques,
+>   boutille Apothicaire (`SHOP_CATALOG`, ré-achat libre, besace illimitée).
+> - **Slughorn** (`npcs.js:212`, étage 2) : 3 quêtes (`quest_potions_slughorn`
+>   1/2/3) qui déverrouillent le chaudron + pré-enseignent les recettes. Pas
+>   de lien avec `chosenHouse` aujourd'hui (le « Slug Club » canon n'est pas
+>   exploité).
+> - **Endgame / Boucle Ténébreuse** (étages 11+) : matériaux dédiés
+>   `essence_tenebres` (Forge) + `page_grimoire` (Bibliothèque). **Aucune
+>   herbe endgame** : la cueillette plafonne à T3 dès l'étage 7, donc rien de
+>   neuf à récolter en Boucle côté herboristerie.
+
+Décomposition en 3 sous-lots indépendants, du plus sûr au plus novateur :
+
+**P6.b1 — Herbe rare endgame (le plus sûr — données pures)**
+- Nouvelle herbe **tier 4** (ex. « Asphodèle des Ténèbres » / herbe corrompue)
+  qui ne pousse qu'en **Boucle Ténébreuse** (étages 11+). Sources : cueillette
+  haut-étage (extension du palier dans `searchRoom`) + drop des variants
+  `Ténébreux` / vendeur Apothicaire Ténébreux.
+- **1 recette de prestige** la consommant (nouvel élixir endgame, ou upgrade
+  d'un Élixir Suprême existant). Découvrable + éventuellement enseignée.
+- **Icône PNG** via `icon_factory.py` (silhouette herbe, teinte ténèbres).
+- *Vérif* : smoke — la 7ᵉ herbe existe (tier 4) ; la recette prestige matche ;
+  cueillette T4 seulement à l'étage 11+ ; pas de régression du palier 1-3.
+
+> **Décisions b1 (figées 2026-05-30, validées utilisateur)** : ancrage
+> **Boucle Ténébreuse (11+)** · consommation = **upgrade des Élixirs Suprêmes
+> existants** (réemploi des items résultats `potion_xl`/`potion_xl_sp`, aucun
+> nouvel item de potion ni effet). **Icône = SVG inline** (les 6 herbes
+> actuelles sont des SVG dans `ITEM_ICON_SVG_REGISTRY` — PAS le pipeline
+> Python ; on suit ce patron).
+>
+> **Étapes** :
+> 1. **Item herbe** `herbe_asphodele_noire` (Asphodèle des Ténèbres) dans
+>    `data.js` : `type:"herb", tier:4, price:40`. → *vérif* : 7 herbes,
+>    `_recipeHint`/cueillette voient tier 4.
+> 2. **2 recettes de prestige** dans `POTION_RECIPES` (21→23), multisets
+>    inédits (pas de collision) :
+>    `brew_xl_tenebres` `{ herbe_asphodele_noire:2 }` diff 18 → `potion_xl` ;
+>    `brew_xl_sp_tenebres` `{ herbe_asphodele_noire:3 }` diff 18 → `potion_xl_sp`.
+>    Découvrables librement (cohérent §6bis « pas de verrou »). → *vérif* :
+>    le combo matche la bonne recette ; produit l'élixir existant.
+> 3. **Source cueillette** : `searchRoom` (movement-interactions.js) — ajouter
+>    le palier `currentFloor >= 11 ? 4`. → *vérif* : tier 4 récolté seulement
+>    à 11+ ; paliers 1-3 inchangés.
+> 4. **Source drop** : ajouter `{ itemId:"herbe_asphodele_noire", chance:0.30 }`
+>    aux drops de `heraut_tenebres` (boss epic, recycle en Boucle). → *vérif* :
+>    drop présent.
+> 5. **Source boutique** : ajouter l'herbe aux `wares` de l'Apothicaire
+>    Ténébreux (`npcs.js`) à `price:40`. → *vérif* : achetable, routée besace.
+> 6. **Icône SVG** : entrée `herbe_asphodele_noire` dans `ITEM_ICON_SVG_REGISTRY`
+>    (asphodèle teinte ténèbres). → *vérif* : `getItemIconHtml` rend le SVG.
+> 7. **Smoke** : scénario dédié `scenarioRareHerb` + **mise à jour des asserts
+>    `POTION_RECIPES.length` 21→23** (scenarioBrewing T1, scenarioCombatBuffs,
+>    scenarioPotionResistance, scenarioPotionUpgradeCraft T1). → *vérif* :
+>    suite verte + pwa bump.
+
+**P6.b2 — Lien Maison / Slughorn (« Slug Club »)**
+- Slughorn reconnaît la Maison du joueur (`chosenHouse`) : dialogue dédié +
+  un **petit bonus d'herboristerie** thématique (ex. cadence de cueillette ou
+  remise boutique selon la Maison), OU un don d'herbes d'amorçage.
+- *Vérif* : smoke — dialogue varie selon `chosenHouse` ; bonus appliqué.
+
+**P6.b3 — Jardin d'herbes à récolte passive (le plus novateur)**
+- Un jardin (cellule spéciale ou feature débloquée par Slughorn) qui **génère
+  des herbes passivement** (cadence à décider : par descente d'étage / par N
+  pas), avec un **plafond d'accumulation** et une UI de récolte. Nouvel état
+  sérialisé + persistance.
+- *Vérif* : smoke — accumulation cadencée, plafonnée, récolte → besace ;
+  round-trip de save.
+
+**Ordre proposé** : b1 (données pures, faible risque) → b2 (léger) → b3
+(nouvelle mécanique + état). Chaque sous-lot = sa propre PR, vert au smoke
+avant la suivante.
+
 ---
 
 ## 4. Ordonnancement proposé
@@ -418,5 +497,6 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 | 2026-05-30 | **PR 3 livré** : Potion de Résistance (statut `resist_buff`, −40 %/3t via `_resistMult` aux 4 sites de dégâts héros) **remplace** `potion_bouclier` (supprimée : item/effet/shop/icône) ; 4 recettes ajoutées (`brew_elixir_antidote`/`_regen`/`brew_potion_resistance`/`brew_potion_xl_sp`) — 10 recettes au total, sans collision d'ingrédients ; 3ᵉ quête Slughorn `quest_potions_slughorn_3` (kill 3 Bundimuns → pré-enseigne Force/Résistance/Esprit Suprême) ; **icône PNG painterly** `potion_resistance` (icon_factory.py + ITEM_ICON_NEW_REGISTRY). Smoke `scenarioPotionResistance` T1-T4 + suite 129/129 + pwa v30. **Première vague potions close.** |
 | 2026-05-30 | **PR 4 livré** : chaîne d'amélioration des potions (upgrade-craft). Généralisation `_ingredientCount`/`_consumeIngredient` (herbe→besace, sinon→sac via `_isHerbIngredient`) ; chaîne de soin `potion_soin_mineure`/`_plus`/`_pp` (15/30/55 PV) ; ressource `eclat_vitalite` (material, shop ét.3+ & drop coffre 25%) ; 7 recettes (chaîne + 4 upgrades `brew_up_potion_l/l_sp/xl/xl_sp` — POTION_RECIPES 10→17, sans collision) ; quête Slughorn 1 offre la recette Mineure. **Fix latent** : branche `material` déplacée avant `type!=='consumable'` dans `useItem` (un matériau slotless tombait dans showEquipMenu→equipItem). 4 icônes PNG (icon_factory : flask niveaux croissants + gemme rouge-vie octaédrique). Smoke `scenarioPotionUpgradeCraft` T1-T6 + suite 130/130 + pwa v31. |
 | 2026-05-30 | **LOT P6.a (codex) — cadrage** : audit confirmé (knownRecipes existe, 21 recettes, section « Recettes connues » liste seulement les connues → trou = recettes masquées + compteur). Plan P6.a rédigé (5 étapes + critères). Décisions proposées : silhouettes+indices (vs tout visible), section inline (vs bouton dédié), indice non-spoiler (palier + nb d'ingrédients). Implémentation en attente du feu vert utilisateur. |
+| 2026-05-30 | **LOT P6.b1 (herbe rare endgame) — LIVRÉ** : décisions confirmées (Boucle Ténébreuse 11+ · consommation = upgrade des Élixirs Suprêmes existants · icône SVG inline). Nouvelle herbe `herbe_asphodele_noire` (Asphodèle des Ténèbres, tier 4, price 40) ; 2 recettes de prestige (`brew_xl_tenebres` 2 herbes→potion_xl · `brew_xl_sp_tenebres` 3 herbes→potion_xl_sp, POTION_RECIPES 21→23, multisets inédits) ; sources : cueillette `searchRoom` palier 4 gated 11+, drop Héraut des Ténèbres @0.30, ware Apothicaire Ténébreux @40 ; icône SVG inline (`ITEM_ICON_SVG_REGISTRY`, asphodèle teinte ténèbres). Asserts `POTION_RECIPES.length` & herbCount mis à jour (21→23, 6→7). Scénario smoke `scenarioRareHerb` T1-T4 (données+sources · recettes prestige · brassage · cueillette gated) ; suite **136/136 verte** + pwa v34. Reste b2 (lien Maison/Slughorn) + b3 (jardin passif). |
 | 2026-05-30 | **LOT P6.a (codex) — LIVRÉ** : décisions confirmées (silhouettes+indices · section inline). La section « Recettes connues » devient un **Codex** listant les 21 recettes — connues (lisibles + « Préparer ») vs à découvrir (silhouette `🔒 ? ? ?` + indice non-spoiler `_recipeHint` : palier d'herbes / « avancée » + nb d'ingrédients), avec compteur « X/21 découvertes ». Helper pur `_recipeHint` ; CSS `.brew-recipe-locked`/`.brew-codex-count`. Scénario smoke `scenarioRecipeCodex` T1-T4 (liste complète · indices herbe vs upgrade · ligne masquée · révélation→compteur+1) ; suite **135/135 verte** + pwa v33. Reste backlog P6 : ancrage narratif herbes + potions offensives jetables. |
 | 2026-05-30 | **PR P2 livré** : potions de buff de combat. Moteur `temp_buff` généralisé de l'ATK seul à 5 stats (`BUFF_STAT_BY_ID` : atk/def/agi/lck/mag) — `_applyConsumableEffect` mute la stat de base + recalc, `tickStatuses` restaure à l'expiry (boucle générique), `recalculateStats` réapplique tous les `buff_*` (source unique, AVANT les stats dérivées → dodge/crit tiennent compte des buffs AGI/LCK). 4 items (Défense+DEF / Célérité+AGI / Précision+LCK / Puissance+MAG, +8/3t) + 4 recettes (POTION_RECIPES 17→21, sans collision) + 4 icônes PNG (flacons teintés) + shop ét.3-4. Smoke `scenarioCombatBuffs` T1-T5 (dont AGI→dodge 9.8→13, LCK→crit 12.5→16.5) + suite 132/132 + pwa v32. |
