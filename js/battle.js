@@ -51,7 +51,11 @@ const STATUS_DEFS = {
   // Durée gérée par consumeImperius() au point d'action, comme stun.
   imperius: { icon: '🌀', label: 'Asservi',           color: '#7d3fa0' },
   // Ferula Maxima : régénération de soutien AOE (PV + PM) sur 3 tours.
-  regen_ferula_max: { icon: '🩹✨', label: 'Régén. Ferula', color: '#5fc7a5' }
+  regen_ferula_max: { icon: '🩹✨', label: 'Régén. Ferula', color: '#5fc7a5' },
+  // Buff ATK temporaire (Potion de Force, P0). Miroir positif de `disarm` :
+  // l'ATK est augmentée à la pose (applyStatus dans _applyConsumableEffect),
+  // restaurée à l'expiry par tickStatuses. `power` = ATK gagnée.
+  buff_atk: { icon: '💪', label: 'Force', color: '#d35400' }
 };
 
 // Pose ou rafraîchit un statut. Renvoie `true` si un nouvel "instance"
@@ -200,6 +204,11 @@ function tickStatuses(target, isEnemy) {
       target.atk = (target.atk || 0) + s.power;
       log += `${STATUS_DEFS[s.id].icon} ${target.name} récupère ${s.power} ATK. `;
       UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} récupère <b>+${s.power} ATK</b>`, 'magic');
+    } else if (s.id === 'buff_atk') {
+      // Expiration du buff de Force → retirer l'ATK gagnée (miroir de disarm).
+      target.atk = Math.max(0, (target.atk || 0) - s.power);
+      log += `${STATUS_DEFS[s.id].icon} ${target.name} perd le bonus de Force (${s.power} ATK). `;
+      UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} : <b>−${s.power} ATK</b> (Force dissipée)`, 'info');
     }
   });
   target.statusEffects = remaining;
