@@ -28,6 +28,20 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  // Icônes PNG des monnaies d'Outremonde (remplacent les emoji ✨ / 🔹).
+  const _ESS  = '<img class="ui-icon ui-icon-md" src="img/icons/essence_outremonde.png" alt="Essence">';
+  const _FRAG = '<img class="ui-icon ui-icon-md" src="img/icons/fragment_outremonde.png" alt="Fragment">';
+  const _ATELIER_TITLE_ICON = '<img class="ui-icon ui-icon-xl" src="img/icons/atelier.png" alt="">';
+  // Icône d'une carte (item ou sort) via les registres PNG partagés ;
+  // repli sur l'emoji de la donnée si le helper n'est pas chargé.
+  function _cardIcon(entry, kind) {
+    if (kind === 'spell' && typeof getSpellIconHtml === 'function')
+      return getSpellIconHtml(entry, 'ui-icon-xl');
+    if (kind === 'item' && typeof getItemIconHtml === 'function')
+      return getItemIconHtml(entry, 'ui-icon-xl');
+    return _esc(entry && entry.icon || '');
+  }
+
   // ── Modale de pose du Verrou ────────────────────────────────
   // Liste les monstres éligibles à l'étage du host (visitSession
   // currentFloor). L'utilisateur choisit ; pose la ligne dans `mp_threats`
@@ -166,10 +180,10 @@
     if (!modal) return;
 
     const tabs = [
-      ['set',       '🧥 Set Voyageur'],
-      ['spells',    '🌌 Sorts'],
-      ['cosmetics', '✨ Cosmétiques'],
-      ['souvenirs', '📜 Souvenirs']
+      ['set',       'Set Voyageur'],
+      ['spells',    'Sorts'],
+      ['cosmetics', 'Cosmétiques'],
+      ['souvenirs', 'Souvenirs']
     ];
     const tabsHtml = tabs.map(([id, label]) =>
       `<button class="atelier-tab ${_atelierTab === id ? 'active' : ''}" type="button"`
@@ -184,10 +198,10 @@
     modal.innerHTML = `
       <div class="atelier-panel atelier-panel-wide">
         <button class="atelier-close" type="button" onclick="closeAtelierVoyageur()" aria-label="Fermer">✕</button>
-        <h2 class="atelier-title">✨ Atelier du Voyageur</h2>
+        <h2 class="atelier-title">${_ATELIER_TITLE_ICON} Atelier du Voyageur</h2>
         <p class="atelier-subtitle">
-          Réserve d'Essences d'Outremonde : <strong>${outremondeEssence}</strong> ✨ ·
-          Fragments : <strong>${outremondeFragments}</strong> 🔹
+          Réserve d'Essences d'Outremonde : <strong>${outremondeEssence}</strong> ${_ESS} ·
+          Fragments : <strong>${outremondeFragments}</strong> ${_FRAG}
         </p>
         <div class="atelier-tabs">${tabsHtml}</div>
         <div class="atelier-tabbody">${body}</div>
@@ -215,8 +229,8 @@
       let badge = '';
       if (isEquipped)       badge = '<span class="atelier-badge done">Équipé</span>';
       else if (isOwned)     badge = '<span class="atelier-badge done">Possédé</span>';
-      else if (!affordable) badge = '<span class="atelier-badge locked">' + cost + ' ✨</span>';
-      else                  badge = '<button class="atelier-craft-btn" type="button" onclick="_craftVoyageurPiece(\'' + _esc(it.id) + '\')">Forger (' + cost + ' ✨)</button>';
+      else if (!affordable) badge = '<span class="atelier-badge locked">' + cost + ' ' + _ESS + '</span>';
+      else                  badge = '<button class="atelier-craft-btn" type="button" onclick="_craftVoyageurPiece(\'' + _esc(it.id) + '\')">Forger (' + cost + ' ' + _ESS + ')</button>';
       const stats = [];
       if (it.bonusInt) stats.push('+' + it.bonusInt + ' INT');
       if (it.bonusAgi) stats.push('+' + it.bonusAgi + ' AGI');
@@ -225,7 +239,7 @@
       if (it.regenSp)  stats.push('regen ' + it.regenSp + ' PM/tour');
       return `
         <div class="atelier-card ${isOwned || isEquipped ? 'owned' : ''} ${affordable ? '' : 'locked'}">
-          <div class="atelier-card-icon">${_esc(it.icon || '✨')}</div>
+          <div class="atelier-card-icon">${_cardIcon(it, 'item')}</div>
           <div class="atelier-card-name">${_esc(it.name)}</div>
           <div class="atelier-card-stats">${stats.join(' · ')}</div>
           <div class="atelier-card-desc">${_esc(it.desc || '')}</div>
@@ -252,11 +266,11 @@
       const affordable = outremondeEssence >= cost;
       let badge = '';
       if (known)            badge = '<span class="atelier-badge done">Appris</span>';
-      else if (!affordable) badge = '<span class="atelier-badge locked">' + cost + ' ✨</span>';
-      else                  badge = '<button class="atelier-craft-btn" type="button" onclick="_buyCrossSpell(\'' + _esc(s.name) + '\')">Apprendre (' + cost + ' ✨)</button>';
+      else if (!affordable) badge = '<span class="atelier-badge locked">' + cost + ' ' + _ESS + '</span>';
+      else                  badge = '<button class="atelier-craft-btn" type="button" onclick="_buyCrossSpell(\'' + _esc(s.name) + '\')">Apprendre (' + cost + ' ' + _ESS + ')</button>';
       return `
         <div class="atelier-card ${known ? 'owned' : ''} ${affordable ? '' : 'locked'}">
-          <div class="atelier-card-icon">${_esc(s.icon || '✨')}</div>
+          <div class="atelier-card-icon">${_cardIcon(s, 'spell')}</div>
           <div class="atelier-card-name">${_esc(s.name)}</div>
           <div class="atelier-card-desc">${_esc(s.desc || '')}</div>
           <div class="atelier-card-action">${badge}</div>
@@ -288,8 +302,8 @@
         let badge = '';
         if (active)       badge = '<button class="atelier-craft-btn active" type="button" onclick="_toggleCosmetic(\'' + _esc(c.id) + '\')">Actif — désactiver</button>';
         else if (owned)   badge = '<button class="atelier-craft-btn" type="button" onclick="_toggleCosmetic(\'' + _esc(c.id) + '\')">Activer</button>';
-        else if (!afford) badge = '<span class="atelier-badge locked">' + c.essCost + ' ✨ + ' + c.fragCost + ' 🔹</span>';
-        else              badge = '<button class="atelier-craft-btn" type="button" onclick="_buyCosmetic(\'' + _esc(c.id) + '\')">Acheter (' + c.essCost + ' ✨ + ' + c.fragCost + ' 🔹)</button>';
+        else if (!afford) badge = '<span class="atelier-badge locked">' + c.essCost + ' ' + _ESS + ' + ' + c.fragCost + ' ' + _FRAG + '</span>';
+        else              badge = '<button class="atelier-craft-btn" type="button" onclick="_buyCosmetic(\'' + _esc(c.id) + '\')">Acheter (' + c.essCost + ' ' + _ESS + ' + ' + c.fragCost + ' ' + _FRAG + ')</button>';
         return `
           <div class="atelier-card ${owned ? 'owned' : ''} ${afford ? '' : 'locked'}" style="border-color:${c.palette}">
             <div class="atelier-card-icon">${_esc(c.icon || '✨')}</div>

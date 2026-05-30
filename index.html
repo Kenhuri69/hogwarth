@@ -727,8 +727,8 @@
 
     <div class="settings-section-label">Voyageur</div>
     <div class="settings-grid">
-      <button id="btn-visits" class="cmd-btn" data-group="audio" onclick="toggleVisitsClosed()" title="Accueil des voyageurs"><span class="btn-icon" style="font-size:20px">🚪</span><span class="btn-label">Portes</span></button>
-      <button id="btn-atelier" class="cmd-btn" data-group="audio" onclick="openAtelierVoyageur()" title="Atelier du Voyageur"><span class="btn-icon" style="font-size:20px">✨</span><span class="btn-label">Atelier</span></button>
+      <button id="btn-visits" class="cmd-btn" data-group="audio" onclick="toggleVisitsClosed()" title="Accueil des voyageurs"><span class="btn-icon"><img src="img/icons/door.png" alt="Portes"></span><span class="btn-label">Portes</span></button>
+      <button id="btn-atelier" class="cmd-btn" data-group="audio" onclick="openAtelierVoyageur()" title="Atelier du Voyageur"><span class="btn-icon"><img src="img/icons/atelier.png" alt="Atelier"></span><span class="btn-label">Atelier</span></button>
     </div>
 
     <div class="settings-section-label">Partie</div>
@@ -736,7 +736,7 @@
       <button class="cmd-btn" data-group="system" onclick="openSaveDialog()" title="Sauvegarder la partie"><span class="btn-icon"><img src="img/icons/save.png" alt="Sauver"></span><span class="btn-label">Sauver</span></button>
       <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon"><img src="img/icons/load.png" alt="Charger"></span><span class="btn-label">Charger</span></button>
       <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon"><img src="img/icons/gear.png" alt="Diff."></span><span class="btn-label">Diff.</span></button>
-      <button class="cmd-btn" data-group="system" onclick="openHelpMenu()" title="Aide / Tutoriel"><span class="btn-icon" style="font-size:20px">📖</span><span class="btn-label">Aide</span></button>
+      <button class="cmd-btn" data-group="system" onclick="openHelpMenu()" title="Aide / Tutoriel"><span class="btn-icon"><img src="img/icons/spellbook.png" alt="Aide"></span><span class="btn-label">Aide</span></button>
     </div>
   </div>
 </div>
@@ -747,9 +747,9 @@
     <div class="modal-title" id="inventory-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/backpack.png" alt=""> Sac de Moldu</div>
     <span class="modal-close" onclick="closeModal('inventory-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
     <div class="shop-tabs" id="inv-tabs">
-      <button type="button" class="shop-tab active" id="inv-tab-sac" onclick="switchInvTab('sac')">🎒 Sac</button>
-      <button type="button" class="shop-tab" id="inv-tab-besace" onclick="switchInvTab('besace')">🌿 Besace</button>
-      <button type="button" class="shop-tab" id="inv-tab-grimoire" onclick="switchInvTab('grimoire')" style="display:none">📖 Grimoire</button>
+      <button type="button" class="shop-tab active" id="inv-tab-sac" onclick="switchInvTab('sac')"><img class="ui-icon ui-icon-md" src="img/icons/backpack.png" alt=""> Sac</button>
+      <button type="button" class="shop-tab" id="inv-tab-besace" onclick="switchInvTab('besace')"><img class="ui-icon ui-icon-md" src="img/icons/besace.png" alt=""> Besace</button>
+      <button type="button" class="shop-tab" id="inv-tab-grimoire" onclick="switchInvTab('grimoire')" style="display:none"><img class="ui-icon ui-icon-md" src="img/icons/spellbook.png" alt=""> Grimoire</button>
     </div>
     <div id="inv-pane-sac">
       <div class="inv-grid" id="inv-grid"></div>
