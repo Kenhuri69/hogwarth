@@ -25,7 +25,17 @@ const MP_CONFIG = {
   presenceTable:   'mp_presence',
   messagesTable:   'mp_messages',
   giftsTable:      'mp_gifts',
+  // Bascule maître du chemin « Mondes Parallèles » (visites inter-mondes).
+  // Défaut activé ; passer à false neutralise le sort Cheminette, le poll
+  // des visites entrantes et les boutons Visites/Atelier — sans toucher au
+  // reste du multijoueur (présence/social).
+  parallelWorldsEnabled: true,
 };
+
+// Helper de lecture du flag maître (cf. parallel-worlds-stabilization.md S2.6).
+function parallelWorldsEnabled() {
+  return !!(typeof MP_CONFIG !== 'undefined' && MP_CONFIG.parallelWorldsEnabled);
+}
 
 const MP_ID_KEY = 'hogwarts_rpg_player_id';
 
