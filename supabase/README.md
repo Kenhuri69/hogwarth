@@ -17,7 +17,11 @@ Toutes les migrations sont **idempotentes** (`create … if not exists`,
 `add column if not exists`, `drop policy if exists` avant `create policy`)
 — ré-exécutables sans casser l'existant.
 
-## Tables (état audit REST live 2026-05-30)
+## Tables (état au 2026-05-30 — migration appliquée)
+
+`20260530_parallel_worlds.sql` a été **appliquée** le 2026-05-30 (via MCP
+`apply_migration`). Les 7 tables répondent 200 en REST anon ; `list_tables`
+les confirme toutes RLS activée.
 
 | Table | État | Provisionnée par |
 |-------|------|------------------|
@@ -26,21 +30,22 @@ Toutes les migrations sont **idempotentes** (`create … if not exists`,
 | `mp_gifts` | ✅ existe | (livrée — multiplayer-social) |
 | `leaderboard` | ✅ existe | (livrée — Hall of Fame) |
 | `leaderboard.house` | ✅ existe | `20260530_leaderboard_house.sql` |
-| `mp_visit_requests` | ⛔ à créer (404) | `20260530_parallel_worlds.sql` |
-| `mp_visit_messages` | ⛔ à créer (404) | `20260530_parallel_worlds.sql` |
-| `mp_threats` | ⛔ à créer (404) | `20260530_parallel_worlds.sql` |
-| `mp_presence.accepts_threats` | ⛔ à créer (400) | `20260530_parallel_worlds.sql` |
+| `mp_visit_requests` | ✅ créée | `20260530_parallel_worlds.sql` |
+| `mp_visit_messages` | ✅ créée | `20260530_parallel_worlds.sql` |
+| `mp_threats` | ✅ créée | `20260530_parallel_worlds.sql` |
+| `mp_presence.accepts_threats` | ✅ ajoutée | `20260530_parallel_worlds.sql` |
 
-## Comment appliquer
+## Comment (ré)appliquer
 
-Le serveur MCP de cette session n'a pas les droits d'écriture sur ce projet.
-Appliquer manuellement via le **dashboard Supabase** :
+Les migrations sont idempotentes — sûres à ré-exécuter. Deux voies :
 
-1. Dashboard → projet `hvdthitluhgevtuqhxpm` → **SQL Editor**.
-2. Coller le contenu de `migrations/20260530_parallel_worlds.sql`, exécuter.
-3. Idem pour `migrations/20260530_leaderboard_house.sql` (no-op si déjà là).
-4. Vérifier : **Table Editor** doit lister les 3 nouvelles tables, et
-   `mp_presence` doit porter la colonne `accepts_threats`.
+- **MCP** (droits requis sur le projet) : `apply_migration` avec le contenu
+  du fichier `.sql`.
+- **Dashboard Supabase** (repli) :
+  1. Dashboard → projet `hvdthitluhgevtuqhxpm` → **SQL Editor**.
+  2. Coller `migrations/20260530_parallel_worlds.sql`, exécuter.
+  3. Idem `migrations/20260530_leaderboard_house.sql` (no-op si déjà là).
+  4. **Table Editor** doit lister les 3 tables visite + `mp_presence.accepts_threats`.
 
 ### Vérification rapide (REST, depuis un shell)
 

@@ -1773,8 +1773,11 @@ chemin visites sans toucher au reste du MP :
 
 ### Tests
 
-- `node tests/smoke.js` : 16+ scénarios `scenario{ParallelPortal,
+- `node tests/smoke.js` : 17+ scénarios `scenario{ParallelPortal,
   PortalMatchmaking,Visit*,Multiplayer*}` — **offline, stubs REST** (jamais
-  d'appel réseau réel : la suite reste déterministe).
+  d'appel réseau réel : la suite reste déterministe). Dont
+  `scenarioVisitBackendMissing` (disjoncteurs 404 + retry des Verrous
+  orphelins) et la vérif du cycle de vie des timers de canal dans
+  `scenarioVisitNetworkDrop`.
 - `tests/parallel-live-checklist.md` : protocole **manuel 2 clients** contre
   le backend réel (hors suite smoke).
