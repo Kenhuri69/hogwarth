@@ -105,10 +105,10 @@ const HELP_TOUR_STEPS = [
           'automatique. Charge une partie via le bouton voisin.'
   },
   {
-    targets: ['button[onclick="startHelpTour()"]'],
+    targets: ['button[onclick="openHelpMenu()"]'],
     title: 'Besoin d\'aide ?',
-    text: 'Ce bouton « Aide » rouvre ce guide quand tu veux. ' +
-          'Bonne aventure à Poudlard !'
+    text: 'Ce bouton « Aide » rouvre ce guide quand tu veux — et te laisse ' +
+          'choisir un sujet précis. Bonne aventure à Poudlard !'
   }
 ];
 
@@ -129,10 +129,23 @@ const COMBAT_TUTORIAL_STEPS = [
 ];
 const COMBAT_TUTO_SEEN_FALLBACK_KEY = 'hh_combat_tuto_seen';
 
+// Sections thématiques pour le menu « Quelle aide ? » (LOT D4). Chaque
+// section est un slice de HELP_TOUR_STEPS ; `start`/`end` (exclusif) servent
+// au slice ET au décalage de narration (voiceOffset = start). L'étape 0
+// (Bienvenue) et l'étape 14 (rappel du bouton Aide) ne sont couvertes que par
+// « Tout le guide ».
+const HELP_TOUR_SECTIONS = [
+  { icon: '🧭', label: 'Explorer le donjon',   start: 1,  end: 4  },
+  { icon: '👥', label: 'Groupe & menus',        start: 4,  end: 10 },
+  { icon: '⚔️', label: 'Combat & survie',       start: 10, end: 13 },
+  { icon: '💾', label: 'Sauvegarder',           start: 13, end: 15 },
+];
+
 let _helpTourStep   = 0;
 let _helpTourActive = false;
 let _htSteps        = HELP_TOUR_STEPS;   // jeu d'étapes courant (override possible)
 let _htOpts         = {};                // options du lancement courant
+let _htVoiceOffset  = 0;                 // décalage de narration (sections D4)
 
 function _htIsVisible(el) {
   if (!el) return false;
@@ -182,7 +195,9 @@ function _htSpeakStep() {
   if (_htOpts.noVoice) return;             // tuto ciblé : pas de narration
   if (typeof AudioSystem === 'undefined' || typeof AudioSystem.playVoice !== 'function') return;
   // playVoice gère lui-même la coupure audio globale (isMuted).
-  AudioSystem.playVoice('mcgonagall_help_' + (_helpTourStep + 1));
+  // _htVoiceOffset (sections D4) réaligne la clé sur la position d'origine
+  // de l'étape dans HELP_TOUR_STEPS.
+  AudioSystem.playVoice('mcgonagall_help_' + (_htVoiceOffset + _helpTourStep + 1));
 }
 
 function _htUpdateVoiceBtn() {
@@ -330,6 +345,7 @@ function startHelpTour(stepsOverride, opts) {
   window._helpTourActive = true;
   _htSteps = (Array.isArray(stepsOverride) && stepsOverride.length) ? stepsOverride : HELP_TOUR_STEPS;
   _htOpts  = opts || {};
+  _htVoiceOffset = _htOpts.voiceOffset | 0;
   _helpTourStep = 0;
   _htBuildDom();
   document.getElementById('help-tour-overlay').style.display = 'block';
@@ -376,6 +392,7 @@ function helpTourEnd() {
   // Retour au jeu d'étapes par défaut pour le prochain lancement (bouton Aide).
   _htSteps = HELP_TOUR_STEPS;
   _htOpts  = {};
+  _htVoiceOffset = 0;
 }
 
 // Lancement auto à chaque nouvelle partie, sauf opt-out.
@@ -403,6 +420,67 @@ function maybeShowCombatTutorial() {
   startHelpTour(COMBAT_TUTORIAL_STEPS, { noVoice: true, hideOptout: true });
 }
 
+// ── Menu « Quelle aide ? » (LOT D4) ────────────────────────────
+// Le bouton « Aide » de la barre de commandes ouvre ce sélecteur plutôt
+// que de relancer systématiquement le tour complet depuis l'étape 1.
+// « Tout le guide » → tour complet ; chaque section → slice + voiceOffset.
+
+function _hmBuildDom() {
+  if (document.getElementById('help-menu-overlay')) return;
+  const root = document.createElement('div');
+  root.id = 'help-menu-overlay';
+  const sectionBtns = HELP_TOUR_SECTIONS.map((s, i) =>
+    '<button type="button" class="help-menu-item" data-section="' + i + '">' +
+      '<span class="help-menu-ico">' + s.icon + '</span>' + s.label +
+    '</button>'
+  ).join('');
+  root.innerHTML =
+    '<div id="help-menu-backdrop"></div>' +
+    '<div id="help-menu-card" role="dialog" aria-modal="true" aria-labelledby="help-menu-title">' +
+      '<button id="help-menu-x" type="button" aria-label="Fermer">✕</button>' +
+      '<div id="help-menu-title">Quelle aide ?</div>' +
+      '<div id="help-menu-list">' +
+        '<button type="button" class="help-menu-item help-menu-all" data-section="all">' +
+          '<span class="help-menu-ico">📖</span>Tout le guide' +
+        '</button>' +
+        sectionBtns +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(root);
+
+  root.querySelector('#help-menu-x').addEventListener('click', closeHelpMenu);
+  root.querySelector('#help-menu-backdrop').addEventListener('click', closeHelpMenu);
+  root.querySelectorAll('.help-menu-item').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      helpMenuStart(this.getAttribute('data-section'));
+    });
+  });
+}
+
+function openHelpMenu() {
+  if (_helpTourActive) return;          // ne pas empiler sur un tour en cours
+  _hmBuildDom();
+  document.getElementById('help-menu-overlay').style.display = 'block';
+}
+
+function closeHelpMenu() {
+  const root = document.getElementById('help-menu-overlay');
+  if (root) root.remove();
+}
+
+// Lance la section choisie (index) ou le tour complet ('all').
+function helpMenuStart(which) {
+  closeHelpMenu();
+  if (which === 'all') { startHelpTour(); return; }
+  const sec = HELP_TOUR_SECTIONS[which | 0];
+  if (!sec) { startHelpTour(); return; }
+  const slice = HELP_TOUR_STEPS.slice(sec.start, sec.end);
+  startHelpTour(slice, { voiceOffset: sec.start, hideOptout: true });
+}
+
+window.openHelpMenu         = openHelpMenu;
+window.closeHelpMenu        = closeHelpMenu;
+window.helpMenuStart        = helpMenuStart;
 window.startHelpTour        = startHelpTour;
 window.maybeShowCombatTutorial = maybeShowCombatTutorial;
 window.helpTourNext         = helpTourNext;
