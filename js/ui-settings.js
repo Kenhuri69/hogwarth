@@ -35,6 +35,18 @@ function _updateVisitsBtn() {
   btn.setAttribute('aria-pressed', closed ? 'true' : 'false');
 }
 
+// Ouvre la modale Réglages (son, voyageur, partie). Resynchronise au
+// passage les icônes des boutons audio + accueil pour refléter l'état
+// courant (utile après un chargement de save).
+function openSettingsModal() {
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.refreshButtons) {
+    AudioSystem.refreshButtons();
+  }
+  _updateVisitsBtn();
+  const modal = document.getElementById('settings-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
 function changeDifficulty() {
   // Mode Ironman : la difficulté est verrouillée pour toute la partie.
   if (typeof ironmanMode !== 'undefined' && ironmanMode) {

@@ -55,24 +55,32 @@ const AudioSystem = {
 
   toggleVoice() {
     this.voiceEnabled = !this.voiceEnabled;
-    const img = document.querySelector('#btn-voice img');
-    if (img) img.src = this.voiceEnabled ? 'img/icons/voice_on.png' : 'img/icons/voice_off.png';
+    this.refreshButtons();
     return this.voiceEnabled;
+  },
+
+  // ── Resynchronise les icônes des boutons audio avec l'état courant ──
+  // Appelé après toggle et après chargement d'une sauvegarde. On met à
+  // jour l'attribut src du <img> (jamais textContent, qui détruirait
+  // la structure <span><img></span> du bouton).
+  refreshButtons() {
+    const mImg = document.querySelector('#btn-music img');
+    if (mImg) mImg.src = this.isMuted ? 'img/icons/music_off.png' : 'img/icons/music_on.png';
+    const vImg = document.querySelector('#btn-voice img');
+    if (vImg) vImg.src = this.voiceEnabled ? 'img/icons/voice_on.png' : 'img/icons/voice_off.png';
   },
 
   // ── Bouton muet / son ─────────────────────────────────────────
   toggleMute() {
     this.isMuted = !this.isMuted;
-    const img = document.querySelector('#btn-music img');
     if (this.isMuted) {
       this.stopMusic();
-      if (img) img.src = 'img/icons/music_off.png';
     } else {
-      if (img) img.src = 'img/icons/music_on.png';
       if (this.inCombat) this.startCombatMusic();
       else if (this.inMenu) this.playMenuMusic();
       else this.playAmbientMusic(this.currentFloor);
     }
+    this.refreshButtons();
     return this.isMuted;
   }
 };

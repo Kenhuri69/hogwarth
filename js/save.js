@@ -184,14 +184,13 @@ function _applyState(gs) {
 
   if (gs.audioMuted !== undefined) {
     AudioSystem.isMuted = gs.audioMuted;
-    const btn = document.getElementById('btn-music');
-    if (btn) btn.textContent = gs.audioMuted ? '🔇' : '♪';
   }
   if (gs.voiceEnabled !== undefined) {
     AudioSystem.voiceEnabled = gs.voiceEnabled;
-    const btnV = document.getElementById('btn-voice');
-    if (btnV) btnV.textContent = gs.voiceEnabled ? '🗣️' : '🔕';
   }
+  // Resynchronise les icônes PNG des boutons audio (jamais textContent,
+  // qui remplacerait le <img> par un emoji brut).
+  if (AudioSystem.refreshButtons) AudioSystem.refreshButtons();
 
   currentFloor = gs.currentFloor;
   playerX      = gs.playerX;

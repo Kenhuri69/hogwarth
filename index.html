@@ -705,21 +705,39 @@
 
       <div class="cmd-vsep"></div>
 
-      <button id="btn-music" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleMute()" title="Musique On/Off"><span class="btn-icon"><img src="img/icons/music_on.png" alt="Musique"></span></button>
-      <button id="btn-voice" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleVoice()" title="Voix des sorts On/Off"><span class="btn-icon"><img src="img/icons/voice_on.png" alt="Voix"></span></button>
-      <button id="btn-visits" class="cmd-btn" data-group="audio" onclick="toggleVisitsClosed()" title="Accueil des voyageurs"><span class="btn-icon" style="font-size:18px">🚪</span></button>
-      <button id="btn-atelier" class="cmd-btn" data-group="audio" onclick="openAtelierVoyageur()" title="Atelier du Voyageur"><span class="btn-icon" style="font-size:18px">✨</span></button>
-
-      <div class="cmd-vsep"></div>
-
-      <button class="cmd-btn" data-group="system" onclick="openSaveDialog()" title="Sauvegarder la partie"><span class="btn-icon"><img src="img/icons/save.png" alt="Sauver"></span><span class="btn-label">Sauver</span></button>
-      <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon"><img src="img/icons/load.png" alt="Charger"></span><span class="btn-label">Charger</span></button>
-      <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon"><img src="img/icons/gear.png" alt="Diff."></span><span class="btn-label">Diff.</span></button>
-      <button class="cmd-btn" data-group="system" onclick="openHelpMenu()" title="Aide / Tutoriel"><span class="btn-icon" style="font-size:18px">📖</span><span class="btn-label">Aide</span></button>
       <button class="cmd-btn mobile-map-btn" data-group="system" onclick="toggleMobileMap()" title="Carte"><span class="btn-icon"><img src="img/icons/map.png" alt="Carte"></span></button>
+      <button class="cmd-btn" data-group="system" onclick="openSettingsModal()" title="Réglages (son, sauvegarde, difficulté…)"><span class="btn-icon"><img src="img/icons/gear.png" alt="Réglages"></span><span class="btn-label">Réglages</span></button>
       <button class="cmd-btn" id="btn-interact" data-group="adventure" style="display:none"><span class="btn-icon"><img src="img/icons/door.png" alt="Interact"></span></button>
     </div>
 
+  </div>
+</div>
+
+<!-- Modale Réglages : regroupe les contrôles système + audio -->
+<div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+  <div class="modal-box">
+    <div class="modal-title" id="settings-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/gear.png" alt=""> Réglages</div>
+    <span class="modal-close" onclick="closeModal('settings-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+
+    <div class="settings-section-label">Son</div>
+    <div class="settings-grid">
+      <button id="btn-music" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleMute()" title="Musique On/Off"><span class="btn-icon"><img src="img/icons/music_on.png" alt="Musique"></span><span class="btn-label">Musique</span></button>
+      <button id="btn-voice" class="cmd-btn" data-group="audio" onclick="AudioSystem.toggleVoice()" title="Voix des sorts On/Off"><span class="btn-icon"><img src="img/icons/voice_on.png" alt="Voix"></span><span class="btn-label">Voix</span></button>
+    </div>
+
+    <div class="settings-section-label">Voyageur</div>
+    <div class="settings-grid">
+      <button id="btn-visits" class="cmd-btn" data-group="audio" onclick="toggleVisitsClosed()" title="Accueil des voyageurs"><span class="btn-icon" style="font-size:20px">🚪</span><span class="btn-label">Portes</span></button>
+      <button id="btn-atelier" class="cmd-btn" data-group="audio" onclick="openAtelierVoyageur()" title="Atelier du Voyageur"><span class="btn-icon" style="font-size:20px">✨</span><span class="btn-label">Atelier</span></button>
+    </div>
+
+    <div class="settings-section-label">Partie</div>
+    <div class="settings-grid">
+      <button class="cmd-btn" data-group="system" onclick="openSaveDialog()" title="Sauvegarder la partie"><span class="btn-icon"><img src="img/icons/save.png" alt="Sauver"></span><span class="btn-label">Sauver</span></button>
+      <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon"><img src="img/icons/load.png" alt="Charger"></span><span class="btn-label">Charger</span></button>
+      <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon"><img src="img/icons/gear.png" alt="Diff."></span><span class="btn-label">Diff.</span></button>
+      <button class="cmd-btn" data-group="system" onclick="openHelpMenu()" title="Aide / Tutoriel"><span class="btn-icon" style="font-size:20px">📖</span><span class="btn-label">Aide</span></button>
+    </div>
   </div>
 </div>
 

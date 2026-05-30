@@ -1490,7 +1490,7 @@ body {
   to   { text-shadow: 0 0 60px rgba(201,168,76,1.0), 0 0 100px rgba(201,168,76,0.4); }
 }
 #inventory-modal, #shop-modal, #character-modal, #spell-modal, #slot-modal,
-#house-detail-modal {
+#house-detail-modal, #settings-modal {
   display: none;
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.85);
@@ -1499,6 +1499,30 @@ body {
   padding: 20px;
 }
 #house-detail-modal .modal-box { max-width: 560px; }
+#settings-modal .modal-box { max-width: 420px; }
+.settings-section-label {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin: 14px 0 6px;
+}
+.settings-section-label:first-of-type { margin-top: 4px; }
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.settings-grid .cmd-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+}
+.settings-grid .cmd-btn .btn-label { display: inline; font-size: 13px; }
 .modal-box {
   background: linear-gradient(180deg, #1a0f05 0%, #120a03 100%);
   border: 2px solid var(--gold);
