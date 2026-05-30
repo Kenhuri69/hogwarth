@@ -52,14 +52,26 @@ const STATUS_DEFS = {
   imperius: { icon: '🌀', label: 'Asservi',           color: '#7d3fa0' },
   // Ferula Maxima : régénération de soutien AOE (PV + PM) sur 3 tours.
   regen_ferula_max: { icon: '🩹✨', label: 'Régén. Ferula', color: '#5fc7a5' },
-  // Buff ATK temporaire (Potion de Force, P0). Miroir positif de `disarm` :
-  // l'ATK est augmentée à la pose (applyStatus dans _applyConsumableEffect),
-  // restaurée à l'expiry par tickStatuses. `power` = ATK gagnée.
+  // Buffs de stat temporaires (potions de buff, P0/P2). Miroir positif de
+  // `disarm` : la stat de base est augmentée à la pose (applyStatus dans
+  // _applyConsumableEffect), réappliquée par recalculateStats (source unique),
+  // restaurée à l'expiry par tickStatuses. `power` = points gagnés.
+  // L'id encode la stat : buff_<stat> (atk/def/agi/lck/mag) — cf. BUFF_STAT_BY_ID.
   buff_atk: { icon: '💪', label: 'Force', color: '#d35400' },
+  buff_def: { icon: '🛡️', label: 'Défense', color: '#3f7a4a' },
+  buff_agi: { icon: '💨', label: 'Célérité', color: '#3fa0a0' },
+  buff_lck: { icon: '🍀', label: 'Précision', color: '#4a9b4a' },
+  buff_mag: { icon: '🔮', label: 'Puissance', color: '#8a4ad0' },
   // Résistance (Potion de Résistance, P3). Non-DoT : réduit tous les dégâts
   // subis de `power` % pendant `turns` tours. Décompté par tickStatuses (pas
   // de fonction de consommation) ; lu par _resistMult() aux sites de dégâts.
   resist_buff: { icon: '🛡️', label: 'Résistance', color: '#4a7ba6' }
+};
+
+// Map statut de buff → stat de base impactée. Source unique consommée par
+// recalculateStats (réapplication) et tickStatuses (restauration à l'expiry).
+const BUFF_STAT_BY_ID = {
+  buff_atk: 'atk', buff_def: 'def', buff_agi: 'agi', buff_lck: 'lck', buff_mag: 'mag'
 };
 
 // Multiplicateur de dégâts subis par une cible (héros) selon son statut
@@ -219,11 +231,18 @@ function tickStatuses(target, isEnemy) {
       target.atk = (target.atk || 0) + s.power;
       log += `${STATUS_DEFS[s.id].icon} ${target.name} récupère ${s.power} ATK. `;
       UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} récupère <b>+${s.power} ATK</b>`, 'magic');
-    } else if (s.id === 'buff_atk') {
-      // Expiration du buff de Force → retirer l'ATK gagnée (miroir de disarm).
-      target.atk = Math.max(0, (target.atk || 0) - s.power);
-      log += `${STATUS_DEFS[s.id].icon} ${target.name} perd le bonus de Force (${s.power} ATK). `;
-      UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} : <b>−${s.power} ATK</b> (Force dissipée)`, 'info');
+    } else if (BUFF_STAT_BY_ID[s.id]) {
+      // Expiration d'un buff de stat → retirer les points gagnés (miroir de
+      // disarm). recalculateStats repartira de la base sans ce buff.
+      const stat = BUFF_STAT_BY_ID[s.id];
+      target[stat] = Math.max(0, (target[stat] || 0) - s.power);
+      const lbl = STATUS_DEFS[s.id].label;
+      log += `${STATUS_DEFS[s.id].icon} ${target.name} perd le bonus de ${lbl} (${s.power}). `;
+      UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} : <b>−${s.power} ${stat.toUpperCase()}</b> (${lbl} dissipée)`, 'info');
+      // Stats dérivées (dodge/crit) à rafraîchir si la stat les pilote.
+      if ((stat === 'agi' || stat === 'lck' || stat === 'mag') && typeof recalculateStats === 'function') {
+        recalculateStats();
+      }
     } else if (s.id === 'resist_buff') {
       // Expiration de la Résistance — aucun état à restaurer (lue à la volée
       // par _resistMult). Simple annonce de dissipation.
