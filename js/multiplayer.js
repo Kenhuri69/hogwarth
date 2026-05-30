@@ -147,6 +147,9 @@ function mpStartSession() {
   // Phase H §6.9 — claim asynchrone des Verrous résolus par d'autres
   // joueurs pendant que ce visiteur était offline.
   if (typeof _claimResolvedSeals === 'function') _claimResolvedSeals();
+  // S2.9 — retry des Verrous orphelins (POST initial échoué) : on tente
+  // de les réenvoyer pour qu'ils deviennent résolubles côté host.
+  if (typeof _retryOrphanSeals === 'function') _retryOrphanSeals();
   // Phase H §6.9 — host : précharge les Verrous actifs sur l'étage
   // initial pour matérialiser les marqueurs minimap dès l'apparition.
   if (typeof loadHostSealsForCurrentFloor === 'function') loadHostSealsForCurrentFloor();

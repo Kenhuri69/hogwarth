@@ -12111,6 +12111,48 @@ async function scenarioVisitBackendMissing() {
   console.log('  T5 hosts 404 →', t5);
   assert(t5.hosts === null, 'mpListAvailableHosts renvoie null sur 404 (→ message silencieux)');
 
+  // T6 (S2.9) : retry des Verrous orphelins. Une entrée 'local-…' (POST
+  // initial échoué) est ré-envoyée ; au succès son id devient l'id serveur.
+  const t6 = await page.evaluate(async () => {
+    outremondePendingSeals = [
+      { id: 'local-111', hostId: 'h9', hostName: 'Zoe', monsterId: 'troll', floor: 4, x: 3, y: 5, postedAt: Date.now() },
+      { id: 'srv-abc',   hostId: 'h9', hostName: 'Zoe', monsterId: 'kappa', floor: 4, x: 1, y: 1, postedAt: Date.now() }
+    ];
+    window.__sealPosts = [];
+    window.mpPostBloodSeal = async (payload) => {
+      window.__sealPosts.push(payload);
+      return { id: 'server-999', status: 'pending' };
+    };
+    const repaired = await _retryOrphanSeals();
+    return {
+      repaired,
+      ids:        outremondePendingSeals.map(s => s.id),
+      postCount:  window.__sealPosts.length,
+      postedMon:  window.__sealPosts.map(p => p.monster_id)
+    };
+  });
+  console.log('  T6 retry orphelins →', t6);
+  assert(t6.repaired === 1,                    'un seul orphelin réparé');
+  assert(t6.postCount === 1,                   'seul le verrou local-… est ré-posté');
+  assert(t6.postedMon[0] === 'troll',          'le bon orphelin (troll) est ré-posté');
+  assert(t6.ids.includes('server-999'),        'l\'id local est remplacé par l\'id serveur');
+  assert(!t6.ids.includes('local-111'),        'plus aucune trace de l\'id local');
+  assert(t6.ids.includes('srv-abc'),           'le verrou déjà serveur reste intact');
+
+  // T7 (S2.9) : si le re-POST échoue encore (null), l'orphelin reste local
+  // pour un essai ultérieur — aucune perte, idempotent.
+  const t7 = await page.evaluate(async () => {
+    outremondePendingSeals = [
+      { id: 'local-222', hostId: 'h', hostName: 'A', monsterId: 'kappa', floor: 2, x: 1, y: 1, postedAt: Date.now() }
+    ];
+    window.mpPostBloodSeal = async () => null;   // encore hors-ligne
+    const repaired = await _retryOrphanSeals();
+    return { repaired, ids: outremondePendingSeals.map(s => s.id) };
+  });
+  console.log('  T7 retry échoue →', t7);
+  assert(t7.repaired === 0,                'aucun réparé si POST échoue encore');
+  assert(t7.ids.includes('local-222'),     'l\'orphelin reste local pour un retry futur');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);

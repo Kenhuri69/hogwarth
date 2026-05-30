@@ -443,6 +443,39 @@
     return claims;
   }
 
+  // S2.9 — retry des Verrous orphelins. Un POST échoué (réseau / table
+  // absente) laisse une entrée à id 'local-…' dans outremondePendingSeals :
+  // le serveur l'ignore, le host ne le résoudra jamais. Au prochain
+  // démarrage de session on re-POST ces orphelins ; en cas de succès on
+  // remplace l'id local par l'id serveur (le Verrou devient résoluble).
+  // Tolérant : un échec laisse l'entrée locale telle quelle pour un essai
+  // ultérieur. Retourne le nombre de verrous réenvoyés avec succès.
+  async function _retryOrphanSeals() {
+    if (typeof mpPostBloodSeal !== 'function') return 0;
+    if (!Array.isArray(outremondePendingSeals) || !outremondePendingSeals.length) return 0;
+    if (typeof getMpPlayerId !== 'function') return 0;
+    const visitorId = getMpPlayerId();
+    let repaired = 0;
+    for (const s of outremondePendingSeals) {
+      if (!s || typeof s.id !== 'string' || s.id.indexOf('local-') !== 0) continue;
+      const payload = {
+        visitor_id:   visitorId,
+        visitor_name: (typeof getPlayerName === 'function' && getPlayerName()) || 'Sorcier',
+        host_id:      s.hostId,
+        floor:        s.floor,
+        x:            s.x,
+        y:            s.y,
+        monster_id:   s.monsterId,
+        status:       'pending'
+      };
+      let posted = null;
+      try { posted = await mpPostBloodSeal(payload); } catch (e) { posted = null; }
+      if (posted && posted.id) { s.id = posted.id; repaired++; }
+    }
+    if (repaired && typeof safeCall === 'function') safeCall('autoSave', 'seals-retry');
+    return repaired;
+  }
+
   function _showClaimsModal(claims) {
     const modal = _ensureModalElement();
     if (!modal) return;
@@ -668,6 +701,7 @@
     window._craftVoyageurPiece      = _craftVoyageurPiece;
     window.closeAtelierVoyageur     = closeAtelierVoyageur;
     window._claimResolvedSeals      = _claimResolvedSeals;
+    window._retryOrphanSeals        = _retryOrphanSeals;
     window._showClaimsModal         = _showClaimsModal;
     window.loadHostSealsForCurrentFloor = loadHostSealsForCurrentFloor;
     window.getBloodSealAt           = getBloodSealAt;
