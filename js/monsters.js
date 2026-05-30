@@ -1802,6 +1802,7 @@ const MONSTERS = [
     drops:  [
       { itemId: "page_grimoire",         chance: 0.85 },
       { itemId: "page_grimoire",         chance: 0.55 },
+      { itemId: "herbe_asphodele_noire", chance: 0.30 },
       { itemId: "larme_phenix_mineure",  chance: 0.15 },
       { itemId: "grimoire_avance",       chance: 0.20 }
     ]

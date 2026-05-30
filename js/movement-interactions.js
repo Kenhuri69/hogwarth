@@ -302,7 +302,8 @@ function searchRoom() {
     }
   } else if (!repeat && roll < SEARCH_ITEM_THRESHOLD + 0.20) {
     // Cueillette d'une herbe du palier de l'étage courant → besace.
-    const tier = (currentFloor >= 7) ? 3 : (currentFloor >= 4) ? 2 : 1;
+    // Palier 4 (Asphodèle des Ténèbres) réservé à la Boucle Ténébreuse (11+).
+    const tier = (currentFloor >= 11) ? 4 : (currentFloor >= 7) ? 3 : (currentFloor >= 4) ? 2 : 1;
     const herbs = ITEMS.filter(i => i.type === 'herb' && i.tier === tier);
     const herb = herbs.length ? herbs[Math.floor(Math.random() * herbs.length)] : null;
     if (herb && tryAddItem(herb, { silent: true })) {

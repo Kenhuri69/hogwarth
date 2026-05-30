@@ -8304,7 +8304,7 @@ async function scenarioBrewing() {
     const added  = tryAddItem('herbe_armoise', { silent: true });
     return {
       herbCount,
-      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 21,
+      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 23,
       added,
       herbInBesace: getHerbCount('herbe_armoise'),
       inventoryUnchanged: player.inventory.length === before,
@@ -8312,8 +8312,8 @@ async function scenarioBrewing() {
     };
   });
   console.log('  T1 données →', t1);
-  assert(t1.herbCount === 6,          '6 items herbe attendus');
-  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 21 recettes');
+  assert(t1.herbCount === 7,          '7 items herbe attendus (6 + l\'herbe rare endgame)');
+  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 23 recettes');
   assert(t1.added,                    'tryAddItem(herbe) doit réussir');
   assert(t1.herbInBesace === 1,       'la herbe doit aller dans la besace');
   assert(t1.inventoryUnchanged,       'la herbe ne doit pas occuper le sac');
@@ -8585,6 +8585,104 @@ async function scenarioRecipeCodex() {
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
   console.log('  ✅ Codex OK (liste complète + silhouettes/indices + compteur + révélation à la découverte)');
+  await browser.close();
+}
+
+// ── Scénario : Herbe rare endgame (LOT P6.b1) ──
+// Asphodèle des Ténèbres (tier 4) : nouvelle herbe ancrée en Boucle
+// Ténébreuse (11+). Sources : cueillette haut-étage, drop du Héraut,
+// Apothicaire Ténébreux. Consommée par 2 recettes de prestige réemployant
+// les Élixirs Suprêmes existants (potion_xl / potion_xl_sp).
+async function scenarioRareHerb() {
+  console.log('\n── Scénario : herbe rare endgame (Asphodèle des Ténèbres) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : item herbe tier 4 + sources (drop Héraut, ware Apothicaire) + icône SVG.
+  const t1 = await page.evaluate(() => {
+    const h = ITEMS.find(i => i.id === 'herbe_asphodele_noire');
+    const heraut = MONSTERS.find(m => m.id === 'heraut_tenebres');
+    const apo = NPCS.find(n => n.id === 'apothicaire_tenebreux');
+    return {
+      isHerb: !!h && h.type === 'herb',
+      tier: h && h.tier,
+      herbCount: ITEMS.filter(i => i.type === 'herb').length,
+      dropOnHeraut: !!heraut && (heraut.drops || []).some(d => d.itemId === 'herbe_asphodele_noire'),
+      onApothicaire: !!apo && (apo.wares || []).some(w => w.id === 'herbe_asphodele_noire'),
+      iconHasSvg: /<svg/.test(getItemIconHtml(h, 'ui-icon-xl')),
+    };
+  });
+  console.log('  T1 données →', t1);
+  assert(t1.isHerb && t1.tier === 4, 'l\'Asphodèle des Ténèbres doit être une herbe tier 4');
+  assert(t1.herbCount === 7,         '7 herbes attendues (6 + l\'herbe rare)');
+  assert(t1.dropOnHeraut,            'le Héraut des Ténèbres doit dropper l\'herbe rare');
+  assert(t1.onApothicaire,           'l\'Apothicaire Ténébreux doit vendre l\'herbe rare');
+  assert(t1.iconHasSvg,              'l\'herbe rare doit avoir une icône SVG inline');
+
+  // T2 : recettes de prestige — 23 recettes, multisets inédits → bons matchs.
+  const t2 = await page.evaluate(() => {
+    const xl   = POTION_RECIPES.find(r => r.id === 'brew_xl_tenebres');
+    const xlsp = POTION_RECIPES.find(r => r.id === 'brew_xl_sp_tenebres');
+    const m2 = _matchRecipe({ herbe_asphodele_noire: 2 });
+    const m3 = _matchRecipe({ herbe_asphodele_noire: 3 });
+    return {
+      count: POTION_RECIPES.length,
+      xlResult: xl && xl.resultItemId,
+      xlspResult: xlsp && xlsp.resultItemId,
+      match2: m2 && m2.id,
+      match3: m3 && m3.id,
+    };
+  });
+  console.log('  T2 recettes prestige →', t2);
+  assert(t2.count === 23, `POTION_RECIPES doit compter 23 recettes (obtenu ${t2.count})`);
+  assert(t2.xlResult === 'potion_xl',      'brew_xl_tenebres doit produire potion_xl (item existant)');
+  assert(t2.xlspResult === 'potion_xl_sp', 'brew_xl_sp_tenebres doit produire potion_xl_sp (item existant)');
+  assert(t2.match2 === 'brew_xl_tenebres',     '2 asphodèles noires → brew_xl_tenebres');
+  assert(t2.match3 === 'brew_xl_sp_tenebres',  '3 asphodèles noires → brew_xl_sp_tenebres');
+
+  // T3 : brassage effectif de la recette de prestige (INT forcée → réussite).
+  const t3 = await page.evaluate(() => {
+    party[0].int = 100;
+    player.herbs = { herbe_asphodele_noire: 2 };
+    player.inventory = [];
+    _cauldronMix = { herbe_asphodele_noire: 2 };
+    attemptBrew();
+    return {
+      produced: player.inventory.filter(it => it && it.id === 'potion_xl').length,
+      herbsLeft: getHerbCount('herbe_asphodele_noire'),
+    };
+  });
+  console.log('  T3 brassage prestige →', t3);
+  assert(t3.produced >= 1, 'le brassage de prestige doit produire au moins 1 potion_xl');
+  assert(t3.herbsLeft === 0, 'les herbes rares doivent être consommées');
+
+  // T4 : cueillette gated — tier 4 seulement en Boucle Ténébreuse (11+).
+  // Math.random piloté : [monstre, piège, roll(bande herbe), pick, bumper].
+  const t4 = await page.evaluate(() => {
+    const orig = Math.random;
+    const drive = (seq) => { let i = 0; Math.random = () => (i < seq.length ? seq[i++] : 0.5); };
+    function pickAt(floor) {
+      player.herbs = {}; player.inventory = []; searchedCells = new Map();
+      currentFloor = floor;
+      drive([0.5, 0.5, 0.40, 0.0, 0.9]);   // bande herbe, pick index 0, simple
+      searchRoom();
+      return Object.keys(player.herbs)[0] || null;
+    }
+    const at7  = pickAt(7);
+    const at11 = pickAt(11);
+    // À l'étage 11, le seul tier 4 est l'asphodèle noire (pick déterministe).
+    Math.random = orig;
+    return { at7, at11 };
+  });
+  console.log('  T4 cueillette gated →', t4);
+  assert(t4.at7 !== 'herbe_asphodele_noire', 'l\'herbe rare ne se cueille pas à l\'étage 7 (tier 3)');
+  assert(t4.at11 === 'herbe_asphodele_noire', 'l\'herbe rare se cueille en Boucle Ténébreuse (étage 11)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Herbe rare OK (tier 4 + recettes prestige + sources + cueillette gated 11+)');
   await browser.close();
 }
 
@@ -8903,7 +9001,7 @@ async function scenarioPotionUpgradeCraft() {
   assert(t1.heals[0] === 15 && t1.heals[1] === 30 && t1.heals[2] === 55, 'paliers de soin 15/30/55');
   assert(t1.recipesOk, 'les 7 recettes P4 doivent exister');
   assert(t1.iconsOk, 'les 4 nouveaux items doivent avoir une icône PNG');
-  assert(t1.count === 21, `POTION_RECIPES doit compter 21 recettes (obtenu ${t1.count})`);
+  assert(t1.count === 23, `POTION_RECIPES doit compter 23 recettes (obtenu ${t1.count})`);
 
   // T2 — pas de collision d'ingrédients (chaque set est unique).
   const t2 = await page.evaluate(() => {
@@ -15944,7 +16042,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length
