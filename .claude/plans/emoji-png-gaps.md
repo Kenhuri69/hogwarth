@@ -69,18 +69,49 @@ Convertis (≈35 `addMsg`) vers PNG existant :
 Laissés (décoratifs, aucun PNG naturel) : ✨ (set complet, gain de stat,
 transition), 👁️, ✦, 🦂, 📦, 📈, 💥, 🔨, 💎, 🌑, 🌀 (écho).
 
-## Étapes
-1. ☐ `tools/gen_outremonde_icons.py` → génère 4 PNG 48×48 :
+## Étapes (lot 1) ✅
+1. ☑ `tools/gen_outremonde_icons.py` → 4 PNG 48×48 :
    `essence_outremonde.png`, `fragment_outremonde.png`, `atelier.png`, `besace.png`.
-   Vérif : fichiers présents, 48×48 RGBA.
-2. ☐ `js/atelier-voyageur.js` : helpers `_ESS`/`_FRAG`/`_ATELIER` icône HTML ;
+2. ☑ `js/atelier-voyageur.js` : helpers `_ESS`/`_FRAG`/`_ATELIER` ;
    item cards → `getItemIconHtml`, spell cards → `getSpellIconHtml` ; titre,
-   sous-titre monnaie, badges coût, onglets. Vérif : plus d'emoji dans le rendu.
-3. ☐ `index.html` : boutons Réglages (Portes/Atelier/Aide) + onglets inventaire
-   (Sac/Besace/Grimoire) en `<img class="ui-icon">`. Vérif : grep emoji = 0.
-4. ☐ `js/inventory.js` : slots anneau 💍 → `accessory.png`. Vérif : grep.
-5. ☐ `js/npcs.js` : `portraitImg: "img/npc/_npc_prof_h.png"` sur Slughorn. Vérif.
-6. ☐ `node tests/smoke.js` vert. Commit + push sur `claude/image-emoji-png-review-HJHL8`.
+   monnaie, badges coût, onglets.
+3. ☑ `index.html` : boutons Réglages (Portes/Atelier/Aide) + onglets inventaire
+   (Sac/Besace/Grimoire) en `<img class="ui-icon">`.
+4. ☑ `js/inventory.js` : slots anneau 💍 → `accessory.png`.
+5. ☑ `js/npcs.js` : `portraitImg: "img/npc/_npc_prof_h.png"` sur Slughorn.
+6. ☑ `node tests/smoke.js` vert.
+
+---
+
+## Bilan final — 5 PR mergées sur `master`
+
+| PR | Périmètre | Assets |
+|----|-----------|--------|
+| **#307** | Atelier, Réglages, Inventaire, modales Verrou, cartes Cosmétiques/Souvenirs, labels PNJ, portrait Slughorn, logs `addMsg` (ceux ayant un PNG) | +22 PNG (`gen_outremonde_icons.py` ×4, `gen_outremonde_cosmetics.py` ×18) |
+| **#308** | Titre boutique (`shop_sign`), drops bestiaire (`getItemIconHtml`) | — |
+| **#309** | Boutons combat Garde/Objet (`protego`/`potion_m`) + titre modale Chaudron | — |
+| **#311** | Icônes de stat dans les tooltips (équipement, stat, slots vides, Journal) — helper `statIco()` | — |
+| **#312** | Carnet de Voyage (fiche perso) + badge victoire des sauvegardes (`trophy`) | — |
+
+Chaque PR : `node tests/smoke.js` = **126 scénarios verts**.
+
+### Politique retenue (validée utilisateur)
+Convertir un emoji **uniquement** s'il existe un PNG naturel. Tout ce qui
+suit reste sciemment en emoji :
+- **Symboles typographiques** : `✕` (fermer), `✓ ► · ★ ⚠ ⬇ ⬆`, `⸻` (séparateurs).
+- **Décoratifs sans PNG dédié** : `💥 🔰` (faiblesse/résistance), `⛔`
+  (verrouillé), `🎉 ✨` (transitions/gains de stat), `📦 🏪` (labels
+  d'exploration), `🦂 📈 🔨 💎 🌑 👁️ 🌀` (logs narratifs).
+- **Float-text animé** : `🛡️ Bloqué`, `👹` (fallback timeline) — `<img>` rend mal.
+- **Préfixe `🩸`** du nom d'un monstre scellé (rendu aussi sur canvas).
+
+### Suite possible (non engagée)
+Un « zéro emoji absolu » nécessiterait un lot **création d'assets** :
+générer des PNG pour les éléments (feu/glace/foudre/lumière/ténèbres/
+physique), faiblesse/résistance, verrouillé, transitions. Distinct de ce
+chantier de câblage.
+
+_Plan clos — session terminée._
 
 ## Lot 5 — Écrans visibles haute-priorité (best-effort « go next ») ✅
 - index.html : boutons de combat **Garde** (🛡️ → protego.png) et **Objet**
