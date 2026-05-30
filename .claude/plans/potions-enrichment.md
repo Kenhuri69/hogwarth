@@ -140,6 +140,26 @@ Introduire une **famille d'effet « buff temporaire »** (la pièce manquante).
 - *Vérif* : smoke — boire une potion de Force pose le statut, ATK augmenté N
   tours puis restauré ; pas de stacking abusif.
 
+> **Décisions P2 (figées 2026-05-30, ajustées à l'état réel)** : le moteur
+> `temp_buff` ne gère **aujourd'hui que `buffStat:'atk'`** (hardcodé `buff_atk`).
+> **Généraliser** à 5 stats : ATK (existant) + DEF, AGI, LCK, MAG.
+> - **Statuts** : `buff_def`, `buff_agi`, `buff_lck`, `buff_mag` (miroir de
+>   `buff_atk`). `_applyConsumableEffect` mute la stat de base à la pose ;
+>   `tickStatuses` la restaure à l'expiry ; `recalculateStats` **réapplique
+>   tous** les `buff_*` actifs (source unique de vérité) — important car AGI/LCK
+>   pilotent des stats **dérivées** (dodge, crit) recalculées.
+> - **Approche retenue** : faire de `recalculateStats` le réapplicateur unique
+>   (boucle générique sur `buff_<stat>`), et déclencher un recalc après la pose
+>   d'un buff AGI/LCK/MAG (pour rafraîchir dodge/crit). Le buff ATK/DEF reste
+>   correct sans recalc mais bénéficie de la même boucle.
+> - **4 nouveaux items + recettes** : Potion de Défense (+DEF), Élixir de
+>   Célérité (+AGI), Potion de Précision (+LCK), Élixir de Puissance (+MAG).
+>   Ampleur alignée sur la Force (+8 base, profite du brassage), durée 3 tours.
+> - **Icônes PNG** (règle pipeline) : 4 fioles teintées par stat.
+> - **Pas de cumul abusif** : `applyStatus` refresh la durée (non empilable),
+>   déjà garanti.
+
+
 ### LOT P3 — Codex des recettes & découverte · ~1 j · risque faible
 
 - Onglet/section « Recettes » dans la modale chaudron : **découvertes** (lisibles)
@@ -311,3 +331,4 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 | 2026-05-30 | **PR 2 livré** : moteur de buff temporaire (`STATUS_DEFS.buff_atk` + expiry dans `tickStatuses` + réapplication dans `recalculateStats`) ; `potion_force` → `effect:"temp_buff"` +8 ATK/3 tours (profite du brassage). Smoke `scenarioPotionBuff` T1-T5 + suite 127/127 + pwa v29. Reste PR 3 = Potion de Résistance + recettes utilitaires + quête Slughorn. |
 | 2026-05-30 | **PR 3 livré** : Potion de Résistance (statut `resist_buff`, −40 %/3t via `_resistMult` aux 4 sites de dégâts héros) **remplace** `potion_bouclier` (supprimée : item/effet/shop/icône) ; 4 recettes ajoutées (`brew_elixir_antidote`/`_regen`/`brew_potion_resistance`/`brew_potion_xl_sp`) — 10 recettes au total, sans collision d'ingrédients ; 3ᵉ quête Slughorn `quest_potions_slughorn_3` (kill 3 Bundimuns → pré-enseigne Force/Résistance/Esprit Suprême) ; **icône PNG painterly** `potion_resistance` (icon_factory.py + ITEM_ICON_NEW_REGISTRY). Smoke `scenarioPotionResistance` T1-T4 + suite 129/129 + pwa v30. **Première vague potions close.** |
 | 2026-05-30 | **PR 4 livré** : chaîne d'amélioration des potions (upgrade-craft). Généralisation `_ingredientCount`/`_consumeIngredient` (herbe→besace, sinon→sac via `_isHerbIngredient`) ; chaîne de soin `potion_soin_mineure`/`_plus`/`_pp` (15/30/55 PV) ; ressource `eclat_vitalite` (material, shop ét.3+ & drop coffre 25%) ; 7 recettes (chaîne + 4 upgrades `brew_up_potion_l/l_sp/xl/xl_sp` — POTION_RECIPES 10→17, sans collision) ; quête Slughorn 1 offre la recette Mineure. **Fix latent** : branche `material` déplacée avant `type!=='consumable'` dans `useItem` (un matériau slotless tombait dans showEquipMenu→equipItem). 4 icônes PNG (icon_factory : flask niveaux croissants + gemme rouge-vie octaédrique). Smoke `scenarioPotionUpgradeCraft` T1-T6 + suite 130/130 + pwa v31. |
+| 2026-05-30 | **PR P2 livré** : potions de buff de combat. Moteur `temp_buff` généralisé de l'ATK seul à 5 stats (`BUFF_STAT_BY_ID` : atk/def/agi/lck/mag) — `_applyConsumableEffect` mute la stat de base + recalc, `tickStatuses` restaure à l'expiry (boucle générique), `recalculateStats` réapplique tous les `buff_*` (source unique, AVANT les stats dérivées → dodge/crit tiennent compte des buffs AGI/LCK). 4 items (Défense+DEF / Célérité+AGI / Précision+LCK / Puissance+MAG, +8/3t) + 4 recettes (POTION_RECIPES 17→21, sans collision) + 4 icônes PNG (flacons teintés) + shop ét.3-4. Smoke `scenarioCombatBuffs` T1-T5 (dont AGI→dodge 9.8→13, LCK→crit 12.5→16.5) + suite 132/132 + pwa v32. |

@@ -50,6 +50,11 @@ const ITEM_ICON_REGISTRY = {
   potion_l_sp:        'img/icons/items/potion_m.png',
   felix:              'img/icons/items/felix.png',
   potion_force:       'img/icons/items/potion_force.png',
+  // Potions de buff P2 — fallback legacy (PNG painterly dans le new registry).
+  potion_defense:     'img/icons/items/potion_m.png',
+  elixir_celerite:    'img/icons/items/potion_m.png',
+  potion_precision:   'img/icons/items/potion_force.png',
+  elixir_puissance:   'img/icons/items/potion_m.png',
   mandragore:         'img/icons/items/mandragore.png',
   choco_sorcier:      'img/icons/items/choco_sorcier.png',
   // Baguettes / armes
@@ -225,6 +230,10 @@ const ITEM_ICON_NEW_REGISTRY = {
   potion_soin_mineure_pp:   'img/icons_new/potion_soin_mineure_pp_64.png',
   eclat_vitalite:           'img/icons_new/eclat_vitalite_64.png',
   potion_force:         'img/icons_new/potion_force_64.png',
+  potion_defense:       'img/icons_new/potion_defense_64.png',
+  elixir_celerite:      'img/icons_new/elixir_celerite_64.png',
+  potion_precision:     'img/icons_new/potion_precision_64.png',
+  elixir_puissance:     'img/icons_new/elixir_puissance_64.png',
   potion_resistance:    'img/icons_new/potion_resistance_64.png',
   larmes_phenix:        'img/icons_new/larmes_phenix_64.png',
   wand1:                'img/icons_new/wand1_64.png',
