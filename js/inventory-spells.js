@@ -210,7 +210,7 @@ const SPELL_OOC_HANDLERS = {
     if (typeof healSpellCooldown === 'number') healSpellCooldown = HEAL_OOC_CD_STEPS;
     AudioSystem.playSpellCast(spell.name);
     AudioSystem.speakSpell(spell.name);
-    addMsg(`💚 ${caster.name} → ${target.name} : ${spell.name} +${healed} PV.`, 'good');
+    addMsg(`${getSpellIconHtml(spell, 'ui-icon-md')} ${caster.name} → ${target.name} : ${spell.name} +${healed} PV.`, 'good');
     UX_safe.floatDmg('ally', healed, 'heal');
     closeModal('spell-modal');
     updateUI();
@@ -253,7 +253,7 @@ const SPELL_OOC_HANDLERS = {
     AudioSystem.playSpellCast(spell.name);
     AudioSystem.speakSpell(spell.name);
     if (pageRevealed) {
-      addMsg(`🔎 ${caster.name} lance ${spell.name} — une page du grimoire scintille sur la carte !`, 'good');
+      addMsg(`${getSpellIconHtml(spell, 'ui-icon-md')} ${caster.name} lance ${spell.name} — une page du grimoire scintille sur la carte !`, 'good');
     } else {
       addMsg(cleared > 0
         ? `🔎 ${caster.name} lance ${spell.name} — le brouillard se dissipe alentour.`
@@ -286,7 +286,7 @@ const SPELL_OOC_HANDLERS = {
     caster.sp -= spell.cost;
     AudioSystem.playSpellCast(spell.name);
     AudioSystem.speakSpell(spell.name);
-    addMsg(`🌀 ${caster.name} entonne ${spell.name} — la cheminée s'embrase.`, 'magic');
+    addMsg(`${getSpellIconHtml(spell, 'ui-icon-md')} ${caster.name} entonne ${spell.name} — la cheminée s'embrase.`, 'magic');
     closeModal('spell-modal');
     updateUI();
     const openTargets = () => {
@@ -359,7 +359,7 @@ const SPELL_OOC_HANDLERS = {
   voyager_seal: function (spell, charIdx) {
     const caster = party[charIdx] || party[0];
     if (!caster) return;
-    addMsg(`🪬 ${caster.name} renforce le Sceau du Voyageur — ton ancrage astral est intact.`, 'magic');
+    addMsg(`${getSpellIconHtml(spell, 'ui-icon-md')} ${caster.name} renforce le Sceau du Voyageur — ton ancrage astral est intact.`, 'magic');
     closeModal('spell-modal');
   },
   // Mémoire d'Outremonde : sort passif. Consommé à l'entrée d'une
@@ -369,7 +369,7 @@ const SPELL_OOC_HANDLERS = {
   outremonde_memory: function (spell, charIdx) {
     const caster = party[charIdx] || party[0];
     if (!caster) return;
-    addMsg(`🌌 ${caster.name} médite — la Mémoire s'éveillera à ta prochaine visite.`, 'magic');
+    addMsg(`${getSpellIconHtml(spell, 'ui-icon-md')} ${caster.name} médite — la Mémoire s'éveillera à ta prochaine visite.`, 'magic');
     closeModal('spell-modal');
   },
   // Marque du Pèlerin : pose un marqueur sur la cellule courante en
@@ -393,7 +393,7 @@ const SPELL_OOC_HANDLERS = {
       y: playerY,
       hostId: visitSession.hostId
     };
-    addMsg(`📍 ${caster.name} grave une Marque du Pèlerin — ${playerX},${playerY}.`, 'magic');
+    addMsg(`${getSpellIconHtml(spell, 'ui-icon-md')} ${caster.name} grave une Marque du Pèlerin — ${playerX},${playerY}.`, 'magic');
     closeModal('spell-modal');
     if (typeof renderMinimap === 'function') renderMinimap();
     if (typeof updateUI === 'function') updateUI();
@@ -423,7 +423,7 @@ const SPELL_OOC_HANDLERS = {
     }
     caster.sp -= spell.cost;
     playerX = mark.x; playerY = mark.y;
-    addMsg(`🌠 ${caster.name} se replie sur la Marque — ${mark.x},${mark.y}.`, 'magic');
+    addMsg(`${getSpellIconHtml(spell, 'ui-icon-md')} ${caster.name} se replie sur la Marque — ${mark.x},${mark.y}.`, 'magic');
     closeModal('spell-modal');
     if (typeof drawDungeon   === 'function') drawDungeon();
     if (typeof renderMinimap === 'function') renderMinimap();

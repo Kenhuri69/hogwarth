@@ -371,7 +371,7 @@ window.checkHouseLevelUp = function checkHouseLevelUp() {
     // tout le groupe actif (mécanisme partagé avec les équipements `grantsSpell`).
     if (tier.bonus.grantsSpell && typeof _teachSpellToParty === 'function') {
       if (_teachSpellToParty(tier.bonus.grantsSpell)) {
-        addMsg(`✨ Sort de Maison débloqué : ${tier.bonus.grantsSpell} !`, 'magic');
+        addMsg(`${getSpellIconHtml(tier.bonus.grantsSpell, 'ui-icon-md')} Sort de Maison débloqué : ${tier.bonus.grantsSpell} !`, 'magic');
       }
     }
 

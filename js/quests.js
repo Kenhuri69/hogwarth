@@ -26,7 +26,7 @@ function unlockHouseQuest(house) {
   availableQuests.add(qid);
   if (typeof addMsg === 'function') {
     const tpl = getQuestTemplate(qid);
-    addMsg(`📜 Nouvelle quête de Maison : « ${tpl ? tpl.title : qid} »`, 'magic');
+    addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Nouvelle quête de Maison : « ${tpl ? tpl.title : qid} »`, 'magic');
   }
   if (typeof updateQuestTracker === 'function') updateQuestTracker();
   return true;
@@ -53,7 +53,7 @@ function unlockHouseMytheQuest(house) {
   availableQuests.add(qid);
   if (typeof addMsg === 'function') {
     const tpl = getQuestTemplate(qid);
-    addMsg(`📜 Nouvelle quête de Maison : « ${tpl ? tpl.title : qid} »`, 'magic');
+    addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Nouvelle quête de Maison : « ${tpl ? tpl.title : qid} »`, 'magic');
   }
   if (typeof updateQuestTracker === 'function') updateQuestTracker();
   return true;
@@ -250,7 +250,7 @@ function acceptQuest(id) {
 
   activeQuests.push(inst);
   availableQuests.delete(id);
-  addMsg(`📜 Nouvelle quête : « ${tpl.title} »`, 'magic');
+  addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Nouvelle quête : « ${tpl.title} »`, 'magic');
 
   // Hook générique : si la quête déclare `spawnOnAccept`, on injecte
   // les mobs sur l'étage courant. Utile pour les quêtes répétables qui
@@ -575,7 +575,7 @@ function completeQuest(index) {
   }
 
   AudioSystem.playLevelUp();
-  addMsg(`✅ Quête terminée : « ${q.title} » !`, 'good');
+  addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête terminée : « ${q.title} » !`, 'good');
 
   recalculateStats();
   updateUI();
@@ -628,14 +628,14 @@ function _grantQuestReward(reward) {
     pendingHouseRewards.add(reward.houseSetReward);
     const item = ITEMS.find(i => i.id === reward.houseSetReward);
     if (item) {
-      addMsg(`🎁 Le Chef de votre Maison conserve la relique : ${item.icon} ${item.name}. Allez la réclamer.`, 'magic');
+      addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Le Chef de votre Maison conserve la relique : ${item.name}. Allez la réclamer.`, 'magic');
     }
   }
   if (reward.spell) {
     party.forEach(c => {
       if (!c.spells.includes(reward.spell)) c.spells.push(reward.spell);
     });
-    addMsg(`✨ Nouveau sort débloqué : ${reward.spell} !`, 'magic');
+    addMsg(`${getSpellIconHtml(reward.spell, 'ui-icon-md')} Nouveau sort débloqué : ${reward.spell} !`, 'magic');
   }
   // Recettes de potion : apprises au groupe (besace partagée).
   if (Array.isArray(reward.recipes) && typeof learnRecipe === 'function') {
@@ -680,12 +680,12 @@ window.checkKillQuests = function(monsterId) {
       step.completed = true;
       const next = getActiveStep(q);
       if (next) {
-        addMsg(`📜 Étape suivante : « ${q.title} »`, 'magic');
+        addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Étape suivante : « ${q.title} »`, 'magic');
       } else {
-        addMsg(`📜 Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+        addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
       }
     } else {
-      addMsg(`📜 Quête « ${q.title} » : ${step.progress}/${step.amount}`, '');
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${step.progress}/${step.amount}`, '');
     }
   });
 };
@@ -703,9 +703,9 @@ window.checkPageQuest = function() {
   step.progress = n;
   if (n >= step.amount) {
     step.completed = true;
-    addMsg(`📜 Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+    addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
   } else {
-    addMsg(`📜 Quête « ${q.title} » : ${n}/${step.amount} pages.`, '');
+    addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » : ${n}/${step.amount} pages.`, '');
   }
   if (typeof updateQuestTracker === 'function') updateQuestTracker();
 };
@@ -720,7 +720,7 @@ window.checkFloorQuests = function(floor) {
       if (floor      >= step.floor) {
         step.progress  = step.amount;
         step.completed = true;
-        addMsg(`📜 Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
+        addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
       }
     }
   });

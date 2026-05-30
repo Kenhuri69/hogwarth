@@ -494,7 +494,7 @@ function triggerNpcSpecialAction(npcId) {
       }
       pendingHouseRewards.delete(id);
       if (typeof addMsg === 'function') {
-        addMsg(`🎁 ${item.icon} ${item.name} vous est remis(e) par ${npc.title || npc.name}.`, 'good');
+        addMsg(`${typeof getItemIconHtml === 'function' ? getItemIconHtml(item, 'ui-icon-md') : ''} ${item.name} vous est remis(e) par ${npc.title || npc.name}.`, 'good');
       }
       given++;
     }

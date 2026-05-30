@@ -55,9 +55,19 @@ _Statut lots 7-10 : ✅ — `node tests/smoke.js` = 126 scénarios verts._
 ### Laissé sciemment
 - `scaled.name = '🩸 ' + name` (marqueur de combat rendu aussi sur canvas —
   un `<img>` n'y est pas rendable).
-- **Log de combat/quêtes global** (~75 `addMsg` hors atelier, dans battle/
-  quests/movement/teleport…) : transformation large et discutable (mini-images
-  inline dans un flux de texte). À confirmer avant de balayer.
+
+## Lot 4 — Log de combat/quêtes global (choix utilisateur : « seulement ceux
+   qui ont un PNG »). ✅ — `node tests/smoke.js` = 126 scénarios verts.
+
+Convertis (≈35 `addMsg`) vers PNG existant :
+- drops/butin/matériaux → `getItemIconHtml(item)`
+- sorts lancés/appris/amplifiés → `getSpellIconHtml(spell|name)`
+- quêtes (nouvelle/étape/prête/terminée) → `quest.png`
+- essence/fragment/verrou/larmes de phénix/Portus/vortex-soin → PNG dédiés
+- groupe d'ennemis ⚔️ → `atk.png` ; grimoire/recette/page → `spellbook`/`scroll`
+
+Laissés (décoratifs, aucun PNG naturel) : ✨ (set complet, gain de stat,
+transition), 👁️, ✦, 🦂, 📦, 📈, 💥, 🔨, 💎, 🌑, 🌀 (écho).
 
 ## Étapes
 1. ☐ `tools/gen_outremonde_icons.py` → génère 4 PNG 48×48 :

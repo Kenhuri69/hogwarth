@@ -375,7 +375,7 @@ function equipItem(inventoryIdx, charIdx, targetSlot) {
     const newSpell = _teachSpellToParty(item.grantsSpell);
     if (newSpell) {
       AudioSystem.playLevelUp();
-      addMsg(`✨ Sort débloqué : ${item.grantsSpell} !`, 'magic');
+      addMsg(`${getSpellIconHtml(item.grantsSpell, 'ui-icon-md')} Sort débloqué : ${item.grantsSpell} !`, 'magic');
     }
   }
 
@@ -634,7 +634,7 @@ function learnSpellbook(inventoryIdx, charIdx) {
   if (_teachSpellToOne(item.spell, charIdx)) {
     AudioSystem.playLevelUp();
     AudioSystem.speakSpell(item.spell);
-    addMsg(`✨ ${c.name} apprend : ${item.spell} !`, 'magic');
+    addMsg(`${getSpellIconHtml(item.spell, 'ui-icon-md')} ${c.name} apprend : ${item.spell} !`, 'magic');
     player.inventory.splice(inventoryIdx, 1);
   } else {
     addMsg(`${c.name} connaît déjà ${item.spell}.`, '');
@@ -787,7 +787,7 @@ function useItemFromChar(inventoryIdx, charIdx) {
     if (_teachSpellToOne(item.spell, charIdx)) {
       AudioSystem.playLevelUp();
       AudioSystem.speakSpell(item.spell);
-      addMsg(`✨ ${target.name} apprend : ${item.spell} !`, 'magic');
+      addMsg(`${getSpellIconHtml(item.spell, 'ui-icon-md')} ${target.name} apprend : ${item.spell} !`, 'magic');
       player.inventory.splice(inventoryIdx, 1);
     } else {
       addMsg(`${target.name} connaît déjà ${item.spell}.`, '');

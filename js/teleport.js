@@ -187,7 +187,7 @@ function teleportEnemyAway(enemyIdx) {
   // Retire l'ennemi de l'enemyGroup sans donner d'XP/loot.
   enemyGroup.splice(enemyIdx, 1);
   setBattleLog(`🌀 ${enemy.name} disparaît dans un vortex !`);
-  if (typeof addMsg === 'function') addMsg(`🌀 Portus : ${enemy.name} banni du combat.`, 'magic');
+  if (typeof addMsg === 'function') addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/spells/teleportation.png" alt=""> Portus : ${enemy.name} banni du combat.`, 'magic');
   UX_safe.logCombat(`🌀 ${enemy.name} est <b>banni</b> du combat (aucun XP).`, 'magic');
   // Cache la sélection.
   const sel = safeEl('target-selection');
@@ -333,7 +333,7 @@ function teleportOutOfCombat(targetFloor, charIdx) {
     renderMinimap();
     drawDungeon();
     updateCompass();
-    addMsg(`🌀 Portus : transporté au Niveau ${currentFloor} !`, 'magic');
+    addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/spells/teleportation.png" alt=""> Portus : transporté au Niveau ${currentFloor} !`, 'magic');
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
 
@@ -363,7 +363,7 @@ function _rollPortusArrivalEvent() {
       healed += (c.hp - before);
     });
     if (healed > 0) {
-      addMsg(`✨ Le vortex restaure ${healed} PV au groupe.`, 'good');
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/heal.png" alt=""> Le vortex restaure ${healed} PV au groupe.`, 'good');
     } else {
       addMsg(`✨ Le vortex semblait bénéfique, mais le groupe est déjà au mieux.`, '');
     }
