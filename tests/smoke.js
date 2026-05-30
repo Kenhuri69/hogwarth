@@ -8304,7 +8304,7 @@ async function scenarioBrewing() {
     const added  = tryAddItem('herbe_armoise', { silent: true });
     return {
       herbCount,
-      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 6,
+      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 10,
       added,
       herbInBesace: getHerbCount('herbe_armoise'),
       inventoryUnchanged: player.inventory.length === before,
@@ -8313,7 +8313,7 @@ async function scenarioBrewing() {
   });
   console.log('  T1 données →', t1);
   assert(t1.herbCount === 6,          '6 items herbe attendus');
-  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 6 recettes');
+  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 10 recettes');
   assert(t1.added,                    'tryAddItem(herbe) doit réussir');
   assert(t1.herbInBesace === 1,       'la herbe doit aller dans la besace');
   assert(t1.inventoryUnchanged,       'la herbe ne doit pas occuper le sac');
@@ -8575,6 +8575,104 @@ async function scenarioPotionBuff() {
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
   console.log('  ✅ Potion de Force OK (buff +ATK, survit au recalc, expiry, no-stack, brassage)');
+  await browser.close();
+}
+
+// ── Scénario : Potion de Résistance + recettes utilitaires + quête 3 (P3) ──
+// Vérifie : (1) potion_bouclier supprimée / potion_resistance présente ;
+// (2) resist_buff réduit réellement les dégâts physiques subis ; (3) les
+// nouvelles recettes existent et matchent leurs ingrédients ; (4) la 3ᵉ quête
+// Slughorn enseigne les recettes avancées.
+async function scenarioPotionResistance() {
+  console.log('\n── Scénario : Potion de Résistance + recettes + quête Slughorn 3 ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — données : bouclier supprimé, résistance présente, icône PNG enregistrée.
+  const t1 = await page.evaluate(() => {
+    const bouclier = ITEMS.find(i => i.id === 'potion_bouclier');
+    const resist   = ITEMS.find(i => i.id === 'potion_resistance');
+    return {
+      bouclierGone: !bouclier,
+      resistEffect: resist && resist.effect,
+      resistPower:  resist && resist.power,
+      resistTurns:  resist && resist.turns,
+      iconNew: typeof ITEM_ICON_NEW_REGISTRY !== 'undefined' && !!ITEM_ICON_NEW_REGISTRY.potion_resistance,
+      shopHasResist: typeof SHOP_CATALOG !== 'undefined' && SHOP_CATALOG.some(e => e.id === 'potion_resistance'),
+      shopHasBouclier: typeof SHOP_CATALOG !== 'undefined' && SHOP_CATALOG.some(e => e.id === 'potion_bouclier'),
+    };
+  });
+  console.log('  T1 données :', t1);
+  assert(t1.bouclierGone, 'potion_bouclier doit être supprimée');
+  assert(t1.resistEffect === 'resist_buff' && t1.resistPower === 40 && t1.resistTurns === 3, 'potion_resistance = resist_buff 40/3');
+  assert(t1.iconNew, 'potion_resistance doit avoir une icône PNG (ITEM_ICON_NEW_REGISTRY)');
+  assert(t1.shopHasResist && !t1.shopHasBouclier, 'le shop référence resistance, plus bouclier');
+
+  // T2 — resist_buff réduit réellement les dégâts physiques (_enemyPhysicalHit).
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    c.statusEffects = []; c.def = 0; c.dodgeChance = 0; c.hpMax = 1000; c.hp = 1000;
+    shieldTurns = [0, 0]; guardTurns = [0, 0]; currentBattleChar = 0;
+    const enemy = { name: 'Mannequin', icon: '🎯', atk: 30, mag: 0 };
+    // Sans résistance : capture un dégât de référence (atk fixe, +0..2 alea →
+    // on neutralise l'aléa en forçant Math.random à 0 le temps du coup).
+    const origRandom = Math.random;
+    Math.random = () => 0;
+    const hp0 = c.hp; _enemyPhysicalHit(enemy, c, 0); const dmgBase = hp0 - c.hp;
+    // Avec résistance 40 %.
+    c.hp = 1000;
+    _applyConsumableEffect(ITEMS.find(i => i.id === 'potion_resistance'), c);
+    const hp1 = c.hp; _enemyPhysicalHit(enemy, c, 0); const dmgResist = hp1 - c.hp;
+    Math.random = origRandom;
+    return { dmgBase, dmgResist, expected: Math.floor(dmgBase * 0.6) };
+  });
+  console.log('  T2 mitig.  :', t2);
+  assert(t2.dmgBase > 0, 'le coup de référence doit infliger des dégâts');
+  assert(t2.dmgResist === t2.expected, `résistance 40 % : ${t2.dmgBase} → attendu ${t2.expected}, obtenu ${t2.dmgResist}`);
+
+  // T3 — nouvelles recettes présentes et matchables par leurs ingrédients.
+  const t3 = await page.evaluate(() => {
+    const ids = ['brew_elixir_antidote', 'brew_elixir_regen', 'brew_potion_resistance', 'brew_potion_xl_sp'];
+    const present = ids.every(id => POTION_RECIPES.some(r => r.id === id));
+    // Match par ingrédients (le moteur exige un set exact).
+    const rResist = POTION_RECIPES.find(r => r.id === 'brew_potion_resistance');
+    const matched = _matchRecipe(rResist.ingredients);
+    // Pas de doublon brew_potion_force.
+    const forceCount = POTION_RECIPES.filter(r => r.id === 'brew_potion_force').length;
+    return { present, matchedId: matched && matched.id, forceCount };
+  });
+  console.log('  T3 recettes:', t3);
+  assert(t3.present, 'les 4 nouvelles recettes doivent exister');
+  assert(t3.matchedId === 'brew_potion_resistance', 'le combo doit matcher brew_potion_resistance');
+  assert(t3.forceCount === 1, 'pas de doublon brew_potion_force');
+
+  // T4 — quête Slughorn 3 : kill 3 bundimuns → enseigne les recettes avancées.
+  const t4 = await page.evaluate(() => {
+    // acceptQuest n'impose pas le prereq (gate seulement l'offre PNJ) — on
+    // peut accepter directement pour tester le flux récompense → recettes.
+    player.knownRecipes = [];
+    const accepted = acceptQuest('quest_potions_slughorn_3');
+    checkKillQuests('bundimun'); checkKillQuests('bundimun'); checkKillQuests('bundimun');
+    const q = activeQuests.find(x => x.id === 'quest_potions_slughorn_3');
+    const done = q && q.objectives.every(o => o.completed);
+    if (q && done) completeQuest(activeQuests.indexOf(q));
+    const known = player.knownRecipes || [];
+    return {
+      accepted, done,
+      learned: ['brew_potion_force', 'brew_potion_resistance', 'brew_potion_xl_sp']
+        .every(r => known.includes(r)),
+    };
+  });
+  console.log('  T4 quête   :', t4);
+  assert(t4.accepted, 'quest_potions_slughorn_3 doit être acceptable');
+  assert(t4.done, 'la quête doit se compléter après 3 bundimuns');
+  assert(t4.learned, 'la quête doit enseigner les 3 recettes avancées');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Potion de Résistance OK (item, mitigation, recettes, quête Slughorn 3)');
   await browser.close();
 }
 
@@ -14979,15 +15077,18 @@ async function scenarioContentConsumablesTradeoffs() {
   console.log('  T2 regen  :', t2);
   assert(t2.has && t2.power === 6 && t2.turns === 4, 'élixir de régén doit poser regen 6/4');
 
-  // T3 — Bouclier érige un Protego sur le porteur.
+  // T3 — Résistance pose le statut resist_buff (réduction de dégâts).
   const t3 = await page.evaluate(() => {
-    shieldTurns = [0, 0];
-    currentBattleChar = 0;
-    _applyConsumableEffect(ITEMS.find(i => i.id === 'potion_bouclier'), party[0]);
-    return { shield: shieldTurns[0] };
+    const c = party[0];
+    c.statusEffects = [];
+    _applyConsumableEffect(ITEMS.find(i => i.id === 'potion_resistance'), c);
+    const r = c.statusEffects.find(s => s.id === 'resist_buff');
+    const mult = _resistMult(c);
+    return { has: !!r, power: r && r.power, turns: r && r.turns, mult };
   });
-  console.log('  T3 shield :', t3);
-  assert(t3.shield === 3, `potion de bouclier doit poser 3 paliers (obtenu ${t3.shield})`);
+  console.log('  T3 resist :', t3);
+  assert(t3.has && t3.power === 40 && t3.turns === 3, 'potion de résistance doit poser resist_buff 40/3');
+  assert(Math.abs(t3.mult - 0.6) < 1e-9, `_resistMult doit valoir 0.6 (obtenu ${t3.mult})`);
 
   // T4 — Item trade-off : ATK+7 / DEF−2 appliqué par recalculateStats.
   const t4 = await page.evaluate(() => {
@@ -15246,7 +15347,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioPotionResistance, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

@@ -49,7 +49,7 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       // (cf. DIFFICULTY_REPORT.md §6). Division par 3 : la DEF a un
       // effet modéré sans annuler complètement (target.def 15 → -5 dgts).
       const raw = ability.power + Math.floor((enemy.mag || 0) / 2);
-      const dmg = Math.max(1, raw - Math.floor((target.def || 0) / 3));
+      const dmg = Math.max(1, Math.floor((raw - Math.floor((target.def || 0) / 3)) * _resistMult(target)));
       if (shieldTurns[charIdx] > 0) {
         shieldTurns[charIdx]--;
         appendLog(`🛡️ Protego bloque ${ability.name} ! `);
@@ -108,7 +108,7 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       break;
     }
     case 'drain': {
-      const drained = Math.min(target.hp, ability.power);
+      const drained = Math.min(target.hp, Math.max(1, Math.floor(ability.power * _resistMult(target))));
       target.hp       = Math.max(0, target.hp - drained);
       enemy.currentHp = Math.min(enemy.hp, enemy.currentHp + Math.floor(drained / 2));
       appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → draine ${drained} PV de ${target.name} ! `);

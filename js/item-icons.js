@@ -200,7 +200,7 @@ const ITEM_ICON_REGISTRY = {
   // Consommables à effet + équipement trade-off (réutilisent des PNG existants).
   elixir_antidote:       'img/icons/items/potion_s.png',
   elixir_regen:          'img/icons/items/potion_s.png',
-  potion_bouclier:       'img/icons/items/potion_m.png',
+  potion_resistance:     'img/icons/items/potion_m.png',
   lame_sanguinaire:      'img/icons/items/sword_gryff.png',
   armure_lourde:         'img/icons/items/robe1.png',
   anneau_furie:          'img/icons/items/anneau_runique.png'
@@ -215,6 +215,7 @@ const ITEM_ICON_NEW_REGISTRY = {
   livre_sortileges:     'img/icons_new/livre_sortileges_64.png',
   potion_m:             'img/icons_new/potion_m_64.png',
   potion_force:         'img/icons_new/potion_force_64.png',
+  potion_resistance:    'img/icons_new/potion_resistance_64.png',
   larmes_phenix:        'img/icons_new/larmes_phenix_64.png',
   wand1:                'img/icons_new/wand1_64.png',
   livre_soin:           'img/icons_new/livre_soin_64.png',

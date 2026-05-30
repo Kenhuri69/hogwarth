@@ -191,6 +191,16 @@ RECIPES: Dict[str, Recipe] = {
             {"kind": "bubbles", "region": "body", "color": (255, 200, 120), "count": 5},
         ],
     ),
+    "potion_resistance": Recipe(
+        id="potion_resistance", name="Potion de Résistance", rarity="common", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (110,  84,  54), "body": (196, 206, 220)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": ( 74, 123, 166),
+             "level": 0.70, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (170, 206, 234), "count": 5},
+        ],
+    ),
     "larmes_phenix": Recipe(
         id="larmes_phenix", name="Larmes de Phénix", rarity="legendary", material="glass",
         silhouette={"kind": "svg", "file": "flask.svg"},

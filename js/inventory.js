@@ -446,12 +446,12 @@ function _applyConsumableEffect(item, target) {
       if (applied && amount > 0) target.atk = (target.atk || 0) + amount;
     }
   }
-  // Bouclier : érige un Protego (paliers shieldTurns) sur le porteur.
-  // Surtout utile en combat ; hors combat, shieldTurns est inactif.
-  else if (item.effect === 'shield_buff') {
-    if (typeof shieldTurns !== 'undefined') {
-      const i = party.indexOf(target);
-      if (i >= 0) shieldTurns[i] = Math.max(shieldTurns[i] || 0, item.power || 3);
+  // Résistance : pose le statut non-DoT `resist_buff` (réduction générale des
+  // dégâts subis de `power` % pendant `turns` tours). Lu par _resistMult()
+  // aux sites de dégâts héros. Surtout utile en combat.
+  else if (item.effect === 'resist_buff') {
+    if (typeof applyStatus === 'function') {
+      applyStatus(target, 'resist_buff', item.power || 40, item.turns || 3);
     }
   }
   // ── Sinks endgame (consommables permanents) ────────────────

@@ -16,7 +16,7 @@ const SHOP_CATALOG = [
   { id: "potion_m",            minFloor: 2 },
   { id: "elixir_antidote",     minFloor: 2 },
   { id: "elixir_regen",        minFloor: 3 },
-  { id: "potion_bouclier",     minFloor: 3 },
+  { id: "potion_resistance",   minFloor: 3 },
   { id: "lame_sanguinaire",    minFloor: 4 },
   { id: "armure_lourde",       minFloor: 4 },
   { id: "anneau_furie",        minFloor: 5 },
