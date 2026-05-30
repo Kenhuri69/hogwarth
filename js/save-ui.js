@@ -50,7 +50,7 @@ function _renderSlotCard(id, slot, mode) {
       : `<span class="slot-hero-icon">${src || '🧙'}</span>`
   ).join('');
   const houseLine = m.house ? ` · ${m.house}` : '';
-  const victoryBadge = m.victory ? `<span class="slot-victory" title="Vainqueur de Voldemort">🏆</span>` : '';
+  const victoryBadge = m.victory ? `<span class="slot-victory" title="Vainqueur de Voldemort"><img class="ui-icon ui-icon-md" src="img/icons/trophy.png" alt="🏆"></span>` : '';
   const when = _formatSavedAt(m.savedAt);
   const readonlyAttr = (mode === 'save' && isAuto) ? 'aria-disabled="true"' : '';
   const dataMode = mode === 'save' && isAuto ? 'noop' : mode;
