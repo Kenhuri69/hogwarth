@@ -310,6 +310,18 @@ de 763 lignes + risque de confusion). **Décision à prendre par l'utilisateur**
 **Recommandation** : Option 2 maintenant (faible coût, assainit), Option 1 plus
 tard si la feature redevient prioritaire.
 
+> **DÉCISION (2026-05-30) — Option 1 (stabiliser), pas geler.** Audit refait :
+> le diagnostic ci-dessus est **périmé**. Le système a en réalité été livré
+> intégralement (phases A→H + V1c.1, le 2026-05-28) et **câblé en production**
+> (le sort « Cheminette » ouvre bien le matchmaking ; le poll des visites
+> entrantes tourne via `mpStartSession()` ; boutons `#btn-visits`/`#btn-atelier`
+> présents ; 16+ scénarios smoke). Le blocage réel n'est donc PAS « finir le
+> code » mais : **backend Supabase non garanti (tables/DDL), zéro validation
+> live, DDL hors-repo, durcissement des chemins d'erreur**. Effort revu à la
+> baisse (~3,5 j, pas « plusieurs jours de dev »). Plan d'exécution dédié :
+> [`.claude/plans/parallel-worlds-stabilization.md`](./parallel-worlds-stabilization.md).
+> À traiter dans une **session séparée**.
+
 ---
 
 ## 4. Ordre d'exécution recommandé
