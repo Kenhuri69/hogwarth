@@ -11969,6 +11969,133 @@ async function scenarioVisitNetworkDrop() {
   await browser.close();
 }
 
+// ── Scénario : Cheminette — table absente / 404 (durcissement S2.7) ──
+// Vérifie que chaque famille (requests / messages / threats) trippe son
+// disjoncteur sur un 404, puis court-circuite tout appel ultérieur — pas
+// de tempête de requêtes, pas de boucle, pas de crash. Le poll entrant
+// s'arrête net. Déterministe et offline : on force _mpConfigured()=true et
+// on stube window.fetch pour renvoyer 404.
+async function scenarioVisitBackendMissing() {
+  console.log('\n── Scénario : Cheminette — backend absent / 404 (S2.7) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : mpPostVisitRequest sur 404 → breaker _mpVisitTableMissing,
+  // 2e appel court-circuité (aucun fetch supplémentaire).
+  const t1 = await page.evaluate(async () => {
+    window._mpConfigured = () => true;          // simule HTTPS configuré
+    _mpVisitTableMissing = false;
+    window.__fetchCount = 0;
+    window.fetch = async () => { window.__fetchCount++; return { ok: false, status: 404 }; };
+
+    const r1 = await mpPostVisitRequest({ player_id: 'host-1' });
+    const trippedAfter1 = _mpVisitTableMissing;
+    const countAfter1   = window.__fetchCount;
+    const r2 = await mpPostVisitRequest({ player_id: 'host-1' });
+    const countAfter2   = window.__fetchCount;
+    return { r1, r2, trippedAfter1, countAfter1, countAfter2 };
+  });
+  console.log('  T1 requests 404 →', t1);
+  assert(t1.r1 === null,          'mpPostVisitRequest renvoie null sur 404');
+  assert(t1.trippedAfter1,        'disjoncteur _mpVisitTableMissing armé après 404');
+  assert(t1.countAfter1 === 1,    'un seul fetch tenté avant l\'armement');
+  assert(t1.r2 === null,          '2e appel renvoie null (court-circuité)');
+  assert(t1.countAfter2 === 1,    'aucun fetch supplémentaire une fois armé');
+
+  // T2 : mpPostVisitMessage sur 404 → breaker _mpVisitMsgTableMissing.
+  const t2 = await page.evaluate(async () => {
+    window._mpConfigured = () => true;
+    _mpVisitMsgTableMissing = false;
+    window.__fetchCount = 0;
+    window.fetch = async () => { window.__fetchCount++; return { ok: false, status: 404 }; };
+
+    const r1 = await mpPostVisitMessage('ch-1', 'host', 'snapshot', { a: 1 });
+    const tripped = _mpVisitMsgTableMissing;
+    const c1 = window.__fetchCount;
+    const r2 = await mpPostVisitMessage('ch-1', 'host', 'snapshot', { a: 1 });
+    const c2 = window.__fetchCount;
+    // Le poll de canal doit aussi court-circuiter une fois le breaker armé.
+    const poll = await mpPollVisitMessages('ch-1', null, 'visitor');
+    const c3 = window.__fetchCount;
+    return { r1, r2, tripped, c1, c2, poll, c3 };
+  });
+  console.log('  T2 messages 404 →', t2);
+  assert(t2.r1 === null,        'mpPostVisitMessage renvoie null sur 404');
+  assert(t2.tripped,            'disjoncteur _mpVisitMsgTableMissing armé');
+  assert(t2.c1 === 1,           'un seul fetch avant armement');
+  assert(t2.c2 === 1,           'POST suivant court-circuité');
+  assert(t2.poll === null,      'mpPollVisitMessages court-circuité (null)');
+  assert(t2.c3 === 1,           'le poll ne refait aucun fetch');
+
+  // T3 : mpPostBloodSeal sur 404 → breaker _mpThreatsTableMissing ; les
+  // lectures host/visiteur court-circuitent en tableau vide (pas null).
+  const t3 = await page.evaluate(async () => {
+    window._mpConfigured = () => true;
+    _mpThreatsTableMissing = false;
+    window.__fetchCount = 0;
+    window.fetch = async () => { window.__fetchCount++; return { ok: false, status: 404 }; };
+
+    const r1 = await mpPostBloodSeal({
+      visitor_id: 'v', visitor_name: 'V', host_id: 'h',
+      floor: 3, x: 2, y: 2, monster_id: 'troll', status: 'pending'
+    });
+    const tripped = _mpThreatsTableMissing;
+    const c1 = window.__fetchCount;
+    const listHost    = await mpListHostSealsForFloor('h', 3);
+    const listVisitor = await mpListVisitorResolvedSeals('v');
+    const c2 = window.__fetchCount;
+    return { r1, tripped, c1, listHost, listVisitor, c2 };
+  });
+  console.log('  T3 threats 404 →', t3);
+  assert(t3.r1 === null,                   'mpPostBloodSeal renvoie null sur 404');
+  assert(t3.tripped,                       'disjoncteur _mpThreatsTableMissing armé');
+  assert(t3.c1 === 1,                      'un seul fetch avant armement');
+  assert(Array.isArray(t3.listHost) && t3.listHost.length === 0,       'liste host vide (court-circuit)');
+  assert(Array.isArray(t3.listVisitor) && t3.listVisitor.length === 0, 'liste visiteur vide (court-circuit)');
+  assert(t3.c2 === 1,                      'les lectures ne refont aucun fetch');
+
+  // T4 : le poll entrant s'arrête net sur 404 — un tour arme le breaker,
+  // le tour suivant retourne immédiatement sans fetch (pas de martèlement).
+  const t4 = await page.evaluate(async () => {
+    window._mpConfigured = () => true;
+    mpActive = true; mpMode = 'normal';
+    _mpVisitTableMissing = false;
+    if (typeof window._mpVisitPendingReq !== 'undefined') window._mpVisitPendingReq = null;
+    window.__fetchCount = 0;
+    window.fetch = async () => { window.__fetchCount++; return { ok: false, status: 404 }; };
+
+    await _mpPollIncomingVisitRequests();   // arme le breaker
+    const trippedAfter1 = _mpVisitTableMissing;
+    const c1 = window.__fetchCount;
+    await _mpPollIncomingVisitRequests();   // doit court-circuiter
+    const c2 = window.__fetchCount;
+    mpActive = false;
+    return { trippedAfter1, c1, c2 };
+  });
+  console.log('  T4 poll entrant 404 →', t4);
+  assert(t4.trippedAfter1,   'le poll entrant arme le breaker sur 404');
+  assert(t4.c1 === 1,        'un seul fetch au premier tour');
+  assert(t4.c2 === 1,        'poll suivant court-circuité (aucun fetch)');
+
+  // T5 : mpListAvailableHosts sur 404 → null (traité comme erreur réseau),
+  // ce que la modale matchmaking rend en « réseau silencieux ».
+  const t5 = await page.evaluate(async () => {
+    window._mpConfigured = () => true;
+    window.fetch = async () => { return { ok: false, status: 404 }; };
+    const hosts = await mpListAvailableHosts();
+    return { hosts };
+  });
+  console.log('  T5 hosts 404 →', t5);
+  assert(t5.hosts === null, 'mpListAvailableHosts renvoie null sur 404 (→ message silencieux)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Cheminette Inter-Mondes — backend absent / 404 dégrade proprement OK');
+  await browser.close();
+}
+
 // ── Scénario : Cheminette — limites territoire + sprites + emotes (Phase D) ──
 async function scenarioVisitPhaseD() {
   console.log('\n── Scénario : Cheminette — limites + sprites + emotes (Phase D) ──');
@@ -14952,7 +15079,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length
