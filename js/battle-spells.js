@@ -34,6 +34,14 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
   }
   ability = ability || fired[0];
 
+  // Priorité B3 : un `enrage_self` prêt à se déclencher (sous le seuil, pas
+  // encore enragé) passe avant le pick IA normal — sinon un boss `aggressive`
+  // choisirait toujours `damage` et n'enragerait jamais.
+  const enrageReady = fired.find(a => a.effect === 'enrage_self'
+    && !enemy._enraged
+    && enemy.currentHp <= (enemy.hp || enemy.currentHp || 1) * (a.hpPct || 0.4));
+  if (enrageReady) ability = enrageReady;
+
   // Legilimens (palier Mythe Serdaigle) : la capacité repérée est
   // anticipée et annulée — l'ennemi gaspille son tour.
   if (legilimensCancelCharges > 0) {
@@ -143,8 +151,92 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       UX_safe.logCombat(`❌ ${enemy.name} dissipe <b>${removed}</b> de ${target.name}`, 'bad');
       break;
     }
+    // ── Archétypes boss/élites (LOT B3) ──────────────────────────
+    case 'summon': {
+      // Invoque un add si un slot ennemi est libre (cap 3, cf. enemyGroup /
+      // rollGroupSize). Slot plein → l'ennemi ne gaspille pas son tour
+      // (return false → attaque physique normale dans enemyTurn).
+      if (enemyGroup.length >= 3) return false;
+      const add = _buildSummonedAdd(ability, enemy);
+      if (!add) return false;
+      enemyGroup.push(add);
+      if (add.id && typeof seenMonsters !== 'undefined') seenMonsters.add(add.id);
+      appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : ${add.name} surgit en renfort ! `);
+      UX_safe.logCombat(`${ability.icon} ${enemy.name} invoque <b>${add.name}</b>`, 'bad');
+      renderEnemyGroup();
+      break;
+    }
+    case 'enrage_self': {
+      // L'ennemi gagne de l'ATK une fois passé sous un seuil de PV. One-shot
+      // (flag de combat `_enraged`, non sérialisé). Au-dessus du seuil ou déjà
+      // enragé → return false (rien : attaque physique normale).
+      const maxHp = enemy.hp || enemy.currentHp || 1;
+      const pct   = ability.hpPct || 0.4;
+      if (enemy._enraged || enemy.currentHp > maxHp * pct) return false;
+      const bonus = ability.atkBonus || Math.max(1, Math.round((enemy.atk || 0) * 0.5));
+      enemy.atk = (enemy.atk || 0) + bonus;
+      enemy._enraged = true;
+      appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : acculé, il entre en rage (+${bonus} ATK) ! `);
+      UX_safe.logCombat(`${ability.icon} ${enemy.name} enrage : <b>+${bonus} ATK</b>`, 'bad');
+      renderEnemyGroup();
+      break;
+    }
+    case 'aura': {
+      // Taunt/Aura : debuff de groupe persistant appliqué à TOUS les héros
+      // vivants, via applyStatus / STATUS_DEFS (réutilisation). Cas `weaken` :
+      // réplique la comptabilité DEF (soustraction au cast, restauration à
+      // l'expiry par tickStatuses) ; autres statuts : applyStatus simple.
+      const sid   = ability.statusId || 'weaken';
+      const turns = ability.turns || 3;
+      const def   = (typeof STATUS_DEFS !== 'undefined') ? STATUS_DEFS[sid] : null;
+      const lbl   = def ? def.label : sid;
+      party.slice(0, partySize).forEach(c => {
+        if (c.hp <= 0) return;
+        if (sid === 'weaken') {
+          const lost    = Math.min(ability.power, c.def || 0);
+          const applied = applyStatus(c, 'weaken', lost, turns);
+          if (applied && lost > 0) c.def = Math.max(0, (c.def || 0) - lost);
+        } else {
+          applyStatus(c, sid, ability.power || 0, turns);
+        }
+      });
+      appendLog(`${ability.icon} ${enemy.name} — ${ability.name} : ${lbl} s'abat sur tout le groupe (${turns} tours) ! `);
+      UX_safe.logCombat(`${ability.icon} ${enemy.name} : <b>${lbl}</b> de groupe (${turns} tours)`, 'bad');
+      break;
+    }
   }
   return true;
+}
+
+// ── Construction d'un add invoqué (effet `summon`, LOT B3) ───
+// Cherche le template `ability.summonId` dans MONSTERS et le met à l'échelle
+// de l'étage courant. Fallback : sbire dérivé du summoner (stats réduites).
+// L'add est dépouillé de toute capacité `summon` (anti-cascade infinie).
+// Pur quant aux globals : ne touche que l'objet add retourné.
+function _buildSummonedAdd(ability, summoner) {
+  const floor = (typeof currentFloor === 'number' && currentFloor > 0) ? currentFloor : 1;
+  let add;
+  const template = (typeof MONSTERS !== 'undefined' && Array.isArray(MONSTERS))
+    ? MONSTERS.find(m => m.id === ability.summonId) : null;
+  if (template && typeof scaleMonster === 'function') {
+    add = scaleMonster(template, floor);
+  } else {
+    // Fallback : minion dérivé du summoner (40 % PV, 60 % ATK).
+    add = JSON.parse(JSON.stringify(summoner));
+    add.id      = (summoner.id || 'add') + '_spawn';
+    add.name    = ability.summonName || ('Sbire de ' + summoner.name);
+    add.hp      = Math.max(1, Math.floor((summoner.hp || summoner.currentHp || 10) * 0.4));
+    add.atk     = Math.max(1, Math.floor((summoner.atk || 5) * 0.6));
+    add.phases  = [];
+    add.variant = 'normal';
+    delete add.epic;
+  }
+  // Anti-cascade : un add n'invoque pas à son tour.
+  add.abilities    = (add.abilities || []).filter(a => a.effect !== 'summon');
+  add.currentHp    = add.hp;
+  add.statusEffects = [];
+  add._summoned    = true;
+  return add;
 }
 
 // ── Sorts en combat : handlers par effet ─────────────────────
