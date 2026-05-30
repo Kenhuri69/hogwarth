@@ -180,16 +180,17 @@ d'**enrichir**, pas de réécrire le moteur.
 - **Vérif** : scénario smoke — un boss avec `phases` change d'état au seuil
   (asserter qu'une capacité de phase 2 ou un buff apparaît).
 
-**B3. Réduire la redondance des capacités (chantier de contenu, itératif)**
-- Auditer les `abilities` clonées (drain/weaken/damage répétés avec stats
-  différentes) et introduire **2-3 nouveaux archétypes d'effet** réellement
-  distincts, p.ex. :
-  - `summon` (invoque un add si slot ennemi libre),
-  - `enrage_self` (gagne ATK quand bas PV),
-  - `taunt`/`aura` (debuff de groupe persistant).
-- Appliquer d'abord aux boss/élites (là où ça compte), pas aux 68 monstres.
-- **Vérif** : chaque nouvel effet a un handler dans `tryEnemyAbility` + un
-  scénario smoke dédié.
+**B3. Réduire la redondance des capacités (chantier de contenu, itératif)** — ✅ FAIT (2026-05-30)
+> Livré : 3 archétypes d'effet distincts dans `tryEnemyAbility`
+> (`js/battle-spells.js`), réservés aux boss/élites (epic / étages 8+).
+> Plan : `.claude/plans/enemy-ability-archetypes.md`.
+- [x] `summon` (invoque un add si slot ennemi libre, cap 3) → Aragog.
+- [x] `enrage_self` (gagne ATK sous un seuil de PV, one-shot) → Fenrir Greyback.
+- [x] `taunt`/`aura` (debuff de groupe persistant) → Héraut des Ténèbres.
+- [x] Appliqué uniquement aux 3 boss ; les 68 monstres standards inchangés.
+- [x] Garde-fou : capacité absente / effet inapplicable → comportement actuel.
+- [x] **Vérif** : handler dédié par effet + scénario smoke
+  `scenarioEnemyAbilityArchetypes` (T1/T2/T3) ; `node tests/smoke.js` 128/128.
 
 **B4. Rééquilibrer Legilimens (optionnel, à discuter)**
 - Aujourd'hui spammable tant qu'il y a du PM (battle-spells.js:516-523).
@@ -361,3 +362,4 @@ testable. Ce fichier est mis à jour au fil de l'eau (cocher, noter les écarts)
 | 2026-05-29 | LOT D.1+D.2 (Quick Start + tuto premier combat) livrés. D3 (bonus Maison chiffrés) / D4 (aide par section) reportés. cf. `.claude/plans/onboarding-quickstart.md`. | impl |
 | 2026-05-29 | D3 (bonus Maison chiffrés) livré ensuite (cf. `.claude/plans/onboarding-quickstart.md` §D3). C5 livré le 2026-05-30 (`brew-potency-c5.md`). | impl |
 | 2026-05-30 | Chantiers restants (B3, B4, C3b, D4, LOT F) à exécuter en **sessions parallèles** — prompts de lancement prêts à coller dans [`.claude/plans/session-launch-prompts.md`](./session-launch-prompts.md). | reco |
+| 2026-05-30 | LOT B3 (archétypes de capacités boss/élites : summon / enrage_self / aura) livré. cf. `.claude/plans/enemy-ability-archetypes.md`. | impl |
