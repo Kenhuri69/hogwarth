@@ -11961,6 +11961,29 @@ async function scenarioVisitNetworkDrop() {
   assert(t7.role === null,    'Host drop ferme sa session');
   assert(!t7.byePosted,       'Host ne poste pas de bye en cas de drop');
 
+  // T8 (S2.8) : cycle de vie des timers — vivants pendant la visite,
+  // clearés par mpExitVisit ; _visitTeardownTimers est un no-op idempotent
+  // hors visite (filet beforeunload/pagehide).
+  const t8 = await page.evaluate(async () => {
+    window.mpPollVisitMessages = async () => [];
+    window.mpPostVisitMessage  = async () => ({ id: 'p', created_at: new Date().toISOString() });
+    await mpStartVisitAsHost({
+      channelId: 'ch-timers',
+      req: { id: 'r3', visitor_id: 'v3', visitor_name: 'Eve' }
+    });
+    const live = window._visitTimersLive();           // attendu : poll+ping vivants
+    await mpExitVisit('cleanup');
+    const afterExit = window._visitTimersLive();        // attendu : tout null
+    // Teardown hors session : doit rester un no-op silencieux.
+    window._visitTeardownTimers();
+    const afterTeardown = window._visitTimersLive();
+    return { live, afterExit, afterTeardown };
+  });
+  console.log('  T8 timers lifecycle →', t8);
+  assert(t8.live.poll && t8.live.ping,                 'timers poll+ping vivants pendant la visite');
+  assert(!t8.afterExit.poll && !t8.afterExit.ping,     'mpExitVisit clear les deux timers');
+  assert(!t8.afterTeardown.poll && !t8.afterTeardown.ping, '_visitTeardownTimers no-op hors session');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
