@@ -432,12 +432,26 @@ function _applyConsumableEffect(item, target) {
   else if (item.effect === 'regen_buff') {
     if (typeof applyStatus === 'function') applyStatus(target, 'regen', item.power || 5, item.turns || 4);
   }
-  // Bouclier : érige un Protego (paliers shieldTurns) sur le porteur.
-  // Surtout utile en combat ; hors combat, shieldTurns est inactif.
-  else if (item.effect === 'shield_buff') {
-    if (typeof shieldTurns !== 'undefined') {
-      const i = party.indexOf(target);
-      if (i >= 0) shieldTurns[i] = Math.max(shieldTurns[i] || 0, item.power || 3);
+  // Buff temporaire de stat (P0 — Potion de Force). Miroir positif de
+  // `disarm` : l'ATK est augmentée ici, restaurée à l'expiry par tickStatuses.
+  // `buffStat` choisit la stat ('atk' par défaut). Le buff profite du
+  // multiplicateur de brassage (brewMult, P1) → une Potion de Force brassée
+  // concentrée booste davantage. Non empilable (applyStatus refresh la durée).
+  else if (item.effect === 'temp_buff') {
+    const stat   = item.buffStat || 'atk';
+    const turns  = item.turns || 3;
+    const amount = Math.round((item.power || 0) * brewMult);
+    if (typeof applyStatus === 'function' && stat === 'atk') {
+      const applied = applyStatus(target, 'buff_atk', amount, turns);
+      if (applied && amount > 0) target.atk = (target.atk || 0) + amount;
+    }
+  }
+  // Résistance : pose le statut non-DoT `resist_buff` (réduction générale des
+  // dégâts subis de `power` % pendant `turns` tours). Lu par _resistMult()
+  // aux sites de dégâts héros. Surtout utile en combat.
+  else if (item.effect === 'resist_buff') {
+    if (typeof applyStatus === 'function') {
+      applyStatus(target, 'resist_buff', item.power || 40, item.turns || 3);
     }
   }
   // ── Sinks endgame (consommables permanents) ────────────────
@@ -672,17 +686,19 @@ function useItem(idx, battleMode) {
     return;
   }
 
+  // Matériaux (Forge / Bibliothèque / upgrade-craft potions) — non utilisables
+  // manuellement. Consommés uniquement à la Forge, Bibliothèque ou au chaudron.
+  // NB : doit précéder la branche équipement (`type !== 'consumable'`), sinon un
+  // matériau slotless tomberait dans showEquipMenu → equipItem corrompu.
+  if (item.type === 'material') {
+    addMsg(`${item.name} : matériau d'upgrade — utilisable à la Forge, à la Bibliothèque ou au chaudron.`, '');
+    return;
+  }
+
   // Équipement → menu de sélection (hors combat seulement)
   if (item.type !== 'consumable') {
     if (battleMode) return; // ne devrait pas être cliquable en combat
     showEquipMenu(item, idx);
-    return;
-  }
-
-  // Matériaux endgame (Forge / Bibliothèque) — non utilisables manuellement.
-  // Consommés lors d'un upgrade Forge/Bibliothèque uniquement.
-  if (item.type === 'material') {
-    addMsg(`${item.name} : matériau d'upgrade — utilisable uniquement à la Forge ou à la Bibliothèque.`, '');
     return;
   }
 

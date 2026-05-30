@@ -93,7 +93,7 @@ const QUEST_TEMPLATES = [
     objectives: [
       { type: "item", itemId: "mandragore", amount: 3, progress: 0, completed: false }
     ],
-    reward: { xp: 60, gold: 40, recipes: ["brew_potion_s", "brew_potion_m"] },
+    reward: { xp: 60, gold: 40, recipes: ["brew_potion_s", "brew_potion_m", "brew_potion_soin_mineure"] },
     location: "Salle des Potions (étage 2)"
   },
   // Quête de suivi Slughorn : déverrouille les recettes de Grande Potion.
@@ -107,6 +107,21 @@ const QUEST_TEMPLATES = [
       { type: "kill", monsterId: "mandragore_sauvage", amount: 3, progress: 0, completed: false }
     ],
     reward: { xp: 180, gold: 90, recipes: ["brew_potion_l", "brew_potion_l_sp"] },
+    location: "Salle des Potions (étage 2)"
+  },
+  // 3ᵉ quête Slughorn : déverrouille les recettes avancées (buff/résistance/PM
+  // suprême). Pré-enseigne — les recettes restent découvrables par
+  // expérimentation (cf. potions-enrichment.md §6bis).
+  {
+    id: "quest_potions_slughorn_3",
+    title: "L'Art des Élixirs",
+    giver: "Horace Slughorn",
+    desc: "Slughorn convoite la sécrétion corrosive des Bundimuns pour ses élixirs avancés. Élimine 3 Bundimuns Venimeux et il t'enseignera ses recettes les plus précieuses.",
+    prereq: "quest_potions_slughorn_2",
+    objectives: [
+      { type: "kill", monsterId: "bundimun", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 300, gold: 150, recipes: ["brew_potion_force", "brew_potion_resistance", "brew_potion_xl_sp"] },
     location: "Salle des Potions (étage 2)"
   },
   {

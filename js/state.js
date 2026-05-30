@@ -450,6 +450,7 @@ let battleTurn      = 0;
 // Palier 17 « Mythe » — état transient de combat (réinitialisé par startBattle).
 // Non sérialisés : un combat ne peut pas être sauvegardé (inBattle bloque autoSave/writeSlot).
 let legilimensCancelCharges = 0;     // capacités ennemies à annuler (sort Legilimens)
+let legilimensCastsThisFight = 0;    // nb de lancers de Legilimens ce combat (coût PM croissant)
 let recolteGoldBonus        = false; // or de fin de combat majoré +50 % (sort Récolte Magique)
 // Sélection de cible en combat (cycle producteur → consommateur) :
 //  - battle-ui.js — showTargetSelection(actionType)  écrit pendingAction

@@ -220,8 +220,8 @@ const NPCS = [
       type:  "open_brewing",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/items/potion_m.png' alt=''> Concocter une potion"
     },
-    questsGiven:    ["quest_potions_slughorn", "quest_potions_slughorn_2"],
-    questsTurnedIn: ["quest_potions_slughorn", "quest_potions_slughorn_2"],
+    questsGiven:    ["quest_potions_slughorn", "quest_potions_slughorn_2", "quest_potions_slughorn_3"],
+    questsTurnedIn: ["quest_potions_slughorn", "quest_potions_slughorn_2", "quest_potions_slughorn_3"],
     dialogues: {
       greeting:    [
         "Ah, un nouveau visage ! Horace Slughorn, maître des Potions — et fin connaisseur des talents prometteurs.",
@@ -238,6 +238,11 @@ const NPCS = [
         questOffer:  "Tu progresses bien. Pour les recettes avancées, il me faut des ingrédients frais : élimine 3 Mandragores Sauvages et leurs racines feront merveille.",
         questActive: "Ces Mandragores Sauvages sont coriaces, n'est-ce pas ? Persévère.",
         questReady:  "Magnifique récolte ! Voici deux recettes de Grande Potion — tu les as méritées."
+      },
+      quest_potions_slughorn_3: {
+        questOffer:  "Tu as l'âme d'un maître, je le sens. Une dernière épreuve : la sécrétion des Bundimuns Venimeux est l'ingrédient secret de mes plus grands élixirs. Rapporte-m'en — élimine-en trois — et je t'ouvrirai mon grimoire le plus précieux.",
+        questActive: "Ces Bundimuns sont corrosifs, prends garde à ton armure. Mais leur sécrétion vaut son pesant de Gallions.",
+        questReady:  "Sublime ! Voici mes recettes de maître : la Potion de Force, la Potion de Résistance et l'Élixir d'Esprit Suprême. Use-en avec sagesse."
       }
     }
   },

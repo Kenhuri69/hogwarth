@@ -44,3 +44,4 @@ power +2 / cost −1 / chance +0.05. On scinde en **2 voies**, verrouillées au
 |------|------|
 | 2026-05-30 | Plan rédigé. Implémentation en cours. |
 | 2026-05-30 | C3b implémenté et testé (126/126 + pwa v25). |
+| 2026-05-30 | Re-vérification : livré via PR #298 (mergée dans master). Toutes les étapes confirmées dans le code (library.js v3, battle-spells.js v5 `_spellForCaster`, save.js v17 migration idempotente, UI 2 voies + CSS `.library-path-choice`). Écarts mineurs vs plan, dûs aux merges ultérieurs : suite smoke à **127/127** (croissance hors-C3b), style.css à v26, CACHE_VERSION à v28. Aucun travail restant. |

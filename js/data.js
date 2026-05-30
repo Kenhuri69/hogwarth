@@ -339,6 +339,10 @@ const RIDDLES_LUMIERE = [
 
 const ITEMS = [
   { id:"potion_s", name:"Potion de Soin", icon:"🧪", desc:"+15 PV", type:"consumable", effect:"heal", power:15, price:30 },
+  // Chaîne de soin à paliers (P4 — upgrade-craft via Éclat de Vitalité).
+  { id:"potion_soin_mineure",      name:"Potion de Soin Mineure",   icon:"🧪", desc:"+15 PV",  type:"consumable", effect:"heal", power:15, price:28 },
+  { id:"potion_soin_mineure_plus", name:"Potion de Soin Mineure +", icon:"🧪", desc:"+30 PV",  type:"consumable", effect:"heal", power:30, price:55 },
+  { id:"potion_soin_mineure_pp",   name:"Potion de Soin Mineure ++",icon:"🧪", desc:"+55 PV",  type:"consumable", effect:"heal", power:55, price:95 },
   { id:"potion_m", name:"Potion Magique", icon:"💜", desc:"+12 PM", type:"consumable", effect:"restore_sp", power:12, price:25 },
   { id:"potion_l",     name:"Grande Potion de Soin", icon:"🧪", desc:"+40 PV", type:"consumable", effect:"heal",       power:40, price:80 },
   { id:"potion_l_sp",  name:"Grande Potion Magique", icon:"💜", desc:"+30 PM", type:"consumable", effect:"restore_sp", power:30, price:70 },
@@ -347,7 +351,7 @@ const ITEMS = [
   // ── Consommables à effet (au-delà du +PV/PM) ────────────────
   { id:"elixir_antidote",  name:"Élixir d'Antidote",      icon:"🧴", desc:"Purge brûlure, poison, saignement et engelures", type:"consumable", effect:"cure",        price:45 },
   { id:"elixir_regen",     name:"Élixir de Régénération", icon:"🌱", desc:"Régénère 6 PV/tour pendant 4 tours",            type:"consumable", effect:"regen_buff",  power:6, turns:4, price:55 },
-  { id:"potion_bouclier",  name:"Potion de Bouclier",     icon:"🛡️", desc:"Érige un Protego (bloque les coups)",           type:"consumable", effect:"shield_buff", power:3, price:50 },
+  { id:"potion_resistance", name:"Potion de Résistance", icon:"🛡️", desc:"Réduit de 40 % tous les dégâts subis pendant 3 tours", type:"consumable", effect:"resist_buff", power:40, turns:3, price:50 },
   { id:"wand1",   name:"Baguette de Saule",   icon:"🪄", desc:"ATK+2",                      type:"wand",  slot:"wand",   family:"wand_basic",    rarity:"common", power:2, bonusAtk:2,                                price:80,  tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_basic", tint:"willow" },
   { id:"wand2",   name:"Baguette de Sureau",  icon:"🪄", desc:"ATK+5 MAG+3 · Crit +2% (×1.7)", type:"wand",  slot:"wand",   family:"wand_elder",    rarity:"rare",   power:5, bonusAtk:5, bonusMag:3, bonusCritChance:2, bonusCritDamage:0.2, price:300, tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_runic", tint:"elder"  },
   { id:"robe1",   name:"Robe Renforcée",      icon:"🧥", desc:"DEF+3",                      type:"armor", slot:"body",   family:"robe",          rarity:"common", power:3, bonusDef:3,                                    price:150 },
@@ -372,6 +376,10 @@ const ITEMS = [
     type:"material", price:0 },
   { id:"page_grimoire",    name:"Page de Grimoire",     icon:"📜", desc:"Matériau · Bibliothèque interdite",
     type:"material", price:0 },
+  // Ressource d'upgrade-craft des potions (P4). Achetable (boutique étage ≥ 3)
+  // + drop de coffre. Consommée au chaudron pour monter une potion en rang.
+  { id:"eclat_vitalite",   name:"Éclat de Vitalité",    icon:"❤️", desc:"Matériau · concentré de vie pour potions",
+    type:"material", price:35 },
   // Objet de quête — Épreuve de la Lumière Éternelle (portrait de Dumbledore).
   // Tombe des morts-vivants ; réuni ×3 pour le 1er temps de l'épreuve.
   // type:"quest" → non utilisable manuellement (useItem affiche un message).
@@ -456,7 +464,7 @@ const ITEMS = [
   { id:"coiffe_blaireau", name:"Coiffe du Blaireau",   icon:"🦡", desc:"DEF+2 END+2 — Set du Blaireau (3/4)",   type:"armor", slot:"head",   family:"pouf_set_3",   rarity:"epic",      power:4, bonusDef:2, bonusEnd:2, price:0, setKey:"pouf_set",  setPiece:3 },
   { id:"medaillon_helga", name:"Médaillon de Helga",   icon:"🏅", desc:"DEF+3 END+2 · Régen +1 PV — Set du Blaireau (4/4)", type:"acc", slot:"amulet", family:"pouf_set_4", rarity:"legendary", power:6, bonusDef:3, bonusEnd:2, regenHp:1, price:0, setKey:"pouf_set",  setPiece:4 },
   { id:"choco_sorcier",name:"Chocolat aux Sorciers", icon:"🍫", desc:"+10 PV +5 PM",       type:"consumable", effect:"both",       power:10, price:20 },
-  { id:"potion_force", name:"Potion de Force",       icon:"💪", desc:"+8 ATK pendant 3 tours", type:"consumable", effect:"heal",      power:8,  price:45 },
+  { id:"potion_force", name:"Potion de Force",       icon:"💪", desc:"+8 ATK pendant 3 tours", type:"consumable", effect:"temp_buff", buffStat:"atk", power:8, turns:3, price:45 },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:200 },
   // ── Phase 3 : équipement étendu (slots head/hands/feet/cloak/amulet/ring/belt/trinket) ──
@@ -592,6 +600,47 @@ const POTION_RECIPES = [
   { id:"brew_potion_xl",    name:"Élixir Suprême",        resultItemId:"potion_xl",
     ingredients:{ herbe_dictame:2, herbe_aconit:1, herbe_asphodele:1 }, difficulty:18,
     lore:"Le dictame, herbe légendaire, parachève l'élixir des maîtres." },
+  // ── Recettes utilitaires (PR 3) ──────────────────────────────
+  // Antidote & régénération : combos d'herbes simples, découvrables librement.
+  { id:"brew_elixir_antidote", name:"Élixir d'Antidote",  resultItemId:"elixir_antidote",
+    ingredients:{ herbe_armoise:1, herbe_ortie:1 },                     difficulty:11,
+    lore:"L'armoise neutralise les humeurs, l'ortie chasse les venins." },
+  { id:"brew_elixir_regen",    name:"Élixir de Régénération", resultItemId:"elixir_regen",
+    ingredients:{ herbe_dictame:1, herbe_asphodele:1 },                 difficulty:12,
+    lore:"Le dictame distillé sur l'asphodèle nourrit la chair tour après tour." },
+  // Avancées : pré-enseignées par la 3ᵉ quête Slughorn (mais découvrables).
+  // (brew_potion_force existe déjà plus haut — pré-enseignée par la quête 3.)
+  { id:"brew_potion_resistance", name:"Potion de Résistance", resultItemId:"potion_resistance",
+    ingredients:{ herbe_aconit:1, herbe_branchiflore:2 },               difficulty:15,
+    lore:"La branchiflore tanne la peau ; l'aconit endurcit l'âme contre les coups." },
+  { id:"brew_potion_xl_sp", name:"Élixir d'Esprit Suprême", resultItemId:"potion_xl_sp",
+    ingredients:{ herbe_dictame:2, herbe_branchiflore:1, herbe_ortie:1 }, difficulty:18,
+    lore:"Le dictame canalise la branchiflore en un flux mental sans égal." },
+  // ── Chaîne de soin à paliers (P4) — upgrade-craft via Éclat de Vitalité ──
+  // Mineure : herbes simples (découvrable). Mineure+ / ++ : la potion de rang
+  // inférieur + Éclat(s) — un ingrédient EST une potion (résolu depuis le sac).
+  { id:"brew_potion_soin_mineure", name:"Potion de Soin Mineure", resultItemId:"potion_soin_mineure",
+    ingredients:{ herbe_armoise:1, herbe_asphodele:1 },                 difficulty:9,
+    lore:"Une décoction de soin d'apprenti : armoise et asphodèle, sans détour." },
+  { id:"brew_potion_soin_mineure_plus", name:"Potion de Soin Mineure +", resultItemId:"potion_soin_mineure_plus",
+    ingredients:{ potion_soin_mineure:1, eclat_vitalite:1 },            difficulty:13,
+    lore:"Un Éclat de Vitalité fondu dans la fiole en double presque la vertu." },
+  { id:"brew_potion_soin_mineure_pp", name:"Potion de Soin Mineure ++", resultItemId:"potion_soin_mineure_pp",
+    ingredients:{ potion_soin_mineure_plus:1, eclat_vitalite:2 },       difficulty:17,
+    lore:"Deux Éclats saturent la potion d'énergie vitale — le palier des maîtres." },
+  // ── Upgrades des potions existantes (soin & magie) ──────────────────────
+  { id:"brew_up_potion_l",    name:"Grande Potion de Soin (raffinage)", resultItemId:"potion_l",
+    ingredients:{ potion_s:1, eclat_vitalite:1 },                       difficulty:12,
+    lore:"L'Éclat de Vitalité transmue une Potion de Soin en sa version majeure." },
+  { id:"brew_up_potion_l_sp", name:"Grande Potion Magique (raffinage)", resultItemId:"potion_l_sp",
+    ingredients:{ potion_m:1, eclat_vitalite:1 },                       difficulty:12,
+    lore:"L'énergie de l'Éclat densifie le flux magique d'une Potion Magique." },
+  { id:"brew_up_potion_xl",   name:"Élixir Suprême (raffinage)",        resultItemId:"potion_xl",
+    ingredients:{ potion_l:1, eclat_vitalite:2 },                       difficulty:18,
+    lore:"Deux Éclats portent une Grande Potion au rang d'Élixir Suprême." },
+  { id:"brew_up_potion_xl_sp", name:"Élixir d'Esprit Suprême (raffinage)", resultItemId:"potion_xl_sp",
+    ingredients:{ potion_l_sp:1, eclat_vitalite:2 },                    difficulty:18,
+    lore:"Deux Éclats subliment une Grande Potion Magique en Élixir d'Esprit." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];

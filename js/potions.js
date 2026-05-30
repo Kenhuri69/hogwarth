@@ -46,20 +46,28 @@ function getHerbCount(id) {
   return (player.herbs && player.herbs[id]) || 0;
 }
 
-// Un « ingrédient » de potion est soit une herbe (besace), soit la
-// Racine de Mandragore (item consommable du sac). Cette indirection
-// permet aux recettes de mélanger les deux sources.
+// Un « ingrédient » de potion est soit une herbe (besace player.herbs),
+// soit un item du sac (player.inventory) — Racine de Mandragore, potions de
+// rang inférieur (upgrade-craft P4), Éclat de Vitalité. La distinction se fait
+// sur le type : seuls les `type:"herb"` vivent dans la besace ; tout le reste
+// est résolu depuis l'inventaire. Cette indirection permet aux recettes de
+// mélanger les deux sources.
+function _isHerbIngredient(id) {
+  const it = (typeof ITEMS !== 'undefined') ? ITEMS.find(i => i.id === id) : null;
+  return it ? it.type === 'herb' : true; // défaut prudent : traiter comme herbe
+}
+
 function _ingredientCount(id) {
-  if (id === 'mandragore') {
-    return (player.inventory || []).filter(it => it && it.id === 'mandragore').length;
+  if (!_isHerbIngredient(id)) {
+    return (player.inventory || []).filter(it => it && it.id === id).length;
   }
   return getHerbCount(id);
 }
 
 function _consumeIngredient(id, n) {
-  if (id === 'mandragore') {
+  if (!_isHerbIngredient(id)) {
     for (let k = 0; k < n; k++) {
-      const idx = (player.inventory || []).findIndex(it => it && it.id === 'mandragore');
+      const idx = (player.inventory || []).findIndex(it => it && it.id === id);
       if (idx >= 0) player.inventory.splice(idx, 1);
     }
     return;

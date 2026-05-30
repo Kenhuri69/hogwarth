@@ -100,9 +100,16 @@ function openChest() {
     updateUI();
 
   } else if (roll < 0.68) {
-    // Consommable
-    const possItems = ITEMS.filter(i => i.type === 'consumable');
-    const item = possItems[Math.floor(Math.random() * possItems.length)];
+    // Consommable — à partir de l'étage 3, 25 % du temps un Éclat de Vitalité
+    // (ressource d'upgrade-craft des potions, P4) plutôt qu'un consommable.
+    let item;
+    if ((currentFloor || 1) >= 3 && Math.random() < 0.25) {
+      item = ITEMS.find(i => i.id === 'eclat_vitalite');
+    }
+    if (!item) {
+      const possItems = ITEMS.filter(i => i.type === 'consumable');
+      item = possItems[Math.floor(Math.random() * possItems.length)];
+    }
     if (tryAddItem(item, { silent: true })) {
       setNarrative(NARRATIVES.item_found(item.name));
       addMsg(`Obtenu : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name}`, 'good');

@@ -51,8 +51,27 @@ const STATUS_DEFS = {
   // Durée gérée par consumeImperius() au point d'action, comme stun.
   imperius: { icon: '🌀', label: 'Asservi',           color: '#7d3fa0' },
   // Ferula Maxima : régénération de soutien AOE (PV + PM) sur 3 tours.
-  regen_ferula_max: { icon: '🩹✨', label: 'Régén. Ferula', color: '#5fc7a5' }
+  regen_ferula_max: { icon: '🩹✨', label: 'Régén. Ferula', color: '#5fc7a5' },
+  // Buff ATK temporaire (Potion de Force, P0). Miroir positif de `disarm` :
+  // l'ATK est augmentée à la pose (applyStatus dans _applyConsumableEffect),
+  // restaurée à l'expiry par tickStatuses. `power` = ATK gagnée.
+  buff_atk: { icon: '💪', label: 'Force', color: '#d35400' },
+  // Résistance (Potion de Résistance, P3). Non-DoT : réduit tous les dégâts
+  // subis de `power` % pendant `turns` tours. Décompté par tickStatuses (pas
+  // de fonction de consommation) ; lu par _resistMult() aux sites de dégâts.
+  resist_buff: { icon: '🛡️', label: 'Résistance', color: '#4a7ba6' }
 };
+
+// Multiplicateur de dégâts subis par une cible (héros) selon son statut
+// `resist_buff` actif. Retourne 1 si aucune résistance. Réduction générale
+// (tous types de dégâts), plafonnée à 90 %. Pur, sans effet de bord.
+function _resistMult(target) {
+  if (!target || !Array.isArray(target.statusEffects)) return 1;
+  const s = target.statusEffects.find(x => x.id === 'resist_buff' && x.turns > 0);
+  if (!s) return 1;
+  const pct = Math.min(90, Math.max(0, s.power || 0));
+  return 1 - pct / 100;
+}
 
 // Pose ou rafraîchit un statut. Renvoie `true` si un nouvel "instance"
 // du statut a été appliqué (création ou stack supplémentaire), `false`
@@ -200,6 +219,16 @@ function tickStatuses(target, isEnemy) {
       target.atk = (target.atk || 0) + s.power;
       log += `${STATUS_DEFS[s.id].icon} ${target.name} récupère ${s.power} ATK. `;
       UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} récupère <b>+${s.power} ATK</b>`, 'magic');
+    } else if (s.id === 'buff_atk') {
+      // Expiration du buff de Force → retirer l'ATK gagnée (miroir de disarm).
+      target.atk = Math.max(0, (target.atk || 0) - s.power);
+      log += `${STATUS_DEFS[s.id].icon} ${target.name} perd le bonus de Force (${s.power} ATK). `;
+      UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} : <b>−${s.power} ATK</b> (Force dissipée)`, 'info');
+    } else if (s.id === 'resist_buff') {
+      // Expiration de la Résistance — aucun état à restaurer (lue à la volée
+      // par _resistMult). Simple annonce de dissipation.
+      log += `${STATUS_DEFS[s.id].icon} La Résistance de ${target.name} se dissipe. `;
+      UX_safe.logCombat(`${STATUS_DEFS[s.id].icon} ${target.name} : Résistance dissipée`, 'info');
     }
   });
   target.statusEffects = remaining;
@@ -317,14 +346,15 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
   }
   if (guardTurns[charIdx] > 0) {
     const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
-    const mitigated = Math.max(0, Math.floor(dmg / 2));
+    const mitigated = Math.max(0, Math.floor(dmg / 2 * _resistMult(target)));
     target.hp = Math.max(0, target.hp - mitigated);
     UX_safe.floatDmg('ally', mitigated, 'dmg');
     UX_safe.logCombat(`🛡️ ${target.name} mitige ${enemy.name} : <b>−${mitigated}</b> <small>(au lieu de −${dmg})</small>`, 'magic');
     guardTurns[charIdx] = Math.max(0, guardTurns[charIdx] - 1);
     return `🛡️ ${target.name} mitige : -${mitigated} (au lieu de -${dmg}). ` + _tryGuardCounter(target, enemy);
   }
-  const dmg = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
+  const raw = mitigatedDamage(enemy.atk + Math.floor(Math.random() * 3), target.def);
+  const dmg = Math.max(0, Math.floor(raw * _resistMult(target)));
   target.hp = Math.max(0, target.hp - dmg);
   UX_safe.floatDmg('ally', dmg === 0 ? 0 : dmg, dmg === 0 ? 'miss' : 'dmg');
   UX_safe.logCombat(`${enemy.icon} ${enemy.name} → ${target.name} : <b>−${dmg} PV</b>`, 'bad');
@@ -350,6 +380,7 @@ function startBattle(baseEnemyData, opts) {
   pendingAction     = null;
   pendingSpell      = null;
   legilimensCancelCharges = 0;
+  legilimensCastsThisFight = 0;
   recolteGoldBonus        = false;
   if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 
