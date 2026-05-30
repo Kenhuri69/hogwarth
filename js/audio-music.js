@@ -92,7 +92,8 @@ Object.assign(AudioSystem, {
     combat_normal: 'audio/combat_normal.ogg',
     combat_late:   'audio/combat_late.ogg',   // étage ≥ 10 — repli combat_normal si 404
     combat_epic:   'audio/combat_epic.ogg',   // boss épique — repli combat_normal si 404
-    // combat_hard, combat_expert : pas encore livrés → procédural
+    combat_hard:   'audio/combat_hard.ogg',   // difficulté Difficile — repli combat_normal si 404
+    combat_expert: 'audio/combat_expert.ogg', // difficulté Expert — repli combat_normal si 404
   },
 
   // ── Registre voix narratives (un fichier par phrase) ──────────
