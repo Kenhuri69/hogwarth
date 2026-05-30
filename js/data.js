@@ -347,7 +347,7 @@ const ITEMS = [
   // ── Consommables à effet (au-delà du +PV/PM) ────────────────
   { id:"elixir_antidote",  name:"Élixir d'Antidote",      icon:"🧴", desc:"Purge brûlure, poison, saignement et engelures", type:"consumable", effect:"cure",        price:45 },
   { id:"elixir_regen",     name:"Élixir de Régénération", icon:"🌱", desc:"Régénère 6 PV/tour pendant 4 tours",            type:"consumable", effect:"regen_buff",  power:6, turns:4, price:55 },
-  { id:"potion_bouclier",  name:"Potion de Bouclier",     icon:"🛡️", desc:"Érige un Protego (bloque les coups)",           type:"consumable", effect:"shield_buff", power:3, price:50 },
+  { id:"potion_resistance", name:"Potion de Résistance", icon:"🛡️", desc:"Réduit de 40 % tous les dégâts subis pendant 3 tours", type:"consumable", effect:"resist_buff", power:40, turns:3, price:50 },
   { id:"wand1",   name:"Baguette de Saule",   icon:"🪄", desc:"ATK+2",                      type:"wand",  slot:"wand",   family:"wand_basic",    rarity:"common", power:2, bonusAtk:2,                                price:80,  tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_basic", tint:"willow" },
   { id:"wand2",   name:"Baguette de Sureau",  icon:"🪄", desc:"ATK+5 MAG+3 · Crit +2% (×1.7)", type:"wand",  slot:"wand",   family:"wand_elder",    rarity:"rare",   power:5, bonusAtk:5, bonusMag:3, bonusCritChance:2, bonusCritDamage:0.2, price:300, tinted:true, tintMask:"wand_shaft_base", tintOverlay:"wand_tip_runic", tint:"elder"  },
   { id:"robe1",   name:"Robe Renforcée",      icon:"🧥", desc:"DEF+3",                      type:"armor", slot:"body",   family:"robe",          rarity:"common", power:3, bonusDef:3,                                    price:150 },
@@ -592,6 +592,22 @@ const POTION_RECIPES = [
   { id:"brew_potion_xl",    name:"Élixir Suprême",        resultItemId:"potion_xl",
     ingredients:{ herbe_dictame:2, herbe_aconit:1, herbe_asphodele:1 }, difficulty:18,
     lore:"Le dictame, herbe légendaire, parachève l'élixir des maîtres." },
+  // ── Recettes utilitaires (PR 3) ──────────────────────────────
+  // Antidote & régénération : combos d'herbes simples, découvrables librement.
+  { id:"brew_elixir_antidote", name:"Élixir d'Antidote",  resultItemId:"elixir_antidote",
+    ingredients:{ herbe_armoise:1, herbe_ortie:1 },                     difficulty:11,
+    lore:"L'armoise neutralise les humeurs, l'ortie chasse les venins." },
+  { id:"brew_elixir_regen",    name:"Élixir de Régénération", resultItemId:"elixir_regen",
+    ingredients:{ herbe_dictame:1, herbe_asphodele:1 },                 difficulty:12,
+    lore:"Le dictame distillé sur l'asphodèle nourrit la chair tour après tour." },
+  // Avancées : pré-enseignées par la 3ᵉ quête Slughorn (mais découvrables).
+  // (brew_potion_force existe déjà plus haut — pré-enseignée par la quête 3.)
+  { id:"brew_potion_resistance", name:"Potion de Résistance", resultItemId:"potion_resistance",
+    ingredients:{ herbe_aconit:1, herbe_branchiflore:2 },               difficulty:15,
+    lore:"La branchiflore tanne la peau ; l'aconit endurcit l'âme contre les coups." },
+  { id:"brew_potion_xl_sp", name:"Élixir d'Esprit Suprême", resultItemId:"potion_xl_sp",
+    ingredients:{ herbe_dictame:2, herbe_branchiflore:1, herbe_ortie:1 }, difficulty:18,
+    lore:"Le dictame canalise la branchiflore en un flux mental sans égal." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];

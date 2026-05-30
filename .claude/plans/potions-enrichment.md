@@ -220,9 +220,38 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 - Refonte de la besace/UI d'inventaire au-delà du chaudron.
 - Potions offensives jetables (déplacé en P4 backlog, scope combat).
 - Lien avec les Mondes Parallèles / économie outremonde (système séparé).
-- Génération d'icônes painterly dédiées pour les nouvelles potions (réutiliser
-  les emojis/icônes existants en V1 ; pipeline `icon_factory.py` en option
-  ultérieure).
+
+---
+
+## 6bis. Décisions PR 3 (figées 2026-05-30, ajustées à l'état réel du code)
+
+> Audit pré-implémentation : `elixir_antidote`/`elixir_regen`/`potion_bouclier`
+> **existaient déjà** (items achetables) ; `brew_potion_force` **existait déjà** ;
+> le brassage **n'a aucun verrou** (toute recette est découvrable). Les décisions
+> §6.3/§6.4 sont donc ajustées :
+
+1. ✅ **Bouclier → Résistance (remplacement)** : `potion_bouclier` (Protego total)
+   est **supprimée** (item + effet `shield_buff` + réf. shop/icônes/smoke) et
+   remplacée par **`potion_resistance`** : statut non-DoT `resist_buff` qui réduit
+   **tous** les dégâts subis de **40 % pendant 3 tours**. Hook : helper
+   `_resistMult(target)` (battle.js) appliqué aux 4 sites de dégâts héros
+   (`_enemyPhysicalHit` ×2, ability `damage`, ability `drain`).
+2. ✅ **Pas de verrou de recette** : la 3ᵉ quête Slughorn **pré-enseigne** les
+   recettes avancées en récompense (`reward.recipes`), comme les quêtes 1 & 2.
+   Tout reste découvrable par expérimentation — aucun nouveau mécanisme.
+3. ✅ **Recettes ajoutées** (`POTION_RECIPES`) : `brew_elixir_antidote`,
+   `brew_elixir_regen` (combos d'herbes existantes, découvrables librement),
+   `brew_potion_resistance`, `brew_potion_xl_sp` (avancées, pré-enseignées par
+   la quête 3).
+4. ✅ **3ᵉ quête Slughorn** `quest_potions_slughorn_3` (prereq quête 2) :
+   récompense `recipes:[brew_potion_force, brew_potion_resistance,
+   brew_potion_xl_sp]` + antidote/régén déjà libres. PNJ : ajout à
+   `questsGiven/TurnedIn` + dialogue dédié.
+5. ✅ **Icône PNG** (règle CLAUDE.md pipeline d'icônes) : `potion_resistance`
+   reçoit une recette `icon_factory.py` (silhouette `flask.svg`, matériau verre,
+   teinte défensive bleu-acier) → 5 PNG `img/icons_new/` + entrée
+   `ITEM_ICON_NEW_REGISTRY`. Les recettes ré-emploient les items existants
+   (antidote/régén/xl_sp gardent leurs icônes actuelles).
 
 ---
 
@@ -233,3 +262,4 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 | 2026-05-30 | Plan rédigé après audit. Constats : potion_force buggée, potion_xl_sp & 3 potions utilitaires sans recette, crit purement quantitatif. Lots P0→P4 cadrés ; première vague P0+P1 (dont l'idée « brassage à maîtrise » validée). Décisions §6 en attente. |
 | 2026-05-30 | Décisions §6 figées. **P1 livré** (PR 1) : potency bakée (`brewPotency`) ratée −15 % / réussite +20 % / critique +40 % + maîtrise INT (plafond [−15 %, +50 %]) ; ratage produit une fiole diluée (au lieu de 0) ; revente indexée sur la potency (`_computeSellPrice`). Smoke T8/T9 + 126/126 + pwa v28. **Reste PR 2 = P0** (recettes manquantes + `potion_force` buff via moteur `temp_buff`). |
 | 2026-05-30 | **PR 2 livré** : moteur de buff temporaire (`STATUS_DEFS.buff_atk` + expiry dans `tickStatuses` + réapplication dans `recalculateStats`) ; `potion_force` → `effect:"temp_buff"` +8 ATK/3 tours (profite du brassage). Smoke `scenarioPotionBuff` T1-T5 + suite 127/127 + pwa v29. Reste PR 3 = Potion de Résistance + recettes utilitaires + quête Slughorn. |
+| 2026-05-30 | **PR 3 livré** : Potion de Résistance (statut `resist_buff`, −40 %/3t via `_resistMult` aux 4 sites de dégâts héros) **remplace** `potion_bouclier` (supprimée : item/effet/shop/icône) ; 4 recettes ajoutées (`brew_elixir_antidote`/`_regen`/`brew_potion_resistance`/`brew_potion_xl_sp`) — 10 recettes au total, sans collision d'ingrédients ; 3ᵉ quête Slughorn `quest_potions_slughorn_3` (kill 3 Bundimuns → pré-enseigne Force/Résistance/Esprit Suprême) ; **icône PNG painterly** `potion_resistance` (icon_factory.py + ITEM_ICON_NEW_REGISTRY). Smoke `scenarioPotionResistance` T1-T4 + suite 129/129 + pwa v30. **Première vague potions close.** |
