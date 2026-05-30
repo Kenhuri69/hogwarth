@@ -1223,7 +1223,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | `gold` | number\|{min,max} | Or de base (scalé automatiquement) |
 | `drops` | [{itemId, chance}] | Drops potentiels après victoire |
 
-### Monstres définis (54 au total)
+### Monstres définis (67 au total)
 | Étages | Monstres |
 |--------|---------|
 | 1–3    | Chat de Mme Norris, Luciole des Marais, Cornichon de Cornouailles, Portrait Hostile, Peeve, Mimi Geignarde, Serpent des Cachots |

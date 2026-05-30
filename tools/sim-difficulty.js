@@ -29,7 +29,10 @@ function loadGameData() {
   const root = path.join(__dirname, '..');
   const monstersSrc = fs.readFileSync(path.join(root, 'js/monsters.js'), 'utf8');
   const dataSrc     = fs.readFileSync(path.join(root, 'js/data.js'),     'utf8');
-  const questsSrc   = fs.readFileSync(path.join(root, 'js/quests.js'),   'utf8');
+  // QUEST_TEMPLATES a été extrait de quests.js vers quests-templates.js
+  // (données inertes). On charge ce module-là — quests.js touche le DOM et
+  // n'apporte rien à la sim.
+  const questsSrc   = fs.readFileSync(path.join(root, 'js/quests-templates.js'), 'utf8');
   const shopSrc     = fs.readFileSync(path.join(root, 'js/shop.js'),     'utf8');
 
   // Sandbox commun : on injecte un objet `globalThis` qu'on peut
@@ -68,11 +71,9 @@ function loadGameData() {
     `;exports.REST_INTERRUPT_HEAL_FRACTION = REST_INTERRUPT_HEAL_FRACTION;\n`;
   vm.runInContext(patchedData, sandbox, { filename: 'data.js' });
 
-  // quests.js : seule la constante `QUEST_TEMPLATES` nous intéresse.
-  // Le reste du fichier touche le DOM (already stubbed) ou ne sera pas
-  // appelé par la sim. On capture la déclaration top-level.
+  // quests-templates.js : module inerte qui déclare `QUEST_TEMPLATES`.
   const patchedQuests = questsSrc + '\n;exports.QUEST_TEMPLATES = QUEST_TEMPLATES;';
-  vm.runInContext(patchedQuests, sandbox, { filename: 'quests.js' });
+  vm.runInContext(patchedQuests, sandbox, { filename: 'quests-templates.js' });
 
   const patchedShop = shopSrc + '\n;exports.SHOP_CATALOG = SHOP_CATALOG;';
   vm.runInContext(patchedShop, sandbox, { filename: 'shop.js' });
@@ -87,6 +88,44 @@ const { MONSTERS, SPELLS, CHARACTERS, LEVEL_UP_XP_MULTIPLIER,
         REST_ENCOUNTER_CHANCE, REST_INTERRUPT_HEAL_FRACTION } = loadGameData();
 
 const spellByName = Object.fromEntries(SPELLS.map(s => [s.name, s]));
+
+// Miroir de state.js — DIFFICULTY_SETTINGS. Le runtime applique
+// `scalingMultiplier` à TOUTES les stats de combat scalées
+// (dungeon-scaling.js — scaleMonster), `enemyGroupMultiplier` au tirage
+// de taille de groupe (battle.js — rollGroupSize) et `xpMultiplier` à
+// l'XP. La sim ne modélisait que le Normal (tout à 1.0) ; --difficulty
+// branche les trois axes.
+const DIFFICULTY_SETTINGS = {
+  Facile:    { enemyGroupMultiplier: 0.65, scalingMultiplier: 0.75, goldMultiplier: 1.6,  xpMultiplier: 1.4,  startingHpBonus: 12 },
+  Normal:    { enemyGroupMultiplier: 1.0,  scalingMultiplier: 1.0,  goldMultiplier: 1.0,  xpMultiplier: 1.0,  startingHpBonus: 0  },
+  Difficile: { enemyGroupMultiplier: 1.35, scalingMultiplier: 1.22, goldMultiplier: 0.75, xpMultiplier: 0.9,  startingHpBonus: -4 },
+  Expert:    { enemyGroupMultiplier: 1.65, scalingMultiplier: 1.45, goldMultiplier: 0.55, xpMultiplier: 0.75, startingHpBonus: -8 },
+};
+function diffOf(cfg) {
+  return DIFFICULTY_SETTINGS[cfg && cfg.difficulty] || DIFFICULTY_SETTINGS.Normal;
+}
+
+// Miroir de state.js — HOUSE_BONUSES[*].starGenerator (série Apothéose ★ N,
+// tier 19+). Cadence : chaque ★ → +1 stat primaire ; tous les 2 ★ → +1 stat
+// secondaire ; tous les 5 ★ → +1 LCK ; tous les 10 ★ → +5 réserve (PV/PM).
+const STAR_GENERATORS = {
+  gryffondor:  { primary: '_baseAtk', secondary: '_baseStr', reserve: 'hpMax' },
+  serpentard:  { primary: '_baseMag', secondary: '_baseInt', reserve: 'spMax' },
+  serdaigle:   { primary: '_baseMag', secondary: '_baseInt', reserve: 'spMax' },
+  poufsouffle: { primary: '_baseDef', secondary: '_baseEnd', reserve: 'hpMax' },
+};
+// Applique cumulativement les bonus des paliers ★ 1..N sur les _baseX/réserve
+// d'un personnage (mute en place). Miroir de _starGeneratorBonus (state.js).
+function applyStarGenerator(c, houseSet, stars) {
+  const gen = STAR_GENERATORS[houseSet];
+  if (!gen || !stars) return;
+  for (let n = 1; n <= stars; n++) {
+    c[gen.primary] = (c[gen.primary] || 0) + 1;
+    if (n % 2  === 0) c[gen.secondary] = (c[gen.secondary] || 0) + 1;
+    if (n % 5  === 0) c._baseLck = (c._baseLck || 0) + 1;
+    if (n % 10 === 0) c[gen.reserve] = (c[gen.reserve] || 0) + 5;
+  }
+}
 
 // Miroir de battle.js — mitigatedDamage (DIFFICULTY_STUDY.md §4 levier B).
 // Plancher à 25 % de l'ATK brute, soustraction au-delà.
@@ -180,14 +219,18 @@ function equipmentBuffForFloor(floor) {
     (SHOP_CATALOG || []).filter(e => (e.minFloor || 1) <= floor).map(e => e.id)
   );
   const buff = { atk: 0, def: 0, mag: 0, lck: 0, str: 0, int: 0, agi: 0, end: 0,
-                 crit: 0, dodge: 0, critDmg: 0, spellCrit: 0, spellCritDmg: 0 };
+                 crit: 0, dodge: 0, critDmg: 0, spellCrit: 0, spellCritDmg: 0,
+                 hpMax: 0, spMax: 0 };
   const bestBySlot = {};
   for (const it of ITEMS) {
     if (!it.slot) continue;
     if (eligibleIds && !eligibleIds.has(it.id)) continue;
+    // Score net : les bonus négatifs (items à compromis — lame_sanguinaire,
+    // armure_lourde, anneau_furie) abaissent bien le score (somme algébrique).
     const score = (it.bonusAtk||0)+(it.bonusDef||0)+(it.bonusMag||0)+(it.bonusLck||0)
                 + (it.bonusStr||0)+(it.bonusInt||0)+(it.bonusAgi||0)+(it.bonusEnd||0)
-                + (it.bonusCritChance||0)+(it.bonusDodgeChance||0);
+                + (it.bonusCritChance||0)+(it.bonusDodgeChance||0)
+                + (it.bonusHpMax||0)*0.25+(it.bonusSpMax||0)*0.25;
     const cur = bestBySlot[it.slot];
     if (!cur || score > cur.score) bestBySlot[it.slot] = { item: it, score };
   }
@@ -210,6 +253,8 @@ function equipmentBuffForFloor(floor) {
     buff.critDmg      += it.bonusCritDamage      || 0;
     buff.spellCrit    += it.bonusSpellCritChance || 0;
     buff.spellCritDmg += it.bonusSpellCritDamage || 0;
+    buff.hpMax += it.bonusHpMax || 0;
+    buff.spMax += it.bonusSpMax || 0;
     if (forgeLvl > 0) {
       const prim = [['atk', it.bonusAtk|0], ['def', it.bonusDef|0],
                     ['mag', it.bonusMag|0], ['lck', it.bonusLck|0]]
@@ -234,6 +279,9 @@ function applyEquipmentBuff(c, floor) {
   c.int = (c.int || 0) + b.int;
   c.agi = (c.agi || 0) + b.agi;
   c.end = (c.end || 0) + b.end;
+  // Réserves max (bonusHpMax/bonusSpMax — inventory-core.js). Refill ensuite.
+  if (b.hpMax) { c.hpMax += b.hpMax; c.hp = c.hpMax; }
+  if (b.spMax) { c.spMax += b.spMax; c.sp = c.spMax; }
   c._critBonus       = b.crit         || 0;
   c._dodgeBonus      = b.dodge        || 0;
   c._critDmgBonus    = b.critDmg      || 0;
@@ -275,6 +323,10 @@ function applySetBonuses(c, cfg, key, partySize) {
     c._setCritDmg      += hs.critDamage      || 0;
     c._setSpellCrit    += hs.spellCritChance || 0;
     c._setSpellCritDmg += hs.spellCritDamage || 0;
+    // Effets spéciaux 4 pièces (state.js — HOUSE_SETS setBonus4) : se cumulent
+    // avec le passif d'Apothéose (appliqué après, combine au lieu d'écraser).
+    if (cfg.houseSet === 'serpentard') c._serpentLifesteal = (c._serpentLifesteal || 0) + 0.10;
+    if (cfg.houseSet === 'serdaigle')  c._spellCostMult    = (c._spellCostMult    || 1) * 0.90;
   }
   // Set Ténèbres 3/3 : sur Hermione en duo ; sur Harry en solo si pas de
   // set de Maison. inventory.js — recalculateStats (≥3 : +15 crit, +10 esquive,
@@ -347,7 +399,8 @@ function parseArgs(argv) {
                 useQuests: true, useEquipment: true, usePotions: true,
                 kills: 0, bonusLevels: 0, artifacts: false,
                 endgame: false, maxFloor: 40, forge: 0, library: 0,
-                houseSet: null, tenebresSet: false, houseTier: 0,
+                houseSet: null, tenebresSet: false, houseTier: 0, stars: 0,
+                difficulty: 'Normal',
                 elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -378,6 +431,13 @@ function parseArgs(argv) {
     else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
     else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
     else if (k === 'house-tier')   out.houseTier = parseInt(v, 10) || 0;
+    else if (k === 'stars' || k === 'star') out.stars = Math.max(0, parseInt(v, 10) || 0);
+    else if (k === 'difficulty' || k === 'diff') {
+      const name = String(v || 'Normal');
+      const canon = Object.keys(DIFFICULTY_SETTINGS)
+        .find(d => d.toLowerCase() === name.toLowerCase());
+      out.difficulty = canon || 'Normal';
+    }
     else if (k === 'elan-step')    out.elanStep = parseFloat(v) || 8;
     else if (k === 'elan-cap')     out.elanCap  = parseInt(v, 10) || 5;
     else if (k === 'elan-decay')   out.elanDecay = String(v || 'none').toLowerCase();
@@ -405,12 +465,21 @@ function buildFor(build, key) {
 }
 
 const ARGS = parseArgs(process.argv);
+// --stars implique d'avoir franchi l'Apothéose (tier 18) : on active le
+// passif de Maison pour cohérence avec le runtime (la série ★ N est gated
+// par requiresDarkTier:2, atteignable seulement post-Apothéose).
+if (ARGS.stars > 0 && ARGS.houseTier < 18) ARGS.houseTier = 18;
 if (ARGS.mode === 'help') {
   console.log(`Usage: node tools/sim-difficulty.js [N_SIMS] [options]
 
 Options:
   --n=N | --n-sims=N      Nombre de sims par cellule (def 400)
-  --hp-mult=F             Multiplicateur HP des monstres (def 1.0)
+  --difficulty=NAME       Facile | Normal | Difficile | Expert (def Normal).
+                          Applique scalingMultiplier (toutes stats),
+                          enemyGroupMultiplier et xpMultiplier.
+  --star=N | --stars=N    Série Apothéose ★ N (tier 19+). Requiert --house-set.
+                          Implique l'Apothéose (tier 18) si non précisé.
+  --hp-mult=F             Multiplicateur HP additionnel des monstres (def 1.0)
   --xp-mult=F             Multiplicateur XP des monstres (def 1.0)
   --stat-points=N         Points libres alloués au joueur par niveau (def 0)
   --build=BUILD           tank | balanced | offensive (def balanced)
@@ -475,9 +544,19 @@ function scaledStatValue(rawBase, scale, key, floor, cfg) {
   const n         = simEndgameTier(floor, cfg);
   const intraMult = 1 + (ef - 1) * (scale || 0.25);
   const stat0     = rawBase * intraMult;
-  if (n <= 0) return stat0;
-  const scal = 1 + ENDGAME_SCALING.scalDelta / intraMult;
-  return _endgameRecurse(stat0, n, ENDGAME_SCALING.baseFix[key] / intraMult, scal);
+  let result;
+  if (n <= 0) {
+    result = stat0;
+  } else {
+    const scal = 1 + ENDGAME_SCALING.scalDelta / intraMult;
+    result = _endgameRecurse(stat0, n, ENDGAME_SCALING.baseFix[key] / intraMult, scal);
+  }
+  // Multiplicateurs de difficulté (state.js — DIFFICULTY_SETTINGS) :
+  // scalingMultiplier sur les stats de combat, xpMultiplier sur l'XP.
+  const d = diffOf(cfg);
+  if (key === 'hp' || key === 'atk' || key === 'def' || key === 'mag') result *= d.scalingMultiplier;
+  else if (key === 'xp') result *= d.xpMultiplier;
+  return result;
 }
 
 // dungeon.js — scaleMonster (Normal = diffMult 1.0, on ignore shiny pour la sim)
@@ -498,15 +577,17 @@ function scaleMonster(base, floor, cfg) {
     currentHp: Math.floor(hpRaw),
     disarmed: 0,
   };
-  // mag : non scalée pré-victoire, mais participe à la récursion endgame.
+  // mag : non scalée par l'étage pré-victoire, mais participe à la
+  // récursion endgame ET reçoit le scalingMultiplier de difficulté.
   const n = simEndgameTier(floor, cfg);
+  let magVal = base.mag || 0;
   if (n > 0 && base.mag) {
     const ef = simEffectiveFloor(floor, cfg);
     const intraMult = 1 + (ef - 1) * scale;
     const scal = 1 + ENDGAME_SCALING.scalDelta / intraMult;
-    out.mag = Math.floor(_endgameRecurse(base.mag, n,
-      ENDGAME_SCALING.baseFix.mag / intraMult, scal));
+    magVal = _endgameRecurse(base.mag, n, ENDGAME_SCALING.baseFix.mag / intraMult, scal);
   }
+  out.mag = Math.floor(magVal * diffOf(cfg).scalingMultiplier);
   return out;
 }
 
@@ -514,16 +595,23 @@ function scaleMonster(base, floor, cfg) {
 // Reproduit la logique runtime battle.js (politique baseline +
 // scaling progressif via `cfg.kills` cumulés sur l'étage).
 function rollGroupSize(floor, partySize, cfg) {
+  // Miroir fidèle de battle.js — rollGroupSize, y compris la division par
+  // `m = enemyGroupMultiplier` (difficulté) sur les probabilités baseline.
+  const m = diffOf(cfg).enemyGroupMultiplier;
   const r = Math.random();
   let p1, p2, p3;
   if (partySize === 1) {
     if (floor <= 2)        { p1 = 1.0;  p2 = 0;    p3 = 0; }
-    else if (floor <= 4)   { p1 = 0.70; p2 = 0.30; p3 = 0; }
-    else                   { p1 = 0.50; p2 = 0.50; p3 = 0; }
+    else if (floor <= 4)   { p1 = Math.max(0.10, 0.70 / m); p2 = 1 - p1; p3 = 0; }
+    else                   { p1 = Math.max(0.10, 0.50 / m); p2 = 1 - p1; p3 = 0; }
   } else {
-    if (floor <= 2)        { p1 = 0.65; p2 = 0.35; p3 = 0; }
-    else if (floor <= 6)   { p1 = 0.35; p2 = 0.65; p3 = 0; }
-    else                   { p1 = 0.20; p2 = 0.35; p3 = 0.45; }
+    if (floor <= 2)        { p1 = Math.max(0.15, 0.65 / m); p2 = 1 - p1; p3 = 0; }
+    else if (floor <= 6)   { p1 = Math.max(0.10, 0.35 / m); p2 = 1 - p1; p3 = 0; }
+    else {
+      const t1 = Math.max(0.05, 0.20 / m);
+      const t2 = Math.min(0.95, t1 + 0.35 * m);
+      p1 = t1; p2 = t2 - t1; p3 = 1 - t2;
+    }
   }
   const n = Math.floor(((cfg && cfg.kills) || 0) / 4);
   const duoBonus  = Math.min(0.40, 0.10 * n);
@@ -623,6 +711,8 @@ function createHero(key, level, cfg, floor, partySize) {
   }
   // Paliers endgame de Maison (Mythe/Apothéose) — delta de stats sur _baseX.
   applyHouseTierBonuses(c, cfg);
+  // Série Apothéose ★ N (tier 19+) — gold-sink endgame, cadence cumulative.
+  applyStarGenerator(c, cfg.houseSet, cfg.stars || 0);
   // Soin complet après les level-ups (l'allocation END a augmenté hpMax)
   c.hp = c.hpMax; c.sp = c.spMax;
   // Stats effectives = _base* (avant équipement). Inclut les gains
@@ -669,9 +759,9 @@ function createHero(key, level, cfg, floor, partySize) {
       c._elanDecay  = cfg.elanDecay || 'none';
       c._elanStacks = 0;
     } else if (cfg.houseSet === 'serpentard') {
-      c._serpentLifesteal = 0.15;
+      c._serpentLifesteal = (c._serpentLifesteal || 0) + 0.15;  // + 0.10 du set 4pc
     } else if (cfg.houseSet === 'serdaigle') {
-      c._spellCostMult = 0.8;
+      c._spellCostMult = (c._spellCostMult || 1) * 0.8;          // × 0.90 du set 4pc
     } else if (cfg.houseSet === 'poufsouffle') {
       c._houseVigor = true;   // Vigueur : +20 % dégâts au-dessus de 60 % PV
     }
@@ -762,6 +852,60 @@ function poolStats(floor, cfg) {
 
 // Statuts DoT infligés par les ennemis et modélisés par la sim.
 const SIM_DOT_IDS = ['burn', 'poison', 'bleed', 'gel'];
+// Statuts de contrôle non-DoT désormais modélisés (battle.js — consumeStun /
+// rollFearSkip). `stun` saute le prochain tour ; `fear` 50 % de saut/tour.
+const SIM_CTRL_IDS = ['stun', 'fear'];
+
+// Miroir de battle.js — consumeStun : consomme 1 tour de stun au point de
+// saut. Retourne true si l'acteur était étourdi (et saute son tour).
+function consumeStunSim(actor) {
+  if (!actor.statusEffects) return false;
+  const s = actor.statusEffects.find(st => st.id === 'stun' && st.turns > 0);
+  if (!s) return false;
+  s.turns--;
+  if (s.turns <= 0) actor.statusEffects = actor.statusEffects.filter(st => st !== s);
+  return true;
+}
+function isFearedSim(actor) {
+  return !!(actor.statusEffects &&
+    actor.statusEffects.some(st => st.id === 'fear' && st.turns > 0));
+}
+
+// Effets de sort considérés comme offensifs mono-cible (dérivé de SPELLS —
+// remplace l'ancienne liste de noms figée). Couvre élémentaire, instant,
+// vol de vie, malédiction et asservissement.
+const DAMAGING_EFFECTS = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius']);
+
+// Sélection de cible ennemie par tempérament (battle.js — _chooseEnemyTarget).
+function chooseEnemyTargetSim(enemy, alive) {
+  if (alive.length <= 1) return alive[0];
+  const ai = enemy.ai;
+  if (ai === 'aggressive') return alive.reduce((a, b) => (b.hp < a.hp ? b : a));
+  if (ai === 'cautious')   return alive.reduce((a, b) => ((b.atk || 0) > (a.atk || 0) ? b : a));
+  return alive[Math.floor(Math.random() * alive.length)];
+}
+
+// Phases de boss (battle.js — _checkBossPhases). Appliquées en tête du tour
+// ennemi. `phases` triées par atPct décroissant ; chaque palier ne se
+// déclenche qu'une fois (suivi via `_phaseIdx`).
+function checkBossPhasesSim(enemy) {
+  if (!enemy.phases || !enemy.phases.length) return;
+  const maxHp = enemy.hp || enemy.currentHp;
+  const pct = enemy.currentHp / maxHp;
+  if (enemy._phaseIdx === undefined) enemy._phaseIdx = 0;
+  while (enemy._phaseIdx < enemy.phases.length) {
+    const ph = enemy.phases[enemy._phaseIdx];
+    if (pct > ph.atPct) break;
+    if (ph.atkMult) enemy.atk = Math.round(enemy.atk * ph.atkMult);
+    if (ph.magMult && enemy.mag) enemy.mag = Math.round(enemy.mag * ph.magMult);
+    if (ph.healPct) enemy.currentHp = Math.min(maxHp, enemy.currentHp + Math.round(maxHp * ph.healPct));
+    if (ph.gainAbility) {
+      if (!enemy.abilities) enemy.abilities = [];
+      enemy.abilities.push(ph.gainAbility);
+    }
+    enemy._phaseIdx++;
+  }
+}
 
 function simulateBattle(party, enemyGroup, opts = {}) {
   // Reset state pour la sim. Élan est un cumul de combat — il repart à
@@ -788,6 +932,10 @@ function simulateBattle(party, enemyGroup, opts = {}) {
     // Tour de chaque héros vivant
     for (const char of party) {
       if (char.hp <= 0) continue;
+      // Contrôle : stun saute le tour (et consomme 1 tour de stun) ;
+      // fear saute 50 % du temps (battle.js — consumeStun / rollFearSkip).
+      if (consumeStunSim(char)) continue;
+      if (isFearedSim(char) && Math.random() < 0.5) continue;
       const enemies = enemyGroup.filter(e => e.currentHp > 0);
       if (!enemies.length) {
         const survivors = party.filter(c => c.hp > 0).length;
@@ -803,7 +951,12 @@ function simulateBattle(party, enemyGroup, opts = {}) {
     }
     for (const enemy of enemyGroup) {
       if (enemy.currentHp <= 0) continue;
-      const target = aliveTargets[Math.floor(Math.random() * aliveTargets.length)];
+      // Phases de boss évaluées en tête de tour (peut enrager / soigner /
+      // gagner une capacité). Puis ciblage par tempérament.
+      checkBossPhasesSim(enemy);
+      const stillAlive = party.filter(c => c.hp > 0);
+      if (!stillAlive.length) break;
+      const target = chooseEnemyTargetSim(enemy, stillAlive);
       if (!target || target.hp <= 0) continue;
       totalEnemyDmg += enemyAct(enemy, target, partySize);
     }
@@ -814,11 +967,21 @@ function simulateBattle(party, enemyGroup, opts = {}) {
       if (char.hp <= 0 || !char.statusEffects.length) continue;
       const remaining = [];
       for (const s of char.statusEffects) {
-        const dmg = Math.max(1, s.power);
-        char.hp = Math.max(0, char.hp - dmg);
-        totalEnemyDmg += dmg;
-        s.turns--;
-        if (s.turns > 0) remaining.push(s);
+        if (SIM_DOT_IDS.includes(s.id)) {
+          // DoT : dégâts puis décompte (miroir de tickStatuses).
+          const dmg = Math.max(1, s.power);
+          char.hp = Math.max(0, char.hp - dmg);
+          totalEnemyDmg += dmg;
+          s.turns--;
+          if (s.turns > 0) remaining.push(s);
+        } else if (s.id === 'fear') {
+          // fear : décompté par round, aucun dégât (le saut est géré au tour).
+          s.turns--;
+          if (s.turns > 0) remaining.push(s);
+        } else {
+          // stun : décompté par consumeStunSim au point de saut, pas ici.
+          remaining.push(s);
+        }
       }
       char.statusEffects = remaining;
     }
@@ -897,8 +1060,10 @@ function heroAct(char, enemies) {
   if (dmgSpell && char.sp >= dmgSpell.cost) {
     char.sp -= dmgSpell.cost;
     let dmg = Math.floor((dmgSpell.power + Math.floor(char.mag / 2)) * vigor * elan);
-    if (target.resist?.includes(dmgSpell.effect)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
-    if (target.weak?.includes(dmgSpell.effect))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
+    // Résistances / faiblesses : matching sur l'ÉLÉMENT du sort (battle-spells.js),
+    // pas sur `effect` (qui ne sert qu'au routage du handler).
+    if (dmgSpell.element && target.resist?.includes(dmgSpell.element)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
+    if (dmgSpell.element && target.weak?.includes(dmgSpell.element))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
     // Crit de sort (battle-spells.js — rollSpellCrit)
     const crit = Math.random() * 100 < (char.spellCritChance || 0);
     if (crit) dmg = Math.floor(dmg * (char.spellCritMultiplier || 1.5));
@@ -949,24 +1114,40 @@ function pickHealSpell(char) {
   return candidates[0] ? simSpellForCaster(candidates[0], char) : undefined;
 }
 
-// Meilleur sort de dégât accessible (cost <= SP), priorité puissance brute
+// Meilleur sort de dégât accessible (cost <= SP), priorité puissance brute.
+// Dérivé dynamiquement des sorts connus du perso (effet offensif mono-cible) —
+// inclut donc tout sort appris par livre/équipement si modélisé un jour.
 function pickDamageSpell(char) {
-  const damaging = ['Avada...', 'Sectumsempra', 'Diffindo', 'Incendio', 'Wingardium Leviosa', 'Stupefix']
-    .filter(n => char.spells.includes(n))
+  const affordable = char.spells
     .map(n => spellByName[n])
-    .filter(s => s && !s.locked)
-    .map(s => simSpellForCaster(s, char));
-  // Filtre par SP dispo
-  const affordable = damaging.filter(s => char.sp >= s.cost);
+    .filter(s => s && !s.locked && DAMAGING_EFFECTS.has(s.effect) && (s.power || 0) > 0)
+    .map(s => simSpellForCaster(s, char))
+    .filter(s => char.sp >= s.cost);
   // Trie par puissance + mag/2 décroissant (puissance effective)
   affordable.sort((a, b) => (b.power + char.mag / 2) - (a.power + char.mag / 2));
   return affordable[0];
 }
 
 function enemyAct(enemy, target, partySize) {
-  // Tentative de capacité spéciale (cf. battle-spells.js:7)
+  // Tentative de capacité spéciale (cf. battle-spells.js — tryEnemyAbility).
+  // Le runtime tire d'abord TOUTES les capacités selon leur `chance`, puis
+  // le tempérament choisit laquelle des réussites jouer.
   if (enemy.abilities?.length) {
-    const ability = enemy.abilities.find(a => Math.random() < a.chance);
+    const fired = enemy.abilities.filter(a => Math.random() < a.chance);
+    let ability = null;
+    if (fired.length) {
+      const ai = enemy.ai;
+      if (ai === 'aggressive') {
+        ability = fired.find(a => a.effect === 'damage' || a.effect === 'drain') || fired[0];
+      } else if (ai === 'cautious') {
+        const lowHp = enemy.currentHp < (enemy.hp || enemy.currentHp) * 0.35;
+        ability = lowHp
+          ? (fired.find(a => a.effect === 'heal') || fired.find(a => a.effect === 'drain') || fired[0])
+          : (fired.find(a => a.effect === 'weaken' || a.effect === 'dispel') || fired[0]);
+      } else {
+        ability = fired[0];
+      }
+    }
     if (ability) {
       switch (ability.effect) {
         case 'damage': {
@@ -983,8 +1164,22 @@ function enemyAct(enemy, target, partySize) {
           return 0;
         }
         case 'weaken': {
-          target.def = Math.max(0, target.def - ability.power);
+          // Débuff DEF temporaire, cap 3 paliers (battle-spells.js). La sim
+          // ne restitue pas la DEF en fin de combat (combat-scoped) mais
+          // plafonne le cumul pour ne pas surestimer son impact.
+          target._weakenCount = target._weakenCount || 0;
+          if (target._weakenCount < 3) {
+            target.def = Math.max(0, target.def - ability.power);
+            target._weakenCount++;
+          }
           return 0;
+        }
+        case 'dispel': {
+          // Dissipe bouclier > garde > (regen non modélisé). Si rien à
+          // dissiper, l'ennemi attaque normalement (battle-spells.js).
+          if (target.shieldTurns > 0) { target.shieldTurns--; return 0; }
+          if ((target.guardStacks || 0) > 0) { target.guardStacks--; return 0; }
+          break;  // rien à dissiper → tombe sur l'attaque physique
         }
         case 'drain': {
           const drained = Math.min(target.hp, ability.power);
@@ -994,19 +1189,18 @@ function enemyAct(enemy, target, partySize) {
         }
         case 'status': {
           // Statut persistant (cf. battle-spells.js — case 'status').
-          // Les DoT (burn/poison/bleed/gel) sont modélisés : le tick de
-          // dégâts est appliqué dans simulateBattle. Le stun (saut de
-          // tour) n'est pas modélisé — on l'ignore. Dans les deux cas
-          // le tour ennemi est consommé (pas d'attaque physique en plus).
-          if (SIM_DOT_IDS.includes(ability.statusId)) {
+          // DoT (burn/poison/bleed/gel) → tick de dégâts dans simulateBattle.
+          // stun → saut du prochain tour (consumeStunSim). fear → 50 %/tour.
+          const sid = ability.statusId;
+          if (SIM_DOT_IDS.includes(sid) || SIM_CTRL_IDS.includes(sid)) {
             if (!target.statusEffects) target.statusEffects = [];
-            const turns = ability.turns || 3;
-            const existing = target.statusEffects.find(s => s.id === ability.statusId);
+            const turns = ability.turns || (sid === 'stun' ? 1 : 3);
+            const existing = target.statusEffects.find(s => s.id === sid);
             if (existing) {
               existing.power = Math.max(existing.power, ability.power);
               existing.turns = Math.max(existing.turns, turns);
             } else {
-              target.statusEffects.push({ id: ability.statusId, power: ability.power, turns });
+              target.statusEffects.push({ id: sid, power: ability.power, turns });
             }
           }
           return 0;
@@ -1233,9 +1427,10 @@ function emitReport(rows, cfg) {
     ? ` | Élan ${cfg.elanStep}%/palier ×${cfg.elanCap} (decay=${cfg.elanDecay})`
     : '';
   const houseInfo = cfg.houseSet
-    ? ` | set=${cfg.houseSet}${cfg.houseTier ? ` | palier Maison ${cfg.houseTier}` : ''}${elanInfo}`
+    ? ` | set=${cfg.houseSet}${cfg.houseTier ? ` | palier Maison ${cfg.houseTier}` : ''}${cfg.stars ? ` | ★${cfg.stars}` : ''}${elanInfo}`
     : '';
-  console.log(`Paramètres : HP×${cfg.hpMult} | XP×${cfg.xpMult} | ` +
+  console.log(`Paramètres : difficulté=${cfg.difficulty || 'Normal'} | ` +
+              `HP×${cfg.hpMult} | XP×${cfg.xpMult} | ` +
               `${cfg.statPoints} pts libres/niveau | build=${cfg.build}${houseInfo}\n`);
 
   console.log('## 1. Progression joueur attendue\n');
