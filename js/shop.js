@@ -226,13 +226,14 @@ function _renderShopHeader() {
   const tabsEl  = document.getElementById('shop-tabs');
 
   let titleText;
+  const shopIcon = '<img class="ui-icon ui-icon-xl" src="img/icons/shop_sign.png" alt="">';
   if (_shopContext.kind === 'static') {
-    titleText = '🏪 Madame Malkins des Cachots';
+    titleText = `${shopIcon} Madame Malkins des Cachots`;
   } else {
     const npc = getNpcById(_shopContext.npcId);
-    titleText = npc ? `${npc.icon || '🛒'} ${npc.name}` : '🛒 Vendeur';
+    titleText = npc ? `${shopIcon} ${npc.name}` : `${shopIcon} Vendeur`;
   }
-  if (titleEl) titleEl.textContent = titleText;
+  if (titleEl) titleEl.innerHTML = titleText;
   if (goldEl)  goldEl.textContent  = (player && player.gold) || 0;
 
   if (tabsEl) {

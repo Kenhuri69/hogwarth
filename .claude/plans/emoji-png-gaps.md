@@ -81,3 +81,14 @@ transition), 👁️, ✦, 🦂, 📦, 📈, 💥, 🔨, 💎, 🌑, 🌀 (écho
 4. ☐ `js/inventory.js` : slots anneau 💍 → `accessory.png`. Vérif : grep.
 5. ☐ `js/npcs.js` : `portraitImg: "img/npc/_npc_prof_h.png"` sur Slughorn. Vérif.
 6. ☐ `node tests/smoke.js` vert. Commit + push sur `claude/image-emoji-png-review-HJHL8`.
+
+## Lot 5 — Écrans visibles haute-priorité (best-effort « go next ») ✅
+- index.html : boutons de combat **Garde** (🛡️ → protego.png) et **Objet**
+  (🧪 → potion_m.png). Fuir (🏃) laissé : aucun PNG « fuite ».
+- shop.js : titre boutique (🏪/🛒 → shop_sign.png ; textContent → innerHTML).
+- ui-bestiary.js : drops du monstre (it.icon → getItemIconHtml).
+
+Suivi possible (cohérent, non fait) : tooltips de stats `ux-improvements.js`
+(⚔️🛡️🔮🌟🏃💪🧠❤️ → atk/def/mag/lck/agi/str/int/hp) — chantier « icônes de
+stat partout », à faire d'un bloc pour éviter les demi-conversions.
+`node tests/smoke.js` = 126 scénarios verts.

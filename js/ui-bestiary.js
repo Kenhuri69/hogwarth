@@ -44,7 +44,7 @@ function filterBestiary() {
     const dropsHtml = seen && monster.drops && monster.drops.length
       ? `<div class="bestiary-drops">Drops : ${monster.drops.map(d => {
             const it = ITEMS.find(i => i.id === d.itemId);
-            return it ? `${it.icon} ${it.name}` : '❓';
+            return it ? `${getItemIconHtml(it, 'ui-icon-sm')} ${it.name}` : '?';
           }).join(' · ')}</div>`
       : '';
 
