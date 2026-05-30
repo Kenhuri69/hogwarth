@@ -15438,6 +15438,111 @@ async function scenarioEnemyAiAndBossPhases() {
   await browser.close();
 }
 
+// ── Scénario : archétypes de capacités boss/élites (LOT B3) ──
+// summon / enrage_self / aura — chaque effet a un handler dédié dans
+// tryEnemyAbility, testé via un ennemi factice forcé.
+async function scenarioEnemyAbilityArchetypes() {
+  console.log('\n── Scénario : archétypes de capacités (summon / enrage / aura) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+  await startDummyFight(page, { hp: 100 });
+
+  // T1 — summon : slot libre → l'add rejoint enemyGroup ; slot plein (3) →
+  // tryEnemyAbility retourne false et la taille reste inchangée.
+  const t1 = await page.evaluate(() => {
+    currentFloor = 9;
+    const summoner = enemyGroup[0];
+    summoner.abilities = [
+      { name: 'Couvée', icon: '🥚', effect: 'summon', summonId: 'acromantula_jeune', chance: 1 }
+    ];
+    summoner.ai = 'random';
+    const before = enemyGroup.length;
+    const orig = Math.random; Math.random = () => 0.5;  // jet OK, pas de shiny
+    let ret1, ret2;
+    try {
+      ret1 = tryEnemyAbility(summoner, party[0], 0, () => {});
+      const afterSummon = enemyGroup.length;
+      const lastSummoned = !!enemyGroup[afterSummon - 1]._summoned;
+      // Remplir jusqu'à 3 puis retenter — slot plein.
+      while (enemyGroup.length < 3) enemyGroup.push({ name: 'X', hp: 1, currentHp: 1, atk: 1, statusEffects: [] });
+      const full = enemyGroup.length;
+      ret2 = tryEnemyAbility(summoner, party[0], 0, () => {});
+      const afterFull = enemyGroup.length;
+      return { before, afterSummon, ret1, full, ret2, afterFull, lastSummoned };
+    } finally { Math.random = orig; }
+  });
+  console.log('  T1 summon :', t1);
+  assert(t1.ret1 === true,                  'summon doit réussir (slot libre)');
+  assert(t1.afterSummon === t1.before + 1,  'summon doit ajouter un ennemi');
+  assert(t1.lastSummoned,                   'l\'add doit porter le marqueur _summoned');
+  assert(t1.ret2 === false,                 'summon slot plein (3) → return false');
+  assert(t1.afterFull === t1.full,          'slot plein → enemyGroup inchangé');
+
+  // T2 — enrage_self : au-dessus du seuil = pas d'enrage ; sous le seuil =
+  // +ATK une seule fois (flag _enraged), pas de re-déclenchement.
+  const t2 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.hp = 100; e.atk = 20; e._enraged = false;
+    e.abilities = [
+      { name: 'Rage', icon: '🌑', effect: 'enrage_self', hpPct: 0.4, atkBonus: 12, chance: 1 }
+    ];
+    e.ai = 'aggressive';
+    const orig = Math.random; Math.random = () => 0.01;
+    try {
+      // Au-dessus du seuil (80 %) → return false, ATK inchangée.
+      e.currentHp = 80;
+      const retHigh = tryEnemyAbility(e, party[0], 0, () => {});
+      const atkHigh = e.atk;
+      // Sous le seuil (30 %) → enrage, +12 ATK.
+      e.currentHp = 30;
+      const retLow = tryEnemyAbility(e, party[0], 0, () => {});
+      const atkLow = e.atk, enraged = e._enraged;
+      // Re-appel sous le seuil → déjà enragé, return false, ATK stable.
+      const retAgain = tryEnemyAbility(e, party[0], 0, () => {});
+      const atkAgain = e.atk;
+      return { retHigh, atkHigh, retLow, atkLow, enraged, retAgain, atkAgain };
+    } finally { Math.random = orig; }
+  });
+  console.log('  T2 enrage :', t2);
+  assert(t2.retHigh === false && t2.atkHigh === 20, 'au-dessus du seuil : pas d\'enrage');
+  assert(t2.retLow === true && t2.atkLow === 32,    'sous le seuil : +12 ATK');
+  assert(t2.enraged === true,                       '_enraged doit être posé');
+  assert(t2.retAgain === false && t2.atkAgain === 32,'enrage ne se re-déclenche pas');
+
+  // T3 — aura : debuff de groupe weaken appliqué à TOUS les héros vivants.
+  const t3 = await page.evaluate(() => {
+    party.forEach(c => { c.statusEffects = []; });
+    party[0].hp = 50; party[0].def = 10;
+    party[1].hp = 50; party[1].def = 8;
+    const e = enemyGroup[0];
+    e.abilities = [
+      { name: 'Litanie', icon: '📯', effect: 'aura', statusId: 'weaken', power: 3, turns: 3, chance: 1 }
+    ];
+    e.ai = 'random';
+    const orig = Math.random; Math.random = () => 0.01;
+    try {
+      const ret = tryEnemyAbility(e, party[0], 0, () => {});
+      return {
+        ret,
+        h0Weak: party[0].statusEffects.some(s => s.id === 'weaken'),
+        h1Weak: party[1].statusEffects.some(s => s.id === 'weaken'),
+        h0Def: party[0].def, h1Def: party[1].def
+      };
+    } finally { Math.random = orig; }
+  });
+  console.log('  T3 aura   :', t3);
+  assert(t3.ret === true,            'aura doit s\'appliquer');
+  assert(t3.h0Weak && t3.h1Weak,     'aura weaken doit toucher les 2 héros');
+  assert(t3.h0Def === 7 && t3.h1Def === 5, 'aura weaken doit retirer 3 DEF à chaque héros');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (archétypes B3)`);
+  }
+  console.log('  ✅ archétypes summon / enrage_self / aura OK');
+  await browser.close();
+}
+
 // ── Scénario : consommables à effet + équipement à compromis (LOT C) ──
 async function scenarioContentConsumablesTradeoffs() {
   console.log('\n── Scénario : consommables à effet + items trade-off ──');
@@ -15742,7 +15847,7 @@ async function scenarioCombatFeedback() {
 
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))
