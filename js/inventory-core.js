@@ -32,7 +32,9 @@ function tryAddItem(itemOrId, opts = {}) {
     }
     return false;
   }
-  player.inventory.push({ ...item });
+  // opts.props : champs additionnels fusionnés dans la copie poussée
+  // (ex. `brewed:true` pour une potion issue du chaudron — cf. potions.js).
+  player.inventory.push({ ...item, ...(opts.props || null) });
   return true;
 }
 

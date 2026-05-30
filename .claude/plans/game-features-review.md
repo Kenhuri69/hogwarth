@@ -228,7 +228,12 @@ d'**enrichir**, pas de réécrire le moteur.
   `executeAttack` (lecture du statut de la cible).
 - **Vérif** : scénario smoke — frapper une cible gelée inflige le bonus attendu.
 
-**C5. Reconnecter le contenu narratif inerte (plus léger)**
+**C5. Reconnecter le contenu narratif inerte (plus léger)** — ✅ FAIT (2026-05-30)
+> Audit : le prémisse (F7) est **obsolète** — Pages de Grimoire (quête Manon →
+> fusion grimoire) et brassage (quête Slughorn → chaudron) ont déjà été
+> reconnectés par le sprint endgame. Sur décision utilisateur, ajout d'un
+> **petit bonus optionnel** à la place : « Brassage maison » (potions brassées
+> +25 % d'effet vs achetées). Cf. `.claude/plans/brew-potency-c5.md`.
 - Pages de Grimoire / brassage : leur donner un **petit** crochet mécanique
   (ex. collecter les 5 pages → recette/bonus passif) pour les sortir du pur
   flavour. À cadrer petit pour ne pas exploser le scope.

@@ -8427,11 +8427,52 @@ async function scenarioBrewing() {
   assert(t7.hasArmoise,    'la besace doit nommer l\'Armoise');
   assert(t7.backToSac,     'le retour sur l\'onglet Sac doit ré-afficher le sac');
 
+  // T8 : C5 — « Brassage maison » : une potion brassée (flag `brewed`)
+  // restaure BREW_POTENCY_BONUS de plus qu'une potion achetée.
+  const t8 = await page.evaluate(() => {
+    // Brassage garanti (INT forcée) → potion_s portant le flag brewed.
+    party[0].int = 100;
+    party[0].hpMax = 200;
+    player.herbs = { herbe_armoise: 2 };
+    player.inventory = [];
+    _cauldronMix = { herbe_armoise: 2 };
+    attemptBrew();
+    const brewed = player.inventory.find(it => it && it.id === 'potion_s');
+    const shop   = ITEMS.find(i => i.id === 'potion_s');   // potion achetée (sans flag)
+    const c = party[0];
+    // Heal depuis 1 PV avec la potion brassée.
+    c.hp = 1;
+    _applyConsumableEffect(brewed, c);
+    const healedBrewed = c.hp - 1;
+    // Idem avec la potion de boutique (non brassée).
+    c.hp = 1;
+    _applyConsumableEffect(shop, c);
+    const healedShop = c.hp - 1;
+    const tooltip = (typeof _renderItemTooltip === 'function') ? _renderItemTooltip(brewed) : '';
+    return {
+      hasFlag: brewed && brewed.brewed === true,
+      shopHasFlag: !!shop.brewed,
+      healedBrewed, healedShop,
+      bonus: (typeof BREW_POTENCY_BONUS !== 'undefined') ? BREW_POTENCY_BONUS : null,
+      expectedBrewed: Math.round(shop.power * (1 + (BREW_POTENCY_BONUS || 0.25))),
+      tooltipMentions: /Brassage maison/.test(tooltip)
+    };
+  });
+  console.log('  T8 brassage maison →', t8);
+  assert(t8.hasFlag,                      'une potion brassée doit porter le flag brewed');
+  assert(t8.shopHasFlag === false,        'une potion de boutique ne doit PAS porter le flag');
+  assert(t8.bonus === 0.25,               'BREW_POTENCY_BONUS doit valoir 0.25');
+  assert(t8.healedShop === 15,            'potion achetée : heal de base (15)');
+  assert(t8.healedBrewed === t8.expectedBrewed,
+         'potion brassée : heal majoré de BREW_POTENCY_BONUS');
+  assert(t8.healedBrewed > t8.healedShop, 'la potion brassée doit soigner davantage');
+  assert(t8.tooltipMentions,              'le tooltip doit signaler le brassage maison');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Concoction OK (besace + verrou + déverrouillage + brassage + découverte + onglet inventaire)');
+  console.log('  ✅ Concoction OK (besace + verrou + déverrouillage + brassage + découverte + onglet inventaire + brassage maison)');
   await browser.close();
 }
 

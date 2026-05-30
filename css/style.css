@@ -2509,6 +2509,10 @@ body {
   margin-bottom: 6px;
   display: flex; align-items: center; gap: 8px;
 }
+.brew-potency-note {
+  font-family: 'Cinzel', serif; font-size: 10px; font-weight: normal;
+  letter-spacing: 0; color: var(--gold); opacity: 0.9;
+}
 .brew-tiles { display: flex; flex-wrap: wrap; gap: 6px; }
 .brew-tile {
   background: #0a0705; border: 1px solid #2a1a08; border-radius: 4px;

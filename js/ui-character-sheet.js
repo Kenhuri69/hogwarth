@@ -115,6 +115,11 @@ function _renderItemTooltip(item, slotLabel, action) {
   if (item.regenSp)  bonuses.push(`+${item.regenSp} PM / tour`);
   if (item.grantsSpell) bonuses.push(`Apprend : ${item.grantsSpell}`);
   if (item.spell)        bonuses.push(`Enseigne : ${item.spell}`);
+  // C5 — potion brassée maison : signale le bonus de puissance (cf. potions.js).
+  if (item.brewed) {
+    const pct = Math.round(((typeof BREW_POTENCY_BONUS !== 'undefined') ? BREW_POTENCY_BONUS : 0.25) * 100);
+    bonuses.push(`✨ Brassage maison : +${pct}% d'effet`);
+  }
 
   const bonusLines = bonuses.map(b => `<span class="tt-bonus">${b}</span>`).join('');
   const desc = item.desc ? `<span class="tt-desc">${item.desc}</span>` : '';
