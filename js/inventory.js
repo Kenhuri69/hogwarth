@@ -402,12 +402,14 @@ function _teachSpellToParty(spellName) {
 // Applique l'effet d'un consommable sur la cible (hp/sp). No-op si
 // l'effet n'est pas un effet de restauration reconnu.
 function _applyConsumableEffect(item, target) {
-  // C5 — « Brassage maison » : une potion brassée (flag `brewed`, cf.
-  // potions.js) restaure BREW_POTENCY_BONUS de plus sur les effets chiffrés
-  // (heal / restore_sp / both). Les effets « full » sont déjà à 100 %.
-  const brewMult = item.brewed
-    ? 1 + ((typeof BREW_POTENCY_BONUS !== 'undefined') ? BREW_POTENCY_BONUS : 0.25)
-    : 1;
+  // C5/P1 — « Brassage maison » : une potion brassée porte une potency bakée
+  // (`brewPotency`, cf. potions.js) qui module les effets chiffrés (heal /
+  // restore_sp / both). Fallback legacy : flag `brewed` seul → BREW_POTENCY_BONUS.
+  // Potency négative possible (fiole diluée d'un brassage raté). « full » = 100 %.
+  const brewPotency = (typeof item.brewPotency === 'number')
+    ? item.brewPotency
+    : (item.brewed ? ((typeof BREW_POTENCY_BONUS !== 'undefined') ? BREW_POTENCY_BONUS : 0.25) : 0);
+  const brewMult = 1 + brewPotency;
   const pow = Math.round((item.power || 0) * brewMult);
   if (item.effect === 'heal')                  target.hp = Math.min(target.hpMax, target.hp + pow);
   else if (item.effect === 'restore_sp')       target.sp = Math.min(target.spMax, target.sp + pow);

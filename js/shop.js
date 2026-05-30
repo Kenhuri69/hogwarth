@@ -185,7 +185,11 @@ function _computeSellPrice(item, buyback) {
   if (buyback.bySlot && item.slot && typeof buyback.bySlot[item.slot] === 'number') {
     mult = Math.max(mult, buyback.bySlot[item.slot]);
   }
-  return Math.max(1, Math.floor(item.price * mult));
+  let value = item.price * mult;
+  // P1 — la qualité de brassage (brewPotency) influe sur la revente : une fiole
+  // concentrée vaut plus, une diluée moins. Sans flag, valeur de base.
+  if (typeof item.brewPotency === 'number') value *= (1 + item.brewPotency);
+  return Math.max(1, Math.floor(value));
 }
 
 // Ouvre la boutique fixe (cellule SHOP). Réinitialise toujours sur l'onglet "Acheter".

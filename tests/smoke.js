@@ -8427,52 +8427,66 @@ async function scenarioBrewing() {
   assert(t7.hasArmoise,    'la besace doit nommer l\'Armoise');
   assert(t7.backToSac,     'le retour sur l\'onglet Sac doit ré-afficher le sac');
 
-  // T8 : C5 — « Brassage maison » : une potion brassée (flag `brewed`)
-  // restaure BREW_POTENCY_BONUS de plus qu'une potion achetée.
+  // T8 : P1 — « Brassage à maîtrise » : la potency est bakée selon la qualité
+  // du jet (ratée −15 % / réussite +20 % / critique +40 %, + bonus INT). Jet
+  // rendu déterministe en stubant Math.random (roll = 1).
   const t8 = await page.evaluate(() => {
-    // Brassage garanti (INT forcée) → potion_s portant le flag brewed.
-    party[0].int = 100;
     party[0].hpMax = 200;
-    player.herbs = { herbe_armoise: 2 };
-    player.inventory = [];
-    _cauldronMix = { herbe_armoise: 2 };
-    attemptBrew();
-    const brewed = player.inventory.find(it => it && it.id === 'potion_s');
-    const shop   = ITEMS.find(i => i.id === 'potion_s');   // potion achetée (sans flag)
-    const c = party[0];
-    // Heal depuis 1 PV avec la potion brassée.
-    c.hp = 1;
-    _applyConsumableEffect(brewed, c);
-    const healedBrewed = c.hp - 1;
-    // Idem avec la potion de boutique (non brassée).
-    c.hp = 1;
-    _applyConsumableEffect(shop, c);
-    const healedShop = c.hp - 1;
-    const tooltip = (typeof _renderItemTooltip === 'function') ? _renderItemTooltip(brewed) : '';
+    // Brasse potion_s (recette difficulty 8, herbe_armoise:2) avec une INT
+    // forcée pour cibler chaque palier ; roll = 1 (Math.random → 0).
+    function brewWith(intVal) {
+      const orig = Math.random;
+      Math.random = () => 0;                 // roll = 1 + floor(0*20) = 1
+      party[0].int = intVal;
+      player.herbs = { herbe_armoise: 2 };
+      player.inventory = [];
+      _cauldronMix = { herbe_armoise: 2 };
+      attemptBrew();
+      Math.random = orig;
+      const pot = player.inventory.find(it => it && it.id === 'potion_s');
+      const c = party[0]; c.hp = 1;
+      if (pot) _applyConsumableEffect(pot, c);
+      return { brewPotency: pot ? pot.brewPotency : null, brewed: pot ? pot.brewed === true : false, healed: c.hp - 1 };
+    }
+    // int 2 → margin = 2+1-8 = -5 (ratée) ; int 10 → 3 (réussite) ; int 20 → 13 (crit).
+    return { fail: brewWith(2), success: brewWith(10), crit: brewWith(20), base: 15 };
+  });
+  console.log('  T8 brassage à maîtrise →', t8);
+  assert(t8.fail.brewed && t8.success.brewed && t8.crit.brewed, 'les 3 fioles doivent porter le flag brewed');
+  assert(t8.fail.brewPotency === -0.15,        'jet raté → fiole diluée −15 %');
+  assert(Math.abs(t8.success.brewPotency - 0.20) < 1e-9, 'réussite → +20 %');
+  assert(Math.abs(t8.crit.brewPotency - 0.45) < 1e-9,    'critique (INT 20) → +40 % +5 % maîtrise');
+  assert(t8.fail.healed === Math.round(15 * 0.85),  'ratée soigne 13 (15×0.85)');
+  assert(t8.success.healed === Math.round(15 * 1.20), 'réussite soigne 18 (15×1.20)');
+  assert(t8.crit.healed === Math.round(15 * 1.45),    'critique soigne 22 (15×1.45)');
+  assert(t8.fail.healed < t8.base && t8.base < t8.crit.healed, 'diluée < achetée < concentrée');
+
+  // T9 : P1 — la potency influe sur la REVENTE + tooltip + fallback legacy.
+  const t9 = await page.evaluate(() => {
+    const shop = ITEMS.find(i => i.id === 'potion_s');         // price 30, sans flag
+    const concentree = { ...shop, brewed: true, brewPotency: 0.40 };
+    const diluee     = { ...shop, brewed: true, brewPotency: -0.15 };
+    const legacy     = { ...shop, brewed: true };              // C5, sans brewPotency
     return {
-      hasFlag: brewed && brewed.brewed === true,
-      shopHasFlag: !!shop.brewed,
-      healedBrewed, healedShop,
-      bonus: (typeof BREW_POTENCY_BONUS !== 'undefined') ? BREW_POTENCY_BONUS : null,
-      expectedBrewed: Math.round(shop.power * (1 + (BREW_POTENCY_BONUS || 0.25))),
-      tooltipMentions: /Brassage maison/.test(tooltip)
+      sellShop:    _computeSellPrice(shop),
+      sellConc:    _computeSellPrice(concentree),
+      sellDil:     _computeSellPrice(diluee),
+      healLegacy:  (() => { const c = party[0]; c.hpMax = 200; c.hp = 1; _applyConsumableEffect(legacy, c); return c.hp - 1; })(),
+      ttConc: /Brassage maison/.test(_renderItemTooltip(concentree)),
+      ttDil:  /diluée/i.test(_renderItemTooltip(diluee)),
     };
   });
-  console.log('  T8 brassage maison →', t8);
-  assert(t8.hasFlag,                      'une potion brassée doit porter le flag brewed');
-  assert(t8.shopHasFlag === false,        'une potion de boutique ne doit PAS porter le flag');
-  assert(t8.bonus === 0.25,               'BREW_POTENCY_BONUS doit valoir 0.25');
-  assert(t8.healedShop === 15,            'potion achetée : heal de base (15)');
-  assert(t8.healedBrewed === t8.expectedBrewed,
-         'potion brassée : heal majoré de BREW_POTENCY_BONUS');
-  assert(t8.healedBrewed > t8.healedShop, 'la potion brassée doit soigner davantage');
-  assert(t8.tooltipMentions,              'le tooltip doit signaler le brassage maison');
+  console.log('  T9 revente + tooltip + legacy →', t9);
+  assert(t9.sellDil < t9.sellShop && t9.sellShop < t9.sellConc, 'revente : diluée < base < concentrée');
+  assert(t9.healLegacy === Math.round(15 * 1.25), 'fallback legacy brewed:true → +25 %');
+  assert(t9.ttConc, 'tooltip d\'une fiole concentrée mentionne le brassage maison');
+  assert(t9.ttDil,  'tooltip d\'une fiole diluée signale la dilution');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Concoction OK (besace + verrou + déverrouillage + brassage + découverte + onglet inventaire + brassage maison)');
+  console.log('  ✅ Concoction OK (besace + verrou + déverrouillage + brassage + découverte + onglet + brassage à maîtrise)');
   await browser.close();
 }
 
