@@ -1703,3 +1703,78 @@ au Hall of Fame Supabase, qui a déjà un repli `localStorage`
 Pendant le dev, ouvrir DevTools → Application → Service Workers →
 *Unregister*. En console : `PWA.unregister()` puis `PWA.clearCaches()`
 (exposés par `js/pwa.js`).
+
+---
+
+## Mondes Parallèles / Cheminette Inter-Mondes (LOT F)
+
+Système de **visites asynchrones inter-mondes** : un joueur (visiteur) se
+téléporte dans le donjon d'un autre joueur en ligne (host) via le sort
+**Cheminette Inter-Mondes** (niv. 8, 25 PM, **exclu en Ironman**). Transport
+**REST polling** sur Supabase (pas de Realtime SDK — philosophie zéro-dépendance).
+
+Plans : `.claude/plans/parallel-worlds.md` (design V1a→V1c, DDL §12),
+`.claude/plans/parallel-worlds-stabilization.md` (stabilisation LOT F).
+
+### Modules (à compléter dans l'arborescence en tête de fichier)
+
+| Fichier | Rôle |
+|---------|------|
+| `js/multiplayer.js` | Socle commun : `MP_CONFIG`, transport REST (`_mpHeaders`, `_mpConfigured`, `_mpNoteSuccess/Failure`), présence (heartbeat `mp_presence`). Expose le flag `parallelWorldsEnabled()`. |
+| `js/multiplayer-social.js` | Messages au sol (`mp_messages`) + cadeaux (`mp_gifts`). |
+| `js/multiplayer-visits.js` | Matchmaking (`mp_visit_requests`), canal de visite (`mp_visit_messages`), Verrous de Sang (`mp_threats`). Disjoncteurs `_mp*TableMissing`. |
+| `js/portal-fx.js` / `css/portal.css` | Animation portail + styles HUD/modales. |
+| `js/portal-matchmaking.js` | Modales destinations (visiteur) + acceptation (host). |
+| `js/visit-channel.js` | Orchestration du canal (poll ~2,5 s, ping 4 s, qualité réseau, reconnect, timeout). |
+| `js/visit-hud.js` | Bandeau `#visit-hud` + paliers good/degraded/lost. |
+| `js/save-visit-snapshot.js` | Snapshots de visite (`mpBuildVisitSnapshot` / `mpApplyVisitSnapshot`). |
+| `js/atelier-voyageur.js` | Atelier du Voyageur (`#btn-atelier`, 4 onglets) + souvenirs/cosmétiques/sorts cross-plan. |
+
+### Flux A→H
+
+```
+A  Sort Cheminette (inventory-spells.js SPELL_OOC_HANDLERS) → PortalFX → openPortalTargetModal()
+B  Matchmaking : mpListAvailableHosts → mpPostVisitRequest → poll ; host : _mpPollIncomingVisitRequests → showIncomingVisitRequest → mpRespondVisitRequest(accepted, channel_id)
+C  Snapshot : host poste 'snapshot' sur mp_visit_messages → visiteur l'applique → #visit-hud
+D  Position/emotes/fog : messages 'hostPosition'/'position' (throttle 1,2 s), sprites visiteur/host
+E  Dialogues PNJ « voyageur » (npc-dialog.js)
+F  Qualité réseau / reconnect / timeout (visit-channel.js) ; opt-out host visitsClosed (#btn-visits)
+G  Combat astral (échos) : engageAstralCombat, limite 3/étage
+H  Verrous de Sang : mpPostBloodSeal → host mpListHostSealsForFloor/mpUpdateSealStatus → visiteur mpListVisitorResolvedSeals/mpClaimSeal ; Atelier (#btn-atelier)
+```
+
+### Backend Supabase
+
+Projet `hvdthitluhgevtuqhxpm` (réutilise celui du Hall of Fame). DDL versionné
+dans **`supabase/migrations/`** (source de vérité reproductible) :
+
+| Table | Migration | Rôle |
+|-------|-----------|------|
+| `mp_presence` (+ col. `accepts_threats`) | présence (col. ajoutée par `20260530_parallel_worlds.sql`) | présence en ligne + opt-out Verrous |
+| `mp_messages`, `mp_gifts` | (livrées) | social |
+| `mp_visit_requests` | `20260530_parallel_worlds.sql` | invitations de visite (TTL 60 s) |
+| `mp_visit_messages` | `20260530_parallel_worlds.sql` | canal de visite (TTL 15 min) |
+| `mp_threats` | `20260530_parallel_worlds.sql` | Verrous de Sang (TTL 30 j) |
+| `leaderboard.house` | `20260530_leaderboard_house.sql` | blason HoF |
+
+RLS permissive (`using(true)/with check(true)`) — cohérent avec le modèle
+anon-key du HoF. Pas de TTL auto (free tier) → purge cron mensuelle
+(cf. `supabase/README.md`). **Disjoncteur** : toute table en 404 désactive
+silencieusement la fonctionnalité concernée avec message contextuel.
+
+### Feature flag maître
+
+`MP_CONFIG.parallelWorldsEnabled` (défaut **true**) + helper
+`parallelWorldsEnabled()` (`multiplayer.js`). À **false**, neutralise le
+chemin visites sans toucher au reste du MP :
+- sort Cheminette : refuse avec message (`inventory-spells.js`) ;
+- poll des visites entrantes : `_mpVisitsAttach` ne démarre pas ;
+- boutons `#btn-visits` / `#btn-atelier` masqués au `DOMContentLoaded`.
+
+### Tests
+
+- `node tests/smoke.js` : 16+ scénarios `scenario{ParallelPortal,
+  PortalMatchmaking,Visit*,Multiplayer*}` — **offline, stubs REST** (jamais
+  d'appel réseau réel : la suite reste déterministe).
+- `tests/parallel-live-checklist.md` : protocole **manuel 2 clients** contre
+  le backend réel (hors suite smoke).
