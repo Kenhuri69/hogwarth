@@ -2,7 +2,9 @@
 
 **Date** : 2026-05-25
 **Branche** : `claude/house-tier-plan-launch-6KQ9B`
-**Statut** : 🚧 En cours — design amendé 2026-05-25 (série Apothéose ★ N infinie).
+**Statut** : ✅ **PLAN CLOS** — implémenté, mergé sur `master` (via #263) et testé vert
+(`scenarioHouseDonationAndStars` dans `tests/smoke.js`, 126/126). Vérifié le 2026-05-30.
+Design amendé 2026-05-25 (série Apothéose ★ N infinie).
 **Origine** : Piste B du `.claude/plans/game-economy-gold-audit.md §5.6`,
 hors-scope V1, validée en suite.
 
@@ -546,52 +548,52 @@ défaut. Coût : 1 bit, intrusion minimale.
 > à l'étape 6.
 
 ### Étape 1 — `starGenerator` data + checkHouseLevelUp génératif
-- [ ] Ajouter le champ `starGenerator` aux 4 entrées `HOUSE_BONUSES`
+- [x] Ajouter le champ `starGenerator` aux 4 entrées `HOUSE_BONUSES`
       (Gryff/Slyth/Serd/Pouf) dans `js/state.js`. Stat principale par
       Maison (ATK/MAG/MAG/DEF). +1 LCK tous les 5 ★.
-- [ ] Ajouter `headOfHouseVoiceKey` aux 4 entrées (`mcgonagall`/`rogue`/
+- [x] Ajouter `headOfHouseVoiceKey` aux 4 entrées (`mcgonagall`/`rogue`/
       `flitwick`/`sprout`) — utile aussi pour les samples de don.
-- [ ] Étendre `checkHouseLevelUp()` (`js/main.js`) : boucle while après
+- [x] Étendre `checkHouseLevelUp()` (`js/main.js`) : boucle while après
       le forEach tiers[] pour franchir N étoiles en cascade (cf. §3.5).
-- [ ] **Vérification** : `node tests/smoke.js` vert. Aucun nouveau test
+- [x] **Vérification** : `node tests/smoke.js` vert. Aucun nouveau test
       pour l'instant (couvert à l'étape 6).
 
 ### Étape 2 — Helper `donateGoldToHouse` + état
-- [ ] Nouveau fichier `js/house-donation.js` avec `donateGoldToHouse(amount)`,
+- [x] Nouveau fichier `js/house-donation.js` avec `donateGoldToHouse(amount)`,
       `openHouseDonationModal()`, helpers `_playDonationVoice(context)`,
       `_previewDonation(amount)`.
-- [ ] Ajout dans `index.html` (ordre : après `npc-dialog.js`, avant `intro.js`).
-- [ ] Ajout au MANIFEST `js/loader.js` (`donateGoldToHouse` en fn critique).
-- [ ] Ajout `donationIntroPlayed` (let global) à `js/state.js`,
+- [x] Ajout dans `index.html` (ordre : après `npc-dialog.js`, avant `intro.js`).
+- [x] Ajout au MANIFEST `js/loader.js` (`donateGoldToHouse` en fn critique).
+- [x] Ajout `donationIntroPlayed` (let global) à `js/state.js`,
       sérialisé dans `js/save.js` (`_serializeState`/`_applyState`).
-- [ ] **Vérification** : `node tests/smoke.js` vert. Pas de cassure du
+- [x] **Vérification** : `node tests/smoke.js` vert. Pas de cassure du
       loader (manifest complet).
 
 ### Étape 3 — Voix off (32 samples OGG)
-- [ ] Ajouter les 32 entrées dans `tools/gen_voice_edge.py` (8 × 4 chefs).
-- [ ] Batch : `python3 tools/gen_voice_edge.py mcgonagall rogue flitwick sprout`.
-- [ ] QA d'écoute : `apotheose_star` (×4) + `apotheose_star_first` (×4)
+- [x] Ajouter les 32 entrées dans `tools/gen_voice_edge.py` (8 × 4 chefs).
+- [x] Batch : `python3 tools/gen_voice_edge.py mcgonagall rogue flitwick sprout`.
+- [x] QA d'écoute : `apotheose_star` (×4) + `apotheose_star_first` (×4)
       + `apotheose_star_milestone` (×4) — 12 samples narrativement critiques.
-- [ ] Référencer les 32 OGG dans `_VOICE_SAMPLES` (`js/audio-music.js`).
-- [ ] **Vérification** : taille audio/ raisonnable (< 1 Mo nouveau).
+- [x] Référencer les 32 OGG dans `_VOICE_SAMPLES` (`js/audio-music.js`).
+- [x] **Vérification** : taille audio/ raisonnable (< 1 Mo nouveau).
       `node tests/pwa-smoke.js` reste vert (le précache audio est SWR).
 
 ### Étape 4 — UI modale `#house-donation-modal`
-- [ ] HTML statique dans `index.html` (avant `#shop-modal` pour proximité
+- [x] HTML statique dans `index.html` (avant `#shop-modal` pour proximité
       logique). Structure : titre + input numérique + 4 boutons rapides
       (1000 / 5000 / 10000 / Max) + zone aperçu (points gagnés, étoile
       suivante, seuil) + boutons "Confirmer" / "Annuler".
-- [ ] CSS dans `css/style.css` (réutiliser styles modale existante).
-- [ ] Confirmation explicite au-delà de 5000 G via `confirm()` natif.
-- [ ] **Vérification** : modale s'ouvre/se ferme proprement, input
+- [x] CSS dans `css/style.css` (réutiliser styles modale existante).
+- [x] Confirmation explicite au-delà de 5000 G via `confirm()` natif.
+- [x] **Vérification** : modale s'ouvre/se ferme proprement, input
       contraint à >= 1 et <= `player.gold`.
 
 ### Étape 5 — Intégration dialogue Chef de Maison
-- [ ] `js/npc-dialog.js — _npcDialogActions` : ajouter bouton
+- [x] `js/npc-dialog.js — _npcDialogActions` : ajouter bouton
       « 💰 Faire un don » conditionnel sur `houseTier >= 17` ET PNJ est
       un `headOfHouse`. Action `open_house_donation` → appelle
       `openHouseDonationModal()`.
-- [ ] Brancher samples voix off :
+- [x] Brancher samples voix off :
   - `donation_intro` : à la **première** ouverture (tracker `donationIntroPlayed`).
   - `donation_offer` : à toute ouverture ultérieure.
   - `donation_small` : après validation `< 5000 G`.
@@ -601,7 +603,7 @@ défaut. Coût : 1 bit, intrusion minimale.
   - `apotheose_star_*` : déclenchés par `checkHouseLevelUp` (étape 1).
 
 ### Étape 6 — Smoke test
-- [ ] Ajouter `scenarioHouseDonationAndStars` à `tests/smoke.js` :
+- [x] Ajouter `scenarioHouseDonationAndStars` à `tests/smoke.js` :
   - T1 : tier 17 atteint, bouton "Faire un don" visible.
   - T2 : tier 16 (Légende) → pas de bouton don.
   - T3 : `donateGoldToHouse(1000)` retire 1000 G + ajoute 200 points.
@@ -614,20 +616,20 @@ défaut. Coût : 1 bit, intrusion minimale.
     d'appels (intro→offer→star_first→star→star_milestone).
   - T9 : gate boucle ténébreuse 2 — étage 12 (boucle 1) bloque les
     étoiles malgré housePoints > 60000.
-- [ ] **Vérification** : `node tests/smoke.js` vert avec le nouveau scénario.
+- [x] **Vérification** : `node tests/smoke.js` vert avec le nouveau scénario.
 
 ### Étape 7 — CLAUDE.md mise à jour
-- [ ] Mettre à jour la section « Système des Maisons » : ajouter une
+- [x] Mettre à jour la section « Système des Maisons » : ajouter une
       sous-section « Tier 19+ — Série Apothéose ★ N » avec la formule
       seuil et la cadence du bonus complémentaire.
-- [ ] Mettre à jour la section « Loader & helpers » : ajout de
+- [x] Mettre à jour la section « Loader & helpers » : ajout de
       `donateGoldToHouse`, `openHouseDonationModal` au MANIFEST.
 
 ### Étape 8 — Commit + push
-- [ ] Plusieurs commits structurés (data / donation / voix / UI /
+- [x] Plusieurs commits structurés (data / donation / voix / UI /
       intégration / smoke / docs).
-- [ ] `git push -u origin claude/house-tier-plan-launch-6KQ9B`.
-- [ ] Pas de PR sans demande explicite utilisateur.
+- [x] `git push -u origin claude/house-tier-plan-launch-6KQ9B`.
+- [x] Pas de PR sans demande explicite utilisateur.
 
 ---
 
@@ -699,3 +701,8 @@ défaut. Coût : 1 bit, intrusion minimale.
   - `tests/smoke.js` : nouveau scénario `scenarioHouseDonationAndStars`
     (9 assertions) ; `node tests/smoke.js` reste vert (166 globals au
     loader, +4).
+- **2026-05-30 — clôture**. Revérifié : `js/house-donation.js`, `starGenerator`
+  (state.js), modale `#house-donation-modal`, 32 OGG de voix et le scénario
+  `scenarioHouseDonationAndStars` sont **présents sur `origin/master`** (intégrés
+  via #263). `node tests/smoke.js` vert (126/126). Cases du §5 cochées, statut
+  passé à clos. Aucun travail d'implémentation restant.
