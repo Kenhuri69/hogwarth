@@ -8490,6 +8490,104 @@ async function scenarioBrewing() {
   await browser.close();
 }
 
+// ── Scénario : Codex des recettes (LOT P6.a) ──
+// La modale chaudron liste la TOTALITÉ des recettes : connues (lisibles +
+// « Préparer ») vs à découvrir (silhouette masquée + indice non-spoiler).
+// Un compteur « X/N découvertes » suit la progression ; brasser une recette
+// inconnue la fait basculer masquée→lisible.
+async function scenarioRecipeCodex() {
+  console.log('\n── Scénario : Codex des recettes (chaudron) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Déverrouille le chaudron (remise de la quête Slughorn → recettes de base).
+  const t0 = await page.evaluate(() => {
+    acceptQuest('quest_potions_slughorn');
+    for (let i = 0; i < 3; i++) player.inventory.push({ ...ITEMS.find(x => x.id === 'mandragore') });
+    _refreshObjectives();
+    completeQuest(activeQuests.findIndex(q => q.id === 'quest_potions_slughorn'));
+    openBrewingModal();
+    const body = document.getElementById('brewing-body');
+    return {
+      unlocked: _isBrewingUnlocked(),
+      total: POTION_RECIPES.length,
+      rows: body.querySelectorAll('.brew-recipe-row').length,
+      locked: body.querySelectorAll('.brew-recipe-locked').length,
+      countText: (body.querySelector('.brew-codex-count') || {}).textContent || '',
+      knownNames: Array.from(body.querySelectorAll('.brew-recipe-row:not(.brew-recipe-locked) .brew-recipe-name')).map(n => n.textContent),
+    };
+  });
+  console.log('  T1 codex complet →', t0);
+  assert(t0.unlocked, 'le chaudron doit être déverrouillé');
+  assert(t0.rows === t0.total, `le codex doit lister les ${t0.total} recettes (obtenu ${t0.rows})`);
+  const discovered0 = t0.rows - t0.locked;
+  assert(t0.locked === t0.total - discovered0, 'masquées = total − découvertes');
+  assert(t0.countText === `${discovered0}/${t0.total} découvertes`, `compteur attendu "${discovered0}/${t0.total} découvertes" (obtenu "${t0.countText}")`);
+  assert(t0.knownNames.some(n => /Potion de Soin/.test(n)), 'la Potion de Soin (de base) doit être lisible');
+  assert(t0.knownNames.every(n => !/\?/.test(n)), 'aucune recette lisible ne doit porter de silhouette');
+
+  // T2 : indice non-spoiler — recette herbe (palier) vs upgrade-craft (avancée).
+  const t2 = await page.evaluate(() => {
+    const rL = POTION_RECIPES.find(r => r.id === 'brew_potion_l');          // herbes T2/T1
+    const rUp = POTION_RECIPES.find(r => r.id === 'brew_up_potion_l');      // potion_s + éclat
+    return { herb: _recipeHint(rL), upgrade: _recipeHint(rUp) };
+  });
+  console.log('  T2 indices →', t2);
+  assert(t2.herb.advanced === false && t2.herb.palier === 2 && t2.herb.ingCount === 3, 'brew_potion_l : palier 2, 3 ingrédients, non avancée');
+  assert(t2.upgrade.advanced === true, 'brew_up_potion_l : avancée (ingrédient de sac)');
+
+  // T3 : une recette masquée affiche bien sa silhouette + son indice.
+  const t3 = await page.evaluate(() => {
+    const body = document.getElementById('brewing-body');
+    const locked = body.querySelector('.brew-recipe-locked');
+    return {
+      name: locked.querySelector('.brew-recipe-name').textContent,
+      hint: locked.querySelector('.brew-recipe-ing').textContent,
+      hasButton: !!locked.querySelector('.brew-mini-btn'),
+    };
+  });
+  console.log('  T3 ligne masquée →', t3);
+  assert(/\?/.test(t3.name), 'une recette masquée affiche une silhouette « ? »');
+  assert(/(Palier \d|Recette avancée)/.test(t3.hint), 'une recette masquée affiche un indice de palier/avancée');
+  assert(/ingrédient/.test(t3.hint), 'l\'indice mentionne le nombre d\'ingrédients');
+  assert(t3.hasButton === false, 'une recette masquée n\'a pas de bouton Préparer');
+
+  // T4 : brasser une recette inconnue la révèle (masquée→lisible, compteur +1).
+  const t4 = await page.evaluate(() => {
+    party[0].int = 100;
+    const before = POTION_RECIPES.filter(r => (player.knownRecipes || []).includes(r.id)).length;
+    const wasKnown = (player.knownRecipes || []).includes('brew_potion_force');
+    player.herbs = { herbe_aconit: 1 };
+    player.inventory = [
+      { ...ITEMS.find(x => x.id === 'mandragore') },
+      { ...ITEMS.find(x => x.id === 'mandragore') },
+    ];
+    _cauldronMix = { herbe_aconit: 1, mandragore: 2 };
+    attemptBrew();                       // découvre brew_potion_force
+    openBrewingModal();                  // re-render (reset le mix)
+    const body = document.getElementById('brewing-body');
+    return {
+      wasKnown,
+      nowKnown: (player.knownRecipes || []).includes('brew_potion_force'),
+      before,
+      after: POTION_RECIPES.filter(r => (player.knownRecipes || []).includes(r.id)).length,
+      countText: (body.querySelector('.brew-codex-count') || {}).textContent || '',
+    };
+  });
+  console.log('  T4 découverte → codex →', t4);
+  assert(t4.wasKnown === false, 'brew_potion_force ne doit pas être connu d\'avance');
+  assert(t4.nowKnown === true, 'le brassage doit révéler brew_potion_force');
+  assert(t4.after === t4.before + 1, 'le compteur de découvertes doit augmenter de 1');
+  assert(t4.countText === `${t4.after}/${t0.total} découvertes`, 'le compteur du codex doit refléter la nouvelle découverte');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Codex OK (liste complète + silhouettes/indices + compteur + révélation à la découverte)');
+  await browser.close();
+}
+
 // ── Scénario : Potion de Force — buff ATK temporaire (LOT P0) ──
 // Moteur temp_buff : potion_force pose un buff +ATK qui survit à
 // recalculateStats, se retire à l'expiry du statut, ne s'empile pas, et
@@ -15846,7 +15944,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

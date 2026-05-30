@@ -254,6 +254,63 @@ tombait à tort dans le sac, **invisible au brassage** (qui lit `player.herbs`).
   **gros scope** (touche la boucle de combat), à flag et à cadrer séparément.
 - Codex de recettes dans la modale chaudron (P3 original, reporté).
 
+#### P6.a — CODEX DE RECETTES (sous-lot prioritaire) · ~0,5 j · risque faible
+
+> Audit 2026-05-30 (session codex). État réel confirmé :
+> - `player.knownRecipes[]` (state.js:608) **existe déjà**, sérialisé en save ;
+>   alimenté par quêtes (`reward.recipes` → `learnRecipe`) **et** par
+>   l'expérimentation (`attemptBrew` découvre une recette inconnue brassée).
+> - `POTION_RECIPES` = **21 recettes** (data.js:589).
+> - La modale chaudron (`_renderBrewingModal`, potions.js:347 — section 5
+>   « Recettes connues ») liste **uniquement les recettes connues**. Les
+>   recettes non découvertes sont **invisibles** : aucun aperçu « X/21 à
+>   trouver », pas de silhouette ni d'indice. C'est précisément le trou que
+>   comble le codex.
+> - Feedback de découverte déjà câblé (`_brewResult.discover`).
+
+**Objectif** : transformer la section « Recettes connues » en un **Codex**
+qui présente la **totalité** des 21 recettes — découvertes (lisibles, avec
+« Préparer ») vs **à découvrir** (silhouette masquée + indice de palier /
+nombre d'ingrédients, sans révéler le combo). En-tête avec compteur de
+progression « Codex — X/21 découvertes ».
+
+**Décisions retenues (cadrage validé avec l'utilisateur — à confirmer)** :
+- **Modèle de découverte** : *silhouettes + indices* (préserve la boucle
+  d'expérimentation, donne un objectif visible). PAS de révélation totale
+  (qui rendrait l'expérimentation inutile).
+- **Placement** : *section inline* dans la modale chaudron existante (la
+  section 5 actuelle est étendue, pas de nouveau bouton ni sous-modale).
+- **Indice révélé pour une recette masquée** : nom remplacé par une
+  silhouette « ? ? ? », + un indice **non-spoiler** = palier d'herbes
+  (tier max des ingrédients herbe, ou « avancée » pour les upgrade-crafts) +
+  nombre d'ingrédients. **Ne révèle ni le combo exact ni le produit.**
+
+**Étapes** :
+1. **Helper indice** `_recipeHint(recipe)` (potions.js, pur) → renvoie
+   `{ palier, ingCount, advanced }` calculé depuis `recipe.ingredients`
+   (tier via `ITEMS[id].tier` ; `advanced=true` si un ingrédient n'est pas
+   une herbe). → *vérif* : test unitaire dans le scénario smoke.
+2. **Rendu codex** : remplacer la section 5 de `_renderBrewingModal` par un
+   bloc unique listant **toutes** `POTION_RECIPES`. Connues → rendu actuel
+   (nom + ingrédients + « Préparer »). Inconnues → ligne masquée
+   (`.brew-recipe-locked` : icône 🔒/silhouette, nom « ? ? ? »,
+   indice `_recipeHint`). En-tête « Codex — X/21 découvertes » + barre/compteur.
+   → *vérif* : la modale liste 21 lignes ; X connues lisibles, 21−X masquées.
+3. **CSS** : classe `.brew-recipe-locked` (opacité réduite, italique, pas de
+   bouton). Réutilise au maximum `.brew-recipe-row`. → *vérif* : pas de
+   régression visuelle des lignes connues.
+4. **Scénario smoke dédié** `scenarioRecipeCodex` : (T1) le codex rend 21
+   lignes total ; (T2) au déverrouillage, 2 connues (brew_potion_s/m) lisibles,
+   le reste masqué ; (T3) `_recipeHint` correct pour une recette herbe (palier)
+   vs une upgrade-craft (advanced) ; (T4) brasser une recette inconnue la fait
+   basculer masquée→lisible (compteur X→X+1). → *vérif* : scénario vert.
+5. **Smoke complet** `node tests/smoke.js` reste vert ; **bump PWA**
+   (`potions.js?v=5` dans index.html + sw.js, `CACHE_VERSION` v33,
+   `style.css?v=N` si touché). → *vérif* : suite verte + pwa-smoke.
+
+**Hors-scope P6.a** (différé) : ancrage narratif des herbes, jardin passif,
+potions offensives jetables — restent dans le backlog P6.
+
 ---
 
 ## 4. Ordonnancement proposé
@@ -360,4 +417,6 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 | 2026-05-30 | **PR 2 livré** : moteur de buff temporaire (`STATUS_DEFS.buff_atk` + expiry dans `tickStatuses` + réapplication dans `recalculateStats`) ; `potion_force` → `effect:"temp_buff"` +8 ATK/3 tours (profite du brassage). Smoke `scenarioPotionBuff` T1-T5 + suite 127/127 + pwa v29. Reste PR 3 = Potion de Résistance + recettes utilitaires + quête Slughorn. |
 | 2026-05-30 | **PR 3 livré** : Potion de Résistance (statut `resist_buff`, −40 %/3t via `_resistMult` aux 4 sites de dégâts héros) **remplace** `potion_bouclier` (supprimée : item/effet/shop/icône) ; 4 recettes ajoutées (`brew_elixir_antidote`/`_regen`/`brew_potion_resistance`/`brew_potion_xl_sp`) — 10 recettes au total, sans collision d'ingrédients ; 3ᵉ quête Slughorn `quest_potions_slughorn_3` (kill 3 Bundimuns → pré-enseigne Force/Résistance/Esprit Suprême) ; **icône PNG painterly** `potion_resistance` (icon_factory.py + ITEM_ICON_NEW_REGISTRY). Smoke `scenarioPotionResistance` T1-T4 + suite 129/129 + pwa v30. **Première vague potions close.** |
 | 2026-05-30 | **PR 4 livré** : chaîne d'amélioration des potions (upgrade-craft). Généralisation `_ingredientCount`/`_consumeIngredient` (herbe→besace, sinon→sac via `_isHerbIngredient`) ; chaîne de soin `potion_soin_mineure`/`_plus`/`_pp` (15/30/55 PV) ; ressource `eclat_vitalite` (material, shop ét.3+ & drop coffre 25%) ; 7 recettes (chaîne + 4 upgrades `brew_up_potion_l/l_sp/xl/xl_sp` — POTION_RECIPES 10→17, sans collision) ; quête Slughorn 1 offre la recette Mineure. **Fix latent** : branche `material` déplacée avant `type!=='consumable'` dans `useItem` (un matériau slotless tombait dans showEquipMenu→equipItem). 4 icônes PNG (icon_factory : flask niveaux croissants + gemme rouge-vie octaédrique). Smoke `scenarioPotionUpgradeCraft` T1-T6 + suite 130/130 + pwa v31. |
+| 2026-05-30 | **LOT P6.a (codex) — cadrage** : audit confirmé (knownRecipes existe, 21 recettes, section « Recettes connues » liste seulement les connues → trou = recettes masquées + compteur). Plan P6.a rédigé (5 étapes + critères). Décisions proposées : silhouettes+indices (vs tout visible), section inline (vs bouton dédié), indice non-spoiler (palier + nb d'ingrédients). Implémentation en attente du feu vert utilisateur. |
+| 2026-05-30 | **LOT P6.a (codex) — LIVRÉ** : décisions confirmées (silhouettes+indices · section inline). La section « Recettes connues » devient un **Codex** listant les 21 recettes — connues (lisibles + « Préparer ») vs à découvrir (silhouette `🔒 ? ? ?` + indice non-spoiler `_recipeHint` : palier d'herbes / « avancée » + nb d'ingrédients), avec compteur « X/21 découvertes ». Helper pur `_recipeHint` ; CSS `.brew-recipe-locked`/`.brew-codex-count`. Scénario smoke `scenarioRecipeCodex` T1-T4 (liste complète · indices herbe vs upgrade · ligne masquée · révélation→compteur+1) ; suite **135/135 verte** + pwa v33. Reste backlog P6 : ancrage narratif herbes + potions offensives jetables. |
 | 2026-05-30 | **PR P2 livré** : potions de buff de combat. Moteur `temp_buff` généralisé de l'ATK seul à 5 stats (`BUFF_STAT_BY_ID` : atk/def/agi/lck/mag) — `_applyConsumableEffect` mute la stat de base + recalc, `tickStatuses` restaure à l'expiry (boucle générique), `recalculateStats` réapplique tous les `buff_*` (source unique, AVANT les stats dérivées → dodge/crit tiennent compte des buffs AGI/LCK). 4 items (Défense+DEF / Célérité+AGI / Précision+LCK / Puissance+MAG, +8/3t) + 4 recettes (POTION_RECIPES 17→21, sans collision) + 4 icônes PNG (flacons teintés) + shop ét.3-4. Smoke `scenarioCombatBuffs` T1-T5 (dont AGI→dodge 9.8→13, LCK→crit 12.5→16.5) + suite 132/132 + pwa v32. |
