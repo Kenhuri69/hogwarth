@@ -8735,13 +8735,15 @@ async function scenarioHelpTour() {
   assert(t6.overlayAfter === false,
          'maybeAutoStartHelpTour ne doit pas afficher le tour avec opt-out actif');
 
-  // T7 : le bouton "Aide" de la barre de commandes est bien câblé.
+  // T7 : le bouton "Aide" de la barre de commandes ouvre le menu (LOT D4).
   const t7 = await page.evaluate(() => {
-    const btn = document.querySelector('button[onclick="startHelpTour()"]');
-    return { exists: !!btn };
+    helpTourEnd();
+    const btn = document.querySelector('button[onclick="openHelpMenu()"]');
+    return { exists: !!btn, hasMenu: typeof openHelpMenu === 'function' };
   });
   console.log('  T7 bouton Aide →', t7);
-  assert(t7.exists, 'bouton « Aide » absent de la barre de commandes');
+  assert(t7.exists,  'bouton « Aide » doit appeler openHelpMenu()');
+  assert(t7.hasMenu, 'openHelpMenu doit être exposé');
 
   // T8 : narration McGonagall — bouton voix, bascule persistée,
   //      OGG enregistrés, lecture sans exception.
@@ -8794,6 +8796,49 @@ async function scenarioHelpTour() {
   assert(t8.offGlyph === '🔇',      'glyphe voix coupée incorrect');
   assert(t8.onStored === '1' && t8.onState === true,
          'la réactivation de voix doit être persistée (=1)');
+
+  // T9 : menu « Quelle aide ? » (LOT D4) — affichage + démarrage par section.
+  const t9 = await page.evaluate(() => {
+    helpTourEnd();
+    openHelpMenu();
+    const menu  = document.getElementById('help-menu-overlay');
+    const items = document.querySelectorAll('#help-menu-list .help-menu-item');
+    const menuShown = !!menu && menu.style.display === 'block';
+    // 1 « Tout le guide » + N sections.
+    const itemCount = items.length;
+    const sectionCount = (typeof HELP_TOUR_SECTIONS !== 'undefined') ? HELP_TOUR_SECTIONS.length : 0;
+    // Démarre la 1re section (index 0 = Explorer, start:1 end:4 → 3 étapes).
+    const sec = HELP_TOUR_SECTIONS[0];
+    helpMenuStart('0');
+    const menuClosedAfter = !document.getElementById('help-menu-overlay');
+    const expectedTitle = HELP_TOUR_STEPS[sec.start].title;
+    const out = {
+      menuShown, itemCount, sectionCount, menuClosedAfter,
+      active:    window._helpTourActive === true,
+      count:     document.getElementById('help-tour-step-count')?.textContent,
+      title:     document.getElementById('help-tour-title')?.textContent,
+      expectedTitle,
+      sliceLen:  sec.end - sec.start,
+      sectionStart: sec.start,
+      voiceOffset: _htVoiceOffset,
+    };
+    helpTourEnd();
+    // « Tout le guide » relance le tour complet depuis l'étape 1.
+    helpMenuStart('all');
+    out.allCount = document.getElementById('help-tour-step-count')?.textContent;
+    out.allTotal = HELP_TOUR_STEPS.length;
+    helpTourEnd();
+    return out;
+  });
+  console.log('  T9 menu sections →', t9);
+  assert(t9.menuShown,                       'le menu « Quelle aide ? » doit s\'afficher');
+  assert(t9.itemCount === t9.sectionCount + 1, 'menu = Tout le guide + N sections');
+  assert(t9.menuClosedAfter,                 'le menu doit se fermer au lancement d\'une section');
+  assert(t9.active,                          'la section doit lancer le tour');
+  assert(t9.title === t9.expectedTitle,      'la section doit démarrer à sa 1re étape d\'origine');
+  assert(t9.count === 'Étape 1 / ' + t9.sliceLen, 'compteur de section incorrect (slice)');
+  assert(t9.voiceOffset === t9.sectionStart, 'voiceOffset doit valoir section.start');
+  assert(t9.allCount === 'Étape 1 / ' + t9.allTotal, '« Tout le guide » doit couvrir toutes les étapes');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

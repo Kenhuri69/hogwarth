@@ -231,6 +231,7 @@ window.UX_safe = new Proxy({}, {
 
     // ── Aide / tour guidé ──
     { name: 'startHelpTour',        source: 'help-tour.js',  kind: 'fn'  },
+    { name: 'openHelpMenu',         source: 'help-tour.js',  kind: 'fn'  },
     { name: 'maybeAutoStartHelpTour',source: 'help-tour.js', kind: 'fn'  },
     { name: 'maybeShowCombatTutorial',source: 'help-tour.js', kind: 'fn'  },
     { name: 'quickStart',           source: 'main.js',       kind: 'fn'  },

@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v25';
+const CACHE_VERSION = 'hogwarth-v26';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -31,7 +31,7 @@ const PRECACHE_URLS = [
   './css/ux-improvements.css?v=2',
   './css/save-ui.css?v=1',
   './css/ornaments.css?v=1',
-  './css/help-tour.css?v=1',
+  './css/help-tour.css?v=2',
   './css/pwa.css?v=1',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
@@ -99,8 +99,8 @@ const PRECACHE_URLS = [
   './js/endgame.js?v=1',
   './js/forge.js?v=3',
   './js/library.js?v=3',
-  './js/help-tour.js?v=2',
-  './js/loader.js?v=17',
+  './js/help-tour.js?v=3',
+  './js/loader.js?v=18',
   './js/pwa.js?v=2',
 
   // Icônes PWA + premier écran

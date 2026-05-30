@@ -148,3 +148,76 @@
   #help-tour-title  { font-size: 14px; }
   #help-tour-text   { font-size: 12px; }
 }
+
+/* ── Menu « Quelle aide ? » (LOT D4) ───────────────────────── */
+#help-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9100;
+  display: none;
+}
+#help-menu-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 2, 0, 0.78);
+}
+#help-menu-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  max-width: calc(100vw - 16px);
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #1a0f05 0%, #120a03 100%);
+  border: 2px solid var(--gold, #c9a84c);
+  border-radius: 6px;
+  padding: 18px 18px 16px;
+  color: #e7d6b0;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.7);
+}
+#help-menu-x {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--gold, #c9a84c);
+  font-size: 15px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+}
+#help-menu-x:hover { color: var(--gold-light, #f0d080); }
+#help-menu-title {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  color: var(--gold-light, #f0d080);
+  margin-bottom: 14px;
+  padding-right: 24px;
+}
+#help-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.help-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  text-align: left;
+  padding: 10px 12px;
+  background: #1a0f05;
+  border: 1px solid var(--gold, #c9a84c);
+  color: var(--gold-light, #f0d080);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.help-menu-item:hover { background: #2a1a08; }
+.help-menu-item.help-menu-all {
+  background: var(--gold-dark, #7a5c1e);
+  color: #fff3d6;
+}
+.help-menu-ico { font-size: 18px; line-height: 1; }
