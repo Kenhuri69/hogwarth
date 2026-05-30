@@ -196,19 +196,22 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 
 ## 6. Décisions (figées 2026-05-30)
 
-1. ✅ **`potion_force`** → (b) **vraie potion de buff ATK** (tire le moteur
-   `temp_buff` minimal dans la 1ʳᵉ vague élargie / 2ᵉ PR).
+1. ✅ **`potion_force`** → (b) **vraie potion de buff ATK** : **+8 ATK pendant
+   3 tours** (miroir positif de `weaken`/`disarm` : stat mutée à la pose,
+   restaurée à l'expiry dans `tickStatuses`).
 2. ✅ **Barème P1** → ratée **−15 %** · réussite **+20 %** · critique **+40 %** ;
    bonus INT `+1 %`/pt au-delà de 15 ; plafond `[−15 %, +50 %]`. Le **ratage
    produit une fiole diluée** (au lieu de 0). La **potency influe sur la
-   revente**.
-3. ⏳ **P2 buffs** : stats/ampleur/durée/cumul Garde — à figer à l'ouverture du
-   2ᵉ PR (potion_force = premier cas concret).
-4. ⏳ **Déblocage** recettes utilitaires (P0) : à figer (proposé : mixte —
-   antidote/bouclier par expérimentation, +1 quête Slughorn pour le reste).
-5. ✅ **Première vague** = **P0 + P1**. Découpage en 2 PR pour la revue :
-   **PR 1 = P1** (brassage à maîtrise, ce commit) ; **PR 2 = P0** (recettes
-   manquantes + `potion_force` buff via moteur `temp_buff`).
+   revente**. *(livré PR 1)*
+3. ✅ **Potion de bouclier abandonnée** → remplacée par une **Potion de
+   Résistance** : **réduction générale** des dégâts subis de X % pendant N tours
+   (décision : générale d'abord, fiable ; variantes élémentaires plus tard si
+   les dégâts ennemis deviennent typés).
+4. ✅ **Déblocage mixte** : antidote (`cure`) + régénération (`regen_buff`)
+   découvrables par **expérimentation** ; Potion de Force, Potion de Résistance
+   et `potion_xl_sp` via une **3ᵉ quête Slughorn** (recettes enseignées).
+5. ✅ **Découpage** : **PR 1 = P1** (livré). **PR 2 = moteur buff + potion_force**.
+   **PR 3 = résistance + recettes utilitaires + quête de déblocage**.
 
 ---
 
@@ -229,3 +232,4 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 |------|------|
 | 2026-05-30 | Plan rédigé après audit. Constats : potion_force buggée, potion_xl_sp & 3 potions utilitaires sans recette, crit purement quantitatif. Lots P0→P4 cadrés ; première vague P0+P1 (dont l'idée « brassage à maîtrise » validée). Décisions §6 en attente. |
 | 2026-05-30 | Décisions §6 figées. **P1 livré** (PR 1) : potency bakée (`brewPotency`) ratée −15 % / réussite +20 % / critique +40 % + maîtrise INT (plafond [−15 %, +50 %]) ; ratage produit une fiole diluée (au lieu de 0) ; revente indexée sur la potency (`_computeSellPrice`). Smoke T8/T9 + 126/126 + pwa v28. **Reste PR 2 = P0** (recettes manquantes + `potion_force` buff via moteur `temp_buff`). |
+| 2026-05-30 | **PR 2 livré** : moteur de buff temporaire (`STATUS_DEFS.buff_atk` + expiry dans `tickStatuses` + réapplication dans `recalculateStats`) ; `potion_force` → `effect:"temp_buff"` +8 ATK/3 tours (profite du brassage). Smoke `scenarioPotionBuff` T1-T5 + suite 127/127 + pwa v29. Reste PR 3 = Potion de Résistance + recettes utilitaires + quête Slughorn. |

@@ -8490,6 +8490,94 @@ async function scenarioBrewing() {
   await browser.close();
 }
 
+// ── Scénario : Potion de Force — buff ATK temporaire (LOT P0) ──
+// Moteur temp_buff : potion_force pose un buff +ATK qui survit à
+// recalculateStats, se retire à l'expiry du statut, ne s'empile pas, et
+// profite du multiplicateur de brassage (brewPotency).
+async function scenarioPotionBuff() {
+  console.log('\n── Scénario : Potion de Force (buff ATK temporaire) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : données — potion_force est désormais un temp_buff (plus un heal).
+  const t1 = await page.evaluate(() => {
+    const it = ITEMS.find(i => i.id === 'potion_force');
+    return { effect: it.effect, buffStat: it.buffStat, power: it.power, turns: it.turns,
+             hasDef: typeof STATUS_DEFS !== 'undefined' && !!STATUS_DEFS.buff_atk };
+  });
+  console.log('  T1 données →', t1);
+  assert(t1.effect === 'temp_buff', 'potion_force doit avoir effect temp_buff');
+  assert(t1.buffStat === 'atk' && t1.power === 8 && t1.turns === 3, 'buff +8 ATK / 3 tours');
+  assert(t1.hasDef, 'STATUS_DEFS.buff_atk doit exister');
+
+  // T2 : appliquer la potion → ATK +8, statut posé, survit à un recalc.
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    const before = c.atk;
+    const pot = { ...ITEMS.find(i => i.id === 'potion_force') };
+    _applyConsumableEffect(pot, c);
+    const afterApply = c.atk;
+    recalculateStats();
+    const afterRecalc = c.atk;
+    const hasStatus = (c.statusEffects || []).some(s => s.id === 'buff_atk' && s.power === 8);
+    return { before, afterApply, afterRecalc, hasStatus };
+  });
+  console.log('  T2 application + recalc →', t2);
+  assert(t2.afterApply === t2.before + 8, 'ATK +8 à l\'application');
+  assert(t2.afterRecalc === t2.before + 8, 'le buff doit survivre à recalculateStats');
+  assert(t2.hasStatus, 'statut buff_atk (power 8) posé');
+
+  // T3 : l'expiry (tickStatuses) retire le buff et restaure l'ATK.
+  const t3 = await page.evaluate(() => {
+    const c = party[0];
+    const buffed = c.atk;
+    const s = c.statusEffects.find(x => x.id === 'buff_atk'); s.turns = 1;
+    tickStatuses(c, false);
+    const after = c.atk;
+    const stillThere = (c.statusEffects || []).some(x => x.id === 'buff_atk');
+    recalculateStats();
+    return { buffed, after, afterRecalc: c.atk, stillThere };
+  });
+  console.log('  T3 expiry →', t3);
+  assert(t3.after === t3.buffed - 8, 'ATK restaurée (-8) à l\'expiry');
+  assert(!t3.stillThere, 'statut buff_atk retiré à l\'expiry');
+  assert(t3.afterRecalc === t3.after, 'aucun re-add fantôme après expiry');
+
+  // T4 : pas de stacking (ré-appliquer ne cumule pas au-delà du buff).
+  const t4 = await page.evaluate(() => {
+    const c = party[0]; recalculateStats(); const base = c.atk;
+    const pot = { ...ITEMS.find(i => i.id === 'potion_force') };
+    _applyConsumableEffect(pot, c);
+    _applyConsumableEffect(pot, c);
+    recalculateStats();
+    const count = (c.statusEffects || []).filter(s => s.id === 'buff_atk').length;
+    return { base, atk: c.atk, count };
+  });
+  console.log('  T4 pas de stacking →', t4);
+  assert(t4.atk === t4.base + 8, 'deux applications ne cumulent pas (+8 seulement)');
+  assert(t4.count === 1, 'un seul statut buff_atk actif');
+
+  // T5 : une Potion de Force brassée et concentrée booste davantage.
+  const t5 = await page.evaluate(() => {
+    const c = party[0];
+    c.statusEffects = (c.statusEffects || []).filter(s => s.id !== 'buff_atk');
+    recalculateStats(); const base = c.atk;
+    const conc = { ...ITEMS.find(i => i.id === 'potion_force'), brewed: true, brewPotency: 0.40 };
+    _applyConsumableEffect(conc, c);
+    recalculateStats();
+    return { base, atk: c.atk, expected: base + Math.round(8 * 1.40) };
+  });
+  console.log('  T5 brassée concentrée →', t5);
+  assert(t5.atk === t5.expected, 'Potion de Force concentrée (+40 %) → +11 ATK (round(8×1.4))');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Potion de Force OK (buff +ATK, survit au recalc, expiry, no-stack, brassage)');
+  await browser.close();
+}
+
 // ── Scénario : boutique anti-abus (stock fini, achat unique, réassort) ─
 async function scenarioShopLimits() {
   console.log('\n── Scénario : boutique anti-abus ──');
@@ -15158,7 +15246,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

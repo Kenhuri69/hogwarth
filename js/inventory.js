@@ -432,6 +432,20 @@ function _applyConsumableEffect(item, target) {
   else if (item.effect === 'regen_buff') {
     if (typeof applyStatus === 'function') applyStatus(target, 'regen', item.power || 5, item.turns || 4);
   }
+  // Buff temporaire de stat (P0 — Potion de Force). Miroir positif de
+  // `disarm` : l'ATK est augmentée ici, restaurée à l'expiry par tickStatuses.
+  // `buffStat` choisit la stat ('atk' par défaut). Le buff profite du
+  // multiplicateur de brassage (brewMult, P1) → une Potion de Force brassée
+  // concentrée booste davantage. Non empilable (applyStatus refresh la durée).
+  else if (item.effect === 'temp_buff') {
+    const stat   = item.buffStat || 'atk';
+    const turns  = item.turns || 3;
+    const amount = Math.round((item.power || 0) * brewMult);
+    if (typeof applyStatus === 'function' && stat === 'atk') {
+      const applied = applyStatus(target, 'buff_atk', amount, turns);
+      if (applied && amount > 0) target.atk = (target.atk || 0) + amount;
+    }
+  }
   // Bouclier : érige un Protego (paliers shieldTurns) sur le porteur.
   // Surtout utile en combat ; hors combat, shieldTurns est inactif.
   else if (item.effect === 'shield_buff') {
