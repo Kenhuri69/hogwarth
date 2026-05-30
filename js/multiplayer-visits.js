@@ -186,6 +186,9 @@ async function mpRespondVisitRequest(reqId, status, channelId) {
 // Démarre/arrête le poll des demandes entrantes — branché à
 // mpStartSession / mpStopSession via les helpers _mpVisitsAttach.
 function _mpVisitsAttach() {
+  // Bascule maître (S2.6) : ne pas démarrer le poll des visites entrantes
+  // si le chemin Mondes Parallèles est désactivé.
+  if (typeof parallelWorldsEnabled === 'function' && !parallelWorldsEnabled()) return;
   if (_mpVisitPollTimer || !_mpConfigured()) return;
   _mpVisitPollTimer = setInterval(_mpPollIncomingVisitRequests, MP_VISIT_POLL_MS);
 }
@@ -426,3 +429,21 @@ async function mpClaimSeal(sealId) {
   }
 }
 
+
+// ============================================================
+// MONDES PARALLÈLES — bascule maître UI (S2.6)
+// ============================================================
+// Masque les boutons Visites / Atelier du Voyageur quand le chemin
+// Mondes Parallèles est désactivé (MP_CONFIG.parallelWorldsEnabled=false).
+// Défensif : no-op si le DOM n'expose pas les boutons (file:// smoke).
+function _mpApplyParallelWorldsUiGate() {
+  if (typeof document === 'undefined') return;
+  const off = (typeof parallelWorldsEnabled === 'function') && !parallelWorldsEnabled();
+  ['btn-visits', 'btn-atelier'].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = off ? 'none' : '';
+  });
+}
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('DOMContentLoaded', _mpApplyParallelWorldsUiGate);
+}

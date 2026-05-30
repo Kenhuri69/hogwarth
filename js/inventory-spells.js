@@ -275,6 +275,12 @@ const SPELL_OOC_HANDLERS = {
       addMsg('Personne ne peut tracer le portail.', 'bad');
       return;
     }
+    // Bascule maître (S2.6) : si le chemin Mondes Parallèles est désactivé,
+    // le sort grésille sans effet plutôt que d'ouvrir le matchmaking.
+    if (typeof parallelWorldsEnabled === 'function' && !parallelWorldsEnabled()) {
+      addMsg('Les Mondes Parallèles sont scellés pour l\'instant — la cheminée reste froide.', 'bad');
+      return;
+    }
     if (typeof ironmanMode !== 'undefined' && ironmanMode) {
       addMsg("Le mode Ironman se joue seul — la solitude est la promesse de la légende.", 'bad');
       return;

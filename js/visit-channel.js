@@ -770,5 +770,24 @@
     // Test helper : remettre à zéro les throttles d'émission entre deux
     // assertions (sinon la 2e émission rapide est rejetée).
     window._visitResetThrottles     = function () { _lastMoveSent = 0; _lastEmoteSent = 0; };
+
+    // S2.8 — filet de sécurité au déchargement de la page : si une visite
+    // est encore ouverte (fermeture d'onglet, navigation, crash mobile),
+    // on arrête les timers de canal de façon synchrone. Pas de 'bye' posté
+    // (unload ne peut pas attendre un fetch async) — le partenaire détecte
+    // la rupture par son propre timeout C.4, comme pour un drop réseau.
+    window._visitTeardownTimers = function () {
+      if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+      if (_pingTimer) { clearInterval(_pingTimer); _pingTimer = null; }
+    };
+    // Test helper (S2.8) : état de vie des timers de canal, pour asserter
+    // qu'ils sont bien clearés en fin de visite / au teardown.
+    window._visitTimersLive = function () {
+      return { poll: _pollTimer !== null, ping: _pingTimer !== null };
+    };
+    if (typeof window.addEventListener === 'function') {
+      window.addEventListener('pagehide', window._visitTeardownTimers);
+      window.addEventListener('beforeunload', window._visitTeardownTimers);
+    }
   }
 })();

@@ -348,6 +348,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'openAtelierVoyageur',      source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
     { name: 'closeAtelierVoyageur',     source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
     { name: '_claimResolvedSeals',      source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
+    { name: '_retryOrphanSeals',        source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
     { name: '_craftVoyageurPiece',      source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },
     { name: 'loadHostSealsForCurrentFloor', source: 'atelier-voyageur.js', kind: 'fn', optional: true },
     { name: 'getBloodSealAt',           source: 'atelier-voyageur.js',    kind: 'fn',  optional: true },

@@ -1870,6 +1870,18 @@ au timeout C.4) — cohérent avec `multiplayer.md` §11bis.
 - [ ] V2 — Quêtes inter-mondes (5–8 j, à planifier après V1).
 - [ ] Branche annexe — Co-op combat (gelée).
 
+> **Stabilisation LOT F — close le 2026-05-30** (cf.
+> `.claude/plans/parallel-worlds-stabilization.md`). Backend provisionné
+> (3 tables visite + `mp_presence.accepts_threats` appliquées via MCP ;
+> DDL versionné dans `supabase/migrations/`), vérif REST anon 200/201,
+> `get_advisors` security = uniquement des WARN `rls_policy_always_true`
+> attendus (modèle anon-key, identique aux tables pré-existantes).
+> Durcissement : flag maître `parallelWorldsEnabled()`, scénario smoke
+> `scenarioVisitBackendMissing` (disjoncteurs 404 + retry orphelins),
+> filet timers `beforeunload`/`pagehide`. Doc : section CLAUDE.md +
+> `supabase/README.md` + `tests/parallel-live-checklist.md`. **Reste
+> manuel** : exécution live 2 clients (checklist prête, non bloquante).
+
 ## 16. Décisions à confirmer avant Phase A
 
 ### V1a
