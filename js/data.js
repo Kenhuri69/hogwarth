@@ -339,6 +339,10 @@ const RIDDLES_LUMIERE = [
 
 const ITEMS = [
   { id:"potion_s", name:"Potion de Soin", icon:"🧪", desc:"+15 PV", type:"consumable", effect:"heal", power:15, price:30 },
+  // Chaîne de soin à paliers (P4 — upgrade-craft via Éclat de Vitalité).
+  { id:"potion_soin_mineure",      name:"Potion de Soin Mineure",   icon:"🧪", desc:"+15 PV",  type:"consumable", effect:"heal", power:15, price:28 },
+  { id:"potion_soin_mineure_plus", name:"Potion de Soin Mineure +", icon:"🧪", desc:"+30 PV",  type:"consumable", effect:"heal", power:30, price:55 },
+  { id:"potion_soin_mineure_pp",   name:"Potion de Soin Mineure ++",icon:"🧪", desc:"+55 PV",  type:"consumable", effect:"heal", power:55, price:95 },
   { id:"potion_m", name:"Potion Magique", icon:"💜", desc:"+12 PM", type:"consumable", effect:"restore_sp", power:12, price:25 },
   { id:"potion_l",     name:"Grande Potion de Soin", icon:"🧪", desc:"+40 PV", type:"consumable", effect:"heal",       power:40, price:80 },
   { id:"potion_l_sp",  name:"Grande Potion Magique", icon:"💜", desc:"+30 PM", type:"consumable", effect:"restore_sp", power:30, price:70 },
@@ -372,6 +376,10 @@ const ITEMS = [
     type:"material", price:0 },
   { id:"page_grimoire",    name:"Page de Grimoire",     icon:"📜", desc:"Matériau · Bibliothèque interdite",
     type:"material", price:0 },
+  // Ressource d'upgrade-craft des potions (P4). Achetable (boutique étage ≥ 3)
+  // + drop de coffre. Consommée au chaudron pour monter une potion en rang.
+  { id:"eclat_vitalite",   name:"Éclat de Vitalité",    icon:"❤️", desc:"Matériau · concentré de vie pour potions",
+    type:"material", price:35 },
   // Objet de quête — Épreuve de la Lumière Éternelle (portrait de Dumbledore).
   // Tombe des morts-vivants ; réuni ×3 pour le 1er temps de l'épreuve.
   // type:"quest" → non utilisable manuellement (useItem affiche un message).
@@ -608,6 +616,31 @@ const POTION_RECIPES = [
   { id:"brew_potion_xl_sp", name:"Élixir d'Esprit Suprême", resultItemId:"potion_xl_sp",
     ingredients:{ herbe_dictame:2, herbe_branchiflore:1, herbe_ortie:1 }, difficulty:18,
     lore:"Le dictame canalise la branchiflore en un flux mental sans égal." },
+  // ── Chaîne de soin à paliers (P4) — upgrade-craft via Éclat de Vitalité ──
+  // Mineure : herbes simples (découvrable). Mineure+ / ++ : la potion de rang
+  // inférieur + Éclat(s) — un ingrédient EST une potion (résolu depuis le sac).
+  { id:"brew_potion_soin_mineure", name:"Potion de Soin Mineure", resultItemId:"potion_soin_mineure",
+    ingredients:{ herbe_armoise:1, herbe_asphodele:1 },                 difficulty:9,
+    lore:"Une décoction de soin d'apprenti : armoise et asphodèle, sans détour." },
+  { id:"brew_potion_soin_mineure_plus", name:"Potion de Soin Mineure +", resultItemId:"potion_soin_mineure_plus",
+    ingredients:{ potion_soin_mineure:1, eclat_vitalite:1 },            difficulty:13,
+    lore:"Un Éclat de Vitalité fondu dans la fiole en double presque la vertu." },
+  { id:"brew_potion_soin_mineure_pp", name:"Potion de Soin Mineure ++", resultItemId:"potion_soin_mineure_pp",
+    ingredients:{ potion_soin_mineure_plus:1, eclat_vitalite:2 },       difficulty:17,
+    lore:"Deux Éclats saturent la potion d'énergie vitale — le palier des maîtres." },
+  // ── Upgrades des potions existantes (soin & magie) ──────────────────────
+  { id:"brew_up_potion_l",    name:"Grande Potion de Soin (raffinage)", resultItemId:"potion_l",
+    ingredients:{ potion_s:1, eclat_vitalite:1 },                       difficulty:12,
+    lore:"L'Éclat de Vitalité transmue une Potion de Soin en sa version majeure." },
+  { id:"brew_up_potion_l_sp", name:"Grande Potion Magique (raffinage)", resultItemId:"potion_l_sp",
+    ingredients:{ potion_m:1, eclat_vitalite:1 },                       difficulty:12,
+    lore:"L'énergie de l'Éclat densifie le flux magique d'une Potion Magique." },
+  { id:"brew_up_potion_xl",   name:"Élixir Suprême (raffinage)",        resultItemId:"potion_xl",
+    ingredients:{ potion_l:1, eclat_vitalite:2 },                       difficulty:18,
+    lore:"Deux Éclats portent une Grande Potion au rang d'Élixir Suprême." },
+  { id:"brew_up_potion_xl_sp", name:"Élixir d'Esprit Suprême (raffinage)", resultItemId:"potion_xl_sp",
+    ingredients:{ potion_l_sp:1, eclat_vitalite:2 },                    difficulty:18,
+    lore:"Deux Éclats subliment une Grande Potion Magique en Élixir d'Esprit." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];

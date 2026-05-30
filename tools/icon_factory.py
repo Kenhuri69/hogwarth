@@ -105,6 +105,47 @@ RECIPES: Dict[str, Recipe] = {
              "level": 0.72, "meniscus": True},
         ],
     ),
+    # ── Chaîne de soin à paliers (P4) — niveau de liquide croissant ──
+    "potion_soin_mineure": Recipe(
+        id="potion_soin_mineure", name="Potion de Soin Mineure", rarity="common", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (118, 78, 42), "body": (172, 196, 208)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": (210, 80, 80), "level": 0.55, "meniscus": True},
+        ],
+    ),
+    "potion_soin_mineure_plus": Recipe(
+        id="potion_soin_mineure_plus", name="Potion de Soin Mineure +", rarity="uncommon", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (118, 78, 42), "body": (172, 196, 208)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": (220, 64, 64), "level": 0.70, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (255, 150, 150), "count": 4},
+        ],
+    ),
+    "potion_soin_mineure_pp": Recipe(
+        id="potion_soin_mineure_pp", name="Potion de Soin Mineure ++", rarity="rare", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (118, 78, 42), "body": (172, 196, 208)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": (232, 48, 56), "level": 0.85, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (255, 170, 170), "count": 6},
+        ],
+    ),
+    # Ressource d'upgrade-craft des potions (gemme rouge-vie).
+    "eclat_vitalite": Recipe(
+        id="eclat_vitalite", name="Éclat de Vitalité", rarity="rare", material="glass",
+        silhouette={"kind": "svg", "file": "gem-octahedron.svg"},
+        fills={
+            "gem":       (208,  48,  56),
+            "gem_facet": (244, 132, 132),
+            "gem_base":  (120,  24,  32),
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem_facet", "color": (255, 210, 210)},
+            {"kind": "orb_glow", "region": "gem", "color": (240, 90, 90)},
+        ],
+    ),
     "felix": Recipe(
         id="felix", name="Félix Felicis", rarity="legendary", material="glass",
         silhouette={"kind": "svg", "file": "flask.svg"},

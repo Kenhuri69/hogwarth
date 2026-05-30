@@ -686,17 +686,19 @@ function useItem(idx, battleMode) {
     return;
   }
 
+  // Matériaux (Forge / Bibliothèque / upgrade-craft potions) — non utilisables
+  // manuellement. Consommés uniquement à la Forge, Bibliothèque ou au chaudron.
+  // NB : doit précéder la branche équipement (`type !== 'consumable'`), sinon un
+  // matériau slotless tomberait dans showEquipMenu → equipItem corrompu.
+  if (item.type === 'material') {
+    addMsg(`${item.name} : matériau d'upgrade — utilisable à la Forge, à la Bibliothèque ou au chaudron.`, '');
+    return;
+  }
+
   // Équipement → menu de sélection (hors combat seulement)
   if (item.type !== 'consumable') {
     if (battleMode) return; // ne devrait pas être cliquable en combat
     showEquipMenu(item, idx);
-    return;
-  }
-
-  // Matériaux endgame (Forge / Bibliothèque) — non utilisables manuellement.
-  // Consommés lors d'un upgrade Forge/Bibliothèque uniquement.
-  if (item.type === 'material') {
-    addMsg(`${item.name} : matériau d'upgrade — utilisable uniquement à la Forge ou à la Bibliothèque.`, '');
     return;
   }
 

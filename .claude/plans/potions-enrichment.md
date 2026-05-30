@@ -148,7 +148,54 @@ Introduire une **famille d'effet « buff temporaire »** (la pièce manquante).
 - *Vérif* : smoke — le codex liste N découvertes et M masquées ; une découverte
   bascule de masquée à révélée.
 
-### LOT P4 — Économie, ancrage & idées longues (backlog) · effort variable
+### LOT P4 — Chaîne d'amélioration des potions (upgrade-craft) · ~1,5 j · risque moyen
+
+> Demande utilisateur (2026-05-30) : potions de soin à paliers, craftées en
+> combinant la potion de rang inférieur **+ une ressource**. Décisions figées
+> ci-dessous (réponses utilisateur).
+
+**Concept** : *upgrade-craft* = une recette `POTION_RECIPES` dont un ingrédient
+est **une potion** (item de sac), pas seulement des herbes. Le moteur du chaudron
+canalise déjà tout via `_ingredientCount`/`_consumeIngredient` (précédent
+`mandragore`) → **généraliser** : `type:"herb"` → besace, sinon → inventaire.
+
+**P4.1 — Généralisation des ingrédients de sac**
+- `_ingredientCount(id)` / `_consumeIngredient(id,n)` : si l'item `ITEMS[id]`
+  n'est pas `type:"herb"`, compter/consommer depuis `player.inventory` (au lieu
+  du hardcode `mandragore`). La besace reste la source des herbes.
+- UI chaudron : surfacer les **ingrédients de sac** éligibles (potions de rang
+  inférieur + Éclat) dans une mini-section dédiée sous la besace.
+
+**P4.2 — Nouvelle chaîne de soin (3 items dédiés)**
+- `potion_soin_mineure` (~15 PV), `potion_soin_mineure_plus` (~30 PV),
+  `potion_soin_mineure_pp` (~55 PV). Items `effect:"heal"`.
+- Recettes : Mineure = herbes ; Mineure+ = **Mineure + Éclat** ;
+  Mineure++ = **Mineure+ + Éclat ×2**.
+
+**P4.3 — Upgrades des potions existantes (soin & magie)**
+- `brew_up_potion_l`   : `potion_s`  + Éclat       → `potion_l`
+- `brew_up_potion_l_sp`: `potion_m`  + Éclat       → `potion_l_sp`
+- `brew_up_potion_xl`  : `potion_l`  + Éclat ×2     → `potion_xl`
+- `brew_up_potion_xl_sp`:`potion_l_sp`+ Éclat ×2     → `potion_xl_sp`
+  (réutilise les items résultats existants, aucun nouvel item de résultat hors
+  la chaîne Mineure).
+
+**P4.4 — Nouvelle ressource « Éclat de Vitalité »**
+- Item `eclat_vitalite` (`type:"material"`, gemme rouge-vie). Source : drop de
+  coffre + boutique (étage ≥ 3). **Icône PNG** via `icon_factory.py`
+  (`gem-octahedron.svg`, teinte rouge-vie) → 5 PNG + `ITEM_ICON_NEW_REGISTRY`.
+
+**P4.5 — Déblocage** : recettes Mineure découvrables librement ; upgrades
+pré-enseignées par la 3ᵉ quête Slughorn (réutilise `reward.recipes`) OU
+découvrables (cohérent avec « pas de verrou » §6bis). Décision : **découvrables
++ Mineure offerte par la quête 1** pour l'amorçage.
+
+- *Vérif* : smoke — `potion_s + eclat_vitalite` matche `brew_up_potion_l` et
+  produit `potion_l` (potency appliquée) ; la chaîne Mineure→+→++ se brasse ;
+  `_ingredientCount` lit bien une potion depuis le sac ; pas de collision
+  d'ingrédients.
+
+### LOT P5 — Économie, ancrage & idées longues (backlog) · effort variable
 
 - Équilibrage des **sources d'herbes** (cueillette `searchRoom` / drops / boutique)
   par palier d'étage.
@@ -263,3 +310,4 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 | 2026-05-30 | Décisions §6 figées. **P1 livré** (PR 1) : potency bakée (`brewPotency`) ratée −15 % / réussite +20 % / critique +40 % + maîtrise INT (plafond [−15 %, +50 %]) ; ratage produit une fiole diluée (au lieu de 0) ; revente indexée sur la potency (`_computeSellPrice`). Smoke T8/T9 + 126/126 + pwa v28. **Reste PR 2 = P0** (recettes manquantes + `potion_force` buff via moteur `temp_buff`). |
 | 2026-05-30 | **PR 2 livré** : moteur de buff temporaire (`STATUS_DEFS.buff_atk` + expiry dans `tickStatuses` + réapplication dans `recalculateStats`) ; `potion_force` → `effect:"temp_buff"` +8 ATK/3 tours (profite du brassage). Smoke `scenarioPotionBuff` T1-T5 + suite 127/127 + pwa v29. Reste PR 3 = Potion de Résistance + recettes utilitaires + quête Slughorn. |
 | 2026-05-30 | **PR 3 livré** : Potion de Résistance (statut `resist_buff`, −40 %/3t via `_resistMult` aux 4 sites de dégâts héros) **remplace** `potion_bouclier` (supprimée : item/effet/shop/icône) ; 4 recettes ajoutées (`brew_elixir_antidote`/`_regen`/`brew_potion_resistance`/`brew_potion_xl_sp`) — 10 recettes au total, sans collision d'ingrédients ; 3ᵉ quête Slughorn `quest_potions_slughorn_3` (kill 3 Bundimuns → pré-enseigne Force/Résistance/Esprit Suprême) ; **icône PNG painterly** `potion_resistance` (icon_factory.py + ITEM_ICON_NEW_REGISTRY). Smoke `scenarioPotionResistance` T1-T4 + suite 129/129 + pwa v30. **Première vague potions close.** |
+| 2026-05-30 | **PR 4 livré** : chaîne d'amélioration des potions (upgrade-craft). Généralisation `_ingredientCount`/`_consumeIngredient` (herbe→besace, sinon→sac via `_isHerbIngredient`) ; chaîne de soin `potion_soin_mineure`/`_plus`/`_pp` (15/30/55 PV) ; ressource `eclat_vitalite` (material, shop ét.3+ & drop coffre 25%) ; 7 recettes (chaîne + 4 upgrades `brew_up_potion_l/l_sp/xl/xl_sp` — POTION_RECIPES 10→17, sans collision) ; quête Slughorn 1 offre la recette Mineure. **Fix latent** : branche `material` déplacée avant `type!=='consumable'` dans `useItem` (un matériau slotless tombait dans showEquipMenu→equipItem). 4 icônes PNG (icon_factory : flask niveaux croissants + gemme rouge-vie octaédrique). Smoke `scenarioPotionUpgradeCraft` T1-T6 + suite 130/130 + pwa v31. |
