@@ -213,11 +213,12 @@ const NPCS = [
     name:  "Horace Slughorn",
     title: "Maître des Potions",
     sprite: "prof_h",
+    portraitImg: "img/npc/_npc_prof_h.png",
     icon:  "🧪",
     placement: { floor: 2, anchor: "any" },
     specialAction: {
       type:  "open_brewing",
-      label: "🧪 Concocter une potion"
+      label: "<img class='ui-icon ui-icon-md' src='img/icons/items/potion_m.png' alt=''> Concocter une potion"
     },
     questsGiven:    ["quest_potions_slughorn", "quest_potions_slughorn_2"],
     questsTurnedIn: ["quest_potions_slughorn", "quest_potions_slughorn_2"],
@@ -324,7 +325,7 @@ const NPCS = [
     // Ouvre l'overlay #fusion-modal qui reconstitue le grimoire (= remise
     // de manon_grimoire). Cf. .claude/plans/manon-grimoire-pages.md §6.
     specialAction: { type: "open_fusion", id: "manon_fusion_grimoire",
-                     label: "📖 Reconstituer le grimoire" },
+                     label: "<img class='ui-icon ui-icon-md' src='img/icons/spellbook.png' alt=''> Reconstituer le grimoire" },
     dialogues: {
       greeting: [
         "Ne fais pas de bruit. S'il te plaît. (Elle est tapie dans l'ombre d'une salle de classe vide, les genoux contre la poitrine.) Tu n'es pas un professeur. Tant mieux — eux, je les évite.",
@@ -462,7 +463,7 @@ const NPCS = [
     specialAction: {
       type:  "claim_house_reward",
       house: "Gryffondor",
-      label: "🎁 Recevoir votre récompense"
+      label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
     questsGiven:    ["golem_passage", "quest_set_gryff", "quest_don_gryff"],
     questsTurnedIn: ["golem_passage", "quest_set_gryff", "quest_don_gryff"],
@@ -509,7 +510,7 @@ const NPCS = [
     specialAction: {
       type:  "claim_house_reward",
       house: "Serpentard",
-      label: "🎁 Recevoir votre récompense"
+      label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
     questsGiven:    ["quest_set_slyth", "quest_don_slyth"],
     questsTurnedIn: ["quest_set_slyth", "quest_don_slyth"],
@@ -553,7 +554,7 @@ const NPCS = [
     specialAction: {
       type:  "claim_house_reward",
       house: "Serdaigle",
-      label: "🎁 Recevoir votre récompense"
+      label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
     questsGiven:    ["quest_set_raven", "quest_don_raven"],
     questsTurnedIn: ["quest_set_raven", "quest_don_raven"],
@@ -597,7 +598,7 @@ const NPCS = [
     specialAction: {
       type:  "claim_house_reward",
       house: "Poufsouffle",
-      label: "🎁 Recevoir votre récompense"
+      label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
     questsGiven:    ["quest_set_pouf", "quest_don_pouf"],
     questsTurnedIn: ["quest_set_pouf", "quest_don_pouf"],
@@ -723,7 +724,7 @@ const NPCS = [
     // Énigmes de l'Épreuve de la Lumière Éternelle : disponible quand la
     // collecte des Éclats est faite. Ouvre #riddle-modal.
     specialAction: { type: "open_riddle", id: "dumbledore_epreuve",
-                     label: "🕯️ Affronter les énigmes" },
+                     label: "<img class='ui-icon ui-icon-md' src='img/icons/scroll.png' alt=''> Affronter les énigmes" },
     dialogues: {
       greeting: [
         "(Le portrait s'éveille en clignant des yeux.) Ah, jeune sorcier... même peint, je veille sur ces couloirs.",
@@ -780,7 +781,7 @@ const NPCS = [
     placement: { floor: 7, anchor: "any" },
     specialAction: {
       type:  "heal_and_revive",
-      label: "✨ Recevoir les larmes du phénix"
+      label: "<img class='ui-icon ui-icon-md' src='img/icons/items/larmes_phenix.png' alt=''> Recevoir les larmes du phénix"
     },
     questsGiven:    ["bouclier_phenix"],
     questsTurnedIn: ["bouclier_phenix"],

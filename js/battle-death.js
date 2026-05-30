@@ -54,7 +54,7 @@ function _finishAstralCombat(won) {
 
     AudioSystem.playVictory();
     setNarrative(`Écho dissipé. +${totalEss} ✨ Essence d'Outremonde.`);
-    addMsg(`✨ +${totalEss} Essence d'Outremonde (total : ${outremondeEssence}).`, 'magic');
+    addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/essence_outremonde.png" alt=""> +${totalEss} Essence d'Outremonde (total : ${outremondeEssence}).`, 'magic');
 
     if (typeof updateUI === 'function') updateUI();
     if (typeof renderMinimap === 'function') renderMinimap();

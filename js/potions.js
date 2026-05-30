@@ -65,7 +65,7 @@ function learnRecipe(id) {
   if (!r) return false;
   player.knownRecipes.push(id);
   if (typeof addMsg === 'function') {
-    addMsg(`📜 Nouvelle recette apprise : ${r.name} !`, 'magic');
+    addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/scroll.png" alt=""> Nouvelle recette apprise : ${r.name} !`, 'magic');
   }
   return true;
 }
@@ -259,7 +259,7 @@ function attemptBrew() {
     if (lost > 0) html += ` (${lost} perdue${lost > 1 ? 's' : ''} — sac plein.)`;
     _brewResult = { cls, html };
     if (typeof addMsg === 'function') {
-      addMsg(`🧪 Brassage réussi : ${added}× ${potName}${kind === 'crit' ? ' (critique !)' : ''}.`, 'good');
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/items/potion_m.png" alt=""> Brassage réussi : ${added}× ${potName}${kind === 'crit' ? ' (critique !)' : ''}.`, 'good');
       if (lost > 0) addMsg(`Sac plein — ${lost} potion(s) perdue(s).`, 'bad');
     }
     if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();

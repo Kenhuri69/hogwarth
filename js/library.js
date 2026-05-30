@@ -133,7 +133,7 @@ function upgradeSpellAtLibrary(charIdx, spellName, path) {
   c.spellUpgrades[spellName] = target;
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
   const voie = c.spellPaths[spellName] === 'focus' ? 'Maîtrise' : 'Puissance';
-  addMsg(`📜 ${c.name} amplifie ${spellName} (niv ${target}, voie ${voie}) !`, 'magic');
+  addMsg(`${getSpellIconHtml(spellName, 'ui-icon-md')} ${c.name} amplifie ${spellName} (niv ${target}, voie ${voie}) !`, 'magic');
   if (typeof updateUI === 'function') updateUI();
   openLibrary();
   return true;

@@ -130,7 +130,7 @@ function openChest() {
     const item = booksAvailable[Math.floor(Math.random() * booksAvailable.length)];
     if (tryAddItem(item, { silent: true })) {
       setNarrative(`Un vieux grimoire poussiéreux est là, dans le coffre : ${item.name} !`);
-      addMsg(`📚 Grimoire trouvé : ${item.name} !`, 'magic');
+      addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Grimoire trouvé : ${item.name} !`, 'magic');
     }
   }
 
@@ -197,7 +197,7 @@ function _tryCollectPage() {
   player.grimoirePages.push(page.id);
   AudioSystem.playChestOpen();
   setNarrative(`Entre deux pierres, un feuillet givré : « ${page.name} ». Vous le glissez dans le grimoire.`);
-  addMsg(`📄 Page récoltée : ${page.name}`, 'good');
+  addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/scroll.png" alt=""> Page récoltée : ${page.name}`, 'good');
   if (typeof checkPageQuest === 'function') checkPageQuest();
   if (typeof renderMinimap === 'function') renderMinimap();
   return true;

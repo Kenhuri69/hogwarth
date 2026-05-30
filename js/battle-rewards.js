@@ -36,11 +36,11 @@ function endBattle(won) {
       const bonusGold = 50;
       player.gold += bonusGold;
       if (typeof addMsg === 'function') {
-        addMsg(`🩸 Verrou résolu — ${seal && seal.visitor_name ? seal.visitor_name + ' te remercie depuis son plan' : 'un voyageur lointain te salue'}. +${bonusGold} G.`, 'magic');
+        addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/spells/verrou_de_sang.png" alt=""> Verrou résolu — ${seal && seal.visitor_name ? seal.visitor_name + ' te remercie depuis son plan' : 'un voyageur lointain te salue'}. +${bonusGold} G.`, 'magic');
       }
       if (typeof outremondeFragments === 'number') outremondeFragments += 1;
       if (typeof addMsg === 'function') {
-        addMsg(`🔹 +1 fragment cosmétique du Voyageur (réserve : ${outremondeFragments}).`, 'good');
+        addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/fragment_outremonde.png" alt=""> +1 fragment cosmétique du Voyageur (réserve : ${outremondeFragments}).`, 'good');
       }
     }
     // Le flow normal continue (XP / or / drops du monstre).
@@ -132,7 +132,7 @@ function endBattle(won) {
           const pickId = TENEBRES_DROPS[Math.floor(Math.random() * TENEBRES_DROPS.length)];
           const item   = ITEMS.find(i => i.id === pickId);
           if (item && tryAddItem(item, { silent: true })) {
-            addMsg(`💎 Butin des Ténèbres : ${item.name} !`, 'magic');
+            addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Butin des Ténèbres : ${item.name} !`, 'magic');
           }
         }
         // Drop 5 % Élixir Suprême HP/SP (random entre les deux)
@@ -140,14 +140,14 @@ function endBattle(won) {
           const xlId = Math.random() < 0.5 ? 'potion_xl' : 'potion_xl_sp';
           const item = ITEMS.find(i => i.id === xlId);
           if (item && tryAddItem(item, { silent: true })) {
-            addMsg(`🧪 Drop des Ténèbres : ${item.name} !`, 'good');
+            addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Drop des Ténèbres : ${item.name} !`, 'good');
           }
         }
         // Drop 30 % Larme du Phénix Pure — UNIQUEMENT sur Voldemort Ténébreux
         if (e.id === 'voldemort_revenu' && Math.random() < 0.30) {
           const item = ITEMS.find(i => i.id === 'larme_phenix_pure');
           if (item && tryAddItem(item, { silent: true })) {
-            addMsg(`✨ Drop unique : ${item.name} !`, 'magic');
+            addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Drop unique : ${item.name} !`, 'magic');
           }
         }
       }
@@ -160,13 +160,13 @@ function endBattle(won) {
         if (Math.random() < essRate) {
           const item = ITEMS.find(i => i.id === 'essence_tenebres');
           if (item && tryAddItem(item, { silent: true })) {
-            addMsg(`🌑 Matériau : ${item.name}`, 'magic');
+            addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Matériau : ${item.name}`, 'magic');
           }
         }
         if (Math.random() < pageRate) {
           const item = ITEMS.find(i => i.id === 'page_grimoire');
           if (item && tryAddItem(item, { silent: true })) {
-            addMsg(`📜 Matériau : ${item.name}`, 'magic');
+            addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Matériau : ${item.name}`, 'magic');
           }
         }
       }
@@ -283,7 +283,7 @@ function _grantLevelSpells(level) {
   const teach = (char, spellName) => {
     if (!char.spells.includes(spellName)) {
       char.spells.push(spellName);
-      setTimeout(() => addMsg(`✨ ${char.name} apprend : ${spellName} !`, 'magic'), 400);
+      setTimeout(() => addMsg(`${getSpellIconHtml(spellName, 'ui-icon-md')} ${char.name} apprend : ${spellName} !`, 'magic'), 400);
     }
   };
 

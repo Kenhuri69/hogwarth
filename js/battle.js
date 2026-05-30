@@ -227,7 +227,7 @@ function _tryAutoReviveKOChars() {
     c.statusEffects = [];
     log += `✨ ${c.name} ressuscite — la Larme du Phénix Pure se consume ! `;
     if (typeof addMsg === 'function') {
-      addMsg(`✨ ${c.name} ressuscite (Larme du Phénix Pure consommée).`, 'magic');
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/items/larmes_phenix.png" alt=""> ${c.name} ressuscite (Larme du Phénix Pure consommée).`, 'magic');
     }
     UX_safe.floatDmg('ally', c.hpMax, 'heal');
   }
@@ -386,7 +386,7 @@ function startBattle(baseEnemyData, opts) {
   renderEnemyGroup();
   updateBattleCharIndicator();
   setBattleLog(`${size > 1 ? size + ' ennemis surgissent' : enemyGroup[0].desc} !`);
-  addMsg(`⚔️ ${size} ennemi${size > 1 ? 's' : ''} !`, 'bad');
+  addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/atk.png" alt=""> ${size} ennemi${size > 1 ? 's' : ''} !`, 'bad');
   // UX : reset journal + timeline + tour 1
   UX_safe.clearCombatLog();
   UX_safe.logCombatTurn(1);

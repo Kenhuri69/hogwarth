@@ -254,9 +254,9 @@ function showEquipMenu(item, idx) {
         <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
         <div style="max-width:200px;margin:0 auto">
           <button class="cmd-btn" style="width:100%;margin-bottom:6px"
-            onclick="equipItem(${idx},0,'ring1')">💍 Anneau gauche${r1Label}</button>
+            onclick="equipItem(${idx},0,'ring1')"><img class="ui-icon ui-icon-md" src="img/icons/accessory.png" alt=""> Anneau gauche${r1Label}</button>
           <button class="cmd-btn" style="width:100%;margin-bottom:6px"
-            onclick="equipItem(${idx},0,'ring2')">💍 Anneau droit${r2Label}</button>
+            onclick="equipItem(${idx},0,'ring2')"><img class="ui-icon ui-icon-md" src="img/icons/accessory.png" alt=""> Anneau droit${r2Label}</button>
           <button class="cmd-btn" style="width:100%;margin-top:4px;opacity:.7"
             onclick="renderInventory(false)">← Annuler</button>
         </div>
@@ -276,9 +276,9 @@ function showEquipMenu(item, idx) {
       return `
         <div style="margin-bottom:8px;font-size:10px;color:var(--gold-dark)">${c.icon} ${c.name.split(' ')[0]}</div>
         <button class="cmd-btn" style="width:100%;margin-bottom:4px"
-          onclick="equipItem(${idx},${ci},'ring1')">💍 gauche${r1Label}</button>
+          onclick="equipItem(${idx},${ci},'ring1')"><img class="ui-icon ui-icon-md" src="img/icons/accessory.png" alt=""> gauche${r1Label}</button>
         <button class="cmd-btn" style="width:100%;margin-bottom:8px"
-          onclick="equipItem(${idx},${ci},'ring2')">💍 droit${r2Label}</button>
+          onclick="equipItem(${idx},${ci},'ring2')"><img class="ui-icon ui-icon-md" src="img/icons/accessory.png" alt=""> droit${r2Label}</button>
       `;
     }
     const slot    = _resolveSlotForItem(item, c);
@@ -375,7 +375,7 @@ function equipItem(inventoryIdx, charIdx, targetSlot) {
     const newSpell = _teachSpellToParty(item.grantsSpell);
     if (newSpell) {
       AudioSystem.playLevelUp();
-      addMsg(`✨ Sort débloqué : ${item.grantsSpell} !`, 'magic');
+      addMsg(`${getSpellIconHtml(item.grantsSpell, 'ui-icon-md')} Sort débloqué : ${item.grantsSpell} !`, 'magic');
     }
   }
 
@@ -634,7 +634,7 @@ function learnSpellbook(inventoryIdx, charIdx) {
   if (_teachSpellToOne(item.spell, charIdx)) {
     AudioSystem.playLevelUp();
     AudioSystem.speakSpell(item.spell);
-    addMsg(`✨ ${c.name} apprend : ${item.spell} !`, 'magic');
+    addMsg(`${getSpellIconHtml(item.spell, 'ui-icon-md')} ${c.name} apprend : ${item.spell} !`, 'magic');
     player.inventory.splice(inventoryIdx, 1);
   } else {
     addMsg(`${c.name} connaît déjà ${item.spell}.`, '');
@@ -787,7 +787,7 @@ function useItemFromChar(inventoryIdx, charIdx) {
     if (_teachSpellToOne(item.spell, charIdx)) {
       AudioSystem.playLevelUp();
       AudioSystem.speakSpell(item.spell);
-      addMsg(`✨ ${target.name} apprend : ${item.spell} !`, 'magic');
+      addMsg(`${getSpellIconHtml(item.spell, 'ui-icon-md')} ${target.name} apprend : ${item.spell} !`, 'magic');
       player.inventory.splice(inventoryIdx, 1);
     } else {
       addMsg(`${target.name} connaît déjà ${item.spell}.`, '');
