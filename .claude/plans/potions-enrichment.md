@@ -215,37 +215,36 @@ découvrables (cohérent avec « pas de verrou » §6bis). Décision : **découv
   `_ingredientCount` lit bien une potion depuis le sac ; pas de collision
   d'ingrédients.
 
-### LOT P5 — Économie des herbes (sources fiabilisées) · ~1 j · risque faible
+### LOT P5 — Économie des herbes (sources fiabilisées) · ✅ LIVRÉ 2026-05-30
 
 > Décisions utilisateur (2026-05-30) : enrichir les 3 sources — **boutique
 > (herboriste)** + **cueillette (Fouiller)** + **drops monstres**.
 
 **Audit de l'existant** : la cueillette (searchRoom, ~20 % par fouille, herbe du
 palier de l'étage) et les drops (~9 monstres botaniques) **fonctionnent déjà**.
-Le **trou** est la **boutique** : aucune herbe vendue, ET `_purchase()` pousse
-tout dans `player.inventory` (sac 16) — il **bypasse** le routage herbe→besace
-de `tryAddItem`. Une herbe achetée tomberait donc à tort dans le sac.
+Le **trou** était la **boutique** : `_purchase()` poussait tout dans
+`player.inventory` (sac 16) — il **bypassait** le routage herbe→besace de
+`tryAddItem`. Une herbe achetée (déjà vendue par l'Apothicaire Ténébreux !)
+tombait à tort dans le sac, **invisible au brassage** (qui lit `player.herbs`).
 
-**P5.1 — Fix routage boutique (bloquant)**
-- `_purchase()` (shop.js) : si l'item est `type:"herb"` → `addHerb(id, 1)`
-  (besace, non plafonnée) au lieu de `player.inventory.push`. Le garde « sac
-  plein » ne s'applique pas aux herbes.
+- [x] **P5.1 — Fix routage boutique (bloquant)** · `shop.js — _purchase()` :
+  `type:"herb"` → `addHerb(id, 1)` (besace) au lieu de `inventory.push`. Le
+  garde « sac plein » est sauté pour les herbes, et l'herbe **ne quitte pas le
+  stock** (ré-achat libre — besace illimitée, source fiable).
+- [x] **P5.2 — Herbes au catalogue** · 6 herbes ajoutées à `SHOP_CATALOG` :
+  T1 (armoise/ortie) étage ≥ 1, T2 (asphodèle/branchiflore) ≥ 4,
+  T3 (aconit/dictame) ≥ 7. Prix = `item.price` (6/12/20).
+- [x] **P5.3 — Cueillette améliorée** · `movement-interactions.js — searchRoom` :
+  récolte **double** (×2) sur jet chanceux (25 %), sinon 1. Narratif dédié.
+- [x] **P5.4 — Drops équilibrés** · audit : chaque tier avait déjà une source de
+  drop sauf **dictame** (T3) dont l'unique source (Loup-Garou Enragé @0.10)
+  plafonne à l'étage 9. Ajout d'un drop dictame @0.12 au **Loup-Garou Adulte**
+  [8+] — tie-in canon (« le Dictame guérit les morsures lycanthropes »).
 
-**P5.2 — Herbes au catalogue (boutique herboriste)**
-- Ajouter les 6 herbes à `SHOP_CATALOG`, déblocage par palier cohérent avec les
-  tiers : T1 (armoise/ortie) étage ≥ 1, T2 (asphodèle/branchiflore) ≥ 4,
-  T3 (aconit/dictame) ≥ 7. Prix = `item.price` existant (6/12/20).
-
-**P5.3 — Cueillette améliorée (Fouiller)**
-- Récolte **double** (2 herbes) sur un jet chanceux (≈ 25 %), sinon 1. Léger
-  ancrage : l'Éclat de Vitalité (P4) reste hors de ce canal.
-
-**P5.4 — Drops équilibrés**
-- Vérifier/compléter quelques monstres botaniques par palier pour que chaque
-  tier d'herbe ait une source de drop fiable (sans inflation).
-
-- *Vérif* : smoke — acheter une herbe l'ajoute à la **besace** (pas au sac) ;
-  catalogue herbes filtré par étage ; cueillette peut rendre 2 herbes.
+- [x] *Vérif* : `scenarioHerbEconomy` (smoke) — achat herbe → besace (pas sac),
+  achat possible sac plein, herbe ré-achetable (stock conservé), catalogue
+  filtré par palier, cueillette double (2) vs simple (1). Suite complète :
+  **133/133 verts**.
 
 ### LOT P6 — Ancrage & idées longues (backlog) · effort variable
 

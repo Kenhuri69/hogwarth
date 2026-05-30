@@ -8981,6 +8981,114 @@ async function scenarioShopLimits() {
   await browser.close();
 }
 
+// ── Scénario Économie des herbes (LOT P5) : routage besace + catalogue + cueillette ──
+
+async function scenarioHerbEconomy() {
+  console.log('\n── Scénario : économie des herbes (besace / boutique / cueillette) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : acheter une herbe la route vers la besace (player.herbs), PAS le sac.
+  const t1 = await page.evaluate(() => {
+    player.herbs = {};
+    player.inventory = [];
+    player.gold = 1000;
+    const herb = ITEMS.find(i => i.id === 'herbe_armoise');
+    const goldBefore = player.gold;
+    _purchase(herb, herb.price, null);
+    return {
+      herbCount: getHerbCount('herbe_armoise'),
+      invLen:    player.inventory.length,
+      goldDelta: goldBefore - player.gold,
+      price:     herb.price
+    };
+  });
+  console.log('  T1 achat herbe →', t1);
+  assert(t1.herbCount === 1,        'herbe achetée doit aller dans la besace (+1)');
+  assert(t1.invLen === 0,           'herbe achetée ne doit PAS occuper de slot du sac');
+  assert(t1.goldDelta === t1.price, 'or débité doit valoir le prix de l\'herbe');
+
+  // T2 : sac plein (16) — l'achat d'herbe reste possible (besace illimitée).
+  const t2 = await page.evaluate(() => {
+    player.inventory = [];
+    const filler = ITEMS.find(i => i.id === 'potion_s');
+    for (let k = 0; k < 16; k++) player.inventory.push({ ...filler });
+    player.gold = 1000;
+    const herb = ITEMS.find(i => i.id === 'herbe_ortie');
+    const before = getHerbCount('herbe_ortie');
+    _purchase(herb, herb.price, null);
+    return { invLen: player.inventory.length, gained: getHerbCount('herbe_ortie') - before };
+  });
+  console.log('  T2 sac plein →', t2);
+  assert(t2.invLen === 16, 'le sac plein ne doit pas changer de taille à l\'achat d\'herbe');
+  assert(t2.gained === 1,  'l\'herbe doit s\'ajouter à la besace malgré le sac plein');
+
+  // T3 : herbe ré-achetable — elle ne quitte PAS le stock de la boutique fixe.
+  const t3 = await page.evaluate(() => {
+    const herb  = ITEMS.find(i => i.id === 'herbe_armoise');
+    const entry = { item: { ...herb }, price: herb.price, sold: false };
+    shopStock = [entry];
+    player.gold = 1000;
+    const lenBefore = shopStock.length;
+    _purchase(herb, herb.price, entry);
+    return { lenBefore, lenAfter: shopStock.length, stillIn: shopStock.includes(entry) };
+  });
+  console.log('  T3 ré-achat →', t3);
+  assert(t3.lenAfter === t3.lenBefore, 'une herbe achetée ne doit pas quitter le stock');
+  assert(t3.stillIn,                   'l\'entrée herbe doit rester dans shopStock (ré-achat)');
+
+  // T4 : catalogue — les 6 herbes y figurent avec déblocage par palier.
+  const t4 = await page.evaluate(() => {
+    const find = id => SHOP_CATALOG.find(e => e.id === id);
+    return {
+      armoise:      find('herbe_armoise')      && find('herbe_armoise').minFloor,
+      ortie:        find('herbe_ortie')        && find('herbe_ortie').minFloor,
+      asphodele:    find('herbe_asphodele')    && find('herbe_asphodele').minFloor,
+      branchiflore: find('herbe_branchiflore') && find('herbe_branchiflore').minFloor,
+      aconit:       find('herbe_aconit')       && find('herbe_aconit').minFloor,
+      dictame:      find('herbe_dictame')      && find('herbe_dictame').minFloor
+    };
+  });
+  console.log('  T4 catalogue →', t4);
+  assert(t4.armoise === 1 && t4.ortie === 1,             'herbes T1 débloquées étage 1');
+  assert(t4.asphodele === 4 && t4.branchiflore === 4,    'herbes T2 débloquées étage 4');
+  assert(t4.aconit === 7 && t4.dictame === 7,            'herbes T3 débloquées étage 7');
+
+  // T5 : cueillette (searchRoom) — peut rendre 2 herbes sur jet chanceux.
+  // Math.random piloté : [monstre, piège, roll(bande herbe), pick, bumper<0.25].
+  const t5 = await page.evaluate(() => {
+    player.herbs = {};
+    player.inventory = [];
+    currentFloor = 1;
+    searchedCells = new Map();   // case vierge → !repeat
+    const orig = Math.random;
+    const drive = (seq) => { let i = 0; Math.random = () => (i < seq.length ? seq[i++] : 0.5); };
+    // Jet chanceux : bumper 0.1 < 0.25 → double récolte.
+    drive([0.5, 0.5, 0.40, 0.0, 0.1]);
+    const before2 = Object.values(player.herbs).reduce((a, b) => a + b, 0);
+    searchRoom();
+    const lucky = Object.values(player.herbs).reduce((a, b) => a + b, 0) - before2;
+    // Jet normal : bumper 0.9 ≥ 0.25 → simple récolte (nouvelle case vierge).
+    player.herbs = {}; searchedCells = new Map();
+    drive([0.5, 0.5, 0.40, 0.0, 0.9]);
+    searchRoom();
+    const single = Object.values(player.herbs).reduce((a, b) => a + b, 0);
+    Math.random = orig;
+    return { lucky, single, invLen: player.inventory.length };
+  });
+  console.log('  T5 cueillette →', t5);
+  assert(t5.lucky === 2,  'un jet chanceux de cueillette doit rendre 2 herbes');
+  assert(t5.single === 1, 'un jet normal de cueillette doit rendre 1 herbe');
+  assert(t5.invLen === 0, 'les herbes cueillies vont dans la besace, pas le sac');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Économie des herbes OK (besace + sac plein + ré-achat + catalogue + cueillette double)');
+  await browser.close();
+}
+
 // ── Scénario Stun : statut d'étourdissement + monstres porteurs ──
 
 async function scenarioLegilimensEscalation() {
@@ -15633,7 +15741,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length
