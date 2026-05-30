@@ -42,3 +42,4 @@ Aucun champ persisté nouveau. Opt-out / voix : clés localStorage inchangées.
 |------|------|
 | 2026-05-30 | Plan rédigé. Implémentation en cours. |
 | 2026-05-30 | D4 implémenté et testé (126/126 + pwa v26). |
+| 2026-05-30 | Re-vérification sur branche `claude/help-tour-sections-d4-PuCON` : D4 déjà livré (commit `b3f4cb8`, PR #300). Toutes les étapes ✓ confirmées dans le code réel (`openHelpMenu`/`closeHelpMenu`/`helpMenuStart`, `HELP_TOUR_SECTIONS`, `voiceOffset`, bouton Aide index.html, MANIFEST loader, CSS, T7/T9 smoke). Suite complète **134/134** verte + pwa-smoke (cache v32). Aucune régression, rien à réimplémenter. |
