@@ -45,6 +45,15 @@
   }
 
   // Helpers
+  // Icône PNG d'une stat/ressource (remplace les emoji des tooltips).
+  const _STAT_ICON = {
+    atk: 'atk', def: 'def', mag: 'mag', lck: 'lck', agi: 'agi',
+    str: 'str', int: 'int', end: 'hp', hp: 'hp', mp: 'mp', gold: 'gold'
+  };
+  function statIco(key) {
+    const f = _STAT_ICON[key];
+    return f ? `<img class="ui-icon ui-icon-md" src="img/icons/${f}.png" alt="">` : '•';
+  }
   function row(k, v, cls) { return `<div class="tt-row"><span class="tt-key">${k}</span><span class="tt-val ${cls||''}">${v}</span></div>`; }
   function header(icon, title, tag) {
     return `<div class="tt-header">
@@ -131,41 +140,42 @@
       body += `<div class="tt-section">${row('Effet', eff, 'tt-good')}</div>`;
     } else if (['wand','armor','acc'].includes(item.type)) {
       const stats = [];
-      if (item.bonusAtk) stats.push(['⚔️ Attaque', `+${item.bonusAtk}`]);
-      if (item.bonusDef) stats.push(['🛡️ Défense', `+${item.bonusDef}`]);
-      if (item.bonusMag) stats.push(['🔮 Magie',   `+${item.bonusMag}`]);
-      if (item.bonusLck) stats.push(['🌟 Chance',  `+${item.bonusLck}`]);
-      if (item.bonusAgi) stats.push(['🏃 Agilité', `+${item.bonusAgi}`]);
+      if (item.bonusAtk) stats.push([`${statIco('atk')} Attaque`, `+${item.bonusAtk}`]);
+      if (item.bonusDef) stats.push([`${statIco('def')} Défense`, `+${item.bonusDef}`]);
+      if (item.bonusMag) stats.push([`${statIco('mag')} Magie`,   `+${item.bonusMag}`]);
+      if (item.bonusLck) stats.push([`${statIco('lck')} Chance`,  `+${item.bonusLck}`]);
+      if (item.bonusAgi) stats.push([`${statIco('agi')} Agilité`, `+${item.bonusAgi}`]);
       if (stats.length) {
         body += `<div class="tt-section">${stats.map(s => row(s[0], s[1], 'tt-good')).join('')}</div>`;
       }
-      if (item.grantsSpell) body += `<div class="tt-section tt-mag" style="font-size:11px">✨ Apprend : ${item.grantsSpell}</div>`;
+      if (item.grantsSpell) body += `<div class="tt-section tt-mag" style="font-size:11px">${typeof getSpellIconHtml === 'function' ? getSpellIconHtml(item.grantsSpell, 'ui-icon-md') : ''} Apprend : ${item.grantsSpell}</div>`;
     } else if (item.type === 'spellbook') {
       body += `<div class="tt-section tt-mag">${row('Apprend', item.spell)}</div>`;
     }
 
-    if (item.price) body += `<div class="tt-section">${row('Valeur', `${item.price} 🪙`, 'tt-good')}</div>`;
+    if (item.price) body += `<div class="tt-section">${row('Valeur', `${item.price} ${statIco('gold')}`, 'tt-good')}</div>`;
     return header(item.icon, item.name, tag) + body + `<div class="tt-flavor">${item.desc}</div>`;
   }
 
   // Vague D — tooltip pour les slots vides de la mini-équipement party-card.
   function emptySlotTooltip(slotName) {
     const labels = { wand: 'Baguette', body: 'Robe / Armure', amulet: 'Amulette' };
-    const icons  = { wand: '🪄',       body: '🥼',           amulet: '📿' };
+    const png    = { wand: 'wand', body: 'armor', amulet: 'accessory' };
     const name   = labels[slotName] || slotName || 'Slot';
-    const icon   = icons[slotName]  || '·';
+    const icon   = png[slotName]
+      ? `<img class="ui-icon ui-icon-md" src="img/icons/${png[slotName]}.png" alt="">` : '·';
     return header(icon, name, 'Slot libre') +
       `<div class="tt-flavor">Équiper un objet depuis le sac pour activer ce slot.</div>`;
   }
 
   function statTooltip(key) {
     const map = {
-      str: { i:'💪', n:'Force',         d:"Influence les attaques physiques. +1 par niveau." },
-      int: { i:'🧠', n:'Intelligence',  d:"Influence l'efficacité des sorts utilitaires." },
-      agi: { i:'🏃', n:'Agilité',       d:"Améliore les chances de fuite et l'esquive." },
-      lck: { i:'🌟', n:'Chance',        d:"Augmente les drops rares et les coups critiques." },
-      mag: { i:'🔮', n:'Magie',         d:"Bonus de dégâts magiques : DMG = base + ⌊MAG/2⌋." },
-      end: { i:'❤️', n:'Endurance',     d:"Influence la régénération au repos et les PV max." },
+      str: { i:statIco('str'), n:'Force',         d:"Influence les attaques physiques. +1 par niveau." },
+      int: { i:statIco('int'), n:'Intelligence',  d:"Influence l'efficacité des sorts utilitaires." },
+      agi: { i:statIco('agi'), n:'Agilité',       d:"Améliore les chances de fuite et l'esquive." },
+      lck: { i:statIco('lck'), n:'Chance',        d:"Augmente les drops rares et les coups critiques." },
+      mag: { i:statIco('mag'), n:'Magie',         d:"Bonus de dégâts magiques : DMG = base + ⌊MAG/2⌋." },
+      end: { i:statIco('end'), n:'Endurance',     d:"Influence la régénération au repos et les PV max." },
     };
     const m = map[key];
     if (!m) return '';
@@ -260,7 +270,7 @@
     panel.id = 'combat-log-panel';
     panel.innerHTML = `
       <div class="clp-header">
-        <span>📜 Journal</span>
+        <span><img class="ui-icon ui-icon-md" src="img/icons/scroll.png" alt=""> Journal</span>
         <span class="clp-toggle" title="Réduire">−</span>
       </div>
       <div id="combat-log-list"></div>
