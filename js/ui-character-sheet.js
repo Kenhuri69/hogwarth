@@ -121,7 +121,7 @@ function _renderItemTooltip(item, slotLabel, action) {
       ? item.brewPotency
       : ((typeof BREW_POTENCY_BONUS !== 'undefined') ? BREW_POTENCY_BONUS : 0.25);
     const pct = (p >= 0 ? '+' : '') + Math.round(p * 100) + '%';
-    bonuses.push(p < 0 ? `🧪 Fiole diluée : ${pct} d'effet` : `✨ Brassage maison : ${pct} d'effet`);
+    bonuses.push(`<img class="ui-icon ui-icon-md" src="img/icons/items/potion_m.png" alt=""> ${p < 0 ? 'Fiole diluée' : 'Brassage maison'} : ${pct} d'effet`);
   }
 
   const bonusLines = bonuses.map(b => `<span class="tt-bonus">${b}</span>`).join('');
@@ -289,7 +289,7 @@ function openCharacter(charIdx = 0) {
   // run en cours. Réservé au mode Ironman (seul mode classé).
   const hofProjBtn = (typeof ironmanMode !== 'undefined' && ironmanMode)
     ? `<button class="cmd-btn" style="font-size:10px;margin-left:auto"`
-      + ` onclick="openHofProjection()">🏆 Mon rang</button>`
+      + ` onclick="openHofProjection()"><img class="ui-icon ui-icon-md" src="img/icons/trophy.png" alt=""> Mon rang</button>`
     : '';
 
   const xpPct = Math.max(0, Math.min(100, Math.floor((player.xp / Math.max(1, player.xpNext)) * 100)));
@@ -414,7 +414,7 @@ function _renderCarnetVoyagePanel(c) {
       + pending.map(s => {
           const m = (typeof MONSTERS !== 'undefined' && MONSTERS.find(x => x.id === s.monsterId)) || {};
           return `<li style="padding:3px 0;border-bottom:1px dashed rgba(216,182,71,0.18)">`
-               + `🩸 ${m.name || s.monsterId} · chez ${s.hostName || '?'} (étage ${s.floor || '?'})`
+               + `<img class="ui-icon ui-icon-md" src="img/icons/spells/verrou_de_sang.png" alt=""> ${m.name || s.monsterId} · chez ${s.hostName || '?'} (étage ${s.floor || '?'})`
                + `</li>`;
         }).join('')
       + '</ul>';
@@ -423,13 +423,13 @@ function _renderCarnetVoyagePanel(c) {
       <button class="section-toggle" onclick="_toggleCharSection(this)">Carnet de Voyage</button>
       <div class="panel-title">⸻ CARNET DE VOYAGE ⸻</div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#f7e4a8;margin-bottom:6px">
-        <div>✨ Essences : <strong>${essence}</strong></div>
-        <div>🔹 Fragments : <strong>${fragments}</strong></div>
-        <div>🧥 Set Voyageur : <strong>${setCount}/5</strong></div>
+        <div><img class="ui-icon ui-icon-md" src="img/icons/essence_outremonde.png" alt=""> Essences : <strong>${essence}</strong></div>
+        <div><img class="ui-icon ui-icon-md" src="img/icons/fragment_outremonde.png" alt=""> Fragments : <strong>${fragments}</strong></div>
+        <div><img class="ui-icon ui-icon-md" src="img/icons/items/cape_voyageur.png" alt=""> Set Voyageur : <strong>${setCount}/5</strong></div>
       </div>
       <div style="font-size:10px;color:rgba(247,228,168,0.65);letter-spacing:0.5px">Verrous en attente</div>
       ${pendingHtml}
-      <button class="cmd-btn" style="font-size:10px;margin-top:8px" onclick="openAtelierVoyageur()">✨ Ouvrir l'Atelier du Voyageur</button>
+      <button class="cmd-btn" style="font-size:10px;margin-top:8px" onclick="openAtelierVoyageur()"><img class="ui-icon ui-icon-md" src="img/icons/atelier.png" alt=""> Ouvrir l'Atelier du Voyageur</button>
     </div>`;
 }
 
