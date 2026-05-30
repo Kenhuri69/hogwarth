@@ -468,7 +468,10 @@ function openBattleSpells() {
                        && typeof _teleportUsedThisFight !== 'undefined'
                        && _teleportUsedThisFight;
     const cdBlocked = fightCd > 0 || alreadyUsed;
-    const canCast  = c.sp >= spell.cost && !spell.locked && !cdBlocked;
+    // Coût effectif : Legilimens enchérit à chaque relance (cf. _spellSpCost).
+    const effCost  = (spell.effect === 'legilimens' && typeof _spellSpCost === 'function')
+                     ? _spellSpCost(spell) : spell.cost;
+    const canCast  = c.sp >= effCost && !spell.locked && !cdBlocked;
     const div      = document.createElement('div');
     div.className  = 'spell-item';
     div.style.opacity = canCast ? '1' : '0.5';
@@ -487,7 +490,7 @@ function openBattleSpells() {
         ${previewHtml}
         ${cdHint}
       </div>
-      <div class="spell-cost">${spell.cost} PM</div>`;
+      <div class="spell-cost">${effCost} PM</div>`;
 
     if (canCast) {
       div.onclick = () => {

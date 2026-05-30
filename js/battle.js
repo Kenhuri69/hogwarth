@@ -380,6 +380,7 @@ function startBattle(baseEnemyData, opts) {
   pendingAction     = null;
   pendingSpell      = null;
   legilimensCancelCharges = 0;
+  legilimensCastsThisFight = 0;
   recolteGoldBonus        = false;
   if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 

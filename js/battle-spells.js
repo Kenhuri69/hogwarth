@@ -347,13 +347,23 @@ function _computeSpellDamage(spell, char, enemy, opts) {
   return { dmg, suffix, crit: cr.crit };
 }
 
+// Anti-spam Legilimens (cf. .claude/plans/legilimens-rebalance.md) : pas de
+// plafond de charges, mais surcoût en PM par relance dans un même combat.
+// 1er lancer au prix de base, puis +6 PM par lancer déjà effectué.
+const LEGILIMENS_COST_STEP = 6;
+
 // Coût en PM effectif d'un sort — réduit de 20 % (arrondi au sup., plancher
 // 1) par l'Apothéose Serdaigle (palier 18 — Esprit de l'Aigle).
 function _spellSpCost(spell) {
-  if (typeof houseApotheosePassive === 'function' && houseApotheosePassive() === 'Serdaigle') {
-    return Math.max(1, Math.ceil(spell.cost * 0.8));
+  let cost = spell.cost;
+  // Legilimens : coût croissant à chaque relance dans le combat courant.
+  if (spell.effect === 'legilimens' && typeof legilimensCastsThisFight === 'number') {
+    cost += legilimensCastsThisFight * LEGILIMENS_COST_STEP;
   }
-  return spell.cost;
+  if (typeof houseApotheosePassive === 'function' && houseApotheosePassive() === 'Serdaigle') {
+    return Math.max(1, Math.ceil(cost * 0.8));
+  }
+  return cost;
 }
 
 // Apothéose Serpentard (palier 18 — Soif du Serpent) : draine 15 % des
@@ -565,6 +575,7 @@ function _spellLegilimens(spell, char) {
     UX_safe.logCombat(`👁️ ${e.name} — capacités : ${abs}`, 'info');
   });
   legilimensCancelCharges += 1;
+  legilimensCastsThisFight += 1;   // enchérit le prochain lancer ce combat
   const msg = `👁️ ${char.name} : ${spell.name} — l'esprit ennemi est lu ; la prochaine capacité sera annulée.`;
   addMsg(msg, 'magic');
   UX_safe.logCombat(`👁️ ${char.name} lance ${spell.name}`, 'magic');

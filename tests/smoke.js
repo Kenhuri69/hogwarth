@@ -8774,6 +8774,83 @@ async function scenarioShopLimits() {
 
 // ── Scénario Stun : statut d'étourdissement + monstres porteurs ──
 
+async function scenarioLegilimensEscalation() {
+  console.log('\n── Scénario Legilimens : coût PM croissant (anti-spam B4) ──');
+  const { browser, page, errors } = await launchGame();
+  // Gryffondor (défaut) : pas de réduction Apothéose Serdaigle → coût brut.
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 400 });
+
+  // T1 : deux lancers consécutifs dans le même combat — le 2e enchérit.
+  // Tout dans un seul evaluate : enemyTurn est différé (setTimeout), donc
+  // aucune interférence sur les PM entre les deux mesures.
+  const t1 = await page.evaluate(() => {
+    const c = party[0];
+    if (!c.spells.includes('Legilimens')) c.spells.push('Legilimens');
+    c.spMax = 200; c.sp = 200;
+    legilimensCastsThisFight = 0;
+    const base = SPELLS.find(s => s.name === 'Legilimens').cost;
+
+    const before1 = c.sp;
+    castSpellInBattle('Legilimens', 0);
+    const delta1 = before1 - c.sp;
+    const charges1 = legilimensCancelCharges;
+
+    const before2 = c.sp;
+    castSpellInBattle('Legilimens', 0);
+    const delta2 = before2 - c.sp;
+
+    const before3 = c.sp;
+    castSpellInBattle('Legilimens', 0);
+    const delta3 = before3 - c.sp;
+
+    return { base, delta1, delta2, delta3, charges1, casts: legilimensCastsThisFight };
+  });
+  console.log('  T1 escalade:', t1);
+  assert(t1.base === 18,    `coût de base attendu 18, obtenu ${t1.base}`);
+  assert(t1.delta1 === 18,  `1er lancer doit coûter 18 PM, obtenu ${t1.delta1}`);
+  assert(t1.delta2 === 24,  `2e lancer doit coûter 24 PM (18+6), obtenu ${t1.delta2}`);
+  assert(t1.delta3 === 30,  `3e lancer doit coûter 30 PM (18+12), obtenu ${t1.delta3}`);
+  assert(t1.charges1 === 1, 'le 1er lancer doit armer 1 charge d\'annulation');
+  assert(t1.casts === 3,    `legilimensCastsThisFight attendu 3, obtenu ${t1.casts}`);
+
+  // T2 : refus si PM insuffisant pour le coût escaladé (≠ coût de base).
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    legilimensCastsThisFight = 3;     // prochain coût = 18 + 18 = 36
+    c.spMax = 200; c.sp = 30;         // 30 ≥ base(18) mais < escaladé(36)
+    const effCost = _spellSpCost(SPELLS.find(s => s.name === 'Legilimens'));
+    const before = c.sp;
+    castSpellInBattle('Legilimens', 0);
+    return { effCost, spent: before - c.sp, casts: legilimensCastsThisFight };
+  });
+  console.log('  T2 refus  :', t2);
+  assert(t2.effCost === 36, `coût escaladé attendu 36, obtenu ${t2.effCost}`);
+  assert(t2.spent === 0,    'lancer doit être refusé faute de PM pour le coût escaladé');
+  assert(t2.casts === 3,    'un lancer refusé ne doit pas incrémenter le compteur');
+
+  // T3 : le compteur est remis à 0 au combat suivant (startBattle).
+  const t3 = await page.evaluate(() => {
+    const dummy = { id: 'leg_dummy2', name: 'Cible', icon: '🎯',
+      hp: 200, atk: 1, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 0, gold: 0, abilities: [], drops: [], resist: [], weak: [], desc: '' };
+    startBattle(dummy);
+    const casts = legilimensCastsThisFight;
+    const cost  = _spellSpCost(SPELLS.find(s => s.name === 'Legilimens'));
+    return { casts, cost };
+  });
+  console.log('  T3 reset  :', t3);
+  assert(t3.casts === 0, 'legilimensCastsThisFight doit être remis à 0 au combat suivant');
+  assert(t3.cost === 18, `coût doit revenir à 18 au combat suivant, obtenu ${t3.cost}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Legilimens : coût PM croissant + reset par combat');
+  await browser.close();
+}
+
 async function scenarioStun() {
   console.log('\n── Scénario Stun : étourdissement + nouveaux monstres ──');
   const { browser, page, errors } = await launchGame();
@@ -15347,7 +15424,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioPotionResistance, scenarioShopLimits, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioPotionBuff, scenarioPotionResistance, scenarioShopLimits, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length
