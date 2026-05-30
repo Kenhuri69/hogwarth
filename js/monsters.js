@@ -42,6 +42,16 @@
 //                       "drain"   → draine power PV de la cible et s'en soigne à moitié
 //                       "status"  → applique un statut persistant à la cible
 //                                   (requiert .statusId + .turns ; ex. burn/bleed/poison)
+//                       — Archétypes boss/élites (LOT B3, réservés epic / étages 8+) —
+//                       "summon"     → invoque un add si un slot ennemi est libre
+//                                      (cap 3). Requiert .summonId (id MONSTERS) ;
+//                                      .summonName optionnel pour le fallback.
+//                       "enrage_self"→ une fois passé sous .hpPct (0-1, déf. 0.4)
+//                                      de PV, l'ennemi gagne .atkBonus ATK (une
+//                                      seule fois). Sinon : attaque normale.
+//                       "aura"       → applique un debuff de groupe persistant à
+//                                      tous les héros vivants. Requiert .statusId
+//                                      (ex. "weaken") + .power + .turns.
 //    .power  {number}   Valeur de base de l'effet
 //    .statusId {string} (effect:"status" uniquement) id du statut appliqué
 //    .turns  {number}   (effect:"status" uniquement) durée du statut en tours
@@ -1487,7 +1497,10 @@ const MONSTERS = [
       { name: "Morsure Infectieuse", icon: "🦷", desc: "Une morsure brutale qui saigne", effect: "status", statusId: "bleed", power: 8, chance: 0.40, turns: 3 },
       { name: "Frénésie Lycanthrope",icon: "🌕", desc: "Se gonfle de rage et se ressource", effect: "heal", power: 12, chance: 0.20 },
       { name: "Coup de Griffes",     icon: "🩸", desc: "Lacération profonde",            effect: "damage", power: 18, chance: 0.45 },
-      { name: "Hurlement Glaçant",   icon: "😱", desc: "Pétrifie de terreur",            effect: "status", statusId: "fear", power: 0, chance: 0.20, turns: 2 }
+      { name: "Hurlement Glaçant",   icon: "😱", desc: "Pétrifie de terreur",            effect: "status", statusId: "fear", power: 0, chance: 0.20, turns: 2 },
+      // Archétype B3 — enrage_self : sous 40 % PV, Fenrir entre en rage
+      // lunaire et gagne +12 ATK (une seule fois dans le combat).
+      { name: "Rage Lunaire",        icon: "🌑", desc: "Acculé, sa fureur de bête explose", effect: "enrage_self", hpPct: 0.40, atkBonus: 12, chance: 0.60 }
     ],
     ai: "aggressive",
     weak:   ["lumière"],
@@ -1613,7 +1626,10 @@ const MONSTERS = [
       { name: "Crochets Venimeux", icon: "☠️", desc: "Injecte un venin tenace",      effect: "status", statusId: "poison", power: 7, chance: 0.40, turns: 4 },
       { name: "Charge Arachnide",  icon: "🕷️", desc: "Ruée massive de pattes",       effect: "damage", power: 19, chance: 0.45 },
       { name: "Appel aux Fils",    icon: "🕸️", desc: "Ses enfants accourent",         effect: "heal",   power: 16, chance: 0.20 },
-      { name: "Toile Étouffante",  icon: "🕸️", desc: "Enveloppe et paralyse",         effect: "status", statusId: "stun", power: 0, chance: 0.20, turns: 1 }
+      { name: "Toile Étouffante",  icon: "🕸️", desc: "Enveloppe et paralyse",         effect: "status", statusId: "stun", power: 0, chance: 0.20, turns: 1 },
+      // Archétype B3 — summon : si un slot ennemi est libre (cap 3), une
+      // Jeune Acromantule rejoint la meute (mise à l'échelle de l'étage).
+      { name: "Couvée Vorace",     icon: "🥚", desc: "Une de ses filles éclot et bondit", effect: "summon", summonId: "acromantula_jeune", chance: 0.35 }
     ],
     ai: "aggressive",
     weak:   ["feu"],
@@ -1773,7 +1789,10 @@ const MONSTERS = [
       { name: "Hymne du Néant",       icon: "🌑", desc: "Onde de magie noire diffuse",     effect: "damage", power: 20, chance: 0.40 },
       { name: "Aura Mortifère",       icon: "😱", desc: "Glace l'âme de tous",              effect: "status", statusId: "fear", power: 0, chance: 0.30, turns: 3 },
       { name: "Régénération Spectrale",icon: "💜", desc: "Les ombres le reconstituent",     effect: "heal",   power: 20, chance: 0.20 },
-      { name: "Sceau de Dissolution", icon: "❌", desc: "Brise sortilèges et protections",  effect: "dispel", chance: 0.35 }
+      { name: "Sceau de Dissolution", icon: "❌", desc: "Brise sortilèges et protections",  effect: "dispel", chance: 0.35 },
+      // Archétype B3 — aura (taunt) : litanie qui affaiblit TOUT le groupe de
+      // héros (weaken de groupe, restauré à l'expiration via tickStatuses).
+      { name: "Litanie d'Effroi",     icon: "📯", desc: "Un chant qui ronge l'armure de tous", effect: "aura", statusId: "weaken", power: 3, turns: 3, chance: 0.30 }
     ],
     ai: "cautious",
     resist: ["ténèbres", "physique"],
