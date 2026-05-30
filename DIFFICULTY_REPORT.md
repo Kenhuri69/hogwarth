@@ -4,6 +4,15 @@
 > Script : [`tools/sim-difficulty.js`](./tools/sim-difficulty.js) — exécutable avec `node tools/sim-difficulty.js --stat-points=3 --build=balanced [N_SIMS]`.
 > Plan : [`.claude/plans/difficulty-progression.md`](./.claude/plans/difficulty-progression.md)
 >
+> **MAJ 2026-05-30** ([`.claude/plans/simulation-tools-update.md`](./.claude/plans/simulation-tools-update.md)) :
+> la sim modélise désormais la **difficulté** (`--difficulty=Facile|Normal|Difficile|Expert` —
+> scalingMultiplier sur toutes les stats + enemyGroupMultiplier + xpMultiplier), les statuts
+> de contrôle **stun / fear**, la capacité **dispel**, les **phases de boss** + l'**IA par
+> tempérament**, les **items à compromis** (bonus négatifs) et la série **Apothéose ★ N**
+> (`--star=N`). Résistances/faiblesses désormais matchées sur `spell.element`.
+> Économie : nouvel outil [`tools/sim-economy.js`](./tools/sim-economy.js) (revenus d'or/étage,
+> accessibilité des items, puits endgame don ★N / élixirs à prix progressif).
+>
 > **Baseline du joueur (default)** : 3 points de stats libres alloués à chaque niveau (build « balanced » = +1 STR, +1 AGI, +1 END par niveau) **+ XP cumulée des quêtes** (chaîne Dumbledore + secondaires PNJ) **+ bonus stats permanents des récompenses** (`reward.stats`) **+ équipement best-in-slot** disponible en boutique selon `minFloor` **+ stock de potions** consommables (1 par tour de soin, restaure 25 PV).
 >
 > **Fixes design appliqués dans ce rapport** :
