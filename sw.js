@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v31';
+const CACHE_VERSION = 'hogwarth-v32';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -46,11 +46,11 @@ const PRECACHE_URLS = [
   './js/npcs.js?v=12',
   './js/npcs-helpers.js?v=1',
   './js/riddles.js?v=1',
-  './js/data.js?v=15',
+  './js/data.js?v=16',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=1',
   './js/floor-events.js?v=1',
-  './js/item-icons.js?v=12',
+  './js/item-icons.js?v=13',
   './js/state.js?v=14',
   './js/ui.js?v=7',
   './js/ui-character-sheet.js?v=3',
@@ -69,14 +69,14 @@ const PRECACHE_URLS = [
   './js/movement-floors.js?v=1',
   './js/movement-interactions.js?v=2',
   './js/swipe-canvas.js?v=4',
-  './js/battle.js?v=14',
+  './js/battle.js?v=15',
   './js/battle-rewards.js?v=1',
   './js/battle-death.js?v=1',
   './js/teleport.js?v=1',
   './js/battle-spells.js?v=6',
   './js/battle-ui.js?v=1',
-  './js/inventory-core.js?v=4',
-  './js/inventory.js?v=14',
+  './js/inventory-core.js?v=5',
+  './js/inventory.js?v=15',
   './js/inventory-spells.js?v=1',
   './js/potions.js?v=4',
   './js/quests-templates.js?v=3',
@@ -85,7 +85,7 @@ const PRECACHE_URLS = [
   './js/npc-dialog.js?v=9',
   './js/karaoke.js?v=1',
   './js/intro.js?v=2',
-  './js/shop.js?v=8',
+  './js/shop.js?v=9',
   './js/save-slots.js?v=1',
   './js/save.js?v=17',
   './js/save-visit-snapshot.js?v=1',

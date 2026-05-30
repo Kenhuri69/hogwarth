@@ -130,13 +130,16 @@ function recalculateStats() {
       }
     }
 
-    // P0 — buffs temporaires de stat (Potion de Force) : réappliqués ici pour
-    // survivre à un recalc déclenché en combat (consommation, équipement…).
-    // La base a déjà été remise (c.atk = c._baseAtk plus haut) ; le retrait
-    // définitif se fait à l'expiry du statut (tickStatuses), avant tout recalc.
-    if (Array.isArray(c.statusEffects)) {
+    // P0/P2 — buffs temporaires de stat (potions de buff) : réappliqués ici
+    // (source unique de vérité) pour survivre à un recalc déclenché en combat
+    // (consommation, équipement…). La base a déjà été remise (c.<stat> =
+    // c._base<Stat> plus haut) ; le retrait définitif se fait à l'expiry du
+    // statut (tickStatuses), avant tout recalc. Les stats dérivées (dodge/crit)
+    // calculées plus bas tiennent donc compte des buffs AGI/LCK actifs.
+    if (Array.isArray(c.statusEffects) && typeof BUFF_STAT_BY_ID !== 'undefined') {
       for (const s of c.statusEffects) {
-        if (s.id === 'buff_atk') c.atk += s.power || 0;
+        const stat = BUFF_STAT_BY_ID[s.id];
+        if (stat) c[stat] += s.power || 0;
       }
     }
 

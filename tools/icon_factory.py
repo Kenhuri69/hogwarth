@@ -232,6 +232,43 @@ RECIPES: Dict[str, Recipe] = {
             {"kind": "bubbles", "region": "body", "color": (255, 200, 120), "count": 5},
         ],
     ),
+    # Potions de buff de combat (P2) — flacons teintés par stat.
+    "potion_defense": Recipe(
+        id="potion_defense", name="Potion de Défense", rarity="common", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (140, 92, 46), "body": (200, 200, 184)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": (74, 134, 84), "level": 0.70, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (150, 210, 160), "count": 5},
+        ],
+    ),
+    "elixir_celerite": Recipe(
+        id="elixir_celerite", name="Élixir de Célérité", rarity="common", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (140, 92, 46), "body": (190, 208, 210)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": (72, 178, 178), "level": 0.70, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (170, 232, 232), "count": 6},
+        ],
+    ),
+    "potion_precision": Recipe(
+        id="potion_precision", name="Potion de Précision", rarity="common", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (140, 92, 46), "body": (198, 208, 188)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": (96, 172, 72), "level": 0.70, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (180, 224, 150), "count": 5},
+        ],
+    ),
+    "elixir_puissance": Recipe(
+        id="elixir_puissance", name="Élixir de Puissance", rarity="common", material="glass",
+        silhouette={"kind": "svg", "file": "flask.svg"},
+        fills={"stopper": (140, 92, 46), "body": (200, 188, 212)},
+        accents=[
+            {"kind": "liquid", "region": "body", "color": (138, 74, 208), "level": 0.70, "meniscus": True, "glow": True},
+            {"kind": "bubbles", "region": "body", "color": (200, 160, 240), "count": 6},
+        ],
+    ),
     "potion_resistance": Recipe(
         id="potion_resistance", name="Potion de Résistance", rarity="common", material="glass",
         silhouette={"kind": "svg", "file": "flask.svg"},

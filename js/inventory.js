@@ -432,18 +432,25 @@ function _applyConsumableEffect(item, target) {
   else if (item.effect === 'regen_buff') {
     if (typeof applyStatus === 'function') applyStatus(target, 'regen', item.power || 5, item.turns || 4);
   }
-  // Buff temporaire de stat (P0 — Potion de Force). Miroir positif de
-  // `disarm` : l'ATK est augmentée ici, restaurée à l'expiry par tickStatuses.
-  // `buffStat` choisit la stat ('atk' par défaut). Le buff profite du
-  // multiplicateur de brassage (brewMult, P1) → une Potion de Force brassée
-  // concentrée booste davantage. Non empilable (applyStatus refresh la durée).
+  // Buff temporaire de stat (P0/P2). Miroir positif de `disarm` : la stat de
+  // base est augmentée ici, réappliquée par recalculateStats (source unique),
+  // restaurée à l'expiry par tickStatuses. `buffStat` ∈ atk/def/agi/lck/mag
+  // ('atk' par défaut). Le buff profite du brassage (brewMult, P1). Non
+  // empilable (applyStatus refresh la durée).
   else if (item.effect === 'temp_buff') {
     const stat   = item.buffStat || 'atk';
     const turns  = item.turns || 3;
     const amount = Math.round((item.power || 0) * brewMult);
-    if (typeof applyStatus === 'function' && stat === 'atk') {
-      const applied = applyStatus(target, 'buff_atk', amount, turns);
-      if (applied && amount > 0) target.atk = (target.atk || 0) + amount;
+    const statusId = 'buff_' + stat;
+    const known = (typeof BUFF_STAT_BY_ID !== 'undefined') && BUFF_STAT_BY_ID[statusId];
+    if (typeof applyStatus === 'function' && known) {
+      const applied = applyStatus(target, statusId, amount, turns);
+      if (applied && amount > 0) {
+        target[stat] = (target[stat] || 0) + amount;
+        // AGI/LCK/MAG pilotent des stats dérivées (dodge/crit) → recalc pour
+        // les rafraîchir. ATK/DEF n'en dépendent pas mais le recalc reste sûr.
+        if (typeof recalculateStats === 'function') recalculateStats();
+      }
     }
   }
   // Résistance : pose le statut non-DoT `resist_buff` (réduction générale des
