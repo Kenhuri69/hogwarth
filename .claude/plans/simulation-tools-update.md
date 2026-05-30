@@ -2,7 +2,7 @@
 
 **Branche** : `claude/simulation-tools-update-fjVnQ`
 **Date** : 2026-05-30
-**Statut** : ⏳ En cours — plan vivant (§5 des guidelines).
+**Statut** : ✅ **PLAN CLOS** (2026-05-30) — implémenté et mergé (PR #304). Outils vérifiés (exit 0).
 
 Périmètre validé par l'utilisateur (AskUserQuestion) :
 - **Tout** : réparer + enrichir `sim-difficulty.js`, créer `sim-economy.js`, MAJ rapports/doc.
@@ -75,7 +75,7 @@ Flag `--difficulty=NAME` partagé avec sim-difficulty (mutualiser les constantes
 8. [x] Créé `tools/sim-economy.js` : revenus/étage, accessibilité items, sinks endgame (don ★N, élixirs progressifs). `--difficulty` inclus.
 9. [x] MAJ `DIFFICULTY_REPORT.md` (nouveaux flags + renvoi éco) + ce plan + CLAUDE.md (67 monstres).
 10. [x] `node tests/smoke.js` vert — 126 scénarios (sim hors-jeu, aucune régression).
-11. [ ] Commit + push sur la branche.
+11. [x] Commit + push sur la branche → mergé via **PR #304** (`sim: répare + enrichit sim-difficulty, ajoute sim-economy`).
 
 ---
 
@@ -98,3 +98,5 @@ Flag `--difficulty=NAME` partagé avec sim-difficulty (mutualiser les constantes
   Constat éco notable : ★1 = 305 000 G de don vs ~15 400 G / boucle 10 étages →
   la série ★ N est un sink quasi illimité ; le « trou §4.I » de l'audit est comblé.
   smoke 126/126 vert.
+- 2026-05-30 : **clôture**. Travail mergé (PR #304). Revérifié : `node tools/sim-difficulty.js 50`
+  et `node tools/sim-economy.js` retournent exit 0. Plan marqué clos.
