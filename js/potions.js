@@ -7,6 +7,12 @@
 // - Recettes connues : player.knownRecipes [].
 // - Le brassage se fait chez Slughorn (action spéciale `open_brewing`),
 //   verrouillé tant que la quête `quest_potions_slughorn` n'est pas remise.
+//
+// LOT C5 — « Brassage maison » : une potion issue du chaudron porte le flag
+// `brewed:true` et restaure BREW_POTENCY_BONUS de plus qu'une potion achetée
+// (appliqué dans inventory.js — _applyConsumableEffect). Récompense la boucle
+// de brassage face à l'achat en boutique.
+const BREW_POTENCY_BONUS = 0.25;   // +25 % pour les potions brassées soi-même
 
 // ── Besace d'herboriste ──────────────────────────────────────
 
@@ -229,7 +235,8 @@ function attemptBrew() {
 
   let added = 0;
   for (let i = 0; i < potions; i++) {
-    if (tryAddItem(recipe.resultItemId, { silent: true })) added++;
+    // `brewed:true` → bonus de puissance à la consommation (C5).
+    if (tryAddItem(recipe.resultItemId, { silent: true, props: { brewed: true } })) added++;
   }
   const lost = potions - added;
 
@@ -246,7 +253,9 @@ function attemptBrew() {
   } else {
     const cls = (kind === 'crit') ? 'is-crit' : 'is-success';
     const tag = (kind === 'crit') ? ' <b>Brassage critique ×2 !</b>' : '';
-    html = `Succès : ${added}× ${potName}.${tag}`;
+    const potencyPct = Math.round(BREW_POTENCY_BONUS * 100);
+    html = `Succès : ${added}× ${potName}.${tag}`
+      + ` <span class="brew-potency-note">✨ Brassage maison : +${potencyPct}% d'effet.</span>`;
     if (lost > 0) html += ` (${lost} perdue${lost > 1 ? 's' : ''} — sac plein.)`;
     _brewResult = { cls, html };
     if (typeof addMsg === 'function') {
@@ -359,7 +368,8 @@ function _renderBrewingModal() {
   // 5) Recettes connues
   const known = (player.knownRecipes || [])
     .map(_getRecipe).filter(Boolean);
-  html += `<div class="brewing-section"><div class="brewing-section-label">Recettes connues</div>`;
+  html += `<div class="brewing-section"><div class="brewing-section-label">Recettes connues `
+    + `<span class="brew-potency-note">✨ +${Math.round(BREW_POTENCY_BONUS * 100)}% d'effet (brassage maison)</span></div>`;
   if (known.length) {
     html += `<div class="brew-recipes">`;
     for (const r of known) {
