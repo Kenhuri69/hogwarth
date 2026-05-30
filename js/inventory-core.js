@@ -130,6 +130,16 @@ function recalculateStats() {
       }
     }
 
+    // P0 — buffs temporaires de stat (Potion de Force) : réappliqués ici pour
+    // survivre à un recalc déclenché en combat (consommation, équipement…).
+    // La base a déjà été remise (c.atk = c._baseAtk plus haut) ; le retrait
+    // définitif se fait à l'expiry du statut (tickStatuses), avant tout recalc.
+    if (Array.isArray(c.statusEffects)) {
+      for (const s of c.statusEffects) {
+        if (s.id === 'buff_atk') c.atk += s.power || 0;
+      }
+    }
+
     // Stats dérivées — deux canaux de crit (physique + sort) :
     //   critChance / spellCritChance  : LCK plafonne à 40 %, les bonus
     //     d'équipement/set s'ajoutent par-dessus (peuvent dépasser 40 %).

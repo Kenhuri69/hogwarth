@@ -456,7 +456,7 @@ const ITEMS = [
   { id:"coiffe_blaireau", name:"Coiffe du Blaireau",   icon:"🦡", desc:"DEF+2 END+2 — Set du Blaireau (3/4)",   type:"armor", slot:"head",   family:"pouf_set_3",   rarity:"epic",      power:4, bonusDef:2, bonusEnd:2, price:0, setKey:"pouf_set",  setPiece:3 },
   { id:"medaillon_helga", name:"Médaillon de Helga",   icon:"🏅", desc:"DEF+3 END+2 · Régen +1 PV — Set du Blaireau (4/4)", type:"acc", slot:"amulet", family:"pouf_set_4", rarity:"legendary", power:6, bonusDef:3, bonusEnd:2, regenHp:1, price:0, setKey:"pouf_set",  setPiece:4 },
   { id:"choco_sorcier",name:"Chocolat aux Sorciers", icon:"🍫", desc:"+10 PV +5 PM",       type:"consumable", effect:"both",       power:10, price:20 },
-  { id:"potion_force", name:"Potion de Force",       icon:"💪", desc:"+8 ATK pendant 3 tours", type:"consumable", effect:"heal",      power:8,  price:45 },
+  { id:"potion_force", name:"Potion de Force",       icon:"💪", desc:"+8 ATK pendant 3 tours", type:"consumable", effect:"temp_buff", buffStat:"atk", power:8, turns:3, price:45 },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:200 },
   // ── Phase 3 : équipement étendu (slots head/hands/feet/cloak/amulet/ring/belt/trinket) ──
