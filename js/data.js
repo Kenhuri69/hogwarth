@@ -2,6 +2,10 @@
 // CONSTANTES DE CARTE
 // ============================================================
 const MAP_W = 16, MAP_H = 16;
+// Taille maximale d'un groupe ennemi en combat (cf. rollGroupSize battle.js,
+// cap d'invocation summon battle-spells.js). Groupes de 4-5 réservés à
+// l'endgame en duo — voir .claude/plans/extend-opponent-count.md.
+const MAX_ENEMY_GROUP = 5;
 const CELL = {
   WALL:0, FLOOR:1, DOOR:2, STAIRS_D:3, STAIRS_U:4, SHOP:5, CHEST:6,
   FOUNTAIN:7, NPC:8,

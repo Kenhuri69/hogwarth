@@ -3688,6 +3688,7 @@ button.shop-tab.active {
 /* ── ENEMY GROUP (encounter overlay) ── */
 .enemy-group-container {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
   align-items: flex-end;
