@@ -271,6 +271,41 @@ Reste à calibrer (PO) : fraction (0.08-0.12 ?), chance/tour, et cible
 (`monsters.js` ability + `battle-spells.js` handler `maxhpdamage`) à faire après
 calibrage. **Aucun code `js/` touché à ce stade.**
 
+#### Borne anti-grind (décision PO : découpler Broyer du niveau du joueur)
+
+Souci relevé : `F × PVmax` brut **récompense le grind** — le pool de PV grossit
+avec le niveau, donc Broyer tape plus fort en absolu sans que la menace de l'étage
+ait bougé. Mesure (tank ét. 10, +4 niveaux de grind) : Broyer **27 → 36.7 (+36 %)**.
+
+Deux références de borne `min(F×PVmax, K × ref)` mesurées (knobs `--maxhp-cap`,
+`--maxhp-cap-ref`) :
+
+| Référence (K=2) | Broyer niv. attendu | sur-levelé +4 | croissance |
+|-----------------|:--:|:--:|:--:|
+| aucune (brut) | 27 | 36.7 | +36 % |
+| `atk` (ATK brute scalée) | 27.1 | 36.7 | +36 % (ne borne pas : cap≈96≫30) |
+| **`hit` (coup normal mitigé)** | 26.5 | 31.4 | **+16 %** |
+
+→ La borne **`hit` = K × mitigatedDamage(atk, def)** amortit le grind (sa DEF qui
+monte rétrécit le coup normal → rétrécit le cap, auto-correcteur). La borne `atk`
+est inutile à K raisonnable (ne mord jamais sans aplatir la différenciation).
+
+**Préservation de l'effet anti-tank** (win % moyen, solo, ét. 8-12, niveau attendu) :
+
+| Config | offensif | balanced | tank | écart t−o |
+|--------|:--:|:--:|:--:|:--:|
+| socle seul | 42.8 | 51.6 | 58.6 | +15.8 |
+| Broyer 0.10/50 % non borné | 45.0 | 50.6 | 52.8 | +7.8 |
+| **Broyer 0.10/50 % cap 2× `hit`** | 44.6 | 50.0 | **53.0** | **+8.4** |
+
+→ La borne `hit` **conserve l'effet anti-tank** (tank 53.0 ≈ non borné, écart +8)
+tout en plafonnant le scaling de niveau. **Formule retenue (sous réserve calibrage
+fraction/K) : `dmg = min(F × PVmax, K × mitigatedDamage(enemy.atk, def))`, K≈2.**
+Résiduel +16 % dû au plancher de mitigation 25 % (le coup normal ne peut pas
+descendre sous 25 % de l'ATK). Découplage total possible mais coûteux (ratio
+PVmax / PVmax-attendu-pour-le-niveau → nécessite un modèle de niveau) — non retenu
+sauf demande PO.
+
 ## 5. Journal
 
 - 2026-05-31 : revue + décisions D1-D5. Implémentation prématurée annulée
@@ -291,3 +326,9 @@ calibrage. **Aucun code `js/` touché à ce stade.**
   n=600 : à 0.10/50 %, écart tank−offensif **+15.8 → +7.8** (−8 pts), offensif
   intact, tank toujours devant. **Le bon levier.** Calibrage fin + cible
   (brutes/boss) en attente PO avant implémentation runtime. Aucun code `js/` touché.
+- 2026-05-31 : PO signale que `F×PVmax` brut récompense le grind (+36 % de Broyer
+  pour +4 niveaux). Ajout knobs `--maxhp-cap` / `--maxhp-cap-ref`. Mesure :
+  borne `hit` (= K × coup normal mitigé) amortit le grind à +16 % **en préservant
+  l'effet anti-tank** (tank 53.0 ≈ non borné, écart +8.4). Borne `atk` inutile.
+  Formule retenue : `min(F×PVmax, K×mitigatedDamage(atk,def))`, K≈2. Calibrage
+  fraction/K/cible en attente PO. Outil de mesure uniquement, aucun code `js/` touché.

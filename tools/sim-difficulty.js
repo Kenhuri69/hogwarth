@@ -416,7 +416,7 @@ function parseArgs(argv) {
                 penCap: 0.50, penHalf: 20, dotResDiv: 8,
                 intMagDiv: 4, endDefDiv: 4, enemyPen: 0,
                 enemyPenLo: 20, enemyPenHi: 34,
-                maxhpDmg: 0, maxhpChance: 0.5,
+                maxhpDmg: 0, maxhpChance: 0.5, maxhpCap: 0, maxhpCapRef: 'atk',
                 elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -455,6 +455,8 @@ function parseArgs(argv) {
     else if (k === 'enemy-pen-hi') out.enemyPenHi = parseFloat(v);
     else if (k === 'maxhp-dmg')    out.maxhpDmg = parseFloat(v) || 0;
     else if (k === 'maxhp-chance') out.maxhpChance = parseFloat(v) || 0.5;
+    else if (k === 'maxhp-cap')    out.maxhpCap = parseFloat(v) || 0;
+    else if (k === 'maxhp-cap-ref') out.maxhpCapRef = (v === 'hit') ? 'hit' : 'atk';
     else if (k === 'forge')        out.forge   = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
     else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
     else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
@@ -534,6 +536,10 @@ Options:
   --maxhp-dmg=F           [Anti-tank] Capacité « Broyer » sur les brutes : dégâts
                           = F × PV max de la cible, contournant la DEF (def 0).
   --maxhp-chance=F        [Anti-tank] Chance par tour de déclencher Broyer (def 0.5)
+  --maxhp-cap=K           [Anti-tank] Borne Broyer à K × référence (def 0 = illimité)
+  --maxhp-cap-ref=atk|hit [Anti-tank] Référence de borne : 'atk' = ATK brute de la
+                          brute (indépendant du joueur) ; 'hit' = coup normal mitigé
+                          (rétrécit quand la DEF joueur monte). Def 'atk'.
   --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
   --max-floor=N           Étage max en mode --endgame (def 40)
   --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
@@ -663,7 +669,8 @@ function scaleMonster(base, floor, cfg) {
   // 'damage' pour la sélection d'IA. Alternative thématique : réserver aux boss.
   if (cfg.maxhpDmg > 0 && isBrute) {
     out.abilities = [...(out.abilities || []),
-      { effect: 'maxhpdamage', power: cfg.maxhpDmg, chance: cfg.maxhpChance }];
+      { effect: 'maxhpdamage', power: cfg.maxhpDmg, chance: cfg.maxhpChance,
+        cap: cfg.maxhpCap || 0, capRef: cfg.maxhpCapRef || 'atk' }];
   }
   return out;
 }
@@ -1291,7 +1298,23 @@ function enemyAct(enemy, target, partySize) {
           // Broyer — dégâts = power × PV MAX de la cible, contournant la DEF.
           // Contre-tank : scale avec le pool de PV. Le bouclier l'annule (comme
           // 'damage') ; plancher à 1. Guard non modélisé ici (miroir de 'damage').
-          const dmg = Math.max(1, Math.floor((target.hpMax || target.hp) * ability.power));
+          //
+          // Borne anti-grind (ability.cap > 0) : plafonne la part PV max par un
+          // multiple d'une « référence de dégât de base », pour découpler Broyer
+          // de la progression du joueur. Deux références mesurées :
+          //   capRef 'atk' → cap = cap × enemy.atk (brut, indexé sur l'étage,
+          //                  indépendant du joueur ; ceiling anti-grind).
+          //   capRef 'hit' → cap = cap × coup normal (atk − def mitigé) ; rétrécit
+          //                  quand la DEF du joueur monte → contre activement le
+          //                  level-scaling (sur-level ⇒ DEF↑ ⇒ cap↓).
+          let dmg = Math.floor((target.hpMax || target.hp) * ability.power);
+          if (ability.cap > 0) {
+            const ref = (ability.capRef === 'hit')
+              ? mitigatedDamage(enemy.atk, target.def)
+              : enemy.atk;
+            dmg = Math.min(dmg, Math.floor(ability.cap * ref));
+          }
+          dmg = Math.max(1, dmg);
           if (target.shieldTurns > 0) { target.shieldTurns--; return 0; }
           target.hp = Math.max(0, target.hp - dmg);
           return dmg;
