@@ -10017,6 +10017,94 @@ async function scenarioHerbGarden() {
   await browser.close();
 }
 
+// ── Scénario Chaîne de quêtes du jardin (Potions P6.b3-suite) ──
+// Chourave : quête A « découvrir un jardin » → quête B répétable « rapporter
+// des herbes » (prereq A). Vérifie les deux nouveaux types d'objectif
+// (discover_garden, herb) + la consommation dans la besace.
+
+async function scenarioGardenQuest() {
+  console.log('\n── Scénario : chaîne de quêtes du jardin (Chourave) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : Quête A — accept ; objectif discover_garden complété à la découverte.
+  const t1 = await page.evaluate(() => {
+    activeQuests = []; completedQuests = new Set(); lastQuestCompletion = {};
+    availableQuests = new Set(QUEST_TEMPLATES.filter(t => !t.houseSetQuest).map(t => t.id));
+    gardenDiscovered = false;
+    const accepted = acceptQuest('quest_garden_sprout');
+    const q = activeQuests.find(x => x.id === 'quest_garden_sprout');
+    const type = q && q.objectives[0].type;
+    const readyBefore = !!q && q.objectives.every(o => o.completed);
+    gardenDiscovered = true;
+    checkGardenQuests();
+    const readyAfter = !!q && q.objectives.every(o => o.completed);
+    return { accepted, type, readyBefore, readyAfter };
+  });
+  console.log('  T1 quête A (découverte) →', t1);
+  assert(t1.accepted,                 'acceptQuest(quest_garden_sprout) doit réussir');
+  assert(t1.type === 'discover_garden','objectif A doit être de type discover_garden');
+  assert(t1.readyBefore === false,    'objectif A non rempli avant découverte');
+  assert(t1.readyAfter === true,      'découverte du jardin doit compléter l\'objectif A');
+
+  // T2 : remise de A apprend la recette ; B (prereq A) verrouillée avant, offerable après.
+  const t2 = await page.evaluate(() => {
+    player.knownRecipes = [];
+    const bOfferableBefore = isQuestOfferable('quest_garden_sprout_2');
+    const idx = activeQuests.findIndex(x => x.id === 'quest_garden_sprout');
+    completeQuest(idx);
+    return {
+      bOfferableBefore,
+      learned:        (player.knownRecipes || []).includes('brew_elixir_regen'),
+      aDone:          completedQuests.has('quest_garden_sprout'),
+      bOfferableAfter: isQuestOfferable('quest_garden_sprout_2')
+    };
+  });
+  console.log('  T2 remise A + déblocage B →', t2);
+  assert(t2.bOfferableBefore === false, 'B doit rester verrouillée tant que A n\'est pas rendue (prereq)');
+  assert(t2.learned,                    'la remise de A doit apprendre brew_elixir_regen');
+  assert(t2.aDone,                       'A doit passer dans completedQuests');
+  assert(t2.bOfferableAfter === true,   'B doit devenir offerable une fois A rendue');
+
+  // T3 : Quête B — besace insuffisante → puis suffisante ; remise consomme 4 herbes.
+  const t3 = await page.evaluate(() => {
+    acceptQuest('quest_garden_sprout_2');
+    const q = activeQuests.find(x => x.id === 'quest_garden_sprout_2');
+    const type = q.objectives[0].type;
+    player.herbs = { herbe_armoise: 2 };
+    _refreshObjectives();
+    const readyLow = q.objectives.every(o => o.completed);
+    player.herbs = { herbe_armoise: 3, herbe_ortie: 2 }; // total 5 ≥ 4
+    _refreshObjectives();
+    const readyHigh = q.objectives.every(o => o.completed);
+    const before = Object.values(player.herbs).reduce((a, b) => a + b, 0);
+    const goldBefore = player.gold;
+    const idx = activeQuests.findIndex(x => x.id === 'quest_garden_sprout_2');
+    completeQuest(idx);
+    const after = Object.values(player.herbs || {}).reduce((a, b) => a + b, 0);
+    return {
+      type, readyLow, readyHigh,
+      consumed: before - after,
+      goldGain: player.gold - goldBefore,
+      repeatRecorded: lastQuestCompletion['quest_garden_sprout_2'] !== undefined
+    };
+  });
+  console.log('  T3 quête B (cueillette répétable) →', t3);
+  assert(t3.type === 'herb',     'objectif B doit être de type herb');
+  assert(t3.readyLow === false,  'besace < 4 herbes → objectif B non rempli');
+  assert(t3.readyHigh === true,  'besace ≥ 4 herbes → objectif B rempli');
+  assert(t3.consumed === 4,      'la remise de B doit consommer exactement 4 herbes de la besace');
+  assert(t3.goldGain === 120,    'la 1re remise de B doit verser 120 Gallions');
+  assert(t3.repeatRecorded,      'B répétable : lastQuestCompletion enregistré à la remise');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ chaîne jardin : A découverte → recette, B prereq + répétable, conso besace 4 herbes');
+  await browser.close();
+}
+
 // ── Scénario Économie des herbes (LOT P5) : routage besace + catalogue + cueillette ──
 
 async function scenarioHerbEconomy() {
@@ -16887,7 +16975,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

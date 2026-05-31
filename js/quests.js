@@ -393,6 +393,14 @@ function _renderActiveQuestCard(q) {
       ? _countItems(activeStep.itemId)
       : player.inventory.filter(i => i.id === activeStep.itemId).length;
   }
+  // Étape `herb` : recompter depuis la besace d'herboriste.
+  if (activeStep && activeStep.type === 'herb') {
+    activeStep.progress = _countBesaceHerbs(activeStep.itemId);
+  }
+  // Étape `discover_garden` : reflet du flag global de découverte.
+  if (activeStep && activeStep.type === 'discover_garden') {
+    activeStep.progress = (typeof gardenDiscovered !== 'undefined' && gardenDiscovered) ? 1 : 0;
+  }
   // Étape `pages` : recompter depuis la besace de pages.
   if (activeStep && activeStep.type === 'pages') {
     activeStep.progress = Array.isArray(player.grimoirePages)
@@ -438,6 +446,13 @@ function _renderQuestStep(o, isActive, ready, isFirst) {
     label = `Réunir ${o.amount} pages du grimoire`;
   } else if (o.type === 'riddle') {
     label = `Résoudre les énigmes de Dumbledore`;
+  } else if (o.type === 'discover_garden') {
+    label = `Découvrir un jardin d'herbes caché`;
+  } else if (o.type === 'herb') {
+    const it = o.itemId && typeof ITEMS !== 'undefined' ? ITEMS.find(x => x.id === o.itemId) : null;
+    label = it
+      ? `Cueillir ${o.amount}× ${it.name}`
+      : `Cueillir ${o.amount} herbe${o.amount > 1 ? 's' : ''} pour Chourave`;
   } else {
     const it = ITEMS.find(x => x.id === o.itemId);
     label = `Apporter ${o.amount}× ${it ? it.name : o.itemId}`;
@@ -536,6 +551,20 @@ function _refreshObjectives() {
         step.completed = step.progress >= step.amount;
         continue;
       }
+      // Découverte d'un jardin : flag global permanent (recompté en continu
+      // pour couvrir le cas « jardin déjà révélé avant l'accept »).
+      if (step.type === 'discover_garden') {
+        step.progress  = (typeof gardenDiscovered !== 'undefined' && gardenDiscovered) ? 1 : 0;
+        step.completed = step.progress >= (step.amount || 1);
+        continue;
+      }
+      // Herbes à rapporter : comptées en continu dans la besace (player.herbs).
+      // `itemId` optionnel restreint à une herbe précise ; sinon total besace.
+      if (step.type === 'herb') {
+        step.progress  = _countBesaceHerbs(step.itemId);
+        step.completed = step.progress >= step.amount;
+        continue;
+      }
       if (step.completed) continue;
       if (step.type === 'item') {
         const count = (typeof _countItems === 'function')
@@ -592,6 +621,11 @@ function _consumeQuestItems(q) {
   for (const step of q.objectives) {
     if (step.type === 'donate') {
       player.gold = Math.max(0, player.gold - step.amount);
+      continue;
+    }
+    // Herbes : prélevées dans la besace (player.herbs), pas l'inventaire.
+    if (step.type === 'herb') {
+      _consumeBesaceHerbs(step.itemId, step.amount);
       continue;
     }
     if (step.type !== 'item') continue;
@@ -729,6 +763,52 @@ window.checkFloorQuests = function(floor) {
         step.completed = true;
         addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
       }
+    }
+  });
+};
+
+// ── Helpers besace d'herboriste (étapes "herb") ──────────────────
+// Total d'herbes dans la besace (player.herbs). `herbId` optionnel restreint
+// à une herbe précise ; sinon somme toutes les herbes.
+function _countBesaceHerbs(herbId) {
+  if (!player || !player.herbs) return 0;
+  if (herbId) return player.herbs[herbId] || 0;
+  let total = 0;
+  for (const id of Object.keys(player.herbs)) total += player.herbs[id] || 0;
+  return total;
+}
+
+// Prélève `amount` herbes de la besace. Avec `herbId` : cette herbe précise.
+// Sinon, consomme à travers les herbes disponibles (ordre des clés).
+function _consumeBesaceHerbs(herbId, amount) {
+  if (!player || !player.herbs) return;
+  let left = amount;
+  if (herbId) {
+    if (typeof _consumeIngredient === 'function') { _consumeIngredient(herbId, amount); return; }
+    player.herbs[herbId] = Math.max(0, (player.herbs[herbId] || 0) - amount);
+    if (player.herbs[herbId] === 0) delete player.herbs[herbId];
+    return;
+  }
+  for (const id of Object.keys(player.herbs)) {
+    if (left <= 0) break;
+    const take = Math.min(left, player.herbs[id] || 0);
+    player.herbs[id] -= take;
+    left -= take;
+    if (player.herbs[id] <= 0) delete player.herbs[id];
+  }
+}
+
+// ── Appelée à la révélation d'un jardin (_revealGardensNear) ──────
+// Marque comme accomplies les étapes "discover_garden" actives.
+window.checkGardenQuests = function() {
+  if (typeof activeQuests === 'undefined') return;
+  activeQuests.forEach((q) => {
+    for (const step of q.objectives) {
+      if (step.completed)                  continue;
+      if (step.type !== 'discover_garden') continue;
+      step.progress  = step.amount || 1;
+      step.completed = true;
+      addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête « ${q.title} » prête — retourne voir ${q.giver}.`, 'good');
     }
   });
 };

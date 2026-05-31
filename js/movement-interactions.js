@@ -651,6 +651,9 @@ function _revealGardensNear(cx, cy, r) {
       : "Le sortilège dévoile un autre carré de jardin d'herbes magiques.");
     addMsg(revealed > 1 ? `${revealed} jardins d'herbes révélés !` : "Jardin d'herbes révélé !", 'good');
     if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+    // Quête « Le Jardin Oublié » (Chourave) : objectif de découverte rempli.
+    if (typeof checkGardenQuests === 'function') checkGardenQuests();
+    if (typeof updateQuestTracker === 'function') updateQuestTracker();
   }
   return revealed;
 }
@@ -686,6 +689,9 @@ function useGarden() {
   addMsg(`Jardin récolté : ${harvested} herbe${harvested > 1 ? 's' : ''} (${summary}).`, 'good');
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
   updateUI();
+  // Étape « Cueillette pour Chourave » : rafraîchit le tracker de quête
+  // (l'objectif "herb" est recompté en continu depuis la besace).
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
   safeCall('autoSave', 'garden-harvest');
 }
 
