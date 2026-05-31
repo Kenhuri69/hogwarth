@@ -375,6 +375,7 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
     const mitigated = Math.max(0, Math.floor(dmg / 2 * _resistMult(target)));
     target.hp = Math.max(0, target.hp - mitigated);
     UX_safe.floatDmg('ally', mitigated, 'dmg');
+    CFX_safe.shake(enemy && enemy.epic ? 'heavy' : 'light'); // coup encaissé (Lot 1)
     UX_safe.logCombat(`🛡️ ${target.name} mitige ${enemy.name} : <b>−${mitigated}</b> <small>(au lieu de −${dmg})</small>`, 'magic');
     guardTurns[charIdx] = Math.max(0, guardTurns[charIdx] - 1);
     return `🛡️ ${target.name} mitige : -${mitigated} (au lieu de -${dmg}). ` + _tryGuardCounter(target, enemy);
@@ -452,6 +453,9 @@ function startBattle(baseEnemyData, opts) {
   UX_safe.logCombat(`⚔️ Combat engagé contre ${size} ennemi${size>1?'s':''}.`, 'info');
   UX_safe.renderTimeline();
   AudioSystem.startCombatMusic(enemyGroup);
+  // Immersion (Lot 1) : cinématique d'apparition pour les boss epic.
+  // Purement visuel (CFX_safe → no-op si le module FX est absent).
+  if (enemyGroup[0] && enemyGroup[0].epic) CFX_safe.bossIntro(enemyGroup[0]);
   // D5 Célérité — ouvre le segment du 1ᵉʳ héros (round 1). Aucune action sup. au
   // round 1 (gauge part de 0, +celerite < 1), mais maintient la parité avec la sim.
   _beginHeroSegment(currentBattleChar);
@@ -648,6 +652,7 @@ function executeAttack(targetIdx) {
   const comboTxt = combo.label ? ` ${combo.label}` : '';
   setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${finalDmg} dégâts${isCrit?' (CRITIQUE !)':''}${comboTxt} !`);
   UX_safe.floatDmg(`enemy:${targetIdx}`, finalDmg, isCrit ? 'crit' : 'dmg');
+  if (isCrit) CFX_safe.shake('light'); // crit phys → secousse (Lot 1)
   UX_safe.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}${comboTxt}`, isCrit?'magic':'good');
   renderEnemyGroup();
   if (checkAllEnemiesDead()) return;
