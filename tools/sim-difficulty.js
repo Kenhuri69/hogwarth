@@ -413,8 +413,12 @@ function parseArgs(argv) {
                 houseSet: null, tenebresSet: false, houseTier: 0, stars: 0,
                 difficulty: 'Normal',
                 statRework: false, fairBaseline: false,
-                penCap: 0.50, penHalf: 20, dotResDiv: 8,
-                intMagDiv: 4, endDefDiv: 4, enemyPen: 0,
+                // Calibration retenue pour l'implémentation runtime (D1–D4) :
+                // INT→MAG 4:1, END→DEF 6:1 (réglage adouci), résistance DoT
+                // floor(END/12), pénétration STR Hill cap 0.50 / demi-sat 20.
+                // Cf. .claude/plans/player-stats-balance.md §4 (réglage adouci).
+                penCap: 0.50, penHalf: 20, dotResDiv: 12,
+                intMagDiv: 4, endDefDiv: 6, enemyPen: 0,
                 enemyPenLo: 20, enemyPenHi: 34,
                 maxhpDmg: 0, maxhpChance: 0.5, maxhpCap: 0, maxhpCapRef: 'atk',
                 elanStep: 8, elanCap: 5, elanDecay: 'none' };
@@ -524,9 +528,9 @@ Options:
                           référence équitable pour mesurer le rework PUR.
   --pen-cap=F             Rework : plafond de pénétration STR (def 0.50)
   --pen-half=F            Rework : STR de demi-saturation de la courbe (def 20)
-  --dot-res-div=F         Rework : diviseur de résistance DoT END (def 8)
+  --dot-res-div=F         Rework : diviseur de résistance DoT END (def 12)
   --int-mag-div=F         Rework : diviseur conversion INT→MAG (def 4)
-  --end-def-div=F         Rework : diviseur conversion END→DEF (def 4)
+  --end-def-div=F         Rework : diviseur conversion END→DEF (def 6)
   --enemy-pen=F           [Option D] Pénétration d'armure des monstres « brutes »
                           (atk>=1.5×mag & atk>=12) : plafond de fraction de DEF
                           ignorée (def 0). Contre-mesure au build tank. La

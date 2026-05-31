@@ -113,6 +113,8 @@ function _step(dir, faceDir) {
     gardenStock = Math.min(GARDEN_CAP, gardenStock + 1);
   }
   if (restCooldown > 0) restCooldown--;
+  // D5 — buff Félix Felicis (Fortune) : décrémenté à chaque pas d'exploration.
+  if (typeof felixFortuneSteps === 'number' && felixFortuneSteps > 0) felixFortuneSteps--;
   if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) healSpellCooldown--;
   if (typeof _tickShopRestock === 'function') _tickShopRestock();
   AudioSystem.playFootstep();

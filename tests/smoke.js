@@ -582,6 +582,226 @@ async function scenarioBruteCrush() {
   await browser.close();
 }
 
+// ── Scénario 2quinquies : rework des stats joueur D1–D4 ──────────
+// Conversions INT→MAG (4:1) / END→DEF (6:1) dans recalculateStats,
+// résistance DoT par l'END (tickStatuses), pénétration de DEF par la STR
+// (executeAttack). Cf. .claude/plans/player-stats-balance.md.
+async function scenarioStatRework() {
+  console.log('\n── Scénario 2quinquies : rework stats D1–D4 ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : D1 — INT → MAG, 4:1. Sac/équipement neutralisés pour isoler.
+  const t1 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = {};
+    c._baseInt = 0; recalculateStats(); const magInt0 = c.mag;
+    c._baseInt = 20; recalculateStats(); const magInt20 = c.mag;
+    return { magInt0, magInt20, intEff: c.int, intDiv: INT_MAG_DIV };
+  });
+  console.log('  T1 INT→MAG:', t1);
+  assert(t1.intDiv === 4, 'INT_MAG_DIV doit être 4');
+  assert(t1.magInt20 - t1.magInt0 === 5, `INT 20 → +floor(20/4)=5 MAG, obtenu +${t1.magInt20 - t1.magInt0}`);
+
+  // T2 : D2 — END → DEF, 6:1.
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = {};
+    c._baseEnd = 0;  recalculateStats(); const defEnd0 = c.def;
+    c._baseEnd = 30; recalculateStats(); const defEnd30 = c.def;
+    return { defEnd0, defEnd30, endDiv: END_DEF_DIV };
+  });
+  console.log('  T2 END→DEF:', t2);
+  assert(t2.endDiv === 6, 'END_DEF_DIV doit être 6');
+  assert(t2.defEnd30 - t2.defEnd0 === 5, `END 30 → +floor(30/6)=5 DEF, obtenu +${t2.defEnd30 - t2.defEnd0}`);
+
+  // T3 : D3 — END atténue chaque tick de DoT subi de floor(END/12).
+  const t3 = await page.evaluate(() => {
+    const c = party[0];
+    c.hpMax = 500; c.hp = 500; c.end = 60;
+    c.statusEffects = [{ id: 'burn', icon: '🔥', power: 20, turns: 3 }];
+    tickStatuses(c, false);
+    const dmgEnd60 = 500 - c.hp;
+    // END massif : la résistance dépasse le power → plancher à 1.
+    c.hp = 500; c.end = 300;
+    c.statusEffects = [{ id: 'burn', icon: '🔥', power: 20, turns: 3 }];
+    tickStatuses(c, false);
+    const dmgEnd300 = 500 - c.hp;
+    return { dmgEnd60, dmgEnd300, div: END_DOT_RES_DIV };
+  });
+  console.log('  T3 résistance DoT:', t3);
+  assert(t3.div === 12, 'END_DOT_RES_DIV doit être 12');
+  assert(t3.dmgEnd60 === 15, `burn 20 − floor(60/12)=5 → 15 attendu, obtenu ${t3.dmgEnd60}`);
+  assert(t3.dmgEnd300 === 1, `résistance > power → plancher 1, obtenu ${t3.dmgEnd300}`);
+
+  // T4 : D4 — la STR ignore une fraction (courbe de Hill) de la DEF ennemie.
+  const t4 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = {}; c.atk = 100; c.critChance = 0;
+    c.statusEffects = []; c.hp = c.hpMax = 500;
+    const mk = () => ([{ id: 't', name: 'T', icon: 'X', def: 40,
+      hp: 100000, currentHp: 100000, atk: 1, mag: 0, agi: 0,
+      statusEffects: [], resist: [], weak: [] }]);
+    const orig = Math.random; Math.random = () => 0; // rawAtk = atk+0, pas de crit
+    let dealtStr0, dealtStr20;
+    try {
+      c.str = 0; inBattle = true; currentBattleChar = 0; enemyGroup = mk();
+      const b0 = enemyGroup[0].currentHp; executeAttack(0);
+      dealtStr0 = b0 - enemyGroup[0].currentHp;
+      c.str = 20; inBattle = true; currentBattleChar = 0; c.hp = c.hpMax = 500;
+      enemyGroup = mk();
+      const b1 = enemyGroup[0].currentHp; executeAttack(0);
+      dealtStr20 = b1 - enemyGroup[0].currentHp;
+    } finally { Math.random = orig; }
+    return { dealtStr0, dealtStr20, penFrac0: _strPenFrac(0), penFrac20: _strPenFrac(20) };
+  });
+  console.log('  T4 pénétration STR:', t4);
+  assert(t4.penFrac0 === 0, 'penFrac(0) doit être 0');
+  assert(Math.abs(t4.penFrac20 - 0.25) < 1e-9, `penFrac(20)=0.5×400/800=0.25, obtenu ${t4.penFrac20}`);
+  // atk 100, def 40, STR 0 : effDef 40 → 100−40 = 60.
+  assert(t4.dealtStr0 === 60, `STR 0 → 60 attendu, obtenu ${t4.dealtStr0}`);
+  // STR 20 : effDef 40×0.75 = 30 → 100−30 = 70.
+  assert(t4.dealtStr20 === 70, `STR 20 → 70 attendu (DEF percée), obtenu ${t4.dealtStr20}`);
+  assert(t4.dealtStr20 > t4.dealtStr0, 'la STR doit augmenter les dégâts en perçant la DEF');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Rework D1–D4 : INT→MAG, END→DEF, résistance DoT, pénétration STR conformes');
+  await browser.close();
+}
+
+// ── Scénario 2sexies : stat dérivée Fortune (D5 volet LCK) ───────
+// Fortune calculée (courbe de Hill), partyFortune = max du groupe (KO exclus),
+// application/bornes par événement (fuite, piège), buff Félix pose/expire.
+// Cf. .claude/plans/luck-fortune.md.
+async function scenarioFortuneStat() {
+  console.log('\n── Scénario 2sexies : Fortune (D5 volet LCK) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+
+  // T1 : Fortune = courbe de Hill sur x = LCK + Σ bonusFortune.
+  const t1 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = {}; c._baseLck = 15; felixFortuneSteps = 0;
+    recalculateStats();
+    return {
+      fortuneX: c._fortuneX, fortune: c.fortune,
+      expected: _fortuneCurve(15),
+      asymptote: FORTUNE_ASYMPTOTE, half: FORTUNE_HALF,
+    };
+  });
+  console.log('  T1 courbe:', t1);
+  assert(t1.asymptote === 0.31 && t1.half === 30, 'constantes Fortune attendues 0.31 / 30');
+  assert(t1.fortuneX === 15, `_fortuneX doit valoir LCK=15, obtenu ${t1.fortuneX}`);
+  assert(Math.abs(t1.fortune - t1.expected) < 1e-9, 'fortune ≠ courbe attendue');
+  assert(Math.abs(t1.fortune - 0.062) < 0.001, `LCK 15 → ~6.2 %, obtenu ${(t1.fortune*100).toFixed(1)} %`);
+
+  // T2 : item.bonusFortune entre dans x (point d'entrée → profite de la courbe).
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    c._baseLck = 15; c.equipped = { amulet: { id: 'x', bonusFortune: 25 } };
+    recalculateStats();
+    return { fortuneX: c._fortuneX, fortune: c.fortune, expected: _fortuneCurve(40) };
+  });
+  console.log('  T2 bonusFortune:', t2);
+  assert(t2.fortuneX === 40, `LCK 15 + bonusFortune 25 → x=40, obtenu ${t2.fortuneX}`);
+  assert(Math.abs(t2.fortune - t2.expected) < 1e-9, 'fortune ≠ courbe(40)');
+
+  // T3 : partyFortune = max du groupe, membres KO exclus.
+  const t3 = await page.evaluate(() => {
+    party[0].equipped = {}; party[1].equipped = {};
+    party[0]._baseLck = 0; party[1]._baseLck = 50;
+    felixFortuneSteps = 0;
+    recalculateStats();
+    party[0].hp = party[0].hpMax; party[1].hp = party[1].hpMax;
+    const max = partyFortune();
+    party[1].hp = 0; // le plus chanceux KO → repli sur party[0]
+    const koExcluded = partyFortune();
+    return { max, expectedMax: _fortuneCurve(50), koExcluded, expectedKo: _fortuneCurve(0) };
+  });
+  console.log('  T3 partyFortune max:', t3);
+  assert(Math.abs(t3.max - t3.expectedMax) < 1e-9, 'partyFortune doit prendre le max (party[1])');
+  assert(Math.abs(t3.koExcluded - t3.expectedKo) < 1e-9, 'membre KO doit être exclu du max');
+
+  // T4 : buff Félix — pose felixFortuneSteps, ajoute FELIX_POINTS à x, aucun
+  // soin ; expire quand felixFortuneSteps retombe à 0.
+  const t4 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = {}; c._baseLck = 15; party[1]._baseLck = 0; party[1].equipped = {};
+    felixFortuneSteps = 0; recalculateStats();
+    c.hp = c.hpMax = 100; party[1].hp = party[1].hpMax; c.hp = 30;
+    const before = partyFortune();
+    const idx = player.inventory.push({ ...ITEMS.find(i => i.id === 'felix') }) - 1;
+    useItem(idx, false);
+    const stepsAfter = felixFortuneSteps;
+    const hpAfter = c.hp;                       // Félix ne soigne plus
+    const during = partyFortune();              // +FELIX_POINTS dans x
+    felixFortuneSteps = 0;                       // simulate l'expiry (pas)
+    const after = partyFortune();
+    return { before, during, after, stepsAfter, hpAfter,
+      felixSteps: FELIX_STEPS, felixPts: FELIX_POINTS,
+      expectDuring: _fortuneCurve(15 + FELIX_POINTS) };
+  });
+  console.log('  T4 buff Félix:', t4);
+  assert(t4.stepsAfter === t4.felixSteps, `Félix doit poser felixFortuneSteps=${t4.felixSteps}, obtenu ${t4.stepsAfter}`);
+  assert(t4.hpAfter === 30, `Félix ne doit plus soigner (hp 30 attendu, obtenu ${t4.hpAfter})`);
+  assert(t4.during > t4.before, 'Félix actif doit augmenter la Fortune du groupe');
+  assert(Math.abs(t4.during - t4.expectDuring) < 1e-9, 'Fortune sous Félix ≠ courbe(LCK+40)');
+  assert(Math.abs(t4.after - t4.before) < 1e-9, 'expiry Félix doit ramener la Fortune de base');
+
+  // T5 : application/bornes par événement — fuite (bornée 0.95) et piège.
+  const t5 = await page.evaluate(() => {
+    // Fuite : Fortune élevée pousse la chance de fuite au-dessus du seuil.
+    party[0].equipped = {}; party[0]._baseLck = 15; party[1]._baseLck = 0;
+    recalculateStats();
+    const enemy = { id: 'd', name: 'D', icon: 'X', hp: 50, atk: 1, def: 0,
+      mag: 0, agi: 0, lck: 0, xp: 0, gold: 0, abilities: [], drops: [],
+      resist: [], weak: [], desc: 'x' };
+    // Sans Félix (F bas) : baseChance 0.7, random 0.92 → échec.
+    felixFortuneSteps = 0;
+    startBattle(enemy); currentBattleChar = 0;
+    player.inventory = player.inventory.filter(i => i.id !== 'broom');
+    let orig = Math.random; Math.random = () => 0.92;
+    try { doFlee(); } finally { Math.random = orig; }
+    const fledNoFelix = !inBattle;
+    // Avec Félix (F≈0.24) : chance min(0.95, 0.7+0.24)=0.94, random 0.92 → succès.
+    felixFortuneSteps = FELIX_STEPS;
+    if (!inBattle) startBattle(enemy);
+    currentBattleChar = 0;
+    orig = Math.random; Math.random = () => 0.92;
+    try { doFlee(); } finally { Math.random = orig; }
+    const fledFelix = !inBattle;
+
+    // Piège : Fortune réduit le risque d'embuscade (déclenchement plein).
+    inBattle = false;
+    party[0]._fortuneX = 200; felixFortuneSteps = FELIX_STEPS; // F ≈ 0.30
+    orig = Math.random; Math.random = () => 0.4;
+    try { _triggerDungeonTrap(); } finally { Math.random = orig; }
+    const ambushHighF = inBattle; // attendu false (pas d'embuscade)
+    inBattle = false;
+    felixFortuneSteps = 0; party[0]._fortuneX = 0; // F = 0
+    orig = Math.random; Math.random = () => 0.4;
+    try { _triggerDungeonTrap(); } finally { Math.random = orig; }
+    const ambushNoF = inBattle;   // attendu true (embuscade à risk 0.5)
+    inBattle = false;
+    return { fledNoFelix, fledFelix, ambushHighF, ambushNoF };
+  });
+  console.log('  T5 application événements:', t5);
+  assert(t5.fledNoFelix === false, 'sans Félix, la fuite doit échouer (random 0.92 > 0.7)');
+  assert(t5.fledFelix === true, 'avec Félix, la Fortune fait passer la fuite (chance 0.94)');
+  assert(t5.ambushNoF === true, 'sans Fortune, risque embuscade 0.5 > random 0.4 → embuscade');
+  assert(t5.ambushHighF === false, 'Fortune élevée réduit le risque d\'embuscade sous 0.4');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Fortune : courbe, partyFortune=max, Félix pose/expire, fuite/piège bornés');
+  await browser.close();
+}
+
 // ── Scénario 2quater : statuts duo isolés par perso (Vague C) ──────
 //
 // Le code stocke les statusEffects directement sur l'objet personnage
@@ -8891,6 +9111,9 @@ async function scenarioRareHerb() {
     function pickAt(floor) {
       player.herbs = {}; player.inventory = []; searchedCells = new Map();
       currentFloor = floor;
+      // Neutralise la Fortune (D5) : le seuil objet de fouille s'élargit de +F,
+      // décalant la bande herbe — ce test ne mesure pas la Fortune.
+      felixFortuneSteps = 0; party.forEach(c => { c._fortuneX = 0; });
       drive([0.5, 0.5, 0.40, 0.0, 0.9]);   // bande herbe, pick index 0, simple
       searchRoom();
       return Object.keys(player.herbs)[0] || null;
@@ -8944,6 +9167,9 @@ async function scenarioSlugClub() {
       if (member) seenNpcs.add('slughorn'); else seenNpcs.delete('slughorn');
       player.herbs = {}; player.inventory = []; searchedCells = new Map();
       currentFloor = 1;
+      // Neutralise la Fortune (D5) : elle élargit le seuil objet (décale la
+      // bande herbe) et le jet double-herbe — ce test mesure le Slug Club.
+      felixFortuneSteps = 0; party.forEach(c => { c._fortuneX = 0; });
       drive([0.5, 0.5, 0.40, 0.0, 0.30]);   // bumper 0.30
       searchRoom();
       return Object.values(player.herbs).reduce((a, b) => a + b, 0);
@@ -9959,6 +10185,8 @@ async function scenarioHerbEconomy() {
     player.inventory = [];
     currentFloor = 1;
     searchedCells = new Map();   // case vierge → !repeat
+    // Neutralise la Fortune (D5) : elle décale la bande herbe et le jet double.
+    felixFortuneSteps = 0; party.forEach(c => { c._fortuneX = 0; });
     const orig = Math.random;
     const drive = (seq) => { let i = 0; Math.random = () => (i < seq.length ? seq[i++] : 0.5); };
     // Jet chanceux : bumper 0.1 < 0.25 → double récolte.
@@ -16490,6 +16718,9 @@ async function scenarioContentConsumablesTradeoffs() {
   // T4 — Item trade-off : ATK+7 / DEF−2 appliqué par recalculateStats.
   const t4 = await page.evaluate(() => {
     const c = party[0];
+    // Baseline propre : T1 a laissé un weaken (malus DEF direct non réappliqué
+    // par recalculateStats) — on le purge pour isoler le trade-off de l'arme.
+    c.statusEffects = []; recalculateStats();
     const atk0 = c.atk, def0 = c.def;
     const clone = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'lame_sanguinaire')));
     player.inventory.push(clone);
@@ -16744,7 +16975,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

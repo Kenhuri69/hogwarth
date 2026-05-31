@@ -87,13 +87,18 @@ function openChest() {
     return false;
   });
 
+  // D5 — Fortune (volet LCK) : or majoré × (1 + F×0.5), roll d'objet rare
+  // (Éclat de Vitalité ≥ ét.3) élargi de +F (borné). Cf. luck-fortune.md §2.4.
+  const F        = (typeof partyFortune === 'function') ? partyFortune() : 0;
+  const goldFort = 1 + F * 0.5;
+
   const roll = Math.random();
   // 38% or | 30% consommable | 22% équipement | 10% livre (si dispo)
   const hasBook = booksAvailable.length > 0;
 
   if (roll < 0.38) {
     // Or
-    const gold = _applyGoldMult(Math.floor(Math.random() * 30 + 10) * currentFloor);
+    const gold = _applyGoldMult(Math.floor(Math.random() * 30 + 10) * currentFloor * goldFort);
     player.gold += gold;
     setNarrative(NARRATIVES.gold_found(gold));
     addMsg(`+${gold} Gallions`, 'good');
@@ -103,7 +108,7 @@ function openChest() {
     // Consommable — à partir de l'étage 3, 25 % du temps un Éclat de Vitalité
     // (ressource d'upgrade-craft des potions, P4) plutôt qu'un consommable.
     let item;
-    if ((currentFloor || 1) >= 3 && Math.random() < 0.25) {
+    if ((currentFloor || 1) >= 3 && Math.random() < Math.min(0.9, 0.25 + F)) {
       item = ITEMS.find(i => i.id === 'eclat_vitalite');
     }
     if (!item) {
@@ -126,7 +131,7 @@ function openChest() {
       addMsg(`Obtenu : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name}`, 'good');
     } else if (!item) {
       // Aucun équipement éligible pour cet étage — repli sur or
-      const gold = _applyGoldMult(Math.floor(Math.random() * 30 + 10) * (currentFloor || 1));
+      const gold = _applyGoldMult(Math.floor(Math.random() * 30 + 10) * (currentFloor || 1) * goldFort);
       player.gold += gold;
       addMsg(`Coffre vide… mais +${gold} Gallions cachés au fond`, 'good');
       updateUI();
@@ -291,25 +296,30 @@ function searchRoom() {
     return;
   }
 
+  // D5 — Fortune (volet LCK) : seuil objet élargi de +F (borné), or majoré
+  // × (1 + F×0.5), double-herbe + F. Cf. luck-fortune.md §2.4.
+  const F        = (typeof partyFortune === 'function') ? partyFortune() : 0;
+  const itemThr  = Math.min(0.9, SEARCH_ITEM_THRESHOLD + F);
+
   const roll = Math.random();
   if (roll < SEARCH_GOLD_THRESHOLD) {
     // Scaling par étage (×0.20 par étage au-delà du 1ᵉʳ) puis multiplicateur
     // de difficulté — cf. .claude/plans/game-economy-gold-audit.md §5.2.
     const floor = currentFloor || 1;
-    let gold = Math.floor((Math.random() * 15 + 5) * (1 + (floor - 1) * 0.20));
+    let gold = Math.floor((Math.random() * 15 + 5) * (1 + (floor - 1) * 0.20) * (1 + F * 0.5));
     if (repeat) gold = Math.max(1, Math.floor(gold * 0.5));
     gold = _applyGoldMult(gold);
     player.gold += gold;
     setNarrative(NARRATIVES.gold_found(gold));
     addMsg(`+${gold} Gallions`, 'good');
     updateUI();
-  } else if (!repeat && roll < SEARCH_ITEM_THRESHOLD) {
+  } else if (!repeat && roll < itemThr) {
     const item = ITEMS.find(i => i.id === 'mandragore') || ITEMS[0];
     if (tryAddItem(item, { silent: true })) {
       setNarrative(NARRATIVES.item_found(item.name));
       addMsg(`Trouvé : ${item.name}`, 'good');
     }
-  } else if (!repeat && roll < SEARCH_ITEM_THRESHOLD + 0.20) {
+  } else if (!repeat && roll < itemThr + 0.20) {
     // Cueillette d'une herbe du palier de l'étage courant → besace.
     // Palier 4 (Asphodèle des Ténèbres) réservé à la Boucle Ténébreuse (11+).
     const tier = (currentFloor >= 11) ? 4 : (currentFloor >= 7) ? 3 : (currentFloor >= 4) ? 2 : 1;
@@ -318,7 +328,8 @@ function searchRoom() {
     if (herb && tryAddItem(herb, { silent: true })) {
       // Jet chanceux : la touffe est généreuse, deux brins d'un coup. Les
       // membres du Slug Club (P6.b2) récoltent plus souvent double (25 → 35 %).
-      const luckyChance = (typeof isSlugClubMember === 'function' && isSlugClubMember()) ? 0.35 : 0.25;
+      const luckyBase = (typeof isSlugClubMember === 'function' && isSlugClubMember()) ? 0.35 : 0.25;
+      const luckyChance = Math.min(0.9, luckyBase + F);
       const bumper = Math.random() < luckyChance && tryAddItem(herb, { silent: true });
       if (bumper) {
         setNarrative(`Une touffe généreuse a poussé entre les pierres : ${herb.name}. Vous en cueillez deux brins.`);
@@ -381,7 +392,11 @@ function _triggerSearchTrap() {
 // repassée en FLOOR par handleCellEntry. Le statut de combat n'est pas
 // utilisé (risque hors-combat) : on s'en tient à dégâts / drain / ambush.
 function _triggerDungeonTrap() {
-  if (Math.random() < 0.5) {
+  // D5 — Fortune (volet LCK) : la chance réduit le risque d'embuscade
+  // (déclenchement plein) de F, borné à [0.1, 0.9]. Cf. luck-fortune.md §2.4.
+  const F          = (typeof partyFortune === 'function') ? partyFortune() : 0;
+  const ambushRisk = Math.max(0.1, Math.min(0.9, 0.5 - F));
+  if (Math.random() < ambushRisk) {
     setNarrative("Le sol se dérobe en un déclic sec — une créature jaillit de la fosse !");
     addMsg("Piège ! Une embuscade vous tombe dessus.", 'bad');
     const f = currentFloor || 1;

@@ -751,6 +751,19 @@ function useItem(idx, battleMode) {
     return;
   }
 
+  // Félix Felicis (D5 — Fortune) : pur buff de chance, plus aucun soin. Arme
+  // felixFortuneSteps (FELIX_POINTS ajoutés à la Fortune du groupe pendant
+  // FELIX_STEPS pas d'exploration). Couvre fouilles, coffres et combats d'une
+  // exploration d'étage. Cf. .claude/plans/luck-fortune.md §2.2.
+  if (item.effect === 'fortune') {
+    felixFortuneSteps = (typeof FELIX_STEPS === 'number') ? FELIX_STEPS : 40;
+    addMsg(`${item.name} : une chance insolente t'enveloppe (${felixFortuneSteps} pas).`, 'magic');
+    _consumeAt(idx, 1);
+    updateUI();
+    closeModal('inventory-modal');
+    return;
+  }
+
   const target = (battleMode && inBattle) ? party[currentBattleChar] : player;
 
   _applyConsumableEffect(item, target);

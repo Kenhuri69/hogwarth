@@ -180,6 +180,13 @@ function tickStatuses(target, isEnemy) {
       let dmg = s.power;
       if (isEnemy && target.resist?.includes(s.id)) dmg = Math.floor(dmg * RESIST_MULTIPLIER);
       if (isEnemy && target.weak?.includes(s.id))   dmg = Math.floor(dmg * WEAK_MULTIPLIER);
+      // Rework D3 — résistance aux DoT : l'END du joueur atténue chaque tick
+      // de floor(END/12). N'affecte que les héros (DoT subi), pas les ennemis.
+      // Miroir de tools/sim-difficulty.js. Cf. player-stats-balance.md §2 (D3).
+      if (!isEnemy) {
+        const div = (typeof END_DOT_RES_DIV === 'number') ? END_DOT_RES_DIV : 12;
+        dmg -= Math.floor((target.end || 0) / div);
+      }
       dmg = Math.max(1, dmg);
       if (isEnemy) target.currentHp = Math.max(0, target.currentHp - dmg);
       else        target.hp         = Math.max(0, target.hp         - dmg);
@@ -599,11 +606,23 @@ function _updateElan(char, didCrit) {
   }
 }
 
+// Rework D4 — pénétration de DEF par la STR : courbe de Hill (n=2), douce au
+// début, quasi-linéaire au milieu, plateau vers STR_PEN_CAP. Pure. Miroir
+// exact de tools/sim-difficulty.js (strPenFrac). Cf. player-stats-balance.md §2.
+function _strPenFrac(str) {
+  const cap = (typeof STR_PEN_CAP === 'number') ? STR_PEN_CAP : 0.50;
+  const h   = (typeof STR_PEN_HALF === 'number') ? STR_PEN_HALF : 20;
+  const s   = Math.max(0, str || 0);
+  return cap * (s * s) / (s * s + h * h);
+}
+
 function executeAttack(targetIdx) {
   const char  = getActiveChar();
   const enemy = enemyGroup[targetIdx];
   const rawAtk = char.atk + Math.floor(Math.random() * 4);
-  let dmg    = Math.max(1, Math.floor(mitigatedDamage(rawAtk, enemy.def) * _houseVigorMult(char) * _houseElanMult(char)));
+  // D4 — la STR du frappeur ignore une fraction de la DEF ennemie.
+  const effDef = Math.max(0, (enemy.def || 0) * (1 - _strPenFrac(char.str)));
+  let dmg    = Math.max(1, Math.floor(mitigatedDamage(rawAtk, effDef) * _houseVigorMult(char) * _houseElanMult(char)));
   // Combo : un coup physique sur une cible gelée / qui saigne est amplifié.
   const combo = (typeof comboDamageMult === 'function') ? comboDamageMult(enemy, 'physique') : { mult: 1, label: null };
   if (combo.mult !== 1) dmg = Math.max(1, Math.floor(dmg * combo.mult));
@@ -903,7 +922,10 @@ function enemyTurn() {
 function doFlee() {
   const char      = getActiveChar();
   const firstEnemy = livingEnemies()[0];
-  const chance    = char.agi > (firstEnemy?.atk || 5) ? 0.7 : 0.4;
+  const baseChance = char.agi > (firstEnemy?.atk || 5) ? 0.7 : 0.4;
+  // D5 — Fortune : la chance du groupe améliore la fuite (bornée à 0.95).
+  const F = (typeof partyFortune === 'function') ? partyFortune() : 0;
+  const chance = Math.min(0.95, baseChance + F);
   const hasBroom  = player.inventory.some(i => i.id === 'broom')
                  || party.some(c => c.equipped &&
                       Object.values(c.equipped).some(it => it && it.id === 'broom'));

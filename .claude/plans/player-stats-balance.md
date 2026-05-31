@@ -1,8 +1,11 @@
 # Revue d'équilibrage — Statistiques du joueur
 
-> **Statut : IMPLÉMENTATION (capacité Broyer).** Calibration figée par le PO :
-> **F=0.10, K=2, chance 50 %, toutes les brutes**. Seule cette capacité passe en
-> runtime à ce stade ; le rework de stats (END→DEF, etc.) reste en conception.
+> **Statut : IMPLÉMENTÉ (socle D1–D4 + Broyer).** Le socle de conversions
+> (D1 INT→MAG 4:1, D2 END→DEF 6:1, D3 résistance DoT `floor(END/12)`,
+> D4 pénétration STR Hill cap 0.50/H 20) est passé en runtime, calibration
+> adoucie retenue. Broyer (F=0.10, K=2, chance 50 %, toutes les brutes) était
+> déjà mergé — non retouché. D5 volet LCK (Fortune) livré, cf.
+> `luck-fortune.md`. D5 volet AGI **différé hors PR** (Phase 2, non conçu).
 >
 > Étapes d'implémentation Broyer (✅ = fait) :
 > 1. ✅ `dungeon-scaling.js` : `isBruteMonster` + `BRUTE_CRUSH_ABILITY` + octroi
@@ -386,3 +389,34 @@ F=0.12 si on veut serrer plus le tank ; K=1.5 si on veut le grind plus plat.
   bestiaire, MANIFEST, `scenarioBruteCrush`, doc CLAUDE.md. Smoke : 138 verts.
   Le rework de stats (END→DEF 6:1, DoT div12, etc.) **reste en conception** —
   non implémenté à ce stade.
+- 2026-05-31 : **implémentation runtime du socle D1–D4** (branche
+  `claude/player-stats-rework`). Calibration adoucie retenue **figée comme
+  défaut** du simulateur (`endDefDiv 6`, `dotResDiv 12`) — la commande de repro
+  reflète donc directement la calibration livrée. Constantes dans `data.js`
+  (`INT_MAG_DIV 4`, `END_DEF_DIV 6`, `END_DOT_RES_DIV 12`, `STR_PEN_CAP 0.50`,
+  `STR_PEN_HALF 20`). Sites runtime : `recalculateStats` (D1/D2),
+  `tickStatuses` héros (D3), `executeAttack` + `_strPenFrac` (D4). Tests :
+  `scenarioStatRework` (T1 INT→MAG +5 @int20, T2 END→DEF +5 @end30, T3 burn
+  20−floor(60/12)=15 puis plancher 1, T4 STR20→DEF 40 percée 0.25 → dégâts
+  60→70). D5 volet LCK livré (cf. luck-fortune.md), volet AGI **différé**.
+  - **Sim de confirmation** (n=600, Normal, `--stat-points=3`, knobs par défaut
+    = calibration retenue). Δ = stat-rework − fair-baseline (points de %) :
+
+    | Étage | bal.Solo | bal.Duo | off.Solo | off.Duo | tank.Solo | tank.Duo |
+    |------:|:--:|:--:|:--:|:--:|:--:|:--:|
+    | 5  | +10 | +1  | +7 | +1  | +16 | +0  |
+    | 6  | +11 | +5  | +3 | +9  | +11 | +7  |
+    | 7  | +6  | +16 | +8 | +16 | +7  | +17 |
+    | 8  | +3  | +12 | +2 | +8  | +5  | +21 |
+    | 9  | +2  | +6  | +1 | +4  | +2  | +5  |
+    | 10 | +1  | +2  | +0 | +4  | +1  | +5  |
+    | 11 | +1  | +2  | +1 | +2  | −1  | +2  |
+    | 12 | +0  | +2  | +0 | +2  | +1  | +3  |
+
+    Lecture : **early game (ét. 1-4) intact** (100 % des deux côtés, Δ omis),
+    gain **croissant puis homogène** (le mur le plus dur, ét. 9-12, est déjà
+    proche de 0 % des deux côtés → Δ se tasse mécaniquement ; le rework mord
+    surtout sur la zone jouable ét. 5-8). **Pas de build dominant** : moyenne
+    solo ét. 5-12 ≈ tank +5.3, balanced +4.3, offensive +2.8 — le tank n'est
+    plus le gagnant aberrant des premières sims (réglage adouci 6:1/div12
+    confirmé). Smoke : **143 verts** (+2 scénarios).

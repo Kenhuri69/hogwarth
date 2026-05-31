@@ -710,7 +710,68 @@ for (const slot of Object.keys(c.equipped)) {
   if (item.bonusAtk) c.atk += item.bonusAtk;
   // ... bonusDef/Mag/Lck/Str/Int/Agi/End
 }
+// Rework des stats (D1/D2) — conversions secondaire → primaire, APRÈS
+// base + équipement + sets (sur les stats effectives finales) :
+c.mag += Math.floor(c.int / INT_MAG_DIV);   // D1 — INT → MAG, 4:1
+c.def += Math.floor(c.end / END_DEF_DIV);   // D2 — END → DEF, 6:1
+// D5 — Fortune (volet LCK) : x = LCK + somme des item.bonusFortune (sans Félix)
+c._fortuneX = c.lck + sumBonusFortune;
+c.fortune   = _fortuneCurve(c._fortuneX);   // courbe de Hill saturante
 ```
+
+#### Rework des statistiques du joueur (D1–D5)
+
+Refonte des stats secondaires pour leur donner un débouché réel. Constantes
+dans `data.js`, calibration validée par `tools/sim-difficulty.js`
+(`--stat-rework`, réglage adouci). Cf. `.claude/plans/player-stats-balance.md`
+et `.claude/plans/luck-fortune.md`.
+
+| # | Décision | Implémentation | Calibration |
+|---|----------|----------------|-------------|
+| D1 | INT → MAG | `recalculateStats` : `mag += floor(int/4)` | `INT_MAG_DIV=4` |
+| D2 | END → DEF | `recalculateStats` : `def += floor(end/6)` | `END_DEF_DIV=6` |
+| D3 | END → résistance DoT | `tickStatuses` (héros) : tick subi `−floor(end/12)`, plancher 1 | `END_DOT_RES_DIV=12` |
+| D4 | STR → pénétration de DEF | `executeAttack` : `effDef = def×(1−penFrac)`, `penFrac=_strPenFrac(str)` courbe de Hill (cap 0.50, demi-sat 20). STR garde aussi son +1 ATK | `STR_PEN_CAP=0.50` `STR_PEN_HALF=20` |
+| D5 (LCK) | Fortune (stat dérivée) | voir « Fortune » ci-dessous | `FORTUNE_*`, `FELIX_*` |
+| D5 (AGI) | débouché post-plafond AGI | **différé hors de cette PR** (Phase 2, non conçu/simulé) | — |
+
+> Broyer (levier anti-tank, capacité ennemie `maxhpdamage`) était déjà
+> implémenté et mergé avant ce rework — il n'y a pas été retouché.
+
+### Fortune (stat dérivée — D5 volet LCK)
+
+LCK pilote toujours le crit physique. En plus, une stat dérivée **Fortune**
+(`c.fortune`) influence les événements aléatoires hors-crit. Courbe de Hill
+saturante (pure, `_fortuneCurve` dans `inventory-core.js`) :
+
+```
+fortune = FORTUNE_ASYMPTOTE × x² / (x² + FORTUNE_HALF²)   // → 31 %, demi-sat 30
+  où  x = LCK + Σ item.bonusFortune   (+ FELIX_POINTS si buff Félix actif)
+```
+
+- `c._fortuneX` (= x **sans** Félix) est mémorisé par `recalculateStats` pour
+  que `partyFortune()` ré-applique la courbe avec le buff Félix transient.
+- **`partyFortune()`** (`inventory-core.js`, au MANIFEST loader) : `max` de la
+  Fortune des membres vivants du groupe (or/inventaire partagés). Ajoute
+  `FELIX_POINTS` à `x` **avant** la courbe quand `felixFortuneSteps > 0`.
+- **`item.bonusFortune`** : point d'entrée d'équipement (s'ajoute à `x`, profite
+  donc de la saturation).
+- **Application par événement** : drops `× (1+F)` (`battle-rewards.js`), or
+  `× (1+F×0.5)` (combat/coffre/fouille, poids ½ pour l'éco), seuil objet de
+  fouille `+F` (borné), double-herbe `+F` (≤0.9), Éclat de Vitalité coffre
+  `0.25+F` (≤0.9), fuite `chance+F` (≤0.95, `doFlee`), embuscade de piège
+  `0.5−F` (∈[0.1,0.9], `_triggerDungeonTrap`). Shiny **hors scope**.
+- **Affichage** : ligne « 🍀 Fortune X% » dans `char-stats-panel`
+  (`ui-character-sheet.js`), buff Félix signalé par ✨.
+
+#### Félix Felicis — pur buff de chance
+
+`felix` (`data.js`) n'est **plus** un soin (`+20 PV/+10 PM` retiré) :
+`effect:"fortune"`. Le boire (`useItem`) arme `felixFortuneSteps = FELIX_STEPS`
+(40 pas) ; chaque pas d'exploration (`movement.js — _step`) le décrémente.
+Tant que `> 0`, `FELIX_POINTS` (40) s'ajoutent à `x` dans `partyFortune()` —
+couvre fouilles, coffres et combats d'une exploration d'étage. Sérialisé
+(`save.js`).
 
 ### Migration save legacy (save.js — `_migrateEquippedSlots`)
 Idempotente, appliquée dans `_applyState` **avant** `recalculateStats` :
@@ -923,6 +984,10 @@ critique** : physique et sort (cf. `.claude/plans/crit-rework.md` +
 | `dodgeChance`         | `5 + agi*0.4 + Σ bonusDodgeChance`                   | 5–35 %  |
 | `critMultiplier`      | `1.5 + Σ bonusCritDamage`                            | ≥ 1.5   |
 | `spellCritMultiplier` | `1.5 + Σ bonusSpellCritDamage`                       | ≥ 1.5   |
+| `fortune` (D5)        | `0.31 × x² / (x² + 30²)`, x = `lck + Σ bonusFortune` | 0–~31 % |
+
+> `fortune` pilote les événements aléatoires hors-crit (drops/or/fouille/
+> fuite/pièges) via `partyFortune()` — voir « Fortune (stat dérivée) » plus haut.
 
 - Le crit physique est piloté par **LCK** (plafonne à 40 %), le crit de
   sort par l'**AGI** (plafonne à 35 %) — c'est le rôle offensif de l'AGI.

@@ -107,9 +107,16 @@ function endBattle(won) {
     let totalXp = 0, totalGold = 0;
     enemyGroup.forEach(e => { totalXp += e.xp; totalGold += e.gold + Math.floor(Math.random() * 5); });
 
+    // D5 — Fortune (volet LCK) : le butin du groupe est majoré par la Fortune.
+    // Or à poids ½ pour protéger l'économie (cf. luck-fortune.md §2.4 +
+    // game-economy-gold-audit.md). Drops : seuil × (1 + F). Calculé une fois.
+    const F        = (typeof partyFortune === 'function') ? partyFortune() : 0;
+    const goldFort = 1 + F * 0.5;
+    const dropFort = 1 + F;
+
     // XP et or multipliés selon la difficulté
     player.xp   += Math.floor(totalXp   * diff.xpMultiplier);
-    player.gold += Math.floor(totalGold * diff.goldMultiplier * recolteMult * equipGoldMult);
+    player.gold += Math.floor(totalGold * diff.goldMultiplier * recolteMult * equipGoldMult * goldFort);
 
     // Drops d'objets (chance modulée par la difficulté + bonus Ténèbres).
     // Endgame §7.9 : sur variant `darkness`, drop standards ×1.5 et roll
@@ -119,7 +126,7 @@ function endBattle(won) {
       const darkMult = (e.variant === 'darkness') ? 1.5 : 1.0;
       if (e.drops && e.drops.length) {
         e.drops.forEach(drop => {
-          if (Math.random() < drop.chance * diff.dropChanceMultiplier * darkMult) {
+          if (Math.random() < drop.chance * diff.dropChanceMultiplier * darkMult * dropFort) {
             const item = ITEMS.find(i => i.id === drop.itemId);
             if (item && tryAddItem(item, { silent: true })) {
               addMsg(`<img class="ui-icon ui-icon-sm" src="img/icons/accessory.png" alt=""> Drop : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name} !`, 'good');
@@ -128,7 +135,8 @@ function endBattle(won) {
         });
       }
       if (e.variant === 'darkness') {
-        if (Math.random() < 0.08) {
+        // Drops rares Ténèbres/XL/boss : seuils × (1 + F) (luck-fortune.md §2.4).
+        if (Math.random() < 0.08 * dropFort) {
           const pickId = TENEBRES_DROPS[Math.floor(Math.random() * TENEBRES_DROPS.length)];
           const item   = ITEMS.find(i => i.id === pickId);
           if (item && tryAddItem(item, { silent: true })) {
@@ -136,7 +144,7 @@ function endBattle(won) {
           }
         }
         // Drop 5 % Élixir Suprême HP/SP (random entre les deux)
-        if (Math.random() < 0.05) {
+        if (Math.random() < 0.05 * dropFort) {
           const xlId = Math.random() < 0.5 ? 'potion_xl' : 'potion_xl_sp';
           const item = ITEMS.find(i => i.id === xlId);
           if (item && tryAddItem(item, { silent: true })) {
@@ -144,7 +152,7 @@ function endBattle(won) {
           }
         }
         // Drop 30 % Larme du Phénix Pure — UNIQUEMENT sur Voldemort Ténébreux
-        if (e.id === 'voldemort_revenu' && Math.random() < 0.30) {
+        if (e.id === 'voldemort_revenu' && Math.random() < 0.30 * dropFort) {
           const item = ITEMS.find(i => i.id === 'larme_phenix_pure');
           if (item && tryAddItem(item, { silent: true })) {
             addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Drop unique : ${item.name} !`, 'magic');
@@ -155,8 +163,8 @@ function endBattle(won) {
       // Variant darkness boost le drop ×2 (cf. .claude/plans/forge-library-audit.md §4.2).
       if ((currentFloor || 0) >= 11) {
         const isDark   = e.variant === 'darkness';
-        const essRate  = isDark ? 0.03 : 0.015;
-        const pageRate = isDark ? 0.02 : 0.01;
+        const essRate  = (isDark ? 0.03 : 0.015) * dropFort;
+        const pageRate = (isDark ? 0.02 : 0.01) * dropFort;
         if (Math.random() < essRate) {
           const item = ITEMS.find(i => i.id === 'essence_tenebres');
           if (item && tryAddItem(item, { silent: true })) {
@@ -180,7 +188,7 @@ function endBattle(won) {
     enemyGroup.forEach(e => safeCall('checkVictoryTrigger', e.id));
 
     const xpEarned   = Math.floor(totalXp   * diff.xpMultiplier);
-    const goldEarned = Math.floor(totalGold * diff.goldMultiplier * recolteMult * equipGoldMult);
+    const goldEarned = Math.floor(totalGold * diff.goldMultiplier * recolteMult * equipGoldMult * goldFort);
     // Fusionne les deux bonus or sur une seule ligne pour éviter le spam
     // (un perso avec Récolte Magique + Reliquaire Lunaire affichait 2 lignes
     // chaque combat). Ordre : Récolte (si actif) > Reliquaire (si actif).
