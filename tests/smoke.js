@@ -10019,6 +10019,19 @@ async function scenarioHerbGarden() {
       for (let x = 0; x < dungeon[y].length && gx === -1; x++)
         if (dungeon[y][x] === CELL.GARDEN) { gx = x; gy = y; }
     playerX = gx; playerY = gy; inBattle = false;
+    // Génération non seedée : un piège (priorité « désamorçage ») ou un mur
+    // secret (priorité « passage ») peut atterrir dans les 8 cases adjacentes
+    // au jardin et court-circuiter searchRoom avant la révélation du jardin.
+    // On neutralise ces interactables prioritaires autour du jardin pour
+    // isoler le comportement testé (révélation par fouille), sans toucher au
+    // runtime — l'ordre de priorité réel reste correct.
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) {
+        const tx = gx + dx, ty = gy + dy;
+        if (ty < 0 || tx < 0 || ty >= dungeon.length || tx >= dungeon[ty].length) continue;
+        if (dungeon[ty][tx] === CELL.TRAP) dungeon[ty][tx] = CELL.FLOOR;
+        if (typeof secretWalls !== 'undefined' && secretWalls) secretWalls.delete(`${tx},${ty}`);
+      }
     const keyBefore = hiddenGardens.has(`3,${gx},${gy}`);
     searchRoom();
     return { keyBefore, keyAfter: hiddenGardens.has(`3,${gx},${gy}`), discovered: gardenDiscovered };
