@@ -2617,11 +2617,43 @@ async function scenarioConsumableStacking() {
   assert(t4.merged.len === 2 && t4.merged.qty === 2, 'doublons legacy fusionnés (potion ×2 + robe)');
   assert(t4.brewSeparate === 2, 'potion brassée et potion boutique ne fusionnent pas');
 
+  // T5 : matériaux et objets de quête s'empilent aussi (Éclat de Lumière =
+  // type:'quest', Éclat de Vitalité = type:'material'). _countMaterial /
+  // _consumeMaterial (Forge/Biblio) sont qty-aware.
+  const t5 = await page.evaluate(() => {
+    player.inventory = [];
+    for (let i = 0; i < 3; i++) tryAddItem('eclat_lumiere', { silent: true });  // quest
+    for (let i = 0; i < 2; i++) tryAddItem('eclat_vitalite', { silent: true }); // material
+    const stacked = {
+      len: player.inventory.length,
+      questQty: _itemQty(player.inventory.find(e => e.id === 'eclat_lumiere')),
+      matQty:   _itemQty(player.inventory.find(e => e.id === 'eclat_vitalite')),
+    };
+    // _countMaterial/_consumeMaterial qty-aware (chemin Forge/Bibliothèque).
+    const counted = _countMaterial('eclat_vitalite');
+    const removed = _consumeMaterial('eclat_vitalite', 1);
+    const afterMat = _countMaterial('eclat_vitalite');
+    // _consolidateInventoryStacks fusionne aussi des doublons material/quest.
+    player.inventory = [
+      { ...ITEMS.find(i => i.id === 'eclat_lumiere') },
+      { ...ITEMS.find(i => i.id === 'eclat_lumiere') },
+    ];
+    _consolidateInventoryStacks();
+    return { stacked, counted, removed, afterMat,
+      consolidated: { len: player.inventory.length, qty: _itemQty(player.inventory[0]) } };
+  });
+  console.log('  T5 material/quest :', t5);
+  assert(t5.stacked.len === 2,        'Éclats Lumière (quest) + Vitalité (material) = 2 cases');
+  assert(t5.stacked.questQty === 3,   'objet de quête empilé ×3');
+  assert(t5.stacked.matQty === 2,     'matériau empilé ×2');
+  assert(t5.counted === 2 && t5.removed === 1 && t5.afterMat === 1, '_count/_consumeMaterial qty-aware');
+  assert(t5.consolidated.len === 1 && t5.consolidated.qty === 2, 'doublons quest legacy consolidés ×2');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ stacking consommables : fusion, décrément, cap, quêtes, migration');
+  console.log('  ✅ stacking objets : consommables + matériaux + quête, fusion, décrément, cap, migration');
   await browser.close();
 }
 

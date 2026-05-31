@@ -9,8 +9,15 @@ Cible : alléger la pression sur le sac 16 cases sans toucher à l'équipement
 
 ## Décisions de périmètre
 
-- **Stackables** : uniquement `type === 'consumable'` (demande utilisateur).
-  Matériaux, objets de quête, livres de sort, équipement → restent 1/case.
+- **Stackables** (v1) : `type === 'consumable'`.
+- **Stackables (v2, extension)** : ajout de `material` (Éclat de Vitalité,
+  Essence des Ténèbres, Page de Grimoire) et `quest` (Éclat de Lumière) — cf.
+  `STACKABLE_TYPES`. Demande utilisateur suite à capture (5 Éclats de Lumière
+  éparpillés). Livres de sort et équipement → restent 1/case (état propre par
+  pièce : upgrade Forge, set Maison, sort enseigné).
+- **Helpers Forge/Bibliothèque** : `_countMaterial`/`_consumeMaterial`
+  délèguent désormais à `_countItems`/`_consumeItems` (qty-aware) — aucune
+  dérive entre le comptage de craft et le stacking.
 - **Signature de stack** : `id` + état de brassage (`brewPotency` / `brewed`).
   Deux potions de même `id` non brassées fusionnent ; une potion brassée
   (potency spécifique) ne fusionne qu'avec une potion brassée identique.
