@@ -308,6 +308,13 @@ function openCharacter(charIdx = 0) {
   const spellCritPct = (c.spellCritChance != null)
     ? `${Math.round(c.spellCritChance)}% ×${sCritMult.toFixed(2)}` : '—';
   const dodgePct = (c.dodgeChance != null) ? `${Math.round(c.dodgeChance)}%` : '—';
+  // Fortune (D5 — volet LCK) : pilote drops, or, trouvailles et fuite. Inclut
+  // le buff Félix actif. Cf. .claude/plans/luck-fortune.md §2.5.
+  const felixOn  = (typeof felixFortuneSteps !== 'undefined' && felixFortuneSteps > 0);
+  const fortX    = ((c._fortuneX != null) ? c._fortuneX : (c.lck || 0))
+                 + (felixOn ? ((typeof FELIX_POINTS === 'number') ? FELIX_POINTS : 40) : 0);
+  const fortunePct = (typeof _fortuneCurve === 'function')
+    ? `${Math.round(_fortuneCurve(fortX) * 100)}%${felixOn ? ' ✨' : ''}` : '—';
 
   // Panneau d'allocation : visible uniquement si des points sont en attente.
   const statPts = c.unallocatedStatPoints || 0;
@@ -352,6 +359,7 @@ function openCharacter(charIdx = 0) {
         ${_renderStatLine('img/icons/atk.png', 'Critique',    critPct,      true)}
         ${_renderStatLine('img/icons/mag.png', 'Crit. sort',  spellCritPct, true)}
         ${_renderStatLine('img/icons/agi.png', 'Esquive',     dodgePct,     true)}
+        ${_renderStatLine('img/icons/xp.png',  '🍀 Fortune',  fortunePct,   true)}
       </div>
 
       <!-- Équipement (grid-area:equip) -->

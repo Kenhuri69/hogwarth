@@ -347,6 +347,38 @@ function recalculateStats() {
       c.agi += sb.bonusAgi; c.end += sb.bonusEnd;
     }
 
+    // Rework D1/D2 — conversions stat secondaire → primaire. Appliquées
+    // APRÈS base + équipement + sets (sur les stats effectives finales) :
+    //   D1 INT→MAG 4:1  · D2 END→DEF 6:1.
+    // Le crit physique (calculé ci-dessous) reste piloté par LCK ; la DEF/MAG
+    // gagnée n'affecte que mitigation/dégâts de sort. Miroir exact de
+    // tools/sim-difficulty.js (recalcEffectiveStats). Cf.
+    // .claude/plans/player-stats-balance.md §2 (D1/D2).
+    {
+      const intDiv = (typeof INT_MAG_DIV === 'number') ? INT_MAG_DIV : 4;
+      const endDiv = (typeof END_DEF_DIV === 'number') ? END_DEF_DIV : 6;
+      c.mag += Math.floor((c.int || 0) / intDiv);
+      c.def += Math.floor((c.end || 0) / endDiv);
+    }
+
+    // D5 — Fortune (volet LCK) : stat dérivée pilotant les événements
+    // aléatoires hors-crit (drops, or, fouille/coffres, fuite/pièges). Courbe
+    // de Hill saturante sur x = LCK + Σ item.bonusFortune. Le buff Félix
+    // (felixFortuneSteps) entre dans x au niveau de partyFortune() — transient,
+    // décrémenté par pas d'exploration, pas ici. `_fortuneX` (x sans Félix)
+    // est mémorisé pour que partyFortune() ré-applique la courbe avec Félix.
+    // Cf. .claude/plans/luck-fortune.md §2.1.
+    {
+      let fortuneBonus = 0;
+      if (c.equipped) {
+        for (const item of Object.values(c.equipped)) {
+          if (item && item.bonusFortune) fortuneBonus += item.bonusFortune;
+        }
+      }
+      c._fortuneX = Math.max(0, (c.lck || 0) + fortuneBonus);
+      c.fortune   = _fortuneCurve(c._fortuneX);
+    }
+
     // Deux canaux de crit. Crit physique : base LCK (plafonne à 40 %).
     // Crit de sort : base AGI (plafonne à 35 %) — rôle offensif de l'AGI.
     // Les bonus équipement/set s'ajoutent PAR-DESSUS (plafond absolu 100 %).
@@ -383,4 +415,36 @@ function recalculateStats() {
     // base de 30 % et le plafond de 40 % sont appliqués dans _tryGuardCounter.
     c.counterChance       = counterBonus;
   });
+}
+
+// ── Fortune (D5, volet LCK) ──────────────────────────────────
+// Courbe de Hill saturante : fortune = ASYMPTOTE × x² / (x² + HALF²).
+// Pure (aucune mutation). x = LCK + Σ bonusFortune (+ buff Félix au niveau
+// du groupe). La saturation fait que les bonus fixes (Félix +40) réduisent
+// la valeur marginale de chaque point de LCK. Cf. luck-fortune.md §2.1.
+function _fortuneCurve(x) {
+  const a = (typeof FORTUNE_ASYMPTOTE === 'number') ? FORTUNE_ASYMPTOTE : 0.31;
+  const h = (typeof FORTUNE_HALF === 'number') ? FORTUNE_HALF : 30;
+  const xx = Math.max(0, x || 0);
+  return a * (xx * xx) / (xx * xx + h * h);
+}
+
+// Fortune effective du groupe — le membre le plus chanceux fait bénéficier
+// tout le groupe (modèle inventaire/or partagés). Le buff Félix
+// (felixFortuneSteps > 0) ajoute FELIX_POINTS à x AVANT la courbe, pour
+// profiter de la saturation (cf. luck-fortune.md §2.3). Les membres KO
+// (hp ≤ 0) sont exclus. Retourne une fraction [0, ~0.31] (+ Félix).
+function partyFortune() {
+  if (typeof party === 'undefined' || !Array.isArray(party)) return 0;
+  const felixActive = (typeof felixFortuneSteps !== 'undefined' && felixFortuneSteps > 0);
+  const felixPts = felixActive ? ((typeof FELIX_POINTS === 'number') ? FELIX_POINTS : 40) : 0;
+  const n = (typeof partySize === 'number') ? partySize : party.length;
+  let best = 0;
+  for (const c of party.slice(0, n)) {
+    if (!c || c.hp <= 0) continue;
+    const baseX = (c._fortuneX != null) ? c._fortuneX : (c.lck || 0);
+    const f = _fortuneCurve(baseX + felixPts);
+    if (f > best) best = f;
+  }
+  return best;
 }

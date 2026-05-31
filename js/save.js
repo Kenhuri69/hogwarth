@@ -44,6 +44,7 @@ function _serializeState() {
     pagePlacements: Array.from(pagePlacements.entries()),
     revealedPages:  Array.from(revealedPages),
     restCooldown,
+    felixFortuneSteps,
     usedFountains: Array.from(usedFountains),
     usedAltars: Array.from(usedAltars),
     currentFloorEvent,
@@ -333,6 +334,7 @@ function _applyState(gs) {
   stepCount = (typeof gs.stepCount === 'number') ? gs.stepCount : 0;
   floorDungeons = gs.floorDungeons || {};
   if (gs.restCooldown  !== undefined) restCooldown = gs.restCooldown;
+  felixFortuneSteps = (typeof gs.felixFortuneSteps === 'number') ? gs.felixFortuneSteps : 0;
   usedFountains = new Set(gs.usedFountains || []);
   usedAltars = new Set(gs.usedAltars || []);
   currentFloorEvent = gs.currentFloorEvent || null;

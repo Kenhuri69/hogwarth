@@ -75,6 +75,26 @@ const WEAK_MULTIPLIER   = 1.5;
 // atk − def reste utilisée tant qu'elle dépasse ce plancher.
 const DAMAGE_MIN_FRACTION = 0.25;
 
+// ── Rework des statistiques du joueur (D1–D5) ────────────────
+// Conversions stat secondaire → primaire (recalculateStats) et leviers de
+// combat. Calibration validée par tools/sim-difficulty.js (réglage adouci) :
+// early game intact, gain endgame homogène, pas de build dominant. Cf.
+// .claude/plans/player-stats-balance.md §4.
+const INT_MAG_DIV     = 4;   // D1 — INT → MAG : mag += floor(int/INT_MAG_DIV)
+const END_DEF_DIV     = 6;   // D2 — END → DEF : def += floor(end/END_DEF_DIV)
+const END_DOT_RES_DIV = 12;  // D3 — END → résistance DoT : tick subi −floor(end/12)
+const STR_PEN_CAP     = 0.50; // D4 — pénétration de DEF (courbe de Hill, plafond)
+const STR_PEN_HALF    = 20;   // D4 — STR de demi-saturation de la courbe
+
+// ── Fortune (D5, volet LCK) — cf. .claude/plans/luck-fortune.md ──
+// Stat dérivée pilotant les événements aléatoires hors-crit (drops, or,
+// fouille/coffres, fuite/pièges). Courbe de Hill saturante sur
+// x = LCK + Σ item.bonusFortune (+ buff Félix transient).
+const FORTUNE_ASYMPTOTE = 0.31; // la courbe tend vers 31 % (jamais atteint)
+const FORTUNE_HALF      = 30;   // demi-saturation : x=30 → 15.5 %
+const FELIX_POINTS      = 40;   // points de chance apportés par le buff Félix
+const FELIX_STEPS       = 40;   // durée du buff Félix, en pas d'exploration
+
 // Fouille de salle (movement.js — searchRoom) : seuils cumulatifs sur un
 // Math.random(). roll < GOLD : trouve de l'or. roll < ITEM (et ≥ GOLD) :
 // trouve un item. Sinon : rien.
@@ -350,7 +370,7 @@ const ITEMS = [
   { id:"potion_m", name:"Potion Magique", icon:"💜", desc:"+12 PM", type:"consumable", effect:"restore_sp", power:12, price:25 },
   { id:"potion_l",     name:"Grande Potion de Soin", icon:"🧪", desc:"+40 PV", type:"consumable", effect:"heal",       power:40, price:80 },
   { id:"potion_l_sp",  name:"Grande Potion Magique", icon:"💜", desc:"+30 PM", type:"consumable", effect:"restore_sp", power:30, price:70 },
-  { id:"felix", name:"Félix Felicis", icon:"✨", desc:"+20 PV +10 PM", type:"consumable", effect:"both", power:20, price:80 },
+  { id:"felix", name:"Félix Felicis", icon:"✨", desc:"Chance liquide : améliore butin, or et trouvailles pendant 40 pas.", type:"consumable", effect:"fortune", price:80 },
   { id:"mandragore", name:"Racine de Mandragore", icon:"🌿", desc:"+8 PV", type:"consumable", effect:"heal", power:8, price:15 },
   // ── Consommables à effet (au-delà du +PV/PM) ────────────────
   { id:"elixir_antidote",  name:"Élixir d'Antidote",      icon:"🧴", desc:"Purge brûlure, poison, saignement et engelures", type:"consumable", effect:"cure",        price:45 },

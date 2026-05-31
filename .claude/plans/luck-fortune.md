@@ -1,10 +1,11 @@
 # Stat dérivée « Fortune » — la Chance influence les événements aléatoires
 
-> **Statut : CONCEPTION (à valider avant runtime).** Décision PO : Forme B —
-> LCK reste la stat de **crit physique** ; on ajoute une stat **dérivée**
-> « Fortune % » (nourrie par LCK + équipement + Félix Felicis) qui pilote les
-> événements aléatoires hors-crit. Événements ciblés : **drops, or, fouille/
-> coffres, fuite/pièges**.
+> **Statut : IMPLÉMENTÉ (runtime).** Forme B livrée dans la branche
+> `claude/player-stats-rework` : LCK reste la stat de **crit physique** ; une
+> stat **dérivée** « Fortune % » (LCK + `item.bonusFortune` + buff Félix)
+> pilote les événements aléatoires hors-crit (**drops, or, fouille/coffres,
+> fuite/pièges**). Décisions ouvertes (§6) tranchées : cap **0.31** (courbe),
+> Félix = **pur buff de chance** (soin retiré), durée du buff = **40 pas**.
 
 ## 1. Constat (audit du code, 2026-05-31)
 
@@ -114,16 +115,31 @@ de critChance. Tooltip : « Augmente drops, or, trouvailles et fuite ».
 - `scenarioFortuneStat` : recalc → fortune attendue ; partyFortune = max ;
   drop chance modulée ; flee/trap bornés ; Félix pose/expire le buff.
 
-## 5. Étapes (à valider PO avant d'attaquer)
+## 5. Étapes (toutes ✅ livrées)
 
-1. `inventory-core.js` : calcul `c.fortune` dans recalculateStats + `item.bonusFortune`.
-2. Helper `partyFortune()` (state.js ou inventory-core.js) + `felixFortuneTurns`.
-3. Application par site (battle-rewards / movement-interactions / battle.doFlee).
-4. Félix → buff (inventory.js useItem) + décrément (movement `_step` ou par rencontre).
-5. Fiche perso : ligne Fortune.
-6. Sérialisation `felixFortuneTurns` (save.js).
-7. `loader.js` : `partyFortune` au MANIFEST.
-8. `scenarioFortuneStat` (smoke) + doc CLAUDE.md.
+1. ✅ `inventory-core.js` : `c._fortuneX`/`c.fortune` dans recalculateStats
+   (D1/D2 conversions au passage) + lecture `item.bonusFortune`.
+2. ✅ Helpers purs `_fortuneCurve()` + `partyFortune()` (inventory-core.js) ;
+   global `felixFortuneSteps` (state.js). Constantes `FORTUNE_*`/`FELIX_*`
+   (data.js).
+3. ✅ Application par site : drops `×(1+F)` + drops rares + or `×(1+F×0.5)`
+   (battle-rewards.js) ; seuil objet/double-herbe/coffre Éclat (movement-
+   interactions.js) ; fuite `+F` ≤0.95 (battle.js doFlee) ; embuscade piège
+   `0.5−F` ∈[0.1,0.9] (movement-interactions.js `_triggerDungeonTrap`).
+4. ✅ Félix → `effect:"fortune"` (data.js, soin retiré), pose
+   `felixFortuneSteps=FELIX_STEPS` (inventory.js useItem) + décrément par pas
+   (movement.js `_step`).
+5. ✅ Fiche perso : ligne « 🍀 Fortune X% » (ui-character-sheet.js), ✨ si
+   Félix actif.
+6. ✅ Sérialisation `felixFortuneSteps` (save.js `_serializeState`/`_applyState`).
+7. ✅ `loader.js` : `partyFortune` au MANIFEST.
+8. ✅ `scenarioFortuneStat` (smoke, 5 sous-tests) + doc CLAUDE.md.
+
+> Décision de modèle : la durée Félix est en **pas** (`felixFortuneSteps`),
+> pas en `turns` (le plan parlait de `felixFortuneTurns`). Les points Félix
+> entrent dans `x` au niveau de `partyFortune()` (pas dans `c.fortune`), pour
+> rester cohérents avec la nature transient du buff (décrémenté hors recalc) ;
+> `c._fortuneX` mémorise x **sans** Félix pour permettre la ré-application.
 
 ## 6. Décisions ouvertes (PO)
 
@@ -136,3 +152,16 @@ de critChance. Tooltip : « Augmente drops, or, trouvailles et fuite ».
 - 2026-05-31 : audit LCK (ne touche que le crit + 2 hooks sort) ; Félix sans effet
   de chance. PO choisit Forme B + 4 familles d'événements. Conception rédigée.
   **Aucun code touché — en attente validation calibration (§6).**
+- 2026-05-31 : **implémentation runtime** (branche `claude/player-stats-rework`,
+  même PR que le socle D1–D4). Calibration §6 figée : cap **0.31**, Félix **pur
+  buff** (soin retiré), durée **40 pas**. Courbe + `partyFortune()` purs ;
+  application aux 4 familles d'événements + bornes. EV : Harry base (LCK 15) →
+  ~6.2 % ; + Félix (x=55) → ~23.9 % ; saturation vérifiée (Δ marginal LCK chute
+  sous Félix). Tests : `scenarioFortuneStat` — T1 courbe (15→6.2 %), T2
+  `bonusFortune` 25 → x=40, T3 partyFortune=max + exclusion KO, T4 Félix
+  pose `felixFortuneSteps=40` / aucun soin / expire, T5 application fuite
+  (0.92>0.7 échoue sans Félix, passe à 0.94 avec) + piège (embuscade évitée).
+  3 tests existants (rareHerb/slugClub/herbEconomy) ajustés : la Fortune élargit
+  le seuil objet de fouille (décale la bande herbe pilotée par `Math.random`) →
+  Fortune neutralisée dans ces tests qui mesurent autre chose. Smoke : **143
+  verts**. Doc CLAUDE.md + MANIFEST mis à jour.

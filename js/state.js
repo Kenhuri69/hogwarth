@@ -489,6 +489,10 @@ let stepCount = 0;
 let floorDungeons = {};
 // Cooldown de repos (nombre de déplacements avant nouveau repos)
 let restCooldown = 0;
+// Buff Félix Felicis (D5 — Fortune) : nombre de pas d'exploration restants
+// pendant lesquels FELIX_POINTS s'ajoutent à la Fortune du groupe. Décrémenté
+// dans movement.js — _step, sérialisé. 0 = aucun buff actif.
+let felixFortuneSteps = 0;
 // Fontaines utilisées sur l'étage courant (clé "x,y") — vidée à chaque
 // entrée d'étage : la fontaine se ré-active si l'on quitte puis revient.
 let usedFountains = new Set();
