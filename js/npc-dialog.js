@@ -308,10 +308,15 @@ function _resolveDialogSource(npc, state) {
   const d   = npc.dialogues || {};
   const qid = _currentQuestForState(npc, state);
   const dq  = (qid && npc.dialoguesByQuest && npc.dialoguesByQuest[qid]) || {};
-  const pick = (k) => (dq[k] !== undefined) ? dq[k] : d[k];
+  // Couche `dialoguesByHouse` (P6.b2) : override par Maison du joueur, le plus
+  // spécifique (quête > Maison > défaut). No-op si le PNJ n'a pas le champ.
+  const dh  = (typeof chosenHouse !== 'undefined' && chosenHouse
+    && npc.dialoguesByHouse && npc.dialoguesByHouse[chosenHouse]) || {};
+  const pick = (k) => (dq[k] !== undefined) ? dq[k]
+    : (dh[k] !== undefined) ? dh[k] : d[k];
 
-  if (typeof seenNpcs !== 'undefined' && !seenNpcs.has(npc.id) && d.greeting)
-    return { source: 'greeting', raw: d.greeting, qid, idleIndex: -1 };
+  if (typeof seenNpcs !== 'undefined' && !seenNpcs.has(npc.id) && pick('greeting') !== undefined)
+    return { source: 'greeting', raw: pick('greeting'), qid, idleIndex: -1 };
   if (state === 'offer'  && pick('questOffer')  !== undefined)
     return { source: 'offer',  raw: pick('questOffer'),  qid, idleIndex: -1 };
   if (state === 'active' && pick('questActive') !== undefined)

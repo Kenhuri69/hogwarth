@@ -244,6 +244,37 @@ const NPCS = [
         questActive: "Ces Bundimuns sont corrosifs, prends garde à ton armure. Mais leur sécrétion vaut son pesant de Gallions.",
         questReady:  "Sublime ! Voici mes recettes de maître : la Potion de Force, la Potion de Résistance et l'Élixir d'Esprit Suprême. Use-en avec sagesse."
       }
+    },
+    // Slug Club (P6.b2) : Slughorn — collectionneur de talents — reconnaît
+    // la Maison du joueur dès le premier contact et l'admet dans son cercle.
+    // Override de `greeting` par `chosenHouse` (couche dialoguesByHouse).
+    // L'admission elle-même (membership) est dérivée de seenNpcs ; le bonus
+    // est la cadence de cueillette accrue (isSlugClubMember → searchRoom).
+    dialoguesByHouse: {
+      Gryffondor: {
+        greeting: [
+          "Ah, un Gryffondor ! Le courage, c'est précieux — mais sais-tu qu'on brasse aussi bien qu'on se bat ? J'ai eu de fameux lions à ma table.",
+          "Bienvenue au Club de Slug, mon brave. Tu y gagneras un œil pour les herbes — les cueilleurs avisés en ramènent toujours davantage."
+        ]
+      },
+      Serpentard: {
+        greeting: [
+          "Un Serpentard ! Ma propre maison, et la plus douée pour les Potions, n'en déplaise aux autres. L'ambition et le chaudron font bon ménage.",
+          "Considère-toi admis au Club de Slug, naturellement. Les miens ont toujours su récolter ce que d'autres laissent pourrir entre les pierres."
+        ]
+      },
+      Serdaigle: {
+        greeting: [
+          "Un Serdaigle ! L'esprit vif, l'œil pour le détail — exactement ce qu'il faut pour distinguer une bonne herbe d'une mauvaise.",
+          "Le Club de Slug t'ouvre ses portes. Ta curiosité te fera ramasser deux fois plus que les distraits, crois-moi."
+        ]
+      },
+      Poufsouffle: {
+        greeting: [
+          "Un Poufsouffle ! La patience et le travail — les meilleures vertus du potionniste, qu'on néglige trop souvent.",
+          "Sois le bienvenu au Club de Slug. Les tiens ont la main verte ; tu reviendras de tes cueillettes la besace bien remplie."
+        ]
+      }
     }
   },
   {
