@@ -8,15 +8,17 @@
 // Capacité maximale du sac (constante centralisée).
 const INVENTORY_MAX = 16;
 
-// ── Stacking des consommables ───────────────────────────────
-// Les consommables identiques se regroupent dans une seule case portant
-// un compteur `qty`. Une entrée sans `qty` vaut 1 (rétrocompat saves).
-// Seuls les `type === 'consumable'` s'empilent ; équipement, matériaux,
-// objets de quête et livres restent 1/case. La signature inclut l'état de
-// brassage : une potion brassée (potency propre) ne fusionne qu'avec une
-// potion brassée identique.
+// ── Stacking des objets empilables ──────────────────────────
+// Les objets identiques se regroupent dans une seule case portant un
+// compteur `qty`. Une entrée sans `qty` vaut 1 (rétrocompat saves).
+// S'empilent : consommables, matériaux (Forge/Biblio/chaudron) et objets
+// de quête (Éclat de Lumière…). Équipement et livres de sort restent
+// 1/case (état propre par pièce : upgrade, set, sort enseigné). La
+// signature inclut l'état de brassage : une potion brassée (potency
+// propre) ne fusionne qu'avec une potion brassée identique.
+const STACKABLE_TYPES = ['consumable', 'material', 'quest'];
 function _itemQty(e) { return (e && e.qty) ? e.qty : 1; }
-function _isStackable(item) { return !!item && item.type === 'consumable'; }
+function _isStackable(item) { return !!item && STACKABLE_TYPES.includes(item.type); }
 function _stackKey(item) {
   const pot = (item.brewPotency != null) ? item.brewPotency : '';
   return item.id + '|' + pot + '|' + (item.brewed ? 1 : 0);
@@ -136,22 +138,17 @@ function tryAddItem(itemOrId, opts = {}) {
 }
 
 // Compte les exemplaires d'un matériau (par id) dans le sac partagé.
+// Délègue à _countItems (qty-aware : les matériaux empilés somment leur
+// `qty`).
 function _countMaterial(itemId) {
-  if (typeof player === 'undefined' || !player.inventory) return 0;
-  return player.inventory.filter(it => it && it.id === itemId).length;
+  return _countItems(itemId);
 }
 
 // Retire jusqu'à `n` exemplaires d'un matériau du sac partagé.
+// Délègue à _consumeItems (qty-aware : décrémente les stacks).
 // Retourne le nombre effectivement retiré.
 function _consumeMaterial(itemId, n) {
-  let removed = 0;
-  for (let i = player.inventory.length - 1; i >= 0 && removed < n; i--) {
-    if (player.inventory[i] && player.inventory[i].id === itemId) {
-      player.inventory.splice(i, 1);
-      removed++;
-    }
-  }
-  return removed;
+  return _consumeItems(itemId, n);
 }
 
 // ── Calcul des stats réelles (base + équipement) ────────────
