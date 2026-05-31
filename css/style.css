@@ -1585,8 +1585,19 @@ body {
   font-size: 10px; color: #6a5030;
   text-align: center; padding: 4px;
 }
+.inv-slot { position: relative; }
 .inv-slot:hover { border-color: var(--gold-dark); background: #120a03; }
 .inv-slot.has-item { border-color: #4a3010; }
+/* Compteur de quantité des consommables empilés (×N), coin haut-droit. */
+.inv-qty-badge {
+  position: absolute;
+  top: 2px; right: 3px;
+  font-size: 10px; font-weight: 700; line-height: 1;
+  color: #1a1008;
+  background: var(--gold); border: 1px solid var(--gold-dark);
+  border-radius: 8px; padding: 1px 4px;
+  pointer-events: none; z-index: 2;
+}
 .inv-slot .item-icon { font-size: 22px; }
 .inv-slot .item-name { font-size: 9px; color: var(--parchment-dark); line-height: 1.2; }
 

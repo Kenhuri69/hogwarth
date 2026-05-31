@@ -8,6 +8,101 @@
 // Capacité maximale du sac (constante centralisée).
 const INVENTORY_MAX = 16;
 
+// ── Stacking des consommables ───────────────────────────────
+// Les consommables identiques se regroupent dans une seule case portant
+// un compteur `qty`. Une entrée sans `qty` vaut 1 (rétrocompat saves).
+// Seuls les `type === 'consumable'` s'empilent ; équipement, matériaux,
+// objets de quête et livres restent 1/case. La signature inclut l'état de
+// brassage : une potion brassée (potency propre) ne fusionne qu'avec une
+// potion brassée identique.
+function _itemQty(e) { return (e && e.qty) ? e.qty : 1; }
+function _isStackable(item) { return !!item && item.type === 'consumable'; }
+function _stackKey(item) {
+  const pot = (item.brewPotency != null) ? item.brewPotency : '';
+  return item.id + '|' + pot + '|' + (item.brewed ? 1 : 0);
+}
+
+// Ajoute `item` au sac partagé avec fusion si un stack compatible existe.
+// Retourne true si ajouté (fusion ou nouvelle case), false si sac plein
+// (aucun stack compatible et 16 cases occupées). Copie défensive à l'ajout.
+function _addItemToBag(item) {
+  if (_isStackable(item)) {
+    const key = _stackKey(item);
+    const slot = player.inventory.find(e => e && _isStackable(e) && _stackKey(e) === key);
+    if (slot) { slot.qty = _itemQty(slot) + _itemQty(item); return true; }
+  }
+  if (player.inventory.length >= INVENTORY_MAX) return false;
+  const entry = { ...item };
+  if (_isStackable(entry)) entry.qty = _itemQty(item);
+  player.inventory.push(entry);
+  return true;
+}
+
+// True si `item` peut être ajouté : fusion possible (stack compatible
+// présent) OU une case libre. Permet d'empiler un consommable déjà
+// possédé même quand les 16 cases sont occupées.
+function _canAddItem(item) {
+  if (_isStackable(item)) {
+    const key = _stackKey(item);
+    if (player.inventory.some(e => e && _isStackable(e) && _stackKey(e) === key)) return true;
+  }
+  return player.inventory.length < INVENTORY_MAX;
+}
+
+// Consomme `n` exemplaires (défaut 1) du stack à l'index `idx` : décrémente
+// `qty`, splice la case si épuisée. Retourne le nombre réellement retiré.
+function _consumeAt(idx, n = 1) {
+  const e = player.inventory[idx];
+  if (!e) return 0;
+  const q = _itemQty(e);
+  if (q > n) { e.qty = q - n; return n; }
+  player.inventory.splice(idx, 1);
+  return q;
+}
+
+// Somme des quantités possédées pour un `id` (toutes cases confondues).
+function _countItems(id) {
+  if (typeof player === 'undefined' || !player.inventory) return 0;
+  return player.inventory.reduce((s, e) => (e && e.id === id) ? s + _itemQty(e) : s, 0);
+}
+
+// Retire jusqu'à `n` exemplaires d'un `id`, répartis sur les stacks
+// (itération arrière pour un splice sûr). Retourne le nombre retiré.
+function _consumeItems(id, n) {
+  let removed = 0;
+  for (let i = player.inventory.length - 1; i >= 0 && removed < n; i--) {
+    const e = player.inventory[i];
+    if (!e || e.id !== id) continue;
+    const q = _itemQty(e);
+    const take = Math.min(q, n - removed);
+    if (q > take) e.qty = q - take;
+    else player.inventory.splice(i, 1);
+    removed += take;
+  }
+  return removed;
+}
+
+// Migration : fusionne les doublons de consommables d'une save legacy
+// (exemplaires séparés → un stack `qty`). Idempotent. Préserve l'ordre
+// (première occurrence conservée, suivantes absorbées).
+function _consolidateInventoryStacks() {
+  if (typeof player === 'undefined' || !Array.isArray(player.inventory)) return;
+  const seen = new Map(); // stackKey → entrée conservée
+  const out = [];
+  for (const e of player.inventory) {
+    if (!e) continue;
+    if (_isStackable(e)) {
+      const key = _stackKey(e);
+      const kept = seen.get(key);
+      if (kept) { kept.qty = _itemQty(kept) + _itemQty(e); continue; }
+      e.qty = _itemQty(e);
+      seen.set(key, e);
+    }
+    out.push(e);
+  }
+  player.inventory = out;
+}
+
 // Helper centralisé pour ajouter un item au sac partagé. Accepte un
 // item complet ou un id ; gère le cap, copie defensive et message UX.
 // Retourne true si l'item a été ajouté, false sinon (sac plein ou id
@@ -26,15 +121,17 @@ function tryAddItem(itemOrId, opts = {}) {
     }
     return true;
   }
-  if (player.inventory.length >= INVENTORY_MAX) {
+  // opts.props : champs additionnels fusionnés dans la copie poussée
+  // (ex. `brewed:true` pour une potion issue du chaudron — cf. potions.js).
+  // _addItemToBag empile les consommables compatibles (sans consommer de
+  // case) et respecte le cap pour les nouvelles cases.
+  const merged = { ...item, ...(opts.props || null) };
+  if (!_addItemToBag(merged)) {
     if (!opts.silent && typeof addMsg === 'function') {
       addMsg(`Sac plein, ${item.name || 'objet'} non récupéré.`, 'bad');
     }
     return false;
   }
-  // opts.props : champs additionnels fusionnés dans la copie poussée
-  // (ex. `brewed:true` pour une potion issue du chaudron — cf. potions.js).
-  player.inventory.push({ ...item, ...(opts.props || null) });
   return true;
 }
 

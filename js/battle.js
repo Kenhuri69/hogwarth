@@ -270,7 +270,7 @@ function _tryAutoReviveKOChars() {
     if (c.hp > 0) continue;
     const idx = player.inventory.findIndex(it => it && it.id === 'larme_phenix_pure');
     if (idx < 0) break; // plus de larmes disponibles
-    player.inventory.splice(idx, 1);
+    _consumeAt(idx, 1); // 1 larme du stack par résurrection
     c.hp = c.hpMax;
     c.statusEffects = [];
     log += `✨ ${c.name} ressuscite — la Larme du Phénix Pure se consume ! `;

@@ -389,7 +389,9 @@ function _renderActiveQuestCard(q) {
 
   // Pour l'étape active de type item : recompter depuis l'inventaire
   if (activeStep && activeStep.type === 'item') {
-    activeStep.progress = player.inventory.filter(i => i.id === activeStep.itemId).length;
+    activeStep.progress = (typeof _countItems === 'function')
+      ? _countItems(activeStep.itemId)
+      : player.inventory.filter(i => i.id === activeStep.itemId).length;
   }
   // Étape `pages` : recompter depuis la besace de pages.
   if (activeStep && activeStep.type === 'pages') {
@@ -536,8 +538,9 @@ function _refreshObjectives() {
       }
       if (step.completed) continue;
       if (step.type === 'item') {
-        const count = (player && player.inventory)
-          ? player.inventory.filter(i => i.id === step.itemId).length : 0;
+        const count = (typeof _countItems === 'function')
+          ? _countItems(step.itemId)
+          : ((player && player.inventory) ? player.inventory.filter(i => i.id === step.itemId).length : 0);
         step.progress = count;
         if (count >= step.amount) step.completed = true;
       }
@@ -592,11 +595,15 @@ function _consumeQuestItems(q) {
       continue;
     }
     if (step.type !== 'item') continue;
-    let toConsume = step.amount;
-    player.inventory = player.inventory.filter(i => {
-      if (i.id === step.itemId && toConsume > 0) { toConsume--; return false; }
-      return true;
-    });
+    if (typeof _consumeItems === 'function') {
+      _consumeItems(step.itemId, step.amount); // décrémente les stacks (qty)
+    } else {
+      let toConsume = step.amount;
+      player.inventory = player.inventory.filter(i => {
+        if (i.id === step.itemId && toConsume > 0) { toConsume--; return false; }
+        return true;
+      });
+    }
   }
 }
 
