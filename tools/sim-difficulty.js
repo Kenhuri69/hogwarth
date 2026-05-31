@@ -416,6 +416,7 @@ function parseArgs(argv) {
                 penCap: 0.50, penHalf: 20, dotResDiv: 8,
                 intMagDiv: 4, endDefDiv: 4, enemyPen: 0,
                 enemyPenLo: 20, enemyPenHi: 34,
+                maxhpDmg: 0, maxhpChance: 0.5,
                 elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -452,6 +453,8 @@ function parseArgs(argv) {
     else if (k === 'enemy-pen')    out.enemyPen = parseFloat(v) || 0;
     else if (k === 'enemy-pen-lo') out.enemyPenLo = parseFloat(v);
     else if (k === 'enemy-pen-hi') out.enemyPenHi = parseFloat(v);
+    else if (k === 'maxhp-dmg')    out.maxhpDmg = parseFloat(v) || 0;
+    else if (k === 'maxhp-chance') out.maxhpChance = parseFloat(v) || 0.5;
     else if (k === 'forge')        out.forge   = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
     else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
     else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
@@ -528,6 +531,9 @@ Options:
                           fraction suit une rampe à seuil sur la DEF cible.
   --enemy-pen-lo=F        [Option D] DEF sous laquelle la pénétration = 0 (def 20)
   --enemy-pen-hi=F        [Option D] DEF au-delà de laquelle penFrac = plafond (def 34)
+  --maxhp-dmg=F           [Anti-tank] Capacité « Broyer » sur les brutes : dégâts
+                          = F × PV max de la cible, contournant la DEF (def 0).
+  --maxhp-chance=F        [Anti-tank] Chance par tour de déclencher Broyer (def 0.5)
   --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
   --max-floor=N           Étage max en mode --endgame (def 40)
   --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
@@ -642,11 +648,22 @@ function scaleMonster(base, floor, cfg) {
   // de DEF des builds endgame étant étroite (offensif ~24 → tank ~31),
   // le seuil cible le mur de DEF du tank sans pénaliser l'offensif —
   // une courbe de Hill (n=2) serait trop molle pour discriminer.
+  const isBrute = (base.atk || 0) >= 1.5 * (base.mag || 0) && (base.atk || 0) >= 12;
   out._armorPenCap = 0;
-  if (cfg.enemyPen > 0 && (base.atk || 0) >= 1.5 * (base.mag || 0) && (base.atk || 0) >= 12) {
+  if (cfg.enemyPen > 0 && isBrute) {
     out._armorPenCap = cfg.enemyPen;
     out._armorPenLo  = (typeof cfg.enemyPenLo === 'number') ? cfg.enemyPenLo : 20;
     out._armorPenHi  = (typeof cfg.enemyPenHi === 'number') ? cfg.enemyPenHi : 34;
+  }
+  // Levier anti-tank (analyse) — capacité « Broyer » : dégâts proportionnels
+  // aux PV MAX de la cible, contournant la DEF. Contre-tank exact : scale avec
+  // le pool de PV (le vrai avantage du tank) là où un coup normal est réduit
+  // au plancher. Injectée comme capacité (effect:"maxhpdamage") sur les brutes
+  // via --maxhp-dmg=FRAC (def 0 → inactif). Routée par enemyAct comme un
+  // 'damage' pour la sélection d'IA. Alternative thématique : réserver aux boss.
+  if (cfg.maxhpDmg > 0 && isBrute) {
+    out.abilities = [...(out.abilities || []),
+      { effect: 'maxhpdamage', power: cfg.maxhpDmg, chance: cfg.maxhpChance }];
   }
   return out;
 }
@@ -1249,7 +1266,7 @@ function enemyAct(enemy, target, partySize) {
     if (fired.length) {
       const ai = enemy.ai;
       if (ai === 'aggressive') {
-        ability = fired.find(a => a.effect === 'damage' || a.effect === 'drain') || fired[0];
+        ability = fired.find(a => a.effect === 'damage' || a.effect === 'drain' || a.effect === 'maxhpdamage') || fired[0];
       } else if (ai === 'cautious') {
         const lowHp = enemy.currentHp < (enemy.hp || enemy.currentHp) * 0.35;
         ability = lowHp
@@ -1266,6 +1283,15 @@ function enemyAct(enemy, target, partySize) {
           // battle-spells.js). Division par 3 : effet modéré.
           const raw = ability.power + Math.floor((enemy.mag || 0) / 2);
           const dmg = Math.max(1, raw - Math.floor((target.def || 0) / 3));
+          if (target.shieldTurns > 0) { target.shieldTurns--; return 0; }
+          target.hp = Math.max(0, target.hp - dmg);
+          return dmg;
+        }
+        case 'maxhpdamage': {
+          // Broyer — dégâts = power × PV MAX de la cible, contournant la DEF.
+          // Contre-tank : scale avec le pool de PV. Le bouclier l'annule (comme
+          // 'damage') ; plancher à 1. Guard non modélisé ici (miroir de 'damage').
+          const dmg = Math.max(1, Math.floor((target.hpMax || target.hp) * ability.power));
           if (target.shieldTurns > 0) { target.shieldTurns--; return 0; }
           target.hp = Math.max(0, target.hp - dmg);
           return dmg;

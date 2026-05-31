@@ -245,6 +245,32 @@ le mauvais levier.** Le vrai levier anti-tank serait END→PV (réduire le +5 PV
 ou plafonner la contribution PV de l'END), non encore simulé. Décision PO en
 attente.
 
+### 4 ter. Levier retenu — capacité « Broyer » (dégâts % PV max)
+
+Décision PO : **accepter le tank durable**, mais lui opposer une menace ciblée
+plutôt que nerfer END→PV. Levier choisi : capacité monstre **Broyer** infligeant
+`F × PV max` de la cible, **contournant la DEF**. Modélisé en sim via
+`--maxhp-dmg=F` / `--maxhp-chance=C` (injecte une ability `effect:"maxhpdamage"`
+sur les brutes ; routée comme un 'damage' pour l'IA).
+
+**Mesures (win % moyen, solo, ét. 8-12, `--stat-points=3`) :**
+
+| Config | offensif | balanced | tank | écart t−o |
+|--------|:--:|:--:|:--:|:--:|
+| socle seul | 42.8 | 51.6 | 58.6 | +15.8 |
+| Broyer 0.10 / 50 % | 45.0 | 50.6 | **52.8** | **+7.8** |
+
+**Verdict.** Resserre l'écart de **8 pts** (vs ~2-3 pour la pénétration d'armure),
+**offensif intact** (+2.2, bruit), tank **toujours devant donc durable** (52.8).
+Mécanisme auto-ciblant : le tank combat plus longtemps (12-15 tours) → encaisse
+plus de procs, chacun ignorant sa DEF et scalant sur son pool de PV ; l'offensif
+tue avant d'en manger beaucoup. **C'est le bon levier anti-tank.**
+
+Reste à calibrer (PO) : fraction (0.08-0.12 ?), chance/tour, et cible
+(toutes les brutes vs réservé aux boss « écraseurs »). Implémentation runtime
+(`monsters.js` ability + `battle-spells.js` handler `maxhpdamage`) à faire après
+calibrage. **Aucun code `js/` touché à ce stade.**
+
 ## 5. Journal
 
 - 2026-05-31 : revue + décisions D1-D5. Implémentation prématurée annulée
@@ -259,4 +285,9 @@ attente.
   `--enemy-pen-lo/-hi`). Mesure n=600 : courbe chirurgicale mais effet faible
   (~2-3 pts). **Diagnostic : l'edge du tank est son pool de PV (+82 %), pas la
   DEF (+24 %) — la pénétration d'armure vise le mauvais levier.** Outil de
-  mesure uniquement, aucun code `js/` touché. Décision PO en attente.
+  mesure uniquement, aucun code `js/` touché.
+- 2026-05-31 : décision PO — tank accepté durable, levier = capacité **Broyer**
+  (dégâts % PV max contournant la DEF). Modèle sim `--maxhp-dmg/-chance`. Mesure
+  n=600 : à 0.10/50 %, écart tank−offensif **+15.8 → +7.8** (−8 pts), offensif
+  intact, tank toujours devant. **Le bon levier.** Calibrage fin + cible
+  (brutes/boss) en attente PO avant implémentation runtime. Aucun code `js/` touché.
