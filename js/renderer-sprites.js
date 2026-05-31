@@ -503,19 +503,29 @@ function drawFountainSprite(x, baseY, sz, dried) {
 }
 
 // Jardin d'herbes (Potions P6.b3) — sprite de couloir d'un jardin révélé.
-function drawGardenSprite(x, baseY, sz) {
+// `tier` (1-4) adapte la palette aux herbes du palier (cf. SCENE_ICONS.garden).
+function drawGardenSprite(x, baseY, sz, tier) {
+  tier = tier || 1;
+  // Halo coloré par palier — accordé à la palette SVG.
+  const HALO = {
+    1: ['rgba(120,220,130,0.40)', 'rgba(40,110,60,0)'],
+    2: ['rgba(110,225,205,0.40)', 'rgba(40,120,100,0)'],
+    3: ['rgba(200,140,240,0.42)', 'rgba(110,60,160,0)'],
+    4: ['rgba(240,90,90,0.42)',   'rgba(120,30,30,0)']
+  };
+  const haloCols = HALO[tier] || HALO[1];
   ctx.save();
   // Ombre au sol
   ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.5, sz * 0.12, 0, 0, Math.PI * 2); ctx.fill();
-  // Halo vert luminescent
+  // Halo luminescent (teinte par palier)
   const halo = ctx.createRadialGradient(x, baseY - sz * 0.45, 0, x, baseY - sz * 0.45, sz * 0.95);
-  halo.addColorStop(0, 'rgba(120,220,130,0.40)');
-  halo.addColorStop(1, 'rgba(40,110,60,0)');
+  halo.addColorStop(0, haloCols[0]);
+  halo.addColorStop(1, haloCols[1]);
   ctx.fillStyle = halo;
   ctx.beginPath(); ctx.arc(x, baseY - sz * 0.45, sz * 0.95, 0, Math.PI * 2); ctx.fill();
-  // Visuel SVG du jardin (viewBox 120×130).
-  const entry = _getSceneSvgImg('garden', () => SCENE_ICONS.garden());
+  // Visuel SVG du jardin (viewBox 120×130) — caché par palier.
+  const entry = _getSceneSvgImg('garden_t' + tier, () => SCENE_ICONS.garden(tier));
   if (entry && entry.ready) {
     const h = sz * 1.1, w = h * (120 / 130);
     ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
