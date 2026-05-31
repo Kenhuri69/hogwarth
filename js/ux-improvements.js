@@ -366,7 +366,7 @@
     if (typeof enemyGroup !== 'undefined') {
       enemyGroup.forEach(e => {
         if (e.currentHp > 0) {
-          order.push({ kind: 'enemy', name: e.name, emoji: e.icon || '👹', ko: false, active: false });
+          order.push({ kind: 'enemy', name: e.name, img: e.imgSrc, emoji: e.icon || '👹', ko: false, active: false });
         }
       });
     }
