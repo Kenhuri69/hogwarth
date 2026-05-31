@@ -17,6 +17,11 @@
 // Voir ENDGAME_PLAN.md §3-§6.
 
 (function () {
+  // A1 — sting audio de victoire : garde-fou d'idempotence. La modale peut
+  // être ré-affichée (double trigger défensif) ; le son ne doit jouer qu'à
+  // la première ouverture.
+  let _victoryStingPlayed = false;
+
   function _humanizeDuration(ms) {
     if (!ms || ms < 0) return '—';
     const sec = Math.floor(ms / 1000);
@@ -109,6 +114,12 @@
     }
 
     modal.style.display = 'flex';
+    // A1 — sting audio de victoire : joué uniquement à la première ouverture.
+    // Call-site défensif (reduced-motion ne s'applique pas à l'audio).
+    if (!_victoryStingPlayed) {
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playVictory) AudioSystem.playVictory();
+      _victoryStingPlayed = true;
+    }
     // Cinématique de victoire (Lot 3) : halo doré + pluie de lumière.
     // Défensif + no-op sous reduced-motion (voir js/cinematics.js).
     if (window.CIN_safe) window.CIN_safe.victoryFlourish();
