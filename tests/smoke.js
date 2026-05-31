@@ -2513,24 +2513,29 @@ async function scenarioTryAddItem() {
 
   const t1 = await page.evaluate(() => {
     player.inventory = [];
-    const r1 = tryAddItem('potion_s', { silent: true });
-    const r2 = tryAddItem(ITEMS[0],   { silent: true });
-    const r3 = tryAddItem('idée_inexistante', { silent: true });
-    return { r1, r2, r3, len: player.inventory.length };
+    const r1 = tryAddItem('potion_s', { silent: true });        // nouveau stack
+    const r2 = tryAddItem('potion_s', { silent: true });        // fusionne → qty 2
+    const r3 = tryAddItem('robe1',    { silent: true });        // équipement → case distincte
+    const r4 = tryAddItem('idée_inexistante', { silent: true });
+    const stack = player.inventory.find(e => e.id === 'potion_s');
+    return { r1, r2, r3, r4, len: player.inventory.length, qty: stack ? (stack.qty || 1) : 0 };
   });
   console.log('  T1 ajouts simples :', t1);
   assert(t1.r1 === true,  'tryAddItem doit accepter un id valide');
-  assert(t1.r2 === true,  'tryAddItem doit accepter un objet item');
-  assert(t1.r3 === false, 'tryAddItem doit refuser un id inconnu');
-  assert(t1.len === 2,    'inventaire doit contenir 2 items après les 2 succès');
+  assert(t1.r2 === true,  'tryAddItem doit accepter un 2e exemplaire (fusion)');
+  assert(t1.r3 === true,  'tryAddItem doit accepter un équipement');
+  assert(t1.r4 === false, 'tryAddItem doit refuser un id inconnu');
+  assert(t1.len === 2,    'potion_s empilée (1 case) + robe1 (1 case) = 2 cases');
+  assert(t1.qty === 2,    'deux potion_s fusionnent en un stack ×2');
 
   const t2 = await page.evaluate(() => {
-    player.inventory = Array.from({ length: 16 }, () => ({ ...ITEMS[0] }));
-    const r = tryAddItem('potion_s', { silent: true });
+    // 16 cases non empilables distinctes → cap réellement atteint.
+    player.inventory = Array.from({ length: 16 }, (_, i) => ({ id: 'mat_' + i, name: 'Mat ' + i, type: 'material' }));
+    const r = tryAddItem('robe1', { silent: true }); // nouvel item, 0 case libre → refusé
     return { r, len: player.inventory.length };
   });
   console.log('  T2 cap 16 atteint :', t2);
-  assert(t2.r === false, 'tryAddItem doit refuser quand inventaire plein');
+  assert(t2.r === false, 'tryAddItem doit refuser un nouvel item quand 16 cases pleines');
   assert(t2.len === 16,  'inventaire ne doit pas dépasser INVENTORY_MAX');
 
   if (errors.length) {
@@ -2538,6 +2543,85 @@ async function scenarioTryAddItem() {
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
   console.log('  ✅ tryAddItem : id, objet, cap 16');
+  await browser.close();
+}
+
+// ── Scénario : stacking des consommables identiques ───────────
+
+async function scenarioConsumableStacking() {
+  console.log('\n── Scénario : stacking consommables ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page);
+
+  // T1 : fusion à l'ajout puis consommation décrémente le stack (qty).
+  const t1 = await page.evaluate(() => {
+    player.inventory = [];
+    tryAddItem('potion_s', { silent: true });
+    tryAddItem('potion_s', { silent: true });
+    tryAddItem('potion_s', { silent: true });
+    const afterAdd = { len: player.inventory.length, qty: _itemQty(player.inventory[0]) };
+    party[0].hp = 1;                 // useItem (hors combat) soigne Harry
+    useItem(0, false);               // consomme 1 → qty 2
+    const afterUse = { len: player.inventory.length, qty: _itemQty(player.inventory[0]) };
+    _consumeAt(0, 1); _consumeAt(0, 1); // épuise le stack
+    return { afterAdd, afterUse, emptied: player.inventory.length };
+  });
+  console.log('  T1 fusion/consommation :', t1);
+  assert(t1.afterAdd.len === 1 && t1.afterAdd.qty === 3, '3 potions → 1 case ×3');
+  assert(t1.afterUse.len === 1 && t1.afterUse.qty === 2, 'useItem décrémente sans vider (×2)');
+  assert(t1.emptied === 0, 'stack épuisé → case libérée');
+
+  // T2 : sac plein (16 cases) — on peut empiler un consommable déjà possédé,
+  // mais pas introduire un nouvel id.
+  const t2 = await page.evaluate(() => {
+    player.inventory = Array.from({ length: 15 }, (_, i) => ({ id: 'mat_' + i, name: 'M' + i, type: 'material' }));
+    tryAddItem('potion_s', { silent: true }); // 16e case
+    const canMatch = _canAddItem(ITEMS.find(i => i.id === 'potion_s'));
+    const rMatch   = tryAddItem('potion_s', { silent: true }); // fusion malgré 16 cases
+    const rBlocked = tryAddItem('felix',    { silent: true }); // nouvel id, plein → refusé
+    const stack = player.inventory.find(e => e.id === 'potion_s');
+    return { canMatch, rMatch, rBlocked, len: player.inventory.length, qty: stack ? (stack.qty || 1) : 0 };
+  });
+  console.log('  T2 fusion sac plein :', t2);
+  assert(t2.canMatch === true,  '_canAddItem autorise un consommable déjà possédé même plein');
+  assert(t2.rMatch === true,    'fusion possible malgré 16 cases');
+  assert(t2.rBlocked === false, 'nouvel id refusé quand 16 cases pleines');
+  assert(t2.len === 16 && t2.qty === 2, '16 cases, potion_s ×2');
+
+  // T3 : comptage/consommation par id sensibles à la quantité (quêtes/ingrédients).
+  const t3 = await page.evaluate(() => {
+    player.inventory = [];
+    tryAddItem('mandragore', { silent: true });
+    tryAddItem('mandragore', { silent: true });
+    const counted = _countItems('mandragore');
+    _consumeItems('mandragore', 1);
+    return { counted, len: player.inventory.length, after: _countItems('mandragore') };
+  });
+  console.log('  T3 count/consume par id :', t3);
+  assert(t3.counted === 2,            '_countItems somme les qty (2)');
+  assert(t3.len === 1 && t3.after === 1, '_consumeItems décrémente le stack (reste 1)');
+
+  // T4 : migration — doublons d'une save legacy fusionnés ; brassage distinct.
+  const t4 = await page.evaluate(() => {
+    const ps = ITEMS.find(i => i.id === 'potion_s');
+    player.inventory = [{ ...ps }, { ...ps }, { ...ITEMS.find(i => i.id === 'robe1') }];
+    _consolidateInventoryStacks();
+    const merged = { len: player.inventory.length, qty: _itemQty(player.inventory.find(e => e.id === 'potion_s')) };
+    // Une potion brassée ne fusionne pas avec une potion de boutique.
+    player.inventory = [];
+    tryAddItem('potion_s', { silent: true });
+    tryAddItem('potion_s', { silent: true, props: { brewed: true, brewPotency: 0.5 } });
+    return { merged, brewSeparate: player.inventory.length };
+  });
+  console.log('  T4 migration/brassage :', t4);
+  assert(t4.merged.len === 2 && t4.merged.qty === 2, 'doublons legacy fusionnés (potion ×2 + robe)');
+  assert(t4.brewSeparate === 2, 'potion brassée et potion boutique ne fusionnent pas');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ stacking consommables : fusion, décrément, cap, quêtes, migration');
   await browser.close();
 }
 
@@ -16117,7 +16201,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

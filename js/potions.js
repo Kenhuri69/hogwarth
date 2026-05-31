@@ -59,13 +59,16 @@ function _isHerbIngredient(id) {
 
 function _ingredientCount(id) {
   if (!_isHerbIngredient(id)) {
-    return (player.inventory || []).filter(it => it && it.id === id).length;
+    return (typeof _countItems === 'function')
+      ? _countItems(id)
+      : (player.inventory || []).filter(it => it && it.id === id).length;
   }
   return getHerbCount(id);
 }
 
 function _consumeIngredient(id, n) {
   if (!_isHerbIngredient(id)) {
+    if (typeof _consumeItems === 'function') { _consumeItems(id, n); return; }
     for (let k = 0; k < n; k++) {
       const idx = (player.inventory || []).findIndex(it => it && it.id === id);
       if (idx >= 0) player.inventory.splice(idx, 1);
