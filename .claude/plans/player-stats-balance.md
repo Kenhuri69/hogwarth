@@ -206,6 +206,45 @@ basse + perce-armure = double peine). Deux pistes si on la retient :
 - Option D (à trancher) : pénétration d'armure des brutes, dose à fixer
   (`0.15` léger / `0.30` marqué) ou réservée aux boss.
 
+### 4 bis. Option D — courbe sur DEF cible (rampe à seuil)
+
+Sur décision PO (« courbe, pas fraction plate »), `--enemy-pen` est passé d'une
+fraction constante à une **rampe à seuil sur la DEF de la cible** (helper pur
+`enemyArmorPenFrac`), réglable par `--enemy-pen-lo` / `--enemy-pen-hi` :
+
+```
+penFrac(DEF) = cap · clamp((DEF − penLo) / (penHi − penLo), 0, 1)
+```
+
+→ plate à 0 sous penLo, linéaire au milieu, plateau à cap au-delà de penHi.
+Forme retenue plutôt qu'une Hill (n=2) car la **fenêtre de DEF entre builds est
+étroite** (mesurée : offensif ~24 → tank ~31 aux ét. 8-12) ; une Hill serait trop
+molle pour discriminer.
+
+**Mesures (win % moyen, solo, ét. 8-12, `--stat-points=3`) :**
+
+| Config | offensif | balanced | tank | écart t−o |
+|--------|:--:|:--:|:--:|:--:|
+| socle seul | 42.8 | 51.6 | 58.6 | +15.8 |
+| D-courbe cap 0.35 (lo20/hi34) | 43.6 | 51.6 | 57.0 | +13.4 |
+| D-courbe cap 0.50 (lo22/hi32) | 42.2 | 50.4 | 56.6 | +14.4 |
+
+**Finding décisif.** La courbe est *chirurgicale* (offensif intact, seul le tank
+raboté — ce que la fraction plate ratait), mais **toute dose ne resserre l'écart
+que de ~2-3 pts**. Cause profonde (mesurée, ét. 10) :
+
+| Build | HP | DEF |
+|-------|:--:|:--:|
+| offensif | 165 | 25 |
+| tank | **300** | 31 |
+
+→ **+135 HP (+82 %) vs +6 DEF (+24 %)**. La domination du tank vient de son
+**réservoir de PV (END→+5 PV/point)**, pas de son mur de DEF. La pénétration
+d'armure attaque le petit avantage et laisse intact le grand. **Structurellement
+le mauvais levier.** Le vrai levier anti-tank serait END→PV (réduire le +5 PV/pt,
+ou plafonner la contribution PV de l'END), non encore simulé. Décision PO en
+attente.
+
 ## 5. Journal
 
 - 2026-05-31 : revue + décisions D1-D5. Implémentation prématurée annulée
@@ -216,3 +255,8 @@ basse + perce-armure = double peine). Deux pistes si on la retient :
   **END sur-récompensée** (build tank +13 à +20 pts solo). Reco : tester
   END→DEF en 6:1 et/ou dotResDiv=12 avant de figer. **Aucune valeur figée,
   aucun code de jeu touché — décision d'implémentation en attente du PO.**
+- 2026-05-31 : Option D passée en **rampe à seuil sur DEF cible** (knobs
+  `--enemy-pen-lo/-hi`). Mesure n=600 : courbe chirurgicale mais effet faible
+  (~2-3 pts). **Diagnostic : l'edge du tank est son pool de PV (+82 %), pas la
+  DEF (+24 %) — la pénétration d'armure vise le mauvais levier.** Outil de
+  mesure uniquement, aucun code `js/` touché. Décision PO en attente.
