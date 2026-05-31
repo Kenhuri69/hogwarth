@@ -16695,8 +16695,8 @@ async function scenarioEnemyAbilityArchetypes() {
   await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
   await startDummyFight(page, { hp: 100 });
 
-  // T1 — summon : slot libre → l'add rejoint enemyGroup ; slot plein (3) →
-  // tryEnemyAbility retourne false et la taille reste inchangée.
+  // T1 — summon : slot libre → l'add rejoint enemyGroup ; slot plein
+  // (MAX_ENEMY_GROUP) → tryEnemyAbility retourne false, taille inchangée.
   const t1 = await page.evaluate(() => {
     currentFloor = 9;
     const summoner = enemyGroup[0];
@@ -16711,8 +16711,10 @@ async function scenarioEnemyAbilityArchetypes() {
       ret1 = tryEnemyAbility(summoner, party[0], 0, () => {});
       const afterSummon = enemyGroup.length;
       const lastSummoned = !!enemyGroup[afterSummon - 1]._summoned;
-      // Remplir jusqu'à 3 puis retenter — slot plein.
-      while (enemyGroup.length < 3) enemyGroup.push({ name: 'X', hp: 1, currentHp: 1, atk: 1, statusEffects: [] });
+      // Remplir jusqu'au plafond contextuel (3 ici : étage 9 duo non
+      // post-victoire) puis retenter — slot plein.
+      const cap = currentMaxGroupSize();
+      while (enemyGroup.length < cap) enemyGroup.push({ name: 'X', hp: 1, currentHp: 1, atk: 1, statusEffects: [] });
       const full = enemyGroup.length;
       ret2 = tryEnemyAbility(summoner, party[0], 0, () => {});
       const afterFull = enemyGroup.length;
@@ -16723,7 +16725,7 @@ async function scenarioEnemyAbilityArchetypes() {
   assert(t1.ret1 === true,                  'summon doit réussir (slot libre)');
   assert(t1.afterSummon === t1.before + 1,  'summon doit ajouter un ennemi');
   assert(t1.lastSummoned,                   'l\'add doit porter le marqueur _summoned');
-  assert(t1.ret2 === false,                 'summon slot plein (3) → return false');
+  assert(t1.ret2 === false,                 'summon slot plein (cap) → return false');
   assert(t1.afterFull === t1.full,          'slot plein → enemyGroup inchangé');
 
   // T2 — enrage_self : au-dessus du seuil = pas d'enrage ; sous le seuil =
@@ -17159,9 +17161,77 @@ async function scenarioCombatFX() {
   await browser.close();
 }
 
+// ── Scénario : gros groupes ennemis (4-5, endgame + duo) ─────
+// Vérifie le tirage gaté de rollGroupSize (jamais >3 hors endgame/duo ;
+// parfois 4-5 en duo post-victoire 11+ avec farming) + le rendu/cible/
+// dégâts flottants d'un groupe de 5 + le cap d'invocation summon.
+async function scenarioLargeEnemyGroup() {
+  console.log('\n── Scénario : gros groupes ennemis (4-5) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+
+  // T1 — gating : solo OU non-endgame ne dépasse jamais 3.
+  const gate = await page.evaluate(() => {
+    const sample = (cfg) => {
+      partySize      = cfg.partySize;
+      currentFloor   = cfg.floor;
+      victoryAchieved = cfg.victory;
+      floorKillCount = new Map([[cfg.floor, cfg.kills]]);
+      let max = 0;
+      for (let i = 0; i < 4000; i++) max = Math.max(max, rollGroupSize());
+      return max;
+    };
+    const soloEndgame = sample({ partySize: 1, floor: 12, victory: true,  kills: 80 });
+    const capSolo     = currentMaxGroupSize();   // contexte solo endgame
+    const duoEarly    = sample({ partySize: 2, floor: 8,  victory: false, kills: 80 });
+    const capDuoEarly = currentMaxGroupSize();   // contexte duo non post-victoire
+    const duoEndgame  = sample({ partySize: 2, floor: 12, victory: true,  kills: 80 });
+    const capDuoEnd   = currentMaxGroupSize();   // contexte duo endgame
+    return { soloEndgame, duoEarly, duoEndgame, cap: MAX_ENEMY_GROUP, capSolo, capDuoEarly, capDuoEnd };
+  });
+  console.log('  gating :', gate);
+  assert(gate.cap === 5, 'MAX_ENEMY_GROUP attendu = 5');
+  assert(gate.soloEndgame <= 3, 'solo ne doit jamais dépasser 3 ennemis');
+  assert(gate.duoEarly    <= 3, 'duo hors post-victoire ne doit pas dépasser 3');
+  assert(gate.duoEndgame  >= 4, 'duo endgame doit parfois produire 4-5 ennemis');
+  // Plafond contextuel partagé (spawn + invocations) : 3 hors endgame+duo.
+  assert(gate.capSolo     === 3, 'plafond solo endgame doit rester 3 (invocations incluses)');
+  assert(gate.capDuoEarly === 3, 'plafond duo non post-victoire doit rester 3');
+  assert(gate.capDuoEnd   === 5, 'plafond duo endgame doit être 5');
+
+  // T2 — rendu + sélection de cible + dégâts flottants pour 5 ennemis.
+  const render = await page.evaluate(() => {
+    const mk = (i) => ({
+      id: 'big_' + i, name: 'Ombre ' + i, icon: '👤',
+      hp: 30, currentHp: 30, atk: 3, def: 0, mag: 0, agi: 0, lck: 0,
+      xp: 0, gold: 0, abilities: [], drops: [], resist: [], weak: [],
+      statusEffects: [], desc: 'Test'
+    });
+    inBattle = true;
+    enemyGroup = [0,1,2,3,4].map(mk);
+    renderEnemyGroup();
+    showTargetSelection('attack');
+    const cards = document.querySelectorAll('#enemy-group .enemy-card').length;
+    const last  = !!document.getElementById('enemy-card-4');
+    const btns  = document.querySelectorAll('#target-buttons button').length;
+    let floatOk = true;
+    try { if (window.UX) UX.floatDmg('enemy:4', 7, 'dmg'); } catch (e) { floatOk = false; }
+    return { cards, last, btns, floatOk };
+  });
+  console.log('  rendu :', render);
+  assert(render.cards === 5, '5 cartes ennemies attendues');
+  assert(render.last,        'carte enemy-card-4 absente');
+  assert(render.btns  === 5, '5 boutons de cible attendus');
+  assert(render.floatOk,     'floatDmg enemy:4 a levé une erreur');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS (gros groupes)'); }
+  console.log('  ✅ gros groupes ennemis (gating + rendu 5 + cibles) OK');
+  await browser.close();
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioLargeEnemyGroup];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))

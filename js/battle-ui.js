@@ -134,10 +134,16 @@ function renderEnemyGroup() {
   container.innerHTML = '';
   const count = enemyGroup.length;
 
+  // Layout adaptatif : icônes/barres plus compactes au-delà de 3 ennemis
+  // (groupes endgame de 4-5) pour tenir à l'écran + flex-wrap CSS en mobile.
+  const big     = count >= 4;
+  const sizePx  = count === 1 ? 80 : (big ? 44 : 56);
+  const nameFs  = count === 1 ? '15px' : (big ? '10px' : '11px');
+  const barsW   = count === 1 ? '180px' : (big ? '96px' : '120px');
+
   enemyGroup.forEach((enemy, i) => {
     const dead    = enemy.currentHp <= 0;
     const pct     = Math.max(0, (enemy.currentHp / enemy.hp) * 100);
-    const sizePx  = count === 1 ? 80 : 56;
     const variant = enemy.variant || 'normal';
 
     // Icône : SVG ou emoji via icons.js
@@ -163,8 +169,8 @@ function renderEnemyGroup() {
         ${iconHtml}
         ${badge}
       </div>
-      <div class="enemy-name" style="font-size:${count === 1 ? '15px' : '11px'}">${enemy.name}</div>
-      <div class="enemy-bars" style="width:${count === 1 ? '180px' : '120px'}">
+      <div class="enemy-name" style="font-size:${nameFs}">${enemy.name}</div>
+      <div class="enemy-bars" style="width:${barsW}">
         <div class="bar-label" style="font-size:9px"><span>PV</span><span>${Math.max(0, enemy.currentHp)}/${enemy.hp}</span></div>
         <div class="bar-track"><div class="bar-fill hp-fill" style="width:${pct}%"></div></div>
         ${dead ? '' : renderStatusBadges(enemy)}
