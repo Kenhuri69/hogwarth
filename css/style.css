@@ -3149,14 +3149,16 @@ button.shop-tab.active {
 }
 .psel-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
   margin-top: 18px;
 }
-.psel-nav .start-btn { margin-top: 0; }
+/* Les deux boutons partagent la largeur et se replient si trop à l'étroit
+   (mobile) au lieu de déborder hors de la modale. */
+.psel-nav .start-btn { margin-top: 0; flex: 1 1 140px; min-width: 0; }
 /* Quick Start (LOT D1) — chemin rapide, présenté en bouton secondaire. */
 .psel-quickstart {
-  flex-shrink: 0;
   background: #0d0805;
   color: var(--gold-light, #f0d080);
   border: 1.5px solid var(--gold-dark);
