@@ -8686,6 +8686,81 @@ async function scenarioRareHerb() {
   await browser.close();
 }
 
+// ── Scénario : Slug Club (LOT P6.b2) ──
+// Slughorn reconnaît la Maison du joueur (couche dialoguesByHouse) et
+// l'admet dans son cercle (membership dérivé de seenNpcs). Bonus : cadence
+// de double-récolte à la cueillette (25 → 35 %) pour les membres.
+async function scenarioSlugClub() {
+  console.log('\n── Scénario : Slug Club (lien Maison / Slughorn) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serpentard' });
+
+  // T1 : membership dérivé de seenNpcs — faux avant contact, vrai après.
+  const t1 = await page.evaluate(() => {
+    seenNpcs.delete('slughorn');
+    const before = isSlugClubMember();
+    seenNpcs.add('slughorn');
+    const after = isSlugClubMember();
+    return { before, after };
+  });
+  console.log('  T1 membership →', t1);
+  assert(t1.before === false, 'non-membre avant d\'avoir rencontré Slughorn');
+  assert(t1.after === true,   'membre après avoir rencontré Slughorn');
+
+  // T2 : cadence de cueillette — jet bumper 0.30 → double pour un membre,
+  // simple pour un non-membre. Math.random piloté :
+  // [monstre, piège, roll(bande herbe), pick, bumper=0.30].
+  const t2 = await page.evaluate(() => {
+    const orig = Math.random;
+    const drive = (seq) => { let i = 0; Math.random = () => (i < seq.length ? seq[i++] : 0.5); };
+    function harvest(member) {
+      if (member) seenNpcs.add('slughorn'); else seenNpcs.delete('slughorn');
+      player.herbs = {}; player.inventory = []; searchedCells = new Map();
+      currentFloor = 1;
+      drive([0.5, 0.5, 0.40, 0.0, 0.30]);   // bumper 0.30
+      searchRoom();
+      return Object.values(player.herbs).reduce((a, b) => a + b, 0);
+    }
+    const memberYield = harvest(true);
+    const nonMember   = harvest(false);
+    Math.random = orig;
+    return { memberYield, nonMember };
+  });
+  console.log('  T2 cadence cueillette →', t2);
+  assert(t2.memberYield === 2, 'un membre du Slug Club double-récolte au jet 0.30 (seuil 0.35)');
+  assert(t2.nonMember === 1,   'un non-membre ne double pas au jet 0.30 (seuil 0.25)');
+
+  // T3 : greeting house-aware — le 1er contact varie selon chosenHouse, via
+  // la couche dialoguesByHouse (override de greeting).
+  const t3 = await page.evaluate(() => {
+    const npc = getNpcById('slughorn');
+    function greetFor(house) {
+      chosenHouse = house;
+      seenNpcs.delete('slughorn');               // force le 1er contact
+      const r = _resolveDialogSource(npc, getNpcQuestState(npc));
+      const txt = Array.isArray(r.raw) ? r.raw.join(' ') : String(r.raw);
+      return { source: r.source, txt };
+    }
+    const slyth = greetFor('Serpentard');
+    const gryff = greetFor('Gryffondor');
+    const houseKeys = Object.keys(npc.dialoguesByHouse || {});
+    return { slyth, gryff, houseKeys };
+  });
+  console.log('  T3 greeting house-aware →', t3);
+  assert(t3.houseKeys.length === 4, 'Slughorn doit déclarer un greeting pour les 4 Maisons');
+  assert(t3.slyth.source === 'greeting' && t3.gryff.source === 'greeting', 'le 1er contact reste un greeting');
+  assert(/Serpentard/.test(t3.slyth.txt), 'le greeting Serpentard nomme la Maison');
+  assert(/Gryffondor/.test(t3.gryff.txt), 'le greeting Gryffondor nomme la Maison');
+  assert(t3.slyth.txt !== t3.gryff.txt,   'le greeting varie selon la Maison');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Slug Club OK (membership seenNpcs + cadence cueillette 25→35 % + greeting house-aware)');
+  await browser.close();
+}
+
 // ── Scénario : Potion de Force — buff ATK temporaire (LOT P0) ──
 // Moteur temp_buff : potion_force pose un buff +ATK qui survit à
 // recalculateStats, se retire à l'expiry du statut, ne s'empile pas, et
@@ -16042,7 +16117,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

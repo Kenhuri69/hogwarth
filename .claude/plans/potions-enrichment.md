@@ -378,6 +378,35 @@ Décomposition en 3 sous-lots indépendants, du plus sûr au plus novateur :
   remise boutique selon la Maison), OU un don d'herbes d'amorçage.
 - *Vérif* : smoke — dialogue varie selon `chosenHouse` ; bonus appliqué.
 
+> **Décisions b2 (figées 2026-05-30, validées utilisateur)** :
+> - **Bonus** = **cadence de cueillette +** : être membre du Slug Club fait
+>   passer la chance de double-récolte de `searchRoom` de **25 % → 35 %**.
+> - **Membership** = avoir rencontré Slughorn (`seenNpcs.has('slughorn')`,
+>   **déjà sérialisé** — aucun nouvel état de save). Helper pur
+>   `isSlugClubMember()`.
+> - **Reconnaissance de Maison** = nouvelle couche `dialoguesByHouse` dans la
+>   cascade `_resolveDialogSource` (miroir de `dialoguesByQuest`, réutilisable
+>   par tout PNJ), + 4 greetings Slughorn par `chosenHouse`.
+>
+> **Étapes** :
+> 1. **Helper** `isSlugClubMember()` (potions.js, pur) →
+>    `seenNpcs.has('slughorn')`. → *vérif* : false avant 1er contact, true après.
+> 2. **Cadence cueillette** : `searchRoom` (movement-interactions.js) — la
+>    constante 0.25 du bumper devient `isSlugClubMember() ? 0.35 : 0.25`.
+>    → *vérif* : double-récolte 0.30 réussit pour un membre, échoue pour un
+>    non-membre (jet déterministe).
+> 3. **Couche `dialoguesByHouse`** : dans `_resolveDialogSource`
+>    (npc-dialog.js), le `pick(k)` consulte `dialoguesByHouse[chosenHouse]`
+>    AVANT `dialoguesByQuest` (override le plus spécifique gagne pour le
+>    greeting). No-op si le PNJ n'a pas le champ. → *vérif* : greeting Slughorn
+>    varie selon `chosenHouse`.
+> 4. **Données Slughorn** (npcs.js) : `dialoguesByHouse` = 4 greetings « Slug
+>    Club » (un par Maison, ton canon Slughorn — collectionneur de talents).
+>    → *vérif* : les 4 textes existent.
+> 5. **Smoke** : scénario dédié `scenarioSlugClub` (membership · cadence
+>    membre vs non-membre · greeting house-aware) + bump PWA.
+>    → *vérif* : suite verte + pwa-smoke.
+
 **P6.b3 — Jardin d'herbes à récolte passive (le plus novateur)**
 - Un jardin (cellule spéciale ou feature débloquée par Slughorn) qui **génère
   des herbes passivement** (cadence à décider : par descente d'étage / par N
@@ -497,6 +526,7 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 | 2026-05-30 | **PR 3 livré** : Potion de Résistance (statut `resist_buff`, −40 %/3t via `_resistMult` aux 4 sites de dégâts héros) **remplace** `potion_bouclier` (supprimée : item/effet/shop/icône) ; 4 recettes ajoutées (`brew_elixir_antidote`/`_regen`/`brew_potion_resistance`/`brew_potion_xl_sp`) — 10 recettes au total, sans collision d'ingrédients ; 3ᵉ quête Slughorn `quest_potions_slughorn_3` (kill 3 Bundimuns → pré-enseigne Force/Résistance/Esprit Suprême) ; **icône PNG painterly** `potion_resistance` (icon_factory.py + ITEM_ICON_NEW_REGISTRY). Smoke `scenarioPotionResistance` T1-T4 + suite 129/129 + pwa v30. **Première vague potions close.** |
 | 2026-05-30 | **PR 4 livré** : chaîne d'amélioration des potions (upgrade-craft). Généralisation `_ingredientCount`/`_consumeIngredient` (herbe→besace, sinon→sac via `_isHerbIngredient`) ; chaîne de soin `potion_soin_mineure`/`_plus`/`_pp` (15/30/55 PV) ; ressource `eclat_vitalite` (material, shop ét.3+ & drop coffre 25%) ; 7 recettes (chaîne + 4 upgrades `brew_up_potion_l/l_sp/xl/xl_sp` — POTION_RECIPES 10→17, sans collision) ; quête Slughorn 1 offre la recette Mineure. **Fix latent** : branche `material` déplacée avant `type!=='consumable'` dans `useItem` (un matériau slotless tombait dans showEquipMenu→equipItem). 4 icônes PNG (icon_factory : flask niveaux croissants + gemme rouge-vie octaédrique). Smoke `scenarioPotionUpgradeCraft` T1-T6 + suite 130/130 + pwa v31. |
 | 2026-05-30 | **LOT P6.a (codex) — cadrage** : audit confirmé (knownRecipes existe, 21 recettes, section « Recettes connues » liste seulement les connues → trou = recettes masquées + compteur). Plan P6.a rédigé (5 étapes + critères). Décisions proposées : silhouettes+indices (vs tout visible), section inline (vs bouton dédié), indice non-spoiler (palier + nb d'ingrédients). Implémentation en attente du feu vert utilisateur. |
+| 2026-05-30 | **LOT P6.b2 (Slug Club) — LIVRÉ** : décisions confirmées (bonus = cadence cueillette + · membership dérivé de seenNpcs · reconnaissance Maison via dialoguesByHouse). Helper pur `isSlugClubMember()` (`seenNpcs.has('slughorn')`, aucun nouvel état de save) ; `searchRoom` : double-récolte 25→35 % pour les membres ; nouvelle couche `dialoguesByHouse` dans `_resolveDialogSource` (override greeting par `chosenHouse`, le plus spécifique : quête > Maison > défaut, réutilisable par tout PNJ) + greeting branch passe par `pick()` ; 4 greetings « Slug Club » Slughorn (un par Maison). Scénario smoke `scenarioSlugClub` T1-T3 (membership · cadence membre vs non-membre au jet 0.30 · greeting house-aware Serpentard vs Gryffondor) ; suite **137/137 verte** + pwa v35. Reste b3 (jardin passif). |
 | 2026-05-30 | **LOT P6.b1 (herbe rare endgame) — LIVRÉ** : décisions confirmées (Boucle Ténébreuse 11+ · consommation = upgrade des Élixirs Suprêmes existants · icône SVG inline). Nouvelle herbe `herbe_asphodele_noire` (Asphodèle des Ténèbres, tier 4, price 40) ; 2 recettes de prestige (`brew_xl_tenebres` 2 herbes→potion_xl · `brew_xl_sp_tenebres` 3 herbes→potion_xl_sp, POTION_RECIPES 21→23, multisets inédits) ; sources : cueillette `searchRoom` palier 4 gated 11+, drop Héraut des Ténèbres @0.30, ware Apothicaire Ténébreux @40 ; icône SVG inline (`ITEM_ICON_SVG_REGISTRY`, asphodèle teinte ténèbres). Asserts `POTION_RECIPES.length` & herbCount mis à jour (21→23, 6→7). Scénario smoke `scenarioRareHerb` T1-T4 (données+sources · recettes prestige · brassage · cueillette gated) ; suite **136/136 verte** + pwa v34. Reste b2 (lien Maison/Slughorn) + b3 (jardin passif). |
 | 2026-05-30 | **LOT P6.a (codex) — LIVRÉ** : décisions confirmées (silhouettes+indices · section inline). La section « Recettes connues » devient un **Codex** listant les 21 recettes — connues (lisibles + « Préparer ») vs à découvrir (silhouette `🔒 ? ? ?` + indice non-spoiler `_recipeHint` : palier d'herbes / « avancée » + nb d'ingrédients), avec compteur « X/21 découvertes ». Helper pur `_recipeHint` ; CSS `.brew-recipe-locked`/`.brew-codex-count`. Scénario smoke `scenarioRecipeCodex` T1-T4 (liste complète · indices herbe vs upgrade · ligne masquée · révélation→compteur+1) ; suite **135/135 verte** + pwa v33. Reste backlog P6 : ancrage narratif herbes + potions offensives jetables. |
 | 2026-05-30 | **PR P2 livré** : potions de buff de combat. Moteur `temp_buff` généralisé de l'ATK seul à 5 stats (`BUFF_STAT_BY_ID` : atk/def/agi/lck/mag) — `_applyConsumableEffect` mute la stat de base + recalc, `tickStatuses` restaure à l'expiry (boucle générique), `recalculateStats` réapplique tous les `buff_*` (source unique, AVANT les stats dérivées → dodge/crit tiennent compte des buffs AGI/LCK). 4 items (Défense+DEF / Célérité+AGI / Précision+LCK / Puissance+MAG, +8/3t) + 4 recettes (POTION_RECIPES 17→21, sans collision) + 4 icônes PNG (flacons teintés) + shop ét.3-4. Smoke `scenarioCombatBuffs` T1-T5 (dont AGI→dodge 9.8→13, LCK→crit 12.5→16.5) + suite 132/132 + pwa v32. |

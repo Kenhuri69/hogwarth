@@ -84,6 +84,13 @@ function _isBrewingUnlocked() {
     && completedQuests.has('quest_potions_slughorn');
 }
 
+// « Slug Club » (P6.b2) : Slughorn admet dans son cercle quiconque l'a
+// rencontré. Membership dérivé de seenNpcs (déjà sérialisé) — pas de nouvel
+// état de save. Bonus : cadence de double-récolte à la cueillette (searchRoom).
+function isSlugClubMember() {
+  return (typeof seenNpcs !== 'undefined') && seenNpcs.has('slughorn');
+}
+
 // Apprend une recette au groupe (besace partagée). Idempotent.
 function learnRecipe(id) {
   if (!player.knownRecipes) player.knownRecipes = [];
