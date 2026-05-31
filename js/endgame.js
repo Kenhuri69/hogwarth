@@ -109,6 +109,12 @@
     }
 
     modal.style.display = 'flex';
+    // A1 — sting audio de victoire : joué uniquement à la première ouverture.
+    // Call-site défensif (reduced-motion ne s'applique pas à l'audio).
+    if (!_victoryStingPlayed) {
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playVictory) AudioSystem.playVictory();
+      _victoryStingPlayed = true;
+    }
     // Cinématique de victoire (Lot 3) : halo doré + pluie de lumière.
     // Défensif + no-op sous reduced-motion (voir js/cinematics.js).
     if (window.CIN_safe) window.CIN_safe.victoryFlourish();
