@@ -698,7 +698,12 @@ function scaleMonster(base, floor, cfg) {
 
 // battle.js:122 — rollGroupSize (Normal = m = 1.0)
 // Reproduit la logique runtime battle.js (politique baseline +
-// scaling progressif via `cfg.kills` cumulés sur l'étage).
+// scaling progressif via `cfg.kills` cumulés sur l'étage + quad/quint
+// endgame). Miroir de currentMaxGroupSize() : 5 en endgame+duo, 3 sinon.
+function simMaxGroupSize(floor, partySize, cfg) {
+  const endgame = partySize === 2 && cfg && cfg.endgame && floor >= 11;
+  return endgame ? 5 : 3;   // MAX_ENEMY_GROUP = 5 (data.js)
+}
 function rollGroupSize(floor, partySize, cfg) {
   // Miroir fidèle de battle.js — rollGroupSize, y compris la division par
   // `m = enemyGroupMultiplier` (difficulté) sur les probabilités baseline.
@@ -723,11 +728,27 @@ function rollGroupSize(floor, partySize, cfg) {
   const trioBonus = n >= 5 ? Math.min(0.40, 0.10 * (n - 4)) : 0;
   const duoShift = Math.min(p1, duoBonus);
   p1 -= duoShift;  p2 += duoShift;
-  const trioShift = Math.min(p2, trioBonus);
+  // Endgame : +10 % de proba groupe 3 en post-victoire à floor 11+.
+  let trioShiftBase = trioBonus;
+  if (partySize === 2 && cfg && cfg.endgame && floor >= 11) trioShiftBase += 0.10;
+  const trioShift = Math.min(p2, trioShiftBase);
   p2 -= trioShift; p3 += trioShift;
+  // Quad/quint (4-5) — gaté endgame + duo via simMaxGroupSize. Quint =
+  // FRACTION de la bande quad (garantit quad ≥ quint). Miroir battle.js.
+  let p4 = 0, p5 = 0;
+  if (simMaxGroupSize(floor, partySize, cfg) >= 4) {
+    const quadBonus  = Math.min(0.25, 0.05 * Math.max(0, n - 6));
+    const quadShift  = Math.min(p3, quadBonus);
+    p3 -= quadShift; p4 += quadShift;
+    const quintFrac  = n >= 10 ? Math.min(0.40, 0.05 * (n - 9)) : 0;
+    const quintShift = p4 * quintFrac;
+    p4 -= quintShift; p5 += quintShift;
+  }
   if (r < p1) return 1;
   if (r < p1 + p2) return 2;
-  return 3;
+  if (r < p1 + p2 + p3) return 3;
+  if (r < p1 + p2 + p3 + p4) return 4;
+  return 5;
 }
 
 // Tirage pondéré sur le pool éligible
@@ -1455,7 +1476,7 @@ function runSimulations(cfg) {
     for (const partySize of [1, 2]) {
       const level = expectedLevelAtFloor(floor, partySize, cfg) + (cfg.bonusLevels || 0);
       const wins = { count: 0, turns: 0, hpPct: 0, dmgTaken: 0 };
-      const groupSizes = { 1: 0, 2: 0, 3: 0 };
+      const groupSizes = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
       for (let i = 0; i < cfg.nSims; i++) {
         const party = partySize === 1
@@ -1677,6 +1698,22 @@ function emitReport(rows, cfg) {
     if (r.skip) continue;
     const mode = r.partySize === 1 ? 'Solo' : 'Duo ';
     console.log(`| ${r.floor} | ${mode} | ${r.level} | ${pct(r.winRate)} | ${num(r.avgTurns,1)} | ${r.avgHpPctOnWin == null ? '—' : pct(r.avgHpPctOnWin)} | ${num(r.avgDmgTaken,1)} |`);
+  }
+
+  // Section 3bis : distribution des tailles de groupe (endgame quad/quint).
+  // N'apparaît qu'en mode --endgame, où les groupes de 4-5 sont débloqués.
+  if (cfg.endgame) {
+    console.log('\n## 3bis. Distribution des tailles de groupe (endgame)\n');
+    console.log('| Étage | Mode | 1 | 2 | 3 | 4 | 5 | moy. |');
+    console.log('|------:|:----:|--:|--:|--:|--:|--:|-----:|');
+    for (const r of rows) {
+      if (r.skip || !r.groupSizes) continue;
+      const g = r.groupSizes;
+      const tot = (g[1]+g[2]+g[3]+g[4]+g[5]) || 1;
+      const avg = (g[1]+2*g[2]+3*g[3]+4*g[4]+5*g[5]) / tot;
+      const mode = r.partySize === 1 ? 'Solo' : 'Duo ';
+      console.log(`| ${r.floor} | ${mode} | ${pct(g[1]/tot)} | ${pct(g[2]/tot)} | ${pct(g[3]/tot)} | ${pct(g[4]/tot)} | ${pct(g[5]/tot)} | ${num(avg,2)} |`);
+    }
   }
 
   // Section 4 : verdicts

@@ -6015,6 +6015,19 @@ async function scenarioVictoryTrigger() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
 
+  // A1 — espionne AudioSystem.playVictory pour vérifier le sting de victoire.
+  await page.evaluate(() => {
+    window.__playVictoryCount = 0;
+    if (typeof AudioSystem !== 'undefined') {
+      const orig = AudioSystem.playVictory;
+      AudioSystem.playVictory = function () {
+        window.__playVictoryCount++;
+        // pas de synthèse audio réelle nécessaire ici (headless) — no-op.
+      };
+      AudioSystem.__origPlayVictory = orig;
+    }
+  });
+
   // 1. Setup minimal d'un combat contre voldemort_revenu hp 1
   await page.evaluate(() => {
     currentFloor = 10;
@@ -6043,6 +6056,24 @@ async function scenarioVictoryTrigger() {
   assert(after.flag === true,         'victoryAchieved doit être à true');
   assert(after.victoryAtSet,          'victoryAt doit être une date ISO non vide');
   assert(after.modalOpen === true,    '#victory-modal doit être affichée');
+
+  // A1 — le sting de victoire a joué à l'ouverture, sans throw. NB : sur une
+  // vraie victoire, endBattle joue AUSSI playVictory ; on vérifie donc juste
+  // que le chemin sting a tourné (count ≥ 1), pas un total exact.
+  const stingAfterFirst = await page.evaluate(() => window.__playVictoryCount);
+  console.log('  sting playVictory (1er trigger):', stingAfterFirst);
+  assert(stingAfterFirst >= 1, 'AudioSystem.playVictory doit être appelé à la 1re ouverture');
+
+  // A1 — idempotence : ré-afficher la modale ne rejoue PAS le sting (le flag
+  // module-local _victoryStingPlayed bloque tout appel supplémentaire).
+  const stingAfterReopen = await page.evaluate(() => {
+    document.getElementById('victory-modal').style.display = 'none';
+    window.showVictoryScreen();
+    return window.__playVictoryCount;
+  });
+  console.log('  sting playVictory (réouverture):', stingAfterReopen);
+  assert(stingAfterReopen === stingAfterFirst,
+         'le sting ne doit pas rejouer à la réouverture (idempotence)');
 
   // 3. Idempotent : second trigger = no-op, ne ré-ouvre pas la modale
   await page.evaluate(() => {
