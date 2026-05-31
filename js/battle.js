@@ -471,6 +471,19 @@ function startBattle(baseEnemyData, opts) {
 // (partySize 2, victoryAchieved, étage 11+). Valeurs calibrées par sim
 // (tools/sim-difficulty.js). Cf. CLAUDE.md §"Difficulté progressive par étage"
 // et .claude/plans/extend-opponent-count.md.
+// Plafond CONTEXTUEL de taille de groupe. Les quad/quint (4-5) ne sont
+// autorisés qu'en endgame + duo (partySize 2, post-victoire, étage 11+) ;
+// partout ailleurs (solo, ou duo non post-victoire) le plafond historique
+// de 3 s'applique — y compris pour les invocations (summon). C'est la
+// source de vérité unique du gating, partagée par rollGroupSize et le cap
+// d'invocation. `MAX_ENEMY_GROUP` (data.js) reste le plafond absolu.
+function currentMaxGroupSize() {
+  const endgame = partySize === 2
+    && typeof victoryAchieved !== 'undefined' && victoryAchieved
+    && currentFloor >= 11;
+  return endgame ? MAX_ENEMY_GROUP : 3;
+}
+
 function rollGroupSize() {
   const m = (DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal']).enemyGroupMultiplier;
   const r = Math.random();
@@ -511,13 +524,10 @@ function rollGroupSize() {
   const trioShift = Math.min(p2, trioShiftBase);
   p2 -= trioShift; p3 += trioShift;
 
-  // Quad/quint (4-5 ennemis) — gaté endgame + duo : mode duo, post-victoire,
-  // étages 11+. Transfert p3 → p4 → p5, montée en puissance via le farming (n).
+  // Quad/quint (4-5 ennemis) — gaté endgame + duo via currentMaxGroupSize().
+  // Transfert p3 → p4 → p5, montée en puissance via le farming (n).
   let p4 = 0, p5 = 0;
-  const endgameQuad = partySize === 2
-    && typeof victoryAchieved !== 'undefined' && victoryAchieved
-    && currentFloor >= 11;
-  if (endgameQuad) {
+  if (currentMaxGroupSize() >= 4) {
     const quadBonus  = Math.min(0.30, 0.06 * Math.max(0, n - 6));
     const quadShift  = Math.min(p3, quadBonus);
     p3 -= quadShift; p4 += quadShift;

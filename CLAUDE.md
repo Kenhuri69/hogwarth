@@ -504,16 +504,18 @@ Au démarrage, `showPlayerSelect()` affiche un écran de sélection.
 > fix, le mur duo arrivait dès l'étage 5 (79 %) ; il est maintenant à
 > l'étage 7 (57 %).
 
-> **Gros groupes (4-5 ennemis)** — `MAX_ENEMY_GROUP = 5` (`data.js`).
-> `rollGroupSize` débloque les quad/quint via un transfert `p3 → p4 → p5`
-> **gaté endgame + duo** : `partySize === 2 && victoryAchieved &&
-> currentFloor >= 11`, montée en puissance via le farming (`n =
-> floor(kills/4)` : quad dès `n > 6`, quint dès `n >= 10`). Hors de ce
-> contexte (solo, ou duo non post-victoire), le tirage reste plafonné à 3.
+> **Gros groupes (4-5 ennemis)** — `MAX_ENEMY_GROUP = 5` (`data.js`) est le
+> plafond **absolu**. Le plafond **contextuel** est `currentMaxGroupSize()`
+> (`battle.js`) : il retourne `MAX_ENEMY_GROUP` (5) uniquement en endgame + duo
+> (`partySize === 2 && victoryAchieved && currentFloor >= 11`), sinon **3**.
+> C'est la **source de vérité unique du gating**, partagée par `rollGroupSize`
+> ET le cap d'invocation `summon` — donc solo ou duo non post-victoire reste
+> plafonné à 3 partout (spawn naturel **et** invocations). `rollGroupSize`
+> débloque les quad/quint via un transfert `p3 → p4 → p5`, montée en puissance
+> via le farming (`n = floor(kills/4)` : quad dès `n > 6`, quint dès `n >= 10`).
 > Calibrage des probabilités à affiner par simulation (Temps 2). Le rendu
 > (`renderEnemyGroup`) compacte icônes/barres au-delà de 3 et le conteneur
-> passe en `flex-wrap`. Cap d'invocation `summon` aligné sur
-> `MAX_ENEMY_GROUP`. Cf. `.claude/plans/extend-opponent-count.md`.
+> passe en `flex-wrap`. Cf. `.claude/plans/extend-opponent-count.md`.
 
 ### Difficulté progressive par étage (scaling au grind)
 

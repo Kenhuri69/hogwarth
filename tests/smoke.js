@@ -16698,8 +16698,10 @@ async function scenarioEnemyAbilityArchetypes() {
       ret1 = tryEnemyAbility(summoner, party[0], 0, () => {});
       const afterSummon = enemyGroup.length;
       const lastSummoned = !!enemyGroup[afterSummon - 1]._summoned;
-      // Remplir jusqu'au cap puis retenter — slot plein.
-      while (enemyGroup.length < MAX_ENEMY_GROUP) enemyGroup.push({ name: 'X', hp: 1, currentHp: 1, atk: 1, statusEffects: [] });
+      // Remplir jusqu'au plafond contextuel (3 ici : étage 9 duo non
+      // post-victoire) puis retenter — slot plein.
+      const cap = currentMaxGroupSize();
+      while (enemyGroup.length < cap) enemyGroup.push({ name: 'X', hp: 1, currentHp: 1, atk: 1, statusEffects: [] });
       const full = enemyGroup.length;
       ret2 = tryEnemyAbility(summoner, party[0], 0, () => {});
       const afterFull = enemyGroup.length;
@@ -17104,15 +17106,22 @@ async function scenarioLargeEnemyGroup() {
       return max;
     };
     const soloEndgame = sample({ partySize: 1, floor: 12, victory: true,  kills: 80 });
+    const capSolo     = currentMaxGroupSize();   // contexte solo endgame
     const duoEarly    = sample({ partySize: 2, floor: 8,  victory: false, kills: 80 });
+    const capDuoEarly = currentMaxGroupSize();   // contexte duo non post-victoire
     const duoEndgame  = sample({ partySize: 2, floor: 12, victory: true,  kills: 80 });
-    return { soloEndgame, duoEarly, duoEndgame, cap: MAX_ENEMY_GROUP };
+    const capDuoEnd   = currentMaxGroupSize();   // contexte duo endgame
+    return { soloEndgame, duoEarly, duoEndgame, cap: MAX_ENEMY_GROUP, capSolo, capDuoEarly, capDuoEnd };
   });
   console.log('  gating :', gate);
   assert(gate.cap === 5, 'MAX_ENEMY_GROUP attendu = 5');
   assert(gate.soloEndgame <= 3, 'solo ne doit jamais dépasser 3 ennemis');
   assert(gate.duoEarly    <= 3, 'duo hors post-victoire ne doit pas dépasser 3');
   assert(gate.duoEndgame  >= 4, 'duo endgame doit parfois produire 4-5 ennemis');
+  // Plafond contextuel partagé (spawn + invocations) : 3 hors endgame+duo.
+  assert(gate.capSolo     === 3, 'plafond solo endgame doit rester 3 (invocations incluses)');
+  assert(gate.capDuoEarly === 3, 'plafond duo non post-victoire doit rester 3');
+  assert(gate.capDuoEnd   === 5, 'plafond duo endgame doit être 5');
 
   // T2 — rendu + sélection de cible + dégâts flottants pour 5 ennemis.
   const render = await page.evaluate(() => {

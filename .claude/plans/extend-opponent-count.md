@@ -157,4 +157,10 @@ en mobile (~360px). → taille adaptative + wrap nécessaires.
   `tests/smoke.js` (scénario `scenarioLargeEnemyGroup` + maj test summon),
   `CLAUDE.md`. Placeholders quad/quint : `quadBonus=min(0.30, 0.06·max(0,n-6))`,
   `quintBonus=(n≥10)?min(0.20, 0.05·(n-9)):0`. Smoke 146/146.
+- 2026-05-31 : **Correctif gating invocations** (remarque utilisateur : monter
+  `MAX_ENEMY_GROUP` relevait le cap summon partout). Extraction d'un helper
+  unique `currentMaxGroupSize()` (`battle.js`) = `MAX_ENEMY_GROUP` en
+  endgame+duo, **3 sinon**. Utilisé par `rollGroupSize` ET le cap `summon`.
+  Conséquence : solo/duo-early restent à 3 ennemis y compris via invocation.
+  Smoke 146/146 (assertions `capSolo/capDuoEarly === 3`, `capDuoEnd === 5`).
   **Reste le Temps 2** (miroir sim + calibrage des probabilités).
