@@ -9179,11 +9179,17 @@ async function scenarioThrowablePotions() {
     const venin = ITEMS.find(i => i.id === 'flacon_venin');
     const svgOk = ['flacon_feu', 'flacon_givre', 'flacon_venin']
       .every(id => typeof ITEM_ICON_SVG_REGISTRY !== 'undefined' && !!ITEM_ICON_SVG_REGISTRY[id]);
+    // Rendu réel via getItemIconHtml : doit retourner un <svg> inline (et pas
+    // l'emoji fallback) pour chaque flacon — preuve que l'icône s'affiche.
+    const rendersSvg = ['flacon_feu', 'flacon_givre', 'flacon_venin'].every(id => {
+      const html = getItemIconHtml(ITEMS.find(i => i.id === id), 'ui-icon-md');
+      return /<svg/.test(html) && /svg-icon/.test(html);
+    });
     return {
       feu:   feu   && { effect: feu.effect, element: feu.element, power: feu.power, hasStatus: !!feu.statusId },
       givre: givre && { effect: givre.effect, element: givre.element, power: givre.power, statusId: givre.statusId, sp: givre.statusPower, st: givre.statusTurns },
       venin: venin && { effect: venin.effect, element: venin.element || null, power: venin.power, statusId: venin.statusId, sp: venin.statusPower, st: venin.statusTurns },
-      svgOk,
+      svgOk, rendersSvg,
     };
   });
   console.log('  T1 données :', t1);
@@ -9191,6 +9197,7 @@ async function scenarioThrowablePotions() {
   assert(t1.givre.effect === 'throw' && t1.givre.element === 'glace' && t1.givre.statusId === 'gel' && t1.givre.sp === 3 && t1.givre.st === 3, 'flacon_givre = throw glace 15 + gel 3/3');
   assert(t1.venin.effect === 'throw' && t1.venin.element === null && t1.venin.statusId === 'poison' && t1.venin.sp === 5 && t1.venin.st === 4, 'flacon_venin = throw sans élément + poison 5/4');
   assert(t1.svgOk, 'les 3 flacons doivent avoir une icône SVG inline');
+  assert(t1.rendersSvg, 'getItemIconHtml doit rendre un <svg> inline (pas l\'emoji fallback) pour chaque flacon');
 
   // T2 — _thrownPotionDamage pur : brassage (+40 %), resist (×0.5), weak (×1.5).
   const t2 = await page.evaluate(() => {
