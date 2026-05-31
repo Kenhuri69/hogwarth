@@ -135,6 +135,17 @@ function mitigatedDamage(rawAtk, def) {
   return Math.max(floorDmg, rawAtk - Math.max(0, def || 0));
 }
 
+// Option D — fraction de DEF ignorée par une brute, rampe à seuil sur la
+// DEF de la cible : 0 sous _armorPenLo, linéaire jusqu'à _armorPenHi, puis
+// plateau à _armorPenCap. Renvoie 0 pour un ennemi non-brute (cap absent).
+function enemyArmorPenFrac(enemy, targetDef) {
+  const cap = enemy._armorPenCap || 0;
+  if (cap <= 0) return 0;
+  const lo = enemy._armorPenLo, hi = enemy._armorPenHi;
+  const t = Math.max(0, Math.min(1, ((targetDef || 0) - lo) / (hi - lo)));
+  return cap * t;
+}
+
 // ── Récompenses de quêtes : modélisation "joueur normal" ─────
 //
 // Étage où une quête est considérée comme complétée. Pour les quêtes
@@ -401,6 +412,11 @@ function parseArgs(argv) {
                 endgame: false, maxFloor: 40, forge: 0, library: 0,
                 houseSet: null, tenebresSet: false, houseTier: 0, stars: 0,
                 difficulty: 'Normal',
+                statRework: false, fairBaseline: false,
+                penCap: 0.50, penHalf: 20, dotResDiv: 8,
+                intMagDiv: 4, endDefDiv: 4, enemyPen: 0,
+                enemyPenLo: 20, enemyPenHi: 34,
+                maxhpDmg: 0, maxhpChance: 0.5, maxhpCap: 0, maxhpCapRef: 'atk',
                 elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -411,6 +427,8 @@ function parseArgs(argv) {
     if (a === '--no-potions')           { out.usePotions = false; continue; }
     if (a === '--pessimistic')          { out.useQuests = false; out.useEquipment = false; out.usePotions = false; continue; }
     if (a === '--artifacts')            { out.artifacts = true; continue; }
+    if (a === '--stat-rework')          { out.statRework = true; out.fairBaseline = true; continue; }
+    if (a === '--fair-baseline')        { out.fairBaseline = true; continue; }
     if (a === '--endgame')              { out.endgame = true; continue; }
     if (a === '--tenebres-set')         { out.tenebresSet = true; continue; }
     if (!a.includes('=')) {
@@ -427,6 +445,18 @@ function parseArgs(argv) {
     else if (k === 'kills')     out.kills = parseInt(v, 10);
     else if (k === 'bonus-levels') out.bonusLevels = parseInt(v, 10) || 0;
     else if (k === 'max-floor')    out.maxFloor = parseInt(v, 10) || 40;
+    else if (k === 'pen-cap')      out.penCap  = parseFloat(v);
+    else if (k === 'pen-half')     out.penHalf = parseFloat(v) || 20;
+    else if (k === 'dot-res-div')  out.dotResDiv = parseFloat(v) || 8;
+    else if (k === 'int-mag-div')  out.intMagDiv = parseFloat(v) || 4;
+    else if (k === 'end-def-div')  out.endDefDiv = parseFloat(v) || 4;
+    else if (k === 'enemy-pen')    out.enemyPen = parseFloat(v) || 0;
+    else if (k === 'enemy-pen-lo') out.enemyPenLo = parseFloat(v);
+    else if (k === 'enemy-pen-hi') out.enemyPenHi = parseFloat(v);
+    else if (k === 'maxhp-dmg')    out.maxhpDmg = parseFloat(v) || 0;
+    else if (k === 'maxhp-chance') out.maxhpChance = parseFloat(v) || 0.5;
+    else if (k === 'maxhp-cap')    out.maxhpCap = parseFloat(v) || 0;
+    else if (k === 'maxhp-cap-ref') out.maxhpCapRef = (v === 'hit') ? 'hit' : 'atk';
     else if (k === 'forge')        out.forge   = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
     else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
     else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
@@ -485,6 +515,31 @@ Options:
   --build=BUILD           tank | balanced | offensive (def balanced)
   --bonus-levels=N        Niveaux gagnés au-delà de l'étage (farming) (def 0)
   --artifacts             Best-in-slot inclut les artefacts légendaires (hors boutique)
+  --stat-rework           [ANALYSE] Modélise le rework des stats secondaires :
+                          INT→MAG 4:1, END→DEF 4:1, END→résistance DoT,
+                          STR→pénétration de DEF (courbe de Hill). Implique
+                          --fair-baseline. Ne change rien hors de ce mode.
+  --fair-baseline         [ANALYSE] Corrige la croissance STR/INT/AGI +1/niveau
+                          (omise par le sim historique) sans le rework — sert de
+                          référence équitable pour mesurer le rework PUR.
+  --pen-cap=F             Rework : plafond de pénétration STR (def 0.50)
+  --pen-half=F            Rework : STR de demi-saturation de la courbe (def 20)
+  --dot-res-div=F         Rework : diviseur de résistance DoT END (def 8)
+  --int-mag-div=F         Rework : diviseur conversion INT→MAG (def 4)
+  --end-def-div=F         Rework : diviseur conversion END→DEF (def 4)
+  --enemy-pen=F           [Option D] Pénétration d'armure des monstres « brutes »
+                          (atk>=1.5×mag & atk>=12) : plafond de fraction de DEF
+                          ignorée (def 0). Contre-mesure au build tank. La
+                          fraction suit une rampe à seuil sur la DEF cible.
+  --enemy-pen-lo=F        [Option D] DEF sous laquelle la pénétration = 0 (def 20)
+  --enemy-pen-hi=F        [Option D] DEF au-delà de laquelle penFrac = plafond (def 34)
+  --maxhp-dmg=F           [Anti-tank] Capacité « Broyer » sur les brutes : dégâts
+                          = F × PV max de la cible, contournant la DEF (def 0).
+  --maxhp-chance=F        [Anti-tank] Chance par tour de déclencher Broyer (def 0.5)
+  --maxhp-cap=K           [Anti-tank] Borne Broyer à K × référence (def 0 = illimité)
+  --maxhp-cap-ref=atk|hit [Anti-tank] Référence de borne : 'atk' = ATK brute de la
+                          brute (indépendant du joueur) ; 'hit' = coup normal mitigé
+                          (rétrécit quand la DEF joueur monte). Def 'atk'.
   --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
   --max-floor=N           Étage max en mode --endgame (def 40)
   --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
@@ -588,6 +643,35 @@ function scaleMonster(base, floor, cfg) {
     magVal = _endgameRecurse(base.mag, n, ENDGAME_SCALING.baseFix.mag / intraMult, scal);
   }
   out.mag = Math.floor(magVal * diffOf(cfg).scalingMultiplier);
+  // Option D (analyse) — pénétration d'armure ennemie. Les monstres « brutes »
+  // (frappeurs physiques : atk >= 1.5×mag ET atk de base >= 12) ignorent une
+  // fraction de la DEF du joueur. Contre-mesure ciblée au build tank.
+  // 15/67 monstres qualifient (ét. 4+). Activée par --enemy-pen=F (def 0).
+  //
+  // La fraction ignorée suit une RAMPE À SEUIL sur la DEF de la cible
+  // (calculée en combat par enemyArmorPenFrac) : plate à 0 sous penLo,
+  // linéaire entre penLo et penHi, plateau à enemyPen au-delà. La fenêtre
+  // de DEF des builds endgame étant étroite (offensif ~24 → tank ~31),
+  // le seuil cible le mur de DEF du tank sans pénaliser l'offensif —
+  // une courbe de Hill (n=2) serait trop molle pour discriminer.
+  const isBrute = (base.atk || 0) >= 1.5 * (base.mag || 0) && (base.atk || 0) >= 12;
+  out._armorPenCap = 0;
+  if (cfg.enemyPen > 0 && isBrute) {
+    out._armorPenCap = cfg.enemyPen;
+    out._armorPenLo  = (typeof cfg.enemyPenLo === 'number') ? cfg.enemyPenLo : 20;
+    out._armorPenHi  = (typeof cfg.enemyPenHi === 'number') ? cfg.enemyPenHi : 34;
+  }
+  // Levier anti-tank (analyse) — capacité « Broyer » : dégâts proportionnels
+  // aux PV MAX de la cible, contournant la DEF. Contre-tank exact : scale avec
+  // le pool de PV (le vrai avantage du tank) là où un coup normal est réduit
+  // au plancher. Injectée comme capacité (effect:"maxhpdamage") sur les brutes
+  // via --maxhp-dmg=FRAC (def 0 → inactif). Routée par enemyAct comme un
+  // 'damage' pour la sélection d'IA. Alternative thématique : réserver aux boss.
+  if (cfg.maxhpDmg > 0 && isBrute) {
+    out.abilities = [...(out.abilities || []),
+      { effect: 'maxhpdamage', power: cfg.maxhpDmg, chance: cfg.maxhpChance,
+        cap: cfg.maxhpCap || 0, capRef: cfg.maxhpCapRef || 'atk' }];
+  }
   return out;
 }
 
@@ -643,15 +727,41 @@ function eligiblePool(floor, cfg) {
 
 // Reproduit _hydrateCharacter() + recalculateStats() pour les
 // stats dérivées de base, puis applique les level-ups.
-// Effets par point alloué (Phase 2 du plan)
-//   STR → +1 ATK, INT → +1 MAG, AGI → +0.4 % esquive, END → +5 HP, LCK → +0.5 % crit
-function applyStatPoints(c, points) {
+// Effets par point alloué.
+//  - Modèle HISTORIQUE du sim (raccourci) : STR→+1 ATK, INT→+1 MAG (1:1),
+//    AGI→+1 AGI, END→+5 HP, LCK→+1 LCK. Conservé par défaut pour ne pas
+//    invalider les rapports existants.
+//  - Modèle REWORK (--stat-rework) : aligné sur STAT_POINT_EFFECTS réel —
+//    STR→+1 ATK +1 STR · INT→+1 INT · AGI→+1 AGI · END→+1 END +5 HP · LCK→+1 LCK.
+//    Les conversions INT→MAG (4:1) et END→DEF (4:1) sont appliquées plus tard,
+//    dans recalcEffectiveStats, à partir des _base secondaires.
+function applyStatPoints(c, points, cfg) {
+  if (cfg && cfg.statRework) {
+    c._baseAtk += points.str || 0;   // STR garde le couplage +1 ATK (D4)
+    c._baseStr += points.str || 0;
+    c._baseInt += points.int || 0;
+    c._baseAgi += points.agi || 0;
+    c._baseEnd += points.end || 0;
+    c.hpMax    += 5 * (points.end || 0);
+    c._baseLck += points.lck || 0;
+    return;
+  }
   c._baseAtk += points.str || 0;
   c._baseMag += points.int || 0;
   c._baseAgi += points.agi || 0;
   c._baseEnd += points.end || 0;
   c.hpMax    += 5 * (points.end || 0);
   c._baseLck += points.lck || 0;
+}
+
+// Pénétration de DEF par la STR (D4) — courbe de Hill (n=2) : douce au
+// début, quasi-linéaire au milieu, plateau logarithmique vers penCap.
+//   penFrac(STR) = penCap · STR² / (STR² + penHalf²)
+function strPenFrac(str, cfg) {
+  const cap = (cfg && typeof cfg.penCap === 'number') ? cfg.penCap : 0.50;
+  const h   = (cfg && cfg.penHalf) || 20;
+  const s   = Math.max(0, str || 0);
+  return cap * (s * s) / (s * s + h * h);
 }
 
 function createHero(key, level, cfg, floor, partySize) {
@@ -684,6 +794,12 @@ function createHero(key, level, cfg, floor, partySize) {
     c.hpMax += 8;  c.hp = c.hpMax;
     c.spMax += 5;  c.sp = c.spMax;
     c._baseAtk += 1;  c._baseDef += 1;  c._baseMag += 1;
+    // Croissance des stats secondaires +1/niveau (jeu réel —
+    // battle-rewards.js _grantLevelStats). Omise par le sim historique car
+    // STR/INT/AGI n'avaient aucun effet combat ; indispensable dès que le
+    // rework les consomme. Gated par --fair-baseline (impliqué par
+    // --stat-rework) pour que la comparaison mesure le rework PUR.
+    if (cfg.fairBaseline) { c._baseStr += 1;  c._baseInt += 1;  c._baseAgi += 1; }
     // points libres alloués selon le build
     if (ptsPerLevel > 0) {
       const total = (allocation.str || 0) + (allocation.int || 0) + (allocation.agi || 0)
@@ -696,7 +812,7 @@ function createHero(key, level, cfg, floor, partySize) {
         agi: Math.round((allocation.agi || 0) * scale),
         end: Math.round((allocation.end || 0) * scale),
         lck: Math.round((allocation.lck || 0) * scale),
-      });
+      }, cfg);
     }
     // apprentissage de sorts
     const learn = learnByLevel[lv];
@@ -731,6 +847,17 @@ function createHero(key, level, cfg, floor, partySize) {
   }
   // Bonus de set (Maison 4/4 + Ténèbres 3/3) — après l'équipement.
   applySetBonuses(c, cfg, key, partySize);
+  // Rework D1/D2 — conversions stat secondaire → primaire. INT→MAG et
+  // END→DEF, diviseurs réglables (--int-mag-div / --end-def-div). Appliquées
+  // APRÈS base + équipement + sets (miroir de la place dans recalculateStats),
+  // sur les stats effectives finales c.int / c.end. Le crit physique calculé
+  // ci-dessous reste piloté par LCK ; la DEF gagnée n'affecte que la mitigation.
+  if (cfg.statRework) {
+    c.mag += Math.floor((c.int || 0) / (cfg.intMagDiv || 4));
+    c.def += Math.floor((c.end || 0) / (cfg.endDefDiv || 4));
+    c._dotResDiv = cfg.dotResDiv || 8;   // D3 — résistance aux DoT (lu en combat)
+    c._strPen    = strPenFrac(c.str, cfg); // D4 — pénétration de DEF (lue en combat)
+  }
   // LCK plafonne à 40 % ; les bonus équipement/set s'ajoutent au-dessus
   // (plafond absolu 100 %). Deux canaux de crit : physique et sort.
   const lckCrit = Math.min(40, 5 + c.lck * 0.5);
@@ -969,7 +1096,11 @@ function simulateBattle(party, enemyGroup, opts = {}) {
       for (const s of char.statusEffects) {
         if (SIM_DOT_IDS.includes(s.id)) {
           // DoT : dégâts puis décompte (miroir de tickStatuses).
-          const dmg = Math.max(1, s.power);
+          // Rework D3 — résistance aux DoT : l'END atténue chaque tick de
+          // floor(END/dotResDiv). Sans rework, _dotResDiv est undefined →
+          // pas d'atténuation (comportement historique inchangé).
+          const dotRes = char._dotResDiv ? Math.floor((char.end || 0) / char._dotResDiv) : 0;
+          const dmg = Math.max(1, s.power - dotRes);
           char.hp = Math.max(0, char.hp - dmg);
           totalEnemyDmg += dmg;
           s.turns--;
@@ -1079,7 +1210,11 @@ function heroAct(char, enemies) {
 
   // 3. Attaque physique
   const bonus = target.disarmed > 0 ? 2 : 0;
-  let dmg = Math.max(1, Math.floor(mitigatedDamage(char.atk + Math.floor(Math.random() * 4), target.def - bonus) * vigor * elan));
+  // Rework D4 — perce-garde : la STR ignore une fraction (courbe de Hill) de
+  // la DEF ennemie. effDef = def · (1 − penFrac(STR)). Sans rework, _strPen
+  // est undefined → pénétration nulle (comportement historique inchangé).
+  const effDef = Math.max(0, (target.def - bonus) * (1 - (char._strPen || 0)));
+  let dmg = Math.max(1, Math.floor(mitigatedDamage(char.atk + Math.floor(Math.random() * 4), effDef) * vigor * elan));
   if (target.disarmed > 0) target.disarmed--;
   const critP = Math.random() * 100 < char.critChance;
   if (critP) dmg = Math.floor(dmg * char.critMultiplier);
@@ -1138,7 +1273,7 @@ function enemyAct(enemy, target, partySize) {
     if (fired.length) {
       const ai = enemy.ai;
       if (ai === 'aggressive') {
-        ability = fired.find(a => a.effect === 'damage' || a.effect === 'drain') || fired[0];
+        ability = fired.find(a => a.effect === 'damage' || a.effect === 'drain' || a.effect === 'maxhpdamage') || fired[0];
       } else if (ai === 'cautious') {
         const lowHp = enemy.currentHp < (enemy.hp || enemy.currentHp) * 0.35;
         ability = lowHp
@@ -1155,6 +1290,31 @@ function enemyAct(enemy, target, partySize) {
           // battle-spells.js). Division par 3 : effet modéré.
           const raw = ability.power + Math.floor((enemy.mag || 0) / 2);
           const dmg = Math.max(1, raw - Math.floor((target.def || 0) / 3));
+          if (target.shieldTurns > 0) { target.shieldTurns--; return 0; }
+          target.hp = Math.max(0, target.hp - dmg);
+          return dmg;
+        }
+        case 'maxhpdamage': {
+          // Broyer — dégâts = power × PV MAX de la cible, contournant la DEF.
+          // Contre-tank : scale avec le pool de PV. Le bouclier l'annule (comme
+          // 'damage') ; plancher à 1. Guard non modélisé ici (miroir de 'damage').
+          //
+          // Borne anti-grind (ability.cap > 0) : plafonne la part PV max par un
+          // multiple d'une « référence de dégât de base », pour découpler Broyer
+          // de la progression du joueur. Deux références mesurées :
+          //   capRef 'atk' → cap = cap × enemy.atk (brut, indexé sur l'étage,
+          //                  indépendant du joueur ; ceiling anti-grind).
+          //   capRef 'hit' → cap = cap × coup normal (atk − def mitigé) ; rétrécit
+          //                  quand la DEF du joueur monte → contre activement le
+          //                  level-scaling (sur-level ⇒ DEF↑ ⇒ cap↓).
+          let dmg = Math.floor((target.hpMax || target.hp) * ability.power);
+          if (ability.cap > 0) {
+            const ref = (ability.capRef === 'hit')
+              ? mitigatedDamage(enemy.atk, target.def)
+              : enemy.atk;
+            dmg = Math.min(dmg, Math.floor(ability.cap * ref));
+          }
+          dmg = Math.max(1, dmg);
           if (target.shieldTurns > 0) { target.shieldTurns--; return 0; }
           target.hp = Math.max(0, target.hp - dmg);
           return dmg;
@@ -1211,7 +1371,12 @@ function enemyAct(enemy, target, partySize) {
   // Attaque physique simple : pas de RNG côté ennemi dans le code réel.
   // Priorité miroir de battle.js — enemyTurn : Esquive > Garde > coup normal.
   if (Math.random() * 100 < (target.dodgeChance || 0)) return 0;
-  const dmg = mitigatedDamage(enemy.atk, target.def);
+  // Option D — pénétration d'armure des brutes : la DEF effective du joueur
+  // est réduite de (1 − penFrac), où penFrac suit la rampe à seuil sur la DEF
+  // de la cible (enemyArmorPenFrac). Vaut 0 hors --enemy-pen ou ennemi non-brute.
+  const penFrac = enemyArmorPenFrac(enemy, target.def);
+  const tgtDef = Math.max(0, (target.def || 0) * (1 - penFrac));
+  const dmg = mitigatedDamage(enemy.atk, tgtDef);
   if ((target.guardStacks || 0) > 0) {
     // Garde : mitigation 50 %, consomme un palier, riposte probabiliste
     // (30 %, atk/2 mitigée par la DEF ennemie — cf. _tryGuardCounter).

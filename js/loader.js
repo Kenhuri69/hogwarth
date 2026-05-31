@@ -127,6 +127,7 @@ window.UX_safe = new Proxy({}, {
     { name: '_ensureActiveKillQuestTargets', source: 'dungeon-spawning.js', kind: 'fn' },
     { name: '_ensureStairsExist', source: 'dungeon-spawning.js', kind: 'fn' },
     { name: 'effectiveFloor',     source: 'dungeon-scaling.js', kind: 'fn'  },
+    { name: 'isBruteMonster',     source: 'dungeon-scaling.js', kind: 'fn'  },
     { name: 'drawDungeon',        source: 'renderer.js',     kind: 'fn'  },
     { name: 'drawNpcSprite',      source: 'renderer-entities.js', kind: 'fn' },
     { name: 'drawForgeSprite',    source: 'renderer-sprites.js', kind: 'fn' },

@@ -149,10 +149,18 @@ function _renderLoreBox(monster, seen) {
 }
 
 function _renderAbilitiesHtml(monster, seen) {
-  if (!seen || !monster.abilities || !monster.abilities.length) return '';
+  if (!seen) return '';
+  // Les brutes reçoivent Broyer au scaling (dungeon-scaling.js) ; on l'affiche
+  // ici via le prédicat partagé pour que le bestiaire reflète le combat réel.
+  const abilities = (monster.abilities ? [...monster.abilities] : []);
+  if (typeof isBruteMonster === 'function' && isBruteMonster(monster)
+      && !abilities.some(a => a.effect === 'maxhpdamage')) {
+    abilities.push(BRUTE_CRUSH_ABILITY);
+  }
+  if (!abilities.length) return '';
   return `<div class="bestiary-abilities">
     <div class="bestiary-section-title">Capacités spéciales</div>
-    ${monster.abilities.map(a =>
+    ${abilities.map(a =>
       `<div class="bestiary-ability">${a.icon} <strong>${a.name}</strong> — ${a.desc}
        <span class="bestiary-chance">(${Math.round(a.chance * 100)}%)</span></div>`
     ).join('')}

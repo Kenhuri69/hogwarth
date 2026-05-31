@@ -26,7 +26,7 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
   let ability;
   if (ai === 'aggressive') {
     // Cherche à infliger un maximum de dégâts.
-    ability = fired.find(a => a.effect === 'damage' || a.effect === 'drain');
+    ability = fired.find(a => a.effect === 'damage' || a.effect === 'drain' || a.effect === 'maxhpdamage');
   } else if (ai === 'cautious') {
     // En danger, privilégie de se soigner ; sinon temporise (affaiblit/dissipe).
     if (lowHp) ability = fired.find(a => a.effect === 'heal') || fired.find(a => a.effect === 'drain');
@@ -58,6 +58,31 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       // effet modéré sans annuler complètement (target.def 15 → -5 dgts).
       const raw = ability.power + Math.floor((enemy.mag || 0) / 2);
       const dmg = Math.max(1, Math.floor((raw - Math.floor((target.def || 0) / 3)) * _resistMult(target)));
+      if (shieldTurns[charIdx] > 0) {
+        shieldTurns[charIdx]--;
+        appendLog(`🛡️ Protego bloque ${ability.name} ! `);
+        UX_safe.floatDmg('ally', 0, 'shield');
+        UX_safe.logCombat(`🛡️ Protego bloque ${ability.name}.`, 'magic');
+      } else {
+        target.hp = Math.max(0, target.hp - dmg);
+        appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → ${dmg} dégâts sur ${target.name} ! `);
+        UX_safe.floatDmg('ally', dmg, 'dmg');
+        UX_safe.logCombat(`${ability.icon} ${enemy.name} : ${ability.name} → <b>−${dmg}</b> sur ${target.name}`, 'bad');
+      }
+      break;
+    }
+    case 'maxhpdamage': {
+      // Broyer — dégâts proportionnels aux PV MAX de la cible, contournant la
+      // DEF (levier anti-tank). Borné à `cap × référence` pour découpler la
+      // valeur de la progression du joueur. capRef 'hit' = coup normal mitigé
+      // (rétrécit quand la DEF joueur monte → amortit le grind) ; 'atk' = ATK
+      // brute. Cf. .claude/plans/player-stats-balance.md §4ter.
+      const ref = (ability.capRef === 'hit')
+        ? mitigatedDamage(enemy.atk, target.def)
+        : (enemy.atk || 0);
+      let dmg = Math.floor((target.hpMax || target.hp) * (ability.power || 0));
+      if (ability.cap > 0) dmg = Math.min(dmg, Math.floor(ability.cap * ref));
+      dmg = Math.max(1, dmg);
       if (shieldTurns[charIdx] > 0) {
         shieldTurns[charIdx]--;
         appendLog(`🛡️ Protego bloque ${ability.name} ! `);

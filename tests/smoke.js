@@ -471,6 +471,117 @@ async function scenarioWeakenAndProtegoBadges() {
   await browser.close();
 }
 
+// ── Scénario 2ter : capacité « Broyer » (dégâts % PV max bornés) ───
+//
+// Levier anti-tank (cf. .claude/plans/player-stats-balance.md §4ter).
+// Vérifie : prédicat isBruteMonster, octroi automatique au scaling,
+// formule de dégâts bornée min(F×PVmax, K×coup normal), blocage Protego,
+// et affichage bestiaire.
+async function scenarioBruteCrush() {
+  console.log('\n── Scénario 2ter : capacité Broyer (% PV max) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 50 });
+
+  // T1 : prédicat isBruteMonster — au moins une brute, et un non-brute.
+  const t1 = await page.evaluate(() => {
+    const brutes    = MONSTERS.filter(m => isBruteMonster(m));
+    const nonBrutes = MONSTERS.filter(m => !isBruteMonster(m));
+    const sample    = brutes[0];
+    return {
+      bruteCount:    brutes.length,
+      nonBruteCount: nonBrutes.length,
+      sampleId:      sample && sample.id,
+      sampleAtk:     sample && sample.atk,
+      sampleMag:     sample && (sample.mag || 0),
+    };
+  });
+  console.log('  T1 prédicat:', t1);
+  assert(t1.bruteCount >= 10, `attendu ≥10 brutes, obtenu ${t1.bruteCount}`);
+  assert(t1.nonBruteCount > 0, 'aucun non-brute — prédicat trop large');
+  assert(t1.sampleAtk >= 12 && t1.sampleAtk >= 1.5 * t1.sampleMag, 'échantillon brute incohérent');
+
+  // T2 : scaleMonster octroie Broyer aux brutes, pas aux autres.
+  const t2 = await page.evaluate(() => {
+    const brute    = MONSTERS.find(m => isBruteMonster(m));
+    const nonBrute = MONSTERS.find(m => !isBruteMonster(m));
+    const sb = scaleMonster(brute, 8);
+    const sn = scaleMonster(nonBrute, 8);
+    const crush = (sb.abilities || []).find(a => a.effect === 'maxhpdamage');
+    return {
+      bruteHasCrush:    !!crush,
+      crushPower:       crush && crush.power,
+      crushCap:         crush && crush.cap,
+      crushCapRef:      crush && crush.capRef,
+      crushChance:      crush && crush.chance,
+      nonBruteHasCrush: (sn.abilities || []).some(a => a.effect === 'maxhpdamage'),
+      // base non muté (octroi sur la copie scalée uniquement)
+      baseUntouched:    !(brute.abilities || []).some(a => a.effect === 'maxhpdamage'),
+    };
+  });
+  console.log('  T2 octroi scaling:', t2);
+  assert(t2.bruteHasCrush,        'brute scalée doit porter Broyer');
+  assert(t2.crushPower === 0.10,  'power Broyer doit être 0.10');
+  assert(t2.crushCap === 2,       'cap Broyer doit être 2');
+  assert(t2.crushCapRef === 'hit','capRef Broyer doit être "hit"');
+  assert(t2.crushChance === 0.5,  'chance Broyer doit être 0.5');
+  assert(!t2.nonBruteHasCrush,    'non-brute ne doit pas porter Broyer');
+  assert(t2.baseUntouched,        'la base MONSTERS ne doit pas être mutée par scaleMonster');
+
+  // T3 : dégâts non bornés (cap large) = floor(PVmax × power).
+  const t3 = await page.evaluate(() => {
+    const c = party[0];
+    c.hpMax = 300; c.hp = 300; c.def = 5;
+    shieldTurns[0] = 0;
+    // enemy.atk élevé → coup normal grand → cap (2×45=90) ne borne pas 30.
+    const fakeEnemy = { name: 'TestBrute', mag: 0, atk: 50,
+      abilities: [{ effect: 'maxhpdamage', name: 'Broyer', icon: '🪨', power: 0.10, chance: 1.0, cap: 2, capRef: 'hit' }] };
+    const orig = Math.random; Math.random = () => 0;
+    try { tryEnemyAbility(fakeEnemy, c, 0, () => {}); } finally { Math.random = orig; }
+    return { hp: c.hp, dealt: 300 - c.hp, normalHit: mitigatedDamage(50, 5) };
+  });
+  console.log('  T3 non borné:', t3);
+  assert(t3.dealt === 30, `attendu 30 (0.10×300), obtenu ${t3.dealt}`);
+
+  // T4 : dégâts bornés — enemy.atk faible → coup normal petit → cap mord.
+  const t4 = await page.evaluate(() => {
+    const c = party[0];
+    c.hpMax = 300; c.hp = 300; c.def = 30;
+    shieldTurns[0] = 0;
+    const normalHit = mitigatedDamage(10, 30);   // = round(10×0.25)=3 (plancher)
+    const fakeEnemy = { name: 'TestBrute', mag: 0, atk: 10,
+      abilities: [{ effect: 'maxhpdamage', name: 'Broyer', icon: '🪨', power: 0.10, chance: 1.0, cap: 2, capRef: 'hit' }] };
+    const orig = Math.random; Math.random = () => 0;
+    try { tryEnemyAbility(fakeEnemy, c, 0, () => {}); } finally { Math.random = orig; }
+    return { dealt: 300 - c.hp, normalHit, expectedCap: 2 * normalHit };
+  });
+  console.log('  T4 borné:', t4);
+  assert(t4.dealt === t4.expectedCap, `cap doit borner à ${t4.expectedCap} (2×coup normal), obtenu ${t4.dealt}`);
+  assert(t4.dealt < 30, 'le cap doit rabaisser sous la valeur non bornée (30)');
+
+  // T5 : Protego bloque Broyer (aucun dégât, shield consommé).
+  const t5 = await page.evaluate(() => {
+    const c = party[0];
+    c.hpMax = 300; c.hp = 300; c.def = 5;
+    shieldTurns[0] = 1;
+    const fakeEnemy = { name: 'TestBrute', mag: 0, atk: 50,
+      abilities: [{ effect: 'maxhpdamage', name: 'Broyer', icon: '🪨', power: 0.10, chance: 1.0, cap: 2, capRef: 'hit' }] };
+    const orig = Math.random; Math.random = () => 0;
+    try { tryEnemyAbility(fakeEnemy, c, 0, () => {}); } finally { Math.random = orig; }
+    return { dealt: 300 - c.hp, shieldLeft: shieldTurns[0] };
+  });
+  console.log('  T5 Protego:', t5);
+  assert(t5.dealt === 0,      'Protego doit annuler Broyer');
+  assert(t5.shieldLeft === 0, 'Protego doit être consommé');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Broyer : prédicat, octroi, borne, Protego conformes');
+  await browser.close();
+}
+
 // ── Scénario 2quater : statuts duo isolés par perso (Vague C) ──────
 //
 // Le code stocke les statusEffects directement sur l'objet personnage
@@ -16349,7 +16460,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length
