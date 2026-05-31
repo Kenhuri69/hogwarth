@@ -1,0 +1,28 @@
+/* ============================================================
+   CINEMATICS (Lot 3) — champ de particules intro / victoire
+   ============================================================
+   Le canvas de particules (js/cinematics.js) est inséré comme premier
+   enfant de l'écran hôte. On le pousse en fond (z-index 0, non cliquable)
+   et on remonte la carte de contenu au-dessus. */
+
+.cin-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Cartes de contenu au-dessus du champ de particules. */
+#intro-screen .intro-card,
+#victory-modal .victory-box {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ceinture-bretelles : sous reduced-motion, le module ne monte rien, mais
+   si un canvas traînait on le neutralise. */
+@media (prefers-reduced-motion: reduce) {
+  .cin-canvas { display: none; }
+}

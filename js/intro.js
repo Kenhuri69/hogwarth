@@ -43,6 +43,9 @@ function showIntroScreen(onContinue) {
   _renderIntroPage();
 
   document.getElementById('intro-screen').style.display = 'flex';
+  // Cinématique d'arrivée (Lot 3) : bougies flottantes derrière la carte.
+  // Défensif + no-op sous reduced-motion (voir js/cinematics.js).
+  if (window.CIN_safe) window.CIN_safe.introAmbiance(true);
   if (typeof AudioSystem !== 'undefined' && typeof AudioSystem.playNpcGreet === 'function') {
     // Geste utilisateur déjà donné via chooseHouse → init() est OK ici.
     AudioSystem.init();
@@ -102,6 +105,7 @@ function _finishIntro() {
     AudioSystem.stopVoice();
   }
   if (typeof Karaoke !== 'undefined') Karaoke.stop();
+  if (window.CIN_safe) window.CIN_safe.introAmbiance(false);
   // Acceptation auto de la 1re quête : c'est le contrat narratif de l'intro.
   if (typeof acceptQuest === 'function') acceptQuest('intro_tutoriel');
   // Marquer le PNJ guide comme rencontré : le greeting ne se rejouera pas

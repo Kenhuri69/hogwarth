@@ -77,8 +77,32 @@ exposant `window.DungeonFX` + helper `DFX_safe` + phase globale
   movement-interactions.js v7, main.js v9, save.js v19, loader.js v20,
   sw cache hogwarth-v40.
 
-## Lot 3 — Cinématiques intro/victoire (À VENIR)
-Intro animée d'arrivée à Poudlard ; séquence de victoire `victoryAchieved`.
+## Lot 3 — Cinématiques intro/victoire (LIVRÉ)
+
+Nouveau module visuel pur `js/cinematics.js` (+ `css/cinematics.css`)
+exposant `window.Cinematics` + helper `CIN_safe`. Un seul moteur de
+particules (champ de motes de lumière sur `<canvas>`), monté **derrière**
+la carte de contenu de l'écran hôte (z-index CSS), deux presets.
+
+- ✅ **Arrivée à Poudlard** : `Cinematics.introAmbiance(true)` monte un
+  champ de **bougies flottantes ambrées** derrière la carte d'intro
+  (motes qui montent + scintillent, blend additif). Branché dans
+  `showIntroScreen` (intro.js), démonté par `introAmbiance(false)` dans
+  `_finishIntro`. S'ajoute à la révélation du portrait déjà existante.
+- ✅ **Séquence de victoire** : `Cinematics.victoryFlourish()` monte un
+  **halo doré central qui respire** + une pluie de motes or-blanc sur la
+  modale de victoire. Branché dans `showVictoryScreen` (endgame.js),
+  arrêté par `Cinematics.stop()` dans `closeVictoryScreen` /
+  `returnToMenuFromVictory`.
+- ✅ **Robustesse** : boucle `requestAnimationFrame` auto-arrêtée quand
+  l'hôte n'est plus affiché ou l'onglet caché ; canvas non cliquable
+  (`pointer-events:none`) ; resize géré. Call-sites défensifs via
+  `CIN_safe`. **Ne monte rien sous `prefers-reduced-motion`** (les écrans
+  gardent leurs anims légères de base).
+- ✅ Scénario smoke `scenarioCinematics` (G1 API/proxy, G2 intro
+  monté/démonté, G3 victoire via les call-sites réels d'endgame.js) ;
+  entrée loader `Cinematics` (optional). **Smoke 149/149, PWA v41 vert.**
+  Bumps : intro.js v3, endgame.js v2, loader.js v21, sw cache hogwarth-v41.
 
 ## Journal d'avancement
 

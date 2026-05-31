@@ -109,10 +109,14 @@
     }
 
     modal.style.display = 'flex';
+    // Cinématique de victoire (Lot 3) : halo doré + pluie de lumière.
+    // Défensif + no-op sous reduced-motion (voir js/cinematics.js).
+    if (window.CIN_safe) window.CIN_safe.victoryFlourish();
   };
 
   // Close — bouton "Continuer l'aventure". Idempotent (double-click safe).
   window.closeVictoryScreen = function closeVictoryScreen() {
+    if (window.CIN_safe) window.CIN_safe.stop();
     const modal = document.getElementById('victory-modal');
     if (modal) modal.style.display = 'none';
     if (typeof addMsg === 'function') {
@@ -124,6 +128,7 @@
   // recharge depuis les slots, donc on doit avoir poussé une sauvegarde
   // à jour). Reset minimal de l'UI pour repasser au hub.
   window.returnToMenuFromVictory = function returnToMenuFromVictory() {
+    if (window.CIN_safe) window.CIN_safe.stop();
     if (typeof autoSave === 'function') autoSave('victory-return');
     const modal = document.getElementById('victory-modal');
     if (modal) modal.style.display = 'none';
