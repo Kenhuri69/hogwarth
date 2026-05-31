@@ -3,14 +3,21 @@
 > Single-asset prompt pour le **Marchand d'Ombre** (PNJ vendeur itinérant
 > rare, étage 11+) livré par PR #249 (sinks endgame combo A+E).
 >
-> Format identique au sprint étages 8-10 (cf.
-> [`nano-banana-prompts-floor-8-10.md`](./nano-banana-prompts-floor-8-10.md)) :
-> portrait **256×256 RGB**, cadrage buste, fond opaque accepté.
-> Style ancré dans [`IMG_STYLE.md`](../../IMG_STYLE.md) (template §8.3 portraits NPC).
+> Portrait **256×256 RGB**, cadrage buste serré, fond opaque accepté.
 >
-> **Statut V1** : `npcs.js` pointe sur `img/npc/_wizard_generic.png` en
-> attendant ce PNG dédié. Une fois le portrait livré, swap la valeur de
-> `portraitImg` sur `img/npc/marchand_ombre.png`.
+> **Statut** : ✅ **LIVRÉ** (2026-05-31). `img/npc/marchand_ombre.png`
+> généré (256×256 RGB) et câblé dans `js/npcs.js` (`portraitImg`).
+>
+> ### ⚠️ Deux règles non-négociables
+>
+> 1. **Style = photo cinématique réaliste**, PAS du concept art peint.
+>    Les portraits NPC du jeu (`rogue.png`, `mcgonagall.png`,
+>    `marchand_clandestin.png`…) sont des **film stills photoréalistes**
+>    (plan serré tête-épaules, profondeur de champ, fond flou, lumière
+>    de cinéma). Bannir « painterly / MTG / concept art ».
+> 2. **Zéro IP nommée / zéro franchise.** Gemini refuse les personnages
+>    canon sous droits. Décrire un **archétype générique** (« fantasy
+>    wizard character ») — jamais « Harry Potter universe ».
 
 ---
 
@@ -48,32 +55,24 @@ pas affecté par le zoom agressif des monstres). Garder :
 
 ---
 
-### Prompt
+### Prompt (validé, livré)
 
 ```
-Portrait of a mysterious itinerant alchemist merchant in Harry Potter universe,
-bust shot, 3/4 face turn, hooded ageless figure of indeterminate gender,
-deep travel-worn dark grey hood pulled forward casting shadow over upper face,
-one visible pale weathered eye glowing faint amber-gold with arcane knowledge,
-the other eye lost in deep hood shadow, dignified composed expression,
-silvery-grey hair strands escaping the hood,
-high cheekbones, faint alchemical burn-scar tracing the jawline,
-slight knowing half-smile, mouth closed,
-heavy charcoal-grey travel robe with frayed hem, dust of many roads on shoulders,
-ornate brass alchemy clasp at the throat shaped as a stylized phial,
-leather bandolier across chest holding three small glass vials catching cold light
-(one ruby-red, one sapphire-blue, one amethyst-purple),
-gloved hand visible at lower frame edge holding up a tiny luminescent flask for inspection,
-warm candle-amber lighting from below illuminating the vials and the visible eye,
-cold cyan rim light from behind suggesting cavern depth,
-soft dark contextual background of vast ancient stone chamber with distant
-phosphorescent runes, hint of incense smoke curling at frame edges,
-palette: charcoal grey robe, weathered parchment skin, brass and ruby/sapphire/amethyst vial highlights,
-faint cyan otherworldly rim,
-painterly digital concept art, Harry Potter universe style,
-256x256 portrait frame, character occupies 75% vertically,
-timeless mystical pragmatic mood, MTG portrait illustration quality,
-no text, no watermark, no signature, no border frame
+Photorealistic cinematic portrait of a mysterious itinerant alchemist merchant,
+tight head-and-shoulders bust, square crop, 3/4 face turn,
+an ageless hooded figure of indeterminate age, dignified and composed — NOT a back-alley thug,
+deep travel-worn charcoal-grey hood pulled forward casting soft shadow over the upper face,
+one visible pale weathered eye glowing faint amber-gold, the other lost in hood shadow,
+high cheekbones, a faint alchemical burn-scar tracing the jawline, strands of silver-grey hair escaping the hood,
+a slight knowing closed-mouth half-smile, realistic detailed weathered skin texture,
+heavy charcoal travel robe with a frayed hem and road-dust on the shoulders,
+an ornate brass phial-shaped clasp at the throat, a leather bandolier across the chest
+holding three small glass vials catching cold light (one ruby-red, one sapphire-blue, one amethyst-purple),
+shallow depth of field, blurred background of a vast ancient stone chamber with distant
+phosphorescent runes and curling incense smoke,
+warm amber candlelight from below lighting the vials and the visible eye, cold cyan rim light from behind,
+cinematic film still, photorealistic, highly detailed, 85mm lens, mysterious mystical mood,
+fantasy wizard character, 256x256 square portrait, no text, no watermark, no border
 ```
 
 ---

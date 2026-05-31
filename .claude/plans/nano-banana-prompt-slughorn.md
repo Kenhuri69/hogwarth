@@ -10,10 +10,8 @@
 > Style ancré dans [`IMG_STYLE.md`](../../IMG_STYLE.md) (template §8.2 sorcier,
 > adapté portrait buste comme §8.3).
 >
-> **Statut V1** : `npcs.js` pointe sur `img/npc/_npc_prof_h.png` (placeholder
-> générique « professeur homme » partagé) en attendant ce PNG dédié. Une
-> fois le portrait livré, swap la valeur de `portraitImg` sur
-> `img/npc/slughorn.png`.
+> **Statut** : ✅ **LIVRÉ** (2026-05-31). `img/npc/slughorn.png` généré
+> (256×256 RGB) et câblé dans `js/npcs.js` (`portraitImg`).
 
 ---
 
@@ -48,28 +46,38 @@ pas affecté par le zoom agressif des monstres). Garder :
 - `slughorn` = lumineux, rond, moustache argentée, velours et confort,
   jovialité mondaine. L'opposé visuel exact.
 
-### Prompt
+### ⚠️ Deux règles non-négociables (apprises à la dure)
+
+1. **Style = photo cinématique réaliste**, PAS du concept art peint. Tous
+   les portraits NPC existants (`rogue.png`, `mcgonagall.png`,
+   `marchand_clandestin.png`…) sont des **film stills photoréalistes**
+   (plan serré tête-épaules, profondeur de champ, fond contextuel flou,
+   éclairage de cinéma). Bannir « painterly / MTG illustration / concept
+   art » — utiliser « photorealistic cinematic film still, 85mm lens ».
+2. **Zéro IP nommée.** Gemini / Nano Banana **refuse** de générer un
+   personnage canon nommé sous droits. NE PAS écrire « Horace Slughorn »
+   ni « Harry Potter ». Décrire l'**archétype générique** (vieux
+   professeur de potions jovial et corpulent) — la moustache argentée +
+   le velours vert + la fiole le rendent reconnaissable sans le nommer.
+
+### Prompt (validé, livré)
 
 ```
-Portrait of Horace Slughorn, Potions Master in Harry Potter universe,
-bust shot, 3/4 face turn, elderly portly jovial wizard,
-large rotund build with a comfortable belly, ruddy good-natured face,
-prominent silver walrus moustache, balding head with wisps of silvery hair,
+Photorealistic cinematic portrait of an elderly portly jovial wizard,
+an old-fashioned potions professor, tight head-and-shoulders bust, square crop,
+facing slightly 3/4 toward camera,
+a man in his sixties with a large rotund build, ruddy good-natured face,
+full cheeks and a double chin, a prominent bushy silver walrus moustache,
+balding head with thin wisps of silvery-grey hair,
 small twinkling pale-blue eyes with a shrewd flattering gleam,
-warm self-satisfied half-smile of a bon vivant and collector of talents,
-plush bottle-green velvet waistcoat over a cream silk shirt,
-golden watch-chain across the belly, ornate brass-and-emerald cravat pin,
-one plump hand raised holding a small crystal potion phial up to the light
-admiringly, soft warm amber candlelight from a hearth catching the
-moustache and the phial, faint emerald rim light suggesting Slytherin
-heritage, soft dark contextual background of a cluttered potions study
-with shelves of glinting bottles and a faint cauldron-steam haze,
-palette: bottle-green velvet, warm ruddy skin, silver moustache,
-brass and amber highlights, emerald accents,
-painterly digital concept art, Harry Potter universe style,
-256x256 portrait frame, character occupies 75% vertically,
-warm convivial shrewd mood, MTG portrait illustration quality,
-no text, no watermark, no signature, no border frame
+a warm self-satisfied half-smile, realistic detailed aged skin texture with fine wrinkles,
+wearing a plush bottle-green velvet waistcoat over a cream silk cravat,
+a golden watch-chain glinting across his belly, an ornate emerald cravat pin,
+shallow depth of field, blurred background of a cluttered candle-lit alchemy study
+with shelves of glinting glass bottles and faint cauldron steam,
+warm amber firelight from the lower left catching his moustache, soft green rim light,
+cinematic film still, photorealistic, highly detailed, 85mm lens, moody warm lighting,
+fantasy wizard character, 256x256 square portrait, no text, no watermark, no border
 ```
 
 ---
