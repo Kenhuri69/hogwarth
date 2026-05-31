@@ -401,6 +401,8 @@ function parseArgs(argv) {
                 endgame: false, maxFloor: 40, forge: 0, library: 0,
                 houseSet: null, tenebresSet: false, houseTier: 0, stars: 0,
                 difficulty: 'Normal',
+                statRework: false, fairBaseline: false,
+                penCap: 0.50, penHalf: 20, dotResDiv: 8,
                 elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -411,6 +413,8 @@ function parseArgs(argv) {
     if (a === '--no-potions')           { out.usePotions = false; continue; }
     if (a === '--pessimistic')          { out.useQuests = false; out.useEquipment = false; out.usePotions = false; continue; }
     if (a === '--artifacts')            { out.artifacts = true; continue; }
+    if (a === '--stat-rework')          { out.statRework = true; out.fairBaseline = true; continue; }
+    if (a === '--fair-baseline')        { out.fairBaseline = true; continue; }
     if (a === '--endgame')              { out.endgame = true; continue; }
     if (a === '--tenebres-set')         { out.tenebresSet = true; continue; }
     if (!a.includes('=')) {
@@ -427,6 +431,9 @@ function parseArgs(argv) {
     else if (k === 'kills')     out.kills = parseInt(v, 10);
     else if (k === 'bonus-levels') out.bonusLevels = parseInt(v, 10) || 0;
     else if (k === 'max-floor')    out.maxFloor = parseInt(v, 10) || 40;
+    else if (k === 'pen-cap')      out.penCap  = parseFloat(v);
+    else if (k === 'pen-half')     out.penHalf = parseFloat(v) || 20;
+    else if (k === 'dot-res-div')  out.dotResDiv = parseFloat(v) || 8;
     else if (k === 'forge')        out.forge   = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
     else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
     else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
@@ -485,6 +492,16 @@ Options:
   --build=BUILD           tank | balanced | offensive (def balanced)
   --bonus-levels=N        Niveaux gagnés au-delà de l'étage (farming) (def 0)
   --artifacts             Best-in-slot inclut les artefacts légendaires (hors boutique)
+  --stat-rework           [ANALYSE] Modélise le rework des stats secondaires :
+                          INT→MAG 4:1, END→DEF 4:1, END→résistance DoT,
+                          STR→pénétration de DEF (courbe de Hill). Implique
+                          --fair-baseline. Ne change rien hors de ce mode.
+  --fair-baseline         [ANALYSE] Corrige la croissance STR/INT/AGI +1/niveau
+                          (omise par le sim historique) sans le rework — sert de
+                          référence équitable pour mesurer le rework PUR.
+  --pen-cap=F             Rework : plafond de pénétration STR (def 0.50)
+  --pen-half=F            Rework : STR de demi-saturation de la courbe (def 20)
+  --dot-res-div=F         Rework : diviseur de résistance DoT END (def 8)
   --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
   --max-floor=N           Étage max en mode --endgame (def 40)
   --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
@@ -643,15 +660,41 @@ function eligiblePool(floor, cfg) {
 
 // Reproduit _hydrateCharacter() + recalculateStats() pour les
 // stats dérivées de base, puis applique les level-ups.
-// Effets par point alloué (Phase 2 du plan)
-//   STR → +1 ATK, INT → +1 MAG, AGI → +0.4 % esquive, END → +5 HP, LCK → +0.5 % crit
-function applyStatPoints(c, points) {
+// Effets par point alloué.
+//  - Modèle HISTORIQUE du sim (raccourci) : STR→+1 ATK, INT→+1 MAG (1:1),
+//    AGI→+1 AGI, END→+5 HP, LCK→+1 LCK. Conservé par défaut pour ne pas
+//    invalider les rapports existants.
+//  - Modèle REWORK (--stat-rework) : aligné sur STAT_POINT_EFFECTS réel —
+//    STR→+1 ATK +1 STR · INT→+1 INT · AGI→+1 AGI · END→+1 END +5 HP · LCK→+1 LCK.
+//    Les conversions INT→MAG (4:1) et END→DEF (4:1) sont appliquées plus tard,
+//    dans recalcEffectiveStats, à partir des _base secondaires.
+function applyStatPoints(c, points, cfg) {
+  if (cfg && cfg.statRework) {
+    c._baseAtk += points.str || 0;   // STR garde le couplage +1 ATK (D4)
+    c._baseStr += points.str || 0;
+    c._baseInt += points.int || 0;
+    c._baseAgi += points.agi || 0;
+    c._baseEnd += points.end || 0;
+    c.hpMax    += 5 * (points.end || 0);
+    c._baseLck += points.lck || 0;
+    return;
+  }
   c._baseAtk += points.str || 0;
   c._baseMag += points.int || 0;
   c._baseAgi += points.agi || 0;
   c._baseEnd += points.end || 0;
   c.hpMax    += 5 * (points.end || 0);
   c._baseLck += points.lck || 0;
+}
+
+// Pénétration de DEF par la STR (D4) — courbe de Hill (n=2) : douce au
+// début, quasi-linéaire au milieu, plateau logarithmique vers penCap.
+//   penFrac(STR) = penCap · STR² / (STR² + penHalf²)
+function strPenFrac(str, cfg) {
+  const cap = (cfg && typeof cfg.penCap === 'number') ? cfg.penCap : 0.50;
+  const h   = (cfg && cfg.penHalf) || 20;
+  const s   = Math.max(0, str || 0);
+  return cap * (s * s) / (s * s + h * h);
 }
 
 function createHero(key, level, cfg, floor, partySize) {
@@ -684,6 +727,12 @@ function createHero(key, level, cfg, floor, partySize) {
     c.hpMax += 8;  c.hp = c.hpMax;
     c.spMax += 5;  c.sp = c.spMax;
     c._baseAtk += 1;  c._baseDef += 1;  c._baseMag += 1;
+    // Croissance des stats secondaires +1/niveau (jeu réel —
+    // battle-rewards.js _grantLevelStats). Omise par le sim historique car
+    // STR/INT/AGI n'avaient aucun effet combat ; indispensable dès que le
+    // rework les consomme. Gated par --fair-baseline (impliqué par
+    // --stat-rework) pour que la comparaison mesure le rework PUR.
+    if (cfg.fairBaseline) { c._baseStr += 1;  c._baseInt += 1;  c._baseAgi += 1; }
     // points libres alloués selon le build
     if (ptsPerLevel > 0) {
       const total = (allocation.str || 0) + (allocation.int || 0) + (allocation.agi || 0)
@@ -696,7 +745,7 @@ function createHero(key, level, cfg, floor, partySize) {
         agi: Math.round((allocation.agi || 0) * scale),
         end: Math.round((allocation.end || 0) * scale),
         lck: Math.round((allocation.lck || 0) * scale),
-      });
+      }, cfg);
     }
     // apprentissage de sorts
     const learn = learnByLevel[lv];
@@ -731,6 +780,16 @@ function createHero(key, level, cfg, floor, partySize) {
   }
   // Bonus de set (Maison 4/4 + Ténèbres 3/3) — après l'équipement.
   applySetBonuses(c, cfg, key, partySize);
+  // Rework D1/D2 — conversions stat secondaire → primaire, 4:1. Appliquées
+  // APRÈS base + équipement + sets (miroir de la place dans recalculateStats),
+  // sur les stats effectives finales c.int / c.end. Le crit physique calculé
+  // ci-dessous reste piloté par LCK ; la DEF gagnée n'affecte que la mitigation.
+  if (cfg.statRework) {
+    c.mag += Math.floor((c.int || 0) / 4);
+    c.def += Math.floor((c.end || 0) / 4);
+    c._dotResDiv = cfg.dotResDiv || 8;   // D3 — résistance aux DoT (lu en combat)
+    c._strPen    = strPenFrac(c.str, cfg); // D4 — pénétration de DEF (lue en combat)
+  }
   // LCK plafonne à 40 % ; les bonus équipement/set s'ajoutent au-dessus
   // (plafond absolu 100 %). Deux canaux de crit : physique et sort.
   const lckCrit = Math.min(40, 5 + c.lck * 0.5);
@@ -969,7 +1028,11 @@ function simulateBattle(party, enemyGroup, opts = {}) {
       for (const s of char.statusEffects) {
         if (SIM_DOT_IDS.includes(s.id)) {
           // DoT : dégâts puis décompte (miroir de tickStatuses).
-          const dmg = Math.max(1, s.power);
+          // Rework D3 — résistance aux DoT : l'END atténue chaque tick de
+          // floor(END/dotResDiv). Sans rework, _dotResDiv est undefined →
+          // pas d'atténuation (comportement historique inchangé).
+          const dotRes = char._dotResDiv ? Math.floor((char.end || 0) / char._dotResDiv) : 0;
+          const dmg = Math.max(1, s.power - dotRes);
           char.hp = Math.max(0, char.hp - dmg);
           totalEnemyDmg += dmg;
           s.turns--;
@@ -1079,7 +1142,11 @@ function heroAct(char, enemies) {
 
   // 3. Attaque physique
   const bonus = target.disarmed > 0 ? 2 : 0;
-  let dmg = Math.max(1, Math.floor(mitigatedDamage(char.atk + Math.floor(Math.random() * 4), target.def - bonus) * vigor * elan));
+  // Rework D4 — perce-garde : la STR ignore une fraction (courbe de Hill) de
+  // la DEF ennemie. effDef = def · (1 − penFrac(STR)). Sans rework, _strPen
+  // est undefined → pénétration nulle (comportement historique inchangé).
+  const effDef = Math.max(0, (target.def - bonus) * (1 - (char._strPen || 0)));
+  let dmg = Math.max(1, Math.floor(mitigatedDamage(char.atk + Math.floor(Math.random() * 4), effDef) * vigor * elan));
   if (target.disarmed > 0) target.disarmed--;
   const critP = Math.random() * 100 < char.critChance;
   if (critP) dmg = Math.floor(dmg * char.critMultiplier);
