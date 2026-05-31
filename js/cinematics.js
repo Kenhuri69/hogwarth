@@ -27,9 +27,9 @@
   // intro   : motes ambrées chaudes (bougies de la Grande Salle).
   // victory : motes or-blanc plus vives + halo central qui respire.
   const PRESETS = {
-    intro:   { count: 34, rise: 14, sway: 16, rMin: 1.2, rMax: 3.4,
+    intro:   { count: 48, rise: 14, sway: 16, rMin: 1.2, rMax: 4.4,
                color: [255, 198, 110], bloom: 0 },
-    victory: { count: 52, rise: 26, sway: 20, rMin: 1.4, rMax: 4.2,
+    victory: { count: 72, rise: 26, sway: 20, rMin: 1.4, rMax: 5.4,
                color: [255, 234, 168], bloom: 1 }
   };
 
@@ -89,7 +89,7 @@
     // Halo central qui respire (victoire seulement) : bloom doré derrière
     // la carte, blend additif très discret.
     if (_spec.bloom) {
-      const breathe = 0.10 + 0.05 * Math.sin(t / 1000 * 1.1);
+      const breathe = 0.15 + 0.07 * Math.sin(t / 1000 * 1.1);
       const [r, g, b] = _spec.color;
       const grad = _cx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.42);
       grad.addColorStop(0,   `rgba(${r},${g},${b},${breathe})`);
