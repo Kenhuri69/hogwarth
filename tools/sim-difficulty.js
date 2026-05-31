@@ -403,7 +403,7 @@ function parseArgs(argv) {
                 difficulty: 'Normal',
                 statRework: false, fairBaseline: false,
                 penCap: 0.50, penHalf: 20, dotResDiv: 8,
-                intMagDiv: 4, endDefDiv: 4,
+                intMagDiv: 4, endDefDiv: 4, enemyPen: 0,
                 elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -437,6 +437,7 @@ function parseArgs(argv) {
     else if (k === 'dot-res-div')  out.dotResDiv = parseFloat(v) || 8;
     else if (k === 'int-mag-div')  out.intMagDiv = parseFloat(v) || 4;
     else if (k === 'end-def-div')  out.endDefDiv = parseFloat(v) || 4;
+    else if (k === 'enemy-pen')    out.enemyPen = parseFloat(v) || 0;
     else if (k === 'forge')        out.forge   = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
     else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
     else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
@@ -507,6 +508,9 @@ Options:
   --dot-res-div=F         Rework : diviseur de résistance DoT END (def 8)
   --int-mag-div=F         Rework : diviseur conversion INT→MAG (def 4)
   --end-def-div=F         Rework : diviseur conversion END→DEF (def 4)
+  --enemy-pen=F           [Option D] Pénétration d'armure des monstres « brutes »
+                          (atk>=1.5×mag & atk>=12) : fraction de DEF ignorée
+                          (def 0). Contre-mesure au build tank.
   --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
   --max-floor=N           Étage max en mode --endgame (def 40)
   --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
@@ -610,6 +614,15 @@ function scaleMonster(base, floor, cfg) {
     magVal = _endgameRecurse(base.mag, n, ENDGAME_SCALING.baseFix.mag / intraMult, scal);
   }
   out.mag = Math.floor(magVal * diffOf(cfg).scalingMultiplier);
+  // Option D (analyse) — pénétration d'armure ennemie. Les monstres « brutes »
+  // (frappeurs physiques : atk >= 1.5×mag ET atk de base >= 12) ignorent une
+  // fraction de la DEF du joueur, en miroir de la pénétration STR du héros.
+  // Contre-mesure ciblée au build tank. Activée par --enemy-pen=F (def 0 →
+  // comportement actuel inchangé). 15/67 monstres qualifient (ét. 4+).
+  out._armorPen = 0;
+  if (cfg.enemyPen > 0 && (base.atk || 0) >= 1.5 * (base.mag || 0) && (base.atk || 0) >= 12) {
+    out._armorPen = cfg.enemyPen;
+  }
   return out;
 }
 
@@ -1284,7 +1297,10 @@ function enemyAct(enemy, target, partySize) {
   // Attaque physique simple : pas de RNG côté ennemi dans le code réel.
   // Priorité miroir de battle.js — enemyTurn : Esquive > Garde > coup normal.
   if (Math.random() * 100 < (target.dodgeChance || 0)) return 0;
-  const dmg = mitigatedDamage(enemy.atk, target.def);
+  // Option D — pénétration d'armure des brutes : la DEF effective du joueur
+  // est réduite de (1 − _armorPen). _armorPen vaut 0 hors --enemy-pen.
+  const tgtDef = Math.max(0, (target.def || 0) * (1 - (enemy._armorPen || 0)));
+  const dmg = mitigatedDamage(enemy.atk, tgtDef);
   if ((target.guardStacks || 0) > 0) {
     // Garde : mitigation 50 %, consomme un palier, riposte probabiliste
     // (30 %, atk/2 mitigée par la DEF ennemie — cf. _tryGuardCounter).

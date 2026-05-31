@@ -153,9 +153,58 @@ balanced en solo n'est plus que de ~2-4 pts (contre ~8 pts avant). L'objectif
   écraser les autres allocations ;
 - ✅ STR/INT conservent leur apport (pénétration, MAG) à 4:1 / courbe inchangés.
 
-**Valeurs retenues pour l'implémentation (sous réserve validation PO) :**
-INT→MAG **4:1**, END→DEF **6:1**, résistance DoT `floor(END/12)`, pénétration
-STR courbe de Hill (cap 50 %, H 20).
+### Option D — pénétration d'armure des monstres « brutes » (n=600)
+
+Plutôt que (ou en plus de) raboter END→DEF, on rend le système **symétrique** :
+certains monstres frappeurs physiques (`atk ≥ 1.5×mag ET atk ≥ 12` — 15/67
+monstres : Greyback, Aragog, trolls, loups-garous, manticore, Basilic…)
+ignorent une fraction de la DEF du joueur. C'est une **contre-mesure ciblée au
+build tank** : un mur de DEF cesse d'être invulnérable face aux brutes.
+Knob `--enemy-pen=F`. Testé à `0.30` PAR-DESSUS le réglage adouci (END 6:1, DoT div12).
+
+Δ rework(adouci+brutes)−baseline, solo endgame :
+
+| Étage | balanced Solo | offensive Solo | tank Solo |
+|------:|:--:|:--:|:--:|
+| 8  | +8  | −1 | +6 |
+| 9  | +4  | +3 | +10 |
+| 10 | +10 | +4 | +4 |
+| 11 | +6  | +7 | +16 |
+| 12 | +4  | −2 | +10 |
+| **moy. 8-12** | **+6.4** | **+2.2** | **+9.2** |
+
+À comparer aux moyennes solo 8-12 **sans** pénétration ennemie :
+balanced +9.4, offensive +6.6, tank +12.6.
+
+**Effet de l'Option D.**
+- ✅ Le tank baisse (moy. 12.6 → 9.2) — la pénétration des brutes mord bien sur
+  son mur de DEF, comme voulu.
+- ⚠️ Mais elle **rabote aussi tous les builds** (offensive tombe à +2.2, parfois
+  négatif) : l'effet de fond du rework — adoucir l'endgame — est en partie
+  annulé. La pénétration frappe toute DEF, pas seulement celle du tank.
+- 🔎 Bruit Monte-Carlo visible (tank ét.10 +4 vs ét.11 +16) : à n≥1500 pour
+  trancher finement, mais la tendance est claire.
+
+**Lecture comparée des deux leviers anti-tank :**
+| Levier | Tank solo 8-12 | Autres builds | Effet de bord |
+|--------|:--:|:--:|--------|
+| END→DEF 4:1, DoT 8 (base) | +13..+20 | +6..+14 | tank aberrant |
+| END→DEF 6:1, DoT 12 | +11..+14 | +7..+14 | tank rogné, fond préservé |
+| + brutes `enemy-pen 0.30` | +4..+16 (moy 9) | offensive ~+2 | symétrique mais rabote tout |
+
+**Recommandation.** L'Option D est **séduisante thématiquement** (la Force perce
+des deux côtés ; enrichit le bestiaire) mais, dosée à 0.30, elle sur-corrige :
+elle gomme une partie du bénéfice voulu et pénalise surtout l'offensif (DEF
+basse + perce-armure = double peine). Deux pistes si on la retient :
+- **dose plus douce** (`enemy-pen 0.15`) pour ne mordre que les gros murs de DEF ;
+- **la réserver aux boss** (Greyback/Aragog/Dolohov) plutôt qu'aux 15 brutes,
+  pour en faire un pic de tension ponctuel et non une taxe permanente.
+
+**Valeurs candidates pour l'implémentation (sous réserve validation PO) :**
+- Socle : INT→MAG **4:1**, END→DEF **6:1**, résistance DoT `floor(END/12)`,
+  pénétration STR Hill (cap 50 %, H 20).
+- Option D (à trancher) : pénétration d'armure des brutes, dose à fixer
+  (`0.15` léger / `0.30` marqué) ou réservée aux boss.
 
 ## 5. Journal
 
