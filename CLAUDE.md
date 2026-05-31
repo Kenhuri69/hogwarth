@@ -504,6 +504,17 @@ Au démarrage, `showPlayerSelect()` affiche un écran de sélection.
 > fix, le mur duo arrivait dès l'étage 5 (79 %) ; il est maintenant à
 > l'étage 7 (57 %).
 
+> **Gros groupes (4-5 ennemis)** — `MAX_ENEMY_GROUP = 5` (`data.js`).
+> `rollGroupSize` débloque les quad/quint via un transfert `p3 → p4 → p5`
+> **gaté endgame + duo** : `partySize === 2 && victoryAchieved &&
+> currentFloor >= 11`, montée en puissance via le farming (`n =
+> floor(kills/4)` : quad dès `n > 6`, quint dès `n >= 10`). Hors de ce
+> contexte (solo, ou duo non post-victoire), le tirage reste plafonné à 3.
+> Calibrage des probabilités à affiner par simulation (Temps 2). Le rendu
+> (`renderEnemyGroup`) compacte icônes/barres au-delà de 3 et le conteneur
+> passe en `flex-wrap`. Cap d'invocation `summon` aligné sur
+> `MAX_ENEMY_GROUP`. Cf. `.claude/plans/extend-opponent-count.md`.
+
 ### Difficulté progressive par étage (scaling au grind)
 
 `floorKillCount: Map<floor, kills>` (`state.js`) accumule les kills
@@ -886,7 +897,7 @@ lecture/clic ; `openInventory()` garde sa modale `#inventory-modal`.
 ```js
 inBattle          // bool
 partySize         // 1 ou 2 — choisi à l'écran de démarrage
-enemyGroup        // [{...monsterData scalé, currentHp, disarmed}, …]  1 à 3 ennemis
+enemyGroup        // [{...monsterData scalé, currentHp, disarmed}, …]  1 à 5 ennemis (cap MAX_ENEMY_GROUP)
 currentBattleChar // 0 = Harry, 1 = Hermione
 shieldTurns       // [0, 0]  — bouclier Protego par personnage
 guardTurns        // [0, 0]  — paliers de Garde par personnage (empilables, cap 3 ; mitigation 50 %)

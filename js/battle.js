@@ -463,11 +463,14 @@ function startBattle(baseEnemyData, opts) {
   }
 }
 
-// Renvoie 1, 2 ou 3. Politique de base selon mode et étage + scaling
-// progressif basé sur `floorKillCount` (n = floor(kills / 4)).
+// Renvoie 1 à 5 (cap MAX_ENEMY_GROUP). Politique de base 1/2/3 selon mode et
+// étage + scaling progressif basé sur `floorKillCount` (n = floor(kills / 4)).
 // duoBonus  = min(0.40, 0.10·n)        — transfert prob p1 → p2
 // trioBonus = (n ≥ 5) ? min(0.40, 0.10·(n-4)) : 0  — transfert p2 → p3
-// Cf. CLAUDE.md §"Difficulté progressive par étage".
+// Groupes de 4-5 (quad/quint) : transfert p3 → p4 → p5 GATÉ endgame + duo
+// (partySize 2, victoryAchieved, étage 11+). Valeurs calibrées par sim
+// (tools/sim-difficulty.js). Cf. CLAUDE.md §"Difficulté progressive par étage"
+// et .claude/plans/extend-opponent-count.md.
 function rollGroupSize() {
   const m = (DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS['Normal']).enemyGroupMultiplier;
   const r = Math.random();
@@ -508,9 +511,26 @@ function rollGroupSize() {
   const trioShift = Math.min(p2, trioShiftBase);
   p2 -= trioShift; p3 += trioShift;
 
+  // Quad/quint (4-5 ennemis) — gaté endgame + duo : mode duo, post-victoire,
+  // étages 11+. Transfert p3 → p4 → p5, montée en puissance via le farming (n).
+  let p4 = 0, p5 = 0;
+  const endgameQuad = partySize === 2
+    && typeof victoryAchieved !== 'undefined' && victoryAchieved
+    && currentFloor >= 11;
+  if (endgameQuad) {
+    const quadBonus  = Math.min(0.30, 0.06 * Math.max(0, n - 6));
+    const quadShift  = Math.min(p3, quadBonus);
+    p3 -= quadShift; p4 += quadShift;
+    const quintBonus = n >= 10 ? Math.min(0.20, 0.05 * (n - 9)) : 0;
+    const quintShift = Math.min(p4, quintBonus);
+    p4 -= quintShift; p5 += quintShift;
+  }
+
   if (r < p1) return 1;
   if (r < p1 + p2) return 2;
-  return 3;
+  if (r < p1 + p2 + p3) return 3;
+  if (r < p1 + p2 + p3 + p4) return 4;
+  return 5;
 }
 
 function pickSimilarEnemy(base) {

@@ -1,7 +1,7 @@
 # Plan — Étendre le nombre d'adversaires (jusqu'à 5)
 
 > Branche : `claude/extend-opponent-count-yoIoJ`
-> Statut : 🟡 plan en cours d'amendement — implémentation pas démarrée.
+> Statut : 🟢 Temps 1 implémenté & testé (146/146 smoke). Temps 2 (sim) à faire.
 
 ## Objectif
 
@@ -47,9 +47,14 @@ en mobile (~360px). → taille adaptative + wrap nécessaires.
 
 ---
 
-## Temps 1 — Implémentation
+## Temps 1 — Implémentation ✅
 
-### Étape 1.1 — Constante de cap partagée
+> Décision A retenue : gating strict **duo + post-victoire + étage ≥ 11**
+> (pas d'élargissement aux étages 7-10 hors post-victoire).
+> Toutes les étapes ci-dessous sont faites et validées par
+> `node tests/smoke.js` (146/146, dont `scenarioLargeEnemyGroup`).
+
+### Étape 1.1 — Constante de cap partagée ✅ (`data.js` — `MAX_ENEMY_GROUP = 5`)
 - Ajouter `const MAX_ENEMY_GROUP = 5;` dans `js/data.js` (section constantes,
   près de `MAP_W/H`, `CELL`…).
 - **Vérif** : `grep MAX_ENEMY_GROUP js/data.js` ; chargé avant battle.js/battle-spells.js (ordre OK).
@@ -145,3 +150,11 @@ en mobile (~360px). → taille adaptative + wrap nécessaires.
 ## Écarts / décisions (journal vivant)
 - 2026-05-31 : plan créé. Cap=5, gating endgame+duo, pic de difficulté assumé.
   Constantes quad/quint = placeholders à calibrer au Temps 2.
+- 2026-05-31 : **Temps 1 implémenté** (décision A — gating strict duo +
+  post-victoire + étage 11+). Fichiers touchés : `js/data.js` (constante),
+  `js/battle.js` (rollGroupSize p4/p5), `js/battle-spells.js` (cap summon),
+  `js/battle-ui.js` + `css/style.css` (layout adaptatif + flex-wrap),
+  `tests/smoke.js` (scénario `scenarioLargeEnemyGroup` + maj test summon),
+  `CLAUDE.md`. Placeholders quad/quint : `quadBonus=min(0.30, 0.06·max(0,n-6))`,
+  `quintBonus=(n≥10)?min(0.20, 0.05·(n-9)):0`. Smoke 146/146.
+  **Reste le Temps 2** (miroir sim + calibrage des probabilités).

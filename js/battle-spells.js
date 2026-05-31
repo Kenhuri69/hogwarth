@@ -178,10 +178,10 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
     }
     // ── Archétypes boss/élites (LOT B3) ──────────────────────────
     case 'summon': {
-      // Invoque un add si un slot ennemi est libre (cap 3, cf. enemyGroup /
-      // rollGroupSize). Slot plein → l'ennemi ne gaspille pas son tour
-      // (return false → attaque physique normale dans enemyTurn).
-      if (enemyGroup.length >= 3) return false;
+      // Invoque un add si un slot ennemi est libre (cap MAX_ENEMY_GROUP, cf.
+      // enemyGroup / rollGroupSize). Slot plein → l'ennemi ne gaspille pas son
+      // tour (return false → attaque physique normale dans enemyTurn).
+      if (enemyGroup.length >= MAX_ENEMY_GROUP) return false;
       const add = _buildSummonedAdd(ability, enemy);
       if (!add) return false;
       enemyGroup.push(add);
