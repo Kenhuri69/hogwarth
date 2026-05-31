@@ -306,6 +306,38 @@ descendre sous 25 % de l'ATK). Découplage total possible mais coûteux (ratio
 PVmax / PVmax-attendu-pour-le-niveau → nécessite un modèle de niveau) — non retenu
 sauf demande PO.
 
+#### Sweep F × K (n=600, solo, ét. 8-12, niveau attendu)
+
+Socle de référence (sans Broyer) : écart tank−offensif **+14.8** (tank 58.4 / off 43.6).
+
+**Axe anti-tank — écart tank−offensif (win %)** par (F, K), cap-ref `hit` :
+
+| F \ K | 1.5 | 2 | 3 | tank (moy) |
+|-------|:--:|:--:|:--:|:--:|
+| 0.08 | +6.6 | +8.2 | +9.4 | 55-57 |
+| 0.10 | +7.8 | +5.8 | +8.4 | 53-54 |
+| 0.12 | +9.2 | +8.2 | +6.4 | 51-54 |
+
+→ **F pilote la force anti-tank** (0.08 → tank ~56, 0.10 → ~53, 0.12 → ~52) ;
+tous écrasent l'écart de +14.8 à ~+7. **K invisible ici** (bruit ±3) — son rôle
+est le grind, pas le niveau attendu.
+
+**Axe grind — Broyer moyen/proc** (tank ét. 10, F=0.10, niv. attendu vs +4 niveaux) :
+
+| K | niv. attendu | +4 niveaux | croissance |
+|---|:--:|:--:|:--:|
+| illimité | 27.0 | 36.7 | +36 % |
+| 1.5 | 25.2 | 28.1 | **+12 %** |
+| 2 | 26.5 | 31.6 | **+19 %** |
+| 3 | 27.0 | 35.2 | +30 % |
+
+→ **K=2 = sweet spot** : niveau attendu intact (anti-tank préservé), grind coupé
+de moitié. K=1.5 neutralise davantage le grind mais rogne l'effet de base (~7 %).
+
+**Recommandation calibrage : F=0.10, K=2, chance 50 %.** Tank → ~53 (durable,
+écart ~+7-8 vs socle +14.8), grind +36 %→+19 %, offensif intact. Variantes :
+F=0.12 si on veut serrer plus le tank ; K=1.5 si on veut le grind plus plat.
+
 ## 5. Journal
 
 - 2026-05-31 : revue + décisions D1-D5. Implémentation prématurée annulée
@@ -332,3 +364,7 @@ sauf demande PO.
   l'effet anti-tank** (tank 53.0 ≈ non borné, écart +8.4). Borne `atk` inutile.
   Formule retenue : `min(F×PVmax, K×mitigatedDamage(atk,def))`, K≈2. Calibrage
   fraction/K/cible en attente PO. Outil de mesure uniquement, aucun code `js/` touché.
+- 2026-05-31 : sweep F×K (n=600). F pilote l'anti-tank (0.10 → écart ~+7-8),
+  K pilote le grind (K=2 : +36 %→+19 %, niveau attendu intact ; K=1.5 : +12 %
+  mais rogne ~7 %). **Reco : F=0.10, K=2, chance 50 %.** En attente confirmation
+  PO (fraction/K/chance/cible) avant implémentation runtime. Aucun code `js/` touché.
