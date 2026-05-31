@@ -175,7 +175,10 @@ function renderInventory(battleMode) {
         ? _renderItemTooltip(item, null, battleMode && !isEquip ? 'cliquer pour utiliser' : (isEquip ? 'cliquer pour équiper' : (isSpellbook ? 'cliquer pour apprendre' : 'cliquer pour utiliser')))
         : '';
       div.title = item.name; // fallback natif si tooltip riche indispo
-      div.innerHTML = `<div class="item-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div><div class="item-name">${item.name}</div>${typeLabel}${ttHtml}`;
+      // Compteur de quantité pour les consommables empilés (×N).
+      const qty = (typeof _itemQty === 'function') ? _itemQty(item) : (item.qty || 1);
+      const qtyBadge = qty > 1 ? `<span class="inv-qty-badge">×${qty}</span>` : '';
+      div.innerHTML = `<div class="item-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div><div class="item-name">${item.name}</div>${typeLabel}${qtyBadge}${ttHtml}`;
 
       if (battleMode && isEquip) {
         // Équipements non utilisables en combat — grisés
@@ -559,7 +562,7 @@ function _applyPermaToChar(idx, charIdx) {
   if (!item || !target) return;
   _applyConsumableEffect(item, target);
   addMsg(`${target.name} consomme : ${item.name}`, 'good');
-  player.inventory.splice(idx, 1);
+  _consumeAt(idx, 1);
   updateUI();
   closeModal('inventory-modal');
 }
@@ -642,7 +645,7 @@ function _applyStatBoost(idx, charIdx, statTrigger) {
   if (typeof recalculateStats === 'function') recalculateStats();
   addMsg(`✨ ${target.name} absorbe la Pierre d'Âme : +1 ${choice.label.match(/\(([A-Z]+)\)/)[1]} permanent !`, 'magic');
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
-  player.inventory.splice(idx, 1);
+  _consumeAt(idx, 1);
   updateUI();
   closeModal('inventory-modal');
 }
@@ -717,6 +720,24 @@ function useItem(idx, battleMode) {
     return;
   }
 
+  // Flacon offensif (P6.c) — se lance sur UN ennemi, en combat uniquement.
+  // Ferme la modale puis cible : auto si 1 seul ennemi vivant, sinon le
+  // sélecteur de cible (pendingAction 'throw_item' → throwItemAtEnemy).
+  if (item.effect === 'throw') {
+    if (!battleMode || !inBattle) {
+      addMsg(`${item.name} : à lancer sur un ennemi — utilisable en combat seulement.`, '');
+      return;
+    }
+    closeModal('inventory-modal');
+    if (livingEnemies().length > 1) {
+      pendingThrowIdx = idx;
+      showTargetSelection('throw_item');
+    } else {
+      throwItemAtEnemy(idx, getFirstLivingEnemy());
+    }
+    return;
+  }
+
   // Sinks endgame : consommables permanents — requièrent un choix
   // de bénéficiaire en duo (hors combat uniquement).
   if (item.effect === 'stat_boost') {
@@ -734,7 +755,7 @@ function useItem(idx, battleMode) {
 
   _applyConsumableEffect(item, target);
   addMsg(`${target.name} utilise : ${item.name}`, 'good');
-  player.inventory.splice(idx, 1);
+  _consumeAt(idx, 1);
 
   updateUI();
   closeModal('inventory-modal');
@@ -802,7 +823,7 @@ function useItemFromChar(inventoryIdx, charIdx) {
   if (item.type === 'consumable') {
     _applyConsumableEffect(item, target);
     addMsg(`${target.name} utilise : ${item.name}`, 'good');
-    player.inventory.splice(inventoryIdx, 1);
+    _consumeAt(inventoryIdx, 1);
     updateUI();
     openCharacter(charIdx);
     return;

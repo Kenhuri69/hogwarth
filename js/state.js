@@ -463,6 +463,10 @@ let recolteGoldBonus        = false; // or de fin de combat majoré +50 % (sort 
 // reste « pendant » jusqu'au prochain combat.
 let pendingAction   = null;
 let pendingSpell    = null;
+// P6.c — index inventaire du flacon offensif en attente de cible ennemie.
+// Posé par useItem (effect:'throw') avec pendingAction='throw_item', lu et
+// remis à null par le callback de showTargetSelection.
+let pendingThrowIdx = null;
 
 // Monstres rencontrés en combat (bestiaire)
 let seenMonsters = new Set();

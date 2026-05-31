@@ -2624,24 +2624,29 @@ async function scenarioTryAddItem() {
 
   const t1 = await page.evaluate(() => {
     player.inventory = [];
-    const r1 = tryAddItem('potion_s', { silent: true });
-    const r2 = tryAddItem(ITEMS[0],   { silent: true });
-    const r3 = tryAddItem('idée_inexistante', { silent: true });
-    return { r1, r2, r3, len: player.inventory.length };
+    const r1 = tryAddItem('potion_s', { silent: true });        // nouveau stack
+    const r2 = tryAddItem('potion_s', { silent: true });        // fusionne → qty 2
+    const r3 = tryAddItem('robe1',    { silent: true });        // équipement → case distincte
+    const r4 = tryAddItem('idée_inexistante', { silent: true });
+    const stack = player.inventory.find(e => e.id === 'potion_s');
+    return { r1, r2, r3, r4, len: player.inventory.length, qty: stack ? (stack.qty || 1) : 0 };
   });
   console.log('  T1 ajouts simples :', t1);
   assert(t1.r1 === true,  'tryAddItem doit accepter un id valide');
-  assert(t1.r2 === true,  'tryAddItem doit accepter un objet item');
-  assert(t1.r3 === false, 'tryAddItem doit refuser un id inconnu');
-  assert(t1.len === 2,    'inventaire doit contenir 2 items après les 2 succès');
+  assert(t1.r2 === true,  'tryAddItem doit accepter un 2e exemplaire (fusion)');
+  assert(t1.r3 === true,  'tryAddItem doit accepter un équipement');
+  assert(t1.r4 === false, 'tryAddItem doit refuser un id inconnu');
+  assert(t1.len === 2,    'potion_s empilée (1 case) + robe1 (1 case) = 2 cases');
+  assert(t1.qty === 2,    'deux potion_s fusionnent en un stack ×2');
 
   const t2 = await page.evaluate(() => {
-    player.inventory = Array.from({ length: 16 }, () => ({ ...ITEMS[0] }));
-    const r = tryAddItem('potion_s', { silent: true });
+    // 16 cases non empilables distinctes → cap réellement atteint.
+    player.inventory = Array.from({ length: 16 }, (_, i) => ({ id: 'mat_' + i, name: 'Mat ' + i, type: 'material' }));
+    const r = tryAddItem('robe1', { silent: true }); // nouvel item, 0 case libre → refusé
     return { r, len: player.inventory.length };
   });
   console.log('  T2 cap 16 atteint :', t2);
-  assert(t2.r === false, 'tryAddItem doit refuser quand inventaire plein');
+  assert(t2.r === false, 'tryAddItem doit refuser un nouvel item quand 16 cases pleines');
   assert(t2.len === 16,  'inventaire ne doit pas dépasser INVENTORY_MAX');
 
   if (errors.length) {
@@ -2649,6 +2654,117 @@ async function scenarioTryAddItem() {
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
   console.log('  ✅ tryAddItem : id, objet, cap 16');
+  await browser.close();
+}
+
+// ── Scénario : stacking des consommables identiques ───────────
+
+async function scenarioConsumableStacking() {
+  console.log('\n── Scénario : stacking consommables ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page);
+
+  // T1 : fusion à l'ajout puis consommation décrémente le stack (qty).
+  const t1 = await page.evaluate(() => {
+    player.inventory = [];
+    tryAddItem('potion_s', { silent: true });
+    tryAddItem('potion_s', { silent: true });
+    tryAddItem('potion_s', { silent: true });
+    const afterAdd = { len: player.inventory.length, qty: _itemQty(player.inventory[0]) };
+    party[0].hp = 1;                 // useItem (hors combat) soigne Harry
+    useItem(0, false);               // consomme 1 → qty 2
+    const afterUse = { len: player.inventory.length, qty: _itemQty(player.inventory[0]) };
+    _consumeAt(0, 1); _consumeAt(0, 1); // épuise le stack
+    return { afterAdd, afterUse, emptied: player.inventory.length };
+  });
+  console.log('  T1 fusion/consommation :', t1);
+  assert(t1.afterAdd.len === 1 && t1.afterAdd.qty === 3, '3 potions → 1 case ×3');
+  assert(t1.afterUse.len === 1 && t1.afterUse.qty === 2, 'useItem décrémente sans vider (×2)');
+  assert(t1.emptied === 0, 'stack épuisé → case libérée');
+
+  // T2 : sac plein (16 cases) — on peut empiler un consommable déjà possédé,
+  // mais pas introduire un nouvel id.
+  const t2 = await page.evaluate(() => {
+    player.inventory = Array.from({ length: 15 }, (_, i) => ({ id: 'mat_' + i, name: 'M' + i, type: 'material' }));
+    tryAddItem('potion_s', { silent: true }); // 16e case
+    const canMatch = _canAddItem(ITEMS.find(i => i.id === 'potion_s'));
+    const rMatch   = tryAddItem('potion_s', { silent: true }); // fusion malgré 16 cases
+    const rBlocked = tryAddItem('felix',    { silent: true }); // nouvel id, plein → refusé
+    const stack = player.inventory.find(e => e.id === 'potion_s');
+    return { canMatch, rMatch, rBlocked, len: player.inventory.length, qty: stack ? (stack.qty || 1) : 0 };
+  });
+  console.log('  T2 fusion sac plein :', t2);
+  assert(t2.canMatch === true,  '_canAddItem autorise un consommable déjà possédé même plein');
+  assert(t2.rMatch === true,    'fusion possible malgré 16 cases');
+  assert(t2.rBlocked === false, 'nouvel id refusé quand 16 cases pleines');
+  assert(t2.len === 16 && t2.qty === 2, '16 cases, potion_s ×2');
+
+  // T3 : comptage/consommation par id sensibles à la quantité (quêtes/ingrédients).
+  const t3 = await page.evaluate(() => {
+    player.inventory = [];
+    tryAddItem('mandragore', { silent: true });
+    tryAddItem('mandragore', { silent: true });
+    const counted = _countItems('mandragore');
+    _consumeItems('mandragore', 1);
+    return { counted, len: player.inventory.length, after: _countItems('mandragore') };
+  });
+  console.log('  T3 count/consume par id :', t3);
+  assert(t3.counted === 2,            '_countItems somme les qty (2)');
+  assert(t3.len === 1 && t3.after === 1, '_consumeItems décrémente le stack (reste 1)');
+
+  // T4 : migration — doublons d'une save legacy fusionnés ; brassage distinct.
+  const t4 = await page.evaluate(() => {
+    const ps = ITEMS.find(i => i.id === 'potion_s');
+    player.inventory = [{ ...ps }, { ...ps }, { ...ITEMS.find(i => i.id === 'robe1') }];
+    _consolidateInventoryStacks();
+    const merged = { len: player.inventory.length, qty: _itemQty(player.inventory.find(e => e.id === 'potion_s')) };
+    // Une potion brassée ne fusionne pas avec une potion de boutique.
+    player.inventory = [];
+    tryAddItem('potion_s', { silent: true });
+    tryAddItem('potion_s', { silent: true, props: { brewed: true, brewPotency: 0.5 } });
+    return { merged, brewSeparate: player.inventory.length };
+  });
+  console.log('  T4 migration/brassage :', t4);
+  assert(t4.merged.len === 2 && t4.merged.qty === 2, 'doublons legacy fusionnés (potion ×2 + robe)');
+  assert(t4.brewSeparate === 2, 'potion brassée et potion boutique ne fusionnent pas');
+
+  // T5 : matériaux et objets de quête s'empilent aussi (Éclat de Lumière =
+  // type:'quest', Éclat de Vitalité = type:'material'). _countMaterial /
+  // _consumeMaterial (Forge/Biblio) sont qty-aware.
+  const t5 = await page.evaluate(() => {
+    player.inventory = [];
+    for (let i = 0; i < 3; i++) tryAddItem('eclat_lumiere', { silent: true });  // quest
+    for (let i = 0; i < 2; i++) tryAddItem('eclat_vitalite', { silent: true }); // material
+    const stacked = {
+      len: player.inventory.length,
+      questQty: _itemQty(player.inventory.find(e => e.id === 'eclat_lumiere')),
+      matQty:   _itemQty(player.inventory.find(e => e.id === 'eclat_vitalite')),
+    };
+    // _countMaterial/_consumeMaterial qty-aware (chemin Forge/Bibliothèque).
+    const counted = _countMaterial('eclat_vitalite');
+    const removed = _consumeMaterial('eclat_vitalite', 1);
+    const afterMat = _countMaterial('eclat_vitalite');
+    // _consolidateInventoryStacks fusionne aussi des doublons material/quest.
+    player.inventory = [
+      { ...ITEMS.find(i => i.id === 'eclat_lumiere') },
+      { ...ITEMS.find(i => i.id === 'eclat_lumiere') },
+    ];
+    _consolidateInventoryStacks();
+    return { stacked, counted, removed, afterMat,
+      consolidated: { len: player.inventory.length, qty: _itemQty(player.inventory[0]) } };
+  });
+  console.log('  T5 material/quest :', t5);
+  assert(t5.stacked.len === 2,        'Éclats Lumière (quest) + Vitalité (material) = 2 cases');
+  assert(t5.stacked.questQty === 3,   'objet de quête empilé ×3');
+  assert(t5.stacked.matQty === 2,     'matériau empilé ×2');
+  assert(t5.counted === 2 && t5.removed === 1 && t5.afterMat === 1, '_count/_consumeMaterial qty-aware');
+  assert(t5.consolidated.len === 1 && t5.consolidated.qty === 2, 'doublons quest legacy consolidés ×2');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ stacking objets : consommables + matériaux + quête, fusion, décrément, cap, migration');
   await browser.close();
 }
 
@@ -8415,7 +8531,7 @@ async function scenarioBrewing() {
     const added  = tryAddItem('herbe_armoise', { silent: true });
     return {
       herbCount,
-      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 23,
+      recipesDefined: typeof POTION_RECIPES !== 'undefined' && POTION_RECIPES.length === 26,
       added,
       herbInBesace: getHerbCount('herbe_armoise'),
       inventoryUnchanged: player.inventory.length === before,
@@ -8424,7 +8540,7 @@ async function scenarioBrewing() {
   });
   console.log('  T1 données →', t1);
   assert(t1.herbCount === 7,          '7 items herbe attendus (6 + l\'herbe rare endgame)');
-  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 23 recettes');
+  assert(t1.recipesDefined,           'POTION_RECIPES doit définir 26 recettes');
   assert(t1.added,                    'tryAddItem(herbe) doit réussir');
   assert(t1.herbInBesace === 1,       'la herbe doit aller dans la besace');
   assert(t1.inventoryUnchanged,       'la herbe ne doit pas occuper le sac');
@@ -8745,7 +8861,7 @@ async function scenarioRareHerb() {
     };
   });
   console.log('  T2 recettes prestige →', t2);
-  assert(t2.count === 23, `POTION_RECIPES doit compter 23 recettes (obtenu ${t2.count})`);
+  assert(t2.count === 26, `POTION_RECIPES doit compter 26 recettes (obtenu ${t2.count})`);
   assert(t2.xlResult === 'potion_xl',      'brew_xl_tenebres doit produire potion_xl (item existant)');
   assert(t2.xlspResult === 'potion_xl_sp', 'brew_xl_sp_tenebres doit produire potion_xl_sp (item existant)');
   assert(t2.match2 === 'brew_xl_tenebres',     '2 asphodèles noires → brew_xl_tenebres');
@@ -9157,6 +9273,122 @@ async function scenarioPotionResistance() {
   await browser.close();
 }
 
+// ── Scénario : potions offensives jetables (LOT P6.c) ──
+// Vérifie : (T1) données des 3 flacons + icônes SVG ; (T2) _thrownPotionDamage
+// pur (brassage, resist/weak) ; (T3) throwItemAtEnemy en combat (dégâts infligés,
+// flacon consommé, statut posé, tour avancé) ; (T4) recettes (26, multisets
+// matchables) ; (T5) catalogue boutique.
+async function scenarioThrowablePotions() {
+  console.log('\n── Scénario : potions offensives jetables (LOT P6.c) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — données + icônes SVG des 3 flacons.
+  const t1 = await page.evaluate(() => {
+    const feu   = ITEMS.find(i => i.id === 'flacon_feu');
+    const givre = ITEMS.find(i => i.id === 'flacon_givre');
+    const venin = ITEMS.find(i => i.id === 'flacon_venin');
+    const svgOk = ['flacon_feu', 'flacon_givre', 'flacon_venin']
+      .every(id => typeof ITEM_ICON_SVG_REGISTRY !== 'undefined' && !!ITEM_ICON_SVG_REGISTRY[id]);
+    // Rendu réel via getItemIconHtml : doit retourner un <svg> inline (et pas
+    // l'emoji fallback) pour chaque flacon — preuve que l'icône s'affiche.
+    const rendersSvg = ['flacon_feu', 'flacon_givre', 'flacon_venin'].every(id => {
+      const html = getItemIconHtml(ITEMS.find(i => i.id === id), 'ui-icon-md');
+      return /<svg/.test(html) && /svg-icon/.test(html);
+    });
+    return {
+      feu:   feu   && { effect: feu.effect, element: feu.element, power: feu.power, hasStatus: !!feu.statusId },
+      givre: givre && { effect: givre.effect, element: givre.element, power: givre.power, statusId: givre.statusId, sp: givre.statusPower, st: givre.statusTurns },
+      venin: venin && { effect: venin.effect, element: venin.element || null, power: venin.power, statusId: venin.statusId, sp: venin.statusPower, st: venin.statusTurns },
+      svgOk, rendersSvg,
+    };
+  });
+  console.log('  T1 données :', t1);
+  assert(t1.feu.effect === 'throw' && t1.feu.element === 'feu' && t1.feu.power === 24 && !t1.feu.hasStatus, 'flacon_feu = throw feu 24, sans statut');
+  assert(t1.givre.effect === 'throw' && t1.givre.element === 'glace' && t1.givre.statusId === 'gel' && t1.givre.sp === 3 && t1.givre.st === 3, 'flacon_givre = throw glace 15 + gel 3/3');
+  assert(t1.venin.effect === 'throw' && t1.venin.element === null && t1.venin.statusId === 'poison' && t1.venin.sp === 5 && t1.venin.st === 4, 'flacon_venin = throw sans élément + poison 5/4');
+  assert(t1.svgOk, 'les 3 flacons doivent avoir une icône SVG inline');
+  assert(t1.rendersSvg, 'getItemIconHtml doit rendre un <svg> inline (pas l\'emoji fallback) pour chaque flacon');
+
+  // T2 — _thrownPotionDamage pur : brassage (+40 %), resist (×0.5), weak (×1.5).
+  const t2 = await page.evaluate(() => {
+    const feu = ITEMS.find(i => i.id === 'flacon_feu');
+    const plain   = _thrownPotionDamage(feu, { resist: [], weak: [] });
+    const brewed  = _thrownPotionDamage({ ...feu, brewPotency: 0.40 }, { resist: [], weak: [] });
+    const resist  = _thrownPotionDamage(feu, { resist: ['feu'], weak: [] });
+    const weak    = _thrownPotionDamage(feu, { resist: [], weak: ['feu'] });
+    return { plain: plain.dmg, brewed: brewed.dmg, resist: resist.dmg, weak: weak.dmg };
+  });
+  console.log('  T2 dégâts  :', t2);
+  assert(t2.plain === 24, 'flacon_feu de base = 24 dégâts (pas de scaling MAG)');
+  assert(t2.brewed === Math.round(24 * 1.40), 'brassage +40 % → round(24×1.4) = 34');
+  assert(t2.resist === Math.floor(24 * 0.5), 'cible résistante au feu → ×0.5');
+  assert(t2.weak === Math.floor(24 * 1.5), 'cible faible au feu → ×1.5');
+
+  // T3 — throwItemAtEnemy en combat : dégâts appliqués, flacon consommé,
+  // statut posé, tour avancé (Math.random=0 pour neutraliser l'aléa ennemi).
+  const t3 = await page.evaluate(() => {
+    inBattle = true; partySize = 1; currentBattleChar = 0;
+    shieldTurns = [0, 0]; guardTurns = [0, 0]; guardRegenCooldown = [0, 0];
+    const c = party[0]; c.hp = c.hpMax = 200; c.statusEffects = [];
+    enemyGroup = [{ id: 'dummy', name: 'Mannequin', icon: '🎯', hp: 300, currentHp: 300,
+                    atk: 5, def: 0, mag: 0, agi: 0, resist: [], weak: [], statusEffects: [] }];
+    // Flacon de Givre dans l'inventaire (dégâts + gel).
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'flacon_givre') });
+    const invIdx = player.inventory.length - 1;
+    const beforeHp  = enemyGroup[0].currentHp;
+    const beforeQty = _countItems('flacon_givre');
+    const origRandom = Math.random; Math.random = () => 0;
+    throwItemAtEnemy(invIdx, 0);
+    Math.random = origRandom;
+    const e = enemyGroup[0];
+    return {
+      dealt:    beforeHp - e.currentHp,   // 15 dégâts + au moins un tick de gel
+      consumed: beforeQty - _countItems('flacon_givre'),
+      hasGel:   (e.statusEffects || []).some(s => s.id === 'gel'),
+    };
+  });
+  console.log('  T3 combat  :', t3);
+  assert(t3.dealt >= 15, 'le flacon doit infliger au moins ses 15 dégâts directs');
+  assert(t3.consumed === 1, 'le flacon doit être consommé (1)');
+  assert(t3.hasGel, 'le flacon de givre doit poser le statut gel sur l\'ennemi');
+
+  // T4 — recettes : 26 au total, 3 nouveaux multisets matchables.
+  const t4 = await page.evaluate(() => {
+    const ids = ['brew_flacon_feu', 'brew_flacon_givre', 'brew_flacon_venin'];
+    const present = ids.every(id => POTION_RECIPES.some(r => r.id === id));
+    const mFeu   = _matchRecipe({ herbe_aconit: 2 });
+    const mGivre = _matchRecipe({ herbe_branchiflore: 2 });
+    const mVenin = _matchRecipe({ herbe_ortie: 1, herbe_dictame: 1 });
+    return {
+      count: POTION_RECIPES.length, present,
+      feu: mFeu && mFeu.id, givre: mGivre && mGivre.id, venin: mVenin && mVenin.id,
+    };
+  });
+  console.log('  T4 recettes:', t4);
+  assert(t4.count === 26, `POTION_RECIPES doit compter 26 recettes (obtenu ${t4.count})`);
+  assert(t4.present, 'les 3 recettes de flacons doivent exister');
+  assert(t4.feu === 'brew_flacon_feu' && t4.givre === 'brew_flacon_givre' && t4.venin === 'brew_flacon_venin', 'chaque combo matche sa recette (multisets inédits)');
+
+  // T5 — catalogue boutique.
+  const t5 = await page.evaluate(() => ({
+    feu:   SHOP_CATALOG.find(e => e.id === 'flacon_feu'),
+    givre: SHOP_CATALOG.find(e => e.id === 'flacon_givre'),
+    venin: SHOP_CATALOG.find(e => e.id === 'flacon_venin'),
+  }));
+  console.log('  T5 boutique:', t5);
+  assert(t5.feu && t5.feu.minFloor === 3, 'flacon_feu au catalogue (étage 3)');
+  assert(t5.givre && t5.givre.minFloor === 3, 'flacon_givre au catalogue (étage 3)');
+  assert(t5.venin && t5.venin.minFloor === 4, 'flacon_venin au catalogue (étage 4)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Potions offensives jetables OK (données, dégâts, combat, recettes, boutique)');
+  await browser.close();
+}
+
 // ── Scénario : chaîne d'upgrade-craft des potions (LOT P4) ──
 // Vérifie : (1) items/ressource/recettes présents ; (2) une potion du sac est
 // un ingrédient valide (potion_s + eclat → potion_l) ; (3) la chaîne Mineure
@@ -9187,7 +9419,7 @@ async function scenarioPotionUpgradeCraft() {
   assert(t1.heals[0] === 15 && t1.heals[1] === 30 && t1.heals[2] === 55, 'paliers de soin 15/30/55');
   assert(t1.recipesOk, 'les 7 recettes P4 doivent exister');
   assert(t1.iconsOk, 'les 4 nouveaux items doivent avoir une icône PNG');
-  assert(t1.count === 23, `POTION_RECIPES doit compter 23 recettes (obtenu ${t1.count})`);
+  assert(t1.count === 26, `POTION_RECIPES doit compter 26 recettes (obtenu ${t1.count})`);
 
   // T2 — pas de collision d'ingrédients (chaque set est unique).
   const t2 = await page.evaluate(() => {
@@ -16228,7 +16460,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

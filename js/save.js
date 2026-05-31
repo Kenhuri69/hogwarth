@@ -162,6 +162,11 @@ function _applyState(gs) {
   // Idempotent : ne touche pas un slot déjà rempli au bon endroit.
   party.forEach(_migrateEquippedSlots);
 
+  // Stacking des consommables : fusionne les doublons d'une save antérieure
+  // au stacking en stacks `qty` (idempotent). L'inventaire est partagé via
+  // player.inventory → un seul appel suffit.
+  if (typeof _consolidateInventoryStacks === 'function') _consolidateInventoryStacks();
+
   // Endgame Tranche 2 — Bibliothèque : initialise spellUpgrades = {} pour
   // les saves antérieures à l'ajout du champ. Object.assign préserve les
   // entrées existantes ; le défaut est juste un objet vide.

@@ -450,8 +450,12 @@ function _mpConfirmGift() {
     const idx = _mpGiftItemIdx | 0;
     const it  = player.inventory && player.inventory[idx];
     if (!it || _mpIsQuestItem(it.id)) return;
+    // N'offrir qu'un seul exemplaire : on retire `qty` du snapshot envoyé
+    // et on décrémente le stack du donneur (sans le vider s'il en reste).
     const snapshot = { ...it };
-    player.inventory.splice(idx, 1);
+    delete snapshot.qty;
+    if (typeof _consumeAt === 'function') _consumeAt(idx, 1);
+    else player.inventory.splice(idx, 1);
     _mpInsertGift({
       sender_id:    getMpPlayerId(),
       sender_name:  senderName,

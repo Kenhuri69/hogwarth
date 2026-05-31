@@ -88,7 +88,9 @@ function _renderInvSlot(item, idx, charIdx) {
     ? `onclick="useItemFromChar(${idx}, ${charIdx})"`
     : '';
   const tooltipHtml = _renderItemTooltip(item, null, `cliquer pour ${actionHint}`);
-  return `<div class="inv-slot has-item ${rarityCls}" title="${titleAttr}" ${onclick}>${icon}${tooltipHtml}</div>`;
+  const qty = (typeof _itemQty === 'function') ? _itemQty(item) : (item.qty || 1);
+  const qtyBadge = qty > 1 ? `<span class="inv-qty-badge">×${qty}</span>` : '';
+  return `<div class="inv-slot has-item ${rarityCls}" title="${titleAttr}" ${onclick}>${icon}${qtyBadge}${tooltipHtml}</div>`;
 }
 
 // Tooltip riche affiché au hover sur un slot rempli (paper-doll OU sac).

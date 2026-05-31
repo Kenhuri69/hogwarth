@@ -32,10 +32,12 @@ function showTargetSelection(actionType) {
     entries.push({ label: `${e.icon} ${e.name} (${e.currentHp} PV)`, idx: i });
   });
   _showTargets(entries, (i) => {
-    if      (pendingAction === 'attack')    executeAttack(i);
-    else if (pendingAction === 'spell_dmg') castSpellInBattle(pendingSpell, i);
-    pendingAction = null;
-    pendingSpell  = null;
+    if      (pendingAction === 'attack')     executeAttack(i);
+    else if (pendingAction === 'spell_dmg')  castSpellInBattle(pendingSpell, i);
+    else if (pendingAction === 'throw_item') throwItemAtEnemy(pendingThrowIdx, i);
+    pendingAction   = null;
+    pendingSpell    = null;
+    pendingThrowIdx = null;
   });
 }
 

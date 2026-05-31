@@ -22,6 +22,9 @@ const SHOP_CATALOG = [
   { id: "elixir_celerite",     minFloor: 4 },
   { id: "potion_precision",    minFloor: 4 },
   { id: "elixir_puissance",    minFloor: 4 },
+  { id: "flacon_feu",          minFloor: 3 },
+  { id: "flacon_givre",        minFloor: 3 },
+  { id: "flacon_venin",        minFloor: 4 },
   { id: "lame_sanguinaire",    minFloor: 4 },
   { id: "armure_lourde",       minFloor: 4 },
   { id: "anneau_furie",        minFloor: 5 },
@@ -354,9 +357,11 @@ function _renderSellGrid(grid) {
     div.dataset.itemId = item.id;
     div.dataset.invIdx = idx;
     div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #5a4020;border-radius:6px;background:rgba(30,20,10,0.55);cursor:pointer';
+    const qty = (typeof _itemQty === 'function') ? _itemQty(item) : (item.qty || 1);
+    const qtySuffix = qty > 1 ? ` <span style="color:var(--gold)">×${qty}</span>` : '';
     div.innerHTML = `<div class="shop-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div>
       <div class="shop-info">
-        <div class="shop-name">${item.name}</div>
+        <div class="shop-name">${item.name}${qtySuffix}</div>
         <div class="shop-desc">${item.desc}</div>
       </div>
       <div class="shop-price" style="color:#a8d878">+${sellPrice}G</div>`;
@@ -380,12 +385,14 @@ function _purchase(item, price, stockEntry) {
   // concerne pas, et l'achat les route vers addHerb (sinon le brassage,
   // qui lit player.herbs, ne les verrait jamais).
   const isHerb = item.type === 'herb';
-  if (!isHerb && player.inventory.length >= 16) { addMsg("Sac plein !", 'bad'); return; }
+  // _canAddItem autorise l'achat d'un consommable déjà possédé même sac
+  // « plein » (fusion dans le stack existant, aucune case neuve requise).
+  if (!isHerb && !_canAddItem(item)) { addMsg("Sac plein !", 'bad'); return; }
   player.gold -= price;
   if (isHerb && typeof addHerb === 'function') {
     addHerb(item.id, 1);
   } else {
-    player.inventory.push({ ...item });
+    _addItemToBag({ ...item });
   }
   // Livre de sort : achetable une seule fois pour toute la partie.
   if (item.type === 'spellbook') purchasedSpellbooks.add(item.id);
@@ -417,13 +424,18 @@ function _purchase(item, price, stockEntry) {
 function sellItem(idx, sellPrice) {
   const item = player.inventory[idx];
   if (!item) return;
-  player.inventory.splice(idx, 1);
+  // Vente à l'unité : un consommable empilé ne cède qu'un exemplaire par clic
+  // (décrément du stack), pour ne payer que ce qui est effectivement vendu.
+  const snapshot = { ...item };
+  delete snapshot.qty;
+  if (typeof _consumeAt === 'function') _consumeAt(idx, 1);
+  else player.inventory.splice(idx, 1);
   player.gold += sellPrice;
   // Boutique fixe : l'objet revendu rejoint le stock, rachetable au prix
   // plein — mais sera perdu au prochain réassort.
   if (_shopContext.kind === 'static' && typeof item.price === 'number' && item.price > 0) {
     _ensureShopStock();
-    shopStock.push({ item: { ...item }, price: item.price, sold: true });
+    shopStock.push({ item: snapshot, price: item.price, sold: true });
   }
   document.getElementById('shop-gold').textContent = player.gold;
   addMsg(`Vendu : ${item.name} (+${sellPrice}G)`, 'good');
