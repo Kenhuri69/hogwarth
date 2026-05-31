@@ -54,7 +54,7 @@ const PRECACHE_URLS = [
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=1',
   './js/floor-events.js?v=1',
-  './js/item-icons.js?v=15',
+  './js/item-icons.js?v=16',
   './js/state.js?v=16',
   './js/ui.js?v=7',
   './js/ui-character-sheet.js?v=3',
@@ -106,7 +106,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=21',
+  './js/loader.js?v=22',
   './js/pwa.js?v=2',
 
   // Icônes PWA + premier écran

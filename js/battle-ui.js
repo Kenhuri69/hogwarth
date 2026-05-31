@@ -201,7 +201,7 @@ function setBattleLog(text) {
   if (!el) return;
   // innerHTML pour permettre <img> des sortilèges/status. Tous les
   // appelants construisent des templates contrôlés (pas d'input user).
-  el.innerHTML = text;
+  el.innerHTML = (typeof iconizeCombatLog === 'function') ? iconizeCombatLog(text) : text;
 }
 
 // ── Panneau d'info monstre (clic / appui long sur une carte) ─────

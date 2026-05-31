@@ -52,3 +52,35 @@ battle-log (🗡️🛡️…) : choix de style assumé du projet (cf.
 - Aucune assertion smoke ne lit ces emoji.
 - `.variant-badge` est rendu uniquement quand `variant !== 'normal'` →
   invisible pour les ennemis communs (inchangé).
+
+---
+
+## Lot 2 — emoji du Journal / log de combat (demande utilisateur)
+
+Le Journal (panneau `#combat-log-list`) et la boîte `#battle-log`
+contiennent encore des emoji de statut/action (⚔️🛡️🔥☠️🩸❄️💫😱🌀…).
+Le projet n'avait converti que les `addMsg` ayant un PNG (Lot 4 de
+`emoji-png-gaps.md`) ; ces ~170 emoji de log restaient.
+
+### Décision
+Plutôt que d'éditer ~170 call-sites (risqué, diff énorme), **une seule
+substitution centrale** `iconizeCombatLog(html)` (item-icons.js) applique
+une table curée emoji→PNG, branchée aux **deux puits de rendu** :
+`setBattleLog()` (battle-ui.js) et `logCombat()` (ux-improvements.js).
+
+- Table = uniquement les emoji ayant un PNG **naturel** déjà présent dans
+  `img/icons/` (statuts + ressources + atk/protego). Les décoratifs sans
+  PNG (💥 crit, 🔰 résistance, ✨ transitions, 👁️ 🦁 🦌 ☀️…) restent en
+  emoji — politique inchangée.
+- Substitution par token (longest-first pour `🩹✨` → regen_ferula_max),
+  pas de regex fragile. N'altère pas les `<img>` déjà injectés.
+
+### Étapes
+6. `js/item-icons.js` — ajouter `iconizeCombatLog(html)` + table curée.
+   → vérif : pur, retourne le HTML avec `<img>` substitués.
+7. `js/battle-ui.js — setBattleLog` + `js/ux-improvements.js — logCombat`
+   appellent le helper (défensif `typeof`).
+   → vérif : Journal et boîte de combat sans emoji convertibles.
+8. `js/loader.js` MANIFEST : déclarer `iconizeCombatLog`.
+9. Bumps `?v=` (item-icons.js, loader.js déjà inclus) + CACHE_VERSION.
+10. `node tests/smoke.js` vert.

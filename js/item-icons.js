@@ -594,3 +594,37 @@ function getSpellIconHtml(spell, sizeClass) {
   }
   return (spell && spell.icon) ? spell.icon : '';
 }
+
+// Substitution centrale emoji → PNG pour le texte du Journal / log de combat.
+// Évite d'éditer ~170 call-sites : appelée au rendu (setBattleLog, logCombat).
+// Table curée : uniquement les emoji ayant un PNG NATUREL déjà présent dans
+// img/icons/ (statuts + actions). Les décoratifs sans PNG (💥 crit, 🔰
+// résistance, ✨ transitions, 👁️ 🦁 🦌 ☀️…) restent en emoji — politique
+// inchangée (cf. emoji-png-gaps.md). Ordre longest-first pour les composés.
+const _COMBAT_LOG_ICON_MAP = [
+  ['🩹✨', 'regen_ferula_max'],
+  ['🛡️↓', 'weaken'],
+  ['🪄↓', 'disarm'],
+  ['🔥', 'burn'],
+  ['☠️', 'poison'],
+  ['🩸', 'bleed'],
+  ['❄️', 'gel'],
+  ['💫', 'stun'],
+  ['😱', 'fear'],
+  ['🌀', 'imperius'],
+  ['🩹', 'regen'],
+  ['🛡️', 'protego'],
+  ['⚔️', 'atk'],
+  ['💚', 'heal'],
+  ['💗', 'heal'],
+  ['🪙', 'gold']
+];
+function iconizeCombatLog(html) {
+  if (typeof html !== 'string' || !html) return html;
+  let out = html;
+  for (const [emoji, name] of _COMBAT_LOG_ICON_MAP) {
+    if (out.indexOf(emoji) === -1) continue;
+    out = out.split(emoji).join(`<img class="ui-icon ui-icon-sm" src="img/icons/${name}.png" alt="">`);
+  }
+  return out;
+}

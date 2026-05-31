@@ -309,7 +309,7 @@
     if (!list) return;
     const div = document.createElement('div');
     div.className = 'clp-entry clp-' + (type || 'info');
-    div.innerHTML = text;
+    div.innerHTML = (typeof iconizeCombatLog === 'function') ? iconizeCombatLog(text) : text;
     list.appendChild(div);
     list.scrollTop = list.scrollHeight;
   }
