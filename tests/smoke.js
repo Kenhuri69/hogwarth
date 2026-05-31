@@ -6057,19 +6057,23 @@ async function scenarioVictoryTrigger() {
   assert(after.victoryAtSet,          'victoryAt doit être une date ISO non vide');
   assert(after.modalOpen === true,    '#victory-modal doit être affichée');
 
-  // A1 — le sting de victoire a joué exactement une fois à l'ouverture.
+  // A1 — le sting de victoire a joué à l'ouverture, sans throw. NB : sur une
+  // vraie victoire, endBattle joue AUSSI playVictory ; on vérifie donc juste
+  // que le chemin sting a tourné (count ≥ 1), pas un total exact.
   const stingAfterFirst = await page.evaluate(() => window.__playVictoryCount);
   console.log('  sting playVictory (1er trigger):', stingAfterFirst);
-  assert(stingAfterFirst === 1, 'AudioSystem.playVictory doit être appelé 1× à la 1re ouverture');
+  assert(stingAfterFirst >= 1, 'AudioSystem.playVictory doit être appelé à la 1re ouverture');
 
-  // A1 — idempotence : ré-afficher la modale ne rejoue PAS le sting.
+  // A1 — idempotence : ré-afficher la modale ne rejoue PAS le sting (le flag
+  // module-local _victoryStingPlayed bloque tout appel supplémentaire).
   const stingAfterReopen = await page.evaluate(() => {
     document.getElementById('victory-modal').style.display = 'none';
     window.showVictoryScreen();
     return window.__playVictoryCount;
   });
   console.log('  sting playVictory (réouverture):', stingAfterReopen);
-  assert(stingAfterReopen === 1, 'le sting ne doit pas rejouer à la réouverture (idempotence)');
+  assert(stingAfterReopen === stingAfterFirst,
+         'le sting ne doit pas rejouer à la réouverture (idempotence)');
 
   // 3. Idempotent : second trigger = no-op, ne ré-ouvre pas la modale
   await page.evaluate(() => {
