@@ -250,9 +250,15 @@ const SPELL_OOC_HANDLERS = {
         pageRevealed = true;
       }
     }
+    // Jardin d'herbes caché (Potions P6.b3) : Revelio dévoile aussi un
+    // jardin dans le rayon 5×5 (le helper pose son propre message).
+    const gardensRevealed = (typeof _revealGardensNear === 'function')
+      ? _revealGardensNear(playerX, playerY, 2) : 0;
     AudioSystem.playSpellCast(spell.name);
     AudioSystem.speakSpell(spell.name);
-    if (pageRevealed) {
+    if (gardensRevealed > 0) {
+      // _revealGardensNear a déjà annoncé la découverte — rien à ajouter.
+    } else if (pageRevealed) {
       addMsg(`${getSpellIconHtml(spell, 'ui-icon-md')} ${caster.name} lance ${spell.name} — une page du grimoire scintille sur la carte !`, 'good');
     } else {
       addMsg(cleared > 0

@@ -256,6 +256,15 @@ function searchRoom() {
     }
   }
 
+  // Révélation de jardin caché (Potions P6.b3) : la fouille met au jour un
+  // jardin d'herbes dans les 8 cases adjacentes. Prioritaire, sans consommer
+  // la recharge de fouille. Le sort Revelio fait de même sur un rayon 5×5.
+  if (_revealGardensNear(playerX, playerY, 1) > 0) {
+    renderMinimap();
+    drawDungeon();
+    return;
+  }
+
   const key = `${playerX},${playerY}`;
   const st  = _searchCellStatus(key);
   if (st.state === 'recharging') {
@@ -592,6 +601,77 @@ function useFountain() {
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
   updateUI();
   safeCall('autoSave', 'fountain-used');
+}
+
+// ── Jardin d'herbes à récolte passive (Potions P6.b3) ────────────────────
+// Palier d'herbe de l'étage courant (même grille que la cueillette de
+// searchRoom) : T1 ≤3 · T2 4-6 · T3 7-10 · T4 11+ (Boucle Ténébreuse).
+function _gardenHerbTier(floor) {
+  return (floor >= 11) ? 4 : (floor >= 7) ? 3 : (floor >= 4) ? 2 : 1;
+}
+
+// Révèle les jardins cachés dans un rayon (Chebyshev) autour de (cx,cy).
+// Retire leur clé de `hiddenGardens`, arme l'éveil et renvoie le nombre
+// révélé. Partagé par la fouille (r=1) et Revelio (r=2).
+function _revealGardensNear(cx, cy, r) {
+  if (typeof hiddenGardens === 'undefined' || !hiddenGardens) return 0;
+  let revealed = 0;
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      const x = cx + dx, y = cy + dy;
+      if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H) continue;
+      if (dungeon[y][x] !== CELL.GARDEN) continue;
+      const k = `${currentFloor},${x},${y}`;
+      if (hiddenGardens.has(k)) {
+        hiddenGardens.delete(k);
+        revealed++;
+      }
+    }
+  }
+  if (revealed > 0) {
+    const firstAwake = !gardenDiscovered;
+    gardenDiscovered = true;
+    setNarrative(firstAwake
+      ? "Sous le sortilège, des pierres s'écartent : un jardin d'herbes magiques se dévoile, déjà frémissant de pousses. Il continuera de croître à mesure que vous arpenterez le château."
+      : "Le sortilège dévoile un autre carré de jardin d'herbes magiques.");
+    addMsg(revealed > 1 ? `${revealed} jardins d'herbes révélés !` : "Jardin d'herbes révélé !", 'good');
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+  }
+  return revealed;
+}
+
+// Récolte le pool `gardenStock` en herbes du palier de l'étage courant.
+// Appelé depuis l'overlay d'exploration quand on est sur un jardin révélé.
+function useGarden() {
+  if (inBattle) return;
+  if (dungeon[playerY][playerX] !== CELL.GARDEN) return;
+  if (typeof gardenHiddenAt === 'function' && gardenHiddenAt(playerX, playerY)) return;
+  if (gardenStock <= 0) {
+    setNarrative("Le jardin n'a pas encore assez poussé. Continuez d'explorer le château : les herbes y mûriront.");
+    addMsg("Jardin encore trop jeune.", '');
+    return;
+  }
+  const tier  = _gardenHerbTier(currentFloor);
+  const herbs = (typeof ITEMS !== 'undefined')
+    ? ITEMS.filter(i => i.type === 'herb' && i.tier === tier) : [];
+  if (!herbs.length || typeof addHerb !== 'function') {
+    addMsg("Aucune herbe ne pousse à ce palier.", 'bad');
+    return;
+  }
+  const harvested = gardenStock;
+  const tally = {};
+  for (let i = 0; i < harvested; i++) {
+    const herb = herbs[Math.floor(Math.random() * herbs.length)];
+    addHerb(herb.id, 1);
+    tally[herb.name] = (tally[herb.name] || 0) + 1;
+  }
+  gardenStock = 0;
+  const summary = Object.keys(tally).map(n => `${n} ×${tally[n]}`).join(', ');
+  setNarrative(`Vous récoltez le jardin : ${summary}. Les tiges se referment, prêtes à repousser.`);
+  addMsg(`Jardin récolté : ${harvested} herbe${harvested > 1 ? 's' : ''} (${summary}).`, 'good');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+  updateUI();
+  safeCall('autoSave', 'garden-harvest');
 }
 
 function rest() {

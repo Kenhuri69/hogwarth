@@ -23,6 +23,15 @@ function canMove(dir) {
   return true;
 }
 
+// Jardin d'herbes (Potions P6.b3) — un jardin dont la clé "étage,x,y" est
+// dans `hiddenGardens` est encore caché : il se comporte comme du sol (pas
+// d'overlay, pas de sprite, pas de marqueur minimap) tant qu'il n'a pas été
+// révélé par Revelio ou par la fouille. Helper pur, sûr si l'état manque.
+function gardenHiddenAt(x, y) {
+  return typeof hiddenGardens !== 'undefined' && hiddenGardens
+    && hiddenGardens.has(`${currentFloor},${x},${y}`);
+}
+
 // Mondes parallèles §3.5 — détecte si la case visée est bloquée par le
 // brouillard (pas un mur). Sert à choisir le message d'erreur dans `_step`.
 function _isVisitorFogBlock(dir) {
@@ -97,6 +106,12 @@ function _step(dir, faceDir) {
   playerX += dx; playerY += dy;
   visited[playerY][playerX] = true;
   stepCount++;
+  // Jardin d'herbes (Potions P6.b3) : une fois éveillé, le jardin pousse
+  // d'1 herbe tous GARDEN_STEP_INTERVAL pas, plafonné à GARDEN_CAP.
+  if (typeof gardenDiscovered !== 'undefined' && gardenDiscovered
+      && stepCount % GARDEN_STEP_INTERVAL === 0 && gardenStock < GARDEN_CAP) {
+    gardenStock = Math.min(GARDEN_CAP, gardenStock + 1);
+  }
   if (restCooldown > 0) restCooldown--;
   if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) healSpellCooldown--;
   if (typeof _tickShopRestock === 'function') _tickShopRestock();
@@ -281,6 +296,8 @@ function _exploreDescriptors() {
   const fountainDried = usedFountains && usedFountains.has(`${playerX},${playerY}`);
   const altarSpent    = usedAltars && usedAltars.has(`${playerX},${playerY}`);
   const altarCost     = 40 * (currentFloor || 1);
+  // Jardin d'herbes (Potions P6.b3) — stock mûr récoltable sur ce jardin révélé.
+  const gardenReady   = (typeof gardenStock !== 'undefined') ? gardenStock : 0;
   // L'escalier descendant de l'étage 10 est scellé tant que Voldemort
   // Ressuscité n'a pas été vaincu. Voir ENDGAME_PLAN.md §7.1ter.
   const stairsSealed = currentFloor === 10
@@ -382,6 +399,18 @@ function _exploreDescriptors() {
             ? "La stèle s'est tue, son énigme résolue : les glyphes ne brillent plus."
             : "Une stèle de pierre couverte de glyphes inertes — aucune énigme ne s'y forme."),
       btns:  steleBtns
+    },
+    // Potions P6.b3 — Jardin d'herbes : récolte le pool mûri (par pas/descente).
+    [CELL.GARDEN]: {
+      icon:  SCENE_ICONS.garden ? SCENE_ICONS.garden() : '🌿',
+      title: "Jardin d'herbes",
+      desc:  gardenReady > 0
+        ? `Des herbes magiques ont poussé entre les pierres luminescentes — ${gardenReady} brin${gardenReady > 1 ? 's' : ''} prêt${gardenReady > 1 ? 's' : ''} à cueillir.`
+        : "Un carré de terre magique frémit doucement, mais rien n'a encore mûri. Continuez d'explorer le château : les herbes y pousseront, et chaque descente les fera mûrir plus vite.",
+      btns:  gardenReady > 0
+        ? `<button class="explore-btn" onclick="useGarden();_hideExploreOverlay()">Récolter (${gardenReady})</button>
+           <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+        : `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     }
   };
 }
@@ -431,10 +460,16 @@ function handleCellEntry(cell) {
   const inVisit = typeof visitSession !== 'undefined' && visitSession
     && visitSession.role === 'visitor';
 
+  // Jardin d'herbes (Potions P6.b3) : un jardin encore caché se comporte
+  // comme du sol (aucun overlay) ; révélé, il ouvre l'overlay de récolte.
+  const gardenHidden = cell === CELL.GARDEN
+    && typeof gardenHiddenAt === 'function' && gardenHiddenAt(playerX, playerY);
+
   if (cell === CELL.STAIRS_D || cell === CELL.STAIRS_U ||
       cell === CELL.SHOP     || cell === CELL.CHEST    ||
       cell === CELL.FOUNTAIN || cell === CELL.ALTAR    ||
-      cell === CELL.FORGE    || cell === CELL.LIBRARY) {
+      cell === CELL.FORGE    || cell === CELL.LIBRARY  ||
+      (cell === CELL.GARDEN  && !gardenHidden)) {
     _showExploreOverlay(cell);
   } else if (cell === CELL.TRAP) {
     if (inVisit) {

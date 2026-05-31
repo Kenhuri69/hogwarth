@@ -323,9 +323,13 @@ function drawCorridor(cx, cy, scale, W, H) {
     // porte ouverte est repassée en FLOOR et n'arrête donc plus le scan.
     if (cell === CELL.WALL || cell === CELL.DOOR) { wallDist = d; break; }
     if (!pendingSprite) {
-      const _isCellSprite = (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR || cell === CELL.RUNE || cell === CELL.STELE);
       const [_fdx, _fdy] = DIRECTIONS[playerDir];
       const _mx = playerX + _fdx * d, _my = playerY + _fdy * d;
+      // Jardin d'herbes (Potions P6.b3) : un jardin encore caché n'a pas de
+      // sprite — il se comporte comme du sol (visiteurs/fantômes/messages OK).
+      const _gardenVisible = cell === CELL.GARDEN
+        && !(typeof gardenHiddenAt === 'function' && gardenHiddenAt(_mx, _my));
+      const _isCellSprite = (cell === CELL.CHEST || cell === CELL.STAIRS_D || cell === CELL.STAIRS_U || cell === CELL.SHOP || cell === CELL.NPC || cell === CELL.FORGE || cell === CELL.LIBRARY || cell === CELL.FOUNTAIN || cell === CELL.ALTAR || cell === CELL.RUNE || cell === CELL.STELE || _gardenVisible);
       // Mondes parallèles §6.5 — visiteur incarné (côté host) : prioritaire
       // sur le fantôme asynchrone (un visiteur incarné est une présence
       // réelle, pas un écho de présence).
@@ -517,6 +521,7 @@ function drawCorridor(cx, cy, scale, W, H) {
         && usedFountains.has(`${pendingSprite.mapX},${pendingSprite.mapY}`);
       drawFountainSprite(x, baseY, sz, dried);
     }
+    else if (cell === CELL.GARDEN)   drawGardenSprite(x, baseY, sz);
     else if (cell === CELL.NPC) {
       const npcId = (typeof npcPlacements !== 'undefined')
         ? npcPlacements.get(`${pendingSprite.mapX},${pendingSprite.mapY}`)
