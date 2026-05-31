@@ -720,6 +720,24 @@ function useItem(idx, battleMode) {
     return;
   }
 
+  // Flacon offensif (P6.c) — se lance sur UN ennemi, en combat uniquement.
+  // Ferme la modale puis cible : auto si 1 seul ennemi vivant, sinon le
+  // sélecteur de cible (pendingAction 'throw_item' → throwItemAtEnemy).
+  if (item.effect === 'throw') {
+    if (!battleMode || !inBattle) {
+      addMsg(`${item.name} : à lancer sur un ennemi — utilisable en combat seulement.`, '');
+      return;
+    }
+    closeModal('inventory-modal');
+    if (livingEnemies().length > 1) {
+      pendingThrowIdx = idx;
+      showTargetSelection('throw_item');
+    } else {
+      throwItemAtEnemy(idx, getFirstLivingEnemy());
+    }
+    return;
+  }
+
   // Sinks endgame : consommables permanents — requièrent un choix
   // de bénéficiaire en duo (hors combat uniquement).
   if (item.effect === 'stat_boost') {
