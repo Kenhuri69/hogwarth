@@ -19,25 +19,50 @@ chance** malgré son nom. Symptôme central du problème.
 
 ## 2. Modèle proposé
 
-### 2.1 Stat dérivée `fortune` (fraction 0..cap)
+### 2.1 Stat dérivée `fortune` — courbe de Hill saturante
 
-Calculée dans `recalculateStats()` (inventory-core.js), comme `critChance` :
+Calculée dans `recalculateStats()` (inventory-core.js). **Tout** (LCK + points
+Félix + points d'équipement) entre dans **une seule courbe de Hill** approchant
+~31 % — forme « douce → linéaire → plateau log » demandée par le PO :
 
 ```
-c.fortune = min(FORTUNE_CAP, c.lck × FORTUNE_PER_LCK + Σ item.bonusFortune)
+fortune = FORTUNE_ASYMPTOTE × x² / (x² + FORTUNE_HALF²)
+  où  x = c.lck + (felixActif ? FELIX_POINTS : 0) + Σ item.bonusFortune
 ```
 
-- `FORTUNE_PER_LCK = 0.006` (0,6 %/point de LCK)
-- `FORTUNE_CAP = 0.30` (plafond dur, comme le crit plafonne)
-- `item.bonusFortune` : nouveau champ d'équipement optionnel (gear de chance futur)
-- Harry (lck 15) → 0.09 ; endgame (lck ~25-30 + paliers Maison + équip) → approche 0.30.
+- `FORTUNE_ASYMPTOTE = 0.31` (la courbe tend vers 31 %, ne l'atteint jamais → pas
+  de clamp séparé)
+- `FORTUNE_HALF = 30` (demi-saturation : à x=30, fortune = 0.31/2 = 15.5 %)
+- `FELIX_POINTS = 40` (apport du buff Félix, cf. §2.2)
+- `item.bonusFortune` : points de chance d'un équipement (futur gear), en
+  **points d'entrée** (pas en % de sortie) — ils profitent donc aussi de la
+  saturation.
 
-### 2.2 Buff Félix Felicis (la chance temporaire)
+**Propriété clé (exigence PO) : les bonus fixes réduisent la valeur marginale de
+LCK.** Comme la courbe sature, un gros bonus fixe (Félix +40) pousse `x` dans la
+zone plate où chaque point de LCK rapporte moins. Mesuré :
 
-Félix devient un **buff de Fortune** : `felixFortuneTurns` (état sérialisé),
-ajoute `FELIX_FORTUNE = +0.25` à la Fortune effective pendant N pas/rencontres.
-(Garde un petit soin ? À trancher — proposition : retire le soin, Félix = pur
-buff de chance, cohérent avec le nom.)
+| Δ LCK | sans Félix | avec Félix |
+|-------|-----------|-----------|
+| +10 LCK (15→25 / 55→65) | +5.6 pts Fortune | **+1.6 pts** |
+
+| x (= lck+félix+équip) | Fortune |
+|----|----|
+| 10 | 3.1 % |
+| 15 (Harry base) | 6.2 % |
+| 30 | 15.5 % |
+| 50 | 22.8 % |
+| 55 (Harry + Félix) | 23.9 % |
+| 80 | 27.2 % |
+| 100 | 28.4 % |
+
+### 2.2 Buff Félix Felicis — pur buff de chance, durée en pas
+
+Félix n'est **plus** un soin (`+20 PV +10 PM` retiré). Il pose
+`felixFortuneSteps = FELIX_STEPS` (proposé : **40 pas**, knob), qui ajoute
+`FELIX_POINTS = 40` à `x` tant que `> 0`. Décrémenté à chaque pas d'exploration
+(`movement.js — _step`). Sérialisé. Couvre fouilles, coffres et combats d'une
+exploration d'étage.
 
 ### 2.3 Règle de groupe — `partyFortune()`
 
