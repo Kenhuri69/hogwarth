@@ -9595,6 +9595,202 @@ async function scenarioShopLimits() {
   await browser.close();
 }
 
+// ── Scénario Jardin d'herbes à récolte passive (Potions P6.b3) ──
+// Couvre : génération cachée (étage 3/6/9…), comportement-sol tant que caché,
+// révélation par Revelio (rayon) et par searchRoom, accumulation par pas et
+// par descente (plafonnée), récolte au palier de l'étage, round-trip de save.
+async function scenarioHerbGarden() {
+  console.log('\n── Scénario : jardin d\'herbes à récolte passive (Potions P6.b3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Événement d'étage neutre pour une génération déterministe : un 'marche'
+  // transformerait toutes les salles d'épine en boutiques (aucune salle FLOOR
+  // libre → jardin non posé). On fige donc l'événement à null.
+  await page.evaluate(() => { rollFloorEvent = () => null; });
+
+  // T1 : génération — l'étage 3 pose au moins un CELL.GARDEN, caché ;
+  //      l'étage 2 (cycle fontaine) n'en pose aucun.
+  const t1 = await page.evaluate(() => {
+    hiddenGardens = new Set();
+    currentFloor = 3; floorDungeons = {};
+    generateDungeon(3);
+    let gx = -1, gy = -1, count = 0;
+    for (let y = 0; y < dungeon.length; y++)
+      for (let x = 0; x < dungeon[y].length; x++)
+        if (dungeon[y][x] === CELL.GARDEN) { count++; if (gx === -1) { gx = x; gy = y; } }
+    const hidden = gx !== -1 && hiddenGardens.has(`3,${gx},${gy}`);
+    hiddenGardens = new Set();
+    currentFloor = 2; floorDungeons = {};
+    generateDungeon(2);
+    let f2 = 0;
+    for (let y = 0; y < dungeon.length; y++)
+      for (let x = 0; x < dungeon[y].length; x++)
+        if (dungeon[y][x] === CELL.GARDEN) f2++;
+    return { gardenEnum: CELL.GARDEN, count, hidden, f2 };
+  });
+  console.log('  T1 génération →', t1);
+  assert(t1.gardenEnum === 15, 'CELL.GARDEN doit valoir 15');
+  assert(t1.count >= 1,        'au moins un jardin sur l\'étage 3');
+  assert(t1.hidden,            'le jardin posé doit être caché (clé dans hiddenGardens)');
+  assert(t1.f2 === 0,          'aucun jardin sur l\'étage 2 (cycle 3/6/9…)');
+
+  // T2 : caché = comportement sol — gardenHiddenAt true, l'entrée n'ouvre PAS l'overlay.
+  const t2 = await page.evaluate(() => {
+    currentFloor = 3; floorDungeons = {}; hiddenGardens = new Set();
+    generateDungeon(3);
+    let gx = -1, gy = -1;
+    for (let y = 0; y < dungeon.length && gx === -1; y++)
+      for (let x = 0; x < dungeon[y].length && gx === -1; x++)
+        if (dungeon[y][x] === CELL.GARDEN) { gx = x; gy = y; }
+    playerX = gx; playerY = gy; inBattle = false;
+    const hiddenBefore = gardenHiddenAt(gx, gy);
+    _hideExploreOverlay();
+    handleCellEntry(CELL.GARDEN);
+    const ov = document.getElementById('explore-overlay');
+    const overlayShown = !!ov && getComputedStyle(ov).display !== 'none';
+    return { hiddenBefore, overlayShown };
+  });
+  console.log('  T2 caché=sol →', t2);
+  assert(t2.hiddenBefore === true,  'gardenHiddenAt doit être true tant que caché');
+  assert(t2.overlayShown === false, 'un jardin caché ne doit PAS ouvrir l\'overlay');
+
+  // T3 : Revelio dévoile un jardin dans le rayon 5×5 et arme l'éveil.
+  const t3 = await page.evaluate(() => {
+    currentFloor = 3; floorDungeons = {}; hiddenGardens = new Set();
+    gardenDiscovered = false; gardenStock = 0;
+    generateDungeon(3);
+    let gx = -1, gy = -1;
+    for (let y = 0; y < dungeon.length && gx === -1; y++)
+      for (let x = 0; x < dungeon[y].length && gx === -1; x++)
+        if (dungeon[y][x] === CELL.GARDEN) { gx = x; gy = y; }
+    playerX = gx; playerY = gy; party[0].sp = 20;
+    const keyBefore = hiddenGardens.has(`3,${gx},${gy}`);
+    castSpellOutOfCombat('Revelio', 0);
+    return { keyBefore, keyAfter: hiddenGardens.has(`3,${gx},${gy}`), discovered: gardenDiscovered };
+  });
+  console.log('  T3 Revelio →', t3);
+  assert(t3.keyBefore === true,  'le jardin doit être caché avant Revelio');
+  assert(t3.keyAfter === false,  'Revelio doit révéler le jardin du rayon');
+  assert(t3.discovered === true, 'la 1re révélation doit armer gardenDiscovered');
+
+  // T4 : la fouille (searchRoom) révèle aussi un jardin (rayon adjacent).
+  const t4 = await page.evaluate(() => {
+    currentFloor = 3; floorDungeons = {}; hiddenGardens = new Set();
+    gardenDiscovered = false;
+    generateDungeon(3);
+    let gx = -1, gy = -1;
+    for (let y = 0; y < dungeon.length && gx === -1; y++)
+      for (let x = 0; x < dungeon[y].length && gx === -1; x++)
+        if (dungeon[y][x] === CELL.GARDEN) { gx = x; gy = y; }
+    playerX = gx; playerY = gy; inBattle = false;
+    const keyBefore = hiddenGardens.has(`3,${gx},${gy}`);
+    searchRoom();
+    return { keyBefore, keyAfter: hiddenGardens.has(`3,${gx},${gy}`), discovered: gardenDiscovered };
+  });
+  console.log('  T4 fouille →', t4);
+  assert(t4.keyBefore === true, 'le jardin doit être caché avant la fouille');
+  assert(t4.keyAfter === false, 'searchRoom doit révéler un jardin adjacent');
+
+  // T5 : accumulation par pas — +1 tous les GARDEN_STEP_INTERVAL pas, plafonnée.
+  const t5 = await page.evaluate(() => {
+    // Corridor dégagé sur une rangée + enemyMap vidé pour des pas déterministes.
+    const row = 8;
+    for (let x = 0; x < dungeon[row].length; x++) {
+      dungeon[row][x] = CELL.FLOOR;
+      if (enemyMap[row]) enemyMap[row][x] = null;
+    }
+    inBattle = false; gardenDiscovered = true; playerDir = 'e'; playerY = row;
+    const walk = (steps) => { for (let i = 0; i < steps; i++) moveForward(); };
+    // +1 après un intervalle complet
+    playerX = 1; stepCount = 0; gardenStock = 0;
+    walk(GARDEN_STEP_INTERVAL);
+    const afterInterval = gardenStock;
+    // pas d'incrément avant l'intervalle
+    playerX = 1; stepCount = 0; gardenStock = 0;
+    walk(GARDEN_STEP_INTERVAL - 1);
+    const beforeInterval = gardenStock;
+    // plafond : déjà au max, un intervalle de plus ne dépasse pas
+    playerX = 1; stepCount = 0; gardenStock = GARDEN_CAP;
+    walk(GARDEN_STEP_INTERVAL);
+    return { afterInterval, beforeInterval, capped: gardenStock, cap: GARDEN_CAP, interval: GARDEN_STEP_INTERVAL };
+  });
+  console.log('  T5 accumulation par pas →', t5);
+  assert(t5.afterInterval === 1,        'un intervalle complet doit ajouter 1 herbe');
+  assert(t5.beforeInterval === 0,       'avant l\'intervalle complet, rien n\'est ajouté');
+  assert(t5.capped === t5.cap,          'le pas ne doit pas dépasser GARDEN_CAP');
+
+  // T6 : accumulation par descente — +GARDEN_DESCENT_BONUS, plafonnée.
+  // onArrive() (qui ajoute le bonus) s'exécute dans le callback différé de
+  // _floorTransition, donc on attend que gardenStock se stabilise.
+  const t6 = await page.evaluate(() => {
+    return new Promise(resolve => {
+      currentFloor = 4; gardenDiscovered = true; gardenStock = 0; inBattle = false;
+      goDeeper();
+      let tries = 0;
+      const wait = () => {
+        if (gardenStock > 0 || tries++ > 40) {
+          resolve({ gained: gardenStock, bonus: GARDEN_DESCENT_BONUS, floor: currentFloor });
+        } else setTimeout(wait, 50);
+      };
+      setTimeout(wait, 50);
+    });
+  });
+  console.log('  T6 accumulation par descente →', t6);
+  assert(t6.gained === t6.bonus, 'une descente doit ajouter GARDEN_DESCENT_BONUS herbes');
+
+  // T7 : récolte — verse le pool en herbes du palier de l'étage, remet le stock à 0.
+  const t7 = await page.evaluate(() => {
+    currentFloor = 5; // palier T2
+    hiddenGardens = new Set();
+    playerX = 6; playerY = 6; dungeon[6][6] = CELL.GARDEN; inBattle = false;
+    player.herbs = {}; gardenStock = 5;
+    const tier = (currentFloor >= 11) ? 4 : (currentFloor >= 7) ? 3 : (currentFloor >= 4) ? 2 : 1;
+    useGarden();
+    const total = Object.values(player.herbs || {}).reduce((a, b) => a + b, 0);
+    const allTier = Object.keys(player.herbs).every(id => {
+      const it = ITEMS.find(i => i.id === id);
+      return it && it.type === 'herb' && it.tier === tier;
+    });
+    // jardin trop jeune : un 2nd appel à stock 0 n'ajoute rien
+    const beforeEmpty = total;
+    useGarden();
+    const afterEmpty = Object.values(player.herbs || {}).reduce((a, b) => a + b, 0);
+    return { total, stock: gardenStock, allTier, tier, noOp: afterEmpty === beforeEmpty };
+  });
+  console.log('  T7 récolte →', t7);
+  assert(t7.total === 5,   'la récolte doit verser tout le pool (5 herbes)');
+  assert(t7.stock === 0,   'le pool doit retomber à 0 après récolte');
+  assert(t7.allTier,       'les herbes récoltées doivent être du palier de l\'étage (T2 à l\'étage 5)');
+  assert(t7.noOp,          'récolter un jardin vide ne doit rien ajouter');
+
+  // T8 : round-trip de save — hiddenGardens / gardenStock / gardenDiscovered persistés.
+  const t8 = await page.evaluate(() => {
+    hiddenGardens = new Set(['3,4,4', '6,7,7']);
+    gardenStock = 7; gardenDiscovered = true;
+    const gs = _serializeState();
+    hiddenGardens = new Set(); gardenStock = 0; gardenDiscovered = false;
+    _applyState(gs);
+    return {
+      keys: Array.from(hiddenGardens).sort(),
+      stock: gardenStock,
+      discovered: gardenDiscovered
+    };
+  });
+  console.log('  T8 round-trip save →', t8);
+  assert(JSON.stringify(t8.keys) === JSON.stringify(['3,4,4', '6,7,7']),
+    'hiddenGardens doit survivre au round-trip de save');
+  assert(t8.stock === 7,         'gardenStock doit survivre au round-trip de save');
+  assert(t8.discovered === true, 'gardenDiscovered doit survivre au round-trip de save');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ jardin d\'herbes : génération cachée, révélation Revelio/fouille, accumulation pas+descente plafonnée, récolte au palier, round-trip save');
+  await browser.close();
+}
+
 // ── Scénario Économie des herbes (LOT P5) : routage besace + catalogue + cueillette ──
 
 async function scenarioHerbEconomy() {
@@ -16460,7 +16656,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

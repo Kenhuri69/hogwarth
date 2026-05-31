@@ -16,7 +16,11 @@ const CELL = {
   RUNE:13,
   // Enrichissement V2 Phase 3 — stèle d'énigme. Marchable (≠ WALL) ;
   // marcher dessus ouvre un overlay de devinette. Voir dungeon-enrichment-v2.md §3.
-  STELE:14
+  STELE:14,
+  // Potions P6.b3 — jardin d'herbes à récolte passive. Marchable (≠ WALL) ;
+  // caché par défaut (Set `hiddenGardens`), révélé par Revelio / fouille.
+  // Voir .claude/plans/potions-enrichment.md §P6.b3.
+  GARDEN:15
 };
 
 // Identité des 3 dalles-runes d'un puzzle, indexée par position dans

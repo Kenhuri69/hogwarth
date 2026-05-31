@@ -473,6 +473,11 @@ async function startGame(count = 2) {
   revealedPages  = new Set();
   player.grimoirePages = [];
   searchedCells = new Map();
+  // Jardin d'herbes (Potions P6.b3) — état neuf à chaque partie. generateDungeon(1)
+  // ne pose aucun jardin (étage 3+), le reset après est donc sûr.
+  hiddenGardens = new Set();
+  gardenStock = 0;
+  gardenDiscovered = false;
   visitedFloors = new Set([1]);
   totalKills     = 0;
   monsterKills   = {};

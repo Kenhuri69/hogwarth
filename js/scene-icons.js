@@ -296,6 +296,53 @@ const SCENE_ICONS = {
     </svg>`;
   },
 
+  // Jardin d'herbes (Potions P6.b3) — carré de terre magique d'où jaillissent
+  // des pousses luminescentes. Pur SVG, aucun paramètre.
+  garden() {
+    return `<svg viewBox="0 0 120 130" width="130" height="140" xmlns="http://www.w3.org/2000/svg" style="display:block">
+      <defs>
+        <radialGradient id="grdGlow" cx="0.5" cy="0.55" r="0.6">
+          <stop offset="0"   stop-color="#bfffb0" stop-opacity="0.55"/>
+          <stop offset="0.6" stop-color="#4fae5e" stop-opacity="0.18"/>
+          <stop offset="1"   stop-color="#000"    stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="grdSoil" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#5a3e26"/><stop offset="1" stop-color="#2c1c10"/>
+        </linearGradient>
+        <linearGradient id="grdLeaf" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#9fe27a"/><stop offset="1" stop-color="#2f7a3a"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="60" cy="124" rx="52" ry="5" fill="#000" opacity="0.55"/>
+      <ellipse cx="60" cy="80" rx="56" ry="42" fill="url(#grdGlow)"/>
+      <ellipse cx="60" cy="104" rx="46" ry="13" fill="url(#grdSoil)" stroke="#1a1208" stroke-width="1.2"/>
+      <ellipse cx="60" cy="100" rx="40" ry="9"  fill="#3a2818"/>
+      <!-- pousses -->
+      <path d="M60 100 Q56 70 60 52 Q64 70 60 100Z" fill="url(#grdLeaf)" stroke="#1a3a14" stroke-width="0.6"/>
+      <path d="M60 78 Q48 70 42 60" stroke="#3f8a44" stroke-width="2.4" fill="none"/>
+      <path d="M60 82 Q72 72 78 62" stroke="#3f8a44" stroke-width="2.4" fill="none"/>
+      <path d="M44 100 Q40 84 36 74 Q40 86 44 100Z" fill="url(#grdLeaf)" stroke="#1a3a14" stroke-width="0.5"/>
+      <path d="M76 100 Q80 84 84 74 Q80 86 76 100Z" fill="url(#grdLeaf)" stroke="#1a3a14" stroke-width="0.5"/>
+      <!-- fleurs luminescentes -->
+      <circle cx="60" cy="50" r="4.5" fill="#eaffb0">
+        <animate attributeName="opacity" values="0.6;1;0.6" dur="2.6s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="60" cy="50" r="2" fill="#fff"/>
+      <circle cx="36" cy="72" r="3" fill="#bfe6ff">
+        <animate attributeName="opacity" values="0.5;0.95;0.5" dur="2.2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="84" cy="60" r="3" fill="#e2b0ff">
+        <animate attributeName="opacity" values="0.5;0.95;0.5" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="50" cy="44" r="1.2" fill="#fff" opacity="0.9">
+        <animate attributeName="cy" values="44;38;44" dur="2.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="72" cy="46" r="1" fill="#fff" opacity="0.85">
+        <animate attributeName="cy" values="46;40;46" dur="2.4s" repeatCount="indefinite"/>
+      </circle>
+    </svg>`;
+  },
+
   // ── Forge des Ténèbres (endgame Tranche 2) ───────────────────
   // Enclume sur charbons rougeoyants avec étincelles ascendantes.
   forge: `<svg viewBox="0 0 120 110" width="130" height="120" xmlns="http://www.w3.org/2000/svg" style="display:block">

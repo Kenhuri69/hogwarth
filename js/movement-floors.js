@@ -223,7 +223,15 @@ function goDeeper() {
         addMsg("L'air devient glacial. Les murs eux-mêmes semblent te haïr.", 'bad');
       }
     },
-    onArrive() { addMsg(`Niveau ${currentFloor} atteint !`, 'good'); },
+    onArrive() {
+      addMsg(`Niveau ${currentFloor} atteint !`, 'good');
+      // Jardin d'herbes (Potions P6.b3) : la descente fait mûrir le jardin
+      // éveillé de GARDEN_DESCENT_BONUS herbes (plafond GARDEN_CAP).
+      if (typeof gardenDiscovered !== 'undefined' && gardenDiscovered
+          && gardenStock < GARDEN_CAP) {
+        gardenStock = Math.min(GARDEN_CAP, gardenStock + GARDEN_DESCENT_BONUS);
+      }
+    },
     saveReason: 'floor-down',
     narrative: (floor) => `Le groupe descend au niveau ${floor} des donjons de Poudlard...`
   });

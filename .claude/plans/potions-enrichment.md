@@ -407,13 +407,49 @@ Décomposition en 3 sous-lots indépendants, du plus sûr au plus novateur :
 >    membre vs non-membre · greeting house-aware) + bump PWA.
 >    → *vérif* : suite verte + pwa-smoke.
 
-**P6.b3 — Jardin d'herbes à récolte passive (le plus novateur)**
+**P6.b3 — Jardin d'herbes à récolte passive (le plus novateur)** — ✅ RÉALISÉ 2026-05-31
 - Un jardin (cellule spéciale ou feature débloquée par Slughorn) qui **génère
   des herbes passivement** (cadence à décider : par descente d'étage / par N
   pas), avec un **plafond d'accumulation** et une UI de récolte. Nouvel état
   sérialisé + persistance.
+- **Livré** : `CELL.GARDEN:15` caché (Set `hiddenGardens`), posé sur une case
+  FLOOR à l'écart du départ aux étages 3/6/9/12… (jamais sur une cellule
+  spéciale). Révélé par **Revelio** (rayon 5×5) ou par la **fouille** adjacente
+  (`_revealGardensNear`, `gardenHiddenAt`). Pool global `gardenStock` (+1/12 pas
+  via `_step`, +2 par descente via `goDeeper`, plafond 10) qui croît après
+  l'éveil (`gardenDiscovered`). Récolte (`useGarden`, overlay d'exploration) →
+  herbes du palier de l'étage. Visuels : `SCENE_ICONS.garden`,
+  `drawGardenSprite`, classe minimap `.map-garden`. Sérialisé dans save.js +
+  reset en nouvelle partie. Smoke : `scenarioHerbGarden` (8 sous-tests).
+  Bump PWA v36→v37.
 - *Vérif* : smoke — accumulation cadencée, plafonnée, récolte → besace ;
   round-trip de save.
+
+> **Décisions b3 (figées 2026-05-31, validées utilisateur)** : accès =
+> **cellule de donjon cachée**, révélée par le **sort Revelio** (« dévoile les
+> éléments cachés », rayon 5×5) — et aussi par `searchRoom` adjacent (miroir des
+> passages secrets) ; cadence = **par pas ET par descente** ; herbes = **palier
+> de l'étage courant**.
+>
+> **Modèle** : pool global `gardenStock` qui croît **après l'éveil** (1ʳᵉ
+> découverte d'un jardin) — `+1` tous les `GARDEN_STEP_INTERVAL=12` pas (`_step`)
+> et `+GARDEN_DESCENT_BONUS=2` par `goDeeper`, plafonné à `GARDEN_CAP=10`. Marcher
+> sur un jardin **révélé** ouvre un overlay « Récolter » → verse `gardenStock`
+> herbes du palier de l'étage (T1 ≤3 · T2 4-6 · T3 7-10 · T4 11+) dans la besace
+> (`addHerb`) et remet le stock à 0.
+>
+> **Cellule** `CELL.GARDEN:15` (marchable, ≠ WALL), placée sur **étages 3/6/9/12…**
+> (`floor>=3 && (floor-3)%3===0`, décalée des fontaines 2/5/8/11). **Cachée** par
+> défaut : Set global `hiddenGardens` (clés `"étage,x,y"`, sérialisé). Une case
+> garden dont la clé est dans `hiddenGardens` se comporte **exactement comme du
+> sol** (pas d'overlay, pas de sprite, pas de marqueur minimap) jusqu'à révélation.
+>
+> **Étapes** : (1) constante+état → (2) génération+cache → (3) révélation
+> Revelio/searchRoom (`gardenHiddenAt`, `gardenDiscovered`) → (4) accumulation
+> `_step`/`goDeeper` plafonnée → (5) récolte (`handleCellEntry`, descripteur
+> overlay, `useGarden`) → (6) visuels (scene-icon, sprite, minimap) → (7)
+> sérialisation save.js → (8) `scenarioHerbGarden` smoke + bump PWA. Chaque étape
+> vérifiée au smoke avant la suivante.
 
 **Ordre proposé** : b1 (données pures, faible risque) → b2 (léger) → b3
 (nouvelle mécanique + état). Chaque sous-lot = sa propre PR, vert au smoke

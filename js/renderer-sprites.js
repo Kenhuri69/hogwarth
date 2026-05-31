@@ -502,3 +502,28 @@ function drawFountainSprite(x, baseY, sz, dried) {
   ctx.restore();
 }
 
+// Jardin d'herbes (Potions P6.b3) — sprite de couloir d'un jardin révélé.
+function drawGardenSprite(x, baseY, sz) {
+  ctx.save();
+  // Ombre au sol
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.5, sz * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  // Halo vert luminescent
+  const halo = ctx.createRadialGradient(x, baseY - sz * 0.45, 0, x, baseY - sz * 0.45, sz * 0.95);
+  halo.addColorStop(0, 'rgba(120,220,130,0.40)');
+  halo.addColorStop(1, 'rgba(40,110,60,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.45, sz * 0.95, 0, Math.PI * 2); ctx.fill();
+  // Visuel SVG du jardin (viewBox 120×130).
+  const entry = _getSceneSvgImg('garden', () => SCENE_ICONS.garden());
+  if (entry && entry.ready) {
+    const h = sz * 1.1, w = h * (120 / 130);
+    ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
+  } else {
+    ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('🌿', x, baseY);
+  }
+  ctx.restore();
+}
+

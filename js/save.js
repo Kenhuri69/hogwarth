@@ -55,6 +55,10 @@ function _serializeState() {
     defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
                           .map(([f, set]) => [f, Array.from(set)]),
     floorKillCount: Array.from(floorKillCount.entries()),
+    // Jardin d'herbes (Potions P6.b3) — jardins cachés + pool + éveil.
+    hiddenGardens: Array.from(hiddenGardens),
+    gardenStock,
+    gardenDiscovered,
     shopStock,
     shopStepsSinceRestock,
     purchasedSpellbooks: Array.from(purchasedSpellbooks),
@@ -341,6 +345,10 @@ function _applyState(gs) {
     (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])
   );
   floorKillCount = new Map(gs.floorKillCount || []);
+  // Jardin d'herbes (Potions P6.b3) — jardins cachés + pool + éveil.
+  hiddenGardens = new Set(gs.hiddenGardens || []);
+  gardenStock = (typeof gs.gardenStock === 'number') ? gs.gardenStock : 0;
+  gardenDiscovered = !!gs.gardenDiscovered;
   // Pages du grimoire de Sandrine (quête manon_grimoire).
   pagePlacements = new Map(gs.pagePlacements || []);
   revealedPages  = new Set(gs.revealedPages || []);

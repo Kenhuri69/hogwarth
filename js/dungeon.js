@@ -408,6 +408,33 @@ function generateDungeon(floor) {
     dungeon[room.cy][room.cx] = CELL.FOUNTAIN;
   }
 
+  // Jardin d'herbes (Potions P6.b3) — étages 3, 6, 9, 12, … (décalé des
+  // fontaines). Posé caché : la case est CELL.GARDEN mais sa clé
+  // "étage,x,y" est ajoutée à `hiddenGardens` → se comporte comme du sol
+  // jusqu'à révélation (Revelio / fouille). Voir potions-enrichment §P6.b3.
+  if (floor >= 3 && (floor - 3) % 3 === 0
+      && typeof hiddenGardens !== 'undefined') {
+    // Posé sur une simple case FLOOR (jamais sur une cellule spéciale déjà
+    // posée : boutique, coffre, fontaine, autel, escalier), à l'écart du
+    // départ. Un jardin est une case marchable ordinaire, pas un centre de
+    // salle — d'où le scan de toutes les cases FLOOR éloignées.
+    const sx = rooms[0].cx, sy = rooms[0].cy;
+    const floorCells = [];
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.FLOOR
+            && (Math.abs(x - sx) + Math.abs(y - sy)) > 3) {
+          floorCells.push([x, y]);
+        }
+      }
+    }
+    if (floorCells.length) {
+      const [gx, gy] = floorCells[Math.floor(Math.random() * floorCells.length)];
+      dungeon[gy][gx] = CELL.GARDEN;
+      hiddenGardens.add(`${floor},${gx},${gy}`);
+    }
+  }
+
   // Endgame Tranche 2 : Forge des Ténèbres garantie aux floors 11, 14, 17, 20.
   // Bibliothèque interdite garantie aux floors 12, 15, 18 (cadence offset
   // pour ne pas overlap avec la Forge). Voir ENDGAME_PLAN.md §7.5 / §7.6.

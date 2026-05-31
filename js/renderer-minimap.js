@@ -100,6 +100,12 @@ function _buildMinimapCells(mm, cellSize) {
           if (typeof runeStele !== 'undefined' && runeStele
               && runeStele.solved) div.classList.add('map-stele-solved');
         }
+        else if (c === CELL.GARDEN
+                 && !(typeof gardenHiddenAt === 'function' && gardenHiddenAt(x, y))) {
+          // Jardin d'herbes révélé (Potions P6.b3) — teinte verte. Caché =
+          // pas de classe (rendu comme du sol jusqu'à la révélation).
+          div.classList.add('map-garden');
+        }
         else if (c === CELL.NPC) {
           // PNJ : teinte spéciale + marqueur "!" / "?" si la quête liée
           // est offrable ou prête à rendre. La case est révélée d'office

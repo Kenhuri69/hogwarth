@@ -525,6 +525,22 @@ let defeatedCellsByFloor = new Map();
 // cap +40 %), n ≥ 5 active la prob trio (+10%/(n-4), cap +40 %). Persisté.
 let floorKillCount = new Map();
 
+// ── Jardin d'herbes à récolte passive (Potions P6.b3) ────────
+// Jardins cachés non encore révélés, clés "étage,x,y" (qualifiées par
+// l'étage car le pool est inter-étages). Posés à la génération, retirés
+// par Revelio / searchRoom. Persisté tel quel.
+let hiddenGardens = new Set();
+// Pool global d'herbes « poussées » mais non encore récoltées. Croît
+// après l'éveil (1ʳᵉ découverte) : +1 tous GARDEN_STEP_INTERVAL pas et
+// +GARDEN_DESCENT_BONUS par descente, plafonné à GARDEN_CAP. Récolté en
+// marchant sur un jardin révélé → herbes du palier de l'étage courant.
+let gardenStock = 0;
+// Éveil : passe à true à la 1ʳᵉ révélation d'un jardin. Gate l'accumulation.
+let gardenDiscovered = false;
+const GARDEN_STEP_INTERVAL = 12; // pas par +1 herbe
+const GARDEN_DESCENT_BONUS = 2;  // herbes par descente d'étage
+const GARDEN_CAP           = 10; // plafond du pool
+
 // ── Pages du grimoire de Sandrine (quête manon_grimoire) ─────
 // Reliques fixes invisibles, une par étage porteur (2,3,5,7,9).
 // pagePlacements : Map<floor, "x,y"> — position posée à la 1re
