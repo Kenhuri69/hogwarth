@@ -37,6 +37,7 @@ const PRECACHE_URLS = [
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
   './js/ux-improvements.js?v=2',
+  './js/combat-fx.js?v=1',
   './js/audio.js?v=1',
   './js/audio-music.js?v=2',
   './js/audio-sfx.js?v=3',
@@ -69,11 +70,11 @@ const PRECACHE_URLS = [
   './js/movement-floors.js?v=2',
   './js/movement-interactions.js?v=6',
   './js/swipe-canvas.js?v=4',
-  './js/battle.js?v=16',
+  './js/battle.js?v=17',
   './js/battle-rewards.js?v=1',
   './js/battle-death.js?v=1',
   './js/teleport.js?v=1',
-  './js/battle-spells.js?v=6',
+  './js/battle-spells.js?v=7',
   './js/battle-ui.js?v=2',
   './js/inventory-core.js?v=5',
   './js/inventory.js?v=16',
@@ -100,7 +101,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=18',
+  './js/loader.js?v=19',
   './js/pwa.js?v=2',
 
   // Icônes PWA + premier écran
