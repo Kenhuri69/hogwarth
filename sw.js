@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v39';
+const CACHE_VERSION = 'hogwarth-v40';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -34,6 +34,7 @@ const PRECACHE_URLS = [
   './css/help-tour.css?v=2',
   './css/pwa.css?v=1',
   './css/combat-fx.css?v=1',
+  './css/dungeon-fx.css?v=1',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
@@ -62,14 +63,15 @@ const PRECACHE_URLS = [
   './js/dungeon.js?v=14',
   './js/dungeon-spawning.js?v=1',
   './js/textures.js?v=1',
-  './js/renderer.js?v=11',
-  './js/renderer-effects.js?v=10',
+  './js/renderer.js?v=12',
+  './js/renderer-effects.js?v=11',
+  './js/dungeon-fx.js?v=1',
   './js/renderer-sprites.js?v=3',
   './js/renderer-entities.js?v=1',
   './js/renderer-minimap.js?v=7',
-  './js/movement.js?v=22',
+  './js/movement.js?v=23',
   './js/movement-floors.js?v=2',
-  './js/movement-interactions.js?v=6',
+  './js/movement-interactions.js?v=7',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=17',
   './js/battle-rewards.js?v=1',
@@ -89,7 +91,7 @@ const PRECACHE_URLS = [
   './js/intro.js?v=2',
   './js/shop.js?v=10',
   './js/save-slots.js?v=1',
-  './js/save.js?v=18',
+  './js/save.js?v=19',
   './js/save-visit-snapshot.js?v=1',
   './js/save-ui.js?v=2',
   './js/ironman.js?v=3',
@@ -97,12 +99,12 @@ const PRECACHE_URLS = [
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
-  './js/main.js?v=8',
+  './js/main.js?v=9',
   './js/endgame.js?v=1',
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=19',
+  './js/loader.js?v=20',
   './js/pwa.js?v=2',
 
   // Icônes PWA + premier écran

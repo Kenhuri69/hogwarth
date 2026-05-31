@@ -1,0 +1,28 @@
+/* ============================================================
+   DUNGEON FX — Immersion visuelle de l'exploration (Lot 2)
+   Secousse de la vue 3D (pièges). Le vacillement de torche et la brume
+   de profondeur sont peints sur le canvas (js/dungeon-fx.js +
+   renderer-effects.js), pas en CSS. Respecte prefers-reduced-motion.
+   ============================================================ */
+
+#dungeon-canvas.dfx-shake-light { animation: dfxShakeLight .4s ease-in-out; }
+#dungeon-canvas.dfx-shake-heavy { animation: dfxShakeHeavy .45s ease-in-out; }
+
+@keyframes dfxShakeLight {
+  0%,100% { transform: translate(0,0); }
+  25% { transform: translate(-3px, 2px); }
+  50% { transform: translate(3px, -2px); }
+  75% { transform: translate(-2px, 2px); }
+}
+@keyframes dfxShakeHeavy {
+  0%,100% { transform: translate(0,0); }
+  15% { transform: translate(-6px, 4px); }
+  35% { transform: translate(6px, -4px); }
+  55% { transform: translate(-5px, -3px); }
+  75% { transform: translate(5px, 3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #dungeon-canvas.dfx-shake-light,
+  #dungeon-canvas.dfx-shake-heavy { animation: none; }
+}

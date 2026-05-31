@@ -379,6 +379,8 @@ window.UX_safe = new Proxy({}, {
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },
     { name: 'CombatFX',           source: 'combat-fx.js',    kind: 'obj',   optional: true },
+    { name: 'DungeonFX',          source: 'dungeon-fx.js',   kind: 'obj',   optional: true },
+    { name: 'startDungeonFxLoop', source: 'dungeon-fx.js',   kind: 'fn',    optional: true },
     { name: 'showIntroScreen',    source: 'intro.js',        kind: 'fn',    optional: true },
     { name: 'getNpcById',         source: 'npcs-helpers.js', kind: 'fn',    optional: true },
     { name: 'Karaoke',            source: 'karaoke.js',      kind: 'obj',   optional: true },

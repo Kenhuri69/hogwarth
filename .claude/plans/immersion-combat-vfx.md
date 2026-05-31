@@ -50,8 +50,32 @@ Nouveau module `js/combat-fx.js` exposant `window.CombatFX` + helper sûr
 - Respecter `@media (prefers-reduced-motion: reduce)`.
 - Ne pas réassigner `player`/`party`. Ne pas toucher la logique de combat.
 
-## Lot 2 — Juice du donjon (À VENIR)
-Torches vacillantes + braises, brume de profondeur, shake exploration.
+## Lot 2 — Juice du donjon (LIVRÉ)
+
+Nouveau module visuel pur `js/dungeon-fx.js` (+ `css/dungeon-fx.css`)
+exposant `window.DungeonFX` + helper `DFX_safe` + phase globale
+`_dungeonFxPhase`.
+
+- ✅ **Torches vivantes** : `drawTorch` (renderer-effects.js) vacille
+  (halo + flamme modulés) et émet des braises montantes, piloté par
+  `_dungeonFxPhase`. Phase 0 → rendu statique identique à l'historique.
+- ✅ **Boucle ambiante** : `startDungeonFxLoop()` (~11 FPS) redessine la
+  scène uniquement en exploration (gardes : pas de combat, pas d'overlay,
+  onglet visible). **Ne démarre pas sous `prefers-reduced-motion`** →
+  torches statiques. Branchée dans `startGame` (main.js) + chargement de
+  save (save.js), à côté de `startNpcAnimLoop`.
+- ✅ **Brume de profondeur** : `drawDepthsMist()` peint 3 nappes
+  dérivantes (composite `screen`) sur la tranche `depths` (étages 7+),
+  appelée dans `drawCorridor` avant le cadre de premier plan. No-op
+  hors depths.
+- ✅ **Shake d'exploration** : `DungeonFX.shakeView('light'|'heavy')` sur
+  le `#dungeon-canvas`, déclenché par les pièges (`_triggerDungeonTrap`
+  *heavy*, piège de couloir inline *light*). Respecte reduced-motion.
+- ✅ Scénario smoke `scenarioDungeonFX` ; entrées loader `DungeonFX` +
+  `startDungeonFxLoop` (optional). **Smoke 148/148, PWA vert.**
+  Bumps : renderer.js v12, renderer-effects.js v11, movement.js v23,
+  movement-interactions.js v7, main.js v9, save.js v19, loader.js v20,
+  sw cache hogwarth-v40.
 
 ## Lot 3 — Cinématiques intro/victoire (À VENIR)
 Intro animée d'arrivée à Poudlard ; séquence de victoire `victoryAchieved`.

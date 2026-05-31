@@ -501,6 +501,7 @@ async function startGame(count = 2) {
   renderMinimap();
   drawDungeon();
   if (typeof startNpcAnimLoop === 'function') startNpcAnimLoop();
+  if (typeof startDungeonFxLoop === 'function') startDungeonFxLoop();
   updateLocationDisplay();
 
   const diffIcon = { Facile:'🟢', Normal:'🟡', Difficile:'🟠', Expert:'🔴' }[difficulty] || '';
