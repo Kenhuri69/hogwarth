@@ -419,6 +419,71 @@ Décomposition en 3 sous-lots indépendants, du plus sûr au plus novateur :
 (nouvelle mécanique + état). Chaque sous-lot = sa propre PR, vert au smoke
 avant la suivante.
 
+#### P6.c — POTIONS OFFENSIVES JETABLES (sous-lot) · ~1,5 j · risque moyen
+
+> Demande utilisateur (2026-05-31). Sorti du backlog P6 (« flacon de feu /
+> poison lancé »). Audit pré-implémentation (session 2026-05-31) confirmé :
+> - `useItem(idx, battleMode)` (inventory.js:673) applique aujourd'hui le
+>   consommable **au perso actif** (`party[currentBattleChar]`, ligne 736) puis
+>   provoque une **contre-attaque immédiate** de chaque ennemi + `advanceBattleChar`.
+> - Le ciblage ennemi passe par `showTargetSelection(actionType)` (battle-ui.js:27)
+>   via `pendingAction` (+ `pendingSpell`) ; l'attaque auto-cible si 1 seul
+>   ennemi vivant (`battleAction('attack')`, battle.js:555).
+> - Système élémentaire (`RESIST_MULTIPLIER`/`WEAK_MULTIPLIER`, `enemy.resist/weak`
+>   vs `item.element`), statuts DoT (`applyStatus`, `gel`/`poison`/`burn`) et
+>   combos (`comboDamageMult`) sont **réutilisables tels quels**.
+> - Pipeline d'icônes **PNG indisponible** dans l'env (pas de PIL) → on suit le
+>   précédent des herbes : **SVG inline** dans `ITEM_ICON_SVG_REGISTRY`.
+
+**Décisions figées (2026-05-31, validées implicitement par le choix du lot)** :
+1. **Catalogue = 3 flacons** aux rôles distincts :
+   - `flacon_feu` 🔥 — **burst** élément `feu`, `power:24`, sans statut. price 40.
+   - `flacon_givre` ❄️ — élément `glace`, `power:15`, pose `gel` (3/3 tours) →
+     **active les combos** (×1.3 sorts/coups suivants). price 42.
+   - `flacon_venin` 🧪 — **sans élément** (dégâts directs non typés `power:8`) +
+     `poison` (5/tour × 4 tours) → **spécialiste DoT**. price 44.
+2. **Modèle de dégâts alchimique** : `dmg = power × (1 + brewPotency)`, respecte
+   `resist`/`weak` (via `element`) + `comboDamageMult` ; **pas de scaling MAG ni
+   de crit de sort** (effet d'objet). Niche : source de dégâts fiable, indépendante
+   des PM/MAG, **gratifiée par le brassage** (brewMult, comme les autres potions).
+3. **Comportement de tour** : lancer = action offensive du tour → `advanceBattleChar`
+   comme une attaque, **sans** la contre-attaque immédiate du « boire une potion ».
+4. **Ciblage** : nouveau `pendingAction:'throw_item'` + global `pendingThrowIdx`
+   (state.js) ; auto-cible si 1 seul ennemi (miroir `executeAttack`).
+5. **Sources** : 3 recettes brassables (multisets inédits, découvrables — pas de
+   verrou, cohérent §6bis) + boutique Apothicaire (`SHOP_CATALOG`, étage 3-4).
+6. **Icônes** : SVG inline (flacon teinté par rôle) dans `ITEM_ICON_SVG_REGISTRY`.
+
+**Étapes** :
+1. **Items** (`data.js`) : 3 consommables `effect:"throw"` (champs
+   `element?`, `power`, `statusId?`/`statusPower?`/`statusTurns?`). → *vérif* :
+   smoke T1 (données).
+2. **Recettes** (`POTION_RECIPES`, 23→26) : `brew_flacon_feu` `{aconit:2}` ·
+   `brew_flacon_givre` `{branchiflore:2}` · `brew_flacon_venin` `{ortie:1,dictame:1}`
+   (multisets libres, vérifiés sans collision). → *vérif* : `_matchRecipe` matche
+   chaque combo ; `POTION_RECIPES.length === 26`.
+3. **Moteur** (`battle.js`) : helper pur `_thrownPotionDamage(item, enemy)`
+   (brewMult + resist/weak + combo, retourne `{dmg, suffix}`) ; action
+   `throwItemAtEnemy(invIdx, enemyIdx)` (applique dégâts + statut optionnel +
+   `_consumeAt` + log/floatDmg + `checkAllEnemiesDead` + `advanceBattleChar`).
+   → *vérif* : smoke T2-T5 (dégâts, resist/weak, statut posé, brassage).
+4. **Ciblage** : `pendingThrowIdx` (state.js) + branche `'throw_item'` dans
+   `showTargetSelection` (battle-ui.js) ; branche `effect==='throw'` dans
+   `useItem` (inventory.js) — combat only, ferme la modale, auto-cible si 1
+   ennemi sinon `showTargetSelection('throw_item')`. Hors combat → message.
+   → *vérif* : smoke (intégration : enemyGroup réduit, item consommé, tour avancé).
+5. **Icônes SVG** : 3 entrées `ITEM_ICON_SVG_REGISTRY`. → *vérif* :
+   `getItemIconHtml` rend le SVG.
+6. **Shop** : 3 entrées `SHOP_CATALOG` (feu/givre ét.3, venin ét.4). → *vérif* :
+   présentes, filtrées par palier.
+7. **Smoke** : scénario dédié `scenarioThrowablePotions` + mise à jour des
+   asserts `POTION_RECIPES.length` 23→26 (3 sites) ; **bump PWA** (data/battle/
+   battle-ui/inventory/item-icons/state/shop `?v=N` + `CACHE_VERSION`).
+   → *vérif* : suite verte + pwa-smoke.
+
+**Hors-scope P6.c** : potions offensives **multi-cibles** (AOE), flacons à effet
+de zone, et l'usage de flacons par les ennemis — différés (gros scope combat).
+
 ---
 
 ## 4. Ordonnancement proposé
@@ -530,3 +595,4 @@ demandée). **Deuxième vague** = P2 (plus de moteur). P3/P4 = backlog.
 | 2026-05-30 | **LOT P6.b1 (herbe rare endgame) — LIVRÉ** : décisions confirmées (Boucle Ténébreuse 11+ · consommation = upgrade des Élixirs Suprêmes existants · icône SVG inline). Nouvelle herbe `herbe_asphodele_noire` (Asphodèle des Ténèbres, tier 4, price 40) ; 2 recettes de prestige (`brew_xl_tenebres` 2 herbes→potion_xl · `brew_xl_sp_tenebres` 3 herbes→potion_xl_sp, POTION_RECIPES 21→23, multisets inédits) ; sources : cueillette `searchRoom` palier 4 gated 11+, drop Héraut des Ténèbres @0.30, ware Apothicaire Ténébreux @40 ; icône SVG inline (`ITEM_ICON_SVG_REGISTRY`, asphodèle teinte ténèbres). Asserts `POTION_RECIPES.length` & herbCount mis à jour (21→23, 6→7). Scénario smoke `scenarioRareHerb` T1-T4 (données+sources · recettes prestige · brassage · cueillette gated) ; suite **136/136 verte** + pwa v34. Reste b2 (lien Maison/Slughorn) + b3 (jardin passif). |
 | 2026-05-30 | **LOT P6.a (codex) — LIVRÉ** : décisions confirmées (silhouettes+indices · section inline). La section « Recettes connues » devient un **Codex** listant les 21 recettes — connues (lisibles + « Préparer ») vs à découvrir (silhouette `🔒 ? ? ?` + indice non-spoiler `_recipeHint` : palier d'herbes / « avancée » + nb d'ingrédients), avec compteur « X/21 découvertes ». Helper pur `_recipeHint` ; CSS `.brew-recipe-locked`/`.brew-codex-count`. Scénario smoke `scenarioRecipeCodex` T1-T4 (liste complète · indices herbe vs upgrade · ligne masquée · révélation→compteur+1) ; suite **135/135 verte** + pwa v33. Reste backlog P6 : ancrage narratif herbes + potions offensives jetables. |
 | 2026-05-30 | **PR P2 livré** : potions de buff de combat. Moteur `temp_buff` généralisé de l'ATK seul à 5 stats (`BUFF_STAT_BY_ID` : atk/def/agi/lck/mag) — `_applyConsumableEffect` mute la stat de base + recalc, `tickStatuses` restaure à l'expiry (boucle générique), `recalculateStats` réapplique tous les `buff_*` (source unique, AVANT les stats dérivées → dodge/crit tiennent compte des buffs AGI/LCK). 4 items (Défense+DEF / Célérité+AGI / Précision+LCK / Puissance+MAG, +8/3t) + 4 recettes (POTION_RECIPES 17→21, sans collision) + 4 icônes PNG (flacons teintés) + shop ét.3-4. Smoke `scenarioCombatBuffs` T1-T5 (dont AGI→dodge 9.8→13, LCK→crit 12.5→16.5) + suite 132/132 + pwa v32. |
+| 2026-05-31 | **LOT P6.c (potions offensives jetables) — LIVRÉ** : 3 flacons `effect:"throw"` lancés sur 1 ennemi en combat — Feu 🔥 (burst feu 24), Givre ❄️ (glace 15 + `gel` 3/3, active les combos), Venin 🧪 (8 directs sans élément + `poison` 5/4). Moteur : helper pur `_thrownPotionDamage` (brewMult + resist/weak + `comboDamageMult`, **sans scaling MAG ni crit de sort**) + action `throwItemAtEnemy(invIdx, enemyIdx)` (battle.js) qui consomme le tour comme une attaque (`advanceBattleChar`), sans la contre-attaque immédiate du « boire une potion ». Ciblage : `pendingThrowIdx` (state.js) + branche `'throw_item'` dans `showTargetSelection` (battle-ui.js) + branche `effect==='throw'` dans `useItem` (combat only, auto-cible si 1 ennemi). 3 recettes brassables (`brew_flacon_feu` {aconit:2} · `brew_flacon_givre` {branchiflore:2} · `brew_flacon_venin` {ortie:1,dictame:1}, POTION_RECIPES 23→26, multisets inédits, découvrables) ; 3 icônes SVG inline (`_potionSvg`, pipeline PNG Python indisponible) ; shop Apothicaire ét.3-4. Asserts `POTION_RECIPES.length` 23→26 (3 sites). Scénario smoke `scenarioThrowablePotions` T1-T5 (données+SVG · dégâts purs brassage/resist/weak · combat intégré dégâts+consommation+gel · recettes · boutique) ; suite **139/139 verte** + pwa v36. **Backlog P6 restant : jardin d'herbes passif (b3).** |

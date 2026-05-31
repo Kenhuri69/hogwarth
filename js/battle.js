@@ -635,6 +635,68 @@ function checkAllEnemiesDead() {
   return false;
 }
 
+// ── Potions offensives jetables (P6.c) ───────────────────────
+// Dégâts « alchimiques » d'un flacon lancé : potency de brassage (brewMult) +
+// résistances/faiblesses élémentaires (via item.element) + combos existants
+// (cible gelée/saignante). PAS de scaling MAG ni de crit de sort — c'est un
+// objet, pas un sortilège : source de dégâts fiable et indépendante des PM.
+// Pur (aucune mutation) → retourne { dmg, suffix }.
+function _thrownPotionDamage(item, enemy) {
+  const brewPotency = (typeof item.brewPotency === 'number')
+    ? item.brewPotency
+    : (item.brewed ? ((typeof BREW_POTENCY_BONUS !== 'undefined') ? BREW_POTENCY_BONUS : 0.25) : 0);
+  let dmg = Math.max(1, Math.round((item.power || 0) * (1 + brewPotency)));
+  let suffix = '';
+  if (item.element && enemy.resist && enemy.resist.includes(item.element)) {
+    dmg = Math.max(1, Math.floor(dmg * RESIST_MULTIPLIER)); suffix += ' 🔰';
+  }
+  if (item.element && enemy.weak && enemy.weak.includes(item.element)) {
+    dmg = Math.floor(dmg * WEAK_MULTIPLIER); suffix += ' 💥';
+  }
+  const combo = (typeof comboDamageMult === 'function')
+    ? comboDamageMult(enemy, item.element || 'physique') : { mult: 1, label: null };
+  if (combo.mult !== 1) { dmg = Math.max(1, Math.floor(dmg * combo.mult)); suffix += combo.label ? ` ${combo.label}` : ''; }
+  return { dmg, suffix };
+}
+
+// Lance le flacon `player.inventory[invIdx]` sur enemyGroup[enemyIdx].
+// Consomme le tour comme une attaque (advanceBattleChar), SANS la
+// contre-attaque immédiate du « boire une potion » (l'offensive EST l'action).
+function throwItemAtEnemy(invIdx, enemyIdx) {
+  if (!inBattle) return;
+  const item  = player.inventory[invIdx];
+  const enemy = enemyGroup[enemyIdx];
+  if (!item || item.effect !== 'throw') return;
+  if (!enemy || enemy.currentHp <= 0) return;
+  const char = getActiveChar();
+
+  const { dmg, suffix } = _thrownPotionDamage(item, enemy);
+  enemy.currentHp -= dmg;
+
+  // Statut optionnel (gel / poison / burn) posé après les dégâts.
+  let statusTxt = '';
+  if (item.statusId && enemy.currentHp > 0 && typeof applyStatus === 'function') {
+    const sp = (typeof item.statusPower === 'number') ? item.statusPower : Math.max(1, Math.floor((item.power || 0) * 0.25));
+    const st = item.statusTurns || 3;
+    applyStatus(enemy, item.statusId, sp, st);
+    const def = (typeof STATUS_DEFS !== 'undefined' && STATUS_DEFS[item.statusId]) || {};
+    statusTxt = ` + ${def.label || item.statusId}`;
+  }
+
+  _consumeAt(invIdx, 1);
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playSpellCast) {
+    AudioSystem.playSpellCast(item.element === 'feu' ? 'Incendio' : (item.element === 'glace' ? 'Glacius' : 'Diffindo'));
+  }
+  setBattleLog(`🧪 ${char.name} lance ${item.name} sur ${enemy.name} : ${dmg} dégâts${suffix}${statusTxt} !`);
+  addMsg(`${char.name} lance ${item.name} (${dmg} dégâts).`, 'good');
+  UX_safe.floatDmg(`enemy:${enemyIdx}`, dmg, 'dmg');
+  UX_safe.logCombat(`🧪 <b>${char.name}</b> lance ${item.name} sur ${enemy.name} : <b>−${dmg}</b>${suffix}${statusTxt}`, 'magic');
+  renderEnemyGroup();
+  updateUI();
+  if (checkAllEnemiesDead()) return;
+  advanceBattleChar();
+}
+
 // ── Passage au personnage suivant / tour des ennemis ─────────
 function advanceBattleChar() {
   updateUI();

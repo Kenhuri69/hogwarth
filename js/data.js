@@ -470,6 +470,13 @@ const ITEMS = [
   { id:"elixir_celerite",  name:"Élixir de Célérité",  icon:"💨", desc:"+8 AGI pendant 3 tours (esquive +)", type:"consumable", effect:"temp_buff", buffStat:"agi", power:8, turns:3, price:48 },
   { id:"potion_precision", name:"Potion de Précision", icon:"🍀", desc:"+8 LCK pendant 3 tours (crit +)",    type:"consumable", effect:"temp_buff", buffStat:"lck", power:8, turns:3, price:48 },
   { id:"elixir_puissance", name:"Élixir de Puissance", icon:"🔮", desc:"+8 MAG pendant 3 tours",      type:"consumable", effect:"temp_buff", buffStat:"mag", power:8, turns:3, price:50 },
+  // ── Potions offensives jetables (P6.c) : lancées sur UN ennemi en combat.
+  // Dégâts « alchimiques » : profitent du brassage (brewPotency) et respectent
+  // resist/weak via `element`, mais SANS scaling MAG ni crit de sort. Statut
+  // optionnel (gel/poison) posé après les dégâts.
+  { id:"flacon_feu",    name:"Flacon de Feu",    icon:"🔥", desc:"Lancé : 24 dégâts de feu sur un ennemi",                 type:"consumable", effect:"throw", element:"feu",   power:24, price:40, rarity:"common" },
+  { id:"flacon_givre",  name:"Flacon de Givre",  icon:"❄️", desc:"Lancé : 15 dégâts de glace + gèle l'ennemi (3 t)",        type:"consumable", effect:"throw", element:"glace", power:15, statusId:"gel",    statusPower:3, statusTurns:3, price:42, rarity:"common" },
+  { id:"flacon_venin",  name:"Flacon de Venin",  icon:"🧪", desc:"Lancé : 8 dégâts + poison (5/tour, 4 tours)",             type:"consumable", effect:"throw",                  power:8,  statusId:"poison", statusPower:5, statusTurns:4, price:44, rarity:"common" },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:200 },
   // ── Phase 3 : équipement étendu (slots head/hands/feet/cloak/amulet/ring/belt/trinket) ──
@@ -673,6 +680,17 @@ const POTION_RECIPES = [
   { id:"brew_xl_sp_tenebres", name:"Élixir d'Esprit Suprême (Ténèbres)", resultItemId:"potion_xl_sp",
     ingredients:{ herbe_asphodele_noire:3 },                            difficulty:18,
     lore:"Trois fleurs noires ouvrent l'esprit aux confins de la magie." },
+  // ── Flacons offensifs (P6.c) — projectiles alchimiques ───────────────────
+  // Multisets inédits (vérifiés sans collision). Découvrables librement.
+  { id:"brew_flacon_feu",   name:"Flacon de Feu",   resultItemId:"flacon_feu",
+    ingredients:{ herbe_aconit:2 },                                     difficulty:13,
+    lore:"L'aconit distillé s'embrase au contact de l'air — à lancer, jamais à boire." },
+  { id:"brew_flacon_givre", name:"Flacon de Givre", resultItemId:"flacon_givre",
+    ingredients:{ herbe_branchiflore:2 },                               difficulty:13,
+    lore:"La branchiflore gelée éclate en esquilles de glace sur sa cible." },
+  { id:"brew_flacon_venin", name:"Flacon de Venin", resultItemId:"flacon_venin",
+    ingredients:{ herbe_ortie:1, herbe_dictame:1 },                     difficulty:14,
+    lore:"Un venin paradoxal : l'ortie attaque là où le dictame guérit." },
 ];
 
 const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];
