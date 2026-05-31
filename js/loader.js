@@ -165,6 +165,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'equipItem',          source: 'inventory.js',    kind: 'fn'  },
     { name: 'recalculateStats',   source: 'inventory-core.js',   kind: 'fn'  },
     { name: 'partyFortune',       source: 'inventory-core.js',   kind: 'fn'  },
+    { name: '_celeriteCurve',     source: 'inventory-core.js',   kind: 'fn'  },
     { name: 'openSpells',         source: 'inventory-spells.js', kind: 'fn'  },
 
     // ── Quêtes ──

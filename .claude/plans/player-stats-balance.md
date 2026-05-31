@@ -5,7 +5,7 @@
 > D4 pénétration STR Hill cap 0.50/H 20) est passé en runtime, calibration
 > adoucie retenue. Broyer (F=0.10, K=2, chance 50 %, toutes les brutes) était
 > déjà mergé — non retouché. D5 volet LCK (Fortune) livré, cf.
-> `luck-fortune.md`. D5 volet AGI **différé hors PR** (Phase 2, non conçu).
+> `luck-fortune.md`. D5 volet AGI (**Célérité**) livré, cf. `agi-derived.md`.
 >
 > Étapes d'implémentation Broyer (✅ = fait) :
 > 1. ✅ `dungeon-scaling.js` : `isBruteMonster` + `BRUTE_CRUSH_ABILITY` + octroi
@@ -45,7 +45,7 @@ des points morts une fois le cap crit atteint).
 | D2 | **END → DEF**, conversion **4:1** | `def += floor(end/4)` dans `recalculateStats`. |
 | D3 | **END → résistance aux DoT** | réduit les dégâts (et/ou durée) des DoT subis (burn/poison/bleed/gel). Modèle proposé : `dégât_tick = max(1, power − floor(END/8))`. |
 | D4 | **STR → pénétration de DEF**, en **% avec courbe sigmoïde** | douce au début → quasi-linéaire au milieu → plateau logarithmique vers un cap. Couplage **STR → +1 ATK conservé** (STR donne ATK *et* pénétration). |
-| D5 | **P6 — débouché post-plafond LCK/AGI** | une fois le cap crit/esquive atteint, recycler les points excédentaires (LCK → or/butin ; AGI → initiative/atténuation). **Phase 2**, non chiffré ici. |
+| D5 | **P6 — débouché post-plafond LCK/AGI** | une fois le cap crit/esquive atteint, recycler les points excédentaires. **LCK → Fortune** (or/butin, livré — cf. `luck-fortune.md`). **AGI → Célérité** (gain de tour fluide / actions sup., livré — cf. `agi-derived.md`). |
 
 ### Formule de pénétration STR (D4) — proposition concrète
 

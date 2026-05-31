@@ -733,7 +733,7 @@ et `.claude/plans/luck-fortune.md`.
 | D3 | END → résistance DoT | `tickStatuses` (héros) : tick subi `−floor(end/12)`, plancher 1 | `END_DOT_RES_DIV=12` |
 | D4 | STR → pénétration de DEF | `executeAttack` : `effDef = def×(1−penFrac)`, `penFrac=_strPenFrac(str)` courbe de Hill (cap 0.50, demi-sat 20). STR garde aussi son +1 ATK | `STR_PEN_CAP=0.50` `STR_PEN_HALF=20` |
 | D5 (LCK) | Fortune (stat dérivée) | voir « Fortune » ci-dessous | `FORTUNE_*`, `FELIX_*` |
-| D5 (AGI) | débouché post-plafond AGI | **différé hors de cette PR** (Phase 2, non conçu/simulé) | — |
+| D5 (AGI) | Célérité (stat dérivée) | voir « Célérité » ci-dessous | `CELERITE_MAX=0.30`, `CELERITE_HALF=45` |
 
 > Broyer (levier anti-tank, capacité ennemie `maxhpdamage`) était déjà
 > implémenté et mergé avant ce rework — il n'y a pas été retouché.
@@ -985,9 +985,12 @@ critique** : physique et sort (cf. `.claude/plans/crit-rework.md` +
 | `critMultiplier`      | `1.5 + Σ bonusCritDamage`                            | ≥ 1.5   |
 | `spellCritMultiplier` | `1.5 + Σ bonusSpellCritDamage`                       | ≥ 1.5   |
 | `fortune` (D5)        | `0.31 × x² / (x² + 30²)`, x = `lck + Σ bonusFortune` | 0–~31 % |
+| `celerite` (D5)       | `0.30 × x² / (x² + 45²)`, x = `agi + Σ bonusCelerite`| 0–~30 % |
 
 > `fortune` pilote les événements aléatoires hors-crit (drops/or/fouille/
 > fuite/pièges) via `partyFortune()` — voir « Fortune (stat dérivée) » plus haut.
+> `celerite` est le **taux d'actions supplémentaires par round** (gain de tour
+> fluide) — voir « Célérité (stat dérivée — D5 volet AGI) » plus bas.
 
 - Le crit physique est piloté par **LCK** (plafonne à 40 %), le crit de
   sort par l'**AGI** (plafonne à 35 %) — c'est le rôle offensif de l'AGI.
@@ -1003,6 +1006,38 @@ critique** : physique et sort (cf. `.claude/plans/crit-rework.md` +
   `bonusSpellCritChance`, `bonusSpellCritDamage`, `bonusDodgeChance`.
   Les sets de Maison (physique : Gryffondor ; sort : Serpentard/Serdaigle)
   et le set Ténèbres portent ces bonus.
+
+### Célérité (stat dérivée — D5 volet AGI)
+
+L'AGI pilote le crit de sort ET l'esquive, tous deux plafonnés à 35 % (à
+AGI 75) ; au-delà, les points d'AGI étaient morts. **Célérité** (`c.celerite`)
+est le débouché post-plafond : une stat dérivée (courbe de Hill saturante,
+helper pur `_celeriteCurve` dans `inventory-core.js`) qui donne un **taux
+continu d'actions supplémentaires par round** — un **gain de tour FLUIDE, jamais
+par palier**. Cf. `.claude/plans/agi-derived.md`.
+
+```
+celerite = CELERITE_MAX × x² / (x² + CELERITE_HALF²)   // → 0.30, demi-sat AGI 45
+  où  x = c.agi + Σ item.bonusCelerite
+```
+
+- **Accumulateur de tempo (type ATB)** : `celeriteGauge[idx]` (state.js,
+  combat-scoped, reset `startBattle`) monte de `c.celerite` à l'ouverture du
+  segment de chaque héros (`_beginHeroSegment` dans `battle.js`, appelé une fois
+  par round par héros qui agit — pas si étourdi/apeuré). Chaque franchissement de
+  1.0 met une action sup. en réserve (`celeriteExtra[idx]`).
+- **Consommation** : `advanceBattleChar()` re-prompte le **même héros** tant
+  qu'il a des actions sup. en réserve (garde-fous : vivant + ennemis en vie), au
+  lieu d'avancer. Bandeau « ⚡ Célérité ! ». Le taux — pas un seuil — pilote la
+  fréquence : AGI 30 → ~1 action sup./4 rounds, AGI 50 → /2,5 rounds.
+- **`item.bonusCelerite`** : point d'entrée d'équipement (s'ajoute à `x`,
+  profite de la saturation), comme `item.bonusFortune`.
+- **Pas de sérialisation** : `celerite` est dérivé (recalc), la jauge est
+  combat-scoped (comme `shieldTurns`/`guardTurns`).
+- **Affichage** : ligne « ⚡ Célérité X% » dans `char-stats-panel`.
+- **Calibration** (sim `tools/sim-difficulty.js --celerite-max/-half`) : 0.30/45.
+  Early game intact (AGI bas → ~0 action sup.), débouché AGI ciblé (un build AGI
+  est le plus gros bénéficiaire), pas de build dominant (le tank garde la tête).
 
 ### Capacités spéciales des ennemis (tryEnemyAbility)
 Chaque ennemi peut avoir un tableau `abilities[]`. À chaque tour ennemi,

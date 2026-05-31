@@ -421,6 +421,12 @@ function parseArgs(argv) {
                 intMagDiv: 4, endDefDiv: 6, enemyPen: 0,
                 enemyPenLo: 20, enemyPenHi: 34,
                 maxhpDmg: 0, maxhpChance: 0.5, maxhpCap: 0, maxhpCapRef: 'atk',
+                // D5 volet AGI (analyse, opt-in) — modèle « Célérité » : gain
+                // de tour FLUIDE (accumulateur, non par palier). Taux d'actions
+                // supplémentaires par round = courbe de Hill sur l'AGI. Défaut
+                // max 0 = inactif (n'altère aucun rapport existant). Cf.
+                // .claude/plans/agi-derived.md §4.
+                celeriteMax: 0, celeriteHalf: 45,
                 elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -472,6 +478,8 @@ function parseArgs(argv) {
         .find(d => d.toLowerCase() === name.toLowerCase());
       out.difficulty = canon || 'Normal';
     }
+    else if (k === 'celerite-max')   out.celeriteMax  = parseFloat(v) || 0;
+    else if (k === 'celerite-half')  out.celeriteHalf = parseFloat(v) || 45;
     else if (k === 'elan-step')    out.elanStep = parseFloat(v) || 8;
     else if (k === 'elan-cap')     out.elanCap  = parseInt(v, 10) || 5;
     else if (k === 'elan-decay')   out.elanDecay = String(v || 'none').toLowerCase();
@@ -490,6 +498,10 @@ const BUILDS = {
   offensive:  { str: 2, int: 0, agi: 0, end: 0, lck: 1 },
   // Casteur (utilisé pour Hermione en mode balanced)
   caster:     { str: 0, int: 1, agi: 1, end: 1, lck: 0 },
+  // Build de mesure du débouché AGI (D5 volet AGI) : tout en AGI. Les 3 builds
+  // ci-dessus n'investissent quasiment pas l'AGI ; celui-ci isole l'apport de
+  // la stat dérivée « Réflexes ». Cf. .claude/plans/agi-derived.md §4.
+  agi:        { str: 0, int: 0, agi: 3, end: 0, lck: 0 },
 };
 
 function buildFor(build, key) {
@@ -544,6 +556,11 @@ Options:
   --maxhp-cap-ref=atk|hit [Anti-tank] Référence de borne : 'atk' = ATK brute de la
                           brute (indépendant du joueur) ; 'hit' = coup normal mitigé
                           (rétrécit quand la DEF joueur monte). Def 'atk'.
+  --celerite-max=F        [D5 AGI] Modèle « Célérité » : taux MAX d'actions sup. par
+                          round (def 0 = inactif). Gain de tour FLUIDE via un
+                          accumulateur (non par palier) ; taux = courbe de Hill sur
+                          l'AGI : celerite = max × agi²/(agi²+half²).
+  --celerite-half=H       [D5 AGI] AGI de demi-saturation de la courbe Célérité (def 45)
   --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
   --max-floor=N           Étage max en mode --endgame (def 40)
   --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
@@ -768,6 +785,19 @@ function strPenFrac(str, cfg) {
   return cap * (s * s) / (s * s + h * h);
 }
 
+// D5 volet AGI — modèle « Célérité » (gain de tour FLUIDE, non par palier).
+// Taux continu d'actions supplémentaires par round, courbe de Hill sur l'AGI
+// (miroir de reflexFrac). Renvoie une fraction [0, celeriteMax). Le gain de
+// tour est lissé par un accumulateur (simulateBattle) : le taux — pas un seuil
+// — pilote la fréquence d'actions sup. Cf. .claude/plans/agi-derived.md §2.
+function celeriteFrac(agi, cfg) {
+  const cap = (cfg && cfg.celeriteMax) || 0;
+  if (cap <= 0) return 0;
+  const h = (cfg && cfg.celeriteHalf) || 45;
+  const a = Math.max(0, agi || 0);
+  return cap * (a * a) / (a * a + h * h);
+}
+
 function createHero(key, level, cfg, floor, partySize) {
   const def = CHARACTERS[key];
   const c = {
@@ -868,6 +898,10 @@ function createHero(key, level, cfg, floor, partySize) {
   c.critChance          = Math.max(5, Math.min(100, lckCrit + (c._critBonus || 0) + (c._setCrit || 0)));
   c.spellCritChance     = Math.max(5, Math.min(100, lckCrit + (c._spellCritBonus || 0) + (c._setSpellCrit || 0)));
   c.dodgeChance         = Math.max(5, Math.min(35, 5 + c.agi * 0.4 + (c._dodgeBonus || 0) + (c._setDodge || 0)));
+  // D5 volet AGI — Célérité : taux continu d'actions supplémentaires par round
+  // (gain de tour FLUIDE, accumulé par simulateBattle). Stat dérivée sur l'AGI
+  // effective. 0 si levier inactif (cfg.celeriteMax == 0) → historique inchangé.
+  c._celerite           = celeriteFrac(c.agi, cfg);
   c.critMultiplier      = 1.5 + (c._critDmgBonus || 0) + (c._setCritDmg || 0);
   c.spellCritMultiplier = 1.5 + (c._spellCritDmgBon || 0) + (c._setSpellCritDmg || 0);
   // Passif d'Apothéose (palier 18 — houseApotheosePassive). Tous posés
@@ -1049,6 +1083,7 @@ function simulateBattle(party, enemyGroup, opts = {}) {
     if (!opts.keepVitals) { c.hp = c.hpMax; c.sp = c.spMax; }
     c.shieldTurns = 0; c.statusEffects = []; c._elanStacks = 0;
     c.guardStacks = 0; c.guardRegenCD = 0;
+    c._celGauge = 0;   // D5 AGI — accumulateur de Célérité (combat-scoped)
   });
   enemyGroup.forEach(e => { e.currentHp = e.hp; e.disarmed = 0; });
 
@@ -1067,12 +1102,23 @@ function simulateBattle(party, enemyGroup, opts = {}) {
       // fear saute 50 % du temps (battle.js — consumeStun / rollFearSkip).
       if (consumeStunSim(char)) continue;
       if (isFearedSim(char) && Math.random() < 0.5) continue;
-      const enemies = enemyGroup.filter(e => e.currentHp > 0);
-      if (!enemies.length) {
-        const survivors = party.filter(c => c.hp > 0).length;
-        return { won: true, turns: turn, survivors, hpPct: avgHpPct(party), enemyDmg: totalEnemyDmg };
+      // D5 AGI — Célérité : gain de tour FLUIDE. L'accumulateur monte de
+      // `_celerite` par round ; chaque franchissement de 1.0 donne UNE action
+      // supplémentaire (le taux, pas un seuil, pilote la fréquence). 1 action
+      // si levier inactif (_celerite == 0).
+      let actions = 1;
+      if (char._celerite > 0) {
+        char._celGauge = (char._celGauge || 0) + char._celerite;
+        while (char._celGauge >= 1) { char._celGauge -= 1; actions++; }
       }
-      heroAct(char, enemies);
+      for (let a = 0; a < actions; a++) {
+        const enemies = enemyGroup.filter(e => e.currentHp > 0);
+        if (!enemies.length) {
+          const survivors = party.filter(c => c.hp > 0).length;
+          return { won: true, turns: turn, survivors, hpPct: avgHpPct(party), enemyDmg: totalEnemyDmg };
+        }
+        heroAct(char, enemies);
+      }
     }
 
     // Tour ennemi

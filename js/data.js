@@ -95,6 +95,15 @@ const FORTUNE_HALF      = 30;   // demi-saturation : x=30 → 15.5 %
 const FELIX_POINTS      = 40;   // points de chance apportés par le buff Félix
 const FELIX_STEPS       = 40;   // durée du buff Félix, en pas d'exploration
 
+// ── Célérité (D5, volet AGI) — cf. .claude/plans/agi-derived.md ──
+// Débouché post-plafond de l'AGI (crit de sort + esquive plafonnent à 35 %).
+// Stat dérivée = TAUX continu d'actions supplémentaires par round (gain de tour
+// FLUIDE via accumulateur de tempo, jamais par palier). Courbe de Hill sur
+// x = AGI + Σ item.bonusCelerite. Calibration validée par sim (0.30/45) :
+// early game intact, débouché AGI ciblé, pas de build dominant.
+const CELERITE_MAX  = 0.30; // taux max d'actions sup./round (asymptote)
+const CELERITE_HALF = 45;   // demi-saturation : AGI 45 → 15 %
+
 // Fouille de salle (movement.js — searchRoom) : seuils cumulatifs sur un
 // Math.random(). roll < GOLD : trouve de l'or. roll < ITEM (et ≥ GOLD) :
 // trouve un item. Sinon : rien.

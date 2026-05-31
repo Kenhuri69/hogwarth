@@ -446,6 +446,11 @@ let shieldTurns     = [0, 0]; // bouclier par personnage (Protego)
 let guardTurns      = [0, 0]; // posture de Garde — mitigation 50 % sur le prochain coup ennemi
 let guardRegenCooldown = [0, 0]; // regen PM de la Garde — disponible 1 tour sur 2 par personnage
 let elanStacks      = [0, 0]; // Apothéose Gryffondor — cumul « Élan » par personnage (combat-scoped)
+// D5 Célérité (volet AGI) — accumulateur de tempo par personnage (combat-scoped,
+// reset startBattle). Monte de c.celerite/round ; chaque franchissement de 1.0
+// donne une action sup. (celeriteExtra). Cf. .claude/plans/agi-derived.md §2.3.
+let celeriteGauge   = [0, 0]; // jauge fractionnaire de tempo par personnage
+let celeriteExtra   = [0, 0]; // actions supplémentaires en réserve ce round
 let battleTurn      = 0;
 // Palier 17 « Mythe » — état transient de combat (réinitialisé par startBattle).
 // Non sérialisés : un combat ne peut pas être sauvegardé (inBattle bloque autoSave/writeSlot).

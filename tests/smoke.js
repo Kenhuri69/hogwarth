@@ -802,6 +802,115 @@ async function scenarioFortuneStat() {
   await browser.close();
 }
 
+// ── Scénario 2septies : Célérité (D5 volet AGI) ────────────────────
+//
+// Débouché post-plafond de l'AGI : stat dérivée = taux d'actions sup./round,
+// gain de tour FLUIDE via un accumulateur de tempo (jamais par palier). Vérifie
+// la courbe, l'accumulateur (action sup. quand la jauge franchit 1.0, aucune à
+// AGI basse), la consommation par advanceBattleChar (re-prompt) et le reset combat.
+async function scenarioAgiCelerite() {
+  console.log('\n── Scénario 2septies : Célérité (D5 volet AGI) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+
+  // T1 : Célérité = courbe de Hill sur x = AGI + Σ bonusCelerite.
+  const t1 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = {}; c._baseAgi = 45;
+    recalculateStats();
+    return {
+      celeriteX: c._celeriteX, celerite: c.celerite,
+      expected: _celeriteCurve(45),
+      max: CELERITE_MAX, half: CELERITE_HALF,
+    };
+  });
+  console.log('  T1 courbe:', t1);
+  assert(t1.max === 0.30 && t1.half === 45, 'constantes Célérité attendues 0.30 / 45');
+  assert(t1.celeriteX === 45, `_celeriteX doit valoir AGI=45, obtenu ${t1.celeriteX}`);
+  assert(Math.abs(t1.celerite - t1.expected) < 1e-9, 'celerite ≠ courbe attendue');
+  assert(Math.abs(t1.celerite - 0.15) < 0.001, `AGI 45 (=half) → 15 %, obtenu ${(t1.celerite*100).toFixed(1)} %`);
+
+  // T2 : item.bonusCelerite entre dans x (point d'entrée → profite de la courbe).
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    c._baseAgi = 30; c.equipped = { trinket: { id: 'x', bonusCelerite: 15 } };
+    recalculateStats();
+    return { celeriteX: c._celeriteX, celerite: c.celerite, expected: _celeriteCurve(45) };
+  });
+  console.log('  T2 bonusCelerite:', t2);
+  assert(t2.celeriteX === 45, `AGI 30 + bonusCelerite 15 → x=45, obtenu ${t2.celeriteX}`);
+  assert(Math.abs(t2.celerite - t2.expected) < 1e-9, 'celerite ≠ courbe(45)');
+
+  // T3 : accumulateur de tempo — gain de tour FLUIDE (le taux pilote la
+  // fréquence, pas un palier). À celerite 0.5 : round1 jauge 0.5 (0 action sup),
+  // round2 jauge 1.0 → 1 action sup. + jauge 0, round3 jauge 0.5 (0). À celerite
+  // basse (AGI early), jamais d'action sup.
+  const t3 = await page.evaluate(() => {
+    const c = party[0];
+    celeriteGauge = [0, 0]; celeriteExtra = [0, 0];
+    c.celerite = 0.5;
+    _beginHeroSegment(0); const r1 = celeriteExtra[0];           // 0
+    _beginHeroSegment(0); const r2 = celeriteExtra[0];           // 1
+    _beginHeroSegment(0); const r3 = celeriteExtra[0];           // 0
+    // AGI basse (early game) : aucune action sup. même sur 5 rounds.
+    celeriteGauge = [0, 0]; celeriteExtra = [0, 0];
+    c.celerite = _celeriteCurve(12);                              // ~1.7 %
+    let lowExtra = 0;
+    for (let i = 0; i < 5; i++) { _beginHeroSegment(0); lowExtra += celeriteExtra[0]; }
+    return { r1, r2, r3, lowExtra, lowCelerite: c.celerite };
+  });
+  console.log('  T3 accumulateur:', t3);
+  assert(t3.r1 === 0 && t3.r2 === 1 && t3.r3 === 0,
+    `gauge 0.5 : actions sup. attendues 0/1/0, obtenu ${t3.r1}/${t3.r2}/${t3.r3}`);
+  assert(t3.lowExtra === 0, `AGI 12 (early) ne doit donner aucune action sup. (obtenu ${t3.lowExtra})`);
+
+  // T4 : advanceBattleChar consomme une action sup. → re-prompt du MÊME héros
+  // (ne change pas currentBattleChar), tant qu'ennemi vivant.
+  const t4 = await page.evaluate(() => {
+    const enemy = { id: 'd', name: 'D', icon: 'X', hp: 80, atk: 1, def: 0,
+      mag: 0, agi: 0, lck: 0, xp: 0, gold: 0, abilities: [], drops: [],
+      resist: [], weak: [], desc: 'x' };
+    startBattle(enemy);
+    // startBattle a reset les jauges (T5 le vérifie). On arme une action sup.
+    currentBattleChar = 0; celeriteExtra = [1, 0];
+    party[0].hp = party[0].hpMax;
+    advanceBattleChar();
+    const reprompted = (currentBattleChar === 0);      // n'a pas avancé
+    const consumed   = (celeriteExtra[0] === 0);        // 1 action sup. consommée
+    // Plus d'action sup. → avance normalement (passe à Hermione en duo).
+    advanceBattleChar();
+    const advanced = (currentBattleChar === 1);
+    inBattle = false;
+    return { reprompted, consumed, advanced };
+  });
+  console.log('  T4 re-prompt:', t4);
+  assert(t4.reprompted, 'advanceBattleChar avec action sup. doit re-prompter le même héros');
+  assert(t4.consumed, 'l\'action sup. doit être consommée (celeriteExtra → 0)');
+  assert(t4.advanced, 'sans action sup. restante, advanceBattleChar doit avancer au héros suivant');
+
+  // T5 : startBattle réinitialise les jauges (combat-scoped, non sérialisées).
+  const t5 = await page.evaluate(() => {
+    celeriteGauge = [9, 9]; celeriteExtra = [9, 9];
+    const enemy = { id: 'd', name: 'D', icon: 'X', hp: 50, atk: 1, def: 0,
+      mag: 0, agi: 0, lck: 0, xp: 0, gold: 0, abilities: [], drops: [],
+      resist: [], weak: [], desc: 'x' };
+    startBattle(enemy);
+    const gauge = [...celeriteGauge], extra = [...celeriteExtra];
+    inBattle = false;
+    return { gauge, extra };
+  });
+  console.log('  T5 reset combat:', t5);
+  assert(t5.gauge[1] === 0 && t5.extra[1] === 0,
+    'startBattle doit réinitialiser celeriteGauge/celeriteExtra');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Célérité : courbe, accumulateur fluide, re-prompt, reset combat');
+  await browser.close();
+}
+
 // ── Scénario 2quater : statuts duo isolés par perso (Vague C) ──────
 //
 // Le code stocke les statusEffects directement sur l'objet personnage
@@ -16975,7 +17084,7 @@ async function scenarioCombatFeedback() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback];
   const filters = parseScenarioFilters();
   const selected = filters.length

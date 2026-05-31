@@ -315,6 +315,10 @@ function openCharacter(charIdx = 0) {
                  + (felixOn ? ((typeof FELIX_POINTS === 'number') ? FELIX_POINTS : 40) : 0);
   const fortunePct = (typeof _fortuneCurve === 'function')
     ? `${Math.round(_fortuneCurve(fortX) * 100)}%${felixOn ? ' ✨' : ''}` : '—';
+  // Célérité (D5 — volet AGI) : taux d'actions supplémentaires par round (gain
+  // de tour fluide). Cf. .claude/plans/agi-derived.md §2.2.
+  const celeritePct = (c.celerite != null)
+    ? `${Math.round(c.celerite * 100)}%` : '—';
 
   // Panneau d'allocation : visible uniquement si des points sont en attente.
   const statPts = c.unallocatedStatPoints || 0;
@@ -360,6 +364,7 @@ function openCharacter(charIdx = 0) {
         ${_renderStatLine('img/icons/mag.png', 'Crit. sort',  spellCritPct, true)}
         ${_renderStatLine('img/icons/agi.png', 'Esquive',     dodgePct,     true)}
         ${_renderStatLine('img/icons/xp.png',  '🍀 Fortune',  fortunePct,   true)}
+        ${_renderStatLine('img/icons/agi.png', '⚡ Célérité',  celeritePct,  true)}
       </div>
 
       <!-- Équipement (grid-area:equip) -->
