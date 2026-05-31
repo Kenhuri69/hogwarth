@@ -2482,10 +2482,9 @@ body {
 }
 
 .variant-badge-darkness {
-  background: linear-gradient(135deg, #4a1a6a 0%, #1a0a2a 100%);
-  border: 1px solid #c060ff;
-  color: #e0c0ff;
-  box-shadow: 0 0 6px #a040ff;
+  background: radial-gradient(circle at 35% 30%, #8a40c0 0%, #4a1a6a 55%, #1a0a2a 100%);
+  border-color: #c060ff;
+  box-shadow: 0 0 6px #a040ff, 0 1px 3px rgba(0,0,0,0.8);
 }
 
 /* ── Icônes SVG inline (herbes, potions) ──────────────────── */
@@ -3476,10 +3475,27 @@ button.shop-tab.active {
   position: absolute;
   top: -4px;
   right: -4px;
-  font-size: 14px;
-  line-height: 1;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.6);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.8);
   pointer-events: none;
+}
+.variant-badge-fierce {
+  background: radial-gradient(circle at 35% 30%, #ff9a55 0%, #d8541a 55%, #7a2c08 100%);
+  border-color: #ffb070;
+  box-shadow: 0 0 6px #d8541a, 0 1px 3px rgba(0,0,0,0.8);
+}
+.variant-badge-ancient {
+  background: radial-gradient(circle at 35% 30%, #b07ad8 0%, #5a2a8a 55%, #2a1042 100%);
+  border-color: #c89aff;
+  box-shadow: 0 0 6px #5a2a8a, 0 1px 3px rgba(0,0,0,0.8);
+}
+.variant-badge-shiny {
+  background: radial-gradient(circle at 35% 30%, #fff4c0 0%, #e6c248 55%, #a07e16 100%);
+  border-color: #fff0a0;
+  box-shadow: 0 0 6px #e6c248, 0 1px 3px rgba(0,0,0,0.8);
 }
 
 /* ── PARTY CARDS V3 (portrait BG plein + contenu droit) ── */

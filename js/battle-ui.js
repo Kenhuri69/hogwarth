@@ -151,14 +151,13 @@ function renderEnemyGroup() {
       ? `<div class="monster-icon variant-dead" style="width:${sizePx}px;height:${sizePx}px;display:flex;align-items:center;justify-content:center"><img src="img/icons/dead.png" alt="" style="width:${Math.floor(sizePx*0.7)}px;height:${Math.floor(sizePx*0.7)}px;image-rendering:pixelated"></div>`
       : getMonsterIconHtml(enemy, sizePx);
 
-    // Badge de variante (shiny / féroce / ancien / ténébreux)
+    // Badge de variante (shiny / féroce / ancien / ténébreux) — gemme CSS,
+    // la couleur/glow communique la variante (cf. .variant-badge-* du CSS).
+    const variantTitles = {
+      shiny: 'Chatoyant', ancient: 'Ancien', darkness: 'Ténébreux', fierce: 'Féroce'
+    };
     const badge = !dead && variant !== 'normal'
-      ? `<div class="variant-badge variant-badge-${variant}">${
-          variant === 'shiny'    ? '✨' :
-          variant === 'ancient'  ? '💜' :
-          variant === 'darkness' ? '🌑' :
-          '🔴'  /* fierce */
-        }</div>`
+      ? `<span class="variant-badge variant-badge-${variant}" title="${variantTitles[variant] || ''}" aria-label="${variantTitles[variant] || ''}"></span>`
       : '';
 
     const card = document.createElement('div');
@@ -202,7 +201,7 @@ function setBattleLog(text) {
   if (!el) return;
   // innerHTML pour permettre <img> des sortilèges/status. Tous les
   // appelants construisent des templates contrôlés (pas d'input user).
-  el.innerHTML = text;
+  el.innerHTML = (typeof iconizeCombatLog === 'function') ? iconizeCombatLog(text) : text;
 }
 
 // ── Panneau d'info monstre (clic / appui long sur une carte) ─────

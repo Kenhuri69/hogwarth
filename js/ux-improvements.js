@@ -309,7 +309,7 @@
     if (!list) return;
     const div = document.createElement('div');
     div.className = 'clp-entry clp-' + (type || 'info');
-    div.innerHTML = text;
+    div.innerHTML = (typeof iconizeCombatLog === 'function') ? iconizeCombatLog(text) : text;
     list.appendChild(div);
     list.scrollTop = list.scrollHeight;
   }
@@ -366,7 +366,7 @@
     if (typeof enemyGroup !== 'undefined') {
       enemyGroup.forEach(e => {
         if (e.currentHp > 0) {
-          order.push({ kind: 'enemy', name: e.name, emoji: e.icon || '👹', ko: false, active: false });
+          order.push({ kind: 'enemy', name: e.name, img: e.imgSrc, emoji: e.icon || '👹', ko: false, active: false });
         }
       });
     }

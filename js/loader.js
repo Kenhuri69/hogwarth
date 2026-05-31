@@ -113,6 +113,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'loadTextures',       source: 'textures.js',     kind: 'fn'  },
     { name: 'getMonsterIconHtml', source: 'icons.js',        kind: 'fn'  },
     { name: 'getItemIconHtml',    source: 'item-icons.js',   kind: 'fn'  },
+    { name: 'iconizeCombatLog',   source: 'item-icons.js',   kind: 'fn'  },
 
     // ── UI (critiques) ──
     { name: 'updateUI',           source: 'ui.js',           kind: 'fn'  },
