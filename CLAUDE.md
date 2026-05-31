@@ -950,6 +950,15 @@ chaque capacité est tentée selon sa `chance` (0.0–1.0).
 - `"dispel"` → retire un buff de la cible (priorité shield > guard > regen) ;
   si rien à dissiper, l'ennemi attaque normalement. Porteurs : `mangemort_elite`,
   `bellatrix`, `voldemort_revenu`
+- `"maxhpdamage"` → **Broyer** (levier anti-tank) : dégâts = `power × PV max` de
+  la cible, **ignorant la DEF**, bornés à `cap × référence` (`capRef:"hit"` →
+  `cap × mitigatedDamage(atk, def)` ; `"atk"` → `cap × atk`). Bloqué par Protego.
+  Octroyé **automatiquement aux « brutes »** (`isBruteMonster` : `atk ≥ 1,5×mag`
+  & `atk ≥ 12`, ~15 monstres) dans `scaleMonster` (`dungeon-scaling.js`) — pas
+  déclaré dans `monsters.js`. Calibration : `power 0.10`, `chance 0.5`, `cap 2`,
+  `capRef "hit"`. La référence `hit` rétrécit quand la DEF du joueur monte, ce
+  qui découple les dégâts de la progression (anti-grind). Cf.
+  `.claude/plans/player-stats-balance.md §4ter`.
 
 Heuristique anti-stalling : face à une cible en Double-Garde (`guardTurns ≥ 2`),
 les capacités `weaken` voient leur `chance` multipliée par 1,5.

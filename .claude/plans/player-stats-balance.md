@@ -1,8 +1,19 @@
 # Revue d'équilibrage — Statistiques du joueur
 
-> **Statut : RÉDACTION (conception).** Aucune modification du code de jeu (`js/`).
-> Seul l'outil de mesure `tools/sim-difficulty.js` reçoit un mode d'analyse
-> opt-in (`--stat-rework`) pour chiffrer les implications avant toute décision.
+> **Statut : IMPLÉMENTATION (capacité Broyer).** Calibration figée par le PO :
+> **F=0.10, K=2, chance 50 %, toutes les brutes**. Seule cette capacité passe en
+> runtime à ce stade ; le rework de stats (END→DEF, etc.) reste en conception.
+>
+> Étapes d'implémentation Broyer (✅ = fait) :
+> 1. ✅ `dungeon-scaling.js` : `isBruteMonster` + `BRUTE_CRUSH_ABILITY` + octroi
+>    dans `scaleMonster`. Vérifié : **15 brutes / 67** reçoivent Broyer.
+> 2. ✅ `battle-spells.js` : sélection IA `aggressive` + handler `case 'maxhpdamage'`
+>    (`min(F×PVmax, K×mitigatedDamage(atk,def))`, parité exacte avec la sim).
+> 3. ✅ `ui-bestiary.js` : Broyer affiché pour les brutes via prédicat partagé.
+> 4. ✅ `loader.js` : `isBruteMonster` ajouté au MANIFEST.
+> 5. ✅ `tests/smoke.js` : `scenarioBruteCrush` (prédicat, octroi, borne 30→6,
+>    Protego). Suite complète **138 scénarios verts**.
+> 6. ✅ `CLAUDE.md` : effet `maxhpdamage` documenté (§ capacités ennemies).
 
 ## 1. Constat (revue du code)
 
@@ -368,3 +379,10 @@ F=0.12 si on veut serrer plus le tank ; K=1.5 si on veut le grind plus plat.
   K pilote le grind (K=2 : +36 %→+19 %, niveau attendu intact ; K=1.5 : +12 %
   mais rogne ~7 %). **Reco : F=0.10, K=2, chance 50 %.** En attente confirmation
   PO (fraction/K/chance/cible) avant implémentation runtime. Aucun code `js/` touché.
+- 2026-05-31 : **PO valide F=0.10 / K=2 / chance 50 % / toutes les brutes.**
+  Implémentation runtime de Broyer (1ʳᵉ touche `js/` de l'effort) : prédicat
+  partagé `isBruteMonster` + `BRUTE_CRUSH_ABILITY` (dungeon-scaling.js), octroi
+  au scaling (15 brutes), handler `maxhpdamage` (battle-spells.js), affichage
+  bestiaire, MANIFEST, `scenarioBruteCrush`, doc CLAUDE.md. Smoke : 138 verts.
+  Le rework de stats (END→DEF 6:1, DoT div12, etc.) **reste en conception** —
+  non implémenté à ce stade.

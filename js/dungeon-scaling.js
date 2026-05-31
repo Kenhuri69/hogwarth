@@ -69,6 +69,25 @@ function endgameTierIndex(floor) {
   return 0;
 }
 
+// Levier anti-tank — capacité « Broyer » (cf. .claude/plans/player-stats-balance.md
+// §4ter). Dégâts proportionnels aux PV MAX de la cible, contournant la DEF :
+// contre-mesure exacte au build tank (dont l'avantage est le pool de PV, pas la
+// DEF). Bornée à K × coup normal pour découpler la valeur de la progression du
+// joueur (anti-grind). Octroyée aux monstres « brutes » (frappeurs physiques).
+//
+// Prédicat partagé par scaleMonster (octroi en combat) et le bestiaire
+// (affichage) — source unique de vérité du « qui est une brute ». Pur.
+function isBruteMonster(base) {
+  return !!base && (base.atk || 0) >= 1.5 * (base.mag || 0) && (base.atk || 0) >= 12;
+}
+// Calibration PO (figée) : F=0.10 (part des PV max), chance 50 %, borne
+// K=2 × coup normal mitigé (capRef 'hit' → rétrécit quand la DEF joueur monte).
+const BRUTE_CRUSH_ABILITY = {
+  effect: 'maxhpdamage', name: 'Broyer', icon: '🪨',
+  desc: "Frappe écrasante : inflige des dégâts proportionnels aux PV maximum de la cible en ignorant l'armure (valeur bornée).",
+  power: 0.10, chance: 0.5, cap: 2, capRef: 'hit',
+};
+
 // Applique la mise à l'échelle d'un monstre de base pour un étage donné.
 //
 // Pré-victoire (n=0) : stat = base × intraMult × diffMult — comportement inchangé.
@@ -135,6 +154,13 @@ function scaleMonster(base, floor) {
     monster.name    = 'Féroce ' + base.name;
   } else {
     monster.variant = 'normal';
+  }
+
+  // Octroi de Broyer aux brutes (prédicat sur les stats de BASE, comme la
+  // sim). Idempotent : aucune brute ne déclare déjà cette capacité dans
+  // monsters.js. Les variantes (shiny / Ténébreux / Ancien) restent des brutes.
+  if (isBruteMonster(base)) {
+    monster.abilities = [...(monster.abilities || []), { ...BRUTE_CRUSH_ABILITY }];
   }
 
   return monster;
