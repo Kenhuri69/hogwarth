@@ -1,7 +1,9 @@
 # Plan — Étendre le nombre d'adversaires (jusqu'à 5)
 
-> Branche : `claude/extend-opponent-count-yoIoJ`
-> Statut : 🟢 Temps 1 implémenté & testé (146/146 smoke). Temps 2 (sim) à faire.
+> Branches : Temps 1 → `claude/extend-opponent-count-yoIoJ` (mergé PR #339).
+> Temps 2 → `claude/extend-opponent-count-sim`.
+> Statut : 🟢 Temps 1 & Temps 2 implémentés et testés (146/146 smoke,
+> distribution sim validée — quad ≥ quint, solo jamais > 3).
 
 ## Objectif
 
@@ -112,40 +114,54 @@ en mobile (~360px). → taille adaptative + wrap nécessaires.
 
 ---
 
-## Temps 2 — Simulation & calibrage
+## Temps 2 — Simulation & calibrage ✅
 
-### Étape 2.1 — Miroir sim de `rollGroupSize` (tools/sim-difficulty.js:702)
-- Répliquer fidèlement la logique étendue (p1..p5, gating endgame/duo).
-- La fonction sim ne reçoit pas `victoryAchieved` : ajouter un paramètre
-  (ex. `cfg.endgame`/`cfg.victory`) pour modéliser le contexte endgame.
-- Étendre les compteurs `groupSizes = {1,2,3}` → `{1,2,3,4,5}` (lignes ~1458-1483).
-- Composition de groupe (`Array.from({length:size}, …)`, lignes 1466/1593) :
-  déjà générique, pioche variée — OK.
-- **Vérif** : `node tools/sim-difficulty.js` tourne sans erreur, rapporte les
-  parts de 4 et 5 ennemis en contexte endgame duo.
+### Étape 2.1 — Miroir sim de `rollGroupSize` ✅
+- `simMaxGroupSize(floor, partySize, cfg)` ajouté (miroir de
+  `currentMaxGroupSize`, gate `cfg.endgame && partySize===2 && floor>=11`).
+- `rollGroupSize` (sim) étendu : p4/p5 + bump trio endgame +0.10 (parité runtime).
+- Compteurs `groupSizes` → `{1,2,3,4,5}`. Composition `Array.from` inchangée
+  (pioche variée OK).
+- Section de rapport **3bis** (distribution des tailles, affichée en `--endgame`).
+- Drive par `--endgame kills=N` (n = floor(kills/4)).
 
-### Étape 2.2 — Lancer la sim & analyser
-- Exécuter la sim sur les scénarios endgame (duo, étages 11+, n croissant,
-  difficultés Normal/Difficile/Expert).
-- Mesurer : taux de win d'étage, durée de combat (tours), létalité. Vérifier
-  que 4-5 ennemis donnent un pic de difficulté **assumé mais franchissable**.
-- **Vérif** : tableau de résultats consigné dans ce plan (taux de clear par
-  taille de groupe et difficulté).
+### Étape 2.2 — Sim lancée & analysée ✅
+Distribution (Duo endgame, n=400-800 sims) — **APRÈS recalibrage** :
 
-### Étape 2.3 — Ajuster les probabilités
-- Régler `quadBonus`/`quintBonus` (et seuils `n`) selon la sim — répercuter
-  **à l'identique** dans `battle.js` ET `sim-difficulty.js` (pas de dérive).
-- **Vérif** : re-run sim ; courbe de difficulté validée ; `node tests/smoke.js` vert.
+| n (kills) | 2 | 3 | 4 | 5 | moy. |
+|-----------|---|---|---|---|------|
+| 7 (28)    | 13% | 81% | 6%  | 0%  | 2.93 |
+| 10 (40)   | 5%  | 75% | 19% | 1%  | 3.16 |
+| 20 (80)   | 5%  | 70% | 14% | 10% | 3.30 |
+
+Solo : **0 % de 4-5 à tous les étages** (gating vérifié). Quad ≥ quint partout.
+
+Win-rate Duo (kills=80, farm max), étages 11-20 : 100/100/100/100/96/85/73/49/20/10 %.
+→ Pic de difficulté **assumé** en profondeur (étages 18-20), franchissable
+avant cela. Le sim ne modélise pas le sur-équipement/sur-niveau réellement
+gagné par le farming → difficulté réelle plus douce que ces chiffres.
+
+### Étape 2.3 — Probabilités ajustées ✅
+Défaut corrigé : la formule initiale (transfert chaîné absolu) produisait
+**quint > quad** à farm max (5 plus fréquent que 4, contre-intuitif).
+Nouvelle formule (parité `battle.js` ↔ `sim-difficulty.js`) :
+```
+quadBonus  = min(0.25, 0.05·max(0, n-6))      // p3 → p4, démarre n>6
+quintFrac  = (n>=10) ? min(0.40, 0.05·(n-9)) : 0
+quintShift = p4 · quintFrac                    // p4 → p5, FRACTION ⇒ quad ≥ quint
+```
+- **Vérif** : re-run sim (distribution propre, quad ≥ quint) ;
+  `node tests/smoke.js` **146/146**.
 
 ---
 
 ## Critères de succès globaux
-- [ ] Combats de 4 et 5 ennemis possibles, gatés endgame + duo.
-- [ ] Rendu propre desktop **et** mobile (≤700px) sans débordement.
-- [ ] Invocations (`summon`) respectent le cap 5.
-- [ ] `node tests/smoke.js` vert (avec nouveau scénario ≥4 ennemis).
-- [ ] Sim étendue + probabilités calibrées (parité battle.js ↔ sim).
-- [ ] `CLAUDE.md` à jour.
+- [x] Combats de 4 et 5 ennemis possibles, gatés endgame + duo.
+- [x] Rendu propre desktop **et** mobile (≤700px) sans débordement.
+- [x] Invocations (`summon`) respectent le cap 5.
+- [x] `node tests/smoke.js` vert (avec nouveau scénario ≥4 ennemis).
+- [x] Sim étendue + probabilités calibrées (parité battle.js ↔ sim).
+- [x] `CLAUDE.md` à jour.
 
 ## Écarts / décisions (journal vivant)
 - 2026-05-31 : plan créé. Cap=5, gating endgame+duo, pic de difficulté assumé.
@@ -163,4 +179,11 @@ en mobile (~360px). → taille adaptative + wrap nécessaires.
   endgame+duo, **3 sinon**. Utilisé par `rollGroupSize` ET le cap `summon`.
   Conséquence : solo/duo-early restent à 3 ennemis y compris via invocation.
   Smoke 146/146 (assertions `capSolo/capDuoEarly === 3`, `capDuoEnd === 5`).
-  **Reste le Temps 2** (miroir sim + calibrage des probabilités).
+- 2026-05-31 : **Temps 2 implémenté** (branche `claude/extend-opponent-count-sim`).
+  Miroir sim (`tools/sim-difficulty.js`) : helper `simMaxGroupSize`, p4/p5 +
+  bump trio endgame +0.10, compteurs `groupSizes` 1-5, section de rapport
+  3bis. Recalibrage `battle.js` : quint passe d'un bonus absolu à une
+  **fraction** de la bande quad (`quintShift = p4 · quintFrac`), garantissant
+  quad ≥ quint (auparavant 5 plus fréquent que 4 à farm max). Sim vérifiée :
+  solo 0 % de 4-5 à tous les étages, duo endgame ~14-18 % quad / ~7-13 % quint.
+  Smoke 146/146.
