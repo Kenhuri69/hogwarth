@@ -636,8 +636,8 @@ const NPCS = [
       house: "Poufsouffle",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
-    questsGiven:    ["quest_set_pouf", "quest_don_pouf"],
-    questsTurnedIn: ["quest_set_pouf", "quest_don_pouf"],
+    questsGiven:    ["quest_set_pouf", "quest_don_pouf", "quest_garden_sprout", "quest_garden_sprout_2"],
+    questsTurnedIn: ["quest_set_pouf", "quest_don_pouf", "quest_garden_sprout", "quest_garden_sprout_2"],
     dialogues: {
       greeting: [
         "Ah, un Poufsouffle ! La loyauté finit toujours par porter ses fruits — comme mes plantes.",
@@ -664,6 +664,16 @@ const NPCS = [
         questOffer:  "Poufsouffle prend soin de chacun des siens, et cela ne pousse pas tout seul, vois-tu. Un don de 3000 Gallions nourrirait bien des racines. Acceptes-tu de partager ?",
         questActive: "Les 3000 Gallions pour la Maison — les as-tu rassemblés, mon petit ?",
         questReady:  "Trois mille Gallions partagés de bon cœur. Voilà la vraie loyauté — Poufsouffle ne l'oubliera pas."
+      },
+      quest_garden_sprout: {
+        questOffer:  "Sais-tu qu'on a muré des jardins entiers dans ces murs ? Des herbes rares y dorment encore. Déniche-m'en un — un Revelio ou une fouille minutieuse devrait le réveiller — et je t'apprendrai une recette de mon cru.",
+        questActive: "Cherche bien, mon petit. Les vieux jardins se cachent là où la pierre ment. Un sortilège de révélation, ou des doigts patients dans la poussière…",
+        questReady:  "Tu l'as trouvé ! Je le savais. Tiens, voici la recette de l'Élixir de Régénération — un jardin mérite qu'on sache en tirer parti."
+      },
+      quest_garden_sprout_2: {
+        questOffer:  "Mes réserves s'épuisent vite, vois-tu. Rapporte-moi quelques herbes fraîches du jardin et je saurai m'en montrer reconnaissante — encore et encore, si le cœur t'en dit.",
+        questActive: "Quatre brins frais, c'est tout ce qu'il me faut. La besace se remplit à la cueillette, ne l'oublie pas.",
+        questReady:  "Des herbes magnifiques — fraîches, gorgées de sève. Voilà qui garnira bien mes étagères. Reviens quand tu en auras d'autres."
       }
     }
   },

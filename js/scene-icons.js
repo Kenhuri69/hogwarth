@@ -297,43 +297,75 @@ const SCENE_ICONS = {
   },
 
   // Jardin d'herbes (Potions P6.b3) — carré de terre magique d'où jaillissent
-  // des pousses luminescentes. Pur SVG, aucun paramètre.
-  garden() {
+  // des pousses luminescentes. Le `tier` (1-4) adapte la palette aux herbes
+  // qui poussent au palier de l'étage : T1 vert d'école · T2 aqua
+  // (branchiflore/asphodèle) · T3 violet magique (aconit/dictame) · T4
+  // sombre/Ténèbres (asphodèle noire). Plus le palier monte, plus le jardin
+  // est dense et chargé de fleurs.
+  garden(tier) {
+    const PAL = {
+      1: { gA:'#bfffb0', gB:'#4fae5e', leafA:'#9fe27a', leafB:'#2f7a3a', stem:'#3f8a44',
+           soilA:'#5a3e26', soilB:'#2c1c10', soilTop:'#3a2818', leafEdge:'#1a3a14',
+           f1:'#eaffb0', f2:'#bfe6ff', f3:'#e2b0ff' },
+      2: { gA:'#b0fff0', gB:'#2f9e86', leafA:'#7ad9c0', leafB:'#23715f', stem:'#2f8a78',
+           soilA:'#3e5246', soilB:'#10241c', soilTop:'#1a3a30', leafEdge:'#123a30',
+           f1:'#c0fff0', f2:'#8fe6ff', f3:'#b0ffe0' },
+      3: { gA:'#e0b0ff', gB:'#7a3ea8', leafA:'#b48ce0', leafB:'#4a2f7a', stem:'#6a3e9a',
+           soilA:'#4a2e56', soilB:'#1a1024', soilTop:'#2e1a3a', leafEdge:'#2a1240',
+           f1:'#f0c0ff', f2:'#c08fff', f3:'#fff0b0' },
+      4: { gA:'#ff8a8a', gB:'#7a1a1a', leafA:'#8a5a6a', leafB:'#2a1018', stem:'#6a2a3a',
+           soilA:'#3a1a22', soilB:'#160608', soilTop:'#2a1014', leafEdge:'#200810',
+           f1:'#ff6060', f2:'#c050ff', f3:'#ff3050' }
+    };
+    const p = PAL[tier] || PAL[1];
+    // Pousses & fleurs supplémentaires à partir du palier 2 / 3.
+    const extraSprouts = (tier >= 2)
+      ? `<path d="M52 100 Q49 86 46 78 Q49 88 52 100Z" fill="url(#grdLeaf)" stroke="${p.leafEdge}" stroke-width="0.5"/>
+         <path d="M68 100 Q71 86 74 78 Q71 88 68 100Z" fill="url(#grdLeaf)" stroke="${p.leafEdge}" stroke-width="0.5"/>` : '';
+    const extraFlower = (tier >= 3)
+      ? `<circle cx="48" cy="58" r="2.6" fill="${p.f1}">
+           <animate attributeName="opacity" values="0.5;0.95;0.5" dur="2.5s" repeatCount="indefinite"/>
+         </circle>
+         <circle cx="74" cy="74" r="2.4" fill="${p.f3}">
+           <animate attributeName="opacity" values="0.5;0.9;0.5" dur="2.9s" repeatCount="indefinite"/>
+         </circle>` : '';
     return `<svg viewBox="0 0 120 130" width="130" height="140" xmlns="http://www.w3.org/2000/svg" style="display:block">
       <defs>
         <radialGradient id="grdGlow" cx="0.5" cy="0.55" r="0.6">
-          <stop offset="0"   stop-color="#bfffb0" stop-opacity="0.55"/>
-          <stop offset="0.6" stop-color="#4fae5e" stop-opacity="0.18"/>
+          <stop offset="0"   stop-color="${p.gA}" stop-opacity="0.55"/>
+          <stop offset="0.6" stop-color="${p.gB}" stop-opacity="0.18"/>
           <stop offset="1"   stop-color="#000"    stop-opacity="0"/>
         </radialGradient>
         <linearGradient id="grdSoil" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stop-color="#5a3e26"/><stop offset="1" stop-color="#2c1c10"/>
+          <stop offset="0" stop-color="${p.soilA}"/><stop offset="1" stop-color="${p.soilB}"/>
         </linearGradient>
         <linearGradient id="grdLeaf" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stop-color="#9fe27a"/><stop offset="1" stop-color="#2f7a3a"/>
+          <stop offset="0" stop-color="${p.leafA}"/><stop offset="1" stop-color="${p.leafB}"/>
         </linearGradient>
       </defs>
       <ellipse cx="60" cy="124" rx="52" ry="5" fill="#000" opacity="0.55"/>
       <ellipse cx="60" cy="80" rx="56" ry="42" fill="url(#grdGlow)"/>
       <ellipse cx="60" cy="104" rx="46" ry="13" fill="url(#grdSoil)" stroke="#1a1208" stroke-width="1.2"/>
-      <ellipse cx="60" cy="100" rx="40" ry="9"  fill="#3a2818"/>
+      <ellipse cx="60" cy="100" rx="40" ry="9"  fill="${p.soilTop}"/>
       <!-- pousses -->
-      <path d="M60 100 Q56 70 60 52 Q64 70 60 100Z" fill="url(#grdLeaf)" stroke="#1a3a14" stroke-width="0.6"/>
-      <path d="M60 78 Q48 70 42 60" stroke="#3f8a44" stroke-width="2.4" fill="none"/>
-      <path d="M60 82 Q72 72 78 62" stroke="#3f8a44" stroke-width="2.4" fill="none"/>
-      <path d="M44 100 Q40 84 36 74 Q40 86 44 100Z" fill="url(#grdLeaf)" stroke="#1a3a14" stroke-width="0.5"/>
-      <path d="M76 100 Q80 84 84 74 Q80 86 76 100Z" fill="url(#grdLeaf)" stroke="#1a3a14" stroke-width="0.5"/>
+      <path d="M60 100 Q56 70 60 52 Q64 70 60 100Z" fill="url(#grdLeaf)" stroke="${p.leafEdge}" stroke-width="0.6"/>
+      <path d="M60 78 Q48 70 42 60" stroke="${p.stem}" stroke-width="2.4" fill="none"/>
+      <path d="M60 82 Q72 72 78 62" stroke="${p.stem}" stroke-width="2.4" fill="none"/>
+      <path d="M44 100 Q40 84 36 74 Q40 86 44 100Z" fill="url(#grdLeaf)" stroke="${p.leafEdge}" stroke-width="0.5"/>
+      <path d="M76 100 Q80 84 84 74 Q80 86 76 100Z" fill="url(#grdLeaf)" stroke="${p.leafEdge}" stroke-width="0.5"/>
+      ${extraSprouts}
       <!-- fleurs luminescentes -->
-      <circle cx="60" cy="50" r="4.5" fill="#eaffb0">
+      <circle cx="60" cy="50" r="4.5" fill="${p.f1}">
         <animate attributeName="opacity" values="0.6;1;0.6" dur="2.6s" repeatCount="indefinite"/>
       </circle>
       <circle cx="60" cy="50" r="2" fill="#fff"/>
-      <circle cx="36" cy="72" r="3" fill="#bfe6ff">
+      <circle cx="36" cy="72" r="3" fill="${p.f2}">
         <animate attributeName="opacity" values="0.5;0.95;0.5" dur="2.2s" repeatCount="indefinite"/>
       </circle>
-      <circle cx="84" cy="60" r="3" fill="#e2b0ff">
+      <circle cx="84" cy="60" r="3" fill="${p.f3}">
         <animate attributeName="opacity" values="0.5;0.95;0.5" dur="3s" repeatCount="indefinite"/>
       </circle>
+      ${extraFlower}
       <circle cx="50" cy="44" r="1.2" fill="#fff" opacity="0.9">
         <animate attributeName="cy" values="44;38;44" dur="2.8s" repeatCount="indefinite"/>
       </circle>

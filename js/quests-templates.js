@@ -124,6 +124,38 @@ const QUEST_TEMPLATES = [
     reward: { xp: 300, gold: 150, recipes: ["brew_potion_force", "brew_potion_resistance", "brew_potion_xl_sp"] },
     location: "Salle des Potions (étage 2)"
   },
+  // ── Chaîne « Jardins de Chourave » (Potions P6.b3-suite) ──────────
+  // Quête A : découvrir un jardin d'herbes caché (révélé par Revelio ou
+  // fouille). Objectif type "discover_garden" (flag global gardenDiscovered).
+  {
+    id: "quest_garden_sprout",
+    title: "Le Jardin Oublié",
+    giver: "Professeur Pomona Chourave",
+    desc: "Chourave murmure qu'au fil des siècles, des jardins d'herbes magiques se sont retrouvés murés dans la pierre du château. Dévoiles-en un — un sortilège de révélation ou une fouille attentive suffira — et reviens lui conter ta trouvaille.",
+    objectives: [
+      { type: "discover_garden", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 120, gold: 80, recipes: ["brew_elixir_regen"] },
+    location: "Serres de Poudlard (étage 3)"
+  },
+  // Quête B : répétable — rapporter des herbes fraîches à Chourave. Objectif
+  // type "herb" (consommé dans la besace player.herbs). Prereq = quête A.
+  {
+    id: "quest_garden_sprout_2",
+    title: "Cueillette pour Chourave",
+    giver: "Professeur Pomona Chourave",
+    desc: "Maintenant que tu sais débusquer les jardins, Chourave te confie une tâche régulière : récolte des herbes fraîches et rapporte-les-lui pour garnir ses réserves.",
+    prereq: "quest_garden_sprout",
+    objectives: [
+      { type: "herb", amount: 4, progress: 0, completed: false }
+    ],
+    reward: { xp: 90, gold: 120, recipes: ["brew_elixir_antidote"] },
+    location: "Serres de Poudlard (étage 3)",
+    // Répétable tous les 2 niveaux. La recette n'est offerte qu'à la 1ʳᵉ
+    // remise : ensuite, récompense allégée en or/XP.
+    repeatable: { everyLevels: 2 },
+    repeatableReward: { xp: 70, gold: 140 }
+  },
   {
     id: "livre_interdit",
     title: "Le livre qui mord",

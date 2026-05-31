@@ -425,6 +425,39 @@ Décomposition en 3 sous-lots indépendants, du plus sûr au plus novateur :
 - *Vérif* : smoke — accumulation cadencée, plafonnée, récolte → besace ;
   round-trip de save.
 
+**P6.b3-suite — Quête Chourave + vue 3D adaptée au palier** — ✅ RÉALISÉ (2026-05-31)
+> Livré : 2 quêtes (`quest_garden_sprout` découverte + `quest_garden_sprout_2`
+> répétable, prereq A) sur Pomona Chourave ; 2 nouveaux types d'objectif
+> (`discover_garden`, `herb` consommé dans la besace) ; hook `checkGardenQuests`
+> dans `_revealGardensNear` ; vue 3D + overlay + halo adaptés au palier
+> (`SCENE_ICONS.garden(tier)`, `drawGardenSprite(tier)`). Smoke :
+> `scenarioGardenQuest` (3 sous-tests). Bump PWA v37→v38 (8 fichiers JS).
+> Suite complète verte (142 scénarios).
+
+> Décisions utilisateur : donneur = **Pomona Chourave** ; objectif = **chaîne de
+> 2 quêtes** (découvrir un jardin → quête répétable de récolte d'herbes) ;
+> récompense = **or + XP + recette/livre**.
+
+1. **Quête A — « Le Jardin Oublié »** (`quest_garden_sprout`) : objectif nouveau
+   type `discover_garden` (complété quand `gardenDiscovered`). Récompense or+XP+
+   recette de potion (`brew_elixir_regen`). → *vérif* : accept → révéler un
+   jardin → état `ready` → remise distribue la recette.
+2. **Quête B — « Cueillette pour Chourave »** (`quest_garden_sprout_2`,
+   `prereq` = A, `repeatable everyLevels:2`) : objectif nouveau type `herb`
+   (compte/consomme N herbes dans la **besace** `player.herbs`). → *vérif* :
+   accept → besace ≥ N → remise consomme N herbes → cooldown répétable.
+3. **Câblage quests.js** : `_refreshObjectives` (discover_garden + herb),
+   `_renderQuestStep`/`_renderActiveQuestCard` (libellés + recompte herb),
+   `_consumeQuestItems` (conso besace), hook `checkGardenQuests()` appelé dans
+   `_revealGardensNear`. Sprout : `questsGiven`/`questsTurnedIn` + `dialoguesByQuest`.
+4. **Vue 3D adaptée aux plantes** : `SCENE_ICONS.garden({tier})` +
+   `drawGardenSprite(tier)` + appel `renderer.js` avec
+   `tier = _gardenHerbTier(currentFloor)`. 4 variantes (T1 vert · T2 aqua ·
+   T3 violet magique · T4 sombre/Ténèbres) — couleurs de fleurs, densité de
+   pousses et halo par palier. Cache SVG par clé `garden_tier<n>`.
+5. **Tests** : `scenarioGardenQuest` (chaîne A→B, conso besace, répétable) ;
+   bump PWA. Suite verte avant push.
+
 > **Décisions b3 (figées 2026-05-31, validées utilisateur)** : accès =
 > **cellule de donjon cachée**, révélée par le **sort Revelio** (« dévoile les
 > éléments cachés », rayon 5×5) — et aussi par `searchRoom` adjacent (miroir des

@@ -402,7 +402,7 @@ function _exploreDescriptors() {
     },
     // Potions P6.b3 — Jardin d'herbes : récolte le pool mûri (par pas/descente).
     [CELL.GARDEN]: {
-      icon:  SCENE_ICONS.garden ? SCENE_ICONS.garden() : '🌿',
+      icon:  SCENE_ICONS.garden ? SCENE_ICONS.garden((typeof _gardenHerbTier === 'function') ? _gardenHerbTier(currentFloor) : 1) : '🌿',
       title: "Jardin d'herbes",
       desc:  gardenReady > 0
         ? `Des herbes magiques ont poussé entre les pierres luminescentes — ${gardenReady} brin${gardenReady > 1 ? 's' : ''} prêt${gardenReady > 1 ? 's' : ''} à cueillir.`

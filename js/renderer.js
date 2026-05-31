@@ -521,7 +521,7 @@ function drawCorridor(cx, cy, scale, W, H) {
         && usedFountains.has(`${pendingSprite.mapX},${pendingSprite.mapY}`);
       drawFountainSprite(x, baseY, sz, dried);
     }
-    else if (cell === CELL.GARDEN)   drawGardenSprite(x, baseY, sz);
+    else if (cell === CELL.GARDEN)   drawGardenSprite(x, baseY, sz, (typeof _gardenHerbTier === 'function') ? _gardenHerbTier(currentFloor) : 1);
     else if (cell === CELL.NPC) {
       const npcId = (typeof npcPlacements !== 'undefined')
         ? npcPlacements.get(`${pendingSprite.mapX},${pendingSprite.mapY}`)
