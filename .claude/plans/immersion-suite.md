@@ -36,6 +36,19 @@ La modale de victoire (`endgame.js — showVictoryScreen`) est silencieuse.
   `scenarioVictoryTrigger` (ou `scenarioCinematics`) pour asserter l'appel
   sans throw.
 
+- **[x] Implémenté (2026-05-31)** :
+  - `js/endgame.js` — flag de module `_victoryStingPlayed` (déclaré en
+    tête de l'IIFE) ; dans `showVictoryScreen`, après `display='flex'`,
+    appel `AudioSystem.playVictory()` derrière garde
+    `typeof AudioSystem !== 'undefined' && AudioSystem.playVictory`,
+    gardé par `!_victoryStingPlayed` (set à `true` après). Aucune
+    mécanique touchée, pas de réassignation `player`/`party`.
+  - Smoke : `scenarioVictoryTrigger` étendu (spy sur
+    `AudioSystem.playVictory`) — assert appelé **1×** au 1ᵉʳ trigger,
+    **pas re-appelé** au 2ᵉ `showVictoryScreen()` (idempotence), sans throw.
+  - Bumps : `js/endgame.js?v=2 → v=3` (`index.html` + `sw.js`),
+    `CACHE_VERSION 'hogwarth-v41' → 'hogwarth-v42'`.
+
 ### A2. Réglages fins du rendu existant (à la demande)
 Aucune nouvelle surface — uniquement des constantes à ajuster si le rendu
 déplaît visuellement :
@@ -115,3 +128,6 @@ est statique.
 ## Journal d'avancement
 
 - 2026-05-31 : backlog rédigé après livraison des Lots 1-3. Rien d'engagé.
+- 2026-05-31 : **A1 livré** (sting audio de victoire). Câblage défensif +
+  idempotence par flag local, scénario smoke étendu, bumps `?v=`/cache.
+  `node tests/smoke.js` et `node tests/pwa-smoke.js` verts. Écart : aucun.

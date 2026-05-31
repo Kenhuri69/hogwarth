@@ -17,6 +17,11 @@
 // Voir ENDGAME_PLAN.md §3-§6.
 
 (function () {
+  // A1 — sting audio de victoire : garde-fou d'idempotence. La modale peut
+  // être ré-affichée (double trigger défensif) ; le son ne doit jouer qu'à
+  // la première ouverture.
+  let _victoryStingPlayed = false;
+
   function _humanizeDuration(ms) {
     if (!ms || ms < 0) return '—';
     const sec = Math.floor(ms / 1000);
