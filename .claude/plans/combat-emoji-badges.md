@@ -84,3 +84,53 @@ une table curée emoji→PNG, branchée aux **deux puits de rendu** :
 8. `js/loader.js` MANIFEST : déclarer `iconizeCombatLog`.
 9. Bumps `?v=` (item-icons.js, loader.js déjà inclus) + CACHE_VERSION.
 10. `node tests/smoke.js` vert.
+
+---
+
+## Lot 3 — création des PNG manquants (zéro-emoji combat, demande utilisateur)
+
+Inventaire des emoji de log NON encore convertis (scan des call-sites) :
+réutilisables (PNG existant) vs à créer.
+
+### Réutilisation (aucun asset à créer — étendre la table)
+| Emoji | PNG existant |
+|-------|--------------|
+| 👁️ Legilimens | `img/icons/spells/legilimens.png` |
+| 🧪 jet de potion | `img/icons/items/potion_m.png` |
+| ☀️ vs morts-vivants | `img/icons/spells/lumos_solem.png` |
+| 🦌 Patronus | `img/icons/spells/patronum.png` |
+| 🌾 Récolte | `img/icons/spells/recolte_magique.png` |
+| 💧 PM restitués | `img/icons/mp.png` |
+| 🔎 Revelio | `img/icons/search.png` |
+| 🌨️ Glacius tempête | `img/icons/gel.png` |
+
+### Création (`tools/gen_combat_log_icons.py`, 48×48 RGBA, style status-icons)
+| Emoji | Nouveau PNG | Visuel |
+|-------|-------------|--------|
+| 💥 crit / amplifié | `crit.png` | éclat explosif orange-rouge, cœur blanc |
+| ✨ gain / transition | `sparkle.png` | étincelle 4 branches dorée |
+| 🔰 résistance | `resist.png` | bouclier bleu (déflexion) |
+| ⚡ Célérité | `celerity.png` | éclair cyan |
+| ❌ échec / dissipe | `fail.png` | disque rouge + croix |
+| 💨 esquive | `dodge.png` | bourrasque gris-cyan |
+| 🐍 lifesteal Serpentard | `serpent.png` | serpent vert en S |
+| 🌑 ténèbres / drain | `tenebres.png` | orbe sombre + croissant + halo violet |
+| 🦁 Élan Gryffondor | `lion.png` | face de lion dorée |
+
+### Étapes
+11. `tools/gen_combat_log_icons.py` → 9 PNG dans `img/icons/`.
+    → vérif : 9 fichiers RGBA 48×48 écrits.
+12. Restructurer `_COMBAT_LOG_ICON_MAP` (item-icons.js) en **chemins
+    complets** (pour pointer aussi vers `spells/`/`items/`) et ajouter les
+    17 nouvelles entrées (8 réutilisées + 9 créées).
+    → vérif (node) : chaque emoji-cible des sources est bien substitué ;
+    les décoratifs typographiques (`−→≈`) intacts.
+13. Bumps `?v=` item-icons.js + CACHE_VERSION ; précache SW des 9 PNG
+    (img/ est en stale-while-revalidate, donc pas obligatoire, mais on
+    documente). En pratique : pas d'ajout au PRECACHE (politique img/).
+14. `node tests/smoke.js` vert.
+
+### Laissé en emoji (aucun PNG, hors combat-log)
+`🔒` (bestiaire — section verrouillée, `_miLocked`), `⚠️` (déverrouillage
+Avada), `🪬` (Sceau du Voyageur, MP) : hors de la boîte/Journal de combat
+principal montré par l'utilisateur ; non ciblés ce lot.

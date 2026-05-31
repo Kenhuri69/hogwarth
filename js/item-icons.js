@@ -597,34 +597,52 @@ function getSpellIconHtml(spell, sizeClass) {
 
 // Substitution centrale emoji → PNG pour le texte du Journal / log de combat.
 // Évite d'éditer ~170 call-sites : appelée au rendu (setBattleLog, logCombat).
-// Table curée : uniquement les emoji ayant un PNG NATUREL déjà présent dans
-// img/icons/ (statuts + actions). Les décoratifs sans PNG (💥 crit, 🔰
-// résistance, ✨ transitions, 👁️ 🦁 🦌 ☀️…) restent en emoji — politique
-// inchangée (cf. emoji-png-gaps.md). Ordre longest-first pour les composés.
+// Table curée emoji → chemin PNG (statuts, actions, éléments, effets). Les
+// purs symboles typographiques (− → ≈ ✕ ✓ ►) restent en texte. Ordre
+// longest-first pour les composés (🩹✨, 🛡️↓, 🪄↓ avant leurs parties).
 const _COMBAT_LOG_ICON_MAP = [
-  ['🩹✨', 'regen_ferula_max'],
-  ['🛡️↓', 'weaken'],
-  ['🪄↓', 'disarm'],
-  ['🔥', 'burn'],
-  ['☠️', 'poison'],
-  ['🩸', 'bleed'],
-  ['❄️', 'gel'],
-  ['💫', 'stun'],
-  ['😱', 'fear'],
-  ['🌀', 'imperius'],
-  ['🩹', 'regen'],
-  ['🛡️', 'protego'],
-  ['⚔️', 'atk'],
-  ['💚', 'heal'],
-  ['💗', 'heal'],
-  ['🪙', 'gold']
+  ['🩹✨', 'img/icons/regen_ferula_max.png'],
+  ['🛡️↓', 'img/icons/weaken.png'],
+  ['🪄↓', 'img/icons/disarm.png'],
+  ['🔥', 'img/icons/burn.png'],
+  ['☠️', 'img/icons/poison.png'],
+  ['🩸', 'img/icons/bleed.png'],
+  ['❄️', 'img/icons/gel.png'],
+  ['🌨️', 'img/icons/gel.png'],
+  ['💫', 'img/icons/stun.png'],
+  ['😱', 'img/icons/fear.png'],
+  ['🌀', 'img/icons/imperius.png'],
+  ['🩹', 'img/icons/regen.png'],
+  ['🛡️', 'img/icons/protego.png'],
+  ['⚔️', 'img/icons/atk.png'],
+  ['💚', 'img/icons/heal.png'],
+  ['💗', 'img/icons/heal.png'],
+  ['🪙', 'img/icons/gold.png'],
+  ['💧', 'img/icons/mp.png'],
+  ['🔎', 'img/icons/search.png'],
+  // Réutilisation d'icônes de sorts / items existantes
+  ['👁️', 'img/icons/spells/legilimens.png'],
+  ['🧪', 'img/icons/items/potion_m.png'],
+  ['☀️', 'img/icons/spells/lumos_solem.png'],
+  ['🦌', 'img/icons/spells/patronum.png'],
+  ['🌾', 'img/icons/spells/recolte_magique.png'],
+  // Nouveaux PNG (tools/gen_combat_log_icons.py)
+  ['💥', 'img/icons/crit.png'],
+  ['✨', 'img/icons/sparkle.png'],
+  ['🔰', 'img/icons/resist.png'],
+  ['⚡', 'img/icons/celerity.png'],
+  ['❌', 'img/icons/fail.png'],
+  ['💨', 'img/icons/dodge.png'],
+  ['🐍', 'img/icons/serpent.png'],
+  ['🌑', 'img/icons/tenebres.png'],
+  ['🦁', 'img/icons/lion.png']
 ];
 function iconizeCombatLog(html) {
   if (typeof html !== 'string' || !html) return html;
   let out = html;
-  for (const [emoji, name] of _COMBAT_LOG_ICON_MAP) {
+  for (const [emoji, src] of _COMBAT_LOG_ICON_MAP) {
     if (out.indexOf(emoji) === -1) continue;
-    out = out.split(emoji).join(`<img class="ui-icon ui-icon-sm" src="img/icons/${name}.png" alt="">`);
+    out = out.split(emoji).join(`<img class="ui-icon ui-icon-sm" src="${src}" alt="">`);
   }
   return out;
 }
