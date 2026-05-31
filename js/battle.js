@@ -529,14 +529,16 @@ function rollGroupSize() {
   p2 -= trioShift; p3 += trioShift;
 
   // Quad/quint (4-5 ennemis) — gaté endgame + duo via currentMaxGroupSize().
-  // Transfert p3 → p4 → p5, montée en puissance via le farming (n).
+  // Transfert p3 → p4 (quad) puis p4 → p5 (quint = FRACTION de la bande quad,
+  // garantit quad ≥ quint — les groupes de 5 restent plus rares que ceux de
+  // 4). Montée en puissance via le farming (n). Calibré par sim (Temps 2).
   let p4 = 0, p5 = 0;
   if (currentMaxGroupSize() >= 4) {
-    const quadBonus  = Math.min(0.30, 0.06 * Math.max(0, n - 6));
+    const quadBonus  = Math.min(0.25, 0.05 * Math.max(0, n - 6));
     const quadShift  = Math.min(p3, quadBonus);
     p3 -= quadShift; p4 += quadShift;
-    const quintBonus = n >= 10 ? Math.min(0.20, 0.05 * (n - 9)) : 0;
-    const quintShift = Math.min(p4, quintBonus);
+    const quintFrac  = n >= 10 ? Math.min(0.40, 0.05 * (n - 9)) : 0;
+    const quintShift = p4 * quintFrac;
     p4 -= quintShift; p5 += quintShift;
   }
 
