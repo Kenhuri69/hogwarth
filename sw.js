@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v40';
+const CACHE_VERSION = 'hogwarth-v41';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -35,6 +35,7 @@ const PRECACHE_URLS = [
   './css/pwa.css?v=1',
   './css/combat-fx.css?v=1',
   './css/dungeon-fx.css?v=1',
+  './css/cinematics.css?v=1',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
@@ -66,6 +67,7 @@ const PRECACHE_URLS = [
   './js/renderer.js?v=12',
   './js/renderer-effects.js?v=11',
   './js/dungeon-fx.js?v=1',
+  './js/cinematics.js?v=1',
   './js/renderer-sprites.js?v=3',
   './js/renderer-entities.js?v=1',
   './js/renderer-minimap.js?v=7',
@@ -88,7 +90,7 @@ const PRECACHE_URLS = [
   './js/quests-riddles.js?v=1',
   './js/npc-dialog.js?v=10',
   './js/karaoke.js?v=1',
-  './js/intro.js?v=2',
+  './js/intro.js?v=3',
   './js/shop.js?v=10',
   './js/save-slots.js?v=1',
   './js/save.js?v=19',
@@ -100,11 +102,11 @@ const PRECACHE_URLS = [
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
   './js/main.js?v=9',
-  './js/endgame.js?v=1',
+  './js/endgame.js?v=2',
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=20',
+  './js/loader.js?v=21',
   './js/pwa.js?v=2',
 
   // Icônes PWA + premier écran

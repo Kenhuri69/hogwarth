@@ -17297,9 +17297,78 @@ async function scenarioDungeonFX() {
   await browser.close();
 }
 
+async function scenarioCinematics() {
+  console.log('\n── Scénario : Cinematics (intro + victoire) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // G1 — module présent + API + proxy défensif
+  const g1 = await page.evaluate(() => ({
+    hasModule:   typeof window.Cinematics === 'object' && !!window.Cinematics,
+    hasIntro:    typeof window.Cinematics?.introAmbiance === 'function',
+    hasVictory:  typeof window.Cinematics?.victoryFlourish === 'function',
+    hasStop:     typeof window.Cinematics?.stop === 'function',
+    hasProxy:    typeof window.CIN_safe?.victoryFlourish === 'function',
+  }));
+  console.log('  G1 module:', g1);
+  assert(g1.hasModule,  'G1 window.Cinematics absent');
+  assert(g1.hasIntro && g1.hasVictory && g1.hasStop, 'G1 API incomplète');
+  assert(g1.hasProxy,   'G1 CIN_safe proxy absent');
+
+  // G2 — intro : monte un canvas derrière la carte, démonté par stop.
+  const g2 = await page.evaluate(() => {
+    const reduced = window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const scr = document.getElementById('intro-screen');
+    scr.style.display = 'flex';                 // hôte visible pour la boucle
+    let threw = false, mounted = false, removed = false;
+    try {
+      window.Cinematics.introAmbiance(true);
+      mounted = !!scr.querySelector('canvas.cin-canvas');
+      window.CIN_safe.introAmbiance(false);
+      removed = !scr.querySelector('canvas.cin-canvas');
+    } catch (e) { threw = true; }
+    scr.style.display = 'none';
+    return { reduced: !!reduced, threw, mounted, removed };
+  });
+  console.log('  G2 intro:', g2);
+  assert(!g2.threw, 'G2 introAmbiance a throw');
+  if (!g2.reduced) assert(g2.mounted, 'G2 canvas intro non monté');
+  assert(g2.removed, 'G2 canvas intro non démonté après stop');
+
+  // G3 — victoire : showVictoryScreen monte le flourish, closeVictoryScreen
+  // l'arrête (call-sites réels d'endgame.js).
+  const g3 = await page.evaluate(() => {
+    const reduced = window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const modal = document.getElementById('victory-modal');
+    let threw = false, mounted = false, removed = false, hidden = false;
+    try {
+      window.showVictoryScreen();
+      mounted = !!modal.querySelector('canvas.cin-canvas');
+      window.closeVictoryScreen();
+      removed = !modal.querySelector('canvas.cin-canvas');
+      hidden  = getComputedStyle(modal).display === 'none';
+    } catch (e) { threw = true; }
+    return { reduced: !!reduced, threw, mounted, removed, hidden };
+  });
+  console.log('  G3 victory:', g3);
+  assert(!g3.threw, 'G3 victoryFlourish/stop a throw');
+  if (!g3.reduced) assert(g3.mounted, 'G3 canvas victoire non monté');
+  assert(g3.removed, 'G3 canvas victoire non démonté après stop');
+  assert(g3.hidden, 'G3 modale victoire non masquée après close');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario Cinematics');
+  }
+  console.log('  ✅ Cinematics (intro + victoire) OK');
+  await browser.close();
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioLargeEnemyGroup, scenarioDungeonFX];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))
