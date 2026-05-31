@@ -1,0 +1,162 @@
+/* ============================================================
+   COMBAT FX — Immersion visuelle du combat (Lot 1)
+   VFX de sorts élémentaires, screen shake, cinématique de boss.
+   Module visuel pur (js/combat-fx.js). Respecte prefers-reduced-motion.
+   ============================================================ */
+
+/* Couche de FX au-dessus de l'arène, sous les boutons d'action.
+   pointer-events:none → ne capte jamais les clics du joueur. */
+.combat-fx-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 35; /* au-dessus des cartes ennemies, sous float-dmg (40) */
+}
+
+/* ── Halo central du burst de sort ─────────────────────────── */
+.cfx-halo {
+  position: absolute;
+  width: 70px; height: 70px;
+  margin: -35px 0 0 -35px;
+  border-radius: 50%;
+  opacity: 0.9;
+  animation: cfxHalo .55s ease-out forwards;
+  mix-blend-mode: screen;
+}
+@keyframes cfxHalo {
+  0%   { transform: scale(0.2); opacity: 0.0; }
+  35%  { opacity: 0.95; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ── Glyphe élémentaire pulsé ──────────────────────────────── */
+.cfx-glyph {
+  position: absolute;
+  font-size: 30px;
+  margin: -22px 0 0 -16px;
+  text-shadow: 0 0 10px currentColor;
+  animation: cfxGlyph .6s ease-out forwards;
+}
+@keyframes cfxGlyph {
+  0%   { transform: scale(0.4) rotate(-12deg); opacity: 0; }
+  30%  { transform: scale(1.25) rotate(4deg); opacity: 1; }
+  100% { transform: scale(1.6) rotate(0deg); opacity: 0; }
+}
+
+/* ── Particules projetées ──────────────────────────────────── */
+.cfx-particle {
+  position: absolute;
+  width: 7px; height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+  animation: cfxParticle .65s ease-out forwards;
+}
+@keyframes cfxParticle {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--cfx-dx, 0), var(--cfx-dy, 0)) scale(0.2); opacity: 0; }
+}
+
+/* Teintes de halo par élément (le glow). Les particules portent leur
+   couleur en inline-style ; ici on colore halo + glow du glyphe. */
+.cfx-halo.cfx-feu       { background: radial-gradient(circle, rgba(255,138,42,.9) 0%, rgba(232,67,31,.2) 60%, transparent 70%); }
+.cfx-halo.cfx-glace     { background: radial-gradient(circle, rgba(159,220,255,.9) 0%, rgba(95,168,211,.2) 60%, transparent 70%); }
+.cfx-halo.cfx-foudre    { background: radial-gradient(circle, rgba(255,242,122,.95) 0%, rgba(154,208,255,.25) 55%, transparent 70%); }
+.cfx-halo.cfx-lumiere   { background: radial-gradient(circle, rgba(255,246,200,.95) 0%, rgba(255,226,122,.25) 55%, transparent 72%); }
+.cfx-halo.cfx-tenebres  { background: radial-gradient(circle, rgba(125,63,160,.9) 0%, rgba(58,20,82,.3) 60%, transparent 72%); }
+.cfx-halo.cfx-physique  { background: radial-gradient(circle, rgba(216,199,154,.85) 0%, rgba(154,128,80,.2) 60%, transparent 70%); }
+
+.cfx-glyph.cfx-feu      { color: #ffb054; }
+.cfx-glyph.cfx-glace    { color: #bfeaff; }
+.cfx-glyph.cfx-foudre   { color: #fff27a; }
+.cfx-glyph.cfx-lumiere  { color: #fff2c0; }
+.cfx-glyph.cfx-tenebres { color: #c47ad6; }
+.cfx-glyph.cfx-physique { color: #ecdcae; }
+
+/* ── Screen shake global de l'arène ────────────────────────── */
+.cfx-shake-light { animation: cfxShakeLight .4s ease-in-out; }
+.cfx-shake-heavy { animation: cfxShakeHeavy .45s ease-in-out; }
+@keyframes cfxShakeLight {
+  0%,100% { transform: translate(0,0); }
+  20% { transform: translate(-3px, 2px); }
+  40% { transform: translate(3px, -2px); }
+  60% { transform: translate(-2px, -2px); }
+  80% { transform: translate(2px, 2px); }
+}
+@keyframes cfxShakeHeavy {
+  0%,100% { transform: translate(0,0) rotate(0deg); }
+  15% { transform: translate(-7px, 4px) rotate(-.4deg); }
+  30% { transform: translate(6px, -5px) rotate(.4deg); }
+  45% { transform: translate(-6px, -4px) rotate(-.3deg); }
+  60% { transform: translate(7px, 4px) rotate(.3deg); }
+  80% { transform: translate(-4px, 2px) rotate(0deg); }
+}
+
+/* ── Cinématique d'apparition de boss ──────────────────────── */
+.cfx-boss-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 45; /* au-dessus de tout l'arène le temps de la séquence */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.cfx-boss-veil {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.35) 0%, rgba(0,0,0,.82) 75%);
+  animation: cfxVeilIn .5s ease-out;
+}
+.cfx-boss-card {
+  position: relative;
+  text-align: center;
+  padding: 8px 24px;
+  animation: cfxBossCard .7s cubic-bezier(.2,.9,.3,1.2);
+}
+.cfx-boss-sub {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(11px, 2.4vw, 15px);
+  letter-spacing: 4px;
+  color: var(--gold-light, #f0d080);
+  text-transform: uppercase;
+  opacity: .9;
+  margin-bottom: 6px;
+}
+.cfx-boss-name {
+  font-family: 'UnifrakturMaguntia', 'Cinzel', cursive;
+  font-size: clamp(30px, 8vw, 64px);
+  color: var(--gold, #c9a84c);
+  text-shadow: 0 0 24px rgba(201,168,76,.85), 0 0 50px rgba(201,168,76,.45), 0 2px 4px #000;
+  line-height: 1.05;
+}
+.cfx-boss-rule {
+  height: 2px;
+  width: 60%;
+  margin: 12px auto 0;
+  background: linear-gradient(90deg, transparent, var(--gold, #c9a84c), transparent);
+  animation: cfxRule .8s ease-out;
+}
+.cfx-boss-intro.cfx-fade-out { animation: cfxBossOut .45s ease forwards; }
+
+@keyframes cfxVeilIn   { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cfxBossOut  { from { opacity: 1; } to { opacity: 0; } }
+@keyframes cfxBossCard {
+  0%   { transform: scale(.7) translateY(14px); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+@keyframes cfxRule {
+  from { width: 0; opacity: 0; }
+  to   { width: 60%; opacity: 1; }
+}
+
+/* ── Accessibilité : réduit le mouvement ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .cfx-shake-light, .cfx-shake-heavy { animation: none; }
+  .cfx-particle { display: none; }
+  /* Le boss-intro reste (carte-titre informative) mais sans rebond. */
+  .cfx-boss-card { animation: cfxVeilIn .3s ease-out; }
+  .cfx-halo, .cfx-glyph { animation-duration: .4s; }
+}

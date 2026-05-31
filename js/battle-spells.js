@@ -999,6 +999,23 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
     console.warn('[spell] effet inconnu:', spell.effect);
   }
 
+  // Immersion (Lot 1) : VFX élémentaire sur la/les cible(s). Purement visuel
+  // (CFX_safe → no-op si le module FX manque). Gardé aux effets offensifs ;
+  // les AoE éclatent sur chaque ennemi vivant.
+  {
+    const _el = spell.element || 'physique';
+    const _aoe = new Set(['aoe_wave', 'aoe_field', 'aoe_chain', 'aoe_drain', 'aoe_cleave']);
+    const _single = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius']);
+    if (_aoe.has(spell.effect) && typeof livingEnemies === 'function') {
+      livingEnemies().forEach(e => CFX_safe.spellBurst(`enemy:${enemyGroup.indexOf(e)}`, _el));
+    } else if (_single.has(spell.effect)) {
+      const _ti = (targetIdx >= 0) ? targetIdx : enemyGroup.indexOf(enemy);
+      if (_ti >= 0) CFX_safe.spellBurst(`enemy:${_ti}`, _el);
+    }
+    // Crit de sort (suffixe 💥CRIT dans le message) → secousse légère.
+    if (typeof msg === 'string' && msg.indexOf('CRIT') >= 0) CFX_safe.shake('light');
+  }
+
   setBattleLog(msg);
   renderEnemyGroup();
   updateUI();

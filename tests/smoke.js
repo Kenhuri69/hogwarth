@@ -17098,6 +17098,69 @@ async function scenarioCombatFeedback() {
   console.log('  ✅ feedback de combat (SFX + timeline + journal mobile) OK');
 }
 
+// ── Scénario : Combat FX (VFX sorts + shake + boss intro) — Immersion Lot 1 ──
+// Vérifie que le module combat-fx.js est chargé et que ses méthodes ne
+// cassent pas le flux de combat (effets purement visuels, défensifs).
+async function scenarioCombatFX() {
+  console.log('\n── Scénario : Combat FX (VFX + shake + boss intro) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // F1 — module présent + API exposée + proxy défensif opérationnel
+  const f1 = await page.evaluate(() => ({
+    hasModule: typeof window.CombatFX === 'object' && !!window.CombatFX,
+    hasBurst:  typeof window.CombatFX?.spellBurst === 'function',
+    hasShake:  typeof window.CombatFX?.shake === 'function',
+    hasBoss:   typeof window.CombatFX?.bossIntro === 'function',
+    hasProxy:  typeof window.CFX_safe?.spellBurst === 'function',
+  }));
+  console.log('  F1 module:', f1);
+  assert(f1.hasModule, 'F1 window.CombatFX absent');
+  assert(f1.hasBurst && f1.hasShake && f1.hasBoss, 'F1 API incomplète');
+  assert(f1.hasProxy, 'F1 CFX_safe proxy absent');
+
+  await startDummyFight(page, { hp: 50 });
+
+  // F2 — appels en combat : ne throwent pas, créent la couche de FX
+  const f2 = await page.evaluate(() => {
+    let threw = false;
+    try {
+      window.CombatFX.spellBurst('enemy:0', 'feu');
+      window.CombatFX.shake('light');
+      window.CFX_safe.spellBurst('enemy:0', 'glace'); // via proxy
+    } catch (e) { threw = true; }
+    return { threw, layer: !!document.getElementById('combat-fx-layer') };
+  });
+  console.log('  F2 combat:', f2);
+  assert(!f2.threw, 'F2 spellBurst/shake throw en combat');
+  assert(f2.layer, 'F2 couche combat-fx-layer non créée');
+
+  // F3 — boss intro : carte-titre pour un ennemi epic, no-op sinon
+  const f3 = await page.evaluate(() => {
+    let threw = false;
+    try {
+      window.CombatFX.bossIntro({ name: 'Voldemort', title: 'Le Seigneur des Ténèbres', epic: true });
+    } catch (e) { threw = true; }
+    const epicCard = !!document.getElementById('cfx-boss-intro');
+    const old = document.getElementById('cfx-boss-intro');
+    if (old) old.remove();
+    window.CombatFX.bossIntro({ name: 'Rat', epic: false });
+    const normalCard = !!document.getElementById('cfx-boss-intro');
+    return { threw, epicCard, normalCard };
+  });
+  console.log('  F3 boss  :', f3);
+  assert(!f3.threw, 'F3 bossIntro throw');
+  assert(f3.epicCard, 'F3 carte-titre boss epic non créée');
+  assert(!f3.normalCard, 'F3 carte-titre créée à tort pour un non-boss');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario Combat FX');
+  }
+  console.log('  ✅ Combat FX (VFX + shake + boss intro) OK');
+  await browser.close();
+}
+
 // ── Scénario : gros groupes ennemis (4-5, endgame + duo) ─────
 // Vérifie le tirage gaté de rollGroupSize (jamais >3 hors endgame/duo ;
 // parfois 4-5 en duo post-victoire 11+ avec farming) + le rendu/cible/
@@ -17168,7 +17231,7 @@ async function scenarioLargeEnemyGroup() {
 
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioLargeEnemyGroup];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioLargeEnemyGroup];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))
