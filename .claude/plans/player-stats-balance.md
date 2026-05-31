@@ -123,11 +123,39 @@ sur-récompensée**. Deux leviers de réglage avant implémentation :
    `--dot-res-div=12` (résistance DoT plus douce).
 2. Garder INT→MAG en 4:1 (le casteur n'est pas sur-servi).
 
-Les knobs `--pen-cap` / `--pen-half` / `--dot-res-div` (+ futur `--end-def-div`)
-permettent de re-simuler chaque réglage avant de figer les valeurs.
+Les knobs `--pen-cap` / `--pen-half` / `--dot-res-div` / `--int-mag-div` /
+`--end-def-div` permettent de re-simuler chaque réglage avant de figer les valeurs.
 
 > Repro :
 > `for b in balanced offensive tank; do node tools/sim-difficulty.js --fair-baseline --stat-points=3 --build=$b 600; node tools/sim-difficulty.js --stat-rework --stat-points=3 --build=$b 600; done`
+
+### Réglage adouci — END→DEF 6:1 + résistance DoT div12 (n=600)
+
+Pour calmer la sur-récompense d'END, conversion **END→DEF passée à 6:1** et
+**résistance DoT adoucie** (`dotResDiv=12`). INT→MAG et pénétration STR
+inchangés. Δ rework−baseline :
+
+| Étage | balanced Solo | balanced Duo | offensive Solo | offensive Duo | tank Solo | tank Duo |
+|------:|:--:|:--:|:--:|:--:|:--:|:--:|
+| 8  | +7  | +5 | +6 | +6 | +9  | +6 |
+| 9  | +10 | +12| +5 | +8 | +13 | +9 |
+| 10 | +9  | +12| +8 | +9 | +11 | +13 |
+| 11 | +10 | +13| +10| +9 | +11 | +14 |
+| 12 | +9  | +11| +6 | +11| +13 | +9  |
+
+**Effet du réglage.** Le build tank en solo endgame retombe de **+13..+20 → +9..+13**,
+et les trois builds **convergent** désormais (~+9 à +13 partout). L'écart tank vs
+balanced en solo n'est plus que de ~2-4 pts (contre ~8 pts avant). L'objectif
+« adoucir le mur endgame sans build dominant » est atteint :
+
+- ✅ early game intact (ét. 1-4 à 100 %), gain croissant et homogène en endgame ;
+- ✅ END reste défensivement utile (PV + DEF 6:1 + résistance DoT douce) sans
+  écraser les autres allocations ;
+- ✅ STR/INT conservent leur apport (pénétration, MAG) à 4:1 / courbe inchangés.
+
+**Valeurs retenues pour l'implémentation (sous réserve validation PO) :**
+INT→MAG **4:1**, END→DEF **6:1**, résistance DoT `floor(END/12)`, pénétration
+STR courbe de Hill (cap 50 %, H 20).
 
 ## 5. Journal
 

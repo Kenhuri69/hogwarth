@@ -403,6 +403,7 @@ function parseArgs(argv) {
                 difficulty: 'Normal',
                 statRework: false, fairBaseline: false,
                 penCap: 0.50, penHalf: 20, dotResDiv: 8,
+                intMagDiv: 4, endDefDiv: 4,
                 elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -434,6 +435,8 @@ function parseArgs(argv) {
     else if (k === 'pen-cap')      out.penCap  = parseFloat(v);
     else if (k === 'pen-half')     out.penHalf = parseFloat(v) || 20;
     else if (k === 'dot-res-div')  out.dotResDiv = parseFloat(v) || 8;
+    else if (k === 'int-mag-div')  out.intMagDiv = parseFloat(v) || 4;
+    else if (k === 'end-def-div')  out.endDefDiv = parseFloat(v) || 4;
     else if (k === 'forge')        out.forge   = Math.max(0, Math.min(5, parseInt(v, 10) || 0));
     else if (k === 'library')      out.library = Math.max(0, Math.min(3, parseInt(v, 10) || 0));
     else if (k === 'house-set')    out.houseSet = String(v || '').toLowerCase();
@@ -502,6 +505,8 @@ Options:
   --pen-cap=F             Rework : plafond de pénétration STR (def 0.50)
   --pen-half=F            Rework : STR de demi-saturation de la courbe (def 20)
   --dot-res-div=F         Rework : diviseur de résistance DoT END (def 8)
+  --int-mag-div=F         Rework : diviseur conversion INT→MAG (def 4)
+  --end-def-div=F         Rework : diviseur conversion END→DEF (def 4)
   --endgame               Boucle Ténébreuse : étages 11..maxFloor, récursion ENDGAME_SCALING
   --max-floor=N           Étage max en mode --endgame (def 40)
   --forge=N               Niveau de Forge (0-5) sur le bonus principal de chaque item
@@ -780,13 +785,14 @@ function createHero(key, level, cfg, floor, partySize) {
   }
   // Bonus de set (Maison 4/4 + Ténèbres 3/3) — après l'équipement.
   applySetBonuses(c, cfg, key, partySize);
-  // Rework D1/D2 — conversions stat secondaire → primaire, 4:1. Appliquées
+  // Rework D1/D2 — conversions stat secondaire → primaire. INT→MAG et
+  // END→DEF, diviseurs réglables (--int-mag-div / --end-def-div). Appliquées
   // APRÈS base + équipement + sets (miroir de la place dans recalculateStats),
   // sur les stats effectives finales c.int / c.end. Le crit physique calculé
   // ci-dessous reste piloté par LCK ; la DEF gagnée n'affecte que la mitigation.
   if (cfg.statRework) {
-    c.mag += Math.floor((c.int || 0) / 4);
-    c.def += Math.floor((c.end || 0) / 4);
+    c.mag += Math.floor((c.int || 0) / (cfg.intMagDiv || 4));
+    c.def += Math.floor((c.end || 0) / (cfg.endDefDiv || 4));
     c._dotResDiv = cfg.dotResDiv || 8;   // D3 — résistance aux DoT (lu en combat)
     c._strPen    = strPenFrac(c.str, cfg); // D4 — pénétration de DEF (lue en combat)
   }
