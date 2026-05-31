@@ -379,6 +379,23 @@ function recalculateStats() {
       c.fortune   = _fortuneCurve(c._fortuneX);
     }
 
+    // D5 — Célérité (volet AGI) : stat dérivée = TAUX continu d'actions
+    // supplémentaires par round (gain de tour fluide, accumulé en combat par
+    // battle.js). Courbe de Hill saturante sur x = AGI + Σ item.bonusCelerite,
+    // qui continue de croître au-delà du plafond d'esquive/crit-sort (AGI 75).
+    // Cf. .claude/plans/agi-derived.md §2.2. La jauge (celeriteGauge) est
+    // combat-scoped (reset startBattle), pas ici.
+    {
+      let celeriteBonus = 0;
+      if (c.equipped) {
+        for (const item of Object.values(c.equipped)) {
+          if (item && item.bonusCelerite) celeriteBonus += item.bonusCelerite;
+        }
+      }
+      c._celeriteX = Math.max(0, (c.agi || 0) + celeriteBonus);
+      c.celerite   = _celeriteCurve(c._celeriteX);
+    }
+
     // Deux canaux de crit. Crit physique : base LCK (plafonne à 40 %).
     // Crit de sort : base AGI (plafonne à 35 %) — rôle offensif de l'AGI.
     // Les bonus équipement/set s'ajoutent PAR-DESSUS (plafond absolu 100 %).
@@ -427,6 +444,19 @@ function _fortuneCurve(x) {
   const h = (typeof FORTUNE_HALF === 'number') ? FORTUNE_HALF : 30;
   const xx = Math.max(0, x || 0);
   return a * (xx * xx) / (xx * xx + h * h);
+}
+
+// ── Célérité (D5, volet AGI) ─────────────────────────────────
+// Courbe de Hill saturante : celerite = MAX × x² / (x² + HALF²). Pure (aucune
+// mutation). x = AGI + Σ bonusCelerite. Renvoie le TAUX d'actions sup. par
+// round (fraction [0, MAX)). Le gain de tour est lissé par un accumulateur de
+// tempo en combat (battle.js — celeriteGauge), jamais par palier. Cf.
+// .claude/plans/agi-derived.md §2.2.
+function _celeriteCurve(x) {
+  const m = (typeof CELERITE_MAX === 'number') ? CELERITE_MAX : 0.30;
+  const h = (typeof CELERITE_HALF === 'number') ? CELERITE_HALF : 45;
+  const xx = Math.max(0, x || 0);
+  return m * (xx * xx) / (xx * xx + h * h);
 }
 
 // Fortune effective du groupe — le membre le plus chanceux fait bénéficier

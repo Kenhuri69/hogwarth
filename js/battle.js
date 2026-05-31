@@ -401,6 +401,8 @@ function startBattle(baseEnemyData, opts) {
   guardTurns        = [0, 0];
   guardRegenCooldown = [0, 0];
   elanStacks        = [0, 0];
+  celeriteGauge     = [0, 0];   // D5 Célérité — accumulateur de tempo (combat-scoped)
+  celeriteExtra     = [0, 0];
   battleTurn        = 0;
   currentBattleChar = 0;
   pendingAction     = null;
@@ -450,6 +452,9 @@ function startBattle(baseEnemyData, opts) {
   UX_safe.logCombat(`⚔️ Combat engagé contre ${size} ennemi${size>1?'s':''}.`, 'info');
   UX_safe.renderTimeline();
   AudioSystem.startCombatMusic(enemyGroup);
+  // D5 Célérité — ouvre le segment du 1ᵉʳ héros (round 1). Aucune action sup. au
+  // round 1 (gauge part de 0, +celerite < 1), mais maintient la parité avec la sim.
+  _beginHeroSegment(currentBattleChar);
 
   // Tuto contextuel du premier combat (LOT D2) — une fois par partie, hors
   // combat astral. Différé pour laisser l'overlay se peindre (mesure DOM).
@@ -717,9 +722,36 @@ function throwItemAtEnemy(invIdx, enemyIdx) {
 }
 
 // ── Passage au personnage suivant / tour des ennemis ─────────
+// D5 Célérité (volet AGI) — ouverture du segment d'un héros dans un round.
+// Accumule le tempo (gauge += c.celerite) ; chaque franchissement de 1.0 met une
+// action supplémentaire en réserve (`celeriteExtra[idx]`), consommée par
+// advanceBattleChar (re-prompt du même héros). Le TAUX — pas un seuil — pilote
+// la fréquence : gain de tour fluide. Appelé UNE fois par round par héros qui
+// agit (pas si étourdi/apeuré → parité avec la sim). Cf. agi-derived.md §2.3.
+function _beginHeroSegment(idx) {
+  const c = party[idx];
+  celeriteExtra[idx] = 0;
+  if (!c || !(c.celerite > 0)) return;
+  celeriteGauge[idx] += c.celerite;
+  while (celeriteGauge[idx] >= 1) { celeriteGauge[idx] -= 1; celeriteExtra[idx]++; }
+}
+
 function advanceBattleChar() {
   updateUI();
   UX_safe.renderTimeline();
+  // Célérité : tant que le héros actif a des actions sup. en réserve, il rejoue
+  // (re-prompt) au lieu d'avancer. Garde-fous : vivant + ennemis encore en vie.
+  if (celeriteExtra[currentBattleChar] > 0 &&
+      party[currentBattleChar] && party[currentBattleChar].hp > 0 &&
+      livingEnemies().length) {
+    celeriteExtra[currentBattleChar]--;
+    pendingAction = null; pendingSpell = null;
+    document.getElementById('target-selection').style.display = 'none';
+    updateBattleCharIndicator();
+    setBattleLog(`⚡ Célérité ! ${party[currentBattleChar].name} agit de nouveau...`);
+    UX_safe.logCombat(`⚡ Célérité — ${party[currentBattleChar].name} gagne une action !`, 'good');
+    return;
+  }
   const next = currentBattleChar === 0 ? 1 : -1;
 
   // Mode solo ou Hermione KO → directement tour des ennemis
@@ -740,6 +772,7 @@ function advanceBattleChar() {
       UX_safe.logCombat(`😱 ${party[currentBattleChar].name} est paralysé par la peur`, 'bad');
       setTimeout(enemyTurn, 900);
     } else {
+      _beginHeroSegment(currentBattleChar);   // D5 Célérité — ouvre le segment du 2ᵉ héros
       setBattleLog(`À ${party[currentBattleChar].name} d'agir...`);
     }
   }
@@ -912,6 +945,7 @@ function enemyTurn() {
     UX_safe.logCombat(`😱 ${opener.name} est paralysé par la peur`, 'bad');
     setTimeout(advanceBattleChar, 900);
   } else {
+    _beginHeroSegment(currentBattleChar);   // D5 Célérité — ouvre le segment du héros qui démarre le round
     setBattleLog((log || '...') + `\nÀ ${party[currentBattleChar].name} d'agir...`);
   }
 }
