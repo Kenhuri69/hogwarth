@@ -33,6 +33,7 @@ const PRECACHE_URLS = [
   './css/ornaments.css?v=1',
   './css/help-tour.css?v=2',
   './css/pwa.css?v=1',
+  './css/combat-fx.css?v=1',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
