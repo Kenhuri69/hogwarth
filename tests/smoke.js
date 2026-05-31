@@ -17229,9 +17229,77 @@ async function scenarioLargeEnemyGroup() {
   await browser.close();
 }
 
+// ── Scénario : Dungeon FX (torches animées + brume + shake) — Immersion Lot 2 ──
+// Vérifie que le module dungeon-fx.js est chargé et que ses surfaces ne
+// cassent ni l'exploration ni le rendu (effets purement visuels, défensifs).
+async function scenarioDungeonFX() {
+  console.log('\n── Scénario : Dungeon FX (torches + brume + shake) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // G1 — module présent + API + proxy défensif + phase d'animation globale
+  const g1 = await page.evaluate(() => ({
+    hasModule:  typeof window.DungeonFX === 'object' && !!window.DungeonFX,
+    hasLoop:    typeof window.startDungeonFxLoop === 'function',
+    hasShake:   typeof window.DungeonFX?.shakeView === 'function',
+    hasProxy:   typeof window.DFX_safe?.shakeView === 'function',
+    hasMist:    typeof drawDepthsMist === 'function',
+    phaseDefined: typeof _dungeonFxPhase !== 'undefined',
+  }));
+  console.log('  G1 module:', g1);
+  assert(g1.hasModule,  'G1 window.DungeonFX absent');
+  assert(g1.hasLoop,    'G1 startDungeonFxLoop absent');
+  assert(g1.hasShake && g1.hasProxy, 'G1 shakeView / proxy absent');
+  assert(g1.hasMist,    'G1 drawDepthsMist absent');
+  assert(g1.phaseDefined, 'G1 _dungeonFxPhase non déclaré');
+
+  // G2 — shakeView ne throw pas et applique la classe sur le canvas.
+  const g2 = await page.evaluate(() => {
+    let threw = false;
+    try { window.DungeonFX.shakeView('heavy'); window.DFX_safe.shakeView('light'); }
+    catch (e) { threw = true; }
+    const cv = document.getElementById('dungeon-canvas');
+    const hasClass = cv && (cv.classList.contains('dfx-shake-light')
+                          || cv.classList.contains('dfx-shake-heavy'));
+    return { threw, hasClass: !!hasClass };
+  });
+  console.log('  G2 shake:', g2);
+  assert(!g2.threw, 'G2 shakeView a throw');
+  // hasClass peut être false sous reduced-motion (no-op) : on ne l'assert pas
+  // durement, mais on garantit l'absence d'exception.
+
+  // G3 — torche animée : drawTorch lit la phase et drawDungeon reste sûr
+  // quelle que soit la valeur de _dungeonFxPhase (statique 0 ou animée).
+  const g3 = await page.evaluate(() => {
+    let threw = false;
+    try {
+      _dungeonFxPhase = 0;             // rendu statique
+      drawDungeon();
+      _dungeonFxPhase = 3.14159;       // rendu animé (flicker + braises)
+      drawDungeon();
+      // Brume : force un étage « depths » (7+) puis redessine.
+      const prevFloor = currentFloor;
+      currentFloor = 8;
+      drawDungeon();
+      currentFloor = prevFloor;
+      drawDungeon();
+    } catch (e) { threw = true; }
+    return { threw };
+  });
+  console.log('  G3 render:', g3);
+  assert(!g3.threw, 'G3 drawDungeon/drawTorch/mist a throw');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario Dungeon FX');
+  }
+  console.log('  ✅ Dungeon FX (torches + brume + shake) OK');
+  await browser.close();
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioLargeEnemyGroup];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioLargeEnemyGroup, scenarioDungeonFX];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))

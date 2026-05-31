@@ -519,6 +519,7 @@ function handleCellEntry(cell) {
     } else if (Math.random() < 0.15) {
       if (Math.random() < 0.08) {
         setNarrative(NARRATIVES.trap);
+        if (typeof DFX_safe !== 'undefined') DFX_safe.shakeView('light');
         const alive  = party.filter(c => c.hp > 0);
         const target = alive[Math.floor(Math.random() * alive.length)];
         const dmg    = Math.ceil(Math.random() * 5 + 2);

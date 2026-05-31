@@ -396,6 +396,8 @@ function _triggerDungeonTrap() {
   // (déclenchement plein) de F, borné à [0.1, 0.9]. Cf. luck-fortune.md §2.4.
   const F          = (typeof partyFortune === 'function') ? partyFortune() : 0;
   const ambushRisk = Math.max(0.1, Math.min(0.9, 0.5 - F));
+  // Immersion Lot 2 : secousse de la vue au déclenchement (no-op si DFX absent).
+  if (typeof DFX_safe !== 'undefined') DFX_safe.shakeView('heavy');
   if (Math.random() < ambushRisk) {
     setNarrative("Le sol se dérobe en un déclic sec — une créature jaillit de la fosse !");
     addMsg("Piège ! Une embuscade vous tombe dessus.", 'bad');

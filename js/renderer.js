@@ -546,6 +546,10 @@ function drawCorridor(cx, cy, scale, W, H) {
   // 5. Halo de lumière de torche (ambiance chaude)
   addTorchGlow(cx, cy, scale);
 
+  // 5bis. Brume de profondeur (Immersion Lot 2) — tranche « depths » (7+).
+  // No-op silencieux hors depths ou si dungeon-fx.js n'a pas chargé.
+  if (typeof drawDepthsMist === 'function') drawDepthsMist(cx, cy, scale);
+
   // 6. Arêtes du couloir au premier plan (cadrage)
   drawForegroundFrame(cx, cy, scale);
 }

@@ -405,6 +405,7 @@ function _applyState(gs) {
   renderMinimap();
   drawDungeon();
   if (typeof startNpcAnimLoop === 'function') startNpcAnimLoop();
+  if (typeof startDungeonFxLoop === 'function') startDungeonFxLoop();
   updateLocationDisplay();
 }
 

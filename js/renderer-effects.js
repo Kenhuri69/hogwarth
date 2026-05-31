@@ -103,34 +103,64 @@ function drawSideLines(nx, ny0, ny1, fx, fy0, fy1, alpha) {
 }
 
 // ── Torche ──────────────────────────────────────────────────────
+// Immersion Lot 2 : vacillement + braises pilotés par `_dungeonFxPhase`
+// (dungeon-fx.js, ~11 FPS). Phase absente/0 → rendu statique identique à
+// l'historique (aucune dépendance dure au module FX). `x` sert de graine
+// de déphasage pour que les deux torches d'un mur ne vacillent pas à
+// l'unisson.
 function drawTorch(x, y, size, alpha) {
   const sz = Math.max(3, size);
+  const phase = (typeof _dungeonFxPhase !== 'undefined') ? _dungeonFxPhase : 0;
+  // Vacillement : combinaison de deux sinus déphasés par la position x.
+  const seed   = x * 0.013;
+  const flick  = phase
+    ? 0.85 + 0.15 * (Math.sin(phase * 7.3 + seed) * 0.6 + Math.sin(phase * 11.7 + seed * 2) * 0.4)
+    : 1;
+  const sway   = phase ? Math.sin(phase * 4.1 + seed) * sz * 0.06 : 0;
 
-  // Support mural (rectangle brun)
+  // Support mural (rectangle brun) — fixe.
   ctx.fillStyle = `rgba(80,50,20,${alpha})`;
   ctx.fillRect(x - sz * 0.15, y - sz * 0.1, sz * 0.3, sz * 0.5);
 
-  // Halo de lumière
-  const glow = ctx.createRadialGradient(x, y, 0, x, y, sz * 2);
-  glow.addColorStop(0,   `rgba(255,160,40,${alpha * 0.35})`);
-  glow.addColorStop(0.5, `rgba(220,100,20,${alpha * 0.12})`);
+  // Halo de lumière (rayon et intensité modulés par le vacillement).
+  const glowR = sz * 2 * (0.92 + flick * 0.12);
+  const glow = ctx.createRadialGradient(x, y, 0, x, y, glowR);
+  glow.addColorStop(0,   `rgba(255,160,40,${alpha * 0.35 * flick})`);
+  glow.addColorStop(0.5, `rgba(220,100,20,${alpha * 0.12 * flick})`);
   glow.addColorStop(1,   'rgba(0,0,0,0)');
   ctx.fillStyle = glow;
   ctx.beginPath();
-  ctx.arc(x, y, sz * 2, 0, Math.PI * 2);
+  ctx.arc(x, y, glowR, 0, Math.PI * 2);
   ctx.fill();
 
-  // Flamme (jaune-orange)
-  ctx.fillStyle = `rgba(255,200,60,${alpha * 0.9})`;
+  // Flamme (jaune-orange) — hauteur et inclinaison animées.
+  ctx.fillStyle = `rgba(255,200,60,${alpha * 0.9 * (0.9 + flick * 0.1)})`;
   ctx.beginPath();
-  ctx.ellipse(x, y - sz * 0.35, sz * 0.22, sz * 0.4, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + sway, y - sz * 0.35, sz * 0.22, sz * 0.4 * flick, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Coeur de flamme (blanc chaud)
+  // Coeur de flamme (blanc chaud).
   ctx.fillStyle = `rgba(255,240,180,${alpha * 0.8})`;
   ctx.beginPath();
-  ctx.ellipse(x, y - sz * 0.3, sz * 0.1, sz * 0.18, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + sway * 0.6, y - sz * 0.3, sz * 0.1, sz * 0.18 * flick, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  // Braises montantes — 2 particules qui s'élèvent et s'éteignent, sur un
+  // cycle d'1 s déphasé par la torche. Uniquement quand la phase tourne et
+  // que la torche est assez grande (proche du joueur) pour être lisible.
+  if (phase && sz >= 6) {
+    for (let i = 0; i < 2; i++) {
+      const t  = (phase * 0.9 + i * 0.5 + seed) % 1;   // 0→1
+      const ex = x + Math.sin(phase * 5 + i * 3 + seed) * sz * 0.18;
+      const ey = y - sz * 0.4 - t * sz * 1.3;
+      const ea = alpha * 0.6 * (1 - t);                // fade en montant
+      const er = sz * 0.06 * (1 - t * 0.5);
+      ctx.fillStyle = `rgba(255,${160 + Math.floor(60 * (1 - t))},60,${ea})`;
+      ctx.beginPath();
+      ctx.arc(ex, ey, Math.max(0.4, er), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 }
 
 // ── Halo d'ambiance torche ──────────────────────────────────────
