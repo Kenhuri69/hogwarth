@@ -23,10 +23,34 @@ function startNpcAnimLoop() {
     const hasNpc   = typeof npcPlacements !== 'undefined' && npcPlacements.size > 0;
     const hasGhost = typeof ghostPlacements !== 'undefined' && ghostPlacements.size > 0;
     const hasMsg   = typeof messagePlacements !== 'undefined' && messagePlacements.size > 0;
-    if (!hasNpc && !hasGhost && !hasMsg) return;
+    const hasEnemy = _enemyAheadVisible(); // E1 : idle des sprites ennemis en couloir
+    if (!hasNpc && !hasGhost && !hasMsg && !hasEnemy) return;
     _npcAnimPhase = performance.now() / 1000;
     if (typeof drawDungeon === 'function') drawDungeon();
   }, 200);
+}
+
+// E1 — vrai si un ennemi se trouve dans l'axe de regard du joueur (hors
+// combat ; en combat la vue 3D est masquée par l'overlay). Sert à animer
+// l'idle du sprite de couloir via la phase partagée _npcAnimPhase. Lecture
+// pure des globals, gardée par typeof ; ne tient pas compte des murs (un
+// faux positif ne fait que redessiner, le sprite reste caché par le mur).
+function _enemyAheadVisible() {
+  if (typeof inBattle !== 'undefined' && inBattle) return false;
+  if (typeof enemyMap === 'undefined' || !Array.isArray(enemyMap)) return false;
+  if (typeof playerX !== 'number' || typeof playerY !== 'number') return false;
+  if (typeof DIRECTIONS === 'undefined' || typeof playerDir === 'undefined') return false;
+  const dir = DIRECTIONS[playerDir];
+  if (!dir) return false;
+  const [fdx, fdy] = dir;
+  const maxW = (typeof MAP_W === 'number') ? MAP_W : 0;
+  const maxH = (typeof MAP_H === 'number') ? MAP_H : 0;
+  for (let d = 1; d <= 5; d++) {
+    const ex = playerX + fdx * d, ey = playerY + fdy * d;
+    if (ex < 0 || ey < 0 || ex >= maxW || ey >= maxH) break;
+    if (enemyMap[ey] && enemyMap[ey][ex]) return true;
+  }
+  return false;
 }
 
 // ── Lignes de fuite sur le sol ──────────────────────────────────

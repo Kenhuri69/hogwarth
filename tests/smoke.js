@@ -2084,6 +2084,87 @@ async function scenarioMonsterImages() {
   await browser.close();
 }
 
+// ── Scénario : idle des sprites ennemis (E1) ──────────────────────────
+// drawEnemySprite anime un léger bobbing + respiration via _npcAnimPhase.
+// Vérifie : helpers présents, _enemyAheadVisible (devant=true / vide=false /
+// combat=false), drawEnemySprite ne throw pas (PNG-ready + emoji), et
+// reduced-motion (amplitude 0, pas de throw). Purement visuel.
+async function scenarioEnemyIdle() {
+  console.log('\n── Scénario : idle des sprites ennemis (E1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // E1a — helpers exposés
+  const a = await page.evaluate(() => ({
+    hasDraw:   typeof drawEnemySprite === 'function',
+    hasAhead:  typeof _enemyAheadVisible === 'function',
+    hasReduce: typeof _spriteReducedMotion === 'function',
+    hasLoop:   typeof startNpcAnimLoop === 'function',
+  }));
+  console.log('  E1a helpers:', a);
+  assert(a.hasDraw && a.hasAhead && a.hasReduce && a.hasLoop, 'E1a helpers absents');
+
+  // E1b — _enemyAheadVisible : ennemi dans l'axe de regard → true ; carte
+  // vide → false ; en combat → false (vue 3D masquée).
+  const b = await page.evaluate(() => {
+    for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) enemyMap[y][x] = null;
+    inBattle = false;
+    const none = _enemyAheadVisible();
+    const [dx, dy] = DIRECTIONS[playerDir];
+    const ex = playerX + dx, ey = playerY + dy;
+    let placed = false, ahead = null, inCombat = null;
+    if (ex >= 0 && ey >= 0 && ex < MAP_W && ey < MAP_H) {
+      enemyMap[ey][ex] = { id: 'peeve', icon: '👻', hp: 10, currentHp: 10 };
+      placed = true;
+      ahead = _enemyAheadVisible();
+      inBattle = true; inCombat = _enemyAheadVisible(); inBattle = false;
+      enemyMap[ey][ex] = null;
+    }
+    return { none, placed, ahead, inCombat };
+  });
+  console.log('  E1b ahead:', b);
+  assert(b.none === false, 'E1b carte vide → false');
+  if (b.placed) {
+    assert(b.ahead === true,    'E1b ennemi devant → true');
+    assert(b.inCombat === false, 'E1b en combat → false');
+  }
+
+  // E1c — drawEnemySprite ne throw pas (fallback emoji ; deux phases) ;
+  // phase 0 par défaut ⇒ amplitude nulle (régression rendu historique).
+  const c = await page.evaluate(() => {
+    const enemy = { id: 'peeve', icon: '👻', hp: 20, currentHp: 12, imgSrc: null };
+    let threw = false;
+    try {
+      _npcAnimPhase = 0;   drawEnemySprite(enemy, 200, 300, 60);
+      _npcAnimPhase = 1.0; drawEnemySprite(enemy, 200, 300, 60);
+      _npcAnimPhase = 2.7; drawEnemySprite(enemy, 200, 300, 60);
+    } catch (e) { threw = true; }
+    return { threw };
+  });
+  console.log('  E1c draw:', c);
+  assert(!c.threw, 'E1c drawEnemySprite throw');
+
+  // E1d — reduced-motion : amplitude 0, pas de throw.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const d = await page.evaluate(() => {
+    const enemy = { id: 'peeve', icon: '👻', hp: 20, currentHp: 12, imgSrc: null };
+    let threw = false;
+    try { _npcAnimPhase = 3.5; drawEnemySprite(enemy, 200, 300, 60); } catch (e) { threw = true; }
+    return { reduced: _spriteReducedMotion(), threw };
+  });
+  console.log('  E1d reduced:', d);
+  assert(d.reduced === true, 'E1d emulateMedia reduce non pris en compte');
+  assert(!d.threw, 'E1d drawEnemySprite throw sous reduced-motion');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario idle ennemis');
+  }
+  console.log('  ✅ idle des sprites ennemis (E1) OK');
+  await browser.close();
+}
+
 // ── Scénario 7 : sélection de texture par étage (paliers 9+/15+) ─
 
 async function scenarioFloorTextures() {
@@ -17894,7 +17975,7 @@ async function scenarioDangerVignette() {
 
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioEnemyIdle];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))
