@@ -14,6 +14,24 @@
   z-index: 35; /* au-dessus des cartes ennemies, sous float-dmg (40) */
 }
 
+/* ── Vignette de danger bas-PV (D2) ────────────────────────────
+   Pulsation rouge en bord d'écran quand un héros vivant passe sous
+   25 % de PV. Pseudo-élément plein écran, pointer-events:none → ne
+   capte jamais les clics et reste au-dessus du jeu, sous les modales. */
+body.cfx-danger::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  box-shadow: inset 0 0 90px 18px rgba(170, 12, 12, 0.55);
+  animation: cfxDangerPulse 1.1s ease-in-out infinite;
+}
+@keyframes cfxDangerPulse {
+  0%, 100% { box-shadow: inset 0 0 70px 12px rgba(170, 12, 12, 0.35); }
+  50%      { box-shadow: inset 0 0 110px 26px rgba(200, 18, 18, 0.70); }
+}
+
 /* ── Halo central du burst de sort ─────────────────────────── */
 .cfx-halo {
   position: absolute;
@@ -261,6 +279,8 @@
 
 /* ── Accessibilité : réduit le mouvement ───────────────────── */
 @media (prefers-reduced-motion: reduce) {
+  /* Vignette de danger : halo statique, sans pulsation. */
+  body.cfx-danger::after { animation: none; }
   .cfx-shake-light, .cfx-shake-heavy { animation: none; }
   .cfx-particle, .cfx-heal-particle { display: none; }
   .cfx-heal-halo, .cfx-heal-glyph,

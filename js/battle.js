@@ -687,6 +687,7 @@ function executeAttack(targetIdx) {
   setBattleLog(`⚔️ ${char.name} frappe ${enemy.name} pour ${finalDmg} dégâts${isCrit?' (CRITIQUE !)':''}${comboTxt} !`);
   UX_safe.floatDmg(`enemy:${targetIdx}`, finalDmg, isCrit ? 'crit' : 'dmg');
   if (isCrit) CFX_safe.shake('light'); // crit phys → secousse (Lot 1)
+  if (isCrit) HAPTICS_safe.crit(); else HAPTICS_safe.hit(); // haptique mobile (D1)
   UX_safe.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}${comboTxt}`, isCrit?'magic':'good');
   renderEnemyGroup();
   if (checkAllEnemiesDead()) return;
