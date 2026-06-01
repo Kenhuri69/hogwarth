@@ -312,3 +312,26 @@ pendant l'exploration (seedés par étage pour la reproductibilité ?
     `movement-interactions.js` (7→8), `battle-rewards.js` (2→3) ;
     `CACHE_VERSION` v52 → v53. Pas de nouveau global → loader inchangé
     (`burst` est une méthode de `DungeonFX`).
+  - **Mergé** : PR #364 (master, après rebase sur l'easter-egg #363). E3 clos.
+- 2026-06-01 : **E4 implémenté** (PR dédiée, branche
+  `claude/immersion-e4-dust`).
+  - **Action** : poussière ambiante des couloirs. `drawDungeonDust()`
+    (`dungeon-fx.js`) peint 18 fines motes flottantes sur la scène (appelé
+    par `renderer.js` juste après la brume, avant le cadre de premier plan).
+    Teinte modulée par la tranche d'ambiance via `getFloorTheme(currentFloor)`
+    (`_DUST_TINTS` : intro doré / dungeon ambré / depths bleuté / abyss
+    runique). Dérive lente + scintillement pilotés par `_dungeonFxPhase`,
+    alpha très bas (0.05–0.11), `globalCompositeOperation:'screen'`. Faible
+    densité pour ne pas charger la lisibilité.
+  - **reduced-motion = désactivée** : double garde — la boucle
+    `startDungeonFxLoop` ne démarre pas (phase reste 0 → `drawDungeonDust`
+    no-op) ET garde `matchMedia` explicite dans la fonction. Phase 0 (rendu
+    statique initial) ⇒ no-op aussi → aucune régression du rendu historique.
+  - **Tests** : `scenarioDungeonFX` étendu — G1 vérifie `drawDungeonDust`
+    (+ `DungeonFX.burst` E3), G4 vérifie l'absence de throw sur les 4
+    tranches d'ambiance + phase 0, G4b vérifie le no-op reduced-motion.
+  - **Bumps** : `dungeon-fx.js` (2→3), `renderer.js` (12→13) ;
+    `CACHE_VERSION` v53 → v54. Pas de CSS (peint sur canvas), pas de
+    nouveau global → loader inchangé.
+  - **Mergé** : PR #… (master). E4 clos → **Lot E entièrement clos**
+    (E1→E4). Reste seulement le Lot F (F1/F2, à cadrer).

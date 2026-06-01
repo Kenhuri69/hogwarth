@@ -550,6 +550,10 @@ function drawCorridor(cx, cy, scale, W, H) {
   // No-op silencieux hors depths ou si dungeon-fx.js n'a pas chargé.
   if (typeof drawDepthsMist === 'function') drawDepthsMist(cx, cy, scale);
 
+  // 5ter. Poussière ambiante (Immersion E4) — motes flottantes teintées
+  // par la tranche d'ambiance. No-op sous reduced-motion / phase statique.
+  if (typeof drawDungeonDust === 'function') drawDungeonDust();
+
   // 6. Arêtes du couloir au premier plan (cadrage)
   drawForegroundFrame(cx, cy, scale);
 }
