@@ -3,10 +3,13 @@
 > Single-asset prompt pour le **Marchand d'Ombre** (PNJ vendeur itinérant
 > rare, étage 11+) livré par PR #249 (sinks endgame combo A+E).
 >
-> Format identique au sprint étages 8-10 (cf.
-> [`nano-banana-prompts-floor-8-10.md`](./nano-banana-prompts-floor-8-10.md)) :
-> portrait **256×256 RGB**, cadrage buste, fond opaque accepté.
-> Style ancré dans [`IMG_STYLE.md`](../../IMG_STYLE.md) (template §8.3 portraits NPC).
+> Portrait PNJ d'interaction : **256×256 RGB**, cadrage buste, fond opaque
+> accepté. **Style PHOTORÉALISTE / cinématique**, conforme à la **Règle B —
+> Portraits PNJ** de [`IMG_STYLE.md`](../../IMG_STYLE.md) **§12** (voir aussi
+> le précédent livré [`nano-banana-prompt-sir-patrick.md`](./nano-banana-prompt-sir-patrick.md)).
+>
+> ⚠️ Ne PAS appliquer le template fantôme §8.3 (Règle A — sprites 512²
+> painterly transparents) : un portrait PNJ n'est pas un sprite de combat.
 >
 > **Statut V1** : `npcs.js` pointe sur `img/npc/_wizard_generic.png` en
 > attendant ce PNG dédié. Une fois le portrait livré, swap la valeur de
@@ -29,7 +32,8 @@ pas affecté par le zoom agressif des monstres). Garder :
 
 **Fichier cible** : `img/npc/marchand_ombre.png`
 **Format** : 256×256 RGB (fond opaque accepté)
-**Template** : §8.3 portraits NPC + accents alchimiques
+**Style** : **photoréaliste / cinématique** (Règle B — `IMG_STYLE.md` §12) +
+accents alchimiques
 **Personnage** :
 
 > Vendeur **itinérant rare** apparaissant uniquement dans la Boucle
@@ -51,7 +55,7 @@ pas affecté par le zoom agressif des monstres). Garder :
 ### Prompt
 
 ```
-Portrait of a mysterious itinerant alchemist merchant in Harry Potter universe,
+Photorealistic cinematic film still portrait of a mysterious itinerant alchemist merchant in Harry Potter universe,
 bust shot, 3/4 face turn, hooded ageless figure of indeterminate gender,
 deep travel-worn dark grey hood pulled forward casting shadow over upper face,
 one visible pale weathered eye glowing faint amber-gold with arcane knowledge,
@@ -70,9 +74,10 @@ soft dark contextual background of vast ancient stone chamber with distant
 phosphorescent runes, hint of incense smoke curling at frame edges,
 palette: charcoal grey robe, weathered parchment skin, brass and ruby/sapphire/amethyst vial highlights,
 faint cyan otherworldly rim,
-painterly digital concept art, Harry Potter universe style,
+shot on ARRI Alexa, 85mm lens, shallow depth of field, fine film grain, cinematic color grading,
+photorealistic skin and fabric detail, Harry Potter universe style,
 256x256 portrait frame, character occupies 75% vertically,
-timeless mystical pragmatic mood, MTG portrait illustration quality,
+timeless mystical pragmatic mood,
 no text, no watermark, no signature, no border frame
 ```
 
@@ -81,6 +86,8 @@ no text, no watermark, no signature, no border frame
 ## Critères d'acceptation
 
 - [ ] Format **256×256 exact**, RGB (alpha optionnel).
+- [ ] Rendu **photoréaliste / cinématique** (Règle B §12) — PAS painterly,
+      PAS concept-art.
 - [ ] Visage net, **un seul œil visible** (l'autre dans l'ombre de la capuche).
 - [ ] Trois vials visibles sur la bandoulière (rouge / bleu / violet) —
       référencent les Élixirs +PV, +PM et la Pierre d'Âme.

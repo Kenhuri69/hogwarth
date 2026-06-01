@@ -8,6 +8,31 @@
 
 ---
 
+## ⚠️ Deux jeux de règles distincts — ne pas confondre
+
+Le jeu génère **deux familles d'images** qui obéissent à des règles
+**opposées**. Identifier la famille AVANT d'écrire un prompt.
+
+| | **Règle A — Sprites en vue 3D** | **Règle B — Portraits PNJ** |
+|---|---|---|
+| Cible | monstres (`img/monsters/`), sprites de couloir | portraits PNJ d'interaction (`img/npc/`) |
+| Usage | rendu pseudo-3D iso (combat, couloir) | modale de dialogue `#npc-dialog` |
+| Dimensions | **512×512** | **256×256** |
+| Format | PNG-32 **RGBA, fond transparent** | PNG **RGB, fond opaque** accepté |
+| Cadrage | figure entière / 3/4 | **buste 3/4** |
+| Style | **painterly / concept-art MTG** | **photoréaliste / cinématique** |
+
+- **§1 à §10 ci-dessous décrivent la Règle A** (sprites 512² painterly
+  transparents) — c'est le gros du guide.
+- **La Règle B (portraits PNJ) est décrite au §12** — c'est elle qu'il faut
+  suivre pour tout nouveau portrait de PNJ d'interaction.
+
+> Erreur classique (corrigée en 2026-06) : appliquer le template fantôme
+> §8.3 (Règle A, painterly transparent) à un portrait PNJ. Un portrait PNJ
+> n'est PAS un sprite de combat — voir §12.
+
+---
+
 ## 1. Spécifications techniques
 
 | Champ | Valeur |
@@ -203,3 +228,70 @@ Si un seul critère échoue → re-run plutôt qu'intégration "à peu près".
 - Catégories monstres : `js/monsters.js` (champ `category`)
 - Couleurs runtime : `js/icons.js` → `MONSTER_BASE_COLORS`, `VARIANT_COLORS`
 - Intégration : `getMonsterIconHtml()` dans `js/icons.js:1163`
+
+---
+
+## 12. Règle B — Portraits PNJ d'interaction
+
+> Règle **distincte** des §1-§10 (qui régissent les sprites 3D). S'applique
+> à tout portrait de PNJ affiché dans la modale de dialogue `#npc-dialog`
+> (`npc.portraitImg`). Dérivée des portraits validés en jeu
+> (`dumbledore.png`, `manon.png`, `sir_nicolas.png`, `marchand_clandestin.png`).
+
+### 12.1 Spécifications techniques
+
+| Champ | Valeur |
+|-------|--------|
+| Dimensions natives | **256 × 256 px** (carré) |
+| Format final | PNG **RGB** (alpha optionnel, non requis) |
+| Fond | **Opaque accepté** — décor contextuel sombre (la modale est sombre) |
+| Cadrage | **buste, 3/4 face** ; sujet occupe ~75% verticalement |
+| Compression cible | < **150 KB** (`oxipng -o 4` après intégration) |
+
+### 12.2 Style
+
+- **Photoréaliste / cinématique** (film still, optique 85mm, profondeur de
+  champ, grain fin) — **PAS** painterly, **PAS** concept-art.
+- Éclairage d'ambiance : clé chaude douce + rim light contextuel.
+- Arrière-plan : décor du lieu, **flou** (bokeh), valeurs sombres pour que
+  le runtime l'affiche dans une modale sombre sans heurt.
+- Les fantômes restent **translucides/nacrés** mais rendus en photo (VFX de
+  film), pas en peinture éthérée.
+
+### 12.3 Prompt-type
+
+```
+Photorealistic cinematic film still portrait of [personnage] in Harry Potter universe,
+bust shot, 3/4 face turn, [traits distinctifs : âge, expression, tenue],
+[accessoires / emblèmes signifiants],
+realistic skin and fabric detail, atmospheric lighting,
+warm key light with cool contextual rim light,
+soft out-of-focus dark contextual background of [lieu],
+shot on ARRI Alexa, 85mm lens, shallow depth of field, fine film grain, cinematic color grading,
+256x256 portrait frame, character occupies 75% vertically, [humeur],
+no text, no watermark, no signature, no border frame
+```
+
+> Suffix universel portraits PNJ :
+> `no text, no watermark, no signature, no border frame`
+
+### 12.4 Intégration
+
+1. Déposer le PNG en `img/npc/<id>.png` (256×256 RGB).
+2. `oxipng -o 4 img/npc/<id>.png`.
+3. `js/npcs.js` — entrée du PNJ : `portraitImg: "img/npc/<id>.png"`.
+   ⚠️ Le rendu `#npc-dialog` n'a **pas** de fallback `onerror` : ne jamais
+   pointer `portraitImg` vers un fichier absent.
+4. `node tests/smoke.js`.
+
+### 12.5 Critères d'acceptation
+
+- [ ] **256×256 exact**, RGB.
+- [ ] **Photoréaliste** (cohérent avec `dumbledore.png` & co.), pas painterly.
+- [ ] Buste 3/4, fond contextuel sombre flou.
+- [ ] Poids < **150 KB**.
+
+### 12.6 Précédents
+
+- [`nano-banana-prompt-sir-patrick.md`](./.claude/plans/nano-banana-prompt-sir-patrick.md) — fantôme photoréaliste (livré).
+- [`nano-banana-prompt-marchand-ombre.md`](./.claude/plans/nano-banana-prompt-marchand-ombre.md) — alchimiste itinérant.
