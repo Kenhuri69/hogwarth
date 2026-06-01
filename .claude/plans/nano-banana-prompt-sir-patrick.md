@@ -8,11 +8,12 @@
 > (même format que le précédent
 > [`nano-banana-prompt-marchand-ombre.md`](./nano-banana-prompt-marchand-ombre.md)).
 >
-> **⚠️ Style : PHOTORÉALISTE / cinématique** — décision utilisateur, **exception
-> assumée** au guide [`IMG_STYLE.md`](../../IMG_STYLE.md), qui est entièrement
-> *painterly / concept-art MTG*. La composition du fantôme s'inspire du
-> template §8.3 « Fantôme / être magique éthéré » (corps translucide, brume,
-> palette argent-bleu) **mais rendue en photo cinématique**, pas en peinture.
+> **⚠️ Style : PHOTORÉALISTE / cinématique** — conforme à la **Règle B —
+> Portraits PNJ** de [`IMG_STYLE.md`](../../IMG_STYLE.md) **§12** (les
+> portraits PNJ d'interaction sont photoréalistes, distincts des sprites 3D
+> painterly des §1-§10 / Règle A). La composition du fantôme reprend l'idée
+> du fantôme éthéré (corps translucide, brume, palette argent-bleu) **rendue
+> en photo cinématique**, pas en peinture.
 >
 > **Statut : LIVRÉ** ✅ — `img/npc/sir_patrick.png` (256×256 RGB, 121 KB) en
 > place, `npcs.js` pointe dessus. Portrait photoréaliste généré via Nano
@@ -45,8 +46,8 @@ porte l'expression.
 
 **Fichier cible** : `img/npc/sir_patrick.png`
 **Format** : 256×256 RGB (fond opaque accepté ; alpha optionnel)
-**Style** : **photoréaliste / cinématique** (exception à `IMG_STYLE.md`) ;
-composition d'après §8.3 « Fantôme / être magique éthéré »
+**Style** : **photoréaliste / cinématique** (Règle B — `IMG_STYLE.md` §12) ;
+fantôme éthéré (translucide, brume argent-bleu) rendu en photo cinématique
 **Personnage** :
 
 > Fantôme **Tudor** d'un noble joyeux et fanfaron, fondateur et Maître de
@@ -111,10 +112,10 @@ no text, no watermark, no signature, no border frame
       plus riche que le costume sobre de Sir Nicolas.
 - [ ] Poids < **150 KB** après `oxipng -o 4`.
 
-> ⚠️ **Cohérence** : le reste du jeu (`IMG_STYLE.md` + ~35 portraits) est
-> en peinture numérique. Ce portrait photoréaliste isolé détonnera en jeu
-> tant que les autres ne sont pas re-générés — exception assumée par
-> l'utilisateur.
+> ✅ **Cohérence** : les portraits PNJ en jeu (`dumbledore.png`,
+> `marchand_clandestin.png`, etc.) sont **déjà photoréalistes** — ce portrait
+> s'aligne dessus, conformément à la Règle B (`IMG_STYLE.md` §12). Seuls les
+> **sprites 3D** (monstres, couloir) restent painterly (Règle A).
 
 ## Si Nano Banana rate sur le 1er essai
 
