@@ -231,8 +231,10 @@ jamais la position exacte, juste l'étage.
 
 - La **2ᵉ quête « épique »** d'obtention d'un autre grimoire — à
   concevoir séparément (déjà annoncée « à discuter plus tard »).
-  → désormais cadrée dans [`manon-grimoire-easter-egg.md`](./manon-grimoire-easter-egg.md)
-  (pages oubliées post-game → nouveau sort / bonus passif).
+  → devenue l'**Acte III** (« les feuillets clairs d'Élara »), cadrée
+  dans [`manon-grimoire-easter-egg.md`](./manon-grimoire-easter-egg.md) :
+  vision lumineuse déclenchée en mode easter egg (rumeurs → trouver un
+  feuillet ouvre la quête Manon).
 - Cue 3D de la page révélée (au-delà de la minimap) — décidé : non.
 - Revelio comme sort d'utilité générale (révéler coffres/passages) —
   reste cantonné aux pages pour cette V1.

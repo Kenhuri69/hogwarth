@@ -1,154 +1,214 @@
-# Plan — Easter egg : les pages oubliées d'Élara
+# Plan — Manon Acte III : les feuillets clairs d'Élara
 
-> Statut : **proposition** (non implémenté). Suite directe de
-> [`manon-grimoire-pages.md`](./manon-grimoire-pages.md) §9 (« 2ᵉ quête
-> épique, à concevoir séparément ») et du correctif de bug ci-dessous.
+> Statut : **proposition** (non implémenté). Suite de
+> [`manon-grimoire-pages.md`](./manon-grimoire-pages.md) (Acte II) et du
+> correctif de bug ci-dessous. Remplace l'ancienne ébauche « easter egg
+> de pages oubliées » (§9 de l'Acte II) — direction retenue avec
+> l'utilisateur : **un vrai Acte III lumineux, mais déclenché à la
+> manière d'un easter egg** (rumeurs, pas de quête imposée d'emblée).
 
 ## 0. Contexte & correctif préalable (livré)
 
-Bug corrigé en amont de ce plan : après la fusion du grimoire
-(`fuseGrimoire`), `pagePlacements` / `revealedPages` n'étaient pas
-purgés ; la besace `player.grimoirePages` vidée ne protégeait plus
-`_tryCollectPage`, si bien que les **5 mêmes pages** redevenaient
-fouillables à leur ancien emplacement. `fuseGrimoire` purge désormais
-les deux structures (`.clear()`) + `renderMinimap()`. Couvert par
+Après la fusion de l'Acte II (`fuseGrimoire`), `pagePlacements` /
+`revealedPages` n'étaient pas purgés : la besace `player.grimoirePages`
+vidée ne protégeait plus `_tryCollectPage`, si bien que les **5 mêmes
+pages** redevenaient fouillables. `fuseGrimoire` purge désormais les deux
+structures (`.clear()`) + `renderMinimap()`. Couvert par
 `scenarioGrimoirePages` T8 (`placementsCleared`, `recollect`).
 
-> Constat utilisateur à l'origine de cet egg : *« re-trouver les mêmes
-> pages n'a pas de sens ; en revanche, que ce soient d'**autres** pages
-> qui débloquent un nouveau sort ou un bonus passif, l'idée est
-> intéressante comme easter egg. »*
+> Ces structures purgées sont **réutilisables** pour l'Acte III (§4) :
+> au moment où l'Acte III démarre, l'Acte II les a déjà libérées.
 
-## 1. Prémisse narrative
+## 1. Principe : easter egg → quête (le cœur du design)
 
-Le grimoire reconstitué n'était pas tout à fait complet. En l'ouvrant
-« les soirs de gel » (cf. `idleRandom` post-Acte II), Manon découvre des
-**renvois en marge** vers des feuillets qu'elle ne possède pas : des
-pages que Élara avait jugées trop dangereuses pour les laisser avec
-les autres, dispersées **plus profond** dans le château (la Boucle
-Ténébreuse, étages 11+). Pas une quête au journal : un **secret** qu'on
-ne trouve qu'en cherchant — l'esprit d'un easter egg.
+Trois temps, du plus diffus au plus explicite :
 
-> Ton : aucune flèche, aucune quête imposée. Au mieux un **murmure** :
-> une réplique `idleRandom` de Manon et/ou un fantôme lore qui évoque
-> « des pages plus noires, écrites les nuits où le froid faisait mal ».
+```
+(a) RUMEURS         (b) DÉCOUVERTE             (c) QUÊTE ACTE III
+PNJ lore + Manon  →  trouver 1 feuillet     →  Manon ouvre la quête
+évoquent des         (Revelio + fouille,       formelle : réunir les
+feuillets clairs     gate post-Acte II)        autres + établi + remise
+PAS de quête         convertit l'egg en        vision LUMINEUSE
+au journal           quête (acceptQuest)        + récompense
+```
 
-## 2. Décisions à acter (⚠️ à valider avant implémentation)
+- **(a) Rumeurs (couche egg).** Aucune entrée au journal. Des PNJ lore
+  aléatoires (`sprite:'fantome'`, `marker:'lore'`) et **Manon en
+  `idleRandom`** lâchent des indices doux : « le grimoire respire encore,
+  comme s'il lui manquait un souffle clair… ». Réemploi strict du
+  mécanisme d'indices de l'Acte II (`_pageHintLine` / greffe dans
+  `_resolveDialogSource`, cf. Acte II §7b).
+- **(b) Découverte.** Les feuillets sont posés dans le donjon (invisibles,
+  révélés par Revelio, ramassés en fouillant — exactement comme l'Acte
+  II). **Trouver le premier** déclenche `acceptQuest('manon_acte3')` et
+  bascule l'expérience en quête suivie. C'est le « clic » de l'easter
+  egg : le joueur curieux qui suit les rumeurs est récompensé par
+  l'ouverture d'un véritable acte.
+- **(c) Quête Acte III.** Dès lors, déroulé classique : objectif
+  `type:"pages"` (réunir les feuillets restants), remise à Manon via un
+  **établi** (réemploi de `open_fusion`), résolution narrative et
+  récompense.
+
+> Pourquoi c'est mieux que l'egg « invisible » initial : la couche
+> rumeurs **résout le problème de découvrabilité** (le joueur sait qu'il
+> y a quelque chose à chercher) tout en gardant l'esprit egg (rien n'est
+> imposé, rien dans le journal tant qu'on n'a pas mordu).
+
+## 2. Prémisse narrative — vision lumineuse
+
+L'Acte II refermait la plaie (« je ne lui en veux plus »). L'Acte III ne
+la rouvre pas : il **prolonge l'apaisement**.
+
+> En recopiant le grimoire reconstitué, Manon réalise qu'il manque des
+> renvois : non des pages *cachées par peur*, mais des feuillets qu'Élara
+> avait **gardés à part — pour elle**. Pas de la magie de survie : des
+> sorts de givre **heureux**, ceux qu'on lance pour le plaisir (dessiner
+> des fougères sur une vitre, figer une goutte en perle, faire neiger
+> dans une pièce un soir de fête). Élara les avait semés dans le château
+> « pour que sa fille tombe un jour sur sa joie, pas seulement sur son
+> mensonge ». Les réunir, c'est rencontrer la mère **heureuse** — le
+> dernier visage qui manquait.
+
+Ton : tendre, lumineux, un brin espiègle (le givre comme jeu). Aucune
+menace, aucun « pages plus noires ». Cohérent avec la clôture de l'Acte
+II et avec l'`idleRandom` post-Acte II (« le givre, elle l'aimait pour de
+vrai »).
+
+## 3. Décisions à acter (⚠️ avant implémentation)
 
 | Sujet | Options | Reco |
 |-------|---------|------|
-| **Récompense** | (A) **nouveau sort** exclusif ; (B) **bonus passif** permanent | **(B)** — voir §4 |
-| Nb de pages | 3 (resserré, post-game) ou 5 (symétrie Acte II) | **3** |
-| Étages porteurs | Boucle Ténébreuse : 11, 13, 15 (post-`victoryAchieved`) | 11/13/15 |
-| Gate d'activation | `completedQuests.has('manon_grimoire')` **et** `victoryAchieved` | les deux |
-| Révélation | Revelio (déjà appris en Acte II) — réemploi strict | oui |
-| Remise | Second passage à l'établi de Manon (`open_fusion` étendu) ou auto à la 3ᵉ page | **établi** |
-| Indice | 1 réplique `idleRandom` Manon + variante fantôme | oui, discret |
+| **Récompense** | (A) sort « signature » à **faible portée méta** (flavor lumineux) ; (B) **passif** lumineux | **à trancher** — voir §7 |
+| Gate de départ | (i) `manon_grimoire` complété **seul** ; (ii) + `victoryAchieved` | **(i)** — éviter de tout repousser en endgame |
+| Nb de feuillets | 3 (resserré) ou 4 | **3** |
+| Étages porteurs | étages déjà connus, « chers » à Élara : ex. 2 (page de garde), 6, 9 | à arbitrer |
+| Conversion | trouver **le 1ᵉʳ** feuillet → `acceptQuest('manon_acte3')` | oui |
+| Rumeurs | Manon `idleRandom` + 2-3 PNJ lore (réemploi `_pageHintLine`) | oui |
+| Remise | établi Manon (réemploi `open_fusion`, 2ᵉ recette) | oui |
+| Architecture pages | **réutiliser** les structures Acte II via un sélecteur de set (§4) | oui |
 
-### Option A — nouveau sort exclusif
-Ajouter un sort `SPELLS` (ex. **« Requiem de Givre »** : AoE glace
-supérieure à Glacius Tempête, ou mono-cible à fort burst + `gel`
-renforcé). Enseigné aux deux héros à la remise (comme `grantsSpell` de
-groupe). Logo PNG dédié (`tools/`).
-- ➕ Récompense tangible, lisible.
-- ➖ Risque d'**équilibrage** (le jeu a déjà Glacius Tempête en tête du
-  classement AoE, cf. `tools/sim-aoe.js`) ; nécessite un passage sim.
+## 4. Architecture — un seul mécanisme, paramétré par « set actif »
 
-### Option B — bonus passif permanent (**recommandé**)
-**« Héritage de givre »** : affinité froide héritée d'Élara.
-- Implémentation : flag sérialisé `frostHeritage` (state.js), lu par
-  `_spellElementalDamage` / `_spellLifesteal` / `_spellCurse`
-  (battle-spells.js) → sorts d'élément `"glace"` ×(1 + `FROST_HERITAGE_MULT`)
-  **et** statut `gel` +1 tour. Constante `FROST_HERITAGE_MULT` (data.js).
-- Affichage : ligne dans `char-stats-panel` (ui-character-sheet.js) +
-  badge à la remise.
-- ➕ Narrativement juste (« un geste que je tiens d'elle »), pas de
-  nouveau sort à équilibrer, surface de code réduite.
-- ➖ Moins « spectaculaire » qu'un sort ; passif diffus.
+Plutôt que dupliquer (`lost*`), on **généralise** le mécanisme de pages
+de l'Acte II autour d'un *descripteur de set actif*. Les structures
+d'état (`pagePlacements`, `revealedPages`, `player.grimoirePages`) sont
+**réutilisées** : l'Acte II les a purgées à sa fusion, l'Acte III les
+reprend. À tout instant **un seul** set est vivant (les actes sont
+exclusifs dans le temps).
 
-> Choix par défaut de ce plan : **Option B**. Bascule possible vers A
-> sur décision utilisateur (le squelette §3 est commun).
+```js
+// data.js — 2ᵉ jeu de pages (feuillets clairs)
+const ACT3_PAGES = [ {id,name,icon,floor,lore}, … ];   // 3 feuillets
 
-## 3. Architecture — réemploi maximal de l'Acte II
+// nouveau sélecteur pur (dungeon.js ou data.js)
+function _activePageSet() {
+  if (activeQuests.some(q => q.id === 'manon_grimoire'))      return ACT2_SET;   // GRIMOIRE_PAGES
+  if (completedQuests.has('manon_grimoire')
+      && !completedQuests.has('manon_acte3'))                 return ACT3_SET;   // ACT3_PAGES
+  return null;
+}
+```
 
-Pour éviter toute collision avec les données purgées de l'Acte II,
-**structures parallèles dédiées** (mêmes patterns, préfixe `lost`) :
+Les fonctions existantes deviennent *set-aware* (changement minimal,
+défaut = comportement Acte II, couvert par `scenarioGrimoirePages`) :
 
-| Élément | Acte II (existant) | Easter egg (nouveau) |
-|---------|--------------------|----------------------|
-| Données pages | `GRIMOIRE_PAGES` (data.js) | `LOST_GRIMOIRE_PAGES` (data.js), floors 11/13/15 |
-| Étages dérivés | `PAGE_FLOORS` | `LOST_PAGE_FLOORS` |
-| Placement | `pagePlacements` Map | `lostPagePlacements` Map |
-| Révélation | `revealedPages` Set | `revealedLostPages` Set |
-| Besace | `player.grimoirePages` | `player.lostGrimoirePages` |
-| Pose | `_ensurePagePlacement` | `_ensureLostPagePlacement` (même seed, gate §2) |
-| Ramassage | `_tryCollectPage` | `_tryCollectLostPage` (appelé dans `searchRoom`) |
-| Reveal hook | bloc `reveal` (inventory-spells.js) | même bloc, ajoute `revealedLostPages` |
-| Minimap | `.map-page` | `.map-page` réutilisé (ou `.map-page-lost`) |
-| Remise | `openFusionModal`/`fuseGrimoire` | `openLostFusionModal`/`fuseLostGrimoire` |
-| Persistance | `_serializeState`/`_applyState` | idem (3 nouvelles clés) |
-| Reset partie | `startGame` | idem |
-| **Purge à la remise** | `.clear()` (correctif) | **idem dès le départ** (leçon retenue) |
+| Fonction | Adaptation |
+|----------|------------|
+| `_ensurePagePlacement(floor)` | lit `_activePageSet()` (floors + lookup page) au lieu de `PAGE_FLOORS`/`getGrimoirePageForFloor` en dur |
+| `_tryCollectPage()` | idem ; **+** si set Acte III et 1ᵉʳ feuillet ramassé et `manon_acte3` pas encore acceptée → `acceptQuest('manon_acte3')` (conversion egg→quête) |
+| bloc `reveal` (inventory-spells.js) | révèle la page du set actif |
+| `checkPageQuest()` | recompte sur l'objectif de la quête active du moment |
 
-> Alternative envisagée : **généraliser** le mécanisme existant pour
-> porter plusieurs jeux de pages (clé composite `set:floor`). Écartée
-> pour la V1 : plus invasif sur du code stabilisé/testé. Les structures
-> parallèles sont du copier-adapter à bas risque.
+> Avantage : **zéro duplication d'état**, une seule source de vérité du
+> « quelles pages sont en jeu maintenant ». Risque maîtrisé par la suite
+> smoke (Acte II reste vert + nouveau scénario Acte III).
+> Réserve assumée : on touche des fonctions testées de l'Acte II — d'où
+> la règle « défaut inchangé » + non-régression `scenarioGrimoirePages`.
 
-## 4. Gate d'activation (cœur de l'« easter egg »)
+## 5. Couche rumeurs (découverte sans journal)
 
-`_ensureLostPagePlacement(floor)` ne pose une page que si **toutes** ces
-conditions sont vraies :
-1. `LOST_PAGE_FLOORS.includes(floor)` ;
-2. `typeof completedQuests !== 'undefined' && completedQuests.has('manon_grimoire')` ;
-3. `victoryAchieved` (Boucle Ténébreuse atteinte) ;
-4. page non déjà collectée (`!player.lostGrimoirePages.includes(id)`).
+- **Gate** : `completedQuests.has('manon_grimoire')` **et**
+  `!completedQuests.has('manon_acte3')` **et** `manon_acte3` pas encore
+  acceptée. Identique à la garde du set Acte III.
+- **Manon** (`idleRandom`) : 1-2 répliques ajoutées, du registre « il
+  manque un souffle clair au grimoire ». Affichées seulement sous la gate
+  (greffe conditionnelle, comme l'Acte II).
+- **PNJ lore** (`_pageHintLine` étendu) : 2-3 variantes de rumeur qui
+  citent l'**étage** d'un feuillet non collecté (jamais la case). Ton
+  espiègle/lumineux pour coller à la prémisse.
+- Revelio reste le moyen **fiable** de localiser la case (les rumeurs ne
+  donnent que l'étage).
 
-Aucune entrée au journal de quêtes — la découverte passe par Revelio +
-curiosité. Hook de pose : `generateDungeon` **et**
-`_restoreFloorFromCache` (comme l'Acte II), sinon les pages
-n'apparaissent pas sur les étages déjà en cache.
+## 6. Conversion egg → quête (`manon_acte3`)
 
-## 5. Découpage en phases (verify)
+- `quests-templates.js` : nouvelle quête `manon_acte3`
+  (`prereq:"manon_grimoire"`), objectif `type:"pages"` ×N, récompense §7,
+  `location` = « Étage 3 — auprès de Manon ».
+- **Acceptation implicite** : pas de `questOffer` au PNJ d'abord ; c'est
+  `_tryCollectPage` (1ᵉʳ feuillet) qui appelle `acceptQuest('manon_acte3')`
+  + narratif « Ce feuillet n'a rien d'un secret honteux… Manon doit voir
+  ça. » Le feuillet trouvé compte comme 1ʳᵉ progression.
+- À partir de là, `dialoguesByQuest.manon_acte3` (`questActive` /
+  `questReady`) prend le relais ; l'établi (`open_fusion`, gating étendu)
+  sert la remise.
 
-1. **Données & gate** — `LOST_GRIMOIRE_PAGES` + `LOST_PAGE_FLOORS`
-   (data.js) ; `lostPagePlacements`/`revealedLostPages`/
-   `player.lostGrimoirePages` (state.js) ; `_ensureLostPagePlacement`
-   (dungeon.js + hook cache) gardé par §4.
-   → verify : test placement posé **seulement** si `manon_grimoire`
-   complété **et** `victoryAchieved`, sinon absent.
-2. **Révélation & ramassage** — extension du bloc `reveal`
-   (inventory-spells.js) ; `_tryCollectLostPage` dans `searchRoom` ;
-   marqueur minimap.
-   → verify : Revelio révèle, fouille ramasse, pas de doublon.
-3. **Récompense** — (B) `frostHeritage` + `FROST_HERITAGE_MULT`, lu par
-   battle-spells.js, ligne fiche perso ; **ou** (A) sort + logo + sim.
-   → verify : sort glace amplifié (B) / sort appris (A) après la 3ᵉ page.
-4. **Remise & purge** — `openLostFusionModal`/`fuseLostGrimoire`
-   (établi Manon étendu) : applique la récompense **et** purge
-   `lostPagePlacements`/`revealedLostPages` (`.clear()`) +
-   `player.lostGrimoirePages = []`.
-   → verify : récompense une seule fois, pages non re-ramassables
-   (régression jumelle du bug corrigé).
-5. **Indices discrets** — 1 `idleRandom` Manon + 1 variante fantôme
-   (`_pageHintLine` style) gardées par la gate §4.
-   → verify : indice présent post-game seulement, absent avant.
-6. **Persistance & reset** — 3 clés dans `_serializeState`/`_applyState`
-   (avec `frostHeritage` si B) ; reset dans `startGame`.
-   → verify : round-trip save conserve placements/révélations/besace/
-   récompense ; nouvelle partie repart à zéro.
-7. **Smoke** — nouveau `scenarioLostGrimoirePages` (calqué sur
-   `scenarioGrimoirePages`) couvrant gate, ramassage, récompense,
-   purge, save.
+## 7. Établi, remise & récompense
+
+- **Remise** : réemploi de l'établi (`specialAction open_fusion`) — la
+  modale `#fusion-modal` affiche les feuillets clairs ; bouton actif
+  quand tous réunis. `fuseAct3()` (jumeau de `fuseGrimoire`) :
+  `turnInQuestById('manon_acte3')`, applique la récompense, **purge**
+  `pagePlacements`/`revealedPages` + `player.grimoirePages = []`
+  (leçon du correctif §0), narratif lumineux, `renderMinimap()`.
+- **Récompense — à trancher (option lumineuse, pas de power-creep)** :
+  - **(A) Sort signature flavor** « Givre Clair » / « Aurore de Givre » :
+    élément `glace`+`lumière`, **dégâts modestes** mais effet sympa (ex.
+    petit soin de groupe ou `gel` léger) — pensé *flavor*, pas méta, donc
+    pas de passage sim lourd. Enseigné aux 2 héros à la remise.
+  - **(B) Passif « Hiver Clair »** : flag sérialisé, effet **léger et
+    lumineux** (ex. +1 PM/pas, ou petit regen hors combat), lu là où
+    c'est pertinent. Ligne fiche perso + badge.
+  > Reco : viser le **flavor lumineux** (A *ou* B faible) plutôt qu'un
+  > gros levier — la récompense de l'Acte III est surtout **narrative**
+  > (rencontrer la mère heureuse). À toi de choisir A ou B.
+
+## 8. Découpage en phases (verify)
+
+1. **Données & sélecteur** — `ACT3_PAGES` (data.js) ; `_activePageSet()` ;
+   `_ensurePagePlacement`/`_tryCollectPage`/reveal rendus *set-aware*
+   (défaut Acte II inchangé).
+   → verify : `scenarioGrimoirePages` **reste vert** ; un test pose une
+   page Acte III seulement sous la gate (Acte II fini, Acte III non).
+2. **Quête & conversion** — `manon_acte3` (quests-templates) ;
+   acceptation implicite dans `_tryCollectPage` ; objectif `type:"pages"`.
+   → verify : ramasser le 1ᵉʳ feuillet crée la quête active à progress 1.
+3. **Rumeurs** — `idleRandom` Manon + `_pageHintLine` étendu, sous gate.
+   → verify : rumeur présente entre Acte II fini et Acte III remis ;
+   absente avant/après.
+4. **Établi & récompense** — `fuseAct3` + gating établi + récompense (A/B)
+   + purge.
+   → verify : récompense une seule fois, pages non re-ramassables après
+   remise (régression jumelle du bug §0).
+5. **Persistance & reset** — réutilise les clés existantes (pas de
+   nouvelle structure d'état sauf le flag récompense si B) ; reset
+   `startGame`.
+   → verify : round-trip save conserve l'état Acte III en cours.
+6. **Smoke dédié** — `scenarioGrimoireActe3` (calqué sur l'Acte II) :
+   gate, découverte→conversion, collecte, remise, purge, save.
    → verify : `node tests/smoke.js` vert.
 
-## 6. Hors-scope
+## 9. Hors-scope
 
-- Cue 3D des pages (cohérent avec V1 Acte II : minimap seule).
-- Indices ailleurs que Manon / fantômes lore.
-- Option A **et** B simultanées — on tranche une seule récompense.
+- Cue 3D des feuillets (minimap seule, cohérent Acte II).
+- Récompense « grosse » / méta (volontairement écarté : Acte III =
+  charge narrative, pas power-spike).
+- Rumeurs hors Manon / PNJ lore (vendeurs, etc.) — possible V2.
+- Duplication de structures `lost*` — écartée au profit du sélecteur §4.
 
 ## Suivi
 - [x] Bug « pages re-fouillables après fusion » corrigé (clear + T8).
-- [ ] §2 — décisions à valider (récompense A/B, nb pages, étages).
-- [ ] Phases 1-7 — à implémenter après arbitrage §2.
+- [x] Direction arbitrée : **Acte III lumineux déclenché en mode egg**
+      (rumeurs → trouver 1 feuillet → quête Manon).
+- [ ] §3 — décisions restantes : **récompense A/B**, étages porteurs,
+      gate `victoryAchieved` ou non, nb de feuillets.
+- [ ] Phases 1-6 — à implémenter après arbitrage §3.
