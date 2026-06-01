@@ -60,6 +60,18 @@ déplaît visuellement :
   nappes, alpha, vitesse.
 - **Vérif** : revue visuelle ; smoke inchangé (pas de nouvelle assertion).
 
+- **[x] A2 — motes plus présentes (2026-05-31)** : retour utilisateur
+  « motes trop discrètes ». Réglage des constantes `PRESETS`
+  (`cinematics.js`), aucune nouvelle surface, blend additif `lighter`
+  inchangé (donc densité + taille ⇒ plus lumineux automatiquement) :
+  - intro : `count 34 → 48`, `rMax 3.4 → 4.4`.
+  - victory : `count 52 → 72`, `rMax 4.2 → 5.4`, halo `breathe`
+    `0.10 → 0.15` (amplitude `0.05 → 0.07`).
+  - Bump `cinematics.js?v=1 → v=2` (`index.html` + `sw.js`),
+    `CACHE_VERSION hogwarth-v42 → v43`.
+  - Smoke inchangé (scénario `Cinematics` ne fige pas les valeurs) ;
+    `node tests/smoke.js` + `node tests/pwa-smoke.js` verts.
+
 ---
 
 ## B. Moyens
