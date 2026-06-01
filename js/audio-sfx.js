@@ -407,5 +407,120 @@ Object.assign(AudioSystem, {
       utt.volume = 0.9;
       speechSynthesis.speak(utt);
     }, 120);
+  },
+
+  // ── Barks ambiants d'exploration (F2) — synthèse procédurale ──
+  // One-shots discrets joués à faible probabilité par pas (movement.js
+  // _step), teintés par la tranche d'ambiance (getFloorTheme). Zéro asset :
+  // tout est synthétisé via WebAudio (comme les autres SFX). Respecte
+  // isMuted ; silencieux en combat / menu. Audio (≠ mouvement) → non gardé
+  // par reduced-motion, comme la musique et les autres SFX.
+  _AMBIENT_BARK_CHANCE: 0.07,
+
+  // Tente un bark : roll de probabilité interne, choix du son selon la zone.
+  // Retourne true si un son a été déclenché (utile aux tests). Tout effet de
+  // bord est purement audio — n'altère aucun état de jeu / RNG de simulation.
+  maybeAmbientBark(floor) {
+    if (this.isMuted || this.inCombat || this.inMenu) return false;
+    if (Math.random() >= (this._AMBIENT_BARK_CHANCE || 0.07)) return false;
+    this.init();
+    let zone = 'intro';
+    if (typeof getFloorTheme === 'function') {
+      const f  = (typeof floor === 'number') ? floor : this.currentFloor;
+      const th = getFloorTheme(f);
+      if (th && th.ambient) zone = th.ambient;
+    }
+    // Pool de barks par zone (du plus clair au plus oppressant).
+    const pool = {
+      intro:   ['drip', 'creak'],
+      dungeon: ['creak', 'clang', 'drip'],
+      depths:  ['groan', 'clang', 'creak'],
+      abyss:   ['rumble', 'groan'],
+    }[zone] || ['drip'];
+    const kind = pool[Math.floor(Math.random() * pool.length)];
+    try { this._playBark(kind); } catch (_) { /* contexte indispo → silencieux */ }
+    return true;
+  },
+
+  // Synthèse d'un bark par type. Gains volontairement bas (sons « lointains »).
+  _playBark(kind) {
+    const now = this.ctx.currentTime;
+    if (kind === 'drip') {
+      // Goutte d'eau : sinus glissant aigu→grave, court, doux.
+      const osc = this.ctx.createOscillator();
+      const g   = this.ctx.createGain();
+      osc.type  = 'sine';
+      osc.frequency.setValueAtTime(1300 + Math.random() * 500, now);
+      osc.frequency.exponentialRampToValueAtTime(420, now + 0.16);
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(0.10, now + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0008, now + 0.22);
+      osc.connect(g).connect(this.sfxGain);
+      osc.start(now); osc.stop(now + 0.26);
+      return;
+    }
+    if (kind === 'creak') {
+      // Craquement de bois : bruit filtré en bande étroite, montée lente.
+      const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.5), this.ctx.sampleRate);
+      const d   = buf.getChannelData(0);
+      for (let i = 0; i < buf.length; i++) d[i] = (Math.random() * 2 - 1);
+      const src = this.ctx.createBufferSource(); src.buffer = buf;
+      const bp  = this.ctx.createBiquadFilter();
+      bp.type = 'bandpass'; bp.frequency.value = 320 + Math.random() * 220; bp.Q.value = 7;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.linearRampToValueAtTime(0.07, now + 0.18);
+      g.gain.exponentialRampToValueAtTime(0.0008, now + 0.48);
+      src.connect(bp).connect(g).connect(this.sfxGain);
+      src.start(now);
+      return;
+    }
+    if (kind === 'clang') {
+      // Cliquetis métallique lointain : deux partiels inharmoniques brefs.
+      [0, 0.04].forEach((off, i) => {
+        const osc = this.ctx.createOscillator();
+        const g   = this.ctx.createGain();
+        osc.type  = 'triangle';
+        osc.frequency.value = (i ? 1870 : 940) + Math.random() * 120;
+        g.gain.setValueAtTime(0.0001, now + off);
+        g.gain.exponentialRampToValueAtTime(0.05, now + off + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0006, now + off + 0.34);
+        osc.connect(g).connect(this.sfxGain);
+        osc.start(now + off); osc.stop(now + off + 0.4);
+      });
+      return;
+    }
+    if (kind === 'groan') {
+      // Râle/souffle lointain : sinus grave avec léger vibrato.
+      const osc = this.ctx.createOscillator();
+      const lfo = this.ctx.createOscillator();
+      const lg  = this.ctx.createGain();
+      const g   = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(96, now + 1.1);
+      lfo.frequency.value = 5.5; lg.gain.value = 8;
+      lfo.connect(lg).connect(osc.frequency);
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.linearRampToValueAtTime(0.06, now + 0.3);
+      g.gain.exponentialRampToValueAtTime(0.0006, now + 1.2);
+      osc.connect(g).connect(this.sfxGain);
+      lfo.start(now); osc.start(now);
+      lfo.stop(now + 1.25); osc.stop(now + 1.25);
+      return;
+    }
+    // 'rumble' — grondement très grave bruité (abysses).
+    const osc = this.ctx.createOscillator();
+    const lpf = this.ctx.createBiquadFilter();
+    const g   = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(58, now);
+    osc.frequency.exponentialRampToValueAtTime(38, now + 1.4);
+    lpf.type = 'lowpass'; lpf.frequency.value = 140;
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.linearRampToValueAtTime(0.07, now + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.0006, now + 1.5);
+    osc.connect(lpf).connect(g).connect(this.sfxGain);
+    osc.start(now); osc.stop(now + 1.55);
   }
 });
