@@ -248,9 +248,12 @@ function chooseHouse(house) {
     activeQuests    = [];
     // Les quêtes de Maison (`houseSetQuest: true`) sont gated par le palier
     // 12 (Maître Or) via `unlockHouseQuest` — on ne les ajoute pas à
-    // `availableQuests` au démarrage.
+    // `availableQuests` au démarrage. Les quêtes à acceptation implicite
+    // (`implicitAccept: true`, ex. l'Acte III egg de Manon) ne s'y ajoutent
+    // pas non plus : elles s'activent par `acceptQuest` depuis un autre
+    // déclencheur (trouver un feuillet), jamais par un bouton « Accepter ».
     availableQuests = new Set(
-      QUEST_TEMPLATES.filter(t => !t.houseSetQuest).map(t => t.id)
+      QUEST_TEMPLATES.filter(t => !t.houseSetQuest && !t.implicitAccept).map(t => t.id)
     );
     completedQuests = new Set();
   }
@@ -468,10 +471,11 @@ async function startGame(count = 2) {
   resizeCanvas();
   generateDungeon(1);
   floorDungeons = {};   // reset du cache à chaque nouvelle partie
-  // Pages du grimoire d'Élara — état neuf à chaque partie.
+  // Pages du grimoire d'Élara (Actes II & III) — état neuf à chaque partie.
   pagePlacements = new Map();
   revealedPages  = new Set();
   player.grimoirePages = [];
+  hiverClair = false;   // passif Acte III non éveillé en début de partie
   searchedCells = new Map();
   // Jardin d'herbes (Potions P6.b3) — état neuf à chaque partie. generateDungeon(1)
   // ne pose aucun jardin (étage 3+), le reset après est donc sûr.

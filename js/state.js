@@ -684,6 +684,12 @@ let victoryAt       = null;
 // _applyState pour ne s'afficher qu'une fois par partie.
 let combatTutorialSeen = false;
 
+// Passif « Hiver Clair » (Manon Acte III) — true une fois l'Acte III remis
+// à Manon (fuseAct3). Effet : hors combat, +1 PM par pas d'exploration
+// (plafonné spMax). Réinitialisé par startGame, persisté via
+// _serializeState / _applyState. Cf. .claude/plans/manon-grimoire-easter-egg.md §7.
+let hiverClair = false;
+
 // ============================================================
 // QUÊTES SECONDAIRES
 // ============================================================

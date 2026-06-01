@@ -130,6 +130,15 @@ function _step(dir, faceDir) {
     });
   }
 
+  // Passif « Hiver Clair » (Manon Acte III) : hors combat, +1 PM par pas
+  // d'exploration (plafonné spMax). Confort lumineux, non gated, distinct
+  // du Souffle du Blaireau (PM seul, +1). Cf. manon-grimoire-easter-egg.md §7.
+  if (typeof hiverClair !== 'undefined' && hiverClair) {
+    party.slice(0, partySize).forEach(c => {
+      if (c.hp > 0) c.sp = Math.min(c.spMax, c.sp + 1);
+    });
+  }
+
   const cell = dungeon[playerY][playerX];
   updateCompass();
   renderMinimap();

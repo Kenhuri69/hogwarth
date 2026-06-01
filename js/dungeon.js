@@ -604,18 +604,16 @@ function generateDungeon(floor) {
   _ensurePagePlacement(floor);
 }
 
-// Pose la page de grimoire de l'étage `floor` si la quête manon_grimoire
-// est active, que la page n'est pas déjà ramassée, et qu'aucune position
-// n'a encore été fixée pour cet étage. Position déterministe (seed par
-// étage) sur une case FLOOR ordinaire. Cf. manon-grimoire-pages.md §5.
+// Pose le feuillet (page) de l'étage `floor` du set de pages actif si un
+// set est en jeu (Acte II ou Acte III, via _activePageSet), que le feuillet
+// n'est pas déjà ramassé, et qu'aucune position n'a encore été fixée pour
+// cet étage. Position déterministe (seed par étage) sur une case FLOOR
+// ordinaire. Cf. manon-grimoire-pages.md §5 + manon-grimoire-easter-egg.md §4.
 function _ensurePagePlacement(floor) {
-  if (typeof PAGE_FLOORS === 'undefined' || !PAGE_FLOORS.includes(floor)) return;
+  const set = (typeof _activePageSet === 'function') ? _activePageSet() : null;
+  if (!set || !set.floors.includes(floor)) return;
   if (typeof pagePlacements === 'undefined' || pagePlacements.has(floor)) return;
-  const questActive = typeof activeQuests !== 'undefined'
-    && activeQuests.some(q => q.id === 'manon_grimoire');
-  if (!questActive) return;
-  const page = (typeof getGrimoirePageForFloor === 'function')
-    ? getGrimoirePageForFloor(floor) : null;
+  const page = set.pages.find(p => p.floor === floor) || null;
   if (!page) return;
   if (player && Array.isArray(player.grimoirePages)
       && player.grimoirePages.includes(page.id)) return;

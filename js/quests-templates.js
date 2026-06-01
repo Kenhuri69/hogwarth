@@ -450,6 +450,27 @@ const QUEST_TEMPLATES = [
     reward: { xp: 420, gold: 180, item: "livre_glacius_tempete" },
     location: "Étage 3 — salles de classe désertes"
   },
+  // ── Manon, Acte III — les feuillets clairs d'Élara ─────────
+  // Easter egg lumineux : déclenché par rumeurs (Manon idleRandom + PNJ
+  // lore), ouvert IMPLICITEMENT quand le joueur trouve le 1ᵉʳ feuillet
+  // (acceptQuest depuis _tryCollectPage). `implicitAccept` l'exclut de
+  // l'amorce `availableQuests` (cf. main.js) → aucun bouton « Accepter »
+  // chez Manon tant que l'egg n'est pas mordu. Remise à l'établi
+  // (fuseAct3). Récompense : passif « Hiver Clair » posé par fuseAct3 (la
+  // vraie récompense est narrative). Cf. .claude/plans/manon-grimoire-easter-egg.md.
+  {
+    id: "manon_acte3",
+    title: "Les feuillets clairs d'Élara",
+    giver: "Manon",
+    desc: "Élara avait gardé à part trois feuillets — non des secrets, mais de la joie : des sorts de givre heureux semés dans le château pour sa fille. Dévoile-les avec Revelio (étages 2, 6, 9), réunis-les, puis rapporte-les à Manon.",
+    prereq: "manon_grimoire",
+    implicitAccept: true,
+    objectives: [
+      { type: "pages", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 500, gold: 220 },
+    location: "Étage 3 — auprès de Manon"
+  },
   // ── Phase 3b : quêtes secondaires PNJ → équipement étendu ──
   {
     id: "bottines_ollivander",

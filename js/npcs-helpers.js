@@ -80,34 +80,65 @@ function getRandomAmbientNpcsForFloor(floor) {
 }
 
 // ── Indices de pages de grimoire (fantômes lore) ─────────────
-// Pendant l'Acte II de Manon, les fantômes lore peuvent lâcher une
-// réplique-blague signalant un étage où traîne une page non collectée.
-// Cf. .claude/plans/manon-grimoire-pages.md §7b.
+// Pendant les Actes II et III de Manon, les fantômes lore peuvent lâcher
+// une réplique-blague signalant un étage où traîne un feuillet non
+// collecté. Cf. manon-grimoire-pages.md §7b + manon-grimoire-easter-egg.md §5.
+// Acte II — ton givre/froid neutre.
 const _PAGE_HINT_LINES = [
   "Tiens, j'y pense — un feuillet couvert de givre traîne au {N}ᵉ étage. Je l'aurais bien ramassé… mais, vous savez, les mains. Tout le drame du métier de fantôme.",
   "On gèle, au {N}ᵉ étage. Et au beau milieu du courant d'air, un bout de parchemin gribouillé qui refuse de prendre la poussière. Suspect, non ? Allez-y voir — moi, je traverse, ça ne compte pas.",
   "J'ai vu une page errer au {N}ᵉ étage, posée là comme si elle attendait quelqu'un. J'ai tenté d'en corner le coin : ma main est passée au travers. Quatre siècles que ça m'agace.",
   "Si vous cherchez du papier givré — et qui n'en cherche pas ? — le {N}ᵉ étage en cache un morceau. Je le surveille pour vous. Enfin, « surveiller »… je flotte au-dessus en soupirant, surtout."
 ];
+// Acte III — ton lumineux/espiègle (feuillets « clairs », joyeux).
+// (Textes provisoires — relecture co-écrite avant merge.)
+const _ACT3_HINT_LINES = [
+  "Drôle de chose, au {N}ᵉ étage : un feuillet qui ne gèle pas le couloir, il le réchauffe presque. J'ai cru y voir une fougère dessinée. Allez voir — moi, ça fait deux siècles que je ne dessine plus rien.",
+  "Au {N}ᵉ étage, il y a un parchemin qui scintille comme un soir de fête. Pas un secret, non — on dirait plutôt une bonne blague laissée là exprès. Ramassez-le, vous comprendrez mieux que moi.",
+  "Vous savez ce qui traîne au {N}ᵉ étage ? Un feuillet tout clair, qui sent la neige propre et le rire. Les fantômes n'ont pas de nez, mais celui-là, je le jurerais.",
+  "Petit conseil de revenant : passez au {N}ᵉ étage. Un feuillet y attend, lumineux comme une vitre givrée un matin d'hiver. Pour une fois qu'un papier d'ici ne fait pas peur."
+];
 
-// Réplique-blague d'indice pour un étage donné (variante seedée par étage).
+// Réplique-blague d'indice pour un étage donné, selon le set de pages actif
+// (variante seedée par étage).
 function _pageHintLine(floor) {
-  const v = _PAGE_HINT_LINES[floor % _PAGE_HINT_LINES.length];
-  return v.replace('{N}', floor);
+  const set = (typeof _activePageSet === 'function') ? _activePageSet() : null;
+  const pool = (set && set.questId === 'manon_acte3') ? _ACT3_HINT_LINES : _PAGE_HINT_LINES;
+  return pool[floor % pool.length].replace('{N}', floor);
 }
 
-// Étage d'une page de grimoire encore non collectée à signaler, ou null.
-// Garde : préambule `manon_revelio` rendu ET collecte `manon_grimoire`
-// en cours. Renvoie l'étage porteur le plus bas non encore collecté.
+// Étage d'un feuillet du set actif encore non collecté à signaler, ou null.
+// Set-aware (Acte II / Acte III). Pour l'Acte II, garde additionnelle : le
+// préambule `manon_revelio` doit être rendu (sinon pas de chasse aux pages).
+// Renvoie l'étage porteur le plus bas non encore collecté.
 function _pendingPageHintFloor() {
-  if (typeof completedQuests === 'undefined'
-      || !completedQuests.has('manon_revelio')) return null;
-  if (typeof activeQuests === 'undefined'
-      || !activeQuests.some(q => q.id === 'manon_grimoire')) return null;
-  if (typeof GRIMOIRE_PAGES === 'undefined') return null;
+  const set = (typeof _activePageSet === 'function') ? _activePageSet() : null;
+  if (!set) return null;
+  if (set.questId === 'manon_grimoire'
+      && !(typeof completedQuests !== 'undefined' && completedQuests.has('manon_revelio'))) {
+    return null;
+  }
   const owned = (typeof player !== 'undefined' && Array.isArray(player.grimoirePages))
     ? player.grimoirePages : [];
-  const pending = GRIMOIRE_PAGES.filter(p => !owned.includes(p.id));
+  const pending = set.pages.filter(p => !owned.includes(p.id));
   return pending.length ? pending[0].floor : null;
+}
+
+// Rumeur diffuse de Manon (Acte III, couche egg) : une réplique greffée
+// dans son idleRandom UNIQUEMENT sous la gate « Acte II fini, Acte III pas
+// encore mordu » (set actif = manon_acte3 ET quête pas encore acceptée).
+// Renvoie une réplique ou null. (Textes provisoires — relecture avant merge.)
+const _MANON_ACT3_RUMORS = [
+  "Tu sais, depuis que j'ai recopié le grimoire, j'ai l'impression qu'il lui manque un souffle. Pas une page de plus — un souffle clair, comme un rire qu'on aurait oublié dedans.",
+  "Ma mère ne faisait pas que de la magie de survie. Il y avait autre chose, j'en suis sûre maintenant : du givre pour le plaisir. Des jeux. Je n'en ai jamais trouvé la trace… mais je la cherche.",
+  "Parfois, le soir, le froid dessine des fougères sur ma vitre toutes seules. Je me dis qu'Élara a peut-être laissé de ça quelque part, exprès. Pour que je tombe dessus un jour."
+];
+function _manonAct3Rumor() {
+  const set = (typeof _activePageSet === 'function') ? _activePageSet() : null;
+  if (!set || set.questId !== 'manon_acte3') return null;
+  // Couche egg seulement : avant l'acceptation implicite (1ᵉʳ feuillet trouvé).
+  if (typeof activeQuests !== 'undefined'
+      && activeQuests.some(q => q.id === 'manon_acte3')) return null;
+  return _MANON_ACT3_RUMORS[Math.floor(Math.random() * _MANON_ACT3_RUMORS.length)];
 }
 

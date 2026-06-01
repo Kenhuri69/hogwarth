@@ -76,6 +76,7 @@ function _serializeState() {
     victoryAchieved,
     victoryAt,
     combatTutorialSeen,
+    hiverClair,
     ironmanMode,
     totalKills,
     monsterKills:  { ...monsterKills },
@@ -311,6 +312,8 @@ function _applyState(gs) {
   victoryAt       = gs.victoryAt || null;
   // Saves antérieures à D2 : champ absent → tuto réaffiché au prochain combat.
   combatTutorialSeen = !!gs.combatTutorialSeen;
+  // Passif Hiver Clair (Manon Acte III) : saves antérieures → false.
+  if (typeof hiverClair !== 'undefined') hiverClair = !!gs.hiverClair;
   // Mode Ironman : saves antérieures à l'ajout du mode → false/0/vide.
   ironmanMode     = !!gs.ironmanMode;
   totalKills      = (typeof gs.totalKills === 'number') ? gs.totalKills : 0;

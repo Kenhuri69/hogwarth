@@ -214,6 +214,29 @@ défaut = comportement Acte II, couvert par `scenarioGrimoirePages`) :
 - [x] §3 — décisions verrouillées : récompense **(B) passif Hiver
       Clair**, gate **dès Acte II fini**, **3** feuillets, étages
       **2/6/9**, sélecteur de set (réemploi structures Acte II).
-- [ ] Phases 1-6 — prêtes à implémenter. Réserve : la **rédaction des
-      dialogues** (voix de Manon, ton lumineux) gagne à être relue/co-
-      écrite avant merge.
+- [x] **Phase 1** — `ACT3_PAGES`/`ACT3_FLOORS` + `_activePageSet()`
+      (data.js) ; `_ensurePagePlacement` (dungeon.js), `_tryCollectPage`
+      (movement-interactions.js), bloc reveal (inventory-spells.js) et
+      `checkPageQuest` (quests.js) rendus *set-aware* (défaut Acte II
+      inchangé — `scenarioGrimoirePages` reste vert).
+- [x] **Phase 2** — quête `manon_acte3` (`implicitAccept:true`,
+      quests-templates.js) exclue de l'amorce `availableQuests`
+      (main.js) ; conversion egg→quête dans `_tryCollectPage`
+      (acceptQuest au 1ᵉʳ feuillet).
+- [x] **Phase 3** — rumeurs : `_manonAct3Rumor` (idleRandom Manon, sous
+      gate egg) + `_pageHintLine`/`_pendingPageHintFloor` set-aware
+      (fantômes lore) ; greffe dans `_resolveDialogSource`.
+- [x] **Phase 4** — établi : `_grimoireFusionReady`/`openFusionModal`
+      set-aware + `fuseAct3()` (turn-in + passif + purge `_purgePageData`) ;
+      suppression du bouton générique de remise pour `manon_acte3`.
+- [x] **Phase 5** — passif : flag `hiverClair` (state.js), hook `_step`
+      (+1 PM/pas, movement.js), ligne « ❄️ Hiver Clair » (char-stats-panel),
+      sérialisation (save.js) + reset `startGame` (main.js) ;
+      MANIFEST loader mis à jour.
+- [x] **Phase 6** — `scenarioGrimoireActe3` (7 cas) ; `node tests/smoke.js`
+      **vert** (150 scénarios, Acte II non régressé).
+- [ ] **Réserve** — rédaction des dialogues de Manon (rumeurs idleRandom,
+      questActive/questReady, scène de remise lumineuse), des feuillets
+      (noms/lore) et des indices fantômes Acte III : **provisoires en
+      l'état**, à relire/co-écrire avant merge (marqués `Textes
+      provisoires` dans le code).

@@ -353,6 +353,48 @@ function getGrimoirePageForFloor(floor) {
   return GRIMOIRE_PAGES.find(p => p.floor === floor) || null;
 }
 
+// ── Feuillets clairs d'Élara (Acte III — quête manon_acte3) ────
+// Trois feuillets LUMINEUX qu'Élara avait gardés à part « pour la joie » :
+// des sorts de givre heureux (dessiner sur une vitre, figer une goutte en
+// perle, faire neiger dans une pièce), semés dans le château pour que sa
+// fille tombe un jour sur sa joie et non seulement sur son mensonge.
+// Réutilisent le mécanisme de pages de l'Acte II via _activePageSet().
+// (Textes provisoires — relecture co-écrite avant merge.)
+// Cf. .claude/plans/manon-grimoire-easter-egg.md.
+const ACT3_PAGES = [
+  { id: "feuillet_clair_1", name: "La fougère sur la vitre", icon: "❄️", floor: 2,
+    lore: "« Premier jeu que je t'apprendrai : souffle sur le carreau et dessine. Une fougère, une étoile, ton prénom. Le givre garde tout ce qu'on lui confie en riant. » — É." },
+  { id: "feuillet_clair_2", name: "La goutte en perle", icon: "❄️", floor: 6,
+    lore: "« Fige une goutte de pluie avant qu'elle tombe : tu auras une perle qui ne coûte rien et ne se ternit pas. J'en ai fait des colliers entiers, les soirs où je pensais à toi. » — É." },
+  { id: "feuillet_clair_3", name: "La neige en chambre", icon: "❄️", floor: 9,
+    lore: "« Et si un soir ton cœur est lourd : ferme les fenêtres, lève ta baguette, et fais neiger dans la pièce. Personne n'a jamais boudé sous la neige. Essaie. » — É." }
+];
+
+// Étages porteurs d'un feuillet clair (dérivé — source ACT3_PAGES).
+const ACT3_FLOORS = ACT3_PAGES.map(p => p.floor);
+
+// ── Sélecteur de set de pages actif (Acte II / Acte III) ──────
+// Source de vérité unique du « quel jeu de pages est en jeu maintenant ».
+// Les structures d'état (pagePlacements / revealedPages /
+// player.grimoirePages) sont RÉUTILISÉES — les actes sont exclusifs dans
+// le temps (l'Acte II purge tout à sa fusion, l'Acte III reprend).
+// Retourne un descripteur { questId, pages, floors, fuse } ou null.
+// Cf. .claude/plans/manon-grimoire-easter-egg.md §4.
+function _activePageSet() {
+  if (typeof activeQuests !== 'undefined'
+      && activeQuests.some(q => q.id === 'manon_grimoire')) {
+    return { questId: 'manon_grimoire', pages: GRIMOIRE_PAGES,
+             floors: PAGE_FLOORS, fuse: 'fuseGrimoire' };
+  }
+  if (typeof completedQuests !== 'undefined'
+      && completedQuests.has('manon_grimoire')
+      && !completedQuests.has('manon_acte3')) {
+    return { questId: 'manon_acte3', pages: ACT3_PAGES,
+             floors: ACT3_FLOORS, fuse: 'fuseAct3' };
+  }
+  return null;
+}
+
 // ── Énigmes de Dumbledore — Épreuve de la Lumière Éternelle ───
 // 2ᵉ temps de la quête dumbledore_lumiere. QCM 4 choix ; `answer` est
 // l'index de la bonne réponse. Cf. .claude/plans/dumbledore-lux-aeterna.md.
