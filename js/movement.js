@@ -118,6 +118,10 @@ function _step(dir, faceDir) {
   if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) healSpellCooldown--;
   if (typeof _tickShopRestock === 'function') _tickShopRestock();
   AudioSystem.playFootstep();
+  // Barks ambiants (F2) : one-shot procédural à faible probabilité par pas,
+  // teinté par la tranche d'ambiance. Effet purement audio (n'altère aucun
+  // état). Self-gated : muet/combat/menu → no-op.
+  if (typeof AudioSystem.maybeAmbientBark === 'function') AudioSystem.maybeAmbientBark(currentFloor);
 
   // Apothéose Poufsouffle (palier 18 — Souffle du Blaireau) : régénération
   // hors combat, +2 PV / +2 PM par membre vivant du groupe à chaque pas.

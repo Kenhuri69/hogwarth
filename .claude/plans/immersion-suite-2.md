@@ -173,15 +173,33 @@ Au-delà du switch combat/ambiant binaire.
   `_activeCombatKey` bascule full→`combat_normal`, danger→`tension`,
   soin→`combat_normal`, sans throw ; `stopMusic()` réinitialise l'état.
 
-### F2. Barks ambiants / one-shots sonores en exploration
-Gouttes d'eau, hurlements lointains, craquements, joués aléatoirement
-pendant l'exploration (seedés par étage pour la reproductibilité ?
-**à cadrer** — possible conflit avec le déterminisme du smoke).
+### F2. Barks ambiants / one-shots sonores en exploration ✅ (cadré + livré 2026-06-01)
+Gouttes d'eau, craquements, râles lointains, grondements.
 
-- **Action** : pool de samples courts déclenchés à faible probabilité par
-  pas (`movement.js — _step`), via `AudioSystem`. **Pré-requis : assets
-  OGG présents** (sinon hors-scope, ne pas générer ici).
-- **Vérif** : à définir au cadrage ; repli silencieux si assets absents.
+- **Cadrage retenu** : **synthèse procédurale** (décision utilisateur) —
+  pas d'assets OGG (le pré-requis « assets présents » est ainsi contourné :
+  tout est synthétisé via WebAudio, comme les autres SFX). Lève aussi le
+  risque de déterminisme du smoke : l'effet est **purement audio** (un
+  `Math.random()` de roll qui n'altère aucun état de jeu ni RNG de
+  simulation), donc pas besoin de seed par étage.
+- **Implémentation** (`audio-sfx.js`) :
+  - `AudioSystem.maybeAmbientBark(floor)` : roll interne
+    (`_AMBIENT_BARK_CHANCE = 0.07`), choix du son selon la zone
+    `getFloorTheme(floor).ambient` (pool : intro = drip/creak · dungeon =
+    creak/clang/drip · depths = groan/clang/creak · abyss = rumble/groan),
+    puis `_playBark(kind)`. **No-op** si `isMuted` / `inCombat` / `inMenu`.
+    Retourne `true` si déclenché (testabilité).
+  - `_playBark(kind)` : 5 synthés WebAudio à gain bas (sons « lointains ») —
+    `drip` (sinus glissant), `creak` (bruit bandpass), `clang` (partiels
+    inharmoniques), `groan` (sinus grave + vibrato LFO), `rumble`
+    (saw grave lowpass). `try/catch` autour → silencieux si contexte indispo.
+  - **Audio (≠ mouvement)** → non gardé par reduced-motion, comme la
+    musique et les SFX existants (gating = `isMuted`).
+  - **Hook** : `movement.js — _step`, juste après `playFootstep()`, gardé
+    `typeof`.
+- **Vérif** : `scenarioAmbientBarks` — API présente ; gating muet/combat ;
+  déclenchement sur les 4 zones (proba forcée à 1) sans throw ; proba 0 ne
+  déclenche jamais.
 
 ---
 
@@ -368,4 +386,13 @@ pendant l'exploration (seedés par étage pour la reproductibilité ?
   `scenarioAdaptiveCombatMusic` (déterministe via buffers réels injectés).
   **Bumps** : `audio.js` (1→2), `audio-music.js` (4→5), `ui.js` (8→9) ;
   `CACHE_VERSION` v54 → v55. Pas de nouveau global → loader inchangé
-  (méthodes de `AudioSystem`).
+  (méthodes de `AudioSystem`). **Mergé** : PR #369. F1 clos.
+- 2026-06-01 : **F2 implémenté** (PR dédiée, branche
+  `claude/immersion-f2-ambient-barks`). Voir cadrage détaillé § F2
+  ci-dessus. `maybeAmbientBark(floor)` + `_playBark(kind)` (5 synthés
+  procéduraux) dans `audio-sfx.js` ; hook dans `movement.js — _step` après
+  `playFootstep()`. Test `scenarioAmbientBarks` (API, gating muet/combat,
+  4 zones proba 1 sans throw, proba 0 jamais). **Bumps** : `audio-sfx.js`
+  (3→4), `movement.js` (23→24) ; `CACHE_VERSION` v55 → v56. Pas de nouveau
+  global → loader inchangé. **F2 clos → Lot F entièrement clos (F1+F2) →
+  backlog immersion suite 2 INTÉGRALEMENT traité (D, E, F).**
