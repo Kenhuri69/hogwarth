@@ -11197,22 +11197,36 @@ async function scenarioFloorTheming() {
   assert(T[0].ambient === 'intro' && T[2].ambient === 'dungeon' && T[4].ambient === 'depths', 'clés ambiant cohérentes');
   assert(themes.invalid.every(l => l.includes('Couloirs')), 'entrée invalide → fallback hogwarts');
 
-  // T2 : _combatSampleKey — epic > étage ≥ 10 > difficulté
+  // T2 : _combatSampleKey — danger critique > epic > étage ≥ 10 > difficulté
   const combat = await page.evaluate(() => {
     const pick = (group, floor) => { currentFloor = floor; return AudioSystem._combatSampleKey(group); };
-    return {
-      early:   pick([{ id: 'peeve', epic: false }], 3),
-      late:    pick([{ id: 'mangemort_elite', epic: false }], 11),
-      epic:    pick([{ id: 'voldemort_revenu', epic: true }], 5),
-      samples: AudioSystem._COMBAT_SAMPLES
+    // Groupe à PV pleins pour les cas baseline (pas de danger critique).
+    party.slice(0, partySize).forEach(c => { c.hp = c.hpMax; });
+    const baseline = {
+      early: pick([{ id: 'peeve', epic: false }], 3),
+      late:  pick([{ id: 'mangemort_elite', epic: false }], 11),
+      epic:  pick([{ id: 'voldemort_revenu', epic: true }], 5),
     };
+    // Danger critique : un membre vivant sous 25 % PV → 'tension' prime,
+    // même contre un boss épique. KO (hp=0) ne compte pas.
+    party[0].hp = Math.max(1, Math.floor(party[0].hpMax * 0.2));
+    const dangerNormal = pick([{ id: 'peeve', epic: false }], 3);
+    const dangerEpic   = pick([{ id: 'voldemort_revenu', epic: true }], 5);
+    party[0].hp = 0;
+    const koNotDanger  = pick([{ id: 'peeve', epic: false }], 3);
+    party.slice(0, partySize).forEach(c => { c.hp = c.hpMax; }); // restore
+    return { baseline, dangerNormal, dangerEpic, koNotDanger, samples: AudioSystem._COMBAT_SAMPLES };
   });
-  console.log('  T2 combat:', combat.early, combat.late, combat.epic);
-  assert(combat.early === 'combat_normal', `combat étage 3 = combat_normal, got ${combat.early}`);
-  assert(combat.late  === 'combat_late',   `combat étage 11 = combat_late, got ${combat.late}`);
-  assert(combat.epic  === 'combat_epic',   `combat vs boss épique = combat_epic, got ${combat.epic}`);
+  console.log('  T2 combat:', JSON.stringify(combat.baseline), '| danger:', combat.dangerNormal, combat.dangerEpic, '| ko:', combat.koNotDanger);
+  assert(combat.baseline.early === 'combat_normal', `combat étage 3 = combat_normal, got ${combat.baseline.early}`);
+  assert(combat.baseline.late  === 'combat_late',   `combat étage 11 = combat_late, got ${combat.baseline.late}`);
+  assert(combat.baseline.epic  === 'combat_epic',   `combat vs boss épique = combat_epic, got ${combat.baseline.epic}`);
+  assert(combat.dangerNormal === 'tension', `danger critique = tension, got ${combat.dangerNormal}`);
+  assert(combat.dangerEpic   === 'tension', `danger critique prime sur epic = tension, got ${combat.dangerEpic}`);
+  assert(combat.koNotDanger  === 'combat_normal', `membre KO ne déclenche pas tension, got ${combat.koNotDanger}`);
   assert(combat.samples.combat_late.endsWith('combat_late.ogg'),  '_COMBAT_SAMPLES.combat_late mappé');
   assert(combat.samples.combat_epic.endsWith('combat_epic.ogg'),  '_COMBAT_SAMPLES.combat_epic mappé');
+  assert(combat.samples.tension.endsWith('ambient_tension.ogg'),  '_COMBAT_SAMPLES.tension mappé (D4)');
 
   // T3 : _maybePlayTierTransition — déclenche aux frontières, pas dans une tranche
   const trans = await page.evaluate(() => {
