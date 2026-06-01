@@ -64,6 +64,11 @@ function _restoreFloorFromCache(floor) {
   if (typeof _ensureStairsExist === 'function') {
     _ensureStairsExist(floor);
   }
+  // Garde-fou endgame : garantit le boss final à l'étage 10 pré-victoire
+  // (répare les étages 10 déjà nettoyés sans avoir croisé Voldemort).
+  if (typeof _ensureFinalBossPresent === 'function') {
+    _ensureFinalBossPresent(floor);
+  }
   return true;
 }
 

@@ -132,6 +132,7 @@ window.UX_safe = new Proxy({}, {
     { name: '_migrateMissingNpcsForFloor', source: 'dungeon-spawning.js', kind: 'fn' },
     { name: '_ensureActiveKillQuestTargets', source: 'dungeon-spawning.js', kind: 'fn' },
     { name: '_ensureStairsExist', source: 'dungeon-spawning.js', kind: 'fn' },
+    { name: '_ensureFinalBossPresent', source: 'dungeon-spawning.js', kind: 'fn' },
     { name: 'effectiveFloor',     source: 'dungeon-scaling.js', kind: 'fn'  },
     { name: 'isBruteMonster',     source: 'dungeon-scaling.js', kind: 'fn'  },
     { name: 'drawDungeon',        source: 'renderer.js',     kind: 'fn'  },

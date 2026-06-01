@@ -6440,6 +6440,89 @@ async function scenarioStairsGated() {
   await browser.close();
 }
 
+// ── Scénario endgame 2bis : boss final garanti à l'étage 10 ──────
+// L'escalier étage 10 est scellé tant que voldemort_revenu n'est pas
+// vaincu, mais le boss n'a que weight:1 (~1 % du pool) → un étage nettoyé
+// pouvait ne jamais le proposer (soft-lock). _ensureFinalBossPresent le
+// garantit. Couvre aussi la réparation des saves existantes.
+async function scenarioFinalBossGuaranteed() {
+  console.log('\n── Scénario endgame 2bis : boss final garanti étage 10 ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helper exposé
+  const t1 = await page.evaluate(() => ({
+    hasFn: typeof _ensureFinalBossPresent === 'function'
+  }));
+  console.log('  T1 fn exposed:', t1);
+  assert(t1.hasFn, '_ensureFinalBossPresent non exposée');
+
+  // T2 : étage 10 pré-victoire, carte vidée → le boss est placé.
+  const t2 = await page.evaluate(() => {
+    currentFloor = 10;
+    victoryAchieved = false;
+    generateDungeon(10);
+    // Vide tout ennemi (simule un étage nettoyé comme dans la save buggée)
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const added = _ensureFinalBossPresent(10);
+    let count = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && enemyMap[y][x].id === 'voldemort_revenu') count++;
+    return { added, count };
+  });
+  console.log('  T2 placement:', t2);
+  assert(t2.added === 1, `le boss doit être placé (1), got ${t2.added}`);
+  assert(t2.count === 1, `exactement 1 boss sur la carte, got ${t2.count}`);
+
+  // T3 : idempotence — 2e appel ne duplique pas le boss
+  const t3 = await page.evaluate(() => {
+    const added = _ensureFinalBossPresent(10);
+    let count = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && enemyMap[y][x].id === 'voldemort_revenu') count++;
+    return { added, count };
+  });
+  console.log('  T3 idempotent:', t3);
+  assert(t3.added === 0, `2e appel doit être no-op, got ${t3.added}`);
+  assert(t3.count === 1, `toujours 1 seul boss, got ${t3.count}`);
+
+  // T4 : post-victoire → aucun placement (Boucle Ténébreuse non polluée)
+  const t4 = await page.evaluate(() => {
+    victoryAchieved = true;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const added = _ensureFinalBossPresent(10);
+    victoryAchieved = false;
+    return { added };
+  });
+  console.log('  T4 post-victoire:', t4);
+  assert(t4.added === 0, 'post-victoire : aucun boss replacé');
+
+  // T5 : autres étages → no-op (gate currentFloor === 10)
+  const t5 = await page.evaluate(() => {
+    currentFloor = 9;
+    victoryAchieved = false;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const added9 = _ensureFinalBossPresent(9);
+    const added10 = _ensureFinalBossPresent(10); // floor param prime sur currentFloor
+    return { added9, added10 };
+  });
+  console.log('  T5 floor gate:', t5);
+  assert(t5.added9 === 0,  'étage 9 : aucun boss');
+  assert(t5.added10 === 1, 'étage 10 explicite : boss placé');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ boss final garanti à l\'étage 10 OK');
+  await browser.close();
+}
+
 // ── Scénario endgame 3 : variant darkness + scaling Ténèbres ─────
 async function scenarioDarkVariant() {
   console.log('\n── Scénario endgame 3 : variant darkness + scaling Ténèbres ──');
@@ -18377,7 +18460,7 @@ async function scenarioDangerVignette() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioHeadlessHunt, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioAdaptiveCombatMusic, scenarioAmbientBarks, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioHeadlessHunt, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioAdaptiveCombatMusic, scenarioAmbientBarks, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioEnemyIdle, scenarioDungeonVfx];
   const filters = parseScenarioFilters();
   const selected = filters.length

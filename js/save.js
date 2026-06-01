@@ -390,6 +390,12 @@ function _applyState(gs) {
   if (typeof _ensureStairsExist === 'function') {
     _ensureStairsExist(currentFloor);
   }
+  // Garde-fou endgame : garantit le boss final à l'étage 10 pré-victoire.
+  // Répare les saves dont l'étage 10 a été nettoyé sans rencontrer
+  // Voldemort Ressuscité (escalier descendant alors scellé sans issue).
+  if (typeof _ensureFinalBossPresent === 'function') {
+    _ensureFinalBossPresent(currentFloor);
+  }
 
   recalculateStats();
   if (!('pendingHouseRewards' in gs)) _migrateHouseRewards();

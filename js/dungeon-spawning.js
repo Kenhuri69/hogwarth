@@ -183,6 +183,66 @@ function _ensureStairsExist(floor) {
   return added;
 }
 
+// Garantit la présence du boss final `voldemort_revenu` à l'étage 10 tant
+// que la victoire n'est pas acquise. La descente vers l'étage 11 est scellée
+// jusqu'à sa défaite (cf. movement-floors.js — goDeeper guard) ; or le boss
+// n'a que `weight: 1` dans le pool (~1 % par spawn), donc un joueur pouvait
+// nettoyer tout l'étage 10 sans jamais le rencontrer → soft-lock de
+// progression (escalier scellé, plus rien à combattre).
+//
+// Place le boss sur une case FLOOR libre, en privilégiant le voisinage de
+// l'escalier descendant scellé (son antre). N'altère pas la map (cohérent
+// avec les autres garde-fous : seul `enemyMap` est touché).
+//
+// Appelée depuis `generateDungeon` (génération initiale), `_restoreFloorFromCache`
+// (retour sur l'étage) et `_applyState` (chargement de save — répare les saves
+// existantes dont l'étage 10 est déjà nettoyé). Idempotente : no-op si déjà
+// présent, si `floor !== 10`, ou si `victoryAchieved`. Retourne 1 si placé.
+function _ensureFinalBossPresent(floor) {
+  if (floor !== 10) return 0;
+  if (typeof victoryAchieved !== 'undefined' && victoryAchieved) return 0;
+  if (typeof dungeon === 'undefined' || typeof enemyMap === 'undefined') return 0;
+  if (typeof MONSTERS === 'undefined' || typeof scaleMonster !== 'function') return 0;
+
+  // Déjà présent quelque part sur l'étage ?
+  for (let y = 0; y < enemyMap.length; y++) {
+    for (let x = 0; x < enemyMap[y].length; x++) {
+      if (enemyMap[y][x] && enemyMap[y][x].id === 'voldemort_revenu') return 0;
+    }
+  }
+  const boss = MONSTERS.find(m => m.id === 'voldemort_revenu');
+  if (!boss) return 0;
+
+  // Cases FLOOR libres (hors joueur) + repère de l'escalier descendant.
+  const free = [];
+  let stairs = null;
+  for (let y = 0; y < dungeon.length; y++) {
+    for (let x = 0; x < dungeon[y].length; x++) {
+      if (dungeon[y][x] === CELL.STAIRS_D) stairs = { x, y };
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (enemyMap[y][x]) continue;
+      if (typeof playerX === 'number' && x === playerX && y === playerY) continue;
+      free.push({ x, y });
+    }
+  }
+  if (!free.length) return 0;
+
+  if (stairs) {
+    // Plus proche de l'escalier scellé = l'antre du boss.
+    free.sort((a, b) =>
+      ((a.x - stairs.x) ** 2 + (a.y - stairs.y) ** 2)
+      - ((b.x - stairs.x) ** 2 + (b.y - stairs.y) ** 2));
+  } else {
+    for (let i = free.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [free[i], free[j]] = [free[j], free[i]];
+    }
+  }
+  const cell = free[0];
+  enemyMap[cell.y][cell.x] = scaleMonster(boss, floor);
+  return 1;
+}
+
 // Repère les PNJ qui devraient être placés à l'étage courant (selon
 // `getNpcsForFloor`) mais absents de `npcPlacements`. Les place sur
 // une cellule FLOOR libre. Permet aux saves antérieures à un ajout
