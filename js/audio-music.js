@@ -94,6 +94,7 @@ Object.assign(AudioSystem, {
     combat_epic:   'audio/combat_epic.ogg',   // boss épique — repli combat_normal si 404
     combat_hard:   'audio/combat_hard.ogg',   // difficulté Difficile — repli combat_normal si 404
     combat_expert: 'audio/combat_expert.ogg', // difficulté Expert — repli combat_normal si 404
+    tension:       'audio/ambient_tension.ogg', // groupe en danger critique (D4) — repli combat_normal si 404
   },
 
   // ── Registre voix narratives (un fichier par phrase) ──────────
@@ -751,17 +752,31 @@ Object.assign(AudioSystem, {
   },
 
   // ── Sélection du sample de combat — axes combinés ─────────────
-  // Priorité : boss épique > étage ≥ 10 > difficulté courante.
-  // `enemyGroup` optionnel : à défaut, lit le global `enemyGroup`.
+  // Priorité : danger critique du groupe > boss épique > étage ≥ 10 >
+  // difficulté courante. `enemyGroup` optionnel : à défaut, lit le global
+  // `enemyGroup`. La couche `tension` (D4) prime : entamer un combat avec
+  // un membre vivant sous 25 % PV est le moment le plus tendu, quel que
+  // soit l'ennemi. Les boss épiques non critiques gardent `combat_epic`.
   _combatSampleKey(grpArg) {
     const grp = (grpArg != null) ? grpArg
               : (typeof enemyGroup !== 'undefined' ? enemyGroup : null);
+    if (this._partyInCriticalDanger()) return 'tension';
     if (Array.isArray(grp) && grp.some(e => e && e.epic)) return 'combat_epic';
     if (typeof currentFloor === 'number' && currentFloor >= 10) return 'combat_late';
     const d = (typeof difficulty !== 'undefined') ? difficulty : 'Normal';
     if (d === 'Expert')    return 'combat_expert';
     if (d === 'Difficile') return 'combat_hard';
     return 'combat_normal';
+  },
+
+  // Vrai si un membre VIVANT du groupe est sous 25 % de ses PV max (même
+  // seuil que la vignette de danger D2). Lecture pure des globals party/
+  // partySize, gardée par typeof. Pur — n'altère aucun état.
+  _partyInCriticalDanger() {
+    if (typeof party === 'undefined' || !Array.isArray(party)) return false;
+    const n = (typeof partySize === 'number') ? partySize : party.length;
+    return party.slice(0, n).some(c =>
+      c && c.hp > 0 && c.hpMax > 0 && c.hp / c.hpMax < 0.25);
   },
 
   // ── Synthèse procédurale de combat (fallback ou difficulté sans sample) ──

@@ -226,3 +226,28 @@ pendant l'exploration (seedés par étage pour la reproductibilité ?
   - **Bumps** : `combat-fx.js` (4→5), `combat-fx.css` (5→6), `battle.js`
     (19→20) ; `CACHE_VERSION` v48 → v49. Pas de nouveau global → loader
     inchangé (`hurtFlash` est une méthode de `CombatFX`).
+  - **Mergé** : PR #358 (master). D3 clos.
+- 2026-06-01 : **D4 implémenté** (PR dédiée, branche
+  `claude/immersion-d4-tension-audio`).
+  - **Action** : `ambient_tension.ogg` branché comme **musique de combat**
+    via `_COMBAT_SAMPLES.tension` + nouvel axe **prioritaire** dans
+    `audio-music.js — _combatSampleKey`. Helper pur `_partyInCriticalDanger()`
+    (membre vivant sous 25 % PV — même seuil que la vignette D2). La couche
+    `tension` prime sur tous les autres axes (epic/late/difficulté).
+  - **Décision (écart documenté)** : le plan évoquait « boss epic OU danger
+    critique » → `tension`. Mais `combat_epic` existe déjà et est testé
+    (T2). Faire gagner `tension` sur tout boss epic **orphelinerait**
+    `combat_epic`. J'ai donc scopé `tension` au **danger critique du
+    groupe** (le déclencheur réellement neuf et sans sample dédié) ; les
+    boss épiques non critiques gardent `combat_epic`. En danger critique,
+    `tension` prime même contre un boss epic — ce qui couvre le « OU » du
+    plan. Surface conforme, aucune régression de `combat_epic`.
+  - **Repli sûr** : aucun changement à `startCombatMusic` — la chaîne de
+    fallback existante (`tension` 404 → `combat_normal` → synthèse
+    procédurale) s'applique telle quelle (`tension !== 'combat_normal'`).
+    `getFloorTheme` non touché (pas de tranche d'ambiance inventée).
+  - **Tests** : `scenarioFloorTheming` T2 étendu — `tension` sur danger
+    critique (normal ET epic), `combat_normal` si le membre bas-PV est KO,
+    baseline inchangée, `_COMBAT_SAMPLES.tension` → `ambient_tension.ogg`.
+  - **Bumps** : `audio-music.js` (index 3→4, sw 2→4 — alignés) ;
+    `CACHE_VERSION` v49 → v50. Pas de nouveau global → loader inchangé.
