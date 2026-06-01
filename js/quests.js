@@ -597,6 +597,13 @@ function completeQuest(index) {
     safeCall('checkHouseLevelUp');
   }
 
+  // Easter egg « La Chasse Sans Tête » : adhésion honoraire cosmétique
+  // (jumeau du hook points de Maison ci-dessus). Pose le flag sérialisé ;
+  // débloque le badge fiche perso + la ligne célébratoire de Sir Nicolas.
+  if (q.id === 'chasse_sans_tete' && typeof headlessHuntMember !== 'undefined') {
+    headlessHuntMember = true;
+  }
+
   // Retire de l'actif, marque comme rendue. Quêtes répétables : on
   // retient le niveau du joueur à la remise pour calculer le cooldown
   // lors d'une éventuelle ré-offre.

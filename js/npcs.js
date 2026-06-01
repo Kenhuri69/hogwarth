@@ -454,6 +454,47 @@ const NPCS = [
       }
     }
   },
+  // PNJ déterministe : Maître de la Chasse Sans Tête (easter egg comique).
+  // Tapi dans les profondeurs (étage 6) ; le joueur curieux le trouve et
+  // plaide la cause de Sir Nicolas. Quête `chasse_sans_tete` (kill Chevalier
+  // Fantôme ×2). Portrait/sprite génériques fantôme (pas d'asset dédié en V1).
+  // Cf. .claude/plans/headless-hunt-easter-egg.md.
+  {
+    id:    "sir_patrick",
+    name:  "Sir Patrick Delaney-Podmore",
+    title: "Maître de la Chasse Sans Tête",
+    sprite: "fantome",
+    icon:  "💀",
+    portraitImg: "img/npc/_npc_fantome.png",
+    placement: { floor: 6, anchor: "any" },
+    questsGiven:    ["chasse_sans_tete"],
+    questsTurnedIn: ["chasse_sans_tete"],
+    // Textes provisoires — relecture co-écrite (ton comique/macabre) avant merge.
+    dialogues: {
+      greeting: [
+        "Halte-là ! (Sa tête, parfaitement détachée, roule sous son bras le temps d'un salut goguenard.) Vous tombez sur Sir Patrick Delaney-Podmore, fondateur de la Chasse Sans Tête. Membres : décapités intégralement. Recalés : les autres.",
+        "Ne me parlez pas de ce pauvre Nicolas. Une tête qui tient encore par un lambeau, ça n'est pas décapité, c'est… mal rangé. Le règlement est le règlement."
+      ],
+      idleRandom: [
+        "Notre dernier tournoi de Hockey à Têtes fut un triomphe. Dommage que Nicolas n'ait pu y participer — il aurait fallu qu'il se débarrasse de ce dernier centimètre de peau.",
+        "La décapitation, jeune sorcier, est un art. On ne s'improvise pas sans-tête.",
+        "Quarante-cinq coups de hache pour Nicolas ! Et pas un n'a fini le travail. Quelle malchance — ou quel bourreau."
+      ]
+    },
+    dialoguesByQuest: {
+      chasse_sans_tete: {
+        questOffer: [
+          "Vous plaidez pour ce brave Nicolas ? (Il soupire, et sa tête en profite pour bâiller sous son bras.) Soit. Je veux une preuve qu'un fantôme entêté sait encore chasser.",
+          "Au fond de ces galeries rôdent des Chevaliers Fantômes — des spectres si orgueilleux qu'ils n'ont jamais ôté leur heaume, même dans la mort. Terrassez-en deux et rapportez-moi leurs casques. Faites cela, et je reconsidérerai la candidature de votre ami."
+        ],
+        questActive: "Alors, ces deux heaumes ? Un Chevalier Fantôme ne se laisse pas décoiffer facilement, je vous l'accorde. Mais une chasse digne de ce nom se mérite.",
+        questReady: [
+          "Deux heaumes ! Et non des moindres. (Il les soupèse, ravi, manquant de faire tomber sa propre tête.) Voilà qui plaide mieux que mille suppliques.",
+          "C'est entendu : j'accorde à Sir Nicolas une adhésion HONORAIRE à la Chasse Sans Tête. Il défilera derrière le cortège — pas devant, n'exagérons rien — mais il défilera. Et vous, mon brave, vous voilà membre d'honneur de notre confrérie. Portez ce titre avec panache !"
+        ]
+      }
+    }
+  },
   {
     id:    "hagrid",
     name:  "Hagrid",
@@ -958,6 +999,8 @@ const NPCS = [
       // Anecdotes graduées du rigolo au sombre (piochées au hasard).
       idleRandom: [
         "Le Chasseur Sans Tête m'a encore refusé l'entrée de son club. Une tête qui pend par un lambeau de peau ne compte pas comme « décapitée », paraît-il. Quelle injustice !",
+        // Ligne d'espoir (couche egg) — Textes provisoires, relecture avant merge.
+        "On dit que Sir Patrick lui-même hante les galeries profondes, par ici-bas. Si seulement quelqu'un d'assez brave plaidait ma cause auprès de lui… mais qui se soucie d'un vieux fantôme à moitié décapité ?",
         "Mon dernier anniversaire de mort fut somptueux : pâté pourri, gâteau couvert d'asticots, orchestre de scies musicales… Vous auriez adoré. Enfin, peut-être pas.",
         "J'ai connu Godric Gryffondor en personne. Charmant, mais bien trop grand pour les portes.",
         "On dit qu'au troisième étage, un miroir reflète plus que votre image…",

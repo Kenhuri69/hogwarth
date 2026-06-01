@@ -690,6 +690,14 @@ let combatTutorialSeen = false;
 // _serializeState / _applyState. Cf. .claude/plans/manon-grimoire-easter-egg.md §7.
 let hiverClair = false;
 
+// Easter egg « La Chasse Sans Tête » — true une fois la quête
+// `chasse_sans_tete` remise à Sir Patrick (hook dans completeQuest).
+// Récompense purement cosmétique : badge sur la fiche perso + ligne
+// célébratoire débloquée chez Sir Nicolas. Aucun effet de combat.
+// Réinitialisé par startGame, persisté via _serializeState / _applyState.
+// Cf. .claude/plans/headless-hunt-easter-egg.md.
+let headlessHuntMember = false;
+
 // ============================================================
 // QUÊTES SECONDAIRES
 // ============================================================

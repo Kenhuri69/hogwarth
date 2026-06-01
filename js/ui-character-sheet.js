@@ -367,6 +367,8 @@ function openCharacter(charIdx = 0) {
         ${_renderStatLine('img/icons/agi.png', '⚡ Célérité',  celeritePct,  true)}
         ${(typeof hiverClair !== 'undefined' && hiverClair)
           ? _renderStatLine('img/icons/mp.png', '❄️ Hiver Clair', '+1 PM/pas', true) : ''}
+        ${(typeof headlessHuntMember !== 'undefined' && headlessHuntMember)
+          ? _renderStatLine('img/icons/xp.png', '💀 Chasse Sans Tête', 'Membre d\'honneur', true) : ''}
       </div>
 
       <!-- Équipement (grid-area:equip) -->
