@@ -14,8 +14,9 @@ function _serializeState() {
     currentFloor, playerX, playerY, playerDir,
     dungeon, visited, enemyMap, itemMap,
     seenMonsters:  Array.from(seenMonsters),
-    audioMuted:    AudioSystem.isMuted,
-    voiceEnabled:  AudioSystem.voiceEnabled,
+    // NB : les préférences audio (son/voix) ne sont volontairement PAS
+    // sérialisées ici — ce sont des réglages d'interface globaux
+    // (AudioSystem._PREFS_KEY), pas de l'état de partie.
     activeQuests,
     difficulty,
     chosenHouse, housePoints, houseTier,
@@ -194,14 +195,12 @@ function _applyState(gs) {
   if (gs.partySize)     partySize    = gs.partySize;
   if (gs.seenMonsters)  seenMonsters = new Set(gs.seenMonsters);
 
-  if (gs.audioMuted !== undefined) {
-    AudioSystem.isMuted = gs.audioMuted;
-  }
-  if (gs.voiceEnabled !== undefined) {
-    AudioSystem.voiceEnabled = gs.voiceEnabled;
-  }
-  // Resynchronise les icônes PNG des boutons audio (jamais textContent,
-  // qui remplacerait le <img> par un emoji brut).
+  // Les préférences audio (son / voix) sont des réglages d'INTERFACE,
+  // globaux et persistés à part (AudioSystem._PREFS_KEY). Charger une
+  // sauvegarde ne doit donc PAS les écraser — sinon un slot enregistré
+  // muet recouperait le son du joueur. On ne fait que resynchroniser les
+  // icônes des boutons avec l'état courant (jamais textContent, qui
+  // remplacerait le <img> par un emoji brut).
   if (AudioSystem.refreshButtons) AudioSystem.refreshButtons();
 
   currentFloor = gs.currentFloor;
