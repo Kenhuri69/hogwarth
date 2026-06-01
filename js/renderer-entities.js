@@ -26,28 +26,46 @@ function _getMonsterImg(src) {
   return entry;
 }
 
+// Vrai si l'utilisateur a demandé la réduction de mouvement — l'idle des
+// sprites (E1) tombe alors à amplitude 0. Pur, sûr en file://.
+function _spriteReducedMotion() {
+  return !!(window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
 // ── Ennemi (sprite de couloir) ───────────────────────────────
 function drawEnemySprite(enemy, x, baseY, sz) {
   ctx.save();
+  // Idle (E1) : léger bobbing vertical + respiration (scale), via la phase
+  // partagée _npcAnimPhase (tickée par startNpcAnimLoop quand un ennemi est
+  // en vue). reduced-motion → amplitude 0 (sprite statique). Le corps et
+  // l'aura bobbent ; l'ombre au sol et la barre de PV restent fixes pour la
+  // lisibilité. Phase 0 (défaut) ⇒ comportement historique inchangé.
+  const phase  = (typeof _npcAnimPhase !== 'undefined') ? _npcAnimPhase : 0;
+  const amp    = _spriteReducedMotion() ? 0 : 1;
+  const bob    = Math.sin(phase * 1.8) * sz * 0.03 * amp;
+  const breath = 1 + Math.sin(phase * 1.2) * 0.02 * amp;
+  const by     = baseY - bob;
+
   const shadowG = ctx.createRadialGradient(x, baseY, 0, x, baseY, sz * 0.65);
   shadowG.addColorStop(0, 'rgba(180,20,10,0.5)'); shadowG.addColorStop(1, 'rgba(180,20,10,0)');
   ctx.fillStyle = shadowG; ctx.fillRect(x - sz, baseY - sz * 0.3, sz * 2, sz * 0.65);
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.38, sz * 0.1, 0, 0, Math.PI * 2); ctx.fill();
-  const aura = ctx.createRadialGradient(x, baseY - sz * 0.55, 0, x, baseY - sz * 0.55, sz * 0.85);
+  const aura = ctx.createRadialGradient(x, by - sz * 0.55, 0, x, by - sz * 0.55, sz * 0.85);
   aura.addColorStop(0, 'rgba(220,40,20,0.22)'); aura.addColorStop(1, 'rgba(100,10,5,0)');
-  ctx.fillStyle = aura; ctx.beginPath(); ctx.arc(x, baseY - sz * 0.55, sz * 0.85, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = aura; ctx.beginPath(); ctx.arc(x, by - sz * 0.55, sz * 0.85, 0, Math.PI * 2); ctx.fill();
 
   // PNG du monstre prioritaire ; emoji en fallback si imgSrc absent
   // (14 monstres récents) ou image pas encore chargée.
   const entry = _getMonsterImg(enemy.imgSrc);
   if (entry && entry.ready) {
-    const drawSize = sz * 1.5;
-    ctx.drawImage(entry.img, x - drawSize / 2, baseY - drawSize, drawSize, drawSize);
+    const drawSize = sz * 1.5 * breath;
+    ctx.drawImage(entry.img, x - drawSize / 2, by - drawSize, drawSize, drawSize);
   } else {
-    ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+    ctx.font = `${Math.floor(sz * 1.1 * breath)}px serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-    ctx.fillText(enemy.icon, x, baseY);
+    ctx.fillText(enemy.icon, x, by);
   }
   const hp  = enemy.currentHp !== undefined ? enemy.currentHp : enemy.hp;
   const pct = Math.max(0, Math.min(1, hp / enemy.hp));

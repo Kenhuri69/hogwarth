@@ -251,3 +251,26 @@ pendant l'exploration (seedés par étage pour la reproductibilité ?
     baseline inchangée, `_COMBAT_SAMPLES.tension` → `ambient_tension.ogg`.
   - **Bumps** : `audio-music.js` (index 3→4, sw 2→4 — alignés) ;
     `CACHE_VERSION` v49 → v50. Pas de nouveau global → loader inchangé.
+  - **Mergé** : PR #360 (master). D4 clos → **Lot D entièrement clos**.
+- 2026-06-01 : **E1 implémenté** (PR dédiée, branche
+  `claude/immersion-e1-enemy-idle`).
+  - **Action** : idle des sprites ennemis de couloir. `drawEnemySprite`
+    (`renderer-entities.js`) applique un léger bobbing vertical
+    (`sin(phase·1.8)·sz·0.03`) + respiration (`scale 1±0.02`) via la phase
+    partagée `_npcAnimPhase` (déjà tickée par `startNpcAnimLoop`). Corps +
+    aura bobbent ; ombre au sol et barre de PV restent fixes (lisibilité).
+    Phase 0 par défaut ⇒ rendu historique inchangé.
+  - **Boucle** : `startNpcAnimLoop` (`renderer-effects.js`) tick désormais
+    aussi quand un ennemi est dans l'axe de regard, via le helper pur
+    `_enemyAheadVisible()` (scan ≤ 5 cases, `false` en combat car la vue 3D
+    est masquée par l'overlay). reduced-motion via `_spriteReducedMotion()`
+    → amplitude 0 (sprite statique).
+  - **Pas de nouvel état persistant** : réutilise `_npcAnimPhase` (déjà non
+    sérialisé). Aucune mécanique touchée.
+  - **Tests** : nouveau `scenarioEnemyIdle` — helpers exposés,
+    `_enemyAheadVisible` (devant=true / vide=false / combat=false),
+    `drawEnemySprite` sans throw (emoji, 3 phases), reduced-motion
+    (amplitude 0, pas de throw via `emulateMedia`).
+  - **Bumps** : `renderer-entities.js` (1→2), `renderer-effects.js`
+    (11→12) ; `CACHE_VERSION` v50 → v51. Pas de nouveau global critique
+    (helpers internes au rendu) → loader inchangé.
