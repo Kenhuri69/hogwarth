@@ -253,7 +253,27 @@
     setTimeout(() => flash.remove(), dur);
   }
 
-  window.CombatFX = { spellBurst, healBurst, buffAura, shake, bossIntro, combatStart };
+  // ── Pétrification de la mort (hors Ironman) — C2 ─────────────
+  // Overlay plein écran qui désature + givre la scène avant le death-screen.
+  // backdrop-filter (grayscale + brightness) ramping + givre en box-shadow
+  // inset. z-index 880 (sous #death-screen 900) ; bouclier de clics. Retourne
+  // la durée (ms) à attendre avant d'afficher l'écran de mort — 0 en
+  // reduced-motion (ne ralentit pas la mort) ou si rien n'a pu être monté.
+  function petrify() {
+    if (!document.body) return 0;
+    if (prefersReducedMotion()) return 0;
+    const old = document.getElementById('cfx-petrify');
+    if (old) old.remove();
+    const el = document.createElement('div');
+    el.id = 'cfx-petrify';
+    el.className = 'cfx-petrify';
+    document.body.appendChild(el);
+    const DUR = 1100;
+    setTimeout(() => el.remove(), DUR + 250); // retiré une fois death-screen au-dessus
+    return DUR;
+  }
+
+  window.CombatFX = { spellBurst, healBurst, buffAura, shake, bossIntro, combatStart, petrify };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle
