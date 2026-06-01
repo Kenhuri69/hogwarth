@@ -17150,12 +17150,14 @@ async function scenarioCombatFX() {
     hasBuff:   typeof window.CombatFX?.buffAura === 'function',
     hasShake:  typeof window.CombatFX?.shake === 'function',
     hasBoss:   typeof window.CombatFX?.bossIntro === 'function',
+    hasEnter:  typeof window.CombatFX?.combatStart === 'function',
     hasProxy:  typeof window.CFX_safe?.spellBurst === 'function',
   }));
   console.log('  F1 module:', f1);
   assert(f1.hasModule, 'F1 window.CombatFX absent');
   assert(f1.hasBurst && f1.hasShake && f1.hasBoss, 'F1 API incomplète');
   assert(f1.hasHeal && f1.hasBuff, 'F1 API soin/buff (B1) absente');
+  assert(f1.hasEnter, 'F1 API combatStart (C1) absente');
   assert(f1.hasProxy, 'F1 CFX_safe proxy absent');
 
   await startDummyFight(page, { hp: 50 });
@@ -17207,6 +17209,17 @@ async function scenarioCombatFX() {
   console.log('  F4 soin/buff:', f4);
   assert(!f4.threw, 'F4 healBurst/buffAura throw en combat');
   assert(f4.layer, 'F4 couche combat-fx-layer absente');
+
+  // F5 — transition d'entrée (C1) : combatStart crée #cfx-combat-flash dans
+  // l'overlay sans throw ; l'élément est présent juste après l'appel.
+  const f5 = await page.evaluate(() => {
+    let threw = false;
+    try { window.CFX_safe.combatStart(); } catch (e) { threw = true; }
+    return { threw, flash: !!document.getElementById('cfx-combat-flash') };
+  });
+  console.log('  F5 entrée  :', f5);
+  assert(!f5.threw, 'F5 combatStart throw');
+  assert(f5.flash, 'F5 #cfx-combat-flash non créé');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

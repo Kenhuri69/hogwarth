@@ -453,9 +453,11 @@ function startBattle(baseEnemyData, opts) {
   UX_safe.logCombat(`⚔️ Combat engagé contre ${size} ennemi${size>1?'s':''}.`, 'info');
   UX_safe.renderTimeline();
   AudioSystem.startCombatMusic(enemyGroup);
-  // Immersion (Lot 1) : cinématique d'apparition pour les boss epic.
-  // Purement visuel (CFX_safe → no-op si le module FX est absent).
+  // Immersion : cinématique d'apparition pour les boss epic, sinon flash
+  // d'entrée court (C1). Mutuellement exclusifs — jamais empilés. Purement
+  // visuel (CFX_safe → no-op si le module FX est absent).
   if (enemyGroup[0] && enemyGroup[0].epic) CFX_safe.bossIntro(enemyGroup[0]);
+  else                                     CFX_safe.combatStart();
   // D5 Célérité — ouvre le segment du 1ᵉʳ héros (round 1). Aucune action sup. au
   // round 1 (gauge part de 0, +celerite < 1), mais maintient la parité avec la sim.
   _beginHeroSegment(currentBattleChar);
