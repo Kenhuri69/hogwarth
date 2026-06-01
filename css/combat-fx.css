@@ -157,6 +157,30 @@
   100% { opacity: 0; transform: scale(1); }
 }
 
+/* ── Pétrification de la mort (désaturation + givre) — C2 ───── */
+.cfx-petrify {
+  position: fixed;
+  inset: 0;
+  z-index: 880; /* sous #death-screen (900) ; recouvert quand il s'affiche */
+  pointer-events: auto; /* bouclier : avale les clics pendant la pétrification */
+  backdrop-filter: grayscale(0) brightness(1);
+  -webkit-backdrop-filter: grayscale(0) brightness(1);
+  box-shadow: inset 0 0 0 0 rgba(180,205,230,0);
+  animation: cfxPetrify 1.1s ease-in forwards;
+}
+@keyframes cfxPetrify {
+  0% {
+    backdrop-filter: grayscale(0) brightness(1);
+    -webkit-backdrop-filter: grayscale(0) brightness(1);
+    box-shadow: inset 0 0 0 0 rgba(180,205,230,0);
+  }
+  100% {
+    backdrop-filter: grayscale(1) brightness(.5) contrast(1.1);
+    -webkit-backdrop-filter: grayscale(1) brightness(.5) contrast(1.1);
+    box-shadow: inset 0 0 140px 50px rgba(180,205,230,.45);
+  }
+}
+
 /* ── Screen shake global de l'arène ────────────────────────── */
 .cfx-shake-light { animation: cfxShakeLight .4s ease-in-out; }
 .cfx-shake-heavy { animation: cfxShakeHeavy .45s ease-in-out; }
@@ -244,6 +268,8 @@
   /* Flash d'entrée : fade court sans zoom (pas de translation/scale). */
   .cfx-combat-flash { animation: cfxCombatFlashReduced .28s ease-out forwards; }
   @keyframes cfxCombatFlashReduced { from { opacity: .45; } to { opacity: 0; } }
+  /* Pétrification : neutralisée (le module n'en monte pas en reduced-motion). */
+  .cfx-petrify { animation: none; }
   /* Le boss-intro reste (carte-titre informative) mais sans rebond. */
   .cfx-boss-card { animation: cfxVeilIn .3s ease-out; }
   .cfx-halo, .cfx-glyph { animation-duration: .4s; }
