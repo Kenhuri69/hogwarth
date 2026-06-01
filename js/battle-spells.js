@@ -1006,11 +1006,17 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
     const _el = spell.element || 'physique';
     const _aoe = new Set(['aoe_wave', 'aoe_field', 'aoe_chain', 'aoe_drain', 'aoe_cleave']);
     const _single = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius']);
+    const _heal = new Set(['heal', 'support_regen', 'support_regen_aoe', 'heal_aoe']);
+    const _buff = new Set(['shield', 'patronus_maxima']);
     if (_aoe.has(spell.effect) && typeof livingEnemies === 'function') {
       livingEnemies().forEach(e => CFX_safe.spellBurst(`enemy:${enemyGroup.indexOf(e)}`, _el));
     } else if (_single.has(spell.effect)) {
       const _ti = (targetIdx >= 0) ? targetIdx : enemyGroup.indexOf(enemy);
       if (_ti >= 0) CFX_safe.spellBurst(`enemy:${_ti}`, _el);
+    } else if (_heal.has(spell.effect)) {
+      CFX_safe.healBurst('ally'); // B1 — gerbe verte de soin
+    } else if (_buff.has(spell.effect)) {
+      CFX_safe.buffAura('ally');  // B1 — halo doré de protection
     }
     // Crit de sort (suffixe 💥CRIT dans le message) → secousse légère.
     if (typeof msg === 'string' && msg.indexOf('CRIT') >= 0) CFX_safe.shake('light');

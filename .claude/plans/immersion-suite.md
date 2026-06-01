@@ -87,6 +87,31 @@ Le Lot 1 (`combat-fx.js — spellBurst`) couvre surtout l'offensif
 - **Vérif** : burst vert visible sur un soin, distinct du burst offensif ;
   `scenarioSpellUx` ou `scenarioCombatFX` étendu ; smoke vert.
 
+- **[x] Livré (2026-06-01)** — branche `claude/immersion-b1-heal-buff-fx`.
+  `node tests/smoke.js` (150 scénarios, `Combat FX` F1+F4 verts) +
+  `node tests/pwa-smoke.js` (cache `hogwarth-v44`, 84 entrées) verts.
+  Écart : `battle-spells.js?v` bumpé en plus (7→8) car son contenu change
+  — non listé initialement, ajouté pour cohérence du cache-busting.
+  Étapes :
+  1. `js/combat-fx.js` : `healBurst(targetKey)` (halo vert + particules
+     **montantes** dy fortement négatif + glyphe `✚`) et
+     `buffAura(targetKey)` (anneau doré qui s'évase, glyphe `✦`). Ajoutés
+     à `window.CombatFX`. → vérif : F1 smoke asserte les 2 fns + proxy.
+  2. `css/combat-fx.css` : classes `.cfx-heal-halo/-particle/-glyph` et
+     `.cfx-buff-ring/-glyph` + keyframes ; `prefers-reduced-motion` =
+     particules masquées, halo/anneau fade court. → vérif : revue + règle
+     reduced-motion présente.
+  3. `js/battle-spells.js` (bloc FX central de `castSpellInBattle`) :
+     `Set` heal (`heal`, `support_regen`, `support_regen_aoe`, `heal_aoe`)
+     → `CFX_safe.healBurst('ally')` ; `Set` buff (`shield`,
+     `patronus_maxima`) → `CFX_safe.buffAura('ally')`. Défensif, aucune
+     mécanique touchée. → vérif : F4 smoke (lancer un sort de soin en
+     combat ne throw pas).
+  4. Bumps `combat-fx.js?v=1→2`, `combat-fx.css?v=1→2` (`index.html` +
+     `sw.js`), `CACHE_VERSION v43→v44`. → vérif : pwa-smoke vert, cache
+     annoncé v44.
+  5. `node tests/smoke.js` + `node tests/pwa-smoke.js` verts avant push.
+
 ### B2. Activer les réserves déjà câblées en commentaire
 Assets/clés préparés mais non activés :
 - Tileset `rune_*` « Ruines Anciennes » (palier étages 14+) — commenté

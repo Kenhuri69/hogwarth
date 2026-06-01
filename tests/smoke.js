@@ -17141,6 +17141,8 @@ async function scenarioCombatFX() {
   const f1 = await page.evaluate(() => ({
     hasModule: typeof window.CombatFX === 'object' && !!window.CombatFX,
     hasBurst:  typeof window.CombatFX?.spellBurst === 'function',
+    hasHeal:   typeof window.CombatFX?.healBurst === 'function',
+    hasBuff:   typeof window.CombatFX?.buffAura === 'function',
     hasShake:  typeof window.CombatFX?.shake === 'function',
     hasBoss:   typeof window.CombatFX?.bossIntro === 'function',
     hasProxy:  typeof window.CFX_safe?.spellBurst === 'function',
@@ -17148,6 +17150,7 @@ async function scenarioCombatFX() {
   console.log('  F1 module:', f1);
   assert(f1.hasModule, 'F1 window.CombatFX absent');
   assert(f1.hasBurst && f1.hasShake && f1.hasBoss, 'F1 API incomplète');
+  assert(f1.hasHeal && f1.hasBuff, 'F1 API soin/buff (B1) absente');
   assert(f1.hasProxy, 'F1 CFX_safe proxy absent');
 
   await startDummyFight(page, { hp: 50 });
@@ -17183,6 +17186,22 @@ async function scenarioCombatFX() {
   assert(!f3.threw, 'F3 bossIntro throw');
   assert(f3.epicCard, 'F3 carte-titre boss epic non créée');
   assert(!f3.normalCard, 'F3 carte-titre créée à tort pour un non-boss');
+
+  // F4 — VFX soin/buff (B1) : appels directs + via proxy ne throwent pas,
+  // alimentent la couche combat-fx-layer (toujours en combat ici).
+  const f4 = await page.evaluate(() => {
+    let threw = false;
+    try {
+      window.CombatFX.healBurst('ally');
+      window.CombatFX.buffAura('ally');
+      window.CFX_safe.healBurst('ally'); // via proxy
+      window.CFX_safe.buffAura('ally');
+    } catch (e) { threw = true; }
+    return { threw, layer: !!document.getElementById('combat-fx-layer') };
+  });
+  console.log('  F4 soin/buff:', f4);
+  assert(!f4.threw, 'F4 healBurst/buffAura throw en combat');
+  assert(f4.layer, 'F4 couche combat-fx-layer absente');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
