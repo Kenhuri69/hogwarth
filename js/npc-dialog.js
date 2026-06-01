@@ -348,7 +348,19 @@ function _resolveDialogSource(npc, state) {
         && typeof _pendingPageHintFloor === 'function')
         ? _pendingPageHintFloor() : null;
       if (hintFloor !== null && typeof _pageHintLine === 'function') {
-        pool = d.idleRandom.concat(_pageHintLine(hintFloor));
+        pool = pool.concat(_pageHintLine(hintFloor));
+      }
+      // Rumeur Acte III de Manon (couche egg) : greffée dans son idle
+      // tant que l'Acte III n'a pas été mordu. Apparition non garantie.
+      if (npc.id === 'manon' && typeof _manonAct3Rumor === 'function') {
+        const rumor = _manonAct3Rumor();
+        if (rumor) pool = pool.concat(rumor);
+      }
+      // Rumeur Acte III DIFFUSE des autres PNJ lore (fantômes) : amorce
+      // l'egg dans la voix d'un revenant, sans citer d'étage. Couche egg.
+      if (npc.id !== 'manon' && typeof _npcAct3Rumor === 'function') {
+        const rumor = _npcAct3Rumor(npc);
+        if (rumor) pool = pool.concat(rumor);
       }
       idleIndex = Math.floor(Math.random() * pool.length);
       idleRandomPick = pool[idleIndex];
@@ -405,9 +417,10 @@ function _npcDialogActions(npc, state) {
       const a = activeQuests.find(x => x.id === q);
       return a && (a.objectives || []).every(o => o.completed);
     });
-    // manon_grimoire se remet via l'établi de fusion (specialAction
-    // open_fusion), pas par le bouton générique de remise.
-    if (qid && qid !== 'manon_grimoire') {
+    // manon_grimoire (Acte II) ET manon_acte3 (Acte III) se remettent via
+    // l'établi de fusion (specialAction open_fusion), pas par le bouton
+    // générique de remise.
+    if (qid && qid !== 'manon_grimoire' && qid !== 'manon_acte3') {
       out.push({
         label: 'Remettre la quête',
         onClick: `turnInQuestById('${qid}'); openNpcDialog('${npc.id}');`

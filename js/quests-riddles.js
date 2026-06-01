@@ -9,22 +9,30 @@
 // Le joueur reconstitue le grimoire de givre d'Élara à partir des 5
 // pages collectées. Cf. .claude/plans/manon-grimoire-pages.md §6.
 
-// Vrai si la quête manon_grimoire est active et les 5 pages réunies.
+// Vrai si la quête de pages du set actif (Acte II manon_grimoire / Acte III
+// manon_acte3) est ACCEPTÉE et tous les feuillets réunis. La remise exige
+// la quête active : côté Acte III, l'egg doit avoir été converti (1ᵉʳ
+// feuillet trouvé) avant que l'établi ne s'active.
 function _grimoireFusionReady() {
+  const set = (typeof _activePageSet === 'function') ? _activePageSet() : null;
+  if (!set) return false;
   if (typeof activeQuests === 'undefined') return false;
-  if (!activeQuests.some(q => q.id === 'manon_grimoire')) return false;
-  const total = (typeof GRIMOIRE_PAGES !== 'undefined') ? GRIMOIRE_PAGES.length : 5;
+  if (!activeQuests.some(q => q.id === set.questId)) return false;
   const owned = (typeof player !== 'undefined' && Array.isArray(player.grimoirePages))
     ? player.grimoirePages.length : 0;
-  return owned >= total;
+  return owned >= set.pages.length;
 }
 
-// Ouvre l'établi : les 5 emplacements de page + bouton de fusion.
+// Ouvre l'établi : les emplacements de feuillet du set actif + bouton de
+// fusion. Set-aware (grimoire de givre Acte II / feuillets clairs Acte III).
 function openFusionModal() {
   const body  = document.getElementById('fusion-body');
   const modal = document.getElementById('fusion-modal');
   if (!body || !modal) return;
-  const pages = (typeof GRIMOIRE_PAGES !== 'undefined') ? GRIMOIRE_PAGES : [];
+  const set   = (typeof _activePageSet === 'function') ? _activePageSet() : null;
+  const isAct3 = !!set && set.questId === 'manon_acte3';
+  const pages = set ? set.pages
+    : ((typeof GRIMOIRE_PAGES !== 'undefined') ? GRIMOIRE_PAGES : []);
   const owned = (player && Array.isArray(player.grimoirePages)) ? player.grimoirePages : [];
   let slots = '';
   for (const p of pages) {
@@ -33,18 +41,32 @@ function openFusionModal() {
       + `<div class="brew-tile-icon">${p.icon}</div>`
       + `<div class="brew-tile-name">${p.name}</div></div>`;
   }
-  const ready = _grimoireFusionReady();
+  const ready  = _grimoireFusionReady();
+  const intro  = isAct3
+    ? "Manon range les feuillets clairs côte à côte, près de la fenêtre givrée. Cette fois, rien à reconstituer d'une plaie — juste à retrouver la joie que sa mère lui avait laissée en chemin."
+    : "Manon dispose les feuillets sur l'établi, près de la fenêtre givrée. Le grimoire de sa mère ne demande qu'à redevenir entier.";
+  const btnLbl = isAct3 ? '❄️ Réunir les feuillets clairs' : '✨ Reconstituer le grimoire';
+  const fuseFn = isAct3 ? 'fuseAct3()' : 'fuseGrimoire()';
   body.innerHTML = `
     <p style="font-size:12px;color:var(--parchment-dark);line-height:1.5;text-align:center;margin:4px 0 12px">
-      Manon dispose les feuillets sur l'établi, près de la fenêtre givrée.
-      Le grimoire de sa mère ne demande qu'à redevenir entier.
+      ${intro}
     </p>
     <div class="brew-tiles" style="justify-content:center">${slots}</div>
     <button type="button" class="brew-launch-btn" style="margin-top:14px"
-      onclick="fuseGrimoire()"${ready ? '' : ' disabled'}>
-      ✨ Reconstituer le grimoire
+      onclick="${fuseFn}"${ready ? '' : ' disabled'}>
+      ${btnLbl}
     </button>`;
   modal.style.display = 'flex';
+}
+
+// Purge commune des données de pages du donjon après une fusion. Sans
+// cela, les feuillets déjà ramassés redeviendraient fouillables à leur
+// ancien emplacement (la besace vidée ne protège plus _tryCollectPage, qui
+// se fie à pagePlacements + revealedPages). Cf. manon-grimoire-pages.md §6.
+function _purgePageData() {
+  player.grimoirePages = [];
+  if (typeof pagePlacements !== 'undefined' && pagePlacements.clear) pagePlacements.clear();
+  if (typeof revealedPages  !== 'undefined' && revealedPages.clear)  revealedPages.clear();
 }
 
 // Fusionne les pages : remet manon_grimoire (récompense le grimoire
@@ -58,16 +80,32 @@ function fuseGrimoire() {
     addMsg('La reconstitution a échoué — réessaie.', 'bad');
     return;
   }
-  player.grimoirePages = [];
-  // Nettoie les données de pages du donjon. Sans cela, les feuillets déjà
-  // ramassés redeviendraient fouillables à leur ancien emplacement : la
-  // besace vidée ci-dessus ne protège plus _tryCollectPage, qui se fie à
-  // pagePlacements + revealedPages. Cf. manon-grimoire-pages.md §6.
-  if (typeof pagePlacements !== 'undefined' && pagePlacements.clear) pagePlacements.clear();
-  if (typeof revealedPages  !== 'undefined' && revealedPages.clear)  revealedPages.clear();
+  _purgePageData();
   closeModal('fusion-modal');
   addMsg('📖 Le grimoire de givre d\'Élara est reconstitué !', 'good');
   setNarrative("Les cinq feuillets se ressoudent dans un souffle de givre. Manon serre le grimoire entier contre elle, sans un mot — c'est sa mère qu'elle retrouve, la sorcière, pas la menteuse.");
+  updateUI();
+  if (typeof renderMinimap === 'function') renderMinimap();
+}
+
+// Réunit les feuillets clairs (Manon Acte III) : remet manon_acte3, éveille
+// le passif « Hiver Clair » (+1 PM/pas hors combat), purge les données de
+// pages et joue le dénouement lumineux. Jumeau de fuseGrimoire().
+// (Textes provisoires — relecture co-écrite avant merge.)
+function fuseAct3() {
+  if (!_grimoireFusionReady()) {
+    addMsg('Il te manque encore des feuillets clairs.', 'bad');
+    return;
+  }
+  if (!turnInQuestById('manon_acte3')) {
+    addMsg('Les feuillets n\'ont pas voulu se joindre — réessaie.', 'bad');
+    return;
+  }
+  _purgePageData();
+  if (typeof hiverClair !== 'undefined') hiverClair = true;
+  closeModal('fusion-modal');
+  addMsg('❄️ Hiver Clair éveillé — la magie te revient à chaque pas.', 'good');
+  setNarrative("Les trois feuillets se posent, et la pièce se met à neiger doucement — sans froid, juste de la lumière. Manon rit pour la première fois sans s'excuser : « C'était ça, son dernier visage. Pas la menteuse. La femme qui dessinait des fougères sur les vitres pour me faire rire. » Elle te tend la main, ouverte. « Garde un peu de cet hiver-là. »");
   updateUI();
   if (typeof renderMinimap === 'function') renderMinimap();
 }

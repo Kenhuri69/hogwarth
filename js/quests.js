@@ -731,11 +731,14 @@ window.checkKillQuests = function(monsterId) {
   });
 };
 
-// ── Appelée après le ramassage d'une page de grimoire ───────
-// Met à jour la progression de manon_grimoire depuis player.grimoirePages.
+// ── Appelée après le ramassage d'un feuillet de page ────────
+// Met à jour la progression de la quête de pages active (Acte II
+// manon_grimoire / Acte III manon_acte3) depuis player.grimoirePages.
 window.checkPageQuest = function() {
+  const set = (typeof _activePageSet === 'function') ? _activePageSet() : null;
+  const qid = set ? set.questId : 'manon_grimoire';
   const q = (typeof activeQuests !== 'undefined')
-    ? activeQuests.find(x => x.id === 'manon_grimoire') : null;
+    ? activeQuests.find(x => x.id === qid) : null;
   if (!q) return;
   const step = q.objectives.find(o => o.type === 'pages');
   if (!step || step.completed) return;

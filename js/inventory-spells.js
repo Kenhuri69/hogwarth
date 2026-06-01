@@ -259,7 +259,10 @@ const SPELL_OOC_HANDLERS = {
     if (gardensRevealed > 0) {
       // _revealGardensNear a déjà annoncé la découverte — rien à ajouter.
     } else if (pageRevealed) {
-      addMsg(`${getSpellIconHtml(spell, 'ui-icon-md')} ${caster.name} lance ${spell.name} — une page du grimoire scintille sur la carte !`, 'good');
+      const _set = (typeof _activePageSet === 'function') ? _activePageSet() : null;
+      const _what = (_set && _set.questId === 'manon_acte3')
+        ? 'un feuillet clair scintille' : 'une page du grimoire scintille';
+      addMsg(`${getSpellIconHtml(spell, 'ui-icon-md')} ${caster.name} lance ${spell.name} — ${_what} sur la carte !`, 'good');
     } else {
       addMsg(cleared > 0
         ? `🔎 ${caster.name} lance ${spell.name} — le brouillard se dissipe alentour.`

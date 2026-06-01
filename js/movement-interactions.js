@@ -194,22 +194,36 @@ function _updateSearchBtn() {
   if (typeof updateRoomStatus === 'function') updateRoomStatus();
 }
 
-// Ramasse la page du grimoire si la case courante en porte une, révélée
-// par Revelio et non encore collectée. Retourne true si une page a été
-// ramassée. Cf. .claude/plans/manon-grimoire-pages.md §5.
+// Ramasse le feuillet du set de pages actif si la case courante en porte
+// un, révélé par Revelio et non encore collecté. Retourne true si un
+// feuillet a été ramassé. Set-aware (Acte II grimoire / Acte III feuillets
+// clairs). Côté Acte III, trouver le 1ᵉʳ feuillet convertit l'easter egg
+// en quête formelle (acceptQuest). Cf. manon-grimoire-easter-egg.md §6.
 function _tryCollectPage() {
   if (typeof pagePlacements === 'undefined') return false;
   if (pagePlacements.get(currentFloor) !== `${playerX},${playerY}`) return false;
   if (!revealedPages.has(currentFloor)) return false;
-  const page = (typeof getGrimoirePageForFloor === 'function')
-    ? getGrimoirePageForFloor(currentFloor) : null;
+  const set  = (typeof _activePageSet === 'function') ? _activePageSet() : null;
+  const page = set ? (set.pages.find(p => p.floor === currentFloor) || null) : null;
   if (!page) return false;
   if (!Array.isArray(player.grimoirePages)) player.grimoirePages = [];
   if (player.grimoirePages.includes(page.id)) return false;
   player.grimoirePages.push(page.id);
   AudioSystem.playChestOpen();
-  setNarrative(`Entre deux pierres, un feuillet givré : « ${page.name} ». Vous le glissez dans le grimoire.`);
-  addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/scroll.png" alt=""> Page récoltée : ${page.name}`, 'good');
+  const isAct3 = set.questId === 'manon_acte3';
+  // Conversion egg → quête : le 1ᵉʳ feuillet clair ouvre formellement
+  // l'Acte III auprès de Manon (acceptation implicite).
+  if (isAct3 && typeof activeQuests !== 'undefined'
+      && !activeQuests.some(q => q.id === 'manon_acte3')
+      && typeof acceptQuest === 'function') {
+    acceptQuest('manon_acte3');
+    setNarrative(`Un feuillet clair, presque tiède sous le givre : « ${page.name} ». Ça n'a rien d'un secret honteux — c'est de la joie. Manon doit voir ça.`);
+  } else if (isAct3) {
+    setNarrative(`Entre deux pierres, un feuillet lumineux : « ${page.name} ». Le givre y dessine un jeu, pas une peur.`);
+  } else {
+    setNarrative(`Entre deux pierres, un feuillet givré : « ${page.name} ». Vous le glissez dans le grimoire.`);
+  }
+  addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/scroll.png" alt=""> ${isAct3 ? 'Feuillet clair récolté' : 'Page récoltée'} : ${page.name}`, 'good');
   if (typeof checkPageQuest === 'function') checkPageQuest();
   if (typeof renderMinimap === 'function') renderMinimap();
   return true;

@@ -11750,6 +11750,236 @@ async function scenarioGrimoirePages() {
   await browser.close();
 }
 
+// ── Scénario : feuillets clairs d'Élara (Manon Acte III) ─────
+// Couvre : données + sélecteur de set, gate egg, découverte→conversion,
+// collecte, remise à l'établi (fuseAct3 + Hiver Clair + purge), passif
+// +1 PM/pas, round-trip save. Cf. manon-grimoire-easter-egg.md §8.
+
+async function scenarioGrimoireActe3() {
+  console.log('\n── Scénario : feuillets clairs d\'Élara (Manon Acte III) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — données : ACT3_PAGES (3 feuillets, étages 2/6/9), quête egg.
+  const t1 = await page.evaluate(() => {
+    const q = getQuestTemplate('manon_acte3');
+    return {
+      pageCount: (typeof ACT3_PAGES !== 'undefined') ? ACT3_PAGES.length : 0,
+      floors:    (typeof ACT3_FLOORS !== 'undefined') ? ACT3_FLOORS.slice() : [],
+      questOk:   !!q && q.prereq === 'manon_grimoire' && q.implicitAccept === true,
+      objOk:     !!q && q.objectives[0].type === 'pages' && q.objectives[0].amount === 3,
+      // Egg : la quête NE doit PAS être amorcée dans availableQuests.
+      notSeeded: !availableQuests.has('manon_acte3')
+    };
+  });
+  console.log('  T1 data :', t1);
+  assert(t1.pageCount === 3, `3 feuillets attendus, obtenu ${t1.pageCount}`);
+  assert(JSON.stringify(t1.floors) === '[2,6,9]', 'étages porteurs attendus 2,6,9');
+  assert(t1.questOk, 'manon_acte3 mal défini (prereq/implicitAccept)');
+  assert(t1.objOk,   'manon_acte3 doit avoir un objectif type pages ×3');
+  assert(t1.notSeeded, 'manon_acte3 ne doit pas être amorcée dans availableQuests (egg)');
+
+  // T2 — sélecteur de set + gate egg : null → ACT2 → ACT3 → null ;
+  // manon_acte3 jamais offrable (aucun bouton « Accepter » chez Manon).
+  const t2 = await page.evaluate(() => {
+    activeQuests = []; completedQuests = new Set(); availableQuests = new Set();
+    const none = _activePageSet();
+    acceptQuest('manon_grimoire');
+    const act2 = _activePageSet();
+    activeQuests = []; completedQuests = new Set(['manon_grimoire']);
+    const act3 = _activePageSet();
+    const offerable = (typeof isQuestOfferable === 'function')
+      ? isQuestOfferable('manon_acte3') : null;
+    completedQuests.add('manon_acte3');
+    const after = _activePageSet();
+    return {
+      none:  none === null,
+      act2:  !!act2 && act2.questId === 'manon_grimoire',
+      act3:  !!act3 && act3.questId === 'manon_acte3' && act3.pages.length === 3,
+      after: after === null,
+      offerable
+    };
+  });
+  console.log('  T2 gate :', t2);
+  assert(t2.none,  '_activePageSet doit être null sans quête de pages');
+  assert(t2.act2,  '_activePageSet doit renvoyer le set Acte II quand manon_grimoire actif');
+  assert(t2.act3,  '_activePageSet doit renvoyer le set Acte III dès manon_grimoire fini');
+  assert(t2.after, '_activePageSet doit redevenir null une fois manon_acte3 fini');
+  assert(t2.offerable === false, 'manon_acte3 ne doit jamais être offrable (egg implicite)');
+
+  // T3 — découverte → conversion : feuillet posé sous la gate, ramassé →
+  // acceptQuest('manon_acte3') déclenché, progression à 1.
+  const t3 = await page.evaluate(() => {
+    inBattle = false;
+    activeQuests = [];
+    completedQuests = new Set(['manon_grimoire']);   // gate Acte III ouvert
+    player.grimoirePages = [];
+    pagePlacements = new Map();
+    revealedPages  = new Set();
+    generateDungeon(2);                              // étage porteur Acte III
+    currentFloor = 2;
+    const placed = pagePlacements.has(2);
+    const [px, py] = pagePlacements.get(2).split(',').map(Number);
+    playerX = px; playerY = py;
+    const beforeAccept = activeQuests.some(q => q.id === 'manon_acte3');
+    const collectedUnrevealed = _tryCollectPage();   // doit échouer (non révélé)
+    revealedPages.add(2);
+    const collected = _tryCollectPage();             // doit réussir + convertir
+    const q = activeQuests.find(x => x.id === 'manon_acte3');
+    return {
+      placed, beforeAccept, collectedUnrevealed, collected,
+      converted: !!q,
+      prog: q && q.objectives[0].progress,
+      owns: player.grimoirePages.includes('feuillet_clair_1')
+    };
+  });
+  console.log('  T3 conv :', t3);
+  assert(t3.placed,             'feuillet Acte III posé à l\'étage 2 sous la gate');
+  assert(!t3.beforeAccept,      'manon_acte3 ne doit pas être active avant la découverte');
+  assert(!t3.collectedUnrevealed,'un feuillet non révélé ne se ramasse pas');
+  assert(t3.collected,          'le feuillet révélé doit être ramassé');
+  assert(t3.converted,          'ramasser le 1er feuillet ouvre manon_acte3 (egg→quête)');
+  assert(t3.prog === 1,         'progression de quête attendue à 1 après conversion');
+  assert(t3.owns,               'feuillet_clair_1 attendu dans la besace');
+
+  // T4 — collecte complète : 3 feuillets → objectif complété + établi prêt.
+  const t4 = await page.evaluate(() => {
+    player.grimoirePages = ACT3_PAGES.map(p => p.id);
+    _refreshObjectives();
+    const q = activeQuests.find(x => x.id === 'manon_acte3');
+    return { prog: q.objectives[0].progress, done: q.objectives[0].completed,
+             ready: _grimoireFusionReady() };
+  });
+  console.log('  T4 collect:', t4);
+  assert(t4.prog === 3, 'progression attendue à 3');
+  assert(t4.done,       'objectif pages doit être complété à 3 feuillets');
+  assert(t4.ready,      'l\'établi doit être prêt avec 3 feuillets');
+
+  // T5 — remise : fuseAct3 → quête remise, Hiver Clair éveillé, pages
+  // purgées, feuillet non re-ramassable (régression jumelle du bug §0).
+  const t5 = await page.evaluate(() => {
+    pagePlacements = new Map([[2, '5,5'], [9, '8,8']]);
+    revealedPages  = new Set([2, 9]);
+    player.grimoirePages = ACT3_PAGES.map(p => p.id);
+    const hiverBefore = hiverClair;
+    openFusionModal();
+    const modalShown = document.getElementById('fusion-modal').style.display === 'flex';
+    const btnAct3    = document.getElementById('fusion-body').innerHTML.includes('fuseAct3()');
+    fuseAct3();
+    currentFloor = 2; playerX = 5; playerY = 5; revealedPages.add(2);
+    const recollect = _tryCollectPage();
+    return {
+      hiverBefore, modalShown, btnAct3,
+      hiverAfter:   hiverClair,
+      questDone:    completedQuests.has('manon_acte3'),
+      questGone:    !activeQuests.some(q => q.id === 'manon_acte3'),
+      pagesEmptied: player.grimoirePages.length === 0,
+      placementsCleared: pagePlacements.size === 0,
+      modalClosed:  document.getElementById('fusion-modal').style.display === 'none',
+      recollect
+    };
+  });
+  console.log('  T5 remise :', t5);
+  assert(!t5.hiverBefore, 'Hiver Clair ne doit pas être éveillé avant la remise');
+  assert(t5.modalShown,   'l\'établi de fusion ne s\'est pas affiché');
+  assert(t5.btnAct3,      'le bouton de l\'établi doit appeler fuseAct3');
+  assert(t5.hiverAfter,   'Hiver Clair doit être éveillé après la remise');
+  assert(t5.questDone,    'manon_acte3 doit passer en complétée');
+  assert(t5.questGone,    'manon_acte3 doit sortir des quêtes actives');
+  assert(t5.pagesEmptied, 'la besace de feuillets doit être vidée après remise');
+  assert(t5.placementsCleared, 'les placements doivent être purgés après remise');
+  assert(t5.modalClosed,  'l\'établi doit se fermer après la remise');
+  assert(!t5.recollect,   'un feuillet ne doit plus être re-ramassable après la remise');
+
+  // T6 — passif Hiver Clair : +1 PM par pas hors combat (plafonné spMax).
+  const t6 = await page.evaluate(() => {
+    inBattle = false;
+    generateDungeon(1);
+    hiverClair = true;
+    const c = party[0];
+    c.hp = c.hpMax; c.spMax = 30; c.sp = 10;
+    // Carve une case franchissable et oriente le héros vers elle.
+    let dir = null;
+    if (playerX + 1 < MAP_W) { dungeon[playerY][playerX + 1] = CELL.FLOOR; dir = 'e'; }
+    else if (playerX - 1 >= 0) { dungeon[playerY][playerX - 1] = CELL.FLOOR; dir = 'w'; }
+    playerDir = dir;
+    const spBefore = c.sp;
+    moveForward();
+    const spAfterStep = party[0].sp;
+    // Désactivé : pas de régénération.
+    hiverClair = false;
+    party[0].sp = 12;
+    const spBeforeOff = party[0].sp;
+    if (playerX + 1 < MAP_W) { dungeon[playerY][playerX + 1] = CELL.FLOOR; playerDir = 'e'; }
+    else if (playerX - 1 >= 0) { dungeon[playerY][playerX - 1] = CELL.FLOOR; playerDir = 'w'; }
+    moveForward();
+    const spAfterOff = party[0].sp;
+    hiverClair = true;
+    return { spBefore, spAfterStep, spBeforeOff, spAfterOff };
+  });
+  console.log('  T6 passif :', t6);
+  assert(t6.spAfterStep === t6.spBefore + 1, 'Hiver Clair doit régénérer +1 PM par pas');
+  assert(t6.spAfterOff === t6.spBeforeOff,   'aucun PM régénéré quand Hiver Clair est éteint');
+
+  // T7 — round-trip save : flag Hiver Clair + structures de pages conservés.
+  const t7 = await page.evaluate(() => {
+    hiverClair = true;
+    pagePlacements = new Map([[2, '4,4']]);
+    revealedPages  = new Set([2]);
+    player.grimoirePages = ['feuillet_clair_2'];
+    const snap = JSON.parse(JSON.stringify(_serializeState()));
+    hiverClair = false;
+    pagePlacements = new Map();
+    revealedPages  = new Set();
+    player.grimoirePages = [];
+    _applyState(snap);
+    return {
+      hiverOk:      hiverClair === true,
+      placementsOk: pagePlacements.get(2) === '4,4',
+      pagesOk:      Array.isArray(player.grimoirePages)
+                    && player.grimoirePages.includes('feuillet_clair_2')
+    };
+  });
+  console.log('  T7 save   :', t7);
+  assert(t7.hiverOk,      'le flag hiverClair doit survivre au round-trip save');
+  assert(t7.placementsOk, 'pagePlacements doit survivre au round-trip save');
+  assert(t7.pagesOk,      'player.grimoirePages doit survivre au round-trip save');
+
+  // T8 — rumeurs des AUTRES PNJ lore (fantômes) : rumeur diffuse sous la
+  // gate egg, exclusion de Manon, extinction une fois l'Acte III mordu/fini.
+  const t8 = await page.evaluate(() => {
+    // Gate egg : Acte II fini, Acte III pas encore accepté.
+    activeQuests = []; completedQuests = new Set(['manon_grimoire']);
+    const ghost = getNpcById('sir_nicolas');
+    const eggRumor      = _npcAct3Rumor(ghost);
+    const manonExcluded = _npcAct3Rumor(getNpcById('manon')); // Manon a la sienne
+    // Une fois l'egg mordu (quête active) → plus de rumeur diffuse.
+    acceptQuest('manon_acte3');
+    const afterBite = _npcAct3Rumor(ghost);
+    // Une fois l'Acte III remis → plus rien.
+    activeQuests = []; completedQuests = new Set(['manon_grimoire', 'manon_acte3']);
+    const afterDone = _npcAct3Rumor(ghost);
+    return {
+      eggRumor:      typeof eggRumor === 'string' && eggRumor.length > 0,
+      manonExcluded: manonExcluded === null,
+      afterBite:     afterBite === null,
+      afterDone:     afterDone === null
+    };
+  });
+  console.log('  T8 rumeurs:', t8);
+  assert(t8.eggRumor,      'un fantôme lore doit lâcher une rumeur Acte III sous la gate egg');
+  assert(t8.manonExcluded, 'Manon ne reçoit pas la rumeur générique (elle a la sienne)');
+  assert(t8.afterBite,     'plus de rumeur diffuse une fois l\'Acte III accepté');
+  assert(t8.afterDone,     'plus de rumeur diffuse une fois l\'Acte III remis');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (feuillets clairs Acte III)`);
+  }
+  console.log('  ✅ Feuillets clairs d\'Élara conformes');
+  await browser.close();
+}
+
 // ── Scénario : Épreuve de la Lumière Éternelle (Dumbledore) ──
 
 async function scenarioDumbledoreLux() {
@@ -17507,7 +17737,7 @@ async function scenarioCinematics() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics];
   const filters = parseScenarioFilters();
   const selected = filters.length

@@ -355,11 +355,13 @@ const NPCS = [
     icon:  "🌙",
     portraitImg: "img/npc/manon.png",
     placement: { floor: 3, anchor: "any" },
-    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire"],
-    questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire"],
-    // Établi de fusion : disponible quand les 5 pages sont réunies.
+    questsGiven:    ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3"],
+    questsTurnedIn: ["manon_secret", "manon_pardon", "manon_revelio", "manon_grimoire", "manon_acte3"],
+    // Établi de fusion : disponible quand tous les feuillets du set actif
+    // sont réunis (5 pages Acte II / 3 feuillets clairs Acte III).
     // Ouvre l'overlay #fusion-modal qui reconstitue le grimoire (= remise
-    // de manon_grimoire). Cf. .claude/plans/manon-grimoire-pages.md §6.
+    // de manon_grimoire) ou réunit les feuillets clairs (= remise de
+    // manon_acte3). Cf. manon-grimoire-pages.md §6 + easter-egg.md §7.
     specialAction: { type: "open_fusion", id: "manon_fusion_grimoire",
                      label: "<img class='ui-icon ui-icon-md' src='img/icons/spellbook.png' alt=''> Reconstituer le grimoire" },
     dialogues: {
@@ -437,6 +439,17 @@ const NPCS = [
         questActive: "Combien de pages, déjà ? (Elle range les feuillets retrouvés dans un linge propre.) N'oublie pas Revelio — sans lui, tu passeras devant sans rien voir. Deuxième, troisième, cinquième, septième, neuvième étage.",
         questReady: [
           "Les cinq pages. Elles sont toutes là. (Sa voix tremble.) Viens — j'ai dressé un établi près de la fenêtre. Nous allons les assembler, et je verrai enfin le visage que ma mère voulait me laisser."
+        ]
+      },
+      // ── Acte III — les feuillets clairs d'Élara ──
+      // Pas de questOffer : l'Acte III s'ouvre IMPLICITEMENT quand le joueur
+      // trouve le 1ᵉʳ feuillet (acceptQuest depuis _tryCollectPage). Les
+      // rumeurs qui amènent là sont greffées dans idleRandom (_manonAct3Rumor).
+      // (Textes provisoires — relecture co-écrite avant merge.)
+      manon_acte3: {
+        questActive: "Tu as trouvé un de ses feuillets clairs, n'est-ce pas ? (Elle le tient à la lumière, émue.) Il en reste deux — au sixième, au neuvième. Ce ne sont pas des secrets, cette fois : ce sont ses joies. Ramène-les toutes, que je voie enfin ma mère rire.",
+        questReady: [
+          "Les trois feuillets clairs. Ils sont là. (Elle les serre, et un sourire monte malgré elle.) Viens à l'établi — ceux-là, on ne les reconstitue pas pour réparer une plaie. On les réunit pour retrouver sa joie."
         ]
       }
     }
