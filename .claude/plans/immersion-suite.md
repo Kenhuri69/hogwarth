@@ -124,6 +124,30 @@ Assets/clés préparés mais non activés :
 - **Vérif** : `scenarioFloorTheming` / `scenarioFloorTextures` étendus ;
   repli sûr si asset manquant (404 → fallback existant).
 
+- **[x] Livré (2026-06-01)** — branche `claude/immersion-b2-ruins-tier`.
+  Vérif pré-requis : assets **tous présents** (`img/textures/{walls/rune_wall,
+  floor/rune_floor,ceiling/rune_ceiling}.png` ; `audio/ambient_{tension,abyss}.ogg` ;
+  `textures.js` charge déjà les `rune_*` ; `_ZONE_SAMPLES` mappe déjà
+  `abyss`/`tension`). Activation donc en scope.
+  - `js/floor-themes.js` : `depths` borné `[7,null] → [7,13]` (couplage
+    **obligatoire** : sinon `getFloorTheme(14)` matche `depths` en premier),
+    ajout `ancient: [14,null]` (rune_*, ambiant `abyss`, « Ruines Anciennes »).
+  - **Aucune autre couche touchée** : `renderer.js` (textures), `audio-music.js`
+    (`_zoneKeyForFloor`) et `movement-floors.js` (`_maybePlayTierTransition`)
+    lisent `getFloorTheme` dynamiquement → s'adaptent seuls. L'override
+    post-victoire `rune_*` (11+) est conservé (couvre 11-13).
+  - **Effet observable** : ambiance `abyss` aux étages 14+ (au lieu de
+    `depths`) + fondu de transition au passage 13↔14. Textures inchangées en
+    pratique (override déjà actif à 14+ post-victoire). `tension` **laissé en
+    réserve** (aucune tranche naturelle sans inventer un palier — hors-scope).
+  - Doc : table « Thèmes par tranche » de `CLAUDE.md` (ajout tranche D) +
+    frontière `13↔14` listée pour `_maybePlayTierTransition`.
+  - Smoke : `scenarioFloorTheming` T1 mis à jour (étage 14 → « Ruines
+    Anciennes », `rune_*`, `abyss`).
+  - Bumps : `floor-themes.js?v=1→2` (`index.html` + `sw.js`),
+    `CACHE_VERSION v43→v45` (v44 réservé par la PR B1 parallèle #350).
+  - `node tests/smoke.js` + `node tests/pwa-smoke.js` verts.
+
 ---
 
 ## C. Plus gros (à cadrer avant de lancer)
