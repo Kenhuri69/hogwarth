@@ -83,7 +83,10 @@ Aucun nouveau système. On réutilise :
   dans le dialogue de remise.
 - Récompense méta / objet à stats — volontairement écarté (egg = charge
   comique, pas power-spike).
-- Portrait dédié de Sir Patrick (asset générique fantôme en V1).
+- Portrait dédié de Sir Patrick (asset générique fantôme en V1). Prompt
+  Nano Banana du portrait dédié rédigé :
+  [`nano-banana-prompt-sir-patrick.md`](./nano-banana-prompt-sir-patrick.md)
+  (PNG à générer hors-environnement, puis swap `portraitImg`).
 
 ## Suivi
 - [x] Concept choisi par l'utilisateur : **La Chasse Sans Tête**.
