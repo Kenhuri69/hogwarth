@@ -231,6 +231,8 @@ jamais la position exacte, juste l'étage.
 
 - La **2ᵉ quête « épique »** d'obtention d'un autre grimoire — à
   concevoir séparément (déjà annoncée « à discuter plus tard »).
+  → désormais cadrée dans [`manon-grimoire-easter-egg.md`](./manon-grimoire-easter-egg.md)
+  (pages oubliées post-game → nouveau sort / bonus passif).
 - Cue 3D de la page révélée (au-delà de la minimap) — décidé : non.
 - Revelio comme sort d'utilité générale (révéler coffres/passages) —
   reste cantonné aux pages pour cette V1.
@@ -250,3 +252,7 @@ jamais la position exacte, juste l'étage.
       T7 vert).
 - [x] Phases 6 & 7 — établi de fusion + couverture smoke (T8 vert).
 - [x] **Fonctionnalité complète** — les 7 phases sont livrées.
+- [x] **Correctif post-livraison** — `fuseGrimoire` purge
+      `pagePlacements`/`revealedPages` (les 5 pages ne sont plus
+      re-fouillables après la fusion). `scenarioGrimoirePages` T8 étendu
+      (`placementsCleared`, `recollect`).

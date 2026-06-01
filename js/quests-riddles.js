@@ -59,10 +59,17 @@ function fuseGrimoire() {
     return;
   }
   player.grimoirePages = [];
+  // Nettoie les données de pages du donjon. Sans cela, les feuillets déjà
+  // ramassés redeviendraient fouillables à leur ancien emplacement : la
+  // besace vidée ci-dessus ne protège plus _tryCollectPage, qui se fie à
+  // pagePlacements + revealedPages. Cf. manon-grimoire-pages.md §6.
+  if (typeof pagePlacements !== 'undefined' && pagePlacements.clear) pagePlacements.clear();
+  if (typeof revealedPages  !== 'undefined' && revealedPages.clear)  revealedPages.clear();
   closeModal('fusion-modal');
   addMsg('📖 Le grimoire de givre de Sandrine est reconstitué !', 'good');
   setNarrative("Les cinq feuillets se ressoudent dans un souffle de givre. Manon serre le grimoire entier contre elle, sans un mot — c'est sa mère qu'elle retrouve, la sorcière, pas la menteuse.");
   updateUI();
+  if (typeof renderMinimap === 'function') renderMinimap();
 }
 
 // ── Épreuve de la Lumière Éternelle — énigmes de Dumbledore ──
