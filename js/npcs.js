@@ -469,7 +469,6 @@ const NPCS = [
     placement: { floor: 6, anchor: "any" },
     questsGiven:    ["chasse_sans_tete"],
     questsTurnedIn: ["chasse_sans_tete"],
-    // Textes provisoires — relecture co-écrite (ton comique/macabre) avant merge.
     dialogues: {
       greeting: [
         "Halte-là ! (Sa tête, parfaitement détachée, roule sous son bras le temps d'un salut goguenard.) Vous tombez sur Sir Patrick Delaney-Podmore, fondateur de la Chasse Sans Tête. Membres : décapités intégralement. Recalés : les autres.",
@@ -999,7 +998,7 @@ const NPCS = [
       // Anecdotes graduées du rigolo au sombre (piochées au hasard).
       idleRandom: [
         "Le Chasseur Sans Tête m'a encore refusé l'entrée de son club. Une tête qui pend par un lambeau de peau ne compte pas comme « décapitée », paraît-il. Quelle injustice !",
-        // Ligne d'espoir (couche egg) — Textes provisoires, relecture avant merge.
+        // Ligne d'espoir (couche egg) : amorce la découverte de Sir Patrick.
         "On dit que Sir Patrick lui-même hante les galeries profondes, par ici-bas. Si seulement quelqu'un d'assez brave plaidait ma cause auprès de lui… mais qui se soucie d'un vieux fantôme à moitié décapité ?",
         "Mon dernier anniversaire de mort fut somptueux : pâté pourri, gâteau couvert d'asticots, orchestre de scies musicales… Vous auriez adoré. Enfin, peut-être pas.",
         "J'ai connu Godric Gryffondor en personne. Charmant, mais bien trop grand pour les portes.",

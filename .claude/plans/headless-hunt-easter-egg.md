@@ -97,5 +97,5 @@ Aucun nouveau système. On réutilise :
 - [x] Phase 3 — sérialisation (save.js) + reset `startGame` (main.js) +
       entrée MANIFEST (loader.js).
 - [x] Phase 4 — `scenarioHeadlessHunt` (tests/smoke.js) ; suite verte.
-- [ ] Réserve : **dialogues** (Sir Patrick, lignes de Nick) à relire/valider
-      avant merge — textes provisoires marqués dans le code.
+- [x] Réserve : **dialogues** (Sir Patrick, lignes de Nick) validés par
+      l'utilisateur ; marqueurs « Textes provisoires » retirés.

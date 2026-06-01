@@ -482,7 +482,6 @@ const QUEST_TEMPLATES = [
     id: "chasse_sans_tete",
     title: "La Chasse Sans Tête",
     giver: "Sir Patrick Delaney-Podmore",
-    // Textes provisoires — relecture co-écrite (ton comique/macabre) avant merge.
     desc: "Sir Patrick doute qu'un fantôme à la tête mal tranchée mérite sa Chasse. Prouve qu'un revenant sait encore chasser : terrasse 2 Chevaliers Fantômes restés casqués et rapporte leurs heaumes en guise de trophées.",
     objectives: [
       { type: "kill", monsterId: "chevalier_fantome", amount: 2, progress: 0, completed: false }

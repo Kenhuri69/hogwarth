@@ -168,7 +168,6 @@ function _npcAct3Rumor(npc) {
 // Sir Nicolas, débloquée UNIQUEMENT une fois la quête remise (flag
 // `headlessHuntMember`). Greffée dans son idleRandom (npc-dialog.js),
 // apparition non garantie. Renvoie une réplique ou null.
-// (Textes provisoires — relecture co-écrite avant merge.)
 const _NICK_HUNT_CELEBRATIONS = [
   "Membre honoraire de la Chasse Sans Tête ! Sir Patrick a cédé — grâce à vous, jeune sorcier. Je défile derrière le cortège, certes, mais je défile ! Mon lambeau de peau et moi vous en serons éternellement reconnaissants.",
   "On m'a remis un fanion ! Un vrai ! « Membre d'honneur », qu'il dit. Le Moine Gras en a pleuré de rire — de joie, je préfère croire. Tout cela grâce à votre plaidoyer.",
