@@ -234,7 +234,26 @@
     }, dur);
   }
 
-  window.CombatFX = { spellBurst, healBurst, buffAura, shake, bossIntro };
+  // ── Transition d'entrée en combat (non-boss) ─────────────────
+  // Flash radial chaud + léger zoom à l'ouverture de l'overlay, pour que le
+  // combat « surgisse » au lieu d'apparaître sèchement. Élément dédié
+  // (#cfx-combat-flash) auto-retiré après l'anim — n'altère pas le transform
+  // de l'overlay (donc ne clashe pas avec shake). Appelé par startBattle
+  // UNIQUEMENT pour les combats non-epic (les boss ont déjà bossIntro).
+  function combatStart() {
+    const ov = overlay();
+    if (!ov) return;
+    const old = document.getElementById('cfx-combat-flash');
+    if (old) old.remove();
+    const flash = document.createElement('div');
+    flash.id = 'cfx-combat-flash';
+    flash.className = 'cfx-combat-flash';
+    ov.appendChild(flash);
+    const dur = prefersReducedMotion() ? 280 : 500;
+    setTimeout(() => flash.remove(), dur);
+  }
+
+  window.CombatFX = { spellBurst, healBurst, buffAura, shake, bossIntro, combatStart };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle

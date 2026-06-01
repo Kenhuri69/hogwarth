@@ -141,6 +141,22 @@
   100% { transform: scale(1.4) rotate(0deg); opacity: 0; }
 }
 
+/* ── Transition d'entrée en combat (flash radial chaud) ────── */
+.cfx-combat-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 44; /* sous boss-intro (45), au-dessus de float-dmg (40) */
+  pointer-events: none;
+  background: radial-gradient(ellipse at center,
+    rgba(255,240,210,.55) 0%, rgba(150,60,24,.34) 45%, rgba(0,0,0,.5) 100%);
+  animation: cfxCombatFlash .5s ease-out forwards;
+}
+@keyframes cfxCombatFlash {
+  0%   { opacity: 0; transform: scale(1.12); }
+  18%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1); }
+}
+
 /* ── Screen shake global de l'arène ────────────────────────── */
 .cfx-shake-light { animation: cfxShakeLight .4s ease-in-out; }
 .cfx-shake-heavy { animation: cfxShakeHeavy .45s ease-in-out; }
@@ -225,6 +241,9 @@
   .cfx-particle, .cfx-heal-particle { display: none; }
   .cfx-heal-halo, .cfx-heal-glyph,
   .cfx-buff-ring, .cfx-buff-glyph { animation-duration: .4s; }
+  /* Flash d'entrée : fade court sans zoom (pas de translation/scale). */
+  .cfx-combat-flash { animation: cfxCombatFlashReduced .28s ease-out forwards; }
+  @keyframes cfxCombatFlashReduced { from { opacity: .45; } to { opacity: 0; } }
   /* Le boss-intro reste (carte-titre informative) mais sans rebond. */
   .cfx-boss-card { animation: cfxVeilIn .3s ease-out; }
   .cfx-halo, .cfx-glyph { animation-duration: .4s; }

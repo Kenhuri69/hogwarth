@@ -164,6 +164,24 @@ Aujourd'hui `#encounter-overlay` apparaît assez sèchement (display flex).
 - **Vérif** : combat s'ouvre sans état figé ; `scenarioCombatFX` /
   `scenarioCombatMobile` étendus ; smoke vert.
 
+- **[x] Livré (2026-06-01)** — branche `claude/immersion-c1-combat-enter`.
+  `node tests/smoke.js` (149, `Combat FX` F1+F5 verts) + `node tests/pwa-smoke.js`
+  (cache `hogwarth-v46`) verts. Cadrage validé (user a choisi C1). Étapes :
+  1. `js/combat-fx.js` : `combatStart()` — voile radial chaud (flash) +
+     léger zoom appliqué via un élément dédié `#cfx-combat-flash` appendé à
+     `#encounter-overlay`, auto-retiré après l'anim. Exposé sur
+     `window.CombatFX`. → vérif : F1 smoke asserte `combatStart` + proxy.
+  2. `css/combat-fx.css` : `.cfx-combat-flash` + keyframes ; z-index 44
+     (sous boss-intro 45, au-dessus float-dmg 40) ; `prefers-reduced-motion`
+     = simple fade court (pas de zoom). → vérif : revue + règle reduced.
+  3. `js/battle.js — startBattle` : **séquençage** — `if (epic) bossIntro
+     else combatStart()`. Jamais empilé sur la carte-titre boss. Défensif
+     (`CFX_safe`). → vérif : F5 smoke (combatStart en combat non-epic ne
+     throw pas, crée puis retire l'élément).
+  4. Bumps `combat-fx.js v=2→3`, `combat-fx.css v=2→3`, `battle.js v=17→18`
+     (`index.html` + `sw.js`), `CACHE_VERSION v45→v46`.
+  5. `node tests/smoke.js` + `node tests/pwa-smoke.js` verts avant push.
+
 ### C2. Mise en scène de la mort / pétrification (hors Ironman)
 L'écran de mort (`death-screen`, `triggerDeath` dans `battle-death.js`)
 est statique.
