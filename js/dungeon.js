@@ -600,7 +600,7 @@ function generateDungeon(floor) {
   // est atteignable depuis le spawn (perce un couloir de secours sinon).
   _assertDungeonConnected();
 
-  // Page du grimoire de Sandrine (quête manon_grimoire) si applicable.
+  // Page du grimoire d'Élara (quête manon_grimoire) si applicable.
   _ensurePagePlacement(floor);
 }
 

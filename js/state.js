@@ -550,7 +550,7 @@ const GARDEN_STEP_INTERVAL = 12; // pas par +1 herbe
 const GARDEN_DESCENT_BONUS = 2;  // herbes par descente d'étage
 const GARDEN_CAP           = 10; // plafond du pool
 
-// ── Pages du grimoire de Sandrine (quête manon_grimoire) ─────
+// ── Pages du grimoire d'Élara (quête manon_grimoire) ─────
 // Reliques fixes invisibles, une par étage porteur (2,3,5,7,9).
 // pagePlacements : Map<floor, "x,y"> — position posée à la 1re
 // génération/visite de l'étage quand la quête est active.
@@ -635,7 +635,7 @@ const player = {
   // Voir .claude/plans/farming-potion-system.md.
   herbs: {},
   knownRecipes: [],
-  // Pages du grimoire de Sandrine récoltées (quête manon_grimoire) :
+  // Pages du grimoire d'Élara récoltées (quête manon_grimoire) :
   // tableau d'ids GRIMOIRE_PAGES, stocké comme une besace (partagé,
   // non plafonné). Voir .claude/plans/manon-grimoire-pages.md.
   grimoirePages: [],

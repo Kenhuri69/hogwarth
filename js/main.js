@@ -468,7 +468,7 @@ async function startGame(count = 2) {
   resizeCanvas();
   generateDungeon(1);
   floorDungeons = {};   // reset du cache à chaque nouvelle partie
-  // Pages du grimoire de Sandrine — état neuf à chaque partie.
+  // Pages du grimoire d'Élara — état neuf à chaque partie.
   pagePlacements = new Map();
   revealedPages  = new Set();
   player.grimoirePages = [];

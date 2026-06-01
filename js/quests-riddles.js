@@ -6,7 +6,7 @@
 // getQuestTemplate) et de state.js (activeQuests). Chargé APRÈS quests.js.
 // ============================================================
 // ── Établi de fusion du grimoire (Manon Acte II) ─────────────
-// Le joueur reconstitue le grimoire de givre de Sandrine à partir des 5
+// Le joueur reconstitue le grimoire de givre d'Élara à partir des 5
 // pages collectées. Cf. .claude/plans/manon-grimoire-pages.md §6.
 
 // Vrai si la quête manon_grimoire est active et les 5 pages réunies.
@@ -66,7 +66,7 @@ function fuseGrimoire() {
   if (typeof pagePlacements !== 'undefined' && pagePlacements.clear) pagePlacements.clear();
   if (typeof revealedPages  !== 'undefined' && revealedPages.clear)  revealedPages.clear();
   closeModal('fusion-modal');
-  addMsg('📖 Le grimoire de givre de Sandrine est reconstitué !', 'good');
+  addMsg('📖 Le grimoire de givre d\'Élara est reconstitué !', 'good');
   setNarrative("Les cinq feuillets se ressoudent dans un souffle de givre. Manon serre le grimoire entier contre elle, sans un mot — c'est sa mère qu'elle retrouve, la sorcière, pas la menteuse.");
   updateUI();
   if (typeof renderMinimap === 'function') renderMinimap();

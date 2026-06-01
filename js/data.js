@@ -327,16 +327,16 @@ function spellCategory(spell) {
   return spell.element || 'utilitaire';
 }
 
-// ── Pages du grimoire de givre de Sandrine (quête manon_grimoire) ──
+// ── Pages du grimoire de givre d'Élara (quête manon_grimoire) ──
 // Cinq feuillets dispersés et dissimulés, un par étage porteur. Le
 // joueur les dévoile avec Revelio puis les ramasse en fouillant. Une
 // fois les cinq réunis, Manon reconstitue le grimoire (établi de
 // fusion). Cf. .claude/plans/manon-grimoire-pages.md.
 const GRIMOIRE_PAGES = [
   { id: "page_grimoire_1", name: "Page de garde", icon: "📄", floor: 2,
-    lore: "« À ma fille, si ces lignes te trouvent : le froid n'est pas l'absence de chaleur. C'est une chaleur qui a appris la patience. » — S." },
+    lore: "« À ma fille, si ces lignes te trouvent : le froid n'est pas l'absence de chaleur. C'est une chaleur qui a appris la patience. » — É." },
   { id: "page_grimoire_2", name: "Le souffle de givre", icon: "📄", floor: 3,
-    lore: "Premiers exercices : givrer la rosée sans la briser. Sandrine a noté en marge : « recommencé onze fois — la onzième tient »." },
+    lore: "Premiers exercices : givrer la rosée sans la briser. Élara a noté en marge : « recommencé onze fois — la onzième tient »." },
   { id: "page_grimoire_3", name: "La rosée durcie", icon: "📄", floor: 5,
     lore: "Le gel comme armure et non comme arme. L'encre y est pâlie, comme soufflée par un hiver ancien." },
   { id: "page_grimoire_4", name: "Le miroir de glace", icon: "📄", floor: 7,

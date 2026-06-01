@@ -56,7 +56,7 @@ function _restoreFloorFromCache(floor) {
   if (typeof _ensureActiveKillQuestTargets === 'function') {
     _ensureActiveKillQuestTargets(floor);
   }
-  // Page du grimoire de Sandrine (quête manon_grimoire) si applicable.
+  // Page du grimoire d'Élara (quête manon_grimoire) si applicable.
   if (typeof _ensurePagePlacement === 'function') {
     _ensurePagePlacement(floor);
   }

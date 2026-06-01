@@ -1,4 +1,4 @@
-# Plan — Easter egg : les pages oubliées de Sandrine
+# Plan — Easter egg : les pages oubliées d'Élara
 
 > Statut : **proposition** (non implémenté). Suite directe de
 > [`manon-grimoire-pages.md`](./manon-grimoire-pages.md) §9 (« 2ᵉ quête
@@ -24,7 +24,7 @@ les deux structures (`.clear()`) + `renderMinimap()`. Couvert par
 Le grimoire reconstitué n'était pas tout à fait complet. En l'ouvrant
 « les soirs de gel » (cf. `idleRandom` post-Acte II), Manon découvre des
 **renvois en marge** vers des feuillets qu'elle ne possède pas : des
-pages que Sandrine avait jugées trop dangereuses pour les laisser avec
+pages que Élara avait jugées trop dangereuses pour les laisser avec
 les autres, dispersées **plus profond** dans le château (la Boucle
 Ténébreuse, étages 11+). Pas une quête au journal : un **secret** qu'on
 ne trouve qu'en cherchant — l'esprit d'un easter egg.
@@ -55,7 +55,7 @@ groupe). Logo PNG dédié (`tools/`).
   classement AoE, cf. `tools/sim-aoe.js`) ; nécessite un passage sim.
 
 ### Option B — bonus passif permanent (**recommandé**)
-**« Héritage de givre »** : affinité froide héritée de Sandrine.
+**« Héritage de givre »** : affinité froide héritée d'Élara.
 - Implémentation : flag sérialisé `frostHeritage` (state.js), lu par
   `_spellElementalDamage` / `_spellLifesteal` / `_spellCurse`
   (battle-spells.js) → sorts d'élément `"glace"` ×(1 + `FROST_HERITAGE_MULT`)

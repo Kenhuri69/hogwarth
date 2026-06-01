@@ -63,7 +63,7 @@ function renderGrimoirePouch() {
     }
     html += '</div>';
   } else {
-    html += `<div class="brew-empty">Aucune page récoltée. Lance Revelio dans le donjon pour dévoiler les pages dissimulées par Sandrine.</div>`;
+    html += `<div class="brew-empty">Aucune page récoltée. Lance Revelio dans le donjon pour dévoiler les pages dissimulées par Élara.</div>`;
   }
   html += `<div style="margin-top:12px; font-size:11px; color:#6a5030; text-align:center;">Pages du grimoire de givre : ${pages.length} / ${all.length}. Rapporte-les à Manon (étage 3).</div>`;
   pane.innerHTML = html;
