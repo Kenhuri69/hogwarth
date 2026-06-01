@@ -125,6 +125,7 @@ function triggerDeath(msg) {
     showIronmanResult(msg);
     return;
   }
+  HAPTICS_safe.death(); // haptique mobile (D1) — chemin normal, pas Ironman (symétrique à C2)
   document.getElementById('death-msg').textContent = msg;
   // Immersion (C2) : pétrification progressive avant l'écran de mort. Purement
   // visuel ; défensif (module absent → dur 0 → écran immédiat) ; reduced-motion

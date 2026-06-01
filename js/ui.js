@@ -66,6 +66,13 @@ function updateUI() {
     if (card) card.classList.toggle('ko-char', c.hp <= 0);
   });
 
+  // ── Vignette de danger bas-PV (D2) ───────────────────────────
+  // Pulsation rouge en bord d'écran si un membre vivant du groupe est
+  // sous 25 % de PV. Purement cosmétique (pointer-events:none, pur CSS).
+  const inDanger = party.slice(0, partySize)
+    .some(c => c.hp > 0 && c.hpMax > 0 && c.hp / c.hpMax < 0.25);
+  document.body.classList.toggle('cfx-danger', inDanger);
+
   // ── Badge "points à allouer" sur le bouton Fiche ──────────────
   const badge = document.getElementById('char-alloc-badge');
   if (badge) {

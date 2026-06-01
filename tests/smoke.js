@@ -17736,9 +17736,135 @@ async function scenarioCinematics() {
   await browser.close();
 }
 
+// ── Scénario : Haptique mobile (D1) ───────────────────────────────────
+// Stub/spy sur navigator.vibrate : appelé sur coup/crit/level-up/mort ;
+// pas appelé sous prefers-reduced-motion (emulateMedia). Module purement
+// haptique, défensif (HAPTICS_safe), aucune mécanique touchée.
+async function scenarioHaptics() {
+  console.log('\n── Scénario : Haptique mobile (D1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // H1 — module présent + API exposée + proxy défensif opérationnel
+  const h1 = await page.evaluate(() => ({
+    hasModule: typeof window.Haptics === 'object' && !!window.Haptics,
+    hasHit:    typeof window.Haptics?.hit === 'function',
+    hasCrit:   typeof window.Haptics?.crit === 'function',
+    hasDeath:  typeof window.Haptics?.death === 'function',
+    hasLevel:  typeof window.Haptics?.levelUp === 'function',
+    hasProxy:  typeof window.HAPTICS_safe?.hit === 'function',
+  }));
+  console.log('  H1 module:', h1);
+  assert(h1.hasModule, 'H1 window.Haptics absent');
+  assert(h1.hasHit && h1.hasCrit && h1.hasDeath && h1.hasLevel, 'H1 API incomplète');
+  assert(h1.hasProxy, 'H1 HAPTICS_safe proxy absent');
+
+  // Spy : remplace navigator.vibrate par un enregistreur d'appels.
+  await page.evaluate(() => {
+    window.__vibes = [];
+    navigator.vibrate = (p) => { window.__vibes.push(p); return true; };
+  });
+
+  // H2 — chaque API déclenche un appel à vibrate (hors reduced-motion)
+  const h2 = await page.evaluate(() => {
+    window.__vibes = [];
+    window.HAPTICS_safe.hit();
+    window.HAPTICS_safe.crit();
+    window.HAPTICS_safe.levelUp();
+    window.HAPTICS_safe.death();
+    return { count: window.__vibes.length };
+  });
+  console.log('  H2 vibrate:', h2);
+  assert(h2.count === 4, 'H2 les 4 API doivent chacune appeler navigator.vibrate');
+
+  // H3 — call-site réel : un coup physique en combat déclenche une vibration
+  await startDummyFight(page, { hp: 50 });
+  const h3 = await page.evaluate(() => {
+    window.__vibes = [];
+    executeAttack(0);
+    return { count: window.__vibes.length };
+  });
+  console.log('  H3 combat:', h3);
+  assert(h3.count >= 1, 'H3 un coup en combat doit déclencher une vibration');
+
+  // H4 — prefers-reduced-motion : aucune vibration (mouvement ressenti)
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const h4 = await page.evaluate(() => {
+    window.__vibes = [];
+    window.HAPTICS_safe.hit();
+    window.HAPTICS_safe.crit();
+    window.HAPTICS_safe.levelUp();
+    window.HAPTICS_safe.death();
+    return { count: window.__vibes.length };
+  });
+  console.log('  H4 reduced:', h4);
+  assert(h4.count === 0, 'H4 aucune vibration ne doit partir sous prefers-reduced-motion');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario Haptique');
+  }
+  console.log('  ✅ Haptique mobile (D1) OK');
+  await browser.close();
+}
+
+// ── Scénario : Vignette de danger bas-PV (D2) ─────────────────────────
+// PV d'un héros vivant sous 25 % → body.cfx-danger présent ; PV remontés
+// → classe retirée ; un héros KO (hp=0) ne déclenche pas. Pur CSS + toggle
+// dans updateUI(), aucune mécanique touchée.
+async function scenarioDangerVignette() {
+  console.log('\n── Scénario : Vignette de danger bas-PV (D2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // V1 — PV pleins → pas de classe
+  const v1 = await page.evaluate(() => {
+    party[0].hp = party[0].hpMax;
+    updateUI();
+    return document.body.classList.contains('cfx-danger');
+  });
+  console.log('  V1 plein:', v1);
+  assert(!v1, 'V1 cfx-danger présente à PV pleins');
+
+  // V2 — PV sous le seuil (20 %) → classe présente
+  const v2 = await page.evaluate(() => {
+    party[0].hp = Math.max(1, Math.floor(party[0].hpMax * 0.2));
+    updateUI();
+    return document.body.classList.contains('cfx-danger');
+  });
+  console.log('  V2 danger:', v2);
+  assert(v2, 'V2 cfx-danger absente sous 25 % PV');
+
+  // V3 — PV remontés → classe retirée
+  const v3 = await page.evaluate(() => {
+    party[0].hp = party[0].hpMax;
+    updateUI();
+    return document.body.classList.contains('cfx-danger');
+  });
+  console.log('  V3 remonté:', v3);
+  assert(!v3, 'V3 cfx-danger non retirée après remontée des PV');
+
+  // V4 — héros KO (hp=0) ne compte pas (seuil sur membres vivants)
+  const v4 = await page.evaluate(() => {
+    party[0].hp = 0;
+    updateUI();
+    return document.body.classList.contains('cfx-danger');
+  });
+  console.log('  V4 KO:', v4);
+  assert(!v4, 'V4 cfx-danger déclenchée à tort pour un héros KO');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario Vignette de danger');
+  }
+  console.log('  ✅ Vignette de danger bas-PV (D2) OK');
+  await browser.close();
+}
+
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))

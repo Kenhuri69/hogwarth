@@ -183,3 +183,28 @@ pendant l'exploration (seedés par étage pour la reproductibilité ?
   (A1→C2). État du code vérifié (aucune des features présente ;
   `ambient_tension.ogg` en réserve activable). Rien d'engagé — ce commit
   ne contient que le plan.
+- 2026-06-01 : **D1 + D2 implémentés** dans une même PR (branche
+  `claude/immersion-d1d2-haptics-danger`, surfaces disjointes, faible
+  effort — packaging recommandé par le plan).
+  - **D1 (haptique)** : nouveau module `js/haptics.js` (`window.Haptics`
+    + proxy `HAPTICS_safe` calqué sur `CFX_safe`). API
+    `hit()/crit()/death()/levelUp()`, garde-fous `navigator.vibrate`
+    absent → no-op et `prefers-reduced-motion` → no-op. Call-sites :
+    `battle.js — executeAttack` (hit/crit au point du `playHit()`),
+    `battle-death.js — triggerDeath` (death, chemin normal après le gate
+    Ironman, symétrique à C2), `battle-rewards.js — checkLevelUp`
+    (levelUp). Entrées loader `Haptics`/`HAPTICS_safe` ajoutées au
+    MANIFEST.
+  - **D2 (vignette danger)** : classe `body.cfx-danger` (pulsation rouge
+    `box-shadow` inset, `pointer-events:none`) togglée dans
+    `ui.js — updateUI()` quand un membre vivant a `hp/hpMax < 0.25`.
+    CSS dans `css/combat-fx.css` ; reduced-motion → halo statique
+    (animation neutralisée).
+  - **Tests** : `scenarioHaptics` (spy `navigator.vibrate` : 4 API +
+    coup en combat appellent ; rien sous reduced-motion via
+    `emulateMedia`) et `scenarioDangerVignette` (PV sous seuil → classe ;
+    remontée → retirée ; KO ne compte pas) ajoutés à `tests/smoke.js`.
+  - **Bumps** : `?v=` de `combat-fx.css` (4→5), `ui.js` (7→8),
+    `battle.js` (18→19), `battle-rewards.js` (1→2), `battle-death.js`
+    (2→3), `loader.js` (22→23) + nouvelle entrée `haptics.js?v=1` dans
+    `index.html` & `sw.js` (PRECACHE) ; `CACHE_VERSION` v47 → v48.
