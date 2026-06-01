@@ -405,15 +405,19 @@ const REST_SP_THRESHOLD = 0.40;
 
 // ── CLI ─────────────────────────────────────────────────────
 function parseArgs(argv) {
-  const out = { nSims: 400, hpMult: 1.0, xpMult: 1.0, statPoints: 0,
+  const out = { nSims: 400, hpMult: 1.0, xpMult: 1.0, statPoints: 3,
                 build: 'balanced', mode: 'single',
                 useQuests: true, useEquipment: true, usePotions: true,
                 kills: 0, bonusLevels: 0, artifacts: false,
                 endgame: false, maxFloor: 40, forge: 0, library: 0,
                 houseSet: null, tenebresSet: false, houseTier: 0, stars: 0,
                 difficulty: 'Normal',
-                statRework: false, fairBaseline: false,
-                // Calibration retenue pour l'implémentation runtime (D1–D4) :
+                // DÉFAUT ALIGNÉ SUR LE RUNTIME (rework D1–D5 live). Le sim
+                // modélise par défaut le jeu ACTUEL ; `--legacy` restaure le
+                // modèle historique pré-rework. Cf.
+                // .claude/plans/difficulty-simulation-review.md.
+                statRework: true, fairBaseline: true,
+                // Calibration runtime (D1–D4), miroir des constantes data.js :
                 // INT→MAG 4:1, END→DEF 6:1 (réglage adouci), résistance DoT
                 // floor(END/12), pénétration STR Hill cap 0.50 / demi-sat 20.
                 // Cf. .claude/plans/player-stats-balance.md §4 (réglage adouci).
@@ -421,12 +425,15 @@ function parseArgs(argv) {
                 intMagDiv: 4, endDefDiv: 6, enemyPen: 0,
                 enemyPenLo: 20, enemyPenHi: 34,
                 maxhpDmg: 0, maxhpChance: 0.5, maxhpCap: 0, maxhpCapRef: 'atk',
-                // D5 volet AGI (analyse, opt-in) — modèle « Célérité » : gain
-                // de tour FLUIDE (accumulateur, non par palier). Taux d'actions
-                // supplémentaires par round = courbe de Hill sur l'AGI. Défaut
-                // max 0 = inactif (n'altère aucun rapport existant). Cf.
-                // .claude/plans/agi-derived.md §4.
-                celeriteMax: 0, celeriteHalf: 45,
+                // D5 volet AGI — modèle « Célérité » : gain de tour FLUIDE
+                // (accumulateur, non par palier). Taux d'actions supplémentaires
+                // par round = courbe de Hill sur l'AGI. Défaut aligné runtime
+                // (CELERITE_MAX 0.30 / HALF 45). Cf. .claude/plans/agi-derived.md.
+                celeriteMax: 0.30, celeriteHalf: 45,
+                // D5 volet LCK — Fortune (dérivée, parité runtime FORTUNE_*).
+                // Win-rate-neutre ici (sim sans fuite/butin) ; effet éco dans
+                // tools/sim-economy.js. Courbe : asympt·x²/(x²+half²).
+                fortuneAsymptote: 0.31, fortuneHalf: 30,
                 elanStep: 8, elanCap: 5, elanDecay: 'none' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -438,7 +445,14 @@ function parseArgs(argv) {
     if (a === '--pessimistic')          { out.useQuests = false; out.useEquipment = false; out.usePotions = false; continue; }
     if (a === '--artifacts')            { out.artifacts = true; continue; }
     if (a === '--stat-rework')          { out.statRework = true; out.fairBaseline = true; continue; }
-    if (a === '--fair-baseline')        { out.fairBaseline = true; continue; }
+    if (a === '--fair-baseline')        { out.fairBaseline = true; out.statRework = false; continue; }
+    if (a === '--legacy' || a === '--no-rework') {
+      // Restaure le modèle HISTORIQUE pré-rework (reproduit les rapports
+      // archivés) : aucune conversion, pas de croissance secondaire, 0 pt
+      // libre, Célérité inactive.
+      out.statRework = false; out.fairBaseline = false;
+      out.celeriteMax = 0; out.statPoints = 0; continue;
+    }
     if (a === '--endgame')              { out.endgame = true; continue; }
     if (a === '--tenebres-set')         { out.tenebresSet = true; continue; }
     if (!a.includes('=')) {
@@ -458,6 +472,8 @@ function parseArgs(argv) {
     else if (k === 'pen-cap')      out.penCap  = parseFloat(v);
     else if (k === 'pen-half')     out.penHalf = parseFloat(v) || 20;
     else if (k === 'dot-res-div')  out.dotResDiv = parseFloat(v) || 8;
+    else if (k === 'fortune-asymptote') out.fortuneAsymptote = parseFloat(v);
+    else if (k === 'fortune-half')      out.fortuneHalf = parseFloat(v) || 30;
     else if (k === 'int-mag-div')  out.intMagDiv = parseFloat(v) || 4;
     else if (k === 'end-def-div')  out.endDefDiv = parseFloat(v) || 4;
     else if (k === 'enemy-pen')    out.enemyPen = parseFloat(v) || 0;
@@ -518,8 +534,15 @@ if (ARGS.stars > 0 && ARGS.houseTier < 18) ARGS.houseTier = 18;
 if (ARGS.mode === 'help') {
   console.log(`Usage: node tools/sim-difficulty.js [N_SIMS] [options]
 
+Par DÉFAUT, le sim modélise le JEU ACTUEL (rework des stats D1–D5 live) :
+conversions INT→MAG / END→DEF, résistance DoT, pénétration STR, croissance
+secondaire +1/niveau, 3 pts libres/niveau, Célérité. Utiliser --legacy pour
+restaurer le modèle historique pré-rework (reproduction des rapports archivés).
+
 Options:
   --n=N | --n-sims=N      Nombre de sims par cellule (def 400)
+  --legacy | --no-rework  Modèle HISTORIQUE pré-rework : aucune conversion, pas
+                          de croissance secondaire, 0 pt libre, Célérité OFF.
   --difficulty=NAME       Facile | Normal | Difficile | Expert (def Normal).
                           Applique scalingMultiplier (toutes stats),
                           enemyGroupMultiplier et xpMultiplier.
@@ -527,20 +550,24 @@ Options:
                           Implique l'Apothéose (tier 18) si non précisé.
   --hp-mult=F             Multiplicateur HP additionnel des monstres (def 1.0)
   --xp-mult=F             Multiplicateur XP des monstres (def 1.0)
-  --stat-points=N         Points libres alloués au joueur par niveau (def 0)
+  --stat-points=N         Points libres alloués au joueur par niveau (def 3)
   --build=BUILD           tank | balanced | offensive (def balanced)
   --bonus-levels=N        Niveaux gagnés au-delà de l'étage (farming) (def 0)
   --artifacts             Best-in-slot inclut les artefacts légendaires (hors boutique)
-  --stat-rework           [ANALYSE] Modélise le rework des stats secondaires :
-                          INT→MAG 4:1, END→DEF 4:1, END→résistance DoT,
-                          STR→pénétration de DEF (courbe de Hill). Implique
-                          --fair-baseline. Ne change rien hors de ce mode.
-  --fair-baseline         [ANALYSE] Corrige la croissance STR/INT/AGI +1/niveau
-                          (omise par le sim historique) sans le rework — sert de
-                          référence équitable pour mesurer le rework PUR.
+  --stat-rework           Rework des stats secondaires (INT→MAG, END→DEF,
+                          END→résistance DoT, STR→pénétration). ACTIF par défaut
+                          depuis l'alignement runtime ; flag conservé pour
+                          explicitation (implique --fair-baseline).
+  --fair-baseline         Croissance STR/INT/AGI +1/niveau SANS le rework
+                          (désactive les conversions) — référence équitable pour
+                          mesurer le rework PUR (comparer à la sortie par défaut).
   --pen-cap=F             Rework : plafond de pénétration STR (def 0.50)
   --pen-half=F            Rework : STR de demi-saturation de la courbe (def 20)
   --dot-res-div=F         Rework : diviseur de résistance DoT END (def 12)
+  --fortune-asymptote=F   D5 LCK : asymptote de la courbe Fortune (def 0.31)
+  --fortune-half=F        D5 LCK : LCK de demi-saturation Fortune (def 30).
+                          Fortune est win-rate-neutre ici (pas de fuite/butin
+                          simulés) → effet économique dans tools/sim-economy.js.
   --int-mag-div=F         Rework : diviseur conversion INT→MAG (def 4)
   --end-def-div=F         Rework : diviseur conversion END→DEF (def 6)
   --enemy-pen=F           [Option D] Pénétration d'armure des monstres « brutes »
@@ -557,7 +584,7 @@ Options:
                           brute (indépendant du joueur) ; 'hit' = coup normal mitigé
                           (rétrécit quand la DEF joueur monte). Def 'atk'.
   --celerite-max=F        [D5 AGI] Modèle « Célérité » : taux MAX d'actions sup. par
-                          round (def 0 = inactif). Gain de tour FLUIDE via un
+                          round (def 0.30, aligné runtime). Gain de tour FLUIDE via un
                           accumulateur (non par palier) ; taux = courbe de Hill sur
                           l'AGI : celerite = max × agi²/(agi²+half²).
   --celerite-half=H       [D5 AGI] AGI de demi-saturation de la courbe Célérité (def 45)
@@ -819,6 +846,18 @@ function celeriteFrac(agi, cfg) {
   return cap * (a * a) / (a * a + h * h);
 }
 
+// D5 volet LCK — Fortune (stat dérivée, miroir de _fortuneCurve runtime).
+//   fortune = asymptote · x² / (x² + half²),  x = LCK (+ bonus Fortune éventuel)
+// Pilote drops/or/fouille/fuite/pièges en jeu. Dans CE sim (win-rate, sans
+// fuite ni butin simulés) elle est neutre — calculée pour parité/visibilité ;
+// son vrai effet économique est modélisé dans tools/sim-economy.js.
+function fortuneCurve(x, cfg) {
+  const a = (cfg && typeof cfg.fortuneAsymptote === 'number') ? cfg.fortuneAsymptote : 0.31;
+  const h = (cfg && cfg.fortuneHalf) || 30;
+  const v = Math.max(0, x || 0);
+  return a * (v * v) / (v * v + h * h);
+}
+
 function createHero(key, level, cfg, floor, partySize) {
   const def = CHARACTERS[key];
   const c = {
@@ -923,6 +962,9 @@ function createHero(key, level, cfg, floor, partySize) {
   // (gain de tour FLUIDE, accumulé par simulateBattle). Stat dérivée sur l'AGI
   // effective. 0 si levier inactif (cfg.celeriteMax == 0) → historique inchangé.
   c._celerite           = celeriteFrac(c.agi, cfg);
+  // D5 volet LCK — Fortune (parité runtime ; win-rate-neutre ici, cf. helper).
+  c._fortuneX           = c.lck + (c._fortuneBonus || 0);
+  c.fortune             = fortuneCurve(c._fortuneX, cfg);
   c.critMultiplier      = 1.5 + (c._critDmgBonus || 0) + (c._setCritDmg || 0);
   c.spellCritMultiplier = 1.5 + (c._spellCritDmgBon || 0) + (c._setSpellCritDmg || 0);
   // Passif d'Apothéose (palier 18 — houseApotheosePassive). Tous posés
@@ -1665,9 +1707,12 @@ function emitReport(rows, cfg) {
   const houseInfo = cfg.houseSet
     ? ` | set=${cfg.houseSet}${cfg.houseTier ? ` | palier Maison ${cfg.houseTier}` : ''}${cfg.stars ? ` | ★${cfg.stars}` : ''}${elanInfo}`
     : '';
+  const modelInfo = cfg.statRework
+    ? `modèle=rework (D1–D5, jeu actuel)${cfg.celeriteMax ? ` | Célérité max ${cfg.celeriteMax}` : ''}`
+    : (cfg.fairBaseline ? 'modèle=fair-baseline (croissance sans rework)' : 'modèle=legacy (historique pré-rework)');
   console.log(`Paramètres : difficulté=${cfg.difficulty || 'Normal'} | ` +
               `HP×${cfg.hpMult} | XP×${cfg.xpMult} | ` +
-              `${cfg.statPoints} pts libres/niveau | build=${cfg.build}${houseInfo}\n`);
+              `${cfg.statPoints} pts libres/niveau | build=${cfg.build} | ${modelInfo}${houseInfo}\n`);
 
   console.log('## 1. Progression joueur attendue\n');
   console.log('| Étage | Niveau Solo | XP cumul Solo | Niveau Duo | XP cumul Duo |');
