@@ -11943,6 +11943,33 @@ async function scenarioGrimoireActe3() {
   assert(t7.placementsOk, 'pagePlacements doit survivre au round-trip save');
   assert(t7.pagesOk,      'player.grimoirePages doit survivre au round-trip save');
 
+  // T8 — rumeurs des AUTRES PNJ lore (fantômes) : rumeur diffuse sous la
+  // gate egg, exclusion de Manon, extinction une fois l'Acte III mordu/fini.
+  const t8 = await page.evaluate(() => {
+    // Gate egg : Acte II fini, Acte III pas encore accepté.
+    activeQuests = []; completedQuests = new Set(['manon_grimoire']);
+    const ghost = getNpcById('sir_nicolas');
+    const eggRumor      = _npcAct3Rumor(ghost);
+    const manonExcluded = _npcAct3Rumor(getNpcById('manon')); // Manon a la sienne
+    // Une fois l'egg mordu (quête active) → plus de rumeur diffuse.
+    acceptQuest('manon_acte3');
+    const afterBite = _npcAct3Rumor(ghost);
+    // Une fois l'Acte III remis → plus rien.
+    activeQuests = []; completedQuests = new Set(['manon_grimoire', 'manon_acte3']);
+    const afterDone = _npcAct3Rumor(ghost);
+    return {
+      eggRumor:      typeof eggRumor === 'string' && eggRumor.length > 0,
+      manonExcluded: manonExcluded === null,
+      afterBite:     afterBite === null,
+      afterDone:     afterDone === null
+    };
+  });
+  console.log('  T8 rumeurs:', t8);
+  assert(t8.eggRumor,      'un fantôme lore doit lâcher une rumeur Acte III sous la gate egg');
+  assert(t8.manonExcluded, 'Manon ne reçoit pas la rumeur générique (elle a la sienne)');
+  assert(t8.afterBite,     'plus de rumeur diffuse une fois l\'Acte III accepté');
+  assert(t8.afterDone,     'plus de rumeur diffuse une fois l\'Acte III remis');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS (feuillets clairs Acte III)`);

@@ -224,8 +224,10 @@ défaut = comportement Acte II, couvert par `scenarioGrimoirePages`) :
       (main.js) ; conversion egg→quête dans `_tryCollectPage`
       (acceptQuest au 1ᵉʳ feuillet).
 - [x] **Phase 3** — rumeurs : `_manonAct3Rumor` (idleRandom Manon, sous
-      gate egg) + `_pageHintLine`/`_pendingPageHintFloor` set-aware
-      (fantômes lore) ; greffe dans `_resolveDialogSource`.
+      gate egg) + `_npcAct3Rumor` (rumeur diffuse des AUTRES PNJ lore —
+      fantômes Sir Nicolas / Moine Gras…, voix de revenant, sans étage)
+      + `_pageHintLine`/`_pendingPageHintFloor` set-aware (indices
+      fantômes citant l'étage) ; greffe dans `_resolveDialogSource`.
 - [x] **Phase 4** — établi : `_grimoireFusionReady`/`openFusionModal`
       set-aware + `fuseAct3()` (turn-in + passif + purge `_purgePageData`) ;
       suppression du bouton générique de remise pour `manon_acte3`.

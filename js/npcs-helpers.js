@@ -142,3 +142,25 @@ function _manonAct3Rumor() {
   return _MANON_ACT3_RUMORS[Math.floor(Math.random() * _MANON_ACT3_RUMORS.length)];
 }
 
+// Rumeur DIFFUSE de l'Acte III lâchée par les AUTRES PNJ lore (fantômes :
+// Sir Nicolas, le Moine Gras…). Distincte des indices fantômes qui citent
+// un étage (_pageHintLine) : ici on ne donne aucune position, juste la
+// rumeur lumineuse qui amorce l'easter egg, dans une voix de revenant.
+// Même gate egg que Manon (Acte III en jeu, pas encore mordu). null sinon.
+// (Textes provisoires — relecture co-écrite avant merge.)
+const _OTHER_NPC_ACT3_RUMORS = [
+  "On murmure qu'Élara, la sorcière du givre, n'a pas tout caché par peur. Quelque part dans ces murs, elle aurait semé de la joie pure — des sorts de neige qu'on lance pour rire. Charmant, pour un château aussi lugubre.",
+  "Entre fantômes, on se raconte qu'il flotte ici des feuillets clairs — pas des secrets honteux, des espiègleries de givre. J'aimerais bien les lire ; hélas, tourner une page demande des doigts.",
+  "Il paraît qu'une mère a laissé à sa fille, dans ce château, non pas un avertissement mais un éclat de rire gelé. Si tu le trouves, jeune vivant, dis-moi à quoi ressemble la joie : j'ai oublié.",
+  "Le froid de ce couloir n'est pas tout triste, tu sais. On raconte qu'Élara y a glissé des jeux de givre lumineux, exprès, pour qui saurait regarder. Moi, je ne vois plus que des courants d'air."
+];
+function _npcAct3Rumor(npc) {
+  if (!npc || npc.sprite !== 'fantome' || npc.id === 'manon') return null;
+  const set = (typeof _activePageSet === 'function') ? _activePageSet() : null;
+  if (!set || set.questId !== 'manon_acte3') return null;
+  // Couche egg seulement : avant l'acceptation implicite (1ᵉʳ feuillet trouvé).
+  if (typeof activeQuests !== 'undefined'
+      && activeQuests.some(q => q.id === 'manon_acte3')) return null;
+  return _OTHER_NPC_ACT3_RUMORS[Math.floor(Math.random() * _OTHER_NPC_ACT3_RUMORS.length)];
+}
+

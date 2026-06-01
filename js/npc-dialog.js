@@ -356,6 +356,12 @@ function _resolveDialogSource(npc, state) {
         const rumor = _manonAct3Rumor();
         if (rumor) pool = pool.concat(rumor);
       }
+      // Rumeur Acte III DIFFUSE des autres PNJ lore (fantômes) : amorce
+      // l'egg dans la voix d'un revenant, sans citer d'étage. Couche egg.
+      if (npc.id !== 'manon' && typeof _npcAct3Rumor === 'function') {
+        const rumor = _npcAct3Rumor(npc);
+        if (rumor) pool = pool.concat(rumor);
+      }
       idleIndex = Math.floor(Math.random() * pool.length);
       idleRandomPick = pool[idleIndex];
     }
