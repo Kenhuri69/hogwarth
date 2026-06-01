@@ -76,16 +76,16 @@ vrai »).
 
 ## 3. Décisions à acter (⚠️ avant implémentation)
 
-| Sujet | Options | Reco |
-|-------|---------|------|
-| **Récompense** | (A) sort « signature » à **faible portée méta** (flavor lumineux) ; (B) **passif** lumineux | **à trancher** — voir §7 |
-| Gate de départ | (i) `manon_grimoire` complété **seul** ; (ii) + `victoryAchieved` | **(i)** — éviter de tout repousser en endgame |
-| Nb de feuillets | 3 (resserré) ou 4 | **3** |
-| Étages porteurs | étages déjà connus, « chers » à Élara : ex. 2 (page de garde), 6, 9 | à arbitrer |
-| Conversion | trouver **le 1ᵉʳ** feuillet → `acceptQuest('manon_acte3')` | oui |
-| Rumeurs | Manon `idleRandom` + 2-3 PNJ lore (réemploi `_pageHintLine`) | oui |
-| Remise | établi Manon (réemploi `open_fusion`, 2ᵉ recette) | oui |
-| Architecture pages | **réutiliser** les structures Acte II via un sélecteur de set (§4) | oui |
+| Sujet | Décision |
+|-------|----------|
+| **Récompense** | ✅ **(B) passif « Hiver Clair »** (lumineux, léger) — voir §7 |
+| Gate de départ | ✅ **`manon_grimoire` complété seul** (pas de `victoryAchieved`) |
+| Nb de feuillets | ✅ **3** |
+| Étages porteurs | ✅ **2, 6, 9** (lieux « chers » à Élara) |
+| Conversion | ✅ trouver **le 1ᵉʳ** feuillet → `acceptQuest('manon_acte3')` |
+| Rumeurs | ✅ Manon `idleRandom` + 2-3 PNJ lore (réemploi `_pageHintLine`) |
+| Remise | ✅ établi Manon (réemploi `open_fusion`, 2ᵉ recette) |
+| Architecture pages | ✅ **réutiliser** les structures Acte II via un sélecteur de set (§4) |
 
 ## 4. Architecture — un seul mécanisme, paramétré par « set actif »
 
@@ -160,17 +160,19 @@ défaut = comportement Acte II, couvert par `scenarioGrimoirePages`) :
   `turnInQuestById('manon_acte3')`, applique la récompense, **purge**
   `pagePlacements`/`revealedPages` + `player.grimoirePages = []`
   (leçon du correctif §0), narratif lumineux, `renderMinimap()`.
-- **Récompense — à trancher (option lumineuse, pas de power-creep)** :
-  - **(A) Sort signature flavor** « Givre Clair » / « Aurore de Givre » :
-    élément `glace`+`lumière`, **dégâts modestes** mais effet sympa (ex.
-    petit soin de groupe ou `gel` léger) — pensé *flavor*, pas méta, donc
-    pas de passage sim lourd. Enseigné aux 2 héros à la remise.
-  - **(B) Passif « Hiver Clair »** : flag sérialisé, effet **léger et
-    lumineux** (ex. +1 PM/pas, ou petit regen hors combat), lu là où
-    c'est pertinent. Ligne fiche perso + badge.
-  > Reco : viser le **flavor lumineux** (A *ou* B faible) plutôt qu'un
-  > gros levier — la récompense de l'Acte III est surtout **narrative**
-  > (rencontrer la mère heureuse). À toi de choisir A ou B.
+- **Récompense — ✅ (B) passif « Hiver Clair »** (lumineux, léger ; la
+  vraie récompense reste narrative — rencontrer la mère heureuse) :
+  - Flag sérialisé `hiverClair` (bool, state.js), posé par `fuseAct3()`.
+  - Effet : **hors combat, +1 PM par pas d'exploration** (plafonné
+    `spMax`) — le calme de l'hiver clair qui « refait » la magie. Hook :
+    `movement.js — _step` (même point que le pas Poufsouffle, mais effet
+    distinct : PM seul, +1, non gated). Défensif : `if (hiverClair) …`.
+  - Affichage : ligne « ❄️ Hiver Clair » dans `char-stats-panel`
+    (ui-character-sheet.js) + badge à la remise.
+  - Persistance : `hiverClair` dans `_serializeState`/`_applyState` ;
+    reset `false` dans `startGame`.
+  > Volontairement **non-méta** : un confort d'exploration lumineux, pas
+  > un levier de combat. Pas de passage sim requis.
 
 ## 8. Découpage en phases (verify)
 
@@ -209,6 +211,9 @@ défaut = comportement Acte II, couvert par `scenarioGrimoirePages`) :
 - [x] Bug « pages re-fouillables après fusion » corrigé (clear + T8).
 - [x] Direction arbitrée : **Acte III lumineux déclenché en mode egg**
       (rumeurs → trouver 1 feuillet → quête Manon).
-- [ ] §3 — décisions restantes : **récompense A/B**, étages porteurs,
-      gate `victoryAchieved` ou non, nb de feuillets.
-- [ ] Phases 1-6 — à implémenter après arbitrage §3.
+- [x] §3 — décisions verrouillées : récompense **(B) passif Hiver
+      Clair**, gate **dès Acte II fini**, **3** feuillets, étages
+      **2/6/9**, sélecteur de set (réemploi structures Acte II).
+- [ ] Phases 1-6 — prêtes à implémenter. Réserve : la **rédaction des
+      dialogues** (voix de Manon, ton lumineux) gagne à être relue/co-
+      écrite avant merge.
