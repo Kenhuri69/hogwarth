@@ -3417,6 +3417,79 @@ async function scenarioFountain() {
   await browser.close();
 }
 
+// ── Scénario : VFX d'interaction de donjon (E3) ───────────────────────
+// DungeonFX.burst(hostId, kind) : gerbe d'étincelles sur un overlay/modale.
+// Vérifie : API + proxy, montage/auto-retrait de la couche, call-sites
+// réels (coffre/fontaine/level-up) sans throw, reduced-motion (halo seul).
+async function scenarioDungeonVfx() {
+  console.log('\n── Scénario : VFX d\'interaction de donjon (E3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // V1 — API + proxy défensif
+  const v1 = await page.evaluate(() => ({
+    hasBurst: typeof window.DungeonFX?.burst === 'function',
+    hasProxy: typeof window.DFX_safe?.burst === 'function',
+  }));
+  console.log('  V1 api:', v1);
+  assert(v1.hasBurst && v1.hasProxy, 'V1 API burst / DFX_safe absente');
+
+  // V2 — burst monte une couche dans l'hôte (direct + proxy), auto-retirée
+  const v2 = await page.evaluate(() => {
+    let threw = false;
+    try {
+      DungeonFX.burst('explore-overlay', 'gold');
+      DFX_safe.burst('explore-overlay', 'water'); // via proxy
+    } catch (e) { threw = true; }
+    return { threw, layers: document.querySelectorAll('#explore-overlay .dfx-burst-layer').length };
+  });
+  console.log('  V2 mount:', v2);
+  assert(!v2.threw, 'V2 burst throw');
+  assert(v2.layers >= 1, 'V2 couche dfx-burst-layer non montée');
+  await page.waitForFunction(
+    () => document.querySelectorAll('.dfx-burst-layer').length === 0, { timeout: 2000 });
+
+  // V3 — call-sites réels ne throwent pas (coffre, fontaine, level-up)
+  const v3 = await page.evaluate(() => {
+    let threw = false;
+    try {
+      dungeon[playerY][playerX] = CELL.CHEST;    openChest();
+      dungeon[playerY][playerX] = CELL.FOUNTAIN; usedFountains.clear(); useFountain();
+      player.xp = player.xpNext;                 checkLevelUp();
+    } catch (e) { threw = true; }
+    return { threw };
+  });
+  console.log('  V3 callsites:', v3);
+  assert(!v3.threw, 'V3 openChest/useFountain/checkLevelUp throw');
+
+  // V4 — reduced-motion : halo seul, aucune particule projetée. On nettoie
+  // d'éventuelles couches résiduelles (bursts V3 encore en cours) puis on
+  // mesure uniquement la couche fraîchement créée.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const v4 = await page.evaluate(() => {
+    document.querySelectorAll('.dfx-burst-layer').forEach(l => l.remove());
+    let threw = false;
+    try { DungeonFX.burst('explore-overlay', 'levelup'); } catch (e) { threw = true; }
+    const layer = document.querySelector('#explore-overlay .dfx-burst-layer');
+    return {
+      threw,
+      halo:  layer ? layer.querySelectorAll('.dfx-burst-halo').length : 0,
+      parts: layer ? layer.querySelectorAll('.dfx-burst-particle').length : 0,
+    };
+  });
+  console.log('  V4 reduced:', v4);
+  assert(!v4.threw, 'V4 burst throw sous reduced-motion');
+  assert(v4.halo >= 1 && v4.parts === 0, 'V4 reduced-motion : halo sans projectiles');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario VFX de donjon');
+  }
+  console.log('  ✅ VFX d\'interaction de donjon (E3) OK');
+  await browser.close();
+}
+
 // ── Scénario 15 : softlock solo (Harry KO en mode 1 joueur) ──
 
 async function scenarioSoloSoftlock() {
@@ -18133,7 +18206,7 @@ async function scenarioDangerVignette() {
 
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioHeadlessHunt, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioEnemyIdle];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioEnemyIdle, scenarioDungeonVfx];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))

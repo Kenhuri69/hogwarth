@@ -78,7 +78,51 @@ let _dungeonFxTimer = null;
     _shakeTimer = setTimeout(() => cv.classList.remove(cls), 450);
   }
 
-  window.DungeonFX = { startDungeonFxLoop, shakeView };
+  // ── Gerbe d'interaction (E3) : étincelles sur un overlay/modale ──
+  // Anime une petite gerbe de particules + halo au centre d'un élément hôte
+  // (explore-overlay pour coffre/fontaine, levelup-modal pour le level-up).
+  // kind ∈ 'gold' (coffre) | 'water' (fontaine) | 'levelup'. Purement visuel,
+  // défensif (hôte absent → no-op). reduced-motion = halo bref sans projectiles.
+  const _BURST_PALETTES = {
+    gold:    { colors: ['#ffe9a8', '#f0c75a', '#c9a84c'], halo: 'rgba(240,199,90,0.55)',  up: false },
+    water:   { colors: ['#bfeaff', '#6fb6e0', '#e8f6ff'], halo: 'rgba(110,182,224,0.50)', up: false },
+    levelup: { colors: ['#fff3c0', '#ffd23f', '#ffffff'], halo: 'rgba(255,226,122,0.60)', up: true  },
+  };
+  function burst(hostId, kind) {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    const pal = _BURST_PALETTES[kind] || _BURST_PALETTES.gold;
+
+    const layer = document.createElement('div');
+    layer.className = 'dfx-burst-layer';
+    host.appendChild(layer);
+
+    const halo = document.createElement('div');
+    halo.className = 'dfx-burst-halo';
+    halo.style.background = `radial-gradient(circle, ${pal.halo} 0%, transparent 70%)`;
+    layer.appendChild(halo);
+
+    const cleanup = () => { if (layer.parentNode) layer.parentNode.removeChild(layer); };
+    if (prefersReducedMotion()) { setTimeout(cleanup, 360); return; }
+
+    const N = 14;
+    for (let i = 0; i < N; i++) {
+      const p = document.createElement('div');
+      p.className = 'dfx-burst-particle';
+      const ang  = (Math.PI * 2 * i) / N + Math.random() * 0.4;
+      const dist = 40 + Math.random() * 70;
+      const dx = Math.cos(ang) * dist;
+      let   dy = Math.sin(ang) * dist;
+      if (pal.up) dy = -(40 + Math.random() * 90); // level-up : gerbe montante
+      p.style.background = pal.colors[i % pal.colors.length];
+      p.style.setProperty('--dfx-dx', dx.toFixed(1) + 'px');
+      p.style.setProperty('--dfx-dy', dy.toFixed(1) + 'px');
+      layer.appendChild(p);
+    }
+    setTimeout(cleanup, 800);
+  }
+
+  window.DungeonFX = { startDungeonFxLoop, shakeView, burst };
   // Exposé aussi en global nu pour les call-sites existants (main.js / save.js).
   window.startDungeonFxLoop = startDungeonFxLoop;
 })();

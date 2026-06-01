@@ -22,7 +22,50 @@
   75% { transform: translate(5px, 3px); }
 }
 
+/* ── Gerbe d'interaction (E3) : coffre / fontaine / level-up ──────
+   Couche absolue posée dans l'hôte (overlay/modale), centrée, sans
+   capture de clic. Particules projetées depuis le centre, halo pulsé. */
+.dfx-burst-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+}
+.dfx-burst-halo {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 160px; height: 160px;
+  margin: -80px 0 0 -80px;
+  border-radius: 50%;
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: dfxBurstHalo .6s ease-out forwards;
+}
+@keyframes dfxBurstHalo {
+  0%   { transform: scale(0.3); opacity: 0; }
+  30%  { opacity: 0.9; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+.dfx-burst-particle {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 8px; height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+  animation: dfxBurstParticle .8s ease-out forwards;
+}
+@keyframes dfxBurstParticle {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dfx-dx, 0), var(--dfx-dy, 0)) scale(0.2); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   #dungeon-canvas.dfx-shake-light,
   #dungeon-canvas.dfx-shake-heavy { animation: none; }
+  /* Gerbe d'interaction : pas de projectiles (le module n'en spawn pas) ;
+     le halo fade brièvement sans dilatation. */
+  .dfx-burst-halo { animation: dfxBurstHaloReduced .34s ease-out forwards; }
+  @keyframes dfxBurstHaloReduced { 0% { opacity: 0; } 30% { opacity: .7; } 100% { opacity: 0; } }
 }

@@ -61,6 +61,7 @@ function openChest() {
   dungeon[playerY][playerX] = CELL.FLOOR;
   document.getElementById('btn-interact').style.display = 'none';
   AudioSystem.playChestOpen();
+  if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'gold'); // VFX d'ouverture (E3)
   if (puzzleReward) {
     _openPuzzleChest(currentFloorEvent === 'runique');
     return;
@@ -627,6 +628,7 @@ function useFountain() {
     c.sp = c.spMax;
   });
   usedFountains.add(key);
+  if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'water'); // VFX fontaine (E3)
   setNarrative("L'eau bleutée scintille. Le groupe boit longuement — la fatigue s'évanouit, la magie se ravive entièrement.");
   addMsg("Fontaine bue : PV et PM entièrement restaurés.", 'good');
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
