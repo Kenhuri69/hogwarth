@@ -142,15 +142,36 @@ Exploration statique entre les murs.
 
 ## F. Plus gros (à cadrer avant de lancer)
 
-### F1. Musique adaptative en couches
+### F1. Musique adaptative en couches ✅ (cadré + livré 2026-06-01)
 Au-delà du switch combat/ambiant binaire.
 
-- **Action** : fondu dynamique d'intensité selon l'état (PV groupe,
-  présence de boss). Réutilise `tension` (D4) comme couche haute.
-  **À cadrer** : éviter les coupures abruptes ; gérer le `musicGain`
-  ramping sans empiler deux boucles.
-- **Vérif** : à définir au cadrage (transport audio testé via stubs comme
-  le reste de la suite).
+- **Cadrage retenu** : **crossfade par intensité** (pas de couche additive
+  permanente — décision utilisateur). Le sample de combat est ré-évalué
+  *pendant* le combat et, quand l'intensité voulue change, on crossfade
+  vers la nouvelle couche sans empiler de boucle permanente.
+- **Implémentation** :
+  - `AudioSystem.updateCombatIntensity()` (`audio-music.js`) : recalcule la
+    couche voulue via `_combatSampleKey()` (qui place déjà `tension` en tête
+    sur danger critique — D4). Si elle diffère de `_activeCombatKey` ET que
+    son buffer est chargé : pose la nouvelle clé active (l'ancienne boucle
+    cesse de se reprogrammer via son `isRelevant`), fade-out 1 s des gains
+    de l'ancienne couche (`_fadeOutCombatLayer`), démarre la nouvelle boucle
+    (fade-in intégré de `_playSampleLoop`). Buffer cible absent → load
+    paresseux puis re-tentative. **No-op** hors combat / muet / sur couche
+    procédurale (`_activeCombatKey === null`, ex. file://) → jamais de sample
+    empilé sur la synthèse.
+  - État (`audio.js`) : `_activeCombatKey` + `_combatGains` (bucket des gains
+    de la couche courante), réinitialisés par `stopMusic()`. `_playSampleLoop`
+    accepte un 3ᵉ param optionnel `gainBucket` (les callers ambient/menu ne le
+    passent pas → comportement inchangé). `startCombatMusic` pose la clé
+    active + passe le bucket (y compris sur le repli `combat_normal`).
+  - **Hook** : `ui.js — updateUI()`, juste après le toggle de la vignette de
+    danger D2 (même déclencheur : PV du groupe en combat), gardé `inBattle`
+    + `typeof AudioSystem`.
+- **Vérif** : `scenarioAdaptiveCombatMusic` — API présente ; no-op sur
+  couche procédurale ; injection de buffers réels (silencieux 4 s) →
+  `_activeCombatKey` bascule full→`combat_normal`, danger→`tension`,
+  soin→`combat_normal`, sans throw ; `stopMusic()` réinitialise l'état.
 
 ### F2. Barks ambiants / one-shots sonores en exploration
 Gouttes d'eau, hurlements lointains, craquements, joués aléatoirement
@@ -335,3 +356,16 @@ pendant l'exploration (seedés par étage pour la reproductibilité ?
     nouveau global → loader inchangé.
   - **Mergé** : PR #… (master). E4 clos → **Lot E entièrement clos**
     (E1→E4). Reste seulement le Lot F (F1/F2, à cadrer).
+- 2026-06-01 : **Lot F cadré** avec l'utilisateur (AskUserQuestion) →
+  F1 = **crossfade par intensité** (pas de couche additive) ; F2 =
+  **synthèse procédurale** (pas d'assets OGG) ; exécution = cadrer +
+  implémenter.
+- 2026-06-01 : **F1 implémenté** (PR dédiée, branche
+  `claude/immersion-f1-adaptive-music`). Voir cadrage détaillé § F1
+  ci-dessus. `updateCombatIntensity()` + `_fadeOutCombatLayer()`
+  (`audio-music.js`), état `_activeCombatKey`/`_combatGains` (`audio.js`),
+  `_playSampleLoop(…, gainBucket)`, hook dans `updateUI()`. Test
+  `scenarioAdaptiveCombatMusic` (déterministe via buffers réels injectés).
+  **Bumps** : `audio.js` (1→2), `audio-music.js` (4→5), `ui.js` (8→9) ;
+  `CACHE_VERSION` v54 → v55. Pas de nouveau global → loader inchangé
+  (méthodes de `AudioSystem`).

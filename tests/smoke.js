@@ -11544,6 +11544,86 @@ async function scenarioFloorTheming() {
   await browser.close();
 }
 
+// ── Scénario : musique adaptative de combat (F1) ──────────────────────
+// updateCombatIntensity() crossfade la couche de combat selon l'intensité
+// (danger critique du groupe → 'tension', et retour) sans empiler de boucle.
+// Test déterministe : on injecte des AudioBuffers réels (silencieux) pour
+// les samples combat_normal/tension, puis on vérifie le swap de
+// _activeCombatKey selon les PV du groupe — sans throw, et no-op sur couche
+// procédurale (samples indisponibles, ex. file://).
+async function scenarioAdaptiveCombatMusic() {
+  console.log('\n── Scénario : musique adaptative de combat (F1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // M1 — API présente
+  const m1 = await page.evaluate(() => ({
+    hasUpdate: typeof AudioSystem.updateCombatIntensity === 'function',
+    hasFade:   typeof AudioSystem._fadeOutCombatLayer === 'function',
+    hasKey:    'combat_normal' in AudioSystem._COMBAT_SAMPLES && 'tension' in AudioSystem._COMBAT_SAMPLES,
+  }));
+  console.log('  M1 api:', m1);
+  assert(m1.hasUpdate && m1.hasFade, 'M1 updateCombatIntensity/_fadeOutCombatLayer absent');
+  assert(m1.hasKey, 'M1 samples combat_normal/tension absents');
+
+  // M2 — couche procédurale (_activeCombatKey null) : no-op, reste null.
+  const m2 = await page.evaluate(() => {
+    const A = AudioSystem; A.init();
+    A.isMuted = false; A.musicPlaying = true; A.inCombat = true;
+    A._activeCombatKey = null; A._combatGains = [];
+    party[0].hp = Math.max(1, Math.floor(party[0].hpMax * 0.2)); // danger
+    let threw = false; try { A.updateCombatIntensity(); } catch (e) { threw = true; }
+    return { threw, key: A._activeCombatKey };
+  });
+  console.log('  M2 procédural:', m2);
+  assert(!m2.threw, 'M2 updateCombatIntensity throw (procédural)');
+  assert(m2.key === null, 'M2 ne doit pas swapper sur couche procédurale');
+
+  // M3 — couche sample : injecte des buffers réels puis vérifie les swaps
+  // selon les PV (full → combat_normal, danger → tension, soin → retour).
+  const m3 = await page.evaluate(() => {
+    const A = AudioSystem; A.init();
+    const mk = () => A.ctx.createBuffer(1, Math.floor(A.ctx.sampleRate * 4), A.ctx.sampleRate);
+    A._sampleBuffers['combat_normal'] = mk();
+    A._sampleBuffers['tension']       = mk();
+    A.isMuted = false; A.musicPlaying = true; A.inCombat = true;
+    A._activeCombatKey = 'combat_normal'; A._combatGains = [];
+    if (typeof enemyGroup !== 'undefined') enemyGroup = []; // pas d'epic
+    const out = {};
+    let threw = false;
+    try {
+      party.slice(0, partySize).forEach(c => { c.hp = c.hpMax; });
+      A.updateCombatIntensity(); out.full = A._activeCombatKey;
+      party[0].hp = Math.max(1, Math.floor(party[0].hpMax * 0.2));
+      A.updateCombatIntensity(); out.danger = A._activeCombatKey;
+      party.slice(0, partySize).forEach(c => { c.hp = c.hpMax; });
+      A.updateCombatIntensity(); out.healed = A._activeCombatKey;
+    } catch (e) { threw = true; }
+    out.threw = threw;
+    return out;
+  });
+  console.log('  M3 swaps:', m3);
+  assert(!m3.threw, 'M3 updateCombatIntensity throw (sample)');
+  assert(m3.full === 'combat_normal', `M3 full PV = combat_normal, got ${m3.full}`);
+  assert(m3.danger === 'tension',      `M3 danger critique = tension, got ${m3.danger}`);
+  assert(m3.healed === 'combat_normal', `M3 retour après soin = combat_normal, got ${m3.healed}`);
+
+  // M4 — stopMusic réinitialise l'état adaptatif.
+  const m4 = await page.evaluate(() => {
+    AudioSystem.stopMusic();
+    return { key: AudioSystem._activeCombatKey, gains: AudioSystem._combatGains.length };
+  });
+  console.log('  M4 stop:', m4);
+  assert(m4.key === null && m4.gains === 0, 'M4 stopMusic ne réinitialise pas l\'état adaptatif');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario musique adaptative');
+  }
+  console.log('  ✅ musique adaptative de combat (F1) OK');
+  await browser.close();
+}
+
 // ── Scénario : Extensions combat V2 ──────────────────────────
 // Couvre les 4 vagues de combat-extensions-v2.md : Garde counter-attack,
 // Double-Garde (empilement), Ferula Maxima (régén AOE), ennemis dispel.
@@ -18237,7 +18317,7 @@ async function scenarioDangerVignette() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioHeadlessHunt, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioHeadlessHunt, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioAdaptiveCombatMusic, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioEnemyIdle, scenarioDungeonVfx];
   const filters = parseScenarioFilters();
   const selected = filters.length

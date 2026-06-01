@@ -25,6 +25,10 @@ const AudioSystem = {
   _voiceSources:      [],   // sources voix actives (séparé de _sampleSources pour ne pas être stoppé par stopMusic)
   _voicePending:      null, // clé voix en attente de décode (pour annuler si une autre est demandée)
   _duckRampSeconds:   0.20, // durée du ducking music in/out pendant une voix
+  // Musique adaptative de combat (F1) : couche de combat active + bucket des
+  // gains de ses itérations (pour les fade-out lors d'un crossfade d'intensité).
+  _activeCombatKey:   null, // clé du sample de combat en cours ('combat_normal'|'tension'|…) ou null (procédural)
+  _combatGains:       [],   // GainNodes des itérations de la couche de combat courante
 
   // ── Initialisation (une seule fois, après geste utilisateur) ──
   init() {
@@ -51,6 +55,9 @@ const AudioSystem = {
       try { src.stop(); } catch (_) { /* déjà arrêté ou pas démarré */ }
     }
     this._sampleSources = [];
+    // Reset de l'état de musique adaptative de combat (F1).
+    this._activeCombatKey = null;
+    this._combatGains = [];
   },
 
   toggleVoice() {
