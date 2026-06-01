@@ -11022,6 +11022,7 @@ async function scenarioIronman() {
     return {
       resultVisible: document.getElementById('ironman-result-screen').style.display === 'flex',
       deathVisible:  document.getElementById('death-screen').style.display === 'flex',
+      petrifyShown:  !!document.getElementById('cfx-petrify'),
       score:         _ironmanLastResult && _ironmanLastResult.score,
       ironmanSlotGone: readSlot('manual_1') === null,
       normalSlotKept:  readSlot('manual_2') !== null,
@@ -11029,7 +11030,8 @@ async function scenarioIronman() {
   });
   console.log('  T4 mort :', t4);
   assert(t4.resultVisible,  'écran de résultat Ironman doit être visible');
-  assert(!t4.deathVisible,  'écran de pétrification ne doit PAS être visible en Ironman');
+  assert(!t4.deathVisible,  'écran de mort ne doit PAS être visible en Ironman');
+  assert(!t4.petrifyShown,  'pétrification (C2) ne doit PAS se jouer en Ironman');
   assert(t4.score === 3640, 'le résultat doit porter le score calculé');
   assert(t4.ironmanSlotGone, 'le slot Ironman doit être supprimé à la mort (permadeath)');
   assert(t4.normalSlotKept,  'un slot non-Ironman doit être préservé à la mort Ironman');
@@ -17145,6 +17147,65 @@ async function scenarioCombatFeedback() {
   console.log('  ✅ feedback de combat (SFX + timeline + journal mobile) OK');
 }
 
+// ── Scénario : pétrification de la mort (C2) ──────────────────────────
+// Mort normale (hors Ironman/astral) → voile #cfx-petrify monté avant le
+// death-screen ; l'écran s'affiche après le délai ; resurrect nettoie tout.
+async function scenarioDeathPetrify() {
+  console.log('\n── Scénario : pétrification de la mort (C2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // P1 — déclenche une mort normale : pas d'Ironman, pas d'astral.
+  const p1 = await page.evaluate(() => {
+    ironmanMode = false;
+    if (typeof inAstralCombat !== 'undefined') inAstralCombat = false;
+    document.getElementById('death-screen').style.display = 'none';
+    party.forEach(c => { c.hp = 0; });
+    triggerDeath('Le groupe a été pétrifié...');
+    return {
+      petrify:     !!document.getElementById('cfx-petrify'),
+      deathImmediate: document.getElementById('death-screen').style.display === 'flex',
+    };
+  });
+  console.log('  P1 mort  :', p1);
+  assert(p1.petrify, 'P1 #cfx-petrify non monté en mort normale');
+  // Le module FX étant présent (non reduced-motion en headless), l'écran est
+  // différé — il ne doit donc PAS être déjà visible juste après l'appel.
+  assert(!p1.deathImmediate, 'P1 death-screen ne doit pas s\'afficher avant la pétrification');
+
+  // P2 — l'écran de mort apparaît après le délai de pétrification.
+  await page.waitForFunction(
+    () => document.getElementById('death-screen').style.display === 'flex',
+    { timeout: 3000 }
+  );
+  const p2 = await page.evaluate(() => ({
+    deathVisible: document.getElementById('death-screen').style.display === 'flex',
+    msg: document.getElementById('death-msg').textContent,
+  }));
+  console.log('  P2 écran :', p2);
+  assert(p2.deathVisible, 'P2 death-screen doit s\'afficher après la pétrification');
+  assert(p2.msg.includes('pétrifié'), 'P2 death-msg doit porter le message');
+
+  // P3 — résurrection : death-screen caché + voile résiduel nettoyé.
+  const p3 = await page.evaluate(() => {
+    resurrect();
+    return {
+      deathHidden: document.getElementById('death-screen').style.display === 'none',
+      petrifyGone: !document.getElementById('cfx-petrify'),
+    };
+  });
+  console.log('  P3 resurr:', p3);
+  assert(p3.deathHidden, 'P3 resurrect doit cacher le death-screen');
+  assert(p3.petrifyGone, 'P3 resurrect doit retirer un #cfx-petrify résiduel');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario pétrification mort');
+  }
+  console.log('  ✅ pétrification de la mort (C2) OK');
+  await browser.close();
+}
+
 // ── Scénario : Combat FX (VFX sorts + shake + boss intro) — Immersion Lot 1 ──
 // Vérifie que le module combat-fx.js est chargé et que ses méthodes ne
 // cassent pas le flux de combat (effets purement visuels, défensifs).
@@ -17447,7 +17508,7 @@ async function scenarioCinematics() {
 
 (async () => {
   const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
-    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics];
+    scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics];
   const filters = parseScenarioFilters();
   const selected = filters.length
     ? scenarios.filter(s => filters.some(f => s.name.toLowerCase().includes(f)))

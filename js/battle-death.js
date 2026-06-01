@@ -126,10 +126,21 @@ function triggerDeath(msg) {
     return;
   }
   document.getElementById('death-msg').textContent = msg;
-  document.getElementById('death-screen').style.display = 'flex';
+  // Immersion (C2) : pétrification progressive avant l'écran de mort. Purement
+  // visuel ; défensif (module absent → dur 0 → écran immédiat) ; reduced-motion
+  // → dur 0. Gate strict : on n'arrive ici qu'en mort normale (astral + Ironman
+  // sont déjà sortis plus haut).
+  const showDeath = () => { document.getElementById('death-screen').style.display = 'flex'; };
+  const dur = (typeof CFX_safe !== 'undefined' && CFX_safe.petrify()) || 0;
+  if (dur > 0) setTimeout(showDeath, dur);
+  else showDeath();
 }
 
 function resurrect() {
+  // C2 : retire un éventuel voile de pétrification résiduel (sécurité si la
+  // résurrection survient avant l'auto-retrait de l'overlay).
+  const pet = document.getElementById('cfx-petrify');
+  if (pet) pet.remove();
   party.forEach(c => {
     c.hp = Math.floor(c.hpMax / 2);
     c.sp = Math.floor(c.spMax / 2);

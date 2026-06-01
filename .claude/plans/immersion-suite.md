@@ -194,6 +194,35 @@ est statique.
 - **Vérif** : mort normale → anim → écran ; mort Ironman → inchangée ;
   `scenarioIronman` reste vert ; smoke complet vert.
 
+- **[x] Livré (2026-06-01)** — branche `claude/immersion-c2-death-petrify`.
+  `node tests/smoke.js` (150, nouveau `scenarioDeathPetrify` P1-P3 + Ironman
+  `petrifyShown:false`) + `node tests/pwa-smoke.js` (cache `hogwarth-v47`) verts.
+  Cadrage validé (user a choisi C2). Analyse du flux :
+  `triggerDeath` (`battle-death.js`) sort **tôt** pour l'astral et l'Ironman
+  (chemins inchangés) ; dans le chemin principal (`battle.js:946-949`)
+  l'overlay de combat est déjà masqué + `inBattle=false` **avant** l'appel
+  → pas de risque d'interaction. Aucun scénario smoke n'attend `#death-screen`
+  visible *synchrone* sur mort normale (les 3 cas testés = Ironman/astral/duel,
+  tous précoces) → le délai n'en casse aucun. Étapes :
+  1. `js/combat-fx.js` : `petrify()` — overlay plein écran `#cfx-petrify`
+     (`backdrop-filter: grayscale + brightness` ramping + givre `box-shadow`
+     inset), z-index 880 (sous `#death-screen` 900), auto-retiré. Retourne
+     la durée (ms) à attendre avant l'écran, **0** en reduced-motion (pas de
+     ralentissement). Exposé sur `window.CombatFX`.
+  2. `css/combat-fx.css` : `.cfx-petrify` + `@keyframes cfxPetrify` ;
+     reduced-motion neutralisé.
+  3. `js/battle-death.js` : **chemin normal uniquement** (après les `return`
+     astral + Ironman) — `dur = (CFX_safe && CFX_safe.petrify())||0` ; si
+     `dur>0` `setTimeout(showDeath,dur)` sinon `showDeath()` immédiat
+     (défensif : module absent → 0 → écran direct). `resurrect()` retire
+     un éventuel `#cfx-petrify` résiduel.
+  4. Smoke : nouveau `scenarioDeathPetrify` (mort normale → `#cfx-petrify`
+     créé puis `#death-screen` visible après délai ; `resurrect` nettoie) +
+     `scenarioIronman` étendu (assert `#cfx-petrify` **absent** en Ironman).
+  5. Bumps `combat-fx.js v=3→4`, `combat-fx.css v=3→4`, `battle-death.js
+     v=1→2`, `CACHE_VERSION v46→v47`.
+  6. `node tests/smoke.js` + `node tests/pwa-smoke.js` verts avant push.
+
 ---
 
 ## Priorisation suggérée
