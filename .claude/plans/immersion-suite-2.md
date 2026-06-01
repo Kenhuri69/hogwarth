@@ -208,3 +208,21 @@ pendant l'exploration (seedés par étage pour la reproductibilité ?
     `battle.js` (18→19), `battle-rewards.js` (1→2), `battle-death.js`
     (2→3), `loader.js` (22→23) + nouvelle entrée `haptics.js?v=1` dans
     `index.html` & `sw.js` (PRECACHE) ; `CACHE_VERSION` v47 → v48.
+  - **Mergé** : PR #357 (master). D1 + D2 clos.
+- 2026-06-01 : **D3 implémenté** (PR dédiée, branche
+  `claude/immersion-d3-hurtflash`).
+  - **Action** : `CombatFX.hurtFlash(intensity)` — voile rouge radial
+    bref (`#cfx-hurt-flash`, z 38 sous float-dmg pour laisser lire les
+    chiffres ; alpha modulé par la custom prop `--hurt-a`), dans l'esprit
+    de `combatStart()`. Appelé via le helper `_maybeHurtFlash(applied,
+    target)` dans `battle.js — _enemyPhysicalHit` (le résolveur de frappe
+    physique appelé par `enemyTurn`, là où `CFX_safe.shake` est déjà posé)
+    — branches Garde-mitigée ET coup normal. Seuil relatif `≥ 15 %` des
+    PV max ; `intensity = min(1, frac/0.4)`. Défensif (`CFX_safe`),
+    reduced-motion = fade très court. Aucune mécanique touchée.
+  - **Tests** : `scenarioCombatFX` étendu — F1 vérifie l'API `hurtFlash`,
+    F6 vérifie appel direct + proxy sans throw + montage de
+    `#cfx-hurt-flash`.
+  - **Bumps** : `combat-fx.js` (4→5), `combat-fx.css` (5→6), `battle.js`
+    (19→20) ; `CACHE_VERSION` v48 → v49. Pas de nouveau global → loader
+    inchangé (`hurtFlash` est une méthode de `CombatFX`).

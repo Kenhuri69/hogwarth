@@ -17453,6 +17453,7 @@ async function scenarioCombatFX() {
     hasShake:  typeof window.CombatFX?.shake === 'function',
     hasBoss:   typeof window.CombatFX?.bossIntro === 'function',
     hasEnter:  typeof window.CombatFX?.combatStart === 'function',
+    hasHurt:   typeof window.CombatFX?.hurtFlash === 'function',
     hasProxy:  typeof window.CFX_safe?.spellBurst === 'function',
   }));
   console.log('  F1 module:', f1);
@@ -17460,6 +17461,7 @@ async function scenarioCombatFX() {
   assert(f1.hasBurst && f1.hasShake && f1.hasBoss, 'F1 API incomplète');
   assert(f1.hasHeal && f1.hasBuff, 'F1 API soin/buff (B1) absente');
   assert(f1.hasEnter, 'F1 API combatStart (C1) absente');
+  assert(f1.hasHurt, 'F1 API hurtFlash (D3) absente');
   assert(f1.hasProxy, 'F1 CFX_safe proxy absent');
 
   await startDummyFight(page, { hp: 50 });
@@ -17522,6 +17524,20 @@ async function scenarioCombatFX() {
   console.log('  F5 entrée  :', f5);
   assert(!f5.threw, 'F5 combatStart throw');
   assert(f5.flash, 'F5 #cfx-combat-flash non créé');
+
+  // F6 — flash de dégâts encaissés (D3) : hurtFlash + proxy ne throwent
+  // pas et créent #cfx-hurt-flash dans l'overlay (intensité quelconque).
+  const f6 = await page.evaluate(() => {
+    let threw = false;
+    try {
+      window.CombatFX.hurtFlash(0.7);
+      window.CFX_safe.hurtFlash(0.3); // via proxy
+    } catch (e) { threw = true; }
+    return { threw, flash: !!document.getElementById('cfx-hurt-flash') };
+  });
+  console.log('  F6 hurt   :', f6);
+  assert(!f6.threw, 'F6 hurtFlash throw');
+  assert(f6.flash, 'F6 #cfx-hurt-flash non créé');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

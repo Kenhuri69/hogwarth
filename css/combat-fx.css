@@ -175,6 +175,24 @@ body.cfx-danger::after {
   100% { opacity: 0; transform: scale(1); }
 }
 
+/* ── Flash de dégâts encaissés (vignette rouge brève) — D3 ──── */
+.cfx-hurt-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 38; /* sous float-dmg (40) → les chiffres restent lisibles */
+  pointer-events: none;
+  background: radial-gradient(ellipse at center,
+    transparent 30%,
+    rgba(150,18,12, calc(var(--hurt-a, .5) * .55)) 72%,
+    rgba(120,8,6, var(--hurt-a, .5)) 100%);
+  animation: cfxHurt .46s ease-out forwards;
+}
+@keyframes cfxHurt {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* ── Pétrification de la mort (désaturation + givre) — C2 ───── */
 .cfx-petrify {
   position: fixed;
@@ -288,6 +306,8 @@ body.cfx-danger::after {
   /* Flash d'entrée : fade court sans zoom (pas de translation/scale). */
   .cfx-combat-flash { animation: cfxCombatFlashReduced .28s ease-out forwards; }
   @keyframes cfxCombatFlashReduced { from { opacity: .45; } to { opacity: 0; } }
+  /* Flash de dégâts (D3) : fade plus court, voile atténué. */
+  .cfx-hurt-flash { animation-duration: .2s; }
   /* Pétrification : neutralisée (le module n'en monte pas en reduced-motion). */
   .cfx-petrify { animation: none; }
   /* Le boss-intro reste (carte-titre informative) mais sans rebond. */
