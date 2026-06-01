@@ -58,15 +58,27 @@ const DIFFICULTY_SETTINGS = {
 const ENDGAME_SCALING = { baseFix: { gold: 80 }, scalDelta: 0.5 };
 // house-donation.js — 5 G = 1 point de Maison.
 const DONATION_GOLD_PER_POINT = 5;
+// data.js — Fortune (D5 LCK) : fortune = asympt·x²/(x²+half²), x = LCK party.
+// En jeu, l'or de combat/coffre/fouille est ×(1+Fortune×0.5) (poids ½ pour
+// l'éco). Modélisé ici à partir d'une LCK party représentative.
+const FORTUNE_ASYMPTOTE = 0.31;
+const FORTUNE_HALF = 30;
+function fortuneFromLck(lck) {
+  const x = Math.max(0, lck || 0);
+  return FORTUNE_ASYMPTOTE * (x * x) / (x * x + FORTUNE_HALF * FORTUNE_HALF);
+}
 // main.js — seuil de la série Apothéose ★ N : 45000 + 15000·N + 1000·N².
 function starThreshold(n) { return 45000 + 15000 * n + 1000 * n * n; }
 
 // ── CLI ──────────────────────────────────────────────────────
 function parseArgs(argv) {
-  const out = { difficulty: 'Normal', maxFloor: 20, combats: 4, searches: 3, chests: 1, help: false };
+  // lck défaut = max LCK de base du groupe (Harry 15 / Hermione 12) → 15.
+  const out = { difficulty: 'Normal', maxFloor: 20, combats: 4, searches: 3, chests: 1,
+                lck: 15, fortune: true, help: false };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') { out.help = true; continue; }
+    if (a === '--no-fortune')         { out.fortune = false; continue; }
     const [k, v] = a.replace(/^--/, '').split('=');
     if (k === 'difficulty' || k === 'diff') {
       const canon = Object.keys(DIFFICULTY_SETTINGS).find(d => d.toLowerCase() === String(v).toLowerCase());
@@ -75,6 +87,7 @@ function parseArgs(argv) {
     else if (k === 'combats')     out.combats  = parseInt(v, 10) || 4;
     else if (k === 'searches')    out.searches = parseInt(v, 10) || 3;
     else if (k === 'chests')      out.chests   = parseFloat(v)   || 1;
+    else if (k === 'lck')         out.lck      = parseInt(v, 10) || 0;
   }
   return out;
 }
@@ -85,10 +98,15 @@ if (ARGS.help) {
   --max-floor=N       Étage max analysé (def 20)
   --combats=N         Combats par étage (def 4)
   --searches=N        Fouilles par étage (def 3)
-  --chests=F          Coffres par étage (def 1)`);
+  --chests=F          Coffres par étage (def 1)
+  --lck=N             LCK party pour la Fortune (def 15 = max LCK de base)
+  --no-fortune        Désactive le bonus d'or de Fortune (comparaison)`);
   process.exit(0);
 }
 const DIFF = DIFFICULTY_SETTINGS[ARGS.difficulty];
+// Bonus d'or de Fortune (D5 LCK) : or ×(1+F×0.5) sur drops/coffres/fouille.
+const FORTUNE = ARGS.fortune ? fortuneFromLck(ARGS.lck) : 0;
+const GOLD_FORTUNE_MULT = 1 + FORTUNE * 0.5;
 
 // ── Scaling d'or (miroir de dungeon-scaling.js — scaleMonster, clé 'gold') ──
 function effectiveFloor(f) { return f >= 11 ? f - 10 : f; }
@@ -178,10 +196,13 @@ function questGoldUpToFloor(floor) {
 
 // ── Revenu d'or par étage ────────────────────────────────────
 function floorIncome(floor, partySize) {
-  const perCombat = avgEnemyGold(floor) * avgGroupSize(floor, partySize);
+  // Or de combat/coffre/fouille ×(1+Fortune×0.5) — miroir runtime (drops/or
+  // gagnés via la Fortune dérivée de la LCK). Les quêtes (récompenses fixes)
+  // ne sont pas Fortune-scalées.
+  const perCombat = avgEnemyGold(floor) * avgGroupSize(floor, partySize) * GOLD_FORTUNE_MULT;
   const drops   = perCombat * ARGS.combats;
-  const chests  = avgChestGold(floor) * ARGS.chests;
-  const search  = avgSearchGold(floor) * ARGS.searches;
+  const chests  = avgChestGold(floor) * ARGS.chests * GOLD_FORTUNE_MULT;
+  const search  = avgSearchGold(floor) * ARGS.searches * GOLD_FORTUNE_MULT;
   return { perCombat, drops, chests, search, total: drops + chests + search };
 }
 
@@ -204,6 +225,9 @@ function g(x) { return Math.round(x).toLocaleString('fr-FR'); }
 console.log(`# Étude de l'économie d'or — difficulté ${ARGS.difficulty}\n`);
 console.log(`Hypothèses : ${ARGS.combats} combats, ${ARGS.chests} coffre(s), ` +
   `${ARGS.searches} fouilles / étage. goldMultiplier = ${DIFF.goldMultiplier}. ` +
+  (ARGS.fortune
+    ? `Fortune (LCK ${ARGS.lck}) = ${(FORTUNE * 100).toFixed(1)} % → or ×${GOLD_FORTUNE_MULT.toFixed(3)} (drops/coffres/fouille). `
+    : `Fortune désactivée (--no-fortune). `) +
   `Sans variantes shiny (×2) ni bonus Poufsouffle « Récolte Magique » (+50 %).\n`);
 
 // Section 1 — Revenus par étage

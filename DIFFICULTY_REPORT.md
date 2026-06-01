@@ -1,198 +1,268 @@
-# Étude de la difficulté — Mode Normal (Phase 3 + fixes design)
+# Étude de la difficulté — Mode Normal (post-rework des stats D1–D5)
 
-> Méthode : tableaux théoriques (formules réelles `scaleMonster`, `checkLevelUp`, `rollGroupSize`) + simulation Monte Carlo (800 combats / étage / mode).
-> Script : [`tools/sim-difficulty.js`](./tools/sim-difficulty.js) — exécutable avec `node tools/sim-difficulty.js --stat-points=3 --build=balanced [N_SIMS]`.
-> Plan : [`.claude/plans/difficulty-progression.md`](./.claude/plans/difficulty-progression.md)
+> Méthode : simulation Monte Carlo (800 combats / étage / mode) sur les formules
+> réelles (`scaleMonster`, `checkLevelUp`, `rollGroupSize`, `recalculateStats`).
+> Script : [`tools/sim-difficulty.js`](./tools/sim-difficulty.js).
+> Plans : [`.claude/plans/difficulty-simulation-review.md`](./.claude/plans/difficulty-simulation-review.md)
+> · [`.claude/plans/player-stats-balance.md`](./.claude/plans/player-stats-balance.md).
 >
-> **MAJ 2026-05-30** ([`.claude/plans/simulation-tools-update.md`](./.claude/plans/simulation-tools-update.md)) :
-> la sim modélise désormais la **difficulté** (`--difficulty=Facile|Normal|Difficile|Expert` —
-> scalingMultiplier sur toutes les stats + enemyGroupMultiplier + xpMultiplier), les statuts
-> de contrôle **stun / fear**, la capacité **dispel**, les **phases de boss** + l'**IA par
-> tempérament**, les **items à compromis** (bonus négatifs) et la série **Apothéose ★ N**
-> (`--star=N`). Résistances/faiblesses désormais matchées sur `spell.element`.
-> Économie : nouvel outil [`tools/sim-economy.js`](./tools/sim-economy.js) (revenus d'or/étage,
-> accessibilité des items, puits endgame don ★N / élixirs à prix progressif).
+> **Commande de régénération** (le sim modélise le JEU ACTUEL par défaut) :
+> ```bash
+> node tools/sim-difficulty.js --difficulty=Normal --build=balanced 800
+> ```
+> Pour reproduire les rapports d'avant le rework : ajouter `--legacy`.
 >
-> **Baseline du joueur (default)** : 3 points de stats libres alloués à chaque niveau (build « balanced » = +1 STR, +1 AGI, +1 END par niveau) **+ XP cumulée des quêtes** (chaîne Dumbledore + secondaires PNJ) **+ bonus stats permanents des récompenses** (`reward.stats`) **+ équipement best-in-slot** disponible en boutique selon `minFloor` **+ stock de potions** consommables (1 par tour de soin, restaure 25 PV).
+> **MAJ 2026-06-01 — Alignement runtime** : le simulateur modélise désormais
+> **par défaut** le rework des stats D1–D5 (live en runtime) : INT→MAG 4:1,
+> END→DEF 6:1, END→résistance DoT, STR→pénétration de DEF (courbe de Hill),
+> croissance secondaire +1/niveau, **3 points libres/niveau** (`STAT_POINTS_PER_LEVEL`),
+> et Célérité (D5 AGI). Fortune (D5 LCK) est win-rate-neutre ici (pas de
+> fuite/butin simulés) — son effet économique est dans
+> [`tools/sim-economy.js`](./tools/sim-economy.js). Avant cette MAJ, le défaut
+> du sim renvoyait des chiffres pré-rework, ~+20 à +27 pts trop pessimistes en
+> mid/late game (cf. §4).
 >
-> **Fixes design appliqués dans ce rapport** :
-> 1. Les **capacités spéciales `damage`** sont atténuées par la DEF cible (`max(1, power + mag/2 − def/3)`) — auparavant la DEF était ignorée par les abilities ennemies.
-> 2. Les **groupes de 3 ennemis** en duo sont **différés à l'étage 7+** (avant : dès l'étage 3-4).
+> **Baseline du joueur (défaut)** : 3 pts libres/niveau (build « balanced » =
+> +1 STR/+1 AGI/+1 END par niveau) **+ rework D1–D5** **+ XP & stats des quêtes**
+> **+ équipement best-in-slot** disponible en boutique selon `minFloor`
+> **+ stock de potions**. **Sans** forge/bibliothèque/sets de Maison/paliers
+> Apothéose (systèmes de progression endgame — cf. §3 et le verdict).
 >
-> **Pour comparer au cas pire** : `--pessimistic` désactive quêtes / équipement / potions.
+> **Cas pire** : `--pessimistic` désactive quêtes / équipement / potions.
 
 ---
 
 ## 📊 Résumé exécutif
 
-| Mode | Étages confortables (≥ 80 %) | Premier décrochage (< 80 %) | Mur (< 40 %) |
-|------|------------------------------|------------------------------|--------------|
-| **Solo** | 1–3 | **Étage 4** (72 %) | **Étage 7** (37 %) |
-| **Duo**  | 1–6 | **Étage 7** (57 %) | **Étage 8** (35 %) |
+Deux métriques complémentaires (cf. §3 et §7) :
 
-**Verdict** : les fixes design **résolvent le mur duo étage 5** (passe de 79 % à 91 %) et **lissent la zone duo 5-6** (étage 6 monte de 67 % à 82 %). Le mur duo se décale logiquement à l'étage 7 (réapparition des groupes de 3) puis 8.
+- **Win % par combat moyen** (§3) — un affrontement isolé au niveau attendu.
+- **Taux de clear d'étage** (§7) — enchaîner ~4 salles sans soin complet
+  (repos partiel + jets de fouille). C'est la métrique de **progression réelle**,
+  mécaniquement bien plus dure.
 
-Le **mur solo étage 5 reste** à 46 %. Cause : en solo les groupes restent à 1-2 ennemis (le retrait des 3 ne s'applique qu'au duo) et l'atténuation DEF apporte un gain marginal car le joueur a peu de DEF à ce niveau (~14, soit -4 dégâts par ability). Améliorer le solo nécessiterait un autre levier (cap chance, ralentissement scaling, ou groupes solo plus indulgents).
+### Win % par combat (mode Normal, build balanced)
+
+| Mode | Confortable (≥ 80 %) | 1er décrochage (< 80 %) | Mur (< 40 %) |
+|------|----------------------|--------------------------|--------------|
+| **Solo** | 1–7 | **Étage 8** (72 %) | aucun ≤ ét. 12 (plancher 49 %) |
+| **Duo**  | 1–8 | **Étage 9** (77 %) | aucun ≤ ét. 12 (plancher 68 %) |
+
+### Win % combat solo — toutes difficultés (balanced, n=600)
+
+| Étage | Facile | Normal | Difficile | Expert |
+|------:|:------:|:------:|:---------:|:------:|
+| 5  | 100 % | 96 % | 93 % | 79 % |
+| 6  | 99 %  | 87 % | 73 % | 62 % |
+| 7  | 97 %  | 87 % | 69 % | 58 % |
+| 8  | 95 %  | 72 % | 49 % | 33 % |
+| 9  | 90 %  | 61 % | 34 % | 18 % |
+| 10 | 90 %  | 54 % | 26 % | 15 % |
+| 12 | 83 %  | 49 % | 27 % | 11 % |
+
+### Taux de clear d'étage (Normal, §7) — la contrainte réelle
+
+| Mode | Étage 7 | Étage 8 | Étage 9 | Étage 10+ |
+|------|:-------:|:-------:|:-------:|:---------:|
+| Solo | 34 % | 11 % | 3 % | ~1 % |
+| Duo  | 69 % | 44 % | 10 % | 3–8 % |
+
+**Verdict.**
+- ✅ Le rework **adoucit nettement le mur mid/late game** : par combat, le solo
+  Normal ne passe jamais sous 49 % (≤ ét. 12) et le duo reste ≥ 68 %, là où le
+  modèle pré-rework s'effondrait dès l'étage 8 (cf. §4).
+- ⚠️ Mais **enchaîner un étage entier sans systèmes de progression endgame**
+  (forge, bibliothèque, sets de Maison 4/4, passifs d'Apothéose) reste très
+  punitif au-delà de l'étage 8, surtout en **solo**. Le jeu est de fait calibré
+  autour de **duo + builds tank-leaning + systèmes endgame** : un duo « préparé »
+  (forge 3 / biblio 2 / set 4/4 / tier 18) tient ~54–82 % de clear ét. 9–12,
+  contre ~3–10 % pour la baseline boutique.
+- 📌 **Ordre des builds** : tank ≥ balanced ≥ offensive partout. L'offensif
+  (casteur) est le plus fragile en solo, conséquence assumée d'INT→MAG 4:1.
+
+### Impact du rework (Normal, win % combat : défaut − legacy)
+
+| Étage | Solo legacy → rework | Δ | Duo legacy → rework | Δ |
+|------:|:--------------------:|:--:|:-------------------:|:--:|
+| 5  | 88 → 96 | +8  | 100 → 100 | 0  |
+| 6  | 74 → 87 | +13 | 95 → 100  | +5 |
+| 7  | 66 → 87 | +21 | 88 → 98   | +10 |
+| 8  | 47 → 72 | +25 | 78 → 92   | +14 |
+| 9  | 36 → 61 | +25 | 52 → 77   | +25 |
+| 10 | 27 → 54 | +27 | 52 → 74   | +22 |
+| 12 | 26 → 49 | +23 | 41 → 68   | +27 |
+
+→ Le rework vaut **+20 à +27 pts de win-rate combat** à partir de l'étage 7.
+C'est l'écart exact qui manquait au rapport pré-rework.
 
 ---
 
-## 1. Progression joueur attendue (4 combats / étage + XP des quêtes)
+## 1. Progression joueur attendue
 
 | Étage | Niveau Solo | XP cumul Solo | Niveau Duo | XP cumul Duo |
 |------:|------------:|--------------:|-----------:|-------------:|
-| 1  | 1  | 0     | 1  | 0     |
-| 2  | 1  | 30    | 1  | 42    |
-| 3  | 2  | 92    | 2  | 125   |
-| 4  | 3  | 229   | 4  | 325   |
-| 5  | 4  | 447   | 5  | 655   |
-| 6  | 6  | 832   | 6  | 1268  |
-| 7  | 7  | 1383  | 7  | 1998  |
-| 8  | 7  | 2149  | 8  | 3307  |
-| 9  | 8  | 3239  | 9  | 4894  |
-| 10 | 9  | 4656  | 10 | 6976  |
-| 11 | 10 | 6585  | 11 | 9858  |
-| 12 | 10 | 8629  | 11 | 12998 |
+| 1 | 1 | 0 | 1 | 0 |
+| 2 | 2 | 30 | 2 | 39 |
+| 3 | 5 | 90 | 5 | 121 |
+| 4 | 6 | 219 | 7 | 293 |
+| 5 | 8 | 432 | 8 | 570 |
+| 6 | 8 | 859 | 8 | 994 |
+| 7 | 9 | 1392 | 9 | 1629 |
+| 8 | 9 | 2215 | 10 | 2849 |
+| 9 | 10 | 3400 | 10 | 4625 |
+| 10 | 10 | 4920 | 11 | 6923 |
+| 11 | 11 | 6905 | 11 | 9784 |
+| 12 | 11 | 9165 | 12 | 13369 |
 
-> Les XP des quêtes (intro 30, Dumbledore 120/220/340/500, secondaires 80-380) sont cumulées selon `QUEST_COMPLETION_FLOOR`. Le sort interdit **Avada... se débloque au niveau 9**.
-
----
-
-## 2. Profil ennemi moyen par étage (pondéré par `weight`)
+## 2. Profil ennemi moyen par étage (pondéré par weight)
 
 | Étage | Monstres éligibles | HP moy | ATK moy | DEF moy | MAG moy |
 |------:|-------------------:|-------:|--------:|--------:|--------:|
-| 1  | 8  | 13  | 3.0  | 0.9  | 2.2  |
-| 2  | 17 | 20  | 4.7  | 1.7  | 3.0  |
-| 3  | 25 | 30  | 7.5  | 3.2  | 5.7  |
-| 4  | 27 | 47  | 11.6 | 5.4  | 7.6  |
-| 5  | 31 | 70  | 17.6 | 8.7  | 10.8 |
-| 6  | 33 | 93  | 23.4 | 11.7 | 15.0 |
-| 7  | 30 | 128 | 30.9 | 15.2 | 20.9 |
-| 8  | 24 | 166 | 40.4 | 19.8 | 27.3 |
-| 9  | 20 | 204 | 48.2 | 24.3 | 34.5 |
-| 10 | 16 | 253 | 56.1 | 29.1 | 50.0 |
-| 11 | 16 | 274 | 61.1 | 31.6 | 54.3 |
-| 12 | 16 | 294 | 65.6 | 33.8 | 58.3 |
+| 1 | 9 | 13 | 3.0 | 0.8 | 2.4 |
+| 2 | 18 | 19 | 4.6 | 1.6 | 3.1 |
+| 3 | 27 | 30 | 7.5 | 3.1 | 5.6 |
+| 4 | 30 | 47 | 11.3 | 5.2 | 7.8 |
+| 5 | 34 | 73 | 17.6 | 8.9 | 11.1 |
+| 6 | 37 | 97 | 23.4 | 11.9 | 15.3 |
+| 7 | 35 | 131 | 30.8 | 15.5 | 21.5 |
+| 8 | 33 | 176 | 41.1 | 20.1 | 28.4 |
+| 9 | 32 | 223 | 50.0 | 24.9 | 36.5 |
+| 10 | 30 | 274 | 57.9 | 29.3 | 49.6 |
+| 11 | 29 | 293 | 63.4 | 31.2 | 55.1 |
+| 12 | 29 | 315 | 68.1 | 33.3 | 59.1 |
 
-**Lecture** : la MAG ennemie (qui scale `power + mag/2` des capacités spéciales) passe de 7.6 à 10.8 entre étages 4 et 5. Avec l'atténuation DEF/3 (joueur ~DEF 14 → -4 dégâts), une capacité Détraqueur (power 10 + mag/2 = 15) fait désormais 11 dégâts au joueur (vs 15 avant le fix).
+## 3. Résultats Monte Carlo
 
----
+| Étage | Mode | Niv. | Win % | Tours moy. | PV restants (win) | Dégâts moy. subis |
+|------:|:----:|-----:|------:|-----------:|------------------:|------------------:|
+| 1 | Solo | 1 | 100% | 2.1 | 100% | 0.0 |
+| 1 | Duo  | 1 | 100% | 1.4 | 100% | 0.0 |
+| 2 | Solo | 2 | 100% | 2.2 | 99% | 0.5 |
+| 2 | Duo  | 2 | 100% | 1.5 | 100% | 0.2 |
+| 3 | Solo | 5 | 100% | 3.1 | 96% | 4.0 |
+| 3 | Duo  | 5 | 100% | 2.0 | 99% | 1.4 |
+| 4 | Solo | 6 | 100% | 3.7 | 93% | 8.5 |
+| 4 | Duo  | 7 | 100% | 2.6 | 98% | 4.6 |
+| 5 | Solo | 8 | 96% | 6.7 | 85% | 49.0 |
+| 5 | Duo  | 8 | 100% | 3.3 | 95% | 13.8 |
+| 6 | Solo | 8 | 87% | 8.6 | 77% | 105.1 |
+| 6 | Duo  | 8 | 100% | 4.3 | 91% | 33.1 |
+| 7 | Solo | 9 | 87% | 9.7 | 73% | 115.0 |
+| 7 | Duo  | 9 | 98% | 7.5 | 82% | 92.9 |
+| 8 | Solo | 9 | 72% | 13.1 | 63% | 194.4 |
+| 8 | Duo  | 10 | 92% | 10.3 | 77% | 173.1 |
+| 9 | Solo | 10 | 61% | 14.7 | 57% | 247.9 |
+| 9 | Duo  | 10 | 77% | 11.9 | 74% | 273.5 |
+| 10 | Solo | 10 | 54% | 16.1 | 58% | 286.4 |
+| 10 | Duo  | 11 | 74% | 12.8 | 73% | 337.9 |
+| 11 | Solo | 11 | 51% | 14.5 | 58% | 298.9 |
+| 11 | Duo  | 11 | 70% | 13.4 | 70% | 377.1 |
+| 12 | Solo | 11 | 49% | 15.1 | 58% | 306.3 |
+| 12 | Duo  | 12 | 68% | 13.3 | 71% | 404.5 |
 
-## 3. Résultats Monte Carlo (800 combats / cellule, post-fixes design)
+## 4. Diagnostic : étages charnières
 
-| Étage | Mode | Niv. | Win % | Tours | PV restants (win) | Dégâts subis |
-|------:|:----:|-----:|------:|------:|------------------:|-------------:|
-| 1  | Solo | 1  | 100 % | 2.2 | 99 % | 0.5  |
-| 1  | Duo  | 1  | 100 % | 1.5 | 100 %| 0.1  |
-| 2  | Solo | 1  | 100 % | 2.4 | 95 % | 1.6  |
-| 2  | Duo  | 1  | 100 % | 1.7 | 99 % | 0.8  |
-| 3  | Solo | 2  | 🟢 80 % | 3.6 | 83 % | 17.9 |
-| 3  | Duo  | 2  | 🟢 100 % | 2.8 | 90 % | 9.4  |
-| 4  | Solo | 3  | 🟡 72 % | 4.4 | 75 % | 33.4 |
-| 4  | Duo  | 4  | 🟢 100 % | 3.1 | 90 % | 14.4 |
-| **5** | **Solo** | **4** | **🟠 46 %** | 5.2 | 70 % | 65.4 |
-| 5  | Duo  | 5  | 🟢 91 % | 3.8 | 85 % | 42.9 |
-| 6  | Solo | 6  | 🟠 46 % | 5.8 | 67 % | 97.4 |
-| 6  | Duo  | 6  | 🟢 82 % | 4.4 | 83 % | 74.7 |
-| 7  | Solo | 7  | 🔴 37 % | 5.9 | 64 % | 118.6 |
-| 7  | Duo  | 7  | 🟠 57 % | 5.3 | 73 % | 167.5 |
-| 8  | Solo | 7  | 🔴 20 % | 6.4 | 51 % | 139.4 |
-| **8** | **Duo** | **8** | **🔴 35 %** | 5.5 | 71 % | 251.3 |
-| 9  | Solo | 8  | 🔴 15 % | 6.8 | 54 % | 161.5 |
-| 9  | Duo  | 9  | 🔴 28 % | 5.5 | 71 % | 293.3 |
-| 10 | Solo | 9  | 🔴 8 %  | 7.2 | 51 % | 181.3 |
-| 10 | Duo  | 10 | 🔴 17 % | 5.9 | 70 % | 358.0 |
-| 11 | Solo | 10 | 🔴 6 %  | 8.4 | 44 % | 202.0 |
-| 11 | Duo  | 11 | 🔴 20 % | 6.5 | 66 % | 382.2 |
-| 12 | Solo | 10 | 🔴 7 %  | 8.6 | 39 % | 202.1 |
-| 12 | Duo  | 11 | 🔴 19 % | 6.8 | 65 % | 379.1 |
 
-### Spikes détectés (chute > 15 pts entre 2 étages)
+### Solo
 
-**Solo**
-- Étage 2 → 3 : 100 % → 80 % (−20 pts)
-- **Étage 4 → 5 : 72 % → 46 % (−26 pts)** ← mur principal solo (inchangé par les fixes)
-- Étage 7 → 8 : 37 % → 20 % (−17 pts)
+| Étage | Niv. | Win % | Verdict |
+|------:|-----:|------:|:--------|
+| 1 | 1 | 100% | 🟢 confortable |
+| 2 | 2 | 100% | 🟢 confortable |
+| 3 | 5 | 100% | 🟢 confortable |
+| 4 | 6 | 100% | 🟢 confortable |
+| 5 | 8 | 96% | 🟢 confortable |
+| 6 | 8 | 87% | 🟢 confortable |
+| 7 | 9 | 87% | 🟢 confortable |
+| 8 | 9 | 72% | 🟡 tendu |
+| 9 | 10 | 61% | 🟠 difficile |
+| 10 | 10 | 54% | 🟠 difficile |
+| 11 | 11 | 51% | 🟠 difficile |
+| 12 | 11 | 49% | 🟠 difficile |
 
-**Duo**
-- **Étage 6 → 7 : 82 % → 57 % (−25 pts)** ← mur duo (déplacé d'1 étage par les fixes)
-- Étage 7 → 8 : 57 % → 35 % (−23 pts)
+### Duo
 
----
+| Étage | Niv. | Win % | Verdict |
+|------:|-----:|------:|:--------|
+| 1 | 1 | 100% | 🟢 confortable |
+| 2 | 2 | 100% | 🟢 confortable |
+| 3 | 5 | 100% | 🟢 confortable |
+| 4 | 7 | 100% | 🟢 confortable |
+| 5 | 8 | 100% | 🟢 confortable |
+| 6 | 8 | 100% | 🟢 confortable |
+| 7 | 9 | 98% | 🟢 confortable |
+| 8 | 10 | 92% | 🟢 confortable |
+| 9 | 10 | 77% | 🟡 tendu |
+| 10 | 11 | 74% | 🟡 tendu |
+| 11 | 11 | 70% | 🟡 tendu |
+| 12 | 12 | 68% | 🟡 tendu |
 
-## 4. Impact mesuré des fixes design
+## 5. Détection des spikes (chute > 15 pts entre 2 étages)
 
-Comparaison du même baseline (Phase 3 complet, 3 pts libres balanced) **avant** vs **après** les fixes design :
+### Solo
+- Aucun spike détecté.
+### Duo
+- Aucun spike détecté.
 
-| Étage | Mode | AVANT fixes | APRÈS fixes | Δ |
-|------:|:----:|------------:|------------:|--:|
-| 3  | Duo  | 98 % | 100 % | +2  |
-| 4  | Duo  | 98 % | 100 % | +2  |
-| 5  | Duo  | 79 % | **91 %** | **+12** |
-| 6  | Duo  | 67 % | **82 %** | **+15** |
-| 7  | Duo  | 54 % | 57 % | +3  |
-| 8  | Duo  | 38 % | 35 % | −3  |
-| 5  | Solo | 46 % | 46 % | 0   |
-| 6  | Solo | 47 % | 46 % | −1  |
-| 7  | Solo | 37 % | 37 % | 0   |
-
-**Conclusion** :
-- **Le mur duo étage 5-6 est éliminé** (gain +12 / +15 pts) — résultat direct du retrait des groupes de 3 dans cette zone, qui supprimait le scénario punitif « 3 ennemis frappent pendant que la party fait 2 actions ».
-- **Le mur duo se décale logiquement à l'étage 7** (57 % de win rate, dès la réapparition des groupes de 3).
-- **Le solo reste inchangé** : ni le retrait des groupes de 3 (qui ne s'applique pas en solo) ni l'atténuation DEF/3 (~-4 dégâts par ability au niveau 4-5) ne suffisent à corriger le mur étage 5.
-
-### Pour aller plus loin sur le mur solo (futur)
-
-Pistes possibles, hors-scope de cette PR :
-- **Cap sur la chance des abilities `damage` à 0.20** pour les monstres ≥ étage 5 (au lieu de 0.30-0.35). Réduirait la fréquence des dégâts ignorant DEF.
-- **Ralentir le scaling** des élites étage 5+ (`scale: 0.30 → 0.25`).
-- **Ajustement `rollGroupSize` solo** : forcer 1 ennemi à 80 % (au lieu de 50 %) sur les étages 5-6 en solo.
-
----
-
-## 5. Monstres à scaling élevé (scale ≥ 0.30)
+## 6. Monstres à scaling élevé (scale ≥ 0.30)
 
 | Monstre | scale | floors | weight | HP base | ATK base |
 |:--------|------:|:-------|-------:|--------:|---------:|
-| Voldemort Ressuscité | 0.40 | 10–∞ | 1 | 100 | 28 |
-| Voldemort Affaibli   | 0.40 | 9–∞  | 2 | 80  | 22 |
-| Basilic Mineur       | 0.35 | 6–∞  | 4 | 60  | 20 |
-| Bellatrix Lestrange  | 0.35 | 8–∞  | 2 | 70  | 20 |
-| Chimère de Poudlard  | 0.32 | 6–∞  | 3 | 65  | 19 |
-| Ombre de Quirrell    | 0.32 | 6–∞  | 3 | 50  | 12 |
-| Nagini               | 0.32 | 7–∞  | 3 | 55  | 18 |
-| Mangemort d'Élite    | 0.32 | 7–∞  | 4 | 55  | 16 |
-| Manticore Juvénile   | 0.32 | 6–∞  | 4 | 65  | 18 |
-| Strigoï Ancien       | 0.32 | 6–∞  | 4 | 110 | 14 |
-| Hécate la Maudisseuse| 0.32 | 7–∞  | 4 | 130 | 10 |
-| Détraqueur           | 0.30 | 3–8  | 7 | 25  | 10 |
-| Mangemort Masqué     | 0.30 | 5–∞  | 8 | 40  | 12 |
-| Jeune Acromantule    | 0.30 | 5–9  | 5 | 48  | 16 |
-| Détraqueur Gardien   | 0.30 | 5–∞  | 5 | 45  | 14 |
-| Gardien du Portail   | 0.30 | 5–∞  | 5 | 80  | 14 |
-| Spectre Maudit       | 0.30 | 5–∞  | 5 | 80  | 11 |
+| Bellatrix Lestrange | 0.4 | 8–∞ | 2 | 70 | 20 |
+| Voldemort Affaibli | 0.4 | 9–∞ | 2 | 80 | 22 |
+| Voldemort Ressuscité | 0.4 | 10–∞ | 1 | 100 | 28 |
+| Mangemort d'Élite | 0.38 | 7–∞ | 4 | 55 | 16 |
+| Manticore Juvénile | 0.38 | 6–∞ | 4 | 65 | 18 |
+| Nagini | 0.36 | 7–∞ | 3 | 55 | 18 |
+| Basilic Mineur | 0.35 | 6–∞ | 4 | 60 | 20 |
+| Fenrir Greyback | 0.34 | 8–∞ | 1 | 95 | 24 |
+| Maître des Détraqueurs | 0.34 | 9–∞ | 1 | 115 | 14 |
+| Héraut des Ténèbres | 0.34 | 10–∞ | 1 | 150 | 16 |
+| Antonin Dolohov | 0.33 | 10–∞ | 1 | 115 | 22 |
+| Chimère de Poudlard | 0.32 | 6–∞ | 3 | 65 | 19 |
+| Ombre de Quirrell | 0.32 | 6–∞ | 3 | 50 | 12 |
+| le Bibliothécaire d'Ombre | 0.32 | 6–∞ | 0 | 95 | 16 |
+| Strigoï Ancien | 0.32 | 6–∞ | 4 | 110 | 14 |
+| Hécate la Maudisseuse | 0.32 | 7–∞ | 4 | 130 | 10 |
+| Aragog | 0.32 | 9–∞ | 1 | 135 | 22 |
+| Détraqueur | 0.3 | 3–8 | 7 | 25 | 10 |
+| Mangemort Masqué | 0.3 | 5–∞ | 8 | 40 | 12 |
+| Jeune Acromantule | 0.3 | 5–9 | 5 | 48 | 16 |
+| Détraqueur Gardien | 0.3 | 5–∞ | 5 | 45 | 14 |
+| Gardien du Portail | 0.3 | 5–∞ | 5 | 80 | 14 |
+| Spectre Maudit | 0.3 | 5–∞ | 5 | 80 | 11 |
+| Gargouille Éveillée | 0.3 | 5–10 | 4 | 95 | 13 |
+| Veilleur du Seuil | 0.3 | 8–∞ | 1 | 140 | 14 |
+| Détraqueur d'Élite | 0.3 | 8–∞ | 4 | 60 | 12 |
+| Mangemort Vétéran | 0.3 | 9–∞ | 4 | 72 | 18 |
 
----
+## 7. Run d'étage complet — PR #213 (repos partiel + malus de fouille)
 
-## 6. Recommandations
+Enchaîne 4 salles sans reset des PV/PM, avec décision de repos (seuils PV < 65 % / PM < 40 %) et 3 fouilles par étage (jets de malus PR #213). « Étage réussi » = groupe vivant au bout des salles.
 
-### Côté joueur (immédiates)
-
-1. **Allocation des 3 pts libres** : prioriser END jusqu'à l'étage 5 (le bonus DEF + HP est désormais effectif contre les abilities). Bascule LCK à partir de l'étage 6 pour les crits.
-2. **Chaîne Dumbledore** : faire les 3 premiers paliers avant l'étage 5. Les +20 PV cumulés et +1 LCK aident concrètement.
-3. **Boutique étage 5** : prioriser l'**équipement DEF** (Casque d'Auror DEF+3 MAG+1, Ceinture de Force ATK+1 DEF+2) — désormais utile contre les capacités spéciales.
-4. **Farming respawn 20 %** : 2-3 allers-retours étage 4-5 pour gagner 1 niveau + 100-200 g supplémentaires.
-5. **Fontaines** (étages 2/5/8/11) : indispensables — 1×/visite.
-
-### Côté design (cette PR)
-
-- ✓ **Atténuation DEF des abilities `damage`** (`max(1, power + mag/2 − def/3)`)
-- ✓ **Retrait des groupes de 3 en duo avant étage 7**
-
-### Côté design (futur, hors-scope)
-
-- Cap sur `chance` des abilities damage à 0.20 pour étages 5+
-- Ralentissement du scaling élites mid-game (`scale: 0.30 → 0.25`)
-- Ajustement `rollGroupSize` solo (favoriser 1 ennemi en mid-game)
-
-Ces pistes attaquent le mur solo restant (étage 5, 46 %) mais touchent plus profondément la balance — à valider et sim avant implémentation.
+| Étage | Mode | Niv. | Étage réussi % | Combats moy. | Repos moy. | Repos interrompu % | Fouille néfaste % | PV fin (réussi) |
+|------:|:----:|-----:|---------------:|-------------:|-----------:|-------------------:|------------------:|----------------:|
+| 1 | Solo | 1 | 100% | 4.6 | 2.07 | 59% | 6% | 98% |
+| 1 | Duo  | 1 | 100% | 4.3 | 0.85 | 25% | 6% | 100% |
+| 2 | Solo | 2 | 100% | 4.4 | 1.39 | 41% | 6% | 97% |
+| 2 | Duo  | 2 | 100% | 4.2 | 0.62 | 19% | 6% | 99% |
+| 3 | Solo | 5 | 100% | 4.4 | 1.58 | 40% | 6% | 94% |
+| 3 | Duo  | 5 | 100% | 4.3 | 0.75 | 24% | 7% | 99% |
+| 4 | Solo | 6 | 100% | 4.6 | 1.85 | 55% | 5% | 90% |
+| 4 | Duo  | 7 | 100% | 4.4 | 1.21 | 36% | 7% | 98% |
+| 5 | Solo | 8 | 81% | 4.4 | 2.24 | 64% | 6% | 74% |
+| 5 | Duo  | 8 | 100% | 4.5 | 1.48 | 44% | 8% | 92% |
+| 6 | Solo | 8 | 43% | 3.7 | 1.81 | 54% | 5% | 66% |
+| 6 | Duo  | 8 | 95% | 4.5 | 1.71 | 49% | 4% | 84% |
+| 7 | Solo | 9 | 34% | 3.5 | 1.69 | 49% | 6% | 57% |
+| 7 | Duo  | 9 | 69% | 4.4 | 2.15 | 65% | 6% | 71% |
+| 8 | Solo | 9 | 11% | 2.6 | 1.15 | 33% | 5% | 48% |
+| 8 | Duo  | 10 | 44% | 3.9 | 1.96 | 58% | 5% | 65% |
+| 9 | Solo | 10 | 3% | 2.1 | 0.81 | 26% | 3% | 38% |
+| 9 | Duo  | 10 | 10% | 2.8 | 1.18 | 35% | 5% | 59% |
+| 10 | Solo | 10 | 1% | 1.9 | 0.68 | 21% | 3% | 37% |
+| 10 | Duo  | 11 | 8% | 2.7 | 1.08 | 32% | 3% | 63% |
+| 11 | Solo | 11 | 1% | 1.9 | 0.70 | 22% | 3% | 41% |
+| 11 | Duo  | 11 | 5% | 2.4 | 0.91 | 28% | 4% | 62% |
+| 12 | Solo | 11 | 1% | 1.7 | 0.58 | 17% | 4% | 36% |
+| 12 | Duo  | 12 | 3% | 2.3 | 0.80 | 25% | 4% | 61% |
