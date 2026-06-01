@@ -596,6 +596,12 @@ function generateDungeon(floor) {
   // rooms[0]/rooms[last] = mêmes centres), on en replace un.
   _ensureStairsExist(floor);
 
+  // Garde-fou endgame : garantit la présence du boss final à l'étage 10
+  // (escalier descendant scellé tant qu'il n'est pas vaincu).
+  if (typeof _ensureFinalBossPresent === 'function') {
+    _ensureFinalBossPresent(floor);
+  }
+
   // Filet de sécurité de connexité : garantit que l'escalier descendant
   // est atteignable depuis le spawn (perce un couloir de secours sinon).
   _assertDungeonConnected();
