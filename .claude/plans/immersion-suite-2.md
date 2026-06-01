@@ -292,3 +292,23 @@ pendant l'exploration (seedés par étage pour la reproductibilité ?
   - **Bumps** : `combat-fx.js` (5→6), `combat-fx.css` (6→7), `battle.js`
     (20→21) ; `CACHE_VERSION` v51 → v52. Pas de nouveau global → loader
     inchangé (`statusFlash` est une méthode de `CombatFX`).
+  - **Mergé** : PR #362 (master). E2 clos.
+- 2026-06-01 : **E3 implémenté** (PR dédiée, branche
+  `claude/immersion-e3-dungeon-vfx`).
+  - **Action** : `DungeonFX.burst(hostId, kind)` — gerbe DOM de particules
+    + halo central, ancrée dans un élément hôte (`explore-overlay` /
+    `levelup-modal`), réutilisant l'infra `dungeon-fx.js`. 3 palettes :
+    `gold` (coffre), `water` (fontaine), `levelup` (gerbe montante). CSS
+    dans `dungeon-fx.css`. Hooks défensifs (`DFX_safe`, garde `typeof`) :
+    `openChest()` (or, après `playChestOpen`), `useFountain()` (eau, après
+    le soin) dans `movement-interactions.js` ; `checkLevelUp()` (level-up,
+    après l'affichage de la modale) dans `battle-rewards.js`. reduced-motion
+    = halo bref sans projectiles. Aucune mécanique touchée.
+  - **Tests** : nouveau `scenarioDungeonVfx` — API + proxy, montage/auto-
+    retrait de `.dfx-burst-layer`, call-sites réels
+    (openChest/useFountain/checkLevelUp) sans throw, reduced-motion (halo
+    seul, 0 particule via `emulateMedia`).
+  - **Bumps** : `dungeon-fx.js` (1→2), `dungeon-fx.css` (1→2),
+    `movement-interactions.js` (7→8), `battle-rewards.js` (2→3) ;
+    `CACHE_VERSION` v52 → v53. Pas de nouveau global → loader inchangé
+    (`burst` est une méthode de `DungeonFX`).
