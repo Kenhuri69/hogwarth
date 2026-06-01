@@ -62,8 +62,35 @@ const AudioSystem = {
 
   toggleVoice() {
     this.voiceEnabled = !this.voiceEnabled;
+    this._savePrefs();
     this.refreshButtons();
     return this.voiceEnabled;
+  },
+
+  // ── Préférences audio : réglages d'INTERFACE, globaux ─────────
+  // isMuted / voiceEnabled sont persistés dans leur propre clé
+  // localStorage, indépendante des sauvegardes. Charger une partie ne
+  // doit PAS écraser le choix son/voix du joueur (bug « le son ne marche
+  // plus après avoir chargé une sauvegarde »).
+  _PREFS_KEY: 'hogwarts_rpg_audio_prefs',
+
+  _savePrefs() {
+    try {
+      localStorage.setItem(this._PREFS_KEY, JSON.stringify({
+        isMuted:      this.isMuted,
+        voiceEnabled: this.voiceEnabled
+      }));
+    } catch (_) { /* localStorage indisponible (quota / file://) — ignore */ }
+  },
+
+  _loadPrefs() {
+    try {
+      const raw = localStorage.getItem(this._PREFS_KEY);
+      if (!raw) return;
+      const p = JSON.parse(raw);
+      if (typeof p.isMuted === 'boolean')      this.isMuted      = p.isMuted;
+      if (typeof p.voiceEnabled === 'boolean') this.voiceEnabled = p.voiceEnabled;
+    } catch (_) { /* JSON cassé / indispo — garde les défauts */ }
   },
 
   // ── Resynchronise les icônes des boutons audio avec l'état courant ──
@@ -87,12 +114,20 @@ const AudioSystem = {
       else if (this.inMenu) this.playMenuMusic();
       else this.playAmbientMusic(this.currentFloor);
     }
+    this._savePrefs();
     this.refreshButtons();
     return this.isMuted;
   }
 };
 
 window.AudioSystem = AudioSystem;
+
+// Restaure les préférences audio globales (avant tout rendu), puis
+// resynchronise les icônes des boutons une fois le DOM prêt.
+AudioSystem._loadPrefs();
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => AudioSystem.refreshButtons());
+}
 
 // Préchauffer les voix SpeechSynthesis
 if (window.speechSynthesis) {
