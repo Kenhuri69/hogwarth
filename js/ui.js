@@ -73,6 +73,13 @@ function updateUI() {
     .some(c => c.hp > 0 && c.hpMax > 0 && c.hp / c.hpMax < 0.25);
   document.body.classList.toggle('cfx-danger', inDanger);
 
+  // Musique adaptative de combat (F1) : re-évalue l'intensité (crossfade vers
+  // la couche `tension` quand le groupe bascule en danger critique, et retour).
+  // Self-gated (no-op hors combat / sur synthèse procédurale).
+  if (inBattle && typeof AudioSystem !== 'undefined' && AudioSystem.updateCombatIntensity) {
+    AudioSystem.updateCombatIntensity();
+  }
+
   // ── Badge "points à allouer" sur le bouton Fiche ──────────────
   const badge = document.getElementById('char-alloc-badge');
   if (badge) {

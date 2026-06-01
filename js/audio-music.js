@@ -425,7 +425,10 @@ Object.assign(AudioSystem, {
   // de se reprogrammer (sans toucher aux sources déjà schedulées qui
   // finiront naturellement). Utilisée pour distinguer ambient vs combat
   // et pour stopper proprement à un changement de zone/contexte.
-  _playSampleLoop(bufKey, isRelevant) {
+  // `gainBucket` (optionnel, F1) : tableau où pousser le GainNode de chaque
+  // itération, pour pouvoir les fade-out lors d'un crossfade d'intensité de
+  // combat. Les callers ambient/menu ne le passent pas (comportement inchangé).
+  _playSampleLoop(bufKey, isRelevant, gainBucket) {
     const buf = this._sampleBuffers[bufKey];
     if (!buf || !this.musicPlaying) return;
     const CROSSFADE = 1.0;
@@ -447,9 +450,14 @@ Object.assign(AudioSystem, {
       src.start(startAt);
       src.stop(startAt + duration + 0.05);
       this._sampleSources.push(src);
+      if (gainBucket) gainBucket.push(gain);
       src.onended = () => {
         const i = this._sampleSources.indexOf(src);
         if (i >= 0) this._sampleSources.splice(i, 1);
+        if (gainBucket) {
+          const j = gainBucket.indexOf(gain);
+          if (j >= 0) gainBucket.splice(j, 1);
+        }
       };
       const nextStart = startAt + duration - CROSSFADE;
       const delayMs   = Math.max(0, (nextStart - this.ctx.currentTime) * 1000 - 200);
@@ -719,6 +727,10 @@ Object.assign(AudioSystem, {
     const combatKey = this._combatSampleKey(enemyGroup);
     const url = this._COMBAT_SAMPLES[combatKey];
 
+    // F1 — réinitialise l'état de couche adaptative pour ce combat.
+    this._activeCombatKey = null;
+    this._combatGains = [];
+
     if (!url) {
       this._playProceduralCombat();
       return;
@@ -727,7 +739,10 @@ Object.assign(AudioSystem, {
     this._loadSample(combatKey, url)
       .then(() => {
         if (this.inCombat && this.musicPlaying) {
-          this._playSampleLoop(combatKey, () => this.inCombat);
+          this._activeCombatKey = combatKey;
+          this._playSampleLoop(combatKey,
+            () => this.inCombat && this._activeCombatKey === combatKey,
+            this._combatGains);
         }
       })
       .catch(err => {
@@ -739,7 +754,10 @@ Object.assign(AudioSystem, {
           this._loadSample('combat_normal', this._COMBAT_SAMPLES.combat_normal)
             .then(() => {
               if (this.inCombat && this.musicPlaying) {
-                this._playSampleLoop('combat_normal', () => this.inCombat);
+                this._activeCombatKey = 'combat_normal';
+                this._playSampleLoop('combat_normal',
+                  () => this.inCombat && this._activeCombatKey === 'combat_normal',
+                  this._combatGains);
               }
             })
             .catch(() => {
@@ -749,6 +767,62 @@ Object.assign(AudioSystem, {
           this._playProceduralCombat();
         }
       });
+  },
+
+  // ── Musique adaptative de combat (F1) — crossfade par intensité ─
+  // Re-évalue la couche de combat voulue (via _combatSampleKey, qui place
+  // `tension` en tête quand le groupe est en danger critique) et, si elle
+  // diffère de la couche active, crossfade vers elle SANS empiler de boucle
+  // permanente : l'ancienne couche est fade-out (1 s), la nouvelle fade-in.
+  // No-op si : hors combat, muet, pas de contexte, on est en synthèse
+  // procédurale (_activeCombatKey null), ou le sample cible n'est pas chargé
+  // (on tente alors un chargement paresseux puis on re-tentera). Idempotent.
+  updateCombatIntensity() {
+    if (!this.inCombat || !this.musicPlaying || this.isMuted) return;
+    if (!this.ctx) return;
+    // Sur couche procédurale (samples indisponibles) : pas de swap (éviterait
+    // d'empiler un sample par-dessus la synthèse). On reste tel quel.
+    if (!this._activeCombatKey) return;
+
+    const desired = this._combatSampleKey();
+    if (desired === this._activeCombatKey) return;
+
+    const buf = this._sampleBuffers[desired];
+    if (!buf) {
+      // Sample cible pas encore chargé : on le charge en tâche de fond et on
+      // re-tentera la transition au retour si elle est toujours pertinente.
+      const url = this._COMBAT_SAMPLES[desired];
+      if (url) {
+        this._loadSample(desired, url)
+          .then(() => { if (this.inCombat) this.updateCombatIntensity(); })
+          .catch(() => {});
+      }
+      return;
+    }
+
+    // Crossfade : l'ancienne couche cesse de se reprogrammer (isRelevant
+    // devient faux car _activeCombatKey change) puis on fade-out ses gains ;
+    // la nouvelle couche démarre avec son fade-in intégré.
+    this._activeCombatKey = desired;
+    this._fadeOutCombatLayer();
+    this._playSampleLoop(desired,
+      () => this.inCombat && this._activeCombatKey === desired,
+      this._combatGains);
+  },
+
+  // Fade-out (1 s) des gains de la couche de combat courante puis vide le
+  // bucket (les sources restent schedulées et s'arrêteront seules, muettes).
+  _fadeOutCombatLayer() {
+    if (!this.ctx || !Array.isArray(this._combatGains)) return;
+    const now = this.ctx.currentTime, CF = 1.0;
+    for (const g of this._combatGains) {
+      try {
+        g.gain.cancelScheduledValues(now);
+        g.gain.setValueAtTime(g.gain.value, now);
+        g.gain.linearRampToValueAtTime(0, now + CF);
+      } catch (_) { /* gain déjà libéré */ }
+    }
+    this._combatGains = [];
   },
 
   // ── Sélection du sample de combat — axes combinés ─────────────
