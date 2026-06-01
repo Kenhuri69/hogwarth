@@ -274,6 +274,39 @@
     setTimeout(() => flash.remove(), dur);
   }
 
+  // ── Flash de statut (E2) : pulse coloré bref sur la carte affligée ─
+  // Appelé par battle.js — applyStatus au moment de la POSE (pas au tick).
+  // Couleur + emoji dérivés de STATUS_DEFS[statusId] (lu au runtime, défensif :
+  // fallback neutre si absent). Anneau qui se dilate + glyphe du statut.
+  // reduced-motion : le glyphe/anneau fadent sans dilatation (via CSS).
+  function statusFlash(targetKey, statusId) {
+    const layer = ensureFxLayer();
+    if (!layer) return;
+    const pos = anchorFor(targetKey);
+    if (!pos) return;
+    const def = (typeof STATUS_DEFS !== 'undefined' && STATUS_DEFS && STATUS_DEFS[statusId])
+      ? STATUS_DEFS[statusId] : null;
+    const color = (def && def.color) || '#d9a521';
+    const glyph = (def && def.icon)  || '✦';
+
+    const ring = document.createElement('div');
+    ring.className = 'cfx-status-ring';
+    ring.style.left = pos.x + 'px';
+    ring.style.top  = pos.y + 'px';
+    ring.style.setProperty('--cfx-status-color', color);
+    layer.appendChild(ring);
+    setTimeout(() => ring.remove(), 620);
+
+    const g = document.createElement('div');
+    g.className = 'cfx-status-glyph';
+    g.textContent = glyph;
+    g.style.left = pos.x + 'px';
+    g.style.top  = pos.y + 'px';
+    g.style.color = color;
+    layer.appendChild(g);
+    setTimeout(() => g.remove(), 680);
+  }
+
   // ── Pétrification de la mort (hors Ironman) — C2 ─────────────
   // Overlay plein écran qui désature + givre la scène avant le death-screen.
   // backdrop-filter (grayscale + brightness) ramping + givre en box-shadow
@@ -294,7 +327,7 @@
     return DUR;
   }
 
-  window.CombatFX = { spellBurst, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, petrify };
+  window.CombatFX = { spellBurst, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, petrify };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle

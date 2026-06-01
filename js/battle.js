@@ -85,6 +85,16 @@ function _resistMult(target) {
   return 1 - pct / 100;
 }
 
+// E2 — résout la clé d'ancrage FX d'une cible de combat : 'enemy:N' si la
+// cible est dans enemyGroup, 'ally' sinon (héros). Pur, sans effet de bord.
+function _combatTargetKey(target) {
+  if (typeof enemyGroup !== 'undefined' && Array.isArray(enemyGroup)) {
+    const idx = enemyGroup.indexOf(target);
+    if (idx >= 0) return `enemy:${idx}`;
+  }
+  return 'ally';
+}
+
 // Pose ou rafraîchit un statut. Renvoie `true` si un nouvel "instance"
 // du statut a été appliqué (création ou stack supplémentaire), `false`
 // si seule la durée a été refresh (cap stacks atteint).
@@ -96,6 +106,9 @@ function applyStatus(target, id, power, turns) {
   if (!target) return false;
   if (!target.statusEffects) target.statusEffects = [];
   const def = STATUS_DEFS[id];
+  // Flash de statut (E2) : pulse coloré sur la carte au moment de la pose
+  // (pas au tick). Purement visuel, défensif (no-op hors overlay de combat).
+  if (def) CFX_safe.statusFlash(_combatTargetKey(target), id);
   const maxStacks = def && def.maxStacks ? def.maxStacks : 1;
   const existing = target.statusEffects.find(s => s.id === id);
   if (existing) {

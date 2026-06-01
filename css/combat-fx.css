@@ -92,6 +92,35 @@ body.cfx-danger::after {
 .cfx-glyph.cfx-tenebres { color: #c47ad6; }
 .cfx-glyph.cfx-physique { color: #ecdcae; }
 
+/* ── Flash de statut (E2) : anneau coloré + glyphe sur la carte ── */
+.cfx-status-ring {
+  position: absolute;
+  width: 54px; height: 54px;
+  margin: -27px 0 0 -27px;
+  border-radius: 50%;
+  border: 3px solid var(--cfx-status-color, #d9a521);
+  box-shadow: 0 0 14px var(--cfx-status-color, #d9a521);
+  opacity: 0;
+  animation: cfxStatusRing .6s ease-out forwards;
+}
+@keyframes cfxStatusRing {
+  0%   { transform: scale(0.5); opacity: 0; }
+  30%  { opacity: 0.95; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+.cfx-status-glyph {
+  position: absolute;
+  font-size: 26px;
+  margin: -20px 0 0 -14px;
+  text-shadow: 0 0 10px currentColor;
+  animation: cfxStatusGlyph .66s ease-out forwards;
+}
+@keyframes cfxStatusGlyph {
+  0%   { transform: scale(0.5) translateY(0); opacity: 0; }
+  30%  { transform: scale(1.2) translateY(-4px); opacity: 1; }
+  100% { transform: scale(1.3) translateY(-14px); opacity: 0; }
+}
+
 /* ── Burst de soin (gerbe verte montante) ──────────────────── */
 .cfx-heal-halo {
   position: absolute;
@@ -308,6 +337,10 @@ body.cfx-danger::after {
   @keyframes cfxCombatFlashReduced { from { opacity: .45; } to { opacity: 0; } }
   /* Flash de dégâts (D3) : fade plus court, voile atténué. */
   .cfx-hurt-flash { animation-duration: .2s; }
+  /* Flash de statut (E2) : fade sans dilatation/translation. */
+  .cfx-status-ring  { animation: cfxStatusReduced .3s ease-out forwards; }
+  .cfx-status-glyph { animation: cfxStatusReduced .34s ease-out forwards; }
+  @keyframes cfxStatusReduced { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
   /* Pétrification : neutralisée (le module n'en monte pas en reduced-motion). */
   .cfx-petrify { animation: none; }
   /* Le boss-intro reste (carte-titre informative) mais sans rebond. */

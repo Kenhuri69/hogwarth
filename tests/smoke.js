@@ -17549,6 +17549,7 @@ async function scenarioCombatFX() {
     hasBoss:   typeof window.CombatFX?.bossIntro === 'function',
     hasEnter:  typeof window.CombatFX?.combatStart === 'function',
     hasHurt:   typeof window.CombatFX?.hurtFlash === 'function',
+    hasStatus: typeof window.CombatFX?.statusFlash === 'function',
     hasProxy:  typeof window.CFX_safe?.spellBurst === 'function',
   }));
   console.log('  F1 module:', f1);
@@ -17557,6 +17558,7 @@ async function scenarioCombatFX() {
   assert(f1.hasHeal && f1.hasBuff, 'F1 API soin/buff (B1) absente');
   assert(f1.hasEnter, 'F1 API combatStart (C1) absente');
   assert(f1.hasHurt, 'F1 API hurtFlash (D3) absente');
+  assert(f1.hasStatus, 'F1 API statusFlash (E2) absente');
   assert(f1.hasProxy, 'F1 CFX_safe proxy absent');
 
   await startDummyFight(page, { hp: 50 });
@@ -17633,6 +17635,32 @@ async function scenarioCombatFX() {
   console.log('  F6 hurt   :', f6);
   assert(!f6.threw, 'F6 hurtFlash throw');
   assert(f6.flash, 'F6 #cfx-hurt-flash non créé');
+
+  // F7 — flash de statut (E2) : statusFlash + proxy ne throwent pas et
+  // montent anneau + glyphe dans la couche FX ; auto-retirés ensuite. La
+  // pose réelle via applyStatus (battle.js) ne throw pas non plus.
+  const f7 = await page.evaluate(() => {
+    let threw = false;
+    try {
+      window.CombatFX.statusFlash('enemy:0', 'burn');
+      window.CFX_safe.statusFlash('ally', 'gel'); // via proxy
+      // call-site réel : pose d'un statut sur l'ennemi 0 en combat
+      if (enemyGroup[0]) applyStatus(enemyGroup[0], 'poison', 3, 3);
+    } catch (e) { threw = true; }
+    const ring  = document.querySelectorAll('.cfx-status-ring').length;
+    const glyph = document.querySelectorAll('.cfx-status-glyph').length;
+    return { threw, ring, glyph };
+  });
+  console.log('  F7 status :', f7);
+  assert(!f7.threw, 'F7 statusFlash/applyStatus throw');
+  assert(f7.ring >= 1 && f7.glyph >= 1, 'F7 anneau/glyphe de statut non montés');
+
+  // F7b — les éléments de flash de statut sont auto-retirés (anim terminée).
+  await page.waitForFunction(
+    () => document.querySelectorAll('.cfx-status-ring').length === 0
+       && document.querySelectorAll('.cfx-status-glyph').length === 0,
+    { timeout: 2000 }
+  );
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

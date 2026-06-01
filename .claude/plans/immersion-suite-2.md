@@ -274,3 +274,21 @@ pendant l'exploration (seedés par étage pour la reproductibilité ?
   - **Bumps** : `renderer-entities.js` (1→2), `renderer-effects.js`
     (11→12) ; `CACHE_VERSION` v50 → v51. Pas de nouveau global critique
     (helpers internes au rendu) → loader inchangé.
+  - **Mergé** : PR #361 (master). E1 clos.
+- 2026-06-01 : **E2 implémenté** (PR dédiée, branche
+  `claude/immersion-e2-status-flash`).
+  - **Action** : `CombatFX.statusFlash(targetKey, statusId)` — anneau
+    coloré qui se dilate + glyphe du statut, ancré sur la carte affligée
+    (réutilise `anchorFor` / `ensureFxLayer`). Couleur + emoji dérivés de
+    `STATUS_DEFS[statusId]` (lu au runtime, défensif, fallback neutre).
+    Appelé dans `battle.js — applyStatus` au moment de la **pose** (pas au
+    tick), via le helper pur `_combatTargetKey(target)` (résout
+    `enemy:N` / `ally`). `CFX_safe` défensif → no-op hors overlay de
+    combat. reduced-motion = fade sans dilatation/translation.
+  - **Tests** : `scenarioCombatFX` étendu — F1 vérifie l'API `statusFlash`,
+    F7 vérifie appel direct + proxy + pose réelle via `applyStatus` sans
+    throw, montage anneau+glyphe (`.cfx-status-ring`/`.cfx-status-glyph`),
+    F7b vérifie l'auto-retrait (anim terminée).
+  - **Bumps** : `combat-fx.js` (5→6), `combat-fx.css` (6→7), `battle.js`
+    (20→21) ; `CACHE_VERSION` v51 → v52. Pas de nouveau global → loader
+    inchangé (`statusFlash` est une méthode de `CombatFX`).
