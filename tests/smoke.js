@@ -17956,6 +17956,8 @@ async function scenarioDungeonFX() {
     hasShake:   typeof window.DungeonFX?.shakeView === 'function',
     hasProxy:   typeof window.DFX_safe?.shakeView === 'function',
     hasMist:    typeof drawDepthsMist === 'function',
+    hasDust:    typeof drawDungeonDust === 'function',
+    hasBurst:   typeof window.DungeonFX?.burst === 'function',
     phaseDefined: typeof _dungeonFxPhase !== 'undefined',
   }));
   console.log('  G1 module:', g1);
@@ -17963,6 +17965,8 @@ async function scenarioDungeonFX() {
   assert(g1.hasLoop,    'G1 startDungeonFxLoop absent');
   assert(g1.hasShake && g1.hasProxy, 'G1 shakeView / proxy absent');
   assert(g1.hasMist,    'G1 drawDepthsMist absent');
+  assert(g1.hasDust,    'G1 drawDungeonDust (E4) absent');
+  assert(g1.hasBurst,   'G1 DungeonFX.burst (E3) absent');
   assert(g1.phaseDefined, 'G1 _dungeonFxPhase non déclaré');
 
   // G2 — shakeView ne throw pas et applique la classe sur le canvas.
@@ -18000,6 +18004,34 @@ async function scenarioDungeonFX() {
   });
   console.log('  G3 render:', g3);
   assert(!g3.threw, 'G3 drawDungeon/drawTorch/mist a throw');
+
+  // G4 — poussière ambiante (E4) : drawDungeonDust ne throw pas sur les
+  // 4 tranches d'ambiance ni quelle que soit la phase ; reduced-motion et
+  // phase 0 = no-op (pas de throw). Peint sur le canvas (pas de DOM).
+  const g4 = await page.evaluate(() => {
+    let threw = false;
+    try {
+      const prevFloor = currentFloor;
+      _dungeonFxPhase = 2.0;
+      [1, 5, 8, 14].forEach(f => { currentFloor = f; drawDungeonDust(); });
+      _dungeonFxPhase = 0; drawDungeonDust();   // phase statique → no-op
+      currentFloor = prevFloor;
+    } catch (e) { threw = true; }
+    return { threw };
+  });
+  console.log('  G4 dust:', g4);
+  assert(!g4.threw, 'G4 drawDungeonDust a throw');
+
+  // G4b — reduced-motion : drawDungeonDust est un no-op (pas de throw).
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const g4b = await page.evaluate(() => {
+    let threw = false;
+    try { _dungeonFxPhase = 2.0; drawDungeonDust(); } catch (e) { threw = true; }
+    return { threw };
+  });
+  console.log('  G4b reduced:', g4b);
+  assert(!g4b.threw, 'G4b drawDungeonDust throw sous reduced-motion');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

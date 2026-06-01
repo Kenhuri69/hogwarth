@@ -161,6 +161,51 @@ function drawDepthsMist(cx, cy, scale) {
   ctx.restore();
 }
 
+// ── Poussière ambiante des couloirs (E4) ───────────────────────
+// Fines motes flottantes peintes sur la scène (juste avant le cadre de
+// premier plan), faible densité pour ne pas charger la lisibilité. Teinte
+// modulée par la tranche d'ambiance (getFloorTheme). Pure : ne lit que le
+// contexte canvas (renderer.js), la phase d'animation et le thème.
+// reduced-motion → désactivée (no-op) ; phase 0 (rendu statique initial,
+// boucle non démarrée) → no-op également.
+const _DUST_TINTS = {
+  intro:   [225, 200, 140],   // poussière dorée chaude (école)
+  dungeon: [210, 180, 120],   // ambrée, plus terreuse (cachots)
+  depths:  [150, 175, 200],   // froide bleutée (profondeurs)
+  abyss:   [175, 150, 205],   // runique violacée (ruines)
+};
+function drawDungeonDust() {
+  if (typeof ctx === 'undefined' || typeof canvas === 'undefined') return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const phase = (typeof _dungeonFxPhase !== 'undefined') ? _dungeonFxPhase : 0;
+  if (phase === 0) return; // boucle pas encore tournée → pas de poussière statique
+  let tint = _DUST_TINTS.intro;
+  if (typeof getFloorTheme === 'function' && typeof currentFloor !== 'undefined') {
+    const th = getFloorTheme(currentFloor);
+    if (th && th.ambient && _DUST_TINTS[th.ambient]) tint = _DUST_TINTS[th.ambient];
+  }
+  const W = canvas.width, H = canvas.height;
+  const N = 18; // faible densité
+  const [r, g, b] = tint;
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  for (let i = 0; i < N; i++) {
+    const bx = ((i * 73) % 100) / 100;   // graines déterministes par mote
+    const by = ((i * 149) % 100) / 100;
+    const x  = (bx + Math.sin(phase * (0.15 + (i % 5) * 0.03) + i) * 0.04) * W;
+    const yf = (((by + phase * (0.012 + (i % 4) * 0.003)) % 1) + 1) % 1; // dérive lente, wrap
+    const y  = yf * H;
+    const tw = 0.5 + 0.5 * Math.sin(phase * 1.4 + i * 1.7); // scintillement
+    const a  = 0.05 + 0.06 * tw;                            // très discret
+    const rad = 0.8 + (i % 3) * 0.7;
+    ctx.fillStyle = `rgba(${r},${g},${b},${a.toFixed(3)})`;
+    ctx.beginPath();
+    ctx.arc(x, y, rad, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 // Helper défensif (calqué sur CFX_safe) : DFX_safe.foo(...) appelle
 // window.DungeonFX.foo si présent, sinon no-op silencieux.
 if (typeof window.DFX_safe === 'undefined') {
