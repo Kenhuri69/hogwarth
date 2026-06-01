@@ -2092,17 +2092,20 @@ async function scenarioFloorTextures() {
   await startNewGame(page, { partySize: 1, heroes: ['harry'] });
 
   // Sélection par étage — pilotée par la SoT FLOOR_THEMES (3 tranches).
-  // Les murs wood/tapestry et rune_* ne sont plus tirés par la
-  // progression normale ; rune_* reste réservé à l'override post-victoire.
+  // Les murs wood/tapestry ne sont plus tirés par la progression normale.
+  // Étages 7-13 = cavern_* ; 14+ = rune_* (tranche D « Ruines Anciennes »,
+  // B2). L'override post-victoire (renderer.js) force aussi rune_* dès 11,
+  // mais ce scénario tourne hors-victoire : seul le thème compte.
   const expected = [
     { floor: 1,  wall: 'stone1',      floorTex: 'stone',         ceil: 'beams' },
     { floor: 4,  wall: 'stone2',      floorTex: 'carpet',        ceil: 'stone' },
     { floor: 6,  wall: 'stone2',      floorTex: 'carpet',        ceil: 'stone' },
     { floor: 8,  wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
     { floor: 10, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
-    { floor: 14, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
-    { floor: 15, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
-    { floor: 20, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
+    { floor: 13, wall: 'cavern_wall', floorTex: 'cavern_floor',  ceil: 'cavern_ceiling' },
+    { floor: 14, wall: 'rune_wall',   floorTex: 'rune_floor',    ceil: 'rune_ceiling' },
+    { floor: 15, wall: 'rune_wall',   floorTex: 'rune_floor',    ceil: 'rune_ceiling' },
+    { floor: 20, wall: 'rune_wall',   floorTex: 'rune_floor',    ceil: 'rune_ceiling' },
   ];
 
   // S'assurer que toutes les textures sont chargées avant de tester les patterns
@@ -11184,7 +11187,9 @@ async function scenarioFloorTheming() {
   assert(T[0].label.includes('Couloirs') && T[1].label.includes('Couloirs'), 'Étages 1-3 = Couloirs');
   assert(T[2].label.includes('Cachots') && T[3].label.includes('Cachots'),   'Étages 4-6 = Cachots');
   assert(T[4].label.includes('Profondeurs') && T[5].label.includes('Profondeurs'), 'Étages 7-13 = Profondeurs');
-  assert(T[6].label.includes('Profondeurs'), 'Étage 14 = Profondeurs (depths ouvert)');
+  assert(T[6].label.includes('Ruines Anciennes'), 'Étage 14 = Ruines Anciennes (palier ancient B2)');
+  assert(T[6].wall === 'rune_wall' && T[6].floor === 'rune_floor' && T[6].ceiling === 'rune_ceiling', 'Étage 14 → tileset rune_*');
+  assert(T[6].ambient === 'abyss', 'Étage 14 → ambiance abyss');
   assert(T[0].wall === 'stone1' && T[2].wall === 'stone2' && T[4].wall === 'cavern_wall', 'clés mur cohérentes');
   assert(T[0].floor === 'stone' && T[2].floor === 'carpet' && T[4].floor === 'cavern_floor', 'clés sol cohérentes');
   assert(T[0].ambient === 'intro' && T[2].ambient === 'dungeon' && T[4].ambient === 'depths', 'clés ambiant cohérentes');

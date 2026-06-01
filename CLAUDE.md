@@ -1591,16 +1591,23 @@ ambiante ; `getFloorTheme(floor)` est pur et sûr (entrée invalide →
 |---------|--------|------|-----|---------|----------|-----|
 | **A** Couloirs de Poudlard | 1-3 | `stone1` | `stone` | `beams` | `intro` | Familier, école |
 | **B** Cachots de Poudlard | 4-6 | `stone2` | `carpet` | `stone` | `dungeon` | Descente, austère |
-| **C** Profondeurs Oubliées | 7+ | `cavern_wall` | `cavern_floor` | `cavern_ceiling` | `depths` | Inconnu, abyssal |
+| **C** Profondeurs Oubliées | 7-13 | `cavern_wall` | `cavern_floor` | `cavern_ceiling` | `depths` | Inconnu, abyssal |
+| **D** Ruines Anciennes | 14+ | `rune_wall` | `rune_floor` | `rune_ceiling` | `abyss` | Endgame, runique |
 
+- **Tranche D « Ruines Anciennes »** (activée B2, 2026-06-01) : palier
+  endgame profond atteignable uniquement en Boucle Ténébreuse (escaliers
+  scellés sans victoire). L'override post-victoire couvrait déjà les
+  textures `rune_*` dès l'étage 11 ; ce thème les rend self-cohérentes à
+  partir de 14 **et** bascule l'ambiance sur `abyss` (sample auparavant en
+  réserve). Le sample `tension` reste réservé (aucune tranche assignée).
 - **Override post-victoire** : `renderer.js` bascule sur `rune_*` à
   l'étage 11+ quand `victoryAchieved` — surcouche indépendante de
-  `getFloorTheme`. Un palier « Ruines Anciennes » (14+, assets `rune_*`)
-  est préparé en commentaire dans `FLOOR_THEMES` pour une V2.
+  `getFloorTheme`, conservée pour couvrir les étages 11-13 (thème `depths`)
+  en look ténébreux.
 - **Transition de tranche** : `movement.js — _maybePlayTierTransition`
   (appelé dans `_changeFloor`) affiche un fondu noir 600 ms
   (`#tier-transition-overlay`) + un toast au franchissement d'une
-  frontière (3↔4, 6↔7). Pas de déclenchement à l'intérieur d'une
+  frontière (3↔4, 6↔7, 13↔14). Pas de déclenchement à l'intérieur d'une
   tranche (compare de référence d'objet).
 
 ---
