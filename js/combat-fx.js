@@ -117,6 +117,74 @@
     }
   }
 
+  // ── Burst de soin : gerbe verte MONTANTE + halo + glyphe ✚ ────
+  // Visuellement distinct du burst offensif : palette verte, particules
+  // qui s'élèvent (dy fortement négatif) plutôt que projetées en étoile.
+  function healBurst(targetKey) {
+    const layer = ensureFxLayer();
+    if (!layer) return;
+    const pos = anchorFor(targetKey);
+    if (!pos) return;
+
+    const halo = document.createElement('div');
+    halo.className = 'cfx-heal-halo';
+    halo.style.left = pos.x + 'px';
+    halo.style.top  = pos.y + 'px';
+    layer.appendChild(halo);
+    setTimeout(() => halo.remove(), 650);
+
+    const g = document.createElement('div');
+    g.className = 'cfx-heal-glyph';
+    g.textContent = '✚';
+    g.style.left = pos.x + 'px';
+    g.style.top  = pos.y + 'px';
+    layer.appendChild(g);
+    setTimeout(() => g.remove(), 700);
+
+    if (prefersReducedMotion()) return;
+    const greens = ['#7ef0a0', '#3fbf6a', '#d8ffe6'];
+    const N = 9;
+    for (let i = 0; i < N; i++) {
+      const p = document.createElement('div');
+      p.className = 'cfx-heal-particle';
+      // Étalement horizontal modéré, forte montée verticale.
+      const dx = (Math.random() - 0.5) * 44;
+      const dy = -(38 + Math.random() * 46);
+      p.style.left = (pos.x + (Math.random() - 0.5) * 24) + 'px';
+      p.style.top  = pos.y + 'px';
+      p.style.background = greens[i % greens.length];
+      p.style.setProperty('--cfx-dx', dx.toFixed(1) + 'px');
+      p.style.setProperty('--cfx-dy', dy.toFixed(1) + 'px');
+      layer.appendChild(p);
+      setTimeout(() => p.remove(), 760);
+    }
+  }
+
+  // ── Aura de buff : anneau doré qui s'évase + glyphe ✦ ─────────
+  // Pour les sorts de protection/soutien (Protego, Patronus). Bref halo
+  // doré sans particules projetées — lecture « buff » immédiate.
+  function buffAura(targetKey) {
+    const layer = ensureFxLayer();
+    if (!layer) return;
+    const pos = anchorFor(targetKey);
+    if (!pos) return;
+
+    const ring = document.createElement('div');
+    ring.className = 'cfx-buff-ring';
+    ring.style.left = pos.x + 'px';
+    ring.style.top  = pos.y + 'px';
+    layer.appendChild(ring);
+    setTimeout(() => ring.remove(), 650);
+
+    const g = document.createElement('div');
+    g.className = 'cfx-buff-glyph';
+    g.textContent = '✦';
+    g.style.left = pos.x + 'px';
+    g.style.top  = pos.y + 'px';
+    layer.appendChild(g);
+    setTimeout(() => g.remove(), 700);
+  }
+
   // ── Secousse globale de l'overlay ─────────────────────────────
   // intensity : 'light' | 'heavy' (défaut 'light'). No-op en reduced-motion
   // (la règle CSS neutralise l'animation, mais on évite aussi le reflow).
@@ -166,7 +234,7 @@
     }, dur);
   }
 
-  window.CombatFX = { spellBurst, shake, bossIntro };
+  window.CombatFX = { spellBurst, healBurst, buffAura, shake, bossIntro };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle

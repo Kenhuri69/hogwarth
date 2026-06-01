@@ -74,6 +74,73 @@
 .cfx-glyph.cfx-tenebres { color: #c47ad6; }
 .cfx-glyph.cfx-physique { color: #ecdcae; }
 
+/* ── Burst de soin (gerbe verte montante) ──────────────────── */
+.cfx-heal-halo {
+  position: absolute;
+  width: 64px; height: 64px;
+  margin: -32px 0 0 -32px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(126,240,160,.9) 0%, rgba(63,191,106,.22) 60%, transparent 72%);
+  mix-blend-mode: screen;
+  animation: cfxHeal .6s ease-out forwards;
+}
+@keyframes cfxHeal {
+  0%   { transform: scale(0.3); opacity: 0; }
+  35%  { opacity: 0.95; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+.cfx-heal-glyph {
+  position: absolute;
+  font-size: 26px;
+  margin: -18px 0 0 -13px;
+  color: #b8ffd0;
+  text-shadow: 0 0 10px rgba(63,191,106,.9);
+  animation: cfxHealGlyph .7s ease-out forwards;
+}
+@keyframes cfxHealGlyph {
+  0%   { transform: translateY(6px) scale(0.5); opacity: 0; }
+  30%  { transform: translateY(-2px) scale(1.15); opacity: 1; }
+  100% { transform: translateY(-26px) scale(1.2); opacity: 0; }
+}
+.cfx-heal-particle {
+  position: absolute;
+  width: 6px; height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(126,240,160,.9);
+  animation: cfxParticle .76s ease-out forwards;
+}
+
+/* ── Aura de buff (anneau doré) ─────────────────────────────── */
+.cfx-buff-ring {
+  position: absolute;
+  width: 30px; height: 30px;
+  margin: -15px 0 0 -15px;
+  border-radius: 50%;
+  border: 3px solid rgba(240,208,128,.9);
+  box-shadow: 0 0 14px rgba(201,168,76,.7), inset 0 0 10px rgba(255,236,170,.5);
+  mix-blend-mode: screen;
+  animation: cfxBuffRing .6s ease-out forwards;
+}
+@keyframes cfxBuffRing {
+  0%   { transform: scale(0.3); opacity: 0; }
+  30%  { opacity: 1; }
+  100% { transform: scale(2.6); opacity: 0; border-width: 1px; }
+}
+.cfx-buff-glyph {
+  position: absolute;
+  font-size: 26px;
+  margin: -18px 0 0 -13px;
+  color: #ffe7a0;
+  text-shadow: 0 0 12px rgba(201,168,76,.95);
+  animation: cfxBuffGlyph .68s ease-out forwards;
+}
+@keyframes cfxBuffGlyph {
+  0%   { transform: scale(0.4) rotate(-20deg); opacity: 0; }
+  35%  { transform: scale(1.2) rotate(6deg); opacity: 1; }
+  100% { transform: scale(1.4) rotate(0deg); opacity: 0; }
+}
+
 /* ── Screen shake global de l'arène ────────────────────────── */
 .cfx-shake-light { animation: cfxShakeLight .4s ease-in-out; }
 .cfx-shake-heavy { animation: cfxShakeHeavy .45s ease-in-out; }
@@ -155,7 +222,9 @@
 /* ── Accessibilité : réduit le mouvement ───────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .cfx-shake-light, .cfx-shake-heavy { animation: none; }
-  .cfx-particle { display: none; }
+  .cfx-particle, .cfx-heal-particle { display: none; }
+  .cfx-heal-halo, .cfx-heal-glyph,
+  .cfx-buff-ring, .cfx-buff-glyph { animation-duration: .4s; }
   /* Le boss-intro reste (carte-titre informative) mais sans rebond. */
   .cfx-boss-card { animation: cfxVeilIn .3s ease-out; }
   .cfx-halo, .cfx-glyph { animation-duration: .4s; }
