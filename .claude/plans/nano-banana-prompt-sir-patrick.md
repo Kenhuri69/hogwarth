@@ -14,9 +14,10 @@
 > template §8.3 « Fantôme / être magique éthéré » (corps translucide, brume,
 > palette argent-bleu) **mais rendue en photo cinématique**, pas en peinture.
 >
-> **Statut V1** : `npcs.js` pointe sur le générique `img/npc/_npc_fantome.png`
-> en attendant ce PNG dédié. Une fois le portrait livré, swap la valeur de
-> `portraitImg` sur `img/npc/sir_patrick.png` (cf. § Intégration).
+> **Statut : LIVRÉ** ✅ — `img/npc/sir_patrick.png` (256×256 RGB, 121 KB) en
+> place, `npcs.js` pointe dessus. Portrait photoréaliste généré via Nano
+> Banana (tête détachée brandie, fraise Tudor, médaille de la Chasse,
+> fantôme nacré, hall gothique).
 >
 > ⚠️ **L'image se génère hors de l'environnement** (modèle Nano Banana) —
 > ce fichier ne produit pas le PNG, il fournit le prompt prêt à l'emploi.

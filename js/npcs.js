@@ -465,7 +465,7 @@ const NPCS = [
     title: "Maître de la Chasse Sans Tête",
     sprite: "fantome",
     icon:  "💀",
-    portraitImg: "img/npc/_npc_fantome.png",
+    portraitImg: "img/npc/sir_patrick.png",
     placement: { floor: 6, anchor: "any" },
     questsGiven:    ["chasse_sans_tete"],
     questsTurnedIn: ["chasse_sans_tete"],
