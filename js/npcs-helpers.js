@@ -164,3 +164,18 @@ function _npcAct3Rumor(npc) {
   return _OTHER_NPC_ACT3_RUMORS[Math.floor(Math.random() * _OTHER_NPC_ACT3_RUMORS.length)];
 }
 
+// Payoff de l'easter egg « La Chasse Sans Tête » : ligne célébratoire de
+// Sir Nicolas, débloquée UNIQUEMENT une fois la quête remise (flag
+// `headlessHuntMember`). Greffée dans son idleRandom (npc-dialog.js),
+// apparition non garantie. Renvoie une réplique ou null.
+const _NICK_HUNT_CELEBRATIONS = [
+  "Membre honoraire de la Chasse Sans Tête ! Sir Patrick a cédé — grâce à vous, jeune sorcier. Je défile derrière le cortège, certes, mais je défile ! Mon lambeau de peau et moi vous en serons éternellement reconnaissants.",
+  "On m'a remis un fanion ! Un vrai ! « Membre d'honneur », qu'il dit. Le Moine Gras en a pleuré de rire — de joie, je préfère croire. Tout cela grâce à votre plaidoyer.",
+  "Quatre siècles de refus, et vous avez tout changé en deux heaumes. Je vous dois ma place dans le cortège, mon brave. À la prochaine Chasse, cherchez-moi : je serai celui qui tient sa tête à deux mains, fièrement."
+];
+function _nickHuntCelebration(npc) {
+  if (!npc || npc.id !== 'sir_nicolas') return null;
+  if (!(typeof headlessHuntMember !== 'undefined' && headlessHuntMember)) return null;
+  return _NICK_HUNT_CELEBRATIONS[Math.floor(Math.random() * _NICK_HUNT_CELEBRATIONS.length)];
+}
+

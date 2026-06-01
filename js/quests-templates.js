@@ -471,6 +471,24 @@ const QUEST_TEMPLATES = [
     reward: { xp: 500, gold: 220 },
     location: "Étage 3 — auprès de Manon"
   },
+  // ── Easter egg « La Chasse Sans Tête » (comique) ───────────
+  // Hôte : Sir Patrick Delaney-Podmore (PNJ déterministe ét. 6, ghost).
+  // Objectif : terrasser 2 Chevaliers Fantômes restés casqués. Récompense
+  // purement cosmétique (flag `headlessHuntMember` posé par completeQuest)
+  // + xp/gold — PAS de levier de combat. Offre classique : aucune amorce
+  // tant que le joueur n'a pas trouvé Sir Patrick en profondeur.
+  // Cf. .claude/plans/headless-hunt-easter-egg.md.
+  {
+    id: "chasse_sans_tete",
+    title: "La Chasse Sans Tête",
+    giver: "Sir Patrick Delaney-Podmore",
+    desc: "Sir Patrick doute qu'un fantôme à la tête mal tranchée mérite sa Chasse. Prouve qu'un revenant sait encore chasser : terrasse 2 Chevaliers Fantômes restés casqués et rapporte leurs heaumes en guise de trophées.",
+    objectives: [
+      { type: "kill", monsterId: "chevalier_fantome", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 260, gold: 120 },
+    location: "Étage 6 — galeries profondes"
+  },
   // ── Phase 3b : quêtes secondaires PNJ → équipement étendu ──
   {
     id: "bottines_ollivander",

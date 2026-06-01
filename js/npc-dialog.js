@@ -362,6 +362,12 @@ function _resolveDialogSource(npc, state) {
         const rumor = _npcAct3Rumor(npc);
         if (rumor) pool = pool.concat(rumor);
       }
+      // Payoff easter egg « La Chasse Sans Tête » : ligne célébratoire de
+      // Sir Nicolas, greffée seulement sous le flag headlessHuntMember.
+      if (npc.id === 'sir_nicolas' && typeof _nickHuntCelebration === 'function') {
+        const cheer = _nickHuntCelebration(npc);
+        if (cheer) pool = pool.concat(cheer);
+      }
       idleIndex = Math.floor(Math.random() * pool.length);
       idleRandomPick = pool[idleIndex];
     }

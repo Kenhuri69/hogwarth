@@ -1232,6 +1232,136 @@ async function scenarioChainedQuest() {
   await browser.close();
 }
 
+// ── Scénario : easter egg « La Chasse Sans Tête » ──────────────────
+// Couvre : données quête/PNJ, placement déterministe ét. 6, flux
+// accept → kill ×2 → ready → remise → flag headlessHuntMember,
+// célébration de Sir Nicolas gated par le flag, round-trip de save.
+
+async function scenarioHeadlessHunt() {
+  console.log('\n── Scénario : Chasse Sans Tête (easter egg) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : données — quête + PNJ cohérents
+  const t1 = await page.evaluate(() => {
+    const tpl = getQuestTemplate('chasse_sans_tete');
+    const npc = getNpcById('sir_patrick');
+    const obj = tpl && tpl.objectives && tpl.objectives[0];
+    return {
+      tplExists:    !!tpl,
+      objType:      obj && obj.type,
+      objMonster:   obj && obj.monsterId,
+      objAmount:    obj && obj.amount,
+      rewardNoItem: !!tpl && !tpl.reward.item && !tpl.reward.spell && !tpl.reward.stats,
+      npcExists:    !!npc,
+      npcSprite:    npc && npc.sprite,
+      npcFloor:     npc && npc.placement && npc.placement.floor,
+      npcGives:     npc && Array.isArray(npc.questsGiven) && npc.questsGiven.includes('chasse_sans_tete'),
+      monsterReal:  !!(typeof MONSTERS !== 'undefined' && MONSTERS.find(m => m.id === 'chevalier_fantome')),
+      available:    availableQuests.has('chasse_sans_tete')
+    };
+  });
+  console.log('  T1 data:', t1);
+  assert(t1.tplExists,    'template chasse_sans_tete absent du catalogue');
+  assert(t1.objType === 'kill',                 'objectif doit être un kill');
+  assert(t1.objMonster === 'chevalier_fantome', 'cible doit être chevalier_fantome');
+  assert(t1.objAmount === 2,                    'objectif doit être ×2');
+  assert(t1.rewardNoItem,  'récompense doit être cosmétique (pas d\'item/sort/stats)');
+  assert(t1.npcExists,     'PNJ sir_patrick introuvable');
+  assert(t1.npcSprite === 'fantome', 'sir_patrick doit avoir le sprite fantome');
+  assert(t1.npcFloor === 6, 'sir_patrick doit être placé à l\'étage 6');
+  assert(t1.npcGives,      'sir_patrick doit donner chasse_sans_tete');
+  assert(t1.monsterReal,   'chevalier_fantome doit exister dans MONSTERS');
+  assert(t1.available,     'chasse_sans_tete doit être dans availableQuests au démarrage');
+
+  // T2 : placement déterministe étage 6 (getNpcsForFloor + generateDungeon)
+  const t2 = await page.evaluate(() => {
+    const forFloor = getNpcsForFloor(6).map(n => n.id);
+    generateDungeon(6);
+    const placed = Array.from(npcPlacements.values());
+    return {
+      inForFloor: forFloor.includes('sir_patrick'),
+      placed:     placed.includes('sir_patrick')
+    };
+  });
+  console.log('  T2 placement:', t2);
+  assert(t2.inForFloor, 'getNpcsForFloor(6) doit inclure sir_patrick');
+  assert(t2.placed,     'generateDungeon(6) doit placer sir_patrick');
+
+  // T3 : flux accept → kill ×2 → ready (état PNJ) → flag avant remise = false
+  const t3 = await page.evaluate(() => {
+    const npc = getNpcById('sir_patrick');
+    const before = getNpcQuestState(npc);
+    acceptQuest('chasse_sans_tete');
+    const afterAccept = getNpcQuestState(npc);
+    checkKillQuests('chevalier_fantome');
+    const afterOne = getNpcQuestState(npc);
+    checkKillQuests('chevalier_fantome');
+    const afterTwo = getNpcQuestState(npc);
+    const q = activeQuests.find(x => x.id === 'chasse_sans_tete');
+    return {
+      before, afterAccept, afterOne, afterTwo,
+      prog:        q && q.objectives[0].progress,
+      done:        q && q.objectives[0].completed,
+      flagBefore:  headlessHuntMember,
+      nickCheerBefore: (typeof _nickHuntCelebration === 'function')
+        ? _nickHuntCelebration(getNpcById('sir_nicolas')) : 'absent'
+    };
+  });
+  console.log('  T3 flow:', t3);
+  assert(t3.before === 'offer',      'état initial Sir Patrick doit être offer');
+  assert(t3.afterAccept === 'active','après acceptation l\'état doit être active');
+  assert(t3.afterOne === 'active',   'après 1 kill l\'état doit rester active');
+  assert(t3.afterTwo === 'ready',    'après 2 kills l\'état doit passer ready');
+  assert(t3.prog === 2,              'progression attendue à 2');
+  assert(t3.done,                    'objectif doit être complété');
+  assert(t3.flagBefore === false,    'headlessHuntMember doit être false avant remise');
+  assert(t3.nickCheerBefore === null,'célébration de Nick ne doit PAS être débloquée avant remise');
+
+  // T4 : remise → flag posé + célébration de Nick débloquée
+  const t4 = await page.evaluate(() => {
+    const ok = turnInQuestById('chasse_sans_tete');
+    return {
+      turnInOk:   ok,
+      questGone:  !activeQuests.find(x => x.id === 'chasse_sans_tete'),
+      inCompleted: completedQuests.has('chasse_sans_tete'),
+      flagAfter:  headlessHuntMember,
+      nickCheerAfter: (typeof _nickHuntCelebration === 'function')
+        ? _nickHuntCelebration(getNpcById('sir_nicolas')) : null,
+      nickCheerOther: (typeof _nickHuntCelebration === 'function')
+        ? _nickHuntCelebration(getNpcById('moine_gras')) : 'absent'
+    };
+  });
+  console.log('  T4 deliver:', t4);
+  assert(t4.turnInOk,    'turnInQuestById a échoué malgré objectif rempli');
+  assert(t4.questGone,   'quête doit sortir d\'activeQuests après remise');
+  assert(t4.inCompleted, 'quête doit être ajoutée à completedQuests');
+  assert(t4.flagAfter === true, 'headlessHuntMember doit être true après remise');
+  assert(typeof t4.nickCheerAfter === 'string' && t4.nickCheerAfter.length > 0,
+         'célébration de Nick doit être débloquée après remise');
+  assert(t4.nickCheerOther === null,
+         'la célébration ne doit concerner que Sir Nicolas (pas les autres fantômes)');
+
+  // T5 : round-trip de save conserve le flag
+  const t5 = await page.evaluate(() => {
+    const gs = _serializeState();
+    const serialized = gs.headlessHuntMember;
+    headlessHuntMember = false;       // simule un état neuf
+    _applyState(gs);
+    return { serialized, restored: headlessHuntMember };
+  });
+  console.log('  T5 save:', t5);
+  assert(t5.serialized === true, '_serializeState doit inclure headlessHuntMember=true');
+  assert(t5.restored === true,   '_applyState doit restaurer headlessHuntMember');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ easter egg Chasse Sans Tête conforme');
+  await browser.close();
+}
+
 // ── Scénario 3bis : intégration PNJ (génération + dialogue + flux quête) ─
 
 async function scenarioNpcIntegration() {
@@ -18002,7 +18132,7 @@ async function scenarioDangerVignette() {
 }
 
 (async () => {
-  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
+  const scenarios = [scenarioStartup, scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioPartyEquipRow, scenarioChainedQuest, scenarioHeadlessHunt, scenarioNpcIntegration, scenarioVendors, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioRandomLoreNpcs, scenarioMobileSelect, scenarioMonsterImages, scenarioFloorTextures, scenarioHouseCrests, scenarioCombatMobile, scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioSceneIcons, scenarioTryAddItem, scenarioConsumableStacking, scenarioFountain, scenarioSoloSoftlock, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioEquipmentAndStatusIcons, scenarioSpellIcons, scenarioItemIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioTintCss, scenarioEquipmentPhase3bQuests, scenarioCritDodge, scenarioCritDodgeFromEquip, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioElementalSystem, scenarioElementSpells, scenarioSpellUx, scenarioRelativeControls, scenarioCanvasSwipe, scenarioNpcSprite3D, scenarioVictoryTrigger, scenarioStairsGated, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioFarmingQuests, scenarioHeadOfHouseVoice, scenarioSpellVoiceMapping, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioGuardAndFerula, scenarioCombatExtV2, scenarioBombardaSplash, scenarioAoeSpells, scenarioTeleportation, scenarioHealOoc, scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioCombatBuffs, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioShopLimits, scenarioHerbEconomy, scenarioHerbGarden, scenarioGardenQuest, scenarioLegilimensEscalation, scenarioStun, scenarioHelpTour, scenarioDelayedSearch, scenarioRespawn20Percent, scenarioIronman, scenarioFloorTheming, scenarioMonsterCombatInfo, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioLoader, scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel,
     scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioContentConsumablesTradeoffs, scenarioSpellCombos, scenarioOnboarding, scenarioCombatFeedback, scenarioCombatFX, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioEnemyIdle];
   const filters = parseScenarioFilters();
   const selected = filters.length

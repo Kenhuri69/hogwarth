@@ -87,6 +87,15 @@ Aucun nouveau système. On réutilise :
 
 ## Suivi
 - [x] Concept choisi par l'utilisateur : **La Chasse Sans Tête**.
-- [ ] Phases 1-4 — **à implémenter** (plan rédigé, implémentation différée).
-- [ ] Réserve : **dialogues** (Sir Patrick, lignes de Nick) à relire/valider
-      avant implémentation/merge.
+- [x] Phase 1 — PNJ `sir_patrick` (npcs.js) + quête `chasse_sans_tete`
+      (quests-templates.js, kill chevalier_fantome ×2) + ligne d'espoir
+      Sir Nicolas. **Textes provisoires** en place.
+- [x] Phase 2 — flag `headlessHuntMember` (state.js) + hook `completeQuest`
+      (jumeau du hook points de Maison) + badge fiche perso
+      (ui-character-sheet.js) + helper `_nickHuntCelebration` (npcs-helpers.js)
+      greffé dans `_resolveDialogSource` (npc-dialog.js, gardé par le flag).
+- [x] Phase 3 — sérialisation (save.js) + reset `startGame` (main.js) +
+      entrée MANIFEST (loader.js).
+- [x] Phase 4 — `scenarioHeadlessHunt` (tests/smoke.js) ; suite verte.
+- [x] Réserve : **dialogues** (Sir Patrick, lignes de Nick) validés par
+      l'utilisateur ; marqueurs « Textes provisoires » retirés.

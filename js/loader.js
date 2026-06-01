@@ -81,6 +81,7 @@ window.UX_safe = new Proxy({}, {
     { name: '_activePageSet',     source: 'data.js',         kind: 'fn'  },
     { name: 'fuseAct3',           source: 'quests-riddles.js', kind: 'fn' },
     { name: 'hiverClair',         source: 'state.js',        kind: 'obj' },
+    { name: 'headlessHuntMember', source: 'state.js',        kind: 'obj' },
     { name: 'RIDDLES_LUMIERE',    source: 'data.js',         kind: 'obj' },
     { name: 'NPCS',               source: 'npcs.js',         kind: 'obj' },
     { name: 'RIDDLES',            source: 'riddles.js',      kind: 'obj' },
