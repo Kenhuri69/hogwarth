@@ -351,7 +351,7 @@ function _applyState(gs) {
   hiddenGardens = new Set(gs.hiddenGardens || []);
   gardenStock = (typeof gs.gardenStock === 'number') ? gs.gardenStock : 0;
   gardenDiscovered = !!gs.gardenDiscovered;
-  // Pages du grimoire de Sandrine (quête manon_grimoire).
+  // Pages du grimoire d'Élara (quête manon_grimoire).
   pagePlacements = new Map(gs.pagePlacements || []);
   revealedPages  = new Set(gs.revealedPages || []);
   // Boutique fixe : stock & réassort. shopStock null → re-tirage paresseux.

@@ -8,19 +8,19 @@
 
 Suite directe de l'arc de Manon Aubin (PNJ étage 3, fille cachée de
 Lupin). L'Acte I (`manon_secret` → `manon_pardon`) refermait la quête du
-**père**. L'Acte II ouvre celle de la **mère**, Sandrine.
+**père**. L'Acte II ouvre celle de la **mère**, Élara.
 
 Proposition de prémisse :
 
-> Dans la doublure de la malle de Sandrine, Manon n'a pas trouvé que la
+> Dans la doublure de la malle d'Élara, Manon n'a pas trouvé que la
 > photographie : il y avait aussi un **grimoire déchiré**, pages
-> arrachées et manquantes. C'était l'œuvre de sa mère — Sandrine était
+> arrachées et manquantes. C'était l'œuvre de sa mère — Élara était
 > une sorcière douée pour la magie de givre. Mais Manon ne sait pas si
 > ce grimoire est un vrai héritage ou une dernière mise en scène : sa
 > mère a menti seize ans, alors **le vrai du faux**, elle ne sait plus.
 > Lupin lui a appris **Revelio**, le charme qui dévoile ce qui est
 > caché ; elle l'enseigne au héros pour l'aider à retrouver les pages.
-> Sandrine, avant de mourir, les a dispersées et dissimulées par
+> Élara, avant de mourir, les a dispersées et dissimulées par
 > sortilège dans le château — comme elle avait cousu la photo dans la
 > malle : *une vérité qu'il faut mériter de trouver.* Reconstituer le
 > grimoire, c'est rendre à Manon la mère qu'elle n'a jamais connue —
@@ -32,7 +32,7 @@ Tempête** (l'AoE la plus puissante du jeu, cf. `tools/sim-aoe.js` :
 total ×3 de 78/93/129, en tête du classement).
 
 **Décisions prises :**
-- Sandrine reçoit la **spécialité givre** (invention assumée — elle
+- Élara reçoit la **spécialité givre** (invention assumée — elle
   n'avait aucune spécialité magique décrite jusqu'ici). L'épithète
   givre/froid double le motif de la mère distante.
 
@@ -49,7 +49,7 @@ total ×3 de 78/93/129, en tête du classement).
 | Revelio — coût | 1-2 PM (bon marché) |
 | Revelio — hors combat | Révèle le brouillard sur ~2 cases ; une page dans la zone éclaircie apparaît en point vert sur la minimap |
 | Revelio — en combat | Révèle d'un coup le panneau d'info du monstre ciblé ; consomme le tour + le PM (voir §4b) |
-| Sandrine — magie | Spécialité **givre** (acté) |
+| Élara — magie | Spécialité **givre** (acté) |
 | Logo du sort | PNG dédié `img/icons/spells/revelio.png` à générer |
 
 > **Rebase effectué (2026-05-18).** La branche a été rebasée sur `master` :
@@ -71,7 +71,7 @@ Deux volets chaînés, après `manon_pardon` (`prereq`).
 - Revelio est donc disponible **dès la fin du préambule**, avant le
   volet de collecte — c'est voulu.
 
-### 3b. Collecte — `manon_grimoire` « Les pages de Sandrine »
+### 3b. Collecte — `manon_grimoire` « Les pages d'Élara »
 - `prereq: "manon_revelio"`.
 - Objectif : réunir les **5 pages** (suivi via `collectedPages`, cf.
   §5 — pas d'items qui encombrent le sac).
@@ -231,6 +231,10 @@ jamais la position exacte, juste l'étage.
 
 - La **2ᵉ quête « épique »** d'obtention d'un autre grimoire — à
   concevoir séparément (déjà annoncée « à discuter plus tard »).
+  → devenue l'**Acte III** (« les feuillets clairs d'Élara »), cadrée
+  dans [`manon-grimoire-easter-egg.md`](./manon-grimoire-easter-egg.md) :
+  vision lumineuse déclenchée en mode easter egg (rumeurs → trouver un
+  feuillet ouvre la quête Manon).
 - Cue 3D de la page révélée (au-delà de la minimap) — décidé : non.
 - Revelio comme sort d'utilité générale (révéler coffres/passages) —
   reste cantonné aux pages pour cette V1.
@@ -250,3 +254,7 @@ jamais la position exacte, juste l'étage.
       T7 vert).
 - [x] Phases 6 & 7 — établi de fusion + couverture smoke (T8 vert).
 - [x] **Fonctionnalité complète** — les 7 phases sont livrées.
+- [x] **Correctif post-livraison** — `fuseGrimoire` purge
+      `pagePlacements`/`revealedPages` (les 5 pages ne sont plus
+      re-fouillables après la fusion). `scenarioGrimoirePages` T8 étendu
+      (`placementsCleared`, `recollect`).

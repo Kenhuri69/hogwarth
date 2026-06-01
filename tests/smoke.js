@@ -11703,6 +11703,9 @@ async function scenarioGrimoirePages() {
 
   // T8 — établi de fusion : 5 pages → grimoire reconstitué, quête remise.
   const t8 = await page.evaluate(() => {
+    // Pose des données de pages résiduelles pour vérifier leur nettoyage.
+    pagePlacements = new Map([[3, '5,5'], [9, '8,8']]);
+    revealedPages  = new Set([3, 9]);
     player.grimoirePages = GRIMOIRE_PAGES.slice(0, 4).map(p => p.id);
     const readyAt4 = _grimoireFusionReady();
     player.grimoirePages = GRIMOIRE_PAGES.map(p => p.id);
@@ -11710,13 +11713,19 @@ async function scenarioGrimoirePages() {
     openFusionModal();
     const modalShown = document.getElementById('fusion-modal').style.display === 'flex';
     fuseGrimoire();
+    // Régression : sans nettoyage, une page revisitée serait re-ramassée.
+    currentFloor = 3; playerX = 5; playerY = 5;
+    revealedPages.add(3);                 // re-révèle au cas où
+    const recollect = _tryCollectPage();  // doit échouer (données purgées)
     return {
       readyAt4, readyAt5, modalShown,
       questDone:    completedQuests.has('manon_grimoire'),
       questGone:    !activeQuests.some(q => q.id === 'manon_grimoire'),
       pagesEmptied: player.grimoirePages.length === 0,
       gotGrimoire:  player.inventory.some(i => i.id === 'livre_glacius_tempete'),
-      modalClosed:  document.getElementById('fusion-modal').style.display === 'none'
+      modalClosed:  document.getElementById('fusion-modal').style.display === 'none',
+      placementsCleared: pagePlacements.size === 0,
+      recollect
     };
   });
   console.log('  T8 fusion :', t8);
@@ -11728,6 +11737,8 @@ async function scenarioGrimoirePages() {
   assert(t8.pagesEmptied, 'la besace de pages doit être vidée après fusion');
   assert(t8.gotGrimoire,  'le grimoire livre_glacius_tempete doit être au sac');
   assert(t8.modalClosed,  'l\'établi doit se fermer après la fusion');
+  assert(t8.placementsCleared, 'les placements de pages doivent être purgés du donjon après fusion');
+  assert(!t8.recollect,   'une page ne doit plus être re-ramassable après la fusion');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

@@ -346,7 +346,7 @@ const NPCS = [
   },
   // PNJ original : fille cachée de Lupin. Pseudo-quête en deux volets
   // qui révèle son histoire et le double secret — paternel (Remus a fui)
-  // et maternel (Sandrine a menti seize ans). Cf. .claude/plans/Manon.md.
+  // et maternel (Élara a menti seize ans). Cf. .claude/plans/Manon.md.
   {
     id:    "manon",
     name:  "Manon Aubin",
@@ -366,7 +366,7 @@ const NPCS = [
       greeting: [
         "Ne fais pas de bruit. S'il te plaît. (Elle est tapie dans l'ombre d'une salle de classe vide, les genoux contre la poitrine.) Tu n'es pas un professeur. Tant mieux — eux, je les évite.",
         "Je m'appelle Manon. Manon Aubin — le nom de ma mère ; c'est le seul que j'aie le droit de dire. Je vis dans ce château sans y être inscrite : je dors dans les salles vides, je mange ce que je trouve. Personne ne sait que je suis là. Personne ne doit savoir.",
-        "Il y a deux mois, ma mère est morte. Sandrine. C'est elle qui m'a élevée — seule, loin d'ici — et qui m'a répété toute ma vie que mon père était tombé en héros à la guerre. En vidant sa maison, j'ai trouvé une photographie cousue dans la doublure d'une vieille malle : un homme qui me tenait, bébé, et qui ne souriait pas. Au dos, un seul mot. Un nom : Lupin.",
+        "Il y a deux mois, ma mère est morte. Élara. C'est elle qui m'a élevée — seule, loin d'ici — et qui m'a répété toute ma vie que mon père était tombé en héros à la guerre. En vidant sa maison, j'ai trouvé une photographie cousue dans la doublure d'une vieille malle : un homme qui me tenait, bébé, et qui ne souriait pas. Au dos, un seul mot. Un nom : Lupin.",
         "Ce nom, il vit. Ici, plus bas, à l'étage de la Défense. C'est mon père. (Sa voix se serre.) Ma mère m'a menti chaque jour pendant seize ans, et elle est partie avant que je puisse lui demander pourquoi, en face. Alors il me reste lui. Depuis des semaines je tourne dans ces couloirs sans oser descendre lui dire que j'existe encore. Tu veux bien m'écouter ? Ça fait si longtemps que je n'ai parlé à personne."
       ],
       idle: "(Elle n'est plus tapie dans l'ombre : elle se tient près de la fenêtre, le visage tourné vers la lumière.)",
@@ -410,16 +410,16 @@ const NPCS = [
           "(Elle prend le carré de chocolat, le serre, ne le mange pas.) J'y suis allée. Tout de suite. Je ne me suis pas laissé réfléchir, sinon je n'y serais jamais allée. Je me suis plantée dans l'encadrement de sa porte et j'ai dit : « Bonjour. Je suis Manon. »",
           "Il a laissé tomber sa tasse. Je crois qu'il m'a reconnue avant même mon nom — à mes yeux, peut-être : les nuits de lune, ils virent à l'or. Comme les siens. Il n'a pas fait semblant, il n'a pas demandé « Manon qui ? ». Il a juste dit, très bas : « Tu as ses cheveux. Et mon malheur. »",
           "Puis il a ouvert un tiroir de son bureau. Plein de lettres. Des dizaines, datées, cachetées — jamais envoyées. Une par mois, depuis ma naissance. « Je les écrivais les soirs de pleine lune, m'a-t-il dit. Quand la bête me rappelait pourquoi je n'avais pas le droit de t'approcher. Te savoir loin et vivante, c'était tout ce que je pouvais t'offrir. »",
-          "Et sous les siennes, il en gardait une autre — la seule qu'il n'avait pas écrite. Elle venait de ma mère. Sandrine la lui avait envoyée il y a deux mois, en sachant qu'elle ne verrait pas l'hiver : « Elle viendra te trouver. Je n'ai jamais su défaire mon mensonge — alors j'ai cousu la vérité dans sa malle, pour qu'elle bute dessus quand je ne serai plus là. Ne la fais pas attendre comme tu m'as fait attendre, moi. » Cette photographie que j'ai trouvée… ce n'était pas un oubli. C'était ma mère qui me parlait une dernière fois, faute d'avoir jamais osé le faire en face.",
+          "Et sous les siennes, il en gardait une autre — la seule qu'il n'avait pas écrite. Elle venait de ma mère. Élara la lui avait envoyée il y a deux mois, en sachant qu'elle ne verrait pas l'hiver : « Elle viendra te trouver. Je n'ai jamais su défaire mon mensonge — alors j'ai cousu la vérité dans sa malle, pour qu'elle bute dessus quand je ne serai plus là. Ne la fais pas attendre comme tu m'as fait attendre, moi. » Cette photographie que j'ai trouvée… ce n'était pas un oubli. C'était ma mère qui me parlait une dernière fois, faute d'avoir jamais osé le faire en face.",
           "Je leur en veux encore. Aux deux, longtemps sans doute. Mais aucun ne m'a abandonnée par indifférence. Mon père n'a jamais posté ses lettres ; ma mère n'a jamais dédit son mensonge ; et moi, je suis restée des semaines en haut de cet escalier sans oser le descendre. Nous sommes une famille de gens qui aiment trop pour oser le dernier pas. Au moins l'un de nous l'aura fait. Ce n'est pas un pardon — c'est un début.",
           "(Elle hésite, puis sourit pour la première fois.) Et il y a ceci. Lupin a tenu à ce que je passe enfin sous le Choixpeau — chez la Directrice, sur un tabouret bancal, seize ans trop tard. Le chapeau a longtemps hésité : il voyait Gryffondor, le sang de mon père, le courage. Puis il a soufflé : « Non — toi, il te faut une maison qui ne te demandera jamais de mériter d'y entrer. » Et il a crié POUFSOUFFLE. La maison de ceux qu'on accueille sans condition. Pour la première fois, j'ai une place. (Elle te tend la main.) Merci. Sans toi, je serais encore tapie dans le noir à compter les pas que je n'osais pas faire."
         ]
       },
-      // ── Acte II — le grimoire de givre de Sandrine ──
+      // ── Acte II — le grimoire de givre d'Élara ──
       manon_revelio: {
         questOffer: [
           "Reste encore un peu. J'ai trouvé autre chose dans la malle de ma mère — sous la doublure, contre la photographie. Un grimoire. Les pages arrachées, la reliure brisée, comme si on l'avait déchiré dans la colère. Ou dans la peur. C'était à elle.",
-          "Sandrine avait un don, je le comprends seulement maintenant : la magie du givre. Le froid lui obéissait. (Elle effleure la couverture abîmée.) Mais je ne sais plus rien d'elle qui soit vrai. Seize ans de mensonge — alors ce grimoire, est-ce un héritage qu'elle me laisse, ou sa dernière mise en scène ? Je veux le reconstituer pour le savoir. Pour décider moi-même du vrai et du faux.",
+          "Élara avait un don, je le comprends seulement maintenant : la magie du givre. Le froid lui obéissait. (Elle effleure la couverture abîmée.) Mais je ne sais plus rien d'elle qui soit vrai. Seize ans de mensonge — alors ce grimoire, est-ce un héritage qu'elle me laisse, ou sa dernière mise en scène ? Je veux le reconstituer pour le savoir. Pour décider moi-même du vrai et du faux.",
           "Mon père m'a appris un charme pour ça : Revelio, celui qui dévoile ce qu'on a caché. Je peux te l'enseigner — mais le charme doit d'abord être accordé à un catalyseur de froid. Descends aux douves, terrasse un Strangulot : ces bestioles suintent un froid d'eau noire. Rapporte-m'en la trace."
         ],
         questActive: "Le Strangulot, tu l'as trouvé ? Cherche les douves, les galeries inondées des cachots. Le froid qu'il dégage — c'est exactement ce qu'il me faut pour accorder le charme à la magie de ma mère.",
