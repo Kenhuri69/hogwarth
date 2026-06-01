@@ -356,6 +356,16 @@ function _tryGuardCounter(defender, enemy) {
   return `🛡️→⚔️ ${defender.name} contre ${enemy.name} pour ${dmg} dégâts ! `;
 }
 
+// D3 — flash plein écran (CFX_safe.hurtFlash) quand un héros encaisse un
+// coup ≥ 15 % de ses PV max. Purement visuel, défensif, aucune mécanique
+// touchée. intensity ∈ [0,1] croît avec la fraction de PV perdue.
+function _maybeHurtFlash(applied, target) {
+  if (!target || !target.hpMax || applied <= 0) return;
+  const frac = applied / target.hpMax;
+  if (frac < 0.15) return;
+  CFX_safe.hurtFlash(Math.min(1, frac / 0.4));
+}
+
 // Résout une attaque physique ennemie sur un allié.
 // Priorité : Protego > Esquive > Garde > coup normal. Retourne le fragment de log.
 function _enemyPhysicalHit(enemy, target, charIdx) {
@@ -376,6 +386,7 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
     target.hp = Math.max(0, target.hp - mitigated);
     UX_safe.floatDmg('ally', mitigated, 'dmg');
     CFX_safe.shake(enemy && enemy.epic ? 'heavy' : 'light'); // coup encaissé (Lot 1)
+    _maybeHurtFlash(mitigated, target); // flash de dégâts encaissés (D3)
     UX_safe.logCombat(`🛡️ ${target.name} mitige ${enemy.name} : <b>−${mitigated}</b> <small>(au lieu de −${dmg})</small>`, 'magic');
     guardTurns[charIdx] = Math.max(0, guardTurns[charIdx] - 1);
     return `🛡️ ${target.name} mitige : -${mitigated} (au lieu de -${dmg}). ` + _tryGuardCounter(target, enemy);
@@ -384,6 +395,7 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
   const dmg = Math.max(0, Math.floor(raw * _resistMult(target)));
   target.hp = Math.max(0, target.hp - dmg);
   UX_safe.floatDmg('ally', dmg === 0 ? 0 : dmg, dmg === 0 ? 'miss' : 'dmg');
+  _maybeHurtFlash(dmg, target); // flash de dégâts encaissés (D3)
   UX_safe.logCombat(`${enemy.icon} ${enemy.name} → ${target.name} : <b>−${dmg} PV</b>`, 'bad');
   return `${enemy.icon} → ${target.name} : -${dmg} PV. `;
 }

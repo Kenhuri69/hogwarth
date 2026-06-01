@@ -253,6 +253,27 @@
     setTimeout(() => flash.remove(), dur);
   }
 
+  // ── Flash de dégâts encaissés (D3) ───────────────────────────
+  // Voile rouge radial bref quand le groupe encaisse un gros coup. Élément
+  // dédié (#cfx-hurt-flash) dans l'overlay de combat, auto-retiré après
+  // l'anim. `intensity` (0..1) module l'alpha du voile via la custom prop
+  // --hurt-a. Sous float-dmg (z 38) pour laisser lire les chiffres. Aucune
+  // mécanique touchée — purement visuel. reduced-motion = fade très court.
+  function hurtFlash(intensity) {
+    const ov = overlay();
+    if (!ov) return;
+    const i = Math.max(0, Math.min(1, typeof intensity === 'number' ? intensity : 0.5));
+    const old = document.getElementById('cfx-hurt-flash');
+    if (old) old.remove();
+    const flash = document.createElement('div');
+    flash.id = 'cfx-hurt-flash';
+    flash.className = 'cfx-hurt-flash';
+    flash.style.setProperty('--hurt-a', (0.30 + i * 0.45).toFixed(2)); // 0.30..0.75
+    ov.appendChild(flash);
+    const dur = prefersReducedMotion() ? 200 : 460;
+    setTimeout(() => flash.remove(), dur);
+  }
+
   // ── Pétrification de la mort (hors Ironman) — C2 ─────────────
   // Overlay plein écran qui désature + givre la scène avant le death-screen.
   // backdrop-filter (grayscale + brightness) ramping + givre en box-shadow
@@ -273,7 +294,7 @@
     return DUR;
   }
 
-  window.CombatFX = { spellBurst, healBurst, buffAura, shake, bossIntro, combatStart, petrify };
+  window.CombatFX = { spellBurst, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, petrify };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle
