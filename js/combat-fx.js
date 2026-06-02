@@ -117,6 +117,49 @@
     }
   }
 
+  // ── Désintégration d'un ennemi vaincu (G1) ───────────────────
+  // Joué UNE fois quand un ennemi passe à 0 PV (hook en tête de
+  // renderEnemyGroup, AVANT la reconstruction en état mort). Nuage qui se
+  // dissipe + cendres montantes, teintés par la catégorie : fantôme =
+  // éthéré bleuté, sinon cendre chaude. Ancré sur la carte encore présente.
+  // reduced-motion = nuage bref sans particules (le module n'en crée pas).
+  function deathDissolve(enemyIdx, monster) {
+    const layer = ensureFxLayer();
+    if (!layer) return;
+    const pos = anchorFor('enemy:' + enemyIdx);
+    if (!pos) return;
+    const ghostly = !!(monster && monster.category === 'fantôme');
+    const palette = ghostly
+      ? ['#bfe4ff', '#7fb7e0', '#eaf6ff']
+      : ['#c9b48f', '#8a7355', '#e8dcc2'];
+
+    // Nuage de dissipation (toujours, même en reduced-motion : il fade).
+    const puff = document.createElement('div');
+    puff.className = 'cfx-dissolve-puff' + (ghostly ? ' cfx-dissolve-ghost' : '');
+    puff.style.left = pos.x + 'px';
+    puff.style.top  = pos.y + 'px';
+    layer.appendChild(puff);
+    setTimeout(() => puff.remove(), 720);
+
+    // Cendres montantes (omises en reduced-motion).
+    if (prefersReducedMotion()) return;
+    const N = 12;
+    for (let i = 0; i < N; i++) {
+      const p = document.createElement('div');
+      p.className = 'cfx-dissolve-ash';
+      const dx = (Math.random() - 0.5) * 46;
+      const dy = -(30 + Math.random() * 60); // cendres qui s'élèvent
+      p.style.left = (pos.x + (Math.random() - 0.5) * 30) + 'px';
+      p.style.top  = pos.y + 'px';
+      p.style.background = palette[i % palette.length];
+      p.style.setProperty('--cfx-dx', dx.toFixed(1) + 'px');
+      p.style.setProperty('--cfx-dy', dy.toFixed(1) + 'px');
+      p.style.animationDelay = (Math.random() * 0.12).toFixed(2) + 's';
+      layer.appendChild(p);
+      setTimeout(() => p.remove(), 840);
+    }
+  }
+
   // ── Burst de soin : gerbe verte MONTANTE + halo + glyphe ✚ ────
   // Visuellement distinct du burst offensif : palette verte, particules
   // qui s'élèvent (dy fortement négatif) plutôt que projetées en étoile.
@@ -327,7 +370,7 @@
     return DUR;
   }
 
-  window.CombatFX = { spellBurst, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, petrify };
+  window.CombatFX = { spellBurst, deathDissolve, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, petrify };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle

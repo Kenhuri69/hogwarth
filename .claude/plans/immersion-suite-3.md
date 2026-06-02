@@ -59,7 +59,7 @@
 
 ## G. Punch du combat (meilleur ratio — fait en premier)
 
-### G1. Désintégration de l'ennemi vaincu ★
+### G1. Désintégration de l'ennemi vaincu ★ ✅ (livré 2026-06-01)
 Quand un ennemi tombe (`currentHp <= 0`), au lieu d'un simple swap d'icône
 grisée : une **dissolution** (fondu + particules de cendres/poussière
 montantes, teinte selon la catégorie : fantôme = bleuté/éthéré, autre =
@@ -221,3 +221,16 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
   Cap = les 4 directions (G/H/I/J) validées par l'utilisateur. Audit du
   code consigné en tête (ancrages G1→J2). Implémentation à suivre, item
   par item dans l'ordre de priorisation.
+- 2026-06-01 : **G1 livré** (PR dédiée, branche
+  `claude/immersion-g1-enemy-dissolve`). `CombatFX.deathDissolve(idx,
+  monster)` (`combat-fx.js`) : nuage `.cfx-dissolve-puff` + 12 cendres
+  montantes `.cfx-dissolve-ash`, teinte fantôme (bleuté) vs cendre chaude.
+  Hook en tête de `renderEnemyGroup` (`battle-ui.js`) : détecte les ennemis
+  fraîchement à 0 PV (`_dissolvePlayed` transient), joue avant la
+  reconstruction en état mort, ancré sur la carte encore présente. CSS
+  (`combat-fx.css`) + reduced-motion (cendres `display:none`, nuage court).
+  Test : volet **F8** ajouté à `scenarioCombatFX` (DRY — réutilise le dummy
+  fight) : nuage monté à la mort, idempotent, palette fantôme sans throw.
+  smoke vert (159) + pwa-smoke vert. **Bumps** : `combat-fx.js` (6→7),
+  `combat-fx.css` (7→8), `battle-ui.js` (3→4) ; `CACHE_VERSION` v56 → v57.
+  Pas de nouveau global → loader inchangé (méthode de `CombatFX`).

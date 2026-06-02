@@ -76,6 +76,36 @@ body.cfx-danger::after {
   100% { transform: translate(var(--cfx-dx, 0), var(--cfx-dy, 0)) scale(0.2); opacity: 0; }
 }
 
+/* ── Désintégration d'un ennemi vaincu (G1) ── */
+.cfx-dissolve-puff {
+  position: absolute;
+  width: 64px; height: 64px;
+  margin: -32px 0 0 -32px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,180,143,.85) 0%, rgba(138,115,85,.35) 55%, transparent 72%);
+  pointer-events: none;
+  animation: cfxDissolvePuff .72s ease-out forwards;
+}
+.cfx-dissolve-puff.cfx-dissolve-ghost {
+  background: radial-gradient(circle, rgba(191,228,255,.9) 0%, rgba(127,183,224,.35) 55%, transparent 74%);
+}
+@keyframes cfxDissolvePuff {
+  0%   { transform: scale(.5); opacity: .9;  filter: blur(0); }
+  100% { transform: scale(1.6); opacity: 0;  filter: blur(4px); }
+}
+.cfx-dissolve-ash {
+  position: absolute;
+  width: 6px; height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+  animation: cfxDissolveAsh .8s ease-out forwards;
+}
+@keyframes cfxDissolveAsh {
+  0%   { transform: translate(0, 0) scale(1); opacity: .95; }
+  100% { transform: translate(var(--cfx-dx, 0), var(--cfx-dy, 0)) scale(0.15); opacity: 0; }
+}
+
 /* Teintes de halo par élément (le glow). Les particules portent leur
    couleur en inline-style ; ici on colore halo + glow du glyphe. */
 .cfx-halo.cfx-feu       { background: radial-gradient(circle, rgba(255,138,42,.9) 0%, rgba(232,67,31,.2) 60%, transparent 70%); }
@@ -329,7 +359,9 @@ body.cfx-danger::after {
   /* Vignette de danger : halo statique, sans pulsation. */
   body.cfx-danger::after { animation: none; }
   .cfx-shake-light, .cfx-shake-heavy { animation: none; }
-  .cfx-particle, .cfx-heal-particle { display: none; }
+  .cfx-particle, .cfx-heal-particle, .cfx-dissolve-ash { display: none; }
+  /* Désintégration (G1) : nuage bref, fade plus court. */
+  .cfx-dissolve-puff { animation-duration: .4s; }
   .cfx-heal-halo, .cfx-heal-glyph,
   .cfx-buff-ring, .cfx-buff-glyph { animation-duration: .4s; }
   /* Flash d'entrée : fade court sans zoom (pas de translation/scale). */

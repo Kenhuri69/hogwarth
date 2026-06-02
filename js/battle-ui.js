@@ -131,6 +131,18 @@ function renderStatusBadges(target) {
 function renderEnemyGroup() {
   const container = document.getElementById('enemy-group');
   if (!container) return;
+  // Désintégration (G1) : un ennemi qui vient de tomber joue sa dissolution
+  // UNE fois, AVANT que le conteneur ne soit reconstruit en état mort — on
+  // ancre l'effet sur la carte encore présente. `_dissolvePlayed` est un
+  // flag transient (jamais sérialisé). Purement visuel, via CFX_safe.
+  if (typeof CFX_safe !== 'undefined' && Array.isArray(enemyGroup)) {
+    enemyGroup.forEach((enemy, i) => {
+      if (enemy && enemy.currentHp <= 0 && !enemy._dissolvePlayed) {
+        enemy._dissolvePlayed = true;
+        CFX_safe.deathDissolve(i, enemy);
+      }
+    });
+  }
   container.innerHTML = '';
   const count = enemyGroup.length;
 
