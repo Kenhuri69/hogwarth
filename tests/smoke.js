@@ -17976,6 +17976,7 @@ async function scenarioCombatFX() {
     hasEnter:  typeof window.CombatFX?.combatStart === 'function',
     hasHurt:   typeof window.CombatFX?.hurtFlash === 'function',
     hasStatus: typeof window.CombatFX?.statusFlash === 'function',
+    hasDissolve: typeof window.CombatFX?.deathDissolve === 'function',
     hasProxy:  typeof window.CFX_safe?.spellBurst === 'function',
   }));
   console.log('  F1 module:', f1);
@@ -17985,6 +17986,7 @@ async function scenarioCombatFX() {
   assert(f1.hasEnter, 'F1 API combatStart (C1) absente');
   assert(f1.hasHurt, 'F1 API hurtFlash (D3) absente');
   assert(f1.hasStatus, 'F1 API statusFlash (E2) absente');
+  assert(f1.hasDissolve, 'F1 API deathDissolve (G1) absente');
   assert(f1.hasProxy, 'F1 CFX_safe proxy absent');
 
   await startDummyFight(page, { hp: 50 });
@@ -18088,11 +18090,38 @@ async function scenarioCombatFX() {
     { timeout: 2000 }
   );
 
+  // F8 — désintégration de l'ennemi vaincu (G1) : tuer l'ennemi 0 puis
+  // renderEnemyGroup monte un nuage .cfx-dissolve-puff (hook réel), une
+  // seule fois (flag _dissolvePlayed) ; l'appel direct ne throw pas.
+  const f8 = await page.evaluate(() => {
+    let threw = false;
+    let puffsAfter1 = 0, puffsAfter2 = 0, flagged = false;
+    try {
+      if (enemyGroup[0]) {
+        enemyGroup[0].currentHp = 0;
+        enemyGroup[0]._dissolvePlayed = false;
+        renderEnemyGroup();                                   // hook réel
+        puffsAfter1 = document.querySelectorAll('.cfx-dissolve-puff').length;
+        flagged = enemyGroup[0]._dissolvePlayed === true;
+        renderEnemyGroup();                                   // idempotent
+        puffsAfter2 = document.querySelectorAll('.cfx-dissolve-puff').length;
+      }
+      // Appel direct (palette fantôme) ne throw pas.
+      window.CFX_safe.deathDissolve(0, { category: 'fantôme' });
+    } catch (e) { threw = true; }
+    return { threw, puffsAfter1, puffsAfter2, flagged };
+  });
+  console.log('  F8 dissolve:', f8);
+  assert(!f8.threw, 'F8 deathDissolve/renderEnemyGroup throw');
+  assert(f8.puffsAfter1 >= 1, 'F8 nuage de désintégration non monté à la mort');
+  assert(f8.flagged, 'F8 _dissolvePlayed non posé');
+  assert(f8.puffsAfter2 === f8.puffsAfter1, 'F8 désintégration rejouée (non idempotent)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error('Erreurs console pendant le scénario Combat FX');
   }
-  console.log('  ✅ Combat FX (VFX + shake + boss intro) OK');
+  console.log('  ✅ Combat FX (VFX + shake + boss intro + désintégration G1) OK');
   await browser.close();
 }
 
