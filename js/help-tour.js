@@ -8,7 +8,7 @@
 //
 // Chaque étape est aussi narrée à voix haute par McGonagall : des
 // OGG pré-synthétisés via edge-tts (voix neurale Microsoft Azure
-// `de-DE-SeraphinaMultilingualNeural`, identique à ses dialogues PNJ),
+// `fr-FR-DeniseNeural`, féminine posée et autoritaire),
 // joués par `AudioSystem.playVoice` — clés `mcgonagall_help_<n>`.
 // Régénération : `tools/gen_voice_edge.py mcgonagall_help`.
 // ============================================================
@@ -99,16 +99,18 @@ const HELP_TOUR_STEPS = [
           'Fuir. Exploite les faiblesses élémentaires des ennemis !'
   },
   {
-    targets: ['button[onclick="openSaveDialog()"]'],
+    targets: ['button[onclick="openSettingsModal()"]'],
     title: 'Sauvegarder',
-    text: 'Trois emplacements de sauvegarde manuels, plus une sauvegarde ' +
-          'automatique. Charge une partie via le bouton voisin.'
+    text: 'Le bouton « Réglages » regroupe Sauver et Charger : trois ' +
+          'emplacements manuels plus une sauvegarde automatique. Tu y ' +
+          'ajustes aussi le son et la difficulté.'
   },
   {
-    targets: ['button[onclick="openHelpMenu()"]'],
+    targets: ['button[onclick="openSettingsModal()"]'],
     title: 'Besoin d\'aide ?',
-    text: 'Ce bouton « Aide » rouvre ce guide quand tu veux — et te laisse ' +
-          'choisir un sujet précis. Bonne aventure à Poudlard !'
+    text: 'Le bouton « Aide », dans les Réglages, rouvre ce guide quand tu ' +
+          'veux — et te laisse choisir un sujet précis. Bonne aventure à ' +
+          'Poudlard !'
   }
 ];
 
@@ -172,7 +174,7 @@ function _htOptedOut() {
 // ── Narration vocale (voix McGonagall — OGG pré-synthétisés) ───
 //
 // Chaque étape est narrée par McGonagall : OGG générés via edge-tts
-// (voix neurale Microsoft Azure de-DE-SeraphinaMultilingualNeural) et
+// (voix neurale Microsoft Azure fr-FR-DeniseNeural) et
 // joués par AudioSystem.playVoice — clés `mcgonagall_help_<n>` dans
 // AudioSystem._VOICE_SAMPLES (js/audio-music.js).
 

@@ -64,9 +64,10 @@ VOICES = {
     "sprout": dict(voice="fr-FR-VivienneMultilingualNeural", rate="-3%", pitch="+0Hz"),
     # Hermione : féminine jeune, claire — incantations des sortilèges.
     "hermione": dict(voice="fr-FR-EloiseNeural", rate="-4%", pitch="+0Hz"),
-    # Tour guidé d'aide aux novices — narré par McGonagall (même voix
-    # et réglages que ses dialogues PNJ).
-    "mcgonagall_help": dict(voice="de-DE-SeraphinaMultilingualNeural", rate="-7%", pitch="+0Hz"),
+    # Tour guidé d'aide aux novices — narré par McGonagall. Voix FR
+    # native (féminine posée, autoritaire) : le tutoriel s'adresse à des
+    # débutants, la narration doit être en français sans accent étranger.
+    "mcgonagall_help": dict(voice="fr-FR-DeniseNeural", rate="-7%", pitch="+0Hz"),
 }
 
 # Textes — copie exacte de npcs.js (dialogues.greeting + dialoguesByQuest).
@@ -440,11 +441,12 @@ LINES = {
          "Objet ou Fuir. Exploite les faiblesses élémentaires des "
          "ennemis !"),
         ("mcgonagall_help_14",
-         "Sauvegarder. Trois emplacements de sauvegarde manuels, plus une "
-         "sauvegarde automatique. Charge une partie via le bouton voisin."),
+         "Sauvegarder. Le bouton Réglages regroupe Sauver et Charger : "
+         "trois emplacements manuels plus une sauvegarde automatique. Tu y "
+         "ajustes aussi le son et la difficulté."),
         ("mcgonagall_help_15",
-         "Besoin d'aide ? Ce bouton Aide rouvre ce guide quand tu veux. "
-         "Bonne aventure à Poudlard !"),
+         "Besoin d'aide ? Le bouton Aide, dans les Réglages, rouvre ce "
+         "guide quand tu veux. Bonne aventure à Poudlard !"),
     ],
 }
 
