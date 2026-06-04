@@ -3076,6 +3076,9 @@ button.shop-tab.active {
 #psel-tile-film .psel-tile-photo {
   background-image: url('../img/scenes/film_heroes.jpg');
 }
+#psel-tile-aube .psel-tile-photo {
+  background-image: url('../img/scenes/title.jpg');
+}
 .psel-tile-veil {
   position: absolute; inset: 0;
   background: linear-gradient(180deg,

@@ -195,6 +195,15 @@
               <span class="psel-tile-note">6 héros originaux de Poudlard.</span>
             </span>
           </button>
+          <button type="button" id="psel-tile-aube" class="psel-group-tile psel-tile-image" onclick="pselOpenGroup('aube')">
+            <span class="psel-tile-photo"></span>
+            <span class="psel-tile-veil"></span>
+            <span class="psel-tile-body">
+              <img class="psel-tile-emblem" src="img/icons/crest_aube.png" alt="">
+              <span class="psel-tile-name">La Garde de l'Aube</span>
+              <span class="psel-tile-note">2 jeunes sorciers de Poudlard.</span>
+            </span>
+          </button>
         </div>
         <div class="psel-nav">
           <button class="psel-back" onclick="pselGoStep(1)">◂ Retour</button>
@@ -312,6 +321,30 @@
         <div class="hero-name">Jeanne d'Argenciel</div>
         <div class="hero-role">Charmeuse · Gryffondor</div>
         <div class="hero-tag">Ses sortilèges chantent comme des étoiles.</div>
+      </button>
+    </div>
+    </div>
+    <!-- Groupe 3 — La Garde de l'Aube -->
+    <div class="hero-section" data-group="aube" style="display:none">
+    <div class="hero-section-title"><img class="hero-section-emblem" src="img/icons/crest_aube.png" alt="">La Garde de l'Aube</div>
+    <div class="hero-grid">
+      <button class="hero-card" data-key="agathe" onclick="toggleHero('agathe')">
+        <div class="hero-portrait-wrap">
+          <img src="img/agathe.png" alt="Agathe">
+          <div class="hero-badge">1</div>
+        </div>
+        <div class="hero-name">Agathe Lumiflore</div>
+        <div class="hero-role">Enchanteresse florale · Gryffondor</div>
+        <div class="hero-tag">La vie s'épanouit sous ses sortilèges.</div>
+      </button>
+      <button class="hero-card" data-key="olivier" onclick="toggleHero('olivier')">
+        <div class="hero-portrait-wrap">
+          <img src="img/olivier.png" alt="Olivier">
+          <div class="hero-badge">2</div>
+        </div>
+        <div class="hero-name">Olivier de Clairval</div>
+        <div class="hero-role">Mage de combat · Serdaigle</div>
+        <div class="hero-tag">Chaque sortilège frappe comme la foudre.</div>
       </button>
     </div>
     </div>
