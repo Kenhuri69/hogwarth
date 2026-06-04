@@ -422,7 +422,8 @@ Object.assign(AudioSystem, {
   // bord est purement audio — n'altère aucun état de jeu / RNG de simulation.
   maybeAmbientBark(floor) {
     if (this.isMuted || this.inCombat || this.inMenu) return false;
-    if (Math.random() >= (this._AMBIENT_BARK_CHANCE || 0.07)) return false;
+    const chance = (typeof this._AMBIENT_BARK_CHANCE === 'number') ? this._AMBIENT_BARK_CHANCE : 0.07;
+    if (Math.random() >= chance) return false;
     this.init();
     let zone = 'intro';
     if (typeof getFloorTheme === 'function') {
