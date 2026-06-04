@@ -225,6 +225,14 @@ const CHARACTERS = {
     wand:"Baguette de Cerisier en Fleur", armor:"Robe de Gryffondor", acc:"Couronne de Fleurs",
     spells:["Episkey","Ferula","Wingardium Leviosa","Protego"],
     tagline:"Enchanteresse florale — la vie s'épanouit sous ses sortilèges."
+  },
+  olivier: { name:"Olivier de Clairval", icon:"🔥", class:"Élève de Serdaigle",
+    imgSrc:"img/olivier.png", role:"Mage de combat",
+    hp:29, sp:33, str:7, int:15, agi:12, end:8, lck:12, mag:15,
+    atk:4, def:2,
+    wand:"Baguette de Chêne Ardent", armor:"Robe de Serdaigle", acc:"Plume d'Aigle",
+    spells:["Incendio","Stupefix","Protego","Episkey"],
+    tagline:"Mage de combat — chaque sortilège frappe comme la foudre."
   }
 };
 

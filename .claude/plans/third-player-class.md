@@ -40,3 +40,19 @@ d'ajouter la tuile (Vue A) + la section héros (Vue B, `data-group="aube"`).
   passif Poufsouffle) — observés AUSSI sur l'état propre `master` (stash),
   donc indépendants de cet ajout (qui ne touche ni la génération de donjon
   ni les passifs de Maison).
+
+## Ajout #2 — Olivier de Clairval (2ᵉ héros du groupe)
+- Rôle : **Mage de combat** (offensif élémentaire, MAG élevée, glass cannon).
+- Maison : **Serdaigle** (demandé : « propose une maison pour équilibrer » —
+  le groupe était 100 % Gryffondor ; Serdaigle = maison du savoir, bonus
+  +MAG, idéal pour un mage de combat). ⚠️ La photo source le montre en robe
+  de Gryffondor → léger écart visuel signalé à l'utilisateur (la Maison de
+  gameplay `chosenHouse` est de toute façon choisie séparément ; `class`
+  n'est que du flavor de carte).
+- [x] Portrait `img/olivier.png` (+ -original) — anneau sobre de `maxence.png`
+  (réf. garçon, or uni sans gemme).
+- [x] `js/data.js` — entrée `CHARACTERS.olivier`.
+- [x] `index.html` — carte héros dans la section `data-group="aube"` +
+  note de tuile « 2 jeunes sorciers de Poudlard ».
+- [x] Vérif headless dédiée : loader OK, cartes `agathe,olivier`, démarrage
+  duo Agathe+Olivier OK, 0 erreur JS.
