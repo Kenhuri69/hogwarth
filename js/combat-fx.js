@@ -160,6 +160,43 @@
     }
   }
 
+  // ── Flash de cast côté lanceur (G2) ──────────────────────────
+  // Bref halo teinté élément à l'ancre du lanceur (typiquement 'ally') au
+  // moment où un sort part, pour qu'il « émane » du personnage. Quelques
+  // étincelles montantes en complément (omises en reduced-motion). Plus
+  // léger que spellBurst (qui éclate sur la cible) — réutilise les teintes
+  // de halo élémentaires existantes (.cfx-halo.cfx-<element>).
+  function castFlash(casterKey, element) {
+    const layer = ensureFxLayer();
+    if (!layer) return;
+    const pos = anchorFor(casterKey || 'ally');
+    if (!pos) return;
+    const def = ELEMENTS[element] || ELEMENTS.physique;
+
+    const halo = document.createElement('div');
+    halo.className = 'cfx-halo cfx-cast-halo ' + def.cls;
+    halo.style.left = pos.x + 'px';
+    halo.style.top  = pos.y + 'px';
+    layer.appendChild(halo);
+    setTimeout(() => halo.remove(), 500);
+
+    if (prefersReducedMotion()) return;
+    const N = 6;
+    for (let i = 0; i < N; i++) {
+      const p = document.createElement('div');
+      p.className = 'cfx-cast-spark';
+      const dx = (Math.random() - 0.5) * 30;
+      const dy = -(14 + Math.random() * 26); // étincelles montantes
+      p.style.left = (pos.x + (Math.random() - 0.5) * 18) + 'px';
+      p.style.top  = pos.y + 'px';
+      p.style.background = def.colors[i % def.colors.length];
+      p.style.setProperty('--cfx-dx', dx.toFixed(1) + 'px');
+      p.style.setProperty('--cfx-dy', dy.toFixed(1) + 'px');
+      layer.appendChild(p);
+      setTimeout(() => p.remove(), 580);
+    }
+  }
+
   // ── Burst de soin : gerbe verte MONTANTE + halo + glyphe ✚ ────
   // Visuellement distinct du burst offensif : palette verte, particules
   // qui s'élèvent (dy fortement négatif) plutôt que projetées en étoile.
@@ -370,7 +407,7 @@
     return DUR;
   }
 
-  window.CombatFX = { spellBurst, deathDissolve, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, petrify };
+  window.CombatFX = { spellBurst, deathDissolve, castFlash, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, petrify };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle

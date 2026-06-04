@@ -79,7 +79,7 @@ cendre chaude) jouée **une fois**, puis l'état `enemy-dead` final.
   `.cfx-dissolve-layer` montée puis auto-retirée, pas de throw ; idempotent
   (2ᵉ appel no-op) ; reduced-motion → 0 particule.
 
-### G2. Feedback de cast côté lanceur
+### G2. Feedback de cast côté lanceur ✅ (livré 2026-06-01)
 Quand un héros lance un sort, sa carte (`ally`) ne réagit pas. Ajouter un
 **flash + léger recul teinté élément** à l'origine du sort, pour que le
 projectile « parte » du lanceur.

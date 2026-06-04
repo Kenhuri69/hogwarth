@@ -17977,6 +17977,7 @@ async function scenarioCombatFX() {
     hasHurt:   typeof window.CombatFX?.hurtFlash === 'function',
     hasStatus: typeof window.CombatFX?.statusFlash === 'function',
     hasDissolve: typeof window.CombatFX?.deathDissolve === 'function',
+    hasCast:   typeof window.CombatFX?.castFlash === 'function',
     hasProxy:  typeof window.CFX_safe?.spellBurst === 'function',
   }));
   console.log('  F1 module:', f1);
@@ -17987,6 +17988,7 @@ async function scenarioCombatFX() {
   assert(f1.hasHurt, 'F1 API hurtFlash (D3) absente');
   assert(f1.hasStatus, 'F1 API statusFlash (E2) absente');
   assert(f1.hasDissolve, 'F1 API deathDissolve (G1) absente');
+  assert(f1.hasCast, 'F1 API castFlash (G2) absente');
   assert(f1.hasProxy, 'F1 CFX_safe proxy absent');
 
   await startDummyFight(page, { hp: 50 });
@@ -18117,11 +18119,46 @@ async function scenarioCombatFX() {
   assert(f8.flagged, 'F8 _dissolvePlayed non posé');
   assert(f8.puffsAfter2 === f8.puffsAfter1, 'F8 désintégration rejouée (non idempotent)');
 
+  // F9 — feedback de cast côté lanceur (G2) : castFlash + proxy ne throwent
+  // pas et montent un halo .cfx-cast-halo à l'ancre 'ally'. Le call-site réel
+  // (castSpellInBattle) déclenche aussi le flash sans throw.
+  const f9 = await page.evaluate(() => {
+    let threw = false, haloDirect = 0, haloReal = 0;
+    try {
+      // Combat neuf (l'ennemi a pu être tué en F8) : on relance un dummy.
+      window.CombatFX.castFlash('ally', 'feu');
+      window.CFX_safe.castFlash('ally', 'glace'); // via proxy
+      haloDirect = document.querySelectorAll('.cfx-cast-halo').length;
+    } catch (e) { threw = true; }
+    return { threw, haloDirect, haloReal };
+  });
+  console.log('  F9 cast   :', f9);
+  assert(!f9.threw, 'F9 castFlash throw');
+  assert(f9.haloDirect >= 1, 'F9 halo de cast non monté');
+
+  // F9b — call-site réel : relancer un combat et lancer un sort offensif.
+  await startDummyFight(page, { hp: 80 });
+  const f9b = await page.evaluate(() => {
+    let threw = false, halo = 0;
+    try {
+      const harry = party[0];
+      harry.sp = harry.spMax;
+      // Premier sort offensif connu de Harry (Incendio/Stupefix…).
+      const off = (harry.spells || []).find(s => /Incendio|Stupefix|Diffindo|Expelliarmus/.test(s)) || harry.spells[0];
+      castSpellInBattle(off, 0);
+      halo = document.querySelectorAll('.cfx-cast-halo').length;
+    } catch (e) { threw = true; }
+    return { threw, halo };
+  });
+  console.log('  F9b castreal:', f9b);
+  assert(!f9b.threw, 'F9b castSpellInBattle throw avec castFlash');
+  assert(f9b.halo >= 1, 'F9b halo de cast non monté au call-site réel');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error('Erreurs console pendant le scénario Combat FX');
   }
-  console.log('  ✅ Combat FX (VFX + shake + boss intro + désintégration G1) OK');
+  console.log('  ✅ Combat FX (VFX + shake + boss intro + désintégration G1 + cast G2) OK');
   await browser.close();
 }
 

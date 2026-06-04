@@ -1008,6 +1008,9 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
     const _single = new Set(['stun', 'burn', 'instant', 'lifesteal', 'curse', 'imperius']);
     const _heal = new Set(['heal', 'support_regen', 'support_regen_aoe', 'heal_aoe']);
     const _buff = new Set(['shield', 'patronus_maxima']);
+    // G2 — feedback côté lanceur : le sort « émane » du personnage actif
+    // avant d'éclater sur la cible. Halo teinté élément à l'ancre 'ally'.
+    CFX_safe.castFlash('ally', _el);
     if (_aoe.has(spell.effect) && typeof livingEnemies === 'function') {
       livingEnemies().forEach(e => CFX_safe.spellBurst(`enemy:${enemyGroup.indexOf(e)}`, _el));
     } else if (_single.has(spell.effect)) {

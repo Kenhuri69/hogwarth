@@ -106,6 +106,31 @@ body.cfx-danger::after {
   100% { transform: translate(var(--cfx-dx, 0), var(--cfx-dy, 0)) scale(0.15); opacity: 0; }
 }
 
+/* ── Flash de cast côté lanceur (G2) ── */
+/* Modifie le halo de base : plus petit, plus rapide (le sort « part »). */
+.cfx-cast-halo {
+  width: 46px; height: 46px;
+  margin: -23px 0 0 -23px;
+  animation: cfxCastHalo .5s ease-out forwards;
+}
+@keyframes cfxCastHalo {
+  0%   { transform: scale(0.3); opacity: 0; }
+  40%  { opacity: .9; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+.cfx-cast-spark {
+  position: absolute;
+  width: 5px; height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  box-shadow: 0 0 6px currentColor;
+  animation: cfxCastSpark .56s ease-out forwards;
+}
+@keyframes cfxCastSpark {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--cfx-dx, 0), var(--cfx-dy, 0)) scale(0.2); opacity: 0; }
+}
+
 /* Teintes de halo par élément (le glow). Les particules portent leur
    couleur en inline-style ; ici on colore halo + glow du glyphe. */
 .cfx-halo.cfx-feu       { background: radial-gradient(circle, rgba(255,138,42,.9) 0%, rgba(232,67,31,.2) 60%, transparent 70%); }
@@ -359,7 +384,7 @@ body.cfx-danger::after {
   /* Vignette de danger : halo statique, sans pulsation. */
   body.cfx-danger::after { animation: none; }
   .cfx-shake-light, .cfx-shake-heavy { animation: none; }
-  .cfx-particle, .cfx-heal-particle, .cfx-dissolve-ash { display: none; }
+  .cfx-particle, .cfx-heal-particle, .cfx-dissolve-ash, .cfx-cast-spark { display: none; }
   /* Désintégration (G1) : nuage bref, fade plus court. */
   .cfx-dissolve-puff { animation-duration: .4s; }
   .cfx-heal-halo, .cfx-heal-glyph,
