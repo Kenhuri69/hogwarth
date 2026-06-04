@@ -216,6 +216,15 @@ const CHARACTERS = {
     wand:"Baguette d'Étoile", armor:"Robe de Gryffondor", acc:"Grimoire de Sortilèges",
     spells:["Wingardium Leviosa","Protego","Episkey","Lumos Maxima"],
     tagline:"Petite Gryffondor espiègle — ses sortilèges chantent comme des étoiles."
+  },
+  // ── La Garde de l'Aube ────────────────────────────────────
+  agathe: { name:"Agathe Lumiflore", icon:"🌸", class:"Élève de Gryffondor",
+    imgSrc:"img/agathe.png", role:"Enchanteresse florale",
+    hp:31, sp:32, str:6, int:14, agi:11, end:11, lck:13, mag:14,
+    atk:3, def:3,
+    wand:"Baguette de Cerisier en Fleur", armor:"Robe de Gryffondor", acc:"Couronne de Fleurs",
+    spells:["Episkey","Ferula","Wingardium Leviosa","Protego"],
+    tagline:"Enchanteresse florale — la vie s'épanouit sous ses sortilèges."
   }
 };
 

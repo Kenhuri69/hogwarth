@@ -7,6 +7,7 @@
   - step_difficulty.png  — fil d'Ariane, étape « Difficulté » (baguettes croisées)
   - crest_film.png       — emblème groupe « Les Héros du Film » (éclair)
   - crest_astres.png     — emblème groupe « Le Cercle des Astres » (lune + étoiles)
+  - crest_aube.png       — emblème groupe « La Garde de l'Aube » (soleil levant)
 
 Procédural via Pillow. Lancer depuis la racine du projet :
     python3 tools/gen_intro_icons.py
@@ -203,6 +204,34 @@ def m_crest_astres():
     return ImageChops.lighter(m, stars)
 
 
+def m_crest_aube():
+    """Emblème groupe « La Garde de l'Aube » : soleil levant + rayons."""
+    m = _ring()
+    sun = new_mask()
+    sd = ImageDraw.Draw(sun)
+    scx, scy = 0.5 * W, 0.60 * W
+    sr = 0.17 * W
+    # Disque solaire
+    sd.ellipse([scx - sr, scy - sr, scx + sr, scy + sr], fill=255)
+    # Rayons triangulaires dans l'hémisphère supérieur
+    for k in range(7):
+        ang = math.pi + (k + 0.5) * math.pi / 7   # de gauche à droite, vers le haut
+        base = sr * 1.18
+        tip = sr * 1.95
+        nx, ny = math.cos(ang), math.sin(ang)
+        # perpendiculaire pour la largeur de base
+        px, py = -ny, nx
+        half = sr * 0.12
+        sd.polygon([
+            (scx + nx * tip,            scy + ny * tip),
+            (scx + nx * base + px * half, scy + ny * base + py * half),
+            (scx + nx * base - px * half, scy + ny * base - py * half),
+        ], fill=255)
+    # Ligne d'horizon
+    sd.rectangle([0.28 * W, 0.605 * W, 0.72 * W, 0.645 * W], fill=255)
+    return ImageChops.lighter(m, sun)
+
+
 def main():
     os.makedirs(ICONS_DIR, exist_ok=True)
     jobs = {
@@ -211,6 +240,7 @@ def main():
         "step_difficulty": m_difficulty,
         "crest_film":      m_crest_film,
         "crest_astres":    m_crest_astres,
+        "crest_aube":      m_crest_aube,
     }
     for name, fn in jobs.items():
         icon = finalize(fn())
