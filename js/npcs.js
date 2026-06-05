@@ -213,7 +213,7 @@ const NPCS = [
     name:  "Horace Slughorn",
     title: "Maître des Potions",
     sprite: "prof_h",
-    portraitImg: "img/npc/_npc_prof_h.png",
+    portraitImg: "img/npc/slughorn.png",
     icon:  "🧪",
     placement: { floor: 2, anchor: "any" },
     specialAction: {
