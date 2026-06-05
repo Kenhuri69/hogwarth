@@ -11,9 +11,9 @@
 > ⚠️ Ne PAS appliquer le template fantôme §8.3 (Règle A — sprites 512²
 > painterly transparents) : un portrait PNJ n'est pas un sprite de combat.
 >
-> **Statut V1** : `npcs.js` pointe sur `img/npc/_wizard_generic.png` en
-> attendant ce PNG dédié. Une fois le portrait livré, swap la valeur de
-> `portraitImg` sur `img/npc/marchand_ombre.png`.
+> **Statut** : ✅ **Livré** — portrait dédié `img/npc/marchand_ombre.png`
+> (256×256 RGB) intégré ; `npcs.js` pointe désormais dessus (plus sur
+> `_wizard_generic.png`).
 
 ---
 

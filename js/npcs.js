@@ -1355,7 +1355,7 @@ const NPCS = [
     title: "Voyageur sans étage",
     sprite: "vendeur",
     icon:  "🛒",
-    portraitImg: "img/npc/_wizard_generic.png",
+    portraitImg: "img/npc/marchand_ombre.png",
     // Pas de `placement` ni `random:true` : placement assuré par le
     // hook dédié dans dungeon.js. Évite la concurrence avec les pools
     // ambiants standards.
