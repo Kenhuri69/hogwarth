@@ -803,7 +803,8 @@ function eligiblePool(floor, cfg) {
 //  - Modèle REWORK (--stat-rework) : aligné sur STAT_POINT_EFFECTS réel —
 //    STR→+1 ATK +1 STR · INT→+1 INT · AGI→+1 AGI · END→+1 END +5 HP · LCK→+1 LCK.
 //    Les conversions INT→MAG (4:1) et END→DEF (4:1) sont appliquées plus tard,
-//    dans recalcEffectiveStats, à partir des _base secondaires.
+//    dans recalcEffectiveStats, à partir des _base secondaires. L'END GAGNÉE
+//    via équipement/sets donne aussi +5 PV (D2bis, appliqué après les sets).
 function applyStatPoints(c, points, cfg) {
   if (cfg && cfg.statRework) {
     c._baseAtk += points.str || 0;   // STR garde le couplage +1 ATK (D4)
@@ -941,6 +942,14 @@ function createHero(key, level, cfg, floor, partySize) {
   }
   // Bonus de set (Maison 4/4 + Ténèbres 3/3) — après l'équipement.
   applySetBonuses(c, cfg, key, partySize);
+  // END → PV max : +5 PV par point d'END GAGNÉ via équipement/sets (miroir
+  // runtime — inventory-core.js recalculateStats, D2bis). L'END de base et
+  // l'END allouée sont dans _baseEnd (l'allocation a déjà crédité hpMax de
+  // +5/pt, cf. applyStatPoints) → (c.end − c._baseEnd) isole l'END gagnée,
+  // aucun double-comptage. Toujours actif (comme au runtime), indépendant de
+  // statRework.
+  c.hpMax += 5 * Math.max(0, (c.end || 0) - (c._baseEnd || 0));
+  c.hp = c.hpMax;
   // Rework D1/D2 — conversions stat secondaire → primaire. INT→MAG et
   // END→DEF, diviseurs réglables (--int-mag-div / --end-def-div). Appliquées
   // APRÈS base + équipement + sets (miroir de la place dans recalculateStats),
