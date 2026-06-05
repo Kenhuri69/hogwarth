@@ -1,0 +1,49 @@
+@startuml architecture
+' Schéma reconstitué à partir du dessin au tableau
+' GAB / AD / $U / GCS / BI
+
+title Architecture d'intégration GAB / GCS / BI
+
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+skinparam database {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+
+' --- Source d'utilisateurs / données ---
+actor "$U" as U
+
+' --- Système GAB ---
+rectangle "GAB" as GAB {
+  component "WS" as WS
+}
+
+' --- Active Directory ---
+rectangle "AD\n(Active Directory)" as AD
+
+' --- Système GCS ---
+rectangle "GCS" as GCS {
+  database "Base\n(alimentée par U)" as GCSDB
+  component "Traitement" as PROC
+  database "new table" as NEWTABLE
+}
+
+' --- Décisionnel ---
+rectangle "BI" as BI {
+  database "Base BI" as BIDB
+}
+
+' --- Flux ---
+U --> GCSDB : alimente
+WS --> AD : membre 1 groupe
+WS <--> NEWTABLE : échange (WS <-> GCS)
+GCSDB --> PROC
+PROC --> NEWTABLE
+NEWTABLE <--> BIDB : synchronisation
+
+@enduml

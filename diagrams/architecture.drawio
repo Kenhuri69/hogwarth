@@ -1,0 +1,71 @@
+<mxfile host="app.diagrams.net" modified="2026-06-05T00:00:00.000Z" agent="claude" version="24.0.0" type="device">
+  <diagram id="archGABGCSBI" name="Architecture GAB-GCS-BI">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Source $U -->
+        <mxCell id="U" value="$U" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="440" y="40" width="90" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Systeme GAB -->
+        <mxCell id="GAB" value="GAB" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#ffffff;strokeColor=#333333;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="260" width="200" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="WS" value="WS" style="shape=process;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=14;fontStyle=1;" vertex="1" parent="GAB">
+          <mxGeometry x="60" y="90" width="90" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Active Directory -->
+        <mxCell id="AD" value="AD&#10;(Active Directory)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="480" width="120" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Systeme GCS -->
+        <mxCell id="GCS" value="GCS" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#ffffff;strokeColor=#333333;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="480" y="220" width="280" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="GCSDB" value="Base&#10;(alim. par $U)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="GCS">
+          <mxGeometry x="30" y="50" width="70" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="PROC" value="Traitement" style="shape=step;perimeter=stepPerimeter;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#333333;fontSize=11;" vertex="1" parent="GCS">
+          <mxGeometry x="40" y="150" width="90" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="NEWTABLE" value="new table" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#ffffff;strokeColor=#333333;fontSize=12;fontStyle=1;" vertex="1" parent="GCS">
+          <mxGeometry x="170" y="110" width="70" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Systeme BI -->
+        <mxCell id="BI" value="BI" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#ffffff;strokeColor=#333333;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="880" y="240" width="180" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="BIDB" value="Base BI" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#ffffff;strokeColor=#333333;fontSize=12;" vertex="1" parent="BI">
+          <mxGeometry x="55" y="60" width="70" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Flux -->
+        <mxCell id="e_u_gcs" value="alimente" style="endArrow=classic;html=1;strokeColor=#333333;fontSize=11;" edge="1" parent="1" source="U" target="GCSDB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ws_ad" value="membre 1 groupe" style="endArrow=classic;html=1;strokeColor=#333333;fontSize=11;" edge="1" parent="1" source="WS" target="AD">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_ws_gcs" value="WS &#8596; GCS" style="endArrow=classic;startArrow=classic;html=1;strokeColor=#333333;fontSize=11;" edge="1" parent="1" source="WS" target="NEWTABLE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_db_proc" style="endArrow=classic;html=1;strokeColor=#333333;" edge="1" parent="1" source="GCSDB" target="PROC">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_proc_nt" style="endArrow=classic;html=1;strokeColor=#333333;" edge="1" parent="1" source="PROC" target="NEWTABLE">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_nt_bi" value="synchronisation" style="endArrow=classic;startArrow=classic;html=1;strokeColor=#333333;fontSize=11;" edge="1" parent="1" source="NEWTABLE" target="BIDB">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
