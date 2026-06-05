@@ -421,6 +421,16 @@ function recalculateStats() {
       c.spellCritMultiplier = Math.min(2.5, c.spellCritMultiplier + 0.15);
     }
 
+    // END → PV max : chaque point d'END GAGNÉ au-delà de la base (équipement,
+    // sets, souvenirs, buffs) donne END_HP_PER PV, aligné sur l'allocation END
+    // (+5 PV). L'END de base est déjà incluse dans _baseHpMax (stats de départ),
+    // et l'allocation END incrémente _baseEnd ET _baseHpMax directement — donc
+    // dériver de (c.end − c._baseEnd) ne double-compte jamais.
+    {
+      const endHpPer = (typeof END_HP_PER === 'number') ? END_HP_PER : 5;
+      hpMaxBonus += endHpPer * Math.max(0, (c.end || 0) - (c._baseEnd || 0));
+    }
+
     // PV/PM max = base (croît au level-up / allocation END) + bonus
     // d'équipement. Le bonus n'affecte PAS hp/sp courants ; au
     // déséquipement, on clamp hp/sp si le max a baissé.

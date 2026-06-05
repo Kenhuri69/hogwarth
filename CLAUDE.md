@@ -727,6 +727,7 @@ for (const slot of Object.keys(c.equipped)) {
 // base + équipement + sets (sur les stats effectives finales) :
 c.mag += Math.floor(c.int / INT_MAG_DIV);   // D1 — INT → MAG, 4:1
 c.def += Math.floor(c.end / END_DEF_DIV);   // D2 — END → DEF, 6:1
+hpMaxBonus += END_HP_PER * (c.end - c._baseEnd); // D2bis — END gagné → +5 PV/pt
 // D5 — Fortune (volet LCK) : x = LCK + somme des item.bonusFortune (sans Félix)
 c._fortuneX = c.lck + sumBonusFortune;
 c.fortune   = _fortuneCurve(c._fortuneX);   // courbe de Hill saturante
@@ -743,6 +744,7 @@ et `.claude/plans/luck-fortune.md`.
 |---|----------|----------------|-------------|
 | D1 | INT → MAG | `recalculateStats` : `mag += floor(int/4)` | `INT_MAG_DIV=4` |
 | D2 | END → DEF | `recalculateStats` : `def += floor(end/6)` | `END_DEF_DIV=6` |
+| D2bis | END → PV max | `recalculateStats` : `hpMax += 5 × (end − _baseEnd)` — chaque point d'END GAGNÉ (équip./sets/souvenirs/buffs) donne +5 PV. L'END de base et l'END allouée sont exclues (déjà créditées par `_baseHpMax` / l'allocation `hpMax:5`) → pas de double-comptage | `END_HP_PER=5` |
 | D3 | END → résistance DoT | `tickStatuses` (héros) : tick subi `−floor(end/12)`, plancher 1 | `END_DOT_RES_DIV=12` |
 | D4 | STR → pénétration de DEF | `executeAttack` : `effDef = def×(1−penFrac)`, `penFrac=_strPenFrac(str)` courbe de Hill (cap 0.50, demi-sat 20). STR garde aussi son +1 ATK | `STR_PEN_CAP=0.50` `STR_PEN_HALF=20` |
 | D5 (LCK) | Fortune (stat dérivée) | voir « Fortune » ci-dessous | `FORTUNE_*`, `FELIX_*` |

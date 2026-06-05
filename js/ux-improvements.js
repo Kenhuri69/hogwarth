@@ -175,7 +175,7 @@
       agi: { i:statIco('agi'), n:'Agilité',       d:"Améliore les chances de fuite et l'esquive." },
       lck: { i:statIco('lck'), n:'Chance',        d:"Augmente les drops rares et les coups critiques." },
       mag: { i:statIco('mag'), n:'Magie',         d:"Bonus de dégâts magiques : DMG = base + ⌊MAG/2⌋." },
-      end: { i:statIco('end'), n:'Endurance',     d:"Influence la régénération au repos et les PV max." },
+      end: { i:statIco('end'), n:'Endurance',     d:"Augmente les PV max (+5 par point), la Défense et la résistance aux dégâts continus." },
     };
     const m = map[key];
     if (!m) return '';
