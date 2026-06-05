@@ -359,6 +359,7 @@ function openCharacter(charIdx = 0) {
         ${_renderStatLine('img/icons/str.png', 'Force',       _renderStatValueWithBonus(c, 'str', '_baseStr'))}
         ${_renderStatLine('img/icons/int.png', 'Intelligence',_renderStatValueWithBonus(c, 'int', '_baseInt'))}
         ${_renderStatLine('img/icons/agi.png', 'Agilité',     _renderStatValueWithBonus(c, 'agi', '_baseAgi'))}
+        ${_renderStatLine('img/icons/hp.png',  'Endurance',   _renderStatValueWithBonus(c, 'end', '_baseEnd'))}
         ${_renderStatLine('img/icons/xp.png',  'Chance',      _renderStatValueWithBonus(c, 'lck', '_baseLck'))}
         ${_renderStatLine('img/icons/atk.png', 'Critique',    critPct,      true)}
         ${_renderStatLine('img/icons/mag.png', 'Crit. sort',  spellCritPct, true)}
