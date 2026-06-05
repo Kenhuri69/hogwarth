@@ -87,6 +87,7 @@ const DAMAGE_MIN_FRACTION = 0.25;
 const INT_MAG_DIV     = 4;   // D1 — INT → MAG : mag += floor(int/INT_MAG_DIV)
 const END_DEF_DIV     = 6;   // D2 — END → DEF : def += floor(end/END_DEF_DIV)
 const END_DOT_RES_DIV = 12;  // D3 — END → résistance DoT : tick subi −floor(end/12)
+const END_HP_PER      = 5;   // END → PV max : +5 PV par point d'END gagné (équip./sets), aligné sur l'allocation END (+5 PV)
 const STR_PEN_CAP     = 0.50; // D4 — pénétration de DEF (courbe de Hill, plafond)
 const STR_PEN_HALF    = 20;   // D4 — STR de demi-saturation de la courbe
 

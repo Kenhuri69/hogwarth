@@ -615,6 +615,24 @@ async function scenarioStatRework() {
   assert(t2.endDiv === 6, 'END_DEF_DIV doit être 6');
   assert(t2.defEnd30 - t2.defEnd0 === 5, `END 30 → +floor(30/6)=5 DEF, obtenu +${t2.defEnd30 - t2.defEnd0}`);
 
+  // T2bis : END → PV max. Chaque point d'END GAGNÉ via l'équipement donne
+  // END_HP_PER PV ; l'END de base (via _baseEnd) n'ajoute PAS de PV — pas de
+  // double-comptage avec l'allocation END qui crédite déjà _baseHpMax.
+  const t2b = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = {};
+    c._baseEnd = 10; recalculateStats(); const hpBase = c.hpMax;
+    c._baseEnd = 15; recalculateStats(); const hpBaseEndUp = c.hpMax;
+    c._baseEnd = 10;
+    c.equipped = { amulet: { id: 'test_end', name: 'Test END', bonusEnd: 4 } };
+    recalculateStats(); const hpGear = c.hpMax;
+    return { hpBase, hpBaseEndUp, hpGear, per: END_HP_PER };
+  });
+  console.log('  T2bis END→PV:', t2b);
+  assert(t2b.per === 5, 'END_HP_PER doit être 5');
+  assert(t2b.hpBaseEndUp === t2b.hpBase, `END de base ne donne pas de PV (pas de double-comptage), ${t2b.hpBaseEndUp} vs ${t2b.hpBase}`);
+  assert(t2b.hpGear === t2b.hpBase + 4 * t2b.per, `équipement +4 END → +${4 * t2b.per} PV, obtenu +${t2b.hpGear - t2b.hpBase}`);
+
   // T3 : D3 — END atténue chaque tick de DoT subi de floor(END/12).
   const t3 = await page.evaluate(() => {
     const c = party[0];
