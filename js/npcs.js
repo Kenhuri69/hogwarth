@@ -213,7 +213,7 @@ const NPCS = [
     name:  "Horace Slughorn",
     title: "Maître des Potions",
     sprite: "prof_h",
-    portraitImg: "img/npc/_npc_prof_h.png",
+    portraitImg: "img/npc/slughorn.png",
     icon:  "🧪",
     placement: { floor: 2, anchor: "any" },
     specialAction: {
@@ -1355,7 +1355,7 @@ const NPCS = [
     title: "Voyageur sans étage",
     sprite: "vendeur",
     icon:  "🛒",
-    portraitImg: "img/npc/_wizard_generic.png",
+    portraitImg: "img/npc/marchand_ombre.png",
     // Pas de `placement` ni `random:true` : placement assuré par le
     // hook dédié dans dungeon.js. Évite la concurrence avec les pools
     // ambiants standards.
