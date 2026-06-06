@@ -503,6 +503,15 @@ const ITEMS = [
   // + drop de coffre. Consommée au chaudron pour monter une potion en rang.
   { id:"eclat_vitalite",   name:"Éclat de Vitalité",    icon:"❤️", desc:"Matériau · concentré de vie pour potions",
     type:"material", price:35 },
+  // Objet de lore — fil rouge « Clé de Voûte des Quatre » (déclencheur).
+  // Fragment de la relique brisée des Fondateurs. Drop garanti (chance 1.0)
+  // sur un monstre-jalon par tranche : Peeves (1-3), Loup-Garou Enragé (4-6),
+  // Mangemort d'Élite (7-10). Réuni ×3 pour la quête `eclats_clef_voute`.
+  // type:"material" → ni équipable ni consommable (useItem refuse) ; compté
+  // par _countItems / _countMaterial et consommé à la remise de la quête.
+  { id:"eclat_voute",      name:"Éclat de la Clé de Voûte", icon:"🔹", rarity:"rare",
+    desc:"Un fragment de la relique des Fondateurs. Il est froid, et il chuchote.",
+    type:"material", price:0 },
   // Objet de quête — Épreuve de la Lumière Éternelle (portrait de Dumbledore).
   // Tombe des morts-vivants ; réuni ×3 pour le 1er temps de l'épreuve.
   // type:"quest" → non utilisable manuellement (useItem affiche un message).

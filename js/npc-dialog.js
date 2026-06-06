@@ -407,31 +407,43 @@ function _npcDialogPages(npc, state, resolved) {
 
 function _npcDialogActions(npc, state) {
   const out = [];
-  // Action contextuelle quête
-  if (state === 'offer') {
-    const qid = (npc.questsGiven || []).find(q =>
-      typeof isQuestOfferable === 'function' ? isQuestOfferable(q) : availableQuests.has(q)
-    );
-    if (qid) {
-      out.push({
-        label: 'Accepter la quête',
-        onClick: `acceptQuest('${qid}'); openNpcDialog('${npc.id}');`
-      });
-    }
-  } else if (state === 'ready') {
-    const qid = (npc.questsGiven || []).find(q => {
-      const a = activeQuests.find(x => x.id === q);
-      return a && (a.objectives || []).every(o => o.completed);
-    });
+  // Actions contextuelles quête — énumère TOUTES les quêtes actionnables du
+  // PNJ (offrables + remettables), pas seulement la première de la chaîne.
+  // Un PNJ peut ainsi porter une quête hors-chaîne (ex. eclats_clef_voute
+  // sur Dumbledore) en parallèle de sa chaîne d'épreuves sans la geler, et
+  // les donneurs multi-quêtes (Kingsley, Bill, Sirius) exposent enfin leurs
+  // quêtes simultanément. Les chaînes (prereq) n'ont de toute façon qu'une
+  // quête offrable à la fois.
+  const given = npc.questsGiven || [];
+  const turnInable = given.filter(q => {
+    const a = (typeof activeQuests !== 'undefined') ? activeQuests.find(x => x.id === q) : null;
     // manon_grimoire (Acte II) ET manon_acte3 (Acte III) se remettent via
     // l'établi de fusion (specialAction open_fusion), pas par le bouton
     // générique de remise.
-    if (qid && qid !== 'manon_grimoire' && qid !== 'manon_acte3') {
-      out.push({
-        label: 'Remettre la quête',
-        onClick: `turnInQuestById('${qid}'); openNpcDialog('${npc.id}');`
-      });
-    }
+    return a && (a.objectives || []).every(o => o.completed)
+      && q !== 'manon_grimoire' && q !== 'manon_acte3';
+  });
+  const offerable = given.filter(q =>
+    typeof isQuestOfferable === 'function' ? isQuestOfferable(q) : availableQuests.has(q)
+  );
+  // Libellé générique si une seule quête actionnable au total (préserve l'UX
+  // et les tests existants), titré sinon pour lever l'ambiguïté.
+  const multi = (turnInable.length + offerable.length) > 1;
+  const titleOf = (q) => {
+    const tpl = (typeof getQuestTemplate === 'function') ? getQuestTemplate(q) : null;
+    return (tpl && tpl.title) || q;
+  };
+  for (const qid of turnInable) {
+    out.push({
+      label: multi ? `Remettre : ${titleOf(qid)}` : 'Remettre la quête',
+      onClick: `turnInQuestById('${qid}'); openNpcDialog('${npc.id}');`
+    });
+  }
+  for (const qid of offerable) {
+    out.push({
+      label: multi ? `Accepter : ${titleOf(qid)}` : 'Accepter la quête',
+      onClick: `acceptQuest('${qid}'); openNpcDialog('${npc.id}');`
+    });
   }
   // Vendeur ambulant : bouton dédié pour ouvrir sa boutique
   if (Array.isArray(npc.wares) && npc.wares.length) {

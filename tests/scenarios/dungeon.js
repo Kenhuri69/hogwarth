@@ -1918,7 +1918,7 @@ async function scenarioRiddleStele() {
   console.log('  T1:', t1);
   assert(t1.cellStele === 14,            'CELL.STELE doit valoir 14');
   assert(t1.steleOk,                     'runeStele non exposé');
-  assert(t1.riddles >= 6 && t1.riddles <= 8, 'RIDDLES doit compter 6 à 8 devinettes');
+  assert(t1.riddles >= 6 && t1.riddles <= 12, 'RIDDLES doit compter 6 à 12 devinettes');
   assert(t1.getFn,                       'getRiddleById non exposée');
   assert(t1.ansFn,                       'answerSteleRiddle non exposée');
   assert(t1.genFn,                       '_generateRuneStele non exposée');

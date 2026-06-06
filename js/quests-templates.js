@@ -71,6 +71,23 @@ const QUEST_TEMPLATES = [
     reward: { xp: 500, gold: 250, stats: { hp: 20, atk: 2, def: 2, mag: 2, lck: 2 } },
     location: "Hall d'entrée (étage 1) — cible étage 10+"
   },
+  // ── Fil rouge « Clé de Voûte des Quatre » (déclencheur narratif) ──
+  // Quête optionnelle hors-chaîne donnée par Dumbledore (étage 1). PAS de
+  // prereq : elle coexiste avec la chaîne d'épreuves (cf. rework multi-quête
+  // de _npcDialogActions). Type `item` → recomptage live depuis l'inventaire
+  // + consommation des éclats à la remise. La descente reste la seule colonne
+  // obligatoire — cette quête ne gate rien (cf. plan clef-de-voute §0).
+  {
+    id: "eclats_clef_voute",
+    title: "Les Éclats de la Clé de Voûte",
+    giver: "Albus Dumbledore",
+    desc: "Rapporte trois Éclats de la Clé de Voûte, glanés sur les créatures des profondeurs. Reconstituée, la relique brisée des Fondateurs dira ce qu'elle taisait.",
+    objectives: [
+      { type: "item", itemId: "eclat_voute", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 300, gold: 150 },
+    location: "Hall d'entrée (étage 1)"
+  },
   {
     id: "mandragore_pomfresh",
     title: "Herboristerie urgente",

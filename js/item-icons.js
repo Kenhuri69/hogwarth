@@ -231,6 +231,7 @@ const ITEM_ICON_NEW_REGISTRY = {
   potion_soin_mineure_plus: 'img/icons_new/potion_soin_mineure_plus_64.png',
   potion_soin_mineure_pp:   'img/icons_new/potion_soin_mineure_pp_64.png',
   eclat_vitalite:           'img/icons_new/eclat_vitalite_64.png',
+  eclat_voute:              'img/icons_new/eclat_voute_64.png',
   potion_force:         'img/icons_new/potion_force_64.png',
   potion_defense:       'img/icons_new/potion_defense_64.png',
   elixir_celerite:      'img/icons_new/elixir_celerite_64.png',
@@ -450,6 +451,10 @@ const ITEM_ICON_SVG_REGISTRY = {
   // Éclat de Lumière (objet de quête — dumbledore_lumiere) : étoile de
   // clarté à 4 branches, halo doux. SVG inline (pas de PNG dédié).
   eclat_lumiere: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="21" fill="#fff3b0" opacity="0.28"/><path d="M32 5 L38 26 L59 32 L38 38 L32 59 L26 38 L5 32 L26 26 Z" fill="#ffe98a"/><path d="M32 15 L36 28 L49 32 L36 36 L32 49 L28 36 L15 32 L28 28 Z" fill="#fff7d8"/><circle cx="32" cy="32" r="3.6" fill="#ffffff"/></svg>`,
+  // Éclat de la Clé de Voûte (fil rouge — eclats_clef_voute) : fragment de
+  // cristal/pierre givré, facettes bleu glacé. Fallback vectoriel ; le rendu
+  // painterly PNG (img/icons_new/eclat_voute_*) reste prioritaire en jeu.
+  eclat_voute: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="34" r="20" fill="#aaccee" opacity="0.22"/><path d="M32 6 L46 24 L40 52 L24 50 L18 26 Z" fill="#9cc3e8"/><path d="M32 6 L46 24 L34 30 Z" fill="#cfe6fa"/><path d="M32 6 L34 30 L18 26 Z" fill="#bcd9f2"/><path d="M34 30 L40 52 L24 50 Z" fill="#7fb0db"/><path d="M18 26 L34 30 L24 50 Z" fill="#6fa3d0"/><path d="M32 6 L34 30" stroke="#eaf6ff" stroke-width="1.2" fill="none" opacity="0.85"/></svg>`,
   // Clé du Donjon (salle scellée §2.C) : clé de fer à anneau et panneton.
   cle_donjon: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><g transform="rotate(45 32 32)"><circle cx="32" cy="17" r="9" fill="none" stroke="#c9a23c" stroke-width="5"/><circle cx="32" cy="17" r="3.2" fill="#3a2c12"/><rect x="29.5" y="24" width="5" height="27" fill="#d4af45"/><rect x="34.5" y="40" width="8" height="4.5" fill="#d4af45"/><rect x="34.5" y="47" width="6" height="4.5" fill="#d4af45"/></g></svg>`,
 };
