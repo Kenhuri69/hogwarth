@@ -538,6 +538,12 @@ let requirementRevealed  = new Set();
 let usedRequirementRooms = new Set();
 let requirementGiftTaken = false;
 let requirementBuffSteps = 0;
+// V2 (room-of-requirement-v2.md) — thème de la Salle décidé pour la visite
+// courante de l'étage : 'refuge' | 'loot' | 'training'. Choix contextuel
+// (PV/PM bas → refuge, sac vide → loot, sinon entraînement) mémorisé par
+// étage pour rester stable tant que l'overlay est ouvert. Reset à l'entrée
+// d'étage (comme `usedRequirementRooms`) → recalcul à la prochaine visite.
+let requirementTheme     = new Map();
 // Cellules où le joueur a tué un ennemi, indexées par étage.
 // Map<floor, Set<"x,y">>. À chaque retour sur un étage déjà visité, chaque
 // entrée a 20 % de chance de re-spawner un ennemi (`_respawnEnemiesOnEntry`).

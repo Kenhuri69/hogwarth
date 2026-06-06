@@ -210,12 +210,29 @@ Nouvel SVG **inerte** (modèle `fountain`/`garden`), viewBox ~`0 0 120 130` :
       `useRequirementRoom`/`_revealRequirementRoom`, `drawRequirementSprite`).
 - [x] §1 — décisions arbitrées (2026-06-06) : thème contextuel+seed,
       entraînement = XP+PM, cue 3D = SVG + porte qui se dessine.
-- [ ] Phase 1 — état + sérialisation.
-- [ ] Phase 2 — Axe A (thèmes).
-- [ ] Phase 3 — Axe B (cue 3D).
-- [ ] Phase 4 — Axe C (rumeur²).
-- [ ] Phase 5 — cache-bump.
-- [ ] Phase 6 — smoke T7-T10 vert.
+- [x] Phase 1 — état + sérialisation (`requirementTheme` Map ; state/save/main ;
+      reset entrée d'étage côté `generateDungeon` **et** `_restoreFloorFromCache`).
+- [x] Phase 2 — Axe A : `_pickRequirementTheme`, `_requirementLootPool`, routage
+      `useRequirementRoom` (loot/training/refuge), descripteur overlay variant.
+- [x] Phase 3 — Axe B : `SCENE_ICONS.requirement` (SVG porte cintrée), refonte
+      `drawRequirementSprite` (SVG + `_drawRequirementVectorFallback`), animation
+      one-shot `_startRequirementRevealAnim` (clip bas→haut) déclenchée à la révélation.
+- [x] Phase 4 — Axe C : ligne `idleRandom` du Moine Gras.
+- [x] Phase 5 — cache-bump : 10 js bumpés (index.html + sw.js PRECACHE_URLS),
+      `CACHE_VERSION` v62→v63 ; `check_cache_versions.js` + `pwa-smoke.js` OK.
+- [x] Phase 6 — smoke `scenarioRoomOfRequirement` étendu T7-T10 (+ T6 théme) :
+      `node tests/smoke.js` vert (160) + `node tests/units.js` (67 assertions).
 
 ## Écarts / décisions d'implémentation
-_(à compléter au fil de l'implémentation)_
+- **Sélection de thème** : le départage seedé ne s'active que dans le cas
+  *strictement nul* (groupe à 100 % PV/PM **et** sac plein) ; sinon le défaut
+  hors refuge/loot est `training`. Choix conservateur pour rester lisible.
+- **Animation « porte qui se dessine »** : pilotée **côté canvas** (timestamp
+  module-level + `setInterval(40ms)` one-shot borné à 900 ms qui rappelle
+  `drawDungeon`, clip montant). Les SMIL `<animate>` du SVG ne tournent pas
+  une fois le SVG rastérisé en `Image` pour le canvas — l'animation devait
+  donc être canvas-side. Le timestamp est **non sérialisé** (FX transitoire).
+- **Icône d'overlay** : réemploi de la string `SCENE_ICONS.requirement` (même
+  SVG que le sprite 3D) dans le descriptor d'exploration, fallback 🚪 si absent.
+- **Loot sac plein** : l'or est versé même si `tryAddItem` échoue ; la Salle est
+  marquée utilisée (cohérent : elle a répondu au besoin d'or).

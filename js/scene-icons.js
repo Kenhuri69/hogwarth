@@ -519,4 +519,51 @@ const SCENE_ICONS = {
     </circle>
   </svg>`,
 
+  // Salle sur Demande V2 (room-of-requirement-v2.md §4) — porte cintrée
+  // gravée dans un pan de mur, vantail de bois patiné cerclé de fer, arche
+  // dorée et halo chaud « magie ancienne ». ViewBox 120×130 (modèle jardin).
+  requirement: `<svg viewBox="0 0 120 130" width="130" height="140" xmlns="http://www.w3.org/2000/svg" style="display:block">
+    <defs>
+      <radialGradient id="reqGlow" cx="50%" cy="42%" r="60%">
+        <stop offset="0%" stop-color="#ffe6a8" stop-opacity="0.7"/>
+        <stop offset="55%" stop-color="#c79338" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="#1a1208" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="reqStone" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#6a5e4a"/>
+        <stop offset="100%" stop-color="#2a2218"/>
+      </linearGradient>
+      <linearGradient id="reqWood" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#5a3c1e"/>
+        <stop offset="100%" stop-color="#311e0e"/>
+      </linearGradient>
+      <linearGradient id="reqGold" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f0d27a"/>
+        <stop offset="100%" stop-color="#9a7320"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="60" cy="124" rx="50" ry="5" fill="#000" opacity="0.55"/>
+    <ellipse cx="60" cy="58" rx="50" ry="50" fill="url(#reqGlow)">
+      <animate attributeName="opacity" values="0.75;1;0.75" dur="3s" repeatCount="indefinite"/>
+    </ellipse>
+    <!-- pan de mur -->
+    <rect x="22" y="20" width="76" height="98" rx="2" fill="url(#reqStone)" stroke="#1a1208" stroke-width="1.4"/>
+    <path d="M30 40 H90 M30 64 H90 M30 88 H90" stroke="#1a1208" stroke-width="0.8" opacity="0.5"/>
+    <!-- embrasure cintrée -->
+    <path d="M38 116 V58 A22 22 0 0 1 82 58 V116 Z" fill="#120c06" stroke="url(#reqGold)" stroke-width="2.4"/>
+    <!-- vantail de bois -->
+    <path d="M41 114 V58 A19 19 0 0 1 79 58 V114 Z" fill="url(#reqWood)" stroke="#1a1208" stroke-width="1"/>
+    <path d="M60 38 V114" stroke="#1a1208" stroke-width="1" opacity="0.7"/>
+    <path d="M50 46 V114 M70 46 V114" stroke="#2a1a0c" stroke-width="0.7" opacity="0.6"/>
+    <!-- ferrures -->
+    <rect x="41" y="74" width="38" height="4" fill="url(#reqGold)" opacity="0.85"/>
+    <rect x="41" y="96" width="38" height="4" fill="url(#reqGold)" opacity="0.85"/>
+    <!-- anneau-poignée -->
+    <circle cx="52" cy="88" r="4.2" fill="none" stroke="url(#reqGold)" stroke-width="2"/>
+    <!-- clef de voûte lumineuse -->
+    <circle cx="60" cy="40" r="4" fill="#ffe6a8">
+      <animate attributeName="opacity" values="1;0.5;1" dur="2.4s" repeatCount="indefinite"/>
+    </circle>
+  </svg>`,
+
 };

@@ -341,6 +341,15 @@ function _exploreDescriptors() {
   // unique encore disponible (force la réouverture si le sac était plein).
   const requirementSpent = usedRequirementRooms && usedRequirementRooms.has(`${playerX},${playerY}`);
   const requirementGift  = (typeof requirementGiftTaken !== 'undefined') && !requirementGiftTaken;
+  // V2 — thème de la Salle pour cette visite (refuge / loot / training).
+  const requirementTheme_ = (typeof _pickRequirementTheme === 'function')
+    ? _pickRequirementTheme(currentFloor || 1) : 'refuge';
+  const REQ_VARIANT = {
+    refuge:   { desc: "Au-delà de la porte, la Salle est devenue exactement ce dont le groupe a besoin : un refuge chaleureux où reprendre son souffle à l'abri du donjon.", btn: 'Entrer dans la Salle' },
+    loot:     { desc: "Au-delà de la porte, la Salle s'est faite cache aux trésors : alcôves et coffrets poussiéreux où s'entassent objets oubliés et bourses ternies.", btn: 'Fouiller la Salle' },
+    training: { desc: "Au-delà de la porte, la Salle s'est faite salle d'entraînement : mannequins enchantés, cibles mouvantes et grimoires d'exercice attendent le groupe.", btn: "S'entraîner" }
+  };
+  const reqVar = REQ_VARIANT[requirementTheme_] || REQ_VARIANT.refuge;
   const altarCost     = 40 * (currentFloor || 1);
   // Jardin d'herbes (Potions P6.b3) — stock mûr récoltable sur ce jardin révélé.
   const gardenReady   = (typeof gardenStock !== 'undefined') ? gardenStock : 0;
@@ -462,15 +471,15 @@ function _exploreDescriptors() {
     // unique la 1ʳᵉ fois. Tarie pour la visite une fois le refuge pris, sauf
     // si l'objet unique reste à récupérer (sac plein la fois précédente).
     [CELL.REQUIREMENT]: (requirementSpent && !requirementGift) ? {
-      icon:  '🚪',
+      icon:  (typeof SCENE_ICONS !== 'undefined' && SCENE_ICONS.requirement) ? SCENE_ICONS.requirement : '🚪',
       title: 'La Salle sur Demande',
-      desc:  "La Salle s'est refermée sur elle-même. Quittez cet étage et revenez plus tard pour qu'elle redevienne un refuge.",
+      desc:  "La Salle s'est refermée sur elle-même. Quittez cet étage et revenez plus tard pour qu'elle se transforme à nouveau.",
       btns:  `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     } : {
-      icon:  '🚪',
+      icon:  (typeof SCENE_ICONS !== 'undefined' && SCENE_ICONS.requirement) ? SCENE_ICONS.requirement : '🚪',
       title: 'La Salle sur Demande',
-      desc:  "Au-delà de la porte, la Salle est devenue exactement ce dont le groupe a besoin : un refuge chaleureux où reprendre son souffle à l'abri du donjon.",
-      btns:  `<button class="explore-btn" onclick="useRequirementRoom();_hideExploreOverlay()">Entrer dans la Salle</button>
+      desc:  reqVar.desc,
+      btns:  `<button class="explore-btn" onclick="useRequirementRoom();_hideExploreOverlay()">${reqVar.btn}</button>
               <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     }
   };

@@ -2258,11 +2258,13 @@ async function scenarioRoomOfRequirement() {
     requirementWalls     = new Map([[3, '8,8']]);
     requirementTrigger   = new Map([[3, '8,9']]);
     usedRequirementRooms = new Set(['8,8']);
+    requirementTheme     = new Map([[3, 'training']]); // V2
     const snap = _serializeState();
     requirementPaces = new Map(); requirementRevealed = new Set();
     requirementGiftTaken = false; requirementBuffSteps = 0;
     requirementWalls = new Map(); requirementTrigger = new Map();
     usedRequirementRooms = new Set();
+    requirementTheme = new Map();
     _applyState(snap);
     return {
       paces:    requirementPaces.get(3),
@@ -2272,12 +2274,98 @@ async function scenarioRoomOfRequirement() {
       wall:     requirementWalls.get(3),
       trig:     requirementTrigger.get(3),
       used:     usedRequirementRooms.has('8,8'),
+      theme:    requirementTheme.get(3),
     };
   });
   console.log('  T6 round-trip save:', t6);
   assert(t6.paces === 2 && t6.revealed && t6.gift, 'paces/revealed/gift doivent survivre au save');
   assert(t6.buff === 7, 'requirementBuffSteps doit survivre au save');
   assert(t6.wall === '8,8' && t6.trig === '8,9' && t6.used, 'walls/trigger/used doivent survivre au save');
+  assert(t6.theme === 'training', 'requirementTheme doit survivre au save (V2)');
+
+  // ── V2 (room-of-requirement-v2.md) ───────────────────────────
+  // T7 : sélection contextuelle du thème (refuge / loot / training) + stabilité
+  const t7 = await page.evaluate(() => {
+    const f = 2;
+    const out = {};
+    requirementTheme = new Map();
+    party.slice(0, partySize).forEach(c => { c.hp = 1; c.sp = c.spMax; });
+    out.refuge = _pickRequirementTheme(f);
+    requirementTheme = new Map();
+    party.slice(0, partySize).forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; });
+    player.inventory = [];                       // sac quasi vide → loot
+    out.loot = _pickRequirementTheme(f);
+    requirementTheme = new Map();
+    player.inventory = Array.from({ length: 8 }, () => ({ id: 'potion_s' })); // ≥6, non plein
+    out.training = _pickRequirementTheme(f);
+    out.stable = _pickRequirementTheme(f) === out.training; // mémoïsé par visite
+    return out;
+  });
+  console.log('  T7 thème:', t7);
+  assert(t7.refuge === 'refuge',     'PV/PM bas doit donner le thème refuge');
+  assert(t7.loot === 'loot',         'sac quasi vide doit donner le thème loot');
+  assert(t7.training === 'training', 'groupe sain + sac garni doit donner training');
+  assert(t7.stable,                  'le thème doit être stable sur la visite (mémoïsé)');
+
+  // T8 : effet par thème (loot = or+items, training = XP+PM, refuge = repos+buff)
+  const t8 = await page.evaluate(() => {
+    currentFloor = 5;
+    playerX = 7; playerY = 7;
+    dungeon[7][7] = CELL.REQUIREMENT;
+    requirementGiftTaken = true; // isole l'effet de thème de l'objet unique
+    const res = {};
+    // LOOT
+    usedRequirementRooms = new Set();
+    requirementTheme = new Map([[5, 'loot']]);
+    player.inventory = [];
+    const gold0 = player.gold;
+    useRequirementRoom();
+    res.lootGold  = player.gold > gold0;
+    res.lootItems = player.inventory.length >= 1;
+    res.lootUsed  = usedRequirementRooms.has('7,7');
+    // TRAINING
+    usedRequirementRooms = new Set();
+    requirementTheme = new Map([[5, 'training']]);
+    party.slice(0, partySize).forEach(c => { c.sp = 0; });
+    const xp0 = player.xp;
+    useRequirementRoom();
+    res.trainXp = player.xp > xp0;
+    res.trainSp = party[0].sp === party[0].spMax;
+    // REFUGE
+    usedRequirementRooms = new Set();
+    requirementTheme = new Map([[5, 'refuge']]);
+    party.slice(0, partySize).forEach(c => { c.hp = 1; });
+    requirementBuffSteps = 0;
+    const hp0 = party[0].hp;
+    useRequirementRoom();
+    res.refugeHp   = party[0].hp > hp0;
+    res.refugeBuff = requirementBuffSteps === REQUIREMENT_BUFF_STEPS;
+    return res;
+  });
+  console.log('  T8 effets thème:', t8);
+  assert(t8.lootGold && t8.lootItems && t8.lootUsed, 'loot : or + objets + 1×/visite');
+  assert(t8.trainXp && t8.trainSp,   'training : XP gagnée + PM restaurés');
+  assert(t8.refugeHp && t8.refugeBuff, 'refuge : PV régénérés + buff de Confort armé');
+
+  // T9 : cue 3D — SCENE_ICONS.requirement (SVG) + rendu sprite sans throw
+  const t9 = await page.evaluate(() => ({
+    svg:  typeof SCENE_ICONS.requirement === 'string' && SCENE_ICONS.requirement.includes('<svg'),
+    anim: typeof _startRequirementRevealAnim === 'function',
+    draw: (() => { try { drawRequirementSprite(60, 60, 40, false); drawRequirementSprite(60, 60, 40, true); return true; } catch (e) { return false; } })(),
+  }));
+  console.log('  T9 cue 3D:', t9);
+  assert(t9.svg,  'SCENE_ICONS.requirement doit être un SVG');
+  assert(t9.anim, '_startRequirementRevealAnim doit exister');
+  assert(t9.draw, 'drawRequirementSprite ne doit pas throw');
+
+  // T10 : rumeur² — le Moine Gras évoque la Salle dans son idleRandom
+  const t10 = await page.evaluate(() => {
+    const m = NPCS.find(n => n.id === 'moine_gras');
+    return !!(m && Array.isArray(m.dialogues.idleRandom)
+      && m.dialogues.idleRandom.some(l => /âtre et fauteuil|en a vraiment besoin/.test(l)));
+  });
+  console.log('  T10 rumeur Moine Gras:', t10);
+  assert(t10, 'le Moine Gras doit évoquer la Salle dans idleRandom');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

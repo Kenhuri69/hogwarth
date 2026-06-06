@@ -1032,6 +1032,9 @@ const NPCS = [
       // Anecdotes graduées du rigolo au sombre (piochées au hasard).
       idleRandom: [
         "Une bonne assiette et un cœur tranquille — voilà mes secrets de longévité. Ironique, pour un fantôme.",
+        // Rumeur² (room-of-requirement-v2.md §5) : évoque la Salle sans
+        // position ni geste (Sir Nicolas garde l'indice des 3 passages).
+        "On raconte qu'un mur, quelque part, sait se faire âtre et fauteuil pour qui en a vraiment besoin. Moi, je n'ai plus besoin de me reposer… mais toi, mon enfant, garde l'esprit ouvert à ce dont tu manques.",
         "Je bénis encore chaque repas des cuisines, par habitude. Les elfes font mine de ne pas voir le fantôme qui salive au-dessus du ragoût.",
         "Helga Poufsouffle disait : « Tous égaux devant la marmite. » Ça m'a toujours plu.",
         "La patience n'est pas une vertu lente, mon enfant. C'est une force qui ne se fatigue jamais.",
