@@ -1814,6 +1814,14 @@ version disponible — Rafraîchir ». Click → `skipWaiting` → reload
 automatique. Pas d'auto-reload silencieux (perte de progression en
 plein combat = no-go).
 
+> ⚠️ **Garde-fou obligatoire** (guidelines §8) : modifier un CSS/JS sans
+> bumper son `?v` = mise à jour **invisible** côté joueur (le SW sert
+> l'ancien cache). Dérouler le skill **`cache-bump`** et vérifier avec
+> `node tools/check_cache_versions.js --base origin/master` (exit 1 si un
+> asset modifié n'est pas bumpé, si `index.html`/`sw.js` divergent, ou si
+> `CACHE_VERSION` n'a pas bougé). Ce contrôle tourne aussi en **CI**
+> (`.github/workflows/test.yml`) et est rappelé par le `commit-guard`.
+
 ### Tests
 
 - `node tests/smoke.js` : tests fonctionnels (file:// — SW désactivé,
