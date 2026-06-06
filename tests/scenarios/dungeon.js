@@ -2294,9 +2294,11 @@ async function scenarioRoomOfRequirement() {
     requirementTheme = new Map();
     party.slice(0, partySize).forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; });
     player.inventory = [];                       // sac quasi vide → loot
+    player.gold = 0;                             // V3 — isole loot du seuil boutique
     out.loot = _pickRequirementTheme(f);
     requirementTheme = new Map();
     player.inventory = Array.from({ length: 8 }, () => ({ id: 'potion_s' })); // ≥6, non plein
+    player.gold = 0;                             // V3 — peu d'or → training (pas boutique)
     out.training = _pickRequirementTheme(f);
     out.stable = _pickRequirementTheme(f) === out.training; // mémoïsé par visite
     return out;
@@ -2367,11 +2369,88 @@ async function scenarioRoomOfRequirement() {
   console.log('  T10 rumeur Moine Gras:', t10);
   assert(t10, 'le Moine Gras doit évoquer la Salle dans idleRandom');
 
+  // ── V3 (room-of-requirement-v3.md) ───────────────────────────
+  // T11 : commerce éphémère — boutique (or haut), forge (Boucle 11+ forgeable),
+  // gate forge (jamais < 11), ouverture sans throw, non-consommable.
+  const t11 = await page.evaluate(() => {
+    const out = {};
+    const gold0 = player.gold;
+    // BOUTIQUE — beaucoup d'or, groupe sain, sac garni
+    requirementTheme = new Map();
+    party.slice(0, partySize).forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; });
+    player.inventory = Array.from({ length: 8 }, () => ({ id: 'potion_s' }));
+    player.gold = 100000;
+    out.boutique = _pickRequirementTheme(5);
+    // FORGE gate : étage 5 ne doit JAMAIS donner forge même si forgeable
+    out.noForgeLowFloor = _pickRequirementTheme(5) !== 'forge';
+    // FORGE — étage 12, item forgeable + essence
+    requirementTheme = new Map();
+    player.inventory.push({ id: 'essence_tenebres' }); // essence pour _countEssence
+    // garantit un item équipé améliorable non maxé
+    party[0].equipped = party[0].equipped || {};
+    party[0].equipped.wand = { id: 'wand1', name: 'Baguette', bonusAtk: 2, upgradeLevel: 0, slot: 'wand' };
+    out.forgeable = _requirementForgeable();
+    out.forge = _pickRequirementTheme(12);
+    // Ouverture sans throw + non-consommable (pas de usedRequirementRooms)
+    currentFloor = 5; playerX = 9; playerY = 9; dungeon[9][9] = CELL.REQUIREMENT;
+    requirementGiftTaken = true; usedRequirementRooms = new Set();
+    requirementTheme = new Map([[5, 'boutique']]);
+    let threw = false;
+    try { useRequirementRoom(); } catch (e) { threw = true; }
+    out.openOk = !threw;
+    out.notConsumed = !usedRequirementRooms.has('9,9');
+    player.gold = gold0;
+    return out;
+  });
+  console.log('  T11 commerce:', t11);
+  assert(t11.boutique === 'boutique',  'beaucoup d\'or → thème boutique');
+  assert(t11.noForgeLowFloor,          'forge interdite hors Boucle (< étage 11)');
+  assert(t11.forgeable && t11.forge === 'forge', 'Boucle 11+ + item forgeable + essence → forge');
+  assert(t11.openOk,                   'useRequirementRoom (commerce) ne doit pas throw');
+  assert(t11.notConsumed,              'commerce non-consommable : pas de usedRequirementRooms');
+
+  // T12 : trophée cosmétique (1×/partie) + codex méta localStorage
+  const t12 = await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_requirement_codex');
+    currentFloor = 4; playerX = 8; playerY = 8; dungeon[8][8] = CELL.REQUIREMENT;
+    requirementGiftTaken = true;            // isole du gift tiare
+    requirementTrophyTaken = false;
+    usedRequirementRooms = new Set();
+    requirementTheme = new Map([[4, 'loot']]);
+    player.inventory = [];
+    useRequirementRoom();                   // 1ʳᵉ visite loot → trophée
+    const trophy1 = requirementTrophyTaken;
+    const codex1 = getRequirementCodex();
+    // 2ᵉ visite loot (autre case) → pas de re-trophée
+    playerX = 2; playerY = 2; dungeon[2][2] = CELL.REQUIREMENT;
+    usedRequirementRooms = new Set();
+    requirementTheme = new Map([[4, 'loot']]);
+    useRequirementRoom();
+    // reveal incrémente roomsFound
+    const rooms0 = getRequirementCodex().roomsFound;
+    recordRequirementRevealed();
+    const rooms1 = getRequirementCodex().roomsFound;
+    // rendu Almanach sans throw
+    let almOk = true;
+    try { if (typeof renderRequirementAlmanac === 'function') renderRequirementAlmanac(); } catch (e) { almOk = false; }
+    return {
+      trophy1, trophyMeta: codex1.trophy, themeSeen: !!codex1.themesSeen.loot,
+      roomsInc: rooms1 === rooms0 + 1, almOk,
+      trophyFlagAfter2: requirementTrophyTaken,
+    };
+  });
+  console.log('  T12 trophée + codex:', t12);
+  assert(t12.trophy1 && t12.trophyMeta, 'loot : trophée armé (partie) + codex à vie');
+  assert(t12.themeSeen,                 'codex : thème loot enregistré');
+  assert(t12.roomsInc,                  'recordRequirementRevealed incrémente roomsFound');
+  assert(t12.trophyFlagAfter2,          'trophée reste pris (pas de doublon) sur 2ᵉ loot');
+  assert(t12.almOk,                     'renderRequirementAlmanac ne doit pas throw');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (Salle sur Demande)`);
   }
-  console.log('  ✅ Salle sur Demande — placement, geste, refuge, objet, persistance OK');
+  console.log('  ✅ Salle sur Demande — placement, geste, thèmes (refuge/loot/training/commerce), trophée, méta, persistance OK');
   await browser.close();
 }
 

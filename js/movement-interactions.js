@@ -646,6 +646,8 @@ function _revealRequirementRoom(floor) {
   if (!dungeon[wy] || dungeon[wy][wx] !== CELL.WALL) return;
   dungeon[wy][wx] = CELL.REQUIREMENT;
   requirementRevealed.add(floor);
+  // V3 — codex méta inter-parties : compte les Salles trouvées (toutes parties).
+  if (typeof recordRequirementRevealed === 'function') recordRequirementRevealed();
   setNarrative("Tu longes ce mur une troisième fois, l'esprit tendu vers ce qu'il te faut… La pierre frémit, se replie : une porte se dessine là où il n'y avait rien. La Salle sur Demande t'ouvre.");
   if (typeof addMsg === 'function') addMsg("✨ Une porte s'est dessinée dans le mur — la Salle sur Demande !", 'magic');
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
@@ -655,10 +657,11 @@ function _revealRequirementRoom(floor) {
   drawDungeon();
 }
 
-// V2 (room-of-requirement-v2.md §3) — choisit le thème de la Salle pour la
-// visite courante de l'étage : « ce dont le groupe a besoin ». PV/PM bas →
-// refuge ; sac quasi vide → loot ; sinon entraînement. Si rien ne tranche
-// (groupe au max ET sac plein), un seed départage parmi les 3 pour la variété.
+// V2/V3 — choisit le thème de la Salle pour la visite courante de l'étage :
+// « ce dont le groupe a besoin ». Priorité : PV/PM bas → refuge ; sac quasi
+// vide → loot ; (V3) Boucle 11+ avec équipement forgeable + Essence → forge ;
+// beaucoup d'or → boutique ; sinon entraînement. Si rien ne tranche (groupe au
+// max ET sac plein), un seed départage parmi refuge/loot/training/boutique.
 // Idempotent par visite : mémorisé dans `requirementTheme` (reset à l'entrée
 // d'étage). Pur (sauf mémoïsation). Garde-fou groupe KO → 'refuge'.
 function _pickRequirementTheme(floor) {
@@ -673,15 +676,33 @@ function _pickRequirementTheme(floor) {
     const hpFrac = sum('hp') / Math.max(1, sum('hpMax'));
     const spFrac = sum('sp') / Math.max(1, sum('spMax'));
     const bagFull = player.inventory.length >= 16;
+    // V3 — seuil d'or « beaucoup d'or → boutique » (× étage).
+    const goldThresh = (typeof REQUIREMENT_COMMERCE_GOLD === 'number')
+      ? REQUIREMENT_COMMERCE_GOLD * floor : 120 * floor;
+    // V3 — forge réservée à la Boucle Ténébreuse (étage 11+), et seulement si
+    // le groupe a réellement de quoi forger (item améliorable + Essence).
+    const canForge = floor >= 11 && _requirementForgeable()
+      && (typeof _countEssence === 'function' ? _countEssence() > 0 : false);
     if (Math.min(hpFrac, spFrac) < 0.5)        theme = 'refuge';
     else if (player.inventory.length < 6)      theme = 'loot';
+    else if (canForge)                         theme = 'forge';
+    else if ((player.gold | 0) >= goldThresh)  theme = 'boutique';
     else if (hpFrac >= 0.999 && spFrac >= 0.999 && bagFull) {
-      // Aucun besoin pressant : variété seedée par étage.
-      theme = ['refuge', 'loot', 'training'][(floor * 7919) % 3];
+      // Aucun besoin pressant : variété seedée par étage (forge exclue — gate
+      // endgame strict ; boutique inoffensive même sans or).
+      theme = ['refuge', 'loot', 'training', 'boutique'][(floor * 7919) % 4];
     } else theme = 'training';
   }
   requirementTheme.set(floor, theme);
   return theme;
+}
+
+// V3 — le groupe a-t-il ≥1 équipement améliorable non maxé ? Réemploi strict
+// des helpers Forge (js/forge.js). Garde-fou si la Forge n'est pas chargée.
+function _requirementForgeable() {
+  if (typeof _equippedItems !== 'function' || typeof _primaryBonus !== 'function') return false;
+  const max = (typeof FORGE_MAX_LEVEL === 'number') ? FORGE_MAX_LEVEL : 5;
+  return _equippedItems().some(({ item }) => _primaryBonus(item) && (item.upgradeLevel | 0) < max);
 }
 
 // V2 — petit pool de butin de la « Cache aux objets », scalé par étage.
@@ -693,9 +714,10 @@ function _requirementLootPool(floor) {
   return ['potion_s'];
 }
 
-// Entrer dans la Salle : effet routé par thème (refuge / loot / entraînement,
-// 1×/visite d'étage, modèle `usedFountains`) + objet unique la toute première
-// fois de la partie (indépendant du thème).
+// Entrer dans la Salle : effet routé par thème (refuge / loot / entraînement
+// 1×/visite d'étage modèle `usedFountains` ; V3 boutique / forge = réemploi pur
+// openShop/openForge, NON consommable) + objet unique la toute première fois de
+// la partie (indépendant du thème).
 function useRequirementRoom() {
   if (inBattle) return;
   if (dungeon[playerY][playerX] !== CELL.REQUIREMENT) return;
@@ -707,8 +729,23 @@ function useRequirementRoom() {
   }
   const f = currentFloor || 1;
   const theme = _pickRequirementTheme(f);
-  // Effet de thème — une fois par visite d'étage.
-  if (!usedRequirementRooms.has(key)) {
+  // V3 — thèmes commerce (boutique/forge) : ouvre l'étal/l'enclume (réemploi
+  // pur). Ré-ouvrable pour la visite → on NE marque PAS usedRequirementRooms.
+  if (theme === 'boutique' || theme === 'forge') {
+    if (typeof recordRequirementTheme === 'function') recordRequirementTheme(theme);
+    if (theme === 'forge') {
+      setNarrative("La Salle s'est faite forge clandestine : une enclume noire ronfle sur des braises éternelles, prête à mordre le métal de vos équipements.");
+      addMsg("Salle sur Demande : forge éphémère.", 'good');
+      if (typeof openForge === 'function') openForge();
+    } else {
+      setNarrative("La Salle s'est faite étal de marchand : présentoirs de fioles, parchemins et babioles utiles s'alignent sous une lanterne tamisée.");
+      addMsg("Salle sur Demande : étal de marchand.", 'good');
+      if (typeof openShop === 'function') openShop();
+    }
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+  }
+  // Effet de thème consommable — une fois par visite d'étage.
+  else if (!usedRequirementRooms.has(key)) {
     if (theme === 'loot') {
       // Cache aux objets : or + 1-2 consommables (cap 16 via tryAddItem).
       const goldGain = (typeof _applyGoldMult === 'function') ? _applyGoldMult(25 * f) : 25 * f;
@@ -726,6 +763,15 @@ function useRequirementRoom() {
       setNarrative("La Salle s'est faite cache aux trésors : alcôves et coffrets poussiéreux débordent d'objets oubliés. Vous y puisez de quoi poursuivre.");
       addMsg(`Salle sur Demande : +${goldGain} Gallions${got.length ? ' · ' + got.join(', ') : ' (sac plein)'}.`, 'good');
       if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+      // V3 — trophée cosmétique unique (collectible NON inventorié), 1×/partie,
+      // sur la 1ʳᵉ Salle « cache aux objets ». Ancre la méta-persistance.
+      if (typeof requirementTrophyTaken !== 'undefined' && !requirementTrophyTaken
+          && typeof REQUIREMENT_TROPHY !== 'undefined') {
+        requirementTrophyTaken = true;
+        if (typeof recordRequirementTrophy === 'function') recordRequirementTrophy();
+        setNarrative("Au fond d'une alcôve scintille un éclat de lumière figée. Tu le recueilles : un souvenir de la Salle, sans prix mais sans poids — l'Éclat de la Salle sur Demande.");
+        addMsg(`${REQUIREMENT_TROPHY.icon} Collecté : ${REQUIREMENT_TROPHY.name} (trophée unique).`, 'magic');
+      }
     } else if (theme === 'training') {
       // Salle d'entraînement : XP (peut faire monter de niveau) + focus PM plein.
       const xpGain = 50 * f;
@@ -747,6 +793,7 @@ function useRequirementRoom() {
       if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
     }
     usedRequirementRooms.add(key);
+    if (typeof recordRequirementTheme === 'function') recordRequirementTheme(theme); // V3 — codex
     if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'magic');
     if (theme === 'training' && typeof checkLevelUp === 'function') checkLevelUp();
   }

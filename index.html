@@ -12,7 +12,7 @@
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
 <link rel="stylesheet" href="css/style.css?v=30">
 <link rel="stylesheet" href="css/ux-improvements.css?v=2">
-<link rel="stylesheet" href="css/save-ui.css?v=1">
+<link rel="stylesheet" href="css/save-ui.css?v=2">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
 <link rel="stylesheet" href="css/help-tour.css?v=2">
 <link rel="stylesheet" href="css/pwa.css?v=1">
@@ -71,6 +71,8 @@
     <div class="hub-title">Bienvenue à Poudlard</div>
     <div class="hub-sub">Reprenez votre aventure ou commencez-en une nouvelle</div>
     <div id="start-hub-slot-list" class="slot-list hub-slot-list"></div>
+    <!-- V3 — Almanach de la Salle sur Demande (méta léger, rempli par JS si découvert) -->
+    <div id="start-hub-almanac" class="hub-almanac"></div>
     <button id="hub-new-btn" class="hub-new-btn" onclick="startHubNewGame()">
       ✦ NOUVELLE AVENTURE ✦
     </button>
@@ -1095,12 +1097,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/npcs.js?v=16"></script>
 <script src="js/npcs-helpers.js?v=1"></script>
 <script src="js/riddles.js?v=1"></script>
-<script src="js/data.js?v=20"></script>
+<script src="js/data.js?v=21"></script>
 <script src="js/data-icon-recipes.js?v=1"></script>
 <script src="js/floor-themes.js?v=2"></script>
 <script src="js/floor-events.js?v=1"></script>
 <script src="js/item-icons.js?v=17"></script>
-<script src="js/state.js?v=17"></script>
+<script src="js/state.js?v=18"></script>
 <script src="js/ui.js?v=10"></script>
 <script src="js/ui-character-sheet.js?v=4"></script>
 <script src="js/ui-settings.js?v=2"></script>
@@ -1116,9 +1118,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/renderer-sprites.js?v=4"></script>
 <script src="js/renderer-entities.js?v=2"></script>
 <script src="js/renderer-minimap.js?v=7"></script>
-<script src="js/movement.js?v=25"></script>
+<script src="js/movement.js?v=26"></script>
 <script src="js/movement-floors.js?v=3"></script>
-<script src="js/movement-interactions.js?v=9"></script>
+<script src="js/movement-interactions.js?v=10"></script>
 <script src="js/swipe-canvas.js?v=4"></script>
 <script src="js/battle.js?v=21"></script>
 <script src="js/battle-rewards.js?v=3"></script>
@@ -1138,10 +1140,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/karaoke.js?v=1"></script>
 <script src="js/intro.js?v=3"></script>
 <script src="js/shop.js?v=10"></script>
-<script src="js/save-slots.js?v=1"></script>
-<script src="js/save.js?v=20"></script>
+<script src="js/save-slots.js?v=2"></script>
+<script src="js/save.js?v=21"></script>
 <script src="js/save-visit-snapshot.js?v=1"></script>
-<script src="js/save-ui.js?v=2"></script>
+<script src="js/save-ui.js?v=3"></script>
 <script src="js/ironman.js?v=3"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
 <script src="js/multiplayer.js?v=9"></script>
@@ -1152,12 +1154,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/visit-channel.js?v=8"></script>
 <script src="js/visit-hud.js?v=5"></script>
 <script src="js/atelier-voyageur.js?v=2"></script>
-<script src="js/main.js?v=10"></script>
+<script src="js/main.js?v=11"></script>
 <script src="js/endgame.js?v=3"></script>
 <script src="js/forge.js?v=3"></script>
 <script src="js/library.js?v=3"></script>
 <script src="js/help-tour.js?v=3"></script>
-<script src="js/loader.js?v=23"></script>
+<script src="js/loader.js?v=24"></script>
 <script src="js/pwa.js?v=3"></script>
 
 </body>

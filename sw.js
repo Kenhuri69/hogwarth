@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v63';
+const CACHE_VERSION = 'hogwarth-v64';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -29,7 +29,7 @@ const PRECACHE_URLS = [
   // CSS
   './css/style.css?v=30',
   './css/ux-improvements.css?v=2',
-  './css/save-ui.css?v=1',
+  './css/save-ui.css?v=2',
   './css/ornaments.css?v=1',
   './css/help-tour.css?v=2',
   './css/pwa.css?v=1',
@@ -51,12 +51,12 @@ const PRECACHE_URLS = [
   './js/npcs.js?v=16',
   './js/npcs-helpers.js?v=1',
   './js/riddles.js?v=1',
-  './js/data.js?v=20',
+  './js/data.js?v=21',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
   './js/floor-events.js?v=1',
   './js/item-icons.js?v=17',
-  './js/state.js?v=17',
+  './js/state.js?v=18',
   './js/ui.js?v=10',
   './js/ui-character-sheet.js?v=4',
   './js/ui-settings.js?v=2',
@@ -72,9 +72,9 @@ const PRECACHE_URLS = [
   './js/renderer-sprites.js?v=4',
   './js/renderer-entities.js?v=2',
   './js/renderer-minimap.js?v=7',
-  './js/movement.js?v=25',
+  './js/movement.js?v=26',
   './js/movement-floors.js?v=3',
-  './js/movement-interactions.js?v=9',
+  './js/movement-interactions.js?v=10',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=21',
   './js/battle-rewards.js?v=3',
@@ -93,21 +93,21 @@ const PRECACHE_URLS = [
   './js/karaoke.js?v=1',
   './js/intro.js?v=3',
   './js/shop.js?v=10',
-  './js/save-slots.js?v=1',
-  './js/save.js?v=20',
+  './js/save-slots.js?v=2',
+  './js/save.js?v=21',
   './js/save-visit-snapshot.js?v=1',
-  './js/save-ui.js?v=2',
+  './js/save-ui.js?v=3',
   './js/ironman.js?v=3',
   './js/hall-of-fame.js?v=4',
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
-  './js/main.js?v=10',
+  './js/main.js?v=11',
   './js/endgame.js?v=3',
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=23',
+  './js/loader.js?v=24',
   './js/pwa.js?v=3',
 
   // Icônes PWA + premier écran

@@ -108,6 +108,18 @@ const FELIX_STEPS       = 40;   // durée du buff Félix, en pas d'exploration
 // Voir .claude/plans/room-of-requirement-easter-egg.md §3.
 const REQUIREMENT_REST_FRAC  = 0.40; // repos : +40 % PV/PM par membre vivant
 const REQUIREMENT_BUFF_STEPS = 20;   // durée du buff de Confort, en pas (+1 PV/PM par pas)
+// V3 (room-of-requirement-v3.md) — seuil d'or (× étage) du thème « boutique
+// éphémère » : beaucoup d'or → la Salle se fait étal de marchand.
+const REQUIREMENT_COMMERCE_GOLD = 120;
+// V3 — trophée cosmétique unique du thème « loot » (collectible NON inventorié :
+// pas d'entrée ITEMS, pas d'équipement, pas de cap 16). Sa découverte arme un
+// flag de partie + enregistre le codex localStorage. Pur trophée, zéro bonus.
+const REQUIREMENT_TROPHY = {
+  id:   'eclat_salle',
+  name: 'Éclat de la Salle sur Demande',
+  icon: '✦',
+  desc: "Une écharde de lumière figée, souvenir d'une Salle qui sut exactement ce qu'il te fallait."
+};
 
 // ── Célérité (D5, volet AGI) — cf. .claude/plans/agi-derived.md ──
 // Débouché post-plafond de l'AGI (crit de sort + esquive plafonnent à 35 %).
