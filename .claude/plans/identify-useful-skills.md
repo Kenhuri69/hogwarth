@@ -11,6 +11,8 @@ Créer 4 skills spécifiques au projet :
 2. `add-item-icon` — ajouter une icône d'item (pipeline `icon_factory.py`)
 3. `add-playable-character` — ajouter un héros sélectionnable
 4. `commit-guard` — garde-fou commit (plan §5 → smoke §7 → état PR §6)
+5. `ui-design-iterate` — itération UX/UI pilotée par captures desktop+mobile
+   (ajoutée après relance utilisateur : axe UX design initialement manqué)
 
 Les skills built-in (`verify`, `run`, `code-review`, `security-review`,
 `init`…) couvrent déjà les besoins génériques — non recréées.
