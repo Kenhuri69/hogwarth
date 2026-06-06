@@ -1,48 +1,118 @@
 # 03 — Trame principale
 
-**Statut :** 🟥 à écrire
+**Statut :** 🟩 proposition de référence — à valider / amender
 
-> Objectif : dérouler l'arc central de bout en bout — la menace, la descente,
-> les jalons, le climax, la résolution, et le post-game.
+> Objectif : dérouler l'arc central beat par beat. `💡` = proposition
+> narrative modifiable ; `✅` = acté dans le jeu. Voir la structure
+> étages↔actes en [04](04-structure-actes-et-etages.md).
 
-## Sections à remplir
+---
 
-### 3.1 Élément déclencheur
-> ❓ À détailler : qu'est-ce qui lance l'aventure ? (Intro Dumbledore.)
+## 3.1 Élément déclencheur
 
-### 3.2 Montée de la menace (étages 1 → 10)
-> ❓ À détailler : comment la corruption s'intensifie à mesure qu'on descend.
-> Jalons narratifs marquants par tranche d'étages (cf.
-> [04](04-structure-actes-et-etages.md)).
+> 💡 (proposition, sur base ✅)
 
-✅ (dans le jeu) Apparition progressive des forces du mal : créatures de
-l'école → mangemorts → boss canon (Fenrir Greyback, Aragog, Antonin Dolohov,
-Bellatrix) → **Voldemort Affaibli** (étage 8) → **Voldemort Ressuscité**
-(étage 10).
+Une nuit, les escaliers mobiles de Poudlard se figent **tournés vers le bas**.
+Le froid monte des cachots ; un élève disparaît. Le **portrait de Dumbledore**
+s'anime et appelle le héros : la peur a fissuré un vieux sceau sous le château,
+et seul quelqu'un qui **descend volontairement** peut le refermer.
 
-### 3.3 Climax — la chute de Voldemort
-> ❓ À détailler : mise en scène de l'affrontement final et de sa résolution.
+✅ Intro Dumbledore → quête `intro_tutoriel` → choix de Maison → entrée dans le
+donjon.
 
-✅ (dans le jeu) La victoire déclenche un discours de Dumbledore et **scelle**
-la fin de l'arc principal ; un escalier plus profond s'ouvre.
+## 3.2 Acte I — L'École (étages 1–3)
 
-### 3.4 Acte post-victoire — la Boucle Ténébreuse
-> ❓ À détailler : sens narratif du post-game. Le château se rejoue (étages
-> 11+) en version « Ténébreuse », plus profond (tranche « Ruines Anciennes »
-> à partir de 14). Pourquoi ? Que cherche le joueur désormais ?
+> 💡 (proposition) / ✅ (ancrages)
 
-✅ (dans le jeu) Les boss étages 8-10 reviennent en variantes « Ténébreux »
-(étages 18-20). Un **Gardien de la Boucle** propose des quêtes répétables de
-purge. Paliers de Maison endgame : **Mythe** (17), **Apothéose** (18), série
-**Apothéose ★ N**.
+Le familier qui se fissure. Les premières créatures sont presque domestiques —
+le chat de Rusard, Peeves, des lutins, des portraits hostiles — mais leur
+agressivité trahit la corruption naissante. Le héros apprend à explorer,
+combattre, accepter des quêtes.
 
-### 3.5 Fils rouges & thèmes
-> ❓ À détailler : 2-3 thèmes qui traversent le récit (la peur, le choix, le
-> sacrifice, l'héritage…). Comment les Maisons et les sous-intrigues les
-> incarnent.
+- **PNJ-jalons** : Pomfresh (mandragore), Mimi (le troll), Hagrid (la chouette),
+  Lockhart (le livre interdit).
+- **Beat** : comprendre que le mal **vient d'en bas**, pas de l'extérieur.
+- ✅ Tranche A « Couloirs de Poudlard », ton `intro`.
 
-## Questions de cadrage
-- La Boucle Ténébreuse a-t-elle une **fin narrative**, ou est-ce une boucle
-  assumée (prestige / score) ?
-- Y a-t-il des **points de bascule scénarisés** (cutscenes/toasts) à des
-  étages précis ?
+## 3.3 Acte II — La Descente (étages 4–6)
+
+> 💡 (proposition) / ✅ (ancrages)
+
+Les cachots. Le ton s'assombrit, l'école laisse place à la pierre froide. Des
+**mangemorts masqués** apparaissent : la corruption n'est pas qu'un phénomène
+magique, des **fidèles** œuvrent à hâter le retour de leur maître.
+
+- **Beat** : la révélation que **Voldemort se reconstitue** au fond.
+- **Sous-intrigue** possible : amorce du **grimoire d'Élara** (Manon) — une
+  histoire de givre et de deuil qui contraste avec la menace montante.
+- ✅ Tranche B « Cachots », ton `dungeon` ; transition marquée 3↔4.
+
+## 3.4 Acte III — Les Profondeurs (étages 7–10)
+
+> 💡 (proposition) / ✅ (ancrages)
+
+L'inconnu, l'abyssal. On quitte le Poudlard connu pour des **Profondeurs
+Oubliées**. Les forces ennemies montent en gamme : élite mangemort, créatures
+majeures, puis les **boss canon** qui gardent la route vers la source.
+
+- ✅ Boss : **Fenrir Greyback** (ét. 8), **Aragog** (ét. 9), **Antonin
+  Dolohov** (ét. 10), **Bellatrix**, et **Voldemort Affaibli** (ét. 8) —
+  un premier contact, encore incomplet.
+- **Beat** : chaque boss tombé **affaiblit le sceau** ; la présence de
+  Voldemort se densifie d'étage en étage.
+- ✅ Tranche C « Profondeurs Oubliées », ton `depths` ; transition 6↔7.
+
+## 3.5 Climax — La chute de Voldemort (étage 10)
+
+> 💡 (proposition) / ✅ (ancrages)
+
+Au fond des Profondeurs, **Voldemort Ressuscité** attend, pleinement reformé.
+C'est l'affrontement-pivot de tout l'arc.
+
+✅ Vaincre `voldemort_revenu` déclenche la **cinématique de victoire** (discours
+de Dumbledore) et **scelle l'arc principal**. *« L'escalier le plus profond,
+scellé par la peur, s'ouvre enfin. »*
+
+> ❓ À détailler : mise en scène du combat (phases ? dialogue avant/pendant ?
+> intervention d'un PNJ — Sirius, présent ét. 10 ?).
+
+## 3.6 Acte IV — La Boucle Ténébreuse (étages 11+)
+
+> 💡 (proposition de sens) / ✅ (ancrages)
+
+La victoire **ouvre** la faille au lieu de la fermer. Le château se rejoue,
+**corrompu** : ses créatures et ses boss reviennent en **Ténébreux**, et sous
+le fond s'ouvrent les **Ruines Anciennes** (étage 14+), antérieures à l'école.
+
+- ✅ Boss 8-10 de retour en variantes Ténébreuses aux étages 18-20.
+- ✅ **Gardien de la Boucle** (PNJ exclusif post-victoire) : quêtes de purge
+  répétables (Greyback / Aragog / Dolohov) → matériaux Forge & Bibliothèque.
+- ✅ PNJ profonds recyclés : Kingsley (8/18), Bill (9/19), Sirius (10/20).
+- ✅ Paliers de Maison endgame : **Mythe (17)**, **Apothéose (18)**, série
+  **Apothéose ★ N** (prestige « infini »), + **don à la Maison** (gold-sink).
+- ✅ Tranche D « Ruines Anciennes », ton `abyss` ; transition 13↔14.
+
+> ❓ À arbitrer : la Boucle a-t-elle une **conclusion écrite** (un dernier
+> palier narratif, une vérité sur ce qui dort sous les Ruines), ou reste-t-elle
+> une **boucle de prestige** sans fin (score, maîtrise de Maison) ?
+
+## 3.7 Fils rouges & thèmes
+
+> 💡 (proposition — cohérent avec [01 §1.7](01-synopsis-et-pitch.md))
+
+- **La peur comme sceau** : descendre = regarder en face ce qui retient le mal.
+- **Le choix plutôt que le don** : la Maison colore, mais ce sont les actes qui
+  sauvent (écho au canon HP).
+- **Le mythe et son revers** : l'Apothéose fait du héros une légende — et les
+  légendes attirent ce qui dort le plus profond.
+
+> Sous-intrigues qui incarnent ces thèmes : le **grimoire d'Élara** (le deuil
+> et la joie cachée), l'**Épreuve de la Lumière Éternelle** de Dumbledore (le
+> souvenir heureux contre les ténèbres). → [08](08-quetes-et-sous-intrigues.md).
+
+---
+
+## Points à trancher (résumé)
+1. Enjeu intime des héros en parallèle de l'enjeu collectif ?
+2. Mise en scène du combat final (phases, PNJ présents) ?
+3. La Boucle Ténébreuse : fin écrite ou boucle de prestige ?
