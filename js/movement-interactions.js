@@ -743,6 +743,7 @@ function useRequirementRoom() {
       if (typeof openShop === 'function') openShop();
     }
     if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+    _awardRequirementTrophy(theme); // V3.1 — trophée cosmétique du thème
   }
   // Effet de thème consommable — une fois par visite d'étage.
   else if (!usedRequirementRooms.has(key)) {
@@ -763,15 +764,6 @@ function useRequirementRoom() {
       setNarrative("La Salle s'est faite cache aux trésors : alcôves et coffrets poussiéreux débordent d'objets oubliés. Vous y puisez de quoi poursuivre.");
       addMsg(`Salle sur Demande : +${goldGain} Gallions${got.length ? ' · ' + got.join(', ') : ' (sac plein)'}.`, 'good');
       if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
-      // V3 — trophée cosmétique unique (collectible NON inventorié), 1×/partie,
-      // sur la 1ʳᵉ Salle « cache aux objets ». Ancre la méta-persistance.
-      if (typeof requirementTrophyTaken !== 'undefined' && !requirementTrophyTaken
-          && typeof REQUIREMENT_TROPHY !== 'undefined') {
-        requirementTrophyTaken = true;
-        if (typeof recordRequirementTrophy === 'function') recordRequirementTrophy();
-        setNarrative("Au fond d'une alcôve scintille un éclat de lumière figée. Tu le recueilles : un souvenir de la Salle, sans prix mais sans poids — l'Éclat de la Salle sur Demande.");
-        addMsg(`${REQUIREMENT_TROPHY.icon} Collecté : ${REQUIREMENT_TROPHY.name} (trophée unique).`, 'magic');
-      }
     } else if (theme === 'training') {
       // Salle d'entraînement : XP (peut faire monter de niveau) + focus PM plein.
       const xpGain = 50 * f;
@@ -794,6 +786,7 @@ function useRequirementRoom() {
     }
     usedRequirementRooms.add(key);
     if (typeof recordRequirementTheme === 'function') recordRequirementTheme(theme); // V3 — codex
+    _awardRequirementTrophy(theme); // V3.1 — trophée cosmétique du thème
     if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'magic');
     if (theme === 'training' && typeof checkLevelUp === 'function') checkLevelUp();
   }
@@ -812,6 +805,32 @@ function useRequirementRoom() {
   }
   updateUI();
   safeCall('autoSave', 'requirement-used');
+}
+
+// V3.1 — collecte le trophée cosmétique d'un thème (collectible NON inventorié).
+// 1×/partie par thème (Set `requirementTrophiesTaken`), enregistré à vie dans le
+// codex. La complétion (5 thèmes à vie) débloque la « Couronne de la Salle ».
+function _awardRequirementTrophy(theme) {
+  if (typeof requirementTrophiesTaken === 'undefined' || !theme) return;
+  if (requirementTrophiesTaken.has(theme)) return;
+  if (typeof REQUIREMENT_TROPHY_BY_THEME === 'undefined') return;
+  const trophy = REQUIREMENT_TROPHY_BY_THEME[theme];
+  if (!trophy) return;
+  requirementTrophiesTaken.add(theme);
+  const completed = (typeof recordRequirementTrophy === 'function') && recordRequirementTrophy(theme);
+  if (typeof addMsg === 'function') addMsg(`${trophy.icon} Trophée collecté : ${trophy.name}.`, 'magic');
+  if (completed && typeof REQUIREMENT_TROPHY_BY_THEME._complete !== 'undefined') {
+    const crown = REQUIREMENT_TROPHY_BY_THEME._complete;
+    if (typeof addMsg === 'function') addMsg(`${crown.icon} Tous les visages de la Salle découverts — ${crown.name} obtenue !`, 'magic');
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+  }
+}
+
+// V3.1 — choix du thème par le joueur (overlay) : force le thème de la visite
+// puis entre dans la Salle. La Salle « décide » par défaut, le joueur peut forcer.
+function chooseRequirementTheme(theme) {
+  if (typeof requirementTheme !== 'undefined' && theme) requirementTheme.set(currentFloor || 1, theme);
+  useRequirementRoom();
 }
 
 // ── Jardin d'herbes à récolte passive (Potions P6.b3) ────────────────────

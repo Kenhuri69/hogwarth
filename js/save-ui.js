@@ -310,31 +310,30 @@ function renderRequirementAlmanac() {
   const el = document.getElementById('start-hub-almanac');
   if (!el) return;
   const codex = (typeof getRequirementCodex === 'function')
-    ? getRequirementCodex() : { themesSeen: {}, roomsFound: 0, trophy: false };
+    ? getRequirementCodex() : { themesSeen: {}, roomsFound: 0, trophies: {} };
+  const trophies = codex.trophies || {};
   const themeKeys = Object.keys(codex.themesSeen || {});
-  if (!codex.roomsFound && !themeKeys.length && !codex.trophy) {
+  const anyTrophy = Object.keys(trophies).some(k => trophies[k]);
+  if (!codex.roomsFound && !themeKeys.length && !anyTrophy) {
     el.innerHTML = '';
     el.style.display = 'none';
     return;
   }
-  const THEMES = [
-    ['refuge',   '🔥', 'Refuge'],
-    ['loot',     '💰', 'Cache aux objets'],
-    ['training', '⚔️', "Salle d'entraînement"],
-    ['boutique', '🛒', 'Étal de marchand'],
-    ['forge',    '🔨', 'Forge éphémère']
-  ];
-  const pills = THEMES.map(([k, ic, label]) => {
-    const seen = !!(codex.themesSeen && codex.themesSeen[k]);
-    return `<span class="alm-pill ${seen ? 'seen' : 'locked'}" title="${label}">${seen ? ic : '·'}</span>`;
+  // V3.1 — médaillons de trophées (PNG, fallback emoji), grisés si non obtenus.
+  const list = (typeof REQUIREMENT_TROPHIES !== 'undefined') ? REQUIREMENT_TROPHIES : [];
+  const pills = list.map(t => {
+    const owned = !!trophies[t.theme];
+    const inner = t.img
+      ? `<img src="${t.img}" alt="" onerror="this.replaceWith(document.createTextNode('${t.icon}'))">`
+      : t.icon;
+    return `<span class="alm-pill ${owned ? 'seen' : 'locked'}${t.theme === '_complete' ? ' alm-trophy' : ''}" title="${t.name}">${owned ? inner : '·'}</span>`;
   }).join('');
-  const trophyPill = codex.trophy
-    ? `<span class="alm-pill seen alm-trophy" title="Éclat de la Salle sur Demande">✦</span>`
-    : '';
+  const total = list.filter(t => t.theme !== '_complete').length;
+  const got = list.filter(t => t.theme !== '_complete' && trophies[t.theme]).length;
   el.innerHTML = `
     <div class="alm-title">🚪 Almanach de la Salle sur Demande</div>
-    <div class="alm-stat">Salles trouvées : <b>${codex.roomsFound | 0}</b></div>
-    <div class="alm-pills">${pills}${trophyPill}</div>`;
+    <div class="alm-stat">Salles trouvées : <b>${codex.roomsFound | 0}</b> · Trophées : <b>${got}/${total}</b></div>
+    <div class="alm-pills">${pills}</div>`;
   el.style.display = 'block';
 }
 

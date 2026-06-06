@@ -114,12 +114,17 @@ const REQUIREMENT_COMMERCE_GOLD = 120;
 // V3 — trophée cosmétique unique du thème « loot » (collectible NON inventorié :
 // pas d'entrée ITEMS, pas d'équipement, pas de cap 16). Sa découverte arme un
 // flag de partie + enregistre le codex localStorage. Pur trophée, zéro bonus.
-const REQUIREMENT_TROPHY = {
-  id:   'eclat_salle',
-  name: 'Éclat de la Salle sur Demande',
-  icon: '✦',
-  desc: "Une écharde de lumière figée, souvenir d'une Salle qui sut exactement ce qu'il te fallait."
-};
+// V3.1 — élargi en jeu de 6 trophées cosmétiques (1 par thème + complétion).
+const REQUIREMENT_TROPHIES = [
+  { id:'eclat_refuge',   theme:'refuge',    name:'Braise du Refuge',       icon:'🔥', img:'img/icons/requirement/eclat_refuge.png' },
+  { id:'eclat_loot',     theme:'loot',      name:'Éclat de la Cache',      icon:'✦', img:'img/icons/requirement/eclat_loot.png' },
+  { id:'eclat_training', theme:'training',  name:"Fanion d'Entraînement",  icon:'⚔️', img:'img/icons/requirement/eclat_training.png' },
+  { id:'eclat_boutique', theme:'boutique',  name:'Jeton du Marchand',      icon:'🛒', img:'img/icons/requirement/eclat_boutique.png' },
+  { id:'eclat_forge',    theme:'forge',     name:'Scorie de la Forge',     icon:'🔨', img:'img/icons/requirement/eclat_forge.png' },
+  { id:'eclat_complet',  theme:'_complete', name:'Couronne de la Salle',   icon:'👑', img:'img/icons/requirement/eclat_complet.png' }
+];
+// Map theme → trophée (lookup direct).
+const REQUIREMENT_TROPHY_BY_THEME = REQUIREMENT_TROPHIES.reduce((m, t) => { m[t.theme] = t; return m; }, {});
 
 // ── Célérité (D5, volet AGI) — cf. .claude/plans/agi-derived.md ──
 // Débouché post-plafond de l'AGI (crit de sort + esquive plafonnent à 35 %).

@@ -234,6 +234,60 @@ rondes. Cohérent avec le style hub existant. Responsive (wrap des pastilles).
   multijoueur ; surface = Almanach hub offline).
 - Bonus méta de gameplay (volontairement aucun — pur trophée).
 
+---
+
+# Complétion V3.1 (« on doit être complet » — 2026-06-06)
+
+> Statut : **proposé → en cours** (même branche). L'utilisateur a explicitement
+> demandé d'implémenter **les 4 items hors-scope** ci-dessus **+ de vraies
+> images PNG**, en assumant que 3 d'entre eux inversent des décisions design
+> précédentes (choix joueur vs canon ; bonus méta vs « reset par partie » ;
+> Atelier vs découplage). Décision utilisateur tracée, on applique.
+
+## C1. Trophées multiples (cosmétiques) + PNG
+- `REQUIREMENT_TROPHIES` (data.js) : 6 entrées — 1 par thème
+  (`refuge`/`loot`/`training`/`boutique`/`forge`) + 1 **complétion**
+  (`_complete`). Champs `{ id, theme, name, icon(emoji fallback), img(PNG) }`.
+- Collecte **par run** : 1ʳᵉ engagement d'un thème dans la partie → message +
+  ajout au Set `requirementTrophiesTaken` (state, sérialisé, remplace le bool
+  `requirementTrophyTaken`). Enregistre la collecte **à vie** dans le codex
+  (`trophies[theme]=true`). Quand les 5 thèmes sont à vie → `trophies._complete`.
+- **PNG** : `tools/gen_requirement_icons.py` (Pillow) → `img/icons/requirement/<id>.png`
+  (médaillon coloré + glyphe par thème). 6 fichiers 64×64.
+
+## C2. Choix du thème par le joueur (overlay)
+- L'overlay `REQUIREMENT` (non épuisé) affiche le thème **suggéré** (contextuel)
+  + une rangée « Demander autre chose » : un bouton par thème **disponible**
+  (`refuge`/`loot`/`training`/`boutique` toujours ; `forge` seulement si
+  `floor≥11 && forgeable && essence>0`).
+- `chooseRequirementTheme(theme)` (movement-interactions.js) : `requirementTheme.set(floor,theme)`
+  puis `useRequirementRoom()`. La Salle « décide » par défaut, mais le joueur peut forcer.
+
+## C3. Bonus méta de gameplay (léger, capé)
+- `_applyRequirementMetaBonus()` (main.js, appelé dans startGame après l'init or) :
+  `n = #thèmes découverts à vie` (0-5). `+15×n` Gallions de départ (cap 75) +
+  `n` `potion_s` ; complétion (5/5) → +1 `potion_m`. Léger, additif, annoncé.
+  Garde-fous `typeof getRequirementCodex/tryAddItem`.
+
+## C4. Trophées dans l'Atelier du Voyageur (lecture seule)
+- Nouvel onglet **« Salle »** dans `openAtelierVoyageur` → `_renderAtelierRequirementTab()` :
+  cartes des 6 trophées (PNG/emoji), `owned` via codex, sinon `locked`. Aucune
+  monnaie, aucun bouton (débloqué-à-vie par la méta). Défensif (`typeof`).
+
+## C5. Tests & cache
+- Smoke `scenarioRoomOfRequirement` : T12 adapté (Set `requirementTrophiesTaken`
+  + `trophies` codex), T13 choix joueur (`chooseRequirementTheme`), T14 méta
+  bonus + onglet Atelier. `node tests/smoke.js` (160) + `node tests/units.js` (67).
+- cache-bump pour data/state/save/main/movement-interactions/movement/save-slots/
+  save-ui/atelier-voyageur + css si touché ; `CACHE_VERSION` v64→v65.
+
+## Suivi V3.1
+- [ ] C1 trophées multiples + PNG.
+- [ ] C2 choix du thème (overlay + `chooseRequirementTheme`).
+- [ ] C3 bonus méta capé.
+- [ ] C4 onglet Atelier.
+- [ ] C5 smoke/units verts + cache-bump.
+
 ## Suivi
 - [x] Lecture code V2 livré (`_pickRequirementTheme`, `_requirementLootPool`,
       `useRequirementRoom`, descripteur overlay, `SCENE_ICONS.requirement`,

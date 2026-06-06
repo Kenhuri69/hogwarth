@@ -185,10 +185,11 @@
     if (!modal) return;
 
     const tabs = [
-      ['set',       'Set Voyageur'],
-      ['spells',    'Sorts'],
-      ['cosmetics', 'Cosmétiques'],
-      ['souvenirs', 'Souvenirs']
+      ['set',         'Set Voyageur'],
+      ['spells',      'Sorts'],
+      ['cosmetics',   'Cosmétiques'],
+      ['souvenirs',   'Souvenirs'],
+      ['requirement', 'Salle']
     ];
     const tabsHtml = tabs.map(([id, label]) =>
       `<button class="atelier-tab ${_atelierTab === id ? 'active' : ''}" type="button"`
@@ -199,6 +200,7 @@
     else if (_atelierTab === 'spells') body = _renderAtelierSpellsTab();
     else if (_atelierTab === 'cosmetics') body = _renderAtelierCosmeticsTab();
     else if (_atelierTab === 'souvenirs') body = _renderAtelierSouvenirsTab();
+    else if (_atelierTab === 'requirement') body = _renderAtelierRequirementTab();
 
     modal.innerHTML = `
       <div class="atelier-panel atelier-panel-wide">
@@ -324,6 +326,33 @@
         </div>`;
     }).join('');
     return html;
+  }
+
+  // V3.1 — Trophées de la Salle sur Demande (méta offline, codex localStorage).
+  // Lecture seule : débloqués à vie en jouant ; aucune monnaie, aucun bouton.
+  function _renderAtelierRequirementTab() {
+    if (typeof REQUIREMENT_TROPHIES === 'undefined') return '<p>Aucun trophée défini.</p>';
+    const codex = (typeof getRequirementCodex === 'function') ? getRequirementCodex() : { trophies: {}, roomsFound: 0 };
+    const trophies = codex.trophies || {};
+    const cards = REQUIREMENT_TROPHIES.map(t => {
+      const owned = !!trophies[t.theme];
+      const icon = t.img
+        ? `<img src="${_esc(t.img)}" alt="" style="width:40px;height:40px;${owned ? '' : 'filter:grayscale(1) opacity(0.4)'}" onerror="this.replaceWith(document.createTextNode('${t.icon}'))">`
+        : t.icon;
+      const badge = owned
+        ? '<span class="atelier-badge done">Obtenu</span>'
+        : '<span class="atelier-badge locked">À découvrir</span>';
+      return `
+        <div class="atelier-card ${owned ? 'owned' : 'locked'}">
+          <div class="atelier-card-icon">${icon}</div>
+          <div class="atelier-card-name">${_esc(t.name)}</div>
+          <div class="atelier-card-action">${badge}</div>
+        </div>`;
+    }).join('');
+    return `
+      <p class="atelier-subtitle">Salles trouvées (toutes parties) : <strong>${codex.roomsFound | 0}</strong></p>
+      <div class="atelier-grid atelier-grid-set">${cards}</div>
+      <p class="atelier-footnote">Trophées cosmétiques de la Salle sur Demande — débloqués à vie en explorant ses visages. Pur ornement.</p>`;
   }
 
   function _renderAtelierSouvenirsTab() {

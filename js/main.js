@@ -466,6 +466,10 @@ async function startGame(count = 2) {
   // En mode solo : masquer la carte d'Hermione et l'indicateur de tour
   applyPartyMode();
 
+  // V3.1 — Faveur de la Salle (bonus méta léger, capé) selon les thèmes de la
+  // Salle sur Demande déjà découverts à vie (codex). Pur démarrage, additif.
+  _applyRequirementMetaBonus();
+
   const gc = document.getElementById('game-container');
   gc.style.display = 'grid';
   resizeCanvas();
@@ -505,7 +509,7 @@ async function startGame(count = 2) {
   requirementGiftTaken = false;
   requirementBuffSteps = 0;
   requirementTheme     = new Map(); // V2 (room-of-requirement-v2.md)
-  requirementTrophyTaken = false;   // V3 (room-of-requirement-v3.md)
+  requirementTrophiesTaken = new Set(); // V3/V3.1 (room-of-requirement-v3.md)
   // Note : seenNpcs / activeQuests / availableQuests / completedQuests
   // sont déjà initialisés par chooseHouse() AVANT l'intro Dumbledore
   // (sinon _finishIntro serait écrasée). Ne pas les reset ici.
@@ -559,6 +563,29 @@ async function startGame(count = 2) {
     requestAnimationFrame(render);
   }
   render();
+}
+
+// V3.1 (room-of-requirement-v3.md §C3) — Faveur de la Salle : bonus méta léger
+// et capé selon le nombre de thèmes de Salle découverts à vie (codex localStorage).
+// Additif au démarrage, jamais power-creep : +15 G/thème (cap 75) + 1 potion_s
+// par thème ; complétion (5/5) → +1 potion_m. Défensif (no-op si codex absent).
+function _applyRequirementMetaBonus() {
+  if (typeof getRequirementCodex !== 'function') return;
+  let codex;
+  try { codex = getRequirementCodex(); } catch (e) { return; }
+  const themes = (codex && codex.themesSeen) ? Object.keys(codex.themesSeen).filter(k => codex.themesSeen[k]) : [];
+  const n = Math.min(5, themes.length);
+  if (n <= 0) return;
+  const goldBonus = Math.min(75, 15 * n);
+  if (player && typeof player.gold === 'number') player.gold += goldBonus;
+  if (typeof tryAddItem === 'function') {
+    for (let i = 0; i < n; i++) tryAddItem('potion_s', { silent: true });
+    const complete = !!(codex.trophies && codex.trophies._complete);
+    if (complete) tryAddItem('potion_m', { silent: true });
+  }
+  if (typeof addMsg === 'function') {
+    addMsg(`🚪 Faveur de la Salle : +${goldBonus} Gallions et ${n} potion(s) de départ (${n} thème(s) découvert(s)).`, 'good');
+  }
 }
 
 // ============================================================
