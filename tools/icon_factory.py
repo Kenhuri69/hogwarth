@@ -737,6 +737,17 @@ RECIPES: Dict[str, Recipe] = {
         ],
         sparkles=True,
     ),
+    # Easter egg « Salle sur Demande » — tiare ancienne et ternie, or vieilli
+    # poussiéreux + gemme bleu nuit sourde (clin d'œil au Diadème caché).
+    "tiare_poussiereuse": Recipe(
+        id="tiare_poussiereuse", name="Tiare poussiéreuse", rarity="rare", material="metal",
+        fills={"band":   (150, 124,  70), "points": (168, 140,  84),
+               "gem":    ( 44,  56,  92), "side":   ( 96, 104, 128)},
+        silhouette={"kind": "svg", "file": "tiara.svg"},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (158, 172, 204)},
+        ],
+    ),
 
     # Chalice
     "coupe_poufsouffle": Recipe(

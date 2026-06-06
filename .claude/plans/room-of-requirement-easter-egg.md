@@ -152,11 +152,15 @@ case précédente était déjà la tuile (déjà géré par la logique d'entrée
       → verify : `node tests/smoke.js` vert (160 scénarios) + `node tests/units.js` vert.
 
 ## Écarts / décisions d'implémentation
-- **Icône de l'objet** : pas de PNG painterly dédié généré (pipeline Python
-  hors-scope V1) — réemploi du visuel `circlet_serdaigle.png` dans le registre
-  legacy (précédent : `diademe_antique`). Le `tint` doré différencie. Suivi
-  possible : recette `icon_factory.py` dédiée plus tard.
+- **Icône de l'objet** : ✅ icône painterly dédiée générée via le pipeline
+  (`tools/icon_factory.py` → recette `tiare_poussiereuse`, part `tiara.svg`,
+  or vieilli terni + gemme bleu nuit sourde, rareté `rare`). 5 mipmaps dans
+  `img/icons_new/`, enregistrée dans `ITEM_ICON_NEW_REGISTRY` (priorité 1).
+  L'entrée legacy `ITEM_ICON_REGISTRY` (réemploi circlet) reste comme fallback.
 - **Sprite 3D** : emoji 🚪 + halo doré (pas de SCENE_ICON SVG), conforme au
   §6 hors-scope (« réemploi sprite type fontaine suffit »).
 - **Loader MANIFEST** : fonctions non ajoutées (précédent `useFountain`/
   `useAltar` absents du manifeste).
+- **Miroir `data-icon-recipes.js`** : non mis à jour (inerte au runtime ; le
+  miroir n'est déjà pas tenu pour les recettes récentes — `couronne_basilic`
+  etc. absentes).
