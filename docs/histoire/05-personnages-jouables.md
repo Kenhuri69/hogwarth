@@ -37,6 +37,17 @@
 > eux qu'on installe les enjeux **intimes** évoqués en [03 §3.7](03-trame-principale.md)
 > sans réécrire le canon.
 
+> ⚠️ **Maison canon vs `chosenHouse`** : la colonne *Maison* ci-dessus est de la
+> **saveur canon** (Harry → Gryffondor…). Mécaniquement, le jeu a un **unique**
+> `chosenHouse` choisi au démarrage, qui pilote bonus, set, prestige **et la Quête
+> Signature** ([07 §7.8](07-les-maisons.md) / [08 §8.5](08-quetes-et-sous-intrigues.md)).
+> En duo, la signature suit ce `chosenHouse` partagé ; le héros dont la Maison canon
+> **diffère** peut lâcher des **barks de saveur** commentant la tension (un
+> Gryffondor-canon qui réagit au *Pacte des Cachots* sur une partie Serpentard) —
+> récompense de **rejouabilité** pour qui refait le jeu avec une autre Maison.
+> Un vrai « deux Maisons simultanées » serait un refactor (`chosenHouse` par perso) —
+> **❓ hors-scope** (cf. [08 §8.5.3](08-quetes-et-sous-intrigues.md)).
+
 ---
 
 ## 5.1 Figures canon
