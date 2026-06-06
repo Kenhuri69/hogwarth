@@ -71,6 +71,34 @@ modèle anon-key déjà utilisé par le Hall of Fame. `get_advisors` peut
 signaler une RLS « trop ouverte » : c'est un choix assumé pour ce jeu sans
 comptes utilisateurs (cf. plan §5).
 
+### Posture de sécurité (à garder en tête)
+
+La clé `sb_publishable_*` est **publique par conception** : elle est
+embarquée en clair dans `js/multiplayer.js` (et reproduite ici pour les
+checks REST). Elle n'est donc PAS un secret — la chercher dans le dépôt
+n'apporte aucun privilège. **La seule frontière de sécurité est la RLS
+côté serveur.** Conséquences à respecter :
+
+- **N'écrire aucune donnée sensible** dans ces tables (pas d'e-mail, pas
+  de token, pas d'identifiant durable). Le contenu est lisible et
+  inscriptible par n'importe quel client anonyme — c'est intentionnel.
+- Tout champ reçu d'une de ces tables est **non fiable** : le client
+  l'échappe (`_esc`) avant injection HTML. Couvert par
+  `tests/units.js §4` (verrou anti-XSS sur les `_esc` de visite).
+- Si une table devait un jour porter une donnée à protéger, il faudrait
+  d'abord introduire un vrai modèle d'auth (hors scope actuel) — ne pas
+  se reposer sur l'obscurité de la clé.
+
+### Disjoncteur côté client (404)
+
+Le client traite un **404** sur une table comme « fonctionnalité
+indisponible » et la désactive **pour le reste de la session** (flags
+`_mp*TableMissing` dans `multiplayer-visits.js`, helper
+`parallelWorldsEnabled()`). Ces flags ne sont **pas ré-armés à chaud** :
+une table qui revient en ligne n'est reprise qu'au prochain rechargement
+de page. C'est volontaire (échec franc plutôt que retries en boucle) — si
+une reprise à chaud devient nécessaire, la prévoir explicitement.
+
 ## Purge (pas de TTL automatique en free tier)
 
 Job cron mensuel recommandé (cf. `parallel-worlds.md §12.3`) :
