@@ -14,6 +14,16 @@ Créer 4 skills spécifiques au projet :
 5. `ui-design-iterate` — itération UX/UI pilotée par captures desktop+mobile
    (ajoutée après relance utilisateur : axe UX design initialement manqué)
 
+### Skills officielles Anthropic vendorisées (relance utilisateur — axe design)
+Copiées verbatim depuis `anthropics/skills` @ da20c92, Apache 2.0
+(LICENSE.txt conservé dans chaque dossier, fichiers non modifiés) :
+- [x] `frontend-design` — qualité design des interfaces
+- [x] `webapp-testing` — harnais Playwright (vérif UI / screenshots / logs)
+- [x] `theme-factory` — thèmes (palettes/fonts), 10 préréglages
+- [x] `skill-creator` — méta-skill création/amélioration/éval de skills
+- [x] `.claude/skills/README.md` — provenance + reco maison/vendorisé
+- [ ] commit + push
+
 Les skills built-in (`verify`, `run`, `code-review`, `security-review`,
 `init`…) couvrent déjà les besoins génériques — non recréées.
 
