@@ -410,6 +410,8 @@ function openCharacter(charIdx = 0) {
 
     </div>
   `;
+  if (typeof setCharacterModalTitle === 'function')
+    setCharacterModalTitle('img/icons/scroll.png', 'Fiche de Personnage');
   document.getElementById('character-modal').style.display = 'flex';
 }
 

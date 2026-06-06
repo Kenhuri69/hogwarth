@@ -503,3 +503,12 @@ function addMsg(text, type = '') {
 
 function closeModal(id) { const el = safeEl(id); if (el) el.style.display = 'none'; }
 
+// La modale #character-modal est partagée par la Fiche, le Journal des Quêtes
+// et les Réglages (tous peuplent #char-detail). Ce helper synchronise l'en-tête
+// #character-modal-title pour qu'il corresponde au contenu affiché.
+function setCharacterModalTitle(iconSrc, label) {
+  const t = safeEl('character-modal-title');
+  if (!t) return;
+  t.innerHTML = `<img class="ui-icon ui-icon-xl" src="${iconSrc}" alt=""> ${label}`;
+}
+
