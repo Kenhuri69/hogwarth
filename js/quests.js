@@ -308,16 +308,14 @@ function openQuestLog() {
   const total = activeQuests.length + done;
 
   detail.innerHTML = `
-    <div style="font-family:'Cinzel',serif;font-size:15px;color:var(--gold);
-                text-align:center;margin-bottom:4px;letter-spacing:2px">
-      <img class="ui-icon ui-icon-xl" src="img/icons/quest.png" alt=""> Journal des Quêtes
-    </div>
     <div style="text-align:center;font-size:11px;color:#8a7050;margin-bottom:14px">
       ${done} / ${total} quête${total > 1 ? 's' : ''} terminée${done > 1 ? 's' : ''}
     </div>
     <div id="quest-list" style="display:flex;flex-direction:column;gap:10px;
                                  max-height:55vh;overflow-y:auto"></div>
   `;
+  if (typeof setCharacterModalTitle === 'function')
+    setCharacterModalTitle('img/icons/quest.png', 'Journal des Quêtes');
   document.getElementById('character-modal').style.display = 'flex';
   renderQuestList();
 }

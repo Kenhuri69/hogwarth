@@ -3904,7 +3904,15 @@ button.shop-tab.active {
   .party-card .stat-bar-row .bar-label > span:first-child > span { display: none; }
   .party-card .stat-bar-row { margin-top: 2px; }
   .party-card .stat-bar-row .bar-label { font-size: 10px; line-height: 1.1; }
-  .party-card .stat-bar-row .bar-track { height: 4px; }
+  /* Valeur PV/PM (35/35) : info vitale → contraste + poids relevés vs le
+     brun terne par défaut (#8a7050), pour une lecture immédiate en jeu. */
+  .party-card .stat-bar-row .bar-label > span:last-child {
+    color: var(--parchment);
+    font-weight: 600;
+    font-size: 11px;
+  }
+  /* Barres un peu plus épaisses pour être lisibles d'un coup d'œil. */
+  .party-card .stat-bar-row .bar-track { height: 7px; }
   /* Médaillon rond mobile : on cache le BG croppé et le voile, on
      affiche le PNG portrait natif (qui inclut déjà le cadre doré rond). */
   .pcard-bg, .pcard-veil { display: none; }
@@ -3926,6 +3934,18 @@ button.shop-tab.active {
   /* Viewport 3D occupe tout l'espace */
   .main-view { overflow: hidden; }
   #narrative-panel { font-size: 12px; min-height: 40px; max-height: 50px; padding: 4px 8px; }
+
+  /* Toasts : en paysage ils sont ancrés bas-droite (bottom:80px), ce qui les
+     fait recouvrir le D-pad / la grille d'actions du footer mobile. On les
+     ré-ancre en HAUT, au-dessus de la vue 3D (sous le bandeau de groupe),
+     pleine largeur marginée. pointer-events:none est conservé. */
+  #msg-log {
+    top: 116px; bottom: auto;
+    left: 8px; right: 8px;
+    width: auto;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  #msg-log .msg-item { max-width: 100%; text-align: center; }
 
   /* Header compact mobile : on retire le texte du titre (l'icône suffit
      d'identifiant), tout reste sur 1 ligne, location ellipsée. Max-width

@@ -76,9 +76,6 @@ function changeDifficulty() {
     </button>`).join('');
 
   detail.innerHTML = `
-    <div style="font-family:'Cinzel',serif;font-size:13px;color:var(--gold);text-align:center;margin-bottom:12px;letter-spacing:2px">
-      ⚙️ DIFFICULTÉ
-    </div>
     <div style="font-size:11px;color:#8a7050;text-align:center;margin-bottom:14px">
       Actuelle : <strong style="color:var(--gold)">${icons[difficulty]} ${difficulty}</strong>
     </div>
@@ -86,6 +83,8 @@ function changeDifficulty() {
     <div style="font-size:10px;color:#4a3a20;text-align:center;margin-top:10px;font-style:italic">
       Le changement s'applique immédiatement (sauf HP de départ)
     </div>`;
+  if (typeof setCharacterModalTitle === 'function')
+    setCharacterModalTitle('img/icons/gear.png', 'Difficulté');
   document.getElementById('character-modal').style.display = 'flex';
 }
 
