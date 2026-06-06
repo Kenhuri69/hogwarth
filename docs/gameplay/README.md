@@ -11,17 +11,17 @@
 > sans le code.
 
 ## Chapitres envisagés
-| # | Chapitre | Objet |
-|---|----------|-------|
-| G1 | Boucle de jeu | Explorer → combattre → s'équiper → descendre ; rythme. |
-| G2 | Combat | Tour par tour, actions, statuts, éléments (résist/faiblesse), capacités ennemies. |
-| G3 | Progression | Niveaux, stats primaires/secondaires, stats dérivées (crit, esquive, Fortune, Célérité). |
-| G4 | Maisons (mécanique) | Points, paliers, bonus, sets, passifs endgame, don à la Maison. |
-| G5 | Équipement & objets | 11 slots, raretés, sorts d'équipement, potions & craft. |
-| G6 | Sorts | Catalogue, éléments, 3 vecteurs d'apprentissage, sorts AoE & utilitaires. |
-| G7 | Donjon | Génération, cellules spéciales, évènements d'étage, thèmes. |
-| G8 | Difficulté & scaling | 4 difficultés, scaling par étage, taille des groupes, anti-farm. |
-| G9 | Méta | Ironman + Hall of Fame ; Mondes Parallèles (système). |
+| # | Chapitre | Objet | Statut |
+|---|----------|-------|--------|
+| G1 | Boucle de jeu | Explorer → combattre → s'équiper → descendre ; rythme. | 🟥 à écrire |
+| G2 | [Combat](G2-combat.md) | Tour par tour, actions, statuts, éléments (résist/faiblesse), capacités ennemies. | 🟧 ébauche |
+| G3 | Progression | Niveaux, stats primaires/secondaires, stats dérivées (crit, esquive, Fortune, Célérité). | 🟥 à écrire |
+| G4 | Maisons (mécanique) | Points, paliers, bonus, sets, passifs endgame, don à la Maison. | 🟥 à écrire |
+| G5 | Équipement & objets | 11 slots, raretés, sorts d'équipement, potions & craft. | 🟥 à écrire |
+| G6 | Sorts | Catalogue, éléments, 3 vecteurs d'apprentissage, sorts AoE & utilitaires. | 🟥 à écrire |
+| G7 | Donjon | Génération, cellules spéciales, évènements d'étage, thèmes. | 🟥 à écrire |
+| G8 | Difficulté & scaling | 4 difficultés, scaling par étage, taille des groupes, anti-farm. | 🟥 à écrire |
+| G9 | Méta | Ironman + Hall of Fame ; Mondes Parallèles (système). | 🟥 à écrire |
 
 > ❓ À détailler : ne créer ces sous-fichiers que lorsqu'ils servent la
 > discussion. Le narratif (`docs/histoire/`) reste prioritaire.
