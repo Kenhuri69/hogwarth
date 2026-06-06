@@ -686,7 +686,16 @@ function _strPenFrac(str) {
 
 function executeAttack(targetIdx) {
   const char  = getActiveChar();
-  const enemy = enemyGroup[targetIdx];
+  let enemy = enemyGroup[targetIdx];
+  // Garde défensive : index périmé ou cible déjà à terre → re-cible le
+  // premier ennemi vivant. S'il n'en reste aucun, on abandonne le coup
+  // (la fin de combat est gérée par checkAllEnemiesDead côté appelant).
+  if (!enemy || enemy.currentHp <= 0) {
+    const alive = livingEnemies();
+    if (!alive.length) return;
+    enemy = alive[0];
+    targetIdx = enemyGroup.indexOf(enemy);
+  }
   const rawAtk = char.atk + Math.floor(Math.random() * 4);
   // D4 — la STR du frappeur ignore une fraction de la DEF ennemie.
   const effDef = Math.max(0, (enemy.def || 0) * (1 - _strPenFrac(char.str)));

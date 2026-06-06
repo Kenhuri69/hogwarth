@@ -36,6 +36,9 @@ jobs:
       - name: Installer Chromium (Playwright)
         run: npx playwright install --with-deps chromium
 
+      - name: Tests unitaires (helpers purs, Node seul)
+        run: node tests/units.js
+
       - name: Suite smoke (124 scénarios)
         run: node tests/smoke.js
 

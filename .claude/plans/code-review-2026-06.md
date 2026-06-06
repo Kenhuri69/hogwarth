@@ -18,6 +18,7 @@ Le balayage automatique a produit beaucoup de bruit. Vérifiés et **infirmés**
 | Fuite `legilimens`/`recolteGoldBonus` entre combats | réinitialisés dans `startBattle` (`battle.js:436-438`). **OK** |
 | Équipement perdu si sac plein | refus explicite `if (old && inventory.length >= INVENTORY_MAX) return` (`inventory.js:323`). **OK** |
 | Boucle d'anim PNJ gaspille du CPU | early-return si aucun PNJ/fantôme/msg/ennemi → quasi no-op (`renderer-effects.js:27`). **Négligeable** |
+| `grantsSpell`/livres enseignent un sort `locked` | `_teachSpellToParty` (`inventory.js:394`) ET `_teachSpellToOne` (`inventory.js:494`) filtrent déjà `spellDef.locked`. **OK** — F2 retiré après vérification |
 
 **Conclusion** : la base est saine et défensive (helpers `safeEl`/`safeCall`,
 gardes `typeof`, court-circuits). Les actions ci-dessous sont du **durcissement**
@@ -25,17 +26,17 @@ et de la **couverture de test**, pas des corrections de bugs bloquants.
 
 ## 1. Findings réels (faibles à moyens)
 
-### F1 — `executeAttack(targetIdx)` sans garde (faible)
-`battle.js:687-689` : `enemyGroup[targetIdx]` n'est pas validé (ni
+### F1 — `executeAttack(targetIdx)` sans garde (faible) ✅ FAIT
+`battle.js:687-689` : `enemyGroup[targetIdx]` n'était pas validé (ni
 `< length`, ni `currentHp > 0`). En pratique l'UI ne câble que des index
-vivants, donc latent. **Action** : garde précoce
-`const enemy = enemyGroup[targetIdx]; if (!enemy || enemy.currentHp <= 0) return;`
+vivants, donc latent. **Corrigé** : garde précoce qui re-cible le premier
+ennemi vivant si la cible est invalide/à terre, ou abandonne le coup s'il
+n'en reste aucun.
 
-### F2 — `grantsSpell` / `_teachSpellToParty` peut enseigner un sort `locked` (latent)
-`inventory-spells.js` : rien ne filtre `SPELLS[x].locked`. Aucun item ne
-l'exploite aujourd'hui (Avada reste verrouillé jusqu'au niv. 9), mais c'est
-un piège pour un futur item. **Action** : ignorer un sort `locked` à
-l'apprentissage par équipement/livre.
+### F2 — `grantsSpell` / livres pourraient enseigner un sort `locked` ❌ NON FONDÉ
+Vérification : `_teachSpellToParty` (`inventory.js:394`) **et**
+`_teachSpellToOne` (`inventory.js:494`) filtrent déjà `spellDef.locked`.
+Aucun changement nécessaire — finding retiré.
 
 ### F3 — Clé Supabase en dur (note, pas une faille)
 `multiplayer.js:21-25` : `supabaseAnonKey: 'sb_publishable_…'`. C'est une clé
@@ -82,25 +83,28 @@ risque sur futurs call-sites. **Action** : optionnelle, faible priorité.
 
 ## 3. Plan d'exécution proposé (par lots, vérifiable)
 
-1. **Lot A — durcissement combat/sorts** (F1, F2)
-   → vérif : `node tests/smoke.js` vert + cas ajouté (attaque sur index
-   invalide ignorée ; sort `locked` non enseigné).
-2. **Lot B — tests unitaires purs** (S2)
-   → vérif : `node tests/units.js` vert, bornes des courbes assertées.
-3. **Lot C — verrou XSS visites** (F5)
-   → vérif : test d'échappement d'un nom malveillant.
-4. **Lot D — doc RLS** (F3) + note disjoncteurs (F4)
-   → vérif : `supabase/README.md` mis à jour, relu.
+1. **Lot A — durcissement combat** (F1) ✅ FAIT
+   → garde dans `executeAttack` ; couvert indirectement par smoke + logique.
+2. **Lot B — tests unitaires purs** (S2) ✅ FAIT
+   → `tests/units.js` (Node pur, 67 assertions) : `getFloorTheme`,
+   `effectiveFloor`/`endgameTierIndex`/`weightedPick`, `_fortuneCurve`/
+   `_celeriteCurve` (bornes, monotonie, saturation, calibration data.js).
+3. **Lot C — verrou XSS visites** (F5) ✅ FAIT
+   → `tests/units.js §4` : extrait et teste les 3 `_esc` privés (visite).
+4. **Lot D — doc RLS + disjoncteurs** (F3, F4) ✅ FAIT
+   → `supabase/README.md` : section « Posture de sécurité » + « Disjoncteur
+   côté client (404) ».
 5. **Lot E (opt.)** — découpage `smoke.js` (S1), helper inventaire (S3).
+   → Non fait (gros chantier, non urgent). À la demande.
 
-> Chaque lot est indépendant et peut être livré/PR séparément. Aucun n'est
-> urgent : aucun bug bloquant n'a été confirmé. Priorité conseillée :
-> A puis B (meilleur ratio sécurité/effort), le reste à la demande.
+> Lots A–D livrés sur cette branche. CI : `tests/units.js` ajouté comme
+> étape rapide (sans navigateur) avant la suite smoke
+> (`.github/workflows/test.yml`), + script `npm run test:units`.
 
 ## Suivi
 
-- [ ] Lot A
-- [ ] Lot B
-- [ ] Lot C
-- [ ] Lot D
-- [ ] Lot E (opt.)
+- [x] Lot A — garde `executeAttack`
+- [x] Lot B — `tests/units.js` (67 assertions)
+- [x] Lot C — verrou XSS `_esc` visites
+- [x] Lot D — doc RLS / disjoncteurs Supabase
+- [ ] Lot E (opt.) — découpage smoke.js / helper inventaire
