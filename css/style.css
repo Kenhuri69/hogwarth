@@ -313,7 +313,7 @@ body {
 }
 .bar-label {
   display: flex; justify-content: space-between;
-  font-size: 10px; color: #8a7050;
+  font-size: 10px; color: var(--label-muted);
 }
 .bar-track {
   height: 8px;
@@ -540,7 +540,7 @@ body {
 }
 .alloc-btn-effect {
   font-size: 11px;
-  color: #8a7050;
+  color: var(--label-muted);
   display: block;
 }
 @media (max-width: 700px) {
@@ -584,7 +584,7 @@ body {
 }
 .cmd-btn.disabled { opacity: 0.4; pointer-events: none; }
 .cmd-btn.searched { opacity: 0.55; border-color: #2a1a08; color: #6a5030; }
-.cmd-btn.searched:hover { background: #1a0f05; border-color: #3a2010; color: #8a7050; cursor: not-allowed; }
+.cmd-btn.searched:hover { background: #1a0f05; border-color: #3a2010; color: var(--label-muted); cursor: not-allowed; }
 
 /* RIGHT PANEL - MINI MAP */
 .right-panel {
@@ -869,27 +869,27 @@ body {
 .bestiary-cat-tag   { font-size: 10px; color: var(--label-muted); font-family: sans-serif; font-weight: normal; }
 .bestiary-floor-tag { font-size: 10px; color: var(--label-muted); margin: 2px 0 4px; letter-spacing: 1px; text-transform: uppercase; }
 .bestiary-lore      { font-size: 12px; color: var(--parchment-dark); line-height: 1.4; }
-.bestiary-drops     { font-size: 11px; color: #8a7050; margin-top: 5px; }
-.bestiary-stats     { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: #8a7050; margin-top: 6px; }
+.bestiary-drops     { font-size: 11px; color: var(--label-muted); margin-top: 5px; }
+.bestiary-stats     { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--label-muted); margin-top: 6px; }
 .bestiary-empty     { text-align: center; padding: 40px; color: var(--label-muted); font-style: italic; }
 
 /* Empty-states divers — pendants de .bestiary-empty / .slot-empty-state */
 .inv-empty-slot       { font-size: 11px; color: #2a1a08; }
 .quest-tracker-empty  { color: #3a2a10; font-style: italic; font-size: 11px; text-align: center; padding-top: 4px; }
-.quest-list-empty     { text-align: center; padding: 30px; color: #8a7050; }
+.quest-list-empty     { text-align: center; padding: 30px; color: var(--label-muted); }
 /* Fiche détail */
 #bestiary-detail-panel { flex: 1; overflow-y: auto; }
 .bestiary-detail-header { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
 .bestiary-detail-icon   { position: relative; flex-shrink: 0; }
 .bestiary-detail-name   { font-family: 'Cinzel', serif; font-size: 20px; color: var(--gold); margin: 0 0 4px; }
-.bestiary-detail-desc   { font-size: 12px; color: #8a7050; font-style: italic; margin-top: 6px; }
+.bestiary-detail-desc   { font-size: 12px; color: var(--label-muted); font-style: italic; margin-top: 6px; }
 .bestiary-lore-full     { font-size: 13px; line-height: 1.7; color: var(--parchment-dark);
                            border-top: 1px solid #2a1a08; padding-top: 14px; margin: 0 0 16px; }
 .bestiary-stat-grid     { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
 .bestiary-stat          { background: #0a0705; border: 1px solid #2a1a08; border-radius: 4px; padding: 8px; text-align: center; }
 .bestiary-stat-val      { font-size: 14px; color: var(--parchment); }
 .bestiary-stat-lbl      { font-size: 11px; color: var(--label-muted); letter-spacing: 1px; margin-top: 2px; }
-.bestiary-resist-line   { font-size: 11px; color: #8a7050; margin-bottom: 14px;
+.bestiary-resist-line   { font-size: 11px; color: var(--label-muted); margin-bottom: 14px;
                            display: flex; gap: 20px; flex-wrap: wrap; }
 .bestiary-abilities     { border-top: 1px solid #2a1a08; padding-top: 12px; margin-bottom: 14px; }
 .bestiary-section-title { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold); margin-bottom: 8px; letter-spacing: 1px; }
@@ -988,7 +988,7 @@ body {
 }
 .explore-btn:hover  { background: #2a1a08; box-shadow: 0 0 12px rgba(201,168,76,0.3); }
 .explore-btn:active { transform: scale(0.97); }
-.explore-btn.secondary { border-color: var(--gold-dark); color: #8a7050; }
+.explore-btn.secondary { border-color: var(--gold-dark); color: var(--label-muted); }
 .explore-btn.secondary:hover { color: var(--gold-light); border-color: var(--gold); }
 
 /* ── PANNEAU INFO MONSTRE (combat) ── */
@@ -1025,7 +1025,7 @@ body {
   font-family: 'Cinzel', serif; color: var(--gold);
   font-size: 18px; margin: 0 0 4px;
 }
-.mi-kills { font-size: 11px; color: #8a7050; margin-top: 4px; letter-spacing: 0.5px; }
+.mi-kills { font-size: 11px; color: var(--label-muted); margin-top: 4px; letter-spacing: 0.5px; }
 .mi-desc {
   font-family: 'Crimson Text', serif; font-style: italic;
   color: var(--parchment-dark); font-size: 13px; line-height: 1.5;
@@ -1036,8 +1036,8 @@ body {
   border-top: 1px solid #2a1a08; padding-top: 10px;
   font-size: 11px; color: #6a5030; font-style: italic; line-height: 1.5;
 }
-.mi-locked em { color: #8a7050; font-style: normal; }
-.mi-none { font-size: 11px; color: #8a7050; font-style: italic; }
+.mi-locked em { color: var(--label-muted); font-style: normal; }
+.mi-none { font-size: 11px; color: var(--label-muted); font-style: italic; }
 
 /* ── DIALOGUE PNJ ── */
 #npc-dialog-overlay {
@@ -1717,7 +1717,7 @@ body {
 }
 .equip-grid .equip-row.filled { background: rgba(40,28,12,0.45); }
 .equip-grid .equip-icon  { display: inline-flex; justify-content: center; opacity: 0.85; }
-.equip-grid .equip-label { color: #8a7050; font-family: 'Cinzel',serif; letter-spacing: 0.5px; font-size: 10px; }
+.equip-grid .equip-label { color: var(--label-muted); font-family: 'Cinzel',serif; letter-spacing: 0.5px; font-size: 10px; }
 .equip-grid .equip-name  { color: var(--parchment-dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .equip-grid .equip-name.empty { color: #4a3a20; font-style: italic; }
 
@@ -1837,7 +1837,7 @@ body {
 .section-houseset .set-cell-icon .ui-icon { width: 28px; height: 28px; }
 .section-houseset .set-cell-num {
   font-size: 9px;
-  color: #8a7050;
+  color: var(--label-muted);
   margin-top: 3px;
   font-variant-numeric: tabular-nums;
 }
@@ -2088,7 +2088,7 @@ body {
 .equip-slot-floating:hover .item-tooltip,
 .section-inv .inv-slot:hover .item-tooltip { opacity: 1; visibility: visible; }
 .item-tooltip .tt-name   { font-family: 'Cinzel',serif; font-size: 12px; color: var(--gold-light); margin-bottom: 3px; }
-.item-tooltip .tt-rarity { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #8a7050; margin-bottom: 4px; }
+.item-tooltip .tt-rarity { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--label-muted); margin-bottom: 4px; }
 .item-tooltip .tt-rarity.rarity-rare      { color: #7ab0d8; }
 .item-tooltip .tt-rarity.rarity-epic      { color: #c89cdc; }
 .item-tooltip .tt-rarity.rarity-legendary { color: var(--gold); }
@@ -2232,7 +2232,7 @@ body {
 .spell-icon { font-size: 24px; }
 .spell-info { flex: 1; }
 .spell-name { font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold-light); }
-.spell-desc { font-size: 11px; color: #8a7050; margin-top: 2px; }
+.spell-desc { font-size: 11px; color: var(--label-muted); margin-top: 2px; }
 .spell-cost { font-size: 11px; color: #8e44ad; font-weight: 600; }
 
 /* Message log */
@@ -2347,7 +2347,7 @@ body {
 .victory-recap-line.victory-recap-time {
   border-top: 1px solid #2a1a08;
   margin-top: 6px; padding-top: 6px;
-  color: #8a7050;
+  color: var(--label-muted);
 }
 .victory-recap-line.victory-recap-time b { color: var(--parchment-dark); }
 .victory-speech {
@@ -2451,7 +2451,7 @@ body {
   font-family: 'Cinzel', serif; font-size: 13px; color: var(--gold-light);
   margin-bottom: 2px;
 }
-.forge-item-slot, .library-spell-meta { color: #8a7050; font-size: 11px; font-style: italic; }
+.forge-item-slot, .library-spell-meta { color: var(--label-muted); font-size: 11px; font-style: italic; }
 .forge-preview, .library-preview {
   font-size: 12px; color: var(--parchment);
 }
@@ -2476,7 +2476,7 @@ body {
 .library-path-choice .library-upgrade-btn { padding: 5px 10px; font-size: 10px; }
 .forge-preview.forge-choose, .library-preview.forge-choose { color: var(--gold); font-style: italic; }
 .forge-empty, .library-empty {
-  text-align: center; padding: 24px; color: #8a7050; font-style: italic;
+  text-align: center; padding: 24px; color: var(--label-muted); font-style: italic;
 }
 .forge-progress-summary {
   margin: 0 0 12px 0; padding: 10px 12px;
@@ -2494,7 +2494,7 @@ body {
 .forge-hint, .library-hint {
   margin-top: 12px; padding-top: 10px;
   border-top: 1px solid rgba(106, 80, 48, 0.4);
-  font-size: 11px; color: #8a7050; font-style: italic; text-align: center;
+  font-size: 11px; color: var(--label-muted); font-style: italic; text-align: center;
 }
 .library-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
 .library-tab {
@@ -2591,7 +2591,7 @@ body {
 .brew-tile-name { font-size: 11px; color: #b0905a; line-height: 1.1; }
 .brew-tile-qty { font-size: 11px; color: var(--gold); font-weight: 700; }
 .brew-empty {
-  text-align: center; padding: 14px; color: #8a7050;
+  text-align: center; padding: 14px; color: var(--label-muted);
   font-style: italic; font-size: 12px;
 }
 .brew-launch-btn {
@@ -2632,7 +2632,7 @@ body {
 .brew-recipe-name {
   font-family: 'Cinzel', serif; font-size: 12.5px; color: var(--gold-light);
 }
-.brew-recipe-ing { font-size: 11px; color: #8a7050; font-style: italic; }
+.brew-recipe-ing { font-size: 11px; color: var(--label-muted); font-style: italic; }
 .brew-recipe-locked { opacity: 0.55; border-style: dashed; }
 .brew-recipe-locked .brew-recipe-name { color: #7a6038; letter-spacing: 2px; }
 .brew-recipe-locked .brew-recipe-ing { color: #6a5838; }
@@ -2694,18 +2694,24 @@ button.shop-tab.active {
   border-color: var(--gold);
   color: var(--gold);
 }
-.shop-grid { display: flex; flex-direction: column; gap: 6px; }
+.shop-grid { display: flex; flex-direction: column; gap: 8px; }
 .shop-item {
   background: #0a0705; border: 1px solid #2a1a08; border-radius: 4px;
-  padding: 8px 12px; display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; display: flex; align-items: center; gap: 12px;
   cursor: pointer; transition: all 0.2s;
 }
 .shop-item:hover { border-color: var(--gold-dark); }
 .shop-icon { font-size: 24px; }
 .shop-info { flex: 1; }
 .shop-name { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold-light); }
-.shop-desc { font-size: 11px; color: #8a7050; }
-.shop-price { color: var(--gold); font-size: 12px; font-weight: 600; }
+.shop-desc { font-size: 11px; color: var(--label-muted); margin-top: 2px; }
+/* Prix en pastille bordée : meilleur repère de scan dans la liste. */
+.shop-price {
+  color: var(--gold); font-size: 12px; font-weight: 600;
+  flex-shrink: 0;
+  padding: 3px 9px; border: 1px solid var(--gold-dark); border-radius: 10px;
+  background: rgba(201,168,76,0.08); white-space: nowrap;
+}
 
 .gold-display {
   display: flex; align-items: center; gap: 4px;
@@ -2791,7 +2797,7 @@ button.shop-tab.active {
 .select-sub {
   font-family: 'Crimson Text', serif;
   font-size: 14px;
-  color: #8a7050;
+  color: var(--label-muted);
   margin-bottom: 28px;
   font-style: italic;
 }
@@ -2823,7 +2829,7 @@ button.shop-tab.active {
 .mode-toggle {
   background: #0d0805;
   border: 1.5px solid var(--gold-dark);
-  color: #8a7050;
+  color: var(--label-muted);
   font-family: 'Cinzel', serif;
   font-size: 11px;
   letter-spacing: 2px;
@@ -2920,7 +2926,7 @@ button.shop-tab.active {
   font-family: 'Crimson Text', serif;
   font-size: 11px;
   line-height: 1.3;
-  color: #8a7050;
+  color: var(--label-muted);
   margin-top: 4px;
   min-height: 26px;
 }
@@ -2948,14 +2954,14 @@ button.shop-tab.active {
   opacity: .35;
   cursor: not-allowed;
   border-color: var(--gold-dark);
-  color: #8a7050;
+  color: var(--label-muted);
   text-shadow: none;
 }
 .hero-hint {
   margin-top: 8px;
   font-family: 'Crimson Text', serif;
   font-size: 12px;
-  color: #8a7050;
+  color: var(--label-muted);
   font-style: italic;
   min-height: 18px;
 }
@@ -2978,7 +2984,7 @@ button.shop-tab.active {
   border-radius: 14px;
   border: 1.5px solid var(--gold-dark);
   background: #0d0805;
-  color: #8a7050;
+  color: var(--label-muted);
   font-family: 'Cinzel', serif;
   font-size: 11px;
   letter-spacing: 1.5px;
@@ -3198,7 +3204,7 @@ button.shop-tab.active {
   padding: 14px 16px;
   background: #0d0805;
   border: 1.5px solid var(--gold-dark);
-  color: #8a7050;
+  color: var(--label-muted);
   font-family: 'Cinzel', serif;
   font-size: 12px;
   letter-spacing: 2px;
@@ -3248,7 +3254,7 @@ button.shop-tab.active {
 }
 .house-btn-icon { font-size: 36px; line-height: 1; }
 .house-btn-name { font-size: 14px; font-weight: 600; color: var(--ha, var(--gold-light)); letter-spacing: 1px; }
-.house-btn-desc { font-size: 11px; color: #8a7050; font-family: 'Crimson Text', serif; text-align: center; line-height: 1.4; }
+.house-btn-desc { font-size: 11px; color: var(--label-muted); font-family: 'Crimson Text', serif; text-align: center; line-height: 1.4; }
 .select-icon { font-size: 36px; line-height: 1; }
 .select-label { font-size: 16px; color: var(--gold); letter-spacing: 1px; }
 .select-desc { font-size: 11px; color: #6a5030; font-family: 'Crimson Text', serif; font-style: italic; line-height: 1.6; }
@@ -3678,7 +3684,7 @@ button.shop-tab.active {
 }
 .hd-pending-hint {
   font-size: 10px;
-  color: #8a7050;
+  color: var(--label-muted);
   font-style: italic;
 }
 .hd-tier-list {
@@ -4186,7 +4192,7 @@ button.shop-tab.active {
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: #8a7050;
+  color: var(--label-muted);
   font-family: 'Crimson Text', serif;
 }
 .legend-dot {
@@ -4401,7 +4407,7 @@ button.shop-tab.active {
 }
 .ir-score-label {
   font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 3px;
-  color: #8a7050; margin-top: 4px;
+  color: var(--label-muted); margin-top: 4px;
 }
 .ir-breakdown-table { width: 100%; border-collapse: collapse; }
 .ir-breakdown-table td {
@@ -4480,12 +4486,12 @@ button.shop-tab.active {
   text-align: center; letter-spacing: 3px; margin-bottom: 4px;
 }
 .hof-sub {
-  font-family: 'Crimson Text', serif; font-size: 13px; color: #8a7050;
+  font-family: 'Crimson Text', serif; font-size: 13px; color: var(--label-muted);
   text-align: center; font-style: italic; margin-bottom: 18px;
 }
 .hof-list { margin-bottom: 16px; }
 .hof-empty {
-  text-align: center; color: #8a7050; font-style: italic;
+  text-align: center; color: var(--label-muted); font-style: italic;
   font-size: 13px; padding: 30px 10px; line-height: 1.6;
 }
 .hof-row {
@@ -4498,7 +4504,7 @@ button.shop-tab.active {
 .hof-rank-3 { border-color: #b07a3a; }
 .hof-rank {
   font-size: 18px; min-width: 38px; text-align: center;
-  font-family: 'Cinzel', serif; color: #8a7050;
+  font-family: 'Cinzel', serif; color: var(--label-muted);
 }
 .hof-heroes { display: flex; gap: 4px; flex-shrink: 0; }
 .hof-hero-av {
@@ -4532,7 +4538,7 @@ button.shop-tab.active {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .hof-meta {
-  font-size: 11px; color: #8a7050; margin-top: 2px;
+  font-size: 11px; color: var(--label-muted); margin-top: 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .hof-chips {
