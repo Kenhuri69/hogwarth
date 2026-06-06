@@ -496,6 +496,14 @@ async function startGame(count = 2) {
   portusOocCooldown   = 0;
   portusFightCooldown = 0;
   healSpellCooldown   = 0;
+  // Easter egg « Salle sur Demande » — état remis à zéro à chaque partie.
+  requirementWalls     = new Map();
+  requirementTrigger   = new Map();
+  requirementPaces     = new Map();
+  requirementRevealed  = new Set();
+  usedRequirementRooms = new Set();
+  requirementGiftTaken = false;
+  requirementBuffSteps = 0;
   // Note : seenNpcs / activeQuests / availableQuests / completedQuests
   // sont déjà initialisés par chooseHouse() AVANT l'intro Dumbledore
   // (sinon _finishIntro serait écrasée). Ne pas les reset ici.

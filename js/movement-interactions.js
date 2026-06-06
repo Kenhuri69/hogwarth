@@ -636,6 +636,65 @@ function useFountain() {
   safeCall('autoSave', 'fountain-used');
 }
 
+// ── Salle sur Demande (easter egg) ───────────────────────────
+// Révèle la porte : le mur « propice » de l'étage devient CELL.REQUIREMENT,
+// marchable. Déclenché par le 3ᵉ passage sur la tuile (cf. movement.js _step).
+function _revealRequirementRoom(floor) {
+  if (typeof requirementWalls === 'undefined' || !requirementWalls.has(floor)) return;
+  if (requirementRevealed.has(floor)) return;
+  const [wx, wy] = requirementWalls.get(floor).split(',').map(Number);
+  if (!dungeon[wy] || dungeon[wy][wx] !== CELL.WALL) return;
+  dungeon[wy][wx] = CELL.REQUIREMENT;
+  requirementRevealed.add(floor);
+  setNarrative("Tu longes ce mur une troisième fois, l'esprit tendu vers ce qu'il te faut… La pierre frémit, se replie : une porte se dessine là où il n'y avait rien. La Salle sur Demande t'ouvre.");
+  if (typeof addMsg === 'function') addMsg("✨ Une porte s'est dessinée dans le mur — la Salle sur Demande !", 'magic');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+  renderMinimap();
+  drawDungeon();
+}
+
+// Entrer dans la Salle : refuge « repos sûr + petit buff » (1×/visite d'étage,
+// modèle `usedFountains`) et objet unique la toute première fois de la partie.
+function useRequirementRoom() {
+  if (inBattle) return;
+  if (dungeon[playerY][playerX] !== CELL.REQUIREMENT) return;
+  const key = `${playerX},${playerY}`;
+  const firstGift = (typeof requirementGiftTaken !== 'undefined') && !requirementGiftTaken;
+  if (usedRequirementRooms.has(key) && !firstGift) {
+    addMsg("La Salle s'est refermée : revenez sur cet étage plus tard.", 'bad');
+    return;
+  }
+  // Repos sûr — régénère une part du groupe et arme le buff de Confort.
+  if (!usedRequirementRooms.has(key)) {
+    party.slice(0, partySize).forEach(c => {
+      if (c.hp <= 0) return;
+      c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * REQUIREMENT_REST_FRAC));
+      c.sp = Math.min(c.spMax, c.sp + Math.ceil(c.spMax * REQUIREMENT_REST_FRAC));
+    });
+    requirementBuffSteps = REQUIREMENT_BUFF_STEPS;
+    usedRequirementRooms.add(key);
+    if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'magic');
+    setNarrative("La Salle s'est faite refuge : un âtre crépite, des fauteuils moelleux accueillent le groupe. Chacun reprend des forces, et une quiétude lumineuse l'accompagnera quelque temps.");
+    addMsg("Salle sur Demande : repos réparateur (+ buff de Confort).", 'good');
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+  }
+  // Objet unique — une seule fois par partie, à la toute première Salle visitée.
+  if (firstGift) {
+    const tiare = (typeof ITEMS !== 'undefined') ? ITEMS.find(i => i.id === 'tiare_poussiereuse') : null;
+    if (tiare && player.inventory.length < 16) {
+      player.inventory.push({ ...tiare });
+      requirementGiftTaken = true;
+      setNarrative("Sur un socle poussiéreux repose une vieille tiare ternie, oubliée là depuis des siècles. La Salle te l'offre — écho d'un trésor jadis enfoui.");
+      addMsg("✨ Trouvé : Tiare poussiéreuse (objet unique) !", 'magic');
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+    } else if (tiare) {
+      addMsg("Une vieille tiare repose sur un socle, mais votre sac est plein.", 'bad');
+    }
+  }
+  updateUI();
+  safeCall('autoSave', 'requirement-used');
+}
+
 // ── Jardin d'herbes à récolte passive (Potions P6.b3) ────────────────────
 // Palier d'herbe de l'étage courant (même grille que la cueillette de
 // searchRoom) : T1 ≤3 · T2 4-6 · T3 7-10 · T4 11+ (Boucle Ténébreuse).

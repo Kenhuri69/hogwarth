@@ -1,6 +1,7 @@
 # Plan — Easter egg « La Salle sur Demande »
 
-> Statut : **proposition** (non implémenté). 3ᵉ easter egg pressenti du jeu
+> Statut : **en cours d'implémentation** (branche `claude/plan-launch-jq2EA`).
+> 3ᵉ easter egg pressenti du jeu
 > (après l'arc Manon livré et le plan « Chasse Sans Tête »). Registre :
 > **émerveillement / utilité**. Canon HP : la Salle sur Demande (Room of
 > Requirement) apparaît quand on **passe trois fois devant le même pan de
@@ -81,15 +82,15 @@ case → la tuile), pas le piétinement. Garde-fou : ne pas recompter si la
 case précédente était déjà la tuile (déjà géré par la logique d'entrée de
 `_step`). 3 entrées suffisent (canon « trois fois »).
 
-## 3. Décisions à acter (⚠️ avant implémentation)
+## 3. Décisions actées (✅ arbitrées le 2026-06-06)
 
-| Sujet | Options / proposition |
-|-------|------------------------|
-| **Objet unique** | (a) **nouveau trinket cosmétique-léger** dédié (ex. « Tiare poussiéreuse » — clin d'œil au Diadème caché, sans empiéter sur `diademe_serdaigle` légendaire) ; (b) un **stock de consommables** (potions) ; (c) rien (refuge seul). → **proposition : (a)**, item unique `tiare_poussiereuse`, slot `head`, bonus modeste (à définir) ou purement cosmétique pour rester non-méta |
-| **Refuge — effet exact** | restaure 100 % PV+PM (calqué fontaine) **ou** repos sûr + petit buff temporaire. → **proposition : 100 % PV+PM**, 1×/étage |
-| **Gating d'étage** | partout (la Salle s'adapte à chaque étage) **ou** à partir d'un étage (canon : 7ᵉ). → **proposition : partout**, mais objet unique **une seule fois** par partie |
-| **Indice de localisation** | aucun (pur geste) **ou** Revelio dévoile la tuile. → **proposition : aucun** (fidélité canon : c'est l'intention, pas la révélation) |
-| **Définition du « passage »** | entrée sur la tuile de déclenchement, 3 entrées distinctes. → **acté** |
+| Sujet | Décision retenue |
+|-------|------------------|
+| **Objet unique** | ✅ **(a)** item unique `tiare_poussiereuse`, slot `head`, rareté `rare`, bonus **modeste non-méta** : `bonusMag:2, bonusLck:1` (clin d'œil au Diadème caché, sans empiéter sur `diademe_serdaigle` légendaire). `price:0` (non vendable). Une seule fois par partie. |
+| **Refuge — effet exact** | ✅ **Repos sûr + petit buff temporaire** (≠ fontaine qui restaure 100 %). Repos : `+40 %` PV/PM (`REQUIREMENT_REST_FRAC=0.40`) par membre vivant. Buff « Confort de la Salle » : `requirementBuffSteps=20` pas (`REQUIREMENT_BUFF_STEPS`), `+1 PV / +1 PM` par pas hors combat tant que `>0`. 1×/visite d'étage. |
+| **Gating d'étage** | ✅ **Partout** (la Salle s'adapte à chaque étage), objet unique **une seule fois** par partie. |
+| **Indice de localisation** | ✅ **Aucun** (pur geste, fidélité canon). |
+| **Définition du « passage »** | ✅ Entrée sur la tuile de déclenchement, 3 entrées distinctes (chaque `_step` qui atterrit sur la tuile = entrée distincte, le piétinement est impossible car `_step` change toujours de case). |
 
 ## 4. Couche rumeurs (découverte sans journal)
 
@@ -132,7 +133,34 @@ case précédente était déjà la tuile (déjà géré par la logique d'entrée
 
 ## Suivi
 - [x] Concept retenu par l'utilisateur (à développer en plan).
-- [ ] §3 — décisions à arbitrer (objet unique, effet refuge, gating, indice).
-- [ ] Phases 1-6 — à implémenter une fois le plan validé.
-- [ ] Réserve : **dialogues/indices** (ligne Sir Nicolas, texte d'overlay de
-      la Salle) à relire/valider avant implémentation.
+- [x] §3 — décisions arbitrées (2026-06-06) : Tiare poussiéreuse (head, MAG+2/LCK+1),
+      refuge = repos +40 % PV/PM + buff de Confort 20 pas, gating partout, aucun indice.
+- [x] Phase 1 — cellule `CELL.REQUIREMENT=16`, constantes (`REQUIREMENT_REST_FRAC`,
+      `REQUIREMENT_BUFF_STEPS`), item `tiare_poussiereuse`, état (state.js),
+      sérialisation (save.js), reset `startGame` (main.js). → verify : round-trip OK.
+- [x] Phase 2 — `_ensureRequirementWall(floor)` (dungeon.js, seed `floor*7919`),
+      reset `usedRequirementRooms` (génération + cache restore). → verify : couple
+      WALL/FLOOR adjacent valide sur 8 étages (test T2).
+- [x] Phase 3 — comptage des passages + buff dans `_step` (movement.js) ;
+      overlay descriptor + `handleCellEntry`. → verify : 1er/2e = rien, 3e = porte (T3).
+- [x] Phase 4 — `_revealRequirementRoom` + `useRequirementRoom` (movement-interactions.js) ;
+      sprite 3D `drawRequirementSprite` + dispatch renderer ; minimap `.map-requirement`.
+      → verify : refuge 1×/étage, objet unique 1×/partie (T4) ; buff régén/décompte (T5).
+- [x] Phase 5 — ligne d'indice Sir Nicolas (npcs.js idleRandom) ; icône item
+      (réemploi circlet dans `ITEM_ICON_REGISTRY`). → verify : couverture icônes 141/141.
+- [x] Phase 6 — `scenarioRoomOfRequirement` (tests/scenarios/dungeon.js, 6 sous-tests).
+      → verify : `node tests/smoke.js` vert (160 scénarios) + `node tests/units.js` vert.
+
+## Écarts / décisions d'implémentation
+- **Icône de l'objet** : ✅ icône painterly dédiée générée via le pipeline
+  (`tools/icon_factory.py` → recette `tiare_poussiereuse`, part `tiara.svg`,
+  or vieilli terni + gemme bleu nuit sourde, rareté `rare`). 5 mipmaps dans
+  `img/icons_new/`, enregistrée dans `ITEM_ICON_NEW_REGISTRY` (priorité 1).
+  L'entrée legacy `ITEM_ICON_REGISTRY` (réemploi circlet) reste comme fallback.
+- **Sprite 3D** : emoji 🚪 + halo doré (pas de SCENE_ICON SVG), conforme au
+  §6 hors-scope (« réemploi sprite type fontaine suffit »).
+- **Loader MANIFEST** : fonctions non ajoutées (précédent `useFountain`/
+  `useAltar` absents du manifeste).
+- **Miroir `data-icon-recipes.js`** : non mis à jour (inerte au runtime ; le
+  miroir n'est déjà pas tenu pour les recettes récentes — `couronne_basilic`
+  etc. absentes).

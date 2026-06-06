@@ -502,6 +502,33 @@ function drawFountainSprite(x, baseY, sz, dried) {
   ctx.restore();
 }
 
+// Salle sur Demande (easter egg) — porte révélée dans un pan de mur. Halo
+// chaud doré ; grisé si le refuge a déjà été pris pour cette visite (spent).
+function drawRequirementSprite(x, baseY, sz, spent) {
+  ctx.save();
+  // Ombre au sol
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.5, sz * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  // Halo doré chaleureux (terni si le refuge est épuisé)
+  const halo = ctx.createRadialGradient(x, baseY - sz * 0.45, 0, x, baseY - sz * 0.45, sz * 0.95);
+  if (spent) {
+    halo.addColorStop(0, 'rgba(120,110,90,0.20)');
+    halo.addColorStop(1, 'rgba(60,55,40,0)');
+  } else {
+    halo.addColorStop(0, 'rgba(240,205,120,0.45)');
+    halo.addColorStop(1, 'rgba(150,110,40,0)');
+  }
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.45, sz * 0.95, 0, Math.PI * 2); ctx.fill();
+  // Porte (emoji fallback — pas de SCENE_ICON dédié, cf. plan §6 hors-scope)
+  ctx.font = `${Math.floor(sz * 1.05)}px serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  if (spent) ctx.globalAlpha = 0.55;
+  ctx.fillText('🚪', x, baseY);
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 // Jardin d'herbes (Potions P6.b3) — sprite de couloir d'un jardin révélé.
 // `tier` (1-4) adapte la palette aux herbes du palier (cf. SCENE_ICONS.garden).
 function drawGardenSprite(x, baseY, sz, tier) {

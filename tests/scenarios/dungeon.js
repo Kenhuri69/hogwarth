@@ -2134,4 +2134,157 @@ async function scenarioRuneRewards() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioFountain, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards] };
+async function scenarioRoomOfRequirement() {
+  console.log('\n── Scénario : Salle sur Demande (easter egg) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+
+  // T1 : surface exposée (cellule, état, fonctions)
+  const t1 = await page.evaluate(() => ({
+    req:      CELL.REQUIREMENT,
+    walls:    typeof requirementWalls instanceof Map || requirementWalls instanceof Map,
+    trigger:  requirementTrigger instanceof Map,
+    paces:    requirementPaces instanceof Map,
+    revealed: requirementRevealed instanceof Set,
+    used:     usedRequirementRooms instanceof Set,
+    reveal:   typeof _revealRequirementRoom === 'function',
+    use:      typeof useRequirementRoom === 'function',
+    ensure:   typeof _ensureRequirementWall === 'function',
+    item:     ITEMS.some(i => i.id === 'tiare_poussiereuse'),
+  }));
+  console.log('  T1:', t1);
+  assert(t1.req === 16,  'CELL.REQUIREMENT doit valoir 16');
+  assert(t1.trigger && t1.paces, 'requirementTrigger/Paces doivent être des Map');
+  assert(t1.revealed && t1.used, 'requirementRevealed/usedRequirementRooms doivent être des Set');
+  assert(t1.reveal && t1.use && t1.ensure, 'fonctions Salle sur Demande absentes');
+  assert(t1.item, 'item tiare_poussiereuse absent de ITEMS');
+
+  // T2 : génération — couple mur(WALL)/tuile(FLOOR) adjacent, valide
+  const t2 = await page.evaluate(() => {
+    let total = 0, ok = 0, bad = 0;
+    for (let f = 1; f <= 8; f++) {
+      requirementWalls = new Map(); requirementTrigger = new Map(); requirementRevealed = new Set();
+      generateDungeon(f);
+      if (!requirementWalls.has(f) || !requirementTrigger.has(f)) continue;
+      total++;
+      const [wx, wy] = requirementWalls.get(f).split(',').map(Number);
+      const [tx, ty] = requirementTrigger.get(f).split(',').map(Number);
+      const wallOk = dungeon[wy][wx] === CELL.WALL;
+      const trigOk = dungeon[ty][tx] === CELL.FLOOR;
+      const adj    = Math.abs(wx - tx) + Math.abs(wy - ty) === 1;
+      if (wallOk && trigOk && adj) ok++; else bad++;
+    }
+    return { total, ok, bad };
+  });
+  console.log('  T2 génération:', t2);
+  assert(t2.total >= 6, 'la Salle doit se placer sur la plupart des étages');
+  assert(t2.bad === 0,  'tout couple posé doit être WALL+FLOOR adjacents');
+
+  // T3 : 3 passages distincts sur la tuile → porte (mur → REQUIREMENT) au 3ᵉ
+  const t3 = await page.evaluate(() => {
+    currentFloor = 1;
+    const px = 5, py = 5;
+    playerX = px; playerY = py; playerDir = 'e';
+    dungeon[py][px]       = CELL.FLOOR;  // joueur
+    dungeon[py][px + 1]   = CELL.FLOOR;  // tuile de déclenchement
+    dungeon[py - 1][px + 1] = CELL.WALL; // mur propice → porte
+    enemyMap[py][px] = null; enemyMap[py][px + 1] = null;
+    requirementTrigger  = new Map([[1, `${px + 1},${py}`]]);
+    requirementWalls    = new Map([[1, `${px + 1},${py - 1}`]]);
+    requirementPaces    = new Map();
+    requirementRevealed = new Set();
+    const wall = () => dungeon[py - 1][px + 1];
+    _step('e', true); const p1 = requirementPaces.get(1) || 0, w1 = wall();
+    _step('w', true);
+    _step('e', true); const p2 = requirementPaces.get(1) || 0, w2 = wall();
+    _step('w', true);
+    _step('e', true); const p3 = requirementPaces.get(1) || 0, w3 = wall();
+    return { p1, p2, p3, w1, w2, w3, revealed: requirementRevealed.has(1), REQ: CELL.REQUIREMENT, WALL: CELL.WALL };
+  });
+  console.log('  T3 passages:', t3);
+  assert(t3.p1 === 1 && t3.p2 === 2 && t3.p3 === 3, 'chaque entrée distincte doit compter +1');
+  assert(t3.w1 === t3.WALL && t3.w2 === t3.WALL, 'aucune porte avant le 3ᵉ passage');
+  assert(t3.w3 === t3.REQ && t3.revealed, 'le 3ᵉ passage doit révéler la porte (REQUIREMENT)');
+
+  // T4 : entrer → repos + buff + objet unique (1×/partie) ; 2e usage refusé
+  const t4 = await page.evaluate(() => {
+    playerX = 6; playerY = 4; // case REQUIREMENT révélée en T3
+    party.forEach(c => { c.hp = 1; c.sp = 1; });
+    requirementGiftTaken = false;
+    usedRequirementRooms = new Set();
+    requirementBuffSteps = 0;
+    const hpBefore = party[0].hp;
+    useRequirementRoom();
+    const out = {
+      hpAfter:  party[0].hp,
+      buff:     requirementBuffSteps,
+      buffMax:  REQUIREMENT_BUFF_STEPS,
+      used:     usedRequirementRooms.has('6,4'),
+      gift:     requirementGiftTaken,
+      hasTiare: player.inventory.some(i => i.id === 'tiare_poussiereuse'),
+    };
+    useRequirementRoom(); // 2e usage même visite
+    out.tiareCount = player.inventory.filter(i => i.id === 'tiare_poussiereuse').length;
+    return Object.assign(out, { hpBefore });
+  });
+  console.log('  T4 refuge:', t4);
+  assert(t4.hpAfter > t4.hpBefore, 'le repos doit régénérer des PV');
+  assert(t4.buff === t4.buffMax,   'le buff de Confort doit être armé');
+  assert(t4.used && t4.gift && t4.hasTiare, 'refuge pris + objet unique donné');
+  assert(t4.tiareCount === 1,      'objet unique donné une seule fois');
+
+  // T5 : buff de Confort — régénération + décompte par pas (_step)
+  const t5 = await page.evaluate(() => {
+    playerX = 5; playerY = 5; playerDir = 'e';
+    dungeon[5][5] = CELL.FLOOR; dungeon[5][6] = CELL.FLOOR;
+    enemyMap[5][6] = null;
+    requirementRevealed = new Set(); requirementTrigger = new Map();
+    party.forEach(c => { c.hp = Math.max(1, c.hpMax - 5); });
+    requirementBuffSteps = 3;
+    const hp0 = party[0].hp;
+    _step('e', true);
+    return { buff: requirementBuffSteps, healed: party[0].hp > hp0 };
+  });
+  console.log('  T5 buff:', t5);
+  assert(t5.buff === 2, 'le buff de Confort doit se décrémenter d\'un pas');
+  assert(t5.healed,     'le buff de Confort doit régénérer des PV par pas');
+
+  // T6 : round-trip save
+  const t6 = await page.evaluate(() => {
+    requirementPaces     = new Map([[3, 2]]);
+    requirementRevealed  = new Set([3]);
+    requirementGiftTaken = true;
+    requirementBuffSteps = 7;
+    requirementWalls     = new Map([[3, '8,8']]);
+    requirementTrigger   = new Map([[3, '8,9']]);
+    usedRequirementRooms = new Set(['8,8']);
+    const snap = _serializeState();
+    requirementPaces = new Map(); requirementRevealed = new Set();
+    requirementGiftTaken = false; requirementBuffSteps = 0;
+    requirementWalls = new Map(); requirementTrigger = new Map();
+    usedRequirementRooms = new Set();
+    _applyState(snap);
+    return {
+      paces:    requirementPaces.get(3),
+      revealed: requirementRevealed.has(3),
+      gift:     requirementGiftTaken,
+      buff:     requirementBuffSteps,
+      wall:     requirementWalls.get(3),
+      trig:     requirementTrigger.get(3),
+      used:     usedRequirementRooms.has('8,8'),
+    };
+  });
+  console.log('  T6 round-trip save:', t6);
+  assert(t6.paces === 2 && t6.revealed && t6.gift, 'paces/revealed/gift doivent survivre au save');
+  assert(t6.buff === 7, 'requirementBuffSteps doit survivre au save');
+  assert(t6.wall === '8,8' && t6.trig === '8,9' && t6.used, 'walls/trigger/used doivent survivre au save');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Salle sur Demande)`);
+  }
+  console.log('  ✅ Salle sur Demande — placement, geste, refuge, objet, persistance OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioFountain, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
