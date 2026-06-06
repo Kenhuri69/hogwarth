@@ -664,6 +664,7 @@ const _DUMBLEDORE_QID_SUFFIX = {
   dumbledore_courage:    'courage',
   dumbledore_resistance: 'resistance',
   dumbledore_revelation: 'revelation',
+  eclats_clef_voute:     'eclats',
 };
 
 // PNJ couverts par la Vague A voice-extensions-v2 : les 4 chefs de Maison.

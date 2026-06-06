@@ -103,6 +103,9 @@ Object.assign(AudioSystem, {
   _VOICE_SAMPLES: {
     dumbledore_intro_1: 'audio/voice/dumbledore_intro_1.ogg',
     dumbledore_intro_2: 'audio/voice/dumbledore_intro_2.ogg',
+    // Cinématique Clé de Voûte : intro réécrite en 4 pages (Lot 1).
+    dumbledore_intro_3: 'audio/voice/dumbledore_intro_3.ogg',
+    dumbledore_intro_4: 'audio/voice/dumbledore_intro_4.ogg',
     // ── Voix narrative de la phase d'introduction (intro UX) ──
     // La voix guide le joueur AVANT toute révélation : aucun nom ni
     // portrait n'est affiché. C'est Dumbledore, mais le joueur ne le
@@ -132,6 +135,10 @@ Object.assign(AudioSystem, {
     dumbledore_revelation_offer_1:  'audio/voice/dumbledore_revelation_offer_1.ogg',
     dumbledore_revelation_active_1: 'audio/voice/dumbledore_revelation_active_1.ogg',
     dumbledore_revelation_ready_1:  'audio/voice/dumbledore_revelation_ready_1.ogg',
+    // ── Fil rouge « Clé de Voûte des Quatre » (Lot 4) — quête éclats ──
+    dumbledore_eclats_offer_1:      'audio/voice/dumbledore_eclats_offer_1.ogg',
+    dumbledore_eclats_active_1:     'audio/voice/dumbledore_eclats_active_1.ogg',
+    dumbledore_eclats_ready_1:      'audio/voice/dumbledore_eclats_ready_1.ogg',
     // ── Quêtes farming (cf. .claude/plans/farming-quests.md §2) ──
     // 6 samples = 2 quêtes × 3 moments. Textes génériques (sans nom de
     // monstre / item, qui varient dynamiquement à l'écran).
