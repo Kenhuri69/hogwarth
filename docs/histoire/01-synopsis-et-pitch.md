@@ -10,26 +10,42 @@
 
 ## 1.1 Logline
 
-> 💡 *« Quand une corruption ancienne remonte des fondations de Poudlard et
-> ranime Lord Voldemort, une poignée d'élèves descend, étage après étage, dans
-> un château retourné contre eux — pour éteindre le mal là où il a pris
-> racine. »*
+> 💡 *« Le jour où une relique des Fondateurs se fend pendant un cours, les
+> escaliers de Poudlard se retournent vers le bas et le château s'ouvre sur ce
+> qu'il avait été bâti pour enfermer. À peine réparti dans sa Maison, un élève
+> descend — étage après étage, à contre-courant de la peur — pour resceller le
+> mal à sa source, tandis qu'au plus profond une présence familière, Lord
+> Voldemort, se ré-assemble. »*
 
 ## 1.2 Prémisse
 
-> 💡 (proposition)
+> 💡 (proposition — événement déclencheur révisé pour l'immersion)
 
 Poudlard ne dort jamais tout à fait. Sous ses salles de classe et ses cachots
-court une magie plus vieille que l'école elle-même — et quelque chose, en bas,
-s'est réveillé. Les escaliers se mettent à descendre là où ils montaient. Des
-portraits hurlent au lieu de bavarder. Des créatures qu'on croyait reléguées
-aux marges du château rôdent dans les couloirs. Et tout au fond, une présence
-familière reprend forme : **Lord Voldemort**, que l'on croyait fini, se
-**ré-assemble** à mesure que la corruption gagne.
+court une magie plus vieille que l'école elle-même, et les Fondateurs, en
+bâtissant le château, ne l'ont pas vaincue : ils l'ont **scellée**. Le verrou
+de ce sceau a un nom et une forme — **la Clé de Voûte des Quatre**, une relique
+qu'on montre aux élèves comme une curiosité d'Histoire de la Magie, sans plus
+savoir qu'elle tient le château fermé sur ses propres profondeurs.
 
-Les professeurs verrouillent les étages supérieurs pour protéger les élèves.
-Mais le mal monte. Il faut quelqu'un pour **descendre à contre-courant** —
-nettoyer le château niveau par niveau jusqu'à sa source.
+💡 **L'événement déclencheur** : en plein cours, devant une classe à demi
+assoupie, la Clé de Voûte se **fend**. Un trait de givre, un son d'étang qui
+gèle — et le familier bascule. Les escaliers mobiles s'immobilisent, puis
+**pivotent tous vers le bas**. Les portraits se mettent à hurler. Le froid
+monte des dalles. Ce n'est pas la fin du monde : c'est la **première fissure**.
+Mais par cette fissure, le château commence à se **déplier vers le bas** — des
+passages murés depuis des siècles s'ouvrent en grinçant, et les Profondeurs
+Oubliées remontent à la rencontre de la peur.
+
+Tout au fond, ce que le sceau retenait reprend forme : **Lord Voldemort**, que
+l'on croyait fini, se **ré-assemble** à mesure que la corruption gagne — non par
+un nouveau complot, mais comme un résidu que plus rien ne contient.
+
+Les professeurs se précipitent pour **tenir les étages habités** — évacuer,
+murer, protéger l'école vivante. Mais on ne rescelle pas la Clé de Voûte d'en
+haut : il faut **descendre à contre-courant** jusqu'à la source, et la
+corruption se nourrit du doute autant que de l'oubli — elle repousse ceux qui
+hésitent. Il faut quelqu'un qui descende **volontairement**.
 
 ✅ (dans le jeu) C'est le **portrait de Dumbledore** qui accueille le héros,
 lui confie la première quête, et l'envoie dans les profondeurs — l'aventure
@@ -108,6 +124,9 @@ la Boucle** et quêtes de purge répétables, paliers de Maison **Mythe (17)** �
 ---
 
 ## Récapitulatif express (pour briefer Gemini)
-> Élèves de Poudlard → descente dans un château corrompu → la corruption
-> ranime Voldemort au fond (ét. 10) → sa défaite ouvre les **Ruines
-> Anciennes** et la **Boucle Ténébreuse** (post-game de prestige).
+> Élèves de Poudlard : pendant un cours, une **relique des Fondateurs (la Clé
+> de Voûte)** se fend → les escaliers se retournent vers le bas, le château
+> s'ouvre sur ses profondeurs → descente à contre-courant dans un château
+> corrompu → la corruption ré-assemble Voldemort au fond (ét. 10) → sa défaite
+> ouvre les **Ruines Anciennes** et la **Boucle Ténébreuse** (post-game de
+> prestige).
