@@ -2409,42 +2409,87 @@ async function scenarioRoomOfRequirement() {
   assert(t11.openOk,                   'useRequirementRoom (commerce) ne doit pas throw');
   assert(t11.notConsumed,              'commerce non-consommable : pas de usedRequirementRooms');
 
-  // T12 : trophée cosmétique (1×/partie) + codex méta localStorage
+  // T12 : trophées multiples (1×/partie par thème) + codex méta localStorage
   const t12 = await page.evaluate(() => {
     localStorage.removeItem('hogwarts_rpg_requirement_codex');
     currentFloor = 4; playerX = 8; playerY = 8; dungeon[8][8] = CELL.REQUIREMENT;
     requirementGiftTaken = true;            // isole du gift tiare
-    requirementTrophyTaken = false;
+    requirementTrophiesTaken = new Set();
     usedRequirementRooms = new Set();
     requirementTheme = new Map([[4, 'loot']]);
     player.inventory = [];
-    useRequirementRoom();                   // 1ʳᵉ visite loot → trophée
-    const trophy1 = requirementTrophyTaken;
+    useRequirementRoom();                   // 1ʳᵉ visite loot → trophée loot
+    const trophyRun = requirementTrophiesTaken.has('loot');
     const codex1 = getRequirementCodex();
-    // 2ᵉ visite loot (autre case) → pas de re-trophée
+    // 2ᵉ visite loot (autre case) → pas de re-trophée loot (toujours 1 dans le Set)
     playerX = 2; playerY = 2; dungeon[2][2] = CELL.REQUIREMENT;
     usedRequirementRooms = new Set();
     requirementTheme = new Map([[4, 'loot']]);
     useRequirementRoom();
+    const lootStillOne = requirementTrophiesTaken.size === 1;
     // reveal incrémente roomsFound
     const rooms0 = getRequirementCodex().roomsFound;
     recordRequirementRevealed();
     const rooms1 = getRequirementCodex().roomsFound;
+    // collecte des 5 thèmes → trophée de complétion à vie
+    ['refuge', 'training', 'boutique', 'forge'].forEach(t => recordRequirementTrophy(t));
+    const codexFull = getRequirementCodex();
     // rendu Almanach sans throw
     let almOk = true;
     try { if (typeof renderRequirementAlmanac === 'function') renderRequirementAlmanac(); } catch (e) { almOk = false; }
     return {
-      trophy1, trophyMeta: codex1.trophy, themeSeen: !!codex1.themesSeen.loot,
-      roomsInc: rooms1 === rooms0 + 1, almOk,
-      trophyFlagAfter2: requirementTrophyTaken,
+      trophyRun, trophyMeta: !!codex1.trophies.loot, themeSeen: !!codex1.themesSeen.loot,
+      roomsInc: rooms1 === rooms0 + 1, almOk, lootStillOne,
+      complete: !!codexFull.trophies._complete,
+      trophiesCount: REQUIREMENT_TROPHIES.length,
     };
   });
-  console.log('  T12 trophée + codex:', t12);
-  assert(t12.trophy1 && t12.trophyMeta, 'loot : trophée armé (partie) + codex à vie');
-  assert(t12.themeSeen,                 'codex : thème loot enregistré');
-  assert(t12.roomsInc,                  'recordRequirementRevealed incrémente roomsFound');
-  assert(t12.trophyFlagAfter2,          'trophée reste pris (pas de doublon) sur 2ᵉ loot');
-  assert(t12.almOk,                     'renderRequirementAlmanac ne doit pas throw');
+  console.log('  T12 trophées + codex:', t12);
+  assert(t12.trophyRun && t12.trophyMeta, 'loot : trophée armé (partie) + codex à vie');
+  assert(t12.themeSeen,                   'codex : thème loot enregistré');
+  assert(t12.roomsInc,                    'recordRequirementRevealed incrémente roomsFound');
+  assert(t12.lootStillOne,                'pas de doublon de trophée sur 2ᵉ loot (Set inchangé)');
+  assert(t12.complete,                    'les 5 thèmes collectés → trophée de complétion');
+  assert(t12.trophiesCount === 6,         '6 trophées définis (5 thèmes + complétion)');
+
+  // T13 : choix du thème par le joueur (chooseRequirementTheme force le thème)
+  const t13 = await page.evaluate(() => {
+    currentFloor = 3; playerX = 6; playerY = 6; dungeon[6][6] = CELL.REQUIREMENT;
+    requirementGiftTaken = true; usedRequirementRooms = new Set();
+    requirementTheme = new Map();
+    party.slice(0, partySize).forEach(c => { c.hp = c.hpMax; c.sp = c.spMax; });
+    player.inventory = []; player.gold = 0;     // contexte → suggérerait loot
+    const suggested = _pickRequirementTheme(3);
+    requirementTheme = new Map();                // reset pour laisser le choix forcer
+    party.slice(0, partySize).forEach(c => { c.hp = 1; });
+    requirementBuffSteps = 0;
+    chooseRequirementTheme('refuge');            // le joueur force refuge
+    return { suggested, forced: requirementTheme.get(3), buff: requirementBuffSteps, buffMax: REQUIREMENT_BUFF_STEPS };
+  });
+  console.log('  T13 choix joueur:', t13);
+  assert(t13.suggested === 'loot',     'contexte sac vide → suggestion loot');
+  assert(t13.forced === 'refuge',      'chooseRequirementTheme force le thème demandé');
+  assert(t13.buff === t13.buffMax,     'le thème forcé refuge applique son effet');
+
+  // T14 : bonus méta (Faveur de la Salle) + onglet Atelier sans throw
+  const t14 = await page.evaluate(() => {
+    // codex avec 2 thèmes découverts
+    localStorage.setItem('hogwarts_rpg_requirement_codex',
+      JSON.stringify({ themesSeen: { refuge: true, loot: true }, roomsFound: 3, trophies: { loot: true } }));
+    player.gold = 0; player.inventory = [];
+    _applyRequirementMetaBonus();
+    const goldBonus = player.gold;               // 15×2 = 30
+    const potions = player.inventory                // potions empilées (qty)
+      .filter(i => i.id === 'potion_s')
+      .reduce((s, i) => s + (i.qty || 1), 0);
+    let atelierOk = true;
+    try { if (typeof openAtelierVoyageur === 'function') openAtelierVoyageur('requirement'); } catch (e) { atelierOk = false; }
+    return { goldBonus, potions, atelierOk };
+  });
+  console.log('  T14 méta + atelier:', t14);
+  assert(t14.goldBonus === 30, 'Faveur de la Salle : +15 G par thème découvert (2 → 30)');
+  assert(t14.potions === 2,    'Faveur de la Salle : 1 potion_s par thème découvert');
+  assert(t14.atelierOk,        'onglet Atelier « Salle » ne doit pas throw');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

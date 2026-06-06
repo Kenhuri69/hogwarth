@@ -223,17 +223,20 @@ function migrateLegacyKey() {
 const REQ_CODEX_KEY = 'hogwarts_rpg_requirement_codex';
 
 function _reqCodexRead() {
+  const empty = () => ({ themesSeen: {}, roomsFound: 0, trophies: {} });
   try {
     const raw = localStorage.getItem(REQ_CODEX_KEY);
-    if (!raw) return { themesSeen: {}, roomsFound: 0, trophy: false };
+    if (!raw) return empty();
     const obj = JSON.parse(raw);
     if (!obj || typeof obj !== 'object') throw new Error('shape');
     obj.themesSeen = (obj.themesSeen && typeof obj.themesSeen === 'object') ? obj.themesSeen : {};
     obj.roomsFound = (typeof obj.roomsFound === 'number') ? obj.roomsFound : 0;
-    obj.trophy     = !!obj.trophy;
+    obj.trophies   = (obj.trophies && typeof obj.trophies === 'object') ? obj.trophies : {};
+    // Migration V3 → V3.1 : ancien bool `trophy` (loot) → trophies.loot.
+    if (obj.trophy) obj.trophies.loot = true;
     return obj;
   } catch (e) {
-    return { themesSeen: {}, roomsFound: 0, trophy: false };
+    return empty();
   }
 }
 
@@ -266,9 +269,17 @@ function recordRequirementTheme(theme) {
   _reqCodexWrite(c);
 }
 
-// Appelé à la 1ʳᵉ collecte du trophée cosmétique (toutes parties confondues).
-function recordRequirementTrophy() {
+// Appelé à la 1ʳᵉ collecte du trophée d'un thème (toutes parties confondues).
+// Marque `trophies[theme]` à vie ; quand les 5 thèmes sont là → `trophies._complete`.
+function recordRequirementTrophy(theme) {
+  if (!theme) return false;
   const c = _reqCodexRead();
-  c.trophy = true;
+  const already = !!c.trophies[theme];
+  c.trophies[theme] = true;
+  // Complétion : les 5 thèmes de base collectés à vie.
+  const base = ['refuge', 'loot', 'training', 'boutique', 'forge'];
+  const justCompleted = !c.trophies._complete && base.every(t => c.trophies[t]);
+  if (justCompleted) c.trophies._complete = true;
   _reqCodexWrite(c);
+  return justCompleted; // true au tout premier passage en complétion
 }

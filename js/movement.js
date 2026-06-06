@@ -353,6 +353,18 @@ function _exploreDescriptors() {
     forge:    { desc: "Au-delà de la porte, la Salle s'est faite forge clandestine : une enclume noire sur des braises éternelles, prête à mordre le métal de vos équipements.", btn: 'Forger' }
   };
   const reqVar = REQ_VARIANT[requirementTheme_] || REQ_VARIANT.refuge;
+  // V3.1 — choix du thème par le joueur : la Salle « décide » (thème suggéré
+  // ci-dessus) mais on propose de demander autre chose. La forge n'est offerte
+  // qu'en Boucle (11+) avec équipement forgeable + Essence.
+  const REQ_CHOICE_LABEL = { refuge: '🔥 Refuge', loot: '💰 Cache aux objets', training: "⚔️ Entraînement", boutique: '🛒 Marchand', forge: '🔨 Forge' };
+  const reqForgeAvail = (currentFloor || 1) >= 11
+    && (typeof _requirementForgeable === 'function' ? _requirementForgeable() : false)
+    && (typeof _countEssence === 'function' ? _countEssence() > 0 : false);
+  const reqChoices = ['refuge', 'loot', 'training', 'boutique'].concat(reqForgeAvail ? ['forge'] : [])
+    .filter(t => t !== requirementTheme_);
+  const reqChoiceBtns = reqChoices
+    .map(t => `<button class="explore-btn secondary" onclick="chooseRequirementTheme('${t}');_hideExploreOverlay()">${REQ_CHOICE_LABEL[t]}</button>`)
+    .join('\n              ');
   const altarCost     = 40 * (currentFloor || 1);
   // Jardin d'herbes (Potions P6.b3) — stock mûr récoltable sur ce jardin révélé.
   const gardenReady   = (typeof gardenStock !== 'undefined') ? gardenStock : 0;
@@ -481,8 +493,9 @@ function _exploreDescriptors() {
     } : {
       icon:  (typeof SCENE_ICONS !== 'undefined' && SCENE_ICONS.requirement) ? SCENE_ICONS.requirement : '🚪',
       title: 'La Salle sur Demande',
-      desc:  reqVar.desc,
-      btns:  `<button class="explore-btn" onclick="useRequirementRoom();_hideExploreOverlay()">${reqVar.btn}</button>
+      desc:  reqVar.desc + " La Salle s'adapte à ton besoin — mais tu peux lui demander autre chose.",
+      btns:  `<button class="explore-btn" onclick="useRequirementRoom();_hideExploreOverlay()">${reqVar.btn} (suggéré)</button>
+              ${reqChoiceBtns}
               <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     }
   };

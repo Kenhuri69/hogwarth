@@ -62,7 +62,7 @@ function _serializeState() {
     requirementGiftTaken,
     requirementBuffSteps,
     requirementTheme:     Array.from(requirementTheme.entries()),
-    requirementTrophyTaken, // V3 (room-of-requirement-v3.md)
+    requirementTrophiesTaken: Array.from(requirementTrophiesTaken), // V3/V3.1
     usedSpecialNpcs: Array.from(usedSpecialNpcs),
     defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
                           .map(([f, set]) => [f, Array.from(set)]),
@@ -365,7 +365,7 @@ function _applyState(gs) {
   requirementGiftTaken = !!gs.requirementGiftTaken;
   requirementBuffSteps = (typeof gs.requirementBuffSteps === 'number') ? gs.requirementBuffSteps : 0;
   requirementTheme     = new Map(gs.requirementTheme || []); // V2 (room-of-requirement-v2.md)
-  requirementTrophyTaken = !!gs.requirementTrophyTaken; // V3 (room-of-requirement-v3.md)
+  requirementTrophiesTaken = new Set(gs.requirementTrophiesTaken || []); // V3/V3.1
   usedSpecialNpcs = new Set(gs.usedSpecialNpcs || []);
   defeatedCellsByFloor = new Map(
     (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])
