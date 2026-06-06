@@ -94,12 +94,19 @@ risque sur futurs call-sites. **Action** : optionnelle, faible priorité.
 4. **Lot D — doc RLS + disjoncteurs** (F3, F4) ✅ FAIT
    → `supabase/README.md` : section « Posture de sécurité » + « Disjoncteur
    côté client (404) ».
-5. **Lot E (opt.)** — découpage `smoke.js` (S1), helper inventaire (S3).
-   → Non fait (gros chantier, non urgent). À la demande.
+5. **Lot E** — découpage `smoke.js` (S1) + helper inventaire (S3). ✅ FAIT
+   - **S3** : `_removeInvItem(idx)` (garde de borne) dans `inventory-core.js`,
+     utilisé aux 3 retraits plein-slot de `inventory.js` (équipement, livres).
+     Au MANIFEST loader. Les retraits stack-aware passent toujours par
+     `_consumeAt` (inchangé).
+   - **S1** : `smoke.js` (18 568 lignes) → **runner mince** + `tests/lib/
+     harness.js` (helpers partagés) + `tests/scenarios/<domaine>.js`
+     (159 scénarios répartis sur 15 domaines). Filtre CLI préservé,
+     `tests/select.js` inchangé.
 
-> Lots A–D livrés sur cette branche. CI : `tests/units.js` ajouté comme
-> étape rapide (sans navigateur) avant la suite smoke
-> (`.github/workflows/test.yml`), + script `npm run test:units`.
+> Lots A–E livrés. CI : `tests/units.js` ajouté comme étape rapide (sans
+> navigateur) avant la suite smoke (`.github/workflows/test.yml`), + script
+> `npm run test:units`.
 
 ## Suivi
 
@@ -107,4 +114,4 @@ risque sur futurs call-sites. **Action** : optionnelle, faible priorité.
 - [x] Lot B — `tests/units.js` (67 assertions)
 - [x] Lot C — verrou XSS `_esc` visites
 - [x] Lot D — doc RLS / disjoncteurs Supabase
-- [ ] Lot E (opt.) — découpage smoke.js / helper inventaire
+- [x] Lot E — découpage smoke.js (runner + harness + 15 domaines) + helper inventaire

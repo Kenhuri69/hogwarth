@@ -1,0 +1,426 @@
+// ============================================================
+// Scénarios smoke — domaine « misc » (extraits de smoke.js)
+// Chaque scénario relance son propre Chromium ; helpers partagés via
+// ../lib/harness. Exécutés par tests/smoke.js (runner).
+// ============================================================
+const { chromium, path, ROOT, INDEX_URL, isIgnorableError, launchGame, startNewGame, startDummyFight, assert } = require('../lib/harness');
+
+async function scenarioStartup() {
+  console.log('\n── Scénario 1 : régression de démarrage ──');
+  const { browser, page, errors } = await launchGame();
+
+  const init = await page.evaluate(() => ({
+    titleVisible: document.getElementById('title-screen').style.display !== 'none',
+    spellCount:   SPELLS.length,
+    monsterCount: MONSTERS.length,
+    itemCount:    ITEMS.length
+  }));
+  console.log('  init :', init);
+  assert(init.titleVisible,        'écran titre invisible');
+  assert(init.spellCount   > 0,    'SPELLS vide');
+  assert(init.monsterCount > 0,    'MONSTERS vide');
+  assert(init.itemCount    > 0,    'ITEMS vide');
+
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const ready = await page.evaluate(() => ({
+    floor: currentFloor, gold: player.gold, hp: party[0].hp, level: player.level
+  }));
+  console.log('  ready :', ready);
+  assert(ready.hp    > 0, 'PV de Harry à 0');
+  assert(ready.floor === 1, 'étage initial différent de 1');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS au démarrage`);
+  }
+  console.log('  ✅ aucune régression');
+  await browser.close();
+}
+
+async function scenarioLoader() {
+  console.log('\n── Scénario 27 : loader (manifeste de globals) ──');
+  const { browser, page, errors } = await launchGame();
+
+  // 1) Happy path : rapport publié par loader.js
+  const report = await page.evaluate(() => window.__loaderReport);
+  console.log('  report :', {
+    ok:              report?.ok,
+    total:           report?.totalChecked,
+    missingCritical: report?.missingCritical?.length,
+    missingOptional: report?.missingOptional?.length
+  });
+  assert(report,                              'window.__loaderReport absent');
+  assert(report.ok === true,                  'loader.ok doit être true');
+  assert(report.missingCritical.length === 0,
+    `modules critiques manquants : ${JSON.stringify(report.missingCritical.map(m => m.name))}`);
+  assert(report.totalChecked >= 50,
+    `totalChecked trop faible (${report.totalChecked}) — manifeste tronqué ?`);
+
+  // 2) Aucun bandeau d'erreur visible sur démarrage sain
+  const noBanner = await page.evaluate(() => !document.getElementById('loader-error-banner'));
+  assert(noBanner, "pas de bandeau d'erreur attendu sur démarrage sain");
+
+  // 3) Helpers exposés sur window
+  const helpers = await page.evaluate(() => ({
+    safeEl:   typeof window.safeEl   === 'function',
+    safeCall: typeof window.safeCall === 'function',
+    UX_safe:  typeof window.UX_safe  === 'object' && window.UX_safe !== null
+  }));
+  console.log('  helpers :', helpers);
+  assert(helpers.safeEl,   'window.safeEl absent');
+  assert(helpers.safeCall, 'window.safeCall absent');
+  assert(helpers.UX_safe,  'window.UX_safe absent');
+
+  // 4) Régression B1 : UX_safe survit à delete window.UX (proxy tolérant)
+  const uxSafeOk = await page.evaluate(() => {
+    const saved = window.UX;
+    try {
+      delete window.UX;
+      const r1 = window.UX_safe.floatDmg('ally', 10, 'dmg');
+      const r2 = window.UX_safe.logCombat('test', 'info');
+      return r1 === undefined && r2 === undefined;
+    } finally {
+      window.UX = saved;
+    }
+  });
+  assert(uxSafeOk, 'UX_safe doit retourner undefined quand window.UX absent');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Loader OK');
+  await browser.close();
+}
+
+async function scenarioIronman() {
+  console.log('\n── Scénario : mode Ironman + Hall of Fame ──');
+  const { browser, page, errors } = await launchGame();
+
+  // Coche la case Ironman avant de confirmer la sélection de héros.
+  await page.evaluate(() => {
+    localStorage.removeItem('hogwarts_rpg_hof');
+    // Neutralise la config Supabase : le scénario teste le repli local
+    // de façon déterministe, sans dépendre du réseau. Le chemin en ligne
+    // est vérifié manuellement (cf. .claude/plans/ironman-hall-of-fame.md).
+    if (typeof HOF_CONFIG !== 'undefined') HOF_CONFIG.supabaseUrl = '';
+    const cb = document.getElementById('ironman-toggle');
+    if (cb) cb.checked = true;
+  });
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Le mode est armé et la difficulté verrouillée.
+  const t1 = await page.evaluate(() => {
+    const modal = document.getElementById('character-modal');
+    modal.style.display = 'none';
+    const before = difficulty;
+    changeDifficulty();                 // doit être refusé en Ironman
+    return { ironmanMode, runId: ironmanRunId, before, after: difficulty,
+             modalOpened: modal.style.display === 'flex' };
+  });
+  console.log('  T1 mode + lock :', t1);
+  assert(t1.ironmanMode === true,   'ironmanMode doit être true');
+  assert(typeof t1.runId === 'string' && t1.runId.length >= 8,
+    'ironmanRunId doit être généré au démarrage Ironman');
+  assert(t1.before === t1.after,    'changeDifficulty ne doit pas changer la difficulté');
+  assert(!t1.modalOpened,           'changeDifficulty ne doit pas ouvrir la modale en Ironman');
+
+  // 2) Comptage des kills + faits d'armes boss.
+  const t2 = await page.evaluate(() => {
+    totalKills = 0; defeatedBosses = new Set();
+    recordIronmanKills([{ id: 'basilic' }, { id: 'chat_norris' }, { id: 'bellatrix' }]);
+    return { totalKills, bosses: Array.from(defeatedBosses).sort() };
+  });
+  console.log('  T2 kills :', t2);
+  assert(t2.totalKills === 3, 'recordIronmanKills doit compter 3 monstres');
+  assert(t2.bosses.length === 2 && t2.bosses.includes('basilic') && t2.bosses.includes('bellatrix'),
+    'seuls les boss doivent entrer dans defeatedBosses');
+
+  // 3) Calcul du score (formule + multiplicateur de difficulté).
+  const t3 = await page.evaluate(() => {
+    difficulty      = 'Difficile';        // multiplicateur ×1.4
+    totalKills      = 20;
+    defeatedBosses  = new Set(['basilic']); // +300
+    visitedFloors   = new Set([1, 2, 3, 4, 5]);
+    currentFloor    = 3;
+    completedQuests = new Set(['q1', 'q2']);
+    player.level    = 8;
+    player.gold     = 100;
+    return computeIronmanScore();
+  });
+  console.log('  T3 score :', { score: t3.score, raw: t3.raw, mult: t3.mult,
+    partyMult: t3.partyMult });
+  // raw = 20*10 + 5*150 + 2*150 + 8*50 + floor(100*0.5) + 300 = 2000
+  assert(t3.raw === 2000,   `raw attendu 2000, obtenu ${t3.raw}`);
+  assert(t3.mult === 1.4,   `multiplicateur Difficile attendu 1.4, obtenu ${t3.mult}`);
+  assert(t3.partyMult === 1.3, `multiplicateur solo attendu 1.3, obtenu ${t3.partyMult}`);
+  // score = round(2000 × 1.4 × 1.3) = 3640
+  assert(t3.score === 3640, `score attendu 3640, obtenu ${t3.score}`);
+
+  // 3b) Plafond anti-farm sur les kills + multiplicateur de groupe.
+  const t3b = await page.evaluate(() => {
+    totalKills    = 999;                       // farm massif
+    currentFloor  = 4;
+    visitedFloors = new Set([1, 2, 3, 4]);
+    const capped  = computeIronmanScore();     // partySize = 1
+    const beforePS = partySize;
+    partySize = 2; const duo  = computeIronmanScore().partyMult;
+    partySize = 1; const solo = computeIronmanScore().partyMult;
+    partySize = beforePS;
+    // Restaure l'état de T3 pour la suite du scénario.
+    totalKills = 20; currentFloor = 3; visitedFloors = new Set([1, 2, 3, 4, 5]);
+    return {
+      killsPts:     capped.breakdown.kills,
+      killsCounted: capped.killsCounted,
+      killsCapped:  capped.killsCapped,
+      duo, solo,
+    };
+  });
+  console.log('  T3b plafond + groupe :', t3b);
+  // étage 4 → plafond 4×12 = 48 kills crédités (au lieu de 999)
+  assert(t3b.killsCounted === 48,  'kills plafonnés à étage×12 attendu 48');
+  assert(t3b.killsPts === 480,     'points de kills attendus 480 (48×10)');
+  assert(t3b.killsCapped === true, 'killsCapped doit être vrai au-delà du plafond');
+  assert(t3b.solo === 1.3 && t3b.duo === 1.0,
+    'partyMult attendu : solo ×1.3, duo ×1.0');
+
+  // 4) Mort en Ironman → écran de résultat + permadeath stricte.
+  const t4 = await page.evaluate(() => {
+    // Prépare un slot Ironman et un slot non-Ironman.
+    ironmanMode = true;
+    writeSlot('manual_1', 'run ironman');
+    ironmanMode = false;
+    writeSlot('manual_2', 'partie normale');
+    ironmanMode = true;
+    triggerDeath('Test de mort Ironman');
+    return {
+      resultVisible: document.getElementById('ironman-result-screen').style.display === 'flex',
+      deathVisible:  document.getElementById('death-screen').style.display === 'flex',
+      petrifyShown:  !!document.getElementById('cfx-petrify'),
+      score:         _ironmanLastResult && _ironmanLastResult.score,
+      ironmanSlotGone: readSlot('manual_1') === null,
+      normalSlotKept:  readSlot('manual_2') !== null,
+    };
+  });
+  console.log('  T4 mort :', t4);
+  assert(t4.resultVisible,  'écran de résultat Ironman doit être visible');
+  assert(!t4.deathVisible,  'écran de mort ne doit PAS être visible en Ironman');
+  assert(!t4.petrifyShown,  'pétrification (C2) ne doit PAS se jouer en Ironman');
+  assert(t4.score === 3640, 'le résultat doit porter le score calculé');
+  assert(t4.ironmanSlotGone, 'le slot Ironman doit être supprimé à la mort (permadeath)');
+  assert(t4.normalSlotKept,  'un slot non-Ironman doit être préservé à la mort Ironman');
+
+  // 5) Soumission du score → stockage local + pseudonyme persistant.
+  const t5 = await page.evaluate(async () => {
+    document.getElementById('hof-name-input').value = 'Testeur';
+    await submitIronmanScore();
+    const raw = localStorage.getItem('hogwarts_rpg_hof');
+    const arr = raw ? JSON.parse(raw) : [];
+    return { count: arr.length, top: arr[0], savedName: getPlayerName() };
+  });
+  console.log('  T5 soumission :', { count: t5.count, name: t5.top && t5.top.player_name,
+    savedName: t5.savedName, house: t5.top && t5.top.house });
+  assert(t5.count === 1,                   'le score doit être stocké localement');
+  assert(t5.top.player_name === 'Testeur', 'le nom soumis doit être conservé');
+  assert(t5.top.score === 3640,            'le score stocké doit valoir 3640');
+  assert(typeof t5.top.run_id === 'string' && t5.top.run_id.length >= 8,
+    "l'entrée doit porter un run_id");
+  assert(t5.savedName === 'Testeur',       'le pseudonyme doit être persisté en localStorage');
+  assert(t5.top.house === 'Gryffondor',
+    `l'entrée doit porter la Maison du joueur, obtenu ${t5.top.house}`);
+
+  // 6) Écran Hall of Fame : rendu de la liste + médaille PNG + blason + chips.
+  await page.evaluate(() => openHallOfFame());
+  await page.waitForFunction(() =>
+    document.querySelectorAll('#hof-list .hof-row').length > 0, { timeout: 3000 });
+  const t6 = await page.evaluate(() => ({
+    screenVisible: document.getElementById('hall-of-fame-screen').style.display === 'flex',
+    rows:          document.querySelectorAll('#hof-list .hof-row').length,
+    firstName:     document.querySelector('#hof-list .hof-name')?.textContent,
+    hasMedal:      !!document.querySelector('#hof-list .hof-row .hof-medal'),
+    heroAvatar:    document.querySelector('#hof-list .hof-hero-av img')?.getAttribute('src'),
+    houseBadge:    document.querySelector('#hof-list .hof-house-badge img')?.getAttribute('src'),
+    chipFloor:     document.querySelector('#hof-list .hof-chip-floor')?.textContent,
+    chipLevel:     document.querySelector('#hof-list .hof-chip-level')?.textContent,
+  }));
+  console.log('  T6 Hall of Fame :', t6);
+  assert(t6.screenVisible,          'écran Hall of Fame doit être visible');
+  assert(t6.rows === 1,             'la liste doit afficher 1 entrée');
+  assert(t6.firstName === 'Testeur','le top 1 doit être Testeur');
+  assert(t6.hasMedal,               'le rang 1 doit afficher une médaille PNG');
+  assert(t6.heroAvatar === 'img/harry.png',
+    `le portrait du sorcier doit être affiché, obtenu ${t6.heroAvatar}`);
+  assert(t6.houseBadge === 'img/houses/gryffondor.png',
+    `le blason de Maison doit être affiché, obtenu ${t6.houseBadge}`);
+  assert(/Ét\.\s*5/.test(t6.chipFloor || ''),
+    `chip Étage doit afficher "Ét.5" (deepestFloor de T3), obtenu "${t6.chipFloor}"`);
+  assert(/Niv\.\s*8/.test(t6.chipLevel || ''),
+    `chip Niveau doit afficher "Niv.8", obtenu "${t6.chipLevel}"`);
+
+  // 6b) Simulation de rang depuis la fiche perso (bouton « Mon rang »).
+  const t6b = await page.evaluate(async () => {
+    ironmanMode = true;
+    const proj = _hofBuildProjection();
+    const rank = await _hofRankForScore(proj.score);
+    await _renderHallOfFame(proj);
+    openCharacter(0);
+    const btnPresent = document.getElementById('char-detail')
+      .innerHTML.includes('openHofProjection');
+    document.getElementById('character-modal').style.display = 'none';
+    return {
+      score:    proj.score,
+      name:     proj.player_name,
+      rank,
+      projRow:  !!document.querySelector('#hof-list .hof-row-projection'),
+      projNote: !!document.querySelector('#hof-list .hof-proj-note'),
+      btnPresent,
+    };
+  });
+  console.log('  T6b simulation de rang :', t6b);
+  assert(t6b.score === 3640,  `score projeté attendu 3640, obtenu ${t6b.score}`);
+  assert(t6b.name === 'Testeur', `nom projeté attendu Testeur, obtenu ${t6b.name}`);
+  assert(t6b.rank === 1,      `rang projeté attendu 1, obtenu ${t6b.rank}`);
+  assert(t6b.projRow,         'la ligne de simulation doit être rendue');
+  assert(t6b.projNote,        'la note de simulation doit être affichée');
+  assert(t6b.btnPresent,      'le bouton « Mon rang » doit figurer sur la fiche Ironman');
+
+  // 7) Anti double-classement : run déjà soumis détecté + re-soumission bloquée.
+  const t7 = await page.evaluate(async () => {
+    const found = await _hofFindByRunId(ironmanRunId);
+    await verifyIronmanRunNotScored();
+    const btn = document.getElementById('hof-submit-btn');
+    await submitIronmanScore();                     // tentative de doublon
+    const raw = localStorage.getItem('hogwarts_rpg_hof');
+    const arr = raw ? JSON.parse(raw) : [];
+    return {
+      foundByRunId:    !!found,
+      runScored:       _ironmanRunScored,
+      btnDisabled:     btn.disabled,
+      countAfterRetry: arr.length,
+    };
+  });
+  console.log('  T7 anti-doublon :', t7);
+  assert(t7.foundByRunId,           '_hofFindByRunId doit retrouver le run soumis');
+  assert(t7.runScored,              'le run doit être marqué déjà classé');
+  assert(t7.btnDisabled,            'le bouton doit être désactivé pour un run déjà classé');
+  assert(t7.countAfterRetry === 1,  'une re-soumission ne doit pas créer de doublon');
+
+  // 8) Round-trip save : ironmanMode / totalKills / defeatedBosses / runId.
+  const t8 = await page.evaluate(() => {
+    ironmanMode    = true;
+    totalKills     = 42;
+    defeatedBosses = new Set(['nagini']);
+    ironmanRunId   = 'fixed-run-12345678';
+    const snap = _serializeState();
+    ironmanMode = false; totalKills = 0; defeatedBosses = new Set(); ironmanRunId = null;
+    _applyState(snap);
+    const kept = ironmanRunId;
+    // Save Ironman sans UID → régénération à _applyState.
+    delete snap.ironmanRunId;
+    ironmanRunId = null;
+    _applyState(snap);
+    return {
+      ironmanMode, totalKills, bosses: Array.from(defeatedBosses),
+      kept, regenerated: !!ironmanRunId && ironmanRunId !== 'fixed-run-12345678',
+    };
+  });
+  console.log('  T8 round-trip :', t8);
+  assert(t8.ironmanMode === true,            'ironmanMode doit survivre au save');
+  assert(t8.totalKills === 42,               'totalKills doit survivre au save');
+  assert(t8.bosses.length === 1 && t8.bosses[0] === 'nagini',
+    'defeatedBosses doit survivre au save');
+  assert(t8.kept === 'fixed-run-12345678',   'ironmanRunId doit survivre au round-trip');
+  assert(t8.regenerated, 'un save Ironman sans UID doit en générer un au chargement');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Mode Ironman + Hall of Fame OK');
+  await browser.close();
+}
+
+async function scenarioContentConsumablesTradeoffs() {
+  console.log('\n── Scénario : consommables à effet + items trade-off ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 200 });
+
+  // T1 — Antidote purge les DoT (burn/poison) mais pas weaken.
+  const t1 = await page.evaluate(() => {
+    const c = party[0];
+    c.statusEffects = [];
+    applyStatus(c, 'burn',   5, 3);
+    applyStatus(c, 'poison', 3, 3);
+    applyStatus(c, 'weaken', 2, 3);
+    const item = ITEMS.find(i => i.id === 'elixir_antidote');
+    _applyConsumableEffect(item, c);
+    return { ids: c.statusEffects.map(s => s.id) };
+  });
+  console.log('  T1 cure   :', t1);
+  assert(!t1.ids.includes('burn') && !t1.ids.includes('poison'), 'antidote doit purger burn/poison');
+  assert(t1.ids.includes('weaken'), 'antidote ne doit pas retirer weaken');
+
+  // T2 — Régénération pose le statut regen.
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    c.statusEffects = [];
+    _applyConsumableEffect(ITEMS.find(i => i.id === 'elixir_regen'), c);
+    const r = c.statusEffects.find(s => s.id === 'regen');
+    return { has: !!r, power: r && r.power, turns: r && r.turns };
+  });
+  console.log('  T2 regen  :', t2);
+  assert(t2.has && t2.power === 6 && t2.turns === 4, 'élixir de régén doit poser regen 6/4');
+
+  // T3 — Résistance pose le statut resist_buff (réduction de dégâts).
+  const t3 = await page.evaluate(() => {
+    const c = party[0];
+    c.statusEffects = [];
+    _applyConsumableEffect(ITEMS.find(i => i.id === 'potion_resistance'), c);
+    const r = c.statusEffects.find(s => s.id === 'resist_buff');
+    const mult = _resistMult(c);
+    return { has: !!r, power: r && r.power, turns: r && r.turns, mult };
+  });
+  console.log('  T3 resist :', t3);
+  assert(t3.has && t3.power === 40 && t3.turns === 3, 'potion de résistance doit poser resist_buff 40/3');
+  assert(Math.abs(t3.mult - 0.6) < 1e-9, `_resistMult doit valoir 0.6 (obtenu ${t3.mult})`);
+
+  // T4 — Item trade-off : ATK+7 / DEF−2 appliqué par recalculateStats.
+  const t4 = await page.evaluate(() => {
+    const c = party[0];
+    // Baseline propre : T1 a laissé un weaken (malus DEF direct non réappliqué
+    // par recalculateStats) — on le purge pour isoler le trade-off de l'arme.
+    c.statusEffects = []; recalculateStats();
+    const atk0 = c.atk, def0 = c.def;
+    const clone = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'lame_sanguinaire')));
+    player.inventory.push(clone);
+    equipItem(player.inventory.length - 1, 0);
+    return { datk: c.atk - atk0, ddef: c.def - def0 };
+  });
+  console.log('  T4 trade  :', t4);
+  assert(t4.datk === 7,  `lame sanguinaire ATK+7 attendu, obtenu ${t4.datk}`);
+  assert(t4.ddef === -2, `lame sanguinaire DEF−2 attendu, obtenu ${t4.ddef}`);
+
+  // T5 — Anneau de Furie : crit +12 / esquive −6 sur les stats dérivées.
+  const t5 = await page.evaluate(() => {
+    const c = party[0];
+    const crit0 = c.critChance, dodge0 = c.dodgeChance;
+    const clone = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'anneau_furie')));
+    player.inventory.push(clone);
+    equipItem(player.inventory.length - 1, 0);
+    return { dcrit: c.critChance - crit0, ddodge: c.dodgeChance - dodge0 };
+  });
+  console.log('  T5 furie  :', t5);
+  assert(t5.dcrit === 12, `anneau de furie crit +12 attendu, obtenu ${t5.dcrit}`);
+  assert(t5.ddodge === -6, `anneau de furie esquive −6 attendu, obtenu ${t5.ddodge}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (contenu C)`);
+  }
+  console.log('  ✅ consommables à effet + items trade-off OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioContentConsumablesTradeoffs] };

@@ -51,6 +51,17 @@ function _canAddItem(item) {
   return player.inventory.length < INVENTORY_MAX;
 }
 
+// Retire entièrement la case d'inventaire à `idx` (un slot, quelle que soit
+// sa `qty`), avec garde de borne. Retourne l'item retiré, ou null si l'index
+// est invalide. Point d'entrée unique pour les retraits « plein slot »
+// (équipement, livre de sort) — protège les futurs call-sites d'un splice
+// sur un index périmé. Pour un retrait à l'unité d'un stack, voir _consumeAt.
+function _removeInvItem(idx) {
+  if (typeof player === 'undefined' || !Array.isArray(player.inventory)) return null;
+  if (!Number.isInteger(idx) || idx < 0 || idx >= player.inventory.length) return null;
+  return player.inventory.splice(idx, 1)[0] || null;
+}
+
 // Consomme `n` exemplaires (défaut 1) du stack à l'index `idx` : décrémente
 // `qty`, splice la case si épuisée. Retourne le nombre réellement retiré.
 function _consumeAt(idx, n = 1) {

@@ -1,0 +1,1252 @@
+// ============================================================
+// Scénarios smoke — domaine « quests » (extraits de smoke.js)
+// Chaque scénario relance son propre Chromium ; helpers partagés via
+// ../lib/harness. Exécutés par tests/smoke.js (runner).
+// ============================================================
+const { chromium, path, ROOT, INDEX_URL, isIgnorableError, launchGame, startNewGame, startDummyFight, assert } = require('../lib/harness');
+
+async function scenarioChainedQuest() {
+  console.log('\n── Scénario 3 : quête chaînée Lupin ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : la quête lumiere_desespoir est dispo (catalogue) + acceptable via PNJ
+  const t1 = await page.evaluate(() => {
+    const tpl = getQuestTemplate('lumiere_desespoir');
+    const wasAvailable = availableQuests.has('lumiere_desespoir');
+    acceptQuest('lumiere_desespoir');
+    const q = activeQuests.find(x => x.id === 'lumiere_desespoir');
+    return {
+      exists:       !!tpl,
+      wasAvailable,
+      removedFromAvailable: !availableQuests.has('lumiere_desespoir'),
+      activeNow:    !!q,
+      stepCount:    q?.objectives.length,
+      step0Type:    q?.objectives[0]?.type,
+      step0Monster: q?.objectives[0]?.monsterId,
+      step1Type:    q?.objectives[1]?.type,
+      step1Item:    q?.objectives[1]?.itemId
+    };
+  });
+  console.log('  T1 quest:', t1);
+  assert(t1.exists,                           'template lumiere_desespoir absent du catalogue');
+  assert(t1.wasAvailable,                     'quête doit être dans availableQuests au démarrage');
+  assert(t1.activeNow,                        'acceptQuest n\'a pas activé la quête');
+  assert(t1.removedFromAvailable,             'quête doit sortir d\'availableQuests après acceptation');
+  assert(t1.stepCount === 2,                  'doit avoir 2 étapes');
+  assert(t1.step0Type === 'kill',             'étape 0 doit être un kill');
+  assert(t1.step0Monster === 'detraqueur',    'étape 0 doit cibler detraqueur');
+  assert(t1.step1Type === 'item',             'étape 1 doit être un item');
+  assert(t1.step1Item === 'choco_sorcier',    'étape 1 doit cibler choco_sorcier');
+
+  // T2 : simuler kill du Détraqueur → étape 0 complète, pas d'auto-completion
+  // L'id doit matcher MONSTERS (detraqueur) — c'est ce que endBattle passe.
+  const t2 = await page.evaluate(() => {
+    checkKillQuests('detraqueur');
+    const q = activeQuests.find(x => x.id === 'lumiere_desespoir');
+    return {
+      step0Done: q.objectives[0].completed,
+      step0Prog: q.objectives[0].progress,
+      step1Done: q.objectives[1].completed,
+      stillActive: !!q,                     // pas auto-complétée
+      notCompleted: !completedQuests.has('lumiere_desespoir')
+    };
+  });
+  console.log('  T2 kill :', t2);
+  assert(t2.step0Done,        'étape 0 non marquée comme complétée');
+  assert(t2.step0Prog === 1,  'progression étape 0 attendue à 1');
+  assert(!t2.step1Done,       'étape 1 ne doit pas être complétée');
+  assert(t2.stillActive,      'quête doit rester active (étape item à faire)');
+  assert(t2.notCompleted,     'quête ne doit pas être marquée rendue automatiquement');
+
+  // T3 : ajouter un choco au sac, remettre via PNJ (turnInQuestById) → Patronum appris
+  const t3 = await page.evaluate(() => {
+    const choco = ITEMS.find(i => i.id === 'choco_sorcier');
+    player.inventory.push({ ...choco });
+    const ok = turnInQuestById('lumiere_desespoir');
+    return {
+      turnInOk:    ok,
+      questGone:   !activeQuests.find(x => x.id === 'lumiere_desespoir'),
+      inCompleted: completedQuests.has('lumiere_desespoir'),
+      patronumLearned: party[0].spells.includes('Patronum'),
+      chocoConsumed:   !player.inventory.some(i => i.id === 'choco_sorcier')
+    };
+  });
+  console.log('  T3 deliver:', t3);
+  assert(t3.turnInOk,          'turnInQuestById a échoué malgré objectifs remplis');
+  assert(t3.questGone,         'quête doit être retirée d\'activeQuests après remise');
+  assert(t3.inCompleted,       'quête doit être ajoutée à completedQuests');
+  assert(t3.patronumLearned,   'Patronum non appris');
+  assert(t3.chocoConsumed,     'chocolat non consommé');
+
+  // T4 : shim de migration sur ancienne sauvegarde
+  const t4 = await page.evaluate(() => {
+    const old = {
+      id: 'old_quest', title: 'Test', giver: '', desc: '', location: '', completed: false,
+      reward: { xp: 10 },
+      objective: { type: 'kill', monsterId: 'troll', amount: 2 },
+      progress: 1
+    };
+    const migrated = _migrateQuestShape(old);
+    return {
+      hasObjectives: Array.isArray(migrated.objectives),
+      stepCount:     migrated.objectives.length,
+      stepType:      migrated.objectives[0].type,
+      stepProgress:  migrated.objectives[0].progress,
+      stepCompleted: migrated.objectives[0].completed,
+      noOldObjective: migrated.objective === undefined,
+      idempotent:    _migrateQuestShape(migrated) === migrated
+    };
+  });
+  console.log('  T4 shim :', t4);
+  assert(t4.hasObjectives,    'shim n\'a pas créé objectives[]');
+  assert(t4.stepCount === 1,  'shim doit produire 1 étape');
+  assert(t4.stepType === 'kill', 'type non préservé');
+  assert(t4.stepProgress === 1,  'progression non transférée');
+  assert(!t4.stepCompleted,      'doit rester incomplet (1<2)');
+  assert(t4.noOldObjective,   'ancien champ objective non retiré');
+  assert(t4.idempotent,       'shim non idempotent');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ flux quête chaînée conforme');
+  await browser.close();
+}
+
+async function scenarioHeadlessHunt() {
+  console.log('\n── Scénario : Chasse Sans Tête (easter egg) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : données — quête + PNJ cohérents
+  const t1 = await page.evaluate(() => {
+    const tpl = getQuestTemplate('chasse_sans_tete');
+    const npc = getNpcById('sir_patrick');
+    const obj = tpl && tpl.objectives && tpl.objectives[0];
+    return {
+      tplExists:    !!tpl,
+      objType:      obj && obj.type,
+      objMonster:   obj && obj.monsterId,
+      objAmount:    obj && obj.amount,
+      rewardNoItem: !!tpl && !tpl.reward.item && !tpl.reward.spell && !tpl.reward.stats,
+      npcExists:    !!npc,
+      npcSprite:    npc && npc.sprite,
+      npcFloor:     npc && npc.placement && npc.placement.floor,
+      npcGives:     npc && Array.isArray(npc.questsGiven) && npc.questsGiven.includes('chasse_sans_tete'),
+      monsterReal:  !!(typeof MONSTERS !== 'undefined' && MONSTERS.find(m => m.id === 'chevalier_fantome')),
+      available:    availableQuests.has('chasse_sans_tete')
+    };
+  });
+  console.log('  T1 data:', t1);
+  assert(t1.tplExists,    'template chasse_sans_tete absent du catalogue');
+  assert(t1.objType === 'kill',                 'objectif doit être un kill');
+  assert(t1.objMonster === 'chevalier_fantome', 'cible doit être chevalier_fantome');
+  assert(t1.objAmount === 2,                    'objectif doit être ×2');
+  assert(t1.rewardNoItem,  'récompense doit être cosmétique (pas d\'item/sort/stats)');
+  assert(t1.npcExists,     'PNJ sir_patrick introuvable');
+  assert(t1.npcSprite === 'fantome', 'sir_patrick doit avoir le sprite fantome');
+  assert(t1.npcFloor === 6, 'sir_patrick doit être placé à l\'étage 6');
+  assert(t1.npcGives,      'sir_patrick doit donner chasse_sans_tete');
+  assert(t1.monsterReal,   'chevalier_fantome doit exister dans MONSTERS');
+  assert(t1.available,     'chasse_sans_tete doit être dans availableQuests au démarrage');
+
+  // T2 : placement déterministe étage 6 (getNpcsForFloor + generateDungeon)
+  const t2 = await page.evaluate(() => {
+    const forFloor = getNpcsForFloor(6).map(n => n.id);
+    generateDungeon(6);
+    const placed = Array.from(npcPlacements.values());
+    return {
+      inForFloor: forFloor.includes('sir_patrick'),
+      placed:     placed.includes('sir_patrick')
+    };
+  });
+  console.log('  T2 placement:', t2);
+  assert(t2.inForFloor, 'getNpcsForFloor(6) doit inclure sir_patrick');
+  assert(t2.placed,     'generateDungeon(6) doit placer sir_patrick');
+
+  // T3 : flux accept → kill ×2 → ready (état PNJ) → flag avant remise = false
+  const t3 = await page.evaluate(() => {
+    const npc = getNpcById('sir_patrick');
+    const before = getNpcQuestState(npc);
+    acceptQuest('chasse_sans_tete');
+    const afterAccept = getNpcQuestState(npc);
+    checkKillQuests('chevalier_fantome');
+    const afterOne = getNpcQuestState(npc);
+    checkKillQuests('chevalier_fantome');
+    const afterTwo = getNpcQuestState(npc);
+    const q = activeQuests.find(x => x.id === 'chasse_sans_tete');
+    return {
+      before, afterAccept, afterOne, afterTwo,
+      prog:        q && q.objectives[0].progress,
+      done:        q && q.objectives[0].completed,
+      flagBefore:  headlessHuntMember,
+      nickCheerBefore: (typeof _nickHuntCelebration === 'function')
+        ? _nickHuntCelebration(getNpcById('sir_nicolas')) : 'absent'
+    };
+  });
+  console.log('  T3 flow:', t3);
+  assert(t3.before === 'offer',      'état initial Sir Patrick doit être offer');
+  assert(t3.afterAccept === 'active','après acceptation l\'état doit être active');
+  assert(t3.afterOne === 'active',   'après 1 kill l\'état doit rester active');
+  assert(t3.afterTwo === 'ready',    'après 2 kills l\'état doit passer ready');
+  assert(t3.prog === 2,              'progression attendue à 2');
+  assert(t3.done,                    'objectif doit être complété');
+  assert(t3.flagBefore === false,    'headlessHuntMember doit être false avant remise');
+  assert(t3.nickCheerBefore === null,'célébration de Nick ne doit PAS être débloquée avant remise');
+
+  // T4 : remise → flag posé + célébration de Nick débloquée
+  const t4 = await page.evaluate(() => {
+    const ok = turnInQuestById('chasse_sans_tete');
+    return {
+      turnInOk:   ok,
+      questGone:  !activeQuests.find(x => x.id === 'chasse_sans_tete'),
+      inCompleted: completedQuests.has('chasse_sans_tete'),
+      flagAfter:  headlessHuntMember,
+      nickCheerAfter: (typeof _nickHuntCelebration === 'function')
+        ? _nickHuntCelebration(getNpcById('sir_nicolas')) : null,
+      nickCheerOther: (typeof _nickHuntCelebration === 'function')
+        ? _nickHuntCelebration(getNpcById('moine_gras')) : 'absent'
+    };
+  });
+  console.log('  T4 deliver:', t4);
+  assert(t4.turnInOk,    'turnInQuestById a échoué malgré objectif rempli');
+  assert(t4.questGone,   'quête doit sortir d\'activeQuests après remise');
+  assert(t4.inCompleted, 'quête doit être ajoutée à completedQuests');
+  assert(t4.flagAfter === true, 'headlessHuntMember doit être true après remise');
+  assert(typeof t4.nickCheerAfter === 'string' && t4.nickCheerAfter.length > 0,
+         'célébration de Nick doit être débloquée après remise');
+  assert(t4.nickCheerOther === null,
+         'la célébration ne doit concerner que Sir Nicolas (pas les autres fantômes)');
+
+  // T5 : round-trip de save conserve le flag
+  const t5 = await page.evaluate(() => {
+    const gs = _serializeState();
+    const serialized = gs.headlessHuntMember;
+    headlessHuntMember = false;       // simule un état neuf
+    _applyState(gs);
+    return { serialized, restored: headlessHuntMember };
+  });
+  console.log('  T5 save:', t5);
+  assert(t5.serialized === true, '_serializeState doit inclure headlessHuntMember=true');
+  assert(t5.restored === true,   '_applyState doit restaurer headlessHuntMember');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ easter egg Chasse Sans Tête conforme');
+  await browser.close();
+}
+
+async function scenarioChainAndRepeatable() {
+  console.log('\n── Scénario 3quater : Hagrid — chaîne + répétable ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : registre QUEST_TEMPLATES contient defense_cabane et chouette_perdue.repeatable
+  const t1 = await page.evaluate(() => {
+    const chouette = QUEST_TEMPLATES.find(t => t.id === 'chouette_perdue');
+    const cabane   = QUEST_TEMPLATES.find(t => t.id === 'defense_cabane');
+    const hagrid   = NPCS.find(n => n.id === 'hagrid');
+    return {
+      chouetteRepeatable: !!(chouette && chouette.repeatable && chouette.repeatable.everyLevels),
+      everyLevels:        chouette?.repeatable?.everyLevels,
+      cabaneExists:       !!cabane,
+      hagridGivesBoth:    JSON.stringify(hagrid?.questsGiven),
+      hagridDialoguesByQuest: !!hagrid?.dialoguesByQuest?.defense_cabane,
+      hasIsQuestOfferable: typeof isQuestOfferable === 'function',
+      lastQuestCompletionInit: JSON.stringify(lastQuestCompletion)
+    };
+  });
+  console.log('  T1 registry:', t1);
+  assert(t1.chouetteRepeatable,                 'chouette_perdue n\'est pas marquée repeatable');
+  assert(t1.everyLevels === 3,                  'cooldown attendu 3 niveaux');
+  assert(t1.cabaneExists,                       'defense_cabane absent du catalogue');
+  assert(t1.hagridGivesBoth.includes('chouette_perdue') && t1.hagridGivesBoth.includes('defense_cabane'),
+                                                'Hagrid n\'a pas la chaîne questsGiven');
+  assert(t1.hagridDialoguesByQuest,             'Hagrid n\'a pas dialoguesByQuest pour defense_cabane');
+  assert(t1.hasIsQuestOfferable,                'isQuestOfferable non exposée');
+  assert(t1.lastQuestCompletionInit === '{}',   'lastQuestCompletion doit démarrer vide');
+
+  // T2 : avant tout, état Hagrid = offer (chouette en 1ère)
+  const t2 = await page.evaluate(() => {
+    const hagrid = NPCS.find(n => n.id === 'hagrid');
+    return {
+      state:    getNpcQuestState(hagrid),
+      currentQ: _currentQuestForState(hagrid, 'offer')
+    };
+  });
+  console.log('  T2 initial state:', t2);
+  assert(t2.state    === 'offer',           `Hagrid initial doit être 'offer', got ${t2.state}`);
+  assert(t2.currentQ === 'chouette_perdue', `Quête courante doit être chouette_perdue, got ${t2.currentQ}`);
+
+  // T3 : accepter + remettre la 1ère quête → chaîne avance vers defense_cabane
+  const t3 = await page.evaluate(() => {
+    const hagrid = NPCS.find(n => n.id === 'hagrid');
+    acceptQuest('chouette_perdue');
+    // Bypass de l'objectif : on coche directement
+    const q = activeQuests.find(x => x.id === 'chouette_perdue');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    turnInQuestById('chouette_perdue');
+    const stateAfter   = getNpcQuestState(hagrid);
+    const currentAfter = _currentQuestForState(hagrid, stateAfter);
+    return {
+      chouetteCompleted: completedQuests.has('chouette_perdue'),
+      chouetteLastLevel: lastQuestCompletion['chouette_perdue'],
+      stateAfter,
+      currentAfter,
+      cabaneOfferable:   isQuestOfferable('defense_cabane'),
+      chouetteOfferableNow: isQuestOfferable('chouette_perdue')
+    };
+  });
+  console.log('  T3 after first quest:', t3);
+  assert(t3.chouetteCompleted,           'chouette_perdue doit être marquée completed');
+  assert(typeof t3.chouetteLastLevel === 'number', 'lastQuestCompletion doit enregistrer le niveau');
+  assert(t3.stateAfter === 'offer',      `chaîne doit avancer à 'offer' (defense_cabane), got ${t3.stateAfter}`);
+  assert(t3.currentAfter === 'defense_cabane', `next quest doit être defense_cabane, got ${t3.currentAfter}`);
+  assert(t3.cabaneOfferable,             'defense_cabane doit être offrable');
+  assert(!t3.chouetteOfferableNow,       'chouette_perdue ne doit pas être ré-offrable immédiatement');
+
+  // T4 : remettre defense_cabane → état done
+  const t4 = await page.evaluate(() => {
+    const hagrid = NPCS.find(n => n.id === 'hagrid');
+    acceptQuest('defense_cabane');
+    const q = activeQuests.find(x => x.id === 'defense_cabane');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    turnInQuestById('defense_cabane');
+    return {
+      bothCompleted: completedQuests.has('chouette_perdue') && completedQuests.has('defense_cabane'),
+      state:         getNpcQuestState(hagrid),
+      cabaneLastLevel: lastQuestCompletion['defense_cabane']  // pas répétable → undefined attendu
+    };
+  });
+  console.log('  T4 chain finished:', t4);
+  assert(t4.bothCompleted,                  'les 2 quêtes doivent être completed');
+  assert(t4.state === 'done',               `Hagrid doit être 'done', got ${t4.state}`);
+  assert(t4.cabaneLastLevel === undefined,  'defense_cabane (non répétable) ne doit pas écrire lastQuestCompletion');
+
+  // T5 : pas de cooldown encore atteint → chouette pas ré-offrable
+  const t5 = await page.evaluate(() => {
+    return {
+      level: player.level,
+      lastChouette: lastQuestCompletion['chouette_perdue'],
+      offerable: isQuestOfferable('chouette_perdue')
+    };
+  });
+  console.log('  T5 cooldown not reached:', t5);
+  assert(!t5.offerable, 'chouette_perdue ne doit pas être ré-offrable avant cooldown');
+
+  // T6 : amener le joueur exactement au cooldown → chouette redevient offrable
+  const t6 = await page.evaluate(() => {
+    const tpl  = QUEST_TEMPLATES.find(t => t.id === 'chouette_perdue');
+    const last = lastQuestCompletion['chouette_perdue'] || 0;
+    player.level = last + tpl.repeatable.everyLevels; // exactement au seuil
+    const hagrid = NPCS.find(n => n.id === 'hagrid');
+    return {
+      level:      player.level,
+      lastSeen:   last,
+      everyLvls:  tpl.repeatable.everyLevels,
+      offerable:  isQuestOfferable('chouette_perdue'),
+      state:      getNpcQuestState(hagrid),
+      currentQ:   _currentQuestForState(hagrid, 'offer')
+    };
+  });
+  console.log('  T6 cooldown reached:', t6);
+  assert(t6.offerable,                       'chouette_perdue doit redevenir offrable après +3 niveaux');
+  assert(t6.state === 'offer',               `Hagrid doit revenir à 'offer', got ${t6.state}`);
+  assert(t6.currentQ === 'chouette_perdue',  `quête courante doit être chouette_perdue, got ${t6.currentQ}`);
+
+  // T7 : ré-acceptation, completedQuests doit la sortir
+  const t7 = await page.evaluate(() => {
+    const accepted = acceptQuest('chouette_perdue');
+    return {
+      accepted,
+      stillCompleted: completedQuests.has('chouette_perdue'),
+      activeNow:      !!activeQuests.find(q => q.id === 'chouette_perdue')
+    };
+  });
+  console.log('  T7 re-accept:', t7);
+  assert(t7.accepted,         'acceptQuest doit retourner true en répétition');
+  assert(!t7.stillCompleted,  'chouette_perdue doit être retirée de completedQuests à la ré-acceptation');
+  assert(t7.activeNow,        'chouette_perdue doit être dans activeQuests');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ chaîne Hagrid + quête répétable conformes');
+  await browser.close();
+}
+
+async function scenarioRepeatableQuestSpawn() {
+  console.log('\n── Scénario 3quinquies : chouette_perdue — spawn + reward répétée ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : champs spawnOnAccept + repeatableReward présents sur le template
+  const t1 = await page.evaluate(() => {
+    const t = QUEST_TEMPLATES.find(q => q.id === 'chouette_perdue');
+    return {
+      hasSpawn:        !!(t && t.spawnOnAccept),
+      spawnTarget:     t?.spawnOnAccept?.targetMonsterId,
+      spawnExtra:      t?.spawnOnAccept?.extraRandomCount,
+      hasRepeatReward: !!(t && t.repeatableReward),
+      repeatXp:        t?.repeatableReward?.xp,
+      repeatGold:      t?.repeatableReward?.gold,
+      repeatItem:      t?.repeatableReward?.item,
+      hasSpawnFn:      typeof spawnQuestMonsters === 'function'
+    };
+  });
+  console.log('  T1 template fields:', t1);
+  assert(t1.hasSpawn,                             'spawnOnAccept manquant sur chouette_perdue');
+  assert(t1.spawnTarget === 'chouette_envoutee',  'targetMonsterId attendu = chouette_envoutee');
+  assert(t1.spawnExtra === 2,                     'extraRandomCount attendu = 2');
+  assert(t1.hasRepeatReward,                      'repeatableReward manquant');
+  assert(typeof t1.repeatXp === 'number' && t1.repeatXp > 0,   'repeatableReward.xp invalide');
+  assert(typeof t1.repeatGold === 'number' && t1.repeatGold > 0, 'repeatableReward.gold invalide');
+  assert(t1.repeatItem === undefined,             'repeatableReward ne doit pas redonner le balai');
+  assert(t1.hasSpawnFn,                           'spawnQuestMonsters non exposée');
+
+  // T2 : étage vide (donjon nettoyé manuellement) → acceptQuest doit
+  // peupler enemyMap avec au moins la cible (chouette).
+  const t2 = await page.evaluate(() => {
+    // Vide l'étage de tous les ennemis
+    for (let y = 0; y < enemyMap.length; y++) {
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    }
+    const before = (() => {
+      let n = 0;
+      for (let y = 0; y < enemyMap.length; y++)
+        for (let x = 0; x < enemyMap[y].length; x++)
+          if (enemyMap[y][x]) n++;
+      return n;
+    })();
+    acceptQuest('chouette_perdue');
+    let chouettes = 0, total = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) {
+        const m = enemyMap[y][x];
+        if (!m) continue;
+        total++;
+        if (m.id === 'chouette_envoutee') chouettes++;
+      }
+    return { before, chouettes, total };
+  });
+  console.log('  T2 spawn after accept:', t2);
+  assert(t2.before === 0,        'enemyMap aurait dû être vidé');
+  assert(t2.chouettes >= 1,      'au moins 1 chouette doit être spawnée');
+  assert(t2.total >= 2,          'au moins 1 chouette + 1 mob random attendus (pool peut être petit)');
+
+  // T3 : 1re remise → récompense complète (xp 90, gold 30, item broom).
+  // On gonfle xpNext pour neutraliser un éventuel level-up qui résète
+  // player.xp et fausserait la mesure du delta.
+  const t3 = await page.evaluate(() => {
+    player.xpNext = 999999;
+    const xpBefore   = player.xp;
+    const goldBefore = player.gold;
+    const hadBroom   = player.inventory.some(i => i.id === 'broom');
+    player.inventory = player.inventory.filter(i => i.id !== 'broom');
+    const q = activeQuests.find(x => x.id === 'chouette_perdue');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    turnInQuestById('chouette_perdue');
+    return {
+      hadBroomBefore: hadBroom,
+      xpDelta:        player.xp   - xpBefore,
+      goldDelta:      player.gold - goldBefore,
+      gotBroom:       player.inventory.some(i => i.id === 'broom'),
+      lastLvl:        lastQuestCompletion['chouette_perdue']
+    };
+  });
+  console.log('  T3 first turn-in:', t3);
+  assert(t3.xpDelta   === 90,     `1re remise : xp+90 attendu, got ${t3.xpDelta}`);
+  assert(t3.goldDelta === 30,     `1re remise : gold+30 attendu, got ${t3.goldDelta}`);
+  assert(t3.gotBroom,             '1re remise doit donner le balai');
+  assert(typeof t3.lastLvl === 'number', 'lastQuestCompletion doit être posé');
+
+  // T4 : ré-acceptation après cooldown atteint → 2e remise = reward dégradée.
+  const t4 = await page.evaluate(() => {
+    const tpl = QUEST_TEMPLATES.find(q => q.id === 'chouette_perdue');
+    player.level += tpl.repeatable.everyLevels; // saute le cooldown
+    player.xpNext = 999999;                     // neutralise level-up
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const accepted = acceptQuest('chouette_perdue');
+    let chouettes = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && enemyMap[y][x].id === 'chouette_envoutee') chouettes++;
+    const xpBefore   = player.xp;
+    const goldBefore = player.gold;
+    const broomCountBefore = player.inventory.filter(i => i.id === 'broom').length;
+    const q = activeQuests.find(x => x.id === 'chouette_perdue');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    turnInQuestById('chouette_perdue');
+    return {
+      accepted,
+      chouettesAfterReaccept: chouettes,
+      xpDelta:                player.xp   - xpBefore,
+      goldDelta:              player.gold - goldBefore,
+      broomCountBefore,
+      broomCountAfter:        player.inventory.filter(i => i.id === 'broom').length
+    };
+  });
+  console.log('  T4 second turn-in (degraded):', t4);
+  assert(t4.accepted,                       'ré-acceptation refusée');
+  assert(t4.chouettesAfterReaccept >= 1,    'spawn doit aussi marcher à la 2e acceptation');
+  assert(t4.xpDelta   === 60,               `2e remise : xp+60 attendu (repeatableReward), got ${t4.xpDelta}`);
+  assert(t4.goldDelta === 35,               `2e remise : gold+35 attendu, got ${t4.goldDelta}`);
+  assert(t4.broomCountAfter === t4.broomCountBefore, '2e remise ne doit PAS ajouter un balai');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ chouette_perdue — spawn + reward dégradée OK');
+  await browser.close();
+}
+
+async function scenarioEnsureKillTargets() {
+  console.log('\n── Scénario : _ensureActiveKillQuestTargets (vieilles saves) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helper exposé
+  const t1 = await page.evaluate(() => ({
+    hasFn: typeof _ensureActiveKillQuestTargets === 'function'
+  }));
+  console.log('  T1 fn exposed:', t1);
+  assert(t1.hasFn, '_ensureActiveKillQuestTargets non exposée');
+
+  // T2 : simule une vieille save — chouette_perdue active sans spawn.
+  // 1) on insère manuellement la quête dans activeQuests (sans passer
+  //    par acceptQuest pour éviter le hook spawnOnAccept).
+  // 2) on vide enemyMap.
+  // 3) appel direct du helper → la chouette doit apparaître.
+  const t2 = await page.evaluate(() => {
+    const tpl  = QUEST_TEMPLATES.find(q => q.id === 'chouette_perdue');
+    const inst = JSON.parse(JSON.stringify(tpl));
+    inst.completed = false;
+    activeQuests.push(inst);
+    availableQuests.delete('chouette_perdue');
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const added = _ensureActiveKillQuestTargets(currentFloor);
+    let chouettes = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && enemyMap[y][x].id === 'chouette_envoutee') chouettes++;
+    return { added, chouettes };
+  });
+  console.log('  T2 migration spawn:', t2);
+  assert(t2.added >= 1,     `helper devrait avoir placé ≥1 cible, got ${t2.added}`);
+  assert(t2.chouettes >= 1, 'chouette_envoutee absente après migration');
+
+  // T3 : idempotence — un 2e appel ne doit RIEN ajouter (cible déjà là).
+  const t3 = await page.evaluate(() => ({
+    added: _ensureActiveKillQuestTargets(currentFloor)
+  }));
+  console.log('  T3 idempotent:', t3);
+  assert(t3.added === 0, `2e appel doit être no-op, got ${t3.added}`);
+
+  // T4 : si la quête est terminée (objective completed), pas de spawn.
+  const t4 = await page.evaluate(() => {
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const q = activeQuests.find(x => x.id === 'chouette_perdue');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    const added = _ensureActiveKillQuestTargets(currentFloor);
+    let chouettes = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && enemyMap[y][x].id === 'chouette_envoutee') chouettes++;
+    return { added, chouettes };
+  });
+  console.log('  T4 completed step skipped:', t4);
+  assert(t4.added === 0,     'objective completed → pas de spawn');
+  assert(t4.chouettes === 0, 'aucune chouette ne doit être placée');
+
+  // T5 : _migrateQuestTargetIds — vieille save dont la quête de Lupin
+  // porte l'id de monstre obsolète `dementeur`. La migration doit le
+  // réaligner sur `detraqueur` (id canonique du template), sans toucher
+  // aux objectifs `item` ni aux quêtes farming (cible à id `null`).
+  const t5 = await page.evaluate(() => {
+    activeQuests = activeQuests.filter(q => q.id !== 'lumiere_desespoir');
+    const tpl  = QUEST_TEMPLATES.find(q => q.id === 'lumiere_desespoir');
+    const inst = JSON.parse(JSON.stringify(tpl));
+    inst.completed = false;
+    inst.objectives[0].monsterId = 'dementeur';   // id obsolète (vieille save)
+    activeQuests.push(inst);
+    _migrateQuestTargetIds();
+    const q = activeQuests.find(x => x.id === 'lumiere_desespoir');
+    // 2e passe → idempotence
+    _migrateQuestTargetIds();
+    return {
+      killId:   q.objectives[0].monsterId,
+      itemId:   q.objectives[1].itemId,
+      hasFn:    typeof _migrateQuestTargetIds === 'function'
+    };
+  });
+  console.log('  T5 migration ids cible:', t5);
+  assert(t5.hasFn,                       '_migrateQuestTargetIds non exposée');
+  assert(t5.killId === 'detraqueur',     `id kill attendu detraqueur, got ${t5.killId}`);
+  assert(t5.itemId === 'choco_sorcier',  `objectif item ne doit pas changer, got ${t5.itemId}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ migration des cibles de quête OK');
+  await browser.close();
+}
+
+async function scenarioEnsureStairs() {
+  console.log('\n── Scénario : _ensureStairsExist (softlock escaliers) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helper exposé
+  const t1 = await page.evaluate(() => ({
+    hasFn: typeof _ensureStairsExist === 'function'
+  }));
+  console.log('  T1 fn exposed:', t1);
+  assert(t1.hasFn, '_ensureStairsExist non exposée');
+
+  // T2 : on simule un étage softlocké — supprime STAIRS_D et STAIRS_U
+  // du dungeon courant puis appelle le helper.
+  const t2 = await page.evaluate(() => {
+    currentFloor = 5; // floor>1 pour activer la condition STAIRS_U
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.STAIRS_D || dungeon[y][x] === CELL.STAIRS_U) {
+          dungeon[y][x] = CELL.FLOOR;
+        }
+      }
+    }
+    const added = _ensureStairsExist(currentFloor);
+    let down = 0, up = 0;
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.STAIRS_D) down++;
+        if (dungeon[y][x] === CELL.STAIRS_U) up++;
+      }
+    }
+    return { added, down, up };
+  });
+  console.log('  T2 softlocked floor:', t2);
+  assert(t2.added === 2, `helper devrait avoir ajouté 2 escaliers, got ${t2.added}`);
+  assert(t2.down === 1, 'STAIRS_D absent après migration');
+  assert(t2.up === 1,   'STAIRS_U absent après migration sur floor>1');
+
+  // T3 : idempotence — 2e appel = no-op
+  const t3 = await page.evaluate(() => ({
+    added: _ensureStairsExist(currentFloor)
+  }));
+  console.log('  T3 idempotent:', t3);
+  assert(t3.added === 0, `2e appel doit être no-op, got ${t3.added}`);
+
+  // T4 : floor 1 → pas de STAIRS_U ajouté même si manquant
+  const t4 = await page.evaluate(() => {
+    currentFloor = 1;
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.STAIRS_D || dungeon[y][x] === CELL.STAIRS_U) {
+          dungeon[y][x] = CELL.FLOOR;
+        }
+      }
+    }
+    const added = _ensureStairsExist(currentFloor);
+    let down = 0, up = 0;
+    for (let y = 0; y < dungeon.length; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.STAIRS_D) down++;
+        if (dungeon[y][x] === CELL.STAIRS_U) up++;
+      }
+    }
+    return { added, down, up };
+  });
+  console.log('  T4 floor 1 (no STAIRS_U):', t4);
+  assert(t4.added === 1, 'floor 1 : seul STAIRS_D doit être ajouté');
+  assert(t4.down === 1,  'STAIRS_D manquant sur floor 1');
+  assert(t4.up === 0,    'STAIRS_U ne doit PAS être ajouté sur floor 1');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ migration des escaliers OK');
+  await browser.close();
+}
+
+async function scenarioIteration74() {
+  console.log('\n── Scénario 3sexies : Itération 7.4 — Ollivander/Guipure/Portrait/Fumseck ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : Ollivander expose wand1+wand2, buyback baguette à 75%, wand2 retiré du shop fixe.
+  const t1 = await page.evaluate(() => {
+    const o = getNpcById('ollivander');
+    npcPlacements.set('1,1', 'ollivander');
+    seenNpcs.add('ollivander');
+    openVendorShop('ollivander');
+    const grid = document.getElementById('shop-grid');
+    const itemIds = Array.from(grid.querySelectorAll('[data-item-id]'))
+      .map(el => el.getAttribute('data-item-id'));
+    // sell — wand1 doit afficher 75% du price
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'wand1') }];
+    setShopMode('sell');
+    const sellLabel = document.querySelector('#shop-grid .shop-price')?.textContent;
+    const wand1Price = ITEMS.find(i => i.id === 'wand1').price;
+    // wand2 ne doit PLUS être dans SHOP_CATALOG (Malkins)
+    const wand2InStaticShop = SHOP_CATALOG.some(e => e.id === 'wand2');
+    return {
+      hasOllivander:      !!o,
+      buybackWand:        o && o.buyback && o.buyback.byType && o.buyback.byType.wand,
+      waresContainsWand1: itemIds.includes('wand1'),
+      waresContainsWand2: itemIds.includes('wand2'),
+      sellLabel,
+      sellExpected:       '+' + Math.max(1, Math.floor(wand1Price * 0.75)) + 'G',
+      wand2InStaticShop
+    };
+  });
+  console.log('  T1 Ollivander:', t1);
+  assert(t1.hasOllivander,        'PNJ ollivander absent');
+  assert(t1.buybackWand === 0.75, 'buyback wand 75% manquant chez Ollivander');
+  assert(t1.waresContainsWand1,   'wand1 absent des wares Ollivander');
+  assert(t1.waresContainsWand2,   'wand2 absent des wares Ollivander');
+  assert(t1.sellLabel === t1.sellExpected,
+    `Ollivander doit racheter wand1 à 75% (${t1.sellExpected}), got ${t1.sellLabel}`);
+  assert(!t1.wand2InStaticShop,   'wand2 ne doit plus être dans SHOP_CATALOG (Malkins)');
+
+  // T2 : Guipure — buyback bySlot 75% sur body/head/cloak via robe1.
+  const t2 = await page.evaluate(() => {
+    const g = getNpcById('guipure');
+    npcPlacements.set('1,1', 'guipure');
+    seenNpcs.add('guipure');
+    player.inventory = [{ ...ITEMS.find(i => i.id === 'robe1') }];
+    openVendorShop('guipure');
+    setShopMode('sell');
+    const sellLabel = document.querySelector('#shop-grid .shop-price')?.textContent;
+    const robe1Price = ITEMS.find(i => i.id === 'robe1').price;
+    return {
+      hasGuipure:        !!g,
+      bySlotBody:        g && g.buyback && g.buyback.bySlot && g.buyback.bySlot.body,
+      bySlotHead:        g && g.buyback && g.buyback.bySlot && g.buyback.bySlot.head,
+      bySlotCloak:       g && g.buyback && g.buyback.bySlot && g.buyback.bySlot.cloak,
+      waresLen:          (g && g.wares || []).length,
+      sellLabel,
+      sellExpected:      '+' + Math.max(1, Math.floor(robe1Price * 0.75)) + 'G'
+    };
+  });
+  console.log('  T2 Guipure:', t2);
+  assert(t2.hasGuipure,            'PNJ guipure absent');
+  assert(t2.bySlotBody === 0.75,   'buyback bySlot.body 75% manquant chez Guipure');
+  assert(t2.bySlotHead === 0.75,   'buyback bySlot.head 75% manquant chez Guipure');
+  assert(t2.bySlotCloak === 0.75,  'buyback bySlot.cloak 75% manquant chez Guipure');
+  assert(t2.waresLen >= 4,         'Guipure doit proposer au moins 4 articles');
+  assert(t2.sellLabel === t2.sellExpected,
+    `Guipure doit racheter robe1 à 75% (${t2.sellExpected}), got ${t2.sellLabel}`);
+
+  // T3 : Portrait Dumbledore — pool contextuel filtré par étage.
+  // À l'étage 1 (currentFloor par défaut), le pool tirable contient `chat_norris`
+  // et autres bas étages mais pas mangemorts/Voldemort → matches devrait être vide
+  // → fallback sur idle. À l'étage 8 forcé, plusieurs entrées doivent matcher.
+  const t3 = await page.evaluate(() => {
+    closeNpcDialog();
+    const p = getNpcById('portrait_dumbledore');
+    if (!p || !p.dialogues || !p.dialogues.contextualLore) return { ok: false };
+    const loreEntries = p.dialogues.contextualLore.length;
+    // Étage 1 : aucun match attendu
+    currentFloor = 1;
+    const hitsFloor1 = (typeof _pickContextualLore === 'function')
+      ? _pickContextualLore(p) : null;
+    // Étage 9 : Voldemort, Bellatrix, mangemorts → plusieurs matches attendus
+    currentFloor = 10;
+    const hitsFloor10 = (typeof _pickContextualLore === 'function')
+      ? _pickContextualLore(p) : null;
+    return {
+      ok: true,
+      loreEntries,
+      hitsFloor1,
+      hitsFloor10,
+      hasContextualLore: !!p.dialogues.contextualLore
+    };
+  });
+  console.log('  T3 Portrait Dumbledore lore:', t3);
+  assert(t3.ok,                            'portrait_dumbledore introuvable');
+  assert(t3.hasContextualLore,             'contextualLore absent du portrait');
+  assert(t3.loreEntries >= 8,              'au moins 8 répliques contextuelles attendues');
+  assert(t3.hitsFloor1 === null,           'aucune réplique ne doit matcher l\'étage 1');
+  assert(typeof t3.hitsFloor10 === 'string' && t3.hitsFloor10.length > 0,
+    'au moins une réplique doit matcher l\'étage 10');
+
+  // T4 : Fumseck — heal+revive, cooldown 1×/étage, reset à l'entrée d'un nouvel étage.
+  const t4 = await page.evaluate(() => {
+    currentFloor = 7;
+    const f = getNpcById('fumseck');
+    // KO Harry
+    party[0].hp = 0;
+    party[0].sp = 0;
+    if (party[1]) { party[1].hp = 5; party[1].sp = 5; }
+    usedSpecialNpcs = new Set();
+    triggerNpcSpecialAction('fumseck');
+    const after1 = {
+      harryHp:  party[0].hp,
+      harryHpMax: party[0].hpMax,
+      harrySp:  party[0].sp,
+      harrySpMax: party[0].spMax,
+      spent:    usedSpecialNpcs.has('fumseck')
+    };
+    // 2e clic refusé (cooldown)
+    party[0].hp = 1;
+    triggerNpcSpecialAction('fumseck');
+    const after2 = {
+      harryHpAfter2: party[0].hp,   // doit rester à 1 (refus silencieux)
+      stillSpent:    usedSpecialNpcs.has('fumseck')
+    };
+    // Reset par entrée d'étage : on simule via le pipeline de reset
+    usedSpecialNpcs = new Set();
+    triggerNpcSpecialAction('fumseck');
+    const after3 = {
+      harryHpAfter3: party[0].hp,
+      respent:       usedSpecialNpcs.has('fumseck')
+    };
+    return { hasFumseck: !!f, hasSpecial: !!(f && f.specialAction), ...after1, ...after2, ...after3 };
+  });
+  console.log('  T4 Fumseck:', t4);
+  assert(t4.hasFumseck,                'PNJ fumseck absent');
+  assert(t4.hasSpecial,                'specialAction absent sur fumseck');
+  assert(t4.harryHp > 0,               'Harry doit être ranimé après les larmes');
+  assert(t4.harryHp === t4.harryHpMax, `Harry doit être à hpMax après l'usage, got ${t4.harryHp}/${t4.harryHpMax}`);
+  assert(t4.harrySp === t4.harrySpMax, `Harry doit être à spMax (PM) après l'usage`);
+  assert(t4.spent,                     'usedSpecialNpcs doit contenir fumseck après usage');
+  assert(t4.harryHpAfter2 === 1,       '2e clic doit être refusé silencieusement (Harry reste à 1 PV)');
+  assert(t4.stillSpent,                'cooldown doit persister');
+  assert(t4.harryHpAfter3 > 1,         'après reset usedSpecialNpcs, larmes redevenues utilisables');
+  assert(t4.respent,                   'reset puis 2e usage : usedSpecialNpcs doit contenir fumseck à nouveau');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Itération 7.4 — câblage métier des 4 PNJ OK');
+  await browser.close();
+}
+
+async function scenarioFarmingQuests() {
+  console.log('\n── Scénario : quêtes répétables de farming ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : templates présents + flag farming
+  const t1 = await page.evaluate(() => {
+    const chasse = QUEST_TEMPLATES.find(q => q.id === 'chasse_magizoologiste');
+    const course = QUEST_TEMPLATES.find(q => q.id === 'course_hagrid');
+    return {
+      chasseFarming: !!(chasse && chasse.farming),
+      courseFarming: !!(course && course.farming),
+      chasseEveryLvls: chasse?.repeatable?.everyLevels,
+      courseEveryLvls: course?.repeatable?.everyLevels,
+      hasRollFn:       typeof _rollFarmingTarget === 'function',
+      hasSpawnFn:      typeof spawnFarmingMonsters === 'function',
+      hasPreviewFn:    typeof _previewFarmingOffer === 'function',
+      blacklistOk:     FARMING_KILL_BLACKLIST.has('bellatrix') &&
+                       FARMING_KILL_BLACKLIST.has('voldemort_revenu')
+    };
+  });
+  console.log('  T1 templates:', t1);
+  assert(t1.chasseFarming,   'chasse_magizoologiste doit porter farming:true');
+  assert(t1.courseFarming,   'course_hagrid doit porter farming:true');
+  assert(t1.chasseEveryLvls === 2, 'chasse : cooldown 2 niveaux');
+  assert(t1.courseEveryLvls === 3, 'course : cooldown 3 niveaux');
+  assert(t1.hasRollFn,       '_rollFarmingTarget absent');
+  assert(t1.hasSpawnFn,      'spawnFarmingMonsters absent');
+  assert(t1.hasPreviewFn,    '_previewFarmingOffer absent');
+  assert(t1.blacklistOk,     'FARMING_KILL_BLACKLIST incomplète');
+
+  // T2 : PNJ random Scamander/Hagrid présents et propres
+  const t2 = await page.evaluate(() => {
+    const sc = NPCS.find(n => n.id === 'scamander_random');
+    const hg = NPCS.find(n => n.id === 'hagrid_random');
+    return {
+      scOk: !!(sc && sc.random && sc.minFloor === 3 && sc.maxFloor === 8 &&
+               sc.questsGiven && sc.questsGiven.includes('chasse_magizoologiste')),
+      hgOk: !!(hg && hg.random && hg.minFloor === 4 && hg.maxFloor === 9 &&
+               hg.questsGiven && hg.questsGiven.includes('course_hagrid'))
+    };
+  });
+  console.log('  T2 random NPCs:', t2);
+  assert(t2.scOk, 'scamander_random mal configuré');
+  assert(t2.hgOk, 'hagrid_random mal configuré');
+
+  // T3 : Accepter la chasse à l'étage 5 → tirage + spawn effectif
+  const t3 = await page.evaluate(() => {
+    currentFloor = 5;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const accepted = acceptQuest('chasse_magizoologiste');
+    const q = activeQuests.find(x => x.id === 'chasse_magizoologiste');
+    let totalMobs = 0, targetMobs = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) {
+        const m = enemyMap[y][x];
+        if (!m) continue;
+        totalMobs++;
+        if (q && m.id === q.objectives[0].monsterId) targetMobs++;
+      }
+    return {
+      accepted, totalMobs, targetMobs,
+      monsterId: q?.objectives[0]?.monsterId,
+      amount:    q?.objectives[0]?.amount,
+      hasDynamic: !!(q && q._dynamicTarget),
+      blacklisted: q ? FARMING_KILL_BLACKLIST.has(q.objectives[0].monsterId) : false,
+      rewardXp:    q?.reward?.xp,
+      rewardGold:  q?.reward?.gold
+    };
+  });
+  console.log('  T3 chasse accepted:', t3);
+  assert(t3.accepted,                'chasse_magizoologiste doit être acceptable étage 5');
+  assert(t3.monsterId,               'objectif.monsterId doit être tiré');
+  assert(t3.amount >= 4 && t3.amount <= 8, `amount attendu 4-8, got ${t3.amount}`);
+  assert(t3.hasDynamic,              '_dynamicTarget doit être renseigné');
+  assert(!t3.blacklisted,            'cible blacklist (bellatrix/voldemort) tirée — interdit');
+  assert(t3.targetMobs >= 1,         'au moins une cible doit être spawnée');
+  assert(typeof t3.rewardXp === 'number' && t3.rewardXp > 0, 'reward.xp invalide');
+  assert(typeof t3.rewardGold === 'number' && t3.rewardGold > 0, 'reward.gold invalide');
+
+  // T4 : Accepter la course à l'étage 6 → tirage item dans le pool autorisé
+  const t4 = await page.evaluate(() => {
+    currentFloor = 6;
+    const accepted = acceptQuest('course_hagrid');
+    const q = activeQuests.find(x => x.id === 'course_hagrid');
+    const allowed = ['mandragore', 'choco_sorcier', 'potion_s', 'potion_m'];
+    return {
+      accepted,
+      itemId:    q?.objectives[0]?.itemId,
+      amount:    q?.objectives[0]?.amount,
+      isAllowed: q ? allowed.includes(q.objectives[0].itemId) : false,
+      descHasName: !!(q && q.desc && q.desc.length > 10)
+    };
+  });
+  console.log('  T4 course accepted:', t4);
+  assert(t4.accepted,        'course_hagrid doit être acceptable étage 6');
+  assert(t4.itemId,          'objectif.itemId doit être tiré');
+  assert(t4.amount >= 3 && t4.amount <= 5, `amount attendu 3-5, got ${t4.amount}`);
+  assert(t4.isAllowed,       `itemId tiré hors pool autorisé : ${t4.itemId}`);
+  assert(t4.descHasName,     'desc dynamique doit être renseignée');
+
+  // T5 : Refus hors fourchette d'étage
+  const t5 = await page.evaluate(() => {
+    // Reset l'état de la quête en la marquant complétée pour qu'elle soit
+    // potentiellement répétable, puis on simule une nouvelle tentative
+    // hors fourchette.
+    activeQuests = activeQuests.filter(q => q.id !== 'chasse_magizoologiste');
+    completedQuests.delete('chasse_magizoologiste');
+    availableQuests.add('chasse_magizoologiste');
+    currentFloor = 1;  // hors fourchette (3-8)
+    const accepted = acceptQuest('chasse_magizoologiste');
+    return {
+      accepted,
+      stillAvailable: availableQuests.has('chasse_magizoologiste'),
+      notActive: !activeQuests.find(q => q.id === 'chasse_magizoologiste')
+    };
+  });
+  console.log('  T5 hors fourchette:', t5);
+  assert(!t5.accepted,       'acceptation doit échouer hors fourchette');
+  assert(t5.notActive,       'chasse ne doit pas devenir active hors fourchette');
+  assert(t5.stillAvailable,  'chasse doit rester offrable pour plus tard');
+
+  // T6 : Preview interpolable dans le dialogue (offer)
+  const t6 = await page.evaluate(() => {
+    currentFloor = 4;
+    _clearFarmingPreviews();
+    const preview = _previewFarmingOffer('chasse_magizoologiste');
+    const raw = "J'ai repéré des {target} qui posent problème par ici. Veux-tu en éliminer {amount} ?";
+    const interpolated = _interpolateFarmingText(raw, 'chasse_magizoologiste', 'offer');
+    return {
+      hasPreview:     !!preview,
+      hasTargetName:  !!(preview && preview.target && preview.target.name),
+      interpolated,
+      hasNoPlaceholder: !/{target}|{amount}/.test(interpolated)
+    };
+  });
+  console.log('  T6 preview interpolation:', t6);
+  assert(t6.hasPreview,        'preview manquant à floor 4');
+  assert(t6.hasTargetName,     'preview sans nom de cible');
+  assert(t6.hasNoPlaceholder,  `placeholders non interpolés : ${t6.interpolated}`);
+
+  // T7 : Cooldown répétable (every 2 niveaux pour la chasse)
+  const t7 = await page.evaluate(() => {
+    // Force une remise pour amorcer lastQuestCompletion
+    currentFloor = 5;
+    activeQuests = activeQuests.filter(q => q.id !== 'chasse_magizoologiste');
+    availableQuests.add('chasse_magizoologiste');
+    completedQuests.delete('chasse_magizoologiste');
+    acceptQuest('chasse_magizoologiste');
+    const q = activeQuests.find(x => x.id === 'chasse_magizoologiste');
+    q.objectives.forEach(o => { o.completed = true; o.progress = o.amount; });
+    turnInQuestById('chasse_magizoologiste');
+    const completedAfter = completedQuests.has('chasse_magizoologiste');
+    const offerableImmediately = isQuestOfferable('chasse_magizoologiste');
+    const tpl = QUEST_TEMPLATES.find(q => q.id === 'chasse_magizoologiste');
+    player.level = (lastQuestCompletion['chasse_magizoologiste'] || 0) + tpl.repeatable.everyLevels;
+    const offerableAfterCd = isQuestOfferable('chasse_magizoologiste');
+    return { completedAfter, offerableImmediately, offerableAfterCd };
+  });
+  console.log('  T7 cooldown:', t7);
+  assert(t7.completedAfter,         'chasse doit être marquée completed après remise');
+  assert(!t7.offerableImmediately,  'chasse ne doit pas être ré-offrable immédiatement');
+  assert(t7.offerableAfterCd,       'chasse doit redevenir offrable après cooldown');
+
+  // T8 : Voix mappées (clés _VOICE_SAMPLES présentes)
+  const t8 = await page.evaluate(() => {
+    const sm = AudioSystem._VOICE_SAMPLES;
+    return {
+      scOffer:  !!sm['scamander_chasse_offer_1'],
+      scActive: !!sm['scamander_chasse_active_1'],
+      scReady:  !!sm['scamander_chasse_ready_1'],
+      hgOffer:  !!sm['hagrid_course_offer_1'],
+      hgActive: !!sm['hagrid_course_active_1'],
+      hgReady:  !!sm['hagrid_course_ready_1']
+    };
+  });
+  console.log('  T8 voice keys:', t8);
+  assert(t8.scOffer && t8.scActive && t8.scReady, 'clés audio Scamander manquantes');
+  assert(t8.hgOffer && t8.hgActive && t8.hgReady, 'clés audio Hagrid manquantes');
+
+  // T9 : helper _npcHasFarmingOffer — détecte uniquement les PNJ random
+  // avec une quête farming offerable (pas les fixes, pas les PNJ lore).
+  const t9 = await page.evaluate(() => {
+    // Reset à un état propre où chasse + course sont offerables
+    activeQuests = activeQuests.filter(q =>
+      q.id !== 'chasse_magizoologiste' && q.id !== 'course_hagrid');
+    completedQuests.delete('chasse_magizoologiste');
+    completedQuests.delete('course_hagrid');
+    availableQuests.add('chasse_magizoologiste');
+    availableQuests.add('course_hagrid');
+    delete lastQuestCompletion['chasse_magizoologiste'];
+    delete lastQuestCompletion['course_hagrid'];
+    return {
+      scRandomFarming: _npcHasFarmingOffer('scamander_random'),
+      hgRandomFarming: _npcHasFarmingOffer('hagrid_random'),
+      scFixedNoFarming: _npcHasFarmingOffer('scamander'),    // ne porte que niffleurs
+      hgFixedNoFarming: _npcHasFarmingOffer('hagrid'),       // ne porte que chouette/cabane
+      dumbledoreNoFarming: _npcHasFarmingOffer('dumbledore'),
+      unknownNoFarming: _npcHasFarmingOffer('inexistant'),
+      noIdNoFarming: _npcHasFarmingOffer(null)
+    };
+  });
+  console.log('  T9 _npcHasFarmingOffer:', t9);
+  assert(t9.scRandomFarming,     'scamander_random doit porter une farming offerable');
+  assert(t9.hgRandomFarming,     'hagrid_random doit porter une farming offerable');
+  assert(!t9.scFixedNoFarming,   'scamander fixe ne doit pas être détecté comme farming');
+  assert(!t9.hgFixedNoFarming,   'hagrid fixe ne doit pas être détecté comme farming');
+  assert(!t9.dumbledoreNoFarming,'dumbledore ne doit pas être détecté comme farming');
+  assert(!t9.unknownNoFarming,   'NPC inexistant ne doit pas crasher');
+  assert(!t9.noIdNoFarming,      'id null ne doit pas crasher');
+
+  // T10 : minimap applique bien .map-npc-farming + dataset.sign sur la
+  // case du PNJ random porteur d'une farming offerable.
+  const t10 = await page.evaluate(() => {
+    // Choisit une case FLOOR connue et la force en NPC pour le test
+    let target = null;
+    for (let y = 0; y < dungeon.length && !target; y++) {
+      for (let x = 0; x < dungeon[y].length; x++) {
+        if (dungeon[y][x] === CELL.FLOOR && !(x === playerX && y === playerY)) {
+          target = { x, y };
+          break;
+        }
+      }
+    }
+    if (!target) return { ok: false, reason: 'no FLOOR cell available' };
+    dungeon[target.y][target.x] = CELL.NPC;
+    visited[target.y][target.x] = true;
+    npcPlacements.set(`${target.x},${target.y}`, 'scamander_random');
+    renderMinimap();
+    const cells = document.querySelectorAll('#minimap .map-cell');
+    const idx   = target.y * MAP_W + target.x;
+    const cell  = cells[idx];
+    return {
+      ok:        true,
+      x:         target.x,
+      y:         target.y,
+      classes:   cell ? Array.from(cell.classList) : null,
+      sign:      cell ? cell.dataset.sign : null,
+      hasFarmingClass: cell ? cell.classList.contains('map-npc-farming') : false,
+      hasOfferClass:   cell ? cell.classList.contains('map-npc-offer') : false
+    };
+  });
+  console.log('  T10 minimap class:', t10);
+  assert(t10.ok,                  `setup échoué : ${t10.reason}`);
+  assert(t10.hasFarmingClass,     'minimap doit appliquer .map-npc-farming sur scamander_random offerable');
+  assert(!t10.hasOfferClass,      'minimap ne doit pas appliquer .map-npc-offer en parallèle');
+  assert(t10.sign === '!',        `dataset.sign attendu "!", got ${t10.sign}`);
+
+  // T11 : pools de rencontre cloisonnés — donneurs de quête vs ambiants.
+  const t11 = await page.evaluate(() => {
+    const givers5  = getRandomQuestGiversForFloor(5).map(n => n.id).sort();
+    const ambient5 = getRandomAmbientNpcsForFloor(5).map(n => n.id).sort();
+    return {
+      hasGiverFn:   typeof getRandomQuestGiversForFloor === 'function',
+      hasAmbientFn: typeof getRandomAmbientNpcsForFloor === 'function',
+      givers5,
+      ambient5,
+      giverHasScamander: givers5.includes('scamander_random'),
+      giverHasHagrid:    givers5.includes('hagrid_random'),
+      ambientNoGivers:   !ambient5.includes('scamander_random') && !ambient5.includes('hagrid_random'),
+      ambientHasVendor:  ambient5.includes('rosmerta')
+    };
+  });
+  console.log('  T11 pools cloisonnés:', t11);
+  assert(t11.hasGiverFn,        'getRandomQuestGiversForFloor absent');
+  assert(t11.hasAmbientFn,      'getRandomAmbientNpcsForFloor absent');
+  assert(t11.giverHasScamander, 'scamander_random doit être dans le pool donneurs étage 5');
+  assert(t11.giverHasHagrid,    'hagrid_random doit être dans le pool donneurs étage 5');
+  assert(t11.ambientNoGivers,   'le pool ambiant ne doit PAS contenir les donneurs de quête');
+  assert(t11.ambientHasVendor,  'le pool ambiant doit contenir les vendeurs (rosmerta)');
+
+  // T12 : test statistique — sur N donjons étage 5 (chasse offrable), le
+  // pool donneurs (70 %) doit faire apparaître un PNJ random porteur d'une
+  // quête de farming bien plus souvent que l'ancien ~6 %.
+  const t12 = await page.evaluate(() => {
+    const N = 60;
+    let withGiver = 0;
+    for (let i = 0; i < N; i++) {
+      generateDungeon(5);
+      const ids = Array.from(npcPlacements.values());
+      if (ids.includes('scamander_random') || ids.includes('hagrid_random')) withGiver++;
+    }
+    return { N, withGiver, ratio: withGiver / N };
+  });
+  console.log('  T12 spawn statistique:', t12);
+  assert(t12.ratio >= 0.40,
+    `donneur de quête répétable doit spawner ≥ 40 % des donjons étage 5, got ${(t12.ratio * 100).toFixed(0)} %`);
+
+  // T13 : flux dialogue — PNJ random placé → état 'offer' → bouton
+  // « Accepter la quête » présent → acceptQuest active bien la quête.
+  const t13 = await page.evaluate(() => {
+    activeQuests = activeQuests.filter(q => q.id !== 'chasse_magizoologiste');
+    completedQuests.delete('chasse_magizoologiste');
+    availableQuests.add('chasse_magizoologiste');
+    delete lastQuestCompletion['chasse_magizoologiste'];
+    const npc   = getNpcById('scamander_random');
+    const state = getNpcQuestState(npc);
+    seenNpcs.delete('scamander_random');           // forcer le greeting puis offer
+    const actions = _npcDialogActions(npc, state).map(a => a.label);
+    const accepted  = acceptQuest('chasse_magizoologiste');
+    const activeNow = activeQuests.some(q => q.id === 'chasse_magizoologiste');
+    return { state, actions, hasAccept: actions.some(l => /Accepter/.test(l)), accepted, activeNow };
+  });
+  console.log('  T13 flux dialogue:', t13);
+  assert(t13.state === 'offer',  `scamander_random doit être 'offer', got ${t13.state}`);
+  assert(t13.hasAccept,          'le dialogue doit proposer « Accepter la quête »');
+  assert(t13.accepted,           'acceptQuest doit activer chasse_magizoologiste');
+  assert(t13.activeNow,          'chasse_magizoologiste doit être dans activeQuests après acceptation');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Quêtes de farming OK');
+  await browser.close();
+}
+
+async function scenarioDelayedSearch() {
+  console.log('\n── Scénario : fouille renouvelée (réactivation différée) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Délai de recharge piloté par la difficulté.
+  const delays = await page.evaluate(() => {
+    const out = {};
+    for (const d of ['Facile', 'Normal', 'Difficile', 'Expert']) {
+      difficulty = d;
+      out[d] = _searchRechargeSteps();
+    }
+    difficulty = 'Normal';
+    return out;
+  });
+  assert(delays.Facile === 45,    `Facile doit recharger en 45 pas (obtenu ${delays.Facile})`);
+  assert(delays.Normal === 60,    `Normal doit recharger en 60 pas (obtenu ${delays.Normal})`);
+  assert(delays.Difficile === 80, `Difficile doit recharger en 80 pas (obtenu ${delays.Difficile})`);
+  assert(delays.Expert === 100,   `Expert doit recharger en 100 pas (obtenu ${delays.Expert})`);
+
+  // 2) Machine d'état : fresh → recharging → ready → recharging.
+  // Math.random est figé à 0.5 le temps des deux searchRoom() : sinon
+  // les jets de malus (monstre/piège, 1 % chacun) peuvent déclencher un
+  // combat et rendre la 2e fouille no-op (test sinon flaky ~1 %).
+  const fsm = await page.evaluate(() => {
+    difficulty   = 'Normal';
+    searchedCells = new Map();
+    stepCount    = 0;
+    const key = `${playerX},${playerY}`;
+    const fresh = _searchCellStatus(key).state;
+    const orig = Math.random;
+    Math.random = () => 0.5;
+    let afterSearch, justBefore, ready, afterRepeat;
+    try {
+      searchRoom();
+      afterSearch = _searchCellStatus(key);
+      stepCount += 59;
+      justBefore = _searchCellStatus(key).state;
+      stepCount += 1;                       // total 60 pas écoulés
+      ready = _searchCellStatus(key);
+      searchRoom();                          // re-fouille
+      afterRepeat = _searchCellStatus(key);
+    } finally { Math.random = orig; }
+    return {
+      fresh,
+      searchState: afterSearch.state, searchCount: afterSearch.count,
+      justBefore,
+      readyState: ready.state,
+      repeatState: afterRepeat.state, repeatCount: afterRepeat.count
+    };
+  });
+  assert(fsm.fresh === 'fresh',            'case neuve doit être fresh');
+  assert(fsm.searchState === 'recharging', 'case doit être recharging juste après fouille');
+  assert(fsm.searchCount === 1,            'count doit valoir 1 après 1re fouille');
+  assert(fsm.justBefore === 'recharging',  'case doit rester recharging à 59 pas (< 60)');
+  assert(fsm.readyState === 'ready',       'case doit être ready à 60 pas écoulés');
+  assert(fsm.repeatState === 'recharging', 'case doit redevenir recharging après re-fouille');
+  assert(fsm.repeatCount === 2,            'count doit valoir 2 après re-fouille');
+
+  // 3) Round-trip save : searchedCells (Map) + stepCount conservés.
+  const rt = await page.evaluate(() => {
+    searchedCells = new Map();
+    searchedCells.set('9,9', { at: 5, count: 3 });
+    stepCount = 42;
+    const snap = _serializeState();
+    searchedCells = new Map();
+    stepCount = 0;
+    _applyState(snap);
+    const rec = searchedCells.get('9,9');
+    return {
+      isMap: searchedCells instanceof Map,
+      stepCount,
+      at: rec && rec.at,
+      count: rec && rec.count
+    };
+  });
+  assert(rt.isMap,           'searchedCells doit rester une Map après _applyState');
+  assert(rt.stepCount === 42,'stepCount doit survivre au round-trip save');
+  assert(rt.at === 5,        'champ at doit survivre au round-trip save');
+  assert(rt.count === 3,     'champ count doit survivre au round-trip save');
+
+  // 4) Migration legacy : ancien format (tableau de chaînes) → Map vide.
+  const legacy = await page.evaluate(() => {
+    const m = _searchedCellsFromArray(['1,1', '2,2', '3,3']);
+    return { isMap: m instanceof Map, size: m.size };
+  });
+  assert(legacy.isMap,      '_searchedCellsFromArray doit retourner une Map');
+  assert(legacy.size === 0, 'entrées legacy (chaînes) doivent être ignorées');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Fouille renouvelée OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch] };
