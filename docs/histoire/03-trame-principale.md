@@ -201,6 +201,31 @@ le fond s'ouvrent les **Ruines Anciennes** (étage 14+), antérieures à l'écol
 > et la joie cachée), l'**Épreuve de la Lumière Éternelle** de Dumbledore (le
 > souvenir heureux contre les ténèbres). → [08](08-quetes-et-sous-intrigues.md).
 
+## 3.8 Variations par Maison (Quêtes Signature)
+
+> 💡 (proposition) — fiches en [08 §8.5](08-quetes-et-sous-intrigues.md), identité
+> narrative en [07 §7.8](07-les-maisons.md).
+
+La trame reste **~80-90 % commune** : même déclencheur, même descente, même chute
+de Voldemort, même Boucle. Mais selon `chosenHouse`, une **Quête Signature** se
+greffe sur les Actes I→III et y dépose une couche **légère mais perceptible** —
+l'illusion que « mon choix change vraiment quelque chose », sans jamais brancher
+l'arc en deux.
+
+| Acte | Greffe selon `chosenHouse` `💡` |
+|------|-------------------------------|
+| **Acte I** (ét. 1-3) | 🦁 *L'Étendard de Godric* s'ouvre (Chevalier Fantôme / McGonagall) ; 🦡 *Ceux qu'on ne laisse pas derrière* s'ouvre (Chourave) ; 🦅 *Le Codex de Rowena* amorce sur la 1ʳᵉ stèle. |
+| **Acte II** (ét. 4-6) | 🐍 *Le Pacte des Cachots* s'ouvre (écho de Salazar / Rogue) — raccourcis gris ; brasiers du Lion ; feuillets du Codex. |
+| **Acte III** (ét. 7-10) | Mini-boss / révélations propres à chaque signature ; **remise cérémonielle** de la récompense exclusive. |
+| **Climax — Voldemort (ét. 10)** | Réplique unique de Dumbledore + **modificateur one-shot** selon le flag `<house>SignatureDone` : 🦁 neutralise la phase **terreur** ; 🦅 **faiblesses révélées** ; 🐍 reconnaissance/lifesteal **ou** debuff (selon `slythPactChoice`) ; 🦡 buff de départ « Espoir partagé ». |
+| **Boucle Ténébreuse (11+)** | Écho mineur de la signature (Bannière déchirée / dernier pacte / pages ténébreuses / refuge à rétablir). |
+
+> ✅ **Garde-fou de trame** : ces variations sont **optionnelles** (ne gatent jamais
+> l'escalier — [§3.6](#36-acte-iv--la-boucle-ténébreuse-étages-11)) et le levier sur
+> le combat final est un **flag**, pas une fin alternative. Le climax §3.5 reste un
+> boss multi-phases unique ; la signature ne fait qu'ouvrir une réplique et un
+> modificateur léger gardé par le flag.
+
 ---
 
 ## Points à trancher (résumé)

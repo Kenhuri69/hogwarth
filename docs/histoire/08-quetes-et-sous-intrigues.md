@@ -219,10 +219,267 @@ une quête acceptée est un clone en cours (`activeQuests`). Objectifs supporté
 
 ---
 
-## 8.5 Récapitulatif express (pour briefer Gemini)
+## 8.5 Quêtes Signature par Maison (proposition d'extension)
+
+> 💡 (proposition de référence) — identité narrative en
+> [07 §7.8](07-les-maisons.md) ; variations de trame en
+> [03 §3.8](03-trame-principale.md).
+>
+> **Différence avec les quêtes de Maison existantes (§8.3).** Le **set@12** et le
+> **don@Mythe** habillent la *fin* de la voie (prestige). La **Signature** se joue
+> **pendant la descente** (Actes I→III), gatée par `chosenHouse` **+ l'étage**
+> (pas par le prestige). Elle est **optionnelle** (ne gate jamais l'escalier — §8.1)
+> mais infuse la trame : dialogue de Dumbledore, événement d'étage, récompense
+> exclusive, **réplique + modificateur one-shot avant Voldemort**, écho mineur en
+> Boucle. Objectif : *80-90 % de trame commune*, variation **perceptible mais
+> légère**.
+
+### 🦁 Gryffondor — *L'Étendard de Godric*
+- **Thème central :** leadership, combats frontaux, sacrifice fidèle.
+- **Résumé 💡 :** la fêlure de la Clé de Voûte éteint le **courage** autant que les
+  escaliers. Un **Chevalier Fantôme** — Gryffondor tombé en défendant le château,
+  « de garde depuis parce que personne ne lui a dit qu'il pouvait partir » —
+  confie au héros l'**Étendard de Godric**, la bannière qui ne s'incline jamais.
+  Rallumer le courage des égarés, reprendre l'Étendard, apprendre qu'être un
+  meneur, c'est **passer devant pour que les autres passent**.
+- **Déclencheur :** ✅ Acte I, étage 2-3 — le `chevalier_fantome` (déjà au
+  bestiaire) en variante **PNJ non-hostile**, ou **McGonagall**. Condition :
+  `chosenHouse === 'Gryffondor'`.
+- **Objectif principal 💡 :** reprendre l'Étendard au **Porte-Étendard Déchu**
+  (mini-boss, Acte III) — `kill`.
+- **Objectifs secondaires 💡 :**
+  1. Rallumer **3 brasiers du courage** éteints par le givre (Actes I-II) —
+     fouille / `item`-proxy.
+  2. **Tenir bon** : remporter un combat en infériorité **sans fuir** (`kill` à
+     contrainte — drapeau « pas de fuite » sur la rencontre).
+- **Influence sur la trame :**
+  - *Dialogues* 💡 : le portrait de Dumbledore salue la bravoure (« Le château a
+    entendu ton pas ne pas reculer ») ; le Chevalier commente chaque étage.
+  - *Événements clés* 💡 : chaque brasier rallumé fait reprendre courage à des
+    élèves terrés → toast + **buff de groupe « Élan du Lion »** (cosmétique +
+    petit +ATK transient au combat suivant).
+  - *Récompense unique* 💡 : la **Bannière de Godric** (relique `trinket` :
+    atténue/immunise partiellement le statut `fear` pour le groupe tant que
+    PV > seuil) **+ révélation lore** (le Chevalier était le frère d'armes d'un
+    Fondateur). Remise **cérémonielle** via `pendingHouseRewards`.
+  - *Conséquence Acte III / Voldemort* 💡 : flag `gryffSignatureDone` → réplique
+    unique de Dumbledore avant le combat **et** l'Étendard « planté » **neutralise
+    la phase terreur** de `voldemort_revenu` (la peur à 25 % PV — cf.
+    [03 §3.5](03-trame-principale.md)). Levier léger, perceptible.
+  - *Boucle Ténébreuse* 💡 : la Bannière revient **déchirée** ; rallumer un dernier
+    brasier dans les Ruines réveille l'écho du Chevalier (cosmétique + lore).
+- **💡 Hooks émotionnels :** le sacrifice comme **fidélité**, pas comme drame ; le
+  Chevalier qui n'attendait qu'« la permission de se reposer ».
+- **✅ À conserver :** `chevalier_fantome` (bestiaire) ; set du Lion + Cœur du Lion
+  (`quest_set_gryff`) ; Patronus Maxima (dissipe `fear`, Mythe) ; passif Élan.
+- **❓ À valider avec le dev :** aucun **allié combattant** n'existe (cf.
+  [03 §3.5](03-trame-principale.md)) → le Chevalier reste **donneur/mémoire**.
+  Neutraliser une phase de Voldemort = hook dans `_checkBossPhases` gardé par flag.
+
+### 🐍 Serpentard — *Le Pacte des Cachots*
+- **Thème central :** secrets des Fondateurs, choix moraux gris, trahison,
+  raccourcis dangereux.
+- **Résumé 💡 :** sous les cachots, l'**écho de Salazar** murmure — scellé *avec* la
+  corruption qu'il a aidé à enfermer (révélation : les Fondateurs ont aussi scellé
+  une **part d'eux-mêmes**). Il propose un **pacte** : ouvrir ses passages secrets
+  (raccourcis), offrir une puissance interdite, contre de petites trahisons.
+  L'écho n'est pas un démon : c'est un Fondateur qui, mille ans plus tôt, a fait le
+  **même choix** que le héros affronte. Un miroir.
+- **Déclencheur :** 💡 Acte II, étage 4 — voix de l'écho (stèle/passage scellé), ou
+  **Rogue** qui « met en garde » tout en montrant le chemin. Condition :
+  `chosenHouse === 'Serpentard'`.
+- **Objectif principal 💡 :** percer la **vérité de l'écho** (révélation lore sur la
+  Clé de Voûte, vue côté Fondateurs).
+- **Objectifs secondaires 💡 (choix gris) :**
+  1. Ouvrir un **passage secret de Salazar** (fouille / énigme) : raccourci qui
+     fait gagner un demi-étage **mais** déclenche une embuscade renforcée.
+  2. **Choix moral** : trahir un secret d'un PNJ naïf (ex. un marchand, ou un
+     feuillet de Manon) pour un objet, **OU** refuser et garder l'estime.
+  3. Récupérer un **secret des Fondateurs** (item lore) gardé par un `basilic`.
+- **Influence sur la trame :**
+  - *Dialogues* 💡 : Dumbledore plus **méfiant** envers un Serpentard qui a pactisé
+    (« Le pouvoir t'écoute. Veille à rester celui qui parle ») ; Rogue respecte la
+    maîtrise, méprise la **dépendance** au raccourci.
+  - *Événements clés* 💡 : les raccourcis = **transitions d'étage alternatives**
+    (risque/récompense) ; le choix de trahison ouvre/ferme des micro-contenus.
+  - *Récompense unique* 💡 : **Sectumsempra Imperius** anticipé **ou** objet
+    « Langue-de-plomb » (MAG + lifesteal) **+ révélation** : ce que Voldemort
+    cherche au fond est ce que **Salazar a scellé**.
+  - *Conséquence Acte III / Voldemort* 💡 : flag `slythSignatureDone` +
+    `slythPactChoice ∈ {pact, defiance}`. **Pacte** → Voldemort *reconnaît* le héros
+    (« Nous nous ressemblons ») : réplique unique + bonus de lifesteal au combat,
+    mais Dumbledore **plus froid** à la victoire. **Défiance** → le héros a retourné
+    le secret de Salazar : léger **debuff** sur le boss (il « connaît » la trahison).
+  - *Boucle Ténébreuse* 💡 : l'écho revient, sachant le héros devenu mythe, et
+    propose un **dernier pacte** (variante cosmétique/lore) ; les raccourcis
+    deviennent permanents.
+- **💡 Hooks émotionnels :** l'ambivalence ; le Fondateur-miroir ; « tu n'es pas
+  tenté par le mal — tu es tenté par la **facilité** ».
+- **✅ À conserver :** set du Serpent + Couronne du Basilic (`quest_set_slyth`) ;
+  Soif du Serpent (Apothéose) ; Sectumsempra (Mythe) ; arcs Drago/Maxence (miroir
+  mangemort, [05](05-personnages-jouables.md)).
+- **❓ À valider :** raccourcis = transitions alternatives → **dev** movement/dungeon ;
+  choix moral persistant → nouveau flag sérialisé ; modif combat Voldemort par
+  sous-flag.
+
+### 🦅 Serdaigle — *Le Codex de Rowena*
+- **Thème central :** savoir ancien, énigmes, exploration, faille révélée.
+- **Résumé 💡 :** le Serdaigle voit une **question mal posée**, pas une catastrophe.
+  En recoupant les **stèles d'énigme** des Fondateurs, il reconstitue le **Codex de
+  Rowena** — le traité perdu décrivant *ce que la Clé scellait vraiment*. Comprendre
+  révèle une **faille** dans la corruption, donc dans Voldemort. Rowena l'a écrit
+  *en sachant qu'elle mourrait avant de le finir* : le savoir comme **legs**.
+- **Déclencheur :** ✅ Acte I/II — **Flitwick**, ou la **stèle** des Fondateurs
+  (`r_clef_voute` existe déjà — [03 §3.1](03-trame-principale.md)). Condition :
+  `chosenHouse === 'Serdaigle'`.
+- **Objectif principal 💡 :** reconstituer le Codex en résolvant les **stèles**
+  (objectif `riddle` — ✅ déjà supporté).
+- **Objectifs secondaires 💡 :**
+  1. Résoudre **3-4 énigmes de stèle** réparties par tranche (`riddle`).
+  2. Récupérer des **feuillets du Codex** (objectif `pages` — ✅ déjà supporté,
+     modèle grimoire d'Élara).
+  3. Cartographier un **secret de fouille** (Salle sur Demande / mur secret via
+     Revelio — §8.4) — exploration.
+- **Influence sur la trame :**
+  - *Dialogues* 💡 : Dumbledore traite le Serdaigle en **pair intellectuel** (« Tu
+    as compris ce que même les professeurs n'osent nommer ») ; Flitwick s'enthousiasme.
+  - *Événements clés* 💡 : chaque feuillet décodé révèle une **anecdote lore** (renvoi
+    [02 §2.2](02-univers-ton-et-canon.md)) ; l'avant-dernier *nomme* la corruption
+    pré-Fondateurs (déjà actée en [03 §3.3](03-trame-principale.md)).
+  - *Récompense unique* 💡 : **Legilimens** anticipé **ou** **Codex de Rowena**
+    (objet : révèle automatiquement resist/weak ennemis, ou réduit le coût) **+
+    révélation de la faille de Voldemort**.
+  - *Conséquence Acte III / Voldemort* 💡 : flag `ravenSignatureDone` → au combat
+    final, les **résistances/faiblesses de Voldemort sont révélées** (bestiaire
+    pré-rempli) et/ou un sort exploite une **weak cachée** (dégât bonus one-shot).
+    Dumbledore confie une dernière clé de lecture avant le combat.
+  - *Boucle Ténébreuse* 💡 : le Codex gagne des **pages ténébreuses** ; une énigme
+    finale dans les **Ruines Anciennes** (tranche D runique — [03 §3.6](03-trame-principale.md))
+    livre un lore endgame (variante mineure).
+- **💡 Hooks émotionnels :** le savoir comme **legs posthume** ; lire ce qu'une morte
+  a laissé pour qu'on ne refasse pas son erreur (écho Cho/Olivier/Céleste).
+- **✅ À conserver :** stèles `riddle` + `r_clef_voute` ; objectif `pages` (Manon) ;
+  Lux Aeterna (énigmes QCM, §8.3) ; set de l'Aigle + Anneau du Savoir ; Legilimens (Mythe).
+- **❓ À valider :** « révéler resist/weak au combat final » = hook léger côté
+  battle/bestiary ; énigmes supplémentaires = nouvelles entrées `RIDDLES`.
+
+### 🦡 Poufsouffle — *Ceux qu'on ne laisse pas derrière*
+- **Thème central :** loyauté, protection des plus faibles, travail d'équipe,
+  résilience.
+- **Résumé 💡 :** quand le château bascule, tous regardent vers le bas — vers la
+  menace. Le Poufsouffle regarde **autour** : combien sont restés coincés ?
+  **Chourave** confie une mission que nul ne juge prioritaire : ramener les
+  **égarés**, bâtir le **Refuge du Blaireau**, tenir bon pour que personne ne soit
+  oublié au fond. La résilience comme héroïsme **discret** : avancer sûrement, et
+  ensemble.
+- **Déclencheur :** 💡 Acte I, étage 2 — **Chourave** (chef de Poufsouffle).
+  Condition : `chosenHouse === 'Poufsouffle'`.
+- **Objectif principal 💡 :** établir et **protéger** le Refuge du Blaireau (salle
+  sûre) en y ramenant les égarés.
+- **Objectifs secondaires 💡 :**
+  1. **Secourir 3 égarés** dispersés (élève, **elfe** — clin d'œil à la libération
+     d'elfe, §8.4) — `item`/`floor`-proxy (les ramener au refuge).
+  2. **Défendre** le refuge : repousser une vague qui menace les rescapés (`kill`).
+  3. Apporter **vivres/herbes** pour soigner les blessés (objectif `herb` — ✅
+     supporté, lien jardins de Chourave §8.2).
+- **Influence sur la trame :**
+  - *Dialogues* 💡 : Dumbledore salue ce que **personne d'autre ne voit** (« On
+    comptera les vies que tu as sauvées, pas les monstres ») ; les rescapés
+    remercient nommément.
+  - *Événements clés* 💡 : le Refuge devient un **point de repos/soin récurrent**
+    (parent de la fontaine) tant qu'on le protège ; les égarés sauvés réapparaissent
+    plus bas en **petits donneurs de bonus** (potion offerte).
+  - *Récompense unique* 💡 : **allié-soutien** (l'elfe libéré → buff passif de
+    groupe) **ou** **Médaillon de Helga** anticipé / objet de résilience (regen)
+    **+ révélation** : le premier Refuge de Poudlard fut creusé par Helga pour les
+    réfugiés.
+  - *Conséquence Acte III / Voldemort* 💡 : flag `poufSignatureDone` → les rescapés
+    **envoient de l'aide** avant le combat final (buff de départ « Espoir partagé » :
+    +PV max transient / regen). Dumbledore : « Tu n'es pas descendu seul, même si tu
+    étais seul à descendre. » Un **filet de sécurité**, pas un avantage offensif.
+  - *Boucle Ténébreuse* 💡 : le Refuge doit être **rétabli** dans le château
+    corrompu ; protéger les échos des rescapés = variante de purge « bienveillante »
+    (cosmétique + petit buff durable).
+- **💡 Hooks émotionnels :** l'elfe sauvé qui refuse de partir (« là où on l'a traité
+  comme quelqu'un, il reste » — écho Dobby) ; sauver un nom, pas un PV.
+- **✅ À conserver :** jardins de Chourave (`herb`, `discover_garden`) ; libération
+  d'elfe (§8.4) ; set du Blaireau + Médaillon de Helga ; Souffle du Blaireau
+  (Apothéose) ; Récolte Magique (Mythe).
+- **❓ À valider :** **escorte / vague défensive / refuge-repos** = objectifs neufs à
+  concevoir (dev) ; allié-buff passif = flag sérialisé ; refuge comme point de repos
+  = lien avec la fontaine.
+
+### 8.5.1 Table de synthèse des 4 Quêtes Signature
+
+| Maison | Quête | Déclencheur | Objectif cœur | Récompense unique 💡 | Levier finale Voldemort 💡 | Flag |
+|--------|-------|-------------|---------------|----------------------|----------------------------|------|
+| 🦁 Gryffondor | L'Étendard de Godric | Acte I, ét. 2-3 (Chevalier Fantôme / McGonagall) | reprendre l'Étendard (kill mini-boss) | Bannière de Godric (anti-`fear`) | neutralise la phase terreur | `gryffSignatureDone` |
+| 🐍 Serpentard | Le Pacte des Cachots | Acte II, ét. 4 (écho de Salazar / Rogue) | percer la vérité de l'écho (choix gris) | Langue-de-plomb / Sectumsempra anticipé | reconnaissance + lifesteal **ou** debuff (selon choix) | `slythSignatureDone` + `slythPactChoice` |
+| 🦅 Serdaigle | Le Codex de Rowena | Acte I/II (stèles / Flitwick) | reconstituer le Codex (riddle + pages) | Codex de Rowena (révèle resist/weak) | faiblesses révélées + weak one-shot | `ravenSignatureDone` |
+| 🦡 Poufsouffle | Ceux qu'on ne laisse pas derrière | Acte I, ét. 2 (Chourave) | bâtir/protéger le Refuge (escorte + herb) | allié-soutien / Médaillon anticipé | buff de départ « Espoir partagé » | `poufSignatureDone` |
+
+### 8.5.2 Conseils d'intégration technique (cadrage dev)
+
+> 💡 Recommandations pour câbler les signatures **en réutilisant l'existant**,
+> conformément au principe « pas de feature neuve si un type d'objectif suffit ».
+
+- **Templates** : 4 entrées `quest_signature_<gryff|slyth|raven|pouf>` dans
+  `QUEST_TEMPLATES` (`js/quests-templates.js`), avec `houseSignatureQuest: true`,
+  `house: <nom>`, et `prereq` pour chaîner les étapes (modèle chaîne `dumbledore_*`).
+  Les beats de **découverte** utilisent `implicitAccept` (modèle `manon_acte3`).
+- **Déverrouillage** : à la différence du set (`unlockHouseQuest`, palier 12) et du
+  don (`unlockHouseMytheQuest`, Mythe), gater par **`chosenHouse` + étage** —
+  ajouter `unlockHouseSignatureQuest(house)`, appelé au franchissement de l'étage
+  déclencheur (modèle des `availableQuests` keyés sur le donneur/étage).
+- **Objectifs = types existants** : `kill`, `item`, `floor`, `riddle`, `pages`,
+  `herb`, `discover_garden` couvrent **80 %** des besoins. Seuls restent à concevoir
+  (❓) : la rencontre « sans fuite » (Gryffondor), les **raccourcis** (Serpentard,
+  dev movement/dungeon), l'**escorte/vague** et le **refuge-repos** (Poufsouffle).
+- **Flags & source de vérité** : ajouter `<house>SignatureDone` (booléen) +
+  `slythPactChoice` au `_serializeState`/`_applyState` (`js/save.js`). **Ne pas**
+  créer de flag redondant avec `chosenHouse`/`houseTier` (cf. CLAUDE.md). Modèle des
+  passifs flaggés : « Hiver Clair » (Manon) et `headlessHuntMember` (cosmétique).
+- **Dialogues conditionnels** : réutiliser la couche **`dialoguesByHouse`** (✅
+  `npcs.js` + `npc-dialog.js`) pour Dumbledore et les chefs ; la réplique pré-Voldemort
+  est un override lu sur `<house>SignatureDone`.
+- **Récompenses** : item exclusif via **`pendingHouseRewards`** (remise cérémonielle,
+  comme la 4ᵉ pièce de set) ; sort via le pipeline d'apprentissage ; allié/buff via
+  flag passif sérialisé.
+- **Levier finale Voldemort (LÉGER)** : hook one-shot dans `startBattle` /
+  `_checkBossPhases` pour `voldemort_revenu`, gardé par le flag — quelques lignes,
+  pas une branche. Réplique = pur dialogue (peu coûteux).
+- **Tests** : 1 scénario smoke par Maison (`scenarioHouseSignature<House>`) —
+  démarrer avec `chosenHouse`, atteindre le déclencheur, asserter la quête
+  disponible→acceptable→remettable, le flag posé, la réplique pré-Voldemort présente
+  (réutiliser `tests/lib/harness.js`).
+
+### 8.5.3 Cohérence en duo (deux Maisons ?)
+
+> ⚠️ **Fait moteur** : `chosenHouse` est **unique par partie** (`js/state.js`), pas
+> par héros. Les héros portent une Maison **canon** (Harry → Gryffondor, etc.) à
+> titre de saveur ([05 §5.0](05-personnages-jouables.md)), mais tout le système de
+> Maison (bonus, set, prestige, signatures) suit l'**unique** `chosenHouse`.
+
+- **Recommandation 💡 :** garder **une seule** Quête Signature active par partie
+  (celle du `chosenHouse`). C'est déjà le modèle de tout le contenu de Maison —
+  cohérent, zéro fragmentation.
+- **Récompense de rejouabilité 💡 :** le 2ᵉ héros, dont la Maison **canon** diffère
+  du `chosenHouse`, peut lâcher des **barks de saveur** qui commentent la tension
+  (un héros Gryffondor-canon réagit au Pacte sur une partie Serpentard). Pur flavor,
+  zéro mécanique — récompense les joueurs qui **refont** le jeu avec une autre Maison.
+- **Vrai « deux Maisons simultanées » 💡 :** nécessiterait un **refactor** (
+  `chosenHouse`/`housePoints`/`houseTier` **par personnage**, deux pistes de prestige,
+  doublement des remises). **❓ Hors-scope** proposé — coût élevé pour un bénéfice de
+  niche ; à arbitrer si un mode « rivalité de Maisons » est désiré un jour.
+
+---
+
+## 8.6 Récapitulatif express (pour briefer Gemini)
 > La descente EST la quête principale ; les quêtes sont des **escortes**
 > (chaîne Dumbledore), de la **saveur/loot** (PNJ d'étage), des **arcs
 > émotionnels** autonomes (Manon/Élara, Lux Aeterna), des **réservées à la
-> Maison** (set au palier 12, don au palier Mythe), et du **farm endgame**
-> (purges du Gardien). Easter eggs canon : Reliques de la Mort, Salle sur
-> Demande, libération d'elfe, Chasse Sans Tête.
+> Maison** (set au palier 12, don au palier Mythe, **+ Signature en Actes I-III**),
+> et du **farm endgame** (purges du Gardien). Les **Quêtes Signature** (§8.5)
+> rendent le choix de Maison *narratif* dès le début, avec un levier **léger** sur
+> la finale Voldemort et un écho en Boucle. Easter eggs canon : Reliques de la
+> Mort, Salle sur Demande, libération d'elfe, Chasse Sans Tête.

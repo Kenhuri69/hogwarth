@@ -211,16 +211,87 @@ prestige identique** (✅), qu'il faut habiller différemment :
 
 ---
 
-## 7.8 Tableau-synthèse (pour briefer Gemini)
+## 7.8 Quêtes Signature de Maison — *« mon choix change vraiment quelque chose »*
+
+> 💡 (proposition de référence) — fiches détaillées + intégration technique en
+> [08 §8.5](08-quetes-et-sous-intrigues.md) ; variations de trame en
+> [03 §3.8](03-trame-principale.md).
+
+Les paliers de prestige (set@12, Mythe, Apothéose) habillent la **fin** de la
+voie. La **Quête Signature** habille le **début et le milieu** : elle se joue
+**pendant la descente** (Actes I→III), gatée par `chosenHouse` + l'étage, et non
+par le prestige. C'est elle qui transforme le choix de Maison d'un *bonus passif*
+en une *manière de vivre l'histoire*. Elle reste **optionnelle** (ne gate jamais
+l'escalier, comme tout le contenu annexe — [03 §3.6](03-trame-principale.md)),
+mais infuse partout : dialogues, événements d'étage, récompense exclusive,
+réplique de Dumbledore avant Voldemort, écho mineur en Boucle.
+
+> **Principe directeur 💡** : *80-90 % de trame commune*. Chaque signature ajoute
+> une **couche perceptible mais légère** — jamais une branche qui réécrit l'arc.
+> Le levier sur le combat final est un **flag** (`<house>SignatureDone`) qui
+> déclenche une réplique + un modificateur one-shot, pas une fin alternative.
+
+### 🦁 Gryffondor — *Le courage qu'on transmet*
+> Thème : **leadership, combats héroïques, sacrifice fidèle.**
+
+La fêlure de la Clé de Voûte n'éteint pas que les escaliers : elle éteint le
+**courage**. Un **Chevalier Fantôme** — Gryffondor tombé en défendant le château
+lors d'un siège oublié, et qui « monte la garde depuis parce que personne ne lui
+a dit qu'il pouvait partir » — reconnaît dans le héros le porteur possible de
+l'**Étendard de Godric**, la bannière qui ne s'incline jamais. Rallumer le
+courage des égarés, reprendre l'Étendard aux ténèbres, et apprendre qu'être un
+meneur c'est **passer devant pour que les autres passent**. Le fantasme ATK de la
+Maison ([§7.4](#74-gryffondor---le-courage-qui-descend)) devient *narratif* :
+on ne recule pas, on rallie.
+
+### 🐍 Serpentard — *L'ambition face à son miroir*
+> Thème : **secrets des Fondateurs, choix moraux gris, trahison, raccourcis.**
+
+Sous les cachots, une voix murmure : l'**écho de Salazar Serpentard**, scellé
+*avec* la corruption qu'il a aidé à enfermer (révélation : les Fondateurs n'ont
+pas seulement scellé un mal extérieur — ils ont scellé une part d'eux-mêmes).
+L'écho propose un **pacte** : ouvrir ses passages secrets (raccourcis dangereux),
+offrir une puissance interdite, en échange de petites trahisons. Le Serpentard
+avance plus vite et plus fort — mais chaque raccourci a un prix, et l'écho n'est
+pas un démon : c'est un Fondateur qui, mille ans plus tôt, a fait le choix que le
+héros affronte. Un **miroir**, cohérent avec la voie MAG-prédation
+([§7.5](#75-serpentard---lambition-qui-calcule)).
+
+### 🦅 Serdaigle — *Comprendre, c'est désamorcer*
+> Thème : **savoir ancien, énigmes, exploration, faille révélée.**
+
+Là où les autres voient une catastrophe, le Serdaigle voit une **question mal
+posée**. En recoupant les **stèles d'énigme** des Fondateurs (✅ `r_clef_voute`
+existe déjà), le héros reconstitue le **Codex de Rowena** — le traité perdu où
+Rowena consigna *ce que la Clé scellait vraiment*. Comprendre révèle une **faille**
+dans la corruption, donc dans Voldemort qui s'en nourrit. Rowena a écrit le Codex
+*en sachant qu'elle mourrait avant de le finir* : le savoir comme **legs**,
+transmis à qui sait lire. Prolonge la voie maîtrise/efficience
+([§7.6](#76-serdaigle---le-savoir-qui-éclaire)) et la prédilection énigmes/runes.
+
+### 🦡 Poufsouffle — *Ceux qu'on ne laisse pas derrière*
+> Thème : **loyauté, protection des plus faibles, travail d'équipe, résilience.**
+
+Quand le château bascule, tout le monde regarde vers le bas — vers la menace. Le
+Poufsouffle, lui, regarde **autour** : combien sont restés coincés ? Chourave
+confie une mission que personne ne juge prioritaire — **ramener les égarés**,
+bâtir un **Refuge du Blaireau**, et tenir bon assez longtemps pour que personne
+ne soit oublié au fond. La résilience comme héroïsme discret : on n'avance pas
+vite, on avance **sûrement, et ensemble** — incarnation de la voie DEF/régén
+([§7.7](#77-poufsouffle---la-loyauté-qui-tient)).
+
+---
+
+## 7.9 Tableau-synthèse (pour briefer Gemini)
 
 > ✅ faits / 💡 habillage
 
-| Maison | Chef | Voie ✅ | Sort de Mythe ✅ | Passif d'Apothéose ✅ | Émotion `💡` |
-|--------|------|---------|------------------|------------------------|--------------|
-| 🦁 Gryffondor | McGonagall | ATK | Patronus Maxima | Cœur du Lion (crit + Élan) | Oser frontalement |
-| 🐍 Serpentard | Rogue | MAG | Sectumsempra Imperius | Soif du Serpent (vol de vie de sort) | Tourner les ténèbres à son profit |
-| 🦅 Serdaigle | Flitwick | MAG | Legilimens | Esprit de l'Aigle (−20 % coût) | Comprendre avant de frapper |
-| 🦡 Poufsouffle | Chourave | DEF | Récolte Magique | Souffle du Blaireau (régén + Vigueur) | Tenir et ne lâcher personne |
+| Maison | Chef | Voie ✅ | Sort de Mythe ✅ | Passif d'Apothéose ✅ | Émotion `💡` | Quête Signature `💡` |
+|--------|------|---------|------------------|------------------------|--------------|----------------------|
+| 🦁 Gryffondor | McGonagall | ATK | Patronus Maxima | Cœur du Lion (crit + Élan) | Oser frontalement | **L'Étendard de Godric** |
+| 🐍 Serpentard | Rogue | MAG | Sectumsempra Imperius | Soif du Serpent (vol de vie de sort) | Tourner les ténèbres à son profit | **Le Pacte des Cachots** |
+| 🦅 Serdaigle | Flitwick | MAG | Legilimens | Esprit de l'Aigle (−20 % coût) | Comprendre avant de frapper | **Le Codex de Rowena** |
+| 🦡 Poufsouffle | Chourave | DEF | Récolte Magique | Souffle du Blaireau (régén + Vigueur) | Tenir et ne lâcher personne | **Ceux qu'on ne laisse pas derrière** |
 
 ---
 
