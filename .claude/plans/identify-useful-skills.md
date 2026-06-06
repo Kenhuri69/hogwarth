@@ -44,7 +44,21 @@ modèle plusieurs centaines de Mo) strictement à la demande.
 - [x] Sections « Prérequis » auto-réparantes (check-then-install + caveat
       politique réseau) : add-item-icon, add-monster (rembg à la demande),
       ui-design-iterate, commit-guard (Playwright/Chromium)
-- [ ] commit + push gestion deps
+- [x] commit + push gestion deps
+
+### Hook d'install paresseuse au 1er test (relance utilisateur)
+Variante du niveau 3 : pas SessionStart (coût à chaque session) mais
+PreToolUse(Bash) déclenché seulement au 1er appel d'un test.
+- [x] `.claude/hooks/ensure-test-deps.sh` (no-op sauf tests/smoke|pwa-smoke|
+      select ; check-then-install Playwright+Chromium ; exit 0 ; caveat réseau)
+- [x] `.claude/settings.json` (hook PreToolUse/Bash, timeout 600s) — créé via
+      skill update-config ; settings.local.json intact
+- [x] Pipe-test du routage OK ; jq -e schéma OK
+- [~] Preuve de déclenchement en session : NON (watcher ne charge pas un
+      settings.json nouveau à chaud → actif à la prochaine session / après
+      /hooks). Config correcte par ailleurs.
+- [x] README mis à jour (section dépendances & hook)
+- [ ] commit + push hook
 
 Les skills built-in (`verify`, `run`, `code-review`, `security-review`,
 `init`…) couvrent déjà les besoins génériques — non recréées.

@@ -29,6 +29,23 @@ Copiées **verbatim** depuis le dépôt public
 | `theme-factory` | Thèmes (palettes/fonts) pour artefacts ; 10 préréglages | Dériver/formaliser le thème parchemin/or |
 | `skill-creator` | Méta-skill : créer/améliorer/évaluer des skills | Pour rédiger proprement les prochaines skills maison |
 
+## Dépendances & hook d'install paresseuse
+
+Les skills qui lancent des tests/génèrent des assets ont besoin de
+dépendances absentes d'un environnement web vierge :
+- **Python** (`pillow/cairosvg/numpy/scipy` ; `rembg` à la demande) →
+  `tools/requirements.txt`. Chaque skill concernée a une section
+  « Prérequis » auto-réparante (check-then-install).
+- **Playwright + Chromium** (tests `smoke.js`/`pwa-smoke.js`/`select.js`).
+
+Un hook **`PreToolUse(Bash)`** (`.claude/settings.json` →
+`.claude/hooks/ensure-test-deps.sh`) installe Playwright **paresseusement, au
+premier appel d'un test** de la session (pas au démarrage), puis laisse la
+commande s'exécuter. No-op pour toute autre commande ; ne bloque jamais.
+> ⚠️ Un nouveau `.claude/settings.json` n'est pris en compte qu'à la session
+> suivante (ou après ouverture de `/hooks`). Caveat réseau : si l'install
+> échoue, le hook prévient sans bloquer.
+
 ### Mise à jour des skills vendorisées
 Pour resynchroniser depuis l'amont :
 ```bash
