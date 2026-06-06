@@ -349,8 +349,8 @@ function equipItem(inventoryIdx, charIdx, targetSlot) {
     c.acc = item.name;
   }
 
-  // Retirer de l'inventaire
-  player.inventory.splice(inventoryIdx, 1);
+  // Retirer de l'inventaire (garde de borne centralisée)
+  _removeInvItem(inventoryIdx);
 
   // Recalculer les stats effectives
   recalculateStats();
@@ -661,7 +661,7 @@ function learnSpellbook(inventoryIdx, charIdx) {
     AudioSystem.playLevelUp();
     AudioSystem.speakSpell(item.spell);
     addMsg(`${getSpellIconHtml(item.spell, 'ui-icon-md')} ${c.name} apprend : ${item.spell} !`, 'magic');
-    player.inventory.splice(inventoryIdx, 1);
+    _removeInvItem(inventoryIdx);
   } else {
     addMsg(`${c.name} connaît déjà ${item.spell}.`, '');
   }
@@ -847,7 +847,7 @@ function useItemFromChar(inventoryIdx, charIdx) {
       AudioSystem.playLevelUp();
       AudioSystem.speakSpell(item.spell);
       addMsg(`${getSpellIconHtml(item.spell, 'ui-icon-md')} ${target.name} apprend : ${item.spell} !`, 'magic');
-      player.inventory.splice(inventoryIdx, 1);
+      _removeInvItem(inventoryIdx);
     } else {
       addMsg(`${target.name} connaît déjà ${item.spell}.`, '');
     }

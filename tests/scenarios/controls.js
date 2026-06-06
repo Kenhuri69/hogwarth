@@ -1,0 +1,438 @@
+// ============================================================
+// Scénarios smoke — domaine « controls » (extraits de smoke.js)
+// Chaque scénario relance son propre Chromium ; helpers partagés via
+// ../lib/harness. Exécutés par tests/smoke.js (runner).
+// ============================================================
+const { chromium, path, ROOT, INDEX_URL, isIgnorableError, launchGame, startNewGame, startDummyFight, assert } = require('../lib/harness');
+
+async function scenarioMobileSelect() {
+  console.log('\n── Scénario 4 : sélection accessible sur mobile ──');
+  const browser = await chromium.launch({ headless: true });
+  const ctx = await browser.newContext({
+    viewport: { width: 375, height: 667 }, // iPhone SE
+    deviceScaleFactor: 2, isMobile: true, hasTouch: true
+  });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
+  page.on('console', m => {
+    if (m.type() !== 'error') return;
+    const t = m.text();
+    if (isIgnorableError(t)) return;
+    errors.push(`console.error: ${t}`);
+  });
+
+  await page.goto(INDEX_URL);
+  await page.waitForFunction(() => typeof window.startGame === 'function');
+
+  await page.evaluate(() => { document.getElementById('title-screen').click(); });
+  // Depuis l'ajout du bouton "📥 Importer" dans le hub, le hub démarrage
+  // s'affiche toujours (même sans slot). On clique "Nouvelle aventure"
+  // pour basculer sur player-select.
+  await page.waitForFunction(() => {
+    const el = document.getElementById('start-hub-screen');
+    return el && getComputedStyle(el).display !== 'none';
+  });
+  await page.evaluate(() => startHubNewGame());
+  await page.waitForFunction(() => {
+    const el = document.getElementById('player-select-screen');
+    return el && getComputedStyle(el).display !== 'none';
+  });
+
+  // Sélection guidée en 3 étapes : étape 1 (mode) visible au départ.
+  const step1 = await page.evaluate(() => {
+    const visible = (s) => {
+      const el = document.querySelector(`#player-select-screen .psel-step[data-step="${s}"]`);
+      return el && getComputedStyle(el).display !== 'none';
+    };
+    return { s1: visible(1), s2: visible(2), s3: visible(3),
+             overflow: getComputedStyle(document.getElementById('player-select-screen')).overflowY };
+  });
+  console.log('  player-select étape 1 :', step1);
+  assert(step1.s1 && !step1.s2 && !step1.s3, 'étape 1 du stepper non isolée');
+  assert(step1.overflow === 'auto',          'overflow-y devrait être auto sur mobile');
+
+  // Étape 1 → 2 (mode). L'étape Héros s'ouvre sur le choix du groupe.
+  await page.evaluate(() => document.getElementById('psel-next-1').click());
+  await page.waitForFunction(() =>
+    getComputedStyle(document.querySelector('.psel-step[data-step="2"]')).display !== 'none');
+  const groupFilter = await page.evaluate(() => ({
+    pickerShown: getComputedStyle(document.getElementById('psel-group-picker')).display !== 'none',
+    listHidden:  getComputedStyle(document.getElementById('psel-group-list')).display === 'none',
+  }));
+  console.log('  player-select étape 2 (filtre groupe) :', groupFilter);
+  assert(groupFilter.pickerShown && groupFilter.listHidden, 'étape Héros doit s\'ouvrir sur le choix du groupe');
+
+  // Choisir le groupe « Héros du Film », puis valider (Harry pré-sélectionné).
+  await page.evaluate(() => document.getElementById('psel-tile-film').click());
+  await page.waitForFunction(() =>
+    getComputedStyle(document.getElementById('psel-group-list')).display !== 'none');
+  await page.evaluate(() => document.getElementById('psel-next-2').click());
+  await page.waitForFunction(() =>
+    getComputedStyle(document.querySelector('.psel-step[data-step="3"]')).display !== 'none');
+
+  // Le bouton "Commencer" de l'étape 3 doit être atteignable et actif.
+  const reach = await page.evaluate(() => {
+    const btn = document.getElementById('start-adventure-btn');
+    btn.scrollIntoView({ block: 'center' });
+    const r = btn.getBoundingClientRect();
+    return { visible: r.top >= 0 && r.bottom <= window.innerHeight, disabled: btn.disabled };
+  });
+  console.log('  player-select étape 3 :', reach);
+  assert(reach.visible,   'bouton "Commencer" hors viewport mobile');
+  assert(!reach.disabled, 'bouton "Commencer" désactivé à l\'étape difficulté');
+
+  // Cliquer "Commencer" puis vérifier que l'écran Maison apparaît et son bouton atteignable
+  await page.evaluate(() => document.getElementById('start-adventure-btn').click());
+  await page.waitForFunction(() => {
+    const el = document.getElementById('house-select-screen');
+    return el && getComputedStyle(el).display !== 'none';
+  }, { timeout: 3000 });
+
+  const houseReach = await page.evaluate(() => {
+    const btn = document.querySelector('.house-btn');
+    btn.scrollIntoView({ block: 'center' });
+    const r = btn.getBoundingClientRect();
+    return { visible: r.top >= 0 && r.bottom <= window.innerHeight };
+  });
+  console.log('  house-select :', houseReach);
+  assert(houseReach.visible, 'bouton Maison hors viewport mobile');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ parcours sélection mobile complet');
+  await browser.close();
+}
+
+async function scenarioCombatMobile() {
+  console.log('\n── Scénario 9 : ergonomie combat sur mobile ──');
+  const browser = await chromium.launch({ headless: true });
+  const ctx = await browser.newContext({
+    viewport: { width: 375, height: 800 }, // iPhone SE-like
+    deviceScaleFactor: 2, isMobile: true, hasTouch: true
+  });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
+  page.on('console', m => {
+    if (m.type() !== 'error') return;
+    const t = m.text();
+    if (isIgnorableError(t)) return;
+    errors.push(`console.error: ${t}`);
+  });
+
+  await page.goto(INDEX_URL);
+  await page.waitForFunction(() => typeof window.startGame === 'function');
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Hit-targets ≥ 44px (audit UX mobile P0 #4) : croix de fermeture des
+  // modales et chevrons d'accordéon de la fiche perso sur mobile.
+  const hitTargets = await page.evaluate(() => {
+    openCharacter(0);
+    const modal  = document.getElementById('character-modal');
+    const close  = modal.querySelector('.modal-close');
+    const toggle = modal.querySelector('.section-toggle');
+    const r = {
+      closeW:  close  ? close.offsetWidth   : 0,
+      closeH:  close  ? close.offsetHeight  : 0,
+      toggleH: toggle ? toggle.offsetHeight : 0
+    };
+    closeModal('character-modal');
+    return r;
+  });
+  console.log('  hit-targets :', hitTargets);
+  assert(hitTargets.closeW >= 44 && hitTargets.closeH >= 44,
+    `croix de modale doit être ≥ 44px (got ${hitTargets.closeW}×${hitTargets.closeH})`);
+  assert(hitTargets.toggleH >= 44,
+    `chevron accordéon fiche perso doit être ≥ 44px (got ${hitTargets.toggleH})`);
+
+  await startDummyFight(page, { hp: 30 });
+
+  const layout = await page.evaluate(() => {
+    const overlay = document.getElementById('encounter-overlay');
+    const cont    = document.getElementById('enemy-group');
+    const panel   = document.getElementById('combat-log-panel');
+    const cs      = el => el ? getComputedStyle(el) : null;
+    return {
+      overlayPadTop: parseFloat(cs(overlay).paddingTop),
+      overlayJustify: cs(overlay).justifyContent,
+      enemyMinH: parseFloat(cs(cont).minHeight),
+      panelExists: !!panel,
+      panelCollapsed: !!panel && panel.classList.contains('collapsed'),
+      panelToggleText: panel ? panel.querySelector('.clp-toggle').textContent : null
+    };
+  });
+  console.log('  layout :', layout);
+  assert(layout.overlayPadTop >= 40,                    'padding-top mobile insuffisant pour libérer la zone du monstre');
+  assert(layout.overlayJustify === 'flex-start',        'overlay devrait s\'aligner en haut sur mobile');
+  assert(layout.enemyMinH >= 140,                       'enemy-group-container trop bas (PNG monstre écrasé)');
+  assert(layout.panelExists,                            'combat-log-panel absent');
+  assert(layout.panelCollapsed,                         'combat-log-panel devrait être replié par défaut sur mobile');
+  assert(layout.panelToggleText === '+',                'toggle devrait afficher + quand replié');
+
+  // Ergonomie combat mobile : barre adventure cachée pendant le combat,
+  // boutons d'action en grille 6 colonnes (ligne 1 = 3 boutons span 2,
+  // ligne 2 = 2 boutons span 3) avec touch targets ≥56px.
+  const battle = await page.evaluate(() => {
+    const cmdBar = document.querySelector('.commands-bar');
+    const actions = document.querySelector('.battle-actions');
+    const btn = actions ? actions.querySelector('.cmd-btn') : null;
+    const btns = actions ? Array.from(actions.querySelectorAll('.cmd-btn')) : [];
+    return {
+      bodyHasInBattle: document.body.classList.contains('in-battle'),
+      cmdBarHidden:    cmdBar ? getComputedStyle(cmdBar).display === 'none' : null,
+      actionsDisplay:  actions ? getComputedStyle(actions).display : null,
+      actionsCols:     actions ? getComputedStyle(actions).gridTemplateColumns : null,
+      btnCount:        btns.length,
+      btnMinHeight:    btn ? parseFloat(getComputedStyle(btn).minHeight) : 0
+    };
+  });
+  console.log('  battle ergonomics :', battle);
+  assert(battle.bodyHasInBattle === true,                   'body.in-battle doit être posé pendant le combat');
+  assert(battle.cmdBarHidden === true,                      'commands-bar doit être cachée pendant le combat sur mobile');
+  assert(battle.actionsDisplay === 'grid',                  'battle-actions doit passer en grille sur mobile en combat');
+  // grid-template-columns peut être résolu en "px px ..." — compter les tracks
+  const trackCount = (battle.actionsCols || '').trim().split(/\s+/).filter(Boolean).length;
+  assert(trackCount === 6,                                  `battle-actions doit être 6 colonnes (${trackCount} vues)`);
+  assert(battle.btnCount === 5,                             `5 boutons attendus (Attaquer/Sortilège/Garde/Objet/Fuir), obtenu ${battle.btnCount}`);
+  assert(battle.btnMinHeight >= 56,                         'boutons combat trop petits pour le tactile');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ ergonomie combat mobile correcte');
+  await browser.close();
+}
+
+async function scenarioRelativeControls() {
+  console.log('\n── Scénario : contrôles relatifs (avancer/reculer/pivoter) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Helpers exposés sur window
+  const exposed = await page.evaluate(() => ({
+    moveForward:  typeof moveForward  === 'function',
+    moveBackward: typeof moveBackward === 'function',
+    turnLeft:     typeof turnLeft     === 'function',
+    turnRight:    typeof turnRight    === 'function'
+  }));
+  assert(exposed.moveForward,  'moveForward absent');
+  assert(exposed.moveBackward, 'moveBackward absent');
+  assert(exposed.turnLeft,     'turnLeft absent');
+  assert(exposed.turnRight,    'turnRight absent');
+
+  // 2) Rotation : turnRight de n → e, sans changer playerX/playerY.
+  const rot = await page.evaluate(() => {
+    playerDir = 'n';
+    const x0 = playerX, y0 = playerY;
+    turnRight();
+    const e = { dir: playerDir, moved: (playerX !== x0 || playerY !== y0) };
+    turnLeft();
+    const back = { dir: playerDir };
+    return { e, back };
+  });
+  assert(rot.e.dir === 'e',   `turnRight depuis n doit donner e (obtenu ${rot.e.dir})`);
+  assert(!rot.e.moved,        'turnRight ne doit pas déplacer le joueur');
+  assert(rot.back.dir === 'n',`turnLeft doit ramener à n (obtenu ${rot.back.dir})`);
+
+  // 3) moveForward : tente d'avancer dans chaque direction jusqu'à trouver
+  //    une case libre. Vérifie ensuite que moveBackward fait l'inverse SANS
+  //    pivoter, puis que l'opposé du dx,dy correspond bien à playerDir.
+  const stepCheck = await page.evaluate(() => {
+    // Déterminisme : vider enemyMap → moveForward ne peut pas tomber sur
+    // un ennemi (le combat poserait inBattle=true et bloquerait à la fois
+    // moveBackward et la rotation clavier testée plus bas).
+    for (let y = 0; y < enemyMap.length; y++) {
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    }
+    const dirs = ['n','e','s','w'];
+    const D = { n:[0,-1], e:[1,0], s:[0,1], w:[-1,0] };
+    for (const d of dirs) {
+      playerDir = d;
+      const [dx,dy] = D[d];
+      const nx = playerX + dx, ny = playerY + dy;
+      if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) continue;
+      if (dungeon[ny][nx] === CELL.WALL) continue;
+      const x0 = playerX, y0 = playerY;
+      moveForward();
+      const afterFwd = { dir: playerDir, dx: playerX - x0, dy: playerY - y0 };
+      const dirBefore = playerDir;
+      moveBackward();
+      const afterBack = { dir: playerDir, dx: playerX - x0, dy: playerY - y0 };
+      return { tried: d, afterFwd, afterBack, dirPreserved: dirBefore === afterBack.dir };
+    }
+    return { tried: null };
+  });
+  assert(stepCheck.tried, 'aucune direction libre — donjon corrompu ?');
+  assert(stepCheck.afterFwd.dx !== 0 || stepCheck.afterFwd.dy !== 0,
+    'moveForward sans effet sur la position');
+  assert(stepCheck.afterFwd.dir === stepCheck.tried,
+    'moveForward doit aligner playerDir sur la direction du pas');
+  assert(stepCheck.afterBack.dx === 0 && stepCheck.afterBack.dy === 0,
+    'moveBackward doit ramener à la position initiale');
+  assert(stepCheck.dirPreserved,
+    'moveBackward NE doit PAS modifier playerDir');
+
+  // 4) Mapping clavier : ArrowRight déclenche turnRight (rotation cardinale).
+  const kbd = await page.evaluate(async () => {
+    playerDir = 'n';
+    const ev = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true });
+    document.dispatchEvent(ev);
+    return playerDir;
+  });
+  assert(kbd === 'e', `ArrowRight depuis n doit donner playerDir=e (obtenu ${kbd})`);
+
+  // 5) Boussole : la lettre orientée porte la classe .facing.
+  const compass = await page.evaluate(() => {
+    playerDir = 'e';
+    updateCompass();
+    return {
+      facingE: document.getElementById('dir-e')?.classList.contains('facing'),
+      facingN: document.getElementById('dir-n')?.classList.contains('facing')
+    };
+  });
+  assert(compass.facingE,  'la lettre E doit porter .facing quand playerDir=e');
+  assert(!compass.facingN, 'la lettre N ne doit pas porter .facing quand playerDir=e');
+
+  // 6) Minimap : la case joueur contient un enfant .map-player-arrow
+  //    avec la classe directionnelle correspondant à playerDir.
+  const arrow = await page.evaluate(() => {
+    playerDir = 's';
+    renderMinimap();
+    const mini = document.getElementById('minimap');
+    const playerCell = mini?.querySelector('.map-cell.map-player');
+    const arr = playerCell?.querySelector('.map-player-arrow');
+    return {
+      hasArrow: !!arr,
+      hasDirClass: !!arr && arr.classList.contains('map-player-dir-s')
+    };
+  });
+  assert(arrow.hasArrow,    'flèche d\'orientation absente sur la minimap');
+  assert(arrow.hasDirClass, 'flèche minimap manque la classe map-player-dir-s');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Contrôles relatifs OK');
+  await browser.close();
+}
+
+async function scenarioCanvasSwipe() {
+  console.log('\n── Scénario : swipe canvas pseudo-3D ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // 1) Helpers exposés
+  const exposed = await page.evaluate(() => ({
+    init:     typeof window.initCanvasSwipeGestures === 'function',
+    dispatch: typeof window._dispatchCanvasSwipe     === 'function',
+    blocked:  typeof window._isCanvasSwipeBlocked    === 'function'
+  }));
+  assert(exposed.init,     'initCanvasSwipeGestures absent');
+  assert(exposed.dispatch, '_dispatchCanvasSwipe absent');
+  assert(exposed.blocked,  '_isCanvasSwipeBlocked absent');
+
+  // 1bis) Hors combat et sans overlay couvrant, le swipe NE doit PAS
+  //       être bloqué. Régression : `#floor-transition` est en permanence
+  //       `display:flex` (visibilité via opacity/pointer-events) — un test
+  //       sur `display` seul le croyait couvrant et bloquait tout swipe.
+  const idleBlocked = await page.evaluate(() => window._isCanvasSwipeBlocked());
+  assert(!idleBlocked,
+    '_isCanvasSwipeBlocked doit être faux en exploration normale');
+
+  // 2) Mapping rotation : swipe horizontal → turnLeft / turnRight,
+  //    position inchangée.
+  const rot = await page.evaluate(() => {
+    playerDir = 'n';
+    const x0 = playerX, y0 = playerY;
+    window._dispatchCanvasSwipe(80, 0);   // → droite
+    const right = { dir: playerDir, moved: (playerX !== x0 || playerY !== y0) };
+    window._dispatchCanvasSwipe(-80, 0);  // → gauche
+    const left  = { dir: playerDir, moved: (playerX !== x0 || playerY !== y0) };
+    return { right, left };
+  });
+  assert(rot.right.dir === 'e',  `swipe droite depuis n doit donner e (obtenu ${rot.right.dir})`);
+  assert(!rot.right.moved,       'swipe droite ne doit pas déplacer le joueur');
+  assert(rot.left.dir === 'n',   `swipe gauche depuis e doit ramener à n (obtenu ${rot.left.dir})`);
+  assert(!rot.left.moved,        'swipe gauche ne doit pas déplacer le joueur');
+
+  // 3) Mapping translation : swipe vertical → moveForward / moveBackward.
+  //    On cherche une direction où la case devant est libre, puis on
+  //    déclenche un swipe vers le haut (avancer) puis vers le bas (reculer).
+  const trans = await page.evaluate(() => {
+    // Déterminisme : vider enemyMap → le swipe « avancer » ne peut pas
+    // tomber sur un ennemi (le combat bloquerait le swipe « reculer »).
+    for (let y = 0; y < enemyMap.length; y++) {
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    }
+    const dirs = ['n','e','s','w'];
+    const D = { n:[0,-1], e:[1,0], s:[0,1], w:[-1,0] };
+    for (const d of dirs) {
+      playerDir = d;
+      const [dx,dy] = D[d];
+      const nx = playerX + dx, ny = playerY + dy;
+      if (nx < 0 || ny < 0 || nx >= MAP_W || ny >= MAP_H) continue;
+      if (dungeon[ny][nx] === CELL.WALL) continue;
+      const x0 = playerX, y0 = playerY;
+      window._dispatchCanvasSwipe(0, -80);  // ↑ = avancer
+      const afterFwd = { dx: playerX - x0, dy: playerY - y0, dir: playerDir };
+      const dirBefore = playerDir;
+      window._dispatchCanvasSwipe(0, 80);   // ↓ = reculer
+      const afterBack = { dx: playerX - x0, dy: playerY - y0, dir: playerDir };
+      return { tried: d, afterFwd, afterBack, dirPreserved: dirBefore === afterBack.dir };
+    }
+    return { tried: null };
+  });
+  assert(trans.tried, 'aucune direction libre — donjon corrompu ?');
+  assert(trans.afterFwd.dx !== 0 || trans.afterFwd.dy !== 0,
+    'swipe haut sans effet sur la position');
+  assert(trans.afterFwd.dir === trans.tried,
+    'swipe haut doit aligner playerDir sur la direction du pas');
+  assert(trans.afterBack.dx === 0 && trans.afterBack.dy === 0,
+    'swipe bas doit ramener à la position initiale');
+  assert(trans.dirPreserved,
+    'swipe bas (reculer) NE doit PAS modifier playerDir');
+
+  // 4) Garde-fou combat : pendant inBattle, le swipe est bloqué.
+  const guard = await page.evaluate(() => {
+    inBattle = true;
+    const dir0 = playerDir;
+    const x0 = playerX, y0 = playerY;
+    const wasBlocked = window._isCanvasSwipeBlocked();
+    // Le dispatch lui-même appelle moveForward/turnLeft, qui sont déjà
+    // gardés par inBattle ; on vérifie surtout _isCanvasSwipeBlocked.
+    inBattle = false;
+    return { wasBlocked, dirUnchanged: playerDir === dir0,
+             posUnchanged: playerX === x0 && playerY === y0 };
+  });
+  assert(guard.wasBlocked,    '_isCanvasSwipeBlocked doit être vrai pendant inBattle');
+  assert(guard.dirUnchanged,  'playerDir ne doit pas changer pendant inBattle');
+  assert(guard.posUnchanged,  'position ne doit pas changer pendant inBattle');
+
+  // 5) Canvas marqué `data-swipe-bound` et touch-action: none côté CSS.
+  const dom = await page.evaluate(() => {
+    const c = document.getElementById('dungeon-canvas');
+    if (!c) return null;
+    return {
+      bound:       c.dataset.swipeBound,
+      touchAction: getComputedStyle(c).touchAction
+    };
+  });
+  assert(dom,                       'canvas #dungeon-canvas absent');
+  assert(dom.bound === '1',         'canvas pas marqué comme bound');
+  assert(dom.touchAction === 'none',
+    `touch-action attendu "none", obtenu "${dom.touchAction}"`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Swipe canvas OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe] };

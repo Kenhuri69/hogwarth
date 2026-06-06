@@ -1818,6 +1818,22 @@ plein combat = no-go).
 
 - `node tests/smoke.js` : tests fonctionnels (file:// — SW désactivé,
   rien à faire de spécial, `js/pwa.js` est silencieux en file://).
+  **Architecture modulaire** : `smoke.js` est un **runner mince** qui assemble
+  et exécute les scénarios ; les helpers partagés vivent dans
+  `tests/lib/harness.js` (`launchGame`, `startNewGame`, `startDummyFight`,
+  `assert`, `isIgnorableError`, `INDEX_URL`) et les 159 scénarios sont
+  répartis par domaine dans `tests/scenarios/<domaine>.js` (combat, dungeon,
+  multiplayer, houses, potions, quests, spells, save, inventory, visuals,
+  npc, controls, audio, fx, misc). Chaque scénario relance son propre
+  Chromium et est indépendant. **Ajouter un scénario** : l'écrire dans le
+  fichier de domaine adéquat (require `../lib/harness`) et l'ajouter à son
+  `module.exports.scenarios`. Le filtre CLI (`node tests/smoke.js crit visit`)
+  est inchangé (matching insensible à la casse sur le nom de fonction),
+  consommé par `tests/select.js`.
+- `node tests/units.js` : tests unitaires **Node pur** (sans navigateur) des
+  helpers purs — `getFloorTheme`, `effectiveFloor`/`endgameTierIndex`/
+  `weightedPick`, courbes `_fortuneCurve`/`_celeriteCurve`, et verrou
+  anti-XSS des `_esc` de visite. Rapide ; étape CI avant la suite smoke.
 - `node tests/pwa-smoke.js` : tests PWA (démarre un mini serveur HTTP
   local, vérifie manifest, SW activé, précache rempli, **chargement
   offline** avec loader OK).
