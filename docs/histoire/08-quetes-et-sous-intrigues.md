@@ -38,10 +38,12 @@ une quête acceptée est un clone en cours (`activeQuests`). Objectifs supporté
 > double la trame est celle de **Dumbledore** (escorte narrative), et elle
 > reste optionnelle mécaniquement.
 
-> ❓ À arbitrer : veut-on **promouvoir la chaîne Dumbledore au rang de fil rouge
-> obligatoire** (un mystère à élucider en parallèle de la descente), ou
-> assume-t-on que la trame = la descente, la chaîne Dumbledore n'étant qu'un
-> **guide fortement recommandé** ?
+> ✅ **Tranché par le jeu** : aucune quête — y compris la chaîne Dumbledore —
+> ne conditionne `goDeeper()` ni l'accès à l'escalier. La colonne vertébrale
+> de la trame est la descente elle-même, culminant en la victoire sur Voldemort
+> (`victoryAchieved`, étage 10), seul vrai verrou dur. Toutes les quêtes
+> (chaîne Dumbledore incluse) sont du **contenu optionnel** : des escortes
+> narratives, de la saveur, du loot — jamais des prérequis de progression.
 
 ---
 

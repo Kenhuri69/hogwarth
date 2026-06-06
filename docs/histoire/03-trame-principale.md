@@ -73,11 +73,21 @@ C'est l'affrontement-pivot de tout l'arc.
 de Dumbledore) et **scelle l'arc principal**. *« L'escalier le plus profond,
 scellé par la peur, s'ouvre enfin. »*
 
-> ❓ À détailler : mise en scène du combat (phases ? dialogue avant/pendant ?
-> intervention d'un PNJ — Sirius, présent ét. 10 ?).
+> ✅ **Tranché par le jeu** : Voldemort est un boss à phases — `voldemort_revenu`
+> déclare un tableau `phases:` (enrage à 50 % PV → atkMult/magMult ; terreur du
+> groupe à 25 %), traité par `_checkBossPhases`, identique au Basilic.
+>
+> ❓ **À travailler en l'état** (non tranché par le jeu) : l'intervention d'un
+> PNJ allié en combat (ex. Sirius, présent à l'étage 10 en donneur de quête)
+> n'existe pas dans le jeu — aucun allié PNJ ne combat. À concevoir si désiré.
 
 ## 3.6 Acte IV — La Boucle Ténébreuse (étages 11+)
 
+> ✅ **Tranché par le jeu** : la descente et la victoire sur Voldemort sont la
+> **seule colonne vertébrale obligatoire** — aucune quête (y compris la chaîne
+> Dumbledore) ne conditionne l'accès à l'escalier. Tout le contenu annexe
+> (quêtes, PNJ, sous-intrigues) est optionnel.
+>
 > 💡 (proposition de sens) / ✅ (ancrages)
 
 La victoire **ouvre** la faille au lieu de la fermer. Le château se rejoue,
@@ -92,9 +102,11 @@ le fond s'ouvrent les **Ruines Anciennes** (étage 14+), antérieures à l'écol
   **Apothéose ★ N** (prestige « infini »), + **don à la Maison** (gold-sink).
 - ✅ Tranche D « Ruines Anciennes », ton `abyss` ; transition 13↔14.
 
-> ❓ À arbitrer : la Boucle a-t-elle une **conclusion écrite** (un dernier
-> palier narratif, une vérité sur ce qui dort sous les Ruines), ou reste-t-elle
-> une **boucle de prestige** sans fin (score, maîtrise de Maison) ?
+> ✅ **Tranché par le jeu** : la Boucle est une boucle de prestige infinie —
+> série Apothéose ★ N génératrice (sans entrée finale dans `tiers[]`), gold-sink
+> illimité (`donateGoldToHouse`), recyclage `effectiveFloor` sans plancher.
+> Il n'y a pas de fin scénarisée. (Une « vérité finale » optionnelle resterait
+> un ajout narratif ; elle n'est pas requise par le jeu.)
 
 ## 3.7 Fils rouges & thèmes
 
@@ -113,6 +125,6 @@ le fond s'ouvrent les **Ruines Anciennes** (étage 14+), antérieures à l'écol
 ---
 
 ## Points à trancher (résumé)
-1. Enjeu intime des héros en parallèle de l'enjeu collectif ?
-2. Mise en scène du combat final (phases, PNJ présents) ?
-3. La Boucle Ténébreuse : fin écrite ou boucle de prestige ?
+1. ❓ Enjeu intime des héros en parallèle de l'enjeu collectif ? (non tranché par le jeu)
+2. ✅ Phases du combat final : tranchées (boss multi-phases dans le code). ❓ Dialogue avant/pendant + PNJ allié combattant : non tranché.
+3. ✅ Boucle Ténébreuse : prestige infini (tranché par le jeu — série ★ N génératrice sans fin).

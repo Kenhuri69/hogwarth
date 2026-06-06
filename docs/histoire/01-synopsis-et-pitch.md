@@ -44,9 +44,9 @@ les étages habités, l'école — dernier bastion sûr du monde magique — tom
 La « horloge » dramatique, c'est la **remontée du mal** : chaque étage non
 purgé, c'est le château qui s'enfonce un peu plus dans la nuit.
 
-> ❓ À détailler / arbitrer : enjeu **collectif** (sauver l'école) seul, ou
-> doublé d'un enjeu **intime** (un héros qui a quelque chose à prouver, à
-> venger, ou à racheter — voir [05](05-personnages-jouables.md)) ?
+> ❓ **À travailler en l'état** (non tranché par le jeu) : le jeu n'implémente
+> qu'un enjeu collectif (aucun arc ni quête propres à un héros). Un enjeu
+> intime par personnage reste à concevoir.
 
 ## 1.4 Le moteur de progression narrative
 
@@ -91,8 +91,9 @@ variantes **Ténébreux**, boss 8-10 de retour aux étages 18-20, **Gardien de
 la Boucle** et quêtes de purge répétables, paliers de Maison **Mythe (17)** →
 **Apothéose (18)** → série **★ N** (progression « infinie » de prestige).
 
-> ❓ À arbitrer : la Boucle a-t-elle une **fin écrite**, ou est-ce une boucle
-> de prestige assumée (score, maîtrise) ? → développé en [03](03-trame-principale.md).
+> ✅ **Tranché par le jeu** : boucle de prestige **infinie**, sans fin écrite
+> (série Apothéose ★ N génératrice, gold-sink illimité, recyclage
+> `effectiveFloor`). → détail en [03 §3.6](03-trame-principale.md).
 
 ## 1.7 Thèmes proposés
 

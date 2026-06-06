@@ -101,9 +101,14 @@ la fracture de décor.
 - ✅ Réplique clé : *« L'escalier le plus profond, scellé par la peur, s'ouvre
   enfin. »*
 
-> ❓ À arbitrer : mise en scène du combat final — **phases** distinctes ?
-> dialogue avant/pendant ? intervention d'un PNJ présent à l'étage 10
-> (Sirius) ? → à détailler avec [03 §3.5](03-trame-principale.md).
+> ✅ **Tranché par le jeu** : Voldemort est un boss à phases (`phases:` dans
+> `monsters.js` — enrage à 50 % PV, terreur à 25 %, traité par
+> `_checkBossPhases`).
+>
+> ❓ **À travailler en l'état** (non tranché par le jeu) : dialogue
+> avant/pendant, et intervention d'un PNJ allié en combat (Sirius est un donneur
+> de quête à l'étage 10, pas un combattant) — à concevoir si désiré.
+> → [03 §3.5](03-trame-principale.md).
 
 ### Acte IV — La Boucle Ténébreuse (étages 11+, tranche C fin → D)
 

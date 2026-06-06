@@ -33,10 +33,13 @@ un bonus : il **promet une voie**.
   jeu**, et le **sens de l'Apothéose** : devenir une légende de SA Maison, pas
   une légende générique.
 
-> ❓ À arbitrer : le choix de Maison débloque-t-il des **dialogues / quêtes
-> exclusifs** au-delà de la quête de set et de la quête de don (✅ déjà
-> réservées par Maison), ou la couleur narrative reste-t-elle de la **saveur**
-> (répliques, ton, récompenses cosmétiques) sans embranchement de trame ?
+> ✅ **Tranché par le jeu** : le choix de Maison a déjà des conséquences
+> narratives réelles — quêtes de Maison déclenchées par `unlockHouseQuest`
+> (palier 12), quête de palier Mythe déclenchée par `unlockHouseMytheQuest`
+> (palier 17), dialogues PNJ variants par Maison (`dialoguesByHouse` dans
+> `npcs.js`, résolu par `npc-dialog.js`), items exclusifs et voix du chef de
+> Maison. (Extensible : davantage de dialogues ou de quêtes réservés peuvent
+> être ajoutés sans architecture supplémentaire.)
 
 ---
 

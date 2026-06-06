@@ -35,10 +35,9 @@ résidu de mal que la peur tenait scellé, et que la descente du héros réveill
 > cadre** — accueille et guide le héros, ce qui confirme une époque
 > **post-canon**.
 
-> ❓ À arbitrer : fixe-t-on une **date** explicite (ex. « ~20 ans après la
-> Bataille de Poudlard ») ou laisse-t-on l'époque volontairement floue (« une
-> génération plus tard ») pour ne jamais se contredire avec un détail du
-> canon ?
+> ❓ **À travailler en l'état** (non tranché par le jeu) : le code ne fixe
+> aucune date ; le seul indice est le portrait de Dumbledore (post-canon).
+> À décider : date explicite (« ~20 ans après la Bataille ») ou flou assumé.
 
 ## 2.2 Le Poudlard du jeu
 
@@ -185,9 +184,9 @@ messages, quêtes) :
 
 ## Questions de cadrage (résumé)
 
-> ❓ À arbitrer :
-> 1. **Époque** — date explicite (« ~20 ans après la Bataille ») ou flou
->    volontaire (« une génération plus tard ») ?
+> ❓ **À travailler en l'état** :
+> 1. **Époque** (non tranché par le jeu) — date explicite (« ~20 ans après la
+>    Bataille ») ou flou assumé (« une génération plus tard ») ?
 > 2. **Statut de Voldemort** — corruption résiduelle qui se ré-assemble
 >    (proposition retenue ici) ou une autre explication à valider ?
 > 3. **Profondeurs vs Chambre des Secrets** — assume-t-on que les Profondeurs
