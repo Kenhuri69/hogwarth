@@ -34,6 +34,18 @@ jugé disproportionné). Corps inchangés (déjà lean <115 l., impératifs).
       ui-design-iterate, commit-guard
 - [x] commit + push affinage
 
+### Gestion des dépendances des skills (relance utilisateur)
+Constat : env web vierge (ni PIL/cairosvg/numpy/scipy/rembg, ni Playwright).
+Choix utilisateur : **baseline niveaux 1+2** (pas de SessionStart hook auto).
+Tiering : léger/fréquent documenté pour install à la demande ; rembg (lourd,
+modèle plusieurs centaines de Mo) strictement à la demande.
+- [x] `tools/requirements.txt` (pillow/cairosvg/numpy/scipy ; rembg en
+      optionnel commenté ; note lib système cairo)
+- [x] Sections « Prérequis » auto-réparantes (check-then-install + caveat
+      politique réseau) : add-item-icon, add-monster (rembg à la demande),
+      ui-design-iterate, commit-guard (Playwright/Chromium)
+- [ ] commit + push gestion deps
+
 Les skills built-in (`verify`, `run`, `code-review`, `security-review`,
 `init`…) couvrent déjà les besoins génériques — non recréées.
 

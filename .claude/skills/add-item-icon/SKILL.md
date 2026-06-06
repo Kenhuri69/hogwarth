@@ -14,11 +14,17 @@ qui résout dans l'ordre :
 
 Objectif de cette skill : produire le **niveau 1** (painterly).
 
-## Prérequis
+## Prérequis (vérifier/installer avant de générer)
+Le pipeline a besoin de `pillow`, `cairosvg`, `numpy`, `scipy`. Source de
+vérité : `tools/requirements.txt`. Vérifier puis installer si besoin :
 ```bash
-pip install pillow cairosvg numpy scipy
-# macOS : brew install cairo pango
+python3 -c "import PIL, cairosvg, numpy, scipy" 2>/dev/null \
+  || python3 -m pip install -r tools/requirements.txt
 ```
+`cairosvg` requiert aussi la lib système **cairo** (`apt-get install -y
+libcairo2` sur Debian/Ubuntu, `brew install cairo pango` sur macOS). Si
+l'install échoue, c'est souvent la **politique réseau** de l'environnement web
+qui bloque PyPI/apt — le signaler à l'utilisateur plutôt que de boucler.
 
 ## Étapes
 

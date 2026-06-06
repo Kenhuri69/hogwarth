@@ -65,10 +65,15 @@ Le sprite est rendu par `_getMonsterImg(enemy.imgSrc)`
   Banana, prompts cadrés dans `.claude/plans/nano-banana-prompts-*.md` et
   `IMG_STYLE.md`), puis la traiter :
   ```bash
+  # Prérequis À LA DEMANDE : rembg + son modèle (LOURD, plusieurs centaines de
+  # Mo téléchargés au 1er run) — n'installer que pour ce chemin PNG :
+  python3 -c "import rembg" 2>/dev/null || python3 -m pip install rembg
   python3 tools/process_monster_png.py --src /chemin/image.png --id mon_monstre --dry-run
   # vérifier /tmp/mon_monstre_check.png puis relancer sans --dry-run
   ```
   Produit `img/monsters/mon_monstre.png` (détourage rembg, 512², specs IMG_STYLE).
+  Si l'install échoue (politique réseau de l'environnement web bloquant PyPI ou
+  le téléchargement du modèle), le signaler — préférer alors le fallback SVG.
 - **Fallback SVG / catégorie** : si pas de PNG dédié, le monstre hérite du
   SVG de sa `category`. Pour un SVG propre, ajouter une entrée dans
   `js/icons.js` (`getMonsterIconHtml()`).

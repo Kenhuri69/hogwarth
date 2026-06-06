@@ -10,6 +10,18 @@ l'app en headless jusqu'à l'état visé, on capture en **desktop ET mobile**, o
 compare avant/après. Pas de build step — tout est servi depuis `index.html`
 (`file://`).
 
+## Prérequis (vérifier/installer avant de capturer)
+Les captures et `node tests/smoke.js` utilisent **Playwright + Chromium**
+(devDependency de `package.json`). Sur un environnement web fraîchement
+provisionné, `node_modules/` et le navigateur sont absents :
+```bash
+node -e "require('playwright')" 2>/dev/null || npm ci
+npx playwright install chromium
+```
+Si l'install échoue, c'est en général la **politique réseau** de
+l'environnement (npm/registre Playwright bloqués) — le signaler à
+l'utilisateur plutôt que de réessayer en boucle.
+
 ## Méthode (boucle)
 
 1. **Capturer l'état AVANT** (audit) → `.claude/mockups/<sujet>-before-{desktop,mobile}.png`

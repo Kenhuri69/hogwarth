@@ -19,9 +19,13 @@ Exception : changement vraiment trivial (typo, renommage local) → mentionner
 explicitement l'absence de plan plutôt que l'éluder.
 
 ## 2. Test headless (guidelines §7)
+Prérequis (env web vierge → `node_modules`/Chromium absents) :
 ```bash
+node -e "require('playwright')" 2>/dev/null || npm ci
+npx playwright install chromium
 node tests/smoke.js
 ```
+Si l'install échoue (politique réseau bloquant npm/Playwright), le signaler.
 - Échec → **corriger avant de committer**. Jamais « le test échoue mais le
   code est bon ».
 - Nouveau comportement → ajouter le scénario dans `tests/smoke.js` (ou test
