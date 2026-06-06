@@ -523,6 +523,21 @@ let litRunes   = new Set();
 // génération, mise en cache + persistée comme `runePuzzle`.
 // Voir dungeon-enrichment-v2.md §3.
 let runeStele = null;
+// Easter egg « Salle sur Demande » (room-of-requirement-easter-egg.md).
+// Couples déterministes par étage (seed) : mur « propice » (révélé ou non)
+// et tuile de déclenchement (case marchable devant le mur). `requirementPaces`
+// compte les passages distincts sur la tuile (porte au 3ᵉ). `requirementRevealed`
+// = étages dont la porte est ouverte. `usedRequirementRooms` = refuge déjà
+// utilisé pour la visite d'étage courante (clés "x,y", reset comme
+// `usedFountains`). `requirementGiftTaken` = objet unique déjà pris (1×/partie).
+// `requirementBuffSteps` = pas restants du buff de Confort. Tous sérialisés.
+let requirementWalls     = new Map();
+let requirementTrigger   = new Map();
+let requirementPaces     = new Map();
+let requirementRevealed  = new Set();
+let usedRequirementRooms = new Set();
+let requirementGiftTaken = false;
+let requirementBuffSteps = 0;
 // Cellules où le joueur a tué un ennemi, indexées par étage.
 // Map<floor, Set<"x,y">>. À chaque retour sur un étage déjà visité, chaque
 // entrée a 20 % de chance de re-spawner un ennemi (`_respawnEnemiesOnEntry`).

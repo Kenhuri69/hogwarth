@@ -1004,6 +1004,9 @@ const NPCS = [
         "J'ai connu Godric Gryffondor en personne. Charmant, mais bien trop grand pour les portes.",
         "On dit qu'au troisième étage, un miroir reflète plus que votre image…",
         "La Salle Sur Demande change selon le besoin. Certains la trouvent. D'autres y restent.",
+        // Indice (couche egg) : amorce le GESTE de découverte (3 passages),
+        // sans jamais donner de position. Cf. room-of-requirement-easter-egg.md §4.
+        "Pour qu'elle se révèle, dit-on, il faut longer trois fois le bon pan de mur, en pensant très fort à ce dont on a besoin. La pierre alors s'efface, et une porte paraît.",
         "Quatre siècles que j'arpente ces couloirs. Les visages changent, les peurs jamais.",
         "Le Baron Sanglant n'apparaît qu'aux nuits d'orage. Évitez les cachots ce soir.",
         "Quarante-cinq coups de hache émoussée. Voilà ce qu'il a fallu pour me séparer de ce monde. Le bourreau n'était pas… doué.",

@@ -53,6 +53,14 @@ function _serializeState() {
     runePuzzle,
     litRunes: Array.from(litRunes),
     runeStele,
+    // Easter egg « Salle sur Demande » (room-of-requirement-easter-egg.md).
+    requirementWalls:     Array.from(requirementWalls.entries()),
+    requirementTrigger:   Array.from(requirementTrigger.entries()),
+    requirementPaces:     Array.from(requirementPaces.entries()),
+    requirementRevealed:  Array.from(requirementRevealed),
+    usedRequirementRooms: Array.from(usedRequirementRooms),
+    requirementGiftTaken,
+    requirementBuffSteps,
     usedSpecialNpcs: Array.from(usedSpecialNpcs),
     defeatedCellsByFloor: Array.from(defeatedCellsByFloor.entries())
                           .map(([f, set]) => [f, Array.from(set)]),
@@ -346,6 +354,14 @@ function _applyState(gs) {
   runePuzzle = gs.runePuzzle || null;
   litRunes = new Set(gs.litRunes || []);
   runeStele = gs.runeStele || null;
+  // Easter egg « Salle sur Demande » (room-of-requirement-easter-egg.md).
+  requirementWalls     = new Map(gs.requirementWalls || []);
+  requirementTrigger   = new Map(gs.requirementTrigger || []);
+  requirementPaces     = new Map(gs.requirementPaces || []);
+  requirementRevealed  = new Set(gs.requirementRevealed || []);
+  usedRequirementRooms = new Set(gs.usedRequirementRooms || []);
+  requirementGiftTaken = !!gs.requirementGiftTaken;
+  requirementBuffSteps = (typeof gs.requirementBuffSteps === 'number') ? gs.requirementBuffSteps : 0;
   usedSpecialNpcs = new Set(gs.usedSpecialNpcs || []);
   defeatedCellsByFloor = new Map(
     (gs.defeatedCellsByFloor || []).map(([f, arr]) => [f, new Set(arr || [])])

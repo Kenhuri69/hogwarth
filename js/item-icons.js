@@ -91,6 +91,8 @@ const ITEM_ICON_REGISTRY = {
   cape_voyageur:       'img/icons/items/cape_voyageur.png',
   amulette_protection: 'img/icons/items/amulette_protection.png',
   circlet_serdaigle:   'img/icons/items/circlet_serdaigle.png',
+  // Easter egg « Salle sur Demande » — réemploi du visuel circlet (cf. diademe_antique).
+  tiare_poussiereuse:  'img/icons/items/circlet_serdaigle.png',
   anneau_runique:      'img/icons/items/anneau_runique.png',
   ceinture_alchimiste: 'img/icons/items/ceinture_alchimiste.png',
   bottes_dragon:       'img/icons/items/bottes_dragon.png',

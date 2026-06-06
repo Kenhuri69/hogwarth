@@ -143,6 +143,18 @@ function _step(dir, faceDir) {
     });
   }
 
+  // Easter egg « Salle sur Demande » — buff de Confort : régénération douce
+  // hors combat (+1 PV / +1 PM par membre vivant), décomptée par pas.
+  if (typeof requirementBuffSteps === 'number' && requirementBuffSteps > 0) {
+    requirementBuffSteps--;
+    party.slice(0, partySize).forEach(c => {
+      if (c.hp > 0) {
+        c.hp = Math.min(c.hpMax, c.hp + 1);
+        c.sp = Math.min(c.spMax, c.sp + 1);
+      }
+    });
+  }
+
   const cell = dungeon[playerY][playerX];
   updateCompass();
   renderMinimap();
@@ -200,6 +212,21 @@ function _step(dir, faceDir) {
     const _msg = getMessageAt(playerX, playerY);
     if (_msg) {
       addMsg('🪶 « ' + _msg.text + ' » — ' + (_msg.authorName || 'un sorcier'), 'info');
+    }
+  }
+
+  // Easter egg « Salle sur Demande » : compter les passages distincts sur la
+  // tuile de déclenchement de l'étage. Chaque `_step` qui y atterrit est une
+  // entrée distincte (le piétinement est impossible). Au 3ᵉ, une porte se
+  // dessine dans le mur adjacent. Skippé en visite (donjon d'un autre joueur).
+  if (!_inVisit && typeof requirementTrigger !== 'undefined'
+      && requirementTrigger.has(currentFloor)
+      && !requirementRevealed.has(currentFloor)
+      && requirementTrigger.get(currentFloor) === `${playerX},${playerY}`) {
+    const n = (requirementPaces.get(currentFloor) || 0) + 1;
+    requirementPaces.set(currentFloor, n);
+    if (n >= 3 && typeof _revealRequirementRoom === 'function') {
+      _revealRequirementRoom(currentFloor);
     }
   }
 
@@ -310,6 +337,10 @@ function _exploreDescriptors() {
   }
   const fountainDried = usedFountains && usedFountains.has(`${playerX},${playerY}`);
   const altarSpent    = usedAltars && usedAltars.has(`${playerX},${playerY}`);
+  // Easter egg « Salle sur Demande » — refuge déjà pris cette visite, et objet
+  // unique encore disponible (force la réouverture si le sac était plein).
+  const requirementSpent = usedRequirementRooms && usedRequirementRooms.has(`${playerX},${playerY}`);
+  const requirementGift  = (typeof requirementGiftTaken !== 'undefined') && !requirementGiftTaken;
   const altarCost     = 40 * (currentFloor || 1);
   // Jardin d'herbes (Potions P6.b3) — stock mûr récoltable sur ce jardin révélé.
   const gardenReady   = (typeof gardenStock !== 'undefined') ? gardenStock : 0;
@@ -426,6 +457,21 @@ function _exploreDescriptors() {
         ? `<button class="explore-btn" onclick="useGarden();_hideExploreOverlay()">Récolter (${gardenReady})</button>
            <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
         : `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    },
+    // Easter egg « Salle sur Demande » — refuge (repos sûr + buff) + objet
+    // unique la 1ʳᵉ fois. Tarie pour la visite une fois le refuge pris, sauf
+    // si l'objet unique reste à récupérer (sac plein la fois précédente).
+    [CELL.REQUIREMENT]: (requirementSpent && !requirementGift) ? {
+      icon:  '🚪',
+      title: 'La Salle sur Demande',
+      desc:  "La Salle s'est refermée sur elle-même. Quittez cet étage et revenez plus tard pour qu'elle redevienne un refuge.",
+      btns:  `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    } : {
+      icon:  '🚪',
+      title: 'La Salle sur Demande',
+      desc:  "Au-delà de la porte, la Salle est devenue exactement ce dont le groupe a besoin : un refuge chaleureux où reprendre son souffle à l'abri du donjon.",
+      btns:  `<button class="explore-btn" onclick="useRequirementRoom();_hideExploreOverlay()">Entrer dans la Salle</button>
+              <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     }
   };
 }
@@ -484,6 +530,7 @@ function handleCellEntry(cell) {
       cell === CELL.SHOP     || cell === CELL.CHEST    ||
       cell === CELL.FOUNTAIN || cell === CELL.ALTAR    ||
       cell === CELL.FORGE    || cell === CELL.LIBRARY  ||
+      cell === CELL.REQUIREMENT ||
       (cell === CELL.GARDEN  && !gardenHidden)) {
     _showExploreOverlay(cell);
   } else if (cell === CELL.TRAP) {

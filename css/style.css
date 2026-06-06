@@ -629,6 +629,8 @@ body {
 .map-special { background: #6a4a18; box-shadow: inset 0 0 2px #f5d27a; }
 /* Salle Fontaine — bleu eau, distincte du type "spécial" générique. */
 .map-fountain { background: #2a5a8a; box-shadow: inset 0 0 3px #9fd0ff; }
+/* Easter egg « Salle sur Demande » — porte révélée (or chaud). */
+.map-requirement { background: #8a6a22; box-shadow: inset 0 0 3px #f0cd78; }
 /* Potions P6.b3 — Jardin d'herbes révélé (vert pousse). */
 .map-garden { background: #2f6b3a; box-shadow: inset 0 0 3px #7fe0a0; }
 /* Endgame Tranche 2 — Forge des Ténèbres (rouge-orange braise). */

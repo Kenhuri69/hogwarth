@@ -24,7 +24,11 @@ const CELL = {
   // Potions P6.b3 — jardin d'herbes à récolte passive. Marchable (≠ WALL) ;
   // caché par défaut (Set `hiddenGardens`), révélé par Revelio / fouille.
   // Voir .claude/plans/potions-enrichment.md §P6.b3.
-  GARDEN:15
+  GARDEN:15,
+  // Easter egg « Salle sur Demande » — porte révélée en passant 3× devant un
+  // pan de mur propice. Marchable (≠ WALL) ; entrer ouvre un overlay de refuge.
+  // Voir .claude/plans/room-of-requirement-easter-egg.md.
+  REQUIREMENT:16
 };
 
 // Identité des 3 dalles-runes d'un puzzle, indexée par position dans
@@ -99,6 +103,11 @@ const FORTUNE_ASYMPTOTE = 0.31; // la courbe tend vers 31 % (jamais atteint)
 const FORTUNE_HALF      = 30;   // demi-saturation : x=30 → 15.5 %
 const FELIX_POINTS      = 40;   // points de chance apportés par le buff Félix
 const FELIX_STEPS       = 40;   // durée du buff Félix, en pas d'exploration
+
+// Easter egg « Salle sur Demande » — refuge « repos sûr + petit buff ».
+// Voir .claude/plans/room-of-requirement-easter-egg.md §3.
+const REQUIREMENT_REST_FRAC  = 0.40; // repos : +40 % PV/PM par membre vivant
+const REQUIREMENT_BUFF_STEPS = 20;   // durée du buff de Confort, en pas (+1 PV/PM par pas)
 
 // ── Célérité (D5, volet AGI) — cf. .claude/plans/agi-derived.md ──
 // Débouché post-plafond de l'AGI (crit de sort + esquive plafonnent à 35 %).
@@ -576,6 +585,9 @@ const ITEMS = [
   { id:"flacon_venin",  name:"Flacon de Venin",  icon:"🧪", desc:"Lancé : 8 dégâts + poison (5/tour, 4 tours)",             type:"consumable", effect:"throw",                  power:8,  statusId:"poison", statusPower:5, statusTurns:4, price:44, rarity:"common" },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:200 },
+  // Easter egg « Salle sur Demande » — objet unique offert à la 1ʳᵉ Salle de
+  // la partie. Clin d'œil au Diadème caché, bonus modeste non-méta, non vendable.
+  { id:"tiare_poussiereuse",name:"Tiare poussiéreuse", icon:"👑", desc:"MAG+2 LCK+1 · trouvée dans la Salle sur Demande", type:"armor", slot:"head", family:"tiara_dusty", rarity:"rare", bonusMag:2, bonusLck:1, power:2, price:0, tint:"#caa84c" },
   // ── Phase 3 : équipement étendu (slots head/hands/feet/cloak/amulet/ring/belt/trinket) ──
   // Tier commun étage 1-2
   { id:"gants_apprenti",   name:"Gants d'Apprenti",      icon:"🧤", desc:"ATK+1 DEF+1",       type:"acc",   slot:"hands", family:"gloves_basic",  rarity:"common", bonusAtk:1, bonusDef:1, power:1, price:60 },

@@ -45,6 +45,8 @@ function _restoreFloorFromCache(floor) {
   usedFountains = new Set();
   usedAltars = new Set();
   usedSpecialNpcs = new Set();
+  // Easter egg « Salle sur Demande » : refuge ré-utilisable à chaque visite.
+  usedRequirementRooms = new Set();
   _respawnEnemiesOnEntry(floor);
   // Migration : re-place les PNJ manquants pour les saves antérieures
   // à un ajout (cf. dungeon.js — _migrateMissingNpcsForFloor).
@@ -59,6 +61,11 @@ function _restoreFloorFromCache(floor) {
   // Page du grimoire d'Élara (quête manon_grimoire) si applicable.
   if (typeof _ensurePagePlacement === 'function') {
     _ensurePagePlacement(floor);
+  }
+  // Easter egg « Salle sur Demande » — assure le couple mur/tuile (migration
+  // des saves antérieures ; ré-applique la porte si l'étage était révélé).
+  if (typeof _ensureRequirementWall === 'function') {
+    _ensureRequirementWall(floor);
   }
   // Migration : replace les escaliers manquants (softlock vieilles saves).
   if (typeof _ensureStairsExist === 'function') {

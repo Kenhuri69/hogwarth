@@ -465,6 +465,8 @@ function generateDungeon(floor) {
 
   // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
   usedFountains = new Set();
+  // Easter egg « Salle sur Demande » : refuge ré-utilisable à chaque visite.
+  usedRequirementRooms = new Set();
   // Réinitialise les autels utilisés : 1 usage par visite d'étage.
   usedAltars = new Set();
   // Réinitialise les actions spéciales PNJ (Fumseck, etc.).
@@ -608,6 +610,58 @@ function generateDungeon(floor) {
 
   // Page du grimoire d'Élara (quête manon_grimoire) si applicable.
   _ensurePagePlacement(floor);
+  // Easter egg « Salle sur Demande » — pose le couple mur/tuile déterministe.
+  _ensureRequirementWall(floor);
+}
+
+// Easter egg « Salle sur Demande » (room-of-requirement-easter-egg.md) :
+// pose, de façon déterministe (seed par étage), un « pan de mur propice »
+// (case WALL) bordé d'une « tuile de déclenchement » (case FLOOR adjacente).
+// Y repasser trois fois fait apparaître une porte (mur → CELL.REQUIREMENT).
+// Idempotent : ne fixe le couple qu'une fois par étage (comme
+// `_ensurePagePlacement`). Si l'étage est déjà révélé (vieux save / cache
+// régénéré), ré-applique la porte sur le mur.
+function _ensureRequirementWall(floor) {
+  if (typeof requirementWalls === 'undefined') return;
+  if (requirementWalls.has(floor)) {
+    if (requirementRevealed.has(floor)) {
+      const [wx, wy] = requirementWalls.get(floor).split(',').map(Number);
+      if (dungeon[wy] && dungeon[wy][wx] === CELL.WALL) dungeon[wy][wx] = CELL.REQUIREMENT;
+    }
+    return;
+  }
+  // Exclusions : page du grimoire (sur une case FLOOR), murs secrets et
+  // barrières de puzzle (rune / stèle) — ne pas les transformer en porte.
+  const pageCell = (typeof pagePlacements !== 'undefined' && pagePlacements.has(floor))
+    ? pagePlacements.get(floor) : null;
+  const barriers = new Set();
+  if (typeof runePuzzle !== 'undefined' && runePuzzle && runePuzzle.barrier) barriers.add(runePuzzle.barrier);
+  if (typeof runeStele  !== 'undefined' && runeStele  && runeStele.barrier)  barriers.add(runeStele.barrier);
+  const DIRS = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+  const pairs = [];
+  for (let y = 1; y < MAP_H - 1; y++) {
+    for (let x = 1; x < MAP_W - 1; x++) {
+      if (dungeon[y][x] !== CELL.FLOOR) continue;
+      if (enemyMap[y] && enemyMap[y][x]) continue;
+      if (x === playerX && y === playerY) continue;
+      const tKey = `${x},${y}`;
+      if (pageCell === tKey) continue;
+      for (const [ddx, ddy] of DIRS) {
+        const wx = x + ddx, wy = y + ddy;
+        if (wx < 1 || wy < 1 || wx >= MAP_W - 1 || wy >= MAP_H - 1) continue;
+        if (dungeon[wy][wx] !== CELL.WALL) continue;
+        const wKey = `${wx},${wy}`;
+        if (secretWalls && secretWalls.has(wKey)) continue;
+        if (barriers.has(wKey)) continue;
+        pairs.push({ t: y * MAP_W + x, w: wy * MAP_W + wx, tKey, wKey });
+      }
+    }
+  }
+  if (!pairs.length) return;
+  pairs.sort((a, b) => (a.t - b.t) || (a.w - b.w));
+  const pick = pairs[(floor * 7919) % pairs.length];
+  requirementWalls.set(floor, pick.wKey);
+  requirementTrigger.set(floor, pick.tKey);
 }
 
 // Pose le feuillet (page) de l'étage `floor` du set de pages actif si un
