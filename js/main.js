@@ -504,6 +504,7 @@ async function startGame(count = 2) {
   usedRequirementRooms = new Set();
   requirementGiftTaken = false;
   requirementBuffSteps = 0;
+  requirementTheme     = new Map(); // V2 (room-of-requirement-v2.md)
   // Note : seenNpcs / activeQuests / availableQuests / completedQuests
   // sont déjà initialisés par chooseHouse() AVANT l'intro Dumbledore
   // (sinon _finishIntro serait écrasée). Ne pas les reset ici.

@@ -502,8 +502,45 @@ function drawFountainSprite(x, baseY, sz, dried) {
   ctx.restore();
 }
 
-// Salle sur Demande (easter egg) — porte révélée dans un pan de mur. Halo
-// chaud doré ; grisé si le refuge a déjà été pris pour cette visite (spent).
+// Salle sur Demande V2 (room-of-requirement-v2.md §4) — animation « la porte
+// se dessine » : timestamp transitoire (non sérialisé, purement FX) + boucle
+// one-shot bornée qui rafraîchit le rendu pendant REVEAL_MS puis s'arrête.
+let _requirementRevealAnim = 0;   // performance.now() de la révélation, ou 0
+let _requirementRevealTimer = null;
+const REQUIREMENT_REVEAL_MS = 900;
+function _startRequirementRevealAnim() {
+  _requirementRevealAnim = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+  if (_requirementRevealTimer) return; // boucle déjà active
+  const tick = () => {
+    if (typeof drawDungeon === 'function') { try { drawDungeon(); } catch (e) {} }
+    const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+    if (now - _requirementRevealAnim >= REQUIREMENT_REVEAL_MS) {
+      clearInterval(_requirementRevealTimer);
+      _requirementRevealTimer = null;
+      _requirementRevealAnim = 0;
+    }
+  };
+  _requirementRevealTimer = setInterval(tick, 40);
+}
+
+// Repli vectoriel de la porte (sans emoji) tant que le SVG n'a pas chargé —
+// arche sombre + vantail bois esquissé, cohérent avec _drawShopVectorFallback.
+function _drawRequirementVectorFallback(x, baseY, sz) {
+  const w = sz * 0.7, top = baseY - sz * 1.05, mid = baseY - sz * 0.55;
+  ctx.fillStyle = '#311e0e';
+  ctx.beginPath();
+  ctx.moveTo(x - w / 2, baseY);
+  ctx.lineTo(x - w / 2, mid);
+  ctx.quadraticCurveTo(x, top, x + w / 2, mid);
+  ctx.lineTo(x + w / 2, baseY);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#c9a84c'; ctx.lineWidth = sz * 0.04; ctx.stroke();
+}
+
+// Salle sur Demande — porte révélée dans un pan de mur. Halo chaud doré ;
+// grisé si le refuge a déjà été pris pour cette visite (spent). Sprite SVG
+// (SCENE_ICONS.requirement) ; pendant l'animation de révélation, le vantail
+// est clippé de bas en haut (la porte « se dessine »).
 function drawRequirementSprite(x, baseY, sz, spent) {
   ctx.save();
   // Ombre au sol
@@ -520,11 +557,31 @@ function drawRequirementSprite(x, baseY, sz, spent) {
   }
   ctx.fillStyle = halo;
   ctx.beginPath(); ctx.arc(x, baseY - sz * 0.45, sz * 0.95, 0, Math.PI * 2); ctx.fill();
-  // Porte (emoji fallback — pas de SCENE_ICON dédié, cf. plan §6 hors-scope)
-  ctx.font = `${Math.floor(sz * 1.05)}px serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  // Progression de l'animation « porte qui se dessine » (1 = porte pleine)
+  let progress = 1;
+  if (_requirementRevealAnim) {
+    const now = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+    progress = Math.min(1, (now - _requirementRevealAnim) / REQUIREMENT_REVEAL_MS);
+  }
+  const entry = _getSceneSvgImg('requirement', () => SCENE_ICONS.requirement);
   if (spent) ctx.globalAlpha = 0.55;
-  ctx.fillText('🚪', x, baseY);
+  if (entry && entry.ready) {
+    const h = sz * 1.25, w = h * (120 / 130);
+    if (progress < 1) {
+      // Révèle la porte de bas en haut (clip montant) + alpha croissant.
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x - w / 2, baseY - h * progress, w, h * progress);
+      ctx.clip();
+      ctx.globalAlpha *= (0.4 + 0.6 * progress);
+      ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
+      ctx.restore();
+    } else {
+      ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
+    }
+  } else {
+    _drawRequirementVectorFallback(x, baseY, sz);
+  }
   ctx.globalAlpha = 1;
   ctx.restore();
 }

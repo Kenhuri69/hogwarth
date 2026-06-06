@@ -47,6 +47,7 @@ function _restoreFloorFromCache(floor) {
   usedSpecialNpcs = new Set();
   // Easter egg « Salle sur Demande » : refuge ré-utilisable à chaque visite.
   usedRequirementRooms = new Set();
+  if (typeof requirementTheme !== 'undefined') requirementTheme.delete(floor); // V2 : re-choix contextuel du thème
   _respawnEnemiesOnEntry(floor);
   // Migration : re-place les PNJ manquants pour les saves antérieures
   // à un ajout (cf. dungeon.js — _migrateMissingNpcsForFloor).

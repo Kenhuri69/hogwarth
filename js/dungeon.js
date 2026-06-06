@@ -467,6 +467,7 @@ function generateDungeon(floor) {
   usedFountains = new Set();
   // Easter egg « Salle sur Demande » : refuge ré-utilisable à chaque visite.
   usedRequirementRooms = new Set();
+  if (typeof requirementTheme !== 'undefined') requirementTheme.delete(floor); // V2 : re-choix contextuel du thème
   // Réinitialise les autels utilisés : 1 usage par visite d'étage.
   usedAltars = new Set();
   // Réinitialise les actions spéciales PNJ (Fumseck, etc.).

@@ -649,12 +649,53 @@ function _revealRequirementRoom(floor) {
   setNarrative("Tu longes ce mur une troisième fois, l'esprit tendu vers ce qu'il te faut… La pierre frémit, se replie : une porte se dessine là où il n'y avait rien. La Salle sur Demande t'ouvre.");
   if (typeof addMsg === 'function') addMsg("✨ Une porte s'est dessinée dans le mur — la Salle sur Demande !", 'magic');
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+  // V2 — animation « la porte se dessine » (one-shot, self-contained).
+  if (typeof _startRequirementRevealAnim === 'function') _startRequirementRevealAnim();
   renderMinimap();
   drawDungeon();
 }
 
-// Entrer dans la Salle : refuge « repos sûr + petit buff » (1×/visite d'étage,
-// modèle `usedFountains`) et objet unique la toute première fois de la partie.
+// V2 (room-of-requirement-v2.md §3) — choisit le thème de la Salle pour la
+// visite courante de l'étage : « ce dont le groupe a besoin ». PV/PM bas →
+// refuge ; sac quasi vide → loot ; sinon entraînement. Si rien ne tranche
+// (groupe au max ET sac plein), un seed départage parmi les 3 pour la variété.
+// Idempotent par visite : mémorisé dans `requirementTheme` (reset à l'entrée
+// d'étage). Pur (sauf mémoïsation). Garde-fou groupe KO → 'refuge'.
+function _pickRequirementTheme(floor) {
+  if (typeof requirementTheme === 'undefined') return 'refuge';
+  if (requirementTheme.has(floor)) return requirementTheme.get(floor);
+  const living = party.slice(0, partySize).filter(c => c.hp > 0);
+  let theme;
+  if (!living.length) {
+    theme = 'refuge';
+  } else {
+    const sum = (k) => living.reduce((s, c) => s + (c[k] || 0), 0);
+    const hpFrac = sum('hp') / Math.max(1, sum('hpMax'));
+    const spFrac = sum('sp') / Math.max(1, sum('spMax'));
+    const bagFull = player.inventory.length >= 16;
+    if (Math.min(hpFrac, spFrac) < 0.5)        theme = 'refuge';
+    else if (player.inventory.length < 6)      theme = 'loot';
+    else if (hpFrac >= 0.999 && spFrac >= 0.999 && bagFull) {
+      // Aucun besoin pressant : variété seedée par étage.
+      theme = ['refuge', 'loot', 'training'][(floor * 7919) % 3];
+    } else theme = 'training';
+  }
+  requirementTheme.set(floor, theme);
+  return theme;
+}
+
+// V2 — petit pool de butin de la « Cache aux objets », scalé par étage.
+// Réemploi des consommables/matériaux existants (non-méta).
+function _requirementLootPool(floor) {
+  if (floor >= 11) return ['potion_m', 'essence_tenebres'];
+  if (floor >= 7)  return ['potion_m', 'mandragore'];
+  if (floor >= 4)  return ['potion_s', 'potion_m', 'mandragore'];
+  return ['potion_s'];
+}
+
+// Entrer dans la Salle : effet routé par thème (refuge / loot / entraînement,
+// 1×/visite d'étage, modèle `usedFountains`) + objet unique la toute première
+// fois de la partie (indépendant du thème).
 function useRequirementRoom() {
   if (inBattle) return;
   if (dungeon[playerY][playerX] !== CELL.REQUIREMENT) return;
@@ -664,19 +705,50 @@ function useRequirementRoom() {
     addMsg("La Salle s'est refermée : revenez sur cet étage plus tard.", 'bad');
     return;
   }
-  // Repos sûr — régénère une part du groupe et arme le buff de Confort.
+  const f = currentFloor || 1;
+  const theme = _pickRequirementTheme(f);
+  // Effet de thème — une fois par visite d'étage.
   if (!usedRequirementRooms.has(key)) {
-    party.slice(0, partySize).forEach(c => {
-      if (c.hp <= 0) return;
-      c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * REQUIREMENT_REST_FRAC));
-      c.sp = Math.min(c.spMax, c.sp + Math.ceil(c.spMax * REQUIREMENT_REST_FRAC));
-    });
-    requirementBuffSteps = REQUIREMENT_BUFF_STEPS;
+    if (theme === 'loot') {
+      // Cache aux objets : or + 1-2 consommables (cap 16 via tryAddItem).
+      const goldGain = (typeof _applyGoldMult === 'function') ? _applyGoldMult(25 * f) : 25 * f;
+      player.gold += goldGain;
+      const pool = _requirementLootPool(f);
+      const n = 1 + (Math.random() < 0.5 ? 1 : 0);
+      const got = [];
+      for (let i = 0; i < n; i++) {
+        const id = pool[Math.floor(Math.random() * pool.length)];
+        if (typeof tryAddItem === 'function' && tryAddItem(id, { silent: true })) {
+          const it = ITEMS.find(x => x.id === id);
+          got.push(it ? it.name : id);
+        }
+      }
+      setNarrative("La Salle s'est faite cache aux trésors : alcôves et coffrets poussiéreux débordent d'objets oubliés. Vous y puisez de quoi poursuivre.");
+      addMsg(`Salle sur Demande : +${goldGain} Gallions${got.length ? ' · ' + got.join(', ') : ' (sac plein)'}.`, 'good');
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+    } else if (theme === 'training') {
+      // Salle d'entraînement : XP (peut faire monter de niveau) + focus PM plein.
+      const xpGain = 50 * f;
+      player.xp += xpGain;
+      party.slice(0, partySize).forEach(c => { if (c.hp > 0) c.sp = c.spMax; });
+      setNarrative("La Salle s'est faite salle d'entraînement : mannequins, grimoires d'exercice et cibles enchantées. Le groupe s'aguerrit et fait le plein de magie.");
+      addMsg(`Salle sur Demande : entraînement (+${xpGain} XP, magie restaurée).`, 'good');
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+    } else {
+      // Refuge (défaut V1) — repos sûr + buff de Confort.
+      party.slice(0, partySize).forEach(c => {
+        if (c.hp <= 0) return;
+        c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * REQUIREMENT_REST_FRAC));
+        c.sp = Math.min(c.spMax, c.sp + Math.ceil(c.spMax * REQUIREMENT_REST_FRAC));
+      });
+      requirementBuffSteps = REQUIREMENT_BUFF_STEPS;
+      setNarrative("La Salle s'est faite refuge : un âtre crépite, des fauteuils moelleux accueillent le groupe. Chacun reprend des forces, et une quiétude lumineuse l'accompagnera quelque temps.");
+      addMsg("Salle sur Demande : repos réparateur (+ buff de Confort).", 'good');
+      if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+    }
     usedRequirementRooms.add(key);
     if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'magic');
-    setNarrative("La Salle s'est faite refuge : un âtre crépite, des fauteuils moelleux accueillent le groupe. Chacun reprend des forces, et une quiétude lumineuse l'accompagnera quelque temps.");
-    addMsg("Salle sur Demande : repos réparateur (+ buff de Confort).", 'good');
-    if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+    if (theme === 'training' && typeof checkLevelUp === 'function') checkLevelUp();
   }
   // Objet unique — une seule fois par partie, à la toute première Salle visitée.
   if (firstGift) {
