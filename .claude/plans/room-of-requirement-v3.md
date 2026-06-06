@@ -241,12 +241,34 @@ rondes. Cohérent avec le style hub existant. Responsive (wrap des pastilles).
 - [x] §1 — décisions arbitrées (2026-06-06) : forge gate étage 11+, méta =
       Almanach hub + trophée à vie, loot = trophée cosmétique + garder
       consommables, surface = hub (pas Atelier multijoueur).
-- [ ] Phase 1 — état + méta-store.
-- [ ] Phase 2 — Axe A commerce.
-- [ ] Phase 3 — Axe C trophée.
-- [ ] Phase 4 — Axe B Almanach.
-- [ ] Phase 5 — cache-bump.
-- [ ] Phase 6 — smoke (T7 ajusté, T11/T12) + units verts.
+- [x] Phase 1 — état + méta-store (`requirementTrophyTaken` state/save/main ;
+      `REQUIREMENT_COMMERCE_GOLD`/`REQUIREMENT_TROPHY` data.js ; codex localStorage
+      `_reqCodexRead/Write` + `recordRequirement{Revealed,Theme,Trophy}` +
+      `getRequirementCodex` dans save-slots.js).
+- [x] Phase 2 — Axe A commerce (`_requirementForgeable`, `_pickRequirementTheme`
+      +forge/boutique, routage `useRequirementRoom` openShop/openForge
+      non-consommable, `REQ_VARIANT` boutique/forge).
+- [x] Phase 3 — Axe C trophée (branche `loot` → collectible non inventorié,
+      `recordRequirementTrophy`, flag partie + codex à vie).
+- [x] Phase 4 — Axe B Almanach (`renderRequirementAlmanac` + `#start-hub-almanac`
+      + CSS `.hub-almanac` ; reveal/use câblés au codex ; MANIFEST loader optionnel).
+- [x] Phase 5 — cache-bump : 9 js + 1 css bumpés (index.html + sw.js PRECACHE_URLS),
+      `CACHE_VERSION` v63→v64 ; `check_cache_versions.js` OK + `pwa-smoke.js` (85 entrées).
+- [x] Phase 6 — smoke `scenarioRoomOfRequirement` : T7 ajusté (gold=0) + T11
+      (commerce/gate forge/non-consommable) + T12 (trophée+codex). `node tests/smoke.js`
+      vert (160) + `node tests/units.js` (67).
 
 ## Écarts / décisions d'implémentation
-- (à compléter à l'implémentation)
+- **Zéro nouveau module** : helpers codex logés dans `save-slots.js` (foyer
+  localStorage), rendu Almanach dans `save-ui.js`, données dans `data.js` — évite
+  un script tag/précache/MANIFEST supplémentaire.
+- **Trophée non inventorié** : confirmé — `REQUIREMENT_TROPHY` vit hors `ITEMS`,
+  jamais poussé dans `player.inventory` (pas de slot, pas de `useItem`/équip). Sa
+  collecte arme `requirementTrophyTaken` (partie) + codex `trophy` (à vie).
+- **Commerce non-consommable** : boutique/forge ouvrent `openShop`/`openForge`
+  et **ne marquent pas** `usedRequirementRooms` → ré-ouvrables pour la visite
+  (comme une vraie cellule SHOP/FORGE). Le gift tiare 1ʳᵉ Salle reste indépendant.
+- **Gate forge** : `floor>=11 && _requirementForgeable() && _countEssence()>0`.
+  Hors du seed de variété (gate endgame strict) ; boutique, elle, entre dans le seed.
+- **MANIFEST loader** : `getRequirementCodex` / `renderRequirementAlmanac` ajoutés
+  en `optional:true` (easter-egg — pas de bandeau rouge si absent).

@@ -303,11 +303,47 @@ function _armMenuAudio() {
 ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
   document.addEventListener(ev, _armMenuAudio, true));
 
+// V3 (room-of-requirement-v3.md §5) — Almanach de la Salle sur Demande : pur
+// trophée offline (codex localStorage). Masqué tant qu'aucune Salle n'a été
+// découverte (pas de spoiler). Lecture seule, aucun bouton.
+function renderRequirementAlmanac() {
+  const el = document.getElementById('start-hub-almanac');
+  if (!el) return;
+  const codex = (typeof getRequirementCodex === 'function')
+    ? getRequirementCodex() : { themesSeen: {}, roomsFound: 0, trophy: false };
+  const themeKeys = Object.keys(codex.themesSeen || {});
+  if (!codex.roomsFound && !themeKeys.length && !codex.trophy) {
+    el.innerHTML = '';
+    el.style.display = 'none';
+    return;
+  }
+  const THEMES = [
+    ['refuge',   '🔥', 'Refuge'],
+    ['loot',     '💰', 'Cache aux objets'],
+    ['training', '⚔️', "Salle d'entraînement"],
+    ['boutique', '🛒', 'Étal de marchand'],
+    ['forge',    '🔨', 'Forge éphémère']
+  ];
+  const pills = THEMES.map(([k, ic, label]) => {
+    const seen = !!(codex.themesSeen && codex.themesSeen[k]);
+    return `<span class="alm-pill ${seen ? 'seen' : 'locked'}" title="${label}">${seen ? ic : '·'}</span>`;
+  }).join('');
+  const trophyPill = codex.trophy
+    ? `<span class="alm-pill seen alm-trophy" title="Éclat de la Salle sur Demande">✦</span>`
+    : '';
+  el.innerHTML = `
+    <div class="alm-title">🚪 Almanach de la Salle sur Demande</div>
+    <div class="alm-stat">Salles trouvées : <b>${codex.roomsFound | 0}</b></div>
+    <div class="alm-pills">${pills}${trophyPill}</div>`;
+  el.style.display = 'block';
+}
+
 function enterStartHub() {
   const titleEl = document.getElementById('title-screen');
   if (titleEl) titleEl.style.display = 'none';
   migrateLegacyKey();
   _renderHubSlotList();
+  renderRequirementAlmanac(); // V3 — méta léger (masqué si vierge)
   document.getElementById('start-hub-screen').style.display = 'flex';
   // La musique de menu est normalement déjà lancée par `_armMenuAudio`
   // (1er geste) ; cet appel reste un filet de sécurité idempotent. La

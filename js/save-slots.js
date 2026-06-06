@@ -211,3 +211,64 @@ function migrateLegacyKey() {
   localStorage.removeItem(SAVE_LEGACY_KEY);
   return true;
 }
+
+// ============================================================
+// V3 — Codex « Salle sur Demande » (méta inter-parties, localStorage)
+// ============================================================
+// Méta-déblocage LÉGER, hors save de partie (room-of-requirement-v3.md §2) :
+// thèmes déjà découverts + nombre de Salles trouvées + trophée à vie. Pur
+// trophée (zéro impact gameplay) → respecte l'esprit « reset par partie ».
+// Surfacé par l'Almanach du hub démarrage (save-ui.js). Défensif : tout accès
+// localStorage est try/catch (Safari privé peut throw).
+const REQ_CODEX_KEY = 'hogwarts_rpg_requirement_codex';
+
+function _reqCodexRead() {
+  try {
+    const raw = localStorage.getItem(REQ_CODEX_KEY);
+    if (!raw) return { themesSeen: {}, roomsFound: 0, trophy: false };
+    const obj = JSON.parse(raw);
+    if (!obj || typeof obj !== 'object') throw new Error('shape');
+    obj.themesSeen = (obj.themesSeen && typeof obj.themesSeen === 'object') ? obj.themesSeen : {};
+    obj.roomsFound = (typeof obj.roomsFound === 'number') ? obj.roomsFound : 0;
+    obj.trophy     = !!obj.trophy;
+    return obj;
+  } catch (e) {
+    return { themesSeen: {}, roomsFound: 0, trophy: false };
+  }
+}
+
+function _reqCodexWrite(obj) {
+  try {
+    localStorage.setItem(REQ_CODEX_KEY, JSON.stringify(obj));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Lecture publique consommée par le rendu de l'Almanach (save-ui.js).
+function getRequirementCodex() {
+  return _reqCodexRead();
+}
+
+// Appelé 1×/révélation de porte (_revealRequirementRoom) — total inter-parties.
+function recordRequirementRevealed() {
+  const c = _reqCodexRead();
+  c.roomsFound = (c.roomsFound | 0) + 1;
+  _reqCodexWrite(c);
+}
+
+// Appelé quand un thème de Salle est réellement engagé (useRequirementRoom).
+function recordRequirementTheme(theme) {
+  if (!theme) return;
+  const c = _reqCodexRead();
+  c.themesSeen[theme] = true;
+  _reqCodexWrite(c);
+}
+
+// Appelé à la 1ʳᵉ collecte du trophée cosmétique (toutes parties confondues).
+function recordRequirementTrophy() {
+  const c = _reqCodexRead();
+  c.trophy = true;
+  _reqCodexWrite(c);
+}

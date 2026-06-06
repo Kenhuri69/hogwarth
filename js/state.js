@@ -544,6 +544,10 @@ let requirementBuffSteps = 0;
 // étage pour rester stable tant que l'overlay est ouvert. Reset à l'entrée
 // d'étage (comme `usedRequirementRooms`) → recalcul à la prochaine visite.
 let requirementTheme     = new Map();
+// V3 (room-of-requirement-v3.md) — trophée cosmétique « Éclat de la Salle »
+// déjà collecté DANS CETTE PARTIE (anti-doublon, reset par partie). La
+// persistance inter-parties à vie vit dans le codex localStorage (save-slots.js).
+let requirementTrophyTaken = false;
 // Cellules où le joueur a tué un ennemi, indexées par étage.
 // Map<floor, Set<"x,y">>. À chaque retour sur un étage déjà visité, chaque
 // entrée a 20 % de chance de re-spawner un ennemi (`_respawnEnemiesOnEntry`).

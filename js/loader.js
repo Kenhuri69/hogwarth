@@ -203,6 +203,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'writeSlot',          source: 'save-slots.js',   kind: 'fn'  },
     { name: 'deleteSlot',         source: 'save-slots.js',   kind: 'fn'  },
     { name: 'migrateLegacyKey',   source: 'save-slots.js',   kind: 'fn'  },
+    { name: 'getRequirementCodex', source: 'save-slots.js',  kind: 'fn', optional: true }, // V3
     { name: 'exportSaveStore',    source: 'save-slots.js',   kind: 'fn'  },
     { name: 'importSaveStore',    source: 'save-slots.js',   kind: 'fn'  },
     { name: 'openSaveDialog',     source: 'save-ui.js',      kind: 'fn'  },
@@ -210,6 +211,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'exportSaveToFile',   source: 'save-ui.js',      kind: 'fn'  },
     { name: 'importSaveFromFile', source: 'save-ui.js',      kind: 'fn'  },
     { name: 'enterStartHub',      source: 'save-ui.js',      kind: 'fn'  },
+    { name: 'renderRequirementAlmanac', source: 'save-ui.js', kind: 'fn', optional: true }, // V3
     { name: 'startHubNewGame',    source: 'save-ui.js',      kind: 'fn'  },
     { name: 'loadSlotAndStart',   source: 'save-ui.js',      kind: 'fn'  },
 

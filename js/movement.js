@@ -347,7 +347,10 @@ function _exploreDescriptors() {
   const REQ_VARIANT = {
     refuge:   { desc: "Au-delà de la porte, la Salle est devenue exactement ce dont le groupe a besoin : un refuge chaleureux où reprendre son souffle à l'abri du donjon.", btn: 'Entrer dans la Salle' },
     loot:     { desc: "Au-delà de la porte, la Salle s'est faite cache aux trésors : alcôves et coffrets poussiéreux où s'entassent objets oubliés et bourses ternies.", btn: 'Fouiller la Salle' },
-    training: { desc: "Au-delà de la porte, la Salle s'est faite salle d'entraînement : mannequins enchantés, cibles mouvantes et grimoires d'exercice attendent le groupe.", btn: "S'entraîner" }
+    training: { desc: "Au-delà de la porte, la Salle s'est faite salle d'entraînement : mannequins enchantés, cibles mouvantes et grimoires d'exercice attendent le groupe.", btn: "S'entraîner" },
+    // V3 — commerce éphémère : étal de marchand (réemploi openShop) ou enclume (openForge).
+    boutique: { desc: "Au-delà de la porte, la Salle s'est faite étal de marchand ambulant : présentoirs de fioles, de parchemins et de babioles utiles sous une lanterne tamisée.", btn: 'Marchander' },
+    forge:    { desc: "Au-delà de la porte, la Salle s'est faite forge clandestine : une enclume noire sur des braises éternelles, prête à mordre le métal de vos équipements.", btn: 'Forger' }
   };
   const reqVar = REQ_VARIANT[requirementTheme_] || REQ_VARIANT.refuge;
   const altarCost     = 40 * (currentFloor || 1);
