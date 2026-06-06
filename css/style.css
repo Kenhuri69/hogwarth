@@ -345,6 +345,14 @@ body {
 .stat-item .sval { color: var(--gold-light); font-weight: 600; }
 .stat-item .skey { color: var(--label-muted); }
 
+/* Allègement du panneau gauche (respiration visuelle) : les stats secondaires
+   détaillées et la liste d'équipement texte sont redondantes avec la Fiche
+   (bouton 📜) — et l'équipement est déjà résumé par les icônes party-equip-row
+   de chaque carte. On les masque partout (mobile le faisait déjà). updateUI()
+   continue d'écrire dans ces nœuds masqués sans effet de bord. */
+.left-panel .stats-grid,
+#hud-equip-block { display: none; }
+
 /* MAIN VIEW */
 .main-view {
   grid-area: main;
@@ -415,6 +423,25 @@ body {
 }
 .battle-actions {
   display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+}
+
+/* Combat desktop : l'overlay centrait tout son contenu, laissant de larges
+   vides haut/bas autour d'un petit groupe d'ennemis. On ancre le contenu en
+   haut, on laisse le groupe d'ennemis occuper la zone supérieure (ennemi
+   centré dedans) et les actions descendent naturellement vers le bas. */
+@media (min-width: 701px) {
+  #encounter-overlay {
+    justify-content: flex-start;
+    padding-top: 6vh;
+    gap: 18px;
+  }
+  .enemy-group-container {
+    flex: 1 1 auto;
+    align-items: center;
+    min-height: 220px;
+    max-height: 48vh;
+  }
+  .battle-log { font-size: 14px; max-width: 460px; }
 }
 
 /* TEXT/NARRATIVE area */
