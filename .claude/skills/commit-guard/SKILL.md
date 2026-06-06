@@ -1,9 +1,9 @@
 ---
 name: commit-guard
-description: Garde-fou à dérouler avant de committer/pousser tout changement de code sur le projet Poudlard & Magie. Enchaîne les 3 règles obligatoires des guidelines : plan écrit à jour (§5) → test headless node tests/smoke.js (§7) → vérification de l'état de la PR avant push (§6). Utiliser systématiquement avant un commit/push, ou dès qu'on dit « commit », « pousse », « finalise », « c'est bon, envoie ». Ne remplace pas une revue de code (skill code-review) ni une vérification fonctionnelle manuelle (skill verify).
+description: Garde-fou à dérouler avant de committer/pousser tout changement de code sur le projet Poudlard & Magie. Enchaîne les règles obligatoires des guidelines : plan écrit à jour (§5) → test headless node tests/smoke.js (§7) → bump du cache PWA si un CSS/JS a changé (§8) → vérification de l'état de la PR avant push (§6). Utiliser systématiquement avant un commit/push, ou dès qu'on dit « commit », « pousse », « finalise », « c'est bon, envoie ». Ne remplace pas une revue de code (skill code-review) ni une vérification fonctionnelle manuelle (skill verify).
 ---
 
-# Garde-fou commit (plan → test → état PR)
+# Garde-fou commit (plan → test → cache → état PR)
 
 Applique dans l'ordre les 3 règles obligatoires de `.claude/guidelines.md`.
 Ne jamais sauter une étape sans le dire explicitement à l'utilisateur.
@@ -40,6 +40,18 @@ Autres harnais selon la zone touchée :
 node tests/pwa-smoke.js   # si shell PWA / sw.js / manifest
 node tests/select.js      # si flow de sélection de héros
 ```
+
+## 2bis. Bump du cache PWA (guidelines §8)
+Si le commit touche un fichier **servi au navigateur** (`js/**.js`, `css/**.css`,
+`sw.js`, `index.html`, `manifest.json`), dérouler le skill **`cache-bump`** :
+bumper le `?v=N` de chaque asset modifié dans `index.html` **et** `PRECACHE_URLS`
+(sw.js), incrémenter `CACHE_VERSION`, puis vérifier :
+```bash
+node tools/check_cache_versions.js --base origin/master   # exit 1 si un asset n'est pas bumpé
+node tests/pwa-smoke.js
+```
+Sans ce bump, la mise à jour est **invisible côté joueur** (le SW sert l'ancien
+cache). Inutile pour tests/tools/docs/Python.
 
 ## 3. État de la PR avant push (guidelines §6)
 **Ne JAMAIS pousser sur la branche d'une PR déjà mergée ou fermée.**

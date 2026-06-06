@@ -93,6 +93,22 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Si le test ne couvre pas la zone modifiée, le dire explicitement à l'utilisateur plutôt que de prétendre que la non-régression est garantie.
 - Pour un changement purement documentaire (markdown, commentaires), le test reste recommandé mais peut être omis si justifié.
 
+## 8. Bump du cache PWA obligatoire (mise à jour visible côté client)
+
+**Toute modification d'un fichier servi au navigateur DOIT s'accompagner, dans le MÊME commit, du bump de son `?v=N` et de `CACHE_VERSION`. Sinon la mise à jour est invisible côté joueur (le Service Worker sert l'ancien cache).**
+
+Le `sw.js` sert les CSS/JS en **Cache-First indexé par `?v=N`**. Modifier un fichier sans changer son `?v` = échec **silencieux** : déploiement réussi mais aucun changement visible (cf. CLAUDE.md « PWA & cache offline »).
+
+- Dès qu'un `js/**.js` ou `css/**.css` change → incrémenter son `?v=N` dans **`index.html` ET `PRECACHE_URLS` de `sw.js`** (même valeur des deux côtés), **et** incrémenter `CACHE_VERSION` dans `sw.js`.
+- Si `sw.js` lui-même change → bumper aussi `const SW_URL = 'sw.js?v=N'` (`js/pwa.js`) — et `pwa.js` ayant changé, bumper son propre `?v`.
+- Dérouler le skill **`cache-bump`** (il automatise et vérifie), puis :
+  ```bash
+  node tools/check_cache_versions.js --base origin/master   # exit 1 si un asset modifié n'est pas bumpé
+  node tests/pwa-smoke.js
+  ```
+- Inutile pour `tests/**`, `tools/**`, `.claude/**`, `*.md`, scripts Python (non servis au runtime navigateur).
+- Le **commit-guard** et la **CI** (`tools/check_cache_versions.js`) appliquent cette règle.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

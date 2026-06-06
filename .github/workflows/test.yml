@@ -24,11 +24,22 @@ jobs:
     steps:
       - name: Récupérer le code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # historique complet pour le diff de bump cache (vs base PR)
 
       - name: Installer Node 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Versionnement du cache PWA (cohérence + bump des assets modifiés)
+        run: |
+          if [ -n "${{ github.base_ref }}" ]; then
+            git fetch --no-tags origin "${{ github.base_ref }}" || true
+            node tools/check_cache_versions.js --base "origin/${{ github.base_ref }}"
+          else
+            node tools/check_cache_versions.js
+          fi
 
       - name: Installer les dépendances de test
         run: npm install
