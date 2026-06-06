@@ -149,7 +149,7 @@ function renderEnemyGroup() {
   // Layout adaptatif : icônes/barres plus compactes au-delà de 3 ennemis
   // (groupes endgame de 4-5) pour tenir à l'écran + flex-wrap CSS en mobile.
   const big     = count >= 4;
-  const sizePx  = count === 1 ? 80 : (big ? 44 : 56);
+  const sizePx  = count === 1 ? 104 : (big ? 44 : 56);
   const nameFs  = count === 1 ? '15px' : (big ? '10px' : '11px');
   const barsW   = count === 1 ? '180px' : (big ? '96px' : '120px');
 
