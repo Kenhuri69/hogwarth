@@ -1,0 +1,18 @@
+# Dépendances Python des outils du jeu Poudlard & Magie.
+# Installation :  python3 -m pip install -r tools/requirements.txt
+#
+# ⚠️ cairosvg nécessite la lib système cairo :
+#     Debian/Ubuntu : sudo apt-get install -y libcairo2
+#     macOS         : brew install cairo pango
+
+# --- Pipeline d'icônes d'items (tools/icon_factory.py) ---
+pillow
+cairosvg
+numpy
+scipy
+
+# --- Détourage des PNG de monstres (tools/process_monster_png.py) — LOURD, À LA DEMANDE ---
+# rembg télécharge un modèle (birefnet/u2net, plusieurs centaines de Mo) au 1er run.
+# Décommenter / installer seulement quand on traite un sprite de monstre :
+#     python3 -m pip install rembg
+# rembg
