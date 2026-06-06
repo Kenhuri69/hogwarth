@@ -1,6 +1,6 @@
 ---
 name: commit-guard
-description: Garde-fou avant de committer/pousser un changement de code sur le projet Poudlard & Magie. Enchaîne les 3 règles obligatoires des guidelines — plan écrit (§5), test headless node tests/smoke.js (§7), vérification de l'état de la PR avant push (§6). Utiliser avant tout commit/push de code, ou quand on dit « commit », « pousse », « finalise ».
+description: Garde-fou à dérouler avant de committer/pousser tout changement de code sur le projet Poudlard & Magie. Enchaîne les 3 règles obligatoires des guidelines : plan écrit à jour (§5) → test headless node tests/smoke.js (§7) → vérification de l'état de la PR avant push (§6). Utiliser systématiquement avant un commit/push, ou dès qu'on dit « commit », « pousse », « finalise », « c'est bon, envoie ». Ne remplace pas une revue de code (skill code-review) ni une vérification fonctionnelle manuelle (skill verify).
 ---
 
 # Garde-fou commit (plan → test → état PR)

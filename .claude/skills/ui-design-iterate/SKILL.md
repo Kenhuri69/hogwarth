@@ -1,6 +1,6 @@
 ---
 name: ui-design-iterate
-description: Itérer sur le design UX/UI du jeu Poudlard & Magie (HUD, modales, fiche perso, combat, boutique, responsive mobile) en pilotant l'app en Chrome headless et en capturant des captures desktop + mobile pour comparer avant/après. Utiliser pour toute retouche visuelle/layout, audit responsive, refonte d'écran, ou quand on dit « le rendu », « le layout », « ça déborde sur mobile », « refais le HUD ». S'appuie sur Playwright (tests/_playwright.js), IMG_STYLE.md, et les contraintes responsive du projet.
+description: Itérer sur le VISUEL/layout de l'UI existante du jeu Poudlard & Magie (HUD, modales, fiche perso, combat, boutique, responsive mobile) en pilotant l'app en Chrome headless et en capturant des screenshots desktop + mobile pour comparer avant/après. Utiliser pour toute retouche esthétique, audit responsive, refonte d'écran, ou quand on dit « le rendu », « le layout », « ça déborde sur mobile », « refais le HUD », « c'est moche ». S'appuie sur Playwright (tests/_playwright.js), IMG_STYLE.md et les contraintes responsive (≤700px). Pour la qualité de design pure d'une création neuve, voir la skill frontend-design ; pour vérifier qu'une fonctionnalité MARCHE (clics, états, régressions), voir la skill webapp-testing.
 ---
 
 # Itérer sur le design UX/UI

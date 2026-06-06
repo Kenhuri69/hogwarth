@@ -1,6 +1,6 @@
 ---
 name: add-playable-character
-description: Ajouter un héros jouable sélectionnable au démarrage du jeu Poudlard & Magie (modèle Harry/Hermione/Céleste/Iris/Maxence/Anastasia). Utiliser quand on veut un nouveau personnage choisissable. Couvre les portraits (médaillon doré), l'entrée CHARACTERS, la carte de sélection et le test.
+description: Ajouter un héros jouable sélectionnable au démarrage du jeu Poudlard & Magie (modèle Harry/Hermione/Céleste/Iris/Maxence/Anastasia). Utiliser dès qu'on veut rendre un personnage choisissable dans l'équipe, même si l'utilisateur nomme juste un personnage de l'univers HP à jouer (« ajoute Drago comme perso jouable », « un 7e héros Serpentard sélectionnable »). Couvre les 2 portraits PNG (transplant du médaillon doré par genre), l'entrée CHARACTERS, la carte #hero-grid et le smoke test. Ne PAS utiliser pour un PNJ non jouable (npcs.js) ni un ennemi humain (skill add-monster).
 ---
 
 # Ajouter un personnage jouable

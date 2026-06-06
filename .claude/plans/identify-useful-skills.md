@@ -22,7 +22,17 @@ Copiées verbatim depuis `anthropics/skills` @ da20c92, Apache 2.0
 - [x] `theme-factory` — thèmes (palettes/fonts), 10 préréglages
 - [x] `skill-creator` — méta-skill création/amélioration/éval de skills
 - [x] `.claude/skills/README.md` — provenance + reco maison/vendorisé
-- [ ] commit + push
+- [x] commit + push
+
+### Affinage des 5 skills maison (via skill-creator, relance utilisateur)
+Méthode : évaluation qualitative du **déclenchement** (should-trigger +
+near-miss should-not-trigger), pas la boucle benchmark lourde (réservée aux
+skills à sortie vérifiable ; l'optimiseur auto run_loop.py ~1500 appels/skill
+jugé disproportionné). Corps inchangés (déjà lean <115 l., impératifs).
+- [x] Descriptions réécrites (plus « pushy » + désambiguïsation vers la bonne
+      skill) pour les 5 : add-monster, add-item-icon, add-playable-character,
+      ui-design-iterate, commit-guard
+- [x] commit + push affinage
 
 Les skills built-in (`verify`, `run`, `code-review`, `security-review`,
 `init`…) couvrent déjà les besoins génériques — non recréées.

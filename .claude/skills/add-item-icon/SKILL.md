@@ -1,6 +1,6 @@
 ---
 name: add-item-icon
-description: Générer une icône painterly pour un item du jeu Poudlard & Magie via le pipeline Python tools/icon_factory.py. Utiliser quand un item neuf a besoin de son visuel (PNG multi-tailles), ou pour regénérer/retoucher une icône existante. Couvre le choix du part SVG, l'écriture de la recette, la génération des mipmaps et l'enregistrement dans le registre JS.
+description: Générer ou retoucher l'icône painterly d'un item d'inventaire/équipement du jeu Poudlard & Magie (potion, arme, armure, anneau, livre de sorts…) via le pipeline Python tools/icon_factory.py. Utiliser dès qu'un item neuf a besoin de son visuel PNG multi-tailles, ou pour regénérer/améliorer une icône existante (« l'icône de l'amulette est moche, refais-la », « génère le PNG de la nouvelle épée légendaire »). Couvre le part SVG, la recette RECIPES, les mipmaps et l'enregistrement dans ITEM_ICON_NEW_REGISTRY. Ne PAS utiliser pour les sprites de monstres (skill add-monster), les portraits de PNJ, ni les icônes de sorts/statuts (scripts gen_*_icons.py dédiés).
 ---
 
 # Ajouter une icône d'item

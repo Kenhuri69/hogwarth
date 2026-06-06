@@ -1,6 +1,6 @@
 ---
 name: add-monster
-description: Ajouter un nouveau monstre/ennemi au jeu Poudlard & Magie. Utiliser quand on veut créer une créature jouable en combat (stats, capacités, résistances, lore bestiaire, sprite). Couvre l'entrée monsters.js, l'icône (PNG ou SVG), l'enrichissement bestiaire et le test de non-régression.
+description: Ajouter ou modifier un monstre/ennemi/boss du jeu Poudlard & Magie — stats, capacités, résistances/faiblesses élémentaires, lore bestiaire, sprite de combat. Utiliser dès qu'on veut une créature affrontable, même si l'utilisateur nomme juste une créature de l'univers HP sans dire « monstre » (« ajoute un Strangulot à l'étage 3 », « un boss pour l'étage 12 », « un ennemi qui inflige la peur »). Touche surtout js/monsters.js. Ne PAS utiliser pour un PNJ non combattant (npcs.js), un personnage jouable (skill add-playable-character) ni une icône d'objet d'inventaire (skill add-item-icon).
 ---
 
 # Ajouter un monstre
