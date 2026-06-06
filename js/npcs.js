@@ -56,14 +56,24 @@ const NPCS = [
     icon:  "🧙‍♂️",
     portraitImg: "img/npc/dumbledore.png",
     placement: { floor: 1, anchor: "first-room" },
+    // `eclats_clef_voute` est hors-chaîne (pas de prereq) : placé en fin de
+    // liste pour que la chaîne d'épreuves garde la priorité d'affichage du
+    // texte (getNpcQuestState), tandis que _npcDialogActions expose son
+    // bouton « Accepter » en parallèle — voir rework multi-quête.
     questsGiven:    ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
-                     "dumbledore_resistance", "dumbledore_revelation"],
+                     "dumbledore_resistance", "dumbledore_revelation",
+                     "eclats_clef_voute"],
     questsTurnedIn: ["intro_tutoriel", "dumbledore_eveil", "dumbledore_courage",
-                     "dumbledore_resistance", "dumbledore_revelation"],
+                     "dumbledore_resistance", "dumbledore_revelation",
+                     "eclats_clef_voute"],
     dialogues: {
+      // Cinématique d'intro (Clé de Voûte des Quatre) : 4 pages paginées
+      // par showIntroScreen(). Voix : dumbledore_intro_1..4 (fallback muet).
       greeting:    [
-        "Ah, te voilà enfin ! Bienvenue dans les profondeurs de Poudlard, jeune sorcier. Le château recèle bien des mystères.",
-        "Pour ta première épreuve, descends d'un étage. Une fois fait, retrouve-moi quelque part dans ces couloirs — je te récompenserai en personne."
+        "Le professeur Binns récitait d'une voix d'outre-tombe, et toute la classe d'Histoire de la Magie sombrait dans une douce torpeur. Au centre de la salle, sur son socle de marbre, la Clé de Voûte des Quatre veillait — comme elle l'avait fait depuis mille ans.",
+        "Puis vint un son qui n'appartenait pas à ce monde : un craquement de glace, net et profond. Le givre rampa sur la pierre, les flammes des bougies vacillèrent, et la lumière, une à une, s'éteignit.",
+        "Sous nos pieds, les grands escaliers pivotèrent — non plus vers les tours, mais vers le bas, vers ce que l'école avait juré d'oublier. Un portrait hurla au fond du couloir. Et même Binns, pour la première fois, se tut.",
+        "La Clé de Voûte des Quatre était le verrou qui scellait les profondeurs de Poudlard. Elle s'est fendue. Mes professeurs tiendront les étages du haut — mais la descente, jeune sorcier, je ne peux la confier qu'à toi. Trouve le grand escalier, et descends d'un étage."
       ],
       idle:        "Le château murmure tes pas. Continue ton exploration.",
       questOffer:  "Avant tout, descends d'un étage. C'est l'épreuve la plus douce que je puisse t'offrir.",
@@ -78,7 +88,7 @@ const NPCS = [
     // avec les samples OGG, sinon décalage texte/voix.
     dialoguesByQuest: {
       intro_tutoriel: {
-        questOffer:  "Tu te demandes par où commencer ? Descends d'un étage — c'est l'épreuve la plus douce que je puisse t'offrir. Reviens me voir une fois la descente accomplie.",
+        questOffer:  "Tu as entendu la pierre se fendre, toi aussi. La Clé de Voûte des Quatre tenait le château fermé sur ses profondeurs — et la voilà brisée. Descends d'un étage : chaque pas vers le bas est un pas vers la fêlure. Reviens me voir une fois la descente accomplie.",
         questActive: "Le grand escalier t'attend, jeune sorcier. Trouve-le, et reviens me retrouver dès que tu auras fait tes premiers pas vers le bas.",
         questReady:  "Bien joué. Tu as fait tes premiers pas — et déjà, le château reconnaît ton courage. Tiens, prends ceci : ce ne sont que des bagatelles, mais elles t'épauleront sur le chemin."
       },
@@ -101,6 +111,21 @@ const NPCS = [
         questOffer:  "Au plus profond, une ombre se reforme. Bellatrix Lestrange a juré de finir ce que son maître n'a pu accomplir. Affronte-la — pour Poudlard, pour ceux que nous avons perdus.",
         questActive: "Bellatrix n'a peur de rien — sauf de l'amour, qu'elle ne comprend pas. Garde cela en tête. Ne la sous-estime pas.",
         questReady:  "Tu l'as fait. Tu as tenu tête à l'ombre… et tu en sors plus lumineux qu'avant. Reçois ce dernier don — un fragment de moi-même, en somme — et continue ton chemin. Poudlard te doit beaucoup."
+      },
+      // Fil rouge « Clé de Voûte des Quatre » — quête de collecte optionnelle.
+      // `questReady` est un tableau : la remise des 3 éclats déclenche une
+      // SCÈNE DE RÉVÉLATION paginée (le payoff promis par `questOffer`).
+      // Voix page-par-page : dumbledore_eclats_ready_1..3 (1 généré, 2-3
+      // en fallback muet tant que les OGG ne sont pas fournis). Le bouton
+      // « Remettre » n'apparaît qu'à la dernière page (_renderDialogPage).
+      eclats_clef_voute: {
+        questOffer:  "La Clé de Voûte s'est brisée en éclats, dispersés au fil de ta descente. Rapporte-m'en trois : reconstituée, ne serait-ce qu'un instant, la relique des Fondateurs dira ce qu'elle a tu pendant mille ans.",
+        questActive: "Les éclats sont froids, et ils chuchotent — tu les sens, n'est-ce pas ? Cherche-les sur ce qui rôde dans chaque profondeur du château. Trois suffiront.",
+        questReady:  [
+          "Trois éclats… donne-les-moi. Vois comme ils s'appellent les uns les autres. La Clé se souvient des Quatre qui l'ont forgée — et, à travers elle, Poudlard se souvient de toi.",
+          "Les éclats se rejoignent, et pour un battement de cœur, la Clé redevient entière. Elle te livre son secret : les Quatre ne l'ont pas forgée pour fermer une salle, mais pour sceller ce qui sommeillait déjà sous la colline — plus ancien que Poudlard, plus ancien qu'eux.",
+          "Mais la fêlure n'a pas qu'ouvert une porte : elle a réveillé ce qui patientait derrière. Tout au fond, dans le froid qui remonte, une ombre se reconstitue éclat après éclat — comme cette relique, à rebours. Les Quatre scellèrent le bas ensemble ; à toi de descendre l'affronter."
+        ]
       }
     }
   },

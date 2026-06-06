@@ -1249,4 +1249,132 @@ async function scenarioDelayedSearch() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch] };
+// ── Fil rouge « Clé de Voûte des Quatre » ─────────────────────────
+// Couvre : item eclat_voute (Lot 3), drop garanti monstre-jalon (Lot 3),
+// quête parallèle hors-chaîne sur Dumbledore sans geler sa chaîne (Lot 4),
+// collecte + remise + consommation (Lot 4), énigme des Fondateurs (Lot 5).
+async function scenarioCleVoute() {
+  console.log('\n── Scénario : fil rouge Clé de Voûte des Quatre ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : l'item eclat_voute existe (matériau) + icône PNG enregistrée.
+  const t1 = await page.evaluate(() => {
+    const it = ITEMS.find(i => i.id === 'eclat_voute');
+    return {
+      exists: !!it,
+      type:   it && it.type,
+      icon:   typeof ITEM_ICON_NEW_REGISTRY !== 'undefined'
+        && !!ITEM_ICON_NEW_REGISTRY['eclat_voute']
+    };
+  });
+  console.log('  T1 item:', t1);
+  assert(t1.exists,            'eclat_voute doit exister dans ITEMS');
+  assert(t1.type === 'material', `eclat_voute doit être type material, got ${t1.type}`);
+  assert(t1.icon,              'eclat_voute doit avoir une icône dans ITEM_ICON_NEW_REGISTRY');
+
+  // T2 : Peeves (jalon tranche A) droppe l'éclat de façon garantie (1.0).
+  const t2 = await page.evaluate(() => {
+    player.inventory = player.inventory.filter(i => i.id !== 'eclat_voute');
+    const peeves = JSON.parse(JSON.stringify(MONSTERS.find(m => m.id === 'peeves')));
+    startBattle(peeves);
+    enemyGroup.forEach(e => { e.currentHp = 0; });
+    endBattle(true);
+    return { count: _countItems('eclat_voute') };
+  });
+  console.log('  T2 drop:', t2);
+  assert(t2.count >= 1, 'Peeves doit dropper un eclat_voute (chance 1.0)');
+
+  // T3 : la quête eclats_clef_voute est offrable EN PARALLÈLE de la chaîne
+  // de Dumbledore — l'accepter (active) ne gèle pas l'offre du maillon
+  // suivant de la chaîne (dumbledore_eveil).
+  const t3 = await page.evaluate(() => {
+    const npc = getNpcById('dumbledore');
+    // À l'ouverture (intro_tutoriel actif), eclats est déjà offrable.
+    const offerableAtStart = isQuestOfferable('eclats_clef_voute');
+    acceptQuest('eclats_clef_voute');
+    const eclatsActive = activeQuests.some(q => q.id === 'eclats_clef_voute');
+    // Simule la remise d'intro_tutoriel → débloque dumbledore_eveil.
+    activeQuests = activeQuests.filter(q => q.id !== 'intro_tutoriel');
+    completedQuests.add('intro_tutoriel');
+    availableQuests.delete('intro_tutoriel');
+    const state  = getNpcQuestState(npc);
+    const labels = _npcDialogActions(npc, state).map(a => a.label).join(' | ');
+    return {
+      offerableAtStart, eclatsActive,
+      eveilOfferable: isQuestOfferable('dumbledore_eveil'),
+      hasAccept:      /Accepter/.test(labels),
+      labels
+    };
+  });
+  console.log('  T3 parallèle:', t3);
+  assert(t3.offerableAtStart, 'eclats_clef_voute doit être offrable dès l\'étage 1');
+  assert(t3.eclatsActive,     'eclats_clef_voute doit s\'accepter');
+  assert(t3.eveilOfferable,   'dumbledore_eveil doit rester offrable malgré eclats actif (chaîne non gelée)');
+  assert(t3.hasAccept,        'le dialogue Dumbledore doit proposer une action « Accepter » (chaîne non gelée)');
+
+  // T4 : collecter 3 éclats → objectif rempli → remise consomme les éclats
+  // et distribue la récompense (or +150).
+  const t4 = await page.evaluate(() => {
+    player.inventory = player.inventory.filter(i => i.id !== 'eclat_voute');
+    const eclat = ITEMS.find(i => i.id === 'eclat_voute');
+    for (let i = 0; i < 3; i++) tryAddItem({ ...eclat }, { silent: true });
+    if (typeof _refreshObjectives === 'function') _refreshObjectives();
+    const q = activeQuests.find(x => x.id === 'eclats_clef_voute');
+    const ready = q && (q.objectives || []).every(o => o.completed);
+    // Baseline d'or connue : T2 a déclenché un combat synthétique dont le
+    // calcul d'or laisse player.gold non fiable. On mesure ici le DELTA de
+    // récompense, pas l'absolu.
+    const goldBefore = (player.gold = 100);
+    turnInQuestById('eclats_clef_voute');
+    return {
+      ready,
+      goldGain:  player.gold - goldBefore,
+      eclatsAfter: _countItems('eclat_voute'),
+      done:      completedQuests.has('eclats_clef_voute')
+    };
+  });
+  console.log('  T4 remise:', t4);
+  assert(t4.ready,            'objectif 3 éclats doit être rempli après collecte');
+  assert(t4.goldGain === 150, `remise doit donner 150 or, got ${t4.goldGain}`);
+  assert(t4.eclatsAfter === 0, 'les 3 éclats doivent être consommés à la remise');
+  assert(t4.done,             'eclats_clef_voute doit être marquée complétée');
+
+  // T5 : l'énigme des Fondateurs existe et pointe la bonne réponse.
+  const t5 = await page.evaluate(() => {
+    const r = getRiddleById('r_clef_voute');
+    return { exists: !!r, correct: r && r.choices[r.answer] };
+  });
+  console.log('  T5 énigme:', t5);
+  assert(t5.exists,                    'r_clef_voute doit exister dans RIDDLES');
+  assert(t5.correct === 'Les Fondateurs', `bonne réponse attendue « Les Fondateurs », got ${t5.correct}`);
+
+  // T6 : payoff narratif — la remise déclenche une scène de révélation
+  // paginée (questReady = 3 pages ≤ 280, voix ready_1..3 enregistrées).
+  const t6 = await page.evaluate(() => {
+    const dq = getNpcById('dumbledore').dialoguesByQuest.eclats_clef_voute;
+    const pages = dq.questReady;
+    return {
+      isArray:   Array.isArray(pages),
+      len:       Array.isArray(pages) ? pages.length : 0,
+      allWithin: Array.isArray(pages) && pages.every(p => p.length <= 280),
+      voiceKeys: (typeof AudioSystem !== 'undefined' && AudioSystem._VOICE_SAMPLES)
+        ? [1, 2, 3].map(n => !!AudioSystem._VOICE_SAMPLES['dumbledore_eclats_ready_' + n])
+        : []
+    };
+  });
+  console.log('  T6 révélation:', t6);
+  assert(t6.isArray && t6.len === 3, 'questReady eclats doit être une scène de 3 pages');
+  assert(t6.allWithin,               'chaque page de révélation doit tenir en 1 sous-page (≤ 280)');
+  assert(t6.voiceKeys.length === 3 && t6.voiceKeys.every(Boolean),
+    'les 3 clés voix dumbledore_eclats_ready_1..3 doivent être enregistrées');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS pendant le fil rouge Clé de Voûte`);
+  }
+  console.log('  ✅ fil rouge Clé de Voûte OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute] };

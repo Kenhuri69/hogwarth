@@ -73,6 +73,16 @@ const RIDDLES = [
     rewardHint: 'Une lumière argentée dissout la barrière.'
   },
   {
+    id: 'r_clef_voute',
+    question: 'Quatre sorciers unirent leur magie pour sceller, sous '
+            + "l'école, ce qu'elle fut bâtie pour oublier. Comment nomme-t-on "
+            + 'ces bâtisseurs ?',
+    choices: ['Les Mangemorts', 'Les Fondateurs', "L'Ordre du Phénix",
+              'Les Aurors'],
+    answer: 1,
+    rewardHint: 'La pierre reconnaît le nom des Quatre, et coulisse.'
+  },
+  {
     id: 'r_choixpeau',
     question: 'Posé sur la tête de chaque nouvel élève, je décide de la '
             + 'maison à laquelle il appartiendra. Qui suis-je ?',

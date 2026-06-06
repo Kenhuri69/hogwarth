@@ -1,6 +1,38 @@
 # Plan d'implémentation — Clé de Voûte des Quatre (ouverture & lore)
 
-**Statut :** 🟦 plan d'implémentation — à dérouler lot par lot.
+**Statut :** ✅ implémenté (2026-06-06, branche `claude/clef-de-voute-impl-Xzat1`).
+
+> **Décisions tranchées** (cf. §« Points à trancher ») : (1) cours = Histoire
+> de la Magie ; (2) héros = témoin (zéro branchement) ; (3) source des éclats =
+> drop garanti `chance:1.0` sur un monstre-jalon par tranche (Peeves 1-3,
+> Loup-Garou Enragé 4-6, Mangemort d'Élite 7-10) ; (4) donneur = **Dumbledore**,
+> avec **rework du moteur de dialogue** pour ne PAS geler sa chaîne (voir Lot 4
+> ci-dessous) ; (5) voix = **samples OGG générés** (intro 1-4, offre tutoriel,
+> éclats offer/active/ready_1 + révélation ready_2/3 en attente d'OGG).
+>
+> **Payoff narratif (suite, 2026-06-06)** : la remise des 3 éclats ne donne plus
+> seulement xp/or — `dialoguesByQuest.eclats_clef_voute.questReady` est devenu un
+> **tableau de 3 pages** (scène de révélation), affiché via le pager existant de
+> `npc-dialog.js`. Le bouton « Remettre » est gaté à la dernière page
+> (`_renderDialogPage`), forçant le joueur à lire la révélation. Contenu ancré
+> sur la **double révélation** de `03-trame-principale.md §3.4` (corruption
+> pré-Poudlard plus ancienne que les Fondateurs + Voldemort qui se reconstitue au
+> fond). Voix page-par-page `dumbledore_eclats_ready_1..3` (1 généré ; 2-3 muets
+> jusqu'à fourniture des OGG). Test : `scenarioCleVoute` T6.
+>
+> **Écart notable (Lot 4)** : le moteur `getNpcQuestState` n'expose qu'UNE quête
+> actionnable par PNJ. Pour porter `eclats_clef_voute` en parallèle de la chaîne
+> de Dumbledore sans la geler, `_npcDialogActions` (`npc-dialog.js`) a été
+> retravaillé pour énumérer **toutes** les quêtes offrables/remettables du PNJ
+> (libellé générique si une seule, titré si plusieurs). Bonus : corrige aussi la
+> limitation latente des donneurs multi-quêtes (Kingsley/Bill/Sirius, qui ne
+> pouvaient en proposer qu'une à la fois). `eclats_clef_voute` est placé en fin
+> de `questsGiven` pour que la chaîne garde la priorité d'affichage du texte.
+>
+> **Tests** : `tests/scenarios/npc.js::scenarioCleVouteIntro` (4 pages d'intro)
+> + `tests/scenarios/quests.js::scenarioCleVoute` (item, drop garanti, quête
+> parallèle non-gelante, collecte+remise+consommation, énigme). Borne RIDDLES
+> élargie à 6-12 dans `dungeon.js`.
 **Source narrative :** [`docs/histoire/01-synopsis-et-pitch.md`](../../docs/histoire/01-synopsis-et-pitch.md) §1.1-1.2 et [`docs/histoire/03-trame-principale.md`](../../docs/histoire/03-trame-principale.md) §3.1-3.3 (commit `29415d8`).
 
 > Objectif : traduire en code les `💡 Pistes d'intégration` de la refonte du
@@ -229,9 +261,9 @@ sûr) → `Lot 3` → `Lot 4` → `Lot 6`. Chaque lot : code → `smoke.js` →
 
 ## Critères de succès global
 
-- [ ] L'intro raconte la scène du cours en pages paginées, puis choix de Maison.
-- [ ] Le portrait étage 1 référence la Clé de Voûte.
-- [ ] `eclat_voute` existe, a une icône, droppe une fois par tranche.
-- [ ] La quête `eclats_clef_voute` se complète sans bloquer la descente.
-- [ ] La stèle peut poser l'énigme des Fondateurs.
-- [ ] `node tests/smoke.js` vert ; cache bumpé ; docs à jour.
+- [x] L'intro raconte la scène du cours en pages paginées, puis choix de Maison.
+- [x] Le portrait étage 1 référence la Clé de Voûte.
+- [x] `eclat_voute` existe, a une icône, droppe une fois par tranche.
+- [x] La quête `eclats_clef_voute` se complète sans bloquer la descente.
+- [x] La stèle peut poser l'énigme des Fondateurs.
+- [x] `node tests/smoke.js` vert ; cache bumpé ; docs à jour.

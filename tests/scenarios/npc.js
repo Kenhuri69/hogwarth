@@ -1478,4 +1478,71 @@ async function scenarioOnboarding() {
   console.log('  ✅ onboarding (Quick Start + tuto combat + bonus Maison chiffrés) OK');
 }
 
-module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding] };
+// ── Cinématique d'intro « Clé de Voûte des Quatre » (Lot 1) ───────
+// L'intro raconte la scène du cours en 4 pages paginées, puis bascule
+// sur le choix de Maison. Vérifie pagination, contenu, bouton final et
+// auto-accept de la quête tutoriel.
+async function scenarioCleVouteIntro() {
+  console.log('\n── Scénario : cinématique d\'intro Clé de Voûte ──');
+  const { browser, page, errors } = await launchGame();
+
+  // Aller jusqu'à l'écran d'intro Dumbledore sans le terminer.
+  await page.evaluate(() => {
+    selectedPartySize = 1;
+    selectedHeroes    = ['harry'];
+    confirmHeroSelection();
+    chooseHouse('Gryffondor');
+  });
+  await page.waitForFunction(() =>
+    document.getElementById('intro-screen') &&
+    document.getElementById('intro-screen').style.display === 'flex',
+    { timeout: 3000 });
+
+  // T1 : 4 pages, la 1re est paginée « 1 / 4 » et mentionne la Clé de Voûte.
+  const t1 = await page.evaluate(() => {
+    return {
+      pages:    _introPages.length,
+      pager:    (document.querySelector('#intro-text .intro-pager') || {}).textContent || '',
+      mentionsRelic: _introPages.join(' ').includes('Clé de Voûte')
+    };
+  });
+  console.log('  T1 pages:', t1);
+  assert(t1.pages === 4,  `intro doit compter 4 pages, got ${t1.pages}`);
+  assert(/1\s*\/\s*4/.test(t1.pager), `pager attendu « 1 / 4 », got « ${t1.pager} »`);
+  assert(t1.mentionsRelic, 'l\'intro doit mentionner la Clé de Voûte');
+
+  // T2 : avancer jusqu'à la dernière page → bouton final présent.
+  const t2 = await page.evaluate(() => {
+    while (_introPage < _introPages.length - 1) _advanceIntro();
+    return {
+      page:   _introPage,
+      btnTxt: (document.querySelector('#intro-actions button') || {}).textContent || ''
+    };
+  });
+  console.log('  T2 final:', t2);
+  assert(t2.page === 3,                      'doit être sur la dernière page (index 3)');
+  assert(/Entrer à Poudlard/.test(t2.btnTxt), `bouton final attendu, got « ${t2.btnTxt} »`);
+
+  // T3 : finir l'intro → quête tutoriel acceptée + Dumbledore marqué vu.
+  const t3 = await page.evaluate(() => {
+    _finishIntro();
+    return {
+      introHidden: document.getElementById('intro-screen').style.display === 'none',
+      introQuest:  activeQuests.some(q => q.id === 'intro_tutoriel'),
+      seen:        seenNpcs.has('dumbledore')
+    };
+  });
+  console.log('  T3 finish:', t3);
+  assert(t3.introHidden, 'l\'écran d\'intro doit se cacher après _finishIntro');
+  assert(t3.introQuest,  'intro_tutoriel doit être auto-acceptée');
+  assert(t3.seen,        'dumbledore doit être marqué dans seenNpcs');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS pendant l'intro Clé de Voûte`);
+  }
+  console.log('  ✅ cinématique d\'intro Clé de Voûte OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro] };

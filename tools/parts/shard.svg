@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <g fill="#000000">
+    <!-- Corps principal de l'éclat : forme anguleuse et irrégulière évoquant un fragment de cristal brisé -->
+    <path data-region="shard_body" d="M 256 60 L 380 200 L 340 280 L 390 360 L 280 460 L 170 390 L 130 260 L 180 170 Z"></path>
+    <!-- Facette centrale : plan de clivage intérieur (rend le reflet du cristal) -->
+    <path data-region="shard_facet" d="M 256 60 L 340 280 L 280 460 L 130 260 Z"></path>
+    <!-- Pointe inférieure : apex de l'éclat, zone la plus fine et cristalline -->
+    <path data-region="shard_tip" d="M 280 460 L 320 430 L 390 360 L 340 280 L 280 460 Z"></path>
+  </g>
+</svg>

@@ -146,6 +146,21 @@ RECIPES: Dict[str, Recipe] = {
             {"kind": "orb_glow", "region": "gem", "color": (240, 90, 90)},
         ],
     ),
+    "eclat_voute": Recipe(
+        id="eclat_voute", name="Éclat de la Clé de Voûte", rarity="rare", material="glass",
+        silhouette={"kind": "svg", "file": "shard.svg"},
+        fills={
+            "shard_body":  (180, 210, 240),   # bleu-blanc glacé, translucide
+            "shard_facet": (220, 238, 255),   # plan de clivage plus clair, reflet givré
+            "shard_tip":   ( 90, 140, 195),   # pointe plus sombre, plus dense
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "shard_facet", "color": (245, 252, 255)},
+            {"kind": "orb_glow",        "region": "shard_body",  "color": (200, 228, 255)},
+            {"kind": "runes",           "region": "shard_body",  "color": ( 60, 110, 180),
+             "count": 4, "around": "body"},
+        ],
+    ),
     "felix": Recipe(
         id="felix", name="Félix Felicis", rarity="legendary", material="glass",
         silhouette={"kind": "svg", "file": "flask.svg"},

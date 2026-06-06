@@ -66,25 +66,26 @@ Dumbledore** (étage 1, première salle) confie la quête `intro_tutoriel`
 > l'Acte I (le familier qui se fissure) et la promesse de la descente — chaque
 > palier non purgé, c'est la fêlure qui s'élargit.
 
-> 💡 **Pistes d'intégration en jeu.**
-> - **Cinématique d'intro** (`intro.js`, lit `dumbledore.dialogues.greeting`) :
->   raconter la scène du cours en 3–4 pages paginées (cours → fêlure →
->   escaliers qui basculent → appel de Dumbledore), puis bascule vers le choix
->   de Maison.
-> - **Dialogue Dumbledore (portrait, étage 1)** : la 1ʳᵉ réplique peut
->   référencer la Clé de Voûte (« Tu as entendu la pierre se fendre, toi
+> **Pistes d'intégration en jeu.** (✅ livrées — plan
+> [`clef-de-voute-implementation.md`](../../.claude/plans/clef-de-voute-implementation.md))
+> - ✅ **Cinématique d'intro** (`intro.js`, lit `dumbledore.dialogues.greeting`) :
+>   la scène du cours est racontée en **4 pages paginées** (cours d'Histoire de
+>   la Magie → fêlure → escaliers qui basculent → appel de Dumbledore), puis
+>   bascule vers le choix de Maison.
+> - ✅ **Dialogue Dumbledore (portrait, étage 1)** : le `questOffer` d'intro
+>   référence la Clé de Voûte (« Tu as entendu la pierre se fendre, toi
 >   aussi… »).
-> - **Quêtes secondaires liées** (💡, non implémentées) : retrouver les
->   **éclats de la Clé de Voûte** en descendant (un par tranche), ou une stèle
->   d'énigme qui révèle le rôle des Fondateurs — relais de lore vers le
->   [02 §2.2](02-univers-ton-et-canon.md).
+> - ✅ **Quêtes secondaires liées** : la quête optionnelle **« Les Éclats de la
+>   Clé de Voûte »** (`eclats_clef_voute`, donnée par Dumbledore, hors-chaîne)
+>   fait collecter trois **éclats** (`eclat_voute`) en descendant — drop garanti
+>   sur un monstre-jalon par tranche (Peeves 1-3, Loup-Garou 4-6, Mangemort
+>   d'Élite 7-10). Une **stèle d'énigme** des Fondateurs (`r_clef_voute`) relaie
+>   le lore vers le [02 §2.2](02-univers-ton-et-canon.md). La descente reste la
+>   seule colonne obligatoire — aucune de ces quêtes ne gate l'escalier.
 
-> ❓ **À trancher** : (1) cours d'**Histoire de la Magie** (proposé) ou d'**Étude
-> des Runes** (la relique est runique, écho des Ruines 14+) ? (2) Le héros est-il
-> simple témoin, ou **involontairement impliqué** (un sort de routine, une
-> résonance avec sa Maison fraîchement choisie) — et veut-on le **mécaniser**
-> (variante de texte selon la Maison) ou le garder en saveur ? (3) Nom définitif
-> de la relique (« Clé de Voûte des Quatre » proposé).
+> ✅ **Tranché à l'implémentation** : (1) cours d'**Histoire de la Magie** ;
+> (2) héros **témoin** (saveur, sans branchement par Maison) ; (3) nom retenu :
+> **« Clé de Voûte des Quatre »**.
 
 ## 3.2 Acte I — L'École (étages 1–3)
 

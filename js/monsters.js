@@ -188,7 +188,9 @@ const MONSTERS = [
     resist: ["physique", "disarm"],
     weak:   ["lumière"],
     xp: 8, gold: { min: 2, max: 6 },
-    drops:  [{ itemId: "mandragore", chance: 0.10 }]
+    // Jalon tranche A (ét. 1-3) du fil rouge « Clé de Voûte » : drop garanti.
+    drops:  [{ itemId: "mandragore", chance: 0.10 },
+             { itemId: "eclat_voute", chance: 1.0 }]
   },
 
   {
@@ -596,11 +598,13 @@ const MONSTERS = [
     resist: [],
     weak:   ["feu"],
     xp: 45, gold: { min: 14, max: 22 },
+    // Jalon tranche B (ét. 4-6) du fil rouge « Clé de Voûte » : drop garanti.
     drops:  [
       { itemId: "mandragore",     chance: 0.25 },
       { itemId: "potion_s",       chance: 0.12 },
       { itemId: "herbe_aconit",   chance: 0.16 },
-      { itemId: "herbe_dictame",  chance: 0.10 }
+      { itemId: "herbe_dictame",  chance: 0.10 },
+      { itemId: "eclat_voute",    chance: 1.0 }
     ]
   },
 
@@ -957,12 +961,14 @@ const MONSTERS = [
     resist: ["ténèbres"],
     weak:   ["lumière"],
     xp: 70, gold: { min: 28, max: 42 },
+    // Jalon tranche C (ét. 7-10) du fil rouge « Clé de Voûte » : drop garanti.
     drops:  [
       { itemId: "potion_m",     chance: 0.25 },
       { itemId: "wand1",        chance: 0.10 },
       { itemId: "wand2",        chance: 0.05 },
       { itemId: "casque_aurore",chance: 0.04 },
-      { itemId: "cor_pegasse",  chance: 0.05 }
+      { itemId: "cor_pegasse",  chance: 0.05 },
+      { itemId: "eclat_voute",  chance: 1.0 }
     ]
   },
 
