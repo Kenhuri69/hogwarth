@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "mcp__096fe724-a89f-41b4-91ce-1f4333c57c98__create_file",
       "Bash(git -C \"C:/Personal/dev/hog\" remote -v)",
       "Bash(git -C \"C:/Personal/dev/hog\" branch -a)",
       "WebFetch(domain:game-icons.net)",
