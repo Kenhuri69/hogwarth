@@ -7,7 +7,18 @@
 > drop garanti `chance:1.0` sur un monstre-jalon par tranche (Peeves 1-3,
 > Loup-Garou Enragé 4-6, Mangemort d'Élite 7-10) ; (4) donneur = **Dumbledore**,
 > avec **rework du moteur de dialogue** pour ne PAS geler sa chaîne (voir Lot 4
-> ci-dessous) ; (5) voix = fallback silencieux (samples non générés).
+> ci-dessous) ; (5) voix = **samples OGG générés** (intro 1-4, offre tutoriel,
+> éclats offer/active/ready_1 + révélation ready_2/3 en attente d'OGG).
+>
+> **Payoff narratif (suite, 2026-06-06)** : la remise des 3 éclats ne donne plus
+> seulement xp/or — `dialoguesByQuest.eclats_clef_voute.questReady` est devenu un
+> **tableau de 3 pages** (scène de révélation), affiché via le pager existant de
+> `npc-dialog.js`. Le bouton « Remettre » est gaté à la dernière page
+> (`_renderDialogPage`), forçant le joueur à lire la révélation. Contenu ancré
+> sur la **double révélation** de `03-trame-principale.md §3.4` (corruption
+> pré-Poudlard plus ancienne que les Fondateurs + Voldemort qui se reconstitue au
+> fond). Voix page-par-page `dumbledore_eclats_ready_1..3` (1 généré ; 2-3 muets
+> jusqu'à fourniture des OGG). Test : `scenarioCleVoute` T6.
 >
 > **Écart notable (Lot 4)** : le moteur `getNpcQuestState` n'expose qu'UNE quête
 > actionnable par PNJ. Pour porter `eclats_clef_voute` en parallèle de la chaîne

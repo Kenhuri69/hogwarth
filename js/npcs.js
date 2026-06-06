@@ -113,10 +113,19 @@ const NPCS = [
         questReady:  "Tu l'as fait. Tu as tenu tête à l'ombre… et tu en sors plus lumineux qu'avant. Reçois ce dernier don — un fragment de moi-même, en somme — et continue ton chemin. Poudlard te doit beaucoup."
       },
       // Fil rouge « Clé de Voûte des Quatre » — quête de collecte optionnelle.
+      // `questReady` est un tableau : la remise des 3 éclats déclenche une
+      // SCÈNE DE RÉVÉLATION paginée (le payoff promis par `questOffer`).
+      // Voix page-par-page : dumbledore_eclats_ready_1..3 (1 généré, 2-3
+      // en fallback muet tant que les OGG ne sont pas fournis). Le bouton
+      // « Remettre » n'apparaît qu'à la dernière page (_renderDialogPage).
       eclats_clef_voute: {
         questOffer:  "La Clé de Voûte s'est brisée en éclats, dispersés au fil de ta descente. Rapporte-m'en trois : reconstituée, ne serait-ce qu'un instant, la relique des Fondateurs dira ce qu'elle a tu pendant mille ans.",
         questActive: "Les éclats sont froids, et ils chuchotent — tu les sens, n'est-ce pas ? Cherche-les sur ce qui rôde dans chaque profondeur du château. Trois suffiront.",
-        questReady:  "Trois éclats… donne-les-moi. Vois comme ils s'appellent les uns les autres. La Clé se souvient des Quatre qui l'ont forgée — et, à travers elle, Poudlard se souvient de toi."
+        questReady:  [
+          "Trois éclats… donne-les-moi. Vois comme ils s'appellent les uns les autres. La Clé se souvient des Quatre qui l'ont forgée — et, à travers elle, Poudlard se souvient de toi.",
+          "Les éclats se rejoignent, et pour un battement de cœur, la Clé redevient entière. Elle te livre son secret : les Quatre ne l'ont pas forgée pour fermer une salle, mais pour sceller ce qui sommeillait déjà sous la colline — plus ancien que Poudlard, plus ancien qu'eux.",
+          "Mais la fêlure n'a pas qu'ouvert une porte : elle a réveillé ce qui patientait derrière. Tout au fond, dans le froid qui remonte, une ombre se reconstitue éclat après éclat — comme cette relique, à rebours. Les Quatre scellèrent le bas ensemble ; à toi de descendre l'affronter."
+        ]
       }
     }
   },

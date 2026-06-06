@@ -136,9 +136,12 @@ Object.assign(AudioSystem, {
     dumbledore_revelation_active_1: 'audio/voice/dumbledore_revelation_active_1.ogg',
     dumbledore_revelation_ready_1:  'audio/voice/dumbledore_revelation_ready_1.ogg',
     // ── Fil rouge « Clé de Voûte des Quatre » (Lot 4) — quête éclats ──
+    // questReady = scène de révélation en 3 pages → ready_1..3.
     dumbledore_eclats_offer_1:      'audio/voice/dumbledore_eclats_offer_1.ogg',
     dumbledore_eclats_active_1:     'audio/voice/dumbledore_eclats_active_1.ogg',
     dumbledore_eclats_ready_1:      'audio/voice/dumbledore_eclats_ready_1.ogg',
+    dumbledore_eclats_ready_2:      'audio/voice/dumbledore_eclats_ready_2.ogg',
+    dumbledore_eclats_ready_3:      'audio/voice/dumbledore_eclats_ready_3.ogg',
     // ── Quêtes farming (cf. .claude/plans/farming-quests.md §2) ──
     // 6 samples = 2 quêtes × 3 moments. Textes génériques (sans nom de
     // monstre / item, qui varient dynamiquement à l'écran).

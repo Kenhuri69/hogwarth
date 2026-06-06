@@ -1349,6 +1349,26 @@ async function scenarioCleVoute() {
   assert(t5.exists,                    'r_clef_voute doit exister dans RIDDLES');
   assert(t5.correct === 'Les Fondateurs', `bonne réponse attendue « Les Fondateurs », got ${t5.correct}`);
 
+  // T6 : payoff narratif — la remise déclenche une scène de révélation
+  // paginée (questReady = 3 pages ≤ 280, voix ready_1..3 enregistrées).
+  const t6 = await page.evaluate(() => {
+    const dq = getNpcById('dumbledore').dialoguesByQuest.eclats_clef_voute;
+    const pages = dq.questReady;
+    return {
+      isArray:   Array.isArray(pages),
+      len:       Array.isArray(pages) ? pages.length : 0,
+      allWithin: Array.isArray(pages) && pages.every(p => p.length <= 280),
+      voiceKeys: (typeof AudioSystem !== 'undefined' && AudioSystem._VOICE_SAMPLES)
+        ? [1, 2, 3].map(n => !!AudioSystem._VOICE_SAMPLES['dumbledore_eclats_ready_' + n])
+        : []
+    };
+  });
+  console.log('  T6 révélation:', t6);
+  assert(t6.isArray && t6.len === 3, 'questReady eclats doit être une scène de 3 pages');
+  assert(t6.allWithin,               'chaque page de révélation doit tenir en 1 sous-page (≤ 280)');
+  assert(t6.voiceKeys.length === 3 && t6.voiceKeys.every(Boolean),
+    'les 3 clés voix dumbledore_eclats_ready_1..3 doivent être enregistrées');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS pendant le fil rouge Clé de Voûte`);
