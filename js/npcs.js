@@ -579,8 +579,8 @@ const NPCS = [
       house: "Gryffondor",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
-    questsGiven:    ["golem_passage", "quest_set_gryff", "quest_don_gryff"],
-    questsTurnedIn: ["golem_passage", "quest_set_gryff", "quest_don_gryff"],
+    questsGiven:    ["golem_passage", "quest_signature_gryff", "quest_set_gryff", "quest_don_gryff"],
+    questsTurnedIn: ["golem_passage", "quest_signature_gryff", "quest_set_gryff", "quest_don_gryff"],
     dialogues: {
       greeting:    [
         "Un Gardien du Portail s'est éveillé dans les passages secrets. Il bloque l'accès à des connaissances précieuses.",
@@ -601,6 +601,11 @@ const NPCS = [
       questReady:  "Excellent travail. Voici votre récompense, bien méritée."
     },
     dialoguesByQuest: {
+      quest_signature_gryff: {
+        questOffer:  "Un Chevalier Fantôme veille encore sur l'Étendard de Godric — il monte la garde depuis un siège oublié, parce que personne ne lui a dit qu'il pouvait partir. Reprenez la bannière qui ne s'incline jamais. Un meneur passe devant pour que les autres passent.",
+        questActive: "L'Étendard est-il repris ? Le château retient son souffle avec vous.",
+        questReady:  "Vous l'avez repris. Godric n'aurait pas mieux fait. La Bannière de Godric vous attend — repassez la réclamer."
+      },
       quest_set_gryff: {
         questOffer:  "Une Chimère rôde dans les profondeurs. Trois de ces bêtes — pas une de moins — et vous aurez gagné le Cœur du Lion. M'accordez-vous ce service ?",
         questActive: "Les Chimères tiennent-elles encore tête à un lion ?",
@@ -626,8 +631,8 @@ const NPCS = [
       house: "Serpentard",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
-    questsGiven:    ["quest_set_slyth", "quest_don_slyth"],
-    questsTurnedIn: ["quest_set_slyth", "quest_don_slyth"],
+    questsGiven:    ["quest_signature_slyth", "quest_set_slyth", "quest_don_slyth"],
+    questsTurnedIn: ["quest_signature_slyth", "quest_set_slyth", "quest_don_slyth"],
     dialogues: {
       greeting: [
         "Tiens, tiens... un élève de ma maison qui ose s'aventurer ici.",
@@ -645,6 +650,11 @@ const NPCS = [
       ]
     },
     dialoguesByQuest: {
+      quest_signature_slyth: {
+        questOffer:  "Sous les cachots, une voix murmure : l'écho de Salazar, scellé avec la corruption qu'il a aidé à enfermer. Un Basilic garde son secret. Je vous montre le chemin… mais méfiez-vous : ce n'est pas un démon, c'est un Fondateur qui a fait, mille ans plus tôt, le choix qui vous attend.",
+        questActive: "Le Basilic garde toujours le secret de Salazar ? L'écho est patient. Pas moi.",
+        questReady:  "Vous avez percé la vérité de l'écho. Reste à choisir, et ce choix-là n'appartient qu'à vous : sceller le Pacte, ou défier Salazar."
+      },
       quest_set_slyth: {
         questOffer:  "Trois Basilics Mineurs souillent les cachots oubliés. Élimine-les. Sans bruit, sans gloire. La Couronne du Basilic n'est pas pour les vantards.",
         questActive: "Encore en vie ? Surprenant. Le travail n'est pas terminé.",
@@ -670,8 +680,8 @@ const NPCS = [
       house: "Serdaigle",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
-    questsGiven:    ["quest_set_raven", "quest_don_raven"],
-    questsTurnedIn: ["quest_set_raven", "quest_don_raven"],
+    questsGiven:    ["quest_signature_raven", "quest_set_raven", "quest_don_raven"],
+    questsTurnedIn: ["quest_signature_raven", "quest_set_raven", "quest_don_raven"],
     dialogues: {
       greeting: [
         "Oh ! Un esprit aiguisé, n'est-ce pas ? L'aigle de Serdaigle se reconnaît au premier regard.",
@@ -689,6 +699,11 @@ const NPCS = [
       ]
     },
     dialoguesByQuest: {
+      quest_signature_raven: {
+        questOffer:  "Oh ! Vous voyez une catastrophe ? Moi, une question mal posée. Le Gardien du Portail veille sur les derniers feuillets du Codex de Rowena — le traité où elle consigna ce que la Clé scellait vraiment. Recomposez-le : comprendre, c'est désamorcer. Rowena l'a écrit en sachant qu'elle mourrait avant de le finir.",
+        questActive: "Le Gardien protège-t-il encore les feuillets du Codex ? Le savoir s'écrit dans la patience.",
+        questReady:  "Vous avez recomposé le Codex ! Magnifique — vous avez compris ce que même les professeurs n'osent nommer. Le Codex de Rowena vous revient ; venez le réclamer."
+      },
       quest_set_raven: {
         questOffer:  "Hécate la Maudisseuse dévore nos grimoires interdits. Trois de ses avatars, voilà ce qu'il faut anéantir — et l'Anneau du Savoir sera vôtre.",
         questActive: "Le savoir s'écrit dans le silence — combien d'avatars d'Hécate avez-vous réduits au néant ?",
@@ -714,8 +729,8 @@ const NPCS = [
       house: "Poufsouffle",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
-    questsGiven:    ["quest_set_pouf", "quest_don_pouf", "quest_garden_sprout", "quest_garden_sprout_2"],
-    questsTurnedIn: ["quest_set_pouf", "quest_don_pouf", "quest_garden_sprout", "quest_garden_sprout_2"],
+    questsGiven:    ["quest_signature_pouf", "quest_set_pouf", "quest_don_pouf", "quest_garden_sprout", "quest_garden_sprout_2"],
+    questsTurnedIn: ["quest_signature_pouf", "quest_set_pouf", "quest_don_pouf", "quest_garden_sprout", "quest_garden_sprout_2"],
     dialogues: {
       greeting: [
         "Ah, un Poufsouffle ! La loyauté finit toujours par porter ses fruits — comme mes plantes.",
@@ -733,6 +748,11 @@ const NPCS = [
       ]
     },
     dialoguesByQuest: {
+      quest_signature_pouf: {
+        questOffer:  "Quand le château bascule, tout le monde regarde vers le bas. Toi, regarde autour : combien sont restés coincés ? Bâtissons le Refuge du Blaireau, et repousse la vague d'Inferi qui menace les égarés. On n'avance pas vite — on avance sûrement, et ensemble. Que personne ne soit oublié au fond.",
+        questActive: "Le Refuge tient-il encore, mon petit ? Trois Inferi repoussés, et nos rescapés dormiront tranquilles.",
+        questReady:  "Tu les as tous protégés. On comptera les vies que tu as sauvées, pas les monstres. Le Cœur du Refuge t'attend — repasse le réclamer."
+      },
       quest_set_pouf: {
         questOffer:  "Trois Trolls des Cavernes terrorisent les passages — patience et loyauté, racine après racine. Le Médaillon de Helga récompensera ton serment.",
         questActive: "Trois trolls, et pas un de moins. Garde la tête haute.",

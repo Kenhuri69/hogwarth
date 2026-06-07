@@ -253,7 +253,7 @@ function chooseHouse(house) {
     // pas non plus : elles s'activent par `acceptQuest` depuis un autre
     // déclencheur (trouver un feuillet), jamais par un bouton « Accepter ».
     availableQuests = new Set(
-      QUEST_TEMPLATES.filter(t => !t.houseSetQuest && !t.implicitAccept).map(t => t.id)
+      QUEST_TEMPLATES.filter(t => !t.houseSetQuest && !t.houseSignatureQuest && !t.implicitAccept).map(t => t.id)
     );
     completedQuests = new Set();
   }
@@ -481,6 +481,10 @@ async function startGame(count = 2) {
   player.grimoirePages = [];
   hiverClair = false;   // passif Acte III non éveillé en début de partie
   headlessHuntMember = false;  // easter egg Chasse Sans Tête non débloqué
+  // Quêtes Signature de Maison — état neuf à chaque partie.
+  gryffSignatureDone = false; slythSignatureDone = false;
+  ravenSignatureDone = false; poufSignatureDone  = false;
+  slythPactChoice    = null;
   searchedCells = new Map();
   // Jardin d'herbes (Potions P6.b3) — état neuf à chaque partie. generateDungeon(1)
   // ne pose aucun jardin (étage 3+), le reset après est donc sûr.

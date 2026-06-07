@@ -159,6 +159,12 @@ const ITEM_ICON_REGISTRY = {
   heaume_vaillant:     'img/icons/items/chapeau_pointu.png',
   cape_godric:         'img/icons/items/cape_invis.png',
   coeur_lion:          'img/icons/items/locket_slytherin.png',
+  // Reliques des Quêtes Signature de Maison — alias legacy (fallback +
+  // couverture du test ; le rendu réel passe par ITEM_ICON_NEW_REGISTRY).
+  banniere_godric:     'img/icons/items/sword_gryff.png',
+  langue_de_plomb:     'img/icons/items/locket_slytherin.png',
+  codex_rowena:        'img/icons/items/livre_sortileges.png',
+  coeur_refuge:        'img/icons/items/coupe_poufsouffle.png',
   // Set du Serpent (Serpentard)
   pendentif_mamba:     'img/icons/items/locket_slytherin.png',
   cape_sibylline:      'img/icons/items/cape_invis.png',
@@ -298,6 +304,11 @@ const ITEM_ICON_NEW_REGISTRY = {
   heaume_vaillant:      'img/icons_new/heaume_vaillant_64.png',
   cape_godric:          'img/icons_new/cape_godric_64.png',
   coeur_lion:           'img/icons_new/coeur_lion_64.png',
+  // Reliques des Quêtes Signature de Maison (painterly, priorité runtime)
+  banniere_godric:      'img/icons_new/banniere_godric_64.png',
+  langue_de_plomb:      'img/icons_new/langue_de_plomb_64.png',
+  codex_rowena:         'img/icons_new/codex_rowena_64.png',
+  coeur_refuge:         'img/icons_new/coeur_refuge_64.png',
   // Set du Serpent (Serpentard)
   pendentif_mamba:      'img/icons_new/pendentif_mamba_64.png',
   cape_sibylline:       'img/icons_new/cape_sibylline_64.png',

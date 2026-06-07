@@ -89,6 +89,11 @@ function _serializeState() {
     combatTutorialSeen,
     hiverClair,
     headlessHuntMember,
+    gryffSignatureDone,
+    slythSignatureDone,
+    ravenSignatureDone,
+    poufSignatureDone,
+    slythPactChoice,
     ironmanMode,
     totalKills,
     monsterKills:  { ...monsterKills },
@@ -325,6 +330,12 @@ function _applyState(gs) {
   // Passif Hiver Clair (Manon Acte III) : saves antérieures → false.
   if (typeof hiverClair !== 'undefined') hiverClair = !!gs.hiverClair;
   if (typeof headlessHuntMember !== 'undefined') headlessHuntMember = !!gs.headlessHuntMember;
+  // Quêtes Signature de Maison : saves antérieures → false/null.
+  if (typeof gryffSignatureDone !== 'undefined') gryffSignatureDone = !!gs.gryffSignatureDone;
+  if (typeof slythSignatureDone !== 'undefined') slythSignatureDone = !!gs.slythSignatureDone;
+  if (typeof ravenSignatureDone !== 'undefined') ravenSignatureDone = !!gs.ravenSignatureDone;
+  if (typeof poufSignatureDone  !== 'undefined') poufSignatureDone  = !!gs.poufSignatureDone;
+  if (typeof slythPactChoice    !== 'undefined') slythPactChoice    = gs.slythPactChoice || null;
   // Mode Ironman : saves antérieures à l'ajout du mode → false/0/vide.
   ironmanMode     = !!gs.ironmanMode;
   totalKills      = (typeof gs.totalKills === 'number') ? gs.totalKills : 0;

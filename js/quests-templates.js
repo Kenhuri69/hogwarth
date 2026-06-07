@@ -714,5 +714,65 @@ const QUEST_TEMPLATES = [
     location: "Serres de Botanique (étage 3)",
     houseMytheQuest: true,
     house: "Poufsouffle"
+  },
+
+  // ── Quêtes Signature de Maison (Actes I-III) ─────────────────
+  // Gatées par `chosenHouse` + l'étage (unlockHouseSignatureQuest, appelée
+  // au franchissement de l'étage déclencheur via checkFloorQuests), distinctes
+  // du set (tier 12) et du don (Mythe). Une seule active par partie ; remise
+  // cérémonielle de la relique (houseSetReward → pendingHouseRewards). À la
+  // remise, completeQuest pose le flag <house>SignatureDone (levier one-shot
+  // avant Voldemort). Cf. docs/histoire/08 §8.5.
+  {
+    id: "quest_signature_gryff",
+    title: "L'Étendard de Godric",
+    giver: "Professeur McGonagall",
+    desc: "Un Chevalier Fantôme — Gryffondor tombé en défendant le château — garde encore l'Étendard de Godric, la bannière qui ne s'incline jamais. Reprends-la : un meneur passe devant pour que les autres passent.",
+    objectives: [
+      { type: "kill", monsterId: "chevalier_fantome", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 700, gold: 320, houseSetReward: "banniere_godric" },
+    location: "Tour de Gryffondor (étage 5) — cible en Acte III",
+    houseSignatureQuest: true,
+    house: "Gryffondor"
+  },
+  {
+    id: "quest_signature_slyth",
+    title: "Le Pacte des Cachots",
+    giver: "Professeur Rogue",
+    desc: "Sous les cachots, l'écho de Salazar murmure — scellé avec la corruption qu'il a aidé à enfermer. Un Basilic garde son secret. Perce la vérité… puis choisis : sceller le Pacte, ou défier l'écho.",
+    objectives: [
+      { type: "kill", monsterId: "basilic", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 720, gold: 300, houseSetReward: "langue_de_plomb" },
+    location: "Cachots de Serpentard (étage 4) — cible en Acte II/III",
+    houseSignatureQuest: true,
+    house: "Serpentard"
+  },
+  {
+    id: "quest_signature_raven",
+    title: "Le Codex de Rowena",
+    giver: "Professeur Flitwick",
+    desc: "Le Gardien du Portail veille sur les derniers feuillets du Codex de Rowena — le traité perdu décrivant ce que la Clé scellait vraiment. Comprendre, c'est désamorcer : recompose le Codex et révèle la faille.",
+    objectives: [
+      { type: "kill", monsterId: "gardien_portail", amount: 1, progress: 0, completed: false }
+    ],
+    reward: { xp: 720, gold: 300, houseSetReward: "codex_rowena" },
+    location: "Salle des Aigles (étage 6) — cible en Acte III",
+    houseSignatureQuest: true,
+    house: "Serdaigle"
+  },
+  {
+    id: "quest_signature_pouf",
+    title: "Ceux qu'on ne laisse pas derrière",
+    giver: "Professeur Chourave",
+    desc: "Quand le château bascule, tous regardent vers le bas. Toi, regarde autour : des égarés sont restés coincés. Repousse la vague d'Inferi qui menace le Refuge du Blaireau — que personne ne soit oublié au fond.",
+    objectives: [
+      { type: "kill", monsterId: "inferius", amount: 3, progress: 0, completed: false }
+    ],
+    reward: { xp: 700, gold: 320, houseSetReward: "coeur_refuge" },
+    location: "Refuge du Blaireau (étage 3) — vague en Acte II/III",
+    houseSignatureQuest: true,
+    house: "Poufsouffle"
   }
 ];
