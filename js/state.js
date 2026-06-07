@@ -724,6 +724,22 @@ let hiverClair = false;
 // Cf. .claude/plans/headless-hunt-easter-egg.md.
 let headlessHuntMember = false;
 
+// Quêtes Signature de Maison — flag posé à la remise de la signature
+// (completeQuest). Un seul actif par partie (gate `chosenHouse` + étage).
+// Levier one-shot lu avant le combat final (voldemort_revenu). Réinitialisé
+// par startGame, persisté via _serializeState / _applyState.
+// Cf. .claude/plans/house-signature-quests-impl.md.
+let gryffSignatureDone = false;
+let slythSignatureDone = false;
+let ravenSignatureDone = false;
+let poufSignatureDone  = false;
+// Choix gris du Pacte des Cachots (Serpentard) : 'pact' | 'defiance' | null.
+let slythPactChoice    = null;
+// Buff de combat one-shot (combat-scoped, NON sérialisé) : pacte de Salazar
+// honoré → lifesteal de sort de 15 % pour le groupe. Armé par le levier
+// Voldemort, réinitialisé à chaque startBattle (comme recolteGoldBonus).
+let slythPactBuff      = false;
+
 // ============================================================
 // QUÊTES SECONDAIRES
 // ============================================================

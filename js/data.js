@@ -703,6 +703,12 @@ const ITEMS = [
   { id:"pendentif_ombre",   name:"Pendentif d'Ombre",              icon:"🦇", desc:"Acc — regen 3 PV/tour, dégâts critiques +20 %.", type:"acc", slot:"amulet", rarity:"epic", regenHp:3, bonusCritDamage:0.20, price:6000 },
   { id:"reliquaire_lunaire", name:"Reliquaire Lunaire",            icon:"🌙", desc:"Bibelot — gain d'or de combat +20 % (cumulable avec Récolte Magique).", type:"trinket", slot:"trinket", rarity:"legendary", bonusGoldMult:0.20, price:8000 },
   { id:"philtre_endurance", name:"Philtre d'Endurance",            icon:"🟢", desc:"+3 END permanent. Recette ancestrale — disponibilité fluctuante.", type:"consumable", effect:"perma_end", power:3, basePrice:3500, price:3500, rarityScales:true, rarity:"rare" },
+  // ── Récompenses des Quêtes Signature de Maison (remises cérémonielles) ──
+  // Cf. docs/histoire/08 §8.5 + .claude/plans/house-signature-quests-impl.md.
+  { id:"banniere_godric",  name:"Bannière de Godric",   icon:"🚩", desc:"Bibelot — l'Étendard qui ne s'incline jamais. Immunise le groupe contre la Peur tant qu'un héros la porte. ATK+2.", type:"trinket", slot:"trinket", family:"banner_godric", rarity:"legendary", bonusAtk:2, fearImmune:true, power:5, price:0, tint:"#d3a625" },
+  { id:"langue_de_plomb",  name:"Langue-de-plomb",      icon:"📿", desc:"Amulette — secret arraché à l'écho de Salazar. MAG+5 INT+2 · Régen +2 PM/tour.", type:"acc", slot:"amulet", family:"amulet_languedeplomb", rarity:"epic", bonusMag:5, bonusInt:2, regenSp:2, power:5, price:0, tint:"#1a472a" },
+  { id:"codex_rowena",     name:"Codex de Rowena",      icon:"📘", desc:"Bibelot — le traité perdu de Rowena Serdaigle. INT+4 MAG+2 · le savoir révèle les failles de l'ennemi.", type:"trinket", slot:"trinket", family:"codex_rowena", rarity:"epic", bonusInt:4, bonusMag:2, power:4, price:0, tint:"#0e1a40" },
+  { id:"coeur_refuge",     name:"Cœur du Refuge",       icon:"🏅", desc:"Bibelot — forgé par Helga pour ceux qu'on ne laisse pas derrière. DEF+2 END+2 · Régen +2 PV/+1 PM par tour.", type:"trinket", slot:"trinket", family:"trinket_refuge", rarity:"epic", bonusDef:2, bonusEnd:2, regenHp:2, regenSp:1, power:4, price:0, tint:"#f0c75e" },
   // ── Herbes (ingrédients de potion) — type:"herb" ─────────────
   // Routées vers la besace d'herboriste (player.herbs), pas le sac.
   // Voir .claude/plans/farming-potion-system.md.

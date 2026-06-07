@@ -489,7 +489,11 @@ function _spellSpCost(spell) {
 // dégâts d'un sort offensif en PV pour le lanceur. Retourne le soin
 // effectif (0 si le passif est inactif ou le lanceur déjà au max).
 function _applySerpentLifesteal(char, dmg) {
-  if (typeof houseApotheosePassive !== 'function' || houseApotheosePassive() !== 'Serpentard') return 0;
+  // Source 1 : Apothéose Serpentard (Soif du Serpent). Source 2 : Pacte des
+  // Cachots honoré au combat final (slythPactBuff, signature Serpentard).
+  const apo  = (typeof houseApotheosePassive === 'function') && houseApotheosePassive() === 'Serpentard';
+  const pact = (typeof slythPactBuff !== 'undefined') && slythPactBuff;
+  if (!apo && !pact) return 0;
   if (!char || dmg <= 0) return 0;
   const heal = Math.min(char.hpMax - char.hp, Math.max(1, Math.floor(dmg * 0.15)));
   if (heal > 0) { char.hp += heal; UX_safe.floatDmg('ally', heal, 'heal'); }

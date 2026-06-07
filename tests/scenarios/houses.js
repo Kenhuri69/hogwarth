@@ -1413,4 +1413,146 @@ async function scenarioHeadOfHouseVoice() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice] };
+async function scenarioHouseSignatureQuests() {
+  console.log('\n── Scénario : Quêtes Signature de Maison (4 Maisons) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const HOUSES = [
+    { house:'Gryffondor', qid:'quest_signature_gryff', floor:2, mob:'chevalier_fantome', amount:1, head:'mcgonagall', reward:'banniere_godric', flag:'gryffSignatureDone' },
+    { house:'Serpentard', qid:'quest_signature_slyth', floor:4, mob:'basilic',           amount:1, head:'rogue',      reward:'langue_de_plomb', flag:'slythSignatureDone' },
+    { house:'Serdaigle',  qid:'quest_signature_raven', floor:2, mob:'gardien_portail',    amount:1, head:'flitwick',   reward:'codex_rowena',    flag:'ravenSignatureDone' },
+    { house:'Poufsouffle',qid:'quest_signature_pouf',  floor:2, mob:'inferius',           amount:3, head:'sprout',     reward:'coeur_refuge',    flag:'poufSignatureDone' },
+  ];
+
+  // T1 : cycle complet par Maison — gate étage, accept, kill, remise (flag),
+  // remise cérémonielle de la relique par le Chef de Maison.
+  for (const H of HOUSES) {
+    const r = await page.evaluate((H) => {
+      chosenHouse = H.house;
+      availableQuests.delete(H.qid);
+      activeQuests = activeQuests.filter(q => q.id !== H.qid);
+      completedQuests.delete(H.qid);
+      pendingHouseRewards = new Set();
+      // En dessous de l'étage déclencheur → pas d'ouverture.
+      currentFloor = H.floor - 1; checkFloorQuests(currentFloor);
+      const beforeUnlock = availableQuests.has(H.qid);
+      // Étage déclencheur atteint → ouverture.
+      currentFloor = H.floor; checkFloorQuests(currentFloor);
+      const unlocked = availableQuests.has(H.qid);
+      acceptQuest(H.qid);
+      const active = activeQuests.some(q => q.id === H.qid);
+      for (let i = 0; i < H.amount; i++) checkKillQuests(H.mob);
+      const q = activeQuests.find(x => x.id === H.qid);
+      const stepDone = q ? q.objectives[0].completed : false;
+      const turned = (H.qid === 'quest_signature_slyth')
+        ? turnInSlythSignature('defiance')
+        : turnInQuestById(H.qid);
+      const flags = { gryffSignatureDone, slythSignatureDone, ravenSignatureDone, poufSignatureDone };
+      const pending = pendingHouseRewards.has(H.reward);
+      triggerNpcSpecialAction(H.head);
+      const inInv = (player.inventory || []).some(i => i && i.id === H.reward);
+      return { beforeUnlock, unlocked, active, stepDone, turned, flagSet: flags[H.flag], pending, inInv };
+    }, H);
+    console.log(`  ${H.house} →`, r);
+    assert(!r.beforeUnlock, `${H.house}: signature ouverte trop tôt (avant étage ${H.floor})`);
+    assert(r.unlocked,      `${H.house}: signature non ouverte à l'étage déclencheur`);
+    assert(r.active,        `${H.house}: acceptQuest a échoué`);
+    assert(r.stepDone,      `${H.house}: objectif kill non complété`);
+    assert(r.turned,        `${H.house}: remise échouée`);
+    assert(r.flagSet,       `${H.house}: flag ${H.flag} non posé à la remise`);
+    assert(r.pending,       `${H.house}: relique non routée vers pendingHouseRewards (cérémonie)`);
+    assert(r.inInv,         `${H.house}: relique non reçue après cérémonie chez ${H.head}`);
+  }
+
+  // T2 : le choix gris Serpentard fige slythPactChoice.
+  const pactChoice = await page.evaluate(() => {
+    slythSignatureDone = false; slythPactChoice = null;
+    activeQuests = activeQuests.filter(q => q.id !== 'quest_signature_slyth');
+    completedQuests.delete('quest_signature_slyth');
+    availableQuests.add('quest_signature_slyth');
+    chosenHouse = 'Serpentard';
+    acceptQuest('quest_signature_slyth');
+    checkKillQuests('basilic');
+    turnInSlythSignature('pact');
+    return { choice: slythPactChoice, done: slythSignatureDone };
+  });
+  console.log('  T2 choix Pacte →', pactChoice);
+  assert(pactChoice.choice === 'pact', 'turnInSlythSignature(pact) doit poser slythPactChoice="pact"');
+  assert(pactChoice.done, 'slythSignatureDone non posé via turnInSlythSignature');
+
+  // T3 : leviers one-shot sur le combat final (voldemort_revenu), gardés par flag.
+  const lever = await page.evaluate(() => {
+    currentFloor = 1;   // solo étage 1 → groupe d'1 ennemi (boss seul, déterministe)
+    const pool = (typeof MONSTERS !== 'undefined') ? MONSTERS : ENEMIES;
+    const vBase = pool.find(m => m.id === 'voldemort_revenu');
+    const mk = () => JSON.parse(JSON.stringify(vBase));
+    const hasFear = (g) => (g[0].phases || []).some(ph => ph.gainAbility && ph.gainAbility.statusId === 'fear');
+    const out = { srcHadFear: (vBase.phases || []).some(ph => ph.gainAbility && ph.gainAbility.statusId === 'fear') };
+
+    gryffSignatureDone = slythSignatureDone = ravenSignatureDone = poufSignatureDone = false;
+
+    // Gryffondor — neutralise la phase terreur.
+    chosenHouse = 'Gryffondor'; gryffSignatureDone = true;
+    startBattle(mk()); out.gryffFearGone = !hasFear(enemyGroup); inBattle = false;
+    gryffSignatureDone = false;
+
+    // Contrôle : flag off → la phase terreur subsiste.
+    startBattle(mk()); out.controlFearKept = hasFear(enemyGroup); inBattle = false;
+
+    // Serdaigle — révèle une faiblesse lumière.
+    chosenHouse = 'Serdaigle'; ravenSignatureDone = true;
+    startBattle(mk()); out.ravenWeakLight = (enemyGroup[0].weak || []).includes('lumière'); inBattle = false;
+    ravenSignatureDone = false;
+
+    // Serpentard Pacte — arme le lifesteal de sort.
+    chosenHouse = 'Serpentard'; slythSignatureDone = true; slythPactChoice = 'pact';
+    startBattle(mk()); out.pactBuff = (slythPactBuff === true); inBattle = false;
+
+    // Serpentard Défiance — affaiblit la frappe du boss.
+    slythPactChoice = 'defiance'; const atk0 = mk().atk;
+    startBattle(mk()); out.defianceWeaker = enemyGroup[0].atk < atk0; inBattle = false;
+    slythSignatureDone = false;
+
+    // Poufsouffle — buff de départ « Espoir partagé ».
+    chosenHouse = 'Poufsouffle'; poufSignatureDone = true;
+    party[0].hpMax = 40; party[0].hp = 40; const hp0 = party[0].hp;
+    startBattle(mk()); out.poufBoost = party[0].hp > hp0; inBattle = false;
+    poufSignatureDone = false;
+
+    return out;
+  });
+  console.log('  T3 leviers Voldemort →', lever);
+  assert(lever.srcHadFear,      'pré-condition : voldemort_revenu doit avoir une phase terreur');
+  assert(lever.gryffFearGone,   'Gryffondor : phase terreur non neutralisée');
+  assert(lever.controlFearKept, 'Contrôle : phase terreur supprimée sans le flag (fuite)');
+  assert(lever.ravenWeakLight,  'Serdaigle : faiblesse lumière non révélée');
+  assert(lever.pactBuff,        'Serpentard Pacte : slythPactBuff non armé');
+  assert(lever.defianceWeaker,  'Serpentard Défiance : frappe du boss non affaiblie');
+  assert(lever.poufBoost,       'Poufsouffle : buff de départ « Espoir partagé » absent');
+
+  // T4 : la Bannière de Godric immunise le groupe contre la peur.
+  const ward = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    party[0].equipped = party[0].equipped || {};
+    party[0].equipped.trinket = { ...ITEMS.find(i => i.id === 'banniere_godric') };
+    party[0].hp = party[0].hpMax; party[0].statusEffects = [];
+    applyStatus(party[0], 'fear', 0, 3);
+    const orig = Math.random; Math.random = () => 0.0;   // forcerait le skip sans la garde
+    const skip = rollFearSkip(party[0]);
+    Math.random = orig;
+    return { feared: isFeared(party[0]), skip };
+  });
+  console.log('  T4 garde anti-peur →', ward);
+  assert(ward.feared,         'statut peur non appliqué');
+  assert(ward.skip === false, 'Bannière de Godric doit immuniser le groupe contre la peur');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Quêtes Signature de Maison conformes (cycle + leviers Voldemort + garde anti-peur)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests] };

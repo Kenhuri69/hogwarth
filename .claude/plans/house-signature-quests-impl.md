@@ -39,4 +39,49 @@ herb/riddle/pages) conformes au conseil 08 §8.5.2.
 
 ## Journal
 
-- (à compléter à chaque lot)
+- **Recensement** : 3 sous-agents Sonnet ont cartographié quest/NPC/state-save-battle.
+  Constats clés : `chevalier_fantome` est un **monstre** (pas un PNJ) ; aucun PNJ
+  écho de Salazar → on réutilise les **4 Chefs de Maison** comme donneurs (la
+  bible les liste comme alternatives), avec `dialoguesByQuest` + cérémonie
+  `claim_house_reward`. `_houseClaimableItems` dérive les items réclamables des
+  paliers + set → étendu avec une map signature.
+- **Lot 1 (flags)** ✅ — `state.js` (5 flags + `slythPactBuff` combat-scoped),
+  `save.js` (serialize + restore `!!`/`||null`), `main.js` (reset startGame).
+- **Lot 2 (items)** ✅ — `data.js` : `banniere_godric` (trinket `fearImmune`),
+  `langue_de_plomb` (amulet MAG/regen), `codex_rowena` (trinket INT/MAG),
+  `coeur_refuge` (trinket regen). Emoji fallback (pas d'icône PNG — hors scope).
+- **Lot 3 (templates)** ✅ — 4 `quest_signature_*` (`houseSignatureQuest`,
+  `house`, objectif `kill`, `houseSetReward`). Exclus du startup via
+  `!t.houseSignatureQuest` (main.js).
+- **Lot 4 (unlock)** ✅ — `unlockHouseSignatureQuest` + `HOUSE_SIGNATURE_FLOORS`
+  {Gryff 2, Slyth 4, Raven 2, Pouf 2} ; `_maybeUnlockSignature(floor)` branché
+  dans `checkFloorQuests`.
+- **Lot 5 (PNJ + dialogues)** ✅ — 4 Chefs : `questsGiven`/`questsTurnedIn` +
+  `dialoguesByQuest[signature]`. `_houseClaimableItems` étendu. Choix gris
+  Serpentard : 2 boutons de remise → `turnInSlythSignature(pact|defiance)`.
+  Flag posé dans `completeQuest` via `_markSignatureDone`.
+- **Lot 6 (leviers Voldemort)** ✅ — `_applySignatureVoldemortLever()` (startBattle) :
+  🦁 neutralise la phase terreur · 🦅 weak `lumière` · 🐍 pacte→`slythPactBuff`
+  (lifesteal de sort, hook dans `_applySerpentLifesteal`) / défiance→−15 % atk/mag
+  boss · 🦡 +15 PV max départ. + garde anti-peur de groupe `fearImmune`
+  (`rollFearSkip`/`_partyFearWardActive`). Réplique Dumbledore = addMsg (pur dialogue).
+- **Lot 7 (tests)** ✅ — `scenarioHouseSignatureQuests` (cycle 4 Maisons + choix
+  Pacte + 5 leviers + garde anti-peur). `node tests/smoke.js signature` ✅,
+  `node tests/units.js` ✅ (67 assertions).
+- **Lot 8 (cache PWA)** ✅ — 11 js bumpés (index.html + sw.js) + `CACHE_VERSION`
+  v67→v68. `check_cache_versions.js` ✅, `tests/pwa-smoke.js` ✅ (cache v68, 85
+  entrées, offline OK). Item-icons : 4 entrées SVG inline ajoutées (couverture
+  100 % du test `scenarioItemIcons`, pas de PNG requis).
+- **Suite complète** ✅ — `node tests/smoke.js` : **163 scénarios, 0 échec**.
+- **Lot 9 (commit/push)** ✅ — branche `claude/house-signature-quests-CWEGq`.
+
+## Hors-scope assumé (cadré `❓` dans la bible, non implémenté)
+
+- Raccourcis Serpentard (transitions d'étage alternatives — refonte movement/dungeon).
+- Escorte / vague défensive / refuge-repos Poufsouffle comme mécaniques neuves
+  → remplacés par des **proxys kill** (conforme 08 §8.5.2 « types existants »).
+- Objectifs `riddle`/`pages` Serdaigle → proxy kill (turn-in PNJ robuste ; les
+  riddle/pages se remettent via établi, pas via le bouton PNJ).
+- Icônes painterly PNG des 4 reliques (fallback SVG inline suffisant) ; PNJ
+  dédié écho de Salazar / Chevalier non-hostile (réutilisation des Chefs).
+- Vrai « deux Maisons simultanées » en duo (refacto `chosenHouse` par perso).

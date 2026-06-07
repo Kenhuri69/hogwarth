@@ -159,10 +159,70 @@ function isFeared(actor) {
   return !!(actor && actor.statusEffects &&
             actor.statusEffects.some(s => s.id === 'fear' && s.turns > 0));
 }
+// Garde anti-peur de groupe : true si un membre vivant porte un équipement
+// `fearImmune` (relique Bannière de Godric — signature Gryffondor). Protège
+// tout le groupe ; n'affecte jamais les ennemis (cf. rollFearSkip).
+function _partyFearWardActive() {
+  if (typeof party === 'undefined') return false;
+  for (const c of party.slice(0, partySize)) {
+    if (!c || c.hp <= 0 || !c.equipped) continue;
+    for (const it of Object.values(c.equipped)) {
+      if (it && it.fearImmune) return true;
+    }
+  }
+  return false;
+}
+
 // rollFearSkip : true si l'acteur est apeuré ET échoue le jet (50 %).
-// Ne consomme rien — la durée est décomptée par tickStatuses.
+// Ne consomme rien — la durée est décomptée par tickStatuses. La Bannière
+// de Godric immunise les héros (pas les ennemis).
 function rollFearSkip(actor) {
-  return isFeared(actor) && Math.random() < 0.5;
+  if (!isFeared(actor)) return false;
+  if (typeof party !== 'undefined' && party.slice(0, partySize).includes(actor)
+      && _partyFearWardActive()) return false;
+  return Math.random() < 0.5;
+}
+
+// Levier one-shot des Quêtes Signature de Maison sur le combat final
+// (voldemort_revenu), gardé par <house>SignatureDone. Volontairement LÉGER :
+// une réplique de Dumbledore (addMsg, pur dialogue) + un modificateur de combat.
+// No-op hors du boss final ou si la signature de la Maison n'est pas remise.
+function _applySignatureVoldemortLever() {
+  if (!enemyGroup.length) return;
+  const boss = enemyGroup[0];
+  if (!boss || boss.id !== 'voldemort_revenu') return;
+  if (typeof chosenHouse === 'undefined' || !chosenHouse) return;
+  const msg = (t) => { if (typeof addMsg === 'function') addMsg(t, 'magic'); };
+
+  if (chosenHouse === 'Gryffondor' && typeof gryffSignatureDone !== 'undefined' && gryffSignatureDone) {
+    // 🦁 Neutralise la phase terreur (la peur à 25 % PV).
+    if (Array.isArray(boss.phases)) {
+      boss.phases = boss.phases.filter(ph => !(ph.gainAbility && ph.gainAbility.statusId === 'fear'));
+    }
+    msg("🦁 Le portrait de Dumbledore : « Le château a entendu ton pas ne pas reculer. » L'Étendard de Godric tient la terreur en respect.");
+  } else if (chosenHouse === 'Serdaigle' && typeof ravenSignatureDone !== 'undefined' && ravenSignatureDone) {
+    // 🦅 Révèle une faille : Voldemort devient vulnérable à la lumière.
+    boss.weak = Array.isArray(boss.weak) ? boss.weak.slice() : [];
+    if (!boss.weak.includes('lumière')) boss.weak.push('lumière');
+    msg("🦅 Dumbledore : « Tu as lu ce que Rowena n'a pu achever. » Le Codex révèle une faille : la lumière le blesse désormais.");
+  } else if (chosenHouse === 'Serpentard' && typeof slythSignatureDone !== 'undefined' && slythSignatureDone) {
+    if (slythPactChoice === 'pact') {
+      slythPactBuff = true;   // lifesteal de sort (15 %) ce combat
+      msg("🐍 Voldemort marque un temps : « Nous nous ressemblons. » Le pacte de Salazar nourrit ta magie.");
+    } else {
+      boss.atk = Math.round((boss.atk || 0) * 0.85);
+      if (boss.mag) boss.mag = Math.round(boss.mag * 0.85);
+      msg("🐍 Tu as retourné le secret de Salazar contre lui. Voldemort connaît la trahison — sa frappe faiblit.");
+    }
+  } else if (chosenHouse === 'Poufsouffle' && typeof poufSignatureDone !== 'undefined' && poufSignatureDone) {
+    // 🦡 « Espoir partagé » : filet de sécurité (+PV max transient), pas une arme.
+    let any = false;
+    for (const c of party.slice(0, partySize)) {
+      if (!c || c.hp <= 0) continue;
+      c.hpMax += 15; c.hp += 15; any = true;
+    }
+    if (any) msg("🦡 « Espoir partagé » — les rescapés du Refuge t'envoient leur force. Tu n'es pas descendu seul, même si tu étais seul à descendre.");
+  }
 }
 
 // ── Imperius : asservissement (l'ennemi frappe ses alliés) ───
@@ -436,6 +496,7 @@ function startBattle(baseEnemyData, opts) {
   legilimensCancelCharges = 0;
   legilimensCastsThisFight = 0;
   recolteGoldBonus        = false;
+  slythPactBuff           = false;   // signature Serpentard : armé par le levier Voldemort
   if (typeof window._resetTeleportFightFlag === 'function') window._resetTeleportFightFlag();
 
   // Duel multijoueur : groupe pré-construit ; sinon tirage 1-3 monstres.
@@ -460,6 +521,8 @@ function startBattle(baseEnemyData, opts) {
 
   // Marquer les ennemis comme découverts dans le bestiaire (hors duellistes).
   enemyGroup.forEach(e => { if (e.id && !e.isDuelist) seenMonsters.add(e.id); });
+  // Levier one-shot des Quêtes Signature de Maison sur le combat final.
+  _applySignatureVoldemortLever();
   const size = enemyGroup.length;
 
   document.getElementById('encounter-overlay').style.display = 'flex';

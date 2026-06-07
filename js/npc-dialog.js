@@ -141,6 +141,12 @@ function _houseClaimableItems(house) {
       if (!ids.includes(id)) ids.push(id);
     }
   }
+  // Récompense de la Quête Signature (remise cérémonielle par le Chef de Maison).
+  const sig = {
+    Gryffondor: 'banniere_godric', Serpentard: 'langue_de_plomb',
+    Serdaigle:  'codex_rowena',    Poufsouffle: 'coeur_refuge',
+  }[house];
+  if (sig && !ids.includes(sig)) ids.push(sig);
   return ids;
 }
 
@@ -434,6 +440,18 @@ function _npcDialogActions(npc, state) {
     return (tpl && tpl.title) || q;
   };
   for (const qid of turnInable) {
+    // Signature Serpentard : choix gris à la remise (Pacte ou Défiance).
+    if (qid === 'quest_signature_slyth') {
+      out.push({
+        label: '<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Sceller le Pacte de Salazar',
+        onClick: `turnInSlythSignature('pact'); openNpcDialog('${npc.id}');`
+      });
+      out.push({
+        label: '<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Défier l\'écho de Salazar',
+        onClick: `turnInSlythSignature('defiance'); openNpcDialog('${npc.id}');`
+      });
+      continue;
+    }
     out.push({
       label: multi ? `Remettre : ${titleOf(qid)}` : 'Remettre la quête',
       onClick: `turnInQuestById('${qid}'); openNpcDialog('${npc.id}');`

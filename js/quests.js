@@ -60,6 +60,72 @@ function unlockHouseMytheQuest(house) {
 }
 window.unlockHouseMytheQuest = unlockHouseMytheQuest;
 
+// Map Maison → Quête Signature (Actes I-III).
+const HOUSE_SIGNATURE_QUESTS = {
+  Gryffondor:  'quest_signature_gryff',
+  Serpentard:  'quest_signature_slyth',
+  Serdaigle:   'quest_signature_raven',
+  Poufsouffle: 'quest_signature_pouf',
+};
+
+// Étage déclencheur par Maison : la signature s'ouvre dès que le joueur
+// atteint cet étage (gate `chosenHouse` + étage, distinct du prestige).
+const HOUSE_SIGNATURE_FLOORS = {
+  Gryffondor: 2, Serpentard: 4, Serdaigle: 2, Poufsouffle: 2,
+};
+
+// Ouvre la Quête Signature de la Maison choisie. Idempotent (ignoré si la
+// quête est déjà connue). Symétrique de unlockHouseQuest / unlockHouseMytheQuest,
+// mais gaté par l'étage (cf. _maybeUnlockSignature, appelé par checkFloorQuests)
+// plutôt que par un palier de prestige.
+function unlockHouseSignatureQuest(house) {
+  const qid = HOUSE_SIGNATURE_QUESTS[house];
+  if (!qid) return false;
+  if (activeQuests.some(q => q.id === qid)) return false;
+  if (completedQuests.has(qid)) return false;
+  if (availableQuests.has(qid)) return false;
+  availableQuests.add(qid);
+  if (typeof addMsg === 'function') {
+    const tpl = getQuestTemplate(qid);
+    addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête Signature de Maison : « ${tpl ? tpl.title : qid} »`, 'magic');
+  }
+  if (typeof updateQuestTracker === 'function') updateQuestTracker();
+  return true;
+}
+window.unlockHouseSignatureQuest = unlockHouseSignatureQuest;
+
+// Tente d'ouvrir la signature de la Maison choisie au franchissement de
+// l'étage déclencheur. No-op sans `chosenHouse` ; idempotent.
+function _maybeUnlockSignature(floor) {
+  if (typeof chosenHouse === 'undefined' || !chosenHouse) return;
+  const trigger = HOUSE_SIGNATURE_FLOORS[chosenHouse];
+  if (typeof trigger !== 'number') return;
+  if (floor >= trigger) unlockHouseSignatureQuest(chosenHouse);
+}
+window._maybeUnlockSignature = _maybeUnlockSignature;
+
+// Pose le flag <house>SignatureDone à la remise de la signature (lu comme
+// levier one-shot avant Voldemort). Pour Serpentard, fige aussi le choix
+// gris à 'defiance' par défaut si turnInSlythSignature ne l'a pas posé.
+function _markSignatureDone(house) {
+  if (house === 'Gryffondor'  && typeof gryffSignatureDone !== 'undefined') gryffSignatureDone = true;
+  else if (house === 'Serpentard' && typeof slythSignatureDone !== 'undefined') {
+    slythSignatureDone = true;
+    if (typeof slythPactChoice !== 'undefined' && !slythPactChoice) slythPactChoice = 'defiance';
+  }
+  else if (house === 'Serdaigle'  && typeof ravenSignatureDone !== 'undefined') ravenSignatureDone = true;
+  else if (house === 'Poufsouffle' && typeof poufSignatureDone  !== 'undefined') poufSignatureDone  = true;
+}
+
+// Remise de la signature Serpentard avec choix gris Pacte / Défiance. Le
+// dialogue de Rogue (npc-dialog.js) expose deux boutons qui appellent cette
+// fonction ; le flag slythPactChoice oriente ensuite le levier Voldemort.
+function turnInSlythSignature(choice) {
+  slythPactChoice = (choice === 'pact') ? 'pact' : 'defiance';
+  return turnInQuestById('quest_signature_slyth');
+}
+window.turnInSlythSignature = turnInSlythSignature;
+
 // IDs de monstres exclus du pool farming (bosses uniques scénaristiques).
 const FARMING_KILL_BLACKLIST = new Set([
   'bellatrix', 'voldemort_affaibli', 'voldemort_revenu', 'nagini'
@@ -602,6 +668,13 @@ function completeQuest(index) {
     headlessHuntMember = true;
   }
 
+  // Quête Signature de Maison : pose le flag <house>SignatureDone (levier
+  // one-shot lu avant le combat final). Le choix Pacte/Défiance (Serpentard)
+  // est posé en amont par turnInSlythSignature.
+  if (tpl && tpl.houseSignatureQuest && tpl.house) {
+    _markSignatureDone(tpl.house);
+  }
+
   // Retire de l'actif, marque comme rendue. Quêtes répétables : on
   // retient le niveau du joueur à la remise pour calculer le cooldown
   // lors d'une éventuelle ré-offre.
@@ -773,6 +846,8 @@ window.checkFloorQuests = function(floor) {
       }
     }
   });
+  // Ouvre la Quête Signature de Maison au franchissement de l'étage déclencheur.
+  _maybeUnlockSignature(floor);
 };
 
 // ── Helpers besace d'herboriste (étapes "herb") ──────────────────
