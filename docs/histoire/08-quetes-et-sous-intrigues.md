@@ -14,6 +14,55 @@
 
 ---
 
+## 8.0 La quête principale — refermer la Clé de Voûte
+
+> 🎯 **La descente EST la quête principale.** ✅ (tranché par le jeu) /
+> 💡 (mise en scène). Détail du déclencheur en [03 §3.1](03-trame-principale.md),
+> structure étages↔actes en [04](04-structure-actes-et-etages.md).
+
+Tout part de la **Clé de Voûte des Quatre** fêlée en plein cours d'Histoire de la
+Magie : le verrou que les Fondateurs avaient posé sur les Profondeurs se craquèle,
+le **froid surnaturel** monte, les **grands escaliers basculent vers le bas**, un
+portrait hurle sans fin. Le **portrait de Dumbledore** dit l'essentiel : *on ne
+rescelle pas d'en haut*. Il faut **descendre à contre-courant** jusqu'à la source —
+et la corruption recule devant qui n'a pas peur de descendre.
+
+### La colonne vertébrale (✅ verrou dur unique)
+```
+Intro (Clé de Voûte) → Maison → DESCENDRE étage par étage
+   → Acte I  (1-3)  le familier se fissure
+   → Acte II (4-6)  les cachots ; Voldemort se reconstitue au fond
+   → Acte III(7-10) les Profondeurs ; boss canon gardent la route
+   → CLIMAX  (10)   Voldemort Ressuscité → victoryAchieved
+   → Acte IV (11+)  la Boucle Ténébreuse (post-game)
+```
+> ✅ **Seul vrai verrou de progression** : la victoire sur `voldemort_revenu`
+> (étage 10) ouvre l'escalier scellé (`victoryAchieved`). **Aucune quête** — pas
+> même la chaîne Dumbledore — ne conditionne `goDeeper()`. Toute la suite (§8.2+)
+> est du **contenu optionnel** greffé sur cette colonne.
+
+### L'escorte narrative de la trame (✅ — chaîne Dumbledore)
+La quête principale n'a pas de « journal » unique : elle se **vit** en descendant,
+et le portrait de Dumbledore l'**escorte** via une chaîne optionnelle qui en
+verbalise chaque palier (fiche complète en [§8.2](#82-quêtes-de-départ--jalons---fiches)) :
+
+| Maillon ✅ | Beat de trame 💡 | Cible |
+|-----------|-------------------|-------|
+| `intro_tutoriel` | « Descends d'un étage. Le sceau t'attend plus bas. » | atteindre ét. 2 |
+| `dumbledore_eveil` | affronter sa **peur** (le sceau est tenu par la peur) | `boggart` |
+| `dumbledore_courage` | la bravoure face aux **fidèles** du retour | 2× `mangemort` |
+| `dumbledore_resistance` | l'**élite** garde la route de la source | `mangemort_elite` |
+| `dumbledore_revelation` | l'**ombre** avant le maître | `bellatrix` |
+| **Climax** ✅ | la chute de Voldemort scelle l'arc | `voldemort_revenu` |
+
+> 💡 **Lecture** : la chaîne Dumbledore est le *commentaire audio* de la quête
+> principale — elle dit tout haut ce que la descente fait tout bas. La **Quête
+> Signature** de la Maison (§8.5) s'y superpose comme une *voix de plus*, propre
+> au `chosenHouse`. Le **fil rouge** (Éclats & voix des Fondateurs, §8.6) en est
+> la **basse continue** : le *pourquoi* derrière le *comment*.
+
+---
+
 ## 8.1 Typologie des quêtes
 
 > 💡 (proposition de classification) / ✅ (les mécaniques d'objectif existent)
@@ -474,7 +523,135 @@ une quête acceptée est un clone en cours (`activeQuests`). Objectifs supporté
 
 ---
 
-## 8.6 Récapitulatif express (pour briefer Gemini)
+## 8.6 Fil rouge narratif — Éclats, voix des Fondateurs & révélation progressive
+
+> 💡 (mise en scène) / ✅ (ancrages code). Le fil rouge est la **basse continue**
+> de la trame ([§8.0](#80-la-quête-principale--refermer-la-clé-de-voûte)) : il ne
+> gate rien, mais récompense qui *écoute* le château en répondant à la question
+> « **qu'est-ce que la Clé scellait, au juste ?** ».
+
+### 8.6.1 Les Éclats de la Clé de Voûte (✅ `eclats_clef_voute`)
+- **Donneur :** ✅ Dumbledore (hors-chaîne, optionnel). **Objectif :** collecter
+  **3 `eclat_voute`** en descendant — ✅ **drop garanti** sur un **monstre-jalon
+  par tranche** : Peeves (1-3), Loup-Garou (4-6), Mangemort d'Élite (7-10).
+- **Sens 💡 :** chaque éclat est un fragment du *verrou* — le ramasser, c'est tenir
+  un morceau de ce que les Fondateurs ont craint. Les **3 tranches** d'éclats
+  épousent les **3 actes** : le fil rouge se reconstitue au rythme de la descente.
+- **Remise 💡 :** révèle la **double trame** ([03 §3.3](03-trame-principale.md)) — la
+  Clé scellait (a) une **corruption pré-Poudlard**, plus vieille que les Fondateurs,
+  **et** (b) tout au fond, **Voldemort** qui se nourrit de la fêlure pour se reformer.
+
+### 8.6.2 Les voix des Fondateurs (révélation distribuée)
+> 💡 Le lore des Fondateurs n'est jamais asséné : il **fuite** par quatre canaux,
+> chacun adressé à une sensibilité différente. C'est le cœur du fil rouge.
+
+| Canal | Porte d'entrée ✅ | Ce qu'il révèle 💡 |
+|-------|-------------------|---------------------|
+| **La stèle de la Clé** | `r_clef_voute` (devinette de stèle) | Ce que les Quatre ont scellé *ensemble* — le pacte fondateur. |
+| **L'écho de Salazar** | 🐍 *Pacte des Cachots* (§8.5) | Les Fondateurs ont scellé **une part d'eux-mêmes** avec le mal ; la tentation est un **miroir**, pas un démon. |
+| **Le Codex de Rowena** | 🦅 *Codex de Rowena* (§8.5) | Le traité perdu décrivant la **faille** de la corruption — le savoir comme **legs posthume**. |
+| **Le portrait de Dumbledore** | chaîne `dumbledore_*` + Lux Aeterna (§8.3) | Le **sens** (la peur comme sceau ; le souvenir heureux comme arme). |
+
+> 💡 **Convergence** : Gryffondor (l'Étendard) et Poufsouffle (le Refuge) répondent
+> au fil rouge par l'**acte** (rallier, protéger), Serpentard et Serdaigle par la
+> **connaissance** (pacte-miroir, Codex). Les quatre disent la même vérité sous
+> quatre angles — fidèle au thème *« quatre façons de vivre la même descente »*
+> ([07 §7.9](07-les-maisons.md)).
+
+### 8.6.3 Courbe de révélation progressive 💡
+```
+Acte I  (1-3)  Symptôme   : le froid, les escaliers, le portrait qui hurle.
+                            → « quelque chose s'est brisé. »  (1ᵉʳ éclat)
+Acte II (4-6)  Origine    : mangemorts + écho de Salazar.
+                            → « ce n'est pas qu'un accident : on l'attise. »  (2ᵉ éclat)
+Acte III(7-10) Vérité     : Codex / stèle nomment la corruption pré-Fondateurs.
+                            → « le verrou cachait deux choses, pas une. »  (3ᵉ éclat)
+Climax  (10)   Confrontation : Voldemort, pointe émergée du mal scellé.
+Boucle  (11+)  Revers     : refermer a OUVERT — le mythe attire le plus profond.
+```
+> ✅ **Garde-fou** : aucune étape du fil rouge ne **bloque** la descente. Un joueur
+> peut foncer au climax sans un seul éclat ; le fil rouge **enrichit** le *pourquoi*,
+> il ne le **conditionne** jamais (cohérent §8.0 / [03 §3.6](03-trame-principale.md)).
+
+---
+
+## 8.7 Structure par acte — synthèse quêtes ↔ étages
+
+> Vue d'ensemble pour caler le contenu sur le rythme de [04](04-structure-actes-et-etages.md).
+> ✅ acté / 💡 proposition. Greffe Signature selon `chosenHouse` ([§8.5](#85-quêtes-signature-par-maison-proposition-dextension)).
+
+| Acte / tranche | Trame principale ✅ | Secondaires & arcs ✅ | Greffe Signature 💡 | Fil rouge |
+|----------------|---------------------|------------------------|----------------------|-----------|
+| **I — L'École** (1-3, A) | `intro_tutoriel` ; `dumbledore_eveil` (peur) | Pomfresh (mandragore), Mimi (troll), Lockhart (livre), Hagrid (chouette) ; amorce Manon (ét. 3) | 🦁 Étendard s'ouvre · 🦡 Refuge s'ouvre · 🦅 1ʳᵉ stèle | **1ᵉʳ éclat** (Peeves) |
+| **II — La Descente** (4-6, B) | `dumbledore_courage`/`_resistance` (mangemorts) | Manon Acte II (Revelio, 5 pages) ; Lupin (Patronum) ; Slughorn (potions) | 🐍 Pacte des Cachots s'ouvre · brasiers du Lion · feuillets du Codex | **2ᵉ éclat** (Loup-Garou) ; écho de Salazar |
+| **III — Les Profondeurs** (7-10, C) | `dumbledore_revelation` (Bellatrix) ; boss canon | Kingsley (8), Bill (9), Sirius (10) ; Lux Aeterna (ét. 6→), Chasse Sans Tête | mini-boss / révélations ; **remise cérémonielle** de la récompense Signature | **3ᵉ éclat** (Mangemort d'Élite) ; Codex se nomme |
+| **Climax** (10, C) | ✅ `voldemort_revenu` → `victoryAchieved` | — | **réplique + modificateur one-shot** selon `<house>SignatureDone` | révélation : la double trame |
+| **IV — Boucle Ténébreuse** (11+, C→D) | descente infinie corrompue | Gardien de la Boucle (purges répétables) ; set@12 ; don@Mythe | écho mineur (Bannière déchirée / dernier pacte / pages ténébreuses / refuge à rétablir) | revers : refermer a ouvert |
+
+---
+
+## 8.8 Exemples de dialogues & choix impactants
+
+> 💡 Échantillons de ton (registre aventure → sombre, [02](02-univers-ton-et-canon.md)).
+> Pas de levier mécanique sauf mention `✅`/`flag`. Voix des PNJ en [06](06-pnj-et-factions.md).
+
+### 8.8.1 Dumbledore (portrait) — escorte de la trame
+- **À l'intro / `intro_tutoriel`** : « Tu as entendu la pierre se fendre, toi aussi.
+  Ce n'était pas un accident — c'était un *réveil*. Descends. Le château a besoin
+  d'un cœur qui n'a pas appris à reculer. »
+- **Avant Voldemort (générique)** : « Plus bas que la peur, il y a toujours autre
+  chose. Souviens-toi : ce n'est pas ta puissance qui scelle. C'est ton choix d'être
+  là. »
+- **Avant Voldemort, `gryffSignatureDone`** : « Le château a entendu ton pas ne pas
+  reculer. La terreur n'aura pas de prise sur toi cette fois. » *(✅ flag → neutralise
+  la phase terreur.)*
+- **Après la victoire, `slythPactChoice = pact`** *(Dumbledore plus froid)* : « Tu as
+  gagné. Veille seulement à rester celui qui parle — et non celui à qui l'on parle. »
+
+### 8.8.2 Le choix gris du Pacte des Cachots (🐍 — `slythPactChoice`)
+> ✅ **Choix impactant implémenté** : 2 boutons de remise → `turnInSlythSignature(pact|defiance)`.
+
+- **L'écho de Salazar (offre)** : « Je ne te demande pas ton âme, petit. Juste un
+  raccourci, et un secret qui ne t'appartient pas tout à fait. Le pouvoir t'écoute
+  déjà — il suffit de ne pas détourner le regard. »
+- **▶ Choix A — Sceller le pacte (`pact`)** : *bonus lifesteal de sort* ; Voldemort
+  *reconnaît* le héros au climax (« Nous nous ressemblons »), Dumbledore se refroidit.
+  → *« On gagne plus vite. On se demandera plus tard ce qu'on a laissé en chemin. »*
+- **▶ Choix B — Défier l'écho (`defiance`)** : *léger debuff sur le boss* (« il
+  connaît la trahison ») ; estime de Dumbledore préservée.
+  → *« Je connaissais ta voix, Salazar. Je ne lui ai juste pas obéi. »*
+
+### 8.8.3 Le serment du Refuge (🦡 — *Ceux qu'on ne laisse pas derrière*)
+- **Chourave (intro)** : « Tout le monde regarde vers le bas, vers le danger. Moi je
+  te demande de regarder *autour*. Combien sont restés coincés pendant que les murs
+  basculaient ? Ramène-les. Personne ne reste au fond. »
+- **Un égaré secouru (élève)** : « Tu… tu es redescendu *pour moi* ? » → flag de
+  rescapé ; réapparaît plus bas en petit donneur de bonus.
+- **L'elfe libéré (clin d'œil Dobby)** : « Là où on m'a traité comme quelqu'un, je
+  reste. » → ❓ allié-buff passif (flag sérialisé).
+
+### 8.8.4 Le Chevalier Fantôme (🦁 — *L'Étendard de Godric*)
+- **Confier l'Étendard** : « Je monte la garde depuis si longtemps que j'ai oublié
+  pourquoi. Toi, tu sais encore. Prends la bannière qui ne s'incline jamais — et
+  apprends qu'être devant, c'est faire passer les autres. »
+- **Dernier brasier rallumé (Boucle Ténébreuse)** : « Tu n'avais pas besoin de me
+  délivrer. Mais tu l'as fait quand même. *Ça*, c'est Gryffondor. »
+
+### 8.8.5 Le Codex de Rowena (🦅) & Manon (arc transverse)
+- **Feuillet du Codex décodé** : « Rowena l'a écrit en sachant qu'elle mourrait avant
+  de finir. Le savoir n'est pas un pouvoir, ici. C'est un *legs*. »
+- **Manon, au grimoire reconstitué** ([§8.3](#83-grands-arcs--sous-intrigues---fiches-détaillées))
+  : « Ma mère m'a menti seize ans. Mais ça… *(la dernière page : « pour toi »)* …ça,
+  elle ne l'a pas menti. » → ✅ `livre_glacius_tempete` + passif « Hiver Clair ».
+
+> 💡 **Règle de ton des choix** : les choix impactants du jeu sont **gris**, jamais
+> bien-contre-mal binaire (cf. thème *« le choix plutôt que le don »*,
+> [03 §3.7](03-trame-principale.md)). Chaque option a un **prix** lisible — le pacte
+> qui rend plus fort *et* refroidit Dumbledore en est le modèle.
+
+---
+
+## 8.9 Récapitulatif express (pour briefer Gemini)
 > La descente EST la quête principale ; les quêtes sont des **escortes**
 > (chaîne Dumbledore), de la **saveur/loot** (PNJ d'étage), des **arcs
 > émotionnels** autonomes (Manon/Élara, Lux Aeterna), des **réservées à la
