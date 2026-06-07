@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Banner / étendard, drawn with 3 explicit regions for the painterly pipeline:
+       pole (vertical staff + finial) · cloth (hanging flag with swallowtail bottom) ·
+       trim (top band of the cloth). Z-order back to front : pole → cloth → trim.
+       The cloth centroid (~285,250) hosts a House symbol. -->
+  <g fill="#000000">
+
+    <!-- pole : vertical staff with a round finial on top -->
+    <path data-region="pole" d="M 128 72 L 150 72 L 150 470 L 128 470 Z"/>
+    <path data-region="pole" d="M 139 60 m -17 0 a 17 17 0 1 0 34 0 a 17 17 0 1 0 -34 0"/>
+
+    <!-- cloth : rectangular flag with a notched swallowtail bottom -->
+    <path data-region="cloth" d="M 150 96 L 420 96 L 420 412 L 285 352 L 150 412 Z"/>
+
+    <!-- trim : decorative band along the top of the cloth -->
+    <path data-region="trim" d="M 150 96 L 420 96 L 420 134 L 150 134 Z"/>
+  </g>
+</svg>

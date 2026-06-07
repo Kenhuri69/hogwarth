@@ -74,6 +74,13 @@ herb/riddle/pages) conformes au conseil 08 §8.5.2.
   100 % du test `scenarioItemIcons`, pas de PNG requis).
 - **Suite complète** ✅ — `node tests/smoke.js` : **163 scénarios, 0 échec**.
 - **Lot 9 (commit/push)** ✅ — branche `claude/house-signature-quests-CWEGq`.
+- **Lot 10 (icônes painterly)** ✅ — 4 recettes dans `tools/icon_factory.py`
+  (palettes Maison + emblèmes lion/snake/eagle/badger) + nouveau part
+  `tools/parts/banner.svg` (étendard pole/cloth/trim) pour la Bannière. 20 PNG
+  générés (`img/icons_new/<id>_{16..64}.png`). Câblés dans `ITEM_ICON_NEW_REGISTRY`
+  (rendu) + alias legacy dans `ITEM_ICON_REGISTRY` (fallback/couverture test) ;
+  retrait des SVG inline (qui shadowaient le PNG). `scenarioItemIcons` ✅
+  (146 items mappés).
 
 ## Hors-scope assumé (cadré `❓` dans la bible, non implémenté)
 

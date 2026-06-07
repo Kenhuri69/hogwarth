@@ -1379,6 +1379,72 @@ RECIPES: Dict[str, Recipe] = {
              "color": (240, 220, 255), "size": 90},
         ],
     ),
+
+    # ── Reliques des Quêtes Signature de Maison ─────────────────────────
+    # Bannière de Godric (Gryffondor) : étendard rouge à trim/hampe or, lion.
+    "banniere_godric": Recipe(
+        id="banniere_godric", name="Bannière de Godric", rarity="legendary", material="matte",
+        silhouette={"kind": "svg", "file": "banner.svg"},
+        fills={
+            "cloth": (116,   0,   1),    # rouge Gryffondor
+            "trim":  (211, 166,  37),    # or
+            "pole":  (188, 148,  60),    # hampe dorée
+        },
+        accents=[
+            {"kind": "emboss", "region": "cloth", "color": ( 60,   0,   0)},
+            {"kind": "symbol", "region": "cloth", "shape": "lion",
+             "color": (224, 184,  76), "size": 150},
+        ],
+        sparkles=True,
+    ),
+    # Langue-de-plomb (Serpentard) : médaillon vert serti d'argent, serpent.
+    "langue_de_plomb": Recipe(
+        id="langue_de_plomb", name="Langue-de-plomb", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={
+            "chain":   (170, 170, 170),   # argent Serpentard
+            "setting": (140, 140, 140),
+            "gem":     ( 26,  71,  42),   # vert Serpentard
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (120, 220, 160)},
+            {"kind": "orb_glow",        "region": "gem", "color": ( 60, 200, 140)},
+            {"kind": "symbol", "region": "setting", "shape": "snake",
+             "color": (200, 200, 200), "size": 90},
+        ],
+    ),
+    # Codex de Rowena (Serdaigle) : grimoire bleu nuit, dorures bronze, aigle.
+    "codex_rowena": Recipe(
+        id="codex_rowena", name="Codex de Rowena", rarity="epic", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={
+            "cover": ( 14,  26,  64),    # bleu Serdaigle
+            "pages": (220, 206, 168),
+            "spine": (  8,  16,  44),
+            "gilt":  (148, 107,  45),    # bronze
+        },
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": (  6,  14,  36)},
+            {"kind": "symbol", "region": "cover", "shape": "eagle",
+             "color": (200, 156,  76), "size": 140},
+        ],
+    ),
+    # Cœur du Refuge (Poufsouffle) : médaillon or à pierre d'ambre, blaireau.
+    "coeur_refuge": Recipe(
+        id="coeur_refuge", name="Cœur du Refuge", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={
+            "chain":   (240, 199,  94),   # or Poufsouffle
+            "setting": (211, 166,  37),
+            "gem":     (200, 128,  36),   # ambre chaud
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (255, 212, 140)},
+            {"kind": "orb_glow",        "region": "gem", "color": (240, 176,  72)},
+            {"kind": "symbol", "region": "setting", "shape": "badger",
+             "color": ( 60,  46,  36), "size": 90},
+        ],
+    ),
 }
 
 
