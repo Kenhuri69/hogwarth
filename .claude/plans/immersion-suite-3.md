@@ -194,14 +194,17 @@ zone de combat à la victoire, pour rendre le gain tangible.
 - **Vérif** : `scenarioLootLoop` (volet J1) — `lootPop` existe ; appel avec
   un item réel → couche montée/retirée sans throw ; reduced-motion safe.
 
-### J2. Fioriture de level-up (optionnel)
+### J2. Fioriture de level-up ✅ (livré 2026-06-08)
 Renforcer le moment du level-up (déjà sonore via `playLevelUp`) d'un
 **flash doré** discret sur la modale / le HUD.
 
 - **Action** : effet CSS bref déclenché à l'ouverture de `#levelup-modal`,
   via une classe transitoire. reduced-motion → no-op.
 - **Vérif** : volet J2 du scénario — classe posée, pas de throw.
-- **Statut** : optionnel, à faire en dernier si le budget le permet.
+- **Statut** : ✅ livré. `DungeonFX.levelUpFlash()` pose `.dfx-levelup-flash`
+  sur `.levelup-box`. Hooké dans `_grantLevel` (`battle-rewards.js`) à
+  l'ouverture de `#levelup-modal`, à côté du burst E3. Seul site d'ouverture
+  de la modale (les paliers de Maison passent par `addMsg`, pas la modale).
 
 ---
 
@@ -215,7 +218,10 @@ Renforcer le moment du level-up (déjà sonore via `playLevelUp`) d'un
 5. **H1** — bob de caméra (présence physique).
 6. **H2** — variation de pas par surface. ✅
 7. **I2** — renfort d'ambiance des événements (à cadrer minimal). ✅
-8. **G3** ✅ / **J2** — optionnels, si budget.
+8. **G3** ✅ / **J2** ✅ — optionnels, si budget.
+
+> **Backlog clos le 2026-06-08** : les 9 items (G1·G2·G3 / H1·H2 / I1·I2 /
+> J1·J2) sont livrés et mergés. Plus aucun reste.
 
 Chaque item = une PR dédiée, smoke vert, journal mis à jour.
 
@@ -358,4 +364,19 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
   (`tests/scenarios/fx.js`). smoke (167) + units (83) + pwa-smoke (v76) verts.
   **Bumps** : `combat-fx.js` (9→10), `combat-fx.css` (10→11), `battle.js`
   (25→26) ; `CACHE_VERSION` v75 → v76. Pas de nouveau global (méthode de
-  `CombatFX`) → loader inchangé.
+  `CombatFX`) → loader inchangé. Mergé en **PR #419**.
+- 2026-06-08 : **J2 livré** (branche `claude/immersion-j2-levelup-flourish`).
+  `DungeonFX.levelUpFlash()` (`dungeon-fx.js`) pose la classe transitoire
+  `.dfx-levelup-flash` sur `.levelup-box` — bref flash doré (glow ambré qui
+  enfle + léger éclaircissement, ~700 ms), en complément du son
+  (`playLevelUp`) et de la gerbe E3 (`burst`). CSS pur (`dungeon-fx.css`),
+  reduced-motion → no-op (le module ne pose pas la classe). Hooké dans
+  `_grantLevel` (`battle-rewards.js`) à l'ouverture de `#levelup-modal`, à
+  côté du `burst` E3 — seul site d'ouverture de la modale (les paliers de
+  Maison passent par `addMsg`). Test : volets **V5/V5b** ajoutés à
+  `scenarioDungeonVfx` (`tests/scenarios/fx.js`) — API, classe posée par
+  l'appel direct ET par le call-site réel `checkLevelUp`, no-op sous
+  reduced-motion. smoke (167) + units (83) + pwa-smoke (v77) verts.
+  **Bumps** : `dungeon-fx.js` (5→6), `dungeon-fx.css` (4→5), `battle-rewards.js`
+  (5→6) ; `CACHE_VERSION` v76 → v77. Pas de nouveau global (méthode de
+  `DungeonFX`) → loader inchangé. **Backlog Immersion suite 3 clos.**

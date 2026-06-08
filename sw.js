@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v76';
+const CACHE_VERSION = 'hogwarth-v77';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -34,7 +34,7 @@ const PRECACHE_URLS = [
   './css/help-tour.css?v=2',
   './css/pwa.css?v=1',
   './css/combat-fx.css?v=11',
-  './css/dungeon-fx.css?v=4',
+  './css/dungeon-fx.css?v=5',
   './css/cinematics.css?v=1',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
@@ -69,7 +69,7 @@ const PRECACHE_URLS = [
   './js/textures.js?v=1',
   './js/renderer.js?v=13',
   './js/renderer-effects.js?v=12',
-  './js/dungeon-fx.js?v=5',
+  './js/dungeon-fx.js?v=6',
   './js/cinematics.js?v=2',
   './js/renderer-sprites.js?v=4',
   './js/renderer-entities.js?v=2',
@@ -79,7 +79,7 @@ const PRECACHE_URLS = [
   './js/movement-interactions.js?v=12',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=26',
-  './js/battle-rewards.js?v=5',
+  './js/battle-rewards.js?v=6',
   './js/battle-death.js?v=3',
   './js/teleport.js?v=1',
   './js/battle-spells.js?v=11',
