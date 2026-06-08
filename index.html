@@ -20,6 +20,7 @@
 <link rel="stylesheet" href="css/combat-fx.css?v=11">
 <link rel="stylesheet" href="css/dungeon-fx.css?v=5">
 <link rel="stylesheet" href="css/cinematics.css?v=1">
+<link rel="stylesheet" href="css/frost.css?v=1">
 <link rel="manifest" href="manifest.json?v=2">
 <meta name="theme-color" content="#c9a84c">
 <link rel="apple-touch-icon" href="img/icons/pwa/apple-touch-icon.png?v=2">
@@ -523,6 +524,9 @@
   <div class="main-view">
     <div class="scene-viewport">
       <canvas id="dungeon-canvas" role="application" aria-label="Vue du donjon en trois dimensions. Utilisez les flèches ou le pavé directionnel pour vous déplacer."></canvas>
+
+      <!-- Overlay givre/corruption (floor-ambiance.js) — opacité pilotée par JS -->
+      <div id="frost-overlay" aria-hidden="true"></div>
 
       <!-- Mini-carte pixel dans le coin (mobile uniquement, informatif) -->
       <div id="minimap-corner" aria-hidden="true"></div>
@@ -1101,6 +1105,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/data.js?v=24"></script>
 <script src="js/data-icon-recipes.js?v=1"></script>
 <script src="js/floor-themes.js?v=2"></script>
+<script src="js/floor-ambiance.js?v=1"></script>
 <script src="js/floor-events.js?v=1"></script>
 <script src="js/room-flavor.js?v=1"></script>
 <script src="js/item-icons.js?v=19"></script>
@@ -1121,8 +1126,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/renderer-sprites.js?v=4"></script>
 <script src="js/renderer-entities.js?v=2"></script>
 <script src="js/renderer-minimap.js?v=7"></script>
-<script src="js/movement.js?v=29"></script>
-<script src="js/movement-floors.js?v=5"></script>
+<script src="js/movement.js?v=30"></script>
+<script src="js/movement-floors.js?v=6"></script>
 <script src="js/movement-interactions.js?v=12"></script>
 <script src="js/swipe-canvas.js?v=4"></script>
 <script src="js/battle.js?v=26"></script>
@@ -1162,7 +1167,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/forge.js?v=3"></script>
 <script src="js/library.js?v=3"></script>
 <script src="js/help-tour.js?v=3"></script>
-<script src="js/loader.js?v=28"></script>
+<script src="js/loader.js?v=29"></script>
 <script src="js/pwa.js?v=3"></script>
 
 </body>
