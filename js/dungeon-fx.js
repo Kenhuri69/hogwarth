@@ -71,11 +71,31 @@ let _dungeonFxTimer = null;
     const cv = document.getElementById('dungeon-canvas');
     if (!cv) return;
     const cls = intensity === 'heavy' ? 'dfx-shake-heavy' : 'dfx-shake-light';
-    cv.classList.remove('dfx-shake-light', 'dfx-shake-heavy');
+    // Retire aussi un éventuel bob de pas (H1) en cours : un piège déclenché
+    // au même pas doit prendre le dessus proprement (même propriété transform).
+    cv.classList.remove('dfx-shake-light', 'dfx-shake-heavy', 'dfx-bob', 'dfx-bob-back');
     void cv.offsetWidth; // reflow → permet de rejouer l'animation
     cv.classList.add(cls);
     clearTimeout(_shakeTimer);
     _shakeTimer = setTimeout(() => cv.classList.remove(cls), 450);
+  }
+
+  // ── Bob de pas (H1) : léger plongeon vertical amorti à l'avancée ──
+  // Donne un ressenti physique au déplacement, distinct du shakeView brutal
+  // des pièges. `dir` ∈ 'forward' | 'back' (reculer = amplitude atténuée via
+  // une classe dédiée). Classe CSS transitoire sur le canvas, retirée après
+  // l'anim. No-op sous reduced-motion.
+  let _bobTimer = null;
+  function stepBob(dir) {
+    if (prefersReducedMotion()) return;
+    const cv = document.getElementById('dungeon-canvas');
+    if (!cv) return;
+    const cls = dir === 'back' ? 'dfx-bob-back' : 'dfx-bob';
+    cv.classList.remove('dfx-bob', 'dfx-bob-back');
+    void cv.offsetWidth; // reflow → permet de rejouer l'animation
+    cv.classList.add(cls);
+    clearTimeout(_bobTimer);
+    _bobTimer = setTimeout(() => cv.classList.remove(cls), 220);
   }
 
   // ── Gerbe d'interaction (E3) : étincelles sur un overlay/modale ──
@@ -122,7 +142,7 @@ let _dungeonFxTimer = null;
     setTimeout(cleanup, 800);
   }
 
-  window.DungeonFX = { startDungeonFxLoop, shakeView, burst };
+  window.DungeonFX = { startDungeonFxLoop, shakeView, stepBob, burst };
   // Exposé aussi en global nu pour les call-sites existants (main.js / save.js).
   window.startDungeonFxLoop = startDungeonFxLoop;
 })();

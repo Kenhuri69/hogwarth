@@ -118,6 +118,10 @@ function _step(dir, faceDir) {
   if (typeof healSpellCooldown === 'number' && healSpellCooldown > 0) healSpellCooldown--;
   if (typeof _tickShopRestock === 'function') _tickShopRestock();
   AudioSystem.playFootstep();
+  // H1 — Bob de caméra : léger plongeon vertical à chaque pas (présence
+  // physique). Reculer (faceDir=false) = bob atténué. Call-site défensif,
+  // no-op sous reduced-motion.
+  if (typeof DFX_safe !== 'undefined') DFX_safe.stepBob(faceDir ? 'forward' : 'back');
   // Barks ambiants (F2) : one-shot procédural à faible probabilité par pas,
   // teinté par la tranche d'ambiance. Effet purement audio (n'altère aucun
   // état). Self-gated : muet/combat/menu → no-op.

@@ -435,4 +435,76 @@ async function scenarioCanvasSwipe() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe] };
+// H1 — Présence physique : bob de caméra à chaque pas. DungeonFX.stepBob
+// (dungeon-fx.js) pose une classe d'anim transitoire sur #dungeon-canvas,
+// distincte du shake des pièges. Reculer = classe atténuée. reduced-motion
+// → no-op (aucune classe posée).
+async function scenarioCameraPresence() {
+  console.log('\n── Scénario : Présence physique (bob de caméra H1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // H1a — API présente + appels directs : la bonne classe est posée.
+  const h1 = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasFn    = typeof DungeonFX !== 'undefined' && typeof DungeonFX.stepBob === 'function';
+      out.hasProxy = typeof DFX_safe !== 'undefined';
+      const cv = document.getElementById('dungeon-canvas');
+      DFX_safe.stepBob('forward');
+      out.bobFwd = cv.classList.contains('dfx-bob');
+      DFX_safe.stepBob('back');
+      out.bobBack = cv.classList.contains('dfx-bob-back') && !cv.classList.contains('dfx-bob');
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  H1a stepBob:', h1);
+  assert(!h1.threw, 'H1 stepBob throw: ' + (h1.err || ''));
+  assert(h1.hasFn, 'H1 DungeonFX.stepBob absent');
+  assert(h1.bobFwd, 'H1 classe dfx-bob non posée (avant)');
+  assert(h1.bobBack, 'H1 classe dfx-bob-back non posée (recul)');
+
+  // H1b — avancée réelle : moveForward ne throw pas et pose un bob.
+  const h1b = await page.evaluate(() => {
+    const out = { threw: false, moved: false, bobbed: false };
+    try {
+      const cv = document.getElementById('dungeon-canvas');
+      cv.classList.remove('dfx-bob', 'dfx-bob-back');
+      for (const d of ['n', 'e', 's', 'w']) {
+        playerDir = d;
+        if (typeof canMove === 'function' && canMove(playerDir)) {
+          moveForward();
+          out.moved = true;
+          break;
+        }
+      }
+      out.bobbed = cv.classList.contains('dfx-bob') || cv.classList.contains('dfx-bob-back');
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  H1b real  :', h1b);
+  assert(!h1b.threw, 'H1 moveForward throw: ' + (h1b.err || ''));
+  // bobbed peut être faux si l'avancée a déclenché un combat/overlay : on
+  // n'exige que l'absence de throw + le mouvement effectif.
+  assert(h1b.moved, 'H1 aucune direction libre pour tester l\'avancée');
+
+  // H1c — reduced-motion : stepBob est un no-op (aucune classe).
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const h1c = await page.evaluate(() => {
+    const cv = document.getElementById('dungeon-canvas');
+    cv.classList.remove('dfx-bob', 'dfx-bob-back');
+    DFX_safe.stepBob('forward');
+    return { any: cv.classList.contains('dfx-bob') || cv.classList.contains('dfx-bob-back') };
+  });
+  console.log('  H1c reduced:', h1c);
+  assert(!h1c.any, 'H1 reduced-motion : stepBob ne doit poser aucune classe');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Présence physique)`);
+  }
+  console.log('  ✅ Présence physique — bob de caméra (avant/recul) + reduced-motion OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence] };
