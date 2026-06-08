@@ -565,6 +565,33 @@ async function scenarioHeroBarks() {
   assert(voiceProf.distinct >= 5,     'les profils de voix doivent offrir des timbres variés');
   assert(!voiceProf.threw,            'speakBark ne doit jamais lever (défensif)');
 
+  // L7c — modulation par émotion : pour un même héros, l'événement change
+  // l'intonation (crit triomphant ≠ allyDown grave), tout en restant borné.
+  const emo = await page.evaluate(() => {
+    const P = vk => AudioSystem._barkVoiceParams(vk);
+    const crit  = P('harry_crit');
+    const down  = P('harry_allyDown');
+    const base  = AudioSystem.HERO_VOICE.harry;
+    const neutral = P('harry_inconnu'); // événement absent → ×1.0 (profil de base)
+    const noHero  = P('zzz_crit');      // héros absent → base neutre × émotion
+    // Bornage : profil extrême × émotion montante reste ≤ 2 / ≤ 10.
+    const allBounded = ['harry','iris','maxence','olivier'].every(h => {
+      const r = P(h + '_crit');
+      return r.pitch <= 2 && r.pitch >= 0 && r.rate <= 10 && r.rate >= 0.1;
+    });
+    return {
+      critUp:   crit.pitch > down.pitch && crit.rate > down.rate,
+      neutralIsBase: Math.abs(neutral.pitch - base.pitch) < 1e-9 && Math.abs(neutral.rate - base.rate) < 1e-9,
+      noHeroOk: typeof noHero.pitch === 'number' && noHero.gender === null,
+      allBounded,
+    };
+  });
+  console.log('  L7c émotion :', emo);
+  assert(emo.critUp,        'crit doit sonner plus haut/vif que allyDown pour un même héros');
+  assert(emo.neutralIsBase, 'événement inconnu doit retomber sur le profil de base (×1.0)');
+  assert(emo.noHeroOk,      'héros inconnu doit donner un profil neutre sans lever');
+  assert(emo.allBounded,    'pitch/rate modulés doivent rester dans la plage SpeechSynthesis');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (barks)`);
