@@ -13,7 +13,14 @@
 > - **L3 — Hooks méta** : ✅ palier Maison (`checkHouseLevelUp`), transition de
 >   tranche (`_maybePlayTierTransition`).
 > - **L5 — Workflow** : ✅ CLAUDE.md + skill `add-playable-character` + checklist §5.5.5.
-> - **L4 / L6 / L7 / L8** : différés (P1+/P2/P3 — voir §6).
+> - **L4 — Texte pré-Voldemort** : ✅ cadre générique de Dumbledore (fallback
+>   `_applySignatureVoldemortLever`, 08 §8.8.1) quand aucune Signature n'a parlé,
+>   + réplique post-victoire plus froide si `slythPactChoice === 'pact'`
+>   (`showVictoryScreen`, style `.victory-speech-cold`). Smoke T5/T6.
+> - **L6 — Toggle UI** : ✅ bouton `#btn-barks` (barre de commandes, à côté de
+>   🗣️) + `toggleBarks()`/`_updateBarksBtn()` (`ui-settings.js`), persistance
+>   localStorage `hogwarts_rpg_barks_enabled` + sync `updateUI`. Smoke L6.
+> - **L7 / L8** : différés (P2/P3 — voir §6).
 
 > Ce plan traduit en travail technique les ajouts narratifs des chapitres 05 et 08.
 > **Principe** : réutiliser l'existant, ne rien dupliquer, garder ~85 % de trame

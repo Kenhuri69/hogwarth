@@ -340,6 +340,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'toggleVisitsClosed',       source: 'ui.js',                  kind: 'fn',  optional: true },
     { name: '_updateVisitsBtn',         source: 'ui.js',                  kind: 'fn',  optional: true },
     { name: 'openSettingsModal',        source: 'ui-settings.js',         kind: 'fn',  optional: true },
+    { name: 'toggleBarks',              source: 'ui-settings.js',         kind: 'fn',  optional: true },
     { name: 'updateVisitQualityBadge',  source: 'visit-hud.js',           kind: 'fn',  optional: true },
     { name: '_visitGetQuality',         source: 'visit-channel.js',       kind: 'fn',  optional: true },
     { name: '_visitIsReconnecting',     source: 'visit-channel.js',       kind: 'fn',  optional: true },

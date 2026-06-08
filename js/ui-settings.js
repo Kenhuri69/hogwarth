@@ -35,6 +35,54 @@ function _updateVisitsBtn() {
   btn.setAttribute('aria-pressed', closed ? 'true' : 'false');
 }
 
+// ── Voix des héros (barks — L6) ──────────────────────────────
+// Toggle d'agrément (comme mute/voix des sorts). `barksEnabled` est un
+// `let` global de state.js, sérialisé dans la save ; on persiste aussi le
+// choix dans une clé localStorage dédiée pour qu'il survive aux rechargements
+// indépendamment d'une partie chargée (même philosophie que les prefs audio).
+const _BARKS_PREF_KEY = 'hogwarts_rpg_barks_enabled';
+
+function toggleBarks() {
+  if (typeof barksEnabled === 'undefined') return;
+  barksEnabled = !barksEnabled;
+  try { localStorage.setItem(_BARKS_PREF_KEY, barksEnabled ? '1' : '0'); } catch (_) { /* indispo */ }
+  _updateBarksBtn();
+  if (typeof addMsg === 'function') {
+    addMsg(barksEnabled
+      ? '💬 Voix des héros activée — tes compagnons réagissent au combat.'
+      : '🤐 Voix des héros coupée.',
+      barksEnabled ? 'good' : '');
+  }
+}
+
+// Met à jour l'icône et le titre du bouton #btn-barks selon `barksEnabled`.
+// Appelé au toggle et à chaque updateUI (pour refléter une sync de save).
+function _updateBarksBtn() {
+  const btn = document.getElementById('btn-barks');
+  if (!btn) return;
+  const on = typeof barksEnabled === 'undefined' || barksEnabled;
+  const icon = btn.querySelector('.btn-icon');
+  if (icon) icon.textContent = on ? '💬' : '🤐';
+  btn.title = on ? 'Voix des héros : activée (cliquer pour couper)'
+                 : 'Voix des héros : coupée (cliquer pour activer)';
+  btn.setAttribute('aria-pressed', on ? 'false' : 'true');
+}
+
+// Restaure la préférence localStorage (si présente) dans `barksEnabled` et
+// resynchronise le bouton. Appelé au DOMContentLoaded.
+function _loadBarksPref() {
+  try {
+    const raw = localStorage.getItem(_BARKS_PREF_KEY);
+    if (raw === '0') barksEnabled = false;
+    else if (raw === '1') barksEnabled = true;
+  } catch (_) { /* indispo — garde le défaut */ }
+  _updateBarksBtn();
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', _loadBarksPref);
+}
+
 // Ouvre la modale Réglages (son, voyageur, partie). Resynchronise au
 // passage les icônes des boutons audio + accueil pour refléter l'état
 // courant (utile après un chargement de save).
@@ -43,6 +91,7 @@ function openSettingsModal() {
     AudioSystem.refreshButtons();
   }
   _updateVisitsBtn();
+  _updateBarksBtn();
   const modal = document.getElementById('settings-modal');
   if (modal) modal.style.display = 'flex';
 }

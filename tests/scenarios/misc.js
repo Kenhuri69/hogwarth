@@ -477,6 +477,27 @@ async function scenarioHeroBarks() {
   console.log('  round-trip barksEnabled :', rt);
   assert(rt === false, 'barksEnabled doit être préservé par le round-trip de save');
 
+  // L6 — bouton de bascule « voix des héros » (#btn-barks) : flip + icône + pref.
+  const toggle = await page.evaluate(() => {
+    barksEnabled = true; _updateBarksBtn();
+    const btn = document.getElementById('btn-barks');
+    const iconOf = () => btn.querySelector('.btn-icon').textContent;
+    const onIcon = iconOf();
+    toggleBarks();                                  // → off
+    const offState = { enabled: barksEnabled, icon: iconOf(), pressed: btn.getAttribute('aria-pressed'), pref: localStorage.getItem('hogwarts_rpg_barks_enabled') };
+    toggleBarks();                                  // → on
+    const onState = { enabled: barksEnabled, icon: iconOf(), pref: localStorage.getItem('hogwarts_rpg_barks_enabled') };
+    return { exists: !!btn, onIcon, offState, onState };
+  });
+  console.log('  L6 toggle bouton :', toggle);
+  assert(toggle.exists,                  '#btn-barks absent de la barre de commandes');
+  assert(toggle.offState.enabled === false, 'toggleBarks doit désactiver barksEnabled');
+  assert(toggle.offState.icon === '🤐',     'icône OFF du bouton barks incorrecte');
+  assert(toggle.offState.pressed === 'true','aria-pressed doit valoir true quand coupé');
+  assert(toggle.offState.pref === '0',      'préférence localStorage non écrite (off)');
+  assert(toggle.onState.enabled === true,   'toggleBarks doit réactiver barksEnabled');
+  assert(toggle.onState.pref === '1',       'préférence localStorage non écrite (on)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (barks)`);
