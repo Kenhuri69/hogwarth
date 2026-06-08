@@ -22,6 +22,22 @@
   75% { transform: translate(5px, 3px); }
 }
 
+/* ── Bob de pas (H1) : léger plongeon vertical amorti à chaque pas ──
+   Distinct du shake brutal des pièges : une seule oscillation douce, courte
+   (~140 ms). Reculer = amplitude atténuée. No-op sous reduced-motion. */
+#dungeon-canvas.dfx-bob      { animation: dfxBob .14s ease-out; }
+#dungeon-canvas.dfx-bob-back { animation: dfxBobBack .14s ease-out; }
+@keyframes dfxBob {
+  0%   { transform: translateY(0); }
+  45%  { transform: translateY(5px); }
+  100% { transform: translateY(0); }
+}
+@keyframes dfxBobBack {
+  0%   { transform: translateY(0); }
+  45%  { transform: translateY(2px); }
+  100% { transform: translateY(0); }
+}
+
 /* ── Gerbe d'interaction (E3) : coffre / fontaine / level-up ──────
    Couche absolue posée dans l'hôte (overlay/modale), centrée, sans
    capture de clic. Particules projetées depuis le centre, halo pulsé. */
@@ -64,6 +80,8 @@
 @media (prefers-reduced-motion: reduce) {
   #dungeon-canvas.dfx-shake-light,
   #dungeon-canvas.dfx-shake-heavy { animation: none; }
+  #dungeon-canvas.dfx-bob,
+  #dungeon-canvas.dfx-bob-back { animation: none; }
   /* Gerbe d'interaction : pas de projectiles (le module n'en spawn pas) ;
      le halo fade brièvement sans dilatation. */
   .dfx-burst-halo { animation: dfxBurstHaloReduced .34s ease-out forwards; }

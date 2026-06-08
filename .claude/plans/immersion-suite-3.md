@@ -109,7 +109,7 @@ s'apprête à agir, pour que les attaques semblent intentionnelles.
 
 ## H. Présence physique (caméra)
 
-### H1. Bob / à-coup de caméra à l'avancée
+### H1. Bob / à-coup de caméra à l'avancée ✅ (livré 2026-06-08)
 `moveForward` ne donne aucun ressenti physique. Ajouter un **léger
 décalage transitoire** de la vue (canvas) à chaque pas : petit « plongeon »
 vertical amorti (~120 ms), distinct du `shakeView` brutal des pièges.
@@ -281,3 +281,19 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
   `maybeRoomFlavor`/`RoomFlavor` (optional). smoke vert + units (76) +
   pwa-smoke (v72) verts. **Bumps** : `room-flavor.js` (neuf, v1),
   `movement.js` (27→28), `loader.js` (26→27) ; `CACHE_VERSION` v71 → v72.
+  Mergé en **PR #410**.
+- 2026-06-08 : **H1 livré** (branche `claude/immersion-h1-step-bob`).
+  Présence physique : `DungeonFX.stepBob(dir)` (`dungeon-fx.js`) pose une
+  classe d'anim transitoire sur `#dungeon-canvas` — léger plongeon vertical
+  amorti (~140 ms, 5 px avant / 2 px recul via `dfx-bob` / `dfx-bob-back`),
+  distinct du `shakeView` brutal des pièges. Appelé dans `_step`
+  (`movement.js`) après `playFootstep`, `dir = faceDir ? 'forward' : 'back'`,
+  via `DFX_safe` (call-site défensif). `shakeView` strippe désormais aussi
+  les classes de bob (un piège au même pas prend le dessus proprement sur la
+  même propriété `transform`). CSS `dfx-bob*` + reduced-motion (no-op).
+  Test : `scenarioCameraPresence` (volet H1) dans `tests/scenarios/controls.js`
+  (API + classes avant/recul, avancée réelle sans throw, reduced-motion via
+  `emulateMedia` → aucune classe). smoke vert + pwa-smoke (v73) verts.
+  **Bumps** : `dungeon-fx.js` (3→4), `dungeon-fx.css` (2→3), `movement.js`
+  (28→29) ; `CACHE_VERSION` v72 → v73. Pas de nouveau global (méthode de
+  `DungeonFX`) → loader inchangé.
