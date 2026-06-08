@@ -154,6 +154,37 @@ Object.assign(AudioSystem, {
     sub.start(now); sub.stop(now + 0.22);
   },
 
+  // ── Souffle glacé surnaturel (créature corrompue, Chapitre 09 §9.1.2) ──
+  // Bruit filtré bande-passante descendante = bourrasque froide brève à
+  // l'apparition d'une créature des profondeurs (corruption >= 2).
+  playColdBreath() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    const dur = 0.9;
+
+    const buf  = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * dur), this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < buf.length; i++) data[i] = Math.random() * 2 - 1;
+    const src  = this.ctx.createBufferSource();
+    src.buffer = buf;
+
+    // Filtre passe-bande qui glisse vers le grave → impression de froid qui tombe.
+    const bpf  = this.ctx.createBiquadFilter();
+    bpf.type   = 'bandpass';
+    bpf.Q.value = 0.7;
+    bpf.frequency.setValueAtTime(1100, now);
+    bpf.frequency.exponentialRampToValueAtTime(220, now + dur);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.35, now + 0.18);   // swell
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);  // fade
+
+    src.connect(bpf).connect(gain).connect(this.sfxGain);
+    src.start(now); src.stop(now + dur);
+  },
+
   // ── Accent de coup critique (ping métallique brillant ascendant) ──
   playCrit() {
     if (this.isMuted) return;

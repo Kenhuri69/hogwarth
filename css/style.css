@@ -918,6 +918,80 @@ body {
 .bestiary-lore-box strong { color: var(--gold-light); }
 .bestiary-lore-box em     { color: #a08860; font-style: italic; }
 
+/* ── Famille narrative (Chapitre 09 §9.2) — chip sur cartes/fiches ── */
+.bestiary-family-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-family: sans-serif;
+  color: var(--gold-light);
+  background: rgba(201, 168, 76, 0.12);
+  border: 1px solid var(--gold-dark);
+  border-radius: 10px;
+  padding: 1px 8px;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+/* ── Codex « Lore profond » (palier 2) ── */
+.codex-deep {
+  background: #0c0a12;
+  border: 1px solid #4a3b6e;
+  border-left: 3px solid #7a5fc0;
+  border-radius: 4px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--parchment-dark);
+  line-height: 1.7;
+}
+.codex-deep-title  { color: #c0a6ff; font-weight: bold; margin-bottom: 6px; letter-spacing: 0.5px; }
+.codex-fam-blurb   { margin: 6px 0 0; }
+.codex-corruption  { margin: 8px 0 0; color: #b9d8ff; }
+.codex-corruption strong { color: #dcebff; }
+.codex-deep-locked {
+  background: #0e0804;
+  border: 1px dashed var(--gold-dark);
+  border-left: 3px dashed var(--gold-dark);
+  color: var(--label-muted);
+  font-style: italic;
+}
+.codex-deep-locked strong { color: var(--gold-light); font-style: normal; }
+
+/* ── Surcouche corruption (Chapitre 09 §9.1.2) — teinte froide + givre ──
+   Placeholder cosmétique CSS (zéro asset). corruption 0-1 : aucun effet.
+   corruption 2 (Profondeurs) / 3 (Boucle Ténébreuse) : la créature est gagnée
+   par le froid surnaturel — teinte bleutée + flocon de givre pulsé. */
+.enemy-card.corruption-2, .enemy-card.corruption-3 { position: relative; }
+.enemy-card.corruption-2 .monster-icon,
+.enemy-card.corruption-2 .monster-img {
+  filter: hue-rotate(-22deg) saturate(0.82) brightness(0.94)
+          drop-shadow(0 0 7px rgba(140, 195, 255, 0.55));
+}
+.enemy-card.corruption-3 .monster-icon,
+.enemy-card.corruption-3 .monster-img {
+  filter: hue-rotate(-36deg) saturate(0.62) brightness(0.86)
+          drop-shadow(0 0 10px rgba(165, 210, 255, 0.7));
+}
+.enemy-card.corruption-2::after,
+.enemy-card.corruption-3::after {
+  content: '❄';
+  position: absolute;
+  top: -3px; right: 0;
+  font-size: 13px;
+  color: #cfe6ff;
+  text-shadow: 0 0 6px #6db4ff, 0 0 2px #fff;
+  pointer-events: none;
+  animation: frostBob 2.4s ease-in-out infinite;
+}
+.enemy-card.enemy-dead::after { display: none; }
+@keyframes frostBob {
+  0%, 100% { transform: translateY(0);    opacity: 0.7; }
+  50%      { transform: translateY(-3px); opacity: 1;   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .enemy-card.corruption-2::after, .enemy-card.corruption-3::after { animation: none; }
+}
+
 @media (max-width: 700px) {
   .bestiary-modal-box     { max-height: 92dvh; }
   .bestiary-detail-header { flex-direction: column; align-items: center; text-align: center; }

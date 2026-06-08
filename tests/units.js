@@ -148,8 +148,9 @@ function loadModule(relPath, exportNames, globals = {}) {
   vm.runInContext(src +
     '\n;exports.effectiveFloor = effectiveFloor;' +
     '\n;exports.endgameTierIndex = endgameTierIndex;' +
+    '\n;exports.creatureCorruptionLevel = creatureCorruptionLevel;' +
     '\n;exports.weightedPick = weightedPick;', sandbox, { filename: 'dungeon-scaling.js' });
-  const { effectiveFloor, endgameTierIndex, weightedPick } = sandbox.exports;
+  const { effectiveFloor, endgameTierIndex, creatureCorruptionLevel, weightedPick } = sandbox.exports;
 
   // Pré-victoire : effectiveFloor est l'identité, palier 0 partout.
   sandbox.victoryAchieved = false;
@@ -167,6 +168,21 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('post-victoire: tier(11)=1',  endgameTierIndex(11) === 1);
   check('post-victoire: tier(20)=1',  endgameTierIndex(20) === 1);
   check('post-victoire: tier(21)=2',  endgameTierIndex(21) === 2);
+
+  // creatureCorruptionLevel (Chapitre 09 §9.1.2) — gradient 0-3 par profondeur.
+  sandbox.victoryAchieved = false;
+  check('corruption: étage 1 = 0',  creatureCorruptionLevel({}, 1) === 0);
+  check('corruption: étage 3 = 0',  creatureCorruptionLevel({}, 3) === 0);
+  check('corruption: étage 4 = 1',  creatureCorruptionLevel({}, 4) === 1);
+  check('corruption: étage 6 = 1',  creatureCorruptionLevel({}, 6) === 1);
+  check('corruption: étage 7 = 2',  creatureCorruptionLevel({}, 7) === 2);
+  check('corruption: étage 10 = 2', creatureCorruptionLevel({}, 10) === 2);
+  sandbox.victoryAchieved = true;
+  // Boucle Ténébreuse : 11+ = cauchemar (3), priorité sur effectiveFloor.
+  check('corruption: étage 11 post-victoire = 3', creatureCorruptionLevel({}, 11) === 3);
+  check('corruption: étage 25 post-victoire = 3', creatureCorruptionLevel({}, 25) === 3);
+  check('corruption: étage 10 post-victoire = 2', creatureCorruptionLevel({}, 10) === 2);
+  sandbox.victoryAchieved = false;
 
   // weightedPick : déterministe via Math.random injecté + respect des poids.
   const pool = [{ id: 'a', weight: 1 }, { id: 'b', weight: 3 }];
