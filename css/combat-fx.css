@@ -418,6 +418,17 @@ body.cfx-danger::after {
   to   { width: 60%; opacity: 1; }
 }
 
+/* ── Télégraphe du tour ennemi (G3) ── wind-up sur la carte ──
+   Bref gonflement + lueur ambrée juste avant que l'ennemi agisse. Classe
+   transitoire posée par js/combat-fx.js, retirée après ~320 ms. Sous
+   reduced-motion, le module ne pose jamais la classe (no-op JS). */
+.enemy-card.cfx-telegraph { animation: cfxTelegraph .3s ease-out; }
+@keyframes cfxTelegraph {
+  0%   { transform: scale(1);    filter: none; }
+  45%  { transform: scale(1.07); filter: drop-shadow(0 0 10px rgba(255,180,70,0.85)) brightness(1.15); }
+  100% { transform: scale(1);    filter: none; }
+}
+
 /* ── Accessibilité : réduit le mouvement ───────────────────── */
 @media (prefers-reduced-motion: reduce) {
   /* Vignette de danger : halo statique, sans pulsation. */
