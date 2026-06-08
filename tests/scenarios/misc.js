@@ -592,6 +592,32 @@ async function scenarioHeroBarks() {
   assert(emo.noHeroOk,      'héros inconnu doit donner un profil neutre sans lever');
   assert(emo.allBounded,    'pitch/rate modulés doivent rester dans la plage SpeechSynthesis');
 
+  // L7d — jitter humanisant : ± borné, centré (rng=0.5 → inchangé), variable.
+  const jit = await page.evaluate(() => {
+    const base = AudioSystem._barkVoiceParams('harry_crit');
+    const centered = AudioSystem._voiceJitter(base, () => 0.5);     // 0.5*2-1=0 → aucun delta
+    const low      = AudioSystem._voiceJitter(base, () => 0);       // delta minimal (−amplitude)
+    const high     = AudioSystem._voiceJitter(base, () => 1);       // delta maximal (+amplitude)
+    const PJ = AudioSystem._PITCH_JITTER, RJ = AudioSystem._RATE_JITTER;
+    // Deux tirages aléatoires successifs diffèrent (quasi-sûr).
+    const a = AudioSystem._voiceJitter(base), b = AudioSystem._voiceJitter(base);
+    return {
+      centeredEqual: Math.abs(centered.pitch - base.pitch) < 1e-9 && Math.abs(centered.rate - base.rate) < 1e-9,
+      lowDown:  low.pitch  < base.pitch && low.rate  < base.rate,
+      highUp:   high.pitch > base.pitch && high.rate > base.rate,
+      bounded:  Math.abs(low.pitch - base.pitch) <= PJ + 1e-9 && Math.abs(high.rate - base.rate) <= RJ + 1e-9,
+      varies:   a.pitch !== b.pitch || a.rate !== b.rate,
+      inRange:  high.pitch <= 2 && low.pitch >= 0 && high.rate <= 10 && low.rate >= 0.1,
+    };
+  });
+  console.log('  L7d jitter :', jit);
+  assert(jit.centeredEqual, 'jitter centré (rng=0.5) ne doit rien changer');
+  assert(jit.lowDown,       'jitter rng=0 doit abaisser pitch et rate');
+  assert(jit.highUp,        'jitter rng=1 doit relever pitch et rate');
+  assert(jit.bounded,       'le jitter ne doit pas dépasser son amplitude');
+  assert(jit.varies,        'deux énoncés successifs doivent varier (anti-robotique)');
+  assert(jit.inRange,       'pitch/rate jittés doivent rester dans la plage SpeechSynthesis');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (barks)`);

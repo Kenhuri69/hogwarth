@@ -38,6 +38,12 @@
 >   valide. `speakBark` route via ce helper. Un même héros change d'intonation
 >   selon l'événement, sa personnalité (base) conservée. Smoke L7c (crit > allyDown,
 >   événement/héros inconnu → neutre, bornage).
+>   **L7d — Jitter humanisant** : ✅ `_voiceJitter(params, rng)` applique un léger
+>   bruit additif (±`_PITCH_JITTER` 0.05 / ±`_RATE_JITTER` 0.04) borné à la plage,
+>   appliqué dans `speakBark` par-dessus `_barkVoiceParams` → deux énoncés du même
+>   héros/événement ne sonnent jamais exactement pareil (casse l'effet robotique).
+>   `rng=0.5` ⇒ inchangé (déterminisme préservé hors jitter). Smoke L7d (centré,
+>   ±borné, variabilité, plage).
 > - **L8 — Étages-scènes fixes** : ✅ `heroBarkScripted(heroKey, event)`
 >   (`hero-barks.js`, ne parle que si le héros visé est présent/vivant,
 >   one-shot) + **les 5 beats de trame (05 §5.4.2)** : Céleste à la 1ʳᵉ fontaine
