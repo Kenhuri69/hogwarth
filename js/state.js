@@ -619,6 +619,11 @@ let endgamePurchases = {};
 // Persisté dans le save.
 let visitedFloors = new Set([1]);
 
+// Étages-scènes scénarisés (P5) — étages dont le beat narratif écrit a déjà été
+// joué pour cette partie (one-shot). Alimenté par maybeScriptedFloorBeat
+// (floor-ambiance.js). Persisté dans le save.
+let seenScriptedBeat = new Set();
+
 // Cooldowns du sort Portus (cf. .claude/plans/teleportation-spell.md §"Itération 2").
 //  - portusOocCooldown   : transitions d'étage (escaliers) restantes avant
 //                          de pouvoir relancer Portus hors combat. Décrémenté

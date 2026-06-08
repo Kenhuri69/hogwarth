@@ -140,6 +140,53 @@ function houseAmbianceLine(chosenHouse) {
   return (HOUSE_AMBIANCE_MOD[chosenHouse] && HOUSE_AMBIANCE_MOD[chosenHouse].extraLine) || null;
 }
 
+// ── Étages-scènes scénarisés (P5) ────────────────────────────
+// Beat narratif écrit GARANTI à la première entrée de certains étages-clés,
+// sans toucher à la génération procédurale (pur affichage textuel).
+// Étages retenus (arbitrage 2026-06-08) : 1 (Seuil familier), 4 (entrée des
+// Cachots / 1re transition), 8 (Seuil du Veilleur, graine des Ruines).
+// L'étage 10 (Voldemort) est déjà scénarisé de fait ; l'étage 11 (Gardien de
+// la Boucle) a son dialogue dédié — exclus volontairement.
+// Textes : docs/histoire/10-lieux-et-geographie.md §10.2 (1/4/8) & §10.5.
+// Plan : .claude/plans/scripted-floor-beats.md.
+const FLOOR_SCRIPTED_BEATS = {
+  1: {
+    id: 'seuil_familier',
+    narrative: "Tu connais ces murs — et pourtant tu as froid. Les grands escaliers se sont figés vers le bas, le givre ourle les fenêtres en pleine année. Poudlard a peur à ta place. Le mal vient d'en bas : il faut descendre.",
+    toast: "Le Seuil familier — la maison a peur. Descends à contre-courant.",
+  },
+  4: {
+    id: 'entree_cachots',
+    narrative: "L'école s'efface derrière toi. Ici la pierre est froide, l'haleine fume, des chaînes pendent aux murs. Des voix humaines basses œuvrent dans l'ombre : la corruption a désormais des fidèles. La Clé scellait deux maux, pas un.",
+    toast: "Les Cachots de Poudlard — la corruption a des serviteurs.",
+  },
+  8: {
+    id: 'seuil_veilleur',
+    narrative: "Sur la roche brute affleurent les premières runes — un alphabet qu'aucun cours n'a enseigné. Quelque chose monte la garde au seuil de ce qui dort plus bas. Tu touches la graine des Ruines Anciennes.",
+    toast: "Le Seuil du Veilleur — la pierre se souvient d'avant l'école.",
+  },
+};
+
+// Résolveur PUR : retourne le beat de l'étage `floor`, ou null.
+function getScriptedFloorBeat(floor) {
+  return FLOOR_SCRIPTED_BEATS[floor] || null;
+}
+
+// Orchestrateur défensif : joue le beat à la PREMIÈRE entrée de l'étage.
+// One-shot via le Set seenScriptedBeat (state.js, sérialisé). Idempotent :
+// un second appel sur le même étage retourne false sans rien réafficher.
+// No-op silencieux si l'état ou les helpers d'affichage manquent (file://).
+function maybeScriptedFloorBeat(floor) {
+  const beat = getScriptedFloorBeat(floor);
+  if (!beat) return false;
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return false;
+  if (seenScriptedBeat.has(floor)) return false;
+  seenScriptedBeat.add(floor);
+  if (typeof setNarrative === 'function') setNarrative(beat.narrative);
+  if (typeof addMsg === 'function') addMsg('📜 ' + beat.toast, 'narrative');
+  return true;
+}
+
 // ── Application de la corruption (overlay givre) ─────────────
 // Appelée à chaque changement d'étage. Règle l'opacité de #frost-overlay.
 // Défensif : no-op si l'élément manque (file:// smoke, DOM absent).

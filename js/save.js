@@ -77,6 +77,7 @@ function _serializeState() {
     purchasedSpellbooks: Array.from(purchasedSpellbooks),
     endgamePurchases: { ...endgamePurchases },
     visitedFloors:  Array.from(visitedFloors),
+    seenScriptedBeat: Array.from(seenScriptedBeat),
     portusOocCooldown,
     portusFightCooldown,
     healSpellCooldown,
@@ -406,6 +407,8 @@ function _applyState(gs) {
   // visitedFloors : fallback sur l'étage courant pour les saves antérieures.
   visitedFloors = new Set(gs.visitedFloors || [currentFloor || 1]);
   if (currentFloor) visitedFloors.add(currentFloor);
+  // Étages-scènes scénarisés (P5) : fallback [] pour les saves antérieures.
+  seenScriptedBeat = new Set(gs.seenScriptedBeat || []);
   portusOocCooldown   = (typeof gs.portusOocCooldown   === 'number') ? gs.portusOocCooldown   : 0;
   portusFightCooldown = (typeof gs.portusFightCooldown === 'number') ? gs.portusFightCooldown : 0;
   healSpellCooldown   = (typeof gs.healSpellCooldown   === 'number') ? gs.healSpellCooldown   : 0;

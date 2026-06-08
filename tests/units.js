@@ -364,6 +364,78 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 6. floor-ambiance.js — étages-scènes scénarisés (P5)
+//    getScriptedFloorBeat (pur) + maybeScriptedFloorBeat (one-shot)
+// ============================================================
+(function testScriptedFloorBeats() {
+  // ── Résolveur pur : pas de dépendance externe ──
+  const pure = loadModule(
+    'js/floor-ambiance.js',
+    ['FLOOR_SCRIPTED_BEATS', 'getScriptedFloorBeat']);
+  const { FLOOR_SCRIPTED_BEATS, getScriptedFloorBeat } = pure;
+
+  // Étages retenus (arbitrage) : 1, 4, 8.
+  for (const f of [1, 4, 8]) {
+    const beat = getScriptedFloorBeat(f);
+    check(`beat étage ${f} défini`, beat && typeof beat === 'object');
+    check(`beat étage ${f} a un id`, beat && typeof beat.id === 'string' && beat.id.length > 0);
+    check(`beat étage ${f} a une narrative`, beat && typeof beat.narrative === 'string' && beat.narrative.length > 0);
+    check(`beat étage ${f} a un toast`, beat && typeof beat.toast === 'string' && beat.toast.length > 0);
+  }
+  // Étages non scénarisés → null (10/11 exclus volontairement).
+  for (const f of [2, 3, 5, 6, 7, 9, 10, 11, 14, 99]) {
+    check(`beat étage ${f} = null`, getScriptedFloorBeat(f) === null);
+  }
+  check('beat étage 0 = null',     getScriptedFloorBeat(0) === null);
+  check('beat étage NaN = null',   getScriptedFloorBeat(NaN) === null);
+  check('beat étage undef = null', getScriptedFloorBeat() === null);
+  // Cohérence dict ↔ résolveur.
+  check('FLOOR_SCRIPTED_BEATS a exactement 1/4/8',
+    JSON.stringify(Object.keys(FLOOR_SCRIPTED_BEATS).sort()) === JSON.stringify(['1', '4', '8']));
+
+  // ── Orchestrateur one-shot : seenScriptedBeat injecté + stubs d'affichage ──
+  const seen = new Set();
+  let narrCalls = 0, toastCalls = 0, lastToast = null;
+  const orch = loadModule(
+    'js/floor-ambiance.js',
+    ['maybeScriptedFloorBeat'],
+    {
+      seenScriptedBeat: seen,
+      setNarrative: () => { narrCalls++; },
+      addMsg: (msg) => { toastCalls++; lastToast = msg; },
+    });
+  const { maybeScriptedFloorBeat } = orch;
+
+  // 1re entrée étage 4 → joue, mute le Set, affiche narrative + toast.
+  check('maybe(4) 1re fois = true', maybeScriptedFloorBeat(4) === true);
+  check('seen contient 4 après 1re entrée', seen.has(4));
+  check('setNarrative appelé 1×', narrCalls === 1);
+  check('addMsg appelé 1×', toastCalls === 1);
+  check('toast préfixé 📜', typeof lastToast === 'string' && lastToast.indexOf('📜') === 0);
+
+  // 2e entrée étage 4 → idempotent (no-op).
+  check('maybe(4) 2e fois = false (idempotent)', maybeScriptedFloorBeat(4) === false);
+  check('setNarrative non rappelé', narrCalls === 1);
+  check('addMsg non rappelé', toastCalls === 1);
+
+  // Étage sans beat → false sans rien afficher.
+  check('maybe(2) = false (pas de beat)', maybeScriptedFloorBeat(2) === false);
+  check('setNarrative toujours 1×', narrCalls === 1);
+
+  // Étage 1 et 8 jouent aussi, chacun une fois.
+  check('maybe(1) = true', maybeScriptedFloorBeat(1) === true);
+  check('maybe(8) = true', maybeScriptedFloorBeat(8) === true);
+  check('seen = {1,4,8} après les 3 beats', seen.has(1) && seen.has(4) && seen.has(8) && seen.size === 3);
+
+  // Défensif : sans seenScriptedBeat utilisable → no-op (pas d'exception).
+  const orch2 = loadModule(
+    'js/floor-ambiance.js',
+    ['maybeScriptedFloorBeat'],
+    { seenScriptedBeat: null, setNarrative: () => {}, addMsg: () => {} });
+  check('maybe(4) sans Set = false (défensif)', orch2.maybeScriptedFloorBeat(4) === false);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
