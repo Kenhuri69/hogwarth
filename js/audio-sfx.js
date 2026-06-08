@@ -26,27 +26,47 @@ Object.assign(AudioSystem, {
     osc.stop(stop);
   },
 
-  // ── Pas dans le couloir ───────────────────────────────────────
-  playFootstep() {
+  // ── Pas selon la surface (H2) ─────────────────────────────────
+  // Profil de timbre par type de sol de la tranche (getFloorTheme().floor) :
+  // claquant sur pierre, feutré sur tapis, mat/résonant en caverne, métallique
+  // sur runes. Bruit filtré ; chaque profil pilote type de filtre / fréquence
+  // / résonance / gain / durée. Audio (≠ mouvement) → gardé `isMuted` seul.
+  _SURFACE_STEPS: {
+    stone:        { type: 'highpass', freq: 90,  q: 0.7, gain: 0.35, dur: 0.10 },
+    carpet:       { type: 'lowpass',  freq: 380, q: 0.7, gain: 0.18, dur: 0.14 },
+    cavern_floor: { type: 'bandpass', freq: 260, q: 1.4, gain: 0.30, dur: 0.12 },
+    rune_floor:   { type: 'highpass', freq: 120, q: 2.2, gain: 0.32, dur: 0.11 },
+  },
+
+  playFootstep(surface) {
     if (this.isMuted) return;
     this.init();
-    const now  = this.ctx.currentTime;
-    const freq = 70 + Math.random() * 45;
+    const now = this.ctx.currentTime;
 
-    const buf  = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.1), this.ctx.sampleRate);
+    // Surface : argument explicite, sinon dérivée de la tranche d'étage.
+    let key = surface;
+    if (!key && typeof getFloorTheme === 'function' && typeof currentFloor !== 'undefined') {
+      const th = getFloorTheme(currentFloor);
+      if (th && th.floor) key = th.floor;
+    }
+    const prof = this._SURFACE_STEPS[key] || this._SURFACE_STEPS.stone;
+    const freq = prof.freq + Math.random() * 40;
+
+    const buf  = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * prof.dur), this.ctx.sampleRate);
     const data = buf.getChannelData(0);
     for (let i = 0; i < buf.length; i++) data[i] = Math.random() * 2 - 1;
     const src  = this.ctx.createBufferSource();
     src.buffer = buf;
 
-    const hpf  = this.ctx.createBiquadFilter();
-    hpf.type   = 'highpass'; hpf.frequency.value = freq;
+    const filt = this.ctx.createBiquadFilter();
+    filt.type  = prof.type; filt.frequency.value = freq;
+    if (prof.q) filt.Q.value = prof.q;
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.35, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+    gain.gain.setValueAtTime(prof.gain, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + prof.dur);
 
-    src.connect(hpf).connect(gain).connect(this.sfxGain);
+    src.connect(filt).connect(gain).connect(this.sfxGain);
     src.start(now);
   },
 
