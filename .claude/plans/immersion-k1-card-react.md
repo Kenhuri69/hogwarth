@@ -78,17 +78,37 @@ non régressé. Affiner = passer l'index du soigné à `floatDmg`/`cardReact` pa
 
 ## Étapes & vérifications
 
-1. [ ] Plan (ce fichier).
-2. [ ] `cardReact` + refactor heal dans `ux-improvements.js` + export.
-3. [ ] CSS `card-react-dmg/crit` + variante reduced-motion.
-4. [ ] 5 call-sites `cardReact(charIdx,'dmg')` (battle.js ×2, battle-spells.js ×3).
-5. [ ] Cache PWA bumpé (`cache-bump`) : ux-improvements.js/.css, battle.js, battle-spells.js.
-6. [ ] `tests/smoke.js` volet K1 (`scenarioCardReact`) : API présente ; un héros
+1. [x] Plan (ce fichier).
+2. [x] `cardReact` + refactor heal dans `ux-improvements.js` + export.
+3. [x] CSS `card-react-dmg/crit` + variante reduced-motion.
+4. [x] 5 call-sites `cardReact(charIdx,'dmg')` (battle.js ×2, battle-spells.js ×3).
+5. [x] Cache PWA bumpé (`cache-bump`) : ux-improvements.js/.css, battle.js, battle-spells.js.
+6. [x] `tests/smoke.js` volet K1 (`scenarioCardReact`) : API présente ; un héros
    encaisse → classe posée puis retirée sans throw ; heal → `flash-heal`.
-7. [ ] DoD : `node tests/units.js`, `node tests/smoke.js`,
+7. [x] DoD : `node tests/units.js` (179), `node tests/smoke.js` (169),
    `node tools/check_cache_versions.js --base origin/master`, `node tests/pwa-smoke.js`
    verts ; commit + push ; PR + merge.
 
 ## Journal des écarts
 
-*(à compléter)*
+### Implémentation (2026-06-08, branche claude/immersion-k1-card-react)
+
+Livré conforme au plan, aucun écart de conception.
+
+- **`ux-improvements.js`** : `UX.cardReact(charIdx, kind)` exporté ; le flash de
+  soin de `floatDmg` délègue désormais à `cardReact(idx, 'heal')` (même source
+  d'index `currentBattleChar`, comportement inchangé).
+- **`ux-improvements.css`** : `.party-card.card-react-dmg` / `.card-react-crit`
+  (flash inset rouge + secousse translateX) ; bloc reduced-motion → variantes
+  `cardReactDmgRM` / `cardReactCritRM` (flash seul, sans mouvement).
+- **Call-sites dégât** (`charIdx` déjà en scope) : `battle.js _enemyPhysicalHit`
+  (coup mitigé + coup normal, gardé `> 0`), `battle-spells.js tryEnemyAbility`
+  (`damage`, `maxhpdamage`, `drain`).
+- **Tests** : `tests/scenarios/fx.js` `scenarioCardReact` (API, pose/retrait des
+  3 kinds, no-op carte absente, call-site réel via `_enemyPhysicalHit`).
+- **Cache PWA** : `CACHE_VERSION` → `hogwarth-v80` ; 4 assets bumpés
+  (ux-improvements.js 3→4, ux-improvements.css 2→3, battle.js 27→28,
+  battle-spells.js 11→12).
+
+Limitation connue conservée : le `flash-heal` reste sur la carte du caster
+(`currentBattleChar`), pas du soigné — pré-existant, hors scope K1.
