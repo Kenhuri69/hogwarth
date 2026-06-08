@@ -131,6 +131,45 @@ body.cfx-danger::after {
   100% { transform: translate(var(--cfx-dx, 0), var(--cfx-dy, 0)) scale(0.2); opacity: 0; }
 }
 
+/* ── Pop de butin (J1) ──────────────────────────────────────── */
+/* Couche fixée au body : endBattle masque l'overlay de combat AVANT de
+   traiter les drops, donc le pop ne peut pas vivre dans l'arène. */
+.cfx-loot-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 120; /* au-dessus du HUD, sous les modales (≥ 900) */
+}
+.cfx-loot-pop {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  /* offset d'empilement vertical pour les drops simultanés */
+  transform: translate(-50%, calc(var(--cfx-loot-i, 0) * -42px));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(40,28,12,.92), rgba(20,14,6,.92));
+  border: 1px solid rgba(212,166,37,.6);
+  box-shadow: 0 0 16px rgba(212,166,37,.4), 0 2px 8px rgba(0,0,0,.5);
+  color: #f2e2b6;
+  font-weight: 600;
+  white-space: nowrap;
+  animation: cfxLootPop .96s ease-out forwards;
+}
+.cfx-loot-icon { display: inline-flex; }
+.cfx-loot-name { font-size: 14px; text-shadow: 0 1px 2px rgba(0,0,0,.7); }
+@keyframes cfxLootPop {
+  0%   { opacity: 0; transform: translate(-50%, calc(var(--cfx-loot-i, 0) * -42px + 18px)) scale(.7); }
+  18%  { opacity: 1; transform: translate(-50%, calc(var(--cfx-loot-i, 0) * -42px)) scale(1.08); }
+  32%  { transform: translate(-50%, calc(var(--cfx-loot-i, 0) * -42px)) scale(1); }
+  78%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, calc(var(--cfx-loot-i, 0) * -42px - 30px)) scale(.95); }
+}
+
 /* Teintes de halo par élément (le glow). Les particules portent leur
    couleur en inline-style ; ici on colore halo + glow du glyphe. */
 .cfx-halo.cfx-feu       { background: radial-gradient(circle, rgba(255,138,42,.9) 0%, rgba(232,67,31,.2) 60%, transparent 70%); }
@@ -400,6 +439,10 @@ body.cfx-danger::after {
   @keyframes cfxStatusReduced { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: 0; } }
   /* Pétrification : neutralisée (le module n'en monte pas en reduced-motion). */
   .cfx-petrify { animation: none; }
+  /* Pop de butin (J1) : apparition statique brève sans montée. L'offset
+     d'empilement reste porté par le transform de base de l'élément. */
+  .cfx-loot-pop { animation: cfxLootPopReduced .7s ease-out forwards; }
+  @keyframes cfxLootPopReduced { 0% { opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
   /* Le boss-intro reste (carte-titre informative) mais sans rebond. */
   .cfx-boss-card { animation: cfxVeilIn .3s ease-out; }
   .cfx-halo, .cfx-glyph { animation-duration: .4s; }
