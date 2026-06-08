@@ -85,6 +85,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'HERO_BARKS',         source: 'hero-barks.js',   kind: 'obj', optional: true },
     { name: 'pickHeroBark',       source: 'hero-barks.js',   kind: 'fn',  optional: true },
     { name: 'heroBark',           source: 'hero-barks.js',   kind: 'fn',  optional: true },
+    { name: 'maitreDeLaMort',     source: 'state.js',        kind: 'obj' },
+    { name: 'checkHallowsUnion',  source: 'inventory-core.js', kind: 'fn' },
     { name: 'RIDDLES_LUMIERE',    source: 'data.js',         kind: 'obj' },
     { name: 'NPCS',               source: 'npcs.js',         kind: 'obj' },
     { name: 'RIDDLES',            source: 'riddles.js',      kind: 'obj' },

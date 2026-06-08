@@ -520,7 +520,7 @@ Au démarrage, `showPlayerSelect()` affiche un écran de sélection.
 > via le farming (`n = floor(kills/4)` : quad dès `n > 6`, quint dès `n >= 10`).
 > Calibrage des probabilités à affiner par simulation (Temps 2). Le rendu
 > (`renderEnemyGroup`) compacte icônes/barres au-delà de 3 et le conteneur
-> passe en `flex-wrap`. Cf. `.claude/plans/extend-opponent-count.md`.
+> passe en `flex-wrap`. Cf. `.claude/plans/_archive/extend-opponent-count.md`.
 
 ### Difficulté progressive par étage (scaling au grind)
 
@@ -654,7 +654,7 @@ qui sont hydratées dynamiquement depuis `CHARACTERS[key]`.
 
 ## Système d'équipement (inventory.js)
 
-Chaque personnage a ses propres slots d'équipement (`c.equipped`), distincts de l'inventaire partagé. Le moteur supporte **11 slots étendus** (refonte Phase 1-4 — voir `.claude/plans/equipment-extended.md`).
+Chaque personnage a ses propres slots d'équipement (`c.equipped`), distincts de l'inventaire partagé. Le moteur supporte **11 slots étendus** (refonte Phase 1-4 — voir `.claude/plans/_archive/equipment-extended.md`).
 
 ### Champs sur chaque personnage (state.js)
 ```js
@@ -757,8 +757,8 @@ c.fortune   = _fortuneCurve(c._fortuneX);   // courbe de Hill saturante
 
 Refonte des stats secondaires pour leur donner un débouché réel. Constantes
 dans `data.js`, calibration validée par `tools/sim-difficulty.js`
-(`--stat-rework`, réglage adouci). Cf. `.claude/plans/player-stats-balance.md`
-et `.claude/plans/luck-fortune.md`.
+(`--stat-rework`, réglage adouci). Cf. `.claude/plans/_archive/player-stats-balance.md`
+et `.claude/plans/_archive/luck-fortune.md`.
 
 | # | Décision | Implémentation | Calibration |
 |---|----------|----------------|-------------|
@@ -866,7 +866,7 @@ Les livres apparaissent avec l'étiquette 📖 violette dans l'inventaire.
 
 `openCharacter(charIdx)` peuple `#char-detail` (conteneur partagé avec
 `openQuestLog()`) puis affiche `#character-modal`. Refonte v2 — cf.
-`.claude/plans/character-ux-v2.md`.
+`.claude/plans/_archive/character-ux-v2.md`.
 
 ### Layout — `.char-grid`
 Grille CSS à zones nommées (`css/style.css`) :
@@ -1009,7 +1009,7 @@ dégâts via `spellDamage()`, helpers purs partagés avec les handlers.
 ### Crit + Esquive (stats dérivées)
 `recalculateStats()` calcule les stats dérivées exposées sur chaque
 personnage et affichées dans la modale Personnage. **Deux canaux de
-critique** : physique et sort (cf. `.claude/plans/crit-rework.md` +
+critique** : physique et sort (cf. `.claude/plans/_archive/crit-rework.md` +
 `agi-spell-crit.md`).
 
 | Stat                  | Formule                                              | Plage   |
@@ -1049,7 +1049,7 @@ AGI 75) ; au-delà, les points d'AGI étaient morts. **Célérité** (`c.celerit
 est le débouché post-plafond : une stat dérivée (courbe de Hill saturante,
 helper pur `_celeriteCurve` dans `inventory-core.js`) qui donne un **taux
 continu d'actions supplémentaires par round** — un **gain de tour FLUIDE, jamais
-par palier**. Cf. `.claude/plans/agi-derived.md`.
+par palier**. Cf. `.claude/plans/_archive/agi-derived.md`.
 
 ```
 celerite = CELERITE_MAX × x² / (x² + CELERITE_HALF²)   // → 0.30, demi-sat AGI 45
@@ -1093,7 +1093,7 @@ chaque capacité est tentée selon sa `chance` (0.0–1.0).
   déclaré dans `monsters.js`. Calibration : `power 0.10`, `chance 0.5`, `cap 2`,
   `capRef "hit"`. La référence `hit` rétrécit quand la DEF du joueur monte, ce
   qui découple les dégâts de la progression (anti-grind). Cf.
-  `.claude/plans/player-stats-balance.md §4ter`.
+  `.claude/plans/_archive/player-stats-balance.md §4ter`.
 
 Heuristique anti-stalling : face à une cible en Double-Garde (`guardTurns ≥ 2`),
 les capacités `weaken` voient leur `chance` multipliée par 1,5.
@@ -1111,7 +1111,7 @@ sert qu'au routage vers le handler). 6 éléments :
 Chaque sort de dégâts porte un `element` (cf. `SPELLS` dans `data.js`).
 `battle-spells.js — _spellElementalDamage / _spellLifesteal / _spellCurse`
 applique le multiplicateur. Bestiaire : `_renderResistWeakHtml` affiche
-l'emoji par élément. Plan : `.claude/plans/elemental-system.md`.
+l'emoji par élément. Plan : `.claude/plans/_archive/elemental-system.md`.
 
 ### Drops
 Après victoire, `endBattle()` tire indépendamment chaque entrée de `enemy.drops[]`.
@@ -1383,7 +1383,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | **+14 ajouts récents** | Niffleur, Elfe de Maison Rebelle, Bowtruckle Géant, Chevalier Fantôme, Gremlin Magique, Manticore Juvénile, Gardien du Portail, Fantôme du Sang Noir, Chauve-Souris Vampire, Vampire Novice, Strigoï Ancien, Poupée Maudite, Spectre Maudit, Hécate la Maudisseuse — voir `monsters.js` pour `minFloor`/`maxFloor` |
 | **+4 monstres étourdissants** | Lutin de Cornouailles (1–4), Strangulot (3–7), Pitiponk (4–8), Gargouille Éveillée (5–10) — capacité `effect:"status", statusId:"stun"`. PNG dédiés dans `img/monsters/`. |
 
-> Le **sprint endgame étages 8-10** (mai 2026, PRs #241-#243, #247-#252) a ajouté 14 monstres dont 6 boss epic uniques + 6 PNJ déterministes + 9 quêtes. Plan d'audit : [`.claude/plans/content-audit-stabilization.md`](./.claude/plans/content-audit-stabilization.md). Prompts Nano Banana v2 (cadrage figure entière) : [`.claude/plans/nano-banana-prompts-floor-8-10.md`](./.claude/plans/nano-banana-prompts-floor-8-10.md).
+> Le **sprint endgame étages 8-10** (mai 2026, PRs #241-#243, #247-#252) a ajouté 14 monstres dont 6 boss epic uniques + 6 PNJ déterministes + 9 quêtes. Plan d'audit : [`.claude/plans/content-audit-stabilization.md`](./.claude/plans/content-audit-stabilization.md). Prompts Nano Banana v2 (cadrage figure entière) : [`.claude/plans/_archive/nano-banana-prompts-floor-8-10.md`](./.claude/plans/_archive/nano-banana-prompts-floor-8-10.md).
 
 **Icônes SVG** définies dans `icons.js` pour tous les monstres majeurs.
 Les monstres sans SVG propre héritent du SVG de leur catégorie.
@@ -1777,8 +1777,8 @@ pip install pillow cairosvg numpy scipy
 ### Référence complète
 
 Procédure détaillée et historique : `tools/README.md` +
-`.claude/plans/house-intermediate-tier.md §2.7` (paliers Tier 2) +
-`.claude/plans/houses-2.0.md §B` (Sets de Maison 2.0).
+`.claude/plans/_archive/house-intermediate-tier.md §2.7` (paliers Tier 2) +
+`.claude/plans/_archive/houses-2.0.md §B` (Sets de Maison 2.0).
 
 ---
 
@@ -1889,7 +1889,7 @@ téléporte dans le donjon d'un autre joueur en ligne (host) via le sort
 **REST polling** sur Supabase (pas de Realtime SDK — philosophie zéro-dépendance).
 
 Plans : `.claude/plans/parallel-worlds.md` (design V1a→V1c, DDL §12),
-`.claude/plans/parallel-worlds-stabilization.md` (stabilisation LOT F).
+`.claude/plans/_archive/parallel-worlds-stabilization.md` (stabilisation LOT F).
 
 ### Modules (à compléter dans l'arborescence en tête de fichier)
 

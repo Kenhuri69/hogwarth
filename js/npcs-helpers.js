@@ -179,3 +179,22 @@ function _nickHuntCelebration(npc) {
   return _NICK_HUNT_CELEBRATIONS[Math.floor(Math.random() * _NICK_HUNT_CELEBRATIONS.length)];
 }
 
+// Indice escalade de l'easter egg « Les Reliques de la Mort » : tout fantôme
+// (sprite:'fantome') REMARQUE que le groupe possède déjà 1 ou 2 Reliques et
+// pousse vers l'union, sans jamais l'imposer ni citer d'objet précis. Greffée
+// dans l'idleRandom (npc-dialog.js), apparition non garantie. Renvoie une
+// réplique ou null. Cf. deathly-hallows-easter-egg.md §2.
+const _HALLOWS_GHOST_HINTS = [
+  "Tu portes sur toi la marque de l'un des trois frères, mortel… mais une seule. La légende parle de trois — réunies sur un même porteur, elles couronnent le Maître de la Mort.",
+  "Curieux. La Mort a posé un doigt sur toi, à travers ce que tu portes. Un seul des trois Présents, pour l'instant. Il t'en manque… et tu le sais déjà.",
+  "Les revenants sentent ces choses : tu détiens un fragment du conte des Trois Frères. Rassemble les Présents sur une même main, et la fable cessera d'en être une."
+];
+function _hallowsGhostHint(npc) {
+  if (!npc || npc.sprite !== 'fantome') return null;
+  if (typeof maitreDeLaMort !== 'undefined' && maitreDeLaMort) return null;
+  if (typeof _hallowsOwnedCount !== 'function') return null;
+  const n = _hallowsOwnedCount();
+  if (n !== 1 && n !== 2) return null;
+  return _HALLOWS_GHOST_HINTS[Math.floor(Math.random() * _HALLOWS_GHOST_HINTS.length)];
+}
+
