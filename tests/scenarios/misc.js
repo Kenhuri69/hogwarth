@@ -544,6 +544,27 @@ async function scenarioHeroBarks() {
   assert(scripted.repeat === null,            'beat scénarisé one-shot ne doit pas se répéter');
   assert(typeof scripted.cedric === 'string', 'beat Cedric leaveSchool doit parler si Cedric est présent');
 
+  // L7 — profils de voix par héros : chaque héros du registre de barks a un
+  // timbre distinct (pitch/rate valides) ; speakBark ne lève pas même sans OGG.
+  const voiceProf = await page.evaluate(() => {
+    const HV = AudioSystem.HERO_VOICE || {};
+    const heroes = Object.keys(HERO_BARKS);
+    const allCovered = heroes.every(k => HV[k] && typeof HV[k].pitch === 'number' && typeof HV[k].rate === 'number');
+    const inRange = Object.values(HV).every(p => p.pitch >= 0 && p.pitch <= 2 && p.rate >= 0.1 && p.rate <= 10);
+    // Au moins 2 timbres distincts → la différenciation est réelle.
+    const distinct = new Set(Object.values(HV).map(p => p.pitch + '/' + p.rate)).size;
+    // speakBark défensif : ne doit pas throw même voix coupée.
+    let threw = false;
+    try { AudioSystem.voiceEnabled = false; AudioSystem.speakBark('test', 'harry_crit'); }
+    catch (e) { threw = true; }
+    return { count: Object.keys(HV).length, allCovered, inRange, distinct, threw };
+  });
+  console.log('  L7 profils voix :', voiceProf);
+  assert(voiceProf.allCovered,        'chaque héros de HERO_BARKS doit avoir un profil HERO_VOICE');
+  assert(voiceProf.inRange,           'pitch/rate des profils de voix hors plage SpeechSynthesis');
+  assert(voiceProf.distinct >= 5,     'les profils de voix doivent offrir des timbres variés');
+  assert(!voiceProf.threw,            'speakBark ne doit jamais lever (défensif)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (barks)`);

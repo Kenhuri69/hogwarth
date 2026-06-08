@@ -386,6 +386,53 @@ Object.assign(AudioSystem, {
     'Sceau du Voyageur':     'spell_sceau_du_voyageur',
   },
 
+  // ── Profils de voix par héros (L7 — barks parlés) ─────────────
+  // Différencie le timbre des 13 héros en synthèse vocale (repli zéro-asset
+  // de speakBark, en attendant d'éventuels OGG enregistrés). `pitch` et `rate`
+  // sont calés sur le genre + le tempérament canon du perso (cf. CHARACTERS).
+  // Plage SpeechSynthesis : pitch 0–2, rate 0.1–10. `gender` ('f'|'m') sert à
+  // préférer une voix fr-FR du bon genre si le navigateur en expose une.
+  // Un héros absent retombe sur le profil neutre (pitch 1.0 / rate 1.0).
+  HERO_VOICE: {
+    harry:     { pitch: 0.95, rate: 1.00, gender: 'm' }, // déterminé, posé
+    hermione:  { pitch: 1.10, rate: 1.08, gender: 'f' }, // précise, rapide
+    draco:     { pitch: 0.90, rate: 0.95, gender: 'm' }, // hautain, froid
+    cho:       { pitch: 1.12, rate: 1.10, gender: 'f' }, // vive, agile
+    cedric:    { pitch: 1.00, rate: 0.98, gender: 'm' }, // loyal, chaleureux
+    celeste:   { pitch: 1.05, rate: 0.90, gender: 'f' }, // mystique, rêveuse
+    iris:      { pitch: 1.20, rate: 1.12, gender: 'f' }, // pétillante, espiègle
+    maxence:   { pitch: 0.82, rate: 0.92, gender: 'm' }, // sombre, taciturne
+    anastasia: { pitch: 1.00, rate: 1.02, gender: 'f' }, // analytique, calme
+    louis:     { pitch: 0.92, rate: 1.05, gender: 'm' }, // ardent, vif
+    jeanne:    { pitch: 1.18, rate: 1.00, gender: 'f' }, // chantante, fantasque
+    agathe:    { pitch: 1.08, rate: 0.93, gender: 'f' }, // douce, bienveillante
+    olivier:   { pitch: 0.88, rate: 1.08, gender: 'm' }, // intense, électrique
+  },
+
+  // Voix fr-FR par genre, mise en cache. Best-effort : si le navigateur
+  // n'expose pas de voix fr (ou pas du bon genre), retombe sur n'importe
+  // quelle fr-FR, puis null (le moteur choisit alors sa voix par défaut).
+  _frVoiceCache: { f: undefined, m: undefined, any: undefined },
+  _pickFrVoice(gender) {
+    if (!window.speechSynthesis) return null;
+    const key = (gender === 'f' || gender === 'm') ? gender : 'any';
+    if (this._frVoiceCache[key] !== undefined) return this._frVoiceCache[key];
+    const voices = speechSynthesis.getVoices();
+    if (!voices.length) return null; // pas encore chargées — réessai au prochain appel
+    const fr = voices.filter(v => /^fr(-|_|$)/i.test(v.lang));
+    let found = null;
+    if (fr.length) {
+      // Heuristique de genre par nom de voix (fragile mais sans coût si absente).
+      const fName = /(amelie|amélie|audrey|marie|julie|virginie|c[ée]line|female|femme|aurélie|aurelie)/i;
+      const mName = /(thomas|nicolas|paul|henri|mathieu|male|homme|daniel)/i;
+      if (gender === 'f') found = fr.find(v => fName.test(v.name));
+      else if (gender === 'm') found = fr.find(v => mName.test(v.name));
+      found = found || fr[0];
+    }
+    this._frVoiceCache[key] = found;
+    return found;
+  },
+
   _pickVoice() {
     if (this._cachedVoice) return this._cachedVoice;
     const voices = speechSynthesis.getVoices();
@@ -442,15 +489,21 @@ Object.assign(AudioSystem, {
       this.playVoice(voiceKey);
       return;
     }
-    // Repli zéro-asset : synthèse vocale du navigateur, en français.
+    // Repli zéro-asset : synthèse vocale du navigateur, en français, avec un
+    // timbre propre au héros (profil HERO_VOICE). heroKey = 1er segment de
+    // voiceKey ('<heroKey>_<event>') ; aucun heroKey ne contient de '_'.
     if (!text || !window.speechSynthesis) return;
+    const heroKey = voiceKey ? String(voiceKey).split('_')[0] : '';
+    const prof    = (this.HERO_VOICE && this.HERO_VOICE[heroKey]) || null;
     try {
       speechSynthesis.cancel();
       const utt   = new SpeechSynthesisUtterance(String(text));
       utt.lang    = 'fr-FR';
-      utt.pitch   = 1.0;
-      utt.rate    = 1.0;
+      utt.pitch   = prof ? prof.pitch : 1.0;
+      utt.rate    = prof ? prof.rate  : 1.0;
       utt.volume  = 0.85;
+      const voice = this._pickFrVoice(prof ? prof.gender : null);
+      if (voice) utt.voice = voice;
       speechSynthesis.speak(utt);
     } catch (_) { /* synthèse indisponible — silencieux */ }
   },

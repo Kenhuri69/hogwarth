@@ -25,6 +25,12 @@
 >   `_VOICE_SAMPLES`), sinon repli SpeechSynthesis FR ; gardé par `voiceEnabled`.
 >   `heroBark` route sa voix via `speakBark`. Production des OGG = asset différé
 >   (binaire, hors-scope code). Smoke L7 (gate + routage OGG).
+>   **L7b — Profils de voix par héros** : ✅ registre `AudioSystem.HERO_VOICE`
+>   (13 héros : `pitch`/`rate`/`gender` calés sur genre+tempérament canon) +
+>   `_pickFrVoice(gender)` (préférence voix fr-FR du bon genre, best-effort,
+>   cache). `speakBark` dérive `heroKey` de `voiceKey` et applique le profil →
+>   chaque héros a un timbre distinct **sans aucun asset binaire**. Smoke L7b
+>   (couverture 13 héros, plage SpeechSynthesis, ≥5 timbres distincts, défensif).
 > - **L8 — Étages-scènes fixes** : ✅ `heroBarkScripted(heroKey, event)`
 >   (`hero-barks.js`, ne parle que si le héros visé est présent/vivant,
 >   one-shot) + **les 5 beats de trame (05 §5.4.2)** : Céleste à la 1ʳᵉ fontaine
