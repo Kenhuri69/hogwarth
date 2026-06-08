@@ -31,6 +31,13 @@
 >   cache). `speakBark` dérive `heroKey` de `voiceKey` et applique le profil →
 >   chaque héros a un timbre distinct **sans aucun asset binaire**. Smoke L7b
 >   (couverture 13 héros, plage SpeechSynthesis, ≥5 timbres distincts, défensif).
+>   **L7c — Modulation par émotion** : ✅ table `AudioSystem.EMOTION_VOICE`
+>   (multiplicateurs `pitch`/`rate` par événement : `crit` triomphant, `allyDown`
+>   grave, `bossAppear` tendu, beats de trame solennels…) + helper pur
+>   `_barkVoiceParams(voiceKey)` = profil héros × émotion, borné à la plage
+>   valide. `speakBark` route via ce helper. Un même héros change d'intonation
+>   selon l'événement, sa personnalité (base) conservée. Smoke L7c (crit > allyDown,
+>   événement/héros inconnu → neutre, bornage).
 > - **L8 — Étages-scènes fixes** : ✅ `heroBarkScripted(heroKey, event)`
 >   (`hero-barks.js`, ne parle que si le héros visé est présent/vivant,
 >   one-shot) + **les 5 beats de trame (05 §5.4.2)** : Céleste à la 1ʳᵉ fontaine

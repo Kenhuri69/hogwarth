@@ -409,6 +409,45 @@ Object.assign(AudioSystem, {
     olivier:   { pitch: 0.88, rate: 1.08, gender: 'm' }, // intense, électrique
   },
 
+  // ── Émotion par événement (L7c) ───────────────────────────────
+  // Multiplicateurs appliqués PAR-DESSUS le profil de base du héros selon
+  // l'événement qui déclenche le bark (`<heroKey>_<event>`). Un même héros
+  // sonne triomphant sur `crit`, grave sur `allyDown`, solennel sur les beats
+  // de trame. Multiplicatif → la personnalité du héros est conservée, seule
+  // l'intonation bouge. Événement inconnu → neutre (×1.0). Résultat borné à
+  // la plage SpeechSynthesis (pitch 0–2, rate 0.1–10).
+  EMOTION_VOICE: {
+    crit:           { pitch: 1.08, rate: 1.10 }, // éclat triomphant, vif
+    bossAppear:     { pitch: 0.95, rate: 0.96 }, // tendu, posé, menaçant
+    allyDown:       { pitch: 0.90, rate: 0.92 }, // grave, inquiet
+    levelUp:        { pitch: 1.06, rate: 1.04 }, // enjoué, montant
+    houseTier:      { pitch: 1.03, rate: 1.00 }, // fier, assuré
+    tierTransition: { pitch: 0.97, rate: 0.96 }, // contemplatif
+    // Beats de trame scénarisés (05 §5.4.2) — registre solennel/dramatique.
+    fountainCold:         { pitch: 0.96, rate: 0.90 },
+    firstMangemort:       { pitch: 0.93, rate: 0.95 },
+    leaveSchool:          { pitch: 0.98, rate: 0.95 },
+    preVoldemortGryff:    { pitch: 1.00, rate: 0.98 },
+    preVoldemortDefiance: { pitch: 0.92, rate: 0.94 },
+  },
+
+  // Calcule les paramètres de voix d'un bark (pur, testable) : profil de base
+  // du héros × modulation d'émotion de l'événement, borné à la plage valide.
+  // voiceKey = '<heroKey>_<event>'. Retourne { pitch, rate, gender }.
+  _barkVoiceParams(voiceKey) {
+    const parts   = voiceKey ? String(voiceKey).split('_') : [];
+    const heroKey = parts[0] || '';
+    const event   = parts[1] || '';
+    const base    = (this.HERO_VOICE && this.HERO_VOICE[heroKey]) || { pitch: 1.0, rate: 1.0, gender: null };
+    const emo     = (this.EMOTION_VOICE && this.EMOTION_VOICE[event]) || { pitch: 1.0, rate: 1.0 };
+    const clamp   = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    return {
+      pitch:  clamp(base.pitch * emo.pitch, 0, 2),
+      rate:   clamp(base.rate  * emo.rate,  0.1, 10),
+      gender: base.gender,
+    };
+  },
+
   // Voix fr-FR par genre, mise en cache. Best-effort : si le navigateur
   // n'expose pas de voix fr (ou pas du bon genre), retombe sur n'importe
   // quelle fr-FR, puis null (le moteur choisit alors sa voix par défaut).
@@ -490,19 +529,18 @@ Object.assign(AudioSystem, {
       return;
     }
     // Repli zéro-asset : synthèse vocale du navigateur, en français, avec un
-    // timbre propre au héros (profil HERO_VOICE). heroKey = 1er segment de
-    // voiceKey ('<heroKey>_<event>') ; aucun heroKey ne contient de '_'.
+    // timbre propre au héros (HERO_VOICE) modulé par l'émotion de l'événement
+    // (EMOTION_VOICE). voiceKey = '<heroKey>_<event>'.
     if (!text || !window.speechSynthesis) return;
-    const heroKey = voiceKey ? String(voiceKey).split('_')[0] : '';
-    const prof    = (this.HERO_VOICE && this.HERO_VOICE[heroKey]) || null;
+    const p = this._barkVoiceParams(voiceKey);
     try {
       speechSynthesis.cancel();
       const utt   = new SpeechSynthesisUtterance(String(text));
       utt.lang    = 'fr-FR';
-      utt.pitch   = prof ? prof.pitch : 1.0;
-      utt.rate    = prof ? prof.rate  : 1.0;
+      utt.pitch   = p.pitch;
+      utt.rate    = p.rate;
       utt.volume  = 0.85;
-      const voice = this._pickFrVoice(prof ? prof.gender : null);
+      const voice = this._pickFrVoice(p.gender);
       if (voice) utt.voice = voice;
       speechSynthesis.speak(utt);
     } catch (_) { /* synthèse indisponible — silencieux */ }
