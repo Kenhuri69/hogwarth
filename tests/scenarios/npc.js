@@ -1545,4 +1545,57 @@ async function scenarioCleVouteIntro() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro] };
+// Lots 4-5 ch.09 — réaction contextuelle PNJ↔créature (dialogues conditionnels).
+// Un PNJ tuteur reconnaît une créature liée VAINCUE (monsterKills > 0) via une
+// réplique greffée dans son pool idle. Test déterministe : Kingsley (sprite
+// "mage") n'a aucune greffe fantôme, donc Math.random≈1 sélectionne toujours la
+// DERNIÈRE entrée du pool — la réaction est concaténée en dernier quand active.
+async function scenarioNpcCreatureReaction() {
+  console.log('\n── Scénario : réaction contextuelle PNJ↔créature (ch.09 §VI) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const r = await page.evaluate(() => {
+    const npc = getNpcById('kingsley');
+    const d   = npc.dialogues;
+    seenNpcs.add('kingsley');             // saute le greeting → branche idle
+    const origRandom = Math.random;
+    Math.random = () => 0.9999;           // pioche toujours la dernière entrée
+    try {
+      monsterKills = {};                                   // aucune victoire
+      const none     = _resolveDialogSource(npc, 'idle').raw;
+      monsterKills = { fenrir_greyback: 1 };               // Greyback vaincu
+      const greyback = _resolveDialogSource(npc, 'idle').raw;
+      monsterKills = { fenrir_greyback: 1, auror_corrompu: 1 }; // + Auror
+      const auror    = _resolveDialogSource(npc, 'idle').raw;
+      return {
+        none, greyback, auror,
+        lastIdle:     d.idleRandom[d.idleRandom.length - 1],
+        greybackText: d.contextualReaction[0].text,
+        aurorText:    d.contextualReaction[1].text,
+      };
+    } finally { Math.random = origRandom; }
+  });
+  console.log('  reactions:', {
+    noneIsLastIdle: r.none === r.lastIdle,
+    greybackMatch:  r.greyback === r.greybackText,
+    aurorMatch:     r.auror === r.aurorText,
+  });
+  assert(r.none === r.lastIdle,
+    `sans victoire, l'idle doit rester idleRandom (got "${r.none}")`);
+  assert(r.none !== r.greybackText,
+    'la réaction ne doit pas apparaître tant que la créature est vivante');
+  assert(r.greyback === r.greybackText,
+    `Greyback vaincu → réaction greffée (got "${r.greyback}")`);
+  assert(r.auror === r.aurorText,
+    `Auror vaincu → réaction greffée (got "${r.auror}")`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ réaction contextuelle PNJ↔créature conforme');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcCreatureReaction] };

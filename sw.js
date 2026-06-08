@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v79';
+const CACHE_VERSION = 'hogwarth-v80';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -49,7 +49,7 @@ const PRECACHE_URLS = [
   './js/icons.js?v=1',
   './js/scene-icons.js?v=5',
   './js/monsters.js?v=8',
-  './js/npcs.js?v=19',
+  './js/npcs.js?v=20',
   './js/npcs-helpers.js?v=2',
   './js/riddles.js?v=2',
   './js/data.js?v=24',
@@ -93,7 +93,7 @@ const PRECACHE_URLS = [
   './js/quests-templates.js?v=6',
   './js/quests.js?v=10',
   './js/quests-riddles.js?v=2',
-  './js/npc-dialog.js?v=13',
+  './js/npc-dialog.js?v=14',
   './js/karaoke.js?v=1',
   './js/intro.js?v=3',
   './js/shop.js?v=10',
