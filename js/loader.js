@@ -95,6 +95,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'getFloorTheme',      source: 'floor-themes.js', kind: 'fn'  },
     { name: 'FLOOR_EVENTS',       source: 'floor-events.js', kind: 'obj' },
     { name: 'rollFloorEvent',     source: 'floor-events.js', kind: 'fn'  },
+    { name: 'maybeRoomFlavor',    source: 'room-flavor.js',  kind: 'fn',  optional: true },
+    { name: 'RoomFlavor',         source: 'room-flavor.js',  kind: 'obj', optional: true },
 
     // ── État global (critiques) ──
     { name: 'player',             source: 'state.js',        kind: 'obj' },

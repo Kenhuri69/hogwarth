@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v71';
+const CACHE_VERSION = 'hogwarth-v72';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -55,6 +55,7 @@ const PRECACHE_URLS = [
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
   './js/floor-events.js?v=1',
+  './js/room-flavor.js?v=1',
   './js/item-icons.js?v=19',
   './js/state.js?v=22',
   './js/hero-barks.js?v=1',
@@ -73,7 +74,7 @@ const PRECACHE_URLS = [
   './js/renderer-sprites.js?v=4',
   './js/renderer-entities.js?v=2',
   './js/renderer-minimap.js?v=7',
-  './js/movement.js?v=27',
+  './js/movement.js?v=28',
   './js/movement-floors.js?v=4',
   './js/movement-interactions.js?v=11',
   './js/swipe-canvas.js?v=4',
@@ -108,7 +109,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=26',
+  './js/loader.js?v=27',
   './js/pwa.js?v=3',
 
   // Icônes PWA + premier écran
