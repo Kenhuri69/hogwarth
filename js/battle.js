@@ -477,6 +477,7 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
     const mitigated = Math.max(0, Math.floor(dmg / 2 * _resistMult(target)));
     target.hp = Math.max(0, target.hp - mitigated);
     UX_safe.floatDmg('ally', mitigated, 'dmg');
+    if (mitigated > 0) UX_safe.cardReact(charIdx, 'dmg'); // réaction de carte (K1)
     CFX_safe.shake(enemy && enemy.epic ? 'heavy' : 'light'); // coup encaissé (Lot 1)
     _maybeHurtFlash(mitigated, target); // flash de dégâts encaissés (D3)
     UX_safe.logCombat(`🛡️ ${target.name} mitige ${enemy.name} : <b>−${mitigated}</b> <small>(au lieu de −${dmg})</small>`, 'magic');
@@ -487,6 +488,7 @@ function _enemyPhysicalHit(enemy, target, charIdx) {
   const dmg = Math.max(0, Math.floor(raw * _resistMult(target)));
   target.hp = Math.max(0, target.hp - dmg);
   UX_safe.floatDmg('ally', dmg === 0 ? 0 : dmg, dmg === 0 ? 'miss' : 'dmg');
+  if (dmg > 0) UX_safe.cardReact(charIdx, 'dmg'); // réaction de carte (K1)
   _maybeHurtFlash(dmg, target); // flash de dégâts encaissés (D3)
   UX_safe.logCombat(`${enemy.icon} ${enemy.name} → ${target.name} : <b>−${dmg} PV</b>`, 'bad');
   return `${enemy.icon} → ${target.name} : -${dmg} PV. `;

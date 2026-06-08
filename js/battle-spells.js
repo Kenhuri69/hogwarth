@@ -67,6 +67,7 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
         target.hp = Math.max(0, target.hp - dmg);
         appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → ${dmg} dégâts sur ${target.name} ! `);
         UX_safe.floatDmg('ally', dmg, 'dmg');
+        UX_safe.cardReact(charIdx, 'dmg'); // réaction de carte (K1)
         UX_safe.logCombat(`${ability.icon} ${enemy.name} : ${ability.name} → <b>−${dmg}</b> sur ${target.name}`, 'bad');
       }
       break;
@@ -92,6 +93,7 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
         target.hp = Math.max(0, target.hp - dmg);
         appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → ${dmg} dégâts sur ${target.name} ! `);
         UX_safe.floatDmg('ally', dmg, 'dmg');
+        UX_safe.cardReact(charIdx, 'dmg'); // réaction de carte (K1)
         UX_safe.logCombat(`${ability.icon} ${enemy.name} : ${ability.name} → <b>−${dmg}</b> sur ${target.name}`, 'bad');
       }
       break;
@@ -147,6 +149,7 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       appendLog(`${ability.icon} ${enemy.name} — ${ability.name} → draine ${drained} PV de ${target.name} ! `);
       const drainIdx = enemyGroup.indexOf(enemy);
       UX_safe.floatDmg('ally', drained, 'dmg');
+      UX_safe.cardReact(charIdx, 'dmg'); // réaction de carte (K1)
       UX_safe.floatDmg(`enemy:${drainIdx}`, Math.floor(drained/2), 'heal');
       UX_safe.logCombat(`${ability.icon} ${enemy.name} draine <b>${drained} PV</b> à ${target.name}`, 'bad');
       renderEnemyGroup();

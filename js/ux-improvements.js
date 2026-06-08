@@ -472,15 +472,31 @@
       setTimeout(() => card && card.classList.remove('shake-hit'), 350);
     }
     if (type === 'heal') {
-      // flash sur la carte du perso actif
+      // flash sur la carte du perso actif (caster) — délégué à cardReact (K1)
       const idx = (typeof currentBattleChar !== 'undefined') ? currentBattleChar : 0;
-      const cc = document.getElementById(`char-card-${idx}`);
-      if (cc) {
-        cc.classList.add('flash-heal');
-        setTimeout(() => cc.classList.remove('flash-heal'), 500);
-      }
+      cardReact(idx, 'heal');
     }
     setTimeout(() => el.remove(), 1300);
+  }
+
+  // Public: cardReact(charIdx, kind) — K1
+  // Réaction visuelle de la carte de groupe #char-card-<idx> du membre
+  // concerné : flash de fond (rouge dégât / vert soin) + micro-secousse pour
+  // dmg/crit. kind ∈ 'dmg'|'crit'|'heal'. La gestion reduced-motion (flash sans
+  // secousse) est portée par le CSS (css/ux-improvements.css). Défensif : no-op
+  // si la carte n'existe pas (mode solo carte 1 masquée, hors combat…).
+  function cardReact(charIdx, kind) {
+    const cc = document.getElementById('char-card-' + ((charIdx | 0)));
+    if (!cc) return;
+    const cls = kind === 'heal' ? 'flash-heal'
+              : kind === 'crit' ? 'card-react-crit'
+              : 'card-react-dmg';
+    // Reset puis reflow pour rejouer l'anim si la même classe revient vite
+    // (multi-coups sur la même carte dans un même tour).
+    cc.classList.remove('flash-heal', 'card-react-dmg', 'card-react-crit');
+    void cc.offsetWidth;
+    cc.classList.add(cls);
+    setTimeout(() => cc.classList.remove(cls), 550);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -490,7 +506,8 @@
     showTooltip, hideTooltip,
     logCombat, logCombatTurn, clearCombatLog,
     renderTimeline,
-    floatDmg
+    floatDmg,
+    cardReact
   };
 
   // Initialisation au DOMContentLoaded
