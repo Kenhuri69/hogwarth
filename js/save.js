@@ -454,6 +454,7 @@ function _applyState(gs) {
   drawDungeon();
   if (typeof startNpcAnimLoop === 'function') startNpcAnimLoop();
   if (typeof startDungeonFxLoop === 'function') startDungeonFxLoop();
+  if (typeof DFX_safe !== 'undefined') DFX_safe.setFloorAmbience();
   updateLocationDisplay();
 }
 

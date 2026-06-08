@@ -468,7 +468,11 @@ Object.assign(AudioSystem, {
   // bord est purement audio — n'altère aucun état de jeu / RNG de simulation.
   maybeAmbientBark(floor) {
     if (this.isMuted || this.inCombat || this.inMenu) return false;
-    const chance = (typeof this._AMBIENT_BARK_CHANCE === 'number') ? this._AMBIENT_BARK_CHANCE : 0.07;
+    let chance = (typeof this._AMBIENT_BARK_CHANCE === 'number') ? this._AMBIENT_BARK_CHANCE : 0.07;
+    // Signature d'événement d'étage (I2) : un étage hanté est plus « vivant »
+    // — barks plus fréquents. Purement audio, n'altère aucun état de jeu.
+    const haunted = (typeof currentFloorEvent !== 'undefined') && currentFloorEvent === 'hante';
+    if (haunted) chance *= 1.6;
     if (Math.random() >= chance) return false;
     this.init();
     let zone = 'intro';
@@ -478,12 +482,14 @@ Object.assign(AudioSystem, {
       if (th && th.ambient) zone = th.ambient;
     }
     // Pool de barks par zone (du plus clair au plus oppressant).
-    const pool = {
+    let pool = {
       intro:   ['drip', 'creak'],
       dungeon: ['creak', 'clang', 'drip'],
       depths:  ['groan', 'clang', 'creak'],
       abyss:   ['rumble', 'groan'],
     }[zone] || ['drip'];
+    // Étage hanté : biais vers les sons les plus oppressants, toutes zones.
+    if (haunted) pool = ['groan', 'rumble', 'groan', 'clang'];
     const kind = pool[Math.floor(Math.random() * pool.length)];
     try { this._playBark(kind); } catch (_) { /* contexte indispo → silencieux */ }
     return true;

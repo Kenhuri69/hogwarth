@@ -142,7 +142,29 @@ let _dungeonFxTimer = null;
     setTimeout(cleanup, 800);
   }
 
-  window.DungeonFX = { startDungeonFxLoop, shakeView, stepBob, burst };
+  // ── Signature d'ambiance d'événement d'étage (I2) ─────────────
+  // Pose une classe STATIQUE sur .scene-viewport reflétant currentFloorEvent :
+  // vignette froide oppressante pour « hante », halo runique violacé pour
+  // « runique ». Les autres événements n'ont pas de signature visuelle
+  // (« tresor » est déjà lisible, etc.). Purement décorative et statique
+  // (pas d'animation) → reduced-motion safe sans garde. Idempotente : retire
+  // toute classe d'ambiance précédente avant de poser la nouvelle, donc
+  // réinitialise l'ambiance à chaque entrée d'étage (call-sites onArrive /
+  // startGame / _applyState). Lit le global currentFloorEvent (pas d'argument).
+  const _AMBIENCE_CLASSES = {
+    hante:   'dfx-ambience-hante',
+    runique: 'dfx-ambience-runique',
+  };
+  function setFloorAmbience() {
+    const vp = document.querySelector('.scene-viewport');
+    if (!vp) return;
+    for (const cls of Object.values(_AMBIENCE_CLASSES)) vp.classList.remove(cls);
+    const ev  = (typeof currentFloorEvent !== 'undefined') ? currentFloorEvent : null;
+    const cls = ev && _AMBIENCE_CLASSES[ev];
+    if (cls) vp.classList.add(cls);
+  }
+
+  window.DungeonFX = { startDungeonFxLoop, shakeView, stepBob, burst, setFloorAmbience };
   // Exposé aussi en global nu pour les call-sites existants (main.js / save.js).
   window.startDungeonFxLoop = startDungeonFxLoop;
 })();
