@@ -1,6 +1,7 @@
 # Plan — Easter egg « Les Reliques de la Mort »
 
-> Statut : 🟧 **en cours d'implémentation** (2026-06-08, branche
+> Statut : ✅ **PLAN CLOS** — implémenté, testé (smoke 164/164) et **mergé**
+> sur `master` (PR #405, 2026-06-08, branche
 > `claude/plan-relica-implementation-rTx5G`). Décisions §3 retenues telles
 > quelles (toutes ✅). 4ᵉ easter egg (après l'arc Manon livré, et les plans
 > « Chasse Sans Tête » + « Salle sur Demande »). Registre : **mythique /
