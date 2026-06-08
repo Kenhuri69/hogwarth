@@ -94,7 +94,7 @@ projectile « parte » du lanceur.
   réel d'un sort → couche montée/retirée sans throw ; reduced-motion → halo
   seul.
 
-### G3. Télégraphe du tour ennemi (optionnel, si G1/G2 rapides)
+### G3. Télégraphe du tour ennemi ✅ (livré 2026-06-08)
 Bref highlight/wind-up (scale + glow ~250 ms) sur la carte de l'ennemi qui
 s'apprête à agir, pour que les attaques semblent intentionnelles.
 
@@ -102,8 +102,14 @@ s'apprête à agir, pour que les attaques semblent intentionnelles.
   chaque ennemi dans `enemyTurn` (battle.js), via `CFX_safe`. CSS pur
   (classe transitoire). reduced-motion → no-op.
 - **Vérif** : volet G3 du scénario — méthode présente, appel sans throw.
-- **Statut** : à confirmer après G1/G2 (ne pas surcharger le tour ennemi
-  si le rythme en pâtit).
+- **Statut** : ✅ livré. **Décision d'implémentation** : le tour ennemi
+  (`enemyTurn`) est entièrement synchrone (un seul `setBattleLog` en fin de
+  tour, pas de révélation séquentielle) et `renderEnemyGroup` vide le
+  conteneur (`innerHTML=''`). Un télégraphe par-ennemi dans la boucle serait
+  donc (a) simultané de toute façon et (b) effacé par les `renderEnemyGroup`
+  intra-boucle. → posé **une fois en tête** de `enemyTurn` sur toutes les
+  cartes vivantes (wind-up collectif, robuste), pas dans la boucle. N'altère
+  ni le timing ni la résolution.
 
 ---
 
@@ -209,7 +215,7 @@ Renforcer le moment du level-up (déjà sonore via `playLevelUp`) d'un
 5. **H1** — bob de caméra (présence physique).
 6. **H2** — variation de pas par surface. ✅
 7. **I2** — renfort d'ambiance des événements (à cadrer minimal). ✅
-8. **G3** / **J2** — optionnels, si budget.
+8. **G3** ✅ / **J2** — optionnels, si budget.
 
 Chaque item = une PR dédiée, smoke vert, journal mis à jour.
 
@@ -337,4 +343,19 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
   `dungeon-fx.js` (4→5), `dungeon-fx.css` (3→4), `audio-sfx.js` (6→7),
   `movement-floors.js` (4→5), `main.js` (15→16), `save.js` (25→26) ;
   `CACHE_VERSION` v74 → v75. Pas de nouveau global (méthode de `DungeonFX`)
-  → loader inchangé.
+  → loader inchangé. Mergé en **PR #416**.
+- 2026-06-08 : **G3 livré** (branche `claude/immersion-g3-enemy-telegraph`).
+  `CombatFX.telegraph(enemyIdx)` (`combat-fx.js`) pose la classe transitoire
+  `.cfx-telegraph` sur `#enemy-card-N` — bref wind-up (échelle 1.07 + lueur
+  ambrée, ~300 ms, retirée après 320 ms). CSS pur (`combat-fx.css`),
+  reduced-motion → no-op (le module ne pose pas la classe). Câblé **une fois
+  en tête** de `enemyTurn` (`battle.js`) sur tous les ennemis vivants via
+  `CFX_safe` (cf. décision d'implémentation G3 : tour synchrone +
+  `renderEnemyGroup` vidant le conteneur → wind-up collectif, pas par-ennemi
+  dans la boucle). N'altère ni le timing ni la résolution du tour. Test :
+  volets **F1** (API) + **F11** (classe posée par l'appel direct ET par le
+  call-site réel `enemyTurn`, sans throw) dans `scenarioCombatFX`
+  (`tests/scenarios/fx.js`). smoke (167) + units (83) + pwa-smoke (v76) verts.
+  **Bumps** : `combat-fx.js` (9→10), `combat-fx.css` (10→11), `battle.js`
+  (25→26) ; `CACHE_VERSION` v75 → v76. Pas de nouveau global (méthode de
+  `CombatFX`) → loader inchangé.

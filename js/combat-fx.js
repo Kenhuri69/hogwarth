@@ -420,6 +420,22 @@
     setTimeout(() => g.remove(), 680);
   }
 
+  // ── Télégraphe du tour ennemi (G3) ───────────────────────────
+  // Bref wind-up (échelle + lueur ~280 ms) sur la carte de l'ennemi qui
+  // s'apprête à agir, pour que ses attaques semblent intentionnelles.
+  // Classe CSS transitoire posée sur #enemy-card-N, retirée après l'anim.
+  // Purement visuel : ne touche aucune mécanique ni timing du tour ennemi.
+  // reduced-motion → no-op (pas de mouvement préparatoire).
+  function telegraph(enemyIdx) {
+    if (prefersReducedMotion()) return;
+    const card = document.getElementById('enemy-card-' + enemyIdx);
+    if (!card) return;
+    card.classList.remove('cfx-telegraph');
+    void card.offsetWidth; // reflow → permet de rejouer l'animation
+    card.classList.add('cfx-telegraph');
+    setTimeout(() => card.classList.remove('cfx-telegraph'), 320);
+  }
+
   // ── Pétrification de la mort (hors Ironman) — C2 ─────────────
   // Overlay plein écran qui désature + givre la scène avant le death-screen.
   // backdrop-filter (grayscale + brightness) ramping + givre en box-shadow
@@ -440,7 +456,7 @@
     return DUR;
   }
 
-  window.CombatFX = { spellBurst, deathDissolve, castFlash, lootPop, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, petrify };
+  window.CombatFX = { spellBurst, deathDissolve, castFlash, lootPop, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, telegraph, petrify };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle

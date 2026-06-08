@@ -996,6 +996,11 @@ function _checkBossPhases(enemy) {
 function enemyTurn() {
   battleTurn++;
   UX_safe.logCombatTurn(battleTurn + 1);
+  // Télégraphe (G3) : bref wind-up sur les cartes des ennemis qui s'apprêtent
+  // à agir, pour que leurs actions semblent intentionnelles. Posé en tête du
+  // tour, avant tout re-render (renderEnemyGroup vide le conteneur). Purement
+  // visuel via CFX_safe ; n'altère ni le timing ni la résolution du tour.
+  livingEnemies().forEach(e => CFX_safe.telegraph(enemyGroup.indexOf(e)));
   const alive = party.slice(0, partySize).filter(c => c.hp > 0);
   // Voix des héros — snapshot des vivants pour détecter un KO ce round.
   const _aliveBefore = party.slice(0, partySize).map(c => c.hp > 0);

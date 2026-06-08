@@ -229,6 +229,7 @@ async function scenarioCombatFX() {
     hasDissolve: typeof window.CombatFX?.deathDissolve === 'function',
     hasCast:   typeof window.CombatFX?.castFlash === 'function',
     hasLoot:   typeof window.CombatFX?.lootPop === 'function',
+    hasTelegraph: typeof window.CombatFX?.telegraph === 'function',
     hasProxy:  typeof window.CFX_safe?.spellBurst === 'function',
   }));
   console.log('  F1 module:', f1);
@@ -241,6 +242,7 @@ async function scenarioCombatFX() {
   assert(f1.hasDissolve, 'F1 API deathDissolve (G1) absente');
   assert(f1.hasCast, 'F1 API castFlash (G2) absente');
   assert(f1.hasLoot, 'F1 API lootPop (J1) absente');
+  assert(f1.hasTelegraph, 'F1 API telegraph (G3) absente');
   assert(f1.hasProxy, 'F1 CFX_safe proxy absent');
 
   await startDummyFight(page, { hp: 50 });
@@ -426,11 +428,34 @@ async function scenarioCombatFX() {
   assert(f10.count >= 2, 'F10 pop de butin non monté (≥ 2 attendus)');
   assert(f10.idxSecond === '1', 'F10 offset d\'empilement non appliqué (--cfx-loot-i)');
 
+  // F11 — télégraphe du tour ennemi (G3) : telegraph pose la classe
+  // transitoire .cfx-telegraph sur la carte de l'ennemi ciblé ; le call-site
+  // réel (enemyTurn) la pose sur les ennemis vivants sans throw.
+  await startDummyFight(page, { hp: 80 });
+  const f11 = await page.evaluate(() => {
+    let threw = false, direct = false, viaTurn = 0;
+    try {
+      window.CombatFX.telegraph(0);
+      const card = document.getElementById('enemy-card-0');
+      direct = !!(card && card.classList.contains('cfx-telegraph'));
+      // Call-site réel : enemyTurn télégraphie tous les ennemis vivants.
+      // On nettoie d'abord les classes posées par l'appel direct.
+      document.querySelectorAll('.cfx-telegraph').forEach(el => el.classList.remove('cfx-telegraph'));
+      enemyTurn();
+      viaTurn = document.querySelectorAll('.enemy-card.cfx-telegraph').length;
+    } catch (e) { threw = true; }
+    return { threw, direct, viaTurn };
+  });
+  console.log('  F11 telegraph:', f11);
+  assert(!f11.threw, 'F11 telegraph/enemyTurn throw');
+  assert(f11.direct, 'F11 classe .cfx-telegraph non posée par l\'appel direct');
+  assert(f11.viaTurn >= 1, 'F11 enemyTurn n\'a télégraphié aucun ennemi vivant');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error('Erreurs console pendant le scénario Combat FX');
   }
-  console.log('  ✅ Combat FX (VFX + shake + boss intro + désintégration G1 + cast G2 + butin J1) OK');
+  console.log('  ✅ Combat FX (VFX + shake + boss intro + désintégration G1 + cast G2 + butin J1 + télégraphe G3) OK');
   await browser.close();
 }
 
