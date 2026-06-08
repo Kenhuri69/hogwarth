@@ -164,7 +164,24 @@ let _dungeonFxTimer = null;
     if (cls) vp.classList.add(cls);
   }
 
-  window.DungeonFX = { startDungeonFxLoop, shakeView, stepBob, burst, setFloorAmbience };
+  // ── Fioriture de level-up (J2) ────────────────────────────────
+  // Bref flash doré sur la boîte de la modale de niveau supérieur, en
+  // complément du son (playLevelUp) et de la gerbe de particules (E3 burst).
+  // Classe transitoire sur .levelup-box, retirée après l'anim. Purement
+  // visuel, défensif (boîte absente → no-op). reduced-motion → no-op.
+  let _lvlFlashTimer = null;
+  function levelUpFlash() {
+    if (prefersReducedMotion()) return;
+    const box = document.querySelector('#levelup-modal .levelup-box');
+    if (!box) return;
+    box.classList.remove('dfx-levelup-flash');
+    void box.offsetWidth; // reflow → permet de rejouer l'animation
+    box.classList.add('dfx-levelup-flash');
+    clearTimeout(_lvlFlashTimer);
+    _lvlFlashTimer = setTimeout(() => box.classList.remove('dfx-levelup-flash'), 700);
+  }
+
+  window.DungeonFX = { startDungeonFxLoop, shakeView, stepBob, burst, setFloorAmbience, levelUpFlash };
   // Exposé aussi en global nu pour les call-sites existants (main.js / save.js).
   window.startDungeonFxLoop = startDungeonFxLoop;
 })();

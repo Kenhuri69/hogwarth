@@ -142,11 +142,48 @@ async function scenarioDungeonVfx() {
   assert(v4.halo >= 1 && v4.parts === 0, 'V4 reduced-motion : halo sans projectiles');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
 
+  // V5 — fioriture de level-up (J2) : levelUpFlash pose la classe transitoire
+  // .dfx-levelup-flash sur .levelup-box (API directe + call-site réel
+  // checkLevelUp). Sous reduced-motion → no-op (classe non posée).
+  const v5api = await page.evaluate(() => typeof window.DungeonFX?.levelUpFlash === 'function');
+  assert(v5api, 'V5 API DungeonFX.levelUpFlash (J2) absente');
+  const v5 = await page.evaluate(() => {
+    let threw = false, direct = false, viaReal = false;
+    try {
+      const box = document.querySelector('#levelup-modal .levelup-box');
+      if (box) box.classList.remove('dfx-levelup-flash');
+      window.DungeonFX.levelUpFlash();
+      direct = !!(box && box.classList.contains('dfx-levelup-flash'));
+      // Call-site réel : un nouveau passage de niveau ré-arme le flash.
+      if (box) box.classList.remove('dfx-levelup-flash');
+      player.xp = player.xpNext;
+      checkLevelUp();
+      viaReal = !!(box && box.classList.contains('dfx-levelup-flash'));
+    } catch (e) { threw = true; }
+    return { threw, direct, viaReal };
+  });
+  console.log('  V5 levelup:', v5);
+  assert(!v5.threw, 'V5 levelUpFlash/checkLevelUp throw');
+  assert(v5.direct, 'V5 classe .dfx-levelup-flash non posée par l\'appel direct');
+  assert(v5.viaReal, 'V5 checkLevelUp n\'a pas déclenché le flash de level-up');
+
+  // V5b — reduced-motion : levelUpFlash est un no-op (aucune classe posée).
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const v5b = await page.evaluate(() => {
+    const box = document.querySelector('#levelup-modal .levelup-box');
+    if (box) box.classList.remove('dfx-levelup-flash');
+    window.DungeonFX.levelUpFlash();
+    return box ? box.classList.contains('dfx-levelup-flash') : null;
+  });
+  console.log('  V5b reduced:', v5b);
+  assert(v5b === false, 'V5b reduced-motion : levelUpFlash devrait être no-op');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error('Erreurs console pendant le scénario VFX de donjon');
   }
-  console.log('  ✅ VFX d\'interaction de donjon (E3) OK');
+  console.log('  ✅ VFX d\'interaction de donjon (E3) + fioriture de level-up (J2) OK');
   await browser.close();
 }
 

@@ -254,7 +254,10 @@ function checkLevelUp() {
   HAPTICS_safe.levelUp(); // haptique mobile (D1)
   document.getElementById('levelup-text').textContent = `Le groupe passe au niveau ${player.level} !`;
   document.getElementById('levelup-modal').style.display = 'flex';
-  if (typeof DFX_safe !== 'undefined') DFX_safe.burst('levelup-modal', 'levelup'); // VFX level-up (E3)
+  if (typeof DFX_safe !== 'undefined') {
+    DFX_safe.burst('levelup-modal', 'levelup'); // VFX level-up (E3)
+    DFX_safe.levelUpFlash();                     // flash doré sur la boîte (J2)
+  }
   addMsg(`Niveau ${player.level} ! +${STAT_POINTS_PER_LEVEL} points à allouer par perso`, 'good');
 
   // Voix des héros — level-up (cosmétique, défensif). Le héros actif (en
