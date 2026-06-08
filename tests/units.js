@@ -77,6 +77,52 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 1bis. hero-barks.js — pickHeroBark (résolveur pur, ÉTAPE 2)
+// ============================================================
+(function testHeroBarks() {
+  const { pickHeroBark, HERO_BARKS } = loadModule(
+    'js/hero-barks.js', ['pickHeroBark', 'HERO_BARKS']);
+  // rng déterministe (toujours le 1ᵉʳ élément du tableau).
+  const rng0 = () => 0;
+
+  // Résolution standard d'un événement connu.
+  check('bark harry/crit non vide',
+    typeof pickHeroBark('harry', 'crit', { rng: rng0 }) === 'string');
+  check('bark hermione/bossAppear connu',
+    pickHeroBark('hermione', 'bossAppear', { rng: rng0 }).includes('résistances'));
+
+  // Héros inconnu → null.
+  check('héros inconnu → null', pickHeroBark('voldemort', 'crit') === null);
+  // Événement absent → null (call-site silencieux).
+  check('événement absent → null', pickHeroBark('cho', 'inexistant', {}) === null);
+
+  // Variante de tension : Maison canon du héros ≠ chosenHouse ET variante
+  // définie → la variante est préférée. Harry (Gryffondor) en partie Serpentard.
+  const tens = pickHeroBark('harry', 'crit',
+    { rng: rng0, canonHouse: 'Gryffondor', chosenHouse: 'Serpentard' });
+  check('tension préférée (harry/Serpentard)', tens.includes('raccourci'));
+  // Pas de variante pour cette Maison → réplique standard.
+  const noTens = pickHeroBark('harry', 'crit',
+    { rng: rng0, canonHouse: 'Gryffondor', chosenHouse: 'Serdaigle' });
+  check('pas de tension Serdaigle → standard', noTens.includes('poli'));
+  // Maison canon == chosenHouse → jamais de tension.
+  const same = pickHeroBark('harry', 'crit',
+    { rng: rng0, canonHouse: 'Gryffondor', chosenHouse: 'Gryffondor' });
+  check('même Maison → standard', same.includes('poli'));
+
+  // Tous les héros ont les 4 événements de base (cohérence du registre).
+  const base = ['bossAppear', 'crit', 'allyDown', 'levelUp'];
+  let allHaveBase = true;
+  for (const k of Object.keys(HERO_BARKS)) {
+    for (const ev of base) {
+      if (!Array.isArray(HERO_BARKS[k][ev]) || !HERO_BARKS[k][ev].length) allHaveBase = false;
+    }
+  }
+  check('13 héros : 4 événements de base couverts', allHaveBase);
+  check('registre = 13 héros', Object.keys(HERO_BARKS).length === 13);
+})();
+
+// ============================================================
 // 2. dungeon-scaling.js — effectiveFloor / endgameTierIndex / weightedPick
 // ============================================================
 (function testDungeonScaling() {

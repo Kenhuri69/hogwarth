@@ -625,7 +625,12 @@ Un candidat n'est validé que s'il coche **tout** :
 - [ ] Rôle distinct, viable solo & duo, budget de stats dans l'enveloppe (5.5.2).
 - [ ] Ton respecté, faiblesse réelle (anti-Mary-Sue), canon cohérent, run dédié
       désirable (5.5.3).
-- [ ] Portraits + `CHARACTERS` + carte + doc §5 + (barks) + smoke vert (5.5.4).
+- [ ] Portraits + `CHARACTERS` + carte + doc §5 + smoke vert (5.5.4).
+- [ ] **Barks** : entrée `HERO_BARKS[<key>]` renseignée (4-6 événements +
+      `houseTension` si pertinent) **ou** omission explicitement assumée
+      (`js/hero-barks.js` — héros silencieux par défaut).
+- [ ] **Profil doc complet** : tous les champs de la convention de tête
+      (§5.0/§5.0.1 + profil §5.1/§5.2) remplis, sans trou.
 - [ ] Cache PWA bumpé si front modifié (guideline §8).
 
 ---

@@ -423,4 +423,66 @@ async function scenarioContentConsumablesTradeoffs() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioContentConsumablesTradeoffs] };
+// ÉTAPE 2 (ch05 §5.4) — Voix des héros (barks). Vérifie : registre chargé,
+// bark loggé en combat, silence quand barksEnabled=false, round-trip save.
+async function scenarioHeroBarks() {
+  console.log('\n── Scénario : voix des héros (barks) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // Module chargé + orchestrateur exposé.
+  const loaded = await page.evaluate(() => ({
+    hasRegistry: typeof HERO_BARKS !== 'undefined' && Object.keys(HERO_BARKS).length === 13,
+    hasFn:       typeof heroBark === 'function' && typeof pickHeroBark === 'function',
+    defaultOn:   barksEnabled === true
+  }));
+  console.log('  chargement :', loaded);
+  assert(loaded.hasRegistry, 'HERO_BARKS absent ou ≠ 13 héros');
+  assert(loaded.hasFn,       'heroBark/pickHeroBark non exposés');
+  assert(loaded.defaultOn,   'barksEnabled doit valoir true par défaut');
+
+  // Bark loggé quand actif (canal combat → #combat-log-list).
+  const on = await page.evaluate(() => {
+    barksEnabled = true;
+    if (window.UX && UX.clearCombatLog) UX.clearCombatLog();
+    const before = (document.getElementById('combat-log-list') || {}).childElementCount || 0;
+    const txt = heroBark('harry', 'crit');
+    const after = (document.getElementById('combat-log-list') || {}).childElementCount || 0;
+    return { txt, added: after - before };
+  });
+  console.log('  bark ON :', on);
+  assert(typeof on.txt === 'string', 'aucun bark renvoyé alors que barksEnabled=true');
+  assert(on.added >= 1, 'le bark de crit doit ajouter une ligne au journal de combat');
+
+  // Silence quand désactivé.
+  const off = await page.evaluate(() => {
+    barksEnabled = false;
+    const before = (document.getElementById('combat-log-list') || {}).childElementCount || 0;
+    const txt = heroBark('hermione', 'bossAppear');
+    const after = (document.getElementById('combat-log-list') || {}).childElementCount || 0;
+    return { txt, added: after - before };
+  });
+  console.log('  bark OFF :', off);
+  assert(off.txt === null, 'heroBark doit renvoyer null quand barksEnabled=false');
+  assert(off.added === 0,  'aucune ligne ne doit être ajoutée quand barksEnabled=false');
+
+  // Round-trip save : la préférence barksEnabled survit à serialize→apply.
+  const rt = await page.evaluate(() => {
+    barksEnabled = false;
+    const snap = _serializeState();
+    barksEnabled = true;            // simule un autre runtime
+    _applyState(snap);
+    return barksEnabled;
+  });
+  console.log('  round-trip barksEnabled :', rt);
+  assert(rt === false, 'barksEnabled doit être préservé par le round-trip de save');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (barks)`);
+  }
+  console.log('  ✅ Voix des héros conforme (registre + log + toggle + save)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioContentConsumablesTradeoffs, scenarioHeroBarks] };

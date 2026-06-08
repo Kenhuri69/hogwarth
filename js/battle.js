@@ -546,6 +546,12 @@ function startBattle(baseEnemyData, opts) {
   // visuel (CFX_safe → no-op si le module FX est absent).
   if (enemyGroup[0] && enemyGroup[0].epic) CFX_safe.bossIntro(enemyGroup[0]);
   else                                     CFX_safe.combatStart();
+  // Voix des héros — apparition d'un boss epic (cosmétique, défensif). Le
+  // héros actif (vivant) prend la parole. Cf. js/hero-barks.js.
+  if (enemyGroup[0] && enemyGroup[0].epic && typeof heroBark === 'function') {
+    const speaker = party.slice(0, partySize).find(c => c.hp > 0);
+    if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'bossAppear', { once: 'boss:' + enemyGroup[0].id });
+  }
   // D5 Célérité — ouvre le segment du 1ᵉʳ héros (round 1). Aucune action sup. au
   // round 1 (gauge part de 0, +celerite < 1), mais maintient la parité avec la sim.
   _beginHeroSegment(currentBattleChar);
@@ -786,6 +792,8 @@ function executeAttack(targetIdx) {
   if (isCrit) CFX_safe.shake('light'); // crit phys → secousse (Lot 1)
   if (isCrit) HAPTICS_safe.crit(); else HAPTICS_safe.hit(); // haptique mobile (D1)
   UX_safe.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}${comboTxt}`, isCrit?'magic':'good');
+  // Voix des héros — crit physique décisif (cosmétique, défensif).
+  if (isCrit && typeof heroBark === 'function' && char && char.heroKey) heroBark(char.heroKey, 'crit');
   renderEnemyGroup();
   if (checkAllEnemiesDead()) return;
   advanceBattleChar();
@@ -964,6 +972,8 @@ function enemyTurn() {
   battleTurn++;
   UX_safe.logCombatTurn(battleTurn + 1);
   const alive = party.slice(0, partySize).filter(c => c.hp > 0);
+  // Voix des héros — snapshot des vivants pour détecter un KO ce round.
+  const _aliveBefore = party.slice(0, partySize).map(c => c.hp > 0);
   let log = '';
 
   // Statuts persistants : tick sur les ennemis vivants en début de tour
@@ -1020,6 +1030,16 @@ function enemyTurn() {
     // Attaque physique normale — priorité : Protego > Esquive > Garde > coup normal.
     log += _enemyPhysicalHit(enemy, target, charIdx);
   });
+
+  // Voix des héros — un allié vient de tomber (duo) : le survivant réagit.
+  // Cosmétique, défensif. Pas de bark `allyDown` en solo (aucun allié).
+  if (partySize === 2 && typeof heroBark === 'function') {
+    const fellIdx = _aliveBefore.findIndex((wasAlive, i) => wasAlive && party[i] && party[i].hp <= 0);
+    if (fellIdx !== -1) {
+      const survivor = party.slice(0, partySize).find((c, i) => i !== fellIdx && c.hp > 0);
+      if (survivor && survivor.heroKey) heroBark(survivor.heroKey, 'allyDown');
+    }
+  }
 
   // Une riposte de garde a pu achever le dernier ennemi.
   if (livingEnemies().length === 0) { setBattleLog(log || '...'); renderEnemyGroup(); endBattle(true); return; }

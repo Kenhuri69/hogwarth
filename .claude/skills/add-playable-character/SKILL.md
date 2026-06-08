@@ -58,7 +58,26 @@ Ajouter dans `#hero-grid` :
 ```
 Numéroter `hero-badge` à la suite des cartes existantes.
 
-### 4. Vérifier (guidelines §7)
+### 4. Barks — voix du héros (optionnel, recommandé)
+Donner une voix au héros dans `js/hero-barks.js` : ajouter une entrée
+`HERO_BARKS[<key>]` avec 4-6 événements parmi `bossAppear` / `crit` /
+`allyDown` / `levelUp` / `houseTier` / `tierTransition`, plus une carte
+`houseTension[<Maison>]` si la Maison canon du héros peut différer de
+`chosenHouse` (rejouabilité, cf. `docs/histoire/05-personnages-jouables.md §5.4`).
+Système purement cosmétique et **défensif** : un héros sans entrée reste
+silencieux (aucun crash). Garder le ton aventure → sombre du registre.
+
+> **Cache PWA** : `hero-barks.js` est servi au navigateur. Toute
+> modification (ou tout autre JS/CSS/`index.html` touché à l'étape 3)
+> impose un bump — dérouler la skill **`cache-bump`** (guideline §8).
+
+> **Doc + normativité** : compléter le profil narratif (§5.0/§5.0.1 +
+> profil §5.1/§5.2) et cocher la checklist `§5.5.5`. La règle narrative
+> **normative** vit dans `docs/histoire/05-personnages-jouables.md §5.5` —
+> cette skill et `CLAUDE.md` (« Ajouter un nouveau personnage jouable »)
+> doivent rester cohérents avec elle.
+
+### 5. Vérifier (guidelines §7)
 ```bash
 node tests/smoke.js
 ```

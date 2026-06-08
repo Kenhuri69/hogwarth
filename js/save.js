@@ -22,6 +22,7 @@ function _serializeState() {
     chosenHouse, housePoints, houseTier,
     donationIntroPlayed,
     visitsClosed,
+    barksEnabled,
     outremondeEssence,
     outremondeFragments,
     outremondePendingSeals,
@@ -292,6 +293,9 @@ function _applyState(gs) {
   if (gs.houseTier   !== undefined) houseTier   = gs.houseTier;
   donationIntroPlayed = !!gs.donationIntroPlayed;  // false par défaut (saves antérieurs)
   visitsClosed        = !!gs.visitsClosed;         // Phase F : false par défaut (accueil ouvert)
+  // Voix des héros (barks) : préférence joueur. true par défaut (saves
+  // antérieurs sans le champ → barks actifs).
+  barksEnabled        = (gs.barksEnabled === undefined) ? true : !!gs.barksEnabled;
   // Phase G — économie cross-plan + cooldown défaite astrale. 0 par défaut
   // pour les saves antérieures (visiteur n'a encore rien gagné en astral).
   outremondeEssence       = (typeof gs.outremondeEssence === 'number') ? gs.outremondeEssence : 0;
