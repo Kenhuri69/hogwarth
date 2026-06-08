@@ -89,6 +89,7 @@ function _serializeState() {
     combatTutorialSeen,
     hiverClair,
     headlessHuntMember,
+    maitreDeLaMort,
     gryffSignatureDone,
     slythSignatureDone,
     ravenSignatureDone,
@@ -330,6 +331,8 @@ function _applyState(gs) {
   // Passif Hiver Clair (Manon Acte III) : saves antérieures → false.
   if (typeof hiverClair !== 'undefined') hiverClair = !!gs.hiverClair;
   if (typeof headlessHuntMember !== 'undefined') headlessHuntMember = !!gs.headlessHuntMember;
+  // Easter egg Reliques de la Mort : saves antérieures → false.
+  if (typeof maitreDeLaMort !== 'undefined') maitreDeLaMort = !!gs.maitreDeLaMort;
   // Quêtes Signature de Maison : saves antérieures → false/null.
   if (typeof gryffSignatureDone !== 'undefined') gryffSignatureDone = !!gs.gryffSignatureDone;
   if (typeof slythSignatureDone !== 'undefined') slythSignatureDone = !!gs.slythSignatureDone;

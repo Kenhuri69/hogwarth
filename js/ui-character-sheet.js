@@ -370,6 +370,8 @@ function openCharacter(charIdx = 0) {
           ? _renderStatLine('img/icons/mp.png', '❄️ Hiver Clair', '+1 PM/pas', true) : ''}
         ${(typeof headlessHuntMember !== 'undefined' && headlessHuntMember)
           ? _renderStatLine('img/icons/xp.png', '💀 Chasse Sans Tête', 'Membre d\'honneur', true) : ''}
+        ${(typeof maitreDeLaMort !== 'undefined' && maitreDeLaMort)
+          ? _renderStatLine('img/icons/xp.png', '☠️ Maître de la Mort', 'Reliques unies', true) : ''}
       </div>
 
       <!-- Équipement (grid-area:equip) -->

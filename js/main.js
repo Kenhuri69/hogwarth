@@ -481,6 +481,7 @@ async function startGame(count = 2) {
   player.grimoirePages = [];
   hiverClair = false;   // passif Acte III non éveillé en début de partie
   headlessHuntMember = false;  // easter egg Chasse Sans Tête non débloqué
+  maitreDeLaMort = false;      // easter egg Reliques de la Mort non débloqué
   // Quêtes Signature de Maison — état neuf à chaque partie.
   gryffSignatureDone = false; slythSignatureDone = false;
   ravenSignatureDone = false; poufSignatureDone  = false;

@@ -453,6 +453,72 @@ function recalculateStats() {
     // base de 30 % et le plafond de 40 % sont appliqués dans _tryGuardCounter.
     c.counterChance       = counterBonus;
   });
+  // Easter egg « Les Reliques de la Mort » : détecte l'union des trois
+  // Reliques sur un même héros. recalculateStats est rappelée après chaque
+  // équipement, level-up et chargement (_applyState) → ce point couvre tous
+  // les cas d'union. No-op si déjà débloqué (garde dans checkHallowsUnion).
+  if (typeof checkHallowsUnion === 'function') checkHallowsUnion();
+}
+
+// ── Easter egg « Les Reliques de la Mort » ───────────────────
+// Les trois Reliques canon existent déjà dans data.js ; l'egg détecte leur
+// UNION sur un même porteur (geste du « Maître de la Mort »). Matching par
+// `family` (robuste aux variantes de teinte) avec repli sur l'`id`.
+// Cf. .claude/plans/deathly-hallows-easter-egg.md.
+const _HALLOWS_FAMILY = { wand: 'wand_elder', cloak: 'cloak_invis', ring: 'ring_resurrection' };
+const _HALLOWS_ID     = { wand: 'wand2',      cloak: 'cape_invis',  ring: 'anneau_resurrection' };
+function _itemIsHallow(item, kind) {
+  if (!item) return false;
+  return item.family === _HALLOWS_FAMILY[kind] || item.id === _HALLOWS_ID[kind];
+}
+// Vrai si le personnage `c` porte les trois Reliques en même temps (la Pierre
+// peut être en ring1 OU ring2, les slots wand/cloak/ring étant distincts).
+function _hallowsEquippedOn(c) {
+  if (!c || !c.equipped) return false;
+  const eq = c.equipped;
+  const hasWand  = _itemIsHallow(eq.wand,  'wand');
+  const hasCloak = _itemIsHallow(eq.cloak, 'cloak');
+  const hasRing  = _itemIsHallow(eq.ring1, 'ring') || _itemIsHallow(eq.ring2, 'ring');
+  return hasWand && hasCloak && hasRing;
+}
+// Nombre de Reliques DISTINCTES possédées par le groupe (équipées sur un
+// membre OU dans le sac partagé). 0–3. Sert l'indice contextuel des fantômes.
+function _hallowsOwnedCount() {
+  if (typeof party === 'undefined' || !Array.isArray(party)) return 0;
+  let count = 0;
+  for (const kind of ['wand', 'cloak', 'ring']) {
+    let owned = false;
+    for (const c of party) {
+      if (!c || !c.equipped) continue;
+      for (const slot of Object.keys(c.equipped)) {
+        if (_itemIsHallow(c.equipped[slot], kind)) { owned = true; break; }
+      }
+      if (owned) break;
+    }
+    if (!owned && typeof player !== 'undefined' && player && Array.isArray(player.inventory)) {
+      owned = player.inventory.some(it => _itemIsHallow(it, kind));
+    }
+    if (owned) count++;
+  }
+  return count;
+}
+// Pose le flag `maitreDeLaMort` et joue la révélation (narratif + son + badge)
+// une seule fois, quand un membre vivant du groupe porte les trois Reliques.
+function checkHallowsUnion() {
+  if (typeof maitreDeLaMort === 'undefined' || maitreDeLaMort) return;
+  if (typeof party === 'undefined' || !Array.isArray(party)) return;
+  const n = (typeof partySize === 'number') ? partySize : party.length;
+  const bearer = party.slice(0, n).find(c => c && c.hp > 0 && _hallowsEquippedOn(c));
+  if (!bearer) return;
+  maitreDeLaMort = true;
+  if (typeof addMsg === 'function')
+    addMsg('☠️ Les trois Reliques s\'unissent sur ' + bearer.name + ' — tu es le Maître de la Mort.', 'good');
+  if (typeof setNarrative === 'function')
+    setNarrative('La Baguette, la Pierre et la Cape, réunies pour la première fois sur un même porteur. Un symbole se forme dans l\'air glacé — un cercle, un triangle, une ligne. Le conte des Trois Frères n\'était pas une fable. La Mort, dit-on, salue enfin son maître. ' + bearer.name + ' ne tremble pas : ce titre ne donne aucun pouvoir nouveau, seulement le poids de l\'avoir compris.');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) {
+    try { AudioSystem.playLevelUp(); } catch (e) { /* audio optionnel */ }
+  }
+  if (typeof updateUI === 'function') updateUI();
 }
 
 // ── Fortune (D5, volet LCK) ──────────────────────────────────

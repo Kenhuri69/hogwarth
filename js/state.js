@@ -724,6 +724,15 @@ let hiverClair = false;
 // Cf. .claude/plans/headless-hunt-easter-egg.md.
 let headlessHuntMember = false;
 
+// Easter egg « Les Reliques de la Mort » — true une fois que les trois
+// Reliques canon (Baguette de Sureau `wand_elder` + Cape `cloak_invis` +
+// Pierre `ring_resurrection`) sont équipées simultanément sur un MÊME héros.
+// Récompense purement cosmétique : titre « Maître de la Mort », badge sur la
+// fiche perso + révélation narrative jouée une seule fois. Aucun effet de
+// combat. Réinitialisé par startGame, persisté via _serializeState /
+// _applyState. Cf. .claude/plans/deathly-hallows-easter-egg.md.
+let maitreDeLaMort = false;
+
 // Quêtes Signature de Maison — flag posé à la remise de la signature
 // (completeQuest). Un seul actif par partie (gate `chosenHouse` + étage).
 // Levier one-shot lu avant le combat final (voldemort_revenu). Réinitialisé

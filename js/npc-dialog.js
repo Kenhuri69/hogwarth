@@ -374,6 +374,12 @@ function _resolveDialogSource(npc, state) {
         const cheer = _nickHuntCelebration(npc);
         if (cheer) pool = pool.concat(cheer);
       }
+      // Indice escalade « Reliques de la Mort » : tout fantôme remarque
+      // 1–2 Reliques possédées par le groupe (couche egg, non garantie).
+      if (npc.sprite === 'fantome' && typeof _hallowsGhostHint === 'function') {
+        const hint = _hallowsGhostHint(npc);
+        if (hint) pool = pool.concat(hint);
+      }
       idleIndex = Math.floor(Math.random() * pool.length);
       idleRandomPick = pool[idleIndex];
     }
