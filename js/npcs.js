@@ -1048,6 +1048,9 @@ const NPCS = [
         "Mon dernier anniversaire de mort fut somptueux : pâté pourri, gâteau couvert d'asticots, orchestre de scies musicales… Vous auriez adoré. Enfin, peut-être pas.",
         "J'ai connu Godric Gryffondor en personne. Charmant, mais bien trop grand pour les portes.",
         "On dit qu'au troisième étage, un miroir reflète plus que votre image…",
+        // Conte des Trois Frères (couche egg « Reliques de la Mort ») : amorce
+        // diffuse, aucune indication d'objet. Cf. deathly-hallows-easter-egg.md §2.
+        "Laissez-moi vous conter Les Trois Frères. Trois sorciers trompèrent la Mort sur un pont ; furieuse, elle feignit l'admiration et offrit à chacun un présent. À l'aîné, une baguette invincible ; au cadet, une pierre qui rappelle les morts ; au plus humble, une cape pour se dérober à Elle. Réunis, ces trois Présents font, dit-on, le Maître de la Mort. Fable d'enfant… ou pas.",
         "La Salle Sur Demande change selon le besoin. Certains la trouvent. D'autres y restent.",
         // Indice (couche egg) : amorce le GESTE de découverte (3 passages),
         // sans jamais donner de position. Cf. room-of-requirement-easter-egg.md §4.

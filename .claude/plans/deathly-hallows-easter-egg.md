@@ -1,8 +1,11 @@
 # Plan — Easter egg « Les Reliques de la Mort »
 
-> Statut : **proposition** (non implémenté). 4ᵉ easter egg pressenti
-> (après l'arc Manon livré, et les plans « Chasse Sans Tête » +
-> « Salle sur Demande »). Registre : **mythique / solennel**.
+> Statut : 🟧 **en cours d'implémentation** (2026-06-08, branche
+> `claude/plan-relica-implementation-rTx5G`). Décisions §3 retenues telles
+> quelles (toutes ✅). 4ᵉ easter egg (après l'arc Manon livré, et les plans
+> « Chasse Sans Tête » + « Salle sur Demande »). Registre : **mythique /
+> solennel**. Modèle de référence : `headless-hunt-easter-egg.md` (flag
+> cosmétique `headlessHuntMember`).
 > Canon HP : les trois Reliques de la Mort — la **Baguette de Sureau**, la
 > **Pierre de Résurrection** et la **Cape d'Invisibilité** — réunies font
 > du porteur le « Maître de la Mort » (conte des Trois Frères, *Les Contes
@@ -138,8 +141,21 @@ Aucun cell, aucune page, aucune quête. On ne touche qu'à la **détection** :
 - [x] Concept retenu par l'utilisateur : **Les Reliques de la Mort**.
 - [x] Vérifié : les 3 Reliques existent déjà (`wand2`/`cape_invis`/
       `anneau_resurrection`) → design « union par possession ».
-- [ ] §3 — décisions à confirmer (condition d'union, récompense cosmétique,
-      conteur).
-- [ ] Phases 1-5 — à implémenter une fois le plan validé.
-- [ ] Réserve : **dialogues** (conte des Trois Frères, indices fantômes,
-      narratif de révélation) à relire/valider avant implémentation.
+- [x] §3 — décisions confirmées (union des 3 sur un même héros ; récompense
+      cosmétique seule ; conteur = Sir Nicolas en V1).
+- [x] Phase 1 — Détection & flag : `_hallowsEquippedOn`/`_hallowsOwnedCount`/
+      `checkHallowsUnion` (`inventory-core.js`), flag `maitreDeLaMort`
+      (`state.js`), appel en fin de `recalculateStats` (couvre équip/level-up/
+      load, no-op si déjà débloqué). Matching `family` avec repli `id`.
+- [x] Phase 2 — Persistance & reset : sérialisé (`save.js`), reset `startGame`
+      (`main.js`), entrée MANIFEST loader (`loader.js`).
+- [x] Phase 3 — Rumeur & indice : Conte des Trois Frères dans l'`idleRandom`
+      de Sir Nicolas (`npcs.js`) ; `_hallowsGhostHint` (`npcs-helpers.js`)
+      greffé dans `_resolveDialogSource` pour les fantômes (`npc-dialog.js`),
+      apparition non garantie, gaté 1-2 Reliques possédées + `!maitreDeLaMort`.
+- [x] Phase 4 — Récompense visuelle : badge « ☠️ Maître de la Mort » dans
+      `char-stats-panel` (`ui-character-sheet.js`) + narratif de révélation
+      (`addMsg` + `setNarrative` + son) dans `checkHallowsUnion`.
+- [x] Phase 5 — Smoke : `scenarioDeathlyHallows` (`tests/scenarios/inventory.js`)
+      — union sur un héros, non-répétition, indice escalade 1/2, save round-trip.
+- [x] Cache PWA : bump `?v` des js touchés + `CACHE_VERSION`.

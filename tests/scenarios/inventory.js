@@ -889,6 +889,92 @@ async function scenarioCritDodgeFromEquip() {
   await browser.close();
 }
 
+async function scenarioDeathlyHallows() {
+  console.log('\n── Scénario : Les Reliques de la Mort (easter egg) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : indice escalade — possession de 1 puis 2 Reliques (sac partagé)
+  const t1 = await page.evaluate(() => {
+    const ghost = { id: 'sir_nicolas', sprite: 'fantome' };
+    const notGhost = { id: 'rusard', sprite: 'prof_h' };
+    const give = id => player.inventory.push({ ...ITEMS.find(i => i.id === id) });
+    const ownedAt0 = _hallowsOwnedCount();
+    const hintAt0  = _hallowsGhostHint(ghost);
+    give('wand2');                       // 1 Relique
+    const ownedAt1 = _hallowsOwnedCount();
+    const hintAt1  = _hallowsGhostHint(ghost);
+    const hintNonGhost = _hallowsGhostHint(notGhost);
+    give('cape_invis');                  // 2 Reliques
+    const ownedAt2 = _hallowsOwnedCount();
+    const hintAt2  = _hallowsGhostHint(ghost);
+    return { ownedAt0, hintAt0, ownedAt1, hintAt1, hintNonGhost, ownedAt2, hintAt2,
+             flag: maitreDeLaMort };
+  });
+  console.log('  T1 escalade:', t1);
+  assert(t1.ownedAt0 === 0,        'aucune Relique au départ');
+  assert(t1.hintAt0 === null,      'pas d\'indice à 0 Relique');
+  assert(t1.ownedAt1 === 1,        '1 Relique possédée attendue');
+  assert(typeof t1.hintAt1 === 'string' && t1.hintAt1.length > 0,
+         'indice fantôme attendu à 1 Relique');
+  assert(t1.hintNonGhost === null, 'indice réservé aux fantômes (pas Rusard)');
+  assert(t1.ownedAt2 === 2,        '2 Reliques possédées attendues');
+  assert(typeof t1.hintAt2 === 'string', 'indice fantôme attendu à 2 Reliques');
+  assert(t1.flag === false,        'flag maitreDeLaMort doit être false avant union');
+
+  // T2 : union des 3 Reliques sur un même héros → flag posé une fois
+  const t2 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+                   cloak:null, amulet:null, ring1:null, ring2:null,
+                   belt:null, trinket:null };
+    c.equipped.wand  = { ...ITEMS.find(i => i.id === 'wand2') };
+    c.equipped.cloak = { ...ITEMS.find(i => i.id === 'cape_invis') };
+    c.equipped.ring2 = { ...ITEMS.find(i => i.id === 'anneau_resurrection') };
+    const equippedOn = _hallowsEquippedOn(c);
+    const flagBefore = maitreDeLaMort;
+    recalculateStats();
+    return { equippedOn, flagBefore, flagAfter: maitreDeLaMort,
+             hintAfter: _hallowsGhostHint({ id:'sir_nicolas', sprite:'fantome' }) };
+  });
+  console.log('  T2 union:', t2);
+  assert(t2.equippedOn === true,   '_hallowsEquippedOn doit voir les 3 Reliques sur le héros');
+  assert(t2.flagBefore === false,  'flag false juste avant le recalc d\'union');
+  assert(t2.flagAfter === true,    'recalculateStats doit poser maitreDeLaMort');
+  assert(t2.hintAfter === null,    'indice escalade éteint une fois le titre obtenu');
+
+  // T3 : permanence — retirer une Relique ne retire pas le titre, pas de re-fire
+  const t3 = await page.evaluate(() => {
+    const c = party[0];
+    c.equipped.ring2 = null;             // brise l'union
+    const stillEquipped = _hallowsEquippedOn(c);
+    recalculateStats();                  // checkHallowsUnion doit no-op
+    return { stillEquipped, flag: maitreDeLaMort };
+  });
+  console.log('  T3 permanence:', t3);
+  assert(t3.stillEquipped === false, 'union brisée après retrait de la Pierre');
+  assert(t3.flag === true,           'le titre Maître de la Mort est permanent');
+
+  // T4 : round-trip de save conserve le flag
+  const t4 = await page.evaluate(() => {
+    const gs = _serializeState();
+    const serialized = gs.maitreDeLaMort;
+    maitreDeLaMort = false;             // simule un état neuf
+    _applyState(gs);
+    return { serialized, restored: maitreDeLaMort };
+  });
+  console.log('  T4 save:', t4);
+  assert(t4.serialized === true, '_serializeState doit inclure maitreDeLaMort=true');
+  assert(t4.restored === true,   '_applyState doit restaurer maitreDeLaMort');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Reliques de la Mort OK');
+  await browser.close();
+}
+
 async function scenarioShopLimits() {
   console.log('\n── Scénario : boutique anti-abus ──');
   const { browser, page, errors } = await launchGame();
@@ -984,4 +1070,4 @@ async function scenarioShopLimits() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioShopLimits] };
+module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioShopLimits] };
