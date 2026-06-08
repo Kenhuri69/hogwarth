@@ -124,7 +124,7 @@ vertical amorti (~120 ms), distinct du `shakeView` brutal des pièges.
   appel + avancée réelle sans throw ; reduced-motion → no-op (pas de
   transform résiduelle).
 
-### H2. Variation de pas selon la surface
+### H2. Variation de pas selon la surface ✅ (livré 2026-06-08)
 Le footstep est un bruit unique. Le timbrer selon le sol de la tranche
 (`getFloorTheme(floor).floor` : `stone` vs `carpet` vs `cavern_floor` vs
 `rune_floor`) — un pas mat/feutré sur tapis, claquant sur pierre.
@@ -296,4 +296,21 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
   `emulateMedia` → aucune classe). smoke vert + pwa-smoke (v73) verts.
   **Bumps** : `dungeon-fx.js` (3→4), `dungeon-fx.css` (2→3), `movement.js`
   (28→29) ; `CACHE_VERSION` v72 → v73. Pas de nouveau global (méthode de
-  `DungeonFX`) → loader inchangé.
+  `DungeonFX`) → loader inchangé. Mergé en **PR #412**.
+- 2026-06-08 : **H2 livré** (branche `claude/immersion-h2-footstep-surface`).
+  `playFootstep(surface)` (`audio-sfx.js`) accepte une surface explicite,
+  sinon la dérive de `getFloorTheme(currentFloor).floor`. Table
+  `_SURFACE_STEPS` (4 profils de timbre) : `stone` claquant (highpass aigu),
+  `carpet` feutré (lowpass, gain bas, décroissance + longue), `cavern_floor`
+  mat/résonant (bandpass médium Q 1.4), `rune_floor` métallique (highpass
+  Q 2.2) — chaque profil pilote type de filtre / fréquence / résonance /
+  gain / durée du bruit filtré. Le call-site `movement.js`
+  (`AudioSystem.playFootstep()` sans argument) bénéficie automatiquement de
+  la dérivation par tranche — **aucun changement movement.js**. Audio
+  (≠ mouvement) → gardé `isMuted` seul, pas de reduced-motion. Surface
+  inconnue → repli `stone`. Test : volet **H2** ajouté à
+  `scenarioCameraPresence` (`tests/scenarios/controls.js`) — profils présents
+  + `playFootstep` ne throw sur aucune des 4 surfaces (ni inconnue, ni sans
+  argument). smoke + pwa-smoke (v74) verts. **Bumps** : `audio-sfx.js`
+  (5→6) ; `CACHE_VERSION` v73 → v74. Pas de nouveau global (méthode/propriété
+  de `AudioSystem`) → loader inchangé.

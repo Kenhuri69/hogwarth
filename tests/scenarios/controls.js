@@ -499,11 +499,32 @@ async function scenarioCameraPresence() {
   console.log('  H1c reduced:', h1c);
   assert(!h1c.any, 'H1 reduced-motion : stepBob ne doit poser aucune classe');
 
+  // H2 — variation de pas selon la surface : playFootstep accepte un
+  // argument de surface et ne throw sur aucune des 4 surfaces (ni sans
+  // argument → dérivée de getFloorTheme). Profils déclarés.
+  const h2 = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasProfiles = !!(AudioSystem._SURFACE_STEPS
+        && AudioSystem._SURFACE_STEPS.stone && AudioSystem._SURFACE_STEPS.carpet
+        && AudioSystem._SURFACE_STEPS.cavern_floor && AudioSystem._SURFACE_STEPS.rune_floor);
+      // Démute pour exercer le chemin de synthèse complet (init AudioContext).
+      AudioSystem.isMuted = false;
+      ['stone', 'carpet', 'cavern_floor', 'rune_floor', 'inconnu', undefined].forEach(s => {
+        AudioSystem.playFootstep(s);
+      });
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  H2 footstep:', h2);
+  assert(!h2.threw, 'H2 playFootstep throw: ' + (h2.err || ''));
+  assert(h2.hasProfiles, 'H2 profils de surface _SURFACE_STEPS absents');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (Présence physique)`);
   }
-  console.log('  ✅ Présence physique — bob de caméra (avant/recul) + reduced-motion OK');
+  console.log('  ✅ Présence physique — bob de caméra (H1) + pas par surface (H2) + reduced-motion OK');
   await browser.close();
 }
 
