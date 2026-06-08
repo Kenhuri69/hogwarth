@@ -448,6 +448,27 @@ Object.assign(AudioSystem, {
     };
   },
 
+  // Amplitude du jitter humanisant (additif, ± par énoncé).
+  _PITCH_JITTER: 0.05,
+  _RATE_JITTER:  0.04,
+
+  // Applique un léger jitter aléatoire à un jeu de paramètres de voix pour
+  // casser l'effet « robotique » d'une voix figée : deux énoncés du même héros
+  // sur le même événement ne sonnent jamais exactement pareil. `rng` (défaut
+  // Math.random) → testable ; rng=0.5 ne change rien (centre de la plage).
+  // Borné à la plage SpeechSynthesis. N'altère pas `params` (copie).
+  _voiceJitter(params, rng) {
+    const r     = (typeof rng === 'function') ? rng : Math.random;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const dp    = (r() * 2 - 1) * this._PITCH_JITTER;
+    const dr    = (r() * 2 - 1) * this._RATE_JITTER;
+    return {
+      pitch:  clamp(params.pitch + dp, 0, 2),
+      rate:   clamp(params.rate  + dr, 0.1, 10),
+      gender: params.gender,
+    };
+  },
+
   // Voix fr-FR par genre, mise en cache. Best-effort : si le navigateur
   // n'expose pas de voix fr (ou pas du bon genre), retombe sur n'importe
   // quelle fr-FR, puis null (le moteur choisit alors sa voix par défaut).
@@ -530,9 +551,10 @@ Object.assign(AudioSystem, {
     }
     // Repli zéro-asset : synthèse vocale du navigateur, en français, avec un
     // timbre propre au héros (HERO_VOICE) modulé par l'émotion de l'événement
-    // (EMOTION_VOICE). voiceKey = '<heroKey>_<event>'.
+    // (EMOTION_VOICE) + un léger jitter humanisant par énoncé.
+    // voiceKey = '<heroKey>_<event>'.
     if (!text || !window.speechSynthesis) return;
-    const p = this._barkVoiceParams(voiceKey);
+    const p = this._voiceJitter(this._barkVoiceParams(voiceKey));
     try {
       speechSynthesis.cancel();
       const utt   = new SpeechSynthesisUtterance(String(text));
