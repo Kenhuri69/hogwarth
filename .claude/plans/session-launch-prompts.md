@@ -1,5 +1,12 @@
 # Prompts de lancement — sessions parallèles
 
+> ✅ **CLOS le 2026-06-08 — tous les chantiers livrés & mergés.** Les cinq lots
+> (B3, B4, C3b, D4, LOT F) sont terminés ; leurs plans sont archivés dans
+> `.claude/plans/_archive/`. Ce fichier est conservé pour mémoire ; aucun
+> prompt n'est plus à lancer. Seul reliquat non bloquant : le test live manuel
+> 2 clients de LOT F (`tests/parallel-live-checklist.md`), qui exige deux
+> clients humains contre le backend Supabase.
+
 > **But** : démarrer chaque chantier restant de la revue
 > [`game-features-review.md`](./game-features-review.md) dans **sa propre session**
 > (branche/PR dédiée). Chaque bloc ci-dessous est **auto-suffisant** : copie-le tel
@@ -23,8 +30,10 @@
 
 ## 1. LOT B3 — Nouveaux archétypes de capacités ennemies (boss & élites)
 
-> Statut : 🔴 **reporté, non démarré, aucun plan dédié.** Le plus gros gain de
-> ressenti restant côté combat.
+> Statut : ✅ **livré & mergé** (2026-06-08). Plan archivé :
+> [`_archive/enemy-ability-archetypes.md`](./_archive/enemy-ability-archetypes.md).
+> Handlers `summon`/`enrage_self`/`aura` en place, boss porteurs (Fenrir,
+> Aragog, Héraut des Ténèbres), scénario smoke `scenarioEnemyAbilityArchetypes`.
 
 ```
 Contexte : RPG tour par tour vanilla JS (dépôt hogwarth). La revue
@@ -61,9 +70,10 @@ en bas de js/monsters.js avant de commencer.
 
 ## 2. LOT B4 — Rééquilibrage de Legilimens (optionnel — décision d'abord)
 
-> Statut : ⚪ **optionnel, à trancher.** Legilimens est spammable tant qu'il
-> reste du PM (battle-spells.js:516-523). Ce n'est peut-être pas un problème
-> ressenti — la session doit commencer par poser la question.
+> Statut : ✅ **livré & mergé** (2026-06-08). Levier retenu : **(b) coût en PM
+> croissant à chaque lancer** (`legilimensCastsThisFight`, `LEGILIMENS_COST_STEP`).
+> Plan archivé : [`_archive/legilimens-rebalance.md`](./_archive/legilimens-rebalance.md).
+> Scénario smoke `scenarioLegilimensEscalation`.
 
 ```
 Contexte : dépôt hogwarth, RPG tour par tour vanilla JS. La revue
@@ -89,8 +99,8 @@ PR sans demande explicite.
 
 ## 3. LOT C3b — Bibliothèque Interdite à deux voies (axe alternatif par sort)
 
-> Statut : 🟡 **plan déjà rédigé** ([`library-spell-axis-c3b.md`](./library-spell-axis-c3b.md),
-> « implémentation en cours »). Cette session finalise + vérifie + merge.
+> Statut : ✅ **livré & mergé** (2026-06-08). Plan archivé (7/7 cases) :
+> [`_archive/library-spell-axis-c3b.md`](./_archive/library-spell-axis-c3b.md).
 
 ```
 Contexte : dépôt hogwarth, RPG vanilla JS. Le plan
@@ -120,8 +130,8 @@ demande explicite.
 
 ## 4. LOT D4 — Aide reprenable par section (help-tour)
 
-> Statut : 🟡 **plan déjà rédigé** ([`help-tour-sections-d4.md`](./help-tour-sections-d4.md),
-> « implémentation en cours »). Cette session finalise + vérifie + merge.
+> Statut : ✅ **livré & mergé** (2026-06-08). Plan archivé (7/7 cases) :
+> [`_archive/help-tour-sections-d4.md`](./_archive/help-tour-sections-d4.md).
 
 ```
 Contexte : dépôt hogwarth, RPG vanilla JS. Le plan
@@ -147,11 +157,11 @@ explicite.
 
 ## 5. LOT F — Stabilisation « Mondes Parallèles » (session dédiée)
 
-> Statut : 🟡 **plan auto-suffisant prêt** ([`parallel-worlds-stabilization.md`](./parallel-worlds-stabilization.md)).
-> Décision utilisateur (2026-05-30) : **stabiliser**, pas geler. Le code est
-> livré & câblé en prod ; le blocage réel = backend Supabase (DDL hors-repo),
-> zéro validation live, durcissement des chemins d'erreur. **Touche à Supabase
-> → MCP requis.**
+> Statut : ✅ **stabilisé & mergé** (2026-06-08). Plan archivé :
+> [`_archive/parallel-worlds-stabilization.md`](./_archive/parallel-worlds-stabilization.md)
+> (migrations appliquées, chemins d'erreur durcis, disjoncteurs 404, ~16
+> scénarios mp/visit verts). **Seul reliquat non bloquant** : test live manuel
+> 2 clients (`tests/parallel-live-checklist.md`) + test optionnel hors-scope.
 
 ```
 Contexte : dépôt hogwarth, RPG vanilla JS avec un système social « Mondes
@@ -181,13 +191,13 @@ claude/parallel-worlds-stabilization. Pas de PR sans demande explicite.
 
 ## Suivi
 
-| Chantier | Prompt | État au 2026-05-30 |
+| Chantier | Prompt | État au 2026-06-08 |
 |----------|--------|--------------------|
-| B3 — archétypes capacités ennemies | §1 | 🔴 à démarrer (pas de plan dédié) |
-| B4 — rééquilibrage Legilimens       | §2 | ⚪ optionnel — décision d'abord |
-| C3b — Bibliothèque 2 voies          | §3 | 🟡 plan rédigé, à finaliser |
-| D4 — aide par section               | §4 | 🟡 plan rédigé, à finaliser |
-| LOT F — Mondes Parallèles           | §5 | 🟡 plan auto-suffisant prêt |
+| B3 — archétypes capacités ennemies | §1 | ✅ livré & mergé |
+| B4 — rééquilibrage Legilimens       | §2 | ✅ livré & mergé (levier b) |
+| C3b — Bibliothèque 2 voies          | §3 | ✅ livré & mergé |
+| D4 — aide par section               | §4 | ✅ livré & mergé |
+| LOT F — Mondes Parallèles           | §5 | ✅ stabilisé & mergé (test live manuel restant, non bloquant) |
 
 > Les lots A, B1, B2, C1, C2, C4, C5, D1, D2, D3 sont **livrés & mergés**
 > (cf. `game-features-review.md` §6 + plans associés) — aucun prompt requis.
