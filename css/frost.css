@@ -1,0 +1,18 @@
+/* ============================================================
+   FROST OVERLAY — vignette blanche-bleutée (corruption visuelle)
+   Opacité pilotée par _applyCorruptionAmbiance() (floor-ambiance.js).
+   z-index sous les modales/overlays (9000) mais sur le canvas (1).
+   pointer-events:none — purement visuel, non interactif.
+   ============================================================ */
+#frost-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 40%, rgba(200, 230, 255, 0.55) 100%),
+    linear-gradient(180deg, rgba(180, 220, 255, 0.10) 0%, transparent 30%, transparent 70%, rgba(180, 220, 255, 0.15) 100%);
+  /* Transition douce à chaque changement d'étage */
+  transition: opacity 1.2s ease-in-out;
+}

@@ -36,6 +36,7 @@ const PRECACHE_URLS = [
   './css/combat-fx.css?v=11',
   './css/dungeon-fx.css?v=5',
   './css/cinematics.css?v=1',
+  './css/frost.css?v=1',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
@@ -54,6 +55,7 @@ const PRECACHE_URLS = [
   './js/data.js?v=24',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
+  './js/floor-ambiance.js?v=1',
   './js/floor-events.js?v=1',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=19',
@@ -74,8 +76,8 @@ const PRECACHE_URLS = [
   './js/renderer-sprites.js?v=4',
   './js/renderer-entities.js?v=2',
   './js/renderer-minimap.js?v=7',
-  './js/movement.js?v=29',
-  './js/movement-floors.js?v=5',
+  './js/movement.js?v=30',
+  './js/movement-floors.js?v=6',
   './js/movement-interactions.js?v=12',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=26',
@@ -109,7 +111,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=28',
+  './js/loader.js?v=29',
   './js/pwa.js?v=3',
 
   // Icônes PWA + premier écran

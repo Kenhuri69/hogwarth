@@ -209,6 +209,28 @@ function houseAmbianceLine(chosenHouse) { return HOUSE_AMBIANCE_MOD[chosenHouse]
 
 ## Journal des écarts
 
-- *(à compléter au fil de l'implémentation réelle des systèmes P1-P5 — ce plan
-  couvre la rédaction des chapitres + la spéc d'implémentation, pas l'implé
-  code qui fera l'objet de PRs dédiées.)*
+### Implémentation Etape 2 (2026-06-08, branche claude/ambiance-floor-system)
+
+**P1 - Descriptions d'ambiance zonees :** livré.
+- Nouveau module `js/floor-ambiance.js` : ZONE_AMBIANCE (4 zones x 6 phrases + smell/sound/temp), getFloorAmbiance(floor) pur.
+- `js/movement.js` : call-site remplacé — tirage zoné via getFloorAmbiance, fallback NARRATIVES.floor conservé si module absent.
+- Ligne de Maison cosmétique ajoutée (~25 % des entrées de cellule).
+
+**P2 - Niveau de corruption + givre :** livré.
+- corruptionLevel(floor, victoryAchieved) pur dans floor-ambiance.js.
+- css/frost.css + frost-overlay div dans index.html.
+- _applyCorruptionAmbiance(floor) appelée dans _changeFloor (movement-floors.js).
+
+**P3 - Ligne d'ambiance par Maison :** livré (intégré dans P1).
+- HOUSE_AMBIANCE_MOD + houseAmbianceLine(chosenHouse) dans floor-ambiance.js.
+- Fréquence ~25 % aléatoire, purement cosmétique.
+
+**P4 - Toast solennel 13->14 :** livré.
+- Dans _maybePlayTierTransition (movement-floors.js) : toast dédié zone D.
+
+**P5 - Etages-scènes fixes :** non implémenté (arbitrage produit requis, noté en plan §C).
+
+**Enregistrements :**
+- Loader MANIFEST : 4 nouvelles entrées (ZONE_AMBIANCE, getFloorAmbiance, corruptionLevel, houseAmbianceLine).
+- Cache PWA : CACHE_VERSION -> hogwarth-v78, 5 assets bumpés + 2 nouveaux dans PRECACHE_URLS.
+- tests/units.js : 40 assertions ajoutées (section 5).

@@ -651,7 +651,25 @@ function handleCellEntry(cell) {
         if (party.every(c => c.hp <= 0)) triggerDeath("Un piège sournois a vaincu le groupe...");
       }
     } else {
-      setNarrative(NARRATIVES.floor[Math.floor(Math.random() * NARRATIVES.floor.length)]);
+      // Ambiance zonée : tire dans getFloorAmbiance si disponible,
+      // sinon repli sur le pool plat NARRATIVES.floor (garde-fou défensif).
+      let ambianceLine = null;
+      if (typeof getFloorAmbiance === 'function') {
+        const amb = getFloorAmbiance(currentFloor);
+        if (amb && Array.isArray(amb.floorLines) && amb.floorLines.length) {
+          ambianceLine = amb.floorLines[Math.floor(Math.random() * amb.floorLines.length)];
+        }
+      }
+      if (!ambianceLine) {
+        ambianceLine = NARRATIVES.floor[Math.floor(Math.random() * NARRATIVES.floor.length)];
+      }
+      // Ligne de Maison cosmétique (~1 fois sur 4).
+      const houseChoix = (typeof chosenHouse !== 'undefined') ? chosenHouse : null;
+      if (houseChoix && typeof houseAmbianceLine === 'function' && Math.random() < 0.25) {
+        const hLine = houseAmbianceLine(houseChoix);
+        if (hLine) ambianceLine += '\n' + hLine;
+      }
+      setNarrative(ambianceLine);
     }
   }
 }

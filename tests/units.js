@@ -262,6 +262,92 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 5. floor-ambiance.js — getFloorAmbiance / corruptionLevel /
+//    houseAmbianceLine
+// ============================================================
+(function testFloorAmbiance() {
+  // Injecter FLOOR_THEMES + getFloorTheme pour que getFloorAmbiance
+  // puisse résoudre les zones.
+  const { FLOOR_THEMES, getFloorTheme } = loadModule(
+    'js/floor-themes.js', ['FLOOR_THEMES', 'getFloorTheme']);
+
+  const mod = loadModule(
+    'js/floor-ambiance.js',
+    ['ZONE_AMBIANCE', 'getFloorAmbiance', 'corruptionLevel', 'HOUSE_AMBIANCE_MOD', 'houseAmbianceLine'],
+    { FLOOR_THEMES, getFloorTheme });
+
+  const { ZONE_AMBIANCE, getFloorAmbiance, corruptionLevel, HOUSE_AMBIANCE_MOD, houseAmbianceLine } = mod;
+
+  // ── getFloorAmbiance : bonne zone aux frontières ──
+  check('ambiance étage 1 → hogwarts',   getFloorAmbiance(1)  === ZONE_AMBIANCE.hogwarts);
+  check('ambiance étage 3 → hogwarts',   getFloorAmbiance(3)  === ZONE_AMBIANCE.hogwarts);
+  check('ambiance étage 4 → dungeons',   getFloorAmbiance(4)  === ZONE_AMBIANCE.dungeons);
+  check('ambiance étage 6 → dungeons',   getFloorAmbiance(6)  === ZONE_AMBIANCE.dungeons);
+  check('ambiance étage 7 → depths',     getFloorAmbiance(7)  === ZONE_AMBIANCE.depths);
+  check('ambiance étage 13 → depths',    getFloorAmbiance(13) === ZONE_AMBIANCE.depths);
+  check('ambiance étage 14 → ancient',   getFloorAmbiance(14) === ZONE_AMBIANCE.ancient);
+  check('ambiance étage 99 → ancient',   getFloorAmbiance(99) === ZONE_AMBIANCE.ancient);
+
+  // Fallback sur hogwarts pour entrée invalide (miroir du comportement de getFloorTheme).
+  check('ambiance floor 0 → hogwarts',   getFloorAmbiance(0)         === ZONE_AMBIANCE.hogwarts);
+  check('ambiance floor -1 → hogwarts',  getFloorAmbiance(-1)        === ZONE_AMBIANCE.hogwarts);
+  check('ambiance floor NaN → hogwarts', getFloorAmbiance(NaN)       === ZONE_AMBIANCE.hogwarts);
+  check('ambiance floor undef → hogwarts', getFloorAmbiance()        === ZONE_AMBIANCE.hogwarts);
+
+  // Chaque zone a des floorLines non vides.
+  for (const [key, zone] of Object.entries(ZONE_AMBIANCE)) {
+    check(`ZONE_AMBIANCE.${key}.floorLines non vide`,
+      Array.isArray(zone.floorLines) && zone.floorLines.length >= 4);
+    check(`ZONE_AMBIANCE.${key}.smell non vide`,
+      Array.isArray(zone.smell) && zone.smell.length > 0);
+    check(`ZONE_AMBIANCE.${key}.sound non vide`,
+      Array.isArray(zone.sound) && zone.sound.length > 0);
+    check(`ZONE_AMBIANCE.${key}.temp défini`,
+      typeof zone.temp === 'string' && zone.temp.length > 0);
+  }
+
+  // ── corruptionLevel : croissance monotone et cap ──
+  check('corruption étage 1 = 0',       corruptionLevel(1, false) === 0);
+  check('corruption étage 14 = 1 (cap)', corruptionLevel(14, false) === 1);
+  check('corruption étage 99 = 1 (cap)', corruptionLevel(99, false) === 1);
+  check('corruption 0/négatif → 0 (floor 1)', corruptionLevel(0, false) === 0);
+
+  // Croissance monotone de 1 à 14 (pré-victoire).
+  let mono = true;
+  for (let f = 1; f < 14; f++) {
+    if (corruptionLevel(f + 1, false) < corruptionLevel(f, false)) mono = false;
+  }
+  check('corruptionLevel monotone 1..14', mono);
+
+  // Boucle Ténébreuse : +0.3 à étage 11+, cap à 1.3.
+  check('corruption boucle étage 11 > étage 11 sans',
+    corruptionLevel(11, true) > corruptionLevel(11, false));
+  check('corruption boucle cap à 1.3',
+    corruptionLevel(99, true) <= 1.3);
+  check('corruption boucle min = +0.3 à étage 11',
+    Math.abs(corruptionLevel(11, true) - (corruptionLevel(11, false) + 0.3)) < 1e-9);
+  // Pas de saut avant étage 11.
+  check('corruption boucle étage 10 = sans victoire',
+    corruptionLevel(10, true) === corruptionLevel(10, false));
+
+  // ── houseAmbianceLine : null sans Maison, texte sinon ──
+  check('houseAmbianceLine(null) = null',       houseAmbianceLine(null) === null);
+  check('houseAmbianceLine(undef) = null',      houseAmbianceLine(undefined) === null);
+  check('houseAmbianceLine("") = null',         houseAmbianceLine('') === null);
+  check('houseAmbianceLine inconnu = null',     houseAmbianceLine('Dumbledore') === null);
+  check('houseAmbianceLine Gryffondor string',  typeof houseAmbianceLine('Gryffondor') === 'string');
+  check('houseAmbianceLine Serpentard string',  typeof houseAmbianceLine('Serpentard') === 'string');
+  check('houseAmbianceLine Serdaigle string',   typeof houseAmbianceLine('Serdaigle') === 'string');
+  check('houseAmbianceLine Poufsouffle string', typeof houseAmbianceLine('Poufsouffle') === 'string');
+
+  // Les quatre Maisons ont des lignes non vides et distinctes.
+  const lines = ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].map(houseAmbianceLine);
+  check('4 lignes de Maison non vides', lines.every(l => l && l.length > 0));
+  const unique = new Set(lines);
+  check('4 lignes de Maison distinctes', unique.size === 4);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
