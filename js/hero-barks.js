@@ -69,6 +69,8 @@ const HERO_BARKS = {
     levelUp:    ["On progresse droit. C'est la seule façon que je connaisse."],
     houseTier:  ["Le mérite paie. On l'a gagné ensemble."],
     tierTransition: ["Plus de salles de classe en dessous. À partir d'ici, on passe l'examen."],
+    // Beat scénarisé (05 §5.4.2) — transition 3↔4, on quitte l'école.
+    leaveSchool: ["Plus de salles de classe en dessous. À partir d'ici, on ne révise plus : on passe l'examen."],
     houseTension: {
       Poufsouffle: ["Plus de salles de classe en dessous. À partir d'ici, on passe l'examen."]
     }
