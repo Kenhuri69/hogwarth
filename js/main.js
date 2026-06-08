@@ -498,6 +498,7 @@ async function startGame(count = 2) {
   gardenStock = 0;
   gardenDiscovered = false;
   visitedFloors = new Set([1]);
+  seenScriptedBeat = new Set();   // étages-scènes (P5) — beats neufs à chaque partie
   totalKills     = 0;
   monsterKills   = {};
   combatTutorialSeen = false;   // tuto premier combat rejoué à chaque partie (LOT D2)
@@ -541,6 +542,10 @@ async function startGame(count = 2) {
     : `Bienvenue à Poudlard. ${player.name.split(' ')[0]} et ${player2.name.split(' ')[0]} s'élancent. ${modeLabel} activé.`;
   setNarrative(intro);
   addMsg(modeLabel, difficulty === 'Expert' ? 'bad' : 'good');
+
+  // Étage-scène scénarisé (P5) : beat du Seuil familier à la 1re entrée de
+  // l'étage 1 (non atteint via _changeFloor, généré direct au démarrage).
+  if (typeof maybeScriptedFloorBeat === 'function') maybeScriptedFloorBeat(1);
 
   // Lancer la musique ambiante (le geste utilisateur vient du clic sur startGame)
   AudioSystem.init();

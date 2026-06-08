@@ -217,6 +217,10 @@ function _changeFloor(delta, opts) {
     if (opts.onArrive) opts.onArrive();
     if (typeof DFX_safe !== 'undefined') DFX_safe.setFloorAmbience();
     _announceFloorEvent();
+    // Étage-scène scénarisé (P5) : beat écrit garanti à la 1re entrée d'un
+    // étage-clé (1/4/8). One-shot via seenScriptedBeat ; après _announceFloorEvent
+    // pour que le beat (rare, important) gagne la narration sur ces étages.
+    if (typeof maybeScriptedFloorBeat === 'function') maybeScriptedFloorBeat(currentFloor);
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
     // Mondes parallèles — si une visite est active côté host, reposter

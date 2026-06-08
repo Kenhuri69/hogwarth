@@ -2601,4 +2601,68 @@ async function scenarioRoomOfRequirement() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioDungeonLife, scenarioFountain, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
+// P5 — Étages-scènes scénarisés : beat narratif écrit garanti à la 1re entrée
+// d'un étage-clé (1/4/8). One-shot via seenScriptedBeat (sérialisé). Le beat de
+// l'étage 1 doit être déclenché au démarrage (startGame), idempotent ensuite ;
+// la résolution est pure (getScriptedFloorBeat), l'orchestrateur défensif.
+async function scenarioScriptedFloorBeats() {
+  console.log('\n── Scénario : Étages-scènes scénarisés (P5) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasResolve = typeof getScriptedFloorBeat === 'function';
+      out.hasOrch    = typeof maybeScriptedFloorBeat === 'function';
+      out.hasSet     = typeof seenScriptedBeat !== 'undefined' && seenScriptedBeat instanceof Set;
+      // Résolution pure : 1/4/8 définis, 2/10 absents.
+      out.beat1 = !!(getScriptedFloorBeat(1) && getScriptedFloorBeat(1).narrative);
+      out.beat4 = !!(getScriptedFloorBeat(4) && getScriptedFloorBeat(4).toast);
+      out.beat8 = !!(getScriptedFloorBeat(8) && getScriptedFloorBeat(8).id);
+      out.beat2null  = getScriptedFloorBeat(2) === null;
+      out.beat10null = getScriptedFloorBeat(10) === null;
+      // Le beat de l'étage 1 a déjà été joué au démarrage (startGame).
+      out.seen1AfterStart = seenScriptedBeat.has(1);
+      out.maybe1Idempotent = maybeScriptedFloorBeat(1) === false; // déjà vu
+      // 1re entrée simulée étage 4 → joue puis idempotent.
+      out.maybe4First = maybeScriptedFloorBeat(4) === true;
+      out.seen4 = seenScriptedBeat.has(4);
+      out.maybe4Again = maybeScriptedFloorBeat(4) === false;
+      // Étage sans beat → no-op.
+      out.maybe2 = maybeScriptedFloorBeat(2) === false;
+      // Sérialisation : seenScriptedBeat survit à un round-trip _serialize/_apply.
+      const snap = _serializeState();
+      out.serialized = Array.isArray(snap.seenScriptedBeat) &&
+        snap.seenScriptedBeat.includes(1) && snap.seenScriptedBeat.includes(4);
+      seenScriptedBeat = new Set();           // on vide
+      _applyState(snap);                       // puis on restaure
+      out.restored = seenScriptedBeat.has(1) && seenScriptedBeat.has(4);
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  P5 scripted beats:', r);
+  assert(!r.threw, 'P5 throw: ' + (r.err || ''));
+  assert(r.hasResolve, 'P5 getScriptedFloorBeat absent');
+  assert(r.hasOrch, 'P5 maybeScriptedFloorBeat absent');
+  assert(r.hasSet, 'P5 seenScriptedBeat absent ou pas un Set');
+  assert(r.beat1 && r.beat4 && r.beat8, 'P5 beats 1/4/8 non résolus');
+  assert(r.beat2null && r.beat10null, 'P5 étages 2/10 devraient être null');
+  assert(r.seen1AfterStart, 'P5 beat étage 1 non joué au démarrage');
+  assert(r.maybe1Idempotent, 'P5 beat étage 1 rejoué (non idempotent)');
+  assert(r.maybe4First, 'P5 beat étage 4 ne s\'est pas déclenché');
+  assert(r.seen4, 'P5 étage 4 pas marqué vu');
+  assert(r.maybe4Again, 'P5 beat étage 4 rejoué (non idempotent)');
+  assert(r.maybe2, 'P5 étage 2 (sans beat) devrait retourner false');
+  assert(r.serialized, 'P5 seenScriptedBeat absent de la sérialisation');
+  assert(r.restored, 'P5 seenScriptedBeat non restauré après _applyState');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (étages-scènes P5)`);
+  }
+  console.log('  ✅ Étages-scènes P5 — résolution pure, one-shot, sérialisation OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioDungeonLife, scenarioFountain, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
