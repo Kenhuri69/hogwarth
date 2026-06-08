@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v78';
+const CACHE_VERSION = 'hogwarth-v79';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -27,7 +27,7 @@ const PRECACHE_URLS = [
   './manifest.json',
 
   // CSS
-  './css/style.css?v=31',
+  './css/style.css?v=32',
   './css/ux-improvements.css?v=2',
   './css/save-ui.css?v=2',
   './css/ornaments.css?v=1',
@@ -45,10 +45,10 @@ const PRECACHE_URLS = [
   './js/haptics.js?v=1',
   './js/audio.js?v=2',
   './js/audio-music.js?v=6',
-  './js/audio-sfx.js?v=10',
+  './js/audio-sfx.js?v=11',
   './js/icons.js?v=1',
   './js/scene-icons.js?v=5',
-  './js/monsters.js?v=7',
+  './js/monsters.js?v=8',
   './js/npcs.js?v=19',
   './js/npcs-helpers.js?v=2',
   './js/riddles.js?v=2',
@@ -64,8 +64,8 @@ const PRECACHE_URLS = [
   './js/ui.js?v=11',
   './js/ui-character-sheet.js?v=5',
   './js/ui-settings.js?v=3',
-  './js/ui-bestiary.js?v=1',
-  './js/dungeon-scaling.js?v=1',
+  './js/ui-bestiary.js?v=2',
+  './js/dungeon-scaling.js?v=2',
   './js/dungeon.js?v=15',
   './js/dungeon-spawning.js?v=1',
   './js/textures.js?v=1',
@@ -80,12 +80,12 @@ const PRECACHE_URLS = [
   './js/movement-floors.js?v=6',
   './js/movement-interactions.js?v=12',
   './js/swipe-canvas.js?v=4',
-  './js/battle.js?v=26',
+  './js/battle.js?v=27',
   './js/battle-rewards.js?v=6',
   './js/battle-death.js?v=3',
   './js/teleport.js?v=1',
   './js/battle-spells.js?v=11',
-  './js/battle-ui.js?v=5',
+  './js/battle-ui.js?v=6',
   './js/inventory-core.js?v=6',
   './js/inventory.js?v=16',
   './js/inventory-spells.js?v=2',
@@ -111,7 +111,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=29',
+  './js/loader.js?v=30',
   './js/pwa.js?v=3',
 
   // Icônes PWA + premier écran

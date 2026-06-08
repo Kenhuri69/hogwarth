@@ -69,6 +69,23 @@ function endgameTierIndex(floor) {
   return 0;
 }
 
+// Surcouche corruption (Chapitre 09 §9.1.2) — gradient narratif 0-3 lu par le
+// rendu (teinte froide / givre) et l'audio (souffle glacé). PUR, dérivé de la
+// profondeur effective + du tag Ténébreux ; non sérialisé (recalculé au spawn).
+//   0 — L'École (canon, intact)        étages eff. 1-3
+//   1 — La Descente (touché)           étages eff. 4-6
+//   2 — Les Profondeurs (corrompu)     étages eff. 7-10
+//   3 — Boucle Ténébreuse (cauchemar)  étages 11+ post-victoire
+// Le `base` est accepté pour extension future (tag par famille) mais reste
+// inutilisé : le gradient est piloté par la profondeur pour rester prévisible.
+function creatureCorruptionLevel(base, floor) {
+  if (typeof victoryAchieved !== 'undefined' && victoryAchieved && floor >= 11) return 3;
+  const ef = effectiveFloor(floor);
+  if (ef >= 7) return 2;
+  if (ef >= 4) return 1;
+  return 0;
+}
+
 // Levier anti-tank — capacité « Broyer » (cf. .claude/plans/player-stats-balance.md
 // §4ter). Dégâts proportionnels aux PV MAX de la cible, contournant la DEF :
 // contre-mesure exacte au build tank (dont l'avantage est le pool de PV, pas la
@@ -162,6 +179,10 @@ function scaleMonster(base, floor) {
   if (isBruteMonster(base)) {
     monster.abilities = [...(monster.abilities || []), { ...BRUTE_CRUSH_ABILITY }];
   }
+
+  // Surcouche corruption cosmétique (Chapitre 09 §9.1.2) — consommée par le
+  // rendu (teinte/givre) et l'audio (souffle froid). Dérivée, non sérialisée.
+  monster.corruption = creatureCorruptionLevel(base, floor);
 
   return monster;
 }

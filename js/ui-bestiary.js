@@ -2,6 +2,35 @@
 // BESTIAIRE INTERACTIF — Encyclopédie des monstres
 // ============================================================
 
+// Familles narratives (Chapitre 09 §9.2) — le sens d'une créature dans le récit,
+// orthogonal aux catégories moteur (bête/humain/…). Le `blurb` exprime l'origine
+// de la corruption au niveau famille : il est révélé au palier 2 du codex.
+const FAMILY_LORE = {
+  F1: { emoji: '🏰', label: "Créatures de l'école",
+        blurb: "Habitants familiers du château retournés contre les leurs : le premier symptôme que quelque chose, en bas, réveille Poudlard." },
+  F2: { emoji: '🌿', label: 'Bêtes & créatures magiques',
+        blurb: "Le monde sauvage qui déborde — territoriales, blessées ou affamées. Toute hostilité n'est pas de la corruption : c'est la nuance morale du bestiaire." },
+  F3: { emoji: '💀', label: 'Morts-vivants & malédictions',
+        blurb: "Là où la mort cesse d'être un fait pour devenir une présence. La famille du froid, du désespoir et de la peur — on y oppose la lumière et le Patronus." },
+  F4: { emoji: '🐍', label: 'Forces de Voldemort',
+        blurb: "La preuve que le mal a des fidèles : des gens veulent cela. L'escalier de la menace organisée, du masque anonyme au cercle intérieur nommé." },
+  F5: { emoji: '🗝️', label: 'Mythiques & gardiens anciens',
+        blurb: "La mémoire profonde du château : l'œuvre des Fondateurs, ou des monstres de légende enfouis plutôt qu'éliminés. La corruption à sa source." },
+};
+function _familyMeta(monster) {
+  return (monster && FAMILY_LORE[monster.loreFamily]) || null;
+}
+
+// Codex à paliers (Chapitre 09 §IV, paliers 1-2). DÉRIVÉ de l'état existant —
+// aucun global sérialisé neuf : palier 1 = rencontre (seenMonsters), palier 2 =
+// CODEX_DEEP_KILLS victoires sur l'espèce (monsterKills, déjà sérialisé).
+const CODEX_DEEP_KILLS = 2;
+function _codexTier(monster) {
+  if (!seenMonsters.has(monster.id)) return 0;
+  const k = (typeof monsterKills !== 'undefined' && monsterKills[monster.id]) || 0;
+  return k >= CODEX_DEEP_KILLS ? 2 : 1;
+}
+
 function openBestiary() {
   document.getElementById('bestiary-modal').style.display = 'flex';
   // Revenir au panneau liste et rafraîchir
@@ -17,6 +46,7 @@ function closeBestiary() {
 function filterBestiary() {
   const search      = (document.getElementById('bestiary-search')?.value  || '').toLowerCase().trim();
   const cat         = document.getElementById('bestiary-category')?.value || '';
+  const family      = document.getElementById('bestiary-family')?.value || '';
   const floorFilter = parseInt(document.getElementById('bestiary-floor')?.value) || 0;
   const grid        = document.getElementById('bestiary-grid');
   if (!grid) return;
@@ -25,8 +55,9 @@ function filterBestiary() {
   const filtered = MONSTERS.filter(m => {
     const matchSearch = !search      || m.name.toLowerCase().includes(search) || (m.lore || '').toLowerCase().includes(search);
     const matchCat    = !cat         || m.category === cat;
+    const matchFamily = !family      || m.loreFamily === family;
     const matchFloor  = !floorFilter || m.minFloor >= floorFilter;
-    return matchSearch && matchCat && matchFloor;
+    return matchSearch && matchCat && matchFamily && matchFloor;
   });
 
   if (filtered.length === 0) {
@@ -61,6 +92,7 @@ function filterBestiary() {
         <div class="spell-name">
           ${seen ? monster.name : '???'}
           <span class="bestiary-cat-tag">${monster.category}</span>
+          ${seen && _familyMeta(monster) ? `<span class="bestiary-family-tag" title="${_familyMeta(monster).label}">${_familyMeta(monster).emoji} ${monster.loreFamily}</span>` : ''}
         </div>
         <div class="bestiary-floor-tag">Étages ${floorRange}</div>
         <div class="bestiary-lore">
@@ -98,6 +130,7 @@ function showMonsterDetail(monster) {
       <div class="bestiary-detail-titles">
         <h2 class="bestiary-detail-name">${seen ? monster.name : '???'}</h2>
         <div class="bestiary-floor-tag">${monster.category.toUpperCase()} · Étages ${floorRange}</div>
+        ${seen && _familyMeta(monster) ? `<div><span class="bestiary-family-tag" title="${_familyMeta(monster).label}">${_familyMeta(monster).emoji} ${monster.loreFamily} · ${_familyMeta(monster).label}</span></div>` : ''}
         ${_renderDangerHtml(monster)}
         <div class="bestiary-detail-desc">${monster.desc}</div>
       </div>
@@ -108,6 +141,8 @@ function showMonsterDetail(monster) {
     </p>
 
     ${_renderLoreBox(monster, seen)}
+
+    ${_renderCodexDeep(monster)}
 
     ${seen ? `
       ${_renderStatGrid(monster, goldRange)}
@@ -146,6 +181,38 @@ function _renderLoreBox(monster, seen) {
     ${monster.habitat  ? `<div><strong>🏰 Habitat :</strong> ${monster.habitat}</div>`  : ''}
     ${monster.anecdote ? `<div><strong>📖 Anecdote :</strong> <em>${monster.anecdote}</em></div>` : ''}
   </div>`;
+}
+
+// Encart « Lore profond » (codex §IV, palier 2) — révèle la famille narrative,
+// son origine de corruption et une note de gradient. Verrouillé tant que
+// l'espèce n'a pas été vaincue CODEX_DEEP_KILLS fois (mirroir du panneau combat).
+function _renderCodexDeep(monster) {
+  if (!seenMonsters.has(monster.id)) return '';
+  const fam = _familyMeta(monster);
+  if (!fam) return '';
+  if (_codexTier(monster) < 2) {
+    const k = (typeof monsterKills !== 'undefined' && monsterKills[monster.id]) || 0;
+    const need = Math.max(1, CODEX_DEEP_KILLS - k);
+    return `<div class="codex-deep codex-deep-locked">
+      🔒 <strong>Lore profond</strong> — vaincs cette espèce ${need} fois de plus pour percer son origine.
+    </div>`;
+  }
+  const note = _corruptionNote(monster);
+  return `<div class="codex-deep">
+    <div class="codex-deep-title">🔎 Lore profond</div>
+    <div><span class="bestiary-family-tag">${fam.emoji} ${monster.loreFamily} · ${fam.label}</span></div>
+    <p class="codex-fam-blurb">${fam.blurb}</p>
+    ${note ? `<p class="codex-corruption">${note}</p>` : ''}
+  </div>`;
+}
+
+// Note de gradient de corruption (Chapitre 09 §9.1.2) indexée sur la profondeur
+// typique d'apparition (minFloor) — lecture narrative, pas une instance scalée.
+function _corruptionNote(monster) {
+  const f = monster.minFloor || 1;
+  if (f >= 7) return "🧊 <strong>Profondeurs :</strong> le froid surnaturel l'a profondément gagnée — créature corrompue, à la lisière du cauchemar.";
+  if (f >= 4) return "❄️ <strong>La Descente :</strong> la corruption commence à la marquer ; le givre s'invite dans son sillage.";
+  return "🌱 <strong>L'École :</strong> encore proche de sa forme canonique — la fêlure ne fait que l'agiter.";
 }
 
 function _renderAbilitiesHtml(monster, seen) {

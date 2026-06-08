@@ -540,6 +540,13 @@ function startBattle(baseEnemyData, opts) {
 
   // Marquer les ennemis comme découverts dans le bestiaire (hors duellistes).
   enemyGroup.forEach(e => { if (e.id && !e.isDuelist) seenMonsters.add(e.id); });
+  // Surcouche corruption (Chapitre 09 §9.1.2) : garantit le champ pour les
+  // groupes non passés par scaleMonster (duels). Cosmétique (rendu + SFX froid).
+  enemyGroup.forEach(e => {
+    if (e.corruption == null && typeof creatureCorruptionLevel === 'function') {
+      e.corruption = creatureCorruptionLevel(e, currentFloor);
+    }
+  });
   // Levier one-shot des Quêtes Signature de Maison sur le combat final.
   _applySignatureVoldemortLever();
   const size = enemyGroup.length;
@@ -560,6 +567,12 @@ function startBattle(baseEnemyData, opts) {
   UX_safe.logCombat(`⚔️ Combat engagé contre ${size} ennemi${size>1?'s':''}.`, 'info');
   UX_safe.renderTimeline();
   AudioSystem.startCombatMusic(enemyGroup);
+  // Souffle glacé surnaturel à l'apparition d'une créature corrompue
+  // (corruption >= 2). Défensif : no-op si le SFX n'est pas défini.
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playColdBreath
+      && enemyGroup.some(e => (e.corruption || 0) >= 2)) {
+    AudioSystem.playColdBreath();
+  }
   // Immersion : cinématique d'apparition pour les boss epic, sinon flash
   // d'entrée court (C1). Mutuellement exclusifs — jamais empilés. Purement
   // visuel (CFX_safe → no-op si le module FX est absent).

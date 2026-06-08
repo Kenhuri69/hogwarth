@@ -173,7 +173,11 @@ function renderEnemyGroup() {
       : '';
 
     const card = document.createElement('div');
-    card.className = `enemy-card variant-${variant}${dead ? ' enemy-dead' : ''}`;
+    // Surcouche corruption (Chapitre 09 §9.1.2) : teinte froide + givre via CSS
+    // pour les créatures des profondeurs (corruption >= 2). `||0` → no-op sur
+    // les groupes pré-construits (duels) dépourvus du champ.
+    const corr = enemy.corruption || 0;
+    card.className = `enemy-card variant-${variant} corruption-${corr}${dead ? ' enemy-dead' : ''}`;
     card.id = `enemy-card-${i}`;
     card.innerHTML = `
       <div style="position:relative;display:inline-block;animation:float 2s ease-in-out infinite alternate">
