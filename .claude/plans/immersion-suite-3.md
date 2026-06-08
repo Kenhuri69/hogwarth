@@ -175,7 +175,7 @@ runique discret ; `tresor` → aucune (déjà visible). Tout cosmétique.
 
 ## J. Boucle de butin
 
-### J1. Pop de butin (révélation visuelle)
+### J1. Pop de butin (révélation visuelle) ✅ (livré 2026-06-08)
 Les drops sont déjà loggés avec icône. Ajouter une **révélation visuelle**
 brève : l'icône de l'objet « pop » (scale + fondu montant) au-dessus de la
 zone de combat à la victoire, pour rendre le gain tangible.
@@ -234,3 +234,27 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
   smoke vert (159) + pwa-smoke vert. **Bumps** : `combat-fx.js` (6→7),
   `combat-fx.css` (7→8), `battle-ui.js` (3→4) ; `CACHE_VERSION` v56 → v57.
   Pas de nouveau global → loader inchangé (méthode de `CombatFX`).
+- 2026-06-01 : **G2 livré** (branche `claude/immersion-g2-cast-feedback`).
+  `CombatFX.castFlash(casterKey, element)` (`combat-fx.js`) : halo bref
+  `.cfx-cast-halo` teinté élément + 6 étincelles montantes `.cfx-cast-spark`
+  à l'ancre du lanceur (`'ally'`). Appelé dans `castSpellInBattle`
+  (`battle-spells.js`) avant le `spellBurst` de la cible, via `CFX_safe`.
+  Tests : volets **F9** (API + halo) et **F9b** (call-site réel) dans
+  `scenarioCombatFX`. CSS + reduced-motion (halo seul). smoke + pwa verts.
+- 2026-06-08 : **J1 livré** (branche `claude/immersion-suite-3-plan-3c00az`).
+  `CombatFX.lootPop(item)` (`combat-fx.js`) : pastille dorée
+  `.cfx-loot-pop` (icône `getItemIconHtml` + nom) qui pop + monte + fade
+  (~960 ms). **Subtilité d'ancrage** : `endBattle` masque
+  `#encounter-overlay` (`display:none`, `battle-rewards.js:10`) AVANT de
+  traiter les drops → le pop ne peut pas vivre dans l'arène. Il se monte
+  donc sur une couche **fixée au `body`** (`#cfx-loot-layer`, z-index 120,
+  sous les modales), centrée haut, **empilable** (offset `--cfx-loot-i`
+  pour les drops simultanés). Hook `CFX_safe.lootPop(item)` aux **6 sites
+  de drop réussi** d'`endBattle` (standard + 3 Ténèbres + 2 matériaux
+  endgame), après le `addMsg` existant. CSS `.cfx-loot-*` + reduced-motion
+  (apparition statique sans translation). Test : volet **F10** ajouté à
+  `scenarioCombatFX` (API directe + proxy, empilement `--cfx-loot-i==='1'`)
+  + `hasLoot` dans F1. smoke vert + units (67) + pwa-smoke (v70) verts.
+  **Bumps** : `combat-fx.js` (8→9), `combat-fx.css` (9→10),
+  `battle-rewards.js` (3→4) ; `CACHE_VERSION` v69 → v70. Pas de nouveau
+  global → loader inchangé (méthode de `CombatFX`).

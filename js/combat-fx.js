@@ -265,6 +265,39 @@
     setTimeout(() => g.remove(), 700);
   }
 
+  // ── Pop de butin (J1) ────────────────────────────────────────
+  // Révélation visuelle brève d'un objet gagné à la victoire. endBattle
+  // masque #encounter-overlay AVANT de traiter les drops, donc ce pop ne
+  // peut pas vivre dans l'arène : il se monte sur une couche dédiée fixée
+  // au body, centrée en haut de la vue. Empilable — chaque pop simultané
+  // est décalé verticalement (var --cfx-loot-i). reduced-motion =
+  // apparition statique brève sans translation (géré en CSS).
+  function lootPop(item) {
+    if (!item || !document.body) return;
+    let layer = document.getElementById('cfx-loot-layer');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.id = 'cfx-loot-layer';
+      layer.className = 'cfx-loot-layer';
+      document.body.appendChild(layer);
+    }
+    const iconHtml = (typeof getItemIconHtml === 'function')
+      ? getItemIconHtml(item, 'ui-icon-xl') : (item.icon || '');
+    const idx = layer.querySelectorAll('.cfx-loot-pop').length; // empilement
+    const pop = document.createElement('div');
+    pop.className = 'cfx-loot-pop';
+    pop.style.setProperty('--cfx-loot-i', String(idx));
+    pop.innerHTML =
+      `<span class="cfx-loot-icon">${iconHtml}</span>` +
+      `<span class="cfx-loot-name">${item.name || ''}</span>`;
+    layer.appendChild(pop);
+    const dur = prefersReducedMotion() ? 700 : 960;
+    setTimeout(() => {
+      pop.remove();
+      if (layer && !layer.querySelector('.cfx-loot-pop')) layer.remove();
+    }, dur);
+  }
+
   // ── Secousse globale de l'overlay ─────────────────────────────
   // intensity : 'light' | 'heavy' (défaut 'light'). No-op en reduced-motion
   // (la règle CSS neutralise l'animation, mais on évite aussi le reflow).
@@ -407,7 +440,7 @@
     return DUR;
   }
 
-  window.CombatFX = { spellBurst, deathDissolve, castFlash, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, petrify };
+  window.CombatFX = { spellBurst, deathDissolve, castFlash, lootPop, healBurst, buffAura, shake, bossIntro, combatStart, hurtFlash, statusFlash, petrify };
 })();
 
 // Helper défensif (calqué sur UX_safe) : CFX_safe.foo(...) appelle

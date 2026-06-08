@@ -130,6 +130,7 @@ function endBattle(won) {
             const item = ITEMS.find(i => i.id === drop.itemId);
             if (item && tryAddItem(item, { silent: true })) {
               addMsg(`<img class="ui-icon ui-icon-sm" src="img/icons/accessory.png" alt=""> Drop : ${getItemIconHtml(item, 'ui-icon-sm')} ${item.name} !`, 'good');
+              CFX_safe.lootPop(item); // J1 — révélation visuelle du butin
             }
           }
         });
@@ -141,6 +142,7 @@ function endBattle(won) {
           const item   = ITEMS.find(i => i.id === pickId);
           if (item && tryAddItem(item, { silent: true })) {
             addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Butin des Ténèbres : ${item.name} !`, 'magic');
+            CFX_safe.lootPop(item); // J1
           }
         }
         // Drop 5 % Élixir Suprême HP/SP (random entre les deux)
@@ -149,6 +151,7 @@ function endBattle(won) {
           const item = ITEMS.find(i => i.id === xlId);
           if (item && tryAddItem(item, { silent: true })) {
             addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Drop des Ténèbres : ${item.name} !`, 'good');
+            CFX_safe.lootPop(item); // J1
           }
         }
         // Drop 30 % Larme du Phénix Pure — UNIQUEMENT sur Voldemort Ténébreux
@@ -156,6 +159,7 @@ function endBattle(won) {
           const item = ITEMS.find(i => i.id === 'larme_phenix_pure');
           if (item && tryAddItem(item, { silent: true })) {
             addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Drop unique : ${item.name} !`, 'magic');
+            CFX_safe.lootPop(item); // J1
           }
         }
       }
@@ -169,12 +173,14 @@ function endBattle(won) {
           const item = ITEMS.find(i => i.id === 'essence_tenebres');
           if (item && tryAddItem(item, { silent: true })) {
             addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Matériau : ${item.name}`, 'magic');
+            CFX_safe.lootPop(item); // J1
           }
         }
         if (Math.random() < pageRate) {
           const item = ITEMS.find(i => i.id === 'page_grimoire');
           if (item && tryAddItem(item, { silent: true })) {
             addMsg(`${getItemIconHtml(item, 'ui-icon-md')} Matériau : ${item.name}`, 'magic');
+            CFX_safe.lootPop(item); // J1
           }
         }
       }
