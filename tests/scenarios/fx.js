@@ -860,4 +860,64 @@ async function scenarioCardReact() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact] };
+// K2 — état "PV bas" par carte : classe .low-hp basculée par updateUI selon le
+// ratio PV (< LOW_HP_RATIO), réactive (retirée dès remontée), jamais sur un KO
+// (.ko-char prioritaire). reduced-motion → règle CSS qui neutralise l'anim.
+async function scenarioLowHpCard() {
+  console.log('\n── Scénario : État "PV bas" par carte (K2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      const c0 = document.getElementById('char-card-0');
+      // 1) PV pleins → pas de low-hp.
+      party[0].hp = party[0].hpMax; updateUI();
+      out.full = c0.classList.contains('low-hp');
+      // 2) Sous le seuil → low-hp posée.
+      party[0].hp = Math.max(1, Math.floor(party[0].hpMax * 0.2)); updateUI();
+      out.low = c0.classList.contains('low-hp');
+      // 3) Remontée → low-hp retirée (réactif).
+      party[0].hp = party[0].hpMax; updateUI();
+      out.recovered = c0.classList.contains('low-hp');
+      // 4) KO → ko-char, jamais low-hp.
+      party[0].hp = 0; updateUI();
+      out.koHasKo  = c0.classList.contains('ko-char');
+      out.koNoLow  = c0.classList.contains('low-hp');
+      out.ratioConst = (typeof LOW_HP_RATIO === 'number') && LOW_HP_RATIO === 0.25;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  K2:', r);
+  assert(!r.threw, 'K2 throw: ' + (r.err || ''));
+  assert(!r.full, 'K2 low-hp présente à PV pleins');
+  assert(r.low, 'K2 low-hp absente sous le seuil');
+  assert(!r.recovered, 'K2 low-hp non retirée après remontée des PV');
+  assert(r.koHasKo, 'K2 ko-char absente sur un héros KO');
+  assert(!r.koNoLow, 'K2 low-hp posée à tort sur un héros KO');
+  assert(r.ratioConst, 'K2 LOW_HP_RATIO absent ou ≠ 0.25');
+
+  // reduced-motion : la carte porte toujours .low-hp mais l'animation est
+  // neutralisée (animation-name "none"), le liseré statique restant lisible.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const rm = await page.evaluate(() => {
+    const c0 = document.getElementById('char-card-0');
+    party[0].hp = Math.max(1, Math.floor(party[0].hpMax * 0.2)); updateUI();
+    const cs = getComputedStyle(c0);
+    return { low: c0.classList.contains('low-hp'), animName: cs.animationName };
+  });
+  console.log('  K2 reduced-motion:', rm);
+  assert(rm.low, 'K2 low-hp absente sous reduced-motion');
+  assert(rm.animName === 'none', 'K2 animation non neutralisée sous reduced-motion');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario État PV bas (K2)');
+  }
+  console.log('  ✅ État "PV bas" par carte (K2) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact, scenarioLowHpCard] };
