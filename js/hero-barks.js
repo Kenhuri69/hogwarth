@@ -48,6 +48,8 @@ const HERO_BARKS = {
     levelUp:    ["La fierté, ça se mérite. Et je commence à la mériter."],
     houseTier:  ["Voilà ce que valent les vrais. Prenez-en de la graine."],
     tierTransition: ["Plus on descend, plus ça sent ma famille. Charmant."],
+    // Beat scénarisé (05 §5.4.2) — première rencontre d'un Mangemort.
+    firstMangemort: ["Ce masque… je l'ai déjà vu à ma table de Noël."],
     houseTension: {
       Gryffondor: ["Vous croyez les connaître. Moi je les reconnais."]
     }
@@ -77,7 +79,9 @@ const HERO_BARKS = {
     allyDown:   ["Ne t'éteins pas. La nuit a encore besoin de toi."],
     levelUp:    ["Un palier de plus vers la lumière froide."],
     houseTier:  ["Les constellations s'alignent un peu mieux pour nous."],
-    tierTransition: ["Même l'eau a peur, ici. Elle se souvient d'avant les Fondateurs."]
+    tierTransition: ["La voûte s'efface. Plus de plafond — juste le vide et ce qu'il garde."],
+    // Beat scénarisé (05 §5.4.2) — devant la première fontaine glacée (ét. 2).
+    fountainCold: ["Même l'eau a peur, ici. Elle se souvient d'avant les Fondateurs."]
   },
   iris: {
     bossAppear: ["Oh, le grand méchant ! Quelqu'un a un appareil photo ?"],
@@ -94,6 +98,8 @@ const HERO_BARKS = {
     levelUp:    ["Plus fort. Donc plus dangereux. Pour eux."],
     houseTier:  ["Le pouvoir s'accumule. Reste à savoir qui le tient."],
     tierTransition: ["Plus bas. Mon sang le sent avant moi."],
+    // Beat scénarisé (05 §5.4.2) — avant Voldemort, Pacte des Cachots défié.
+    preVoldemortDefiance: ["Je connaissais ta voix, Salazar. Je ne lui ai juste pas obéi."],
     houseTension: {
       Gryffondor: ["Le courage… c'est plus simple quand on n'a rien à cacher dans le sang."]
     }
@@ -104,7 +110,9 @@ const HERO_BARKS = {
     allyDown:   ["Tiens — j'ai calculé qu'on s'en sortait. Ne me contredis pas."],
     levelUp:    ["Un cran de plus. La descente m'apprend plus que n'importe quel cours."],
     houseTier:  ["Le palier était dans mes calculs. Le mérite, un peu moins."],
-    tierTransition: ["Strate suivante. J'ajuste les variables et on continue."]
+    tierTransition: ["Strate suivante. J'ajuste les variables et on continue."],
+    // Beat scénarisé (05 §5.4.2) — avant Voldemort, signature Gryffondor faite.
+    preVoldemortGryff: ["La Bannière est plantée. Maintenant, il ne peut plus nous faire reculer — c'est mathématique."]
   },
   louis: {
     bossAppear: ["Plus gros qu'un dragon ? On verra ça."],
@@ -234,20 +242,42 @@ function heroBark(heroKey, event, opts) {
     addMsg(html, 'narrative');
   }
 
-  // Voix parlée optionnelle (L7) — défensif, silence si le sample manque.
+  // Voix parlée optionnelle (L7) — OGG dédié si produit, sinon synthèse FR.
+  // Gardée par le toggle « Voix » (voiceEnabled) côté AudioSystem.speakBark.
   try {
-    if (typeof AudioSystem !== 'undefined' && AudioSystem.playVoice) {
-      AudioSystem.playVoice(heroKey + '_' + event);
+    if (typeof AudioSystem !== 'undefined' && AudioSystem.speakBark) {
+      AudioSystem.speakBark(text, heroKey + '_' + event);
     }
   } catch (_) { /* no-op */ }
 
   return text;
 }
 
+// Vrai si `heroKey` est présent ET vivant dans le groupe actif.
+function _heroInPartyAlive(heroKey) {
+  try {
+    if (typeof party === 'undefined' || !Array.isArray(party)) return false;
+    const n = (typeof partySize === 'number') ? partySize : party.length;
+    return party.slice(0, n).some(c => c && c.heroKey === heroKey && c.hp > 0);
+  } catch (_) { return false; }
+}
+
+// ── Beats de trame scénarisés (L8 — étages-scènes fixes, 05 §5.4.2) ──
+// Contrairement à heroBark (où le LOCUTEUR est le héros actif), un beat
+// scénarisé est délivré par un héros PRÉCIS et n'a de sens que s'il est dans
+// le groupe (Céleste à la fontaine, Drago au 1ᵉʳ Mangemort…). Toujours
+// one-shot. No-op silencieux si le héros n'est pas présent/vivant.
+function heroBarkScripted(heroKey, event, opts) {
+  if (!_heroInPartyAlive(heroKey)) return null;
+  opts = Object.assign({ once: 'scripted:' + event, channel: 'explore' }, opts || {});
+  return heroBark(heroKey, event, opts);
+}
+
 // Expose l'orchestrateur (les call-sites de battle.js/main.js l'appellent
 // via le scope global ; on publie aussi sur window pour les gardes `window.`).
 if (typeof window !== 'undefined') {
-  window.HERO_BARKS  = HERO_BARKS;
-  window.pickHeroBark = pickHeroBark;
-  window.heroBark     = heroBark;
+  window.HERO_BARKS       = HERO_BARKS;
+  window.pickHeroBark     = pickHeroBark;
+  window.heroBark         = heroBark;
+  window.heroBarkScripted = heroBarkScripted;
 }

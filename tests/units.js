@@ -120,6 +120,18 @@ function loadModule(relPath, exportNames, globals = {}) {
   }
   check('13 héros : 4 événements de base couverts', allHaveBase);
   check('registre = 13 héros', Object.keys(HERO_BARKS).length === 13);
+
+  // L8 — beats de trame scénarisés rattachés au bon héros (05 §5.4.2).
+  check('celeste.fountainCold présent',
+    Array.isArray(HERO_BARKS.celeste.fountainCold) && HERO_BARKS.celeste.fountainCold.length > 0);
+  check('draco.firstMangemort présent',
+    Array.isArray(HERO_BARKS.draco.firstMangemort) && HERO_BARKS.draco.firstMangemort.length > 0);
+  check('anastasia.preVoldemortGryff présent',
+    Array.isArray(HERO_BARKS.anastasia.preVoldemortGryff) && HERO_BARKS.anastasia.preVoldemortGryff.length > 0);
+  check('maxence.preVoldemortDefiance présent',
+    Array.isArray(HERO_BARKS.maxence.preVoldemortDefiance) && HERO_BARKS.maxence.preVoldemortDefiance.length > 0);
+  // Un beat scénarisé n'existe que sur son héros (sinon null → silencieux).
+  check('fountainCold absent chez harry', pickHeroBark('harry', 'fountainCold', {}) === null);
 })();
 
 // ============================================================

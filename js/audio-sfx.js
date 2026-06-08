@@ -409,6 +409,32 @@ Object.assign(AudioSystem, {
     }, 120);
   },
 
+  // ── Voix parlée des barks de héros (L7) ───────────────────────
+  // Prononce à voix haute une réplique de héros. OGG enregistré prioritaire
+  // (audio/voice/<key>_<event>.ogg, enregistré dans _VOICE_SAMPLES si produit),
+  // sinon repli SpeechSynthesis en français. Gardé par le toggle « Voix »
+  // (voiceEnabled) + isMuted — purement optionnel et défensif (silence si rien
+  // n'est disponible). Appelé par heroBark() (js/hero-barks.js).
+  speakBark(text, voiceKey) {
+    if (!this.voiceEnabled || this.isMuted) return;
+    // OGG dédié si présent (production future — fallback silencieux sinon).
+    if (voiceKey && this._VOICE_SAMPLES && this._VOICE_SAMPLES[voiceKey]) {
+      this.playVoice(voiceKey);
+      return;
+    }
+    // Repli zéro-asset : synthèse vocale du navigateur, en français.
+    if (!text || !window.speechSynthesis) return;
+    try {
+      speechSynthesis.cancel();
+      const utt   = new SpeechSynthesisUtterance(String(text));
+      utt.lang    = 'fr-FR';
+      utt.pitch   = 1.0;
+      utt.rate    = 1.0;
+      utt.volume  = 0.85;
+      speechSynthesis.speak(utt);
+    } catch (_) { /* synthèse indisponible — silencieux */ }
+  },
+
   // ── Barks ambiants d'exploration (F2) — synthèse procédurale ──
   // One-shots discrets joués à faible probabilité par pas (movement.js
   // _step), teintés par la tranche d'ambiance (getFloorTheme). Zéro asset :

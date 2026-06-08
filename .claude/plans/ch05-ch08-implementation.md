@@ -20,7 +20,17 @@
 > - **L6 — Toggle UI** : ✅ bouton `#btn-barks` (barre de commandes, à côté de
 >   🗣️) + `toggleBarks()`/`_updateBarksBtn()` (`ui-settings.js`), persistance
 >   localStorage `hogwarts_rpg_barks_enabled` + sync `updateUI`. Smoke L6.
-> - **L7 / L8** : différés (P2/P3 — voir §6).
+> - **L7 — Voix parlées** : ✅ `AudioSystem.speakBark(text, voiceKey)`
+>   (`audio-sfx.js`) — OGG dédié si produit (`audio/voice/<key>_<event>.ogg`,
+>   `_VOICE_SAMPLES`), sinon repli SpeechSynthesis FR ; gardé par `voiceEnabled`.
+>   `heroBark` route sa voix via `speakBark`. Production des OGG = asset différé
+>   (binaire, hors-scope code). Smoke L7 (gate + routage OGG).
+> - **L8 — Étages-scènes fixes** : ✅ `heroBarkScripted(heroKey, event)`
+>   (`hero-barks.js`, ne parle que si le héros visé est présent/vivant,
+>   one-shot) + 4 beats de trame (05 §5.4.2) : Céleste à la 1ʳᵉ fontaine glacée
+>   (`useFountain`, ét. 2), Drago au 1ᵉʳ Mangemort (`startBattle`), Anastasia &
+>   Maxence avant Voldemort selon flag (`_applySignatureVoldemortLever`).
+>   Refuge-repos Poufsouffle resté différé. Smoke L8 + units (registre).
 
 > Ce plan traduit en travail technique les ajouts narratifs des chapitres 05 et 08.
 > **Principe** : réutiliser l'existant, ne rien dupliquer, garder ~85 % de trame

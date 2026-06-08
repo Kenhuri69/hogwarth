@@ -632,6 +632,11 @@ function useFountain() {
   setNarrative("L'eau bleutée scintille. Le groupe boit longuement — la fatigue s'évanouit, la magie se ravive entièrement.");
   addMsg("Fontaine bue : PV et PM entièrement restaurés.", 'good');
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+  // Beat scénarisé (L8, 05 §5.4.2) — première fontaine glacée (ét. 2) :
+  // Céleste, si présente, commente. One-shot, cosmétique, défensif.
+  if (currentFloor === 2 && typeof heroBarkScripted === 'function') {
+    heroBarkScripted('celeste', 'fountainCold', { once: 'fountain-cold' });
+  }
   updateUI();
   safeCall('autoSave', 'fountain-used');
 }
