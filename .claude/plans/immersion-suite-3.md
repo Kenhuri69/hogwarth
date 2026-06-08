@@ -139,7 +139,7 @@ Le footstep est un bruit unique. Le timbrer selon le sol de la tranche
 
 ## I. Donjon vivant (narration)
 
-### I1. Phrases d'atmosphère à l'entrée de salle
+### I1. Phrases d'atmosphère à l'entrée de salle ✅ (livré 2026-06-08)
 À l'entrée d'une nouvelle salle (pas un simple pas de couloir), afficher
 parfois (throttle + anti-répétition) une **courte phrase d'ambiance**
 teintée par la zone (`getFloorTheme(floor).ambient`).
@@ -258,3 +258,26 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
   **Bumps** : `combat-fx.js` (8→9), `combat-fx.css` (9→10),
   `battle-rewards.js` (3→4) ; `CACHE_VERSION` v69 → v70. Pas de nouveau
   global → loader inchangé (méthode de `CombatFX`).
+  - *Note post-merge* : rebasé sur master (PR #408 barks, qui avait aussi
+    pris `CACHE_VERSION v70` + `battle-rewards.js?v=4`) → collisions
+    résolues, re-bump `battle-rewards.js` (4→5) + `CACHE_VERSION` v70 → v71.
+    Mergé en **PR #409**.
+- 2026-06-08 : **I1 livré** (branche `claude/immersion-i1-room-flavor`).
+  Donjon vivant : nouveau module pur `js/room-flavor.js` exposant
+  `maybeRoomFlavor(floor)` + `RoomFlavor.pickFlavor(zone)`. Pool de 4
+  phrases par zone d'ambiance (`intro`/`dungeon`/`depths`/`abyss`, résolu
+  via `getFloorTheme().ambient`), throttle `CHANCE` (0.30, mutable pour le
+  smoke) + anti-répétition transiente (`_lastIdx`, jamais sérialisée).
+  Affichage `addMsg('🕯️ …', 'info')` — **purement textuel** (≠
+  mouvement/visuel → non gardé par reduced-motion, comme les barks F2),
+  n'altère aucun état/RNG de simulation. Déclenchement gardé à l'**entrée
+  de salle** (pas un pas de couloir) : `_isRoomCell(x,y)` (movement.js,
+  heuristique « carré 2×2 ouvert ») + flag transient `_wasInRoomCell` ;
+  `handleCellEntry` calcule le franchissement de seuil et n'appelle
+  `maybeRoomFlavor` que dans la branche sol nu, via `typeof … === 'function'`
+  (call-site défensif). Test : `scenarioDungeonLife` (volet I1) dans
+  `tests/scenarios/dungeon.js` (API, phrases par zone, anti-répétition,
+  forçage proba 1 → ligne 🕯️, `_isRoomCell` booléen). MANIFEST loader :
+  `maybeRoomFlavor`/`RoomFlavor` (optional). smoke vert + units (76) +
+  pwa-smoke (v72) verts. **Bumps** : `room-flavor.js` (neuf, v1),
+  `movement.js` (27→28), `loader.js` (26→27) ; `CACHE_VERSION` v71 → v72.

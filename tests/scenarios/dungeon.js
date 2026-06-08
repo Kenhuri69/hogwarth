@@ -5,6 +5,65 @@
 // ============================================================
 const { chromium, path, ROOT, INDEX_URL, isIgnorableError, launchGame, startNewGame, startDummyFight, assert } = require('../lib/harness');
 
+// I1 — Donjon vivant : phrases d'atmosphère à l'entrée de salle. Le helper
+// maybeRoomFlavor (room-flavor.js) tente une phrase teintée par la zone ;
+// pickFlavor est le cœur testable (anti-répétition). Le détecteur de salle
+// _isRoomCell (movement.js) garde le déclenchement aux entrées de room.
+async function scenarioDungeonLife() {
+  console.log('\n── Scénario : Donjon vivant (phrases d\'ambiance I1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasMaybe   = typeof maybeRoomFlavor === 'function';
+      out.hasPick    = typeof RoomFlavor !== 'undefined' && typeof RoomFlavor.pickFlavor === 'function';
+      out.hasIsRoom  = typeof _isRoomCell === 'function';
+      // Chaque zone retourne bien une phrase non vide.
+      out.zonesOk = ['intro', 'dungeon', 'depths', 'abyss']
+        .every(z => typeof RoomFlavor.pickFlavor(z) === 'string');
+      out.unknownNull = RoomFlavor.pickFlavor('zzz') === null;
+      // Anti-répétition : deux tirages consécutifs de la même zone diffèrent.
+      const a = RoomFlavor.pickFlavor('depths');
+      const b = RoomFlavor.pickFlavor('depths');
+      out.antiRepeat = a !== b;
+      // Forçage proba 1 → une ligne de log 🕯️ est ajoutée, sans throw.
+      RoomFlavor.CHANCE = 1;
+      const log = document.getElementById('msg-log');
+      const before = log ? log.querySelectorAll('.msg-item').length : 0;
+      currentFloor = 1; // zone intro
+      const shown = maybeRoomFlavor(1);
+      const after = log ? log.querySelectorAll('.msg-item').length : 0;
+      const last  = log && log.lastChild ? log.lastChild.textContent : '';
+      out.shown   = shown === true;
+      out.logGrew = after === before + 1;
+      out.candle  = last.indexOf('🕯️') === 0;
+      // _isRoomCell renvoie un booléen sans throw sur la case de spawn.
+      out.isRoomBool = typeof _isRoomCell(playerX, playerY) === 'boolean';
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  I1 flavor:', r);
+  assert(!r.threw, 'I1 throw: ' + (r.err || ''));
+  assert(r.hasMaybe, 'I1 maybeRoomFlavor absent');
+  assert(r.hasPick, 'I1 RoomFlavor.pickFlavor absent');
+  assert(r.hasIsRoom, 'I1 _isRoomCell absent');
+  assert(r.zonesOk, 'I1 une zone ne retourne pas de phrase');
+  assert(r.unknownNull, 'I1 zone inconnue devrait retourner null');
+  assert(r.antiRepeat, 'I1 anti-répétition non respectée (phrases identiques)');
+  assert(r.shown && r.logGrew, 'I1 forçage proba 1 : aucune ligne de log ajoutée');
+  assert(r.candle, 'I1 ligne d\'ambiance non préfixée 🕯️');
+  assert(r.isRoomBool, 'I1 _isRoomCell ne retourne pas un booléen');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Donjon vivant)`);
+  }
+  console.log('  ✅ Donjon vivant — phrases d\'ambiance par zone, anti-répétition, détection de salle OK');
+  await browser.close();
+}
+
 async function scenarioFountain() {
   console.log('\n── Scénario 14 : salle fontaine ──');
   const { browser, page, errors } = await launchGame();
@@ -2499,4 +2558,4 @@ async function scenarioRoomOfRequirement() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioFountain, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
+module.exports = { scenarios: [scenarioDungeonLife, scenarioFountain, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
