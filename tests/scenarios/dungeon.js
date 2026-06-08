@@ -56,11 +56,54 @@ async function scenarioDungeonLife() {
   assert(r.candle, 'I1 ligne d\'ambiance non préfixée 🕯️');
   assert(r.isRoomBool, 'I1 _isRoomCell ne retourne pas un booléen');
 
+  // I2 — signature d'ambiance d'événement d'étage : classe statique sur
+  // .scene-viewport (visuel) + boost de barks sur étage hanté (audio).
+  const i2 = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasFn = typeof DungeonFX !== 'undefined' && typeof DungeonFX.setFloorAmbience === 'function';
+      const vp  = document.querySelector('.scene-viewport');
+      const cls = () => vp ? Array.from(vp.classList).filter(c => c.indexOf('dfx-ambience') === 0) : [];
+      // hante → classe vignette froide
+      currentFloorEvent = 'hante';
+      DungeonFX.setFloorAmbience();
+      out.hante = cls().length === 1 && vp.classList.contains('dfx-ambience-hante');
+      // runique → bascule propre (une seule classe d'ambiance à la fois)
+      currentFloorEvent = 'runique';
+      DungeonFX.setFloorAmbience();
+      out.runique = cls().length === 1 && vp.classList.contains('dfx-ambience-runique');
+      // événement sans signature → aucune classe
+      currentFloorEvent = 'tresor';
+      DungeonFX.setFloorAmbience();
+      out.tresorNone = cls().length === 0;
+      // pas d'événement → réinitialisé
+      currentFloorEvent = null;
+      DungeonFX.setFloorAmbience();
+      out.nullNone = cls().length === 0;
+      // Audio : maybeAmbientBark ne throw pas avec un étage hanté (forçage
+      // proba 1, démuté pour exercer la synthèse).
+      currentFloorEvent = 'hante';
+      AudioSystem.isMuted = false;
+      AudioSystem._AMBIENT_BARK_CHANCE = 1;
+      out.barkOk = AudioSystem.maybeAmbientBark(1) === true;
+      currentFloorEvent = null;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  I2 ambience:', i2);
+  assert(!i2.threw, 'I2 throw: ' + (i2.err || ''));
+  assert(i2.hasFn, 'I2 DungeonFX.setFloorAmbience absent');
+  assert(i2.hante, 'I2 « hante » ne pose pas la classe de vignette froide');
+  assert(i2.runique, 'I2 « runique » ne bascule pas proprement (classe unique)');
+  assert(i2.tresorNone, 'I2 un événement sans signature ne doit poser aucune classe');
+  assert(i2.nullNone, 'I2 absence d\'événement doit réinitialiser l\'ambiance');
+  assert(i2.barkOk, 'I2 maybeAmbientBark hanté n\'a pas déclenché');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (Donjon vivant)`);
   }
-  console.log('  ✅ Donjon vivant — phrases d\'ambiance par zone, anti-répétition, détection de salle OK');
+  console.log('  ✅ Donjon vivant — phrases d\'ambiance (I1) + signature d\'événement (I2) OK');
   await browser.close();
 }
 

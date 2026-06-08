@@ -77,6 +77,32 @@
   100% { transform: translate(var(--dfx-dx, 0), var(--dfx-dy, 0)) scale(0.2); opacity: 0; }
 }
 
+/* ── Signature d'ambiance d'événement d'étage (I2) ── statique ──
+   Overlay décoratif posé par js/dungeon-fx.js (setFloorAmbience). Vignette
+   STATIQUE par-dessus la vue 3D, sous la minimap (z 5) et les overlays
+   d'interaction (explore z 9). pointer-events:none → n'intercepte rien.
+   Aucune animation → naturellement reduced-motion safe. */
+.scene-viewport.dfx-ambience-hante::after,
+.scene-viewport.dfx-ambience-runique::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+/* Étage hanté : vignette froide oppressante (bleu-vert sombre aux bords). */
+.scene-viewport.dfx-ambience-hante::after {
+  background: radial-gradient(ellipse at center,
+    transparent 45%, rgba(18,40,52,0.32) 100%);
+  box-shadow: inset 0 0 120px 18px rgba(10,30,44,0.42);
+}
+/* Étage runique : halo violacé ancien aux bords (magie de pierre). */
+.scene-viewport.dfx-ambience-runique::after {
+  background: radial-gradient(ellipse at center,
+    transparent 55%, rgba(82,42,122,0.24) 100%);
+  box-shadow: inset 0 0 100px 12px rgba(98,56,142,0.30);
+}
+
 @media (prefers-reduced-motion: reduce) {
   #dungeon-canvas.dfx-shake-light,
   #dungeon-canvas.dfx-shake-heavy { animation: none; }

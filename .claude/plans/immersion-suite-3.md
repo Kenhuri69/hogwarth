@@ -155,7 +155,7 @@ teintée par la zone (`getFloorTheme(floor).ambient`).
   (proba 1) → produit une ligne de log de la bonne zone, sans throw ;
   anti-répétition (deux tirages consécutifs ≠).
 
-### I2. Renfort d'ambiance des événements d'étage
+### I2. Renfort d'ambiance des événements d'étage ✅ (livré 2026-06-08)
 Les événements (`hante`, `runique`…) ne sont qu'un toast. Leur donner une
 **signature persistante légère** sur l'étage : p.ex. `hante` → teinte
 froide discrète de la vignette + barks plus fréquents ; `runique` → halo
@@ -207,8 +207,8 @@ Renforcer le moment du level-up (déjà sonore via `playLevelUp`) d'un
 3. **J1** — pop de butin (renforce la récompense, réutilise CombatFX).
 4. **I1** — phrases d'atmosphère (fort sur un crawler textuel, faible coût).
 5. **H1** — bob de caméra (présence physique).
-6. **H2** — variation de pas par surface.
-7. **I2** — renfort d'ambiance des événements (à cadrer minimal).
+6. **H2** — variation de pas par surface. ✅
+7. **I2** — renfort d'ambiance des événements (à cadrer minimal). ✅
 8. **G3** / **J2** — optionnels, si budget.
 
 Chaque item = une PR dédiée, smoke vert, journal mis à jour.
@@ -313,4 +313,28 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
   + `playFootstep` ne throw sur aucune des 4 surfaces (ni inconnue, ni sans
   argument). smoke + pwa-smoke (v74) verts. **Bumps** : `audio-sfx.js`
   (5→6) ; `CACHE_VERSION` v73 → v74. Pas de nouveau global (méthode/propriété
-  de `AudioSystem`) → loader inchangé.
+  de `AudioSystem`) → loader inchangé. Mergé en **PR #414**.
+- 2026-06-08 : **I2 livré** (branche `claude/immersion-i2-floor-event-ambience`).
+  Signature légère par événement d'étage, sur deux canaux. **Visuel** :
+  `DungeonFX.setFloorAmbience()` (`dungeon-fx.js`) pose une classe STATIQUE
+  sur `.scene-viewport` selon `currentFloorEvent` — `dfx-ambience-hante`
+  (vignette froide bleu-vert oppressante) / `dfx-ambience-runique` (halo
+  violacé ancien). Les autres événements n'ont pas de signature (`tresor`
+  déjà lisible). Idempotente (retire la classe précédente → bascule propre +
+  reset hors événement). Overlay `::after` `pointer-events:none`, `z-index:2`
+  (sous minimap z5 + overlays d'interaction z9). Statique → reduced-motion
+  safe sans garde. Câblée via `DFX_safe.setFloorAmbience()` aux 3 points
+  d'entrée d'étage : `_changeFloor` onArrive (`movement-floors.js`),
+  `startGame` (`main.js`), `_applyState` (`save.js`). **Audio** :
+  `maybeAmbientBark` (`audio-sfx.js`) lit `currentFloorEvent` — un étage
+  `hante` ×1.6 la fréquence des barks et biaise le pool vers les sons
+  oppressants (groan/rumble/clang), toutes zones. Purement audio/cosmétique,
+  n'altère aucun état/RNG de simulation. Test : volet **I2** ajouté à
+  `scenarioDungeonLife` (`tests/scenarios/dungeon.js`) — API présente, classe
+  posée pour hante/runique, bascule à classe unique, aucune classe pour
+  `tresor`/null, `maybeAmbientBark` hanté ne throw pas (forçage proba 1).
+  smoke (167) + units (81) + pwa-smoke (v75) verts. **Bumps** :
+  `dungeon-fx.js` (4→5), `dungeon-fx.css` (3→4), `audio-sfx.js` (6→7),
+  `movement-floors.js` (4→5), `main.js` (15→16), `save.js` (25→26) ;
+  `CACHE_VERSION` v74 → v75. Pas de nouveau global (méthode de `DungeonFX`)
+  → loader inchangé.

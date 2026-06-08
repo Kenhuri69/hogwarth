@@ -207,6 +207,7 @@ function _changeFloor(delta, opts) {
     updateCompass();
     _maybePlayTierTransition(prevFloor, currentFloor);
     if (opts.onArrive) opts.onArrive();
+    if (typeof DFX_safe !== 'undefined') DFX_safe.setFloorAmbience();
     _announceFloorEvent();
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
