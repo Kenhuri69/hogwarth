@@ -375,7 +375,11 @@ const NPCS = [
       ],
       questOffer:  "Affronte un Détraqueur, puis rapporte-moi un Chocolat aux Sorciers. Je t'enseignerai alors le sort du Patronus.",
       questActive: "As-tu trouvé un Détraqueur ? Et le chocolat ?",
-      questReady:  "Tu reviens vivant — et avec le chocolat. Approche : voici le sort du Patronus."
+      questReady:  "Tu reviens vivant — et avec le chocolat. Approche : voici le sort du Patronus.",
+      contextualReaction: [
+        { killedId: "fenrir_greyback",
+          text: "Tu as abattu Greyback. L'homme qui a fait de moi ce que je suis, dans une chambre d'enfant. Je ne sais pas si je dois te remercier ou pleurer — alors je ferai les deux." }
+      ]
     }
   },
   // PNJ original : fille cachée de Lupin. Pseudo-quête en deux volets
@@ -553,6 +557,10 @@ const NPCS = [
         "On m'a renvoyé d'l'école quand j'étais gamin. Pour une faute qu'j'avais pas commise. Ça… ça reste, tu sais.",
         "J'ai élevé une araignée, autrefois. Aragog. Ses enfants, eux, m'ont jamais r'connu comme un ami. Faut pas leur en vouloir — c'est leur nature.",
         "La Forêt prend c'qu'on lui laisse traîner. Élèves, créatures, secrets… Elle rend rien. Jamais."
+      ],
+      contextualReaction: [
+        { killedId: "aragog",
+          text: "Alors… Aragog est parti pour de bon. C'était mon ami, tu sais, l'plus vieux qu'j'avais. Mais ses p'tits avaient pas son cœur. J'comprends qu'il fallait. J'comprends." }
       ]
     },
     // Dialogues spécifiques par quête (chaîne + répétable)
@@ -1340,7 +1348,13 @@ const NPCS = [
       ],
       questOffer:  "J'ai trois besoins. Greyback à abattre, le Veilleur du Seuil à neutraliser, et de l'Aconit pour Lupin. Choisis.",
       questActive: "Le travail avance ?",
-      questReady:  "Bien joué. L'Ordre te doit cela."
+      questReady:  "Bien joué. L'Ordre te doit cela.",
+      contextualReaction: [
+        { killedId: "fenrir_greyback",
+          text: "Greyback est tombé ? L'Ordre attendait cette nouvelle depuis des années. Cette nuit, Lupin dormira un peu mieux — et moi aussi." },
+        { killedId: "auror_corrompu",
+          text: "Tu as terrassé un Auror corrompu. Le pire ennemi d'un Auror, c'est son propre reflet déchu. Tu m'as épargné d'avoir à le faire." }
+      ]
     }
   },
 
@@ -1415,7 +1429,13 @@ const NPCS = [
       ],
       questOffer:  "Aragog dans la Forêt. Le Maître des Détraqueurs dans les cellules. Et du Dictame pour les blessures que Greyback a laissées. Choisis l'ordre.",
       questActive: "Le travail avance ?",
-      questReady:  "Bien joué. Voilà ce qui était convenu."
+      questReady:  "Bien joué. Voilà ce qui était convenu.",
+      contextualReaction: [
+        { killedId: "aragog",
+          text: "Aragog, vaincu... Hagrid pleurera son vieil ami, je le sais. Mais ses fils, eux, ne chasseront plus en meute dans ces galeries. Tu as fait le nécessaire." },
+        { killedId: "maitre_detraqueur",
+          text: "Le Maître des Détraqueurs ne savourera plus personne. Tu lui as rendu le froid qu'il distribuait — bien joué." }
+      ]
     }
   },
 
@@ -1497,7 +1517,13 @@ const NPCS = [
       ],
       questOffer:  "Trois cibles. Dolohov pour la justice, le Héraut pour gagner du temps, les Spectres pour leur repos. Choisis dans l'ordre que tu veux.",
       questActive: "Le travail se poursuit ?",
-      questReady:  "Bien. Le Voile s'apaise un peu plus à chaque fin."
+      questReady:  "Bien. Le Voile s'apaise un peu plus à chaque fin.",
+      contextualReaction: [
+        { killedId: "antonin_dolohov",
+          text: "Dolohov... il a fauché tant des nôtres pendant la première guerre. Le voir tomber par ta main — voilà une justice que je n'espérais plus voir, même d'outre-Voile." },
+        { killedId: "heraut_tenebres",
+          text: "Le Héraut annonçait sa résurrection. Tu as fait taire l'annonce — mais prépare-toi : ce qu'il proclamait t'attend encore, plus bas." }
+      ]
     }
   },
 

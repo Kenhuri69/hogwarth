@@ -380,6 +380,17 @@ function _resolveDialogSource(npc, state) {
         const hint = _hallowsGhostHint(npc);
         if (hint) pool = pool.concat(hint);
       }
+      // Réaction contextuelle PNJ↔créature (Chapitre 09 §VI) : reconnaissance
+      // d'une créature liée VAINCUE par le groupe (monsterKills > 0). Greffée
+      // dans le pool idle comme les rumeurs/indices ci-dessus — apparition non
+      // garantie, no-op si le PNJ n'a pas le champ ou si la créature est vivante.
+      if (Array.isArray(d.contextualReaction) && typeof monsterKills !== 'undefined') {
+        for (const r of d.contextualReaction) {
+          if (r && r.killedId && r.text && monsterKills[r.killedId] > 0) {
+            pool = pool.concat(r.text);
+          }
+        }
+      }
       idleIndex = Math.floor(Math.random() * pool.length);
       idleRandomPick = pool[idleIndex];
     }
