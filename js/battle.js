@@ -191,37 +191,52 @@ function _applySignatureVoldemortLever() {
   if (!enemyGroup.length) return;
   const boss = enemyGroup[0];
   if (!boss || boss.id !== 'voldemort_revenu') return;
-  if (typeof chosenHouse === 'undefined' || !chosenHouse) return;
   const msg = (t) => { if (typeof addMsg === 'function') addMsg(t, 'magic'); };
 
-  if (chosenHouse === 'Gryffondor' && typeof gryffSignatureDone !== 'undefined' && gryffSignatureDone) {
-    // 🦁 Neutralise la phase terreur (la peur à 25 % PV).
-    if (Array.isArray(boss.phases)) {
-      boss.phases = boss.phases.filter(ph => !(ph.gainAbility && ph.gainAbility.statusId === 'fear'));
+  // Le levier de Signature (texte + modificateur) ne s'applique que si la
+  // Maison du joueur a remis sa Quête Signature. `signatureApplied` indique
+  // si une réplique de Dumbledore conditionnée par le flag a déjà parlé —
+  // sinon, on retombe sur le cadre générique (08 §8.8.1).
+  let signatureApplied = false;
+  if (typeof chosenHouse !== 'undefined' && chosenHouse) {
+    if (chosenHouse === 'Gryffondor' && typeof gryffSignatureDone !== 'undefined' && gryffSignatureDone) {
+      // 🦁 Neutralise la phase terreur (la peur à 25 % PV).
+      if (Array.isArray(boss.phases)) {
+        boss.phases = boss.phases.filter(ph => !(ph.gainAbility && ph.gainAbility.statusId === 'fear'));
+      }
+      msg("🦁 Le portrait de Dumbledore : « Le château a entendu ton pas ne pas reculer. » L'Étendard de Godric tient la terreur en respect.");
+      signatureApplied = true;
+    } else if (chosenHouse === 'Serdaigle' && typeof ravenSignatureDone !== 'undefined' && ravenSignatureDone) {
+      // 🦅 Révèle une faille : Voldemort devient vulnérable à la lumière.
+      boss.weak = Array.isArray(boss.weak) ? boss.weak.slice() : [];
+      if (!boss.weak.includes('lumière')) boss.weak.push('lumière');
+      msg("🦅 Dumbledore : « Tu as lu ce que Rowena n'a pu achever. » Le Codex révèle une faille : la lumière le blesse désormais.");
+      signatureApplied = true;
+    } else if (chosenHouse === 'Serpentard' && typeof slythSignatureDone !== 'undefined' && slythSignatureDone) {
+      if (slythPactChoice === 'pact') {
+        slythPactBuff = true;   // lifesteal de sort (15 %) ce combat
+        msg("🐍 Voldemort marque un temps : « Nous nous ressemblons. » Le pacte de Salazar nourrit ta magie.");
+      } else {
+        boss.atk = Math.round((boss.atk || 0) * 0.85);
+        if (boss.mag) boss.mag = Math.round(boss.mag * 0.85);
+        msg("🐍 Tu as retourné le secret de Salazar contre lui. Voldemort connaît la trahison — sa frappe faiblit.");
+      }
+      signatureApplied = true;
+    } else if (chosenHouse === 'Poufsouffle' && typeof poufSignatureDone !== 'undefined' && poufSignatureDone) {
+      // 🦡 « Espoir partagé » : filet de sécurité (+PV max transient), pas une arme.
+      let any = false;
+      for (const c of party.slice(0, partySize)) {
+        if (!c || c.hp <= 0) continue;
+        c.hpMax += 15; c.hp += 15; any = true;
+      }
+      if (any) { msg("🦡 « Espoir partagé » — les rescapés du Refuge t'envoient leur force. Tu n'es pas descendu seul, même si tu étais seul à descendre."); signatureApplied = true; }
     }
-    msg("🦁 Le portrait de Dumbledore : « Le château a entendu ton pas ne pas reculer. » L'Étendard de Godric tient la terreur en respect.");
-  } else if (chosenHouse === 'Serdaigle' && typeof ravenSignatureDone !== 'undefined' && ravenSignatureDone) {
-    // 🦅 Révèle une faille : Voldemort devient vulnérable à la lumière.
-    boss.weak = Array.isArray(boss.weak) ? boss.weak.slice() : [];
-    if (!boss.weak.includes('lumière')) boss.weak.push('lumière');
-    msg("🦅 Dumbledore : « Tu as lu ce que Rowena n'a pu achever. » Le Codex révèle une faille : la lumière le blesse désormais.");
-  } else if (chosenHouse === 'Serpentard' && typeof slythSignatureDone !== 'undefined' && slythSignatureDone) {
-    if (slythPactChoice === 'pact') {
-      slythPactBuff = true;   // lifesteal de sort (15 %) ce combat
-      msg("🐍 Voldemort marque un temps : « Nous nous ressemblons. » Le pacte de Salazar nourrit ta magie.");
-    } else {
-      boss.atk = Math.round((boss.atk || 0) * 0.85);
-      if (boss.mag) boss.mag = Math.round(boss.mag * 0.85);
-      msg("🐍 Tu as retourné le secret de Salazar contre lui. Voldemort connaît la trahison — sa frappe faiblit.");
-    }
-  } else if (chosenHouse === 'Poufsouffle' && typeof poufSignatureDone !== 'undefined' && poufSignatureDone) {
-    // 🦡 « Espoir partagé » : filet de sécurité (+PV max transient), pas une arme.
-    let any = false;
-    for (const c of party.slice(0, partySize)) {
-      if (!c || c.hp <= 0) continue;
-      c.hpMax += 15; c.hp += 15; any = true;
-    }
-    if (any) msg("🦡 « Espoir partagé » — les rescapés du Refuge t'envoient leur force. Tu n'es pas descendu seul, même si tu étais seul à descendre.");
+  }
+
+  // Cadre générique de Dumbledore (08 §8.8.1) — joué quand aucune réplique de
+  // Signature n'a parlé (Maison sans Signature remise, ou aucune Maison).
+  if (!signatureApplied) {
+    msg("🕯️ Le portrait de Dumbledore : « Plus bas que la peur, il y a toujours autre chose. Ce n'est pas ta puissance qui scelle — c'est ton choix d'être là. »");
   }
 }
 
@@ -546,6 +561,12 @@ function startBattle(baseEnemyData, opts) {
   // visuel (CFX_safe → no-op si le module FX est absent).
   if (enemyGroup[0] && enemyGroup[0].epic) CFX_safe.bossIntro(enemyGroup[0]);
   else                                     CFX_safe.combatStart();
+  // Voix des héros — apparition d'un boss epic (cosmétique, défensif). Le
+  // héros actif (vivant) prend la parole. Cf. js/hero-barks.js.
+  if (enemyGroup[0] && enemyGroup[0].epic && typeof heroBark === 'function') {
+    const speaker = party.slice(0, partySize).find(c => c.hp > 0);
+    if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'bossAppear', { once: 'boss:' + enemyGroup[0].id });
+  }
   // D5 Célérité — ouvre le segment du 1ᵉʳ héros (round 1). Aucune action sup. au
   // round 1 (gauge part de 0, +celerite < 1), mais maintient la parité avec la sim.
   _beginHeroSegment(currentBattleChar);
@@ -786,6 +807,8 @@ function executeAttack(targetIdx) {
   if (isCrit) CFX_safe.shake('light'); // crit phys → secousse (Lot 1)
   if (isCrit) HAPTICS_safe.crit(); else HAPTICS_safe.hit(); // haptique mobile (D1)
   UX_safe.logCombat(`⚔️ <b>${char.name}</b> frappe ${enemy.name} : <b>−${finalDmg}</b>${isCrit?' 💥 CRIT':''}${comboTxt}`, isCrit?'magic':'good');
+  // Voix des héros — crit physique décisif (cosmétique, défensif).
+  if (isCrit && typeof heroBark === 'function' && char && char.heroKey) heroBark(char.heroKey, 'crit');
   renderEnemyGroup();
   if (checkAllEnemiesDead()) return;
   advanceBattleChar();
@@ -964,6 +987,8 @@ function enemyTurn() {
   battleTurn++;
   UX_safe.logCombatTurn(battleTurn + 1);
   const alive = party.slice(0, partySize).filter(c => c.hp > 0);
+  // Voix des héros — snapshot des vivants pour détecter un KO ce round.
+  const _aliveBefore = party.slice(0, partySize).map(c => c.hp > 0);
   let log = '';
 
   // Statuts persistants : tick sur les ennemis vivants en début de tour
@@ -1020,6 +1045,16 @@ function enemyTurn() {
     // Attaque physique normale — priorité : Protego > Esquive > Garde > coup normal.
     log += _enemyPhysicalHit(enemy, target, charIdx);
   });
+
+  // Voix des héros — un allié vient de tomber (duo) : le survivant réagit.
+  // Cosmétique, défensif. Pas de bark `allyDown` en solo (aucun allié).
+  if (partySize === 2 && typeof heroBark === 'function') {
+    const fellIdx = _aliveBefore.findIndex((wasAlive, i) => wasAlive && party[i] && party[i].hp <= 0);
+    if (fellIdx !== -1) {
+      const survivor = party.slice(0, partySize).find((c, i) => i !== fellIdx && c.hp > 0);
+      if (survivor && survivor.heroKey) heroBark(survivor.heroKey, 'allyDown');
+    }
+  }
 
   // Une riposte de garde a pu achever le dernier ennemi.
   if (livingEnemies().length === 0) { setBattleLog(log || '...'); renderEnemyGroup(); endBattle(true); return; }

@@ -1,8 +1,26 @@
 # ÉTAPE 2 — Plan d'implémentation (suite ch05 & ch08)
 
-**Statut :** 🟧 plan rédigé — à prioriser/valider avant code
-**Branche :** `claude/hogwarth-ch05-ch08-narrative-KEglC`
+**Statut :** 🟩 en cours d'implémentation (L1→L5)
+**Branche :** `claude/go-ch05-ch08-impl-0SrK1`
 **Pré-requis :** ÉTAPE 1 livrée (contenu narratif ch05/ch08, commit `d338297`).
+
+> ### Journal d'avancement (2026-06-08)
+> - **L1 — Socle barks** : ✅ `js/hero-barks.js` (registre 13 héros + `pickHeroBark`
+>   pur + orchestrateur `heroBark`), `barksEnabled` (state + sérialisé), MANIFEST,
+>   chargement `index.html` après `data.js`, cache bump.
+> - **L2 — Hooks combat** : ✅ bossAppear (`startBattle`), crit phys (`executeAttack`),
+>   crit sort (`castSpellInBattle`), allyDown (`enemyTurn`), levelUp (`checkLevelUp`).
+> - **L3 — Hooks méta** : ✅ palier Maison (`checkHouseLevelUp`), transition de
+>   tranche (`_maybePlayTierTransition`).
+> - **L5 — Workflow** : ✅ CLAUDE.md + skill `add-playable-character` + checklist §5.5.5.
+> - **L4 — Texte pré-Voldemort** : ✅ cadre générique de Dumbledore (fallback
+>   `_applySignatureVoldemortLever`, 08 §8.8.1) quand aucune Signature n'a parlé,
+>   + réplique post-victoire plus froide si `slythPactChoice === 'pact'`
+>   (`showVictoryScreen`, style `.victory-speech-cold`). Smoke T5/T6.
+> - **L6 — Toggle UI** : ✅ bouton `#btn-barks` (barre de commandes, à côté de
+>   🗣️) + `toggleBarks()`/`_updateBarksBtn()` (`ui-settings.js`), persistance
+>   localStorage `hogwarts_rpg_barks_enabled` + sync `updateUI`. Smoke L6.
+> - **L7 / L8** : différés (P2/P3 — voir §6).
 
 > Ce plan traduit en travail technique les ajouts narratifs des chapitres 05 et 08.
 > **Principe** : réutiliser l'existant, ne rien dupliquer, garder ~85 % de trame

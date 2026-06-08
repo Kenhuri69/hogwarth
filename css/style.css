@@ -2362,6 +2362,15 @@ body {
   padding: 0 6px;
 }
 .victory-speech em { color: var(--gold-light); font-style: italic; }
+/* Réplique post-victoire plus froide (Pacte des Cachots — 08 §8.8.1) :
+   teinte bleutée distante, séparée par un filet discret. */
+.victory-speech-cold {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(120, 140, 170, 0.35);
+  color: #9fb0c8;
+}
+.victory-speech-cold em { color: #b9c8dc; }
 .victory-speech-sign {
   margin-top: 8px;
   font-style: normal;

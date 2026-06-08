@@ -463,6 +463,8 @@ function _computeSpellDamage(spell, char, enemy, opts) {
   const cr = rollSpellCrit(dmg, char);
   dmg = cr.dmg;
   if (cr.crit) suffix += ' 💥CRIT';
+  // Voix des héros — crit de sort (cosmétique, défensif). Cf. js/hero-barks.js.
+  if (cr.crit && typeof heroBark === 'function' && char && char.heroKey) heroBark(char.heroKey, 'crit');
   return { dmg, suffix, crit: cr.crit };
 }
 

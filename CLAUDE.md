@@ -43,9 +43,14 @@ js/
   item-icons.js    →  Registres ITEM_ICON_REGISTRY, EQUIPMENT_SLOT_ICONS,
                       STATUS_ICON_REGISTRY, SPELL_ICON_REGISTRY ;
                       getItemIconHtml(item, size), tinted variants via filter CSS
+  hero-barks.js    →  HERO_BARKS{} (registre des répliques des 13 héros par
+                      événement + variantes houseTension) + pickHeroBark()
+                      (résolveur pur) + heroBark() (orchestrateur défensif).
+                      Voix des héros en combat/exploration (cosmétique). APRÈS
+                      data.js, AVANT battle.js. Toggle joueur `barksEnabled`.
   state.js         →  Variables globales mutables (player, player2, party, partySize,
                       dungeon, combat, seenMonsters, activeQuests, usedFountains,
-                      searchedCells, floorDungeons, restCooldown,
+                      searchedCells, floorDungeons, restCooldown, barksEnabled,
                       chosenHouse, housePoints, houseTier, HOUSE_BONUSES, DIFFICULTY_SETTINGS)
   ui.js            →  updateUI(), addMsg(), closeModal(), openHouseDetail() +
                       helpers HUD (barres, blason, boussole, tracker de quête)
@@ -621,10 +626,25 @@ Harry, Hermione, Céleste, Iris, Maxence, Anastasia) :
 3. **Carte de sélection** — ajouter un `<button class="hero-card"
    data-key="<key>" onclick="toggleHero('<key>')">…</button>` dans
    `#hero-grid` de `index.html`, en numérotant `hero-badge` à la suite.
-4. **Test** — relancer `node tests/smoke.js` ; aucune assertion n'utilise
+4. **Barks (optionnel mais recommandé)** — donner une voix au héros :
+   ajouter une entrée `HERO_BARKS[<key>]` dans `js/hero-barks.js`
+   (4-6 événements : `bossAppear`/`crit`/`allyDown`/`levelUp` + éventuels
+   `houseTier`/`tierTransition`, et `houseTension[<Maison>]` si la Maison
+   canon du héros peut différer de `chosenHouse`). Système purement
+   cosmétique et défensif — un héros sans entrée reste silencieux. Si on
+   touche `hero-barks.js` (ou tout autre JS/CSS), **bumper le cache PWA**
+   (skill `cache-bump`).
+5. **Test** — relancer `node tests/smoke.js` ; aucune assertion n'utilise
    la nouvelle clé directement, donc tous les scénarios doivent rester
    verts sans modification. Si tu touches au flow de sélection, ajouter
    un cas dédié.
+
+> **Règle normative narrative** : tout ajout de héros doit respecter
+> [`docs/histoire/05-personnages-jouables.md §5.5`](./docs/histoire/05-personnages-jouables.md)
+> (lien déclencheur, ancrage de Maison fort, arc léger, anti-Mary-Sue,
+> profil §5.0/§5.1/§5.2 complet, checklist §5.5.5). La skill
+> `add-playable-character` et cette section doivent rester cohérentes
+> avec §5.5 : amender l'une = vérifier les autres.
 
 Aucun autre câblage n'est requis : combats, sauvegardes, équipement,
 quêtes — tout repose sur les références `party[0]/party[1]`/`player`

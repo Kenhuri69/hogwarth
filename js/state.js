@@ -186,6 +186,15 @@ let outremondeActivePortalSkin = null;
 let outremondeActiveFissureSkin = null;
 
 // ============================================================
+// VOIX DES HÉROS (barks — ÉTAPE 2, ch05 §5.4)
+// ------------------------------------------------------------
+// Toggle joueur (comme mute/voice) ; sérialisé comme préférence dans la
+// save. `_barkSeen` mémorise les beats one-shot par session (non sérialisé,
+// reset au démarrage). Cf. js/hero-barks.js.
+let barksEnabled = true;
+let _barkSeen    = new Set();
+
+// ============================================================
 // SYSTÈME DES MAISONS
 // ============================================================
 let chosenHouse = null;

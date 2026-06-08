@@ -58,6 +58,7 @@ function updateUI() {
   _updateXpWrap();
   _updateHouseBadge();
   if (typeof _updateVisitsBtn === 'function') _updateVisitsBtn();
+  if (typeof _updateBarksBtn === 'function') _updateBarksBtn();
 
   // ── Statut KO sur les cartes ─────────────────────────────────
   party.forEach((c, i) => {

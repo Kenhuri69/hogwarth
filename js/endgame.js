@@ -102,6 +102,13 @@
     }
 
     if (speech) {
+      // Réplique post-victoire conditionnée par le Pacte des Cachots
+      // (08 §8.8.1) : si le joueur a scellé le pacte de Salazar, Dumbledore
+      // est plus froid — une mise en garde au lieu d'un éloge.
+      const pactCold = (typeof slythPactChoice !== 'undefined' && slythPactChoice === 'pact')
+        ? `<p class="victory-speech-cold"><em>« Tu as gagné. Veille seulement à
+            rester celui qui parle — et non celui à qui l'on parle. »</em></p>`
+        : '';
       speech.innerHTML = `
         « Vous avez fait ce que même les plus grands sorciers n'auraient
         osé tenter. La nuit la plus sombre cède, enfin, devant votre
@@ -109,6 +116,7 @@
         ombres rôdent encore, plus profondément, là où la magie est plus
         ancienne. <em>L'escalier le plus profond, scellé par la peur,
         s'ouvre enfin.</em> »
+        ${pactCold}
         <div class="victory-speech-sign">— Albus Dumbledore</div>
       `;
     }

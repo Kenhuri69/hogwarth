@@ -153,6 +153,12 @@ function _maybePlayTierTransition(prevFloor, nextFloor) {
     setTimeout(() => overlay.classList.remove('active'), 600);
   }
   if (typeof addMsg === 'function') addMsg(`✨ ${next.label}`, 'narrative');
+  // Voix des héros — franchissement d'une frontière de tranche (cosmétique,
+  // défensif, exploration). Cf. js/hero-barks.js.
+  if (typeof heroBark === 'function') {
+    const speaker = party.slice(0, partySize).find(c => c.hp > 0) || party[0];
+    if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'tierTransition', { channel: 'explore', once: 'tier-trans:' + next.label });
+  }
 }
 
 // Toast d'événement d'étage (Phase 4) — affiché à l'entrée d'un étage

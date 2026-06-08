@@ -251,6 +251,14 @@ function checkLevelUp() {
   if (typeof DFX_safe !== 'undefined') DFX_safe.burst('levelup-modal', 'levelup'); // VFX level-up (E3)
   addMsg(`Niveau ${player.level} ! +${STAT_POINTS_PER_LEVEL} points à allouer par perso`, 'good');
 
+  // Voix des héros — level-up (cosmétique, défensif). Le héros actif (en
+  // combat) ou Harry (hors combat) commente. Cf. js/hero-barks.js.
+  if (typeof heroBark === 'function') {
+    const idx = (typeof inBattle !== 'undefined' && inBattle && typeof currentBattleChar === 'number') ? currentBattleChar : 0;
+    const speaker = (party[idx] && party[idx].hp > 0) ? party[idx] : party.slice(0, partySize).find(c => c.hp > 0);
+    if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'levelUp', { channel: inBattle ? 'combat' : 'explore' });
+  }
+
   _grantLevelSpells(player.level);
 
   updateUI();

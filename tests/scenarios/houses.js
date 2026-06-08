@@ -1547,6 +1547,60 @@ async function scenarioHouseSignatureQuests() {
   assert(ward.feared,         'statut peur non appliqué');
   assert(ward.skip === false, 'Bannière de Godric doit immuniser le groupe contre la peur');
 
+  // T5 : dialogue de Dumbledore pré-Voldemort (L4) — le texte suit le flag.
+  const dlg = await page.evaluate(() => {
+    const pool = (typeof MONSTERS !== 'undefined') ? MONSTERS : ENEMIES;
+    const vBase = pool.find(m => m.id === 'voldemort_revenu');
+    const mk = () => JSON.parse(JSON.stringify(vBase));
+    const out = {};
+    // Spy sur addMsg (fonction globale → backée par window) pour capturer le texte.
+    const orig = window.addMsg;
+    let msgs = [];
+    window.addMsg = (t) => { msgs.push(t); };
+    const run = (fn) => { msgs = []; fn(); return msgs.join(' || '); };
+
+    gryffSignatureDone = slythSignatureDone = ravenSignatureDone = poufSignatureDone = false;
+    slythPactChoice = null;
+    currentFloor = 1;
+
+    // Aucune Signature remise → cadre générique.
+    chosenHouse = 'Gryffondor';
+    const generic = run(() => { startBattle(mk()); inBattle = false; });
+    out.genericShown = generic.includes('Plus bas que la peur');
+
+    // Signature remise → réplique spécifique, et PAS la générique.
+    gryffSignatureDone = true;
+    const sig = run(() => { startBattle(mk()); inBattle = false; });
+    out.sigShown      = sig.includes('pas ne pas reculer');
+    out.genericHidden = !sig.includes('Plus bas que la peur');
+    gryffSignatureDone = false;
+
+    window.addMsg = orig;
+    return out;
+  });
+  console.log('  T5 dialogue pré-Voldemort →', dlg);
+  assert(dlg.genericShown,  'L4 : cadre générique de Dumbledore absent sans Signature');
+  assert(dlg.sigShown,      'L4 : réplique Signature Gryffondor absente avec le flag');
+  assert(dlg.genericHidden, 'L4 : la générique ne doit pas doubler la réplique Signature');
+
+  // T6 : réplique post-victoire plus froide si Pacte des Cachots scellé (L4).
+  const vic = await page.evaluate(() => {
+    const speech = document.getElementById('victory-speech');
+    const out = {};
+    slythPactChoice = 'pact';
+    showVictoryScreen();
+    out.coldWithPact = speech.innerHTML.includes("celui à qui l'on parle");
+    closeVictoryScreen();
+    slythPactChoice = 'defiance';
+    showVictoryScreen();
+    out.warmWithoutPact = !speech.innerHTML.includes("celui à qui l'on parle");
+    closeVictoryScreen();
+    return out;
+  });
+  console.log('  T6 victoire post-Pacte →', vic);
+  assert(vic.coldWithPact,    'L4 : réplique froide de Dumbledore absente après un Pacte');
+  assert(vic.warmWithoutPact, 'L4 : réplique froide ne doit apparaître que sur slythPactChoice=pact');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
