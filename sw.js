@@ -109,7 +109,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=27',
+  './js/loader.js?v=28',
   './js/pwa.js?v=3',
 
   // Icônes PWA + premier écran
