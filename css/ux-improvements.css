@@ -301,6 +301,24 @@
   50%     { filter: drop-shadow(0 0 14px #7fff8f) brightness(1.2); }
 }
 
+/* K1 — réaction de la carte de groupe qui encaisse (dégât / crit) :
+   flash de fond rouge (inset box-shadow clipé à la carte) + légère secousse.
+   La secousse est neutralisée en reduced-motion (flash seul, plus bas). */
+.party-card.card-react-dmg  { animation: cardReactDmg  .45s ease; }
+.party-card.card-react-crit { animation: cardReactCrit .5s  ease; }
+@keyframes cardReactDmg {
+  0%,100% { box-shadow: none; transform: translateX(0); }
+  20% { box-shadow: inset 0 0 0 9999px rgba(200,40,40,.26); transform: translateX(-4px); }
+  45% { box-shadow: inset 0 0 0 9999px rgba(200,40,40,.16); transform: translateX(4px); }
+  70% { box-shadow: inset 0 0 0 9999px rgba(200,40,40,.10); transform: translateX(-2px); }
+}
+@keyframes cardReactCrit {
+  0%,100% { box-shadow: none; transform: translateX(0); }
+  18% { box-shadow: inset 0 0 0 9999px rgba(255,70,40,.40), 0 0 16px rgba(255,90,40,.8); transform: translateX(-6px); }
+  42% { box-shadow: inset 0 0 0 9999px rgba(255,70,40,.26); transform: translateX(5px); }
+  70% { box-shadow: inset 0 0 0 9999px rgba(255,70,40,.14); transform: translateX(-3px); }
+}
+
 /* ── ACCESSIBILITÉ : mouvement réduit ──────────────────────────
    Neutralise les animations de combat (dégâts flottants, secousse,
    flash de soin) pour les joueurs sensibles au mouvement. Le float-dmg
@@ -310,6 +328,17 @@
   .shake-hit { animation: none; }
   .flash-heal { animation: none; }
   #combat-log-list .clp-entry { animation: none; }
+  /* K1 — flash de danger conservé (info), secousse retirée. */
+  .party-card.card-react-dmg  { animation: cardReactDmgRM  .4s ease; }
+  .party-card.card-react-crit { animation: cardReactCritRM .4s ease; }
+}
+@keyframes cardReactDmgRM {
+  0%,100% { box-shadow: none; }
+  45% { box-shadow: inset 0 0 0 9999px rgba(200,40,40,.24); }
+}
+@keyframes cardReactCritRM {
+  0%,100% { box-shadow: none; }
+  40% { box-shadow: inset 0 0 0 9999px rgba(255,70,40,.34); }
 }
 
 /* ── RESPONSIVE MOBILE ─────────────────────────────────────── */

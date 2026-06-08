@@ -780,4 +780,84 @@ async function scenarioDangerVignette() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette] };
+// K1 — réaction de la carte de groupe qui encaisse/est soignée. UX.cardReact
+// pose une classe transitoire sur #char-card-<idx> (flash rouge + secousse pour
+// dmg/crit, flash vert pour heal), retirée après l'anim. Défensif sur carte
+// absente. Exerce le même chemin que les call-sites battle.js/battle-spells.js.
+async function scenarioCardReact() {
+  console.log('\n── Scénario : Réaction de carte de groupe (K1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // 1) API présente + classe posée immédiatement par chaque kind.
+  const posed = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasFn = typeof UX !== 'undefined' && typeof UX.cardReact === 'function';
+      const cc = document.getElementById('char-card-0');
+      UX.cardReact(0, 'dmg');
+      out.dmg = cc.classList.contains('card-react-dmg');
+      UX.cardReact(0, 'crit');
+      out.crit = cc.classList.contains('card-react-crit');
+      // crit reset retire la classe dmg (anti-cumul lors de coups rapprochés).
+      out.dmgCleared = !cc.classList.contains('card-react-dmg');
+      UX.cardReact(1, 'heal');
+      out.heal = document.getElementById('char-card-1').classList.contains('flash-heal');
+      // Carte absente → no-op sans throw.
+      UX.cardReact(9, 'dmg');
+      out.noThrowMissing = true;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  K1 posé:', posed);
+  assert(!posed.threw, 'K1 throw: ' + (posed.err || ''));
+  assert(posed.hasFn, 'K1 UX.cardReact absent');
+  assert(posed.dmg, 'K1 classe card-react-dmg non posée');
+  assert(posed.crit, 'K1 classe card-react-crit non posée');
+  assert(posed.dmgCleared, 'K1 classe dmg non réinitialisée avant crit');
+  assert(posed.heal, 'K1 classe flash-heal non posée (heal)');
+  assert(posed.noThrowMissing, 'K1 carte absente devrait être un no-op');
+
+  // 2) La classe est bien retirée après l'animation (~550 ms).
+  await new Promise(r => setTimeout(r, 700));
+  const cleared = await page.evaluate(() => {
+    const c0 = document.getElementById('char-card-0');
+    const c1 = document.getElementById('char-card-1');
+    return !c0.classList.contains('card-react-dmg') &&
+           !c0.classList.contains('card-react-crit') &&
+           !c1.classList.contains('flash-heal');
+  });
+  assert(cleared, 'K1 classes de réaction non retirées après l\'animation');
+
+  // 3) Call-site réel : un héros encaisse un coup → sa carte réagit.
+  await startDummyFight(page);
+  const real = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      const idx = 0;
+      const target = party[idx];
+      const enemy = enemyGroup[0];
+      // Force un coup non esquivé/non bloqué.
+      shieldTurns[idx] = 0; guardTurns[idx] = 0; target.dodgeChance = 0;
+      const before = target.hp;
+      _enemyPhysicalHit(enemy, target, idx);
+      const cc = document.getElementById('char-card-' + idx);
+      out.took = target.hp < before;            // a bien encaissé
+      out.reacted = cc.classList.contains('card-react-dmg');
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  K1 call-site réel:', real);
+  assert(!real.threw, 'K1 call-site throw: ' + (real.err || ''));
+  assert(real.took, 'K1 le héros n\'a pas encaissé (test invalide)');
+  assert(real.reacted, 'K1 la carte n\'a pas réagi au coup réel encaissé');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario Réaction de carte (K1)');
+  }
+  console.log('  ✅ Réaction de carte de groupe (K1) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact] };
