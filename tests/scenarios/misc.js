@@ -498,6 +498,48 @@ async function scenarioHeroBarks() {
   assert(toggle.onState.enabled === true,   'toggleBarks doit réactiver barksEnabled');
   assert(toggle.onState.pref === '1',       'préférence localStorage non écrite (on)');
 
+  // L7 — voix parlée des barks (speakBark) gardée par voiceEnabled.
+  const voice = await page.evaluate(() => {
+    // Spy sur playVoice + OGG simulé : teste le gate voiceEnabled et le
+    // routage OGG-first sans dépendre du moteur TTS (read-only en headless).
+    let played = 0;
+    const origPV = AudioSystem.playVoice;
+    AudioSystem.playVoice = () => { played++; return Promise.resolve(); };
+    AudioSystem._VOICE_SAMPLES = AudioSystem._VOICE_SAMPLES || {};
+    AudioSystem._VOICE_SAMPLES['harry_crit'] = 'audio/voice/harry_crit.ogg';
+    AudioSystem.isMuted = false;
+    AudioSystem.voiceEnabled = false;
+    AudioSystem.speakBark('x', 'harry_crit');   // voix off → aucun son
+    const offPlayed = played;
+    AudioSystem.voiceEnabled = true;
+    AudioSystem.speakBark('x', 'harry_crit');   // voix on + OGG présent → playVoice
+    const onPlayed = played;
+    delete AudioSystem._VOICE_SAMPLES['harry_crit'];
+    AudioSystem.playVoice = origPV;
+    return { offPlayed, onPlayed };
+  });
+  console.log('  L7 speakBark :', voice);
+  assert(voice.offPlayed === 0, 'speakBark ne doit pas jouer quand voiceEnabled=false');
+  assert(voice.onPlayed === 1,  'speakBark doit router vers playVoice (OGG) quand voiceEnabled=true');
+
+  // L8 — beat scénarisé : ne parle que si le héros visé est dans le groupe.
+  const scripted = await page.evaluate(() => {
+    barksEnabled = true; _barkSeen.clear();
+    // Céleste absente (groupe Harry/Hermione) → silencieux.
+    const absent = heroBarkScripted('celeste', 'fountainCold', { once: 'celeste-test' });
+    // Simule la présence de Céleste sur le 2ᵉ slot.
+    const saved = party[1].heroKey;
+    party[1].heroKey = 'celeste'; party[1].hp = party[1].hpMax;
+    const present = heroBarkScripted('celeste', 'fountainCold', { once: 'celeste-test2' });
+    const repeat  = heroBarkScripted('celeste', 'fountainCold', { once: 'celeste-test2' }); // one-shot
+    party[1].heroKey = saved;
+    return { absent, present, repeat };
+  });
+  console.log('  L8 beat scénarisé :', scripted);
+  assert(scripted.absent === null,            'beat scénarisé ne doit pas parler si le héros est absent');
+  assert(typeof scripted.present === 'string','beat scénarisé doit parler si le héros est présent');
+  assert(scripted.repeat === null,            'beat scénarisé one-shot ne doit pas se répéter');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (barks)`);

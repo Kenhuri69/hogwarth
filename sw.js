@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v70';
+const CACHE_VERSION = 'hogwarth-v71';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -44,7 +44,7 @@ const PRECACHE_URLS = [
   './js/haptics.js?v=1',
   './js/audio.js?v=2',
   './js/audio-music.js?v=6',
-  './js/audio-sfx.js?v=5',
+  './js/audio-sfx.js?v=6',
   './js/icons.js?v=1',
   './js/scene-icons.js?v=5',
   './js/monsters.js?v=7',
@@ -57,7 +57,7 @@ const PRECACHE_URLS = [
   './js/floor-events.js?v=1',
   './js/item-icons.js?v=19',
   './js/state.js?v=22',
-  './js/hero-barks.js?v=1',
+  './js/hero-barks.js?v=2',
   './js/ui.js?v=11',
   './js/ui-character-sheet.js?v=5',
   './js/ui-settings.js?v=3',
@@ -75,9 +75,9 @@ const PRECACHE_URLS = [
   './js/renderer-minimap.js?v=7',
   './js/movement.js?v=27',
   './js/movement-floors.js?v=4',
-  './js/movement-interactions.js?v=11',
+  './js/movement-interactions.js?v=12',
   './js/swipe-canvas.js?v=4',
-  './js/battle.js?v=24',
+  './js/battle.js?v=25',
   './js/battle-rewards.js?v=4',
   './js/battle-death.js?v=3',
   './js/teleport.js?v=1',
@@ -108,7 +108,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=26',
+  './js/loader.js?v=27',
   './js/pwa.js?v=3',
 
   // Icônes PWA + premier écran

@@ -44,10 +44,13 @@ js/
                       STATUS_ICON_REGISTRY, SPELL_ICON_REGISTRY ;
                       getItemIconHtml(item, size), tinted variants via filter CSS
   hero-barks.js    →  HERO_BARKS{} (registre des répliques des 13 héros par
-                      événement + variantes houseTension) + pickHeroBark()
-                      (résolveur pur) + heroBark() (orchestrateur défensif).
-                      Voix des héros en combat/exploration (cosmétique). APRÈS
-                      data.js, AVANT battle.js. Toggle joueur `barksEnabled`.
+                      événement + variantes houseTension + beats scénarisés) +
+                      pickHeroBark() (résolveur pur) + heroBark() (orchestrateur
+                      défensif) + heroBarkScripted() (beat de trame délivré par
+                      un héros précis si présent, one-shot). Voix des héros en
+                      combat/exploration (cosmétique). APRÈS data.js, AVANT
+                      battle.js. Toggle joueur `barksEnabled` ; voix parlée
+                      optionnelle via AudioSystem.speakBark (OGG / synthèse FR).
   state.js         →  Variables globales mutables (player, player2, party, partySize,
                       dungeon, combat, seenMonsters, activeQuests, usedFountains,
                       searchedCells, floorDungeons, restCooldown, barksEnabled,

@@ -205,6 +205,8 @@ function _applySignatureVoldemortLever() {
         boss.phases = boss.phases.filter(ph => !(ph.gainAbility && ph.gainAbility.statusId === 'fear'));
       }
       msg("🦁 Le portrait de Dumbledore : « Le château a entendu ton pas ne pas reculer. » L'Étendard de Godric tient la terreur en respect.");
+      // Beat scénarisé (L8, 05 §5.4.2) — Anastasia, si présente, exulte.
+      if (typeof heroBarkScripted === 'function') heroBarkScripted('anastasia', 'preVoldemortGryff', { channel: 'combat', once: 'prevold-gryff' });
       signatureApplied = true;
     } else if (chosenHouse === 'Serdaigle' && typeof ravenSignatureDone !== 'undefined' && ravenSignatureDone) {
       // 🦅 Révèle une faille : Voldemort devient vulnérable à la lumière.
@@ -220,6 +222,8 @@ function _applySignatureVoldemortLever() {
         boss.atk = Math.round((boss.atk || 0) * 0.85);
         if (boss.mag) boss.mag = Math.round(boss.mag * 0.85);
         msg("🐍 Tu as retourné le secret de Salazar contre lui. Voldemort connaît la trahison — sa frappe faiblit.");
+        // Beat scénarisé (L8, 05 §5.4.2) — Maxence, si présent, assume sa défiance.
+        if (typeof heroBarkScripted === 'function') heroBarkScripted('maxence', 'preVoldemortDefiance', { channel: 'combat', once: 'prevold-defiance' });
       }
       signatureApplied = true;
     } else if (chosenHouse === 'Poufsouffle' && typeof poufSignatureDone !== 'undefined' && poufSignatureDone) {
@@ -566,6 +570,12 @@ function startBattle(baseEnemyData, opts) {
   if (enemyGroup[0] && enemyGroup[0].epic && typeof heroBark === 'function') {
     const speaker = party.slice(0, partySize).find(c => c.hp > 0);
     if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'bossAppear', { once: 'boss:' + enemyGroup[0].id });
+  }
+  // Beat scénarisé (L8, 05 §5.4.2) — première rencontre d'un Mangemort :
+  // Drago, s'il est présent, le reconnaît. One-shot par partie, défensif.
+  if (typeof heroBarkScripted === 'function' &&
+      enemyGroup.some(e => e && typeof e.id === 'string' && e.id.indexOf('mangemort') === 0)) {
+    heroBarkScripted('draco', 'firstMangemort', { channel: 'combat', once: 'first-mangemort' });
   }
   // D5 Célérité — ouvre le segment du 1ᵉʳ héros (round 1). Aucune action sup. au
   // round 1 (gauge part de 0, +celerite < 1), mais maintient la parité avec la sim.
