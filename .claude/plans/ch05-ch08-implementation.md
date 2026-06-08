@@ -27,10 +27,14 @@
 >   (binaire, hors-scope code). Smoke L7 (gate + routage OGG).
 > - **L8 — Étages-scènes fixes** : ✅ `heroBarkScripted(heroKey, event)`
 >   (`hero-barks.js`, ne parle que si le héros visé est présent/vivant,
->   one-shot) + 4 beats de trame (05 §5.4.2) : Céleste à la 1ʳᵉ fontaine glacée
->   (`useFountain`, ét. 2), Drago au 1ᵉʳ Mangemort (`startBattle`), Anastasia &
+>   one-shot) + **les 5 beats de trame (05 §5.4.2)** : Céleste à la 1ʳᵉ fontaine
+>   glacée (`useFountain`, ét. 2), **Cedric à la transition 3↔4 « on quitte
+>   l'école » (`leaveSchool`, `_maybePlayTierTransition`, prioritaire sur le bark
+>   générique de tranche)**, Drago au 1ᵉʳ Mangemort (`startBattle`), Anastasia &
 >   Maxence avant Voldemort selon flag (`_applySignatureVoldemortLever`).
->   Refuge-repos Poufsouffle resté différé. Smoke L8 + units (registre).
+>   Smoke L8 + units (registre). Le **Refuge-repos Poufsouffle** (mécanique de
+>   gameplay, §3.3) reste volontairement différé (effort élevé, P3) — seul le
+>   *beat* Poufsouffle de §5.4.2 (transition 3↔4, Cedric) était dû et est livré.
 
 > Ce plan traduit en travail technique les ajouts narratifs des chapitres 05 et 08.
 > **Principe** : réutiliser l'existant, ne rien dupliquer, garder ~85 % de trame

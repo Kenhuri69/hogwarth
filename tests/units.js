@@ -130,8 +130,11 @@ function loadModule(relPath, exportNames, globals = {}) {
     Array.isArray(HERO_BARKS.anastasia.preVoldemortGryff) && HERO_BARKS.anastasia.preVoldemortGryff.length > 0);
   check('maxence.preVoldemortDefiance présent',
     Array.isArray(HERO_BARKS.maxence.preVoldemortDefiance) && HERO_BARKS.maxence.preVoldemortDefiance.length > 0);
+  check('cedric.leaveSchool présent',
+    Array.isArray(HERO_BARKS.cedric.leaveSchool) && HERO_BARKS.cedric.leaveSchool.length > 0);
   // Un beat scénarisé n'existe que sur son héros (sinon null → silencieux).
   check('fountainCold absent chez harry', pickHeroBark('harry', 'fountainCold', {}) === null);
+  check('leaveSchool absent chez harry', pickHeroBark('harry', 'leaveSchool', {}) === null);
 })();
 
 // ============================================================

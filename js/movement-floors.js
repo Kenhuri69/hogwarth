@@ -153,9 +153,17 @@ function _maybePlayTierTransition(prevFloor, nextFloor) {
     setTimeout(() => overlay.classList.remove('active'), 600);
   }
   if (typeof addMsg === 'function') addMsg(`✨ ${next.label}`, 'narrative');
+  // Beat scénarisé (L8 — 05 §5.4.2) : Cedric à la sortie de l'école (3→4).
+  // Délivré par Cedric précisément s'il est présent ; prioritaire sur le bark
+  // générique de tranche pour éviter la double-parole.
+  let scriptedSpoke = false;
+  if (prevFloor <= 3 && nextFloor >= 4 && nextFloor > prevFloor &&
+      typeof heroBarkScripted === 'function') {
+    scriptedSpoke = !!heroBarkScripted('cedric', 'leaveSchool', { channel: 'explore', once: 'leave-school' });
+  }
   // Voix des héros — franchissement d'une frontière de tranche (cosmétique,
   // défensif, exploration). Cf. js/hero-barks.js.
-  if (typeof heroBark === 'function') {
+  if (!scriptedSpoke && typeof heroBark === 'function') {
     const speaker = party.slice(0, partySize).find(c => c.hp > 0) || party[0];
     if (speaker && speaker.heroKey) heroBark(speaker.heroKey, 'tierTransition', { channel: 'explore', once: 'tier-trans:' + next.label });
   }

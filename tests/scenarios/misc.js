@@ -532,13 +532,17 @@ async function scenarioHeroBarks() {
     party[1].heroKey = 'celeste'; party[1].hp = party[1].hpMax;
     const present = heroBarkScripted('celeste', 'fountainCold', { once: 'celeste-test2' });
     const repeat  = heroBarkScripted('celeste', 'fountainCold', { once: 'celeste-test2' }); // one-shot
+    // Beat Cedric « on quitte l'école » (transition 3↔4) — même mécanique.
+    party[1].heroKey = 'cedric'; party[1].hp = party[1].hpMax;
+    const cedric = heroBarkScripted('cedric', 'leaveSchool', { once: 'cedric-test' });
     party[1].heroKey = saved;
-    return { absent, present, repeat };
+    return { absent, present, repeat, cedric };
   });
   console.log('  L8 beat scénarisé :', scripted);
   assert(scripted.absent === null,            'beat scénarisé ne doit pas parler si le héros est absent');
   assert(typeof scripted.present === 'string','beat scénarisé doit parler si le héros est présent');
   assert(scripted.repeat === null,            'beat scénarisé one-shot ne doit pas se répéter');
+  assert(typeof scripted.cedric === 'string', 'beat Cedric leaveSchool doit parler si Cedric est présent');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
