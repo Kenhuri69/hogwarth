@@ -265,6 +265,26 @@ function move(dir) { _step(dir, true); }
 // Feedback transitoire de la stèle d'énigme : préfixe affiché dans
 // l'overlay après une mauvaise réponse. Réinitialisé à chaque ouverture.
 let _steleFeedback = '';
+// I1 — Donjon vivant : suivi transient de l'état « dans une salle » pour
+// ne déclencher une phrase d'atmosphère qu'au FRANCHISSEMENT du seuil
+// (entrée de salle), pas à chaque pas. Jamais sérialisé.
+let _wasInRoomCell = false;
+
+// Une case appartient à une « salle » (≠ couloir 1-large) s'il existe un
+// carré 2×2 entièrement ouvert (non-mur) la contenant. Pur, sans effet de
+// bord. Sert uniquement à teinter la narration d'ambiance (I1).
+function _isRoomCell(x, y) {
+  if (typeof dungeon === 'undefined' || !dungeon) return false;
+  const open = (cx, cy) =>
+    cy >= 0 && cy < dungeon.length &&
+    cx >= 0 && cx < dungeon[cy].length &&
+    dungeon[cy][cx] !== CELL.WALL;
+  for (const [ox, oy] of [[0, 0], [-1, 0], [0, -1], [-1, -1]]) {
+    if (open(x + ox, y + oy) && open(x + ox + 1, y + oy) &&
+        open(x + ox, y + oy + 1) && open(x + ox + 1, y + oy + 1)) return true;
+  }
+  return false;
+}
 // Descripteurs en mode visite (parallel-worlds.md §6.4) : le visiteur
 // voit les éléments du donjon de l'autre mais ne peut pas les utiliser.
 // Message contextuel par type de cellule, un seul bouton "S'éloigner".
@@ -540,6 +560,13 @@ function handleCellEntry(cell) {
   _hideExploreOverlay();
   updateRoomStatus();
 
+  // I1 — détection du franchissement de seuil de salle (entrée d'une room
+  // neuve, pas un pas de couloir). Suivi à CHAQUE entrée pour rester juste ;
+  // la phrase n'est tentée que sur la transition couloir → salle, plus bas.
+  const _roomNow     = _isRoomCell(playerX, playerY);
+  const _enteredRoom = _roomNow && !_wasInRoomCell;
+  _wasInRoomCell = _roomNow;
+
   // Mondes parallèles §6.4 — en visite, le visiteur observe sans agir :
   // pas de piège déclenché (mutation du donjon distant), pas de PNJ
   // (Phase E pour les dialogues astraux), pas d'activation de rune.
@@ -595,6 +622,12 @@ function handleCellEntry(cell) {
     _steleFeedback = '';
     _showExploreOverlay(CELL.STELE);
   } else {
+    // I1 — Donjon vivant : à l'entrée d'une salle neuve, tente une phrase
+    // d'atmosphère teintée par la zone (throttle + anti-répétition dans
+    // room-flavor.js). Purement textuel — call-site défensif.
+    if (_enteredRoom && typeof maybeRoomFlavor === 'function') {
+      maybeRoomFlavor(currentFloor);
+    }
     // Inscription-indice d'un puzzle runique ordonné : la case courante
     // peut porter le vers décrivant l'ordre d'éveil des runes.
     if (runePuzzle && runePuzzle.hint

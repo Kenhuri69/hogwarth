@@ -139,7 +139,7 @@ Le footstep est un bruit unique. Le timbrer selon le sol de la tranche
 
 ## I. Donjon vivant (narration)
 
-### I1. Phrases d'atmosphère à l'entrée de salle
+### I1. Phrases d'atmosphère à l'entrée de salle ✅ (livré 2026-06-08)
 À l'entrée d'une nouvelle salle (pas un simple pas de couloir), afficher
 parfois (throttle + anti-répétition) une **courte phrase d'ambiance**
 teintée par la zone (`getFloorTheme(floor).ambient`).
@@ -175,7 +175,7 @@ runique discret ; `tresor` → aucune (déjà visible). Tout cosmétique.
 
 ## J. Boucle de butin
 
-### J1. Pop de butin (révélation visuelle)
+### J1. Pop de butin (révélation visuelle) ✅ (livré 2026-06-08)
 Les drops sont déjà loggés avec icône. Ajouter une **révélation visuelle**
 brève : l'icône de l'objet « pop » (scale + fondu montant) au-dessus de la
 zone de combat à la victoire, pour rendre le gain tangible.
@@ -234,3 +234,50 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
   smoke vert (159) + pwa-smoke vert. **Bumps** : `combat-fx.js` (6→7),
   `combat-fx.css` (7→8), `battle-ui.js` (3→4) ; `CACHE_VERSION` v56 → v57.
   Pas de nouveau global → loader inchangé (méthode de `CombatFX`).
+- 2026-06-01 : **G2 livré** (branche `claude/immersion-g2-cast-feedback`).
+  `CombatFX.castFlash(casterKey, element)` (`combat-fx.js`) : halo bref
+  `.cfx-cast-halo` teinté élément + 6 étincelles montantes `.cfx-cast-spark`
+  à l'ancre du lanceur (`'ally'`). Appelé dans `castSpellInBattle`
+  (`battle-spells.js`) avant le `spellBurst` de la cible, via `CFX_safe`.
+  Tests : volets **F9** (API + halo) et **F9b** (call-site réel) dans
+  `scenarioCombatFX`. CSS + reduced-motion (halo seul). smoke + pwa verts.
+- 2026-06-08 : **J1 livré** (branche `claude/immersion-suite-3-plan-3c00az`).
+  `CombatFX.lootPop(item)` (`combat-fx.js`) : pastille dorée
+  `.cfx-loot-pop` (icône `getItemIconHtml` + nom) qui pop + monte + fade
+  (~960 ms). **Subtilité d'ancrage** : `endBattle` masque
+  `#encounter-overlay` (`display:none`, `battle-rewards.js:10`) AVANT de
+  traiter les drops → le pop ne peut pas vivre dans l'arène. Il se monte
+  donc sur une couche **fixée au `body`** (`#cfx-loot-layer`, z-index 120,
+  sous les modales), centrée haut, **empilable** (offset `--cfx-loot-i`
+  pour les drops simultanés). Hook `CFX_safe.lootPop(item)` aux **6 sites
+  de drop réussi** d'`endBattle` (standard + 3 Ténèbres + 2 matériaux
+  endgame), après le `addMsg` existant. CSS `.cfx-loot-*` + reduced-motion
+  (apparition statique sans translation). Test : volet **F10** ajouté à
+  `scenarioCombatFX` (API directe + proxy, empilement `--cfx-loot-i==='1'`)
+  + `hasLoot` dans F1. smoke vert + units (67) + pwa-smoke (v70) verts.
+  **Bumps** : `combat-fx.js` (8→9), `combat-fx.css` (9→10),
+  `battle-rewards.js` (3→4) ; `CACHE_VERSION` v69 → v70. Pas de nouveau
+  global → loader inchangé (méthode de `CombatFX`).
+  - *Note post-merge* : rebasé sur master (PR #408 barks, qui avait aussi
+    pris `CACHE_VERSION v70` + `battle-rewards.js?v=4`) → collisions
+    résolues, re-bump `battle-rewards.js` (4→5) + `CACHE_VERSION` v70 → v71.
+    Mergé en **PR #409**.
+- 2026-06-08 : **I1 livré** (branche `claude/immersion-i1-room-flavor`).
+  Donjon vivant : nouveau module pur `js/room-flavor.js` exposant
+  `maybeRoomFlavor(floor)` + `RoomFlavor.pickFlavor(zone)`. Pool de 4
+  phrases par zone d'ambiance (`intro`/`dungeon`/`depths`/`abyss`, résolu
+  via `getFloorTheme().ambient`), throttle `CHANCE` (0.30, mutable pour le
+  smoke) + anti-répétition transiente (`_lastIdx`, jamais sérialisée).
+  Affichage `addMsg('🕯️ …', 'info')` — **purement textuel** (≠
+  mouvement/visuel → non gardé par reduced-motion, comme les barks F2),
+  n'altère aucun état/RNG de simulation. Déclenchement gardé à l'**entrée
+  de salle** (pas un pas de couloir) : `_isRoomCell(x,y)` (movement.js,
+  heuristique « carré 2×2 ouvert ») + flag transient `_wasInRoomCell` ;
+  `handleCellEntry` calcule le franchissement de seuil et n'appelle
+  `maybeRoomFlavor` que dans la branche sol nu, via `typeof … === 'function'`
+  (call-site défensif). Test : `scenarioDungeonLife` (volet I1) dans
+  `tests/scenarios/dungeon.js` (API, phrases par zone, anti-répétition,
+  forçage proba 1 → ligne 🕯️, `_isRoomCell` booléen). MANIFEST loader :
+  `maybeRoomFlavor`/`RoomFlavor` (optional). smoke vert + units (76) +
+  pwa-smoke (v72) verts. **Bumps** : `room-flavor.js` (neuf, v1),
+  `movement.js` (27→28), `loader.js` (26→27) ; `CACHE_VERSION` v71 → v72.

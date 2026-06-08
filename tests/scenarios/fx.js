@@ -228,6 +228,7 @@ async function scenarioCombatFX() {
     hasStatus: typeof window.CombatFX?.statusFlash === 'function',
     hasDissolve: typeof window.CombatFX?.deathDissolve === 'function',
     hasCast:   typeof window.CombatFX?.castFlash === 'function',
+    hasLoot:   typeof window.CombatFX?.lootPop === 'function',
     hasProxy:  typeof window.CFX_safe?.spellBurst === 'function',
   }));
   console.log('  F1 module:', f1);
@@ -239,6 +240,7 @@ async function scenarioCombatFX() {
   assert(f1.hasStatus, 'F1 API statusFlash (E2) absente');
   assert(f1.hasDissolve, 'F1 API deathDissolve (G1) absente');
   assert(f1.hasCast, 'F1 API castFlash (G2) absente');
+  assert(f1.hasLoot, 'F1 API lootPop (J1) absente');
   assert(f1.hasProxy, 'F1 CFX_safe proxy absent');
 
   await startDummyFight(page, { hp: 50 });
@@ -404,11 +406,31 @@ async function scenarioCombatFX() {
   assert(!f9b.threw, 'F9b castSpellInBattle throw avec castFlash');
   assert(f9b.halo >= 1, 'F9b halo de cast non monté au call-site réel');
 
+  // F10 — pop de butin (J1) : lootPop monte une couche fixée au body
+  // (l'overlay de combat étant masqué quand endBattle traite les drops),
+  // empilable (offset --cfx-loot-i), sans throw via API directe + proxy.
+  const f10 = await page.evaluate(() => {
+    let threw = false, count = 0, idxSecond = null;
+    try {
+      const item = (typeof ITEMS !== 'undefined' && ITEMS[0]) ? ITEMS[0] : { name: 'Test', icon: '🎁' };
+      window.CombatFX.lootPop(item);
+      window.CFX_safe.lootPop(item); // via proxy → empilé
+      const pops = document.querySelectorAll('#cfx-loot-layer .cfx-loot-pop');
+      count = pops.length;
+      idxSecond = pops[1] ? pops[1].style.getPropertyValue('--cfx-loot-i') : null;
+    } catch (e) { threw = true; }
+    return { threw, count, idxSecond };
+  });
+  console.log('  F10 loot  :', f10);
+  assert(!f10.threw, 'F10 lootPop throw');
+  assert(f10.count >= 2, 'F10 pop de butin non monté (≥ 2 attendus)');
+  assert(f10.idxSecond === '1', 'F10 offset d\'empilement non appliqué (--cfx-loot-i)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error('Erreurs console pendant le scénario Combat FX');
   }
-  console.log('  ✅ Combat FX (VFX + shake + boss intro + désintégration G1 + cast G2) OK');
+  console.log('  ✅ Combat FX (VFX + shake + boss intro + désintégration G1 + cast G2 + butin J1) OK');
   await browser.close();
 }
 
