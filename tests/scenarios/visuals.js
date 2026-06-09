@@ -615,6 +615,37 @@ async function scenarioNpcSprite3D() {
   assert(noNpc.calls === 0,
     `drawNpcSprite ne doit pas être appelé si aucun PNJ devant (obtenu ${noNpc.calls})`);
 
+  // 5) M1 — réaction d'approche : helper pur exposé + drawNpcSprite ne throw
+  //    pas avec/sans `dist` (proche/loin), ni sous reduced-motion.
+  const m1 = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasProx = typeof _npcApproachProx === 'function';
+      out.prox1 = _npcApproachProx(1);
+      out.prox3 = _npcApproachProx(3);
+      _npcAnimPhase = 1.2;
+      drawNpcSprite('dumbledore', 120, 200, 60, 1);          // proche
+      drawNpcSprite('dumbledore', 120, 200, 60, 99);         // loin
+      drawNpcSprite('dumbledore', 120, 200, 60);             // sans dist (rétro-compat)
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  M1 approche:', m1);
+  assert(!m1.threw, 'M1 drawNpcSprite throw: ' + (m1.err || ''));
+  assert(m1.hasProx, 'M1 _npcApproachProx absent');
+  assert(m1.prox1 === 1 && m1.prox3 === 0, 'M1 proximité incohérente');
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const m1r = await page.evaluate(() => {
+    let threw = false;
+    try { _npcAnimPhase = 2.3; drawNpcSprite('dumbledore', 120, 200, 60, 1); }
+    catch (e) { threw = true; }
+    return { reduced: _spriteReducedMotion(), threw };
+  });
+  console.log('  M1 reduced:', m1r);
+  assert(m1r.reduced && !m1r.threw, 'M1 drawNpcSprite throw sous reduced-motion');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);

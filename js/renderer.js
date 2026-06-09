@@ -536,7 +536,11 @@ function drawCorridor(cx, cy, scale, W, H) {
       const npcId = (typeof npcPlacements !== 'undefined')
         ? npcPlacements.get(`${pendingSprite.mapX},${pendingSprite.mapY}`)
         : null;
-      drawNpcSprite(npcId, x, baseY, sz);
+      // M1 — distance en cases joueur↔PNJ pour la réaction d'approche.
+      const ndist = (typeof playerX === 'number' && typeof pendingSprite.mapX === 'number')
+        ? Math.abs(pendingSprite.mapX - playerX) + Math.abs(pendingSprite.mapY - playerY)
+        : undefined;
+      drawNpcSprite(npcId, x, baseY, sz, ndist);
     }
     else if (cell === CELL.RUNE) {
       const k   = `${pendingSprite.mapX},${pendingSprite.mapY}`;

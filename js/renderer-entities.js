@@ -175,10 +175,28 @@ function _drawNpcVectorFallback(bx, by, size, sign, phase) {
   ctx.fill(); ctx.stroke();
 }
 
-function drawNpcSprite(npcId, x, baseY, sz) {
+// M1 — facteur de proximité d'un PNJ (réaction d'approche). Pur : convertit
+// une distance en cases en intensité 0..1 (1 case → 1, 2 → 0.5, ≥ 3 → 0).
+// Distance absente / invalide → 0 (aucune réaction). Testable en units.js.
+function _npcApproachProx(dist) {
+  if (typeof dist !== 'number' || !isFinite(dist) || dist < 0) return 0;
+  return Math.max(0, Math.min(1, 1 - (dist - 1) / 2));
+}
+
+function drawNpcSprite(npcId, x, baseY, sz, dist) {
   const phase = (typeof _npcAnimPhase !== 'undefined') ? _npcAnimPhase : 0;
   const sign  = (typeof getNpcMarkerSign === 'function')
     ? getNpcMarkerSign(npcId) : '';
+
+  // M1 — réaction d'approche : à courte distance, le PNJ "remarque" le joueur
+  // (aura plus attentive + signe plus agité). Neutralisé en reduced-motion et
+  // si `dist` est absente (rétro-compat des call-sites).
+  const reduce = (typeof _spriteReducedMotion === 'function') && _spriteReducedMotion();
+  const prox   = reduce ? 0 : _npcApproachProx(dist);
+  // Shimmer attentif (1.0 → ~1.30) quand proche ; 1.0 sinon.
+  const attentive = prox > 0
+    ? (1 + prox * 0.30 * (0.6 + 0.4 * Math.sin(phase * 5.5)))
+    : 1;
 
   ctx.save();
 
@@ -190,8 +208,8 @@ function drawNpcSprite(npcId, x, baseY, sz) {
 
   // Aura chaude douce derrière le PNJ — distincte du halo pulsé du
   // fallback, car ici elle accompagne le PNG (qui contient déjà ses
-  // ombres internes).
-  const auraPulse = 0.85 + 0.20 * Math.sin(phase * 2);
+  // ombres internes). M1 : accentuée à l'approche via `attentive`.
+  const auraPulse = (0.85 + 0.20 * Math.sin(phase * 2)) * attentive;
   const aura = ctx.createRadialGradient(x, baseY - sz * 0.55, 0,
                                         x, baseY - sz * 0.55, sz * 0.95 * auraPulse);
   aura.addColorStop(0,   `rgba(255,220,140,${0.28 * auraPulse})`);
@@ -216,9 +234,10 @@ function drawNpcSprite(npcId, x, baseY, sz) {
     _drawNpcVectorFallback(x, baseY, sz, sign, phase);
   }
 
-  // Signe ❗/❓ au-dessus, bobbé verticalement.
+  // Signe ❗/❓ au-dessus, bobbé verticalement. M1 : bob amplifié à l'approche
+  // (le PNJ s'agite davantage quand le joueur est proche).
   if (sign) {
-    const signBob = Math.sin(phase * 3) * sz * 0.08;
+    const signBob = Math.sin(phase * 3) * sz * 0.08 * (1 + prox * 0.6);
     ctx.font         = `bold ${Math.floor(sz * 0.45)}px sans-serif`;
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
