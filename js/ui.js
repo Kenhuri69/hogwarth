@@ -5,6 +5,10 @@
 // quête, narration, addMsg, closeModal). Fiche personnage :
 // ui-character-sheet.js. Réglages (difficulté, visites) : ui-settings.js.
 
+// Seuil de "PV bas" (fraction des PV max) partagé par l'état de carte K2
+// (.low-hp) et la vignette de danger plein écran D2 (.cfx-danger).
+const LOW_HP_RATIO = 0.25;
+
 // Synchronise les éléments UI dépendants de `partySize` (carte
 // d'Hermione + indicateur de tour combat). Centralisé pour éviter les
 // 3 copies historiques dans main.js, ui.js et save-ui.js.
@@ -64,14 +68,20 @@ function updateUI() {
   party.forEach((c, i) => {
     if (i >= partySize) return;
     const card = document.getElementById(`char-card-${i}`);
-    if (card) card.classList.toggle('ko-char', c.hp <= 0);
+    if (!card) return;
+    const ko = c.hp <= 0;
+    card.classList.toggle('ko-char', ko);
+    // ── État "PV bas" par carte (K2) ──────────────────────────
+    // Liseré rouge + pulsation sous le seuil de danger. Jamais sur un KO
+    // (.ko-char a priorité). Purement dérivé de l'état, aucune variable neuve.
+    card.classList.toggle('low-hp', !ko && c.hpMax > 0 && c.hp / c.hpMax < LOW_HP_RATIO);
   });
 
   // ── Vignette de danger bas-PV (D2) ───────────────────────────
   // Pulsation rouge en bord d'écran si un membre vivant du groupe est
-  // sous 25 % de PV. Purement cosmétique (pointer-events:none, pur CSS).
+  // sous le seuil de PV. Purement cosmétique (pointer-events:none, pur CSS).
   const inDanger = party.slice(0, partySize)
-    .some(c => c.hp > 0 && c.hpMax > 0 && c.hp / c.hpMax < 0.25);
+    .some(c => c.hp > 0 && c.hpMax > 0 && c.hp / c.hpMax < LOW_HP_RATIO);
   document.body.classList.toggle('cfx-danger', inDanger);
 
   // Musique adaptative de combat (F1) : re-évalue l'intensité (crossfade vers

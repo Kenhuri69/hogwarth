@@ -3638,6 +3638,25 @@ button.shop-tab.active {
   opacity: 0.45;
   border-color: var(--danger);
 }
+/* K2 — état "PV bas" : liseré rouge + pulsation douce sous le seuil de danger.
+   Placé après .active-char/.ko-char pour que le liseré rouge prime sur la
+   bordure dorée du tour actif (le danger est plus important à signaler).
+   Jamais posé sur un KO (géré côté JS — .ko-char a priorité visuelle). */
+.party-card.low-hp {
+  border-color: var(--danger);
+  animation: lowHpPulse 1.4s ease-in-out infinite;
+}
+@keyframes lowHpPulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(200,40,40,0.35); }
+  50%      { box-shadow: 0 0 12px rgba(220,60,60,0.75); }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Mouvement retiré, liseré de danger conservé (info lisible). */
+  .party-card.low-hp {
+    animation: none;
+    box-shadow: 0 0 8px rgba(210,50,50,0.6);
+  }
+}
 .pcard-bg {
   position: absolute;
   left: 0; top: 0; bottom: 0;
