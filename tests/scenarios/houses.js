@@ -1464,7 +1464,6 @@ async function scenarioHouseSignatureQuests() {
       }
       if (typeof _refreshObjectives === 'function') _refreshObjectives();
       const stepDone = q ? q.objectives.every(o => o.completed) : false;
-      const objDump = q ? q.objectives.map(o => ({ t: o.type, p: o.progress, a: o.amount, c: o.completed })) : null;
       const turned = (H.qid === 'quest_signature_slyth')
         ? turnInSlythSignature('defiance')
         : turnInQuestById(H.qid);
@@ -1472,7 +1471,7 @@ async function scenarioHouseSignatureQuests() {
       const pending = pendingHouseRewards.has(H.reward);
       triggerNpcSpecialAction(H.head);
       const inInv = (player.inventory || []).some(i => i && i.id === H.reward);
-      return { beforeUnlock, unlocked, active, stepDone, objDump, turned, flagSet: flags[H.flag], pending, inInv };
+      return { beforeUnlock, unlocked, active, stepDone, turned, flagSet: flags[H.flag], pending, inInv };
     }, H);
     console.log(`  ${H.house} →`, r);
     assert(!r.beforeUnlock, `${H.house}: signature ouverte trop tôt (avant étage ${H.floor})`);

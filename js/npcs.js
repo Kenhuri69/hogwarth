@@ -700,8 +700,8 @@ const NPCS = [
     },
     dialoguesByQuest: {
       quest_signature_raven: {
-        questOffer:  "Oh ! Vous voyez une catastrophe ? Moi, une question mal posée. Le Gardien du Portail veille sur les derniers feuillets du Codex de Rowena — le traité où elle consigna ce que la Clé scellait vraiment. Recomposez-le : comprendre, c'est désamorcer. Rowena l'a écrit en sachant qu'elle mourrait avant de le finir.",
-        questActive: "Le Gardien protège-t-il encore les feuillets du Codex ? Le savoir s'écrit dans la patience.",
+        questOffer:  "Oh ! Vous voyez une catastrophe ? Moi, une question mal posée. Le Codex de Rowena a été dispersé : trois portraits-gardiens en cachent les premiers feuillets — forcez-les. Puis descendez jusqu'à la Salle des Aigles, où le Gardien du Portail veille sur les derniers. Recomposez le tout : comprendre, c'est désamorcer. Rowena l'a écrit en sachant qu'elle mourrait avant de le finir.",
+        questActive: "Les portraits, la Salle des Aigles, le Gardien — chaque feuillet à sa place. Le savoir s'écrit dans la patience.",
         questReady:  "Vous avez recomposé le Codex ! Magnifique — vous avez compris ce que même les professeurs n'osent nommer. Le Codex de Rowena vous revient ; venez le réclamer."
       },
       quest_set_raven: {

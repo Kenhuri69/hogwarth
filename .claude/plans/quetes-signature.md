@@ -83,4 +83,14 @@ compte qu'une fois devenu l'étape active → placer les kills en **fin** de cha
   kill basilic×1 (le secret, climax)] + choix gris Pacte/Défiance inchangé au
   turn-in (`turnInSlythSignature`). Dialogues Rogue réécrits. T2 (choix pact)
   mis à jour pour compléter la chaîne. Vert.
-- (à venir) PR4 Serdaigle (contourner `riddle` hardcodé / `pages`).
+- ✅ **PR4 — Serdaigle enrichie** : `riddle` (hardcodé dumbledore_lumiere) et
+  `pages` (couplé à la quête Manon → risque de complétabilité) écartés au profit
+  de types robustes. `quest_signature_raven` → 3 beats [kill portrait_hostile×3
+  (forcer les portraits-gardiens des feuillets) → floor 6 (Salle des Aigles) →
+  kill gardien_portail×1 (les derniers feuillets, climax)]. Dialogues Flitwick
+  réécrits. Debug `objDump` du test retiré. Vert.
+
+## ✅ CHANTIER CLOS
+Les 4 Quêtes Signature sont des chaînes à 3 beats, fidèles à §8.5/§8.8, en types
+d'objectifs EXISTANTS (kill/floor/herb), zéro nouvel asset, leviers Voldemort et
+récompenses inchangés. Smoke `scenarioHouseSignatureQuests` couvre les 4.

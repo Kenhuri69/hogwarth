@@ -764,9 +764,14 @@ const QUEST_TEMPLATES = [
     id: "quest_signature_raven",
     title: "Le Codex de Rowena",
     giver: "Professeur Flitwick",
-    desc: "Le Gardien du Portail veille sur les derniers feuillets du Codex de Rowena — le traité perdu décrivant ce que la Clé scellait vraiment. Comprendre, c'est désamorcer : recompose le Codex et révèle la faille.",
+    desc: "Le Codex de Rowena — le traité perdu décrivant ce que la Clé scellait vraiment — a été dispersé. Force les trois portraits-gardiens qui en dissimulent les premiers feuillets, descends jusqu'à la Salle des Aigles, puis arrache au Gardien du Portail les derniers. Comprendre, c'est désamorcer : recompose le Codex et révèle la faille.",
     objectives: [
-      { type: "kill", monsterId: "gardien_portail", amount: 1, progress: 0, completed: false }
+      // 1. Forcer les 3 portraits-gardiens dissimulant les premiers feuillets.
+      { type: "kill",  monsterId: "portrait_hostile", amount: 3, progress: 0, completed: false },
+      // 2. Gagner la Salle des Aigles, en profondeur (floor-proxy).
+      { type: "floor", floor: 6, amount: 1, progress: 0, completed: false },
+      // 3. Climax — le Gardien du Portail veille sur les derniers feuillets.
+      { type: "kill",  monsterId: "gardien_portail", amount: 1, progress: 0, completed: false }
     ],
     reward: { xp: 720, gold: 300, houseSetReward: "codex_rowena" },
     location: "Salle des Aigles (étage 6) — cible en Acte III",
