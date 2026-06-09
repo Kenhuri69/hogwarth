@@ -920,4 +920,42 @@ async function scenarioLowHpCard() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact, scenarioLowHpCard] };
+// K3 — surbrillance pulsée du tour actif : .party-card.active-char porte une
+// animation de halo doré (CSS seul ; la classe est posée par la boucle de
+// combat). reduced-motion → animation neutralisée (halo statique), sans
+// régression de l'indicateur de tour.
+async function scenarioActiveCharPulse() {
+  console.log('\n── Scénario : Halo pulsé du tour actif (K3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  // Mouvement normal : la carte active porte une animation non nulle.
+  const normal = await page.evaluate(() => {
+    const c0 = document.getElementById('char-card-0');
+    c0.classList.add('active-char');
+    const name = getComputedStyle(c0).animationName;
+    return { name };
+  });
+  console.log('  K3 normal:', normal);
+  assert(normal.name === 'activeCharPulse', 'K3 halo du tour actif non animé (' + normal.name + ')');
+
+  // reduced-motion : animation neutralisée, la classe reste posée (indicateur OK).
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const reduced = await page.evaluate(() => {
+    const c0 = document.getElementById('char-card-0');
+    return { name: getComputedStyle(c0).animationName, active: c0.classList.contains('active-char') };
+  });
+  console.log('  K3 reduced:', reduced);
+  assert(reduced.name === 'none', 'K3 animation non neutralisée sous reduced-motion');
+  assert(reduced.active, 'K3 classe active-char perdue sous reduced-motion');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario Halo du tour actif (K3)');
+  }
+  console.log('  ✅ Halo pulsé du tour actif (K3) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact, scenarioLowHpCard, scenarioActiveCharPulse] };
