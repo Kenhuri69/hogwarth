@@ -305,18 +305,23 @@ async function scenarioUiChromeIcons() {
     assert(t2.some(s => s.endsWith(name)), `fiche perso doit contenir ${name}`);
   });
 
-  // T3 : updateUI() après une mutation de gold maintient l'<img> (pas de regression sur innerHTML)
+  // T3 : updateUI() après une mutation de gold maintient l'<img> (pas de regression sur innerHTML).
+  // K4 — le montant fait désormais un roll-up animé : la cible est reflétée tout
+  // de suite par data-gold, le texte atterrit sur la valeur exacte après l'anim.
   const t3 = await page.evaluate(() => {
     player.gold = 999;
     updateUI();
     const el = document.getElementById('gold-display');
     const img = el.querySelector('img');
-    return { hasImg: !!img, src: img && img.getAttribute('src'), txt: el.textContent.trim() };
+    return { hasImg: !!img, src: img && img.getAttribute('src'), dataGold: el.getAttribute('data-gold') };
   });
   console.log('  T3 updateUI gold →', t3);
   assert(t3.hasImg,                   'gold-display doit conserver son <img> après updateUI');
   assert(/gold\.png$/.test(t3.src),   'gold-display src doit rester sur gold.png');
-  assert(t3.txt.includes('999'),      'le montant Gallions doit être mis à jour');
+  assert(t3.dataGold === '999',       'la cible data-gold doit refléter la nouvelle valeur');
+  await new Promise(r => setTimeout(r, 700));
+  const t3txt = await page.evaluate(() => document.getElementById('gold-display').textContent.trim());
+  assert(/999\s*Gallions/.test(t3txt), 'le montant Gallions doit atterrir sur 999');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

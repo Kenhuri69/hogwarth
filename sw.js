@@ -40,7 +40,7 @@ const PRECACHE_URLS = [
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
-  './js/ux-improvements.js?v=5',
+  './js/ux-improvements.js?v=6',
   './js/combat-fx.js?v=10',
   './js/haptics.js?v=1',
   './js/audio.js?v=2',
@@ -61,7 +61,7 @@ const PRECACHE_URLS = [
   './js/item-icons.js?v=19',
   './js/state.js?v=24',
   './js/hero-barks.js?v=3',
-  './js/ui.js?v=12',
+  './js/ui.js?v=13',
   './js/ui-character-sheet.js?v=5',
   './js/ui-settings.js?v=3',
   './js/ui-bestiary.js?v=2',

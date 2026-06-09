@@ -519,6 +519,33 @@
     setTimeout(() => el.remove(), 2600);
   }
 
+  // Public: tickNumber(el, from, to, ms, render) — K4
+  // Interpole l'affichage d'un compteur (or/XP) de `from` à `to` sur `ms`
+  // (easeOutCubic). `render(v)` écrit la valeur `v` (défaut : textContent) —
+  // permet de préserver une icône autour du nombre. Auto-annulé si rappelé sur
+  // le même élément (anti-empilement). reduced-motion → écrit `to` directement.
+  function _tickReduced() {
+    return !!(window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  function tickNumber(el, from, to, ms, render) {
+    if (!el) return;
+    const write = (typeof render === 'function') ? render : (v) => { el.textContent = String(v); };
+    if (el._tickRAF) { cancelAnimationFrame(el._tickRAF); el._tickRAF = null; }
+    if (_tickReduced() || !(ms > 0) || from === to || typeof from !== 'number') {
+      write(to); return;
+    }
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - start) / ms);
+      const eased = 1 - Math.pow(1 - t, 3);
+      write(Math.round(from + (to - from) * eased));
+      if (t < 1) { el._tickRAF = requestAnimationFrame(step); }
+      else { el._tickRAF = null; write(to); }
+    }
+    el._tickRAF = requestAnimationFrame(step);
+  }
+
   // ─────────────────────────────────────────────────────────
   // EXPORTS GLOBAUX
   // ─────────────────────────────────────────────────────────
@@ -528,7 +555,8 @@
     renderTimeline,
     floatDmg,
     cardReact,
-    questFanfare
+    questFanfare,
+    tickNumber
   };
 
   // Initialisation au DOMContentLoaded
