@@ -735,7 +735,8 @@ const MONSTERS = [
     scale: 0.30,
     abilities: [
       { name: "Sortilège des Ténèbres", icon: "🟣", desc: "Magie noire concentrée", effect: "damage", power: 12, chance: 0.40 },
-      { name: "Expelliarmus Sombre",    icon: "⚡", desc: "Affaiblit les défenses",  effect: "weaken", power: 2,  chance: 0.20 }
+      { name: "Expelliarmus Sombre",    icon: "⚡", desc: "Affaiblit les défenses",  effect: "weaken", power: 2,  chance: 0.20 },
+      { name: "Potion de Soin",         icon: "🧪", desc: "Boit une potion quand il est entamé", effect: "consumable", potion: "heal", power: 22, chance: 0.50, uses: 2 }
     ],
     ai: "aggressive",
     resist: ["ténèbres"],
@@ -1058,7 +1059,8 @@ const MONSTERS = [
       { name: "Magie Noire Pure",    icon: "🟣", desc: "Magie des ténèbres absolue",  effect: "damage", power: 15, chance: 0.35 },
       { name: "Expelliarmus Sombre", icon: "⚫", desc: "Désarme et affaiblit",         effect: "weaken", power: 3,  chance: 0.20 },
       { name: "Marque Brûlante",     icon: "🔥", desc: "Marque incandescente sur la peau", effect: "status", statusId: "burn", power: 5, chance: 0.25, turns: 3 },
-      { name: "Dissipation Noire",   icon: "❌", desc: "Dissipe les protections magiques", effect: "dispel", chance: 0.30 }
+      { name: "Dissipation Noire",   icon: "❌", desc: "Dissipe les protections magiques", effect: "dispel", chance: 0.30 },
+      { name: "Élixir de Soin",      icon: "🧪", desc: "Boit un élixir quand il est entamé", effect: "consumable", potion: "heal", power: 34, chance: 0.55, uses: 2 }
     ],
     ai: "aggressive",
     resist: ["ténèbres"],

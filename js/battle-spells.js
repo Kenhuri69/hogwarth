@@ -42,6 +42,17 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
     && enemy.currentHp <= (enemy.hp || enemy.currentHp || 1) * (a.hpPct || 0.4));
   if (enrageReady) ability = enrageReady;
 
+  // Potion de soin (P6 §1.1) : un ennemi ENTAMÉ (<60 % PV) dont la potion a
+  // « fired » la boit en priorité — même IA aggressive (sinon il ne choisirait
+  // jamais de se soigner). Subordonné à enrage (le boss enrage d'abord).
+  if (!enrageReady) {
+    const healPotionReady = fired.find(a => a.effect === 'consumable'
+      && (a.potion || 'heal') === 'heal'
+      && enemy.currentHp < (enemy.hp || enemy.currentHp || 1) * 0.6
+      && (typeof enemy._potionsLeft !== 'number' || enemy._potionsLeft > 0));
+    if (healPotionReady) ability = healPotionReady;
+  }
+
   // Legilimens (palier Mythe Serdaigle) : la capacité repérée est
   // anticipée et annulée — l'ennemi gaspille son tour.
   if (legilimensCancelCharges > 0) {
@@ -234,7 +245,38 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       UX_safe.logCombat(`${ability.icon} ${enemy.name} : <b>${lbl}</b> de groupe (${turns} tours)`, 'bad');
       break;
     }
+    case 'consumable': {
+      // L'ennemi boit une potion (P6 §1.1). S'il n'est pas opportun de la
+      // boire (PV hauts) ou que la réserve est vide → false : attaque normale.
+      if (!tryEnemyConsumable(enemy, ability, appendLog)) return false;
+      break;
+    }
   }
+  return true;
+}
+
+// Potion ennemie (P6 §1.1) — réserve limitée `enemy._potionsLeft` (transient de
+// combat, non sérialisé : les saves sont refusées en combat). V1 : potion de
+// SOIN uniquement, bue seulement quand l'ennemi est entamé (<60 % PV). Retourne
+// true si la potion a été consommée, false sinon (l'appelant attaque normalement).
+function tryEnemyConsumable(enemy, ability, appendLog) {
+  if (typeof enemy._potionsLeft !== 'number') {
+    enemy._potionsLeft = (typeof ability.uses === 'number') ? ability.uses : 2;
+  }
+  if (enemy._potionsLeft <= 0) return false;
+  if ((ability.potion || 'heal') !== 'heal') return false;  // buff = hors-scope V1
+  const maxHp = enemy.hp || enemy.currentHp || 1;
+  if (enemy.currentHp >= maxHp * 0.6) return false;          // ne gaspille pas à PV hauts
+  const restored = Math.min(maxHp, enemy.currentHp + (ability.power || 0)) - enemy.currentHp;
+  if (restored <= 0) return false;
+  enemy.currentHp += restored;
+  enemy._potionsLeft--;
+  const icon = ability.icon || '🧪';
+  const left = enemy._potionsLeft;
+  appendLog(`${icon} ${enemy.name} boit ${ability.name || 'une potion'} : +${restored} PV${left > 0 ? ` (${left} en réserve)` : ' (dernière !)'} ! `);
+  UX_safe.logCombat(`${icon} ${enemy.name} boit une potion : <b>+${restored} PV</b>`, 'bad');
+  UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(enemy)}`, restored, 'heal');
+  if (typeof renderEnemyGroup === 'function') renderEnemyGroup();
   return true;
 }
 

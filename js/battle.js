@@ -886,8 +886,10 @@ function _thrownPotionDamage(item, enemy) {
 function throwItemAtEnemy(invIdx, enemyIdx) {
   if (!inBattle) return;
   const item  = player.inventory[invIdx];
-  const enemy = enemyGroup[enemyIdx];
   if (!item || item.effect !== 'throw') return;
+  // Flacon AOE (P6 §1.1) : frappe tous les ennemis vivants, pas de cible unique.
+  if (item.aoe) { _throwItemAoe(invIdx, item); return; }
+  const enemy = enemyGroup[enemyIdx];
   if (!enemy || enemy.currentHp <= 0) return;
   const char = getActiveChar();
 
@@ -912,6 +914,41 @@ function throwItemAtEnemy(invIdx, enemyIdx) {
   addMsg(`${char.name} lance ${item.name} (${dmg} dégâts).`, 'good');
   UX_safe.floatDmg(`enemy:${enemyIdx}`, dmg, 'dmg');
   UX_safe.logCombat(`🧪 <b>${char.name}</b> lance ${item.name} sur ${enemy.name} : <b>−${dmg}</b>${suffix}${statusTxt}`, 'magic');
+  renderEnemyGroup();
+  updateUI();
+  if (checkAllEnemiesDead()) return;
+  advanceBattleChar();
+}
+
+// Flacon AOE (P6 §1.1) : applique _thrownPotionDamage (resist/weak par cible)
+// + statut éventuel à CHAQUE ennemi vivant. Comme le splash de Bombarda : pas
+// de crit, pas de passif de Maison. Consomme le tour comme une attaque.
+function _throwItemAoe(invIdx, item) {
+  const item2 = player.inventory[invIdx];
+  if (!item2 || item2 !== item) return;
+  const char    = getActiveChar();
+  const targets = livingEnemies();
+  if (!targets.length) return;
+  let total = 0;
+  const parts = [];
+  targets.forEach(enemy => {
+    const { dmg, suffix } = _thrownPotionDamage(item, enemy);
+    enemy.currentHp -= dmg;
+    total += dmg;
+    if (item.statusId && enemy.currentHp > 0 && typeof applyStatus === 'function') {
+      const sp = (typeof item.statusPower === 'number') ? item.statusPower : Math.max(1, Math.floor((item.power || 0) * 0.25));
+      applyStatus(enemy, item.statusId, sp, item.statusTurns || 3);
+    }
+    UX_safe.floatDmg(`enemy:${enemyGroup.indexOf(enemy)}`, dmg, 'dmg');
+    parts.push(`${enemy.name} −${dmg}${suffix}`);
+  });
+  _consumeAt(invIdx, 1);
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playSpellCast) {
+    AudioSystem.playSpellCast(item.element === 'feu' ? 'Incendio' : (item.element === 'glace' ? 'Glacius' : 'Bombarda'));
+  }
+  setBattleLog(`🧪 ${char.name} lance ${item.name} sur tout le groupe : ${total} dégâts au total !`);
+  addMsg(`${char.name} lance ${item.name} (AOE, ${total} dégâts).`, 'good');
+  UX_safe.logCombat(`🧪 <b>${char.name}</b> lance ${item.name} (AOE) : ${parts.join(' · ')}`, 'magic');
   renderEnemyGroup();
   updateUI();
   if (checkAllEnemiesDead()) return;

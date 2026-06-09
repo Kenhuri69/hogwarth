@@ -1256,4 +1256,74 @@ async function scenarioHerbEconomy() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy] };
+// P6 §1.1 — Potion AOE (joueur) + potion de soin (IA ennemie).
+async function scenarioPotionAoe() {
+  console.log('\n── Scénario : Potions AOE + potion ennemie (P6 §1.1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // A) Flacon de Feu Grégeois (aoe:true) → frappe TOUT le groupe ennemi.
+  await startDummyFight(page);
+  const aoe = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      const item = ITEMS.find(i => i.id === 'flacon_grec');
+      out.itemAoe = !!(item && item.aoe && item.effect === 'throw');
+      const mk = (n) => ({ id: 'test_dummy', name: n, icon: '🎯', hp: 50, currentHp: 50, atk: 1, def: 0, resist: [], weak: [], statusEffects: [] });
+      enemyGroup = [mk('A'), mk('B'), mk('C')];
+      currentBattleChar = 0;
+      player.inventory.push({ ...item });
+      const idx = player.inventory.findIndex(i => i.id === 'flacon_grec');
+      const before = enemyGroup.map(e => e.currentHp);
+      throwItemAtEnemy(idx, -1);   // chemin AOE
+      out.before = before;
+      out.after  = enemyGroup.map(e => e.currentHp);
+      out.consumed = player.inventory.findIndex(i => i.id === 'flacon_grec') === -1;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  A AOE:', aoe);
+  assert(!aoe.threw, 'A throw: ' + (aoe.err || ''));
+  assert(aoe.itemAoe, 'A flacon_grec doit être un throw aoe');
+  assert(aoe.after.length === 3 && aoe.after.every((hp, i) => hp < aoe.before[i]),
+    'A le flacon AOE doit toucher les 3 ennemis');
+  assert(aoe.consumed, 'A le flacon AOE doit être consommé');
+
+  // B) Mangemort entamé boit une potion ; la réserve s'épuise ; PV hauts → ne boit pas.
+  const enemy = await page.evaluate(() => {
+    const out = { threw: false, log: [] };
+    try {
+      const e = {
+        id: 'mangemort', name: 'TestMangemort', icon: '💀', hp: 100, currentHp: 30, atk: 5, def: 0,
+        resist: [], weak: [], statusEffects: [],
+        abilities: [{ name: 'Potion de Soin', icon: '🧪', effect: 'consumable', potion: 'heal', power: 20, chance: 1, uses: 2 }],
+      };
+      enemyGroup = [e];
+      const append = (s) => out.log.push(s);
+      const tgt = party[0];
+      out.r1 = tryEnemyAbility(e, tgt, 0, append); out.hp1 = e.currentHp; out.pot1 = e._potionsLeft;
+      out.r2 = tryEnemyAbility(e, tgt, 0, append); out.hp2 = e.currentHp; out.pot2 = e._potionsLeft;
+      out.r3 = tryEnemyAbility(e, tgt, 0, append); out.hp3 = e.currentHp; out.pot3 = e._potionsLeft;
+      // PV hauts → ne gaspille pas la potion (même avec réserve réarmée).
+      e.currentHp = 95; e._potionsLeft = 2;
+      out.r4 = tryEnemyAbility(e, tgt, 0, append); out.hp4 = e.currentHp;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  B potion ennemie:', { r1: enemy.r1, hp1: enemy.hp1, pot1: enemy.pot1, hp2: enemy.hp2, pot2: enemy.pot2, r3: enemy.r3, hp3: enemy.hp3, r4: enemy.r4, hp4: enemy.hp4 });
+  assert(!enemy.threw, 'B throw: ' + (enemy.err || ''));
+  assert(enemy.r1 === true && enemy.hp1 === 50 && enemy.pot1 === 1, 'B 1re potion : +20 PV, réserve 1');
+  assert(enemy.hp2 === 70 && enemy.pot2 === 0, 'B 2e potion : +20 PV, réserve 0');
+  assert(enemy.r3 === false && enemy.hp3 === 70, 'B réserve vide → pas de soin (attaque normale)');
+  assert(enemy.r4 === false && enemy.hp4 === 95, 'B PV hauts → ne boit pas (attaque normale)');
+  assert(enemy.log.some(l => l.includes('boit')), 'B log « boit une potion » attendu');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('erreurs JS (potions AOE / IA)');
+  }
+  console.log('  ✅ Potions AOE + potion ennemie (P6 §1.1) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoe] };

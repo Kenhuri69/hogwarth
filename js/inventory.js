@@ -729,6 +729,11 @@ function useItem(idx, battleMode) {
       return;
     }
     closeModal('inventory-modal');
+    // Flacon AOE (P6 §1.1) : frappe tout le groupe, aucune cible à choisir.
+    if (item.aoe) {
+      throwItemAtEnemy(idx, -1);
+      return;
+    }
     if (livingEnemies().length > 1) {
       pendingThrowIdx = idx;
       showTargetSelection('throw_item');

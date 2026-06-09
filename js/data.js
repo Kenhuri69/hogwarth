@@ -617,6 +617,7 @@ const ITEMS = [
   { id:"flacon_feu",    name:"Flacon de Feu",    icon:"🔥", desc:"Lancé : 24 dégâts de feu sur un ennemi",                 type:"consumable", effect:"throw", element:"feu",   power:24, price:40, rarity:"common" },
   { id:"flacon_givre",  name:"Flacon de Givre",  icon:"❄️", desc:"Lancé : 15 dégâts de glace + gèle l'ennemi (3 t)",        type:"consumable", effect:"throw", element:"glace", power:15, statusId:"gel",    statusPower:3, statusTurns:3, price:42, rarity:"common" },
   { id:"flacon_venin",  name:"Flacon de Venin",  icon:"🧪", desc:"Lancé : 8 dégâts + poison (5/tour, 4 tours)",             type:"consumable", effect:"throw",                  power:8,  statusId:"poison", statusPower:5, statusTurns:4, price:44, rarity:"common" },
+  { id:"flacon_grec",   name:"Flacon de Feu Grégeois", icon:"🔥", desc:"Lancé : 16 dégâts de feu sur TOUT le groupe ennemi", type:"consumable", effect:"throw", element:"feu", power:16, aoe:true, price:75, rarity:"rare" },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:200 },
   // Easter egg « Salle sur Demande » — objet unique offert à la 1ʳᵉ Salle de
@@ -842,7 +843,7 @@ const POTION_RECIPES = [
     lore:"Un venin paradoxal : l'ortie attaque là où le dictame guérit." },
 ];
 
-const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda"];
+const SHOP_ITEMS = ["potion_s","potion_m","felix","choco_sorcier","wand1","robe1","amulette","broom","mandragore","livre_sortileges","livre_soin","livre_bombarda","flacon_grec"];
 
 // Set bonus Ténèbres (endgame Tranche 2 — cf. ENDGAME_PLAN.md §7.8) :
 //   2 items équipés → +10 crit chance, +5 dodge chance
