@@ -3633,6 +3633,14 @@ button.shop-tab.active {
 .party-card.active-char {
   border-color: var(--gold);
   box-shadow: 0 0 8px rgba(201,168,76,0.35);
+  /* K3 — halo doré qui respire pendant le tour du perso actif. La classe est
+     posée par la boucle de combat (battle-ui.js). reduced-motion → halo
+     statique (box-shadow ci-dessus, animation neutralisée plus bas). */
+  animation: activeCharPulse 1.8s ease-in-out infinite;
+}
+@keyframes activeCharPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(201,168,76,0.30); }
+  50%      { box-shadow: 0 0 16px rgba(201,168,76,0.65); }
 }
 .party-card.ko-char {
   opacity: 0.45;
@@ -3656,6 +3664,8 @@ button.shop-tab.active {
     animation: none;
     box-shadow: 0 0 8px rgba(210,50,50,0.6);
   }
+  /* K3 — halo du tour actif figé (état statique d'origine). */
+  .party-card.active-char { animation: none; }
 }
 .pcard-bg {
   position: absolute;
