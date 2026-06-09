@@ -3,6 +3,23 @@
 // Fonctions de sorts utilisées par le moteur de combat (battle.js)
 // ============================================================
 
+// Potions ennemies (effect:"consumable") — charges suivies PAR INSTANCE de
+// monstre (les objets `abilities` sont partagés entre instances scalées, on ne
+// peut donc pas y stocker l'état). `enemy._potions[key]` = charges restantes,
+// initialisé paresseusement depuis `ability.charges` (défaut 1). Combat-scoped,
+// non sérialisé (autoSave est refusé en combat).
+function _enemyPotionKey(a) { return a.name || a.statusId || 'potion'; }
+function _enemyPotionLeft(enemy, a) {
+  if (!enemy._potions) enemy._potions = {};
+  const k = _enemyPotionKey(a);
+  if (enemy._potions[k] === undefined) enemy._potions[k] = (a.charges | 0) || 1;
+  return enemy._potions[k];
+}
+function _enemyPotionConsume(enemy, a) {
+  const left = _enemyPotionLeft(enemy, a);
+  if (left > 0) enemy._potions[_enemyPotionKey(a)] = left - 1;
+}
+
 // ── Utilisation d'une capacité spéciale par un ennemi ────────
 function tryEnemyAbility(enemy, target, charIdx, appendLog) {
   if (!enemy.abilities || !enemy.abilities.length) return false;
@@ -12,6 +29,8 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
   const heavyGuard = (typeof guardTurns !== 'undefined') && guardTurns[charIdx] >= 2;
   // Capacités dont le jet probabiliste réussit ce tour.
   const fired = enemy.abilities.filter(a => {
+    // Potion ennemie : un consommable épuisé (charges par instance) ne tire plus.
+    if (a.effect === 'consumable' && _enemyPotionLeft(enemy, a) <= 0) return false;
     let ch = a.chance;
     if (heavyGuard && a.effect === 'weaken') ch = Math.min(1, ch * 1.5);
     return Math.random() < ch;
@@ -41,6 +60,13 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
     && !enemy._enraged
     && enemy.currentHp <= (enemy.hp || enemy.currentHp || 1) * (a.hpPct || 0.4));
   if (enrageReady) ability = enrageReady;
+
+  // Potion ennemie : en danger (lowHp), un consommable disponible est bu en
+  // priorité — filet de survie limité par ses charges (par instance).
+  if (lowHp) {
+    const potion = fired.find(a => a.effect === 'consumable');
+    if (potion) ability = potion;
+  }
 
   // Legilimens (palier Mythe Serdaigle) : la capacité repérée est
   // anticipée et annulée — l'ennemi gaspille son tour.
@@ -105,6 +131,22 @@ function tryEnemyAbility(enemy, target, charIdx, appendLog) {
       const healIdx = enemyGroup.indexOf(enemy);
       UX_safe.floatDmg(`enemy:${healIdx}`, restored, 'heal');
       UX_safe.logCombat(`${ability.icon} ${enemy.name} se soigne : <b>+${restored} PV</b>`, 'magic');
+      renderEnemyGroup();
+      break;
+    }
+    case 'consumable': {
+      // Potion bue par l'ennemi : soin (ou buff) à charges limitées par
+      // instance. `power` = PV rendus ; `buffAtk` (optionnel) = ATK gagnée.
+      _enemyPotionConsume(enemy, ability);
+      const restored = Math.min(enemy.hp, enemy.currentHp + (ability.power || 0)) - enemy.currentHp;
+      enemy.currentHp += restored;
+      if (ability.buffAtk) enemy.atk = (enemy.atk || 0) + ability.buffAtk;
+      const left = _enemyPotionLeft(enemy, ability);
+      const cIdx = enemyGroup.indexOf(enemy);
+      const buffTxt = ability.buffAtk ? ` (+${ability.buffAtk} ATK)` : '';
+      appendLog(`${ability.icon || '🧪'} ${enemy.name} boit ${ability.name} : +${restored} PV${buffTxt}${left > 0 ? '' : ' (dernière)'} ! `);
+      if (restored > 0) UX_safe.floatDmg(`enemy:${cIdx}`, restored, 'heal');
+      UX_safe.logCombat(`${ability.icon || '🧪'} ${enemy.name} boit une potion : <b>+${restored} PV</b>${buffTxt}`, 'magic');
       renderEnemyGroup();
       break;
     }

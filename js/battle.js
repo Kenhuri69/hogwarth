@@ -918,6 +918,46 @@ function throwItemAtEnemy(invIdx, enemyIdx) {
   advanceBattleChar();
 }
 
+// Flacon à dispersion (item.aoe) — applique les dégâts + statut à TOUT le
+// groupe ennemi vivant. Pas de sélection de cible. Mêmes calculs que le jet
+// simple (_thrownPotionDamage), résolus indépendamment par ennemi.
+function throwItemAoe(invIdx) {
+  if (!inBattle) return;
+  const item = player.inventory[invIdx];
+  if (!item || item.effect !== 'throw') return;
+  const char = getActiveChar();
+  const targets = enemyGroup
+    .map((e, i) => ({ e, i }))
+    .filter(o => o.e && o.e.currentHp > 0);
+  if (!targets.length) return;
+
+  let total = 0;
+  for (const { e, i } of targets) {
+    const { dmg } = _thrownPotionDamage(item, e);
+    e.currentHp -= dmg;
+    total += dmg;
+    UX_safe.floatDmg(`enemy:${i}`, dmg, 'dmg');
+    if (item.statusId && e.currentHp > 0 && typeof applyStatus === 'function') {
+      const sp = (typeof item.statusPower === 'number') ? item.statusPower : Math.max(1, Math.floor((item.power || 0) * 0.25));
+      applyStatus(e, item.statusId, sp, item.statusTurns || 3);
+    }
+  }
+
+  _consumeAt(invIdx, 1);
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playSpellCast) {
+    AudioSystem.playSpellCast(item.element === 'feu' ? 'Incendio' : (item.element === 'glace' ? 'Glacius' : 'Diffindo'));
+  }
+  const statusTxt = item.statusId && typeof STATUS_DEFS !== 'undefined' && STATUS_DEFS[item.statusId]
+    ? ` + ${STATUS_DEFS[item.statusId].label || item.statusId}` : '';
+  setBattleLog(`🧪 ${char.name} lance ${item.name} sur tout le groupe : ${total} dégâts au total${statusTxt} !`);
+  addMsg(`${char.name} lance ${item.name} (${targets.length} ennemis touchés).`, 'good');
+  UX_safe.logCombat(`🧪 <b>${char.name}</b> disperse ${item.name} : <b>−${total}</b> sur ${targets.length} ennemis${statusTxt}`, 'magic');
+  renderEnemyGroup();
+  updateUI();
+  if (checkAllEnemiesDead()) return;
+  advanceBattleChar();
+}
+
 // ── Passage au personnage suivant / tour des ennemis ─────────
 // D5 Célérité (volet AGI) — ouverture du segment d'un héros dans un round.
 // Accumule le tempo (gauge += c.celerite) ; chaque franchissement de 1.0 met une

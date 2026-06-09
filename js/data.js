@@ -617,6 +617,9 @@ const ITEMS = [
   { id:"flacon_feu",    name:"Flacon de Feu",    icon:"🔥", desc:"Lancé : 24 dégâts de feu sur un ennemi",                 type:"consumable", effect:"throw", element:"feu",   power:24, price:40, rarity:"common" },
   { id:"flacon_givre",  name:"Flacon de Givre",  icon:"❄️", desc:"Lancé : 15 dégâts de glace + gèle l'ennemi (3 t)",        type:"consumable", effect:"throw", element:"glace", power:15, statusId:"gel",    statusPower:3, statusTurns:3, price:42, rarity:"common" },
   { id:"flacon_venin",  name:"Flacon de Venin",  icon:"🧪", desc:"Lancé : 8 dégâts + poison (5/tour, 4 tours)",             type:"consumable", effect:"throw",                  power:8,  statusId:"poison", statusPower:5, statusTurns:4, price:44, rarity:"common" },
+  // Flacons à dispersion (AOE) — touchent TOUT le groupe ennemi (flag aoe).
+  { id:"flacon_deflagration", name:"Flacon de Déflagration", icon:"💥", desc:"Lancé : 16 dégâts de feu sur tout le groupe ennemi", type:"consumable", effect:"throw", aoe:true, element:"feu", power:16, price:90, rarity:"rare" },
+  { id:"flacon_brume_toxique", name:"Flacon de Brume Toxique", icon:"☠️", desc:"Lancé : 6 dégâts + poison (4/tour, 4 t) sur tout le groupe ennemi", type:"consumable", effect:"throw", aoe:true, power:6, statusId:"poison", statusPower:4, statusTurns:4, price:95, rarity:"rare" },
   { id:"cape_invis",   name:"Cape d'Invisibilité",   icon:"🌫️", desc:"AGI+5 LCK+5 · Esquive +5%", type:"acc",   slot:"cloak", family:"cloak_invis",  rarity:"epic",     bonusAgi:5, bonusLck:5, bonusDodgeChance:5, power:5, price:550 },
   { id:"chapeau_pointu",name:"Chapeau de Serdaigle", icon:"🎓", desc:"MAG+3 INT+3",            type:"armor", slot:"head",  family:"hat_serd",     rarity:"rare",     bonusDef:2, bonusMag:3, power:3, price:200 },
   // Easter egg « Salle sur Demande » — objet unique offert à la 1ʳᵉ Salle de
