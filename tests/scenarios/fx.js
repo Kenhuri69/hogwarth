@@ -837,8 +837,10 @@ async function scenarioCardReact() {
       const idx = 0;
       const target = party[idx];
       const enemy = enemyGroup[0];
-      // Force un coup non esquivé/non bloqué.
+      // Force un coup non esquivé/non bloqué ET des dégâts garantis > 0
+      // (ATK ennemie élevée vs DEF nulle → mitigatedDamage déterministe).
       shieldTurns[idx] = 0; guardTurns[idx] = 0; target.dodgeChance = 0;
+      target.def = 0; enemy.atk = 999;
       const before = target.hp;
       _enemyPhysicalHit(enemy, target, idx);
       const cc = document.getElementById('char-card-' + idx);

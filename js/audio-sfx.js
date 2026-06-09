@@ -263,6 +263,28 @@ Object.assign(AudioSystem, {
     });
   },
 
+  // ── Fanfare de quête accomplie (L1) ──────────────────────────
+  // Distinct de playLevelUp (gamme sine montante) : arpège d'accord majeur au
+  // timbre triangle + note tenue finale — marque un *jalon*, pas un palier.
+  playQuestComplete() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    const arp = [392, 494, 587, 784]; // Sol majeur (G B D G)
+    arp.forEach((freq, i) => {
+      const delay = i * 0.09;
+      this._playTone({
+        freq, type: 'triangle', start: now + delay, peak: 0.40, attack: 0.04,
+        decayAt: now + delay + 0.40, stop: now + delay + 0.45,
+      });
+    });
+    // Note tenue finale (octave) qui couronne l'arpège.
+    this._playTone({
+      freq: 1046, type: 'triangle', start: now + 0.36, peak: 0.42, attack: 0.05,
+      decayAt: now + 1.1, stop: now + 1.2,
+    });
+  },
+
   // ── Brassage de potion (bouillonnement de chaudron) ──────────
   playBrew() {
     if (this.isMuted) return;

@@ -684,8 +684,12 @@ function completeQuest(index) {
     lastQuestCompletion[q.id] = (player && player.level) || 0;
   }
 
-  AudioSystem.playLevelUp();
+  // L1 — moment dédié de quête accomplie : timbre distinct + bandeau doré
+  // (distinct du level-up ; un éventuel level-up du reward sonnera via checkLevelUp).
+  if (AudioSystem.playQuestComplete) AudioSystem.playQuestComplete();
+  else AudioSystem.playLevelUp();
   addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête terminée : « ${q.title} » !`, 'good');
+  if (window.UX_safe) UX_safe.questFanfare(q.title);
 
   recalculateStats();
   updateUI();

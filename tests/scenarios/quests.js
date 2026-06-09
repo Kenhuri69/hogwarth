@@ -1377,4 +1377,58 @@ async function scenarioCleVoute() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute] };
+// L1 — fanfare de quête accomplie : completeQuest monte un bandeau doré
+// (UX.questFanfare) + joue un timbre distinct (AudioSystem.playQuestComplete).
+async function scenarioQuestFanfare() {
+  console.log('\n── Scénario : Fanfare de quête accomplie (L1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasFanfare = typeof UX !== 'undefined' && typeof UX.questFanfare === 'function';
+      out.hasSound   = typeof AudioSystem !== 'undefined' && typeof AudioSystem.playQuestComplete === 'function';
+      // Aucun bandeau au repos.
+      out.noneBefore = !document.querySelector('.quest-fanfare');
+      // Complète une quête réelle → le bandeau doit apparaître.
+      acceptQuest('lumiere_desespoir');
+      const idx = activeQuests.findIndex(x => x.id === 'lumiere_desespoir');
+      out.accepted = idx >= 0;
+      completeQuest(idx);
+      const el = document.querySelector('.quest-fanfare');
+      out.mounted = !!el;
+      out.titleShown = !!(el && el.querySelector('.qf-name') &&
+                          el.querySelector('.qf-name').textContent.length > 0);
+      // API directe : titre échappé (pas d'injection HTML).
+      UX.questFanfare('<b>x</b>');
+      const els = document.querySelectorAll('.quest-fanfare');
+      const last = els[els.length - 1];
+      out.escaped = last.querySelector('.qf-name').innerHTML.indexOf('<b>') === -1;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  L1:', r);
+  assert(!r.threw, 'L1 throw: ' + (r.err || ''));
+  assert(r.hasFanfare, 'L1 UX.questFanfare absent');
+  assert(r.hasSound, 'L1 AudioSystem.playQuestComplete absent');
+  assert(r.noneBefore, 'L1 bandeau présent à tort au repos');
+  assert(r.accepted, 'L1 quête de test non acceptée');
+  assert(r.mounted, 'L1 bandeau non monté après completeQuest');
+  assert(r.titleShown, 'L1 titre de quête absent du bandeau');
+  assert(r.escaped, 'L1 titre non échappé (risque d\'injection HTML)');
+
+  // Le bandeau est retiré après l'animation (~2,6 s).
+  await new Promise(res => setTimeout(res, 2900));
+  const gone = await page.evaluate(() => !document.querySelector('.quest-fanfare'));
+  assert(gone, 'L1 bandeau non retiré après l\'animation');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario Fanfare de quête (L1)');
+  }
+  console.log('  ✅ Fanfare de quête accomplie (L1) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioChainedQuest, scenarioHeadlessHunt, scenarioChainAndRepeatable, scenarioRepeatableQuestSpawn, scenarioEnsureKillTargets, scenarioEnsureStairs, scenarioIteration74, scenarioFarmingQuests, scenarioDelayedSearch, scenarioCleVoute, scenarioQuestFanfare] };

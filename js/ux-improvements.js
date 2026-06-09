@@ -499,6 +499,26 @@
     setTimeout(() => cc.classList.remove(cls), 550);
   }
 
+  // Public: questFanfare(title) — L1
+  // Monte un bandeau doré transitoire centré (« Quête accomplie ! » + titre),
+  // retiré après l'animation. Flourish CSS (.quest-fanfare). reduced-motion →
+  // fondu d'opacité seul (porté par le CSS). Défensif : no-op si pas de body.
+  function _escFanfare(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function questFanfare(title) {
+    if (!document.body) return;
+    const el = document.createElement('div');
+    el.className = 'quest-fanfare';
+    el.innerHTML =
+      '<span class="qf-flourish">❧</span>' +
+      '<span class="qf-title">Quête accomplie !</span>' +
+      '<span class="qf-name">' + _escFanfare(title) + '</span>';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2600);
+  }
+
   // ─────────────────────────────────────────────────────────
   // EXPORTS GLOBAUX
   // ─────────────────────────────────────────────────────────
@@ -507,7 +527,8 @@
     logCombat, logCombatTurn, clearCombatLog,
     renderTimeline,
     floatDmg,
-    cardReact
+    cardReact,
+    questFanfare
   };
 
   // Initialisation au DOMContentLoaded
