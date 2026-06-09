@@ -435,6 +435,14 @@ function drawCorridor(cx, cy, scale, W, H) {
       ctx.fillStyle = _fpattern;
       ctx.fillRect(near.x0, far.y1, near.x1 - near.x0, near.y1 - far.y1);
     }
+    // Runes pulsées (P-D4) : glow violet froid qui « respire » sur le sol rune.
+    if (_floorDark && typeof _runePulseAlpha === 'function') {
+      const _rp = _runePulseAlpha(di);
+      if (_rp > 0) {
+        ctx.fillStyle = `rgba(150,130,210,${_rp})`;
+        ctx.fillRect(near.x0, far.y1, near.x1 - near.x0, near.y1 - far.y1);
+      }
+    }
     // Fog de profondeur
     ctx.fillStyle = `rgba(6,4,2,${0.06 + di * 0.18})`;
     ctx.fillRect(near.x0, far.y1, near.x1 - near.x0, near.y1 - far.y1);
@@ -470,6 +478,14 @@ function drawCorridor(cx, cy, scale, W, H) {
     if (_cpattern) {
       ctx.fillStyle = _cpattern;
       ctx.fillRect(near.x0, near.y0, near.x1 - near.x0, far.y0 - near.y0);
+    }
+    // Runes pulsées (P-D4) — plafond, plus discret que le sol.
+    if (_ceilDark && typeof _runePulseAlpha === 'function') {
+      const _rp = _runePulseAlpha(di) * 0.7;
+      if (_rp > 0) {
+        ctx.fillStyle = `rgba(150,130,210,${_rp})`;
+        ctx.fillRect(near.x0, near.y0, near.x1 - near.x0, far.y0 - near.y0);
+      }
     }
     // Fog
     ctx.fillStyle = `rgba(6,4,2,${0.10 + di * 0.14})`;
@@ -563,6 +579,9 @@ function drawCorridor(cx, cy, scale, W, H) {
   // 5bis. Brume de profondeur (Immersion Lot 2) — tranche « depths » (7+).
   // No-op silencieux hors depths ou si dungeon-fx.js n'a pas chargé.
   if (typeof drawDepthsMist === 'function') drawDepthsMist(cx, cy, scale);
+
+  // 5bis-D. Brouillard temporel (P-D4) — zone D / Boucle runique. No-op ailleurs.
+  if (typeof drawTemporalFog === 'function') drawTemporalFog(cx, cy, scale);
 
   // 5ter. Poussière ambiante (Immersion E4) — motes flottantes teintées
   // par la tranche d'ambiance. No-op sous reduced-motion / phase statique.
