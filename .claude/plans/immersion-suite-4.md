@@ -284,7 +284,23 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
     à l'entrée de case et **couvre** la vue 3D, donc un éclat sur
     `scene-viewport` serait invisible. **Pas de PR** (anti-doublon / anti-travail
     inutile, guidelines §1-2). Item considéré clos.
+  - ✅ **M1** PNJ qui réagit à l'approche (PR #440) —
+    [`immersion-m1-npc-approach.md`](./immersion-m1-npc-approach.md).
+  - ✅ **K4** comptage animé de l'or (PR #443) —
+    [`immersion-k4-gold-tick.md`](./immersion-k4-gold-tick.md).
+  - ✅ **L3** toast de première découverte de monstre (PR #444) —
+    [`immersion-l3-monster-discovery.md`](./immersion-l3-monster-discovery.md).
+  - ✅ **N2** retour haptique étendu (PR #445) —
+    [`immersion-n2-haptics.md`](./immersion-n2-haptics.md).
+  - 🟰 **M2** motes de premier plan : **abandonné** — `drawDungeonDust` (E4,
+    `dungeon-fx.js`) implémente **déjà** des motes scintillantes teintées par
+    zone, incluant les signatures exactes proposées (or chaud `intro` / violet
+    runique `abyss`). La seule distinction possible (premier plan vs fond) est
+    trop subtile et risquerait de lire comme « plus de poussière ». **Pas de
+    PR** — condition d'abandon explicite du plan (« à abandonner si trop proche
+    d'E4 »), guidelines §1-2.
   - ➕ Hors backlog : correction du test flaky `scenarioRandomLoreNpcs`
-    (idle paginé) rencontré pendant la suite (PR #434).
-  - **Cap K (HUD réactif) terminé** (K1+K2+K3). Restants : **M1** (PNJ réactif,
-    « à cadrer subtil »), optionnels **K4 / L3 / M2 / N2**.
+    (idle paginé, PR #434).
+  - **🏁 Suite 4 CLOSE** : 8 items livrés (K1-K4, L1, L3, M1, N1, N2) ;
+    L2 & M2 clos sans PR (déjà couverts par E3/E4). Toute la priorisation est
+    traitée. Suite complète verte (177 scénarios smoke, 190 units).
