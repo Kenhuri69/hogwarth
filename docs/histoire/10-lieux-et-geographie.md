@@ -42,6 +42,14 @@
 > les **voix des Fondateurs** (murmures dans la pierre). Ces trois signatures
 > **s'intensifient avec la profondeur** : c'est le fil rouge atmosphérique qui
 > relie les fiches ci-dessous.
+>
+> 💡 **Quatrième signature, émergente** : en **zone D** (Ruines Anciennes), la
+> signature « voix » mue en **échos temporels** — la pierre ne murmure plus, elle
+> *rejoue*. Visions du passé, silhouettes des Fondateurs au travail, sons d'un
+> rituel mille fois antérieur : le lieu est si vieux qu'il a cessé de distinguer
+> *jadis* de *maintenant*. C'est la pleine éclosion de la signature « voix »,
+> traitée à part en **[§10.8](#108-échos-temporels--voix-des-fondateurs-zone-c-fin--zone-d)**
+> car elle change de **nature** (de l'audible au visible) plus que d'intensité.
 
 ---
 
@@ -100,15 +108,36 @@ canon** qui gardent la route vers la source.
 
 **« Plus vieux que Poudlard. »** Atteignable **uniquement après la victoire**,
 quand la faille s'est ouverte au lieu de se refermer. Des **ruines runiques**
-antérieures à la fondation de l'école s'étendent sous les Profondeurs : murs,
-sols et plafonds gravés de runes vivantes, ambiance abyssale. Ici, le héros
-n'explore plus le château — il explore **ce qui était là avant lui, avant
-tous**.
+antérieures à la fondation de l'école s'étendent sous les Profondeurs. Ici, le
+héros n'explore plus le château — il explore **ce qui était là avant lui, avant
+tous**. La signature de la zone D est un **basculement de registre** : on passe
+d'un décor *bâti puis corrompu* (A→C) à un décor **qui n'a jamais appartenu aux
+sorciers modernes**.
+
+Quatre marqueurs visuels la signent (à doser crescendo, §10.2) :
+
+- 🪨 **Architecture primitive & mégalithique** : plus de pierre taillée à
+  l'équerre. Des **monolithes** dressés, des **dolmens** noirs, des linteaux
+  trop grands pour une main humaine. Les angles *dérangent* — les proportions
+  obéissent à une géométrie qui n'est pas la nôtre.
+- ✨ **Runes vivantes** : murs, sols et plafonds gravés de runes qui **palpitent**
+  d'une lueur froide et **murmurent** quand on les frôle. Elles ne décorent pas :
+  elles *veillent*. Certaines s'allument au passage du héros comme si elles le
+  **reconnaissaient** (✅ tileset `rune_*`).
+- 🌿 **Racines géantes & cristaux de magie brute** : des **racines** ligneuses
+  épaisses comme des troncs traversent les salles — vestige de ce qui poussait
+  ici avant la roche ; et des **cristaux** affleurants pulsent d'une magie
+  *non raffinée*, antérieure aux baguettes, qui fait grésiller l'air.
+- 🌫️ **Brouillard temporel** : une brume basse, lente, où **le temps ne coule
+  plus droit**. On y croise des **échos** du passé (§10.8) ; un pas en avant
+  peut traverser une scène vieille de mille ans.
 
 - **Ce qu'on y apprend** : la peur scellait quelque chose de **bien plus ancien**
   que Voldemort ; le mythe du héros attire le plus profond
-  ([01 §1.7](01-synopsis-et-pitch.md)).
-- **Créatures** : variantes **Ténébreuses** ([09 §9.10](09-bestiaire-et-lore.md)), boss recyclés.
+  ([01 §1.7](01-synopsis-et-pitch.md)). Les Fondateurs n'ont **pas creusé** les
+  Ruines — ils ont **bâti par-dessus** pour les oublier.
+- **Créatures** : variantes **Ténébreuses** ([09 §9.10](09-bestiaire-et-lore.md)),
+  boss recyclés, **abominations & gardiens runiques** F5 ([09 §9.7](09-bestiaire-et-lore.md)).
 
 ---
 
@@ -359,84 +388,203 @@ tous**.
 - ✅ **Victoire** → cinématique de Dumbledore : *« L'escalier le plus profond,
   scellé par la peur, s'ouvre enfin. »* Bascule en **Boucle Ténébreuse**.
 
-#### Étages 11–13 — Les Profondeurs rejouées (Boucle Ténébreuse) ❄❄❄❄
-> *« Tu as gagné. Pourquoi descends-tu encore ? »*
+#### Étage 11 — Le premier palier de la Boucle ❄❄❄❄
+> *« Tu as gagné. Pourquoi l'escalier descend-il encore ? »*
 
-- 👁️ **Visuel** : la même roche, mais **recouverte de runes** (✅ override
-  post-victoire `rune_*`) — les Profondeurs prennent déjà le **look des Ruines**.
-  Tout est plus sombre, plus dense, plus *gravé*.
+- 👁️ **Visuel** : la même roche que l'étage 7, mais **recouverte de runes** (✅
+  override post-victoire `rune_*`) — les Profondeurs prennent déjà le **look des
+  Ruines**. Tout est plus sombre, plus dense, plus *gravé*. Au seuil, un PNJ
+  spectral monte la garde : le **Gardien de la Boucle**.
 - 🔊 **Sons** : les échos se chargent de **murmures runiques** ; les créatures
-  reviennent, mais leur cri sonne **familier et faux**.
+  reviennent, mais leur cri sonne **familier et faux** — comme un enregistrement
+  rejoué une fois de trop.
 - 👃 **Odeurs** : pierre brûlée et givre ancien ; l'air a un goût de **temps
   arrêté**.
 - 🌡️ **Température** : constante et hostile — le froid de l'endgame, qui ne
-  s'apprivoise pas, seulement se maîtrise.
-- 💔 **Atmosphère** : *vertige du mythe*. La victoire a ouvert, pas fermé.
+  s'apprivoise plus, seulement se maîtrise.
+- 💔 **Atmosphère** : *vertige du mythe*. La victoire a **ouvert**, pas fermé ; le
+  héros-légende ([01 §1.7](01-synopsis-et-pitch.md)) est attiré vers le bas.
 - **Lieux emblématiques** : ⛲ Fontaine (✅ étage 11), **Forge** & **Bibliothèque**
   de la Boucle (Salle sur Demande, §10.5).
-- **Créatures** : recyclage `effectiveFloor` ; densité accrue (gros groupes
-  4-5 possibles en duo post-victoire).
-- **Hooks** : ✅ **Gardien de la Boucle** (ét. 11, PNJ exclusif) → 3 quêtes de
-  purge répétables → matériaux Forge/Biblio. ✅ Paliers de Maison **Mythe (17)**.
+- **Créatures** : recyclage `effectiveFloor` (variantes Ténébreuses) ; densité
+  accrue (gros groupes 4-5 possibles en duo post-victoire).
+- **Hooks** : ✅ **Gardien de la Boucle** (PNJ exclusif post-victoire) → 3 quêtes
+  de purge répétables → matériaux Forge/Biblio ([08](08-quetes-et-sous-intrigues.md)).
+  ✅ Paliers de Maison **Mythe (17)** s'ouvrent ; **don à la Maison** (gold-sink).
+- 💡 **Variante Maison** : 🦅 Serdaigle remarque que les runes d'override **ne sont
+  pas du décor** — elles forment des *phrases* (amorce des pages ténébreuses du
+  Codex). 🐍 Serpentard sent que l'escalier scellé n'a pas cédé : il a été *ouvert
+  de l'intérieur*.
+
+#### Étage 12 — La roche qui se souvient ❄❄❄❄
+> *« Tu as déjà marché ici. Pas toi — quelqu'un, il y a très longtemps. »*
+
+- 👁️ **Visuel** : les runes d'override se densifient ; pour la **première fois**,
+  une **brume basse** stagne au ras du sol, et l'on y aperçoit de **brèves
+  silhouettes** — un **écho temporel** naissant (§10.8) qui retraverse la salle
+  avant de se dissiper. Les murs portent des **empreintes de mains** trop grandes.
+- 🔊 **Sons** : sous le bourdonnement runique, des **fragments de voix** — pas
+  encore des mots, mais déjà un *grain* humain, ancien, qui n'appartient à
+  aucune créature présente.
+- 👃 **Odeurs** : givre ancien, ozone, et une bouffée incongrue — **fumée d'un
+  feu éteint mille ans plus tôt**.
+- 🌡️ **Température** : par **poches** : on traverse des zones où l'air est
+  *plus vieux*, comme entrer dans le froid d'une crypte scellée.
+- 💔 **Atmosphère** : *hantise douce*. Le lieu ne te menace pas encore — il
+  **te confond** avec quelqu'un d'autre.
+- **Lieux emblématiques** : premières **dalles-runes** « originelles » (le même
+  alphabet que les puzzles, mais *vivant*) ; couloirs où la brume temporelle
+  s'accroche.
+- **Créatures** : recyclage Ténébreux ; premiers **Spectres Renforcés** dont le
+  cri se superpose aux échos.
+- **Hooks** : ✅ purges répétables du Gardien. 💡 **Premier écho temporel
+  jouable** (§10.8) : une vision muette d'un Fondateur en train de *graver* —
+  amorce facultative du codex de lieu (§10.9).
+- 💡 **Variante Maison** : 🦡 Poufsouffle perçoit dans la brume une **présence qui
+  ne lui veut pas de mal** (créature neutre du passé) ; 🦁 Gryffondor entend, dans
+  les fragments de voix, un **appel au courage** d'un combattant d'avant.
 
 #### Étage 13 — Le dernier palier du château ❄❄❄❄
 > *« Au prochain pas, la pierre n'aura plus de nom. »*
 
-- 👁️ **Visuel** : les runes saturent les murs jusqu'au plafond ; la frontière
-  du **bâti humain** est visible — au-delà, la roche cède à des **ruines
-  géométriques** impossibles.
+- 👁️ **Visuel** : les runes saturent les murs jusqu'au plafond ; la **frontière
+  du bâti humain** devient visible — au-delà du fond de la salle, la roche taillée
+  cède à des **ruines géométriques impossibles**, des **monolithes** qui percent
+  le plafond. Les échos temporels y sont **plus nombreux et plus nets**.
 - 🔊 **Sons** : le bourdonnement runique culmine ; un **chœur de voix anciennes**
-  affleure, à la limite de l'audible.
+  affleure — les **quatre Fondateurs**, à la limite de l'audible, qui se
+  *répondent* ([09 §9.1](09-bestiaire-et-lore.md)).
 - 👃 **Odeurs** : ozone pur, l'absence d'odeur des grands vides.
-- 🌡️ **Température** : seuil thermique — un **froid solennel**, presque rituel.
+- 🌡️ **Température** : seuil thermique — un **froid solennel**, presque rituel,
+  qui n'est plus celui de la peur mais celui de l'**ancienneté**.
 - 💔 **Atmosphère** : *seuil mythologique*. Le franchissement le plus grave du jeu.
-- **Hooks** : ✅ **Transition 13↔14** (la plus solennelle) — toast dédié proposé :
+- **Lieux emblématiques** : la **ligne de couture** entre roche bâtie et ruine
+  brute ; dernière ⛲ Fontaine avant la zone D (répit *symbolique* : on boit
+  avant de quitter toute trace humaine).
+- **Créatures** : recyclage Ténébreux dense ; gardiens runiques F5 en approche.
+- **Hooks** : ✅ **Transition 13↔14** (la plus solennelle) — toast dédié :
   *« Sous Poudlard, la pierre n'a plus de nom. Tu entres dans ce que l'école fut
-  bâtie pour oublier. »* ([04 §4.5](04-structure-actes-et-etages.md)).
+  bâtie pour oublier. »* ([04 §4.5](04-structure-actes-et-etages.md)). 💡 Dernière
+  occasion d'entendre une voix de Fondateur *en tant qu'humain* — au-delà, elles
+  deviennent **lieu**.
 
 ---
 
 ### 🟥 ZONE D — Ruines Anciennes (étages 14+, Boucle Ténébreuse) · *abyss*
 
-#### Étages 14+ — Avant l'école, avant les Fondateurs ❄❄❄❄+
+> 💡 La zone D se lit en **trois paliers d'intensité croissante** : on entre par
+> le **Seuil mégalithique** (14–16), on s'enfonce dans le **Cœur runique**
+> (17–20, où les boss Ténébreux gardent les voies), puis on atteint l'**Avant-Monde**
+> (21+, magie brute & prestige infini). Le thermomètre ❄ passe à **❄❄❄❄+** et
+> n'a plus de sens *météo* : le froid est devenu l'**état du lieu**.
+
+#### Étages 14–16 — Le Seuil mégalithique ❄❄❄❄+
 > *« Tu n'explores plus un château. Tu explores ce qui était là avant tous. »*
 
-- 👁️ **Visuel** : architecture **runique non-humaine** — angles qui dérangent,
-  **runes vivantes** qui pulsent sur murs, sols et plafonds (✅ tileset `rune_*`).
-  La lumière est froide, bleutée, sans source apparente.
+- 👁️ **Visuel** : l'architecture cesse d'être humaine. **Monolithes** dressés,
+  **dolmens** noirs, linteaux cyclopéens ; des **racines géantes** ligneuses
+  traversent les salles, soulèvent les dalles, **enlacent** les runes. La lumière
+  est froide, bleutée, **sans source** — elle suinte des gravures (✅ tileset
+  `rune_*`). Les **runes palpitent** lentement, comme une respiration.
 - 🔊 **Sons** : un **chant runique** continu, grave, qui semble *commenter* ta
-  présence ; aucun écho de pas — comme si l'espace ne te reconnaissait pas.
-- 👃 **Odeurs** : minéral pur, ozone, et une note **antérieure à toute vie**.
-- 🌡️ **Température** : le froid n'est plus une sensation mais un **état du lieu** —
-  hors-temps, hors-saison.
+  présence ; **aucun écho de pas** — comme si l'espace ne te reconnaissait pas.
+  Les racines **craquent** dans le noir.
+- 👃 **Odeurs** : minéral pur, ozone, sève froide des racines, et une note
+  **antérieure à toute vie**.
+- 🌡️ **Température** : hors-temps, hors-saison. Le brouillard temporel (§10.8)
+  fait alterner des bouffées **glaciales** et des poches d'air *immobile*.
+- 💔 **Atmosphère** : *dépaysement absolu et effroi naissant*. On franchit le seuil
+  d'un lieu **qui n'a jamais appartenu aux sorciers modernes**.
+- **Lieux emblématiques** : le **portail mégalithique** d'entrée (lieu-signature,
+  §10.5) ; les premières **Chambres des Fondateurs** modifiées (§10.5), encore
+  reconnaissables sous la corruption.
+- **Créatures** : ✅ variantes **Ténébreuses** ; premières **abominations &
+  gardiens runiques** F5 ([09 §9.7](09-bestiaire-et-lore.md)).
+- **Hooks** : 💡 **Échos temporels** pleins (§10.8) : on *voit* les Fondateurs
+  bâtir le sceau. 💡 Écho mineur de la **quête signature** de chaque Maison
+  ([07 §7.8](07-les-maisons.md)).
+- 💡 **Variante Maison** : 🦅 Serdaigle **lit** enfin les runes (elles forment la
+  langue-mère du Codex) ; 🐍 Serpentard trouve, derrière un monolithe descellé, un
+  **raccourci** vers l'étage suivant ; 🦁 Gryffondor voit une **flamme** survivre
+  au froid sur un autel ; 🦡 Poufsouffle découvre une **alcôve-refuge** entre deux
+  racines, où une créature neutre veille.
+
+#### Étages 17–20 — Le Cœur runique ❄❄❄❄+
+> *« Ce n'est pas une ruine. C'est une machine, et elle se rallume. »*
+
+- 👁️ **Visuel** : l'apogée du lieu-signature. Des **cristaux de magie brute**
+  affleurent partout, pulsant d'une lueur *non raffinée* qui fait grésiller l'air ;
+  les **runes vivantes** ne palpitent plus, elles **brûlent**. Le brouillard
+  temporel est si épais que des **scènes du passé** se rejouent en pleine salle —
+  on peut **marcher au travers**.
+- 🔊 **Sons** : les **voix des Fondateurs** sont désormais *partout*, non comme
+  des fantômes mais comme une **propriété de la pierre** (§10.8) — elles nomment,
+  avertissent, regrettent. Le chant runique se fend par moments en **quatre
+  timbres** distincts (Godric, Salazar, Rowena, Helga).
+- 👃 **Odeurs** : ozone saturé, **cristal chaud**, et l'absence d'odeur des très
+  grands vides.
+- 🌡️ **Température** : près des cristaux, une **chaleur sèche et fausse** détonne
+  dans le froid — la magie brute ne réchauffe pas, elle *irradie*.
 - 💔 **Atmosphère** : *solennité mythique et effroi*. On regarde ce que le mythe
-  n'osait regarder ([01 §1.7](01-synopsis-et-pitch.md)).
-- **Lieux emblématiques** : Les **Ruines Anciennes** entières (lieu-signature,
-  §10.5) — l'alphabet runique semé dès les premières stèles **y trouve son
-  origine** : promesse visuelle tenue.
-- **Créatures** : ✅ variantes **Ténébreuses** ([09 §9.10](09-bestiaire-et-lore.md)) ;
-  boss 8-10 recyclés en Ténébreux (ét. 18-20).
-- **Hooks** : ✅ paliers de Maison **Apothéose (18)** + série **★ N** (prestige
-  infini) ; **don à la Maison** (gold-sink). 💡 Écho mineur de la quête signature
-  de chaque Maison.
-- ❓ **À trancher** (§10.3) : personnifie-t-on **ce qui dort sous les Ruines** ?
+  n'osait regarder ([01 §1.7](01-synopsis-et-pitch.md)) ; chaque salle est un
+  **caveau de mémoire** des Quatre.
+- **Lieux emblématiques** : les **quatre Chambres des Fondateurs** modifiées
+  (§10.5), une par boss Ténébreux ; les **veines de cristal** qui relient le tout.
+- **Créatures** : ✅ **boss 8–10 recyclés en Ténébreux** (ét. 18–20 :
+  Greyback Ténébreux, Aragog Ténébreux, Dolohov Ténébreux…) ; gardiens runiques F5.
+- **Hooks** : ✅ paliers de Maison **Apothéose (18)** — éveil du **passif légendaire**
+  de Maison. 💡 Chaque Chambre rejoue, en écho, un fragment de la **quête signature**
+  de la Maison correspondante (§10.6).
+- 💡 **Variante Maison** : la Chambre **de sa propre Maison** s'illumine pour le
+  héros — 🦁 brasiers ravivés, 🐍 serrures qui s'ouvrent seules, 🦅 runes qui se
+  *traduisent* d'elles-mêmes, 🦡 refuge tiède au cœur du froid. Les trois autres
+  Chambres restent **hostiles et muettes**.
+
+#### Étages 21+ — L'Avant-Monde ❄❄❄❄+
+> *« Plus bas que les Fondateurs, il n'y a plus de pierre. Seulement ce qui dormait. »*
+
+- 👁️ **Visuel** : la ruine elle-même se **désagrège** en faveur de la **magie
+  brute** : des **cristaux** géants, des **racines-mères** d'où tout semble être
+  parti, un sol qui n'est plus du sol mais de la **lumière froide compactée**. Les
+  runes ont disparu — on est **avant l'écriture**.
+- 🔊 **Sons** : le chant cesse. À sa place, un **battement** lent, énorme,
+  **organique** — comme si le lieu avait un cœur, et qu'il dormait.
+- 👃 **Odeurs** : aucune. Un vide olfactif total, plus inquiétant que n'importe
+  quelle puanteur.
+- 🌡️ **Température** : **indéfinissable** — ni chaude ni froide, *hors de la
+  notion même*. Le corps cesse de savoir où il est dans le temps.
+- 💔 **Atmosphère** : *abîme pur*. La profondeur pour la profondeur — le prestige
+  comme seule raison de continuer.
+- **Lieux emblématiques** : l'**Avant-Monde** (lieu-signature terminal, §10.5) ;
+  le **don à la Maison** y prend des airs de **rituel** plus que de commerce.
+- **Créatures** : ✅ variantes Ténébreuses au plafond de scaling ; abominations F5
+  à leur paroxysme.
+- **Hooks** : ✅ série **Apothéose ★ N** (prestige infini, gold-sink) ; **don à la
+  Maison** ([state.js / house-donation.js]). 💡 Le **codex de lieu** (§10.9) se
+  complète ici : dernières entrées sur *ce qui dort*.
+- ❓ **À trancher** (§10.3) : personnifie-t-on **ce qui dort sous les Ruines** —
+  le « cœur » qui bat à l'étage 21+ — ou reste-t-il une **menace muette** ?
 
 > 💡 **Table de synthèse des fiches** (récap rapide pour briefer / implémenter) :
 
-| Ét. | Zone | Corruption | Signature dominante | Boss / jalon | Éclat / PNJ-clé |
+| Ét. | Zone | Corruption | Signature dominante | Boss / jalon | Éclat / PNJ-clé · variante Maison |
 |----|------|-----------|---------------------|--------------|------------------|
-| 1 | A | ❄ | froid naissant | — (Dumbledore portrait) | amorce `eclats_clef_voute` |
-| 2 | A | ❄ | havre (fontaine) | — | Pomfresh, Mimi |
-| 3 | A | ❄❄ | seuil → bascule | — | **Éclat 1** (Peeves), Lockhart · *transition 3↔4* |
-| 4 | B | ❄❄ | menace humaine | Mangemort Masqué (apparition) | Hagrid, Lupin, Rogue · 🐍 Pacte |
-| 5 | B | ❄❄❄ | répit rare (fontaine) | — | McGonagall, Manon |
+| 1 | A | ❄ | froid naissant | — (Dumbledore portrait) | amorce `eclats_clef_voute` · 🦅 1ʳᵉ stèle / 🦡 1ʳᵉ âme |
+| 2 | A | ❄ | havre (fontaine) | — | Pomfresh, Mimi · 🦡 1ᵉʳ secours |
+| 3 | A | ❄❄ | seuil → bascule | — | **Éclat 1** (Peeves), Lockhart · 🦁 brasiers · *transition 3↔4* |
+| 4 | B | ❄❄ | menace humaine | Mangemort Masqué (apparition) | Hagrid, Lupin, Rogue · 🐍 Pacte / écho Salazar |
+| 5 | B | ❄❄❄ | répit rare (fontaine) | — | McGonagall, Manon · 🐍 raccourcis gris / 🦁 marques de bataille |
 | 6 | B | ❄❄❄ | fin du bâti scolaire | (Détraqueurs) | **Éclat 2** (Loup-Garou Adulte), Flitwick, Lux Aeterna · *transition 6↔7* |
 | 7 | C | ❄❄❄ | cavernes, dépaysement | — | Fumseck · **Éclat 3** (Mangemort d'Élite) |
-| 8 | C | ❄❄❄❄ | seuil runique | Greyback, Veilleur, Voldemort Affaibli | Kingsley · stèle `r_clef_voute` |
-| 9 | C | ❄❄❄❄ | prédation arachnéenne | Aragog | Bill Weasley |
-| 10 | C | ❄❄❄❄ | **CLIMAX** | **Voldemort Ressuscité** | Sirius · *victoire → Boucle* |
-| 11-13 | C | ❄❄❄❄ | Profondeurs rejouées | recyclage Ténébreux | Gardien de la Boucle · Forge/Biblio |
-| 14+ | D | ❄❄❄❄+ | mythe & solennité | boss Ténébreux (18-20) | Apothéose ★ N · don à la Maison |
+| 8 | C | ❄❄❄❄ | seuil runique | Greyback, Veilleur, Voldemort Affaibli | Kingsley · stèle `r_clef_voute` · 🦅 lit les runes / 🐍 main de Salazar |
+| 9 | C | ❄❄❄❄ | prédation arachnéenne | Aragog | Bill Weasley · 🦡 avant-dernière âme |
+| 10 | C | ❄❄❄❄ | **CLIMAX** | **Voldemort Ressuscité** | Sirius · modif. signature one-shot · *victoire → Boucle* |
+| 11 | C | ❄❄❄❄ | Boucle, runes naissantes | recyclage Ténébreux | Gardien de la Boucle · Forge/Biblio · 🦅 runes = phrases |
+| 12 | C | ❄❄❄❄ | roche qui se souvient | recyclage Ténébreux | **1ᵉʳ écho temporel** · 🦡 présence neutre / 🦁 appel au courage |
+| 13 | C | ❄❄❄❄ | seuil mythologique | gardiens F5 en approche | chœur des Fondateurs · *transition 13↔14 solennelle* |
+| 14-16 | D | ❄❄❄❄+ | seuil mégalithique | abominations F5 | échos Fondateurs · 🦅 langue-mère / 🐍 raccourci / 🦁 flamme / 🦡 refuge |
+| 17-20 | D | ❄❄❄❄+ | cœur runique | **boss Ténébreux** (18-20) | Apothéose (18) · Chambres des Fondateurs · variante Maison forte |
+| 21+ | D | ❄❄❄❄+ | Avant-Monde, magie brute | abominations (plafond) | Apothéose ★ N · don à la Maison · codex de lieu |
 
 ---
 
@@ -541,6 +689,53 @@ Forêt explique les Acromantules et centaures (zone B/C), les Égouts relient le
 douves (Kappa, Strangulot) à la Chambre des Secrets. Servent à **justifier**
 géographiquement le bestiaire aquatique/arachnéen.
 
+### 💡 Lieux spéciaux **récurrents** (fil rouge vertical)
+
+> Au-delà des lieux nommés ponctuels, trois motifs **réapparaissent** d'une zone
+> à l'autre en se **dégradant** — c'est leur transformation qui raconte la
+> descente. Ils sont le **fil rouge architectural** du chapitre.
+
+#### Le Grand Escalier corrompu
+Le motif central du château canon — l'escalier qui bouge — revisité comme
+**baromètre de corruption**. 💡 Présent à chaque zone, mais altéré crescendo :
+- **Zone A** : les marches ✅ **figées vers le bas** (elles ne montent plus —
+  premier signe que la corruption *appelle* en profondeur).
+- **Zone B** : des volées **manquantes**, des paliers suspendus dans le vide,
+  un givre qui rend la pierre glissante.
+- **Zone C** : l'escalier devient **organique** — il *descend tout seul*, comme
+  aspiré ; les rampes sont des **racines**.
+- **Zone D** : il n'y a plus d'escalier, seulement une **chute douce** où le
+  brouillard temporel (§10.8) fait *flotter* — on tombe vers le passé.
+
+💡 Support idéal d'un **étage-scène** de transition (§10.7) : le Grand Escalier
+comme **seuil rejoué** à chaque frontière de zone.
+
+#### Les Chambres des Fondateurs (modifiées)
+💡 Quatre **caveaux de mémoire**, un par Fondateur, semés dans la zone D
+(étages 17–20, §10.2). Chacun est la **chambre originelle** où un Fondateur a
+posé sa part du sceau de la Clé de Voûte — désormais **corrompue** et gardée par
+le **boss Ténébreux** correspondant :
+
+| Chambre | Fondateur | Boss-gardien Ténébreux | Écho de quête signature | Variante Maison |
+|---------|-----------|------------------------|--------------------------|-----------------|
+| 🦁 **Chambre du Lion** | Godric | (boss 18-20 recyclé) | *L'Étendard de Godric* ([08 §8.5](08-quetes-et-sous-intrigues.md)) | brasiers ravivés pour le héros Gryffondor |
+| 🐍 **Chambre du Serpent** | Salazar | (boss 18-20 recyclé) | *Le Pacte des Cachots* | serrures qui s'ouvrent seules |
+| 🦅 **Chambre de l'Aigle** | Rowena | (boss 18-20 recyclé) | *Le Codex de Rowena* | runes qui se traduisent d'elles-mêmes |
+| 🦡 **Chambre du Blaireau** | Helga | (boss 18-20 recyclé) | *Le Refuge de Helga* | alcôve tiède au cœur du froid |
+
+> 💡 **Règle d'illumination** : seule la Chambre de la **Maison du héros**
+> (`chosenHouse`) s'**illumine et l'accueille** ; les trois autres restent
+> **hostiles et muettes**. C'est la récompense atmosphérique du choix de Maison
+> en endgame — cosmétique, mais forte (§10.6). Les Chambres rejouent en **écho
+> temporel** (§10.8) un fragment de la quête signature correspondante.
+
+#### Le Refuge errant (Salle sur Demande dégradée)
+💡 La Salle sur Demande, mais **affamée** : en zone C/D, elle n'offre plus *ce
+qu'on veut* — elle offre **ce qui reste**. Tantôt fontaine tarie, tantôt forge
+froide, tantôt bibliothèque aux pages effacées. Support narratif du basculement
+**survie → maîtrise** (§10.4) : le château *essaie* encore d'aider, mais s'épuise.
+Ancrage 🦡 Poufsouffle (les Refuges temporaires, [08](08-quetes-et-sous-intrigues.md)).
+
 ---
 
 ## 10.6 Variantes par Maison & héros — la même descente, vécue autrement
@@ -565,6 +760,68 @@ au joueur l'illusion forte que « ma Maison change ce que je vois ».
 > carte générée — la promesse procédurale reste intacte. Cohérent avec les
 > **quêtes signature** ([07 §7.8](07-les-maisons.md)) qui, elles, posent du
 > contenu réel sans brancher l'arc.
+
+### Le détail de chaque Maison — perceptions, hooks & escalade
+
+> 💡 Chaque Maison a un **registre sensoriel** propre qui **s'intensifie** avec la
+> descente. La ligne cosmétique (`houseAmbianceLine`) puise dans ce registre, et
+> le registre *monte d'un cran* par zone (A→D). Objectif : que le joueur Serpentard
+> et le joueur Poufsouffle ne **lisent pas le même donjon**, même en marchant
+> dedans côte à côte.
+
+#### 🐍 Serpentard — *Les murs qui s'ouvrent*
+Registre : **secrets, raccourcis, murmures manipulateurs** (écho de Salazar).
+- **Perçoit** : pierres descellées, serrures cachées, **passages secrets** que
+  d'autres n'ont pas vus. Beaucoup plus de **murs qui pivotent**, de raccourcis
+  *ambigus* (gagne-t-on du temps, ou descend-on trop vite ?).
+- **Entend** : des **murmures qui flattent et poussent** — *« par ici, plus
+  vite, tu le mérites »*. La voix de l'écho de Salazar le tutoie.
+- **Escalade** : A « une pierre a bougé » → B « raccourcis gris descellés » → C
+  « la main de Salazar dans les verrous » → D « les monolithes s'écartent pour
+  toi seul ».
+- **Hook fort** : *Le Pacte des Cachots* ([08 §8.5](08-quetes-et-sous-intrigues.md)) ;
+  Chambre du Serpent (§10.5) ; 💡 *flavor `secret`* — ligne d'ambiance + (V2)
+  biais possible vers +densité de passages/coffres.
+
+#### 🦁 Gryffondor — *La lumière qui tient*
+Registre : **héroïsme, courage, lumière contre le froid**.
+- **Perçoit** : **marques de bataille**, positions à tenir, lieux où quelqu'un a
+  **refusé de fuir**. Les zones de combat lui paraissent plus **héroïques** —
+  arènes naturelles, lignes de front.
+- **Entend** : des **appels au courage** dans les fragments de voix ; une flamme
+  qui crépite *plus fort* quand le froid voudrait l'éteindre.
+- **Voit la lumière résister** : torches, brasiers et autels gardent une lueur
+  chaude là où la corruption l'a éteinte ailleurs — **la lumière qui tient**.
+- **Escalade** : A « brasiers du Lion » → B « on a tenu ici » → C « tenir la
+  ligne face aux Détraqueurs » → D « une flamme survit au froid sur l'autel ».
+- **Hook fort** : *L'Étendard de Godric* (anti-`fear`) ; Chambre du Lion ;
+  💡 *flavor `valor`* — (V2) biais possible vers +cellules de combat.
+
+#### 🦅 Serdaigle — *Ce qui veut être lu*
+Registre : **énigmes, runes intelligibles, bibliothèques oubliées**.
+- **Perçoit** : **glyphes**, stèles, détails qui *signifient*. Rencontre
+  **plus d'énigmes** (stèles, dalles-runes) ; les runes qui restent muettes pour
+  les autres lui deviennent **intelligibles**.
+- **Découvre** : des **bibliothèques oubliées** — recoins de savoir, feuillets du
+  Codex, rayonnages effacés que lui seul songe à fouiller.
+- **Escalade** : A « 1ʳᵉ stèle du Codex » → B « feuillets dispersés » → C « lit
+  les runes du Veilleur » → D « la langue-mère se traduit d'elle-même ».
+- **Hook fort** : *Le Codex de Rowena* (révèle resist/weak) ; Chambre de l'Aigle ;
+  💡 *flavor `lore`* — (V2) biais possible vers +stèles.
+
+#### 🦡 Poufsouffle — *Là où l'on survit*
+Registre : **refuges temporaires, créatures neutres, résilience**.
+- **Perçoit** : **recoins abrités**, âmes à secourir, endroits où **reprendre
+  souffle ensemble**. Trouve des **zones-refuge** temporaires que la carte ne
+  promet pas.
+- **Rencontre l'aide** : des **créatures neutres** du lieu (bowtruckles,
+  présences du passé non hostiles) qui *veillent* ou guident plutôt que d'attaquer.
+- **Ressent la résilience** : même au plus froid, une atmosphère de *« quelqu'un
+  pourrait survivre ici »* — la corruption n'a pas tout pris.
+- **Escalade** : A « une voix faible appelle à l'aide » → B « 1ᵉʳ secours » → C
+  « avant-dernière âme du Refuge » → D « une alcôve tiède entre deux racines ».
+- **Hook fort** : *Le Refuge de Helga* (regen/résilience) ; Chambre du Blaireau ;
+  💡 *flavor `refuge`* — (V2) biais possible vers +fontaines/refuges.
 
 > ❓ **À arbitrer (V2)** : veut-on que la Maison **biaise la génération**
 > (Serpentard → +densité de coffres/passages ; Gryffondor → +cellules de combat ;
@@ -627,6 +884,109 @@ d'implémentation (Étape 2), à risque nul (fallback conservé).
 
 ---
 
+## 10.8 Échos temporels & voix des Fondateurs (zone C fin → zone D)
+
+> 💡 (proposition de signature endgame) — pleine éclosion de la signature
+> **« voix »** (§10.0), qui change de **nature** en profondeur.
+
+En surface, la corruption *murmure* (portraits, stèles). En profondeur, elle
+**rejoue** : le lieu est si ancien qu'il a cessé de distinguer *jadis* de
+*maintenant*. Ce sont les **échos temporels** — des fragments de passé qui se
+matérialisent dans la salle. Ils sont l'**outil narratif principal** de la zone D
+pour livrer le lore des Fondateurs **sans PNJ vivant**.
+
+### Trois registres d'écho (intensité croissante)
+
+| Registre | Où | Forme | Rôle narratif |
+|----------|-----|-------|----------------|
+| 🔈 **Murmure** | A–C | voix off, texte d'ambiance, stèle (`r_clef_voute`) | *On entend.* Avertissement, lore voilé. |
+| 👤 **Silhouette** | C fin (12-13) → D | brève figure dans le brouillard temporel, muette | *On aperçoit.* Premier contact visuel avec le passé. |
+| 🎞️ **Scène rejouée** | D (14+) | vision traversable d'un moment des Fondateurs | *On marche dedans.* Révélation : comment le sceau fut posé. |
+
+### Les quatre voix (zone D)
+
+💡 Au cœur runique (17–20, §10.2), le chant se fend en **quatre timbres** — un par
+Fondateur, cohérents avec leur quête signature ([08 §8.5](08-quetes-et-sous-intrigues.md)) :
+
+- 🦁 **Godric** — *« On ne scelle pas par peur. On tient la porte. »* (courage)
+- 🐍 **Salazar** — *« J'ai scellé ma part **avec** ma faute. »* (ambivalence,
+  révélation : un Fondateur scellé *avec* la corruption qu'il aida à enfermer).
+- 🦅 **Rowena** — *« Comprends, et la faille apparaît. »* (savoir = faiblesse révélée).
+- 🦡 **Helga** — *« J'ai creusé un abri pour ceux qui resteraient. »* (refuge,
+  résilience).
+
+> 💡 **Garde-fou de cohérence** : les échos **ne contredisent jamais** le canon
+> établi (le sceau = œuvre des Quatre ; Voldemort = dernière serrure, pas le fond,
+> [01 §1.6](01-synopsis-et-pitch.md)). Ils **montrent** ce que les chapitres 03/08
+> *racontent*. La voix de la **Maison du héros** est la plus claire et bienveillante ;
+> les trois autres restent plus distantes — miroir de la **règle d'illumination**
+> des Chambres (§10.5).
+
+### Ancrages mécaniques (✅ existants / 💡 proposés)
+
+- ✅ **Stèle de la Clé** (`r_clef_voute`, `riddles.js`) : déjà le vecteur canon de
+  la voix des Fondateurs.
+- ✅ **Override `rune_*`** post-victoire : déjà le **terrain visuel** des échos
+  (runes vivantes). Le brouillard temporel s'y greffe naturellement.
+- 💡 **Flag `temporalEchoActive`** (dérivé, non sérialisé) : vrai en zone C fin /
+  zone D, pilote l'apparition des silhouettes/scènes. Détail technique : plan
+  Étape 2.
+- 💡 **Codex de lieu** (§10.9) : chaque écho *vu* déverrouille une entrée — le
+  joueur **collectionne** la mémoire du lieu.
+
+---
+
+## 10.9 Règles d'ajout / modification de lieux
+
+> 💡 Procédure normative pour étendre ce chapitre **sans casser la cohérence**.
+> À dérouler pour tout nouveau lieu, étage-scène ou variante.
+
+### Check-list « nouveau lieu / étage »
+
+1. ✅ **Zone & thème d'abord** : déterminer la **tranche** (A/B/C/D) →
+   `getFloorTheme(floor)` doit déjà couvrir l'étage (`floor-themes.js`). Aucun
+   lieu ne doit contredire le tileset/ambiance de sa zone.
+2. ✅ **Thermomètre de corruption** : fixer le niveau ❄→❄❄❄❄+ — il **ne redescend
+   jamais** (un lieu plus profond est ≥ au précédent).
+3. ✅ **Trois signatures** : décrire **froid**, **peur**, **voix** au niveau de la
+   zone (en D, la « voix » devient **écho temporel**, §10.8).
+4. ✅ **Bloc sensoriel 5 axes** obligatoire : 👁️ visuel · 🔊 son · 👃 odeur ·
+   🌡️ température · 💔 atmosphère. C'est le **gabarit de fiche** (§10.2).
+5. ✅ **Ancrages de jeu** : lister créatures (renvoi [09](09-bestiaire-et-lore.md)),
+   PNJ ([06](06-pnj-et-factions.md)), hooks de quête/Éclats ([08](08-quetes-et-sous-intrigues.md)).
+   Distinguer ✅ (acté) de 💡 (proposé).
+6. ✅ **Variante Maison** : fournir au moins **une** perception par Maison
+   concernée, puisant dans son **registre** (§10.6). Cosmétique par défaut.
+7. ✅ **Cohérence verticale** : un lieu doit respecter *« descendre = remonter le
+   temps »* (§10.3). Plus profond = plus ancien, jamais l'inverse.
+8. ✅ **Lien procédural** : préciser si c'est une **ambiance** (distribuée par
+   génération, défaut) ou un **étage-scène** garanti (§10.7) — ces derniers sont
+   **rares et arbitrés** (ne pas multiplier sans accord produit).
+
+### Garde-fous de cohérence (à ne pas violer)
+
+- ❌ **Pas de retour de chaleur/sécurité durable** en profondeur (sauf fontaine,
+  qui *se tarit*, et Refuge errant qui *s'épuise*, §10.4/§10.5).
+- ❌ **Pas de contradiction du canon du sceau** (œuvre des Quatre ; Voldemort =
+  dernière serrure ; Ruines antérieures aux Fondateurs).
+- ❌ **Pas de génération biaisée par Maison en V1** (variantes = cosmétiques ;
+  le biais procédural est un ❓ V2, §10.6).
+- ✅ **Renvoyer aux sources** : tout nouvel ancrage cite le chapitre canon
+  (03/04/06/07/08/09) — ce chapitre **décrit le décor**, il ne crée pas de canon
+  mécanique seul.
+
+### Où écrire quoi
+
+| Type d'ajout | Section cible | Impact code (renvoi Étape 2) |
+|--------------|---------------|-------------------------------|
+| Nouvelle fiche d'étage | §10.2 | `ZONE_AMBIANCE` (phrases zonées) |
+| Lieu nommé / signature | §10.5 | `LOCATIONS` (étiquette) |
+| Variante de Maison | §10.6 | `HOUSE_AMBIANCE_MOD` |
+| Écho temporel / voix | §10.8 | flag `temporalEchoActive`, codex de lieu |
+| Mobilier d'ambiance | §10.4 | `CELL.*` + sprite renderer |
+
+---
+
 ## Récapitulatif express (pour briefer Gemini)
 > 4 zones verticales = 4 strates de mémoire : **A Couloirs** (l'école qui a
 > peur) → **B Cachots** (la corruption a des serviteurs humains) → **C
@@ -634,18 +994,29 @@ d'implémentation (Étape 2), à risque nul (fallback conservé).
 > **D Ruines Anciennes** (plus vieilles que la fondation, ouvertes par la
 > victoire). **Descendre = remonter le temps.** Chaque palier a sa **fiche
 > sensorielle** (§10.2 : visuel/son/odeur/température/émotion) et son
-> **thermomètre de corruption** ❄→❄❄❄❄ qui monte sans redescendre. Trois
-> signatures montantes : **froid**, **peur**, **voix des Fondateurs**.
-> Lieux-signatures : Chambre des Secrets, Salle sur Demande, Seuil du Veilleur,
-> Ruines runiques. Le mobilier raconte : fontaine = sanctuaire, autel = pacte,
+> **thermomètre de corruption** ❄→❄❄❄❄+ qui monte sans redescendre. Trois
+> signatures montantes : **froid**, **peur**, **voix des Fondateurs** — cette
+> dernière éclôt en **échos temporels** (§10.8 : visions du passé, 4 voix des
+> Fondateurs) en zone D. La **zone D** (14+) est désormais détaillée en trois
+> paliers — **Seuil mégalithique** (14-16 : monolithes, racines géantes), **Cœur
+> runique** (17-20 : runes vivantes, cristaux de magie brute, Chambres des
+> Fondateurs), **Avant-Monde** (21+ : magie brute, ce qui dort). **Descendre =
+> remonter le temps.** Lieux-signatures : Chambre des Secrets, Salle sur Demande,
+> Seuil du Veilleur, Ruines runiques, **Grand Escalier corrompu** & **Chambres des
+> Fondateurs** (§10.5). Le mobilier raconte : fontaine = sanctuaire, autel = pacte,
 > stèle/runes = savoir gardé, forge/bibliothèque = l'endgame qui s'outille. Les
-> **variantes de Maison/héros** (§10.6) recolorent la *même* carte (cosmétique),
-> et un **niveau de corruption** d'ambiance fait *ressentir* la descente.
+> **variantes de Maison/héros** (§10.6) recolorent la *même* carte (cosmétique,
+> registre distinct par Maison qui escalade A→D), et un **niveau de corruption**
+> d'ambiance fait *ressentir* la descente.
 
 ## Points à trancher (résumé)
-1. Personnifie-t-on **ce qui dort sous les Ruines Anciennes** (§10.3) ?
+1. Personnifie-t-on **ce qui dort sous les Ruines Anciennes** — le « cœur » qui
+   bat à l'étage 21+ (§10.3, §10.2) ?
 2. Combien d'**étages-jalons non procéduraux** garantis (§10.7) ?
 3. Les variantes de Maison restent-elles **cosmétiques** ou **biaisent-elles la
    génération** (§10.6, V2) ?
 4. Adopte-t-on le **niveau de corruption** d'ambiance + les **phrases zonées**
    (§10.6, §10.7 — spéc Étape 2) ?
+5. Implémente-t-on les **échos temporels** (silhouettes/scènes rejouées) et le
+   **codex de lieu** (§10.8, §10.9), ou la zone D reste-t-elle **textuelle**
+   (phrases d'ambiance seules) ?

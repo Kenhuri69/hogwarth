@@ -234,3 +234,185 @@ function houseAmbianceLine(chosenHouse) { return HOUSE_AMBIANCE_MOD[chosenHouse]
 - Loader MANIFEST : 4 nouvelles entrées (ZONE_AMBIANCE, getFloorAmbiance, corruptionLevel, houseAmbianceLine).
 - Cache PWA : CACHE_VERSION -> hogwarth-v78, 5 assets bumpés + 2 nouveaux dans PRECACHE_URLS.
 - tests/units.js : 40 assertions ajoutées (section 5).
+
+---
+
+## Étape 3 — Enrichissement Zone D & échos temporels (Chapitre 10, 2026-06-09)
+
+**Branche :** `claude/hogwarth-chapter-10-locations-qgi1wa`
+**Statut :** 🟩 Étape 1 (rédaction chapitre 10 enrichi) livrée · Étape 2 (ce plan) spécifiée.
+**Nature :** Étape 1 = **documentaire** (Markdown `docs/histoire/10`). Cette section
+spécifie l'implémentation technique des nouveaux systèmes décrits au chapitre. Tant
+qu'on ne touche aucun JS/CSS servi → **pas de bump cache PWA** ; le bump devient
+obligatoire au moment de l'implémentation réelle (P-D2/P-D4 ci-dessous).
+
+### Contexte — ce qui a été enrichi côté narratif (Étape 1)
+
+| Manque corrigé | Section ch.10 |
+|----------------|----------------|
+| Zone D détaillée en 3 paliers (Seuil mégalithique 14-16 / Cœur runique 17-20 / Avant-Monde 21+) | §10.1, §10.2 |
+| Étages 11-13 éclatés en fiches granulaires (Boucle, roche qui se souvient, seuil) | §10.2 |
+| Échos temporels & 4 voix des Fondateurs (signature endgame) | §10.0, §10.8 |
+| Lieux récurrents : Grand Escalier corrompu, Chambres des Fondateurs, Refuge errant | §10.5 |
+| Variantes Maison distinctes + escalade A→D + grain héros | §10.6 |
+| Règles normatives d'ajout de lieux | §10.9 |
+
+### Structure de données proposée (💡)
+
+#### B.4 — Enrichir `ZONE_AMBIANCE.ancient` (P-D1, priorité 1, risque nul)
+
+La zone D du module `floor-ambiance.js` a aujourd'hui **6 phrases** plates. La
+spliter par **palier** pour coller aux 3 sous-zones du chapitre, sans casser l'API :
+
+```js
+// js/floor-ambiance.js — ancient devient un sélecteur par palier
+ancient: {
+  // résolu par getFloorAmbiance via un sous-palier dérivé de floor
+  tiers: {
+    megalith: { floors:[14,16], floorLines:[ "Des monolithes percent le plafond ; des racines géantes soulèvent les dalles.", … ] },
+    runic:    { floors:[17,20], floorLines:[ "Les cristaux de magie brute grésillent ; les runes ne palpitent plus, elles brûlent.", … ] },
+    before:   { floors:[21,Infinity], floorLines:[ "Plus de runes. On est avant l'écriture. Un battement lent, énorme, dort sous le sol.", … ] },
+  },
+  smell:["minéral pur","ozone","sève froide des racines","cristal chaud","une note antérieure à toute vie"],
+  sound:["chant runique grave","craquement de racines","voix anciennes à la limite de l'audible","un battement organique"],
+  temp:"surnaturelle",
+}
+```
+
+- **Pur, fallback conservé** : si `tiers` absent ou floor hors borne → retombe sur
+  `floorLines` à plat (back-compat). Testable `tests/units.js`.
+- `getFloorAmbiance(floor)` étendu : pour la zone `ancient`, choisit le sous-palier
+  par `floor`. Reste **pur**.
+
+#### B.5 — Échos temporels (P-D3, priorité 2)
+
+```js
+// floor-ambiance.js — pur, dérivé (PAS de sérialisation)
+function temporalEchoActive(floor, victoryAchieved) {
+  // silhouettes dès la fin de zone C en Boucle ; scènes pleines en zone D
+  return !!victoryAchieved && floor >= 12;
+}
+function temporalEchoTier(floor) {           // 'silhouette' | 'scene' | null
+  if (floor >= 14) return 'scene';
+  if (floor >= 12) return 'silhouette';
+  return null;
+}
+// FOUNDER_VOICES : 4 timbres (zone D 17+), clé = Maison
+const FOUNDER_VOICES = {
+  Gryffondor:  ["On ne scelle pas par peur. On tient la porte."],
+  Serpentard:  ["J'ai scellé ma part avec ma faute."],
+  Serdaigle:   ["Comprends, et la faille apparaît."],
+  Poufsouffle: ["J'ai creusé un abri pour ceux qui resteraient."],
+};
+// echoLine(floor, victoryAchieved, chosenHouse) → ligne d'écho contextuelle ou null
+//   - voix de la Maison du héros priorisée (plus claire), cf. règle d'illumination §10.5
+```
+
+- **Aucun nouvel état persistant** : tout dérive de `currentFloor`/`victoryAchieved`/
+  `chosenHouse` (déjà persistés). Zéro migration de save.
+- **Rendu V1 = textuel** : l'écho s'affiche comme une **ligne d'ambiance spéciale**
+  (préfixe `🎞️`/`👤`) injectée par `movement.js` à l'entrée de cellule, en plus de
+  la phrase zonée. Pas de sprite requis pour la V1 (défensif, faible coût).
+- **Rendu V2 (optionnel)** : silhouette = sprite fantôme semi-transparent réutilisant
+  `drawGhostSprite` (renderer-entities.js) ; scène = particules de brouillard
+  (cf. P-D4).
+
+#### B.6 — Codex de lieu (P-D5, priorité 3)
+
+Journal de déverrouillage de la mémoire du lieu (analogie : bestiaire `seenMonsters`).
+
+```js
+// state.js — nouvel état SÉRIALISÉ (set d'IDs d'échos vus)
+let seenEchoes = new Set();   // 'echo_godric', 'echo_seal_megalith', …
+// déverrouillage à l'affichage d'un écho (movement.js)
+// affichage : onglet/section dans la modale Codex existante (12-glossaire-et-codex)
+```
+
+- **Sérialisation** : `Array.from(seenEchoes)` dans `_serializeState`/`_applyState`
+  (`save.js`), exactement comme `seenMonsters`/`usedFountains`.
+- **UI** : réutiliser la modale Codex/Bestiaire (pas de nouvelle modale) — onglet
+  « Mémoire des Ruines ». Entrée verrouillée = silhouette grisée + *« Écho non
+  encore perçu »*.
+
+### Variables & flags (récap)
+
+| Variable | Lieu | Persisté ? | Rôle |
+|----------|------|-----------|------|
+| `currentFloor` | state.js | ✅ oui | base de toute dérivation |
+| `victoryAchieved` | state.js | ✅ oui | gate Boucle/zone D |
+| `chosenHouse` | state.js | ✅ oui | variante Maison + voix de Fondateur priorisée |
+| `corruptionLevel(f,v)` | floor-ambiance.js | dérivé | intensité givre/fog/voix (✅ livré Étape 2) |
+| `houseAmbianceLine(h)` | floor-ambiance.js | dérivé | ligne cosmétique Maison (✅ livré) |
+| `temporalEchoActive(f,v)` | floor-ambiance.js | dérivé | 💡 active les échos |
+| `temporalEchoTier(f)` | floor-ambiance.js | dérivé | 💡 silhouette vs scène |
+| `seenEchoes` | state.js | 💡 à ajouter | codex de lieu (set) |
+
+> **houseLocationModifier** (terme du brief) = `HOUSE_AMBIANCE_MOD[chosenHouse]`
+> (déjà en place) + son `flavor` (`secret`/`valor`/`lore`/`refuge`). En V2, ce flavor
+> pourrait piloter un biais de génération `dungeon.js` (❓ ch.10 §10.6) — hors-scope V1.
+
+### Intégration procédurale & ambiance
+
+- **Point d'injection unique** (inchangé) : le rendu d'ambiance de cellule vide dans
+  `movement.js`. On y appelle déjà `getFloorAmbiance` + `houseAmbianceLine` ; on
+  **ajoute** un appel conditionnel `echoLine(...)` quand `temporalEchoActive`.
+  **Surgical** : un seul call-site, tout défensif (`typeof === 'function'`).
+- **Génération (`dungeon.js`)** : **aucun changement V1**. Les Chambres des Fondateurs
+  et le Grand Escalier corrompu sont des **lieux-ambiance** (étiquettes `LOCATIONS` +
+  phrases), pas des cellules spéciales — promesse procédurale intacte. Un éventuel
+  étage-scène (Chambre de la Maison à l'étage 17-20) = P5/arbitrage (dict
+  `FLOOR_SCRIPTED_BEATS`, déjà esquissé §C).
+
+### Système audiovisuel (💡 ajouts au-delà d'Étape 2)
+
+| Couche | Existant ✅ | Ajout proposé pour zone D |
+|--------|-------------|----------------------------|
+| Fog 3D | indexé `corruptionLevel` (✅) | teinte **bleu glacé** plafonnée à corruption ≥ 1.0 (zone D) |
+| Givre CSS | `#frost-overlay` (✅) | **pic** lors d'un écho temporel (flash bref de l'overlay) |
+| **Runes vivantes (FX)** | tileset `rune_*` (✅) | 💡 **pulsation** : modulation d'alpha des gravures (renderer-effects, sin(temps)) — « palpitent » du chapitre |
+| **Brouillard temporel (FX)** | — | 💡 particules basses semi-transparentes (canvas, réutilise la logique torch-glow) ou overlay CSS dédié zone D |
+| Audio | `_zoneKeyForFloor` lit `abyss` (✅) | 💡 superposer les 4 timbres de Fondateur (samples voix existants ? sinon synthèse) au cœur runique |
+
+### Intégration bestiaire / quêtes / Éclats (cohérence)
+
+- **Bestiaire** : zone D = variantes Ténébreuses + F5 ([09 §9.7/9.10](../../docs/histoire/09-bestiaire-et-lore.md)) — déjà couvert par `effectiveFloor`/`scaleMonster`. Rien à câbler.
+- **Quêtes** : Chambres des Fondateurs rejouent un **écho** de la quête signature
+  ([08 §8.5](../../docs/histoire/08-quetes-et-sous-intrigues.md)). V1 = ligne d'écho ;
+  pas de nouvelle quête.
+- **Éclats** : le fil rouge `eclats_clef_voute` (jalons Peeves/Loup/Mangemort Élite)
+  est **antérieur** à la zone D (étages 3/6/7) — inchangé. Les échos de zone D
+  *expliquent* visuellement ce que les Éclats *racontent* (le sceau des Quatre).
+
+### Priorisation (commencer par les étages manquants 11-14, puis variantes)
+
+1. **P-D1 — Phrases zonées par palier `ancient`** (B.4) : couvre 14-16/17-20/21+.
+   Risque nul, testable. **À faire en premier** (répond au manque #1 du brief).
+2. **P-D3 — Échos temporels textuels** (B.5) : silhouettes (12-13) + scènes +
+   4 voix (17+). Cosmétique, dérivé, défensif.
+3. **P-D2 — Variantes Maison escaladées** : enrichir `HOUSE_AMBIANCE_MOD` avec des
+   variantes **par zone** (registre qui monte A→D, §10.6). Touche JS → bump cache.
+4. **P-D5 — Codex de lieu** (B.6) : `seenEchoes` + onglet Codex. Sérialisé.
+5. **P-D4 (optionnel) — FX runes pulsées + brouillard temporel** : visuel, plus gros,
+   à isoler. Touche renderer + CSS → bump cache.
+6. **P5 (❓) — Étage-scène Chambre de Maison** : arbitrage produit (promesse procédurale).
+
+### Assets suggérés
+
+- **Texte** (réutilisable tel quel depuis ch.10 §10.2) : ~6 phrases/palier zone D ×3
+  paliers + 4 voix de Fondateur + lignes d'écho silhouette/scène + escalade Maison
+  (4 lignes × 4 zones).
+- **Visuel** : `rune-pulse` (CSS/canvas, pas d'image) ; `#temporal-fog-overlay`
+  (overlay CSS zone D) ; option silhouette = réutilise `drawGhostSprite`.
+- **Audio** : sample `abyss` (✅ réservé) ; 4 voix de Fondateur (idéalement OGG
+  `audio/voice/founder_<house>.ogg`, fallback synthèse FR via `speakBark`).
+
+### Tests & garde-fous (au moment de l'implémentation)
+
+- `tests/units.js` : cas purs `getFloorAmbiance` (palier ancient correct par
+  frontière 14/17/21), `temporalEchoActive`/`temporalEchoTier` (gates), `echoLine`
+  (voix Maison priorisée, null hors zone).
+- `tests/smoke.js` : scénario zone D — entrer étages 14/17/21, vérifier phrase de
+  palier distincte + (si Boucle) ligne d'écho ; vérifier déverrouillage `seenEchoes`.
+- **Cache PWA** : P-D2/P-D4/P-D5 touchent JS/CSS → skill `cache-bump` + MANIFEST
+  loader (`temporalEchoActive`, `temporalEchoTier`, `FOUNDER_VOICES`, `seenEchoes`)
+  + `check_cache_versions.js`.
