@@ -1256,4 +1256,83 @@ async function scenarioHerbEconomy() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy] };
+// Potions AOE (flacons à dispersion) + usage de potions par les ennemis.
+// Cf. .claude/plans/reliquats-backlog.md §1.1.
+async function scenarioPotionAoeAndEnemyUse() {
+  console.log('\n── Scénario : potions AOE + potions ennemies ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 — données des flacons AOE.
+  const t1 = await page.evaluate(() => {
+    const d = ITEMS.find(i => i.id === 'flacon_deflagration');
+    const b = ITEMS.find(i => i.id === 'flacon_brume_toxique');
+    return {
+      d: d && { effect: d.effect, aoe: d.aoe, element: d.element, power: d.power },
+      b: b && { effect: b.effect, aoe: b.aoe, statusId: b.statusId, power: b.power },
+    };
+  });
+  console.log('  T1 données :', t1);
+  assert(t1.d && t1.d.effect === 'throw' && t1.d.aoe === true && t1.d.element === 'feu', 'flacon_deflagration = throw aoe feu');
+  assert(t1.b && t1.b.effect === 'throw' && t1.b.aoe === true && t1.b.statusId === 'poison', 'flacon_brume_toxique = throw aoe poison');
+
+  // T2 — throwItemAoe : tout le groupe ennemi subit des dégâts ; flacon consommé.
+  const t2 = await page.evaluate(() => {
+    inBattle = true; partySize = 1; currentBattleChar = 0;
+    shieldTurns = [0, 0]; guardTurns = [0, 0]; guardRegenCooldown = [0, 0];
+    const c = party[0]; c.hp = c.hpMax = 200; c.statusEffects = [];
+    enemyGroup = [0, 1, 2].map(i => ({ id: 'd' + i, name: 'D' + i, icon: '🎯', hp: 300, currentHp: 300,
+      atk: 5, def: 0, mag: 0, agi: 0, resist: [], weak: [], statusEffects: [] }));
+    player.inventory.push({ ...ITEMS.find(i => i.id === 'flacon_deflagration') });
+    const invIdx = player.inventory.length - 1;
+    const before  = enemyGroup.map(e => e.currentHp);
+    const beforeQ = _countItems('flacon_deflagration');
+    const orig = Math.random; Math.random = () => 0;
+    throwItemAoe(invIdx);
+    Math.random = orig;
+    return { before, after: enemyGroup.map(e => e.currentHp), beforeQ, afterQ: _countItems('flacon_deflagration') };
+  });
+  console.log('  T2 AOE throw :', t2);
+  assert(t2.after.every((hp, i) => hp < t2.before[i]), 'tous les ennemis doivent subir les dégâts AOE');
+  assert(t2.afterQ === t2.beforeQ - 1, 'le flacon AOE est consommé une fois');
+
+  // T3 — potion ennemie : un Mangemort en danger boit sa potion (1 charge),
+  // se soigne, puis ne peut plus la reboire (charge épuisée).
+  const t3 = await page.evaluate(() => {
+    inBattle = true; partySize = 1; currentBattleChar = 0;
+    shieldTurns = [0, 0]; guardTurns = [0, 0];
+    const c = party[0]; c.hp = c.hpMax = 200; c.statusEffects = [];
+    const enemy = { id: 'mangemort', name: 'Mangemort', icon: '💀', hp: 100, currentHp: 20,
+      atk: 5, def: 0, mag: 0, agi: 0, resist: [], weak: [], statusEffects: [], ai: 'aggressive',
+      abilities: [
+        { name: 'Sortilège', icon: '🟣', effect: 'damage', power: 5, chance: 1 },
+        { name: 'Potion de Régénération', icon: '🧪', effect: 'consumable', power: 16, charges: 1, chance: 1 },
+      ] };
+    enemyGroup = [enemy];
+    const orig = Math.random; Math.random = () => 0;
+    let log1 = ''; const used1 = tryEnemyAbility(enemy, c, 0, (t) => { log1 += t; });
+    const hp1 = enemy.currentHp;
+    const charge1 = enemy._potions ? enemy._potions['Potion de Régénération'] : null;
+    enemy.currentHp = 20;  // de nouveau en danger
+    let log2 = ''; tryEnemyAbility(enemy, c, 0, (t) => { log2 += t; });
+    const charge2 = enemy._potions['Potion de Régénération'];
+    Math.random = orig;
+    return { used1, drank1: /boit/.test(log1), hp1, charge1, drank2: /boit/.test(log2), charge2 };
+  });
+  console.log('  T3 potion ennemie :', t3);
+  assert(t3.used1, 'tryEnemyAbility doit agir');
+  assert(t3.drank1, 'le Mangemort en danger doit boire sa potion');
+  assert(t3.hp1 > 20, 'la potion ennemie doit soigner (+16 PV)');
+  assert(t3.charge1 === 0, 'la charge de potion doit tomber à 0 après usage');
+  assert(!t3.drank2, 'potion épuisée : ne doit plus être bue');
+  assert(t3.charge2 === 0, 'la charge reste à 0');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (potions AOE/ennemies)`);
+  }
+  console.log('  ✅ Potions AOE (dispersion) + potions ennemies à charges OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioBrewing, scenarioRecipeCodex, scenarioRareHerb, scenarioSlugClub, scenarioPotionBuff, scenarioPotionResistance, scenarioThrowablePotions, scenarioPotionUpgradeCraft, scenarioHerbGarden, scenarioGardenQuest, scenarioHerbEconomy, scenarioPotionAoeAndEnemyUse] };

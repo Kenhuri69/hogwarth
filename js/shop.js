@@ -25,6 +25,8 @@ const SHOP_CATALOG = [
   { id: "flacon_feu",          minFloor: 3 },
   { id: "flacon_givre",        minFloor: 3 },
   { id: "flacon_venin",        minFloor: 4 },
+  { id: "flacon_deflagration", minFloor: 5 },
+  { id: "flacon_brume_toxique",minFloor: 6 },
   { id: "lame_sanguinaire",    minFloor: 4 },
   { id: "armure_lourde",       minFloor: 4 },
   { id: "anneau_furie",        minFloor: 5 },

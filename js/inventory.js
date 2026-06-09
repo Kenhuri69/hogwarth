@@ -729,7 +729,10 @@ function useItem(idx, battleMode) {
       return;
     }
     closeModal('inventory-modal');
-    if (livingEnemies().length > 1) {
+    // Flacon à dispersion (aoe) : touche tout le groupe ennemi, pas de ciblage.
+    if (item.aoe) {
+      throwItemAoe(idx);
+    } else if (livingEnemies().length > 1) {
       pendingThrowIdx = idx;
       showTargetSelection('throw_item');
     } else {

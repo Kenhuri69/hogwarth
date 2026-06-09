@@ -735,7 +735,10 @@ const MONSTERS = [
     scale: 0.30,
     abilities: [
       { name: "Sortilège des Ténèbres", icon: "🟣", desc: "Magie noire concentrée", effect: "damage", power: 12, chance: 0.40 },
-      { name: "Expelliarmus Sombre",    icon: "⚡", desc: "Affaiblit les défenses",  effect: "weaken", power: 2,  chance: 0.20 }
+      { name: "Expelliarmus Sombre",    icon: "⚡", desc: "Affaiblit les défenses",  effect: "weaken", power: 2,  chance: 0.20 },
+      // Potion de soin à usage unique : bue en priorité quand le Mangemort est
+      // en danger (effect:"consumable", 1 charge par instance).
+      { name: "Potion de Régénération", icon: "🧪", desc: "Boit une potion de soin (1 fois)", effect: "consumable", power: 16, charges: 1, chance: 0.6 }
     ],
     ai: "aggressive",
     resist: ["ténèbres"],
