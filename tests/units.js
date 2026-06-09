@@ -436,6 +436,30 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 7. renderer-entities.js — _npcApproachProx (M1, réaction d'approche PNJ)
+// ============================================================
+(function testNpcApproachProx() {
+  const { _npcApproachProx } = loadModule(
+    'js/renderer-entities.js', ['_npcApproachProx']);
+
+  // Distance en cases → intensité 0..1.
+  check('prox(1) = 1 (adjacent)',     _npcApproachProx(1) === 1);
+  check('prox(2) = 0.5',              _npcApproachProx(2) === 0.5);
+  check('prox(3) = 0',                _npcApproachProx(3) === 0);
+  check('prox(5) = 0 (loin)',         _npcApproachProx(5) === 0);
+  check('prox(0) = 1 (clamp haut)',   _npcApproachProx(0) === 1);
+  // Entrées invalides → 0 (aucune réaction ; rétro-compat).
+  check('prox(undefined) = 0',        _npcApproachProx(undefined) === 0);
+  check('prox(NaN) = 0',              _npcApproachProx(NaN) === 0);
+  check('prox(-1) = 0',               _npcApproachProx(-1) === 0);
+  check('prox("2") = 0 (non-nombre)', _npcApproachProx('2') === 0);
+  check('prox(Infinity) = 0',         _npcApproachProx(Infinity) === 0);
+  // Monotone décroissant sur [1, 3].
+  check('prox décroît 1→2→3',
+    _npcApproachProx(1) > _npcApproachProx(2) && _npcApproachProx(2) > _npcApproachProx(3));
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
