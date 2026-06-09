@@ -319,6 +319,35 @@
   70% { box-shadow: inset 0 0 0 9999px rgba(255,70,40,.14); transform: translateX(-3px); }
 }
 
+/* L1 — Fanfare de quête accomplie : bandeau doré transitoire centré. */
+.quest-fanfare {
+  position: fixed;
+  left: 50%; top: 34%;
+  transform: translate(-50%, -50%);
+  z-index: 9000;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 14px 30px;
+  text-align: center;
+  border: 1px solid var(--gold, #c9a84c);
+  border-radius: 8px;
+  background: radial-gradient(ellipse at center, rgba(40,28,8,0.96), rgba(18,12,4,0.92));
+  box-shadow: 0 0 22px rgba(201,168,76,0.45), inset 0 0 14px rgba(201,168,76,0.18);
+  animation: questFanfare 2.6s ease forwards;
+}
+.quest-fanfare .qf-flourish { font-size: 22px; color: var(--gold, #c9a84c); line-height: 1; }
+.quest-fanfare .qf-title    { font-weight: 700; color: var(--gold, #c9a84c); letter-spacing: .5px; font-size: 17px; }
+.quest-fanfare .qf-name     { color: #f0e3c0; font-style: italic; font-size: 14px; max-width: 70vw; }
+@keyframes questFanfare {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+  12%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  82%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -64%) scale(1); }
+}
+
 /* ── ACCESSIBILITÉ : mouvement réduit ──────────────────────────
    Neutralise les animations de combat (dégâts flottants, secousse,
    flash de soin) pour les joueurs sensibles au mouvement. Le float-dmg
@@ -331,6 +360,12 @@
   /* K1 — flash de danger conservé (info), secousse retirée. */
   .party-card.card-react-dmg  { animation: cardReactDmgRM  .4s ease; }
   .party-card.card-react-crit { animation: cardReactCritRM .4s ease; }
+  /* L1 — bandeau de quête : fondu d'opacité seul (sans translation/scale). */
+  .quest-fanfare { animation: questFanfareRM 2.4s ease forwards; }
+}
+@keyframes questFanfareRM {
+  0%, 100% { opacity: 0; }
+  12%, 82% { opacity: 1; }
 }
 @keyframes cardReactDmgRM {
   0%,100% { box-shadow: none; }

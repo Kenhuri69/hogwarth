@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v82';
+const CACHE_VERSION = 'hogwarth-v83';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -28,7 +28,7 @@ const PRECACHE_URLS = [
 
   // CSS
   './css/style.css?v=34',
-  './css/ux-improvements.css?v=3',
+  './css/ux-improvements.css?v=4',
   './css/save-ui.css?v=2',
   './css/ornaments.css?v=1',
   './css/help-tour.css?v=2',
@@ -40,12 +40,12 @@ const PRECACHE_URLS = [
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
-  './js/ux-improvements.js?v=4',
+  './js/ux-improvements.js?v=5',
   './js/combat-fx.js?v=10',
   './js/haptics.js?v=1',
   './js/audio.js?v=2',
   './js/audio-music.js?v=6',
-  './js/audio-sfx.js?v=11',
+  './js/audio-sfx.js?v=12',
   './js/icons.js?v=1',
   './js/scene-icons.js?v=6',
   './js/monsters.js?v=8',
@@ -91,7 +91,7 @@ const PRECACHE_URLS = [
   './js/inventory-spells.js?v=2',
   './js/potions.js?v=6',
   './js/quests-templates.js?v=6',
-  './js/quests.js?v=10',
+  './js/quests.js?v=11',
   './js/quests-riddles.js?v=2',
   './js/npc-dialog.js?v=13',
   './js/karaoke.js?v=1',
