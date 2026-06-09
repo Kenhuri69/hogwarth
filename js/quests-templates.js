@@ -766,9 +766,14 @@ const QUEST_TEMPLATES = [
     id: "quest_signature_pouf",
     title: "Ceux qu'on ne laisse pas derrière",
     giver: "Professeur Chourave",
-    desc: "Quand le château bascule, tous regardent vers le bas. Toi, regarde autour : des égarés sont restés coincés. Repousse la vague d'Inferi qui menace le Refuge du Blaireau — que personne ne soit oublié au fond.",
+    desc: "Quand le château bascule, tous regardent vers le bas. Toi, regarde autour : des égarés sont restés coincés. Rassemble des vivres pour les blessés, escorte les égarés en lieu sûr plus bas, puis repousse la vague d'Inferi qui déferle sur le Refuge du Blaireau — que personne ne soit oublié au fond.",
     objectives: [
-      { type: "kill", monsterId: "inferius", amount: 3, progress: 0, completed: false }
+      // 1. Vivres pour les blessés — jardins de Chourave (besace d'herbes, 08 §8.5).
+      { type: "herb",  amount: 2, progress: 0, completed: false },
+      // 2. Escorter/ramener les égarés en lieu sûr plus bas (floor-proxy, 08 §8.5).
+      { type: "floor", floor: 4, amount: 1, progress: 0, completed: false },
+      // 3. Climax — repousser la vague d'Inferi qui menace le Refuge.
+      { type: "kill",  monsterId: "inferius", amount: 3, progress: 0, completed: false }
     ],
     reward: { xp: 700, gold: 320, houseSetReward: "coeur_refuge" },
     location: "Refuge du Blaireau (étage 3) — vague en Acte II/III",

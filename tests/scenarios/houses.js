@@ -1442,9 +1442,29 @@ async function scenarioHouseSignatureQuests() {
       const unlocked = availableQuests.has(H.qid);
       acceptQuest(H.qid);
       const active = activeQuests.some(q => q.id === H.qid);
-      for (let i = 0; i < H.amount; i++) checkKillQuests(H.mob);
+      // Complète TOUTE la chaîne d'objectifs (multi-beats) de façon générique.
+      // Les `kill` sont SÉQUENTIELS (checkKillQuests ne progresse que sur l'étape
+      // active = 1ʳᵉ incomplète) : on satisfait d'abord les beats passifs
+      // (herb/item/pages/donate via _refreshObjectives, floor via checkFloorQuests),
+      // puis les kills une fois devenus actifs.
       const q = activeQuests.find(x => x.id === H.qid);
-      const stepDone = q ? q.objectives[0].completed : false;
+      if (q) {
+        for (const o of q.objectives) {
+          if (o.type === 'herb')       { player.herbs = player.herbs || {}; player.herbs.__test = (player.herbs.__test || 0) + o.amount; }
+          else if (o.type === 'item')  { player.inventory = player.inventory || []; for (let i = 0; i < o.amount; i++) player.inventory.push({ id: o.itemId }); }
+          else if (o.type === 'pages') { player.grimoirePages = player.grimoirePages || []; while (player.grimoirePages.length < o.amount) player.grimoirePages.push({}); }
+          else if (o.type === 'donate'){ player.gold = (player.gold || 0) + o.amount; }
+        }
+        if (typeof _refreshObjectives === 'function') _refreshObjectives();
+        for (const o of q.objectives) if (o.type === 'floor') checkFloorQuests(o.floor);
+        for (const o of q.objectives) {
+          if (o.type !== 'kill') continue;
+          for (let i = 0; i < o.amount; i++) checkKillQuests(o.monsterId);
+        }
+      }
+      if (typeof _refreshObjectives === 'function') _refreshObjectives();
+      const stepDone = q ? q.objectives.every(o => o.completed) : false;
+      const objDump = q ? q.objectives.map(o => ({ t: o.type, p: o.progress, a: o.amount, c: o.completed })) : null;
       const turned = (H.qid === 'quest_signature_slyth')
         ? turnInSlythSignature('defiance')
         : turnInQuestById(H.qid);
@@ -1452,13 +1472,13 @@ async function scenarioHouseSignatureQuests() {
       const pending = pendingHouseRewards.has(H.reward);
       triggerNpcSpecialAction(H.head);
       const inInv = (player.inventory || []).some(i => i && i.id === H.reward);
-      return { beforeUnlock, unlocked, active, stepDone, turned, flagSet: flags[H.flag], pending, inInv };
+      return { beforeUnlock, unlocked, active, stepDone, objDump, turned, flagSet: flags[H.flag], pending, inInv };
     }, H);
     console.log(`  ${H.house} →`, r);
     assert(!r.beforeUnlock, `${H.house}: signature ouverte trop tôt (avant étage ${H.floor})`);
     assert(r.unlocked,      `${H.house}: signature non ouverte à l'étage déclencheur`);
     assert(r.active,        `${H.house}: acceptQuest a échoué`);
-    assert(r.stepDone,      `${H.house}: objectif kill non complété`);
+    assert(r.stepDone,      `${H.house}: chaîne d'objectifs non complétée`);
     assert(r.turned,        `${H.house}: remise échouée`);
     assert(r.flagSet,       `${H.house}: flag ${H.flag} non posé à la remise`);
     assert(r.pending,       `${H.house}: relique non routée vers pendingHouseRewards (cérémonie)`);
