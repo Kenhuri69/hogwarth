@@ -960,4 +960,65 @@ async function scenarioActiveCharPulse() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact, scenarioLowHpCard, scenarioActiveCharPulse] };
+// K4 — comptage animé de l'or : UX.tickNumber interpole le compteur ; updateUI
+// déclenche un roll-up au changement de total (data-gold mémorise le dernier
+// affiché). ms=0 / reduced-motion → valeur finale immédiate.
+async function scenarioGoldTick() {
+  console.log('\n── Scénario : Comptage animé de l\'or (K4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasFn = typeof UX !== 'undefined' && typeof UX.tickNumber === 'function';
+      // API directe, ms=0 → écrit la valeur finale immédiatement.
+      const el = document.createElement('div'); el.textContent = '0';
+      UX.tickNumber(el, 0, 50, 0);
+      out.immediate = el.textContent;
+      // render personnalisé préservant un suffixe.
+      const el2 = document.createElement('div');
+      UX.tickNumber(el2, 0, 7, 0, (v) => { el2.textContent = v + ' G'; });
+      out.rendered = el2.textContent;
+      // Roll-up réel : startNewGame a déjà posé data-gold ; on change le total.
+      const goldEl = document.getElementById('gold-display');
+      out.hadDataGold = goldEl.getAttribute('data-gold') !== null;
+      player.gold = 999; updateUI();
+      out.dataGold = goldEl.getAttribute('data-gold');
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  K4:', r);
+  assert(!r.threw, 'K4 throw: ' + (r.err || ''));
+  assert(r.hasFn, 'K4 UX.tickNumber absent');
+  assert(r.immediate === '50', 'K4 ms=0 doit écrire la valeur finale (got ' + r.immediate + ')');
+  assert(r.rendered === '7 G', 'K4 render personnalisé non appliqué (got ' + r.rendered + ')');
+  assert(r.hadDataGold, 'K4 data-gold non initialisé par le 1er updateUI');
+  assert(r.dataGold === '999', 'K4 data-gold non mis à jour (got ' + r.dataGold + ')');
+
+  // L'animation atterrit sur la valeur exacte après ~450 ms.
+  await new Promise(res => setTimeout(res, 750));
+  const settled = await page.evaluate(() => document.getElementById('gold-display').textContent);
+  console.log('  K4 settled:', settled.trim());
+  assert(/999\s*Gallions/.test(settled), 'K4 le compteur n\'atterrit pas sur 999');
+
+  // reduced-motion : valeur finale immédiate (pas d'interpolation).
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const rm = await page.evaluate(() => {
+    const el = document.createElement('div');
+    UX.tickNumber(el, 0, 77, 500);
+    return el.textContent;
+  });
+  console.log('  K4 reduced:', rm);
+  assert(rm === '77', 'K4 reduced-motion doit écrire la valeur finale immédiatement');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario Comptage de l\'or (K4)');
+  }
+  console.log('  ✅ Comptage animé de l\'or (K4) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact, scenarioLowHpCard, scenarioActiveCharPulse, scenarioGoldTick] };

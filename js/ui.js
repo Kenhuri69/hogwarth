@@ -37,7 +37,21 @@ function updateUI() {
     if (txt) txt.textContent  = `${player.xp}/${player.xpNext}`;
     if (bar) bar.style.width  = xpPct + '%';
   }
-  document.getElementById('gold-display').innerHTML = `<img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${player.gold} Gallions`;
+  // K4 — comptage animé de l'or : roll-up bref quand le total change (le
+  // dernier total affiché est mémorisé sur l'attribut data-gold, pas dans
+  // l'état de jeu). Préserve l'icône via le callback de rendu. Défensif :
+  // sans UX.tickNumber, écriture directe. Ne clobbe pas une anim en cours.
+  const goldEl = document.getElementById('gold-display');
+  const goldRender = (v) => { goldEl.innerHTML = `<img class="ui-icon ui-icon-md" src="img/icons/gold.png" alt=""> ${v} Gallions`; };
+  const goldCur  = player.gold;
+  const goldPrev = parseInt(goldEl.getAttribute('data-gold'), 10);
+  if (window.UX && typeof UX.tickNumber === 'function'
+      && Number.isFinite(goldPrev) && goldPrev !== goldCur) {
+    UX.tickNumber(goldEl, goldPrev, goldCur, 450, goldRender);
+  } else if (!goldEl._tickRAF) {
+    goldRender(goldCur);
+  }
+  goldEl.setAttribute('data-gold', String(goldCur));
   const floorEl = document.getElementById('ghd-floor');
   if (floorEl && typeof currentFloor === 'number') floorEl.textContent = `ÉT.${currentFloor}`;
 
