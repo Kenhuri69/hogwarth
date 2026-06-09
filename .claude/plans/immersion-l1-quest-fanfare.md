@@ -44,17 +44,38 @@ if (window.UX_safe) UX_safe.questFanfare(q.title);
 
 ## Étapes & vérifications
 
-1. [ ] Plan (ce fichier).
-2. [ ] `audio-sfx.js` : `playQuestComplete()`.
-3. [ ] `ux-improvements.js` : `questFanfare(title)` + escape + export.
-4. [ ] `ux-improvements.css` : `.quest-fanfare` + variante reduced-motion.
-5. [ ] `quests.js` : swap son + appel `questFanfare`.
-6. [ ] Cache PWA bumpé : audio-sfx.js, ux-improvements.js/.css, quests.js.
-7. [ ] `tests/smoke.js` `scenarioQuestFanfare` : API présente ; une quête
-   complétée monte le bandeau (retiré ensuite) sans throw ; `playQuestComplete`
-   présent.
-8. [ ] DoD : units, smoke, check_cache_versions, pwa-smoke verts ; commit + push ; PR + merge.
+1. [x] Plan (ce fichier).
+2. [x] `audio-sfx.js` : `playQuestComplete()`.
+3. [x] `ux-improvements.js` : `questFanfare(title)` + escape + export.
+4. [x] `ux-improvements.css` : `.quest-fanfare` + variante reduced-motion.
+5. [x] `quests.js` : swap son + appel `questFanfare`.
+6. [x] Cache PWA bumpé (v83) : audio-sfx.js, ux-improvements.js/.css, quests.js.
+7. [x] `tests/smoke.js` `scenarioQuestFanfare` : API présente ; quête complétée
+   monte le bandeau (retiré ensuite) ; escape HTML ; `playQuestComplete` présent.
+8. [x] DoD : units (179), smoke (173), check_cache_versions, pwa-smoke verts.
 
 ## Journal des écarts
 
-*(à compléter)*
+### Implémentation (2026-06-08, branche claude/immersion-l1-quest-fanfare)
+
+Livré conforme au plan.
+
+- **`audio-sfx.js`** : `playQuestComplete()` (arpège Sol majeur timbre triangle +
+  note tenue octave) — distinct de `playLevelUp`.
+- **`ux-improvements.js`** : `UX.questFanfare(title)` exporté, titre échappé
+  (`_escFanfare`, anti-injection).
+- **`ux-improvements.css`** : `.quest-fanfare` (bandeau doré `position:fixed`,
+  flourish) + variante reduced-motion (fondu d'opacité seul).
+- **`quests.js`** : `completeQuest` joue `playQuestComplete` (repli `playLevelUp`
+  si absent) et appelle `UX_safe.questFanfare(q.title)`.
+- **Tests** : `scenarioQuestFanfare` (quests.js) — montage via `completeQuest`
+  réel, titre affiché, escape HTML, retrait après anim, présence API audio.
+- **Cache PWA** : `CACHE_VERSION` → `hogwarth-v83` ; audio-sfx 11→12,
+  ux-improvements.js 4→5, ux-improvements.css 3→4, quests 10→11.
+
+**Écart mineur (correctif inclus)** : le sous-test « call-site réel » de
+`scenarioCardReact` (K1, déjà mergé) s'est révélé **flaky** dans la suite
+complète — le coup de l'ennemi factice pouvait tirer 0 dégât selon son ATK vs la
+DEF de Harry. Corrigé ici (test-only) en forçant `target.def=0`/`enemy.atk=999`
+→ dégâts déterministes. Hors périmètre fonctionnel L1, mais c'est mon propre
+test à fiabiliser (guidelines §3).
