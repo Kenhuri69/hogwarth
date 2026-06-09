@@ -266,5 +266,25 @@ Chaque item = une PR dédiée, smoke vert, journal mis à jour.
   code consigné en tête (ancrages K1→N2, anti-doublon vérifié : barres déjà
   fluides, voile D3 ≠ flash par-carte, etc.). Cap = **HUD gauche réactif**
   (K) + jalons (L) + monde/confort (M/N). Implémentation à suivre, item par
-  item dans l'ordre de priorisation. **Cap des directions à valider avec
-  l'utilisateur avant la 1ʳᵉ implémentation.**
+  item dans l'ordre de priorisation.
+- 2026-06-08 (impl.) — items livrés & mergés (1 PR/item, plan dédié par item) :
+  - ✅ **K1** flash de dégât/soin par carte (PR #429) —
+    [`immersion-k1-card-react.md`](./immersion-k1-card-react.md).
+  - ✅ **K2** état « PV bas » par carte (PR #430) —
+    [`immersion-k2-low-hp.md`](./immersion-k2-low-hp.md).
+  - ✅ **K3** halo pulsé du tour actif (PR #432, CSS seul) —
+    [`immersion-k3-active-pulse.md`](./immersion-k3-active-pulse.md).
+  - ✅ **L1** fanfare de quête accomplie (PR #433) —
+    [`immersion-l1-quest-fanfare.md`](./immersion-l1-quest-fanfare.md).
+  - ✅ **N1** transitions d'ouverture des modales (PR #435, CSS seul) —
+    [`immersion-n1-modal-transitions.md`](./immersion-n1-modal-transitions.md).
+  - 🟰 **L2** révélation de coffre : **déjà couvert par E3** —
+    `openChest` (`movement-interactions.js:64`) émet déjà
+    `DFX_safe.burst('explore-overlay','gold')`. L'overlay d'exploration s'ouvre
+    à l'entrée de case et **couvre** la vue 3D, donc un éclat sur
+    `scene-viewport` serait invisible. **Pas de PR** (anti-doublon / anti-travail
+    inutile, guidelines §1-2). Item considéré clos.
+  - ➕ Hors backlog : correction du test flaky `scenarioRandomLoreNpcs`
+    (idle paginé) rencontré pendant la suite (PR #434).
+  - **Cap K (HUD réactif) terminé** (K1+K2+K3). Restants : **M1** (PNJ réactif,
+    « à cadrer subtil »), optionnels **K4 / L3 / M2 / N2**.
