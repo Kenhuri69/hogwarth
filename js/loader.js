@@ -101,6 +101,11 @@ window.UX_safe = new Proxy({}, {
     { name: 'FLOOR_SCRIPTED_BEATS', source: 'floor-ambiance.js', kind: 'obj' },
     { name: 'getScriptedFloorBeat', source: 'floor-ambiance.js', kind: 'fn'  },
     { name: 'maybeScriptedFloorBeat', source: 'floor-ambiance.js', kind: 'fn'  },
+    { name: 'temporalEchoActive', source: 'floor-ambiance.js', kind: 'fn'  },
+    { name: 'temporalEchoTier',  source: 'floor-ambiance.js', kind: 'fn'  },
+    { name: 'echoLine',          source: 'floor-ambiance.js', kind: 'fn'  },
+    { name: 'FOUNDER_VOICES',    source: 'floor-ambiance.js', kind: 'obj' },
+    { name: 'TEMPORAL_ECHOES',   source: 'floor-ambiance.js', kind: 'obj' },
     { name: 'FLOOR_EVENTS',       source: 'floor-events.js',  kind: 'obj' },
     { name: 'rollFloorEvent',     source: 'floor-events.js', kind: 'fn'  },
     { name: 'maybeRoomFlavor',    source: 'room-flavor.js',  kind: 'fn',  optional: true },
@@ -118,6 +123,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'monsterKills',       source: 'state.js',        kind: 'obj' },
     { name: 'visitedFloors',      source: 'state.js',        kind: 'obj' },
     { name: 'seenScriptedBeat',   source: 'state.js',        kind: 'obj' },
+    { name: 'seenEchoes',         source: 'state.js',        kind: 'obj' },
     { name: 'portusOocCooldown',  source: 'state.js',        kind: 'obj' },
     { name: 'portusFightCooldown',source: 'state.js',        kind: 'obj' },
     { name: 'healSpellCooldown',  source: 'state.js',        kind: 'obj' },
@@ -142,6 +148,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'openCharacter',      source: 'ui-character-sheet.js', kind: 'fn'  },
     { name: 'openHouseDetail',    source: 'ui.js',           kind: 'fn'  },
     { name: 'openBestiary',       source: 'ui-bestiary.js',  kind: 'fn'  },
+    { name: 'switchCodexTab',     source: 'ui-bestiary.js',  kind: 'fn'  },
 
     // ── Donjon / rendu ──
     { name: 'generateDungeon',    source: 'dungeon.js',      kind: 'fn'  },

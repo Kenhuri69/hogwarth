@@ -485,6 +485,11 @@ let pendingThrowIdx = null;
 // Monstres rencontrés en combat (bestiaire)
 let seenMonsters = new Set();
 
+// Échos temporels perçus (codex « Mémoire des Ruines », P-D5). Set d'IDs
+// (cf. TEMPORAL_ECHOES dans floor-ambiance.js). Déverrouillé à l'affichage
+// d'un écho en zone D / Boucle (movement.js). Sérialisé comme seenMonsters.
+let seenEchoes = new Set();
+
 // Kills cumulés par espèce de monstre — { monsterId: count }.
 // Alimente le panneau d'info en combat (révélation progressive des
 // caractéristiques / faiblesses / capacités selon le nombre de victoires).
