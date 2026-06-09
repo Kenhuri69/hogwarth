@@ -49,6 +49,7 @@ function _serializeState() {
     felixFortuneSteps,
     usedFountains: Array.from(usedFountains),
     usedAltars: Array.from(usedAltars),
+    usedRefuges: Array.from(usedRefuges),
     currentFloorEvent,
     secretWalls: Array.from(secretWalls),
     runePuzzle,
@@ -370,6 +371,7 @@ function _applyState(gs) {
   felixFortuneSteps = (typeof gs.felixFortuneSteps === 'number') ? gs.felixFortuneSteps : 0;
   usedFountains = new Set(gs.usedFountains || []);
   usedAltars = new Set(gs.usedAltars || []);
+  usedRefuges = new Set(gs.usedRefuges || []);
   currentFloorEvent = gs.currentFloorEvent || null;
   secretWalls = new Set(gs.secretWalls || []);
   runePuzzle = gs.runePuzzle || null;

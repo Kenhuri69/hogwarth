@@ -211,6 +211,91 @@ async function scenarioFountain() {
   await browser.close();
 }
 
+// Refuge du Blaireau — point de repos signature de Poufsouffle (parent de la
+// fontaine). Génération gated maison + étage non-fontaine ; soin partiel 50 %
+// 1×/visite. Voir .claude/plans/refuge-poufsouffle.md.
+async function scenarioRefuge() {
+  console.log('\n── Scénario : Refuge du Blaireau (Poufsouffle) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Poufsouffle' });
+
+  // T1 : Poufsouffle, étage non-fontaine (3) → au moins un REFUGE généré.
+  const t1 = await page.evaluate(() => {
+    chosenHouse = 'Poufsouffle';
+    currentFloor = 3; floorDungeons = {};
+    generateDungeon(3);
+    let count = 0;
+    for (let y = 0; y < dungeon.length; y++)
+      for (let x = 0; x < dungeon[y].length; x++)
+        if (dungeon[y][x] === CELL.REFUGE) count++;
+    return { count, refugeEnum: CELL.REFUGE };
+  });
+  console.log('  T1 génération Poufsouffle étage 3 →', t1);
+  assert(t1.refugeEnum === 17, 'CELL.REFUGE doit valoir 17');
+  assert(t1.count >= 1, 'au moins un Refuge sur l\'étage 3 pour Poufsouffle');
+
+  // T2 : autre maison → aucun Refuge ; pas de Refuge sur un étage-fontaine.
+  const t2 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    currentFloor = 3; floorDungeons = {};
+    generateDungeon(3);
+    let otherHouse = 0;
+    for (let y = 0; y < dungeon.length; y++)
+      for (let x = 0; x < dungeon[y].length; x++)
+        if (dungeon[y][x] === CELL.REFUGE) otherHouse++;
+    chosenHouse = 'Poufsouffle';
+    currentFloor = 2; floorDungeons = {};
+    generateDungeon(2);
+    let fountainFloor = 0;
+    for (let y = 0; y < dungeon.length; y++)
+      for (let x = 0; x < dungeon[y].length; x++)
+        if (dungeon[y][x] === CELL.REFUGE) fountainFloor++;
+    return { otherHouse, fountainFloor };
+  });
+  console.log('  T2 gating maison/étage →', t2);
+  assert(t2.otherHouse === 0, 'aucun Refuge pour une maison ≠ Poufsouffle');
+  assert(t2.fountainFloor === 0, 'aucun Refuge sur un étage-fontaine (pas de doublon)');
+
+  // T3 : useRefuge() soigne ~50 %, 1×/visite (2e usage sans effet).
+  const t3 = await page.evaluate(() => {
+    chosenHouse = 'Poufsouffle';
+    currentFloor = 3; floorDungeons = {};
+    generateDungeon(3);
+    let rx = -1, ry = -1;
+    for (let y = 0; y < dungeon.length && rx === -1; y++)
+      for (let x = 0; x < dungeon[y].length && rx === -1; x++)
+        if (dungeon[y][x] === CELL.REFUGE) { rx = x; ry = y; }
+    playerX = rx; playerY = ry;
+    party.forEach(c => { c.hp = 1; c.sp = 0; });
+    const max = party.map(c => ({ hpMax: c.hpMax, spMax: c.spMax }));
+    useRefuge();
+    const after  = party.map(c => ({ hp: c.hp, sp: c.sp }));
+    const spentKey = usedRefuges.has(`${rx},${ry}`);
+    const hpBefore2 = party.map(c => c.hp);
+    useRefuge();
+    const after2 = party.map(c => c.hp);
+    return { max, after, after2, hpBefore2, spentKey, frac: REFUGE_HEAL_FRAC };
+  });
+  console.log('  T3 soin Refuge →', t3);
+  assert(t3.frac === 0.5, 'REFUGE_HEAL_FRAC attendu 0.5');
+  t3.after.forEach((c, i) => {
+    const expHp = Math.min(t3.max[i].hpMax, 1 + Math.ceil(t3.max[i].hpMax * 0.5));
+    const expSp = Math.min(t3.max[i].spMax, 0 + Math.ceil(t3.max[i].spMax * 0.5));
+    assert(c.hp === expHp, `perso ${i} : HP après Refuge attendu ${expHp}, obtenu ${c.hp}`);
+    assert(c.sp === expSp, `perso ${i} : SP après Refuge attendu ${expSp}, obtenu ${c.sp}`);
+    assert(c.hp > 1, `perso ${i} : le Refuge doit soigner`);
+  });
+  assert(t3.spentKey, 'usedRefuges doit contenir la clé après usage');
+  t3.after2.forEach((hp, i) => assert(hp === t3.hpBefore2[i], `perso ${i} : 2e usage sans effet`));
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (refuge)`);
+  }
+  console.log('  ✅ Refuge : gating maison/étage, soin partiel 50 %, 1×/visite');
+  await browser.close();
+}
+
 async function scenarioSoloSoftlock() {
   console.log('\n── Scénario 15 : softlock solo ──');
   const { browser, page, errors } = await launchGame();
@@ -2665,4 +2750,4 @@ async function scenarioScriptedFloorBeats() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioDungeonLife, scenarioFountain, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
+module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };

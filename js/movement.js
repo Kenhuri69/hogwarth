@@ -327,6 +327,12 @@ function _visitorExploreDescriptors() {
       desc:  `L'eau scintille pour ${hostName}, pas pour toi.`,
       btns:  close
     },
+    [CELL.REFUGE]: {
+      icon:  SCENE_ICONS.refuge({ spent: false }),
+      title: 'Refuge du Blaireau',
+      desc:  `Le foyer réchauffe les compagnons de ${hostName} — tu n'es ici que de passage.`,
+      btns:  close
+    },
     [CELL.ALTAR]: {
       icon:  SCENE_ICONS.altar,
       title: 'Autel Ancien',
@@ -360,6 +366,7 @@ function _exploreDescriptors() {
     return _visitorExploreDescriptors();
   }
   const fountainDried = usedFountains && usedFountains.has(`${playerX},${playerY}`);
+  const refugeSpent   = usedRefuges && usedRefuges.has(`${playerX},${playerY}`);
   const altarSpent    = usedAltars && usedAltars.has(`${playerX},${playerY}`);
   // Easter egg « Salle sur Demande » — refuge déjà pris cette visite, et objet
   // unique encore disponible (force la réouverture si le sac était plein).
@@ -449,6 +456,18 @@ function _exploreDescriptors() {
       btns:  fountainDried
         ? `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
         : `<button class="explore-btn" onclick="useFountain();_hideExploreOverlay()">Boire à la fontaine</button>
+           <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+    },
+    // Refuge du Blaireau (Poufsouffle) — repos partiel 1×/visite d'étage.
+    [CELL.REFUGE]: {
+      icon:  SCENE_ICONS.refuge({ spent: refugeSpent }),
+      title: 'Refuge du Blaireau',
+      desc:  refugeSpent
+        ? "Le foyer s'est éteint pour cette visite. Quittez l'étage et revenez pour le raviver."
+        : "Un foyer chaleureux veille sous une bannière jaune et noire : un havre où le groupe panse ses plaies. On n'y laisse personne derrière.",
+      btns:  refugeSpent
+        ? `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
+        : `<button class="explore-btn" onclick="useRefuge();_hideExploreOverlay()">Se reposer au Refuge</button>
            <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     },
     // Enrichissement du donjon §2.B — Autel Ancien : tribut risque/récompense.
@@ -585,6 +604,7 @@ function handleCellEntry(cell) {
   if (cell === CELL.STAIRS_D || cell === CELL.STAIRS_U ||
       cell === CELL.SHOP     || cell === CELL.CHEST    ||
       cell === CELL.FOUNTAIN || cell === CELL.ALTAR    ||
+      cell === CELL.REFUGE   ||
       cell === CELL.FORGE    || cell === CELL.LIBRARY  ||
       cell === CELL.REQUIREMENT ||
       (cell === CELL.GARDEN  && !gardenHidden)) {

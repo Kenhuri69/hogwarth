@@ -43,6 +43,7 @@ function _restoreFloorFromCache(floor) {
   runeStele = c.runeStele || null;
   // Nouvelle visite = nouvelle eau dans la fontaine et nouvelles larmes Fumseck
   usedFountains = new Set();
+  usedRefuges = new Set();
   usedAltars = new Set();
   usedSpecialNpcs = new Set();
   // Easter egg « Salle sur Demande » : refuge ré-utilisable à chaque visite.

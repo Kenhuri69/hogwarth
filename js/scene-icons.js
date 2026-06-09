@@ -296,6 +296,57 @@ const SCENE_ICONS = {
     </svg>`;
   },
 
+  // Refuge du Blaireau (Poufsouffle) — foyer chaleureux sous une bannière
+  // jaune et noire. `spent` éteint le feu (braises ternes). viewBox 120×130
+  // (mêmes proportions que la fontaine pour drawRefugeSprite).
+  refuge(opts) {
+    const spent = !!(opts && opts.spent);
+    return `<svg viewBox="0 0 120 130" width="130" height="140" xmlns="http://www.w3.org/2000/svg" style="display:block">
+      <defs>
+        <radialGradient id="refGlow" cx="0.5" cy="0.5" r="0.55">
+          <stop offset="0"   stop-color="#ffe6a8" stop-opacity="${spent ? 0.2 : 0.7}"/>
+          <stop offset="0.6" stop-color="#e8a13a" stop-opacity="${spent ? 0.08 : 0.25}"/>
+          <stop offset="1"   stop-color="#000"    stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="refFlame" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#fff2b0"/><stop offset="0.5" stop-color="#ffb347"/><stop offset="1" stop-color="#d24a16"/>
+        </linearGradient>
+        <linearGradient id="refLog" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#7a5a36"/><stop offset="1" stop-color="#3a2a18"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="60" cy="124" rx="50" ry="5" fill="#000" opacity="0.55"/>
+      <ellipse cx="60" cy="80" rx="54" ry="40" fill="url(#refGlow)"/>
+      <rect x="56" y="14" width="3" height="40" fill="#2a2018"/>
+      <path d="M59 16 H92 L86 24 L92 32 H59 Z" fill="#f0c84a" stroke="#2a2018" stroke-width="1"/>
+      <ellipse cx="74" cy="24" rx="5" ry="4" fill="#2a2018"/>
+      <ellipse cx="74" cy="24" rx="2.4" ry="3.2" fill="#f0c84a"/>
+      <rect x="36" y="96" width="48" height="9" rx="3" fill="url(#refLog)" stroke="#1a1208" stroke-width="1" transform="rotate(8 60 100)"/>
+      <rect x="36" y="96" width="48" height="9" rx="3" fill="url(#refLog)" stroke="#1a1208" stroke-width="1" transform="rotate(-8 60 100)"/>
+      ${spent ? `
+      <ellipse cx="60" cy="92" rx="12" ry="4" fill="#5a3a1a" opacity="0.8"/>
+      <circle cx="55" cy="91" r="1.6" fill="#a8521f" opacity="0.7"/>
+      <circle cx="64" cy="92" r="1.4" fill="#a8521f" opacity="0.6"/>
+      <path d="M58 88 Q56 82 60 78" stroke="#777" stroke-width="1.4" fill="none" opacity="0.5"/>` : `
+      <path d="M60 92 Q48 78 60 58 Q72 78 60 92 Z" fill="url(#refFlame)">
+        <animate attributeName="opacity" values="0.85;1;0.85" dur="1.4s" repeatCount="indefinite"/>
+      </path>
+      <path d="M60 90 Q54 80 60 68 Q66 80 60 90 Z" fill="#fff2b0" opacity="0.9">
+        <animate attributeName="d"
+          values="M60 90 Q54 80 60 68 Q66 80 60 90 Z;M60 90 Q56 78 60 64 Q64 78 60 90 Z;M60 90 Q54 80 60 68 Q66 80 60 90 Z"
+          dur="1.1s" repeatCount="indefinite"/>
+      </path>
+      <circle cx="50" cy="70" r="1.2" fill="#ffd27a" opacity="0.9">
+        <animate attributeName="cy" values="70;58;70" dur="2.0s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.9;0;0.9" dur="2.0s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="70" cy="72" r="1" fill="#ffd27a" opacity="0.9">
+        <animate attributeName="cy" values="72;60;72" dur="2.4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.9;0;0.9" dur="2.4s" repeatCount="indefinite"/>
+      </circle>`}
+    </svg>`;
+  },
+
   // Jardin d'herbes (Potions P6.b3) — carré de terre magique d'où jaillissent
   // des pousses luminescentes. Le `tier` (1-4) adapte la palette aux herbes
   // qui poussent au palier de l'étage : T1 vert d'école · T2 aqua

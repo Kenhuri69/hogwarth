@@ -502,6 +502,37 @@ function drawFountainSprite(x, baseY, sz, dried) {
   ctx.restore();
 }
 
+// Refuge du Blaireau — foyer de repos Poufsouffle. Halo ambre chaud (éteint =
+// braises ternes), visuel SVG (viewBox 120×130) avec repli emoji 🏕️.
+function drawRefugeSprite(x, baseY, sz, spent) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.beginPath(); ctx.ellipse(x, baseY, sz * 0.5, sz * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  const halo = ctx.createRadialGradient(x, baseY - sz * 0.42, 0, x, baseY - sz * 0.42, sz * 0.95);
+  if (spent) {
+    halo.addColorStop(0, 'rgba(120,100,70,0.20)');
+    halo.addColorStop(1, 'rgba(60,45,25,0)');
+  } else {
+    halo.addColorStop(0, 'rgba(245,200,110,0.45)');
+    halo.addColorStop(1, 'rgba(150,90,30,0)');
+  }
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(x, baseY - sz * 0.42, sz * 0.95, 0, Math.PI * 2); ctx.fill();
+  const entry = _getSceneSvgImg(spent ? 'refuge_spent' : 'refuge',
+    () => SCENE_ICONS.refuge({ spent }));
+  if (entry && entry.ready) {
+    const h = sz * 1.1, w = h * (120 / 130);
+    ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
+  } else {
+    ctx.font = `${Math.floor(sz * 1.1)}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    if (spent) ctx.globalAlpha = 0.55;
+    ctx.fillText('🏕️', x, baseY);
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
 // Salle sur Demande V2 (room-of-requirement-v2.md §4) — animation « la porte
 // se dessine » : timestamp transitoire (non sérialisé, purement FX) + boucle
 // one-shot bornée qui rafraîchit le rendu pendant REVEAL_MS puis s'arrête.
