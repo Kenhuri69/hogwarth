@@ -749,8 +749,8 @@ const NPCS = [
     },
     dialoguesByQuest: {
       quest_signature_pouf: {
-        questOffer:  "Quand le château bascule, tout le monde regarde vers le bas. Toi, regarde autour : combien sont restés coincés ? Bâtissons le Refuge du Blaireau, et repousse la vague d'Inferi qui menace les égarés. On n'avance pas vite — on avance sûrement, et ensemble. Que personne ne soit oublié au fond.",
-        questActive: "Le Refuge tient-il encore, mon petit ? Trois Inferi repoussés, et nos rescapés dormiront tranquilles.",
+        questOffer:  "Quand le château bascule, tout le monde regarde vers le bas. Toi, regarde autour : combien sont restés coincés ? Trois choses, mon petit : rapporte des vivres pour les blessés, escorte les égarés en lieu sûr plus bas, puis tiens bon contre la vague d'Inferi. On n'avance pas vite — on avance sûrement, et ensemble. Que personne ne soit oublié au fond.",
+        questActive: "Le Refuge tient-il encore, mon petit ? D'abord les vivres pour les blessés, puis les égarés ramenés à l'abri plus bas — et alors seulement tu pourras faire front contre la vague d'Inferi.",
         questReady:  "Tu les as tous protégés. On comptera les vies que tu as sauvées, pas les monstres. Le Cœur du Refuge t'attend — repasse le réclamer."
       },
       quest_set_pouf: {
