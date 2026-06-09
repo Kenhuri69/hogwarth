@@ -28,8 +28,16 @@ const CELL = {
   // Easter egg « Salle sur Demande » — porte révélée en passant 3× devant un
   // pan de mur propice. Marchable (≠ WALL) ; entrer ouvre un overlay de refuge.
   // Voir .claude/plans/room-of-requirement-easter-egg.md.
-  REQUIREMENT:16
+  REQUIREMENT:16,
+  // Refuge du Blaireau (Poufsouffle) — point de repos récurrent, parent de la
+  // fontaine. N'apparaît que si chosenHouse==='Poufsouffle'. Soin partiel
+  // 1×/visite. Voir .claude/plans/refuge-poufsouffle.md.
+  REFUGE:17
 };
+
+// Refuge du Blaireau — fraction des PV/PM max rendus par usage (≠ fontaine
+// 100 %). Repos « de campagne » : filet de sécurité, pas restauration totale.
+const REFUGE_HEAL_FRAC = 0.5;
 
 // Identité des 3 dalles-runes d'un puzzle, indexée par position dans
 // `runePuzzle.runes`. `color` teinte le glyphe (rendu 3D + minimap),

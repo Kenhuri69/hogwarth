@@ -101,12 +101,15 @@ let _dungeonFxTimer = null;
   // ── Gerbe d'interaction (E3) : étincelles sur un overlay/modale ──
   // Anime une petite gerbe de particules + halo au centre d'un élément hôte
   // (explore-overlay pour coffre/fontaine, levelup-modal pour le level-up).
-  // kind ∈ 'gold' (coffre) | 'water' (fontaine) | 'levelup'. Purement visuel,
-  // défensif (hôte absent → no-op). reduced-motion = halo bref sans projectiles.
+  // kind ∈ 'gold' (coffre) | 'water' (fontaine) | 'levelup' | 'heal' (refuge).
+  // Purement visuel, défensif (hôte absent → no-op). reduced-motion = halo bref
+  // sans projectiles.
   const _BURST_PALETTES = {
     gold:    { colors: ['#ffe9a8', '#f0c75a', '#c9a84c'], halo: 'rgba(240,199,90,0.55)',  up: false },
     water:   { colors: ['#bfeaff', '#6fb6e0', '#e8f6ff'], halo: 'rgba(110,182,224,0.50)', up: false },
     levelup: { colors: ['#fff3c0', '#ffd23f', '#ffffff'], halo: 'rgba(255,226,122,0.60)', up: true  },
+    // Refuge du Blaireau : ambre chaud + vert tendre (repos/soin Poufsouffle).
+    heal:    { colors: ['#ffe9a8', '#bfe6a0', '#e8f6d8'], halo: 'rgba(180,214,120,0.50)', up: true  },
   };
   function burst(hostId, kind) {
     const host = document.getElementById(hostId);

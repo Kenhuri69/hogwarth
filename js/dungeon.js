@@ -402,10 +402,22 @@ function generateDungeon(floor) {
   // Salle fontaine — étages 2, 5, 8, 11, … (1 garantie)
   // Choisit une room intermédiaire (ni départ, ni dernière=stairs down)
   // et écrase ce qui s'y trouvait pour garantir l'apparition.
-  if (floor >= 2 && (floor - 2) % 3 === 0 && rooms.length >= 3) {
+  const isFountainFloor = floor >= 2 && (floor - 2) % 3 === 0;
+  if (isFountainFloor && rooms.length >= 3) {
     const candidates = rooms.slice(1, rooms.length - 1);
     const room       = candidates[Math.floor(Math.random() * candidates.length)];
     dungeon[room.cy][room.cx] = CELL.FOUNTAIN;
+  }
+
+  // Refuge du Blaireau — point de repos signature de Poufsouffle, sur les
+  // étages SANS fontaine garantie (≥ 2), pour ne pas doublonner le soin total.
+  // Une room intermédiaire est forcée en CELL.REFUGE. Voir
+  // .claude/plans/refuge-poufsouffle.md.
+  if (typeof chosenHouse !== 'undefined' && chosenHouse === 'Poufsouffle'
+      && floor >= 2 && !isFountainFloor && rooms.length >= 3) {
+    const candidates = rooms.slice(1, rooms.length - 1);
+    const room       = candidates[Math.floor(Math.random() * candidates.length)];
+    dungeon[room.cy][room.cx] = CELL.REFUGE;
   }
 
   // Jardin d'herbes (Potions P6.b3) — étages 3, 6, 9, 12, … (décalé des
@@ -465,6 +477,8 @@ function generateDungeon(floor) {
 
   // Réinitialise les fontaines utilisées : nouvelle visite = nouvelle eau.
   usedFountains = new Set();
+  // Refuges du Blaireau : ré-actifs à chaque nouvelle visite d'étage.
+  usedRefuges = new Set();
   // Easter egg « Salle sur Demande » : refuge ré-utilisable à chaque visite.
   usedRequirementRooms = new Set();
   if (typeof requirementTheme !== 'undefined') requirementTheme.delete(floor); // V2 : re-choix contextuel du thème

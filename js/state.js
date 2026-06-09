@@ -513,6 +513,9 @@ let usedFountains = new Set();
 // Autels utilisés sur l'étage courant (clé "x,y") — même cycle que
 // `usedFountains` : 1 usage par visite d'étage. Voir dungeon-enrichment §2.B.
 let usedAltars = new Set();
+// Refuges du Blaireau utilisés sur l'étage courant (clé "x,y") — même cycle
+// que `usedFountains`. Voir .claude/plans/refuge-poufsouffle.md.
+let usedRefuges = new Set();
 // Événement de l'étage courant (id de FLOOR_EVENTS) ou null. Tiré à la
 // génération, mis en cache par étage et persisté. Voir dungeon-enrichment §4.
 let currentFloorEvent = null;

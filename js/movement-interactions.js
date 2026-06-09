@@ -641,6 +641,32 @@ function useFountain() {
   safeCall('autoSave', 'fountain-used');
 }
 
+// ── Refuge du Blaireau — repos partiel 1×/visite (Poufsouffle) ──
+// Parent de la fontaine, mais soin PARTIEL (REFUGE_HEAL_FRAC) : un repos de
+// campagne, « filet de sécurité » thématique de Poufsouffle (08 §8.8.3).
+function useRefuge() {
+  if (inBattle) return;
+  if (dungeon[playerY][playerX] !== CELL.REFUGE) return;
+  const key = `${playerX},${playerY}`;
+  if (usedRefuges.has(key)) {
+    addMsg("Le Refuge a déjà servi : revenez sur cet étage plus tard.", 'bad');
+    return;
+  }
+  const frac = (typeof REFUGE_HEAL_FRAC === 'number') ? REFUGE_HEAL_FRAC : 0.5;
+  party.forEach(c => {
+    if (c.hp <= 0) return;
+    c.hp = Math.min(c.hpMax, c.hp + Math.ceil(c.hpMax * frac));
+    c.sp = Math.min(c.spMax, c.sp + Math.ceil(c.spMax * frac));
+  });
+  usedRefuges.add(key);
+  if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'heal');
+  setNarrative("Autour du foyer du Blaireau, le groupe panse ses plaies et reprend son souffle. On ne laisse personne derrière — ici, on tient bon, ensemble.");
+  addMsg(`Refuge du Blaireau : ${Math.round(frac * 100)} % des PV et PM restaurés.`, 'good');
+  if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
+  updateUI();
+  safeCall('autoSave', 'refuge-used');
+}
+
 // ── Salle sur Demande (easter egg) ───────────────────────────
 // Révèle la porte : le mur « propice » de l'étage devient CELL.REQUIREMENT,
 // marchable. Déclenché par le 3ᵉ passage sur la tuile (cf. movement.js _step).
