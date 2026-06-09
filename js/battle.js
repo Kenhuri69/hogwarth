@@ -540,6 +540,18 @@ function startBattle(baseEnemyData, opts) {
   }
   party.forEach(c => { c.statusEffects = []; });
 
+  // L3 — toast de première découverte d'une espèce (cosmétique, purement
+  // textuel → non gardé reduced-motion). Émis AVANT le seenMonsters.add :
+  // une ligne par espèce neuve, dédupliquée au sein du groupe.
+  if (typeof addMsg === 'function' && typeof seenMonsters !== 'undefined') {
+    const _newSpecies = new Set();
+    for (const e of enemyGroup) {
+      if (!e.id || e.isDuelist) continue;
+      if (seenMonsters.has(e.id) || _newSpecies.has(e.id)) continue;
+      _newSpecies.add(e.id);
+      addMsg(`🔎 Nouvelle créature cataloguée : ${e.name} !`, 'good');
+    }
+  }
   // Marquer les ennemis comme découverts dans le bestiaire (hors duellistes).
   enemyGroup.forEach(e => { if (e.id && !e.isDuelist) seenMonsters.add(e.id); });
   // Surcouche corruption (Chapitre 09 §9.1.2) : garantit le champ pour les
