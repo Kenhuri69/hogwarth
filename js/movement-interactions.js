@@ -62,6 +62,7 @@ function openChest() {
   document.getElementById('btn-interact').style.display = 'none';
   AudioSystem.playChestOpen();
   if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'gold'); // VFX d'ouverture (E3)
+  if (typeof HAPTICS_safe !== 'undefined') HAPTICS_safe.chest(); // N2
   if (puzzleReward) {
     _openPuzzleChest(currentFloorEvent === 'runique');
     return;

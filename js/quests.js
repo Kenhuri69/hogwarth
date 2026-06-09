@@ -690,6 +690,7 @@ function completeQuest(index) {
   else AudioSystem.playLevelUp();
   addMsg(`<img class="ui-icon ui-icon-md" src="img/icons/quest.png" alt=""> Quête terminée : « ${q.title} » !`, 'good');
   if (window.UX_safe) UX_safe.questFanfare(q.title);
+  if (typeof HAPTICS_safe !== 'undefined') HAPTICS_safe.quest(); // N2
 
   recalculateStats();
   updateUI();

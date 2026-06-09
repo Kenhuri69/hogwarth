@@ -1021,4 +1021,79 @@ async function scenarioGoldTick() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact, scenarioLowHpCard, scenarioActiveCharPulse, scenarioGoldTick] };
+// N2 — haptique étendue : lowHp / chest / quest / cast présents et appelés à
+// leurs call-sites respectifs (front montant pour lowHp). navigator.vibrate
+// absent en headless → _buzz no-op ; on espionne window.Haptics.
+async function scenarioHapticsExtended() {
+  console.log('\n── Scénario : Haptique étendue (N2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Méthodes présentes + installation des espions.
+  const api = await page.evaluate(() => {
+    const out = { ok: false };
+    const H = window.Haptics;
+    out.ok = !!H && ['lowHp', 'chest', 'quest', 'cast'].every(k => typeof H[k] === 'function');
+    if (out.ok) {
+      H.__calls = { lowHp: 0, chest: 0, quest: 0, cast: 0 };
+      ['lowHp', 'chest', 'quest', 'cast'].forEach(k => {
+        const orig = H[k];
+        H[k] = function () { H.__calls[k]++; return orig.apply(this, arguments); };
+      });
+    }
+    // Le proxy HAPTICS_safe ne throw pas.
+    let safeOk = true;
+    try { HAPTICS_safe.lowHp(); HAPTICS_safe.chest(); HAPTICS_safe.quest(); HAPTICS_safe.cast(); }
+    catch (e) { safeOk = false; }
+    return { ok: out.ok, safeOk };
+  });
+  assert(api.ok, 'N2 méthodes lowHp/chest/quest/cast absentes de Haptics');
+  assert(api.safeOk, 'N2 HAPTICS_safe a throw');
+
+  // lowHp — front montant : un seul buzz à l'entrée en PV bas, pas en restant bas.
+  const low = await page.evaluate(() => {
+    const H = window.Haptics;
+    party[0].hp = party[0].hpMax; updateUI();            // pas bas
+    const base = H.__calls.lowHp;
+    party[0].hp = Math.max(1, Math.floor(party[0].hpMax * 0.1)); updateUI(); // entre en bas
+    const enter = H.__calls.lowHp;
+    updateUI();                                          // reste bas
+    const stay = H.__calls.lowHp;
+    return { base, enter, stay };
+  });
+  console.log('  N2 lowHp:', low);
+  assert(low.enter === low.base + 1, 'N2 lowHp doit buzz une fois à l\'entrée en PV bas');
+  assert(low.stay === low.enter, 'N2 lowHp ne doit pas re-buzz en restant bas');
+
+  // chest + quest (hors combat).
+  const explore = await page.evaluate(() => {
+    const H = window.Haptics;
+    const c0 = H.__calls.chest, q0 = H.__calls.quest;
+    dungeon[playerY][playerX] = CELL.CHEST; openChest();
+    acceptQuest('lumiere_desespoir');
+    const idx = activeQuests.findIndex(x => x.id === 'lumiere_desespoir');
+    completeQuest(idx);
+    return { chest: H.__calls.chest - c0, quest: H.__calls.quest - q0 };
+  });
+  console.log('  N2 chest/quest:', explore);
+  assert(explore.chest >= 1, 'N2 openChest doit déclencher HAPTICS_safe.chest');
+  assert(explore.quest >= 1, 'N2 completeQuest doit déclencher HAPTICS_safe.quest');
+
+  // cast (en combat).
+  await startDummyFight(page);
+  const cast = await page.evaluate(() => {
+    const H = window.Haptics;
+    const before = H.__calls.cast;
+    party[0].sp = 50; currentBattleChar = 0;
+    castSpellInBattle('Incendio', 0);
+    return { delta: H.__calls.cast - before };
+  });
+  console.log('  N2 cast:', cast);
+  assert(cast.delta >= 1, 'N2 castSpellInBattle doit déclencher HAPTICS_safe.cast');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS (haptique N2)'); }
+  console.log('  ✅ Haptique étendue (N2) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioEnemyIdle, scenarioDungeonVfx, scenarioCombatFeedback, scenarioCombatFX, scenarioDungeonFX, scenarioCinematics, scenarioHaptics, scenarioDangerVignette, scenarioCardReact, scenarioLowHpCard, scenarioActiveCharPulse, scenarioGoldTick, scenarioHapticsExtended] };

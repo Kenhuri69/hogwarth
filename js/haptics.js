@@ -37,8 +37,13 @@
   function crit()    { _buzz([12, 30, 28]); }
   function death()   { _buzz(200); }
   function levelUp() { _buzz([20, 40, 20, 40, 40]); }
+  // N2 — moments supplémentaires (sobres, mêmes garde-fous via _buzz) :
+  function lowHp()   { _buzz([30, 50, 30]); }          // alerte PV bas (entrée K2)
+  function chest()   { _buzz(12); }                    // coffre ouvert
+  function quest()   { _buzz([20, 30, 20, 30, 60]); }  // quête accomplie
+  function cast()    { _buzz(8); }                     // sort lancé
 
-  window.Haptics = { hit, crit, death, levelUp };
+  window.Haptics = { hit, crit, death, levelUp, lowHp, chest, quest, cast };
 })();
 
 // Helper défensif (calqué sur CFX_safe) : HAPTICS_safe.foo(...) appelle
