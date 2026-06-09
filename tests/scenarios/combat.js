@@ -2124,4 +2124,47 @@ async function scenarioLargeEnemyGroup() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioLargeEnemyGroup] };
+// L3 — toast de première découverte d'une espèce : la 1re rencontre émet
+// « 🔎 Nouvelle créature cataloguée : <nom> » ; une 2e rencontre de la même
+// espèce (déjà dans seenMonsters) n'en émet pas.
+async function scenarioMonsterDiscovery() {
+  console.log('\n── Scénario : Toast de découverte de monstre (L3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // 1re rencontre d'une espèce neuve → toast + entrée bestiaire.
+  await page.evaluate(() => {
+    seenMonsters.delete('test_dummy');
+    const log = document.getElementById('msg-log'); if (log) log.innerHTML = '';
+  });
+  await startDummyFight(page);
+  const first = await page.evaluate(() => {
+    const txt = (document.getElementById('msg-log') || {}).textContent || '';
+    return {
+      hasToast: txt.includes('Nouvelle créature cataloguée') && txt.includes('Mannequin'),
+      seen: seenMonsters.has('test_dummy'),
+    };
+  });
+  console.log('  L3 1re rencontre:', first);
+  assert(first.hasToast, 'L3 toast de découverte absent à la 1re rencontre');
+  assert(first.seen, 'L3 espèce non ajoutée à seenMonsters');
+
+  // Fin de combat, puis 2e rencontre de la même espèce → pas de nouveau toast.
+  await page.evaluate(() => {
+    inBattle = false; enemyGroup = [];
+    const log = document.getElementById('msg-log'); if (log) log.innerHTML = '';
+  });
+  await startDummyFight(page);
+  const second = await page.evaluate(() => {
+    const txt = (document.getElementById('msg-log') || {}).textContent || '';
+    return { hasToast: txt.includes('Nouvelle créature cataloguée') };
+  });
+  console.log('  L3 2e rencontre:', second);
+  assert(!second.hasToast, 'L3 toast émis à tort pour une espèce déjà cataloguée');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS (découverte L3)'); }
+  console.log('  ✅ Toast de découverte de monstre (L3) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };
