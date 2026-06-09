@@ -70,7 +70,7 @@ function renderEchoCodex() {
   const ids  = Object.keys(TEMPORAL_ECHOES);
   const unlocked = ids.filter(id => seen.has(id)).length;
 
-  const tierLabel = { silhouette: '👤 Silhouette', scene: '🎞️ Scène rejouée', voice: '🗣️ Voix de Fondateur' };
+  const tierLabel = { silhouette: '👤 Silhouette', scene: '🎞️ Scène rejouée', voice: '🗣️ Voix de Fondateur', chamber: '🏛️ Chambre des Fondateurs' };
 
   const cards = ids.map(id => {
     const e   = TEMPORAL_ECHOES[id];

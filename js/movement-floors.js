@@ -222,6 +222,9 @@ function _changeFloor(delta, opts) {
     // étage-clé (1/4/8). One-shot via seenScriptedBeat ; après _announceFloorEvent
     // pour que le beat (rare, important) gagne la narration sur ces étages.
     if (typeof maybeScriptedFloorBeat === 'function') maybeScriptedFloorBeat(currentFloor);
+    // Étage-scène « Chambre des Fondateurs » (P5) : au seuil du Cœur runique
+    // (étage 17), la Chambre de la Maison du héros s'illumine. One-shot.
+    if (typeof maybeFounderChamberBeat === 'function') maybeFounderChamberBeat(currentFloor);
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
     // Mondes parallèles — si une visite est active côté host, reposter
