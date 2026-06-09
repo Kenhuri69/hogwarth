@@ -1493,7 +1493,15 @@ async function scenarioHouseSignatureQuests() {
     availableQuests.add('quest_signature_slyth');
     chosenHouse = 'Serpentard';
     acceptQuest('quest_signature_slyth');
-    checkKillQuests('basilic');
+    // Complète la chaîne 3 beats (floor → serpents → basilic) avant le choix.
+    const q = activeQuests.find(x => x.id === 'quest_signature_slyth');
+    if (q) {
+      for (const o of q.objectives) if (o.type === 'floor') checkFloorQuests(o.floor);
+      for (const o of q.objectives) {
+        if (o.type !== 'kill') continue;
+        for (let i = 0; i < o.amount; i++) checkKillQuests(o.monsterId);
+      }
+    }
     turnInSlythSignature('pact');
     return { choice: slythPactChoice, done: slythSignatureDone };
   });

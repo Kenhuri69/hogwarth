@@ -78,4 +78,9 @@ compte qu'une fois devenu l'étape active → placer les kills en **fin** de cha
   [kill boggart×3 (dissiper la peur = rallumer les brasiers) → floor 5 (monter à
   la Tour sans reculer) → kill chevalier_fantome×1 (reprendre l'Étendard, climax)].
   Dialogues McGonagall réécrits. Vert.
-- (à venir) PR3 Serpentard, PR4 Serdaigle.
+- ✅ **PR3 — Serpentard enrichie** : `quest_signature_slyth` → 3 beats
+  [floor 4 (ouvrir le passage de Salazar) → kill serpent_cachot×2 (gardiens) →
+  kill basilic×1 (le secret, climax)] + choix gris Pacte/Défiance inchangé au
+  turn-in (`turnInSlythSignature`). Dialogues Rogue réécrits. T2 (choix pact)
+  mis à jour pour compléter la chaîne. Vert.
+- (à venir) PR4 Serdaigle (contourner `riddle` hardcodé / `pages`).
