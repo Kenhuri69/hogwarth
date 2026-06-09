@@ -223,6 +223,70 @@ function drawDepthsMist(cx, cy, scale) {
   ctx.restore();
 }
 
+// ── Runes pulsées + brouillard temporel (zone D, P-D4) ──────────
+// « Les runes palpitent... une respiration » (ch.10 §10.2). Surfaces rune
+// = sol + plafond (rune_floor/ceiling), peintes en renderer.js sous le flag
+// victoryAchieved && floor>=11. On y superpose un glow violet froid pulsé.
+
+const _RUNE_PULSE_MAX = 0.12;   // alpha crête du glow (discret)
+
+// Alpha du glow rune pour un niveau de profondeur donné. Pur sur la phase FX.
+// Retourne 0 sous prefers-reduced-motion ou tant que la boucle n'a pas tourné.
+function _runePulseAlpha(depthIndex) {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 0;
+  const phase = (typeof _dungeonFxPhase !== 'undefined') ? _dungeonFxPhase : 0;
+  if (phase === 0) return 0;
+  const di = (typeof depthIndex === 'number') ? depthIndex : 0;
+  // Respiration lente, déphasée par la profondeur ; atténuée au loin.
+  const breath = 0.5 + 0.5 * Math.sin(phase * 1.6 - di * 0.7);
+  const atten  = Math.max(0.25, 1 - di * 0.18);
+  return _RUNE_PULSE_MAX * breath * atten;
+}
+
+// Vrai si l'étage courant montre les surfaces runiques (zone D ou override
+// post-victoire 11+). Miroir de la gate _floorDark/_ceilDark de renderer.js.
+function _isRuneZone() {
+  const f  = (typeof currentFloor === 'number') ? currentFloor : 0;
+  const va = (typeof victoryAchieved !== 'undefined') && victoryAchieved;
+  if (va && f >= 11) return true;
+  if (typeof getFloorTheme === 'function') {
+    const t = getFloorTheme(f);
+    return !!(t && t.ambient === 'abyss');
+  }
+  return false;
+}
+
+// Brouillard temporel — miroir de drawDepthsMist mais palette violacée, nappes
+// basses et dérive plus lente (« le temps ne coule plus droit », ch.10 §10.2).
+// No-op hors zone rune, hors contexte canvas, ou phase statique (reduced-motion).
+function drawTemporalFog(cx, cy, scale) {
+  if (!_isRuneZone()) return;
+  if (typeof ctx === 'undefined' || typeof canvas === 'undefined') return;
+  const phase = (typeof _dungeonFxPhase !== 'undefined') ? _dungeonFxPhase : 0;
+  if (phase === 0) return;
+  const W = canvas.width, H = canvas.height;
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  // 3 nappes violacées basses, lentes — le passé qui affleure au ras du sol.
+  for (let i = 0; i < 3; i++) {
+    const speed = 5 + i * 3;                          // plus lent que depths (hors-temps)
+    const drift = ((phase * speed) % (W + 300)) - 150;
+    const my    = H * (0.62 + i * 0.12) + Math.sin(phase * 0.35 + i * 1.3) * 8;
+    const r     = scale * (1.0 + i * 0.3);
+    const a     = 0.06 + i * 0.014;                   // très discret
+    const g = ctx.createRadialGradient(drift, my, 0, drift, my, r);
+    g.addColorStop(0,   `rgba(150,130,205,${a})`);
+    g.addColorStop(0.6, `rgba(95,80,140,${a * 0.5})`);
+    g.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(drift, my, r, r * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 // ── Poussière ambiante des couloirs (E4) ───────────────────────
 // Fines motes flottantes peintes sur la scène (juste avant le cadre de
 // premier plan), faible densité pour ne pas charger la lisibilité. Teinte

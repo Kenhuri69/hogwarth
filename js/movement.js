@@ -700,6 +700,8 @@ function handleCellEntry(cell) {
           if (typeof seenEchoes !== 'undefined' && seenEchoes && echo.id) {
             seenEchoes.add(echo.id);
           }
+          // P-D4 : flash de givre quand le passé affleure.
+          if (typeof pulseFrostOverlay === 'function') pulseFrostOverlay();
         }
       }
       setNarrative(ambianceLine);

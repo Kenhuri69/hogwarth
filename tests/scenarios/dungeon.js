@@ -1349,6 +1349,85 @@ async function scenarioZoneDEchoes() {
   await browser.close();
 }
 
+async function scenarioZoneDFx() {
+  console.log('\n── Scénario : Zone D — FX runes pulsées + brouillard temporel (P-D4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serdaigle' });
+
+  // T1 : helpers FX exposés.
+  const t1 = await page.evaluate(() => ({
+    fog:   typeof drawTemporalFog === 'function',
+    pulse: typeof _runePulseAlpha === 'function',
+    frost: typeof pulseFrostOverlay === 'function',
+    zone:  typeof _isRuneZone === 'function',
+  }));
+  console.log('  T1 helpers:', JSON.stringify(t1));
+  assert(t1.fog && t1.pulse && t1.frost && t1.zone, 'helpers FX P-D4 absents');
+
+  // T2 : gate de zone rune — vrai en zone D / Boucle, faux ailleurs.
+  const t2 = await page.evaluate(() => {
+    const probe = (f, v) => { currentFloor = f; victoryAchieved = v; return _isRuneZone(); };
+    const out = {
+      floor1:    probe(1, false),
+      floor14:   probe(14, false),     // zone D (abyss) même sans victoire
+      boucle11:  probe(11, true),      // override post-victoire 11+
+      depths11:  probe(11, false),     // depths sans victoire → pas rune
+    };
+    currentFloor = 1; victoryAchieved = false;
+    return out;
+  });
+  console.log('  T2 gate:', JSON.stringify(t2));
+  assert(t2.floor1 === false,  'étage 1 ne doit pas être zone rune');
+  assert(t2.floor14 === true,  'étage 14 = zone rune (abyss)');
+  assert(t2.boucle11 === true, 'étage 11 post-victoire = zone rune');
+  assert(t2.depths11 === false,'étage 11 sans victoire ≠ zone rune');
+
+  // T3 : _runePulseAlpha borné [0, cap] et > 0 quand la phase tourne.
+  const t3 = await page.evaluate(() => {
+    _dungeonFxPhase = 1.234;                  // force une phase non nulle
+    const vals = [0, 1, 2, 3, 4].map(d => _runePulseAlpha(d));
+    _dungeonFxPhase = 0;
+    const atZero = _runePulseAlpha(0);        // phase 0 → 0
+    return { vals, atZero };
+  });
+  console.log('  T3 pulse:', JSON.stringify(t3));
+  assert(t3.vals.every(v => v >= 0 && v <= 0.12 + 1e-9), 'pulse hors bornes [0,0.12]');
+  assert(t3.vals.some(v => v > 0), 'pulse toujours nul malgré phase active');
+  assert(t3.atZero === 0, 'pulse devrait être 0 à phase 0');
+
+  // T4 : drawDungeon à l'étage 14 + victoire ne throw pas (rune pulse + fog).
+  const t4 = await page.evaluate(() => {
+    currentFloor = 14; victoryAchieved = true; _dungeonFxPhase = 2.5;
+    let threw = false, err = '';
+    try { drawDungeon(); } catch (e) { threw = true; err = String(e); }
+    // Fog no-op à l'étage 1 (pas de throw non plus).
+    currentFloor = 1; victoryAchieved = false;
+    let threw1 = false;
+    try { drawDungeon(); } catch (e) { threw1 = true; }
+    return { threw, err, threw1 };
+  });
+  console.log('  T4 draw:', JSON.stringify(t4));
+  assert(!t4.threw, 'drawDungeon étage 14 a throw: ' + t4.err);
+  assert(!t4.threw1, 'drawDungeon étage 1 a throw');
+
+  // T5 : pulseFrostOverlay élève l'opacité de #frost-overlay au-dessus de la baseline.
+  const t5 = await page.evaluate(() => {
+    const el = document.getElementById('frost-overlay');
+    el.style.opacity = '0.1';
+    pulseFrostOverlay();
+    return { after: parseFloat(el.style.opacity) };
+  });
+  console.log('  T5 frost pic:', JSON.stringify(t5));
+  assert(t5.after > 0.1, 'pulseFrostOverlay n\'a pas élevé l\'opacité du givre');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Zone D FX)`);
+  }
+  console.log('  ✅ Zone D FX — runes pulsées, brouillard temporel & pic givre conformes');
+  await browser.close();
+}
+
 async function scenarioBranchyDungeon() {
   console.log('\n── Scénario : donjon branchu (Phase 1) ──');
   const { browser, page, errors } = await launchGame();
@@ -2824,4 +2903,4 @@ async function scenarioScriptedFloorBeats() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
+module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };

@@ -399,3 +399,21 @@ function _applyCorruptionAmbiance(floor) {
   const c  = corruptionLevel(floor, va);
   el.style.opacity = String(Math.min(0.35, c * _FROST_FACTOR));
 }
+
+// ── Pic de givre sur écho temporel (P-D4) ───────────────────────
+// Élève brièvement #frost-overlay au-dessus de la baseline de corruption
+// (la transition CSS de 1.2 s lisse la montée), puis ré-applique la baseline.
+// Appelé par movement.js quand un écho temporel s'affiche. Défensif.
+function pulseFrostOverlay() {
+  const el = (typeof safeEl === 'function') ? safeEl('frost-overlay') : document.getElementById('frost-overlay');
+  if (!el) return;
+  const base = parseFloat(el.style.opacity) || 0;
+  el.style.opacity = String(Math.min(0.6, base + 0.3));
+  setTimeout(() => {
+    if (typeof _applyCorruptionAmbiance === 'function' && typeof currentFloor !== 'undefined') {
+      _applyCorruptionAmbiance(currentFloor);
+    } else {
+      el.style.opacity = String(base);
+    }
+  }, 900);
+}
