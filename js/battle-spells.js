@@ -993,6 +993,7 @@ function castSpellInBattle(spellName, targetIdx, targetAllyIdx) {
   char.sp -= _spellSpCost(spell);
   AudioSystem.playSpellCast(spellName);
   AudioSystem.speakSpell(spellName);
+  if (typeof HAPTICS_safe !== 'undefined') HAPTICS_safe.cast(); // N2
   closeModal('spell-modal');
   document.getElementById('target-selection').style.display = 'none';
 

@@ -88,7 +88,11 @@ function updateUI() {
     // ── État "PV bas" par carte (K2) ──────────────────────────
     // Liseré rouge + pulsation sous le seuil de danger. Jamais sur un KO
     // (.ko-char a priorité). Purement dérivé de l'état, aucune variable neuve.
-    card.classList.toggle('low-hp', !ko && c.hpMax > 0 && c.hp / c.hpMax < LOW_HP_RATIO);
+    const wasLow = card.classList.contains('low-hp');
+    const isLow  = !ko && c.hpMax > 0 && c.hp / c.hpMax < LOW_HP_RATIO;
+    card.classList.toggle('low-hp', isLow);
+    // N2 — haptique : un seul buzz à l'ENTRÉE en état PV bas (front montant).
+    if (isLow && !wasLow && typeof HAPTICS_safe !== 'undefined') HAPTICS_safe.lowHp();
   });
 
   // ── Vignette de danger bas-PV (D2) ───────────────────────────
