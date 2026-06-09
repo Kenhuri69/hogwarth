@@ -485,7 +485,15 @@ async function scenarioRandomLoreNpcs() {
     const idleText = _dialogState.pages[0];
     const idleActions = _dialogState.actions.map(a => a.label);
     const sn = NPCS.find(n => n.id === 'sir_nicolas');
-    const inIdlePool = sn.dialogues.idleRandom.includes(idleText);
+    // L'idle vient bien du pool idleRandom : on s'appuie sur idleIndex (>=0)
+    // plutôt que sur une comparaison de chaîne — les longues répliques sont
+    // paginées (_splitDialogPage), donc pages[0] ne reproduit pas forcément
+    // l'entrée complète. On vérifie l'index ET que la 1re page en est le préfixe.
+    const idleIdx = _dialogState.idleIndex;
+    const inIdlePool = idleIdx >= 0
+      && Array.isArray(sn.dialogues.idleRandom)
+      && typeof sn.dialogues.idleRandom[idleIdx] === 'string'
+      && sn.dialogues.idleRandom[idleIdx].startsWith(idleText);
     closeNpcDialog();
     return {
       greetingIsArray: greetingPages.length >= 2,
