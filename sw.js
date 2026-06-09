@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v83';
+const CACHE_VERSION = 'hogwarth-v84';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -27,7 +27,7 @@ const PRECACHE_URLS = [
   './manifest.json',
 
   // CSS
-  './css/style.css?v=34',
+  './css/style.css?v=35',
   './css/ux-improvements.css?v=4',
   './css/save-ui.css?v=2',
   './css/ornaments.css?v=1',

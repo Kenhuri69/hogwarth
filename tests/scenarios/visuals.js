@@ -723,4 +723,58 @@ async function scenarioMonsterCombatInfo() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMonsterImages, scenarioFloorTextures, scenarioSceneIcons, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioItemIcons, scenarioTintCss, scenarioNpcSprite3D, scenarioMonsterCombatInfo] };
+// N1 — transitions d'ouverture des modales d'info : le panneau .modal-box porte
+// une animation d'entrée (fondu + scale), neutralisée en fondu seul sous
+// reduced-motion. La modale reste fonctionnelle (boutons cliquables). Les
+// overlays de combat ne sont pas touchés (n'utilisent pas .modal-box).
+async function scenarioModalTransitions() {
+  console.log('\n── Scénario : Transitions d\'ouverture des modales (N1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Mouvement normal : la box de la fiche perso porte modalBoxIn.
+  const normal = await page.evaluate(() => {
+    openCharacter(0);
+    const modal = document.getElementById('character-modal');
+    const box = modal.querySelector('.modal-box');
+    const visible = getComputedStyle(modal).display !== 'none';
+    const anim = box ? getComputedStyle(box).animationName : null;
+    // Le bouton de fermeture reste présent/cliquable (modale fonctionnelle).
+    const closable = !!modal.querySelector('.modal-close');
+    closeModal && closeModal('character-modal');
+    return { visible, anim, closable };
+  });
+  console.log('  N1 normal:', normal);
+  assert(normal.visible, 'N1 modale non affichée après openCharacter');
+  assert(normal.anim === 'modalBoxIn', 'N1 animation d\'ouverture absente (' + normal.anim + ')');
+  assert(normal.closable, 'N1 bouton de fermeture absent (modale non fonctionnelle)');
+
+  // L'overlay de combat n'est PAS animé par cette règle (pas de .modal-box).
+  const combatUntouched = await page.evaluate(() => {
+    const enc = document.getElementById('encounter-overlay');
+    return !!enc && !enc.classList.contains('modal-box');
+  });
+  assert(combatUntouched, 'N1 régression : encounter-overlay ne doit pas être une .modal-box');
+
+  // reduced-motion : fondu seul (modalBoxFadeRM), modale toujours affichée.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const reduced = await page.evaluate(() => {
+    openBestiary();
+    const box = document.querySelector('#bestiary-modal .bestiary-modal-box');
+    const anim = box ? getComputedStyle(box).animationName : null;
+    closeModal && closeModal('bestiary-modal');
+    return { anim };
+  });
+  console.log('  N1 reduced:', reduced);
+  assert(reduced.anim === 'modalBoxFadeRM', 'N1 variante reduced-motion absente (' + reduced.anim + ')');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error('Erreurs console pendant le scénario Transitions de modales (N1)');
+  }
+  console.log('  ✅ Transitions d\'ouverture des modales (N1) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMonsterImages, scenarioFloorTextures, scenarioSceneIcons, scenarioCmdBtnIcons, scenarioUiChromeIcons, scenarioItemIcons, scenarioTintCss, scenarioNpcSprite3D, scenarioMonsterCombatInfo, scenarioModalTransitions] };

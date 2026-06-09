@@ -1640,6 +1640,28 @@ body {
   position: relative;
   box-shadow: 0 0 40px rgba(201,168,76,0.2);
 }
+
+/* N1 — transitions d'ouverture des modales d'info : fondu du voile + léger
+   scale du panneau au passage display:none → flex (CSS seul, rejoué à chaque
+   réaffichage). N'affecte PAS les overlays de combat (#encounter-overlay) ni
+   les transitions d'étage (qui n'utilisent pas .modal-box). */
+#inventory-modal, #shop-modal, #character-modal, #spell-modal, #slot-modal,
+#house-detail-modal, #settings-modal, #bestiary-modal {
+  animation: modalBackdropIn 0.18s ease;
+}
+@keyframes modalBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-box, .bestiary-modal-box {
+  animation: modalBoxIn 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+@keyframes modalBoxIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Fondu d'opacité seul, sans translation/scale. */
+  .modal-box, .bestiary-modal-box { animation: modalBoxFadeRM 0.16s ease; }
+}
+@keyframes modalBoxFadeRM { from { opacity: 0; } to { opacity: 1; } }
 /* Fiche personnage v2 — beaucoup plus large pour contenir les 4 sections.
    max-height portée à 92vh (vs 80vh global) : sur un écran 800 px,
    la box passe de 640 → 736 px (gain 96 px) — réduit nettement le
