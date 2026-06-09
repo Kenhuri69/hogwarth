@@ -33,10 +33,65 @@ function _codexTier(monster) {
 
 function openBestiary() {
   document.getElementById('bestiary-modal').style.display = 'flex';
-  // Revenir au panneau liste et rafraîchir
-  document.getElementById('bestiary-list-panel').style.display  = '';
-  document.getElementById('bestiary-detail-panel').style.display = 'none';
-  filterBestiary();
+  // Toujours rouvrir sur l'onglet Bestiaire (panneau liste).
+  switchCodexTab('bestiary');
+}
+
+// ── Onglets Codex : Bestiaire / Mémoire des Ruines (P-D5) ─────
+// Bascule entre la liste du bestiaire et le codex des échos temporels,
+// dans la même modale. Défensif : safeEl tolère un élément manquant.
+function switchCodexTab(tab) {
+  const list   = document.getElementById('bestiary-list-panel');
+  const detail = document.getElementById('bestiary-detail-panel');
+  const echoes = document.getElementById('bestiary-echoes-panel');
+  const tabB   = document.getElementById('codex-tab-bestiary');
+  const tabE   = document.getElementById('codex-tab-echoes');
+  const isEchoes = tab === 'echoes';
+  if (list)   list.style.display   = isEchoes ? 'none' : 'flex';
+  if (detail) detail.style.display = 'none';
+  if (echoes) echoes.style.display = isEchoes ? 'block' : 'none';
+  if (tabB) tabB.classList.toggle('active', !isEchoes);
+  if (tabE) tabE.classList.toggle('active', isEchoes);
+  if (isEchoes) renderEchoCodex();
+  else filterBestiary();
+}
+
+// Rend le codex « Mémoire des Ruines ». Chaque écho de TEMPORAL_ECHOES est
+// affiché déverrouillé (texte de codex) ou verrouillé (silhouette grisée)
+// selon seenEchoes. Tout défensif : un module absent → message neutre.
+function renderEchoCodex() {
+  const host = document.getElementById('bestiary-echoes');
+  if (!host) return;
+  if (typeof TEMPORAL_ECHOES === 'undefined') {
+    host.innerHTML = `<div class="bestiary-empty">La mémoire des Ruines n'est pas encore accessible…</div>`;
+    return;
+  }
+  const seen = (typeof seenEchoes !== 'undefined' && seenEchoes) ? seenEchoes : new Set();
+  const ids  = Object.keys(TEMPORAL_ECHOES);
+  const unlocked = ids.filter(id => seen.has(id)).length;
+
+  const tierLabel = { silhouette: '👤 Silhouette', scene: '🎞️ Scène rejouée', voice: '🗣️ Voix de Fondateur' };
+
+  const cards = ids.map(id => {
+    const e   = TEMPORAL_ECHOES[id];
+    const got = seen.has(id);
+    return `
+      <div class="echo-card${got ? ' echo-seen' : ' echo-locked'}">
+        <div class="echo-icon">${got ? e.icon : '❔'}</div>
+        <div class="echo-info">
+          <div class="echo-name">${got ? e.label : 'Écho non encore perçu'}
+            <span class="echo-tier-tag">${tierLabel[e.tier] || e.tier}</span>
+          </div>
+          <div class="echo-text">${got ? e.codex : 'Avance plus profond dans les Ruines Anciennes pour percevoir ce fragment du passé…'}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  host.innerHTML = `
+    <p class="echo-intro">Au cœur des Ruines Anciennes, le temps cesse de couler droit.
+    Le lieu <em>rejoue</em> son passé : chaque écho perçu se grave ici.
+    <span class="echo-progress">${unlocked}/${ids.length} perçus</span></p>
+    <div class="echo-grid">${cards}</div>`;
 }
 
 function closeBestiary() {

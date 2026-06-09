@@ -877,6 +877,50 @@ body {
 .bestiary-stats     { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--label-muted); margin-top: 6px; }
 .bestiary-empty     { text-align: center; padding: 40px; color: var(--label-muted); font-style: italic; }
 
+/* Onglets Codex : Bestiaire / Mémoire des Ruines (P-D5) */
+.codex-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.3);
+  flex-shrink: 0;
+}
+.codex-tab {
+  flex: 1 1 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--label-muted);
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: 7px 4px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.codex-tab:hover  { color: var(--gold); }
+.codex-tab.active { color: var(--gold); border-bottom-color: var(--gold-dark); }
+
+/* Codex « Mémoire des Ruines » */
+#bestiary-echoes-panel { flex: 1; overflow-y: auto; padding-right: 4px; }
+.echo-intro    { font-size: 12px; color: var(--parchment-dark); line-height: 1.5; margin-bottom: 12px; }
+.echo-progress { display: block; margin-top: 6px; color: var(--gold); font-family: 'Cinzel', serif; letter-spacing: 1px; }
+.echo-grid     { display: flex; flex-direction: column; gap: 8px; }
+.echo-card {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid #2a1a08;
+  border-radius: 6px;
+  background: #0d0805;
+}
+.echo-seen   { border-color: #3a2a10; }
+.echo-locked { opacity: 0.55; filter: grayscale(0.6); }
+.echo-icon   { font-size: 28px; flex-shrink: 0; line-height: 1; }
+.echo-info   { flex: 1; }
+.echo-name   { font-family: 'Cinzel', serif; color: var(--gold); font-size: 13px; margin-bottom: 4px; }
+.echo-tier-tag { font-size: 9px; color: var(--label-muted); font-family: sans-serif; letter-spacing: 1px; margin-left: 6px; text-transform: uppercase; }
+.echo-text   { font-size: 12px; color: var(--parchment-dark); line-height: 1.45; }
+
 /* Empty-states divers — pendants de .bestiary-empty / .slot-empty-state */
 .inv-empty-slot       { font-size: 11px; color: #2a1a08; }
 .quest-tracker-empty  { color: #3a2a10; font-style: italic; font-size: 11px; text-align: center; padding-top: 4px; }

@@ -14,6 +14,7 @@ function _serializeState() {
     currentFloor, playerX, playerY, playerDir,
     dungeon, visited, enemyMap, itemMap,
     seenMonsters:  Array.from(seenMonsters),
+    seenEchoes:    Array.from(seenEchoes),
     // NB : les préférences audio (son/voix) ne sont volontairement PAS
     // sérialisées ici — ce sont des réglages d'interface globaux
     // (AudioSystem._PREFS_KEY), pas de l'état de partie.
@@ -213,6 +214,7 @@ function _applyState(gs) {
 
   if (gs.partySize)     partySize    = gs.partySize;
   if (gs.seenMonsters)  seenMonsters = new Set(gs.seenMonsters);
+  seenEchoes = new Set(gs.seenEchoes || []);
 
   // Les préférences audio (son / voix) sont des réglages d'INTERFACE,
   // globaux et persistés à part (AudioSystem._PREFS_KEY). Charger une

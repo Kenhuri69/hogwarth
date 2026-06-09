@@ -683,11 +683,24 @@ function handleCellEntry(cell) {
       if (!ambianceLine) {
         ambianceLine = NARRATIVES.floor[Math.floor(Math.random() * NARRATIVES.floor.length)];
       }
-      // Ligne de Maison cosmétique (~1 fois sur 4).
+      // Ligne de Maison cosmétique (~1 fois sur 4), escaladée par zone (P-D2).
       const houseChoix = (typeof chosenHouse !== 'undefined') ? chosenHouse : null;
       if (houseChoix && typeof houseAmbianceLine === 'function' && Math.random() < 0.25) {
-        const hLine = houseAmbianceLine(houseChoix);
+        const hLine = houseAmbianceLine(houseChoix, currentFloor);
         if (hLine) ambianceLine += '\n' + hLine;
+      }
+      // Écho temporel (P-D3) : en Boucle Ténébreuse, ~1 entrée sur 3 fait
+      // affleurer un fragment du passé. Déverrouille le codex (seenEchoes).
+      // Défensif : tout sous typeof === 'function'.
+      const vaEcho = (typeof victoryAchieved !== 'undefined') ? victoryAchieved : false;
+      if (typeof echoLine === 'function' && Math.random() < 0.34) {
+        const echo = echoLine(currentFloor, vaEcho, houseChoix);
+        if (echo) {
+          ambianceLine += '\n' + echo.icon + ' ' + echo.text;
+          if (typeof seenEchoes !== 'undefined' && seenEchoes && echo.id) {
+            seenEchoes.add(echo.id);
+          }
+        }
       }
       setNarrative(ambianceLine);
     }

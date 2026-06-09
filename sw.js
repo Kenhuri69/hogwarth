@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v89';
+const CACHE_VERSION = 'hogwarth-v90';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -27,7 +27,7 @@ const PRECACHE_URLS = [
   './manifest.json',
 
   // CSS
-  './css/style.css?v=35',
+  './css/style.css?v=36',
   './css/ux-improvements.css?v=4',
   './css/save-ui.css?v=2',
   './css/ornaments.css?v=1',
@@ -55,16 +55,16 @@ const PRECACHE_URLS = [
   './js/data.js?v=25',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
-  './js/floor-ambiance.js?v=2',
+  './js/floor-ambiance.js?v=3',
   './js/floor-events.js?v=1',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=19',
-  './js/state.js?v=24',
+  './js/state.js?v=25',
   './js/hero-barks.js?v=3',
   './js/ui.js?v=14',
   './js/ui-character-sheet.js?v=5',
   './js/ui-settings.js?v=3',
-  './js/ui-bestiary.js?v=2',
+  './js/ui-bestiary.js?v=3',
   './js/dungeon-scaling.js?v=2',
   './js/dungeon.js?v=16',
   './js/dungeon-spawning.js?v=1',
@@ -76,7 +76,7 @@ const PRECACHE_URLS = [
   './js/renderer-sprites.js?v=5',
   './js/renderer-entities.js?v=3',
   './js/renderer-minimap.js?v=8',
-  './js/movement.js?v=31',
+  './js/movement.js?v=32',
   './js/movement-floors.js?v=8',
   './js/movement-interactions.js?v=14',
   './js/swipe-canvas.js?v=4',
@@ -98,7 +98,7 @@ const PRECACHE_URLS = [
   './js/intro.js?v=3',
   './js/shop.js?v=10',
   './js/save-slots.js?v=3',
-  './js/save.js?v=28',
+  './js/save.js?v=29',
   './js/save-visit-snapshot.js?v=1',
   './js/save-ui.js?v=4',
   './js/ironman.js?v=3',
@@ -111,7 +111,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=3',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=30',
+  './js/loader.js?v=31',
   './js/pwa.js?v=3',
 
   // Icônes PWA + premier écran

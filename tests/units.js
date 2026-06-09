@@ -289,20 +289,44 @@ function loadModule(relPath, exportNames, globals = {}) {
 
   const mod = loadModule(
     'js/floor-ambiance.js',
-    ['ZONE_AMBIANCE', 'getFloorAmbiance', 'corruptionLevel', 'HOUSE_AMBIANCE_MOD', 'houseAmbianceLine'],
+    ['ZONE_AMBIANCE', 'getFloorAmbiance', 'corruptionLevel', 'HOUSE_AMBIANCE_MOD', 'houseAmbianceLine',
+     'temporalEchoActive', 'temporalEchoTier', 'echoLine', 'FOUNDER_VOICES', 'TEMPORAL_ECHOES'],
     { FLOOR_THEMES, getFloorTheme });
 
-  const { ZONE_AMBIANCE, getFloorAmbiance, corruptionLevel, HOUSE_AMBIANCE_MOD, houseAmbianceLine } = mod;
+  const { ZONE_AMBIANCE, getFloorAmbiance, corruptionLevel, HOUSE_AMBIANCE_MOD, houseAmbianceLine,
+          temporalEchoActive, temporalEchoTier, echoLine, FOUNDER_VOICES, TEMPORAL_ECHOES } = mod;
 
   // ── getFloorAmbiance : bonne zone aux frontières ──
+  // Zones sans paliers : identité d'objet préservée (back-compat).
   check('ambiance étage 1 → hogwarts',   getFloorAmbiance(1)  === ZONE_AMBIANCE.hogwarts);
   check('ambiance étage 3 → hogwarts',   getFloorAmbiance(3)  === ZONE_AMBIANCE.hogwarts);
   check('ambiance étage 4 → dungeons',   getFloorAmbiance(4)  === ZONE_AMBIANCE.dungeons);
   check('ambiance étage 6 → dungeons',   getFloorAmbiance(6)  === ZONE_AMBIANCE.dungeons);
   check('ambiance étage 7 → depths',     getFloorAmbiance(7)  === ZONE_AMBIANCE.depths);
   check('ambiance étage 13 → depths',    getFloorAmbiance(13) === ZONE_AMBIANCE.depths);
-  check('ambiance étage 14 → ancient',   getFloorAmbiance(14) === ZONE_AMBIANCE.ancient);
-  check('ambiance étage 99 → ancient',   getFloorAmbiance(99) === ZONE_AMBIANCE.ancient);
+  // Zone ancient : objet résolu par palier (P-D1) — plus identique par référence,
+  // mais smell/sound/temp partagés avec ZONE_AMBIANCE.ancient.
+  check('ambiance étage 14 → ancient (temp partagée)', getFloorAmbiance(14).temp === ZONE_AMBIANCE.ancient.temp);
+  check('ambiance étage 99 → ancient (temp partagée)', getFloorAmbiance(99).temp === ZONE_AMBIANCE.ancient.temp);
+
+  // ── P-D1 : paliers ancient distincts aux frontières 14/17/21 ──
+  const a14 = getFloorAmbiance(14), a16 = getFloorAmbiance(16);
+  const a17 = getFloorAmbiance(17), a20 = getFloorAmbiance(20);
+  const a21 = getFloorAmbiance(21), a99 = getFloorAmbiance(99);
+  check('palier 14 = megalith', a14.tier === 'megalith');
+  check('palier 16 = megalith', a16.tier === 'megalith');
+  check('palier 17 = runic',    a17.tier === 'runic');
+  check('palier 20 = runic',    a20.tier === 'runic');
+  check('palier 21 = before',   a21.tier === 'before');
+  check('palier 99 = before',   a99.tier === 'before');
+  check('floorLines megalith ≠ runic',  a14.floorLines !== a17.floorLines);
+  check('floorLines runic ≠ before',    a17.floorLines !== a21.floorLines);
+  check('floorLines megalith ≠ before', a14.floorLines !== a21.floorLines);
+  check('chaque palier ancient a ≥ 4 floorLines',
+    [a14, a17, a21].every(a => Array.isArray(a.floorLines) && a.floorLines.length >= 4));
+  // Le contenu des paliers diffère réellement (pas seulement la référence).
+  check('1re ligne megalith ≠ 1re ligne runic', a14.floorLines[0] !== a17.floorLines[0]);
+  check('1re ligne runic ≠ 1re ligne before',   a17.floorLines[0] !== a21.floorLines[0]);
 
   // Fallback sur hogwarts pour entrée invalide (miroir du comportement de getFloorTheme).
   check('ambiance floor 0 → hogwarts',   getFloorAmbiance(0)         === ZONE_AMBIANCE.hogwarts);
@@ -357,10 +381,67 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('houseAmbianceLine Poufsouffle string', typeof houseAmbianceLine('Poufsouffle') === 'string');
 
   // Les quatre Maisons ont des lignes non vides et distinctes.
-  const lines = ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].map(houseAmbianceLine);
+  const lines = ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].map(h => houseAmbianceLine(h));
   check('4 lignes de Maison non vides', lines.every(l => l && l.length > 0));
   const unique = new Set(lines);
   check('4 lignes de Maison distinctes', unique.size === 4);
+
+  // ── P-D2 : escalade par zone (byZone A→D) ──
+  // Sans floor → fallback extraLine. Avec floor → ligne de la zone.
+  check('houseAmbianceLine sans floor = extraLine',
+    houseAmbianceLine('Serpentard') === HOUSE_AMBIANCE_MOD.Serpentard.extraLine);
+  for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle']) {
+    const a = houseAmbianceLine(h, 1);   // hogwarts
+    const b = houseAmbianceLine(h, 4);   // dungeons
+    const c = houseAmbianceLine(h, 7);   // depths
+    const d = houseAmbianceLine(h, 14);  // ancient
+    check(`${h} : 4 lignes de zone non vides`, [a, b, c, d].every(x => typeof x === 'string' && x.length > 0));
+    check(`${h} : 4 lignes de zone distinctes`, new Set([a, b, c, d]).size === 4);
+    check(`${h} : ligne zone ancient = byZone.ancient`, d === HOUSE_AMBIANCE_MOD[h].byZone.ancient);
+  }
+  check('houseAmbianceLine(null, 14) = null', houseAmbianceLine(null, 14) === null);
+
+  // ── P-D3 : échos temporels (gates, paliers, voix Maison priorisée) ──
+  // temporalEchoActive : gate victory + floor >= 12.
+  check('echo inactif hors Boucle', temporalEchoActive(14, false) === false);
+  check('echo inactif floor 11 en Boucle', temporalEchoActive(11, true) === false);
+  check('echo actif floor 12 en Boucle',   temporalEchoActive(12, true) === true);
+  check('echo actif floor 99 en Boucle',   temporalEchoActive(99, true) === true);
+  check('echo inactif floor invalide',     temporalEchoActive(undefined, true) === false);
+
+  // temporalEchoTier : silhouette (12-13) / scene (14+) / null.
+  check('tier floor 11 = null',        temporalEchoTier(11) === null);
+  check('tier floor 12 = silhouette',  temporalEchoTier(12) === 'silhouette');
+  check('tier floor 13 = silhouette',  temporalEchoTier(13) === 'silhouette');
+  check('tier floor 14 = scene',       temporalEchoTier(14) === 'scene');
+  check('tier floor 21 = scene',       temporalEchoTier(21) === 'scene');
+
+  // echoLine : null hors zone, voix de la Maison du héros priorisée à 17+.
+  check('echoLine null hors Boucle',   echoLine(20, false, 'Gryffondor') === null);
+  check('echoLine null floor 11',      echoLine(11, true,  'Gryffondor') === null);
+  check('echoLine silhouette (12-13)', echoLine(12, true, 'Gryffondor').id === 'echo_silhouette');
+  check('echoLine scène (14-16)',      echoLine(14, true, 'Gryffondor').id === 'echo_scene_sceau');
+  // Cœur runique 17+ : la voix de la Maison du héros est priorisée.
+  check('echoLine 17 Gryffondor = Godric',  echoLine(17, true, 'Gryffondor').id  === 'echo_godric');
+  check('echoLine 17 Serpentard = Salazar', echoLine(17, true, 'Serpentard').id  === 'echo_salazar');
+  check('echoLine 17 Serdaigle = Rowena',   echoLine(17, true, 'Serdaigle').id   === 'echo_rowena');
+  check('echoLine 17 Poufsouffle = Helga',  echoLine(17, true, 'Poufsouffle').id === 'echo_helga');
+  // Cohérence FOUNDER_VOICES ↔ echoId ↔ TEMPORAL_ECHOES.
+  for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle']) {
+    const id = FOUNDER_VOICES[h].echoId;
+    check(`FOUNDER_VOICES.${h}.echoId ∈ TEMPORAL_ECHOES`, !!TEMPORAL_ECHOES[id]);
+    check(`echo ${id} a un texte de codex`, typeof TEMPORAL_ECHOES[id].codex === 'string' && TEMPORAL_ECHOES[id].codex.length > 0);
+  }
+  // 17+ sans Maison → retombe sur la scène (pas de voix priorisée).
+  check('echoLine 17 sans Maison = scène', echoLine(17, true, null).id === 'echo_scene_sceau');
+  // echoLine retourne { id, icon, text }.
+  const eSample = echoLine(17, true, 'Gryffondor');
+  check('echoLine renvoie id/icon/text',
+    eSample && typeof eSample.id === 'string' && typeof eSample.icon === 'string' && typeof eSample.text === 'string');
+  // TEMPORAL_ECHOES : 6 entrées (2 visuelles + 4 voix), chacune avec label/codex.
+  check('TEMPORAL_ECHOES a 6 entrées', Object.keys(TEMPORAL_ECHOES).length === 6);
+  check('chaque écho a label + codex + tier',
+    Object.values(TEMPORAL_ECHOES).every(e => e.label && e.codex && e.tier));
 })();
 
 // ============================================================

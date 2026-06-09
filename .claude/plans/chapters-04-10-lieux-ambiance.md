@@ -416,3 +416,57 @@ let seenEchoes = new Set();   // 'echo_godric', 'echo_seal_megalith', …
 - **Cache PWA** : P-D2/P-D4/P-D5 touchent JS/CSS → skill `cache-bump` + MANIFEST
   loader (`temporalEchoActive`, `temporalEchoTier`, `FOUNDER_VOICES`, `seenEchoes`)
   + `check_cache_versions.js`.
+
+---
+
+## Journal des écarts — Étape 3 implémentée (2026-06-09, branche `claude/ambiance-zone-d-echos-s2n0hb`)
+
+Périmètre livré : **P-D1, P-D3, P-D2, P-D5**. Hors scope (notés comme suites) :
+P-D4 (FX runes pulsées + brouillard temporel) et P5 (étage-scène Chambre de Maison).
+
+**P-D1 — Phrases zonées par palier `ancient` :** livré.
+- `js/floor-ambiance.js` : `ZONE_AMBIANCE.ancient` gagne un sous-arbre `tiers`
+  (`megalith` 14-16 / `runic` 17-20 / `before` 21+), chacun avec ses `floorLines`
+  (textes tirés de ch.10 §10.2). `floorLines` à plat conservé en fallback.
+- Helpers purs : `_ambianceZoneKey(floor)` (clé de zone), `_resolveAmbianceTier(entry, floor)`
+  (merge `{...entry, floorLines: tierLines, tier}` pour la zone `ancient`).
+- `getFloorAmbiance(floor)` reste pur ; pour `ancient` il renvoie un objet résolu
+  par palier (donc **plus identique par référence** à `ZONE_AMBIANCE.ancient` —
+  tests d'identité de la section 5 ajustés en conséquence).
+
+**P-D3 — Échos temporels (textuels V1) :** livré.
+- Helpers purs : `temporalEchoActive(floor, victoryAchieved)` (gate `victory && floor>=12`),
+  `temporalEchoTier(floor)` (`silhouette` 12-13 / `scene` 14+ / null), `FOUNDER_VOICES`
+  (4 voix par Maison, ch.10 §10.8), `TEMPORAL_ECHOES` (registre id→entrée), `echoLine(floor,
+  victoryAchieved, chosenHouse)` (voix de la Maison du héros priorisée à 17+, sinon
+  scène/silhouette ; retourne `{id, icon, text}` ou null).
+- Injection au call-site unique d'ambiance de cellule dans `js/movement.js`,
+  défensif (`typeof === 'function'`). Affiche la phrase zonée + ligne d'écho (préfixe
+  `🎞️`/`👤`/voix) et déverrouille `seenEchoes` (codex).
+
+**P-D2 — Variantes Maison escaladées :** livré.
+- `HOUSE_AMBIANCE_MOD[h]` gagne `byZone:{hogwarts,dungeons,depths,ancient}` (registre
+  qui monte A→D, ch.10 §10.6). `extraLine` conservé en fallback.
+- `houseAmbianceLine(chosenHouse, floor)` : signature étendue (floor optionnel →
+  fallback `extraLine`, back-compat). Call-site `movement.js` passe `currentFloor`.
+
+**P-D5 — Codex de lieu :** livré.
+- `state.js` : `let seenEchoes = new Set()` (réinit `main.js`, sérialisé `save.js`
+  comme `seenMonsters`).
+- `ui-bestiary.js` : onglet « Mémoire des Ruines » dans la modale Bestiaire
+  (`#bestiary-echoes-panel`), `renderEchoCodex()` ; entrée verrouillée = silhouette
+  grisée. Bascule via `switchCodexTab()`.
+
+**Garde-fous :**
+- Loader MANIFEST : `temporalEchoActive`, `temporalEchoTier`, `echoLine`,
+  `FOUNDER_VOICES`, `TEMPORAL_ECHOES` (floor-ambiance.js) + `seenEchoes` (state.js).
+- `tests/units.js` section 5 : frontières 14/17/21 (paliers ancient distincts),
+  gates échos, voix Maison priorisée, null hors zone ; identités hogwarts/dungeons/depths
+  conservées.
+- `tests/smoke.js` : `scenarioZoneDEchoes` (dungeon.js).
+- Cache PWA : `floor-ambiance.js` `?v=2→3`, `movement.js`, `ui-bestiary.js`,
+  `index.html`, CSS Codex si touché → `?v` + `CACHE_VERSION` + `PRECACHE_URLS`.
+
+**Suites possibles (hors scope) :**
+- P-D4 : pulsation alpha des runes (renderer-effects) + `#temporal-fog-overlay` CSS.
+- P5 : étage-scène Chambre de Maison (17-20) via `FLOOR_SCRIPTED_BEATS` (arbitrage produit).

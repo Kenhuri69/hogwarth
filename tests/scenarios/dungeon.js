@@ -1275,6 +1275,80 @@ async function scenarioFloorTheming() {
   await browser.close();
 }
 
+async function scenarioZoneDEchoes() {
+  console.log('\n── Scénario : Zone D — paliers ancient, échos temporels, codex ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serdaigle' });
+
+  // T1 : P-D1 — paliers ancient distincts (14/17/21) via getFloorAmbiance.
+  const t1 = await page.evaluate(() => {
+    const pick = f => { const a = getFloorAmbiance(f); return { tier: a.tier, first: a.floorLines[0] }; };
+    return { a14: pick(14), a17: pick(17), a21: pick(21) };
+  });
+  console.log('  T1 paliers:', JSON.stringify(t1));
+  assert(t1.a14.tier === 'megalith', `étage 14 = megalith, got ${t1.a14.tier}`);
+  assert(t1.a17.tier === 'runic',    `étage 17 = runic, got ${t1.a17.tier}`);
+  assert(t1.a21.tier === 'before',   `étage 21 = before, got ${t1.a21.tier}`);
+  assert(t1.a14.first !== t1.a17.first && t1.a17.first !== t1.a21.first, 'phrases de palier distinctes');
+
+  // T2 : P-D3 — échos gated par la Boucle + voix de la Maison priorisée.
+  const t2 = await page.evaluate(() => ({
+    offBoucle: echoLine(17, false, 'Serdaigle'),
+    floor11:   echoLine(11, true,  'Serdaigle'),
+    silhouette: echoLine(12, true, 'Serdaigle'),
+    scene:      echoLine(14, true, 'Serdaigle'),
+    voice:      echoLine(17, true, 'Serdaigle'),
+  }));
+  console.log('  T2 échos:', JSON.stringify(t2));
+  assert(t2.offBoucle === null, 'pas d\'écho hors Boucle');
+  assert(t2.floor11 === null,   'pas d\'écho avant étage 12');
+  assert(t2.silhouette && t2.silhouette.id === 'echo_silhouette', 'silhouette à 12-13');
+  assert(t2.scene && t2.scene.id === 'echo_scene_sceau', 'scène à 14-16');
+  assert(t2.voice && t2.voice.id === 'echo_rowena', 'voix Serdaigle priorisée = Rowena à 17+');
+
+  // T3 : P-D5 — déverrouillage seenEchoes + survie à un round-trip de save.
+  const t3 = await page.evaluate(() => {
+    seenEchoes = new Set();
+    const echo = echoLine(17, true, 'Serdaigle');
+    if (echo) seenEchoes.add(echo.id);
+    const snap = _serializeState();
+    seenEchoes = new Set();           // on vide, puis on restaure
+    _applyState(snap);
+    return { serialized: Array.isArray(snap.seenEchoes) && snap.seenEchoes.includes('echo_rowena'),
+             restored: seenEchoes.has('echo_rowena') };
+  });
+  console.log('  T3 codex save:', JSON.stringify(t3));
+  assert(t3.serialized, 'seenEchoes absent de la sérialisation');
+  assert(t3.restored,   'seenEchoes non restauré après _applyState');
+
+  // T4 : P-D5 — onglet « Mémoire des Ruines » dans la modale Bestiaire.
+  const t4 = await page.evaluate(() => {
+    openBestiary();
+    switchCodexTab('echoes');
+    const panel = document.getElementById('bestiary-echoes-panel');
+    const host  = document.getElementById('bestiary-echoes');
+    const visible = panel && panel.style.display !== 'none';
+    const hasSeen = host && host.innerHTML.includes('Rowena');     // écho déverrouillé en T3
+    const hasLocked = host && host.innerHTML.includes('echo-locked'); // d'autres restent verrouillés
+    switchCodexTab('bestiary');
+    const backToList = document.getElementById('bestiary-list-panel').style.display !== 'none';
+    closeBestiary();
+    return { visible, hasSeen, hasLocked, backToList };
+  });
+  console.log('  T4 codex UI:', JSON.stringify(t4));
+  assert(t4.visible,     'panneau Mémoire des Ruines non affiché');
+  assert(t4.hasSeen,     'écho déverrouillé (Rowena) absent du codex');
+  assert(t4.hasLocked,   'aucun écho verrouillé affiché (silhouettes grisées attendues)');
+  assert(t4.backToList,  'retour à l\'onglet Bestiaire cassé');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Zone D / échos)`);
+  }
+  console.log('  ✅ Zone D — paliers ancient, échos temporels & codex conformes');
+  await browser.close();
+}
+
 async function scenarioBranchyDungeon() {
   console.log('\n── Scénario : donjon branchu (Phase 1) ──');
   const { browser, page, errors } = await launchGame();
@@ -2750,4 +2824,4 @@ async function scenarioScriptedFloorBeats() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
+module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };

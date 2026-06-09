@@ -6,14 +6,19 @@
 // avec la source unique de vérité des zones.
 //
 // Surfaces publiques :
-//   ZONE_AMBIANCE       — données par clé de thème
-//   getFloorAmbiance(f) — pur, retourne l'entrée ZONE_AMBIANCE
+//   ZONE_AMBIANCE       — données par clé de thème (ancient splittée en paliers)
+//   getFloorAmbiance(f) — pur, entrée ZONE_AMBIANCE (palier ancient résolu)
 //   corruptionLevel(f, victoryAchieved) — pur, 0.0→1.3
-//   HOUSE_AMBIANCE_MOD  — lignes cosmétiques par Maison
-//   houseAmbianceLine(chosenHouse) — null si Maison absente
+//   HOUSE_AMBIANCE_MOD  — lignes cosmétiques par Maison (escalade byZone A→D)
+//   houseAmbianceLine(chosenHouse, floor?) — null si Maison absente
+//   temporalEchoActive(f, victoryAchieved) — pur, gate des échos (Boucle 12+)
+//   temporalEchoTier(f) — pur, 'silhouette'|'scene'|null
+//   FOUNDER_VOICES      — 4 voix de Fondateur par Maison
+//   TEMPORAL_ECHOES     — registre des échos déverrouillables (codex)
+//   echoLine(f, victoryAchieved, chosenHouse) — { id, icon, text } ou null
 //
-// Voir .claude/plans/chapters-04-10-lieux-ambiance.md §B.
-// Textes : docs/histoire/10-lieux-et-geographie.md §10.2, §10.6.
+// Voir .claude/plans/chapters-04-10-lieux-ambiance.md §B / §Étape 3.
+// Textes : docs/histoire/10-lieux-et-geographie.md §10.2, §10.6, §10.8.
 // ============================================================
 
 // ── Descriptions zonées ─────────────────────────────────────
@@ -69,8 +74,41 @@ const ZONE_AMBIANCE = {
   },
 
   // Zone D — Ruines Anciennes (étages 14+, Boucle Ténébreuse)
-  // Ton : solennité mythique, antérieur à l'école, hors-temps
+  // Ton : solennité mythique, antérieur à l'école, hors-temps.
+  // P-D1 — splittée en 3 paliers d'intensité croissante (ch.10 §10.2) :
+  //   megalith (14-16) → runic (17-20) → before (21+).
+  // `floorLines` à plat est conservé : fallback back-compat si `tiers`
+  // est absent ou si l'étage tombe hors borne (getFloorAmbiance le résout).
   ancient: {
+    tiers: {
+      // Seuil mégalithique (14-16) — l'architecture cesse d'être humaine.
+      megalith: { floors: [14, 16], floorLines: [
+        "Tu n'explores plus un château. Tu explores ce qui était là avant tous.",
+        "L'architecture cesse d'être humaine : monolithes dressés, dolmens noirs, linteaux trop grands pour une main.",
+        "Des racines géantes ligneuses traversent les salles, soulèvent les dalles et enlacent les runes.",
+        "La lumière est froide, bleutée, sans source — elle suinte des gravures elles-mêmes.",
+        "Les runes palpitent lentement, comme une respiration ; aucun écho ne renvoie tes pas.",
+        "Minéral pur, ozone, sève froide des racines — une note antérieure à toute vie.",
+      ] },
+      // Cœur runique (17-20) — ce n'est pas une ruine, c'est une machine.
+      runic: { floors: [17, 20], floorLines: [
+        "Ce n'est pas une ruine. C'est une machine, et elle se rallume.",
+        "Des cristaux de magie brute affleurent partout, grésillant d'une lueur non raffinée qui fait vibrer l'air.",
+        "Les runes ne palpitent plus — elles brûlent.",
+        "Le brouillard est si épais que des scènes du passé se rejouent en pleine salle ; on peut marcher au travers.",
+        "Le chant runique se fend par moments en quatre timbres distincts — Godric, Salazar, Rowena, Helga.",
+        "Près des cristaux, une chaleur sèche et fausse irradie sans réchauffer.",
+      ] },
+      // Avant-Monde (21+) — avant l'écriture, avant la pierre.
+      before: { floors: [21, Infinity], floorLines: [
+        "Plus de runes. On est avant l'écriture.",
+        "La ruine se désagrège en faveur de la magie brute : cristaux géants, racines-mères, sol de lumière froide compactée.",
+        "Le chant a cessé. À sa place, un battement lent, énorme, organique — comme un cœur qui dort.",
+        "Aucune odeur. Un vide olfactif total, plus inquiétant que n'importe quelle puanteur.",
+        "La température est hors de la notion même : le corps cesse de savoir où il est dans le temps.",
+        "La profondeur pour la profondeur. Le prestige comme seule raison de continuer.",
+      ] },
+    },
     floorLines: [
       "Tu n'explores plus un château. Tu explores ce qui était là avant tous.",
       "Les runes pulsent sur les murs, le sol, le plafond — elles commentent ta présence.",
@@ -79,37 +117,58 @@ const ZONE_AMBIANCE = {
       "Minéral pur, ozone, et une note antérieure à toute vie.",
       "Les angles dérangent. Les proportions sont fausses. Ceux qui ont bâti cela n'étaient pas humains.",
     ],
-    smell:  ["minéral pur", "ozone", "une note antérieure à toute vie"],
-    sound:  ["chant runique grave", "silence absolu de pas", "voix anciennes à la limite de l'audible"],
+    smell:  ["minéral pur", "ozone", "sève froide des racines", "cristal chaud", "une note antérieure à toute vie"],
+    sound:  ["chant runique grave", "craquement de racines", "voix anciennes à la limite de l'audible", "un battement organique"],
     temp:   "surnaturelle",
   },
 };
 
-// ── Résolveur pur ────────────────────────────────────────────
-// Retourne l'entrée ZONE_AMBIANCE correspondant à l'étage `floor`.
-// Toujours sûr : un étage invalide tombe sur la zone hogwarts
-// (identique au fallback de getFloorTheme).
-function getFloorAmbiance(floor) {
-  if (typeof getFloorTheme !== 'function') return ZONE_AMBIANCE.hogwarts;
+// ── Résolveur pur : clé de zone ──────────────────────────────
+// Retourne la clé ZONE_AMBIANCE (hogwarts/dungeons/depths/ancient)
+// correspondant à l'étage `floor`. Toujours sûr : entrée invalide →
+// 'hogwarts' (miroir du fallback de getFloorTheme). Partagé par
+// getFloorAmbiance ET houseAmbianceLine (escalade par zone).
+function _ambianceZoneKey(floor) {
+  if (typeof getFloorTheme !== 'function') return 'hogwarts';
   const theme = getFloorTheme(floor);
-  // Retrouver la clé du thème dans FLOOR_THEMES (la référence d'objet
-  // est partagée, on peut faire une recherche par identité).
+  // Recherche par identité d'objet (référence partagée avec FLOOR_THEMES).
   if (typeof FLOOR_THEMES !== 'undefined') {
     for (const [key, t] of Object.entries(FLOOR_THEMES)) {
-      if (t === theme) return ZONE_AMBIANCE[key] || ZONE_AMBIANCE.hogwarts;
+      if (t === theme) return ZONE_AMBIANCE[key] ? key : 'hogwarts';
     }
   }
-  // Fallback par valeur du champ ambient
+  // Fallback par valeur du champ ambient.
   if (theme && theme.ambient) {
-    const byAmbient = {
-      intro:   ZONE_AMBIANCE.hogwarts,
-      dungeon: ZONE_AMBIANCE.dungeons,
-      depths:  ZONE_AMBIANCE.depths,
-      abyss:   ZONE_AMBIANCE.ancient,
-    };
-    return byAmbient[theme.ambient] || ZONE_AMBIANCE.hogwarts;
+    const byAmbient = { intro: 'hogwarts', dungeon: 'dungeons', depths: 'depths', abyss: 'ancient' };
+    return byAmbient[theme.ambient] || 'hogwarts';
   }
-  return ZONE_AMBIANCE.hogwarts;
+  return 'hogwarts';
+}
+
+// Résout le sous-palier d'une entrée de zone (P-D1). Pour `ancient`,
+// renvoie un objet mergé { ...entry, floorLines: <palier>, tier }. Pour
+// toute zone sans `tiers` (ou floor hors borne) → l'entrée inchangée
+// (identité préservée, back-compat). Pur.
+function _resolveAmbianceTier(entry, floor) {
+  if (!entry || !entry.tiers) return entry;
+  const f = (typeof floor === 'number') ? floor : 0;
+  for (const key of Object.keys(entry.tiers)) {
+    const t = entry.tiers[key];
+    const lo = t.floors[0], hi = t.floors[1];
+    if (f >= lo && f <= hi) {
+      return Object.assign({}, entry, { floorLines: t.floorLines, tier: key });
+    }
+  }
+  return entry; // fallback à plat (floorLines de l'entrée)
+}
+
+// ── Résolveur pur ────────────────────────────────────────────
+// Retourne l'entrée ZONE_AMBIANCE correspondant à l'étage `floor`,
+// sous-palier `ancient` résolu (P-D1). Toujours sûr : un étage invalide
+// tombe sur la zone hogwarts (identique au fallback de getFloorTheme).
+function getFloorAmbiance(floor) {
+  const zone = ZONE_AMBIANCE[_ambianceZoneKey(floor)] || ZONE_AMBIANCE.hogwarts;
+  return _resolveAmbianceTier(zone, floor);
 }
 
 // ── Niveau de corruption ─────────────────────────────────────
@@ -126,18 +185,159 @@ function corruptionLevel(floor, victoryAchieved) {
 // ── Variantes cosmétiques par Maison ────────────────────────
 // Une ligne occasionnelle (~1 entrée sur 4) selon chosenHouse.
 // Purement cosmétique, ne modifie pas la carte générée.
-// Textes : docs/histoire/10-lieux-et-geographie.md §10.6.
+// P-D2 — registre `byZone` qui ESCALADE A→D : le même héros lit un donjon
+// différent selon sa Maison, et le registre monte d'un cran par zone.
+// Textes : docs/histoire/10-lieux-et-geographie.md §10.6 (escalade A→D).
 const HOUSE_AMBIANCE_MOD = {
-  Serpentard:  { extraLine: "Une pierre a bougé ici récemment — d'autres n'ont pas vu ce passage.", flavor: "secret"  },
-  Gryffondor:  { extraLine: "Une marque de bataille : quelqu'un a tenu ici, et n'a pas fui.",       flavor: "valor"   },
-  Serdaigle:   { extraLine: "Une glyphe à demi effacée attend un œil qui sait lire.",               flavor: "lore"    },
-  Poufsouffle: { extraLine: "Un recoin abrité — on pourrait y reprendre souffle, ensemble.",         flavor: "refuge"  },
+  Serpentard:  {
+    extraLine: "Une pierre a bougé ici récemment — d'autres n'ont pas vu ce passage.",
+    flavor: "secret",
+    byZone: {
+      hogwarts: "Une pierre a bougé ici récemment — d'autres n'ont pas vu ce passage.",
+      dungeons: "Un raccourci gris se faufile derrière un mur descellé — gagne-t-on du temps, ou descend-on trop vite ?",
+      depths:   "Tu reconnais la main de Salazar dans ces verrous : ils s'ouvrent pour qui sait demander.",
+      ancient:  "Les monolithes s'écartent pour toi seul, comme s'ils attendaient un héritier.",
+    },
+  },
+  Gryffondor:  {
+    extraLine: "Une marque de bataille : quelqu'un a tenu ici, et n'a pas fui.",
+    flavor: "valor",
+    byZone: {
+      hogwarts: "Des brasiers du Lion gardent une lueur chaude là où le froid voudrait l'éteindre.",
+      dungeons: "Une marque de bataille : quelqu'un a tenu ici, et n'a pas fui.",
+      depths:   "Une arène naturelle s'ouvre : ici on tient la ligne, même face aux Détraqueurs.",
+      ancient:  "Sur un autel de pierre, une flamme survit au froid — la lumière qui ne s'éteint pas.",
+    },
+  },
+  Serdaigle:   {
+    extraLine: "Une glyphe à demi effacée attend un œil qui sait lire.",
+    flavor: "lore",
+    byZone: {
+      hogwarts: "Une glyphe à demi effacée attend un œil qui sait lire.",
+      dungeons: "Des feuillets dispersés, un savoir éparpillé : quelqu'un a voulu garder une trace.",
+      depths:   "Les runes du Veilleur, muettes pour les autres, te deviennent intelligibles.",
+      ancient:  "La langue-mère se traduit d'elle-même sous ton regard — le Codex prend vie.",
+    },
+  },
+  Poufsouffle: {
+    extraLine: "Un recoin abrité — on pourrait y reprendre souffle, ensemble.",
+    flavor: "refuge",
+    byZone: {
+      hogwarts: "Un recoin abrité — on pourrait y reprendre souffle, ensemble.",
+      dungeons: "Une voix faible, quelque part, appelle à l'aide ; un premier secours possible.",
+      depths:   "Un Refuge précaire tient encore : une âme y attend qu'on ne l'oublie pas.",
+      ancient:  "Entre deux racines géantes, une alcôve tiède veille — quelqu'un pourrait survivre ici.",
+    },
+  },
 };
 
 // Retourne la ligne d'ambiance de Maison, ou null si Maison absente/inconnue.
-function houseAmbianceLine(chosenHouse) {
+// `floor` (optionnel) : si fourni, escalade par zone (byZone). Sans floor,
+// fallback sur `extraLine` (back-compat).
+function houseAmbianceLine(chosenHouse, floor) {
   if (!chosenHouse) return null;
-  return (HOUSE_AMBIANCE_MOD[chosenHouse] && HOUSE_AMBIANCE_MOD[chosenHouse].extraLine) || null;
+  const mod = HOUSE_AMBIANCE_MOD[chosenHouse];
+  if (!mod) return null;
+  if (typeof floor === 'number' && mod.byZone) {
+    const zoneLine = mod.byZone[_ambianceZoneKey(floor)];
+    if (zoneLine) return zoneLine;
+  }
+  return mod.extraLine || null;
+}
+
+// ── Échos temporels & voix des Fondateurs (P-D3) ────────────
+// Fragments de passé matérialisés en zone C fin / zone D. Tout DÉRIVÉ
+// (currentFloor / victoryAchieved / chosenHouse, déjà persistés) — seul
+// `seenEchoes` (codex, state.js) est sérialisé, et il est rempli au call-site.
+// Textes : docs/histoire/10-lieux-et-geographie.md §10.8 (registres d'écho,
+// quatre voix), §10.5 (règle d'illumination : voix de la Maison du héros
+// priorisée — la plus claire).
+
+// Gate maître : silhouettes dès la fin de zone C en Boucle (12-13),
+// scènes pleines en zone D (14+). Faux hors Boucle.
+function temporalEchoActive(floor, victoryAchieved) {
+  const f = (typeof floor === 'number') ? floor : 0;
+  return !!victoryAchieved && f >= 12;
+}
+
+// Registre d'intensité (indépendant de victoryAchieved — pur sur floor) :
+//   'silhouette' (12-13) · 'scene' (14+) · null sinon.
+function temporalEchoTier(floor) {
+  const f = (typeof floor === 'number') ? floor : 0;
+  if (f >= 14) return 'scene';
+  if (f >= 12) return 'silhouette';
+  return null;
+}
+
+// Quatre voix des Fondateurs (cœur runique 17+), clé = Maison. La voix de
+// la Maison du héros est la plus claire (règle d'illumination §10.5).
+const FOUNDER_VOICES = {
+  Gryffondor:  { founder: 'Godric',  echoId: 'echo_godric',  emoji: '🦁', line: "On ne scelle pas par peur. On tient la porte." },
+  Serpentard:  { founder: 'Salazar', echoId: 'echo_salazar', emoji: '🐍', line: "J'ai scellé ma part avec ma faute." },
+  Serdaigle:   { founder: 'Rowena',  echoId: 'echo_rowena',  emoji: '🦅', line: "Comprends, et la faille apparaît." },
+  Poufsouffle: { founder: 'Helga',   echoId: 'echo_helga',   emoji: '🦡', line: "J'ai creusé un abri pour ceux qui resteraient." },
+};
+
+// Registre des échos déverrouillables (codex « Mémoire des Ruines », P-D5).
+// `id` = clé sérialisée dans seenEchoes. `text` = ligne d'ambiance affichée ;
+// `codex` = entrée déverrouillée dans le journal.
+const TEMPORAL_ECHOES = {
+  echo_silhouette: {
+    tier: 'silhouette', icon: '👤', label: "Silhouette du Graveur",
+    text: "Dans la brume basse, une brève silhouette retraverse la salle — quelqu'un, courbé, en train de graver — avant de se dissiper. Tu n'aperçois pas son visage.",
+    codex: "Premier contact visuel avec le passé : un Fondateur grave le sceau, muet, indifférent à ta présence.",
+  },
+  echo_scene_sceau: {
+    tier: 'scene', icon: '🎞️', label: "La Pose du Sceau",
+    text: "Le brouillard se fige en une scène pleine : les Quatre posent ensemble leur part du sceau sur la faille. Tu marches au travers — ils ne te voient pas. Voici comment le sceau fut posé.",
+    codex: "Scène traversable : les quatre Fondateurs scellent ensemble la faille. La peur retenait quelque chose de bien plus ancien que Voldemort.",
+  },
+  echo_godric: {
+    tier: 'voice', icon: '🦁', house: 'Gryffondor', founder: 'Godric', label: "Voix de Godric",
+    text: "Une voix chaude se détache du chant runique : « On ne scelle pas par peur. On tient la porte. »",
+    codex: "Godric Gryffondor — le courage : on ne scelle pas par peur, on tient la porte.",
+  },
+  echo_salazar: {
+    tier: 'voice', icon: '🐍', house: 'Serpentard', founder: 'Salazar', label: "Voix de Salazar",
+    text: "Une voix basse glisse entre les runes : « J'ai scellé ma part avec ma faute. »",
+    codex: "Salazar Serpentard — l'ambivalence : un Fondateur scellé avec la corruption qu'il aida à enfermer.",
+  },
+  echo_rowena: {
+    tier: 'voice', icon: '🦅', house: 'Serdaigle', founder: 'Rowena', label: "Voix de Rowena",
+    text: "Une voix claire affleure des gravures : « Comprends, et la faille apparaît. »",
+    codex: "Rowena Serdaigle — le savoir : comprendre, c'est révéler la faille.",
+  },
+  echo_helga: {
+    tier: 'voice', icon: '🦡', house: 'Poufsouffle', founder: 'Helga', label: "Voix de Helga",
+    text: "Une voix douce monte du sol : « J'ai creusé un abri pour ceux qui resteraient. »",
+    codex: "Helga Poufsouffle — le refuge : creuser un abri pour ceux qui resteraient.",
+  },
+};
+
+// Résolveur PUR : retourne l'écho contextuel { id, icon, text } ou null.
+//   - Hors Boucle / hors zone (floor < 12) → null.
+//   - Cœur runique (17+) avec Maison → voix de la Maison du héros (priorité,
+//     la plus claire — §10.5).
+//   - Sinon : scène (14+) ou silhouette (12-13) selon le palier.
+function echoLine(floor, victoryAchieved, chosenHouse) {
+  if (!temporalEchoActive(floor, victoryAchieved)) return null;
+  const f = floor;
+  // Voix de la Maison du héros priorisée au cœur runique.
+  if (f >= 17 && chosenHouse && FOUNDER_VOICES[chosenHouse]) {
+    const id = FOUNDER_VOICES[chosenHouse].echoId;
+    const e  = TEMPORAL_ECHOES[id];
+    if (e) return { id, icon: e.icon, text: e.text };
+  }
+  const tier = temporalEchoTier(f);
+  if (tier === 'scene') {
+    const e = TEMPORAL_ECHOES.echo_scene_sceau;
+    return { id: 'echo_scene_sceau', icon: e.icon, text: e.text };
+  }
+  if (tier === 'silhouette') {
+    const e = TEMPORAL_ECHOES.echo_silhouette;
+    return { id: 'echo_silhouette', icon: e.icon, text: e.text };
+  }
+  return null;
 }
 
 // ── Étages-scènes scénarisés (P5) ────────────────────────────
