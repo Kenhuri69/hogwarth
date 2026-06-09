@@ -458,6 +458,7 @@ const ITEM_ICON_SVG_REGISTRY = {
   flacon_feu:   _potionSvg('cl_ffeu', 33, '#e8421a', '#ff7a3a', '#7a3a1a'),
   flacon_givre: _potionSvg('cl_fgiv', 33, '#2aa8d8', '#7ad6f0', '#5a6a7a'),
   flacon_venin: _potionSvg('cl_fven', 33, '#4aa82a', '#8ad65a', '#3a5a2a'),
+  flacon_grec:  _potionSvg('cl_fgrec', 33, '#f08a1a', '#ffc94a', '#8a4a1a'),
   potion_xl: _potionSvg('cl_pxl', 27, '#e8324a', '#ff6a78', '#e8c14a', true),
   // Éclat de Lumière (objet de quête — dumbledore_lumiere) : étoile de
   // clarté à 4 branches, halo doux. SVG inline (pas de PNG dédié).
