@@ -651,8 +651,8 @@ const NPCS = [
     },
     dialoguesByQuest: {
       quest_signature_slyth: {
-        questOffer:  "Sous les cachots, une voix murmure : l'écho de Salazar, scellé avec la corruption qu'il a aidé à enfermer. Un Basilic garde son secret. Je vous montre le chemin… mais méfiez-vous : ce n'est pas un démon, c'est un Fondateur qui a fait, mille ans plus tôt, le choix qui vous attend.",
-        questActive: "Le Basilic garde toujours le secret de Salazar ? L'écho est patient. Pas moi.",
+        questOffer:  "Sous les cachots, une voix murmure : l'écho de Salazar, scellé avec la corruption qu'il a aidé à enfermer. Descendez ouvrir son passage, franchissez les serpents qui le gardent, et arrachez au Basilic son secret. Je vous montre le chemin… mais méfiez-vous : ce n'est pas un démon, c'est un Fondateur qui a fait, mille ans plus tôt, le choix qui vous attend.",
+        questActive: "Le passage est-il ouvert, les serpents écartés, le Basilic vaincu ? L'écho est patient. Pas moi.",
         questReady:  "Vous avez percé la vérité de l'écho. Reste à choisir, et ce choix-là n'appartient qu'à vous : sceller le Pacte, ou défier Salazar."
       },
       quest_set_slyth: {

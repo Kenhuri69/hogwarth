@@ -745,9 +745,15 @@ const QUEST_TEMPLATES = [
     id: "quest_signature_slyth",
     title: "Le Pacte des Cachots",
     giver: "Professeur Rogue",
-    desc: "Sous les cachots, l'écho de Salazar murmure — scellé avec la corruption qu'il a aidé à enfermer. Un Basilic garde son secret. Perce la vérité… puis choisis : sceller le Pacte, ou défier l'écho.",
+    desc: "Sous les cachots, l'écho de Salazar murmure — scellé avec la corruption qu'il a aidé à enfermer. Descends ouvrir son passage secret, franchis les serpents qui le gardent, puis arrache au Basilic le secret des Fondateurs. Alors seulement tu choisiras : sceller le Pacte, ou défier l'écho.",
     objectives: [
-      { type: "kill", monsterId: "basilic", amount: 1, progress: 0, completed: false }
+      // 1. Ouvrir le passage secret de Salazar = descendre dans les cachots.
+      { type: "floor", floor: 4, amount: 1, progress: 0, completed: false },
+      // 2. Franchir les serpents gardiens du passage.
+      { type: "kill",  monsterId: "serpent_cachot", amount: 2, progress: 0, completed: false },
+      // 3. Climax — le secret des Fondateurs gardé par le Basilic.
+      //    Le choix gris (Pacte/Défiance) se joue à la remise (turnInSlythSignature).
+      { type: "kill",  monsterId: "basilic", amount: 1, progress: 0, completed: false }
     ],
     reward: { xp: 720, gold: 300, houseSetReward: "langue_de_plomb" },
     location: "Cachots de Serpentard (étage 4) — cible en Acte II/III",
