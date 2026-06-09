@@ -602,8 +602,8 @@ const NPCS = [
     },
     dialoguesByQuest: {
       quest_signature_gryff: {
-        questOffer:  "Un Chevalier Fantôme veille encore sur l'Étendard de Godric — il monte la garde depuis un siège oublié, parce que personne ne lui a dit qu'il pouvait partir. Reprenez la bannière qui ne s'incline jamais. Un meneur passe devant pour que les autres passent.",
-        questActive: "L'Étendard est-il repris ? Le château retient son souffle avec vous.",
+        questOffer:  "Trois choses, et dans l'ordre. La peur que sèment les Épouvantards a éteint trois brasiers du courage : dissipez-la pour les rallumer. Puis montez jusqu'à la Tour sans jamais reculer d'un pas. Là vous attend un Chevalier Fantôme — reprenez-lui l'Étendard de Godric, la bannière qui ne s'incline jamais. Un meneur passe devant pour que les autres passent.",
+        questActive: "Les brasiers, la montée, l'Étendard — dans cet ordre, Gryffondor. Le château retient son souffle avec vous.",
         questReady:  "Vous l'avez repris. Godric n'aurait pas mieux fait. La Bannière de Godric vous attend — repassez la réclamer."
       },
       quest_set_gryff: {

@@ -727,9 +727,14 @@ const QUEST_TEMPLATES = [
     id: "quest_signature_gryff",
     title: "L'Étendard de Godric",
     giver: "Professeur McGonagall",
-    desc: "Un Chevalier Fantôme — Gryffondor tombé en défendant le château — garde encore l'Étendard de Godric, la bannière qui ne s'incline jamais. Reprends-la : un meneur passe devant pour que les autres passent.",
+    desc: "Trois brasiers du courage se sont éteints, étouffés par la peur que les Épouvantards font lever. Rallume-les en les dissipant, avance jusqu'à la Tour sans jamais reculer, puis reprends l'Étendard de Godric au Chevalier Fantôme — la bannière qui ne s'incline jamais. Un meneur passe devant pour que les autres passent.",
     objectives: [
-      { type: "kill", monsterId: "chevalier_fantome", amount: 1, progress: 0, completed: false }
+      // 1. Rallumer les 3 brasiers du courage = dissiper la peur (Épouvantards).
+      { type: "kill",  monsterId: "boggart", amount: 3, progress: 0, completed: false },
+      // 2. Tenir bon et avancer jusqu'à la Tour sans reculer (floor-proxy).
+      { type: "floor", floor: 5, amount: 1, progress: 0, completed: false },
+      // 3. Climax — reprendre l'Étendard au Chevalier Fantôme.
+      { type: "kill",  monsterId: "chevalier_fantome", amount: 1, progress: 0, completed: false }
     ],
     reward: { xp: 700, gold: 320, houseSetReward: "banniere_godric" },
     location: "Tour de Gryffondor (étage 5) — cible en Acte III",

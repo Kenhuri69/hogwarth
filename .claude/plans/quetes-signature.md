@@ -74,4 +74,8 @@ compte qu'une fois devenu l'étape active → placer les kills en **fin** de cha
   **3 beats** [herb×2 → floor 4 (§8.5 floor-proxy) → kill inferius×3 (climax)].
   Dialogues Chourave réécrits pour la séquence. Smoke généralisé pour compléter
   toute chaîne d'objectifs (réutilisable PR2-4) — vert.
-- (à venir) PR2 Gryffondor, PR3 Serpentard, PR4 Serdaigle.
+- ✅ **PR2 — Gryffondor enrichie** : `quest_signature_gryff` → 3 beats
+  [kill boggart×3 (dissiper la peur = rallumer les brasiers) → floor 5 (monter à
+  la Tour sans reculer) → kill chevalier_fantome×1 (reprendre l'Étendard, climax)].
+  Dialogues McGonagall réécrits. Vert.
+- (à venir) PR3 Serpentard, PR4 Serdaigle.
