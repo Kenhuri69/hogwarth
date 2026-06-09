@@ -312,6 +312,29 @@ const TEMPORAL_ECHOES = {
     text: "Une voix douce monte du sol : « J'ai creusé un abri pour ceux qui resteraient. »",
     codex: "Helga Poufsouffle — le refuge : creuser un abri pour ceux qui resteraient.",
   },
+  // Chambres des Fondateurs (P5) — déverrouillées par l'étage-scène du Cœur
+  // runique (maybeFounderChamberBeat) : seule celle de la Maison du héros
+  // s'illumine (règle d'illumination §10.5, saveurs de Maison §10.6).
+  echo_chamber_gryffondor: {
+    tier: 'chamber', icon: '🦁', house: 'Gryffondor', founder: 'Godric', label: "Chambre du Lion",
+    text: "La Chambre du Lion s'embrase pour toi : des brasiers se rallument seuls le long d'une salle de garde tenue contre la peur.",
+    codex: "La Chambre du Lion s'illumine pour son héritier : brasiers ravivés, salle de garde tenue contre la peur. Godric accueille les siens par le feu.",
+  },
+  echo_chamber_serpentard: {
+    tier: 'chamber', icon: '🐍', house: 'Serpentard', founder: 'Salazar', label: "Chambre du Serpent",
+    text: "La Chambre du Serpent se descelle pour toi : les verrous cèdent seuls, une pierre pivote, un passage gris s'ouvre.",
+    codex: "La Chambre du Serpent s'ouvre pour son héritier : verrous descellés, passage gris révélé. Salazar reconnaît le sang qui sait voir les portes cachées.",
+  },
+  echo_chamber_serdaigle: {
+    tier: 'chamber', icon: '🦅', house: 'Serdaigle', founder: 'Rowena', label: "Chambre de l'Aigle",
+    text: "La Chambre de l'Aigle se traduit pour toi : les glyphes se déchiffrent d'eux-mêmes sous ton regard, ligne après ligne.",
+    codex: "La Chambre de l'Aigle se déchiffre pour son héritier : glyphes traduits d'eux-mêmes. Rowena n'accueille que l'œil qui sait lire.",
+  },
+  echo_chamber_poufsouffle: {
+    tier: 'chamber', icon: '🦡', house: 'Poufsouffle', founder: 'Helga', label: "Chambre du Blaireau",
+    text: "La Chambre du Blaireau t'abrite : au cœur du gel, une alcôve tiède où reprendre souffle ensemble.",
+    codex: "La Chambre du Blaireau abrite son héritier : alcôve tiède creusée dans le gel. Helga garde un refuge pour ceux qui restent.",
+  },
 };
 
 // Résolveur PUR : retourne l'écho contextuel { id, icon, text } ou null.
@@ -384,6 +407,61 @@ function maybeScriptedFloorBeat(floor) {
   seenScriptedBeat.add(floor);
   if (typeof setNarrative === 'function') setNarrative(beat.narrative);
   if (typeof addMsg === 'function') addMsg('📜 ' + beat.toast, 'narrative');
+  return true;
+}
+
+// ── Étage-scène « Chambre des Fondateurs » (P5 — Maison, Cœur runique) ──
+// Au seuil du Cœur runique (étage 17), seule la Chambre de la Maison du héros
+// (`chosenHouse`) s'illumine et l'accueille ; les trois autres restent hostiles
+// et muettes (règle d'illumination §10.5, saveurs de Maison §10.6). Étage-scène
+// House-aware, one-shot, qui déverrouille l'écho de Chambre (codex). Comme les
+// beats 1/4/8 : pur affichage textuel, AUCUNE incidence sur la génération.
+const CHAMBER_FLOOR = 17;
+const FOUNDER_CHAMBERS = {
+  Gryffondor: {
+    chamber: "la Chambre du Lion", founder: 'Godric', emoji: '🦁', echoId: 'echo_chamber_gryffondor',
+    narrative: "Le Cœur runique s'ouvre sur quatre caveaux scellés. Trois restent froids et muets — mais à ton approche, la Chambre du Lion s'embrase : des brasiers se rallument seuls le long d'une salle de garde où quelqu'un, jadis, a refusé de fuir. La voix de Godric monte des flammes et te reconnaît — on ne scelle pas par peur, on tient la porte.",
+    toast: "🦁 La Chambre du Lion s'embrase — Godric te reconnaît.",
+  },
+  Serpentard: {
+    chamber: "la Chambre du Serpent", founder: 'Salazar', emoji: '🐍', echoId: 'echo_chamber_serpentard',
+    narrative: "Le Cœur runique s'ouvre sur quatre caveaux scellés. Trois gardent leurs verrous clos — mais devant la Chambre du Serpent, les serrures cèdent seules, une pierre pivote, un passage gris s'offre à toi seul. La voix de Salazar glisse entre les runes et te laisse entrer — il a scellé sa part avec sa faute.",
+    toast: "🐍 La Chambre du Serpent se descelle — Salazar te laisse passer.",
+  },
+  Serdaigle: {
+    chamber: "la Chambre de l'Aigle", founder: 'Rowena', emoji: '🦅', echoId: 'echo_chamber_serdaigle',
+    narrative: "Le Cœur runique s'ouvre sur quatre caveaux scellés. Trois gardent leurs runes illisibles — mais dans la Chambre de l'Aigle, les glyphes se traduisent d'eux-mêmes sous ton regard, ligne après ligne, comme s'ils n'avaient attendu qu'un œil qui sait lire. La voix de Rowena affleure des gravures — comprends, et la faille apparaît.",
+    toast: "🦅 La Chambre de l'Aigle se traduit — Rowena t'accueille.",
+  },
+  Poufsouffle: {
+    chamber: "la Chambre du Blaireau", founder: 'Helga', emoji: '🦡', echoId: 'echo_chamber_poufsouffle',
+    narrative: "Le Cœur runique s'ouvre sur quatre caveaux scellés. Trois exhalent un froid hostile — mais la Chambre du Blaireau t'offre, au cœur du gel, une alcôve tiède où l'on pourrait reprendre souffle ensemble. La voix de Helga monte du sol et veille sur toi — elle a creusé un abri pour ceux qui resteraient.",
+    toast: "🦡 La Chambre du Blaireau t'abrite — Helga veille sur toi.",
+  },
+};
+
+// Résolveur PUR : beat de Chambre pour la Maison du héros à l'étage 17, sinon null.
+function getFounderChamberBeat(floor, chosenHouse) {
+  if (floor !== CHAMBER_FLOOR) return null;
+  if (!chosenHouse) return null;
+  return FOUNDER_CHAMBERS[chosenHouse] || null;
+}
+
+// Orchestrateur one-shot : joue le beat de Chambre à la 1re entrée de l'étage 17.
+// Sentinelle string distincte dans seenScriptedBeat (ne heurte pas les clés
+// d'étage int 1/4/8). Déverrouille l'écho de Chambre dans seenEchoes (codex).
+// No-op silencieux si l'état/les helpers manquent (file://).
+const _CHAMBER_SEEN_KEY = 'founder_chamber';
+function maybeFounderChamberBeat(floor) {
+  const hero = (typeof chosenHouse !== 'undefined') ? chosenHouse : null;
+  const beat = getFounderChamberBeat(floor, hero);
+  if (!beat) return false;
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return false;
+  if (seenScriptedBeat.has(_CHAMBER_SEEN_KEY)) return false;
+  seenScriptedBeat.add(_CHAMBER_SEEN_KEY);
+  if (typeof setNarrative === 'function') setNarrative(beat.narrative);
+  if (typeof addMsg === 'function') addMsg('📜 ' + beat.toast, 'narrative');
+  if (typeof seenEchoes !== 'undefined' && seenEchoes && beat.echoId) seenEchoes.add(beat.echoId);
   return true;
 }
 

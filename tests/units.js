@@ -290,11 +290,13 @@ function loadModule(relPath, exportNames, globals = {}) {
   const mod = loadModule(
     'js/floor-ambiance.js',
     ['ZONE_AMBIANCE', 'getFloorAmbiance', 'corruptionLevel', 'HOUSE_AMBIANCE_MOD', 'houseAmbianceLine',
-     'temporalEchoActive', 'temporalEchoTier', 'echoLine', 'FOUNDER_VOICES', 'TEMPORAL_ECHOES'],
+     'temporalEchoActive', 'temporalEchoTier', 'echoLine', 'FOUNDER_VOICES', 'TEMPORAL_ECHOES',
+     'FOUNDER_CHAMBERS', 'getFounderChamberBeat'],
     { FLOOR_THEMES, getFloorTheme });
 
   const { ZONE_AMBIANCE, getFloorAmbiance, corruptionLevel, HOUSE_AMBIANCE_MOD, houseAmbianceLine,
-          temporalEchoActive, temporalEchoTier, echoLine, FOUNDER_VOICES, TEMPORAL_ECHOES } = mod;
+          temporalEchoActive, temporalEchoTier, echoLine, FOUNDER_VOICES, TEMPORAL_ECHOES,
+          FOUNDER_CHAMBERS, getFounderChamberBeat } = mod;
 
   // ── getFloorAmbiance : bonne zone aux frontières ──
   // Zones sans paliers : identité d'objet préservée (back-compat).
@@ -438,10 +440,29 @@ function loadModule(relPath, exportNames, globals = {}) {
   const eSample = echoLine(17, true, 'Gryffondor');
   check('echoLine renvoie id/icon/text',
     eSample && typeof eSample.id === 'string' && typeof eSample.icon === 'string' && typeof eSample.text === 'string');
-  // TEMPORAL_ECHOES : 6 entrées (2 visuelles + 4 voix), chacune avec label/codex.
-  check('TEMPORAL_ECHOES a 6 entrées', Object.keys(TEMPORAL_ECHOES).length === 6);
+  // TEMPORAL_ECHOES : 10 entrées (2 visuelles + 4 voix + 4 Chambres), chacune avec label/codex.
+  check('TEMPORAL_ECHOES a 10 entrées', Object.keys(TEMPORAL_ECHOES).length === 10);
   check('chaque écho a label + codex + tier',
     Object.values(TEMPORAL_ECHOES).every(e => e.label && e.codex && e.tier));
+
+  // ── P5 : Chambre des Fondateurs (résolveur pur House-aware) ──
+  for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle']) {
+    const beat = getFounderChamberBeat(17, h);
+    check(`getFounderChamberBeat(17, ${h}) défini`, !!beat && beat === FOUNDER_CHAMBERS[h]);
+    check(`Chambre ${h} → echoId ∈ TEMPORAL_ECHOES`, !!beat && !!TEMPORAL_ECHOES[beat.echoId]);
+    check(`Chambre ${h} a narrative + toast`,
+      !!beat && typeof beat.narrative === 'string' && beat.narrative.length > 0
+            && typeof beat.toast === 'string' && beat.toast.length > 0);
+  }
+  // Gate d'étage strict (17 seulement) + Maison requise.
+  check('getFounderChamberBeat(16) = null', getFounderChamberBeat(16, 'Gryffondor') === null);
+  check('getFounderChamberBeat(18) = null', getFounderChamberBeat(18, 'Gryffondor') === null);
+  check('getFounderChamberBeat(99) = null', getFounderChamberBeat(99, 'Gryffondor') === null);
+  check('getFounderChamberBeat sans Maison = null', getFounderChamberBeat(17, null) === null);
+  check('getFounderChamberBeat Maison inconnue = null', getFounderChamberBeat(17, 'Durmstrang') === null);
+  // Les 4 échos de Chambre portent bien le tier 'chamber'.
+  check('4 échos de tier chamber',
+    Object.values(TEMPORAL_ECHOES).filter(e => e.tier === 'chamber').length === 4);
 })();
 
 // ============================================================
@@ -514,6 +535,39 @@ function loadModule(relPath, exportNames, globals = {}) {
     ['maybeScriptedFloorBeat'],
     { seenScriptedBeat: null, setNarrative: () => {}, addMsg: () => {} });
   check('maybe(4) sans Set = false (défensif)', orch2.maybeScriptedFloorBeat(4) === false);
+
+  // ── P5 : Chambre des Fondateurs (orchestrateur one-shot House-aware) ──
+  const cSeen = new Set();
+  const cEch  = new Set();
+  let cNarr = 0, cToast = 0;
+  const cham = loadModule(
+    'js/floor-ambiance.js',
+    ['maybeFounderChamberBeat'],
+    {
+      chosenHouse: 'Serdaigle',
+      seenScriptedBeat: cSeen,
+      seenEchoes: cEch,
+      setNarrative: () => { cNarr++; },
+      addMsg: () => { cToast++; },
+    });
+  const { maybeFounderChamberBeat } = cham;
+  // 1re entrée étage 17 → joue, déverrouille l'écho, sentinelle posée.
+  check('chamber(17) 1re fois = true', maybeFounderChamberBeat(17) === true);
+  check('sentinelle founder_chamber posée', cSeen.has('founder_chamber'));
+  check('écho de Chambre déverrouillé', cEch.has('echo_chamber_serdaigle'));
+  check('chamber narrative + toast 1×', cNarr === 1 && cToast === 1);
+  // Idempotent : 2e entrée → no-op.
+  check('chamber(17) 2e fois = false', maybeFounderChamberBeat(17) === false);
+  check('chamber pas de double affichage', cNarr === 1 && cToast === 1);
+  // Hors étage 17 → false sans rien faire (la sentinelle int 1/4/8 reste libre).
+  check('chamber(16) = false', maybeFounderChamberBeat(16) === false);
+  // Défensif : sans Maison → no-op.
+  const cham2 = loadModule(
+    'js/floor-ambiance.js',
+    ['maybeFounderChamberBeat'],
+    { chosenHouse: null, seenScriptedBeat: new Set(), seenEchoes: new Set(),
+      setNarrative: () => {}, addMsg: () => {} });
+  check('chamber(17) sans Maison = false', cham2.maybeFounderChamberBeat(17) === false);
 })();
 
 // ============================================================

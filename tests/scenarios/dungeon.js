@@ -1428,6 +1428,76 @@ async function scenarioZoneDFx() {
   await browser.close();
 }
 
+async function scenarioFounderChamber() {
+  console.log('\n── Scénario : Étage-scène « Chambre des Fondateurs » (P5) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // T1 : résolveur pur House-aware — Chambre = Maison du héros, gate étage 17.
+  const t1 = await page.evaluate(() => ({
+    gryff:  getFounderChamberBeat(17, 'Gryffondor'),
+    slyth:  getFounderChamberBeat(17, 'Serpentard'),
+    floor16: getFounderChamberBeat(16, 'Gryffondor'),
+    floor18: getFounderChamberBeat(18, 'Gryffondor'),
+    noHouse: getFounderChamberBeat(17, null),
+  }));
+  console.log('  T1 résolveur:', JSON.stringify({ g: !!t1.gryff, s: !!t1.slyth, f16: t1.floor16, f18: t1.floor18, nh: t1.noHouse }));
+  assert(t1.gryff && t1.gryff.echoId === 'echo_chamber_gryffondor', 'Chambre Gryffondor incorrecte');
+  assert(t1.slyth && t1.slyth.echoId === 'echo_chamber_serpentard', 'Chambre Serpentard incorrecte');
+  assert(t1.floor16 === null && t1.floor18 === null, 'gate étage 17 non respecté');
+  assert(t1.noHouse === null, 'sans Maison devrait être null');
+
+  // T2 : orchestrateur one-shot — joue à la 1re entrée 17, déverrouille l'écho.
+  const t2 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    seenScriptedBeat = new Set();
+    seenEchoes = new Set();
+    const first  = maybeFounderChamberBeat(17);
+    const unlocked = seenEchoes.has('echo_chamber_gryffondor');
+    const second = maybeFounderChamberBeat(17);   // idempotent
+    return { first, unlocked, second, sealed: seenScriptedBeat.has('founder_chamber') };
+  });
+  console.log('  T2 one-shot:', JSON.stringify(t2));
+  assert(t2.first === true,  'beat de Chambre non joué à la 1re entrée');
+  assert(t2.unlocked === true, 'écho de Chambre non déverrouillé');
+  assert(t2.second === false, 'beat de Chambre rejoué (non idempotent)');
+  assert(t2.sealed === true,  'sentinelle founder_chamber absente');
+
+  // T3 : sentinelle string survit au round-trip de save (sérialisée avec seenScriptedBeat).
+  const t3 = await page.evaluate(() => {
+    const snap = _serializeState();
+    seenScriptedBeat = new Set();
+    _applyState(snap);
+    return { serialized: Array.isArray(snap.seenScriptedBeat) && snap.seenScriptedBeat.includes('founder_chamber'),
+             restored: seenScriptedBeat.has('founder_chamber') };
+  });
+  console.log('  T3 save:', JSON.stringify(t3));
+  assert(t3.serialized, 'sentinelle founder_chamber absente de la sérialisation');
+  assert(t3.restored,   'sentinelle founder_chamber non restaurée');
+
+  // T4 : l'écho de Chambre apparaît dans le codex « Mémoire des Ruines ».
+  const t4 = await page.evaluate(() => {
+    openBestiary();
+    switchCodexTab('echoes');
+    const host = document.getElementById('bestiary-echoes');
+    const hasChamber = host && host.innerHTML.includes('Chambre du Lion');
+    const hasTier = host && host.innerHTML.includes('Chambre des Fondateurs');
+    switchCodexTab('bestiary');
+    closeBestiary();
+    return { hasChamber, hasTier };
+  });
+  console.log('  T4 codex:', JSON.stringify(t4));
+  assert(t4.hasChamber, 'écho « Chambre du Lion » absent du codex');
+  assert(t4.hasTier,    'libellé de tier « Chambre des Fondateurs » absent');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Chambre des Fondateurs)`);
+  }
+  console.log('  ✅ Chambre des Fondateurs — beat House-aware, one-shot, codex conformes');
+  await browser.close();
+}
+
 async function scenarioBranchyDungeon() {
   console.log('\n── Scénario : donjon branchu (Phase 1) ──');
   const { browser, page, errors } = await launchGame();
@@ -2903,4 +2973,4 @@ async function scenarioScriptedFloorBeats() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
+module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
