@@ -137,6 +137,7 @@ const ITEM_ICON_REGISTRY = {
   // Matériaux endgame (Tranche 2) — réutilisent les PNG existants.
   essence_tenebres:    'img/icons/items/larmes_phenix.png',
   page_grimoire:       'img/icons/items/livre_sortileges.png',
+  essence_primordiale: 'img/icons/items/felix.png',
   // Items Tier 2 Maison (cf. .claude/plans/house-intermediate-tier.md) —
   // alias legacy vers le PNG du slot le plus proche. Le rendu effectif
   // passe par ITEM_ICON_NEW_REGISTRY (painterly, priorité 1 au runtime).
