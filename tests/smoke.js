@@ -28,6 +28,7 @@ function parseScenarioFilters() {
 // Modules de scénarios par domaine. Chaque module exporte { scenarios: [...] }.
 const modules = [
   require('./scenarios/audio.js'),
+  require('./scenarios/codex.js'),
   require('./scenarios/combat.js'),
   require('./scenarios/controls.js'),
   require('./scenarios/dungeon.js'),

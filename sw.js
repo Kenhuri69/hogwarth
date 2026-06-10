@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v94';
+const CACHE_VERSION = 'hogwarth-v95';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -37,6 +37,7 @@ const PRECACHE_URLS = [
   './css/dungeon-fx.css?v=5',
   './css/cinematics.css?v=1',
   './css/frost.css?v=1',
+  './css/codex.css?v=1',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
@@ -52,6 +53,7 @@ const PRECACHE_URLS = [
   './js/npcs.js?v=24',
   './js/npcs-helpers.js?v=2',
   './js/riddles.js?v=2',
+  './js/codex.js?v=1',
   './js/data.js?v=27',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
@@ -59,12 +61,13 @@ const PRECACHE_URLS = [
   './js/floor-events.js?v=1',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=21',
-  './js/state.js?v=25',
+  './js/state.js?v=26',
   './js/hero-barks.js?v=3',
   './js/ui.js?v=14',
   './js/ui-character-sheet.js?v=5',
   './js/ui-settings.js?v=3',
   './js/ui-bestiary.js?v=4',
+  './js/ui-codex.js?v=1',
   './js/dungeon-scaling.js?v=2',
   './js/dungeon.js?v=16',
   './js/dungeon-spawning.js?v=1',
@@ -77,11 +80,11 @@ const PRECACHE_URLS = [
   './js/renderer-entities.js?v=3',
   './js/renderer-minimap.js?v=8',
   './js/movement.js?v=33',
-  './js/movement-floors.js?v=9',
-  './js/movement-interactions.js?v=14',
+  './js/movement-floors.js?v=10',
+  './js/movement-interactions.js?v=15',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=30',
-  './js/battle-rewards.js?v=6',
+  './js/battle-rewards.js?v=7',
   './js/battle-death.js?v=3',
   './js/teleport.js?v=1',
   './js/battle-spells.js?v=14',
@@ -91,14 +94,14 @@ const PRECACHE_URLS = [
   './js/inventory-spells.js?v=2',
   './js/potions.js?v=6',
   './js/quests-templates.js?v=10',
-  './js/quests.js?v=12',
+  './js/quests.js?v=13',
   './js/quests-riddles.js?v=2',
   './js/npc-dialog.js?v=13',
   './js/karaoke.js?v=1',
   './js/intro.js?v=3',
   './js/shop.js?v=11',
   './js/save-slots.js?v=3',
-  './js/save.js?v=29',
+  './js/save.js?v=30',
   './js/save-visit-snapshot.js?v=1',
   './js/save-ui.js?v=4',
   './js/ironman.js?v=3',
@@ -106,12 +109,12 @@ const PRECACHE_URLS = [
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
-  './js/main.js?v=17',
+  './js/main.js?v=18',
   './js/endgame.js?v=4',
   './js/forge.js?v=4',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=33',
+  './js/loader.js?v=34',
   './js/pwa.js?v=4',
 
   // Icônes PWA + premier écran

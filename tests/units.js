@@ -595,6 +595,137 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 8. codex.js — codexEntryState / getCodexEntry / unlockedCodexFor /
+//    codexVariantNote (helpers PURS, Chapitre 12 Lots 1-2)
+// ============================================================
+(function testCodex() {
+  const { CODEX_ENTRIES, getCodexEntry, codexEntryState, unlockedCodexFor, codexVariantNote } =
+    loadModule('js/codex.js',
+      ['CODEX_ENTRIES', 'getCodexEntry', 'codexEntryState', 'unlockedCodexFor', 'codexVariantNote']);
+
+  // Contexte de base : tout vide / au plus bas (rien de débloqué).
+  const empty = {
+    floorReached: 0, eclatProgress: 0,
+    seenMonsters: new Set(), monsterKills: {},
+    questsDone: new Set(), riddlesSolved: new Set(), echoSeen: new Set(),
+    victoryAchieved: false, chosenHouse: null,
+  };
+
+  // ── getCodexEntry ──
+  check('getCodexEntry connu', getCodexEntry('cle_de_voute') &&
+    getCodexEntry('cle_de_voute').id === 'cle_de_voute');
+  check('getCodexEntry inconnu → null', getCodexEntry('inexistant') === null);
+  check('getCodexEntry(null) → null', getCodexEntry(null) === null);
+
+  // ── Registre cohérent : champs obligatoires (§12.3) ──
+  let shapeOk = true;
+  const CATS = ['glossaire', 'bestiaire', 'lieux', 'personnages', 'histoire', 'eclats', 'objets'];
+  for (const e of CODEX_ENTRIES) {
+    if (!e.id || !e.category || !e.title) shapeOk = false;
+    if (!CATS.includes(e.category)) shapeOk = false;
+    if (!Array.isArray(e.unlockConditions) || !e.unlockConditions.length) shapeOk = false;
+    if (!e.textVersions || typeof e.textVersions.veiled !== 'string') shapeOk = false;
+  }
+  check('toutes entrées : champs obligatoires + catégorie valide', shapeOk);
+  const ids = CODEX_ENTRIES.map(e => e.id);
+  check('ids uniques', new Set(ids).size === ids.length);
+
+  // ── locked : aucune condition remplie ──
+  check('cle_de_voute locked (floor 0)', codexEntryState(getCodexEntry('cle_de_voute'), empty) === 'locked');
+  check('entry null → locked', codexEntryState(null, empty) === 'locked');
+
+  // ── floor : ouverture + révélation par étage ──
+  const cle = getCodexEntry('cle_de_voute');
+  check('cle floor1 → veiled', codexEntryState(cle, { ...empty, floorReached: 1 }) === 'veiled');
+  check('cle floor13 → veiled (pas encore 3 éclats)', codexEntryState(cle, { ...empty, floorReached: 13 }) === 'veiled');
+
+  // ── eclat : révélation à 3 éclats (revealedBy ET) ──
+  check('cle 2 éclats → veiled', codexEntryState(cle, { ...empty, floorReached: 1, eclatProgress: 2 }) === 'veiled');
+  check('cle 3 éclats → revealed', codexEntryState(cle, { ...empty, floorReached: 1, eclatProgress: 3 }) === 'revealed');
+
+  // ── corrupted : surcouche d'endgame (revealed + corruptedBy) ──
+  check('cle floor14 sans révélation → veiled (corrupted exige revealed)',
+    codexEntryState(cle, { ...empty, floorReached: 14 }) === 'veiled');
+  check('cle floor14 + 3 éclats → corrupted',
+    codexEntryState(cle, { ...empty, floorReached: 14, eclatProgress: 3 }) === 'corrupted');
+
+  // ── eclat robinet 3-temps (eclat_voute_codex) ──
+  const ecl = getCodexEntry('eclat_voute_codex');
+  check('éclats: 0 → locked', codexEntryState(ecl, empty) === 'locked');
+  check('éclats: 1 → veiled',  codexEntryState(ecl, { ...empty, eclatProgress: 1 }) === 'veiled');
+  check('éclats: 3 → revealed', codexEntryState(ecl, { ...empty, eclatProgress: 3 }) === 'revealed');
+
+  // ── echo : ouverture + révélation par les 4 voix (ET) ──
+  const sce = getCodexEntry('echo_scellement');
+  check('echo: rien vu → locked', codexEntryState(sce, empty) === 'locked');
+  check('echo: scène vue → veiled',
+    codexEntryState(sce, { ...empty, echoSeen: new Set(['echo_scene_sceau']) }) === 'veiled');
+  check('echo: 3 voix sur 4 → veiled',
+    codexEntryState(sce, { ...empty, echoSeen: new Set(['echo_scene_sceau', 'echo_godric', 'echo_salazar', 'echo_rowena']) }) === 'veiled');
+  check('echo: 4 voix → revealed',
+    codexEntryState(sce, { ...empty, echoSeen: new Set(['echo_scene_sceau', 'echo_godric', 'echo_salazar', 'echo_rowena', 'echo_helga']) }) === 'revealed');
+
+  // ── victory : Boucle Ténébreuse ──
+  const bcl = getCodexEntry('boucle_tenebreuse');
+  check('boucle: pré-victoire → locked', codexEntryState(bcl, { ...empty, floorReached: 10 }) === 'locked');
+  check('boucle: victoire → veiled', codexEntryState(bcl, { ...empty, victoryAchieved: true }) === 'veiled');
+  check('boucle: victoire + floor14 → revealed',
+    codexEntryState(bcl, { ...empty, victoryAchieved: true, floorReached: 14 }) === 'revealed');
+  check('boucle: victoire + floor21 → corrupted',
+    codexEntryState(bcl, { ...empty, victoryAchieved: true, floorReached: 21 }) === 'corrupted');
+
+  // ── monster : type bestiaire (couverture évaluateur, sans/avec kills) ──
+  const monsterEntry = {
+    id: '_t_monster', category: 'bestiaire', title: 'T',
+    unlockConditions: [{ type: 'monster', value: 'troll' }],
+    revealedBy: [{ type: 'monster', value: 'troll', kills: 2 }],
+    textVersions: { veiled: 'v', revealed: 'r' },
+  };
+  check('monster: jamais vu → locked', codexEntryState(monsterEntry, empty) === 'locked');
+  check('monster: vu 0 kill → veiled',
+    codexEntryState(monsterEntry, { ...empty, seenMonsters: new Set(['troll']), monsterKills: {} }) === 'veiled');
+  check('monster: vu 1 kill → veiled (kills<2)',
+    codexEntryState(monsterEntry, { ...empty, seenMonsters: new Set(['troll']), monsterKills: { troll: 1 } }) === 'veiled');
+  check('monster: vu 2 kills → revealed',
+    codexEntryState(monsterEntry, { ...empty, seenMonsters: new Set(['troll']), monsterKills: { troll: 2 } }) === 'revealed');
+
+  // ── quest + riddle : couverture évaluateur ──
+  const qrEntry = {
+    id: '_t_qr', category: 'personnages', title: 'T',
+    unlockConditions: [{ type: 'quest', value: 'q1' }, { type: 'riddle', value: 'r_clef_voute' }],
+    textVersions: { veiled: 'v' },
+  };
+  check('quest/riddle: rien → locked', codexEntryState(qrEntry, empty) === 'locked');
+  check('quest remplie (OU) → veiled',
+    codexEntryState(qrEntry, { ...empty, questsDone: new Set(['q1']) }) === 'veiled');
+  check('riddle remplie (OU) → veiled',
+    codexEntryState(qrEntry, { ...empty, riddlesSolved: new Set(['r_clef_voute']) }) === 'veiled');
+
+  // ── unlockedCodexFor : filtre + état ──
+  const ctxMid = { ...empty, floorReached: 14, eclatProgress: 3, echoSeen: new Set(['echo_scene_sceau']) };
+  const unlocked = unlockedCodexFor(ctxMid);
+  check('unlockedCodexFor renvoie un tableau', Array.isArray(unlocked));
+  check('unlockedCodexFor: aucune entrée locked', unlocked.every(u => u.state !== 'locked'));
+  check('unlockedCodexFor(empty) ⊂ unlockedCodexFor(mid)',
+    unlockedCodexFor(empty).length <= unlocked.length);
+  const cleRow = unlocked.find(u => u.entry.id === 'cle_de_voute');
+  check('cle_de_voute corrupted dans ctxMid', cleRow && cleRow.state === 'corrupted');
+
+  // ── codexVariantNote : note marginale Maison ──
+  const sal = getCodexEntry('voix_salazar');
+  check('variante Serpentard présente', typeof codexVariantNote(sal, 'Serpentard', []) === 'string');
+  check('variante autre Maison → null', codexVariantNote(sal, 'Gryffondor', []) === null);
+  check('variante sans Maison → null', codexVariantNote(sal, null, []) === null);
+  check('variante entrée sans variants → null', codexVariantNote(cle, 'Gryffondor', []) === null);
+
+  // ── Défensif : ctx incomplet ne throw jamais ──
+  let noThrow = true;
+  try { codexEntryState(cle, {}); codexEntryState(cle, { floorReached: 1 }); unlockedCodexFor({}); }
+  catch (e) { noThrow = false; }
+  check('codex helpers tolèrent un ctx incomplet', noThrow);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

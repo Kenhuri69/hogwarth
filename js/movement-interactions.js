@@ -523,6 +523,7 @@ function answerSteleRiddle(choiceIdx) {
     }
     renderMinimap();
     drawDungeon();
+    if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('riddle-solved');
   } else {
     // Mauvaise réponse : on redessine l'overlay avec un préfixe d'échec.
     _steleFeedback = "✗ Les glyphes restent sombres — ce n'est pas la "

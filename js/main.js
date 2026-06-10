@@ -501,6 +501,9 @@ async function startGame(count = 2) {
   seenScriptedBeat = new Set();   // étages-scènes (P5) — beats neufs à chaque partie
   totalKills     = 0;
   monsterKills   = {};
+  // Codex (Chapitre 12) — journal neuf à chaque partie.
+  unlockedCodexEntries = new Set();
+  floorReached         = 1;
   combatTutorialSeen = false;   // tuto premier combat rejoué à chaque partie (LOT D2)
   defeatedBosses = new Set();
   ironmanRunId   = (ironmanMode && typeof _genRunId === 'function') ? _genRunId() : null;
@@ -542,6 +545,8 @@ async function startGame(count = 2) {
     : `Bienvenue à Poudlard. ${player.name.split(' ')[0]} et ${player2.name.split(' ')[0]} s'élancent. ${modeLabel} activé.`;
   setNarrative(intro);
   addMsg(modeLabel, difficulty === 'Expert' ? 'bad' : 'good');
+  // Codex : ouvre les entrées de l'étage 1 (ex. la Clé de Voûte fêlée).
+  if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('game-start');
 
   // Étage-scène scénarisé (P5) : beat du Seuil familier à la 1re entrée de
   // l'étage 1 (non atteint via _changeFloor, généré direct au démarrage).
