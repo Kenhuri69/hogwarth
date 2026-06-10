@@ -159,6 +159,107 @@ const CODEX_ENTRIES = [
     },
   },
 
+  // ── 🗺️ Lieux & Géographie — fiches de zone (robinet étage, Lot 4) ──
+  {
+    id: 'grande_salle', category: 'lieux', icon: '🍽️', act: 1,
+    title: 'La Grande Salle',
+    links: ['echo_scellement'],
+    unlockConditions: [{ type: 'floor', value: 1 }],
+    revealedBy: [{ type: 'echo', value: 'echo_silhouette' }],
+    textVersions: {
+      veiled: "Le cœur de l'école : quatre longues tables, un plafond enchanté. Ce matin, elle est vide — les tables dressées pour personne, les bougies allumées pour des absents.",
+      revealed: "Dans la brume, l'espace d'un battement, la salle se remplit : des centaines d'élèves, un Choixpeau qui chante, le brouhaha d'un festin. Puis plus rien. Le château ne te montre pas un fantôme — il te montre ce pour quoi il fut bâti. Toute cette vie posée comme un couvercle chaud sur le froid d'en dessous. C'est cela que tu défends en descendant.",
+    },
+  },
+  {
+    id: 'couloirs_poudlard', category: 'lieux', icon: '🏰', act: 1,
+    title: 'Les Couloirs de Poudlard',
+    links: ['froid_surnaturel', 'cachots_poudlard'],
+    unlockConditions: [{ type: 'floor', value: 1 }],
+    revealedBy: [{ type: 'floor', value: 4 }],
+    textVersions: {
+      veiled: "Pierre claire, poutres, portraits, torches : le Poudlard qu'on reconnaît. Mais un chat attaque, un portrait maudit, les escaliers se figent vers le bas, et le givre s'accroche aux vitraux en pleine année. On est encore à la maison — mais la maison a peur.",
+      revealed: "Ce familier était déjà contaminé. La zone d'entrée n'était pas un prologue paisible : c'était la première couche du mensonge tendre, là où la corruption monte d'en bas sans qu'on veuille encore le croire. La seule leçon qui compte s'apprend ici — le mal ne vient pas du dehors, il remonte.",
+    },
+  },
+  {
+    id: 'cachots_poudlard', category: 'lieux', icon: '🔒', act: 2,
+    title: 'Les Cachots de Poudlard',
+    links: ['couloirs_poudlard', 'profondeurs_oubliees'],
+    unlockConditions: [{ type: 'floor', value: 4 }],
+    revealedBy: [{ type: 'floor', value: 7 }],
+    textVersions: {
+      veiled: "Sous les salles de classe : tapis sombres, pierre humide, lumière rare. Le décor cesse d'être scolaire et devient carcéral. C'est ici qu'apparaissent les premiers masques — la corruption a des serviteurs humains.",
+      revealed: "Les cachots disent ce que l'école taisait : la menace est organisée, et elle veut. Des gens choisissent cela. Plus bas que les Mangemorts masqués, quelque chose se reconstitue — et chaque pas vers le ventre de pierre rapproche de la source qui les nourrit.",
+    },
+  },
+  {
+    id: 'profondeurs_oubliees', category: 'lieux', icon: '🕳️', act: 3,
+    title: 'Les Profondeurs Oubliées',
+    links: ['cachots_poudlard', 'ruines_anciennes'],
+    unlockConditions: [{ type: 'floor', value: 7 }],
+    revealedBy: [{ type: 'floor', value: 10 }],
+    textVersions: {
+      veiled: "Plus de murs taillés : de la roche brute, des lacs souterrains, le noir. On a quitté Poudlard. On entre dans ce que l'école a enfoui plutôt qu'effacé.",
+      revealed: "Il existe des strates antérieures et inférieures à l'école. Le Veilleur du Seuil interdit le passage : première graine des Ruines, première preuve que descendre, c'est remonter le temps. Au fond attend la source.",
+    },
+  },
+
+  // ── 📖 Glossaire — termes de lore (robinet étage / victoire, Lot 4) ──
+  {
+    id: 'echos_temporels', category: 'glossaire', icon: '🕰️', act: 4,
+    title: 'Les Échos temporels',
+    links: ['echo_scellement', 'ruines_anciennes'],
+    unlockConditions: [{ type: 'floor', value: 12 }],
+    revealedBy: [{ type: 'floor', value: 14 }],
+    textVersions: {
+      veiled: "Plus bas, le temps cesse de couler droit. Un murmure d'abord, puis une silhouette, puis une scène entière qui se rejoue : le lieu se souvient à voix haute.",
+      revealed: "Les échos ne sont pas des fantômes : ce sont des fragments de passé que la pierre, trop ancienne pour distinguer jadis de maintenant, laisse remonter. Vecteur du lore des Fondateurs sans qu'aucun d'eux soit vivant — la mémoire gravée qui parle quand plus personne ne peut témoigner.",
+    },
+  },
+  {
+    id: 'tenebreux', category: 'glossaire', icon: '👁️', act: 4,
+    title: 'Les Ténébreux',
+    links: ['boucle_tenebreuse'],
+    unlockConditions: [{ type: 'victory' }],
+    revealedBy: [{ type: 'floor', value: 18 }],
+    textVersions: {
+      veiled: "Après la victoire, les créatures reviennent changées : un préfixe sombre, une lueur plus froide. On les appelle les Ténébreux.",
+      revealed: "Le Ténébreux n'est pas un monstre neuf : c'est l'ancien, repassé par la Boucle. Les boss qui gardaient la route (étages 8-10) reviennent plus profond (18-20), nourris de la faille qu'on a rouverte. La corruption ne crée pas — elle reprend, et aggrave.",
+    },
+  },
+  // Mondes Parallèles → Glossaire (décision : pas de 8ᵉ onglet « Voyageur »).
+  // Robinet `floor` = proxy du sort Cheminette (niv. 8, ~étage 8).
+  {
+    id: 'cheminette_inter_mondes', category: 'glossaire', icon: '🔥', act: 3,
+    title: 'La Cheminette Inter-Mondes',
+    links: ['voyageur', 'mondes_paralleles'],
+    unlockConditions: [{ type: 'floor', value: 8 }],
+    revealedBy: [{ type: 'floor', value: 14 }],
+    textVersions: {
+      veiled: "Une veine de cendre verte court dans la pierre, plus ancienne que les cheminées. Le sort qui la réveille te projette, en projection astrale, dans le donjon d'un autre monde.",
+      revealed: "Chaque sauvegarde est un plan : un Poudlard-reflet où la même fêlure se joue autrement. La Cheminette ne te fait pas avancer — elle te fait traverser. Tu deviens Voyageur, marcheur entre les mondes, et ce que tu y gagnes (l'Essence d'Outremonde, « la peur d'un autre monde cristallisée ») ne sert qu'à ceux qui acceptent que leur descente n'est pas la seule.",
+    },
+  },
+  {
+    id: 'voyageur', category: 'glossaire', icon: '🧭', act: 3,
+    title: 'Le Voyageur',
+    links: ['cheminette_inter_mondes', 'mondes_paralleles'],
+    unlockConditions: [{ type: 'floor', value: 8 }],
+    textVersions: {
+      veiled: "Le rôle qu'endosse tout héros maîtrisant la Cheminette : marcher entre les plans en projection astrale, hôte d'un monde et visiteur d'un autre. On n'avance pas en Voyageur — on traverse.",
+    },
+  },
+  {
+    id: 'mondes_paralleles', category: 'glossaire', icon: '🌐', act: 3,
+    title: 'Les Mondes Parallèles',
+    links: ['cheminette_inter_mondes', 'voyageur'],
+    unlockConditions: [{ type: 'floor', value: 8 }],
+    textVersions: {
+      veiled: "Les Poudlard-reflets : chaque partie sauvegardée est un plan distinct, où la même Clé s'est fêlée. On peut les visiter — latéralement, sans avancer dans sa propre descente.",
+    },
+  },
+
 ];
 
 // ── Helpers PURS ─────────────────────────────────────────────

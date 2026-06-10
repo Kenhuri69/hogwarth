@@ -718,6 +718,21 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('variante sans Maison → null', codexVariantNote(sal, null, []) === null);
   check('variante entrée sans variants → null', codexVariantNote(cle, 'Gryffondor', []) === null);
 
+  // ── Lot 4 : Lieux & Glossaire — déverrouillage par zone (A/B/C/D) ──
+  const zoneAt = (id, floor) => codexEntryState(getCodexEntry(id), { ...empty, floorReached: floor });
+  check('zone A (couloirs) ouverte étage 1', zoneAt('couloirs_poudlard', 1) === 'veiled');
+  check('zone B (cachots) fermée étage 1',   zoneAt('cachots_poudlard', 1) === 'locked');
+  check('zone B (cachots) ouverte étage 4',  zoneAt('cachots_poudlard', 4) === 'veiled');
+  check('zone C (profondeurs) ouverte étage 7', zoneAt('profondeurs_oubliees', 7) === 'veiled');
+  check('zone D (ruines) ouverte étage 14',  zoneAt('ruines_anciennes', 14) === 'veiled');
+  // Glossaire : Ténébreux gardé par la victoire ; échos par l'étage profond.
+  check('tenebreux locked sans victoire', codexEntryState(getCodexEntry('tenebreux'), { ...empty, floorReached: 18 }) === 'locked');
+  check('tenebreux ouvert après victoire', codexEntryState(getCodexEntry('tenebreux'), { ...empty, victoryAchieved: true }) === 'veiled');
+  check('echos_temporels ouvert étage 12', zoneAt('echos_temporels', 12) === 'veiled');
+  check('cheminette (MP) dans glossaire', getCodexEntry('cheminette_inter_mondes').category === 'glossaire');
+  // Révélation par descente : couloirs révélés une fois en zone B.
+  check('couloirs révélés étage 4', zoneAt('couloirs_poudlard', 4) === 'revealed');
+
   // ── Défensif : ctx incomplet ne throw jamais ──
   let noThrow = true;
   try { codexEntryState(cle, {}); codexEntryState(cle, { floorReached: 1 }); unlockedCodexFor({}); }
