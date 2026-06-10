@@ -17,6 +17,7 @@ const BOSS_FEATS = {
   bellatrix:          { label: 'Bellatrix Lestrange vaincue',   points: 600 },
   voldemort_affaibli: { label: 'Voldemort Affaibli repoussé',   points: 800 },
   voldemort_revenu:   { label: 'Voldemort Ressuscité défait',   points: 1500 },
+  reflet_mythe:       { label: 'Le Reflet du Mythe affronté',   points: 1200 },
 };
 
 // Multiplicateur de score par difficulté — aligné sur la grille des

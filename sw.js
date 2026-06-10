@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v101';
+const CACHE_VERSION = 'hogwarth-v102';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -49,11 +49,11 @@ const PRECACHE_URLS = [
   './js/audio-sfx.js?v=13',
   './js/icons.js?v=1',
   './js/scene-icons.js?v=6',
-  './js/monsters.js?v=10',
+  './js/monsters.js?v=11',
   './js/npcs.js?v=24',
   './js/npcs-helpers.js?v=2',
   './js/riddles.js?v=2',
-  './js/codex.js?v=5',
+  './js/codex.js?v=6',
   './js/data.js?v=27',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
@@ -61,13 +61,13 @@ const PRECACHE_URLS = [
   './js/floor-events.js?v=1',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=21',
-  './js/state.js?v=27',
+  './js/state.js?v=28',
   './js/hero-barks.js?v=4',
   './js/ui.js?v=14',
-  './js/ui-character-sheet.js?v=6',
+  './js/ui-character-sheet.js?v=7',
   './js/ui-settings.js?v=3',
   './js/ui-bestiary.js?v=5',
-  './js/ui-codex.js?v=4',
+  './js/ui-codex.js?v=5',
   './js/dungeon-scaling.js?v=3',
   './js/dungeon.js?v=16',
   './js/dungeon-spawning.js?v=1',
@@ -84,7 +84,7 @@ const PRECACHE_URLS = [
   './js/movement-interactions.js?v=15',
   './js/swipe-canvas.js?v=4',
   './js/battle.js?v=30',
-  './js/battle-rewards.js?v=7',
+  './js/battle-rewards.js?v=8',
   './js/battle-death.js?v=3',
   './js/teleport.js?v=1',
   './js/battle-spells.js?v=14',
@@ -101,20 +101,21 @@ const PRECACHE_URLS = [
   './js/intro.js?v=3',
   './js/shop.js?v=11',
   './js/save-slots.js?v=3',
-  './js/save.js?v=31',
+  './js/save.js?v=32',
   './js/save-visit-snapshot.js?v=1',
   './js/save-ui.js?v=4',
-  './js/ironman.js?v=3',
+  './js/ironman.js?v=4',
   './js/hall-of-fame.js?v=4',
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
-  './js/main.js?v=19',
+  './js/main.js?v=20',
   './js/endgame.js?v=4',
+  './js/break-cycle.js?v=1',
   './js/forge.js?v=4',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=36',
+  './js/loader.js?v=37',
   './js/pwa.js?v=4',
 
   // Icônes PWA + premier écran

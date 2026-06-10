@@ -193,6 +193,10 @@ function endBattle(won) {
     // est tombé. No-op pour tout autre monstre ou si déjà déclenché.
     enemyGroup.forEach(e => safeCall('checkVictoryTrigger', e.id));
 
+    // « Briser le Cycle » (V3) : à la mort du boss-miroir « Le Reflet du Mythe »,
+    // propose le choix final si les jalons I & II sont déjà remplis. No-op sinon.
+    safeCall('maybeOfferBreakCycle', enemyGroup);
+
     const xpEarned   = Math.floor(totalXp   * diff.xpMultiplier);
     const goldEarned = Math.floor(totalGold * diff.goldMultiplier * recolteMult * equipGoldMult * goldFort);
     // Fusionne les deux bonus or sur une seule ligne pour éviter le spam

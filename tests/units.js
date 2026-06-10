@@ -694,6 +694,47 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 6ter. break-cycle.js — « Briser le Cycle » (V3, ch.11 §11.10)
+//    briserCycleJalons (résolveur PUR des 4 jalons)
+// ============================================================
+(function testBreakCycle() {
+  const { briserCycleJalons, BRISER_ECLAT_SEUIL } = loadModule(
+    'js/break-cycle.js', ['briserCycleJalons', 'BRISER_ECLAT_SEUIL']);
+
+  check('BRISER_ECLAT_SEUIL = 15', BRISER_ECLAT_SEUIL === 15);
+
+  // Aucun jalon rempli.
+  let j = briserCycleJalons({});
+  check('aucun jalon → count 0 + non prêt', j.count === 0 && j.ready === false);
+
+  // Jalon I — Entendre (scène du Scellement vue).
+  check('scène vue → entendre', briserCycleJalons({ sceneSeen: true }).entendre === true);
+  check('scène non vue → entendre false', briserCycleJalons({ sceneSeen: false }).entendre === false);
+
+  // Jalon II — Porter (seuil d'Éclats).
+  check('eclats 14 < seuil → porter false', briserCycleJalons({ eclats: 14 }).porter === false);
+  check('eclats 15 = seuil → porter true',  briserCycleJalons({ eclats: 15 }).porter === true);
+  check('eclats 99 > seuil → porter true',  briserCycleJalons({ eclats: 99 }).porter === true);
+  check('seuil custom respecté', briserCycleJalons({ eclats: 5, seuil: 5 }).porter === true);
+
+  // Jalon III — Affronter (boss-miroir vaincu).
+  check('bossKills 0 → affronter false', briserCycleJalons({ bossKills: 0 }).affronter === false);
+  check('bossKills 1 → affronter true',  briserCycleJalons({ bossKills: 1 }).affronter === true);
+
+  // Convergence : les 3 jalons → prêt (jalon IV proposable).
+  j = briserCycleJalons({ sceneSeen: true, eclats: 15, bossKills: 1 });
+  check('3 jalons → count 3 + ready', j.count === 3 && j.ready === true);
+  // 2 jalons sur 3 → pas encore prêt (même avec un surplus d'Éclats).
+  check('2 jalons → non prêt', briserCycleJalons({ sceneSeen: true, eclats: 99 }).ready === false);
+  check('boss + éclats sans scène → non prêt',
+    briserCycleJalons({ eclats: 20, bossKills: 3 }).ready === false);
+
+  // Défensif : ctx invalide → count 0, jamais d'exception.
+  check('ctx null → count 0', briserCycleJalons(null).count === 0);
+  check('ctx undefined → count 0', briserCycleJalons().count === 0);
+})();
+
+// ============================================================
 // 7. renderer-entities.js — _npcApproachProx (M1, réaction d'approche PNJ)
 // ============================================================
 (function testNpcApproachProx() {
@@ -731,7 +772,7 @@ function loadModule(relPath, exportNames, globals = {}) {
     floorReached: 0, eclatProgress: 0, accumulatedEclats: 0,
     seenMonsters: new Set(), monsterKills: {},
     questsDone: new Set(), riddlesSolved: new Set(), echoSeen: new Set(),
-    victoryAchieved: false, chosenHouse: null,
+    victoryAchieved: false, chosenHouse: null, cycleBroken: false,
   };
 
   // ── getCodexEntry ──
@@ -819,6 +860,28 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('echo_signature: victoire → veiled', codexEntryState(es, { ...empty, victoryAchieved: true }) === 'veiled');
   check('echo_signature: écho vu → revealed',
     codexEntryState(es, { ...empty, victoryAchieved: true, echoSeen: new Set(['echo_signature']) }) === 'revealed');
+
+  // ── V3 (ch.11 §11.10) — Briser le Cycle : quête (3 robinets) + fin ──
+  const bcq = getCodexEntry('briser_cycle');
+  check('briser_cycle présent (eclats)', !!bcq && bcq.category === 'eclats');
+  check('briser_cycle: pré-victoire → locked', codexEntryState(bcq, { ...empty }) === 'locked');
+  check('briser_cycle: victoire → veiled', codexEntryState(bcq, { ...empty, victoryAchieved: true }) === 'veiled');
+  check('briser_cycle: 2 robinets sur 3 → veiled',
+    codexEntryState(bcq, { ...empty, victoryAchieved: true, echoSeen: new Set(['echo_scene_sceau']), accumulatedEclats: 15 }) === 'veiled');
+  check('briser_cycle: 3 robinets → revealed',
+    codexEntryState(bcq, { ...empty, victoryAchieved: true,
+      echoSeen: new Set(['echo_scene_sceau']), accumulatedEclats: 15,
+      seenMonsters: new Set(['reflet_mythe']), monsterKills: { reflet_mythe: 1 } }) === 'revealed');
+  // Le robinet `monster` exige le KILL (seen seul ne suffit pas).
+  check('briser_cycle: boss vu mais 0 kill → veiled',
+    codexEntryState(bcq, { ...empty, victoryAchieved: true,
+      echoSeen: new Set(['echo_scene_sceau']), accumulatedEclats: 15,
+      seenMonsters: new Set(['reflet_mythe']), monsterKills: {} }) === 'veiled');
+
+  const cbr = getCodexEntry('cycle_brise');
+  check('cycle_brise présent (histoire)', !!cbr && cbr.category === 'histoire');
+  check('cycle_brise: non brisé → locked', codexEntryState(cbr, { ...empty, victoryAchieved: true }) === 'locked');
+  check('cycle_brise: brisé → revealed', codexEntryState(cbr, { ...empty, cycleBroken: true }) === 'revealed');
 
   // ── monster : type bestiaire (couverture évaluateur, sans/avec kills) ──
   const monsterEntry = {

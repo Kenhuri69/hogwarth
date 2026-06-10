@@ -1969,6 +1969,43 @@ const MONSTERS = [
     ]
   },
 
+  // ── Boss-miroir terminal de « Briser le Cycle » (V3, ch.11 §11.10) ──
+  // Apparition à l'étage RÉEL 21+ : minFloor 11 filtré via effectiveFloor
+  // (effectiveFloor(21)=11) → exclu des étages 11-20 (eff. 1-10). Le vaincre
+  // valide le jalon III ; voir js/break-cycle.js.
+  {
+    id:       "reflet_mythe",
+    epic:     true,
+    name:     "Le Reflet du Mythe",
+    icon:     "🪞",
+    category: "être magique",
+    desc:     "Au sommet de l'Avant-Monde, une silhouette se lève — la tienne, faite de lumière froide et de légende retournée.",
+    lore:     "Ce n'est pas un monstre : c'est ce que la Boucle a fait de ta propre légende. À force de descendre, le mythe du héros s'est détaché de toi et s'est dressé en face, gardien de ce qui dort tout au fond. Le vaincre, c'est se mesurer à soi-même — au prix qu'on a payé pour devenir une histoire.",
+    habitat:  "Le sommet de l'Avant-Monde (étage 21+), là où la pierre cesse de distinguer jadis de maintenant",
+    anecdote: "Les Ruines ne créent rien : elles renvoient. Le Reflet n'a d'autre visage que celui de qui ose descendre jusqu'à lui.",
+    danger:   11,
+    minFloor: 11, maxFloor: null, weight: 2,
+    hp: 175, atk: 30, def: 16, mag: 28, agi: 14, lck: 16,
+    scale: 0.40,
+    abilities: [
+      { name: "Éclat de Légende", icon: "🌟", desc: "Ta propre gloire, retournée en arme", effect: "damage", power: 26, chance: 0.55 },
+      { name: "Reflet Inversé",   icon: "🪞", desc: "Il te vole ta force et s'en nourrit",  effect: "drain",  power: 20, chance: 0.30 },
+      { name: "Effroi du Miroir", icon: "😱", desc: "Se voir soi-même, terrible",           effect: "status", statusId: "fear", power: 0, chance: 0.30, turns: 2 },
+      { name: "Dissipe les Vœux", icon: "❌", desc: "Brise protections et bénédictions",     effect: "dispel", chance: 0.30 }
+    ],
+    ai: "aggressive",
+    phases: [
+      { atPct: 0.5,  atkMult: 1.2, magMult: 1.2, msg: "Le Reflet sourit de ton propre sourire — il frappe plus fort, comme tu le ferais." },
+      { atPct: 0.25, magMult: 1.15, msg: "Acculé, le Reflet se fissure de lumière froide — ce qui dort, derrière, retient son souffle." }
+    ],
+    resist: ["ténèbres", "physique"],
+    weak:   ["lumière"],
+    xp: 400, gold: { min: 150, max: 240 },
+    drops: [
+      { itemId: "felix", chance: 0.30 }
+    ]
+  },
+
   {
     id:       "mangemort_veteran",
     name:     "Mangemort Vétéran",

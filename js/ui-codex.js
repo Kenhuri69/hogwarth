@@ -75,6 +75,8 @@ function _codexContext() {
     chosenHouse:    (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
     // Robinet `eclatLoop` (V1, ch.11) : Éclats portés en Boucle (Porteur d'Éclats).
     accumulatedEclats: (typeof accumulatedEclats !== 'undefined') ? accumulatedEclats : 0,
+    // Robinet `cycleBroken` (V3, ch.11) : fin « Briser le Cycle » atteinte.
+    cycleBroken: (typeof cycleBroken !== 'undefined') ? !!cycleBroken : false,
   };
 }
 

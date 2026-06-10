@@ -365,4 +365,108 @@ async function scenarioDarkLoopV2() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2] };
+// Boucle Ténébreuse V3 (Chapitre 11 §11.10) — « Briser le Cycle » : boss-miroir,
+// 4 jalons dérivés, modale de choix + cinématique, fin cosmétique non-gating,
+// Codex (briser_cycle + cycle_brise), persistance de cycleBroken.
+async function scenarioDarkLoopV3() {
+  console.log('\n── Scénario : Boucle Ténébreuse V3 — Briser le Cycle ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const wired = await page.evaluate(() => ({
+    jalonsFn: typeof briserCycleJalons === 'function',
+    offerFn:  typeof maybeOfferBreakCycle === 'function',
+    modalFn:  typeof openBreakCycleModal === 'function',
+    confirmFn: typeof confirmBreakCycle === 'function',
+    boss:     !!(typeof MONSTERS !== 'undefined' && MONSTERS.find(m => m.id === 'reflet_mythe')),
+    bossMinFloor: (MONSTERS.find(m => m.id === 'reflet_mythe') || {}).minFloor,
+    bossFeat: !!(typeof BOSS_FEATS !== 'undefined' && BOSS_FEATS.reflet_mythe),
+    overlay:  !!document.getElementById('break-cycle-overlay'),
+    seuil:    (typeof BRISER_ECLAT_SEUIL !== 'undefined') ? BRISER_ECLAT_SEUIL : null,
+  }));
+  console.log('  wired :', wired);
+  assert(wired.jalonsFn && wired.offerFn && wired.modalFn && wired.confirmFn, 'helpers V3 absents');
+  assert(wired.boss, 'boss-miroir reflet_mythe absent de MONSTERS');
+  assert(wired.bossMinFloor === 11, 'reflet_mythe minFloor doit être 11 (→ étage réel 21+ via effectiveFloor)');
+  assert(wired.bossFeat, 'reflet_mythe absent de BOSS_FEATS');
+  assert(wired.overlay, '#break-cycle-overlay absent du DOM');
+  assert(wired.seuil === 15, 'BRISER_ECLAT_SEUIL devrait être 15');
+
+  // Jalons incomplets : vaincre le Reflet sans scène/éclats → pas de choix offert.
+  const incomplete = await page.evaluate(() => {
+    victoryAchieved = true; cycleBroken = false;
+    seenEchoes = new Set(); accumulatedEclats = 0;
+    monsterKills = { reflet_mythe: 1 };   // boss vaincu, mais I & II manquants
+    return maybeOfferBreakCycle([{ id: 'reflet_mythe' }]);
+  });
+  assert(incomplete === false, 'le choix ne doit pas être offert si I & II manquent');
+
+  // Jalons I & II remplis → le choix est proposé (programmé) ; on ouvre la modale.
+  const offered = await page.evaluate(() => {
+    seenEchoes.add('echo_scene_sceau');     // jalon I
+    accumulatedEclats = 15;                  // jalon II
+    // En jeu réel, startBattle peuple seenMonsters ; on le simule ici pour le
+    // robinet Codex `monster` (seen + kill).
+    if (typeof seenMonsters !== 'undefined') seenMonsters.add('reflet_mythe');
+    const progress = briserCycleJalons({ sceneSeen: true, eclats: 15, bossKills: 1 }).count;
+    const willOffer = maybeOfferBreakCycle([{ id: 'reflet_mythe' }]);  // jalon III déjà enregistré
+    openBreakCycleModal();
+    const ov = document.getElementById('break-cycle-overlay');
+    return { progress, willOffer, visible: ov && ov.style.display === 'flex' };
+  });
+  console.log('  offered :', offered);
+  assert(offered.progress === 3, '3 jalons devraient être remplis');
+  assert(offered.willOffer === true, 'maybeOfferBreakCycle devrait planifier le choix');
+  assert(offered.visible, 'la modale de choix ne s\'affiche pas');
+
+  // Choisir « Briser » → cinématique → fin : cycleBroken + Codex + overlay fermé.
+  const broke = await page.evaluate(() => {
+    confirmBreakCycle();        // → page 1/3
+    advanceBreakCycle();        // → page 2/3
+    advanceBreakCycle();        // → page 3/3
+    finishBreakCycle();         // ferme
+    checkCodexUnlocks('cycle-broken');
+    const ov = document.getElementById('break-cycle-overlay');
+    return {
+      broken:  cycleBroken === true,
+      hidden:  ov && ov.style.display === 'none',
+      codexOpen:  unlockedCodexEntries.has('cycle_brise'),
+      codexState: codexEntryState(getCodexEntry('cycle_brise'), _codexContext()),
+      questRevealed: codexEntryState(getCodexEntry('briser_cycle'), _codexContext()),
+    };
+  });
+  console.log('  broke :', broke);
+  assert(broke.broken, 'cycleBroken devrait être true après Briser');
+  assert(broke.hidden, 'la modale devrait se fermer après la cinématique');
+  assert(broke.codexOpen, 'cycle_brise non ouverte dans le Codex');
+  assert(broke.codexState === 'revealed', `cycle_brise devrait être révélée (${broke.codexState})`);
+  assert(broke.questRevealed === 'revealed', `briser_cycle devrait être révélée (${broke.questRevealed})`);
+
+  // Perpétuer : decline ferme sans casser l'état (cycleBroken reste tel quel).
+  const declined = await page.evaluate(() => {
+    openBreakCycleModal();
+    declineBreakCycle();
+    const ov = document.getElementById('break-cycle-overlay');
+    return ov && ov.style.display === 'none';
+  });
+  assert(declined, 'declineBreakCycle devrait fermer la modale');
+
+  // Persistance : cycleBroken survit à un cycle save/load.
+  const persisted = await page.evaluate(() => {
+    cycleBroken = true;
+    const gs = _serializeState();
+    cycleBroken = false;
+    _applyState(gs);
+    return cycleBroken;
+  });
+  assert(persisted === true, 'cycleBroken non sérialisé/restauré');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (dark loop v3)`);
+  }
+  console.log('  ✅ Boucle V3 : boss-miroir + 4 jalons + cinématique + fin + Codex OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3] };

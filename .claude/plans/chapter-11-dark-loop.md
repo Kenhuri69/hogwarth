@@ -191,7 +191,35 @@ Surcouches **légères** indexées par `loopNumber`, par-dessus l'existant
    - **Scope** : cosmétique-first (§11.11.2). La version « **mini-quête de Boucle
      par Maison** » (spawns/récompenses, §11.9.3 💡) est **différée** — l'écho de
      signature V2 est un beat narratif one-shot, pas un nouveau moteur de quête.
-3. **V3 — Briser le Cycle** : quête secrète multi-passages + cinématique + fin.
+3. [x] **V3 — Briser le Cycle** ✅ **IMPLÉMENTÉE** (branche
+   `claude/dark-loop-v3-break-cycle`) : quête secrète multi-passages +
+   boss-miroir + cinématique + fin optionnelle non-gating.
+   - [x] **Boss-miroir** « Le Reflet du Mythe » (`reflet_mythe`, `monsters.js`,
+     epic, danger 11). `minFloor:11` → via `effectiveFloor` n'apparaît qu'à
+     l'**étage réel 21+** (effectiveFloor 11), jamais aux étages 11-20. Ajouté à
+     `BOSS_FEATS` (`ironman.js`) → crédité dans `defeatedBosses`/`monsterKills`.
+   - [x] **4 jalons** (`break-cycle.js`, `briserCycleJalons` pur) — tous DÉRIVÉS,
+     aucun compteur persistant en plus : **I Entendre** (`seenEchoes` ⊇
+     `echo_scene_sceau`, étage 14+, reachable par tous — la scène des Quatre,
+     pas les 4 voix de Maison qui ne sont pas atteignables) ; **II Porter**
+     (`accumulatedEclats ≥ BRISER_ECLAT_SEUIL=15`) ; **III Affronter**
+     (`monsterKills.reflet_mythe ≥ 1`) ; **IV Choisir** (modale).
+   - [x] **Choix + cinématique** (`break-cycle.js` + overlay `#break-cycle-overlay`) :
+     `maybeOfferBreakCycle(enemyGroup)` (hook `endBattle`) propose le choix à la
+     mort du Reflet quand I & II sont déjà remplis. 🕊️ Briser → `cycleBroken=true`
+     + cinématique 3 pages (réutilise le patron pages d'`intro.js`, overlay dédié)
+     + Codex `cycle_brise`. 🌑 Perpétuer → ferme, la Boucle continue (★ N intact).
+   - [x] **Seul état persistant ajouté** : `cycleBroken` (bool, `state.js`/`save.js`/
+     reset `main.js`). `brokenCycleProgress` reste **dérivé** (`briserCycleProgress()`).
+   - [x] Codex : condition `cycleBroken` + entrées `briser_cycle` (quête, révélée
+     par echo+eclatLoop+monster) et `cycle_brise` (la fin). Badge « 🕊️ Cycle
+     Brisé » dans `char-stats-panel`.
+   - [x] Tests : bloc `briserCycleJalons`/`briser_cycle`/`cycle_brise`/`cycleBroken`
+     (`units.js`) + `scenarioDarkLoopV3` (smoke).
+   - **Arbitrages tranchés** (validés utilisateur) : boss-miroir **nommé** ;
+     **feature complète** (jalons + boss + cinématique + 2 fins) ; **jouable en
+     Ironman** (cinématique cosmétique, n'interrompt pas le run de score).
+     Non-gating : refuser = continuer ; la Boucle reste ouverte après avoir brisé.
 4. **V4 (optionnel)** : mutations bestiaire `loopVariant`, New Game+ discret.
 
 ### B.7 Décisions à arbitrer (❓)
