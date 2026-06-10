@@ -211,4 +211,88 @@ async function scenarioCodexCorrupted() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted] };
+// Boucle Ténébreuse V1 (Chapitre 11) — loopNumber dérivé, compteur
+// accumulatedEclats crédité au franchissement d'un nouvel étage de Boucle
+// le plus profond (anti-farm), persistance, et entrée Codex Porteur d'Éclats.
+async function scenarioDarkLoopV1() {
+  console.log('\n── Scénario : Boucle Ténébreuse V1 — loopNumber / Éclats ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Helpers câblés + état initial neutre (pré-Boucle).
+  const wired = await page.evaluate(() => ({
+    loopFn:  typeof loopNumber === 'function',
+    eclats:  typeof accumulatedEclats !== 'undefined',
+    advFn:   typeof _maybeAdvanceDarkLoop === 'function',
+    loop0:   typeof loopNumber === 'function' ? loopNumber(1) : -1,
+    start:   accumulatedEclats,
+  }));
+  console.log('  wired :', wired);
+  assert(wired.loopFn && wired.eclats && wired.advFn, 'helpers Boucle V1 absents');
+  assert(wired.loop0 === 0, 'loopNumber(1) devrait être 0 (pré-Boucle)');
+  assert(wired.start === 0, 'accumulatedEclats devrait démarrer à 0');
+
+  // Hors Boucle (pré-victoire) : franchir un étage ne crédite aucun Éclat.
+  const preVictory = await page.evaluate(() => {
+    victoryAchieved = false; floorReached = 4;
+    _maybeAdvanceDarkLoop(4, 5);
+    return accumulatedEclats;
+  });
+  assert(preVictory === 0, 'aucun Éclat ne doit être crédité hors Boucle');
+
+  // En Boucle : chaque NOUVEL étage le plus profond crédite +1 Éclat.
+  const inLoop = await page.evaluate(() => {
+    victoryAchieved = true; floorReached = 10;
+    _maybeAdvanceDarkLoop(10, 11);  // entrée Boucle 1 (+1)
+    floorReached = 11;
+    _maybeAdvanceDarkLoop(11, 12);  // +1
+    floorReached = 12;
+    const afterTwo = accumulatedEclats;
+    // Anti-farm : re-franchir un étage DÉJÀ atteint ne crédite rien.
+    _maybeAdvanceDarkLoop(11, 12);  // 12 <= floorReached(12) → no-op
+    const afterRefarm = accumulatedEclats;
+    // Remontée → no-op.
+    _maybeAdvanceDarkLoop(12, 11);
+    return { afterTwo, afterRefarm, afterUp: accumulatedEclats, loop11: loopNumber(11), loop21: loopNumber(21) };
+  });
+  console.log('  inLoop :', inLoop);
+  assert(inLoop.afterTwo === 2, `2 étages franchis = 2 Éclats (obtenu ${inLoop.afterTwo})`);
+  assert(inLoop.afterRefarm === 2, 'le re-farming d\'un étage déjà atteint ne doit rien créditer');
+  assert(inLoop.afterUp === 2, 'remonter ne doit rien créditer');
+  assert(inLoop.loop11 === 1 && inLoop.loop21 === 2, 'loopNumber incorrect aux paliers');
+
+  // Codex : Porteur d'Éclats s'ouvre après victoire, se révèle au seuil d'Éclats.
+  const codex = await page.evaluate(() => {
+    accumulatedEclats = 5;
+    checkCodexUnlocks('eclat-loop');
+    const ctx = _codexContext();
+    return {
+      ctxEclats: ctx.accumulatedEclats,
+      open:  unlockedCodexEntries.has('porteur_eclats'),
+      state: codexEntryState(getCodexEntry('porteur_eclats'), ctx),
+    };
+  });
+  console.log('  codex :', codex);
+  assert(codex.ctxEclats === 5, '_codexContext n\'expose pas accumulatedEclats');
+  assert(codex.open, 'porteur_eclats non ouverte après victoire');
+  assert(codex.state === 'revealed', `porteur_eclats devrait être révélée à 5 Éclats (${codex.state})`);
+
+  // Persistance : accumulatedEclats survit à un cycle save/load.
+  const persisted = await page.evaluate(() => {
+    accumulatedEclats = 7;
+    const gs = _serializeState();
+    accumulatedEclats = 0;
+    _applyState(gs);
+    return accumulatedEclats;
+  });
+  assert(persisted === 7, 'accumulatedEclats non sérialisé/restauré');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (dark loop v1)`);
+  }
+  console.log('  ✅ Boucle V1 : loopNumber dérivé, Éclats anti-farm, Codex & persistance OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1] };

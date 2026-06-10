@@ -73,6 +73,8 @@ function _codexContext() {
     itemsOwned,
     victoryAchieved: (typeof victoryAchieved !== 'undefined') ? !!victoryAchieved : false,
     chosenHouse:    (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
+    // Robinet `eclatLoop` (V1, ch.11) : Éclats portés en Boucle (Porteur d'Éclats).
+    accumulatedEclats: (typeof accumulatedEclats !== 'undefined') ? accumulatedEclats : 0,
   };
 }
 

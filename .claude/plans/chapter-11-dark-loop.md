@@ -141,9 +141,35 @@ Surcouches **légères** indexées par `loopNumber`, par-dessus l'existant
 
 ### B.6 Priorisation
 
-1. **V1 — Boucle 1 « lisible »** : documenter (✅ fait ici) ; exposer `loopNumber`
+1. [x] **V1 — Boucle 1 « lisible »** ✅ **IMPLÉMENTÉE** (branche
+   `claude/dark-loop-v1-ddiw8a`) : documenter (✅) ; exposer `loopNumber`
    dérivé + compteur `accumulatedEclats` (HUD/Codex) ; overlay cosmétique
    d'intensité ; entrées Codex de Boucle. *Coût faible, 100 % réutilisation.*
+   - [x] `loopNumber(deepest)` pur (`dungeon-scaling.js`, `LOOP_SPAN=10`,
+     `max(0, ceil((d−10)/10))`) — testé `tests/units.js`.
+   - [x] `accumulatedEclats` (int persistant, `state.js` + `save.js`).
+     Source d'incrément : **+1 par nouvel étage de Boucle le plus profond
+     franchi** (`movement-floors.js — _maybeAdvanceDarkLoop`, anti-farm :
+     `nextFloor > floorReached` ; le respawn / aller-retour ne crédite rien).
+     Déterministe → aucun aléa introduit, donc `darkLoopSeed` non requis en V1.
+   - [x] Overlay cosmétique : `_applyCorruptionAmbiance` ajoute un bonus de
+     givre ∝ `loopNumber(floorReached)`, **borné** (`_FROST_LOOP_BONUS_CAP`
+     0.10, plafond absolu `_FROST_LOOP_CAP` 0.45 — lisibilité).
+   - [x] Exposition HUD/Codex : toast « 🌀 Boucle N » au franchissement
+     (réutilise `#tier-transition-overlay`) + ligne discrète « 🌀 Boucle N —
+     🔹 X Éclats » dans `char-stats-panel` (Boucle uniquement).
+   - [x] Codex : condition `eclatLoop` (`codex.js`) + entrée **`porteur_eclats`**
+     (rôle, format §12.3, `victory` → `eclatLoop:5` → `corruptedBy floor 21`),
+     en complément de `boucle_tenebreuse` (déjà présent).
+   - [x] Tests : bloc `loopNumber`/`porteur_eclats` (`units.js`) +
+     `scenarioDarkLoopV1` (`tests/scenarios/codex.js`).
+   - **Arbitrages tranchés** : (1) modèle **continu + `loopNumber` dérivé**
+     (pas de New Game+/reset) ; (2) « ce qui dort » ét. 21+ = **menace muette**
+     en V1 (personnification = jalon III de « Briser le Cycle », V3) ; (3)
+     « Briser le Cycle » en Ironman = **hors V1** (V3 ; décision enregistrée :
+     non-désactivée, cinématique cosmétique post-score). `accumulatedEclats` =
+     **compteur de prestige pur** (pas de monnaie dépensable). `brokenCycleProgress`
+     **déféré** (pas de squelette persistant inutile en V1).
 2. **V2 — Variantes de Maison fortes** : illumination Chambres des Fondateurs
    (10.6), écho de signature en Boucle (08 §8.5), barks de héros par boucle.
 3. **V3 — Briser le Cycle** : quête secrète multi-passages + cinématique + fin.

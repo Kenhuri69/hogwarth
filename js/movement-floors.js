@@ -176,6 +176,39 @@ function _maybePlayTierTransition(prevFloor, nextFloor) {
   }
 }
 
+// Boucle Ténébreuse (V1 — Chapitre 11 §11.6.2 / §11.7.1) : franchissement
+// d'un NOUVEL étage de Boucle le plus profond. Crédite 1 Éclat au Porteur
+// d'Éclats (anti-farm : seul un nouveau plus-profond compte — le respawn et
+// les allers-retours ne créditent rien) et, au passage d'un palier de Boucle
+// (loopNumber accru), affiche un toast solennel réutilisant
+// #tier-transition-overlay + une ligne de message. Appelé pendant que
+// `floorReached` porte encore le max d'AVANT la descente (checkCodexUnlocks le
+// met à jour plus tard dans le même callback). Défensif : no-op hors Boucle,
+// sans victoire, ou en remontée.
+function _maybeAdvanceDarkLoop(prevFloor, nextFloor) {
+  if (!(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return;
+  if (typeof nextFloor !== 'number' || nextFloor < 11) return;
+  if (nextFloor <= prevFloor) return;                       // descente uniquement
+  const prevDeepest = (typeof floorReached === 'number') ? floorReached : 1;
+  if (nextFloor <= prevDeepest) return;                     // pas un nouveau plus-profond
+  // +1 Éclat porté par étage de Boucle franchi.
+  if (typeof accumulatedEclats !== 'undefined') accumulatedEclats++;
+  // Toast de franchissement de boucle (uniquement au passage d'un palier).
+  if (typeof loopNumber !== 'function') return;
+  const ln = loopNumber(nextFloor);
+  if (ln <= loopNumber(prevFloor)) return;
+  const overlay = safeEl('tier-transition-overlay');
+  if (overlay) {
+    overlay.textContent = `🌀 Boucle ${ln}`;
+    overlay.classList.add('active');
+    setTimeout(() => overlay.classList.remove('active'), 600);
+  }
+  if (typeof addMsg === 'function') {
+    const e = (typeof accumulatedEclats !== 'undefined') ? accumulatedEclats : 0;
+    addMsg(`🌀 Boucle ${ln} — la spirale s'enfonce. Tu portes ${e} Éclat${e > 1 ? 's' : ''}.`, 'magic');
+  }
+}
+
 // Toast d'événement d'étage (Phase 4) — affiché à l'entrée d'un étage
 // qui porte un `currentFloorEvent`. No-op si l'étage est ordinaire.
 function _announceFloorEvent() {
@@ -213,6 +246,9 @@ function _changeFloor(delta, opts) {
     drawDungeon();
     updateCompass();
     _maybePlayTierTransition(prevFloor, currentFloor);
+    // Boucle Ténébreuse (V1) — crédite les Éclats + toast de franchissement
+    // de boucle AVANT que checkCodexUnlocks ne mette floorReached à jour.
+    _maybeAdvanceDarkLoop(prevFloor, currentFloor);
     // Givre/corruption — overlay CSS proportionnel à la profondeur.
     if (typeof _applyCorruptionAmbiance === 'function') _applyCorruptionAmbiance(currentFloor);
     if (opts.onArrive) opts.onArrive();

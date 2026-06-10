@@ -92,6 +92,7 @@ function _serializeState() {
     lastQuestCompletion: { ...lastQuestCompletion },
     victoryAchieved,
     victoryAt,
+    accumulatedEclats,
     combatTutorialSeen,
     hiverClair,
     headlessHuntMember,
@@ -342,6 +343,10 @@ function _applyState(gs) {
   // Endgame : saves antérieures à l'introduction du flag → false/null.
   victoryAchieved = !!gs.victoryAchieved;
   victoryAt       = gs.victoryAt || null;
+  // Boucle Ténébreuse — Porteur d'Éclats : saves antérieures au flag → 0.
+  if (typeof accumulatedEclats !== 'undefined') {
+    accumulatedEclats = (typeof gs.accumulatedEclats === 'number') ? gs.accumulatedEclats : 0;
+  }
   // Saves antérieures à D2 : champ absent → tuto réaffiché au prochain combat.
   combatTutorialSeen = !!gs.combatTutorialSeen;
   // Passif Hiver Clair (Manon Acte III) : saves antérieures → false.

@@ -372,6 +372,12 @@ function openCharacter(charIdx = 0) {
           ? _renderStatLine('img/icons/xp.png', '💀 Chasse Sans Tête', 'Membre d\'honneur', true) : ''}
         ${(typeof maitreDeLaMort !== 'undefined' && maitreDeLaMort)
           ? _renderStatLine('img/icons/xp.png', '☠️ Maître de la Mort', 'Reliques unies', true) : ''}
+        ${(typeof victoryAchieved !== 'undefined' && victoryAchieved
+           && typeof floorReached === 'number' && floorReached >= 11
+           && typeof loopNumber === 'function')
+          ? _renderStatLine('img/icons/xp.png', '🌀 Boucle ' + loopNumber(floorReached),
+              '🔹 ' + ((typeof accumulatedEclats !== 'undefined') ? accumulatedEclats : 0) + ' Éclats', true)
+          : ''}
       </div>
 
       <!-- Équipement (grid-area:equip) -->

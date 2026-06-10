@@ -473,12 +473,23 @@ function maybeFounderChamberBeat(floor) {
 // Défensif : no-op si l'élément manque (file:// smoke, DOM absent).
 // Le facteur 0.28 maintient le givre discret (max ~35 % à corruption 1.3).
 const _FROST_FACTOR = 0.28;
+// Boucle Ténébreuse (V1 — ch.11 §11.7.3) : l'intensité du givre croît avec le
+// niveau de Boucle, mais reste BORNÉE (lisibilité — on n'aveugle jamais).
+const _FROST_PER_LOOP       = 0.03;  // +3 % d'opacité par niveau de Boucle
+const _FROST_LOOP_BONUS_CAP = 0.10;  // plafond du bonus cumulé de Boucle
+const _FROST_LOOP_CAP       = 0.45;  // plafond absolu d'opacité du givre
 function _applyCorruptionAmbiance(floor) {
   const el = (typeof safeEl === 'function') ? safeEl('frost-overlay') : document.getElementById('frost-overlay');
   if (!el) return;
   const va = (typeof victoryAchieved !== 'undefined') ? victoryAchieved : false;
   const c  = corruptionLevel(floor, va);
-  el.style.opacity = String(Math.min(0.35, c * _FROST_FACTOR));
+  let opacity = Math.min(0.35, c * _FROST_FACTOR);
+  // Surcouche de Boucle : bonus dérivé de loopNumber(floorReached), borné.
+  if (va && typeof loopNumber === 'function' && typeof floorReached !== 'undefined') {
+    const loopBonus = Math.min(_FROST_LOOP_BONUS_CAP, loopNumber(floorReached) * _FROST_PER_LOOP);
+    opacity = Math.min(_FROST_LOOP_CAP, opacity + loopBonus);
+  }
+  el.style.opacity = String(opacity);
 }
 
 // ── Pic de givre sur écho temporel (P-D4) ───────────────────────

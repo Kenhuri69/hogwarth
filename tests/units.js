@@ -149,8 +149,10 @@ function loadModule(relPath, exportNames, globals = {}) {
     '\n;exports.effectiveFloor = effectiveFloor;' +
     '\n;exports.endgameTierIndex = endgameTierIndex;' +
     '\n;exports.creatureCorruptionLevel = creatureCorruptionLevel;' +
+    '\n;exports.loopNumber = loopNumber;' +
+    '\n;exports.LOOP_SPAN = LOOP_SPAN;' +
     '\n;exports.weightedPick = weightedPick;', sandbox, { filename: 'dungeon-scaling.js' });
-  const { effectiveFloor, endgameTierIndex, creatureCorruptionLevel, weightedPick } = sandbox.exports;
+  const { effectiveFloor, endgameTierIndex, creatureCorruptionLevel, loopNumber, LOOP_SPAN, weightedPick } = sandbox.exports;
 
   // Pré-victoire : effectiveFloor est l'identité, palier 0 partout.
   sandbox.victoryAchieved = false;
@@ -168,6 +170,28 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('post-victoire: tier(11)=1',  endgameTierIndex(11) === 1);
   check('post-victoire: tier(20)=1',  endgameTierIndex(20) === 1);
   check('post-victoire: tier(21)=2',  endgameTierIndex(21) === 2);
+
+  // ── Boucle Ténébreuse V1 (ch.11 §11.7.1) — loopNumber (pur, dérivé) ──
+  // Dérivé de l'étage le plus profond ; indépendant de victoryAchieved.
+  check('LOOP_SPAN = 10',           LOOP_SPAN === 10);
+  check('loopNumber(1)=0 (pré-Boucle)',   loopNumber(1)  === 0);
+  check('loopNumber(10)=0 (gate)',        loopNumber(10) === 0);
+  check('loopNumber(11)=1 (Boucle 1)',    loopNumber(11) === 1);
+  check('loopNumber(20)=1',               loopNumber(20) === 1);
+  check('loopNumber(21)=2 (Boucle 2)',    loopNumber(21) === 2);
+  check('loopNumber(30)=2',               loopNumber(30) === 2);
+  check('loopNumber(31)=3',               loopNumber(31) === 3);
+  // Garde-fous : entrées invalides → 0 (jamais d'exception / NaN).
+  check('loopNumber(0)=0',          loopNumber(0)         === 0);
+  check('loopNumber(-5)=0',         loopNumber(-5)        === 0);
+  check('loopNumber(NaN)=0',        loopNumber(NaN)       === 0);
+  check('loopNumber(Infinity)=0',   loopNumber(Infinity)  === 0);
+  check('loopNumber(undefined)=0',  loopNumber()          === 0);
+  check('loopNumber("abc")=0',      loopNumber('abc')     === 0);
+  // Monotonie croissante (large) sur la plage de jeu.
+  let monoLoop = true;
+  for (let f = 1; f < 120; f++) { if (loopNumber(f + 1) < loopNumber(f)) monoLoop = false; }
+  check('loopNumber monotone croissant', monoLoop);
 
   // creatureCorruptionLevel (Chapitre 09 §9.1.2) — gradient 0-3 par profondeur.
   sandbox.victoryAchieved = false;
@@ -605,7 +629,7 @@ function loadModule(relPath, exportNames, globals = {}) {
 
   // Contexte de base : tout vide / au plus bas (rien de débloqué).
   const empty = {
-    floorReached: 0, eclatProgress: 0,
+    floorReached: 0, eclatProgress: 0, accumulatedEclats: 0,
     seenMonsters: new Set(), monsterKills: {},
     questsDone: new Set(), riddlesSolved: new Set(), echoSeen: new Set(),
     victoryAchieved: false, chosenHouse: null,
@@ -673,6 +697,21 @@ function loadModule(relPath, exportNames, globals = {}) {
     codexEntryState(bcl, { ...empty, victoryAchieved: true, floorReached: 14 }) === 'revealed');
   check('boucle: victoire + floor21 → corrupted',
     codexEntryState(bcl, { ...empty, victoryAchieved: true, floorReached: 21 }) === 'corrupted');
+
+  // ── Boucle Ténébreuse V1 (ch.11 §11.6.2) — Porteur d'Éclats + robinet eclatLoop ──
+  const pe = getCodexEntry('porteur_eclats');
+  check('porteur_eclats présent dans le registre', !!pe && pe.category === 'eclats');
+  check('porteur: pré-victoire → locked', codexEntryState(pe, { ...empty, floorReached: 10 }) === 'locked');
+  check('porteur: victoire → veiled', codexEntryState(pe, { ...empty, victoryAchieved: true }) === 'veiled');
+  check('porteur: 4 éclats → veiled (seuil 5 non atteint)',
+    codexEntryState(pe, { ...empty, victoryAchieved: true, accumulatedEclats: 4 }) === 'veiled');
+  check('porteur: 5 éclats → revealed',
+    codexEntryState(pe, { ...empty, victoryAchieved: true, accumulatedEclats: 5 }) === 'revealed');
+  check('porteur: 5 éclats + floor21 → corrupted',
+    codexEntryState(pe, { ...empty, victoryAchieved: true, accumulatedEclats: 5, floorReached: 21 }) === 'corrupted');
+  // Le robinet eclatLoop ne se déclenche jamais sans victoire (unlock victory).
+  check('porteur: 99 éclats sans victoire → locked',
+    codexEntryState(pe, { ...empty, accumulatedEclats: 99 }) === 'locked');
 
   // ── monster : type bestiaire (couverture évaluateur, sans/avec kills) ──
   const monsterEntry = {
