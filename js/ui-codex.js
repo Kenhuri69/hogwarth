@@ -263,17 +263,28 @@ function checkCodexUnlocks(reason) {
 }
 
 // Émet les toasts en attente, jamais en plein combat (modèle level-up).
+// SFX joués au plus une fois par vidage (écriture pour les ouvertures,
+// sceau pour les révélations/corruptions) — défensif, jamais bloquant.
 function _codexFlushNotifications() {
   if (typeof inBattle !== 'undefined' && inBattle) return;
   if (typeof addMsg !== 'function') { _codexNotifyQueue = []; return; }
+  let didOpen = false, didReveal = false;
   while (_codexNotifyQueue.length) {
     const n = _codexNotifyQueue.shift();
     if (n.kind === 'open') {
       addMsg(`📖 Codex — nouvelle entrée : <em>${n.title}</em>`, 'good');
+      didOpen = true;
     } else if (n.kind === 'corrupted') {
       addMsg(`🌑 Codex corrompu : <em>${n.title}</em>`, 'magic');
+      didReveal = true;
     } else {
       addMsg(`✨ Codex révélé : <em>${n.title}</em>`, 'magic');
+      didReveal = true;
     }
+  }
+  // La révélation (sceau) prime sur l'écriture si les deux surviennent.
+  if (typeof AudioSystem !== 'undefined' && AudioSystem) {
+    if (didReveal && typeof AudioSystem.playCodexReveal === 'function') AudioSystem.playCodexReveal();
+    else if (didOpen && typeof AudioSystem.playCodexWrite === 'function') AudioSystem.playCodexWrite();
   }
 }
