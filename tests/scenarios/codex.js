@@ -295,4 +295,74 @@ async function scenarioDarkLoopV1() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1] };
+// Boucle Ténébreuse V2 (Chapitre 11 §11.8) — Variantes de Maison fortes :
+// écho de signature en Boucle (accompli vs dette, étage 14, one-shot, déverrouille
+// le Codex) + voix de héros par boucle (événement darkLoop, tension de Maison).
+async function scenarioDarkLoopV2() {
+  console.log('\n── Scénario : Boucle Ténébreuse V2 — écho signature / barks ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const wired = await page.evaluate(() => ({
+    sigFn:  typeof maybeSignatureEchoBeat === 'function',
+    getFn:  typeof getSignatureEchoBeat === 'function',
+    barkFn: typeof heroBark === 'function',
+    floor:  (typeof SIGNATURE_FLOOR !== 'undefined') ? SIGNATURE_FLOOR : null,
+  }));
+  console.log('  wired :', wired);
+  assert(wired.sigFn && wired.getFn && wired.barkFn, 'helpers V2 absents');
+  assert(wired.floor === 14, 'SIGNATURE_FLOOR devrait être 14');
+
+  // Écho de signature ACCOMPLI : Gryffondor + signature remise → beat « braise ».
+  const done = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    victoryAchieved = true;
+    gryffSignatureDone = true;
+    currentFloor = 14; floorReached = 14;
+    seenScriptedBeat = new Set();   // état neuf
+    const played = maybeSignatureEchoBeat(14);
+    checkCodexUnlocks('echo-signature');
+    return {
+      played,
+      sentinel: seenScriptedBeat.has('signature_echo'),
+      echo:     seenEchoes.has('echo_signature'),
+      codexOpen:  unlockedCodexEntries.has('echo_signature'),
+      codexState: codexEntryState(getCodexEntry('echo_signature'), _codexContext()),
+      replay:   maybeSignatureEchoBeat(14),  // idempotent
+    };
+  });
+  console.log('  done :', done);
+  assert(done.played, 'écho de signature non joué à l\'étage 14');
+  assert(done.sentinel && done.echo, 'sentinelle / écho non posés');
+  assert(done.codexOpen, 'echo_signature non ouverte dans le Codex');
+  assert(done.codexState === 'revealed', `echo_signature devrait être révélée (${done.codexState})`);
+  assert(done.replay === false, 'écho de signature devrait être one-shot');
+
+  // Variante DETTE (signature non remise) : narrative distincte de l'accompli.
+  const variants = await page.evaluate(() => {
+    const d = getSignatureEchoBeat(14, 'Gryffondor', true, null);
+    const u = getSignatureEchoBeat(14, 'Gryffondor', false, null);
+    const sPact = getSignatureEchoBeat(14, 'Serpentard', true, 'pact');
+    const sDef  = getSignatureEchoBeat(14, 'Serpentard', true, 'defiance');
+    return { differ: d.narrative !== u.narrative, pactDiffer: sPact.narrative !== sDef.narrative };
+  });
+  assert(variants.differ, 'la variante dette devrait différer de l\'accompli');
+  assert(variants.pactDiffer, 'Serpentard pacte/défi devraient différer');
+
+  // Voix de héros par boucle : l'événement darkLoop produit une réplique.
+  const bark = await page.evaluate(() => {
+    barksEnabled = true;
+    const text = heroBark('harry', 'darkLoop', { channel: 'explore', once: 'test-loop' });
+    return typeof text === 'string' && text.length > 0;
+  });
+  assert(bark, 'le bark darkLoop devrait produire une réplique');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (dark loop v2)`);
+  }
+  console.log('  ✅ Boucle V2 : écho de signature (accompli/dette) + barks par boucle OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2] };

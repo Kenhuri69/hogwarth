@@ -170,8 +170,27 @@ Surcouches **légères** indexées par `loopNumber`, par-dessus l'existant
      non-désactivée, cinématique cosmétique post-score). `accumulatedEclats` =
      **compteur de prestige pur** (pas de monnaie dépensable). `brokenCycleProgress`
      **déféré** (pas de squelette persistant inutile en V1).
-2. **V2 — Variantes de Maison fortes** : illumination Chambres des Fondateurs
+2. [x] **V2 — Variantes de Maison fortes** ✅ **IMPLÉMENTÉE** (branche
+   `claude/dark-loop-v1-ddiw8a`) : illumination Chambres des Fondateurs
    (10.6), écho de signature en Boucle (08 §8.5), barks de héros par boucle.
+   - [x] Chambres des Fondateurs (étage 17) : **déjà ✅** (`maybeFounderChamberBeat`,
+     `FOUNDER_CHAMBERS`) — rien à ajouter.
+   - [x] **Écho de signature en Boucle** (`floor-ambiance.js`) : `SIGNATURE_ECHOES`
+     + `getSignatureEchoBeat` (pur) + `maybeSignatureEchoBeat` (one-shot, étage 14).
+     Gated sur `chosenHouse` + `<house>SignatureDone` (+ `slythPactChoice` pour
+     Serpentard) : variante **accompli** (braise/pacte/codex/refuge) vs **dette**
+     (Bannière éteinte/pacte muet/page illisible/abri vide). Déverrouille l'écho
+     `echo_signature` → entrée Codex `echo_signature` (victory → echo reveal).
+     Câblé dans `movement-floors.js — _changeFloor` après la Chambre.
+   - [x] **Barks de héros par boucle** : événement `darkLoop` ajouté aux 13 héros
+     (`hero-barks.js`), tiré au franchissement de boucle (`_maybeAdvanceDarkLoop`).
+     La tension `houseTension` (Maison canon ≠ `chosenHouse`) le colore
+     automatiquement — aucun nouveau mécanisme.
+   - [x] Tests : bloc `getSignatureEchoBeat`/`maybeSignatureEchoBeat`/`darkLoop`/
+     `echo_signature` (`units.js`, 403 assertions) + `scenarioDarkLoopV2` (smoke).
+   - **Scope** : cosmétique-first (§11.11.2). La version « **mini-quête de Boucle
+     par Maison** » (spawns/récompenses, §11.9.3 💡) est **différée** — l'écho de
+     signature V2 est un beat narratif one-shot, pas un nouveau moteur de quête.
 3. **V3 — Briser le Cycle** : quête secrète multi-passages + cinématique + fin.
 4. **V4 (optionnel)** : mutations bestiaire `loopVariant`, New Game+ discret.
 

@@ -18,7 +18,8 @@
 // ============================================================
 
 // Registre des répliques. Clés d'événement reconnues :
-//   bossAppear · crit · allyDown · levelUp · houseTier · tierTransition
+//   bossAppear · crit · allyDown · levelUp · houseTier · tierTransition · darkLoop
+// `darkLoop` (V2, ch.11 §11.8.2) : voix au franchissement d'un niveau de Boucle.
 // `houseTension` = variantes jouées quand la Maison CANON du héros diffère
 // de `chosenHouse` (rejouabilité, ch05 §5.4.3) — indexées par chosenHouse.
 const HERO_BARKS = {
@@ -27,6 +28,7 @@ const HERO_BARKS = {
     crit:       ["Ça, c'était pour rester poli.", "Voilà. On avance."],
     allyDown:   ["Debout ! On n'a pas fini, toi et moi !"],
     levelUp:    ["Encore un cran. On descend plus loin."],
+    darkLoop:   ["Encore un tour. Le château se souvient de nous — et il a plus froid à chaque fois."],
     houseTier:  ["Le château reconnaît les siens. Tant mieux — on en aura besoin."],
     tierTransition: ["L'air change. On n'est plus à l'école, là."],
     houseTension: {
@@ -38,6 +40,7 @@ const HERO_BARKS = {
     crit:       ["Mécaniquement imparable."],
     allyDown:   ["Tiens bon — Episkey, tout de suite !"],
     levelUp:    ["Note méthodique : progresser, c'est survivre deux fois."],
+    darkLoop:   ["Boucle suivante. Les variables changent à peine ; nous, beaucoup. Restons méthodiques."],
     houseTier:  ["Un palier de plus. J'ai lu ce que ça débloque — c'est précieux."],
     tierTransition: ["Nouvelle strate, nouvelles règles. J'actualise nos hypothèses."]
   },
@@ -46,6 +49,7 @@ const HERO_BARKS = {
     crit:       ["Un Malefoy ne rate jamais deux fois."],
     allyDown:   ["Relève-toi. Je refuse de perdre devant ça."],
     levelUp:    ["La fierté, ça se mérite. Et je commence à la mériter."],
+    darkLoop:   ["Encore un tour de spirale. Élégant, le désespoir, vu d'assez bas."],
     houseTier:  ["Voilà ce que valent les vrais. Prenez-en de la graine."],
     tierTransition: ["Plus on descend, plus ça sent ma famille. Charmant."],
     // Beat scénarisé (05 §5.4.2) — première rencontre d'un Mangemort.
@@ -59,6 +63,7 @@ const HERO_BARKS = {
     crit:       ["Attrapé. Comme un Vif d'Or."],
     allyDown:   ["Tiens encore une seconde — j'arrive !"],
     levelUp:    ["Plus vive, plus haut. On ne me rattrape pas."],
+    darkLoop:   ["Un tour de plus, plus profond. Je sens le courant avant de le voir."],
     houseTier:  ["Un cran de plus. Mes réflexes suivent, eux."],
     tierTransition: ["Le terrain s'ouvre autrement. Adaptons notre vol."]
   },
@@ -67,6 +72,7 @@ const HERO_BARKS = {
     crit:       ["Loyal et franc — jusque dans les coups."],
     allyDown:   ["Personne ne tombe sous ma garde. Tiens bon !"],
     levelUp:    ["On progresse droit. C'est la seule façon que je connaisse."],
+    darkLoop:   ["Un tour de plus. On le passe ensemble — c'est toujours la règle, même ici."],
     houseTier:  ["Le mérite paie. On l'a gagné ensemble."],
     tierTransition: ["Plus de salles de classe en dessous. À partir d'ici, on passe l'examen."],
     // Beat scénarisé (05 §5.4.2) — transition 3↔4, on quitte l'école.
@@ -80,6 +86,7 @@ const HERO_BARKS = {
     crit:       ["La lune a guidé ma main."],
     allyDown:   ["Ne t'éteins pas. La nuit a encore besoin de toi."],
     levelUp:    ["Un palier de plus vers la lumière froide."],
+    darkLoop:   ["La spirale tourne encore. Les astres, eux, ne descendent pas si bas."],
     houseTier:  ["Les constellations s'alignent un peu mieux pour nous."],
     tierTransition: ["La voûte s'efface. Plus de plafond — juste le vide et ce qu'il garde."],
     // Beat scénarisé (05 §5.4.2) — devant la première fontaine glacée (ét. 2).
@@ -90,6 +97,7 @@ const HERO_BARKS = {
     crit:       ["La chance ? Non non. Le talent. (Bon, un peu la chance.)"],
     allyDown:   ["Eh, pas le droit de partir, on n'a pas fini de rire !"],
     levelUp:    ["Plus forte ET plus mignonne, c'est injuste pour les autres."],
+    darkLoop:   ["Encore un tour ?! Bon, au moins le décor change. Un peu."],
     houseTier:  ["Ma Maison brille un peu plus fort. Comme moi, quoi."],
     tierTransition: ["Nouveau décor ! J'espère qu'il y a de meilleurs éclairages."]
   },
@@ -98,6 +106,7 @@ const HERO_BARKS = {
     crit:       ["Le sang ne ment pas."],
     allyDown:   ["…Reste. Je n'ai pas envie d'être seul ici."],
     levelUp:    ["Plus fort. Donc plus dangereux. Pour eux."],
+    darkLoop:   ["Encore plus bas. Mon sang aime ça, et ça m'inquiète."],
     houseTier:  ["Le pouvoir s'accumule. Reste à savoir qui le tient."],
     tierTransition: ["Plus bas. Mon sang le sent avant moi."],
     // Beat scénarisé (05 §5.4.2) — avant Voldemort, Pacte des Cachots défié.
@@ -111,6 +120,7 @@ const HERO_BARKS = {
     crit:       ["La Bannière est plantée. C'est mathématique."],
     allyDown:   ["Tiens — j'ai calculé qu'on s'en sortait. Ne me contredis pas."],
     levelUp:    ["Un cran de plus. La descente m'apprend plus que n'importe quel cours."],
+    darkLoop:   ["Boucle suivante. J'ajoute une décimale à la peur et je continue."],
     houseTier:  ["Le palier était dans mes calculs. Le mérite, un peu moins."],
     tierTransition: ["Strate suivante. J'ajuste les variables et on continue."],
     // Beat scénarisé (05 §5.4.2) — avant Voldemort, signature Gryffondor faite.
@@ -121,6 +131,7 @@ const HERO_BARKS = {
     crit:       ["Ça brûle, hein ? C'est le principe."],
     allyDown:   ["Garde la flamme allumée, je te couvre !"],
     levelUp:    ["Ma baguette pulse plus fort. Bon présage."],
+    darkLoop:   ["On replonge. Tant qu'il reste une braise, on descend."],
     houseTier:  ["La braise monte. Notre Maison aussi."],
     tierTransition: ["Ça chauffe en descendant. J'aime ça."]
   },
@@ -129,6 +140,7 @@ const HERO_BARKS = {
     crit:       ["Mes sortilèges chantent comme des étoiles, tu trouves pas ?"],
     allyDown:   ["Non non non, relève-toi, on n'a pas fini de jouer !"],
     levelUp:    ["Encore un petit pas — et une étoile de plus."],
+    darkLoop:   ["La spirale chante plus grave à chaque tour. J'apprends la mélodie."],
     houseTier:  ["Notre Maison scintille un peu plus ! Joli, non ?"],
     tierTransition: ["Nouvel étage ! Les échos résonnent différemment ici."]
   },
@@ -137,6 +149,7 @@ const HERO_BARKS = {
     crit:       ["La vie est tenace. Elle frappe fort quand il le faut."],
     allyDown:   ["Reste avec moi — je te soigne, je te garde."],
     levelUp:    ["On s'enracine plus profond. On tiendra."],
+    darkLoop:   ["Un tour de plus sous la pierre. Même ici, on tient racine."],
     houseTier:  ["Notre Maison fleurit, même sous la pierre."],
     tierTransition: ["La terre change de souffle. On s'y adapte, comme toujours."]
   },
@@ -145,6 +158,7 @@ const HERO_BARKS = {
     crit:       ["Chaque sortilège frappe comme la foudre. Celui-là aussi."],
     allyDown:   ["Tiens bon — je nettoie le terrain et je reviens."],
     levelUp:    ["Plus de puissance à canaliser. Tant mieux."],
+    darkLoop:   ["Encore un cran vers le fond. La foudre porte loin, même dans le noir."],
     houseTier:  ["Plus de puissance pour la Maison. Je sais quoi en faire."],
     tierTransition: ["Terrain neuf à foudroyer. Restons concentrés."],
     houseTension: {
