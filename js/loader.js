@@ -171,6 +171,7 @@ window.UX_safe = new Proxy({}, {
     { name: '_ensureStairsExist', source: 'dungeon-spawning.js', kind: 'fn' },
     { name: '_ensureFinalBossPresent', source: 'dungeon-spawning.js', kind: 'fn' },
     { name: 'effectiveFloor',     source: 'dungeon-scaling.js', kind: 'fn'  },
+    { name: 'loopNumber',         source: 'dungeon-scaling.js', kind: 'fn'  },
     { name: 'isBruteMonster',     source: 'dungeon-scaling.js', kind: 'fn'  },
     { name: 'creatureCorruptionLevel', source: 'dungeon-scaling.js', kind: 'fn' },
     { name: 'drawDungeon',        source: 'renderer.js',     kind: 'fn'  },
@@ -263,6 +264,7 @@ window.UX_safe = new Proxy({}, {
 
     // ── Endgame (écran de victoire + boucle Ténébreuse) ──
     { name: 'victoryAchieved',    source: 'state.js',        kind: 'obj' },
+    { name: 'accumulatedEclats',  source: 'state.js',        kind: 'obj' },
     { name: 'checkVictoryTrigger',source: 'endgame.js',      kind: 'fn'  },
     { name: 'showVictoryScreen',  source: 'endgame.js',      kind: 'fn'  },
     { name: 'closeVictoryScreen', source: 'endgame.js',      kind: 'fn'  },

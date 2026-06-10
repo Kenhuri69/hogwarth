@@ -69,6 +69,20 @@ function endgameTierIndex(floor) {
   return 0;
 }
 
+// ── Niveau de Boucle narratif (V1 — Chapitre 11 §11.7.1) ─────
+// `loopNumber(deepest)` est un palier de profondeur DÉRIVÉ de l'étage le plus
+// profond atteint (`floorReached`), PAS un état sauvegardé : un « tour de
+// spirale » = LOOP_SPAN étages sous l'étage 10 (gate de Boucle). Convention :
+//   loopNumber(≤10)=0 (pré-Boucle) · 11→1 · 20→1 · 21→2 · 30→2 · …
+// Pur & sûr : entrée non-numérique/négative → 0. Indépendant de victoryAchieved
+// (la descente ≤10 garde floorReached ≤ 10 tant que l'escalier 10→11 est scellé,
+// donc loopNumber reste 0 hors Boucle). Cf. .claude/plans/chapter-11-dark-loop.md §B.1.
+const LOOP_SPAN = 10;
+function loopNumber(deepestFloor) {
+  const d = (typeof deepestFloor === 'number' && isFinite(deepestFloor)) ? deepestFloor : 0;
+  return Math.max(0, Math.ceil((d - 10) / LOOP_SPAN));
+}
+
 // Surcouche corruption (Chapitre 09 §9.1.2) — gradient narratif 0-3 lu par le
 // rendu (teinte froide / givre) et l'audio (souffle glacé). PUR, dérivé de la
 // profondeur effective + du tag Ténébreux ; non sérialisé (recalculé au spawn).

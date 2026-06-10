@@ -738,6 +738,15 @@ const party = [player, player2];
 let victoryAchieved = false;
 let victoryAt       = null;
 
+// ── Boucle Ténébreuse — Porteur d'Éclats (V1, Chapitre 11 §11.6.2) ──
+// Compteur PERSISTANT d'« Éclats de réalité » glanés en Boucle (étages 11+),
+// distinct des 3 `eclat_voute` canon de la trame. Fil de prestige narratif :
+// +1 à chaque NOUVEL étage de Boucle le plus profond franchi (anti-farm ;
+// movement-floors.js — _maybeAdvanceDarkLoop). Ne gate JAMAIS la descente.
+// Le niveau de Boucle `loopNumber` (dungeon-scaling.js) reste DÉRIVÉ de
+// floorReached — non persisté. Sérialisé via _serializeState / _applyState.
+let accumulatedEclats = 0;
+
 // Tuto contextuel du premier combat (LOT D2) — true une fois la bulle
 // affichée. Réinitialisé par startGame, persisté via _serializeState /
 // _applyState pour ne s'afficher qu'une fois par partie.

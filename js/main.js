@@ -504,6 +504,8 @@ async function startGame(count = 2) {
   // Codex (Chapitre 12) — journal neuf à chaque partie.
   unlockedCodexEntries = new Set();
   floorReached         = 1;
+  // Boucle Ténébreuse — Porteur d'Éclats (ch.11 V1) : compteur neuf par partie.
+  if (typeof accumulatedEclats !== 'undefined') accumulatedEclats = 0;
   combatTutorialSeen = false;   // tuto premier combat rejoué à chaque partie (LOT D2)
   defeatedBosses = new Set();
   ironmanRunId   = (ironmanMode && typeof _genRunId === 'function') ? _genRunId() : null;

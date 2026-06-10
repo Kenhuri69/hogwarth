@@ -31,6 +31,7 @@
 //   item    → ctx.itemsOwned.has(value)          (inventaire + équipement ; palier/drop)
 //   house   → ctx.chosenHouse === value          (variantes / gating)
 //   victory → ctx.victoryAchieved === true       (Boucle Ténébreuse)
+//   eclatLoop → ctx.accumulatedEclats >= value   (Porteur d'Éclats — V1, ch.11)
 // ============================================================
 
 const CODEX_ENTRIES = [
@@ -117,6 +118,19 @@ const CODEX_ENTRIES = [
       veiled: "La plus douce des quatre : « J'ai creusé un abri pour ceux qui resteraient. » Pendant que les autres scellaient, elle pensait déjà aux vivants d'après — à ceux qu'on ne laisse pas derrière.",
     },
     variants: { house: { Poufsouffle: "Elle te confie l'abri, pas le verrou. Protéger ceux qui restent vaut autant que tenir la porte." } },
+  },
+  {
+    id: 'porteur_eclats', category: 'eclats', icon: '🔹', act: 4,
+    title: "Le Porteur d'Éclats",
+    links: ['boucle_tenebreuse', 'eclat_voute_codex', 'ruines_anciennes'],
+    unlockConditions: [{ type: 'victory' }],
+    revealedBy: [{ type: 'eclatLoop', value: 5 }],
+    corruptedBy: [{ type: 'floor', value: 21 }],
+    textVersions: {
+      veiled: "Depuis que la Boucle s'est ouverte, chaque pas plus bas détache un fragment — non plus du verrou (il est brisé), mais des réalités que la faille déchire. On ne les possède pas : on les porte, comme un poids. Tu es devenu le Porteur d'Éclats.",
+      revealed: "Tu en portes assez, maintenant, pour sentir ce qu'ils sont : des coutures du réel, des bouts de mémoire et de futurs avortés que la spirale arrache à chaque tour. Les accumuler ne te rend pas plus fort — cela te rapproche du fond, là où le sceau fut posé, et de ce que les Ruines tiennent encore clos. Porter, c'est s'alourdir de tout ce que la légende ramasse en descendant.",
+      corrupted: "Les Éclats que tu portes ne pèsent plus dans tes mains : ils pèsent dans le lieu. La pierre te reconnaît à leur nombre, comme si tu en étais devenu un toi-même — une couture de plus dans un réel qui a cessé de distinguer celui qui porte de ce qui est porté.",
+    },
   },
 
   // ── 📖 Glossaire ────────────────────────────────────────────
@@ -409,6 +423,8 @@ function _codexCondMet(cond, ctx) {
       return ctx.chosenHouse === cond.value;
     case 'victory':
       return ctx.victoryAchieved === true;
+    case 'eclatLoop':
+      return typeof ctx.accumulatedEclats === 'number' && ctx.accumulatedEclats >= cond.value;
     default:
       return false;
   }
