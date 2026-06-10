@@ -67,11 +67,21 @@ seul** global sérialisé (`unlockedCodexEntries`). Zéro dépendance, zéro bui
       `scenarioCodexUnlockOnFloor`) ; le Codex s'ouvre, une entrée se déverrouille
       en descendant.
 
-### Lot 4 — Lieux & Glossaire (robinet étage/Acte)
-- [ ] Entrées `lieux` depuis les fiches sensorielles [10 §10.2] ; entrées
-      `glossaire` depuis §12.7. Robinet `floor`.
-- [ ] Le « Codex de lieu » [10 §10.9] = cette section (aucune couche neuve).
-- **Vérif** : déverrouillage à l'entrée de chaque zone (A/B/C/D).
+### Lot 4 — Lieux & Glossaire (robinet étage/Acte) ✅
+- [x] Entrées `lieux` depuis les fiches sensorielles [10 §10.2] : `grande_salle`,
+      `couloirs_poudlard` (A), `cachots_poudlard` (B), `profondeurs_oubliees` (C)
+      — `ruines_anciennes` (D) déjà livrée en Lot 2. Robinet `floor`.
+- [x] Entrées `glossaire` depuis §12.7 : `echos_temporels`, `tenebreux`
+      (robinet `victory`), + MP dans Glossaire (décision : pas de 8ᵉ onglet) :
+      `cheminette_inter_mondes`, `voyageur`, `mondes_paralleles`.
+- [x] Le « Codex de lieu » [10 §10.9] = cette section (aucune couche neuve,
+      pur ajout de données à `CODEX_ENTRIES`).
+- [x] Bump `codex.js?v=2` + `CACHE_VERSION` v96. Couvert par `tests/units.js`
+      (déverrouillage par zone A/B/C/D + victoire).
+- **Vérif** : `node tests/units.js` + `node tests/smoke.js` verts. ✅
+- **Écart** : MP (Cheminette niv. 8) gaté par `floor:8` (proxy de la
+      disponibilité du sort) — pas de type de condition `spell` ajouté
+      (hors-scope Lot 4).
 
 ### Lot 5 — Personnages & Objets + variantes Maison
 - [ ] Entrées `personnages` (Fondateurs, PNJ-lore) + `objets` (légendaires,
