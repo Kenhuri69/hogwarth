@@ -39,6 +39,7 @@ const CODEX_ENTRIES = [
   // ── 🔥 Histoire & Lore ─────────────────────────────────────
   {
     id: 'cle_de_voute', category: 'histoire', icon: '🔑', act: 1,
+    iconImg: 'img/icons_new/cle_de_voute_64.png',
     title: 'La Clé de Voûte des Quatre',
     links: ['eclat_voute_codex', 'ruines_anciennes', 'boucle_tenebreuse'],
     unlockConditions: [{ type: 'floor', value: 1 }],
@@ -54,6 +55,7 @@ const CODEX_ENTRIES = [
   // ── 🔹 Éclats & Voix des Fondateurs ────────────────────────
   {
     id: 'eclat_voute_codex', category: 'eclats', icon: '🔹', act: 1,
+    iconImg: 'img/icons_new/eclat_voute_64.png',
     title: 'Les Éclats de la Clé de Voûte',
     links: ['cle_de_voute', 'echo_scellement'],
     unlockConditions: [{ type: 'eclat', value: 1 }],
@@ -332,6 +334,7 @@ const CODEX_ENTRIES = [
   // ── ⚜️ Objets & Artefacts (robinet item/palier, Lot 5) ──
   {
     id: 'sword_gryff', category: 'objets', icon: '⚔️', act: 4,
+    iconImg: 'img/icons_new/sword_gryff_64.png',
     title: "L'Épée de Gryffondor",
     links: ['les_fondateurs'],
     unlockConditions: [{ type: 'item', value: 'sword_gryff' }],
@@ -344,6 +347,7 @@ const CODEX_ENTRIES = [
   },
   {
     id: 'locket_slytherin', category: 'objets', icon: '🐍', act: 4,
+    iconImg: 'img/icons_new/locket_slytherin_64.png',
     title: 'Le Médaillon de Serpentard',
     links: ['echo_salazar'],
     unlockConditions: [{ type: 'item', value: 'locket_slytherin' }],
@@ -354,6 +358,7 @@ const CODEX_ENTRIES = [
   },
   {
     id: 'diademe_serdaigle', category: 'objets', icon: '👑', act: 4,
+    iconImg: 'img/icons_new/diademe_serdaigle_64.png',
     title: 'Le Diadème de Serdaigle',
     links: ['voix_rowena'],
     unlockConditions: [{ type: 'item', value: 'diademe_serdaigle' }],
@@ -364,6 +369,7 @@ const CODEX_ENTRIES = [
   },
   {
     id: 'coupe_poufsouffle', category: 'objets', icon: '🏆', act: 4,
+    iconImg: 'img/icons_new/coupe_poufsouffle_64.png',
     title: 'La Coupe de Poufsouffle',
     links: ['voix_helga'],
     unlockConditions: [{ type: 'item', value: 'coupe_poufsouffle' }],
@@ -374,6 +380,7 @@ const CODEX_ENTRIES = [
   },
   {
     id: 'larmes_phenix', category: 'objets', icon: '🔥', act: 2,
+    iconImg: 'img/icons_new/larmes_phenix_64.png',
     title: 'Les Larmes de Fumseck',
     links: ['dumbledore'],
     unlockConditions: [{ type: 'item', value: 'larmes_phenix' }],

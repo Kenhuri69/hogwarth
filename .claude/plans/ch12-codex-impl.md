@@ -132,6 +132,19 @@ seul** global sérialisé (`unlockedCodexEntries`). Zéro dépendance, zéro bui
 - [x] Bump `codex.css?v=3`, `CACHE_VERSION v100`. PNG = assets `img/`
       (chargés à la demande, non `?v`-versionnés, hors précache — politique 42 Mo).
 
+### Polish post-lots — icônes painterly des phares (§VIII)
+- [x] `cle_de_voute` : nouveau part `tools/parts/key-voute.svg` (clé : anneau,
+      gemme, tige, dents) + recette `cle_de_voute` (legendary/metal) dans
+      `tools/icon_factory.py` → `img/icons_new/cle_de_voute_*.png`.
+- [x] Réutilisation des PNG painterly déjà en dépôt pour les autres phares :
+      eclat_voute, sword_gryff, locket_slytherin, diademe_serdaigle,
+      coupe_poufsouffle, larmes_phenix.
+- [x] `ui-codex.js` : champ optionnel `iconImg` (PNG) rendu via `_codexIcon`
+      (carte + fiche), repli emoji sinon ; `codex.js` : `iconImg` sur les
+      7 entrées-phares ; `codex.css` : `.codex-icon-img` (40/56 px, drop-shadow).
+- [x] Bump codex.js v4, ui-codex.js v4, codex.css v4, CACHE_VERSION v101.
+      Rendu vérifié (capture : clé d'or sur le vélin de l'Acte 1).
+
 ### Polish post-lots — SFX (§VIII)
 - [x] `AudioSystem.playCodexWrite()` (grattés de plume, bruit band-pass) +
       `playCodexReveal()` (sceau, cloche sine) dans `audio-sfx.js` — procédural,

@@ -161,6 +161,27 @@ RECIPES: Dict[str, Recipe] = {
              "count": 4, "around": "body"},
         ],
     ),
+    # Codex Ch.12 — icône painterly de l'entrée-phare « La Clé de Voûte des
+    # Quatre » (non-item : référencée par CODEX_ENTRIES via iconImg). Clé
+    # gobeline d'or, gemme glacée des Fondateurs, runes gravées sur la tige.
+    "cle_de_voute": Recipe(
+        id="cle_de_voute", name="La Clé de Voûte des Quatre", rarity="legendary", material="metal",
+        silhouette={"kind": "svg", "file": "key-voute.svg"},
+        fills={
+            "key_bow":   (201, 168,  76),     # or gobelin de l'anneau ouvragé
+            "key_shaft": (170, 138,  60),     # tige, or plus sombre
+            "key_bit":   (150, 120,  52),     # dents, métal patiné
+            "key_gem":   (150, 200, 240),     # gemme glacée (le froid du verrou)
+        },
+        accents=[
+            {"kind": "gem_facet_shine", "region": "key_gem",  "color": (224, 244, 255)},
+            {"kind": "orb_glow",        "region": "key_gem",  "color": (190, 224, 255)},
+            {"kind": "runes",           "region": "key_shaft", "color": ( 86,  62,  22),
+             "count": 3, "around": "body"},
+            {"kind": "emboss",          "region": "key_bow",  "color": ( 96,  70,  26)},
+        ],
+        sparkles=True,
+    ),
     "felix": Recipe(
         id="felix", name="Félix Felicis", rarity="legendary", material="glass",
         silhouette={"kind": "svg", "file": "flask.svg"},

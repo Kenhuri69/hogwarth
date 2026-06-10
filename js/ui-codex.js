@@ -161,10 +161,19 @@ function showCodexList() {
   grid.innerHTML = cards || `<div class="bestiary-empty">Aucune entrée ne correspond…</div>`;
 }
 
+// Icône d'une entrée ouverte : PNG painterly si `iconImg` (entrées-phares),
+// sinon emoji de repli. Défensif.
+function _codexIcon(entry) {
+  if (entry && entry.iconImg) {
+    return `<img class="codex-icon-img" src="${entry.iconImg}" alt="">`;
+  }
+  return (entry && entry.icon) || '📜';
+}
+
 function _renderCodexCard(entry, state) {
   const meta   = _CODEX_STATE_META[state] || _CODEX_STATE_META.veiled;
   const locked = state === 'locked';
-  const icon   = locked ? '❔' : (entry.icon || '📜');
+  const icon   = locked ? '❔' : _codexIcon(entry);
   const title  = locked ? '???' : entry.title;
   const snippet = locked
     ? 'Continue d\'explorer pour percer ce mystère…'
@@ -206,7 +215,7 @@ function showCodexEntry(id) {
 
   detail.innerHTML = `
     <div class="codex-detail-header ${meta.cls}">
-      <div class="codex-detail-icon">${entry.icon || '📜'}</div>
+      <div class="codex-detail-icon">${_codexIcon(entry)}</div>
       <div class="codex-detail-titles">
         <h2 class="codex-detail-name">${entry.title}</h2>
         <div class="codex-detail-meta">

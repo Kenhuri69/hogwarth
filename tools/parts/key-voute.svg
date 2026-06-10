@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <g fill="#000000" fill-rule="evenodd">
+    <!-- Anneau (panneton) : tête circulaire ouvragée de la clé, percée en son centre -->
+    <path data-region="key_bow" d="M 176 138 a 80 80 0 1 0 160 0 a 80 80 0 1 0 -160 0 Z M 214 138 a 42 42 0 1 0 84 0 a 42 42 0 1 0 -84 0 Z"></path>
+    <!-- Gemme sertie dans l'anneau : losange central qui capte la lumière -->
+    <path data-region="key_gem" d="M 256 110 L 282 138 L 256 166 L 230 138 Z"></path>
+    <!-- Tige : fût vertical de la clé, descendant de l'anneau vers les dents -->
+    <path data-region="key_shaft" d="M 240 206 L 272 206 L 272 432 L 240 432 Z"></path>
+    <!-- Dents (râteau) : panneton inférieur, deux crans qui « ouvrent » le verrou -->
+    <path data-region="key_bit" d="M 272 356 L 332 356 L 332 392 L 300 392 L 300 412 L 332 412 L 332 448 L 272 448 Z"></path>
+  </g>
+</svg>
