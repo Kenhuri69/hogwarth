@@ -285,6 +285,52 @@ Object.assign(AudioSystem, {
     });
   },
 
+  // ── Codex : écriture sur parchemin (nouvelle entrée) ─────────
+  // Deux brèves « grattées » de plume : bruit blanc filtré band-pass,
+  // discret (le Codex se remplit en marge, pas une fanfare). Cf. Ch.12 §VIII.
+  playCodexWrite() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    [0, 0.13].forEach((delay, i) => {
+      const dur = 0.09;
+      const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * dur), this.ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let j = 0; j < buf.length; j++) data[j] = (Math.random() * 2 - 1) * (1 - j / buf.length);
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      const filt = this.ctx.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.value = 2600 + i * 600;
+      filt.Q.value = 0.8;
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.14, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + dur);
+      src.connect(filt).connect(gain).connect(this.sfxGain);
+      src.start(now + delay);
+    });
+  },
+
+  // ── Codex : sceau qui se pose (révélation voilée → révélée) ──
+  // Cloche douce : quinte sine au timbre cristallin + harmonique tenue.
+  // Distinct du level-up (gamme) et de la quête (arpège triangle).
+  playCodexReveal() {
+    if (this.isMuted) return;
+    this.init();
+    const now = this.ctx.currentTime;
+    [[659, 0], [988, 0.08]].forEach(([freq, delay]) => {
+      this._playTone({
+        freq, type: 'sine', start: now + delay, peak: 0.32, attack: 0.04,
+        decayAt: now + delay + 0.9, stop: now + delay + 1.0,
+      });
+    });
+    // Harmonique haute, tenue, qui « dépose » la vérité.
+    this._playTone({
+      freq: 1318, type: 'sine', start: now + 0.12, peak: 0.18, attack: 0.06,
+      decayAt: now + 1.3, stop: now + 1.4,
+    });
+  },
+
   // ── Brassage de potion (bouillonnement de chaudron) ──────────
   playBrew() {
     if (this.isMuted) return;
