@@ -87,7 +87,7 @@ sombre et plus profond.
 | 09 | [Bestiaire & lore des créatures](histoire/09-bestiaire-et-lore.md) | Origine et rôle narratif des monstres. |
 | 10 | [Lieux & géographie](histoire/10-lieux-et-geographie.md) | Les étages comme lieux ; ambiance et progression. |
 | 11 | [Mondes Parallèles](histoire/11-mondes-paralleles.md) | Lore des visites inter-mondes (cheminette, échos, verrous de sang). |
-| 12 | [Glossaire & codex](histoire/12-glossaire-et-codex.md) | Termes propres au jeu, objets de lore, chronologie. |
+| 12 | [Glossaire & Codex](histoire/12-glossaire-et-codex.md) | Le **Codex** : journal vivant déverrouillable du joueur (7 sections, déverrouillage par étage/Éclat/quête) + socle de référence (glossaire, artefacts, chronologie, index). |
 
 ### ⚙️ Gameplay (`docs/gameplay/`) — documentation de support
 | # | Chapitre | Objet |
