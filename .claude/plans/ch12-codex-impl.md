@@ -122,6 +122,16 @@ seul** global sérialisé (`unlockedCodexEntries`). Zéro dépendance, zéro bui
 > fondation pure testée, trame principale, menu jouable, Lieux & Glossaire,
 > Personnages & Objets + variantes Maison, échos zone D live + états corrompus.
 
+### Polish post-lots — fonds de parchemin (§VIII)
+- [x] `tools/gen_codex_parchment.py` (PIL + numpy, déterministe) génère
+      `img/codex/parchment_{a,b,c,d}.png` (384², PNG-8) — la même couverture
+      patinée par Acte : vélin propre → taché/gelé → recousu → runique.
+- [x] `css/codex.css` : `.codex-act-N` superpose la texture SOUS un dégradé
+      d'assombrissement (fallback dégradé seul si l'image ne charge pas) →
+      texte d'archive lisible. Vérifié au rendu (capture Acte 4 runique).
+- [x] Bump `codex.css?v=3`, `CACHE_VERSION v100`. PNG = assets `img/`
+      (chargés à la demande, non `?v`-versionnés, hors précache — politique 42 Mo).
+
 ### Polish post-lots — SFX (§VIII)
 - [x] `AudioSystem.playCodexWrite()` (grattés de plume, bruit band-pass) +
       `playCodexReveal()` (sceau, cloche sine) dans `audio-sfx.js` — procédural,
