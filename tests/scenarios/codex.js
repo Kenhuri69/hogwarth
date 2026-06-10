@@ -145,4 +145,70 @@ async function scenarioCodexUnlockOnFloor() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor] };
+// Lot 6 : échos zone D live + états corrompus (CODEX phares + bestiaire).
+async function scenarioCodexCorrupted() {
+  console.log('\n── Scénario : Codex — échos live & états corrompus (Lot 6) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // Robinet `echo` live : percevoir un écho de voix ouvre l'entrée associée.
+  const echoLive = await page.evaluate(() => {
+    seenEchoes.add('echo_godric');
+    checkCodexUnlocks('echo-seen');
+    return {
+      open: unlockedCodexEntries.has('voix_godric'),
+      state: codexEntryState(getCodexEntry('voix_godric'), _codexContext()),
+    };
+  });
+  console.log('  echoLive :', echoLive);
+  assert(echoLive.open, 'voix_godric non ouverte après écho perçu');
+  assert(echoLive.state === 'veiled', `voix_godric devrait être veiled (${echoLive.state})`);
+
+  // État corrompu d'une entrée-phare : Clé de Voûte révélée (3 éclats) +
+  // zone D (étage 14) → bascule corrupted, et la fiche rend le corps corrompu.
+  const corrupted = await page.evaluate(() => {
+    const eclat = ITEMS.find(i => i.id === 'eclat_voute');
+    player.inventory.push({ ...eclat }, { ...eclat }, { ...eclat });
+    currentFloor = 14; floorReached = 14;
+    const st = codexEntryState(getCodexEntry('cle_de_voute'), _codexContext());
+    openCodex();
+    switchCodexSection('histoire');
+    showCodexEntry('cle_de_voute');
+    const body = document.querySelector('#codex-detail .codex-detail-body');
+    return {
+      state: st,
+      bodyCorrupted: body && body.className.includes('codex-body-corrupted'),
+      text: body ? body.textContent.slice(0, 40) : '',
+    };
+  });
+  console.log('  corrupted :', corrupted);
+  assert(corrupted.state === 'corrupted', `cle_de_voute devrait être corrupted (${corrupted.state})`);
+  assert(corrupted.bodyCorrupted, 'le corps de la fiche n\'a pas la classe corrupted');
+
+  // Variante corrompue d'une créature-phare (Détraqueur) en Boucle profonde.
+  const beastCorrupt = await page.evaluate(() => {
+    victoryAchieved = true; currentFloor = 16;
+    seenMonsters.add('detraqueur');
+    monsterKills.detraqueur = 2;
+    const m = MONSTERS.find(x => x.id === 'detraqueur');
+    openBestiary();
+    showMonsterDetail(m);
+    const html = document.getElementById('bestiary-detail').innerHTML;
+    return {
+      hasCorruptedField: !!m.corruptedLore,
+      shown: html.includes('Page retournée'),
+    };
+  });
+  console.log('  beastCorrupt :', beastCorrupt);
+  assert(beastCorrupt.hasCorruptedField, 'detraqueur.corruptedLore absent');
+  assert(beastCorrupt.shown, 'variante corrompue du Détraqueur non affichée en Boucle profonde');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (codex corrupted)`);
+  }
+  console.log('  ✅ Échos live + états corrompus OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted] };

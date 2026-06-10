@@ -172,6 +172,27 @@
 }
 .codex-link:hover { border-color: var(--gold-dark); color: var(--gold); }
 
+/* ── Variante corrompue dans le bestiaire (Lot 6, « givre dans l'encre ») ── */
+.codex-corrupted-variant {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid #4a6e8c;
+  border-radius: 6px;
+  background: linear-gradient(165deg, #0e1622 0%, #0a0f18 100%);
+  box-shadow: inset 0 0 22px rgba(74, 110, 140, 0.28);
+  color: #cfe0ec;
+  font-style: italic;
+  line-height: 1.6;
+}
+.codex-corrupted-title {
+  font-family: 'Cinzel', serif;
+  font-style: normal;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: #9fc4e0;
+  margin-bottom: 6px;
+}
+
 /* ── Responsive (≤700px) ───────────────────────────────────── */
 @media (max-width: 700px) {
   .codex-modal-box   { width: 96vw; max-height: 92dvh; }

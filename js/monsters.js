@@ -575,6 +575,9 @@ const MONSTERS = [
     lore:     "Créature squelettique qui se nourrit littéralement du bonheur des autres. Sa simple présence aspire toute joie et force quiconque à revivre ses pires souvenirs. Seul le Patronus — manifestation de ses propres souvenirs heureux — peut le repousser.",
     habitat:  "Forêt Interdite, cachots les plus sombres et abords du lac souterrain",
     anecdote: "Harry en rencontre pour la première fois dans le Poudlard Express — il s'évanouit sous leur influence (Le Prisonnier d'Azkaban).",
+    // Variante corrompue (Codex Ch.12 §12.4.8) — affichée dans le bestiaire
+    // une fois en Boucle Ténébreuse profonde (victoire + étage 16+).
+    corruptedLore: "Plus bas, ils ne flottent plus : ils s'écoulent, comme de l'encre dans de l'eau gelée. Ce ne sont plus des gardiens d'Azkaban égarés. Ce sont les premières larmes de ce que les Ruines contiennent — la peur d'avant les noms.",
     danger:   9,
     minFloor: 3, maxFloor: 8, weight: 7,
     hp: 25, atk: 10, def: 3, mag: 8, agi: 10, lck: 6,
