@@ -12,7 +12,10 @@
 //   - Items grant-spell ou regen : `upgradeLevel` ne touche pas ces
 //     effets binaires (cf. plan §7.5 « Cas spécial »).
 
-const FORGE_MAX_LEVEL = 5;
+// Palier T5 (forge-t5.md) : le plafond passe de +5 à +8. Les niveaux 6-8
+// exigent en plus de l'Essence Primordiale (`primordiale`), matériau premium
+// vendu par l'Apothicaire des Ténèbres (Boucle) — gold-sink endgame profond.
+const FORGE_MAX_LEVEL = 8;
 // C3a — deux voies d'amélioration, verrouillées au 1er upgrade (item.forgePath) :
 //   'power' (défaut/legacy) → +upgradeLevel sur la stat principale.
 //   'crit'                  → +upgradeLevel × FORGE_CRIT_PER_LEVEL % de crit.
@@ -24,6 +27,10 @@ const FORGE_COSTS = {
   3: { gold:  320, essence: 3 },
   4: { gold:  640, essence: 5 },
   5: { gold: 1280, essence: 8 },
+  // T5 — au-delà de +5 : coûts en forte hausse + Essence Primordiale.
+  6: { gold: 2200, essence: 10, primordiale: 1 },
+  7: { gold: 3400, essence: 13, primordiale: 2 },
+  8: { gold: 5000, essence: 16, primordiale: 3 },
 };
 
 // Compte / consomme l'Essence des Ténèbres via les helpers de matériau
@@ -34,6 +41,15 @@ function _countEssence() {
 
 function _consumeEssence(n) {
   return _consumeMaterial('essence_tenebres', n);
+}
+
+// Essence Primordiale (T5) — requise pour les niveaux 6-8.
+function _countPrimordiale() {
+  return _countMaterial('essence_primordiale');
+}
+
+function _consumePrimordiale(n) {
+  return _consumeMaterial('essence_primordiale', n);
 }
 
 // Détermine la stat principale d'un item à forger.
@@ -141,6 +157,11 @@ function upgradeItemAtForge(charIdx, slot, path) {
     addMsg(`Forge : ${cost.essence} Essence(s) des Ténèbres requise(s).`, 'bad');
     return false;
   }
+  const needPrim = cost.primordiale | 0;
+  if (needPrim > 0 && _countPrimordiale() < needPrim) {
+    addMsg(`Forge : ${needPrim} Essence(s) Primordiale(s) requise(s) (au-delà de +5).`, 'bad');
+    return false;
+  }
   if (!_primaryBonus(item)) {
     addMsg(`${item.name} n'a pas de stat principale à renforcer.`, '');
     return false;
@@ -148,6 +169,7 @@ function upgradeItemAtForge(charIdx, slot, path) {
 
   player.gold -= cost.gold;
   _consumeEssence(cost.essence);
+  if (needPrim > 0) _consumePrimordiale(needPrim);
   item.upgradeLevel = targetLvl;
   if (typeof recalculateStats === 'function') recalculateStats();
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
@@ -169,7 +191,10 @@ function openForge() {
   const gold = document.getElementById('forge-gold');
   const essCount = document.getElementById('forge-essence');
   if (gold)     gold.textContent     = `${player.gold | 0} Gallions`;
-  if (essCount) essCount.textContent = `${_countEssence()} Essence(s)`;
+  if (essCount) {
+    const prim = _countPrimordiale();
+    essCount.textContent = `${_countEssence()} Essence(s)` + (prim > 0 ? ` · ${prim} 🔮 Primordiale(s)` : '');
+  }
 
   if (!list) return;
   // Entête : récap progression Forge du groupe (§4.5).
@@ -201,9 +226,10 @@ function openForge() {
       const voieLbl  = path === 'crit' ? 'Critique' : 'Puissance';
       const lvlBadge  = lvl > 0 ? `<span class="forge-lvl-badge">+${lvl}</span>` : '';
       const costLine = cost
-        ? `<div class="forge-cost">${cost.gold} g · ${cost.essence} 🌑</div>`
+        ? `<div class="forge-cost">${cost.gold} g · ${cost.essence} 🌑${cost.primordiale ? ` · ${cost.primordiale} 🔮` : ''}</div>`
         : '';
-      const affordable = cost && player.gold >= cost.gold && _countEssence() >= cost.essence;
+      const affordable = cost && player.gold >= cost.gold && _countEssence() >= cost.essence
+        && _countPrimordiale() >= (cost.primordiale | 0);
       const dis = affordable ? '' : 'disabled';
       let previewLine = '', btn = '';
       if (!upgradable) {

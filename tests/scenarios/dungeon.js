@@ -985,11 +985,44 @@ async function scenarioForgeUpgrade() {
   assert(t4.atkAfter === t4.atkBefore,        'voie crit : la stat ATK ne bouge pas');
   assert(t4.critAfter === t4.critBefore + t4.per, 'voie crit : critChance +FORGE_CRIT_PER_LEVEL');
 
+  // T5 (palier T5, forge-t5.md) — au-delà de +5 : plafond +8, Essence
+  // Primordiale requise pour les niveaux 6-8.
+  const t5 = await page.evaluate(() => {
+    const wand = JSON.parse(JSON.stringify(ITEMS.find(i => i.id === 'wand1')));
+    wand.upgradeLevel = 5; wand.forgePath = 'power';
+    party[0].equipped.wand = wand;
+    player.gold = 100000;
+    player.inventory = player.inventory.filter(i => i.id !== 'essence_tenebres' && i.id !== 'essence_primordiale');
+    for (let i = 0; i < 60; i++) player.inventory.push({ ...ITEMS.find(i => i.id === 'essence_tenebres') });
+    recalculateStats();
+    const maxLevel = FORGE_MAX_LEVEL;
+    const cost6 = FORGE_COSTS[6];
+    const blocked = upgradeItemAtForge(0, 'wand');          // sans Primordiale → refusé
+    const lvlBlocked = party[0].equipped.wand.upgradeLevel;
+    for (let i = 0; i < 10; i++) player.inventory.push({ ...ITEMS.find(i => i.id === 'essence_primordiale') });
+    const ok6 = upgradeItemAtForge(0, 'wand');
+    const ok7 = upgradeItemAtForge(0, 'wand');
+    const ok8 = upgradeItemAtForge(0, 'wand');
+    const lvl8 = party[0].equipped.wand.upgradeLevel;
+    const ok9 = upgradeItemAtForge(0, 'wand');              // plafond → refusé
+    const primLeft = player.inventory.filter(i => i.id === 'essence_primordiale').length;
+    return { maxLevel, hasCost6: !!cost6, prim6: cost6 && cost6.primordiale, blocked, lvlBlocked, ok6, ok7, ok8, lvl8, ok9, primLeft };
+  });
+  console.log('  T5 palier T5 →', t5);
+  assert(t5.maxLevel === 8,           'FORGE_MAX_LEVEL doit valoir 8');
+  assert(t5.hasCost6 && t5.prim6 >= 1,'le niveau 6 doit coûter de l\'Essence Primordiale');
+  assert(t5.blocked === false,        'upgrade 5→6 refusé sans Primordiale');
+  assert(t5.lvlBlocked === 5,         'niveau inchangé sans Primordiale');
+  assert(t5.ok6 && t5.ok7 && t5.ok8,  'niveaux 6-8 réussis avec Primordiale');
+  assert(t5.lvl8 === 8,               'item forgé jusqu\'à +8');
+  assert(t5.ok9 === false,            'au-delà de +8 : plafond, refusé');
+  assert(t5.primLeft === 4,           'Primordiales consommées (1+2+3 = 6 sur 10)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Forge des Ténèbres (2 voies) OK');
+  console.log('  ✅ Forge des Ténèbres (2 voies + palier T5 jusqu\'à +8) OK');
   await browser.close();
 }
 

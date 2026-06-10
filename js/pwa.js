@@ -20,7 +20,7 @@
     return;
   }
 
-  const SW_URL = 'sw.js?v=3';
+  const SW_URL = 'sw.js?v=4';
   let updateBanner = null;
   let pendingWorker = null;
 
