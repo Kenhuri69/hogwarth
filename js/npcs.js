@@ -1315,7 +1315,8 @@ const NPCS = [
       { id: "herbe_dictame",    price: 35 },
       { id: "herbe_asphodele_noire", price: 40 },
       { id: "essence_tenebres", price: 380 },
-      { id: "page_grimoire",    price: 460 }
+      { id: "page_grimoire",    price: 460 },
+      { id: "essence_primordiale", price: 1200 }
     ],
     buyback: { default: 0.30 },
     dialogues: {

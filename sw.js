@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v92';
+const CACHE_VERSION = 'hogwarth-v94';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -49,16 +49,16 @@ const PRECACHE_URLS = [
   './js/icons.js?v=1',
   './js/scene-icons.js?v=6',
   './js/monsters.js?v=9',
-  './js/npcs.js?v=23',
+  './js/npcs.js?v=24',
   './js/npcs-helpers.js?v=2',
   './js/riddles.js?v=2',
-  './js/data.js?v=26',
+  './js/data.js?v=27',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
   './js/floor-ambiance.js?v=5',
   './js/floor-events.js?v=1',
   './js/room-flavor.js?v=1',
-  './js/item-icons.js?v=20',
+  './js/item-icons.js?v=21',
   './js/state.js?v=25',
   './js/hero-barks.js?v=3',
   './js/ui.js?v=14',
@@ -108,11 +108,11 @@ const PRECACHE_URLS = [
   './js/multiplayer-visits.js?v=1',
   './js/main.js?v=17',
   './js/endgame.js?v=4',
-  './js/forge.js?v=3',
+  './js/forge.js?v=4',
   './js/library.js?v=3',
   './js/help-tour.js?v=3',
   './js/loader.js?v=33',
-  './js/pwa.js?v=3',
+  './js/pwa.js?v=4',
 
   // Icônes PWA + premier écran
   './img/icons/pwa/icon-192.png?v=2',

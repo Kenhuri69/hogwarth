@@ -507,6 +507,11 @@ const ITEMS = [
     type:"material", price:0 },
   { id:"page_grimoire",    name:"Page de Grimoire",     icon:"📜", desc:"Matériau · Bibliothèque interdite",
     type:"material", price:0 },
+  // Matériau premium T5 (endgame) — requis pour forger un item au-delà de +5
+  // (niveaux 6-8). Vendu par l'Apothicaire des Ténèbres (Boucle). Cf.
+  // .claude/plans/forge-t5.md.
+  { id:"essence_primordiale", name:"Essence Primordiale", icon:"🔮", desc:"Matériau · Forge T5 (forge au-delà de +5)",
+    type:"material", price:1200 },
   // Ressource d'upgrade-craft des potions (P4). Achetable (boutique étage ≥ 3)
   // + drop de coffre. Consommée au chaudron pour monter une potion en rang.
   { id:"eclat_vitalite",   name:"Éclat de Vitalité",    icon:"❤️", desc:"Matériau · concentré de vie pour potions",
