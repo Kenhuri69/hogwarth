@@ -35,9 +35,23 @@ let _codexSection = 'histoire';
 // ── Contexte de déverrouillage (agrège les signaux runtime, défensif) ──
 function _codexContext() {
   let eclatCount = 0;
+  // Robinet `item` (Lot 5) : ids possédés (inventaire partagé + équipement
+  // de tous les membres). Sert aux légendaires de Maison / Larmes de Fumseck.
+  const itemsOwned = new Set();
   if (player && Array.isArray(player.inventory)) {
     for (const it of player.inventory) {
-      if (it && it.id === 'eclat_voute') eclatCount += (it.qty || 1);
+      if (!it) continue;
+      if (it.id === 'eclat_voute') eclatCount += (it.qty || 1);
+      if (it.id) itemsOwned.add(it.id);
+    }
+  }
+  if (typeof party !== 'undefined' && Array.isArray(party)) {
+    for (const c of party) {
+      if (!c || !c.equipped) continue;
+      for (const slot of Object.keys(c.equipped)) {
+        const it = c.equipped[slot];
+        if (it && it.id) itemsOwned.add(it.id);
+      }
     }
   }
   // Robinet `riddle` : pas de global persistant → dérivé au mieux de la
@@ -56,6 +70,7 @@ function _codexContext() {
     questsDone:     (typeof completedQuests !== 'undefined') ? completedQuests : new Set(),
     riddlesSolved:  riddles,
     echoSeen:       (typeof seenEchoes !== 'undefined') ? seenEchoes : new Set(),
+    itemsOwned,
     victoryAchieved: (typeof victoryAchieved !== 'undefined') ? !!victoryAchieved : false,
     chosenHouse:    (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
   };

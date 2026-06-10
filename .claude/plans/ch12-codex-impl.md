@@ -83,11 +83,20 @@ seul** global sérialisé (`unlockedCodexEntries`). Zéro dépendance, zéro bui
       disponibilité du sort) — pas de type de condition `spell` ajouté
       (hors-scope Lot 4).
 
-### Lot 5 — Personnages & Objets + variantes Maison
-- [ ] Entrées `personnages` (Fondateurs, PNJ-lore) + `objets` (légendaires,
-      Grimoire d'Élara, Larmes de Fumseck). Robinet `quest`/`monster`/palier.
-- [ ] `variants.house` (notes marginales) lues par `codexVariantNote`.
-- **Vérif** : note marginale visible seulement pour la bonne `chosenHouse`.
+### Lot 5 — Personnages & Objets + variantes Maison ✅
+- [x] Entrées `personnages` : `les_fondateurs`, `dumbledore`, `echo_salazar`
+      (variante Serpentard, §12.4.5), `manon`. Robinet `floor`/`echo`/`eclat`.
+- [x] Entrées `objets` : `sword_gryff` (§12.4.10), `locket_slytherin`,
+      `diademe_serdaigle`, `coupe_poufsouffle`, `larmes_phenix` (robinet `item`
+      = possession, faithful du « palier/drop »), `grimoire_elara` (robinet
+      `floor`, Manon).
+- [x] `variants.house` (notes marginales) sur les 4 légendaires + echo_salazar,
+      lues par `codexVariantNote`.
+- [x] Nouveau type de condition **`item`** (ctx.itemsOwned = inventaire +
+      équipement, dérivé live dans `_codexContext`). Pur, testé.
+- [x] Bump `codex.js?v=3` + `ui-codex.js?v=2` + `CACHE_VERSION` v97.
+- **Vérif** : `node tests/units.js` (333) — note marginale visible seulement
+      pour la bonne `chosenHouse` + gating par item. `node tests/smoke.js` vert.
 
 ### Lot 6 — Échos temporels (zone D) + états corrompus
 - [ ] `temporalEchoSeen` alimenté en zone D (dépend de
