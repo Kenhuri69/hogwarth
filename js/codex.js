@@ -28,6 +28,7 @@
 //   monster → ctx.seenMonsters.has(value) [&& monsterKills[value] >= kills]
 //   riddle  → ctx.riddlesSolved.has(value)
 //   echo    → ctx.echoSeen.has(value)            (= seenEchoes existant)
+//   item    → ctx.itemsOwned.has(value)          (inventaire + équipement ; palier/drop)
 //   house   → ctx.chosenHouse === value          (variantes / gating)
 //   victory → ctx.victoryAchieved === true       (Boucle Ténébreuse)
 // ============================================================
@@ -260,6 +261,113 @@ const CODEX_ENTRIES = [
     },
   },
 
+  // ── 👤 Personnages & Maisons (robinet étage/quête/écho, Lot 5) ──
+  {
+    id: 'les_fondateurs', category: 'personnages', icon: '🏛️', act: 1,
+    title: 'Les Quatre Fondateurs',
+    links: ['cle_de_voute', 'echo_scellement', 'echo_salazar'],
+    unlockConditions: [{ type: 'floor', value: 1 }],
+    revealedBy: [{ type: 'eclat', value: 3 }],
+    textVersions: {
+      veiled: "Godric, Salazar, Rowena, Helga : les quatre noms gravés au fronton de l'école. On les apprend dès le premier cours, comme une formule qu'on ne questionne pas.",
+      revealed: "Les Fondateurs ne furent pas seulement des bâtisseurs : ils furent des geôliers. Pour sceller ce qui dormait sous la colline, chacun dut y mettre une part de lui-même — son courage, sa faute, son savoir, son refuge. Quatre tempéraments, un seul verrou. Comprendre Poudlard, c'est comprendre qu'une école fut posée comme un couvercle sur une peur qu'ils n'ont pas su tuer, seulement tenir.",
+    },
+  },
+  {
+    id: 'dumbledore', category: 'personnages', icon: '🧙', act: 1,
+    title: 'Albus Dumbledore',
+    links: ['cle_de_voute'],
+    unlockConditions: [{ type: 'floor', value: 1 }],
+    textVersions: {
+      veiled: "Le portrait qui t'a appelé. Sa voix t'a guidé vers le donjon, sa main invisible ouvre les épreuves. Mort, il guide encore — et il en sait plus qu'il n'en dit.",
+    },
+  },
+  {
+    id: 'echo_salazar', category: 'personnages', icon: '🐍', act: 2,
+    title: "L'Écho de Salazar",
+    links: ['les_fondateurs', 'voix_salazar'],
+    unlockConditions: [{ type: 'floor', value: 4 }],
+    revealedBy: [{ type: 'echo', value: 'echo_salazar' }],
+    textVersions: {
+      veiled: "Dans les cachots, une voix qui n'appartient à aucun vivant. Elle connaît ton nom, tes tentations, et le chemin le plus court vers le pouvoir. Elle se présente comme un ami.",
+      revealed: "L'écho est Salazar Serpentard — non pas un fantôme, mais une part de lui qu'il a scellée avec la corruption qu'il aida à enfermer. Voilà le secret des Fondateurs : pour fermer le verrou, chacun a dû y mettre une part de soi-même, sa plus laide. La tentation que tu entends n'est pas un démon — c'est un miroir. Salazar n'a pas vaincu sa voix. Il a juste refusé de lui obéir.",
+    },
+    variants: { house: { Serpentard: "Il te parle comme à un héritier. Ce n'est pas un piège : c'est une passation. À toi de décider ce que tu fais de ce que tu reconnais en lui." } },
+  },
+  {
+    id: 'manon', category: 'personnages', icon: '❄️', act: 2,
+    title: 'Manon',
+    links: ['grimoire_elara'],
+    unlockConditions: [{ type: 'floor', value: 4 }],
+    textVersions: {
+      veiled: "Une élève rencontrée dans la descente, le regard hanté par un deuil de givre. Elle cherche les pages dispersées du grimoire de sa mère, Élara — comme si les reconstituer pouvait réchauffer quelque chose.",
+    },
+  },
+
+  // ── ⚜️ Objets & Artefacts (robinet item/palier, Lot 5) ──
+  {
+    id: 'sword_gryff', category: 'objets', icon: '⚔️', act: 4,
+    title: "L'Épée de Gryffondor",
+    links: ['les_fondateurs'],
+    unlockConditions: [{ type: 'item', value: 'sword_gryff' }],
+    revealedBy: [{ type: 'eclat', value: 3 }],
+    textVersions: {
+      veiled: "Lame gobeline sertie de rubis, qui ne se présente qu'au vrai courage. Récompense de l'identité Gryffondor menée à son terme.",
+      revealed: "Forgée par Ragnuk, elle n'absorbe que ce qui la rend plus forte. Sa vraie nature n'est pas de trancher : c'est de répondre — elle ne vient qu'à la main qui a déjà choisi de tenir la porte, comme Godric devant le sceau. Une arme qui exige d'être méritée avant d'être tirée.",
+    },
+    variants: { house: { Gryffondor: "Elle ne pèse rien dans ta main : elle te reconnaît. Ce que Godric a tenu, tu le tiens à ton tour." } },
+  },
+  {
+    id: 'locket_slytherin', category: 'objets', icon: '🐍', act: 4,
+    title: 'Le Médaillon de Serpentard',
+    links: ['echo_salazar'],
+    unlockConditions: [{ type: 'item', value: 'locket_slytherin' }],
+    textVersions: {
+      veiled: "Reflet du goût du pouvoir : sa puissance se mérite, son ombre se porte. Récompense de l'identité Serpentard menée à son terme.",
+    },
+    variants: { house: { Serpentard: "Il pèse au cou comme un secret. Salazar te le tend non pour te corrompre, mais pour voir ce que tu en feras." } },
+  },
+  {
+    id: 'diademe_serdaigle', category: 'objets', icon: '👑', act: 4,
+    title: 'Le Diadème de Serdaigle',
+    links: ['voix_rowena'],
+    unlockConditions: [{ type: 'item', value: 'diademe_serdaigle' }],
+    textVersions: {
+      veiled: "Couronne du savoir ; elle aiguise la magie de qui l'a gagnée par l'esprit. Récompense de l'identité Serdaigle menée à son terme.",
+    },
+    variants: { house: { Serdaigle: "Posé sur le front, il ne donne pas de réponses : il rend les questions plus nettes. C'est tout ce que Rowena a jamais promis." } },
+  },
+  {
+    id: 'coupe_poufsouffle', category: 'objets', icon: '🏆', act: 4,
+    title: 'La Coupe de Poufsouffle',
+    links: ['voix_helga'],
+    unlockConditions: [{ type: 'item', value: 'coupe_poufsouffle' }],
+    textVersions: {
+      veiled: "Calice de la loyauté ; il protège qui protège les autres. Récompense de l'identité Poufsouffle menée à son terme.",
+    },
+    variants: { house: { Poufsouffle: "Il ne brille que pour ceux qui n'ont jamais brillé seuls. Helga l'a voulu ainsi : un trophée qui récompense d'avoir porté les autres." } },
+  },
+  {
+    id: 'larmes_phenix', category: 'objets', icon: '🔥', act: 2,
+    title: 'Les Larmes de Fumseck',
+    links: ['dumbledore'],
+    unlockConditions: [{ type: 'item', value: 'larmes_phenix' }],
+    textVersions: {
+      veiled: "Pleurs du phénix de Dumbledore, données en récompense par Fumseck lui-même. Une amulette tiède qui referme les plaies à chaque souffle du combat — la consolation, faite objet.",
+    },
+  },
+  {
+    id: 'grimoire_elara', category: 'objets', icon: '📓', act: 2,
+    title: "Le Grimoire d'Élara",
+    links: ['manon'],
+    unlockConditions: [{ type: 'floor', value: 5 }],
+    revealedBy: [{ type: 'floor', value: 9 }],
+    textVersions: {
+      veiled: "Un carnet de givre et de deuil, dont les pages se sont dispersées dans la descente. Manon les cherche : sa mère, Élara, y avait consigné quelque chose qu'elle ne se résout pas à perdre.",
+      revealed: "Reconstitué, le grimoire révèle ce que le deuil cachait : sous le givre des dernières pages, une joie. Élara n'écrivait pas pour conjurer le froid — elle écrivait pour que sa fille se souvienne de la chaleur d'avant. Rendre les pages à Manon, c'est lui rendre non pas une mère, mais le droit de ne plus seulement avoir froid.",
+    },
+  },
+
 ];
 
 // ── Helpers PURS ─────────────────────────────────────────────
@@ -295,6 +403,8 @@ function _codexCondMet(cond, ctx) {
       return !!(ctx.riddlesSolved && ctx.riddlesSolved.has && ctx.riddlesSolved.has(cond.value));
     case 'echo':
       return !!(ctx.echoSeen && ctx.echoSeen.has && ctx.echoSeen.has(cond.value));
+    case 'item':
+      return !!(ctx.itemsOwned && ctx.itemsOwned.has && ctx.itemsOwned.has(cond.value));
     case 'house':
       return ctx.chosenHouse === cond.value;
     case 'victory':

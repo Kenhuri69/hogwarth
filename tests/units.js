@@ -733,6 +733,29 @@ function loadModule(relPath, exportNames, globals = {}) {
   // Révélation par descente : couloirs révélés une fois en zone B.
   check('couloirs révélés étage 4', zoneAt('couloirs_poudlard', 4) === 'revealed');
 
+  // ── Lot 5 : Personnages & Objets — robinet `item` + variantes Maison ──
+  const sword = getCodexEntry('sword_gryff');
+  check('sword_gryff dans objets', sword && sword.category === 'objets');
+  check('légendaire locked sans l\'item',
+    codexEntryState(sword, empty) === 'locked');
+  check('légendaire ouvert si possédé',
+    codexEntryState(sword, { ...empty, itemsOwned: new Set(['sword_gryff']) }) === 'veiled');
+  check('larmes_phenix ouvert si possédé (item)',
+    codexEntryState(getCodexEntry('larmes_phenix'), { ...empty, itemsOwned: new Set(['larmes_phenix']) }) === 'veiled');
+  // Variante Maison sur le légendaire : visible pour la bonne Maison seulement.
+  check('sword_gryff variante Gryffondor', typeof codexVariantNote(sword, 'Gryffondor', []) === 'string');
+  check('sword_gryff pas de variante Serpentard', codexVariantNote(sword, 'Serpentard', []) === null);
+  check('locket variante Serpentard', typeof codexVariantNote(getCodexEntry('locket_slytherin'), 'Serpentard', []) === 'string');
+  // Personnages : Fondateurs ouverts dès l'étage 1, révélés à 3 éclats.
+  const fond = getCodexEntry('les_fondateurs');
+  check('les_fondateurs ouverts étage 1', codexEntryState(fond, { ...empty, floorReached: 1 }) === 'veiled');
+  check('les_fondateurs révélés à 3 éclats', codexEntryState(fond, { ...empty, floorReached: 1, eclatProgress: 3 }) === 'revealed');
+  // echo_salazar : ouvert en zone B (étage 4), révélé par sa voix.
+  const eS = getCodexEntry('echo_salazar');
+  check('echo_salazar ouvert étage 4', codexEntryState(eS, { ...empty, floorReached: 4 }) === 'veiled');
+  check('echo_salazar révélé par sa voix',
+    codexEntryState(eS, { ...empty, floorReached: 4, echoSeen: new Set(['echo_salazar']) }) === 'revealed');
+
   // ── Défensif : ctx incomplet ne throw jamais ──
   let noThrow = true;
   try { codexEntryState(cle, {}); codexEntryState(cle, { floorReached: 1 }); unlockedCodexFor({}); }
