@@ -37,7 +37,7 @@ const PRECACHE_URLS = [
   './css/dungeon-fx.css?v=5',
   './css/cinematics.css?v=1',
   './css/frost.css?v=1',
-  './css/codex.css?v=2',
+  './css/codex.css?v=3',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
