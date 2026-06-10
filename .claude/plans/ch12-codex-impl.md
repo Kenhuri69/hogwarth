@@ -98,11 +98,29 @@ seul** global sérialisé (`unlockedCodexEntries`). Zéro dépendance, zéro bui
 - **Vérif** : `node tests/units.js` (333) — note marginale visible seulement
       pour la bonne `chosenHouse` + gating par item. `node tests/smoke.js` vert.
 
-### Lot 6 — Échos temporels (zone D) + états corrompus
-- [ ] `temporalEchoSeen` alimenté en zone D (dépend de
-      [`ambiance-zone-d-fx.md`](ambiance-zone-d-fx.md)). Robinet `echo`.
-- [ ] États `corrupted` (givre dans l'encre) sur les entrées-phares.
-- **Vérif** : entrée bascule en `corrupted` à l'étage 14+ (unit + smoke).
+### Lot 6 — Échos temporels (zone D) + états corrompus ✅
+- [x] Robinet `echo` **alimenté live** : `checkCodexUnlocks('echo-seen')`
+      branché aux deux points qui remplissent `seenEchoes` (movement.js — écho
+      d'ambiance zone D ; floor-ambiance.js — Chambre des Fondateurs). Les
+      6 entrées écho (voix + scellement) + `grande_salle` se déverrouillent /
+      révèlent désormais sans attendre un autre hook. (`temporalEchoSeen`
+      abandonné au profit de `seenEchoes`, cf. Écarts.)
+- [x] États `corrupted` (givre dans l'encre) sur les entrées-phares :
+      - CODEX_ENTRIES : `cle_de_voute`, `ruines_anciennes`, `boucle_tenebreuse`
+        (corruptedBy + texte corrupted livrés en Lots 2-4 ; rendu CSS
+        `.codex-body-corrupted`).
+      - Bestiaire (créature-phare) : `detraqueur.corruptedLore` (monsters.js) +
+        `_renderCorruptedVariant` (ui-bestiary.js), affiché en Boucle profonde
+        (victoire + étage 16+), style `.codex-corrupted-variant` (codex.css).
+- [x] Bump cache : movement v34, floor-ambiance v6, monsters v10,
+      ui-bestiary v5, codex.css v2, CACHE_VERSION v98.
+- **Vérif** : `scenarioCodexCorrupted` (écho live + bascule corrupted CODEX +
+      variante corrompue Détraqueur). `node tests/units.js` (333) +
+      `node tests/smoke.js` (184) verts.
+
+> 🏁 **Chapitre 12 — Codex : Lots 1-6 livrés.** Le journal est complet :
+> fondation pure testée, trame principale, menu jouable, Lieux & Glossaire,
+> Personnages & Objets + variantes Maison, échos zone D live + états corrompus.
 
 ## Variables & globals (récap)
 

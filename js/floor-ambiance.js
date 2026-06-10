@@ -462,6 +462,9 @@ function maybeFounderChamberBeat(floor) {
   if (typeof setNarrative === 'function') setNarrative(beat.narrative);
   if (typeof addMsg === 'function') addMsg('📜 ' + beat.toast, 'narrative');
   if (typeof seenEchoes !== 'undefined' && seenEchoes && beat.echoId) seenEchoes.add(beat.echoId);
+  // Robinet `echo` du Codex : la Chambre d'un Fondateur perçue peut révéler
+  // l'écho du scellement (défensif, no-op hors runtime jeu / sandbox tests).
+  if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('echo-chamber');
   return true;
 }
 

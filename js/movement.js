@@ -699,6 +699,9 @@ function handleCellEntry(cell) {
           ambianceLine += '\n' + echo.icon + ' ' + echo.text;
           if (typeof seenEchoes !== 'undefined' && seenEchoes && echo.id) {
             seenEchoes.add(echo.id);
+            // Robinet `echo` du Codex : un fragment perçu peut ouvrir/révéler
+            // une entrée (voix des Fondateurs, écho du scellement…).
+            if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('echo-seen');
           }
           // P-D4 : flash de givre quand le passé affleure.
           if (typeof pulseFrostOverlay === 'function') pulseFrostOverlay();

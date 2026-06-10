@@ -258,6 +258,21 @@ function _renderCodexDeep(monster) {
     <div><span class="bestiary-family-tag">${fam.emoji} ${monster.loreFamily} · ${fam.label}</span></div>
     <p class="codex-fam-blurb">${fam.blurb}</p>
     ${note ? `<p class="codex-corruption">${note}</p>` : ''}
+    ${_renderCorruptedVariant(monster)}
+  </div>`;
+}
+
+// Variante corrompue d'une créature-phare (Codex Ch.12 §12.4.8 — états
+// corrupted réservés aux entrées-phares). Révélée seulement en Boucle
+// Ténébreuse profonde (victoire + étage 16+) — « givre dans l'encre ».
+function _renderCorruptedVariant(monster) {
+  if (!monster || !monster.corruptedLore) return '';
+  const inDeepLoop = (typeof victoryAchieved !== 'undefined' && victoryAchieved)
+    && (typeof currentFloor === 'number' && currentFloor >= 16);
+  if (!inDeepLoop) return '';
+  return `<div class="codex-corrupted-variant">
+    <div class="codex-corrupted-title">🌑 Page retournée — la Boucle</div>
+    <p>${monster.corruptedLore}</p>
   </div>`;
 }
 
