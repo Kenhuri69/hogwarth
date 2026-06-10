@@ -122,6 +122,14 @@ seul** global sérialisé (`unlockedCodexEntries`). Zéro dépendance, zéro bui
 > fondation pure testée, trame principale, menu jouable, Lieux & Glossaire,
 > Personnages & Objets + variantes Maison, échos zone D live + états corrompus.
 
+### Polish post-lots — SFX (§VIII)
+- [x] `AudioSystem.playCodexWrite()` (grattés de plume, bruit band-pass) +
+      `playCodexReveal()` (sceau, cloche sine) dans `audio-sfx.js` — procédural,
+      zéro dépendance. Branchés dans `_codexFlushNotifications` (écriture pour
+      les ouvertures, sceau pour les révélations/corruptions ; sceau prioritaire,
+      au plus 1 SFX par vidage, jamais en combat). Bump audio-sfx v13,
+      ui-codex v3, CACHE_VERSION v99.
+
 ## Variables & globals (récap)
 
 | Global | Nouveau ? | Sérialisé | MANIFEST |
