@@ -697,6 +697,7 @@ function completeQuest(index) {
   updateQuestTracker();
   checkLevelUp();
   renderQuestList();
+  if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('quest-complete');
 }
 
 // Consomme les items requis par les étapes "item" de la quête.

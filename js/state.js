@@ -495,6 +495,17 @@ let seenEchoes = new Set();
 // caractéristiques / faiblesses / capacités selon le nombre de victoires).
 let monsterKills = {};
 
+// ── Codex (journal vivant, Chapitre 12) ──────────────────────
+// `unlockedCodexEntries` : ids des entrées NON-créature déjà ouvertes/
+// révélées (mémorise l'instant du déverrouillage pour la notification).
+// Les entrées créature restent dérivées de seenMonsters/monsterKills
+// (pas de double source de vérité). Sérialisé comme seenMonsters.
+// `floorReached` : étage maximum atteint (≥ currentFloor), robinet `floor`
+// du Codex. Robinet `echo` = `seenEchoes` (déjà existant) — pas de global
+// dédié. Cf. .claude/plans/ch12-codex-impl.md.
+let unlockedCodexEntries = new Set();
+let floorReached         = 1;
+
 // ── Anti-exploit ─────────────────────────────────────────────
 // Cases fouillées : Map "x,y" → { at, count }.
 //   at    = valeur de stepCount au moment de la fouille

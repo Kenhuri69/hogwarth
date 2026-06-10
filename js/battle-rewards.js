@@ -230,6 +230,7 @@ function endBattle(won) {
   recolteGoldBonus = false;
   updateUI();
   safeCall('autoSave', won ? 'battle-end' : 'battle-flee');
+  safeCall('checkCodexUnlocks', won ? 'battle-end' : 'battle-flee');
 }
 
 // ── Montée de niveau (synchronisée pour le groupe) ───────────
@@ -272,6 +273,7 @@ function checkLevelUp() {
 
   updateUI();
   safeCall('autoSave', 'level-up');
+  safeCall('checkCodexUnlocks', 'level-up');
 }
 
 // Accumule STAT_POINTS_PER_LEVEL sur le perso. Le joueur dépense les

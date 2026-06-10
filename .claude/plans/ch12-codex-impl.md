@@ -1,14 +1,15 @@
 # Plan — Implémentation Étape 2 du Chapitre 12 (Glossaire & Codex)
 
-**Branche :** `claude/hogwarth-chapter-12-codex-lduabc`
+**Branche :** `claude/codex-impl-ch12-il06a4`
 **Source :** `docs/histoire/12-glossaire-et-codex.md` § ÉTAPE 2
-**Statut :** 📋 plan d'implémentation — **non démarré** (le chapitre est finalisé
-côté narratif ; ce plan cadre le futur dev, à découper en lots et à arbitrer avec
-l'utilisateur avant de coder).
+**Statut :** 🚧 en cours — Lots 1-3 (fondation + trame principale + menu jouable).
 
-> ⚠️ Décisions utilisateur **requises** avant codage : voir « Points à trancher »
-> du chapitre (§12 fin). Notamment : conteneur UI (`#codex-modal` dédié vs
-> `#char-detail`), 8ᵉ onglet Voyageur, profondeur des états corrompus.
+> ✅ Décisions utilisateur **arbitrées** (ne plus redemander) :
+> 1. Conteneur UI : modale **dédiée `#codex-modal`** (jamais `#char-detail`).
+> 2. Pas de 8ᵉ onglet « Voyageur » : les entrées Mondes Parallèles vivent dans
+>    Glossaire/Objets.
+> 3. États `corrupted` : **réservés aux entrées-phares** (Clé de Voûte,
+>    Détraqueur, Ruines, Boucle), pas généralisés.
 
 ## Principe directeur
 
@@ -20,46 +21,46 @@ seul** global sérialisé (`unlockedCodexEntries`). Zéro dépendance, zéro bui
 ## Périmètre — lots (priorisation §VII du chapitre)
 
 ### Lot 1 — Squelette data + évaluateur pur (zéro risque, zéro UI)
-- [ ] Créer `js/codex.js` : registre `CODEX_ENTRIES[]` (format §12.3) + helpers
+- [x] Créer `js/codex.js` : registre `CODEX_ENTRIES[]` (format §12.3) + helpers
       **purs** :
   - `getCodexEntry(id)`
   - `codexEntryState(entry, ctx)` → `'locked'|'veiled'|'revealed'|'corrupted'`
   - `unlockedCodexFor(ctx)` (liste filtrée)
   - `codexVariantNote(entry, chosenHouse, heroKeys)` (note marginale, défensif)
-- [ ] Charger `codex.js` **avant** son UI dans `index.html` (après `riddles.js`,
+- [x] Charger `codex.js` **avant** son UI dans `index.html` (après `riddles.js`,
       avant `ui-*`). Ordre : pur registre comme `quests-templates.js`.
-- [ ] Ajouter `CODEX_ENTRIES` + helpers au **MANIFEST `loader.js`**.
-- [ ] Tests `tests/units.js` : matrice d'états (locked/veiled/revealed/corrupted)
+- [x] Ajouter `CODEX_ENTRIES` + helpers au **MANIFEST `loader.js`**.
+- [x] Tests `tests/units.js` : matrice d'états (locked/veiled/revealed/corrupted)
       sur quelques entrées-types et tous les `type` de condition (§12.5.3).
 - **Vérif** : `node tests/units.js` vert ; aucun global muté ; jeu inchangé.
 
 ### Lot 2 — Entrées trame principale (Histoire & Éclats & Voix)
-- [ ] Rédiger dans `CODEX_ENTRIES` les entrées §12.4 prioritaires :
+- [x] Rédiger dans `CODEX_ENTRIES` les entrées §12.4 prioritaires :
       `cle_de_voute`, `eclat_voute_codex`, `echo_scellement`, `boucle_tenebreuse`,
       `ruines_anciennes`, `froid_surnaturel` (+ voix par Fondateur).
-- [ ] Mapper le robinet Éclat : `revealedBy:[{type:"eclat",value:1|2|3}]` calé sur
+- [x] Mapper le robinet Éclat : `revealedBy:[{type:"eclat",value:1|2|3}]` calé sur
       le **compte de `eclat_voute`** en inventaire (`eclatProgress`).
 - **Vérif** : `codexEntryState` renvoie la bonne version selon le nb d'Éclats
       simulé (unit test).
 
 ### Lot 3 — Menu Codex + onglet Bestiaire embarqué + déverrouillage live
-- [ ] `state.js` : `unlockedCodexEntries = new Set()` (sérialisé `_serializeState`
+- [x] `state.js` : `unlockedCodexEntries = new Set()` (sérialisé `_serializeState`
       / `_applyState`, migration = Set vide si absent) + `floorReached` (max
-      d'étage atteint, sérialisé) + `temporalEchoSeen = new Set()`.
-      → ajouter au **MANIFEST loader**.
-- [ ] `js/ui-codex.js` (nouveau, après `ui-bestiary.js`) : `openCodex()`,
+      d'étage atteint, sérialisé). **`temporalEchoSeen` → réutilise `seenEchoes`**
+      existant (voir « Écarts »). → ajouté au **MANIFEST loader**.
+- [x] `js/ui-codex.js` (nouveau, après `ui-bestiary.js`) : `openCodex()`,
       `filterCodex()`, `showCodexEntry(id)`. **Réutilise** l'archi
       `ui-bestiary.js` (grille + fiche). Onglet Bestiaire = `openBestiary()`
       existant embarqué (pas de réécriture).
-- [ ] `#codex-modal` dans `index.html` (modale dédiée — **pas** `#char-detail`,
+- [x] `#codex-modal` dans `index.html` (modale dédiée — **pas** `#char-detail`,
       garde-fou CLAUDE.md), bouton 📖 dans la barre de commandes.
-- [ ] `checkCodexUnlocks(reason)` : réévalue, diffe vs `unlockedCodexEntries`,
+- [x] `checkCodexUnlocks(reason)` : réévalue, diffe vs `unlockedCodexEntries`,
       notifie les nouveautés. Branché aux **points `autoSave`** (fin combat,
       level-up, changement d'étage, quête complétée, Éclat ramassé, stèle résolue).
       Défensif (`typeof` garde).
-- [ ] Notifications : toast « 📖 Codex — nouvelle entrée » / « ✨ Codex révélé »
+- [x] Notifications : toast « 📖 Codex — nouvelle entrée » / « ✨ Codex révélé »
       (file d'attente, jamais en plein combat — modèle level-up).
-- [ ] CSS `css/codex.css` : parchemin (4 fonds par Acte, placeholder dégradé +
+- [x] CSS `css/codex.css` : parchemin (4 fonds par Acte, placeholder dégradé +
       filtre), états (grisé/voilé/révélé/corrompu), responsive (96vw, accordéon
       par section comme la fiche perso).
 - **Vérif** : scénario `tests/smoke.js` dédié (`scenarioCodexOpen`,
@@ -129,4 +130,27 @@ seul** global sérialisé (`unlockedCodexEntries`). Zéro dépendance, zéro bui
 
 ## Écarts constatés
 
-- (aucun — implémentation non démarrée)
+- **`temporalEchoSeen` → réutilise `seenEchoes` (existant).** Depuis la
+  rédaction du plan, le système d'échos temporels zone D a été livré
+  (`floor-ambiance.js — TEMPORAL_ECHOES`, `state.js — seenEchoes` Set sérialisé,
+  onglet « Mémoire des Ruines » dans `ui-bestiary.js`). Créer un nouveau global
+  `temporalEchoSeen` ferait **double source de vérité** (interdit CLAUDE.md). Le
+  robinet `echo` du Codex lit donc `seenEchoes` (ctx.echoSeen) — **aucun nouveau
+  global échos**. Seuls `unlockedCodexEntries` (Set) et `floorReached` (int) sont
+  ajoutés.
+- **`riddle` (robinet stèle) : pas de global dédié.** Pas de `riddlesSolved`
+  persistant dans l'existant. `codexEntryState` lit `ctx.riddlesSolved` (Set,
+  testé purement) ; `buildCodexContext` le dérive au mieux de `runeStele.solved`
+  (best-effort, défensif). Aucune entrée Lot 1-3 ne dépend strictement de
+  `riddle`, donc pas de nouveau global requis ici.
+
+## Journal d'implémentation
+
+- **Lot 1** (fondation pure) : `js/codex.js` créé (registre + 4 helpers purs),
+  chargé après `riddles.js`, ajouté au MANIFEST, couvert par `tests/units.js`
+  (matrice d'états sur tous les types de condition). ✅
+- **Lot 2** (trame principale) : entrées §12.4 prioritaires rédigées dans
+  `CODEX_ENTRIES` + robinet Éclat (`eclatProgress`). ✅
+- **Lot 3** (menu jouable) : globals `state.js` + `ui-codex.js` + `#codex-modal`
+  + bouton 📖 + `css/codex.css` + `checkCodexUnlocks` branché aux hooks autoSave
+  + scénarios smoke. ✅

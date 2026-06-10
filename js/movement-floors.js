@@ -240,6 +240,7 @@ function _changeFloor(delta, opts) {
       loadHostSealsForCurrentFloor();
     }
     safeCall('autoSave', opts.saveReason);
+    safeCall('checkCodexUnlocks', opts.saveReason);
   });
   setNarrative(opts.narrative(currentFloor));
 }

@@ -15,6 +15,8 @@ function _serializeState() {
     dungeon, visited, enemyMap, itemMap,
     seenMonsters:  Array.from(seenMonsters),
     seenEchoes:    Array.from(seenEchoes),
+    unlockedCodexEntries: Array.from(unlockedCodexEntries),
+    floorReached,
     // NB : les préférences audio (son/voix) ne sont volontairement PAS
     // sérialisées ici — ce sont des réglages d'interface globaux
     // (AudioSystem._PREFS_KEY), pas de l'état de partie.
@@ -215,6 +217,12 @@ function _applyState(gs) {
   if (gs.partySize)     partySize    = gs.partySize;
   if (gs.seenMonsters)  seenMonsters = new Set(gs.seenMonsters);
   seenEchoes = new Set(gs.seenEchoes || []);
+  // Codex (Chapitre 12) : saves antérieures → Set vide / étage courant.
+  // `currentFloor` runtime n'est pas encore réassigné ici → on lit gs.
+  unlockedCodexEntries = new Set(gs.unlockedCodexEntries || []);
+  floorReached = (typeof gs.floorReached === 'number')
+    ? Math.max(gs.floorReached, gs.currentFloor || 1)
+    : (gs.currentFloor || 1);
 
   // Les préférences audio (son / voix) sont des réglages d'INTERFACE,
   // globaux et persistés à part (AudioSystem._PREFS_KEY). Charger une
