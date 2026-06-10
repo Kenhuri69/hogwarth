@@ -775,6 +775,17 @@ let headlessHuntMember = false;
 // _applyState. Cf. .claude/plans/deathly-hallows-easter-egg.md.
 let maitreDeLaMort = false;
 
+// « Briser le Cycle » (V3, Chapitre 11 §11.10) — fin optionnelle NON-GATING de
+// la Boucle Ténébreuse. `cycleBroken` passe à true au choix « Briser » (jalon IV),
+// une fois les 3 jalons remplis (voir la scène du Scellement, porter
+// BRISER_ECLAT_SEUIL Éclats, vaincre le boss-miroir « Le Reflet du Mythe »).
+// SEUL état persistant ajouté : la progression des jalons est DÉRIVÉE
+// (seenEchoes / accumulatedEclats / monsterKills) via briserCycleJalons().
+// Cosmétique (badge fiche perso + Codex `cycle_brise`) ; la Boucle reste
+// accessible après. Réinitialisé par startGame, persisté via _serializeState /
+// _applyState. Cf. js/break-cycle.js + .claude/plans/chapter-11-dark-loop.md.
+let cycleBroken = false;
+
 // Quêtes Signature de Maison — flag posé à la remise de la signature
 // (completeQuest). Un seul actif par partie (gate `chosenHouse` + étage).
 // Levier one-shot lu avant le combat final (voldemort_revenu). Réinitialisé

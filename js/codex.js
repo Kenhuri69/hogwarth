@@ -32,6 +32,7 @@
 //   house   → ctx.chosenHouse === value          (variantes / gating)
 //   victory → ctx.victoryAchieved === true       (Boucle Ténébreuse)
 //   eclatLoop → ctx.accumulatedEclats >= value   (Porteur d'Éclats — V1, ch.11)
+//   cycleBroken → ctx.cycleBroken === true        (« Briser le Cycle » — V3, ch.11)
 // ============================================================
 
 const CODEX_ENTRIES = [
@@ -169,6 +170,32 @@ const CODEX_ENTRIES = [
       veiled: "Tu as vaincu Voldemort. L'escalier le plus profond, scellé par la peur, s'ouvre enfin — et le château recommence, corrompu.",
       revealed: "Voici le revers que nul manuel n'osait écrire : refermer la serrure du haut a ouvert celle du bas. Voldemort n'était que la dernière dent du verrou ; en l'arrachant, tu as exposé ce que les Fondateurs tenaient vraiment clos. La victoire n'est pas une fin : c'est la permission de descendre là où le mythe n'osait pas regarder. Tu es devenu légende — et la légende attire le plus profond.",
       corrupted: "La Boucle ne recommence pas : elle s'enfonce. Chaque tour du château gratte une couche de plus du mensonge tendre, et sous l'école il n'y a bientôt plus d'école — seulement la pierre qui a cessé de distinguer jadis de maintenant.",
+    },
+  },
+  {
+    id: 'briser_cycle', category: 'eclats', icon: '🗝️', act: 4,
+    title: 'Briser le Cycle',
+    links: ['boucle_tenebreuse', 'porteur_eclats', 'cycle_brise', 'echo_scellement'],
+    unlockConditions: [{ type: 'victory' }],
+    revealedBy: [
+      { type: 'echo', value: 'echo_scene_sceau' },
+      { type: 'eclatLoop', value: 15 },
+      { type: 'monster', value: 'reflet_mythe', kills: 1 },
+    ],
+    textVersions: {
+      veiled: "Une rumeur sans manuel : il existerait, pour le Porteur d'Éclats qui descend assez loin, écoute assez de voix et porte assez de fragments, une autre issue que descendre toujours. Trois conditions la précèdent — entendre, porter, affronter — avant un dernier choix.",
+      revealed: "Tu les as réunies, les trois clés du chemin que nul n'osa écrire : tu as VU comment le sceau fut posé (à quatre, chacun avec sa faute) ; tu as PORTÉ assez d'Éclats pour peser sur la faille ; tu as AFFRONTÉ ton propre mythe retourné, le Reflet, au sommet de l'Avant-Monde. Reste le quatrième pas, qui n'appartient qu'à toi : choisir. Refermer la faille par le bas — ou perpétuer la spirale, et rester une légende sans fin.",
+    },
+  },
+  {
+    id: 'cycle_brise', category: 'histoire', icon: '🕊️', act: 4,
+    title: 'Le Cycle Brisé',
+    links: ['briser_cycle', 'boucle_tenebreuse', 'cle_de_voute'],
+    unlockConditions: [{ type: 'cycleBroken' }],
+    revealedBy: [{ type: 'cycleBroken' }],
+    textVersions: {
+      veiled: "Tu as brisé le Cycle.",
+      revealed: "Tu n'as pas fui la peur vers le haut : tu es descendu jusqu'à elle et tu l'as rescellée par le bas, en y laissant — comme les Quatre — une part de toi. La victoire sur Voldemort fermait la serrure du haut ; ce geste-ci ferme celle du bas. Le mythe ne meurt pas pour autant : la Boucle reste ouverte à qui veut redescendre. Mais toi, désormais, tu sais ce qu'il y a au fond — et qu'on peut le regarder sans se perdre.",
     },
   },
 
@@ -443,6 +470,8 @@ function _codexCondMet(cond, ctx) {
       return ctx.victoryAchieved === true;
     case 'eclatLoop':
       return typeof ctx.accumulatedEclats === 'number' && ctx.accumulatedEclats >= cond.value;
+    case 'cycleBroken':
+      return ctx.cycleBroken === true;
     default:
       return false;
   }

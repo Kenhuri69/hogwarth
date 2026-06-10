@@ -97,6 +97,7 @@ function _serializeState() {
     hiverClair,
     headlessHuntMember,
     maitreDeLaMort,
+    cycleBroken,
     gryffSignatureDone,
     slythSignatureDone,
     ravenSignatureDone,
@@ -354,6 +355,8 @@ function _applyState(gs) {
   if (typeof headlessHuntMember !== 'undefined') headlessHuntMember = !!gs.headlessHuntMember;
   // Easter egg Reliques de la Mort : saves antérieures → false.
   if (typeof maitreDeLaMort !== 'undefined') maitreDeLaMort = !!gs.maitreDeLaMort;
+  // « Briser le Cycle » (V3) : saves antérieures → false.
+  if (typeof cycleBroken !== 'undefined') cycleBroken = !!gs.cycleBroken;
   // Quêtes Signature de Maison : saves antérieures → false/null.
   if (typeof gryffSignatureDone !== 'undefined') gryffSignatureDone = !!gs.gryffSignatureDone;
   if (typeof slythSignatureDone !== 'undefined') slythSignatureDone = !!gs.slythSignatureDone;

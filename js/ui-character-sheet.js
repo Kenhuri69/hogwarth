@@ -378,6 +378,8 @@ function openCharacter(charIdx = 0) {
           ? _renderStatLine('img/icons/xp.png', '🌀 Boucle ' + loopNumber(floorReached),
               '🔹 ' + ((typeof accumulatedEclats !== 'undefined') ? accumulatedEclats : 0) + ' Éclats', true)
           : ''}
+        ${(typeof cycleBroken !== 'undefined' && cycleBroken)
+          ? _renderStatLine('img/icons/xp.png', '🕊️ Cycle Brisé', 'La faille rescellée', true) : ''}
       </div>
 
       <!-- Équipement (grid-area:equip) -->

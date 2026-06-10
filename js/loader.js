@@ -267,10 +267,15 @@ window.UX_safe = new Proxy({}, {
     // ── Endgame (écran de victoire + boucle Ténébreuse) ──
     { name: 'victoryAchieved',    source: 'state.js',        kind: 'obj' },
     { name: 'accumulatedEclats',  source: 'state.js',        kind: 'obj' },
+    { name: 'cycleBroken',        source: 'state.js',        kind: 'obj' },
     { name: 'checkVictoryTrigger',source: 'endgame.js',      kind: 'fn'  },
     { name: 'showVictoryScreen',  source: 'endgame.js',      kind: 'fn'  },
     { name: 'closeVictoryScreen', source: 'endgame.js',      kind: 'fn'  },
     { name: 'returnToMenuFromVictory', source: 'endgame.js', kind: 'fn'  },
+    // « Briser le Cycle » (V3 — fin optionnelle de la Boucle)
+    { name: 'briserCycleJalons',  source: 'break-cycle.js',  kind: 'fn'  },
+    { name: 'maybeOfferBreakCycle', source: 'break-cycle.js', kind: 'fn' },
+    { name: 'openBreakCycleModal', source: 'break-cycle.js', kind: 'fn'  },
 
     // ── Don à la Maison (gold-sink post-tier 17) ──
     { name: 'donateGoldToHouse',       source: 'house-donation.js', kind: 'fn'  },
