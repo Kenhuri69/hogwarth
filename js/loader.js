@@ -114,6 +114,8 @@ window.UX_safe = new Proxy({}, {
     { name: 'FOUNDER_CHAMBERS',  source: 'floor-ambiance.js', kind: 'obj' },
     { name: 'getFounderChamberBeat',  source: 'floor-ambiance.js', kind: 'fn' },
     { name: 'maybeFounderChamberBeat', source: 'floor-ambiance.js', kind: 'fn' },
+    { name: 'getSignatureEchoBeat',   source: 'floor-ambiance.js', kind: 'fn' },
+    { name: 'maybeSignatureEchoBeat', source: 'floor-ambiance.js', kind: 'fn' },
     { name: 'FLOOR_EVENTS',       source: 'floor-events.js',  kind: 'obj' },
     { name: 'rollFloorEvent',     source: 'floor-events.js', kind: 'fn'  },
     { name: 'maybeRoomFlavor',    source: 'room-flavor.js',  kind: 'fn',  optional: true },

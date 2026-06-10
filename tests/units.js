@@ -121,6 +121,18 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('13 héros : 4 événements de base couverts', allHaveBase);
   check('registre = 13 héros', Object.keys(HERO_BARKS).length === 13);
 
+  // V2 (ch.11 §11.8.2) — événement `darkLoop` (voix au franchissement de Boucle).
+  let allHaveDarkLoop = true;
+  for (const k of Object.keys(HERO_BARKS)) {
+    if (!Array.isArray(HERO_BARKS[k].darkLoop) || !HERO_BARKS[k].darkLoop.length) allHaveDarkLoop = false;
+  }
+  check('13 héros : événement darkLoop couvert', allHaveDarkLoop);
+  check('bark harry/darkLoop non vide', typeof pickHeroBark('harry', 'darkLoop', { rng: rng0 }) === 'string');
+  // La tension de Maison s'applique aussi à darkLoop (canon ≠ chosenHouse).
+  const dlTens = pickHeroBark('harry', 'darkLoop',
+    { rng: rng0, canonHouse: 'Gryffondor', chosenHouse: 'Serpentard' });
+  check('darkLoop : tension préférée (harry/Serpentard)', dlTens.includes('raccourci'));
+
   // L8 — beats de trame scénarisés rattachés au bon héros (05 §5.4.2).
   check('celeste.fountainCold présent',
     Array.isArray(HERO_BARKS.celeste.fountainCold) && HERO_BARKS.celeste.fountainCold.length > 0);
@@ -595,6 +607,93 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 6bis. floor-ambiance.js — Écho de signature en Boucle (V2, ch.11 §11.8)
+//    getSignatureEchoBeat (pur) + maybeSignatureEchoBeat (one-shot)
+// ============================================================
+(function testSignatureEcho() {
+  // ── Résolveur pur (pas de dépendance externe) ──
+  const pure = loadModule(
+    'js/floor-ambiance.js',
+    ['SIGNATURE_ECHOES', 'SIGNATURE_FLOOR', 'getSignatureEchoBeat']);
+  const { SIGNATURE_ECHOES, SIGNATURE_FLOOR, getSignatureEchoBeat } = pure;
+
+  check('SIGNATURE_FLOOR = 14', SIGNATURE_FLOOR === 14);
+  // Registre : 4 Maisons, chacune avec echoId + variantes done/undone.
+  const HOUSES = ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'];
+  check('SIGNATURE_ECHOES = 4 Maisons', Object.keys(SIGNATURE_ECHOES).length === 4);
+  for (const h of HOUSES) {
+    const s = SIGNATURE_ECHOES[h];
+    check(`${h} : echoId = echo_signature`, s && s.echoId === 'echo_signature');
+    check(`${h} : variante undone (narrative+toast)`,
+      s && s.undone && typeof s.undone.narrative === 'string' && typeof s.undone.toast === 'string');
+  }
+  // Serpentard distingue pacte / défi ; les autres ont `done`.
+  check('Serpentard : donePact + doneDefiance',
+    !!(SIGNATURE_ECHOES.Serpentard.donePact && SIGNATURE_ECHOES.Serpentard.doneDefiance));
+  for (const h of ['Gryffondor', 'Serdaigle', 'Poufsouffle']) {
+    check(`${h} : variante done`, !!(SIGNATURE_ECHOES[h].done));
+  }
+
+  // Gate d'étage strict (14 seulement) + Maison requise.
+  check('getSignatureEchoBeat(13) = null', getSignatureEchoBeat(13, 'Gryffondor', true, null) === null);
+  check('getSignatureEchoBeat(17) = null', getSignatureEchoBeat(17, 'Gryffondor', true, null) === null);
+  check('getSignatureEchoBeat(99) = null', getSignatureEchoBeat(99, 'Gryffondor', true, null) === null);
+  check('getSignatureEchoBeat sans Maison = null', getSignatureEchoBeat(14, null, true, null) === null);
+  check('getSignatureEchoBeat Maison inconnue = null', getSignatureEchoBeat(14, 'Durmstrang', true, null) === null);
+
+  // Variantes done / undone distinctes par Maison.
+  for (const h of HOUSES) {
+    const done   = getSignatureEchoBeat(14, h, true, h === 'Serpentard' ? 'defiance' : null);
+    const undone = getSignatureEchoBeat(14, h, false, null);
+    check(`${h} : beat done renvoie narrative/toast/echoId`,
+      done && done.narrative && done.toast && done.echoId === 'echo_signature');
+    check(`${h} : done ≠ undone (narrative)`, done.narrative !== undone.narrative);
+    check(`${h} : done ≠ undone (toast)`,     done.toast !== undone.toast);
+  }
+  // Serpentard : pacte ≠ défi (selon slythPactChoice).
+  const sPact = getSignatureEchoBeat(14, 'Serpentard', true, 'pact');
+  const sDef  = getSignatureEchoBeat(14, 'Serpentard', true, 'defiance');
+  check('Serpentard : pacte ≠ défi', sPact.narrative !== sDef.narrative);
+  check('Serpentard : défi par défaut (pactChoice null)',
+    getSignatureEchoBeat(14, 'Serpentard', true, null).narrative === sDef.narrative);
+
+  // ── Orchestrateur one-shot : globals injectés + stubs d'affichage ──
+  const seen = new Set();
+  const ech  = new Set();
+  let narr = 0, toast = 0;
+  const orch = loadModule(
+    'js/floor-ambiance.js',
+    ['maybeSignatureEchoBeat'],
+    {
+      chosenHouse: 'Gryffondor',
+      gryffSignatureDone: true,
+      slythPactChoice: null,
+      seenScriptedBeat: seen,
+      seenEchoes: ech,
+      setNarrative: () => { narr++; },
+      addMsg: () => { toast++; },
+    });
+  const { maybeSignatureEchoBeat } = orch;
+  // 1re entrée étage 14 → joue, déverrouille l'écho, sentinelle posée.
+  check('signature(14) 1re fois = true', maybeSignatureEchoBeat(14) === true);
+  check('sentinelle signature_echo posée', seen.has('signature_echo'));
+  check('écho echo_signature déverrouillé', ech.has('echo_signature'));
+  check('signature narrative + toast 1×', narr === 1 && toast === 1);
+  // Idempotent : 2e entrée → no-op.
+  check('signature(14) 2e fois = false', maybeSignatureEchoBeat(14) === false);
+  check('signature pas de double affichage', narr === 1 && toast === 1);
+  // Hors étage 14 → false.
+  check('signature(13) = false', maybeSignatureEchoBeat(13) === false);
+  // Défensif : sans Maison → no-op.
+  const orch2 = loadModule(
+    'js/floor-ambiance.js',
+    ['maybeSignatureEchoBeat'],
+    { chosenHouse: null, seenScriptedBeat: new Set(), seenEchoes: new Set(),
+      setNarrative: () => {}, addMsg: () => {} });
+  check('signature(14) sans Maison = false', orch2.maybeSignatureEchoBeat(14) === false);
+})();
+
+// ============================================================
 // 7. renderer-entities.js — _npcApproachProx (M1, réaction d'approche PNJ)
 // ============================================================
 (function testNpcApproachProx() {
@@ -712,6 +811,14 @@ function loadModule(relPath, exportNames, globals = {}) {
   // Le robinet eclatLoop ne se déclenche jamais sans victoire (unlock victory).
   check('porteur: 99 éclats sans victoire → locked',
     codexEntryState(pe, { ...empty, accumulatedEclats: 99 }) === 'locked');
+
+  // ── V2 (ch.11 §11.8) — Écho de signature (victory → echo reveal) ──
+  const es = getCodexEntry('echo_signature');
+  check('echo_signature présent (eclats)', !!es && es.category === 'eclats');
+  check('echo_signature: pré-victoire → locked', codexEntryState(es, { ...empty }) === 'locked');
+  check('echo_signature: victoire → veiled', codexEntryState(es, { ...empty, victoryAchieved: true }) === 'veiled');
+  check('echo_signature: écho vu → revealed',
+    codexEntryState(es, { ...empty, victoryAchieved: true, echoSeen: new Set(['echo_signature']) }) === 'revealed');
 
   // ── monster : type bestiaire (couverture évaluateur, sans/avec kills) ──
   const monsterEntry = {

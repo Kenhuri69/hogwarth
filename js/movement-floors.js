@@ -207,6 +207,16 @@ function _maybeAdvanceDarkLoop(prevFloor, nextFloor) {
     const e = (typeof accumulatedEclats !== 'undefined') ? accumulatedEclats : 0;
     addMsg(`🌀 Boucle ${ln} — la spirale s'enfonce. Tu portes ${e} Éclat${e > 1 ? 's' : ''}.`, 'magic');
   }
+  // Voix du héros au franchissement de boucle (V2 — ch.11 §11.8.2). Cosmétique
+  // et défensif : la tension `houseTension` (Maison canon ≠ chosenHouse) colore
+  // automatiquement la réplique. One-shot par niveau de Boucle.
+  if (typeof heroBark === 'function' && typeof party !== 'undefined') {
+    const n = (typeof partySize === 'number') ? partySize : party.length;
+    const speaker = party.slice(0, n).find(c => c && c.hp > 0) || party[0];
+    if (speaker && speaker.heroKey) {
+      heroBark(speaker.heroKey, 'darkLoop', { channel: 'explore', once: 'darkloop:' + ln });
+    }
+  }
 }
 
 // Toast d'événement d'étage (Phase 4) — affiché à l'entrée d'un étage
@@ -261,6 +271,9 @@ function _changeFloor(delta, opts) {
     // Étage-scène « Chambre des Fondateurs » (P5) : au seuil du Cœur runique
     // (étage 17), la Chambre de la Maison du héros s'illumine. One-shot.
     if (typeof maybeFounderChamberBeat === 'function') maybeFounderChamberBeat(currentFloor);
+    // Écho de signature en Boucle (V2) : à l'entrée des Ruines (étage 14), la
+    // quête signature accomplie/laissée revient, déchirée. House-aware, one-shot.
+    if (typeof maybeSignatureEchoBeat === 'function') maybeSignatureEchoBeat(currentFloor);
     AudioSystem.playAmbientMusic(currentFloor);
     if (typeof checkFloorQuests === 'function') checkFloorQuests(currentFloor);
     // Mondes parallèles — si une visite est active côté host, reposter

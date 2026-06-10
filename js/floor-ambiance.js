@@ -468,6 +468,120 @@ function maybeFounderChamberBeat(floor) {
   return true;
 }
 
+// ── Écho de signature en Boucle (V2 — ch.11 §11.8.1 / §11.8.3) ──────────
+// À l'entrée des Ruines Anciennes (étage 14, début de la Boucle 2), la quête
+// signature accomplie dans les Actes I-III REVIENT, déchirée/altérée. Selon que
+// la signature de la Maison du héros a été remise (`<house>SignatureDone`) ou
+// laissée en plan, le beat joue une variante « aboutissement emporté » (braise
+// qui tient / pacte prolongé / codex ténébreux / refuge rétabli) ou « dette
+// narrative » (Bannière éteinte / pacte muet / page illisible / abri vide).
+// Serpentard distingue en plus le pacte scellé du défi (`slythPactChoice`).
+// Pur affichage textuel, one-shot, AUCUNE incidence sur la génération — même
+// patron que maybeFounderChamberBeat. V2 reste cosmétique (§11.11.2) : la
+// version « mini-quête de Boucle » (spawns/récompenses) est différée.
+const SIGNATURE_FLOOR = 14;
+const _SIGNATURE_SEEN_KEY = 'signature_echo';
+const SIGNATURE_ECHOES = {
+  Gryffondor: {
+    flag: 'gryffSignatureDone', echoId: 'echo_signature', emoji: '🦁',
+    done: {
+      narrative: "Plus bas dans les Ruines, l'Étendard de Godric revient — déchiré, noirci, planté de travers dans la roche-mère. Mais sous la cendre, une braise tient encore : la Bannière que tu as rallumée jadis refuse de s'éteindre, même ici. Le courage que tu as prouvé descend avec toi.",
+      toast: "🦁 L'Étendard de Godric — déchiré, mais la braise tient.",
+    },
+    undone: {
+      narrative: "Plus bas dans les Ruines, une hampe nue se dresse dans la roche-mère : l'Étendard de Godric, jamais rallumé. La Bannière pend, déchirée, éteinte. Tu descends avec une dette — le brasier que tu n'as pas ravivé manque, ici, plus que partout ailleurs.",
+      toast: "🦁 L'Étendard reste éteint — tu descends avec une dette.",
+    },
+  },
+  Serpentard: {
+    flag: 'slythSignatureDone', echoId: 'echo_signature', emoji: '🐍',
+    donePact: {
+      narrative: "Dans un couloir descellé, l'écho du Pacte des Cachots t'attend pour une dernière passation. Le serpent reconnaît le pacte que tu as scellé : les serrures cèdent seules devant toi, et une voix basse murmure que tout gain, ici encore, garde son ombre.",
+      toast: "🐍 Le Pacte des Cachots — une dernière passation t'est offerte.",
+    },
+    doneDefiance: {
+      narrative: "Dans un couloir descellé, l'écho du Pacte des Cachots revient — mais tu l'as refusé, jadis. Le serpent te laisse passer quand même, presque amusé : on n'a pas besoin d'un pacte pour descendre, seulement du cran de regarder ce qu'on refuse.",
+      toast: "🐍 Le Pacte refusé — le serpent te laisse passer, amusé.",
+    },
+    undone: {
+      narrative: "Dans un couloir qui reste clos, l'écho du Pacte des Cachots t'ignore : tu n'as jamais scellé, ni refusé. Les serrures restent muettes, le passage gris ne s'ouvre pas. Une affaire laissée inachevée pèse plus bas qu'en haut.",
+      toast: "🐍 Le Pacte inachevé — les serrures restent muettes.",
+    },
+  },
+  Serdaigle: {
+    flag: 'ravenSignatureDone', echoId: 'echo_signature', emoji: '🦅',
+    done: {
+      narrative: "Sur un pan de roche, le Codex de Rowena que tu as reconstitué gagne ici ses pages ténébreuses : les glyphes se prolongent d'eux-mêmes, plus bas, plus sombres, vers une énigme que les Ruines n'avaient jamais laissé lire. Comprendre, c'est descendre — et tu sais déjà lire.",
+      toast: "🦅 Le Codex de Rowena gagne ses pages ténébreuses.",
+    },
+    undone: {
+      narrative: "Sur un pan de roche, des glyphes s'enchaînent vers une page que tu ne peux pas lire : le Codex de Rowena, jamais reconstitué, te laisse aveugle au seuil de sa vérité ténébreuse. Le savoir manquant est une porte close de plus.",
+      toast: "🦅 Le Codex amputé — la page ténébreuse reste illisible.",
+    },
+  },
+  Poufsouffle: {
+    flag: 'poufSignatureDone', echoId: 'echo_signature', emoji: '🦡',
+    done: {
+      narrative: "Entre deux racines géantes, l'écho du Refuge revient — précaire, menacé par le gel, mais tu sais le rétablir : les présences que tu n'as pas laissées derrière jadis veillent encore, une alcôve tiède se rouvre. On ne descend pas seul quand on a appris à ne pas abandonner.",
+      toast: "🦡 Le Refuge à rétablir — ceux que tu n'as pas laissés veillent.",
+    },
+    undone: {
+      narrative: "Entre deux racines géantes, un Refuge vide exhale un froid hostile : tu n'as veillé personne, jadis, et nul ne veille ici. L'alcôve reste close, l'abri jamais creusé. Descendre sans avoir tenu la main de quiconque pèse, plus bas, comme une absence.",
+      toast: "🦡 Le Refuge vide — tu descends sans personne derrière toi.",
+    },
+  },
+};
+
+// Lecture défensive du flag de signature par Maison (globals `let`, scope
+// déclaratif → pas indexables par nom sur window). Injectables en sandbox tests.
+function _signatureDoneFor(house) {
+  switch (house) {
+    case 'Gryffondor':  return (typeof gryffSignatureDone !== 'undefined') && !!gryffSignatureDone;
+    case 'Serpentard':  return (typeof slythSignatureDone !== 'undefined') && !!slythSignatureDone;
+    case 'Serdaigle':   return (typeof ravenSignatureDone !== 'undefined') && !!ravenSignatureDone;
+    case 'Poufsouffle': return (typeof poufSignatureDone !== 'undefined') && !!poufSignatureDone;
+    default: return false;
+  }
+}
+
+// Résolveur PUR : beat d'écho de signature à l'étage 14 pour la Maison du héros,
+// variante selon `signatureDone` (+ `pactChoice` pour Serpentard), sinon null.
+function getSignatureEchoBeat(floor, chosenHouse, signatureDone, pactChoice) {
+  if (floor !== SIGNATURE_FLOOR) return null;
+  if (!chosenHouse) return null;
+  const sig = SIGNATURE_ECHOES[chosenHouse];
+  if (!sig) return null;
+  let variant;
+  if (chosenHouse === 'Serpentard' && signatureDone) {
+    variant = (pactChoice === 'pact') ? sig.donePact : sig.doneDefiance;
+  } else if (signatureDone) {
+    variant = sig.done;
+  } else {
+    variant = sig.undone;
+  }
+  return { narrative: variant.narrative, toast: variant.toast, echoId: sig.echoId, emoji: sig.emoji };
+}
+
+// Orchestrateur one-shot : joue l'écho de signature à la 1re entrée de l'étage 14.
+// Sentinelle string dédiée dans seenScriptedBeat (distincte des clés int 1/4/8
+// et de 'founder_chamber'). Déverrouille l'écho `echo_signature` (codex).
+// No-op silencieux si l'état/les helpers manquent (file://).
+function maybeSignatureEchoBeat(floor) {
+  const hero = (typeof chosenHouse !== 'undefined') ? chosenHouse : null;
+  const done = _signatureDoneFor(hero);
+  const pact = (typeof slythPactChoice !== 'undefined') ? slythPactChoice : null;
+  const beat = getSignatureEchoBeat(floor, hero, done, pact);
+  if (!beat) return false;
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return false;
+  if (seenScriptedBeat.has(_SIGNATURE_SEEN_KEY)) return false;
+  seenScriptedBeat.add(_SIGNATURE_SEEN_KEY);
+  if (typeof setNarrative === 'function') setNarrative(beat.narrative);
+  if (typeof addMsg === 'function') addMsg('📜 ' + beat.toast, 'narrative');
+  if (typeof seenEchoes !== 'undefined' && seenEchoes && beat.echoId) seenEchoes.add(beat.echoId);
+  if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('echo-signature');
+  return true;
+}
+
 // ── Application de la corruption (overlay givre) ─────────────
 // Appelée à chaque changement d'étage. Règle l'opacité de #frost-overlay.
 // Défensif : no-op si l'élément manque (file:// smoke, DOM absent).

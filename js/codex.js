@@ -132,6 +132,17 @@ const CODEX_ENTRIES = [
       corrupted: "Les Éclats que tu portes ne pèsent plus dans tes mains : ils pèsent dans le lieu. La pierre te reconnaît à leur nombre, comme si tu en étais devenu un toi-même — une couture de plus dans un réel qui a cessé de distinguer celui qui porte de ce qui est porté.",
     },
   },
+  {
+    id: 'echo_signature', category: 'eclats', icon: '🪧', act: 4,
+    title: "L'Écho de ta Signature",
+    links: ['boucle_tenebreuse', 'porteur_eclats'],
+    unlockConditions: [{ type: 'victory' }],
+    revealedBy: [{ type: 'echo', value: 'echo_signature' }],
+    textVersions: {
+      veiled: "En Boucle, ce que tu as accompli — ou laissé inachevé — dans ta Maison revient, déchiré, planté dans la roche-mère. La spirale ne corrompt pas seulement les lieux : elle rejoue tes propres choix, altérés.",
+      revealed: "Ta signature te précède jusqu'au fond. L'avoir bouclée, c'est emporter son aboutissement dans la spirale — une braise qui tient, un pacte qui se prolonge, un codex qui s'écrit, un refuge qui se rouvre. L'avoir laissée en plan, c'est descendre avec une dette : la Bannière reste éteinte, le pacte muet, la page illisible, l'abri vide. La Boucle n'invente pas ce poids — elle te le rend.",
+    },
+  },
 
   // ── 📖 Glossaire ────────────────────────────────────────────
   {
