@@ -2167,4 +2167,44 @@ async function scenarioMonsterDiscovery() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };
+// Reliquat UX : les badges de buff de stat / Résistance s'affichent en PNG
+// (STATUS_ICON_REGISTRY) et non plus en emoji. Cf. .claude/plans/combat-buff-badges.md
+async function scenarioBuffBadgesPng() {
+  console.log('\n── Scénario : badges de buff/résistance en PNG ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 50 });
+
+  const r = await page.evaluate(() => {
+    const c = party[0];
+    c.statusEffects = [];
+    // Un buff par PNG distinct + la Résistance.
+    applyStatus(c, 'buff_atk', 3, 4);
+    applyStatus(c, 'buff_lck', 2, 4);
+    applyStatus(c, 'resist_buff', 20, 3);
+    updateUI();
+    const slot = document.getElementById('status-slot-0');
+    const read = (key) => {
+      const pill = slot ? slot.querySelector(`.status-pill[data-key="${key}"]`) : null;
+      const img  = pill ? pill.querySelector('img') : null;
+      return {
+        exists:  !!pill,
+        imgSrc:  img ? img.getAttribute('src') : null,
+        // Plus aucun emoji brut résiduel dans le badge.
+        hasEmoji: pill ? /💪|🍀|🛡️|🔮|💨/.test(pill.textContent || '') : false
+      };
+    };
+    return { atk: read('buff_atk'), lck: read('buff_lck'), res: read('resist_buff') };
+  });
+  console.log('  badges:', r);
+  assert(r.atk.exists && /atk\.png/.test(r.atk.imgSrc || ''),    'buff_atk doit afficher atk.png');
+  assert(r.lck.exists && /xp\.png/.test(r.lck.imgSrc || ''),     'buff_lck doit afficher xp.png');
+  assert(r.res.exists && /resist\.png/.test(r.res.imgSrc || ''), 'resist_buff doit afficher resist.png');
+  assert(!r.atk.hasEmoji && !r.lck.hasEmoji && !r.res.hasEmoji,  'un badge buff/résistance affiche encore un emoji');
+
+  if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS (buff badges PNG)'); }
+  console.log('  ✅ Badges de buff/résistance en PNG OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };
