@@ -103,16 +103,44 @@ no text, no watermark, no signature, no border frame, no ground line, no ground 
 
 ---
 
-## Post-traitement (rappel Règle A)
+## ✅ Assets livrés (2026-06-11)
 
-1. Détourage alpha : `python3 tools/process_monster_png.py --src <png_généré> --id <olivier|agathe> --model birefnet`
-   → `birefnet-general` recommandé ici (pétales/embers/aura translucides à préserver).
-2. Vérifier les critères §9 d'`IMG_STYLE.md` : pas de halo blanc, marge ≥ 8 %,
-   silhouette lisible à 80×80, < 350 KB.
-3. Déposer le PNG final au chemin retenu, puis cabler le câblage côté code
-   (hors-scope de ce doc de prompts — à décider : sprite de combat héros ?
-   carte de sélection enrichie ? overlay ?).
+Les deux visuels ont été générés via Gemini puis détourés :
 
-> Note câblage : aujourd'hui les héros n'utilisent que `imgSrc` (portrait
-> médaillon `img/<key>.png`). Ces visuels plein corps sont un asset NOUVEAU —
-> définir leur usage avant intégration. Ce fichier ne couvre que la génération.
+| Héros | Fichier | Format |
+|-------|---------|--------|
+| Olivier | `img/heroes/olivier.png` | 512×512 RGBA transparent (~110 KB) |
+| Agathe  | `img/heroes/agathe.png`  | 512×512 RGBA transparent (~145 KB) |
+
+### Détourage (fond damier « cuit »)
+
+Gemini a renvoyé des PNG **1024×1024 RGB** avec le damier de transparence
+**aplati en pixels gris** (pas de vrai canal alpha). `rembg`/`birefnet`
+(cf. `process_monster_png.py`) sont superflus ici : fond gris régulier, sujet
+coloré. Outil dédié **`tools/dechecker_png.py`** (reconstruction de silhouette,
+récupère les vêtements gris internes par fill-holes, garde les blobs de magie
+saturés) :
+
+```bash
+python3 tools/dechecker_png.py <gemini_olivier.png> img/heroes/olivier.png
+python3 tools/dechecker_png.py <gemini_agathe.png>  img/heroes/agathe.png
+```
+
+Critères §9 d'`IMG_STYLE.md` OK : 512² RGBA, marge ≥ 8 %, < 350 KB, pas de halo
+gris (érosion 1 px + feather). Reliquat : quelques carreaux ultra-faibles près
+de la magie d'Agathe (invisibles à la taille d'affichage 80-150 px).
+
+## Câblage côté code — À DÉCIDER
+
+Aujourd'hui les héros n'utilisent que `imgSrc` (portrait médaillon
+`img/<key>.png`). Ces visuels plein corps sont un asset **NOUVEAU**. Usage visé
+(réponse joueur) : **sprites de combat (côté allié) + rendu 3D donjon**.
+
+⚠️ Deux points à arbitrer avant d'implémenter :
+1. **Vue 3D donjon = première personne** : on ne voit pas sa propre équipe.
+   Préciser le besoin (sprite allié visible où exactement ?).
+2. **Seuls 2 des 14 héros** ont un sprite plein corps. Un système de sprite
+   allié en combat serait incohérent pour les 12 autres (portrait seul).
+   → soit fallback portrait médaillon, soit générer les 12 manquants.
+
+Ce fichier ne couvre que la génération + le détourage des 2 assets.
