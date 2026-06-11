@@ -593,10 +593,17 @@ Hermione : sorts de soin/support + forte magie — commence avec : Episkey, Prot
 Pour ajouter un héros sélectionnable (modèle des 6 entrées actuelles :
 Harry, Hermione, Céleste, Iris, Maxence, Anastasia) :
 
-1. **Portrait** — préparer **deux** fichiers PNG 128×128 dans `img/` :
-   - `img/<key>-original.png` : crop centré du visuel source, sans décoration.
+> ⚠️ **DEUX images distinctes, deux sources différentes** (ne pas confondre —
+> un cadrage VISAGE ≠ un cadrage PLEIN CORPS) : le **portrait-médaillon**
+> (étape 1) **et** le **sprite plein corps** (étape 1bis). Réutiliser l'un
+> pour l'autre = médaillon avec un visage qui ne colle pas.
+
+1. **Portrait-médaillon (VISAGE)** — préparer **deux** fichiers PNG 128×128
+   dans `img/` à partir d'un **crop visage/buste** :
+   - `img/<key>-original.png` : crop centré du visage, sans décoration.
    - `img/<key>.png` : variante encadrée d'un **médaillon doré**.
-     C'est ce fichier qui s'affiche partout dans le jeu.
+     C'est ce fichier (`imgSrc`) qui s'affiche dans le HUD, la carte de
+     sélection, la fiche et les dialogues.
 
    **Procédure** : center-crop puis Lanczos vers 128×128 pour la version
    `-original.png`. Pour la version encadrée, NE PAS générer l'anneau de
@@ -622,6 +629,21 @@ Harry, Hermione, Céleste, Iris, Maxence, Anastasia) :
      Anastasia = bleu glacé argenté).
    - **Garçons** (Maxence…) : référence = `maxence.png`. Anneau plus
      fin et sobre (gold uni `#f0d782`), pas de gemme colorée.
+
+   **1bis. Sprite plein corps (FIGURE ENTIÈRE)** — préparer **un** PNG
+   `img/players/<key>.png`, **512×512 RGBA fond transparent**, à partir d'un
+   **visuel PLEIN CORPS** (tête aux pieds — ≠ le crop visage du portrait),
+   style **Règle A** d'`IMG_STYLE.md` (painterly, marge ≥ 8 %). C'est le sprite
+   du joueur rendu par `drawGhostSprite` (identité en Mondes Parallèles ; repli
+   silhouette vectorielle si absent). Puis :
+   - **enregistrer** la clé `<key>: "img/players/<key>.png"` dans
+     `PLAYER_SPRITE_SRC` (`js/renderer-entities.js`) → impose un **bump cache
+     PWA** (skill `cache-bump`) ;
+   - **mettre à jour le compte de héros** dans l'assertion du scénario sprite
+     plein corps (`tests/scenarios/multiplayer.js`).
+   - Si l'image source arrive sur **fond damier aplati** (Gemini/Nano Banana,
+     RGB sans alpha) : détourer via
+     `python3 tools/dechecker_png.py <src.png> img/players/<key>.png`.
 2. **Données** — ajouter une entrée dans `CHARACTERS` (`js/data.js`)
    avec `name`, `icon`, `class`, `imgSrc:"img/<key>.png"`, `role`, stats
    (hp/sp/str/int/agi/end/lck/mag/atk/def), `wand`, `armor`, `acc`,

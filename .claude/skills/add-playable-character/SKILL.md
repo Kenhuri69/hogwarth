@@ -1,6 +1,6 @@
 ---
 name: add-playable-character
-description: Ajouter un héros jouable sélectionnable au démarrage du jeu Poudlard & Magie (modèle Harry/Hermione/Céleste/Iris/Maxence/Anastasia). Utiliser dès qu'on veut rendre un personnage choisissable dans l'équipe, même si l'utilisateur nomme juste un personnage de l'univers HP à jouer (« ajoute Drago comme perso jouable », « un 7e héros Serpentard sélectionnable »). Couvre les 2 portraits PNG (transplant du médaillon doré par genre), l'entrée CHARACTERS, la carte #hero-grid et le smoke test. Ne PAS utiliser pour un PNJ non jouable (npcs.js) ni un ennemi humain (skill add-monster).
+description: Ajouter un héros jouable sélectionnable au démarrage du jeu Poudlard & Magie (modèle Harry/Hermione/Céleste/Iris/Maxence/Anastasia). Utiliser dès qu'on veut rendre un personnage choisissable dans l'équipe, même si l'utilisateur nomme juste un personnage de l'univers HP à jouer (« ajoute Drago comme perso jouable », « un 7e héros Serpentard sélectionnable »). Couvre les DEUX images distinctes (portrait-médaillon visage + sprite plein corps img/players/), l'entrée CHARACTERS, la carte #hero-grid et le smoke test. Ne PAS utiliser pour un PNJ non jouable (npcs.js) ni un ennemi humain (skill add-monster).
 ---
 
 # Ajouter un personnage jouable
@@ -11,11 +11,19 @@ quêtes fonctionnent sans câblage supplémentaire.
 
 ## Étapes
 
-### 1. Portraits — deux PNG 128×128 dans `img/`
-- `img/<key>-original.png` : crop centré du visuel source, sans décoration
+### 1. Images — DEUX visuels distincts à NE PAS confondre
+
+Un héros a **deux images de sources différentes**. Ce sont **deux visuels
+séparés** (un cadrage VISAGE ≠ un cadrage PLEIN CORPS) — ne jamais réutiliser
+l'un pour l'autre, sinon le médaillon affiche un visage qui ne colle pas.
+
+#### 1a. Portrait-médaillon (VISAGE) — `img/<key>.png` (+ `img/<key>-original.png`)
+Affiché dans le HUD, la carte de sélection, la fiche perso, les dialogues.
+**Source = un crop VISAGE/buste**, deux PNG 128×128 dans `img/` :
+- `img/<key>-original.png` : crop centré du visage, sans décoration
   (center-crop puis Lanczos → 128×128).
-- `img/<key>.png` : variante encadrée d'un **médaillon doré** — c'est le
-  fichier affiché partout dans le jeu.
+- `img/<key>.png` : même crop encadré d'un **médaillon doré** — c'est le
+  fichier référencé par `CHARACTERS[<key>].imgSrc`.
 
 **Ne pas générer l'anneau de zéro** (profil radial subtil, échoue à l'œil).
 Transplanter l'anneau d'un médaillon existant de **même genre** :
@@ -34,6 +42,21 @@ Référence selon le genre :
   bleu glacé argenté).
 - **Garçons** (Maxence…) : `maxence.png`. Anneau plus fin, gold uni
   `#f0d782`, pas de gemme colorée.
+
+#### 1b. Sprite plein corps (FIGURE ENTIÈRE) — `img/players/<key>.png`
+Figure debout tête-aux-pieds, **512×512 RGBA fond transparent** (même format
+que les 13 sprites existants). Enregistré dans `PLAYER_SPRITE_SRC`
+(`js/renderer-entities.js`) et rendu par `drawGhostSprite` (identité du
+joueur, Mondes Parallèles) — repli silhouette vectorielle si le PNG manque.
+- **Source = un visuel PLEIN CORPS** (≠ le crop visage de 1a).
+- Style **Règle A** d'`IMG_STYLE.md` (painterly, head-to-toe, marge ≥ 8 %).
+  Prompts type : voir `.claude/plans/nano-banana-prompts-heroes-olivier-agathe.md`.
+- Si l'image arrive sur **fond damier aplati** (Gemini/Nano Banana en RGB) :
+  détourer via `python3 tools/dechecker_png.py <src.png> img/players/<key>.png`.
+- **Ajouter la clé** `<key>: 'img/players/<key>.png'` à `PLAYER_SPRITE_SRC`,
+  **bumper le cache PWA** (`renderer-entities.js`, skill `cache-bump`), et
+  **mettre à jour le compte de héros** dans l'assertion de
+  `tests/scenarios/multiplayer.js` (scénario sprite plein corps).
 
 ### 2. Données — entrée dans `CHARACTERS` (`js/data.js`)
 Lue par `_hydrateCharacter()`. Champs :

@@ -603,8 +603,14 @@ Un candidat n'est validé que s'il coche **tout** :
 > Détail exhaustif : skill **`add-playable-character`** + [`CLAUDE.md`](../../CLAUDE.md).
 > Rappel des points de contact, dans l'ordre :
 
-1. **Portraits** : `img/<key>-original.png` (crop 128×128) **+** `img/<key>.png`
-   (médaillon doré transplanté du genre adéquat — procédure CLAUDE.md).
+1. **DEUX images distinctes** (sources différentes — ne pas confondre) :
+   - **Portrait-médaillon** (crop VISAGE) : `img/<key>-original.png` (128×128)
+     **+** `img/<key>.png` (médaillon doré transplanté du genre adéquat —
+     procédure CLAUDE.md). Référencé par `CHARACTERS.imgSrc`.
+   - **Sprite plein corps** (visuel FIGURE ENTIÈRE) : `img/players/<key>.png`
+     (512×512 RGBA transparent, Règle A `IMG_STYLE.md`) → enregistrer la clé
+     dans `PLAYER_SPRITE_SRC` (`js/renderer-entities.js`) + bump cache PWA +
+     compte de héros à jour dans `tests/scenarios/multiplayer.js`.
 2. **Données** : entrée dans `CHARACTERS` (`js/data.js`) — `name`, `icon`, `class`,
    `imgSrc`, `role`, stats, `wand/armor/acc`, `spells`, `tagline`.
 3. **Carte de sélection** : `<button class="hero-card" data-key="<key>" …>` dans
@@ -625,7 +631,9 @@ Un candidat n'est validé que s'il coche **tout** :
 - [ ] Rôle distinct, viable solo & duo, budget de stats dans l'enveloppe (5.5.2).
 - [ ] Ton respecté, faiblesse réelle (anti-Mary-Sue), canon cohérent, run dédié
       désirable (5.5.3).
-- [ ] Portraits + `CHARACTERS` + carte + doc §5 + smoke vert (5.5.4).
+- [ ] **Les 2 images** : portrait-médaillon (`img/<key>.png` + `-original`)
+      **ET** sprite plein corps (`img/players/<key>.png` + `PLAYER_SPRITE_SRC`)
+      + `CHARACTERS` + carte + doc §5 + smoke vert (5.5.4).
 - [ ] **Barks** : entrée `HERO_BARKS[<key>]` renseignée (4-6 événements +
       `houseTension` si pertinent) **ou** omission explicitement assumée
       (`js/hero-barks.js` — héros silencieux par défaut).
