@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v103';
+const CACHE_VERSION = 'hogwarth-v104';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -77,7 +77,7 @@ const PRECACHE_URLS = [
   './js/dungeon-fx.js?v=8',
   './js/cinematics.js?v=2',
   './js/renderer-sprites.js?v=5',
-  './js/renderer-entities.js?v=3',
+  './js/renderer-entities.js?v=4',
   './js/renderer-minimap.js?v=8',
   './js/movement.js?v=34',
   './js/movement-floors.js?v=12',

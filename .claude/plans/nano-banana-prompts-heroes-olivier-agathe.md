@@ -50,7 +50,7 @@ MTG illustration quality, no cropping of limbs, complete figure visible
 
 ### `olivier` — Olivier de Clairval (Serdaigle, Mage de combat)
 
-**Fichier cible suggéré** : `img/heroes/olivier.png` (ou `img/olivier-full.png`)
+**Fichier cible suggéré** : `img/players/olivier.png` (ou `img/olivier-full.png`)
 **Canon** : Serdaigle, 7e année. Discipliné, intense, perfectionniste du sortilège ;
 regard d'escrimeur. Baguette de Chêne Ardent, Plume d'Aigle dans un carnet, Robe
 de Serdaigle. Nukeur élémentaire (feu/foudre) : Incendio, Stupefix.
@@ -77,7 +77,7 @@ no text, no watermark, no signature, no border frame, no ground line, no ground 
 
 ### `agathe` — Agathe Lumiflore (Gryffondor, Enchanteresse florale)
 
-**Fichier cible suggéré** : `img/heroes/agathe.png` (ou `img/agathe-full.png`)
+**Fichier cible suggéré** : `img/players/agathe.png` (ou `img/agathe-full.png`)
 **Canon** : Gryffondor, 5e année. Douce, tenace, profondément vivante. Couronne
 de fleurs vivantes dans les cheveux, mains tachées de terre et de pollen.
 Baguette de Cerisier en Fleur, Robe de Gryffondor. Soigneuse-soutien
@@ -109,8 +109,8 @@ Les deux visuels ont été générés via Gemini puis détourés :
 
 | Héros | Fichier | Format |
 |-------|---------|--------|
-| Olivier | `img/heroes/olivier.png` | 512×512 RGBA transparent (~110 KB) |
-| Agathe  | `img/heroes/agathe.png`  | 512×512 RGBA transparent (~145 KB) |
+| Olivier | `img/players/olivier.png` | 512×512 RGBA transparent (~110 KB) |
+| Agathe  | `img/players/agathe.png`  | 512×512 RGBA transparent (~145 KB) |
 
 ### Détourage (fond damier « cuit »)
 
@@ -122,25 +122,27 @@ récupère les vêtements gris internes par fill-holes, garde les blobs de magie
 saturés) :
 
 ```bash
-python3 tools/dechecker_png.py <gemini_olivier.png> img/heroes/olivier.png
-python3 tools/dechecker_png.py <gemini_agathe.png>  img/heroes/agathe.png
+python3 tools/dechecker_png.py <gemini_olivier.png> img/players/olivier.png
+python3 tools/dechecker_png.py <gemini_agathe.png>  img/players/agathe.png
 ```
 
 Critères §9 d'`IMG_STYLE.md` OK : 512² RGBA, marge ≥ 8 %, < 350 KB, pas de halo
 gris (érosion 1 px + feather). Reliquat : quelques carreaux ultra-faibles près
 de la magie d'Agathe (invisibles à la taille d'affichage 80-150 px).
 
-## Câblage côté code — À DÉCIDER
+## ✅ Câblage côté code (fait)
 
-Aujourd'hui les héros n'utilisent que `imgSrc` (portrait médaillon
-`img/<key>.png`). Ces visuels plein corps sont un asset **NOUVEAU**. Usage visé
-(réponse joueur) : **sprites de combat (côté allié) + rendu 3D donjon**.
+Les sprites plein corps des héros existaient déjà comme convention :
+`img/players/<key>.png`, mappés dans `PLAYER_SPRITE_SRC` (`js/renderer-entities.js`)
+et rendus par `drawGhostSprite` (identité du joueur, Mondes Parallèles ;
+fallback silhouette vectorielle si PNG absent). Olivier et Agathe y manquaient.
 
-⚠️ Deux points à arbitrer avant d'implémenter :
-1. **Vue 3D donjon = première personne** : on ne voit pas sa propre équipe.
-   Préciser le besoin (sprite allié visible où exactement ?).
-2. **Seuls 2 des 14 héros** ont un sprite plein corps. Un système de sprite
-   allié en combat serait incohérent pour les 12 autres (portrait seul).
-   → soit fallback portrait médaillon, soit générer les 12 manquants.
+Intégration :
+1. `img/players/olivier.png` + `img/players/agathe.png` (512² RGBA, format
+   identique aux 11 sprites existants).
+2. 2 entrées ajoutées à `PLAYER_SPRITE_SRC` (`agathe`, `olivier`).
+3. Bump cache PWA : `renderer-entities.js?v=3→v4`, `CACHE_VERSION v103→v104`.
 
-Ce fichier ne couvre que la génération + le détourage des 2 assets.
+Aucun autre câblage requis (combat/save/équipement héritent des références de
+groupe). Reste cohérent : les 13 autres héros ont déjà leur PNG ; jeanne y
+figurait déjà.

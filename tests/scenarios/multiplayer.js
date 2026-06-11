@@ -2779,7 +2779,7 @@ async function scenarioMultiplayerPresence() {
   });
   assert(minimap >= 1, `un marqueur .map-ghost attendu sur la minimap (obtenu ${minimap})`);
 
-  // 7) Sprite PNG plein corps — registre exposé, 11 héros, fichiers
+  // 7) Sprite PNG plein corps — registre exposé, 13 héros, fichiers
   //    présents (file:// charge tout sauf erreur explicite).
   const sprites = await page.evaluate(async () => {
     if (typeof PLAYER_SPRITE_SRC === 'undefined') return { registered: false };
@@ -2799,8 +2799,8 @@ async function scenarioMultiplayerPresence() {
     };
   });
   assert(sprites.registered,    'PLAYER_SPRITE_SRC doit être exposé');
-  assert(sprites.keys === 11,   `11 héros attendus dans PLAYER_SPRITE_SRC (obtenu ${sprites.keys})`);
-  assert(sprites.loaded === 11, `11 PNG doivent charger (obtenu ${sprites.loaded})`);
+  assert(sprites.keys === 13,   `13 héros attendus dans PLAYER_SPRITE_SRC (obtenu ${sprites.keys})`);
+  assert(sprites.loaded === 13, `13 PNG doivent charger (obtenu ${sprites.loaded})`);
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
