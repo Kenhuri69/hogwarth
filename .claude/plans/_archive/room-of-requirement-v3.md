@@ -282,11 +282,19 @@ rondes. Cohérent avec le style hub existant. Responsive (wrap des pastilles).
   save-ui/atelier-voyageur + css si touché ; `CACHE_VERSION` v64→v65.
 
 ## Suivi V3.1
-- [ ] C1 trophées multiples + PNG.
-- [ ] C2 choix du thème (overlay + `chooseRequirementTheme`).
-- [ ] C3 bonus méta capé.
-- [ ] C4 onglet Atelier.
-- [ ] C5 smoke/units verts + cache-bump.
+- [x] C1 trophées multiples + PNG.
+- [x] C2 choix du thème (overlay + `chooseRequirementTheme`).
+- [x] C3 bonus méta capé.
+- [x] C4 onglet Atelier.
+- [x] C5 smoke/units verts + cache-bump.
+
+> 🏁 **V3.1 livrée & mergée.** Vérifié dans le code (2026-06-11) :
+> `REQUIREMENT_TROPHIES` + Set `requirementTrophiesTaken` (state/save),
+> 6 PNG `img/icons/requirement/eclat_*.png`, `chooseRequirementTheme`
+> (overlay), `_applyRequirementMetaBonus` (main.js), onglet Atelier
+> « Salle » (`_renderAtelierRequirementTab`). Scénario
+> `scenarioRoomOfRequirement` T1–T14 vert. Les cases étaient simplement
+> restées non cochées.
 
 ## Suivi
 - [x] Lecture code V2 livré (`_pickRequirementTheme`, `_requirementLootPool`,
