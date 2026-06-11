@@ -11,6 +11,18 @@
 > (guidelines §4/§5). Quand un reliquat est livré, le rayer ici et, si pertinent,
 > ouvrir un plan dédié pour le détail technique.
 
+> ⚠️ **Audit 2026-06-11** : ce backlog s'était fortement périmé — plusieurs
+> reliquats avaient été livrés sans que le fichier soit mis à jour. État
+> revérifié contre le code :
+> - ✅ **livrés** : 1.1 (potions AOE/ennemi), 3.2 (badges journal + buffs),
+>   3.3 (Room of Requirement V3.1).
+> - 🟡 **partiel / nuancé** : 1.2 (Forge T5 +8 implémenté ; Bibliothèque T5
+>   ouverte), 3.1 (Atelier converti ; reste = emoji « laissés sciemment »).
+> - ❌ **réellement ouverts** : 1.3 (House post-tier-18 forge/reroll),
+>   2.1/2.2 (dialogues easter-eggs, éditorial), 4.x (PvP/live MP),
+>   5.1 (musiques combat, bloqué asset), 6.1/6.2 (dette technique).
+> Toujours **vérifier l'état réel dans le code** avant d'attaquer un item.
+
 ---
 
 ## Légende priorité
@@ -23,7 +35,12 @@
 
 ## 1. Contenu & systèmes de jeu
 
-### 1.1 Potions multi-cibles & usage ennemi — **P2**
+### 1.1 Potions multi-cibles & usage ennemi — ✅ **LIVRÉ**
+> Vérifié 2026-06-11 contre le code : flacons AOE (`data.js` `aoe:true`,
+> `throwItemAoe` dans `battle.js`) + potions ennemies à charges
+> (`tryEnemyAbility case 'consumable'`) implémentés. Plan dédié :
+> [`potions-aoe-enemy-use.md`](./potions-aoe-enemy-use.md). Smoke
+> `scenarioPotionAoeAndEnemyUse`.
 - **Source** : `_archive/potions-enrichment.md` (backlog P6).
 - **Reste à faire** : potions offensives **multi-cibles / AOE** (splash sur le
   groupe ennemi) et **usage de potions par les ennemis** (soin/buff côté IA).
@@ -37,7 +54,11 @@
   3. Scénario smoke dédié (`scenarioPotionAoe`) → vérif : `node tests/smoke.js` vert.
   4. Bump cache PWA (data.js/battle.js touchés) via skill `cache-bump`.
 
-### 1.2 Forge & Bibliothèque — extension matériaux T5 + formule d'upgrade — **P2**
+### 1.2 Forge & Bibliothèque — extension matériaux T5 + formule d'upgrade — 🟡 **PARTIEL**
+> Vérifié 2026-06-11 contre le code : **volet Forge T5 implémenté**
+> (`forge.js` `FORGE_MAX_LEVEL=8`, matériau `essence_primordiale`, paliers
+> 6-8) — plan dédié [`forge-t5.md`](./forge-t5.md). **Restent ouverts** :
+> refonte de la formule d'upgrade Bibliothèque + nouvelles recettes/sorts T5.
 - **Source** : `_archive/forge-library-stabilization.md`.
 - **Reste à faire** : ajouter une **source de matériaux de palier T5** (endgame),
   **refondre la formule d'upgrade** (coût/scaling), et de nouveaux items/sorts
@@ -85,7 +106,12 @@
 
 ## 3. Visuels / cosmétiques manquants
 
-### 3.1 emoji-png-gaps — lots 7-10 — **P3**
+### 3.1 emoji-png-gaps — lots 7-10 — 🟡 **essentiellement clos**
+> Vérifié 2026-06-11 : l'Atelier (cartes/onglets/titre/monnaies) est **déjà
+> converti en PNG**. Le reliquat résiduel (cartes cosmétiques, souvenirs,
+> labels `specialAction` PNJ, logs d'atelier) était **« laissé sciemment »**
+> dans `emoji-png-gaps.md` (icônes abstraites sans PNG) — choix de style, pas
+> une lacune. À ne rouvrir que si une demande explicite « zéro emoji absolu ».
 - **Source** : `_archive/emoji-png-gaps.md` (lots 1-5 livrés ; lots 7-10 non engagés).
 - **Reste à faire** : cartes **cosmétiques**, **souvenirs**, **labels PNJ**,
   **logs d'atelier** encore en emoji → conversion PNG.
@@ -95,7 +121,11 @@
   2. Générer les PNG manquants (pipeline existant) et brancher les registries.
   3. Scénario smoke visuel + bump cache.
 
-### 3.2 combat-emoji-badges — Lot 2 (journal) & Lot 3 (9 PNG) — **P3**
+### 3.2 combat-emoji-badges — Lot 2 (journal) & Lot 3 (9 PNG) — ✅ **LIVRÉ**
+> Vérifié 2026-06-11 contre le code : `iconizeCombatLog` + table
+> (`item-icons.js`) branchés au journal ; les 9 PNG du Lot 3 présents
+> dans `img/icons/`. En complément, les badges de buff/résistance passent
+> aussi en PNG — plan dédié [`combat-buff-badges.md`](./combat-buff-badges.md).
 - **Source** : `_archive/combat-emoji-badges.md` (Lot 1 livré).
 - **Reste à faire** : **Lot 2** conversion emoji → badge dans le **journal de
   combat** ; **Lot 3** création des **9 PNG** manquants.
@@ -105,7 +135,12 @@
      journal sans emoji bruts.
   3. Smoke + bump cache.
 
-### 3.3 Room of Requirement V3.1 — bonus — **P2**
+### 3.3 Room of Requirement V3.1 — bonus — ✅ **LIVRÉ**
+> Vérifié 2026-06-11 : C1 trophées multiples + 6 PNG (`img/icons/requirement/
+> eclat_*.png`), C2 choix du thème (`chooseRequirementTheme` + overlay),
+> C3 bonus méta (`_applyRequirementMetaBonus`), C4 onglet Atelier « Salle »
+> (`_renderAtelierRequirementTab`). Scénario `scenarioRoomOfRequirement`
+> T1–T14 vert. Cases du plan archivé cochées.
 - **Source** : `_archive/room-of-requirement-v3.md` (V3 livré ; V3.1 en bonus).
 - **Reste à faire** : **6 trophées PNG**, **choix joueur** sur le trophée,
   **bonus méta**, **onglet Atelier** dédié.
