@@ -32,8 +32,8 @@ https://coupon.netmarble.com/sololv pour plusieurs identifiants de compte (pid).
 3. [x] Probe sûr du POST avec code bidon → `24002` (endpoint OK, pas d'auth).
 4. [x] Écrire `tools/netmarble-coupon.js` (Node 18+, zéro dépendance, `fetch` natif).
    → vérifier : `node tools/netmarble-coupon.js --dry-run` valide les 2 pid.
-5. [ ] (Optionnel, sur accord utilisateur) lancer la vraie redemption du code
-   `LIUZHIGANGGANG` sur les 2 comptes — action externe IRRÉVERSIBLE.
+5. [x] Redemption réelle du code `LIUZHIGANGGANG` sur les 2 comptes (sur accord
+   utilisateur, 2026-06-11) → 2/2 succès.
 6. [x] Commit + push sur `claude/coupon-automation-script-5genbx`.
 
 ## Hors-scope / notes
