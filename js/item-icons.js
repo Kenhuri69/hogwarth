@@ -362,7 +362,18 @@ const STATUS_ICON_REGISTRY = {
   fear:             'img/icons/fear.png',
   imperius:         'img/icons/imperius.png',
   heal:             'img/icons/heal.png',
-  dead:             'img/icons/dead.png'
+  dead:             'img/icons/dead.png',
+  // Buffs de stat & Résistance : icône = la stat impactée (cf.
+  // BUFF_STAT_BY_ID, battle.js). PNG existants — pas d'asset dédié.
+  // `buff_lck` réutilise xp.png (convention luck du jeu : la fiche perso
+  // affiche Chance/Fortune avec xp.png). resist_buff → bouclier de
+  // déflexion bleu (resist.png), distinct de def/protego.
+  buff_atk:         'img/icons/atk.png',
+  buff_def:         'img/icons/def.png',
+  buff_agi:         'img/icons/agi.png',
+  buff_lck:         'img/icons/xp.png',
+  buff_mag:         'img/icons/mag.png',
+  resist_buff:      'img/icons/resist.png'
 };
 
 // Sortilèges (priorité 1 par nom canonique, fallback emoji icon)
