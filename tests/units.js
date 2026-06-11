@@ -163,8 +163,11 @@ function loadModule(relPath, exportNames, globals = {}) {
     '\n;exports.creatureCorruptionLevel = creatureCorruptionLevel;' +
     '\n;exports.loopNumber = loopNumber;' +
     '\n;exports.LOOP_SPAN = LOOP_SPAN;' +
-    '\n;exports.weightedPick = weightedPick;', sandbox, { filename: 'dungeon-scaling.js' });
-  const { effectiveFloor, endgameTierIndex, creatureCorruptionLevel, loopNumber, LOOP_SPAN, weightedPick } = sandbox.exports;
+    '\n;exports.weightedPick = weightedPick;' +
+    '\n;exports.loopVariantTierName = loopVariantTierName;' +
+    '\n;exports.applyLoopVariant = applyLoopVariant;', sandbox, { filename: 'dungeon-scaling.js' });
+  const { effectiveFloor, endgameTierIndex, creatureCorruptionLevel, loopNumber, LOOP_SPAN, weightedPick,
+          loopVariantTierName, applyLoopVariant } = sandbox.exports;
 
   // Pré-victoire : effectiveFloor est l'identité, palier 0 partout.
   sandbox.victoryAchieved = false;
@@ -204,6 +207,33 @@ function loadModule(relPath, exportNames, globals = {}) {
   let monoLoop = true;
   for (let f = 1; f < 120; f++) { if (loopNumber(f + 1) < loopNumber(f)) monoLoop = false; }
   check('loopNumber monotone croissant', monoLoop);
+
+  // ── Variantes de Boucle V4 (ch.11 §11.11) — loopVariant (pur, déterministe) ──
+  check('loopVariantTierName(0) = "" (hors Boucle)', loopVariantTierName(0) === '');
+  check('loopVariantTierName(1) = Ténébreux (compat V1)', loopVariantTierName(1) === 'Ténébreux');
+  check('loopVariantTierName(2) = Spectral', loopVariantTierName(2) === 'Spectral');
+  check('loopVariantTierName(3) = Abyssal', loopVariantTierName(3) === 'Abyssal');
+  check('loopVariantTierName plafonné (loop 9 → Funeste)', loopVariantTierName(9) === 'Funeste');
+  check('loopVariantTierName(NaN) = ""', loopVariantTierName(NaN) === '');
+  // Mutation thématique : nom préfixé + résist ténèbres + faille lumière.
+  let mv = applyLoopVariant({ name: 'Troll', resist: [], weak: [] }, 2);
+  check('applyLoopVariant: nom escaladé', mv.name === 'Spectral Troll');
+  check('applyLoopVariant: loopTier posé', mv.loopTier === 2);
+  check('applyLoopVariant: résiste ténèbres', mv.resist.includes('ténèbres'));
+  check('applyLoopVariant: faible lumière', mv.weak.includes('lumière'));
+  // Garde-fou : un monstre DÉJÀ faible aux ténèbres ne devient pas résistant.
+  mv = applyLoopVariant({ name: 'X', resist: [], weak: ['ténèbres'] }, 1);
+  check('applyLoopVariant: pas de résist+faible ténèbres', !mv.resist.includes('ténèbres'));
+  // Garde-fou : un monstre DÉJÀ résistant à la lumière ne devient pas faible.
+  mv = applyLoopVariant({ name: 'Y', resist: ['lumière'], weak: [] }, 1);
+  check('applyLoopVariant: pas de faible+résist lumière', !mv.weak.includes('lumière'));
+  // On n'écrase pas une résistance déclarée (idempotent sur ténèbres existant).
+  mv = applyLoopVariant({ name: 'Z', resist: ['ténèbres', 'feu'], weak: [] }, 1);
+  check('applyLoopVariant: ténèbres non dupliqué',
+    mv.resist.filter(r => r === 'ténèbres').length === 1);
+  // Défensif : n<1 ou monstre nul → no-op (pas d'exception).
+  check('applyLoopVariant(n=0) no-op', applyLoopVariant({ name: 'A', resist: [], weak: [] }, 0).name === 'A');
+  check('applyLoopVariant(null) no-op', applyLoopVariant(null, 2) === null);
 
   // creatureCorruptionLevel (Chapitre 09 §9.1.2) — gradient 0-3 par profondeur.
   sandbox.victoryAchieved = false;

@@ -119,6 +119,47 @@ const BRUTE_CRUSH_ABILITY = {
   power: 0.10, chance: 0.5, cap: 2, capRef: 'hit',
 };
 
+// ── Variantes de Boucle (V4 — Chapitre 11 §11.11, mutations loopVariant) ──
+// Surcouche DÉTERMINISTE (zéro RNG) par-dessus la variante « Ténébreux » : en
+// Boucle Ténébreuse, le palier endgame `n` (= loopNumber du floor, 1 pour 11-20,
+// 2 pour 21-30, …) escalade le NOM de la créature et lui ajoute une légère
+// mutation thématique BORNÉE. Le scaling de puissance reste entièrement géré par
+// la récursion endgame (ci-dessus) — ici, aucun gonflement de stats.
+//
+// Décisions (validées) : loopVariant SEUL (pas de New Game+, modèle continu
+// canon) + « cosmétique + tweak léger ». Cf. .claude/plans/chapter-11-dark-loop.md.
+const LOOP_VARIANT_TIERS = ['Ténébreux', 'Spectral', 'Abyssal', 'Cauchemardesque', 'Funeste'];
+
+// Préfixe de nom pour le palier de Boucle `n` (n≥1). n≤0 → '' (hors Boucle).
+// Plafonné au dernier palier nommé (boucles très profondes → 'Funeste').
+function loopVariantTierName(n) {
+  if (typeof n !== 'number' || !isFinite(n) || n < 1) return '';
+  return LOOP_VARIANT_TIERS[Math.min(n - 1, LOOP_VARIANT_TIERS.length - 1)];
+}
+
+// Applique la variante de Boucle à une instance DÉJÀ scalée (mute en place).
+// - Nom : préfixe escaladé par palier (loop 1 « Ténébreux » = compat V1, puis
+//   « Spectral » loop 2, « Abyssal » loop 3, …).
+// - Tweak léger thématique (déterministe, borné) : imprégnée de ténèbres, la
+//   créature RÉSISTE aux ténèbres et révèle une faille à la LUMIÈRE — donne au
+//   joueur un levier (sorts de lumière) en Boucle, sidegrade ~neutre en
+//   puissance. Garde-fous : jamais résist+faible sur le même élément ; on
+//   n'écrase pas une résistance/faiblesse déclarée par le monstre.
+// Pur (hormis la mutation de l'objet passé) → testable hors navigateur.
+function applyLoopVariant(monster, n) {
+  if (!monster || typeof n !== 'number' || !isFinite(n) || n < 1) return monster;
+  const prefix = loopVariantTierName(n);
+  if (prefix) monster.name = prefix + ' ' + monster.name;
+  monster.loopTier = n;   // métadonnée (rendu/bestiaire éventuel)
+  const resist = Array.isArray(monster.resist) ? monster.resist.slice() : [];
+  const weak   = Array.isArray(monster.weak)   ? monster.weak.slice()   : [];
+  if (!resist.includes('ténèbres') && !weak.includes('ténèbres')) resist.push('ténèbres');
+  if (!weak.includes('lumière')   && !resist.includes('lumière'))  weak.push('lumière');
+  monster.resist = resist;
+  monster.weak   = weak;
+  return monster;
+}
+
 // Applique la mise à l'échelle d'un monstre de base pour un étage donné.
 //
 // Pré-victoire (n=0) : stat = base × intraMult × diffMult — comportement inchangé.
@@ -172,11 +213,11 @@ function scaleMonster(base, floor) {
     }
   } else if (isDark) {
     // Ténébreux : la récursion endgame ci-dessus a déjà appliqué le
-    // boost de stats. On garde uniquement le préfixe et la metadata
-    // pour le rendu (CSS halo violet, badge 🌑). Plus de multiplicateurs
-    // séparés (×1.5 HP / ×1.12 ATK / etc.) — tout passe par scal+fix.
+    // boost de stats. On garde le halo violet (variant='darkness', badge 🌑)
+    // et on délègue le nom + la mutation thématique BORNÉE à la variante de
+    // Boucle (V4) — escaladée par palier `n` (loop 1 « Ténébreux » = compat).
     monster.variant = 'darkness';
-    monster.name    = 'Ténébreux ' + base.name;
+    applyLoopVariant(monster, n);
   } else if (floor >= 5) {
     monster.variant = 'ancient';
     monster.name    = 'Ancien ' + base.name;

@@ -469,4 +469,49 @@ async function scenarioDarkLoopV3() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3] };
+// Boucle Ténébreuse V4 (Chapitre 11 §11.11) — mutations loopVariant : en Boucle,
+// le palier endgame escalade le nom de la créature (Ténébreux → Spectral → …) et
+// ajoute une mutation thématique bornée (résist ténèbres / faille lumière).
+async function scenarioDarkLoopV4() {
+  console.log('\n── Scénario : Boucle Ténébreuse V4 — mutations loopVariant ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const out = await page.evaluate(() => {
+    victoryAchieved = true;   // ouvre la Boucle (effectiveFloor décale les floors 11+)
+    // Base "propre" (ni résist ni faiblesse déclarée) → le tweak s'applique net.
+    const base = MONSTERS.find(m => (!m.resist || !m.resist.length) && (!m.weak || !m.weak.length)) || MONSTERS[0];
+    let d22 = null, d11 = null;
+    // scaleMonster a 4 % de chance shiny → on boucle pour capturer une instance Ténébreuse.
+    for (let i = 0; i < 120 && (!d22 || !d11); i++) {
+      const a = scaleMonster(base, 22);   // n=2 → Spectral
+      if (a.variant === 'darkness' && !d22) d22 = a;
+      const b = scaleMonster(base, 11);   // n=1 → Ténébreux (compat V1)
+      if (b.variant === 'darkness' && !d11) d11 = b;
+    }
+    return {
+      baseName: base.name,
+      name22: d22 && d22.name, tier22: d22 && d22.loopTier,
+      resist22: d22 && d22.resist, weak22: d22 && d22.weak,
+      name11: d11 && d11.name, tier11: d11 && d11.loopTier,
+      helper: typeof loopVariantTierName === 'function' && loopVariantTierName(3),
+    };
+  });
+  console.log('  out :', out);
+  assert(out.helper === 'Abyssal', 'loopVariantTierName indisponible en jeu');
+  assert(out.name22 && out.name22.startsWith('Spectral '), `loop 2 devrait préfixer "Spectral" (${out.name22})`);
+  assert(out.tier22 === 2, 'loopTier 2 attendu à l\'étage 22');
+  assert(Array.isArray(out.resist22) && out.resist22.includes('ténèbres'), 'la variante de Boucle devrait résister aux ténèbres');
+  assert(Array.isArray(out.weak22) && out.weak22.includes('lumière'), 'la variante de Boucle devrait être faible à la lumière');
+  assert(out.name11 && out.name11.startsWith('Ténébreux '), `loop 1 devrait rester "Ténébreux" (compat V1) (${out.name11})`);
+  assert(out.tier11 === 1, 'loopTier 1 attendu à l\'étage 11');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (dark loop v4)`);
+  }
+  console.log('  ✅ Boucle V4 : nom escaladé par palier + mutation ténèbres/lumière OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4] };
