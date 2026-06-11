@@ -220,7 +220,28 @@ Surcouches **légères** indexées par `loopNumber`, par-dessus l'existant
      **feature complète** (jalons + boss + cinématique + 2 fins) ; **jouable en
      Ironman** (cinématique cosmétique, n'interrompt pas le run de score).
      Non-gating : refuser = continuer ; la Boucle reste ouverte après avoir brisé.
-4. **V4 (optionnel)** : mutations bestiaire `loopVariant`, New Game+ discret.
+4. [x] **V4 — Mutations loopVariant** ✅ **IMPLÉMENTÉE** (branche
+   `claude/dark-loop-v1-ddiw8a`) : variantes de bestiaire en Boucle,
+   déterministes, par-dessus `scaleMonster`. **Décisions validées** :
+   loopVariant **seul** (PAS de New Game+ → respecte le modèle continu canon,
+   cf. B.7) + « **cosmétique + tweak léger** ».
+   - [x] `loopVariantTierName(n)` + `applyLoopVariant(monster, n)` purs
+     (`dungeon-scaling.js`, testés `units.js`). Zéro RNG : dérivé du palier
+     endgame `n` (= `loopNumber` du floor).
+   - [x] **Nom escaladé par palier** : `LOOP_VARIANT_TIERS` = Ténébreux (loop 1,
+     **compat V1**) → Spectral (2) → Abyssal (3) → Cauchemardesque (4) → Funeste
+     (5+, plafonné). Remplace le « Ténébreux » plat de la branche `isDark`.
+   - [x] **Tweak léger thématique borné** : la créature de Boucle **résiste aux
+     ténèbres** et **révèle une faille à la lumière** (sidegrade ~neutre ; levier
+     sorts de lumière en endgame). Garde-fous : jamais résist+faible sur le même
+     élément ; n'écrase pas une résist/faiblesse déclarée par le monstre.
+   - [x] Réutilise le halo violet existant (`variant='darkness'`, badge 🌑) — pas
+     de nouvelle CSS. Métadonnée `loopTier` posée pour rendu futur éventuel.
+   - [x] Tests : bloc `loopVariantTierName`/`applyLoopVariant` (`units.js`) +
+     `scenarioDarkLoopV4` (smoke, vérifie nom + résist/faiblesse en jeu réel).
+   - **Hors-scope (tranché)** : New Game+ (toute forme, contredit le modèle
+     continu) ; teinte/aura par palier (halo + nom escaladé suffisent). Pilier
+     Boucle Ténébreuse **clos V1→V4**.
 
 ### B.7 Décisions à arbitrer (❓)
 
