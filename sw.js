@@ -27,7 +27,7 @@ const PRECACHE_URLS = [
   './manifest.json',
 
   // CSS
-  './css/style.css?v=36',
+  './css/style.css?v=37',
   './css/ux-improvements.css?v=4',
   './css/save-ui.css?v=3',
   './css/ornaments.css?v=1',

@@ -180,6 +180,27 @@ function quickStart() {
   }
 }
 
+// Activation du mode Ironman : à la coche, on exige une confirmation
+// explicite de la permadeath (modale stylisée). La case n'est retenue
+// que si le joueur accepte le risque ; sinon on la décoche.
+function onIronmanToggle(cb) {
+  if (cb && cb.checked) {
+    const modal = document.getElementById('ironman-confirm-modal');
+    if (modal) modal.style.display = 'flex';
+  }
+}
+function confirmIronman() {
+  const modal = document.getElementById('ironman-confirm-modal');
+  if (modal) modal.style.display = 'none';
+  // La case reste cochée (état déjà acquis) — rien d'autre à faire.
+}
+function cancelIronman() {
+  const cb = document.getElementById('ironman-toggle');
+  if (cb) cb.checked = false;            // mute programmatique : ne re-déclenche pas onchange
+  const modal = document.getElementById('ironman-confirm-modal');
+  if (modal) modal.style.display = 'none';
+}
+
 function confirmHeroSelection() {
   if (selectedHeroes.length !== selectedPartySize) return;
   difficulty        = document.getElementById('difficulty-select')?.value || 'Normal';

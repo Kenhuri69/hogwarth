@@ -15,6 +15,20 @@ function _formatSavedAt(iso) {
   return d.toLocaleDateString('fr-FR');
 }
 
+// Confirme la suppression d'un slot en différenciant le risque : l'auto-save
+// (`id === 'auto'`) est bénin — recréé automatiquement à la prochaine étape —
+// alors qu'un slot manuel est une sauvegarde délibérée dont la perte est
+// irréversible. Deux messages distincts pour éviter une suppression à la
+// légère via un `confirm()` générique peu visible.
+function _confirmSlotDeletion(id) {
+  if (id === AUTO_SLOT_ID) {
+    return confirm('Supprimer la sauvegarde automatique ?\n\n'
+      + 'Elle sera recréée seule à la prochaine étape (descente, fin de combat, niveau).');
+  }
+  return confirm('Supprimer DÉFINITIVEMENT cette sauvegarde manuelle ?\n\n'
+    + 'Cette action est irréversible — cette partie enregistrée sera perdue.');
+}
+
 // Construit le HTML d'une carte de slot. mode = 'save' | 'load'.
 // id : 'manual_1' | … | 'auto'. slot peut être null (slot vide).
 function _renderSlotCard(id, slot, mode) {
@@ -108,7 +122,7 @@ function _bindSlotModalEvents(mode) {
       const card = delBtn.closest('[data-slot-id]');
       const id   = card && card.getAttribute('data-slot-id');
       if (!id) return;
-      if (!confirm('Supprimer définitivement cette sauvegarde ?')) return;
+      if (!_confirmSlotDeletion(id)) return;
       deleteSlot(id);
       _renderSlotList(mode);
       return;
@@ -265,7 +279,7 @@ function _renderHubSlotList() {
       const card = delBtn.closest('[data-slot-id]');
       const id = card && card.getAttribute('data-slot-id');
       if (!id) return;
-      if (!confirm('Supprimer définitivement cette sauvegarde ?')) return;
+      if (!_confirmSlotDeletion(id)) return;
       deleteSlot(id);
       _renderHubSlotList();
       return;
