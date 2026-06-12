@@ -666,6 +666,23 @@ function learnSpellbook(inventoryIdx, charIdx) {
 }
 
 // ── Utiliser / équiper un objet ──────────────────────────────
+// Un soin / une recharge n'aurait aucun effet si la stat visée est déjà au
+// max → on refuse l'usage (visible) au lieu de gaspiller l'objet en silence.
+// 'both' n'est gaspillé que si PV ET PM sont pleins (sinon il reste utile).
+function _isWastedRestore(item, c) {
+  if (!item || !c) return false;
+  const hpFull = c.hp >= c.hpMax;
+  const spFull = c.sp >= c.spMax;
+  switch (item.effect) {
+    case 'heal':
+    case 'heal_full':       return hpFull;
+    case 'restore_sp':
+    case 'restore_sp_full': return spFull;
+    case 'both':            return hpFull && spFull;
+    default:                return false;
+  }
+}
+
 function useItem(idx, battleMode) {
   const item = player.inventory[idx];
   if (!item) return;
@@ -765,6 +782,11 @@ function useItem(idx, battleMode) {
 
   const target = (battleMode && inBattle) ? party[currentBattleChar] : player;
 
+  if (_isWastedRestore(item, target)) {
+    addMsg(`${target.name} est déjà au maximum — ${item.name} serait gaspillé.`, '');
+    return;
+  }
+
   _applyConsumableEffect(item, target);
   addMsg(`${target.name} utilise : ${item.name}`, 'good');
   _consumeAt(idx, 1);
@@ -833,6 +855,10 @@ function useItemFromChar(inventoryIdx, charIdx) {
   }
 
   if (item.type === 'consumable') {
+    if (_isWastedRestore(item, target)) {
+      addMsg(`${target.name} est déjà au maximum — ${item.name} serait gaspillé.`, '');
+      return;
+    }
     _applyConsumableEffect(item, target);
     addMsg(`${target.name} utilise : ${item.name}`, 'good');
     _consumeAt(inventoryIdx, 1);

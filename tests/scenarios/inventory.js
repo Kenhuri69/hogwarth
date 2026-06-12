@@ -1070,4 +1070,57 @@ async function scenarioShopLimits() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioShopLimits] };
+// 0.2 — Feedback sur action refusée : achat sans or + soin gaspillé à PV max.
+// Avant : refus silencieux (le joueur clique, rien ne se passe → perçu bug).
+async function scenarioRefusalFeedback() {
+  console.log('\n── Scénario : feedback achat/usage refusé (0.2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : achat avec or insuffisant → message visible, or + stock inchangés.
+  const t1 = await page.evaluate(() => {
+    shopStock = null;
+    player.gold = 0;
+    openShop();
+    const before = shopStock.length;
+    const goldBefore = player.gold;
+    const first = document.querySelector('#shop-grid .shop-item');
+    document.getElementById('msg-log').innerHTML = '';
+    first.click();
+    return {
+      before, after: shopStock.length, goldBefore, goldAfter: player.gold,
+      msg: document.getElementById('msg-log').textContent,
+    };
+  });
+  console.log('  T1 achat sans or →', t1);
+  assert(/Pas assez de Gallions/.test(t1.msg), 'un achat sans or doit afficher un message visible');
+  assert(t1.after === t1.before,             'le stock ne doit pas bouger sur un achat refusé');
+  assert(t1.goldAfter === t1.goldBefore,     'l\'or ne doit pas bouger sur un achat refusé');
+
+  // T2 : potion de soin utilisée à PV max → refus visible, objet conservé.
+  const t2 = await page.evaluate(() => {
+    const potion = ITEMS.find(i => i.id === 'potion_s');
+    player.inventory.push({ ...potion });
+    const idx = player.inventory.length - 1;
+    player.hp = player.hpMax;
+    document.getElementById('msg-log').innerHTML = '';
+    const lenBefore = player.inventory.length;
+    useItem(idx, false);
+    return {
+      msg: document.getElementById('msg-log').textContent,
+      lenBefore, lenAfter: player.inventory.length,
+    };
+  });
+  console.log('  T2 soin à PV max →', t2);
+  assert(/gaspillé/.test(t2.msg),          'un soin à PV max doit afficher un refus visible');
+  assert(t2.lenAfter === t2.lenBefore,     'l\'objet ne doit pas être consommé s\'il serait gaspillé');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Feedback achat/usage refusé OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioShopLimits, scenarioRefusalFeedback] };
