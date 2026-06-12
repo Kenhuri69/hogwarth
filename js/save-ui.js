@@ -153,7 +153,7 @@ function _commitSlotSave(id) {
 function _commitSlotLoad(id) {
   const slot = readSlot(id);
   if (!slot || !slot.state) { addMsg('Sauvegarde introuvable.', 'bad'); return; }
-  _applyState(slot.state);
+  if (_applyState(slot.state) === false) return;  // save corrompue : message déjà affiché, slot intact
   setNarrative('Le groupe reprend ses esprits. La partie est chargée !');
   addMsg('Partie chargée !', 'good');
   closeModal('slot-modal');
@@ -426,8 +426,14 @@ async function loadSlotAndStart(id) {
   if (typeof resizeCanvas === 'function') resizeCanvas();
 
   // Appliquer l'état (mute player/player2, currentFloor, dungeon, etc.,
-  // et redessine la minimap + le donjon).
-  _applyState(slot.state);
+  // et redessine la minimap + le donjon). Si la save est corrompue, on
+  // revient à l'écran de démarrage (slot intact, message déjà affiché).
+  if (_applyState(slot.state) === false) {
+    if (gc) gc.style.display = 'none';
+    const hub = document.getElementById('start-hub-screen');
+    if (hub) hub.style.display = 'flex';
+    return false;
+  }
 
   // Tweaks UI dépendants de partySize
   applyPartyMode();
