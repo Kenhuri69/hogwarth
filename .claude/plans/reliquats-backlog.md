@@ -197,7 +197,11 @@
      → vérif : ajouter le nouveau module à `index.html` **et** au MANIFEST loader.
   3. `node tests/smoke.js` vert avant/après chaque découpe + bump cache.
 
-### 6.2 code-review-tasks — N15 (factoriser `showEquipMenu` duo) — **P3 (optionnel)**
+### 6.2 code-review-tasks — N15 (factoriser `showEquipMenu` duo) — ✅ **LIVRÉ**
+> Vérifié 2026-06-12 : helpers `_equipMenuPanel` + `_equipRingButtons` extraits
+> dans `inventory.js`, 3 variantes inline (solo non-ring / solo ring / duo)
+> dé-dupliquées, **sans changement de rendu**. Plan dédié :
+> [`refactor-equip-menu.md`](./refactor-equip-menu.md). Smoke complet vert.
 - **Source** : `_archive/code-review-tasks.md` (15/16 items livrés).
 - **Reste à faire** : factoriser le chemin duo de `showEquipMenu` (inventory.js).
 - **Étape** : refactor local + smoke vert + bump cache. À coupler éventuellement
