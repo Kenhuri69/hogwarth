@@ -43,10 +43,8 @@
   let _incomingDeadline    = 0;
   let _incomingCountdownH  = null;
 
-  function _esc(s) {
-    return String(s || '').replace(/[&<>"]/g, c =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-  }
+  // Échappement HTML unifié (window.htmlEscape, js/html-escape.js chargé tôt).
+  const _esc = window.htmlEscape;
 
   // Blason de Maison utilisé dans la liste (réutilise le pattern
   // multiplayer.js — `_mpHouseCrest`). Pas critique : si la fonction

@@ -28,7 +28,7 @@ Légende effort : **S** < 1 h · **M** 1-4 h · **L** > 4 h.
 *Critère de passage : aucun flux ne peut faire perdre une partie ou ignorer
 silencieusement une action du joueur ; surface XSS unifiée.*
 
-- [ ] **0.1 — Unifier l'échappement HTML `_esc`** ✅ (S)
+- [x] **0.1 — Unifier l'échappement HTML `_esc`** ✅ (S) — FAIT 2026-06-12
   3 implémentations divergentes : `js/visit-hud.js:43`, `js/atelier-voyageur.js:25`,
   `js/portal-matchmaking.js:46` (`s == null` vs `s || ''`, jeux de caractères
   différents). Ces helpers échappent des données **venant du réseau**
@@ -37,6 +37,11 @@ silencieusement une action du joueur ; surface XSS unifiée.*
   au MANIFEST du loader), faire pointer les 3 `_esc` dessus, étendre le test
   anti-XSS de `tests/units.js` pour verrouiller l'implémentation unique.
   *Vérif : `node tests/units.js` + grep `function _esc(` → 0 implémentation locale.*
+  → Nouveau module `js/html-escape.js` (jeu de 5 caractères `& < > " '`, repli
+  null/undefined → `''`). Les 3 `_esc` deviennent `const _esc = window.htmlEscape`.
+  Ajouté au MANIFEST loader + PRECACHE_URLS. Test anti-XSS réécrit : charge
+  l'helper unique + verrouille la délégation des 3 fichiers (0 impl. locale).
+  Vérifié : units (435), smoke (189), pwa-smoke verts ; grep = 0.
 
 - [ ] **0.2 — Feedback sur achat refusé (or insuffisant)** ✅ (S)
   `js/shop.js:384 — _purchase()` : `if (player.gold < price) return;` —

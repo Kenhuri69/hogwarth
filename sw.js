@@ -41,6 +41,7 @@ const PRECACHE_URLS = [
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
+  './js/html-escape.js?v=1',
   './js/ux-improvements.js?v=6',
   './js/combat-fx.js?v=10',
   './js/haptics.js?v=2',

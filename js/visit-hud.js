@@ -40,11 +40,8 @@
     Poufsouffle: '🦡'
   };
 
-  function _esc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
+  // Échappement HTML unifié (window.htmlEscape, js/html-escape.js chargé tôt).
+  const _esc = window.htmlEscape;
 
   function showVisitHud(opts) {
     const o = opts || {};

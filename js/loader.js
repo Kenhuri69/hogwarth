@@ -69,6 +69,7 @@ window.UX_safe = new Proxy({}, {
   // identifiants non déclarés (retourne "undefined").
   const MANIFEST = [
     // ── Données de référence (critiques) ──
+    { name: 'htmlEscape',         source: 'html-escape.js',  kind: 'fn'  },
     { name: 'MONSTERS',           source: 'monsters.js',     kind: 'obj' },
     { name: 'SPELLS',             source: 'data.js',         kind: 'obj' },
     { name: 'ITEMS',              source: 'data.js',         kind: 'obj' },
