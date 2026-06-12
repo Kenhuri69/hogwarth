@@ -213,14 +213,14 @@ existent déjà (✅) ; il reste à s'assurer que **le texte** suit le flag.
 > L'ÉTAPE 2 la **branche dans le workflow technique** pour qu'un futur ajout n'oublie
 > ni la voix ni la doc.
 
-- [ ] **Skill `add-playable-character`** : ajouter une étape « **6. Barks (optionnel)** :
+- [x] **Skill `add-playable-character`** : ajouter une étape « **6. Barks (optionnel)** :
       ajouter `HERO_BARKS[<key>]` (4-6 événements + `houseTension`) ; rappeler le
       **bump cache PWA** et le `MANIFEST` loader. » + une étape « **7. Doc** : §5.0,
       §5.0.1, profil §5.1/§5.2 complet, checklist §5.5.5 ».
-- [ ] **`CLAUDE.md`** (section « Ajouter un nouveau personnage jouable ») : renvoyer
+- [x] **`CLAUDE.md`** (section « Ajouter un nouveau personnage jouable ») : renvoyer
       vers [05 §5.5](../../docs/histoire/05-personnages-jouables.md) comme **règle normative**
       et mentionner `js/hero-barks.js` + `barksEnabled` dans la structure des fichiers.
-- [ ] **Checklist §5.5.5** : ajouter une ligne « barks renseignés ou explicitement
+- [x] **Checklist §5.5.5** : ajouter une ligne « barks renseignés ou explicitement
       omis » + « profil doc complet (tous les champs de la convention) ».
 
 **Vérif :** relecture croisée — la skill, CLAUDE.md et §5.5 ne se contredisent pas.
