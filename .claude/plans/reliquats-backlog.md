@@ -39,7 +39,7 @@
 > Vérifié 2026-06-11 contre le code : flacons AOE (`data.js` `aoe:true`,
 > `throwItemAoe` dans `battle.js`) + potions ennemies à charges
 > (`tryEnemyAbility case 'consumable'`) implémentés. Plan dédié :
-> [`potions-aoe-enemy-use.md`](./potions-aoe-enemy-use.md). Smoke
+> [`potions-aoe-enemy-use.md`](./_archive/potions-aoe-enemy-use.md). Smoke
 > `scenarioPotionAoeAndEnemyUse`.
 - **Source** : `_archive/potions-enrichment.md` (backlog P6).
 - **Reste à faire** : potions offensives **multi-cibles / AOE** (splash sur le
@@ -57,7 +57,7 @@
 ### 1.2 Forge & Bibliothèque — extension matériaux T5 + formule d'upgrade — 🟡 **PARTIEL**
 > Vérifié 2026-06-11 contre le code : **volet Forge T5 implémenté**
 > (`forge.js` `FORGE_MAX_LEVEL=8`, matériau `essence_primordiale`, paliers
-> 6-8) — plan dédié [`forge-t5.md`](./forge-t5.md). **Restent ouverts** :
+> 6-8) — plan dédié [`forge-t5.md`](./_archive/forge-t5.md). **Restent ouverts** :
 > refonte de la formule d'upgrade Bibliothèque + nouvelles recettes/sorts T5.
 - **Source** : `_archive/forge-library-stabilization.md`.
 - **Reste à faire** : ajouter une **source de matériaux de palier T5** (endgame),
@@ -125,7 +125,7 @@
 > Vérifié 2026-06-11 contre le code : `iconizeCombatLog` + table
 > (`item-icons.js`) branchés au journal ; les 9 PNG du Lot 3 présents
 > dans `img/icons/`. En complément, les badges de buff/résistance passent
-> aussi en PNG — plan dédié [`combat-buff-badges.md`](./combat-buff-badges.md).
+> aussi en PNG — plan dédié [`combat-buff-badges.md`](./_archive/combat-buff-badges.md).
 - **Source** : `_archive/combat-emoji-badges.md` (Lot 1 livré).
 - **Reste à faire** : **Lot 2** conversion emoji → badge dans le **journal de
   combat** ; **Lot 3** création des **9 PNG** manquants.
@@ -201,7 +201,7 @@
 > Vérifié 2026-06-12 : helpers `_equipMenuPanel` + `_equipRingButtons` extraits
 > dans `inventory.js`, 3 variantes inline (solo non-ring / solo ring / duo)
 > dé-dupliquées, **sans changement de rendu**. Plan dédié :
-> [`refactor-equip-menu.md`](./refactor-equip-menu.md). Smoke complet vert.
+> [`refactor-equip-menu.md`](./_archive/refactor-equip-menu.md). Smoke complet vert.
 - **Source** : `_archive/code-review-tasks.md` (15/16 items livrés).
 - **Reste à faire** : factoriser le chemin duo de `showEquipMenu` (inventory.js).
 - **Étape** : refactor local + smoke vert + bump cache. À coupler éventuellement

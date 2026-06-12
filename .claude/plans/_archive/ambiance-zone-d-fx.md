@@ -1,7 +1,7 @@
 # Plan — P-D4 : FX runes pulsées + brouillard temporel (Zone D)
 
 **Branche :** `claude/ambiance-zone-d-fx` (depuis master, Étape 3 mergée #447)
-**Statut :** 🟧 En cours
+**Statut :** ✅ Livré (P-D4 mergé #450 — commit 108eafd)
 **Nature :** visuel canvas (renderer + dungeon-fx) + pic givre sur écho. Touche
 des JS servis → **bump cache PWA obligatoire**. Aucune nouvelle CSS, aucun
 nouvel état persistant (tout dérivé de `currentFloor`/`victoryAchieved`).

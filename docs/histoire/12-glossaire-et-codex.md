@@ -691,7 +691,7 @@ sérialisés ou dérivables** (pas de nouvel état lourd) :
 > l'architecture zéro-dépendance / zéro-build. Beaucoup de briques **existent
 > déjà** (✅, surtout côté bestiaire) ; ce plan distingue l'acté (✅) du à
 > construire (🔧). Détail opérationnel (lots, cases à cocher) dans le plan
-> dédié : [`.claude/plans/ch12-codex-impl.md`](../../.claude/plans/ch12-codex-impl.md).
+> dédié : [`.claude/plans/_archive/ch12-codex-impl.md`](../../.claude/plans/_archive/ch12-codex-impl.md).
 
 ## I. Structure des données
 
@@ -833,7 +833,7 @@ const CODEX_ENTRIES = [
    (notes marginales). → profondeur & rejouabilité.
 6. **Échos temporels** (`temporalEchoSeen`, zone D) + états **corrompus**. →
    endgame, en dernier (dépend de l'ambiance zone D, plan
-   [`ambiance-zone-d-fx.md`](../../.claude/plans/ambiance-zone-d-fx.md)).
+   [`ambiance-zone-d-fx.md`](../../.claude/plans/_archive/ambiance-zone-d-fx.md)).
 
 > Garde-fous transverses : chaque helper pur → `tests/units.js` ; tout changement
 > JS/CSS → **bump cache PWA** (skill `cache-bump`) + `node tests/smoke.js`

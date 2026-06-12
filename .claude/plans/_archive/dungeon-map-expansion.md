@@ -5,7 +5,8 @@
 > (10×10 utile) ne sépare proprement que ~4 salles ; passer à 16×16
 > (14×14 utile) redonne l'espace pour une vraie épine + plusieurs branches.
 
-Statut global : **🟡 EN COURS.**
+Statut global : **✅ LIVRÉ.** (code confirmé : `MAP_W=MAP_H=16`, `ROOM_COUNT=7`,
+`SPINE_LEN=4`, minimap desktop 10px ; `scenarioBranchyDungeon` à jour.)
 Branche de travail : `claude/fix-door-view-blocking`.
 Décision utilisateur (2026-05-22) : taille **16×16**, **plus de salles**.
 
@@ -31,19 +32,19 @@ Décision utilisateur (2026-05-22) : taille **16×16**, **plus de salles**.
 
 ## Étapes
 
-- [ ] **1** `data.js` : `MAP_W = MAP_H = 12` → `16`. → *verif :* le jeu démarre,
+- [x] **1** `data.js` : `MAP_W = MAP_H = 12` → `16`. → *verif :* le jeu démarre,
       `node tests/smoke.js` ne régresse pas hors comptes de salles.
-- [ ] **2** `dungeon.js` : `ROOM_COUNT 5 → 7`, `SPINE_LEN 3 → 4`
+- [x] **2** `dungeon.js` : `ROOM_COUNT 5 → 7`, `SPINE_LEN 3 → 4`
       (épine = spawn + 2 salles + escalier ; 3 branches cul-de-sac).
       Mettre à jour le bloc de commentaire « 5 salles ». → *verif :*
       `lastDungeonRooms.length === 7`, ≥ 1 branche, connexité 100 %.
-- [ ] **3** `renderer-minimap.js` : case desktop `14 → 10`
+- [x] **3** `renderer-minimap.js` : case desktop `14 → 10`
       (16×10 + 15×2 = 190px, identique à l'actuel), overlay mobile
       `20 → 16` (16×16 + 15×2 = 286px < 92vw). → *verif :* minimap
       ne déborde pas du panneau ni de la modale.
-- [ ] **4** `tests/smoke.js` : `scenarioBranchyDungeon` assertion
+- [x] **4** `tests/smoke.js` : `scenarioBranchyDungeon` assertion
       `rooms === 5` → `rooms === 7`. → *verif :* scénario vert.
-- [ ] **5** `node tests/smoke.js` complet 100 % vert.
+- [x] **5** `node tests/smoke.js` complet 100 % vert.
 
 ## Critères de succès
 

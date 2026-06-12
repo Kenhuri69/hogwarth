@@ -50,7 +50,7 @@ que les 13 sprites existants). Enregistré dans `PLAYER_SPRITE_SRC`
 joueur, Mondes Parallèles) — repli silhouette vectorielle si le PNG manque.
 - **Source = un visuel PLEIN CORPS** (≠ le crop visage de 1a).
 - Style **Règle A** d'`IMG_STYLE.md` (painterly, head-to-toe, marge ≥ 8 %).
-  Prompts type : voir `.claude/plans/nano-banana-prompts-heroes-olivier-agathe.md`.
+  Prompts type : voir `.claude/plans/_archive/nano-banana-prompts-heroes-olivier-agathe.md`.
 - Si l'image arrive sur **fond damier aplati** (Gemini/Nano Banana en RGB) :
   détourer via `python3 tools/dechecker_png.py <src.png> img/players/<key>.png`.
 - **Ajouter la clé** `<key>: 'img/players/<key>.png'` à `PLAYER_SPRITE_SRC`,

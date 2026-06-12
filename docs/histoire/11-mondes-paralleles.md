@@ -13,7 +13,7 @@
 >
 > Conventions : `💡` = proposition narrative modifiable ; `✅` = acté dans le jeu
 > (système) ; `❓` = point à valider. Le « comment » technique de la Boucle est
-> esquissé dans `.claude/plans/chapter-11-dark-loop.md` (ÉTAPE 2) ; celui des
+> esquissé dans `.claude/plans/_archive/chapter-11-dark-loop.md` (ÉTAPE 2) ; celui des
 > Mondes Parallèles dans `CLAUDE.md` § *Mondes Parallèles* +
 > `.claude/plans/parallel-worlds.md`.
 >
@@ -668,4 +668,4 @@ Une variante de Boucle n'est admise que si elle **passe ces cinq tests** :
 > · [07 Maisons (Mythe/Apothéose/★ N)](07-les-maisons.md) · [08 Quêtes signature & Gardien](08-quetes-et-sous-intrigues.md)
 > · [09 §9.10 Ténébreux](09-bestiaire-et-lore.md) · [10 zone D Ruines Anciennes](10-lieux-et-geographie.md)
 > · [12 Codex (entrées de Boucle)](12-glossaire-et-codex.md). Plan technique
-> (ÉTAPE 2) : `.claude/plans/chapter-11-dark-loop.md`.
+> (ÉTAPE 2) : `.claude/plans/_archive/chapter-11-dark-loop.md`.
