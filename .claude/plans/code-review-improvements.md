@@ -61,7 +61,7 @@ silencieusement une action du joueur ; surface XSS unifiée.*
   (quête/clé/matériau/passif) : déjà messagés. Nouveau scénario smoke
   `scenarioRefusalFeedback` (achat sans or + soin à PV max). 190 scénarios verts.
 
-- [ ] **0.3 — Confirmations destructives : Ironman + suppression de slot manuel** (M)
+- [x] **0.3 — Confirmations destructives : Ironman + suppression de slot manuel** (M) — FAIT 2026-06-12
   Audit UX P1.1/P3.11 : le toggle Ironman (`#ironman-toggle`) n'explique pas la
   permadeath (suppression de TOUS les slots Ironman à la mort, cf.
   `deleteIronmanSlots`) ; la suppression d'un slot manuel et celle de l'auto-save
@@ -70,6 +70,12 @@ silencieusement une action du joueur ; surface XSS unifiée.*
   La mort efface la partie. ») + différencier la confirmation auto-save
   (bénin) vs slot manuel (définitif).
   *Vérif : scénario smoke Ironman + revue manuelle mobile.*
+  → Nouvelle modale `#ironman-confirm-modal` (markup + CSS), wirée par
+  `onIronmanToggle`/`confirmIronman`/`cancelIronman` (main.js) sur le `onchange`
+  du toggle : cocher ouvre la modale, Annuler décoche, Confirmer retient.
+  Suppression de slot : helper partagé `_confirmSlotDeletion(id)` (save-ui.js) —
+  message bénin pour l'auto-save (recréée seule), avertissement irréversible
+  pour un slot manuel. Nouveau scénario smoke `scenarioIronmanConfirm`. 191 verts.
 
 - [ ] **0.4 — Robustesse de `_applyState` sur save partielle/corrompue** (M)
   Audit bugs #4 : `js/save.js` restaure `party` par `Object.assign` puis appelle

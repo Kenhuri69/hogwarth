@@ -10,7 +10,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=36">
+<link rel="stylesheet" href="css/style.css?v=37">
 <link rel="stylesheet" href="css/ux-improvements.css?v=4">
 <link rel="stylesheet" href="css/save-ui.css?v=3">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -376,7 +376,7 @@
         </select>
       </div>
       <label class="ironman-toggle" for="ironman-toggle">
-        <input type="checkbox" id="ironman-toggle">
+        <input type="checkbox" id="ironman-toggle" onchange="onIronmanToggle(this)">
         <span class="ironman-toggle-body">
           <span class="ironman-toggle-title"><img class="ir-icon ironman-toggle-icon" src="img/icons/ironman.png" alt=""> Mode Ironman</span>
           <span class="ironman-toggle-desc">Une seule vie. La mort est définitive et inscrit votre score au Hall of Fame. La difficulté est verrouillée pour toute la partie.</span>
@@ -793,6 +793,24 @@
       <button class="cmd-btn" data-group="system" onclick="openLoadDialog()" title="Charger une sauvegarde"><span class="btn-icon"><img src="img/icons/load.png" alt="Charger"></span><span class="btn-label">Charger</span></button>
       <button class="cmd-btn" data-group="system" onclick="changeDifficulty()" title="Changer la difficulté"><span class="btn-icon"><img src="img/icons/gear.png" alt="Diff."></span><span class="btn-label">Diff.</span></button>
       <button class="cmd-btn" data-group="system" onclick="openHelpMenu()" title="Aide / Tutoriel"><span class="btn-icon"><img src="img/icons/spellbook.png" alt="Aide"></span><span class="btn-label">Aide</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation d'activation du mode Ironman (permadeath explicite) -->
+<div id="ironman-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="ironman-confirm-title">
+  <div class="modal-box">
+    <div class="modal-title" id="ironman-confirm-title"><img class="ui-icon ui-icon-xl" src="img/icons/ironman.png" alt=""> Mode Ironman</div>
+    <p class="ironman-confirm-text">
+      <strong>Une seule vie. La mort efface la partie.</strong><br>
+      En cas de défaite, <em>toutes</em> vos sauvegardes Ironman (automatique
+      <em>et</em> manuelles) sont supprimées définitivement — aucun
+      rechargement possible. Votre score sera inscrit au Hall of Fame et la
+      difficulté restera verrouillée pour toute la partie.
+    </p>
+    <div class="ironman-confirm-actions">
+      <button class="psel-back" type="button" onclick="cancelIronman()">Annuler</button>
+      <button class="start-btn" type="button" onclick="confirmIronman()">J'accepte le risque</button>
     </div>
   </div>
 </div>

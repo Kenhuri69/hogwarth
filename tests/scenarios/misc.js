@@ -626,4 +626,45 @@ async function scenarioHeroBarks() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioContentConsumablesTradeoffs, scenarioHeroBarks] };
+// 0.3 — Confirmation explicite de la permadeath à l'activation d'Ironman.
+// Cocher la case ouvre une modale ; Annuler décoche, Confirmer retient.
+async function scenarioIronmanConfirm() {
+  console.log('\n── Scénario : confirmation d\'activation Ironman (0.3) ──');
+  const { browser, page, errors } = await launchGame();
+
+  const t = await page.evaluate(() => {
+    const cb    = document.getElementById('ironman-toggle');
+    const modal = document.getElementById('ironman-confirm-modal');
+    cb.checked = false;
+    // 1) cocher (event utilisateur) → la modale de confirmation s'ouvre.
+    cb.checked = true;
+    cb.dispatchEvent(new Event('change'));
+    const opened = modal.style.display === 'flex';
+    // 2) Annuler → case décochée + modale fermée.
+    cancelIronman();
+    const afterCancel = { checked: cb.checked, modal: modal.style.display };
+    // 3) re-cocher → modale rouverte → Confirmer → case retenue + modale fermée.
+    cb.checked = true;
+    cb.dispatchEvent(new Event('change'));
+    const reopened = modal.style.display === 'flex';
+    confirmIronman();
+    const afterConfirm = { checked: cb.checked, modal: modal.style.display };
+    return { opened, afterCancel, reopened, afterConfirm };
+  });
+  console.log('  flux →', t);
+  assert(t.opened,                        'cocher Ironman doit ouvrir la modale de confirmation');
+  assert(t.afterCancel.checked === false, 'Annuler doit décocher Ironman');
+  assert(t.afterCancel.modal === 'none',  'Annuler doit fermer la modale');
+  assert(t.reopened,                      're-cocher doit rouvrir la modale');
+  assert(t.afterConfirm.checked === true, 'Confirmer doit conserver Ironman coché');
+  assert(t.afterConfirm.modal === 'none', 'Confirmer doit fermer la modale');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Confirmation d\'activation Ironman OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStartup, scenarioLoader, scenarioIronman, scenarioIronmanConfirm, scenarioContentConsumablesTradeoffs, scenarioHeroBarks] };

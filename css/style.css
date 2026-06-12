@@ -1649,6 +1649,26 @@ body {
   align-items: center; justify-content: center;
   padding: 20px;
 }
+/* Confirmation Ironman — au-dessus de l'écran de sélection (permadeath) */
+#ironman-confirm-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 900;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+#ironman-confirm-modal .modal-box { max-width: 440px; }
+.ironman-confirm-text {
+  color: var(--parchment);
+  font-family: 'Crimson Text', serif;
+  font-size: 15px; line-height: 1.55;
+  margin: 4px 2px 20px;
+}
+.ironman-confirm-text strong { color: #e0584a; }
+.ironman-confirm-actions {
+  display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;
+}
 #house-detail-modal .modal-box { max-width: 560px; }
 #settings-modal .modal-box { max-width: 420px; }
 .settings-section-label {
