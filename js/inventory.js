@@ -233,6 +233,42 @@ function _equipMenuSetBadge(item) {
   return `<span class="equip-menu-set-badge">${set.setLabel} (${piece})</span>`;
 }
 
+// Coquille du panneau de choix d'équipement (titre + desc + boutons +
+// Annuler), partagée par les branches solo-anneau et duo de showEquipMenu.
+function _equipMenuPanel(item, setBadge, buttonsHtml) {
+  return `
+    <div style="grid-column:1/-1;padding:14px;text-align:center">
+      <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
+        Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}${setBadge}
+      </div>
+      <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
+      <div style="max-width:200px;margin:0 auto">
+        ${buttonsHtml}
+        <button class="cmd-btn" style="width:100%;margin-top:4px;opacity:.7"
+          onclick="renderInventory(false)">← Annuler</button>
+      </div>
+    </div>
+  `;
+}
+
+// Boutons « anneau gauche / droit » pour le perso `ci`. `compact=false`
+// (solo) : libellés longs « Anneau gauche/droit » + « (vide) » si slot libre.
+// `compact=true` (duo) : libellés courts, pas de « (vide) », marges resserrées.
+function _equipRingButtons(idx, ci, c, compact) {
+  const ring1 = c.equipped && c.equipped.ring1;
+  const ring2 = c.equipped && c.equipped.ring2;
+  const r1Label = ring1 ? ` (rem. ${ring1.name})` : (compact ? '' : ' (vide)');
+  const r2Label = ring2 ? ` (rem. ${ring2.name})` : (compact ? '' : ' (vide)');
+  const lead = compact ? '' : 'Anneau ';
+  const ico  = '<img class="ui-icon ui-icon-md" src="img/icons/accessory.png" alt="">';
+  return `
+        <button class="cmd-btn" style="width:100%;margin-bottom:${compact ? '4px' : '6px'}"
+          onclick="equipItem(${idx},${ci},'ring1')">${ico} ${lead}gauche${r1Label}</button>
+        <button class="cmd-btn" style="width:100%;margin-bottom:${compact ? '8px' : '6px'}"
+          onclick="equipItem(${idx},${ci},'ring2')">${ico} ${lead}droit${r2Label}</button>
+  `;
+}
+
 function showEquipMenu(item, idx) {
   const isRing = item.slot === 'ring';
 
@@ -244,45 +280,17 @@ function showEquipMenu(item, idx) {
 
   // Mode solo + anneau : choisir l'anneau cible (Harry uniquement)
   if (partySize === 1 && isRing) {
-    const c = party[0];
-    const ring1 = c.equipped && c.equipped.ring1;
-    const ring2 = c.equipped && c.equipped.ring2;
-    const r1Label = ring1 ? ` (rem. ${ring1.name})` : ' (vide)';
-    const r2Label = ring2 ? ` (rem. ${ring2.name})` : ' (vide)';
-    grid.innerHTML = `
-      <div style="grid-column:1/-1;padding:14px;text-align:center">
-        <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
-          Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}${setBadge}
-        </div>
-        <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
-        <div style="max-width:200px;margin:0 auto">
-          <button class="cmd-btn" style="width:100%;margin-bottom:6px"
-            onclick="equipItem(${idx},0,'ring1')"><img class="ui-icon ui-icon-md" src="img/icons/accessory.png" alt=""> Anneau gauche${r1Label}</button>
-          <button class="cmd-btn" style="width:100%;margin-bottom:6px"
-            onclick="equipItem(${idx},0,'ring2')"><img class="ui-icon ui-icon-md" src="img/icons/accessory.png" alt=""> Anneau droit${r2Label}</button>
-          <button class="cmd-btn" style="width:100%;margin-top:4px;opacity:.7"
-            onclick="renderInventory(false)">← Annuler</button>
-        </div>
-      </div>
-    `;
+    grid.innerHTML = _equipMenuPanel(item, setBadge, _equipRingButtons(idx, 0, party[0], false));
     return;
   }
 
   // Duo : un bouton par personnage. Pour les anneaux, deux boutons par
-  // personnage (anneau gauche / anneau droit).
+  // personnage (anneau gauche / droit) précédés d'un en-tête perso.
   const charButtons = party.slice(0, partySize).map((c, ci) => {
     if (isRing) {
-      const ring1 = c.equipped && c.equipped.ring1;
-      const ring2 = c.equipped && c.equipped.ring2;
-      const r1Label = ring1 ? ` (rem. ${ring1.name})` : '';
-      const r2Label = ring2 ? ` (rem. ${ring2.name})` : '';
       return `
         <div style="margin-bottom:8px;font-size:10px;color:var(--gold-dark)">${c.icon} ${c.name.split(' ')[0]}</div>
-        <button class="cmd-btn" style="width:100%;margin-bottom:4px"
-          onclick="equipItem(${idx},${ci},'ring1')"><img class="ui-icon ui-icon-md" src="img/icons/accessory.png" alt=""> gauche${r1Label}</button>
-        <button class="cmd-btn" style="width:100%;margin-bottom:8px"
-          onclick="equipItem(${idx},${ci},'ring2')"><img class="ui-icon ui-icon-md" src="img/icons/accessory.png" alt=""> droit${r2Label}</button>
-      `;
+        ${_equipRingButtons(idx, ci, c, true)}`;
     }
     const slot    = _resolveSlotForItem(item, c);
     const current = c.equipped && c.equipped[slot];
@@ -293,19 +301,7 @@ function showEquipMenu(item, idx) {
             </button>`;
   }).join('');
 
-  grid.innerHTML = `
-    <div style="grid-column:1/-1;padding:14px;text-align:center">
-      <div style="font-family:'Cinzel',serif;color:var(--gold);font-size:13px;margin-bottom:4px">
-        Équiper ${getItemIconHtml(item, 'ui-icon-md')} ${item.name}${setBadge}
-      </div>
-      <div style="font-size:11px;color:#8a7050;margin-bottom:12px">${item.desc}</div>
-      <div style="max-width:200px;margin:0 auto">
-        ${charButtons}
-        <button class="cmd-btn" style="width:100%;margin-top:4px;opacity:.7"
-          onclick="renderInventory(false)">← Annuler</button>
-      </div>
-    </div>
-  `;
+  grid.innerHTML = _equipMenuPanel(item, setBadge, charButtons);
 }
 
 // ── Équiper un objet sur un personnage ───────────────────────
