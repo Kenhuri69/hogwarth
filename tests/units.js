@@ -359,6 +359,58 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 4bis. save.js — robustesse de _applyState contre une save corrompue
+// ------------------------------------------------------------
+// _applyState mute ~100 globals + DOM (non testable purement), mais sa garde
+// d'entrée s'appuie sur deux helpers PURS extractibles : _validCharForLoad /
+// _validateLoadedState. On verrouille ici qu'une save valide passe et qu'une
+// save tronquée (champs vitaux NaN/absents) est refusée avec un motif clair —
+// la garantie « pas de NaN en cascade » repose sur ce refus pré-mutation.
+// ============================================================
+(function testApplyStateGuard() {
+  const { _validCharForLoad, _validateLoadedState } = loadModule(
+    'js/save.js', ['_validCharForLoad', '_validateLoadedState']);
+
+  // Personnage de référence (forme d'une save valide hydratée).
+  const goodChar = { hpMax: 35, spMax: 22, hp: 30, sp: 10, level: 3, spells: ['Incendio'] };
+
+  // ── _validCharForLoad : champ par champ ──
+  check('char valide accepté', _validCharForLoad(goodChar) === true);
+  check('char null refusé',    _validCharForLoad(null) === false);
+  check('hpMax NaN refusé',    _validCharForLoad({ ...goodChar, hpMax: NaN }) === false);
+  check('hpMax 0 refusé',      _validCharForLoad({ ...goodChar, hpMax: 0 }) === false);
+  check('hpMax absent refusé', _validCharForLoad({ ...goodChar, hpMax: undefined }) === false);
+  check('hp NaN refusé',       _validCharForLoad({ ...goodChar, hp: NaN }) === false);
+  check('level 0 refusé',      _validCharForLoad({ ...goodChar, level: 0 }) === false);
+  check('level NaN refusé',    _validCharForLoad({ ...goodChar, level: NaN }) === false);
+  check('spells non-array refusé', _validCharForLoad({ ...goodChar, spells: 'Incendio' }) === false);
+  check('spMax négatif refusé', _validCharForLoad({ ...goodChar, spMax: -1 }) === false);
+  check('spMax 0 accepté',     _validCharForLoad({ ...goodChar, spMax: 0 }) === true);
+
+  // ── _validateLoadedState : forme de l'instantané ──
+  check('state solo valide',   _validateLoadedState({ party: [goodChar] }).ok === true);
+  check('state duo valide',    _validateLoadedState({ party: [goodChar, { ...goodChar }] }).ok === true);
+  check('state null refusé',   _validateLoadedState(null).ok === false);
+  check('state sans party',    _validateLoadedState({}).ok === false);
+  check('state party vide',    _validateLoadedState({ party: [] }).ok === false);
+  check('motif groupe manquant', _validateLoadedState({}).reason === 'groupe manquant');
+
+  // Save tronquée : héros principal corrompu → refus + motif explicite.
+  const trunc = _validateLoadedState({ party: [{ ...goodChar, hpMax: NaN }] });
+  check('save tronquée refusée', trunc.ok === false);
+  check('motif héros principal', trunc.reason === 'stats du héros principal invalides');
+
+  // Duo : 2nd héros corrompu → refus distinct (le 1er reste valide).
+  const duoBad = _validateLoadedState({ party: [goodChar, { ...goodChar, level: NaN }] });
+  check('2nd héros corrompu refusé', duoBad.ok === false);
+  check('motif second héros', duoBad.reason === 'stats du second héros invalides');
+
+  // Round-trip de forme : un instantané réel (clone JSON) reste valide.
+  const snapshot = JSON.parse(JSON.stringify({ party: [goodChar, { ...goodChar, level: 5 }], partySize: 2 }));
+  check('round-trip JSON valide', _validateLoadedState(snapshot).ok === true);
+})();
+
+// ============================================================
 // 5. floor-ambiance.js — getFloorAmbiance / corruptionLevel /
 //    houseAmbianceLine
 // ============================================================

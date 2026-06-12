@@ -185,7 +185,46 @@ function _mapDimsStale(grid) {
       || !Array.isArray(grid[0]) || grid[0].length !== MAP_W;
 }
 
+// Un personnage chargé doit porter des stats vitales numériques cohérentes,
+// sinon `recalculateStats` propagerait des NaN en cascade (jeu injouable).
+// Ces champs existent dans TOUTE save valide (hydratés depuis CHARACTERS) ;
+// leur absence/NaN trahit une save tronquée (quota localStorage, import
+// manuel bricolé). On valide AVANT toute mutation pour préserver le slot.
+function _validCharForLoad(c) {
+  return !!c && typeof c === 'object'
+    && Number.isFinite(c.hpMax) && c.hpMax > 0
+    && Number.isFinite(c.spMax) && c.spMax >= 0
+    && Number.isFinite(c.hp)
+    && Number.isFinite(c.sp)
+    && Number.isFinite(c.level) && c.level >= 1
+    && Array.isArray(c.spells);
+}
+
+// Valide la forme minimale d'un instantané avant de l'appliquer. Retourne
+// { ok, reason } — `reason` est affiché au joueur si le chargement est refusé.
+function _validateLoadedState(gs) {
+  if (!gs || typeof gs !== 'object')      return { ok: false, reason: 'données absentes' };
+  if (!Array.isArray(gs.party) || !gs.party[0])
+    return { ok: false, reason: 'groupe manquant' };
+  if (!_validCharForLoad(gs.party[0]))
+    return { ok: false, reason: 'stats du héros principal invalides' };
+  // En duo, le second héros présent doit être valide lui aussi.
+  if (gs.party[1] && !_validCharForLoad(gs.party[1]))
+    return { ok: false, reason: 'stats du second héros invalides' };
+  return { ok: true, reason: '' };
+}
+
 function _applyState(gs) {
+  // Garde de robustesse : une save corrompue est refusée proprement (message
+  // clair, slot intact, aucune stat NaN) plutôt qu'appliquée en l'état.
+  const _v = _validateLoadedState(gs);
+  if (!_v.ok) {
+    if (typeof addMsg === 'function')
+      addMsg(`❌ Sauvegarde corrompue (${_v.reason}) — chargement annulé.`, 'bad');
+    console.warn('[save] _applyState refusé :', _v.reason);
+    return false;
+  }
+
   if (gs.party && gs.party[0]) Object.assign(player,  gs.party[0]);
   if (gs.party && gs.party[1]) Object.assign(player2, gs.party[1]);
   party[0] = player;
@@ -482,6 +521,7 @@ function _applyState(gs) {
   if (typeof startDungeonFxLoop === 'function') startDungeonFxLoop();
   if (typeof DFX_safe !== 'undefined') DFX_safe.setFloorAmbience();
   updateLocationDisplay();
+  return true;
 }
 
 // Migration rétroactive : pour les saves antérieures à l'introduction des
@@ -616,7 +656,7 @@ function loadGame() {
     addMsg("Sauvegarde invalide, chargement annulé.", "bad");
     return;
   }
-  _applyState(gs);
+  if (_applyState(gs) === false) return;   // message déjà affiché, slot intact
   setNarrative("Le groupe reprend ses esprits. La partie est chargée !");
   addMsg("Partie chargée !", "good");
 }

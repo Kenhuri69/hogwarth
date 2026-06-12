@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v117';
+const CACHE_VERSION = 'hogwarth-v118';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -91,7 +91,7 @@ const PRECACHE_URLS = [
   './js/battle-spells.js?v=14',
   './js/battle-ui.js?v=6',
   './js/inventory-core.js?v=6',
-  './js/inventory.js?v=18',
+  './js/inventory.js?v=19',
   './js/inventory-spells.js?v=2',
   './js/potions.js?v=6',
   './js/quests-templates.js?v=11',
@@ -102,21 +102,21 @@ const PRECACHE_URLS = [
   './js/intro.js?v=3',
   './js/shop.js?v=12',
   './js/save-slots.js?v=3',
-  './js/save.js?v=33',
+  './js/save.js?v=34',
   './js/save-visit-snapshot.js?v=1',
-  './js/save-ui.js?v=5',
+  './js/save-ui.js?v=6',
   './js/ironman.js?v=4',
   './js/hall-of-fame.js?v=4',
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
-  './js/main.js?v=21',
+  './js/main.js?v=22',
   './js/endgame.js?v=4',
   './js/break-cycle.js?v=1',
   './js/forge.js?v=4',
   './js/library.js?v=4',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=39',
+  './js/loader.js?v=40',
   './js/pwa.js?v=4',
 
   // Icônes PWA + premier écran

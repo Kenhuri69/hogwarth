@@ -524,6 +524,40 @@ async function scenarioCorruptSave() {
   console.log('  T1 legacy corrompue →', t1);
   assert(t1.threw === false, 'loadGame ne doit pas propager d\'exception sur JSON cassé');
 
+  // T2 : save VALIDE JSON mais tronquée (champs vitaux corrompus) → _applyState
+  // refuse proprement, ne mute pas le groupe (pas de NaN), et le slot survit.
+  const t2 = await page.evaluate(() => {
+    // Sauvegarde réelle dans un slot manuel (round-trip _serializeState).
+    player.hp = player.hpMax; player2.hp = player2.hpMax;
+    writeSlot('manual_1', 'avant corruption');
+    // Mémorise les stats live AVANT la tentative de chargement corrompu.
+    const hpMaxBefore = player.hpMax, levelBefore = player.level, atkBefore = player.atk;
+    // Clone JSON (comme un vrai chargement depuis localStorage : objet frais,
+    // pas une référence vers le player live) puis corrompt (hpMax NaN).
+    const broken = JSON.parse(JSON.stringify(_serializeState()));
+    broken.party[0].hpMax = NaN;
+    document.getElementById('msg-log').innerHTML = '';
+    const ret = _applyState(broken);
+    const msg = document.getElementById('msg-log').textContent;
+    // Le slot manuel doit rester lisible (intact) après le refus.
+    const slotStillThere = !!readSlot('manual_1');
+    return {
+      ret, msg,
+      hpMaxNaN: Number.isNaN(player.hpMax),
+      atkNaN:   Number.isNaN(player.atk),
+      hpMaxKept: player.hpMax === hpMaxBefore,
+      levelKept: player.level === levelBefore,
+      atkKept:   player.atk === atkBefore,
+      slotStillThere,
+    };
+  });
+  console.log('  T2 save tronquée →', t2);
+  assert(t2.ret === false,        '_applyState doit renvoyer false sur save corrompue');
+  assert(/corrompue/i.test(t2.msg), 'un message clair doit signaler la save corrompue');
+  assert(!t2.hpMaxNaN && !t2.atkNaN, 'aucune stat du joueur ne doit devenir NaN');
+  assert(t2.hpMaxKept && t2.levelKept && t2.atkKept, 'l\'état live doit rester inchangé (pas de mutation partielle)');
+  assert(t2.slotStillThere,       'le slot doit rester intact après un chargement refusé');
+
   // Cleanup
   await page.evaluate(() => {
     localStorage.removeItem('hogwarts_rpg_save');

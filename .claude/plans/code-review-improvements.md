@@ -77,7 +77,7 @@ silencieusement une action du joueur ; surface XSS unifiée.*
   message bénin pour l'auto-save (recréée seule), avertissement irréversible
   pour un slot manuel. Nouveau scénario smoke `scenarioIronmanConfirm`. 191 verts.
 
-- [ ] **0.4 — Robustesse de `_applyState` sur save partielle/corrompue** (M)
+- [x] **0.4 — Robustesse de `_applyState` sur save partielle/corrompue** (M) — FAIT 2026-06-12
   Audit bugs #4 : `js/save.js` restaure `party` par `Object.assign` puis appelle
   `recalculateStats()` sans valider les champs critiques (`hp`, `level`, `spells`).
   Une save tronquée (quota localStorage, import manuel) produit des **NaN en
@@ -87,6 +87,13 @@ silencieusement une action du joueur ; surface XSS unifiée.*
   d'appliquer un état corrompu.
   *Vérif : test unitaire round-trip `_serializeState`/`_applyState` + cas save
   tronquée (nouveau dans `tests/units.js`).*
+  → Garde **pré-mutation** : helpers purs `_validCharForLoad` / `_validateLoadedState`
+  (save.js) ; `_applyState` valide AVANT tout `Object.assign`, refuse (message
+  clair + `return false`, slot intact) si `hpMax/hp/sp/spMax/level/spells`
+  invalides, renvoie `true` sinon. Callers (`loadGame`, `_commitSlotLoad`,
+  `loadSlotAndStart`) bailent sur `false` (le hub revient à l'écran de démarrage).
+  Tests : units (validators, +22 assertions) + smoke `scenarioCorruptSave` T2
+  (round-trip JSON tronqué → refus, aucune stat NaN, slot survivant). 191 verts.
 
 ---
 
@@ -282,7 +289,7 @@ existants. À discuter avant tout chantier.*
 
 | Étape | Items | Statut |
 |-------|-------|--------|
-| 0 — Critique | 4 | ☐ à faire |
+| 0 — Critique | 4 | ✅ fait (2026-06-12) |
 | 1 — Majeur | 5 | ☐ à faire |
 | 2 — UX | 8 | ☐ à faire |
 | 3 — Structure | 5 | ☐ à faire |
