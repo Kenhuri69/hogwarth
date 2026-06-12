@@ -311,35 +311,50 @@ function loadModule(relPath, exportNames, globals = {}) {
 // 4. Échappement HTML des données externes (Mondes Parallèles)
 // ------------------------------------------------------------
 // Les noms de host/visiteur viennent du backend Supabase (non fiables) et
-// sont injectés en innerHTML. Chaque module de visite possède son `_esc`
-// privé ; on l'extrait de la source et on vérifie qu'il neutralise les
-// caractères dangereux (verrou anti-régression XSS / défense en profondeur).
+// sont injectés en innerHTML. L'implémentation est désormais UNIQUE
+// (window.htmlEscape, js/html-escape.js) ; les 3 modules de visite
+// délèguent dessus via `const _esc = window.htmlEscape`. On verrouille ici
+// (a) que l'helper unique neutralise les caractères dangereux, et
+// (b) qu'aucun module ne réintroduit une implémentation locale divergente.
 // ============================================================
 (function testEscapers() {
+  // (a) — Implémentation unique : charger js/html-escape.js dans un vm avec
+  // un stub `window`, en extraire htmlEscape, et le soumettre à l'attaque.
+  const win = {};
+  const src = fs.readFileSync(path.join(ROOT, 'js/html-escape.js'), 'utf8');
+  const sandbox = { console, window: win };
+  vm.createContext(sandbox);
+  vm.runInContext(src, sandbox, { filename: 'html-escape.js' });
+  const htmlEscape = win.htmlEscape;
+  check('window.htmlEscape défini', typeof htmlEscape === 'function');
+
+  // Charge utile typique d'injection via un nom de joueur malveillant.
+  const evil = "<img src=x onerror=\"alert(1)\"> & \"Bob\" <b> 'q'";
+  const out = htmlEscape(evil);
+  check('htmlEscape: échappe <', !out.includes('<'));
+  check('htmlEscape: échappe >', !out.includes('>'));
+  check('htmlEscape: échappe " (attribut)', !out.includes('"'));
+  check("htmlEscape: échappe ' (apostrophe)", !out.includes("'"));
+  check('htmlEscape: & encodé', out.includes('&amp;'));
+  check('htmlEscape: apostrophe encodée', out.includes('&#39;'));
+  check('htmlEscape: pas de balise img résiduelle', !/<img/i.test(out));
+  // Garde-fous d'entrée : null/undefined → chaîne vide, pas d'exception.
+  check("htmlEscape(null)=''",      htmlEscape(null) === '');
+  check("htmlEscape(undefined)=''", htmlEscape(undefined) === '');
+  // Types non-string tolérés (jamais d'exception).
+  check('htmlEscape(0)="0"', htmlEscape(0) === '0');
+
+  // (b) — Aucun module de visite ne redéfinit son propre _esc : ils délèguent
+  // tous à window.htmlEscape (verrou anti-réintroduction d'une divergence XSS).
   const ESC_FILES = [
     'js/portal-matchmaking.js',
     'js/atelier-voyageur.js',
     'js/visit-hud.js',
   ];
-  // Charge utile typique d'injection via un nom de joueur malveillant.
-  const evil = '<img src=x onerror="alert(1)"> & "Bob" <b>';
-
   for (const rel of ESC_FILES) {
-    const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
-    const m = src.match(/function _esc\(s\)\s*\{[\s\S]*?\n {2}\}/);
-    check(`${rel}: _esc présent`, !!m);
-    if (!m) continue;
-    // eslint-disable-next-line no-eval — code maison extrait de la source du jeu.
-    const _esc = eval('(' + m[0] + ')');
-    const out = _esc(evil);
-    check(`${rel}: échappe <`, !out.includes('<'));
-    check(`${rel}: échappe >`, !out.includes('>'));
-    check(`${rel}: échappe " (attribut)`, !out.includes('"'));
-    check(`${rel}: & encodé`, out.includes('&amp;'));
-    check(`${rel}: pas de balise img résiduelle`, !/<img/i.test(out));
-    // Garde-fous d'entrée : null/undefined → chaîne vide, pas d'exception.
-    check(`${rel}: _esc(null)=''`,      _esc(null) === '');
-    check(`${rel}: _esc(undefined)=''`, _esc(undefined) === '');
+    const fsrc = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+    check(`${rel}: pas d'implémentation _esc locale`, !/function\s+_esc\s*\(/.test(fsrc));
+    check(`${rel}: délègue à window.htmlEscape`, /_esc\s*=\s*window\.htmlEscape/.test(fsrc));
   }
 })();
 

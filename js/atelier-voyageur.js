@@ -22,11 +22,8 @@
   const SEAL_RESOLVED_REWARD = { essence: 3, fragmentChance: 0.20 };
   const SEAL_FLED_REWARD     = { essence: 1, fragmentChance: 0.00 };
 
-  function _esc(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
+  // Échappement HTML unifié (window.htmlEscape, js/html-escape.js chargé tôt).
+  const _esc = window.htmlEscape;
 
   // Icônes PNG des monnaies d'Outremonde (remplacent les emoji ✨ / 🔹).
   const _ESS  = '<img class="ui-icon ui-icon-md" src="img/icons/essence_outremonde.png" alt="Essence">';
