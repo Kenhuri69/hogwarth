@@ -310,7 +310,10 @@ function _renderBuyGrid(grid) {
     const div = document.createElement('div');
     div.className = 'shop-item';
     div.dataset.itemId = item.id;
-    div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #5a4020;border-radius:6px;background:rgba(30,20,10,0.55);cursor:' + (canAfford ? 'pointer' : 'default') + ';opacity:' + (canAfford ? '1' : '0.5');
+    // Toujours cliquable : un item non abordable reste grisé (cue visuel) mais
+    // le clic déclenche _purchase, qui annonce explicitement le manque d'or
+    // (pas de refus silencieux).
+    div.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid #5a4020;border-radius:6px;background:rgba(30,20,10,0.55);cursor:pointer;opacity:' + (canAfford ? '1' : '0.5');
     const soldTag = (stockEntry && stockEntry.sold)
       ? ' <span style="color:#a8d878;font-size:0.85em">♻️ revendu</span>' : '';
     // Indicateur rareté pour les items à prix progressif (sinks endgame).
@@ -322,7 +325,7 @@ function _renderBuyGrid(grid) {
         <div class="shop-desc">${item.desc}</div>
       </div>
       <div class="shop-price">${price}G</div>`;
-    if (canAfford) div.onclick = () => _purchase(item, price, stockEntry);
+    div.onclick = () => _purchase(item, price, stockEntry);
     grid.appendChild(div);
     added++;
   }
@@ -381,7 +384,11 @@ function _renderSellGrid(grid) {
 // ── Achat / vente ─────────────────────────────────────────────
 
 function _purchase(item, price, stockEntry) {
-  if (!Number.isFinite(player.gold) || player.gold < price) return;
+  if (!Number.isFinite(player.gold) || player.gold < price) {
+    const have = Number.isFinite(player.gold) ? player.gold : 0;
+    addMsg(`❌ Pas assez de Gallions (il te faut ${price}, tu as ${have}).`, 'bad');
+    return;
+  }
   // Les herbes vivent dans la besace d'herboriste (player.herbs, non
   // plafonnée), pas dans le sac 16 slots : le garde « sac plein » ne les
   // concerne pas, et l'achat les route vers addHerb (sinon le brassage,

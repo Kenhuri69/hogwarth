@@ -43,7 +43,7 @@ silencieusement une action du joueur ; surface XSS unifiée.*
   l'helper unique + verrouille la délégation des 3 fichiers (0 impl. locale).
   Vérifié : units (435), smoke (189), pwa-smoke verts ; grep = 0.
 
-- [ ] **0.2 — Feedback sur achat refusé (or insuffisant)** ✅ (S)
+- [x] **0.2 — Feedback sur achat refusé (or insuffisant)** ✅ (S) — FAIT 2026-06-12
   `js/shop.js:384 — _purchase()` : `if (player.gold < price) return;` —
   **silencieux** (le cas « Sac plein ! » a un message, pas le cas or).
   Le joueur clique, rien ne se passe → perçu comme un bug.
@@ -51,6 +51,15 @@ silencieusement une action du joueur ; surface XSS unifiée.*
   Au même passage, balayer les autres refus silencieux signalés par l'audit UX :
   sort sans PM en combat, soin à PV max, objet inutilisable.
   *Vérif : scénario smoke « achat sans or → message visible ».*
+  → `_purchase` annonce désormais le manque d'or. **Cause racine** : `_renderBuyGrid`
+  n'attachait pas de `onclick` aux items non abordables (clic = rien) → corrigé,
+  l'item reste grisé (cue visuel) **et** cliquable pour délivrer le message.
+  Soin/recharge à la stat max : nouveau garde pur `_isWastedRestore` (inventory.js)
+  appliqué dans `useItem` ET `useItemFromChar` → refus visible, objet conservé.
+  Sort sans PM en combat (battle-spells.js:976) et soin OOC « déjà au mieux »
+  (inventory-spells.js:203) : déjà couverts (vérifiés). Objets non utilisables
+  (quête/clé/matériau/passif) : déjà messagés. Nouveau scénario smoke
+  `scenarioRefusalFeedback` (achat sans or + soin à PV max). 190 scénarios verts.
 
 - [ ] **0.3 — Confirmations destructives : Ironman + suppression de slot manuel** (M)
   Audit UX P1.1/P3.11 : le toggle Ironman (`#ironman-toggle`) n'explique pas la
