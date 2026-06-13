@@ -619,4 +619,91 @@ async function scenarioOldSaveMapMigration() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioCorruptSave, scenarioOldSaveMapMigration] };
+// 1.3.4 — Round-trip d'un save « ancien format » : équipement legacy
+// (armor/acc, sans les 11 slots étendus) + absence des champs récents
+// (Sets/Maps de Codex, fontaines, fouilles, kills d'étage, Ironman…). Doit
+// migrer proprement vers un état JOUABLE, sans NaN, puis re-sérialiser de
+// façon stable.
+async function scenarioOldSaveFormatRoundTrip() {
+  console.log('\n── Scénario : round-trip save « ancien format » → jouable ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Gryffondor' });
+
+  const t1 = await page.evaluate(() => {
+    // Part d'un état runtime valide, puis on le RÉTROGRADE au schéma legacy.
+    const gs = _serializeState();
+    gs._version = 1;                       // pré-v2 : force les migrations de quêtes/stat-points
+
+    // 1) Équipement legacy : uniquement wand + armor + acc (pas de slots étendus).
+    gs.party.forEach((c) => {
+      c.equipped = {
+        wand:  { id: 'wand1', name: 'Baguette', slot: 'wand', bonusAtk: 1 },
+        armor: { id: 'robe1', name: 'Robe', slot: 'body', bonusDef: 2 },
+        acc:   { id: 'amulette_protection', name: 'Amulette', slot: 'amulet', bonusMag: 1 },
+      };
+      // Champs récents par-perso absents d'un vieux save.
+      delete c.spellUpgrades;
+      delete c.spellPaths;
+      delete c.unallocatedStatPoints;
+    });
+
+    // 2) Champs top-level récents absents (Sets/Maps + endgame + Ironman + MP).
+    [ 'seenEchoes', 'unlockedCodexEntries', 'floorReached', 'availableQuests',
+      'completedQuests', 'lastQuestCompletion', 'floorKillCount', 'usedFountains',
+      'searchedCells', 'seenScriptedBeat', 'ironmanMode', 'ironmanRunId',
+      'totalKills', 'defeatedBosses', 'visitSession', 'spellUpgrades'
+    ].forEach((k) => { delete gs[k]; });
+
+    let applyErr = null, applied = null;
+    try { applied = _applyState(gs); } catch (e) { applyErr = e.message; }
+
+    // Lecture post-migration.
+    const eq0 = party[0].equipped;
+    const nan = (v) => typeof v !== 'number' || Number.isNaN(v);
+    const playable = party.slice(0, partySize).every(c =>
+      c.hp > 0 && c.hpMax > 0 && !nan(c.atk) && !nan(c.def) && !nan(c.mag) && !nan(c.hpMax));
+
+    let drawErr = null;
+    try { drawDungeon(); renderMinimap(); updateUI(); } catch (e) { drawErr = e.message; }
+
+    // Round-trip : re-sérialiser puis ré-appliquer doit rester stable.
+    let rtErr = null, rtApplied = null;
+    try { rtApplied = _applyState(_serializeState()); } catch (e) { rtErr = e.message; }
+
+    return {
+      applyErr, applied, drawErr, rtErr, rtApplied, playable,
+      // Migration équipement : armor→body, acc→amulet, clés legacy supprimées,
+      // slots étendus initialisés.
+      hasBody:   !!(eq0.body && eq0.body.id === 'robe1'),
+      hasAmulet: !!(eq0.amulet && eq0.amulet.id === 'amulette_protection'),
+      noArmorKey: !('armor' in eq0),
+      noAccKey:   !('acc' in eq0),
+      slotsPresent: ['head', 'hands', 'feet', 'cloak', 'ring1', 'ring2', 'belt', 'trinket']
+        .every(s => s in eq0),
+      // Champs récents redevenus des conteneurs sains.
+      codexIsSet:    typeof unlockedCodexEntries === 'object' && unlockedCodexEntries instanceof Set,
+      statPointsNum: party.slice(0, partySize).every(c => typeof c.unallocatedStatPoints === 'number'),
+    };
+  });
+  console.log('  T1 round-trip:', t1);
+  assert(t1.applyErr === null, `_applyState a planté : ${t1.applyErr}`);
+  assert(t1.applied === true,  '_applyState doit accepter un vieux save valide (return true)');
+  assert(t1.playable, 'le groupe doit être jouable (PV>0, stats numériques, pas de NaN)');
+  assert(t1.hasBody,   'armor doit migrer vers le slot body');
+  assert(t1.hasAmulet, 'acc doit migrer vers le slot amulet');
+  assert(t1.noArmorKey && t1.noAccKey, 'les clés legacy armor/acc doivent être supprimées');
+  assert(t1.slotsPresent, 'les 11 slots étendus doivent être initialisés');
+  assert(t1.codexIsSet, 'unlockedCodexEntries doit redevenir un Set');
+  assert(t1.statPointsNum, 'unallocatedStatPoints doit être migré (nombre)');
+  assert(t1.drawErr === null, `rendu post-migration a planté : ${t1.drawErr}`);
+  assert(t1.rtErr === null && t1.rtApplied === true, 'le round-trip re-sérialisé doit rester stable');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (ancien format)`);
+  }
+  console.log('  ✅ ancien format migré : équipement, champs récents, jouable, round-trip stable');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioSaveSlots, scenarioSlotModal, scenarioExportImport, scenarioAutoSave, scenarioStartHub, scenarioCorruptSave, scenarioOldSaveMapMigration, scenarioOldSaveFormatRoundTrip] };
