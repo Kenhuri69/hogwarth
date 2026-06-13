@@ -238,6 +238,14 @@ function refreshEndingType() {
     }
 
     modal.style.display = 'flex';
+    // Illustration de fin (Chapitre 14 §14.6.1, P4) : affichée seulement si
+    // l'asset existe. onerror → masquée (le jeu reste identique sans elle).
+    const art = document.getElementById('victory-art');
+    if (art && !art.getAttribute('src')) {
+      art.onload  = function () { art.style.display = 'block'; };
+      art.onerror = function () { art.style.display = 'none'; };
+      art.src = 'img/scenes/ending_victory.jpg';
+    }
     // A1 — sting audio de victoire : joué uniquement à la première ouverture.
     // Call-site défensif (reduced-motion ne s'applique pas à l'audio).
     if (!_victoryStingPlayed) {

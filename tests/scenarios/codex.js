@@ -736,4 +736,75 @@ async function scenarioEndingEpilogue() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp, scenarioEndingEpilogue] };
+// Assets de fin (Chapitre 14 §14.6.1, P4) : illustrations victoire / Briser le
+// Cycle + sting audio `ending_break`. Câblage DÉFENSIF — le jeu marche sans les
+// assets (img masquée par onerror, sample audio → repli synthèse).
+async function scenarioEndingAssets() {
+  console.log('\n── Scénario : assets de fin (illustrations + audio, §14.6.1 P4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    // Audio : méthode + constante de sample exposées, appel sans exception.
+    const hasPlayEnding = !!(typeof AudioSystem !== 'undefined' && AudioSystem.playEndingTheme);
+    const sample = (typeof AudioSystem !== 'undefined') ? AudioSystem._ENDING_SAMPLE : null;
+    let endingThrew = false;
+    try { if (hasPlayEnding) AudioSystem.playEndingTheme(); } catch (e) { endingThrew = true; }
+
+    // Illustration de victoire : élément présent, masqué d'entrée, src câblé
+    // par showVictoryScreen (asset absent en test → reste masqué via onerror).
+    const va0 = document.getElementById('victory-art');
+    const vArtExists = !!va0;
+    const vArtHidden0 = va0 && va0.style.display === 'none';
+    showVictoryScreen();
+    const va = document.getElementById('victory-art');
+    const vArtSrc = va ? (va.getAttribute('src') || '') : '';
+    const vArtHidden = va && va.style.display === 'none';   // onerror n'a pas (encore) montré
+    const vm = document.getElementById('victory-modal');
+    if (vm) vm.style.display = 'none';
+
+    // Illustration « Briser le Cycle » : sobre à l'écran de choix, posée à la
+    // cinématique (confirmBreakCycle).
+    const ba0 = document.getElementById('break-cycle-art');
+    const bArtExists = !!ba0;
+    openBreakCycleModal();
+    const bArtSrcChoice = ba0 ? (ba0.getAttribute('src') || '') : '';   // vide attendu
+    confirmBreakCycle();
+    const bArtSrc = ba0 ? (ba0.getAttribute('src') || '') : '';
+    finishBreakCycle();
+    const bArtSrcAfterClose = ba0 ? (ba0.getAttribute('src') || '') : '';   // vidé attendu
+
+    return {
+      hasPlayEnding, sample, endingThrew,
+      vArtExists, vArtHidden0, vArtSrc, vArtHidden,
+      bArtExists, bArtSrcChoice, bArtSrc, bArtSrcAfterClose
+    };
+  });
+  console.log('  →', r);
+
+  assert(r.hasPlayEnding, 'AudioSystem.playEndingTheme absent');
+  assert(typeof r.sample === 'string' && r.sample.endsWith('ending_break.ogg'),
+    `_ENDING_SAMPLE devrait pointer ending_break.ogg (${r.sample})`);
+  assert(r.endingThrew === false, 'playEndingTheme ne doit pas lever d\'exception');
+
+  assert(r.vArtExists, '#victory-art absent du DOM');
+  assert(r.vArtHidden0, '#victory-art doit être masqué par défaut');
+  assert(r.vArtSrc.endsWith('ending_victory.jpg'),
+    `showVictoryScreen doit câbler ending_victory.jpg (${r.vArtSrc})`);
+  assert(r.vArtHidden, '#victory-art reste masqué tant que l\'asset est absent (onerror)');
+
+  assert(r.bArtExists, '#break-cycle-art absent du DOM');
+  assert(r.bArtSrcChoice === '', 'l\'écran de choix ne doit PAS afficher d\'illustration');
+  assert(r.bArtSrc.endsWith('ending_break_cycle.jpg'),
+    `confirmBreakCycle doit câbler ending_break_cycle.jpg (${r.bArtSrc})`);
+  assert(r.bArtSrcAfterClose === '', 'l\'illustration doit être réinitialisée à la fermeture');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (assets de fin P4)`);
+  }
+  console.log('  ✅ Assets de fin câblés défensivement (illustrations + audio) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp, scenarioEndingEpilogue, scenarioEndingAssets] };
