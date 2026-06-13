@@ -762,21 +762,24 @@ function useRequirementRoom() {
   }
   const f = currentFloor || 1;
   const theme = _pickRequirementTheme(f);
-  // V3 — thèmes commerce (boutique/forge) : ouvre l'étal/l'enclume (réemploi
-  // pur). Ré-ouvrable pour la visite → on NE marque PAS usedRequirementRooms.
-  if (theme === 'boutique' || theme === 'forge') {
+  // V3 — thèmes commerce (boutique/forge) : ouvre l'étal premium / l'enclume.
+  // Consomme la visite (comme les thèmes consommables) → 1 seul choix par
+  // visite, pas de cumul d'une 2ᵉ récompense. Le trophée est attribué AVANT
+  // l'ouverture de la modale pour que son message reste visible dans le log.
+  if ((theme === 'boutique' || theme === 'forge') && !usedRequirementRooms.has(key)) {
     if (typeof recordRequirementTheme === 'function') recordRequirementTheme(theme);
+    _awardRequirementTrophy(theme); // V3.1 — trophée cosmétique du thème
+    usedRequirementRooms.add(key);
     if (theme === 'forge') {
       setNarrative("La Salle s'est faite forge clandestine : une enclume noire ronfle sur des braises éternelles, prête à mordre le métal de vos équipements.");
       addMsg("Salle sur Demande : forge éphémère.", 'good');
       if (typeof openForge === 'function') openForge();
     } else {
-      setNarrative("La Salle s'est faite étal de marchand : présentoirs de fioles, parchemins et babioles utiles s'alignent sous une lanterne tamisée.");
-      addMsg("Salle sur Demande : étal de marchand.", 'good');
-      if (typeof openShop === 'function') openShop();
+      setNarrative("La Salle s'est faite étal de marchand : présentoirs de fioles, parchemins et babioles rares s'alignent sous une lanterne tamisée — et à prix d'ami.");
+      addMsg("Salle sur Demande : étal de marchand (remise de 25 %).", 'good');
+      if (typeof openRequirementShop === 'function') openRequirementShop();
     }
     if (typeof AudioSystem !== 'undefined' && AudioSystem.playChestOpen) AudioSystem.playChestOpen();
-    _awardRequirementTrophy(theme); // V3.1 — trophée cosmétique du thème
   }
   // Effet de thème consommable — une fois par visite d'étage.
   else if (!usedRequirementRooms.has(key)) {

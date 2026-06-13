@@ -2844,8 +2844,9 @@ async function scenarioRoomOfRequirement() {
   assert(t10, 'le Moine Gras doit évoquer la Salle dans idleRandom');
 
   // ── V3 (room-of-requirement-v3.md) ───────────────────────────
-  // T11 : commerce éphémère — boutique (or haut), forge (Boucle 11+ forgeable),
-  // gate forge (jamais < 11), ouverture sans throw, non-consommable.
+  // T11 : commerce — boutique (or haut), forge (Boucle 11+ forgeable), gate
+  // forge (jamais < 11), ouverture via l'Étal premium sans throw, désormais
+  // CONSOMMABLE (1 choix/visite), étal premium remisé, exploit de cumul fermé.
   const t11 = await page.evaluate(() => {
     const out = {};
     const gold0 = player.gold;
@@ -2865,14 +2866,30 @@ async function scenarioRoomOfRequirement() {
     party[0].equipped.wand = { id: 'wand1', name: 'Baguette', bonusAtk: 2, upgradeLevel: 0, slot: 'wand' };
     out.forgeable = _requirementForgeable();
     out.forge = _pickRequirementTheme(12);
-    // Ouverture sans throw + non-consommable (pas de usedRequirementRooms)
+    // Ouverture sans throw + désormais CONSOMMABLE (1 choix/visite) + badge
     currentFloor = 5; playerX = 9; playerY = 9; dungeon[9][9] = CELL.REQUIREMENT;
     requirementGiftTaken = true; usedRequirementRooms = new Set();
+    requirementTrophiesTaken = new Set();
     requirementTheme = new Map([[5, 'boutique']]);
     let threw = false;
     try { useRequirementRoom(); } catch (e) { threw = true; }
-    out.openOk = !threw;
-    out.notConsumed = !usedRequirementRooms.has('9,9');
+    out.openOk      = !threw;
+    out.consumed    = usedRequirementRooms.has('9,9');
+    out.shopContext = (typeof _shopContext !== 'undefined') && _shopContext.kind === 'requirement';
+    out.trophy      = requirementTrophiesTaken.has('boutique');
+    // Étal premium remisé : prix < prix de base, rareté rare+ ou consommable haut de gamme
+    const stock = (typeof _requirementStock !== 'undefined') ? _requirementStock : [];
+    out.stockLen = stock.length;
+    out.discounted = stock.length > 0 && stock.every(s => {
+      const it = ITEMS.find(i => i.id === s.item.id);
+      return it && (typeof it.price !== 'number' || it.price <= 0 || s.price < it.price);
+    });
+    // EXPLOIT fermé : salle consommée → choisir refuge ne soigne plus
+    party.slice(0, partySize).forEach(c => { c.hp = 1; });
+    requirementBuffSteps = 0;
+    requirementTheme = new Map([[5, 'refuge']]);
+    chooseRequirementTheme('refuge');
+    out.exploitClosed = party[0].hp === 1 && requirementBuffSteps === 0;
     player.gold = gold0;
     return out;
   });
@@ -2881,7 +2898,11 @@ async function scenarioRoomOfRequirement() {
   assert(t11.noForgeLowFloor,          'forge interdite hors Boucle (< étage 11)');
   assert(t11.forgeable && t11.forge === 'forge', 'Boucle 11+ + item forgeable + essence → forge');
   assert(t11.openOk,                   'useRequirementRoom (commerce) ne doit pas throw');
-  assert(t11.notConsumed,              'commerce non-consommable : pas de usedRequirementRooms');
+  assert(t11.consumed,                 'commerce consommable : usedRequirementRooms marqué (1 choix/visite)');
+  assert(t11.shopContext,              'boutique ouvre l\'Étal de la Salle (_shopContext.kind === requirement)');
+  assert(t11.trophy,                   'boutique attribue bien le trophée/badge');
+  assert(t11.stockLen > 0 && t11.discounted, 'Étal premium : stock non vide et remisé (prix < base)');
+  assert(t11.exploitClosed,            'exploit fermé : après boutique, refuge ne donne plus soin/buff');
 
   // T12 : trophées multiples (1×/partie par thème) + codex méta localStorage
   const t12 = await page.evaluate(() => {
