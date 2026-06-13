@@ -16,10 +16,28 @@ Vanilla JS / HTML5 Canvas, zéro dépendance, zéro build step.
 
 ## Structure des fichiers
 
+Les entrées `js/` ci-dessous suivent **l'ordre de chargement réel** des
+`<script src>` dans `index.html` (84 modules). La cohérence
+arborescence ↔ `index.html` est verrouillée par
+`node tools/check_doc_modules.js` (CI : tout module ajouté/retiré dans
+`index.html` sans mise à jour de cette section échoue).
+
 ```
 index.html               Point d'entrée unique
 css/style.css            Toute la mise en page (thème parchemin/or + responsive mobile)
 js/
+  html-escape.js   →  window.htmlEscape(s) — échappement HTML unifié (5 car.
+                      & < > " '), source de vérité anti-XSS. Chargé EN PREMIER,
+                      AVANT tout module rendant des données réseau (Mondes
+                      Parallèles, Hall of Fame).
+  ux-improvements.js → window.UX = { showTooltip, hideTooltip, logCombat,
+                      logCombatTurn, clearCombatLog, renderTimeline, floatDmg }
+                      — surcouche UX combat (tooltips, log enrichi, dégâts
+                      flottants, timeline d'initiative)
+  combat-fx.js     →  window.CombatFX — surcouche visuelle PURE du combat
+                      (shake, flash, particules). Défensive (call-sites gardés).
+  haptics.js       →  window.Haptics — retour tactile mobile (vibration).
+                      Surcouche PURE défensive.
   audio.js         →  AudioSystem{} — core : init, state, toggleMute, toggleVoice, stopMusic
   audio-music.js   →  AudioSystem — musique ambiante et combat (playAmbientMusic, startCombatMusic…)
   audio-sfx.js     →  AudioSystem — effets sonores et voix (playHit, playSpellCast, speakSpell…)
@@ -34,15 +52,26 @@ js/
                       Chargé APRÈS npcs.js
   riddles.js       →  RIDDLES[] — registre des devinettes des stèles
                       d'énigme du donjon. getRiddleById()
+  codex.js         →  CODEX_ENTRIES + évaluateur pur — journal vivant
+                      déverrouillable (entrées non-créature : lieux, lore,
+                      systèmes). Données + logique d'éligibilité.
   data.js          →  Constantes : MAP_W/H, CELL, CHARACTERS, ITEMS, SPELLS, LOCATIONS
-                      ENEMIES = MONSTERS (alias de compatibilité)
   data-icon-recipes.js → ICON_RECIPES : schéma du pipeline d'icônes (mirror du
                       dict Python). Inerte au runtime navigateur. APRÈS data.js
   floor-themes.js  →  FLOOR_THEMES{} + getFloorTheme() — source unique de
                       vérité tileset/ambiance par tranche d'étages (pur)
+  floor-ambiance.js → Descriptions d'ambiance zonées + corruption (PUR, aucun
+                      état). APRÈS floor-themes.js
+  floor-events.js  →  ÉVÉNEMENTS D'ÉTAGE : micro-événements rares tirés à
+                      l'entrée d'étage (FLOOR_EVENTS, FLOOR_EVENT_CHANCE)
+  room-flavor.js   →  Phrases d'atmosphère à l'entrée de salle (donjon vivant)
   item-icons.js    →  Registres ITEM_ICON_REGISTRY, EQUIPMENT_SLOT_ICONS,
                       STATUS_ICON_REGISTRY, SPELL_ICON_REGISTRY ;
                       getItemIconHtml(item, size), tinted variants via filter CSS
+  state.js         →  Variables globales mutables (player, player2, party, partySize,
+                      dungeon, combat, seenMonsters, activeQuests, usedFountains,
+                      searchedCells, floorDungeons, restCooldown, barksEnabled,
+                      chosenHouse, housePoints, houseTier, HOUSE_BONUSES, DIFFICULTY_SETTINGS)
   hero-barks.js    →  HERO_BARKS{} (registre des répliques des 13 héros par
                       événement + variantes houseTension + beats scénarisés) +
                       pickHeroBark() (résolveur pur) + heroBark() (orchestrateur
@@ -51,16 +80,14 @@ js/
                       combat/exploration (cosmétique). APRÈS data.js, AVANT
                       battle.js. Toggle joueur `barksEnabled` ; voix parlée
                       optionnelle via AudioSystem.speakBark (OGG / synthèse FR).
-  state.js         →  Variables globales mutables (player, player2, party, partySize,
-                      dungeon, combat, seenMonsters, activeQuests, usedFountains,
-                      searchedCells, floorDungeons, restCooldown, barksEnabled,
-                      chosenHouse, housePoints, houseTier, HOUSE_BONUSES, DIFFICULTY_SETTINGS)
   ui.js            →  updateUI(), addMsg(), closeModal(), openHouseDetail() +
                       helpers HUD (barres, blason, boussole, tracker de quête)
   ui-character-sheet.js → openCharacter() : paper-doll, Set Maison, sorts,
                       sac, allocation de points, carnet de voyage. APRÈS ui.js
   ui-settings.js   →  changeDifficulty(), toggleVisitsClosed(). APRÈS ui.js
   ui-bestiary.js   →  openBestiary(), filterBestiary(), showMonsterDetail(), showBestiaryList()
+  ui-codex.js      →  openCodex() — UI du journal vivant. Modale DÉDIÉE
+                      #codex-modal (jamais #char-detail). APRÈS ui-bestiary.js
   dungeon-scaling.js → weightedPick(), effectiveFloor(), endgameTierIndex(),
                       scaleMonster(), buildEcho() — mise à l'échelle des
                       monstres (purs). Chargé AVANT dungeon.js
@@ -70,8 +97,14 @@ js/
                       _ensureActiveKillQuestTargets(), _ensureStairsExist(),
                       _migrateMissingNpcsForFloor(), _findFreeNpcCell() —
                       spawn de quête & garde-fous. Chargé APRÈS dungeon.js
+  textures.js      →  Chargement des textures pixel art (TEXTURES, loadTextures()).
+                      Consommé par renderer.js
   renderer.js      →  drawDungeon(), drawCorridor() — rendu 3D canvas + textures + fog
   renderer-effects.js → drawTorch(), drawStoneBlocks(), drawFloorLines(), drawCellMarker()…
+  dungeon-fx.js    →  window.DungeonFX — surcouche visuelle PURE de l'exploration.
+                      Défensive. APRÈS renderer-effects.js
+  cinematics.js    →  window.Cinematics — immersion narrative intro / victoire
+                      (surcouche visuelle PURE)
   renderer-sprites.js → sprites de scène : drawChestSprite/Stairs/Shop/Forge/
                       Library/Altar/Rune/Stele/Fountain. APRÈS renderer-effects.js
   renderer-entities.js → sprites d'entités : drawEnemySprite, drawNpcSprite,
@@ -98,6 +131,8 @@ js/
                       Chargé APRÈS battle.js
   battle-death.js  →  triggerDeath(), resurrect(), _finishAstralCombat() (combat
                       astral Mondes Parallèles). Chargé APRÈS battle.js
+  teleport.js      →  Sort de téléportation Portus (3 entrées d'exposition).
+                      APRÈS battle-death.js
   battle-spells.js →  castSpellInBattle(), tryEnemyAbility()
   battle-ui.js     →  renderEnemyGroup(), showTargetSelection(), updateBattleCharIndicator()
   inventory-core.js → tryAddItem(), _countMaterial/_consumeMaterial,
@@ -109,6 +144,8 @@ js/
   inventory-spells.js → openSpells(), openBattleSpells(), openBattleItems(),
                       SPELL_OOC_HANDLERS, castSpellOutOfCombat(). Chargé APRÈS
                       inventory.js
+  potions.js       →  CONCOCTION : besace d'herboriste + chaudron (farming-potion
+                      -system.md). APRÈS inventory-spells.js
   quests-templates.js → QUEST_TEMPLATES (catalogue inerte) + maps de quêtes
                       de Maison. Données pures. Chargé AVANT quests.js
   quests.js        →  Logique + journal UI : acceptQuest(), completeQuest(),
@@ -117,6 +154,16 @@ js/
   quests-riddles.js → Mini-jeux : fusion du grimoire (Manon) + énigmes de
                       Dumbledore (openRiddleModal, _spawnLuxAeternaBoss).
                       Chargé APRÈS quests.js
+  npc-dialog.js    →  Dialogues PNJ : openNpcDialog(), nextDialogPage(),
+                      closeNpcDialog(), triggerNpcSpecialAction(),
+                      getNpcQuestState(), getNpcMarkerSign()
+  house-donation.js → Don à la Maison (gold-sink endgame illimité) :
+                      donateGoldToHouse(), modale #house-donation-modal.
+                      APRÈS npc-dialog.js
+  karaoke.js       →  Surlignage progressif du texte au rythme de la voix
+                      (cosmétique, voice-extensions-v2.md)
+  intro.js         →  Écran d'intro Dumbledore : showIntroScreen(onContinue),
+                      _renderIntroPage(), _advanceIntro(), _finishIntro()
   shop.js          →  openShop(), buyItem() — catalogue progressif selon étage + garde-fous
   save-slots.js    →  Modèle multi-slots (store localStorage) : _readStore/
                       _writeStore, listSaveSlots, readSlot, writeSlot,
@@ -139,76 +186,52 @@ js/
                       buildIronmanResult(), showIronmanResult()
   hall-of-fame.js  →  Hall of Fame : HOF_CONFIG (Supabase), submitIronmanScore(),
                       openHallOfFame()/closeHallOfFame(), repli localStorage
-  npc-dialog.js    →  Dialogues PNJ : openNpcDialog(), nextDialogPage(),
-                      closeNpcDialog(), triggerNpcSpecialAction(),
-                      getNpcQuestState(), getNpcMarkerSign()
-  intro.js         →  Écran d'intro Dumbledore : showIntroScreen(onContinue),
-                      _renderIntroPage(), _advanceIntro(), _finishIntro()
-  ux-improvements.js → window.UX = { showTooltip, hideTooltip, logCombat,
-                      logCombatTurn, clearCombatLog, renderTimeline, floatDmg }
-                      — surcouche UX combat (tooltips, log enrichi, dégâts
-                      flottants, timeline d'initiative)
+  multiplayer.js   →  MP cœur : MP_CONFIG, transport REST (_mpHeaders,
+                      _mpConfigured…), présence (heartbeat mp_presence), duels.
+                      Expose parallelWorldsEnabled().
+  multiplayer-social.js → MP social : messages au sol (mp_messages) + cadeaux
+                      (mp_gifts).
+  multiplayer-visits.js → MP visites : matchmaking (mp_visit_requests), canal
+                      (mp_visit_messages), Verrous de Sang (mp_threats).
+  portal-fx.js     →  Animation portail Cheminette Inter-Mondes (PortalFX).
+                      css/portal.css
+  portal-matchmaking.js → Modales destinations (visiteur) + acceptation (host)
+  visit-channel.js →  Orchestrateur du canal de visite (poll ~2,5 s, ping 4 s,
+                      qualité réseau, reconnect, timeout)
+  visit-hud.js     →  Bandeau #visit-hud pendant une visite (paliers
+                      good/degraded/lost)
+  pvp-duel.js      →  Duel PvP EN DIRECT (tours alternés relayés)
+  atelier-voyageur.js → Atelier du Voyageur (#btn-atelier, 4 onglets :
+                      souvenirs/cosmétiques/sorts cross-plan) + Verrou de Sang
   main.js          →  showPlayerSelect(), startGame(count), keyboard listeners,
                       _hydrateCharacter(), checkHouseLevelUp()
-  loader.js        →  Chargé EN DERNIER. Vérifie ~55 globals attendus
+  endgame.js       →  ENDGAME : trigger de victoire & cinématique (victoryAchieved)
+  break-cycle.js   →  BRISER LE CYCLE : fin optionnelle de la Boucle Ténébreuse
+                      (docs/histoire/11-mondes-paralleles.md §11.10)
+  forge.js         →  FORGE DES TÉNÈBRES : upgrade des items équipés
+                      (cellule CELL.FORGE, endgame Tranche 2)
+  library.js       →  BIBLIOTHÈQUE INTERDITE : upgrade des sorts
+                      (cellule CELL.LIBRARY, endgame Tranche 2)
+  help-tour.js     →  Tour guidé d'aide pour novices (spotlight + bulles sur
+                      les vrais éléments de l'UI)
+  loader.js        →  Chargé EN AVANT-DERNIER. Vérifie ~55 globals attendus
                       (typeof entry.name), affiche bandeau rouge si critique
                       manquant. Exporte window.safeEl(id) + window.safeCall(fn,...args).
                       window.__loaderReport publié pour smoke test.
-
-  ── Modules additionnels (chargés dans index.html ; voir « ordre » ci-dessous) ──
-  html-escape.js   →  Échappement HTML unifié (escapeHtml). Chargé très tôt.
-  textures.js      →  Chargement des textures pixel art (loadTextures, idempotent)
-  codex.js         →  CODEX : registre CODEX_ENTRIES (entrées non-créature) +
-                      évaluateur pur codexEntryState() + helpers de requête.
-                      Source de vérité du journal vivant (Chap. 12 — LIVRÉ).
-  ui-codex.js      →  UI du Codex : openCodex(), modale #codex-modal, 7 onglets,
-                      notifications de déverrouillage. Calque sur ui-bestiary.js.
-  floor-ambiance.js → Descriptions d'ambiance zonées + corruption (pur). Consomme
-                      getFloorTheme(). APRÈS floor-themes.js. (« 4ᵉ levier » du Ch.13)
-  floor-events.js  →  Événements d'étage pondérés (FLOOR_EVENT_CHANCE) à la
-                      génération du donjon (Chap. 04 « étages-scènes »).
-  room-flavor.js   →  Phrases d'atmosphère à l'entrée de salle, teintées par zone.
-  cinematics.js    →  window.Cinematics : surcouche visuelle pure intro/victoire
-                      (aucune mécanique touchée).
-  endgame.js       →  Trigger de victoire (#victory-modal) + cinématique ;
-                      pose victoryAchieved. Variante de fin slythPactChoice 'pact'.
-  break-cycle.js   →  « Briser le Cycle » : vraie fin optionnelle de la Boucle
-                      (boss reflet_mythe, flag cycleBroken). Chap. 14 — LIVRÉ.
-  forge.js         →  Forge des Ténèbres : upgrade d'items équipés (endgame
-                      Tranche 2, cellule CELL.FORGE aux étages 11/14/17/20).
-  library.js       →  Bibliothèque Interdite : upgrade de sorts (endgame Tranche 2,
-                      cellule CELL.LIBRARY aux étages 12/15/18).
-  potions.js       →  Concoction : besace d'herboriste (player.herbs) + chaudron.
-  teleport.js      →  Sort Portus : téléportation en combat / exploration.
-  help-tour.js     →  Tour guidé d'aide pour novices (spotlight UI, auto au 1er lancement).
-  combat-fx.js     →  Immersion visuelle du combat (Lot 1). Surcouche pure.
-  dungeon-fx.js    →  Immersion visuelle de l'exploration (Lot 2). Surcouche pure.
-  haptics.js       →  Retour tactile mobile (vibration).
-  karaoke.js       →  Surlignage progressif du texte au rythme de la voix.
-  pvp-duel.js      →  Duel PvP live (tours alternés relayés) — cf. multiplayer.js.
+  pwa.js           →  Enregistre le Service Worker + bandeau de mise à jour.
+                      Défensif (silencieux en file:// et sans serviceWorker).
+                      Chargé EN DERNIER.
 .github/workflows/deploy.yml   →  CI GitHub Pages (push master → déploiement automatique)
 ```
 
-Ordre de chargement réel des scripts dans `index.html` (**84 modules** ;
-vérifiable par `grep -c 'src="js/' index.html`) :
-`html-escape → ux-improvements → combat-fx → haptics → audio → audio-music →
-audio-sfx → icons → scene-icons → monsters → npcs → npcs-helpers → riddles →
-codex → data → data-icon-recipes → floor-themes → floor-ambiance →
-floor-events → room-flavor → item-icons → state → hero-barks → ui →
-ui-character-sheet → ui-settings → ui-bestiary → ui-codex → dungeon-scaling →
-dungeon → dungeon-spawning → textures → renderer → renderer-effects →
-dungeon-fx → cinematics → renderer-sprites → renderer-entities →
-renderer-minimap → movement → movement-floors → movement-interactions →
-swipe-canvas → battle → battle-rewards → battle-death → teleport →
-battle-spells → battle-ui → inventory-core → inventory → inventory-spells →
-potions → quests-templates → quests → quests-riddles → npc-dialog →
-house-donation → karaoke → intro → shop → save-slots → save →
-save-visit-snapshot → save-ui → ironman → hall-of-fame → multiplayer →
-multiplayer-social → multiplayer-visits → portal-fx → portal-matchmaking →
-visit-channel → visit-hud → pvp-duel → atelier-voyageur → main → endgame →
-break-cycle → forge → library → help-tour → loader → pwa`
+> L'ordre de chargement ci-dessus EST l'ordre des `<script src>` de
+> `index.html` : il n'est plus maintenu à la main dans une liste séparée.
+> `node tools/check_doc_modules.js --print` régénère la liste canonique ;
+> `node tools/check_doc_modules.js` (sans argument) vérifie que la section
+> ci-dessus reste alignée sur `index.html` (exit 1 en cas de dérive).
 
-> `loader.js` est volontairement chargé en dernier : il vérifie que tous
+> `loader.js` est volontairement chargé en avant-dernier (seul `pwa.js`,
+> sans dépendance sur les globals du jeu, le suit) : il vérifie que tous
 > les globals attendus sont présents et affiche un bandeau d'erreur sinon.
 > Tout nouveau module exposant une fonction critique doit être ajouté à son
 > MANIFEST (voir section « Loader & helpers » ci-dessous).

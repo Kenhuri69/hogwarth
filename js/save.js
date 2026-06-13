@@ -92,6 +92,7 @@ function _serializeState() {
     lastQuestCompletion: { ...lastQuestCompletion },
     victoryAchieved,
     victoryAt,
+    endingType,
     accumulatedEclats,
     combatTutorialSeen,
     endgamePivotSeen,
@@ -214,6 +215,27 @@ function _validateLoadedState(gs) {
   return { ok: true, reason: '' };
 }
 
+// ── Conventions internes de _applyState (NE PAS « nettoyer ») ────────────────
+//
+// 1) Gardes `if (typeof <global> !== 'undefined') <global> = …` : VOLONTAIRES.
+//    Tous les modules partagent le scope global via <script> séquentiels (zéro
+//    bundler). Un global déclaré en `let`/`const` dans un autre fichier n'est
+//    lisible ici que si ce <script> s'est exécuté AVANT save.js. La garde
+//    `typeof` protège donc contre un réordonnancement de scripts ou un module
+//    optionnel absent (file://, build partielle) : sans elle, lire/écrire un
+//    identifiant non déclaré jette une ReferenceError et avorte tout le
+//    chargement. Ce n'est PAS du code mort — ne pas le « simplifier » en
+//    affectation nue (une future PR de nettoyage casserait le chargement
+//    défensif). `typeof X` ne jette jamais, même pour un identifiant inconnu.
+//
+// 2) Invariant `searchedCells` : Map "x,y" → { at, count } (anti-exploit de
+//    fouille, cf. state.js). Sérialisé en SHALLOW via `Array.from(searchedCells)`
+//    → `[["x,y", {at, count}], …]`. La valeur est un objet plat à deux nombres :
+//    la copie superficielle suffit (pas de structure imbriquée à cloner) et
+//    `_searchedCellsFromArray` (movement-interactions.js) ne restaure QUE
+//    `{ at: at||0, count: count||1 }` — toute clé supplémentaire d'un futur
+//    schéma serait silencieusement ignorée au reload. Garder les deux côtés
+//    (serialize/rebuild) cohérents si on étend la forme.
 function _applyState(gs) {
   // Garde de robustesse : une save corrompue est refusée proprement (message
   // clair, slot intact, aucune stat NaN) plutôt qu'appliquée en l'état.
@@ -405,6 +427,13 @@ function _applyState(gs) {
   if (typeof ravenSignatureDone !== 'undefined') ravenSignatureDone = !!gs.ravenSignatureDone;
   if (typeof poufSignatureDone  !== 'undefined') poufSignatureDone  = !!gs.poufSignatureDone;
   if (typeof slythPactChoice    !== 'undefined') slythPactChoice    = gs.slythPactChoice || null;
+  // Label de fin (P3) : restauré tel quel, puis réconcilié depuis les flags
+  // (victoire / Cycle / Pacte tous appliqués ci-dessus) — back-fill des saves
+  // antérieures au champ (endingType dérivé, jamais une source de gating).
+  if (typeof endingType !== 'undefined') {
+    endingType = gs.endingType || null;
+    if (typeof refreshEndingType === 'function') refreshEndingType();
+  }
   // Mode Ironman : saves antérieures à l'ajout du mode → false/0/vide.
   ironmanMode     = !!gs.ironmanMode;
   totalKills      = (typeof gs.totalKills === 'number') ? gs.totalKills : 0;

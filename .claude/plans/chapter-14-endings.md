@@ -176,3 +176,55 @@ suffixes muets existants de `npc-dialog.js` (`_eclatSuffixPages`,
 
 > **Hors-scope P2** (laissé pour P3+) : `endingType` + entrée Codex `epilogue`
 > (P3), assets de fin (P4), NG+ (P5).
+
+---
+
+## 5. Phase P3 — `endingType` + entrée Codex `epilogue` (✅ implémentée)
+
+Branche `claude/hogwarth-ch14-p3-ending-epilogue`. Périmètre **strict** : additif,
+défensif, **non-gating**. `endingType` est un **label dérivé** (jamais un gate) ;
+l'épilogue est une **entrée Codex** (pas un écran neuf). Décision (Point à trancher
+5) : `endingType` est **persisté** (forward-looking pour un futur profil NG+) et
+**réconcilié** au chargement depuis les flags.
+
+### Étapes & vérif
+
+1. ✅ Helper **pur** `computeEndingType(ctx)` (`endgame.js`, top-level, testable) :
+   priorité `cycle_broken` > `victory_pact` > `victory` > `null`. Helper d'écriture
+   `refreshEndingType()` (lit les globals, assigne `endingType`).
+   - vérif : `tests/units.js` §11bis (matrice null/victory/victory_pact/cycle_broken
+     + priorité) → **vert**.
+2. ✅ Champ `endingType` (`state.js`, `let endingType = null;`) sérialisé/restauré
+   (`save.js` : ajout au payload + restauration + **back-fill** via
+   `refreshEndingType()` pour les saves antérieures au champ).
+   - vérif : `scenarioEndingEpilogue` round-trip `cycle_broken` + back-fill
+     legacy `victory_pact` → **vert**.
+3. ✅ Posé/réconcilié aux deux hooks de fin : `checkVictoryTrigger` (`endgame.js`)
+   après la victoire, et `confirmBreakCycle` (`break-cycle.js`) après `cycleBroken`.
+   - vérif : `scenarioEndingEpilogue` (victoire→`victory`, pacte→`victory_pact`,
+     Briser→`cycle_broken`) → **vert**.
+4. ✅ **Robinet Codex `ending`** (`codex.js — _codexCondMet`) : `ctx.endingType ===
+   value`. Une ligne, cohérente avec `victory`/`cycleBroken`. `endingType` exposé
+   dans le `ctx` Codex (`ui-codex.js`). Fait d'`endingType` la **source unique** de
+   l'épilogue (sinon le champ serait orphelin jusqu'à P5).
+   - vérif : `tests/units.js` §11ter (épilogue locked→veiled→revealed selon
+     `endingType`) → **vert**.
+5. ✅ Entrée Codex **`epilogue`** (`codex.js`, 🔥 Histoire, icône 📜) : ouverte à la
+   1ʳᵉ victoire (`victory`), révélée quand `ending = cycle_broken`. Texte
+   veiled (base) / revealed (fin accomplie) + **note marginale `variants.house`**
+   par Maison (réutilise le format Codex existant). Présent, 2ᵉ personne (§14.7).
+   Aucun asset PNG requis (icône emoji, comme la plupart des entrées).
+6. ✅ Garde-fou guidelines : 6 JS servis modifiés (`state.js`, `endgame.js`,
+   `break-cycle.js`, `save.js`, `codex.js`, `ui-codex.js`) → bump cache PWA
+   (skill `cache-bump`) ; `node tests/units.js` + `node tests/smoke.js` +
+   `node tests/pwa-smoke.js` verts ; skill `commit-guard`.
+
+> **Décision de conception** : l'épilogue se révèle via le robinet `ending`
+> (= `endingType`) plutôt que directement `cycleBroken`, pour que le label dérivé
+> soit la **source unique** de la fin (cohérent §A.2). La nuance `victory_pact`
+> reste portée par `endingType` (persistée) et déjà reflétée dans le discours de
+> victoire (P1) ; l'épilogue Codex la traite en texte `veiled` (comme `victory`),
+> la Maison colorant via la note marginale.
+
+> **Hors-scope P3** (laissé pour P4+) : assets de fin (illustrations + sample
+> audio C, P4), NG+ opt-in (profil + titres + Codex de profil, P5).

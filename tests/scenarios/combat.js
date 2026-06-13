@@ -743,6 +743,109 @@ async function scenarioAgiCelerite() {
   await browser.close();
 }
 
+// 1.3.5 — Célérité × Protego / double-garde : comptage des coups bloqués.
+// Vérifie que les compteurs défensifs (shieldTurns Protego, guardTurns garde)
+// sont consommés EXACTEMENT un par coup encaissé, et qu'une action sup. de
+// Célérité permet d'empiler la garde (double-garde) dans un seul segment —
+// les paliers ainsi accumulés bloquant le bon nombre de coups.
+async function scenarioCeleriteGuardCounting() {
+  console.log('\n── Scénario : Célérité × Protego / double-garde (comptage) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 400 });
+
+  // T1 — Double-garde : 3 paliers bloquent exactement 3 coups (chacun mitigé),
+  // le 4ᵉ passe en coup normal. guardTurns décrémente d'un par coup mitigé.
+  const t1 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.atk = 20; e.abilities = [];
+    const c = party[0];
+    c.def = 0; c.dodgeChance = 0; c.hp = 500; c.hpMax = 500;
+    shieldTurns = [0, 0]; guardTurns = [3, 0];     // triple garde
+    const blocked = [];
+    const guardSeen = [];
+    for (let i = 0; i < 4; i++) {
+      const before = guardTurns[0];
+      const frag = _enemyPhysicalHit(e, c, 0);
+      guardSeen.push(before - guardTurns[0]);       // 1 si un palier consommé
+      blocked.push(/mitige/.test(frag));
+    }
+    return { blocked, guardSeen, guardEnd: guardTurns[0] };
+  });
+  console.log('  T1 double-garde:', t1);
+  assert(JSON.stringify(t1.blocked) === JSON.stringify([true, true, true, false]),
+    `3 coups mitigés puis 1 normal attendu, obtenu ${JSON.stringify(t1.blocked)}`);
+  assert(JSON.stringify(t1.guardSeen) === JSON.stringify([1, 1, 1, 0]),
+    'chaque coup mitigé doit consommer exactement 1 palier de garde');
+  assert(t1.guardEnd === 0, 'tous les paliers de garde doivent être épuisés');
+
+  // T2 — Protego : 2 tours de bouclier bloquent 2 coups (priorité sur la garde),
+  // le 3ᵉ passe en garde si présente, sinon coup normal.
+  const t2 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.atk = 20;
+    const c = party[0];
+    c.def = 0; c.dodgeChance = 0; c.hp = 500; c.hpMax = 500;
+    shieldTurns = [2, 0]; guardTurns = [0, 0];
+    const res = [];
+    for (let i = 0; i < 3; i++) {
+      const frag = _enemyPhysicalHit(e, c, 0);
+      res.push(/Protego/.test(frag) ? 'shield' : (/mitige/.test(frag) ? 'guard' : 'hit'));
+    }
+    return { res, shieldEnd: shieldTurns[0] };
+  });
+  console.log('  T2 protego:', t2);
+  assert(JSON.stringify(t2.res) === JSON.stringify(['shield', 'shield', 'hit']),
+    `2 blocages Protego puis 1 coup, obtenu ${JSON.stringify(t2.res)}`);
+  assert(t2.shieldEnd === 0, 'shieldTurns doit être épuisé après 2 blocages');
+
+  // T3 — Célérité monte la double-garde dans UN segment : une action sup.
+  // permet de poser la garde deux fois (0→2) avant de rendre la main. Les
+  // 2 paliers bloquent ensuite exactement 2 coups.
+  const t3 = await page.evaluate(() => {
+    const origEnemyTurn = window.enemyTurn;
+    window.enemyTurn = () => {};                    // neutralise le tour ennemi
+    let guardAfterTwo;
+    try {
+      const c = party[0];
+      c.hp = c.hpMax = 500; c.def = 0; c.dodgeChance = 0;
+      currentBattleChar = 0;
+      shieldTurns = [0, 0]; guardTurns = [0, 0];
+      guardRegenCooldown = [0, 0];
+      celeriteExtra = [1, 0];                        // 1 action sup. en réserve
+      battleAction('guard');                         // garde ×1 → re-prompt (Célérité)
+      const repromptStayed = currentBattleChar === 0 && celeriteExtra[0] === 0;
+      battleAction('guard');                         // garde ×2 (double-garde) → fin de segment
+      guardAfterTwo = guardTurns[0];
+      var rp = repromptStayed;
+    } finally {
+      window.enemyTurn = origEnemyTurn;
+    }
+    // Comptage : les 2 paliers bloquent 2 coups, le 3ᵉ est normal.
+    const e = enemyGroup[0]; e.atk = 20;
+    const c = party[0];
+    const res = [];
+    for (let i = 0; i < 3; i++) {
+      const frag = _enemyPhysicalHit(e, c, 0);
+      res.push(/mitige/.test(frag));
+    }
+    return { repromptStayed: rp, guardAfterTwo, res, guardEnd: guardTurns[0] };
+  });
+  console.log('  T3 célérité→double-garde:', t3);
+  assert(t3.repromptStayed, 'l\'action sup. de Célérité doit re-prompter le même héros (garde ré-empilable)');
+  assert(t3.guardAfterTwo === 2, `deux gardes dans un segment → double-garde (2), obtenu ${t3.guardAfterTwo}`);
+  assert(JSON.stringify(t3.res) === JSON.stringify([true, true, false]),
+    '2 paliers accumulés via Célérité bloquent exactement 2 coups');
+  assert(t3.guardEnd === 0, 'paliers épuisés après 2 blocages');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Célérité × garde)`);
+  }
+  console.log('  ✅ Célérité × Protego / double-garde : comptage des blocages correct');
+  await browser.close();
+}
+
 async function scenarioDuoStatuses() {
   console.log('\n── Scénario 2quater : statuts duo isolés ──');
   const { browser, page, errors } = await launchGame();
@@ -1614,6 +1717,122 @@ async function scenarioStun() {
   await browser.close();
 }
 
+// 1.3.3 — Interactions de statuts combinés (stun + fear + weaken) sur héros
+// ET ennemis : coexistence, décompte correct par tickStatuses, et surtout
+// JAMAIS de segment figé même si tout le groupe est privé d'action.
+async function scenarioStatusComboNoFreeze() {
+  console.log('\n── Scénario : statuts combinés stun+fear+weaken (jamais figé) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+  await startDummyFight(page, { hp: 200 });
+
+  // T1 — Coexistence sur un ennemi : les trois statuts cohabitent ; un tick
+  // ne décompte PAS le stun, décompte fear et weaken, et n'inflige aucun
+  // dégât (aucun n'est un DoT).
+  const t1 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.statusEffects = [];
+    applyStatus(e, 'stun',   0, 2);
+    applyStatus(e, 'fear',   0, 2);
+    applyStatus(e, 'weaken', 4, 2);   // power = DEF perdue (restaurée à l'expiry)
+    const hpBefore = e.currentHp;
+    tickStatuses(e, true);
+    const find = id => e.statusEffects.find(s => s.id === id);
+    return {
+      hpBefore, hpAfter: e.currentHp,
+      stunTurns: find('stun')?.turns,
+      fearTurns: find('fear')?.turns,
+      weakenTurns: find('weaken')?.turns,
+      count: e.statusEffects.length,
+    };
+  });
+  console.log('  T1 enemy coexist:', t1);
+  assert(t1.hpAfter === t1.hpBefore, 'aucun statut combiné ne doit blesser (pas de DoT)');
+  assert(t1.stunTurns === 2,         'stun ne doit pas être décompté par tickStatuses');
+  assert(t1.fearTurns === 1,         'fear doit être décompté (2→1)');
+  assert(t1.weakenTurns === 1,       'weaken doit être décompté (2→1)');
+  assert(t1.count === 3,             'les 3 statuts doivent coexister');
+
+  // T2 — Ennemi stun+fear+weaken : il saute son action (stun prioritaire),
+  // aucun dégât au groupe même avec une ATK énorme.
+  const t2 = await page.evaluate(() => {
+    enemyGroup.length = 1;             // duo peut rouler un groupe de 2 — on isole l'unique ennemi étourdi
+    const e = enemyGroup[0];
+    e.statusEffects = [];
+    e.atk = 80; e.abilities = [];
+    applyStatus(e, 'stun', 0, 1);
+    applyStatus(e, 'fear', 0, 3);
+    applyStatus(e, 'weaken', 3, 3);
+    party.forEach(c => { c.statusEffects = []; c.hp = c.hpMax; });
+    const hpBefore = party.map(c => c.hp);
+    enemyTurn();
+    return {
+      hpBefore, hpAfter: party.map(c => c.hp),
+      stunGone: !e.statusEffects.some(s => s.id === 'stun'),
+    };
+  });
+  console.log('  T2 enemy skip:', t2);
+  assert(t2.hpAfter[0] === t2.hpBefore[0] && t2.hpAfter[1] === t2.hpBefore[1],
+    'ennemi étourdi (même apeuré/affaibli) ne doit pas frapper');
+  assert(t2.stunGone, 'stun ennemi doit être consommé au saut de tour');
+
+  // T3 — Tout le groupe privé d'action : Harry étourdi + Hermione apeurée
+  // (fear forcé à sauter). On pilote la chaîne de setTimeout de façon
+  // déterministe (queue drainée) pour vérifier qu'aucun segment ne reste
+  // FIGÉ : la boucle termine et un héros finit par regagner la main.
+  const t3 = await page.evaluate(() => {
+    // Fear déterministe : forcer le jet à toujours « rater » (skip).
+    const origRandom = Math.random;
+    Math.random = () => 0; // < 0.5 → fear skip systématique
+    // setTimeout → file synchrone drainée manuellement.
+    const origST = window.setTimeout;
+    const queue = [];
+    window.setTimeout = (fn) => { queue.push(fn); return 0; };
+    let drained = 0, frozen = false;
+    try {
+      enemyGroup.length = 1;          // isole un unique ennemi (groupe duo possiblement à 2)
+      const e = enemyGroup[0];
+      e.statusEffects = []; e.atk = 1; e.abilities = [];
+      party.forEach(c => { c.hp = c.hpMax; c.statusEffects = []; });
+      applyStatus(party[0], 'stun', 0, 1);     // Harry étourdi 1 tour
+      applyStatus(party[1], 'fear', 0, 1);     // Hermione apeurée 1 tour
+      currentBattleChar = 0;
+      enemyTurn();
+      while (queue.length) {
+        if (drained > 40) { frozen = true; break; }   // garde anti-boucle infinie
+        const fn = queue.shift();
+        fn();
+        drained++;
+      }
+    } finally {
+      window.setTimeout = origST;
+      Math.random = origRandom;
+    }
+    const log = document.getElementById('battle-log')?.textContent || '';
+    return {
+      drained, frozen,
+      inBattle,
+      // Un héros vivant a-t-il retrouvé la main (prompt « d'agir ») ?
+      heroPrompted: /d'agir/.test(log),
+      harryStunGone: !party[0].statusEffects.some(s => s.id === 'stun'),
+      hermioneFearGone: !party[1].statusEffects.some(s => s.id === 'fear'),
+    };
+  });
+  console.log('  T3 no-freeze:', t3);
+  assert(!t3.frozen, 'la chaîne de tours ne doit pas boucler indéfiniment (segment figé)');
+  assert(t3.inBattle, 'le combat doit rester actif après la résolution des sauts');
+  assert(t3.heroPrompted, 'un héros doit regagner la main (jamais de segment figé)');
+  assert(t3.harryStunGone, 'le stun de Harry doit avoir été consommé');
+  assert(t3.hermioneFearGone, 'la peur d\'Hermione (durée 1) doit avoir expiré');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (statuts combinés)`);
+  }
+  console.log('  ✅ statuts combinés : coexistence, décompte, jamais de segment figé');
+  await browser.close();
+}
+
 async function scenarioCombatExtV2() {
   console.log('\n── Scénario : Extensions combat V2 (counter / double-garde / Ferula Maxima / dispel) ──');
 
@@ -2060,6 +2279,63 @@ async function scenarioDeathPetrify() {
   await browser.close();
 }
 
+// 1.3.2 — Mort en mode Ironman : écran de score (pas de pétrification),
+// permadeath stricte (TOUS les slots Ironman purgés ; un slot non-Ironman
+// survit). Symétrique de scenarioDeathPetrify (mort normale).
+async function scenarioIronmanDeath() {
+  console.log('\n── Scénario : mort Ironman (score + purge des slots) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const setup = await page.evaluate(() => {
+    // Un slot NON-Ironman doit survivre à la purge → l'écrire d'abord.
+    ironmanMode = false;
+    writeSlot('manual_3', 'partie normale');
+    // Bascule Ironman + UID de run, puis deux slots Ironman (auto + manuel).
+    ironmanMode = true;
+    if (typeof _genRunId === 'function') ironmanRunId = _genRunId();
+    writeSlot('manual_1', 'run ironman');
+    if (typeof autoSave === 'function') autoSave('test-ironman');
+    const ids = listSaveSlots().map(s => s.id);
+    return {
+      before: ids.map(id => { const s = readSlot(id); return { id, iron: !!(s && s.state && s.state.ironmanMode) }; }),
+    };
+  });
+  console.log('  setup slots:', setup.before);
+  const ironBefore = setup.before.filter(s => s.iron).length;
+  assert(ironBefore >= 2, `attendu ≥2 slots Ironman avant la mort, got ${ironBefore}`);
+
+  // Mort Ironman : triggerDeath doit router vers showIronmanResult.
+  const death = await page.evaluate(() => {
+    document.getElementById('death-screen').style.display = 'none';
+    if (typeof inAstralCombat !== 'undefined') inAstralCombat = false;
+    party.forEach(c => { c.hp = 0; });
+    triggerDeath('Tombé en mode Ironman.');
+    const ids = listSaveSlots().map(s => s.id);
+    return {
+      ironResultVisible: document.getElementById('ironman-result-screen').style.display === 'flex',
+      deathVisible:      document.getElementById('death-screen').style.display === 'flex',
+      petrify:           !!document.getElementById('cfx-petrify'),
+      remaining: ids.map(id => { const s = readSlot(id); return { id, iron: !!(s && s.state && s.state.ironmanMode) }; }),
+    };
+  });
+  console.log('  death:', death);
+  assert(death.ironResultVisible, 'écran de résultat Ironman non affiché');
+  assert(!death.deathVisible, 'death-screen (pétrification) ne doit PAS s\'afficher en Ironman');
+  assert(!death.petrify, 'aucune pétrification en mort Ironman');
+  const ironAfter = death.remaining.filter(s => s.iron).length;
+  assert(ironAfter === 0, `tous les slots Ironman doivent être purgés, reste ${ironAfter}`);
+  assert(death.remaining.some(s => s.id === 'manual_3' && !s.iron),
+    'le slot non-Ironman manual_3 doit survivre à la purge');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (mort Ironman)`);
+  }
+  console.log('  ✅ mort Ironman : score affiché, slots Ironman purgés, slot normal préservé');
+  await browser.close();
+}
+
 async function scenarioLargeEnemyGroup() {
   console.log('\n── Scénario : gros groupes ennemis (4-5) ──');
   const { browser, page, errors } = await launchGame();
@@ -2207,4 +2483,4 @@ async function scenarioBuffBadgesPng() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };

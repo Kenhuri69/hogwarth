@@ -3190,4 +3190,74 @@ async function scenarioVoixDesRuines() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
+// 1.3.1 — Atteignabilité de l'escalier descendant (filet _ensureStairsExist).
+// Garantit qu'aucune génération d'étage ne softlock le joueur : depuis la case
+// de départ (rooms[0]), l'escalier STAIRS_D doit TOUJOURS être atteignable par
+// un chemin de cases marchables (≠ CELL.WALL). 50 générations couvrant les
+// étages 1-10 (5 seeds chacun) — la génération est procédurale (Math.random),
+// donc on échantillonne suffisamment pour piéger une régression de connectivité.
+async function scenarioStairsReachable() {
+  console.log('\n── Scénario : escalier atteignable (50 gen. étages 1-10) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { runs: 0, failures: [], threw: false };
+    try {
+      // BFS 4-directionnel sur la grille ; tout ce qui n'est pas WALL est
+      // marchable (cohérent avec movement.js : `dungeon[ny][nx] === CELL.WALL`).
+      function reachable(sx, sy, tx, ty) {
+        const H = dungeon.length, W = dungeon[0].length;
+        const seen = Array.from({ length: H }, () => new Array(W).fill(false));
+        const q = [[sx, sy]];
+        seen[sy][sx] = true;
+        while (q.length) {
+          const [x, y] = q.shift();
+          if (x === tx && y === ty) return true;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+            if (seen[ny][nx]) continue;
+            if (dungeon[ny][nx] === CELL.WALL) continue;
+            seen[ny][nx] = true;
+            q.push([nx, ny]);
+          }
+        }
+        return false;
+      }
+      for (let floor = 1; floor <= 10; floor++) {
+        for (let seed = 0; seed < 5; seed++) {
+          generateDungeon(floor);
+          out.runs++;
+          // Localise l'escalier descendant.
+          let sx = -1, sy = -1;
+          for (let y = 0; y < dungeon.length && sx === -1; y++)
+            for (let x = 0; x < dungeon[y].length; x++)
+              if (dungeon[y][x] === CELL.STAIRS_D) { sx = x; sy = y; break; }
+          if (sx === -1) { out.failures.push({ floor, seed, why: 'no STAIRS_D' }); continue; }
+          // Départ = case du joueur (rooms[0].cx/cy posée par generateDungeon).
+          if (dungeon[playerY][playerX] === CELL.WALL) {
+            out.failures.push({ floor, seed, why: 'start is WALL' }); continue;
+          }
+          if (!reachable(playerX, playerY, sx, sy))
+            out.failures.push({ floor, seed, why: 'STAIRS_D unreachable' });
+        }
+      }
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  runs:', r.runs, 'failures:', r.failures.length, r.failures.slice(0, 5));
+  assert(!r.threw, 'reachability throw: ' + (r.err || ''));
+  assert(r.runs === 50, `attendu 50 générations, got ${r.runs}`);
+  assert(r.failures.length === 0,
+    `escalier injoignable sur ${r.failures.length} génération(s) : ` + JSON.stringify(r.failures.slice(0, 5)));
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (stairs reachable)`);
+  }
+  console.log('  ✅ escalier atteignable sur les 50 générations');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable] };

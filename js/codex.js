@@ -33,6 +33,7 @@
 //   victory → ctx.victoryAchieved === true       (Boucle Ténébreuse)
 //   eclatLoop → ctx.accumulatedEclats >= value   (Porteur d'Éclats — V1, ch.11)
 //   cycleBroken → ctx.cycleBroken === true        (« Briser le Cycle » — V3, ch.11)
+//   ending  → ctx.endingType === value            (label de fin dérivé — ch.14 §14.6.2, P3)
 // ============================================================
 
 const CODEX_ENTRIES = [
@@ -197,6 +198,28 @@ const CODEX_ENTRIES = [
       veiled: "Tu as brisé le Cycle.",
       revealed: "Tu n'as pas fui la peur vers le haut : tu es descendu jusqu'à elle et tu l'as rescellée par le bas, en y laissant — comme les Quatre — une part de toi. La victoire sur Voldemort fermait la serrure du haut ; ce geste-ci ferme celle du bas. Le mythe ne meurt pas pour autant : la Boucle reste ouverte à qui veut redescendre. Mais toi, désormais, tu sais ce qu'il y a au fond — et qu'on peut le regarder sans se perdre.",
     },
+  },
+  // Épilogue dynamique (Chapitre 14 §14.6.2, P3) : ouvert à la PREMIÈRE victoire
+  // (robinet `victory`), il se révèle quand la partie atteint sa fin accomplie
+  // (robinet `ending` = label dérivé `cycle_broken`). Le texte est la mémoire
+  // écrite de COMMENT cette partie s'est conclue ; la Maison la colore via la
+  // note marginale `variants.house` (cosmétique, non-gating).
+  {
+    id: 'epilogue', category: 'histoire', icon: '📜', act: 4,
+    title: "Épilogue — la dernière ligne",
+    links: ['cycle_brise', 'boucle_tenebreuse', 'cle_de_voute'],
+    unlockConditions: [{ type: 'victory' }],
+    revealedBy: [{ type: 'ending', value: 'cycle_broken' }],
+    textVersions: {
+      veiled: "Quelque part, un parchemin s'écrit seul à mesure que tu avances. Il dit que Voldemort est tombé, que la nuit a cédé devant ton courage — et que le château, au lieu de se refermer, s'est ouvert vers le bas. Comment ton histoire se conclura, il l'ignore encore : la dernière ligne dépend de jusqu'où tu oseras descendre.",
+      revealed: "Le parchemin a trouvé sa dernière ligne. Tu n'as pas seulement vaincu l'Ombre du haut : tu es descendu jusqu'à la peur du fond et tu l'as rescellée par le bas, en y laissant — comme les Quatre — une part de toi. Ton nom rejoint le leur non pour avoir bâti un couvercle, mais pour avoir osé regarder dessous sans te perdre. La Boucle reste ouverte ; toi, désormais, tu sais. C'est ainsi que finit ta légende : non par un mur, mais par une paix qu'on emporte en redescendant.",
+    },
+    variants: { house: {
+      Gryffondor:  "Le parchemin te nomme à la manière de Godric : celui qui est descendu avec sa peur, et n'a jamais lâché la porte.",
+      Serpentard:  "Le parchemin retient de toi ce que Salazar admirait : le sens de l'heure juste — et la lucidité de savoir à qui l'on serre la main.",
+      Serdaigle:   "Le parchemin garde de toi la marque de Rowena : tu as compris la faille avant même de la combattre.",
+      Poufsouffle: "Le parchemin retient de toi la leçon de Helga : tu n'as laissé personne derrière, jusqu'au plus profond.",
+    } },
   },
 
   // ── 🗺️ Lieux & Géographie ──────────────────────────────────
@@ -496,6 +519,8 @@ function _codexCondMet(cond, ctx) {
       return typeof ctx.accumulatedEclats === 'number' && ctx.accumulatedEclats >= cond.value;
     case 'cycleBroken':
       return ctx.cycleBroken === true;
+    case 'ending':
+      return ctx.endingType === cond.value;
     default:
       return false;
   }

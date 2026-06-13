@@ -77,6 +77,8 @@ function _codexContext() {
     accumulatedEclats: (typeof accumulatedEclats !== 'undefined') ? accumulatedEclats : 0,
     // Robinet `cycleBroken` (V3, ch.11) : fin « Briser le Cycle » atteinte.
     cycleBroken: (typeof cycleBroken !== 'undefined') ? !!cycleBroken : false,
+    // Robinet `ending` (ch.14 §14.6.2, P3) : label de fin dérivé (épilogue).
+    endingType: (typeof endingType !== 'undefined') ? endingType : null,
   };
 }
 

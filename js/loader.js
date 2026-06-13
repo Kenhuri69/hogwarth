@@ -147,6 +147,10 @@ window.UX_safe = new Proxy({}, {
     { name: 'allocateStatPoint',  source: 'ui-character-sheet.js', kind: 'fn'  },
 
     // ── Audio (critique) ──
+    // audio-music.js / audio-sfx.js n'ajoutent PAS de global : ils étendent
+    // l'objet AudioSystem (méthodes). Le check par identifiant nu (typeof)
+    // ne peut donc pas les couvrir individuellement — leur absence se traduit
+    // par des méthodes manquantes sur AudioSystem, pas par un global absent.
     { name: 'AudioSystem',        source: 'audio.js',        kind: 'obj' },
 
     // ── Icônes / textures ──
@@ -195,10 +199,15 @@ window.UX_safe = new Proxy({}, {
     { name: 'handleCellEntry',    source: 'movement.js',     kind: 'fn'  },
     { name: 'searchRoom',         source: 'movement-interactions.js', kind: 'fn' },
     { name: 'rest',               source: 'movement-interactions.js', kind: 'fn' },
+    { name: 'goDeeper',           source: 'movement-floors.js', kind: 'fn' },
+    { name: 'goUp',               source: 'movement-floors.js', kind: 'fn' },
+    { name: '_changeFloor',       source: 'movement-floors.js', kind: 'fn' },
 
     // ── Combat ──
     { name: 'startBattle',        source: 'battle.js',       kind: 'fn'  },
     { name: 'endBattle',          source: 'battle-rewards.js', kind: 'fn'  },
+    { name: 'triggerDeath',       source: 'battle-death.js', kind: 'fn'  },
+    { name: 'resurrect',          source: 'battle-death.js', kind: 'fn'  },
     { name: 'battleAction',       source: 'battle.js',       kind: 'fn'  },
     { name: 'castSpellInBattle',  source: 'battle-spells.js',kind: 'fn'  },
     { name: '_buildSummonedAdd',  source: 'battle-spells.js',kind: 'fn'  },
@@ -226,6 +235,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'unlockHouseQuest',   source: 'quests.js',       kind: 'fn'  },
     { name: 'unlockHouseMytheQuest', source: 'quests.js',    kind: 'fn'  },
     { name: 'HOUSE_SET_QUESTS',   source: 'quests.js',       kind: 'obj' },
+    { name: 'QUEST_TEMPLATES',    source: 'quests-templates.js', kind: 'obj' },
 
     // ── Concoction de potions ──
     { name: 'POTION_RECIPES',     source: 'data.js',         kind: 'obj' },
@@ -456,6 +466,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'showIntroScreen',    source: 'intro.js',        kind: 'fn',    optional: true },
     { name: 'getNpcById',         source: 'npcs-helpers.js', kind: 'fn',    optional: true },
     { name: 'Karaoke',            source: 'karaoke.js',      kind: 'obj',   optional: true },
+    { name: 'PWA',                source: 'pwa.js',          kind: 'obj',   optional: true },
   ];
 
   // ── Vérification d'un identifiant nu via typeof ──────────────
