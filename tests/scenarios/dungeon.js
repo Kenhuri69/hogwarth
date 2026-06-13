@@ -3006,4 +3006,61 @@ async function scenarioScriptedFloorBeats() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
+// Voix des Ruines (P3 — ch.06 §6.9.4 / ch.04 §4.5) : beat solennel one-shot au
+// franchissement 13↔14, distinct de l'écho de signature. Toast (pas narrative).
+async function scenarioVoixDesRuines() {
+  console.log('\n── Scénario : Voix des Ruines (frontière 13↔14, P3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasResolve = typeof isVoixDesRuinesCrossing === 'function';
+      out.hasOrch    = typeof maybeVoixDesRuinesBeat === 'function';
+      // Reset propre de la sentinelle.
+      seenScriptedBeat.delete('voix_des_ruines');
+      // Résolveur pur du franchissement.
+      out.cross1314 = isVoixDesRuinesCrossing(13, 14) === true;
+      out.crossUp   = isVoixDesRuinesCrossing(14, 13) === false;
+      out.crossSame = isVoixDesRuinesCrossing(15, 16) === false;
+      // 1er franchissement → joue, sentinelle posée.
+      out.first = maybeVoixDesRuinesBeat(13, 14) === true;
+      out.seen  = seenScriptedBeat.has('voix_des_ruines');
+      // Idempotent : ré-entrée (ex. remontée 13 puis re-descente) → no-op.
+      out.again = maybeVoixDesRuinesBeat(13, 14) === false;
+      // Sérialisation : la sentinelle survit au round-trip.
+      const snap = _serializeState();
+      out.serialized = Array.isArray(snap.seenScriptedBeat) &&
+        snap.seenScriptedBeat.includes('voix_des_ruines');
+      seenScriptedBeat = new Set();
+      _applyState(snap);
+      out.restored = seenScriptedBeat.has('voix_des_ruines');
+      // Après restauration : toujours one-shot (pas de rejeu).
+      out.afterRestore = maybeVoixDesRuinesBeat(13, 14) === false;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  Voix des Ruines:', r);
+  assert(!r.threw, 'Voix des Ruines throw: ' + (r.err || ''));
+  assert(r.hasResolve, 'isVoixDesRuinesCrossing absent');
+  assert(r.hasOrch, 'maybeVoixDesRuinesBeat absent');
+  assert(r.cross1314, 'franchissement 13→14 non détecté');
+  assert(r.crossUp, 'remontée 14→13 ne doit pas déclencher');
+  assert(r.crossSame, 'transition interne 15→16 ne doit pas déclencher');
+  assert(r.first, 'beat Voix des Ruines ne s\'est pas déclenché');
+  assert(r.seen, 'sentinelle voix_des_ruines non posée');
+  assert(r.again, 'beat Voix des Ruines rejoué (non idempotent)');
+  assert(r.serialized, 'sentinelle absente de la sérialisation');
+  assert(r.restored, 'sentinelle non restaurée après _applyState');
+  assert(r.afterRestore, 'beat rejoué après restauration (non idempotent)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Voix des Ruines)`);
+  }
+  console.log('  ✅ Voix des Ruines — franchissement pur, one-shot, sérialisation OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };

@@ -1630,4 +1630,61 @@ async function scenarioNpcEclatReaction() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction] };
+// Suffixe « Ténébreux » en Boucle (ch.06 §6.12.E) : un PNJ recyclé (Kingsley
+// 8/18) porte une variante de dialogue lue uniquement sur currentFloor >= 18.
+async function scenarioLoopDarkSuffix() {
+  console.log('\n── Scénario : suffixe Ténébreux en Boucle (PNJ recyclés) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const k = (typeof getNpcById === 'function') ? getNpcById('kingsley') : null;
+    const ap = (typeof getNpcById === 'function') ? getNpcById('apothicaire_tenebreux') : null;
+    const hasField = !!(k && k.darkLoopLines);
+    const hasHelper = typeof _darkLoopSuffixPages === 'function';
+
+    // Résolveur de suffixe — gate sur currentFloor >= 18 (déterministe).
+    currentFloor = 8;
+    const surfacePages = hasHelper ? _darkLoopSuffixPages(k).length : -1;   // 0 attendu
+    currentFloor = 17;
+    const justBelow = hasHelper ? _darkLoopSuffixPages(k).length : -1;      // 0 attendu
+    currentFloor = 18;
+    const loopPages = hasHelper ? _darkLoopSuffixPages(k).length : -1;      // > 0 attendu
+
+    // Intégration : à l'étage 18, openNpcDialog appende bien une des darkLoopLines.
+    currentFloor = 18;
+    openNpcDialog('kingsley');
+    const joinedLoop = _dialogState.pages.join(' || ');
+    const lines = Array.isArray(k.darkLoopLines) ? k.darkLoopLines : [k.darkLoopLines];
+    const suffixPresent = lines.some(l => joinedLoop.includes(l.slice(0, 40)));
+
+    // Marchand recyclé (apothicaire) : champ présent + gate identique.
+    const apHasField = !!(ap && ap.darkLoopLines);
+    currentFloor = 9;
+    const apSurface = hasHelper ? _darkLoopSuffixPages(ap).length : -1;     // 0 attendu
+    currentFloor = 19;
+    const apLoop = hasHelper ? _darkLoopSuffixPages(ap).length : -1;        // > 0 attendu
+
+    return { hasField, hasHelper, surfacePages, justBelow, loopPages, suffixPresent, apHasField, apSurface, apLoop };
+  });
+  console.log('  →', r);
+
+  assert(r.hasField, 'Kingsley doit porter le champ darkLoopLines');
+  assert(r.hasHelper, '_darkLoopSuffixPages doit exister');
+  assert(r.surfacePages === 0, 'pas de suffixe Ténébreux à l\'étage 8 (surface)');
+  assert(r.justBelow === 0, 'pas de suffixe Ténébreux à l\'étage 17 (sous le seuil 18)');
+  assert(r.loopPages > 0, 'suffixe Ténébreux attendu à l\'étage 18 (Boucle)');
+  assert(r.suffixPresent, 'openNpcDialog(18) doit appender une darkLoopLine de Kingsley');
+  assert(r.apHasField, 'l\'apothicaire doit porter le champ darkLoopLines');
+  assert(r.apSurface === 0, 'apothicaire : pas de suffixe en surface (étage 9)');
+  assert(r.apLoop > 0, 'apothicaire : suffixe Ténébreux attendu en Boucle (étage 19)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (suffixe Ténébreux)`);
+  }
+  console.log('  ✅ Suffixe Ténébreux en Boucle conforme');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction, scenarioLoopDarkSuffix] };

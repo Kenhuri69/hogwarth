@@ -582,6 +582,40 @@ function maybeSignatureEchoBeat(floor) {
   return true;
 }
 
+// ── Voix des Ruines — beat solennel 13↔14 (P3 — ch.06 §6.9.4, ch.04 §4.5) ──
+// Au franchissement de la frontière de tranche 13→14 (entrée des Ruines
+// Anciennes), un beat SOLENNEL universel marque le passage de tout ce qui est
+// Poudlard vers des ruines pré-école. DISTINCT de l'écho de signature
+// (maybeSignatureEchoBeat, floor 14, house-aware) : ici aucun lien à la Maison,
+// registre soutenu, voix des Ruines plutôt que voix scolaire.
+// C'est un TOAST (§4.5 « toast solennel dédié ») — l'écho de signature détient
+// déjà le panneau de narration à l'étage 14 ; les deux toasts coexistent.
+// One-shot via seenScriptedBeat (sentinelle string, comme 'signature_echo').
+const VOIX_DES_RUINES_KEY = 'voix_des_ruines';
+const VOIX_DES_RUINES = {
+  toast: "🪨 La Voix des Ruines : « Sous Poudlard, la pierre n'a plus de nom. Tu entres dans ce que l'école fut bâtie pour oublier — antérieur aux Fondateurs, à toute main humaine. »",
+};
+
+// Résolveur PUR : vrai uniquement au franchissement strict 13→14 (descente).
+// Les transitions internes à une tranche ou la remontée ne le déclenchent pas.
+function isVoixDesRuinesCrossing(prevFloor, nextFloor) {
+  return typeof prevFloor === 'number' && typeof nextFloor === 'number'
+    && prevFloor <= 13 && nextFloor >= 14 && nextFloor > prevFloor;
+}
+
+// Orchestrateur one-shot : joue le toast solennel à la 1re entrée des Ruines.
+// Sentinelle 'voix_des_ruines' dans seenScriptedBeat (distincte des clés int
+// 1/4/8, de 'founder_chamber' et de 'signature_echo'). No-op silencieux si
+// l'état/les helpers manquent (file://) ou si déjà joué.
+function maybeVoixDesRuinesBeat(prevFloor, nextFloor) {
+  if (!isVoixDesRuinesCrossing(prevFloor, nextFloor)) return false;
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return false;
+  if (seenScriptedBeat.has(VOIX_DES_RUINES_KEY)) return false;
+  seenScriptedBeat.add(VOIX_DES_RUINES_KEY);
+  if (typeof addMsg === 'function') addMsg(VOIX_DES_RUINES.toast, 'narrative');
+  return true;
+}
+
 // ── Application de la corruption (overlay givre) ─────────────
 // Appelée à chaque changement d'étage. Règle l'opacité de #frost-overlay.
 // Défensif : no-op si l'élément manque (file:// smoke, DOM absent).

@@ -438,6 +438,26 @@ function _eclatSuffixPages(npc) {
   return _splitDialogPage(text, _DIALOG_PAGE_MAXLEN);
 }
 
+// Suffixe « Ténébreux » en Boucle (ch.06 §6.12.E) : les PNJ recyclés en Boucle
+// Ténébreuse (Kingsley 8/18, Bill 9/19, Sirius 10/20, marchands) gardent leur
+// id mais portent une variante de dialogue lue sur `currentFloor >= 18` — ce
+// qu'ils sont devenus quand le château est rejoué corrompu. Même patron que
+// `_eclatSuffixPages` (P2) : un suffixe muet appendu en fin de dialogue, pas une
+// page neuve. `darkLoopLines` peut être une string ou un tableau (pioche).
+// Renvoie [] (défensif) si le champ est absent ou si l'étage est sous le seuil.
+const _DARK_LOOP_FLOOR = 18;
+function _darkLoopSuffixPages(npc) {
+  const raw = npc && npc.darkLoopLines;
+  if (raw === undefined || raw === null) return [];
+  const f = (typeof currentFloor === 'number') ? currentFloor : 0;
+  if (f < _DARK_LOOP_FLOOR) return [];
+  const text = Array.isArray(raw)
+    ? raw[Math.floor(Math.random() * raw.length)]
+    : raw;
+  if (!text) return [];
+  return _splitDialogPage(text, _DIALOG_PAGE_MAXLEN);
+}
+
 function _npcDialogActions(npc, state) {
   const out = [];
   // Actions contextuelles quête — énumère TOUTES les quêtes actionnables du
@@ -823,6 +843,18 @@ function openNpcDialog(npcId) {
     const lastSrc = _pageData.srcPages.length
       ? _pageData.srcPages[_pageData.srcPages.length - 1] : 0;
     for (const sub of _eclatPages) {
+      _pageData.pages.push(sub);
+      _pageData.srcPages.push(lastSrc);
+    }
+  }
+  // Suffixe Ténébreux en Boucle (§6.12.E) — appendu après la réplique d'état
+  // (et l'éventuel suffixe Éclat) quand le PNJ recyclé est lu en Boucle (floor
+  // >= 18). Suffixe muet : calé sur la dernière authored-page (pas de voix).
+  const _darkPages = _darkLoopSuffixPages(npc);
+  if (_darkPages.length) {
+    const lastSrc = _pageData.srcPages.length
+      ? _pageData.srcPages[_pageData.srcPages.length - 1] : 0;
+    for (const sub of _darkPages) {
       _pageData.pages.push(sub);
       _pageData.srcPages.push(lastSrc);
     }

@@ -724,6 +724,52 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 6quater. floor-ambiance.js — Voix des Ruines (P3, ch.06 §6.9.4 / ch.04 §4.5)
+//    isVoixDesRuinesCrossing (pur) + maybeVoixDesRuinesBeat (one-shot)
+// ============================================================
+(function testVoixDesRuines() {
+  // ── Résolveur pur du franchissement ──
+  const pure = loadModule(
+    'js/floor-ambiance.js',
+    ['VOIX_DES_RUINES_KEY', 'isVoixDesRuinesCrossing']);
+  const { VOIX_DES_RUINES_KEY, isVoixDesRuinesCrossing } = pure;
+
+  check('VOIX_DES_RUINES_KEY = voix_des_ruines', VOIX_DES_RUINES_KEY === 'voix_des_ruines');
+  check('crossing 13→14 = true', isVoixDesRuinesCrossing(13, 14) === true);
+  check('crossing 10→14 = true (saut)', isVoixDesRuinesCrossing(10, 14) === true);
+  check('crossing 14→14 = false', isVoixDesRuinesCrossing(14, 14) === false);
+  check('crossing 14→13 = false (remontée)', isVoixDesRuinesCrossing(14, 13) === false);
+  check('crossing 6→7 = false (autre frontière)', isVoixDesRuinesCrossing(6, 7) === false);
+  check('crossing 15→16 = false (interne aux Ruines)', isVoixDesRuinesCrossing(15, 16) === false);
+  check('crossing non-num = false', isVoixDesRuinesCrossing(undefined, 14) === false);
+
+  // ── Orchestrateur one-shot : globals injectés + stubs d'affichage ──
+  const seen = new Set();
+  let toast = 0;
+  const orch = loadModule(
+    'js/floor-ambiance.js',
+    ['maybeVoixDesRuinesBeat'],
+    { seenScriptedBeat: seen, addMsg: () => { toast++; } });
+  const { maybeVoixDesRuinesBeat } = orch;
+  // 1er franchissement 13→14 → joue, sentinelle posée.
+  check('voix(13,14) 1re fois = true', maybeVoixDesRuinesBeat(13, 14) === true);
+  check('sentinelle voix_des_ruines posée', seen.has('voix_des_ruines'));
+  check('voix toast 1×', toast === 1);
+  // Idempotent : 2e franchissement → no-op.
+  check('voix(13,14) 2e fois = false', maybeVoixDesRuinesBeat(13, 14) === false);
+  check('voix pas de double toast', toast === 1);
+  // Hors franchissement → false (sentinelle déjà posée n'interfère pas).
+  const seen2 = new Set();
+  let toast2 = 0;
+  const orch2 = loadModule(
+    'js/floor-ambiance.js',
+    ['maybeVoixDesRuinesBeat'],
+    { seenScriptedBeat: seen2, addMsg: () => { toast2++; } });
+  check('voix(6,7) = false', orch2.maybeVoixDesRuinesBeat(6, 7) === false);
+  check('voix(6,7) pas de toast', toast2 === 0);
+})();
+
+// ============================================================
 // 6ter. break-cycle.js — « Briser le Cycle » (V3, ch.11 §11.10)
 //    briserCycleJalons (résolveur PUR des 4 jalons)
 // ============================================================
