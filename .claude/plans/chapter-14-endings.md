@@ -279,3 +279,93 @@ l'agent** (hors capacité) : les visuels sont à produire via les prompts livré
 > **Hors-scope P4** (laissé pour P5) : NG+ opt-in — profil `localStorage`
 > hors-save (titres, compteur de victoires, Codex de profil), cosmétique de
 > départ. **Zéro stat héritée** (équilibrage 13). Décision produit requise.
+
+---
+
+## 7. Phase P5 — New Game+ opt-in (profil persistant + titres + cosmétique)
+
+**Statut :** 🟩 en cours · branche `claude/hogwarth-ch14-p5-newgame-plus`.
+
+Périmètre **strict** : un **profil joueur persistant hors-save** (localStorage,
+clé dédiée), un **opt-in NG+ purement cosmétique** au démarrage, et un **Codex
+de profil** consultable au hub. **ZÉRO** stat / objet / or hérité (équilibrage
+13). Aucune branche d'arc, aucun gate. Tout est additif et défensif.
+
+### Décision produit (validée par l'utilisateur via AskUserQuestion, 2026-06-13)
+
+1. **Titres (3 + prestige ★N)** — dérivés du profil, purement honorifiques :
+   - `Vainqueur de l'Ombre` — ≥ 1 victoire (`endingsSeen.victory`).
+   - `Diplomate des Cachots` — ≥ 1 victoire avec **Pacte scellé** (`victory_pact`).
+   - `Briseur de Cycle` (N = 1) puis `Briseur de Cycle ★N` (N ≥ 2) — N Cycles brisés.
+   - **Titre affiché** (`profileTopTitle`) = le plus prestigieux : Briseur > Diplomate > Vainqueur.
+2. **Cosmétique de départ** : (a) **cadre doré « Vétéran »** sur les cartes héros
+   à la sélection quand NG+ est coché ; (b) **titre affiché dans le HUD** pendant
+   la partie. Visuel uniquement — aucun effet mécanique.
+3. **Placement UI** : (a) **case à cocher** « ✦ Nouvelle Partie+ » à l'étape 1 du
+   player-select, **visible seulement si `ngPlusAvailable()`** (≥ 1 victoire) ;
+   (b) panneau **« Codex du Sorcier »** repliable dans le hub de démarrage, sur le
+   **modèle exact de l'Almanach** (`renderRequirementAlmanac`) — lecture seule.
+
+### Architecture
+
+| Pièce | Fichier | Rôle |
+|-------|---------|------|
+| Profil persistant | **`js/profile.js`** (nouveau) | clé `hogwarts_rpg_profile` ; `getPlayerProfile`, `recordEndingToProfile(endingType)`, `ngPlusAvailable()` |
+| Helpers PURS | `js/profile.js` | `computeProfileTitles(profile)`, `profileTopTitle(profile)` — testés `units.js` |
+| Flags de run | `js/state.js` | `ngPlusRun` (bool), `ngPlusTitle` (string) — cosmétiques, sérialisés |
+| Hooks d'enregistrement | `js/endgame.js` (`checkVictoryTrigger`), `js/break-cycle.js` (`confirmBreakCycle`) | appellent `recordEndingToProfile(endingType)` après `refreshEndingType()` |
+| Opt-in | `index.html` (case `#ngplus-toggle`), `js/main.js` (`confirmHeroSelection` lit la case ; `pselReset`/`_refreshNgPlusOptIn` gère la visibilité) | arme `ngPlusRun` + `ngPlusTitle` |
+| Cosmétique sélection | `css/style.css` (classe `.ngplus-veteran`) | liseré doré sur les cartes héros |
+| Cosmétique HUD | `index.html` (`#ngplus-hud-title`), `js/ui.js` (`updateUI`) | titre affiché en partie |
+| Codex de profil | `index.html` (`#start-hub-profile`), `js/profile.js` (`renderProfileCodex`) appelé par `enterStartHub` (`save-ui.js`) | panneau repliable du hub |
+| Sérialisation | `js/save.js` | `ngPlusRun`/`ngPlusTitle` ajoutés au payload + back-fill défensif |
+
+> **Modèle de référence** : l'Almanach (`hogwarts_rpg_requirement_codex`,
+> `save-slots.js` + `renderRequirementAlmanac` dans `save-ui.js`) — même patron
+> localStorage défensif, même `<details>` repliable masqué si vierge. La SEULE
+> différence : le profil NG+ n'accorde **aucun bonus** (l'Almanach accorde un
+> petit bonus Gallions/potions — hors-scope, non touché).
+
+### Forme du profil (`hogwarts_rpg_profile`)
+
+```js
+{ version:1, victories:int, pactVictories:int, cyclesBroken:int,
+  endingsSeen:{ victory:bool, victory_pact:bool, cycle_broken:bool },
+  titles:[ "…" ] }   // recalculés à chaque enregistrement (computeProfileTitles)
+```
+
+`recordEndingToProfile(endingType)` (idempotence par run garantie par les gates
+amont — `victoryAchieved` / `cycleBroken` ne re-déclenchent pas) :
+- `'victory'`      → `victories++`, `endingsSeen.victory=true`
+- `'victory_pact'` → `victories++`, `pactVictories++`, `endingsSeen.{victory,victory_pact}=true`
+- `'cycle_broken'` → `cyclesBroken++`, `endingsSeen.cycle_broken=true` (victoire déjà comptée en amont)
+puis `titles = computeProfileTitles(profile)` et write.
+
+### Étapes & vérif
+
+1. ✅ `js/profile.js` : profil localStorage défensif + helpers purs `computeProfileTitles`
+   / `profileTopTitle` + `recordEndingToProfile` + `ngPlusAvailable` + `renderProfileCodex`
+   + `_refreshNgPlusOptIn`.
+   - vérif : `units.js` §11quater (matrice titres : vierge / victory / pact / cycle ×N / top) → **vert**.
+2. ✅ `state.js` `ngPlusRun`/`ngPlusTitle` + sérialisation `save.js` (+ back-fill défensif).
+3. ✅ Hooks : `checkVictoryTrigger` (endgame.js) + `confirmBreakCycle` (break-cycle.js) → `recordEndingToProfile`.
+4. ✅ Opt-in UI (case `#ngplus-toggle` étape 1, visible si dispo via `_refreshNgPlusOptIn`)
+   + cosmétiques (cadre `.ngplus-veteran` sélection + titre `#ngplus-hud-title` HUD via `_updateNgPlusTitle`).
+5. ✅ Codex de profil (`#start-hub-profile`, `renderProfileCodex` appelé par `enterStartHub`).
+6. ✅ Loader MANIFEST : entrées profile.js (optionnelles).
+7. ✅ Tests : `units.js` §11quater (titres purs) + scénario smoke `scenarioNgPlusProfile`
+   (enregistrement → profil → opt-in visible → titre HUD → codex hub) → **vert**.
+8. ✅ Garde-fou guidelines : bump cache PWA (profile.js ajouté ; css/style 38→39,
+   css/save-ui 3→4, state 31→32, ui 14→15, save 36→37, save-ui 6→7, main 22→23,
+   endgame 7→8, break-cycle 3→4, loader 42→43, `CACHE_VERSION` v123→v124) ;
+   `node tests/units.js` (562✅) + `node tests/pwa-smoke.js` (✅, 95 entrées) + `node tests/smoke.js` ; `commit-guard`.
+   - vérif : `check_cache_versions.js` OK ; grep `ngPlus` confiné à UI/state/save/opt-in (zéro leak gameplay).
+9. ⬜ Commit + push (ne pas merger sans feu vert).
+
+### Garde-fou équilibrage (cardinal)
+
+- `ngPlusRun` / `ngPlusTitle` ne sont **jamais** lus par un calcul de stat, de
+  loot, d'or ou de scaling. Recherche de non-régression : `grep -n "ngPlus"`
+  ne doit apparaître que dans le rendu UI/cosmétique et la sérialisation.
+- Le profil n'est **jamais** réinjecté dans une save de partie ; il ne sert qu'à
+  l'affichage (titres/codex) et à la cosmétique opt-in.
