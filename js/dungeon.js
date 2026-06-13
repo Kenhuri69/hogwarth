@@ -409,11 +409,12 @@ function generateDungeon(floor) {
     dungeon[room.cy][room.cx] = CELL.FOUNTAIN;
   }
 
-  // Refuge du Blaireau — point de repos signature de Poufsouffle, sur les
-  // étages SANS fontaine garantie (≥ 2), pour ne pas doublonner le soin total.
-  // Une room intermédiaire est forcée en CELL.REFUGE. Voir
-  // .claude/plans/refuge-poufsouffle.md.
-  if (typeof chosenHouse !== 'undefined' && chosenHouse === 'Poufsouffle'
+  // Refuge de Maison — point de repos signature, sur les étages SANS fontaine
+  // garantie (≥ 2), pour ne pas doublonner le soin total. Disponible pour LES
+  // QUATRE Maisons (Ch.13 P3 §13.4.3) : habillage cosmétique par chosenHouse
+  // (refugeTheme, state.js), mécanique IDENTIQUE (repos partiel — équité
+  // stricte). Une room intermédiaire est forcée en CELL.REFUGE.
+  if (typeof chosenHouse !== 'undefined' && chosenHouse
       && floor >= 2 && !isFountainFloor && rooms.length >= 3) {
     const candidates = rooms.slice(1, rooms.length - 1);
     const room       = candidates[Math.floor(Math.random() * candidates.length)];

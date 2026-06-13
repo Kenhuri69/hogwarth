@@ -296,11 +296,14 @@ const SCENE_ICONS = {
     </svg>`;
   },
 
-  // Refuge du Blaireau (Poufsouffle) — foyer chaleureux sous une bannière
-  // jaune et noire. `spent` éteint le feu (braises ternes). viewBox 120×130
-  // (mêmes proportions que la fontaine pour drawRefugeSprite).
+  // Refuge de Maison (Ch.13 P3) — foyer chaleureux sous une bannière dont la
+  // couleur reprend l'accent de la Maison (`opts.accent`, défaut or Poufsouffle).
+  // Le feu reste chaud (un foyer l'est, quelle que soit la Maison). `spent`
+  // éteint le feu (braises ternes). viewBox 120×130 (proportions de la fontaine
+  // pour drawRefugeSprite).
   refuge(opts) {
-    const spent = !!(opts && opts.spent);
+    const spent  = !!(opts && opts.spent);
+    const accent = (opts && opts.accent) || '#f0c84a';   // accent de Maison (bannière)
     return `<svg viewBox="0 0 120 130" width="130" height="140" xmlns="http://www.w3.org/2000/svg" style="display:block">
       <defs>
         <radialGradient id="refGlow" cx="0.5" cy="0.5" r="0.55">
@@ -318,9 +321,9 @@ const SCENE_ICONS = {
       <ellipse cx="60" cy="124" rx="50" ry="5" fill="#000" opacity="0.55"/>
       <ellipse cx="60" cy="80" rx="54" ry="40" fill="url(#refGlow)"/>
       <rect x="56" y="14" width="3" height="40" fill="#2a2018"/>
-      <path d="M59 16 H92 L86 24 L92 32 H59 Z" fill="#f0c84a" stroke="#2a2018" stroke-width="1"/>
+      <path d="M59 16 H92 L86 24 L92 32 H59 Z" fill="${accent}" stroke="#2a2018" stroke-width="1"/>
       <ellipse cx="74" cy="24" rx="5" ry="4" fill="#2a2018"/>
-      <ellipse cx="74" cy="24" rx="2.4" ry="3.2" fill="#f0c84a"/>
+      <ellipse cx="74" cy="24" rx="2.4" ry="3.2" fill="${accent}"/>
       <rect x="36" y="96" width="48" height="9" rx="3" fill="url(#refLog)" stroke="#1a1208" stroke-width="1" transform="rotate(8 60 100)"/>
       <rect x="36" y="96" width="48" height="9" rx="3" fill="url(#refLog)" stroke="#1a1208" stroke-width="1" transform="rotate(-8 60 100)"/>
       ${spent ? `

@@ -397,17 +397,23 @@ Les **sorts** s'apprennent par 3 vecteurs (level-up, livres, équipement
 
 ✅ **Système de répit actuel** : (1) **fontaines** (restauration totale, tous les
 3 étages, 1×/visite) ; (2) **repos** (`rest()`, soin partiel, interrompu ~1/3,
-amortisseur de 15 % PV/PM si coupé). La raréfaction des fontaines vers le bas est
-le **3ᵉ levier d'escalade** ([04 §4.3](04-structure-actes-et-etages.md)).
+amortisseur de 15 % PV/PM si coupé) ; (3) **Refuges de Maison** (`CELL.REFUGE`,
+repos partiel **non-interrompu** 50 % PV/PM, 1×/visite, sur les étages ≥ 2 sans
+fontaine). La raréfaction des fontaines vers le bas reste le **3ᵉ levier
+d'escalade** ([04 §4.3](04-structure-actes-et-etages.md)).
 
-> 💡 **Proposition — « refuges de Maison »** (à valider `❓`) : un havre cosmétique
-> coloré par `chosenHouse` (la chambre de Maison) où le repos serait garanti
-> non-interrompu, 1×/tranche. ⚠️ **Tradeoff** : ajoute une source de répit fiable
-> → adoucit l'attrition (le vrai mur du Solo). À calibrer pour ne pas *aplatir* la
-> tension de la tranche C. Une amorce d'ambiance existe
-> (`.claude/plans/ambiance-chambre-maison.md`) ; le volet *mécanique* reste à
-> concevoir. **Recommandation : si adopté, le réserver à un répit cosmétique** (pas
-> de soin total) pour ne pas concurrencer la fontaine. `❓ à trancher`.
+> ✅ **Implémenté (P3) — « Refuges de Maison »** : le Refuge (jadis exclusif à
+> Poufsouffle) est désormais disponible pour **les quatre Maisons**, avec un
+> habillage **purement cosmétique** par `chosenHouse` (nom, récit, teinte de
+> bannière via `refugeTheme()`/`HOUSE_BONUSES` — 🦁 Foyer du Lion · 🐍 Antre du
+> Serpent · 🦅 Alcôve de l'Aigle · 🦡 Refuge du Blaireau). **Mécanique identique
+> pour les 4 → équité stricte préservée** (§13.6 #5) ; **repos partiel, pas de
+> soin total** (ne concurrence pas la fontaine, §13.4.3 respecté). Poufsouffle
+> conserve son identité profonde (passif Apothéose Souffle du Blaireau, item Cœur
+> du Refuge). Le répit est uniforme et modéré ; non modélisé par
+> `sim-difficulty.js`, donc le §3 du rapport est inchangé. Cf.
+> `js/state.js — REFUGE_THEMES/refugeTheme`, [G4](../gameplay/G4-maisons.md),
+> [G7](../gameplay/G7-donjon.md).
 
 ### 13.4.4 Gestion de la mort & de l'échec
 
@@ -769,7 +775,7 @@ bruit Monte-Carlo (SE de la différence ≈ 2.5 pts à N=800). Analogue à
 | **P1** ✅ | `check_difficulty.js` en CI (C) | Tooling | Garde-fou anti-régression d'équilibre — **implémenté** |
 | **P1** ✅ | Toast d'entrée de Boucle + indicateur d'attrition (E) | UX cosmétique | Résout la frustration n°1 des sims (écart combat/clear, pivot endgame) — **sans toucher l'équilibrage**. **Implémenté** |
 | **P2** ✅ | XP passive de Boucle (`LOOP_PASSIVE_XP_FRAC`, axe additif — pas de nerf scaling) | Équilibrage | **Implémenté** — adoucit le mur ét. 19-21 sans trivialiser (`DIFFICULTY_STUDY.md §8.8`) |
-| **P3** | `houseDifficultyModifier` / refuges de Maison (💡 ❓) | Feature opt-in | Rompt des garde-fous → décision design préalable |
+| **P3** ✅ (refuges) | Refuges de Maison (cosmétique, équité préservée) **implémenté** · `houseDifficultyModifier` non retenu (rompt l'équité) | Feature | Refuges : habillage par Maison, répit partiel uniforme (§13.4.3) |
 | **Hors-scope V1** | `eclatPowerBoost`, héritage en Boucle (💡 ❓) | Feature | Déconseillé (§13.3.4, §13.4.4) |
 
 > ✅ **Ordre directeur** : *base scaling (déjà là → documenter) → garde-fou de
@@ -801,8 +807,8 @@ bruit Monte-Carlo (SE de la différence ≈ 2.5 pts à N=800). Analogue à
    de l'équité stricte ? *(Recommandation : non en V1 — §13.3.1.)*
 2. ❓ Donner un `eclatPowerBoost` aux Éclats (les rendre semi-obligatoires) ?
    *(Recommandation : non — garder narratif — §13.3.4.)*
-3. ❓ Ajouter des « refuges de Maison » (répit garanti) ? *(Si oui, cosmétique
-   seulement, pas de soin total — §13.4.3.)*
+3. ✅ « Refuges de Maison » — **tranché : implémenté** (P3, cosmétique, repos
+   partiel non-interrompu, équité stricte préservée — §13.4.3).
 4. ❓ Introduire un « héritage en Boucle » / perte partielle à la mort ?
    *(Recommandation : hors-scope V1 — §13.4.4.)*
 5. ✅ Adoucir l'endgame (XP passive de Boucle) — **tranché : implémenté** (P2,

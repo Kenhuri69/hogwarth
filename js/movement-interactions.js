@@ -643,15 +643,19 @@ function useFountain() {
   safeCall('autoSave', 'fountain-used');
 }
 
-// ── Refuge du Blaireau — repos partiel 1×/visite (Poufsouffle) ──
+// ── Refuge de Maison — repos partiel 1×/visite (Ch.13 P3) ──
 // Parent de la fontaine, mais soin PARTIEL (REFUGE_HEAL_FRAC) : un repos de
-// campagne, « filet de sécurité » thématique de Poufsouffle (08 §8.8.3).
+// campagne, « filet de sécurité » disponible pour les 4 Maisons, habillé par
+// chosenHouse (refugeTheme). Mécanique identique — équité stricte (08 §8.8.3).
 function useRefuge() {
   if (inBattle) return;
   if (dungeon[playerY][playerX] !== CELL.REFUGE) return;
+  const theme = (typeof refugeTheme === 'function')
+    ? refugeTheme()
+    : { name: 'Refuge du Blaireau', narrative: "Autour du foyer, le groupe panse ses plaies et reprend son souffle." };
   const key = `${playerX},${playerY}`;
   if (usedRefuges.has(key)) {
-    addMsg("Le Refuge a déjà servi : revenez sur cet étage plus tard.", 'bad');
+    addMsg(`${theme.name} a déjà servi : revenez sur cet étage plus tard.`, 'bad');
     return;
   }
   const frac = (typeof REFUGE_HEAL_FRAC === 'number') ? REFUGE_HEAL_FRAC : 0.5;
@@ -662,8 +666,8 @@ function useRefuge() {
   });
   usedRefuges.add(key);
   if (typeof DFX_safe !== 'undefined') DFX_safe.burst('explore-overlay', 'heal');
-  setNarrative("Autour du foyer du Blaireau, le groupe panse ses plaies et reprend son souffle. On ne laisse personne derrière — ici, on tient bon, ensemble.");
-  addMsg(`Refuge du Blaireau : ${Math.round(frac * 100)} % des PV et PM restaurés.`, 'good');
+  setNarrative(theme.narrative);
+  addMsg(`${theme.name} : ${Math.round(frac * 100)} % des PV et PM restaurés.`, 'good');
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
   updateUI();
   safeCall('autoSave', 'refuge-used');

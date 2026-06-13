@@ -502,8 +502,9 @@ function drawFountainSprite(x, baseY, sz, dried) {
   ctx.restore();
 }
 
-// Refuge du Blaireau — foyer de repos Poufsouffle. Halo ambre chaud (éteint =
-// braises ternes), visuel SVG (viewBox 120×130) avec repli emoji 🏕️.
+// Refuge de Maison (Ch.13 P3) — foyer de repos, bannière teintée par
+// chosenHouse (refugeTheme). Halo ambre chaud (éteint = braises ternes),
+// visuel SVG (viewBox 120×130) avec repli emoji 🏕️.
 function drawRefugeSprite(x, baseY, sz, spent) {
   ctx.save();
   ctx.fillStyle = 'rgba(0,0,0,0.45)';
@@ -518,8 +519,11 @@ function drawRefugeSprite(x, baseY, sz, spent) {
   }
   ctx.fillStyle = halo;
   ctx.beginPath(); ctx.arc(x, baseY - sz * 0.42, sz * 0.95, 0, Math.PI * 2); ctx.fill();
-  const entry = _getSceneSvgImg(spent ? 'refuge_spent' : 'refuge',
-    () => SCENE_ICONS.refuge({ spent }));
+  // Refuge de Maison (Ch.13 P3) — bannière teintée par chosenHouse. On clé le
+  // cache SVG par Maison pour que chaque teinte soit mémoïsée séparément.
+  const rt = (typeof refugeTheme === 'function') ? refugeTheme() : { accent: '#f0c84a', house: 'Poufsouffle' };
+  const entry = _getSceneSvgImg((spent ? 'refuge_spent_' : 'refuge_') + rt.house,
+    () => SCENE_ICONS.refuge({ spent, accent: rt.accent }));
   if (entry && entry.ready) {
     const h = sz * 1.1, w = h * (120 / 130);
     ctx.drawImage(entry.img, x - w / 2, baseY - h, w, h);
