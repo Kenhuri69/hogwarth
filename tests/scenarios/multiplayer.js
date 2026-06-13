@@ -3530,4 +3530,109 @@ async function scenarioMultiplayerPolish() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel, scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish] };
+// ============================================================
+// Duel PvP EN DIRECT (tours relayés, reliquat 4.1) — pvp-duel.js
+// ============================================================
+// Stubs REST (offline, déterministe) : on simule une visite active via
+// _visitGetState, et l'adversaire via une boîte de réception de messages
+// (window.__pvpInbox). Vérifie invite → accept → tour relayé → fin (KO).
+async function scenarioPvpDuel() {
+  console.log('\n── Scénario : duel PvP live (tours relayés) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Stubs : visite active + transport contrôlé.
+  await page.evaluate(() => {
+    window._visitGetState = () => ({ role: 'visitor', channelId: 'duel-ch', lastIso: null });
+    window.__pvpPosted = [];
+    window.mpPostVisitMessage = async (channelId, sender, type, payload) => {
+      window.__pvpPosted.push({ channelId, sender, type, payload });
+      return { id: 'p' + window.__pvpPosted.length, created_at: new Date().toISOString() };
+    };
+    window.__pvpInbox = [];
+    window.mpPollVisitMessages = async () => {
+      const out = window.__pvpInbox.slice();
+      window.__pvpInbox.length = 0;
+      return out.map((m, i) => ({
+        id: 'in' + i, sender: 'host', type: m.type, payload: m.payload,
+        created_at: new Date().toISOString()
+      }));
+    };
+  });
+
+  // T1 : surface publique + duel possible (visite stubbée).
+  const t1 = await page.evaluate(() => ({
+    send:  typeof pvpSendDuelInvite === 'function',
+    can:   typeof pvpCanDuel === 'function',
+    state: typeof _pvpGetState === 'function',
+    canDuel: pvpCanDuel(),
+    phase: _pvpGetState().phase
+  }));
+  console.log('  T1 surface →', t1);
+  assert(t1.send && t1.can && t1.state, 'API duel exposée');
+  assert(t1.canDuel === true,           'duel possible en visite active');
+  assert(t1.phase === 'idle',           'phase initiale idle');
+
+  // T2 : j'envoie une invitation → message duelInvite posté, phase inviting.
+  const t2 = await page.evaluate(() => {
+    const ok = pvpSendDuelInvite();
+    const posted = window.__pvpPosted.map(p => p.type);
+    return { ok, posted, phase: _pvpGetState().phase };
+  });
+  console.log('  T2 invite →', t2);
+  assert(t2.ok === true,                    'invitation envoyée');
+  assert(t2.posted.includes('duelInvite'),  'message duelInvite posté');
+  assert(t2.phase === 'inviting',           'phase inviting');
+
+  // T3 : l'adversaire accepte → combat, c'est mon tour (invitant), opp nommé.
+  const t3 = await page.evaluate(async () => {
+    window.__pvpInbox.push({ type: 'duelAccept',
+      payload: { name: 'Bellatrix', combatant: { name: 'Bellatrix', icon: '🧙‍♀️', hpMax: 40 } } });
+    await window._pvpPollOnce();
+    const s = _pvpGetState();
+    return { phase: s.phase, turn: s.turn, oppName: s.oppName, oppHp: s.oppHp, myHp: s.myHp };
+  });
+  console.log('  T3 accept →', t3);
+  assert(t3.phase === 'fighting',  'combat engagé après accept');
+  assert(t3.turn === 'me',         'invitant joue en premier');
+  assert(t3.oppName === 'Bellatrix', 'adversaire hydraté');
+  assert(t3.oppHp === 40,          'PV adverse = hpMax du snapshot');
+
+  // T4 : j'attaque → duelAction posté (dmgToFoe>0), PV adverse baisse, tour opp.
+  const t4 = await page.evaluate(() => {
+    const before = _pvpGetState().oppHp;
+    pvpActAttack();
+    const last = window.__pvpPosted[window.__pvpPosted.length - 1];
+    const s = _pvpGetState();
+    return { type: last.type, dmg: last.payload.dmgToFoe, before, after: s.oppHp, turn: s.turn };
+  });
+  console.log('  T4 attaque →', t4);
+  assert(t4.type === 'duelAction',     'action relayée');
+  assert(t4.dmg > 0,                   'dégâts infligés');
+  assert(t4.after === t4.before - t4.dmg, 'PV adverse synchronisés (miroir)');
+  assert(t4.turn === 'opp',            'la main passe à l\'adversaire');
+
+  // T5 : l'adversaire me porte un coup létal → défaite, duelEnd posté (loser=moi).
+  const t5 = await page.evaluate(async () => {
+    window.__pvpInbox.push({ type: 'duelAction', payload: { dmgToFoe: 9999, crit: true } });
+    await window._pvpPollOnce();
+    const s = _pvpGetState();
+    const ends = window.__pvpPosted.filter(p => p.type === 'duelEnd');
+    return { phase: s.phase, winner: s.winner, myHp: s.myHp,
+             endLoser: ends.length ? ends[ends.length - 1].payload.loser : null };
+  });
+  console.log('  T5 KO →', t5);
+  assert(t5.phase === 'ended',     'duel terminé après KO');
+  assert(t5.winner === 'opp',      'adversaire vainqueur (j\'ai 0 PV)');
+  assert(t5.myHp <= 0,             'mes PV à 0');
+  assert(t5.endLoser === 'visitor','duelEnd déclare le perdant (mon rôle)');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (pvp duel)`);
+  }
+  console.log('  ✅ duel PvP live — invite, accept, tour relayé, fin OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioParallelPortal, scenarioPortalMatchmaking, scenarioVisitSnapshot, scenarioVisitChannelTransport, scenarioVisitHudAndBlock, scenarioVisitFloorUpdate, scenarioVisitNetworkDrop, scenarioVisitBackendMissing, scenarioVisitPhaseD, scenarioVisitPhaseE, scenarioVisitPhaseF, scenarioVisitPhaseG, scenarioVisitPhaseH, scenarioVisitV1c1, scenarioMultiplayerPresence, scenarioMultiplayerInteraction, scenarioMultiplayerDuel, scenarioMultiplayerMessages, scenarioMultiplayerGifts, scenarioMultiplayerPolish, scenarioPvpDuel] };

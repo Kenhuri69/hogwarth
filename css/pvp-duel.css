@@ -1,0 +1,153 @@
+/* ============================================================
+   Duel PvP en direct (reliquat 4.1) — overlay de duel relayé.
+   Surface autonome, thème parchemin/or cohérent avec le reste.
+   ============================================================ */
+
+#pvp-duel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 4, 2, 0.82);
+  padding: 16px;
+}
+
+.pvp-duel-panel {
+  width: min(560px, 96vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  background: linear-gradient(160deg, #241a10, #181009);
+  border: 2px solid #c9a84c;
+  border-radius: 12px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  padding: 18px 20px;
+  color: #ecd9b0;
+  font-family: inherit;
+}
+
+.pvp-title {
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f0d782;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+.pvp-title.pvp-win  { color: #8fdc7a; }
+.pvp-title.pvp-lose { color: #e08585; }
+
+.pvp-info {
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.pvp-arena {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pvp-fighter {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid #5a4420;
+  border-radius: 8px;
+  padding: 10px;
+}
+.pvp-fighter.pvp-me  { border-color: #6e8fc0; }
+.pvp-fighter.pvp-opp { border-color: #b05a5a; }
+
+.pvp-fighter-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.pvp-fighter-icon { font-size: 1.3rem; }
+.pvp-fighter-name { font-weight: 700; flex: 1; }
+.pvp-fighter-lvl  { font-size: 0.8rem; opacity: 0.8; }
+
+.pvp-bar {
+  position: relative;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 9px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+.pvp-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 9px;
+  transition: width 0.35s ease;
+}
+.pvp-bar-fill.pvp-hp { background: linear-gradient(90deg, #b83b3b, #e06a4a); }
+.pvp-bar-fill.pvp-sp { background: linear-gradient(90deg, #2f6fb0, #4fa0d8); }
+.pvp-bar-txt {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 18px;
+  text-shadow: 0 1px 2px #000;
+}
+
+.pvp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.pvp-act {
+  background: linear-gradient(160deg, #3a2c16, #2a1f10);
+  border: 1px solid #c9a84c;
+  color: #ecd9b0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.pvp-act:hover:not([disabled]) { filter: brightness(1.25); }
+.pvp-act[disabled] { opacity: 0.4; cursor: not-allowed; }
+.pvp-act-atk  { border-color: #e06a4a; }
+.pvp-act-spell { border-color: #7aa0e0; }
+.pvp-act-quit { border-color: #8a6a6a; }
+.pvp-act small { opacity: 0.75; }
+
+.pvp-wait {
+  text-align: center;
+  font-style: italic;
+  opacity: 0.85;
+  margin-bottom: 12px;
+}
+
+.pvp-log {
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid #3a2c16;
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-height: 60px;
+  max-height: 160px;
+  overflow-y: auto;
+  font-size: 0.82rem;
+  margin-bottom: 12px;
+}
+.pvp-log-line { padding: 1px 0; }
+.pvp-log-good { color: #8fdc7a; }
+.pvp-log-bad  { color: #e08585; }
+.pvp-log-info { color: #d7c79a; opacity: 0.9; }
+
+.pvp-end-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+@media (max-width: 700px) {
+  .pvp-arena { flex-direction: column; }
+}
