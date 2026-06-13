@@ -1213,6 +1213,73 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 11. endgame.js — _victorySpeechVariants PUR (Chapitre 14 §14.2.2, P1)
+//    Variantes conditionnelles de texte du discours de victoire.
+// ============================================================
+(function testVictorySpeechVariants() {
+  // endgame.js exécute une IIFE qui assigne sur `window` au chargement →
+  // on fournit un window stub. _victorySpeechVariants est top-level (pur).
+  const { _victorySpeechVariants } = loadModule(
+    'js/endgame.js', ['_victorySpeechVariants'], { window: {} });
+
+  // Défensif : ctx vide / absent → aucun bloc (texte de base seul).
+  check('ctx absent → chaîne vide', _victorySpeechVariants() === '');
+  check('ctx vide → chaîne vide', _victorySpeechVariants({}) === '');
+
+  // (a) Maison → dernier mot coloré, une réplique distincte par Maison.
+  check('Gryffondor → réplique Godric',
+    _victorySpeechVariants({ chosenHouse: 'Gryffondor' }).includes('Godric'));
+  check('Serpentard → réplique Salazar',
+    _victorySpeechVariants({ chosenHouse: 'Serpentard' }).includes('Salazar'));
+  check('Serdaigle → réplique Rowena',
+    _victorySpeechVariants({ chosenHouse: 'Serdaigle' }).includes('Rowena'));
+  check('Poufsouffle → réplique Helga',
+    _victorySpeechVariants({ chosenHouse: 'Poufsouffle' }).includes('Helga'));
+  // Maison inconnue → pas de bloc Maison.
+  check('Maison inconnue → pas de bloc house',
+    !_victorySpeechVariants({ chosenHouse: 'Inconnue' }).includes('victory-speech-house'));
+
+  // (e) Choix moral : pact = froid, defiance = reconnaissance (miroir).
+  check('pact → réplique froide',
+    _victorySpeechVariants({ slythPactChoice: 'pact' }).includes("celui à qui l'on parle"));
+  check('defiance → réplique chaleureuse',
+    _victorySpeechVariants({ slythPactChoice: 'defiance' }).includes('mille ans'));
+  check('defiance ≠ froide',
+    !_victorySpeechVariants({ slythPactChoice: 'defiance' }).includes("celui à qui l'on parle"));
+  check('pact ≠ chaleureuse',
+    !_victorySpeechVariants({ slythPactChoice: 'pact' }).includes('mille ans'));
+
+  // (d) Éclats : révélation seulement si fil rouge complet.
+  check('eclatsComplete → révélation deux choses',
+    _victorySpeechVariants({ eclatsComplete: true }).includes('deux choses'));
+  check('sans eclatsComplete → pas de révélation',
+    !_victorySpeechVariants({ eclatsComplete: false }).includes('deux choses'));
+
+  // (c) Signatures : chaque flag nomme sa récompense cérémonielle.
+  check('gryffSignatureDone → Bannière de Godric',
+    _victorySpeechVariants({ gryffSignatureDone: true }).includes('Bannière de Godric'));
+  check('slythSignatureDone → Pacte des Cachots',
+    _victorySpeechVariants({ slythSignatureDone: true }).includes('Pacte des Cachots'));
+  check('ravenSignatureDone → Codex de Rowena',
+    _victorySpeechVariants({ ravenSignatureDone: true }).includes('Codex de Rowena'));
+  check('poufSignatureDone → Médaillon de Helga',
+    _victorySpeechVariants({ poufSignatureDone: true }).includes('Médaillon de Helga'));
+
+  // Cumul : tous les flags actifs → tous les blocs présents, sans crash.
+  const full = _victorySpeechVariants({
+    chosenHouse: 'Poufsouffle', slythPactChoice: 'defiance', eclatsComplete: true,
+    gryffSignatureDone: true, slythSignatureDone: true,
+    ravenSignatureDone: true, poufSignatureDone: true
+  });
+  check('cumul : Maison présente', full.includes('Helga aurait été fière'));
+  check('cumul : révélation présente', full.includes('deux choses'));
+  check('cumul : 4 héritages présents',
+    full.includes('Bannière de Godric') && full.includes('Pacte des Cachots') &&
+    full.includes('Codex de Rowena') && full.includes('Médaillon de Helga'));
+  check('cumul : reconnaissance présente', full.includes('mille ans'));
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

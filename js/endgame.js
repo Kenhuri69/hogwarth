@@ -15,6 +15,85 @@
 //   Retour au menu   → autoSave puis remontée vers le hub de saves
 //
 // Voir ENDGAME_PLAN.md §3-§6.
+//
+// Variantes conditionnelles du discours (Chapitre 14 §14.2.2, P1) :
+// _victorySpeechVariants(ctx) est un helper PUR (testé dans tests/units.js)
+// qui retourne les blocs HTML à concaténer au discours de base de
+// #victory-speech selon le contexte de fin (Maison, choix moral du Pacte,
+// Éclats remis, quêtes Signature). Aucune branche d'arc, aucun gate : ce
+// sont des couches de TEXTE posées sur la même cinématique. Tout est
+// défensif — champ absent → bloc omis (jamais de crash, texte de base seul).
+
+// Pur & testable. `ctx` regroupe les flags de fin déjà présents dans l'état.
+// Ordre d'affichage (concaténé après le discours de base) : révélation des
+// Éclats → héritage des Signatures → choix moral (Pacte) → dernier mot de
+// Dumbledore coloré par la Maison.
+function _victorySpeechVariants(ctx) {
+  ctx = ctx || {};
+  const blocks = [];
+
+  // (d) §14.2.2(d) — Révélation des Éclats : si le fil rouge des 3 Éclats de
+  // la Clé de Voûte a été remis (quête `eclats_clef_voute` terminée), un
+  // préavis lucide qui prépare émotionnellement la Boucle.
+  if (ctx.eclatsComplete) {
+    blocks.push(
+      `<p class="victory-speech-eclats"><em>« Tu as remis les trois Éclats —
+       alors tu sais déjà ce que je vais dire. Le verrou retenait deux choses,
+       pas une : le résidu de Voldemort, et ce qui dormait là bien avant lui.
+       Voilà pourquoi ta victoire <strong>ouvre</strong> au lieu de fermer. »</em></p>`);
+  }
+
+  // (c) §14.2.2(c) — Héritage des quêtes Signature : nomme la récompense
+  // cérémonielle obtenue. Chaque flag est indépendant (un seul actif par
+  // partie en pratique, mais on ne le présuppose pas).
+  if (ctx.gryffSignatureDone) {
+    blocks.push(
+      `<p class="victory-speech-legacy">La <b>Bannière de Godric</b> a tenu
+       jusqu'au fond — ton étendard n'a pas plié.</p>`);
+  }
+  if (ctx.slythSignatureDone) {
+    blocks.push(
+      `<p class="victory-speech-legacy">Le <b>Pacte des Cachots</b> a été
+       scellé en ton nom — souviens-toi qu'il a toujours un revers.</p>`);
+  }
+  if (ctx.ravenSignatureDone) {
+    blocks.push(
+      `<p class="victory-speech-legacy">Le <b>Codex de Rowena</b> t'a livré
+       ses failles — tu le connaissais avant de le frapper.</p>`);
+  }
+  if (ctx.poufSignatureDone) {
+    blocks.push(
+      `<p class="victory-speech-legacy">Le <b>Médaillon de Helga</b> a veillé
+       sur le Refuge — il a tenu pendant toute ta descente.</p>`);
+  }
+
+  // (e) §14.2.2(e) — Choix moral du Pacte des Cachots (08 §8.8.1). `pact` =
+  // ton froid (mise en garde) ; `defiance` = ton de reconnaissance, en miroir.
+  if (ctx.slythPactChoice === 'pact') {
+    blocks.push(
+      `<p class="victory-speech-cold"><em>« Tu as gagné. Veille seulement à
+       rester celui qui parle — et non celui à qui l'on parle. »</em></p>`);
+  } else if (ctx.slythPactChoice === 'defiance') {
+    blocks.push(
+      `<p class="victory-speech-warm"><em>« Tu as tenu tête à une voix vieille
+       de mille ans, et tu n'as rien cédé. Peu y parviennent. Cela, je ne
+       l'oublierai pas. »</em></p>`);
+  }
+
+  // (a) §14.2.2(a) — Dernier mot de Dumbledore, coloré par la Maison du héros.
+  const HOUSE_LAST_WORD = {
+    Gryffondor:  "Tu n'as pas vaincu parce que tu n'avais pas peur — mais parce que tu es descendu <em>avec</em> ta peur. C'est tout Godric, cela.",
+    Serpentard:  "Tu as su quand frapper, et quand attendre. Salazar lui-même n'aurait pu mieux choisir son heure — veille à ce que ce soit toujours <em>toi</em> qui choisisses.",
+    Serdaigle:   "Tu as compris avant de combattre. Rowena disait : « la connaissance est l'arme qu'on ne perd jamais. » Tu viens de le prouver au plus profond.",
+    Poufsouffle: "Tu n'as laissé personne derrière, pas même quand descendre seul eût été plus simple. Helga aurait été fière — et l'école, qu'elle a fondée pour tous, te doit la nuit."
+  };
+  if (ctx.chosenHouse && HOUSE_LAST_WORD[ctx.chosenHouse]) {
+    blocks.push(
+      `<p class="victory-speech-house"><em>« ${HOUSE_LAST_WORD[ctx.chosenHouse]} »</em></p>`);
+  }
+
+  return blocks.join('\n');
+}
 
 (function () {
   // A1 — sting audio de victoire : garde-fou d'idempotence. La modale peut
@@ -102,13 +181,21 @@
     }
 
     if (speech) {
-      // Réplique post-victoire conditionnée par le Pacte des Cachots
-      // (08 §8.8.1) : si le joueur a scellé le pacte de Salazar, Dumbledore
-      // est plus froid — une mise en garde au lieu d'un éloge.
-      const pactCold = (typeof slythPactChoice !== 'undefined' && slythPactChoice === 'pact')
-        ? `<p class="victory-speech-cold"><em>« Tu as gagné. Veille seulement à
-            rester celui qui parle — et non celui à qui l'on parle. »</em></p>`
-        : '';
+      // Variantes conditionnelles (Chapitre 14 §14.2.2, P1) : on lit les flags
+      // de fin déjà présents dans l'état (tous défensifs) et on délègue au
+      // helper pur _victorySpeechVariants pour produire les blocs à concaténer.
+      const ctx = {
+        chosenHouse:        (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
+        slythPactChoice:    (typeof slythPactChoice !== 'undefined') ? slythPactChoice : null,
+        gryffSignatureDone: (typeof gryffSignatureDone !== 'undefined') && gryffSignatureDone,
+        slythSignatureDone: (typeof slythSignatureDone !== 'undefined') && slythSignatureDone,
+        ravenSignatureDone: (typeof ravenSignatureDone !== 'undefined') && ravenSignatureDone,
+        poufSignatureDone:  (typeof poufSignatureDone !== 'undefined') && poufSignatureDone,
+        eclatsComplete:     (typeof completedQuests !== 'undefined' && completedQuests &&
+                             typeof completedQuests.has === 'function' &&
+                             completedQuests.has('eclats_clef_voute'))
+      };
+      const variants = _victorySpeechVariants(ctx);
       speech.innerHTML = `
         « Vous avez fait ce que même les plus grands sorciers n'auraient
         osé tenter. La nuit la plus sombre cède, enfin, devant votre
@@ -116,7 +203,7 @@
         ombres rôdent encore, plus profondément, là où la magie est plus
         ancienne. <em>L'escalier le plus profond, scellé par la peur,
         s'ouvre enfin.</em> »
-        ${pactCold}
+        ${variants}
         <div class="victory-speech-sign">— Albus Dumbledore</div>
       `;
     }

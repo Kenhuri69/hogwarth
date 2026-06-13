@@ -1765,4 +1765,75 @@ async function scenarioHouseSignaturePoufsouffle() {
   });
 }
 
-module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle] };
+// ── Variantes conditionnelles du discours de victoire (Chapitre 14 §14.2.2, P1) ──
+// Force victoryAchieved + un chosenHouse et vérifie que #victory-speech contient
+// le dernier mot de Dumbledore coloré par la Maison, plus les variantes Éclats /
+// choix moral / Signature. Intégration DOM du helper pur _victorySpeechVariants
+// (testé à part dans tests/units.js).
+async function scenarioVictorySpeechVariants() {
+  console.log('\n── Scénario : variantes conditionnelles du discours de victoire (ch.14 P1) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const out = await page.evaluate(() => {
+    const speech = document.getElementById('victory-speech');
+    const res = {};
+    // État de base propre.
+    victoryAchieved = true;
+    slythPactChoice = null;
+    gryffSignatureDone = slythSignatureDone = ravenSignatureDone = poufSignatureDone = false;
+    if (typeof completedQuests !== 'undefined' && completedQuests.delete) completedQuests.delete('eclats_clef_voute');
+
+    // (a) Dernier mot par Maison — une réplique distincte pour chacune.
+    const houseKey = { Gryffondor: 'Godric', Serpentard: 'Salazar', Serdaigle: 'Rowena', Poufsouffle: 'Helga' };
+    res.byHouse = {};
+    for (const h of Object.keys(houseKey)) {
+      chosenHouse = h;
+      showVictoryScreen();
+      res.byHouse[h] = speech.innerHTML.includes(houseKey[h]);
+      closeVictoryScreen();
+    }
+    chosenHouse = 'Gryffondor';
+
+    // (e) Choix moral defiance → ton de reconnaissance (miroir du pact existant).
+    slythPactChoice = 'defiance';
+    showVictoryScreen();
+    res.defianceWarm = speech.innerHTML.includes('mille ans');
+    res.defianceNotCold = !speech.innerHTML.includes("celui à qui l'on parle");
+    closeVictoryScreen();
+    slythPactChoice = null;
+
+    // (d) Éclats remis → paragraphe de révélation.
+    if (typeof completedQuests !== 'undefined' && completedQuests.add) completedQuests.add('eclats_clef_voute');
+    showVictoryScreen();
+    res.eclatsReveal = speech.innerHTML.includes('deux choses');
+    closeVictoryScreen();
+    if (typeof completedQuests !== 'undefined' && completedQuests.delete) completedQuests.delete('eclats_clef_voute');
+
+    // (c) Signature → héritage nommé.
+    gryffSignatureDone = true;
+    showVictoryScreen();
+    res.legacyNamed = speech.innerHTML.includes('Bannière de Godric');
+    closeVictoryScreen();
+    gryffSignatureDone = false;
+
+    return res;
+  });
+  console.log('  →', JSON.stringify(out));
+  for (const [h, ok] of Object.entries(out.byHouse)) {
+    assert(ok, `#victory-speech doit contenir le dernier mot ${h}`);
+  }
+  assert(out.defianceWarm,    'defiance → ton de reconnaissance attendu dans #victory-speech');
+  assert(out.defianceNotCold, 'defiance ne doit pas afficher la mise en garde froide du Pacte');
+  assert(out.eclatsReveal,    '3 Éclats remis → paragraphe de révélation « deux choses »');
+  assert(out.legacyNamed,     'gryffSignatureDone → la Bannière de Godric doit être nommée');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Variantes conditionnelles du discours de victoire conformes');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants] };

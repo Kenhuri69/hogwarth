@@ -1,15 +1,19 @@
 # Plan — Chapitre 14 : Scénarios de fin & post-game
 
 **Statut :** 🟩 en cours · branche `claude/hogwarth-chapter-14-endings-hg6y4l`
+(ÉTAPE 1/2 doc) → P1 implémentée sur `claude/hogwarth-ch14-p1-victory-variants`.
 
 > Tâche : créer & finaliser le **Chapitre 14** comme pilier **conclusion &
 > rejouabilité**. ÉTAPE 1 = contenu narratif (→ `docs/histoire/14-scenarios-de-fin.md`).
 > ÉTAPE 2 = plan d'implémentation (→ **dans le même fichier**, section « ÉTAPE 2 »,
 > modèle du chapitre 12).
 >
-> **Nature du livrable : documentation pure.** Aucun fichier servi au navigateur
+> **Nature du livrable (doc) : documentation pure.** Aucun fichier servi au navigateur
 > (`js/**`, `css/**`, `sw.js`, `index.html`) n'est touché → **pas de bump de
 > cache** (guidelines §8), **pas de smoke test** (guidelines §7, exception doc).
+>
+> **⚠️ Les phases d'implémentation (P1+) touchent `js/**` / `css/**`** → bump de
+> cache PWA + `node tests/smoke.js` obligatoires (guidelines §7/§8).
 
 ---
 
@@ -76,3 +80,47 @@ note le nom réel).
   l'épilogue/Codex — n'est pas un gate. `cycleBroken` = vraie fin (✅ existe).
 - Pas de NG+ « reset » dans le jeu : la Boucle EST un soft-NG+ continu. Un vrai
   NG+ avec héritage est une proposition.
+
+---
+
+## 3. Phase P1 — Variantes conditionnelles du discours de victoire (✅ implémentée)
+
+Branche `claude/hogwarth-ch14-p1-victory-variants`. Périmètre **strict** : on
+enrichit uniquement le **texte** de `#victory-modal` (aucune structure d'arc
+touchée, aucun gate). Modèle du bloc `pactCold` déjà présent.
+
+### Étapes & vérif
+
+1. ✅ Helper pur `_victorySpeechVariants(ctx)` extrait au top-level de
+   `js/endgame.js` (testable). Retourne les blocs HTML à concaténer au discours
+   de base, dans l'ordre : Éclats → héritage Signatures → choix moral (Pacte) →
+   dernier mot de Dumbledore par Maison. Tout défensif (champ absent → bloc omis).
+   - vérif : `tests/units.js` section 11 (matrice base / Maison ×4 / pact /
+     defiance / éclats / 4 signatures / cumul) → **vert**.
+2. ✅ `showVictoryScreen()` construit `ctx` depuis les flags existants
+   (`chosenHouse`, `slythPactChoice`, `<house>SignatureDone`,
+   `completedQuests.has('eclats_clef_voute')`) et délègue au helper. L'ancien
+   ternaire `pactCold` est absorbé par le helper (variante `pact` conservée à
+   l'identique).
+   - vérif : scénario smoke `scenarioVictorySpeechVariants` (`tests/scenarios/houses.js`)
+     force `victoryAchieved` + chaque Maison et assert le contenu de
+     `#victory-speech` → **vert** ; régression `scenarioHouseSignatureQuests` T6
+     (pact/defiance) → **vert**.
+3. ✅ Variantes livrées :
+   - **(a) Maison** : 4 répliques de clôture (§14.2.2(a)).
+   - **(c) Signatures** : paragraphe « héritage » nommant Bannière de Godric /
+     Pacte des Cachots / Codex de Rowena / Médaillon de Helga.
+   - **(d) Éclats** : révélation « le verrou retenait deux choses, pas une » si
+     `eclats_clef_voute` terminée.
+   - **(e) Choix moral** : `pact` (froid, existant) + `defiance` (reconnaissance,
+     **ajouté**, en miroir).
+4. ✅ CSS additif (`css/style.css`) : classes `.victory-speech-{house,warm,eclats,legacy}`
+   (filet de séparation discret, mêmes codes que `.victory-speech-cold`).
+5. ✅ Garde-fou guidelines : bump cache PWA (`endgame.js` 4→5, `style.css` 36→37,
+   `CACHE_VERSION` v117→v118) ; `node tests/units.js` + `node tests/smoke.js` +
+   `node tests/pwa-smoke.js` verts ; skill `commit-guard`.
+   - vérif : `check_cache_versions.js` OK.
+
+> **Hors-scope P1** (laissé pour P2+) : lignes PNJ post-victoire (P2), `endingType`
+> + entrée Codex `epilogue` (P3), variantes par héros solo/duo §14.2.2(b) (réutilise
+> les barks — non demandé ici), assets de fin (P4), NG+ (P5).
