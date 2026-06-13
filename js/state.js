@@ -752,6 +752,13 @@ let accumulatedEclats = 0;
 // _applyState pour ne s'afficher qu'une fois par partie.
 let combatTutorialSeen = false;
 
+// Communication du pivot endgame (Chapitre 13 §13.5 Sim 3 / §13.9.E) — true
+// une fois le toast « Ici, la puissance se gagne — elle ne tombe plus. » affiché
+// à la 1ʳᵉ entrée en Boucle Ténébreuse. One-shot SÉRIALISÉ (une seule fois par
+// partie) — distinct du toast d'ambiance _darknessToastShown (session-only).
+// Réinitialisé par startGame, persisté via _serializeState / _applyState.
+let endgamePivotSeen = false;
+
 // Passif « Hiver Clair » (Manon Acte III) — true une fois l'Acte III remis
 // à Manon (fuseAct3). Effet : hors combat, +1 PM par pas d'exploration
 // (plafonné spMax). Réinitialisé par startGame, persisté via

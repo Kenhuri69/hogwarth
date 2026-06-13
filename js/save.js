@@ -94,6 +94,7 @@ function _serializeState() {
     victoryAt,
     accumulatedEclats,
     combatTutorialSeen,
+    endgamePivotSeen,
     hiverClair,
     headlessHuntMember,
     maitreDeLaMort,
@@ -350,6 +351,8 @@ function _applyState(gs) {
   }
   // Saves antérieures à D2 : champ absent → tuto réaffiché au prochain combat.
   combatTutorialSeen = !!gs.combatTutorialSeen;
+  // Pivot endgame (Ch.13) : saves antérieures → false (toast re-jouable une fois).
+  if (typeof endgamePivotSeen !== 'undefined') endgamePivotSeen = !!gs.endgamePivotSeen;
   // Passif Hiver Clair (Manon Acte III) : saves antérieures → false.
   if (typeof hiverClair !== 'undefined') hiverClair = !!gs.hiverClair;
   if (typeof headlessHuntMember !== 'undefined') headlessHuntMember = !!gs.headlessHuntMember;

@@ -114,9 +114,24 @@ function _respawnEnemiesOnEntry(floor) {
   return respawned.length;
 }
 
+// Indicateur d'attrition / niveau de visite (Chapitre 13 §13.5 Sim 1 / §13.9.E).
+// Étiquette NARRATIVE dérivée du compteur floorKillCount existant — JAMAIS le
+// chiffre brut n. Communique au joueur Solo la pression qui monte quand il
+// ponce un étage (au lieu de descendre). Pur, sûr hors contexte.
+function floorVisitLabel(floor) {
+  const kills = (typeof floorKillCount !== 'undefined')
+    ? (floorKillCount.get(floor) || 0) : 0;
+  const n = Math.floor(kills / 4);
+  if (n <= 1) return 'Étage maîtrisé';
+  if (n <= 3) return 'Étage agité';
+  if (n <= 5) return 'Étage hostile';
+  return 'Étage redouté';
+}
+
 // Toast narratif au respawn — message varie selon le « niveau de visite »
 // n = floor(kills / 4). Plus le joueur ponce l'étage, plus le message
 // est inquiétant — cohérent avec le scaling progressif des groupes.
+// Préfixé par l'indicateur d'attrition narratif (floorVisitLabel).
 function _announceRespawn(floor, respawnCount) {
   if (typeof addMsg !== 'function') return;
   const kills = (typeof floorKillCount !== 'undefined')
@@ -127,7 +142,7 @@ function _announceRespawn(floor, respawnCount) {
   else if (n <= 3)  msg = `Les ombres se reforment plus nombreuses cette fois (${respawnCount}).`;
   else if (n <= 5)  msg = `Tu sens des présences hostiles se rassembler — ta présence dérange (${respawnCount}).`;
   else              msg = `Le château pulse de menaces. L'étage te défie ouvertement (${respawnCount}).`;
-  addMsg(`👁️ ${msg}`, 'bad');
+  addMsg(`👁️ <strong>${floorVisitLabel(floor)}</strong> — ${msg}`, 'bad');
 }
 
 // Flag mémoire session : toast "entrée Ténèbres" affiché 1× par session.
@@ -215,6 +230,23 @@ function _maybeAdvanceDarkLoop(prevFloor, nextFloor) {
     if (speaker && speaker.heroKey) {
       heroBark(speaker.heroKey, 'darkLoop', { channel: 'explore', once: 'darkloop:' + ln });
     }
+  }
+}
+
+// Communication du pivot endgame (Chapitre 13 §13.5 Sim 3 / §13.9.E) : à la
+// 1ʳᵉ entrée en Boucle Ténébreuse (étage 11+ post-victoire), un toast explique
+// que la puissance ne « tombe » plus passivement mais se gagne par le farming.
+// Résout la frustration n°1 de la Sim 3 (pas de progression passive en endgame).
+// One-shot SÉRIALISÉ (endgamePivotSeen) — affiché une seule fois par partie,
+// contrairement au toast d'ambiance _darknessToastShown (re-joué par session).
+// Appelé depuis goDeeper/beforeTransition (currentFloor déjà incrémenté).
+function _maybeAnnounceEndgamePivot() {
+  if (typeof endgamePivotSeen === 'undefined' || endgamePivotSeen) return;
+  if (!(typeof victoryAchieved !== 'undefined' && victoryAchieved)) return;
+  if (currentFloor < 11) return;
+  endgamePivotSeen = true;
+  if (typeof addMsg === 'function') {
+    addMsg('🌀 Ici, la puissance se gagne — elle ne tombe plus.', 'magic');
   }
 }
 
@@ -315,6 +347,8 @@ function goDeeper() {
         _darknessToastShown = true;
         addMsg("L'air devient glacial. Les murs eux-mêmes semblent te haïr.", 'bad');
       }
+      // Pivot endgame (Ch.13) — one-shot sérialisé, communiqué une seule fois.
+      _maybeAnnounceEndgamePivot();
     },
     onArrive() {
       addMsg(`Niveau ${currentFloor} atteint !`, 'good');

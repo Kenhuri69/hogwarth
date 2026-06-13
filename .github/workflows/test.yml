@@ -41,6 +41,15 @@ jobs:
             node tools/check_cache_versions.js
           fi
 
+      - name: Garde-fou d'équilibre (dérive de win-rate vs DIFFICULTY_REPORT.md)
+        run: |
+          if [ -n "${{ github.base_ref }}" ]; then
+            git fetch --no-tags origin "${{ github.base_ref }}" || true
+            node tools/check_difficulty.js --base "origin/${{ github.base_ref }}"
+          else
+            node tools/check_difficulty.js
+          fi
+
       - name: Installer les dépendances de test
         run: npm install
 

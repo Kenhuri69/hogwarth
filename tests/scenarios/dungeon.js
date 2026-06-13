@@ -3006,6 +3006,102 @@ async function scenarioScriptedFloorBeats() {
   await browser.close();
 }
 
+async function scenarioCh13EndgamePivot() {
+  console.log('\n── Scénario Ch.13 : pivot endgame + indicateur d\'attrition ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : helpers exposés + flag sérialisable
+  const t1 = await page.evaluate(() => ({
+    hasLabel: typeof floorVisitLabel === 'function',
+    hasPivot: typeof _maybeAnnounceEndgamePivot === 'function',
+    hasFlag:  typeof endgamePivotSeen !== 'undefined',
+  }));
+  console.log('  T1 surface:', t1);
+  assert(t1.hasLabel, 'floorVisitLabel non exposée');
+  assert(t1.hasPivot, '_maybeAnnounceEndgamePivot non exposée');
+  assert(t1.hasFlag,  'endgamePivotSeen non défini');
+
+  // T2 : indicateur d'attrition narratif dérivé de floorKillCount (pas de n brut)
+  const t2 = await page.evaluate(() => {
+    const f = currentFloor;
+    const out = {};
+    floorKillCount.set(f, 0);   out.calme   = floorVisitLabel(f);  // n=0
+    floorKillCount.set(f, 8);   out.agite   = floorVisitLabel(f);  // n=2
+    floorKillCount.set(f, 20);  out.hostile = floorVisitLabel(f);  // n=5
+    floorKillCount.set(f, 28);  out.redoute = floorVisitLabel(f);  // n=7
+    return out;
+  });
+  console.log('  T2 attrition labels:', t2);
+  assert(t2.calme   === 'Étage maîtrisé', `n=0 attendu « Étage maîtrisé », got ${t2.calme}`);
+  assert(t2.agite   === 'Étage agité',    `n=2 attendu « Étage agité », got ${t2.agite}`);
+  assert(t2.hostile === 'Étage hostile',  `n=5 attendu « Étage hostile », got ${t2.hostile}`);
+  assert(t2.redoute === 'Étage redouté',  `n=7 attendu « Étage redouté », got ${t2.redoute}`);
+
+  // T3 : le toast de respawn intègre l'étiquette d'attrition (pas de chiffre n)
+  const t3 = await page.evaluate(() => {
+    floorKillCount.set(currentFloor, 28);   // n=7 → « Étage redouté »
+    document.getElementById('msg-log').innerHTML = '';
+    _announceRespawn(currentFloor, 2);
+    return document.getElementById('msg-log').textContent;
+  });
+  console.log('  T3 respawn toast:', JSON.stringify(t3));
+  assert(t3.includes('Étage redouté'), 'toast de respawn devrait porter l\'étiquette d\'attrition');
+
+  // T4 : pivot endgame — fire une fois en Boucle (victoire + étage 11+), no-op ensuite
+  const t4 = await page.evaluate(() => {
+    victoryAchieved = true;
+    currentFloor = 11;
+    endgamePivotSeen = false;
+    document.getElementById('msg-log').innerHTML = '';
+    _maybeAnnounceEndgamePivot();
+    const firstMsg = document.getElementById('msg-log').textContent;
+    const flagAfter = endgamePivotSeen;
+    document.getElementById('msg-log').innerHTML = '';
+    _maybeAnnounceEndgamePivot();             // 2e appel : déjà vu → silencieux
+    const secondMsg = document.getElementById('msg-log').textContent;
+    return { firstMsg, flagAfter, secondEmpty: secondMsg.trim() === '' };
+  });
+  console.log('  T4 pivot:', t4);
+  assert(t4.firstMsg.includes('se gagne'), 'le toast pivot doit annoncer « la puissance se gagne »');
+  assert(t4.flagAfter === true, 'endgamePivotSeen doit passer à true après le 1er toast');
+  assert(t4.secondEmpty, 'le pivot ne doit PAS se rejouer (one-shot)');
+
+  // T5 : garde — pas de pivot sans victoire / sous l'étage 11
+  const t5 = await page.evaluate(() => {
+    endgamePivotSeen = false;
+    document.getElementById('msg-log').innerHTML = '';
+    victoryAchieved = false; currentFloor = 11; _maybeAnnounceEndgamePivot();
+    const noVictory = document.getElementById('msg-log').textContent.trim();
+    victoryAchieved = true; currentFloor = 5; _maybeAnnounceEndgamePivot();
+    const tooHigh = document.getElementById('msg-log').textContent.trim();
+    return { noVictory, tooHigh, flag: endgamePivotSeen };
+  });
+  console.log('  T5 gardes:', t5);
+  assert(t5.noVictory === '', 'pas de pivot sans victoire');
+  assert(t5.tooHigh === '',   'pas de pivot sous l\'étage 11');
+  assert(t5.flag === false,   'le flag ne doit pas être armé si le pivot ne s\'est pas joué');
+
+  // T6 : sérialisation du flag one-shot
+  const t6 = await page.evaluate(() => {
+    endgamePivotSeen = true;
+    const ser = _serializeState();
+    endgamePivotSeen = false;
+    _applyState(ser);
+    return { serialized: ser.endgamePivotSeen, restored: endgamePivotSeen };
+  });
+  console.log('  T6 sérialisation:', t6);
+  assert(t6.serialized === true, 'endgamePivotSeen absent de _serializeState');
+  assert(t6.restored === true,   'endgamePivotSeen non restauré par _applyState');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Ch.13 pivot/attrition)`);
+  }
+  console.log('  ✅ Ch.13 — pivot endgame one-shot sérialisé + indicateur d\'attrition OK');
+  await browser.close();
+}
+
 // Voix des Ruines (P3 — ch.06 §6.9.4 / ch.04 §4.5) : beat solennel one-shot au
 // franchissement 13↔14, distinct de l'écho de signature. Toast (pas narrative).
 async function scenarioVoixDesRuines() {
@@ -3063,4 +3159,4 @@ async function scenarioVoixDesRuines() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
+module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement] };
