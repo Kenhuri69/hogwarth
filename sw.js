@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v110';
+const CACHE_VERSION = 'hogwarth-v111';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -37,7 +37,7 @@ const PRECACHE_URLS = [
   './css/dungeon-fx.css?v=5',
   './css/cinematics.css?v=1',
   './css/frost.css?v=1',
-  './css/codex.css?v=4',
+  './css/codex.css?v=5',
 
   // JS — ordre identique à index.html (sans incidence pour le cache,
   // mais utile à la relecture)
