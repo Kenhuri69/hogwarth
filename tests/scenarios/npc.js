@@ -1738,4 +1738,89 @@ async function scenarioNpcReputation() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction, scenarioLoopDarkSuffix, scenarioNpcReputation] };
+// Ligne « après » post-victoire (ch.14 §14.3.2, Phase P2) : les PNJ profonds
+// recyclés (Kingsley 8/18, Bill 9/19, Sirius 10/20) gagnent une variante plus
+// grave une fois `victoryAchieved`, lue aux étages de surface (< 18). En Boucle
+// profonde (>= 18), darkLoopLines reprend la main (les deux restent exclusifs).
+async function scenarioNpcPostVictory() {
+  console.log('\n── Scénario : ligne « après » post-victoire (PNJ profonds, §14.3.2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const ids = ['kingsley', 'bill_weasley', 'sirius_esprit'];
+    const npcs = ids.map(id => (typeof getNpcById === 'function') ? getNpcById(id) : null);
+    const hasFields = npcs.every(n => n && Array.isArray(n.postVictoryLines) && n.postVictoryLines.length);
+    const hasHelper = typeof _postVictorySuffixPages === 'function';
+    const hasPure   = typeof pickPostVictoryLine === 'function';
+
+    // Helper PUR : gate sur ctx.victoryAchieved + rng injectable (déterminisme).
+    const lines = ['A', 'B'];
+    const pureNoVictory = hasPure ? pickPostVictoryLine(lines, { victoryAchieved: false }) : 'X';   // null
+    const pureVictory0  = hasPure ? pickPostVictoryLine(lines, { victoryAchieved: true, rng: () => 0 }) : null;     // 'A'
+    const pureVictory1  = hasPure ? pickPostVictoryLine(lines, { victoryAchieved: true, rng: () => 0.99 }) : null;  // 'B'
+    const pureNoLines   = hasPure ? pickPostVictoryLine(null, { victoryAchieved: true }) : 'X';      // null
+
+    const kingsley = getNpcById('kingsley');
+
+    // Pré-victoire, étage de surface : aucun suffixe « après ».
+    victoryAchieved = false;
+    currentFloor = 8;
+    const surfaceNoVictory = hasHelper ? _postVictorySuffixPages(kingsley).length : -1;  // 0 attendu
+
+    // Post-victoire, étage de surface : suffixe « après » présent.
+    victoryAchieved = true;
+    currentFloor = 8;
+    const surfaceVictory = hasHelper ? _postVictorySuffixPages(kingsley).length : -1;    // > 0 attendu
+
+    // Post-victoire, Boucle profonde (>= 18) : complémentarité — darkLoop reprend
+    // la main, le suffixe « après » s'efface (pas de double beat).
+    currentFloor = 18;
+    const deepLoop = hasHelper ? _postVictorySuffixPages(kingsley).length : -1;          // 0 attendu
+
+    // Intégration : openNpcDialog post-victoire à l'étage 8 appende bien la ligne.
+    victoryAchieved = true;
+    currentFloor = 8;
+    seenNpcs.delete('kingsley');
+    openNpcDialog('kingsley');
+    const joinedVictory = _dialogState.pages.join(' || ');
+    const pv = kingsley.postVictoryLines;
+    const suffixPresent = pv.some(l => joinedVictory.includes(l.slice(0, 40)));
+
+    // À victoryAchieved=false, la ligne « après » est absente (ligne normale).
+    victoryAchieved = false;
+    seenNpcs.delete('kingsley');
+    openNpcDialog('kingsley');
+    const joinedNormal = _dialogState.pages.join(' || ');
+    const suffixAbsent = pv.every(l => !joinedNormal.includes(l.slice(0, 40)));
+
+    return {
+      hasFields, hasHelper, hasPure,
+      pureNoVictory, pureVictory0, pureVictory1, pureNoLines,
+      surfaceNoVictory, surfaceVictory, deepLoop, suffixPresent, suffixAbsent
+    };
+  });
+  console.log('  →', r);
+
+  assert(r.hasFields, 'Kingsley/Bill/Sirius doivent porter postVictoryLines');
+  assert(r.hasHelper, '_postVictorySuffixPages doit exister');
+  assert(r.hasPure,   'pickPostVictoryLine (pur) doit exister');
+  assert(r.pureNoVictory === null, 'pickPostVictoryLine : null sans victoire');
+  assert(r.pureVictory0 === 'A',   'pickPostVictoryLine : rng=0 → 1re ligne');
+  assert(r.pureVictory1 === 'B',   'pickPostVictoryLine : rng≈max → 2e ligne');
+  assert(r.pureNoLines === null,   'pickPostVictoryLine : null si lignes absentes');
+  assert(r.surfaceNoVictory === 0, 'pas de ligne « après » sans victoire (étage 8)');
+  assert(r.surfaceVictory > 0,     'ligne « après » attendue post-victoire (étage 8)');
+  assert(r.deepLoop === 0,         'pas de ligne « après » en Boucle profonde (étage 18, darkLoop prend le relais)');
+  assert(r.suffixPresent, 'openNpcDialog post-victoire (ét. 8) doit appender une postVictoryLine de Kingsley');
+  assert(r.suffixAbsent,  'openNpcDialog sans victoire ne doit PAS appender de postVictoryLine');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (ligne post-victoire)`);
+  }
+  console.log('  ✅ Ligne « après » post-victoire conforme (gate victoryAchieved, complémentaire de darkLoop)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction, scenarioLoopDarkSuffix, scenarioNpcReputation, scenarioNpcPostVictory] };

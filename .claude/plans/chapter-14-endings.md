@@ -124,3 +124,55 @@ touchée, aucun gate). Modèle du bloc `pactCold` déjà présent.
 > **Hors-scope P1** (laissé pour P2+) : lignes PNJ post-victoire (P2), `endingType`
 > + entrée Codex `epilogue` (P3), variantes par héros solo/duo §14.2.2(b) (réutilise
 > les barks — non demandé ici), assets de fin (P4), NG+ (P5).
+
+---
+
+## 4. Phase P2 — Lignes de dialogue PNJ post-victoire (✅ implémentée)
+
+Branche `claude/hogwarth-ch14-p2-npc-postvictory`. Périmètre **strict** :
+cosmétique, **non-gating**, **additif**. Aucun écran ajouté, rien de gaté, ni la
+structure de l'arc ni la Boucle touchées. On ajoute uniquement des **lignes de
+dialogue conditionnelles** gardées par `victoryAchieved`, sur le modèle des
+suffixes muets existants de `npc-dialog.js` (`_eclatSuffixPages`,
+`_darkLoopSuffixPages`, `_reputationSuffixPages`).
+
+### Étapes & vérif
+
+1. ✅ Champ `postVictoryLines` (2 répliques) ajouté à **Kingsley** (8/18),
+   **Bill** (9/19), **Sirius** (10/20) dans `js/npcs.js` — ton moins martial,
+   plus grave (registre §14.3.2 : ouverture « Tu es redescendu. Pourquoi ? »).
+   - vérif : scénario smoke `scenarioNpcPostVictory` T `hasFields` → **vert**.
+2. ✅ Helper **pur** `pickPostVictoryLine(lines, ctx)` (testable) extrait dans
+   `npc-dialog.js` : choisit la réplique selon `{ victoryAchieved }` + `rng`
+   injectable, aucune lecture de global. Wrapper `_postVictorySuffixPages(npc)`
+   lit `victoryAchieved` + `currentFloor` et appende un suffixe muet via le
+   patron de `_darkLoopSuffixPages`.
+   - vérif : `tests/units.js` section 6ter (gate victoire / rng / string /
+     tableau vide) → **vert** ; `scenarioNpcPostVictory` (pur + intégration) → **vert**.
+3. ✅ **Complémentarité darkLoop** (décision de qualité, non-régression) : le
+   suffixe « après » ne s'appende **pas** en Boucle profonde
+   (`currentFloor >= _DARK_LOOP_FLOOR` = 18), où `darkLoopLines` prend déjà le
+   relais — les deux variantes restent mutuellement exclusives (pas de double
+   beat). Le gate de fin reste `victoryAchieved` (fidèle à la tâche), la garde
+   d'étage est une mesure additive de non-redondance au call-site.
+   - vérif : `scenarioNpcPostVictory` `deepLoop === 0` (étage 18) → **vert**.
+4. ✅ **Gardien de la Boucle** (`gardien_boucle`) : aucune modif. Son `greeting`
+   (« Tu reviens. Tous reviennent — c'est le sens de la Boucle. ») **incarne
+   déjà** la première voix de l'après ; il n'apparaît que post-victoire (étage
+   11+). Pas de `postVictoryLines` (conditionnel inutile : toujours post-victoire).
+   Ses quêtes de purge sont intactes.
+5. ✅ Garde-fou guidelines : `npcs.js`/`npc-dialog.js` servis au navigateur →
+   bump cache PWA (skill `cache-bump`) ; `node tests/units.js` + `node tests/smoke.js`
+   verts ; skill `commit-guard`.
+
+### Point tranché — beat « Grande Salle » (§14.3.2, Point à trancher 2)
+
+> **Laissé hors-scope** (conforme à la consigne « NE PAS l'implémenter sans
+> validation »). Le jeu ne « remonte » pas réellement en haut du château après
+> la victoire — il n'existe pas d'écran ni d'étage-scène « Grande Salle » où
+> épingler un mot de Dumbledore depuis son cadre. Aucun angle propre et
+> strictement cosmétique n'a été identifié sans ajouter un écran (hors périmètre
+> P2). Le Gardien de la Boucle reste la seule voix de transition.
+
+> **Hors-scope P2** (laissé pour P3+) : `endingType` + entrée Codex `epilogue`
+> (P3), assets de fin (P4), NG+ (P5).

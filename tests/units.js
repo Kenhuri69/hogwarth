@@ -791,6 +791,41 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 6ter. npc-dialog.js — pickPostVictoryLine (ch.14 §14.3.2, Phase P2)
+// ------------------------------------------------------------
+// Résolveur PUR de la ligne « après » post-victoire des PNJ profonds. Ne lit
+// aucun global → seul le chargement du module exige un stub `document`
+// (npc-dialog.js attache des listeners Échap/backdrop au top-level).
+// ============================================================
+(function testPickPostVictoryLine() {
+  const { pickPostVictoryLine } = loadModule(
+    'js/npc-dialog.js', ['pickPostVictoryLine'],
+    { document: { addEventListener: () => {} }, window: {} });
+
+  const lines = ['Tu es redescendu. Pourquoi ?', 'On a gagné, et pourtant tu descends encore.'];
+
+  // Gate victoryAchieved : null tant que la victoire n'est pas acquise.
+  check('postVictory: null sans victoire', pickPostVictoryLine(lines, { victoryAchieved: false }) === null);
+  check('postVictory: null ctx absent',    pickPostVictoryLine(lines, null) === null);
+  check('postVictory: null lignes absentes', pickPostVictoryLine(null, { victoryAchieved: true }) === null);
+  check('postVictory: null tableau vide',  pickPostVictoryLine([], { victoryAchieved: true }) === null);
+
+  // rng injectable → tirage déterministe sur le tableau.
+  check('postVictory: rng=0 → 1re ligne',
+    pickPostVictoryLine(lines, { victoryAchieved: true, rng: () => 0 }) === lines[0]);
+  check('postVictory: rng≈max → 2e ligne',
+    pickPostVictoryLine(lines, { victoryAchieved: true, rng: () => 0.999 }) === lines[1]);
+
+  // String simple acceptée (normalisée en tableau d'un élément).
+  check('postVictory: string simple acceptée',
+    pickPostVictoryLine('Solo.', { victoryAchieved: true, rng: () => 0 }) === 'Solo.');
+
+  // Sans rng explicite → Math.random, mais toujours une des lignes du pool.
+  const sample = pickPostVictoryLine(lines, { victoryAchieved: true });
+  check('postVictory: défaut Math.random → ligne du pool', lines.includes(sample));
+})();
+
+// ============================================================
 // 6quater. floor-ambiance.js — Voix des Ruines (P3, ch.06 §6.9.4 / ch.04 §4.5)
 //    isVoixDesRuinesCrossing (pur) + maybeVoixDesRuinesBeat (one-shot)
 // ============================================================

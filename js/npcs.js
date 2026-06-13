@@ -1310,6 +1310,15 @@ const NPCS = [
       "Tu m'as déjà vu, n'est-ce pas ? Plus bas, dans un autre temps. Je tiens encore ce seuil — mais le château se rejoue, et je ne sais plus quelle fois est la vraie.",
       "L'Ordre est tombé là-haut, et pourtant me revoici, posté au même seuil. La Boucle ne libère personne. Elle nous garde à notre poste, indéfiniment."
     ],
+    // ── Ligne « après » post-victoire (ch.14 §14.3.2) ──────────────
+    // Ton moins martial, plus grave une fois victoryAchieved : l'Auror dont
+    // la guerre est gagnée s'interroge sur le sens de la redescente. Lue par
+    // _postVictorySuffixPages aux étages de surface (< 18) ; en Boucle profonde
+    // (>= 18), darkLoopLines prend le relais (les deux restent exclusifs).
+    postVictoryLines: [
+      "Tu es redescendu. Pourquoi ? L'Ombre est tombée, là-haut — j'ai senti le château changer jusqu'ici. Et pourtant te revoilà, à descendre vers le froid. Je ne donne plus d'ordres, sorcier. Comme toi, je m'interroge.",
+      "Voldemort n'est plus, et mon poste n'a plus d'ennemi à guetter. Je tiens ce seuil quand même. Dis-moi, toi qui as gagné : qu'est-ce qu'on garde, une fois la guerre finie ?"
+    ],
     // ── Suffixe réputation (ch.06 §6.9.2) — l'Auror « trahi par le Pacte » ──
     // Réaction de signe OPPOSÉ à l'écho de Salazar : défier le Serpent gagne sa
     // confiance (warm), sceller le Pacte éveille sa méfiance (hostile).
@@ -1387,6 +1396,11 @@ const NPCS = [
       "Mes cicatrices brûlent plus fort ici. La Boucle n'apaise pas la morsure de Greyback — elle la rejoue, encore et encore, à chaque tour de spirale.",
       "Briseur de sortilèges, et incapable de briser celui-ci. Le château se referme sur lui-même. Si tu trouves la sortie, briseur, dis-moi : je commence à oublier qu'il y en avait une."
     ],
+    // ── Ligne « après » post-victoire (ch.14 §14.3.2) — voir Kingsley. ──
+    postVictoryLines: [
+      "Tu es redescendu. Pourquoi ? On a gagné — Greyback aurait dû s'éteindre avec le reste. Mes cicatrices, elles, n'ont pas eu le message. Elles brûlent toujours, dès qu'on s'enfonce.",
+      "La victoire n'a rien brisé du sortilège de ces lieux, briseur. Je le sais maintenant : certaines failles ne se referment pas par le haut. Tu cherches la même chose que moi, je crois."
+    ],
     dialogues: {
       greeting: [
         "Salut. Bill Weasley, briseur de sortilèges pour Gringotts — enfin, c'était mon métier d'avant. Maintenant je traque autre chose.",
@@ -1463,6 +1477,11 @@ const NPCS = [
     darkLoopLines: [
       "Le Voile m'a pris une fois. La Boucle me reprend à chaque tour. Mort, je devrais être libre — et pourtant me revoici, à te guider sur le même précipice.",
       "On ne traverse pas le Voile deux fois, dit-on. Personne n'avait prévu le Voile qui se répète. Si tu brises ce cycle, filleul, brise-le pour moi aussi."
+    ],
+    // ── Ligne « après » post-victoire (ch.14 §14.3.2) — voir Kingsley. ──
+    postVictoryLines: [
+      "Tu es redescendu. Pourquoi ? Voldemort est tombé — j'ai cru que le Voile me rendrait enfin au silence. Et me revoici, à te guider sur le même précipice, après la fin de tout.",
+      "On a vaincu, filleul. Et pourtant tu descends encore, et moi je hante encore. La mort de l'Ombre n'a apaisé aucun fantôme, ici. Ce que tu cherches plus bas, c'est peut-être ce qui nous libérerait, toi et moi."
     ],
     dialogues: {
       greeting: [
