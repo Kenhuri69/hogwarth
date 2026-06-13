@@ -88,6 +88,7 @@ sombre et plus profond.
 | 10 | [Lieux & géographie](histoire/10-lieux-et-geographie.md) | Les étages comme lieux ; ambiance et progression. |
 | 11 | [Mondes Parallèles](histoire/11-mondes-paralleles.md) | Lore des visites inter-mondes (cheminette, échos, verrous de sang). |
 | 12 | [Glossaire & Codex](histoire/12-glossaire-et-codex.md) | Le **Codex** : journal vivant déverrouillable du joueur (7 sections, déverrouillage par étage/Éclat/quête) + socle de référence (glossaire, artefacts, chronologie, index). |
+| 13 | [Équilibre, difficulté & progression](histoire/13-equilibre-difficulte-progression.md) | La **doctrine d'équilibrage** reliée à la descente : courbe par acte/tranche, facteurs (Maison, héros, solo/duo, Boucle), récompenses, **validation par simulation**, et **plan d'implémentation**. |
 
 ### ⚙️ Gameplay (`docs/gameplay/`) — documentation de support
 | # | Chapitre | Objet |
@@ -114,4 +115,5 @@ sombre et plus profond.
 |----------|--------|
 | Cadre général (ce fichier) | 🟩 stable (à amender) |
 | 01–12 Histoire | 🟥 squelettes posés — **à détailler** |
+| 13 Histoire (Équilibre) | 🟩 proposition de référence — à valider |
 | Gameplay | 🟥 index posé |
