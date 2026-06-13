@@ -2533,6 +2533,25 @@ body {
   color: #9fb0c8;
 }
 .victory-speech-cold em { color: #b9c8dc; }
+/* Variantes conditionnelles P1 (Chapitre 14 §14.2.2) : séparées du discours
+   de base par un filet discret, mêmes codes que la variante froide. */
+.victory-speech-house,
+.victory-speech-warm,
+.victory-speech-eclats {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(120, 140, 170, 0.25);
+}
+.victory-speech-warm em { color: var(--gold-light); }
+.victory-speech-eclats { color: #c8b89f; }
+.victory-speech-eclats strong { color: var(--gold-light); font-style: normal; }
+.victory-speech-legacy {
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-style: normal;
+  color: var(--parchment-dark);
+}
+.victory-speech-legacy b { color: var(--gold); }
 .victory-speech-sign {
   margin-top: 8px;
   font-style: normal;
