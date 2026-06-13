@@ -30,7 +30,9 @@ chaque cas d'usage.
 ## Action
 - [x] Décision utilisateur : prompt Nano Banana fourni, l'utilisateur génère l'image.
 - [x] Prompt rédigé → `.claude/plans/nano-banana-reflet-mythe.md`.
-- [ ] (utilisateur) Générer l'image via Nano Banana et me la fournir.
-- [ ] (moi) `process_monster_png.py --id reflet_mythe --model birefnet`.
-- [ ] (moi) Ajouter `imgSrc: "img/monsters/reflet_mythe.png"` dans `js/monsters.js`.
-- [ ] (moi) `node tests/smoke.js` + bump cache PWA (js/monsters.js modifié).
+- [x] (utilisateur) Image Nano Banana fournie (fond gris plat 1024²).
+- [x] (moi) `process_monster_png.py --id reflet_mythe --model birefnet` → `img/monsters/reflet_mythe.png` (512² RGBA, alpha 72.6 % fond / 14.6 % sujet, 194 KB). Détourage propre, brume translucide préservée, pas de halo sur fond sombre.
+- [x] (moi) `imgSrc: "img/monsters/reflet_mythe.png"` ajouté dans `js/monsters.js`.
+- [x] (moi) Tests : units (442 ok), smoke MonsterImages (68/68 imgSrc RGBA), pwa-smoke OK. Cache bumpé (monsters.js v11→v12, CACHE_VERSION v106→v107).
+
+## ✅ Clos — toutes catégories couvertes (2026-06-13).
