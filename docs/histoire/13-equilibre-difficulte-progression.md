@@ -334,11 +334,14 @@ issus d'une **quête optionnelle**. **Ils ne donnent aucune puissance.**
 ### 13.3.5 Niveau de Boucle (Boucle 1 vs 2 vs 3)
 
 ✅ Chaque palier de 10 étages = **×~1.5** de puissance ennemie (§13.2.3). Le
-joueur, lui, ne suit **pas passivement** : `xpNext × 1.6/niveau` compose plus
-vite que l'XP gagnée → règle empirique **~+12-15 niveaux farmés par palier de
-Boucle** pour rester confortable (`DIFFICULTY_STUDY.md §8.3`). La Boucle est donc
-un **gate infini farmable sur 4 axes** : niveaux, artefacts, Forge/Bibliothèque,
-sets de Maison.
+joueur reçoit désormais une **XP passive de Boucle** (P2,
+`LOOP_PASSIVE_XP_FRAC = 0.45` — ~0.45 niveau par étage le plus profond franchi)
+qui amortit le décrochage, mais elle ne suffit **pas** à elle seule : `xpNext ×
+1.6/niveau` compose plus vite → règle empirique **~+12-15 niveaux farmés par
+palier de Boucle** pour rester *confortable* (`DIFFICULTY_STUDY.md §8.3/§8.8`).
+La Boucle reste donc un **gate infini farmable sur 4 axes** (niveaux, artefacts,
+Forge/Bibliothèque, sets) ; la passive transforme le mur en pente sans
+remplacer le farming.
 
 ### 13.3.6 Table de synthèse — facteurs d'influence
 
@@ -512,11 +515,14 @@ le **3ᵉ levier d'escalade** ([04 §4.3](04-structure-actes-et-etages.md)).
   heurte un mur réel vers l'étage 19-21. C'est un **choix de design assumé**
   (roguelike), mais surprenant pour qui a traversé la trame principale en
   sur-leveling passif.
-- 💡 **Ajustements recommandés** : si l'on veut adoucir, **XP passive de Boucle**
-  par étage franchi *ou* ralentir `xpNext` en endgame (`DIFFICULTY_STUDY.md §8.7`).
-  Optionnel — à ne pas faire si le farming forcé est l'intention. **Recommandation
-  : conserver**, mais **communiquer** le pivot (toast à l'entrée de Boucle :
-  *« ici, la puissance se gagne, elle ne tombe plus »*).
+- ✅ **Implémenté (P2)** : on a retenu l'**XP passive de Boucle**
+  (`LOOP_PASSIVE_XP_FRAC = 0.45`, `data.js`) — un axe de progression *additif*
+  (règle §13.6 #6 : on ne touche pas au scaling), crédité par étage de Boucle
+  le plus profond franchi (anti-farm). Mesure : le mur de l'étage 19-21
+  s'adoucit (ét. 20 Duo 63 → 76 %, Solo 48 → 63 %) **sans trivialiser** le deep
+  endgame (ét. 30 reste ≤ 36 % sans farming, qui garde toute sa valeur). Cf.
+  `DIFFICULTY_STUDY.md §8.8`. Le pivot du P1 (toast *« la puissance se gagne »*)
+  reste vrai : la passive est un filet, pas une rente.
 
 ### Simulation 4 — Cas extrême : toutes quêtes signature + max Éclats + kit endgame
 
@@ -544,7 +550,7 @@ Forge 5 / Biblio 3 / sets 4/4 répartis, ~30 niveaux farmés.
 |----------|----------------|--------------------|
 | Gryff Solo 1–8 | ✅ sain, mais écart combat/clear surprenant | Signal UI d'attrition (💡) |
 | Serp Duo | ✅ confortable, mur ét. 9 sans endgame | RAS (farming = réponse prévue) |
-| Boucle 3 | ✅ gate farmable tenable, pas de progression passive | Communiquer le pivot (toast) |
+| Boucle 3 | ✅ gate farmable tenable ; mur ét. 19-21 adouci par l'XP passive (P2) | Pivot communiqué (toast P1) + XP passive de Boucle ✅ (P2) |
 | Cas extrême | ✅ sain, léger risque de trivialisation climax | Garder phases boss ; refuser `eclatPowerBoost` |
 
 > ✅ **Conclusion d'ensemble** (alignée sur `DIFFICULTY_STUDY.md §1, §7`) : *« la
@@ -762,7 +768,7 @@ bruit Monte-Carlo (SE de la différence ≈ 2.5 pts à N=800). Analogue à
 | **P0** | Documentation (ce chapitre + maj G8/G3/G4 si écart) | Doc | Source de vérité d'équilibrage ; zéro risque |
 | **P1** ✅ | `check_difficulty.js` en CI (C) | Tooling | Garde-fou anti-régression d'équilibre — **implémenté** |
 | **P1** ✅ | Toast d'entrée de Boucle + indicateur d'attrition (E) | UX cosmétique | Résout la frustration n°1 des sims (écart combat/clear, pivot endgame) — **sans toucher l'équilibrage**. **Implémenté** |
-| **P2** | XP passive de Boucle *ou* `xpNext` adouci en endgame (💡, Sim 3) | Équilibrage | Seulement si on juge le farming endgame trop forcé |
+| **P2** ✅ | XP passive de Boucle (`LOOP_PASSIVE_XP_FRAC`, axe additif — pas de nerf scaling) | Équilibrage | **Implémenté** — adoucit le mur ét. 19-21 sans trivialiser (`DIFFICULTY_STUDY.md §8.8`) |
 | **P3** | `houseDifficultyModifier` / refuges de Maison (💡 ❓) | Feature opt-in | Rompt des garde-fous → décision design préalable |
 | **Hors-scope V1** | `eclatPowerBoost`, héritage en Boucle (💡 ❓) | Feature | Déconseillé (§13.3.4, §13.4.4) |
 
@@ -799,8 +805,10 @@ bruit Monte-Carlo (SE de la différence ≈ 2.5 pts à N=800). Analogue à
    seulement, pas de soin total — §13.4.3.)*
 4. ❓ Introduire un « héritage en Boucle » / perte partielle à la mort ?
    *(Recommandation : hors-scope V1 — §13.4.4.)*
-5. ❓ Adoucir l'endgame (XP passive de Boucle) ou conserver le farming forcé ?
-   *(Sim 3 : conserver + communiquer le pivot.)*
+5. ✅ Adoucir l'endgame (XP passive de Boucle) — **tranché : implémenté** (P2,
+   `LOOP_PASSIVE_XP_FRAC = 0.45`). Axe additif sans toucher au scaling ; adoucit
+   le mur sans trivialiser (le farming reste la voie du confort total). Le pivot
+   reste communiqué (toast P1). Cf. §13.5 Sim 3 / `DIFFICULTY_STUDY.md §8.8`.
 6. ✅ Garde-fou de sim en CI (`check_difficulty.js`) — **implémenté** (P1,
    §13.9.C/F). Le toast de pivot endgame + l'indicateur d'attrition (§13.9.E)
    sont aussi **implémentés**.

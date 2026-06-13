@@ -29,6 +29,13 @@
 > Apothéose (systèmes de progression endgame — cf. §3 et le verdict).
 >
 > **Cas pire** : `--pessimistic` désactive quêtes / équipement / potions.
+>
+> **MAJ Ch.13 P2 — XP passive de Boucle** (`LOOP_PASSIVE_XP_FRAC = 0.45`) : un
+> axe de progression endgame additif a été ajouté (étages 11+ post-victoire
+> uniquement, modélisé par `--loop-xp-frac`). **Le tableau §3 ci-dessous
+> (jeu principal, no-endgame) n'est PAS affecté** ; l'impact mesuré est
+> documenté dans [`DIFFICULTY_STUDY.md §8.8`](./DIFFICULTY_STUDY.md). Le scaling
+> n'a pas été touché.
 
 ---
 

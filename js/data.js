@@ -60,6 +60,18 @@ const DIRECTIONS = { n:[0,-1], s:[0,1], e:[1,0], w:[-1,0] };
 // Progression d'XP : multiplicateur appliqué à xpNext à chaque level-up.
 const LEVEL_UP_XP_MULTIPLIER = 1.6;
 
+// XP passive de Boucle (Chapitre 13 §13.9.F P2 — adoucissement endgame).
+// À chaque NOUVEL étage de Boucle Ténébreuse le plus profond franchi (11+,
+// post-victoire), le groupe gagne `LOOP_PASSIVE_XP_FRAC × player.xpNext` d'XP.
+// Exprimée en fraction du coût du niveau courant → ~0.45 niveau par étage
+// descendu, auto-pacé sur la composition ×1.6. C'est un AXE DE PROGRESSION
+// ADDITIF (règle §13.6 #6 : on n'altère pas le scaling) qui transforme le mur
+// endgame en pente sans le supprimer — le farming reste la voie du confort
+// total (cf. DIFFICULTY_STUDY.md §8.8). Anti-farm : seul un nouvel étage
+// descendu crédite (même gate que les Éclats). Calibrage validé à 0.45 par
+// tools/sim-difficulty.js --endgame --loop-xp-frac. 0 = désactivé.
+const LOOP_PASSIVE_XP_FRAC = 0.45;
+
 // Points de stats libres gagnés à chaque level-up, en plus du baseline
 // (+1 ATK/DEF/MAG, +1 STR/INT/AGI, +8 HP, +5 SP qui restent dans `_grantLevelStats`).
 // `unallocatedStatPoints` sur chaque perso accumule les points non dépensés.
