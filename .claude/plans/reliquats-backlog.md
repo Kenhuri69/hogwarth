@@ -1,4 +1,4 @@
-# Backlog des reliquats hors-scope (plans archivés)
+# Backlog des reliquats hors-scope (tracker vivant)
 
 > Plan consolidé créé le **2026-06-08** lors de l'archivage en masse des plans
 > terminés. Chaque entrée correspond à un plan dont le **cœur est livré et
@@ -8,20 +8,49 @@
 >
 > Format par entrée : **Source** (plan archivé) · **Reste à faire** · **Étapes
 > → vérification** · **Priorité**. Cocher et dater au fil de l'implémentation
-> (guidelines §4/§5). Quand un reliquat est livré, le rayer ici et, si pertinent,
-> ouvrir un plan dédié pour le détail technique.
+> (guidelines §4/§5). Quand un reliquat est livré, le rayer ici (section
+> « Reliquats clos » en bas) et, si pertinent, ouvrir un plan dédié.
 
-> ⚠️ **Audit 2026-06-11** : ce backlog s'était fortement périmé — plusieurs
-> reliquats avaient été livrés sans que le fichier soit mis à jour. État
-> revérifié contre le code :
-> - ✅ **livrés** : 1.1 (potions AOE/ennemi), 3.2 (badges journal + buffs),
->   3.3 (Room of Requirement V3.1).
-> - 🟡 **partiel / nuancé** : 1.2 (Forge T5 +8 implémenté ; Bibliothèque T5
->   ouverte), 3.1 (Atelier converti ; reste = emoji « laissés sciemment »).
-> - ❌ **réellement ouverts** : 1.3 (House post-tier-18 forge/reroll),
->   2.1/2.2 (dialogues easter-eggs, éditorial), 4.x (PvP/live MP),
->   5.1 (musiques combat, bloqué asset), 6.1/6.2 (dette technique).
-> Toujours **vérifier l'état réel dans le code** avant d'attaquer un item.
+> 🔄 **Tracker vivant** — re-vérifier l'état réel dans le code **avant**
+> d'attaquer un item ; cet en-tête peut s'être périmé. Mettre à jour le tableau
+> de bord ci-dessous à chaque livraison.
+
+---
+
+## Tableau de bord (audit 2026-06-12)
+
+| # | Item | État | Priorité |
+|---|------|------|----------|
+| 1.1 | Potions multi-cibles & usage ennemi | ✅ Clos | — |
+| 1.2 | Forge T5 (livré) **+ Bibliothèque T5** (ouvert) | 🟡 Partiel | P2 |
+| 1.3 | House post-tier-18 — forge (C) / reroll (D) | ❌ Ouvert | P2 |
+| 2.1 | Manon — feuillets (livré) **+ dialogues Acte III** (provisoires) | 🟡 Partiel | P1 |
+| 2.2 | Elfe de maison libre (easter-egg) | ⚠️ Cœur **non livré** → cf. plans actifs | — |
+| 3.1 | emoji-png-gaps lots 7-10 | ✅ Clos (laissé sciemment) | — |
+| 3.2 | combat-emoji-badges Lot 2/3 | ✅ Clos | — |
+| 3.3 | Room of Requirement V3.1 | ✅ Clos | — |
+| 4.1 | Duel PvP direct (Phase 7) | ❌ Ouvert (optionnel) | P2 |
+| 4.2 | Validation live 2 clients (S3.10) | ⛔ Bloqué (manuel) | P-bloqué |
+| 5.1 | Musiques combat epic / late | ✅ Clos (assets reçus) | — |
+| 6.1 | Modularisation god-files (6 fichiers > 950 l.) | ❌ Ouvert | P2 |
+| 6.2 | Factoriser `showEquipMenu` duo (N15) | ✅ Clos | — |
+| 6.3 | Hook settings.json « commit + push » | ❌ Ouvert | P3 |
+
+**Reliquats encore actionnables** : 1.2 (Bibliothèque T5), 1.3, 2.1, 4.1, 6.1,
+6.3. — **Bloqué** : 4.2 (session live manuelle). — **Clos** : 1.1, 3.1, 3.2,
+3.3, 5.1, 6.2 (récapitulés en bas).
+
+> ⚠️ **Correctif d'audit 2026-06-12** vs l'audit précédent (2026-06-11) :
+> - **5.1** musiques de combat : les OGG `combat_epic` / `combat_late` sont
+>   **présents** dans `audio/` (livrés 2026-06-04) — l'item n'est plus bloqué,
+>   il est **clos** (câblage `_combatSampleKey` déjà en place).
+> - **2.2** elfe de maison libre : le plan source
+>   [`free-house-elf-easter-egg.md`](./_archive/free-house-elf-easter-egg.md)
+>   est en réalité une **proposition non implémentée** (en-tête « proposition
+>   (non implémenté) ») — aucun NPC/levier en code. Ce **n'est donc pas un
+>   reliquat** (cœur absent) ; il rejoint les « plans laissés actifs » en bas.
+>   Seul l'acquis préexistant est le monstre `elfe_rebelle` (cible de l'egg).
+> - **6.2** `showEquipMenu` duo : **livré** le 2026-06-12.
 
 ---
 
@@ -33,45 +62,31 @@
 
 ---
 
-## 1. Contenu & systèmes de jeu
+## Reliquats actifs
 
-### 1.1 Potions multi-cibles & usage ennemi — ✅ **LIVRÉ**
-> Vérifié 2026-06-11 contre le code : flacons AOE (`data.js` `aoe:true`,
-> `throwItemAoe` dans `battle.js`) + potions ennemies à charges
-> (`tryEnemyAbility case 'consumable'`) implémentés. Plan dédié :
-> [`potions-aoe-enemy-use.md`](./_archive/potions-aoe-enemy-use.md). Smoke
-> `scenarioPotionAoeAndEnemyUse`.
-- **Source** : `_archive/potions-enrichment.md` (backlog P6).
-- **Reste à faire** : potions offensives **multi-cibles / AOE** (splash sur le
-  groupe ennemi) et **usage de potions par les ennemis** (soin/buff côté IA).
-- **Étapes** :
-  1. Étendre le schéma item consommable d'un flag `aoe:true` (réutiliser la
-     mécanique `splash` des sorts, cf. `bombarda-splash`) → vérif : une potion
-     AOE touche tout `enemyGroup` en combat.
-  2. Brancher un hook `tryEnemyConsumable()` dans `tryEnemyAbility` (battle.js)
-     pour quelques monstres « humains » porteurs → vérif : un Mangemort se soigne
-     via potion, log combat correct.
-  3. Scénario smoke dédié (`scenarioPotionAoe`) → vérif : `node tests/smoke.js` vert.
-  4. Bump cache PWA (data.js/battle.js touchés) via skill `cache-bump`.
-
-### 1.2 Forge & Bibliothèque — extension matériaux T5 + formule d'upgrade — 🟡 **PARTIEL**
-> Vérifié 2026-06-11 contre le code : **volet Forge T5 implémenté**
-> (`forge.js` `FORGE_MAX_LEVEL=8`, matériau `essence_primordiale`, paliers
-> 6-8) — plan dédié [`forge-t5.md`](./_archive/forge-t5.md). **Restent ouverts** :
-> refonte de la formule d'upgrade Bibliothèque + nouvelles recettes/sorts T5.
+### 1.2 Bibliothèque — extension matériaux T5 + formule d'upgrade — 🟡 **PARTIEL**
+> Vérifié 2026-06-12 : **volet Forge T5 livré** (`forge.js` `FORGE_MAX_LEVEL=8`,
+> matériau `essence_primordiale`, paliers 6-8) — plan dédié
+> [`forge-t5.md`](./_archive/forge-t5.md). **Reste ouvert : la Bibliothèque**,
+> plafonnée à `LIBRARY_MAX_LEVEL=5` (`library.js:17`, coûts paliers 1-5 dans
+> `LIBRARY_COSTS`), sans matériau ni palier T5 ni refonte de formule.
 - **Source** : `_archive/forge-library-stabilization.md`.
-- **Reste à faire** : ajouter une **source de matériaux de palier T5** (endgame),
-  **refondre la formule d'upgrade** (coût/scaling), et de nouveaux items/sorts
-  débloquables.
+- **Reste à faire** : ajouter un **palier/matériau T5 côté Bibliothèque**
+  (endgame), **refondre la formule d'upgrade** (coût/scaling), et de nouveaux
+  sorts/recettes débloquables.
 - **Étapes** :
-  1. Décider la source T5 (drop boss Boucle Ténébreuse ? don Gardien de la Boucle ?)
-     → vérif : matériau T5 obtenable en partie réelle endgame.
+  1. Décider la source T5 (drop boss Boucle Ténébreuse ? don Gardien de la Boucle ?
+     réutiliser `essence_primordiale` ?) → vérif : matériau T5 obtenable en
+     partie réelle endgame.
   2. Recalibrer la courbe de coût d'upgrade (sim `tools/sim-economy.js`) → vérif :
      progression non triviale mais atteignable (rapport sim joint au plan).
   3. Ajouter les recettes/sorts T5 → vérif : visibles et achetables/forgeables.
   4. Scénario smoke + bump cache.
 
-### 1.3 House post-tier-18 — Piste C (forge d'amélioration) & Piste D (reroll) — **P2**
+### 1.3 House post-tier-18 — Piste C (forge d'amélioration) & Piste D (reroll) — ❌ **OUVERT** · P2
+> Vérifié 2026-06-12 : **aucun code** de reroll/enchant/forge légendaire lié aux
+> Maisons (`grep reroll|enchant|upgrade legendary` → 0 match en `js/`).
+> `house-donation.js` n'adresse que le don d'or pur.
 - **Source** : `_archive/house-post-tier-18.md` (pistes C/D renvoyées à plans séparés).
 - **Reste à faire** : **Piste C** — forge d'amélioration d'équipement légendaire ;
   **Piste D** — reroll d'enchantement (gold-sink endgame complémentaire au don Maison).
@@ -82,79 +97,21 @@
   3. Sim économie (ne pas casser l'équilibre or endgame) → vérif : rapport sim.
   4. Scénario smoke + bump cache.
 
----
-
-## 2. Easter-eggs — finalisation des dialogues
-
-### 2.1 Manon (grimoire) — dialogues & lore des feuillets — **P1**
-- **Source** : `_archive/manon-grimoire-easter-egg.md` (phases 1-5 livrées, textes provisoires).
+### 2.1 Manon (grimoire) — dialogues définitifs de l'Acte III — 🟡 **PARTIEL** · P1
+> Vérifié 2026-06-12 : **feuillets livrés** (noms + lore définitifs,
+> `GRIMOIRE_PAGES` / `ACT3_PAGES` dans `data.js:388-423`). **Reste provisoire :
+> les dialogues de Manon Acte III** — `npcs.js:473` porte encore le commentaire
+> `// (Textes provisoires — relecture co-écrite avant merge.)` (idem
+> `data.js:414` sur `ACT3_PAGES`).
+- **Source** : `_archive/manon-grimoire-easter-egg.md` (phases 1-5 livrées).
 - **Reste à faire** : finaliser/co-écrire les **dialogues de Manon** (rumeurs,
-  remise) et les **noms + lore des feuillets** (textes actuellement « provisoires »).
+  remise) — purement éditorial, aucun changement de logique.
 - **Étapes** :
   1. Rédiger les textes définitifs (revue avec l'utilisateur) → vérif : aucun
-     placeholder « provisoire » restant dans `npcs.js`/données feuillets.
+     commentaire « Textes provisoires » restant dans `npcs.js` / `data.js`.
   2. Bump cache si fichiers JS de données touchés.
-- **Note** : purement éditorial, aucun changement de logique.
 
-### 2.2 Elfe de maison libre — dialogues définitifs — **P1**
-- **Source** : `_archive/free-house-elf-easter-egg.md` (leviers livrés, dialogues provisoires).
-- **Reste à faire** : finaliser les **dialogues** (Dobby/gag/ambiance) avant
-  considérer l'easter-egg « propre ».
-- **Étapes** : idem 2.1 (rédaction + revue + bump cache si data JS touché).
-
----
-
-## 3. Visuels / cosmétiques manquants
-
-### 3.1 emoji-png-gaps — lots 7-10 — 🟡 **essentiellement clos**
-> Vérifié 2026-06-11 : l'Atelier (cartes/onglets/titre/monnaies) est **déjà
-> converti en PNG**. Le reliquat résiduel (cartes cosmétiques, souvenirs,
-> labels `specialAction` PNJ, logs d'atelier) était **« laissé sciemment »**
-> dans `emoji-png-gaps.md` (icônes abstraites sans PNG) — choix de style, pas
-> une lacune. À ne rouvrir que si une demande explicite « zéro emoji absolu ».
-- **Source** : `_archive/emoji-png-gaps.md` (lots 1-5 livrés ; lots 7-10 non engagés).
-- **Reste à faire** : cartes **cosmétiques**, **souvenirs**, **labels PNJ**,
-  **logs d'atelier** encore en emoji → conversion PNG.
-- **Étapes** :
-  1. Inventorier les emoji restants par lot (grep des surfaces concernées)
-     → vérif : liste exhaustive des cibles.
-  2. Générer les PNG manquants (pipeline existant) et brancher les registries.
-  3. Scénario smoke visuel + bump cache.
-
-### 3.2 combat-emoji-badges — Lot 2 (journal) & Lot 3 (9 PNG) — ✅ **LIVRÉ**
-> Vérifié 2026-06-11 contre le code : `iconizeCombatLog` + table
-> (`item-icons.js`) branchés au journal ; les 9 PNG du Lot 3 présents
-> dans `img/icons/`. En complément, les badges de buff/résistance passent
-> aussi en PNG — plan dédié [`combat-buff-badges.md`](./_archive/combat-buff-badges.md).
-- **Source** : `_archive/combat-emoji-badges.md` (Lot 1 livré).
-- **Reste à faire** : **Lot 2** conversion emoji → badge dans le **journal de
-  combat** ; **Lot 3** création des **9 PNG** manquants.
-- **Étapes** :
-  1. Générer les 9 PNG (pipeline icônes) → vérif : présents dans `img/`.
-  2. Router le journal de combat (`UX.logCombat`) vers les badges PNG → vérif :
-     journal sans emoji bruts.
-  3. Smoke + bump cache.
-
-### 3.3 Room of Requirement V3.1 — bonus — ✅ **LIVRÉ**
-> Vérifié 2026-06-11 : C1 trophées multiples + 6 PNG (`img/icons/requirement/
-> eclat_*.png`), C2 choix du thème (`chooseRequirementTheme` + overlay),
-> C3 bonus méta (`_applyRequirementMetaBonus`), C4 onglet Atelier « Salle »
-> (`_renderAtelierRequirementTab`). Scénario `scenarioRoomOfRequirement`
-> T1–T14 vert. Cases du plan archivé cochées.
-- **Source** : `_archive/room-of-requirement-v3.md` (V3 livré ; V3.1 en bonus).
-- **Reste à faire** : **6 trophées PNG**, **choix joueur** sur le trophée,
-  **bonus méta**, **onglet Atelier** dédié.
-- **Étapes** :
-  1. Design du bonus méta (effet durable inter-parties ?) → vérif : règle écrite.
-  2. Générer les 6 PNG trophées.
-  3. UI onglet Atelier + sélection joueur → vérif : scénario smoke.
-  4. Bump cache.
-
----
-
-## 4. Multijoueur / Mondes Parallèles
-
-### 4.1 Phase 7 — duel PvP direct — **P2 (optionnel)**
+### 4.1 Phase 7 — duel PvP direct — ❌ **OUVERT (optionnel)** · P2
 - **Source** : `_archive/multiplayer.md` (Phases 0-6 livrées ; Phase 7 optionnelle).
 - **Reste à faire** : **duel PvP en direct** entre deux joueurs en ligne.
 - **Étapes** :
@@ -164,62 +121,81 @@
      tour-par-tour synchronisé → vérif : protocole 2 clients.
   3. Stubs REST + scénario smoke offline (modèle des scénarios `Visit*`).
 
-### 4.2 Validation live 2 clients (S3.10) — **P-bloqué**
+### 4.2 Validation live 2 clients (S3.10) — ⛔ **P-bloqué**
 - **Source** : `_archive/parallel-worlds-stabilization.md` (S1-S4 livrés ; S3.10 manuel).
 - **Reste à faire** : **validation end-to-end live** à 2 clients réels contre le
   backend Supabase (protocole `tests/parallel-live-checklist.md`).
 - **Action** : exécuter la checklist manuelle (hors suite smoke). Non codable —
   cocher quand la session live a été menée.
 
----
-
-## 5. Audio — bloqué sur asset
-
-### 5.1 Musiques de combat (epic / late) — **P-bloqué**
-- **Source** : `_archive/audio-completion-spell-voices-combat-music.md` (voix de sorts livrées).
-- **Reste à faire** : intégrer les **musiques de combat** `combat_epic` /
-  `combat_late` — en attente des **MP3 fournis par l'utilisateur** (conversion OGG).
-- **Action** : à réception des MP3 → convertir en OGG, placer dans `audio/`,
-  vérifier `_combatSampleKey` (audio-music.js). Cf. CLAUDE.md « Musique de combat ».
-
----
-
-## 6. Dette technique / confort dev
-
-### 6.1 Modularisation des god-files — **P2**
+### 6.1 Modularisation des god-files — ❌ **OUVERT** · P2
+> Vérifié 2026-06-12 (`wc -l js/*.js`) : **6 fichiers > 950 lignes** —
+> `monsters.js` (2099), `npcs.js` (1474), `battle.js` (1230), `icons.js` (1227),
+> `battle-spells.js` (1085), `movement-interactions.js` (983). Aucune découpe
+> effectuée depuis le plan archivé.
 - **Source** : `_archive/game-review-modularization.md` (outillage tests livré ;
   propositions de refactor non appliquées).
-- **Reste à faire** : découper les **god-files restants** (7 fichiers > 950 lignes)
-  et **documenter les ~19 modules** non couverts par la doc.
+- **Reste à faire** : découper les god-files restants et **documenter les
+  modules** non couverts par la doc.
 - **Étapes** :
   1. Prioriser un god-file à la fois (ne pas tout refactorer d'un coup).
   2. Extraire par responsabilité, conserver le scope global (`<script>` séquentiels)
      → vérif : ajouter le nouveau module à `index.html` **et** au MANIFEST loader.
   3. `node tests/smoke.js` vert avant/après chaque découpe + bump cache.
 
-### 6.2 code-review-tasks — N15 (factoriser `showEquipMenu` duo) — ✅ **LIVRÉ**
-> Vérifié 2026-06-12 : helpers `_equipMenuPanel` + `_equipRingButtons` extraits
-> dans `inventory.js`, 3 variantes inline (solo non-ring / solo ring / duo)
-> dé-dupliquées, **sans changement de rendu**. Plan dédié :
-> [`refactor-equip-menu.md`](./_archive/refactor-equip-menu.md). Smoke complet vert.
-- **Source** : `_archive/code-review-tasks.md` (15/16 items livrés).
-- **Reste à faire** : factoriser le chemin duo de `showEquipMenu` (inventory.js).
-- **Étape** : refactor local + smoke vert + bump cache. À coupler éventuellement
-  avec une future itération de la fiche perso.
-
-### 6.3 identify-useful-skills — hook commit+push — **P3 (meta)**
+### 6.3 identify-useful-skills — hook commit+push — ❌ **OUVERT** · P3 (meta)
+> Vérifié 2026-06-12 : `.claude/settings.json` ne contient qu'un hook
+> `PreToolUse` (deps de test) ; aucun hook commit+push dans `settings.json` ni
+> `settings.local.json`.
 - **Source** : `_archive/identify-useful-skills.md` (skills créées ; hook en attente).
-- **Reste à faire** : configurer le **hook settings.json** « commit + push » qui
-  n'a pas pu être posé en session (cf. skill `update-config`).
+- **Reste à faire** : configurer le **hook settings.json** « commit + push »
+  (cf. skill `update-config`).
 - **Étape** : ajouter le hook → vérif : déclenchement effectif sur l'événement visé.
+
+---
+
+## Reliquats clos (récapitulatif)
+
+> Conservés pour mémoire/traçabilité. Ne plus traiter — le cœur **et** le
+> reliquat sont livrés (ou le reliquat est un choix de style assumé).
+
+- ~~**1.1 Potions multi-cibles & usage ennemi**~~ — ✅ livré. Flacons AOE
+  (`data.js` `aoe:true`, `throwItemAoe` dans `battle.js`) + potions ennemies à
+  charges (`tryEnemyAbility case 'consumable'`). Plan
+  [`potions-aoe-enemy-use.md`](./_archive/potions-aoe-enemy-use.md), smoke
+  `scenarioPotionAoeAndEnemyUse`.
+- ~~**3.1 emoji-png-gaps lots 7-10**~~ — ✅ clos. L'Atelier est converti en PNG ;
+  le résiduel (cartes cosmétiques/souvenirs, labels `specialAction` PNJ, logs
+  d'atelier) était **« laissé sciemment »** (icônes abstraites, choix de style).
+  À ne rouvrir que sur demande explicite « zéro emoji absolu ».
+- ~~**3.2 combat-emoji-badges Lot 2/3**~~ — ✅ livré. `iconizeCombatLog` + table
+  (`item-icons.js`) au journal ; 9 PNG du Lot 3 dans `img/icons/` ; badges
+  buff/résistance en PNG ([`combat-buff-badges.md`](./_archive/combat-buff-badges.md)).
+- ~~**3.3 Room of Requirement V3.1**~~ — ✅ livré. C1 trophées + 6 PNG
+  (`img/icons/requirement/eclat_*.png`), C2 choix du thème, C3 bonus méta,
+  C4 onglet Atelier « Salle ». Scénario `scenarioRoomOfRequirement` T1–T14.
+- ~~**5.1 Musiques de combat (epic / late)**~~ — ✅ clos 2026-06-12. Les OGG
+  `audio/combat_epic.ogg` et `audio/combat_late.ogg` sont présents (livrés
+  2026-06-04) ; câblage `_combatSampleKey` (audio-music.js) déjà en place. Le
+  blocage « en attente des MP3 » est levé.
+- ~~**6.2 code-review-tasks N15 — `showEquipMenu` duo**~~ — ✅ livré 2026-06-12.
+  Helpers `_equipMenuPanel` + `_equipRingButtons` extraits (`inventory.js`),
+  3 variantes inline dé-dupliquées sans changement de rendu. Plan
+  [`refactor-equip-menu.md`](./_archive/refactor-equip-menu.md).
 
 ---
 
 ## Plans laissés actifs (NON archivés — cœur non livré)
 
-Pour mémoire, ces plans restent dans `.claude/plans/` car leur cœur n'est pas
-implémenté (ne pas confondre avec les reliquats ci-dessus) :
+Pour mémoire, ces plans restent dans `.claude/plans/` (ou y mériteraient un
+retour) car leur cœur n'est **pas** implémenté — ne pas confondre avec les
+reliquats ci-dessus :
 
+- **Elfe de maison libre (Dobby & la chaussette)** — `_archive/free-house-elf-easter-egg.md`
+  est une **proposition non implémentée** (malgré son emplacement dans
+  `_archive/`). Aucun NPC/levier en code ; seul l'acquis préexistant est le
+  monstre `elfe_rebelle`. À traiter comme un easter-egg **à construire** (pas un
+  reliquat éditorial).
 - `parallel-worlds.md` — design rédigé, 0 code runtime.
 - `ch05-ch08-implementation.md` + `ch05-ch08-narrative-finalization.md` — narratif
   écrit, implémentation technique à mener.
