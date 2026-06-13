@@ -25,10 +25,19 @@
 .codex-section-tabs { flex-wrap: wrap; }
 .codex-section-tab  { font-size: 12px; }
 
+/* ── Panneaux liste / fiche ────────────────────────────────── */
+/* Calque sur #bestiary-list-panel : showCodexList() pose display:flex en
+   inline ; sans flex-direction:column ici, la barre de filtres et la grille
+   se posaient côte à côte (mobile) et écrasaient la liste. */
+#codex-list-panel   { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+#codex-detail-panel { flex: 1; overflow-y: auto; }
+
 /* ── Grille de cartes ──────────────────────────────────────── */
 .codex-grid {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   gap: 10px;
   overflow-y: auto;
   padding-right: 4px;
