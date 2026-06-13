@@ -62,7 +62,9 @@ jobs:
       - name: Tests unitaires (helpers purs, Node seul)
         run: node tests/units.js
 
-      - name: Suite smoke (159 scénarios, runner modulaire)
+      # Le nombre de scénarios n'est pas figé dans le libellé (il dérivait) :
+      # le runner imprime le total réel en fin de suite (« N scénario(s) »).
+      - name: Suite smoke (runner modulaire — total dans le log)
         run: node tests/smoke.js
 
       - name: Tests PWA (manifest + Service Worker + offline)

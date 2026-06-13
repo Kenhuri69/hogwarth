@@ -152,13 +152,17 @@ plus probables sont couvertes par un test.*
      sup. de Célérité empile la double-garde dans un segment.
   *Vérif : 5 nouveaux scénarios, smoke 207 verts.*
 
-- [ ] **1.4 — Hygiène CI/harness** ✅ partiel (S)
-  Vérifié : `test.yml:53` annonce « 159 scénarios » alors que la suite en
-  compte **189** (comptage réel des `module.exports.scenarios`).
-  → Corriger le label (ou le rendre dynamique) ; centraliser les timeouts en
-  dur du harness (`tests/lib/harness.js`) dans une constante `TIMEOUTS` ;
-  resserrer `isIgnorableError` (ne pas avaler TypeError/ReferenceError).
-  *Vérif : CI verte, log de suite cohérent.*
+- [x] **1.4 — Hygiène CI/harness** (S) — FAIT 2026-06-13
+  Label `test.yml` « 159 scénarios » (la suite en compte désormais 207) :
+  le nombre est retiré du libellé — le runner imprime le total réel en fin
+  de suite (« N scénario(s) »), donc plus de dérive possible. Timeouts du
+  harness centralisés dans `TIMEOUTS` (`globalReady`/`introScreen`/`gameReady`/
+  `battleReady`, valeurs inchangées) et appliqués explicitement aux 4
+  `waitForFunction`. `isIgnorableError` resserré : garde dure en tête qui
+  refuse d'avaler tout message contenant `TypeError`/`ReferenceError`/
+  `SyntaxError`/`RangeError`, même s'il matche par ailleurs une sous-chaîne
+  ignorable.
+  *Vérif : units (503) + smoke (207) verts (filtre durci sans régression).*
 
 - [ ] **1.5 — Cohérence des gardes `typeof` dans `_applyState`** (S)
   L'audit a signalé des gardes hétérogènes ; contre-vérification : le pattern
