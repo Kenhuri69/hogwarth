@@ -81,6 +81,15 @@ const NPCS = [
       questReady:  "Bien joué ! Tu as fait tes premiers pas. Voici ta récompense, bien méritée.",
       questDone:   "Tu es désormais lancé sur le chemin. Que la chance t'accompagne."
     },
+    // ── Suffixe fil rouge des Éclats (ch.06 §6.9.3) ──
+    // Dumbledore — 4ᵉ voix des Fondateurs — commente la double trame à mesure
+    // que le héros ramasse les Éclats de la Clé de Voûte (eclatProgress 1→3).
+    // Appendu en fin de dialogue par _eclatSuffixPages (npc-dialog.js).
+    eclatLines: {
+      1: "Et puis… tu as trouvé un Éclat. Quelque chose s'est brisé là-dessous — tu le sens dans tes os, n'est-ce pas ? Ce n'était pas un simple accident.",
+      2: "Deux Éclats, maintenant. Ce n'est pas qu'une fêlure qui s'élargit toute seule : on l'attise, d'en bas. Quelqu'un — quelque chose — veut que la Clé cède.",
+      3: "Trois Éclats. Alors tu sais, désormais : le verrou cachait deux choses, pas une. Le mal que tu affrontes au fond n'est que la pointe émergée de ce que les Fondateurs ont scellé avec eux-mêmes."
+    },
     // ── Chaîne d'épreuves (Phase 3) — dialogues par quête ──
     // Override `questOffer` / `questActive` / `questReady` par quête.
     // Les textes ci-dessous sont ceux générés en audio (cf.
@@ -727,6 +736,14 @@ const NPCS = [
       questActive: "Le passage, les serpents, le Basilic. L'écho est patient — il a mille ans d'avance sur ton impatience.",
       questReady:  "Tu as percé ma vérité, petit. Reste l'unique chose qui t'appartienne vraiment : le choix. Scelle le Pacte et le pouvoir t'écoutera… ou défie-moi, et garde les mains libres. Décide.",
       questDone:   "Le choix est fait. Il l'est pour toujours — c'est ce qui en faisait un choix. Va, héritier du Serpent."
+    },
+    // ── Suffixe fil rouge des Éclats (ch.06 §6.9.3) ──
+    // L'écho — voix de Fondateur — relaie la révélation distribuée à mesure des
+    // Éclats : la garde de Godric, sa propre faute, puis la faille de Rowena.
+    eclatLines: {
+      1: "(Un murmure froid t'accompagne.) Tu portes un Éclat… La première stèle le dirait mieux que moi : on ne scelle pas par peur. On tient la porte. Godric avait raison sur ce point.",
+      2: "Deux Éclats. Alors écoute ce que nul autre n'avouera : j'ai scellé ma part avec ma faute. Le mal d'en bas n'est pas seulement venu du dehors — nous l'avons nourri de nous-mêmes.",
+      3: "Trois Éclats, petit. Rowena l'avait écrit avant de mourir : comprends, et la faille apparaît. Tu sais maintenant ce que ton ennemi cherche au fond — c'est ce que j'ai aidé à enfermer."
     }
   },
   {
