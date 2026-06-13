@@ -154,16 +154,59 @@ js/
                       (typeof entry.name), affiche bandeau rouge si critique
                       manquant. Exporte window.safeEl(id) + window.safeCall(fn,...args).
                       window.__loaderReport publié pour smoke test.
+
+  ── Modules additionnels (chargés dans index.html ; voir « ordre » ci-dessous) ──
+  html-escape.js   →  Échappement HTML unifié (escapeHtml). Chargé très tôt.
+  textures.js      →  Chargement des textures pixel art (loadTextures, idempotent)
+  codex.js         →  CODEX : registre CODEX_ENTRIES (entrées non-créature) +
+                      évaluateur pur codexEntryState() + helpers de requête.
+                      Source de vérité du journal vivant (Chap. 12 — LIVRÉ).
+  ui-codex.js      →  UI du Codex : openCodex(), modale #codex-modal, 7 onglets,
+                      notifications de déverrouillage. Calque sur ui-bestiary.js.
+  floor-ambiance.js → Descriptions d'ambiance zonées + corruption (pur). Consomme
+                      getFloorTheme(). APRÈS floor-themes.js. (« 4ᵉ levier » du Ch.13)
+  floor-events.js  →  Événements d'étage pondérés (FLOOR_EVENT_CHANCE) à la
+                      génération du donjon (Chap. 04 « étages-scènes »).
+  room-flavor.js   →  Phrases d'atmosphère à l'entrée de salle, teintées par zone.
+  cinematics.js    →  window.Cinematics : surcouche visuelle pure intro/victoire
+                      (aucune mécanique touchée).
+  endgame.js       →  Trigger de victoire (#victory-modal) + cinématique ;
+                      pose victoryAchieved. Variante de fin slythPactChoice 'pact'.
+  break-cycle.js   →  « Briser le Cycle » : vraie fin optionnelle de la Boucle
+                      (boss reflet_mythe, flag cycleBroken). Chap. 14 — LIVRÉ.
+  forge.js         →  Forge des Ténèbres : upgrade d'items équipés (endgame
+                      Tranche 2, cellule CELL.FORGE aux étages 11/14/17/20).
+  library.js       →  Bibliothèque Interdite : upgrade de sorts (endgame Tranche 2,
+                      cellule CELL.LIBRARY aux étages 12/15/18).
+  potions.js       →  Concoction : besace d'herboriste (player.herbs) + chaudron.
+  teleport.js      →  Sort Portus : téléportation en combat / exploration.
+  help-tour.js     →  Tour guidé d'aide pour novices (spotlight UI, auto au 1er lancement).
+  combat-fx.js     →  Immersion visuelle du combat (Lot 1). Surcouche pure.
+  dungeon-fx.js    →  Immersion visuelle de l'exploration (Lot 2). Surcouche pure.
+  haptics.js       →  Retour tactile mobile (vibration).
+  karaoke.js       →  Surlignage progressif du texte au rythme de la voix.
+  pvp-duel.js      →  Duel PvP live (tours alternés relayés) — cf. multiplayer.js.
 .github/workflows/deploy.yml   →  CI GitHub Pages (push master → déploiement automatique)
 ```
 
-Ordre de chargement des scripts dans `index.html` (33 modules) :
-`ux-improvements → audio → audio-music → audio-sfx → icons → scene-icons →
-monsters → npcs → riddles → data → floor-themes → item-icons → state → ui →
-ui-bestiary → dungeon →
-textures → renderer → renderer-effects → renderer-minimap → movement →
-battle → battle-spells → battle-ui → inventory → quests → npc-dialog →
-intro → shop → save → save-ui → ironman → hall-of-fame → main → loader`
+Ordre de chargement réel des scripts dans `index.html` (**84 modules** ;
+vérifiable par `grep -c 'src="js/' index.html`) :
+`html-escape → ux-improvements → combat-fx → haptics → audio → audio-music →
+audio-sfx → icons → scene-icons → monsters → npcs → npcs-helpers → riddles →
+codex → data → data-icon-recipes → floor-themes → floor-ambiance →
+floor-events → room-flavor → item-icons → state → hero-barks → ui →
+ui-character-sheet → ui-settings → ui-bestiary → ui-codex → dungeon-scaling →
+dungeon → dungeon-spawning → textures → renderer → renderer-effects →
+dungeon-fx → cinematics → renderer-sprites → renderer-entities →
+renderer-minimap → movement → movement-floors → movement-interactions →
+swipe-canvas → battle → battle-rewards → battle-death → teleport →
+battle-spells → battle-ui → inventory-core → inventory → inventory-spells →
+potions → quests-templates → quests → quests-riddles → npc-dialog →
+house-donation → karaoke → intro → shop → save-slots → save →
+save-visit-snapshot → save-ui → ironman → hall-of-fame → multiplayer →
+multiplayer-social → multiplayer-visits → portal-fx → portal-matchmaking →
+visit-channel → visit-hud → pvp-duel → atelier-voyageur → main → endgame →
+break-cycle → forge → library → help-tour → loader → pwa`
 
 > `loader.js` est volontairement chargé en dernier : il vérifie que tous
 > les globals attendus sont présents et affiche un bandeau d'erreur sinon.

@@ -2,6 +2,15 @@
 
 **Statut :** 🟩 proposition de référence — finalisée, à valider / amender
 
+> ✅ **Statut réel (code, 2026-06-13)** : le socle des fins est **livré** —
+> fin « normale » + cinématique (`js/endgame.js`, `js/cinematics.js`), **vraie
+> fin « Briser le Cycle »** (`js/break-cycle.js`, flag `cycleBroken`), écran de
+> permadeath Ironman. La **seule variante conditionnelle (B) codée** reste le
+> ton froid `slythPactChoice === 'pact'`. Le travail restant relève du
+> **contenu** (compléter les 5 axes de variantes texte, dont la symétrie
+> `'defiance'`), non de la plomberie — cf. Roadmap Phase 1/2.
+> Voir `docs/REVUE-TRANSVERSALE-ET-ROADMAP.md` §1.2.
+
 > Objectif : faire du Chapitre 14 la **clôture** de la spécification narrative —
 > dire comment l'aventure *finit*, ce qui *reste* après la victoire, et comment
 > chaque choix (Maison, héros, quêtes signature, Éclats, choix moraux) **colore
