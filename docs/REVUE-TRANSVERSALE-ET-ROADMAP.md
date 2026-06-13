@@ -1,0 +1,233 @@
+# Revue transversale de la narration & Roadmap
+
+> **Document de pilotage** — revue croisée des 14 chapitres `docs/histoire/`
+> (+ support `docs/gameplay/`) et feuille de route pour passer en phase
+> **« polish & implémentation lourde »**.
+>
+> Date : 2026-06-13 · Méthode : lecture intégrale des 14 chapitres + audit
+> croisé avec le code réel (`js/`, `index.html`). Légende : ✅ acquis /
+> solide · ⚠️ point de friction / risque · ❓ décision ou écriture en attente.
+
+---
+
+# ÉTAPE 1 — Revue transversale & spécifications
+
+## 1.1 Synthèse globale de la narration
+
+### Forces majeures ✅
+
+| # | Force | Preuve transversale |
+|---|-------|---------------------|
+| ✅ 1 | **Colonne vertébrale claire et non-bloquante** | « La descente EST la quête » ; un seul verrou dur (`victoryAchieved` à l'ét. 10). Tout le reste est optionnel et greffé. Cohérent de 03 → 04 → 08 → 14. |
+| ✅ 2 | **Architecture A/B/C/D = source unique de vérité** | Les 4 tranches (`floor-themes.js`) pilotent tileset + musique + ton ; reprises à l'identique par 02, 04, 09, 10, 13. Zéro dérive entre couches. |
+| ✅ 3 | **Fil rouge des Éclats parfaitement filé** | 3 `eclat_voute` (Peeves / Loup-Garou / Mangemort d'Élite), 1 par acte ; révélation « double trame » en 3 temps. Suivi sans contradiction de 03 → 04 → 08 → 09 → 12 → 14. |
+| ✅ 4 | **Trois thèmes porteurs, incarnés mécaniquement** | Peur = sceau (statut `fear` ↔ Patronus Maxima), Choix > Don (Pacte gris), Mythe > Revers (paliers Apothéose gatés par la victoire). Le lore et le gameplay disent la même chose. |
+| ✅ 5 | **Immersion sensorielle & gradient de ton** | Familier → austère → abyssal → runique ; Codex qui se dégrade par acte ; froid surnaturel ; voix des Fondateurs qui mûrissent (murmure → silhouette → scène rejouée). |
+| ✅ 6 | **Identité de Maison déclinée sans rompre l'équité** | 4 Maisons = même grille de paliers/scaling (garde-fou cardinal du Ch. 13) ; la différence passe par build + quête signature + cosmétique, jamais par la difficulté. |
+| ✅ 7 | **Endgame déjà pensé jusqu'à sa « vraie fin »** | Boucle Ténébreuse (prestige ★ N infini) + « Briser le Cycle » (4 jalons, choix 🕊️/🌑) — et **tout est déjà codé** (voir §1.5). |
+
+### Points faibles / frictions restantes ⚠️
+
+| # | Faiblesse | Localisation | Gravité |
+|---|-----------|--------------|---------|
+| ⚠️ 1 | **Dérive documentation ↔ code** (le point n°1) | Ch. 12, 14 + `CLAUDE.md` | 🔴 Haute |
+| ⚠️ 2 | **`💡 proposé` vs `✅ acté` mal séparés** dans plusieurs chapitres | 09, 10, 11 | 🟠 Moyenne |
+| ⚠️ 3 | **Enjeu intime par héros toujours absent** (gap explicité 2×) | 01 §1.x, 03 §3.x | 🟠 Moyenne |
+| ⚠️ 4 | **PNJ-clés de signature non implémentés** (Chevalier Fantôme 🦁, Écho de Salazar 🐍) | 06, 08 | 🟠 Moyenne |
+| ⚠️ 5 | **Variante de choix asymétrique** : `slythPactChoice` `'pact'` codé, `'defiance'` seulement proposé | 08, 14 | 🟡 Faible |
+| ⚠️ 6 | **Localisations/statuts de boss flous** (Bellatrix sans étage ; Voldemort « affaibli » vs « ressuscité » = 1 ou 2 entrées ?) | 01, 03, 06 | 🟡 Faible |
+| ⚠️ 7 | **Trois checklists d'ajout parallèles non coordonnées** (créatures Ch.09 / lieux Ch.10 / variantes Ch.11) | 09, 10, 11 | 🟡 Faible |
+
+---
+
+## 1.2 ⚠️ Le constat n°1 : la doc est en retard sur le code
+
+C'est de loin l'observation la plus structurante de cette revue, et elle
+**réoriente toute la roadmap**. Plusieurs systèmes documentés comme
+« 🔧 à construire », « 💡 proposition » ou « ❓ à arbitrer » sont **déjà
+livrés, câblés dans `index.html` et versionnés `?v=N`** :
+
+| Élément (statut affiché dans la doc) | Module réel (vérifié) | Réalité code |
+|--------------------------------------|------------------------|--------------|
+| **Codex** « 🔧 à créer » + gros « plan d'implémentation » (Ch. 12 ÉTAPE 2) | `js/codex.js` (35+ entrées), `js/ui-codex.js`, `#codex-modal`, bouton `openCodex()` | ✅ **Livré** — ids identiques à la doc (`cle_de_voute`, `voix_godric`, `briser_cycle`, `cycle_brise`…) |
+| **Briser le Cycle** « proposition § 11.10 » | `js/break-cycle.js` (boss `reflet_mythe`, flag `cycleBroken`) | ✅ **Livré** (Ch. 14 le reconnaît déjà ✅ — Ch. 11 non) |
+| **Tutoriel / onboarding** (gap supposé) | `js/help-tour.js` (tour guidé auto pour novices) | ✅ **Livré** (+ `intro_tutoriel` + `intro.js`) |
+| **Corruption cosmétique / 4ᵉ levier d'escalade** (Ch. 04/10/13 💡) | `js/floor-ambiance.js` (ambiance zonée + corruption) | ✅ **Livré** |
+| **Phrases d'ambiance à l'entrée de salle** (Ch. 10 §10.7 💡) | `js/room-flavor.js` | ✅ **Livré** |
+| **Étages-scènes / événements scénarisés** (Ch. 04 §4.4 ❓) | `js/floor-events.js` (`FLOOR_EVENT_CHANCE` pondéré) | ✅ **Livré** (au moins partiellement) |
+| **Forge / Bibliothèque = boucle de farm matériaux** (Ch. 13) | `js/forge.js`, `js/library.js` (cellules `CELL.FORGE`/`CELL.LIBRARY` post-victoire) | ✅ **Livré** (réf. `ENDGAME_PLAN.md`) |
+| **Cinématiques intro/victoire** (Ch. 14 P4 « assets ») | `js/cinematics.js`, `js/endgame.js` | ✅ **Partiel** (surcouche visuelle pure en place) |
+| **Concoction de potions / besace d'herbes** (Ch. 08) | `js/potions.js` | ✅ **Livré** |
+| **Téléportation Portus, Duel PvP live** | `js/teleport.js`, `js/pvp-duel.js` | ✅ **Livré** (non documentés côté histoire) |
+
+**Conséquences :**
+
+- ⚠️ **`CLAUDE.md` est obsolète** : son index liste ~33 modules ; `index.html`
+  en charge **85**. Aucune mention de `codex.js`, `ui-codex.js`,
+  `break-cycle.js`, `endgame.js`, `cinematics.js`, `forge.js`, `library.js`,
+  `floor-ambiance.js`, `floor-events.js`, `room-flavor.js`, `help-tour.js`,
+  `potions.js`, `teleport.js`, `pvp-duel.js`, `haptics.js`, `karaoke.js`…
+- ⚠️ **Le Ch. 12 contient un « plan d'implémentation » du Codex déjà périmé** :
+  il faut le transformer en **doc descriptive du Codex livré** + liste des
+  entrées restant à rédiger.
+- ⚠️ **Risque réel** : planifier en lisant ces docs ferait **ré-implémenter
+  des systèmes existants** et **manquer le vrai travail** (rédiger le contenu
+  des coquilles déjà en place, finir les variantes, polir).
+
+> 🟢 **À retenir** : le projet n'a pas un déficit de *systèmes*, mais un
+> déficit de **réconciliation doc↔code** et de **contenu à verser dans des
+> systèmes déjà construits**. La roadmap part de là.
+
+---
+
+## 1.3 Vérification des liens entre chapitres
+
+### Matrice de cohérence croisée
+
+| Question d'analyse croisée | Réponse | Statut |
+|----------------------------|---------|--------|
+| Le Codex réagit-il aux **fins du Ch. 14** ? | Oui : robinets `victory` → `boucle_tenebreuse`/`tenebreux`/`porteur_eclats`/`echo_signature` ; `cycleBroken` → `cycle_brise`. Câblé dans `codex.js`. | ✅ Cohérent **et codé** |
+| Les **PNJ (06)** interagissent-ils avec la **Boucle (11)** ? | Oui : recyclage `effectiveFloor` (Kingsley/Bill/Sirius reviennent ét. 18-20) ; **Gardien de la Boucle** hérite du fil rouge de Dumbledore ; marchands ténébreux = farm. | ✅ Cohérent |
+| Les **quêtes signature (08)** pèsent-elles sur le **climax (03)** et la **fin (14)** ? | Oui : flag `<house>SignatureDone` → réplique pré-Voldemort + modificateur one-shot + paragraphe « héritage » dans la fin A. | ✅ Cohérent (mais 2 PNJ donneurs manquants — ⚠️4) |
+| L'**équilibrage (13)** respecte-t-il l'**identité de Maison (07)** ? | Oui : équité stricte (même grille), identité = build + signature + cosmétique. `houseDifficultyModifier` explicitement **déconseillé**. | ✅ Cohérent |
+| Les **Éclats** relient-ils trame, bestiaire, codex et fin ? | Oui, bout-à-bout : 03 (sens) → 04 (jalons) → 08 (collecte) → 09 (drops) → 12 (révélation Codex) → 14 (jalon « Briser » à 15 Éclats). | ✅ Excellent fil |
+| Le **bestiaire (09)** s'aligne-t-il avec les **lieux (10)** par zone ? | Oui : familles F1-F5 par tranche A/B/C/D, signatures de corruption partagées. | ✅ Cohérent |
+
+### Liens manquants ou faibles à renforcer ⚠️/❓
+
+| Lien | Problème | Action suggérée |
+|------|----------|-----------------|
+| **11 ↔ 14** (Briser le Cycle) | Le Ch. 11 le présente en « proposition § 11.10 » alors que le Ch. 14 **et le code** le donnent ✅ livré. | Aligner le Ch. 11 sur l'état réel (✅). |
+| **11 ↔ 06** (nature de la Boucle) | Le Ch. 06 ne dit jamais si la Boucle est une dimension / boucle temporelle / cristallisation ; renvoie en l'air vers 03 §3.6. | Ajouter 1 § canonique « qu'est-ce que la Boucle » dans 11, lié depuis 06. |
+| **08 ↔ 06** (PNJ donneurs) | Chevalier Fantôme & Écho de Salazar sont **donneurs de signature mais non implémentés**. | Décider : créer les PNJ, ou rabattre les déclencheurs sur McGonagall/Rogue. |
+| **Boucle ↔ Mondes Parallèles** | Présentés comme « deux axes opposés » (vertical/latéral) mais **aucune interaction définie** (un Voyageur peut-il visiter un château en Boucle ?). | Écrire la règle explicite (proposé : non — systèmes isolés). |
+| **9 / 10 / 11 checklists** | Trois procédures d'ajout (créatures / lieux / variantes) sans renvoi mutuel. | Ajouter un renvoi croisé en tête de chacune. |
+| **Codex ↔ Mondes Parallèles** | 8ᵉ onglet « Voyageur » ou intégré au Glossaire ? `❓` ouvert (12). | Trancher (proposé : intégré, pas d'onglet dédié). |
+
+---
+
+## 1.4 Améliorations transversales proposées 💡
+
+| # | Amélioration | But | Effort | Recommandation |
+|---|--------------|-----|--------|----------------|
+| 💡 1 | **Bandeau « Statut réel » en tête de chaque chapitre** : `✅ livré` / `🔧 partiel` / `💡 conception` + lien vers le(s) module(s) `js/`. | Tuer la dérive doc↔code à la racine. | Faible | **Forte** |
+| 💡 2 | **Index « doc ↔ module »** unique (un tableau dans le README docs). | Savoir d'un coup d'œil ce qui est codé. | Faible | **Forte** |
+| 💡 3 | **« Thermomètre de corruption » global unifié** déjà amorcé (`floor-ambiance.js` + ❄→❄❄❄❄+ du Ch. 10) : en faire **un indicateur HUD lisible** + clé Codex. | Rendre la descente *ressentie*, pas seulement subie. | Moyen | Moyenne |
+| 💡 4 | **Système de mémoire/héritage cosmétique** (profil hors-partie : titres, Codex de profil, bordure si `cycleBroken`) — déjà spécifié Ch.14 §14.6.3, **zéro stat**. | Récompenser la complétion sans casser l'équité (13). | Moyen | Moyenne |
+| 💡 5 | **Enjeu intime par héros** : 2-3 lignes de bark scénarisées par héros déclenchées sur un beat (déjà infra `heroBarkScripted`). | Combler le gap ⚠️3 à coût quasi nul. | Faible | Forte |
+| 💡 6 | **Unifier le ton des « fins conditionnelles »** : compléter la symétrie `pact`/`defiance` + injecter les 5 axes de variation texte dans `endgame.js`. | Cohérence narrative de la fin. | Faible | Forte |
+| 💡 7 | **Fusionner les 3 checklists d'ajout** (créature/lieu/variante) en une page « Règles d'extension de contenu ». | Éviter le creep mécanique. | Faible | Moyenne |
+
+---
+
+## 1.5 Derniers chapitres / sections manquants
+
+### Côté narration (`docs/histoire/`)
+
+| Manque | Statut | Priorité |
+|--------|--------|----------|
+| ❓ **Réconciliation Ch. 12 & 14** avec le code livré (Codex, Briser le Cycle) | À réécrire (sections « plan d'impl. » périmées) | 🔴 Haute |
+| ❓ **Définition canonique de « la Boucle »** (1 §) + règle Boucle↔MP | À écrire | 🟠 Moyenne |
+| ❓ **Fiches de contenu Codex restantes** (entrées rédigées vs coquilles) | Audit + écriture | 🟠 Moyenne |
+| ❓ **Enjeu intime par personnage** (les 13 héros) | À concevoir (léger) | 🟠 Moyenne |
+| ❓ **Localisation des boss** (Bellatrix ; statut Voldemort affaibli/ressuscité) | À clarifier | 🟡 Faible |
+
+### Côté gameplay (`docs/gameplay/`)
+
+- ⚠️ Les **9 chapitres G1-G9 sont en `🟧 ébauche`** et, comme les docs histoire,
+  **ne couvrent pas** les systèmes récents (Forge, Bibliothèque, Potions,
+  Téléportation, PvP live, Événements d'étage, Codex). → À mettre à niveau.
+
+### Ce qui n'est **pas** manquant (contrairement à ce que les docs laissent croire)
+
+✅ Tutoriel · ✅ Codex · ✅ Cinématiques de fin · ✅ Vraie fin · ✅ Forge/Biblio ·
+✅ Corruption cosmétique · ✅ Événements d'étage · ✅ Craft de potions.
+
+---
+
+# ÉTAPE 2 — Roadmap & plan d'action
+
+> Principe directeur : **réconcilier avant de construire**. La première phase
+> n'ajoute presque aucun système — elle aligne la doc sur le code et verse du
+> *contenu* dans des coquilles déjà livrées. On ne « code le Codex » pas : on
+> le **remplit** et on le **documente**.
+
+## Phase 1 — Réconciliation & polish narratif (court terme, ~2-3 semaines)
+
+| Tâche | Priorité | Chapitres / systèmes | Complexité | Dépendances |
+|-------|----------|----------------------|------------|-------------|
+| **Audit doc↔code complet** : tableau « chapitre ↔ module(s) ↔ statut réel » | 🔴 Haute | Tous + `CLAUDE.md` | Faible (lecture) | — |
+| **Mettre à jour `CLAUDE.md`** (index des 85 modules, sections Codex/Forge/Biblio/Endgame/Potions/Events) | 🔴 Haute | `CLAUDE.md` | Faible | Audit |
+| **Réécrire Ch. 12 & 14** : « plan d'impl. » → « état livré + contenu restant » | 🔴 Haute | 12, 14, `codex.js`, `endgame.js`, `break-cycle.js` | Faible | Audit |
+| **Aligner Ch. 11** (Briser le Cycle = ✅, pas proposition) + définir « la Boucle » | 🟠 Moyenne | 11 | Faible | Audit |
+| **Bandeaux « Statut réel » + index doc↔module** | 🟠 Moyenne | Tous | Faible | Audit |
+| **Compléter symétrie `pact`/`defiance`** + variantes texte fin (5 axes) | 🟠 Moyenne | 14, `endgame.js` | Faible | — |
+| **Enjeu intime héros** (barks scénarisés légers) | 🟡 Basse | 05, `hero-barks.js` | Faible | — |
+| **Clarifier localisation boss** (Bellatrix, Voldemort ×1/×2) | 🟡 Basse | 03, 06, `monsters.js` | Faible | — |
+
+**Critère de sortie Phase 1** : un·e lecteur·rice de la doc peut, pour chaque
+système, savoir s'il est livré et où — et `node tests/smoke.js` reste vert.
+
+## Phase 2 — Implémentation technique prioritaire (moyen terme, ~3-5 semaines)
+
+| Tâche | Priorité | Chapitres / systèmes | Complexité | Dépendances |
+|-------|----------|----------------------|------------|-------------|
+| **Audit de complétude du Codex** : combien d'entrées rédigées vs coquilles ; remplir les `textVersions` manquantes (veiled/revealed/corrupted) | 🔴 Haute | 12, `codex.js` | Moyenne | Phase 1 |
+| **PNJ de signature manquants** : Chevalier Fantôme 🦁 + Écho de Salazar 🐍 (ou rabattre sur les chefs) | 🟠 Moyenne | 06, 08, `npcs.js`, `npc-dialog.js` | Moyenne | Décision design |
+| **Objectifs de quête neufs** des signatures : « combat sans fuite », escorte/vague défensive, raccourcis Salazar (`teleport.js` existe déjà ?) | 🟠 Moyenne | 08, `quests*.js`, `movement.js` | Élevée | PNJ ci-dessus |
+| **Échos temporels → Codex** : Set `temporalEchoSeen` + robinet `corruptedBy` zone D | 🟠 Moyenne | 10, 12, `codex.js`, `floor-ambiance.js` | Moyenne | Codex audit |
+| **Variantes texte de fin (B) complètes** dans la cinématique | 🟡 Basse | 14, `endgame.js`, `cinematics.js` | Faible | Phase 1 |
+
+**Critère de sortie Phase 2** : le Codex est *plein* (pas de coquille vide
+visible) ; les 4 signatures sont jouables de bout en bout.
+
+## Phase 3 — Contenu endgame & rejouabilité (long terme, ~4-6 semaines)
+
+| Tâche | Priorité | Chapitres / systèmes | Complexité | Dépendances |
+|-------|----------|----------------------|------------|-------------|
+| **Boss-gardiens des Chambres des Fondateurs** (ét. 17-20) + illumination selon `chosenHouse` | 🟠 Moyenne | 10, 11, `monsters.js`, `dungeon.js` | Élevée | Phase 2 |
+| **Variantes Ténébreuses** (barks one-shot « Tu m'as déjà tué une fois ») | 🟡 Basse | 09, 11, `hero-barks.js`, `monsters.js` | Moyenne | — |
+| **Héritage / NG+ cosmétique opt-in** (profil hors-partie, zéro stat) | 🟡 Basse | 14, nouveau `js/profile.js` | Moyenne | Phase 2 |
+| **Suites de signature en Boucle** (écho déchiré par Maison) | 🟡 Basse | 08, 11 | Moyenne | Signatures (P2) |
+| **Décisions `❓` endgame** : « ce qui dort » personnifié ? barks Ténébreux ? biais génération par Maison (V2) ? | 🟡 Basse | 09, 10, 11 | Variable | Arbitrage user |
+
+**Critère de sortie Phase 3** : la Boucle a une **destination narrative
+ressentie** (Chambres, échos, variantes) au-delà du seul ★ N.
+
+## Phase 4 — Démo / Release (jouable de bout en bout)
+
+| Tâche | Priorité | Chapitres / systèmes | Complexité | Dépendances |
+|-------|----------|----------------------|------------|-------------|
+| **Mettre à niveau `docs/gameplay/` G1-G9** (systèmes récents) | 🟠 Moyenne | G1-G9 | Faible | Phase 1 |
+| **Pass d'assets de fin** (illustrations victoire, SFX, fonds parchemin Codex par acte) | 🟠 Moyenne | 12, 14, `cinematics.js`, pipelines `tools/` | Moyenne | P2/P3 |
+| **Pass d'équilibrage de release** (`tools/sim-difficulty.js`, `check_difficulty.js` en CI) | 🟠 Moyenne | 13 | Moyenne | Contenu figé |
+| **QA parcours complet** : intro → tutoriel → Acte I-III → victoire → Boucle → Briser le Cycle, solo & duo, 4 Maisons | 🔴 Haute | Tous | Élevée | P1-P3 |
+| **Garde-fous release** : `cache-bump`, `smoke.js`, `units.js`, `pwa-smoke.js` verts | 🔴 Haute | PWA, tests | Faible | Tout |
+
+**Critère de sortie Phase 4** : un parcours démo complet, cohérent
+narration↔gameplay, tests verts, doc fidèle au code.
+
+---
+
+## Vision d'ensemble (motivation)
+
+Le projet n'est **pas** à mi-chemin d'un océan de features à coder : la
+plupart des systèmes structurants **existent déjà**. Le vrai travail qui
+sépare l'état actuel d'une **démo jouable et cohérente** est :
+
+1. **Réconcilier** la doc et `CLAUDE.md` avec un code en avance (Phase 1).
+2. **Remplir** des coquilles déjà livrées — surtout le Codex (Phase 2).
+3. **Donner une destination** à la Boucle et finir les quêtes signature (Phase 3).
+4. **Polir, équilibrer, tester** pour la release (Phase 4).
+
+Autrement dit : on passe de *« construire le jeu »* à *« finir d'y écrire
+l'histoire et la vérifier »* — une phase plus courte et plus gratifiante
+qu'elle n'en a l'air à la seule lecture des docs.
+
+---
+
+> **Note d'audit** : les statuts « ✅ livré » ci-dessus ont été vérifiés par
+> présence du module dans `js/`, câblage dans `index.html` (`?v=N`) et
+> repérage des symboles attendus. La **complétude fonctionnelle** de chaque
+> module (ex. nombre d'entrées Codex réellement rédigées) reste à confirmer
+> par les audits de Phase 1/2 — d'où leur place en tête de roadmap.

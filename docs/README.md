@@ -112,10 +112,14 @@ sombre et plus profond.
 
 ## Statut global
 
+> 🧭 **Revue transversale & roadmap** : voir
+> [`REVUE-TRANSVERSALE-ET-ROADMAP.md`](REVUE-TRANSVERSALE-ET-ROADMAP.md)
+> (état doc↔code, liens entre chapitres, feuille de route 4 phases).
+
 | Chapitre | Statut |
 |----------|--------|
 | Cadre général (ce fichier) | 🟩 stable (à amender) |
-| 01–12 Histoire | 🟥 squelettes posés — **à détailler** |
+| 01–14 Histoire | 🟩 chapitres rédigés (référence) — **réconciliation doc↔code en cours** (Roadmap Phase 1) |
 | 13 Histoire (Équilibre) | 🟩 proposition de référence — à valider |
-| 14 Histoire (Fins & post-game) | 🟩 proposition de référence — à valider |
-| Gameplay | 🟥 index posé |
+| 14 Histoire (Fins & post-game) | 🟩 socle **livré** dans le code — contenu de variantes restant à écrire |
+| Gameplay (G1–G9) | 🟧 ébauche — à mettre à niveau (systèmes récents non couverts) |

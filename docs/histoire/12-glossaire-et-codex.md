@@ -2,6 +2,16 @@
 
 **Statut :** 🟩 proposition de référence — finalisée, à valider / amender
 
+> ✅ **Statut réel (code, 2026-06-13)** : le **Codex est LIVRÉ** — `js/codex.js`
+> (registre `CODEX_ENTRIES`, ~35 entrées dont `cle_de_voute`, `voix_*`,
+> `briser_cycle`, `cycle_brise`… + évaluateur pur `codexEntryState()`),
+> `js/ui-codex.js` (modale `#codex-modal`, bouton 📖 `openCodex()`). La section
+> **« ÉTAPE 2 — Plan d'implémentation » ci-dessous est donc PÉRIMÉE** : la
+> traiter comme un **historique de conception**. Le travail restant n'est plus
+> de *construire* le Codex mais d'**auditer la complétude de ses entrées**
+> (coquilles vs `textVersions` rédigées) — cf. Roadmap Phase 2.
+> Voir `docs/REVUE-TRANSVERSALE-ET-ROADMAP.md` §1.2.
+
 > Objectif : faire du Chapitre 12 le **Codex** — le **journal vivant et
 > déverrouillable** du joueur. Il centralise les **termes propres au jeu**, les
 > **objets de lore**, une **chronologie** de référence et un **index des

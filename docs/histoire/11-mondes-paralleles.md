@@ -2,6 +2,15 @@
 
 **Statut :** 🟩 proposition de référence — à valider / amender
 
+> ✅ **Statut réel (code, 2026-06-13)** : la **Boucle Ténébreuse** et sa **vraie
+> fin « Briser le Cycle »** ne sont **plus des propositions** — elles sont
+> **livrées** : `js/break-cycle.js` (boss `reflet_mythe`, flag `cycleBroken`,
+> modale de choix), gating `victoryAchieved`, paliers Mythe/Apothéose/★ N,
+> recyclage `effectiveFloor`. Les **Mondes Parallèles** sont également livrés
+> (`js/multiplayer*.js`, `js/visit-*.js`, `js/atelier-voyageur.js`). Lire la
+> section § 11.10 (Briser le Cycle) comme **descriptive du livré**, non comme
+> un design à valider. Cf. `docs/REVUE-TRANSVERSALE-ET-ROADMAP.md` §1.2.
+
 > Objectif : faire du Chapitre 11 le **pilier endgame & rejouabilité** du jeu.
 > Il pose la fiction des **deux façons de prolonger l'aventure** une fois
 > Voldemort vaincu — deux directions opposées, déjà esquissées en [§11.5](#115-cadrage--canon-dans-la-fiction-ou-méta-mode-) :
