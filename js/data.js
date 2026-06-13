@@ -411,7 +411,6 @@ function getGrimoirePageForFloor(floor) {
 // perle, faire neiger dans une pièce), semés dans le château pour que sa
 // fille tombe un jour sur sa joie et non seulement sur son mensonge.
 // Réutilisent le mécanisme de pages de l'Acte II via _activePageSet().
-// (Textes provisoires — relecture co-écrite avant merge.)
 // Cf. .claude/plans/manon-grimoire-easter-egg.md.
 const ACT3_PAGES = [
   { id: "feuillet_clair_1", name: "La fougère sur la vitre", icon: "❄️", floor: 2,
