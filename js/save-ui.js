@@ -326,14 +326,20 @@ function renderRequirementAlmanac() {
     const inner = t.img
       ? `<img src="${t.img}" alt="" onerror="this.replaceWith(document.createTextNode('${t.icon}'))">`
       : t.icon;
-    return `<span class="alm-pill ${owned ? 'seen' : 'locked'}${t.theme === '_complete' ? ' alm-trophy' : ''}" title="${t.name}">${owned ? inner : '·'}</span>`;
+    const title = owned ? t.name : `${t.name} — à découvrir`;
+    return `<span class="alm-pill ${owned ? 'seen' : 'locked'}${t.theme === '_complete' ? ' alm-trophy' : ''}" title="${title}">${owned ? inner : '·'}</span>`;
   }).join('');
   const total = list.filter(t => t.theme !== '_complete').length;
   const got = list.filter(t => t.theme !== '_complete' && trophies[t.theme]).length;
+  // Replié par défaut (discret) : le résumé porte le compteur, le corps
+  // explicite ce que c'est et pourquoi ça intéresse le joueur.
   el.innerHTML = `
-    <div class="alm-title">🚪 Almanach de la Salle sur Demande</div>
-    <div class="alm-stat">Salles trouvées : <b>${codex.roomsFound | 0}</b> · Trophées : <b>${got}/${total}</b></div>
-    <div class="alm-pills">${pills}</div>`;
+    <details class="alm-details">
+      <summary class="alm-title">🚪 Almanach de la Salle sur Demande · <span class="alm-count">${got}/${total}</span></summary>
+      <div class="alm-sub">Souvenirs gardés entre tes parties. Chaque thème de Salle sur Demande déjà découvert t'accorde un petit bonus de départ (Gallions + potions).</div>
+      <div class="alm-stat">Salles trouvées : <b>${codex.roomsFound | 0}</b></div>
+      <div class="alm-pills">${pills}</div>
+    </details>`;
   el.style.display = 'block';
 }
 
