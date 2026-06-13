@@ -362,6 +362,29 @@ Object.assign(AudioSystem, {
       });
   },
 
+  // ── Sting de fin « Briser le Cycle » (ch.14 §14.6.1, P4) ──────
+  // Nappe douce one-shot pour la cinématique C. Défensif : si le sample
+  // `audio/ending_break.ogg` est absent (404) ou si l'audio n'est pas prêt,
+  // repli sur le sting procédural `playVictory()` existant. Aucune dépendance
+  // dure à l'asset — le comportement actuel (sans sample) reste inchangé.
+  playEndingTheme() {
+    if (this.isMuted) return;
+    this.init();
+    const url = this._ENDING_SAMPLE;
+    this._loadSample('ending_break', url)
+      .then(buf => {
+        if (!this.musicGain || !this.ctx) { if (this.playVictory) this.playVictory(); return; }
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(this.musicGain);
+        src.start(this.ctx.currentTime);
+      })
+      .catch(() => { if (this.playVictory) this.playVictory(); });
+  },
+
+  // Sample de la cinématique de fin (P4). Absent par défaut → repli synthèse.
+  _ENDING_SAMPLE: 'audio/ending_break.ogg',
+
   // ── Stoppe toutes les voix actives et restaure la musique ─────
   stopVoice() {
     this._voicePending = null;

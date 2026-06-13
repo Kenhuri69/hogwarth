@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v121';
+const CACHE_VERSION = 'hogwarth-v122';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -46,7 +46,7 @@ const PRECACHE_URLS = [
   './js/combat-fx.js?v=10',
   './js/haptics.js?v=2',
   './js/audio.js?v=2',
-  './js/audio-music.js?v=6',
+  './js/audio-music.js?v=7',
   './js/audio-sfx.js?v=13',
   './js/icons.js?v=1',
   './js/scene-icons.js?v=6',
@@ -111,8 +111,8 @@ const PRECACHE_URLS = [
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
   './js/main.js?v=22',
-  './js/endgame.js?v=6',
-  './js/break-cycle.js?v=2',
+  './js/endgame.js?v=7',
+  './js/break-cycle.js?v=3',
   './js/forge.js?v=4',
   './js/library.js?v=4',
   './js/help-tour.js?v=3',

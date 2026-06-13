@@ -1056,6 +1056,9 @@
      style="display:none; position:fixed; inset:0; z-index:9500; background:rgba(4,6,14,0.93);
             align-items:center; justify-content:center; padding:18px">
   <div class="modal-box" style="max-width:640px; text-align:center; background:linear-gradient(180deg,#141022,#0a0712); border:1px solid #3a2d5a; border-radius:10px; padding:24px">
+    <!-- Illustration de la cinématique « Briser le Cycle » (ch.14 §14.6.1, P4) —
+         posée par confirmBreakCycle, masquée si l'asset est absent. -->
+    <img id="break-cycle-art" alt="" style="display:none; width:100%; max-height:200px; object-fit:cover; border-radius:8px; margin-bottom:14px">
     <div id="break-cycle-icon" style="font-size:46px; margin-bottom:6px">🌀</div>
     <div class="victory-title" id="break-cycle-title" style="color:#cbb6f0">Briser le Cycle</div>
     <div class="victory-sub" id="break-cycle-text" style="margin-top:10px; line-height:1.55; color:#d8cdee"></div>
@@ -1068,6 +1071,10 @@
      revenir au hub. Voir js/endgame.js + ENDGAME_PLAN.md §4. -->
 <div id="victory-modal" role="dialog" aria-modal="true" aria-labelledby="victory-title" style="display:none">
   <div class="victory-box modal-box">
+    <!-- Illustration de fin (ch.14 §14.6.1, P4) — affichée seulement si
+         l'asset existe (showVictoryScreen pose src + onerror→masqué). Le
+         jeu reste identique sans l'image. -->
+    <img id="victory-art" alt="" style="display:none; width:100%; max-height:200px; object-fit:cover; border-radius:8px; margin-bottom:14px">
     <svg class="victory-seal" viewBox="0 0 130 130" xmlns="http://www.w3.org/2000/svg">
       <circle cx="65" cy="65" r="58" fill="none" stroke="#c9a84c" stroke-width="2"/>
       <circle cx="65" cy="65" r="50" fill="none" stroke="#7a5c1e" stroke-width="0.8"/>
@@ -1200,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/combat-fx.js?v=10"></script>
 <script src="js/haptics.js?v=2"></script>
 <script src="js/audio.js?v=2"></script>
-<script src="js/audio-music.js?v=6"></script>
+<script src="js/audio-music.js?v=7"></script>
 <script src="js/audio-sfx.js?v=13"></script>
 <script src="js/icons.js?v=1"></script>
 <script src="js/scene-icons.js?v=6"></script>
@@ -1272,8 +1279,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/pvp-duel.js?v=1"></script>
 <script src="js/atelier-voyageur.js?v=4"></script>
 <script src="js/main.js?v=22"></script>
-<script src="js/endgame.js?v=6"></script>
-<script src="js/break-cycle.js?v=2"></script>
+<script src="js/endgame.js?v=7"></script>
+<script src="js/break-cycle.js?v=3"></script>
 <script src="js/forge.js?v=4"></script>
 <script src="js/library.js?v=4"></script>
 <script src="js/help-tour.js?v=3"></script>

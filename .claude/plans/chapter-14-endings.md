@@ -228,3 +228,54 @@ l'épilogue est une **entrée Codex** (pas un écran neuf). Décision (Point à 
 
 > **Hors-scope P3** (laissé pour P4+) : assets de fin (illustrations + sample
 > audio C, P4), NG+ opt-in (profil + titres + Codex de profil, P5).
+
+---
+
+## 6. Phase P4 — Assets de fin (câblage défensif + prompts) (✅ implémentée)
+
+Branche `claude/hogwarth-ch14-p4-ending-assets`. Périmètre : **câbler** les
+emplacements d'assets de fin de façon **défensive** (le jeu marche sans eux ;
+ils s'activent dès qu'on les dépose) + **sample audio** de la cinématique C avec
+repli synthèse + **prompts Gemini/Nano Banana**. **Aucune image générée par
+l'agent** (hors capacité) : les visuels sont à produire via les prompts livrés.
+
+### Étapes & vérif
+
+1. ✅ **Illustration de victoire** — `<img id="victory-art">` (masqué) dans
+   `#victory-modal` (`index.html`) ; `showVictoryScreen` (`endgame.js`) pose
+   `src = img/scenes/ending_victory.jpg` avec `onload`→affiche / `onerror`→masque.
+   Asset absent → modale identique à aujourd'hui.
+2. ✅ **Illustration « Briser le Cycle »** — `<img id="break-cycle-art">` (masqué)
+   dans `#break-cycle-overlay` ; helper `_setBreakCycleArt(src)` (`break-cycle.js`)
+   l'affiche à la cinématique (`confirmBreakCycle` → `ending_break_cycle.jpg`),
+   la masque à l'écran de choix et à la fermeture. Défensif (`onerror`).
+3. ✅ **Sting audio de fin** — `AudioSystem.playEndingTheme()` (`audio-music.js`,
+   réutilise `_loadSample`) joue `audio/ending_break.ogg` si présent, **repli
+   sur `playVictory()`** sinon. `confirmBreakCycle` le préfère à `playVictory`.
+   `audio/` non précaché (SWR) → pas de `?v`.
+4. ✅ **Prompts Gemini** — `.claude/plans/nano-banana-prompts-endings.md` :
+   `ending_victory.jpg`, `ending_break_cycle.jpg`, `epilogue.png` (icône Codex,
+   + suivi 1 ligne), `ending_spiral.jpg` (⏸️ différé, pas d'écran),
+   `ending_break.ogg` (brief audio, hors Gemini).
+5. ✅ Tests : `scenarioEndingAssets` (`tests/scenarios/codex.js`) — éléments
+   présents + masqués, `src` câblés (victoire / cinématique), réinit à la
+   fermeture, `playEndingTheme` exposé/sans exception, `_ENDING_SAMPLE` correct.
+6. ✅ Garde-fou guidelines : 4 fichiers servis modifiés (`index.html`,
+   `endgame.js`, `break-cycle.js`, `audio-music.js`) → bump cache PWA
+   (skill `cache-bump`) ; `node tests/units.js` + `node tests/smoke.js` +
+   `node tests/pwa-smoke.js` verts ; skill `commit-guard`.
+
+### Décisions / écarts
+
+- **Icône Codex `epilogue`** : NON câblée tout de suite (`ui-codex.js` n'a pas de
+  repli `onerror` sur `iconImg` → un chemin mort afficherait une image cassée).
+  L'entrée garde l'emoji 📜 ; le PNG s'active par une **ligne** (`iconImg`) une
+  fois généré (documenté §3 du doc de prompts). Choix surgical (ne pas toucher
+  le rendu partagé du Codex).
+- **`ending_spiral.jpg`** : différé — aucun écran ne porte la posture
+  « Perpétuer / vertige » (`declineBreakCycle` n'affiche qu'un toast). Prompt
+  fourni pour mémoire, non câblé (pas d'asset orphelin).
+
+> **Hors-scope P4** (laissé pour P5) : NG+ opt-in — profil `localStorage`
+> hors-save (titres, compteur de victoires, Codex de profil), cosmétique de
+> départ. **Zéro stat héritée** (équilibrage 13). Décision produit requise.

@@ -99,12 +99,26 @@ function openBreakCycleModal() {
   set('break-cycle-actions',
     '<button class="cmd-btn" onclick="confirmBreakCycle()">🕊️ Briser le Cycle</button>' +
     '<button class="cmd-btn" onclick="declineBreakCycle()">🌑 Perpétuer</button>');
+  _setBreakCycleArt(null);   // l'écran de choix reste sobre (texte + 🪞)
   ov.style.display = 'flex';
 }
 
 function closeBreakCycleModal() {
   const ov = (typeof safeEl === 'function') ? safeEl('break-cycle-overlay') : document.getElementById('break-cycle-overlay');
   if (ov) ov.style.display = 'none';
+  _setBreakCycleArt(null);
+}
+
+// Illustration de fin (ch.14 §14.6.1, P4) : posée seulement pendant la
+// cinématique « Briser le Cycle ». Défensif — `src` falsy masque l'image, et
+// un asset absent (404) la masque via onerror (le jeu reste identique sans).
+function _setBreakCycleArt(src) {
+  const el = (typeof safeEl === 'function') ? safeEl('break-cycle-art') : document.getElementById('break-cycle-art');
+  if (!el) return;
+  if (!src) { el.style.display = 'none'; el.removeAttribute('src'); return; }
+  el.onload  = function () { el.style.display = 'block'; };
+  el.onerror = function () { el.style.display = 'none'; };
+  el.src = src;
 }
 
 // 🌑 Perpétuer — refuse de briser. Aucune punition ; la Boucle continue.
@@ -121,7 +135,16 @@ function confirmBreakCycle() {
   // Label de fin (P3) : bascule sur 'cycle_broken' (priorité max).
   if (typeof refreshEndingType === 'function') refreshEndingType();
   if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('cycle-broken');
-  try { if (typeof AudioSystem !== 'undefined' && AudioSystem.playVictory) AudioSystem.playVictory(); } catch (_) { /* no-op */ }
+  // Musique de fin (P4) : nappe douce `ending_break` si présente, repli sur le
+  // sting procédural playVictory() sinon (playEndingTheme gère lui-même le 404).
+  try {
+    if (typeof AudioSystem !== 'undefined') {
+      if (AudioSystem.playEndingTheme) AudioSystem.playEndingTheme();
+      else if (AudioSystem.playVictory) AudioSystem.playVictory();
+    }
+  } catch (_) { /* no-op */ }
+  // Illustration de la cinématique (P4) : affichée si l'asset existe.
+  _setBreakCycleArt('img/scenes/ending_break_cycle.jpg');
   _breakCyclePage = 0;
   _renderBreakCyclePage();
 }
