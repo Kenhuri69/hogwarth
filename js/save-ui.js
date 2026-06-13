@@ -363,7 +363,7 @@ function enterStartHub() {
   migrateLegacyKey();
   _renderHubSlotList();
   renderRequirementAlmanac(); // V3 — méta léger (masqué si vierge)
-  if (typeof renderProfileCodex === 'function') renderProfileCodex(); // Ch.14 P5 — Codex du Sorcier (masqué si vierge)
+  if (typeof _refreshHubCodexBtn === 'function') _refreshHubCodexBtn(); // Ch.14 P6 — bouton Codex du Sorcier (masqué si vierge)
   document.getElementById('start-hub-screen').style.display = 'flex';
   // La musique de menu est normalement déjà lancée par `_armMenuAudio`
   // (1er geste) ; cet appel reste un filet de sécurité idempotent. La

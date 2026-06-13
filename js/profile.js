@@ -121,49 +121,78 @@ function ngPlusAvailable() {
   return _profileRead().victories >= 1;
 }
 
-// ── Codex du Sorcier (panneau repliable du hub de démarrage) ──────
-// Appelé par enterStartHub (save-ui.js). Masqué tant que le profil est vierge
-// (aucun spoiler de fin). Lecture seule, aucun bouton. Modèle :
-// renderRequirementAlmanac.
+// ── Codex du Sorcier (modale dédiée du hub de démarrage, P6) ──────
+// Bouton #hub-codex-btn (masqué si profil vierge) → openWizardCodex() ouvre
+// #wizard-codex-modal ; renderProfileCodex peuple le corps #wizard-codex-body.
+// Lecture seule, purement honorifique (aucun avantage hérité).
+
+// Les 3 fins canoniques (révélées / à découvrir), sans spoiler de mécanique.
+const _PROFILE_ENDINGS = [
+  { key: 'victory',      icon: '🏆', name: "L'Ombre s'efface",  hint: 'Vaincre Lord Voldemort' },
+  { key: 'victory_pact', icon: '🐍', name: 'Le Pacte scellé',   hint: 'Vaincre après avoir scellé le Pacte des Cachots' },
+  { key: 'cycle_broken', icon: '🕊️', name: 'Le Cycle brisé',    hint: 'Briser la Boucle Ténébreuse' }
+];
+
+// Rend le corps de la modale Codex du Sorcier (#wizard-codex-body).
 function renderProfileCodex() {
-  const el = document.getElementById('start-hub-profile');
+  const el = document.getElementById('wizard-codex-body');
   if (!el) return;
   const p = _profileRead();
-  if ((p.victories | 0) === 0 && (p.cyclesBroken | 0) === 0) {
-    el.innerHTML = '';
-    el.style.display = 'none';
-    return;
-  }
   const esc = (typeof htmlEscape === 'function') ? htmlEscape : (s => String(s));
+
+  // Bandeau du titre dominant (médaillon Vétéran si au moins un titre).
+  const top = profileTopTitle(p);
+  const banner = top
+    ? `<div class="wcodex-banner"><img class="wcodex-medal" src="img/icons/ngplus_veteran.png" alt="">`
+      + `<span class="wcodex-top-title">${esc(top)}</span></div>`
+    : `<div class="wcodex-banner wcodex-banner-empty">Aucune fin atteinte pour l'instant.</div>`;
+
   const titles = computeProfileTitles(p);
   const titleChips = titles.length
     ? titles.map(t => `<span class="prof-title">${esc(t)}</span>`).join('')
     : '<span class="prof-title prof-title-empty">—</span>';
 
-  // Les 3 fins canoniques (révélées / à découvrir), sans spoiler de mécanique.
-  const ENDINGS = [
-    { key: 'victory',      icon: '🏆', name: "L'Ombre s'efface",  hint: 'Vaincre Lord Voldemort' },
-    { key: 'victory_pact', icon: '🐍', name: 'Le Pacte scellé',   hint: 'Vaincre après avoir scellé le Pacte des Cachots' },
-    { key: 'cycle_broken', icon: '🕊️', name: 'Le Cycle brisé',    hint: 'Briser la Boucle Ténébreuse' }
-  ];
-  const endingPills = ENDINGS.map(e => {
+  const endingPills = _PROFILE_ENDINGS.map(e => {
     const got = !!(p.endingsSeen && p.endingsSeen[e.key]);
     const label = got ? e.name : '???';
     const title = got ? e.name : `${e.name} — ${e.hint}`;
     return `<span class="prof-ending ${got ? 'seen' : 'locked'}" title="${esc(title)}">`
          + `${got ? e.icon : '·'} ${esc(label)}</span>`;
   }).join('');
+  const gotEndings = _PROFILE_ENDINGS.filter(e => p.endingsSeen && p.endingsSeen[e.key]).length;
 
-  const gotEndings = ENDINGS.filter(e => p.endingsSeen && p.endingsSeen[e.key]).length;
   el.innerHTML = `
-    <details class="prof-details">
-      <summary class="prof-summary">📜 Codex du Sorcier · <span class="prof-count">${gotEndings}/${ENDINGS.length} fins</span></summary>
-      <div class="prof-sub">Mémoire de tes parties achevées. Purement honorifique — aucun avantage hérité.</div>
-      <div class="prof-stat">Victoires : <b>${p.victories | 0}</b>${(p.cyclesBroken | 0) ? ` · Cycles brisés : <b>${p.cyclesBroken | 0}</b>` : ''}</div>
-      <div class="prof-titles">${titleChips}</div>
-      <div class="prof-endings">${endingPills}</div>
-    </details>`;
-  el.style.display = 'block';
+    ${banner}
+    <div class="wcodex-sub">Mémoire de tes parties achevées. Purement honorifique — aucun avantage hérité.</div>
+    <div class="wcodex-stats">
+      <span class="wcodex-stat"><b>${p.victories | 0}</b> victoire${(p.victories | 0) > 1 ? 's' : ''}</span>
+      <span class="wcodex-stat"><b>${p.cyclesBroken | 0}</b> cycle${(p.cyclesBroken | 0) > 1 ? 's' : ''} brisé${(p.cyclesBroken | 0) > 1 ? 's' : ''}</span>
+    </div>
+    <div class="wcodex-section-label">Titres</div>
+    <div class="prof-titles">${titleChips}</div>
+    <div class="wcodex-section-label">Fins découvertes · ${gotEndings}/${_PROFILE_ENDINGS.length}</div>
+    <div class="prof-endings">${endingPills}</div>`;
+}
+
+function openWizardCodex() {
+  renderProfileCodex();
+  const m = document.getElementById('wizard-codex-modal');
+  if (m) m.style.display = 'flex';
+}
+
+function closeWizardCodex() {
+  const m = document.getElementById('wizard-codex-modal');
+  if (m) m.style.display = 'none';
+}
+
+// Visibilité du bouton « Codex du Sorcier » du hub. Masqué tant que le profil
+// est vierge (aucun spoiler de fin). Appelé par enterStartHub (save-ui.js).
+function _refreshHubCodexBtn() {
+  const btn = document.getElementById('hub-codex-btn');
+  if (!btn) return;
+  const p = _profileRead();
+  const has = (p.victories | 0) > 0 || (p.cyclesBroken | 0) > 0;
+  btn.style.display = has ? '' : 'none';
 }
 
 // Visibilité de la case New Game+ à l'étape 1 du player-select. Affichée
