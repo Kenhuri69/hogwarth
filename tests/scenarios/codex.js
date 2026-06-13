@@ -760,6 +760,10 @@ async function scenarioEndingAssets() {
     const va = document.getElementById('victory-art');
     const vArtSrc = va ? (va.getAttribute('src') || '') : '';
     const vArtHidden = va && va.style.display === 'none';   // onerror n'a pas (encore) montré
+    // (b) §14.2.2 — beat des héros : solo Harry/Gryffondor → ligne intime, sans clin d'œil.
+    const vSpeechEl = document.getElementById('victory-speech');
+    const vSpeechTxt = vSpeechEl ? vSpeechEl.textContent : '';
+    const vSpeechHtml = vSpeechEl ? vSpeechEl.innerHTML : '';
     const vm = document.getElementById('victory-modal');
     if (vm) vm.style.display = 'none';
 
@@ -777,6 +781,7 @@ async function scenarioEndingAssets() {
     return {
       hasPlayEnding, sample, endingThrew,
       vArtExists, vArtHidden0, vArtSrc, vArtHidden,
+      vSpeechTxt, vSpeechHtml,
       bArtExists, bArtSrcChoice, bArtSrc, bArtSrcAfterClose
     };
   });
@@ -792,6 +797,11 @@ async function scenarioEndingAssets() {
   assert(r.vArtSrc.endsWith('ending_victory.jpg'),
     `showVictoryScreen doit câbler ending_victory.jpg (${r.vArtSrc})`);
   assert(r.vArtHidden, '#victory-art reste masqué tant que l\'asset est absent (onerror)');
+  // (b) §14.2.2 — beat solo rendu dans le discours réel ; pas de clin d'œil (canon == jouée).
+  assert(/Harry Potter/.test(r.vSpeechTxt) && /seul·e/.test(r.vSpeechTxt),
+    `beat héros solo absent du discours de victoire (${r.vSpeechTxt.slice(0, 120)})`);
+  assert(!/victory-speech-wink/.test(r.vSpeechHtml),
+    'pas de clin d\'œil attendu quand la Maison canon == Maison jouée');
 
   assert(r.bArtExists, '#break-cycle-art absent du DOM');
   assert(r.bArtSrcChoice === '', 'l\'écran de choix ne doit PAS afficher d\'illustration');

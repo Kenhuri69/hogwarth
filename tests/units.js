@@ -1312,6 +1312,28 @@ function loadModule(relPath, exportNames, globals = {}) {
     full.includes('Bannière de Godric') && full.includes('Pacte des Cachots') &&
     full.includes('Codex de Rowena') && full.includes('Médaillon de Helga'));
   check('cumul : reconnaissance présente', full.includes('mille ans'));
+
+  // (b) Héros / solo-duo : beat du palier + clin d'œil Maison canon ≠ jouée.
+  const solo = _victorySpeechVariants({ heroes: [{ name: 'Harry Potter', canonHouse: 'Gryffondor' }] });
+  check('solo → beat intime (seul·e)', solo.includes('seul·e') && solo.includes('Harry Potter'));
+  const duo = _victorySpeechVariants({
+    heroes: [{ name: 'Harry Potter', canonHouse: 'Gryffondor' },
+             { name: 'Hermione Granger', canonHouse: 'Gryffondor' }] });
+  check('duo → échange à deux voix',
+    duo.includes('Harry Potter') && duo.includes('Hermione Granger') && duo.includes('Ensemble'));
+  check('solo ≠ duo (pas d\'échange en solo)', !solo.includes('Ensemble'));
+  // Clin d'œil : héros canon ≠ Maison jouée.
+  const wink = _victorySpeechVariants({
+    chosenHouse: 'Serpentard',
+    heroes: [{ name: 'Harry Potter', canonHouse: 'Gryffondor' }] });
+  check('Maison canon ≠ jouée → clin d\'œil', wink.includes('victory-speech-wink') && wink.includes("l'ironie"));
+  // Pas de clin d'œil si la Maison canon == Maison jouée.
+  const noWink = _victorySpeechVariants({
+    chosenHouse: 'Gryffondor',
+    heroes: [{ name: 'Harry Potter', canonHouse: 'Gryffondor' }] });
+  check('Maison canon == jouée → pas de clin d\'œil', !noWink.includes('victory-speech-wink'));
+  // Défensif : heroes absent / vide → pas de beat (b).
+  check('heroes vide → pas de beat héros', !_victorySpeechVariants({ heroes: [] }).includes('victory-speech-heroes'));
 })();
 
 // ============================================================

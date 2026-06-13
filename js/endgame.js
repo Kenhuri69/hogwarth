@@ -19,18 +19,47 @@
 // Variantes conditionnelles du discours (Chapitre 14 §14.2.2, P1) :
 // _victorySpeechVariants(ctx) est un helper PUR (testé dans tests/units.js)
 // qui retourne les blocs HTML à concaténer au discours de base de
-// #victory-speech selon le contexte de fin (Maison, choix moral du Pacte,
-// Éclats remis, quêtes Signature). Aucune branche d'arc, aucun gate : ce
+// #victory-speech selon le contexte de fin (héros choisis & solo/duo, Maison,
+// choix moral du Pacte, Éclats remis, quêtes Signature). Aucune branche, aucun gate : ce
 // sont des couches de TEXTE posées sur la même cinématique. Tout est
 // défensif — champ absent → bloc omis (jamais de crash, texte de base seul).
 
 // Pur & testable. `ctx` regroupe les flags de fin déjà présents dans l'état.
-// Ordre d'affichage (concaténé après le discours de base) : révélation des
-// Éclats → héritage des Signatures → choix moral (Pacte) → dernier mot de
-// Dumbledore coloré par la Maison.
+// Ordre d'affichage (concaténé après le discours de base) : beat des héros sur
+// le palier (solo intime / duo à deux voix + clin d'œil Maison canon ≠ jouée) →
+// révélation des Éclats → héritage des Signatures → choix moral (Pacte) →
+// dernier mot de Dumbledore coloré par la Maison.
 function _victorySpeechVariants(ctx) {
   ctx = ctx || {};
   const blocks = [];
+  const esc = (s) => (typeof htmlEscape === 'function' ? htmlEscape(String(s)) : String(s));
+
+  // (b) §14.2.2(b) — Beat des héros sur le palier, selon solo/duo et l'identité
+  // des héros choisis. Camera sur les héros avant le dernier mot de Dumbledore.
+  const heroes = Array.isArray(ctx.heroes) ? ctx.heroes.filter(h => h && h.name) : [];
+  if (heroes.length === 1) {
+    blocks.push(
+      `<p class="victory-speech-heroes"><em>Sur le palier, ${esc(heroes[0].name)}
+       s'arrête un instant, seul·e. « Je suis descendu·e seul·e jusqu'au fond. Le
+       château s'en souviendra. »</em></p>`);
+  } else if (heroes.length >= 2) {
+    blocks.push(
+      `<p class="victory-speech-heroes"><em>Sur le palier, ${esc(heroes[0].name)}
+       se tourne vers ${esc(heroes[1].name)} : « On a touché le fond — et on est
+       remontés. » — « Ensemble, répond ${esc(heroes[1].name)}. Comme
+       toujours. »</em></p>`);
+  }
+  // Clin d'œil : un héros dont la Maison canon diffère de la Maison jouée note
+  // l'ironie d'avoir vaincu sous une autre bannière (1er concerné seulement).
+  if (ctx.chosenHouse) {
+    const odd = heroes.find(h => h.canonHouse && h.canonHouse !== ctx.chosenHouse);
+    if (odd) {
+      blocks.push(
+        `<p class="victory-speech-wink"><em>${esc(odd.name)} sourit : avoir gagné
+         sous les couleurs de ${esc(ctx.chosenHouse)}, quand ${esc(odd.canonHouse)}
+         l'a vu naître… l'ironie ne lui échappe pas.</em></p>`);
+    }
+  }
 
   // (d) §14.2.2(d) — Révélation des Éclats : si le fil rouge des 3 Éclats de
   // la Clé de Voûte a été remis (quête `eclats_clef_voute` terminée), un
@@ -215,6 +244,15 @@ function refreshEndingType() {
       // helper pur _victorySpeechVariants pour produire les blocs à concaténer.
       const ctx = {
         chosenHouse:        (typeof chosenHouse !== 'undefined') ? chosenHouse : null,
+        // (b) §14.2.2(b) — héros actifs (nom + Maison canon) pour le beat du palier.
+        heroes:             (typeof party !== 'undefined' && Array.isArray(party))
+          ? party.slice(0, (typeof partySize !== 'undefined' ? partySize : 1))
+              .filter(c => c && c.heroKey)
+              .map(c => ({
+                name:       c.name,
+                canonHouse: (typeof _heroCanonHouse === 'function') ? _heroCanonHouse(c.heroKey) : null,
+              }))
+          : [],
         slythPactChoice:    (typeof slythPactChoice !== 'undefined') ? slythPactChoice : null,
         gryffSignatureDone: (typeof gryffSignatureDone !== 'undefined') && gryffSignatureDone,
         slythSignatureDone: (typeof slythSignatureDone !== 'undefined') && slythSignatureDone,
