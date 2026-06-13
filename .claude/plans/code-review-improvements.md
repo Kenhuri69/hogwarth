@@ -102,18 +102,22 @@ silencieusement une action du joueur ; surface XSS unifiée.*
 *Critère de passage : doc = code sur les invariants, et les régressions les
 plus probables sont couvertes par un test.*
 
-- [ ] **1.1 — Résorber la dérive doc/code de CLAUDE.md** ✅ (M)
-  Vérifié : **83 balises `<script>`** dans `index.html` vs **33 documentées** ;
-  ~26 modules absents de la section « Structure des fichiers » (`combat-fx`,
-  `codex`, `floor-events`, `potions`, `forge`, `library`, `endgame`,
-  `multiplayer*`, `teleport`, `haptics`, `help-tour`, `pwa`…) ; l'alias
-  **`ENEMIES = MONSTERS` documenté mais inexistant dans `js/data.js`** (grep
-  vide). CLAUDE.md est la mémoire projet : sa dérive provoque de mauvaises
-  décisions (humaines et IA).
-  → Mettre à jour la liste des fichiers + l'ordre de chargement (généré depuis
-  `index.html`, pas énuméré à la main) ; pour `ENEMIES`, **corriger la doc**
-  (l'alias n'est utilisé nulle part — ne pas ajouter de code mort).
-  *Vérif : script ponctuel comparant `<script src>` ↔ section doc.*
+- [x] **1.1 — Résorber la dérive doc/code de CLAUDE.md** ✅ (M) — FAIT 2026-06-13
+  Vérifié sur master actuel : **84 modules `<script src>`** dans `index.html`
+  (85 `<script>` dont 1 inline) vs **33 documentés** ; l'alias
+  **`ENEMIES = MONSTERS` documenté mais inexistant** (grep `js/` = 0 def, 0 usage).
+  → Section « Structure des fichiers » réécrite **dans l'ordre de chargement réel**
+  (84 entrées, modules manquants ajoutés : `html-escape`, `combat-fx`, `haptics`,
+  `codex`, `floor-ambiance`, `floor-events`, `room-flavor`, `ui-codex`, `textures`,
+  `dungeon-fx`, `cinematics`, `teleport`, `potions`, `house-donation`, `karaoke`,
+  `multiplayer*`, `portal-*`, `visit-*`, `pvp-duel`, `atelier-voyageur`, `endgame`,
+  `break-cycle`, `forge`, `library`, `help-tour`, `pwa`). La liste « ordre de
+  chargement » manuelle redondante est supprimée (l'arborescence EST l'ordre).
+  Ligne `ENEMIES = MONSTERS` retirée (pas de code mort réintroduit).
+  → Nouveau garde-fou `tools/check_doc_modules.js` (`--print` régénère l'ordre
+  canonique ; sans arg vérifie set + ordre, exit 1 en dérive) + étape CI
+  (`test.yml`). Vérifié : `node tools/check_doc_modules.js` → 84 modules alignés,
+  units (503), smoke (202) verts.
 
 - [ ] **1.2 — Audit du MANIFEST du loader** (S)
   Croiser les globals critiques des modules récents (`house-donation.js`,
