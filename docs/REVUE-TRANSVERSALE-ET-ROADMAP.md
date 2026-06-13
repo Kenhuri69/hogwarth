@@ -172,7 +172,7 @@ système, savoir s'il est livré et où — et `node tests/smoke.js` reste vert.
 
 | Tâche | Priorité | Chapitres / systèmes | Complexité | Dépendances |
 |-------|----------|----------------------|------------|-------------|
-| **Audit de complétude du Codex** : combien d'entrées rédigées vs coquilles ; remplir les `textVersions` manquantes (veiled/revealed/corrupted) | 🔴 Haute | 12, `codex.js` | Moyenne | Phase 1 |
+| ✅ **Audit de complétude du Codex** *(fait, 2026-06-13)* : 36 entrées, **0 coquille vide**, 0 condition morte / texte inatteignable / lien pendouillant. 6 entrées de lore majeur (4 Voix, Dumbledore, Manon) enrichies d'une couche `revealed` (revealed 24→30). Les 6 mono-couche restantes sont des termes courts légitimes (§12.3). | 🔴 Haute | 12, `codex.js` | Moyenne | Phase 1 |
 | **PNJ de signature manquants** : Chevalier Fantôme 🦁 + Écho de Salazar 🐍 (ou rabattre sur les chefs) | 🟠 Moyenne | 06, 08, `npcs.js`, `npc-dialog.js` | Moyenne | Décision design |
 | **Objectifs de quête neufs** des signatures : « combat sans fuite », escorte/vague défensive, raccourcis Salazar (`teleport.js` existe déjà ?) | 🟠 Moyenne | 08, `quests*.js`, `movement.js` | Élevée | PNJ ci-dessus |
 | **Échos temporels → Codex** : Set `temporalEchoSeen` + robinet `corruptedBy` zone D | 🟠 Moyenne | 10, 12, `codex.js`, `floor-ambiance.js` | Moyenne | Codex audit |
