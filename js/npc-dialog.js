@@ -458,6 +458,25 @@ function _darkLoopSuffixPages(npc) {
   return _splitDialogPage(text, _DIALOG_PAGE_MAXLEN);
 }
 
+// Suffixe « réputation par PNJ » (ch.06 §6.9.2) : les 2-3 PNJ à choix gris
+// portent une variante lue selon la réputation DÉRIVÉE (npcReputationFor, quests.js)
+// du choix du Pacte des Cachots. `reputationLines.warm` si rep>0, `.hostile` si
+// rep<0 ; rien à neutre (0). Même patron muet que `_eclatSuffixPages` (P2).
+// string|tableau. Défensif : [] si champ absent, helper absent, ou rep nulle.
+function _reputationSuffixPages(npc) {
+  const lines = npc && npc.reputationLines;
+  if (!lines) return [];
+  const rep = (typeof npcReputationFor === 'function') ? npcReputationFor(npc.id) : 0;
+  if (!rep) return [];
+  const raw = rep > 0 ? lines.warm : lines.hostile;
+  if (raw === undefined || raw === null) return [];
+  const text = Array.isArray(raw)
+    ? raw[Math.floor(Math.random() * raw.length)]
+    : raw;
+  if (!text) return [];
+  return _splitDialogPage(text, _DIALOG_PAGE_MAXLEN);
+}
+
 function _npcDialogActions(npc, state) {
   const out = [];
   // Actions contextuelles quête — énumère TOUTES les quêtes actionnables du
@@ -855,6 +874,17 @@ function openNpcDialog(npcId) {
     const lastSrc = _pageData.srcPages.length
       ? _pageData.srcPages[_pageData.srcPages.length - 1] : 0;
     for (const sub of _darkPages) {
+      _pageData.pages.push(sub);
+      _pageData.srcPages.push(lastSrc);
+    }
+  }
+  // Suffixe réputation (§6.9.2) — appendu après les autres suffixes muets, pour
+  // les PNJ à choix gris (écho de Salazar, Kingsley) selon la réputation dérivée.
+  const _repPages = _reputationSuffixPages(npc);
+  if (_repPages.length) {
+    const lastSrc = _pageData.srcPages.length
+      ? _pageData.srcPages[_pageData.srcPages.length - 1] : 0;
+    for (const sub of _repPages) {
       _pageData.pages.push(sub);
       _pageData.srcPages.push(lastSrc);
     }

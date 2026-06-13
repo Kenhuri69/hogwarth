@@ -745,6 +745,12 @@ const NPCS = [
       1: "(Un murmure froid t'accompagne.) Tu portes un Éclat… La première stèle le dirait mieux que moi : on ne scelle pas par peur. On tient la porte. Godric avait raison sur ce point.",
       2: "Deux Éclats. Alors écoute ce que nul autre n'avouera : j'ai scellé ma part avec ma faute. Le mal d'en bas n'est pas seulement venu du dehors — nous l'avons nourri de nous-mêmes.",
       3: "Trois Éclats, petit. Rowena l'avait écrit avant de mourir : comprends, et la faille apparaît. Tu sais maintenant ce que ton ennemi cherche au fond — c'est ce que j'ai aidé à enfermer."
+    },
+    // ── Suffixe réputation (ch.06 §6.9.2) — dérivé de slythPactChoice ──
+    // L'écho se souvient du choix du Pacte : scellé (warm) ou défié (hostile).
+    reputationLines: {
+      warm:    "(L'écho s'enroule autour de toi, presque tendre.) Tu as scellé. Bien. Désormais ma part marche avec toi, et toi avec elle. Le pouvoir t'écoutera, héritier — veille seulement à ne jamais l'écouter en retour.",
+      hostile: "(L'écho se fige, froid comme la pierre.) Tu m'as défié. Je ne t'en garde pas rancune — un serpent respecte qui garde les mains libres. Mais ne reviens pas quémander ce que tu as refusé de prendre.",
     }
   },
   {
@@ -1304,6 +1310,13 @@ const NPCS = [
       "Tu m'as déjà vu, n'est-ce pas ? Plus bas, dans un autre temps. Je tiens encore ce seuil — mais le château se rejoue, et je ne sais plus quelle fois est la vraie.",
       "L'Ordre est tombé là-haut, et pourtant me revoici, posté au même seuil. La Boucle ne libère personne. Elle nous garde à notre poste, indéfiniment."
     ],
+    // ── Suffixe réputation (ch.06 §6.9.2) — l'Auror « trahi par le Pacte » ──
+    // Réaction de signe OPPOSÉ à l'écho de Salazar : défier le Serpent gagne sa
+    // confiance (warm), sceller le Pacte éveille sa méfiance (hostile).
+    reputationLines: {
+      warm:    "Un mot m'est parvenu des cachots : tu as tenu tête à la vieille voix du Serpent, et tu n'as rien signé. L'Ordre se souvient de ceux qui refusent les raccourcis. Tu as ma confiance, sorcier.",
+      hostile: "On murmure que tu as scellé un pacte avec ce qui dort sous les cachots. Je ne juge pas vite — mais je garde un œil sur qui serre la main des vieux serpents. Prends garde à ce que tu as accepté.",
+    },
     dialogues: {
       greeting: [
         "Reste discret. Ce seuil est observé. Je suis Kingsley Shacklebolt — l'Ordre m'a posté ici en avant-garde.",

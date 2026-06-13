@@ -1687,4 +1687,55 @@ async function scenarioLoopDarkSuffix() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction, scenarioLoopDarkSuffix] };
+// Réputation par PNJ DÉRIVÉE du choix gris du Pacte (ch.06 §6.9.2) : l'écho de
+// Salazar et Kingsley réagissent de signe OPPOSÉ selon slythPactChoice.
+async function scenarioNpcReputation() {
+  console.log('\n── Scénario : réputation par PNJ (Pacte des Cachots, §6.9.2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serpentard' });
+
+  const r = await page.evaluate(() => {
+    const joined = (id) => { openNpcDialog(id); return _dialogState.pages.join(' || '); };
+    const set = (c) => { slythPactChoice = c; };
+
+    // Aucun choix → aucun suffixe réputation.
+    set(null);
+    const echoNone = joined('echo_salazar');
+    const kingNone = joined('kingsley');
+
+    // Pacte scellé : écho chaleureux, Kingsley méfiant.
+    set('pact');
+    const echoPact = joined('echo_salazar');
+    const kingPact = joined('kingsley');
+
+    // Défiance : signes inversés.
+    set('defiance');
+    const echoDef = joined('echo_salazar');
+    const kingDef = joined('kingsley');
+
+    return { echoNone, kingNone, echoPact, kingPact, echoDef, kingDef,
+      repFn: typeof npcReputationFor === 'function' };
+  });
+
+  assert(r.repFn, 'npcReputationFor doit être défini');
+  // Neutre : ni warm ni hostile.
+  assert(!r.echoNone.includes('marche avec toi') && !r.echoNone.includes('mains libres'),
+    'écho : aucun suffixe réputation sans choix');
+  assert(!r.kingNone.includes('raccourcis') && !r.kingNone.includes('vieux serpents'),
+    'Kingsley : aucun suffixe réputation sans choix');
+  // Pacte : écho warm, Kingsley hostile.
+  assert(r.echoPact.includes('marche avec toi'), 'écho : suffixe warm attendu après le Pacte');
+  assert(r.kingPact.includes('vieux serpents'), 'Kingsley : suffixe hostile attendu après le Pacte');
+  // Défiance : écho hostile, Kingsley warm (signes opposés).
+  assert(r.echoDef.includes('mains libres'), 'écho : suffixe hostile attendu après la Défiance');
+  assert(r.kingDef.includes('raccourcis'), 'Kingsley : suffixe warm attendu après la Défiance');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (réputation PNJ)`);
+  }
+  console.log('  ✅ Réputation par PNJ dérivée conforme (signes opposés écho/Kingsley)');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction, scenarioLoopDarkSuffix, scenarioNpcReputation] };
