@@ -239,14 +239,20 @@ de fermer. **C'est le pont narratif vers la Boucle.**
   `renderer.js`).
 - ✅ **Autosave** raison `victory` (la victoire est un point de non-régression).
 
-### 14.3.2 Réactions des PNJ & état de Poudlard — 💡
+### 14.3.2 Réactions des PNJ & état de Poudlard — ✅
 
-> 💡 **Proposition de beats émotionnels** (cosmétiques, non bloquants) :
+> ✅ **Beats émotionnels** (cosmétiques, non bloquants) — implémentés :
 
-- **Retour des PNJ profonds en ton « après »** : Kingsley, Bill, Sirius — déjà
+- ✅ **Retour des PNJ profonds en ton « après »** : Kingsley, Bill, Sirius — déjà
   recyclés en Boucle ([04 §4.2](04-structure-actes-et-etages.md), `effectiveFloor`)
-  — gagneraient une **ligne de dialogue post-victoire** (`victoryAchieved`) : moins
-  martiale, plus grave, *« Tu es redescendu. Pourquoi ? »*.
+  — portent une **ligne de dialogue post-victoire** (`victoryAchieved`), moins
+  martiale, plus grave, *« Tu es redescendu. Pourquoi ? »* (`postVictoryLines`
+  dans `npcs.js`). Suffixe muet appendu en fin de dialogue par
+  `_postVictorySuffixPages` (`npc-dialog.js`), résolu par le helper pur
+  `pickPostVictoryLine`. **Mutuellement exclusif** avec `darkLoopLines` : la
+  variante « après » ne se lit qu'aux étages de surface (< 18, où ces PNJ
+  réapparaissent post-victoire) ; en Boucle profonde (18-20) `darkLoopLines`
+  prend le relais. Couvert par `tests/units.js` + `tests/scenarios/npc.js`.
 - **Le Gardien de la Boucle** (✅ PNJ exclusif post-victoire, étage 11) **est** la
   première voix de l'après : il accueille le héros dans le château rejoué et donne
   les quêtes de purge. C'est lui qui **incarne** la transition vers la Boucle.
@@ -606,7 +612,7 @@ function computeEndingType(ctx) {
 | Cible | ✅/💡 | Action |
 |-------|------|--------|
 | **Codex** | ✅ | Entrées de fin câblées (`cycle_brise`, `porteur_eclats`…). 💡 ajouter `epilogue` (texte `variants` selon `endingType`) ; appeler `checkCodexUnlocks('victory')` est **déjà** fait. |
-| **PNJ** | 💡 | Lignes post-victoire gardées par `victoryAchieved` (Kingsley/Bill/Sirius/Gardien) via `dialogues` conditionnels (`npc-dialog.js`) — cosmétique. |
+| **PNJ** | ✅ | Lignes post-victoire gardées par `victoryAchieved` (Kingsley/Bill/Sirius) appendues par `_postVictorySuffixPages` (`npc-dialog.js`, helper pur `pickPostVictoryLine`) ; exclusives de `darkLoopLines` (surface < 18 vs Boucle profonde). Gardien = voix dédiée de l'après (étage 11). Cosmétique. |
 | **Quêtes signature** | ✅ flags / 💡 lecture | Lire `<house>SignatureDone` dans `showVictoryScreen` (B.c). |
 | **Boucle** | ✅ | Aucune modif : la Boucle reste le post-game. 💡 ton par `loopNumber` déjà partiellement exposé (HUD). |
 
@@ -642,7 +648,7 @@ function computeEndingType(ctx) {
 |-------|---------|-----------|------|--------|
 | **P0** | ✅ Déjà en jeu : victoire (A), Pacte (B partiel), Briser le Cycle (C), Codex de fin, Ironman | — | 0 (fait) | — |
 | **P1** | 💡 **Variantes texte (B)** : Maison + Éclats(3) + Pacte `defiance` dans `showVictoryScreen` | flags existants | faible | **élevée** (le « mes choix comptent ») |
-| **P2** | 💡 **Lignes PNJ post-victoire** + beat Grande Salle (si validé) | P1 | moyen | moyenne (émotion) |
+| **P2** | ✅ **Lignes PNJ post-victoire** (Kingsley/Bill/Sirius) + beat Grande Salle — **implémentés** | P1 | moyen | moyenne (émotion) |
 | **P3** | 💡 **`endingType` + entrée Codex `epilogue`** (épilogue dynamique) | P1 | faible-moyen | moyenne (rejouabilité Codex) |
 | **P4** | 💡 **Assets de fin** (illustrations + sample C) | P1-P3 | moyen (prod art) | élevée (mémorabilité) |
 | **P5** | 💡 **NG+ opt-in** (profil + titres + Codex de profil) | P3 | moyen-élevé | rejouabilité long terme |
