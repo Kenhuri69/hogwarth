@@ -646,4 +646,94 @@ async function scenarioLoopPassiveXp() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp] };
+// Épilogue dynamique (Chapitre 14 §14.6.2, P3) : label de fin `endingType`
+// dérivé des flags existants, source de l'entrée Codex `epilogue` (robinet
+// `ending`). Cosmétique, non-gating, additif.
+async function scenarioEndingEpilogue() {
+  console.log('\n── Scénario : épilogue dynamique (endingType + Codex, §14.6.2 P3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const wired = await page.evaluate(() => ({
+    computeFn: typeof computeEndingType === 'function',
+    refreshFn: typeof refreshEndingType === 'function',
+    epilogue:  !!getCodexEntry('epilogue'),
+    hasEndingType: typeof endingType !== 'undefined',
+    ctxHasEnding: '_codexContext' in window
+      ? ('endingType' in _codexContext()) : false,
+  }));
+  console.log('  wired :', wired);
+  assert(wired.computeFn, 'computeEndingType absent');
+  assert(wired.refreshFn, 'refreshEndingType absent');
+  assert(wired.epilogue,  'entrée Codex epilogue absente');
+  assert(wired.hasEndingType, 'global endingType absent');
+  assert(wired.ctxHasEnding, '_codexContext doit exposer endingType');
+
+  // Fresh : pas de victoire → endingType null, épilogue verrouillé.
+  const fresh = await page.evaluate(() => {
+    victoryAchieved = false; cycleBroken = false; slythPactChoice = null;
+    refreshEndingType();
+    return { endingType, state: codexEntryState(getCodexEntry('epilogue'), _codexContext()) };
+  });
+  console.log('  fresh :', fresh);
+  assert(fresh.endingType === null, `endingType devrait être null (${fresh.endingType})`);
+  assert(fresh.state === 'locked',  `épilogue devrait être locked (${fresh.state})`);
+
+  // Victoire via le hook réel checkVictoryTrigger → label posé, épilogue veiled.
+  const won = await page.evaluate(() => {
+    const triggered = checkVictoryTrigger('voldemort_revenu');
+    const modal = document.getElementById('victory-modal');
+    if (modal) modal.style.display = 'none';   // referme la cinématique
+    return { triggered, endingType, state: codexEntryState(getCodexEntry('epilogue'), _codexContext()) };
+  });
+  console.log('  won :', won);
+  assert(won.triggered === true, 'checkVictoryTrigger devrait déclencher');
+  assert(won.endingType === 'victory', `endingType devrait être victory (${won.endingType})`);
+  assert(won.state === 'veiled', `épilogue devrait être veiled après victoire (${won.state})`);
+
+  // Pacte scellé → label victory_pact, épilogue toujours veiled (pas révélé).
+  const pact = await page.evaluate(() => {
+    slythPactChoice = 'pact'; refreshEndingType();
+    return { endingType, state: codexEntryState(getCodexEntry('epilogue'), _codexContext()) };
+  });
+  console.log('  pact :', pact);
+  assert(pact.endingType === 'victory_pact', `endingType devrait être victory_pact (${pact.endingType})`);
+  assert(pact.state === 'veiled', 'épilogue devrait rester veiled avec le Pacte');
+
+  // Cycle brisé → label cycle_broken, épilogue révélé (robinet `ending`).
+  const broke = await page.evaluate(() => {
+    cycleBroken = true; refreshEndingType();
+    return { endingType, state: codexEntryState(getCodexEntry('epilogue'), _codexContext()) };
+  });
+  console.log('  broke :', broke);
+  assert(broke.endingType === 'cycle_broken', `endingType devrait être cycle_broken (${broke.endingType})`);
+  assert(broke.state === 'revealed', `épilogue devrait être révélé après Briser le Cycle (${broke.state})`);
+
+  // Persistance + back-fill : round-trip save/load conserve le label, et une
+  // save legacy (sans endingType) le reconstruit depuis les flags restaurés.
+  const persisted = await page.evaluate(() => {
+    const gs = _serializeState();
+    endingType = null;
+    _applyState(gs);
+    const roundTrip = endingType;        // cycle_broken attendu
+    // Legacy : payload sans champ endingType, cycle non brisé mais Pacte scellé.
+    const legacy = _serializeState();
+    delete legacy.endingType;
+    legacy.cycleBroken = false;
+    endingType = 'sentinelle';
+    _applyState(legacy);
+    return { roundTrip, backfill: endingType };
+  });
+  console.log('  persisted :', persisted);
+  assert(persisted.roundTrip === 'cycle_broken', `round-trip devrait conserver cycle_broken (${persisted.roundTrip})`);
+  assert(persisted.backfill === 'victory_pact', `back-fill legacy devrait recalculer victory_pact (${persisted.backfill})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (épilogue P3)`);
+  }
+  console.log('  ✅ Épilogue dynamique : endingType + robinet `ending` + persistance/back-fill OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp, scenarioEndingEpilogue] };

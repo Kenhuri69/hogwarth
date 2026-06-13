@@ -95,6 +95,33 @@ function _victorySpeechVariants(ctx) {
   return blocks.join('\n');
 }
 
+// Label de fin (Chapitre 14 §14.6.2, P3) — PUR & testable. Déduit COMMENT la
+// partie s'est conclue à partir des flags existants, par priorité décroissante :
+// Cycle brisé > victoire avec Pacte scellé > victoire simple > pas encore de fin.
+// C'est un LABEL (Codex/épilogue), jamais un gate : la Boucle reste ouverte
+// quelle que soit sa valeur. Tout défensif (ctx absent → null).
+function computeEndingType(ctx) {
+  ctx = ctx || {};
+  if (ctx.cycleBroken) return 'cycle_broken';
+  if (!ctx.victoryAchieved) return null;
+  if (ctx.slythPactChoice === 'pact') return 'victory_pact';
+  return 'victory';
+}
+
+// Recalcule et persiste `endingType` (global state.js) depuis les flags
+// courants. Appelé à la victoire et au Briser-le-Cycle. Lit des globals → non
+// pur (computeEndingType reste la part pure/testée). No-op si le global n'existe
+// pas (chargement partiel / sandbox de test).
+function refreshEndingType() {
+  if (typeof endingType === 'undefined') return null;
+  endingType = computeEndingType({
+    victoryAchieved: (typeof victoryAchieved !== 'undefined') && victoryAchieved,
+    cycleBroken:     (typeof cycleBroken !== 'undefined') && cycleBroken,
+    slythPactChoice: (typeof slythPactChoice !== 'undefined') ? slythPactChoice : null,
+  });
+  return endingType;
+}
+
 (function () {
   // A1 — sting audio de victoire : garde-fou d'idempotence. La modale peut
   // être ré-affichée (double trigger défensif) ; le son ne doit jouer qu'à
@@ -134,6 +161,8 @@ function _victorySpeechVariants(ctx) {
 
     victoryAchieved = true;
     victoryAt       = new Date().toISOString();
+    // Label de fin (P3) : posé dès la victoire ('victory' ou 'victory_pact').
+    refreshEndingType();
 
     // Force le re-render du donjon avec les textures Ténèbres (§7.1bis)
     // au prochain pas. Indépendant du floor courant : un trigger à

@@ -118,6 +118,8 @@ function declineBreakCycle() {
 // 🕊️ Briser — pose le flag cosmétique, déverrouille le Codex, joue la cinématique.
 function confirmBreakCycle() {
   if (typeof cycleBroken !== 'undefined') cycleBroken = true;
+  // Label de fin (P3) : bascule sur 'cycle_broken' (priorité max).
+  if (typeof refreshEndingType === 'function') refreshEndingType();
   if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('cycle-broken');
   try { if (typeof AudioSystem !== 'undefined' && AudioSystem.playVictory) AudioSystem.playVictory(); } catch (_) { /* no-op */ }
   _breakCyclePage = 0;

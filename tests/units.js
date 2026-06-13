@@ -1315,6 +1315,70 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 11bis. endgame.js — computeEndingType PUR (Chapitre 14 §14.6.2, P3)
+//    Label de fin dérivé : null / victory / victory_pact / cycle_broken.
+// ============================================================
+(function testComputeEndingType() {
+  const { computeEndingType } = loadModule(
+    'js/endgame.js', ['computeEndingType'], { window: {} });
+
+  // Défensif : ctx absent / vide → null (pas encore de fin).
+  check('ending: ctx absent → null', computeEndingType() === null);
+  check('ending: ctx vide → null',   computeEndingType({}) === null);
+  check('ending: pas de victoire → null', computeEndingType({ slythPactChoice: 'pact' }) === null);
+
+  // Victoire simple.
+  check('ending: victoire → victory', computeEndingType({ victoryAchieved: true }) === 'victory');
+  check('ending: victoire + défiance → victory',
+    computeEndingType({ victoryAchieved: true, slythPactChoice: 'defiance' }) === 'victory');
+
+  // Victoire avec Pacte scellé.
+  check('ending: victoire + pacte → victory_pact',
+    computeEndingType({ victoryAchieved: true, slythPactChoice: 'pact' }) === 'victory_pact');
+
+  // Cycle brisé : priorité maximale (écrase pacte et victoire simple).
+  check('ending: cycle brisé → cycle_broken',
+    computeEndingType({ victoryAchieved: true, cycleBroken: true }) === 'cycle_broken');
+  check('ending: cycle brisé prioritaire sur pacte',
+    computeEndingType({ victoryAchieved: true, cycleBroken: true, slythPactChoice: 'pact' }) === 'cycle_broken');
+  // cycleBroken sans victoire (cas théorique) → cycle_broken (priorité stricte).
+  check('ending: cycleBroken seul → cycle_broken',
+    computeEndingType({ cycleBroken: true }) === 'cycle_broken');
+})();
+
+// ============================================================
+// 11ter. codex.js — robinet `ending` + entrée `epilogue` (P3)
+//    Évaluateur pur : la révélation de l'épilogue suit endingType.
+// ============================================================
+(function testCodexEpilogue() {
+  const { getCodexEntry, codexEntryState } = loadModule(
+    'js/codex.js', ['getCodexEntry', 'codexEntryState']);
+
+  const epi = getCodexEntry('epilogue');
+  check('epilogue: entrée présente', !!epi);
+  check('epilogue: catégorie histoire', epi && epi.category === 'histoire');
+  check('epilogue: 4 notes de Maison',
+    epi && epi.variants && epi.variants.house &&
+    ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].every(h => typeof epi.variants.house[h] === 'string'));
+
+  // Verrouillé tant que la victoire n'est pas acquise.
+  check('epilogue: locked sans victoire', codexEntryState(epi, {}) === 'locked');
+  // Ouvert (veiled) à la victoire, quel que soit le label simple.
+  check('epilogue: veiled à la victoire (victory)',
+    codexEntryState(epi, { victoryAchieved: true, endingType: 'victory' }) === 'veiled');
+  check('epilogue: veiled à la victoire (victory_pact)',
+    codexEntryState(epi, { victoryAchieved: true, endingType: 'victory_pact' }) === 'veiled');
+  // Révélé quand le label de fin vaut cycle_broken (robinet `ending`).
+  check('epilogue: revealed quand ending=cycle_broken',
+    codexEntryState(epi, { victoryAchieved: true, endingType: 'cycle_broken' }) === 'revealed');
+  // Le robinet `ending` lit bien endingType, pas cycleBroken directement :
+  // endingType absent malgré cycleBroken → reste veiled (cohérent : endingType
+  // est la source unique, réconciliée par refreshEndingType au runtime).
+  check('epilogue: ending non posé → veiled',
+    codexEntryState(epi, { victoryAchieved: true, cycleBroken: true }) === 'veiled');
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
