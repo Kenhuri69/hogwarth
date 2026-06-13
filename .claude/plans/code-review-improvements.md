@@ -164,14 +164,16 @@ plus probables sont couvertes par un test.*
   ignorable.
   *Vérif : units (503) + smoke (207) verts (filtre durci sans régression).*
 
-- [ ] **1.5 — Cohérence des gardes `typeof` dans `_applyState`** (S)
-  L'audit a signalé des gardes hétérogènes ; contre-vérification : le pattern
-  `if (typeof <global> !== 'undefined')` est **volontaire** (protège contre un
-  réordonnancement de scripts) — ne pas « corriger ». En revanche, documenter
-  ce pattern en tête de `_applyState` pour éviter qu'une future PR le
-  « nettoie », et noter l'invariant `searchedCells` (`{at, count}` uniquement,
-  sérialisation shallow).
-  *Vérif : commentaire en place, aucun changement de comportement.*
+- [x] **1.5 — Cohérence des gardes `typeof` dans `_applyState`** (S) — FAIT 2026-06-13
+  Bloc de conventions ajouté en tête de `_applyState` (save.js) : (1) le pattern
+  `if (typeof <global> !== 'undefined')` est **volontaire** (scope global
+  partagé, protège contre réordonnancement de scripts / module absent — sinon
+  ReferenceError au chargement), **ne pas** le « nettoyer » en affectation nue ;
+  (2) invariant `searchedCells` (`Map "x,y" → {at,count}`, sérialisation shallow
+  `Array.from`, rebuild ne restaurant que `at`/`count`). **Commentaire seul,
+  aucun changement de comportement.** Bump cache (comment dans un JS servi) :
+  save.js v34→35, CACHE_VERSION v119→v120.
+  *Vérif : units (503) + smoke (207) + pwa-smoke verts.*
 
 ---
 
@@ -312,7 +314,7 @@ existants. À discuter avant tout chantier.*
 | Étape | Items | Statut |
 |-------|-------|--------|
 | 0 — Critique | 4 | ✅ fait (2026-06-12) |
-| 1 — Majeur | 5 | ☐ à faire |
+| 1 — Majeur | 5 | ✅ fait (2026-06-13) |
 | 2 — UX | 8 | ☐ à faire |
 | 3 — Structure | 5 | ☐ à faire |
 | 4 — Contenu | propositions | ☐ à arbitrer |
