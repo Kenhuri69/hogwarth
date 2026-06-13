@@ -1614,6 +1614,122 @@ async function scenarioStun() {
   await browser.close();
 }
 
+// 1.3.3 — Interactions de statuts combinés (stun + fear + weaken) sur héros
+// ET ennemis : coexistence, décompte correct par tickStatuses, et surtout
+// JAMAIS de segment figé même si tout le groupe est privé d'action.
+async function scenarioStatusComboNoFreeze() {
+  console.log('\n── Scénario : statuts combinés stun+fear+weaken (jamais figé) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'] });
+  await startDummyFight(page, { hp: 200 });
+
+  // T1 — Coexistence sur un ennemi : les trois statuts cohabitent ; un tick
+  // ne décompte PAS le stun, décompte fear et weaken, et n'inflige aucun
+  // dégât (aucun n'est un DoT).
+  const t1 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.statusEffects = [];
+    applyStatus(e, 'stun',   0, 2);
+    applyStatus(e, 'fear',   0, 2);
+    applyStatus(e, 'weaken', 4, 2);   // power = DEF perdue (restaurée à l'expiry)
+    const hpBefore = e.currentHp;
+    tickStatuses(e, true);
+    const find = id => e.statusEffects.find(s => s.id === id);
+    return {
+      hpBefore, hpAfter: e.currentHp,
+      stunTurns: find('stun')?.turns,
+      fearTurns: find('fear')?.turns,
+      weakenTurns: find('weaken')?.turns,
+      count: e.statusEffects.length,
+    };
+  });
+  console.log('  T1 enemy coexist:', t1);
+  assert(t1.hpAfter === t1.hpBefore, 'aucun statut combiné ne doit blesser (pas de DoT)');
+  assert(t1.stunTurns === 2,         'stun ne doit pas être décompté par tickStatuses');
+  assert(t1.fearTurns === 1,         'fear doit être décompté (2→1)');
+  assert(t1.weakenTurns === 1,       'weaken doit être décompté (2→1)');
+  assert(t1.count === 3,             'les 3 statuts doivent coexister');
+
+  // T2 — Ennemi stun+fear+weaken : il saute son action (stun prioritaire),
+  // aucun dégât au groupe même avec une ATK énorme.
+  const t2 = await page.evaluate(() => {
+    enemyGroup.length = 1;             // duo peut rouler un groupe de 2 — on isole l'unique ennemi étourdi
+    const e = enemyGroup[0];
+    e.statusEffects = [];
+    e.atk = 80; e.abilities = [];
+    applyStatus(e, 'stun', 0, 1);
+    applyStatus(e, 'fear', 0, 3);
+    applyStatus(e, 'weaken', 3, 3);
+    party.forEach(c => { c.statusEffects = []; c.hp = c.hpMax; });
+    const hpBefore = party.map(c => c.hp);
+    enemyTurn();
+    return {
+      hpBefore, hpAfter: party.map(c => c.hp),
+      stunGone: !e.statusEffects.some(s => s.id === 'stun'),
+    };
+  });
+  console.log('  T2 enemy skip:', t2);
+  assert(t2.hpAfter[0] === t2.hpBefore[0] && t2.hpAfter[1] === t2.hpBefore[1],
+    'ennemi étourdi (même apeuré/affaibli) ne doit pas frapper');
+  assert(t2.stunGone, 'stun ennemi doit être consommé au saut de tour');
+
+  // T3 — Tout le groupe privé d'action : Harry étourdi + Hermione apeurée
+  // (fear forcé à sauter). On pilote la chaîne de setTimeout de façon
+  // déterministe (queue drainée) pour vérifier qu'aucun segment ne reste
+  // FIGÉ : la boucle termine et un héros finit par regagner la main.
+  const t3 = await page.evaluate(() => {
+    // Fear déterministe : forcer le jet à toujours « rater » (skip).
+    const origRandom = Math.random;
+    Math.random = () => 0; // < 0.5 → fear skip systématique
+    // setTimeout → file synchrone drainée manuellement.
+    const origST = window.setTimeout;
+    const queue = [];
+    window.setTimeout = (fn) => { queue.push(fn); return 0; };
+    let drained = 0, frozen = false;
+    try {
+      enemyGroup.length = 1;          // isole un unique ennemi (groupe duo possiblement à 2)
+      const e = enemyGroup[0];
+      e.statusEffects = []; e.atk = 1; e.abilities = [];
+      party.forEach(c => { c.hp = c.hpMax; c.statusEffects = []; });
+      applyStatus(party[0], 'stun', 0, 1);     // Harry étourdi 1 tour
+      applyStatus(party[1], 'fear', 0, 1);     // Hermione apeurée 1 tour
+      currentBattleChar = 0;
+      enemyTurn();
+      while (queue.length) {
+        if (drained > 40) { frozen = true; break; }   // garde anti-boucle infinie
+        const fn = queue.shift();
+        fn();
+        drained++;
+      }
+    } finally {
+      window.setTimeout = origST;
+      Math.random = origRandom;
+    }
+    const log = document.getElementById('battle-log')?.textContent || '';
+    return {
+      drained, frozen,
+      inBattle,
+      // Un héros vivant a-t-il retrouvé la main (prompt « d'agir ») ?
+      heroPrompted: /d'agir/.test(log),
+      harryStunGone: !party[0].statusEffects.some(s => s.id === 'stun'),
+      hermioneFearGone: !party[1].statusEffects.some(s => s.id === 'fear'),
+    };
+  });
+  console.log('  T3 no-freeze:', t3);
+  assert(!t3.frozen, 'la chaîne de tours ne doit pas boucler indéfiniment (segment figé)');
+  assert(t3.inBattle, 'le combat doit rester actif après la résolution des sauts');
+  assert(t3.heroPrompted, 'un héros doit regagner la main (jamais de segment figé)');
+  assert(t3.harryStunGone, 'le stun de Harry doit avoir été consommé');
+  assert(t3.hermioneFearGone, 'la peur d\'Hermione (durée 1) doit avoir expiré');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (statuts combinés)`);
+  }
+  console.log('  ✅ statuts combinés : coexistence, décompte, jamais de segment figé');
+  await browser.close();
+}
+
 async function scenarioCombatExtV2() {
   console.log('\n── Scénario : Extensions combat V2 (counter / double-garde / Ferula Maxima / dispel) ──');
 
@@ -2264,4 +2380,4 @@ async function scenarioBuffBadgesPng() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };
