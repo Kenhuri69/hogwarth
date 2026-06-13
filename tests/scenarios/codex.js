@@ -570,4 +570,80 @@ async function scenarioBossPromo() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo] };
+// Ch.13 P2 — XP passive de Boucle : adoucissement endgame (axe additif, sans
+// toucher au scaling). Vérifie le grant sur nouvel étage le plus profond,
+// le gate anti-farm (respawn/allers-retours), et l'absence hors Boucle.
+async function scenarioLoopPassiveXp() {
+  console.log('\n── Scénario : Ch.13 P2 — XP passive de Boucle ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  // T1 : constante câblée + > 0
+  const t1 = await page.evaluate(() => ({
+    defined: typeof LOOP_PASSIVE_XP_FRAC === 'number',
+    frac:    typeof LOOP_PASSIVE_XP_FRAC === 'number' ? LOOP_PASSIVE_XP_FRAC : null,
+  }));
+  console.log('  T1 constante:', t1);
+  assert(t1.defined, 'LOOP_PASSIVE_XP_FRAC non défini');
+  assert(t1.frac > 0 && t1.frac < 1, `LOOP_PASSIVE_XP_FRAC attendu ∈ ]0,1[, got ${t1.frac}`);
+
+  // T2 : grant sur un NOUVEL étage de Boucle le plus profond. xpNext élevé →
+  // pas de level-up parasite, on lit l'XP brute créditée.
+  const t2 = await page.evaluate(() => {
+    victoryAchieved = true; floorReached = 15;
+    player.level = 12; player.xp = 0; player.xpNext = 10000;
+    document.getElementById('msg-log').innerHTML = '';
+    _maybeAdvanceDarkLoop(15, 16);   // 16 > floorReached → crédite
+    return {
+      xp: player.xp,
+      expected: Math.round(LOOP_PASSIVE_XP_FRAC * 10000),
+      toast: document.getElementById('msg-log').textContent,
+    };
+  });
+  console.log('  T2 grant:', t2);
+  assert(t2.xp === t2.expected, `XP passive attendue ${t2.expected}, got ${t2.xp}`);
+  assert(/Boucle nourrit/.test(t2.toast), 'toast d\'XP passive manquant');
+
+  // T3 : anti-farm — re-franchir un étage DÉJÀ atteint ne crédite rien.
+  const t3 = await page.evaluate(() => {
+    floorReached = 16; player.xp = 0; player.xpNext = 10000;
+    _maybeAdvanceDarkLoop(15, 16);   // 16 <= floorReached → no-op
+    const afterRefarm = player.xp;
+    _maybeAdvanceDarkLoop(16, 15);   // remontée → no-op
+    return { afterRefarm, afterUp: player.xp };
+  });
+  console.log('  T3 anti-farm:', t3);
+  assert(t3.afterRefarm === 0, 'le re-farming d\'un étage déjà atteint ne doit rien créditer');
+  assert(t3.afterUp === 0, 'remonter ne doit rien créditer');
+
+  // T4 : gardes — pas d'XP passive hors Boucle (pré-victoire) ni sous l'étage 11.
+  const t4 = await page.evaluate(() => {
+    player.xp = 0; player.xpNext = 10000;
+    victoryAchieved = false; floorReached = 4; _maybeAdvanceDarkLoop(4, 5);
+    const noVictory = player.xp;
+    victoryAchieved = true; floorReached = 4; _maybeAdvanceDarkLoop(4, 5);  // <11 → no-op
+    return { noVictory, belowLoop: player.xp };
+  });
+  console.log('  T4 gardes:', t4);
+  assert(t4.noVictory === 0, 'pas d\'XP passive sans victoire');
+  assert(t4.belowLoop === 0, 'pas d\'XP passive sous l\'étage 11');
+
+  // T5 : auto-pacing — la fraction suit le xpNext courant.
+  const t5 = await page.evaluate(() => {
+    victoryAchieved = true; floorReached = 20;
+    player.level = 18; player.xp = 0; player.xpNext = 50000;
+    _maybeAdvanceDarkLoop(20, 21);
+    return { xp: player.xp, expected: Math.round(LOOP_PASSIVE_XP_FRAC * 50000) };
+  });
+  console.log('  T5 auto-pacing:', t5);
+  assert(t5.xp === t5.expected, `XP passive devrait suivre xpNext (att. ${t5.expected}, got ${t5.xp})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (P2 XP passive)`);
+  }
+  console.log('  ✅ Ch.13 P2 — XP passive de Boucle : grant, anti-farm, gardes, auto-pacing OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp] };

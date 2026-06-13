@@ -207,6 +207,22 @@ function _maybeAdvanceDarkLoop(prevFloor, nextFloor) {
   if (nextFloor <= prevDeepest) return;                     // pas un nouveau plus-profond
   // +1 Éclat porté par étage de Boucle franchi.
   if (typeof accumulatedEclats !== 'undefined') accumulatedEclats++;
+  // Ch.13 P2 — XP passive de Boucle : adoucit le mur endgame sans toucher au
+  // scaling (axe de progression ADDITIF, règle §13.6 #6). Crédité UNIQUEMENT
+  // sur un nouvel étage le plus profond (même gate anti-farm que l'Éclat) :
+  // ni le respawn ni les allers-retours ne nourrissent. FRAC < 1 ⇒ au plus
+  // une montée de niveau par étage ⇒ un seul checkLevelUp(). Cf. data.js.
+  if (typeof LOOP_PASSIVE_XP_FRAC === 'number' && LOOP_PASSIVE_XP_FRAC > 0
+      && typeof player !== 'undefined' && typeof player.xpNext === 'number') {
+    const passive = Math.round(LOOP_PASSIVE_XP_FRAC * player.xpNext);
+    if (passive > 0) {
+      player.xp += passive;
+      if (typeof addMsg === 'function') {
+        addMsg(`🌀 La Boucle nourrit ta puissance (+${passive} XP).`, 'magic');
+      }
+      if (typeof checkLevelUp === 'function') checkLevelUp();
+    }
+  }
   // Toast de franchissement de boucle (uniquement au passage d'un palier).
   if (typeof loopNumber !== 'function') return;
   const ln = loopNumber(nextFloor);

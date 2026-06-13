@@ -35,7 +35,12 @@ directement : elles découlent toujours des stats primaires et secondaires final
 ✅ (dans le jeu — `battle-rewards.js — checkLevelUp / _grantLevel*`)
 
 L'XP est versée en fin de combat (`endBattle`) sur `player.xp`, multipliée par
-le coefficient de difficulté. Quand `player.xp >= player.xpNext`, le groupe passe
+le coefficient de difficulté. **XP passive de Boucle** (endgame, post-victoire) :
+à chaque NOUVEL étage de Boucle Ténébreuse le plus profond franchi, le groupe
+gagne en plus `LOOP_PASSIVE_XP_FRAC × player.xpNext` (= 0.45 niveau, `data.js`) —
+un axe de progression additif qui amortit le mur endgame sans toucher au scaling
+(anti-farm : seul un nouvel étage descendu crédite). Cf. Chapitre 13 §13.9.F /
+`DIFFICULTY_STUDY.md §8.8`. Quand `player.xp >= player.xpNext`, le groupe passe
 au niveau suivant :
 
 1. `player.level` s'incrémente.

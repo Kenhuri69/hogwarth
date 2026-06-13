@@ -410,6 +410,11 @@ function parseArgs(argv) {
                 useQuests: true, useEquipment: true, usePotions: true,
                 kills: 0, bonusLevels: 0, artifacts: false,
                 endgame: false, maxFloor: 40, forge: 0, library: 0,
+                // Ch.13 P2 — XP passive de Boucle (data.js LOOP_PASSIVE_XP_FRAC).
+                // Fraction de xpNext gagnée par étage de Boucle (11+) franchi.
+                // 0 = désactivé (modèle historique). Défaut 0 ici : le rapport
+                // par défaut (no-endgame) reste inchangé ; on mesure via le flag.
+                loopXpFrac: 0,
                 houseSet: null, tenebresSet: false, houseTier: 0, stars: 0,
                 difficulty: 'Normal',
                 // DÉFAUT ALIGNÉ SUR LE RUNTIME (rework D1–D5 live). Le sim
@@ -468,6 +473,7 @@ function parseArgs(argv) {
     else if (k === 'build')     out.build = v;
     else if (k === 'kills')     out.kills = parseInt(v, 10);
     else if (k === 'bonus-levels') out.bonusLevels = parseInt(v, 10) || 0;
+    else if (k === 'loop-xp-frac')  out.loopXpFrac = parseFloat(v) || 0;
     else if (k === 'max-floor')    out.maxFloor = parseInt(v, 10) || 40;
     else if (k === 'pen-cap')      out.penCap  = parseFloat(v);
     else if (k === 'pen-half')     out.penHalf = parseFloat(v) || 20;
@@ -1028,6 +1034,14 @@ function levelFromXp(totalXp) {
   return level;
 }
 
+// Coût d'XP du prochain niveau quand on EST au niveau `level` (= player.xpNext
+// runtime). Réplique le floor compounding : 50, 80, 128, 204, …
+function xpNextForLevel(level) {
+  let xpNext = 50;
+  for (let lv = 1; lv < level; lv++) xpNext = Math.floor(xpNext * LEVEL_UP_XP_MULTIPLIER);
+  return xpNext;
+}
+
 // XP moyenne d'un combat à l'étage f (cfg.xpMult appliqué)
 function avgCombatXp(floor, partySize, cfg) {
   const pool = eligiblePool(floor, cfg);
@@ -1050,6 +1064,14 @@ function expectedLevelAtFloor(floor, partySize, cfg) {
   let totalXp = 0;
   for (let f = 1; f < floor; f++) {
     totalXp += avgCombatXp(f, partySize, cfg) * COMBATS_PER_FLOOR_AVG;
+    // Ch.13 P2 — XP passive de Boucle : à chaque étage de Boucle (11+) franchi,
+    // le groupe gagne FRAC × xpNext courant (auto-pacé sur le coût du niveau).
+    // Modèle du runtime _maybeAdvanceDarkLoop : seul un nouvel étage descendu
+    // crédite — ici la marche descendante est implicite (f croît).
+    if (cfg.loopXpFrac > 0 && f >= 11) {
+      const lvlNow = levelFromXp(totalXp);
+      totalXp += cfg.loopXpFrac * xpNextForLevel(lvlNow);
+    }
   }
   if (cfg.useQuests) totalXp += questXpUpToFloor(floor);
   return levelFromXp(totalXp);

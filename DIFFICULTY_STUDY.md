@@ -321,14 +321,44 @@ refonte aligne donc chaque set sur son archétype de jeu.
   de progression passive**. Il *impose* le farming actif dès l'étage ~19.
   Choix de design assumable (mode infini façon roguelike), mais à
   connaître — descendre sans farmer heurte un mur réel vers l'étage 20.
-- 💡 Si l'on veut adoucir : ralentir `xpNext` en endgame, ou ajouter une
-  XP passive de Boucle par étage franchi. Optionnel — à ne pas faire si
-  le farming forcé est l'intention.
+- ✅ **Adouci en P2** : une **XP passive de Boucle** a été retenue (et non un
+  ralentissement de `xpNext`, pour ne pas toucher au scaling — règle §13.6 #6).
+  Voir §8.8.
 - ✅ Refonte du critique (§8.6) : deux canaux physique/sort, crit damage
   augmentable, crit d'équipement au-delà de 40 % — les sets crit ne sont
   plus gaspillés et s'alignent sur leur archétype.
 - ⚠️ Limite résiduelle du modèle : effets de set non chiffrables en sim
   (regen passif, lifesteal de sorts, réduction de coût) — impact mineur.
+
+### 8.8 XP passive de Boucle (P2 — `LOOP_PASSIVE_XP_FRAC = 0.45`)
+
+Pour transformer le mur endgame en **pente** sans le supprimer (Ch.13 §13.9.F
+P2), le jeu crédite désormais une **XP passive** à chaque NOUVEL étage de Boucle
+le plus profond franchi (11+, post-victoire) : `0.45 × player.xpNext`, soit
+~0.45 niveau par étage descendu. C'est un **axe de progression additif**
+(`data.js — LOOP_PASSIVE_XP_FRAC`, grant dans `movement-floors.js —
+_maybeAdvanceDarkLoop`) : **le scaling n'est PAS touché**. Anti-farm : seul un
+nouvel étage descendu crédite (même gate que les Éclats — respawn et
+allers-retours ne nourrissent pas).
+
+Impact mesuré (`--endgame --loop-xp-frac=0.45`, N=800) :
+
+| Étage | Win % avant (F=0) | Win % après (F=0.45) | Niveau joueur |
+|------:|:-----------------:|:--------------------:|:-------------:|
+| 18 | Solo 78 / Duo 92 | Solo 82 / Duo 98 | 12 → 14 |
+| 20 | Solo 48 / Duo 63 | Solo 63 / Duo 76 | 12 → 15 |
+| 22 | Solo 31 / Duo 36 | Solo 42 / Duo 52 | 13 → 16 |
+| 25 | Solo 23 / Duo 31 | Solo 37 / Duo 46 | 13 → 17 |
+| 30 | Solo 13 / Duo 22 | Solo 28 / Duo 36 | 14 → 19 |
+
+Lecture : le mur de l'étage 19-21 s'**adoucit** (étage 20 Duo 63 → 76 %, Solo
+48 → 63 %) sans **trivialiser** le deep endgame (étage 30 reste ≤ 36 % sans
+farming). Le **farming garde toute sa valeur** : +25 niveaux farmés portent
+toujours l'étage 30 à ~85 % (§8.3) — la passive ne remplace pas les quatre axes
+de farming, elle évite le décrochage brutal de qui descend sans grinder.
+Calibrage `0.45` validé par balayage `--loop-xp-frac ∈ {0.30, 0.45, 0.60}`.
+Cohérent avec le toast de pivot P1 (« la puissance se gagne ») : elle reste
+gagnée — la passive n'en est qu'un filet, pas une rente.
 
 ---
 
