@@ -82,6 +82,7 @@ function _serializeState() {
     endgamePurchases: { ...endgamePurchases },
     visitedFloors:  Array.from(visitedFloors),
     seenScriptedBeat: Array.from(seenScriptedBeat),
+    grandeSalleBeatSeen,
     portusOocCooldown,
     portusFightCooldown,
     healSpellCooldown,
@@ -500,6 +501,8 @@ function _applyState(gs) {
   if (currentFloor) visitedFloors.add(currentFloor);
   // Étages-scènes scénarisés (P5) : fallback [] pour les saves antérieures.
   seenScriptedBeat = new Set(gs.seenScriptedBeat || []);
+  // Beat « Grande Salle » (Ch.14 §14.3.2) : fallback false pour les saves antérieures.
+  grandeSalleBeatSeen = !!gs.grandeSalleBeatSeen;
   portusOocCooldown   = (typeof gs.portusOocCooldown   === 'number') ? gs.portusOocCooldown   : 0;
   portusFightCooldown = (typeof gs.portusFightCooldown === 'number') ? gs.portusFightCooldown : 0;
   healSpellCooldown   = (typeof gs.healSpellCooldown   === 'number') ? gs.healSpellCooldown   : 0;

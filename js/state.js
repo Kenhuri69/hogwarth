@@ -401,6 +401,38 @@ const HOUSE_BONUSES = {
 };
 
 // ============================================================
+// REFUGES DE MAISON (Chapitre 13 §13.4.3 / §13.9.F P3) — habillage COSMÉTIQUE
+// ============================================================
+// Le Refuge (CELL.REFUGE) est désormais disponible pour LES QUATRE Maisons
+// (cf. dungeon.js), avec une mécanique IDENTIQUE (repos partiel
+// REFUGE_HEAL_FRAC = 0.5, 1×/visite, non-interrompu) — équité stricte préservée
+// (§13.6 #5). Seuls le nom et le récit changent selon `chosenHouse` ; la teinte
+// réutilise HOUSE_BONUSES[h].color/accent/emoji. Poufsouffle conserve le
+// « Refuge du Blaireau » canonique (Helga) et son identité profonde (passif
+// Souffle du Blaireau, item Cœur du Refuge), non touchés.
+const REFUGE_THEMES = {
+  Gryffondor:  { name: 'Foyer du Lion',     narrative: "Sous la bannière écarlate, le groupe ranime le feu et panse ses plaies. Le courage se repose pour mieux rugir." },
+  Serpentard:  { name: 'Antre du Serpent',  narrative: "Dans l'alcôve d'émeraude, à l'abri des regards, le groupe reprend son souffle. La ruse sait quand se retirer pour mieux frapper." },
+  Serdaigle:   { name: "Alcôve de l'Aigle", narrative: "Sous la voûte indigo, le groupe médite et restaure ses forces. L'esprit clair guérit le corps." },
+  Poufsouffle: { name: 'Refuge du Blaireau', narrative: "Autour du foyer du Blaireau, le groupe panse ses plaies et reprend son souffle. On ne laisse personne derrière — ici, on tient bon, ensemble." },
+};
+// Thème cosmétique du refuge pour la Maison active (défaut Poufsouffle/Blaireau
+// si chosenHouse absent/inconnu). Pur ; lit HOUSE_BONUSES au runtime.
+function refugeTheme() {
+  const h = (typeof chosenHouse !== 'undefined' && chosenHouse) ? chosenHouse : 'Poufsouffle';
+  const t = (typeof REFUGE_THEMES !== 'undefined' && REFUGE_THEMES[h]) ? REFUGE_THEMES[h] : REFUGE_THEMES.Poufsouffle;
+  const hb = (typeof HOUSE_BONUSES !== 'undefined' && HOUSE_BONUSES[h]) ? HOUSE_BONUSES[h] : null;
+  return {
+    name:      t.name,
+    narrative: t.narrative,
+    emoji:     hb ? hb.emoji  : '🦡',
+    color:     hb ? hb.color  : '#372E29',
+    accent:    hb ? hb.accent : '#F0C75E',
+    house:     h,
+  };
+}
+
+// ============================================================
 // SYSTÈME DE SETS DE MAISON — 4 pièces par Maison
 // ============================================================
 // Composition : 1 pièce existante (brassard/anneau/plume/ceinture
@@ -642,6 +674,12 @@ let visitedFloors = new Set([1]);
 // joué pour cette partie (one-shot). Alimenté par maybeScriptedFloorBeat
 // (floor-ambiance.js). Persisté dans le save.
 let seenScriptedBeat = new Set();
+
+// Beat « Grande Salle » (Ch.14 §14.3.2) — one-shot joué au premier retour réel
+// sur l'étage 1 APRÈS victoire (l'école respire à nouveau). Distinct de
+// seenScriptedBeat (qui contient déjà l'étage 1 via seuil_familier pré-victoire).
+// Persisté dans le save.
+let grandeSalleBeatSeen = false;
 
 // Cooldowns du sort Portus (cf. .claude/plans/teleportation-spell.md §"Itération 2").
 //  - portusOocCooldown   : transitions d'étage (escaliers) restantes avant
