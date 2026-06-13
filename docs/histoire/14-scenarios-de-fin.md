@@ -247,10 +247,14 @@ de fermer. **C'est le pont narratif vers la Boucle.**
 - **Le Gardien de la Boucle** (✅ PNJ exclusif post-victoire, étage 11) **est** la
   première voix de l'après : il accueille le héros dans le château rejoué et donne
   les quêtes de purge. C'est lui qui **incarne** la transition vers la Boucle.
-- 💡 **Beat optionnel « Grande Salle »** : une scène écrite épinglée (étages-scènes,
-  04 §4.4) — au premier retour en haut après victoire, un mot de Dumbledore depuis
-  son cadre, l'école qui respire à nouveau. ❓ À arbitrer (le jeu ne « remonte » pas
-  réellement — voir Points à trancher).
+- ✅ **Beat « Grande Salle »** (implémenté) : scène écrite épinglée (étages-scènes,
+  04 §4.4) — au **premier retour réel sur l'étage 1** après victoire, un mot de
+  Dumbledore depuis son cadre, l'école qui respire à nouveau. **Arbitrage tranché**
+  (le jeu ne « remonte » pas tout seul) : le beat se joue uniquement si le héros
+  **choisit de remonter** ; ceux qui descendent dans la Boucle gardent le Gardien
+  de la Boucle comme première voix de l'après. One-shot cosmétique, non-bloquant —
+  `GRANDE_SALLE_BEAT` + variante post-victoire de `maybeScriptedFloorBeat`
+  (`floor-ambiance.js`), flag `grandeSalleBeatSeen` sérialisé.
 
 ### 14.3.3 La transition vers la Boucle (✅ mécanique / 💡 sens)
 
@@ -516,8 +520,10 @@ robinets `victory` / `eclatLoop` / `cycleBroken` :
 1. ❓ **Variantes conditionnelles de la cinématique (B)** : les adopte-t-on toutes
    (Maison + héros + signatures + Éclats + Pacte `defiance`), ou un sous-ensemble ?
    (§14.2.2)
-2. ❓ **Beat « Grande Salle » post-victoire** : épingle-t-on une scène de retour en
-   haut, ou la transition reste-t-elle le seul Gardien de la Boucle ? (§14.3.2)
+2. ✅ **Beat « Grande Salle » post-victoire** — **tranché : implémenté** (§14.3.2).
+   Scène épinglée au premier retour réel sur l'étage 1 post-victoire ; le Gardien
+   de la Boucle reste la voix de ceux qui descendent. One-shot cosmétique
+   (`GRANDE_SALLE_BEAT`, flag `grandeSalleBeatSeen`).
 3. ❓ **Entrée Codex `epilogue`** dépendante de `endingType` : oui / non ? (§14.6.2)
 4. ❓ **NG+ opt-in** (titre + Codex de profil + cosmétique, **zéro stat**) : on
    l'implémente ou la Boucle continue reste l'unique « après » ? (§14.6.3, ÉTAPE 2.E)

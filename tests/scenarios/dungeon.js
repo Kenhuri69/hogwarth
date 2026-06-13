@@ -3073,11 +3073,45 @@ async function scenarioScriptedFloorBeats() {
   assert(r.serialized, 'P5 seenScriptedBeat absent de la sérialisation');
   assert(r.restored, 'P5 seenScriptedBeat non restauré après _applyState');
 
+  // ── Beat « Grande Salle » post-victoire (Ch.14 §14.3.2) ──
+  const g = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasBeat = typeof GRANDE_SALLE_BEAT !== 'undefined'
+        && !!GRANDE_SALLE_BEAT.narrative && !!GRANDE_SALLE_BEAT.toast
+        && GRANDE_SALLE_BEAT.id === 'grande_salle';
+      // Pré-victoire : retour étage 1 ne joue PAS la Grande Salle.
+      victoryAchieved = false; grandeSalleBeatSeen = false;
+      out.preVictoryNoBeat = maybeScriptedFloorBeat(1) === false && grandeSalleBeatSeen === false;
+      // Post-victoire : 1er retour étage 1 → Grande Salle, one-shot.
+      victoryAchieved = true; grandeSalleBeatSeen = false;
+      out.firstReturn = maybeScriptedFloorBeat(1) === true;
+      out.flagSet = grandeSalleBeatSeen === true;
+      out.secondReturn = maybeScriptedFloorBeat(1) === false; // déjà vu
+      // Sérialisation round-trip du flag.
+      const snap = _serializeState();
+      out.serialized = snap.grandeSalleBeatSeen === true;
+      grandeSalleBeatSeen = false;
+      _applyState(snap);
+      out.restored = grandeSalleBeatSeen === true;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  Grande Salle beat:', g);
+  assert(!g.threw, 'Grande Salle throw: ' + (g.err || ''));
+  assert(g.hasBeat, 'GRANDE_SALLE_BEAT absent ou incomplet');
+  assert(g.preVictoryNoBeat, 'Grande Salle jouée à tort avant victoire');
+  assert(g.firstReturn, 'Grande Salle ne s\'est pas déclenchée au 1er retour post-victoire');
+  assert(g.flagSet, 'grandeSalleBeatSeen non marqué après le beat');
+  assert(g.secondReturn, 'Grande Salle rejouée (non one-shot)');
+  assert(g.serialized, 'grandeSalleBeatSeen absent de la sérialisation');
+  assert(g.restored, 'grandeSalleBeatSeen non restauré après _applyState');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (étages-scènes P5)`);
   }
-  console.log('  ✅ Étages-scènes P5 — résolution pure, one-shot, sérialisation OK');
+  console.log('  ✅ Étages-scènes P5 + Grande Salle — one-shot, gate victoire, sérialisation OK');
   await browser.close();
 }
 
