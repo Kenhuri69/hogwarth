@@ -1978,6 +1978,7 @@ const MONSTERS = [
     epic:     true,
     name:     "Le Reflet du Mythe",
     icon:     "🪞",
+    imgSrc:   "img/monsters/reflet_mythe.png",
     category: "être magique",
     desc:     "Au sommet de l'Avant-Monde, une silhouette se lève — la tienne, faite de lumière froide et de légende retournée.",
     lore:     "Ce n'est pas un monstre : c'est ce que la Boucle a fait de ta propre légende. À force de descendre, le mythe du héros s'est détaché de toi et s'est dressé en face, gardien de ce qui dort tout au fond. Le vaincre, c'est se mesurer à soi-même — au prix qu'on a payé pour devenir une histoire.",
