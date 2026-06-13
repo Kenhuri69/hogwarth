@@ -92,6 +92,7 @@ function _serializeState() {
     lastQuestCompletion: { ...lastQuestCompletion },
     victoryAchieved,
     victoryAt,
+    endingType,
     accumulatedEclats,
     combatTutorialSeen,
     endgamePivotSeen,
@@ -405,6 +406,13 @@ function _applyState(gs) {
   if (typeof ravenSignatureDone !== 'undefined') ravenSignatureDone = !!gs.ravenSignatureDone;
   if (typeof poufSignatureDone  !== 'undefined') poufSignatureDone  = !!gs.poufSignatureDone;
   if (typeof slythPactChoice    !== 'undefined') slythPactChoice    = gs.slythPactChoice || null;
+  // Label de fin (P3) : restauré tel quel, puis réconcilié depuis les flags
+  // (victoire / Cycle / Pacte tous appliqués ci-dessus) — back-fill des saves
+  // antérieures au champ (endingType dérivé, jamais une source de gating).
+  if (typeof endingType !== 'undefined') {
+    endingType = gs.endingType || null;
+    if (typeof refreshEndingType === 'function') refreshEndingType();
+  }
   // Mode Ironman : saves antérieures à l'ajout du mode → false/0/vide.
   ironmanMode     = !!gs.ironmanMode;
   totalKills      = (typeof gs.totalKills === 'number') ? gs.totalKills : 0;

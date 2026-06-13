@@ -738,6 +738,14 @@ const party = [player, player2];
 let victoryAchieved = false;
 let victoryAt       = null;
 
+// ── Label de fin dérivé (Chapitre 14 §14.6.2, P3) ──────────────────
+// `endingType` est un LABEL non-gating décrivant COMMENT la partie s'est
+// conclue : null | 'victory' | 'victory_pact' | 'cycle_broken'. Dérivé des
+// flags existants par `computeEndingType()` (endgame.js, pur) ; posé à la
+// victoire et réconcilié quand `cycleBroken` devient vrai. Source unique de
+// l'entrée Codex `epilogue` (robinet `ending`). Persisté via save.js.
+let endingType = null;
+
 // ── Boucle Ténébreuse — Porteur d'Éclats (V1, Chapitre 11 §11.6.2) ──
 // Compteur PERSISTANT d'« Éclats de réalité » glanés en Boucle (étages 11+),
 // distinct des 3 `eclat_voute` canon de la trame. Fil de prestige narratif :
