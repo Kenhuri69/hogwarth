@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v127';
+const CACHE_VERSION = 'hogwarth-v128';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -47,7 +47,7 @@ const PRECACHE_URLS = [
   './js/haptics.js?v=2',
   './js/audio.js?v=2',
   './js/audio-music.js?v=7',
-  './js/audio-sfx.js?v=14',
+  './js/audio-sfx.js?v=15',
   './js/icons.js?v=1',
   './js/scene-icons.js?v=7',
   './js/monsters.js?v=12',
@@ -55,7 +55,7 @@ const PRECACHE_URLS = [
   './js/npcs-helpers.js?v=4',
   './js/riddles.js?v=2',
   './js/codex.js?v=9',
-  './js/data.js?v=30',
+  './js/data.js?v=31',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
   './js/floor-ambiance.js?v=10',
@@ -63,7 +63,7 @@ const PRECACHE_URLS = [
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=22',
   './js/state.js?v=32',
-  './js/hero-barks.js?v=5',
+  './js/hero-barks.js?v=6',
   './js/ui.js?v=14',
   './js/ui-character-sheet.js?v=7',
   './js/ui-settings.js?v=3',
@@ -78,7 +78,7 @@ const PRECACHE_URLS = [
   './js/dungeon-fx.js?v=8',
   './js/cinematics.js?v=2',
   './js/renderer-sprites.js?v=6',
-  './js/renderer-entities.js?v=6',
+  './js/renderer-entities.js?v=7',
   './js/renderer-minimap.js?v=8',
   './js/movement.js?v=35',
   './js/movement-floors.js?v=15',

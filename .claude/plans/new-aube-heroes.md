@@ -1,8 +1,14 @@
 # Plan — Deux nouveaux héros de la Garde de l'Aube
 
 Ajouter 2 héros jouables originaux (faction « Garde de l'Aube ») :
-- **Aubin Tournesol** (`aubin`) — Poufsouffle, *Gardien-Herboriste* (tank/soutien).
-- **Séraphine Nocturne** (`seraphine`) — Serpentard, *Ombremancienne* (glass-cannon contrôle).
+- **Nathalie Finch** (`nathalie`) — Poufsouffle, *Gardienne-Herboriste* (tank/soutien).
+- **Olivier de Châtillon** (`chatillon`) — Serpentard, *Ombremancien* (glass-cannon contrôle).
+
+> Renommés depuis la conception initiale (Aubin Tournesol → Nathalie Finch ♀ ;
+> Séraphine Nocturne → Olivier de Châtillon ♂) sur fourniture de l'art par
+> l'utilisateur. Médaillons fabriqués depuis les photos (crop visage + anneau
+> transplanté : iris ♀ / maxence ♂). Sprites plein corps = stand-ins genrés
+> (iris / maxence) à remplacer par de vrais plein-corps transparents.
 
 Suit la skill `add-playable-character` + règle normative `docs/histoire/05-personnages-jouables.md §5.5`.
 

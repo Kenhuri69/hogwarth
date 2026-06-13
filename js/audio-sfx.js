@@ -506,8 +506,8 @@ Object.assign(AudioSystem, {
     jeanne:    { pitch: 1.18, rate: 1.00, gender: 'f' }, // chantante, fantasque
     agathe:    { pitch: 1.08, rate: 0.93, gender: 'f' }, // douce, bienveillante
     olivier:   { pitch: 0.88, rate: 1.08, gender: 'm' }, // intense, électrique
-    aubin:     { pitch: 0.90, rate: 0.88, gender: 'm' }, // placide, posé, lent
-    seraphine: { pitch: 0.96, rate: 0.95, gender: 'f' }, // basse, ironique, feutrée
+    nathalie:  { pitch: 1.06, rate: 0.90, gender: 'f' }, // chaleureuse, posée, lente
+    chatillon: { pitch: 0.86, rate: 0.95, gender: 'm' }, // basse, ironique, feutrée
   },
 
   // ── Émotion par événement (L7c) ───────────────────────────────

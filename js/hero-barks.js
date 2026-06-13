@@ -165,7 +165,7 @@ const HERO_BARKS = {
       Poufsouffle: ["On perd du temps à les ramener. (…) Non. Tu as raison. On les ramène."]
     }
   },
-  aubin: {
+  nathalie: {
     bossAppear: ["Reste derrière moi. Tant que je tiens, tu avances."],
     crit:       ["Patience… et le bon coup au bon moment."],
     allyDown:   ["Pas toi. Tiens bon, je te relève — j'ai vu pire au potager."],
@@ -174,7 +174,7 @@ const HERO_BARKS = {
     houseTier:  ["La Maison s'enracine. On ne lâche personne."],
     tierTransition: ["Sol nouveau, mêmes racines. On tient."]
   },
-  seraphine: {
+  chatillon: {
     bossAppear: ["Bruyant. Il ne verra pas venir l'ombre qui l'attend."],
     crit:       ["La ruse frappe là où la lumière n'ose pas."],
     allyDown:   ["Recule dans l'ombre — je couvre, tu récupères."],

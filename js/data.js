@@ -281,21 +281,21 @@ const CHARACTERS = {
     spells:["Incendio","Stupefix","Protego","Episkey"],
     tagline:"Mage de combat — chaque sortilège frappe comme la foudre."
   },
-  aubin: { name:"Aubin Tournesol", icon:"🌻", class:"Élève de Poufsouffle",
-    imgSrc:"img/aubin.png", role:"Gardien-Herboriste",
+  nathalie: { name:"Nathalie Finch", icon:"🌻", class:"Élève de Poufsouffle",
+    imgSrc:"img/nathalie.png", role:"Gardienne-Herboriste",
     hp:36, sp:24, str:9, int:12, agi:9, end:13, lck:12, mag:11,
     atk:5, def:4,
     wand:"Baguette de Chêne Noueux", armor:"Robe de Poufsouffle", acc:"Besace d'Herboriste",
     spells:["Episkey","Protego","Ferula","Incendio"],
-    tagline:"Gardien-herboriste — un rempart patient pour les siens."
+    tagline:"Gardienne-herboriste — un rempart patient pour les siens."
   },
-  seraphine: { name:"Séraphine Nocturne", icon:"🌑", class:"Élève de Serpentard",
-    imgSrc:"img/seraphine.png", role:"Ombremancienne",
+  chatillon: { name:"Olivier De Châtillon", icon:"🌑", class:"Élève de Serpentard",
+    imgSrc:"img/chatillon.png", role:"Ombremancien",
     hp:27, sp:34, str:5, int:16, agi:13, end:7, lck:12, mag:16,
     atk:3, def:2,
     wand:"Baguette d'Ébène", armor:"Robe de Serpentard", acc:"Camée d'Ombre",
     spells:["Expelliarmus","Stupefix","Protego","Incendio"],
-    tagline:"Ombremancienne de Serpentard — la ruse frappe avant la lumière."
+    tagline:"Ombremancien de Serpentard — la ruse frappe avant la lumière."
   }
 };
 
