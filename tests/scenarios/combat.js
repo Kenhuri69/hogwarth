@@ -2060,6 +2060,63 @@ async function scenarioDeathPetrify() {
   await browser.close();
 }
 
+// 1.3.2 — Mort en mode Ironman : écran de score (pas de pétrification),
+// permadeath stricte (TOUS les slots Ironman purgés ; un slot non-Ironman
+// survit). Symétrique de scenarioDeathPetrify (mort normale).
+async function scenarioIronmanDeath() {
+  console.log('\n── Scénario : mort Ironman (score + purge des slots) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const setup = await page.evaluate(() => {
+    // Un slot NON-Ironman doit survivre à la purge → l'écrire d'abord.
+    ironmanMode = false;
+    writeSlot('manual_3', 'partie normale');
+    // Bascule Ironman + UID de run, puis deux slots Ironman (auto + manuel).
+    ironmanMode = true;
+    if (typeof _genRunId === 'function') ironmanRunId = _genRunId();
+    writeSlot('manual_1', 'run ironman');
+    if (typeof autoSave === 'function') autoSave('test-ironman');
+    const ids = listSaveSlots().map(s => s.id);
+    return {
+      before: ids.map(id => { const s = readSlot(id); return { id, iron: !!(s && s.state && s.state.ironmanMode) }; }),
+    };
+  });
+  console.log('  setup slots:', setup.before);
+  const ironBefore = setup.before.filter(s => s.iron).length;
+  assert(ironBefore >= 2, `attendu ≥2 slots Ironman avant la mort, got ${ironBefore}`);
+
+  // Mort Ironman : triggerDeath doit router vers showIronmanResult.
+  const death = await page.evaluate(() => {
+    document.getElementById('death-screen').style.display = 'none';
+    if (typeof inAstralCombat !== 'undefined') inAstralCombat = false;
+    party.forEach(c => { c.hp = 0; });
+    triggerDeath('Tombé en mode Ironman.');
+    const ids = listSaveSlots().map(s => s.id);
+    return {
+      ironResultVisible: document.getElementById('ironman-result-screen').style.display === 'flex',
+      deathVisible:      document.getElementById('death-screen').style.display === 'flex',
+      petrify:           !!document.getElementById('cfx-petrify'),
+      remaining: ids.map(id => { const s = readSlot(id); return { id, iron: !!(s && s.state && s.state.ironmanMode) }; }),
+    };
+  });
+  console.log('  death:', death);
+  assert(death.ironResultVisible, 'écran de résultat Ironman non affiché');
+  assert(!death.deathVisible, 'death-screen (pétrification) ne doit PAS s\'afficher en Ironman');
+  assert(!death.petrify, 'aucune pétrification en mort Ironman');
+  const ironAfter = death.remaining.filter(s => s.iron).length;
+  assert(ironAfter === 0, `tous les slots Ironman doivent être purgés, reste ${ironAfter}`);
+  assert(death.remaining.some(s => s.id === 'manual_3' && !s.iron),
+    'le slot non-Ironman manual_3 doit survivre à la purge');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (mort Ironman)`);
+  }
+  console.log('  ✅ mort Ironman : score affiché, slots Ironman purgés, slot normal préservé');
+  await browser.close();
+}
+
 async function scenarioLargeEnemyGroup() {
   console.log('\n── Scénario : gros groupes ennemis (4-5) ──');
   const { browser, page, errors } = await launchGame();
@@ -2207,4 +2264,4 @@ async function scenarioBuffBadgesPng() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };
