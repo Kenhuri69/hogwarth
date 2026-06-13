@@ -102,54 +102,78 @@ silencieusement une action du joueur ; surface XSS unifiée.*
 *Critère de passage : doc = code sur les invariants, et les régressions les
 plus probables sont couvertes par un test.*
 
-- [ ] **1.1 — Résorber la dérive doc/code de CLAUDE.md** ✅ (M)
-  Vérifié : **83 balises `<script>`** dans `index.html` vs **33 documentées** ;
-  ~26 modules absents de la section « Structure des fichiers » (`combat-fx`,
-  `codex`, `floor-events`, `potions`, `forge`, `library`, `endgame`,
-  `multiplayer*`, `teleport`, `haptics`, `help-tour`, `pwa`…) ; l'alias
-  **`ENEMIES = MONSTERS` documenté mais inexistant dans `js/data.js`** (grep
-  vide). CLAUDE.md est la mémoire projet : sa dérive provoque de mauvaises
-  décisions (humaines et IA).
-  → Mettre à jour la liste des fichiers + l'ordre de chargement (généré depuis
-  `index.html`, pas énuméré à la main) ; pour `ENEMIES`, **corriger la doc**
-  (l'alias n'est utilisé nulle part — ne pas ajouter de code mort).
-  *Vérif : script ponctuel comparant `<script src>` ↔ section doc.*
+- [x] **1.1 — Résorber la dérive doc/code de CLAUDE.md** ✅ (M) — FAIT 2026-06-13
+  Vérifié sur master actuel : **84 modules `<script src>`** dans `index.html`
+  (85 `<script>` dont 1 inline) vs **33 documentés** ; l'alias
+  **`ENEMIES = MONSTERS` documenté mais inexistant** (grep `js/` = 0 def, 0 usage).
+  → Section « Structure des fichiers » réécrite **dans l'ordre de chargement réel**
+  (84 entrées, modules manquants ajoutés : `html-escape`, `combat-fx`, `haptics`,
+  `codex`, `floor-ambiance`, `floor-events`, `room-flavor`, `ui-codex`, `textures`,
+  `dungeon-fx`, `cinematics`, `teleport`, `potions`, `house-donation`, `karaoke`,
+  `multiplayer*`, `portal-*`, `visit-*`, `pvp-duel`, `atelier-voyageur`, `endgame`,
+  `break-cycle`, `forge`, `library`, `help-tour`, `pwa`). La liste « ordre de
+  chargement » manuelle redondante est supprimée (l'arborescence EST l'ordre).
+  Ligne `ENEMIES = MONSTERS` retirée (pas de code mort réintroduit).
+  → Nouveau garde-fou `tools/check_doc_modules.js` (`--print` régénère l'ordre
+  canonique ; sans arg vérifie set + ordre, exit 1 en dérive) + étape CI
+  (`test.yml`). Vérifié : `node tools/check_doc_modules.js` → 84 modules alignés,
+  units (503), smoke (202) verts.
 
-- [ ] **1.2 — Audit du MANIFEST du loader** (S)
-  Croiser les globals critiques des modules récents (`house-donation.js`,
-  `atelier-voyageur.js`, `floor-ambiance.js`, `potions.js`, `endgame.js`…)
-  avec le `MANIFEST` de `js/loader.js` : tout export critique absent rend une
-  régression de chargement invisible (raison d'être du loader).
-  *Vérif : `window.__loaderReport.totalChecked` en hausse, smoke vert.*
+- [x] **1.2 — Audit du MANIFEST du loader** (S) — FAIT 2026-06-13
+  Croisé tous les modules `<script>` ↔ MANIFEST. `house-donation`,
+  `atelier-voyageur`, `floor-ambiance`, `potions`, `endgame`, `pvp-duel` :
+  déjà couverts. **Vrais trous critiques comblés** (globaux non checkés) :
+  `goDeeper`/`goUp`/`_changeFloor` (movement-floors.js), `triggerDeath`/
+  `resurrect` (battle-death.js), `QUEST_TEMPLATES` (quests-templates.js) ;
+  `PWA` (pwa.js) ajouté en optionnel. **Non checkables (documenté en place)** :
+  `audio-music.js`/`audio-sfx.js` n'ajoutent pas de global — ils étendent
+  l'objet `AudioSystem` (méthodes), hors de portée du test par identifiant nu ;
+  `data-icon-recipes.js` est inerte au runtime.
+  Vérif : `totalChecked` +7, smoke (202) + units (503) verts, loader OK
+  (pwa-smoke « loader OK »). Bump cache : loader.js v40→41, CACHE_VERSION
+  v118→v119.
 
-- [ ] **1.3 — Tests manquants à plus haut risque** (M-L, découpables)
-  1. **Génération de donjon** : 50 générations étages 1-10 → chaque étage a un
-     escalier **atteignable** (filet de sécurité `_ensureStairsExist`). (S)
-  2. **Mort Ironman** : `triggerDeath` en `ironmanMode` → écran de score, pas de
-     pétrification, slots Ironman purgés. (S)
-  3. **Interactions de statuts** : stun + fear + weaken combinés sur héros et
-     ennemis — ordre des tours, `consumeStun`, jamais de segment figé. (M)
-  4. **Migrations de save** : round-trip d'un save « ancien format » (sans
-     slots étendus, sans champs récents) → état jouable. (M)
-  5. **Célérité × Protego / double-garde** : comptage des coups bloqués. (M)
-  *Vérif : nouveaux scénarios dans `tests/scenarios/` + `node tests/smoke.js`.*
+- [x] **1.3 — Tests manquants à plus haut risque** (M-L, découpables) — FAIT 2026-06-13
+  1. **Génération de donjon** ✅ `scenarioStairsReachable` (dungeon.js) : 50
+     générations (étages 1-10 × 5 seeds), BFS depuis la case de départ →
+     STAIRS_D toujours atteignable.
+  2. **Mort Ironman** ✅ `scenarioIronmanDeath` (combat.js) : écran de score,
+     pas de pétrification ni death-screen, slots Ironman purgés, slot
+     non-Ironman préservé.
+  3. **Interactions de statuts** ✅ `scenarioStatusComboNoFreeze` (combat.js) :
+     stun+fear+weaken coexistent et se décomptent correctement ; groupe entier
+     privé d'action → chaîne de tours (file setTimeout drainée) sans segment
+     figé.
+  4. **Migrations de save** ✅ `scenarioOldSaveFormatRoundTrip` (save.js) :
+     équipement legacy + champs récents absents → migration jouable, round-trip
+     stable, aucun NaN.
+  5. **Célérité × Protego / double-garde** ✅ `scenarioCeleriteGuardCounting`
+     (combat.js) : comptage exact des coups bloqués (Protego/garde), action
+     sup. de Célérité empile la double-garde dans un segment.
+  *Vérif : 5 nouveaux scénarios, smoke 207 verts.*
 
-- [ ] **1.4 — Hygiène CI/harness** ✅ partiel (S)
-  Vérifié : `test.yml:53` annonce « 159 scénarios » alors que la suite en
-  compte **189** (comptage réel des `module.exports.scenarios`).
-  → Corriger le label (ou le rendre dynamique) ; centraliser les timeouts en
-  dur du harness (`tests/lib/harness.js`) dans une constante `TIMEOUTS` ;
-  resserrer `isIgnorableError` (ne pas avaler TypeError/ReferenceError).
-  *Vérif : CI verte, log de suite cohérent.*
+- [x] **1.4 — Hygiène CI/harness** (S) — FAIT 2026-06-13
+  Label `test.yml` « 159 scénarios » (la suite en compte désormais 207) :
+  le nombre est retiré du libellé — le runner imprime le total réel en fin
+  de suite (« N scénario(s) »), donc plus de dérive possible. Timeouts du
+  harness centralisés dans `TIMEOUTS` (`globalReady`/`introScreen`/`gameReady`/
+  `battleReady`, valeurs inchangées) et appliqués explicitement aux 4
+  `waitForFunction`. `isIgnorableError` resserré : garde dure en tête qui
+  refuse d'avaler tout message contenant `TypeError`/`ReferenceError`/
+  `SyntaxError`/`RangeError`, même s'il matche par ailleurs une sous-chaîne
+  ignorable.
+  *Vérif : units (503) + smoke (207) verts (filtre durci sans régression).*
 
-- [ ] **1.5 — Cohérence des gardes `typeof` dans `_applyState`** (S)
-  L'audit a signalé des gardes hétérogènes ; contre-vérification : le pattern
-  `if (typeof <global> !== 'undefined')` est **volontaire** (protège contre un
-  réordonnancement de scripts) — ne pas « corriger ». En revanche, documenter
-  ce pattern en tête de `_applyState` pour éviter qu'une future PR le
-  « nettoie », et noter l'invariant `searchedCells` (`{at, count}` uniquement,
-  sérialisation shallow).
-  *Vérif : commentaire en place, aucun changement de comportement.*
+- [x] **1.5 — Cohérence des gardes `typeof` dans `_applyState`** (S) — FAIT 2026-06-13
+  Bloc de conventions ajouté en tête de `_applyState` (save.js) : (1) le pattern
+  `if (typeof <global> !== 'undefined')` est **volontaire** (scope global
+  partagé, protège contre réordonnancement de scripts / module absent — sinon
+  ReferenceError au chargement), **ne pas** le « nettoyer » en affectation nue ;
+  (2) invariant `searchedCells` (`Map "x,y" → {at,count}`, sérialisation shallow
+  `Array.from`, rebuild ne restaurant que `at`/`count`). **Commentaire seul,
+  aucun changement de comportement.** Bump cache (comment dans un JS servi) :
+  save.js v34→35, CACHE_VERSION v119→v120.
+  *Vérif : units (503) + smoke (207) + pwa-smoke verts.*
 
 ---
 
@@ -290,7 +314,7 @@ existants. À discuter avant tout chantier.*
 | Étape | Items | Statut |
 |-------|-------|--------|
 | 0 — Critique | 4 | ✅ fait (2026-06-12) |
-| 1 — Majeur | 5 | ☐ à faire |
+| 1 — Majeur | 5 | ✅ fait (2026-06-13) |
 | 2 — UX | 8 | ☐ à faire |
 | 3 — Structure | 5 | ☐ à faire |
 | 4 — Contenu | propositions | ☐ à arbitrer |

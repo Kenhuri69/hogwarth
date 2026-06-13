@@ -41,6 +41,9 @@ jobs:
             node tools/check_cache_versions.js
           fi
 
+      - name: Garde-fou doc (modules CLAUDE.md ↔ index.html)
+        run: node tools/check_doc_modules.js
+
       - name: Garde-fou d'équilibre (dérive de win-rate vs DIFFICULTY_REPORT.md)
         run: |
           if [ -n "${{ github.base_ref }}" ]; then
@@ -59,7 +62,9 @@ jobs:
       - name: Tests unitaires (helpers purs, Node seul)
         run: node tests/units.js
 
-      - name: Suite smoke (159 scénarios, runner modulaire)
+      # Le nombre de scénarios n'est pas figé dans le libellé (il dérivait) :
+      # le runner imprime le total réel en fin de suite (« N scénario(s) »).
+      - name: Suite smoke (runner modulaire — total dans le log)
         run: node tests/smoke.js
 
       - name: Tests PWA (manifest + Service Worker + offline)

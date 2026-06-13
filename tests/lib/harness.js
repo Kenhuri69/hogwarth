@@ -6,9 +6,25 @@ const { chromium } = require('../_playwright.js');
 const path = require('path');
 
 const INDEX_URL = 'file://' + path.resolve(__dirname, '../../index.html');
+
+// Timeouts centralisés (ms). Évite les littéraux en dur épars : un seul
+// endroit à ajuster si l'environnement CI est lent. Les valeurs reprennent
+// le défaut Playwright (30 s) pour les attentes longues, 3 s pour l'intro.
+const TIMEOUTS = {
+  globalReady: 30000,   // disponibilité de window.startGame après goto
+  introScreen: 3000,    // apparition de #intro-screen (flow nouvelle partie)
+  gameReady:   30000,   // fin d'init startGame (textures + dungeon)
+  battleReady: 30000,   // entrée effective en combat
+};
+
 // ── Helpers réutilisables ────────────────────────────────────
 
 function isIgnorableError(text) {
+  // Garde dure : ne JAMAIS avaler une vraie erreur JS runtime, même si son
+  // message contient par ailleurs une sous-chaîne « ignorable » (ex. un
+  // TypeError levé pendant le chargement d'une ressource). Ces erreurs
+  // signalent des régressions réelles et doivent faire échouer le scénario.
+  if (/\b(TypeError|ReferenceError|SyntaxError|RangeError)\b/.test(text)) return false;
   // Bruit décorrélé du code (fonts CDN sur file://)
   return text.includes('ERR_CERT_AUTHORITY_INVALID')
       || text.includes('Failed to load resource')
@@ -47,7 +63,8 @@ async function launchGame() {
   });
 
   await page.goto(INDEX_URL);
-  await page.waitForFunction(() => typeof window.startGame === 'function');
+  await page.waitForFunction(() => typeof window.startGame === 'function',
+    { timeout: TIMEOUTS.globalReady });
 
   return { browser, page, errors };
 }
@@ -69,7 +86,7 @@ async function startNewGame(page, { partySize = 1, heroes = ['harry'], house = '
     await page.waitForFunction(() =>
       document.getElementById('intro-screen') &&
       document.getElementById('intro-screen').style.display === 'flex',
-      { timeout: 3000 });
+      { timeout: TIMEOUTS.introScreen });
     await page.evaluate(() => {
       while (typeof _introPage === 'number' &&
              typeof _introPages !== 'undefined' &&
@@ -84,7 +101,8 @@ async function startNewGame(page, { partySize = 1, heroes = ['harry'], house = '
   await page.waitForFunction(() =>
     Array.isArray(party) && party[0] && party[0].hp > 0
     && Array.isArray(enemyMap) && Array.isArray(enemyMap[0])
-    && typeof playerX === 'number' && typeof playerY === 'number'
+    && typeof playerX === 'number' && typeof playerY === 'number',
+    { timeout: TIMEOUTS.gameReady }
   );
 }
 
@@ -99,7 +117,8 @@ async function startDummyFight(page, { hp = 50 } = {}) {
     };
     startBattle(enemy);
   }, hp);
-  await page.waitForFunction(() => inBattle === true && enemyGroup.length > 0);
+  await page.waitForFunction(() => inBattle === true && enemyGroup.length > 0,
+    { timeout: TIMEOUTS.battleReady });
 }
 
 function assert(cond, msg) {
@@ -109,6 +128,6 @@ function assert(cond, msg) {
 const ROOT = path.resolve(__dirname, '../..');
 
 module.exports = {
-  chromium, path, ROOT, INDEX_URL,
+  chromium, path, ROOT, INDEX_URL, TIMEOUTS,
   isIgnorableError, launchGame, startNewGame, startDummyFight, assert,
 };
