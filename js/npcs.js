@@ -579,8 +579,11 @@ const NPCS = [
       house: "Gryffondor",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
-    questsGiven:    ["golem_passage", "quest_signature_gryff", "quest_set_gryff", "quest_don_gryff"],
-    questsTurnedIn: ["golem_passage", "quest_signature_gryff", "quest_set_gryff", "quest_don_gryff"],
+    // La Quête Signature 🦁 « L'Étendard de Godric » est désormais confiée par le
+    // donneur thématique dédié (Chevalier Fantôme `chevalier_godric`, ch.06 §6.8.5) ;
+    // McGonagall garde la leçon, le set, le don et la remise cérémonielle de la relique.
+    questsGiven:    ["golem_passage", "quest_set_gryff", "quest_don_gryff"],
+    questsTurnedIn: ["golem_passage", "quest_set_gryff", "quest_don_gryff"],
     dialogues: {
       greeting:    [
         "Un Gardien du Portail s'est éveillé dans les passages secrets. Il bloque l'accès à des connaissances précieuses.",
@@ -601,11 +604,6 @@ const NPCS = [
       questReady:  "Excellent travail. Voici votre récompense, bien méritée."
     },
     dialoguesByQuest: {
-      quest_signature_gryff: {
-        questOffer:  "Trois choses, et dans l'ordre. La peur que sèment les Épouvantards a éteint trois brasiers du courage : dissipez-la pour les rallumer. Puis montez jusqu'à la Tour sans jamais reculer d'un pas. Là vous attend un Chevalier Fantôme — reprenez-lui l'Étendard de Godric, la bannière qui ne s'incline jamais. Un meneur passe devant pour que les autres passent.",
-        questActive: "Les brasiers, la montée, l'Étendard — dans cet ordre, Gryffondor. Le château retient son souffle avec vous.",
-        questReady:  "Vous l'avez repris. Godric n'aurait pas mieux fait. La Bannière de Godric vous attend — repassez la réclamer."
-      },
       quest_set_gryff: {
         questOffer:  "Une Chimère rôde dans les profondeurs. Trois de ces bêtes — pas une de moins — et vous aurez gagné le Cœur du Lion. M'accordez-vous ce service ?",
         questActive: "Les Chimères tiennent-elles encore tête à un lion ?",
@@ -616,6 +614,39 @@ const NPCS = [
         questActive: "Avez-vous réuni les 3000 Gallions promis à la Maison ?",
         questReady:  "Trois mille Gallions pour Gryffondor. Voilà un geste digne d'un lion — la Maison vous en sait gré."
       }
+    }
+  },
+  // ── Donneur de Quête Signature 🦁 (original, gaté Gryffondor) ──
+  // Chevalier Fantôme : variante NON-HOSTILE du `chevalier_fantome` du
+  // bestiaire (§6.8.5). Confie « L'Étendard de Godric » ; n'apparaît que
+  // si chosenHouse === 'Gryffondor' (houseGate). Le mini-boss « Porte-Étendard
+  // Déchu » (climax kill `chevalier_fantome`) est une entité distincte.
+  {
+    id:    "chevalier_godric",
+    name:  "Chevalier Fantôme",
+    title: "Garde de l'Étendard de Godric",
+    sprite: "chevalier",
+    icon:  "⚔️",
+    portraitImg: "img/npc/chevalier_godric.png",
+    houseGate: "Gryffondor",
+    placement: { floor: 2, anchor: "any" },
+    questsGiven:    ["quest_signature_gryff"],
+    questsTurnedIn: ["quest_signature_gryff"],
+    dialogues: {
+      greeting: [
+        "Halte… non. Approche, plutôt. Voilà mille ans que je veille ce couloir, l'épée haute, et nul ne m'avait encore regardé en face. La fêlure a éteint les escaliers — mais elle éteint aussi le courage, et ça, je ne peux le souffrir.",
+        "Je suis tombé en défendant ce château lors d'un siège que plus personne ne nomme, et l'on ne m'a jamais dit que je pouvais me reposer. Toi, lion, tu portes encore la flamme. Il est temps de reprendre l'Étendard de Godric — la bannière qui ne s'incline jamais."
+      ],
+      idleRandom: [
+        "Mille ans de garde. On finit par parler aux torches. Elles, au moins, ne désertent pas.",
+        "Le courage n'est pas de ne pas trembler. C'est de tenir la porte en tremblant.",
+        "J'ai connu un Fondateur, jadis — frère d'armes, presque. Il riait fort. Garde ce nom pour toi, lion.",
+        "Tu sens ce froid ? C'est la fêlure. Elle gèle les cœurs avant les pierres. Garde le tien chaud."
+      ],
+      questOffer:  "Trois épreuves, dans l'ordre, et tu seras digne de la bannière. La peur que sèment les Épouvantards a étouffé trois brasiers du courage : dissipe-la pour les rallumer. Puis monte jusqu'à la Tour sans jamais reculer d'un pas. Là veille le Porte-Étendard Déchu — un frère que la fêlure a retourné. Reprends-lui l'Étendard de Godric, la bannière qui ne s'incline jamais. Un meneur passe devant pour que les autres passent.",
+      questActive: "Les brasiers, la montée, le Déchu — dans cet ordre, lion. Le château retient son souffle avec toi.",
+      questReady:  "Tu l'as repris au Déchu. Godric n'aurait pas mieux fait — et moi, enfin, je peux poser mon épée. La Bannière de Godric t'attend : le professeur McGonagall te la remettra, comme il sied à un héritier du Lion.",
+      questDone:   "Va, porteur de l'Étendard. La bannière ne s'incline jamais — et toi non plus, désormais."
     }
   },
   {
@@ -631,8 +662,11 @@ const NPCS = [
       house: "Serpentard",
       label: "<img class='ui-icon ui-icon-md' src='img/icons/gold.png' alt=''> Recevoir votre récompense"
     },
-    questsGiven:    ["quest_signature_slyth", "quest_set_slyth", "quest_don_slyth"],
-    questsTurnedIn: ["quest_signature_slyth", "quest_set_slyth", "quest_don_slyth"],
+    // La Quête Signature 🐍 « Le Pacte des Cachots » est désormais confiée par le
+    // donneur thématique dédié (Écho de Salazar `echo_salazar`, ch.06 §6.8.6) ;
+    // Rogue garde le set, le don et la remise cérémonielle de la relique.
+    questsGiven:    ["quest_set_slyth", "quest_don_slyth"],
+    questsTurnedIn: ["quest_set_slyth", "quest_don_slyth"],
     dialogues: {
       greeting: [
         "Tiens, tiens... un élève de ma maison qui ose s'aventurer ici.",
@@ -650,11 +684,6 @@ const NPCS = [
       ]
     },
     dialoguesByQuest: {
-      quest_signature_slyth: {
-        questOffer:  "Sous les cachots, une voix murmure : l'écho de Salazar, scellé avec la corruption qu'il a aidé à enfermer. Descendez ouvrir son passage, franchissez les serpents qui le gardent, et arrachez au Basilic son secret. Je vous montre le chemin… mais méfiez-vous : ce n'est pas un démon, c'est un Fondateur qui a fait, mille ans plus tôt, le choix qui vous attend.",
-        questActive: "Le passage est-il ouvert, les serpents écartés, le Basilic vaincu ? L'écho est patient. Pas moi.",
-        questReady:  "Vous avez percé la vérité de l'écho. Reste à choisir, et ce choix-là n'appartient qu'à vous : sceller le Pacte, ou défier Salazar."
-      },
       quest_set_slyth: {
         questOffer:  "Trois Basilics Mineurs souillent les cachots oubliés. Élimine-les. Sans bruit, sans gloire. La Couronne du Basilic n'est pas pour les vantards.",
         questActive: "Encore en vie ? Surprenant. Le travail n'est pas terminé.",
@@ -665,6 +694,39 @@ const NPCS = [
         questActive: "Les 3000 Gallions. Serpentard attend — l'attente n'est pas une vertu que je cultive.",
         questReady:  "Trois mille Gallions versés sans un mot. Voilà qui est… habile. Serpentard n'oubliera pas."
       }
+    }
+  },
+  // ── Donneur de Quête Signature 🐍 (original, gaté Serpentard) ──
+  // Écho de Salazar : pas un fantôme — une présence murmurée derrière un
+  // passage scellé des cachots (§6.8.6). Confie « Le Pacte des Cachots » ;
+  // le choix gris Pacte/Défiance se joue à la remise (turnInSlythSignature,
+  // déjà câblé dans npc-dialog.js sur le qid). houseGate Serpentard.
+  {
+    id:    "echo_salazar",
+    name:  "Écho de Salazar",
+    title: "Présence des Cachots",
+    sprite: "echo",
+    icon:  "🐍",
+    portraitImg: "img/npc/echo_salazar.png",
+    houseGate: "Serpentard",
+    placement: { floor: 4, anchor: "any" },
+    questsGiven:    ["quest_signature_slyth"],
+    questsTurnedIn: ["quest_signature_slyth"],
+    dialogues: {
+      greeting: [
+        "…Tu es venu. Ils viennent toujours, ceux de ma Maison. Je suis l'écho de Salazar Serpentard — ce qu'il en reste, scellé ici avec la corruption qu'il a aidé à enfermer. Car les Fondateurs n'ont pas seulement muré un mal du dehors. Ils ont muré une part d'eux-mêmes.",
+        "Ne me crains pas comme un démon. Je suis un Fondateur qui, mille ans avant toi, a fait le choix qui t'attend. Descends, ouvre mon passage, et viens chercher ce que j'ai à t'offrir — ou à te montrer."
+      ],
+      idleRandom: [
+        "Le pouvoir n'est pas mal, petit. Il est seulement… disponible. C'est ce qu'on en fait qui pèse.",
+        "Tu n'es pas tenté par le mal. Tu es tenté par la facilité. Ne confonds jamais les deux.",
+        "Ce que ton ennemi cherche tout au fond, c'est ce que j'ai scellé. Médite cela avant de l'affronter.",
+        "Un serpent ne ment pas. Il choisit seulement ce qu'il montre."
+      ],
+      questOffer:  "Sous ces cachots dort mon passage secret. Descends l'ouvrir, franchis les serpents qui le gardent, puis arrache au Basilic le secret des Fondateurs. Alors — alors seulement — tu sauras assez pour choisir : sceller notre pacte, ou me défier. Je ne te demande pas ton âme. Juste un raccourci, et un secret qui ne t'appartient pas tout à fait.",
+      questActive: "Le passage, les serpents, le Basilic. L'écho est patient — il a mille ans d'avance sur ton impatience.",
+      questReady:  "Tu as percé ma vérité, petit. Reste l'unique chose qui t'appartienne vraiment : le choix. Scelle le Pacte et le pouvoir t'écoutera… ou défie-moi, et garde les mains libres. Décide.",
+      questDone:   "Le choix est fait. Il l'est pour toujours — c'est ce qui en faisait un choix. Va, héritier du Serpent."
     }
   },
   {

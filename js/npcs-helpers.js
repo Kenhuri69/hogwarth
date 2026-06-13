@@ -16,12 +16,24 @@ function getNpcSpriteType(id) {
   return (npc && npc.sprite) || 'mage';
 }
 
+// Vrai si le PNJ est visible pour la Maison choisie. Un PNJ porteur de
+// `houseGate` (string ou tableau de noms de Maison) n'apparaît que si
+// `chosenHouse` correspond — câblage des donneurs de Quête Signature
+// (Chevalier Fantôme 🦁, Écho de Salazar 🐍 ; cf. ch.06 §6.12.A). Sans
+// `houseGate`, le PNJ est visible pour tout le monde (comportement inchangé).
+function _npcPassesHouseGate(npc) {
+  const gate = npc && npc.houseGate;
+  if (!gate) return true;
+  if (typeof chosenHouse === 'undefined' || !chosenHouse) return false;
+  return Array.isArray(gate) ? gate.includes(chosenHouse) : gate === chosenHouse;
+}
+
 function getNpcsForFloor(floor) {
   // PNJ fixes : placement déterministe par étage. La Boucle Ténébreuse
   // (effectiveFloor remappe 11→1, 18→8, etc.) recycle automatiquement
   // les PNJ étages 1-10 : Kingsley apparaît à 8 ET 18, etc.
   const ef = (typeof effectiveFloor === 'function') ? effectiveFloor(floor) : floor;
-  return NPCS.filter(n => n.placement && (
+  return NPCS.filter(n => n.placement && _npcPassesHouseGate(n) && (
     n.placement.floor === floor || n.placement.floor === ef
   ));
 }

@@ -70,17 +70,30 @@ async function scenarioNpcIntegration() {
   assert(t0c.seenNow,           'PNJ non marqué rencontré par _finishIntro');
   await fresh.browser.close();
 
-  // T1 : registre + helpers exposés
-  const t1 = await page.evaluate(() => ({
-    npcCount:        typeof NPCS !== 'undefined' ? NPCS.length : -1,
-    hasGetById:      typeof getNpcById === 'function',
-    hasGetForFloor:  typeof getNpcsForFloor === 'function',
-    cellNpc:         CELL.NPC,
-    dumbledore:      !!getNpcById('dumbledore'),
-    floor1Count:     getNpcsForFloor(1).length,
-    floor2Count:     getNpcsForFloor(2).length,
-    floor4Count:     getNpcsForFloor(4).length
-  }));
+  // T1 : registre + helpers exposés. Les comptes d'étage dépendent de la
+  // Maison (donneurs de signature gatés `houseGate` — Chevalier Fantôme à
+  // l'ét. 2 pour Gryffondor, Écho de Salazar à l'ét. 4 pour Serpentard).
+  const t1 = await page.evaluate(() => {
+    const counts = (house) => {
+      const prev = chosenHouse; chosenHouse = house;
+      const f2 = getNpcsForFloor(2), f4 = getNpcsForFloor(4);
+      const r = {
+        f1: getNpcsForFloor(1).length, f2: f2.length, f4: f4.length,
+        chevAt2: f2.some(n => n.id === 'chevalier_godric'),
+        echoAt4: f4.some(n => n.id === 'echo_salazar')
+      };
+      chosenHouse = prev; return r;
+    };
+    return {
+      npcCount:        typeof NPCS !== 'undefined' ? NPCS.length : -1,
+      hasGetById:      typeof getNpcById === 'function',
+      hasGetForFloor:  typeof getNpcsForFloor === 'function',
+      cellNpc:         CELL.NPC,
+      dumbledore:      !!getNpcById('dumbledore'),
+      gryff:           counts('Gryffondor'),
+      slyth:           counts('Serpentard')
+    };
+  });
   console.log('  T1 registry:', t1);
   // 8 PNJ fixes + 2 vendeurs (it. 4) + 4 lore (it. 6) = 14 entrées minimum.
   assert(t1.npcCount >= 8,               `attendu ≥ 8 PNJ, trouvé ${t1.npcCount}`);
@@ -88,9 +101,17 @@ async function scenarioNpcIntegration() {
   assert(t1.hasGetForFloor,              'getNpcsForFloor absent');
   assert(t1.cellNpc === 8,               'CELL.NPC doit valoir 8');
   assert(t1.dumbledore,                  'PNJ Dumbledore introuvable');
-  assert(t1.floor1Count === 1,           'étage 1 doit avoir 1 PNJ (Dumbledore)');
-  assert(t1.floor2Count === 4,           'étage 2 doit avoir 4 PNJ (incl. Slughorn)');
-  assert(t1.floor4Count === 3,           'étage 4 doit avoir 3 PNJ (incl. Rogue chef Serpentard)');
+  assert(t1.gryff.f1 === 1,              'étage 1 doit avoir 1 PNJ (Dumbledore)');
+  // Base ét. 2 : Pomfresh, Mimi, Scamander, Slughorn = 4 ; +1 Chevalier (🦁).
+  assert(t1.gryff.f2 === 5,             'étage 2 (Gryffondor) doit avoir 5 PNJ (4 + Chevalier Fantôme)');
+  assert(t1.gryff.chevAt2,              'Chevalier Fantôme doit apparaître à l\'ét. 2 pour Gryffondor');
+  assert(t1.slyth.f2 === 4,             'étage 2 (Serpentard) doit avoir 4 PNJ (Chevalier gaté absent)');
+  assert(!t1.slyth.chevAt2,             'Chevalier Fantôme ne doit PAS apparaître hors Gryffondor');
+  // Base ét. 4 : Lupin, Hagrid, Rogue = 3 ; +1 Écho de Salazar (🐍) pour Serpentard.
+  assert(t1.gryff.f4 === 3,             'étage 4 (Gryffondor) doit avoir 3 PNJ (Écho gaté absent)');
+  assert(!t1.gryff.echoAt4,             'Écho de Salazar ne doit PAS apparaître hors Serpentard');
+  assert(t1.slyth.f4 === 4,             'étage 4 (Serpentard) doit avoir 4 PNJ (3 + Écho de Salazar)');
+  assert(t1.slyth.echoAt4,              'Écho de Salazar doit apparaître à l\'ét. 4 pour Serpentard');
 
   // T2 : génération étage 1 — Dumbledore présent + npcPlacements peuplé
   const t2 = await page.evaluate(() => {

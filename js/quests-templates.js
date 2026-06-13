@@ -726,8 +726,8 @@ const QUEST_TEMPLATES = [
   {
     id: "quest_signature_gryff",
     title: "L'Étendard de Godric",
-    giver: "Professeur McGonagall",
-    desc: "Trois brasiers du courage se sont éteints, étouffés par la peur que les Épouvantards font lever. Rallume-les en les dissipant, avance jusqu'à la Tour sans jamais reculer, puis reprends l'Étendard de Godric au Chevalier Fantôme — la bannière qui ne s'incline jamais. Un meneur passe devant pour que les autres passent.",
+    giver: "Chevalier Fantôme",
+    desc: "Trois brasiers du courage se sont éteints, étouffés par la peur que les Épouvantards font lever. Rallume-les en les dissipant, avance jusqu'à la Tour sans jamais reculer, puis reprends l'Étendard de Godric au Porte-Étendard Déchu — la bannière qui ne s'incline jamais. Un meneur passe devant pour que les autres passent.",
     objectives: [
       // 1. Rallumer les 3 brasiers du courage = dissiper la peur (Épouvantards).
       { type: "kill",  monsterId: "boggart", amount: 3, progress: 0, completed: false },
@@ -744,7 +744,7 @@ const QUEST_TEMPLATES = [
   {
     id: "quest_signature_slyth",
     title: "Le Pacte des Cachots",
-    giver: "Professeur Rogue",
+    giver: "Écho de Salazar",
     desc: "Sous les cachots, l'écho de Salazar murmure — scellé avec la corruption qu'il a aidé à enfermer. Descends ouvrir son passage secret, franchis les serpents qui le gardent, puis arrache au Basilic le secret des Fondateurs. Alors seulement tu choisiras : sceller le Pacte, ou défier l'écho.",
     objectives: [
       // 1. Ouvrir le passage secret de Salazar = descendre dans les cachots.

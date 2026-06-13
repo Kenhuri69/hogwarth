@@ -1636,4 +1636,133 @@ async function scenarioHouseSignatureQuests() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests] };
+// ── Quête Signature par Maison : le DONNEUR THÉMATIQUE dédié (ch.06 §6.12 P1) ──
+// Vérifie, pour une Maison, que sa signature est confiée/remise par son donneur
+// (Chevalier Fantôme 🦁 / Écho de Salazar 🐍 / Flitwick 🦅 / Chourave 🦡), gatée
+// par `chosenHouse` + étage, avec pose du flag à la remise. Pour les donneurs
+// originaux gatés (gryff/slyth), vérifie aussi le `houseGate` (présence pour la
+// bonne Maison, absence pour une autre).
+async function _runHouseSignatureDonor(cfg) {
+  console.log(`\n── Scénario : Signature ${cfg.house} — donneur ${cfg.donor} ──`);
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: cfg.house });
+
+  const r = await page.evaluate((cfg) => {
+    chosenHouse = cfg.house;
+    availableQuests.delete(cfg.qid);
+    activeQuests = activeQuests.filter(q => q.id !== cfg.qid);
+    completedQuests.delete(cfg.qid);
+    pendingHouseRewards = new Set();
+    gryffSignatureDone = slythSignatureDone = ravenSignatureDone = poufSignatureDone = false;
+    slythPactChoice = null;
+
+    const donor = getNpcById(cfg.donor);
+
+    // houseGate : donneur original présent pour sa Maison, absent pour une autre.
+    let gatePresent = null, gateAbsent = null;
+    if (cfg.gated) {
+      gatePresent = getNpcsForFloor(cfg.donorFloor).some(n => n.id === cfg.donor);
+      const other = cfg.house === 'Serpentard' ? 'Gryffondor' : 'Serpentard';
+      chosenHouse = other;
+      gateAbsent = getNpcsForFloor(cfg.donorFloor).some(n => n.id === cfg.donor);
+      chosenHouse = cfg.house;
+    }
+
+    // Gate étage : pas d'ouverture avant le déclencheur, ouverture au seuil.
+    currentFloor = cfg.trigger - 1; checkFloorQuests(currentFloor);
+    const beforeUnlock = availableQuests.has(cfg.qid);
+    currentFloor = cfg.trigger; checkFloorQuests(currentFloor);
+    const unlocked = availableQuests.has(cfg.qid);
+
+    const donorGivesQuest = (donor && (donor.questsGiven || []).includes(cfg.qid));
+    const donorOfferState = getNpcQuestState(donor);
+
+    acceptQuest(cfg.qid);
+    const active = activeQuests.some(q => q.id === cfg.qid);
+
+    // Complète la chaîne (beats passifs d'abord, kills séquentiels ensuite).
+    const q = activeQuests.find(x => x.id === cfg.qid);
+    if (q) {
+      for (const o of q.objectives) {
+        if (o.type === 'herb')       { player.herbs = player.herbs || {}; player.herbs.__t = (player.herbs.__t || 0) + o.amount; }
+        else if (o.type === 'item')  { player.inventory = player.inventory || []; for (let i = 0; i < o.amount; i++) player.inventory.push({ id: o.itemId }); }
+        else if (o.type === 'pages') { player.grimoirePages = player.grimoirePages || []; while (player.grimoirePages.length < o.amount) player.grimoirePages.push({}); }
+        else if (o.type === 'donate'){ player.gold = (player.gold || 0) + o.amount; }
+      }
+      if (typeof _refreshObjectives === 'function') _refreshObjectives();
+      for (const o of q.objectives) if (o.type === 'floor') checkFloorQuests(o.floor);
+      for (const o of q.objectives) { if (o.type !== 'kill') continue; for (let i = 0; i < o.amount; i++) checkKillQuests(o.monsterId); }
+    }
+    if (typeof _refreshObjectives === 'function') _refreshObjectives();
+    const chainDone = q ? q.objectives.every(o => o.completed) : false;
+    const donorReadyState = getNpcQuestState(donor);
+
+    // Remise via le donneur (choix gris à la remise pour Serpentard).
+    const turned = (cfg.qid === 'quest_signature_slyth')
+      ? turnInSlythSignature('defiance')
+      : turnInQuestById(cfg.qid);
+    const flags = { gryffSignatureDone, slythSignatureDone, ravenSignatureDone, poufSignatureDone };
+    return { gatePresent, gateAbsent, beforeUnlock, unlocked, donorGivesQuest,
+             donorOfferState, active, chainDone, donorReadyState, turned,
+             flagSet: flags[cfg.flag], pact: slythPactChoice };
+  }, cfg);
+
+  console.log('  →', r);
+  if (cfg.gated) {
+    assert(r.gatePresent,  `${cfg.house}: donneur ${cfg.donor} absent à l'ét. ${cfg.donorFloor} pour sa Maison`);
+    assert(!r.gateAbsent,  `${cfg.house}: donneur ${cfg.donor} ne doit PAS apparaître pour une autre Maison (houseGate)`);
+  }
+  assert(r.donorGivesQuest, `${cfg.house}: ${cfg.donor} ne confie pas ${cfg.qid}`);
+  assert(!r.beforeUnlock,   `${cfg.house}: signature ouverte trop tôt (avant l'ét. ${cfg.trigger})`);
+  assert(r.unlocked,        `${cfg.house}: signature non ouverte à l'ét. déclencheur`);
+  assert(r.donorOfferState === 'offer', `${cfg.house}: ${cfg.donor} ne propose pas la signature (état ${r.donorOfferState})`);
+  assert(r.active,          `${cfg.house}: acceptQuest a échoué`);
+  assert(r.chainDone,       `${cfg.house}: chaîne d'objectifs non complétée`);
+  assert(r.donorReadyState === 'ready', `${cfg.house}: ${cfg.donor} pas en état 'ready' (état ${r.donorReadyState})`);
+  assert(r.turned,          `${cfg.house}: remise échouée`);
+  assert(r.flagSet,         `${cfg.house}: flag ${cfg.flag} non posé à la remise`);
+  if (cfg.qid === 'quest_signature_slyth') {
+    assert(r.pact === 'defiance', `${cfg.house}: slythPactChoice non figé à la remise`);
+  }
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log(`  ✅ Signature ${cfg.house} confiée et remise par ${cfg.donor}`);
+  await browser.close();
+}
+
+// 🦁 Gryffondor — Chevalier Fantôme (donneur original gaté).
+async function scenarioHouseSignatureGryffondor() {
+  await _runHouseSignatureDonor({
+    house: 'Gryffondor', donor: 'chevalier_godric', gated: true, donorFloor: 2,
+    qid: 'quest_signature_gryff', trigger: 2, flag: 'gryffSignatureDone'
+  });
+}
+
+// 🐍 Serpentard — Écho de Salazar (donneur original gaté + choix gris).
+async function scenarioHouseSignatureSerpentard() {
+  await _runHouseSignatureDonor({
+    house: 'Serpentard', donor: 'echo_salazar', gated: true, donorFloor: 4,
+    qid: 'quest_signature_slyth', trigger: 4, flag: 'slythSignatureDone'
+  });
+}
+
+// 🦅 Serdaigle — Flitwick (chef de Maison, donneur thématique des stèles/Codex).
+async function scenarioHouseSignatureSerdaigle() {
+  await _runHouseSignatureDonor({
+    house: 'Serdaigle', donor: 'flitwick', gated: false, donorFloor: 6,
+    qid: 'quest_signature_raven', trigger: 2, flag: 'ravenSignatureDone'
+  });
+}
+
+// 🦡 Poufsouffle — Chourave (cheffe de Maison, donneuse du Refuge).
+async function scenarioHouseSignaturePoufsouffle() {
+  await _runHouseSignatureDonor({
+    house: 'Poufsouffle', donor: 'sprout', gated: false, donorFloor: 3,
+    qid: 'quest_signature_pouf', trigger: 2, flag: 'poufSignatureDone'
+  });
+}
+
+module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle] };
