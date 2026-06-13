@@ -369,3 +369,53 @@ puis `titles = computeProfileTitles(profile)` et write.
   ne doit apparaître que dans le rendu UI/cosmétique et la sérialisation.
 - Le profil n'est **jamais** réinjecté dans une save de partie ; il ne sert qu'à
   l'affichage (titres/codex) et à la cosmétique opt-in.
+
+---
+
+## 8. Phase P6 — Polish NG+ (modale dédiée + finitions + art)
+
+**Statut :** 🟩 en cours · branche `claude/hogwarth-ch14-p6-ngplus-polish` (P5 mergé #502).
+
+Trois axes validés par l'utilisateur (AskUserQuestion, 2026-06-13) : **finitions
+visuelles + modale Codex dédiée + art/icônes**. Reste **strictement cosmétique**
+(zéro impact gameplay, équilibrage 13 intact).
+
+### A. Modale Codex dédiée
+- Remplace le panneau repliable `#start-hub-profile` du hub par un **bouton**
+  `#hub-codex-btn` (📜 Codex du Sorcier), masqué si profil vierge
+  (`_refreshHubCodexBtn`), qui ouvre une **modale dédiée** `#wizard-codex-modal`
+  (patron `.modal-box` standard, `closeModal`).
+- `openWizardCodex()` / `closeWizardCodex()` ; `renderProfileCodex()` repeuple
+  désormais le corps `#wizard-codex-body` (titres + 3 fins + stats agrégées —
+  victoires / Cycles brisés ; **pas** d'historique par run, non stocké).
+
+### B. Finitions visuelles
+- Bandeau titre HUD `#ngplus-hud-title` : animation d'apparition (fade/scale,
+  no-op reduced-motion), meilleur contraste, responsive ≤700px.
+- Cadre doré « Vétéran » `.ngplus-veteran .hero-card` : glow affiné.
+- Ligne opt-in : médaillon « Vétéran » (`ngplus_veteran.png`) en tête.
+- Modale : style parchemin/or cohérent.
+
+### C. Art / icônes (procédural Pillow, pas d'IA externe)
+- `tools/gen_ngplus_icons.py` (modèle `gen_ironman_icons.py`, PIL/numpy) →
+  `img/icons/codex_wizard.png` (grimoire + étoile) et `img/icons/ngplus_veteran.png`
+  (écu + étoile). 64×64 dorés, cohérents avec le set existant. `img/` en SWR →
+  pas de `?v`. Marqueurs de fin = emojis existants (🏆/🐍/🕊️), pas d'art douteux.
+
+### Étapes & vérif
+1. ✅ `tools/gen_ngplus_icons.py` + génération des 2 PNG (`codex_wizard.png`,
+   `ngplus_veteran.png`) — vérifiés visuellement (grimoire + écu dorés, cohérents).
+2. ✅ index.html : bouton hub `#hub-codex-btn` + modale `#wizard-codex-modal` +
+   médaillon opt-in ; retrait du panneau `#start-hub-profile`.
+3. ✅ profile.js : `openWizardCodex`/`closeWizardCodex`/`_refreshHubCodexBtn` ;
+   `renderProfileCodex` → corps `#wizard-codex-body`.
+4. ✅ CSS : modale (`#wizard-codex-body` save-ui.css) + finitions style.css
+   (HUD anim `ngplusTitleIn`/contraste/responsive ≤700px, cadre Vétéran, médaillon opt-in).
+5. ✅ save-ui.js : `enterStartHub` → `_refreshHubCodexBtn` (au lieu du panneau).
+6. ✅ Loader MANIFEST : `openWizardCodex` (optionnel).
+7. ✅ Tests : `scenarioNgPlusProfile` MAJ (bouton hub + modale open/close/contenu)
+   → **vert** ; units inchangés (568 ✅) ; screenshot modale validé.
+8. ✅ Cache bump (style 40→41, save-ui 4→5, profile 1→2, save-ui.js 7→8, loader 45→46,
+   `CACHE_VERSION` v127→v128) ; `units` 568 ✅ + `smoke` 213/213 ✅ + `pwa-smoke` ✅ ;
+   `check_cache_versions.js` OK ; grep `ngPlus` toujours confiné (zéro leak).
+9. ⬜ Commit + push + PR (ne pas merger sans feu vert).

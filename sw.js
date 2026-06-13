@@ -27,9 +27,9 @@ const PRECACHE_URLS = [
   './manifest.json',
 
   // CSS
-  './css/style.css?v=40',
+  './css/style.css?v=41',
   './css/ux-improvements.css?v=4',
-  './css/save-ui.css?v=4',
+  './css/save-ui.css?v=5',
   './css/ornaments.css?v=1',
   './css/help-tour.css?v=2',
   './css/pwa.css?v=1',
@@ -104,8 +104,8 @@ const PRECACHE_URLS = [
   './js/save-slots.js?v=3',
   './js/save.js?v=38',
   './js/save-visit-snapshot.js?v=1',
-  './js/profile.js?v=1',
-  './js/save-ui.js?v=7',
+  './js/profile.js?v=2',
+  './js/save-ui.js?v=8',
   './js/ironman.js?v=4',
   './js/hall-of-fame.js?v=4',
   './js/multiplayer.js?v=9',
@@ -117,7 +117,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=4',
   './js/library.js?v=4',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=45',
+  './js/loader.js?v=46',
   './js/pwa.js?v=4',
 
   // Icônes PWA + premier écran

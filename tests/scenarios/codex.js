@@ -877,15 +877,31 @@ async function scenarioNgPlusProfile() {
   assert(broke.seen === true, 'endingsSeen.cycle_broken devrait être vrai');
   assert(broke.top === 'Briseur de Cycle', `top title Briseur attendu (${broke.top})`);
 
-  // Codex du Sorcier : le panneau du hub se rend et n'est plus masqué.
+  // Codex du Sorcier (P6) : bouton du hub visible (≥1 victoire), modale dédiée
+  // s'ouvre et son corps liste titre dominant + fins.
   const codex = await page.evaluate(() => {
-    renderProfileCodex();
-    const el = document.getElementById('start-hub-profile');
-    return { display: el && el.style.display, html: el ? el.innerHTML : '' };
+    _refreshHubCodexBtn();
+    const btn = document.getElementById('hub-codex-btn');
+    const btnVisible = btn && btn.style.display !== 'none';
+    openWizardCodex();
+    const m = document.getElementById('wizard-codex-modal');
+    const body = document.getElementById('wizard-codex-body');
+    const res = {
+      btnVisible,
+      modalOpen: m && m.style.display === 'flex',
+      hasTopTitle: body && body.textContent.includes('Briseur de Cycle'),
+      hasEndingSection: body && body.textContent.includes('Fins découvertes'),
+    };
+    closeWizardCodex();
+    res.modalClosed = m && m.style.display === 'none';
+    return res;
   });
-  console.log('  codex :', { display: codex.display, len: codex.html.length });
-  assert(codex.display === 'block', 'Codex du Sorcier devrait être affiché (≥1 victoire)');
-  assert(codex.html.includes('Codex du Sorcier'), 'panneau Codex devrait nommer le Codex du Sorcier');
+  console.log('  codex :', codex);
+  assert(codex.btnVisible, 'bouton Codex du Sorcier du hub devrait être visible (≥1 victoire)');
+  assert(codex.modalOpen, 'modale Codex du Sorcier devrait s\'ouvrir');
+  assert(codex.hasTopTitle, 'modale devrait afficher le titre dominant');
+  assert(codex.hasEndingSection, 'modale devrait lister les fins découvertes');
+  assert(codex.modalClosed, 'closeWizardCodex devrait fermer la modale');
 
   // Opt-in : la case devient visible quand le profil a une victoire.
   const optin = await page.evaluate(() => {

@@ -10,9 +10,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=40">
+<link rel="stylesheet" href="css/style.css?v=41">
 <link rel="stylesheet" href="css/ux-improvements.css?v=4">
-<link rel="stylesheet" href="css/save-ui.css?v=4">
+<link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
 <link rel="stylesheet" href="css/help-tour.css?v=2">
 <link rel="stylesheet" href="css/pwa.css?v=1">
@@ -76,13 +76,16 @@
     <div id="start-hub-slot-list" class="slot-list hub-slot-list"></div>
     <!-- V3 — Almanach de la Salle sur Demande (méta léger, rempli par JS si découvert) -->
     <div id="start-hub-almanac" class="hub-almanac"></div>
-    <!-- Ch.14 P5 — Codex du Sorcier (profil persistant : fins + titres ; rempli par JS si ≥1 victoire) -->
-    <div id="start-hub-profile" class="hub-almanac"></div>
     <button id="hub-new-btn" class="hub-new-btn" onclick="startHubNewGame()">
       ✦ NOUVELLE AVENTURE ✦
     </button>
     <button type="button" class="hub-import-btn" onclick="importSaveFromFileToHub()">
       📥 Importer une sauvegarde
+    </button>
+    <!-- Ch.14 P6 — Codex du Sorcier (profil persistant : fins + titres).
+         Masqué si profil vierge (géré par _refreshHubCodexBtn). -->
+    <button type="button" id="hub-codex-btn" class="hub-import-btn" onclick="openWizardCodex()" style="display:none">
+      <img class="ir-icon hof-btn-icon" src="img/icons/codex_wizard.png" alt=""> Codex du Sorcier
     </button>
     <button type="button" class="hub-import-btn hub-hof-btn" onclick="openHallOfFame()">
       <img class="ir-icon hof-btn-icon" src="img/icons/trophy.png" alt=""> Hall of Fame
@@ -174,6 +177,7 @@
       <!-- Ch.14 P5 — New Game+ opt-in : visible seulement si le profil a ≥1
            victoire (géré par _refreshNgPlusOptIn). Purement cosmétique. -->
       <label id="ngplus-optin-row" class="psel-ngplus-row" style="display:none">
+        <img class="psel-ngplus-medal" src="img/icons/ngplus_veteran.png" alt="">
         <input type="checkbox" id="ngplus-toggle" onchange="_onNgPlusToggle()">
         <span class="psel-ngplus-text">
           <span class="psel-ngplus-title">✦ Nouvelle Partie+</span>
@@ -927,6 +931,16 @@
   </div>
 </div>
 
+<!-- Ch.14 P6 — Codex du Sorcier (profil persistant : fins + titres). Peuplée
+     par profile.js (renderProfileCodex → #wizard-codex-body). -->
+<div id="wizard-codex-modal" role="dialog" aria-modal="true" aria-labelledby="wizard-codex-title">
+  <div class="modal-box">
+    <div class="modal-title" id="wizard-codex-title"><img class="ui-icon ui-icon-xl" src="img/icons/codex_wizard.png" alt=""> Codex du Sorcier</div>
+    <span class="modal-close" onclick="closeWizardCodex()" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <div id="wizard-codex-body"></div>
+  </div>
+</div>
+
 <!-- Modale de choix de slot (save / load) — peuplée par save-ui.js -->
 <div id="slot-modal" role="dialog" aria-modal="true" aria-labelledby="slot-modal-title">
   <div class="modal-box">
@@ -1279,8 +1293,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/save-slots.js?v=3"></script>
 <script src="js/save.js?v=38"></script>
 <script src="js/save-visit-snapshot.js?v=1"></script>
-<script src="js/profile.js?v=1"></script>
-<script src="js/save-ui.js?v=7"></script>
+<script src="js/profile.js?v=2"></script>
+<script src="js/save-ui.js?v=8"></script>
 <script src="js/ironman.js?v=4"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
 <script src="js/multiplayer.js?v=9"></script>
@@ -1298,7 +1312,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/forge.js?v=4"></script>
 <script src="js/library.js?v=4"></script>
 <script src="js/help-tour.js?v=3"></script>
-<script src="js/loader.js?v=45"></script>
+<script src="js/loader.js?v=46"></script>
 <script src="js/pwa.js?v=4"></script>
 
 </body>
