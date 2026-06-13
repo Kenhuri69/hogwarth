@@ -2888,8 +2888,9 @@ async function scenarioRoomOfRequirement() {
   assert(t10, 'le Moine Gras doit évoquer la Salle dans idleRandom');
 
   // ── V3 (room-of-requirement-v3.md) ───────────────────────────
-  // T11 : commerce éphémère — boutique (or haut), forge (Boucle 11+ forgeable),
-  // gate forge (jamais < 11), ouverture sans throw, non-consommable.
+  // T11 : commerce — boutique (or haut), forge (Boucle 11+ forgeable), gate
+  // forge (jamais < 11), ouverture via l'Étal premium sans throw, désormais
+  // CONSOMMABLE (1 choix/visite), étal premium remisé, exploit de cumul fermé.
   const t11 = await page.evaluate(() => {
     const out = {};
     const gold0 = player.gold;
@@ -2909,14 +2910,30 @@ async function scenarioRoomOfRequirement() {
     party[0].equipped.wand = { id: 'wand1', name: 'Baguette', bonusAtk: 2, upgradeLevel: 0, slot: 'wand' };
     out.forgeable = _requirementForgeable();
     out.forge = _pickRequirementTheme(12);
-    // Ouverture sans throw + non-consommable (pas de usedRequirementRooms)
+    // Ouverture sans throw + désormais CONSOMMABLE (1 choix/visite) + badge
     currentFloor = 5; playerX = 9; playerY = 9; dungeon[9][9] = CELL.REQUIREMENT;
     requirementGiftTaken = true; usedRequirementRooms = new Set();
+    requirementTrophiesTaken = new Set();
     requirementTheme = new Map([[5, 'boutique']]);
     let threw = false;
     try { useRequirementRoom(); } catch (e) { threw = true; }
-    out.openOk = !threw;
-    out.notConsumed = !usedRequirementRooms.has('9,9');
+    out.openOk      = !threw;
+    out.consumed    = usedRequirementRooms.has('9,9');
+    out.shopContext = (typeof _shopContext !== 'undefined') && _shopContext.kind === 'requirement';
+    out.trophy      = requirementTrophiesTaken.has('boutique');
+    // Étal premium remisé : prix < prix de base, rareté rare+ ou consommable haut de gamme
+    const stock = (typeof _requirementStock !== 'undefined') ? _requirementStock : [];
+    out.stockLen = stock.length;
+    out.discounted = stock.length > 0 && stock.every(s => {
+      const it = ITEMS.find(i => i.id === s.item.id);
+      return it && (typeof it.price !== 'number' || it.price <= 0 || s.price < it.price);
+    });
+    // EXPLOIT fermé : salle consommée → choisir refuge ne soigne plus
+    party.slice(0, partySize).forEach(c => { c.hp = 1; });
+    requirementBuffSteps = 0;
+    requirementTheme = new Map([[5, 'refuge']]);
+    chooseRequirementTheme('refuge');
+    out.exploitClosed = party[0].hp === 1 && requirementBuffSteps === 0;
     player.gold = gold0;
     return out;
   });
@@ -2925,7 +2942,11 @@ async function scenarioRoomOfRequirement() {
   assert(t11.noForgeLowFloor,          'forge interdite hors Boucle (< étage 11)');
   assert(t11.forgeable && t11.forge === 'forge', 'Boucle 11+ + item forgeable + essence → forge');
   assert(t11.openOk,                   'useRequirementRoom (commerce) ne doit pas throw');
-  assert(t11.notConsumed,              'commerce non-consommable : pas de usedRequirementRooms');
+  assert(t11.consumed,                 'commerce consommable : usedRequirementRooms marqué (1 choix/visite)');
+  assert(t11.shopContext,              'boutique ouvre l\'Étal de la Salle (_shopContext.kind === requirement)');
+  assert(t11.trophy,                   'boutique attribue bien le trophée/badge');
+  assert(t11.stockLen > 0 && t11.discounted, 'Étal premium : stock non vide et remisé (prix < base)');
+  assert(t11.exploitClosed,            'exploit fermé : après boutique, refuge ne donne plus soin/buff');
 
   // T12 : trophées multiples (1×/partie par thème) + codex méta localStorage
   const t12 = await page.evaluate(() => {
@@ -3073,11 +3094,45 @@ async function scenarioScriptedFloorBeats() {
   assert(r.serialized, 'P5 seenScriptedBeat absent de la sérialisation');
   assert(r.restored, 'P5 seenScriptedBeat non restauré après _applyState');
 
+  // ── Beat « Grande Salle » post-victoire (Ch.14 §14.3.2) ──
+  const g = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasBeat = typeof GRANDE_SALLE_BEAT !== 'undefined'
+        && !!GRANDE_SALLE_BEAT.narrative && !!GRANDE_SALLE_BEAT.toast
+        && GRANDE_SALLE_BEAT.id === 'grande_salle';
+      // Pré-victoire : retour étage 1 ne joue PAS la Grande Salle.
+      victoryAchieved = false; grandeSalleBeatSeen = false;
+      out.preVictoryNoBeat = maybeScriptedFloorBeat(1) === false && grandeSalleBeatSeen === false;
+      // Post-victoire : 1er retour étage 1 → Grande Salle, one-shot.
+      victoryAchieved = true; grandeSalleBeatSeen = false;
+      out.firstReturn = maybeScriptedFloorBeat(1) === true;
+      out.flagSet = grandeSalleBeatSeen === true;
+      out.secondReturn = maybeScriptedFloorBeat(1) === false; // déjà vu
+      // Sérialisation round-trip du flag.
+      const snap = _serializeState();
+      out.serialized = snap.grandeSalleBeatSeen === true;
+      grandeSalleBeatSeen = false;
+      _applyState(snap);
+      out.restored = grandeSalleBeatSeen === true;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  Grande Salle beat:', g);
+  assert(!g.threw, 'Grande Salle throw: ' + (g.err || ''));
+  assert(g.hasBeat, 'GRANDE_SALLE_BEAT absent ou incomplet');
+  assert(g.preVictoryNoBeat, 'Grande Salle jouée à tort avant victoire');
+  assert(g.firstReturn, 'Grande Salle ne s\'est pas déclenchée au 1er retour post-victoire');
+  assert(g.flagSet, 'grandeSalleBeatSeen non marqué après le beat');
+  assert(g.secondReturn, 'Grande Salle rejouée (non one-shot)');
+  assert(g.serialized, 'grandeSalleBeatSeen absent de la sérialisation');
+  assert(g.restored, 'grandeSalleBeatSeen non restauré après _applyState');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (étages-scènes P5)`);
   }
-  console.log('  ✅ Étages-scènes P5 — résolution pure, one-shot, sérialisation OK');
+  console.log('  ✅ Étages-scènes P5 + Grande Salle — one-shot, gate victoire, sérialisation OK');
   await browser.close();
 }
 

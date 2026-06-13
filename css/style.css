@@ -2552,11 +2552,16 @@ body {
    de base par un filet discret, mêmes codes que la variante froide. */
 .victory-speech-house,
 .victory-speech-warm,
-.victory-speech-eclats {
+.victory-speech-eclats,
+.victory-speech-heroes,
+.victory-speech-wink {
   margin-top: 10px;
   padding-top: 8px;
   border-top: 1px solid rgba(120, 140, 170, 0.25);
 }
+/* (b) §14.2.2 — beat des héros sur le palier : ton chaleureux, intime. */
+.victory-speech-heroes em { color: var(--gold-light); }
+.victory-speech-wink { color: #c8b89f; font-size: 12.5px; }
 .victory-speech-warm em { color: var(--gold-light); }
 .victory-speech-eclats { color: #c8b89f; }
 .victory-speech-eclats strong { color: var(--gold-light); font-style: normal; }

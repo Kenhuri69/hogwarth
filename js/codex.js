@@ -88,8 +88,10 @@ const CODEX_ENTRIES = [
     title: 'La Voix de Godric',
     links: ['echo_scellement'],
     unlockConditions: [{ type: 'echo', value: 'echo_godric' }],
+    revealedBy: [{ type: 'echo', value: 'echo_scene_sceau' }],
     textVersions: {
       veiled: "Au cœur runique des Ruines, un timbre clair sans corps : « On ne scelle pas par peur. On tient la porte. » Le courage, ici, n'est pas un cri — c'est une faction qu'on ne quitte pas.",
+      revealed: "Tu as vu la scène, maintenant : devant la faille, Godric ne brandit rien. Il se place, simplement, entre la lumière et les trois autres, et il reste. Voilà ce que sa voix taisait — la part qu'il a scellée dans le verrou n'est pas l'élan qui charge, c'est l'aplomb qui ne recule pas quand les autres faiblissent. Tenir la porte, c'est accepter d'être le dernier à partir.",
     },
     variants: { house: { Gryffondor: "Il parle comme à l'un des siens : tenir la porte n'est pas mourir pour elle, c'est rester quand tout pousse à reculer." } },
   },
@@ -98,8 +100,10 @@ const CODEX_ENTRIES = [
     title: 'La Voix de Salazar',
     links: ['echo_scellement'],
     unlockConditions: [{ type: 'echo', value: 'echo_salazar' }],
+    revealedBy: [{ type: 'echo', value: 'echo_scene_sceau' }],
     textVersions: {
       veiled: "Dans les profondeurs, une voix qui connaît ton nom et tes tentations : « J'ai scellé ma part avec ma faute. » Pour fermer le verrou, chacun a dû y mettre une part de soi-même — sa plus laide. La tentation que tu entends n'est pas un démon : c'est un miroir.",
+      revealed: "Dans la scène, Salazar est le seul à fermer les yeux en posant la main sur le sceau. Sa voix le disait sans l'avouer : la part qu'il a enfermée dans le verrou, c'est sa faute même — l'orgueil qui faillit tout perdre. Il n'a pas tué cette voix en lui ; il l'a scellée avec le reste, et il a refusé de lui obéir. Le miroir qu'il te tend n'exige pas que tu sois pur — seulement que tu choisisses, comme lui, de ne pas écouter.",
     },
     variants: { house: { Serpentard: "Il te parle comme à un héritier. Ce n'est pas un piège : c'est une passation. À toi de décider ce que tu fais de ce que tu reconnais en lui." } },
   },
@@ -108,8 +112,10 @@ const CODEX_ENTRIES = [
     title: 'La Voix de Rowena',
     links: ['echo_scellement'],
     unlockConditions: [{ type: 'echo', value: 'echo_rowena' }],
+    revealedBy: [{ type: 'echo', value: 'echo_scene_sceau' }],
     textVersions: {
       veiled: "Une voix posée, presque amusée : « Comprends, et la faille apparaît. » Le savoir n'écarte pas la peur — il la nomme, et c'est en la nommant qu'on trouve où poser le sceau.",
+      revealed: "La scène le montre : Rowena ne fixe pas la faille, elle regarde les trois autres — et c'est elle qui leur dit où poser les mains. Comprendre n'a jamais écarté la peur ; mais sans elle, nul n'aurait su OÙ sceller. Sa part dans le verrou, c'est la lucidité : voir une faille là où les autres ne voyaient qu'un mur. La question juste, toujours, avant la réponse.",
     },
     variants: { house: { Serdaigle: "Elle ne te donne pas la réponse : elle te montre la question juste. Lis ce qui est sous toutes les autres pages." } },
   },
@@ -118,8 +124,10 @@ const CODEX_ENTRIES = [
     title: 'La Voix de Helga',
     links: ['echo_scellement'],
     unlockConditions: [{ type: 'echo', value: 'echo_helga' }],
+    revealedBy: [{ type: 'echo', value: 'echo_scene_sceau' }],
     textVersions: {
       veiled: "La plus douce des quatre : « J'ai creusé un abri pour ceux qui resteraient. » Pendant que les autres scellaient, elle pensait déjà aux vivants d'après — à ceux qu'on ne laisse pas derrière.",
+      revealed: "Pendant que les trois posent le sceau, la scène montre Helga à l'écart, tournant déjà le dos à la faille : elle creuse. Non par lâcheté — parce qu'un verrou sans abri ne protège personne. Sa part dans le sceau n'est pas une force qui ferme, c'est une douceur qui prévoit. Elle savait qu'on ne tient pas une porte mille ans sans laisser, derrière, de quoi vivre à ceux qui la tiendront après nous.",
     },
     variants: { house: { Poufsouffle: "Elle te confie l'abri, pas le verrou. Protéger ceux qui restent vaut autant que tenir la porte." } },
   },
@@ -355,8 +363,10 @@ const CODEX_ENTRIES = [
     title: 'Albus Dumbledore',
     links: ['cle_de_voute'],
     unlockConditions: [{ type: 'floor', value: 1 }],
+    revealedBy: [{ type: 'victory' }],
     textVersions: {
       veiled: "Le portrait qui t'a appelé. Sa voix t'a guidé vers le donjon, sa main invisible ouvre les épreuves. Mort, il guide encore — et il en sait plus qu'il n'en dit.",
+      revealed: "Maintenant que l'Ombre du haut est tombée, tu comprends ce que le portrait taisait : il savait. Il savait que vaincre Voldemort n'achèverait rien — que forcer la serrure du haut ouvrirait celle du bas. Il ne t'a pas menti ; il t'a laissé descendre une marche à la fois, parce qu'on ne porte pas d'un coup le poids de toute la vérité. Sa voix te guidait moins vers une victoire que vers le courage d'en regarder le revers.",
     },
   },
   {
@@ -376,8 +386,10 @@ const CODEX_ENTRIES = [
     title: 'Manon',
     links: ['grimoire_elara'],
     unlockConditions: [{ type: 'floor', value: 4 }],
+    revealedBy: [{ type: 'quest', value: 'manon_grimoire' }],
     textVersions: {
       veiled: "Une élève rencontrée dans la descente, le regard hanté par un deuil de givre. Elle cherche les pages dispersées du grimoire de sa mère, Élara — comme si les reconstituer pouvait réchauffer quelque chose.",
+      revealed: "Les pages rendues, le givre de son regard cède d'un degré. Tu comprends alors ce que Manon cherchait vraiment : non pas un livre, mais la permission d'arrêter d'avoir froid. Le grimoire d'Élara ne gardait aucun sort de chaleur — seulement la mémoire d'une chaleur d'avant le deuil. En l'aidant, tu n'as pas réchauffé le monde : tu lui as rendu le droit de se souvenir qu'il a déjà été chaud.",
     },
   },
   // Boss promus en personnages (P4, ch.06 §6.6) : vu en combat → veiled ;

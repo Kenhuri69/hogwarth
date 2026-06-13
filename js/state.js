@@ -675,6 +675,12 @@ let visitedFloors = new Set([1]);
 // (floor-ambiance.js). Persisté dans le save.
 let seenScriptedBeat = new Set();
 
+// Beat « Grande Salle » (Ch.14 §14.3.2) — one-shot joué au premier retour réel
+// sur l'étage 1 APRÈS victoire (l'école respire à nouveau). Distinct de
+// seenScriptedBeat (qui contient déjà l'étage 1 via seuil_familier pré-victoire).
+// Persisté dans le save.
+let grandeSalleBeatSeen = false;
+
 // Cooldowns du sort Portus (cf. .claude/plans/teleportation-spell.md §"Itération 2").
 //  - portusOocCooldown   : transitions d'étage (escaliers) restantes avant
 //                          de pouvoir relancer Portus hors combat. Décrémenté
