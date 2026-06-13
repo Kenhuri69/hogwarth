@@ -34,7 +34,7 @@
 | ⚠️ 2 | **`💡 proposé` vs `✅ acté` mal séparés** dans plusieurs chapitres | 09, 10, 11 | 🟠 Moyenne |
 | ⚠️ 3 | **Enjeu intime par héros toujours absent** (gap explicité 2×) | 01 §1.x, 03 §3.x | 🟠 Moyenne |
 | ✅ 4 | ~~PNJ-clés de signature non implémentés~~ **Livré** (2026-06-13) : Chevalier Fantôme (`chevalier_godric`) 🦁 + Écho de Salazar (`echo_salazar`) 🐍 — PNJ donneurs dédiés (art `img/npc/`, dialogues, placement), signatures retirées de McGonagall/Rogue. Serdaigle/Poufsouffle restent sur Flitwick/Chourave (chefs existants). | 06, 08, `npcs.js` | ✅ Résolu |
-| ⚠️ 5 | **Variante de choix asymétrique** : `slythPactChoice` `'pact'` codé, `'defiance'` seulement proposé | 08, 14 | 🟡 Faible |
+| ✅ 5 | ~~Variante de choix asymétrique : `'defiance'` seulement proposé~~ **Résolu** (2026-06-13) : les deux branches sont câblées de bout en bout — choix joueur (`npc-dialog.js` : « Sceller le Pacte » / « Défier l'écho » → `turnInSlythSignature`), levier Voldemort (`battle.js` : buff lifesteal `pact` vs debuff −15 % `defiance`), variantes de fin (`endgame.js` : `victory_pact` vs miroir de reconnaissance), réputation dérivée. | 08, 14, `endgame.js` | ✅ Résolu |
 | ⚠️ 6 | **Localisations/statuts de boss flous** (Bellatrix sans étage ; Voldemort « affaibli » vs « ressuscité » = 1 ou 2 entrées ?) | 01, 03, 06 | 🟡 Faible |
 | ⚠️ 7 | **Trois checklists d'ajout parallèles non coordonnées** (créatures Ch.09 / lieux Ch.10 / variantes Ch.11) | 09, 10, 11 | 🟡 Faible |
 
