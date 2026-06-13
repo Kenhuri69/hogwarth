@@ -72,7 +72,7 @@ js/
                       dungeon, combat, seenMonsters, activeQuests, usedFountains,
                       searchedCells, floorDungeons, restCooldown, barksEnabled,
                       chosenHouse, housePoints, houseTier, HOUSE_BONUSES, DIFFICULTY_SETTINGS)
-  hero-barks.js    →  HERO_BARKS{} (registre des répliques des 13 héros par
+  hero-barks.js    →  HERO_BARKS{} (registre des répliques des 15 héros par
                       événement + variantes houseTension + beats scénarisés) +
                       pickHeroBark() (résolveur pur) + heroBark() (orchestrateur
                       défensif) + heroBarkScripted() (beat de trame délivré par

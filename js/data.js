@@ -280,6 +280,22 @@ const CHARACTERS = {
     wand:"Baguette de Chêne Ardent", armor:"Robe de Serdaigle", acc:"Plume d'Aigle",
     spells:["Incendio","Stupefix","Protego","Episkey"],
     tagline:"Mage de combat — chaque sortilège frappe comme la foudre."
+  },
+  nathalie: { name:"Nathalie Finch", icon:"🌻", class:"Élève de Poufsouffle",
+    imgSrc:"img/nathalie.png", role:"Gardienne-Herboriste",
+    hp:36, sp:24, str:9, int:12, agi:9, end:13, lck:12, mag:11,
+    atk:5, def:4,
+    wand:"Baguette de Chêne Noueux", armor:"Robe de Poufsouffle", acc:"Besace d'Herboriste",
+    spells:["Episkey","Protego","Ferula","Incendio"],
+    tagline:"Gardienne-herboriste — un rempart patient pour les siens."
+  },
+  chatillon: { name:"Olivier De Châtillon", icon:"🌑", class:"Élève de Serpentard",
+    imgSrc:"img/chatillon.png", role:"Ombremancien",
+    hp:27, sp:34, str:5, int:16, agi:13, end:7, lck:12, mag:16,
+    atk:3, def:2,
+    wand:"Baguette d'Ébène", armor:"Robe de Serpentard", acc:"Camée d'Ombre",
+    spells:["Expelliarmus","Stupefix","Protego","Incendio"],
+    tagline:"Ombremancien de Serpentard — la ruse frappe avant la lumière."
   }
 };
 
