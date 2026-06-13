@@ -390,6 +390,15 @@ const FLOOR_SCRIPTED_BEATS = {
   },
 };
 
+// Beat « Grande Salle » (Ch.14 §14.3.2) — variante POST-VICTOIRE de l'étage 1.
+// Joué au premier retour réel en haut après victoire : un mot de Dumbledore
+// depuis son cadre, l'école qui respire à nouveau. Cosmétique, non-bloquant.
+const GRANDE_SALLE_BEAT = {
+  id: 'grande_salle',
+  narrative: "Tu es remonté. Le givre a fondu des fenêtres ; un soleil pâle traverse de nouveau les grands vitraux. Dans son cadre, Dumbledore lève les yeux de son livre et te sourit, sans surprise : « Tu es redescendu jusqu'au fond, et tu es revenu. Peu en sont capables. » Autour de toi, l'école respire — les escaliers recommencent à tourner. Mais sous tes pieds, très loin, quelque chose veille encore.",
+  toast: "La Grande Salle — l'école respire à nouveau. Dumbledore te salue d'un cadre.",
+};
+
 // Résolveur PUR : retourne le beat de l'étage `floor`, ou null.
 function getScriptedFloorBeat(floor) {
   return FLOOR_SCRIPTED_BEATS[floor] || null;
@@ -400,6 +409,18 @@ function getScriptedFloorBeat(floor) {
 // un second appel sur le même étage retourne false sans rien réafficher.
 // No-op silencieux si l'état ou les helpers d'affichage manquent (file://).
 function maybeScriptedFloorBeat(floor) {
+  // Variante post-victoire de l'étage 1 : beat « Grande Salle » (Ch.14 §14.3.2).
+  // One-shot via son propre flag (seenScriptedBeat contient déjà l'étage 1).
+  // Prioritaire sur seuil_familier dès que victoryAchieved.
+  if (floor === 1
+      && typeof victoryAchieved !== 'undefined' && victoryAchieved
+      && typeof GRANDE_SALLE_BEAT !== 'undefined'
+      && typeof grandeSalleBeatSeen !== 'undefined' && !grandeSalleBeatSeen) {
+    grandeSalleBeatSeen = true;
+    if (typeof setNarrative === 'function') setNarrative(GRANDE_SALLE_BEAT.narrative);
+    if (typeof addMsg === 'function') addMsg('📜 ' + GRANDE_SALLE_BEAT.toast, 'narrative');
+    return true;
+  }
   const beat = getScriptedFloorBeat(floor);
   if (!beat) return false;
   if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return false;

@@ -105,6 +105,7 @@ window.UX_safe = new Proxy({}, {
     { name: 'corruptionLevel',    source: 'floor-ambiance.js', kind: 'fn'  },
     { name: 'houseAmbianceLine',  source: 'floor-ambiance.js', kind: 'fn'  },
     { name: 'FLOOR_SCRIPTED_BEATS', source: 'floor-ambiance.js', kind: 'obj' },
+    { name: 'GRANDE_SALLE_BEAT',  source: 'floor-ambiance.js', kind: 'obj' },
     { name: 'getScriptedFloorBeat', source: 'floor-ambiance.js', kind: 'fn'  },
     { name: 'maybeScriptedFloorBeat', source: 'floor-ambiance.js', kind: 'fn'  },
     { name: 'temporalEchoActive', source: 'floor-ambiance.js', kind: 'fn'  },
