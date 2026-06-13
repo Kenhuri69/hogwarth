@@ -360,6 +360,11 @@ window.UX_safe = new Proxy({}, {
     { name: 'mpStartVisitAsVisitor',    source: 'visit-channel.js',       kind: 'fn',  optional: true },
     { name: 'mpStartVisitAsHost',       source: 'visit-channel.js',       kind: 'fn',  optional: true },
     { name: 'mpExitVisit',              source: 'visit-channel.js',       kind: 'fn',  optional: true },
+    // Reliquat 4.1 — duel PvP live (tours relayés, pvp-duel-live.md).
+    { name: 'pvpSendDuelInvite',        source: 'pvp-duel.js',            kind: 'fn',  optional: true },
+    { name: 'pvpCanDuel',               source: 'pvp-duel.js',            kind: 'fn',  optional: true },
+    { name: 'pvpAttachVisit',           source: 'pvp-duel.js',            kind: 'fn',  optional: true },
+    { name: '_pvpGetState',             source: 'pvp-duel.js',            kind: 'fn',  optional: true },
     // Phase C.3 — bandeau de visite (parallel-worlds.md §3.4 / §6.4).
     { name: 'showVisitHud',             source: 'visit-hud.js',           kind: 'fn',  optional: true },
     { name: 'updateVisitHud',           source: 'visit-hud.js',           kind: 'fn',  optional: true },

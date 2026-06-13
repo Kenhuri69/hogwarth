@@ -29,16 +29,16 @@
 | 3.1 | emoji-png-gaps lots 7-10 | ✅ Clos (laissé sciemment) | — |
 | 3.2 | combat-emoji-badges Lot 2/3 | ✅ Clos | — |
 | 3.3 | Room of Requirement V3.1 | ✅ Clos | — |
-| 4.1 | Duel PvP direct (Phase 7) | ❌ Ouvert (optionnel) | P2 |
+| 4.1 | Duel PvP — async (livré) + live relayé (livré) | ✅ Clos | — |
 | 4.2 | Validation live 2 clients (S3.10) | ⛔ Bloqué (manuel) | P-bloqué |
 | 5.1 | Musiques combat epic / late | ✅ Clos (assets reçus) | — |
 | 6.1 | Modularisation god-files (6 fichiers > 950 l.) | ❌ Ouvert | P2 |
 | 6.2 | Factoriser `showEquipMenu` duo (N15) | ✅ Clos | — |
 | 6.3 | Hook settings.json « commit + push » | ❌ Ouvert | P3 |
 
-**Reliquats encore actionnables** : 1.2 (Bibliothèque T5), 1.3, 4.1, 6.1,
+**Reliquats encore actionnables** : 1.2 (Bibliothèque T5), 1.3, 6.1,
 6.3. — **Bloqué** : 4.2 (session live manuelle). — **Clos** : 1.1, 2.1, 3.1,
-3.2, 3.3, 5.1, 6.2 (récapitulés en bas).
+3.2, 3.3, 4.1, 5.1, 6.2 (récapitulés en bas).
 
 > ⚠️ **Correctif d'audit 2026-06-12** vs l'audit précédent (2026-06-11) :
 > - **5.1** musiques de combat : les OGG `combat_epic` / `combat_late` sont
@@ -97,16 +97,6 @@
   3. Sim économie (ne pas casser l'équilibre or endgame) → vérif : rapport sim.
   4. Scénario smoke + bump cache.
 
-### 4.1 Phase 7 — duel PvP direct — ❌ **OUVERT (optionnel)** · P2
-- **Source** : `_archive/multiplayer.md` (Phases 0-6 livrées ; Phase 7 optionnelle).
-- **Reste à faire** : **duel PvP en direct** entre deux joueurs en ligne.
-- **Étapes** :
-  1. Décider si on poursuit (feature lourde, transport REST polling existant)
-     → vérif : go/no-go documenté.
-  2. Si go : canal de duel sur Supabase (réutiliser `mp_visit_messages` ?),
-     tour-par-tour synchronisé → vérif : protocole 2 clients.
-  3. Stubs REST + scénario smoke offline (modèle des scénarios `Visit*`).
-
 ### 4.2 Validation live 2 clients (S3.10) — ⛔ **P-bloqué**
 - **Source** : `_archive/parallel-worlds-stabilization.md` (S1-S4 livrés ; S3.10 manuel).
 - **Reste à faire** : **validation end-to-end live** à 2 clients réels contre le
@@ -145,6 +135,16 @@
 > Conservés pour mémoire/traçabilité. Ne plus traiter — le cœur **et** le
 > reliquat sont livrés (ou le reliquat est un choix de style assumé).
 
+- ~~**4.1 Duel PvP direct**~~ — ✅ livré 2026-06-13. (a) **Async** déjà livré :
+  défier le snapshot/fantôme d'un autre joueur (`mpStartDuel`, `_mpHeroToEnemy`,
+  IA + butin Ironman, `scenarioMultiplayerDuel`). (b) **Live relayé** (variante
+  demandée) : duel 1v1 entre deux joueurs en ligne en tours alternés, résolution
+  « attaquant autoritaire » (chacun résout son action et relaie le résultat ;
+  écrans synchronisés sans lockstep ni RNG partagée). Module autonome
+  `js/pvp-duel.js` + `css/pvp-duel.css`, lancé depuis une visite active
+  (réutilise le canal `mp_visit_messages`). Plan
+  [`pvp-duel-live.md`](./pvp-duel-live.md). Smoke `scenarioPvpDuel`. Hors-scope
+  V2 : garde/statuts en duel, objets, 2v2, défi hors visite, score/ELO.
 - ~~**2.1 Manon — dialogues définitifs de l'Acte III**~~ — ✅ livré 2026-06-13.
   Payoff `manon_acte3.questReady` enrichi (climax : réconciliation avec la mère
   morte, miroir du père aux Actes I-II) ; tous les commentaires « Textes

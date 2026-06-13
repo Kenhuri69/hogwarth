@@ -97,6 +97,8 @@
     _pingTimer = setInterval(_sendPing,      VISIT_PING_MS);
     // Premier tick immédiat pour ne pas attendre 2,5 s le snapshot.
     await _visitPollOnce();
+    // Duel PvP live (reliquat 4.1) — démarre le poll passif des invitations.
+    if (typeof pvpAttachVisit === 'function') pvpAttachVisit();
     return true;
   }
 
@@ -158,6 +160,8 @@
 
     _pollTimer = setInterval(_visitPollOnce, VISIT_POLL_MS);
     _pingTimer = setInterval(_sendPing,      VISIT_PING_MS);
+    // Duel PvP live (reliquat 4.1) — démarre le poll passif des invitations.
+    if (typeof pvpAttachVisit === 'function') pvpAttachVisit();
     return true;
   }
 
@@ -174,6 +178,8 @@
     // bye croisé du partenaire qui ré-entrerait dans cette fonction.
     if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
     if (_pingTimer) { clearInterval(_pingTimer); _pingTimer = null; }
+    // Duel PvP live (reliquat 4.1) — coupe le poll de duel à la sortie.
+    if (typeof pvpDetachVisit === 'function') pvpDetachVisit();
     _visitReset();
 
     if (channel && typeof mpPostVisitMessage === 'function') {
