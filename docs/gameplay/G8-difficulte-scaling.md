@@ -172,14 +172,23 @@ nécessite `n ≥ 10` (40+ kills). Le plafond absolu `MAX_ENEMY_GROUP = 5`
 
 **Toasts narratifs au respawn** (`movement-floors.js : _announceRespawn`) :
 les messages indiquent au joueur le niveau de pression sans l'exposer aux
-chiffres bruts.
+chiffres bruts. Chaque toast est **préfixé par un indicateur d'attrition
+narratif** `floorVisitLabel(floor)` (dérivé du même `n`, jamais le chiffre brut) :
 
-| n | Message |
-|---|---------|
-| ≤ 1 | « Quelques ombres se reforment dans les couloirs. » |
-| ≤ 3 | « Les ombres se reforment plus nombreuses cette fois. » |
-| ≤ 5 | « Tu sens des présences hostiles se rassembler — ta présence dérange. » |
-| ≥ 6 | « Le château pulse de menaces. L'étage te défie ouvertement. » |
+| n | Indicateur d'attrition | Message |
+|---|------------------------|---------|
+| ≤ 1 | « Étage maîtrisé » | « Quelques ombres se reforment dans les couloirs. » |
+| ≤ 3 | « Étage agité »    | « Les ombres se reforment plus nombreuses cette fois. » |
+| ≤ 5 | « Étage hostile »  | « Tu sens des présences hostiles se rassembler — ta présence dérange. » |
+| ≥ 6 | « Étage redouté »  | « Le château pulse de menaces. L'étage te défie ouvertement. » |
+
+**Toast de pivot endgame** (`movement-floors.js : _maybeAnnounceEndgamePivot`) :
+à la **1ʳᵉ entrée en Boucle Ténébreuse** (étage 11+ post-victoire), un toast
+*« Ici, la puissance se gagne — elle ne tombe plus. »* communique au joueur que
+l'endgame n'offre plus de progression passive (la puissance s'obtient par le
+farming). One-shot **sérialisé** (`endgamePivotSeen`), affiché une seule fois
+par partie — distinct du toast d'ambiance `_darknessToastShown` (re-joué par
+session). Purement cosmétique : aucune mécanique d'équilibrage n'est touchée.
 
 ### Broyer — octroi automatique aux brutes
 

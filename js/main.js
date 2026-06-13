@@ -509,6 +509,7 @@ async function startGame(count = 2) {
   // « Briser le Cycle » (ch.11 V3) : fin non débloquée en début de partie.
   if (typeof cycleBroken !== 'undefined') cycleBroken = false;
   combatTutorialSeen = false;   // tuto premier combat rejoué à chaque partie (LOT D2)
+  if (typeof endgamePivotSeen !== 'undefined') endgamePivotSeen = false;  // pivot endgame (Ch.13)
   defeatedBosses = new Set();
   ironmanRunId   = (ironmanMode && typeof _genRunId === 'function') ? _genRunId() : null;
   shopStock = null;

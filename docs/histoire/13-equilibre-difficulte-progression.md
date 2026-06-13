@@ -709,10 +709,16 @@ demandé est, dans ce projet vanilla, ces objets JS :
 > 3. Régénérer `DIFFICULTY_REPORT.md` ; vérifier §5 (aucun spike).
 > 4. `node tests/units.js && node tests/smoke.js` si du code change.
 
-💡 **Test automatisé proposé** : un **gardien d'équilibre** en CI —
-`tools/check_difficulty.js --base origin/master` qui échoue si le win-rate d'un
-étage bouge de > 10 pts sans mise à jour du rapport. Empêche les régressions
-d'équilibre silencieuses (analogue à `check_cache_versions.js`). *Non implémenté.*
+✅ **Gardien d'équilibre en CI** (implémenté, P1) — `tools/check_difficulty.js`
+régénère un résumé win-rate via `tools/sim-difficulty.js` et le compare à la
+**baseline committée = le tableau §3 de `DIFFICULTY_REPORT.md`** (source de
+vérité unique, pas de JSON parallèle). En PR (`--base origin/<base_ref>`), il
+échoue (exit 1) si un couple (étage, mode) dérive de > 10 pts **sans** mise à
+jour de `DIFFICULTY_REPORT.md` ; un changement d'équilibre documenté passe (avec
+rappel de régénérer la baseline via `--update-baseline`). Sur push master / en
+local (sans `--base`), il est advisory (exit 0). Le seuil 10 pts absorbe le
+bruit Monte-Carlo (SE de la différence ≈ 2.5 pts à N=800). Analogue à
+`check_cache_versions.js` ; câblé dans `.github/workflows/test.yml`.
 
 ## D. Intégration (procédural, bestiaire, lieux)
 
@@ -736,20 +742,26 @@ d'équilibre silencieuses (analogue à `check_cache_versions.js`). *Non impléme
 - ✅ **Codex** (chap. 12) : déverrouillage par étage/Éclat/quête. **Point
   d'ancrage idéal** pour *expliquer* la difficulté narrativement (entrée
   « La Descente », « La Boucle se referme »).
-- 💡 **Notifications proposées** (cosmétiques, issues des simulations) :
-  - Toast à l'entrée de Boucle : *« Ici, la puissance se gagne — elle ne tombe
-    plus. »* (communique le pivot endgame, Sim 3).
-  - Indicateur d'**attrition / niveau de visite** (Sim 1) — narratif
-    (« Étage maîtrisé / redouté ») plutôt que chiffré.
-  - Réutiliser les **toasts de respawn** existants (✅) comme jauge de pression.
+- ✅ **Notifications implémentées** (cosmétiques, P1, issues des simulations) :
+  - Toast à la 1ʳᵉ entrée en Boucle : *« Ici, la puissance se gagne — elle ne
+    tombe plus. »* — communique le pivot endgame (Sim 3). One-shot **sérialisé**
+    (`endgamePivotSeen`, state.js), distinct du toast d'ambiance
+    `_darknessToastShown` (session-only). Posé dans `_maybeAnnounceEndgamePivot()`
+    (`movement-floors.js`), déclenché par `goDeeper` (étage 11+ post-victoire).
+  - Indicateur d'**attrition / niveau de visite** (Sim 1) — étiquette narrative
+    (« Étage maîtrisé » → « agité » → « hostile » → « redouté ») dérivée du
+    `floorKillCount` existant, **pas de chiffre brut**. Helper pur
+    `floorVisitLabel(floor)` (`movement-floors.js`), affiché en préfixe des
+    **toasts de respawn** existants (`_announceRespawn`) réutilisés comme jauge
+    de pression.
 
 ## F. Priorisation des implémentations
 
 | Priorité | Lot | Nature | Justification |
 |----------|-----|--------|---------------|
 | **P0** | Documentation (ce chapitre + maj G8/G3/G4 si écart) | Doc | Source de vérité d'équilibrage ; zéro risque |
-| **P1** | `check_difficulty.js` en CI (💡 C) | Tooling | Garde-fou anti-régression d'équilibre |
-| **P1** | Toast d'entrée de Boucle + indicateur d'attrition (💡 E) | UX cosmétique | Résout la frustration n°1 des sims (écart combat/clear, pivot endgame) — **sans toucher l'équilibrage** |
+| **P1** ✅ | `check_difficulty.js` en CI (C) | Tooling | Garde-fou anti-régression d'équilibre — **implémenté** |
+| **P1** ✅ | Toast d'entrée de Boucle + indicateur d'attrition (E) | UX cosmétique | Résout la frustration n°1 des sims (écart combat/clear, pivot endgame) — **sans toucher l'équilibrage**. **Implémenté** |
 | **P2** | XP passive de Boucle *ou* `xpNext` adouci en endgame (💡, Sim 3) | Équilibrage | Seulement si on juge le farming endgame trop forcé |
 | **P3** | `houseDifficultyModifier` / refuges de Maison (💡 ❓) | Feature opt-in | Rompt des garde-fous → décision design préalable |
 | **Hors-scope V1** | `eclatPowerBoost`, héritage en Boucle (💡 ❓) | Feature | Déconseillé (§13.3.4, §13.4.4) |
@@ -789,5 +801,6 @@ d'équilibre silencieuses (analogue à `check_cache_versions.js`). *Non impléme
    *(Recommandation : hors-scope V1 — §13.4.4.)*
 5. ❓ Adoucir l'endgame (XP passive de Boucle) ou conserver le farming forcé ?
    *(Sim 3 : conserver + communiquer le pivot.)*
-6. 💡 Implémenter le garde-fou de sim en CI (`check_difficulty.js`) ? *(Recommandé
-   — §13.9.C/F.)*
+6. ✅ Garde-fou de sim en CI (`check_difficulty.js`) — **implémenté** (P1,
+   §13.9.C/F). Le toast de pivot endgame + l'indicateur d'attrition (§13.9.E)
+   sont aussi **implémentés**.
