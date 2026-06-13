@@ -36,6 +36,19 @@ function pselReset() {
   if (pseudoEl && typeof getPlayerName === 'function') {
     pseudoEl.value = getPlayerName();
   }
+  // New Game+ (Ch.14 P5) : (ré)affiche la case opt-in si le profil a ≥1 victoire.
+  if (typeof _refreshNgPlusOptIn === 'function') _refreshNgPlusOptIn();
+  // Retire le cadre « Vétéran » d'une sélection précédente (état neuf).
+  const psBox = document.getElementById('player-select-screen');
+  if (psBox) psBox.classList.remove('ngplus-veteran');
+}
+
+// Bascule le cadre doré « Vétéran » sur l'écran de sélection au gré de la
+// case New Game+ (cosmétique pure ; aperçu immédiat du choix).
+function _onNgPlusToggle() {
+  const cb  = document.getElementById('ngplus-toggle');
+  const box = document.getElementById('player-select-screen');
+  if (box) box.classList.toggle('ngplus-veteran', !!(cb && cb.checked));
 }
 
 // Navigue vers une étape de la sélection guidée
@@ -205,6 +218,15 @@ function confirmHeroSelection() {
   if (selectedHeroes.length !== selectedPartySize) return;
   difficulty        = document.getElementById('difficulty-select')?.value || 'Normal';
   ironmanMode       = !!document.getElementById('ironman-toggle')?.checked;
+  // New Game+ cosmétique (Ch.14 P5) : opt-in retenu seulement si disponible
+  // (profil ≥ 1 victoire). Arme le titre affiché — ZÉRO stat/objet/or hérité.
+  if (typeof ngPlusRun !== 'undefined') {
+    const wantNg = !!document.getElementById('ngplus-toggle')?.checked
+      && (typeof ngPlusAvailable === 'function') && ngPlusAvailable();
+    ngPlusRun   = wantNg;
+    ngPlusTitle = (wantNg && typeof profileTopTitle === 'function')
+      ? (profileTopTitle(getPlayerProfile()) || '') : '';
+  }
   // Multijoueur — persiste le pseudo saisi au démarrage (défaut « Sorcier »).
   const _pseudo = (document.getElementById('psel-pseudo-input')?.value || '').trim();
   if (_pseudo && typeof setPlayerName === 'function') setPlayerName(_pseudo);

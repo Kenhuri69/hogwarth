@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v123';
+const CACHE_VERSION = 'hogwarth-v124';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -27,9 +27,9 @@ const PRECACHE_URLS = [
   './manifest.json',
 
   // CSS
-  './css/style.css?v=38',
+  './css/style.css?v=39',
   './css/ux-improvements.css?v=4',
-  './css/save-ui.css?v=3',
+  './css/save-ui.css?v=4',
   './css/ornaments.css?v=1',
   './css/help-tour.css?v=2',
   './css/pwa.css?v=1',
@@ -62,9 +62,9 @@ const PRECACHE_URLS = [
   './js/floor-events.js?v=1',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=22',
-  './js/state.js?v=31',
+  './js/state.js?v=32',
   './js/hero-barks.js?v=4',
-  './js/ui.js?v=14',
+  './js/ui.js?v=15',
   './js/ui-character-sheet.js?v=7',
   './js/ui-settings.js?v=3',
   './js/ui-bestiary.js?v=5',
@@ -102,21 +102,22 @@ const PRECACHE_URLS = [
   './js/intro.js?v=3',
   './js/shop.js?v=12',
   './js/save-slots.js?v=3',
-  './js/save.js?v=36',
+  './js/save.js?v=37',
   './js/save-visit-snapshot.js?v=1',
-  './js/save-ui.js?v=6',
+  './js/profile.js?v=1',
+  './js/save-ui.js?v=7',
   './js/ironman.js?v=4',
   './js/hall-of-fame.js?v=4',
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
-  './js/main.js?v=22',
-  './js/endgame.js?v=7',
-  './js/break-cycle.js?v=3',
+  './js/main.js?v=23',
+  './js/endgame.js?v=8',
+  './js/break-cycle.js?v=4',
   './js/forge.js?v=4',
   './js/library.js?v=4',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=42',
+  './js/loader.js?v=43',
   './js/pwa.js?v=4',
 
   // Icônes PWA + premier écran

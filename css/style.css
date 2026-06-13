@@ -286,6 +286,21 @@ body {
   letter-spacing: 2px;
 }
 
+/* Ch.14 P5 — Titre New Game+ affiché dans le HUD (cosmétique). Discret, doré. */
+.ngplus-hud-title {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-align: center;
+  color: #ffe6a8;
+  background: rgba(201,168,76,0.12);
+  border: 1px solid var(--gold-dark);
+  border-radius: 10px;
+  padding: 2px 6px;
+  margin: 4px auto 0;
+  max-width: max-content;
+}
+
 .char-name {
   font-family: 'Cinzel', serif;
   font-size: 13px;
@@ -3374,6 +3389,32 @@ button.shop-tab.active {
   color: rgba(214, 195, 150, 0.55);
   font-style: italic;
 }
+/* Ch.14 P5 — New Game+ opt-in (étape 1). Masqué par défaut (style inline),
+   affiché par _refreshNgPlusOptIn si le profil a ≥1 victoire. Cosmétique. */
+.psel-ngplus-row {
+  align-items: center;
+  gap: 9px;
+  margin: 12px auto 0;
+  max-width: 320px;
+  padding: 8px 12px;
+  border: 1px solid var(--gold-dark);
+  border-radius: 6px;
+  background: rgba(201,168,76,0.08);
+  cursor: pointer;
+  text-align: left;
+}
+.psel-ngplus-row #ngplus-toggle { flex: 0 0 auto; width: 16px; height: 16px; accent-color: var(--gold); }
+.psel-ngplus-text { display: flex; flex-direction: column; gap: 2px; }
+.psel-ngplus-title { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 1px; color: var(--gold); }
+.psel-ngplus-hint { font-size: 11px; color: rgba(214,195,150,0.6); font-style: italic; line-height: 1.35; }
+
+/* Cadre doré « Vétéran » : liseré or sur les cartes héros quand NG+ est coché
+   à la sélection. Purement visuel. */
+#player-select-screen.ngplus-veteran .hero-card {
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(201,168,76,0.35), inset 0 0 0 1px rgba(240,208,128,0.4);
+}
+
 .psel-nav {
   display: flex;
   flex-wrap: wrap;

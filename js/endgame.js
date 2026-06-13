@@ -163,6 +163,12 @@ function refreshEndingType() {
     victoryAt       = new Date().toISOString();
     // Label de fin (P3) : posé dès la victoire ('victory' ou 'victory_pact').
     refreshEndingType();
+    // Profil persistant hors-save (P5) : enregistre la victoire (compteur +
+    // titres). Cosmétique — aucun héritage de stat. Gardé par victoryAchieved
+    // ci-dessus → un seul enregistrement par run.
+    if (typeof recordEndingToProfile === 'function') {
+      recordEndingToProfile((typeof endingType !== 'undefined' && endingType) || 'victory');
+    }
 
     // Force le re-render du donjon avec les textures Ténèbres (§7.1bis)
     // au prochain pas. Indépendant du floor courant : un trigger à

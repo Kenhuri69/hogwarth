@@ -259,6 +259,9 @@ window.UX_safe = new Proxy({}, {
     { name: 'deleteSlot',         source: 'save-slots.js',   kind: 'fn'  },
     { name: 'migrateLegacyKey',   source: 'save-slots.js',   kind: 'fn'  },
     { name: 'getRequirementCodex', source: 'save-slots.js',  kind: 'fn', optional: true }, // V3
+    { name: 'getPlayerProfile',   source: 'profile.js',      kind: 'fn', optional: true }, // Ch.14 P5
+    { name: 'recordEndingToProfile', source: 'profile.js',   kind: 'fn', optional: true }, // Ch.14 P5
+    { name: 'ngPlusAvailable',    source: 'profile.js',      kind: 'fn', optional: true }, // Ch.14 P5
     { name: 'exportSaveStore',    source: 'save-slots.js',   kind: 'fn'  },
     { name: 'importSaveStore',    source: 'save-slots.js',   kind: 'fn'  },
     { name: 'openSaveDialog',     source: 'save-ui.js',      kind: 'fn'  },
