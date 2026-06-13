@@ -286,6 +286,37 @@ body {
   letter-spacing: 2px;
 }
 
+/* Ch.14 P5/P6 — Titre New Game+ affiché dans le HUD (cosmétique). Discret,
+   doré, avec apparition en fondu (P6). */
+.ngplus-hud-title {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-align: center;
+  color: #ffe9b0;
+  background: linear-gradient(180deg, rgba(201,168,76,0.22), rgba(201,168,76,0.10));
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 3px 8px;
+  margin: 5px auto 0;
+  max-width: 92%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 0 8px rgba(201,168,76,0.22);
+  animation: ngplusTitleIn 0.4s ease both;
+}
+@keyframes ngplusTitleIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ngplus-hud-title { animation: none; }
+}
+@media (max-width: 700px) {
+  .ngplus-hud-title { font-size: 9px; letter-spacing: 0.5px; padding: 2px 6px; }
+}
+
 .char-name {
   font-family: 'Cinzel', serif;
   font-size: 13px;
@@ -1641,7 +1672,7 @@ body {
   to   { text-shadow: 0 0 60px rgba(201,168,76,1.0), 0 0 100px rgba(201,168,76,0.4); }
 }
 #inventory-modal, #shop-modal, #character-modal, #spell-modal, #slot-modal,
-#house-detail-modal, #settings-modal {
+#house-detail-modal, #settings-modal, #wizard-codex-modal {
   display: none;
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.85);
@@ -1710,7 +1741,7 @@ body {
    réaffichage). N'affecte PAS les overlays de combat (#encounter-overlay) ni
    les transitions d'étage (qui n'utilisent pas .modal-box). */
 #inventory-modal, #shop-modal, #character-modal, #spell-modal, #slot-modal,
-#house-detail-modal, #settings-modal, #bestiary-modal {
+#house-detail-modal, #settings-modal, #bestiary-modal, #wizard-codex-modal {
   animation: modalBackdropIn 0.18s ease;
 }
 @keyframes modalBackdropIn { from { opacity: 0; } to { opacity: 1; } }
@@ -3379,6 +3410,33 @@ button.shop-tab.active {
   color: rgba(214, 195, 150, 0.55);
   font-style: italic;
 }
+/* Ch.14 P5 — New Game+ opt-in (étape 1). Masqué par défaut (style inline),
+   affiché par _refreshNgPlusOptIn si le profil a ≥1 victoire. Cosmétique. */
+.psel-ngplus-row {
+  align-items: center;
+  gap: 9px;
+  margin: 12px auto 0;
+  max-width: 320px;
+  padding: 8px 12px;
+  border: 1px solid var(--gold-dark);
+  border-radius: 6px;
+  background: rgba(201,168,76,0.08);
+  cursor: pointer;
+  text-align: left;
+}
+.psel-ngplus-row #ngplus-toggle { flex: 0 0 auto; width: 16px; height: 16px; accent-color: var(--gold); }
+.psel-ngplus-medal { flex: 0 0 auto; width: 30px; height: 30px; object-fit: contain; }
+.psel-ngplus-text { display: flex; flex-direction: column; gap: 2px; }
+.psel-ngplus-title { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 1px; color: var(--gold); }
+.psel-ngplus-hint { font-size: 11px; color: rgba(214,195,150,0.6); font-style: italic; line-height: 1.35; }
+
+/* Cadre doré « Vétéran » : liseré or sur les cartes héros quand NG+ est coché
+   à la sélection. Purement visuel. */
+#player-select-screen.ngplus-veteran .hero-card {
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(201,168,76,0.35), inset 0 0 0 1px rgba(240,208,128,0.4);
+}
+
 .psel-nav {
   display: flex;
   flex-wrap: wrap;

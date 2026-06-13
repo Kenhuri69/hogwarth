@@ -33,8 +33,8 @@
 | ⚠️ 1 | **Dérive documentation ↔ code** (le point n°1) | Ch. 12, 14 + `CLAUDE.md` | 🔴 Haute |
 | ⚠️ 2 | **`💡 proposé` vs `✅ acté` mal séparés** dans plusieurs chapitres | 09, 10, 11 | 🟠 Moyenne |
 | ⚠️ 3 | **Enjeu intime par héros toujours absent** (gap explicité 2×) | 01 §1.x, 03 §3.x | 🟠 Moyenne |
-| ⚠️ 4 | **PNJ-clés de signature non implémentés** (Chevalier Fantôme 🦁, Écho de Salazar 🐍) | 06, 08 | 🟠 Moyenne |
-| ⚠️ 5 | **Variante de choix asymétrique** : `slythPactChoice` `'pact'` codé, `'defiance'` seulement proposé | 08, 14 | 🟡 Faible |
+| ✅ 4 | ~~PNJ-clés de signature non implémentés~~ **Livré** (2026-06-13) : Chevalier Fantôme (`chevalier_godric`) 🦁 + Écho de Salazar (`echo_salazar`) 🐍 — PNJ donneurs dédiés (art `img/npc/`, dialogues, placement), signatures retirées de McGonagall/Rogue. Serdaigle/Poufsouffle restent sur Flitwick/Chourave (chefs existants). | 06, 08, `npcs.js` | ✅ Résolu |
+| ✅ 5 | ~~Variante de choix asymétrique : `'defiance'` seulement proposé~~ **Résolu** (2026-06-13) : les deux branches sont câblées de bout en bout — choix joueur (`npc-dialog.js` : « Sceller le Pacte » / « Défier l'écho » → `turnInSlythSignature`), levier Voldemort (`battle.js` : buff lifesteal `pact` vs debuff −15 % `defiance`), variantes de fin (`endgame.js` : `victory_pact` vs miroir de reconnaissance), réputation dérivée. | 08, 14, `endgame.js` | ✅ Résolu |
 | ⚠️ 6 | **Localisations/statuts de boss flous** (Bellatrix sans étage ; Voldemort « affaibli » vs « ressuscité » = 1 ou 2 entrées ?) | 01, 03, 06 | 🟡 Faible |
 | ⚠️ 7 | **Trois checklists d'ajout parallèles non coordonnées** (créatures Ch.09 / lieux Ch.10 / variantes Ch.11) | 09, 10, 11 | 🟡 Faible |
 
@@ -88,7 +88,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 |----------------------------|---------|--------|
 | Le Codex réagit-il aux **fins du Ch. 14** ? | Oui : robinets `victory` → `boucle_tenebreuse`/`tenebreux`/`porteur_eclats`/`echo_signature` ; `cycleBroken` → `cycle_brise`. Câblé dans `codex.js`. | ✅ Cohérent **et codé** |
 | Les **PNJ (06)** interagissent-ils avec la **Boucle (11)** ? | Oui : recyclage `effectiveFloor` (Kingsley/Bill/Sirius reviennent ét. 18-20) ; **Gardien de la Boucle** hérite du fil rouge de Dumbledore ; marchands ténébreux = farm. | ✅ Cohérent |
-| Les **quêtes signature (08)** pèsent-elles sur le **climax (03)** et la **fin (14)** ? | Oui : flag `<house>SignatureDone` → réplique pré-Voldemort + modificateur one-shot + paragraphe « héritage » dans la fin A. | ✅ Cohérent (mais 2 PNJ donneurs manquants — ⚠️4) |
+| Les **quêtes signature (08)** pèsent-elles sur le **climax (03)** et la **fin (14)** ? | Oui : flag `<house>SignatureDone` → réplique pré-Voldemort + modificateur one-shot + paragraphe « héritage » dans la fin A. | ✅ Cohérent **et codé** (PNJ donneurs livrés — ✅4) |
 | L'**équilibrage (13)** respecte-t-il l'**identité de Maison (07)** ? | Oui : équité stricte (même grille), identité = build + signature + cosmétique. `houseDifficultyModifier` explicitement **déconseillé**. | ✅ Cohérent |
 | Les **Éclats** relient-ils trame, bestiaire, codex et fin ? | Oui, bout-à-bout : 03 (sens) → 04 (jalons) → 08 (collecte) → 09 (drops) → 12 (révélation Codex) → 14 (jalon « Briser » à 15 Éclats). | ✅ Excellent fil |
 | Le **bestiaire (09)** s'aligne-t-il avec les **lieux (10)** par zone ? | Oui : familles F1-F5 par tranche A/B/C/D, signatures de corruption partagées. | ✅ Cohérent |
@@ -99,7 +99,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 |------|----------|-----------------|
 | **11 ↔ 14** (Briser le Cycle) | Le Ch. 11 le présente en « proposition § 11.10 » alors que le Ch. 14 **et le code** le donnent ✅ livré. | Aligner le Ch. 11 sur l'état réel (✅). |
 | **11 ↔ 06** (nature de la Boucle) | Le Ch. 06 ne dit jamais si la Boucle est une dimension / boucle temporelle / cristallisation ; renvoie en l'air vers 03 §3.6. | Ajouter 1 § canonique « qu'est-ce que la Boucle » dans 11, lié depuis 06. |
-| **08 ↔ 06** (PNJ donneurs) | Chevalier Fantôme & Écho de Salazar sont **donneurs de signature mais non implémentés**. | Décider : créer les PNJ, ou rabattre les déclencheurs sur McGonagall/Rogue. |
+| **08 ↔ 06** (PNJ donneurs) | ✅ Résolu (2026-06-13) : décision = **créer les 2 PNJ dédiés**. `chevalier_godric` + `echo_salazar` livrés (npcs.js, art, dialogues, smoke par Maison). | — |
 | **Boucle ↔ Mondes Parallèles** | Présentés comme « deux axes opposés » (vertical/latéral) mais **aucune interaction définie** (un Voyageur peut-il visiter un château en Boucle ?). | Écrire la règle explicite (proposé : non — systèmes isolés). |
 | **9 / 10 / 11 checklists** | Trois procédures d'ajout (créatures / lieux / variantes) sans renvoi mutuel. | Ajouter un renvoi croisé en tête de chacune. |
 | **Codex ↔ Mondes Parallèles** | 8ᵉ onglet « Voyageur » ou intégré au Glossaire ? `❓` ouvert (12). | Trancher (proposé : intégré, pas d'onglet dédié). |
@@ -173,8 +173,8 @@ système, savoir s'il est livré et où — et `node tests/smoke.js` reste vert.
 | Tâche | Priorité | Chapitres / systèmes | Complexité | Dépendances |
 |-------|----------|----------------------|------------|-------------|
 | ✅ **Audit de complétude du Codex** *(fait, 2026-06-13)* : 36 entrées, **0 coquille vide**, 0 condition morte / texte inatteignable / lien pendouillant. 6 entrées de lore majeur (4 Voix, Dumbledore, Manon) enrichies d'une couche `revealed` (revealed 24→30). Les 6 mono-couche restantes sont des termes courts légitimes (§12.3). | 🔴 Haute | 12, `codex.js` | Moyenne | Phase 1 |
-| **PNJ de signature manquants** : Chevalier Fantôme 🦁 + Écho de Salazar 🐍 (ou rabattre sur les chefs) | 🟠 Moyenne | 06, 08, `npcs.js`, `npc-dialog.js` | Moyenne | Décision design |
-| **Objectifs de quête neufs** des signatures : « combat sans fuite », escorte/vague défensive, raccourcis Salazar (`teleport.js` existe déjà ?) | 🟠 Moyenne | 08, `quests*.js`, `movement.js` | Élevée | PNJ ci-dessus |
+| ~~**PNJ de signature manquants**~~ ✅ **Livré (2026-06-13)** : `chevalier_godric` 🦁 + `echo_salazar` 🐍 PNJ dédiés (art, dialogues, placement) ; 4 signatures opérationnelles + 5 smoke. | ✅ | 06, 08, `npcs.js` | — | Fait |
+| **Objectifs de quête neufs** des signatures (« combat sans fuite », escorte/vague défensive, raccourcis Salazar) — restent **hors-scope** : les signatures shippent avec des **proxys `kill`/`item`** (08 §8.5.2). Mécaniques neuves = chantier optionnel. | 🟡 Basse | 08, `quests*.js`, `movement.js` | Élevée | Optionnel |
 | **Échos temporels → Codex** : Set `temporalEchoSeen` + robinet `corruptedBy` zone D | 🟠 Moyenne | 10, 12, `codex.js`, `floor-ambiance.js` | Moyenne | Codex audit |
 | **Variantes texte de fin (B) complètes** dans la cinématique | 🟡 Basse | 14, `endgame.js`, `cinematics.js` | Faible | Phase 1 |
 
@@ -217,7 +217,7 @@ sépare l'état actuel d'une **démo jouable et cohérente** est :
 
 1. **Réconcilier** la doc et `CLAUDE.md` avec un code en avance (Phase 1).
 2. **Remplir** des coquilles déjà livrées — surtout le Codex (Phase 2).
-3. **Donner une destination** à la Boucle et finir les quêtes signature (Phase 3).
+3. **Donner une destination** à la Boucle (quêtes signature ✅ livrées 2026-06-13).
 4. **Polir, équilibrer, tester** pour la release (Phase 4).
 
 Autrement dit : on passe de *« construire le jeu »* à *« finir d'y écrire

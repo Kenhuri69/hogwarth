@@ -10,9 +10,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=39">
+<link rel="stylesheet" href="css/style.css?v=41">
 <link rel="stylesheet" href="css/ux-improvements.css?v=4">
-<link rel="stylesheet" href="css/save-ui.css?v=3">
+<link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
 <link rel="stylesheet" href="css/help-tour.css?v=2">
 <link rel="stylesheet" href="css/pwa.css?v=1">
@@ -81,6 +81,11 @@
     </button>
     <button type="button" class="hub-import-btn" onclick="importSaveFromFileToHub()">
       📥 Importer une sauvegarde
+    </button>
+    <!-- Ch.14 P6 — Codex du Sorcier (profil persistant : fins + titres).
+         Masqué si profil vierge (géré par _refreshHubCodexBtn). -->
+    <button type="button" id="hub-codex-btn" class="hub-import-btn" onclick="openWizardCodex()" style="display:none">
+      <img class="ir-icon hof-btn-icon" src="img/icons/codex_wizard.png" alt=""> Codex du Sorcier
     </button>
     <button type="button" class="hub-import-btn hub-hof-btn" onclick="openHallOfFame()">
       <img class="ir-icon hof-btn-icon" src="img/icons/trophy.png" alt=""> Hall of Fame
@@ -169,6 +174,16 @@
                maxlength="24" placeholder="Sorcier" autocomplete="off" spellcheck="false">
         <span class="psel-pseudo-hint">Visible par les autres joueurs en ligne.</span>
       </div>
+      <!-- Ch.14 P5 — New Game+ opt-in : visible seulement si le profil a ≥1
+           victoire (géré par _refreshNgPlusOptIn). Purement cosmétique. -->
+      <label id="ngplus-optin-row" class="psel-ngplus-row" style="display:none">
+        <img class="psel-ngplus-medal" src="img/icons/ngplus_veteran.png" alt="">
+        <input type="checkbox" id="ngplus-toggle" onchange="_onNgPlusToggle()">
+        <span class="psel-ngplus-text">
+          <span class="psel-ngplus-title">✦ Nouvelle Partie+</span>
+          <span class="psel-ngplus-hint">Cadre doré « Vétéran » + ton titre affiché. Cosmétique : aucun bonus hérité.</span>
+        </span>
+      </label>
       <div class="psel-nav">
         <button id="psel-quickstart" class="start-btn psel-quickstart" onclick="quickStart()"
                 title="Solo · Harry · Normal — directement au choix de Maison">⚡ Partie rapide</button>
@@ -456,6 +471,8 @@
 
   <div class="left-panel">
     <div class="panel-title">Groupe</div>
+    <!-- Ch.14 P5 — Titre New Game+ (cosmétique, rempli par updateUI si ngPlusRun) -->
+    <div id="ngplus-hud-title" class="ngplus-hud-title" style="display:none"></div>
 
     <!-- Harry -->
     <div class="party-card" id="char-card-0">
@@ -932,6 +949,16 @@
   </div>
 </div>
 
+<!-- Ch.14 P6 — Codex du Sorcier (profil persistant : fins + titres). Peuplée
+     par profile.js (renderProfileCodex → #wizard-codex-body). -->
+<div id="wizard-codex-modal" role="dialog" aria-modal="true" aria-labelledby="wizard-codex-title">
+  <div class="modal-box">
+    <div class="modal-title" id="wizard-codex-title"><img class="ui-icon ui-icon-xl" src="img/icons/codex_wizard.png" alt=""> Codex du Sorcier</div>
+    <span class="modal-close" onclick="closeWizardCodex()" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <div id="wizard-codex-body"></div>
+  </div>
+</div>
+
 <!-- Modale de choix de slot (save / load) — peuplée par save-ui.js -->
 <div id="slot-modal" role="dialog" aria-modal="true" aria-labelledby="slot-modal-title">
   <div class="modal-box">
@@ -1230,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/icons.js?v=1"></script>
 <script src="js/scene-icons.js?v=7"></script>
 <script src="js/monsters.js?v=12"></script>
-<script src="js/npcs.js?v=30"></script>
+<script src="js/npcs.js?v=31"></script>
 <script src="js/npcs-helpers.js?v=4"></script>
 <script src="js/riddles.js?v=2"></script>
 <script src="js/codex.js?v=9"></script>
@@ -1241,9 +1268,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/floor-events.js?v=1"></script>
 <script src="js/room-flavor.js?v=1"></script>
 <script src="js/item-icons.js?v=22"></script>
-<script src="js/state.js?v=32"></script>
+<script src="js/state.js?v=33"></script>
 <script src="js/hero-barks.js?v=6"></script>
-<script src="js/ui.js?v=14"></script>
+<script src="js/ui.js?v=15"></script>
 <script src="js/ui-character-sheet.js?v=7"></script>
 <script src="js/ui-settings.js?v=3"></script>
 <script src="js/ui-bestiary.js?v=5"></script>
@@ -1276,15 +1303,16 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/quests-templates.js?v=11"></script>
 <script src="js/quests.js?v=15"></script>
 <script src="js/quests-riddles.js?v=3"></script>
-<script src="js/npc-dialog.js?v=17"></script>
+<script src="js/npc-dialog.js?v=18"></script>
 <script src="js/house-donation.js?v=1"></script>
 <script src="js/karaoke.js?v=1"></script>
 <script src="js/intro.js?v=3"></script>
 <script src="js/shop.js?v=13"></script>
 <script src="js/save-slots.js?v=3"></script>
-<script src="js/save.js?v=37"></script>
+<script src="js/save.js?v=38"></script>
 <script src="js/save-visit-snapshot.js?v=1"></script>
-<script src="js/save-ui.js?v=6"></script>
+<script src="js/profile.js?v=2"></script>
+<script src="js/save-ui.js?v=8"></script>
 <script src="js/ironman.js?v=4"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
 <script src="js/multiplayer.js?v=9"></script>
@@ -1296,13 +1324,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/visit-hud.js?v=6"></script>
 <script src="js/pvp-duel.js?v=1"></script>
 <script src="js/atelier-voyageur.js?v=4"></script>
-<script src="js/main.js?v=22"></script>
-<script src="js/endgame.js?v=8"></script>
-<script src="js/break-cycle.js?v=3"></script>
+<script src="js/main.js?v=23"></script>
+<script src="js/endgame.js?v=9"></script>
+<script src="js/break-cycle.js?v=4"></script>
 <script src="js/forge.js?v=4"></script>
 <script src="js/library.js?v=4"></script>
 <script src="js/help-tour.js?v=3"></script>
-<script src="js/loader.js?v=44"></script>
+<script src="js/loader.js?v=46"></script>
 <script src="js/pwa.js?v=4"></script>
 
 </body>

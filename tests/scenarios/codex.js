@@ -817,4 +817,123 @@ async function scenarioEndingAssets() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp, scenarioEndingEpilogue, scenarioEndingAssets] };
+// New Game+ opt-in + profil persistant (Chapitre 14 §14.6.3, P5). Profil
+// hors-save (localStorage `hogwarts_rpg_profile`) : compteur de victoires, fins
+// vues, titres. Cosmétique strict — ZÉRO stat/objet/or hérité (équilibrage 13).
+async function scenarioNgPlusProfile() {
+  console.log('\n── Scénario : New Game+ opt-in + profil persistant (§14.6.3 P5) ──');
+  const { browser, page, errors } = await launchGame();
+
+  // Profil vierge (browser frais, mais on force le nettoyage par sûreté).
+  await page.evaluate(() => { try { localStorage.removeItem('hogwarts_rpg_profile'); } catch (e) {} });
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serpentard' });
+
+  const wired = await page.evaluate(() => ({
+    getFn:    typeof getPlayerProfile === 'function',
+    recordFn: typeof recordEndingToProfile === 'function',
+    availFn:  typeof ngPlusAvailable === 'function',
+    titlesFn: typeof computeProfileTitles === 'function',
+    topFn:    typeof profileTopTitle === 'function',
+    renderFn: typeof renderProfileCodex === 'function',
+    hasRun:   typeof ngPlusRun !== 'undefined',
+    hasTitle: typeof ngPlusTitle !== 'undefined',
+  }));
+  console.log('  wired :', wired);
+  Object.entries(wired).forEach(([k, v]) => assert(v, `profile: ${k} manquant`));
+
+  // Profil vierge → NG+ indisponible.
+  const vierge = await page.evaluate(() => ({
+    avail: ngPlusAvailable(),
+    victories: getPlayerProfile().victories,
+  }));
+  console.log('  vierge :', vierge);
+  assert(vierge.avail === false, 'NG+ ne doit pas être dispo sans victoire');
+  assert(vierge.victories === 0, 'profil vierge → 0 victoire');
+
+  // Victoire via le hook réel → profil enregistre victoire + titre + NG+ dispo.
+  const won = await page.evaluate(() => {
+    checkVictoryTrigger('voldemort_revenu');
+    const m = document.getElementById('victory-modal'); if (m) m.style.display = 'none';
+    const p = getPlayerProfile();
+    return { victories: p.victories, seenVictory: p.endingsSeen.victory, titles: p.titles,
+             avail: ngPlusAvailable(), top: profileTopTitle(p) };
+  });
+  console.log('  won :', won);
+  assert(won.victories === 1, `victoire enregistrée (${won.victories})`);
+  assert(won.seenVictory === true, 'endingsSeen.victory devrait être vrai');
+  assert(won.titles.includes("Vainqueur de l'Ombre"), 'titre Vainqueur attendu');
+  assert(won.avail === true, 'NG+ doit être dispo après 1 victoire');
+  assert(won.top === "Vainqueur de l'Ombre", `top title attendu (${won.top})`);
+
+  // Cycle brisé via le hook → titre « Briseur de Cycle » prioritaire.
+  const broke = await page.evaluate(() => {
+    confirmBreakCycle();
+    const bm = document.getElementById('break-cycle-overlay'); if (bm) bm.style.display = 'none';
+    const p = getPlayerProfile();
+    return { cycles: p.cyclesBroken, seen: p.endingsSeen.cycle_broken, top: profileTopTitle(p) };
+  });
+  console.log('  broke :', broke);
+  assert(broke.cycles === 1, `1 cycle brisé enregistré (${broke.cycles})`);
+  assert(broke.seen === true, 'endingsSeen.cycle_broken devrait être vrai');
+  assert(broke.top === 'Briseur de Cycle', `top title Briseur attendu (${broke.top})`);
+
+  // Codex du Sorcier (P6) : bouton du hub visible (≥1 victoire), modale dédiée
+  // s'ouvre et son corps liste titre dominant + fins.
+  const codex = await page.evaluate(() => {
+    _refreshHubCodexBtn();
+    const btn = document.getElementById('hub-codex-btn');
+    const btnVisible = btn && btn.style.display !== 'none';
+    openWizardCodex();
+    const m = document.getElementById('wizard-codex-modal');
+    const body = document.getElementById('wizard-codex-body');
+    const res = {
+      btnVisible,
+      modalOpen: m && m.style.display === 'flex',
+      hasTopTitle: body && body.textContent.includes('Briseur de Cycle'),
+      hasEndingSection: body && body.textContent.includes('Fins découvertes'),
+    };
+    closeWizardCodex();
+    res.modalClosed = m && m.style.display === 'none';
+    return res;
+  });
+  console.log('  codex :', codex);
+  assert(codex.btnVisible, 'bouton Codex du Sorcier du hub devrait être visible (≥1 victoire)');
+  assert(codex.modalOpen, 'modale Codex du Sorcier devrait s\'ouvrir');
+  assert(codex.hasTopTitle, 'modale devrait afficher le titre dominant');
+  assert(codex.hasEndingSection, 'modale devrait lister les fins découvertes');
+  assert(codex.modalClosed, 'closeWizardCodex devrait fermer la modale');
+
+  // Opt-in : la case devient visible quand le profil a une victoire.
+  const optin = await page.evaluate(() => {
+    _refreshNgPlusOptIn();
+    const row = document.getElementById('ngplus-optin-row');
+    return row ? row.style.display : 'absent';
+  });
+  console.log('  optin display :', optin);
+  assert(optin === 'flex', `case NG+ devrait être visible (${optin})`);
+
+  // Cosmétique HUD : ngPlusRun + titre → bandeau visible ; round-trip de save
+  // conserve les flags (purement visuels).
+  const hud = await page.evaluate(() => {
+    ngPlusRun = true; ngPlusTitle = 'Briseur de Cycle';
+    updateUI();
+    const el = document.getElementById('ngplus-hud-title');
+    const visible = el && el.style.display === 'block' && el.textContent.includes('Briseur de Cycle');
+    const gs = _serializeState();
+    ngPlusRun = false; ngPlusTitle = '';
+    _applyState(gs);
+    return { visible, run: ngPlusRun, title: ngPlusTitle };
+  });
+  console.log('  hud :', hud);
+  assert(hud.visible, 'bandeau titre HUD devrait être visible en NG+');
+  assert(hud.run === true && hud.title === 'Briseur de Cycle', 'flags NG+ devraient survivre au round-trip de save');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS (NG+ P5)`);
+  }
+  console.log('  ✅ New Game+ : profil persistant + titres + Codex du Sorcier + cosmétique OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo, scenarioLoopPassiveXp, scenarioEndingEpilogue, scenarioEndingAssets, scenarioNgPlusProfile] };

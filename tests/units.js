@@ -1401,6 +1401,51 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 11quater. profile.js — titres NG+ PURS (Chapitre 14, P5)
+//    computeProfileTitles / profileTopTitle dérivés du profil persistant.
+// ============================================================
+(function testProfileTitles() {
+  const { computeProfileTitles, profileTopTitle } = loadModule(
+    'js/profile.js', ['computeProfileTitles', 'profileTopTitle']);
+
+  // Profil vierge → aucun titre.
+  check('titres: profil absent → []', computeProfileTitles().length === 0);
+  check('titres: profil vide → []',   computeProfileTitles({}).length === 0);
+  check('top: profil vierge → ""',    profileTopTitle({}) === '');
+
+  // Victoire simple → « Vainqueur de l'Ombre ».
+  const win = { victories: 1, endingsSeen: { victory: true } };
+  check('titres: victoire → Vainqueur',
+    computeProfileTitles(win).join('|') === "Vainqueur de l'Ombre");
+  check('top: victoire → Vainqueur', profileTopTitle(win) === "Vainqueur de l'Ombre");
+
+  // Victoire avec Pacte → ajoute « Diplomate des Cachots » (prioritaire au top).
+  const pact = { victories: 1, pactVictories: 1,
+                 endingsSeen: { victory: true, victory_pact: true } };
+  check('titres: pacte → Vainqueur + Diplomate',
+    computeProfileTitles(pact).includes('Diplomate des Cachots'));
+  check('top: pacte → Diplomate', profileTopTitle(pact) === 'Diplomate des Cachots');
+
+  // 1 Cycle brisé → « Briseur de Cycle » (sans ★).
+  const c1 = { victories: 1, cyclesBroken: 1,
+               endingsSeen: { victory: true, cycle_broken: true } };
+  check('titres: 1 cycle → Briseur de Cycle (sans ★)',
+    computeProfileTitles(c1).includes('Briseur de Cycle'));
+  check('top: 1 cycle → Briseur (prioritaire)', profileTopTitle(c1) === 'Briseur de Cycle');
+
+  // N≥2 Cycles brisés → « Briseur de Cycle ★N ».
+  const c3 = { victories: 2, pactVictories: 1, cyclesBroken: 3,
+               endingsSeen: { victory: true, victory_pact: true, cycle_broken: true } };
+  check('titres: 3 cycles → ★3', computeProfileTitles(c3).includes('Briseur de Cycle ★3'));
+  check('top: 3 cycles → Briseur ★3 (prioritaire)', profileTopTitle(c3) === 'Briseur de Cycle ★3');
+  check('titres: 3 titres cumulés', computeProfileTitles(c3).length === 3);
+
+  // endingsSeen suffit même sans compteur (saves rétro-compatibles).
+  check('titres: endingsSeen seul → Vainqueur',
+    computeProfileTitles({ endingsSeen: { victory: true } }).join('|') === "Vainqueur de l'Ombre");
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

@@ -94,6 +94,8 @@ function _serializeState() {
     victoryAchieved,
     victoryAt,
     endingType,
+    ngPlusRun,
+    ngPlusTitle,
     accumulatedEclats,
     combatTutorialSeen,
     endgamePivotSeen,
@@ -435,6 +437,10 @@ function _applyState(gs) {
     endingType = gs.endingType || null;
     if (typeof refreshEndingType === 'function') refreshEndingType();
   }
+  // New Game+ cosmétique (P5) : restauré tel quel ; saves antérieures → off.
+  // Purement visuel (cadre/titre) — aucun effet mécanique.
+  if (typeof ngPlusRun   !== 'undefined') ngPlusRun   = !!gs.ngPlusRun;
+  if (typeof ngPlusTitle !== 'undefined') ngPlusTitle = gs.ngPlusTitle || '';
   // Mode Ironman : saves antérieures à l'ajout du mode → false/0/vide.
   ironmanMode     = !!gs.ironmanMode;
   totalKills      = (typeof gs.totalKills === 'number') ? gs.totalKills : 0;

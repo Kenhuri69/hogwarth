@@ -178,6 +178,16 @@ js/
                       Parallèles) : _takeVisitSnapshot/_restoreFromVisit,
                       mpBuildVisitSnapshot/mpApplyVisitSnapshot/
                       mpApplyVisitFloorUpdate. Chargé APRÈS save.js.
+  profile.js       →  Profil joueur persistant hors-save (localStorage
+                      `hogwarts_rpg_profile`, distinct des saves) — Chapitre 14
+                      P5 : getPlayerProfile(), recordEndingToProfile(),
+                      ngPlusAvailable(), helpers PURS computeProfileTitles()/
+                      profileTopTitle(), Codex du Sorcier (modale dédiée
+                      #wizard-codex-modal : openWizardCodex()/closeWizardCodex()/
+                      renderProfileCodex(), bouton hub #hub-codex-btn via
+                      _refreshHubCodexBtn()), _refreshNgPlusOptIn(). New Game+
+                      COSMÉTIQUE — zéro stat/objet/or hérité. Chargé APRÈS
+                      save-visit-snapshot.js.
   save-ui.js       →  Modale #slot-modal (openSaveDialog/openLoadDialog) +
                       Hub démarrage (enterStartHub, startHubNewGame,
                       loadSlotAndStart).
