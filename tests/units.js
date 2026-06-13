@@ -974,6 +974,19 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('monster: vu 2 kills → revealed',
     codexEntryState(monsterEntry, { ...empty, seenMonsters: new Set(['troll']), monsterKills: { troll: 2 } }) === 'revealed');
 
+  // ── Boss promus en personnages (P4, §6.6) — robinet `monster` réel ──
+  for (const id of ['maitre_detraqueur', 'heraut_tenebres']) {
+    const e = getCodexEntry(id);
+    check(`${id} : entrée Codex personnages`, e && e.category === 'personnages');
+    check(`${id} : veiled + revealed définis`,
+      e && e.textVersions.veiled && e.textVersions.revealed);
+    check(`${id} : jamais vu → locked`, codexEntryState(e, empty) === 'locked');
+    check(`${id} : vu → veiled`,
+      codexEntryState(e, { ...empty, seenMonsters: new Set([id]) }) === 'veiled');
+    check(`${id} : vaincu → revealed`,
+      codexEntryState(e, { ...empty, seenMonsters: new Set([id]), monsterKills: { [id]: 1 } }) === 'revealed');
+  }
+
   // ── quest + riddle : couverture évaluateur ──
   const qrEntry = {
     id: '_t_qr', category: 'personnages', title: 'T',
@@ -1046,6 +1059,47 @@ function loadModule(relPath, exportNames, globals = {}) {
   try { codexEntryState(cle, {}); codexEntryState(cle, { floorReached: 1 }); unlockedCodexFor({}); }
   catch (e) { noThrow = false; }
   check('codex helpers tolèrent un ctx incomplet', noThrow);
+})();
+
+// ============================================================
+// 9. battle.js — Promotion de boss en personnage (P4, ch.06 §6.6)
+//    BOSS_PROMO_BEATS (registre pur) + _maybeBossPromoBeat (one-shot)
+// ============================================================
+(function testBossPromo() {
+  // Registre pur — 2 boss promus, chacun avec une ligne de monologue.
+  const pure = loadModule('js/battle.js', ['BOSS_PROMO_BEATS']);
+  const { BOSS_PROMO_BEATS } = pure;
+  check('BOSS_PROMO_BEATS = 2 boss', Object.keys(BOSS_PROMO_BEATS).length === 2);
+  for (const id of ['maitre_detraqueur', 'heraut_tenebres']) {
+    check(`${id} : ligne de promotion non vide`,
+      BOSS_PROMO_BEATS[id] && typeof BOSS_PROMO_BEATS[id].line === 'string' && BOSS_PROMO_BEATS[id].line.length > 20);
+  }
+
+  // Orchestrateur one-shot — globals injectés (enemyGroup, seenScriptedBeat, addMsg).
+  const seen = new Set();
+  let msgs = 0;
+  const eg = [{ id: 'maitre_detraqueur', epic: true }];
+  const orch = loadModule('js/battle.js', ['_maybeBossPromoBeat'],
+    { enemyGroup: eg, seenScriptedBeat: seen, addMsg: () => { msgs++; } });
+  const { _maybeBossPromoBeat } = orch;
+  check('promo Maître 1re fois = true', _maybeBossPromoBeat() === true);
+  check('sentinelle boss_promo:maitre_detraqueur posée', seen.has('boss_promo:maitre_detraqueur'));
+  check('promo monologue émis 1×', msgs === 1);
+  check('promo Maître 2e fois = false (one-shot)', _maybeBossPromoBeat() === false);
+  check('promo pas de double monologue', msgs === 1);
+
+  // Boss non promu (ex. troll en tête) → no-op.
+  const seen2 = new Set();
+  let msgs2 = 0;
+  const orch2 = loadModule('js/battle.js', ['_maybeBossPromoBeat'],
+    { enemyGroup: [{ id: 'troll' }], seenScriptedBeat: seen2, addMsg: () => { msgs2++; } });
+  check('boss non promu → false', orch2._maybeBossPromoBeat() === false);
+  check('boss non promu → aucun message', msgs2 === 0);
+
+  // Groupe vide → no-op défensif.
+  const orch3 = loadModule('js/battle.js', ['_maybeBossPromoBeat'],
+    { enemyGroup: [], seenScriptedBeat: new Set(), addMsg: () => {} });
+  check('groupe vide → false', orch3._maybeBossPromoBeat() === false);
 })();
 
 // ============================================================

@@ -357,6 +357,30 @@ const CODEX_ENTRIES = [
       veiled: "Une élève rencontrée dans la descente, le regard hanté par un deuil de givre. Elle cherche les pages dispersées du grimoire de sa mère, Élara — comme si les reconstituer pouvait réchauffer quelque chose.",
     },
   },
+  // Boss promus en personnages (P4, ch.06 §6.6) : vu en combat → veiled ;
+  // vaincu → revealed (robinet `monster`, comme reflet_mythe).
+  {
+    id: 'maitre_detraqueur', category: 'personnages', icon: '👁️', act: 3,
+    title: 'Le Maître des Détraqueurs',
+    links: ['les_fondateurs', 'boucle_tenebreuse'],
+    unlockConditions: [{ type: 'monster', value: 'maitre_detraqueur' }],
+    revealedBy: [{ type: 'monster', value: 'maitre_detraqueur', kills: 1 }],
+    textVersions: {
+      veiled: "Plus vieux et plus avide que ses subordonnés, il ne se rue jamais : il s'attarde, savoure, et glisse une voix sans bouche dans ton esprit. Là où les autres Détraqueurs sont des bêtes de froid, lui semble penser.",
+      revealed: "Le Maître n'est pas un monstre de plus : il est l'incarnation de la peur-sceau. Les Fondateurs n'ont pas tué ce qui dormait sous la colline — ils l'ont tenu par la peur, et cette peur a fini par prendre forme et capuchon. Il ne prend pas la vie : il prend ce qui la rendait belle, un souvenir à la fois, pour entretenir le froid qui maintient le verrou. L'abattre n'éteint pas la peur — cela rappelle seulement qu'on peut la regarder en face.",
+    },
+  },
+  {
+    id: 'heraut_tenebres', category: 'personnages', icon: '📯', act: 3,
+    title: 'Le Héraut des Ténèbres',
+    links: ['boucle_tenebreuse', 'cle_de_voute'],
+    unlockConditions: [{ type: 'monster', value: 'heraut_tenebres' }],
+    revealedBy: [{ type: 'monster', value: 'heraut_tenebres', kills: 1 }],
+    textVersions: {
+      veiled: "Nul n'a jamais vu son visage sous le capuchon. Il ne combat pas pour vaincre : son cor d'os sonne une annonce, et sa seule présence corrompt l'air. Un messager, pas un soldat.",
+      revealed: "Le Héraut est la charnière. Il n'annonce pas la fin mais le seuil : ce qui vient avant la Boucle Ténébreuse. Sa litanie dit la vérité que le château refuse — qu'aucune victoire n'est définitive tant que la faille du bas reste ouverte. Le terrasser ne ferme rien : cela sonne le prochain tour, plus bas, toujours. Comprendre le Héraut, c'est comprendre pourquoi la descente recommence.",
+    },
+  },
 
   // ── ⚜️ Objets & Artefacts (robinet item/palier, Lot 5) ──
   {

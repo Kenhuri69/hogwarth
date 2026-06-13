@@ -244,6 +244,44 @@ function _applySignatureVoldemortLever() {
   }
 }
 
+// ── Promotion de boss en personnage (P4, ch.06 §6.6) ─────────
+// Deux boss originaux sont promus en personnages scénarisés : ils prennent la
+// parole à leur PREMIÈRE rencontre (monologue one-shot), ce qui les distingue
+// des purs gardiens mécaniques (Veilleur, Hécate). Modèle :
+// `_applySignatureVoldemortLever` (addMsg pur) + one-shot via seenScriptedBeat
+// (sentinelle string, comme 'voix_des_ruines'). Leur entrée de Codex
+// (catégorie 👤 Personnages) parachève la promotion (codex.js).
+//   - Maître des Détraqueurs : incarne la peur-sceau (§6.5 B).
+//   - Héraut des Ténèbres : charnière vers la Boucle Ténébreuse.
+const BOSS_PROMO_BEATS = {
+  maitre_detraqueur: {
+    icon: '👁️',
+    line: "Le Maître des Détraqueurs ne se rue pas. Il s'attarde, et une voix sans bouche s'insinue : « Je ne prends pas la vie. Je prends ce qui la rendait belle, un souvenir à la fois. La peur que tu sens n'est pas la tienne — c'est celle que les Fondateurs ont scellée, et que je garde au chaud. »",
+  },
+  heraut_tenebres: {
+    icon: '📯',
+    line: "Le Héraut lève son cor d'os et n'attaque pas d'abord — il annonce : « Je ne suis pas la fin. Je suis ce qui vient avant. Abats-moi, et tu n'auras fait que sonner toi-même le prochain tour. Ce qui se referme ici se rouvrira plus bas, toujours. »",
+  },
+};
+
+// Orchestrateur one-shot : joue le monologue de promotion à la 1re rencontre du
+// boss en tête de groupe. Sentinelle 'boss_promo:<id>' dans seenScriptedBeat
+// (l'id survit au recyclage de Boucle — scaleMonster ne renomme que le `name`).
+// No-op silencieux si l'état/les helpers manquent (file://) ou si déjà joué.
+function _maybeBossPromoBeat() {
+  if (!enemyGroup.length) return false;
+  const boss = enemyGroup[0];
+  if (!boss || !boss.id) return false;
+  const beat = BOSS_PROMO_BEATS[boss.id];
+  if (!beat) return false;
+  if (typeof seenScriptedBeat === 'undefined' || !seenScriptedBeat) return false;
+  const key = 'boss_promo:' + boss.id;
+  if (seenScriptedBeat.has(key)) return false;
+  seenScriptedBeat.add(key);
+  if (typeof addMsg === 'function') addMsg(beat.line, 'magic');
+  return true;
+}
+
 // ── Imperius : asservissement (l'ennemi frappe ses alliés) ───
 // consumeImperius : consomme 1 tour d'asservissement. Retourne true si
 // l'ennemi doit agir sous contrôle ce tour. Retire le statut à 0.
@@ -592,6 +630,10 @@ function startBattle(baseEnemyData, opts) {
   // visuel (CFX_safe → no-op si le module FX est absent).
   if (enemyGroup[0] && enemyGroup[0].epic) CFX_safe.bossIntro(enemyGroup[0]);
   else                                     CFX_safe.combatStart();
+  // Promotion de boss en personnage (P4, §6.6) : le Maître des Détraqueurs / le
+  // Héraut des Ténèbres prennent la parole à leur 1re rencontre, AVANT que le
+  // héros ne réplique. One-shot, défensif. Cf. _maybeBossPromoBeat.
+  _maybeBossPromoBeat();
   // Voix des héros — apparition d'un boss epic (cosmétique, défensif). Le
   // héros actif (vivant) prend la parole. Cf. js/hero-barks.js.
   if (enemyGroup[0] && enemyGroup[0].epic && typeof heroBark === 'function') {

@@ -514,4 +514,60 @@ async function scenarioDarkLoopV4() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4] };
+// Promotion de boss en personnage (P4, ch.06 §6.6) : monologue one-shot au 1ᵉʳ
+// combat contre le Maître des Détraqueurs + entrée Codex 👤 Personnages.
+async function scenarioBossPromo() {
+  console.log('\n── Scénario : promotion de boss en personnage (P4 §6.6) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const r = await page.evaluate(() => {
+    const out = { threw: false };
+    try {
+      out.hasReg  = typeof BOSS_PROMO_BEATS !== 'undefined' && !!BOSS_PROMO_BEATS.maitre_detraqueur;
+      out.hasOrch = typeof _maybeBossPromoBeat === 'function';
+      // État neuf + combat contre le Maître des Détraqueurs.
+      seenScriptedBeat = new Set();
+      currentFloor = 9;
+      const base = MONSTERS.find(m => m.id === 'maitre_detraqueur');
+      out.foundMonster = !!base;
+      startBattle(base);
+      // startBattle a appelé _maybeBossPromoBeat → sentinelle posée.
+      out.sentinel = seenScriptedBeat.has('boss_promo:maitre_detraqueur');
+      out.seen     = seenMonsters.has('maitre_detraqueur');
+      // Codex : vu en combat → veiled.
+      checkCodexUnlocks('battle-start');
+      out.codexOpen   = unlockedCodexEntries.has('maitre_detraqueur');
+      out.codexVeiled = codexEntryState(getCodexEntry('maitre_detraqueur'), _codexContext());
+      // Idempotent : un 2ᵉ appel direct ne rejoue pas.
+      out.replay = _maybeBossPromoBeat();
+      // Révélation par le kill (simulé via monsterKills).
+      monsterKills = monsterKills || {};
+      monsterKills['maitre_detraqueur'] = 1;
+      out.codexRevealed = codexEntryState(getCodexEntry('maitre_detraqueur'), _codexContext());
+      // Le Héraut est promu lui aussi (registre).
+      out.herautReg = !!BOSS_PROMO_BEATS.heraut_tenebres;
+    } catch (e) { out.threw = true; out.err = String(e); }
+    return out;
+  });
+  console.log('  →', r);
+  assert(!r.threw, 'boss promo throw: ' + (r.err || ''));
+  assert(r.hasReg && r.hasOrch, 'BOSS_PROMO_BEATS / _maybeBossPromoBeat absents');
+  assert(r.foundMonster, 'monstre maitre_detraqueur introuvable dans MONSTERS');
+  assert(r.sentinel, 'monologue de promotion non joué (sentinelle absente)');
+  assert(r.seen, 'le Maître devrait être marqué vu (seenMonsters)');
+  assert(r.codexOpen, 'entrée Codex maitre_detraqueur non ouverte');
+  assert(r.codexVeiled === 'veiled', `Codex devrait être veiled après combat (${r.codexVeiled})`);
+  assert(r.replay === false, 'le monologue de promotion devrait être one-shot');
+  assert(r.codexRevealed === 'revealed', `Codex devrait être révélé après le kill (${r.codexRevealed})`);
+  assert(r.herautReg, 'le Héraut des Ténèbres devrait être promu lui aussi');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (promotion de boss)`);
+  }
+  console.log('  ✅ Promotion de boss — monologue one-shot + entrée Codex OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioCodexOpen, scenarioCodexUnlockOnFloor, scenarioCodexCorrupted, scenarioDarkLoopV1, scenarioDarkLoopV2, scenarioDarkLoopV3, scenarioDarkLoopV4, scenarioBossPromo] };
