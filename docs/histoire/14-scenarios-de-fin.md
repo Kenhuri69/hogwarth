@@ -5,10 +5,11 @@
 > ✅ **Statut réel (code, 2026-06-13)** : le socle des fins est **livré** —
 > fin « normale » + cinématique (`js/endgame.js`, `js/cinematics.js`), **vraie
 > fin « Briser le Cycle »** (`js/break-cycle.js`, flag `cycleBroken`), écran de
-> permadeath Ironman. La **seule variante conditionnelle (B) codée** reste le
-> ton froid `slythPactChoice === 'pact'`. Le travail restant relève du
-> **contenu** (compléter les 5 axes de variantes texte, dont la symétrie
-> `'defiance'`), non de la plomberie — cf. Roadmap Phase 1/2.
+> permadeath Ironman. Les **5 axes de variantes conditionnelles (B)** du discours
+> de victoire sont désormais **codés** (`_victorySpeechVariants`, `js/endgame.js`,
+> testés `tests/units.js`) : (a) Maison, (b) héros choisis & solo/duo, (c) quêtes
+> Signature, (d) Éclats, (e) choix moral du Pacte (`pact`/`defiance`). Tout est
+> du **texte** sur la même cinématique — aucune branche d'arc.
 > Voir `docs/REVUE-TRANSVERSALE-ET-ROADMAP.md` §1.2.
 
 > Objectif : faire du Chapitre 14 la **clôture** de la spécification narrative —
@@ -161,7 +162,7 @@ ce que la Maison a *appris* au joueur, écho à [07](07-les-maisons.md)).
 | 🦅 Serdaigle | *« Tu as compris avant de combattre. Rowena disait : *« la connaissance est l'arme qu'on ne perd jamais. »* Tu viens de le prouver au plus profond. »* |
 | 🦡 Poufsouffle | *« Tu n'as laissé personne derrière, pas même quand descendre seul eût été plus simple. Helga aurait été fière — et l'école, qu'elle a fondée pour tous, te doit la nuit. »* |
 
-#### (b) Selon les **héros choisis** & solo/duo — 💡
+#### (b) Selon les **héros choisis** & solo/duo — ✅ (implémenté)
 
 | Contexte | 💡 Variante |
 |----------|-------------|
@@ -169,9 +170,11 @@ ce que la Maison a *appris* au joueur, écho à [07](07-les-maisons.md)).
 | **Solo** | Ligne plus intime : *« Tu es descendu seul. Le château s'en souviendra. »* |
 | **Héros à Maison canon ≠ `chosenHouse`** | Clin d'œil (réutilise la logique `houseTension[<Maison>]` des barks) : le héros note l'ironie d'avoir vaincu sous une bannière qui n'est pas « la sienne ». |
 
-> 💡 Ces variantes **réutilisent le système de barks** ([05](05-personnages-jouables.md),
-> `hero-barks.js`) plutôt que d'inventer un canal : un nouvel événement de bark
-> `victory` suffirait, déclenché à l'ouverture de `#victory-modal`.
+> ✅ **Implémenté** dans `_victorySpeechVariants` (`js/endgame.js`) : un **beat du
+> palier** (solo → ligne intime ; duo → échange à deux voix entre les héros) +
+> un **clin d'œil** quand la Maison canon d'un héros (`_heroCanonHouse`,
+> `hero-barks.js`) diffère de `chosenHouse`. Pur, défensif, testé — pas de nouveau
+> canal de barks (la logique de Maison canon est seulement réutilisée).
 
 #### (c) Selon les **quêtes signature** terminées — 💡
 
@@ -469,12 +472,12 @@ robinets `victory` / `eclatLoop` / `cycleBroken` :
 | Condition | Type de Fin | Description narrative | Impact sur la Boucle | Déblocage Codex |
 |-----------|-------------|-----------------------|----------------------|------------------|
 | Vaincre `voldemort_revenu` (ét. 10) | **A. Normale** ✅ | « L'Ombre s'efface » — discours de Dumbledore, l'escalier profond s'ouvre | **Ouvre** la Boucle (`victoryAchieved`) | ✅ `boucle_tenebreuse`, `tenebreux`, `porteur_eclats`, `echo_signature` (robinet `victory`) |
-| `chosenHouse` = X | **B. Conditionnelle** 💡 | Dernier mot de Dumbledore coloré par la Maison | Aucun | 💡 variante `variants.house` de l'épilogue |
-| Solo / Duo / héros | **B. Conditionnelle** 💡 | Épilogue intime (solo) ou à 2 voix (duo) | Aucun | 💡 `variants.hero` |
-| `<house>SignatureDone` | **B. Conditionnelle** 💡 | Paragraphe « héritage » nommant la récompense de signature | Aucun | 💡 lien vers entrée Objet (`sword_gryff`, `locket_slytherin`…) ✅ existantes |
-| 3 `eclat_voute` remis | **B. Conditionnelle** 💡 (sur ✅) | Paragraphe de révélation : « le verrou retenait deux choses » | Prépare émotionnellement la Boucle | ✅ entrées Éclats du fil rouge |
+| `chosenHouse` = X | **B. Conditionnelle** ✅ **codé** | Dernier mot de Dumbledore coloré par la Maison | Aucun | `_victorySpeechVariants` (a) |
+| Solo / Duo / héros | **B. Conditionnelle** ✅ **codé** | Épilogue intime (solo) ou à 2 voix (duo) + clin d'œil Maison canon ≠ jouée | Aucun | `_victorySpeechVariants` (b) |
+| `<house>SignatureDone` | **B. Conditionnelle** ✅ **codé** | Paragraphe « héritage » nommant la récompense de signature | Aucun | `_victorySpeechVariants` (c) |
+| 3 `eclat_voute` remis | **B. Conditionnelle** ✅ **codé** | Paragraphe de révélation : « le verrou retenait deux choses » | Prépare émotionnellement la Boucle | `_victorySpeechVariants` (d) |
 | `slythPactChoice === 'pact'` | **B. Conditionnelle** ✅ **codé** | Ton **froid**, mise en garde de Dumbledore | Aucun | ✅ `echo_salazar` |
-| `slythPactChoice === 'defiance'` | **B. Conditionnelle** 💡 | Ton de **reconnaissance** (avoir refusé le pacte) | Aucun | 💡 variante |
+| `slythPactChoice === 'defiance'` | **B. Conditionnelle** ✅ **codé** | Ton de **reconnaissance** (avoir refusé le pacte) | Aucun | `_victorySpeechVariants` (e) |
 | 4 jalons (voir §14.5) + 🕊️ Briser | **C. Vraie fin** ✅ | Cinématique 3 pages, rescellement par le bas | **Reste ouverte** ; `cycleBroken=true` | ✅ `cycle_brise` (robinet `cycleBroken`) |
 | 4 jalons + 🌑 Perpétuer | **D. Renoncement** ✅ | « Tu choisis le mythe » ; le Reflet revient | **Reste ouverte**, série ★ N intacte | ✅ `briser_cycle` (reste « connu, non brisé ») |
 | Descente ★ N infinie | **D. Folie/vertige** 💡 | Prestige sans fin — le mythe dévore | **Est** la Boucle | ✅ échos temporels (zone D) |
@@ -517,9 +520,9 @@ robinets `victory` / `eclatLoop` / `cycleBroken` :
 
 ## Points à trancher (résumé)
 
-1. ❓ **Variantes conditionnelles de la cinématique (B)** : les adopte-t-on toutes
-   (Maison + héros + signatures + Éclats + Pacte `defiance`), ou un sous-ensemble ?
-   (§14.2.2)
+1. ✅ **Variantes conditionnelles de la cinématique (B)** — **tranché : les 5 axes
+   adoptés et implémentés** (Maison + héros/solo-duo + signatures + Éclats + Pacte
+   `pact`/`defiance`), 100 % texte sur la même cinématique. (§14.2.2)
 2. ✅ **Beat « Grande Salle » post-victoire** — **tranché : implémenté** (§14.3.2).
    Scène épinglée au premier retour réel sur l'étage 1 post-victoire ; le Gardien
    de la Boucle reste la voix de ceux qui descendent. One-shot cosmétique
