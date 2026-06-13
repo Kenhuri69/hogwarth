@@ -417,6 +417,27 @@ function _npcDialogPages(npc, state, resolved) {
   return { pages: out, srcPages };
 }
 
+// Suffixe « fil rouge des Éclats » (ch.06 §6.9.3) : si le PNJ porte le champ
+// `eclatLines` et que le joueur a entamé la collecte des Éclats (eclatProgress
+// > 0), on ajoute la ligne du palier courant EN FIN de dialogue — un suffixe
+// qui dit « ce que ce PNJ sait du mystère maintenant », pas une page de quête
+// neuve. `eclatLines[palier]` peut être une string ou un tableau (pioche).
+// Renvoie un tableau de sous-pages déjà scindées, ou [] (défensif : no-op si le
+// champ est absent, eclatProgress nul, ou aucune ligne pour ce palier).
+function _eclatSuffixPages(npc) {
+  const lines = npc && npc.eclatLines;
+  if (!lines) return [];
+  const p = (typeof eclatProgress === 'function') ? eclatProgress() : 0;
+  if (!p) return [];
+  const raw = lines[p];
+  if (raw === undefined || raw === null) return [];
+  const text = Array.isArray(raw)
+    ? raw[Math.floor(Math.random() * raw.length)]
+    : raw;
+  if (!text) return [];
+  return _splitDialogPage(text, _DIALOG_PAGE_MAXLEN);
+}
+
 function _npcDialogActions(npc, state) {
   const out = [];
   // Actions contextuelles quête — énumère TOUTES les quêtes actionnables du
@@ -795,6 +816,17 @@ function openNpcDialog(npcId) {
   // affiché et la clé voix (sinon deux tirages → voix décalée).
   const _resolved = _resolveDialogSource(npc, state);
   const _pageData = _npcDialogPages(npc, state, _resolved);
+  // Suffixe fil rouge des Éclats (§6.9.3) — appendu après la réplique d'état,
+  // calé sur l'authored-page précédente (suffixe muet : pas de relance voix).
+  const _eclatPages = _eclatSuffixPages(npc);
+  if (_eclatPages.length) {
+    const lastSrc = _pageData.srcPages.length
+      ? _pageData.srcPages[_pageData.srcPages.length - 1] : 0;
+    for (const sub of _eclatPages) {
+      _pageData.pages.push(sub);
+      _pageData.srcPages.push(lastSrc);
+    }
+  }
   _dialogState = {
     npcId,
     pages:     _pageData.pages,

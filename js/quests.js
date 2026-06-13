@@ -126,6 +126,25 @@ function turnInSlythSignature(choice) {
 }
 window.turnInSlythSignature = turnInSlythSignature;
 
+// ── Fil rouge des Éclats (ch.06 §6.9.3) ──────────────────────────
+// `eclatProgress()` : avancement DÉRIVÉ du fil rouge des Éclats de la Clé de
+// Voûte, dans {0,1,2,3}. Lu par les PNJ-pivots (Dumbledore, écho de Salazar)
+// pour leur suffixe `eclatLines`. Aucun compteur sérialisé parallèle (§6.12.B) :
+// on compte les `eclat_voute` possédés, MAIS la remise de `eclats_clef_voute`
+// consomme l'inventaire (_consumeQuestItems) → on plafonne à 3 une fois la
+// quête complétée (monotone post-remise). Défensif (file:// / état partiel).
+function eclatProgress() {
+  if (typeof completedQuests !== 'undefined' && completedQuests.has('eclats_clef_voute')) return 3;
+  let n = 0;
+  if (typeof player !== 'undefined' && Array.isArray(player.inventory)) {
+    for (const it of player.inventory) {
+      if (it && it.id === 'eclat_voute') n += (it.qty || 1);
+    }
+  }
+  return Math.min(3, n);
+}
+window.eclatProgress = eclatProgress;
+
 // IDs de monstres exclus du pool farming (bosses uniques scénaristiques).
 const FARMING_KILL_BLACKLIST = new Set([
   'bellatrix', 'voldemort_affaibli', 'voldemort_revenu', 'nagini'

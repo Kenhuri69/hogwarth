@@ -1574,4 +1574,60 @@ async function scenarioCleVouteIntro() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro] };
+// Réactivité fil rouge des Éclats (ch.06 §6.9.3) : le suffixe `eclatLines` des
+// PNJ-pivots suit `eclatProgress()` (dérivé, monotone après remise).
+async function scenarioNpcEclatReaction() {
+  console.log('\n── Scénario : réactivité fil rouge des Éclats (PNJ-pivots) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const joined = (id) => { openNpcDialog(id); return _dialogState.pages.join(' || '); };
+
+    // Reset propre du fil rouge.
+    player.inventory = (player.inventory || []).filter(i => !i || i.id !== 'eclat_voute');
+    completedQuests.delete('eclats_clef_voute');
+
+    const p0   = eclatProgress();
+    const dlg0 = joined('dumbledore');
+
+    // 2 Éclats ramassés → palier 2.
+    player.inventory.push({ id: 'eclat_voute' }, { id: 'eclat_voute' });
+    const p2   = eclatProgress();
+    const dlg2 = joined('dumbledore');
+
+    // Quête `eclats_clef_voute` remise (inventaire consommé) → reste à 3 (monotone).
+    player.inventory = player.inventory.filter(i => i.id !== 'eclat_voute');
+    completedQuests.add('eclats_clef_voute');
+    const p3   = eclatProgress();
+    const dlg3 = joined('dumbledore');
+
+    // Écho de Salazar (Serpentard) — voix de Fondateur, palier 1.
+    completedQuests.delete('eclats_clef_voute');
+    chosenHouse = 'Serpentard';
+    player.inventory.push({ id: 'eclat_voute' });
+    const echoP1 = eclatProgress();
+    const echo1  = joined('echo_salazar');
+
+    return { p0, dlg0, p2, dlg2, p3, dlg3, echoP1, echo1 };
+  });
+  console.log('  →', { p0: r.p0, p2: r.p2, p3: r.p3, echoP1: r.echoP1 });
+
+  assert(r.p0 === 0,                          'eclatProgress doit valoir 0 sans Éclat ni quête remise');
+  assert(!r.dlg0.includes('attise'),          'pas de suffixe Éclat au palier 0');
+  assert(r.p2 === 2,                          'eclatProgress doit valoir 2 avec 2 eclat_voute');
+  assert(r.dlg2.includes('attise'),           'suffixe Dumbledore palier 2 absent');
+  assert(r.p3 === 3,                          'eclatProgress doit rester 3 après remise (monotone, inventaire vidé)');
+  assert(r.dlg3.includes('deux choses, pas une'), 'suffixe Dumbledore palier 3 absent');
+  assert(r.echoP1 === 1,                      'eclatProgress 1 attendu pour l\'écho');
+  assert(r.echo1.includes('tient la porte'),  'suffixe écho de Salazar palier 1 absent');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Réactivité fil rouge des Éclats conforme');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioNpcIntegration, scenarioVendors, scenarioRandomLoreNpcs, scenarioKaraokeIntro, scenarioKaraokeNpc, scenarioHelpTour, scenarioGrimoirePages, scenarioGrimoireActe3, scenarioDumbledoreLux, scenarioOnboarding, scenarioCleVouteIntro, scenarioNpcEclatReaction] };
