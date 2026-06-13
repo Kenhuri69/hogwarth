@@ -14,17 +14,28 @@
 //   - Pas d'effet sur les sorts à coût/effet binaire (Avada Kedavra).
 //   - Persistance : ajouter à _serializeState (save.js) + lazy init.
 
-const LIBRARY_MAX_LEVEL = 5;
+// Palier T5 (library-t5.md) : le plafond passe de +5 à +8, pendant exact de
+// la Forge T5. Les niveaux 6-8 exigent en plus de l'Essence Primordiale
+// (`essence_primordiale`) — matériau premium partagé avec la Forge, vendu par
+// l'Apothicaire Ténébreux (Boucle). Sink endgame profond et arbitré (Forge vs
+// Bibliothèque puisent le même stock).
+const LIBRARY_MAX_LEVEL = 8;
 // C3b — deux voies d'amplification, verrouillées au 1er upgrade (char.spellPaths[name]) :
 //   'power' (défaut/legacy) → power +2 × level.
 //   'focus'                 → cost −1 × level + chance +0.05 × level.
 const LIBRARY_FOCUS_CHANCE_PER_LEVEL = 0.05;
+// Règle de coût : gold Bibliothèque = 1,5 × gold Forge ; pages = essence Forge ;
+// même nombre de Primordiale (cf. library-t5.md).
 const LIBRARY_COSTS = {
   1: { gold: 120,  pages: 1 },
   2: { gold: 240,  pages: 2 },
   3: { gold: 480,  pages: 3 },
   4: { gold: 960,  pages: 5 },
   5: { gold: 1920, pages: 8 },
+  // T5 — au-delà de +5 : coûts en forte hausse + Essence Primordiale.
+  6: { gold: 3300, pages: 10, primordiale: 1 },
+  7: { gold: 5100, pages: 13, primordiale: 2 },
+  8: { gold: 7500, pages: 16, primordiale: 3 },
 };
 
 // État UI : index du perso sélectionné dans les onglets.
@@ -38,6 +49,16 @@ function _countPages() {
 
 function _consumePages(n) {
   return _consumeMaterial('page_grimoire', n);
+}
+
+// Essence Primordiale (T5) — requise pour les niveaux 6-8 (partagée avec la
+// Forge). Helpers locaux pour rester indépendant de l'ordre de chargement.
+function _countLibPrimordiale() {
+  return _countMaterial('essence_primordiale');
+}
+
+function _consumeLibPrimordiale(n) {
+  return _consumeMaterial('essence_primordiale', n);
 }
 
 // Récap de progression Bibliothèque par héros actif. Pure — utilisée
@@ -127,9 +148,15 @@ function upgradeSpellAtLibrary(charIdx, spellName, path) {
     addMsg(`Bibliothèque : ${cost.pages} Page(s) de Grimoire requise(s).`, 'bad');
     return false;
   }
+  const needPrim = cost.primordiale | 0;
+  if (needPrim > 0 && _countLibPrimordiale() < needPrim) {
+    addMsg(`Bibliothèque : ${needPrim} Essence(s) Primordiale(s) requise(s) (au-delà de +5).`, 'bad');
+    return false;
+  }
 
   player.gold -= cost.gold;
   _consumePages(cost.pages);
+  if (needPrim > 0) _consumeLibPrimordiale(needPrim);
   c.spellUpgrades[spellName] = target;
   if (typeof AudioSystem !== 'undefined' && AudioSystem.playLevelUp) AudioSystem.playLevelUp();
   const voie = c.spellPaths[spellName] === 'focus' ? 'Maîtrise' : 'Puissance';
@@ -154,7 +181,10 @@ function openLibrary() {
   const gold  = document.getElementById('library-gold');
   const pages = document.getElementById('library-pages');
   if (gold)  gold.textContent  = `${player.gold | 0} Gallions`;
-  if (pages) pages.textContent = `${_countPages()} Page(s)`;
+  if (pages) {
+    const prim = _countLibPrimordiale();
+    pages.textContent = `${_countPages()} Page(s)` + (prim > 0 ? ` · ${prim} 🔮 Primordiale(s)` : '');
+  }
 
   // Onglets perso (visible en mode duo)
   const tabsEl = document.getElementById('library-tabs');
@@ -220,9 +250,10 @@ function openLibrary() {
     const path      = getSpellPath(c, name);   // 'power' | 'focus' | undefined (legacy)
     const voieLbl   = path === 'focus' ? 'Maîtrise' : 'Puissance';
     const costLine = (cost && !utility)
-      ? `<div class="library-cost">${cost.gold} g · ${cost.pages} 📜</div>`
+      ? `<div class="library-cost">${cost.gold} g · ${cost.pages} 📜${cost.primordiale ? ` · ${cost.primordiale} 🔮` : ''}</div>`
       : '';
-    const affordable = cost && player.gold >= cost.gold && _countPages() >= cost.pages;
+    const affordable = cost && player.gold >= cost.gold && _countPages() >= cost.pages
+      && _countLibPrimordiale() >= (cost.primordiale | 0);
     const dis = affordable ? '' : 'disabled';
     // Aperçu de la voie Maîtrise : cost réduit (+ fiabilité de statut si applicable).
     const focusPreview = `cost ${cstNow} → <b>${cstNext}</b> SP${hasChance ? ` · statut +${Math.round(LIBRARY_FOCUS_CHANCE_PER_LEVEL * 100)}%` : ''}`;

@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v115';
+const CACHE_VERSION = 'hogwarth-v116';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -113,7 +113,7 @@ const PRECACHE_URLS = [
   './js/endgame.js?v=4',
   './js/break-cycle.js?v=1',
   './js/forge.js?v=4',
-  './js/library.js?v=3',
+  './js/library.js?v=4',
   './js/help-tour.js?v=3',
   './js/loader.js?v=39',
   './js/pwa.js?v=4',

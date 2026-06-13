@@ -1117,11 +1117,42 @@ async function scenarioLibraryUpgrade() {
   assert(t5.augPower === t5.basePower + 2,     'legacy : power +2');
   assert(t5.augCost  === Math.max(1, t5.baseCost - 1), 'legacy : cost −1');
 
+  // T6 (palier T5, library-t5.md) — amplification au-delà de +5 : plafond +8,
+  // Essence Primordiale requise pour les niveaux 6-8.
+  const t6 = await page.evaluate(() => {
+    party[0].spellUpgrades['Incendio'] = 5;
+    party[0].spellPaths['Incendio'] = 'power';
+    player.gold = 100000;
+    player.inventory = player.inventory.filter(i => i.id !== 'page_grimoire' && i.id !== 'essence_primordiale');
+    for (let i = 0; i < 60; i++) player.inventory.push({ ...ITEMS.find(it => it.id === 'page_grimoire') });
+    const maxLevel = LIBRARY_MAX_LEVEL;
+    const cost6 = LIBRARY_COSTS[6];
+    const blocked = upgradeSpellAtLibrary(0, 'Incendio');     // sans Primordiale → refusé
+    const lvlBlocked = getSpellUpgradeLevel(party[0], 'Incendio');
+    for (let i = 0; i < 10; i++) player.inventory.push({ ...ITEMS.find(it => it.id === 'essence_primordiale') });
+    const ok6 = upgradeSpellAtLibrary(0, 'Incendio');
+    const ok7 = upgradeSpellAtLibrary(0, 'Incendio');
+    const ok8 = upgradeSpellAtLibrary(0, 'Incendio');
+    const lvl8 = getSpellUpgradeLevel(party[0], 'Incendio');
+    const ok9 = upgradeSpellAtLibrary(0, 'Incendio');         // plafond → refusé
+    const primLeft = player.inventory.filter(i => i.id === 'essence_primordiale').length;
+    return { maxLevel, hasCost6: !!cost6, prim6: cost6 && cost6.primordiale, blocked, lvlBlocked, ok6, ok7, ok8, lvl8, ok9, primLeft };
+  });
+  console.log('  T6 palier T5 →', t6);
+  assert(t6.maxLevel === 8,            'LIBRARY_MAX_LEVEL doit valoir 8');
+  assert(t6.hasCost6 && t6.prim6 >= 1, 'le niveau 6 doit coûter de l\'Essence Primordiale');
+  assert(t6.blocked === false,         'upgrade 5→6 refusé sans Primordiale');
+  assert(t6.lvlBlocked === 5,          'niveau inchangé sans Primordiale');
+  assert(t6.ok6 && t6.ok7 && t6.ok8,   'niveaux 6-8 réussis avec Primordiale');
+  assert(t6.lvl8 === 8,                'sort amplifié jusqu\'à +8');
+  assert(t6.ok9 === false,             'au-delà de +8 : plafond, refusé');
+  assert(t6.primLeft === 4,            'Primordiales consommées (1+2+3 = 6 sur 10)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Bibliothèque interdite OK');
+  console.log('  ✅ Bibliothèque interdite (2 voies + palier T5 jusqu\'à +8) OK');
   await browser.close();
 }
 
@@ -1130,14 +1161,14 @@ async function scenarioForgeLibraryAudit() {
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
 
-  // T1 — §4.1 : Library cap à +5 + coûts 4-5 définis.
+  // T1 — §4.1 : Library cap à +8 (palier T5, library-t5.md) + coûts 4-5 définis.
   const t1 = await page.evaluate(() => ({
     max:   LIBRARY_MAX_LEVEL,
     c4:    LIBRARY_COSTS[4],
     c5:    LIBRARY_COSTS[5],
   }));
-  console.log('  T1 Library +5 →', t1);
-  assert(t1.max === 5,                        'LIBRARY_MAX_LEVEL doit être 5');
+  console.log('  T1 Library +8 →', t1);
+  assert(t1.max === 8,                        'LIBRARY_MAX_LEVEL doit être 8 (palier T5)');
   assert(t1.c4 && t1.c4.gold === 960  && t1.c4.pages === 5, 'LIBRARY_COSTS[4] mal configuré');
   assert(t1.c5 && t1.c5.gold === 1920 && t1.c5.pages === 8, 'LIBRARY_COSTS[5] mal configuré');
 
