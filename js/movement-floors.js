@@ -154,11 +154,10 @@ function _maybePlayTierTransition(prevFloor, nextFloor) {
     setTimeout(() => overlay.classList.remove('active'), 600);
   }
   if (typeof addMsg === 'function') addMsg(`✨ ${next.label}`, 'narrative');
-  // P4 — Toast solennel dédié à la frontière 13↔14 (Ruines Anciennes).
-  // Texte plus long et plus grave, distinct des autres transitions.
-  const enteringAncient = (prevFloor <= 13 && nextFloor >= 14 && nextFloor > prevFloor);
-  if (enteringAncient && typeof addMsg === 'function') {
-    addMsg('🪨 Sous Poudlard, la pierre n\'a plus de nom. Tu entres dans ce que l\'école fut bâtie pour oublier.', 'narrative');
+  // Voix des Ruines (P3 — ch.06 §6.9.4 / ch.04 §4.5) : beat solennel one-shot à
+  // la frontière 13↔14, distinct de l'écho de signature (floor 14, house-aware).
+  if (typeof maybeVoixDesRuinesBeat === 'function') {
+    maybeVoixDesRuinesBeat(prevFloor, nextFloor);
   }
   // Beat scénarisé (L8 — 05 §5.4.2) : Cedric à la sortie de l'école (3→4).
   // Délivré par Cedric précisément s'il est présent ; prioritaire sur le bark

@@ -1299,6 +1299,11 @@ const NPCS = [
     placement: { floor: 8, anchor: "any" },
     questsGiven:    ["chasse_greyback", "garde_seuil", "herbes_lupin"],
     questsTurnedIn: ["chasse_greyback", "garde_seuil", "herbes_lupin"],
+    // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
+    darkLoopLines: [
+      "Tu m'as déjà vu, n'est-ce pas ? Plus bas, dans un autre temps. Je tiens encore ce seuil — mais le château se rejoue, et je ne sais plus quelle fois est la vraie.",
+      "L'Ordre est tombé là-haut, et pourtant me revoici, posté au même seuil. La Boucle ne libère personne. Elle nous garde à notre poste, indéfiniment."
+    ],
     dialogues: {
       greeting: [
         "Reste discret. Ce seuil est observé. Je suis Kingsley Shacklebolt — l'Ordre m'a posté ici en avant-garde.",
@@ -1333,6 +1338,11 @@ const NPCS = [
       { id: "potion_lune" }
     ],
     buyback: { default: 0.40 },
+    // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
+    darkLoopLines: [
+      "Ici-bas, dans la Boucle, mes marchandises ne viennent plus de cadavres frais. Elles viennent de moi — celui que j'étais, les fois d'avant. C'est devenu... circulaire.",
+      "Tu reviens, je reviens, le stock revient. Achète quand même : dans un château qui se répète, un casque qui tient reste un casque qui tient."
+    ],
     dialogues: {
       greeting: [
         "Pssst. Ferme derrière toi. Je n'ai rien à vendre que des choses... récupérées. Sur le terrain.",
@@ -1359,6 +1369,11 @@ const NPCS = [
     placement: { floor: 9, anchor: "any" },
     questsGiven:    ["chasse_aragog", "baiser_detraqueur", "dictame_bill"],
     questsTurnedIn: ["chasse_aragog", "baiser_detraqueur", "dictame_bill"],
+    // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
+    darkLoopLines: [
+      "Mes cicatrices brûlent plus fort ici. La Boucle n'apaise pas la morsure de Greyback — elle la rejoue, encore et encore, à chaque tour de spirale.",
+      "Briseur de sortilèges, et incapable de briser celui-ci. Le château se referme sur lui-même. Si tu trouves la sortie, briseur, dis-moi : je commence à oublier qu'il y en avait une."
+    ],
     dialogues: {
       greeting: [
         "Salut. Bill Weasley, briseur de sortilèges pour Gringotts — enfin, c'était mon métier d'avant. Maintenant je traque autre chose.",
@@ -1399,6 +1414,11 @@ const NPCS = [
       { id: "essence_primordiale", price: 1200 }
     ],
     buyback: { default: 0.30 },
+    // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
+    darkLoopLines: [
+      "Dans la Boucle, l'Essence des Ténèbres se cueille à même les murs — le château entier est devenu l'organe. Mes prix montent ; ma marchandise aussi est plus... mûre.",
+      "Tu reviens toujours, et c'est tant mieux pour mes affaires. Un client qui ne peut pas mourir vraiment, voilà un client fidèle."
+    ],
     dialogues: {
       greeting: [
         "Bienvenue. Ne touche à rien sans demander — certaines choses ici mordent en retour.",
@@ -1426,6 +1446,11 @@ const NPCS = [
     placement: { floor: 10, anchor: "any" },
     questsGiven:    ["chasse_dolohov", "chasse_heraut", "purification_sirius"],
     questsTurnedIn: ["chasse_dolohov", "chasse_heraut", "purification_sirius"],
+    // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
+    darkLoopLines: [
+      "Le Voile m'a pris une fois. La Boucle me reprend à chaque tour. Mort, je devrais être libre — et pourtant me revoici, à te guider sur le même précipice.",
+      "On ne traverse pas le Voile deux fois, dit-on. Personne n'avait prévu le Voile qui se répète. Si tu brises ce cycle, filleul, brise-le pour moi aussi."
+    ],
     dialogues: {
       greeting: [
         "Tu m'entends ? Bien. Voici une voix de l'au-delà — celle de Sirius Black, mort derrière le Voile au Ministère.",
@@ -1465,6 +1490,11 @@ const NPCS = [
       { id: "page_grimoire",         price: 620 }
     ],
     buyback: { default: 0.35 },
+    // Suffixe Ténébreux en Boucle (§6.12.E) — lu sur currentFloor >= 18.
+    darkLoopLines: [
+      "Dans la Boucle, je forge les mêmes pièces, encore et encore, pour le même client qui revient. Mon enclume ne refroidit jamais. Le marteau frappe en cadence avec la spirale.",
+      "Mes prix sont scandaleux, et le resteront à chaque tour. Au moins, sorcier, mon acier ne se répète pas, lui : il tient. C'est tout ce qui tient, ici."
+    ],
     dialogues: {
       greeting: [
         "Approche, sorcier. Mes prix sont scandaleux et mes pièces sont parfaites — choisis ton scandale.",
