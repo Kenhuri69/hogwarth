@@ -119,12 +119,19 @@ plus probables sont couvertes par un test.*
   (`test.yml`). Vérifié : `node tools/check_doc_modules.js` → 84 modules alignés,
   units (503), smoke (202) verts.
 
-- [ ] **1.2 — Audit du MANIFEST du loader** (S)
-  Croiser les globals critiques des modules récents (`house-donation.js`,
-  `atelier-voyageur.js`, `floor-ambiance.js`, `potions.js`, `endgame.js`…)
-  avec le `MANIFEST` de `js/loader.js` : tout export critique absent rend une
-  régression de chargement invisible (raison d'être du loader).
-  *Vérif : `window.__loaderReport.totalChecked` en hausse, smoke vert.*
+- [x] **1.2 — Audit du MANIFEST du loader** (S) — FAIT 2026-06-13
+  Croisé tous les modules `<script>` ↔ MANIFEST. `house-donation`,
+  `atelier-voyageur`, `floor-ambiance`, `potions`, `endgame`, `pvp-duel` :
+  déjà couverts. **Vrais trous critiques comblés** (globaux non checkés) :
+  `goDeeper`/`goUp`/`_changeFloor` (movement-floors.js), `triggerDeath`/
+  `resurrect` (battle-death.js), `QUEST_TEMPLATES` (quests-templates.js) ;
+  `PWA` (pwa.js) ajouté en optionnel. **Non checkables (documenté en place)** :
+  `audio-music.js`/`audio-sfx.js` n'ajoutent pas de global — ils étendent
+  l'objet `AudioSystem` (méthodes), hors de portée du test par identifiant nu ;
+  `data-icon-recipes.js` est inerte au runtime.
+  Vérif : `totalChecked` +7, smoke (202) + units (503) verts, loader OK
+  (pwa-smoke « loader OK »). Bump cache : loader.js v40→41, CACHE_VERSION
+  v118→v119.
 
 - [ ] **1.3 — Tests manquants à plus haut risque** (M-L, découpables)
   1. **Génération de donjon** : 50 générations étages 1-10 → chaque étage a un
