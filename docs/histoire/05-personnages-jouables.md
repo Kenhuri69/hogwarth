@@ -36,13 +36,15 @@
 | `jeanne` | Jeanne d'Argenciel | Gryffondor | Charmeuse de Sortilèges | Wingardium Leviosa, Protego, Episkey, Lumos Maxima | original |
 | `agathe` | Agathe Lumiflore | Gryffondor | Enchanteresse florale | Episkey, Ferula, Wingardium Leviosa, Protego | original |
 | `olivier` | Olivier de Clairval | Serdaigle | Mage de combat | Incendio, Stupefix, Protego, Episkey | original |
+| `aubin` | Aubin Tournesol | Poufsouffle | Gardien-Herboriste | Episkey, Protego, Ferula, Incendio | original |
+| `seraphine` | Séraphine Nocturne | Serpentard | Ombremancienne | Expelliarmus, Stupefix, Protego, Incendio | original |
 
 > ✅ Le jeu se joue **solo (1)** ou **duo (2)**. Le duo par défaut est
-> **Harry + Hermione**. Les 13 héros partagent la même paire de slots à l'écran
+> **Harry + Hermione**. Les 15 héros partagent la même paire de slots à l'écran
 > de sélection ; n'importe quel binôme est jouable.
 
 > 💡 **Note de design narratif** : les 5 figures canon servent d'« ancrage »
-> familier ; les 8 originaux sont la marge de manœuvre de la spec — c'est par
+> familier ; les 10 originaux sont la marge de manœuvre de la spec — c'est par
 > eux qu'on installe les enjeux **intimes** évoqués en [03 §3.7](03-trame-principale.md)
 > sans réécrire le canon.
 
@@ -77,6 +79,8 @@
 | Jeanne | 31 | 30 | INT 15 | Contrôle / utilitaire | jeune, sans pic |
 | Agathe | 31 | 32 | **DEF 3 (base)** / END 11 | Soigneuse-soutien régén | ATK 3 |
 | Olivier | 29 | 33 | MAG 15 / SP 33 | Nukeur offensif | END 8 |
+| Aubin | **36** | 24 | **END 13 / DEF 4 (base)** | Tank front-line + soin de champ | AGI 9 / MAG 11 |
+| Séraphine | **27** | 34 | MAG 16 / AGI 13 | Contrôle (disarm + stun) glass-cannon | **PV 27 / END 7** |
 
 > 💡 **Lecture transverse** : les rôles couvrent les quatre voies de Maison
 > ([07](07-les-maisons.md)) — **ATK** (Harry, Cedric, Louis), **MAG offensive**
@@ -445,6 +449,65 @@
   comme savoir. Tension fertile avec Hermione/Céleste, plus contemplatives.
 - **Tagline ✅ :** *« Mage de combat — chaque sortilège frappe comme la foudre. »*
 
+### Aubin Tournesol
+
+- **Maison / rôle :** Poufsouffle / Gardien-Herboriste.
+- **Année scolaire 💡 :** 6ᵉ année.
+- **Apparence 💡 :** carrure tranquille de jardinier, mains larges et calleuses, une
+  **Besace d'Herboriste** débordant de boutures et de baumes ; robe de Poufsouffle,
+  **Baguette de Chêne Noueux**. Un tournesol séché glissé au revers — il se tourne,
+  dit-on, vers l'aube.
+- **Personnalité (3 traits) 💡 :** placide, opiniâtre, protecteur jusqu'à l'os.
+- **Motivation 💡 :** on ne descend pas pour vaincre mais pour **abriter** ; tant qu'il
+  tient le mur, les autres avancent. Le don de soi, pas l'exploit.
+- **Voix 💡 :** posée, lente, métaphores de terre et de saisons (« on tient racine »).
+- **Forces ✅ / faiblesses ✅ :** **PV 36 / END 13 / DEF 4 de base** (le plus résistant
+  du roster) + un kit de tenue (Protego, **Ferula**) et un soin de champ (Episkey) —
+  le rempart qui achète des tours aux fragiles. Revers : **AGI 9** (le plus lent, agit
+  tard, esquive peu) et **MAG 11** — il encaisse et soigne, il ne *nuke* pas.
+- **Rôle en combat / spécialités 💡 :** tank front-line + soutien de survie ; le mur d'un
+  duo d'usure, parfait devant un glass-cannon (Séraphine, Maxence, Olivier).
+- **Lien à la trame :** la résilience faite chair (Protego/Ferula) — un Poufsouffle qui
+  fait du **refus d'abandonner** une arme défensive ; antithèse de la corruption qui
+  fait flétrir.
+- **Arc personnel 💡 :** apprendre que protéger n'est pas seulement encaisser — parfois,
+  tenir le mur exige de frapper le premier.
+- **Interaction Signature & trame 💡 :** porteur naturel de **🦡 Ceux qu'on ne laisse pas
+  derrière** ([08 §8.2](08-quetes-et-sous-intrigues.md)) ; en duo avec Agathe, il forme
+  le « bouclier + soin » canonique du Refuge de Poufsouffle.
+- **Tagline ✅ :** *« Gardien-herboriste — un rempart patient pour les siens. »*
+
+### Séraphine Nocturne
+
+- **Maison / rôle :** Serpentard / Ombremancienne.
+- **Année scolaire 💡 :** 7ᵉ année.
+- **Apparence 💡 :** silhouette fine et nette, regard qui jauge avant de parler, un
+  **Camée d'Ombre** au creux du cou ; robe de Serpentard, **Baguette d'Ébène**. Elle se
+  tient toujours un pas en retrait — d'où l'on voit tout.
+- **Personnalité (3 traits) 💡 :** lucide, calculatrice, loyale à qui la mérite.
+- **Motivation 💡 :** la lumière frontale a ses martyrs ; elle préfère **désamorcer**
+  l'ennemi avant qu'il ne frappe. Remonter la lumière, oui — mais par l'ombre, là où le
+  mal se croit chez lui.
+- **Voix 💡 :** basse, ironique, économe ; le compliment et la menace ont chez elle le
+  même timbre.
+- **Forces ✅ / faiblesses ✅ :** **MAG 16 / INT 16 / AGI 13** (crit de sort) + un kit de
+  **contrôle** (Expelliarmus désarme, Stupefix étourdit) — elle neutralise un adversaire
+  avant qu'il n'agisse. Revers : **PV 27 / END 7 / DEF 2** — la plus fragile du roster
+  avec Maxence ; un coup encaissé de trop et c'est fini.
+- **Rôle en combat / spécialités 💡 :** caster de contrôle glass-cannon ; verrouille la
+  menace (disarm/stun) puis punit — exige un protecteur qui lui achète des tours (Aubin,
+  Cedric).
+- **Lien à la trame :** un Serpentard du **bon côté par calcul autant que par cœur** —
+  la ruse au service de la lumière, écho assumé de Salazar tel que la trame le réhabilite
+  ([07](07-les-maisons.md)).
+- **Arc personnel 💡 :** accepter qu'on puisse la voir agir — sortir de l'ombre sans y
+  laisser ce qui fait sa force.
+- **Interaction Signature & trame 💡 :** native de **🐍 Le Pacte des Cachots**
+  ([08 §8.5](08-quetes-et-sous-intrigues.md)), qu'elle lit non comme une tentation mais
+  comme une **énigme à déjouer** ; tension fertile avec Maxence (le sang) sur la *bonne*
+  façon d'être Serpentard.
+- **Tagline ✅ :** *« Ombremancienne de Serpentard — la ruse frappe avant la lumière. »*
+
 ---
 
 ## 5.3 Choix des personnages — solo / duo & customisation légère
@@ -644,10 +707,10 @@ Un candidat n'est validé que s'il coche **tout** :
 ---
 
 ## Récapitulatif express (pour briefer Gemini)
-> 13 héros jouables (solo ou duo, défaut Harry + Hermione) : **5 figures canon**
-> (Harry, Hermione, Drago, Cho, Cedric) ancrent le familier ; **8 originaux**
+> 15 héros jouables (solo ou duo, défaut Harry + Hermione) : **5 figures canon**
+> (Harry, Hermione, Drago, Cho, Cedric) ancrent le familier ; **10 originaux**
 > forment la **Garde de l'Aube** (Céleste, Iris, Maxence, Anastasia, Louis,
-> Jeanne, Agathe, Olivier), volontaires pressentis par le portrait de Dumbledore
+> Jeanne, Agathe, Olivier, Aubin, Séraphine), volontaires pressentis par le portrait de Dumbledore
 > pour « remonter la lumière depuis le fond ». Chaque héros porte un trait dominant
 > qui sert un thème de la trame (peur/sceau, choix/don, mythe/revers), une **apparence**,
 > des **forces/faiblesses** lisibles dans ses stats, un **rôle de combat** et une

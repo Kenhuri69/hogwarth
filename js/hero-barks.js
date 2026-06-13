@@ -164,6 +164,27 @@ const HERO_BARKS = {
     houseTension: {
       Poufsouffle: ["On perd du temps à les ramener. (…) Non. Tu as raison. On les ramène."]
     }
+  },
+  aubin: {
+    bossAppear: ["Reste derrière moi. Tant que je tiens, tu avances."],
+    crit:       ["Patience… et le bon coup au bon moment."],
+    allyDown:   ["Pas toi. Tiens bon, je te relève — j'ai vu pire au potager."],
+    levelUp:    ["Plus solide. On encaissera ce qui vient."],
+    darkLoop:   ["Encore un étage sous la pierre. On tient le mur, comme toujours."],
+    houseTier:  ["La Maison s'enracine. On ne lâche personne."],
+    tierTransition: ["Sol nouveau, mêmes racines. On tient."]
+  },
+  seraphine: {
+    bossAppear: ["Bruyant. Il ne verra pas venir l'ombre qui l'attend."],
+    crit:       ["La ruse frappe là où la lumière n'ose pas."],
+    allyDown:   ["Recule dans l'ombre — je couvre, tu récupères."],
+    levelUp:    ["Plus de pouvoir. La discrétion n'en sera que plus mortelle."],
+    darkLoop:   ["Plus profond, plus sombre. C'est là que je suis le mieux."],
+    houseTier:  ["Serpentard remonte la lumière. Ironique, et délicieux."],
+    tierTransition: ["L'ombre s'épaissit. Tant mieux."],
+    houseTension: {
+      Gryffondor:  ["Tout ce courage… et personne pour regarder dans le dos. Heureusement, moi si."]
+    }
   }
 };
 

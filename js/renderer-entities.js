@@ -128,6 +128,8 @@ const PLAYER_SPRITE_SRC = {
   jeanne:    'img/players/jeanne.png',
   agathe:    'img/players/agathe.png',
   olivier:   'img/players/olivier.png',
+  aubin:     'img/players/aubin.png',
+  seraphine: 'img/players/seraphine.png',
 };
 const _PLAYER_SPRITE_CACHE = Object.create(null);
 function _getPlayerSprite(key) {
