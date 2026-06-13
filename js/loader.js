@@ -248,6 +248,7 @@ window.UX_safe = new Proxy({}, {
 
     // ── Boutique ──
     { name: 'openShop',           source: 'shop.js',         kind: 'fn'  },
+    { name: 'openRequirementShop',source: 'shop.js',         kind: 'fn'  },
     { name: 'buyItem',            source: 'shop.js',         kind: 'fn'  },
 
     // ── Sauvegarde ──

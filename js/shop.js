@@ -108,9 +108,16 @@ const STATIC_SHOP_BUYBACK = { default: 0.50 };
 const SHOP_STOCK_SIZE    = 8;   // objets tirés au hasard par réassort
 const SHOP_RESTOCK_STEPS = 40;  // pas avant réassort automatique
 
-// État courant du shop ouvert (kind 'static' | 'vendor', mode 'buy' | 'sell')
+// État courant du shop ouvert (kind 'static' | 'vendor' | 'requirement', mode 'buy' | 'sell')
 let _shopContext = { kind: 'static', npcId: null };
 let _shopMode    = 'buy';
+
+// ── Étal de la Salle sur Demande (boutique premium éphémère) ──────
+// La Salle se fait étal de marchand : stock curé d'objets de meilleure
+// rareté (rare+), grimoires et consommables haut de gamme, à prix réduit.
+// Stock volatile (1 visite, jamais sérialisé) — voir openRequirementShop.
+const REQUIREMENT_SHOP_DISCOUNT = 0.75; // -25 % sur le prix de base
+let _requirementStock = null;
 
 // Tire `count` éléments distincts au hasard d'un tableau (sans le muter).
 function _pickRandom(pool, count) {
@@ -152,6 +159,40 @@ function _rollShopStock() {
 // Tirage paresseux : ne (re)tire que si le stock n'existe pas encore.
 function _ensureShopStock() {
   if (!Array.isArray(shopStock)) shopStock = _rollShopStock();
+}
+
+// Tire le stock premium de l'Étal de la Salle : sous-ensemble curé du
+// catalogue éligible à l'étage — objets de rareté rare/epic/legendary,
+// grimoires et consommables haut de gamme — trié par rareté puis prix, capé,
+// avec ≥2 consommables de soin garantis (anti-softlock), prix remisé -25 %.
+function _rollRequirementStock() {
+  const floor = (typeof currentFloor === 'number' && currentFloor > 0) ? currentFloor : 1;
+  let eligible = SHOP_CATALOG.filter(e => e.minFloor <= floor);
+  if (eligible.length === 0) eligible = SHOP_CATALOG.filter(e => e.minFloor <= 1);
+  // Résout l'item, exclut livres déjà appris et herbes communes (pas premium).
+  const resolved = eligible
+    .map(e => ITEMS.find(i => i.id === e.id))
+    .filter(it => it && it.type !== 'herb'
+      && !(it.type === 'spellbook' && purchasedSpellbooks.has(it.id)));
+  const rarityRank = { legendary: 4, epic: 3, rare: 2, uncommon: 1, common: 0 };
+  const isPremium = (it) => (rarityRank[it.rarity] | 0) >= 2
+    || it.type === 'spellbook'
+    || (it.type === 'consumable' && (it.price | 0) >= 40);
+  const premium = resolved.filter(isPremium).sort((a, b) =>
+    (rarityRank[b.rarity] | 0) - (rarityRank[a.rarity] | 0)
+    || (b.price | 0) - (a.price | 0));
+  const CAP = 10;
+  const picked = premium.slice(0, CAP);
+  // Garantit 2 consommables de soin dans la sélection (peut être hors premium).
+  const heals = resolved.filter(it => it.type === 'consumable'
+    && /potion|elixir|eclat|larme/.test(it.id));
+  for (const h of heals.slice(0, 2)) if (!picked.includes(h)) picked.push(h);
+  const final = picked.length ? picked : resolved.slice(0, CAP);
+  return final.map(it => {
+    const base  = (typeof it.price === 'number') ? it.price : 0;
+    const price = Math.max(1, Math.round(base * REQUIREMENT_SHOP_DISCOUNT));
+    return { item: { ...it }, price, sold: false };
+  });
 }
 
 // Invalide le stock courant (perd aussi les objets revendus) et remet
@@ -232,6 +273,17 @@ function openVendorShop(npcId) {
   document.getElementById('shop-modal').style.display = 'flex';
 }
 
+// Ouvre l'Étal premium de la Salle sur Demande (thème « boutique »). Stock
+// curé rare+ à -25 %, retiré à neuf à chaque ouverture (éphémère, 1 visite).
+function openRequirementShop() {
+  _shopContext = { kind: 'requirement', npcId: null };
+  _shopMode    = 'buy';
+  _requirementStock = _rollRequirementStock();
+  _renderShopHeader();
+  _renderShopGrid();
+  document.getElementById('shop-modal').style.display = 'flex';
+}
+
 // Bascule entre les onglets Acheter / Vendre. Appelé depuis les boutons
 // d'onglets rendus par _renderShopHeader.
 function setShopMode(mode) {
@@ -252,6 +304,8 @@ function _renderShopHeader() {
   const shopIcon = '<img class="ui-icon ui-icon-xl" src="img/icons/shop_sign.png" alt="">';
   if (_shopContext.kind === 'static') {
     titleText = `${shopIcon} Madame Malkins des Cachots`;
+  } else if (_shopContext.kind === 'requirement') {
+    titleText = `${shopIcon} Étal de la Salle <span style="color:#a8d878;font-size:0.7em">— remise de 25 %</span>`;
   } else {
     const npc = getNpcById(_shopContext.npcId);
     titleText = npc ? `${shopIcon} ${npc.name}` : `${shopIcon} Vendeur`;
@@ -287,6 +341,13 @@ function _renderBuyGrid(grid) {
   if (_shopContext.kind === 'static') {
     _ensureShopStock();
     rows = shopStock.map(s => ({
+      item:  s.item,
+      price: _endgameItemPrice(s.item, s.price, null),
+      stockEntry: s
+    }));
+  } else if (_shopContext.kind === 'requirement') {
+    if (!Array.isArray(_requirementStock)) _requirementStock = _rollRequirementStock();
+    rows = _requirementStock.map(s => ({
       item:  s.item,
       price: _endgameItemPrice(s.item, s.price, null),
       stockEntry: s
@@ -417,12 +478,15 @@ function _purchase(item, price, stockEntry) {
       addMsg(`Le marchand hausse un sourcil. « Encore un… ces flacons se font rares. »`, '');
     }
   }
-  // Boutique fixe : l'objet quitte le stock (achat unique jusqu'au réassort)
-  // — sauf pour les items rarityScales (ré-achetables au prix progressif)
-  // et les herbes (besace illimitée → ré-achat libre, source fiable).
-  if (stockEntry && Array.isArray(shopStock) && !item.rarityScales && !isHerb) {
-    const i = shopStock.indexOf(stockEntry);
-    if (i !== -1) shopStock.splice(i, 1);
+  // Boutique à stock (fixe ou Étal de la Salle) : l'objet quitte le stock
+  // (achat unique jusqu'au réassort) — sauf pour les items rarityScales
+  // (ré-achetables au prix progressif) et les herbes (besace illimitée).
+  if (stockEntry && !item.rarityScales && !isHerb) {
+    const stock = (_shopContext.kind === 'requirement') ? _requirementStock : shopStock;
+    if (Array.isArray(stock)) {
+      const i = stock.indexOf(stockEntry);
+      if (i !== -1) stock.splice(i, 1);
+    }
   }
   document.getElementById('shop-gold').textContent = player.gold;
   addMsg(`Acheté : ${item.name}`, 'good');
