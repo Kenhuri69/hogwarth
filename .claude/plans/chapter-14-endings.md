@@ -156,11 +156,14 @@ suffixes muets existants de `npc-dialog.js` (`_eclatSuffixPages`,
    beat). Le gate de fin reste `victoryAchieved` (fidèle à la tâche), la garde
    d'étage est une mesure additive de non-redondance au call-site.
    - vérif : `scenarioNpcPostVictory` `deepLoop === 0` (étage 18) → **vert**.
-4. ✅ **Gardien de la Boucle** (`gardien_boucle`) : aucune modif. Son `greeting`
-   (« Tu reviens. Tous reviennent — c'est le sens de la Boucle. ») **incarne
-   déjà** la première voix de l'après ; il n'apparaît que post-victoire (étage
-   11+). Pas de `postVictoryLines` (conditionnel inutile : toujours post-victoire).
-   Ses quêtes de purge sont intactes.
+4. ✅ **Gardien de la Boucle** (`gardien_boucle`) : aucune modif **en P2**. Son
+   `greeting` (« Tu reviens. Tous reviennent — c'est le sens de la Boucle. »)
+   incarne déjà la première voix de l'après ; il n'apparaît que post-victoire
+   (étage 11+). Pas de `postVictoryLines` en P2 (jugé conditionnel inutile :
+   toujours post-victoire). **Revisité en P2-ext** (§4ter) : le greeting parle de
+   la Boucle *générique*, jamais du triomphe réel sur l'Ombre — une ligne « après »
+   *victoire-spécifique* a donc été ajoutée (non redondante). Ses quêtes de purge
+   restent intactes.
 5. ✅ Garde-fou guidelines : `npcs.js`/`npc-dialog.js` servis au navigateur →
    bump cache PWA (skill `cache-bump`) ; `node tests/units.js` + `node tests/smoke.js`
    verts ; skill `commit-guard`.
@@ -279,3 +282,51 @@ l'agent** (hors capacité) : les visuels sont à produire via les prompts livré
 > **Hors-scope P4** (laissé pour P5) : NG+ opt-in — profil `localStorage`
 > hors-save (titres, compteur de victoires, Codex de profil), cosmétique de
 > départ. **Zéro stat héritée** (équilibrage 13). Décision produit requise.
+
+---
+
+## 4ter. Phase P2-ext — Extension post-victoire (Gardien + vendeurs recyclés)
+
+Branche `claude/ch13-impl-p1-vhoroc` (2026-06-13). Suite directe de la P2 :
+étendre la **ligne « après »** post-victoire (`postVictoryLines` + suffixe muet
+`_postVictorySuffixPages`, déjà génériques) aux PNJ recyclés en Boucle qui en
+étaient dépourvus. **Aucune logique nouvelle** — additions de **données** dans
+`js/npcs.js` uniquement ; le résolveur pur `pickPostVictoryLine` et le wrapper
+de suffixe restent inchangés.
+
+### Périmètre
+
+PNJ recyclés en Boucle qui portent déjà un `darkLoopLines` (Boucle profonde
+≥ 18) mais aucune voix pour la **fenêtre post-victoire de surface** (étages
+11–17, où `_postVictorySuffixPages` est actif et `darkLoopLines` muet) :
+
+- **Vendeurs fixes** : `marchand_clandestin` (ét. 8/18), `apothicaire_tenebreux`
+  (9/19), `forgeron_tenebreux` (10/20). Registre mercantile (≠ ouverture « Tu es
+  redescendu. Pourquoi ? » des guides) : le commerce qui continue après la
+  guerre, le héros devenu « client qui revient ».
+- **Gardien de la Boucle** (`gardien_boucle`, ét. 11) : **revisite explicite de
+  la décision P2 step 4**. Le greeting parle de la Boucle *générique* (« Tu
+  reviens. Tous reviennent ») mais ne référence **jamais le triomphe réel** sur
+  l'Ombre. La ligne « après » ajoute un beat *victoire-spécifique* (« Tu as brisé
+  l'Ombre… et pourtant te voici dans ma récurrence ») — non redondant. Mécanique
+  « toujours post-victoire » assumée : le suffixe s'appose systématiquement à
+  l'ét. 11 (< 18), ce qui est l'effet voulu.
+
+> **Hors-scope** : `marchand_ombre` (itinérant, sans `placement` ni
+> `darkLoopLines` — pas un PNJ « recyclé » au sens Boucle ; one-shot premium).
+
+### Étapes & vérif
+
+1. ✅ `postVictoryLines` (2 répliques) ajouté à `gardien_boucle`,
+   `marchand_clandestin`, `apothicaire_tenebreux`, `forgeron_tenebreux`
+   (`js/npcs.js`). Ton conforme §14.3.2 (grave, 2ᵉ personne).
+   - vérif : `scenarioNpcPostVictory` étendu — les 4 ids portent le champ.
+2. ✅ Test `tests/scenarios/npc.js` : assertion `hasFields` élargie aux 4
+   nouveaux ids + intégration `openNpcDialog` post-victoire sur un vendeur
+   (`apothicaire_tenebreux`, ét. 9) appende bien le suffixe ; complémentarité
+   (`deepLoop === 0` à l'ét. 18) re-vérifiée sur un vendeur.
+3. ✅ Doc : `docs/histoire/14-scenarios-de-fin.md §14.3.2` + note P2 step 4 de ce
+   plan mises à jour (Gardien + vendeurs désormais couverts).
+4. ✅ Garde-fou guidelines : `npcs.js` servi au navigateur → bump cache PWA
+   (skill `cache-bump`) ; `node tests/units.js` + `node tests/smoke.js` verts ;
+   skill `commit-guard`.

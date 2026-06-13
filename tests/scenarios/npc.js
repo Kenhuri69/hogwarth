@@ -1751,6 +1751,13 @@ async function scenarioNpcPostVictory() {
     const ids = ['kingsley', 'bill_weasley', 'sirius_esprit'];
     const npcs = ids.map(id => (typeof getNpcById === 'function') ? getNpcById(id) : null);
     const hasFields = npcs.every(n => n && Array.isArray(n.postVictoryLines) && n.postVictoryLines.length);
+    // Extension P2-ext : Gardien de la Boucle + vendeurs recyclés portent aussi
+    // la ligne « après ».
+    const extIds = ['gardien_boucle', 'marchand_clandestin', 'apothicaire_tenebreux', 'forgeron_tenebreux'];
+    const hasFieldsExt = extIds.every(id => {
+      const n = (typeof getNpcById === 'function') ? getNpcById(id) : null;
+      return n && Array.isArray(n.postVictoryLines) && n.postVictoryLines.length;
+    });
     const hasHelper = typeof _postVictorySuffixPages === 'function';
     const hasPure   = typeof pickPostVictoryLine === 'function';
 
@@ -1794,15 +1801,31 @@ async function scenarioNpcPostVictory() {
     const joinedNormal = _dialogState.pages.join(' || ');
     const suffixAbsent = pv.every(l => !joinedNormal.includes(l.slice(0, 40)));
 
+    // Extension P2-ext — vendeur recyclé (Apothicaire, ét. 9/19) : même gate +
+    // complémentarité que les guides. Suffixe en surface (9), muet en Boucle
+    // profonde (19, darkLoop reprend).
+    const apo = getNpcById('apothicaire_tenebreux');
+    victoryAchieved = true;
+    currentFloor = 9;
+    const vendorSurfaceVictory = hasHelper ? _postVictorySuffixPages(apo).length : -1;   // > 0 attendu
+    currentFloor = 19;
+    const vendorDeepLoop = hasHelper ? _postVictorySuffixPages(apo).length : -1;          // 0 attendu
+    // Gardien de la Boucle (ét. 11, toujours post-victoire) : suffixe présent.
+    const gardien = getNpcById('gardien_boucle');
+    currentFloor = 11;
+    const gardienVictory = hasHelper ? _postVictorySuffixPages(gardien).length : -1;      // > 0 attendu
+
     return {
-      hasFields, hasHelper, hasPure,
+      hasFields, hasFieldsExt, hasHelper, hasPure,
       pureNoVictory, pureVictory0, pureVictory1, pureNoLines,
-      surfaceNoVictory, surfaceVictory, deepLoop, suffixPresent, suffixAbsent
+      surfaceNoVictory, surfaceVictory, deepLoop, suffixPresent, suffixAbsent,
+      vendorSurfaceVictory, vendorDeepLoop, gardienVictory
     };
   });
   console.log('  →', r);
 
   assert(r.hasFields, 'Kingsley/Bill/Sirius doivent porter postVictoryLines');
+  assert(r.hasFieldsExt, 'Gardien + vendeurs recyclés (P2-ext) doivent porter postVictoryLines');
   assert(r.hasHelper, '_postVictorySuffixPages doit exister');
   assert(r.hasPure,   'pickPostVictoryLine (pur) doit exister');
   assert(r.pureNoVictory === null, 'pickPostVictoryLine : null sans victoire');
@@ -1814,6 +1837,9 @@ async function scenarioNpcPostVictory() {
   assert(r.deepLoop === 0,         'pas de ligne « après » en Boucle profonde (étage 18, darkLoop prend le relais)');
   assert(r.suffixPresent, 'openNpcDialog post-victoire (ét. 8) doit appender une postVictoryLine de Kingsley');
   assert(r.suffixAbsent,  'openNpcDialog sans victoire ne doit PAS appender de postVictoryLine');
+  assert(r.vendorSurfaceVictory > 0, 'vendeur recyclé : ligne « après » attendue post-victoire (ét. 9)');
+  assert(r.vendorDeepLoop === 0,     'vendeur recyclé : pas de ligne « après » en Boucle profonde (ét. 19)');
+  assert(r.gardienVictory > 0,       'Gardien de la Boucle : ligne « après » attendue post-victoire (ét. 11)');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

@@ -253,9 +253,20 @@ de fermer. **C'est le pont narratif vers la Boucle.**
   variante « après » ne se lit qu'aux étages de surface (< 18, où ces PNJ
   réapparaissent post-victoire) ; en Boucle profonde (18-20) `darkLoopLines`
   prend le relais. Couvert par `tests/units.js` + `tests/scenarios/npc.js`.
-- **Le Gardien de la Boucle** (✅ PNJ exclusif post-victoire, étage 11) **est** la
+- ✅ **Extension P2-ext aux vendeurs recyclés** : le Marchand Clandestin (8/18),
+  l'Apothicaire Ténébreux (9/19) et le Forgeron Ténébreux (10/20) portent aussi
+  une `postVictoryLines` — registre **mercantile** (≠ « Tu es redescendu.
+  Pourquoi ? » des guides) : le négoce qui survit à la guerre, le héros devenu
+  *« client qui revient »*. Même gate/complémentarité que les guides
+  (surface 8-17 vs `darkLoopLines` ≥ 18).
+- ✅ **Le Gardien de la Boucle** (PNJ exclusif post-victoire, étage 11) **est** la
   première voix de l'après : il accueille le héros dans le château rejoué et donne
   les quêtes de purge. C'est lui qui **incarne** la transition vers la Boucle.
+  Il porte désormais (P2-ext) une `postVictoryLines` *victoire-spécifique* — son
+  greeting parle de la Boucle *générique*, cette ligne ajoute un beat sur le
+  triomphe réel sur l'Ombre (« Tu as brisé l'Ombre… et pourtant te voici dans ma
+  récurrence »). Toujours post-victoire à l'étage 11, le suffixe s'appose
+  systématiquement.
 - ✅ **Beat « Grande Salle »** (implémenté) : scène écrite épinglée (étages-scènes,
   04 §4.4) — au **premier retour réel sur l'étage 1** après victoire, un mot de
   Dumbledore depuis son cadre, l'école qui respire à nouveau. **Arbitrage tranché**
@@ -612,7 +623,7 @@ function computeEndingType(ctx) {
 | Cible | ✅/💡 | Action |
 |-------|------|--------|
 | **Codex** | ✅ | Entrées de fin câblées (`cycle_brise`, `porteur_eclats`…). 💡 ajouter `epilogue` (texte `variants` selon `endingType`) ; appeler `checkCodexUnlocks('victory')` est **déjà** fait. |
-| **PNJ** | ✅ | Lignes post-victoire gardées par `victoryAchieved` (Kingsley/Bill/Sirius) appendues par `_postVictorySuffixPages` (`npc-dialog.js`, helper pur `pickPostVictoryLine`) ; exclusives de `darkLoopLines` (surface < 18 vs Boucle profonde). Gardien = voix dédiée de l'après (étage 11). Cosmétique. |
+| **PNJ** | ✅ | Lignes post-victoire gardées par `victoryAchieved` (Kingsley/Bill/Sirius **+ P2-ext** : Gardien de la Boucle, Marchand Clandestin, Apothicaire & Forgeron Ténébreux) appendues par `_postVictorySuffixPages` (`npc-dialog.js`, helper pur `pickPostVictoryLine`) ; exclusives de `darkLoopLines` (surface < 18 vs Boucle profonde). Gardien = voix dédiée de l'après (étage 11). Cosmétique. |
 | **Quêtes signature** | ✅ flags / 💡 lecture | Lire `<house>SignatureDone` dans `showVictoryScreen` (B.c). |
 | **Boucle** | ✅ | Aucune modif : la Boucle reste le post-game. 💡 ton par `loopNumber` déjà partiellement exposé (HUD). |
 
