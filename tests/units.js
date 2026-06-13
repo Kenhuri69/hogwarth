@@ -1103,6 +1103,49 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 10. quests.js — npcReputation DÉRIVÉE (P4-B, ch.06 §6.9.2)
+//    npcReputationFor : réputation bornée [-2,+2] dérivée de slythPactChoice
+// ============================================================
+(function testNpcReputation() {
+  const load = (choice) => loadModule('js/quests.js',
+    ['npcReputationFor', 'NPC_REPUTATION_PACT'],
+    { slythPactChoice: choice, window: {} });
+
+  const { NPC_REPUTATION_PACT } = load(null);
+  check('NPC_REPUTATION_PACT couvre écho + Kingsley',
+    NPC_REPUTATION_PACT.echo_salazar && NPC_REPUTATION_PACT.kingsley);
+
+  // Pas de choix → réputation neutre partout.
+  const none = load(null).npcReputationFor;
+  check('null : écho = 0', none('echo_salazar') === 0);
+  check('null : kingsley = 0', none('kingsley') === 0);
+
+  // Pacte : écho chaleureux (+2), Kingsley méfiant (−2) — signes opposés.
+  const pact = load('pact').npcReputationFor;
+  check('pact : écho = +2', pact('echo_salazar') === 2);
+  check('pact : kingsley = −2', pact('kingsley') === -2);
+
+  // Défiance : signes inversés (écho froid −2, Kingsley respect +1).
+  const def = load('defiance').npcReputationFor;
+  check('defiance : écho = −2', def('echo_salazar') === -2);
+  check('defiance : kingsley = +1', def('kingsley') === 1);
+
+  // PNJ non concerné → 0 quel que soit le choix.
+  check('pact : PNJ inconnu = 0', pact('hagrid') === 0);
+  check('defiance : PNJ inconnu = 0', def('dumbledore') === 0);
+
+  // Bornes [-2,+2] respectées sur toutes les valeurs du registre.
+  let bounded = true;
+  for (const id of Object.keys(NPC_REPUTATION_PACT)) {
+    for (const c of ['pact', 'defiance']) {
+      const v = load(c).npcReputationFor(id);
+      if (v < -2 || v > 2) bounded = false;
+    }
+  }
+  check('réputation toujours bornée [-2,+2]', bounded);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

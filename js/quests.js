@@ -145,6 +145,28 @@ function eclatProgress() {
 }
 window.eclatProgress = eclatProgress;
 
+// ── Réputation par PNJ (ch.06 §6.9.2) — DÉRIVÉE, zéro flag neuf ──────
+// §6.9.2 met en tête « réputation dérivée — aucune variable neuve si possible » :
+// le seul vrai choix gris du jeu (le Pacte des Cachots) est déjà porté par
+// `slythPactChoice` (sérialisé). On en DÉRIVE une réputation bornée [-2,+2] pour
+// les 2-3 PNJ à choix gris, sans Map parallèle. Réactions de signe OPPOSÉ sur le
+// même choix : l'écho de Salazar (donneur) accueille le Pacte ; Kingsley (Ordre)
+// le voit comme une trahison. Lu par `_reputationSuffixPages` (npc-dialog.js).
+const NPC_REPUTATION_PACT = {
+  echo_salazar: { pact:  2, defiance: -2 },  // le Fondateur-miroir : scellé → héritier ; défié → froid
+  kingsley:     { pact: -2, defiance:  1 },  // l'Auror de l'Ordre : pacte → méfiance ; défiance → respect
+};
+function npcReputationFor(npcId) {
+  const r = NPC_REPUTATION_PACT[npcId];
+  if (!r) return 0;
+  const choice = (typeof slythPactChoice !== 'undefined') ? slythPactChoice : null;
+  if (choice !== 'pact' && choice !== 'defiance') return 0;
+  const v = r[choice] || 0;
+  return Math.max(-2, Math.min(2, v));   // borné [-2,+2] (§6.9.2)
+}
+window.npcReputationFor = npcReputationFor;
+
+
 // IDs de monstres exclus du pool farming (bosses uniques scénaristiques).
 const FARMING_KILL_BLACKLIST = new Set([
   'bellatrix', 'voldemort_affaibli', 'voldemort_revenu', 'nagini'
