@@ -91,7 +91,6 @@ function fuseGrimoire() {
 // Réunit les feuillets clairs (Manon Acte III) : remet manon_acte3, éveille
 // le passif « Hiver Clair » (+1 PM/pas hors combat), purge les données de
 // pages et joue le dénouement lumineux. Jumeau de fuseGrimoire().
-// (Textes provisoires — relecture co-écrite avant merge.)
 function fuseAct3() {
   if (!_grimoireFusionReady()) {
     addMsg('Il te manque encore des feuillets clairs.', 'bad');

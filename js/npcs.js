@@ -479,11 +479,12 @@ const NPCS = [
       // Pas de questOffer : l'Acte III s'ouvre IMPLICITEMENT quand le joueur
       // trouve le 1ᵉʳ feuillet (acceptQuest depuis _tryCollectPage). Les
       // rumeurs qui amènent là sont greffées dans idleRandom (_manonAct3Rumor).
-      // (Textes provisoires — relecture co-écrite avant merge.)
       manon_acte3: {
-        questActive: "Tu as trouvé un de ses feuillets clairs, n'est-ce pas ? (Elle le tient à la lumière, émue.) Il en reste deux — au sixième, au neuvième. Ce ne sont pas des secrets, cette fois : ce sont ses joies. Ramène-les toutes, que je voie enfin ma mère rire.",
+        questActive: "Tu as trouvé un de ses feuillets clairs, n'est-ce pas ? (Elle le tient à la lumière, et le givre y scintille comme un sourire.) Il en reste deux — au sixième étage, au neuvième. Ceux-là ne cachent aucun secret : ce sont ses joies, semées exprès pour que je tombe dessus. Rapporte-les toutes, que je voie enfin ma mère rire.",
         questReady: [
-          "Les trois feuillets clairs. Ils sont là. (Elle les serre, et un sourire monte malgré elle.) Viens à l'établi — ceux-là, on ne les reconstitue pas pour réparer une plaie. On les réunit pour retrouver sa joie."
+          "Les trois feuillets clairs. Ils sont tous là. (Elle les étale sur l'établi, près de la fenêtre où le givre monte.) Regarde — pas un sortilège de guerre là-dedans. Une fougère à dessiner sur la vitre. Une goutte de pluie figée en perle. De la neige qu'on fait tomber dans une chambre, un soir de cœur lourd. Elle a couché ça noir sur blanc, pour moi, en riant — je le vois à son écriture : elle ne tremble pas comme dans les autres pages.",
+          "Toute ma vie je l'ai crue faite seulement de prudence et de mensonge. Et voilà qu'elle me tend, par-dessus la mort, trois façons d'être heureuse avec un peu de froid. (Sa voix se brise, mais c'est un rire qui passe au travers.) Elle n'a pas seulement cousu sa peur dans ma malle — elle y a glissé sa joie, en espérant que je la trouve après le reste, pour que je ne reste pas sur le mensonge.",
+          "(Elle souffle sur le carreau et, du bout de la baguette, y trace une fougère de givre — la toute première du grimoire.) Voilà. Je sais enfin à quoi elle ressemblait quand elle ne se cachait pas. Merci de me l'avoir rendue entière : la menteuse et la rieuse, la même femme. Les soirs de gel, désormais, je ne pleure plus toute seule. Je dessine."
         ]
       }
     }

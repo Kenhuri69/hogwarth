@@ -24,7 +24,7 @@
 | 1.1 | Potions multi-cibles & usage ennemi | ✅ Clos | — |
 | 1.2 | Forge T5 (livré) **+ Bibliothèque T5** (ouvert) | 🟡 Partiel | P2 |
 | 1.3 | House post-tier-18 — forge (C) / reroll (D) | ❌ Ouvert | P2 |
-| 2.1 | Manon — feuillets (livré) **+ dialogues Acte III** (provisoires) | 🟡 Partiel | P1 |
+| 2.1 | Manon — dialogues Acte III finalisés | ✅ Clos | — |
 | 2.2 | Elfe de maison libre (easter-egg) | ⚠️ Cœur **non livré** → cf. plans actifs | — |
 | 3.1 | emoji-png-gaps lots 7-10 | ✅ Clos (laissé sciemment) | — |
 | 3.2 | combat-emoji-badges Lot 2/3 | ✅ Clos | — |
@@ -36,9 +36,9 @@
 | 6.2 | Factoriser `showEquipMenu` duo (N15) | ✅ Clos | — |
 | 6.3 | Hook settings.json « commit + push » | ❌ Ouvert | P3 |
 
-**Reliquats encore actionnables** : 1.2 (Bibliothèque T5), 1.3, 2.1, 4.1, 6.1,
-6.3. — **Bloqué** : 4.2 (session live manuelle). — **Clos** : 1.1, 3.1, 3.2,
-3.3, 5.1, 6.2 (récapitulés en bas).
+**Reliquats encore actionnables** : 1.2 (Bibliothèque T5), 1.3, 4.1, 6.1,
+6.3. — **Bloqué** : 4.2 (session live manuelle). — **Clos** : 1.1, 2.1, 3.1,
+3.2, 3.3, 5.1, 6.2 (récapitulés en bas).
 
 > ⚠️ **Correctif d'audit 2026-06-12** vs l'audit précédent (2026-06-11) :
 > - **5.1** musiques de combat : les OGG `combat_epic` / `combat_late` sont
@@ -97,20 +97,6 @@
   3. Sim économie (ne pas casser l'équilibre or endgame) → vérif : rapport sim.
   4. Scénario smoke + bump cache.
 
-### 2.1 Manon (grimoire) — dialogues définitifs de l'Acte III — 🟡 **PARTIEL** · P1
-> Vérifié 2026-06-12 : **feuillets livrés** (noms + lore définitifs,
-> `GRIMOIRE_PAGES` / `ACT3_PAGES` dans `data.js:388-423`). **Reste provisoire :
-> les dialogues de Manon Acte III** — `npcs.js:473` porte encore le commentaire
-> `// (Textes provisoires — relecture co-écrite avant merge.)` (idem
-> `data.js:414` sur `ACT3_PAGES`).
-- **Source** : `_archive/manon-grimoire-easter-egg.md` (phases 1-5 livrées).
-- **Reste à faire** : finaliser/co-écrire les **dialogues de Manon** (rumeurs,
-  remise) — purement éditorial, aucun changement de logique.
-- **Étapes** :
-  1. Rédiger les textes définitifs (revue avec l'utilisateur) → vérif : aucun
-     commentaire « Textes provisoires » restant dans `npcs.js` / `data.js`.
-  2. Bump cache si fichiers JS de données touchés.
-
 ### 4.1 Phase 7 — duel PvP direct — ❌ **OUVERT (optionnel)** · P2
 - **Source** : `_archive/multiplayer.md` (Phases 0-6 livrées ; Phase 7 optionnelle).
 - **Reste à faire** : **duel PvP en direct** entre deux joueurs en ligne.
@@ -159,6 +145,12 @@
 > Conservés pour mémoire/traçabilité. Ne plus traiter — le cœur **et** le
 > reliquat sont livrés (ou le reliquat est un choix de style assumé).
 
+- ~~**2.1 Manon — dialogues définitifs de l'Acte III**~~ — ✅ livré 2026-06-13.
+  Payoff `manon_acte3.questReady` enrichi (climax : réconciliation avec la mère
+  morte, miroir du père aux Actes I-II) ; tous les commentaires « Textes
+  provisoires » retirés (`npcs.js`, `data.js`, `npcs-helpers.js`,
+  `quests-riddles.js`). Pages/rumeurs déjà abouties conservées. Plan dédié
+  [`manon-acte3-dialogues.md`](./manon-acte3-dialogues.md). Smoke npc/manon vert.
 - ~~**1.1 Potions multi-cibles & usage ennemi**~~ — ✅ livré. Flacons AOE
   (`data.js` `aoe:true`, `throwItemAoe` dans `battle.js`) + potions ennemies à
   charges (`tryEnemyAbility case 'consumable'`). Plan

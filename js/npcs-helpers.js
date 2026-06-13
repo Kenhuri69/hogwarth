@@ -103,7 +103,6 @@ const _PAGE_HINT_LINES = [
   "Si vous cherchez du papier givré — et qui n'en cherche pas ? — le {N}ᵉ étage en cache un morceau. Je le surveille pour vous. Enfin, « surveiller »… je flotte au-dessus en soupirant, surtout."
 ];
 // Acte III — ton lumineux/espiègle (feuillets « clairs », joyeux).
-// (Textes provisoires — relecture co-écrite avant merge.)
 const _ACT3_HINT_LINES = [
   "Drôle de chose, au {N}ᵉ étage : un feuillet qui ne gèle pas le couloir, il le réchauffe presque. J'ai cru y voir une fougère dessinée. Allez voir — moi, ça fait deux siècles que je ne dessine plus rien.",
   "Au {N}ᵉ étage, il y a un parchemin qui scintille comme un soir de fête. Pas un secret, non — on dirait plutôt une bonne blague laissée là exprès. Ramassez-le, vous comprendrez mieux que moi.",
@@ -139,7 +138,7 @@ function _pendingPageHintFloor() {
 // Rumeur diffuse de Manon (Acte III, couche egg) : une réplique greffée
 // dans son idleRandom UNIQUEMENT sous la gate « Acte II fini, Acte III pas
 // encore mordu » (set actif = manon_acte3 ET quête pas encore acceptée).
-// Renvoie une réplique ou null. (Textes provisoires — relecture avant merge.)
+// Renvoie une réplique ou null.
 const _MANON_ACT3_RUMORS = [
   "Tu sais, depuis que j'ai recopié le grimoire, j'ai l'impression qu'il lui manque un souffle. Pas une page de plus — un souffle clair, comme un rire qu'on aurait oublié dedans.",
   "Ma mère ne faisait pas que de la magie de survie. Il y avait autre chose, j'en suis sûre maintenant : du givre pour le plaisir. Des jeux. Je n'en ai jamais trouvé la trace… mais je la cherche.",
@@ -159,7 +158,6 @@ function _manonAct3Rumor() {
 // un étage (_pageHintLine) : ici on ne donne aucune position, juste la
 // rumeur lumineuse qui amorce l'easter egg, dans une voix de revenant.
 // Même gate egg que Manon (Acte III en jeu, pas encore mordu). null sinon.
-// (Textes provisoires — relecture co-écrite avant merge.)
 const _OTHER_NPC_ACT3_RUMORS = [
   "On murmure qu'Élara, la sorcière du givre, n'a pas tout caché par peur. Quelque part dans ces murs, elle aurait semé de la joie pure — des sorts de neige qu'on lance pour rire. Charmant, pour un château aussi lugubre.",
   "Entre fantômes, on se raconte qu'il flotte ici des feuillets clairs — pas des secrets honteux, des espiègleries de givre. J'aimerais bien les lire ; hélas, tourner une page demande des doigts.",
