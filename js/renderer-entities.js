@@ -92,6 +92,9 @@ const NPC_SPRITE_SRC = {
   fantome: 'img/npc/_npc_fantome.png',
   vendeur: 'img/npc/_npc_vendeur.png',
   phenix:  'img/npc/_npc_phenix.png',
+  // Donneurs de Quête Signature (ch.06 §6.12) — sprites dédiés.
+  chevalier: 'img/npc/_npc_chevalier.png',  // 🦁 Chevalier Fantôme (non-hostile)
+  echo:      'img/npc/_npc_echo.png',        // 🐍 Écho de Salazar
 };
 const _NPC_SPRITE_CACHE = Object.create(null);
 function _getNpcSprite(type) {
