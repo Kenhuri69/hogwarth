@@ -79,6 +79,7 @@ préservée.
 | `CELL.STAIRS_D` | 3 | Escaliers SVG | Dernière salle d'épine, toujours | `goDeeper()` |
 | `CELL.STAIRS_U` | 4 | Escaliers SVG | Salle de spawn, étage 2+ | `goUp()` |
 | `CELL.FOUNTAIN` | 7 | Fontaine SVG | Salle intermédiaire garantie (étages 2, 5, 8, 11…) | `useFountain()` |
+| `CELL.REFUGE` | 17 | Foyer SVG (bannière teintée par Maison) | Salle intermédiaire, étages ≥ 2 **sans** fontaine — **toutes Maisons** (Ch.13 P3) | `useRefuge()` |
 | `CELL.ALTAR` | 12 | — | Branches (~25 % au lieu du coffre) | `useAltar()` |
 | `CELL.DOOR` | 2 | Porte 3D | Salle scellée (alvéole mur, toujours présente) | `_tryOpenDoor()` |
 | `CELL.NPC` | 8 | Sprite PNJ | Placement déterministe ou aléatoire | `openNpcDialog()` |
@@ -114,6 +115,22 @@ La case `CELL.FOUNTAIN` a son propre sprite 3D (`drawFountainSprite` dans
 `renderer-effects.js`) : emoji ⛲ avec halo bleu, grisé à l'état tari. Sur la
 minimap, elle affiche la classe `.map-fountain` (bleu eau, distincte des
 autres cellules spéciales).
+
+### Refuge de Maison (Ch.13 P3)
+
+`CELL.REFUGE` (`useRefuge()`) est un **repos partiel non-interrompu** :
+restaure **50 %** des PV et PM du groupe (`REFUGE_HEAL_FRAC`), **1×/visite**
+d'étage (set `usedRefuges`, vidé au retour sur l'étage — comme la fontaine).
+Apparaît sur une salle intermédiaire des étages **≥ 2 sans fontaine garantie**
+(pour ne pas doublonner le soin total), **pour les quatre Maisons**.
+
+Habillage **purement cosmétique** par `chosenHouse` (`refugeTheme()`, state.js,
+réutilise `HOUSE_BONUSES[h].color/accent/emoji`) — nom, récit et teinte de
+bannière : 🦁 Foyer du Lion · 🐍 Antre du Serpent · 🦅 Alcôve de l'Aigle ·
+🦡 Refuge du Blaireau (canon Poufsouffle). **Mécanique identique pour les 4
+Maisons** (équité stricte) ; soin **partiel**, jamais total. Sprite 3D
+`drawRefugeSprite` (bannière teintée, cache clé par Maison) ; minimap
+`.map-refuge`.
 
 ### Salle Autel
 

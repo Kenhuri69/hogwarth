@@ -329,7 +329,7 @@ function _visitorExploreDescriptors() {
     },
     [CELL.REFUGE]: {
       icon:  SCENE_ICONS.refuge({ spent: false }),
-      title: 'Refuge du Blaireau',
+      title: 'Refuge',
       desc:  `Le foyer réchauffe les compagnons de ${hostName} — tu n'es ici que de passage.`,
       btns:  close
     },
@@ -367,6 +367,10 @@ function _exploreDescriptors() {
   }
   const fountainDried = usedFountains && usedFountains.has(`${playerX},${playerY}`);
   const refugeSpent   = usedRefuges && usedRefuges.has(`${playerX},${playerY}`);
+  // Refuge de Maison (Ch.13 P3) — habillage cosmétique par chosenHouse.
+  const refTheme = (typeof refugeTheme === 'function')
+    ? refugeTheme()
+    : { name: 'Refuge du Blaireau', emoji: '🦡', color: '#372E29', accent: '#F0C75E' };
   const altarSpent    = usedAltars && usedAltars.has(`${playerX},${playerY}`);
   // Easter egg « Salle sur Demande » — refuge déjà pris cette visite, et objet
   // unique encore disponible (force la réouverture si le sac était plein).
@@ -458,13 +462,14 @@ function _exploreDescriptors() {
         : `<button class="explore-btn" onclick="useFountain();_hideExploreOverlay()">Boire à la fontaine</button>
            <button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
     },
-    // Refuge du Blaireau (Poufsouffle) — repos partiel 1×/visite d'étage.
+    // Refuge de Maison (Ch.13 P3) — repos partiel 1×/visite d'étage, habillé
+    // par chosenHouse (refTheme). Mécanique identique pour les 4 Maisons.
     [CELL.REFUGE]: {
-      icon:  SCENE_ICONS.refuge({ spent: refugeSpent }),
-      title: 'Refuge du Blaireau',
+      icon:  SCENE_ICONS.refuge({ spent: refugeSpent, color: refTheme.color, accent: refTheme.accent, emoji: refTheme.emoji }),
+      title: refTheme.name,
       desc:  refugeSpent
         ? "Le foyer s'est éteint pour cette visite. Quittez l'étage et revenez pour le raviver."
-        : "Un foyer chaleureux veille sous une bannière jaune et noire : un havre où le groupe panse ses plaies. On n'y laisse personne derrière.",
+        : `Un havre ${refTheme.emoji} veille au creux du donjon : un foyer où le groupe panse ses plaies et reprend son souffle.`,
       btns:  refugeSpent
         ? `<button class="explore-btn secondary" onclick="_hideExploreOverlay()">S'éloigner</button>`
         : `<button class="explore-btn" onclick="useRefuge();_hideExploreOverlay()">Se reposer au Refuge</button>

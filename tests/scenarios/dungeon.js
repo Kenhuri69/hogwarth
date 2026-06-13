@@ -215,7 +215,7 @@ async function scenarioFountain() {
 // fontaine). Génération gated maison + étage non-fontaine ; soin partiel 50 %
 // 1×/visite. Voir .claude/plans/refuge-poufsouffle.md.
 async function scenarioRefuge() {
-  console.log('\n── Scénario : Refuge du Blaireau (Poufsouffle) ──');
+  console.log('\n── Scénario : Refuge de Maison (Ch.13 P3) ──');
   const { browser, page, errors } = await launchGame();
   await startNewGame(page, { partySize: 2, heroes: ['harry', 'hermione'], house: 'Poufsouffle' });
 
@@ -234,27 +234,52 @@ async function scenarioRefuge() {
   assert(t1.refugeEnum === 17, 'CELL.REFUGE doit valoir 17');
   assert(t1.count >= 1, 'au moins un Refuge sur l\'étage 3 pour Poufsouffle');
 
-  // T2 : autre maison → aucun Refuge ; pas de Refuge sur un étage-fontaine.
+  // T2 (P3) : LES QUATRE Maisons génèrent un Refuge (équité) ; jamais sur un
+  // étage-fontaine ; jamais sans Maison choisie.
   const t2 = await page.evaluate(() => {
-    chosenHouse = 'Gryffondor';
-    currentFloor = 3; floorDungeons = {};
-    generateDungeon(3);
-    let otherHouse = 0;
-    for (let y = 0; y < dungeon.length; y++)
-      for (let x = 0; x < dungeon[y].length; x++)
-        if (dungeon[y][x] === CELL.REFUGE) otherHouse++;
-    chosenHouse = 'Poufsouffle';
-    currentFloor = 2; floorDungeons = {};
+    const refugeCount = () => {
+      let n = 0;
+      for (let y = 0; y < dungeon.length; y++)
+        for (let x = 0; x < dungeon[y].length; x++)
+          if (dungeon[y][x] === CELL.REFUGE) n++;
+      return n;
+    };
+    const perHouse = {};
+    for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle']) {
+      chosenHouse = h; currentFloor = 3; floorDungeons = {};
+      generateDungeon(3);
+      perHouse[h] = refugeCount();
+    }
+    chosenHouse = 'Gryffondor'; currentFloor = 2; floorDungeons = {};
     generateDungeon(2);
-    let fountainFloor = 0;
-    for (let y = 0; y < dungeon.length; y++)
-      for (let x = 0; x < dungeon[y].length; x++)
-        if (dungeon[y][x] === CELL.REFUGE) fountainFloor++;
-    return { otherHouse, fountainFloor };
+    const fountainFloor = refugeCount();
+    chosenHouse = null; currentFloor = 3; floorDungeons = {};
+    generateDungeon(3);
+    const noHouse = refugeCount();
+    return { perHouse, fountainFloor, noHouse };
   });
-  console.log('  T2 gating maison/étage →', t2);
-  assert(t2.otherHouse === 0, 'aucun Refuge pour une maison ≠ Poufsouffle');
+  console.log('  T2 génération par Maison →', t2);
+  for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle']) {
+    assert(t2.perHouse[h] >= 1, `Refuge attendu pour ${h} (équité P3)`);
+  }
   assert(t2.fountainFloor === 0, 'aucun Refuge sur un étage-fontaine (pas de doublon)');
+  assert(t2.noHouse === 0, 'aucun Refuge sans Maison choisie');
+
+  // T2bis : habillage cosmétique — refugeTheme() distinct par Maison.
+  const t2b = await page.evaluate(() => {
+    const names = {};
+    for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle']) {
+      chosenHouse = h; names[h] = refugeTheme().name;
+    }
+    chosenHouse = 'Poufsouffle';
+    const t = refugeTheme();
+    return { names, poufHasAccent: !!t.accent, poufEmoji: t.emoji };
+  });
+  console.log('  T2bis theming →', t2b);
+  assert(t2b.names.Gryffondor === 'Foyer du Lion', 'nom Gryffondor incorrect');
+  assert(t2b.names.Poufsouffle === 'Refuge du Blaireau', 'Poufsouffle garde le Blaireau');
+  assert(new Set(Object.values(t2b.names)).size === 4, 'les 4 noms doivent être distincts');
+  assert(t2b.poufHasAccent && t2b.poufEmoji === '🦡', 'theme porte accent + emoji de Maison');
 
   // T3 : useRefuge() soigne ~50 %, 1×/visite (2e usage sans effet).
   const t3 = await page.evaluate(() => {
@@ -288,11 +313,30 @@ async function scenarioRefuge() {
   assert(t3.spentKey, 'usedRefuges doit contenir la clé après usage');
   t3.after2.forEach((hp, i) => assert(hp === t3.hpBefore2[i], `perso ${i} : 2e usage sans effet`));
 
+  // T4 : useRefuge() sous Gryffondor → message habillé « Foyer du Lion ».
+  const t4 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    currentFloor = 3; floorDungeons = {};
+    generateDungeon(3);
+    let rx = -1, ry = -1;
+    for (let y = 0; y < dungeon.length && rx === -1; y++)
+      for (let x = 0; x < dungeon[y].length && rx === -1; x++)
+        if (dungeon[y][x] === CELL.REFUGE) { rx = x; ry = y; }
+    playerX = rx; playerY = ry;
+    party.forEach(c => { c.hp = 1; c.sp = 0; });
+    document.getElementById('msg-log').innerHTML = '';
+    useRefuge();
+    return { msg: document.getElementById('msg-log').textContent, healed: party[0].hp > 1 };
+  });
+  console.log('  T4 message habillé →', JSON.stringify(t4.msg));
+  assert(/Foyer du Lion/.test(t4.msg), 'le message du Refuge doit être habillé par la Maison');
+  assert(t4.healed, 'le Refuge doit soigner sous Gryffondor aussi');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées (refuge)`);
   }
-  console.log('  ✅ Refuge : gating maison/étage, soin partiel 50 %, 1×/visite');
+  console.log('  ✅ Refuge de Maison : 4 Maisons (équité), habillage cosmétique, soin partiel 50 %, 1×/visite');
   await browser.close();
 }
 
