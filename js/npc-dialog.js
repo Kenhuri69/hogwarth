@@ -458,6 +458,38 @@ function _darkLoopSuffixPages(npc) {
   return _splitDialogPage(text, _DIALOG_PAGE_MAXLEN);
 }
 
+// Résolveur PUR (testable units.js) de la ligne « après » post-victoire
+// (ch.14 §14.3.2) : les PNJ profonds recyclés en Boucle (Kingsley 8/18, Bill
+// 9/19, Sirius 10/20) portent une variante plus grave, moins martiale, lue une
+// fois `victoryAchieved`. Retourne la réplique choisie (string) ou null si la
+// variante ne s'applique pas. `lines` est `npc.postVictoryLines` (string|array) ;
+// `ctx.victoryAchieved` est le gate de fin ; `ctx.rng` un tirage injectable
+// (déterminisme des tests). Aucune lecture de global → pure.
+function pickPostVictoryLine(lines, ctx) {
+  if (!lines || !ctx || !ctx.victoryAchieved) return null;
+  const arr = Array.isArray(lines) ? lines : [lines];
+  if (!arr.length) return null;
+  const rng = (typeof ctx.rng === 'function') ? ctx.rng : Math.random;
+  return arr[Math.floor(rng() * arr.length)] || null;
+}
+
+// Suffixe « après » post-victoire (ch.14 §14.3.2) : même patron muet que
+// `_darkLoopSuffixPages` (un suffixe appendu en fin de dialogue, pas une page
+// neuve). Délègue le choix à `pickPostVictoryLine` (pur). Garde de
+// complémentarité : on n'appende PAS sous le seuil de Boucle profonde
+// (currentFloor >= _DARK_LOOP_FLOOR), où `darkLoopLines` prend déjà le relais —
+// les deux variantes restent ainsi mutuellement exclusives (pas de double beat).
+// Renvoie [] (défensif) si le champ est absent, la victoire non acquise, ou si
+// l'étage relève de la Boucle profonde.
+function _postVictorySuffixPages(npc) {
+  if (typeof currentFloor === 'number' && currentFloor >= _DARK_LOOP_FLOOR) return [];
+  const text = pickPostVictoryLine(npc && npc.postVictoryLines, {
+    victoryAchieved: (typeof victoryAchieved !== 'undefined') && !!victoryAchieved,
+  });
+  if (!text) return [];
+  return _splitDialogPage(text, _DIALOG_PAGE_MAXLEN);
+}
+
 // Suffixe « réputation par PNJ » (ch.06 §6.9.2) : les 2-3 PNJ à choix gris
 // portent une variante lue selon la réputation DÉRIVÉE (npcReputationFor, quests.js)
 // du choix du Pacte des Cachots. `reputationLines.warm` si rep>0, `.hostile` si
@@ -874,6 +906,19 @@ function openNpcDialog(npcId) {
     const lastSrc = _pageData.srcPages.length
       ? _pageData.srcPages[_pageData.srcPages.length - 1] : 0;
     for (const sub of _darkPages) {
+      _pageData.pages.push(sub);
+      _pageData.srcPages.push(lastSrc);
+    }
+  }
+  // Suffixe « après » post-victoire (ch.14 §14.3.2) — appendu pour les PNJ
+  // profonds recyclés (Kingsley/Bill/Sirius) une fois `victoryAchieved`, aux
+  // étages de surface (la Boucle profonde 18+ relève de darkLoopLines). Suffixe
+  // muet : calé sur la dernière authored-page (pas de relance voix).
+  const _postVictoryPages = _postVictorySuffixPages(npc);
+  if (_postVictoryPages.length) {
+    const lastSrc = _pageData.srcPages.length
+      ? _pageData.srcPages[_pageData.srcPages.length - 1] : 0;
+    for (const sub of _postVictoryPages) {
       _pageData.pages.push(sub);
       _pageData.srcPages.push(lastSrc);
     }
