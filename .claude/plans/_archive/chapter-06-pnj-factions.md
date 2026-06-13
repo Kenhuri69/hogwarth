@@ -1,6 +1,8 @@
 # Plan — Finalisation du Chapitre 06 « PNJ & Factions »
 
-**Statut :** 🟩 en cours — 2026-06-12
+**Statut :** ✅ livré & archivé — la doc du chapitre (#472) **et** tout le plan
+d'implémentation §6.12 (P0→P4 : #474 P1, #476 P2, #480 P3, #483 P4-A, #486 P4-B)
+sont mergés. Archivé le 2026-06-13.
 
 ## Constat de départ
 
