@@ -22,7 +22,7 @@
 | # | Item | État | Priorité |
 |---|------|------|----------|
 | 1.1 | Potions multi-cibles & usage ennemi | ✅ Clos | — |
-| 1.2 | Forge T5 (livré) **+ Bibliothèque T5** (ouvert) | 🟡 Partiel | P2 |
+| 1.2 | Forge T5 + Bibliothèque T5 (livrés) | ✅ Clos | — |
 | 1.3 | House post-tier-18 — forge (C) / reroll (D) | ❌ Ouvert | P2 |
 | 2.1 | Manon — dialogues Acte III finalisés | ✅ Clos | — |
 | 2.2 | Elfe de maison libre (easter-egg) | ⚠️ Cœur **non livré** → cf. plans actifs | — |
@@ -36,9 +36,9 @@
 | 6.2 | Factoriser `showEquipMenu` duo (N15) | ✅ Clos | — |
 | 6.3 | Hook settings.json « commit + push » | ❌ Ouvert | P3 |
 
-**Reliquats encore actionnables** : 1.2 (Bibliothèque T5), 1.3, 6.1,
-6.3. — **Bloqué** : 4.2 (session live manuelle). — **Clos** : 1.1, 2.1, 3.1,
-3.2, 3.3, 4.1, 5.1, 6.2 (récapitulés en bas).
+**Reliquats encore actionnables** : 1.3, 6.1, 6.3. — **Bloqué** : 4.2
+(session live manuelle). — **Clos** : 1.1, 1.2, 2.1, 3.1, 3.2, 3.3, 4.1,
+5.1, 6.2 (récapitulés en bas).
 
 > ⚠️ **Correctif d'audit 2026-06-12** vs l'audit précédent (2026-06-11) :
 > - **5.1** musiques de combat : les OGG `combat_epic` / `combat_late` sont
@@ -63,25 +63,6 @@
 ---
 
 ## Reliquats actifs
-
-### 1.2 Bibliothèque — extension matériaux T5 + formule d'upgrade — 🟡 **PARTIEL**
-> Vérifié 2026-06-12 : **volet Forge T5 livré** (`forge.js` `FORGE_MAX_LEVEL=8`,
-> matériau `essence_primordiale`, paliers 6-8) — plan dédié
-> [`forge-t5.md`](./_archive/forge-t5.md). **Reste ouvert : la Bibliothèque**,
-> plafonnée à `LIBRARY_MAX_LEVEL=5` (`library.js:17`, coûts paliers 1-5 dans
-> `LIBRARY_COSTS`), sans matériau ni palier T5 ni refonte de formule.
-- **Source** : `_archive/forge-library-stabilization.md`.
-- **Reste à faire** : ajouter un **palier/matériau T5 côté Bibliothèque**
-  (endgame), **refondre la formule d'upgrade** (coût/scaling), et de nouveaux
-  sorts/recettes débloquables.
-- **Étapes** :
-  1. Décider la source T5 (drop boss Boucle Ténébreuse ? don Gardien de la Boucle ?
-     réutiliser `essence_primordiale` ?) → vérif : matériau T5 obtenable en
-     partie réelle endgame.
-  2. Recalibrer la courbe de coût d'upgrade (sim `tools/sim-economy.js`) → vérif :
-     progression non triviale mais atteignable (rapport sim joint au plan).
-  3. Ajouter les recettes/sorts T5 → vérif : visibles et achetables/forgeables.
-  4. Scénario smoke + bump cache.
 
 ### 1.3 House post-tier-18 — Piste C (forge d'amélioration) & Piste D (reroll) — ❌ **OUVERT** · P2
 > Vérifié 2026-06-12 : **aucun code** de reroll/enchant/forge légendaire lié aux
@@ -135,6 +116,16 @@
 > Conservés pour mémoire/traçabilité. Ne plus traiter — le cœur **et** le
 > reliquat sont livrés (ou le reliquat est un choix de style assumé).
 
+- ~~**1.2 Forge T5 + Bibliothèque T5**~~ — ✅ livré 2026-06-13. Forge T5 livré
+  antérieurement (`forge-t5.md`). Volet **Bibliothèque T5** : amplification des
+  sorts +5→+8, niveaux 6-8 gatés par l'**Essence Primordiale** (matériau premium
+  partagé avec la Forge, déjà vendu par l'Apothicaire Ténébreux). Règle de coût
+  reprise des tables existantes (gold Biblio = 1,5 × Forge, pages = essence
+  Forge, même Primordiale). Effet combat inchangé (`_spellForCaster` déjà
+  compatible 6-8). Plan [`library-t5.md`](./library-t5.md), smoke `library`/audit
+  étendus. **Hors-scope assumé** : nouveaux sorts *débloquables* à la Bibliothèque
+  (elle amplifie, n'enseigne pas — l'apprentissage reste level-up/grimoires/
+  `grantsSpell`) — feature distincte à rouvrir si désirée.
 - ~~**4.1 Duel PvP direct**~~ — ✅ livré 2026-06-13. (a) **Async** déjà livré :
   défier le snapshot/fantôme d'un autre joueur (`mpStartDuel`, `_mpHeroToEnemy`,
   IA + butin Ironman, `scenarioMultiplayerDuel`). (b) **Live relayé** (variante
