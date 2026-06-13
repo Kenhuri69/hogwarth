@@ -134,6 +134,9 @@ function confirmBreakCycle() {
   if (typeof cycleBroken !== 'undefined') cycleBroken = true;
   // Label de fin (P3) : bascule sur 'cycle_broken' (priorité max).
   if (typeof refreshEndingType === 'function') refreshEndingType();
+  // Profil persistant hors-save (P5) : enregistre le Cycle brisé (compteur +
+  // titre « Briseur de Cycle ★N »). Gardé par cycleBroken → un seul par run.
+  if (typeof recordEndingToProfile === 'function') recordEndingToProfile('cycle_broken');
   if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('cycle-broken');
   // Musique de fin (P4) : nappe douce `ending_break` si présente, repli sur le
   // sting procédural playVictory() sinon (playEndingTheme gère lui-même le 404).

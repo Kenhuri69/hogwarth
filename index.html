@@ -10,9 +10,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=39">
+<link rel="stylesheet" href="css/style.css?v=40">
 <link rel="stylesheet" href="css/ux-improvements.css?v=4">
-<link rel="stylesheet" href="css/save-ui.css?v=3">
+<link rel="stylesheet" href="css/save-ui.css?v=4">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
 <link rel="stylesheet" href="css/help-tour.css?v=2">
 <link rel="stylesheet" href="css/pwa.css?v=1">
@@ -76,6 +76,8 @@
     <div id="start-hub-slot-list" class="slot-list hub-slot-list"></div>
     <!-- V3 — Almanach de la Salle sur Demande (méta léger, rempli par JS si découvert) -->
     <div id="start-hub-almanac" class="hub-almanac"></div>
+    <!-- Ch.14 P5 — Codex du Sorcier (profil persistant : fins + titres ; rempli par JS si ≥1 victoire) -->
+    <div id="start-hub-profile" class="hub-almanac"></div>
     <button id="hub-new-btn" class="hub-new-btn" onclick="startHubNewGame()">
       ✦ NOUVELLE AVENTURE ✦
     </button>
@@ -169,6 +171,15 @@
                maxlength="24" placeholder="Sorcier" autocomplete="off" spellcheck="false">
         <span class="psel-pseudo-hint">Visible par les autres joueurs en ligne.</span>
       </div>
+      <!-- Ch.14 P5 — New Game+ opt-in : visible seulement si le profil a ≥1
+           victoire (géré par _refreshNgPlusOptIn). Purement cosmétique. -->
+      <label id="ngplus-optin-row" class="psel-ngplus-row" style="display:none">
+        <input type="checkbox" id="ngplus-toggle" onchange="_onNgPlusToggle()">
+        <span class="psel-ngplus-text">
+          <span class="psel-ngplus-title">✦ Nouvelle Partie+</span>
+          <span class="psel-ngplus-hint">Cadre doré « Vétéran » + ton titre affiché. Cosmétique : aucun bonus hérité.</span>
+        </span>
+      </label>
       <div class="psel-nav">
         <button id="psel-quickstart" class="start-btn psel-quickstart" onclick="quickStart()"
                 title="Solo · Harry · Normal — directement au choix de Maison">⚡ Partie rapide</button>
@@ -438,6 +449,8 @@
 
   <div class="left-panel">
     <div class="panel-title">Groupe</div>
+    <!-- Ch.14 P5 — Titre New Game+ (cosmétique, rempli par updateUI si ngPlusRun) -->
+    <div id="ngplus-hud-title" class="ngplus-hud-title" style="display:none"></div>
 
     <!-- Harry -->
     <div class="party-card" id="char-card-0">
@@ -1223,9 +1236,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/floor-events.js?v=1"></script>
 <script src="js/room-flavor.js?v=1"></script>
 <script src="js/item-icons.js?v=22"></script>
-<script src="js/state.js?v=32"></script>
+<script src="js/state.js?v=33"></script>
 <script src="js/hero-barks.js?v=4"></script>
-<script src="js/ui.js?v=14"></script>
+<script src="js/ui.js?v=15"></script>
 <script src="js/ui-character-sheet.js?v=7"></script>
 <script src="js/ui-settings.js?v=3"></script>
 <script src="js/ui-bestiary.js?v=5"></script>
@@ -1264,9 +1277,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/intro.js?v=3"></script>
 <script src="js/shop.js?v=13"></script>
 <script src="js/save-slots.js?v=3"></script>
-<script src="js/save.js?v=37"></script>
+<script src="js/save.js?v=38"></script>
 <script src="js/save-visit-snapshot.js?v=1"></script>
-<script src="js/save-ui.js?v=6"></script>
+<script src="js/profile.js?v=1"></script>
+<script src="js/save-ui.js?v=7"></script>
 <script src="js/ironman.js?v=4"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
 <script src="js/multiplayer.js?v=9"></script>
@@ -1278,13 +1292,13 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/visit-hud.js?v=6"></script>
 <script src="js/pvp-duel.js?v=1"></script>
 <script src="js/atelier-voyageur.js?v=4"></script>
-<script src="js/main.js?v=22"></script>
-<script src="js/endgame.js?v=8"></script>
-<script src="js/break-cycle.js?v=3"></script>
+<script src="js/main.js?v=23"></script>
+<script src="js/endgame.js?v=9"></script>
+<script src="js/break-cycle.js?v=4"></script>
 <script src="js/forge.js?v=4"></script>
 <script src="js/library.js?v=4"></script>
 <script src="js/help-tour.js?v=3"></script>
-<script src="js/loader.js?v=44"></script>
+<script src="js/loader.js?v=45"></script>
 <script src="js/pwa.js?v=4"></script>
 
 </body>

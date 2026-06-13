@@ -75,6 +75,7 @@ function updateUI() {
   // ── Anneaux header (XP gauche + Maison droite) ───────────────
   _updateXpWrap();
   _updateHouseBadge();
+  _updateNgPlusTitle();
   if (typeof _updateVisitsBtn === 'function') _updateVisitsBtn();
   if (typeof _updateBarksBtn === 'function') _updateBarksBtn();
 
@@ -343,6 +344,20 @@ function _updateHouseBadge() {
   // sera retiré du HTML dans une PR ultérieure.
   const crest = document.getElementById('house-crest');
   if (crest) crest.style.display = 'none';
+}
+
+// New Game+ (Chapitre 14 P5) — titre honorifique affiché dans le HUD pendant
+// une partie lancée en Nouvelle Partie+. Purement cosmétique (jamais lu par un
+// calcul). Masqué hors NG+ ou sans titre.
+function _updateNgPlusTitle() {
+  const el = document.getElementById('ngplus-hud-title');
+  if (!el) return;
+  const on = (typeof ngPlusRun !== 'undefined') && ngPlusRun
+    && (typeof ngPlusTitle !== 'undefined') && ngPlusTitle;
+  if (!on) { el.style.display = 'none'; el.textContent = ''; return; }
+  const label = '✦ ' + ngPlusTitle;
+  if (el.textContent !== label) el.textContent = label;
+  el.style.display = 'block';
 }
 
 function _updateCharBar(idx) {
