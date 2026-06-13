@@ -743,6 +743,109 @@ async function scenarioAgiCelerite() {
   await browser.close();
 }
 
+// 1.3.5 — Célérité × Protego / double-garde : comptage des coups bloqués.
+// Vérifie que les compteurs défensifs (shieldTurns Protego, guardTurns garde)
+// sont consommés EXACTEMENT un par coup encaissé, et qu'une action sup. de
+// Célérité permet d'empiler la garde (double-garde) dans un seul segment —
+// les paliers ainsi accumulés bloquant le bon nombre de coups.
+async function scenarioCeleriteGuardCounting() {
+  console.log('\n── Scénario : Célérité × Protego / double-garde (comptage) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 400 });
+
+  // T1 — Double-garde : 3 paliers bloquent exactement 3 coups (chacun mitigé),
+  // le 4ᵉ passe en coup normal. guardTurns décrémente d'un par coup mitigé.
+  const t1 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.atk = 20; e.abilities = [];
+    const c = party[0];
+    c.def = 0; c.dodgeChance = 0; c.hp = 500; c.hpMax = 500;
+    shieldTurns = [0, 0]; guardTurns = [3, 0];     // triple garde
+    const blocked = [];
+    const guardSeen = [];
+    for (let i = 0; i < 4; i++) {
+      const before = guardTurns[0];
+      const frag = _enemyPhysicalHit(e, c, 0);
+      guardSeen.push(before - guardTurns[0]);       // 1 si un palier consommé
+      blocked.push(/mitige/.test(frag));
+    }
+    return { blocked, guardSeen, guardEnd: guardTurns[0] };
+  });
+  console.log('  T1 double-garde:', t1);
+  assert(JSON.stringify(t1.blocked) === JSON.stringify([true, true, true, false]),
+    `3 coups mitigés puis 1 normal attendu, obtenu ${JSON.stringify(t1.blocked)}`);
+  assert(JSON.stringify(t1.guardSeen) === JSON.stringify([1, 1, 1, 0]),
+    'chaque coup mitigé doit consommer exactement 1 palier de garde');
+  assert(t1.guardEnd === 0, 'tous les paliers de garde doivent être épuisés');
+
+  // T2 — Protego : 2 tours de bouclier bloquent 2 coups (priorité sur la garde),
+  // le 3ᵉ passe en garde si présente, sinon coup normal.
+  const t2 = await page.evaluate(() => {
+    const e = enemyGroup[0];
+    e.atk = 20;
+    const c = party[0];
+    c.def = 0; c.dodgeChance = 0; c.hp = 500; c.hpMax = 500;
+    shieldTurns = [2, 0]; guardTurns = [0, 0];
+    const res = [];
+    for (let i = 0; i < 3; i++) {
+      const frag = _enemyPhysicalHit(e, c, 0);
+      res.push(/Protego/.test(frag) ? 'shield' : (/mitige/.test(frag) ? 'guard' : 'hit'));
+    }
+    return { res, shieldEnd: shieldTurns[0] };
+  });
+  console.log('  T2 protego:', t2);
+  assert(JSON.stringify(t2.res) === JSON.stringify(['shield', 'shield', 'hit']),
+    `2 blocages Protego puis 1 coup, obtenu ${JSON.stringify(t2.res)}`);
+  assert(t2.shieldEnd === 0, 'shieldTurns doit être épuisé après 2 blocages');
+
+  // T3 — Célérité monte la double-garde dans UN segment : une action sup.
+  // permet de poser la garde deux fois (0→2) avant de rendre la main. Les
+  // 2 paliers bloquent ensuite exactement 2 coups.
+  const t3 = await page.evaluate(() => {
+    const origEnemyTurn = window.enemyTurn;
+    window.enemyTurn = () => {};                    // neutralise le tour ennemi
+    let guardAfterTwo;
+    try {
+      const c = party[0];
+      c.hp = c.hpMax = 500; c.def = 0; c.dodgeChance = 0;
+      currentBattleChar = 0;
+      shieldTurns = [0, 0]; guardTurns = [0, 0];
+      guardRegenCooldown = [0, 0];
+      celeriteExtra = [1, 0];                        // 1 action sup. en réserve
+      battleAction('guard');                         // garde ×1 → re-prompt (Célérité)
+      const repromptStayed = currentBattleChar === 0 && celeriteExtra[0] === 0;
+      battleAction('guard');                         // garde ×2 (double-garde) → fin de segment
+      guardAfterTwo = guardTurns[0];
+      var rp = repromptStayed;
+    } finally {
+      window.enemyTurn = origEnemyTurn;
+    }
+    // Comptage : les 2 paliers bloquent 2 coups, le 3ᵉ est normal.
+    const e = enemyGroup[0]; e.atk = 20;
+    const c = party[0];
+    const res = [];
+    for (let i = 0; i < 3; i++) {
+      const frag = _enemyPhysicalHit(e, c, 0);
+      res.push(/mitige/.test(frag));
+    }
+    return { repromptStayed: rp, guardAfterTwo, res, guardEnd: guardTurns[0] };
+  });
+  console.log('  T3 célérité→double-garde:', t3);
+  assert(t3.repromptStayed, 'l\'action sup. de Célérité doit re-prompter le même héros (garde ré-empilable)');
+  assert(t3.guardAfterTwo === 2, `deux gardes dans un segment → double-garde (2), obtenu ${t3.guardAfterTwo}`);
+  assert(JSON.stringify(t3.res) === JSON.stringify([true, true, false]),
+    '2 paliers accumulés via Célérité bloquent exactement 2 coups');
+  assert(t3.guardEnd === 0, 'paliers épuisés après 2 blocages');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (Célérité × garde)`);
+  }
+  console.log('  ✅ Célérité × Protego / double-garde : comptage des blocages correct');
+  await browser.close();
+}
+
 async function scenarioDuoStatuses() {
   console.log('\n── Scénario 2quater : statuts duo isolés ──');
   const { browser, page, errors } = await launchGame();
@@ -2380,4 +2483,4 @@ async function scenarioBuffBadgesPng() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };

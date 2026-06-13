@@ -133,17 +133,24 @@ plus probables sont couvertes par un test.*
   (pwa-smoke « loader OK »). Bump cache : loader.js v40→41, CACHE_VERSION
   v118→v119.
 
-- [ ] **1.3 — Tests manquants à plus haut risque** (M-L, découpables)
-  1. **Génération de donjon** : 50 générations étages 1-10 → chaque étage a un
-     escalier **atteignable** (filet de sécurité `_ensureStairsExist`). (S)
-  2. **Mort Ironman** : `triggerDeath` en `ironmanMode` → écran de score, pas de
-     pétrification, slots Ironman purgés. (S)
-  3. **Interactions de statuts** : stun + fear + weaken combinés sur héros et
-     ennemis — ordre des tours, `consumeStun`, jamais de segment figé. (M)
-  4. **Migrations de save** : round-trip d'un save « ancien format » (sans
-     slots étendus, sans champs récents) → état jouable. (M)
-  5. **Célérité × Protego / double-garde** : comptage des coups bloqués. (M)
-  *Vérif : nouveaux scénarios dans `tests/scenarios/` + `node tests/smoke.js`.*
+- [x] **1.3 — Tests manquants à plus haut risque** (M-L, découpables) — FAIT 2026-06-13
+  1. **Génération de donjon** ✅ `scenarioStairsReachable` (dungeon.js) : 50
+     générations (étages 1-10 × 5 seeds), BFS depuis la case de départ →
+     STAIRS_D toujours atteignable.
+  2. **Mort Ironman** ✅ `scenarioIronmanDeath` (combat.js) : écran de score,
+     pas de pétrification ni death-screen, slots Ironman purgés, slot
+     non-Ironman préservé.
+  3. **Interactions de statuts** ✅ `scenarioStatusComboNoFreeze` (combat.js) :
+     stun+fear+weaken coexistent et se décomptent correctement ; groupe entier
+     privé d'action → chaîne de tours (file setTimeout drainée) sans segment
+     figé.
+  4. **Migrations de save** ✅ `scenarioOldSaveFormatRoundTrip` (save.js) :
+     équipement legacy + champs récents absents → migration jouable, round-trip
+     stable, aucun NaN.
+  5. **Célérité × Protego / double-garde** ✅ `scenarioCeleriteGuardCounting`
+     (combat.js) : comptage exact des coups bloqués (Protego/garde), action
+     sup. de Célérité empile la double-garde dans un segment.
+  *Vérif : 5 nouveaux scénarios, smoke 207 verts.*
 
 - [ ] **1.4 — Hygiène CI/harness** ✅ partiel (S)
   Vérifié : `test.yml:53` annonce « 159 scénarios » alors que la suite en
