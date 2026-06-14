@@ -1464,6 +1464,7 @@ function loadModule(relPath, exportNames, globals = {}) {
   const b = MONSTERS.find(m => m.id === 'basilic_ancestral');
   check('basilic: entrée présente', !!b);
   check('basilic: epic + weight 1', !!b && b.epic === true && b.weight === 1);
+  check('basilic: imgSrc câblé', !!b && b.imgSrc === 'img/monsters/basilic_ancestral.png');
   check('basilic: faible à la lumière', !!b && Array.isArray(b.weak) && b.weak.includes('lumière'));
   check('basilic: drops non vides', !!b && Array.isArray(b.drops) && b.drops.length >= 3);
 
@@ -1490,6 +1491,7 @@ function loadModule(relPath, exportNames, globals = {}) {
   const m = MONSTERS.find(x => x.id === 'moremplis');
   check('moremplis: entrée présente', !!m);
   check('moremplis: epic + weight 1', !!m && m.epic === true && m.weight === 1);
+  check('moremplis: imgSrc câblé', !!m && m.imgSrc === 'img/monsters/moremplis.png');
   check('moremplis: faible à la lumière', !!m && Array.isArray(m.weak) && m.weak.includes('lumière'));
   // Caster/drain : atk < 1,5×mag → PAS une brute (pas de Broyer).
   check('moremplis: n\'est PAS une brute', isBruteMonster(m) === false);
