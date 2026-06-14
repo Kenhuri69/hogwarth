@@ -186,12 +186,14 @@ js/
   profile.js       →  Profil joueur persistant hors-save (localStorage
                       `hogwarts_rpg_profile`, distinct des saves) — Chapitre 14
                       P5 : getPlayerProfile(), recordEndingToProfile(),
-                      ngPlusAvailable(), helpers PURS computeProfileTitles()/
+                      ngPlusAvailable(), ngPlusMaxLevel() (cran = victoires,
+                      plafonné NGPLUS_CAP), helpers PURS computeProfileTitles()/
                       profileTopTitle(), Codex du Sorcier (modale dédiée
                       #wizard-codex-modal : openWizardCodex()/closeWizardCodex()/
                       renderProfileCodex(), bouton hub #hub-codex-btn via
                       _refreshHubCodexBtn()), _refreshNgPlusOptIn(). New Game+
-                      COSMÉTIQUE — zéro stat/objet/or hérité. Chargé APRÈS
+                      « VRAI » (challenge empilable) — voir « New Game+ » plus
+                      bas. ZÉRO héritage conservé. Chargé APRÈS
                       save-visit-snapshot.js.
   save-ui.js       →  Modale #slot-modal (openSaveDialog/openLoadDialog) +
                       Hub démarrage (enterStartHub, startHubNewGame,
@@ -570,6 +572,29 @@ hors-ligne ; un score soumis est **toujours** écrit en local.
 ### Icônes
 `tools/gen_ironman_icons.py` génère les PNG dorés 64×64 dans `img/icons/` :
 `ironman.png` (crâne), `trophy.png` (coupe), `medal_{gold,silver,bronze}.png`.
+
+---
+
+## New Game+ « vrai » (challenge empilable)
+
+Opt-in au player-select (`#ngplus-toggle`, visible si le profil a ≥ 1 victoire).
+À l'origine purement cosmétique (Ch.14 P5) ; désormais un **mode challenge**.
+
+- **Cran** `ngPlusLevel` (`state.js`, sérialisé) = `ngPlusMaxLevel()` (`profile.js`)
+  = `min(profil.victories, NGPLUS_CAP=10)`. **Empilable** : chaque victoire
+  enregistrée débloque le cran suivant. Armé dans `confirmHeroSelection` (main.js).
+- **Effet** (multiplicateur GLOBAL, dernière passe de `scaleMonster`,
+  `dungeon-scaling.js`) via le helper PUR `ngPlusScaling(level)` :
+  - stats ennemies (hp/atk/def/mag) : `× (1 + 0.20 × level)`
+  - butin (xp/or) : `× (1 + 0.25 × level)`
+  - drops : `chance × (1 + 0.10 × level)` (borné à 1)
+  Compose avec la difficulté ET la récursion endgame (Boucle). `buildEcho`
+  passe `{ ngPlusLevel: 0 }` → échos astraux neutres.
+- **ZÉRO héritage** (équilibrage 13, inchangé) : aucun or/objet/niveau hérité —
+  seuls les ennemis et leurs gains sont renforcés.
+- **UI** : libellé opt-in dynamique (`_refreshNgPlusOptIn`, affiche le cran +
+  les %), HUD `#ngplus-hud-title` suffixé « · NG+N » (`_updateNgPlusTitle`).
+- Calibration : `NGPLUS_*` dans `dungeon-scaling.js` ; helper testé (`units.js` §17).
 
 ---
 

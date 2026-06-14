@@ -362,7 +362,9 @@ function _updateNgPlusTitle() {
   const on = (typeof ngPlusRun !== 'undefined') && ngPlusRun
     && (typeof ngPlusTitle !== 'undefined') && ngPlusTitle;
   if (!on) { el.style.display = 'none'; el.textContent = ''; return; }
-  const label = '✦ ' + ngPlusTitle;
+  // Suffixe « NG+N » : signale le cran de challenge actif (scaling ennemis).
+  const lvl = (typeof ngPlusLevel === 'number' && ngPlusLevel > 0) ? ngPlusLevel : 0;
+  const label = '✦ ' + ngPlusTitle + (lvl > 0 ? ` · NG+${lvl}` : '');
   if (el.textContent !== label) el.textContent = label;
   el.style.display = 'block';
 }

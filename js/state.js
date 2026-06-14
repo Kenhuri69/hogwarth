@@ -784,15 +784,19 @@ let victoryAt       = null;
 // l'entrée Codex `epilogue` (robinet `ending`). Persisté via save.js.
 let endingType = null;
 
-// ── New Game+ cosmétique (Chapitre 14, P5) ────────────────────────
-// `ngPlusRun` : la partie courante a été lancée en mode Nouvelle Partie+
-// (opt-in au démarrage, disponible si le profil persistant a ≥ 1 victoire).
-// `ngPlusTitle` : titre honorifique affiché dans le HUD pendant cette partie.
-// PUREMENT COSMÉTIQUES — jamais lus par un calcul de stat/loot/or (équilibrage
-// 13 : ZÉRO héritage). Sérialisés (save.js) pour persister l'affichage au
-// rechargement. Le profil persistant lui-même vit dans `js/profile.js`
-// (localStorage `hogwarts_rpg_profile`, hors save de partie).
+// ── New Game+ « vrai » (Chapitre 14 P5 cosmétique → challenge) ────
+// `ngPlusRun`   : la partie courante est un run Nouvelle Partie+ (opt-in au
+//                 démarrage, disponible si le profil a ≥ 1 victoire).
+// `ngPlusLevel` : cran NG+ empilable (= nombre de victoires au profil, plafonné
+//                 NGPLUS_CAP). Pilote le multiplicateur CHALLENGE appliqué aux
+//                 monstres (stats + butin) dans scaleMonster — voir
+//                 dungeon-scaling.js / .claude/plans/ngplus-real.md. 0 hors NG+.
+// `ngPlusTitle` : titre honorifique affiché dans le HUD pendant la partie.
+// ZÉRO HÉRITAGE conservé (équilibrage 13) : aucun or/objet/niveau hérité — seuls
+// les ennemis et leurs gains sont renforcés. Sérialisés (save.js). Le profil
+// persistant vit dans `js/profile.js` (localStorage, hors save de partie).
 let ngPlusRun   = false;
+let ngPlusLevel = 0;
 let ngPlusTitle = '';
 
 // ── Boucle Ténébreuse — Porteur d'Éclats (V1, Chapitre 11 §11.6.2) ──

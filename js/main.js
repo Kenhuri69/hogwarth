@@ -218,12 +218,16 @@ function confirmHeroSelection() {
   if (selectedHeroes.length !== selectedPartySize) return;
   difficulty        = document.getElementById('difficulty-select')?.value || 'Normal';
   ironmanMode       = !!document.getElementById('ironman-toggle')?.checked;
-  // New Game+ cosmétique (Ch.14 P5) : opt-in retenu seulement si disponible
-  // (profil ≥ 1 victoire). Arme le titre affiché — ZÉRO stat/objet/or hérité.
+  // New Game+ « vrai » (Ch.14 P5 → challenge) : opt-in retenu seulement si
+  // disponible (profil ≥ 1 victoire). Arme le cran `ngPlusLevel` (= victoires,
+  // plafonné) qui pilote le scaling CHALLENGE, + le titre HUD. ZÉRO héritage.
   if (typeof ngPlusRun !== 'undefined') {
     const wantNg = !!document.getElementById('ngplus-toggle')?.checked
       && (typeof ngPlusAvailable === 'function') && ngPlusAvailable();
     ngPlusRun   = wantNg;
+    if (typeof ngPlusLevel !== 'undefined') {
+      ngPlusLevel = (wantNg && typeof ngPlusMaxLevel === 'function') ? ngPlusMaxLevel() : 0;
+    }
     ngPlusTitle = (wantNg && typeof profileTopTitle === 'function')
       ? (profileTopTitle(getPlayerProfile()) || '') : '';
   }
