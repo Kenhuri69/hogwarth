@@ -1,9 +1,10 @@
 # Plan — Amélioration de l'ergonomie (clavier, modales, accessibilité)
 
-> Statut : **Phases 1-3 livrées**. Phase 1 → PR #520, Phase 2 → PR #521.
-> Phase 3 sur `claude/ergonomics-phase3-confirm-focus`. Créé le 2026-06-14.
-> Phase 4 en attente d'arbitrage. Focus-trap générique sur TOUTES les
-> modales reporté (cf. note Phase 3) — risque/bénéfice à arbitrer séparément.
+> Statut : **Phases 1-4 livrées** (plan complet). Phase 1 → PR #520,
+> Phase 2 → PR #521, Phase 3 → PR #524, Phase 4 → `claude/ergonomics-phase4-a11y`.
+> Créé le 2026-06-14. **Reste hors-scope** : passe dédiée « isolation de
+> modale » (focus-trap générique + `inert`/`aria-describedby` sur le fond) —
+> reportée pour risque/bénéfice (cf. notes Phases 3 & 4).
 > Aucun plan d'ergonomie transversal n'existait : il y avait des fixes UX
 > ponctuels (`room-presentation-startup-ux.md`, `codex-mobile-list-layout.md`,
 > `hit-targets-44px.md` archivé) mais pas de passe d'ergonomie d'interaction.
@@ -124,7 +125,18 @@ clavier. Cache-bump (`main.js`, `battle-ui.js`).
 
 ---
 
-## Phase 4 — Accessibilité de finition (basse)
+## Phase 4 — Accessibilité de finition (basse) ✅ LIVRÉE
+
+> Livré le 2026-06-14. `index.html` : `title` explicatif sur les 6 cases de
+> stats (rôle réel D1-D5). `ui.js` + `index.html` : région live `#a11y-live`
+> (`role=status`, `aria-live=assertive`) annonçant « Points de vie critiques »
+> sur front montant / effacée sur front descendant ; classe utilitaire
+> `.sr-only` (style.css). Test : `scenarioA11yFinish`. Cache bumpé (style v43,
+> ui v17, CACHE_VERSION v137).
+>
+> **Reporté avec le focus-trap (Phase 3)** : `inert`/`aria-describedby`
+> génériques sur le fond quand une modale est ouverte — même surface
+> « isolation de modale » que le focus-trap, à traiter dans la passe dédiée.
 
 | Fichier | Changement | Vérif |
 |---------|-----------|-------|
