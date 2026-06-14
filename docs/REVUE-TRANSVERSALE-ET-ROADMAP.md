@@ -30,7 +30,7 @@
 
 | # | Faiblesse | Localisation | Gravité |
 |---|-----------|--------------|---------|
-| 🔧 1 | **Dérive documentation ↔ code** (le point n°1) — **Ch.12 réconcilié** (2026-06-14 : « ÉTAPE 2 » plan → état livré). **Restant : Ch.14 + `CLAUDE.md`.** | Ch. 14 + `CLAUDE.md` | 🔴 Haute |
+| 🔧 1 | **Dérive documentation ↔ code** (le point n°1) — **Ch.12 & Ch.14 réconciliés** (2026-06-14 : « ÉTAPE 2 » plan → état livré ; NG+/`endingType`/épilogue marqués ✅). **Restant : `CLAUDE.md`** (index/sections). | `CLAUDE.md` | 🔴 Haute |
 | ⚠️ 2 | **`💡 proposé` vs `✅ acté` mal séparés** dans plusieurs chapitres | 09, 10, 11 | 🟠 Moyenne |
 | ✅ 3 | ~~Enjeu intime par héros toujours absent~~ **Livré** (2026-06-14) : couche de beats scénarisés cosmétiques `descentStake` (6 héros jouables, seuil 3↔4) via `heroBarkScripted` ; gaps 01 §1.3 & 03 #2 tranchés, canon en 05 §5.4.2. | 01 §1.3, 03 #2, 05 §5.4.2, `hero-barks.js` | ✅ Résolu |
 | ✅ 4 | ~~PNJ-clés de signature non implémentés~~ **Livré** (2026-06-13) : Chevalier Fantôme (`chevalier_godric`) 🦁 + Écho de Salazar (`echo_salazar`) 🐍 — PNJ donneurs dédiés (art `img/npc/`, dialogues, placement), signatures retirées de McGonagall/Rogue. Serdaigle/Poufsouffle restent sur Flitwick/Chourave (chefs existants). | 06, 08, `npcs.js` | ✅ Résolu |
@@ -158,7 +158,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 |-------|----------|----------------------|------------|-------------|
 | **Audit doc↔code complet** : tableau « chapitre ↔ module(s) ↔ statut réel » | 🔴 Haute | Tous + `CLAUDE.md` | Faible (lecture) | — |
 | **Mettre à jour `CLAUDE.md`** (index des 85 modules, sections Codex/Forge/Biblio/Endgame/Potions/Events) | 🔴 Haute | `CLAUDE.md` | Faible | Audit |
-| **Réécrire Ch. 12 & 14** : « plan d'impl. » → « état livré + contenu restant ». **Ch.12 ✅ (2026-06-14)** ; Ch.14 restant. | 🔴 Haute | ~~12~~ 14, `endgame.js`, `break-cycle.js` | Faible | Audit |
+| ~~**Réécrire Ch. 12 & 14** : « plan d'impl. » → « état livré »~~ ✅ **Fait (2026-06-14)** (Ch.12 + Ch.14). | 🔴 Haute | ~~12, 14~~ | Faible | Audit |
 | **Aligner Ch. 11** (Briser le Cycle = ✅, pas proposition) + définir « la Boucle » | 🟠 Moyenne | 11 | Faible | Audit |
 | **Bandeaux « Statut réel » + index doc↔module** | 🟠 Moyenne | Tous | Faible | Audit |
 | **Compléter symétrie `pact`/`defiance`** + variantes texte fin (5 axes) | 🟠 Moyenne | 14, `endgame.js` | Faible | — |

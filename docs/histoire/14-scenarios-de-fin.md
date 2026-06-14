@@ -405,7 +405,7 @@ t'appelle plus bas — le Reflet reviendra. »
 > *compris*) ; perpétuer est **noir** (on a *choisi le gouffre*). Le contraste
 > chromatique **porte le sens** sans une ligne de texte de plus.
 
-### 14.6.2 Impact sur le Codex (✅ + 💡)
+### 14.6.2 Impact sur le Codex (✅)
 
 ✅ Entrées de fin **déjà câblées** (`js/codex.js`) — déverrouillées par les
 robinets `victory` / `eclatLoop` / `cycleBroken` :
@@ -421,28 +421,32 @@ robinets `victory` / `eclatLoop` / `cycleBroken` :
 | `voix_{godric,salazar,rowena,helga}` | 🔹 Éclats | échos des Fondateurs (Ruines) | — |
 | `ruines_anciennes` | 🗺️ Lieux | étage 14 | écho `echo_scene_sceau` |
 
-> 💡 **Entrée d'épilogue proposée.** Une entrée `epilogue` (section 🔥 Histoire),
-> déverrouillée à la **première** victoire, dont le **texte révélé** varie selon
-> `endingType` (§ÉTAPE 2.A) — la mémoire écrite de *comment* cette partie s'est
-> conclue (Maison, choix moraux, Cycle brisé ou non). Réutilise le champ
-> `variants.house` du format Codex ([12 §12.3](12-glossaire-et-codex.md)).
+> ✅ **Entrée d'épilogue livrée.** L'entrée `epilogue` (section 🔥 Histoire,
+> `js/codex.js` + `state.js`), déverrouillée à la **première** victoire, voit son
+> **texte révélé** varier selon `endingType` (§ÉTAPE 2.A, livré) — la mémoire
+> écrite de *comment* cette partie s'est conclue (Maison, choix moraux, Cycle
+> brisé ou non). Réutilise le champ `variants.house` du format Codex
+> ([12 §12.3](12-glossaire-et-codex.md)).
 
-### 14.6.3 Héritage visible entre runs (❓/💡)
+### 14.6.3 Héritage visible entre runs (✅ livré)
 
-> ❓ **Statut de jeu : aucun héritage inter-run** n'est implémenté. La Boucle EST le
-> seul « après » (un **soft-NG+ continu** dans la même partie : on ne recommence
-> pas, on s'enfonce). Un vrai NG+ « reset + héritage » serait un **ajout**.
+> ✅ **Livré (New Game+ cosmétique, opt-in)** : `js/profile.js` — profil
+> persistant `hogwarts_rpg_profile` (hors save de partie, comme le pseudo HoF).
+> La Boucle reste le « soft-NG+ continu » d'une même partie ; ce NG+-ci ajoute
+> un héritage **inter-run cosmétique** sans toucher la save. **Zéro stat/objet/or
+> hérité** (préserve l'équilibrage 13).
 
-💡 **Proposition d'héritage minimal et opt-in** (détail en ÉTAPE 2.E) :
+Héritage minimal et opt-in **implémenté** :
 
-- **Persistant de profil** (hors save de partie, comme le pseudo HoF) : un
-  **titre** (« Vainqueur », « Briseur de Cycle ★ N ») et un **compteur de victoires**.
-- **Codex de profil** : les entrées de fin **déjà vues** restent consultables au
-  hub de démarrage (lecture seule), comme une bibliothèque qui grossit de run en
-  run.
-- **Cosmétique de départ** : un blason orné / une bordure pour les héros d'un
-  profil ayant brisé le Cycle. **Zéro avantage de stat** (sinon on casse
-  l'équilibrage 13).
+- **Persistant de profil** (`hogwarts_rpg_profile`, hors save de partie) : des
+  **titres** (`computeProfileTitles` / `profileTopTitle` — « Vainqueur »,
+  « Briseur de Cycle ★ N ») et un **compteur de victoires/cycles**
+  (`recordEndingToProfile`).
+- **Codex du Sorcier** : les fins **déjà vues** restent consultables (modale
+  dédiée `#wizard-codex-modal`, `openWizardCodex` / `renderProfileCodex`,
+  bouton hub) — une bibliothèque qui grossit de run en run.
+- **Opt-in NG+** : `ngPlusAvailable()` débloque l'option cosmétique de départ.
+  **Zéro avantage de stat** (cf. CLAUDE.md « profile.js »).
 
 ---
 
@@ -521,8 +525,8 @@ robinets `victory` / `eclatLoop` / `cycleBroken` :
 > Éclats / Affronter `reflet_mythe` / Choisir), flag `cycleBroken`, cinématique 3
 > pages — **non-gating** : la Boucle reste ouverte, le héros « sait, désormais ».
 > Échec dur = **permadeath Ironman** uniquement. Le **Codex** enregistre tout
-> (`cycle_brise`, `porteur_eclats`…). **Héritage inter-run** = non implémenté (la
-> Boucle est un soft-NG+ continu) ; un NG+ opt-in **cosmétique** est proposé.
+> (`cycle_brise`, `porteur_eclats`…). **Héritage inter-run** = ✅ livré (NG+ opt-in
+> **cosmétique**, `js/profile.js`) par-dessus la Boucle (soft-NG+ continu).
 
 ## Points à trancher (résumé)
 
@@ -533,11 +537,12 @@ robinets `victory` / `eclatLoop` / `cycleBroken` :
    Scène épinglée au premier retour réel sur l'étage 1 post-victoire ; le Gardien
    de la Boucle reste la voix de ceux qui descendent. One-shot cosmétique
    (`GRANDE_SALLE_BEAT`, flag `grandeSalleBeatSeen`).
-3. ❓ **Entrée Codex `epilogue`** dépendante de `endingType` : oui / non ? (§14.6.2)
-4. ❓ **NG+ opt-in** (titre + Codex de profil + cosmétique, **zéro stat**) : on
-   l'implémente ou la Boucle continue reste l'unique « après » ? (§14.6.3, ÉTAPE 2.E)
-5. ❓ **`endingType`** : nouveau champ dérivé/persisté pour l'épilogue, ou se
-   contente-t-on des flags existants lus à la volée ? (ÉTAPE 2.A)
+3. ✅ **Entrée Codex `epilogue`** dépendante de `endingType` — **tranché : oui,
+   implémentée** (`codex.js` + `state.js`). (§14.6.2)
+4. ✅ **NG+ opt-in** (titre + Codex du Sorcier + cosmétique, **zéro stat**) —
+   **tranché : implémenté** (`js/profile.js`). (§14.6.3, ÉTAPE 2.E)
+5. ✅ **`endingType`** — **tranché : champ dérivé persisté** (`computeEndingType`,
+   sérialisé), source de l'épilogue. (ÉTAPE 2.A)
 
 ---
 
@@ -566,17 +571,18 @@ let slythPactChoice = null;       // 'pact' | 'defiance' | null
 > ✅ **Rien à migrer.** La « vraie fin » de la tâche (`brokenCycle`) **existe** sous
 > le nom `cycleBroken`. Le gate de fin d'Acte III (`victoryAchieved`) existe.
 
-### A.2 Nouveau — uniquement si validé (💡)
+### A.2 Nouveau — ✅ livré
 
 ```js
-// state.js (💡 proposé — label dérivé, NON-gating)
+// state.js (✅ livré — label dérivé, NON-gating, sérialisé)
 let endingType = null;            // null | 'victory' | 'victory_pact' | 'cycle_broken' | ...
 ```
 
 - **`endingType` est un LABEL, pas un gate.** Calculé (et persisté) au **premier**
   déclenchement de victoire, puis **mis à jour** si `cycleBroken` devient vrai.
-  Source unique pour l'**épilogue** et l'entrée Codex `epilogue`.
-- Helper pur **`computeEndingType()`** (proposé, à tester dans `tests/units.js`) :
+  Source unique pour l'**épilogue** et l'entrée Codex `epilogue`. Câblé dans
+  `endgame.js` / `state.js` / `save.js` / `codex.js` / `ui-codex.js`.
+- Helper pur **`computeEndingType()`** (livré) :
 
 ```js
 // Pur : déduit le label de fin des flags existants (priorité : Cycle brisé > Pacte > base)
@@ -588,9 +594,9 @@ function computeEndingType(ctx) {
 }
 ```
 
-> 💡 **Héritage de profil** (si NG+ validé, §E) : clé `localStorage`
-> **`hogwarts_rpg_profile`** (hors save de partie, comme `hogwarts_rpg_player_name`)
-> `{ victories:int, cycleBroken:bool, titles:[], seenEndings:[] }`.
+> ✅ **Héritage de profil livré** (NG+, §E) : clé `localStorage`
+> **`hogwarts_rpg_profile`** (hors save de partie, comme `hogwarts_rpg_player_name`),
+> lue/écrite par `js/profile.js` (`getPlayerProfile` / `recordEndingToProfile`).
 
 ## B. Variables & conditions de déclenchement
 
@@ -628,35 +634,36 @@ function computeEndingType(ctx) {
   (`audio-music.js`, défensif : repli synthèse si 404 — modèle des samples de
   combat). ⚠️ tout sample nouveau = passe par le SW (cache `audio/`).
 
-## E. New Game+ après fin (💡 — non implémenté aujourd'hui)
+## E. New Game+ après fin (✅ livré — `js/profile.js`)
 
-> ❓ Décision requise (Point à trancher 4). Le jeu **n'a pas** de NG+ : la Boucle
-> est un soft-NG+ continu. Proposition **opt-in, cosmétique, zéro stat** :
+> ✅ Livré (P5). La Boucle reste le soft-NG+ continu ; ce NG+ ajoute un héritage
+> **opt-in, cosmétique, zéro stat** par-dessus :
 
-1. **Profil persistant** (`hogwarts_rpg_profile`, hors save de partie) : titres,
-   compteur de victoires, liste des fins vues.
-2. **Hub de démarrage** : afficher le **titre** du profil + un **Codex de profil**
-   (lecture seule des entrées de fin déjà vues), sans toucher la save de partie.
-3. **Cosmétique de départ** : bordure / blason orné si `profile.cycleBroken`.
-4. **Garde-fou équilibrage** : **aucun** bonus de stat hérité (sinon casse
-   [13](13-equilibre-difficulte-progression.md)). Un vrai « reset + héritage de
-   stats » est **explicitement hors-scope** sauf décision contraire.
+1. **Profil persistant** (`hogwarts_rpg_profile`, hors save de partie) : titres
+   (`computeProfileTitles`), compteur de victoires/cycles, fins vues
+   (`recordEndingToProfile`).
+2. **Hub de démarrage** : **titre** du profil + **Codex du Sorcier** (modale
+   `#wizard-codex-modal`, `openWizardCodex` — lecture seule des fins déjà vues),
+   sans toucher la save de partie.
+3. **Opt-in de départ** : `ngPlusAvailable()` ; cosmétique si `cycleBroken`.
+4. **Garde-fou équilibrage** : **aucun** bonus de stat hérité (préserve
+   [13](13-equilibre-difficulte-progression.md)). Le « reset + héritage de
+   stats » reste **explicitement hors-scope**.
 
 ## F. Priorisation
 
 | Phase | Contenu | Dépend de | Coût | Valeur |
 |-------|---------|-----------|------|--------|
 | **P0** | ✅ Déjà en jeu : victoire (A), Pacte (B partiel), Briser le Cycle (C), Codex de fin, Ironman | — | 0 (fait) | — |
-| **P1** | 💡 **Variantes texte (B)** : Maison + Éclats(3) + Pacte `defiance` dans `showVictoryScreen` | flags existants | faible | **élevée** (le « mes choix comptent ») |
+| **P1** | ✅ **Variantes texte (B)** : Maison + Éclats(3) + Pacte `defiance` dans `showVictoryScreen` — **implémenté** (5 axes) | flags existants | faible | **élevée** (le « mes choix comptent ») |
 | **P2** | ✅ **Lignes PNJ post-victoire** (Kingsley/Bill/Sirius) + beat Grande Salle — **implémentés** | P1 | moyen | moyenne (émotion) |
-| **P3** | 💡 **`endingType` + entrée Codex `epilogue`** (épilogue dynamique) | P1 | faible-moyen | moyenne (rejouabilité Codex) |
-| **P4** | 💡 **Assets de fin** (illustrations + sample C) | P1-P3 | moyen (prod art) | élevée (mémorabilité) |
-| **P5** | 💡 **NG+ opt-in** (profil + titres + Codex de profil) | P3 | moyen-élevé | rejouabilité long terme |
+| **P3** | ✅ **`endingType` + entrée Codex `epilogue`** (épilogue dynamique) — **implémenté** | P1 | faible-moyen | moyenne (rejouabilité Codex) |
+| **P4** | ✅ **Assets de fin** (câblage défensif illustrations + sample) — **livré** (art = polish optionnel) | P1-P3 | moyen (prod art) | élevée (mémorabilité) |
+| **P5** | ✅ **NG+ opt-in** (profil + titres + Codex du Sorcier) — **implémenté** (`profile.js`) | P3 | moyen-élevé | rejouabilité long terme |
 
-> **Ordre conseillé** : P1 (fins Acte III enrichies) → P2/P3 (post-game & épilogue)
-> → P4 (assets) → P5 (vraie fin sur plusieurs boucles / NG+). C'est exactement
-> l'ordre demandé par la tâche : *fins Acte III → post-game → vraie fin
-> multi-boucles*.
+> **Ordre suivi** (✅ tout livré) : P1 (fins Acte III enrichies) → P2/P3 (post-game
+> & épilogue) → P4 (assets) → P5 (NG+ cosmétique). C'est exactement l'ordre demandé
+> par la tâche : *fins Acte III → post-game → vraie fin multi-boucles*.
 
 ## G. Suggestions d'assets
 
