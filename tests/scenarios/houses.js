@@ -630,6 +630,38 @@ async function scenarioHouseFavorShop() {
   await browser.close();
 }
 
+// Artefacts P3.2 — Premium exclusives au Marchand d'Ombre (prix prohibitif).
+async function scenarioPremiumShadowVendor() {
+  console.log('\n── Scénario : Premium exclusives Marchand d\'Ombre (P3.2) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const out = await page.evaluate(() => {
+    const m = NPCS.find(n => n.id === 'marchand_ombre');
+    const ids = (m.wares || []).map(w => w.id);
+    const prem = ['orbe_runique_premium_gryff', 'masque_rituel_premium_slyth',
+                  'baton_ancestral_premium_serd', 'talisman_fondateurs_premium_pouf'];
+    const it = ITEMS.find(i => i.id === 'orbe_runique_premium_gryff');
+    const price = _endgameItemPrice(it, it.basePrice, m);   // 9000 ×1.4 (n=0)
+    return {
+      allIn:  prem.every(p => ids.includes(p)),
+      scales: !!it.rarityScales,
+      price,
+    };
+  });
+  console.log('  →', JSON.stringify(out));
+  assert(out.allIn,         'les 4 Premium doivent figurer dans les wares du Marchand d\'Ombre');
+  assert(out.scales,        'les Premium doivent porter rarityScales (prix progressif)');
+  assert(out.price >= 9000, `prix Premium prohibitif attendu (≥9000), got ${out.price}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Premium exclusives Marchand d\'Ombre OK');
+  await browser.close();
+}
+
 async function scenarioHouseDonationAndStars() {
   console.log('\n── Scénario : Don Maison + série Apothéose ★ N ──');
   const { browser, page, errors } = await launchGame();
@@ -1937,4 +1969,4 @@ async function scenarioVictorySpeechVariants() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop] };
+module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop, scenarioPremiumShadowVendor] };

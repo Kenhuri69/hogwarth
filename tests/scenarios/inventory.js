@@ -967,11 +967,24 @@ async function scenarioDeathlyHallows() {
   assert(t4.serialized === true, '_serializeState doit inclure maitreDeLaMort=true');
   assert(t4.restored === true,   '_applyState doit restaurer maitreDeLaMort');
 
+  // T5 : Codex « Reliques de la Mort » — méta-objectif (allItems) déverrouillé
+  // uniquement quand les 3 Reliques sont possédées (P3.2).
+  const t5 = await page.evaluate(() => {
+    const entry = CODEX_ENTRIES.find(e => e.id === 'reliques_de_la_mort');
+    const st2 = codexEntryState(entry, { itemsOwned: new Set(['wand2', 'cape_invis']) });
+    const st3 = codexEntryState(entry, { itemsOwned: new Set(['wand2', 'cape_invis', 'anneau_resurrection']) });
+    return { present: !!entry, st2, st3 };
+  });
+  console.log('  T5 codex:', t5);
+  assert(t5.present,          'entrée Codex reliques_de_la_mort doit exister');
+  assert(t5.st2 === 'locked', 'Codex verrouillé avec seulement 2 Reliques');
+  assert(t5.st3 !== 'locked', 'Codex déverrouillé avec les 3 Reliques (allItems)');
+
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));
     throw new Error(`${errors.length} erreurs JS détectées`);
   }
-  console.log('  ✅ Reliques de la Mort OK');
+  console.log('  ✅ Reliques de la Mort OK (+ Codex méta-objectif)');
   await browser.close();
 }
 
