@@ -2180,15 +2180,14 @@ const MONSTERS = [
   // Caster (atk 12 < 1,5×mag 27) → PAS une brute. Identité = attrition radiante :
   // SEUL boss qui se SOIGNE en lumière + aveugle (stun). SEUL boss qui RÉSISTE
   // la lumière et est FAIBLE aux ténèbres → unique levier des sorts sombres
-  // (Sanguini/Vampyrus/Morsmordre/Nox Vorax). Pas d'`imgSrc` : repli sur le SVG
-  // de catégorie « être magique » (combat → emoji ☀️) tant que le sprite PNG
-  // dédié (img/monsters/heraut_aube.png, pipeline tools/process_monster_png.py)
-  // n'est pas généré.
+  // (Sanguini/Vampyrus/Morsmordre/Nox Vorax). Sprite PNG dédié généré via
+  // tools/process_monster_png.py (détourage rembg + recentrage 512²).
   {
     id:       "heraut_aube",
     epic:     true,
     name:     "Le Héraut de l'Aube",
     icon:     "☀️",
+    imgSrc:   "img/monsters/heraut_aube.png",
     category: "être magique",
     desc:     "Une lumière blanche se lève sans soleil. Une silhouette d'or pâle se dresse, paumes ouvertes, et l'air se met à brûler de clarté.",
     lore:     "On raconte qu'un gardien de lumière veillait jadis sur les profondeurs de Poudlard, brandissant l'éclat d'un Patronus que rien n'éteignait. La Boucle l'a retourné : sa clarté ne protège plus, elle juge. Le Héraut de l'Aube n'éclaire que pour aveugler, et ne soigne que lui-même.",
