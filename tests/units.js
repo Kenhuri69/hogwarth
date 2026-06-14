@@ -1478,6 +1478,41 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 13. monsters.js + quêtes — Moremplis (Lethifold) + purge du Gardien
+//    Caster/drain (PAS une brute), faible lumière, recycle en Boucle, et
+//    cible de la quête de purge répétable purge_moremplis du Gardien.
+// ============================================================
+(function testMoremplis() {
+  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { isBruteMonster, effectiveFloor } = loadModule(
+    'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
+
+  const m = MONSTERS.find(x => x.id === 'moremplis');
+  check('moremplis: entrée présente', !!m);
+  check('moremplis: epic + weight 1', !!m && m.epic === true && m.weight === 1);
+  check('moremplis: faible à la lumière', !!m && Array.isArray(m.weak) && m.weak.includes('lumière'));
+  // Caster/drain : atk < 1,5×mag → PAS une brute (pas de Broyer).
+  check('moremplis: n\'est PAS une brute', isBruteMonster(m) === false);
+  // minFloor 9 → recycle dans la Boucle au réel 19 (effectiveFloor(19)=9).
+  check('moremplis: éligible Boucle réel 19 (eff. 9)', !!m && effectiveFloor(19) >= m.minFloor);
+
+  // Quête de purge répétable.
+  const { QUEST_TEMPLATES } = loadModule('js/quests-templates.js', ['QUEST_TEMPLATES']);
+  const q = QUEST_TEMPLATES.find(t => t.id === 'purge_moremplis');
+  check('purge_moremplis: template présent', !!q);
+  check('purge_moremplis: cible moremplis ×2',
+    !!q && q.objectives[0].monsterId === 'moremplis' && q.objectives[0].amount === 2);
+  check('purge_moremplis: répétable everyLevels 2',
+    !!q && q.repeatable && q.repeatable.everyLevels === 2);
+
+  // Le Gardien de la Boucle donne ET reçoit la nouvelle purge.
+  const { NPCS } = loadModule('js/npcs.js', ['NPCS']);
+  const g = NPCS.find(n => n.id === 'gardien_boucle');
+  check('gardien: donne purge_moremplis', !!g && g.questsGiven.includes('purge_moremplis'));
+  check('gardien: reçoit purge_moremplis', !!g && g.questsTurnedIn.includes('purge_moremplis'));
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

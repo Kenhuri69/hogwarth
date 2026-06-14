@@ -1620,8 +1620,8 @@ const NPCS = [
     icon:  "♾️",
     portraitImg: "img/npc/gardien_boucle.png",
     placement: { floor: 11, anchor: "first-room" },
-    questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts"],
-    questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts"],
+    questsGiven:    ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis"],
+    questsTurnedIn: ["purge_loups", "purge_acromantules", "purge_mangemorts", "purge_moremplis"],
     dialogues: {
       greeting: [
         "Tu reviens. Tous reviennent — c'est le sens de la Boucle. Je veille ici depuis la première récurrence.",
@@ -1631,10 +1631,11 @@ const NPCS = [
         "Greyback se reforme à chaque boucle. C'est sa malédiction. C'est aussi ton opportunité.",
         "Aragog dort sous la racine du temps. Réveille-le, abats-le, recommence — il ne te tiendra jamais rancune.",
         "Dolohov ne meurt jamais vraiment. Chaque mort le rend plus prévisible — étudie sa courbe violette.",
+        "Le Moremplis rampe là où meurent les torches. Garde un sortilège de lumière prêt, ou il t'avalera tout entier.",
         "Plus tu purges, plus la Boucle s'allège. C'est ainsi qu'on en sort — peut-être.",
         "Je n'ai plus de nom propre. Trop de récurrences. Mais j'ai encore des récompenses."
       ],
-      questOffer:  "Trois purges, à répétition. Loups, Acromantules, Mangemorts. Recommence quand tu veux — je récompense chaque cycle.",
+      questOffer:  "Quatre purges, à répétition. Loups, Acromantules, Mangemorts, Linceuls. Recommence quand tu veux — je récompense chaque cycle.",
       questActive: "La purge avance.",
       questReady:  "Bien. La Boucle te doit cela — pour cette fois."
     }

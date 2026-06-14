@@ -1969,6 +1969,45 @@ const MONSTERS = [
     ]
   },
 
+  // ── Boss-prédateur d'ombre de la Boucle (Lethifold canon, XXXXX) ───
+  // minFloor 9 → apparaît au réel 9-10 (école profonde) ET recycle dans la
+  // Boucle au réel 19+ (effectiveFloor(19)=9), où il sert de cible à la quête
+  // de purge du Gardien (purge_moremplis). Caster/drain (atk < 1,5×mag) → PAS
+  // une brute (pas de Broyer). Repli emoji 🌑 (PNG dédié à générer).
+  {
+    id:       "moremplis",
+    epic:     true,
+    name:     "Moremplis",
+    icon:     "🌑",
+    category: "être magique",
+    desc:     "Une nappe de ténèbres ondule au ras du sol, sans visage ni bord net. Elle glisse vers toi pour t'envelopper.",
+    lore:     "Le Moremplis — Lethifold pour les naturalistes — est un linceul vivant qui étouffe sa proie dans son sommeil et la digère sans laisser de trace. Classé XXXXX, il ne craint qu'une chose : la lumière d'un Patronus. La Boucle en a tissé un des ombres mêmes des Ruines.",
+    habitat:  "Les recoins sans lumière de la Boucle, là où même les torches renoncent.",
+    anecdote: "On ne recense aucun survivant d'une attaque de Moremplis — seulement des disparitions et un drap noir retrouvé vide au matin.",
+    danger:   10,
+    minFloor: 9, maxFloor: null, weight: 1,
+    hp: 145, atk: 16, def: 9, mag: 24, agi: 17, lck: 11,
+    scale: 0.34,
+    abilities: [
+      { name: "Linceul d'Ombre",  icon: "🌑", desc: "Il enveloppe sa proie et boit sa vie", effect: "drain",  power: 20, chance: 0.40 },
+      { name: "Effroi du Suaire",  icon: "😱", desc: "L'étreinte froide glace l'âme",         effect: "status", statusId: "fear", power: 0, chance: 0.30, turns: 2 },
+      { name: "Voile Étouffant",   icon: "❌", desc: "Étouffe sortilèges et protections",      effect: "dispel", chance: 0.30 }
+    ],
+    ai: "cautious",
+    phases: [
+      { atPct: 0.4, magMult: 1.2, msg: "Le Moremplis se déploie en un linceul plus vaste — l'obscurité avale la lumière des torches." }
+    ],
+    resist: ["ténèbres"],
+    weak:   ["lumière"],
+    xp: 250, gold: { min: 120, max: 180 },
+    drops: [
+      { itemId: "essence_tenebres",      chance: 0.70 },
+      { itemId: "page_grimoire",         chance: 0.45 },
+      { itemId: "herbe_asphodele_noire", chance: 0.30 },
+      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+    ]
+  },
+
   // ── Boss naturel de la Boucle profonde (Ruines Anciennes) ──────────
   // Apparition à l'étage RÉEL 22+ : minFloor 12 filtré via effectiveFloor
   // (effectiveFloor(22)=12) → Boucle-exclusif, second tour de spirale, dans

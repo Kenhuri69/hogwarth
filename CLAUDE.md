@@ -1468,7 +1468,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | `gold` | number\|{min,max} | Or de base (scalé automatiquement) |
 | `drops` | [{itemId, chance}] | Drops potentiels après victoire |
 
-### Monstres définis (68 au total)
+### Monstres définis (69 au total)
 | Étages | Monstres |
 |--------|---------|
 | 1–3    | Chat de Mme Norris, Luciole des Marais, Cornichon de Cornouailles, Portrait Hostile, Peeve, Mimi Geignarde, Serpent des Cachots |
@@ -1482,6 +1482,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | 9+     | **Aragog** (boss canon epic), **Maître des Détraqueurs** (boss original epic), **Acromantule Adulte**, **Détraqueur d'Élite**, **Mangemort Vétéran**, **Spectre Renforcé** |
 | 10+    | Voldemort Ressuscité, **Antonin Dolohov** (boss canon epic), **Héraut des Ténèbres** (boss original epic) |
 | Boucle 22+ | **Basilic Ancestral** (boss canon epic, `minFloor:12` → réel 22+ via `effectiveFloor`, Ruines Anciennes ; brute → Broyer auto, regard pétrifiant/venin/mue) |
+| 9+ / Boucle | **Moremplis** (Lethifold canon epic, `minFloor:9` → réel 9-10 + Boucle 19+ ; caster/drain, faible lumière ; cible de la purge `purge_moremplis` du Gardien) |
 | **+14 ajouts récents** | Niffleur, Elfe de Maison Rebelle, Bowtruckle Géant, Chevalier Fantôme, Gremlin Magique, Manticore Juvénile, Gardien du Portail, Fantôme du Sang Noir, Chauve-Souris Vampire, Vampire Novice, Strigoï Ancien, Poupée Maudite, Spectre Maudit, Hécate la Maudisseuse — voir `monsters.js` pour `minFloor`/`maxFloor` |
 | **+4 monstres étourdissants** | Lutin de Cornouailles (1–4), Strangulot (3–7), Pitiponk (4–8), Gargouille Éveillée (5–10) — capacité `effect:"status", statusId:"stun"`. PNG dédiés dans `img/monsters/`. |
 
@@ -1506,10 +1507,11 @@ Conséquences :
 
 **Gardien de la Boucle** (`gardien_boucle`, placement floor:11, sprite
 `fantome`) est exclusif post-victoire (l'escalier étage 10 est scellé
-sans `victoryAchieved`). Il donne 3 quêtes répétables `everyLevels: 2` :
+sans `victoryAchieved`). Il donne 4 quêtes répétables `everyLevels: 2` :
 - `purge_loups` (kill 2 Greyback) → essence + 250g
 - `purge_acromantules` (kill 2 Aragog) → page + 260g
 - `purge_mangemorts` (kill 2 Dolohov) → essence + 280g
+- `purge_moremplis` (kill 2 Moremplis) → page + 270g
 
 Cible volontaire des boss étage 8-10 (qui apparaissent en variant
 `Ténébreux` aux étages 18-20). C'est la boucle de farm matériaux

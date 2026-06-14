@@ -411,6 +411,19 @@ const QUEST_TEMPLATES = [
     repeatableReward: { xp: 240, gold: 200, item: "essence_tenebres" },
     location: "Boucle Ténébreuse (étage 11+)"
   },
+  {
+    id: "purge_moremplis",
+    title: "Purge des linceuls",
+    giver: "Gardien de la Boucle",
+    desc: "Abats 2 Moremplis. Le Lethifold se retisse des ombres de la Boucle ; dissipe-le avec la lumière avant qu'il ne t'enveloppe.",
+    objectives: [
+      { type: "kill", monsterId: "moremplis", amount: 2, progress: 0, completed: false }
+    ],
+    reward: { xp: 330, gold: 270, item: "page_grimoire" },
+    repeatable: { everyLevels: 2 },
+    repeatableReward: { xp: 230, gold: 195, item: "page_grimoire" },
+    location: "Boucle Ténébreuse (étage 11+)"
+  },
   // ── Manon, fille cachée de Lupin — pseudo-quête en deux volets ──
   // Données et rendues par Manon (PNJ étage 3, cf. npcs.js). Le volet 2
   // (`prereq`) ne s'ouvre qu'après remise du volet 1 — chaîne classique.
