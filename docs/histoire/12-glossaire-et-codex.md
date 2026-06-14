@@ -153,11 +153,17 @@ Cinq pointent vers des chapitres dédiés (renvois), deux sont **propres au Code
 > réciproquement). Le Codex est un **graphe** : lire une page en éclaire d'autres
 > (réutilise le champ `links[]` du format, §12.3).
 
-> ❓ **À arbitrer.** Faut-il un **huitième onglet « Voyageur »** dédié aux Mondes
-> Parallèles ([11 §11.4](11-mondes-paralleles.md) : Set Voyageur, Souvenirs,
-> Essence d'Outremonde), ou ces entrées vivent-elles dans Glossaire + Objets ?
-> Proposition : **rester dans Glossaire/Objets** (le MP est *latéral*, pas un acte
-> de la descente — [12.9](#129-chronologie--continuité)).
+> ✅ **Acté (2026-06-14) — pas de huitième onglet « Voyageur ».** Les Mondes
+> Parallèles vivent dans **Glossaire** (et **Objets** pour le Set Voyageur) :
+> c'est la **décision livrée dans le code**. `js/codex.js` porte le commentaire
+> *« Mondes Parallèles → Glossaire (décision : pas de 8ᵉ onglet « Voyageur ») »*
+> et range les trois entrées MP — `cheminette_inter_mondes`, `voyageur`,
+> `mondes_paralleles` — en `category: 'glossaire'` (le Set/Souvenirs Voyageur
+> relèvent de l'onglet **Objets**, §12.8). Justification narrative : le MP est
+> *latéral*, pas un acte de la descente — cohérent avec la **règle d'isolation
+> Boucle ↔ Mondes Parallèles** ([11 §11.5.1](11-mondes-paralleles.md)) et la
+> chronologie *« hors-temps »* ([12.9](#129-chronologie--continuité)). Le Codex
+> reste donc à **sept onglets**.
 
 ---
 
@@ -750,8 +756,9 @@ livrés. Versions voilée/révélée/corrompue : rédigées en §12.4. Reste **o
 
 ## Points à trancher (résumé)
 
-1. ❓ **Huitième onglet « Voyageur »** (Mondes Parallèles) ou intégration dans
-   Glossaire/Objets ? (§12.2) — *proposition : Glossaire/Objets.*
+1. ✅ **Huitième onglet « Voyageur »** : **tranché (2026-06-14) — pas d'onglet
+   dédié.** Les Mondes Parallèles vivent dans Glossaire/Objets (décision livrée
+   dans `js/codex.js`, cf. §12.2). Codex à **sept onglets**.
 2. ✅ **Conteneur UI** : **tranché — modale dédiée `#codex-modal`** (livrée,
    `js/ui-codex.js`), pas de partage de `#char-detail`.
 3. ❓ Profondeur des **états corrompus** : généralisés à toutes les entrées
