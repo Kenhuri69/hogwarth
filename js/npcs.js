@@ -1589,7 +1589,15 @@ const NPCS = [
       { id: "pierre_ame"        },
       { id: "philtre_endurance" },
       { id: "essence_tenebres"  },
-      { id: "page_grimoire"     }
+      { id: "page_grimoire"     },
+      // Exclusivité Premium (Artefacts 2.0 §1.5/§3) : seul endroit où acheter
+      // les variantes Premium des 4 Maisons, à prix prohibitif (rarityScales
+      // ×1.5ⁿ + priceMultiplier 1.4). Toute Maison peut acheter toute Premium
+      // (la Maison module l'accès, jamais le droit de porter — §1.2).
+      { id: "orbe_runique_premium_gryff"       },
+      { id: "masque_rituel_premium_slyth"      },
+      { id: "baton_ancestral_premium_serd"     },
+      { id: "talisman_fondateurs_premium_pouf" }
     ],
     buyback: { default: 0.30 },
     dialogues: {

@@ -541,6 +541,20 @@ const CODEX_ENTRIES = [
     variants: { house: { Poufsouffle: "Le talisman bat au rythme de ton cœur — calme, régulier, têtu. Comme toi." } },
   },
 
+  // Méta-objectif cosmétique (§1.1/§3) : réunir les 3 Reliques de la Mort —
+  // la Baguette de Sureau (wand2), la Cape d'Invisibilité (cape_invis) et la
+  // Pierre de Résurrection (anneau_resurrection). Zéro stat ajoutée ; l'entrée
+  // se déverrouille quand les trois sont possédées.
+  {
+    id: 'reliques_de_la_mort', category: 'objets', icon: '☠️', act: 4,
+    title: 'Les Reliques de la Mort',
+    links: ['les_fondateurs'],
+    unlockConditions: [{ type: 'allItems', value: ['wand2', 'cape_invis', 'anneau_resurrection'] }],
+    textVersions: {
+      veiled: "Trois objets qu'aucune légende ne réunit jamais sans prix : une baguette qui ne perd pas, une cape qui ne trahit pas, une pierre qui rappelle les morts. Les posséder toutes, dit-on, fait de toi le Maître de la Mort.",
+    },
+  },
+
 ];
 
 // ── Helpers PURS ─────────────────────────────────────────────
@@ -578,6 +592,9 @@ function _codexCondMet(cond, ctx) {
       return !!(ctx.echoSeen && ctx.echoSeen.has && ctx.echoSeen.has(cond.value));
     case 'item':
       return !!(ctx.itemsOwned && ctx.itemsOwned.has && ctx.itemsOwned.has(cond.value));
+    case 'allItems':   // méta-objectif : TOUS les ids possédés (ET intra-condition)
+      return Array.isArray(cond.value) && !!(ctx.itemsOwned && ctx.itemsOwned.has)
+             && cond.value.every(id => ctx.itemsOwned.has(id));
     case 'house':
       return ctx.chosenHouse === cond.value;
     case 'victory':

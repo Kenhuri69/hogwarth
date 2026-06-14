@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v145';
+const CACHE_VERSION = 'hogwarth-v146';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -51,11 +51,11 @@ const PRECACHE_URLS = [
   './js/icons.js?v=1',
   './js/scene-icons.js?v=7',
   './js/monsters.js?v=18',
-  './js/npcs.js?v=32',
+  './js/npcs.js?v=33',
   './js/npcs-helpers.js?v=4',
   './js/riddles.js?v=2',
-  './js/codex.js?v=10',
-  './js/data.js?v=37',
+  './js/codex.js?v=11',
+  './js/data.js?v=38',
   './js/data-icon-recipes.js?v=1',
   './js/floor-themes.js?v=2',
   './js/floor-ambiance.js?v=10',
