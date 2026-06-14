@@ -1,10 +1,11 @@
 # Plan — Amélioration de l'ergonomie (clavier, modales, accessibilité)
 
-> Statut : **Phases 1-4 livrées** (plan complet). Phase 1 → PR #520,
-> Phase 2 → PR #521, Phase 3 → PR #524, Phase 4 → `claude/ergonomics-phase4-a11y`.
-> Créé le 2026-06-14. **Reste hors-scope** : passe dédiée « isolation de
-> modale » (focus-trap générique + `inert`/`aria-describedby` sur le fond) —
-> reportée pour risque/bénéfice (cf. notes Phases 3 & 4).
+> Statut : **Phases 1-5 livrées** (plan complet). Phase 1 → PR #520,
+> Phase 2 → PR #521, Phase 3 → PR #524, Phase 4 → `claude/ergonomics-phase4-a11y`,
+> Phase 5 (isolation de modale) → `claude/ergonomics-modal-isolation`.
+> Créé le 2026-06-14. La passe dédiée « isolation de modale » (focus-trap
+> générique + `inert`/`aria-describedby` sur le fond), reportée des Phases 3 & 4
+> pour risque/bénéfice, est désormais livrée (Phase 5 ci-dessous).
 > Aucun plan d'ergonomie transversal n'existait : il y avait des fixes UX
 > ponctuels (`room-presentation-startup-ux.md`, `codex-mobile-list-layout.md`,
 > `hit-targets-44px.md` archivé) mais pas de passe d'ergonomie d'interaction.
@@ -147,6 +148,39 @@ clavier. Cache-bump (`main.js`, `battle-ui.js`).
 **Verify Phase 4** : `node tests/smoke.js`. Cache-bump si HTML/CSS/JS servis.
 
 ---
+
+## Phase 5 — Isolation de modale (focus-trap + `inert`) ✅ LIVRÉE
+
+> Livrée le 2026-06-14. Nouveau module `js/modal-isolation.js` (chargé avant
+> `loader.js`). Mécanisme **central par `MutationObserver`** — aucun des ~16
+> call-sites d'ouverture n'est touché. Test : `scenarioModalIsolation`
+> (`tests/scenarios/controls.js`). Cache bumpé (nouveau module + index.html).
+
+### Approche retenue (justification)
+
+Il n'existe pas de fonction d'ouverture unique : chaque modale toggle son
+propre `el.style.display` (flux `closeModal`/`open*`). Plutôt que de hooker
+16 fonctions distinctes (fragile, churn, oublis à chaque nouvelle modale),
+on observe la **bascule `display:none↔flex`** de chaque modale enregistrée
+via un `MutationObserver` (filtre attributs `style`/`class`). Propriété clé :
+le callback de l'observer s'exécute en microtâche **après** que la fonction
+d'ouverture a fini son travail synchrone (display posé **et** contenu rendu),
+donc la liste des éléments focusables est complète au moment de poser le
+focus initial. Zéro modification des call-sites = robuste aux ajouts futurs.
+
+`#confirm-modal` est **exclue** : elle gère déjà son focus (Phase 3,
+`confirmModal`/`_closeConfirmModal`).
+
+### Détail
+
+| Fichier | Changement | Vérif |
+|---------|-----------|-------|
+| `js/modal-isolation.js` (nouveau) | Observer central : pile des modales ouvertes. À l'ouverture → mémoriser `document.activeElement`, fond (`game-container` + écrans de démarrage) en `inert`, focus initial (1er champ/contrôle non-✕). `Tab`/`Shift+Tab` (capture) cyclent dans la modale du sommet. À la fermeture → retrait de `inert` (pile vide) + restitution du focus au déclencheur. Défensif (try/catch, garde-fous DOM). | `scenarioModalIsolation`. |
+| `index.html` | Inclure `modal-isolation.js` avant `loader.js`. `aria-describedby` sur les modales à texte instructionnel stable (inventaire). | Sémantique modale complète. |
+| `js/loader.js` | Entrée MANIFEST optionnelle `__modalIsolation`. | Bandeau si régression de chargement. |
+
+**Verify Phase 5** : `node tests/smoke.js` vert (focus piégé, restitution,
+`inert` sur le fond) + aucune régression souris/tactile. Cache-bump.
 
 ## Vérification transverse (toutes phases)
 

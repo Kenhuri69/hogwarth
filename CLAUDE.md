@@ -224,6 +224,13 @@ js/
                       (cellule CELL.LIBRARY, endgame Tranche 2)
   help-tour.js     →  Tour guidé d'aide pour novices (spotlight + bulles sur
                       les vrais éléments de l'UI)
+  modal-isolation.js → Isolation clavier/sémantique des ~16 modales : focus-trap
+                      générique (Tab cyclique), restitution du focus au
+                      déclencheur, fond (#game-container + écrans de démarrage)
+                      en `inert`. Mécanisme central par MutationObserver
+                      (bascule display:none↔flex) — aucun call-site touché.
+                      #confirm-modal exclue (gère déjà son focus). Chargé
+                      AVANT loader.js. window.__modalIsolation publié (debug/test).
   loader.js        →  Chargé EN AVANT-DERNIER. Vérifie ~55 globals attendus
                       (typeof entry.name), affiche bandeau rouge si critique
                       manquant. Exporte window.safeEl(id) + window.safeCall(fn,...args).

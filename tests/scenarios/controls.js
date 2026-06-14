@@ -746,4 +746,98 @@ async function scenarioA11yFinish() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish] };
+// Phase 5 — isolation de modale (focus-trap générique + fond `inert`) :
+//  1) à l'ouverture : fond en `inert`, focus déplacé dans la modale ;
+//  2) Tab/Shift+Tab piégés dans la modale (wrap aux bornes) ;
+//  3) à la fermeture : `inert` retiré du fond + focus restitué au déclencheur.
+async function scenarioModalIsolation() {
+  console.log('\n── Scénario : isolation de modale (focus-trap + inert) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // Mécanisme central exposé.
+  const exposed = await page.evaluate(() => typeof window.__modalIsolation === 'object'
+    && typeof window.__modalIsolation.isActive === 'function');
+  assert(exposed, 'window.__modalIsolation absent (module non chargé ?)');
+
+  // 1) Ouverture : l'observer (microtâche) pose `inert` sur le fond et
+  //    déplace le focus dans la modale. On attend l'engagement asynchrone.
+  await page.evaluate(() => openCharacter(0));
+  await page.waitForFunction(() =>
+    document.getElementById('game-container').hasAttribute('inert')
+    && window.__modalIsolation.isActive());
+  const opened = await page.evaluate(() => {
+    const modal = document.getElementById('character-modal');
+    return {
+      focusInside: modal.contains(document.activeElement),
+      topId: window.__modalIsolation.topId(),
+      bgInert: document.getElementById('game-container').hasAttribute('inert')
+    };
+  });
+  assert(opened.bgInert,                 'le fond #game-container doit être inert pendant la modale');
+  assert(opened.topId === 'character-modal', 'la modale ouverte doit être au sommet de la pile');
+  assert(opened.focusInside,             'le focus initial doit être posé dans la modale');
+
+  // 2) Focus-trap : Tab depuis le dernier focusable repart au premier ;
+  //    Shift+Tab depuis le premier repart au dernier (les événements
+  //    synthétiques n'ont pas d'action par défaut → seul le trap déplace).
+  const trap = await page.evaluate(() => {
+    const modal = document.getElementById('character-modal');
+    const sel = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const f = Array.from(modal.querySelectorAll(sel))
+      .filter(el => el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
+    const first = f[0], last = f[f.length - 1];
+    last.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    const afterTab = document.activeElement === first;
+    first.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+    const afterShift = document.activeElement === last;
+    return { n: f.length, afterTab, afterShift };
+  });
+  assert(trap.n > 1,        `la modale doit avoir plusieurs focusables (${trap.n})`);
+  assert(trap.afterTab,     'Tab depuis le dernier focusable doit revenir au premier (piégé)');
+  assert(trap.afterShift,   'Shift+Tab depuis le premier doit aller au dernier (piégé)');
+
+  // Fermeture : `inert` retiré, focus restitué (testé en 3 avec déclencheur dédié).
+  await page.evaluate(() => closeModal('character-modal'));
+  await page.waitForFunction(() => !document.getElementById('game-container').hasAttribute('inert'));
+
+  // 3) Restitution du focus : un déclencheur focusé hors modale doit
+  //    récupérer le focus à la fermeture.
+  await page.evaluate(() => {
+    let t = document.getElementById('__iso_trigger');
+    if (!t) { t = document.createElement('button'); t.id = '__iso_trigger'; t.textContent = 'décl.'; document.body.appendChild(t); }
+    t.focus();
+  });
+  await page.evaluate(() => openBestiary());
+  await page.waitForFunction(() =>
+    document.getElementById('game-container').hasAttribute('inert')
+    && document.getElementById('bestiary-modal').contains(document.activeElement));
+  await page.evaluate(() => closeModal('bestiary-modal'));
+  await page.waitForFunction(() => !document.getElementById('game-container').hasAttribute('inert'));
+  const restored = await page.evaluate(() => ({
+    focusBack: document.activeElement === document.getElementById('__iso_trigger'),
+    notActive: window.__modalIsolation.isActive() === false
+  }));
+  assert(restored.notActive, 'la pile d\'isolation doit être vide après fermeture');
+  assert(restored.focusBack, 'le focus doit être restitué au déclencheur à la fermeture');
+
+  // aria-describedby complété sur l'inventaire (sémantique modale).
+  const aria = await page.evaluate(() => {
+    const inv = document.getElementById('inventory-modal');
+    const ref = inv ? inv.getAttribute('aria-describedby') : null;
+    return { ref, target: ref ? !!document.getElementById(ref) : false };
+  });
+  assert(aria.ref === 'inv-hint', 'inventory-modal doit porter aria-describedby="inv-hint"');
+  assert(aria.target,             'la cible aria-describedby doit exister dans le DOM');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (isolation modale)`);
+  }
+  console.log('  ✅ Isolation de modale (focus-trap + inert + restitution) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation] };
