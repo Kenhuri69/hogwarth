@@ -1,10 +1,13 @@
 # Plan — Amélioration de l'ergonomie (clavier, modales, accessibilité)
 
-> Statut : **Phases 1-4 livrées** (plan complet). Phase 1 → PR #520,
-> Phase 2 → PR #521, Phase 3 → PR #524, Phase 4 → `claude/ergonomics-phase4-a11y`.
-> Créé le 2026-06-14. **Reste hors-scope** : passe dédiée « isolation de
-> modale » (focus-trap générique + `inert`/`aria-describedby` sur le fond) —
-> reportée pour risque/bénéfice (cf. notes Phases 3 & 4).
+> Statut : **CLOS — plan complet livré**. Phase 1 → PR #520, Phase 2 → PR #521,
+> Phase 3 → PR #524, Phase 4 → `claude/ergonomics-phase4-a11y`. Passe dédiée
+> « isolation de modale » (focus-trap générique + `inert` sur le fond +
+> restitution du focus + `aria-describedby`) — initialement reportée — **livrée**
+> via PR #529 (`js/modal-a11y.js` : `MutationObserver` sur les ~16 modales,
+> focus-trap, `inert`, restitution ; `aria-describedby` don de Maison + forge ;
+> scénario `scenarioModalIsolation`) et PR #534 (`aria-describedby` sur
+> l'inventaire). Doublon #528 fermé. Créé le 2026-06-14, clos le 2026-06-14.
 > Aucun plan d'ergonomie transversal n'existait : il y avait des fixes UX
 > ponctuels (`room-presentation-startup-ux.md`, `codex-mobile-list-layout.md`,
 > `hit-targets-44px.md` archivé) mais pas de passe d'ergonomie d'interaction.
@@ -103,10 +106,10 @@ clavier. Cache-bump (`main.js`, `battle-ui.js`).
 >
 > **Note 3B — focus** : la gestion du focus (initial + restitution) est livrée
 > **dans `confirmModal`** (le cas concret le plus à risque : suppression de
-> save). Le focus-trap **générique sur les ~16 autres modales** (hook de
-> chaque fonction d'ouverture) est volontairement **reporté** : large surface,
-> risque de fragilité des tests pour un bénéfice diffus. À traiter en passe
-> dédiée si souhaité (guidelines §2/§3 — simplicité, changements chirurgicaux).
+> save). Le focus-trap **générique sur les ~16 autres modales** a ensuite été
+> livré dans la passe dédiée « isolation de modale » (`js/modal-a11y.js`,
+> PR #529) — via un `MutationObserver` global plutôt qu'un hook par fonction
+> d'ouverture (aucun call-site touché).
 
 ### 3A. Modale de confirmation custom réutilisable
 
@@ -134,9 +137,9 @@ clavier. Cache-bump (`main.js`, `battle-ui.js`).
 > `.sr-only` (style.css). Test : `scenarioA11yFinish`. Cache bumpé (style v43,
 > ui v17, CACHE_VERSION v137).
 >
-> **Reporté avec le focus-trap (Phase 3)** : `inert`/`aria-describedby`
-> génériques sur le fond quand une modale est ouverte — même surface
-> « isolation de modale » que le focus-trap, à traiter dans la passe dédiée.
+> **Livré dans la passe dédiée (PR #529 + #534)** : `inert` générique sur le
+> fond quand une modale est ouverte (`js/modal-a11y.js`) + `aria-describedby`
+> sur les modales à descriptif statique (don de Maison, forge, inventaire).
 
 | Fichier | Changement | Vérif |
 |---------|-----------|-------|
