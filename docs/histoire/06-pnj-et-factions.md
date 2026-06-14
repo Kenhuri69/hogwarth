@@ -199,7 +199,7 @@ La ligne de force narrative : *la surface recule, les profondeurs montent*.
 | **Professeurs / Ordre** | Donneurs de quêtes familiers. | Mentors (Lupin, chefs). | **Sentinelles** isolées (Kingsley, Bill, Sirius) — les derniers feux. | Recyclés en gardiens de farm. |
 | **Esprits des Fondateurs** | Latents (1ʳᵉ stèle, intro). | L'**écho de Salazar** s'éveille (cachots). | **Convergence** : stèle + Codex + écho + portrait disent la même vérité. | Échos ténébreux dans les Ruines (14+). |
 | **Forces de la Corruption** | Symptôme : familier qui se fissure. | **Fidèles** organisés (mangemorts masqués). | **Élite + boss canon** gardent la route de la source. | Tout revient **Ténébreux** (18-20). |
-| **Voldemort** | Absent (rumeur). | Se **reconstitue** au fond (révélation). | Affaibli (8) → **Ressuscité** (10, climax). | Vaincu — mais la faille reste **ouverte**. |
+| **Voldemort** | Absent (rumeur). | Se **reconstitue** au fond (révélation). | Affaibli (9) → **Ressuscité** (10, climax). | Vaincu — mais la faille reste **ouverte**. |
 
 > 💡 **Lecture** : c'est un **chiasme**. Les Maisons (école) culminent en haut puis
 > se diluent ; les Fondateurs (mémoire) montent à mesure qu'on descend. Au point
@@ -295,7 +295,7 @@ Mme Norris, Peeves, lutins, Acromantules, Trolls, Hippogriffes, Gargouilles…
 
 ### Antagoniste suprême
 
-- **Voldemort** — `voldemort_affaibli` (ét. 8, premier contact incomplet) puis
+- **Voldemort** — `voldemort_affaibli` (ét. 9, premier contact incomplet) puis
   `voldemort_revenu` (ét. 10, **climax**, boss à phases `_checkBossPhases`). C'est
   la **pointe émergée** du mal scellé ; sa chute scelle l'arc principal
   ([03 §3.5](03-trame-principale.md)). 💡 Ce qu'il *cherche au fond* est ce que les

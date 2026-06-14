@@ -135,9 +135,9 @@ la fracture de décor.
   (bestiaire **familles F4-F5**, [09 §9.6-9.7](09-bestiaire-et-lore.md)), puis
   les boss canon qui gardent la route vers la source.
 - ✅ **Boss-jalons** : **Fenrir Greyback** (ét. 8), **Voldemort Affaibli**
-  (ét. 8 — premier contact, encore incomplet), **Veilleur du Seuil** (ét. 8 —
+  (ét. 9 — premier contact, encore incomplet), **Veilleur du Seuil** (ét. 8 —
   graine runique des Ruines), **Aragog** (ét. 9), **Antonin Dolohov** (ét. 10),
-  **Bellatrix**. Chaque boss tombé *affaiblit le sceau*.
+  **Bellatrix** (ét. 8). Chaque boss tombé *affaiblit le sceau*.
 - ✅ **PNJ profonds** : Fumseck (phénix, ét. 7), Kingsley (ét. 8), Bill Weasley
   (ét. 9), Esprit de Sirius (ét. 10), marchands ténébreux (Essence/Page).
 - 💡 **Signature — apogée** : mini-boss / révélations propres à chaque Maison et

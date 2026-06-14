@@ -80,7 +80,7 @@ Descendre **fait** avancer l'histoire : la profondeur est l'axe dramatique.
 
 ✅ La menace culmine à l'**étage 10** avec `voldemort_revenu`. Les boss canon
 jalonnent la descente : Fenrir Greyback, Aragog, Antonin Dolohov, Bellatrix,
-**Voldemort Affaibli** (ét. 8) puis **Ressuscité** (ét. 10).
+**Voldemort Affaibli** (ét. 9) puis **Ressuscité** (ét. 10).
 
 ## 1.5 Climax & résolution
 

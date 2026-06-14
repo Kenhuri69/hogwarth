@@ -35,7 +35,7 @@
 | ✅ 3 | ~~Enjeu intime par héros toujours absent~~ **Livré** (2026-06-14) : couche de beats scénarisés cosmétiques `descentStake` (6 héros jouables, seuil 3↔4) via `heroBarkScripted` ; gaps 01 §1.3 & 03 #2 tranchés, canon en 05 §5.4.2. | 01 §1.3, 03 #2, 05 §5.4.2, `hero-barks.js` | ✅ Résolu |
 | ✅ 4 | ~~PNJ-clés de signature non implémentés~~ **Livré** (2026-06-13) : Chevalier Fantôme (`chevalier_godric`) 🦁 + Écho de Salazar (`echo_salazar`) 🐍 — PNJ donneurs dédiés (art `img/npc/`, dialogues, placement), signatures retirées de McGonagall/Rogue. Serdaigle/Poufsouffle restent sur Flitwick/Chourave (chefs existants). | 06, 08, `npcs.js` | ✅ Résolu |
 | ✅ 5 | ~~Variante de choix asymétrique : `'defiance'` seulement proposé~~ **Résolu** (2026-06-13) : les deux branches sont câblées de bout en bout — choix joueur (`npc-dialog.js` : « Sceller le Pacte » / « Défier l'écho » → `turnInSlythSignature`), levier Voldemort (`battle.js` : buff lifesteal `pact` vs debuff −15 % `defiance`), variantes de fin (`endgame.js` : `victory_pact` vs miroir de reconnaissance), réputation dérivée. | 08, 14, `endgame.js` | ✅ Résolu |
-| ⚠️ 6 | **Localisations/statuts de boss flous** (Bellatrix sans étage ; Voldemort « affaibli » vs « ressuscité » = 1 ou 2 entrées ?) | 01, 03, 06 | 🟡 Faible |
+| ✅ 6 | ~~**Localisations/statuts de boss flous**~~ **Résolu** (2026-06-14) : code source de vérité (`monsters.js`) — **Bellatrix = ét. 8** (`minFloor:8`) ; **Voldemort = 2 entrées distinctes** : `voldemort_affaibli` (ét. **9**) puis `voldemort_revenu` (ét. 10, climax à phases). Unique dérive corrigée partout : « Affaibli ét. 8 » → **ét. 9** (01, 02, 03, 04, 06, 09, 12 + `CLAUDE.md`). | 01, 03, 06 | ✅ Résolu |
 | ⚠️ 7 | **Trois checklists d'ajout parallèles non coordonnées** (créatures Ch.09 / lieux Ch.10 / variantes Ch.11) | 09, 10, 11 | 🟡 Faible |
 
 ---
@@ -132,7 +132,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | ❓ **Définition canonique de « la Boucle »** (1 §) + règle Boucle↔MP | À écrire | 🟠 Moyenne |
 | ❓ **Fiches de contenu Codex restantes** (entrées rédigées vs coquilles) | Audit + écriture | 🟠 Moyenne |
 | ✅ **Enjeu intime par personnage** (beats `descentStake`, 6 héros jouables) | Livré (2026-06-14) — cf. 05 §5.4.2 | ✅ Résolu |
-| ❓ **Localisation des boss** (Bellatrix ; statut Voldemort affaibli/ressuscité) | À clarifier | 🟡 Faible |
+| ✅ **Localisation des boss** (Bellatrix ét. 8 ; Voldemort = 2 entrées, Affaibli ét. 9 / Ressuscité ét. 10) | Résolu (2026-06-14) — doc alignée sur `monsters.js` | ✅ Résolu |
 
 ### Côté gameplay (`docs/gameplay/`)
 
@@ -165,7 +165,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | **Bandeaux « Statut réel » + index doc↔module** | 🟠 Moyenne | Tous | Faible | Audit |
 | **Compléter symétrie `pact`/`defiance`** + variantes texte fin (5 axes) | 🟠 Moyenne | 14, `endgame.js` | Faible | — |
 | ~~**Enjeu intime héros**~~ ✅ **Livré** (beat `descentStake`) | — | 05, `hero-barks.js` | Faible | — |
-| **Clarifier localisation boss** (Bellatrix, Voldemort ×1/×2) | 🟡 Basse | 03, 06, `monsters.js` | Faible | — |
+| ~~**Clarifier localisation boss** (Bellatrix, Voldemort ×1/×2)~~ ✅ **Fait (2026-06-14)** : Bellatrix ét. 8 ; Voldemort = 2 entrées (Affaibli ét. 9 / Ressuscité ét. 10) ; dérive « Affaibli ét. 8 » → 9 corrigée dans 01-04/06/09/12 + `CLAUDE.md`. | 🟡 Basse | 03, 06, `monsters.js` | Faible | — |
 
 **Critère de sortie Phase 1** : un·e lecteur·rice de la doc peut, pour chaque
 système, savoir s'il est livré et où — et `node tests/smoke.js` reste vert.
