@@ -268,7 +268,14 @@ async function scenarioVendors() {
       mundungusMinFloor:     mundungus && mundungus.minFloor,
       poolFloor1Empty:       getRandomVendorsForFloor(1).length,
       poolFloor2HasRosmerta: getRandomVendorsForFloor(2).some(n => n.id === 'rosmerta'),
-      poolFloor3HasMundungus: getRandomVendorsForFloor(3).some(n => n.id === 'mundungus')
+      poolFloor3HasMundungus: getRandomVendorsForFloor(3).some(n => n.id === 'mundungus'),
+      // Apothicaire des Reliques (P3.3) — vendeur ambulant de formes mid-game.
+      apothExists:           !!getNpcById('apothicaire_reliques'),
+      apothIsRandom:         getNpcById('apothicaire_reliques')?.random === true,
+      apothPortrait:         !!getNpcById('apothicaire_reliques')?.portraitImg,
+      apothWaresLen:         getNpcById('apothicaire_reliques')?.wares?.length || -1,
+      poolFloor6HasApoth:    getRandomVendorsForFloor(6).some(n => n.id === 'apothicaire_reliques'),
+      poolFloor1NoApoth:     getRandomVendorsForFloor(1).every(n => n.id !== 'apothicaire_reliques')
     };
   });
   console.log('  T1 registry:', t1);
@@ -282,6 +289,12 @@ async function scenarioVendors() {
   assert(t1.poolFloor1Empty === 0,  'aucun vendeur ne doit être éligible étage 1');
   assert(t1.poolFloor2HasRosmerta,  'rosmerta doit être éligible étage 2');
   assert(t1.poolFloor3HasMundungus, 'mundungus doit être éligible étage 3');
+  assert(t1.apothExists,            'PNJ apothicaire_reliques introuvable');
+  assert(t1.apothIsRandom,          'apothicaire_reliques doit avoir random=true');
+  assert(t1.apothPortrait,          'apothicaire_reliques doit avoir un portraitImg');
+  assert(t1.apothWaresLen >= 5,     'apothicaire_reliques doit avoir au moins 5 articles');
+  assert(t1.poolFloor6HasApoth,     'apothicaire_reliques doit être éligible étage 6');
+  assert(t1.poolFloor1NoApoth,      'apothicaire_reliques ne doit pas apparaître étage 1');
 
   // T2 : ouverture boutique + bouton dialogue
   const t2 = await page.evaluate(() => {

@@ -1566,6 +1566,48 @@ const NPCS = [
       ]
     }
   },
+  // ── Apothicaire des Reliques — vendeur ambulant de formes mid-game ──
+  // (Artefacts 2.0 §1.4 A) : source fiable des nouvelles formes d'artefacts
+  // (orbes, cristal, gantelets, grimoire, talisman, masque). Ambulant dès
+  // l'étage 6 — complète Madame Malkins (stock tournant) par un comptoir
+  // spécialisé. Portrait Copilot (Règle B).
+  {
+    id:        "apothicaire_reliques",
+    name:      "Cassiopée Vance",
+    title:     "Apothicaire des Reliques",
+    sprite:    "vendeur",
+    icon:      "⚗️",
+    portraitImg: "img/npc/apothicaire_reliques.png",
+    random:    true,
+    minFloor:  6,
+    maxFloor:  null,
+    wares: [
+      { id: "orbe_flamme"          },
+      { id: "orbe_givre"           },
+      { id: "cristal_focalisation" },
+      { id: "gantelets_combat"     },
+      { id: "talisman_blaireau"    },
+      { id: "grimoire_flottant"    },
+      { id: "masque_courage"       }
+    ],
+    // Rachat : 50 % par défaut, 70 % pour les artefacts (sa spécialité).
+    buyback: {
+      default: 0.50,
+      byType:  { "acc": 0.70, "armor": 0.70, "wand": 0.70 }
+    },
+    dialogues: {
+      greeting: [
+        "Une relique mineure, voyageur ? J'en ai de toutes les formes — orbes, cristaux, talismans. Chacune attend la bonne main.",
+        "Ne te fie pas à l'étiquette « mineure ». Une forme bien choisie vaut mieux qu'une légende mal portée."
+      ],
+      idleRandom: [
+        "Les Fondateurs n'ont pas tout gravé dans l'or. Le reste tient dans des objets comme ceux-ci.",
+        "Un orbe pour l'élément, un cristal pour l'esprit, un talisman pour tenir. À toi de composer.",
+        "J'ai vu des sorciers négliger une simple relique… puis la regretter trois étages plus bas.",
+        "Mes prix sont honnêtes. Mes objets, plus encore : aucun ne ment sur ce qu'il fait."
+      ]
+    }
+  },
   // ── Marchand itinérant rare — sinks endgame Piste E ────────────
   // Spawn dédié dans dungeon.js (10 % par génération d'étage 11+).
   // Inventaire premium : items endgame à prix progressif (rarityScales)
