@@ -4,8 +4,12 @@ Remplacer les portraits-médaillons des héros `olivier` et `nathalie` par les
 deux nouvelles photos fournies.
 
 ## Mapping image → héros
-- `nathalie` (Poufsouffle, fille) ← image Poufsouffle souriante (e4cccc2c)
-- `olivier`  (Serdaigle, garçon)  ← image garçon cheveux courts (9efdc27e)
+- `nathalie`  (Poufsouffle, fille) ← image Poufsouffle souriante (e4cccc2c)
+- `chatillon` (Olivier De Châtillon, Serpentard) ← image Serpentard (9efdc27e)
+
+> ⚠️ Correction : il y a DEUX Olivier (`olivier` = de Clairval/Serdaigle,
+> `chatillon` = De Châtillon/Serpentard). L'image Serpentard va sur
+> `chatillon`. `olivier` (Serdaigle) est restauré à son visuel d'origine.
 
 ## Étapes
 1. Crop visage carré + resize Lanczos 128×128 → `img/<key>-original.png` → verif: aperçu visage cadré.
