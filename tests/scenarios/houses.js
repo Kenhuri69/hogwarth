@@ -1969,4 +1969,39 @@ async function scenarioVictorySpeechVariants() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop, scenarioPremiumShadowVendor] };
+// Artefacts P3.3c — obtention Premium hors Marchand d'Ombre (coffre/boss).
+async function scenarioHousePremiumDrop() {
+  console.log('\n── Scénario : drops Premium Ruines/boss (P3.3c) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Serpentard' });
+
+  const out = await page.evaluate(() => {
+    player.inventory = [];
+    party.forEach(c => { if (c.equipped) Object.keys(c.equipped).forEach(k => c.equipped[k] = null); });
+    const id     = housePremiumId('Serpentard');
+    const r1     = grantHousePremiumDrop('chest');
+    const owned1 = player.inventory.filter(i => i.id === id).length;
+    const r2     = grantHousePremiumDrop('boss');   // one-shot : déjà possédée
+    const owned2 = player.inventory.filter(i => i.id === id).length;
+    const map    = ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle'].map(h => housePremiumId(h));
+    return { id, r1, owned1, r2, owned2,
+             mapAll: map.every(x => !!x), mapDistinct: new Set(map).size === 4 };
+  });
+  console.log('  →', JSON.stringify(out));
+  assert(out.id === 'masque_rituel_premium_slyth', 'Premium Serpentard = masque_rituel_premium_slyth');
+  assert(out.r1 === true,    'drop coffre doit octroyer la Premium de la Maison');
+  assert(out.owned1 === 1,   '1 Premium attendu après octroi');
+  assert(out.r2 === false,   'one-shot : pas de second octroi si déjà possédée');
+  assert(out.owned2 === 1,   'toujours 1 seul exemplaire');
+  assert(out.mapAll,         'les 4 Maisons doivent mapper une Premium');
+  assert(out.mapDistinct,    'les 4 Premium doivent être distinctes');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Drops Premium Ruines/boss OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop, scenarioPremiumShadowVendor, scenarioHousePremiumDrop] };

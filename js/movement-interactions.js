@@ -94,6 +94,17 @@ function openChest() {
   const F        = (typeof partyFortune === 'function') ? partyFortune() : 0;
   const goldFort = 1 + F * 0.5;
 
+  // Premium des Ruines (§3 P3.3c) : en Boucle profonde (≥14), faible chance
+  // qu'un coffre recèle la variante Premium de ta Maison (one-shot tant que
+  // non possédée ; sinon le check no-op et le butin normal suit).
+  if ((currentFloor || 1) >= 14 && Math.random() < 0.12
+      && typeof grantHousePremiumDrop === 'function' && grantHousePremiumDrop('chest')) {
+    setNarrative("Sous la poussière des Ruines, une relique frappée du blason de ta Maison.");
+    updateUI();
+    if (typeof autoSave === 'function') autoSave('chest-premium');
+    return;
+  }
+
   const roll = Math.random();
   // 38% or | 30% consommable | 22% équipement | 10% livre (si dispo)
   const hasBook = booksAvailable.length > 0;

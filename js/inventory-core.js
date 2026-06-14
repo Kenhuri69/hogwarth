@@ -184,6 +184,29 @@ function grantVoiceRelicForEcho(echoId) {
   return ok;
 }
 
+// ── Variantes Premium — obtention hors Marchand d'Ombre (§3 P3.3c) ──────
+// Chaque Maison a UNE variante Premium ; en Boucle profonde, elle peut tomber
+// d'un coffre des Ruines ou d'un boss Ténébreux. One-shot tant que non possédée.
+const HOUSE_PREMIUM_ID = {
+  Gryffondor:  'orbe_runique_premium_gryff',
+  Serpentard:  'masque_rituel_premium_slyth',
+  Serdaigle:   'baton_ancestral_premium_serd',
+  Poufsouffle: 'talisman_fondateurs_premium_pouf',
+};
+function housePremiumId(house) { return HOUSE_PREMIUM_ID[house] || null; }
+function grantHousePremiumDrop(source) {
+  const id = housePremiumId(typeof chosenHouse !== 'undefined' ? chosenHouse : null);
+  if (!id || _ownsItemId(id)) return false;
+  const item = (typeof ITEMS !== 'undefined') && ITEMS.find(i => i.id === id);
+  if (!item) return false;
+  const ok = tryAddItem(id, { silent: true });
+  if (ok && typeof addMsg === 'function') {
+    const where = source === 'boss' ? 'des cendres du Ténébreux' : 'des Ruines';
+    addMsg(`✨ Une relique Premium de ta Maison émerge ${where} : ${item.name} !`, 'good');
+  }
+  return ok;
+}
+
 // Compte les exemplaires d'un matériau (par id) dans le sac partagé.
 // Délègue à _countItems (qty-aware : les matériaux empilés somment leur
 // `qty`).
