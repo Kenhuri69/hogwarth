@@ -1,7 +1,9 @@
 # Plan — Amélioration de l'ergonomie (clavier, modales, accessibilité)
 
-> Statut : **Phase 1 livrée** (branche `claude/ergonomics-improvement-plan-hg4dzw`).
-> Créé le 2026-06-14. Phases 2-4 en attente d'arbitrage.
+> Statut : **Phases 1-2 livrées**. Phase 1 mergée via PR #520 (branche
+> `claude/ergonomics-improvement-plan-hg4dzw`). Phase 2 sur
+> `claude/ergonomics-phase2-discoverability`. Créé le 2026-06-14.
+> Phases 3-4 en attente d'arbitrage.
 > Aucun plan d'ergonomie transversal n'existait : il y avait des fixes UX
 > ponctuels (`room-presentation-startup-ux.md`, `codex-mobile-list-layout.md`,
 > `hit-targets-44px.md` archivé) mais pas de passe d'ergonomie d'interaction.
@@ -68,7 +70,14 @@ clavier. Cache-bump (`main.js`, `battle-ui.js`).
 
 ---
 
-## Phase 2 — Découvrabilité (haute)
+## Phase 2 — Découvrabilité (haute) ✅ LIVRÉE
+
+> Livré le 2026-06-14. `index.html` : `title`/`aria-label` « (A/S/G/O/F) » sur
+> les 5 boutons de combat ; `title="Fermer (Échap)"` sur toutes les croix de
+> modale. `main.js` : Échap étendu aux 6 dernières modales (settings, forge,
+> bibliothèque, chaudron, fusion, énigme) → hint universellement véridique.
+> Test : `scenarioCombatKeyboard` (assertions titres + Échap forge). Cache
+> bumpé (main v25, CACHE_VERSION v135).
 
 | Fichier | Changement | Vérif |
 |---------|-----------|-------|

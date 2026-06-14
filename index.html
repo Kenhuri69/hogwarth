@@ -699,11 +699,11 @@
           <div class="target-buttons" id="target-buttons"></div>
         </div>
         <div class="battle-actions">
-          <button class="cmd-btn" onclick="battleAction('attack')"><img class="ui-icon ui-icon-md" src="img/icons/atk.png" alt=""> Attaquer</button>
-          <button class="cmd-btn" onclick="battleAction('spell')"><img class="ui-icon ui-icon-md" src="img/icons/mp.png" alt=""> Sortilège</button>
-          <button class="cmd-btn" onclick="battleAction('guard')"><img class="ui-icon ui-icon-md" src="img/icons/protego.png" alt=""> Garde</button>
-          <button class="cmd-btn" onclick="battleAction('item')"><img class="ui-icon ui-icon-md" src="img/icons/items/potion_m.png" alt=""> Objet</button>
-          <button class="cmd-btn" onclick="battleAction('flee')"><img class="ui-icon ui-icon-md" src="img/icons/agi.png" alt=""> Fuir</button>
+          <button class="cmd-btn" onclick="battleAction('attack')" title="Attaquer (A)" aria-label="Attaquer (A)"><img class="ui-icon ui-icon-md" src="img/icons/atk.png" alt=""> Attaquer</button>
+          <button class="cmd-btn" onclick="battleAction('spell')" title="Sortilège (S)" aria-label="Sortilège (S)"><img class="ui-icon ui-icon-md" src="img/icons/mp.png" alt=""> Sortilège</button>
+          <button class="cmd-btn" onclick="battleAction('guard')" title="Garde (G)" aria-label="Garde (G)"><img class="ui-icon ui-icon-md" src="img/icons/protego.png" alt=""> Garde</button>
+          <button class="cmd-btn" onclick="battleAction('item')" title="Objet (O)" aria-label="Objet (O)"><img class="ui-icon ui-icon-md" src="img/icons/items/potion_m.png" alt=""> Objet</button>
+          <button class="cmd-btn" onclick="battleAction('flee')" title="Fuir (F)" aria-label="Fuir (F)"><img class="ui-icon ui-icon-md" src="img/icons/agi.png" alt=""> Fuir</button>
         </div>
 
         <!-- Panneau d'info monstre (clic / appui long sur une carte ennemie) -->
@@ -816,7 +816,7 @@
 <div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
   <div class="modal-box">
     <div class="modal-title" id="settings-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/gear.png" alt=""> Réglages</div>
-    <span class="modal-close" onclick="closeModal('settings-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('settings-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
 
     <div class="settings-section-label">Son</div>
     <div class="settings-grid">
@@ -863,7 +863,7 @@
 <div id="inventory-modal" role="dialog" aria-modal="true" aria-labelledby="inventory-modal-title">
   <div class="modal-box">
     <div class="modal-title" id="inventory-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/backpack.png" alt=""> Sac de Moldu</div>
-    <span class="modal-close" onclick="closeModal('inventory-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('inventory-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div class="shop-tabs" id="inv-tabs">
       <button type="button" class="shop-tab active" id="inv-tab-sac" onclick="switchInvTab('sac')"><img class="ui-icon ui-icon-md" src="img/icons/backpack.png" alt=""> Sac</button>
       <button type="button" class="shop-tab" id="inv-tab-besace" onclick="switchInvTab('besace')"><img class="ui-icon ui-icon-md" src="img/icons/besace.png" alt=""> Besace</button>
@@ -881,7 +881,7 @@
 <div id="spell-modal" role="dialog" aria-modal="true" aria-labelledby="spell-modal-title">
   <div class="modal-box">
     <div class="modal-title" id="spell-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/spellbook.png" alt=""> Livre des Sortilèges</div>
-    <span class="modal-close" onclick="closeModal('spell-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('spell-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div class="spell-list" id="spell-list"></div>
   </div>
 </div>
@@ -889,7 +889,7 @@
 <div id="shop-modal" role="dialog" aria-modal="true" aria-labelledby="shop-title">
   <div class="modal-box">
     <div class="modal-title" id="shop-title"><img class="ui-icon ui-icon-xl" src="img/icons/shop_sign.png" alt=""> Boutique</div>
-    <span class="modal-close" onclick="closeModal('shop-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('shop-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div style="text-align:right; margin-bottom:8px; font-family:'Cinzel',serif; font-size:12px; color:var(--gold)">
       💰 <span id="shop-gold">0</span> Gallions
     </div>
@@ -902,7 +902,7 @@
 <div id="house-donation-modal" role="dialog" aria-modal="true" aria-labelledby="house-donation-title" style="display:none">
   <div class="modal-box">
     <div class="modal-title" id="house-donation-title">Don à la Maison</div>
-    <span class="modal-close" onclick="closeHouseDonationModal()" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeHouseDonationModal()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
 
     <div style="text-align:right; margin-bottom:8px; font-family:'Cinzel',serif; font-size:12px; color:var(--gold)">
       💰 <span id="house-donation-gold">0</span>
@@ -944,7 +944,7 @@
 <div id="character-modal" role="dialog" aria-modal="true" aria-labelledby="character-modal-title">
   <div class="modal-box">
     <div class="modal-title" id="character-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/scroll.png" alt=""> Fiche de Personnage</div>
-    <span class="modal-close" onclick="closeModal('character-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('character-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div id="char-detail"></div>
   </div>
 </div>
@@ -953,7 +953,7 @@
 <div id="house-detail-modal" role="dialog" aria-modal="true" aria-labelledby="house-detail-modal-title">
   <div class="modal-box">
     <div class="modal-title" id="house-detail-modal-title">Détail de la Maison</div>
-    <span class="modal-close" onclick="closeModal('house-detail-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('house-detail-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div id="house-detail-content"></div>
   </div>
 </div>
@@ -963,7 +963,7 @@
 <div id="wizard-codex-modal" role="dialog" aria-modal="true" aria-labelledby="wizard-codex-title">
   <div class="modal-box">
     <div class="modal-title" id="wizard-codex-title"><img class="ui-icon ui-icon-xl" src="img/icons/codex_wizard.png" alt=""> Codex du Sorcier</div>
-    <span class="modal-close" onclick="closeWizardCodex()" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeWizardCodex()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div id="wizard-codex-body"></div>
   </div>
 </div>
@@ -972,7 +972,7 @@
 <div id="slot-modal" role="dialog" aria-modal="true" aria-labelledby="slot-modal-title">
   <div class="modal-box">
     <div class="modal-title" id="slot-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/save.png" alt=""> Sauvegarder</div>
-    <span class="modal-close" onclick="closeModal('slot-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('slot-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div id="slot-modal-list" class="slot-list"></div>
     <div class="slot-modal-hint" id="slot-modal-hint">Choisissez un emplacement…</div>
     <div class="slot-modal-footer">
@@ -988,7 +988,7 @@
     <!-- En-tête -->
     <div class="bestiary-header">
       <span class="bestiary-title" id="bestiary-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/bestiary.png" alt=""> Bestiaire de Poudlard</span>
-      <span class="modal-close" onclick="closeBestiary()" role="button" aria-label="Fermer" tabindex="0">✕</span>
+      <span class="modal-close" onclick="closeBestiary()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     </div>
 
     <!-- Onglets Codex : Bestiaire / Mémoire des Ruines (P-D5) -->
@@ -1051,7 +1051,7 @@
   <div class="modal-box codex-modal-box">
     <div class="bestiary-header">
       <span class="bestiary-title" id="codex-modal-title">📖 Codex</span>
-      <span class="modal-close" onclick="closeCodex()" role="button" aria-label="Fermer" tabindex="0">✕</span>
+      <span class="modal-close" onclick="closeCodex()" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     </div>
 
     <!-- Onglets de section (§12.2). Bestiaire délègue à openBestiary(). -->
@@ -1151,7 +1151,7 @@
 <!-- Endgame Tranche 2 — Forge des Ténèbres (upgrade items) -->
 <div id="forge-modal" role="dialog" aria-modal="true" aria-labelledby="forge-modal-title" style="display:none">
   <div class="forge-box modal-box">
-    <span class="modal-close" onclick="closeModal('forge-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('forge-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div class="modal-title" id="forge-modal-title">🔨 Forge des Ténèbres</div>
     <div class="forge-resources">
       <span>💰 <span id="forge-gold">0 Gallions</span></span>
@@ -1165,7 +1165,7 @@
 <!-- Endgame Tranche 2 — Bibliothèque interdite (upgrade sorts) -->
 <div id="library-modal" role="dialog" aria-modal="true" aria-labelledby="library-modal-title" style="display:none">
   <div class="library-box modal-box">
-    <span class="modal-close" onclick="closeModal('library-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('library-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div class="modal-title" id="library-modal-title">📜 Bibliothèque interdite</div>
     <div class="library-resources">
       <span>💰 <span id="library-gold">0 Gallions</span></span>
@@ -1180,7 +1180,7 @@
 <!-- Concoction de potions — Le Chaudron de Slughorn -->
 <div id="brewing-modal" role="dialog" aria-modal="true" aria-labelledby="brewing-modal-title" style="display:none">
   <div class="brewing-box modal-box">
-    <span class="modal-close" onclick="closeModal('brewing-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('brewing-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div class="modal-title" id="brewing-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/items/potion_m.png" alt=""> Le Chaudron de Slughorn</div>
     <div id="brewing-body"></div>
   </div>
@@ -1188,7 +1188,7 @@
 
 <div id="fusion-modal" role="dialog" aria-modal="true" aria-labelledby="fusion-modal-title" style="display:none">
   <div class="brewing-box modal-box">
-    <span class="modal-close" onclick="closeModal('fusion-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('fusion-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div class="modal-title" id="fusion-modal-title">📖 L'établi de Manon</div>
     <div id="fusion-body"></div>
   </div>
@@ -1196,7 +1196,7 @@
 
 <div id="riddle-modal" role="dialog" aria-modal="true" aria-labelledby="riddle-modal-title" style="display:none">
   <div class="brewing-box modal-box">
-    <span class="modal-close" onclick="closeModal('riddle-modal')" role="button" aria-label="Fermer" tabindex="0">✕</span>
+    <span class="modal-close" onclick="closeModal('riddle-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
     <div class="modal-title" id="riddle-modal-title">🕯️ Les Énigmes de Dumbledore</div>
     <div id="riddle-body"></div>
   </div>
@@ -1333,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/visit-hud.js?v=6"></script>
 <script src="js/pvp-duel.js?v=1"></script>
 <script src="js/atelier-voyageur.js?v=4"></script>
-<script src="js/main.js?v=24"></script>
+<script src="js/main.js?v=25"></script>
 <script src="js/endgame.js?v=9"></script>
 <script src="js/break-cycle.js?v=4"></script>
 <script src="js/forge.js?v=4"></script>
