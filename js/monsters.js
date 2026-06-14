@@ -1969,6 +1969,47 @@ const MONSTERS = [
     ]
   },
 
+  // ── Boss naturel de la Boucle profonde (Ruines Anciennes) ──────────
+  // Apparition à l'étage RÉEL 22+ : minFloor 12 filtré via effectiveFloor
+  // (effectiveFloor(22)=12) → Boucle-exclusif, second tour de spirale, dans
+  // la tranche D « Ruines Anciennes » (textures runiques). Spawn naturel rare
+  // (weight 1, epic). Brute (atk ≥ 1,5×mag) → Broyer auto via scaleMonster.
+  {
+    id:       "basilic_ancestral",
+    epic:     true,
+    name:     "Basilic Ancestral",
+    icon:     "🐍",
+    category: "bête",
+    desc:     "Une colonne d'écailles antiques se déroule des Ruines. Deux yeux d'or s'ouvrent — ne croise pas son regard.",
+    lore:     "Le premier des serpents, scellé sous Poudlard bien avant que Salazar n'y bâtisse sa Chambre. La Boucle l'a réveillé du fond des Ruines, là où la pierre est plus vieille que les Fondateurs. Son regard pétrifie, sa morsure dissout, et son corps brise les armures comme des coquilles.",
+    habitat:  "Les galeries noyées des Ruines Anciennes, sous la racine du château.",
+    anecdote: "Les serpents ordinaires fuient les Ruines : ils savent ce qui dort en dessous, et qu'on ne réveille pas le Roi sans le payer.",
+    danger:   11,
+    minFloor: 12, maxFloor: null, weight: 1,
+    hp: 200, atk: 26, def: 18, mag: 14, agi: 8, lck: 8,
+    scale: 0.38,
+    abilities: [
+      { name: "Regard Pétrifiant", icon: "💫", desc: "Ses yeux d'or figent la chair en pierre", effect: "status", statusId: "stun",   power: 0, chance: 0.28, turns: 2 },
+      { name: "Crocs Venimeux",    icon: "🟢", desc: "Un venin qui dissout de l'intérieur",      effect: "status", statusId: "poison", power: 8, chance: 0.35, turns: 3 },
+      { name: "Mue Ancestrale",    icon: "💚", desc: "Il abandonne sa vieille peau et se régénère", effect: "heal",  power: 22, chance: 0.20 }
+    ],
+    ai: "aggressive",
+    phases: [
+      { atPct: 0.5,  atkMult: 1.25, msg: "Le Basilic resserre ses anneaux — chaque coup pèse désormais le poids des siècles." },
+      { atPct: 0.25, atkMult: 1.15, msg: "Acculé, le Roi des Serpents siffle un cri qui fait trembler les Ruines." }
+    ],
+    resist: ["physique", "ténèbres"],
+    weak:   ["lumière"],
+    xp: 320, gold: { min: 170, max: 250 },
+    drops: [
+      { itemId: "essence_tenebres",      chance: 0.80 },
+      { itemId: "page_grimoire",         chance: 0.50 },
+      { itemId: "herbe_asphodele_noire", chance: 0.30 },
+      { itemId: "eclat_vitalite",        chance: 0.20 },
+      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+    ]
+  },
+
   // ── Boss-miroir terminal de « Briser le Cycle » (V3, ch.11 §11.10) ──
   // Apparition à l'étage RÉEL 21+ : minFloor 11 filtré via effectiveFloor
   // (effectiveFloor(21)=11) → exclu des étages 11-20 (eff. 1-10). Le vaincre
