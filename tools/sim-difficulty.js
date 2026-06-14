@@ -417,6 +417,10 @@ function parseArgs(argv) {
                 loopXpFrac: 0,
                 houseSet: null, tenebresSet: false, houseTier: 0, stars: 0,
                 difficulty: 'Normal',
+                // New Game+ « vrai » (challenge empilable). Cran 0 = hors NG+.
+                // Miroir des constantes ngPlusScaling (dungeon-scaling.js) :
+                // stats ennemies ×(1+0.20×n), butin xp/or ×(1+0.25×n), cap 10.
+                ngPlus: 0,
                 // DÉFAUT ALIGNÉ SUR LE RUNTIME (rework D1–D5 live). Le sim
                 // modélise par défaut le jeu ACTUEL ; `--legacy` restaure le
                 // modèle historique pré-rework. Cf.
@@ -469,6 +473,7 @@ function parseArgs(argv) {
     if (k === 'n' || k === 'n-sims') out.nSims = parseInt(v, 10);
     else if (k === 'hp-mult')   out.hpMult = parseFloat(v);
     else if (k === 'xp-mult')   out.xpMult = parseFloat(v);
+    else if (k === 'ngplus' || k === 'ng-plus') out.ngPlus = parseInt(v, 10) || 0;
     else if (k === 'stat-points') out.statPoints = parseInt(v, 10);
     else if (k === 'build')     out.build = v;
     else if (k === 'kills')     out.kills = parseInt(v, 10);
@@ -556,6 +561,8 @@ Options:
                           Implique l'Apothéose (tier 18) si non précisé.
   --hp-mult=F             Multiplicateur HP additionnel des monstres (def 1.0)
   --xp-mult=F             Multiplicateur XP des monstres (def 1.0)
+  --ngplus=N              New Game+ cran N : stats ennemies ×(1+0.20×N), butin
+                          xp/or ×(1+0.25×N), plafond 10 (def 0 = hors NG+)
   --stat-points=N         Points libres alloués au joueur par niveau (def 3)
   --build=BUILD           tank | balanced | offensive (def balanced)
   --bonus-levels=N        Niveaux gagnés au-delà de l'étage (farming) (def 0)
@@ -647,6 +654,15 @@ function _endgameRecurse(stat, n, fixEff, scal) {
   return stat;
 }
 // Valeur scalée d'une stat (hp/atk/def/xp/gold), récursion endgame incluse.
+// Miroir de ngPlusScaling (dungeon-scaling.js) : multiplicateurs du cran NG+.
+// stat ×(1+0.20×n) sur hp/atk/def/mag, butin ×(1+0.25×n) sur xp/gold, cap 10.
+const SIM_NGPLUS = { cap: 10, statPer: 0.15, rewardPer: 0.25 };
+function simNgPlusScaling(level) {
+  const n = (typeof level === 'number' && isFinite(level) && level > 0)
+    ? Math.min(level, SIM_NGPLUS.cap) : 0;
+  return { stat: 1 + SIM_NGPLUS.statPer * n, reward: 1 + SIM_NGPLUS.rewardPer * n };
+}
+
 // Miroir fidèle de dungeon.js — scaleMonster.
 function scaledStatValue(rawBase, scale, key, floor, cfg) {
   const ef        = simEffectiveFloor(floor, cfg);
@@ -665,6 +681,12 @@ function scaledStatValue(rawBase, scale, key, floor, cfg) {
   const d = diffOf(cfg);
   if (key === 'hp' || key === 'atk' || key === 'def' || key === 'mag') result *= d.scalingMultiplier;
   else if (key === 'xp') result *= d.xpMultiplier;
+  // New Game+ (dernière passe, miroir scaleMonster) : stats ×stat, butin ×reward.
+  if (cfg.ngPlus > 0) {
+    const ng = simNgPlusScaling(cfg.ngPlus);
+    if (key === 'hp' || key === 'atk' || key === 'def' || key === 'mag') result *= ng.stat;
+    else if (key === 'xp' || key === 'gold') result *= ng.reward;
+  }
   return result;
 }
 
@@ -696,7 +718,8 @@ function scaleMonster(base, floor, cfg) {
     const scal = 1 + ENDGAME_SCALING.scalDelta / intraMult;
     magVal = _endgameRecurse(base.mag, n, ENDGAME_SCALING.baseFix.mag / intraMult, scal);
   }
-  out.mag = Math.floor(magVal * diffOf(cfg).scalingMultiplier);
+  out.mag = Math.floor(magVal * diffOf(cfg).scalingMultiplier
+    * (cfg.ngPlus > 0 ? simNgPlusScaling(cfg.ngPlus).stat : 1));
   // Option D (analyse) — pénétration d'armure ennemie. Les monstres « brutes »
   // (frappeurs physiques : atk >= 1.5×mag ET atk de base >= 12) ignorent une
   // fraction de la DEF du joueur. Contre-mesure ciblée au build tank.

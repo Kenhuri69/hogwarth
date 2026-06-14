@@ -39,7 +39,7 @@ const ENDGAME_SCALING = {
 // gains changent, jamais l'or/inventaire/niveaux du joueur. Cf.
 // .claude/plans/ngplus-real.md.
 const NGPLUS_CAP             = 10;     // cran max pris en compte par le scaling
-const NGPLUS_STAT_PER_LEVEL  = 0.20;   // +20 % stats ennemies / cran
+const NGPLUS_STAT_PER_LEVEL  = 0.15;   // +15 % stats ennemies / cran (calibré sim)
 const NGPLUS_REWARD_PER_LEVEL = 0.25;  // +25 % xp/or / cran (récompense le défi)
 const NGPLUS_DROP_PER_LEVEL  = 0.10;   // +10 % chance de drop / cran (borné à 1)
 
