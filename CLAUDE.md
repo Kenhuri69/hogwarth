@@ -17,7 +17,7 @@ Vanilla JS / HTML5 Canvas, zéro dépendance, zéro build step.
 ## Structure des fichiers
 
 Les entrées `js/` ci-dessous suivent **l'ordre de chargement réel** des
-`<script src>` dans `index.html` (84 modules). La cohérence
+`<script src>` dans `index.html` (85 modules). La cohérence
 arborescence ↔ `index.html` est verrouillée par
 `node tools/check_doc_modules.js` (CI : tout module ajouté/retiré dans
 `index.html` sans mise à jour de cette section échoue).
@@ -1407,11 +1407,15 @@ Sons déclenchés automatiquement :
 ### Musique ambiante et de combat (`audio-music.js`)
 
 - **Ambiant** : `_zoneKeyForFloor(f)` retourne `getFloorTheme(f).ambient`
-  (`intro`/`dungeon`/`depths`) — voir « Thèmes par tranche d'étages ».
-  `_ZONE_SAMPLES` conserve 5 entrées (`tension`/`abyss` en réserve V2).
+  (`intro`/`dungeon`/`depths`/`abyss`) — voir « Thèmes par tranche d'étages ».
+  `_ZONE_SAMPLES` conserve 5 entrées, toutes actives sauf une : `abyss` est
+  l'ambiance de la tranche D (étages 14+) ; seul `tension` n'est assigné à
+  aucune tranche ambiante — il sert la **couche de combat** « danger critique »
+  (ci-dessous).
 - **Combat** : `_combatSampleKey(enemyGroup)` choisit le sample par
-  **axes combinés** — priorité `epic` (boss porteur de `epic:true` dans
-  `monsters.js`) > étage ≥ 10 (`combat_late`) > difficulté
+  **axes combinés** — priorité **danger critique** (`tension`, un membre vivant
+  sous 25 % PV via `_partyInCriticalDanger`) > `epic` (boss porteur de
+  `epic:true` dans `monsters.js`) > étage ≥ 10 (`combat_late`) > difficulté
   (`combat_normal`/`combat_hard`/`combat_expert`). Si le sample de
   tranche est absent (404), repli sur `combat_normal` puis synthèse
   procédurale. `startCombatMusic(enemyGroup)` reçoit le groupe depuis
@@ -1995,7 +1999,7 @@ téléporte dans le donjon d'un autre joueur en ligne (host) via le sort
 Plans : `.claude/plans/parallel-worlds.md` (design V1a→V1c, DDL §12),
 `.claude/plans/_archive/parallel-worlds-stabilization.md` (stabilisation LOT F).
 
-### Modules (à compléter dans l'arborescence en tête de fichier)
+### Modules (récapitulatif — tous listés dans « Structure des fichiers »)
 
 | Fichier | Rôle |
 |---------|------|
