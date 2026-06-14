@@ -112,8 +112,8 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 
 | # | Amélioration | But | Effort | Recommandation |
 |---|--------------|-----|--------|----------------|
-| 💡 1 | **Bandeau « Statut réel » en tête de chaque chapitre** : `✅ livré` / `🔧 partiel` / `💡 conception` + lien vers le(s) module(s) `js/`. | Tuer la dérive doc↔code à la racine. | Faible | **Forte** |
-| 💡 2 | **Index « doc ↔ module »** unique (un tableau dans le README docs). | Savoir d'un coup d'œil ce qui est codé. | Faible | **Forte** |
+| ✅ 1 | ~~**Bandeau « Statut réel » en tête de chaque chapitre**~~ **Livré (2026-06-14)** : bandeau « 📊 Statut réel (code) » (✅/🔧 + modules `js/`) sur les 14 chapitres (01-10,13 ajoutés ; 11/12/14 déjà conformes). | Tuer la dérive doc↔code à la racine. | Faible | **Forte** |
+| ✅ 2 | ~~**Index « doc ↔ module »** unique~~ **Livré (2026-06-14)** : table « Index doc ↔ module ↔ statut réel » dans [`docs/README.md`](README.md#index-doc--module--statut-réel) (14 chapitres). | Savoir d'un coup d'œil ce qui est codé. | Faible | **Forte** |
 | 💡 3 | **« Thermomètre de corruption » global unifié** déjà amorcé (`floor-ambiance.js` + ❄→❄❄❄❄+ du Ch. 10) : en faire **un indicateur HUD lisible** + clé Codex. | Rendre la descente *ressentie*, pas seulement subie. | Moyen | Moyenne |
 | 💡 4 | **Système de mémoire/héritage cosmétique** (profil hors-partie : titres, Codex de profil, bordure si `cycleBroken`) — déjà spécifié Ch.14 §14.6.3, **zéro stat**. | Récompenser la complétion sans casser l'équité (13). | Moyen | Moyenne |
 | ✅ 5 | ~~**Enjeu intime par héros**~~ **Livré** (2026-06-14) : beat `descentStake` par héros jouable (seuil 3↔4) via `heroBarkScripted`. | Gap ⚠️3 comblé à coût quasi nul. | Faible | Forte |
@@ -163,7 +163,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | ~~**Mettre à jour `CLAUDE.md`** (index des 85 modules, sections Codex/Forge/Biblio/Endgame/Potions/Events)~~ ✅ **Fait (2026-06-14)** : index des 85 modules aligné (`check_doc_modules` vert), modules récents tous décrits ; dérives résiduelles corrigées. | 🔴 Haute | `CLAUDE.md` | Faible | Audit |
 | ~~**Réécrire Ch. 12 & 14** : « plan d'impl. » → « état livré »~~ ✅ **Fait (2026-06-14)** (Ch.12 + Ch.14). | 🔴 Haute | ~~12, 14~~ | Faible | Audit |
 | ~~**Aligner Ch. 11**~~ ✅ **Fait (2026-06-14)** : ~~Briser le Cycle = ✅~~ (§11.10 descriptif du livré) · ~~définir « la Boucle »~~ canon = §11.6.1 (déjà rédigé), renvois croisés ajoutés depuis 06 §6.7.2 + forward 03 §3.6 → 11 §11.6.1 (chaîne « en l'air » close) · ~~**règle Boucle ↔ Mondes Parallèles**~~ ratifiée **axes isolés** (§11.5.1, crossover incident lecture seule conforme au code ; cross-links 06 §6.7.2 + 11 §11.13). | 🟠 Moyenne | 11 | Faible | Audit |
-| **Bandeaux « Statut réel » + index doc↔module** | 🟠 Moyenne | Tous | Faible | Audit |
+| ~~**Bandeaux « Statut réel » + index doc↔module**~~ ✅ **Fait (2026-06-14)** : bandeau « 📊 Statut réel (code) » sur les 14 chapitres + table « Index doc ↔ module ↔ statut réel » dans `docs/README.md`. | 🟠 Moyenne | Tous | Faible | Audit |
 | **Compléter symétrie `pact`/`defiance`** + variantes texte fin (5 axes) | 🟠 Moyenne | 14, `endgame.js` | Faible | — |
 | ~~**Enjeu intime héros**~~ ✅ **Livré** (beat `descentStake`) | — | 05, `hero-barks.js` | Faible | — |
 | ~~**Clarifier localisation boss** (Bellatrix, Voldemort ×1/×2)~~ ✅ **Fait (2026-06-14)** : Bellatrix ét. 8 ; Voldemort = 2 entrées (Affaibli ét. 9 / Ressuscité ét. 10) ; dérive « Affaibli ét. 8 » → 9 corrigée dans 01-04/06/09/12 + `CLAUDE.md`. | 🟡 Basse | 03, 06, `monsters.js` | Faible | — |

@@ -2,6 +2,11 @@
 
 **Statut :** 🟩 proposition de référence — à valider
 
+> 📊 **Statut réel (code)** : ✅ doctrine appliquée + validation par simulation —
+> modules : `js/dungeon-scaling.js`, `js/data.js` (constantes), `js/battle*.js`,
+> `tools/sim-difficulty.js`.
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif du chapitre : poser la **doctrine d'équilibrage** du jeu et la relier
 > à la descente narrative. Comment la difficulté *sert l'histoire* (sentiment de
 > descente, peur croissante, héroïsme contre corruption), comment la **courbe de

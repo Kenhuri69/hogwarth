@@ -2,6 +2,11 @@
 
 **Statut :** 🟩 proposition de référence — à valider / amender
 
+> 📊 **Statut réel (code)** : ✅ tilesets/ambiance/flavor livrés · 🔧 échos
+> temporels partiels — modules : `js/floor-themes.js`, `js/floor-ambiance.js`,
+> `js/room-flavor.js`, `js/renderer*.js`.
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif : traiter les **étages comme des lieux**, et faire **ressentir
 > physiquement la descente**. Ambiance sensorielle, sens narratif, et ce que le
 > joueur découvre en s'enfonçant — de l'école familière aux **Ruines Anciennes**.

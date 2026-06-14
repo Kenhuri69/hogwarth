@@ -2,6 +2,10 @@
 
 **Statut :** 🟩 proposition de référence — finalisée, à valider / amender
 
+> 📊 **Statut réel (code)** : ✅ 72 monstres + bestiaire + scaling livrés —
+> modules : `js/monsters.js`, `js/ui-bestiary.js`, `js/dungeon-scaling.js`.
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif : donner aux créatures une **origine narrative** qui les relie à la
 > corruption, à la **Clé de Voûte des Quatre** et aux **Ruines Anciennes**, pour
 > que chaque monstre soit une menace **à la fois mécanique et narrative**. Le

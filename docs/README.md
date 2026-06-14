@@ -98,6 +98,36 @@ sombre et plus profond.
 
 ---
 
+## Index doc ↔ module ↔ statut réel
+
+> Vue d'un coup d'œil : pour chaque chapitre Histoire, son **statut réel côté
+> code** (✅ livré · 🔧 partiel · 💡 conception) et le(s) **module(s) `js/`**
+> qui l'incarnent. Tuer la dérive doc↔code à la racine (Roadmap §1.4 💡1/💡2).
+> Chaque chapitre porte aussi un bandeau « 📊 Statut réel (code) » en tête.
+
+| # | Chapitre | Statut réel | Module(s) `js/` principaux |
+|---|----------|-------------|----------------------------|
+| 01 | Synopsis & pitch | ✅ | *transversal* (récit) — `monsters.js`, `quests*.js`, `endgame.js`, `break-cycle.js` |
+| 02 | Univers, ton & canon | ✅ | `floor-themes.js`, `floor-ambiance.js`, `data.js` |
+| 03 | Trame principale | ✅ | `monsters.js`, `quests*.js`, `endgame.js`, `break-cycle.js` |
+| 04 | Structure : actes & étages | ✅ | `floor-themes.js`, `dungeon.js`, `movement-floors.js`, `floor-events.js` |
+| 05 | Personnages jouables | ✅ | `data.js` (`CHARACTERS`), `main.js`, `hero-barks.js` |
+| 06 | PNJ & factions | ✅ | `npcs.js`, `npcs-helpers.js`, `npc-dialog.js` |
+| 07 | Les Maisons | ✅ | `state.js` (`HOUSE_BONUSES`), `main.js`, `house-donation.js` |
+| 08 | Quêtes & sous-intrigues | ✅ | `quests-templates.js`, `quests.js`, `quests-riddles.js`, `potions.js` |
+| 09 | Bestiaire & lore | ✅ | `monsters.js`, `ui-bestiary.js`, `dungeon-scaling.js` |
+| 10 | Lieux & géographie | ✅ · 🔧 (échos temporels) | `floor-themes.js`, `floor-ambiance.js`, `room-flavor.js`, `renderer*.js` |
+| 11 | Mondes Parallèles & Boucle | ✅ | `multiplayer*.js`, `visit-*.js`, `atelier-voyageur.js`, `break-cycle.js` |
+| 12 | Glossaire & Codex | ✅ | `codex.js`, `ui-codex.js` |
+| 13 | Équilibre & difficulté | ✅ | `dungeon-scaling.js`, `data.js`, `battle*.js`, `tools/sim-difficulty.js` |
+| 14 | Scénarios de fin & post-game | ✅ socle · 🔧 (variantes B) | `endgame.js`, `cinematics.js`, `break-cycle.js`, `profile.js` |
+
+> L'index des modules complet (85+ modules, ordre de chargement) vit dans
+> [`CLAUDE.md`](../CLAUDE.md) à la racine — verrouillé par
+> `node tools/check_doc_modules.js`.
+
+---
+
 ## Conventions d'écriture
 
 - Un chapitre = un fichier Markdown ; les gros chapitres peuvent éclater en

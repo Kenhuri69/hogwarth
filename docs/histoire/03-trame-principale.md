@@ -2,6 +2,11 @@
 
 **Statut :** 🟩 proposition de référence — à valider / amender
 
+> 📊 **Statut réel (code)** : ✅ arc central jouable (descente → Voldemort →
+> victoire → Boucle) — modules : `js/monsters.js` (boss), `js/quests*.js`,
+> `js/endgame.js`, `js/break-cycle.js`.
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif : dérouler l'arc central beat par beat. `💡` = proposition
 > narrative modifiable ; `✅` = acté dans le jeu. Voir la structure
 > étages↔actes en [04](04-structure-actes-et-etages.md).

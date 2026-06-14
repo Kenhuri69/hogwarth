@@ -2,6 +2,11 @@
 
 **Statut :** 🟩 proposition de référence — à valider / amender
 
+> 📊 **Statut réel (code)** : ✅ 6 héros jouables + beats `descentStake` —
+> modules : `js/data.js` (`CHARACTERS`), `js/main.js` (`_hydrateCharacter`),
+> `js/hero-barks.js`.
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif : donner à chaque héros sélectionnable une **personnalité, un rôle
 > et un arc**. Le casting mêle figures canon et créations originales. `✅` = acté
 > dans le jeu (`js/data.js` — `CHARACTERS`, taglines, stats et sorts exacts) ;
