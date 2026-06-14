@@ -30,7 +30,7 @@
 
 | # | Faiblesse | Localisation | Gravité |
 |---|-----------|--------------|---------|
-| 🔧 1 | **Dérive documentation ↔ code** (le point n°1) — **Ch.12 & Ch.14 réconciliés** (2026-06-14 : « ÉTAPE 2 » plan → état livré ; NG+/`endingType`/épilogue marqués ✅). **Restant : `CLAUDE.md`** (index/sections). | `CLAUDE.md` | 🔴 Haute |
+| ✅ 1 | ~~**Dérive documentation ↔ code** (le point n°1)~~ **Résolu** (2026-06-14) : Ch.12 (Codex) + Ch.14 (fins) réconciliés (PR #511, #514) ; `CLAUDE.md` réconcilié (index des 85 modules déjà aligné — vérifié `check_doc_modules`) + dérives résiduelles corrigées (compte de modules, titre récap MP, `abyss`/`tension` plus « en réserve », priorité combat `tension`). | `CLAUDE.md` | ✅ Résolu |
 | ⚠️ 2 | **`💡 proposé` vs `✅ acté` mal séparés** dans plusieurs chapitres | 09, 10, 11 | 🟠 Moyenne |
 | ✅ 3 | ~~Enjeu intime par héros toujours absent~~ **Livré** (2026-06-14) : couche de beats scénarisés cosmétiques `descentStake` (6 héros jouables, seuil 3↔4) via `heroBarkScripted` ; gaps 01 §1.3 & 03 #2 tranchés, canon en 05 §5.4.2. | 01 §1.3, 03 #2, 05 §5.4.2, `hero-barks.js` | ✅ Résolu |
 | ✅ 4 | ~~PNJ-clés de signature non implémentés~~ **Livré** (2026-06-13) : Chevalier Fantôme (`chevalier_godric`) 🦁 + Écho de Salazar (`echo_salazar`) 🐍 — PNJ donneurs dédiés (art `img/npc/`, dialogues, placement), signatures retirées de McGonagall/Rogue. Serdaigle/Poufsouffle restent sur Flitwick/Chourave (chefs existants). | 06, 08, `npcs.js` | ✅ Résolu |
@@ -62,11 +62,13 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 
 **Conséquences :**
 
-- ⚠️ **`CLAUDE.md` est obsolète** : son index liste ~33 modules ; `index.html`
-  en charge **85**. Aucune mention de `codex.js`, `ui-codex.js`,
-  `break-cycle.js`, `endgame.js`, `cinematics.js`, `forge.js`, `library.js`,
-  `floor-ambiance.js`, `floor-events.js`, `room-flavor.js`, `help-tour.js`,
-  `potions.js`, `teleport.js`, `pvp-duel.js`, `haptics.js`, `karaoke.js`…
+- ✅ ~~**`CLAUDE.md` est obsolète** : son index liste ~33 modules~~ **Résolu
+  (2026-06-14)** : l'index de `CLAUDE.md` liste désormais les **85 modules** de
+  `index.html` (alignement verrouillé par `node tools/check_doc_modules.js`, CI).
+  `codex.js`, `ui-codex.js`, `break-cycle.js`, `endgame.js`, `cinematics.js`,
+  `forge.js`, `library.js`, `floor-ambiance.js`, `floor-events.js`,
+  `room-flavor.js`, `help-tour.js`, `potions.js`, `teleport.js`, `pvp-duel.js`,
+  `haptics.js`, `karaoke.js`, `profile.js`… sont tous décrits.
 - ⚠️ **Le Ch. 12 contient un « plan d'implémentation » du Codex déjà périmé** :
   il faut le transformer en **doc descriptive du Codex livré** + liste des
   entrées restant à rédiger.
@@ -157,7 +159,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | Tâche | Priorité | Chapitres / systèmes | Complexité | Dépendances |
 |-------|----------|----------------------|------------|-------------|
 | **Audit doc↔code complet** : tableau « chapitre ↔ module(s) ↔ statut réel » | 🔴 Haute | Tous + `CLAUDE.md` | Faible (lecture) | — |
-| **Mettre à jour `CLAUDE.md`** (index des 85 modules, sections Codex/Forge/Biblio/Endgame/Potions/Events) | 🔴 Haute | `CLAUDE.md` | Faible | Audit |
+| ~~**Mettre à jour `CLAUDE.md`** (index des 85 modules, sections Codex/Forge/Biblio/Endgame/Potions/Events)~~ ✅ **Fait (2026-06-14)** : index des 85 modules aligné (`check_doc_modules` vert), modules récents tous décrits ; dérives résiduelles corrigées. | 🔴 Haute | `CLAUDE.md` | Faible | Audit |
 | ~~**Réécrire Ch. 12 & 14** : « plan d'impl. » → « état livré »~~ ✅ **Fait (2026-06-14)** (Ch.12 + Ch.14). | 🔴 Haute | ~~12, 14~~ | Faible | Audit |
 | **Aligner Ch. 11** (Briser le Cycle = ✅, pas proposition) + définir « la Boucle » | 🟠 Moyenne | 11 | Faible | Audit |
 | **Bandeaux « Statut réel » + index doc↔module** | 🟠 Moyenne | Tous | Faible | Audit |
