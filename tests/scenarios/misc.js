@@ -432,12 +432,12 @@ async function scenarioHeroBarks() {
 
   // Module chargé + orchestrateur exposé.
   const loaded = await page.evaluate(() => ({
-    hasRegistry: typeof HERO_BARKS !== 'undefined' && Object.keys(HERO_BARKS).length === 15,
+    hasRegistry: typeof HERO_BARKS !== 'undefined' && Object.keys(HERO_BARKS).length === 16,
     hasFn:       typeof heroBark === 'function' && typeof pickHeroBark === 'function',
     defaultOn:   barksEnabled === true
   }));
   console.log('  chargement :', loaded);
-  assert(loaded.hasRegistry, 'HERO_BARKS absent ou ≠ 15 héros');
+  assert(loaded.hasRegistry, 'HERO_BARKS absent ou ≠ 16 héros');
   assert(loaded.hasFn,       'heroBark/pickHeroBark non exposés');
   assert(loaded.defaultOn,   'barksEnabled doit valoir true par défaut');
 

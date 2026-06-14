@@ -508,6 +508,7 @@ Object.assign(AudioSystem, {
     olivier:   { pitch: 0.88, rate: 1.08, gender: 'm' }, // intense, électrique
     nathalie:  { pitch: 1.06, rate: 0.90, gender: 'f' }, // chaleureuse, posée, lente
     chatillon: { pitch: 0.86, rate: 0.95, gender: 'm' }, // basse, ironique, feutrée
+    margaux:   { pitch: 1.24, rate: 1.06, gender: 'f' }, // fillette vive, émerveillée
   },
 
   // ── Émotion par événement (L7c) ───────────────────────────────

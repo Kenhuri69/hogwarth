@@ -38,13 +38,14 @@
 | `olivier` | Olivier de Clairval | Serdaigle | Mage de combat | Incendio, Stupefix, Protego, Episkey | original |
 | `nathalie` | Nathalie Finch | Poufsouffle | Gardienne-Herboriste | Episkey, Protego, Ferula, Incendio | original |
 | `chatillon` | Olivier de Châtillon | Serpentard | Ombremancien | Expelliarmus, Stupefix, Protego, Incendio | original |
+| `margaux` | Margaux Aiglebrume | Serdaigle | Astromancienne | Protego, Episkey, Lumos Maxima, Wingardium Leviosa | original |
 
 > ✅ Le jeu se joue **solo (1)** ou **duo (2)**. Le duo par défaut est
-> **Harry + Hermione**. Les 15 héros partagent la même paire de slots à l'écran
+> **Harry + Hermione**. Les 16 héros partagent la même paire de slots à l'écran
 > de sélection ; n'importe quel binôme est jouable.
 
 > 💡 **Note de design narratif** : les 5 figures canon servent d'« ancrage »
-> familier ; les 10 originaux sont la marge de manœuvre de la spec — c'est par
+> familier ; les 11 originaux sont la marge de manœuvre de la spec — c'est par
 > eux qu'on installe les enjeux **intimes** évoqués en [03 §3.7](03-trame-principale.md)
 > sans réécrire le canon.
 
@@ -81,6 +82,7 @@
 | Olivier | 29 | 33 | MAG 15 / SP 33 | Nukeur offensif | END 8 |
 | Nathalie | **36** | 24 | **END 13 / DEF 4 (base)** | Tank front-line + soin de champ | AGI 9 / MAG 11 |
 | O. de Châtillon | **27** | 34 | MAG 16 / AGI 13 | Contrôle (disarm + stun) glass-cannon | **PV 27 / END 7** |
+| Margaux | **28** | 33 | INT 16 / **LCK 16** | Astromancienne crit-sort + Fortune | **PV 28 / END 7** |
 
 > 💡 **Lecture transverse** : les rôles couvrent les quatre voies de Maison
 > ([07](07-les-maisons.md)) — **ATK** (Harry, Cedric, Louis), **MAG offensive**
@@ -511,6 +513,34 @@
   façon d'être Serpentard.
 - **Tagline ✅ :** *« Ombremancien de Serpentard — la ruse frappe avant la lumière. »*
 
+### Margaux Aiglebrume
+
+- **Maison / rôle :** Serdaigle / Astromancienne.
+- **Année scolaire 💡 :** 1ʳᵉ année — la benjamine du **Cercle des Astres**.
+- **Apparence 💡 :** petite fille aux boucles blond-roux, l'œil malicieux et **une
+  trace de chocolat au coin des lèvres** ; cravate et robe de Serdaigle, **Baguette
+  d'Aulne Étoilé** qui crache une étincelle bleue, le **Grimoire des Enchantements**
+  serré contre elle.
+- **Personnalité (3 traits) 💡 :** curieuse, espiègle, têtue-studieuse — elle dévore
+  les sortilèges comme des friandises.
+- **Motivation 💡 :** tout comprendre, tout déchiffrer ; le château est un livre
+  géant et chaque étage une page à tourner.
+- **Voix 💡 :** vive et claire, ponctuée de « oh ! » émerveillés ; cite un sort
+  juste avant de le lancer, comme on récite une leçon.
+- **Forces ✅ / faiblesses ✅ :** **INT 16 / LCK 16 / AGI 13** — crit de sort
+  (AGI) doublé d'une **Fortune** élevée (LCK) sur les drops/or/fouilles ; kit de
+  charmes (Lumos Maxima, Wingardium Leviosa) qui contrôle et illumine. Revers :
+  **PV 28 / END 7 / DEF 2** — fragile, à protéger derrière un front-line.
+- **Rôle en combat / spécialités 💡 :** caster d'appoint chanceuse ; brille en duo
+  derrière une gardienne (Nathalie, Agathe) qui lui achète des tours.
+- **Lien à la trame :** la **relève** de Serdaigle — trop jeune pour les batailles,
+  mais le portrait de Dumbledore voit en sa soif de savoir l'étincelle qui
+  « remonte la lumière depuis le fond ». Petite sœur d'études de Céleste l'astromage.
+- **Arc personnel 💡 :** apprendre que comprendre ne suffit pas — qu'il faut parfois
+  fermer le livre et tendre la main.
+- **Tagline ✅ :** *« Petite astromancienne de Serdaigle — son grimoire scintille
+  d'étincelles d'étoiles. »*
+
 ---
 
 ## 5.3 Choix des personnages — solo / duo & customisation légère
@@ -734,10 +764,10 @@ Un candidat n'est validé que s'il coche **tout** :
 ---
 
 ## Récapitulatif express (pour briefer Gemini)
-> 15 héros jouables (solo ou duo, défaut Harry + Hermione) : **5 figures canon**
-> (Harry, Hermione, Drago, Cho, Cedric) ancrent le familier ; **10 originaux**
+> 16 héros jouables (solo ou duo, défaut Harry + Hermione) : **5 figures canon**
+> (Harry, Hermione, Drago, Cho, Cedric) ancrent le familier ; **11 originaux**
 > forment la **Garde de l'Aube** (Céleste, Iris, Maxence, Anastasia, Louis,
-> Jeanne, Agathe, Olivier, Nathalie, Olivier de Châtillon), volontaires pressentis par le portrait de Dumbledore
+> Jeanne, Agathe, Olivier, Nathalie, Olivier de Châtillon, Margaux), volontaires pressentis par le portrait de Dumbledore
 > pour « remonter la lumière depuis le fond ». Chaque héros porte un trait dominant
 > qui sert un thème de la trame (peur/sceau, choix/don, mythe/revers), une **apparence**,
 > des **forces/faiblesses** lisibles dans ses stats, un **rôle de combat** et une
