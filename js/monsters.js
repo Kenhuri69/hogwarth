@@ -2133,6 +2133,47 @@ const MONSTERS = [
     ]
   },
 
+  // ── Caster foudre rapide des Profondeurs (élémentaire d'orage) ─────
+  // minFloor 7 → réel 7+ ET recycle en Boucle au réel 17+ (effectiveFloor(17)=7).
+  // Caster (atk 14 < 1,5×mag 25) → PAS une brute. AGI élevée (frappe vive,
+  // esquive). Élément foudre : Fulgari-like (dégâts purs) + décharge (stun).
+  // Faible PHYSIQUE — unique parmi les boss → valorise Diffindo/Sectumsempra ;
+  // résiste foudre. Sprite PNG (rembg).
+  {
+    id:       "heraut_foudre",
+    epic:     true,
+    name:     "Héraut de l'Orage",
+    icon:     "⚡",
+    imgSrc:   "img/monsters/heraut_foudre.png",
+    category: "être magique",
+    desc:     "L'air se charge et crépite. Une silhouette d'orage se condense, doigts grésillant d'arcs électriques bleus.",
+    lore:     "Quand la foudre frappe assez profond et assez souvent le même point des Ruines, la Boucle finit par lui donner une volonté. Le Héraut de l'Orage n'est qu'une tempête qui a appris à haïr : il frappe vite, sans prévenir, et la terre tremble sous chaque décharge.",
+    habitat:  "Les puits verticaux des Profondeurs Oubliées, où l'orage de surface s'engouffre encore.",
+    anecdote: "On le repère avant de le voir : les cheveux se dressent, le métal bourdonne, et l'instant d'après l'éclair est déjà parti.",
+    danger:   10,
+    minFloor: 7, maxFloor: null, weight: 1,
+    hp: 145, atk: 14, def: 9, mag: 25, agi: 20, lck: 11,
+    scale: 0.35,
+    abilities: [
+      { name: "Fulguration",       icon: "⚡", desc: "Un trait de foudre pure traverse l'armure", effect: "damage", power: 26, chance: 0.50 },
+      { name: "Décharge",          icon: "💫", desc: "Une secousse électrique paralyse",          effect: "status", statusId: "stun", power: 0, chance: 0.30, turns: 1 },
+      { name: "Bourrasque Statique", icon: "🌀", desc: "Le souffle d'orage disperse les protections", effect: "dispel", chance: 0.28 }
+    ],
+    ai: "aggressive",
+    phases: [
+      { atPct: 0.4, magMult: 1.3, msg: "Le Héraut se densifie en un nuage noir zébré d'éclairs — l'orage gronde, prêt à tout foudroyer." }
+    ],
+    resist: ["foudre"],
+    weak:   ["physique"],
+    xp: 300, gold: { min: 160, max: 240 },
+    drops: [
+      { itemId: "essence_tenebres",      chance: 0.75 },
+      { itemId: "page_grimoire",         chance: 0.50 },
+      { itemId: "herbe_asphodele_noire", chance: 0.30 },
+      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+    ]
+  },
+
   // ── Boss-miroir terminal de « Briser le Cycle » (V3, ch.11 §11.10) ──
   // Apparition à l'étage RÉEL 21+ : minFloor 11 filtré via effectiveFloor
   // (effectiveFloor(21)=11) → exclu des étages 11-20 (eff. 1-10). Le vaincre

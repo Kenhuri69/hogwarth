@@ -1622,6 +1622,27 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 16. monsters.js — Héraut de l'Orage (caster foudre, faible physique)
+//    Caster (PAS une brute), élément foudre (résiste foudre, faible physique
+//    — unique parmi les boss), recycle en Boucle.
+// ============================================================
+(function testHerautFoudre() {
+  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { isBruteMonster, effectiveFloor } = loadModule(
+    'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
+
+  const h = MONSTERS.find(x => x.id === 'heraut_foudre');
+  check('heraut_foudre: entrée présente', !!h);
+  check('heraut_foudre: epic + weight 1', !!h && h.epic === true && h.weight === 1);
+  check('heraut_foudre: imgSrc câblé', !!h && h.imgSrc === 'img/monsters/heraut_foudre.png');
+  check('heraut_foudre: n\'est PAS une brute', isBruteMonster(h) === false);
+  check('heraut_foudre: résiste foudre, faible physique',
+    !!h && h.resist.includes('foudre') && h.weak.includes('physique'));
+  // minFloor 7 → recycle en Boucle au réel 17 (effectiveFloor(17)=7).
+  check('heraut_foudre: éligible Boucle réel 17 (eff. 7)', !!h && effectiveFloor(17) >= h.minFloor);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
