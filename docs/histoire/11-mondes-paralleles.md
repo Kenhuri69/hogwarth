@@ -198,11 +198,34 @@ Concrètement :
 - Si on coupe entièrement la fonctionnalité (feature flag à `false`, ✅), le
   joueur ne perd **aucun fil narratif obligatoire**.
 
-> ❓ À arbitrer : la **séparation Boucle Ténébreuse / Mondes Parallèles** est-elle
-> à thématiser explicitement ? Proposition : *descendre* (Boucle, vertical, vers
-> sa propre ombre) vs *traverser* (Voyageur, latéral, vers l'autre). Deux façons
-> opposées de prolonger l'aventure — l'une introspective, l'autre sociale. À
-> confirmer comme axe de design narratif.
+### 11.5.1 ✅ Règle canon : Boucle Ténébreuse et Mondes Parallèles sont **isolés**
+
+✅ **Ratifié (2026-06-14).** Les deux piliers de rejouabilité sont des **axes
+indépendants** : *descendre* (Boucle, vertical, vers sa propre ombre,
+introspectif & tragique) vs *traverser* (Voyageur, latéral, vers l'autre,
+social & curieux). **Aucune interaction spéciale n'est conçue entre eux** — ils
+ne se nourrissent jamais l'un l'autre.
+
+**Crossover incident assumé (conforme au code).** La séparation est *thématique*,
+pas *mécanique* : rien n'empêche un Voyageur de visiter un hôte qui se trouve
+en Boucle Ténébreuse. Le matchmaking liste les hôtes en ligne **sans filtrer**
+l'étage ni la victoire (`mpListAvailableHosts`, `js/multiplayer-visits.js`) ;
+le visiteur voit alors simplement le **donjon plus profond** de l'hôte. Mais le
+crossover s'arrête là — **rien de la Boucle ne se propage au visiteur** :
+
+- le visiteur n'hérite d'**aucun Éclat porté**, palier ★ N ni état `cycleBroken`
+  de l'hôte (snapshot **lecture seule**, `js/save-visit-snapshot.js`) ;
+- **pas de permadeath** : la mort en combat astral éjecte simplement le visiteur
+  (`_finishAstralCombat`, `js/battle-death.js`), sans toucher sa propre save ;
+- la progression de Boucle de l'hôte n'est **pas affectée** par la visite.
+
+Autrement dit : la visite est une **fenêtre en lecture seule** sur le monde de
+l'autre, quel que soit l'axe (vertical ou latéral) où il en est. Les deux
+systèmes restent **conceptuellement isolés** ; le seul point de contact est
+visuel (on regarde le donjon de l'hôte), jamais mécanique.
+
+> 🔗 Symétrie côté Boucle : [§11.10](#1110-fin-optionnelle--briser-le-cycle) ·
+> PNJ exclusif de la Boucle : [06 §6.7.2 (Gardien de la Boucle)](06-pnj-et-factions.md#672-le-gardien-de-la-boucle-post-victoire).
 
 > ❓ À arbitrer : un PNJ **mentor du voyage** (un « Maître de la Cheminette »,
 > ou une figure rencontrée au premier passage) pourrait introniser le Voyageur
@@ -657,10 +680,13 @@ Une variante de Boucle n'est admise que si elle **passe ces cinq tests** :
   l'**Acte IV** ✅ du jeu — elle existe dès qu'on a vaincu Voldemort. Mais tout
   son **contenu narratif** (échos, variantes de Maison, « Briser le Cycle ») reste
   **optionnel** : le joueur peut ne faire que poncer la profondeur pour le prestige.
-- **Axe thématique des deux piliers** (à confirmer comme design narratif) :
+- **Axe thématique des deux piliers** ✅ (ratifié 2026-06-14, cf.
+  [§11.5.1](#1151--règle-canon--boucle-ténébreuse-et-mondes-parallèles-sont-isolés)) :
   **descendre** (Boucle, vertical, vers sa propre ombre, *introspectif & tragique*)
   vs **traverser** (Voyageur, latéral, vers l'autre, *social & curieux*). Deux
-  façons opposées de répondre à *« et après la victoire ? »*.
+  façons opposées de répondre à *« et après la victoire ? »* — **axes isolés**,
+  sans interaction spéciale (le crossover incident d'une visite reste une fenêtre
+  en lecture seule, rien de la Boucle ne se propage).
 - **Compatibilité Ironman** : la Boucle est **jouable en Ironman** (la permadeath
   rend la descente infinie d'autant plus tendue) — à l'inverse de la Cheminette,
   **exclue** ✅. Le score Ironman ([CLAUDE.md] / `ironman.js`) récompense déjà la
