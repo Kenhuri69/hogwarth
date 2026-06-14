@@ -695,10 +695,14 @@ document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT') return;
   const k = e.key;
 
-  // ── Échap : ferme la sélection de cible en combat, sinon toute modale ouverte.
+  // ── Échap : confirmation custom (résout « Annuler ») > sélection de cible
+  //    en combat > toute modale ouverte.
   if (k === 'Escape') {
+    const confirmM = document.getElementById('confirm-modal');
     const ts = document.getElementById('target-selection');
-    if (inBattle && ts && ts.style.display !== 'none' && typeof _cancelTargetSelection === 'function') {
+    if (confirmM && confirmM.style.display !== 'none' && typeof _closeConfirmModal === 'function') {
+      _closeConfirmModal(false);
+    } else if (inBattle && ts && ts.style.display !== 'none' && typeof _cancelTargetSelection === 'function') {
       _cancelTargetSelection();
     } else {
       ESC_CLOSEABLE_MODALS.forEach(closeModal);

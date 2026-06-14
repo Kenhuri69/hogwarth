@@ -266,17 +266,20 @@ function openOutOfCombatTeleport(charIdx) {
   safeEl('spell-modal').style.display = 'flex';
 }
 
-// Confirmation native (mobile-friendly) puis exécution.
-function confirmTeleport(targetFloor, charIdx) {
+// Confirmation thématisée puis exécution.
+async function confirmTeleport(targetFloor, charIdx) {
   const caster = party[charIdx] || party[0];
   if (!caster) return;
   const spell = SPELLS.find(s => s.name === 'Portus');
   const cost  = (spell && spell.outOfCombatCost) || (spell && spell.cost) || 38;
-  if (typeof confirm === 'function') {
+  if (typeof confirmModal === 'function') {
     const locName = (typeof LOCATIONS !== 'undefined' && LOCATIONS[Math.min(targetFloor - 1, LOCATIONS.length - 1)]) || `Niveau ${targetFloor}`;
-    if (!confirm(`Téléporter le groupe vers le Niveau ${targetFloor} (${locName}) pour ${cost} PM ?`)) {
-      return;
-    }
+    const ok = await confirmModal({
+      title: 'Téléportation',
+      body: `Téléporter le groupe vers le Niveau ${targetFloor} (${locName}) pour ${cost} PM ?`,
+      confirmLabel: 'Se téléporter'
+    });
+    if (!ok) return;
   }
   closeModal('spell-modal');
   teleportOutOfCombat(targetFloor, charIdx);

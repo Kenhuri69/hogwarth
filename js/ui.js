@@ -547,6 +547,45 @@ function addMsg(text, type = '') {
 
 function closeModal(id) { const el = safeEl(id); if (el) el.style.display = 'none'; }
 
+// ── Confirmation thématisée (remplace confirm() natif) ───────────────────
+// Retourne une Promise<boolean> résolue au choix du joueur. Gère le focus :
+// focus initial sur le bouton de confirmation, restitué à l'élément
+// précédemment actif à la fermeture (accessibilité clavier). Repli défensif
+// sur confirm() natif si la modale n'est pas dans le DOM.
+let _confirmModalResolve = null;
+let _confirmModalPrevFocus = null;
+function confirmModal({ title = 'Confirmer', body = '', confirmLabel = 'Confirmer',
+                        cancelLabel = 'Annuler', danger = false } = {}) {
+  const modal = safeEl('confirm-modal');
+  if (!modal) {
+    return Promise.resolve(typeof confirm === 'function' ? confirm(`${title}\n\n${body}`) : true);
+  }
+  const titleEl  = safeEl('confirm-modal-title');
+  const bodyEl   = safeEl('confirm-modal-body');
+  const okBtn    = safeEl('confirm-modal-ok');
+  const cancelBtn = safeEl('confirm-modal-cancel');
+  if (titleEl)  titleEl.textContent  = title;
+  if (bodyEl)   bodyEl.textContent   = body;
+  if (okBtn)    { okBtn.textContent = confirmLabel; okBtn.classList.toggle('confirm-danger', !!danger); }
+  if (cancelBtn) cancelBtn.textContent = cancelLabel;
+  _confirmModalPrevFocus = (document.activeElement instanceof HTMLElement) ? document.activeElement : null;
+  modal.style.display = 'flex';
+  if (okBtn) okBtn.focus();
+  return new Promise((resolve) => { _confirmModalResolve = resolve; });
+}
+function _closeConfirmModal(result) {
+  const modal = safeEl('confirm-modal');
+  if (modal) modal.style.display = 'none';
+  const resolve = _confirmModalResolve;
+  _confirmModalResolve = null;
+  // Restitue le focus à l'élément qui a ouvert la confirmation.
+  if (_confirmModalPrevFocus && typeof _confirmModalPrevFocus.focus === 'function') {
+    _confirmModalPrevFocus.focus();
+  }
+  _confirmModalPrevFocus = null;
+  if (resolve) resolve(!!result);
+}
+
 // La modale #character-modal est partagée par la Fiche, le Journal des Quêtes
 // et les Réglages (tous peuplent #char-detail). Ce helper synchronise l'en-tête
 // #character-modal-title pour qu'il corresponde au contenu affiché.

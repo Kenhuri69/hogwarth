@@ -167,7 +167,7 @@ function setHouseDonationAmount(value) {
 }
 
 // ── Confirmation (depuis l'UI) ───────────────────────────────
-function confirmHouseDonation() {
+async function confirmHouseDonation() {
   const input = document.getElementById('house-donation-amount');
   if (!input) return;
   const amount = Math.floor(Number(input.value) || 0);
@@ -177,8 +177,13 @@ function confirmHouseDonation() {
     return;
   }
 
-  if (amount >= 5000 && typeof confirm === 'function') {
-    if (!confirm(`Confirmer un don de ${amount} G à ${chosenHouse} ?`)) return;
+  if (amount >= 5000 && typeof confirmModal === 'function') {
+    const ok = await confirmModal({
+      title: 'Confirmer le don',
+      body: `Verser ${amount} G à ${chosenHouse} ?`,
+      confirmLabel: 'Faire le don'
+    });
+    if (!ok) return;
   }
 
   const ok = donateGoldToHouse(amount);

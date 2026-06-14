@@ -1700,6 +1700,31 @@ body {
 .ironman-confirm-actions {
   display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;
 }
+/* Modale de confirmation générique (remplace confirm() natif). z-index élevé
+   pour passer au-dessus de la modale appelante (slot/don/sorts). */
+#confirm-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 1500;
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+#confirm-modal .modal-box { max-width: 420px; }
+.confirm-modal-body {
+  color: var(--parchment);
+  font-family: 'Crimson Text', serif;
+  font-size: 15px; line-height: 1.55;
+  margin: 4px 2px 20px;
+  white-space: pre-line;
+}
+.confirm-modal-actions {
+  display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap;
+}
+#confirm-modal-ok.confirm-danger {
+  background: linear-gradient(#b8362c, #8a241c);
+  border-color: #e0584a;
+}
 #house-detail-modal .modal-box { max-width: 560px; }
 #settings-modal .modal-box { max-width: 420px; }
 .settings-section-label {
