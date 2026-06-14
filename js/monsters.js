@@ -2093,6 +2093,46 @@ const MONSTERS = [
     ]
   },
 
+  // ── Caster glace des profondeurs (spectre revenant gelé) ───────────
+  // minFloor 8 → réel 8+ ET recycle en Boucle au réel 18+ (effectiveFloor(18)=8).
+  // Caster (atk 12 < 1,5×mag 26) → PAS une brute. Élément glace : Glacius-like
+  // (statut gel ❄️) + gel profond (stun). Catégorie fantôme → mort-vivant, donc
+  // Lumos Solem ×1,5 s'applique en plus ; faible feu. Sprite PNG (rembg).
+  {
+    id:       "spectre_givre",
+    epic:     true,
+    name:     "Spectre de Givre",
+    icon:     "❄️",
+    imgSrc:   "img/monsters/spectre_givre.png",
+    category: "fantôme",
+    desc:     "Le froid tombe d'un coup. Une silhouette de glace et de linceul gelé se dresse, un éclat de givre au creux de sa main décharnée.",
+    lore:     "Un sorcier mort de froid dans les profondeurs, que la Boucle a relevé en revenant de givre. Il ne se souvient plus de son nom — seulement du gel qui l'a pris, et qu'il rend désormais à quiconque s'aventure trop bas. Là où il flotte, l'air se cristallise.",
+    habitat:  "Les galeries glacées des Profondeurs Oubliées, où l'eau ne coule plus depuis des siècles.",
+    anecdote: "Les torches s'éteignent à son approche : non par manque d'air, mais parce que la flamme elle-même gèle sur la mèche.",
+    danger:   10,
+    minFloor: 8, maxFloor: null, weight: 1,
+    hp: 150, atk: 12, def: 10, mag: 26, agi: 14, lck: 10,
+    scale: 0.35,
+    abilities: [
+      { name: "Éclat de Givre",   icon: "🧊", desc: "Projette un dard de glace pure",         effect: "damage", power: 24, chance: 0.45 },
+      { name: "Étreinte Glaciale", icon: "❄️", desc: "Le gel s'accroche et ronge lentement",   effect: "status", statusId: "gel",  power: 8, chance: 0.40, turns: 3 },
+      { name: "Gel Profond",      icon: "💫", desc: "Fige la cible dans un bloc de glace",      effect: "status", statusId: "stun", power: 0, chance: 0.22, turns: 1 }
+    ],
+    ai: "cautious",
+    phases: [
+      { atPct: 0.4, magMult: 1.3, msg: "Le Spectre se hérisse de pics de glace — le froid devient mordant, chaque souffle brûle de givre." }
+    ],
+    resist: ["glace", "ténèbres"],
+    weak:   ["feu"],
+    xp: 300, gold: { min: 160, max: 240 },
+    drops: [
+      { itemId: "essence_tenebres",      chance: 0.75 },
+      { itemId: "page_grimoire",         chance: 0.50 },
+      { itemId: "herbe_asphodele_noire", chance: 0.30 },
+      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+    ]
+  },
+
   // ── Boss-miroir terminal de « Briser le Cycle » (V3, ch.11 §11.10) ──
   // Apparition à l'étage RÉEL 21+ : minFloor 11 filtré via effectiveFloor
   // (effectiveFloor(21)=11) → exclu des étages 11-20 (eff. 1-10). Le vaincre

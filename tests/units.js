@@ -1597,6 +1597,31 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 15. monsters.js — Spectre de Givre (caster glace, mort-vivant)
+//    Caster (PAS une brute), élément glace (résiste glace, faible feu),
+//    catégorie fantôme (→ Lumos Solem ×1,5), sprite PNG câblé.
+// ============================================================
+(function testSpectreGivre() {
+  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { isBruteMonster, effectiveFloor } = loadModule(
+    'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
+
+  const s = MONSTERS.find(x => x.id === 'spectre_givre');
+  check('spectre_givre: entrée présente', !!s);
+  check('spectre_givre: epic + weight 1', !!s && s.epic === true && s.weight === 1);
+  check('spectre_givre: imgSrc câblé', !!s && s.imgSrc === 'img/monsters/spectre_givre.png');
+  check('spectre_givre: catégorie fantôme (mort-vivant)', !!s && s.category === 'fantôme');
+  check('spectre_givre: n\'est PAS une brute', isBruteMonster(s) === false);
+  check('spectre_givre: résiste glace, faible feu',
+    !!s && s.resist.includes('glace') && s.weak.includes('feu'));
+  // Applique le statut gel ❄️ (4ᵉ DoT).
+  check('spectre_givre: inflige le statut gel',
+    !!s && s.abilities.some(a => a.statusId === 'gel'));
+  // minFloor 8 → recycle en Boucle au réel 18 (effectiveFloor(18)=8).
+  check('spectre_givre: éligible Boucle réel 18 (eff. 8)', !!s && effectiveFloor(18) >= s.minFloor);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
