@@ -366,7 +366,8 @@ signature ([08 §8.5](../../docs/histoire/08-quetes-et-sous-intrigues.md)) :
 | **P0** ✅ | **Coûts & socle data** *(livré 2026-06-14)* | table §1.6 figée ; registre `ARTIFACT_FORMS` (12 formes, inerte) + `PREMIUM_MULT` + helper PUR `premiumStat()` ajoutés à `data.js` ; palier `uncommon` documenté (§1.6) | ✅ `node tests/units.js` (614 assertions, bloc #12 `testArtifactSocle`) + smoke Equipment/ShopLimits/TryAddItem/CritDodge/ConsumableStacking verts ; cache bump data.js `?v=33` / `CACHE_VERSION v136` ; `check_cache_versions` + `pwa-smoke` OK |
 | **P1** ✅ | **Nouvelles formes (1.4 A/B)** *(livré 2026-06-14)* | 13 entrées ITEMS (8 mid-game A + 5 endgame B) avec `formType` (+ `bonusElemDmg`/`spCostReduction` là où prévu) ; 2 leviers combat branchés (`_spellElementalDamage`, `_spellSpCost`) ; 13 icônes painterly (2 parts neufs `orb.svg`/`mask.svg`) + registres NEW & legacy | ✅ `node tests/units.js` (620) + `node tests/smoke.js` (219 dont `scenarioArtifactForms`) verts ; cache bump data.js `?v=34` / battle-spells `?v=15` / inventory-spells `?v=3` / item-icons `?v=23` / `CACHE_VERSION v139` ; `check_cache_versions` + `pwa-smoke` OK |
 | **P2** ✅ | **Premium (1.5)** *(livré 2026-06-14)* | 4 variantes Premium pré-cuites (1/Maison) via `premiumStat` + tags `premium/premiumOf/houseAffinity/premiumFx` ; remise cérémonielle (`HOUSE_PREMIUM` → `pendingHouseRewards` à la Quête Signature + `_houseClaimableItems`) ; FX/son d'équipement défensif (`_premiumEquipFlash` + stinger) ; 4 entrées Codex ; 4 icônes painterly (repli, swappables `--raster`) | ✅ `node tests/units.js` (634) + smoke `scenarioPremiumReward` (stats pré-cuites + remise + équipement) / `ItemIcons` (166 mappés) verts ; cache bump data v35 / codex v10 / inventory v20 / quests v16 / npc-dialog v19 / item-icons v24 / `CACHE_VERSION v142` |
-| **P3** | **Shops & quêtes (1.7/1.8)** | SHOP_CATALOG + slot faveur Maison + nouveau PNJ + récompenses quêtes + entrées Codex + Reliques de la Mort/Chœur | smoke `npc`/`quests` ; cas : stock garantit l'artefact affinité ; sim éco OK |
+| **P3 (partie 1)** ✅ | **Shops (1.7 cœur)** *(livré 2026-06-14)* | `SHOP_CATALOG` enrichi (10 nouvelles formes vendables, minFloor) + `houseAffinity` sur les formes mid-game + **slot « faveur de Maison »** dans `_rollShopStock` (artefact affin à `chosenHouse` garanti, remise −10 % via `houseAffinityDiscount`, bandeau ⚜) | ✅ `node tests/units.js` + smoke `scenarioHouseFavorShop` (garanti + affinité + remise, 3 Maisons) / `ShopLimits` / `ItemIcons` verts ; cache bump data v36 / shop v14 / `CACHE_VERSION v144` |
+| **P3 (partie 2)** ⏳ | **Quêtes & obtention Premium + Codex** | nouveau PNJ Apothicaire des Reliques (`npcs.js wares`) ; obtention Premium en Ruines (coffres ≥14) / drops boss Ténébreux / exclusive Marchand d'Ombre (`rarityScales`) ; Codex **Reliques de la Mort** (méta-objectif cosmétique) + **Chœur des Fondateurs** (dépend des reliques vocales §1.4 C, non implémentées) | à faire |
 
 Chaque lot : **plan amendé** (§5), **smoke vert** (§7), **cache-bump** si JS/CSS
 touché (§8), **PR non créée sans demande** (§6).
@@ -473,6 +474,29 @@ rowena/helga`), avec `variants.house`.
   et **coffres Ruines / drops boss Ténébreux** (§2.4) : reportés en **P3**
   (canaux d'obtention = shops/quêtes/Boucle). P2 ne livre que la remise
   cérémonielle de signature.
+
+#### P3 partie 1 — notes d'implémentation (2026-06-14)
+
+**Livré (cœur shop, §1.7/§2.3)** :
+- `SHOP_CATALOG` (shop.js) : +10 formes vendables — `orbe_flamme`/`orbe_givre`/
+  `baton_apprenti` (ét.4), `cristal_focalisation`/`gantelets_combat` (ét.5),
+  `cape_funambule`/`masque_courage` (ét.6), `baton_ancestral`/`masque_rituel`
+  (ét.9), `gantelets_aurors` (ét.10). `grimoire_flottant` (coffre) et
+  `orbe_runique` (Ruines) volontairement HORS shop.
+- `houseAffinity` posé sur les formes mid-game (lean visuel/accès, jamais
+  bloquant — §1.2) : Gryff = orbe_flamme/gantelets_combat/masque_courage ;
+  Slyth = orbe_givre/cape_funambule ; Serd = cristal/baton_apprenti/grimoire ;
+  **Pouf = `talisman_blaireau`** (forme défensive mid-game créée pour combler le
+  trou : DEF+3 END+2 régen +1 PV, rare, ét.5, icône painterly repli). Les 4
+  Maisons ont donc un slot faveur.
+- **Slot « faveur de Maison »** dans `_rollShopStock` : garantit l'artefact affin
+  à `chosenHouse`, remise `houseAffinityDiscount` (0.90), bandeau ⚜ dans
+  `_renderBuyGrid`. Ne remplace jamais un consommable de soin en dernière
+  position (anti-softlock).
+
+**Reporté en P3 partie 2** : PNJ Apothicaire des Reliques ; obtention Premium
+(Ruines/Boucle/Marchand d'Ombre) ; Codex Reliques de la Mort + Chœur des
+Fondateurs (ce dernier dépend des reliques vocales §1.4 C, non implémentées).
 
 ### 2.7 Suggestions d'assets
 

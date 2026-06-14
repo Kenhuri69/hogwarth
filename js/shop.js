@@ -85,6 +85,19 @@ const SHOP_CATALOG = [
   { id: "pectoral_auror",       minFloor: 10 },
   { id: "larme_phenix_mineure", minFloor: 10 },
   { id: "grimoire_avance",      minFloor: 10 },
+  // Artefacts & Reliquaires 2.0 — P3 : nouvelles formes vendables (plan §1.4/§1.7).
+  // Mid-game (uncommon/rare) ; les endgame (epic) à haut étage (Hogsmeade corrompu).
+  { id: "orbe_flamme",          minFloor: 4 },
+  { id: "orbe_givre",           minFloor: 4 },
+  { id: "baton_apprenti",       minFloor: 4 },
+  { id: "cristal_focalisation", minFloor: 5 },
+  { id: "gantelets_combat",     minFloor: 5 },
+  { id: "cape_funambule",       minFloor: 6 },
+  { id: "masque_courage",       minFloor: 6 },
+  { id: "talisman_blaireau",    minFloor: 5 },
+  { id: "baton_ancestral",      minFloor: 9 },
+  { id: "masque_rituel",        minFloor: 9 },
+  { id: "gantelets_aurors",     minFloor: 10 },
   // Consommables endgame (post-victoire) — voir ENDGAME_PLAN.md §7.10
   { id: "potion_xl",           minFloor: 15 },
   { id: "potion_xl_sp",        minFloor: 15 },
@@ -107,6 +120,9 @@ const STATIC_SHOP_BUYBACK = { default: 0.50 };
 // Voir .claude/plans/shop-purchase-limits.md
 const SHOP_STOCK_SIZE    = 8;   // objets tirés au hasard par réassort
 const SHOP_RESTOCK_STEPS = 40;  // pas avant réassort automatique
+// Artefacts 2.0 §2.3 — slot « faveur de Maison » : un artefact dont
+// houseAffinity === chosenHouse est garanti dans le stock fixe, remisé.
+const houseAffinityDiscount = 0.90;   // −10 % sur le slot faveur
 
 // État courant du shop ouvert (kind 'static' | 'vendor' | 'requirement', mode 'buy' | 'sell')
 let _shopContext = { kind: 'static', npcId: null };
@@ -149,11 +165,38 @@ function _rollShopStock() {
   const consumablePicks = _pickRandom(consumables, Math.min(2, consumables.length, SHOP_STOCK_SIZE));
   const rest      = eligible.filter(e => !consumablePicks.includes(e));
   const restPicks = _pickRandom(rest, SHOP_STOCK_SIZE - consumablePicks.length);
-  return consumablePicks.concat(restPicks).map(e => {
+  const stock = consumablePicks.concat(restPicks).map(e => {
     const it    = ITEMS.find(i => i.id === e.id);
     const price = (typeof e.price === 'number') ? e.price : it.price;
     return { item: { ...it }, price, sold: false };
   });
+
+  // Slot « faveur de Maison » (§2.3) : si un artefact éligible penche vers la
+  // Maison du joueur, on le GARANTIT dans le stock (remisé, bandeau ⚜). S'il
+  // est déjà présent, on le marque simplement ; sinon il remplace la dernière
+  // entrée non-consommable du tirage (préserve les soins anti-softlock).
+  const house = (typeof chosenHouse !== 'undefined') ? chosenHouse : null;
+  if (house) {
+    const favEligible = eligible.filter(e => {
+      const it = ITEMS.find(i => i.id === e.id);
+      return it && it.houseAffinity === house;
+    });
+    if (favEligible.length) {
+      let already = stock.find(s => s.item.houseAffinity === house);
+      if (!already) {
+        const pick = favEligible[Math.floor(Math.random() * favEligible.length)];
+        const it   = ITEMS.find(i => i.id === pick.id);
+        const base = (typeof pick.price === 'number') ? pick.price : it.price;
+        const idx  = stock.map(s => s.item.type).lastIndexOf('consumable') === stock.length - 1
+          ? stock.length - 2 : stock.length - 1;   // ne pas écraser un soin en dernière position
+        already = { item: { ...it }, price: base, sold: false };
+        if (idx >= 0) stock[idx] = already; else stock.push(already);
+      }
+      already.favor = true;
+      already.price = Math.round(already.price * houseAffinityDiscount);
+    }
+  }
+  return stock;
 }
 
 // Tirage paresseux : ne (re)tire que si le stock n'existe pas encore.
@@ -380,9 +423,12 @@ function _renderBuyGrid(grid) {
     // Indicateur rareté pour les items à prix progressif (sinks endgame).
     const rareTag = (item.rarityScales)
       ? ` <span style="color:#c9a84c;font-size:0.78em" title="Stock rare — chaque achat épuise davantage le marché.">⚜ rare</span>` : '';
+    // Slot faveur de Maison : bandeau + remise (−10 %) signalés.
+    const favorTag = (stockEntry && stockEntry.favor)
+      ? ` <span style="color:#e6c34a;font-size:0.78em" title="Faveur de Maison — artefact affin à votre Maison, remisé.">⚜ Faveur de Maison −10%</span>` : '';
     div.innerHTML = `<div class="shop-icon">${getItemIconHtml(item, 'ui-icon-xl')}</div>
       <div class="shop-info">
-        <div class="shop-name">${item.name}${soldTag}${rareTag}</div>
+        <div class="shop-name">${item.name}${soldTag}${rareTag}${favorTag}</div>
         <div class="shop-desc">${item.desc}</div>
       </div>
       <div class="shop-price">${price}G</div>`;
