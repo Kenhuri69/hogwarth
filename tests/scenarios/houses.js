@@ -600,7 +600,7 @@ async function scenarioHouseFavorShop() {
 
   const res = await page.evaluate(() => {
     const out = {};
-    for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle']) {
+    for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle']) {
       chosenHouse = h; currentFloor = 6; shopStock = null;
       const stock = _rollShopStock();
       const fav = stock.find(s => s.favor);
@@ -615,7 +615,7 @@ async function scenarioHouseFavorShop() {
     return out;
   });
   console.log('  →', JSON.stringify(res));
-  for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle']) {
+  for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle', 'Poufsouffle']) {
     assert(res[h].hasFav,     `${h} : un slot faveur doit être garanti à l'étage 6`);
     assert(res[h].affMatch,   `${h} : l'item faveur doit pencher vers ${h}`);
     assert(res[h].discounted, `${h} : la faveur doit être remisée de 10 %`);

@@ -94,6 +94,7 @@ const SHOP_CATALOG = [
   { id: "gantelets_combat",     minFloor: 5 },
   { id: "cape_funambule",       minFloor: 6 },
   { id: "masque_courage",       minFloor: 6 },
+  { id: "talisman_blaireau",    minFloor: 5 },
   { id: "baton_ancestral",      minFloor: 9 },
   { id: "masque_rituel",        minFloor: 9 },
   { id: "gantelets_aurors",     minFloor: 10 },

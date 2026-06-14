@@ -485,9 +485,10 @@ rowena/helga`), avec `variants.house`.
   `orbe_runique` (Ruines) volontairement HORS shop.
 - `houseAffinity` posé sur les formes mid-game (lean visuel/accès, jamais
   bloquant — §1.2) : Gryff = orbe_flamme/gantelets_combat/masque_courage ;
-  Slyth = orbe_givre/cape_funambule ; Serd = cristal/baton_apprenti/grimoire.
-  **Poufsouffle : aucune forme mid-game ne lui convient** (défensif) → pas de
-  faveur Pouf pour l'instant (no-op gracieux ; à combler en partie 2).
+  Slyth = orbe_givre/cape_funambule ; Serd = cristal/baton_apprenti/grimoire ;
+  **Pouf = `talisman_blaireau`** (forme défensive mid-game créée pour combler le
+  trou : DEF+3 END+2 régen +1 PV, rare, ét.5, icône painterly repli). Les 4
+  Maisons ont donc un slot faveur.
 - **Slot « faveur de Maison »** dans `_rollShopStock` : garantit l'artefact affin
   à `chosenHouse`, remise `houseAffinityDiscount` (0.90), bandeau ⚜ dans
   `_renderBuyGrid`. Ne remplace jamais un consommable de soin en dernière

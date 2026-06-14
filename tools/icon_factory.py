@@ -1654,6 +1654,19 @@ RECIPES: Dict[str, Recipe] = {
         ],
         sparkles=True,
     ),
+    # Forme défensive mid-game Poufsouffle (P3) — talisman badger, repli painterly.
+    "talisman_blaireau": Recipe(
+        id="talisman_blaireau", name="Talisman du Blaireau",
+        rarity="rare", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (200, 168,  96), "setting": (240, 199,  94), "gem": (120,  92,  52)},
+        accents=[
+            {"kind": "emboss", "region": "setting", "color": (150, 112,  56)},
+            {"kind": "symbol", "region": "setting", "shape": "badger",
+             "color": ( 55,  46,  41), "size": 90},
+            {"kind": "gem_facet_shine", "region": "gem", "color": (210, 184, 130)},
+        ],
+    ),
 }
 
 
