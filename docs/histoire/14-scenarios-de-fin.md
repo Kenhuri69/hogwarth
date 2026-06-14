@@ -152,6 +152,14 @@ Au fond des Profondeurs (étage 10), `voldemort_revenu` tombe → la modale
 > (`js/endgame.js`) et couverts par `tests/units.js` §11. Tout est défensif :
 > flag absent → texte de base.
 
+> ✅ **Surface = la cinématique de victoire.** La « cinématique » de la fin A
+> **est** cette modale `#victory-modal` (discours `#victory-speech` + flourish
+> doré `victoryFlourish`, `js/cinematics.js` — surcouche **visuelle pure**, sans
+> page de texte). Les variantes B sont donc **déjà rendues dans la cinématique** :
+> il n'existe pas de cinématique-texte de victoire distincte où les « porter ».
+> *(Le seul texte multi-pages est la fin C « Briser le Cycle », `BREAK_CYCLE_PAGES`
+> — hors de ce périmètre, qui ne couvre que la fin A.)*
+
 #### (a) Selon la **Maison** (`chosenHouse`) — ✅ (implémenté)
 
 Le **dernier mot** de Dumbledore prend la couleur de la Maison du héros (registre :
