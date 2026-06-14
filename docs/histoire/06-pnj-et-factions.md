@@ -372,8 +372,12 @@ Forge & Bibliothèque.
   récurrences. Mais j'ai encore des récompenses. »*
 - **Lien à la trame :** ses répliques *idle* posent l'identité de la Boucle (Greyback
   qui se reforme, Aragog « sous la racine du temps », Dolohov « jamais vraiment
-  mort »). Il laisse entrevoir une **sortie possible** : *« Plus tu purges, plus la
-  Boucle s'allège. C'est ainsi qu'on en sort — peut-être. »*
+  mort »). Pour la **nature canonique** de la Boucle — ce qu'elle *est* : une
+  **spirale qui s'enfonce** (et non un cercle), conséquence narrative de la
+  fêlure menée à son terme, pas un recommencement mécanique — voir
+  [11 §11.6.1](11-mondes-paralleles.md). Il laisse entrevoir une **sortie
+  possible** : *« Plus tu purges, plus la Boucle s'allège. C'est ainsi qu'on en
+  sort — peut-être. »*
 
 > ❓ **À arbitrer** (en lien avec [03 §3.6](03-trame-principale.md)) : ce « peut-être »
 > annonce-t-il une **fin écrite** de la Boucle, ou n'est-ce qu'une **boucle de

@@ -173,6 +173,10 @@ La victoire **ouvre** la faille au lieu de la fermer. Le château se rejoue,
 **corrompu** : ses créatures et ses boss reviennent en **Ténébreux**, et sous
 le fond s'ouvrent les **Ruines Anciennes** (étage 14+), antérieures à l'école.
 
+> 🔗 **Nature canonique de la Boucle** (ce qu'elle *est* : une spirale qui
+> s'enfonce, conséquence de la fêlure menée à son terme, pas un recommencement
+> mécanique) : [11 §11.6.1 « Pourquoi la Boucle existe »](11-mondes-paralleles.md).
+
 - ✅ Boss 8-10 de retour en variantes Ténébreuses aux étages 18-20.
 - ✅ **Gardien de la Boucle** (PNJ exclusif post-victoire) : quêtes de purge
   répétables (Greyback / Aragog / Dolohov) → matériaux Forge & Bibliothèque.
