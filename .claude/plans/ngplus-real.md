@@ -15,7 +15,7 @@ ce flag sur le gameplay via un **multiplicateur global** sur les monstres.
   Empilable : finir un run (victoire) incrémente `victories` → débloque le cran
   suivant. Opt-in au démarrage → `ngPlusLevel` = ce cran (sinon 0).
 - **Multiplicateur** (pur, `ngPlusScaling(level)` dans dungeon-scaling.js) :
-  - stats ennemis (hp/atk/def/mag) : `1 + 0.20 × level`
+  - stats ennemis (hp/atk/def/mag) : `1 + 0.15 × level` (calibré sim, cf. ci-dessous)
   - butin (xp/gold) : `1 + 0.25 × level` (un peu plus riche → récompense le défi)
   - drops : `chance × (1 + 0.10 × level)`, borné à 1
 - **Application** : dernière passe de `scaleMonster` (compose avec difficulté +
@@ -38,5 +38,13 @@ ce flag sur le gameplay via un **multiplicateur global** sur les monstres.
 10. Bump cache PWA (tous les JS servis modifiés) + `node tests/smoke.js`.
 
 ## Statut
-- [x] 1-10 — livré. units 646 ✅ · smoke 218/218 ✅ · pwa ✅. Calibration
-  0.20/0.25/0.10 par cran, cap 10 (à affiner par retour de jeu si besoin).
+- [x] 1-10 — livré (PR #536). units 646 ✅ · smoke ✅ · pwa ✅.
+
+## Calibration par simulation (suivi)
+Flag ajouté : `tools/sim-difficulty.js --ngplus=N` (miroir de `ngPlusScaling`,
+injecté dans `scaledStatValue` + ligne `mag`). Sweep vétéran kitté
+(`--artifacts --house-tier=16 --bonus-levels=2`, Duo, n=250), win% étage 8 :
+NG+1 = 56 % (stat 0.20) → 66 % (0.15) ; NG+3 = 16 % → 28 % ; NG+5 = 2 % → 12 %.
+**Décision : stat 0.15/cran** (ladder ~6 %/cran, F8 reste le mur naturel). Le sim
+est pessimiste ET ignore la boucle +25 % XP → difficulté réelle plus douce.
+Butin 0.25 / drop 0.10 conservés (sous-crédités par le sim, donc sûrs).

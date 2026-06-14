@@ -585,7 +585,7 @@ Opt-in au player-select (`#ngplus-toggle`, visible si le profil a ≥ 1 victoire
   enregistrée débloque le cran suivant. Armé dans `confirmHeroSelection` (main.js).
 - **Effet** (multiplicateur GLOBAL, dernière passe de `scaleMonster`,
   `dungeon-scaling.js`) via le helper PUR `ngPlusScaling(level)` :
-  - stats ennemies (hp/atk/def/mag) : `× (1 + 0.20 × level)`
+  - stats ennemies (hp/atk/def/mag) : `× (1 + 0.15 × level)`
   - butin (xp/or) : `× (1 + 0.25 × level)`
   - drops : `chance × (1 + 0.10 × level)` (borné à 1)
   Compose avec la difficulté ET la récursion endgame (Boucle). `buildEcho`
@@ -594,7 +594,9 @@ Opt-in au player-select (`#ngplus-toggle`, visible si le profil a ≥ 1 victoire
   seuls les ennemis et leurs gains sont renforcés.
 - **UI** : libellé opt-in dynamique (`_refreshNgPlusOptIn`, affiche le cran +
   les %), HUD `#ngplus-hud-title` suffixé « · NG+N » (`_updateNgPlusTitle`).
-- Calibration : `NGPLUS_*` dans `dungeon-scaling.js` ; helper testé (`units.js` §17).
+- Calibration : `NGPLUS_*` dans `dungeon-scaling.js` (stat 0.15/cran calibré par
+  `tools/sim-difficulty.js --ngplus=N` — ladder ~6 %/cran de win-rate Duo) ;
+  helper testé (`units.js` §17).
 
 ---
 

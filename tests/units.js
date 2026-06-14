@@ -1661,7 +1661,7 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('ngPlusScaling(0) = identité', s0.stat === 1 && s0.reward === 1 && s0.drop === 1);
   check('ngPlusScaling(-3) = identité (garde-fou)', ngPlusScaling(-3).stat === 1);
   const s5 = ngPlusScaling(5);
-  check('ngPlusScaling(5).stat = 2.0',   approx(s5.stat, 1 + 0.20 * 5));
+  check('ngPlusScaling(5).stat = 1.75', approx(s5.stat, 1 + 0.15 * 5));
   check('ngPlusScaling(5).reward = 2.25', approx(s5.reward, 1 + 0.25 * 5));
   check('ngPlusScaling(5).drop = 1.5',   approx(s5.drop, 1 + 0.10 * 5));
   const sCap = ngPlusScaling(999), sMax = ngPlusScaling(NGPLUS_CAP);
@@ -1675,7 +1675,7 @@ function loadModule(relPath, exportNames, globals = {}) {
   const b = scaleMonster(base, 1, { ngPlusLevel: 5 });
   check('scaleMonster NG+0 : hp de base', a.hp === 100 && a.gold === 10);
   check('scaleMonster NG+0 : pas de tag ngPlusLevel', a.ngPlusLevel === undefined);
-  check('scaleMonster NG+5 : hp ×2.0', b.hp === 200);
+  check('scaleMonster NG+5 : hp ×1.75', b.hp === 175);
   check('scaleMonster NG+5 : or ×2.25', b.gold === 22);     // floor(10×2.25)
   check('scaleMonster NG+5 : drop ×1.5', approx(b.drops[0].chance, 0.6));
   check('scaleMonster NG+5 : tag ngPlusLevel=5', b.ngPlusLevel === 5);
