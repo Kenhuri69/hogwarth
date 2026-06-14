@@ -592,6 +592,44 @@ async function scenarioPremiumReward() {
   await browser.close();
 }
 
+// Artefacts 2.0 — P3 : slot « faveur de Maison » dans la boutique fixe.
+async function scenarioHouseFavorShop() {
+  console.log('\n── Scénario : Artefacts P3 (slot faveur de Maison) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const res = await page.evaluate(() => {
+    const out = {};
+    for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle']) {
+      chosenHouse = h; currentFloor = 6; shopStock = null;
+      const stock = _rollShopStock();
+      const fav = stock.find(s => s.favor);
+      const base = fav ? (ITEMS.find(i => i.id === fav.item.id).price) : 0;
+      out[h] = {
+        hasFav: !!fav,
+        affMatch: !!fav && fav.item.houseAffinity === h,
+        discounted: !!fav && fav.price === Math.round(base * 0.90),
+        single: stock.filter(s => s.favor).length,
+      };
+    }
+    return out;
+  });
+  console.log('  →', JSON.stringify(res));
+  for (const h of ['Gryffondor', 'Serpentard', 'Serdaigle']) {
+    assert(res[h].hasFav,     `${h} : un slot faveur doit être garanti à l'étage 6`);
+    assert(res[h].affMatch,   `${h} : l'item faveur doit pencher vers ${h}`);
+    assert(res[h].discounted, `${h} : la faveur doit être remisée de 10 %`);
+    assert(res[h].single === 1, `${h} : un seul slot faveur attendu`);
+  }
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Slot faveur de Maison OK (garanti + affinité + remise)');
+  await browser.close();
+}
+
 async function scenarioHouseDonationAndStars() {
   console.log('\n── Scénario : Don Maison + série Apothéose ★ N ──');
   const { browser, page, errors } = await launchGame();
@@ -1899,4 +1937,4 @@ async function scenarioVictorySpeechVariants() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward] };
+module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward, scenarioHouseFavorShop] };
