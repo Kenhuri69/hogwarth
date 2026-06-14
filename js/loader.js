@@ -166,6 +166,7 @@ window.UX_safe = new Proxy({}, {
     // ── UI (critiques) ──
     { name: 'updateUI',           source: 'ui.js',           kind: 'fn'  },
     { name: 'addMsg',             source: 'ui.js',           kind: 'fn'  },
+    { name: 'confirmModal',       source: 'ui.js',           kind: 'fn'  },
     { name: 'openCharacter',      source: 'ui-character-sheet.js', kind: 'fn'  },
     { name: 'openHouseDetail',    source: 'ui.js',           kind: 'fn'  },
     { name: 'openBestiary',       source: 'ui-bestiary.js',  kind: 'fn'  },

@@ -639,4 +639,111 @@ async function scenarioCombatKeyboard() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard] };
+// Phase 3 — modale de confirmation thématisée (remplace confirm() natif) :
+// résout true au clic OK, false à l'Échap ; styling danger ; focus restitué.
+async function scenarioConfirmModal() {
+  console.log('\n── Scénario : modale de confirmation custom (Phase 3) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(async () => {
+    const out = {};
+    out.hasFn = typeof confirmModal === 'function';
+
+    // a) clic « Confirmer » → résout true ; libellés posés.
+    out.okResult = await new Promise((resolve) => {
+      confirmModal({ title: 'T', body: 'Corps', confirmLabel: 'Oui' }).then(resolve);
+      out.titleText = document.getElementById('confirm-modal-title').textContent;
+      out.okLabel   = document.getElementById('confirm-modal-ok').textContent;
+      out.focused   = document.activeElement === document.getElementById('confirm-modal-ok');
+      document.getElementById('confirm-modal-ok').click();
+    });
+    out.hiddenAfterOk = getComputedStyle(document.getElementById('confirm-modal')).display === 'none';
+
+    // b) Échap → résout false.
+    out.escResult = await new Promise((resolve) => {
+      confirmModal({ title: 'T2', body: 'B2' }).then(resolve);
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+
+    // c) danger:true → bouton OK porte la classe confirm-danger ; focus restitué
+    //    à l'élément déclencheur à la fermeture (déclencheur dédié focusable).
+    const trigger = document.createElement('button');
+    trigger.textContent = 'déclencheur';
+    document.body.appendChild(trigger);
+    trigger.focus();
+    out.triggerFocusedBefore = document.activeElement === trigger;
+    out.dangerResult = await new Promise((resolve) => {
+      confirmModal({ title: 'D', body: 'B', danger: true }).then(resolve);
+      out.hasDangerClass = document.getElementById('confirm-modal-ok').classList.contains('confirm-danger');
+      document.getElementById('confirm-modal-cancel').click();
+    });
+    out.focusRestored = document.activeElement === trigger;
+    trigger.remove();
+    return out;
+  });
+
+  assert(r.hasFn,            'confirmModal doit être défini');
+  assert(r.titleText === 'T','le titre de la modale doit être posé');
+  assert(r.okLabel === 'Oui','le libellé du bouton OK doit être personnalisable');
+  assert(r.focused,          'le focus initial doit être sur le bouton de confirmation');
+  assert(r.okResult === true,'clic Confirmer doit résoudre true');
+  assert(r.hiddenAfterOk,    'la modale doit se fermer après confirmation');
+  assert(r.escResult === false, 'Échap doit résoudre false');
+  assert(r.hasDangerClass,   'danger:true doit appliquer la classe confirm-danger');
+  assert(r.dangerResult === false, 'clic Annuler doit résoudre false');
+  assert(r.focusRestored,    'le focus doit être restitué au déclencheur à la fermeture');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (confirm modal)`);
+  }
+  console.log('  ✅ Modale de confirmation custom (true/false + danger + focus) OK');
+  await browser.close();
+}
+
+// Phase 4 — accessibilité de finition : tooltips de stats + annonce PV bas
+// aux lecteurs d'écran (région live #a11y-live, fronts montant/descendant).
+async function scenarioA11yFinish() {
+  console.log('\n── Scénario : accessibilité de finition (Phase 4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = {};
+    // a) tooltips de stats (title) sur chaque case.
+    out.strTitle = document.querySelector('.stat-item[data-stat="str"]')?.getAttribute('title') || '';
+    out.agiTitle = document.querySelector('.stat-item[data-stat="agi"]')?.getAttribute('title') || '';
+    // b) région live présente.
+    const live = document.getElementById('a11y-live');
+    out.liveExists = !!live;
+    out.liveAttrs = live ? { role: live.getAttribute('role'), aria: live.getAttribute('aria-live') } : null;
+    // c) front montant : PV critiques → annonce posée.
+    party[0].hp = 1;
+    updateUI();
+    out.dangerText = live ? live.textContent : null;
+    out.bodyDanger = document.body.classList.contains('cfx-danger');
+    // d) front descendant : PV pleins → annonce effacée.
+    party[0].hp = party[0].hpMax;
+    updateUI();
+    out.clearedText = live ? live.textContent : null;
+    return out;
+  });
+
+  assert(/STR/.test(r.strTitle),  'la case FORCE doit porter un title explicatif (STR)');
+  assert(/AGI/.test(r.agiTitle),  'la case AGILITÉ doit porter un title explicatif (AGI)');
+  assert(r.liveExists,            'région live #a11y-live absente');
+  assert(r.liveAttrs && r.liveAttrs.aria === 'assertive', '#a11y-live doit être aria-live=assertive');
+  assert(/critiques/i.test(r.dangerText || ''), 'PV bas doit annoncer un message critique');
+  assert(r.bodyDanger,            'la vignette cfx-danger doit être active à PV bas');
+  assert(r.clearedText === '',    'l\'annonce doit être effacée au retour à PV pleins');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (a11y finition)`);
+  }
+  console.log('  ✅ Accessibilité de finition (tooltips stats + annonce PV bas) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish] };

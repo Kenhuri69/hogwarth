@@ -1576,6 +1576,27 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 14. monsters.js — Magyar Ancestral (dragon de feu, brute → Broyer)
+//    Brute (atk ≥ 1,5×mag & atk ≥ 12) → Broyer auto, élément feu (résiste
+//    feu, faible glace), sprite PNG câblé, recycle en Boucle.
+// ============================================================
+(function testMagyar() {
+  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { isBruteMonster, effectiveFloor } = loadModule(
+    'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
+
+  const d = MONSTERS.find(x => x.id === 'magyar_ancestral');
+  check('magyar: entrée présente', !!d);
+  check('magyar: epic + weight 1', !!d && d.epic === true && d.weight === 1);
+  check('magyar: imgSrc câblé', !!d && d.imgSrc === 'img/monsters/magyar_ancestral.png');
+  check('magyar: est une brute (Broyer auto)', isBruteMonster(d) === true);
+  check('magyar: résiste feu, faible glace',
+    !!d && d.resist.includes('feu') && d.weak.includes('glace'));
+  // minFloor 10 → dernier étage pré-victoire ET recycle au réel 20 (eff. 10).
+  check('magyar: éligible Boucle réel 20 (eff. 10)', !!d && effectiveFloor(20) >= d.minFloor);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

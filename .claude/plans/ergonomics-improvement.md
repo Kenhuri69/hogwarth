@@ -1,9 +1,10 @@
 # Plan — Amélioration de l'ergonomie (clavier, modales, accessibilité)
 
-> Statut : **Phases 1-2 livrées**. Phase 1 mergée via PR #520 (branche
-> `claude/ergonomics-improvement-plan-hg4dzw`). Phase 2 sur
-> `claude/ergonomics-phase2-discoverability`. Créé le 2026-06-14.
-> Phases 3-4 en attente d'arbitrage.
+> Statut : **Phases 1-4 livrées** (plan complet). Phase 1 → PR #520,
+> Phase 2 → PR #521, Phase 3 → PR #524, Phase 4 → `claude/ergonomics-phase4-a11y`.
+> Créé le 2026-06-14. **Reste hors-scope** : passe dédiée « isolation de
+> modale » (focus-trap générique + `inert`/`aria-describedby` sur le fond) —
+> reportée pour risque/bénéfice (cf. notes Phases 3 & 4).
 > Aucun plan d'ergonomie transversal n'existait : il y avait des fixes UX
 > ponctuels (`room-presentation-startup-ux.md`, `codex-mobile-list-layout.md`,
 > `hit-targets-44px.md` archivé) mais pas de passe d'ergonomie d'interaction.
@@ -88,7 +89,24 @@ clavier. Cache-bump (`main.js`, `battle-ui.js`).
 
 ---
 
-## Phase 3 — Confirmations unifiées + focus (moyenne)
+## Phase 3 — Confirmations unifiées + focus (moyenne) ✅ LIVRÉE
+
+> Livré le 2026-06-14. `confirmModal()` (ui.js, Promise<bool>, `role="alertdialog"`,
+> focus initial sur OK + restitution du focus, repli défensif `confirm()`,
+> au MANIFEST loader). Modale `#confirm-modal` (index.html) + CSS (style.css,
+> variante `.confirm-danger`). Échap → résout `false` (main.js, priorité avant
+> sélection de cible). **TOUS** les `confirm()` natifs du jeu convertis :
+> suppression de slot (auto bénin / manuel `danger`), écrasement de slot, don
+> de Maison ≥5000 G, téléportation. Test : `scenarioConfirmModal`. Cache bumpé
+> (style v42, ui v16, save-ui v9, house-donation v2, teleport v2, main v26,
+> loader v47, CACHE_VERSION v136).
+>
+> **Note 3B — focus** : la gestion du focus (initial + restitution) est livrée
+> **dans `confirmModal`** (le cas concret le plus à risque : suppression de
+> save). Le focus-trap **générique sur les ~16 autres modales** (hook de
+> chaque fonction d'ouverture) est volontairement **reporté** : large surface,
+> risque de fragilité des tests pour un bénéfice diffus. À traiter en passe
+> dédiée si souhaité (guidelines §2/§3 — simplicité, changements chirurgicaux).
 
 ### 3A. Modale de confirmation custom réutilisable
 
@@ -107,7 +125,18 @@ clavier. Cache-bump (`main.js`, `battle-ui.js`).
 
 ---
 
-## Phase 4 — Accessibilité de finition (basse)
+## Phase 4 — Accessibilité de finition (basse) ✅ LIVRÉE
+
+> Livré le 2026-06-14. `index.html` : `title` explicatif sur les 6 cases de
+> stats (rôle réel D1-D5). `ui.js` + `index.html` : région live `#a11y-live`
+> (`role=status`, `aria-live=assertive`) annonçant « Points de vie critiques »
+> sur front montant / effacée sur front descendant ; classe utilitaire
+> `.sr-only` (style.css). Test : `scenarioA11yFinish`. Cache bumpé (style v43,
+> ui v17, CACHE_VERSION v137).
+>
+> **Reporté avec le focus-trap (Phase 3)** : `inert`/`aria-describedby`
+> génériques sur le fond quand une modale est ouverte — même surface
+> « isolation de modale » que le focus-trap, à traiter dans la passe dédiée.
 
 | Fichier | Changement | Vérif |
 |---------|-----------|-------|

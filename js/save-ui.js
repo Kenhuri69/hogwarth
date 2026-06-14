@@ -20,13 +20,23 @@ function _formatSavedAt(iso) {
 // alors qu'un slot manuel est une sauvegarde délibérée dont la perte est
 // irréversible. Deux messages distincts pour éviter une suppression à la
 // légère via un `confirm()` générique peu visible.
+// Retourne une Promise<boolean> via la modale de confirmation thématisée
+// (confirmModal). L'auto-save est bénin ; un slot manuel est marqué `danger`
+// (suppression irréversible) avec un libellé explicite.
 function _confirmSlotDeletion(id) {
   if (id === AUTO_SLOT_ID) {
-    return confirm('Supprimer la sauvegarde automatique ?\n\n'
-      + 'Elle sera recréée seule à la prochaine étape (descente, fin de combat, niveau).');
+    return confirmModal({
+      title: 'Supprimer la sauvegarde automatique ?',
+      body: 'Elle sera recréée seule à la prochaine étape (descente, fin de combat, niveau).',
+      confirmLabel: 'Supprimer'
+    });
   }
-  return confirm('Supprimer DÉFINITIVEMENT cette sauvegarde manuelle ?\n\n'
-    + 'Cette action est irréversible — cette partie enregistrée sera perdue.');
+  return confirmModal({
+    title: 'Supprimer définitivement cette sauvegarde ?',
+    body: 'Cette action est irréversible — cette partie enregistrée sera perdue.',
+    confirmLabel: 'Supprimer définitivement',
+    danger: true
+  });
 }
 
 // Construit le HTML d'une carte de slot. mode = 'save' | 'load'.
@@ -115,14 +125,14 @@ function _renderSlotList(mode) {
 function _bindSlotModalEvents(mode) {
   const list = document.getElementById('slot-modal-list');
   if (!list) return;
-  list.onclick = (ev) => {
+  list.onclick = async (ev) => {
     const delBtn = ev.target.closest('[data-action="delete"]');
     if (delBtn) {
       ev.stopPropagation();
       const card = delBtn.closest('[data-slot-id]');
       const id   = card && card.getAttribute('data-slot-id');
       if (!id) return;
-      if (!_confirmSlotDeletion(id)) return;
+      if (!(await _confirmSlotDeletion(id))) return;
       deleteSlot(id);
       _renderSlotList(mode);
       return;
@@ -138,9 +148,16 @@ function _bindSlotModalEvents(mode) {
   };
 }
 
-function _commitSlotSave(id) {
+async function _commitSlotSave(id) {
   const existing = readSlot(id);
-  if (existing && !confirm("Cet emplacement contient déjà une sauvegarde. L'écraser ?")) return;
+  if (existing) {
+    const ok = await confirmModal({
+      title: 'Écraser la sauvegarde ?',
+      body: 'Cet emplacement contient déjà une sauvegarde. La remplacer ?',
+      confirmLabel: 'Écraser'
+    });
+    if (!ok) return;
+  }
   const ok = writeSlot(id, 'Manuel');
   if (ok) {
     addMsg('Partie sauvegardée !', 'good');
@@ -272,14 +289,14 @@ function _renderHubSlotList() {
     .map(s => _renderSlotCard(s.id, readSlot(s.id), 'load'))
     .filter(Boolean)
     .join('');
-  list.onclick = (ev) => {
+  list.onclick = async (ev) => {
     const delBtn = ev.target.closest('[data-action="delete"]');
     if (delBtn) {
       ev.stopPropagation();
       const card = delBtn.closest('[data-slot-id]');
       const id = card && card.getAttribute('data-slot-id');
       if (!id) return;
-      if (!_confirmSlotDeletion(id)) return;
+      if (!(await _confirmSlotDeletion(id))) return;
       deleteSlot(id);
       _renderHubSlotList();
       return;
