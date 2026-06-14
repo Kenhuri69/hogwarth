@@ -101,7 +101,14 @@ function updateUI() {
   // sous le seuil de PV. Purement cosmétique (pointer-events:none, pur CSS).
   const inDanger = party.slice(0, partySize)
     .some(c => c.hp > 0 && c.hpMax > 0 && c.hp / c.hpMax < LOW_HP_RATIO);
+  const wasDanger = document.body.classList.contains('cfx-danger');
   document.body.classList.toggle('cfx-danger', inDanger);
+  // Accessibilité : la vignette rouge est purement visuelle ; on annonce
+  // l'entrée/sortie de l'état critique aux lecteurs d'écran (fronts only).
+  if (inDanger !== wasDanger) {
+    const live = safeEl('a11y-live');
+    if (live) live.textContent = inDanger ? 'Points de vie critiques.' : '';
+  }
 
   // Musique adaptative de combat (F1) : re-évalue l'intensité (crossfade vers
   // la couche `tension` quand le groupe bascule en danger critique, et retour).

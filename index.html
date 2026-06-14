@@ -10,7 +10,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Poudlard & Magie : Les Secrets de Poudlard</title>
-<link rel="stylesheet" href="css/style.css?v=42">
+<link rel="stylesheet" href="css/style.css?v=43">
 <link rel="stylesheet" href="css/ux-improvements.css?v=4">
 <link rel="stylesheet" href="css/save-ui.css?v=5">
 <link rel="stylesheet" href="css/ornaments.css?v=1">
@@ -549,12 +549,12 @@
 
     <!-- Stats de Harry -->
     <div class="stats-grid">
-      <div class="stat-item" data-stat="str"><div class="skey">FORCE</div><div class="sval" id="s-str">8</div></div>
-      <div class="stat-item" data-stat="int"><div class="skey">INTEL.</div><div class="sval" id="s-int">12</div></div>
-      <div class="stat-item" data-stat="agi"><div class="skey">AGILITÉ</div><div class="sval" id="s-agi">10</div></div>
-      <div class="stat-item" data-stat="lck"><div class="skey">CHANCE</div><div class="sval" id="s-lck">14</div></div>
-      <div class="stat-item" data-stat="mag"><div class="skey">MAGIE</div><div class="sval" id="s-mag">11</div></div>
-      <div class="stat-item" data-stat="end"><div class="skey">END.</div><div class="sval" id="s-end">10</div></div>
+      <div class="stat-item" data-stat="str" title="Force (STR) — dégâts physiques + pénétration de la défense ennemie"><div class="skey">FORCE</div><div class="sval" id="s-str">8</div></div>
+      <div class="stat-item" data-stat="int" title="Intelligence (INT) — augmente la Magie (4 INT → +1 MAG)"><div class="skey">INTEL.</div><div class="sval" id="s-int">12</div></div>
+      <div class="stat-item" data-stat="agi" title="Agilité (AGI) — crit de sort, esquive et Célérité (actions supplémentaires)"><div class="skey">AGILITÉ</div><div class="sval" id="s-agi">10</div></div>
+      <div class="stat-item" data-stat="lck" title="Chance (LCK) — crit physique + Fortune (butin, or, fouilles)"><div class="skey">CHANCE</div><div class="sval" id="s-lck">14</div></div>
+      <div class="stat-item" data-stat="mag" title="Magie (MAG) — puissance des sortilèges"><div class="skey">MAGIE</div><div class="sval" id="s-mag">11</div></div>
+      <div class="stat-item" data-stat="end" title="Endurance (END) — PV max, défense et résistance aux dégâts continus"><div class="skey">END.</div><div class="sval" id="s-end">10</div></div>
     </div>
 
     <div id="hud-equip-block" style="margin-top:4px">
@@ -1253,6 +1253,9 @@
 
 <div id="msg-log" role="log" aria-live="polite" aria-atomic="false"></div>
 
+<!-- Région live réservée aux lecteurs d'écran (alertes d'état, ex. PV bas) -->
+<div id="a11y-live" class="sr-only" role="status" aria-live="assertive" aria-atomic="true"></div>
+
 <!-- Scripts (ordre de chargement important) -->
 <script>
 // Injection des ornements de coin dans toutes les .modal-box
@@ -1291,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/item-icons.js?v=22"></script>
 <script src="js/state.js?v=33"></script>
 <script src="js/hero-barks.js?v=8"></script>
-<script src="js/ui.js?v=16"></script>
+<script src="js/ui.js?v=17"></script>
 <script src="js/ui-character-sheet.js?v=7"></script>
 <script src="js/ui-settings.js?v=3"></script>
 <script src="js/ui-bestiary.js?v=5"></script>

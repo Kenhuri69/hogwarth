@@ -702,4 +702,48 @@ async function scenarioConfirmModal() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal] };
+// Phase 4 — accessibilité de finition : tooltips de stats + annonce PV bas
+// aux lecteurs d'écran (région live #a11y-live, fronts montant/descendant).
+async function scenarioA11yFinish() {
+  console.log('\n── Scénario : accessibilité de finition (Phase 4) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const r = await page.evaluate(() => {
+    const out = {};
+    // a) tooltips de stats (title) sur chaque case.
+    out.strTitle = document.querySelector('.stat-item[data-stat="str"]')?.getAttribute('title') || '';
+    out.agiTitle = document.querySelector('.stat-item[data-stat="agi"]')?.getAttribute('title') || '';
+    // b) région live présente.
+    const live = document.getElementById('a11y-live');
+    out.liveExists = !!live;
+    out.liveAttrs = live ? { role: live.getAttribute('role'), aria: live.getAttribute('aria-live') } : null;
+    // c) front montant : PV critiques → annonce posée.
+    party[0].hp = 1;
+    updateUI();
+    out.dangerText = live ? live.textContent : null;
+    out.bodyDanger = document.body.classList.contains('cfx-danger');
+    // d) front descendant : PV pleins → annonce effacée.
+    party[0].hp = party[0].hpMax;
+    updateUI();
+    out.clearedText = live ? live.textContent : null;
+    return out;
+  });
+
+  assert(/STR/.test(r.strTitle),  'la case FORCE doit porter un title explicatif (STR)');
+  assert(/AGI/.test(r.agiTitle),  'la case AGILITÉ doit porter un title explicatif (AGI)');
+  assert(r.liveExists,            'région live #a11y-live absente');
+  assert(r.liveAttrs && r.liveAttrs.aria === 'assertive', '#a11y-live doit être aria-live=assertive');
+  assert(/critiques/i.test(r.dangerText || ''), 'PV bas doit annoncer un message critique');
+  assert(r.bodyDanger,            'la vignette cfx-danger doit être active à PV bas');
+  assert(r.clearedText === '',    'l\'annonce doit être effacée au retour à PV pleins');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (a11y finition)`);
+  }
+  console.log('  ✅ Accessibilité de finition (tooltips stats + annonce PV bas) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish] };
