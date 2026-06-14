@@ -144,6 +144,12 @@ function loadModule(relPath, exportNames, globals = {}) {
     Array.isArray(HERO_BARKS.maxence.preVoldemortDefiance) && HERO_BARKS.maxence.preVoldemortDefiance.length > 0);
   check('cedric.leaveSchool présent',
     Array.isArray(HERO_BARKS.cedric.leaveSchool) && HERO_BARKS.cedric.leaveSchool.length > 0);
+  // Enjeu intime (05 §5.4.2) : chaque héros JOUABLE a un beat descentStake (3↔4).
+  for (const k of ['harry', 'hermione', 'celeste', 'iris', 'maxence', 'anastasia']) {
+    check('descentStake présent : ' + k,
+      Array.isArray(HERO_BARKS[k].descentStake) && HERO_BARKS[k].descentStake.length > 0 &&
+      typeof pickHeroBark(k, 'descentStake', { rng: rng0 }) === 'string');
+  }
   // Un beat scénarisé n'existe que sur son héros (sinon null → silencieux).
   check('fountainCold absent chez harry', pickHeroBark('harry', 'fountainCold', {}) === null);
   check('leaveSchool absent chez harry', pickHeroBark('harry', 'leaveSchool', {}) === null);

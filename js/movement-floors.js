@@ -180,7 +180,13 @@ function _maybePlayTierTransition(prevFloor, nextFloor) {
   let scriptedSpoke = false;
   if (prevFloor <= 3 && nextFloor >= 4 && nextFloor > prevFloor &&
       typeof heroBarkScripted === 'function') {
+    // Beat canon de Cedric (rarement présent : non jouable), puis enjeu intime
+    // du meneur présent — chaque héros jouable a sa raison de descendre (05 §5.4.2).
     scriptedSpoke = !!heroBarkScripted('cedric', 'leaveSchool', { channel: 'explore', once: 'leave-school' });
+    if (!scriptedSpoke) {
+      const lead = party.slice(0, partySize).find(c => c && c.hp > 0 && c.heroKey);
+      if (lead) scriptedSpoke = !!heroBarkScripted(lead.heroKey, 'descentStake', { channel: 'explore', once: 'descent-stake' });
+    }
   }
   // Voix des héros — franchissement d'une frontière de tranche (cosmétique,
   // défensif, exploration). Cf. js/hero-barks.js.

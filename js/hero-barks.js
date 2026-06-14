@@ -31,6 +31,8 @@ const HERO_BARKS = {
     darkLoop:   ["Encore un tour. Le château se souvient de nous — et il a plus froid à chaque fois."],
     houseTier:  ["Le château reconnaît les siens. Tant mieux — on en aura besoin."],
     tierTransition: ["L'air change. On n'est plus à l'école, là."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — sa raison de descendre, au seuil 3↔4.
+    descentStake: ["Encore lui, encore en bas. Personne d'autre ne devrait avoir à descendre ici — alors ce sera moi. Comme toujours."],
     houseTension: {
       Serpentard: ["Un raccourci, vraiment ? La dernière fois que j'ai pris un raccourci, j'ai fini face à lui."]
     }
@@ -42,7 +44,9 @@ const HERO_BARKS = {
     levelUp:    ["Note méthodique : progresser, c'est survivre deux fois."],
     darkLoop:   ["Boucle suivante. Les variables changent à peine ; nous, beaucoup. Restons méthodiques."],
     houseTier:  ["Un palier de plus. J'ai lu ce que ça débloque — c'est précieux."],
-    tierTransition: ["Nouvelle strate, nouvelles règles. J'actualise nos hypothèses."]
+    tierTransition: ["Nouvelle strate, nouvelles règles. J'actualise nos hypothèses."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — comprendre pour résoudre, au seuil 3↔4.
+    descentStake: ["On me dit « une terreur ». Moi, je vois un problème. Et un problème, ça se résout — même en descendant le chercher."]
   },
   draco: {
     bossAppear: ["Ce masque… je l'ai déjà vu à ma table de Noël.", "Ne me déçois pas. J'ai une réputation."],
@@ -90,7 +94,9 @@ const HERO_BARKS = {
     houseTier:  ["Les constellations s'alignent un peu mieux pour nous."],
     tierTransition: ["La voûte s'efface. Plus de plafond — juste le vide et ce qu'il garde."],
     // Beat scénarisé (05 §5.4.2) — devant la première fontaine glacée (ét. 2).
-    fountainCold: ["Même l'eau a peur, ici. Elle se souvient d'avant les Fondateurs."]
+    fountainCold: ["Même l'eau a peur, ici. Elle se souvient d'avant les Fondateurs."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — les astres l'ont menée ici, au seuil 3↔4.
+    descentStake: ["Les astres m'ont montré ce fond avant que j'y pose le pied. Descendre, ce n'est pas du courage — c'est leur donner raison."]
   },
   iris: {
     bossAppear: ["Oh, le grand méchant ! Quelqu'un a un appareil photo ?"],
@@ -99,7 +105,9 @@ const HERO_BARKS = {
     levelUp:    ["Plus forte ET plus mignonne, c'est injuste pour les autres."],
     darkLoop:   ["Encore un tour ?! Bon, au moins le décor change. Un peu."],
     houseTier:  ["Ma Maison brille un peu plus fort. Comme moi, quoi."],
-    tierTransition: ["Nouveau décor ! J'espère qu'il y a de meilleurs éclairages."]
+    tierTransition: ["Nouveau décor ! J'espère qu'il y a de meilleurs éclairages."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — rendre la couleur au château, au seuil 3↔4.
+    descentStake: ["Le château vire au gris, tu as remarqué ? Quelqu'un doit descendre lui rendre ses couleurs. Autant que ce soit moi — je suis la mieux assortie."]
   },
   maxence: {
     bossAppear: ["Il a la même odeur que moi. C'est mauvais signe."],
@@ -109,6 +117,8 @@ const HERO_BARKS = {
     darkLoop:   ["Encore plus bas. Mon sang aime ça, et ça m'inquiète."],
     houseTier:  ["Le pouvoir s'accumule. Reste à savoir qui le tient."],
     tierTransition: ["Plus bas. Mon sang le sent avant moi."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — tenir son sang en laisse, au seuil 3↔4.
+    descentStake: ["Mon sang m'appelle vers le bas. Je préfère y descendre en le tenant en laisse plutôt qu'il m'y traîne."],
     // Beat scénarisé (05 §5.4.2) — avant Voldemort, Pacte des Cachots défié.
     preVoldemortDefiance: ["Je connaissais ta voix, Salazar. Je ne lui ai juste pas obéi."],
     houseTension: {
@@ -123,6 +133,8 @@ const HERO_BARKS = {
     darkLoop:   ["Boucle suivante. J'ajoute une décimale à la peur et je continue."],
     houseTier:  ["Le palier était dans mes calculs. Le mérite, un peu moins."],
     tierTransition: ["Strate suivante. J'ajuste les variables et on continue."],
+    // Enjeu intime (05 §5.4.2 / §5.2) — sa logique implacable, au seuil 3↔4.
+    descentStake: ["J'ai fait le calcul : si personne ne descend, tout finit par remonter. Donc on descend. C'est arithmétique."],
     // Beat scénarisé (05 §5.4.2) — avant Voldemort, signature Gryffondor faite.
     preVoldemortGryff: ["La Bannière est plantée. Maintenant, il ne peut plus nous faire reculer — c'est mathématique."]
   },

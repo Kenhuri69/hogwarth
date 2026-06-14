@@ -32,7 +32,7 @@
 |---|-----------|--------------|---------|
 | ⚠️ 1 | **Dérive documentation ↔ code** (le point n°1) | Ch. 12, 14 + `CLAUDE.md` | 🔴 Haute |
 | ⚠️ 2 | **`💡 proposé` vs `✅ acté` mal séparés** dans plusieurs chapitres | 09, 10, 11 | 🟠 Moyenne |
-| ⚠️ 3 | **Enjeu intime par héros toujours absent** (gap explicité 2×) | 01 §1.x, 03 §3.x | 🟠 Moyenne |
+| ✅ 3 | ~~Enjeu intime par héros toujours absent~~ **Livré** (2026-06-14) : couche de beats scénarisés cosmétiques `descentStake` (6 héros jouables, seuil 3↔4) via `heroBarkScripted` ; gaps 01 §1.3 & 03 #2 tranchés, canon en 05 §5.4.2. | 01 §1.3, 03 #2, 05 §5.4.2, `hero-barks.js` | ✅ Résolu |
 | ✅ 4 | ~~PNJ-clés de signature non implémentés~~ **Livré** (2026-06-13) : Chevalier Fantôme (`chevalier_godric`) 🦁 + Écho de Salazar (`echo_salazar`) 🐍 — PNJ donneurs dédiés (art `img/npc/`, dialogues, placement), signatures retirées de McGonagall/Rogue. Serdaigle/Poufsouffle restent sur Flitwick/Chourave (chefs existants). | 06, 08, `npcs.js` | ✅ Résolu |
 | ✅ 5 | ~~Variante de choix asymétrique : `'defiance'` seulement proposé~~ **Résolu** (2026-06-13) : les deux branches sont câblées de bout en bout — choix joueur (`npc-dialog.js` : « Sceller le Pacte » / « Défier l'écho » → `turnInSlythSignature`), levier Voldemort (`battle.js` : buff lifesteal `pact` vs debuff −15 % `defiance`), variantes de fin (`endgame.js` : `victory_pact` vs miroir de reconnaissance), réputation dérivée. | 08, 14, `endgame.js` | ✅ Résolu |
 | ⚠️ 6 | **Localisations/statuts de boss flous** (Bellatrix sans étage ; Voldemort « affaibli » vs « ressuscité » = 1 ou 2 entrées ?) | 01, 03, 06 | 🟡 Faible |
@@ -114,7 +114,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | 💡 2 | **Index « doc ↔ module »** unique (un tableau dans le README docs). | Savoir d'un coup d'œil ce qui est codé. | Faible | **Forte** |
 | 💡 3 | **« Thermomètre de corruption » global unifié** déjà amorcé (`floor-ambiance.js` + ❄→❄❄❄❄+ du Ch. 10) : en faire **un indicateur HUD lisible** + clé Codex. | Rendre la descente *ressentie*, pas seulement subie. | Moyen | Moyenne |
 | 💡 4 | **Système de mémoire/héritage cosmétique** (profil hors-partie : titres, Codex de profil, bordure si `cycleBroken`) — déjà spécifié Ch.14 §14.6.3, **zéro stat**. | Récompenser la complétion sans casser l'équité (13). | Moyen | Moyenne |
-| 💡 5 | **Enjeu intime par héros** : 2-3 lignes de bark scénarisées par héros déclenchées sur un beat (déjà infra `heroBarkScripted`). | Combler le gap ⚠️3 à coût quasi nul. | Faible | Forte |
+| ✅ 5 | ~~**Enjeu intime par héros**~~ **Livré** (2026-06-14) : beat `descentStake` par héros jouable (seuil 3↔4) via `heroBarkScripted`. | Gap ⚠️3 comblé à coût quasi nul. | Faible | Forte |
 | 💡 6 | **Unifier le ton des « fins conditionnelles »** : compléter la symétrie `pact`/`defiance` + injecter les 5 axes de variation texte dans `endgame.js`. | Cohérence narrative de la fin. | Faible | Forte |
 | 💡 7 | **Fusionner les 3 checklists d'ajout** (créature/lieu/variante) en une page « Règles d'extension de contenu ». | Éviter le creep mécanique. | Faible | Moyenne |
 
@@ -129,7 +129,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | ❓ **Réconciliation Ch. 12 & 14** avec le code livré (Codex, Briser le Cycle) | À réécrire (sections « plan d'impl. » périmées) | 🔴 Haute |
 | ❓ **Définition canonique de « la Boucle »** (1 §) + règle Boucle↔MP | À écrire | 🟠 Moyenne |
 | ❓ **Fiches de contenu Codex restantes** (entrées rédigées vs coquilles) | Audit + écriture | 🟠 Moyenne |
-| ❓ **Enjeu intime par personnage** (les 13 héros) | À concevoir (léger) | 🟠 Moyenne |
+| ✅ **Enjeu intime par personnage** (beats `descentStake`, 6 héros jouables) | Livré (2026-06-14) — cf. 05 §5.4.2 | ✅ Résolu |
 | ❓ **Localisation des boss** (Bellatrix ; statut Voldemort affaibli/ressuscité) | À clarifier | 🟡 Faible |
 
 ### Côté gameplay (`docs/gameplay/`)
@@ -162,7 +162,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | **Aligner Ch. 11** (Briser le Cycle = ✅, pas proposition) + définir « la Boucle » | 🟠 Moyenne | 11 | Faible | Audit |
 | **Bandeaux « Statut réel » + index doc↔module** | 🟠 Moyenne | Tous | Faible | Audit |
 | **Compléter symétrie `pact`/`defiance`** + variantes texte fin (5 axes) | 🟠 Moyenne | 14, `endgame.js` | Faible | — |
-| **Enjeu intime héros** (barks scénarisés légers) | 🟡 Basse | 05, `hero-barks.js` | Faible | — |
+| ~~**Enjeu intime héros**~~ ✅ **Livré** (beat `descentStake`) | — | 05, `hero-barks.js` | Faible | — |
 | **Clarifier localisation boss** (Bellatrix, Voldemort ×1/×2) | 🟡 Basse | 03, 06, `monsters.js` | Faible | — |
 
 **Critère de sortie Phase 1** : un·e lecteur·rice de la doc peut, pour chaque
