@@ -2035,6 +2035,68 @@ def save_all(recipe: Recipe, out_dir: str = OUT_DIR) -> List[str]:
     return paths
 
 
+# ── Raster path (Gemini / Nano Banana cutouts) ──────────────────────────────
+# Au lieu de peindre une silhouette SVG, on encadre un sujet DÉJÀ peint (icône
+# générée par LLM image), en réutilisant UNIQUEMENT les deux passes de cadrage
+# communes — halo de rareté + cartouche doré — pour rester cohérent avec les
+# icônes painterly. Les passes painterly (AO/shading/rim/specular/grain) sont
+# sautées (le sujet est déjà ombragé). Source attendue : tools/raster_src/<id>.png.
+RASTER_SRC_DIR = os.path.normpath(os.path.join(HERE, "..", "tools", "raster_src"))
+
+
+def _load_raster_subject(path: str, margin: float = 0.08):
+    """Charge un PNG d'icône externe en (rgb[0..1], alpha[0..1]) sur un canevas
+    512² transparent, sujet centré avec marge. Accepte un PNG RGBA à
+    transparence réelle, OU un PNG RGB/opaque sur damier de transparence aplati
+    (détouré via dechecker_png)."""
+    import dechecker_png
+    im = Image.open(path).convert("RGBA")
+    a = np.asarray(im)[..., 3]
+    if a.min() >= 250:  # pas d'alpha exploitable → damier « cuit »
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False).name
+        dechecker_png.detour(path, tmp, side=RENDER_SIZE, margin=margin)
+        im = Image.open(tmp).convert("RGBA")
+        os.unlink(tmp)
+    bbox = im.getbbox()
+    if bbox:
+        im = im.crop(bbox)
+    inner = int(RENDER_SIZE * (1 - 2 * margin))
+    w, h = im.size
+    scale = min(inner / w, inner / h)
+    im = im.resize((max(1, round(w * scale)), max(1, round(h * scale))),
+                   Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (RENDER_SIZE, RENDER_SIZE), (0, 0, 0, 0))
+    canvas.alpha_composite(im, ((RENDER_SIZE - im.size[0]) // 2,
+                                (RENDER_SIZE - im.size[1]) // 2))
+    arr = np.asarray(canvas).astype(np.float64) / 255.0
+    return arr[..., :3].copy(), arr[..., 3].copy()
+
+
+def render_raster(src: str, rarity: str = "common", sparkles: bool = False,
+                  seed: int = 0) -> Image.Image:
+    """Encadre une icône raster externe avec le MÊME halo de rareté + cartouche
+    doré que les icônes par recette (sans les passes painterly)."""
+    rgb, alpha = _load_raster_subject(src)
+    rgb, alpha = pass_halo(rgb, alpha, rarity=rarity, sparkles=sparkles, seed=seed)
+    rgb = pass_cartouche(rgb, size=RENDER_SIZE)
+    rgba = np.dstack([np.clip(rgb, 0, 1), alpha])
+    return Image.fromarray((rgba * 255 + 0.5).astype(np.uint8), mode="RGBA")
+
+
+def save_raster(item_id: str, src: str, rarity: str, out_dir: str = OUT_DIR,
+                sparkles: bool = False) -> List[str]:
+    os.makedirs(out_dir, exist_ok=True)
+    big = render_raster(src, rarity=rarity, sparkles=sparkles,
+                        seed=hash(item_id) & 0xFFFF)
+    paths: List[str] = []
+    for s in MIPMAPS:
+        p = os.path.join(out_dir, f"{item_id}_{s}.png")
+        big.resize((s, s), Image.Resampling.LANCZOS).save(p, "PNG", optimize=True)
+        paths.append(p)
+    return paths
+
+
 # ── CLI ────────────────────────────────────────────────────────────────────
 
 def main():
@@ -2042,12 +2104,30 @@ def main():
     parser.add_argument("ids", nargs="*", help="recipe ids to render")
     parser.add_argument("--all", action="store_true", help="render every recipe")
     parser.add_argument("--list", action="store_true", help="list known recipes")
+    parser.add_argument("--raster", action="store_true",
+                        help="frame raster icons (Gemini cutouts) from "
+                             "tools/raster_src/<id>.png — halo+cartouche only")
     parser.add_argument("--out", default=OUT_DIR, help="output directory")
     args = parser.parse_args()
 
     if args.list:
         for r in RECIPES.values():
             print(f"  {r.id:24s} {r.rarity:10s} {r.name}")
+        return
+
+    if args.raster:
+        ids = args.ids or [r.id for r in RECIPES.values()]
+        for rid in ids:
+            src = os.path.join(RASTER_SRC_DIR, f"{rid}.png")
+            if not os.path.exists(src):
+                print(f"!! no raster source: {os.path.relpath(src)}", file=sys.stderr)
+                continue
+            rarity   = RECIPES[rid].rarity   if rid in RECIPES else "common"
+            sparkles = RECIPES[rid].sparkles if rid in RECIPES else False
+            print(f"→ framing raster {rid} ({rarity}) …")
+            for p in save_raster(rid, src, rarity, out_dir=args.out, sparkles=sparkles):
+                print(f"   wrote {os.path.relpath(p)}")
+        print("done.")
         return
 
     if args.all:

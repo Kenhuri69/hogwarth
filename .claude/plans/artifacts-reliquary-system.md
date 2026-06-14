@@ -413,6 +413,18 @@ exigé par le test de couverture `scenarioItemIcons`).
 - Mirror inerte `js/data-icon-recipes.js` (`ICON_RECIPES`) : non mis à jour
   (documentation sans impact runtime, non vérifiée par les tests).
 
+**Option icônes Gemini (outillage prêt)** : `tools/icon_factory.py` gagne un
+mode `--raster` qui encadre une icône peinte par LLM image (Gemini / Nano
+Banana) avec les **mêmes** passes `pass_halo` (rareté) + `pass_cartouche` +
+mipmaps que les icônes par recette — les passes painterly sont sautées. Source :
+`tools/raster_src/<id>.png` (détourage damier auto via `dechecker_png`). Permet
+de remplacer tout ou partie des 13 icônes painterly sans toucher au JS (chemins
+`ITEM_ICON_NEW_REGISTRY` inchangés) ni au cache (`img/` en SWR). Prompts prêts :
+[`.claude/plans/artifacts-p1-gemini-prompts.md`](./artifacts-p1-gemini-prompts.md)
+; mode opératoire : [`tools/raster_src/README.md`](../../tools/raster_src/README.md).
+Les recettes painterly restent le **repli** tant qu'aucune source Gemini n'est
+fournie pour un id.
+
 ### 2.7 Suggestions d'assets
 
 - **Icônes painterly** (`tools/icon_factory.py`, skill `add-item-icon`) : 1 recette
