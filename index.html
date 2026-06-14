@@ -872,7 +872,7 @@
 </div>
 
 <!-- Modales -->
-<div id="inventory-modal" role="dialog" aria-modal="true" aria-labelledby="inventory-modal-title">
+<div id="inventory-modal" role="dialog" aria-modal="true" aria-labelledby="inventory-modal-title" aria-describedby="inv-hint">
   <div class="modal-box">
     <div class="modal-title" id="inventory-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/backpack.png" alt=""> Sac de Moldu</div>
     <span class="modal-close" onclick="closeModal('inventory-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
@@ -883,7 +883,7 @@
     </div>
     <div id="inv-pane-sac">
       <div class="inv-grid" id="inv-grid"></div>
-      <div style="margin-top:12px; font-size:11px; color:#6a5030; text-align:center;">Cliquez sur un objet pour l'utiliser</div>
+      <div id="inv-hint" style="margin-top:12px; font-size:11px; color:#6a5030; text-align:center;">Cliquez sur un objet pour l'utiliser</div>
     </div>
     <div id="inv-pane-besace" class="inv-besace" style="display:none"></div>
     <div id="inv-pane-grimoire" class="inv-besace" style="display:none"></div>
