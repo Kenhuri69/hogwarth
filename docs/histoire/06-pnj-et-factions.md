@@ -378,6 +378,12 @@ Forge & Bibliothèque.
   [11 §11.6.1](11-mondes-paralleles.md). Il laisse entrevoir une **sortie
   possible** : *« Plus tu purges, plus la Boucle s'allège. C'est ainsi qu'on en
   sort — peut-être. »*
+- **Isolation Boucle ↔ Mondes Parallèles ✅ :** le Gardien et son axe (la Boucle,
+  *verticale*) n'interagissent **pas** avec les Mondes Parallèles (axe *latéral*
+  du Voyageur). Visiter un hôte en Boucle reste une fenêtre en lecture seule —
+  rien de la Boucle ne se propage (ni Éclats portés, ni permadeath). Règle canon
+  ratifiée en
+  [11 §11.5.1](11-mondes-paralleles.md#1151--règle-canon--boucle-ténébreuse-et-mondes-parallèles-sont-isolés).
 
 > ❓ **À arbitrer** (en lien avec [03 §3.6](03-trame-principale.md)) : ce « peut-être »
 > annonce-t-il une **fin écrite** de la Boucle, ou n'est-ce qu'une **boucle de

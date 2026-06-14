@@ -816,9 +816,13 @@ async function scenarioModalIsolation() {
   const aria = await page.evaluate(() => ({
     donation: document.getElementById('house-donation-modal').getAttribute('aria-describedby'),
     forge: document.getElementById('forge-modal').getAttribute('aria-describedby'),
+    inventory: document.getElementById('inventory-modal').getAttribute('aria-describedby'),
+    invHintExists: !!document.getElementById('inv-hint'),
   }));
   assert(aria.donation === 'house-donation-desc', 'le don de Maison doit porter aria-describedby');
   assert(aria.forge === 'forge-hint',             'la forge doit porter aria-describedby');
+  assert(aria.inventory === 'inv-hint',           'l\'inventaire doit porter aria-describedby');
+  assert(aria.invHintExists,                      'la cible aria-describedby de l\'inventaire doit exister');
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

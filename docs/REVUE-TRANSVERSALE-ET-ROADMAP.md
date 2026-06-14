@@ -102,7 +102,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | **11 ↔ 14** (Briser le Cycle) | ✅ Résolu (2026-06-14) : §11.10 réécrit **descriptif du livré** (`break-cycle.js`) — statut du chapitre, jalons (`echo_scene_sceau`/`accumulatedEclats ≥ 15`/`reflet_mythe`), choix final et ❓ tranchés. | — |
 | **11 ↔ 06** (nature de la Boucle) | ✅ Résolu (2026-06-14) : le § canonique existait déjà ([11 §11.6.1 « Pourquoi la Boucle existe »](histoire/11-mondes-paralleles.md) : spirale qui s'enfonce, conséquence de la fêlure menée à son terme, pas un recommencement mécanique). Renvois croisés ajoutés depuis 06 §6.7.2 (Gardien) et forward 03 §3.6 → 11 §11.6.1 (la chaîne « en l'air » est close). Aucune ratification de lore (marqueurs 💡 de §11.6.1 inchangés). | — |
 | **08 ↔ 06** (PNJ donneurs) | ✅ Résolu (2026-06-13) : décision = **créer les 2 PNJ dédiés**. `chevalier_godric` + `echo_salazar` livrés (npcs.js, art, dialogues, smoke par Maison). | — |
-| **Boucle ↔ Mondes Parallèles** | Présentés comme « deux axes opposés » (vertical/latéral) mais **aucune interaction définie** (un Voyageur peut-il visiter un château en Boucle ?). | Écrire la règle explicite (proposé : non — systèmes isolés). |
+| **Boucle ↔ Mondes Parallèles** | ✅ Résolu (2026-06-14) : règle canon ratifiée = **axes isolés**, aucune interaction spéciale. Audit code : la visite n'est pas gatée (`mpListAvailableHosts`), donc le **crossover incident** est assumé — visiter un hôte en Boucle est une fenêtre **lecture seule** (snapshot read-only, pas de permadeath, rien de la Boucle ne se propage). Canon en [11 §11.5.1](histoire/11-mondes-paralleles.md) ; cross-links depuis 06 §6.7.2 (Gardien) + note symétrique 11 §11.13. | — |
 | **9 / 10 / 11 checklists** | Trois procédures d'ajout (créatures / lieux / variantes) sans renvoi mutuel. | Ajouter un renvoi croisé en tête de chacune. |
 | **Codex ↔ Mondes Parallèles** | 8ᵉ onglet « Voyageur » ou intégré au Glossaire ? `❓` ouvert (12). | Trancher (proposé : intégré, pas d'onglet dédié). |
 
@@ -130,7 +130,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 |--------|--------|----------|
 | ❓ **Réconciliation Ch. 12 & 14** avec le code livré (Codex, Briser le Cycle) | À réécrire (sections « plan d'impl. » périmées) | 🔴 Haute |
 | ✅ **Définition canonique de « la Boucle »** (1 §) | Résolu (2026-06-14) : foyer canon = [11 §11.6.1](histoire/11-mondes-paralleles.md) (déjà rédigé) ; renvois croisés ajoutés depuis 06 §6.7.2 + 03 §3.6 | ✅ Résolu |
-| ❓ **Règle Boucle ↔ Mondes Parallèles** (interaction / isolation) | À écrire (item §1.3 distinct, proposé : systèmes isolés) | 🟠 Moyenne |
+| ✅ **Règle Boucle ↔ Mondes Parallèles** (interaction / isolation) | Résolu (2026-06-14) : **axes isolés**, crossover incident d'une visite = lecture seule (conforme au code). Canon en [11 §11.5.1](histoire/11-mondes-paralleles.md), cross-links 06 §6.7.2 + 11 §11.13 | ✅ Résolu |
 | ❓ **Fiches de contenu Codex restantes** (entrées rédigées vs coquilles) | Audit + écriture | 🟠 Moyenne |
 | ✅ **Enjeu intime par personnage** (beats `descentStake`, 6 héros jouables) | Livré (2026-06-14) — cf. 05 §5.4.2 | ✅ Résolu |
 | ✅ **Localisation des boss** (Bellatrix ét. 8 ; Voldemort = 2 entrées, Affaibli ét. 9 / Ressuscité ét. 10) | Résolu (2026-06-14) — doc alignée sur `monsters.js` | ✅ Résolu |
@@ -162,7 +162,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | **Audit doc↔code complet** : tableau « chapitre ↔ module(s) ↔ statut réel » | 🔴 Haute | Tous + `CLAUDE.md` | Faible (lecture) | — |
 | ~~**Mettre à jour `CLAUDE.md`** (index des 85 modules, sections Codex/Forge/Biblio/Endgame/Potions/Events)~~ ✅ **Fait (2026-06-14)** : index des 85 modules aligné (`check_doc_modules` vert), modules récents tous décrits ; dérives résiduelles corrigées. | 🔴 Haute | `CLAUDE.md` | Faible | Audit |
 | ~~**Réécrire Ch. 12 & 14** : « plan d'impl. » → « état livré »~~ ✅ **Fait (2026-06-14)** (Ch.12 + Ch.14). | 🔴 Haute | ~~12, 14~~ | Faible | Audit |
-| ~~**Aligner Ch. 11**~~ ✅ **Fait (2026-06-14)** : ~~Briser le Cycle = ✅~~ (§11.10 descriptif du livré) · ~~définir « la Boucle »~~ canon = §11.6.1 (déjà rédigé), renvois croisés ajoutés depuis 06 §6.7.2 + forward 03 §3.6 → 11 §11.6.1 (chaîne « en l'air » close ; aucune ratification de lore). | 🟠 Moyenne | 11 | Faible | Audit |
+| ~~**Aligner Ch. 11**~~ ✅ **Fait (2026-06-14)** : ~~Briser le Cycle = ✅~~ (§11.10 descriptif du livré) · ~~définir « la Boucle »~~ canon = §11.6.1 (déjà rédigé), renvois croisés ajoutés depuis 06 §6.7.2 + forward 03 §3.6 → 11 §11.6.1 (chaîne « en l'air » close) · ~~**règle Boucle ↔ Mondes Parallèles**~~ ratifiée **axes isolés** (§11.5.1, crossover incident lecture seule conforme au code ; cross-links 06 §6.7.2 + 11 §11.13). | 🟠 Moyenne | 11 | Faible | Audit |
 | **Bandeaux « Statut réel » + index doc↔module** | 🟠 Moyenne | Tous | Faible | Audit |
 | **Compléter symétrie `pact`/`defiance`** + variantes texte fin (5 axes) | 🟠 Moyenne | 14, `endgame.js` | Faible | — |
 | ~~**Enjeu intime héros**~~ ✅ **Livré** (beat `descentStake`) | — | 05, `hero-barks.js` | Faible | — |

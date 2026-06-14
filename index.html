@@ -174,14 +174,16 @@
                maxlength="24" placeholder="Sorcier" autocomplete="off" spellcheck="false">
         <span class="psel-pseudo-hint">Visible par les autres joueurs en ligne.</span>
       </div>
-      <!-- Ch.14 P5 — New Game+ opt-in : visible seulement si le profil a ≥1
-           victoire (géré par _refreshNgPlusOptIn). Purement cosmétique. -->
+      <!-- Ch.14 P5 → challenge — New Game+ opt-in : visible seulement si le
+           profil a ≥1 victoire. Le cran et l'ampleur du défi sont injectés par
+           _refreshNgPlusOptIn (libellé/hint dynamiques). Mode CHALLENGE :
+           ennemis renforcés + butin majoré, ZÉRO héritage. -->
       <label id="ngplus-optin-row" class="psel-ngplus-row" style="display:none">
         <img class="psel-ngplus-medal" src="img/icons/ngplus_veteran.png" alt="">
         <input type="checkbox" id="ngplus-toggle" onchange="_onNgPlusToggle()">
         <span class="psel-ngplus-text">
           <span class="psel-ngplus-title">✦ Nouvelle Partie+</span>
-          <span class="psel-ngplus-hint">Cadre doré « Vétéran » + ton titre affiché. Cosmétique : aucun bonus hérité.</span>
+          <span class="psel-ngplus-hint">Ennemis renforcés + butin majoré. Aucun héritage.</span>
         </span>
       </label>
       <div class="psel-nav">
@@ -872,7 +874,7 @@
 </div>
 
 <!-- Modales -->
-<div id="inventory-modal" role="dialog" aria-modal="true" aria-labelledby="inventory-modal-title">
+<div id="inventory-modal" role="dialog" aria-modal="true" aria-labelledby="inventory-modal-title" aria-describedby="inv-hint">
   <div class="modal-box">
     <div class="modal-title" id="inventory-modal-title"><img class="ui-icon ui-icon-xl" src="img/icons/backpack.png" alt=""> Sac de Moldu</div>
     <span class="modal-close" onclick="closeModal('inventory-modal')" role="button" title="Fermer (Échap)" aria-label="Fermer (Échap)" tabindex="0">✕</span>
@@ -883,7 +885,7 @@
     </div>
     <div id="inv-pane-sac">
       <div class="inv-grid" id="inv-grid"></div>
-      <div style="margin-top:12px; font-size:11px; color:#6a5030; text-align:center;">Cliquez sur un objet pour l'utiliser</div>
+      <div id="inv-hint" style="margin-top:12px; font-size:11px; color:#6a5030; text-align:center;">Cliquez sur un objet pour l'utiliser</div>
     </div>
     <div id="inv-pane-besace" class="inv-besace" style="display:none"></div>
     <div id="inv-pane-grimoire" class="inv-besace" style="display:none"></div>
@@ -1292,15 +1294,15 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/floor-events.js?v=1"></script>
 <script src="js/room-flavor.js?v=1"></script>
 <script src="js/item-icons.js?v=24"></script>
-<script src="js/state.js?v=33"></script>
+<script src="js/state.js?v=34"></script>
 <script src="js/hero-barks.js?v=8"></script>
-<script src="js/ui.js?v=17"></script>
+<script src="js/ui.js?v=18"></script>
 <script src="js/modal-a11y.js?v=1"></script>
 <script src="js/ui-character-sheet.js?v=7"></script>
 <script src="js/ui-settings.js?v=3"></script>
 <script src="js/ui-bestiary.js?v=5"></script>
 <script src="js/ui-codex.js?v=6"></script>
-<script src="js/dungeon-scaling.js?v=4"></script>
+<script src="js/dungeon-scaling.js?v=5"></script>
 <script src="js/dungeon.js?v=17"></script>
 <script src="js/dungeon-spawning.js?v=1"></script>
 <script src="js/textures.js?v=1"></script>
@@ -1334,9 +1336,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/intro.js?v=3"></script>
 <script src="js/shop.js?v=13"></script>
 <script src="js/save-slots.js?v=3"></script>
-<script src="js/save.js?v=38"></script>
+<script src="js/save.js?v=39"></script>
 <script src="js/save-visit-snapshot.js?v=1"></script>
-<script src="js/profile.js?v=2"></script>
+<script src="js/profile.js?v=3"></script>
 <script src="js/save-ui.js?v=9"></script>
 <script src="js/ironman.js?v=4"></script>
 <script src="js/hall-of-fame.js?v=4"></script>
@@ -1349,7 +1351,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="js/visit-hud.js?v=6"></script>
 <script src="js/pvp-duel.js?v=1"></script>
 <script src="js/atelier-voyageur.js?v=4"></script>
-<script src="js/main.js?v=26"></script>
+<script src="js/main.js?v=27"></script>
 <script src="js/endgame.js?v=9"></script>
 <script src="js/break-cycle.js?v=4"></script>
 <script src="js/forge.js?v=4"></script>
