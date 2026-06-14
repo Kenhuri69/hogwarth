@@ -392,13 +392,19 @@ inclus). Slots existants réutilisés (aucun slot neuf).
   sorts (`inventory-spells.js`) affiche le coût effectif par lanceur (reflète
   aussi désormais l'Apothéose Serdaigle — amélioration de cohérence).
 
-**Icônes** : 13 recettes painterly (`tools/icon_factory.py`) + 2 nouveaux parts
-SVG (`tools/parts/orb.svg`, `tools/parts/mask.svg`) ; enregistrées dans
-`ITEM_ICON_NEW_REGISTRY` (priorité 1) **et** `ITEM_ICON_REGISTRY` (repli legacy,
-exigé par le test de couverture `scenarioItemIcons`).
-> ⚠️ Les masques rendent en ovales lisses : le pipeline painterly relighte les
-> petites régions internes (yeux) vers le ton du visage → ils ne survivent pas.
-> Acceptés comme masques cérémoniels stylisés (lecture OK avec nom + contexte).
+**Icônes** : enregistrées dans `ITEM_ICON_NEW_REGISTRY` (priorité 1) **et**
+`ITEM_ICON_REGISTRY` (repli legacy, exigé par `scenarioItemIcons`).
+- **Version livrée** : objets peints par **Gemini** (planche unique générée via
+  le prompt unifié `artifacts-p1-gemini-prompts.md`), découpés + détourés puis
+  encadrés par `tools/icon_factory.py --raster` → halo de rareté + cartouche
+  doré + mipmaps **du moteur** (cohérence avec les 149 autres icônes). Sources
+  détourées conservées dans `tools/raster_src/<id>.png`. Résout proprement le
+  problème de lisibilité des masques (visages nets).
+- **Repli/historique** : 13 recettes painterly (`tools/icon_factory.py`) + 2
+  parts SVG (`tools/parts/orb.svg`, `tools/parts/mask.svg`) restent dans le
+  dépôt — regénérables si une source Gemini disparaît. (Limite connue du
+  painterly sur les masques : petites régions internes relightées vers le ton
+  du visage → ovales lisses ; c'est pourquoi la version Gemini est préférée.)
 
 **Écarts assumés** (hors périmètre « 2 seuls nouveaux leviers ») :
 - `gantelets_combat` : pas de champ `bonusStrPen` (3ᵉ levier non sanctionné).
