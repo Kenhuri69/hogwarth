@@ -2,6 +2,10 @@
 
 **Statut :** 🟩 proposition de référence — à valider / amender
 
+> 📊 **Statut réel (code)** : ✅ PNJ, dialogues & recyclage en Boucle livrés —
+> modules : `js/npcs.js`, `js/npcs-helpers.js`, `js/npc-dialog.js`.
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif : faire de Poudlard un monde **vivant et réactif**. Caractériser les
 > personnages non-jouables (mentors, donneurs de quêtes, marchands, figures de
 > lore), structurer les **factions** et leur évolution, hiérarchiser les

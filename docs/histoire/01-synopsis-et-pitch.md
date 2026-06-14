@@ -2,6 +2,11 @@
 
 **Statut :** 🟩 proposition de référence — à valider / amender
 
+> 📊 **Statut réel (code)** : ✅ récit jouable de bout en bout — chapitre
+> **transversal** (synthèse), sans module unique : la trame vit dans
+> `js/monsters.js` (boss), `js/quests*.js`, `js/endgame.js`, `js/break-cycle.js`.
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif du chapitre : poser le récit en bref. **Cette version est une
 > proposition de ton** : tout ce qui est `💡` est inventé et modifiable ;
 > tout ce qui est `✅` est déjà acté dans le jeu.

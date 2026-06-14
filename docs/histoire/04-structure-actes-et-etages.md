@@ -2,6 +2,11 @@
 
 **Statut :** 🟩 proposition de référence — à valider
 
+> 📊 **Statut réel (code)** : ✅ tranches A/B/C/D + transitions + événements
+> d'étage livrés — modules : `js/floor-themes.js`, `js/dungeon.js`,
+> `js/movement-floors.js`, `js/floor-events.js`.
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif du chapitre : faire le pont entre la **structure de jeu** (étages) et
 > la **structure narrative** (actes). Donner à chaque tranche d'étages une
 > identité de lieu, d'ambiance et de progression dramatique, et **aligner** cette

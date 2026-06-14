@@ -2,6 +2,11 @@
 
 **Statut :** 🟩 proposition de référence — à valider / amender
 
+> 📊 **Statut réel (code)** : ✅ 4 Maisons, paliers (Mythe/Apothéose/★ N) &
+> don d'or livrés — modules : `js/state.js` (`HOUSE_BONUSES`), `js/main.js`
+> (`checkHouseLevelUp`), `js/house-donation.js`.
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif : l'identité **narrative** des 4 Maisons (au-delà des bonus
 > chiffrés, documentés côté gameplay). Valeurs, voix, chef, fantasme de jeu,
 > sens narratif des paliers de prestige. `💡` = proposition narrative

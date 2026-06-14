@@ -2,6 +2,11 @@
 
 **Statut :** 🟩 proposition de référence — à valider / amender
 
+> 📊 **Statut réel (code)** : ✅ quêtes (principales/répétables), signatures &
+> concoction livrées — modules : `js/quests-templates.js`, `js/quests.js`,
+> `js/quests-riddles.js`, `js/potions.js`.
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif : cartographier les quêtes (principales, secondaires, répétables) et
 > les easter eggs narratifs. `💡` = proposition narrative modifiable ; `✅` =
 > acté dans le jeu (`QUEST_TEMPLATES` dans `js/quests-templates.js`,

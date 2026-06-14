@@ -2,6 +2,10 @@
 
 **Statut :** 🟩 proposition de référence — à valider
 
+> 📊 **Statut réel (code)** : ✅ ton & gradient d'ambiance incarnés —
+> modules : `js/floor-themes.js`, `js/floor-ambiance.js`, `js/data.js` (lore).
+> Cf. [index doc ↔ module](../README.md#index-doc--module--statut-réel).
+
 > Objectif du chapitre : définir le cadre fictionnel — quelle époque, quel
 > Poudlard, quel degré de fidélité à *Harry Potter*, et quel ton recherché.
 > Tout ce qui est `💡` est une proposition argumentée et modifiable ; tout ce
