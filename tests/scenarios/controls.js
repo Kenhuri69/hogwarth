@@ -552,6 +552,38 @@ async function scenarioCombatKeyboard() {
   assert(esc.before, 'bestiaire devrait être visible après openBestiary()');
   assert(!esc.after, 'Échap doit fermer le bestiaire');
 
+  // 1bis) Phase 2 — découvrabilité : boutons de combat porteurs de leur
+  //        raccourci (title/aria-label) + hint « Échap » sur les croix +
+  //        Échap couvre désormais aussi la forge.
+  const disc = await page.evaluate(() => {
+    const titleOf = (action) => {
+      const b = document.querySelector(`.battle-actions .cmd-btn[onclick*="'${action}'"]`);
+      return b ? b.getAttribute('title') : null;
+    };
+    const close = document.querySelector('#bestiary-modal .modal-close');
+    // Échap ferme la forge (ajout Phase 2 à ESC_CLOSEABLE_MODALS).
+    const forge = document.getElementById('forge-modal');
+    let forgeClosedByEsc = null;
+    if (forge) {
+      forge.style.display = 'flex';
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      forgeClosedByEsc = getComputedStyle(forge).display === 'none';
+    }
+    return {
+      attack: titleOf('attack'), spell: titleOf('spell'), guard: titleOf('guard'),
+      item: titleOf('item'), flee: titleOf('flee'),
+      closeTitle: close ? close.getAttribute('title') : null,
+      forgeClosedByEsc
+    };
+  });
+  assert(/\(A\)/.test(disc.attack || ''), 'bouton Attaquer doit indiquer (A)');
+  assert(/\(S\)/.test(disc.spell  || ''), 'bouton Sortilège doit indiquer (S)');
+  assert(/\(G\)/.test(disc.guard  || ''), 'bouton Garde doit indiquer (G)');
+  assert(/\(O\)/.test(disc.item   || ''), 'bouton Objet doit indiquer (O)');
+  assert(/\(F\)/.test(disc.flee   || ''), 'bouton Fuir doit indiquer (F)');
+  assert(/Échap/.test(disc.closeTitle || ''), 'la croix de fermeture doit mentionner Échap');
+  assert(disc.forgeClosedByEsc === true,      'Échap doit aussi fermer la forge (Phase 2)');
+
   // 2) Combat à 2 ennemis pour exercer la sélection de cible.
   await page.evaluate(() => {
     const mk = (id) => ({ id, name: 'Mannequin ' + id, icon: '🎯', hp: 40, atk: 1,

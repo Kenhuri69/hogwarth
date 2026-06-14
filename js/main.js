@@ -686,7 +686,9 @@ function toggleMobileMap() {
 const ESC_CLOSEABLE_MODALS = [
   'inventory-modal', 'spell-modal', 'shop-modal', 'character-modal',
   'bestiary-modal', 'codex-modal', 'house-detail-modal', 'house-donation-modal',
-  'wizard-codex-modal', 'slot-modal', 'monster-info-overlay'
+  'wizard-codex-modal', 'slot-modal', 'monster-info-overlay',
+  'settings-modal', 'forge-modal', 'library-modal', 'brewing-modal',
+  'fusion-modal', 'riddle-modal'
 ];
 
 document.addEventListener('keydown',e=>{
