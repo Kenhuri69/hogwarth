@@ -462,6 +462,7 @@ window.UX_safe = new Proxy({}, {
 
     // ── Modules optionnels (warnings doux uniquement) ──
     { name: 'UX',                 source: 'ux-improvements.js', kind: 'obj', optional: true },
+    { name: 'ModalA11y',          source: 'modal-a11y.js',   kind: 'obj',   optional: true },
     { name: 'CombatFX',           source: 'combat-fx.js',    kind: 'obj',   optional: true },
     { name: 'Haptics',            source: 'haptics.js',      kind: 'obj',   optional: true },
     { name: 'HAPTICS_safe',       source: 'haptics.js',      kind: 'obj',   optional: true },

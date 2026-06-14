@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v139';
+const CACHE_VERSION = 'hogwarth-v141';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -50,7 +50,7 @@ const PRECACHE_URLS = [
   './js/audio-sfx.js?v=16',
   './js/icons.js?v=1',
   './js/scene-icons.js?v=7',
-  './js/monsters.js?v=16',
+  './js/monsters.js?v=18',
   './js/npcs.js?v=32',
   './js/npcs-helpers.js?v=4',
   './js/riddles.js?v=2',
@@ -65,6 +65,7 @@ const PRECACHE_URLS = [
   './js/state.js?v=33',
   './js/hero-barks.js?v=8',
   './js/ui.js?v=17',
+  './js/modal-a11y.js?v=1',
   './js/ui-character-sheet.js?v=7',
   './js/ui-settings.js?v=3',
   './js/ui-bestiary.js?v=5',
@@ -117,7 +118,7 @@ const PRECACHE_URLS = [
   './js/forge.js?v=4',
   './js/library.js?v=4',
   './js/help-tour.js?v=3',
-  './js/loader.js?v=47',
+  './js/loader.js?v=48',
   './js/pwa.js?v=4',
 
   // Icônes PWA + premier écran

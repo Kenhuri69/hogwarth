@@ -35,7 +35,7 @@
 | ✅ 3 | ~~Enjeu intime par héros toujours absent~~ **Livré** (2026-06-14) : couche de beats scénarisés cosmétiques `descentStake` (6 héros jouables, seuil 3↔4) via `heroBarkScripted` ; gaps 01 §1.3 & 03 #2 tranchés, canon en 05 §5.4.2. | 01 §1.3, 03 #2, 05 §5.4.2, `hero-barks.js` | ✅ Résolu |
 | ✅ 4 | ~~PNJ-clés de signature non implémentés~~ **Livré** (2026-06-13) : Chevalier Fantôme (`chevalier_godric`) 🦁 + Écho de Salazar (`echo_salazar`) 🐍 — PNJ donneurs dédiés (art `img/npc/`, dialogues, placement), signatures retirées de McGonagall/Rogue. Serdaigle/Poufsouffle restent sur Flitwick/Chourave (chefs existants). | 06, 08, `npcs.js` | ✅ Résolu |
 | ✅ 5 | ~~Variante de choix asymétrique : `'defiance'` seulement proposé~~ **Résolu** (2026-06-13) : les deux branches sont câblées de bout en bout — choix joueur (`npc-dialog.js` : « Sceller le Pacte » / « Défier l'écho » → `turnInSlythSignature`), levier Voldemort (`battle.js` : buff lifesteal `pact` vs debuff −15 % `defiance`), variantes de fin (`endgame.js` : `victory_pact` vs miroir de reconnaissance), réputation dérivée. | 08, 14, `endgame.js` | ✅ Résolu |
-| ⚠️ 6 | **Localisations/statuts de boss flous** (Bellatrix sans étage ; Voldemort « affaibli » vs « ressuscité » = 1 ou 2 entrées ?) | 01, 03, 06 | 🟡 Faible |
+| ✅ 6 | ~~**Localisations/statuts de boss flous**~~ **Résolu** (2026-06-14) : code source de vérité (`monsters.js`) — **Bellatrix = ét. 8** (`minFloor:8`) ; **Voldemort = 2 entrées distinctes** : `voldemort_affaibli` (ét. **9**) puis `voldemort_revenu` (ét. 10, climax à phases). Unique dérive corrigée partout : « Affaibli ét. 8 » → **ét. 9** (01, 02, 03, 04, 06, 09, 12 + `CLAUDE.md`). | 01, 03, 06 | ✅ Résolu |
 | ⚠️ 7 | **Trois checklists d'ajout parallèles non coordonnées** (créatures Ch.09 / lieux Ch.10 / variantes Ch.11) | 09, 10, 11 | 🟡 Faible |
 
 ---
@@ -100,7 +100,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | Lien | Problème | Action suggérée |
 |------|----------|-----------------|
 | **11 ↔ 14** (Briser le Cycle) | ✅ Résolu (2026-06-14) : §11.10 réécrit **descriptif du livré** (`break-cycle.js`) — statut du chapitre, jalons (`echo_scene_sceau`/`accumulatedEclats ≥ 15`/`reflet_mythe`), choix final et ❓ tranchés. | — |
-| **11 ↔ 06** (nature de la Boucle) | Le Ch. 06 ne dit jamais si la Boucle est une dimension / boucle temporelle / cristallisation ; renvoie en l'air vers 03 §3.6. | Ajouter 1 § canonique « qu'est-ce que la Boucle » dans 11, lié depuis 06. |
+| **11 ↔ 06** (nature de la Boucle) | ✅ Résolu (2026-06-14) : le § canonique existait déjà ([11 §11.6.1 « Pourquoi la Boucle existe »](histoire/11-mondes-paralleles.md) : spirale qui s'enfonce, conséquence de la fêlure menée à son terme, pas un recommencement mécanique). Renvois croisés ajoutés depuis 06 §6.7.2 (Gardien) et forward 03 §3.6 → 11 §11.6.1 (la chaîne « en l'air » est close). Aucune ratification de lore (marqueurs 💡 de §11.6.1 inchangés). | — |
 | **08 ↔ 06** (PNJ donneurs) | ✅ Résolu (2026-06-13) : décision = **créer les 2 PNJ dédiés**. `chevalier_godric` + `echo_salazar` livrés (npcs.js, art, dialogues, smoke par Maison). | — |
 | **Boucle ↔ Mondes Parallèles** | Présentés comme « deux axes opposés » (vertical/latéral) mais **aucune interaction définie** (un Voyageur peut-il visiter un château en Boucle ?). | Écrire la règle explicite (proposé : non — systèmes isolés). |
 | **9 / 10 / 11 checklists** | Trois procédures d'ajout (créatures / lieux / variantes) sans renvoi mutuel. | Ajouter un renvoi croisé en tête de chacune. |
@@ -129,10 +129,11 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | Manque | Statut | Priorité |
 |--------|--------|----------|
 | ❓ **Réconciliation Ch. 12 & 14** avec le code livré (Codex, Briser le Cycle) | À réécrire (sections « plan d'impl. » périmées) | 🔴 Haute |
-| ❓ **Définition canonique de « la Boucle »** (1 §) + règle Boucle↔MP | À écrire | 🟠 Moyenne |
+| ✅ **Définition canonique de « la Boucle »** (1 §) | Résolu (2026-06-14) : foyer canon = [11 §11.6.1](histoire/11-mondes-paralleles.md) (déjà rédigé) ; renvois croisés ajoutés depuis 06 §6.7.2 + 03 §3.6 | ✅ Résolu |
+| ❓ **Règle Boucle ↔ Mondes Parallèles** (interaction / isolation) | À écrire (item §1.3 distinct, proposé : systèmes isolés) | 🟠 Moyenne |
 | ❓ **Fiches de contenu Codex restantes** (entrées rédigées vs coquilles) | Audit + écriture | 🟠 Moyenne |
 | ✅ **Enjeu intime par personnage** (beats `descentStake`, 6 héros jouables) | Livré (2026-06-14) — cf. 05 §5.4.2 | ✅ Résolu |
-| ❓ **Localisation des boss** (Bellatrix ; statut Voldemort affaibli/ressuscité) | À clarifier | 🟡 Faible |
+| ✅ **Localisation des boss** (Bellatrix ét. 8 ; Voldemort = 2 entrées, Affaibli ét. 9 / Ressuscité ét. 10) | Résolu (2026-06-14) — doc alignée sur `monsters.js` | ✅ Résolu |
 
 ### Côté gameplay (`docs/gameplay/`)
 
@@ -161,11 +162,11 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | **Audit doc↔code complet** : tableau « chapitre ↔ module(s) ↔ statut réel » | 🔴 Haute | Tous + `CLAUDE.md` | Faible (lecture) | — |
 | ~~**Mettre à jour `CLAUDE.md`** (index des 85 modules, sections Codex/Forge/Biblio/Endgame/Potions/Events)~~ ✅ **Fait (2026-06-14)** : index des 85 modules aligné (`check_doc_modules` vert), modules récents tous décrits ; dérives résiduelles corrigées. | 🔴 Haute | `CLAUDE.md` | Faible | Audit |
 | ~~**Réécrire Ch. 12 & 14** : « plan d'impl. » → « état livré »~~ ✅ **Fait (2026-06-14)** (Ch.12 + Ch.14). | 🔴 Haute | ~~12, 14~~ | Faible | Audit |
-| **Aligner Ch. 11** : ~~Briser le Cycle = ✅, pas proposition~~ ✅ **Fait (2026-06-14)** (§11.10 descriptif du livré) · reste « définir « la Boucle » » (canon §11.6.1 → cross-link depuis Ch. 06, authorial) | 🟠 Moyenne | 11 | Faible | Audit |
+| ~~**Aligner Ch. 11**~~ ✅ **Fait (2026-06-14)** : ~~Briser le Cycle = ✅~~ (§11.10 descriptif du livré) · ~~définir « la Boucle »~~ canon = §11.6.1 (déjà rédigé), renvois croisés ajoutés depuis 06 §6.7.2 + forward 03 §3.6 → 11 §11.6.1 (chaîne « en l'air » close ; aucune ratification de lore). | 🟠 Moyenne | 11 | Faible | Audit |
 | **Bandeaux « Statut réel » + index doc↔module** | 🟠 Moyenne | Tous | Faible | Audit |
 | **Compléter symétrie `pact`/`defiance`** + variantes texte fin (5 axes) | 🟠 Moyenne | 14, `endgame.js` | Faible | — |
 | ~~**Enjeu intime héros**~~ ✅ **Livré** (beat `descentStake`) | — | 05, `hero-barks.js` | Faible | — |
-| **Clarifier localisation boss** (Bellatrix, Voldemort ×1/×2) | 🟡 Basse | 03, 06, `monsters.js` | Faible | — |
+| ~~**Clarifier localisation boss** (Bellatrix, Voldemort ×1/×2)~~ ✅ **Fait (2026-06-14)** : Bellatrix ét. 8 ; Voldemort = 2 entrées (Affaibli ét. 9 / Ressuscité ét. 10) ; dérive « Affaibli ét. 8 » → 9 corrigée dans 01-04/06/09/12 + `CLAUDE.md`. | 🟡 Basse | 03, 06, `monsters.js` | Faible | — |
 
 **Critère de sortie Phase 1** : un·e lecteur·rice de la doc peut, pour chaque
 système, savoir s'il est livré et où — et `node tests/smoke.js` reste vert.

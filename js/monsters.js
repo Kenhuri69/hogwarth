@@ -2093,6 +2093,87 @@ const MONSTERS = [
     ]
   },
 
+  // ── Caster glace des profondeurs (spectre revenant gelé) ───────────
+  // minFloor 8 → réel 8+ ET recycle en Boucle au réel 18+ (effectiveFloor(18)=8).
+  // Caster (atk 12 < 1,5×mag 26) → PAS une brute. Élément glace : Glacius-like
+  // (statut gel ❄️) + gel profond (stun). Catégorie fantôme → mort-vivant, donc
+  // Lumos Solem ×1,5 s'applique en plus ; faible feu. Sprite PNG (rembg).
+  {
+    id:       "spectre_givre",
+    epic:     true,
+    name:     "Spectre de Givre",
+    icon:     "❄️",
+    imgSrc:   "img/monsters/spectre_givre.png",
+    category: "fantôme",
+    desc:     "Le froid tombe d'un coup. Une silhouette de glace et de linceul gelé se dresse, un éclat de givre au creux de sa main décharnée.",
+    lore:     "Un sorcier mort de froid dans les profondeurs, que la Boucle a relevé en revenant de givre. Il ne se souvient plus de son nom — seulement du gel qui l'a pris, et qu'il rend désormais à quiconque s'aventure trop bas. Là où il flotte, l'air se cristallise.",
+    habitat:  "Les galeries glacées des Profondeurs Oubliées, où l'eau ne coule plus depuis des siècles.",
+    anecdote: "Les torches s'éteignent à son approche : non par manque d'air, mais parce que la flamme elle-même gèle sur la mèche.",
+    danger:   10,
+    minFloor: 8, maxFloor: null, weight: 1,
+    hp: 150, atk: 12, def: 10, mag: 26, agi: 14, lck: 10,
+    scale: 0.35,
+    abilities: [
+      { name: "Éclat de Givre",   icon: "🧊", desc: "Projette un dard de glace pure",         effect: "damage", power: 24, chance: 0.45 },
+      { name: "Étreinte Glaciale", icon: "❄️", desc: "Le gel s'accroche et ronge lentement",   effect: "status", statusId: "gel",  power: 8, chance: 0.40, turns: 3 },
+      { name: "Gel Profond",      icon: "💫", desc: "Fige la cible dans un bloc de glace",      effect: "status", statusId: "stun", power: 0, chance: 0.22, turns: 1 }
+    ],
+    ai: "cautious",
+    phases: [
+      { atPct: 0.4, magMult: 1.3, msg: "Le Spectre se hérisse de pics de glace — le froid devient mordant, chaque souffle brûle de givre." }
+    ],
+    resist: ["glace", "ténèbres"],
+    weak:   ["feu"],
+    xp: 300, gold: { min: 160, max: 240 },
+    drops: [
+      { itemId: "essence_tenebres",      chance: 0.75 },
+      { itemId: "page_grimoire",         chance: 0.50 },
+      { itemId: "herbe_asphodele_noire", chance: 0.30 },
+      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+    ]
+  },
+
+  // ── Caster foudre rapide des Profondeurs (élémentaire d'orage) ─────
+  // minFloor 7 → réel 7+ ET recycle en Boucle au réel 17+ (effectiveFloor(17)=7).
+  // Caster (atk 14 < 1,5×mag 25) → PAS une brute. AGI élevée (frappe vive,
+  // esquive). Élément foudre : Fulgari-like (dégâts purs) + décharge (stun).
+  // Faible PHYSIQUE — unique parmi les boss → valorise Diffindo/Sectumsempra ;
+  // résiste foudre. Sprite PNG (rembg).
+  {
+    id:       "heraut_foudre",
+    epic:     true,
+    name:     "Héraut de l'Orage",
+    icon:     "⚡",
+    imgSrc:   "img/monsters/heraut_foudre.png",
+    category: "être magique",
+    desc:     "L'air se charge et crépite. Une silhouette d'orage se condense, doigts grésillant d'arcs électriques bleus.",
+    lore:     "Quand la foudre frappe assez profond et assez souvent le même point des Ruines, la Boucle finit par lui donner une volonté. Le Héraut de l'Orage n'est qu'une tempête qui a appris à haïr : il frappe vite, sans prévenir, et la terre tremble sous chaque décharge.",
+    habitat:  "Les puits verticaux des Profondeurs Oubliées, où l'orage de surface s'engouffre encore.",
+    anecdote: "On le repère avant de le voir : les cheveux se dressent, le métal bourdonne, et l'instant d'après l'éclair est déjà parti.",
+    danger:   10,
+    minFloor: 7, maxFloor: null, weight: 1,
+    hp: 145, atk: 14, def: 9, mag: 25, agi: 20, lck: 11,
+    scale: 0.35,
+    abilities: [
+      { name: "Fulguration",       icon: "⚡", desc: "Un trait de foudre pure traverse l'armure", effect: "damage", power: 26, chance: 0.50 },
+      { name: "Décharge",          icon: "💫", desc: "Une secousse électrique paralyse",          effect: "status", statusId: "stun", power: 0, chance: 0.30, turns: 1 },
+      { name: "Bourrasque Statique", icon: "🌀", desc: "Le souffle d'orage disperse les protections", effect: "dispel", chance: 0.28 }
+    ],
+    ai: "aggressive",
+    phases: [
+      { atPct: 0.4, magMult: 1.3, msg: "Le Héraut se densifie en un nuage noir zébré d'éclairs — l'orage gronde, prêt à tout foudroyer." }
+    ],
+    resist: ["foudre"],
+    weak:   ["physique"],
+    xp: 300, gold: { min: 160, max: 240 },
+    drops: [
+      { itemId: "essence_tenebres",      chance: 0.75 },
+      { itemId: "page_grimoire",         chance: 0.50 },
+      { itemId: "herbe_asphodele_noire", chance: 0.30 },
+      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+    ]
+  },
+
   // ── Boss-miroir terminal de « Briser le Cycle » (V3, ch.11 §11.10) ──
   // Apparition à l'étage RÉEL 21+ : minFloor 11 filtré via effectiveFloor
   // (effectiveFloor(21)=11) → exclu des étages 11-20 (eff. 1-10). Le vaincre

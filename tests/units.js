@@ -1597,6 +1597,52 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 15. monsters.js — Spectre de Givre (caster glace, mort-vivant)
+//    Caster (PAS une brute), élément glace (résiste glace, faible feu),
+//    catégorie fantôme (→ Lumos Solem ×1,5), sprite PNG câblé.
+// ============================================================
+(function testSpectreGivre() {
+  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { isBruteMonster, effectiveFloor } = loadModule(
+    'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
+
+  const s = MONSTERS.find(x => x.id === 'spectre_givre');
+  check('spectre_givre: entrée présente', !!s);
+  check('spectre_givre: epic + weight 1', !!s && s.epic === true && s.weight === 1);
+  check('spectre_givre: imgSrc câblé', !!s && s.imgSrc === 'img/monsters/spectre_givre.png');
+  check('spectre_givre: catégorie fantôme (mort-vivant)', !!s && s.category === 'fantôme');
+  check('spectre_givre: n\'est PAS une brute', isBruteMonster(s) === false);
+  check('spectre_givre: résiste glace, faible feu',
+    !!s && s.resist.includes('glace') && s.weak.includes('feu'));
+  // Applique le statut gel ❄️ (4ᵉ DoT).
+  check('spectre_givre: inflige le statut gel',
+    !!s && s.abilities.some(a => a.statusId === 'gel'));
+  // minFloor 8 → recycle en Boucle au réel 18 (effectiveFloor(18)=8).
+  check('spectre_givre: éligible Boucle réel 18 (eff. 8)', !!s && effectiveFloor(18) >= s.minFloor);
+})();
+
+// ============================================================
+// 16. monsters.js — Héraut de l'Orage (caster foudre, faible physique)
+//    Caster (PAS une brute), élément foudre (résiste foudre, faible physique
+//    — unique parmi les boss), recycle en Boucle.
+// ============================================================
+(function testHerautFoudre() {
+  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { isBruteMonster, effectiveFloor } = loadModule(
+    'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
+
+  const h = MONSTERS.find(x => x.id === 'heraut_foudre');
+  check('heraut_foudre: entrée présente', !!h);
+  check('heraut_foudre: epic + weight 1', !!h && h.epic === true && h.weight === 1);
+  check('heraut_foudre: imgSrc câblé', !!h && h.imgSrc === 'img/monsters/heraut_foudre.png');
+  check('heraut_foudre: n\'est PAS une brute', isBruteMonster(h) === false);
+  check('heraut_foudre: résiste foudre, faible physique',
+    !!h && h.resist.includes('foudre') && h.weak.includes('physique'));
+  // minFloor 7 → recycle en Boucle au réel 17 (effectiveFloor(17)=7).
+  check('heraut_foudre: éligible Boucle réel 17 (eff. 7)', !!h && effectiveFloor(17) >= h.minFloor);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

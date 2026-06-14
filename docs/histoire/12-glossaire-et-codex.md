@@ -621,7 +621,7 @@ sérialisés ou dérivables** (pas de nouvel état lourd) :
 | **Ouverture** | Le portrait de Dumbledore appelle le héros → quête tutoriel → choix de Maison → entrée dans le donjon. | ✅ |
 | **Acte I — étages 1-3** | L'École qui se fissure (couloirs de Poudlard). | ✅ [03 §3.2](03-trame-principale.md) |
 | **Acte II — étages 4-6** | La Descente (cachots) ; apparition des mangemorts ; amorce du grimoire d'Élara. | ✅ [03 §3.3](03-trame-principale.md) |
-| **Acte III — étages 7-10** | Les Profondeurs ; boss canon (Greyback ét.8, Aragog ét.9, Dolohov ét.10, Bellatrix, Voldemort **Affaibli** ét.8). | ✅ [03 §3.4](03-trame-principale.md) |
+| **Acte III — étages 7-10** | Les Profondeurs ; boss canon (Greyback ét.8, Aragog ét.9, Dolohov ét.10, Bellatrix ét.8, Voldemort **Affaibli** ét.9). | ✅ [03 §3.4](03-trame-principale.md) |
 | **Climax — étage 10** | **Voldemort Ressuscité** ; sa défaite scelle l'arc → cinématique de victoire. | ✅ [03 §3.5](03-trame-principale.md) |
 | **Acte IV — étages 11+** | **Boucle Ténébreuse** : château corrompu, Ténébreux, Ruines Anciennes (14+), paliers Mythe/Apothéose/★ N. | ✅ [03 §3.6](03-trame-principale.md) |
 | **Hors-temps (parallèle)** | Les **Mondes Parallèles** : visites latérales via la Cheminette (niv. 8). Sans place fixe dans la chronologie — *traverser*, pas *avancer*. | 💡 [11](11-mondes-paralleles.md) |

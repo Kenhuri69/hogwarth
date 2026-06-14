@@ -123,7 +123,7 @@ aux 5 catégories moteur.
 |-----------|--------|---------------------|--------------------------|----------|
 | **I — L'École** | 1–3 (A) | F1 + amorce F3 | — (tutoriel) | Familier qui se fissure |
 | **II — La Descente** | 4–6 (B) | F2 + F4 (Mangemorts masqués) + F3 | (boss de seuil ✅ Gardien du Portail 5+) | Austère, froid qui monte |
-| **III — Les Profondeurs** | 7–10 (C) | F3 + F4 + F5 | Nagini (7), Greyback (8), Veilleur (8), Voldemort Affaibli (8), Aragog (9), Maître des Détraqueurs (9), Dolohov (10), Héraut (10), **Voldemort Ressuscité (10)** | Abyssal, mortel |
+| **III — Les Profondeurs** | 7–10 (C) | F3 + F4 + F5 | Nagini (7), Greyback (8), Veilleur (8), Aragog (9), Voldemort Affaibli (9), Maître des Détraqueurs (9), Dolohov (10), Héraut (10), **Voldemort Ressuscité (10)** | Abyssal, mortel |
 | **IV — La Boucle Ténébreuse** | 11+ (C→D) | Tout, en variantes **Ténébreux** | Boss 8–10 « Ténébreux » (ét. 18–20) | Le mythe retourné |
 
 ---
@@ -456,7 +456,7 @@ Anciennes** et la corruption à sa source.
 ### 9.8.11 — Voldemort Ressuscité (F4, ✅ `epic`, **climax**)
 
 - **Apparence.** Forme reptilienne blafarde, yeux rouges, fentes nasales ;
-  pleinement reconstitué. **Avant** (Voldemort Affaibli, ét. 8) : spectre
+  pleinement reconstitué. **Avant** (Voldemort Affaibli, ét. 9) : spectre
   translucide et incomplet — le **premier contact**.
 - **Origine narrative.** Ce que la Clé de Voûte retenait *au plus profond* : un
   fragment qui se **reconstitue à mesure que la fêlure remonte**. Chaque boss
@@ -706,8 +706,8 @@ jusqu'à l'os, plus profonde, plus sombre.
 | 6+ | Strigoï Ancien | Prédateur **pré-Poudlard** muré (F3/F5) | Strates anciennes |
 | 8 | **Fenrir Greyback** ✅`epic` | Loup-garou de Voldemort, gardien de route (F4) | 1ᵉʳ boss canon · boss enragé |
 | 8 | **Veilleur du Seuil** ✅`epic` | Gardien **runique pré-Poudlard** (F5) | Seuil interdit · graine des Ruines |
-| 8 | Voldemort Affaibli ✅`epic` | Fragment **incomplet** (F4) | Premier contact |
 | 9 | **Aragog** ✅`epic` | Patriarche de la colonie (F5) | Boss territorial · purge endgame |
+| 9 | Voldemort Affaibli ✅`epic` | Fragment **incomplet** (F4) | Premier contact |
 | 9 | Maître des Détraqueurs ✅`epic` | Figure tutélaire d'Azkaban (F3/F5) | Sommet du désespoir |
 | 10 | **Antonin Dolohov** ✅`epic` | Lieutenant méthodique (F4) | Dernière marche avant le maître |
 | 10 | **Héraut des Ténèbres** ✅`epic` | **Annonciateur** de la résurrection (F5) | Dernier seuil · peur rituelle |
