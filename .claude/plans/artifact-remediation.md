@@ -99,6 +99,41 @@ toutes ses références (intactes).
 Faible — rename localisé, le legendary inchangé. Le seul piège est d'oublier un
 call-site → la nouvelle assertion d'unicité + grep `codex_rowena` couvrent.
 
+### ✅ Implémenté (2026-06-14, branche `claude/artifact-lot-a-codex-rowena-xgvter`)
+- `js/data.js:875` : `id` → `codex_rowena_eclat`, `name` → « Feuillets de Rowena »,
+  `family` → `codex_rowena_eclat` (spécialisée, distincte du legendary).
+- `js/quests-templates.js:789` : `houseSetReward` → `codex_rowena_eclat`.
+- `js/npc-dialog.js:147` : map `Serdaigle` → `codex_rowena_eclat`.
+- `js/item-icons.js` : **écart vs plan** — le plan annonçait « 3 entrées (NEW +
+  2 legacy) ». En réalité les 3 entrées `codex_rowena` existantes n'étaient PAS
+  toutes partagées : la ligne 168 (groupe Tier-5, `diademe_serdaigle.png`)
+  appartient au **legendary** ; les lignes 183 (legacy, groupe signature,
+  `livre_sortileges.png`) et 364 (NEW, `codex_rowena_64.png`, recette
+  `icon_factory` rareté epic) appartiennent à l'**epic**. Choix retenu pour
+  garder le legendary **strictement inchangé** au rendu :
+  - ligne 183 **renommée** `codex_rowena_eclat` (résout au passage le doublon de
+    clé legacy préexistant 168/183) ;
+  - **ajout** d'une entrée NEW `codex_rowena_eclat → codex_rowena_64.png` (art
+    painterly partagé) ; la ligne 364 `codex_rowena` reste pour le legendary
+    (NEW prioritaire → legendary rend `codex_rowena_64.png` comme avant).
+  - Net : 1 entrée renommée + 1 ajoutée (et non « 3 ajoutées » : une 2ᵉ entrée
+    legacy au même id serait une clé dupliquée invalide).
+- `js/codex.js` : **vérifié, rien à repointer** — aucune entrée Codex ne
+  référence `codex_rowena` (grep vide).
+- `tests/units.js` : assertion d'unicité des `id` dans `ITEMS` ajoutée
+  (+ vérif présence du legendary `codex_rowena` & de l'epic `codex_rowena_eclat`).
+- `tests/scenarios/houses.js:1557` : `reward` attendu mis à jour en
+  `codex_rowena_eclat` (call-site de test non listé au plan).
+- `tools/icon_factory.py` (recette `codex_rowena`, rareté epic) **laissée
+  intacte** : génère `codex_rowena_64.png` réutilisé par les deux items
+  (non servi au navigateur ; surgical).
+- **Save legacy** : aucune migration (le legendary garde son id ; l'epic était
+  inatteignable, aucun joueur ne le possède).
+- Garde-fous verts : `units.js` (655 assertions), `smoke.js` (224 scénarios),
+  `pwa-smoke.js`, `check_cache_versions.js`. Cache-bump : `data.js` v39→40,
+  `item-icons.js` v26→27, `quests-templates.js` v12→13, `npc-dialog.js` v19→20,
+  `CACHE_VERSION` v151→152.
+
 ---
 
 ## Lot B — 🟠 Équité des 4 Premium de Maison (P3)
@@ -247,7 +282,7 @@ non créée sans demande (§6).
 
 ## Suivi (à cocher à l'implémentation)
 
-- [ ] Lot A — rename `codex_rowena_eclat` + assertion unicité ids + cache-bump
+- [x] Lot A — rename `codex_rowena_eclat` + assertion unicité ids + cache-bump ✅ 2026-06-14
 - [ ] Lot F — formule §1.6 corrigée
 - [ ] Lot C — `voix_rowena_relique` +MAG+2
 - [ ] Lot B — Premium Gryffondor rebasé (+ sim)

@@ -786,7 +786,7 @@ const QUEST_TEMPLATES = [
       // 3. Climax — le Gardien du Portail veille sur les derniers feuillets.
       { type: "kill",  monsterId: "gardien_portail", amount: 1, progress: 0, completed: false }
     ],
-    reward: { xp: 720, gold: 300, houseSetReward: "codex_rowena" },
+    reward: { xp: 720, gold: 300, houseSetReward: "codex_rowena_eclat" },
     location: "Salle des Aigles (étage 6) — cible en Acte III",
     houseSignatureQuest: true,
     house: "Serdaigle"

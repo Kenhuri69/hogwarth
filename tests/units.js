@@ -1696,6 +1696,27 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// N. data.js — unicité des `id` dans ITEMS (garde-fou anti-régression)
+// ============================================================
+// Contexte : le bug `codex_rowena` (legendary Tier-5 + epic signature au même
+// id) faisait que `ITEMS.find(i=>i.id===…)` shadowait l'epic. Tout id dupliqué
+// rend une entrée inatteignable par lookup → assertion d'unicité globale.
+(function testItemsUniqueIds() {
+  const { ITEMS } = loadModule('js/data.js', ['ITEMS']);
+  const seen = new Set();
+  const dupes = [];
+  for (const it of ITEMS) {
+    if (seen.has(it.id)) dupes.push(it.id);
+    seen.add(it.id);
+  }
+  check('ITEMS : aucun id dupliqué' + (dupes.length ? ' (doublons: ' + dupes.join(', ') + ')' : ''),
+    dupes.length === 0);
+  // L'epic signature Serdaigle a bien un id distinct du legendary Tier-5.
+  check('codex_rowena (legendary) présent', ITEMS.some(i => i.id === 'codex_rowena' && i.rarity === 'legendary'));
+  check('codex_rowena_eclat (epic signature) présent', ITEMS.some(i => i.id === 'codex_rowena_eclat' && i.rarity === 'epic'));
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {
