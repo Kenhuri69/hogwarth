@@ -946,6 +946,10 @@ Fondateur, cohérents avec leur quête signature ([08 §8.5](08-quetes-et-sous-i
 > 💡 Procédure normative pour étendre ce chapitre **sans casser la cohérence**.
 > À dérouler pour tout nouveau lieu, étage-scène ou variante.
 
+> 🔗 **Checklists d'extension de contenu** (mêmes principes : *trahison du
+> familier > invention pure*, ancrage de zone/corruption, non-contradiction du
+> canon) — créatures [09 §9.11](09-bestiaire-et-lore.md#911-règles-dajout-de-nouvelles-créatures) · **lieux (ici, §10.9)** · variantes de Boucle [11 §11.11](11-mondes-paralleles.md#1111-règles-dajout-de-nouvelles-variantes--boucles) · héros jouables [05 §5.5](05-personnages-jouables.md). *(Fusion en une page unique = chantier optionnel, roadmap §1.4 💡7.)*
+
 ### Check-list « nouveau lieu / étage »
 
 1. ✅ **Zone & thème d'abord** : déterminer la **tranche** (A/B/C/D) →

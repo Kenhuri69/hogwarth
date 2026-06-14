@@ -646,6 +646,10 @@ jusqu'à l'os, plus profonde, plus sombre.
 > est dans la skill `add-monster` et `CLAUDE.md` (« Système de monstres ») ;
 > cette section couvre la **cohérence narrative**.
 
+> 🔗 **Checklists d'extension de contenu** (mêmes principes : *trahison du
+> familier > invention pure*, ancrage de zone/corruption, non-contradiction du
+> canon) — **créatures (ici, §9.11)** · lieux [10 §10.9](10-lieux-et-geographie.md#109-règles-dajout--modification-de-lieux) · variantes de Boucle [11 §11.11](11-mondes-paralleles.md#1111-règles-dajout-de-nouvelles-variantes--boucles) · héros jouables [05 §5.5](05-personnages-jouables.md). *(Fusion en une page unique = chantier optionnel, roadmap §1.4 💡7.)*
+
 ### 9.11.1 Checklist narrative (obligatoire)
 
 1. **Ancrage de corruption.** La créature *réveille / retourne / aggrave* quoi ?

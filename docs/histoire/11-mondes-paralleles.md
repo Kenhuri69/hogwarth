@@ -613,6 +613,10 @@ reste libre de **continuer la Boucle** (le mythe ne meurt pas, il *choisit*).
 > 💡 (norme d'écriture) — pour que la Boucle reste **cohérente, équilibrée et
 > extensible**. Miroir des règles du Codex ([12 §12.5](12-glossaire-et-codex.md)).
 
+> 🔗 **Checklists d'extension de contenu** (mêmes principes : *trahison du
+> familier > invention pure*, ancrage de zone/corruption, non-contradiction du
+> canon) — créatures [09 §9.11](09-bestiaire-et-lore.md#911-règles-dajout-de-nouvelles-créatures) · lieux [10 §10.9](10-lieux-et-geographie.md#109-règles-dajout--modification-de-lieux) · **variantes de Boucle (ici, §11.11)** · héros jouables [05 §5.5](05-personnages-jouables.md). *(Fusion en une page unique = chantier optionnel, roadmap §1.4 💡7.)*
+
 ### 11.11.1 Critères de cohérence (le filtre canon)
 
 Une variante de Boucle n'est admise que si elle **passe ces cinq tests** :
