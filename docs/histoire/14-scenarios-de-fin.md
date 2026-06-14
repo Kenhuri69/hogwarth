@@ -50,7 +50,7 @@ les met en mots, et propose les couches émotionnelles qui manquent.
 | Brique | ✅ Statut de jeu | Fichier |
 |--------|-----------------|---------|
 | **Cinématique de victoire** | `checkVictoryTrigger('voldemort_revenu')` → `victoryAchieved`, modale `#victory-modal` | `js/endgame.js` |
-| **Variante conditionnelle** | ✅ **une seule** existe : ton froid de Dumbledore si `slythPactChoice === 'pact'` | `js/endgame.js` |
+| **Variantes conditionnelles** | ✅ **les 5 axes (a-e)** sont codés & testés : Maison, héros (solo/duo), signatures, Éclats, choix moral (`pact` **et** `defiance`) — `_victorySpeechVariants` | `js/endgame.js`, `tests/units.js` §11 |
 | **Boucle Ténébreuse** | descente continue **infinie** (`effectiveFloor`, recyclage, paliers ★ N, gold-sink) | `dungeon-scaling.js`, `movement-floors.js`, `state.js` |
 | **Compteur de prestige** | `accumulatedEclats` (+1 / nouvel étage de Boucle le plus profond), `loopNumber` dérivé | `state.js`, `movement-floors.js` |
 | **Vraie fin — Briser le Cycle** | quête secrète **non-gating** 4 jalons, boss-miroir `reflet_mythe`, flag `cycleBroken` | `js/break-cycle.js` |
@@ -76,14 +76,15 @@ Le jeu connaît **trois registres de fin** — qui sont des **postures**, pas de
 | Registre | Nature | Déclencheur | Ferme la partie ? |
 |----------|--------|-------------|-------------------|
 | **A. Fin « normale »** (Acte III) | ✅ Cinématique de victoire | Vaincre `voldemort_revenu` (ét. 10) | **Non** — ouvre la Boucle |
-| **B. Fins conditionnelles** | 💡 Variantes de **texte** de la cinématique A | Flags de contexte (Maison, héros, signatures, Éclats, choix moraux) | **Non** — même écran, autre épilogue |
+| **B. Fins conditionnelles** | ✅ Variantes de **texte** de la cinématique A (5 axes a-e livrés) | Flags de contexte (Maison, héros, signatures, Éclats, choix moraux) | **Non** — même écran, autre épilogue |
 | **C. Vraie fin** — *Briser le Cycle* | ✅ Cinématique 3 pages + flag `cycleBroken` | 4 jalons en Boucle (voir §14.5) | **Non** — la Boucle reste ouverte |
 | *D. Non-fin — Renoncement* | 💡 Lecture narrative | Le joueur **arrête** de descendre / choisit *Perpétuer* | — (état de jeu, pas d'écran) |
 | *E. Échec — Permadeath* | ✅ Écran de résultat Ironman | Mort en mode Ironman | **Oui** (mode Ironman uniquement) |
 
-> ✅ **Point dur.** A et C **existent et coexistent** dans le code. B est une
-> **enrichissement de A par le texte** (la seule variante B déjà codée est le ton
-> froid `slythPactChoice`). D et E ne sont **pas** des écrans de « fin » au sens
+> ✅ **Point dur.** A et C **existent et coexistent** dans le code. B est un
+> **enrichissement de A par le texte** : **les 5 axes (a-e) sont désormais codés
+> & testés** (`_victorySpeechVariants`, `js/endgame.js` ; `tests/units.js` §11),
+> pact **et** defiance compris. D et E ne sont **pas** des écrans de « fin » au sens
 > classique : E est le seul vrai *game over* du jeu, et il est **réservé à
 > Ironman**.
 
@@ -142,20 +143,22 @@ Au fond des Profondeurs (étage 10), `voldemort_revenu` tombe → la modale
 > (`_invalidatePatternCache` + `drawDungeon`) ; autosave dédiée raison `victory` ;
 > à la fermeture, message « Le château recèle encore des mystères… ».
 
-### 14.2.2 Fins conditionnelles — variantes de la cinématique (💡 sauf mention)
+### 14.2.2 Fins conditionnelles — variantes de la cinématique (✅ livré — 5 axes implémentés & testés)
 
-> 💡 **Principe.** On **n'ajoute pas d'écran** : on **enrichit le discours et
-> l'épilogue** de la modale `#victory-modal` selon des flags **déjà présents** dans
-> l'état. Une variante = **un paragraphe ou une réplique** injectée, comme la
-> variante `slythPactChoice` le fait déjà (✅). Tout est défensif : flag absent →
-> texte de base.
+> ✅ **Principe (livré).** On **n'ajoute pas d'écran** : on **enrichit le discours
+> et l'épilogue** de la modale `#victory-modal` selon des flags **déjà présents**
+> dans l'état. Une variante = **un paragraphe ou une réplique** injectée. **Les
+> cinq axes (a-e) ci-dessous sont tous codés** dans `_victorySpeechVariants`
+> (`js/endgame.js`) et couverts par `tests/units.js` §11. Tout est défensif :
+> flag absent → texte de base.
 
-#### (a) Selon la **Maison** (`chosenHouse`) — 💡
+#### (a) Selon la **Maison** (`chosenHouse`) — ✅ (implémenté)
 
 Le **dernier mot** de Dumbledore prend la couleur de la Maison du héros (registre :
-ce que la Maison a *appris* au joueur, écho à [07](07-les-maisons.md)).
+ce que la Maison a *appris* au joueur, écho à [07](07-les-maisons.md)). ✅ Codé
+dans `_victorySpeechVariants` (`HOUSE_LAST_WORD`), une réplique par Maison.
 
-| Maison | 💡 Réplique de clôture (proposée) |
+| Maison | ✅ Réplique de clôture (codée) |
 |--------|------------------------------------|
 | 🦁 Gryffondor | *« Tu n'as pas vaincu parce que tu n'avais pas peur — mais parce que tu as descendu *avec* ta peur. C'est tout Godric, cela. »* |
 | 🐍 Serpentard | *« Tu as su quand frapper, et quand attendre. Salazar lui-même n'aurait pu mieux choisir son heure — veille à ce que ce soit toujours *toi* qui choisisses. »* |
@@ -176,23 +179,25 @@ ce que la Maison a *appris* au joueur, écho à [07](07-les-maisons.md)).
 > `hero-barks.js`) diffère de `chosenHouse`. Pur, défensif, testé — pas de nouveau
 > canal de barks (la logique de Maison canon est seulement réutilisée).
 
-#### (c) Selon les **quêtes signature** terminées — 💡
+#### (c) Selon les **quêtes signature** terminées — ✅ (implémenté)
 
 Les flags `gryffSignatureDone` / `slythSignatureDone` / `ravenSignatureDone` /
 `poufSignatureDone` ([08 §8.5](08-quetes-et-sous-intrigues.md)) ajoutent un
 **paragraphe « héritage »** qui **nomme la récompense cérémonielle** obtenue.
+✅ Codé dans `_victorySpeechVariants` (un bloc `victory-speech-legacy` par flag).
 
-| Flag | 💡 Paragraphe ajouté |
+| Flag | ✅ Paragraphe ajouté (codé) |
 |------|----------------------|
 | `gryffSignatureDone` | La **Bannière de Godric** est citée : « Ton étendard a tenu jusqu'au fond. » |
 | `slythSignatureDone` (+ `slythPactChoice`) | Le **Pacte des Cachots** est évoqué — *avec son revers* (voir choix moraux ci-dessous). |
 | `ravenSignatureDone` | Le **Codex de Rowena** : « Tu connaissais ses faiblesses avant de le frapper. » |
 | `poufSignatureDone` | Le **Médaillon de Helga** : « Le Refuge a tenu pendant ta descente. » |
 
-#### (d) Selon le nombre d'**Éclats** collectés — 💡 (s'appuie sur ✅)
+#### (d) Selon le nombre d'**Éclats** collectés — ✅ (implémenté)
 
 ✅ Le fil rouge des **Éclats de la Clé de Voûte** (`eclats_clef_voute`, ×3
-`eclat_voute`) existe. 💡 Si les **3 Éclats** ont été remis avant le climax, la
+`eclat_voute`) existe. ✅ Si les **3 Éclats** ont été remis avant le climax
+(`eclatsComplete`), la
 cinématique gagne un **paragraphe de révélation** : Dumbledore confirme que *« le
 verrou retenait deux choses, pas une »* (la corruption pré-Poudlard **et** le
 résidu de Voldemort) — le joueur comprend *pourquoi* la victoire **ouvre** au lieu
@@ -203,12 +208,12 @@ de fermer. **C'est le pont narratif vers la Boucle.**
 | 0–2 | Texte de base (le joueur découvrira la vérité dans la Boucle). |
 | 3 (fil rouge complet) | Paragraphe de révélation : la victoire **ne suffit pas** — un préavis lucide qui *prépare* émotionnellement la Boucle. |
 
-#### (e) Selon les **choix moraux majeurs** — ✅ (Pacte) + 💡
+#### (e) Selon les **choix moraux majeurs** — ✅ (Pacte : `pact` **et** `defiance`)
 
 | Choix | 💡/✅ | Effet |
 |-------|------|-------|
 | `slythPactChoice === 'pact'` | ✅ **codé** | Ton **froid** : Dumbledore met en garde — *« Veille à rester celui qui parle, et non celui à qui l'on parle. »* |
-| `slythPactChoice === 'defiance'` | 💡 | Ton de **reconnaissance** : avoir refusé le pacte est salué (« Tu as tenu tête à une voix vieille de mille ans »). |
+| `slythPactChoice === 'defiance'` | ✅ **codé** | Ton de **reconnaissance** (miroir) : avoir refusé le pacte est salué (« Tu as tenu tête à une voix vieille de mille ans »). |
 | 💡 Autres choix moraux | 💡 | Réservé si de nouveaux choix scénarisés sont ajoutés (ex. épargner un PNJ, voir [06](06-pnj-et-factions.md)) — **non présents** aujourd'hui. |
 
 ### 14.2.3 Garde-fou — un flag/texte, jamais une branche
