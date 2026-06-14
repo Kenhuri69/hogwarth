@@ -378,9 +378,39 @@ function equipItem(inventoryIdx, charIdx, targetSlot) {
     }
   }
 
+  // P2 — feedback d'équipement Premium (cosmétique, défensif) : stinger
+  // sonore + flash teinté par la Maison (premiumFx). No-op silencieux si les
+  // surcouches audio/DOM sont absentes.
+  if (item.premium) {
+    if (typeof AudioSystem !== 'undefined') {
+      if (AudioSystem.playSetComplete)    AudioSystem.playSetComplete();
+      else if (AudioSystem.playChestOpen) AudioSystem.playChestOpen();
+    }
+    _premiumEquipFlash(item.premiumFx);
+    addMsg(`✨ <b>Relique de prestige équipée</b> — ${item.name}`, 'magic');
+  }
+
   updateUI();
   addMsg(`${c.name} équipe : ${item.name}`, 'good');
   closeModal('inventory-modal');
+}
+
+// Flash plein écran teinté par la Maison à l'équipement d'une Premium (P2).
+// PUR cosmétique, entièrement défensif (try/catch + pointer-events none).
+function _premiumEquipFlash(fx) {
+  try {
+    const COL = { gryff: '#d3a625', slyth: '#1a472a', serd: '#0e1a40', pouf: '#f0c75e' };
+    const col = COL[fx] || '#d3a625';
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:0;'
+      + 'transition:opacity .18s ease-out;'
+      + `background:radial-gradient(circle at 50% 45%, ${col}88, transparent 68%);`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => {
+      el.style.opacity = '1';
+      setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 340); }, 170);
+    });
+  } catch (_e) { /* défensif : pas de DOM (smoke file://) → silencieux */ }
 }
 
 // ── Apprendre un sort depuis un livre ou un équipement ───────

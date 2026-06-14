@@ -1,7 +1,13 @@
-# tools/raster_src/ — sources raster d'icônes (Gemini / Nano Banana)
+# tools/raster_src/ — sources raster d'icônes (Gemini / Copilot / Nano Banana)
 
-Dépose ici les icônes générées par LLM image, nommées **`<id>.png`** (l'`id`
-exact de l'item dans `js/data.js`), puis encadre-les avec le pipeline commun :
+> ⚠️ **Ne découpe plus une planche à la main.** Procédure FIABLE (anti-bave +
+> centrage + porte QC) : **`tools/ICON_SHEET_PROCEDURE.md`** via
+> `tools/sheet_extract.py`. Ce dossier contient les **sources déjà détourées**
+> (un PNG transparent par `id`) produites par cette procédure.
+
+Dépose ici des icônes **déjà détourées** (`<id>.png`, fond transparent) — ou,
+mieux, génère-les depuis une planche via `sheet_extract.py` — puis encadre-les
+avec le pipeline commun :
 
 ```bash
 python3 tools/icon_factory.py --raster <id1> <id2> ...   # ids précis

@@ -147,6 +147,9 @@ function _houseClaimableItems(house) {
     Serdaigle:  'codex_rowena',    Poufsouffle: 'coeur_refuge',
   }[house];
   if (sig && !ids.includes(sig)) ids.push(sig);
+  // P2 — variante Premium de prestige de la Maison (remise cérémonielle).
+  const prem = (typeof HOUSE_PREMIUM !== 'undefined') ? HOUSE_PREMIUM[house] : null;
+  if (prem && !ids.includes(prem)) ids.push(prem);
   return ids;
 }
 

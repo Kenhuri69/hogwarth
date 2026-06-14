@@ -1596,6 +1596,64 @@ RECIPES: Dict[str, Recipe] = {
              "color": (240, 224, 255), "size": 110},
         ],
     ),
+
+    # ════════════════════════════════════════════════════════════
+    # Artefacts P2 — variantes Premium par Maison (recolor + emblème + sparkles
+    # de prestige). Repli painterly ; visuels finaux remplaçables via --raster.
+    # Palettes Maison standardisées (Gryff/Slyth/Serd/Pouf).
+    # ════════════════════════════════════════════════════════════
+    "orbe_runique_premium_gryff": Recipe(
+        id="orbe_runique_premium_gryff", name="Orbe Runique de Godric",
+        rarity="epic", material="glass",
+        silhouette={"kind": "svg", "file": "orb.svg"},
+        fills={"sphere": (150,  20,  16), "core": (255, 198,  96), "base": (116,   0,   1)},
+        accents=[
+            {"kind": "orb_glow", "region": "core",   "color": (255, 214, 120)},
+            {"kind": "runes",    "region": "sphere", "color": (240, 206, 120), "count": 5},
+            {"kind": "symbol",   "region": "sphere", "shape": "lion",
+             "color": (240, 206, 120), "size": 110},
+        ],
+        sparkles=True,
+    ),
+    "masque_rituel_premium_slyth": Recipe(
+        id="masque_rituel_premium_slyth", name="Masque Rituel de Salazar",
+        rarity="epic", material="matte",
+        silhouette={"kind": "svg", "file": "mask.svg"},
+        fills={"face": ( 20,  56,  36), "brow": ( 26,  71,  42),
+               "eyes": (  8,  20,  14), "accent": (170, 170, 170)},
+        accents=[
+            {"kind": "emboss", "region": "face", "color": ( 10,  34,  22)},
+            {"kind": "symbol", "region": "brow", "shape": "snake",
+             "color": (200, 210, 200), "size": 80},
+            {"kind": "gem_facet_shine", "region": "accent", "color": (230, 240, 230)},
+        ],
+        sparkles=True,
+    ),
+    "baton_ancestral_premium_serd": Recipe(
+        id="baton_ancestral_premium_serd", name="Bâton Ancestral de Rowena",
+        rarity="epic", material="wood",
+        silhouette={"kind": "svg", "file": "wizard-staff.svg"},
+        fills={"shaft": ( 30,  44,  86), "grip": ( 14,  26,  64),
+               "pommel": (148, 107,  45), "orb": (120, 170, 255)},
+        accents=[
+            {"kind": "orb_glow", "region": "orb",   "color": (180, 210, 255)},
+            {"kind": "runes",    "region": "shaft", "color": (170, 140,  80), "count": 4},
+        ],
+        sparkles=True,
+    ),
+    "talisman_fondateurs_premium_pouf": Recipe(
+        id="talisman_fondateurs_premium_pouf", name="Talisman de Helga",
+        rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (240, 199,  94), "setting": (211, 166,  37), "gem": (200, 128,  36)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem",     "color": (255, 212, 140)},
+            {"kind": "orb_glow",        "region": "gem",     "color": (240, 176,  72)},
+            {"kind": "symbol", "region": "setting", "shape": "badger",
+             "color": ( 60,  46,  36), "size": 80},
+        ],
+        sparkles=True,
+    ),
 }
 
 
@@ -2044,6 +2102,37 @@ def save_all(recipe: Recipe, out_dir: str = OUT_DIR) -> List[str]:
 RASTER_SRC_DIR = os.path.normpath(os.path.join(HERE, "..", "tools", "raster_src"))
 
 
+def _drop_border_components(im, min_area_frac=0.003):
+    """Retire de l'alpha les composants connexes touchant le bord (bave de
+    voisin) et les micro-composants (< min_area_frac). Conserve les sujets
+    multi-parties (paire de gantelets) tant qu'ils ne touchent pas le bord.
+    No-op silencieux si scipy absent."""
+    try:
+        from scipy.ndimage import label
+    except Exception:
+        return im
+    arr = np.asarray(im).copy()
+    fg = arr[..., 3] > 32
+    if not fg.any():
+        return im
+    lbl, n = label(fg)
+    if n <= 1:
+        return im
+    border = set(lbl[0]).union(lbl[-1]).union(lbl[:, 0]).union(lbl[:, -1])
+    border.discard(0)
+    areas = np.bincount(lbl.ravel())
+    min_area = max(1, int(min_area_frac * arr.shape[0] * arr.shape[1]))
+    keep = np.zeros(fg.shape, dtype=bool)
+    for li in range(1, n + 1):
+        if li in border or areas[li] < min_area:
+            continue
+        keep |= (lbl == li)
+    if not keep.any():        # tout supprimé (sujet collé au bord) → on garde tel quel
+        return im
+    arr[..., 3] = np.where(keep, arr[..., 3], 0)
+    return Image.fromarray(arr, "RGBA")
+
+
 def _load_raster_subject(path: str, margin: float = 0.08):
     """Charge un PNG d'icône externe en (rgb[0..1], alpha[0..1]) sur un canevas
     512² transparent, sujet centré avec marge. Accepte un PNG RGBA à
@@ -2058,6 +2147,10 @@ def _load_raster_subject(path: str, margin: float = 0.08):
         dechecker_png.detour(path, tmp, side=RENDER_SIZE, margin=margin)
         im = Image.open(tmp).convert("RGBA")
         os.unlink(tmp)
+    # Défense-en-profondeur (cf. tools/sheet_extract.py) : retire les composants
+    # alpha qui touchent le bord (bave de voisin sur une source mal découpée) et
+    # les micro-specks, AVANT le bbox → garantit un centrage sur le vrai sujet.
+    im = _drop_border_components(im)
     bbox = im.getbbox()
     if bbox:
         im = im.crop(bbox)
