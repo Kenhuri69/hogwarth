@@ -239,11 +239,22 @@ const ITEM_ICON_REGISTRY = {
   potion_resistance:     'img/icons/items/potion_m.png',
   lame_sanguinaire:      'img/icons/items/sword_gryff.png',
   armure_lourde:         'img/icons/items/robe1.png',
-  anneau_furie:          'img/icons/items/anneau_runique.png'
+  anneau_furie:          'img/icons/items/anneau_runique.png',
+  // Artefacts P2 — variantes Premium (repli legacy ; painterly/Gemini en
+  // priorité 1 via ITEM_ICON_NEW_REGISTRY). Réutilise un PNG de famille proche.
+  orbe_runique_premium_gryff:       'img/icons/items/amulette.png',
+  masque_rituel_premium_slyth:      'img/icons/items/chapeau_pointu.png',
+  baton_ancestral_premium_serd:     'img/icons/items/wand2.png',
+  talisman_fondateurs_premium_pouf: 'img/icons/items/amulette.png'
 };
 
 // Mapping painterly pipeline (étape 9 — voir SVG_PLAN / tools/icon_factory.py)
 const ITEM_ICON_NEW_REGISTRY = {
+  // Artefacts & Reliquaires 2.0 — P2 variantes Premium par Maison.
+  orbe_runique_premium_gryff:       'img/icons_new/orbe_runique_premium_gryff_64.png',
+  masque_rituel_premium_slyth:      'img/icons_new/masque_rituel_premium_slyth_64.png',
+  baton_ancestral_premium_serd:     'img/icons_new/baton_ancestral_premium_serd_64.png',
+  talisman_fondateurs_premium_pouf: 'img/icons_new/talisman_fondateurs_premium_pouf_64.png',
   // Artefacts & Reliquaires 2.0 — P1 nouvelles formes (plan §1.4 A/B).
   orbe_flamme:          'img/icons_new/orbe_flamme_64.png',
   orbe_givre:           'img/icons_new/orbe_givre_64.png',

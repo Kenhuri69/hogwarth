@@ -714,6 +714,16 @@ function completeQuest(index) {
   // est posé en amont par turnInSlythSignature.
   if (tpl && tpl.houseSignatureQuest && tpl.house) {
     _markSignatureDone(tpl.house);
+    // P2 — variante Premium de prestige : le Chef de Maison la met de côté
+    // (remise cérémonielle au prochain dialogue, comme la pièce #4 de set).
+    if (typeof HOUSE_PREMIUM !== 'undefined' && typeof pendingHouseRewards !== 'undefined') {
+      const premId = HOUSE_PREMIUM[tpl.house];
+      if (premId) {
+        pendingHouseRewards.add(premId);
+        const pit = ITEMS.find(i => i.id === premId);
+        if (pit) addMsg(`${getItemIconHtml(pit, 'ui-icon-md')} Le Chef de votre Maison met de côté une relique de prestige : ${pit.name}. Allez la réclamer.`, 'magic');
+      }
+    }
   }
 
   // Retire de l'actif, marque comme rendue. Quêtes répétables : on

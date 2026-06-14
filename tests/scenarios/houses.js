@@ -529,6 +529,69 @@ async function scenarioHouseApotheoseTier() {
   await browser.close();
 }
 
+// Artefacts & Reliquaires 2.0 — P2 : variantes Premium par Maison.
+// Vérifie (1) stats pré-cuites conformes à premiumStat(base), (2) remise
+// cérémonielle = la Premium de chosenHouse devient réclamable au Chef de
+// Maison, (3) l'item s'équipe et applique son bonus.
+async function scenarioPremiumReward() {
+  console.log('\n── Scénario : Artefacts P2 (variantes Premium par Maison) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const res = await page.evaluate(() => {
+    const out = { tags: {}, precooked: {}, claimable: {}, equip: {} };
+    // (1) tags + stats pré-cuites conformes à premiumStat(base, rareté)
+    for (const [house, pid] of Object.entries(HOUSE_PREMIUM)) {
+      const it   = ITEMS.find(i => i.id === pid);
+      const base = it && ITEMS.find(i => i.id === it.premiumOf);
+      out.tags[house] = !!(it && it.premium === true && base && it.houseAffinity === house);
+      if (!it || !base) { out.precooked[house] = false; continue; }
+      let ok = true;
+      for (const f of ['bonusMag','bonusDef','bonusAtk','bonusSpellCritChance','regenHp','regenSp']) {
+        if (typeof base[f] === 'number' && base[f] > 0) ok = ok && (it[f] === premiumStat(base[f], base.rarity));
+      }
+      // valeurs fractionnaires
+      if (typeof base.bonusSpellCritDamage === 'number')
+        ok = ok && (it.bonusSpellCritDamage === premiumStat(base.bonusSpellCritDamage, base.rarity, { fractional: true }));
+      if (base.bonusElemDmg && typeof base.bonusElemDmg.tous === 'number')
+        ok = ok && (it.bonusElemDmg.tous === premiumStat(base.bonusElemDmg.tous, base.rarity, { fractional: true }));
+      // malus (≤0) jamais aggravé
+      if (typeof base.bonusHpMax === 'number' && base.bonusHpMax < 0)
+        ok = ok && (it.bonusHpMax === base.bonusHpMax);
+      out.precooked[house] = ok;
+    }
+    // (2) remise cérémonielle : la Premium de la Maison est réclamable
+    for (const [house, pid] of Object.entries(HOUSE_PREMIUM)) {
+      out.claimable[house] = _houseClaimableItems(house).includes(pid);
+    }
+    // (3) équipement : la Premium Gryffondor (orbe, trinket) ajoute son MAG
+    const c = party[0];
+    c.equipped = { wand:null, head:null, body:null, hands:null, feet:null,
+      cloak:null, amulet:null, ring1:null, ring2:null, belt:null, trinket:null };
+    recalculateStats(); const magBefore = c.mag;
+    const orbe = ITEMS.find(i => i.id === HOUSE_PREMIUM.Gryffondor);
+    c.equipped.trinket = { ...orbe }; recalculateStats();
+    out.equip = { delta: c.mag - magBefore, expected: orbe.bonusMag };
+    return out;
+  });
+  console.log('  →', JSON.stringify(res));
+
+  for (const h of ['Gryffondor','Serpentard','Serdaigle','Poufsouffle']) {
+    assert(res.tags[h],      `${h} : Premium mal taguée (premium/premiumOf/houseAffinity)`);
+    assert(res.precooked[h], `${h} : stats Premium non conformes à premiumStat(base)`);
+    assert(res.claimable[h], `${h} : Premium absente de _houseClaimableItems (remise cérémonielle)`);
+  }
+  assert(res.equip.delta === res.equip.expected,
+    `équipement Premium : MAG +${res.equip.expected} attendu, got +${res.equip.delta}`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Artefacts P2 (Premium pré-cuites + remise cérémonielle + équipement) OK');
+  await browser.close();
+}
+
 async function scenarioHouseDonationAndStars() {
   console.log('\n── Scénario : Don Maison + série Apothéose ★ N ──');
   const { browser, page, errors } = await launchGame();
@@ -1836,4 +1899,4 @@ async function scenarioVictorySpeechVariants() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants] };
+module.exports = { scenarios: [scenarioHouseCrests, scenarioHouseTier5, scenarioHouseMytheTier, scenarioHouseApotheoseTier, scenarioHouseDonationAndStars, scenarioHouseRewardFlow, scenarioHouseSetQuest, scenarioHouseSetUI, scenarioHouseSet, scenarioHouseSetCompleteFeedback, scenarioHouseSaveRoundTrip, scenarioTenebresSet, scenarioHeadOfHouseVoice, scenarioHouseSignatureQuests, scenarioHouseSignatureGryffondor, scenarioHouseSignatureSerpentard, scenarioHouseSignatureSerdaigle, scenarioHouseSignaturePoufsouffle, scenarioVictorySpeechVariants, scenarioPremiumReward] };

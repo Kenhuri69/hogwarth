@@ -365,7 +365,7 @@ signature ([08 §8.5](../../docs/histoire/08-quetes-et-sous-intrigues.md)) :
 |---|-----|---------|--------------|
 | **P0** ✅ | **Coûts & socle data** *(livré 2026-06-14)* | table §1.6 figée ; registre `ARTIFACT_FORMS` (12 formes, inerte) + `PREMIUM_MULT` + helper PUR `premiumStat()` ajoutés à `data.js` ; palier `uncommon` documenté (§1.6) | ✅ `node tests/units.js` (614 assertions, bloc #12 `testArtifactSocle`) + smoke Equipment/ShopLimits/TryAddItem/CritDodge/ConsumableStacking verts ; cache bump data.js `?v=33` / `CACHE_VERSION v136` ; `check_cache_versions` + `pwa-smoke` OK |
 | **P1** ✅ | **Nouvelles formes (1.4 A/B)** *(livré 2026-06-14)* | 13 entrées ITEMS (8 mid-game A + 5 endgame B) avec `formType` (+ `bonusElemDmg`/`spCostReduction` là où prévu) ; 2 leviers combat branchés (`_spellElementalDamage`, `_spellSpCost`) ; 13 icônes painterly (2 parts neufs `orb.svg`/`mask.svg`) + registres NEW & legacy | ✅ `node tests/units.js` (620) + `node tests/smoke.js` (219 dont `scenarioArtifactForms`) verts ; cache bump data.js `?v=34` / battle-spells `?v=15` / inventory-spells `?v=3` / item-icons `?v=23` / `CACHE_VERSION v139` ; `check_cache_versions` + `pwa-smoke` OK |
-| **P2** | **Premium (1.5)** | variantes pré-cuites par Maison + FX/son d'équipement + Codex | smoke `houses`/`visuals` ; cas : remise cérémonielle pousse la Premium de `chosenHouse` |
+| **P2** ✅ | **Premium (1.5)** *(livré 2026-06-14)* | 4 variantes Premium pré-cuites (1/Maison) via `premiumStat` + tags `premium/premiumOf/houseAffinity/premiumFx` ; remise cérémonielle (`HOUSE_PREMIUM` → `pendingHouseRewards` à la Quête Signature + `_houseClaimableItems`) ; FX/son d'équipement défensif (`_premiumEquipFlash` + stinger) ; 4 entrées Codex ; 4 icônes painterly (repli, swappables `--raster`) | ✅ `node tests/units.js` (634) + smoke `scenarioPremiumReward` (stats pré-cuites + remise + équipement) / `ItemIcons` (166 mappés) verts ; cache bump data v35 / codex v10 / inventory v20 / quests v16 / npc-dialog v19 / item-icons v24 / `CACHE_VERSION v142` |
 | **P3** | **Shops & quêtes (1.7/1.8)** | SHOP_CATALOG + slot faveur Maison + nouveau PNJ + récompenses quêtes + entrées Codex + Reliques de la Mort/Chœur | smoke `npc`/`quests` ; cas : stock garantit l'artefact affinité ; sim éco OK |
 
 Chaque lot : **plan amendé** (§5), **smoke vert** (§7), **cache-bump** si JS/CSS
@@ -430,6 +430,44 @@ de remplacer tout ou partie des 13 icônes painterly sans toucher au JS (chemins
 ; mode opératoire : [`tools/raster_src/README.md`](../../tools/raster_src/README.md).
 Les recettes painterly restent le **repli** tant qu'aucune source Gemini n'est
 fournie pour un id.
+
+#### P2 — notes d'implémentation & écarts (2026-06-14)
+
+**Livré** : 4 variantes Premium (1/Maison), stats **pré-cuites** (décision §2.1
+n°2, jamais de mult runtime), tags `premium/premiumOf/houseAffinity/premiumFx/
+tint`, prix 0 (récompense). `HOUSE_PREMIUM` (data.js) mappe Maison → id Premium.
+- Gryffondor : `orbe_runique_premium_gryff` (base `orbe_runique` epic ×1.35).
+- Serpentard : `masque_rituel_premium_slyth` (base `masque_rituel` epic ×1.35).
+- Serdaigle  : `baton_ancestral_premium_serd` (base `baton_ancestral` epic ×1.35).
+- Poufsouffle: `talisman_fondateurs_premium_pouf` (base `talisman_fondateurs` epic ×1.35).
+
+**Remise cérémonielle** (réutilise le pipeline existant) : à la complétion de
+la Quête Signature (`quests.js`, après `_markSignatureDone`), la Premium de
+`tpl.house` est poussée dans `pendingHouseRewards` ; `_houseClaimableItems`
+(npc-dialog.js) l'inclut → le Chef de Maison la remet comme les autres reliques.
+
+**FX/son d'équipement** : `_premiumEquipFlash(premiumFx)` (inventory.js) — flash
+plein écran teinté par la Maison (radial-gradient inline, `pointer-events:none`,
+try/catch) + stinger `AudioSystem.playSetComplete`/`playChestOpen`. Entièrement
+défensif (no-op en file:///smoke). **Pas** de nouvelle méthode CombatFX ni de
+nouveau CSS (surgical).
+
+**Codex** : 4 entrées `category:'objets'` (modèle `sword_gryff`), déverrouillées
+par `{type:'item'}`, révélées par l'écho du Fondateur (`echo_godric/salazar/
+rowena/helga`), avec `variants.house`.
+
+**Écarts assumés** :
+- Choix des bases : **4 epic** retenues (boost ×1.35 lisible après arrondi) au
+  lieu des suggestions rare §1.8 (`cristal`/`grimoire` rares → ×1.20 souvent
+  absorbé par l'arrondi). Serpentard prend `masque_rituel` (très « cachots »),
+  Serdaigle `baton_ancestral` (savoir) — déviation thématique mineure vs §1.8.
+- Icônes Premium : **painterly** (recolor base + emblème Maison + `sparkles`),
+  repli comme en P1 — remplaçables par Gemini via `--raster` (prompts à étendre
+  si souhaité).
+- **Premium achetables** (1 exclusive Marchand d'Ombre `rarityScales`, §1.5/§3)
+  et **coffres Ruines / drops boss Ténébreux** (§2.4) : reportés en **P3**
+  (canaux d'obtention = shops/quêtes/Boucle). P2 ne livre que la remise
+  cérémonielle de signature.
 
 ### 2.7 Suggestions d'assets
 

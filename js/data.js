@@ -540,6 +540,17 @@ const ARTIFACT_FORMS = {
 // runtime : aucun chemin chaud (recalculateStats) n'est touché.
 const PREMIUM_MULT = { rare: 1.20, epic: 1.35, legendary: 1.50 };
 
+// Variante Premium de prestige par Maison (P2) — remise cérémonielle par le
+// Chef de Maison à la complétion de la Quête Signature (pendingHouseRewards).
+// Une seule Premium par Maison, recoloriée + boostée (stats pré-cuites dans
+// ITEMS via premiumStat). Consommé par quests.js et npc-dialog.js.
+const HOUSE_PREMIUM = {
+  Gryffondor:  'orbe_runique_premium_gryff',
+  Serpentard:  'masque_rituel_premium_slyth',
+  Serdaigle:   'baton_ancestral_premium_serd',
+  Poufsouffle: 'talisman_fondateurs_premium_pouf',
+};
+
 // Calcule une stat boostée Premium : `value × PREMIUM_MULT[rarity]`. PUR (aucun
 // accès à l'état) — testé dans tests/units.js. Règles :
 //  - rareté inconnue → multiplicateur 1 (no-op sûr) ;
@@ -831,6 +842,20 @@ const ITEMS = [
   { id:"masque_rituel",        name:"Masque Rituel",          icon:"🎭", desc:"MAG+8 · Crit de sort +8 % mais PV max −5",     type:"acc",  slot:"head",    formType:"masque",    rarity:"epic",     bonusMag:8, bonusSpellCritChance:8, bonusHpMax:-5, power:8, price:1100, tint:"#5b2c6f" },
   { id:"gantelets_aurors",     name:"Gantelets des Aurors",   icon:"🥊", desc:"ATK+5 STR+3 · Crit phys. +6 %",                type:"acc",  slot:"hands",   formType:"gantelets", rarity:"epic",     bonusAtk:5, bonusStr:3, bonusCritChance:6, power:5, price:1000, tint:"#2c5f8a" },
   { id:"orbe_runique",         name:"Orbe Runique",           icon:"🔮", desc:"MAG+3 · +10 % dégâts de tous les éléments",    type:"acc",  slot:"trinket", formType:"orbe",      rarity:"epic",     bonusMag:3, bonusElemDmg:{ tous:0.10 }, power:3, price:1200, tint:"#9b59d0" },
+  // ── Artefacts & Reliquaires 2.0 — P2 variantes Premium (plan §1.5) ──
+  // Variantes recoloriées par Maison d'un artefact de base, stats PRÉ-CUITES
+  // (base × PREMIUM_MULT[rarity], arrondi par premiumStat — décision §2.1 n°2 :
+  // jamais de multiplicateur au runtime). Non vendables (prix 0) : remise
+  // cérémonielle par le Chef de Maison à la Quête Signature (HOUSE_PREMIUM).
+  // tags : premium, premiumOf (base), houseAffinity, premiumFx (clé FX/son).
+  // Gryffondor — Orbe Runique doré (base orbe_runique epic ×1.35).
+  { id:"orbe_runique_premium_gryff", name:"Orbe Runique de Godric", icon:"🔮", desc:"MAG+4 · +14 % dégâts de tous les éléments — Premium Gryffondor", type:"acc", slot:"trinket", formType:"orbe", rarity:"epic", bonusMag:4, bonusElemDmg:{ tous:0.14 }, power:4, price:0, premium:true, premiumOf:"orbe_runique", houseAffinity:"Gryffondor", premiumFx:"gryff", tint:"#d3a625" },
+  // Serpentard — Masque Rituel émeraude (base masque_rituel epic ×1.35).
+  { id:"masque_rituel_premium_slyth", name:"Masque Rituel de Salazar", icon:"🎭", desc:"MAG+11 · Crit de sort +11 % mais PV max −5 — Premium Serpentard", type:"acc", slot:"head", formType:"masque", rarity:"epic", bonusMag:11, bonusSpellCritChance:11, bonusHpMax:-5, power:11, price:0, premium:true, premiumOf:"masque_rituel", houseAffinity:"Serpentard", premiumFx:"slyth", tint:"#1a472a" },
+  // Serdaigle — Bâton Ancestral bleu éthéré (base baton_ancestral epic ×1.35).
+  { id:"baton_ancestral_premium_serd", name:"Bâton Ancestral de Rowena", icon:"🌳", desc:"ATK+8 MAG+11 · Dégâts crit. de sort +34 % — Premium Serdaigle", type:"wand", slot:"wand", formType:"baton", rarity:"epic", bonusAtk:8, bonusMag:11, bonusSpellCritDamage:0.34, power:11, price:0, premium:true, premiumOf:"baton_ancestral", houseAffinity:"Serdaigle", premiumFx:"serd", tint:"#0e1a40" },
+  // Poufsouffle — Talisman des Fondateurs terre cuite (base talisman_fondateurs epic ×1.35).
+  { id:"talisman_fondateurs_premium_pouf", name:"Talisman de Helga", icon:"📿", desc:"MAG+5 DEF+5 · Régen +3 PV/+1 PM par tour — Premium Poufsouffle", type:"acc", slot:"amulet", formType:"talisman", rarity:"epic", bonusMag:5, bonusDef:5, regenHp:3, regenSp:1, power:5, price:0, premium:true, premiumOf:"talisman_fondateurs", houseAffinity:"Poufsouffle", premiumFx:"pouf", tint:"#f0c75e" },
   // ── Récompenses des Quêtes Signature de Maison (remises cérémonielles) ──
   // Cf. docs/histoire/08 §8.5 + .claude/plans/house-signature-quests-impl.md.
   { id:"banniere_godric",  name:"Bannière de Godric",   icon:"🚩", desc:"Bibelot — l'Étendard qui ne s'incline jamais. Immunise le groupe contre la Peur tant qu'un héros la porte. ATK+2.", type:"trinket", slot:"trinket", family:"banner_godric", rarity:"legendary", bonusAtk:2, fearImmune:true, power:5, price:0, tint:"#d3a625" },

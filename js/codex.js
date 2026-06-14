@@ -486,6 +486,61 @@ const CODEX_ENTRIES = [
     },
   },
 
+  // ── Variantes Premium des Maisons (P2) — reliques de prestige remises au
+  //    terme de la Quête Signature. Révélées par l'écho du Fondateur. ──
+  {
+    id: 'orbe_runique_premium_gryff', category: 'objets', icon: '🔮', act: 4,
+    iconImg: 'img/icons_new/orbe_runique_premium_gryff_64.png',
+    title: "L'Orbe Runique de Godric",
+    links: ['les_fondateurs'],
+    unlockConditions: [{ type: 'item', value: 'orbe_runique_premium_gryff' }],
+    revealedBy: [{ type: 'echo', value: 'echo_godric' }],
+    textVersions: {
+      veiled: "Une sphère runique nimbée d'or, remise à qui a mené l'identité Gryffondor à son terme. Les runes y brûlent d'une chaleur qui ne consume que l'ennemi.",
+      revealed: "Ce n'est pas l'orbe qui choisit l'élément : c'est le porteur. Godric ne cherchait pas la maîtrise d'un feu, mais le courage de canaliser tous les feux à la fois. La version dorée n'ajoute pas de puissance — elle ajoute la confiance de s'en servir.",
+    },
+    variants: { house: { Gryffondor: "L'or de l'orbe répond à ton sang : il s'allume avant même que tu n'aies visé." } },
+  },
+  {
+    id: 'masque_rituel_premium_slyth', category: 'objets', icon: '🎭', act: 4,
+    iconImg: 'img/icons_new/masque_rituel_premium_slyth_64.png',
+    title: 'Le Masque Rituel de Salazar',
+    links: ['les_fondateurs'],
+    unlockConditions: [{ type: 'item', value: 'masque_rituel_premium_slyth' }],
+    revealedBy: [{ type: 'echo', value: 'echo_salazar' }],
+    textVersions: {
+      veiled: "Obsidienne veinée d'émeraude, ce masque exige un prix — un peu de vitalité — pour décupler la frappe des sorts. Salazar n'a jamais offert de pouvoir sans contrepartie.",
+      revealed: "Le masque ne cache pas le visage : il révèle l'ambition. Ce qu'il retire en PV, il le rend en certitude — celui qui le porte accepte de saigner un peu pour frapper beaucoup. C'est tout Salazar : le calcul du risque, érigé en relique.",
+    },
+    variants: { house: { Serpentard: "Le masque épouse tes traits comme s'il avait toujours su que tu viendrais le chercher." } },
+  },
+  {
+    id: 'baton_ancestral_premium_serd', category: 'objets', icon: '🌳', act: 4,
+    iconImg: 'img/icons_new/baton_ancestral_premium_serd_64.png',
+    title: 'Le Bâton Ancestral de Rowena',
+    links: ['les_fondateurs'],
+    unlockConditions: [{ type: 'item', value: 'baton_ancestral_premium_serd' }],
+    revealedBy: [{ type: 'echo', value: 'echo_rowena' }],
+    textVersions: {
+      veiled: "Un bâton de bois ancien aux runes bleues, dont chaque nœud consigne un théorème oublié. Le savoir, fait arme — et la frappe critique des sorts, aiguisée à l'extrême.",
+      revealed: "Rowena disait qu'un sort n'est jamais qu'une idée suffisamment précise. Le bâton ne lance pas mieux : il pense mieux. Ce qu'il ajoute aux dégâts critiques, il le prend à l'approximation — il ne récompense que l'intention exacte.",
+    },
+    variants: { house: { Serdaigle: "Les runes s'éclairent à mesure que tu les comprends — le bâton t'enseigne en même temps qu'il t'obéit." } },
+  },
+  {
+    id: 'talisman_fondateurs_premium_pouf', category: 'objets', icon: '📿', act: 4,
+    iconImg: 'img/icons_new/talisman_fondateurs_premium_pouf_64.png',
+    title: 'Le Talisman de Helga',
+    links: ['les_fondateurs'],
+    unlockConditions: [{ type: 'item', value: 'talisman_fondateurs_premium_pouf' }],
+    revealedBy: [{ type: 'echo', value: 'echo_helga' }],
+    textVersions: {
+      veiled: "Terre cuite et or doux, ce talisman rend à chaque tour ce que le combat prend — un souffle de vie et de magie, sans jamais faillir.",
+      revealed: "Helga n'a jamais cru aux armes. Sa relique ne frappe pas : elle tient. Là où les autres Fondateurs ont gravé la puissance, elle a gravé la constance — celle qui ramène les siens debout, tour après tour, parce que personne n'est laissé derrière.",
+    },
+    variants: { house: { Poufsouffle: "Le talisman bat au rythme de ton cœur — calme, régulier, têtu. Comme toi." } },
+  },
+
 ];
 
 // ── Helpers PURS ─────────────────────────────────────────────
