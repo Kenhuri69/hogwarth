@@ -528,4 +528,83 @@ async function scenarioCameraPresence() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence] };
+// Ergonomie clavier (plan ergonomics-improvement Phase 1) :
+//  1) Échap ferme toute modale (dont bestiaire, auparavant manquant).
+//  2) Raccourcis d'action en combat (A/S/G/O/F) — parité avec les boutons.
+//  3) Sélection de cible au clavier : cibles numérotées + Annuler/Échap.
+async function scenarioCombatKeyboard() {
+  console.log('\n── Scénario : ergonomie clavier (Échap + combat) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const press = (key) => page.evaluate((k) => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+  }, key);
+
+  // 1) Échap ferme le bestiaire (régression : absent du handler avant ce plan).
+  const esc = await page.evaluate(() => {
+    openBestiary();
+    const before = getComputedStyle(document.getElementById('bestiary-modal')).display !== 'none';
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    const after = getComputedStyle(document.getElementById('bestiary-modal')).display !== 'none';
+    return { before, after };
+  });
+  assert(esc.before, 'bestiaire devrait être visible après openBestiary()');
+  assert(!esc.after, 'Échap doit fermer le bestiaire');
+
+  // 2) Combat à 2 ennemis pour exercer la sélection de cible.
+  await page.evaluate(() => {
+    const mk = (id) => ({ id, name: 'Mannequin ' + id, icon: '🎯', hp: 40, atk: 1,
+      def: 0, mag: 0, agi: 0, lck: 0, xp: 0, gold: 0, abilities: [], drops: [],
+      resist: [], weak: [], desc: 'Test' });
+    startBattle(mk('a'), { duelGroup: [mk('a'), mk('b')] });
+  });
+  await page.waitForFunction(() => inBattle === true && livingEnemies().length === 2);
+
+  // 2a) Touche A → ouvre la sélection de cible numérotée + bouton Annuler.
+  await press('a');
+  const sel = await page.evaluate(() => {
+    const wrap = document.getElementById('target-selection');
+    const targets = document.querySelectorAll('#target-buttons button[data-target-index]');
+    const cancel  = document.querySelector('#target-buttons .target-cancel-btn');
+    return {
+      visible: getComputedStyle(wrap).display !== 'none',
+      count: targets.length,
+      firstLabelNumbered: targets[0] ? /^1\./.test(targets[0].textContent.trim()) : false,
+      hasCancel: !!cancel
+    };
+  });
+  assert(sel.visible,            'touche A doit ouvrir la sélection de cible');
+  assert(sel.count === 2,        `2 cibles attendues, obtenu ${sel.count}`);
+  assert(sel.firstLabelNumbered, 'les cibles doivent être numérotées (« 1. … »)');
+  assert(sel.hasCancel,          'bouton Annuler manquant dans la sélection de cible');
+
+  // 2b) Échap annule la sélection (panneau masqué, action purgée).
+  await press('Escape');
+  const cancelled = await page.evaluate(() => ({
+    hidden: getComputedStyle(document.getElementById('target-selection')).display === 'none',
+    pending: typeof pendingAction !== 'undefined' ? pendingAction : 'absent'
+  }));
+  assert(cancelled.hidden,            'Échap doit masquer la sélection de cible');
+  assert(cancelled.pending === null,  'Échap doit purger pendingAction');
+
+  // 2c) Touche A puis touche 1 → attaque la 1ʳᵉ cible (PV entamés, panneau fermé).
+  await press('a');
+  const hp0 = await page.evaluate(() => enemyGroup[0].currentHp);
+  await press('1');
+  const hit = await page.evaluate(() => ({
+    hidden: getComputedStyle(document.getElementById('target-selection')).display === 'none',
+    hp: enemyGroup[0].currentHp
+  }));
+  assert(hit.hidden,    'la sélection doit se fermer après le choix clavier');
+  assert(hit.hp < hp0,  `la cible 1 doit subir des dégâts (avant ${hp0}, après ${hit.hp})`);
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (clavier combat)`);
+  }
+  console.log('  ✅ Ergonomie clavier (Échap modale + raccourcis combat + ciblage) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard] };

@@ -680,11 +680,56 @@ function toggleMobileMap() {
 // CLAVIER
 // ============================================================
 
+// Liste centralisée des modales fermables par Échap (toutes basées sur un
+// display:none — closeModal suffit). NPC-dialog et help-tour gèrent Échap
+// localement (ne pas doubler).
+const ESC_CLOSEABLE_MODALS = [
+  'inventory-modal', 'spell-modal', 'shop-modal', 'character-modal',
+  'bestiary-modal', 'codex-modal', 'house-detail-modal', 'house-donation-modal',
+  'wizard-codex-modal', 'slot-modal', 'monster-info-overlay'
+];
+
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT') return;
-  // Contrôles relatifs : ↑/W = avancer, ↓/S = reculer, ←/A = pivoter G, →/D = pivoter D.
-  // Z/Q ajoutés pour les claviers AZERTY.
   const k = e.key;
+
+  // ── Échap : ferme la sélection de cible en combat, sinon toute modale ouverte.
+  if (k === 'Escape') {
+    const ts = document.getElementById('target-selection');
+    if (inBattle && ts && ts.style.display !== 'none' && typeof _cancelTargetSelection === 'function') {
+      _cancelTargetSelection();
+    } else {
+      ESC_CLOSEABLE_MODALS.forEach(closeModal);
+    }
+    return;
+  }
+
+  // ── En combat : raccourcis d'action (parité avec les boutons) + ciblage clavier.
+  if (inBattle) {
+    const ts = document.getElementById('target-selection');
+    // Sélection de cible ouverte → 1-9 choisit la cible numérotée.
+    if (ts && ts.style.display !== 'none') {
+      if (k >= '1' && k <= '9') {
+        const btns = document.querySelectorAll('#target-buttons button[data-target-index]');
+        const i = parseInt(k, 10) - 1;
+        if (btns[i]) { btns[i].click(); e.preventDefault(); }
+      }
+      return;
+    }
+    // Ne pas agir derrière une sous-modale de combat (sorts / objets).
+    const subOpen = ['spell-modal', 'inventory-modal'].some(id => {
+      const el = document.getElementById(id);
+      return el && el.style.display !== 'none';
+    });
+    if (subOpen) return;
+    // A = Attaquer · S = Sortilège · G = Garde · O = Objet · F = Fuir.
+    const act = { a: 'attack', s: 'spell', g: 'guard', o: 'item', f: 'flee' }[k.toLowerCase()];
+    if (act) { battleAction(act); e.preventDefault(); }
+    return;
+  }
+
+  // ── Hors combat : déplacement relatif (↑/W avancer, ↓/S reculer, ←/A pivoter
+  //    G, →/D pivoter D ; Z/Q pour AZERTY) + raccourcis d'exploration.
   const fwd   = (k==='ArrowUp'    || k==='w' || k==='W' || k==='z' || k==='Z');
   const back  = (k==='ArrowDown'  || k==='s' || k==='S');
   const left  = (k==='ArrowLeft'  || k==='a' || k==='A' || k==='q' || k==='Q');
@@ -693,14 +738,11 @@ document.addEventListener('keydown',e=>{
   else if (back)  { moveBackward(); e.preventDefault(); }
   else if (left)  { turnLeft();     e.preventDefault(); }
   else if (right) { turnRight();    e.preventDefault(); }
-  if(e.key==='i') openInventory();
-  if(e.key==='p') openSpells();
-  if(e.key==='c') openCharacter();
-  if(e.key==='f') searchRoom();
-  if(e.key==='r') rest();
-  if(e.key==='Escape') {
-    ['inventory-modal','spell-modal','shop-modal','character-modal'].forEach(closeModal);
-  }
+  if(k==='i') openInventory();
+  if(k==='p') openSpells();
+  if(k==='c') openCharacter();
+  if(k==='f') searchRoom();
+  if(k==='r') rest();
 });
 
 // ============================================================

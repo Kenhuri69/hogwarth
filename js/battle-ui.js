@@ -10,18 +10,36 @@ function _showTargets(entries, onPick) {
   const wrap = document.getElementById('target-selection');
   const btns = document.getElementById('target-buttons');
   btns.innerHTML = '';
-  entries.forEach(({ label, idx }) => {
+  entries.forEach(({ label, idx }, n) => {
     const btn = document.createElement('button');
     btn.className = 'cmd-btn';
     btn.style.fontSize = '10px';
-    btn.textContent = label;
+    btn.dataset.targetIndex = n;          // ciblage clavier : touche n+1
+    btn.textContent = `${n + 1}. ${label}`;
     btn.onclick = () => {
       wrap.style.display = 'none';
       onPick(idx);
     };
     btns.appendChild(btn);
   });
+  // Bouton d'annulation (souris) — équivalent de la touche Échap.
+  const cancel = document.createElement('button');
+  cancel.className = 'cmd-btn target-cancel-btn';
+  cancel.style.fontSize = '10px';
+  cancel.textContent = '✖ Annuler (Échap)';
+  cancel.onclick = _cancelTargetSelection;
+  btns.appendChild(cancel);
   wrap.style.display = 'flex';
+}
+
+// Annule la sélection de cible en cours (clic « Annuler » ou touche Échap) :
+// masque le panneau et purge l'action en attente.
+function _cancelTargetSelection() {
+  const wrap = document.getElementById('target-selection');
+  if (wrap) wrap.style.display = 'none';
+  pendingAction   = null;
+  pendingSpell    = null;
+  pendingThrowIdx = null;
 }
 
 function showTargetSelection(actionType) {
