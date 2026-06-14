@@ -2051,6 +2051,48 @@ const MONSTERS = [
     ]
   },
 
+  // ── Dragon ancestral de la Boucle (Magyar à Pointes canon) ─────────
+  // minFloor 10 → apparaît au dernier étage RÉEL pré-victoire (10) ET recycle
+  // en Boucle au réel 20+ (effectiveFloor(20)=10). Brute (atk ≥ 1,5×mag &
+  // atk ≥ 12) → reçoit Broyer auto via scaleMonster. Élément feu : souffle +
+  // statut burn ; faible glace. Sprite PNG painterly (rembg/birefnet).
+  {
+    id:       "magyar_ancestral",
+    epic:     true,
+    name:     "Magyar Ancestral",
+    icon:     "🐉",
+    imgSrc:   "img/monsters/magyar_ancestral.png",
+    category: "bête",
+    desc:     "Un rugissement ébranle les Ruines. Des ailes de cuir noir se déploient — le dragon ancestral ouvre la gueule sur une braise.",
+    lore:     "Un Magyar à Pointes que la Boucle a tiré des âges anciens, plus vaste et plus noir qu'aucun dragon recensé. Ses écailles d'obsidienne renvoient le feu ; sa queue cloutée de bronze brise la pierre. On dit qu'il couvait sous les Ruines bien avant qu'on n'y bâtisse Poudlard.",
+    habitat:  "Les cavernes incandescentes au plus profond des Ruines Anciennes.",
+    anecdote: "Les dompteurs de dragons de Roumanie refusent de nommer le Magyar Ancestral : on ne convoque pas ce qu'on ne peut rendormir.",
+    danger:   11,
+    minFloor: 10, maxFloor: null, weight: 1,
+    hp: 185, atk: 25, def: 14, mag: 16, agi: 10, lck: 9,
+    scale: 0.36,
+    abilities: [
+      { name: "Souffle de Feu", icon: "🔥", desc: "Un torrent de flammes balaie le groupe",     effect: "damage", power: 22, chance: 0.45 },
+      { name: "Embrasement",    icon: "🔥", desc: "Les flammes s'accrochent et consument",        effect: "status", statusId: "burn", power: 9, chance: 0.35, turns: 3 },
+      { name: "Coup de Queue",  icon: "💥", desc: "La queue cloutée fracasse les défenses",        effect: "weaken", power: 5, chance: 0.30 }
+    ],
+    ai: "aggressive",
+    phases: [
+      { atPct: 0.5,  atkMult: 1.2,  msg: "Le Magyar se cabre, ailes grandes ouvertes — l'air lui-même prend feu autour de lui." },
+      { atPct: 0.25, magMult: 1.3,  msg: "Acculé, le dragon inspire profondément : sa gorge rougeoie d'un brasier prêt à tout engloutir." }
+    ],
+    resist: ["feu", "physique"],
+    weak:   ["glace"],
+    xp: 340, gold: { min: 190, max: 270 },
+    drops: [
+      { itemId: "essence_tenebres",      chance: 0.80 },
+      { itemId: "page_grimoire",         chance: 0.50 },
+      { itemId: "herbe_asphodele_noire", chance: 0.30 },
+      { itemId: "eclat_vitalite",        chance: 0.20 },
+      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+    ]
+  },
+
   // ── Boss-miroir terminal de « Briser le Cycle » (V3, ch.11 §11.10) ──
   // Apparition à l'étage RÉEL 21+ : minFloor 11 filtré via effectiveFloor
   // (effectiveFloor(21)=11) → exclu des étages 11-20 (eff. 1-10). Le vaincre

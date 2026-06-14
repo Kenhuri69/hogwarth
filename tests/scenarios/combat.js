@@ -2384,15 +2384,20 @@ async function scenarioLargeEnemyGroup() {
     showTargetSelection('attack');
     const cards = document.querySelectorAll('#enemy-group .enemy-card').length;
     const last  = !!document.getElementById('enemy-card-4');
+    // Boutons de cible (1 par ennemi) hors bouton « ✖ Annuler (Échap) »
+    // ajouté inconditionnellement par _showTargets (ergonomie Échap).
+    const targetBtns = document.querySelectorAll('#target-buttons button[data-target-index]').length;
+    const cancelBtn  = !!document.querySelector('#target-buttons .target-cancel-btn');
     const btns  = document.querySelectorAll('#target-buttons button').length;
     let floatOk = true;
     try { if (window.UX) UX.floatDmg('enemy:4', 7, 'dmg'); } catch (e) { floatOk = false; }
-    return { cards, last, btns, floatOk };
+    return { cards, last, btns, targetBtns, cancelBtn, floatOk };
   });
   console.log('  rendu :', render);
   assert(render.cards === 5, '5 cartes ennemies attendues');
   assert(render.last,        'carte enemy-card-4 absente');
-  assert(render.btns  === 5, '5 boutons de cible attendus');
+  assert(render.targetBtns === 5, '5 boutons de cible attendus');
+  assert(render.cancelBtn,        'bouton Annuler de cible attendu');
   assert(render.floatOk,     'floatDmg enemy:4 a levé une erreur');
 
   if (errors.length) { errors.forEach(e => console.log('  ⚠️ ', e)); throw new Error('erreurs JS (gros groupes)'); }
