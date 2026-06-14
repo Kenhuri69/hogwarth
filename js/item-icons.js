@@ -35,6 +35,22 @@ const EQUIPMENT_SLOT_ICONS = {
 
 // Registre des icônes per-item (Phase 4 — peuplé pour tous les ITEMS[])
 const ITEM_ICON_REGISTRY = {
+  // Artefacts & Reliquaires 2.0 — P1 (plan §1.4 A/B). Repli legacy (PNG
+  // painterly dédiés en priorité 1 dans ITEM_ICON_NEW_REGISTRY) : réutilise
+  // un PNG legacy de famille proche pour la couverture.
+  orbe_flamme:          'img/icons/items/amulette.png',
+  orbe_givre:           'img/icons/items/amulette.png',
+  orbe_runique:         'img/icons/items/amulette.png',
+  cristal_focalisation: 'img/icons/items/amulette.png',
+  talisman_fondateurs:  'img/icons/items/amulette.png',
+  gantelets_combat:     'img/icons/items/gants_apprenti.png',
+  gantelets_aurors:     'img/icons/items/gants_apprenti.png',
+  baton_apprenti:       'img/icons/items/wand1.png',
+  baton_ancestral:      'img/icons/items/wand2.png',
+  cape_funambule:       'img/icons/items/cape_voyageur.png',
+  masque_courage:       'img/icons/items/chapeau_pointu.png',
+  masque_rituel:        'img/icons/items/chapeau_pointu.png',
+  grimoire_flottant:    'img/icons/items/book_monsters.png',
   // Consommables
   potion_s:           'img/icons/items/potion_s.png',
   potion_m:           'img/icons/items/potion_m.png',
@@ -228,6 +244,20 @@ const ITEM_ICON_REGISTRY = {
 
 // Mapping painterly pipeline (étape 9 — voir SVG_PLAN / tools/icon_factory.py)
 const ITEM_ICON_NEW_REGISTRY = {
+  // Artefacts & Reliquaires 2.0 — P1 nouvelles formes (plan §1.4 A/B).
+  orbe_flamme:          'img/icons_new/orbe_flamme_64.png',
+  orbe_givre:           'img/icons_new/orbe_givre_64.png',
+  orbe_runique:         'img/icons_new/orbe_runique_64.png',
+  cristal_focalisation: 'img/icons_new/cristal_focalisation_64.png',
+  gantelets_combat:     'img/icons_new/gantelets_combat_64.png',
+  gantelets_aurors:     'img/icons_new/gantelets_aurors_64.png',
+  baton_apprenti:       'img/icons_new/baton_apprenti_64.png',
+  baton_ancestral:      'img/icons_new/baton_ancestral_64.png',
+  cape_funambule:       'img/icons_new/cape_funambule_64.png',
+  masque_courage:       'img/icons_new/masque_courage_64.png',
+  masque_rituel:        'img/icons_new/masque_rituel_64.png',
+  grimoire_flottant:    'img/icons_new/grimoire_flottant_64.png',
+  talisman_fondateurs:  'img/icons_new/talisman_fondateurs_64.png',
   potion_s:             'img/icons_new/potion_s_64.png',
   felix:                'img/icons_new/felix_64.png',
   wand2:                'img/icons_new/wand2_64.png',

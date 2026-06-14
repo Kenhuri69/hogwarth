@@ -477,9 +477,10 @@ function openBattleSpells() {
                        && typeof _teleportUsedThisFight !== 'undefined'
                        && _teleportUsedThisFight;
     const cdBlocked = fightCd > 0 || alreadyUsed;
-    // Coût effectif : Legilimens enchérit à chaque relance (cf. _spellSpCost).
-    const effCost  = (spell.effect === 'legilimens' && typeof _spellSpCost === 'function')
-                     ? _spellSpCost(spell) : spell.cost;
+    // Coût effectif pour CE lanceur : Legilimens enchérit à chaque relance,
+    // l'Apothéose Serdaigle et les artefacts (spCostReduction) le réduisent.
+    const effCost  = (typeof _spellSpCost === 'function')
+                     ? _spellSpCost(spell, c) : spell.cost;
     const canCast  = c.sp >= effCost && !spell.locked && !cdBlocked;
     const div      = document.createElement('div');
     div.className  = 'spell-item';

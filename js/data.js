@@ -809,6 +809,28 @@ const ITEMS = [
   { id:"pendentif_ombre",   name:"Pendentif d'Ombre",              icon:"🦇", desc:"Acc — regen 3 PV/tour, dégâts critiques +20 %.", type:"acc", slot:"amulet", rarity:"epic", regenHp:3, bonusCritDamage:0.20, price:6000 },
   { id:"reliquaire_lunaire", name:"Reliquaire Lunaire",            icon:"🌙", desc:"Bibelot — gain d'or de combat +20 % (cumulable avec Récolte Magique).", type:"trinket", slot:"trinket", rarity:"legendary", bonusGoldMult:0.20, price:8000 },
   { id:"philtre_endurance", name:"Philtre d'Endurance",            icon:"🟢", desc:"+3 END permanent. Recette ancestrale — disponibilité fluctuante.", type:"consumable", effect:"perma_end", power:3, basePrice:3500, price:3500, rarityScales:true, rarity:"rare" },
+  // ── Artefacts & Reliquaires 2.0 — P1 nouvelles formes (plan §1.4 A/B) ──
+  // Nouveaux archétypes (`formType`) MAPPÉS sur les slots existants — aucun
+  // nouveau slot. Deux nouveaux leviers mécaniques additifs seulement :
+  //   bonusElemDmg    → +% dégâts d'un/des élément(s) de sort (battle-spells.js)
+  //   spCostReduction → −N PM sur le coût des sorts, plancher 1 (battle-spells.js)
+  // Les autres effets réutilisent les bonus* existants. `houseAffinity` est
+  // posé là où le canon le justifie (consommé par les shops en P3).
+  // A. Mid-game (Actes I-II, étages 3-7) — comble le palier `uncommon`/`rare`.
+  { id:"orbe_flamme",          name:"Orbe de Flamme",         icon:"🔥", desc:"MAG+1 · +15 % dégâts de feu",                 type:"acc",  slot:"trinket", formType:"orbe",      rarity:"uncommon", bonusMag:1, bonusElemDmg:{ feu:0.15 },   power:1, price:220, tint:"#e0531f" },
+  { id:"orbe_givre",           name:"Orbe de Givre",          icon:"❄️", desc:"MAG+1 · +15 % dégâts de glace",               type:"acc",  slot:"trinket", formType:"orbe",      rarity:"uncommon", bonusMag:1, bonusElemDmg:{ glace:0.15 }, power:1, price:220, tint:"#4fb6e8" },
+  { id:"cristal_focalisation", name:"Cristal de Focalisation",icon:"💠", desc:"MAG+2 · Crit de sort +4 % · −1 PM par sort", type:"acc",  slot:"amulet",  formType:"cristal",   rarity:"rare",     bonusMag:2, bonusSpellCritChance:4, spCostReduction:1, power:2, price:320, tint:"#7fd6e0" },
+  { id:"gantelets_combat",     name:"Gantelets de Combat",    icon:"🥊", desc:"ATK+3 STR+2 — la force perce les défenses",   type:"acc",  slot:"hands",   formType:"gantelets", rarity:"rare",     bonusAtk:3, bonusStr:2, power:3, price:300 },
+  { id:"baton_apprenti",       name:"Bâton d'Apprenti",       icon:"🌳", desc:"ATK+2 MAG+3 — bois de caster, lourd mais sûr",type:"wand", slot:"wand",    formType:"baton",     rarity:"uncommon", bonusAtk:2, bonusMag:3, power:3, price:260, tint:"#8a5a2b" },
+  { id:"cape_funambule",       name:"Cape du Funambule",      icon:"🧥", desc:"AGI+3 · Célérité +4 · Esquive +3 %",          type:"acc",  slot:"cloak",   formType:"cape",      rarity:"rare",     bonusAgi:3, bonusCelerite:4, bonusDodgeChance:3, power:3, price:360, tint:"#c8a24a" },
+  { id:"masque_courage",       name:"Masque du Courage",      icon:"🎭", desc:"ATK+5 mais DEF−2 — l'audace sans la garde",    type:"acc",  slot:"head",    formType:"masque",    rarity:"rare",     bonusAtk:5, bonusDef:-2, power:5, price:300, tint:"#b03a2e" },
+  { id:"grimoire_flottant",    name:"Grimoire Flottant",      icon:"📖", desc:"INT+4 MAG+2 — un savoir qui se feuillette seul",type:"acc", slot:"trinket", formType:"grimoire",  rarity:"rare",     bonusInt:4, bonusMag:2, power:3, price:380, tint:"#3d6cc0" },
+  // B. Endgame (Acte III, étages 8-10).
+  { id:"baton_ancestral",      name:"Bâton Ancestral",        icon:"🌳", desc:"ATK+6 MAG+8 · Dégâts crit. de sort +25 %",    type:"wand", slot:"wand",    formType:"baton",     rarity:"epic",     bonusAtk:6, bonusMag:8, bonusSpellCritDamage:0.25, power:8, price:1300, tint:"#6b4423" },
+  { id:"talisman_fondateurs",  name:"Talisman des Fondateurs",icon:"📿", desc:"MAG+4 DEF+4 · Régen +2 PV/+1 PM par tour",     type:"acc",  slot:"amulet",  formType:"talisman",  rarity:"epic",     bonusMag:4, bonusDef:4, regenHp:2, regenSp:1, power:4, price:1200, tint:"#caa84c" },
+  { id:"masque_rituel",        name:"Masque Rituel",          icon:"🎭", desc:"MAG+8 · Crit de sort +8 % mais PV max −5",     type:"acc",  slot:"head",    formType:"masque",    rarity:"epic",     bonusMag:8, bonusSpellCritChance:8, bonusHpMax:-5, power:8, price:1100, tint:"#5b2c6f" },
+  { id:"gantelets_aurors",     name:"Gantelets des Aurors",   icon:"🥊", desc:"ATK+5 STR+3 · Crit phys. +6 %",                type:"acc",  slot:"hands",   formType:"gantelets", rarity:"epic",     bonusAtk:5, bonusStr:3, bonusCritChance:6, power:5, price:1000, tint:"#2c5f8a" },
+  { id:"orbe_runique",         name:"Orbe Runique",           icon:"🔮", desc:"MAG+3 · +10 % dégâts de tous les éléments",    type:"acc",  slot:"trinket", formType:"orbe",      rarity:"epic",     bonusMag:3, bonusElemDmg:{ tous:0.10 }, power:3, price:1200, tint:"#9b59d0" },
   // ── Récompenses des Quêtes Signature de Maison (remises cérémonielles) ──
   // Cf. docs/histoire/08 §8.5 + .claude/plans/house-signature-quests-impl.md.
   { id:"banniere_godric",  name:"Bannière de Godric",   icon:"🚩", desc:"Bibelot — l'Étendard qui ne s'incline jamais. Immunise le groupe contre la Peur tant qu'un héros la porte. ATK+2.", type:"trinket", slot:"trinket", family:"banner_godric", rarity:"legendary", bonusAtk:2, fearImmune:true, power:5, price:0, tint:"#d3a625" },

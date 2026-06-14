@@ -2488,4 +2488,75 @@ async function scenarioBuffBadgesPng() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery] };
+// ── Artefacts & Reliquaires 2.0 — P1 nouvelles formes ──────────────
+// Équipe une nouvelle forme (stat via recalc) puis vérifie EN COMBAT les
+// deux nouveaux leviers : bonusElemDmg (Orbe de Flamme) et spCostReduction
+// (Cristal de Focalisation). Cf. .claude/plans/artifacts-reliquary-system.md.
+async function scenarioArtifactForms() {
+  console.log('\n── Scénario : Artefacts P1 (nouvelles formes — bonusElemDmg / spCostReduction) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+  await startDummyFight(page, { hp: 100000 });
+
+  const res = await page.evaluate(() => {
+    const c = party[0];
+    const emptyEquip = () => ({ wand:null, head:null, body:null, hands:null,
+      feet:null, cloak:null, amulet:null, ring1:null, ring2:null, belt:null,
+      trinket:null });
+    // Neutralise les passifs de Maison susceptibles de fausser les mesures.
+    chosenHouse = 'Gryffondor'; houseTier = 0;
+
+    // (1) Bonus de stat d'une nouvelle forme : Cristal MAG+2.
+    c.equipped = emptyEquip(); recalculateStats();
+    const magBefore = c.mag;
+    c.equipped.amulet = { ...ITEMS.find(i => i.id === 'cristal_focalisation') };
+    recalculateStats();
+    const magAfter = c.mag;
+
+    // (2) spCostReduction : Cristal −1 PM (plancher 1).
+    const incendio = SPELLS.find(s => s.name === 'Incendio');
+    const costWithCristal = _spellSpCost(incendio, c);
+    c.equipped = emptyEquip(); recalculateStats();
+    const costBase = _spellSpCost(incendio, c);
+
+    // (3) bonusElemDmg : Orbe de Flamme +15 % sur Incendio (feu).
+    c.equipped = emptyEquip();
+    c.equipped.trinket = { ...ITEMS.find(i => i.id === 'orbe_flamme') };
+    recalculateStats();
+    c.spellCritChance = 0;            // mesure déterministe (pas de crit)
+    const enemy = enemyGroup[0];
+    const expBase = incendio.power + Math.floor(c.mag / 2);  // mag inclut +1 Orbe
+    enemy.currentHp = 100000;
+    _spellElementalDamage(incendio, c, enemy, 0);
+    const dmgWithBonus = 100000 - enemy.currentHp;
+    // Retire le seul levier élémentaire (mag inchangé) et relance.
+    delete c.equipped.trinket.bonusElemDmg;
+    enemy.currentHp = 100000;
+    _spellElementalDamage(incendio, c, enemy, 0);
+    const dmgNoBonus = 100000 - enemy.currentHp;
+
+    return { magBefore, magAfter, costBase, costWithCristal,
+             expBase, dmgWithBonus, dmgNoBonus };
+  });
+  console.log('  →', JSON.stringify(res));
+
+  assert(res.magAfter - res.magBefore === 2,
+    `Cristal de Focalisation : MAG+2 attendu, got ${res.magAfter - res.magBefore}`);
+  assert(res.costWithCristal === Math.max(1, res.costBase - 1),
+    `spCostReduction : coût réduit de 1 attendu (base ${res.costBase}), got ${res.costWithCristal}`);
+  assert(res.dmgNoBonus === res.expBase,
+    `dégâts de base attendus ${res.expBase}, got ${res.dmgNoBonus}`);
+  assert(res.dmgWithBonus === Math.floor(res.expBase * 1.15),
+    `bonusElemDmg : ${Math.floor(res.expBase * 1.15)} attendu (×1.15), got ${res.dmgWithBonus}`);
+  assert(res.dmgWithBonus > res.dmgNoBonus,
+    'bonusElemDmg : les dégâts avec orbe doivent dépasser les dégâts de base');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Artefacts P1 (formes + leviers bonusElemDmg/spCostReduction) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioStatusEffects, scenarioWeakenAndProtegoBadges, scenarioBuffBadgesPng, scenarioBruteCrush, scenarioStatRework, scenarioFortuneStat, scenarioAgiCelerite, scenarioCeleriteGuardCounting, scenarioDuoStatuses, scenarioCritDodge, scenarioHpSpMaxBonus, scenarioCritBonusMultiplier, scenarioGuardAndFerula, scenarioCombatBuffs, scenarioLegilimensEscalation, scenarioStun, scenarioStatusComboNoFreeze, scenarioCombatExtV2, scenarioEnemyAiAndBossPhases, scenarioEnemyAbilityArchetypes, scenarioDeathPetrify, scenarioIronmanDeath, scenarioLargeEnemyGroup, scenarioMonsterDiscovery, scenarioArtifactForms] };

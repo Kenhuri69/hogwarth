@@ -1466,6 +1466,136 @@ RECIPES: Dict[str, Recipe] = {
              "color": ( 60,  46,  36), "size": 90},
         ],
     ),
+
+    # ════════════════════════════════════════════════════════════
+    # Artefacts & Reliquaires 2.0 — P1 nouvelles formes (plan §1.4 A/B)
+    # ════════════════════════════════════════════════════════════
+    # A. Mid-game (uncommon/rare)
+    "orbe_flamme": Recipe(
+        id="orbe_flamme", name="Orbe de Flamme", rarity="uncommon", material="glass",
+        silhouette={"kind": "svg", "file": "orb.svg"},
+        fills={"sphere": (200,  72,  32), "core": (255, 168,  72), "base": (120,  82,  40)},
+        accents=[
+            {"kind": "orb_glow", "region": "core",   "color": (255, 200, 110)},
+            {"kind": "symbol",   "region": "sphere", "shape": "flame",
+             "color": (255, 226, 152), "size": 120},
+        ],
+    ),
+    "orbe_givre": Recipe(
+        id="orbe_givre", name="Orbe de Givre", rarity="uncommon", material="glass",
+        silhouette={"kind": "svg", "file": "orb.svg"},
+        fills={"sphere": ( 60, 140, 200), "core": (190, 232, 255), "base": ( 96, 110, 128)},
+        accents=[
+            {"kind": "orb_glow", "region": "core",   "color": (210, 240, 255)},
+            {"kind": "symbol",   "region": "sphere", "shape": "snowflake",
+             "color": (235, 250, 255), "size": 120},
+        ],
+    ),
+    "cristal_focalisation": Recipe(
+        id="cristal_focalisation", name="Cristal de Focalisation", rarity="rare", material="glass",
+        silhouette={"kind": "svg", "file": "gem-octahedron.svg"},
+        fills={"gem": ( 96, 200, 216), "gem_base": ( 40, 120, 140)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (224, 250, 255)},
+            {"kind": "orb_glow",        "region": "gem", "color": (170, 230, 240)},
+        ],
+    ),
+    "gantelets_combat": Recipe(
+        id="gantelets_combat", name="Gantelets de Combat", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={"cuff": ( 96,  72,  48), "palm": (140, 100,  60),
+               "fingers": (128,  92,  52), "stitch": (208, 180, 120)},
+        accents=[{"kind": "emboss", "region": "palm", "color": ( 60,  40,  20)}],
+    ),
+    "baton_apprenti": Recipe(
+        id="baton_apprenti", name="Bâton d'Apprenti", rarity="uncommon", material="wood",
+        silhouette={"kind": "svg", "file": "wizard-staff.svg"},
+        fills={"shaft": (120,  84,  48), "grip": ( 84,  60,  36),
+               "pommel": (150, 112,  64), "orb": (176, 208, 160)},
+        accents=[{"kind": "orb_glow", "region": "orb", "color": (210, 232, 190)}],
+    ),
+    "cape_funambule": Recipe(
+        id="cape_funambule", name="Cape du Funambule", rarity="rare", material="matte",
+        silhouette={"kind": "svg", "file": "hood.svg"},
+        fills={"cloth": (176, 140,  64), "cavity": ( 96,  72,  36)},
+        accents=[{"kind": "emboss", "region": "cloth", "color": (120,  92,  40)}],
+    ),
+    "masque_courage": Recipe(
+        id="masque_courage", name="Masque du Courage", rarity="rare", material="matte",
+        silhouette={"kind": "svg", "file": "mask.svg"},
+        fills={"face": (150,  40,  36), "brow": (176,  60,  48),
+               "eyes": ( 40,  16,  14), "accent": (208, 168,  80)},
+        accents=[
+            {"kind": "emboss",          "region": "face",   "color": ( 96,  24,  20)},
+            {"kind": "gem_facet_shine", "region": "accent", "color": (255, 224, 150)},
+        ],
+    ),
+    "grimoire_flottant": Recipe(
+        id="grimoire_flottant", name="Grimoire Flottant", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 46,  84, 150), "pages": (224, 224, 236),
+               "spine": ( 28,  56, 104), "gilt": (150, 180, 220)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 24,  48,  90)},
+            {"kind": "symbol", "region": "cover", "shape": "eye",
+             "color": (210, 228, 255), "size": 130},
+        ],
+    ),
+    # B. Endgame (epic)
+    "baton_ancestral": Recipe(
+        id="baton_ancestral", name="Bâton Ancestral", rarity="epic", material="wood",
+        silhouette={"kind": "svg", "file": "wizard-staff.svg"},
+        fills={"shaft": ( 96,  64,  36), "grip": ( 64,  42,  24),
+               "pommel": (150, 112,  64), "orb": (180, 150, 255)},
+        accents=[
+            {"kind": "orb_glow", "region": "orb",   "color": (220, 196, 255)},
+            {"kind": "runes",    "region": "shaft", "color": (200, 170, 255), "count": 4},
+        ],
+    ),
+    "talisman_fondateurs": Recipe(
+        id="talisman_fondateurs", name="Talisman des Fondateurs", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (200, 168,  96), "setting": (211, 166,  37), "gem": (120, 150, 200)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem",     "color": (224, 235, 255)},
+            {"kind": "orb_glow",        "region": "gem",     "color": (170, 200, 240)},
+            {"kind": "symbol", "region": "setting", "shape": "star",
+             "color": ( 60,  46,  30), "size": 80},
+        ],
+    ),
+    "masque_rituel": Recipe(
+        id="masque_rituel", name="Masque Rituel", rarity="epic", material="matte",
+        silhouette={"kind": "svg", "file": "mask.svg"},
+        fills={"face": ( 72,  40,  90), "brow": ( 96,  56, 120),
+               "eyes": ( 20,  10,  28), "accent": (176, 144, 220)},
+        accents=[
+            {"kind": "emboss", "region": "face", "color": ( 44,  24,  56)},
+            {"kind": "symbol", "region": "brow", "shape": "eye",
+             "color": (216, 196, 248), "size": 70},
+            {"kind": "gem_facet_shine", "region": "accent", "color": (224, 200, 255)},
+        ],
+    ),
+    "gantelets_aurors": Recipe(
+        id="gantelets_aurors", name="Gantelets des Aurors", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={"cuff": ( 44,  70, 100), "palm": ( 90, 120, 150),
+               "fingers": ( 76, 104, 134), "stitch": (200, 210, 224)},
+        accents=[
+            {"kind": "emboss",          "region": "palm",   "color": ( 30,  48,  70)},
+            {"kind": "gem_facet_shine", "region": "stitch", "color": (220, 232, 255)},
+        ],
+    ),
+    "orbe_runique": Recipe(
+        id="orbe_runique", name="Orbe Runique", rarity="epic", material="glass",
+        silhouette={"kind": "svg", "file": "orb.svg"},
+        fills={"sphere": (120,  72, 180), "core": (208, 168, 255), "base": ( 90,  76, 120)},
+        accents=[
+            {"kind": "orb_glow", "region": "core",   "color": (224, 196, 255)},
+            {"kind": "runes",    "region": "sphere", "color": (224, 196, 255), "count": 5},
+            {"kind": "symbol",   "region": "sphere", "shape": "star",
+             "color": (240, 224, 255), "size": 110},
+        ],
+    ),
 }
 
 

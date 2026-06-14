@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <g fill="#000000">
+    <path data-region="base" d="M 168 392 L 344 392 L 360 452 C 320 470 192 470 152 452 Z"></path>
+    <path data-region="base" d="M 196 372 L 256 360 L 316 372 L 300 410 L 212 410 Z"></path>
+    <path data-region="sphere" d="M 106 246 A 150 150 0 1 0 406 246 A 150 150 0 1 0 106 246 Z"></path>
+    <path data-region="core" d="M 162 222 A 78 78 0 1 0 318 222 A 78 78 0 1 0 162 222 Z"></path>
+  </g>
+</svg>
