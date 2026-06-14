@@ -11,8 +11,10 @@ cairosvg
 numpy
 scipy
 
-# --- Détourage des PNG de monstres (tools/process_monster_png.py) — LOURD, À LA DEMANDE ---
-# rembg télécharge un modèle (birefnet/u2net, plusieurs centaines de Mo) au 1er run.
-# Décommenter / installer seulement quand on traite un sprite de monstre :
-#     python3 -m pip install rembg
+# --- Détourage optionnel (rembg) — LOURD, À LA DEMANDE ---
+# Utilisé par tools/process_monster_png.py ET, en fallback fond chargé, par
+# tools/sheet_extract.py (--method rembg). Modèle U²-Net ~176 Mo au 1er run.
+# Pour nos planches d'icônes à FOND PLAT CLAIR, rembg est inutile (le détourage
+# par remplissage de sheet_extract suffit et est plus net). Installer au besoin :
+#     python3 -m pip install "rembg[cpu]"
 # rembg

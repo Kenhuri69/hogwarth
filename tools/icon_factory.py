@@ -2102,6 +2102,37 @@ def save_all(recipe: Recipe, out_dir: str = OUT_DIR) -> List[str]:
 RASTER_SRC_DIR = os.path.normpath(os.path.join(HERE, "..", "tools", "raster_src"))
 
 
+def _drop_border_components(im, min_area_frac=0.003):
+    """Retire de l'alpha les composants connexes touchant le bord (bave de
+    voisin) et les micro-composants (< min_area_frac). Conserve les sujets
+    multi-parties (paire de gantelets) tant qu'ils ne touchent pas le bord.
+    No-op silencieux si scipy absent."""
+    try:
+        from scipy.ndimage import label
+    except Exception:
+        return im
+    arr = np.asarray(im).copy()
+    fg = arr[..., 3] > 32
+    if not fg.any():
+        return im
+    lbl, n = label(fg)
+    if n <= 1:
+        return im
+    border = set(lbl[0]).union(lbl[-1]).union(lbl[:, 0]).union(lbl[:, -1])
+    border.discard(0)
+    areas = np.bincount(lbl.ravel())
+    min_area = max(1, int(min_area_frac * arr.shape[0] * arr.shape[1]))
+    keep = np.zeros(fg.shape, dtype=bool)
+    for li in range(1, n + 1):
+        if li in border or areas[li] < min_area:
+            continue
+        keep |= (lbl == li)
+    if not keep.any():        # tout supprimé (sujet collé au bord) → on garde tel quel
+        return im
+    arr[..., 3] = np.where(keep, arr[..., 3], 0)
+    return Image.fromarray(arr, "RGBA")
+
+
 def _load_raster_subject(path: str, margin: float = 0.08):
     """Charge un PNG d'icône externe en (rgb[0..1], alpha[0..1]) sur un canevas
     512² transparent, sujet centré avec marge. Accepte un PNG RGBA à
@@ -2116,6 +2147,10 @@ def _load_raster_subject(path: str, margin: float = 0.08):
         dechecker_png.detour(path, tmp, side=RENDER_SIZE, margin=margin)
         im = Image.open(tmp).convert("RGBA")
         os.unlink(tmp)
+    # Défense-en-profondeur (cf. tools/sheet_extract.py) : retire les composants
+    # alpha qui touchent le bord (bave de voisin sur une source mal découpée) et
+    # les micro-specks, AVANT le bbox → garantit un centrage sur le vrai sujet.
+    im = _drop_border_components(im)
     bbox = im.getbbox()
     if bbox:
         im = im.crop(bbox)

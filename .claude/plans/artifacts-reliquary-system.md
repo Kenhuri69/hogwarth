@@ -395,12 +395,16 @@ inclus). Slots existants réutilisés (aucun slot neuf).
 **Icônes** : enregistrées dans `ITEM_ICON_NEW_REGISTRY` (priorité 1) **et**
 `ITEM_ICON_REGISTRY` (repli legacy, exigé par `scenarioItemIcons`).
 - **Version livrée** (mise à jour P2-branch 2026-06-14) : objets peints par
-  **Copilot/DALL·E** sur **fond gris clair** (planche unique, prompt unifié),
-  découpés + détourés (flood-fill bords + érosion 1 px) puis encadrés par
-  `tools/icon_factory.py --raster` → halo de rareté + cartouche doré + mipmaps
-  **du moteur**. Sources dans `tools/raster_src/<id>.png`. Rendu plus riche que
-  la 1ʳᵉ passe Gemini ; le **fond clair est crucial** (un fond sombre rend les
-  objets sombres — gantelets de cuir, bâtons — indétourables car iso-couleur).
+  **Copilot/DALL·E** sur **fond gris clair**, extraits par la procédure FIABLE
+  `tools/sheet_extract.py` (**anti-bave** : retire les composants touchant le
+  bord = morceaux du voisin ; **centrage** sur la bbox du sujet nettoyé ;
+  **porte QC** : marge/couverture/sujet non vide, exit 1 + planche QC), puis
+  encadrés par `tools/icon_factory.py --raster`. Procédure réutilisable
+  (Premium/épique) : [`tools/ICON_SHEET_PROCEDURE.md`](../../tools/ICON_SHEET_PROCEDURE.md).
+  Sources détourées dans `tools/raster_src/`. Le **fond clair est crucial** (un
+  fond sombre rend les objets sombres indétourables car iso-couleur). Bug initial
+  corrigé : 1ʳᵉ passe (découpage naïf) → masque décentré + sliver du gantelet
+  voisin ; `sheet_extract` l'empêche par construction + QC.
 - **Repli/historique** : 13 recettes painterly (`tools/icon_factory.py`) + 2
   parts SVG (`tools/parts/orb.svg`, `tools/parts/mask.svg`) restent dans le
   dépôt — regénérables si une source Gemini disparaît. (Limite connue du
