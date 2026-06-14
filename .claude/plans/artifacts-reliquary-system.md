@@ -394,12 +394,13 @@ inclus). Slots existants réutilisés (aucun slot neuf).
 
 **Icônes** : enregistrées dans `ITEM_ICON_NEW_REGISTRY` (priorité 1) **et**
 `ITEM_ICON_REGISTRY` (repli legacy, exigé par `scenarioItemIcons`).
-- **Version livrée** : objets peints par **Gemini** (planche unique générée via
-  le prompt unifié `artifacts-p1-gemini-prompts.md`), découpés + détourés puis
-  encadrés par `tools/icon_factory.py --raster` → halo de rareté + cartouche
-  doré + mipmaps **du moteur** (cohérence avec les 149 autres icônes). Sources
-  détourées conservées dans `tools/raster_src/<id>.png`. Résout proprement le
-  problème de lisibilité des masques (visages nets).
+- **Version livrée** (mise à jour P2-branch 2026-06-14) : objets peints par
+  **Copilot/DALL·E** sur **fond gris clair** (planche unique, prompt unifié),
+  découpés + détourés (flood-fill bords + érosion 1 px) puis encadrés par
+  `tools/icon_factory.py --raster` → halo de rareté + cartouche doré + mipmaps
+  **du moteur**. Sources dans `tools/raster_src/<id>.png`. Rendu plus riche que
+  la 1ʳᵉ passe Gemini ; le **fond clair est crucial** (un fond sombre rend les
+  objets sombres — gantelets de cuir, bâtons — indétourables car iso-couleur).
 - **Repli/historique** : 13 recettes painterly (`tools/icon_factory.py`) + 2
   parts SVG (`tools/parts/orb.svg`, `tools/parts/mask.svg`) restent dans le
   dépôt — regénérables si une source Gemini disparaît. (Limite connue du
