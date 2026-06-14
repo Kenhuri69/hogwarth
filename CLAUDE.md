@@ -82,6 +82,11 @@ js/
                       optionnelle via AudioSystem.speakBark (OGG / synthèse FR).
   ui.js            →  updateUI(), addMsg(), closeModal(), openHouseDetail() +
                       helpers HUD (barres, blason, boussole, tracker de quête)
+  modal-a11y.js    →  window.ModalA11y — isolation de modale : focus-trap
+                      générique + `inert` sur le fond + restitution du focus.
+                      Observe les transitions display:none↔flex des ~16 modales
+                      via MutationObserver (aucun call-site touché). Défensif.
+                      APRÈS ui.js
   ui-character-sheet.js → openCharacter() : paper-doll, Set Maison, sorts,
                       sac, allocation de points, carnet de voyage. APRÈS ui.js
   ui-settings.js   →  changeDifficulty(), toggleVisitsClosed(). APRÈS ui.js
