@@ -156,6 +156,15 @@ const HERO_BARKS = {
     houseTier:  ["Notre Maison scintille un peu plus ! Joli, non ?"],
     tierTransition: ["Nouvel étage ! Les échos résonnent différemment ici."]
   },
+  margaux: {
+    bossAppear: ["Oh ! Une grosse bête. J'ai lu un sort pour ça, attends…"],
+    crit:       ["Pile poil sur l'étoile filante ! Tu as vu ça ?"],
+    allyDown:   ["Bouge pas, je connais un enchantement — ça va aller !"],
+    levelUp:    ["Encore une page comprise. Le ciel s'éclaire un peu plus."],
+    darkLoop:   ["On retourne en bas ? Les astres y brillent autrement. J'aime bien."],
+    houseTier:  ["Serdaigle monte d'un cran ! L'aigle aime ça."],
+    tierTransition: ["Nouvel étage — de nouvelles constellations à déchiffrer."]
+  },
   agathe: {
     bossAppear: ["Même ici, quelque chose peut pousser. Tenons bon."],
     crit:       ["La vie est tenace. Elle frappe fort quand il le faut."],

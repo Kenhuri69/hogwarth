@@ -264,6 +264,14 @@ const CHARACTERS = {
     spells:["Wingardium Leviosa","Protego","Episkey","Lumos Maxima"],
     tagline:"Petite Gryffondor espiègle — ses sortilèges chantent comme des étoiles."
   },
+  margaux: { name:"Margaux Aiglebrume", icon:"⭐", class:"Élève de Serdaigle",
+    imgSrc:"img/margaux.png", role:"Astromancienne",
+    hp:28, sp:33, str:5, int:16, agi:13, end:7, lck:16, mag:14,
+    atk:3, def:2,
+    wand:"Baguette d'Aulne Étoilé", armor:"Robe de Serdaigle", acc:"Grimoire des Enchantements",
+    spells:["Protego","Episkey","Lumos Maxima","Wingardium Leviosa"],
+    tagline:"Petite astromancienne de Serdaigle — son grimoire scintille d'étincelles d'étoiles."
+  },
   // ── La Garde de l'Aube ────────────────────────────────────
   agathe: { name:"Agathe Lumiflore", icon:"🌸", class:"Élève de Gryffondor",
     imgSrc:"img/agathe.png", role:"Enchanteresse florale",

@@ -45,18 +45,59 @@ Référence selon le genre :
 
 #### 1b. Sprite plein corps (FIGURE ENTIÈRE) — `img/players/<key>.png`
 Figure debout tête-aux-pieds, **512×512 RGBA fond transparent** (même format
-que les 13 sprites existants). Enregistré dans `PLAYER_SPRITE_SRC`
+que les sprites existants). Enregistré dans `PLAYER_SPRITE_SRC`
 (`js/renderer-entities.js`) et rendu par `drawGhostSprite` (identité du
 joueur, Mondes Parallèles) — repli silhouette vectorielle si le PNG manque.
-- **Source = un visuel PLEIN CORPS** (≠ le crop visage de 1a).
-- Style **Règle A** d'`IMG_STYLE.md` (painterly, head-to-toe, marge ≥ 8 %).
-  Prompts type : voir `.claude/plans/_archive/nano-banana-prompts-heroes-olivier-agathe.md`.
-- Si l'image arrive sur **fond damier aplati** (Gemini/Nano Banana en RGB) :
-  détourer via `python3 tools/dechecker_png.py <src.png> img/players/<key>.png`.
-- **Ajouter la clé** `<key>: 'img/players/<key>.png'` à `PLAYER_SPRITE_SRC`,
+
+> ⚠️ **Tu ne peux PAS générer cette image toi-même** (pas de génération
+> raster painterly). La source vient de **Gemini / Nano Banana**. Le portrait
+> fourni par l'utilisateur est presque toujours un **buste/visage** (cadrage 1a)
+> — il ne convient PAS pour le plein corps. Donc, par défaut :
+>
+> **TU DOIS FOURNIR À L'UTILISATEUR, DANS TA RÉPONSE, UN PROMPT GEMINI
+> PRÊT-À-COLLER** pour générer le sprite plein corps. Ne te contente jamais
+> de dire « source manquante » : génère le prompt et donne-le. C'est un
+> **livrable obligatoire** de la skill quand aucune image plein corps n'est
+> fournie.
+
+**Construire le prompt** (modèle ci-dessous, à remplir d'après le profil du
+héros — Maison, baguette, élément, tenue, âge). Règles de cadrage anti-zoom +
+suffixe universel : voir
+[`.claude/plans/_archive/nano-banana-prompts-heroes-olivier-agathe.md`](../../plans/_archive/nano-banana-prompts-heroes-olivier-agathe.md)
+(palettes Maison : Gryffondor crimson/gold·lion, Serpentard green/silver·snake,
+Serdaigle midnight-blue/bronze·eagle, Poufsouffle black-yellow/gold·badger).
+
+```
+Concept art digital painting of <NOM>, a young heroic <wizard|witch> in the Harry Potter universe,
+wide shot, distant framing, head to toe in frame, feet fully visible standing on invisible ground,
+complete standing figure in a confident noble pose, determined gaze toward the viewer,
+<ÂGE>-year-old <description physique : cheveux, expression>,
+wearing <MAISON> school robes in <couleurs maison> with the <emblème> house crest,
+raising a <BAGUETTE> from which <ÉLÉMENT/effet magique> swirls (translucent, alpha 30-70%),
+<accessoire signature tenu dans l'autre main>,
+shoes fully visible at the bottom of frame,
+dramatic upper-left lighting, warm key light + cool cyan rim light separating the figure from the background,
+palette: <couleurs maison + accents>, 
+fully transparent background, no ground shadow,
+subject occupies 70% of 512x512 square frame with 15% empty margin above head and below feet,
+centered full standing pose, painterly brush strokes, no outline, MTG concept art quality,
+complete silhouette visible, no cropping of limbs,
+no text, no watermark, no signature, no border frame, no ground line, no ground shadow
+```
+
+> Archive le prompt rempli dans `.claude/plans/_archive/nano-banana-prompt-<key>.md`
+> et **donne-le tel quel à l'utilisateur** (bloc copiable).
+
+**Une fois l'image reçue de l'utilisateur** (souvent un PNG 1024² RGB sur
+**fond damier aplati**) :
+- détourer via `python3 tools/dechecker_png.py <src.png> img/players/<key>.png` ;
+- **ajouter la clé** `<key>: 'img/players/<key>.png'` à `PLAYER_SPRITE_SRC`,
   **bumper le cache PWA** (`renderer-entities.js`, skill `cache-bump`), et
   **mettre à jour le compte de héros** dans l'assertion de
   `tests/scenarios/multiplayer.js` (scénario sprite plein corps).
+
+Tant que l'image n'est pas livrée, le héros reste pleinement jouable via le
+**repli vectoriel** — mais le prompt doit avoir été fourni.
 
 ### 2. Données — entrée dans `CHARACTERS` (`js/data.js`)
 Lue par `_hydrateCharacter()`. Champs :

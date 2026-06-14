@@ -118,15 +118,15 @@ function loadModule(relPath, exportNames, globals = {}) {
       if (!Array.isArray(HERO_BARKS[k][ev]) || !HERO_BARKS[k][ev].length) allHaveBase = false;
     }
   }
-  check('15 héros : 4 événements de base couverts', allHaveBase);
-  check('registre = 15 héros', Object.keys(HERO_BARKS).length === 15);
+  check('16 héros : 4 événements de base couverts', allHaveBase);
+  check('registre = 16 héros', Object.keys(HERO_BARKS).length === 16);
 
   // V2 (ch.11 §11.8.2) — événement `darkLoop` (voix au franchissement de Boucle).
   let allHaveDarkLoop = true;
   for (const k of Object.keys(HERO_BARKS)) {
     if (!Array.isArray(HERO_BARKS[k].darkLoop) || !HERO_BARKS[k].darkLoop.length) allHaveDarkLoop = false;
   }
-  check('15 héros : événement darkLoop couvert', allHaveDarkLoop);
+  check('16 héros : événement darkLoop couvert', allHaveDarkLoop);
   check('bark harry/darkLoop non vide', typeof pickHeroBark('harry', 'darkLoop', { rng: rng0 }) === 'string');
   // La tension de Maison s'applique aussi à darkLoop (canon ≠ chosenHouse).
   const dlTens = pickHeroBark('harry', 'darkLoop',

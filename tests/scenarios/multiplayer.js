@@ -2799,8 +2799,8 @@ async function scenarioMultiplayerPresence() {
     };
   });
   assert(sprites.registered,    'PLAYER_SPRITE_SRC doit être exposé');
-  assert(sprites.keys === 15,   `15 héros attendus dans PLAYER_SPRITE_SRC (obtenu ${sprites.keys})`);
-  assert(sprites.loaded === 15, `15 PNG doivent charger (obtenu ${sprites.loaded})`);
+  assert(sprites.keys === 16,   `16 héros attendus dans PLAYER_SPRITE_SRC (obtenu ${sprites.keys})`);
+  assert(sprites.loaded === 16, `16 PNG doivent charger (obtenu ${sprites.loaded})`);
 
   if (errors.length) {
     errors.forEach(e => console.log('  ⚠️ ', e));

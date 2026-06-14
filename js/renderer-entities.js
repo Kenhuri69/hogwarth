@@ -130,6 +130,7 @@ const PLAYER_SPRITE_SRC = {
   olivier:   'img/players/olivier.png',
   nathalie:  'img/players/nathalie.png',
   chatillon: 'img/players/chatillon.png',
+  margaux:   'img/players/margaux.png',
 };
 const _PLAYER_SPRITE_CACHE = Object.create(null);
 function _getPlayerSprite(key) {
