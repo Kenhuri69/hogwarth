@@ -50,7 +50,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | Élément (statut affiché dans la doc) | Module réel (vérifié) | Réalité code |
 |--------------------------------------|------------------------|--------------|
 | **Codex** « 🔧 à créer » + gros « plan d'implémentation » (Ch. 12 ÉTAPE 2) | `js/codex.js` (35+ entrées), `js/ui-codex.js`, `#codex-modal`, bouton `openCodex()` | ✅ **Livré** — ids identiques à la doc (`cle_de_voute`, `voix_godric`, `briser_cycle`, `cycle_brise`…) |
-| **Briser le Cycle** « proposition § 11.10 » | `js/break-cycle.js` (boss `reflet_mythe`, flag `cycleBroken`) | ✅ **Livré** (Ch. 14 le reconnaît déjà ✅ — Ch. 11 non) |
+| **Briser le Cycle** « proposition § 11.10 » | `js/break-cycle.js` (boss `reflet_mythe`, flag `cycleBroken`) | ✅ **Livré** (reconnu ✅ par Ch. 14 **et Ch. 11** depuis 2026-06-14 : §11.10 réécrit descriptif du livré) |
 | **Tutoriel / onboarding** (gap supposé) | `js/help-tour.js` (tour guidé auto pour novices) | ✅ **Livré** (+ `intro_tutoriel` + `intro.js`) |
 | **Corruption cosmétique / 4ᵉ levier d'escalade** (Ch. 04/10/13 💡) | `js/floor-ambiance.js` (ambiance zonée + corruption) | ✅ **Livré** |
 | **Phrases d'ambiance à l'entrée de salle** (Ch. 10 §10.7 💡) | `js/room-flavor.js` | ✅ **Livré** |
@@ -99,7 +99,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 
 | Lien | Problème | Action suggérée |
 |------|----------|-----------------|
-| **11 ↔ 14** (Briser le Cycle) | Le Ch. 11 le présente en « proposition § 11.10 » alors que le Ch. 14 **et le code** le donnent ✅ livré. | Aligner le Ch. 11 sur l'état réel (✅). |
+| **11 ↔ 14** (Briser le Cycle) | ✅ Résolu (2026-06-14) : §11.10 réécrit **descriptif du livré** (`break-cycle.js`) — statut du chapitre, jalons (`echo_scene_sceau`/`accumulatedEclats ≥ 15`/`reflet_mythe`), choix final et ❓ tranchés. | — |
 | **11 ↔ 06** (nature de la Boucle) | Le Ch. 06 ne dit jamais si la Boucle est une dimension / boucle temporelle / cristallisation ; renvoie en l'air vers 03 §3.6. | Ajouter 1 § canonique « qu'est-ce que la Boucle » dans 11, lié depuis 06. |
 | **08 ↔ 06** (PNJ donneurs) | ✅ Résolu (2026-06-13) : décision = **créer les 2 PNJ dédiés**. `chevalier_godric` + `echo_salazar` livrés (npcs.js, art, dialogues, smoke par Maison). | — |
 | **Boucle ↔ Mondes Parallèles** | Présentés comme « deux axes opposés » (vertical/latéral) mais **aucune interaction définie** (un Voyageur peut-il visiter un château en Boucle ?). | Écrire la règle explicite (proposé : non — systèmes isolés). |
@@ -161,7 +161,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | **Audit doc↔code complet** : tableau « chapitre ↔ module(s) ↔ statut réel » | 🔴 Haute | Tous + `CLAUDE.md` | Faible (lecture) | — |
 | ~~**Mettre à jour `CLAUDE.md`** (index des 85 modules, sections Codex/Forge/Biblio/Endgame/Potions/Events)~~ ✅ **Fait (2026-06-14)** : index des 85 modules aligné (`check_doc_modules` vert), modules récents tous décrits ; dérives résiduelles corrigées. | 🔴 Haute | `CLAUDE.md` | Faible | Audit |
 | ~~**Réécrire Ch. 12 & 14** : « plan d'impl. » → « état livré »~~ ✅ **Fait (2026-06-14)** (Ch.12 + Ch.14). | 🔴 Haute | ~~12, 14~~ | Faible | Audit |
-| **Aligner Ch. 11** (Briser le Cycle = ✅, pas proposition) + définir « la Boucle » | 🟠 Moyenne | 11 | Faible | Audit |
+| **Aligner Ch. 11** : ~~Briser le Cycle = ✅, pas proposition~~ ✅ **Fait (2026-06-14)** (§11.10 descriptif du livré) · reste « définir « la Boucle » » (canon §11.6.1 → cross-link depuis Ch. 06, authorial) | 🟠 Moyenne | 11 | Faible | Audit |
 | **Bandeaux « Statut réel » + index doc↔module** | 🟠 Moyenne | Tous | Faible | Audit |
 | **Compléter symétrie `pact`/`defiance`** + variantes texte fin (5 axes) | 🟠 Moyenne | 14, `endgame.js` | Faible | — |
 | ~~**Enjeu intime héros**~~ ✅ **Livré** (beat `descentStake`) | — | 05, `hero-barks.js` | Faible | — |
