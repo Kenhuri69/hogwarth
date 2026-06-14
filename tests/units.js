@@ -1643,6 +1643,45 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 17. dungeon-scaling.js — New Game+ « vrai » (challenge empilable)
+//    Helper PUR ngPlusScaling (identité à 0, valeur à N, plafond) + intégration
+//    dans scaleMonster (multiplie stats/butin/drops via opts.ngPlusLevel).
+// ============================================================
+(function testNgPlus() {
+  // Math déterministe (random=0.5 → jamais shiny ; pas d'aléa d'or sur gold scalaire).
+  const detMath = Object.assign(Object.create(Math), { random: () => 0.5 });
+  const { ngPlusScaling, scaleMonster, NGPLUS_CAP } = loadModule(
+    'js/dungeon-scaling.js', ['ngPlusScaling', 'scaleMonster', 'NGPLUS_CAP'],
+    { victoryAchieved: false, difficulty: 'Normal',
+      DIFFICULTY_SETTINGS: { Normal: { scalingMultiplier: 1 } },
+      MONSTERS: [], ngPlusRun: false, ngPlusLevel: 0, Math: detMath });
+
+  // Helper pur.
+  const s0 = ngPlusScaling(0);
+  check('ngPlusScaling(0) = identité', s0.stat === 1 && s0.reward === 1 && s0.drop === 1);
+  check('ngPlusScaling(-3) = identité (garde-fou)', ngPlusScaling(-3).stat === 1);
+  const s5 = ngPlusScaling(5);
+  check('ngPlusScaling(5).stat = 2.0',   approx(s5.stat, 1 + 0.20 * 5));
+  check('ngPlusScaling(5).reward = 2.25', approx(s5.reward, 1 + 0.25 * 5));
+  check('ngPlusScaling(5).drop = 1.5',   approx(s5.drop, 1 + 0.10 * 5));
+  const sCap = ngPlusScaling(999), sMax = ngPlusScaling(NGPLUS_CAP);
+  check('ngPlusScaling plafonné à NGPLUS_CAP', sCap.stat === sMax.stat && sCap.reward === sMax.reward);
+
+  // Intégration scaleMonster : opts.ngPlusLevel multiplie stats + butin + drops.
+  const base = { id: 't', name: 'T', hp: 100, atk: 10, def: 10, mag: 10, agi: 5, lck: 5,
+    scale: 0, xp: 20, gold: 10, drops: [{ itemId: 'x', chance: 0.4 }],
+    abilities: [], resist: [], weak: [] };
+  const a = scaleMonster(base, 1, { ngPlusLevel: 0 });
+  const b = scaleMonster(base, 1, { ngPlusLevel: 5 });
+  check('scaleMonster NG+0 : hp de base', a.hp === 100 && a.gold === 10);
+  check('scaleMonster NG+0 : pas de tag ngPlusLevel', a.ngPlusLevel === undefined);
+  check('scaleMonster NG+5 : hp ×2.0', b.hp === 200);
+  check('scaleMonster NG+5 : or ×2.25', b.gold === 22);     // floor(10×2.25)
+  check('scaleMonster NG+5 : drop ×1.5', approx(b.drops[0].chance, 0.6));
+  check('scaleMonster NG+5 : tag ngPlusLevel=5', b.ngPlusLevel === 5);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

@@ -95,6 +95,7 @@ function _serializeState() {
     victoryAt,
     endingType,
     ngPlusRun,
+    ngPlusLevel,
     ngPlusTitle,
     accumulatedEclats,
     combatTutorialSeen,
@@ -437,9 +438,10 @@ function _applyState(gs) {
     endingType = gs.endingType || null;
     if (typeof refreshEndingType === 'function') refreshEndingType();
   }
-  // New Game+ cosmétique (P5) : restauré tel quel ; saves antérieures → off.
-  // Purement visuel (cadre/titre) — aucun effet mécanique.
+  // New Game+ : restauré tel quel ; saves antérieures → off / cran 0.
+  // `ngPlusLevel` pilote le scaling challenge (scaleMonster).
   if (typeof ngPlusRun   !== 'undefined') ngPlusRun   = !!gs.ngPlusRun;
+  if (typeof ngPlusLevel !== 'undefined') ngPlusLevel = (typeof gs.ngPlusLevel === 'number') ? gs.ngPlusLevel : 0;
   if (typeof ngPlusTitle !== 'undefined') ngPlusTitle = gs.ngPlusTitle || '';
   // Mode Ironman : saves antérieures à l'ajout du mode → false/0/vide.
   ironmanMode     = !!gs.ironmanMode;

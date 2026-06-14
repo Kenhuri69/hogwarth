@@ -16,7 +16,7 @@
 //     individuel suffit pour eux.
 // =======================================================================
 
-const CACHE_VERSION = 'hogwarth-v141';
+const CACHE_VERSION = 'hogwarth-v142';
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 // Précache minimal (~1 Mo) : shell HTML/CSS/JS + premier visuel.
@@ -62,15 +62,15 @@ const PRECACHE_URLS = [
   './js/floor-events.js?v=1',
   './js/room-flavor.js?v=1',
   './js/item-icons.js?v=23',
-  './js/state.js?v=33',
+  './js/state.js?v=34',
   './js/hero-barks.js?v=8',
-  './js/ui.js?v=17',
+  './js/ui.js?v=18',
   './js/modal-a11y.js?v=1',
   './js/ui-character-sheet.js?v=7',
   './js/ui-settings.js?v=3',
   './js/ui-bestiary.js?v=5',
   './js/ui-codex.js?v=6',
-  './js/dungeon-scaling.js?v=4',
+  './js/dungeon-scaling.js?v=5',
   './js/dungeon.js?v=17',
   './js/dungeon-spawning.js?v=1',
   './js/textures.js?v=1',
@@ -103,16 +103,16 @@ const PRECACHE_URLS = [
   './js/intro.js?v=3',
   './js/shop.js?v=13',
   './js/save-slots.js?v=3',
-  './js/save.js?v=38',
+  './js/save.js?v=39',
   './js/save-visit-snapshot.js?v=1',
-  './js/profile.js?v=2',
+  './js/profile.js?v=3',
   './js/save-ui.js?v=9',
   './js/ironman.js?v=4',
   './js/hall-of-fame.js?v=4',
   './js/multiplayer.js?v=9',
   './js/multiplayer-social.js?v=1',
   './js/multiplayer-visits.js?v=1',
-  './js/main.js?v=26',
+  './js/main.js?v=27',
   './js/endgame.js?v=9',
   './js/break-cycle.js?v=4',
   './js/forge.js?v=4',

@@ -31,6 +31,30 @@ const ENDGAME_SCALING = {
   scalDelta: 0.5,
 };
 
+// ── New Game+ « vrai » (challenge empilable) ─────────────────
+// Multiplicateur GLOBAL appliqué aux monstres quand la partie courante est un
+// run NG+ (`ngPlusRun`), proportionnel au cran `ngPlusLevel` (= nombre de
+// victoires enregistrées au profil, plafonné). Compose avec la difficulté ET
+// la récursion endgame (Boucle). ZÉRO héritage : seuls les ennemis et leurs
+// gains changent, jamais l'or/inventaire/niveaux du joueur. Cf.
+// .claude/plans/ngplus-real.md.
+const NGPLUS_CAP             = 10;     // cran max pris en compte par le scaling
+const NGPLUS_STAT_PER_LEVEL  = 0.20;   // +20 % stats ennemies / cran
+const NGPLUS_REWARD_PER_LEVEL = 0.25;  // +25 % xp/or / cran (récompense le défi)
+const NGPLUS_DROP_PER_LEVEL  = 0.10;   // +10 % chance de drop / cran (borné à 1)
+
+// PUR & testable (units.js) — multiplicateurs dérivés du cran NG+. Niveau ≤ 0
+// (ou non fini) → identité {1,1,1} (no-op hors NG+). Plafonné à NGPLUS_CAP.
+function ngPlusScaling(level) {
+  const n = (typeof level === 'number' && isFinite(level) && level > 0)
+    ? Math.min(level, NGPLUS_CAP) : 0;
+  return {
+    stat:   1 + NGPLUS_STAT_PER_LEVEL   * n,
+    reward: 1 + NGPLUS_REWARD_PER_LEVEL * n,
+    drop:   1 + NGPLUS_DROP_PER_LEVEL   * n,
+  };
+}
+
 // Récursion endgame : applique `(stat × scal + fixEff)` exactement `n` fois.
 // Implémentation récursive pour refléter la spec du joueur. Le coût est nul
 // (n ≤ ~10 en pratique).
@@ -165,7 +189,7 @@ function applyLoopVariant(monster, n) {
 // Pré-victoire (n=0) : stat = base × intraMult × diffMult — comportement inchangé.
 // Post-victoire (n≥1) : récursion endgame `_endgameRecurse(stat0, n, fixEff, scal)`
 // avec `scal` et `fixEff` lissés par `intraMult` (cf. ENDGAME_SCALING en haut).
-function scaleMonster(base, floor) {
+function scaleMonster(base, floor, opts) {
   const ef        = effectiveFloor(floor);
   const isDark    = (ef !== floor);
   const n         = endgameTierIndex(floor);
@@ -239,6 +263,29 @@ function scaleMonster(base, floor) {
   // rendu (teinte/givre) et l'audio (souffle froid). Dérivée, non sérialisée.
   monster.corruption = creatureCorruptionLevel(base, floor);
 
+  // ── Passe New Game+ (challenge) ──────────────────────────────
+  // Dernière passe : multiplicateur global du cran NG+. `opts.ngPlusLevel`
+  // permet de neutraliser (buildEcho → échos astraux neutres) ; sinon on lit
+  // le run courant. Compose avec difficulté + récursion endgame.
+  const ngLevel = (opts && opts.ngPlusLevel != null)
+    ? opts.ngPlusLevel
+    : ((typeof ngPlusRun !== 'undefined' && ngPlusRun
+        && typeof ngPlusLevel !== 'undefined' && typeof ngPlusLevel === 'number')
+        ? ngPlusLevel : 0);
+  if (ngLevel > 0) {
+    const ng = ngPlusScaling(ngLevel);
+    monster.hp   = Math.floor(monster.hp  * ng.stat);
+    monster.atk  = Math.floor(monster.atk * ng.stat);
+    monster.def  = Math.floor(monster.def * ng.stat);
+    if (monster.mag) monster.mag = Math.floor(monster.mag * ng.stat);
+    monster.xp   = Math.floor(monster.xp   * ng.reward);
+    monster.gold = Math.floor(monster.gold * ng.reward);
+    if (monster.drops) {
+      monster.drops = monster.drops.map(d => ({ ...d, chance: Math.min(1, d.chance * ng.drop) }));
+    }
+    monster.ngPlusLevel = ngLevel;   // métadonnée (rendu/bestiaire éventuel)
+  }
+
   return monster;
 }
 
@@ -260,7 +307,8 @@ function buildEcho(monsterId, visitorLevel) {
   // dans scaleMonster. Plafond : pas de cap explicite — un visiteur très
   // haut niveau peut affronter un écho coriace, c'est le risque assumé.
   const effFloor = Math.max(1, visitorLevel | 0);
-  const scaled = scaleMonster(template, effFloor);
+  // Échos astraux neutres : pas de scaling NG+ (équilibré au niveau du visiteur).
+  const scaled = scaleMonster(template, effFloor, { ngPlusLevel: 0 });
   scaled._echo  = true;     // marqueur astral — lu par endBattle
   scaled._level = effFloor; // niveau effectif (pour la formule essence)
   scaled.gold   = 0;        // pas d'or de loot standard (§6.8)

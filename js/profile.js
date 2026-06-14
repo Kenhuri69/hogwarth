@@ -121,6 +121,15 @@ function ngPlusAvailable() {
   return _profileRead().victories >= 1;
 }
 
+// Cran NG+ empilable = nombre de victoires enregistrées, plafonné à NGPLUS_CAP
+// (dungeon-scaling.js). Chaque run terminé (victoire) débloque le cran suivant.
+// 0 si aucune victoire. Lu par confirmHeroSelection pour armer `ngPlusLevel`.
+function ngPlusMaxLevel() {
+  const v = _profileRead().victories | 0;
+  const cap = (typeof NGPLUS_CAP === 'number') ? NGPLUS_CAP : 10;
+  return Math.max(0, Math.min(v, cap));
+}
+
 // ── Codex du Sorcier (modale dédiée du hub de démarrage, P6) ──────
 // Bouton #hub-codex-btn (masqué si profil vierge) → openWizardCodex() ouvre
 // #wizard-codex-modal ; renderProfileCodex peuple le corps #wizard-codex-body.
@@ -205,5 +214,16 @@ function _refreshNgPlusOptIn() {
   if (!avail) {
     const cb = document.getElementById('ngplus-toggle');
     if (cb) cb.checked = false;
+    return;
+  }
+  // Affiche le cran disponible + l'ampleur du défi dans le libellé opt-in.
+  const lvl = (typeof ngPlusMaxLevel === 'function') ? ngPlusMaxLevel() : 1;
+  const titleEl = row.querySelector('.psel-ngplus-title');
+  const hintEl  = row.querySelector('.psel-ngplus-hint');
+  if (titleEl) titleEl.textContent = `✦ Nouvelle Partie+ ${lvl}`;
+  if (hintEl) {
+    const statPct   = Math.round((typeof NGPLUS_STAT_PER_LEVEL   === 'number' ? NGPLUS_STAT_PER_LEVEL   : 0.20) * lvl * 100);
+    const rewardPct = Math.round((typeof NGPLUS_REWARD_PER_LEVEL === 'number' ? NGPLUS_REWARD_PER_LEVEL : 0.25) * lvl * 100);
+    hintEl.textContent = `Ennemis +${statPct} % · butin +${rewardPct} %. Aucun héritage. (Cran = victoires.)`;
   }
 }
