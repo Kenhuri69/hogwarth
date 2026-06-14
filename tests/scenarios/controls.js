@@ -746,4 +746,86 @@ async function scenarioA11yFinish() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish] };
+// Passe « isolation de modale » : focus-trap générique + inert sur le fond +
+// restitution du focus au déclencheur. Vérifié sur #inventory-modal (chemin
+// MutationObserver commun aux 16 modales).
+async function scenarioModalIsolation() {
+  console.log('\n── Scénario : isolation de modale (focus-trap + inert) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  // a) Ouverture : focus initial dans la modale + fond inert. Le déclencheur
+  //    (bouton focusé avant l'ouverture) est mémorisé pour la restitution.
+  await page.evaluate(() => {
+    const trigger = document.createElement('button');
+    trigger.id = '__modal_trigger';
+    trigger.textContent = 'ouvrir';
+    document.body.appendChild(trigger);
+    trigger.focus();
+    openInventory();
+  });
+  // L'observer réagit en microtask : attendre que le focus soit entré.
+  await page.waitForFunction(() => {
+    const modal = document.getElementById('inventory-modal');
+    return modal && modal.contains(document.activeElement);
+  });
+
+  const opened = await page.evaluate(() => ({
+    focusInside: document.getElementById('inventory-modal').contains(document.activeElement),
+    bgInert: document.getElementById('game-container').hasAttribute('inert'),
+    modalOpen: !!(window.ModalA11y && window.ModalA11y.isModalOpen()),
+  }));
+  assert(opened.focusInside, 'le focus initial doit être posé dans la modale');
+  assert(opened.bgInert,     '#game-container doit être inert pendant qu\'une modale est ouverte');
+  assert(opened.modalOpen,   'ModalA11y doit signaler une modale ouverte');
+
+  // b) Tab piégé : depuis le dernier élément focusable, Tab boucle au premier ;
+  //    depuis le premier, Shift+Tab boucle au dernier.
+  const trap = await page.evaluate(() => {
+    const modal = document.getElementById('inventory-modal');
+    const sel = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const items = Array.from(modal.querySelectorAll(sel)).filter(el => el.getClientRects().length > 0);
+    const first = items[0], last = items[items.length - 1];
+    last.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    const wrappedToFirst = document.activeElement === first;
+    first.focus();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }));
+    const wrappedToLast = document.activeElement === last;
+    return { count: items.length, wrappedToFirst, wrappedToLast };
+  });
+  assert(trap.count >= 2,       'la modale doit contenir au moins 2 éléments focusables');
+  assert(trap.wrappedToFirst,   'Tab depuis le dernier élément doit revenir au premier (trap)');
+  assert(trap.wrappedToLast,    'Shift+Tab depuis le premier élément doit aller au dernier (trap)');
+
+  // c) Fermeture : inert retiré + focus restitué au déclencheur.
+  await page.evaluate(() => closeModal('inventory-modal'));
+  await page.waitForFunction(() =>
+    !document.getElementById('game-container').hasAttribute('inert'));
+  const closed = await page.evaluate(() => {
+    const restored = document.activeElement === document.getElementById('__modal_trigger');
+    const stillOpen = !!(window.ModalA11y && window.ModalA11y.isModalOpen());
+    document.getElementById('__modal_trigger').remove();
+    return { restored, stillOpen, bgInert: document.getElementById('game-container').hasAttribute('inert') };
+  });
+  assert(!closed.bgInert,   'le fond ne doit plus être inert après fermeture');
+  assert(closed.restored,   'le focus doit être restitué au déclencheur à la fermeture');
+  assert(!closed.stillOpen, 'ModalA11y ne doit plus signaler de modale ouverte');
+
+  // d) aria-describedby complété sur les modales à descriptif statique.
+  const aria = await page.evaluate(() => ({
+    donation: document.getElementById('house-donation-modal').getAttribute('aria-describedby'),
+    forge: document.getElementById('forge-modal').getAttribute('aria-describedby'),
+  }));
+  assert(aria.donation === 'house-donation-desc', 'le don de Maison doit porter aria-describedby');
+  assert(aria.forge === 'forge-hint',             'la forge doit porter aria-describedby');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées (isolation de modale)`);
+  }
+  console.log('  ✅ Isolation de modale (focus-trap + inert + restitution + aria) OK');
+  await browser.close();
+}
+
+module.exports = { scenarios: [scenarioMobileSelect, scenarioCombatMobile, scenarioRelativeControls, scenarioCanvasSwipe, scenarioCameraPresence, scenarioCombatKeyboard, scenarioConfirmModal, scenarioA11yFinish, scenarioModalIsolation] };
