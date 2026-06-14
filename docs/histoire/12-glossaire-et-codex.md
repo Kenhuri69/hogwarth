@@ -3,14 +3,14 @@
 **Statut :** 🟩 proposition de référence — finalisée, à valider / amender
 
 > ✅ **Statut réel (code, 2026-06-13)** : le **Codex est LIVRÉ** — `js/codex.js`
-> (registre `CODEX_ENTRIES`, ~35 entrées dont `cle_de_voute`, `voix_*`,
+> (registre `CODEX_ENTRIES`, ~36 entrées dont `cle_de_voute`, `voix_*`,
 > `briser_cycle`, `cycle_brise`… + évaluateur pur `codexEntryState()`),
 > `js/ui-codex.js` (modale `#codex-modal`, bouton 📖 `openCodex()`). La section
-> **« ÉTAPE 2 — Plan d'implémentation » ci-dessous est donc PÉRIMÉE** : la
-> traiter comme un **historique de conception**. Le travail restant n'est plus
-> de *construire* le Codex mais d'**auditer la complétude de ses entrées**
-> (coquilles vs `textVersions` rédigées) — cf. Roadmap Phase 2.
-> Voir `docs/REVUE-TRANSVERSALE-ET-ROADMAP.md` §1.2.
+> **« ÉTAPE 2 » ci-dessous a été réconciliée** (2026-06-14) : elle ne décrit
+> plus du « à construire » mais l'**état livré** (cartographie brique → module).
+> Le travail restant n'est plus de *construire* le Codex mais d'**auditer la
+> complétude de ses entrées** (coquilles vs `textVersions` rédigées, fait —
+> cf. Roadmap Phase 2). Voir `docs/REVUE-TRANSVERSALE-ET-ROADMAP.md` §1.2.
 
 > Objectif : faire du Chapitre 12 le **Codex** — le **journal vivant et
 > déverrouillable** du joueur. Il centralise les **termes propres au jeu**, les
@@ -86,7 +86,7 @@ mais **la mémoire qui s'approfondit**.
 | **Acte III** (7–10) | C | 📜 **Registre des Profondeurs** : parchemins recousus, fragments de stèles recopiés, le Codex *cite* les Fondateurs. | Grave, érudit. *« Le verrou cachait deux choses, pas une. »* |
 | **Acte IV** (11+) | C→D | 🗿 **Archive des Ruines Anciennes** : tablettes runiques, échos temporels transcrits, pages qui s'écrivent *seules*. | Mythologique, hors-temps. *« Sous Poudlard, la pierre n'a plus de nom. »* |
 
-> 💡 **Mise en scène visuelle** (cf. ÉTAPE 2 §IV) : le **fond de parchemin** du
+> 💡 **Mise en scène visuelle** (livrée, cf. ÉTAPE 2 « Cartographie » + `js/ui-codex.js`) : le **fond de parchemin** du
 > Codex se **dégrade** par Acte — vélin propre en A, taché et gelé en B, recousu
 > en C, gravé dans la roche runique en D. La même couverture, quatre âges.
 > Aucune page n'est *jamais retirée* : la naïveté du carnet d'élève reste
@@ -109,7 +109,7 @@ mais **la mémoire qui s'approfondit**.
 - **Il est une récompense narrative forte.** Compléter une entrée *corrompue*
   (passer de la version voilée à la version *révélée*) est un **petit climax** :
   une vérité qui se dépose, accompagnée d'un effet de parchemin et d'un son
-  d'écriture (cf. ÉTAPE 2 §VIII).
+  d'écriture (`playCodexWrite`, cf. ÉTAPE 2 « Assets »).
 
 ### 12.1.3 Mécanique de déverrouillage — quatre robinets
 
@@ -695,172 +695,39 @@ sérialisés ou dérivables** (pas de nouvel état lourd) :
 
 ---
 
-# ÉTAPE 2 — Plan d'implémentation
+# ÉTAPE 2 — État livré (réconcilié 2026-06-14)
 
-> Objectif technique : faire du Codex un **système jouable** sans casser
-> l'architecture zéro-dépendance / zéro-build. Beaucoup de briques **existent
-> déjà** (✅, surtout côté bestiaire) ; ce plan distingue l'acté (✅) du à
-> construire (🔧). Détail opérationnel (lots, cases à cocher) dans le plan
-> dédié : [`.claude/plans/_archive/ch12-codex-impl.md`](../../.claude/plans/_archive/ch12-codex-impl.md).
+> ✅ **Système entièrement livré.** Ce qui suit fut un *plan d'implémentation* ;
+> le Codex est désormais **codé, câblé et versionné**. Cette section ne décrit
+> plus du « à construire » mais l'**état réel** + les renvois module. Le détail
+> opérationnel historique (lots, cases à cocher) reste archivé dans
+> [`.claude/plans/_archive/ch12-codex-impl.md`](../../.claude/plans/_archive/ch12-codex-impl.md).
 
-## I. Structure des données
+## Cartographie brique → module livré
 
-> Principe : **ne pas dupliquer les sources existantes.** Le Bestiaire reste géré
-> par `monsters.js` + `ui-bestiary.js` (✅). On ajoute **un seul registre** pour
-> les entrées **non-créature** (Glossaire, Lieux, Histoire, Éclats, Objets,
-> Personnages-lore), au même format que les autres registres de données du jeu.
+| Brique (ex-plan) | Module(s) réel(s) | État |
+|------------------|-------------------|------|
+| Registre `CODEX_ENTRIES` + helpers purs `getCodexEntry` / `codexEntryState` / `unlockedCodexFor` / `codexVariantNote` | `js/codex.js` (registre + évaluateur purs, **au MANIFEST `loader.js`**) | ✅ livré |
+| Évaluateur d'état `'locked'/'veiled'/'revealed'/'corrupted'` | `codexEntryState()` (`js/codex.js`) — pur, couvert par `tests/units.js` | ✅ livré |
+| Hook de réévaluation `checkCodexUnlocks(reason)` aux points d'`autoSave` | `js/ui-codex.js` + appels dans `battle-rewards.js`, `quests.js`, `movement*.js`, `break-cycle.js`, `floor-ambiance.js`, `main.js` | ✅ livré |
+| Globals sérialisés `unlockedCodexEntries`, `floorReached` | `js/state.js` (+ `js/save.js`) | ✅ livré |
+| Robinet **échos** (zone D / Voix des Fondateurs) | **livré sous le nom `seenEchoes`** (`state.js:523`, sérialisé ; 18 conditions `echo` dans `codex.js`) — l'ex-nom `temporalEchoSeen` du plan n'a pas été retenu | ✅ livré |
+| Menu Codex `openCodex()` + modale **dédiée `#codex-modal`** + bouton 📖 + recherche/filtres | `js/ui-codex.js`, `index.html` (`filterCodex`, `showCodexEntry`) | ✅ livré |
+| Notifications + SFX (`playCodexWrite` / `playCodexReveal`) | `js/audio-sfx.js` (défensifs) | ✅ livré |
+| Bestiaire embarqué (familles, codex 2 paliers) | `js/ui-bestiary.js` (réutilisé, non réécrit) | ✅ livré |
+| Variantes Maison/héros (notes marginales) + choix scénarisés (`slythPactChoice`) | `codexVariantNote()` (`js/codex.js`) | ✅ livré |
 
-| Donnée | Fichier | État |
-|--------|---------|------|
-| Entrées **créature** (lore/habitat/anecdote/danger, familles, codex 2 paliers) | `js/monsters.js` + `js/ui-bestiary.js` | ✅ existe |
-| Items Éclats (`eclat_voute`, `eclat_lumiere`…) | `js/data.js` (`ITEMS`) | ✅ existe |
-| Stèles / voix des Fondateurs | `js/riddles.js` (`r_clef_voute`) | ✅ existe |
-| **Registre Codex non-créature** `CODEX_ENTRIES[]` (format §12.3) | 🔧 nouveau `js/codex.js` (données pures + helpers purs) | 🔧 à créer |
-| Helpers de requête purs (`getCodexEntry`, `codexEntryState`, `unlockedCodexFor`) | 🔧 `js/codex.js` | 🔧 à créer |
+> **Contenu** : audit de complétude réalisé (2026-06-13) — 36 entrées, **0 coquille
+> vide**, 0 condition morte ; 6 entrées de lore majeur enrichies d'une couche
+> `revealed` (cf. roadmap Phase 2, [REVUE](../REVUE-TRANSVERSALE-ET-ROADMAP.md)).
 
-```jsonc
-// js/codex.js — extrait du registre (données pures, zéro dépendance)
-const CODEX_ENTRIES = [
-  { id:"cle_de_voute", category:"histoire", title:"La Clé de Voûte des Quatre",
-    act:1, icon:"🔑", links:["eclat_voute_codex","ruines_anciennes","fondateurs"],
-    unlockConditions:[{type:"floor",value:1}],
-    revealedBy:[{type:"eclat",value:3}],
-    corruptedBy:[{type:"floor",value:14}],
-    textVersions:{ veiled:"…", revealed:"…", corrupted:"…" } },
-  // … (entrées §12.4)
-];
-```
+## Assets — état
 
-> 💡 `codex.js` est **inerte au runtime** côté logique (pur registre + helpers
-> purs), à l'image de `quests-templates.js` / `riddles.js`. Chargé **avant** son
-> UI. À déclarer au **MANIFEST de `loader.js`** (`CLAUDE.md` « Loader »).
-
-## II. Variables & flags nécessaires
-
-| Variable / flag | Portée | Rôle | État |
-|-----------------|--------|------|------|
-| `seenMonsters` (Set) · `monsterKills` (obj) | `state.js`, sérialisés | Robinet **Bestiaire** (✅ pilote déjà `_codexTier`) | ✅ existe |
-| `activeQuests` (+ quêtes terminées) | `state.js`, sérialisé | Robinet **quête** | ✅ existe |
-| Nombre de `eclat_voute` (inventaire) | item | Robinet **Éclat** (dérivable, `eclatProgress = count`) | ✅ existe |
-| `currentFloor` / max atteint | `state.js` | Robinet **étage** (`floorReached = max(floorReached, currentFloor)`) | ✅ `currentFloor` ; 🔧 `floorReached` (max, sérialisé) |
-| `unlockedCodexEntries` (Set d'ids) | 🔧 `state.js`, **sérialisé** | Entrées **non-créature** ouvertes/révélées (mémorise l'instant du déverrouillage pour la notification) | 🔧 à ajouter |
-| `temporalEchoSeen` (Set d'ids) | 🔧 `state.js`, sérialisé | Échos temporels *vus* (zone D) → robinet `echo` | 🔧 à ajouter (cf. [10 §10.8]) |
-| `riddlesSolved` (Set) | `state.js` | Stèles résolues → robinet `riddle` | ✅/🔧 selon l'existant (sinon dériver de l'état de stèle) |
-| `victoryAchieved` · `chosenHouse` | `state.js` | Gate Boucle / variantes Maison | ✅ existe |
-
-> ⚠️ **Un seul** nouveau global sérialisé majeur (`unlockedCodexEntries`) : les
-> entrées créature **restent dérivées** de `seenMonsters`/`monsterKills` (pas de
-> double source de vérité). Tout nouveau global critique → **MANIFEST `loader.js`**.
-> Helpers purs → couverts par `tests/units.js`.
-
-## III. Système de déverrouillage progressif & notifications
-
-- 🔧 **Évaluateur central pur** `codexEntryState(entry, ctx)` → `'locked' |
-  'veiled' | 'revealed' | 'corrupted'`, où `ctx` agrège les signaux
-  (`floorReached`, `eclatProgress`, `seenMonsters`, `monsterKills`,
-  `questsDone`, `riddlesSolved`, `temporalEchoSeen`, `victoryAchieved`,
-  `chosenHouse`). **Pur, testable** (`tests/units.js`).
-- 🔧 **Hook de réévaluation** `checkCodexUnlocks(reason)` appelé aux **mêmes
-  points que `autoSave`** (fin de combat, level-up, changement d'étage,
-  complétion de quête, ramassage d'Éclat, stèle résolue, écho vu). Compare l'état
-  courant à `unlockedCodexEntries` ; toute **nouvelle** ouverture/révélation →
-  notification + ajout au Set. Défensif (`typeof` garde).
-- 🔧 **Notification** (réutilise l'UX existante) : toast discret « 📖 Codex —
-  nouvelle entrée : *La Clé de Voûte des Quatre* » + son d'écriture (§VIII). Pour
-  une **révélation** (voilée → révélée) : toast « ✨ Codex révélé : *…* ». Jamais
-  bloquant, jamais en plein combat (file d'attente, comme les level-ups).
-- ✅ **Bestiaire** : `seenMonsters` alimenté dans `startBattle`, codex profond
-  déjà géré — on **branche** simplement la notification « nouvelle créature » sur
-  le même hook pour l'unifier (cosmétique).
-
-## IV. Intégration UI (menu Codex, recherche, catégories, parchemin)
-
-- 🔧 **Menu Codex** : nouveau bouton 📖 dans la barre de commandes →
-  `openCodex()` (modale `#codex-modal`). **Réutilise** l'architecture du
-  bestiaire (`ui-bestiary.js`) : grille de cartes + fiche détail.
-  - **Onglets** = 7 sections (§12.2). L'onglet **Bestiaire** *embarque* la vue
-    `openBestiary()` existante (pas de réécriture).
-  - **Recherche** : champ texte (filtre titre + contenu révélé), comme
-    `filterBestiary()`.
-  - **Filtres** : par section, par état (verrouillée/voilée/révélée/corrompue),
-    par Acte.
-- 🔧 **Visuel parchemin** : fond `img/codex/parchment_<act>.png` (4 variantes,
-  §12.1.1) ; entrée verrouillée = silhouette grisée + « ??? » ; révélation =
-  animation de sceau doré + transition d'opacité (CSS, réutilise les transitions
-  de modale existantes, `immersion-n1`). Aucune lib.
-- 🔧 **Graphe `links[]`** : liens cliquables entre entrées (navigation interne).
-- ✅ **Mobile** : la modale suit le responsive existant (96vw scrollable,
-  accordéon par section comme la fiche perso, [CLAUDE.md « Modale Personnage »]).
-
-> 💡 **Réutilisation maximale** : `openCodex` ≈ `openBestiary` généralisé. Le
-> conteneur `#char-detail` est **déjà** partagé par fiche/quêtes ; on lui ajoute
-> un 3ᵉ consommateur **OU** on crée `#codex-modal` dédié (préférable : évite les
-> collisions, cf. garde-fou `#char-detail` de `CLAUDE.md`).
-
-## V. Gestion des variantes (Maison / héros / choix)
-
-- 🔧 `codexVariantNote(entry, chosenHouse, heroKeys)` → renvoie la **note
-  marginale** `variants.house[chosenHouse]` (ou `variants.hero[...]`) si présente,
-  sinon `null`. **Défensif, cosmétique** : n'altère jamais le corps de l'entrée
-  (cohérence §12.5.1 / [04 §4.7]).
-- ✅ **Précédent** : la voix de la **Maison du héros** est la plus claire ([10
-  §10.8]) — la note marginale en est la trace Codex.
-- 🔧 **Choix scénarisés** (`slythPactChoice`…) : une entrée peut avoir deux
-  `revealed` selon un flag de choix → champ optionnel `revealedVariant` indexé
-  par flag (rare, réservé aux entrées de quête signature).
-
-## VI. Intégration avec bestiaire, lieux, quêtes & fil rouge Éclats
-
-- ✅ **Bestiaire** : section B = la vue existante (familles F1–F5, codex 2
-  paliers). **Aucune réécriture** ; on l'**héberge** dans le Codex.
-- 🔧 **Lieux** : section L alimentée par `floorReached` + `temporalEchoSeen`.
-  Source de texte = fiches sensorielles [10 §10.2] (déjà écrites) → entrées
-  `CODEX_ENTRIES` de catégorie `lieux`. Le « Codex de lieu » de [10 §10.9] **est**
-  cette section.
-- ✅ **Fil rouge Éclats** : section É pilotée par le **compte de `eclat_voute`**
-  (`eclatProgress`) ; la quête `eclats_clef_voute` reste le donneur. La
-  révélation en 3 temps (§12.4.7) mappe `revealedBy:[{eclat:1|2|3}]`.
-- ✅ **Voix des Fondateurs** : stèle `r_clef_voute` (✅) + échos temporels (🔧
-  `temporalEchoSeen`) → entrées É (`echo_scellement`, voix par Fondateur).
-- 🔧 **Quêtes signature** : entrées P/É liées aux flags `<house>SignatureDone` /
-  `slythPactChoice` ([08 §8.5]) — robinet `quest`.
-- 🔧 **Renvois doc ↔ data** : chaque entrée majeure de §12.4 porte le même `id`
-  que l'objet `CODEX_ENTRIES` (traçabilité doc → code).
-
-## VII. Priorisation (ordre de réalisation)
-
-1. **Squelette data + évaluateur pur (zéro risque)** : `js/codex.js`
-   (`CODEX_ENTRIES` + `codexEntryState`), tests `tests/units.js`. *Aucune UI, aucun
-   global muté.* → fondation testable.
-2. **Entrées de la trame principale** (Histoire & Éclats & Voix) : Clé de Voûte,
-   3 Éclats, 4 voix, double trame. → *sert d'abord le « pourquoi » (objectif #1).*
-3. **Menu Codex + onglet Bestiaire embarqué** (`openCodex`, `#codex-modal`) +
-   `unlockedCodexEntries` + hook `checkCodexUnlocks` + notifications. → le Codex
-   devient **consultable**.
-4. **Lieux & Glossaire** (robinet étage/Acte) : reprise des fiches [10] et du
-   glossaire §12.7. → couverture large, faible risque.
-5. **Personnages & Objets** (robinet quête/découverte) + **variantes Maison**
-   (notes marginales). → profondeur & rejouabilité.
-6. **Échos temporels** (`temporalEchoSeen`, zone D) + états **corrompus**. →
-   endgame, en dernier (dépend de l'ambiance zone D, plan
-   [`ambiance-zone-d-fx.md`](../../.claude/plans/_archive/ambiance-zone-d-fx.md)).
-
-> Garde-fous transverses : chaque helper pur → `tests/units.js` ; tout changement
-> JS/CSS → **bump cache PWA** (skill `cache-bump`) + `node tests/smoke.js`
-> (guidelines §7/§8). Les étapes 1–2 sont **data/doc** : faible risque.
-
-## VIII. Suggestions d'assets
-
-| Type | Besoin | Piste |
-|------|--------|-------|
-| **Visuel** | 4 fonds de parchemin par Acte (`parchment_a..d.png`) — vélin propre → givré → recousu → runique | Texture procédurale ou 4 PNG ; **placeholder** = dégradé CSS + filtre `sepia/hue-rotate` (déjà faisable sans asset). |
-| **Icônes** | Icônes de **section** (📖🐉🗺️👤🔥🔹⚜️) et d'**entrée majeure** | Emoji fallback immédiat ; pipeline `tools/icon_factory.py` pour les entrées phares (Clé de Voûte, Éclats). |
-| **Effet de révélation** | Animation « sceau qui se pose » / encre qui apparaît (voilée → révélée) | CSS keyframes (opacité + glow doré), réutilise `immersion-n1` (transitions de modale). Aucune lib. |
-| **SFX** | Son d'**écriture sur parchemin** (nouvelle entrée) + **sceau** (révélation) | `audio-sfx.js` — `playCodexWrite()` (noise filtré + plume) / `playCodexReveal()` (cloche douce). Défensif. |
-| **Voix** | Murmure FR des **quatre voix** sur l'écho du scellement | Optionnel via `AudioSystem.speakBark` / OGG ; silencieux si absent. |
-| **Texte** | Versions voilée/révélée/corrompue des entrées majeures | **Déjà rédigées** ici (§12.4) ; étendre depuis les fiches [09]/[10] et le glossaire §12.7. |
-
----
+Les visuels parchemin par Acte restent en **fallback CSS** (dégradé + filtre
+`sepia/hue-rotate`) : fonctionnel sans PNG dédiés. Les SFX (`playCodexWrite` /
+`playCodexReveal`) et l'effet de révélation (keyframes CSS, glow doré) sont
+livrés. Versions voilée/révélée/corrompue : rédigées en §12.4. Reste **optionnel**
+(polish, non bloquant) : 4 PNG `parchment_<act>.png` et la voix FR des Fondateurs.
 
 ## Objectifs finaux — comment ce chapitre les sert
 
@@ -885,13 +752,13 @@ const CODEX_ENTRIES = [
 
 1. ❓ **Huitième onglet « Voyageur »** (Mondes Parallèles) ou intégration dans
    Glossaire/Objets ? (§12.2) — *proposition : Glossaire/Objets.*
-2. ❓ **Conteneur UI** : `#codex-modal` dédié (recommandé) ou 3ᵉ consommateur de
-   `#char-detail` ? (§IV)
+2. ✅ **Conteneur UI** : **tranché — modale dédiée `#codex-modal`** (livrée,
+   `js/ui-codex.js`), pas de partage de `#char-detail`.
 3. ❓ Profondeur des **états corrompus** : généralisés à toutes les entrées
    majeures en zone D, ou réservés à une poignée d'entrées-phares ? (§12.6.2)
 4. ❓ **Reliques de la Mort** : pur easter egg Codex allusif, ou mini-arc ? (§12.8)
 5. 💡 Brancher la **notification « nouvelle créature »** existante sur le hook
-   Codex unifié (cosmétique, faible coût) ? (§III)
+   Codex unifié (cosmétique, faible coût) — `checkCodexUnlocks`, `js/ui-codex.js`.
 
 ---
 
