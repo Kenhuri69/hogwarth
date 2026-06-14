@@ -1472,7 +1472,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | `gold` | number\|{min,max} | Or de base (scalé automatiquement) |
 | `drops` | [{itemId, chance}] | Drops potentiels après victoire |
 
-### Monstres définis (71 au total)
+### Monstres définis (72 au total)
 | Étages | Monstres |
 |--------|---------|
 | 1–3    | Chat de Mme Norris, Luciole des Marais, Cornichon de Cornouailles, Portrait Hostile, Peeve, Mimi Geignarde, Serpent des Cachots |
@@ -1489,6 +1489,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | 9+ / Boucle | **Moremplis** (Lethifold canon epic, `minFloor:9` → réel 9-10 + Boucle 19+ ; caster/drain, faible lumière ; cible de la purge `purge_moremplis` du Gardien) |
 | 10+ / Boucle | **Magyar Ancestral** (dragon canon epic, `minFloor:10` → dernier étage pré-victoire + Boucle 20+ ; brute → Broyer auto, souffle de feu + `burn`, résiste feu, faible glace) |
 | 8+ / Boucle | **Spectre de Givre** (boss original epic, `minFloor:8` → réel 8+ + Boucle 18+ ; caster glace, statut `gel` + `stun`, catégorie fantôme → Lumos Solem ×1,5, faible feu) |
+| 7+ / Boucle | **Héraut de l'Orage** (boss original epic, `minFloor:7` → réel 7+ + Boucle 17+ ; caster foudre rapide, dégâts purs + `stun` + dispel, résiste foudre, faible physique) |
 | **+14 ajouts récents** | Niffleur, Elfe de Maison Rebelle, Bowtruckle Géant, Chevalier Fantôme, Gremlin Magique, Manticore Juvénile, Gardien du Portail, Fantôme du Sang Noir, Chauve-Souris Vampire, Vampire Novice, Strigoï Ancien, Poupée Maudite, Spectre Maudit, Hécate la Maudisseuse — voir `monsters.js` pour `minFloor`/`maxFloor` |
 | **+4 monstres étourdissants** | Lutin de Cornouailles (1–4), Strangulot (3–7), Pitiponk (4–8), Gargouille Éveillée (5–10) — capacité `effect:"status", statusId:"stun"`. PNG dédiés dans `img/monsters/`. |
 
