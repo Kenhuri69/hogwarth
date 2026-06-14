@@ -162,6 +162,12 @@ function endBattle(won) {
             CFX_safe.lootPop(item); // J1
           }
         }
+        // Premium Ténébreux (§3 P3.3c) : un boss epic vaincu en Boucle profonde
+        // (≥18) peut léguer la variante Premium de ta Maison (one-shot).
+        if (e.epic && (currentFloor || 0) >= 18 && Math.random() < 0.20
+            && typeof grantHousePremiumDrop === 'function') {
+          grantHousePremiumDrop('boss');
+        }
       }
       // Matériaux endgame (Tranche 2) — gate étage 11+ (boucle ténébreuse).
       // Variant darkness boost le drop ×2 (cf. .claude/plans/forge-library-audit.md §4.2).
