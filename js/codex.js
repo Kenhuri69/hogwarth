@@ -555,6 +555,18 @@ const CODEX_ENTRIES = [
     },
   },
 
+  // Méta-objectif (§1.4 C / §1.8) : réunir les 4 reliques vocales (Murmures),
+  // octroyées en voyant chaque écho de Fondateur en Boucle. Cosmétique.
+  {
+    id: 'choeur_des_fondateurs', category: 'objets', icon: '🗣️', act: 4,
+    title: 'Le Chœur des Fondateurs',
+    links: ['echo_scellement', 'voix_godric', 'voix_salazar', 'voix_rowena', 'voix_helga'],
+    unlockConditions: [{ type: 'allItems', value: ['voix_godric_relique', 'voix_salazar_relique', 'voix_rowena_relique', 'voix_helga_relique'] }],
+    textVersions: {
+      veiled: "Quatre Murmures recueillis au fil des Boucles — Godric, Salazar, Rowena, Helga. Réunis sur un même sorcier, ils ne forment plus quatre voix mais une seule : le Chœur qui scella jadis la Voûte. Tenir, douter, comprendre, abriter — les quatre faces d'un même courage.",
+    },
+  },
+
 ];
 
 // ── Helpers PURS ─────────────────────────────────────────────

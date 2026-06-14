@@ -148,6 +148,42 @@ function tryAddItem(itemOrId, opts = {}) {
   return true;
 }
 
+// ── Reliques vocales (§1.4 C) — octroi écho-gaté ────────────────────────
+// En voyant l'écho d'un Fondateur en Boucle (echo_godric…), le héros reçoit
+// la relique vocale correspondante. One-shot : pas de re-grant si déjà
+// possédée (sac OU équipée). Appelé défensivement par floor-ambiance.js.
+const VOICE_RELIC_BY_ECHO = {
+  echo_godric:  'voix_godric_relique',
+  echo_salazar: 'voix_salazar_relique',
+  echo_rowena:  'voix_rowena_relique',
+  echo_helga:   'voix_helga_relique',
+};
+function _ownsItemId(id) {
+  if (typeof player !== 'undefined' && player && Array.isArray(player.inventory)
+      && player.inventory.some(it => it && it.id === id)) return true;
+  if (typeof party !== 'undefined' && Array.isArray(party)) {
+    for (const c of party) {
+      if (!c || !c.equipped) continue;
+      for (const it of Object.values(c.equipped)) {
+        if (it && it.id === id) return true;
+      }
+    }
+  }
+  return false;
+}
+function grantVoiceRelicForEcho(echoId) {
+  const relicId = VOICE_RELIC_BY_ECHO[echoId];
+  if (!relicId || _ownsItemId(relicId)) return false;
+  const item = (typeof ITEMS !== 'undefined') && ITEMS.find(i => i.id === relicId);
+  if (!item) return false;
+  const ok = tryAddItem(relicId, { silent: true });
+  if (typeof addMsg === 'function') {
+    addMsg(ok ? `🗣️ Une voix ancienne se condense en relique : ${item.name} rejoint ton sac.`
+              : `Sac plein — ${item.name} n'a pu être recueilli.`, ok ? 'good' : 'bad');
+  }
+  return ok;
+}
+
 // Compte les exemplaires d'un matériau (par id) dans le sac partagé.
 // Délègue à _countItems (qty-aware : les matériaux empilés somment leur
 // `qty`).

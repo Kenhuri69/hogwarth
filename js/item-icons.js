@@ -243,6 +243,10 @@ const ITEM_ICON_REGISTRY = {
   // Artefacts P2 — variantes Premium (repli legacy ; painterly/Gemini en
   // priorité 1 via ITEM_ICON_NEW_REGISTRY). Réutilise un PNG de famille proche.
   talisman_blaireau:                'img/icons/items/amulette.png',
+  voix_godric_relique:              'img/icons/items/amulette.png',
+  voix_salazar_relique:             'img/icons/items/amulette.png',
+  voix_rowena_relique:              'img/icons/items/amulette.png',
+  voix_helga_relique:               'img/icons/items/amulette.png',
   orbe_runique_premium_gryff:       'img/icons/items/amulette.png',
   masque_rituel_premium_slyth:      'img/icons/items/chapeau_pointu.png',
   baton_ancestral_premium_serd:     'img/icons/items/wand2.png',
@@ -251,6 +255,11 @@ const ITEM_ICON_REGISTRY = {
 
 // Mapping painterly pipeline (étape 9 — voir SVG_PLAN / tools/icon_factory.py)
 const ITEM_ICON_NEW_REGISTRY = {
+  // Artefacts & Reliquaires 2.0 — P3.3b reliques vocales (§1.4 C).
+  voix_godric_relique:  'img/icons_new/voix_godric_relique_64.png',
+  voix_salazar_relique: 'img/icons_new/voix_salazar_relique_64.png',
+  voix_rowena_relique:  'img/icons_new/voix_rowena_relique_64.png',
+  voix_helga_relique:   'img/icons_new/voix_helga_relique_64.png',
   // Artefacts & Reliquaires 2.0 — P3 forme défensive Poufsouffle.
   talisman_blaireau:    'img/icons_new/talisman_blaireau_64.png',
   // Artefacts & Reliquaires 2.0 — P2 variantes Premium par Maison.

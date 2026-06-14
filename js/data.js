@@ -858,6 +858,16 @@ const ITEMS = [
   { id:"baton_ancestral_premium_serd", name:"Bâton Ancestral de Rowena", icon:"🌳", desc:"ATK+8 MAG+11 · Dégâts crit. de sort +34 % — Premium Serdaigle", type:"wand", slot:"wand", formType:"baton", rarity:"epic", bonusAtk:8, bonusMag:11, bonusSpellCritDamage:0.34, power:11, price:0, premium:true, premiumOf:"baton_ancestral", houseAffinity:"Serdaigle", premiumFx:"serd", tint:"#0e1a40", rarityScales:true, basePrice:9000 },
   // Poufsouffle — Talisman des Fondateurs terre cuite (base talisman_fondateurs epic ×1.35).
   { id:"talisman_fondateurs_premium_pouf", name:"Talisman de Helga", icon:"📿", desc:"MAG+5 DEF+5 · Régen +3 PV/+1 PM par tour — Premium Poufsouffle", type:"acc", slot:"amulet", formType:"talisman", rarity:"epic", bonusMag:5, bonusDef:5, regenHp:3, regenSp:1, power:5, price:0, premium:true, premiumOf:"talisman_fondateurs", houseAffinity:"Poufsouffle", premiumFx:"pouf", tint:"#f0c75e", rarityScales:true, basePrice:9000 },
+  // ── C. Reliques vocales (§1.4 C) — trinket, NON vendables (price:0),
+  // octroyées en voyant l'écho du Fondateur en Boucle (grantVoiceRelicForEcho).
+  // Les 4 réunies déverrouillent le Codex « Chœur des Fondateurs ». Passifs sur
+  // champs prouvés : « fearImmune partiel » (Godric) & « spellLifesteal »
+  // (Salazar) du plan rendus en stats (pas de mécanisme partiel/lifesteal
+  // d'item dédié) ; « régen /pas » (Helga) rendu en regenHp /tour de combat.
+  { id:"voix_godric_relique",  name:"Murmure de Godric",  icon:"🦁", desc:"Relique vocale — ATK+4 LCK+2. « On ne scelle pas par peur. On tient la porte. »", type:"acc", slot:"trinket", formType:"relique_vocale", rarity:"epic", bonusAtk:4, bonusLck:2, power:4, price:0, houseAffinity:"Gryffondor", tint:"#d3a625" },
+  { id:"voix_salazar_relique", name:"Murmure de Salazar", icon:"🐍", desc:"Relique vocale — MAG+4 · Crit de sort +5 %. « J'ai scellé ma part avec ma faute. »", type:"acc", slot:"trinket", formType:"relique_vocale", rarity:"epic", bonusMag:4, bonusSpellCritChance:5, power:4, price:0, houseAffinity:"Serpentard", tint:"#1a472a" },
+  { id:"voix_rowena_relique",  name:"Murmure de Rowena",  icon:"🦅", desc:"Relique vocale — INT+4 · −1 PM par sort. « Comprends, et la faille apparaît. »", type:"acc", slot:"trinket", formType:"relique_vocale", rarity:"epic", bonusInt:4, spCostReduction:1, power:4, price:0, houseAffinity:"Serdaigle", tint:"#0e1a40" },
+  { id:"voix_helga_relique",   name:"Murmure de Helga",   icon:"🦡", desc:"Relique vocale — DEF+4 · Régen +2 PV/tour. « J'ai creusé un abri pour ceux qui resteraient. »", type:"acc", slot:"trinket", formType:"relique_vocale", rarity:"epic", bonusDef:4, regenHp:2, power:4, price:0, houseAffinity:"Poufsouffle", tint:"#f0c75e" },
   // ── Récompenses des Quêtes Signature de Maison (remises cérémonielles) ──
   // Cf. docs/histoire/08 §8.5 + .claude/plans/house-signature-quests-impl.md.
   { id:"banniere_godric",  name:"Bannière de Godric",   icon:"🚩", desc:"Bibelot — l'Étendard qui ne s'incline jamais. Immunise le groupe contre la Peur tant qu'un héros la porte. ATK+2.", type:"trinket", slot:"trinket", family:"banner_godric", rarity:"legendary", bonusAtk:2, fearImmune:true, power:5, price:0, tint:"#d3a625" },

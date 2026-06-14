@@ -1667,6 +1667,29 @@ RECIPES: Dict[str, Recipe] = {
             {"kind": "gem_facet_shine", "region": "gem", "color": (210, 184, 130)},
         ],
     ),
+    # Reliques vocales (P3.3b) — recettes minimales : seules rarity/sparkles
+    # sont lues par --raster (cadrage halo+cartouche d'une source Copilot
+    # banque dans tools/raster_src/). silhouette/fills inertes ici.
+    "voix_godric_relique": Recipe(
+        id="voix_godric_relique", name="Murmure de Godric", rarity="epic",
+        material="metal", silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (180, 150, 90), "setting": (211, 166, 37), "gem": (116, 0, 1)},
+    ),
+    "voix_salazar_relique": Recipe(
+        id="voix_salazar_relique", name="Murmure de Salazar", rarity="epic",
+        material="metal", silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (170, 170, 170), "setting": (150, 150, 150), "gem": (26, 71, 42)},
+    ),
+    "voix_rowena_relique": Recipe(
+        id="voix_rowena_relique", name="Murmure de Rowena", rarity="epic",
+        material="metal", silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (148, 107, 45), "setting": (148, 107, 45), "gem": (14, 26, 64)},
+    ),
+    "voix_helga_relique": Recipe(
+        id="voix_helga_relique", name="Murmure de Helga", rarity="epic",
+        material="metal", silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (200, 168, 96), "setting": (240, 199, 94), "gem": (55, 46, 41)},
+    ),
 }
 
 

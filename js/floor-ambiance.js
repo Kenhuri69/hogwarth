@@ -483,6 +483,8 @@ function maybeFounderChamberBeat(floor) {
   if (typeof setNarrative === 'function') setNarrative(beat.narrative);
   if (typeof addMsg === 'function') addMsg('📜 ' + beat.toast, 'narrative');
   if (typeof seenEchoes !== 'undefined' && seenEchoes && beat.echoId) seenEchoes.add(beat.echoId);
+  // §1.4 C — voir l'écho d'un Fondateur octroie sa relique vocale (one-shot).
+  if (typeof grantVoiceRelicForEcho === 'function' && beat.echoId) grantVoiceRelicForEcho(beat.echoId);
   // Robinet `echo` du Codex : la Chambre d'un Fondateur perçue peut révéler
   // l'écho du scellement (défensif, no-op hors runtime jeu / sandbox tests).
   if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('echo-chamber');
@@ -599,6 +601,8 @@ function maybeSignatureEchoBeat(floor) {
   if (typeof setNarrative === 'function') setNarrative(beat.narrative);
   if (typeof addMsg === 'function') addMsg('📜 ' + beat.toast, 'narrative');
   if (typeof seenEchoes !== 'undefined' && seenEchoes && beat.echoId) seenEchoes.add(beat.echoId);
+  // §1.4 C — voir l'écho d'un Fondateur octroie sa relique vocale (one-shot).
+  if (typeof grantVoiceRelicForEcho === 'function' && beat.echoId) grantVoiceRelicForEcho(beat.echoId);
   if (typeof checkCodexUnlocks === 'function') checkCodexUnlocks('echo-signature');
   return true;
 }

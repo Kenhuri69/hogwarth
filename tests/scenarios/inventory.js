@@ -988,6 +988,51 @@ async function scenarioDeathlyHallows() {
   await browser.close();
 }
 
+// Artefacts P3.3b — reliques vocales : octroi écho-gaté (one-shot) + Codex Chœur.
+async function scenarioVoiceRelics() {
+  console.log('\n── Scénario : Reliques vocales (octroi écho + Chœur) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'] });
+
+  const out = await page.evaluate(() => {
+    player.inventory = [];
+    const r1     = grantVoiceRelicForEcho('echo_godric');
+    const after1 = player.inventory.filter(i => i.id === 'voix_godric_relique').length;
+    const r2     = grantVoiceRelicForEcho('echo_godric');   // one-shot
+    const after2 = player.inventory.filter(i => i.id === 'voix_godric_relique').length;
+    const bad    = grantVoiceRelicForEcho('echo_inconnu');  // mapping inconnu
+    grantVoiceRelicForEcho('echo_salazar');
+    grantVoiceRelicForEcho('echo_rowena');
+    grantVoiceRelicForEcho('echo_helga');
+    const ids   = ['voix_godric_relique', 'voix_salazar_relique', 'voix_rowena_relique', 'voix_helga_relique'];
+    const owned = ids.filter(id => player.inventory.some(i => i.id === id));
+    const entry = CODEX_ENTRIES.find(e => e.id === 'choeur_des_fondateurs');
+    const st3   = codexEntryState(entry, { itemsOwned: new Set(owned.slice(0, 3)) });
+    const st4   = codexEntryState(entry, { itemsOwned: new Set(owned) });
+    const icon  = getItemIconHtml(ITEMS.find(i => i.id === 'voix_godric_relique'), 64);
+    return { r1, after1, r2, after2, bad, ownedLen: owned.length, present: !!entry, st3, st4,
+             iconPng: /icons_new\/voix_godric_relique/.test(icon) };
+  });
+  console.log('  →', JSON.stringify(out));
+  assert(out.r1 === true,      'écho Godric doit octroyer la relique');
+  assert(out.after1 === 1,     '1 Murmure de Godric attendu après octroi');
+  assert(out.r2 === false,     'octroi one-shot : pas de second exemplaire');
+  assert(out.after2 === 1,     'toujours 1 seul Murmure de Godric (pas de doublon)');
+  assert(out.bad === false,    'écho inconnu ne doit rien octroyer');
+  assert(out.ownedLen === 4,   'les 4 reliques vocales doivent être possédées');
+  assert(out.present,          'entrée Codex choeur_des_fondateurs doit exister');
+  assert(out.st3 === 'locked', 'Chœur verrouillé avec 3 reliques');
+  assert(out.st4 !== 'locked', 'Chœur déverrouillé avec les 4 reliques');
+  assert(out.iconPng,          'icône PNG dédiée attendue pour voix_godric_relique');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ Reliques vocales + Chœur des Fondateurs OK');
+  await browser.close();
+}
+
 async function scenarioShopLimits() {
   console.log('\n── Scénario : boutique anti-abus ──');
   const { browser, page, errors } = await launchGame();
@@ -1136,4 +1181,4 @@ async function scenarioRefusalFeedback() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioShopLimits, scenarioRefusalFeedback] };
+module.exports = { scenarios: [scenarioPartyEquipRow, scenarioTryAddItem, scenarioConsumableStacking, scenarioEquipmentAndStatusIcons, scenarioExtendedEquipment, scenarioPhase3Catalog, scenarioEquipmentPhase3bQuests, scenarioCritDodgeFromEquip, scenarioDeathlyHallows, scenarioVoiceRelics, scenarioShopLimits, scenarioRefusalFeedback] };
