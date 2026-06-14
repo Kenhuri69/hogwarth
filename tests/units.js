@@ -1067,6 +1067,20 @@ function loadModule(relPath, exportNames, globals = {}) {
   check('cycle_brise: non brisé → locked', codexEntryState(cbr, { ...empty, victoryAchieved: true }) === 'locked');
   check('cycle_brise: brisé → revealed', codexEntryState(cbr, { ...empty, cycleBroken: true }) === 'revealed');
 
+  // ── Phase 2 — Échos temporels : corruptedBy zone D (floor 14 + Set echo) ──
+  const et = getCodexEntry('echos_temporels');
+  check('echos_temporels présent (glossaire)', !!et && et.category === 'glossaire');
+  check('echos_temporels: floor11 → locked', codexEntryState(et, { ...empty, floorReached: 11 }) === 'locked');
+  check('echos_temporels: floor12 → veiled', codexEntryState(et, { ...empty, floorReached: 12 }) === 'veiled');
+  check('echos_temporels: floor14 sans scène → revealed',
+    codexEntryState(et, { ...empty, floorReached: 14 }) === 'revealed');
+  // Le Set seenEchoes (robinet echo) fait basculer en corrupted en zone D.
+  check('echos_temporels: floor14 + scène vue → corrupted',
+    codexEntryState(et, { ...empty, floorReached: 14, echoSeen: new Set(['echo_scene_sceau']) }) === 'corrupted');
+  // Scène vue mais hors zone D (revealed exige floor 14) → pas de corrupted.
+  check('echos_temporels: scène vue floor12 → veiled (pas zone D)',
+    codexEntryState(et, { ...empty, floorReached: 12, echoSeen: new Set(['echo_scene_sceau']) }) === 'veiled');
+
   // ── monster : type bestiaire (couverture évaluateur, sans/avec kills) ──
   const monsterEntry = {
     id: '_t_monster', category: 'bestiaire', title: 'T',
