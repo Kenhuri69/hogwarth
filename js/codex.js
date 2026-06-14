@@ -298,9 +298,14 @@ const CODEX_ENTRIES = [
     links: ['echo_scellement', 'ruines_anciennes'],
     unlockConditions: [{ type: 'floor', value: 12 }],
     revealedBy: [{ type: 'floor', value: 14 }],
+    // Surcouche corrompue zone D : en Ruines Anciennes (14+) ET une fois la
+    // scène pleine traversée (Set `seenEchoes` via robinet `echo`). Additif —
+    // sans la scène, l'entrée reste `revealed`.
+    corruptedBy: [{ type: 'floor', value: 14 }, { type: 'echo', value: 'echo_scene_sceau' }],
     textVersions: {
       veiled: "Plus bas, le temps cesse de couler droit. Un murmure d'abord, puis une silhouette, puis une scène entière qui se rejoue : le lieu se souvient à voix haute.",
       revealed: "Les échos ne sont pas des fantômes : ce sont des fragments de passé que la pierre, trop ancienne pour distinguer jadis de maintenant, laisse remonter. Vecteur du lore des Fondateurs sans qu'aucun d'eux soit vivant — la mémoire gravée qui parle quand plus personne ne peut témoigner.",
+      corrupted: "Tu ne perçois plus les échos : ce sont eux qui te perçoivent. À force de traverser leurs scènes, c'est toi qui es devenu le passage — la pierre rejoue ta propre descente parmi celles des Fondateurs, sans plus savoir laquelle fut la première. La mémoire gravée a cessé de distinguer celui qui regarde de ce qui est regardé.",
     },
   },
   {
