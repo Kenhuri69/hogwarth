@@ -1,6 +1,6 @@
 # 11 — Mondes Parallèles & Boucle Ténébreuse (endgame & rejouabilité)
 
-**Statut :** 🟩 proposition de référence — à valider / amender
+**Statut :** ✅ systèmes livrés (Boucle Ténébreuse, Mondes Parallèles, « Briser le Cycle ») · 💡 habillage narratif amendable
 
 > ✅ **Statut réel (code, 2026-06-13)** : la **Boucle Ténébreuse** et sa **vraie
 > fin « Briser le Cycle »** ne sont **plus des propositions** — elles sont
@@ -515,10 +515,12 @@ s'assombrir.
 
 ## 11.10 La fin ultime optionnelle — « Briser le Cycle »
 
-> 💡 **Proposition d'ajout narratif** / ❓ **à valider** — strictement **optionnelle
-> et non-gating**, en parfait accord avec [03 §3.6](03-trame-principale.md) :
-> *« Il n'y a pas de fin scénarisée. Une "vérité finale" optionnelle resterait un
-> ajout narratif ; elle n'est pas requise par le jeu. »* La voici proposée.
+> ✅ **Livré** (`js/break-cycle.js`, boss `reflet_mythe`, flag `cycleBroken`,
+> Codex `cycle_brise`) — strictement **optionnelle et non-gating**, en parfait
+> accord avec [03 §3.6](03-trame-principale.md) : *« Il n'y a pas de fin
+> scénarisée. Une "vérité finale" optionnelle resterait un ajout narratif ;
+> elle n'est pas requise par le jeu. »* Cette section est **descriptive du
+> livré** (le 💡 résiduel ci-dessous = extensions Phase 2 non shippées).
 
 ### 11.10.1 L'idée
 
@@ -533,19 +535,28 @@ C'est une **vraie fin narrative**, mais qui ne **clôt pas** le jeu : la briser
 **déverrouille** une cinématique, une entrée Codex et un cosmétique ; le joueur
 reste libre de **continuer la Boucle** (le mythe ne meurt pas, il *choisit*).
 
-### 11.10.2 La structure multi-passages (`brokenCycleProgress`)
+### 11.10.2 La structure multi-passages (`briserCycleProgress`)
 
-> 💡 Quête secrète **`briser_cycle`** jalonnée sur **plusieurs tours de spirale** —
-> jamais en un seul passage, pour que la fin se **mérite** sans devenir une corvée.
+> ✅ Quête secrète jalonnée sur **plusieurs tours de spirale** — jamais en un
+> seul passage. Les 3 premiers jalons sont **dérivés** (résolveur PUR
+> `briserCycleJalons`, testé dans `tests/units.js`) ; le seul état persistant
+> ajouté est `cycleBroken`.
 
-| Jalon | Condition (💡) | Source ✅ réutilisée | Révélation |
-|-------|----------------|----------------------|------------|
-| **I — Entendre** | *Voir* les **4 écho-scellements** (un par Fondateur, Chambres 17–20) | `temporalEchoSeen` (Set, [12 §12.5.3](12-glossaire-et-codex.md)) | Comprendre **comment** le sceau fut posé (à quatre, chacun « avec sa faute »). |
-| **II — Porter** | Atteindre un seuil d'**Éclats portés** (`accumulatedEclats ≥ N`) | compteur §11.6.2 | Le héros porte assez du réel déchiré pour **peser** sur la faille. |
-| **III — Affronter** | Vaincre un **boss-miroir terminal** (ét. 21+) | ❓ « ce qui dort » personnifié | Se mesurer à sa **propre ombre de légende** — le mythe retourné, ultime. |
-| **IV — Choisir** | Au sommet de l'Avant-Monde : **briser** ou **perpétuer** | choix narratif | La fin. |
+| Jalon | Condition (✅ shippée) | Source ✅ réutilisée | Révélation |
+|-------|----------------------|----------------------|------------|
+| **I — Entendre** | *Voir* la **scène du Scellement** (écho `echo_scene_sceau`, ét. 14+) | `seenEchoes` (Set) | Comprendre **comment** le sceau fut posé (à quatre, chacun « avec sa faute »). *(💡 Phase 2 : enrichir en 4 écho-scellements distincts via `temporalEchoSeen` — non shippé.)* |
+| **II — Porter** | Atteindre le seuil d'**Éclats portés** (`accumulatedEclats ≥ 15` = `BRISER_ECLAT_SEUIL`) | compteur §11.6.2 (`+1` par étage de Boucle le plus profond franchi) | Le héros porte assez du réel déchiré pour **peser** sur la faille. |
+| **III — Affronter** | Vaincre le **boss-miroir terminal** `reflet_mythe` « Le Reflet du Mythe » (ét. réel 21+) | ✅ monstre `reflet_mythe` (`monsters.js`) | Se mesurer à sa **propre ombre de légende** — le mythe retourné, ultime. |
+| **IV — Choisir** | Au sommet de l'Avant-Monde : **briser** ou **perpétuer** (modale `openBreakCycleModal`) | choix narratif | La fin. |
 
 ### 11.10.3 Le choix final (deux issues, aucune « game over »)
+
+> ✅ **Livré** (`break-cycle.js`) : 🕊️ pose `cycleBroken`, déverrouille le Codex
+> `cycle_brise`, joue une **cinématique 3 pages** (patron de pages d'`intro.js`)
+> + musique de fin (`playEndingTheme` / repli `playVictory`) + illustration
+> `img/scenes/ending_break_cycle.jpg`, et enregistre au profil hors-save le
+> titre « Briseur de Cycle ★N » (`recordEndingToProfile('cycle_broken')`).
+> 🌑 ne pose aucun flag : la série ★ N continue, sans punition.
 
 - 🕊️ **Briser le Cycle** : le héros **rescelle par le bas**, en y mettant — comme
   les Fondateurs — **une part de lui-même**. Cinématique de paix amère ; entrée
@@ -566,10 +577,11 @@ reste libre de **continuer la Boucle** (le mythe ne meurt pas, il *choisit*).
 > [03 §3.7](03-trame-principale.md) (« le mythe et son revers ») sans contredire
 > [03 §3.6](03-trame-principale.md) (« pas de fin scénarisée [obligatoire] »).
 
-> ❓ **À arbitrer** : (a) personnifie-t-on le **boss-miroir terminal** / « ce qui
-> dort » (ét. 21+, lié à [10 §10.3](10-lieux-et-geographie.md)) ? (b) la cinématique
-> « briser » réutilise-t-elle le pipeline `intro.js` ? (c) seuil exact de
-> `accumulatedEclats` (calibrage).
+> ✅ **Tranché (livré)** : (a) le boss-miroir terminal **est** personnifié —
+> `reflet_mythe` « Le Reflet du Mythe » (ét. réel 21+, lié à
+> [10 §10.3](10-lieux-et-geographie.md)) ; (b) la cinématique « briser » réutilise
+> le **patron de pages d'`intro.js`** (`BREAK_CYCLE_PAGES`) ; (c) seuil
+> `accumulatedEclats` calibré à **15** (`BRISER_ECLAT_SEUIL`).
 
 ---
 
