@@ -503,6 +503,61 @@ const RIDDLES_LUMIERE = [
   }
 ];
 
+// ============================================================
+// ARTEFACTS & RELIQUAIRES 2.0 — socle data (Lot P0)
+// ------------------------------------------------------------
+// Voir .claude/plans/artifacts-reliquary-system.md.
+// INERTE au runtime : registres + helper PUR, consommés par les lots
+// suivants (P1 nouvelles formes, P2 Premium, P3 shops). Aucune mutation
+// d'état au top-level → chargeable tel quel dans le sandbox de tests/units.js.
+// ============================================================
+
+// Archétypes visuels/sémantiques d'un artefact (futur champ `formType` sur
+// les entrées ITEMS), ORTHOGONAUX au `slot` mécanique : on enrichit la fiction
+// et le visuel sans créer de nouveau slot d'équipement (les 11 slots existants
+// — wand/head/body/hands/feet/cloak/amulet/ring/belt/trinket — sont conservés).
+// `slot` = destination mécanique par défaut de la forme (null pour un
+// consommable). Source de vérité pour les badges de forme (UI) et les recettes
+// d'icônes (tools/icon_factory.py).
+const ARTIFACT_FORMS = {
+  baguette:       { label: "Baguette",                slot: "wand",    icon: "🪄" },
+  baton:          { label: "Bâton ancestral",         slot: "wand",    icon: "🌳" },
+  orbe:           { label: "Orbe runique",            slot: "trinket", icon: "🔮" },
+  cristal:        { label: "Cristal de focalisation", slot: "amulet",  icon: "💠" },
+  cape:           { label: "Cape enchantée",          slot: "cloak",   icon: "🧥" },
+  grimoire:       { label: "Grimoire flottant",       slot: "trinket", icon: "📖" },
+  talisman:       { label: "Talisman des Fondateurs", slot: "amulet",  icon: "📿" },
+  masque:         { label: "Masque rituel",           slot: "head",    icon: "🎭" },
+  gantelets:      { label: "Gantelets de combat",     slot: "hands",   icon: "🥊" },
+  anneau:         { label: "Anneau",                  slot: "ring",    icon: "💍" },
+  relique_vocale: { label: "Relique vocale",          slot: "trinket", icon: "🗣️" },
+  elixir_perma:   { label: "Élixir permanent",        slot: null,      icon: "⚗️" },
+};
+
+// Multiplicateur de stats des variantes Premium (variante coloriée par Maison
+// d'un artefact de base — plan §1.5). Appliqué par `premiumStat()` lors de la
+// GÉNÉRATION des entrées Premium (stats pré-cuites dans ITEMS), JAMAIS au
+// runtime : aucun chemin chaud (recalculateStats) n'est touché.
+const PREMIUM_MULT = { rare: 1.20, epic: 1.35, legendary: 1.50 };
+
+// Calcule une stat boostée Premium : `value × PREMIUM_MULT[rarity]`. PUR (aucun
+// accès à l'état) — testé dans tests/units.js. Règles :
+//  - rareté inconnue → multiplicateur 1 (no-op sûr) ;
+//  - valeur non finie → renvoyée telle quelle ;
+//  - valeur ≤ 0 (malus de trade-off, ou 0) → JAMAIS aggravée : une Premium
+//    boost le bon côté, pas le défaut ;
+//  - bonus entier → arrondi à l'entier le plus proche ;
+//  - valeur fractionnaire (regen %, multiplicateurs crit…) ou opts.fractional
+//    → arrondie à 2 décimales.
+function premiumStat(value, rarity, opts) {
+  const mult = (PREMIUM_MULT[rarity] != null) ? PREMIUM_MULT[rarity] : 1;
+  if (typeof value !== 'number' || !isFinite(value)) return value;
+  if (value <= 0) return value;
+  const boosted = value * mult;
+  const fractional = (opts && opts.fractional) || !Number.isInteger(value);
+  return fractional ? Math.round(boosted * 100) / 100 : Math.round(boosted);
+}
+
 const ITEMS = [
   { id:"potion_s", name:"Potion de Soin", icon:"🧪", desc:"+15 PV", type:"consumable", effect:"heal", power:15, price:30 },
   // Chaîne de soin à paliers (P4 — upgrade-craft via Éclat de Vitalité).

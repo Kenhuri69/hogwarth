@@ -1,7 +1,7 @@
 # Artefacts & Reliquaires 2.0 — Spécifications & Plan d'implémentation
 
 > **Branche** : `claude/hogwarth-artifacts-system-we6nvv`
-> **Statut** : 📐 Spécification + plan (aucun code livré dans cette passe — design d'abord, guidelines §5).
+> **Statut** : 🟢 **Lot P0 livré** (2026-06-14 — socle data inerte + tests). Lots P1→P3 à venir.
 > **Périmètre** : faire des Artefacts/Reliquaires un **pilier de personnalisation
 > et de progression**, sans casser l'économie ni l'architecture zéro-build.
 > **Canon de référence** : chapitres [05](../../docs/histoire/05-personnages-jouables.md),
@@ -361,7 +361,7 @@ signature ([08 §8.5](../../docs/histoire/08-quetes-et-sous-intrigues.md)) :
 
 | # | Lot | Contenu | Vérification |
 |---|-----|---------|--------------|
-| **P0** | **Coûts & socle data** | table §1.6 figée ; champs `formType`/`houseAffinity`/`bonusElemDmg`/`spCostReduction` ajoutés (inertes) ; palier `uncommon` documenté | `node tests/units.js` (helpers purs) + `node tests/smoke.js inventory` verts |
+| **P0** ✅ | **Coûts & socle data** *(livré 2026-06-14)* | table §1.6 figée ; registre `ARTIFACT_FORMS` (12 formes, inerte) + `PREMIUM_MULT` + helper PUR `premiumStat()` ajoutés à `data.js` ; palier `uncommon` documenté (§1.6) | ✅ `node tests/units.js` (614 assertions, bloc #12 `testArtifactSocle`) + smoke Equipment/ShopLimits/TryAddItem/CritDodge/ConsumableStacking verts ; cache bump data.js `?v=33` / `CACHE_VERSION v136` ; `check_cache_versions` + `pwa-smoke` OK |
 | **P1** | **Nouvelles formes (1.4 A/B)** | entrées ITEMS + icônes painterly + branchement `bonusElemDmg`/`spCostReduction` en combat | smoke `inventory`/`spells`/`combat` ; un cas équipe une nouvelle forme et vérifie la stat |
 | **P2** | **Premium (1.5)** | variantes pré-cuites par Maison + FX/son d'équipement + Codex | smoke `houses`/`visuals` ; cas : remise cérémonielle pousse la Premium de `chosenHouse` |
 | **P3** | **Shops & quêtes (1.7/1.8)** | SHOP_CATALOG + slot faveur Maison + nouveau PNJ + récompenses quêtes + entrées Codex + Reliques de la Mort/Chœur | smoke `npc`/`quests` ; cas : stock garantit l'artefact affinité ; sim éco OK |
