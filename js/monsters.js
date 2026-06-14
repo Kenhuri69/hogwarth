@@ -2174,6 +2174,50 @@ const MONSTERS = [
     ]
   },
 
+  // ── Caster lumière radiant des Profondeurs (élémentaire d'aube) ─────
+  // 6e boss original élémentaire, complète la collection givre/foudre/ténèbres.
+  // minFloor 9 → réel 9+ ET recycle en Boucle au réel 19+ (effectiveFloor(19)=9).
+  // Caster (atk 12 < 1,5×mag 27) → PAS une brute. Identité = attrition radiante :
+  // SEUL boss qui se SOIGNE en lumière + aveugle (stun). SEUL boss qui RÉSISTE
+  // la lumière et est FAIBLE aux ténèbres → unique levier des sorts sombres
+  // (Sanguini/Vampyrus/Morsmordre/Nox Vorax). Pas d'`imgSrc` : repli sur le SVG
+  // de catégorie « être magique » (combat → emoji ☀️) tant que le sprite PNG
+  // dédié (img/monsters/heraut_aube.png, pipeline tools/process_monster_png.py)
+  // n'est pas généré.
+  {
+    id:       "heraut_aube",
+    epic:     true,
+    name:     "Le Héraut de l'Aube",
+    icon:     "☀️",
+    category: "être magique",
+    desc:     "Une lumière blanche se lève sans soleil. Une silhouette d'or pâle se dresse, paumes ouvertes, et l'air se met à brûler de clarté.",
+    lore:     "On raconte qu'un gardien de lumière veillait jadis sur les profondeurs de Poudlard, brandissant l'éclat d'un Patronus que rien n'éteignait. La Boucle l'a retourné : sa clarté ne protège plus, elle juge. Le Héraut de l'Aube n'éclaire que pour aveugler, et ne soigne que lui-même.",
+    habitat:  "Les nefs effondrées des Profondeurs Oubliées, où une aube morte filtre encore par les fissures runiques.",
+    anecdote: "Ceux qui l'ont affronté parlent d'une lumière qui ne réchauffe pas : on a froid en plein éclat, comme si la clarté avait oublié à quoi sert le jour.",
+    danger:   10,
+    minFloor: 9, maxFloor: null, weight: 1,
+    hp: 148, atk: 12, def: 11, mag: 27, agi: 13, lck: 12,
+    scale: 0.35,
+    abilities: [
+      { name: "Jugement de l'Aube", icon: "☀️", desc: "Un trait de lumière pure transperce la chair", effect: "damage", power: 26, chance: 0.50 },
+      { name: "Voile Aveuglant",    icon: "💫", desc: "Une clarté brutale fige la cible, aveuglée",    effect: "status", statusId: "stun", power: 0, chance: 0.26, turns: 1 },
+      { name: "Halo Régénérateur",  icon: "✨", desc: "La lumière se replie sur lui et le recompose",   effect: "heal",   power: 22, chance: 0.28 }
+    ],
+    ai: "cautious",
+    phases: [
+      { atPct: 0.4, magMult: 1.3, msg: "Le Héraut irradie d'un seul coup — la nef entière vire au blanc, et chaque ombre s'efface dans la clarté mordante." }
+    ],
+    resist: ["lumière"],
+    weak:   ["ténèbres"],
+    xp: 300, gold: { min: 160, max: 240 },
+    drops: [
+      { itemId: "essence_tenebres",      chance: 0.75 },
+      { itemId: "page_grimoire",         chance: 0.50 },
+      { itemId: "herbe_asphodele_noire", chance: 0.30 },
+      { itemId: "larme_phenix_mineure",  chance: 0.12 }
+    ]
+  },
+
   // ── Boss-miroir terminal de « Briser le Cycle » (V3, ch.11 §11.10) ──
   // Apparition à l'étage RÉEL 21+ : minFloor 11 filtré via effectiveFloor
   // (effectiveFloor(21)=11) → exclu des étages 11-20 (eff. 1-10). Le vaincre
