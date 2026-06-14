@@ -1,9 +1,13 @@
 # Artefacts & Reliquaires 2.0 — Spécifications & Plan d'implémentation
 
 > **Branche** : `claude/hogwarth-artifacts-system-we6nvv` (P0) ·
-> `claude/hogwarth-artifacts-p1-em6jln` (P1)
-> **Statut** : 🟢 **Lots P0 + P1 livrés** (P0 2026-06-14 socle data inerte ;
-> P1 2026-06-14 nouvelles formes §1.4 A/B + leviers combat + icônes). Lots P2→P3 à venir.
+> `claude/hogwarth-artifacts-p1-em6jln` (P1) ·
+> `claude/hogwarth-artifacts-p3*` (P2 + P3)
+> **Statut** : ✅ **LOT COMPLET — P0 + P1 + P2 + P3 livrés** (clos 2026-06-14).
+> P0 socle data inerte ; P1 nouvelles formes §1.4 A/B + leviers combat + icônes ;
+> P2 Codex/Reliquaire + sets ; P3 shops & faveur de Maison (3.1), Premium
+> exclusives + Codex Reliques de la Mort (3.2), Apothicaire + reliques vocales +
+> Chœur des Fondateurs (3.3), drops Premium Ruines/boss Ténébreux (3c).
 > **Périmètre** : faire des Artefacts/Reliquaires un **pilier de personnalisation
 > et de progression**, sans casser l'économie ni l'architecture zéro-build.
 > **Canon de référence** : chapitres [05](../../docs/histoire/05-personnages-jouables.md),
