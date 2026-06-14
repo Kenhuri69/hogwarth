@@ -232,6 +232,9 @@ l'arc en deux.
 1. ❓ Élément déclencheur : cours d'**Histoire de la Magie** vs **Étude des
    Runes** ; degré d'implication du héros (témoin / responsable involontaire /
    résonance de Maison) ; nom définitif de la **Clé de Voûte** (cf. §3.1).
-2. ❓ Enjeu intime des héros en parallèle de l'enjeu collectif ? (non tranché par le jeu)
+2. ✅ Enjeu intime des héros en parallèle de l'enjeu collectif : **tranché** — couche
+   de **beats scénarisés cosmétiques** (raison personnelle de descendre *dite*, pas
+   *jouée* ; aucun arc/quête dédiés). Cf. [05 §5.4.2](05-personnages-jouables.md)
+   (beat `descentStake`, 6 héros jouables).
 3. ✅ Phases du combat final : tranchées (boss multi-phases dans le code). ❓ Dialogue avant/pendant + PNJ allié combattant : non tranché.
 4. ✅ Boucle Ténébreuse : prestige infini (tranché par le jeu — série ★ N génératrice sans fin).

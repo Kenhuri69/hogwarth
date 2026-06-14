@@ -583,8 +583,32 @@ Intro Dumbledore (Clé de Voûte)  →  Choix de Maison (chosenHouse)
 | **Allié à terre** | « Debout ! On n'a pas fini, toi et moi ! » | « Tiens bon — Episkey, *tout de suite* ! » | « Eh, pas le droit de partir, on n'a pas fini de rire ! » | « …Reste. Je n'ai pas envie d'être seul ici. » |
 | **Level-up** | « Encore un cran. On descend plus loin. » | « Note méthodique : progresser, c'est survivre deux fois. » | « Plus forte ET plus mignonne, c'est injuste pour les autres. » | « Plus fort. Donc plus dangereux. Pour eux. » |
 
-### 5.4.2 Répliques liées à la trame (déclencheurs scénarisés) 💡
+### 5.4.2 Répliques liées à la trame (déclencheurs scénarisés) ✅
 
+> ✅ **Canon (implémenté).** Ces beats sont la **couche officielle de l'enjeu
+> intime par héros** (tranche le gap historique — cf. [01 §1.3](01-synopsis-et-pitch.md),
+> [03 §3 point #2](03-trame-principale.md)) : purement **cosmétiques**, one-shot,
+> défensifs (`heroBarkScripted()` ; no-op si le héros n'est pas dans le groupe).
+> Zéro mécanique, zéro quête, zéro stat — la « raison de descendre » de chaque
+> héros est *dite*, pas *jouée* (guidelines §2). Câblage : `js/hero-barks.js`
+> (registre) + call-sites `battle.js` / `movement-floors.js` /
+> `movement-interactions.js`.
+
+- **À la transition 3↔4 (on quitte l'école) — enjeu intime du meneur présent** ✅ :
+  chacun des **6 héros jouables** porte sa raison *personnelle* de descendre
+  (`descentStake`, jouée par le 1ᵉʳ membre vivant du groupe ; `movement-floors.js`).
+  - *Harry* : « Encore lui, encore en bas. Personne d'autre ne devrait avoir à
+    descendre ici — alors ce sera moi. Comme toujours. »
+  - *Hermione* : « On me dit « une terreur ». Moi, je vois un problème. Et un
+    problème, ça se résout — même en descendant le chercher. »
+  - *Céleste* : « Les astres m'ont montré ce fond avant que j'y pose le pied.
+    Descendre, ce n'est pas du courage — c'est leur donner raison. »
+  - *Iris* : « Le château vire au gris, tu as remarqué ? Quelqu'un doit descendre
+    lui rendre ses couleurs. Autant que ce soit moi — je suis la mieux assortie. »
+  - *Maxence* : « Mon sang m'appelle vers le bas. Je préfère y descendre en le
+    tenant en laisse plutôt qu'il m'y traîne. »
+  - *Anastasia* : « J'ai fait le calcul : si personne ne descend, tout finit par
+    remonter. Donc on descend. C'est arithmétique. »
 - **Devant la première fontaine glacée (ét. 2)** — *Céleste* : « Même l'eau a peur,
   ici. Elle se souvient d'avant les Fondateurs. »
 - **À la transition 3↔4 (on quitte l'école)** — *Cedric* : « Plus de salles de

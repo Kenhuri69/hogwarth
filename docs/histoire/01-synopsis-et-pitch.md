@@ -60,9 +60,12 @@ les étages habités, l'école — dernier bastion sûr du monde magique — tom
 La « horloge » dramatique, c'est la **remontée du mal** : chaque étage non
 purgé, c'est le château qui s'enfonce un peu plus dans la nuit.
 
-> ❓ **À travailler en l'état** (non tranché par le jeu) : le jeu n'implémente
-> qu'un enjeu collectif (aucun arc ni quête propres à un héros). Un enjeu
-> intime par personnage reste à concevoir.
+> ✅ **Tranché.** L'enjeu reste **collectif** (sauver le château) ; l'**enjeu
+> intime** de chaque héros est porté par une couche de **beats scénarisés
+> cosmétiques** — sa raison *personnelle* de descendre est *dite*, pas *jouée*
+> (aucun arc/quête/stat dédiés). Voir [05 §5.4.2](05-personnages-jouables.md)
+> (registre `hero-barks.js`, beat `descentStake` au seuil 3↔4 pour les 6 héros
+> jouables).
 
 ## 1.4 Le moteur de progression narrative
 
