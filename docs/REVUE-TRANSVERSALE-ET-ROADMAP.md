@@ -104,7 +104,7 @@ livrés, câblés dans `index.html` et versionnés `?v=N`** :
 | **08 ↔ 06** (PNJ donneurs) | ✅ Résolu (2026-06-13) : décision = **créer les 2 PNJ dédiés**. `chevalier_godric` + `echo_salazar` livrés (npcs.js, art, dialogues, smoke par Maison). | — |
 | **Boucle ↔ Mondes Parallèles** | ✅ Résolu (2026-06-14) : règle canon ratifiée = **axes isolés**, aucune interaction spéciale. Audit code : la visite n'est pas gatée (`mpListAvailableHosts`), donc le **crossover incident** est assumé — visiter un hôte en Boucle est une fenêtre **lecture seule** (snapshot read-only, pas de permadeath, rien de la Boucle ne se propage). Canon en [11 §11.5.1](histoire/11-mondes-paralleles.md) ; cross-links depuis 06 §6.7.2 (Gardien) + note symétrique 11 §11.13. | — |
 | **9 / 10 / 11 checklists** | Trois procédures d'ajout (créatures / lieux / variantes) sans renvoi mutuel. | Ajouter un renvoi croisé en tête de chacune. |
-| **Codex ↔ Mondes Parallèles** | 8ᵉ onglet « Voyageur » ou intégré au Glossaire ? `❓` ouvert (12). | Trancher (proposé : intégré, pas d'onglet dédié). |
+| **Codex ↔ Mondes Parallèles** | ✅ Résolu (2026-06-14) : **pas de 8ᵉ onglet « Voyageur »** — décision **déjà livrée dans le code** (`js/codex.js` : entrées `cheminette_inter_mondes`/`voyageur`/`mondes_paralleles` en `category:'glossaire'` + commentaire explicite). Doc 12 §12.2 réconciliée (❓→✅) ; Codex à 7 onglets, MP en Glossaire/Objets. | — |
 
 ---
 
