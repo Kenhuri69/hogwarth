@@ -1515,6 +1515,67 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 12. data.js — Artefacts & Reliquaires 2.0, socle data (Lot P0)
+//    ARTIFACT_FORMS (registre inerte) + premiumStat (helper PUR)
+// ------------------------------------------------------------
+// data.js n'a aucun code exécutable au top-level lisant un global externe
+// (les .map/.reduce de tête n'opèrent que sur des tableaux locaux) → il se
+// charge tel quel dans le sandbox vm. On verrouille le registre de formes et
+// la règle de boost Premium (+20/35/50 %) AVANT que tout artefact ne s'en serve.
+// ============================================================
+(function testArtifactSocle() {
+  const { ARTIFACT_FORMS, PREMIUM_MULT, premiumStat } = loadModule(
+    'js/data.js', ['ARTIFACT_FORMS', 'PREMIUM_MULT', 'premiumStat']);
+
+  // ── ARTIFACT_FORMS : chaque forme mappe un slot d'équipement VALIDE ──
+  // (orthogonalité forme↔slot : aucune forme n'invente de slot — plan §0/§1.3).
+  const VALID_SLOTS = ['wand','head','body','hands','feet','cloak','amulet','ring','belt','trinket'];
+  const FORM_KEYS = Object.keys(ARTIFACT_FORMS);
+  check('ARTIFACT_FORMS : 12 formes', FORM_KEYS.length === 12);
+  check('ARTIFACT_FORMS contient les nouvelles formes du plan',
+    ['baton','orbe','cristal','grimoire','talisman','masque','gantelets','relique_vocale']
+      .every(k => !!ARTIFACT_FORMS[k]));
+  let formsOk = true;
+  for (const k of FORM_KEYS) {
+    const f = ARTIFACT_FORMS[k];
+    if (!f || typeof f.label !== 'string' || !f.label.length) formsOk = false;
+    // slot null autorisé UNIQUEMENT pour la forme consommable (elixir_perma).
+    if (f.slot === null) { if (k !== 'elixir_perma') formsOk = false; }
+    else if (!VALID_SLOTS.includes(f.slot)) formsOk = false;
+    if (typeof f.icon !== 'string' || !f.icon.length) formsOk = false;
+  }
+  check('ARTIFACT_FORMS : label/slot valide/icon pour chaque forme', formsOk);
+  check('elixir_perma : forme sans slot (consommable)', ARTIFACT_FORMS.elixir_perma.slot === null);
+
+  // ── PREMIUM_MULT : +20 % rare / +35 % epic / +50 % legendary ──
+  check('PREMIUM_MULT rare = 1.20',      approx(PREMIUM_MULT.rare, 1.20));
+  check('PREMIUM_MULT epic = 1.35',      approx(PREMIUM_MULT.epic, 1.35));
+  check('PREMIUM_MULT legendary = 1.50', approx(PREMIUM_MULT.legendary, 1.50));
+
+  // ── premiumStat : boost entier arrondi ──
+  check('premiumStat(8, epic) = 11 (8×1.35=10.8)', premiumStat(8, 'epic') === 11);
+  check('premiumStat(4, epic) = 5 (4×1.35=5.4)',   premiumStat(4, 'epic') === 5);
+  check('premiumStat(6, legendary) = 9 (6×1.5)',   premiumStat(6, 'legendary') === 9);
+  check('premiumStat(10, rare) = 12 (10×1.2)',     premiumStat(10, 'rare') === 12);
+  // Valeur fractionnaire (regen %, multiplicateur crit) → 2 décimales.
+  check('premiumStat(0.20, epic) ≈ 0.27 (0.20×1.35)', approx(premiumStat(0.20, 'epic'), 0.27));
+  check('premiumStat(0.15, rare) = 0.18 (0.15×1.2)',  approx(premiumStat(0.15, 'rare'), 0.18));
+  check('premiumStat(3, rare, {fractional}) = 3.6',   approx(premiumStat(3, 'rare', { fractional: true }), 3.6));
+  // Malus de trade-off (≤0) JAMAIS aggravé ; 0 inchangé.
+  check('premiumStat(-2, epic) = -2 (malus intact)', premiumStat(-2, 'epic') === -2);
+  check('premiumStat(0, epic) = 0',                  premiumStat(0, 'epic') === 0);
+  // Rareté inconnue → no-op (multiplicateur 1) ; valeur non finie renvoyée telle quelle.
+  check('premiumStat(5, "common") = 5 (no-op)', premiumStat(5, 'common') === 5);
+  check('premiumStat(5, undefined) = 5 (no-op)', premiumStat(5) === 5);
+  check('premiumStat(NaN, epic) = NaN (passthrough)', Number.isNaN(premiumStat(NaN, 'epic')));
+
+  // ── Cohérence doc ↔ code (verrou anti-dérive avec le plan §1.6) ──
+  const dataSrc = fs.readFileSync(path.join(ROOT, 'js/data.js'), 'utf8');
+  check('data.js déclare PREMIUM_MULT rare 1.20/epic 1.35/legendary 1.50',
+    /PREMIUM_MULT\s*=\s*\{\s*rare:\s*1\.20,\s*epic:\s*1\.35,\s*legendary:\s*1\.50\s*\}/.test(dataSrc));
+})();
+
+// ============================================================
 // 14. monsters.js — Magyar Ancestral (dragon de feu, brute → Broyer)
 //    Brute (atk ≥ 1,5×mag & atk ≥ 12) → Broyer auto, élément feu (résiste
 //    feu, faible glace), sprite PNG câblé, recycle en Boucle.
