@@ -1452,6 +1452,32 @@ function loadModule(relPath, exportNames, globals = {}) {
 })();
 
 // ============================================================
+// 12. monsters.js — Basilic Ancestral (boss Boucle profonde)
+//    Vérifie l'enregistrement + le gating d'étage effectif + le statut
+//    de « brute » (→ Broyer auto). Données pures.
+// ============================================================
+(function testBasilicAncestral() {
+  const { MONSTERS } = loadModule('js/monsters.js', ['MONSTERS']);
+  const { isBruteMonster, effectiveFloor } = loadModule(
+    'js/dungeon-scaling.js', ['isBruteMonster', 'effectiveFloor'], { victoryAchieved: true });
+
+  const b = MONSTERS.find(m => m.id === 'basilic_ancestral');
+  check('basilic: entrée présente', !!b);
+  check('basilic: epic + weight 1', !!b && b.epic === true && b.weight === 1);
+  check('basilic: faible à la lumière', !!b && Array.isArray(b.weak) && b.weak.includes('lumière'));
+  check('basilic: drops non vides', !!b && Array.isArray(b.drops) && b.drops.length >= 3);
+
+  // Brute (atk ≥ 1,5×mag & atk ≥ 12) → reçoit Broyer auto via scaleMonster.
+  check('basilic: est une brute (Broyer auto)', isBruteMonster(b) === true);
+
+  // Boucle-exclusif : minFloor 12 filtré via effectiveFloor → exclu du 1er tour
+  // (réel 11-20, eff. 1-10) et du réel 21 (eff. 11), apparaît au réel 22 (eff. 12).
+  check('basilic: minFloor 12', !!b && b.minFloor === 12);
+  check('basilic: exclu réel 21 (eff. 11 < 12)', effectiveFloor(21) < b.minFloor);
+  check('basilic: éligible réel 22 (eff. 12)', effectiveFloor(22) >= b.minFloor);
+})();
+
+// ============================================================
 // Rapport
 // ============================================================
 if (failures.length) {

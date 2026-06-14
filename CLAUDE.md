@@ -1468,7 +1468,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | `gold` | number\|{min,max} | Or de base (scalé automatiquement) |
 | `drops` | [{itemId, chance}] | Drops potentiels après victoire |
 
-### Monstres définis (67 au total)
+### Monstres définis (68 au total)
 | Étages | Monstres |
 |--------|---------|
 | 1–3    | Chat de Mme Norris, Luciole des Marais, Cornichon de Cornouailles, Portrait Hostile, Peeve, Mimi Geignarde, Serpent des Cachots |
@@ -1481,6 +1481,7 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | 8+     | Bellatrix Lestrange, Voldemort Affaibli, **Fenrir Greyback** (boss canon, epic, weight 1), **Veilleur du Seuil** (boss original epic), **Loup-Garou Adulte** |
 | 9+     | **Aragog** (boss canon epic), **Maître des Détraqueurs** (boss original epic), **Acromantule Adulte**, **Détraqueur d'Élite**, **Mangemort Vétéran**, **Spectre Renforcé** |
 | 10+    | Voldemort Ressuscité, **Antonin Dolohov** (boss canon epic), **Héraut des Ténèbres** (boss original epic) |
+| Boucle 22+ | **Basilic Ancestral** (boss canon epic, `minFloor:12` → réel 22+ via `effectiveFloor`, Ruines Anciennes ; brute → Broyer auto, regard pétrifiant/venin/mue) |
 | **+14 ajouts récents** | Niffleur, Elfe de Maison Rebelle, Bowtruckle Géant, Chevalier Fantôme, Gremlin Magique, Manticore Juvénile, Gardien du Portail, Fantôme du Sang Noir, Chauve-Souris Vampire, Vampire Novice, Strigoï Ancien, Poupée Maudite, Spectre Maudit, Hécate la Maudisseuse — voir `monsters.js` pour `minFloor`/`maxFloor` |
 | **+4 monstres étourdissants** | Lutin de Cornouailles (1–4), Strangulot (3–7), Pitiponk (4–8), Gargouille Éveillée (5–10) — capacité `effect:"status", statusId:"stun"`. PNG dédiés dans `img/monsters/`. |
 
