@@ -23,7 +23,7 @@ plus tout à fait des élèves : ils reviennent à Poudlard en figures tutélair
 au même titre que les professeurs.
 
 Ce choix résout proprement la tension que pose le bestiaire : le jeu fait
-coexister **Voldemort « Affaibli » (ét. 8)** puis **« Ressuscité » (ét. 10)**
+coexister **Voldemort « Affaibli » (ét. 9)** puis **« Ressuscité » (ét. 10)**
 avec des élèves jouables inédits. L'explication narrative est que Voldemort
 n'est pas *revenu* par un nouveau complot politique, mais **se ré-assemble
 passivement** à mesure qu'une corruption ancienne remonte des fondations — un

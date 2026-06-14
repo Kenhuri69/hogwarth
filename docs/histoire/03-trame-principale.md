@@ -135,7 +135,7 @@ Oubliées**. Les forces ennemies montent en gamme : élite mangemort, créatures
 majeures, puis les **boss canon** qui gardent la route vers la source.
 
 - ✅ Boss : **Fenrir Greyback** (ét. 8), **Aragog** (ét. 9), **Antonin
-  Dolohov** (ét. 10), **Bellatrix**, et **Voldemort Affaibli** (ét. 8) —
+  Dolohov** (ét. 10), **Bellatrix** (ét. 8), et **Voldemort Affaibli** (ét. 9) —
   un premier contact, encore incomplet.
 - **Beat** : chaque boss tombé **affaiblit le sceau** ; la présence de
   Voldemort se densifie d'étage en étage.

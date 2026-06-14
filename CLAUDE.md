@@ -1482,8 +1482,8 @@ Le moteur s'adapte automatiquement sans toucher au reste du code.
 | 5+     | Mangemort Masqué, Jeune Acromantule, Détraqueur Gardien, Troll des Cavernes, Sorcier Renégat |
 | 6+     | Basilic Mineur, Chimère de Poudlard, Ombre de Quirrell, Nagini |
 | 7+     | Mangemort d'Élite, **Auror Corrompu** |
-| 8+     | Bellatrix Lestrange, Voldemort Affaibli, **Fenrir Greyback** (boss canon, epic, weight 1), **Veilleur du Seuil** (boss original epic), **Loup-Garou Adulte** |
-| 9+     | **Aragog** (boss canon epic), **Maître des Détraqueurs** (boss original epic), **Acromantule Adulte**, **Détraqueur d'Élite**, **Mangemort Vétéran**, **Spectre Renforcé** |
+| 8+     | Bellatrix Lestrange, **Fenrir Greyback** (boss canon, epic, weight 1), **Veilleur du Seuil** (boss original epic), **Loup-Garou Adulte** |
+| 9+     | Voldemort Affaibli (epic), **Aragog** (boss canon epic), **Maître des Détraqueurs** (boss original epic), **Acromantule Adulte**, **Détraqueur d'Élite**, **Mangemort Vétéran**, **Spectre Renforcé** |
 | 10+    | Voldemort Ressuscité, **Antonin Dolohov** (boss canon epic), **Héraut des Ténèbres** (boss original epic) |
 | Boucle 22+ | **Basilic Ancestral** (boss canon epic, `minFloor:12` → réel 22+ via `effectiveFloor`, Ruines Anciennes ; brute → Broyer auto, regard pétrifiant/venin/mue) |
 | 9+ / Boucle | **Moremplis** (Lethifold canon epic, `minFloor:9` → réel 9-10 + Boucle 19+ ; caster/drain, faible lumière ; cible de la purge `purge_moremplis` du Gardien) |
