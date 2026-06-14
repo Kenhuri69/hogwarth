@@ -518,18 +518,49 @@ function _computeSpellDamage(spell, char, enemy, opts) {
 // 1er lancer au prix de base, puis +6 PM par lancer déjà effectué.
 const LEGILIMENS_COST_STEP = 6;
 
-// Coût en PM effectif d'un sort — réduit de 20 % (arrondi au sup., plancher
-// 1) par l'Apothéose Serdaigle (palier 18 — Esprit de l'Aigle).
-function _spellSpCost(spell) {
+// Artefacts (P1) — somme des `bonusElemDmg` de l'équipement du lanceur pour
+// l'élément du sort (clé spécifique + clé `tous`). PUR, défensif (saves
+// antérieures / char sans equipped → 0). Cf. plan artifacts-reliquary-system.md.
+function _artifactElemBonus(char, element) {
+  if (!char || !char.equipped || !element) return 0;
+  let total = 0;
+  for (const item of Object.values(char.equipped)) {
+    if (!item || !item.bonusElemDmg) continue;
+    const m = item.bonusElemDmg;
+    if (typeof m[element] === 'number') total += m[element];
+    if (typeof m.tous === 'number')     total += m.tous;
+  }
+  return total;
+}
+
+// Artefacts (P1) — somme des `spCostReduction` de l'équipement du lanceur
+// (Cristal de Focalisation…). PUR, défensif. Le plancher de coût (1) est
+// appliqué par `_spellSpCost`.
+function _artifactSpCostReduction(char) {
+  if (!char || !char.equipped) return 0;
+  let total = 0;
+  for (const item of Object.values(char.equipped)) {
+    if (item && typeof item.spCostReduction === 'number') total += item.spCostReduction;
+  }
+  return total;
+}
+
+// Coût en PM effectif d'un sort — réduit de 20 % (arrondi au sup.) par
+// l'Apothéose Serdaigle (palier 18 — Esprit de l'Aigle), puis −N PM additif
+// par les artefacts (`spCostReduction`). Plancher final : 1 PM. `char`
+// optionnel → résolu sur le lanceur actif (getActiveChar).
+function _spellSpCost(spell, char) {
+  if (char === undefined && typeof getActiveChar === 'function') char = getActiveChar();
   let cost = spell.cost;
   // Legilimens : coût croissant à chaque relance dans le combat courant.
   if (spell.effect === 'legilimens' && typeof legilimensCastsThisFight === 'number') {
     cost += legilimensCastsThisFight * LEGILIMENS_COST_STEP;
   }
   if (typeof houseApotheosePassive === 'function' && houseApotheosePassive() === 'Serdaigle') {
-    return Math.max(1, Math.ceil(cost * 0.8));
+    cost = Math.ceil(cost * 0.8);
   }
-  return cost;
+  cost -= _artifactSpCostReduction(char);
+  return Math.max(1, cost);
 }
 
 // Apothéose Serpentard (palier 18 — Soif du Serpent) : draine 15 % des
@@ -550,7 +581,11 @@ function _applySerpentLifesteal(char, dmg) {
 function _spellElementalDamage(spell, char, enemy, targetIdx) {
   let msg = '';
   if (enemy) {
-    const { dmg, suffix, crit } = _computeSpellDamage(spell, char, enemy, { undead: true });
+    let { dmg, suffix, crit } = _computeSpellDamage(spell, char, enemy, { undead: true });
+    // Artefacts (P1) — Orbe/Cristal : +% dégâts élémentaires (additif, après
+    // résist/faiblesse/crit). Aucun effet si le lanceur n'en porte pas.
+    const elemBonus = _artifactElemBonus(char, spell.element);
+    if (elemBonus > 0) { dmg = Math.floor(dmg * (1 + elemBonus)); suffix += ' 🔆'; }
     enemy.currentHp -= dmg;
     // Accent SFX : crit prioritaire, sinon faiblesse élémentaire touchée.
     if (typeof AudioSystem !== 'undefined') {

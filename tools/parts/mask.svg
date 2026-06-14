@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <g fill="#000000">
+    <path data-region="face" d="M 256 56 C 348 56 392 124 388 216 C 386 282 364 348 326 398 C 302 430 280 454 256 470 C 232 454 210 430 186 398 C 148 348 126 282 124 216 C 120 124 164 56 256 56 Z"></path>
+    <path data-region="brow" d="M 132 150 C 200 112 312 112 380 150 L 360 200 C 304 168 208 168 152 200 Z"></path>
+    <path data-region="eyes" d="M 156 254 C 192 206 252 210 274 262 C 244 300 180 302 156 254 Z"></path>
+    <path data-region="eyes" d="M 356 254 C 320 206 260 210 238 262 C 268 300 332 302 356 254 Z"></path>
+    <path data-region="eyes" d="M 200 396 C 240 380 272 380 312 396 C 284 422 228 422 200 396 Z"></path>
+    <path data-region="accent" d="M 256 290 L 270 340 L 256 360 L 242 340 Z"></path>
+  </g>
+</svg>

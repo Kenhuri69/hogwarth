@@ -1,7 +1,9 @@
 # Artefacts & Reliquaires 2.0 — Spécifications & Plan d'implémentation
 
-> **Branche** : `claude/hogwarth-artifacts-system-we6nvv`
-> **Statut** : 🟢 **Lot P0 livré** (2026-06-14 — socle data inerte + tests). Lots P1→P3 à venir.
+> **Branche** : `claude/hogwarth-artifacts-system-we6nvv` (P0) ·
+> `claude/hogwarth-artifacts-p1-em6jln` (P1)
+> **Statut** : 🟢 **Lots P0 + P1 livrés** (P0 2026-06-14 socle data inerte ;
+> P1 2026-06-14 nouvelles formes §1.4 A/B + leviers combat + icônes). Lots P2→P3 à venir.
 > **Périmètre** : faire des Artefacts/Reliquaires un **pilier de personnalisation
 > et de progression**, sans casser l'économie ni l'architecture zéro-build.
 > **Canon de référence** : chapitres [05](../../docs/histoire/05-personnages-jouables.md),
@@ -362,12 +364,72 @@ signature ([08 §8.5](../../docs/histoire/08-quetes-et-sous-intrigues.md)) :
 | # | Lot | Contenu | Vérification |
 |---|-----|---------|--------------|
 | **P0** ✅ | **Coûts & socle data** *(livré 2026-06-14)* | table §1.6 figée ; registre `ARTIFACT_FORMS` (12 formes, inerte) + `PREMIUM_MULT` + helper PUR `premiumStat()` ajoutés à `data.js` ; palier `uncommon` documenté (§1.6) | ✅ `node tests/units.js` (614 assertions, bloc #12 `testArtifactSocle`) + smoke Equipment/ShopLimits/TryAddItem/CritDodge/ConsumableStacking verts ; cache bump data.js `?v=33` / `CACHE_VERSION v136` ; `check_cache_versions` + `pwa-smoke` OK |
-| **P1** | **Nouvelles formes (1.4 A/B)** | entrées ITEMS + icônes painterly + branchement `bonusElemDmg`/`spCostReduction` en combat | smoke `inventory`/`spells`/`combat` ; un cas équipe une nouvelle forme et vérifie la stat |
+| **P1** ✅ | **Nouvelles formes (1.4 A/B)** *(livré 2026-06-14)* | 13 entrées ITEMS (8 mid-game A + 5 endgame B) avec `formType` (+ `bonusElemDmg`/`spCostReduction` là où prévu) ; 2 leviers combat branchés (`_spellElementalDamage`, `_spellSpCost`) ; 13 icônes painterly (2 parts neufs `orb.svg`/`mask.svg`) + registres NEW & legacy | ✅ `node tests/units.js` (620) + `node tests/smoke.js` (219 dont `scenarioArtifactForms`) verts ; cache bump data.js `?v=34` / battle-spells `?v=15` / inventory-spells `?v=3` / item-icons `?v=23` / `CACHE_VERSION v139` ; `check_cache_versions` + `pwa-smoke` OK |
 | **P2** | **Premium (1.5)** | variantes pré-cuites par Maison + FX/son d'équipement + Codex | smoke `houses`/`visuals` ; cas : remise cérémonielle pousse la Premium de `chosenHouse` |
 | **P3** | **Shops & quêtes (1.7/1.8)** | SHOP_CATALOG + slot faveur Maison + nouveau PNJ + récompenses quêtes + entrées Codex + Reliques de la Mort/Chœur | smoke `npc`/`quests` ; cas : stock garantit l'artefact affinité ; sim éco OK |
 
 Chaque lot : **plan amendé** (§5), **smoke vert** (§7), **cache-bump** si JS/CSS
 touché (§8), **PR non créée sans demande** (§6).
+
+#### P1 — notes d'implémentation & écarts (2026-06-14)
+
+**Livré** : 13 artefacts dans `ITEMS` (`js/data.js`) — A : `orbe_flamme`,
+`orbe_givre`, `cristal_focalisation`, `gantelets_combat`, `baton_apprenti`,
+`cape_funambule`, `masque_courage`, `grimoire_flottant` ; B : `baton_ancestral`,
+`talisman_fondateurs`, `masque_rituel`, `gantelets_aurors`, `orbe_runique`.
+Chacun porte `formType` ; prix conformes à la table §1.6 (palier `uncommon`
+inclus). Slots existants réutilisés (aucun slot neuf).
+
+**2 leviers combat** (les seuls demandés, additifs) :
+- `bonusElemDmg` → branché dans `_spellElementalDamage` (`battle-spells.js`)
+  via helper pur `_artifactElemBonus(char, element)` : somme les bonus de
+  l'élément du sort + la clé `tous`, applique `dmg = floor(dmg × (1+Σ))`
+  **après** résist/faiblesse/crit. N'affecte que la voie de dégât élémentaire
+  (pas lifesteal/curse) — conforme à la fonction nommée au plan.
+- `spCostReduction` → branché dans `_spellSpCost` (`battle-spells.js`) via
+  helper pur `_artifactSpCostReduction(char)`, **plancher 1**. `_spellSpCost`
+  prend désormais un `char` optionnel (défaut `getActiveChar()`). La modale de
+  sorts (`inventory-spells.js`) affiche le coût effectif par lanceur (reflète
+  aussi désormais l'Apothéose Serdaigle — amélioration de cohérence).
+
+**Icônes** : enregistrées dans `ITEM_ICON_NEW_REGISTRY` (priorité 1) **et**
+`ITEM_ICON_REGISTRY` (repli legacy, exigé par `scenarioItemIcons`).
+- **Version livrée** : objets peints par **Gemini** (planche unique générée via
+  le prompt unifié `artifacts-p1-gemini-prompts.md`), découpés + détourés puis
+  encadrés par `tools/icon_factory.py --raster` → halo de rareté + cartouche
+  doré + mipmaps **du moteur** (cohérence avec les 149 autres icônes). Sources
+  détourées conservées dans `tools/raster_src/<id>.png`. Résout proprement le
+  problème de lisibilité des masques (visages nets).
+- **Repli/historique** : 13 recettes painterly (`tools/icon_factory.py`) + 2
+  parts SVG (`tools/parts/orb.svg`, `tools/parts/mask.svg`) restent dans le
+  dépôt — regénérables si une source Gemini disparaît. (Limite connue du
+  painterly sur les masques : petites régions internes relightées vers le ton
+  du visage → ovales lisses ; c'est pourquoi la version Gemini est préférée.)
+
+**Écarts assumés** (hors périmètre « 2 seuls nouveaux leviers ») :
+- `gantelets_combat` : pas de champ `bonusStrPen` (3ᵉ levier non sanctionné).
+  Le STR+2 octroie déjà la pénétration de DEF via D4 (`_strPenFrac`).
+- `baton_apprenti` : pas de rider mécanique `noCounter` (3ᵉ levier). « Lourd »
+  reste du flavor ; ATK+2 MAG+3 sans malus.
+- `grimoire_flottant` : pas de passif « révèle l'ennemi » (3ᵉ levier). INT+4
+  MAG+2 seul.
+- Reliques vocales (§1.4 C) et élixirs perma (§1.4 D) : **non implémentés**
+  (le périmètre P1 demandé était §1.4 **A et B** uniquement).
+- Variantes Premium (P2) et shops/quêtes (P3) : non touchés.
+- Mirror inerte `js/data-icon-recipes.js` (`ICON_RECIPES`) : non mis à jour
+  (documentation sans impact runtime, non vérifiée par les tests).
+
+**Option icônes Gemini (outillage prêt)** : `tools/icon_factory.py` gagne un
+mode `--raster` qui encadre une icône peinte par LLM image (Gemini / Nano
+Banana) avec les **mêmes** passes `pass_halo` (rareté) + `pass_cartouche` +
+mipmaps que les icônes par recette — les passes painterly sont sautées. Source :
+`tools/raster_src/<id>.png` (détourage damier auto via `dechecker_png`). Permet
+de remplacer tout ou partie des 13 icônes painterly sans toucher au JS (chemins
+`ITEM_ICON_NEW_REGISTRY` inchangés) ni au cache (`img/` en SWR). Prompts prêts :
+[`.claude/plans/artifacts-p1-gemini-prompts.md`](./artifacts-p1-gemini-prompts.md)
+; mode opératoire : [`tools/raster_src/README.md`](../../tools/raster_src/README.md).
+Les recettes painterly restent le **repli** tant qu'aucune source Gemini n'est
+fournie pour un id.
 
 ### 2.7 Suggestions d'assets
 

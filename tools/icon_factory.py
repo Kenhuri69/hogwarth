@@ -1466,6 +1466,136 @@ RECIPES: Dict[str, Recipe] = {
              "color": ( 60,  46,  36), "size": 90},
         ],
     ),
+
+    # ════════════════════════════════════════════════════════════
+    # Artefacts & Reliquaires 2.0 — P1 nouvelles formes (plan §1.4 A/B)
+    # ════════════════════════════════════════════════════════════
+    # A. Mid-game (uncommon/rare)
+    "orbe_flamme": Recipe(
+        id="orbe_flamme", name="Orbe de Flamme", rarity="uncommon", material="glass",
+        silhouette={"kind": "svg", "file": "orb.svg"},
+        fills={"sphere": (200,  72,  32), "core": (255, 168,  72), "base": (120,  82,  40)},
+        accents=[
+            {"kind": "orb_glow", "region": "core",   "color": (255, 200, 110)},
+            {"kind": "symbol",   "region": "sphere", "shape": "flame",
+             "color": (255, 226, 152), "size": 120},
+        ],
+    ),
+    "orbe_givre": Recipe(
+        id="orbe_givre", name="Orbe de Givre", rarity="uncommon", material="glass",
+        silhouette={"kind": "svg", "file": "orb.svg"},
+        fills={"sphere": ( 60, 140, 200), "core": (190, 232, 255), "base": ( 96, 110, 128)},
+        accents=[
+            {"kind": "orb_glow", "region": "core",   "color": (210, 240, 255)},
+            {"kind": "symbol",   "region": "sphere", "shape": "snowflake",
+             "color": (235, 250, 255), "size": 120},
+        ],
+    ),
+    "cristal_focalisation": Recipe(
+        id="cristal_focalisation", name="Cristal de Focalisation", rarity="rare", material="glass",
+        silhouette={"kind": "svg", "file": "gem-octahedron.svg"},
+        fills={"gem": ( 96, 200, 216), "gem_base": ( 40, 120, 140)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem", "color": (224, 250, 255)},
+            {"kind": "orb_glow",        "region": "gem", "color": (170, 230, 240)},
+        ],
+    ),
+    "gantelets_combat": Recipe(
+        id="gantelets_combat", name="Gantelets de Combat", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={"cuff": ( 96,  72,  48), "palm": (140, 100,  60),
+               "fingers": (128,  92,  52), "stitch": (208, 180, 120)},
+        accents=[{"kind": "emboss", "region": "palm", "color": ( 60,  40,  20)}],
+    ),
+    "baton_apprenti": Recipe(
+        id="baton_apprenti", name="Bâton d'Apprenti", rarity="uncommon", material="wood",
+        silhouette={"kind": "svg", "file": "wizard-staff.svg"},
+        fills={"shaft": (120,  84,  48), "grip": ( 84,  60,  36),
+               "pommel": (150, 112,  64), "orb": (176, 208, 160)},
+        accents=[{"kind": "orb_glow", "region": "orb", "color": (210, 232, 190)}],
+    ),
+    "cape_funambule": Recipe(
+        id="cape_funambule", name="Cape du Funambule", rarity="rare", material="matte",
+        silhouette={"kind": "svg", "file": "hood.svg"},
+        fills={"cloth": (176, 140,  64), "cavity": ( 96,  72,  36)},
+        accents=[{"kind": "emboss", "region": "cloth", "color": (120,  92,  40)}],
+    ),
+    "masque_courage": Recipe(
+        id="masque_courage", name="Masque du Courage", rarity="rare", material="matte",
+        silhouette={"kind": "svg", "file": "mask.svg"},
+        fills={"face": (150,  40,  36), "brow": (176,  60,  48),
+               "eyes": ( 40,  16,  14), "accent": (208, 168,  80)},
+        accents=[
+            {"kind": "emboss",          "region": "face",   "color": ( 96,  24,  20)},
+            {"kind": "gem_facet_shine", "region": "accent", "color": (255, 224, 150)},
+        ],
+    ),
+    "grimoire_flottant": Recipe(
+        id="grimoire_flottant", name="Grimoire Flottant", rarity="rare", material="leather",
+        silhouette={"kind": "svg", "file": "book-cover.svg"},
+        fills={"cover": ( 46,  84, 150), "pages": (224, 224, 236),
+               "spine": ( 28,  56, 104), "gilt": (150, 180, 220)},
+        accents=[
+            {"kind": "emboss", "region": "cover", "color": ( 24,  48,  90)},
+            {"kind": "symbol", "region": "cover", "shape": "eye",
+             "color": (210, 228, 255), "size": 130},
+        ],
+    ),
+    # B. Endgame (epic)
+    "baton_ancestral": Recipe(
+        id="baton_ancestral", name="Bâton Ancestral", rarity="epic", material="wood",
+        silhouette={"kind": "svg", "file": "wizard-staff.svg"},
+        fills={"shaft": ( 96,  64,  36), "grip": ( 64,  42,  24),
+               "pommel": (150, 112,  64), "orb": (180, 150, 255)},
+        accents=[
+            {"kind": "orb_glow", "region": "orb",   "color": (220, 196, 255)},
+            {"kind": "runes",    "region": "shaft", "color": (200, 170, 255), "count": 4},
+        ],
+    ),
+    "talisman_fondateurs": Recipe(
+        id="talisman_fondateurs", name="Talisman des Fondateurs", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "gem-pendant.svg"},
+        fills={"chain": (200, 168,  96), "setting": (211, 166,  37), "gem": (120, 150, 200)},
+        accents=[
+            {"kind": "gem_facet_shine", "region": "gem",     "color": (224, 235, 255)},
+            {"kind": "orb_glow",        "region": "gem",     "color": (170, 200, 240)},
+            {"kind": "symbol", "region": "setting", "shape": "star",
+             "color": ( 60,  46,  30), "size": 80},
+        ],
+    ),
+    "masque_rituel": Recipe(
+        id="masque_rituel", name="Masque Rituel", rarity="epic", material="matte",
+        silhouette={"kind": "svg", "file": "mask.svg"},
+        fills={"face": ( 72,  40,  90), "brow": ( 96,  56, 120),
+               "eyes": ( 20,  10,  28), "accent": (176, 144, 220)},
+        accents=[
+            {"kind": "emboss", "region": "face", "color": ( 44,  24,  56)},
+            {"kind": "symbol", "region": "brow", "shape": "eye",
+             "color": (216, 196, 248), "size": 70},
+            {"kind": "gem_facet_shine", "region": "accent", "color": (224, 200, 255)},
+        ],
+    ),
+    "gantelets_aurors": Recipe(
+        id="gantelets_aurors", name="Gantelets des Aurors", rarity="epic", material="metal",
+        silhouette={"kind": "svg", "file": "glove.svg"},
+        fills={"cuff": ( 44,  70, 100), "palm": ( 90, 120, 150),
+               "fingers": ( 76, 104, 134), "stitch": (200, 210, 224)},
+        accents=[
+            {"kind": "emboss",          "region": "palm",   "color": ( 30,  48,  70)},
+            {"kind": "gem_facet_shine", "region": "stitch", "color": (220, 232, 255)},
+        ],
+    ),
+    "orbe_runique": Recipe(
+        id="orbe_runique", name="Orbe Runique", rarity="epic", material="glass",
+        silhouette={"kind": "svg", "file": "orb.svg"},
+        fills={"sphere": (120,  72, 180), "core": (208, 168, 255), "base": ( 90,  76, 120)},
+        accents=[
+            {"kind": "orb_glow", "region": "core",   "color": (224, 196, 255)},
+            {"kind": "runes",    "region": "sphere", "color": (224, 196, 255), "count": 5},
+            {"kind": "symbol",   "region": "sphere", "shape": "star",
+             "color": (240, 224, 255), "size": 110},
+        ],
+    ),
 }
 
 
@@ -1905,6 +2035,68 @@ def save_all(recipe: Recipe, out_dir: str = OUT_DIR) -> List[str]:
     return paths
 
 
+# ── Raster path (Gemini / Nano Banana cutouts) ──────────────────────────────
+# Au lieu de peindre une silhouette SVG, on encadre un sujet DÉJÀ peint (icône
+# générée par LLM image), en réutilisant UNIQUEMENT les deux passes de cadrage
+# communes — halo de rareté + cartouche doré — pour rester cohérent avec les
+# icônes painterly. Les passes painterly (AO/shading/rim/specular/grain) sont
+# sautées (le sujet est déjà ombragé). Source attendue : tools/raster_src/<id>.png.
+RASTER_SRC_DIR = os.path.normpath(os.path.join(HERE, "..", "tools", "raster_src"))
+
+
+def _load_raster_subject(path: str, margin: float = 0.08):
+    """Charge un PNG d'icône externe en (rgb[0..1], alpha[0..1]) sur un canevas
+    512² transparent, sujet centré avec marge. Accepte un PNG RGBA à
+    transparence réelle, OU un PNG RGB/opaque sur damier de transparence aplati
+    (détouré via dechecker_png)."""
+    import dechecker_png
+    im = Image.open(path).convert("RGBA")
+    a = np.asarray(im)[..., 3]
+    if a.min() >= 250:  # pas d'alpha exploitable → damier « cuit »
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False).name
+        dechecker_png.detour(path, tmp, side=RENDER_SIZE, margin=margin)
+        im = Image.open(tmp).convert("RGBA")
+        os.unlink(tmp)
+    bbox = im.getbbox()
+    if bbox:
+        im = im.crop(bbox)
+    inner = int(RENDER_SIZE * (1 - 2 * margin))
+    w, h = im.size
+    scale = min(inner / w, inner / h)
+    im = im.resize((max(1, round(w * scale)), max(1, round(h * scale))),
+                   Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (RENDER_SIZE, RENDER_SIZE), (0, 0, 0, 0))
+    canvas.alpha_composite(im, ((RENDER_SIZE - im.size[0]) // 2,
+                                (RENDER_SIZE - im.size[1]) // 2))
+    arr = np.asarray(canvas).astype(np.float64) / 255.0
+    return arr[..., :3].copy(), arr[..., 3].copy()
+
+
+def render_raster(src: str, rarity: str = "common", sparkles: bool = False,
+                  seed: int = 0) -> Image.Image:
+    """Encadre une icône raster externe avec le MÊME halo de rareté + cartouche
+    doré que les icônes par recette (sans les passes painterly)."""
+    rgb, alpha = _load_raster_subject(src)
+    rgb, alpha = pass_halo(rgb, alpha, rarity=rarity, sparkles=sparkles, seed=seed)
+    rgb = pass_cartouche(rgb, size=RENDER_SIZE)
+    rgba = np.dstack([np.clip(rgb, 0, 1), alpha])
+    return Image.fromarray((rgba * 255 + 0.5).astype(np.uint8), mode="RGBA")
+
+
+def save_raster(item_id: str, src: str, rarity: str, out_dir: str = OUT_DIR,
+                sparkles: bool = False) -> List[str]:
+    os.makedirs(out_dir, exist_ok=True)
+    big = render_raster(src, rarity=rarity, sparkles=sparkles,
+                        seed=hash(item_id) & 0xFFFF)
+    paths: List[str] = []
+    for s in MIPMAPS:
+        p = os.path.join(out_dir, f"{item_id}_{s}.png")
+        big.resize((s, s), Image.Resampling.LANCZOS).save(p, "PNG", optimize=True)
+        paths.append(p)
+    return paths
+
+
 # ── CLI ────────────────────────────────────────────────────────────────────
 
 def main():
@@ -1912,12 +2104,30 @@ def main():
     parser.add_argument("ids", nargs="*", help="recipe ids to render")
     parser.add_argument("--all", action="store_true", help="render every recipe")
     parser.add_argument("--list", action="store_true", help="list known recipes")
+    parser.add_argument("--raster", action="store_true",
+                        help="frame raster icons (Gemini cutouts) from "
+                             "tools/raster_src/<id>.png — halo+cartouche only")
     parser.add_argument("--out", default=OUT_DIR, help="output directory")
     args = parser.parse_args()
 
     if args.list:
         for r in RECIPES.values():
             print(f"  {r.id:24s} {r.rarity:10s} {r.name}")
+        return
+
+    if args.raster:
+        ids = args.ids or [r.id for r in RECIPES.values()]
+        for rid in ids:
+            src = os.path.join(RASTER_SRC_DIR, f"{rid}.png")
+            if not os.path.exists(src):
+                print(f"!! no raster source: {os.path.relpath(src)}", file=sys.stderr)
+                continue
+            rarity   = RECIPES[rid].rarity   if rid in RECIPES else "common"
+            sparkles = RECIPES[rid].sparkles if rid in RECIPES else False
+            print(f"→ framing raster {rid} ({rarity}) …")
+            for p in save_raster(rid, src, rarity, out_dir=args.out, sparkles=sparkles):
+                print(f"   wrote {os.path.relpath(p)}")
+        print("done.")
         return
 
     if args.all:
