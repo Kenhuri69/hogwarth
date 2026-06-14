@@ -1973,12 +1973,13 @@ const MONSTERS = [
   // minFloor 9 → apparaît au réel 9-10 (école profonde) ET recycle dans la
   // Boucle au réel 19+ (effectiveFloor(19)=9), où il sert de cible à la quête
   // de purge du Gardien (purge_moremplis). Caster/drain (atk < 1,5×mag) → PAS
-  // une brute (pas de Broyer). Repli emoji 🌑 (PNG dédié à générer).
+  // une brute (pas de Broyer). Sprite PNG painterly (rembg/birefnet).
   {
     id:       "moremplis",
     epic:     true,
     name:     "Moremplis",
     icon:     "🌑",
+    imgSrc:   "img/monsters/moremplis.png",
     category: "être magique",
     desc:     "Une nappe de ténèbres ondule au ras du sol, sans visage ni bord net. Elle glisse vers toi pour t'envelopper.",
     lore:     "Le Moremplis — Lethifold pour les naturalistes — est un linceul vivant qui étouffe sa proie dans son sommeil et la digère sans laisser de trace. Classé XXXXX, il ne craint qu'une chose : la lumière d'un Patronus. La Boucle en a tissé un des ombres mêmes des Ruines.",
@@ -2018,6 +2019,7 @@ const MONSTERS = [
     epic:     true,
     name:     "Basilic Ancestral",
     icon:     "🐍",
+    imgSrc:   "img/monsters/basilic_ancestral.png",
     category: "bête",
     desc:     "Une colonne d'écailles antiques se déroule des Ruines. Deux yeux d'or s'ouvrent — ne croise pas son regard.",
     lore:     "Le premier des serpents, scellé sous Poudlard bien avant que Salazar n'y bâtisse sa Chambre. La Boucle l'a réveillé du fond des Ruines, là où la pierre est plus vieille que les Fondateurs. Son regard pétrifie, sa morsure dissout, et son corps brise les armures comme des coquilles.",
