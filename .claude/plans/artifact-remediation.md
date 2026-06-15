@@ -284,7 +284,7 @@ non créée sans demande (§6).
 
 - [x] Lot A — rename `codex_rowena_eclat` + assertion unicité ids + cache-bump ✅ 2026-06-14
 - [x] Lot F — formule §1.6 corrigée (actMult' 1,2/2,0/4,0/6,0 × rarityPremium' 1,0/1,1/1,25/1,4 + renvoi étude §2.1) ✅ 2026-06-15 — markdown pur, pas de cache-bump/smoke
-- [ ] Lot C — `voix_rowena_relique` +MAG+2
+- [x] Lot C — `voix_rowena_relique` +`bonusMag:2` (budget 140→210, parité reliques vocales) + desc « INT+4 MAG+2 » ✅ 2026-06-15 — sim endgame kit-complet sain (Ch.13 OK, +2 MAG sous résolution sim), `scenarioVoiceRelics` vert ; cache-bump data v40→41 / CACHE_VERSION v155→156
 - [ ] Lot B — Premium Gryffondor rebasé (+ sim)
 - [ ] Lot D — `chapeau_pointu`/`bottes_dragon`(/`amulette`) repricés
 - [ ] Lot E — palier uncommon étoffé + belt epic (+ sim)
