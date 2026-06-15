@@ -133,6 +133,16 @@ function loadModule(relPath, exportNames, globals = {}) {
     { rng: rng0, canonHouse: 'Gryffondor', chosenHouse: 'Serpentard' });
   check('darkLoop : tension préférée (harry/Serpentard)', dlTens.includes('raccourci'));
 
+  // Phase 3 — événement `darkBoss` (boss revenu en variante Ténébreuse).
+  let allHaveDarkBoss = true;
+  for (const k of Object.keys(HERO_BARKS)) {
+    if (!Array.isArray(HERO_BARKS[k].darkBoss) || !HERO_BARKS[k].darkBoss.length) allHaveDarkBoss = false;
+  }
+  check('16 héros : événement darkBoss couvert', allHaveDarkBoss);
+  check('bark harry/darkBoss non vide', typeof pickHeroBark('harry', 'darkBoss', { rng: rng0 }) === 'string');
+  check('darkBoss ≠ bossAppear (harry)',
+    pickHeroBark('harry', 'darkBoss', { rng: rng0 }) !== pickHeroBark('harry', 'bossAppear', { rng: rng0 }));
+
   // L8 — beats de trame scénarisés rattachés au bon héros (05 §5.4.2).
   check('celeste.fountainCold présent',
     Array.isArray(HERO_BARKS.celeste.fountainCold) && HERO_BARKS.celeste.fountainCold.length > 0);

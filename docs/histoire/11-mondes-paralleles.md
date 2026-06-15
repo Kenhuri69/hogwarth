@@ -505,8 +505,13 @@ s'assombrir.
   18–20 (Greyback → Aragog → Dolohov), gardiens des Chambres des Fondateurs.
 - 💡 **Sens narratif** : un Ténébreux n'est pas un nouvel ennemi — c'est
   **l'ombre projetée par les Ruines**, le **mythe du héros retourné** contre lui
-  ([09 §9.10](09-bestiaire-et-lore.md)). Piste de bark : *« Tu m'as déjà tué une
-  fois. Cela t'a-t-il libéré ? »* (❓ cosmétique ou dialogues dédiés ?).
+  ([09 §9.10](09-bestiaire-et-lore.md)).
+- ✅ **Bark one-shot « déjà tué »** (Phase 3) : face à un boss epic revenu en
+  variante Ténébreuse (`variant === 'darkness'`), le héros actif lance une
+  réplique dédiée *« Tu m'as déjà tué une fois… »* — événement `darkBoss` des
+  16 héros (`hero-barks.js`), déclenché à la place de `bossAppear` dans
+  `startBattle` (`battle.js`), one-shot par boss/session. Cosmétique & défensif
+  (héros sans entrée → silence).
 - 💡 **Mutation par boucle (V2, hors V1)** : champ `loopVariant` dans
   `monsters.js` pour des créatures qui **mutent** au-delà du recyclage. À évaluer
   seulement après V1.
