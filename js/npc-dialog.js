@@ -144,7 +144,7 @@ function _houseClaimableItems(house) {
   // Récompense de la Quête Signature (remise cérémonielle par le Chef de Maison).
   const sig = {
     Gryffondor: 'banniere_godric', Serpentard: 'langue_de_plomb',
-    Serdaigle:  'codex_rowena',    Poufsouffle: 'coeur_refuge',
+    Serdaigle:  'codex_rowena_eclat', Poufsouffle: 'coeur_refuge',
   }[house];
   if (sig && !ids.includes(sig)) ids.push(sig);
   // P2 — variante Premium de prestige de la Maison (remise cérémonielle).

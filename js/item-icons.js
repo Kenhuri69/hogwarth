@@ -180,7 +180,7 @@ const ITEM_ICON_REGISTRY = {
   // couverture du test ; le rendu réel passe par ITEM_ICON_NEW_REGISTRY).
   banniere_godric:     'img/icons/items/sword_gryff.png',
   langue_de_plomb:     'img/icons/items/locket_slytherin.png',
-  codex_rowena:        'img/icons/items/livre_sortileges.png',
+  codex_rowena_eclat:  'img/icons/items/livre_sortileges.png',
   coeur_refuge:        'img/icons/items/coupe_poufsouffle.png',
   // Set du Serpent (Serpentard)
   pendentif_mamba:     'img/icons/items/locket_slytherin.png',
@@ -362,6 +362,9 @@ const ITEM_ICON_NEW_REGISTRY = {
   banniere_godric:      'img/icons_new/banniere_godric_64.png',
   langue_de_plomb:      'img/icons_new/langue_de_plomb_64.png',
   codex_rowena:         'img/icons_new/codex_rowena_64.png',
+  // Récompense Quête Signature Serdaigle (epic) — id distinct du legendary
+  // Tier-5 `codex_rowena` ; réutilise l'art painterly existant.
+  codex_rowena_eclat:   'img/icons_new/codex_rowena_64.png',
   coeur_refuge:         'img/icons_new/coeur_refuge_64.png',
   // Set du Serpent (Serpentard)
   pendentif_mamba:      'img/icons_new/pendentif_mamba_64.png',
