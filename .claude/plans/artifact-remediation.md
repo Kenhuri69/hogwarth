@@ -289,6 +289,80 @@ non créée sans demande (§6).
 - [ ] Lot D — `chapeau_pointu`/`bottes_dragon`(/`amulette`) repricés
 - [ ] Lot E — palier uncommon étoffé + belt epic (+ sim)
 
+## Spécifications d'implémentation prêtes à coder
+
+> Specs concrètes (ids, stats, prix) pour rendre chaque lot directement
+> implémentable. **Poids de budget** (étude §1.2) : primaire 35 G/pt · secondaire
+> 20 G/pt · crit % 12 G/% · regen 40 G/pt · `bonusElemDmg{un}` 300 G/+1 ·
+> `bonusElemDmg{tous}` 800 G/+1. Toute stat reste **sim-gated**
+> (`tools/sim-difficulty.js`) avant figeage.
+
+### Lot F (doc, à faire en 1er — trivial)
+`/.claude/plans/artifacts-reliquary-system.md §1.6` — remplacer la ligne de
+formule `prix ≈ budget × rarityMult × actMult` par :
+```
+prix ≈ budget × actMult' × rarityPremium'
+  actMult'       : I 1,2 · II 2,0 · III 4,0 · Boucle 6,0
+  rarityPremium' : common 1,0 · uncommon 1,1 · rare 1,25 · epic 1,4 · legendary (non vendable)
+```
++ phrase de renvoi : « cf. `docs/artifact-balance-study.md §2.1` (la formule
+littérale double-comptait la rareté epic) ». Aucun test/cache.
+
+### Lot C (1 item, faible risque)
+`js/data.js` `voix_rowena_relique` : ajouter `bonusMag:2` (budget 140→210).
+Une seule ligne. Cache-bump `data.js`. Vérif : `scenarioVoiceRelics`.
+
+### Lot D (repricing, hausses seules)
+`js/data.js` champ `price` :
+| id | actuel | cible |
+|----|--------|-------|
+| `chapeau_pointu` | 200 | **300** |
+| `bottes_dragon` | 340 | **600** |
+| `amulette` | 250 | **laisser** (Q1 = laisser, rampe early) |
+Cache-bump `data.js`. Vérif : `scenarioShopLimits`.
+
+### Lot B (Premium Gryffondor — buff, sim sérieux)
+B1 retenu. `js/data.js` `orbe_runique_premium_gryff` — rehausser à ~490–520 de
+budget (cible bande 480–560). Exemple (à valider sim) :
+`bonusMag:6` (210) + `bonusElemDmg:{ tous:0.20 }` (160) + `bonusCritChance:5`
+(60) + `bonusInt:3` (60) ≈ **490**. Conserver `formType`/`tint`/`price:0`/
+`rarityScales` existants. **Ne pas** changer la base (pas de B2) → `HOUSE_PREMIUM`,
+Codex, icône **intacts**. Option : plafonner `baton_ancestral_premium_serd`
+(685) vers ~580 si la sim montre un pic. Cache-bump `data.js`. Vérif :
+`scenarioPremiumReward` + `tools/sim-difficulty.js` (seuil « kit complet » Ch.13).
+
+### Lot E (contenu neuf — sim ; découpable E1 puis E2)
+
+**E1 — 5 uncommons** (`js/data.js`, slots vides ; budget ~75–90 ; prix 170–200) :
+| id | slot | bonus | budget | prix | houseAffinity |
+|----|------|-------|--------|------|---------------|
+| `serre_tete_etude` | head | `bonusMag:1 bonusInt:1 bonusDef:1` | 90 | 180 | Serdaigle |
+| `plastron_renforce` | body | `bonusDef:2 bonusEnd:1` | 90 | 200 | Poufsouffle |
+| `bottes_lestes` | feet | `bonusAgi:2 bonusLck:1` | 75 | 170 | — |
+| `cape_doublee` | cloak | `bonusDef:1 bonusAgi:1 bonusEnd:1` | 75 | 180 | — |
+| `ceinture_etudiant` | belt | `bonusDef:1 bonusLck:1 bonusEnd:1` | 90 | 170 | Poufsouffle |
+
+Champs communs : `type` cohérent au slot (`armor` pour head/body/feet/cloak/belt
+défensifs, `acc` sinon), `rarity:"uncommon"`, `power` = stat principale, `icon`
+emoji de repli, `tint` optionnel. `houseAffinity` Pouf ×2 corrige son
+sous-effectif de slots-faveur (étude §5.3).
+
+**E2 — 1 belt epic acte III** (`js/data.js`) :
+`ceinture_aurors` · belt · `rarity:"epic"` · `bonusDef:3 bonusEnd:3
+bonusCritChance:4` (budget 213) · `price:900` · tint or. Donne au slot `belt`
+son 1er epic (étude §5.2/§6.7).
+
+**Câblage E1+E2** :
+- `js/shop.js` `SHOP_CATALOG` : `{ id, minFloor }` — uncommons `minFloor:3-5` ;
+  `ceinture_aurors` `minFloor:9` (Pré-au-Lard corrompu).
+- `js/item-icons.js` : 1 entrée NEW + 1 legacy par id (skill `add-item-icon`,
+  parts SVG existants : `hat-pointy`, `belt`, `glove`…). `scenarioItemIcons`
+  exige une icône par id.
+- Pas de module neuf → MANIFEST loader inchangé.
+- Cache-bump : `data.js`, `shop.js`, `item-icons.js`.
+- Vérif : `units.js` (unicité ids), `smoke.js` (`scenarioShopLimits`,
+  `scenarioItemIcons`, `scenarioHouseFavorShop`), `tools/sim-difficulty.js`.
+
 ## Questions ouvertes restantes (arbitrage humain)
 
 Reprises de l'étude §7 — **Q1→Q5 ci-dessus** (porte de décision globale). Aucun
