@@ -60,3 +60,26 @@
 - `minFloor:17` → jouable en Boucle dès Lot 1 (pas de dead content) ; le
   placement en chambre (Lot 2) raffine sans casser Lot 1.
 - Pas de changement de génération en Lot 1 → risque minimal.
+
+---
+
+## Lot 2/3 — Placement en chambre (2026-06-15) ✅
+
+Audit : monstres placés via `enemyMap[y][x] = scaleMonster(...)` ; modèle
+déterministe = `_ensureFinalBossPresent` (appelé depuis generateDungeon /
+movement-floors / save). Design (illumination §10.5) : la Chambre de la Maison
+du héros l'**accueille** (pas de combat) ; les **3 autres** sont gardées.
+
+1. [x] `dungeon-spawning.js` : `_ensureChamberGuardiansPresent(floor)` — étage 17
+   + victoire + chosenHouse → place les gardiens des 3 Maisons ≠ chosenHouse.
+   Idempotent (skip si déjà présent), mélange des cases FLOOR libres.
+2. [x] 3 call-sites (generateDungeon, _changeFloor, _applyState) + MANIFEST loader.
+3. [x] `scenarioChamberGuardians` (tests/scenarios/dungeon.js) : placement (3,
+   pas le Lion), idempotence, gates (pré-victoire / hors étage 17).
+4. [x] units 678 + scenarios (FounderChamber, FinalBoss, stairs ×50) verts.
+5. [x] cache-bump : dungeon-spawning v2, movement-floors v17, dungeon v18,
+   save v40, loader v49, CACHE_VERSION v156.
+6. [x] Doc : 11 §11.9.2 (Lots 1-2) + roadmap Phase 3.
+7. [ ] Commit → push → PR → CI verte → squash-merge.
+
+Reste : **Lot 3** (art PNG dédié + promo beat + Codex à la défaite).

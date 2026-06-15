@@ -810,6 +810,81 @@ async function scenarioFinalBossGuaranteed() {
   await browser.close();
 }
 
+// Phase 3 Lot 2 — gardiens des Chambres des Fondateurs placés à l'étage 17 en
+// Boucle : les 3 Maisons ≠ chosenHouse sont gardées, celle du héros l'accueille.
+async function scenarioChamberGuardians() {
+  console.log('\n── Scénario endgame : gardiens des Chambres des Fondateurs (ét.17) ──');
+  const { browser, page, errors } = await launchGame();
+  await startNewGame(page, { partySize: 1, heroes: ['harry'], house: 'Gryffondor' });
+
+  const t1 = await page.evaluate(() => ({
+    hasFn: typeof _ensureChamberGuardiansPresent === 'function'
+  }));
+  console.log('  T1 fn exposed:', t1);
+  assert(t1.hasFn, '_ensureChamberGuardiansPresent non exposée');
+
+  // T2 : étage 17 en Boucle, Gryffondor → les 3 AUTRES gardiens placés, pas le Lion.
+  const t2 = await page.evaluate(() => {
+    chosenHouse = 'Gryffondor';
+    victoryAchieved = true;
+    currentFloor = 17; floorDungeons = {};
+    generateDungeon(17);
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    const added = _ensureChamberGuardiansPresent(17);
+    const ids = new Set();
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && enemyMap[y][x].id) ids.add(enemyMap[y][x].id);
+    return {
+      added,
+      serpent:  ids.has('gardien_serpent'),
+      aigle:    ids.has('gardien_aigle'),
+      blaireau: ids.has('gardien_blaireau'),
+      lion:     ids.has('gardien_lion'),
+    };
+  });
+  console.log('  T2 placement (Gryffondor):', t2);
+  assert(t2.added === 3, `3 gardiens placés attendus, got ${t2.added}`);
+  assert(t2.serpent && t2.aigle && t2.blaireau, 'les 3 gardiens non-Gryffondor doivent être présents');
+  assert(!t2.lion, 'le gardien de la Maison du héros (Lion) ne doit PAS être placé');
+
+  // T3 : idempotence — 2e appel ne duplique pas.
+  const t3 = await page.evaluate(() => {
+    const added = _ensureChamberGuardiansPresent(17);
+    let count = 0;
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++)
+        if (enemyMap[y][x] && /^gardien_/.test(enemyMap[y][x].id || '')) count++;
+    return { added, count };
+  });
+  console.log('  T3 idempotent:', t3);
+  assert(t3.added === 0, `2e appel doit être no-op, got ${t3.added}`);
+  assert(t3.count === 3, `toujours 3 gardiens, got ${t3.count}`);
+
+  // T4 : gates — pré-victoire OU hors étage 17 → aucun placement.
+  const t4 = await page.evaluate(() => {
+    for (let y = 0; y < enemyMap.length; y++)
+      for (let x = 0; x < enemyMap[y].length; x++) enemyMap[y][x] = null;
+    victoryAchieved = false;
+    const preVictory = _ensureChamberGuardiansPresent(17);
+    victoryAchieved = true;
+    const wrongFloor = _ensureChamberGuardiansPresent(16);
+    victoryAchieved = false;
+    return { preVictory, wrongFloor };
+  });
+  console.log('  T4 gates:', t4);
+  assert(t4.preVictory === 0, 'pré-victoire : aucun gardien');
+  assert(t4.wrongFloor === 0, 'hors étage 17 : aucun gardien');
+
+  if (errors.length) {
+    errors.forEach(e => console.log('  ⚠️ ', e));
+    throw new Error(`${errors.length} erreurs JS détectées`);
+  }
+  console.log('  ✅ gardiens des Chambres des Fondateurs OK');
+  await browser.close();
+}
+
 async function scenarioDarkVariant() {
   console.log('\n── Scénario endgame 3 : variant darkness + scaling Ténèbres ──');
   const { browser, page, errors } = await launchGame();
@@ -3359,4 +3434,4 @@ async function scenarioStairsReachable() {
   await browser.close();
 }
 
-module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable] };
+module.exports = { scenarios: [scenarioCh13EndgamePivot, scenarioScriptedFloorBeats, scenarioVoixDesRuines, scenarioDungeonLife, scenarioFountain, scenarioRefuge, scenarioSoloSoftlock, scenarioSideDoorRender, scenarioSideWallHandedness, scenarioRespawn20Percent, scenarioVictoryTrigger, scenarioStairsGated, scenarioFinalBossGuaranteed, scenarioChamberGuardians, scenarioDarkVariant, scenarioDarkRewards, scenarioForgeUpgrade, scenarioLibraryUpgrade, scenarioForgeLibraryAudit, scenarioFloorTheming, scenarioZoneDEchoes, scenarioZoneDFx, scenarioFounderChamber, scenarioBranchyDungeon, scenarioDungeonTraps, scenarioDungeonAltars, scenarioSealedRoom, scenarioFloorEvents, scenarioSecretPassage, scenarioRunePuzzle, scenarioRuneSequence, scenarioRiddleStele, scenarioRuneRewards, scenarioRoomOfRequirement, scenarioStairsReachable] };
